@@ -23,8 +23,8 @@
  *             compatible with the HP Compiler
  */
 
-#ifndef _JRD_DSC_H_
-#define _JRD_DSC_H_
+#ifndef JRD_DSC_H
+#define JRD_DSC_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -198,4 +198,4 @@ typedef struct alt_dsc {
 } /* extern "C" */
 #endif
 
-#endif /* _JRD_DSC_H_ */
+#endif /* JRD_DSC_H */

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.32 2003-02-28 13:10:12 brodsom Exp $
+$Id: ibase.h,v 1.33 2003-03-13 12:30:54 brodsom Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -200,7 +200,7 @@ typedef struct bstream
 /* it's more accurate to use void* than int* as the blob pointer    */
 /********************************************************************/
 
-#if !defined(_JRD_VAL_H_) && !defined(REQUESTER)
+#if !defined(JRD_VAL_H) && !defined(REQUESTER)
 /* Blob passing structure */
 
 enum lseek_mode {blb_seek_relative = 1, blb_seek_from_tail = 2};
@@ -217,7 +217,7 @@ typedef struct blobcallback {
     ISC_LONG ( *blob_lseek)
 		(void * hnd, ISC_USHORT mode, ISC_LONG offset);
 }  *BLOBCALLBACK;
-#endif /* !defined(_JRD_VAL_H_) && !defined(REQUESTER) */
+#endif /* !defined(JRD_VAL_H) && !defined(REQUESTER) */
 
 
 
@@ -231,7 +231,7 @@ typedef struct blobcallback {
 /* Ultimately, dsc.h should be part of the public interface.        */
 /********************************************************************/
 
-#if !defined(_JRD_DSC_H_)
+#if !defined(JRD_DSC_H)
 /* This is the famous internal descriptor that UDFs can use, too. */
 typedef struct paramdsc {
     unsigned char	dsc_dtype;
@@ -242,13 +242,13 @@ typedef struct paramdsc {
     unsigned char	*dsc_address;
 } PARAMDSC;
 
-#if !defined(_JRD_VAL_H_)
+#if !defined(JRD_VAL_H)
 /* This is a helper struct to work with varchars. */
 typedef struct paramvary {
     ISC_USHORT		vary_length;
     unsigned char	vary_string [1];
 } PARAMVARY;
-#endif /* !defined(_JRD_VAL_H_) */
+#endif /* !defined(JRD_VAL_H) */
 
 /* values for dsc_flags */
 /* Note: DSC_null is only reliably set for local variables
@@ -291,7 +291,7 @@ typedef struct paramvary {
 #define dtype_array	18
 #define dtype_int64     19
 #define DTYPE_TYPE_MAX	20
-#endif /* !defined(_JRD_DSC_H_) */
+#endif /* !defined(JRD_DSC_H) */
 
 
 /***************************/

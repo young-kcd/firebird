@@ -26,8 +26,8 @@
  *
  */
 
-#ifndef _JRD_VAL_H_
-#define _JRD_VAL_H_
+#ifndef JRD_VAL_H
+#define JRD_VAL_H
 
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
@@ -178,4 +178,4 @@ typedef arr *ARR;
 #endif /* REQUESTER */
 
 
-#endif /* _JRD_VAL_H_ */
+#endif /* JRD_VAL_H */
