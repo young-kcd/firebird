@@ -5102,7 +5102,7 @@ static JRD_NOD make_inversion(TDBB tdbb,
 					   it becomes a trivial task. But note that indices with zero (unknown)
 					   selectivity are always used, because we don't have a clue how useful
 					   they are in fact, so we should be optimistic in this case. */
-			IDX *idx = idx_csb[last_idx];
+			idx = idx_csb[last_idx];
 			bool should_be_used = true;
 			if (idx->idx_selectivity && !(csb_tail->csb_plan)) {
 				if (selectivity * SELECTIVITY_THRESHOLD_FACTOR < idx->idx_selectivity) {
