@@ -1,3 +1,27 @@
+2004-12-04 09:30  robocop
+
+	* firebird2/src/isql/: extract.epp (1.51), show.epp (1.63):
+	
+	Misc and solve a couple of missing deallocations.
+
+2004-12-04 08:00  robocop
+
+	* firebird2/src/jrd/ibase.h (1.99):
+	
+	Misc.
+
+2004-12-04 07:58  robocop
+
+	* firebird2/src/jrd/ibase.h (1.98):
+	
+	Function was deprecated in May 2001.
+
+2004-12-04 07:50  robocop
+
+	* firebird2/src/jrd/btr.cpp (1.126):
+	
+	Style.
+
 2004-12-04 00:56  arnobrinkman
 
 	* firebird2/src/jrd/opt.cpp (1.208):
