@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.52 2003-09-28 21:36:03 skidder Exp $
+$Id: par.cpp,v 1.53 2003-09-30 17:21:04 skidder Exp $
 */
 
 #include "firebird.h"
@@ -198,6 +198,7 @@ JRD_NOD PAR_blr(TDBB	tdbb,
 			t2 = CMP_csb_element(csb, stream);
 			t2->csb_relation = ptr->csb_relation;
 			t2->csb_stream = ptr->csb_stream;
+			t2->csb_flags = ptr->csb_flags & csb_used;
 		}
 		csb->csb_n_stream = view_csb->csb_n_stream;
 	}
