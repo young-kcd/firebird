@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.55 2003-06-30 11:02:52 brodsom Exp $
+$Id: lock.cpp,v 1.56 2003-07-04 03:12:02 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -4139,7 +4139,15 @@ static void shutdown_blocking_thread( ISC_STATUS * status_vector)
 	WaitForSingleObject(blocking_action_thread_handle, 10*1000 /* Give it 10 seconds for clean shutdown */);
 	CloseHandle(blocking_action_thread_handle);
 	CloseHandle(blocking_event[0]);
+/*
+In MINGW during the build when making empbuild.fdb , there is a semop failed (acquire)
+if this CloseHandle is enabled. 
+Across the build the CloseHandle return failed with 
+GetLastError value 6 (Invalid Handle) To be tested with Classic win32(msvc)
+*/
+#if !defined(MINGW)
 	CloseHandle(wakeup_event[0]);
+#endif
 #endif
 
 #ifdef SOLARIS_MT
