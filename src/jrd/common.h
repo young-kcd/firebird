@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.85 2003-10-07 07:24:25 eku Exp $
+$Id: common.h,v 1.86 2003-10-07 09:55:59 robocop Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -903,10 +903,10 @@ void routine(const char* message, ...) { \
 	static const char name_facility[] = subsystem ","; \
 	char buffer[1000]; \
 	strcpy(buffer, name_facility); \
-	char *ptr = buffer + sizeof(name_facility)-1; \
+	char *ptr = buffer + sizeof(name_facility) - 1; \
 	va_list params; \
 	va_start(params, message); \
-	VSNPRINTF(ptr, sizeof(buffer)-sizeof(name_facility), message, params); \
+	VSNPRINTF(ptr, sizeof(buffer) - sizeof(name_facility), message, params); \
 	va_end(params); \
 	gds__trace(buffer); \
 }
