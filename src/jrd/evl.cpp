@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.56 2003-12-31 05:35:52 robocop Exp $ 
+  * $Id: evl.cpp,v 1.57 2003-12-31 16:09:07 skidder Exp $ 
  */
 
 /*
@@ -445,7 +445,8 @@ BOOLEAN EVL_boolean(TDBB tdbb, JRD_NOD node)
 						request->req_flags |= req_null;
 					else
 						computed_invariant = true;
-				} else {
+				} 
+				else {
 					desc[1] = EVL_expr(tdbb, *ptr++);
 					if (request->req_flags & req_null) {
 						impure->vlu_flags |= VLU_computed;
@@ -4528,11 +4529,12 @@ static SSHORT string_boolean(TDBB tdbb, JRD_NOD node, dsc* desc1, dsc* desc2, bo
 				void* evaluator;
 				if (node->nod_flags & nod_invariant) {
 					VLU impure = (VLU) ((SCHAR *) request + node->nod_impure);
-					if (!impure->vlu_flags & VLU_computed) {
+					if (!(impure->vlu_flags & VLU_computed)) {
 						obj.like_destroy(impure->vlu_misc.vlu_invariant);
 						impure->vlu_misc.vlu_invariant = evaluator = obj.like_create(tdbb, p2, l2, escape);
 						impure->vlu_flags |= VLU_computed;
-					} else {
+					}
+					else {
 						evaluator = impure->vlu_misc.vlu_invariant;
 						obj.like_reset(evaluator);
 					}
@@ -4555,11 +4557,12 @@ static SSHORT string_boolean(TDBB tdbb, JRD_NOD node, dsc* desc1, dsc* desc2, bo
 				void* evaluator;
 				if (node->nod_flags & nod_invariant) {
 					VLU impure = (VLU) ((SCHAR *) request + node->nod_impure);
-					if (!impure->vlu_flags & VLU_computed) {
+					if (!(impure->vlu_flags & VLU_computed)) {
 						obj.contains_destroy(impure->vlu_misc.vlu_invariant);
 						impure->vlu_misc.vlu_invariant = evaluator = obj.contains_create(tdbb, p2, l2);
 						impure->vlu_flags |= VLU_computed;
-					} else {
+					} 
+					else {
 						evaluator = impure->vlu_misc.vlu_invariant;
 						obj.contains_reset(evaluator);
 					}
@@ -4625,7 +4628,7 @@ static SSHORT string_function(
 	if (node->nod_type == nod_contains) {
 		if (node->nod_flags & nod_invariant) {
 			VLU impure = (VLU) ((SCHAR *) request + node->nod_impure);
-			if (!impure->vlu_flags & VLU_computed) {
+			if (!(impure->vlu_flags & VLU_computed)) {
 				obj.contains_destroy(impure->vlu_misc.vlu_invariant);
 				impure->vlu_misc.vlu_invariant = obj.contains_create(tdbb, p2, l2);
 				impure->vlu_flags |= VLU_computed;
@@ -4672,7 +4675,7 @@ static SSHORT string_function(
 		}
 		if (node->nod_flags & nod_invariant) {
 			VLU impure = (VLU) ((SCHAR *) request + node->nod_impure);
-			if (!impure->vlu_flags & VLU_computed) {
+			if (!(impure->vlu_flags & VLU_computed)) {
 				obj.like_destroy(impure->vlu_misc.vlu_invariant);
 				impure->vlu_misc.vlu_invariant = obj.like_create(tdbb, p2, l2, escape);
 				impure->vlu_flags |= VLU_computed;
