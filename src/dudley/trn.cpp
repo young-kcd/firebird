@@ -106,8 +106,7 @@ void TRN_translate(void)
  *	Translate from internal data structures into dynamic DDL.
  *
  **************************************/
-	ACT action, temp;
-	TEXT *p;
+	ACT action;
 	USHORT length;
 	struct str d, *dyn;
 
@@ -606,9 +605,8 @@ static void add_global_field( STR dyn, DUDLEY_FLD field)
  *	Generate dynamic DDL to create a relation.
  *
  **************************************/
-	SYM name, symbol;
+	SYM name;
 	DSC desc;
-	USHORT dtype;
 	int n;
 
 	if (field->fld_computed)
@@ -894,7 +892,7 @@ static void drop_field( STR dyn, DUDLEY_FLD field)
  *	a local field.
  *
  **************************************/
-	SYM name, symbol;
+	SYM name;
 	DUDLEY_REL relation;
 
 	name = field->fld_name;
@@ -963,7 +961,7 @@ static void drop_global_field( STR dyn, DUDLEY_FLD field)
  *	a global field.
  *
  **************************************/
-	SYM name, symbol;
+	SYM name;
 
 	name = field->fld_name;
 
@@ -1062,10 +1060,7 @@ static void drop_trigger( STR dyn, DUDLEY_TRG trigger)
  *	Generate dynamic ddl to delete a trigger.
  *
  **************************************/
-	SYM name, symbol;
-	DUDLEY_REL relation;
-	USHORT dtype;
-	int n;
+	SYM name;
 
 	name = trigger->trg_name;
 
@@ -1227,8 +1222,6 @@ static void modify_field( STR dyn, DUDLEY_FLD field, DUDLEY_REL view)
  **************************************/
 	SYM name, symbol;
 	DUDLEY_REL relation;
-	DUDLEY_FLD source_field;
-	int n;
 
 	name = field->fld_name;
 	if (view)
@@ -1306,9 +1299,8 @@ static void modify_global_field( STR dyn, DUDLEY_FLD field)
  *	more and more tiresome.
  *
  **************************************/
-	SYM name, symbol;
+	SYM name;
 	DSC desc;
-	USHORT dtype;
 	int n;
 
 	if (field->fld_computed)
@@ -1406,7 +1398,6 @@ static void modify_index( STR dyn, DUDLEY_IDX index)
  *	Generate dynamic DDL to modify an index.
  *
  **************************************/
-	TEXT i;
 
 	put_symbol(dyn, gds_dyn_mod_idx, index->idx_name);
 
@@ -1490,10 +1481,8 @@ static void modify_trigger( STR dyn, DUDLEY_TRG trigger)
  *	Generate dynamic ddl to modify a trigger for a relation.
  *
  **************************************/
-	SYM name, symbol;
+	SYM name;
 	DUDLEY_REL relation;
-	USHORT dtype;
-	int n;
 
 	relation = trigger->trg_relation;
 	name = trigger->trg_name;
@@ -1551,7 +1540,7 @@ static void put_acl( STR dyn, UCHAR attribute, SCL class_)
  * Functional description
  *
  **************************************/
-	USHORT length, offset;
+	USHORT length;
 	TEXT buffer[4096], *p;
 
 	if (!class_)
@@ -1613,7 +1602,6 @@ static void put_number( STR dyn, TEXT attribute, SSHORT number)
  * Functional description
  *
  **************************************/
-	TEXT *p;
 
 	CHECK_DYN(5);
 	STUFF(attribute);
@@ -1687,7 +1675,7 @@ static void put_symbol( STR dyn, TEXT attribute, SYM symbol)
  * Functional description
  *
  **************************************/
-	TEXT *p, *string;
+	TEXT *string;
 	USHORT l;
 
 	if (!symbol)
@@ -1730,7 +1718,6 @@ static void put_text( STR dyn, UCHAR attribute, TXT text)
  * Functional description
  *
  **************************************/
-	TEXT *p, *start;
 	USHORT length;
 
 	if (!text)
@@ -1776,7 +1763,7 @@ static void raw_ada( STR dyn)
  * Functional description
  *
  **************************************/
-	SCHAR *p, c;
+	SCHAR *p;
 	USHORT n;
 
 	n = 0;
@@ -1854,7 +1841,7 @@ static void raw_cobol( STR dyn)
  *
  **************************************/
 	SCHAR *blr, *c;
-	int blr_length, i, length;
+	int blr_length, length;
 	union {
 		SCHAR bytewise_blr[4];
 		SLONG longword_blr;
@@ -1896,7 +1883,7 @@ static void raw_ftn( STR dyn)
  **************************************/
 	UCHAR *blr, *c;
 	TEXT buffer[80], *p;
-	int blr_length, i;
+	int blr_length;
 	union {
 		UCHAR bytewise_blr[4];
 		SLONG longword_blr;
