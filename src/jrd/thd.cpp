@@ -1567,7 +1567,7 @@ void THD_yield(void)
 #endif
 
 #ifdef WIN_NT
-	SleepEx(1, FALSE);
+	SleepEx(0, FALSE);
 #endif
 #endif /* ANY_THREADING */
 }
