@@ -34,8 +34,8 @@
 namespace BTreeNode {
 
 
-USHORT computePrefix(UCHAR* prevString, USHORT prevLength, 
-			UCHAR* string, USHORT length)
+USHORT computePrefix(const UCHAR* prevString, USHORT prevLength, 
+			const UCHAR* string, USHORT length)
 {
 /**************************************
  *
@@ -48,18 +48,16 @@ USHORT computePrefix(UCHAR* prevString, USHORT prevLength,
  *  to two strings.
  *
  **************************************/
-	UCHAR* p;
-	USHORT l;
-
-	if (!(l = MIN(prevLength, length))) {
+	USHORT l = MIN(prevLength, length);
+	if (!l) {
 		return 0;
 	}
 
-	p = prevString;
+	const UCHAR* p = prevString;
 
 	while (*p == *string) {
-		p++;
-		string++;
+		++p;
+		++string;
 		if (!--l) {
 			break;
 		}
@@ -68,7 +66,7 @@ USHORT computePrefix(UCHAR* prevString, USHORT prevLength,
 }
 
 
-SLONG findPageInDuplicates(btr* page, UCHAR* pointer, 
+SLONG findPageInDuplicates(const btr* page, UCHAR* pointer, 
 			SLONG previousNumber, SLONG findRecordNumber)
 {
 /**************************************
@@ -81,10 +79,10 @@ SLONG findPageInDuplicates(btr* page, UCHAR* pointer,
  *	Return the first page number
  *
  **************************************/
-	IndexNode node, previousNode;
-	bool leafPage = (page->btr_level == 0);
-	SCHAR flags = page->btr_header.pag_flags;
+	const bool leafPage = (page->btr_level == 0);
+	const SCHAR flags = page->btr_header.pag_flags;
 
+	IndexNode node, previousNode;
 	pointer = readNode(&node, pointer, flags, leafPage);
 
 	while (true) {
@@ -124,7 +122,7 @@ SLONG findPageInDuplicates(btr* page, UCHAR* pointer,
 }
 
 
-USHORT getJumpNodeSize(IndexJumpNode* jumpNode, SCHAR flags)
+USHORT getJumpNodeSize(const IndexJumpNode* jumpNode, SCHAR flags)
 {
 /**************************************
  *
@@ -158,7 +156,7 @@ USHORT getJumpNodeSize(IndexJumpNode* jumpNode, SCHAR flags)
 }
 
 
-USHORT getNodeSize(IndexNode* indexNode, SCHAR flags, bool leafNode)
+USHORT getNodeSize(const IndexNode* indexNode, SCHAR flags, bool leafNode)
 {
 /**************************************
  *
@@ -227,23 +225,23 @@ UCHAR* getPointerFirstNode(btr* page, IndexJumpInfo* jumpInfo)
  **************************************/
 	if (page->btr_header.pag_flags & btr_jump_info) {
 		if (jumpInfo) {
-			UCHAR* pointer = reinterpret_cast<UCHAR*> (page->btr_nodes);
+			UCHAR* pointer = reinterpret_cast<UCHAR*>(page->btr_nodes);
 			return readJumpInfo(jumpInfo, pointer);
 		}
 		else {
 			IndexJumpInfo jumpInformation;
-			UCHAR* pointer = reinterpret_cast<UCHAR*> (page->btr_nodes);
+			UCHAR* pointer = reinterpret_cast<UCHAR*>(page->btr_nodes);
 			readJumpInfo(&jumpInformation, pointer);
-			return (UCHAR*)page + jumpInformation.firstNodeOffset;
+			return reinterpret_cast<UCHAR*>(page) + jumpInformation.firstNodeOffset;
 		}
 	}
 	else {
-		return reinterpret_cast<UCHAR*> (page->btr_nodes);
+		return reinterpret_cast<UCHAR*>(page->btr_nodes);
 	}
 }
 
 
-bool isEndBucket(IndexNode* indexNode, bool leafNode)
+bool isEndBucket(const IndexNode* indexNode, bool leafNode)
 {
 /**************************************
  *
@@ -265,7 +263,7 @@ bool isEndBucket(IndexNode* indexNode, bool leafNode)
 }
 
 
-bool isEndLevel(IndexNode* indexNode, bool leafNode)
+bool isEndLevel(const IndexNode* indexNode, bool leafNode)
 {
 /**************************************
  *
@@ -287,7 +285,7 @@ bool isEndLevel(IndexNode* indexNode, bool leafNode)
 }
 
 
-bool keyEquality(USHORT length, UCHAR* data, IndexNode* indexNode)
+bool keyEquality(USHORT length, const UCHAR* data, const IndexNode* indexNode)
 {
 /**************************************
  *
@@ -309,13 +307,13 @@ bool keyEquality(USHORT length, UCHAR* data, IndexNode* indexNode)
 		return true;
 	}
 
-	UCHAR* p = indexNode->data;
-	UCHAR* q = data + indexNode->prefix;
+	const UCHAR* p = indexNode->data;
+	const UCHAR* q = data + indexNode->prefix;
 	while (l) {
 		if (*p++ != *q++) {
 			return false;
 		}
-		l--;
+		--l;
 	};
 
 	return true;
@@ -345,7 +343,7 @@ UCHAR* lastNode(btr* page, EXP expanded_page, BTX* expanded_node)
 	// starting at the end of the page, find the
 	// first node that is not an end marker
 	UCHAR* pointer = ((UCHAR*) page + page->btr_length);
-	SCHAR flags = page->btr_header.pag_flags;
+	const SCHAR flags = page->btr_header.pag_flags;
 	IndexNode node;
 	while (true) {
 		pointer = previousNode(&node, pointer, flags, &enode);
@@ -452,8 +450,8 @@ UCHAR* readJumpInfo(IndexJumpInfo* jumpInfo, UCHAR* pagePointer)
 	pagePointer += sizeof(USHORT);
 	jumpInfo->jumpAreaSize = *reinterpret_cast<const USHORT*>(pagePointer);
 	pagePointer += sizeof(USHORT);
-	jumpInfo->jumpers = (USHORT)(UCHAR)(*pagePointer);
-	pagePointer ++;
+	jumpInfo->jumpers = (USHORT)(*pagePointer);
+	++pagePointer;
 	jumpInfo->keyLength = *reinterpret_cast<const USHORT*>(pagePointer);
 	pagePointer += sizeof(USHORT);
 	return pagePointer;
@@ -484,9 +482,9 @@ UCHAR* readJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer,
 	}
 	else {
 		jumpNode->prefix = (USHORT)(UCHAR)(*pagePointer);
-		pagePointer++;
+		++pagePointer;
 		jumpNode->length = (USHORT)(UCHAR)(*pagePointer);
-		pagePointer++;
+		++pagePointer;
 	}
 	jumpNode->offset = *reinterpret_cast<const USHORT*>(pagePointer);
 	pagePointer += sizeof(USHORT);
@@ -512,17 +510,17 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
  **************************************/
 	indexNode->nodePointer = pagePointer;
 	if (flags & btr_large_keys) {
-		indexNode->prefix = (USHORT)(UCHAR)(*pagePointer);
+		indexNode->prefix = (USHORT)(*pagePointer);
 		pagePointer++;
 		if (indexNode->prefix & 128) {
-			USHORT prefix = (USHORT)(UCHAR)(*pagePointer);
+			const USHORT prefix = (USHORT)(*pagePointer);
 			indexNode->prefix = (prefix << 7) | (indexNode->prefix & 127);
 			pagePointer++;
 		}
-		indexNode->length = (USHORT)(UCHAR)(*pagePointer);
+		indexNode->length = (USHORT)(*pagePointer);
 		pagePointer++;
 		if (indexNode->length & 128) {
-			USHORT length = (USHORT)(UCHAR)(*pagePointer);
+			const USHORT length = (USHORT)(*pagePointer);
 			indexNode->length = (length << 7) | (indexNode->length & 127);
 			pagePointer++;
 		}
@@ -535,9 +533,9 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 		pagePointer += 4;
 	}
 	else {
-		indexNode->prefix = (UCHAR) (*pagePointer);
+		indexNode->prefix = (*pagePointer);
 		pagePointer++;
-		indexNode->length = (UCHAR) (*pagePointer);
+		indexNode->length = (*pagePointer);
 		pagePointer++;
 		if (leafNode) {
 			indexNode->recordNumber = get_long(pagePointer);
@@ -564,7 +562,7 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 }
 
 
-UCHAR* writeJumpInfo(btr* page, IndexJumpInfo* jumpInfo)
+UCHAR* writeJumpInfo(btr* page, const IndexJumpInfo* jumpInfo)
 {
 /**************************************
  *
@@ -697,7 +695,7 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags,
 
 	if (withData) {
 		USHORT size = indexNode->length;
-		UCHAR* ptr = indexNode->data;
+		const UCHAR* ptr = indexNode->data;
 		while (size) {
 			*pagePointer++ = *ptr++;
 			size--;

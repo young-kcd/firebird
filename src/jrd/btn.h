@@ -63,20 +63,20 @@ typedef Firebird::HalfStaticArray<IndexJumpNode, 32> jumpNodeList;
 
 namespace BTreeNode {
 
-	USHORT computePrefix(UCHAR* prevString, USHORT prevLength, 
-				UCHAR* string, USHORT length);
+	USHORT computePrefix(const UCHAR* prevString, USHORT prevLength, 
+				const UCHAR* string, USHORT length);
 
-	SLONG findPageInDuplicates(btr* page, UCHAR* pointer, 
+	SLONG findPageInDuplicates(const btr* page, UCHAR* pointer, 
 				SLONG previousNumber, SLONG findRecordNumber);
 
-	USHORT getJumpNodeSize(IndexJumpNode* jumpNode, SCHAR flags);
-	USHORT getNodeSize(IndexNode* indexNode, SCHAR flags, bool leafNode = true);
-	UCHAR* getPointerFirstNode(btr* page, IndexJumpInfo *jumpInfo = NULL);
+	USHORT getJumpNodeSize(const IndexJumpNode* jumpNode, SCHAR flags);
+	USHORT getNodeSize(const IndexNode* indexNode, SCHAR flags, bool leafNode = true);
+	UCHAR* getPointerFirstNode(btr* page, IndexJumpInfo* jumpInfo = NULL);
 
-	bool isEndBucket(IndexNode* indexNode, bool leafNode = true);
-	bool isEndLevel(IndexNode* indexNode, bool leafNode = true);
+	bool isEndBucket(const IndexNode* indexNode, bool leafNode = true);
+	bool isEndLevel(const IndexNode* indexNode, bool leafNode = true);
 
-	bool keyEquality(USHORT length, UCHAR* data, IndexNode* indexNode);
+	bool keyEquality(USHORT length, const UCHAR* data, const IndexNode* indexNode);
 
 #ifdef SCROLLABLE_CURSORS
 	UCHAR* lastNode(btr* page, EXP expanded_page, BTX* expanded_node);
@@ -94,7 +94,7 @@ namespace BTreeNode {
 	UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, 
 		bool leafNode);
 
-	UCHAR* writeJumpInfo(btr* page, IndexJumpInfo* jumpInfo);
+	UCHAR* writeJumpInfo(btr* page, const IndexJumpInfo* jumpInfo);
 	UCHAR* writeJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer, SCHAR flags);
 	UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, 
 		bool leafNode, bool withData = true);
