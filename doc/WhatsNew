@@ -1,4 +1,50 @@
   **************
+  * v1.5 RC 5
+  **************
+
+    * Fixed RC4 bug.
+        Incorrect GDSCODE evaluation in the case of user-defined exceptions.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed bugs SF #774987, #775003.
+        1) ltrim('') and rtrim('') return NULL; rtrim forgets 1st char
+        2) log(x, y) in fact returns log(y, x)
+      Contributor(s):
+        Paul Vinkenoog <paul@vinkenoog.nl>
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Fixed RC4 bug.
+        Incorrect nested aggregates tracking.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Fixed RC4 bug.
+        Various lockups in win32 CS.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Fixed unregistered bug.
+        Server crash caused by lost transaction context.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff@hotmail.ru>
+
+    * Explicit locking change.
+        Make FOR UPDATE and WITH LOCK independent subclauses.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Fixed unregistered bug.
+        Server crash for any combination of sub-select & between.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff@hotmail.ru>
+
+    * Fixed unregistered bug.
+        Occasional server crash on plan generation.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+  **************
   * v1.5 RC 4
   **************
 
