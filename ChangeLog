@@ -1,3 +1,57 @@
+2003-10-28 23:47  arnobrinkman
+
+	* firebird2/src/jrd/cmp.cpp:
+	
+	bugfix: Missing literal node caused at least to fail on GROUP BY
+	constant expressions
+
+2003-10-28 23:44  arnobrinkman
+
+	* firebird2/src/jrd/cmp.cpp:
+	
+	bugfix: Missing literal node caused at least to fail on GROUP BY
+	constant expressions
+
+2003-10-28 19:21  skidder
+
+	* firebird2/: builds/posix/Makefile.in.firebird,
+	src/install/arch-specific/linux/classic/makeInstallImage.sh.in,
+	src/install/arch-specific/linux/classic/preinstall.sh.in:
+	
+	Build libfbclient.so in Linux CS
+
+2003-10-28 18:58  skidder
+
+	* firebird2/builds/:
+	install/arch-specific/linux/classic/makeInstallImage.sh.in,
+	install/arch-specific/linux/classic/preinstall.sh.in,
+	posix/Makefile.in.firebird:
+	
+	Build and install libfbclient.so in Linux CS
+
+2003-10-28 14:43  eku
+
+	* firebird2/src/jrd/common.h:
+	
+	Replaced ib_printf with gds_log. stderr is usually connected to the
+	TCP-connection between database client and server. Writing an error
+	message to it means violating the Interbase protocol. The client
+	then aborts with an assertation in xdr_protocol
+	(remote/protocol.cpp).
+
+2003-10-28 14:39  brodsom
+
+	* firebird2/src/gpre/: gpre.h, msc.cpp, msc_proto.h, sql.cpp:
+	
+	Rename usn struct to avoid collision with mingw headers (appear
+	only after last changes)
+
+2003-10-28 13:37  skidder
+
+	* firebird2/builds/posix/: prefix.solaris, prefix.solaris:
+	
+	Remove unneeded define. Noted by Claudio
+
 2003-10-27 23:27  skidder
 
 	* firebird2/src/: common/classes/alloc.cpp, common/classes/alloc.h,
