@@ -11,8 +11,6 @@
 @echo   This may not be what you intended 
 @echo.
 
-
-
 ::Check if on-line help is required
 @if /I "%1"=="-h" (goto :HELP & goto :EOF)
 @if /I "%1"=="/h" (goto :HELP & goto :EOF)
@@ -21,40 +19,26 @@
 
 if "%1" NEQ "" (set FIREBIRD=%1)
 if "%FIREBIRD%"=="" (goto :HELP & goto :EOF)
-@goto :MAIN
-
-:SET_DB_DIR
-@cd ..\..
-@for /f "delims=" %%a in ('@cd') do (set ROOT_PATH=%%a)
-@echo Setting root path to %ROOT_PATH%
-@cd %~dp0
-::for /f "delims=" %%a in ('cd') do (@echo %%a)
-@goto :EOF
 
 ::===========
 :MAIN
-call :SET_DB_DIR
-
-::Make sure that the db path is set to a style that wont break SED
-for /f "tokens=*" %%a in ('@echo %ROOT_PATH:\=/%') do (set DB_PATH=%%a)
+@call setenvvar.bat
+@if errorlevel 1 (goto :END)
 
 @md dbs 2>nul
-@cd dbs
 @echo Creating databases
 
 @"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\src\misc\metadata.gbak localhost:%DB_PATH%\builds\win32\dbs\metadata.fdb
-@md jrd 2>nul
+@md %ROOT_PATH%\builds\win32\dbs\jrd 2>nul
 @"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\src\misc\security.gbak localhost:%DB_PATH%\builds\win32\dbs\jrd\security.fdb
-@md msgs  2>nul
+@md %ROOT_PATH%\builds\win32\dbs\msgs  2>nul
 @"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\src\msgs\msg.gbak localhost:%DB_PATH%\builds\win32\dbs\msgs\msg.fdb
-@md qli 2>nul
+@md %ROOT_PATH%\builds\win32\dbs\qli 2>nul
 @"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\src\misc\help.gbak localhost:%DB_PATH%\builds\win32\dbs\qli\help.fdb
-@cd ..
 
 @echo.
 @echo Completed Preparations for build
-@echo    You may now run makeX_boot.bat
-@echo.   where X is your version of MSVC - 6 or 7.
+@echo    You may now run make_boot.bat
 @echo.
 
 @goto :END

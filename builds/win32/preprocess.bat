@@ -25,7 +25,7 @@
 ::===========
 :PREPROCESS
 @echo Processing %1/%2.epp
-@del ..\..\gen\%1\%2.cpp 2>nul
+@del %ROOT_PATH%\gen\%1\%2.cpp 2>nul
 @echo Calling GPRE for %1/%2.epp
 @if "%3"=="" (call :GPRE_M %1 %2) else (call :GPRE_GDS %1 %2)
 @echo.
@@ -33,18 +33,18 @@
 
 ::===========
 :GPRE_M
-@%GPRE% -n -m -raw ..\..\src\%1\%2.epp ..\..\gen\%1\%2.cpp -b localhost:%DB_PATH%/gen/
+@%GPRE% -n -m -raw %ROOT_PATH%\src\%1\%2.epp %ROOT_PATH%\gen\%1\%2.cpp -b localhost:%DB_PATH%/gen/
 @goto :EOF
 
 ::===========
 :GPRE_GDS
-@%GPRE% -n -gds -raw -ids ..\..\src\%1\%2.epp ..\..\gen\%1\%2.cpp -b localhost:%DB_PATH%/gen/
+@%GPRE% -n -gds -raw -ids %ROOT_PATH%\src\%1\%2.epp %ROOT_PATH%\gen\%1\%2.cpp -b localhost:%DB_PATH%/gen/
 goto :EOF
 
 ::===========
 :BOOT_PROCESS
 @echo.
-@set GPRE=gpre_boot -lang_internal
+@set GPRE=%ROOT_PATH%\gen\gpre_boot -lang_internal
 @for %%i in (array, blob, metd) do @call :PREPROCESS dsql %%i
 @for %%i in (gpre_meta) do @call :PREPROCESS gpre %%i
 @goto :EOF
@@ -52,7 +52,7 @@ goto :EOF
 ::===========
 :MASTER_PROCESS
 @echo.
-@set GPRE=gpre_static
+@set GPRE=%ROOT_PATH%\gen\gpre_static
 @for %%i in (alice_meta) do @call :PREPROCESS alice %%i
 @for %%i in (backup, restore) do @call :PREPROCESS burp %%i
 @for %%i in (array, blob, metd) do @call :PREPROCESS dsql %%i
