@@ -1,3 +1,33 @@
+2004-09-18 09:47  skidder
+
+	* firebird2/: doc/WhatsNew (1.36.2.22), src/dsql/pass1.cpp
+	(1.72.2.8), src/jrd/cmp.cpp (1.52.2.15), src/jrd/opt.cpp
+	(1.73.2.23):
+	
+	Backport fixes for the problems detected by Valgrind
+
+2004-09-18 09:20  skidder
+
+	* firebird2/src/jrd/opt.cpp (1.73.2.22):
+	
+	backport fix for wrong plan order regression
+
+2004-09-18 08:56  skidder
+
+	* firebird2/: Makefile.in (1.3.2.1), configure.in (1.141.2.27),
+	builds/posix/Makefile.in.firebird (1.37.2.14),
+	src/misc/src_bundle.sh (1.2.2.1):
+	
+	Erik's packaging fixes
+
+2004-09-18 07:32  skidder
+
+	* firebird2/src/: jrd/evl.cpp (1.34.2.7), lock/print.cpp
+	(1.19.2.2), wal/walw.cpp (1.20.2.2):
+	
+	Backport fix for the broken CURRENT_TIMESTAMP issue on 64-bit
+	platforms
+
 2004-09-18 01:34  skidder
 
 	* firebird2/src/: include/fb_types.h (1.25.2.2), jrd/jrd.cpp
@@ -118,6 +148,19 @@
 	because some of the access layers (BDE, MS Text Engine, Access,
 	etc) threat longer strings as CLOBs and this may affect backward
 	compatibility.
+
+2004-08-20 07:11  skidder
+
+	* firebird2/src/misc/src_bundle.sh (1.2):
+	
+	Erik's script producing source bundle including configure script.
+	Invoked via: make srctarfile
+
+2004-08-19 02:04  skidder
+
+	* firebird2/src/misc/src_bundle.sh (1.1):
+	
+	Script which I use to generate Firebird source packages
 
 2004-08-11 06:53  paul_reeves
 
