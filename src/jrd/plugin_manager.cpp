@@ -7,6 +7,11 @@
  *
  */
 
+#if defined(_MSC_VER) && _MSC_VER < 1300
+// Any Microsoft compiler before MSVC7
+#pragma warning(disable: 4786)
+#endif
+
 #include "../jrd/plugin_manager.h"
 #include "../jrd/os/path_utils.h"
 
