@@ -1,3 +1,35 @@
+2004-06-30 01:29  skidder
+
+	* firebird2/src/: common/classes/fb_string.cpp (1.19),
+	include/fb_string.h (1.24):
+	
+	Little string class cleanups
+
+2004-06-30 00:15  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp (1.151):
+	
+	1) Fix FB2 problem with union-auto-cast and losing field-name as
+	column-name 2) Fix FB2 problem with WITH CHECK OPTION
+
+2004-06-29 17:16  kkuznetsov
+
+	* firebird2/configure.in (1.201):
+	
+	Fix for not adding both lpthread and lthread on Solaris|solx86
+
+2004-06-29 14:41  skidder
+
+	* firebird2/src/include/fb_string.h (1.23):
+	
+	Add forgotten (by me) length checks
+
+2004-06-29 14:36  skidder
+
+	* firebird2/src/common/classes/fb_string.cpp (1.18):
+	
+	Add forgotten length checks
+
 2004-06-29 06:37  robocop
 
 	* firebird2/src/: burp/burp.cpp (1.81), burp/restore.epp (1.79),
