@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.110 2004-10-08 10:18:40 hvlad Exp $ 
+  * $Id: evl.cpp,v 1.111 2004-10-08 11:10:58 hvlad Exp $ 
  */
 
 /*
@@ -146,11 +146,11 @@ static void compute_agg_distinct(thread_db*, jrd_nod*);
 static dsc* concatenate(thread_db*, jrd_nod*, impure_value*);
 static dsc* dbkey(thread_db*, const jrd_nod*, impure_value*);
 static dsc* eval_statistical(thread_db*, jrd_nod*, impure_value*);
+static void fini_agg_distinct(thread_db* tdbb, const jrd_nod *const);
 static SINT64 get_day_fraction(const dsc* d);
 static dsc* get_mask(thread_db*, jrd_nod*, impure_value*);
 static SINT64 get_timestamp_to_isc_ticks(const dsc* d);
 static void init_agg_distinct(thread_db*, const jrd_nod*);
-static void fini_agg_distinct(thread_db* tdbb, const jrd_nod *const);
 #ifdef PC_ENGINE
 static dsc* lock_record(thread_db*, jrd_nod*, impure_value*);
 static dsc* lock_relation(thread_db*, jrd_nod*, impure_value*);
@@ -1408,48 +1408,6 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 	else {
 		desc->dsc_flags &= ~DSC_null;
 		return true;
-	}
-}
-
-static void fini_agg_distinct(thread_db* tdbb, const jrd_nod *const node)
-{
-/**************************************
- *
- *      f i n i _ a g g _ d i s t i n c t
- *
- **************************************
- *
- * Functional description
- *      Finalize a sort for distinct aggregate.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	DEV_BLKCHK(node, type_nod);
-
-	jrd_req* request = tdbb->tdbb_request;
-	jrd_nod* map = node->nod_arg[e_agg_map];
-
-	jrd_nod** ptr;
-	const jrd_nod* const* end;
-
-	for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++)
-	{
-		const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
-		switch (from->nod_type)
-		{
-		case nod_agg_count_distinct:
-		case nod_agg_total_distinct:
-		case nod_agg_average_distinct:
-		case nod_agg_average_distinct2:
-		case nod_agg_total_distinct2:
-			{
-			const AggregateSort* asb = (AggregateSort*) from->nod_arg[1];
-			impure_agg_sort* asb_impure = (impure_agg_sort*) ((SCHAR *) request + asb->nod_impure);
-			SORT_fini(asb_impure->iasb_sort_handle, tdbb->tdbb_attachment);
-			asb_impure->iasb_sort_handle = NULL;
-			}
-		}
 	}
 }
 
@@ -3587,6 +3545,47 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 	return desc;
 }
 
+static void fini_agg_distinct(thread_db* tdbb, const jrd_nod *const node)
+{
+/**************************************
+ *
+ *      f i n i _ a g g _ d i s t i n c t
+ *
+ **************************************
+ *
+ * Functional description
+ *      Finalize a sort for distinct aggregate.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	DEV_BLKCHK(node, type_nod);
+
+	jrd_req* request = tdbb->tdbb_request;
+	jrd_nod* map = node->nod_arg[e_agg_map];
+
+	jrd_nod** ptr;
+	const jrd_nod* const* end;
+
+	for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++)
+	{
+		const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
+		switch (from->nod_type)
+		{
+		case nod_agg_count_distinct:
+		case nod_agg_total_distinct:
+		case nod_agg_average_distinct:
+		case nod_agg_average_distinct2:
+		case nod_agg_total_distinct2:
+			{
+			const AggregateSort* asb = (AggregateSort*) from->nod_arg[1];
+			impure_agg_sort* asb_impure = (impure_agg_sort*) ((SCHAR *) request + asb->nod_impure);
+			SORT_fini(asb_impure->iasb_sort_handle, tdbb->tdbb_attachment);
+			asb_impure->iasb_sort_handle = NULL;
+			}
+		}
+	}
+}
 
 static SINT64 get_day_fraction(const dsc* d)
 {
