@@ -2,6 +2,27 @@
   * v1.5.1
   **************
 
+    * Added new collation.
+        LT_LT for ISO8859_13 charset (Lithuanian language).
+      Contributor(s):
+        Jonas Jasas Jr. <jon at stekas.com>
+
+    * Debugging enhancement.
+        Added config-driven ability to abort server process in the case of bugchecks or structured exceptions (to produce a core dump).
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed v1.5 bug.
+        1) Problem with IS NULL used in outer joined views.
+        2) Use MERGE instead of JOIN when indices are not applicable for a join.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed v1.5 bug.
+        Procedure parameters are extracted incorrectly by ISQL.
+      Contributor(s):
+        Dimitry Sibiryakov <sd at topol.udm.net>
+
     * Fixed unregistered bug.
         -n option of GBAK is ignored for NOT NULL contraints.
       Contributor(s):
