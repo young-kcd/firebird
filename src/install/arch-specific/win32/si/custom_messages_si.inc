@@ -1,8 +1,8 @@
-si.MyAppName=Firebird Relacijska baza 1.5
+si.MyAppName=Firebird Database Server 1.5
 si.SuperServerInstall=Polna instalacija super serverja in razvojnih orodij.
 si.ClassicServerInstall=Polna instalacija klasiènega serverja in razvojnih orodij.
-si.DeveloperInstall=Instalcija klientovih orodij za razvijalce in administratorje baze.
-si.ClientInstall=Minimalna instalcija klienta - brez serverja, brez orodij.
+si.DeveloperInstall=Instalacija klientovih orodij za razvijalce in administratorje baze.
+si.ClientInstall=Minimalna instalacija klienta - brez serverja, brez orodij.
 si.CustomInstall=Prikrojena instalacija
 si.SuperServerComponent=Super server
 si.ClassicServerComponent=Klasièni server
@@ -35,7 +35,7 @@ si.InstallSummarySuffix2=Prav tako velja, da lahko istalacija te verzije Firebir
 si.InstallSummarySuffix3=v primeru, da je naslednja verzija programa že instalirana na 
 si.InstallSummarySuffix4=raèunalnik, nepredvidljivo vpliva na Firebird.
 
-si.InstallSummaryCancel1= Èe boste nadaljevali z instalcijo Firebird serverja, bo ta instaliran ne pa tudi konfiguriran.
+si.InstallSummaryCancel1= Èe boste nadaljevali z instalacijo Firebird serverja, bo ta instaliran ne pa tudi konfiguriran.
 si.InstallSummaryCancel2= Instalacijo boste morali dopolniti roèno.
 si.InstallSummaryCancel3= Ali želite prekiniti instalacijo?
 
@@ -43,9 +43,9 @@ si.InstalledProducts='pri ponovni instalaciji je bila najdena obstojeèa %s Fireb
 si.InstalledProdCountSingular=verzija ima
 si.InstalledProdCountPlural=verzije imajo
 
-si.Fb15Running1=Obstojeèa verzija Firebird 1.5 Server je zagana.
-si.Fb15Running2= Zaprite vse aplikacije ali pa jih zakljuèiti v 
-si.Fb15Running3=         nastavitah servisov.
+si.Fb15Running1=Obstojeèa verzija Firebird 1.5 Server je zagnana.
+si.Fb15Running2=Zaprite vse aplikacije oz. jih zakljuèite v 
+si.Fb15Running3=nastavitah servisov.
 
 si.PreviousInstallBroken=   (Instalacije je bila prekinjena zaradi neujemanja informacije o verzijah.)
 si.PreviousInstallGood=   (Instalacije je uspela.)
@@ -64,6 +64,5 @@ si.RunSSNoGuardian=Zaženi Firebird kot super server (brez nadzornika)
 si.RunSSWithGuardian=Zaženi Firebird kot super server (z nadzornikom)
 si.RunCSWithGuardian=Zaženi Firebird kot klasièni server (z nadzornikom)
 si.RunISQL=Zaženi ukazno vrstico z orodjem Interactive SQL
-
-si.ReadmeFile=precitajMe.txt
+si.ReadmeFile=readme.txt
 si.InstallationReadmeFile=instalacija_precitajMe.txt

@@ -53,7 +53,7 @@ set FBBUILD_EMB_PACK=0
 
 :: Hard code our package number - it only needs to be changed if the
 :: kit is repackaged but the engine is not rebuilt
-set FBBUILD_PACKAGE_NUMBER=0_RC4
+set FBBUILD_PACKAGE_NUMBER=0_RC5
 
 :: See what we have on the command line
 for %%v in ( %1 %2 %3 %4 %5 )  do (
