@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.32.2.11 2005-02-07 08:01:10 robocop Exp $
+  $Id: isql.epp,v 1.32.2.12 2005-03-28 09:02:24 robocop Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -3888,7 +3888,7 @@ static SSHORT get_statement(TEXT ** statement_ref,
 
 			if (!incomment && 
 				!in_single_quoted_string && !in_double_quoted_string &&
-				/* Making sure that q does'nt go out of bounds */
+				/* Making sure that q doesn't go out of bounds */
 				((q - statement) >= Termlen) &&
 				!strncmp(q - Termlen, Term, Termlen)) 
 			{
@@ -3926,7 +3926,7 @@ static SSHORT get_statement(TEXT ** statement_ref,
 			   * ignore possibilities of a comment beginning inside
 			   * quoted strings.
 			 */
-			if (count && (*(p - 1) == '-') &&
+			if (count && (*(p - 1) == '-') && !incomment &&
 				!in_single_quoted_string && !in_double_quoted_string)
 			{
 					incomment = TRUE;
