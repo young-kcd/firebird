@@ -73,7 +73,7 @@ static struct {
 /* dtype_int64		*/ {SQL_INT64, sizeof(SINT64)},
 };
 
-static TEXT cba[] = "Callback arg";
+static TEXT cba[] = "Callback Argument";
 static TEXT r_dsc[] = "Illegal type of local variable in EXECUTE STATEMENT INTO ...";
 static TEXT s_sql[] = "Local variable and returned column type does not match in EXECUTE STATEMENT";
 
@@ -89,7 +89,8 @@ void ExecuteStatement::Open(TDBB tdbb, JRD_NOD sql, SSHORT nVars, bool SingleTon
 		FB_NEW(*tdbb->tdbb_transaction->tra_pool) char[BUFFER_LARGE + sizeof(vary)]);
 	v->vary_length = BUFFER_LARGE;
 	UCHAR *p = 0;
-	SLONG l = MOV_get_string(EVL_expr(tdbb, sql), &p, v, BUFFER_LARGE);
+	DSC* dsc = EVL_expr(tdbb, sql);
+	SLONG l = dsc ? MOV_get_string(dsc, &p, v, BUFFER_LARGE) : 0;
 	if (! p) {
 		tdbb->tdbb_status_vector[0] = gds_arg_gds;
 		tdbb->tdbb_status_vector[1] = gds_convert_error;
