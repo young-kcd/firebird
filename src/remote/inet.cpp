@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.62 2003-03-12 13:55:45 eku Exp $
+$Id: inet.cpp,v 1.63 2003-03-19 13:14:09 dimitr Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -353,8 +353,8 @@ static int fork(void);
 static int fork(SOCKET, USHORT);
 #endif
 
-static ULONG get_bind_address();
-static hostent * get_host(const TEXT *);
+static in_addr get_bind_address();
+static in_addr get_host_address(const TEXT *);
 
 static void copy_p_cnct_repeat_array(	p_cnct::p_cnct_repeat*			pDest,
 										const p_cnct::p_cnct_repeat*	pSource,
@@ -828,7 +828,6 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 	TEXT *p;
 	struct sockaddr_in address;
 #ifndef VMS
-	struct hostent *host;
 	struct servent *service;
 	TEXT msg[64];
 #endif
@@ -884,7 +883,7 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 
 /* Set up Inter-Net socket address */
 
-	inet_zero((SCHAR *) & address, sizeof(address));
+	inet_zero((SCHAR *) &address, sizeof(address));
 
 #ifdef VMS
 	/* V M S */
@@ -906,54 +905,38 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 #else
 
 /* U N I X style sockets */
-	THREAD_EXIT;
 
-	host = get_host(name);
+	address.sin_family = AF_INET;
 
-/* On Windows NT/9x, gethostbyname can only accomodate
- * 1 call at a time.  In this case it returns the error
- * WSAEINPROGRESS. On UNIX systems, this call may not succeed
- * because of a temporary error.  In this case, it returns
- * h_error set to TRY_AGAIN.  When these errors occur,
- * retry the operation a few times.
- * NOTE: This still does not guarantee success, but helps.
- */
-	if (!host) {
-		if (H_ERRNO == INET_RETRY_ERRNO) {
-			for (int retry = 0; retry < INET_RETRY_CALL; retry++) {
-				if ( (host = get_host(name)) )
-					break;
-			}
+	in_addr host_addr;
+
+	if (packet) {
+		// client connection
+		host_addr = get_host_address(name);
+
+		if (host_addr.s_addr == INADDR_NONE) {
+			sprintf(msg,
+					"INET/INET_connect: gethostbyname failed, error code = %d",
+					H_ERRNO);
+			gds__log(msg, 0);
+			inet_gen_error(port,
+						   isc_network_error,
+						   isc_arg_string,
+						   port->port_connection->str_data,
+						   isc_arg_gds,
+						   isc_net_lookup_err, isc_arg_gds, isc_host_unknown, 0);
+
+			disconnect(port);
+			return NULL;
 		}
 	}
-	THREAD_ENTER;
-	if (!host) {
-		sprintf(msg,
-				"INET/INET_connect: gethostbyname failed, error code = %d",
-				H_ERRNO);
-		gds__log(msg, 0);
-		inet_gen_error(port,
-					   isc_network_error,
-					   isc_arg_string,
-					   port->port_connection->str_data,
-					   isc_arg_gds,
-					   isc_net_lookup_err, isc_arg_gds, isc_host_unknown, 0);
-
-		disconnect(port);
-		return NULL;
-	}
-
-/* Copy info from host struct before making another socket call for
-   Winsock compatibility */
-
-	address.sin_family = host->h_addrtype;
-	if (packet) {
-		inet_copy(host->h_addr, (SCHAR *) &address.sin_addr,
-				  sizeof(address.sin_addr));
-	}
 	else {
-		address.sin_addr.s_addr = get_bind_address();
+		// server connection
+		host_addr = get_bind_address();
 	}
+
+	inet_copy((SCHAR*) &host_addr, (SCHAR *) &address.sin_addr,
+			  sizeof(address.sin_addr));
 
 	THREAD_EXIT;
 
@@ -1704,12 +1687,13 @@ static PORT aux_request( PORT port, PACKET * packet)
 	SOCKET n;
     socklen_t length;
 	struct sockaddr_in address, port_address;
-	int optval;
 
 /* Set up new socket */
 
 	address.sin_family = AF_INET;
-	address.sin_addr.s_addr = get_bind_address();
+	in_addr bind_addr = get_bind_address();
+	inet_copy((SCHAR *) &bind_addr, (SCHAR*) &address.sin_addr,
+			  sizeof(address.sin_addr));
 	address.sin_port = htons(Config::getRemoteAuxPort());
 
 	if ((n = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
@@ -1717,6 +1701,7 @@ static PORT aux_request( PORT port, PACKET * packet)
 		return NULL;
 	}
 
+	int optval;
 	setsockopt(n, SOL_SOCKET, SO_REUSEADDR,
 			   (SCHAR *) &optval, sizeof(optval));
 
@@ -1751,7 +1736,8 @@ static PORT aux_request( PORT port, PACKET * packet)
 		inet_error(port, "getsockname", isc_net_event_listen_err, ERRNO);
 		return NULL;
 	}
-	address.sin_addr = port_address.sin_addr;
+	inet_copy((SCHAR *) &port_address.sin_addr, (SCHAR*) &address.sin_addr,
+			  sizeof(address.sin_addr));
 
 	response->p_resp_data.cstr_address = (UCHAR *) & response->p_resp_blob_id;
 	response->p_resp_data.cstr_length = sizeof(response->p_resp_blob_id);
@@ -2209,7 +2195,7 @@ static int fork( SOCKET old_handle, USHORT flag)
 }
 #endif
 
-static ULONG get_bind_address()
+static in_addr get_bind_address()
 {
 /**************************************
  *
@@ -2221,27 +2207,64 @@ static ULONG get_bind_address()
  *	Return local address to bind sockets to.
  *
  **************************************/
+	in_addr config_address;
+
 	const char* config_option = Config::getRemoteBindAddress();
-	ULONG config_address = (config_option) ? inet_addr(config_option) : INADDR_NONE;
-	return (config_address == INADDR_NONE) ? INADDR_ANY : config_address;
+	config_address.s_addr =
+		(config_option) ? inet_addr(config_option) : INADDR_NONE;
+	if (config_address.s_addr == INADDR_NONE) {
+		config_address.s_addr = INADDR_ANY;
+	}
+	return config_address;
 }
 
-static hostent * get_host(const TEXT * name)
+static in_addr get_host_address(const TEXT * name)
 {
 /**************************************
  *
- *	g e t _ h o s t
+ *	g e t _ h o s t _ a d d r e s s
  *
  **************************************
  *
  * Functional description
- *	Return host information.
+ *	Return host address.
  *
  **************************************/
-	ULONG address = inet_addr(name);
-	return (address == INADDR_NONE) ?
-		gethostbyname(name) :
-		gethostbyaddr((SCHAR *) &address, sizeof(ULONG), AF_INET);
+	in_addr address;
+
+	THREAD_EXIT;
+
+	address.s_addr = inet_addr(name);
+
+	if (address.s_addr == INADDR_NONE) {
+
+		hostent * host = gethostbyname(name);
+
+		/* On Windows NT/9x, gethostbyname can only accomodate
+		 * 1 call at a time.  In this case it returns the error
+		 * WSAEINPROGRESS. On UNIX systems, this call may not succeed
+		 * because of a temporary error.  In this case, it returns
+		 * h_error set to TRY_AGAIN.  When these errors occur,
+		 * retry the operation a few times.
+		 * NOTE: This still does not guarantee success, but helps.
+		 */
+		if (!host) {
+			if (H_ERRNO == INET_RETRY_ERRNO) {
+				for (int retry = 0; retry < INET_RETRY_CALL; retry++) {
+					if ( (host = gethostbyname(name)) )
+						break;
+				}
+			}
+		}
+
+		if (host) {
+			inet_copy(host->h_addr, (SCHAR*) &address, sizeof(address));
+		}
+	}
+
+	THREAD_ENTER;
+
+	return address;
 }
 
 //____________________________________________________________
