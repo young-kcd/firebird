@@ -1,3 +1,5 @@
+#ident "$Id: autoconfig_msvc.h,v 1.21 2002-08-22 11:30:32 eku Exp $"
+
 /*
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
  *                          - MAC (MAC, MAC_AUX and "MAC_CP" defines)
@@ -59,6 +61,7 @@
 #undef HAVE_TIMES
 #define HAVE_DIRNAME
 #undef HAVE_SIGACTION
+#define HAVE_SNPRINTF
 
 /* Types */
 #undef socklen_t

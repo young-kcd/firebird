@@ -1,4 +1,4 @@
-# $Id: configure.in,v 1.34 2002-08-22 10:48:22 eku Exp $
+# $Id: configure.in,v 1.35 2002-08-22 11:30:31 eku Exp $
 
 ################################# INITIALISATION ###############################
 
@@ -149,6 +149,7 @@ if test "$ac_cv_func_dirname" = "no"; then
      AC_CHECK_FUNCS(dirname)],, $LIBS)
 fi
 AC_CHECK_FUNCS(sigaction)
+AC_CHECK_FUNCS(snprintf)
 
 # Check for other things
 AC_C_BIGENDIAN

@@ -2221,18 +2221,32 @@ static void* intl_back_compat_obj_init_lookup(
 #define snprintf _snprintf
 #endif
 
+/* EKU: need a replacement for snprintf for systems like SINIX-Z!!! */
 	switch (type) {
 		case type_texttype:
+#ifdef HAVE_SNPRINTF
 			snprintf(entry, sizeof(entry), INTL_USER_ENTRY, parm1);
+#else
+			sprintf(entry, INTL_USER_ENTRY, parm1);
+#endif
 			argcount = 2;
 			break;
 		case type_charset:
+#ifdef HAVE_SNPRINTF
 			snprintf(entry, sizeof(entry), "USER_CHARSET_%03d", parm1);
+#else
+			sprintf(entry, "USER_CHARSET_%03d", parm1);
+#endif
 			argcount = 2;
 			break;
 		case type_csconvert:
+#ifdef HAVE_SNPRINTF
 			snprintf(entry, sizeof(entry), "USER_TRANSLATE_%03d_%03d", parm1,
 					parm2);
+#else
+			sprintf(entry, "USER_TRANSLATE_%03d_%03d", parm1,
+					parm2);
+#endif
 			argcount = 3;
 			break;
 		default:
