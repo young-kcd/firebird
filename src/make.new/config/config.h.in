@@ -39,6 +39,9 @@
 #undef HAVE_UNISTD_H
 #undef HAVE_VARARGS_H
 
+#undef HAVE_STRLCPY
+#undef HAVE_STRLCAT
+
 /* types */
 #undef socklen_t
 

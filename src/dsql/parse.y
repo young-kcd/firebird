@@ -36,8 +36,11 @@
  *   and not in gen.c; this closes Bug #450301.
  * 2001.10.01 Claudio Valderrama: enable explicit GRANT...to ROLE role_name.
  * 2001.10.06 Claudio Valderrama: Honor explicit USER keyword in GRANTs and REVOKEs.
+ * 2002.07.05 Mark O'Donohue: change keyword DEBUG to DEBUG_KEYWORD to avoid
+ *            clashes with normal DEBUG macro.
  *
  */
+
 
 #if defined(DEV_BUILD) && defined(WIN32) && defined(SUPERSERVER)
 #include <windows.h>
@@ -175,7 +178,7 @@ static void	yyerror (TEXT *);
 %token DATABASE
 %token DATE
 %token DB_KEY
-%token DEBUG
+%token DEBUG_KEYWORD
 %token DECIMAL
 %token DECLARE
 %token DEFAULT
@@ -439,7 +442,7 @@ statement	: alter
 		| select
 		| set
 		| update
-		| DEBUG signed_short_integer
+		| DEBUG_KEYWORD signed_short_integer
 			{ prepare_console_debug ((int) $2, &yydebug);
 			  $$ = make_node (nod_null, (int) 0, NULL); }
 		;
@@ -3106,7 +3109,7 @@ column_select	: SELECT limit_clause
 			having_clause
 			plan_clause
 		    { $$ = make_node (nod_select_expr, e_sel_count, 
-				$2, make_list ($3), $4, $5, $6, $7, $8, $9, NULL); }
+				$2, $3, make_list ($4), $5, $6, $7, $8, $9, NULL); }
 		;
 
 column_singleton : SELECT limit_clause
@@ -3118,7 +3121,7 @@ column_singleton : SELECT limit_clause
 			having_clause
 			plan_clause
 		    { $$ = make_node (nod_select_expr, e_sel_count, 
-                              $2, make_list ($3), $4, $5, $6, $7, $8, $9, 
+                              $2, $3, make_list ($4), $5, $6, $7, $8, $9, 
 				MAKE_constant ((STR) 1, CONSTANT_SLONG)); }
 		;
 

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.8 2002-07-01 15:07:18 skywalker Exp $
+ * $Id: sort.cpp,v 1.9 2002-07-05 15:00:20 skywalker Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -121,7 +121,8 @@ extern double MTH$CVT_D_G(), MTH$CVT_G_D();
    As the diddle_key routines differ on VAX (little endian) and non VAX
    (big endian) patforms, making the following CONST caused a core on the 
    Intel Platforms, while Solaris was working fine. */
-static ULONG low_key[] = { 0, 0, 0, 0, 0, 0 }, 
+static ULONG low_key[] = { 0, 0, 0, 0, 0, 0 };
+ 
 static ULONG high_key[] = {
 	ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX,
 		ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX,

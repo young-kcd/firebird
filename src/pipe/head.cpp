@@ -28,7 +28,7 @@
  *
  */
 
- /* $Id: head.cpp,v 1.7 2002-06-29 08:40:25 dimitr Exp $ */
+ /* $Id: head.cpp,v 1.8 2002-07-05 15:00:21 skywalker Exp $ */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -71,7 +71,7 @@
 #include <fcntl.h>
 #endif
 
-#if (defined DELTA || defined M88K || defined SCO_UNIX || defined(SINIXZ)
+#if (defined DELTA || defined M88K || defined SCO_UNIX || defined SINIXZ)
 #include <fcntl.h>
 #endif
 

@@ -295,7 +295,7 @@ void SCL_check_index( TDBB tdbb, TEXT * index_name, UCHAR index_id, USHORT mask)
 		CROSS RF IN RDB$RELATION_FIELDS
 			OVER RDB$FIELD_NAME
 			WITH RF.RDB$RELATION_NAME EQ reln_name
-			AND ISEG.RDB$INDEX_NAME EQ index_name_ptr
+			AND ISEG.RDB$INDEX_NAME EQ idx_name_ptr
 
         if (!RF.RDB$SECURITY_CLASS.NULL) {
 			s_class = SCL_get_class(RF.RDB$SECURITY_CLASS);

@@ -35,15 +35,11 @@
  * 2002.04.16  Paul Beach - HP10 and unistd.h
  */
 /*
-$Id: common.h,v 1.18 2002-07-01 15:07:18 skywalker Exp $
+$Id: common.h,v 1.19 2002-07-05 15:00:19 skywalker Exp $
 */
 
 #ifndef JRD_COMMON_H
 #define JRD_COMMON_H
-
-/* configure.sh builds the file 64bitio.h on all platforms
-   except windows.  Windows doesn't need it, happily */
-
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>

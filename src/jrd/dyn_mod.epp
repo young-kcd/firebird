@@ -89,7 +89,10 @@ DATABASE DB = STATIC "yachts.gdb";
 static UCHAR alloc_info[] = { gds_info_allocation, gds_info_end };
 static void drop_cache(GBL);
 static void drop_log(GBL);
-static void modify_lfield_type(GBL, UCHAR **, TEXT *, TEXT *);
+
+// Function not defined in this file MOD 04-July-2002
+// static void modify_lfield_type(GBL, UCHAR **, TEXT *, TEXT *);
+
 static void modify_lfield_position(TDBB, DBB, GBL, TEXT *, TEXT *, USHORT,
 								   USHORT);
 static BOOLEAN check_view_dependency(TDBB, DBB, GBL, TEXT *, TEXT *);
@@ -519,7 +522,7 @@ void DYN_modify_global_field(
 				new_dom->dyn_dsc.dsc_length = DYN_get_number(ptr);
 				if (++field_adjusted_count > 2)
 				{
-					EXE_unwind(tdbb, request);
+					EXE_unwind(tdbb, (REQ)request);
 					DYN_error_punt(FALSE, 5, err_one_type_change_only, NULL, NULL, NULL, NULL);
 				}
 				switch (new_dom->dyn_dtype) {
@@ -543,7 +546,7 @@ void DYN_modify_global_field(
 				new_dom->dyn_dtype = DYN_get_number(ptr);
 				if (++field_adjusted_count > 2)
 				{
-					EXE_unwind(tdbb, request);
+					EXE_unwind(tdbb, (REQ)request);
 					DYN_error_punt(FALSE, 5, err_one_type_change_only, NULL, NULL, NULL, NULL);
 				}
 

@@ -359,25 +359,27 @@ void DYN_delete_generator(GBL gbl, UCHAR **ptr)
 	dbb = tdbb->tdbb_database;
 
 	try {
-	GET_STRING(ptr, t);
+        GET_STRING(ptr, t);
+        
+        request = (BLK) CMP_find_request(tdbb, drq_e_gens, DYN_REQUESTS);
+        
+        
+        found = FALSE;
+        FOR (REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+            X IN RDB$GENERATORS
+            WITH X.RDB$GENERATOR_NAME EQ t
 
-	request = (BLK) CMP_find_request(tdbb, drq_e_gens, DYN_REQUESTS);
+            if (!DYN_REQUEST(drq_e_gens))
+                DYN_REQUEST(drq_e_gens) = request;
 
+		    found = TRUE;
+            ERASE X;
+        END_FOR;
 
-	found = FALSE;
-	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		X IN RDB$GENERATORS
-		WITH X.RDB$GENERATOR_NAME EQ t
-		if (!DYN_REQUEST(drq_e_gens))
-			DYN_REQUEST(drq_e_gens) = request;
+        if (!DYN_REQUEST(drq_e_gens))
+            DYN_REQUEST(drq_e_gens) = request;
 
-		found = TRUE;
-		ERASE X;
-	END_FOR;
-
-	if (!DYN_REQUEST(drq_e_gens))
-		DYN_REQUEST(drq_e_gens) = request;
-
+    }
 	catch (...) {
 	    DYN_rundown_request(request, -1);
 		DYN_error_punt(TRUE, 213, NULL, NULL, NULL, NULL, NULL);

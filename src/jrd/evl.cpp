@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.10 2002-06-30 09:58:20 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.11 2002-07-05 15:00:19 skywalker Exp $ 
  */
 
 /*
@@ -4997,19 +4997,13 @@ static DSC *substring(
 		}
 		/* If we failed or we exhausted our available characters before finding the
 		starting position, nothing more to do. */
-		if (failure || !pcount)
+		if (failure || !pcount) {
 			desc.dsc_length = 0;
-		else
-		{
+        }
+		else {
 			/* Keep our starting pos safe. */
-#ifdef HPUX /* RITTER - removed the below cast on HP-UX to avoid compiler error */
-	        /*(UCHAR*)*/ desc.dsc_address = p;
-#else
-			(UCHAR*) desc.dsc_address = p;
-#endif // HPUX
 			desc.dsc_address = p;
-			while (length && pcount)
-			{
+			while (length && pcount) {
 				if (!INTL_getch(tdbb, &text_obj, INTL_TTYPE(&desc), &p, &pcount))
 				{
 					failure = TRUE;

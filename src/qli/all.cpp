@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: all.cpp,v 1.6 2002-06-29 08:46:59 dimitr Exp $
+$Id: all.cpp,v 1.7 2002-07-05 15:00:21 skywalker Exp $
 */
 
 /***************************************************
@@ -41,13 +41,14 @@ $Id: all.cpp,v 1.6 2002-06-29 08:46:59 dimitr Exp $
    - THANK YOU
 ***************************************************/
 
-//#include "firebird.h"
+#include "firebird.h"
 #include <string.h>
 #include "../qli/everything.h"
 #include "../qli/all_proto.h"
 #include "../qli/err_proto.h"
 #include "../qli/mov_proto.h"
 #include "../jrd/gds_proto.h"
+
 
 #define BLKDEF(type, root, tail) { sizeof (struct root), tail },
 

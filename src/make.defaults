@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.5 2002-07-04 09:34:18 skywalker Exp $
+#   $Id: make.defaults,v 1.6 2002-07-05 15:00:16 skywalker Exp $
 # 
 
 
@@ -44,7 +44,8 @@
 #_____________________________________________________________________________
 
 
-RealFirebirdPath = $(shell cd $(FIREBIRD); pwd)
+#RealFirebirdPath = $(shell cd $(FIREBIRD); pwd)
+RealFirebirdPath = /home/odonohue/src/firebird_work2/build/firebird2/gen/firebird
 
 
 FirebirdInstallPrefix = /usr/local/firebird

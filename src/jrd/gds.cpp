@@ -644,9 +644,9 @@ static const struct
 };
 
 
-#define ISC_ENV			"INTERBASE"
-#define ISC_LOCK_ENV    "INTERBASE_LOCK"
-#define ISC_MSG_ENV     "INTERBASE_MSG"
+#define ISC_ENV			"FIREBIRD"
+#define ISC_LOCK_ENV    "FIREBIRD_LOCK"
+#define ISC_MSG_ENV     "FIREBIRD_MSG"
 
 #ifdef WIN_NT
 #define EXPAND_PATH(relative, absolute)		_fullpath(absolute, relative, MAXPATHLEN)

@@ -584,7 +584,7 @@ TEXT * function_name, TEXT * procedure_name)
 			DYN_delete_dimensions(gbl, ptr, relation_name, field_name);
 			break;
 
-		case gds__dyn_delete_generator:
+		case gds_dyn_delete_generator:
 			DYN_delete_generator(gbl, ptr);
 			break;
 
@@ -1104,6 +1104,7 @@ static void grant( GBL gbl, UCHAR ** ptr)
 	int    options   = 0;
 	SSHORT user_type = -1;
 	SSHORT obj_type  = -1;
+    TEXT dummy_name[32];
 
 	UCHAR verb;
 	while ((verb = *(*ptr)++) != gds_dyn_end)
@@ -1133,7 +1134,6 @@ static void grant( GBL gbl, UCHAR ** ptr)
 				GET_STRING(ptr, user);
 				DYN_terminate(user, sizeof(user));
 				/* This test may become obsolete as we now allow explicit ROLE keyword. */
-				TEXT dummy_name[32];
 				if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
 					user_type = obj_sql_role;
 					if (!strcmp(user, "NONE")) {

@@ -19,6 +19,9 @@ namespace Firebird
 {
 	typedef std::basic_string<char, std::char_traits<char>,
 				Firebird::allocator<char> > string;
+
+
 };
+
 
 #endif	// FB_STRING_H

@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.8 2002-06-29 13:39:10 skywalker Exp $
+  $Id: isql.epp,v 1.9 2002-07-05 15:00:19 skywalker Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -5155,7 +5155,7 @@ void ISQL_get_version( BOOLEAN call_by_create_db)
 			break;
         case isc_info_firebird_version: 
             strcpy(server_version, "Server: "); 
-            strncat(server_version, &(p[2]), (length - 2)); 
+            strncat(server_version, (char*) &(p[2]), (length - 2)); 
             if (Version_info == TRUE)  { 
                 strcat(server_version, NEWLINE); 
                 ISQL_printf (Out, server_version); 
@@ -7205,8 +7205,8 @@ static int process_statement( TEXT * string, XSQLDA ** sqldap)
     }
     else {
         if (info_buffer [0] == isc_info_sql_stmt_type) {
-            l = gds__vax_integer (info_buffer + 1, 2);
-            statement_type = gds__vax_integer (info_buffer + 3, l);
+            l = gds__vax_integer((UCHAR*) info_buffer + 1, 2);
+            statement_type = gds__vax_integer( (UCHAR*) info_buffer + 3, l);
         }
     }
 

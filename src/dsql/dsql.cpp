@@ -29,7 +29,7 @@
  *
  */
 /*
-$Id: dsql.cpp,v 1.16 2002-07-02 12:17:44 dimitr Exp $
+$Id: dsql.cpp,v 1.17 2002-07-05 15:00:17 skywalker Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -2294,11 +2294,12 @@ void DSQL_pretty(NOD node, int column)
     /* CVC: The answer is that nod_arg[0] can be either the udf name or the
     pointer to udf struct returned by METD_get_function, so we should resort
     to the block type. The replacement happens in pass1_udf(). */
-        switch (node->nod_arg [e_udf_name]->nod_header.blk_type) {
-        case type_udf:
+        //        switch (node->nod_arg [e_udf_name]->nod_header.blk_type) {
+        switch (MemoryPool::blk_type(node->nod_arg [e_udf_name])) {
+        case dsql_type_udf:
             PRINTF ("%s\"\n", ((UDF) node->nod_arg [e_udf_name])->udf_name);
             break;
-        case type_str:  
+        case dsql_type_str:  
             string = (STR) node->nod_arg [e_udf_name];
             PRINTF ("%s\"\n", string->str_data);
             break;
@@ -2312,12 +2313,6 @@ void DSQL_pretty(NOD node, int column)
             DSQL_pretty (*ptr, column + 1);
         }
         FREE_MEM_RETURN;
-
-	case nod_udf:
-		PRINTF("%sfunction: \"%s\"\n", buffer, *ptr++);
-		if (node->nod_count == 2)
-			DSQL_pretty(*ptr, column + 1);
-		FREE_MEM_RETURN;
 
 	default:
 		sprintf(s, "unknown type %d", node->nod_type);

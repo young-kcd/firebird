@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.dsql,v 1.5 2001-12-24 02:50:52 tamlin Exp $
+#   $Id: Makefile.in.dsql,v 1.6 2002-07-05 15:00:20 skywalker Exp $
 # 
 
 ROOT=../..
@@ -70,7 +70,7 @@ DSQL_CLIENT_P_OBJECTS=	array.bin blob.bin preparse.bin user_dsql.bin utld.bin
 
 y.tab.c:	parse.y
 	$(YACC) -l $(YFLAGS) $<
-parse.cpp:	parse.sed y.tab.c
+$(SRC)/parse.cpp:	parse.sed y.tab.c
 # replace the above line with the following three for FLINTSTONE
 #	awk -f parse.awk FLINTSTONE=1 < $< > tmp.$<
 #	$(YACC) -l $(YFLAGS) tmp.$<

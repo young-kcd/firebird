@@ -26,7 +26,7 @@
 #   Contributor(s):
 #
 #
-#   $Id: Makefile.in.firebird,v 1.15 2002-07-04 09:34:19 skywalker Exp $
+#   $Id: Makefile.in.firebird,v 1.16 2002-07-05 15:00:20 skywalker Exp $
 #
 # 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
 #
@@ -43,11 +43,8 @@ include     $(ROOT)/src/make.shared.variables
 
 ISC_USER=	sysdba
 ISC_PASSWORD=	masterkey
-LD_LIBRARY_PATH=/home/odonohue/src/firebird2/gen/firebird/lib:/usr/lib
-
-
-#RealFirebirdPath = $(shell cd $(FIREBIRD); pwd)
-
+#LD_LIBRARY_PATH=/home/odonohue/src/firebird2/gen/firebird/lib:/usr/lib
+TEST_PATH = @FIREBIRD_BUILD_DIR@
 LD_LIBRARY_PATH=$(RealFirebirdPath)/lib
 
 export ISC_USER

@@ -181,7 +181,7 @@ static bool make_version(TDBB, SSHORT, DFW, TRA);
 
 static void check_dependencies(TDBB, TEXT*, TEXT*, USHORT, TRA);
 static void check_filename(TEXT*, USHORT);
-static bool compare_formats(FMT, FMT);
+static bool formatsAreEqual(FMT, FMT);
 static bool	find_depend_in_dfw(TDBB, TEXT*, USHORT, USHORT, TRA);
 static void get_array_desc(TDBB, TEXT*, ADS);
 static void get_procedure_dependencies(DFW);
@@ -191,9 +191,10 @@ static FMT	make_format(TDBB, REL, USHORT *, TFB);
 static USHORT name_length(TEXT *);
 static void put_summary_blob(BLB, enum rsr_t, SLONG[2]);
 static void put_summary_record(BLB, enum rsr_t, UCHAR *, USHORT);
-static void	setup_array(TDBB, BLB, UCHAR *, USHORT, TFB);
+static void	setup_array(TDBB, BLB, TEXT *, USHORT, TFB);
 static BLB	setup_triggers(TDBB, REL, BOOLEAN, VEC *, BLB);
-static void	setup_trigger_details(TDBB, REL, BLB, VEC *, UCHAR *, UCHAR *, BOOLEAN);
+static void	setup_trigger_details(TDBB, REL, BLB, VEC *, TEXT*, TEXT*, BOOLEAN);
+//static void	setup_trigger_details(TDBB, REL, BLB, VEC *, UCHAR *, UCHAR *, BOOLEAN);
 static bool shadow_defined(TDBB);
 static bool validate_text_type (TDBB, STATUS *, TFB);
 static bool wal_defined(TDBB);
@@ -1247,46 +1248,40 @@ static void check_filename( TEXT * name, USHORT l)
 }
 
 
-static bool compare_formats(FMT old_format, FMT new_format)
+static bool formatsAreEqual(FMT old_format, FMT new_format)
 {
 /**************************************
- *
- *	c o m p a r e _ f o r m a t s
- *
- **************************************
  *
  * Functional description
  *	Compare two format blocks
  *
  **************************************/
-	DSC *old_desc, *new_desc, *end;
 
 	if ((old_format->fmt_length != new_format->fmt_length)
-		|| (old_format->fmt_count != new_format->fmt_count))
-	{
-		return true;
+		|| (old_format->fmt_count != new_format->fmt_count)) {
+		return false;
     }
 
-	old_desc = old_format->fmt_desc;
-	new_desc = new_format->fmt_desc;
-	end = old_format->fmt_desc + old_format->fmt_count;
+    fmt::fmt_desc_iterator  old_desc = old_format->fmt_desc.begin();
+    fmt::fmt_desc_iterator  old_end = old_format->fmt_desc.end();
 
-	while (old_desc < end)
-    {
+    fmt::fmt_desc_iterator new_desc = old_format->fmt_desc.begin();
+
+    while (old_desc != old_end) {
 		if ((old_desc->dsc_dtype != new_desc->dsc_dtype)
 			|| (old_desc->dsc_scale != new_desc->dsc_scale)
 			|| (old_desc->dsc_length != new_desc->dsc_length)
 			|| (old_desc->dsc_sub_type != new_desc->dsc_sub_type)
 			|| (old_desc->dsc_flags != new_desc->dsc_flags)
-			|| (old_desc->dsc_address != new_desc->dsc_address))
-		{
-			return true;
+			|| (old_desc->dsc_address != new_desc->dsc_address)) {
+			return false;
 		}
-		old_desc++;
-		new_desc++;
+
+        new_desc++;
+        old_desc++;
     }
 
-	return false;
+	return true;
 }
 
 
@@ -3425,7 +3420,7 @@ static FMT make_format(TDBB tdbb, REL relation, USHORT * version, TFB stack)
 
 	if ((format->fmt_version)
 		&& (old_format = MET_format(tdbb, relation, (format->fmt_version - 1)))    
-		&& (!compare_formats(old_format, format)))
+		&& (formatsAreEqual(old_format, format)))
 	{
 		delete format;
 		*version = old_format->fmt_version;
@@ -3680,7 +3675,7 @@ static bool make_version(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 										FLD.RDB$CHARACTER_SET_ID, collation);
 
 					/* Make sure the text type specified is implemented */
-				    if (!(validate_text_type(tdbb, status, tfb)))
+				    if (!(validate_text_type(tdbb, status, tfb_)))
 					{
 						EXE_unwind(tdbb, (REQ)request_fmt1);
 						EXE_unwind(tdbb, (REQ)request_fmtx);
@@ -3696,7 +3691,7 @@ static bool make_version(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 					tfb_->tfb_id = RFR.RDB$FIELD_ID;
 
 					if ((n = FLD.RDB$DIMENSIONS))
-						setup_array(tdbb, blob, FLD.RDB$FIELD_NAME, n, tfb);
+						setup_array(tdbb, blob, FLD.RDB$FIELD_NAME, n, tfb_);
 
 					if (external_flag)
 					{
@@ -4168,7 +4163,7 @@ static bool shadow_defined(TDBB tdbb)
 }
 
 
-static void setup_array(TDBB tdbb, BLB blob, UCHAR * field_name, USHORT n, TFB tfb)
+static void setup_array(TDBB tdbb, BLB blob, TEXT* field_name, USHORT n, TFB tfb)
 {
 /**************************************
  *
@@ -4185,7 +4180,7 @@ static void setup_array(TDBB tdbb, BLB blob, UCHAR * field_name, USHORT n, TFB t
 	SLONG stuff[64];
 	ADS array;
 
-	put_summary_record(blob, RSR_dimensions, &n, sizeof(n));
+	put_summary_record(blob, RSR_dimensions, (UCHAR*) &n, sizeof(n));
 	tfb->tfb_flags |= TFB_array;
 	array = reinterpret_cast<ADS>(stuff);
 	MOVE_CLEAR(array, (SLONG) sizeof(struct ads));
@@ -4193,7 +4188,7 @@ static void setup_array(TDBB tdbb, BLB blob, UCHAR * field_name, USHORT n, TFB t
 	array->ads_struct_count = 1;
 	array->ads_rpt[0].ads_desc = tfb->tfb_desc;
 	get_array_desc(tdbb, field_name, array);
-	put_summary_record(blob, RSR_array_desc, array, array->ads_length);
+	put_summary_record(blob, RSR_array_desc, (UCHAR*) array, array->ads_length);
 }
 
 
@@ -4310,8 +4305,8 @@ static void setup_trigger_details(TDBB tdbb,
 								  REL relation,
 								  BLB blob,
 								  VEC * triggers,
-								  UCHAR * trigger_name,
-								  UCHAR * relation_name, 
+								  TEXT * trigger_name,
+								  TEXT * relation_name, 
 								  BOOLEAN null_view)
 {
 /**************************************
@@ -4331,10 +4326,9 @@ static void setup_trigger_details(TDBB tdbb,
  **************************************/
 
 	put_summary_record(blob, RSR_trigger_name, 
-		trigger_name, name_length(trigger_name));
+		(UCHAR*) trigger_name, name_length(trigger_name));
 
-	if (!null_view)
-    {
+	if (!null_view) {
 		if (!relation->rel_name)
 			relation->rel_name = MET_save_name(tdbb, relation_name);
 		MET_load_trigger(tdbb, relation, trigger_name, triggers);

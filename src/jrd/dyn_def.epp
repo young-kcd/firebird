@@ -60,6 +60,7 @@
 #include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
+#include "../jrd/dls_proto.h"
 #include "../jrd/dyn_proto.h"
 #include "../jrd/dyn_df_proto.h"
 #include "../jrd/dyn_ut_proto.h"
@@ -69,6 +70,7 @@
 #include "../jrd/inf_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/isc_f_proto.h"
+#include "../jrd/met_proto.h"
 #include "../jrd/thd_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/scl_proto.h"
@@ -1611,8 +1613,8 @@ void DYN_define_index(GBL		gbl,
 	BLK old_request;
 	VOLATILE SSHORT id, old_id;
 	const size_t field_name_size = 32;
-	UCHAR index_name[32];
-	UCHAR referenced_relation[32];
+	TEXT index_name[32];
+	TEXT referenced_relation[32];
 	UCHAR verb;
 	UCHAR seg_count;
 	UCHAR fld_count;

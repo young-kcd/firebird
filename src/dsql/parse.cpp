@@ -45,8 +45,11 @@ static char yysccsid[] = "@(#)yaccpar	1.9 (Berkeley) 02/21/93";
  *   and not in gen.c; this closes Bug #450301.
  * 2001.10.01 Claudio Valderrama: enable explicit GRANT...to ROLE role_name.
  * 2001.10.06 Claudio Valderrama: Honor explicit USER keyword in GRANTs and REVOKEs.
+ * 2002.07.05 Mark O'Donohue: change keyword DEBUG to DEBUG_KEYWORD to avoid
+ *            clashes with normal DEBUG macro.
  *
  */
+
 
 #if defined(DEV_BUILD) && defined(WIN32) && defined(SUPERSERVER)
 #include <windows.h>
@@ -174,10 +177,7 @@ static void	yyerror (TEXT *);
 #define DATABASE 295
 #define DATE 296
 #define DB_KEY 297
-#ifdef DEBUG
-#undef DEBUG
-#define DEBUG 298
-#endif
+#define DEBUG_KEYWORD 298
 #define DECIMAL 299
 #define DECLARE 300
 #define DEFAULT 301
@@ -2731,9 +2731,9 @@ char *yyname[] = {
 "CACHE","CAST","CHARACTER","CHECK","CHECK_POINT_LEN","COLLATE","COLLATION",
 "COMMA","COMMIT","COMMITTED","COMPUTED","CONCATENATE","CONDITIONAL",
 "CONSTRAINT","CONTAINING","COUNT","CREATE","CSTRING","CURRENT","CURSOR",
-"DATABASE","DATE","DB_KEY","DEBUG","DECIMAL","DECLARE","DEFAULT","DELETE",
-"DESC","DISTINCT","DO","DOMAIN","DROP","ELSE","END","ENTRY_POINT","EQL",
-"ESCAPE","EXCEPTION","EXECUTE","EXISTS","EXIT","EXTERNAL","FILTER","FOR",
+"DATABASE","DATE","DB_KEY","DEBUG_KEYWORD","DECIMAL","DECLARE","DEFAULT",
+"DELETE","DESC","DISTINCT","DO","DOMAIN","DROP","ELSE","END","ENTRY_POINT",
+"EQL","ESCAPE","EXCEPTION","EXECUTE","EXISTS","EXIT","EXTERNAL","FILTER","FOR",
 "FOREIGN","FROM","FULL","FUNCTION","GDSCODE","GEQ","GENERATOR","GEN_ID","GRANT",
 "GROUP","GROUP_COMMIT_WAIT","GTR","HAVING","IF","IN","INACTIVE","INNER",
 "INPUT_TYPE","INDEX","INSERT","INTEGER","INTO","IS","ISOLATION","JOIN","KEY",
@@ -2779,7 +2779,7 @@ char *yyrule[] = {
 "statement : select",
 "statement : set",
 "statement : update",
-"statement : DEBUG signed_short_integer",
+"statement : DEBUG_KEYWORD signed_short_integer",
 "grant : GRANT privileges ON prot_table_name TO user_grantee_list grant_option",
 "grant : GRANT proc_privileges ON PROCEDURE simple_proc_name TO user_grantee_list grant_option",
 "grant : GRANT privileges ON prot_table_name TO grantee_list",
@@ -4823,7 +4823,7 @@ dsql_yyparse(USHORT client_dialect, USHORT db_dialect, USHORT parser_version, BO
     register int yym, yyn, yystate;
 #if YYDEBUG
     register char *yys;
-    extern char *getenv(const char*);
+    ;
 
     if (yys = getenv("YYDEBUG"))
     {
@@ -7054,11 +7054,11 @@ case 778:
 break;
 case 779:
 { yyval = make_node (nod_select_expr, e_sel_count, 
-				yyvsp[-7], make_list (yyvsp[-6]), yyvsp[-5], yyvsp[-4], yyvsp[-3], yyvsp[-2], yyvsp[-1], yyvsp[0], NULL); }
+				yyvsp[-7], yyvsp[-6], make_list (yyvsp[-5]), yyvsp[-4], yyvsp[-3], yyvsp[-2], yyvsp[-1], yyvsp[0], NULL); }
 break;
 case 780:
 { yyval = make_node (nod_select_expr, e_sel_count, 
-                              yyvsp[-7], make_list (yyvsp[-6]), yyvsp[-5], yyvsp[-4], yyvsp[-3], yyvsp[-2], yyvsp[-1], yyvsp[0], 
+                              yyvsp[-7], yyvsp[-6], make_list (yyvsp[-5]), yyvsp[-4], yyvsp[-3], yyvsp[-2], yyvsp[-1], yyvsp[0], 
 				MAKE_constant ((STR) 1, CONSTANT_SLONG)); }
 break;
 case 788:

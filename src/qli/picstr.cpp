@@ -348,16 +348,16 @@ void PIC_edit( DSC * desc, PIC picture, TEXT ** output, USHORT max_length)
 	switch (picture->pic_type) {
 	case pic_alpha:
 		edit_alpha(desc, picture, output, max_length);
-		return 0;
+		return;
 	case pic_numeric:
 		edit_numeric(desc, picture, output);
-		return 0;
+		return;
 	case pic_date:
 		edit_date(desc, picture, output);
-		return 0;
+		return;
 	case pic_float:
 		edit_float(desc, picture, output);
-		return 0;
+		return;
 	default:
 #ifndef PYXIS
 		BUGCHECK(68);			/* Msg 68 PIC_edit: class not yet implemented */

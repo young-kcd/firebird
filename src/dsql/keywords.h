@@ -90,7 +90,7 @@
 	{DATABASE, "DATABASE", 1},
 	{DATE, "DATE", 1},
 	{DAY, "DAY", 2},
-	{DEBUG, "DEBUG", 1},
+	{DEBUG_KEYWORD, "DEBUG", 1},
 	{KW_DEC, "DEC", 1},
 	{DECIMAL, "DECIMAL", 1},
 	{DECLARE, "DECLARE", 1},

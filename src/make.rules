@@ -26,7 +26,7 @@
 #   Contributor(s):
 #
 #
-#   $Id: make.rules,v 1.5 2002-07-04 09:34:18 skywalker Exp $
+#   $Id: make.rules,v 1.6 2002-07-05 15:00:17 skywalker Exp $
 #
 
 #____________________________________________________________________________
@@ -145,10 +145,10 @@ LINK_OPTIONS=
 #ReadlineLibs = -lreadline -ltermcap
 #ReadlineLibs = -lreadline -lncurses
 #ReadlineLibs:= -lreadline
-#LINK_LIBS:= -lm -lstdc++ $(ReadlineLibs) -lstdc++ -lreadline -lcurses -lm -lc -ldl -lcrypt  -lc -ldl -lcrypt
+#LINK_LIBS:= -lm -lstdc++ $(ReadlineLibs) -lstdc++ -lreadline -lcurses -lcrypt -lm -lc -ldl  -lc -ldl -lcrypt
 #STATICLINK_LIBS := -lm -lstdc++ $(ReadlineLibs) -lc -ldl -lcrypt
-LINK_LIBS = -lstdc++ -lreadline -lcurses -lm -lc -ldl -lcrypt 
-STATICLINK_LIBS = -lstdc++ -lreadline -lcurses -lm -lc -ldl -lcrypt 
+LINK_LIBS = -lstdc++ -lreadline -lcurses -lcrypt -lm -lc -ldl 
+STATICLINK_LIBS = -lstdc++ -lreadline -lcurses -lcrypt -lm -lc -ldl 
 
 #LINK_LIBS= -L$(LIB)  -lgds -lm -lc -ldl -lcrypt
 # -lgcc

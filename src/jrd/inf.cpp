@@ -67,6 +67,8 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/err_proto.h"
 
+using namespace Firebird;
+
 
 /*
  * The variable DBSERVER_BASE_LEVEL was originally IB_MAJOR_VER but with
@@ -564,17 +566,17 @@ int INF_database_info(
 			for (att = dbb->dbb_attachments; att; att = att->att_next) {
 				if (att->att_flags & ATT_shutdown)
 					continue;
-				if ( (user = att->att_user) ) {
-					char *user_name = user->usr_user_name ? 
-						user->usr_user_name : "(SQL Server)";
+                
+                user = att->att_user;
+				if (user) {
+					const char *user_name = user->usr_user_name ? user->usr_user_name : "(SQL Server)";
 					p = buffer;
 					*p++ = l = strlen (user_name);
-					for (q = user_name; l; l--)
+					for (q = const_cast<char*>(user_name); l; l--)
 						*p++ = *q++;
 					length = p - buffer;
-					if (!
-						(info =
-						 INF_put_item(item, length, buffer, info, end))) {
+                    info = INF_put_item(item, length, buffer, info, end);
+					if (!info) {
 						if (transaction)
 							TRA_commit(tdbb, transaction, FALSE);
 						return FALSE;
@@ -1207,3 +1209,5 @@ static USHORT get_counts(USHORT count_id, UCHAR * buffer, USHORT length)
 	return p - buffer;
 }
 #endif
+
+
