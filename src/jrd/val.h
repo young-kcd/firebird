@@ -40,7 +40,7 @@
 const UCHAR DEFAULT_DOUBLE	= dtype_double;
 
 #ifdef VMS
-const UCHAR DEFAULT_DOUBLE	= dtype_d_float;
+const UCHAR SPECIAL_DOUBLE	= dtype_d_float;
 #define CNVT_TO_DFLT(x)	MTH$CVT_D_G (x)
 #define CNVT_FROM_DFLT(x)	MTH$CVT_G_D (x)
 
