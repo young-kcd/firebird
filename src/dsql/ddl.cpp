@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.55 2003-09-01 07:39:54 brodsom Exp $
+ * $Id: ddl.cpp,v 1.56 2003-09-01 23:20:13 arnobrinkman Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -1017,7 +1017,7 @@ static void define_computed(DSQL_REQ request,
 
 	PASS1_make_context(request, relation_node);
 
-	DSQL_NOD input = PASS1_node(request, node->nod_arg[e_cmp_expr], 0);
+	DSQL_NOD input = PASS1_node(request, node->nod_arg[e_cmp_expr], false);
 
 	// check if array or blobs are used in expression
 
@@ -1177,7 +1177,7 @@ static void define_constraint_trigger(DSQL_REQ request, DSQL_NOD node)
 
 		request->append_uchar(blr_if);
 		GEN_expr(request,
-				 PASS1_node(request, node->nod_arg[e_cnstr_condition], 0));
+				 PASS1_node(request, node->nod_arg[e_cnstr_condition], false));
 
 		request->append_uchar(blr_begin);
 		request->append_uchar(blr_end);		// of begin
@@ -1683,7 +1683,7 @@ static void define_domain(DSQL_REQ request)
 	DSQL_NOD node = element->nod_arg[e_dom_default];
 	if (node)
 	{
-		node = PASS1_node(request, node, 0);
+		node = PASS1_node(request, node, false);
 		request->begin_blr(gds_dyn_fld_default_value);
 		GEN_expr(request, node);
 		request->end_blr();
@@ -1771,7 +1771,7 @@ static void define_domain(DSQL_REQ request)
 					GEN_expr(request,
 							 PASS1_node(request,
 										node1->nod_arg[e_cnstr_condition],
-										0));
+										false));
 
 					request->end_blr();
 				}
@@ -1902,7 +1902,7 @@ static void define_field(
 	node = element->nod_arg[e_dfl_default];
 	if (node)
 	{
-		node = PASS1_node(request, node, 0);
+		node = PASS1_node(request, node, false);
 		request->begin_blr(gds_dyn_fld_default_value);
 		if (node->nod_type == nod_null) {
 			default_null_flag = true;
@@ -3729,9 +3729,9 @@ static void define_view_trigger( DSQL_REQ request, DSQL_NOD node, DSQL_NOD rse, 
 		if (trig_type == PRE_MODIFY_TRIGGER) {
 			request->append_uchar(blr_for);
 			temp = rse->nod_arg[e_rse_streams];
-			temp->nod_arg[0] = PASS1_node(request, temp->nod_arg[0], 0);
+			temp->nod_arg[0] = PASS1_node(request, temp->nod_arg[0], false);
 			temp = rse->nod_arg[e_rse_boolean];
-			rse->nod_arg[e_rse_boolean] = PASS1_node(request, temp, 0);
+			rse->nod_arg[e_rse_boolean] = PASS1_node(request, temp, false);
 			GEN_expr(request, rse);
 
 			condition = MAKE_node(nod_not, 1);
@@ -3740,7 +3740,7 @@ static void define_view_trigger( DSQL_REQ request, DSQL_NOD node, DSQL_NOD rse, 
 									view_fields, FALSE);
 			request->append_uchar(blr_begin);
 			request->append_uchar(blr_if);
-			GEN_expr(request, PASS1_node(request, condition->nod_arg[0], 0));
+			GEN_expr(request, PASS1_node(request, condition->nod_arg[0], false));
 			request->append_uchar(blr_begin);
 			request->append_uchar(blr_end);
 		}
@@ -3751,7 +3751,7 @@ static void define_view_trigger( DSQL_REQ request, DSQL_NOD node, DSQL_NOD rse, 
 				replace_field_names(select_expr->nod_arg[e_sel_where], items,
 									view_fields, TRUE);
 			request->append_uchar(blr_if);
-			GEN_expr(request, PASS1_node(request, condition->nod_arg[0], 0));
+			GEN_expr(request, PASS1_node(request, condition->nod_arg[0], false));
 			request->append_uchar(blr_begin);
 			request->append_uchar(blr_end);
 		}
@@ -4696,7 +4696,7 @@ static void modify_domain( DSQL_REQ request)
 			}
 			/* CVC End modification. */
 			element->nod_arg[e_dft_default] =
-				PASS1_node(request, element->nod_arg[e_dft_default], 0);
+				PASS1_node(request, element->nod_arg[e_dft_default], false);
 
 			request->begin_blr(gds_dyn_fld_default_value);
 			GEN_expr(request, element->nod_arg[e_dft_default]);
@@ -4748,7 +4748,7 @@ static void modify_domain( DSQL_REQ request)
 
 			GEN_expr(request,
 					 PASS1_node(request, element->nod_arg[e_cnstr_condition],
-								0));
+								false));
 
 			request->end_blr();
 			if ((string = (STR) element->nod_arg[e_cnstr_source]) != NULL) {
@@ -5397,7 +5397,7 @@ static void put_local_variable( DSQL_REQ request, VAR variable, DSQL_NOD host_pa
 	DSQL_NOD node = (host_param) ? host_param->nod_arg[e_dfl_default] : 0;
 	if (node)
 	{
-		node = PASS1_node(request, node, 0);
+		node = PASS1_node(request, node, false);
 		GEN_expr(request, node);
 	}
 	else
