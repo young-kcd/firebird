@@ -20,10 +20,6 @@
 #define ARG(type, arg)		type arg
 #define ARGLIST(arg)
 
-#if defined __BORLANDC__ && defined __WIN32__
 #define EXPORT _export
-#else
-#define EXPORT
-#endif
 
 #define ERREXIT(status, rc)	{isc_print_status(status); return rc;}

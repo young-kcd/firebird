@@ -2008,15 +2008,6 @@ static int thread_start(int (*routine) (void *),
 	DWORD thread_id;
 	int priority;
 
-#ifdef __BORLANDC__
-	handle =
-		(HANDLE) _beginthreadNT((void (_USERENTRY *) (void *)) routine, 0,
-								arg, NULL, CREATE_SUSPENDED, &thread_id);
-
-	if (handle == (HANDLE) - 1) {
-		return errno;
-	}
-#else
 	/* I have changed the CreateThread here to _beginthreadex() as using
 	 * CreateThread() can lead to memory leaks caused by C-runtime library.
 	 * Advanced Windows by Richter pg. # 109. */
@@ -2035,8 +2026,6 @@ static int thread_start(int (*routine) (void *),
 		return GetLastError();
 	}
 	handle = reinterpret_cast < HANDLE > (real_handle);
-
-#endif
 
 	switch (priority_arg) {
 	case THREAD_critical:

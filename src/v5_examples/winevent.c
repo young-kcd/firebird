@@ -78,10 +78,6 @@ STATUS          status[ISC_STATUS_LENGTH];
 ** FUNCTION PROTOTYPES 
 */
 
-#ifdef __BORLANDC__
-#pragma argsused
-#endif
-
 long FAR PASCAL _export WndProc (HWND, UINT, UINT, LONG) ;
 HWND                    InitApplication(int nCmdShow, HINSTANCE hPrevInstance);
 int                     InitEvent(EVENTBLK *lpEvent, long *DB,

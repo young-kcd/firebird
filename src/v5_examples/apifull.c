@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: apifull.c,v 1.3 2002-10-24 09:01:33 eku Exp $
+$Id: apifull.c,v 1.4 2003-02-14 02:50:10 brodsom Exp $
 */
 
 #include <stdlib.h>
@@ -64,7 +64,7 @@ int                ret;
 /* Define a format string for printf.  Printing of 64-bit integers
    is not standard between platforms */
 
-#if (defined(_MSC_VER) && defined(WIN32)) || (defined(__BORLANDC__) && defined(__WIN32__))
+#if (defined(_MSC_VER) && defined(WIN32))
 #define	ISC_INT64_FORMAT	"I64"
 #else
 #define	ISC_INT64_FORMAT	"ll"

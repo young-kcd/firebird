@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.21 2003-02-13 09:42:17 dimitr Exp $
+  $Id: isql.epp,v 1.22 2003-02-14 02:45:55 brodsom Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -2183,21 +2183,7 @@ static SSHORT copy_table( TEXT * source, TEXT * destination, TEXT * otherdb)
 	if (*otherdb)
 		domain_flag = TRUE;
 
-#ifndef __BORLANDC__
 	Out = (IB_FILE *) gds__temp_file(TRUE, SCRATCH, ftmp);
-#else
-/* When using Borland C, routine gds__temp_file is in a DLL which maps
-   a set of I/O handles that are different from the ones in the ISQL
-   process!  So we will get a temp name on our own.  [Note that
-   gds__temp_file returns -1 on error, not 0] */
-
-	TEXT p = tempnam(NULL, SCRATCH);
-	strcpy(ftmp, p);
-	free(p);
-	Out = ib_fopen(ftmp, "w+");
-	if (!Out)
-		Out = (IB_FILE *) - 1;
-#endif
 	if (Out == (IB_FILE *) - 1) {
 		/* If we can't open a temp file then bail */
 
@@ -2528,22 +2514,7 @@ static void do_isql(void)
 
 /* File used to edit sessions */
 
-#ifndef __BORLANDC__
 	Ofp = (IB_FILE *) gds__temp_file(TRUE, SCRATCH, Tmpfile);
-#else
-/* When using Borland C, routine gds__temp_file is in a DLL which maps
-   a set of I/O handles that are different from the ones in the ISQL
-   process!  So we will get a temp name on our own.  [Note that
-   gds__temp_file returns -1 on error, not 0] */
-
-	TEXT* p = tempnam(NULL, SCRATCH);
-	strcpy(Tmpfile, p);
-	free(p);
-	Ofp = ib_fopen(Tmpfile, "w+");
-	if (!Ofp) {
-		Ofp = (IB_FILE *) - 1;
-	}
-#endif
 	if (Ofp == (IB_FILE *) - 1)
 	{
 		/* If we can't open a temp file then bail */

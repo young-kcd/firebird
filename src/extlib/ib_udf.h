@@ -17,13 +17,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifdef __BORLANDC__
-#define EXPORT _export
-#define MATHERR	_matherr
-#else
 #define EXPORT
 #define MATHERR	matherr
-#endif
 
 #include <stdarg.h>
 

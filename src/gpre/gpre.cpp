@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.19 2003-02-13 12:01:28 dimitr Exp $
+//  $Id: gpre.cpp,v 1.20 2003-02-14 02:44:37 brodsom Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -42,7 +42,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.19 2003-02-13 12:01:28 dimitr Exp $
+//	$Id: gpre.cpp,v 1.20 2003-02-14 02:44:37 brodsom Exp $
 //
 
 #define GPRE_MAIN
@@ -1350,9 +1350,6 @@ static SLONG compile_module( SLONG start_position)
 {
 	SLONG end_position;
 	GPRE_REQ request;
-#ifdef __BORLANDC__
-	SCHAR *p;
-#endif
 
 //  Reset miscellaneous pointers 
 
@@ -1369,24 +1366,10 @@ static SLONG compile_module( SLONG start_position)
 #if !(defined WIN_NT)
 	trace_file = (IB_FILE *) gds__temp_file(TRUE, SCRATCH, 0);
 #else
-#ifndef __BORLANDC__
 //  PC-like platforms can't delete a file that is open.  Therefore
 //  we will save the name of the temp file for later deletion. 
 
 	trace_file = (IB_FILE *) gds__temp_file(TRUE, SCRATCH, trace_file_name);
-#else
-//  When using Borland C, routine gds__temp_file is in a DLL which maps
-//  a set of I/O handles that are different from the ones in the GPRE
-//  process!  So we will get a temp name on our own.  [Note that
-//  gds__temp_file returns -1 on error, not 0] 
-
-	p = tempnam(NULL, SCRATCH);
-	strcpy(trace_file_name, p);
-	free(p);
-	trace_file = ib_fopen(trace_file_name, "w+");
-	if (!trace_file)
-		trace_file = (IB_FILE *) - 1;
-#endif
 #endif
 
 	if (trace_file == (IB_FILE *) - 1) {

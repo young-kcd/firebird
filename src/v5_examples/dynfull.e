@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: dynfull.e,v 1.1 2001-07-23 16:05:46 skywalker Exp $
+$Id: dynfull.e,v 1.2 2003-02-14 02:50:10 brodsom Exp $
 */
 
 #include "example.h"
@@ -50,7 +50,7 @@ typedef struct vary {
 /* Define a format string for printf.  Printing of 64-bit integers
    is not standard between platforms */
 
-#if (defined(_MSC_VER) && defined(WIN32)) || (defined(__BORLANDC__) && defined(__WIN32__))
+#if (defined(_MSC_VER) && defined(WIN32))
 #define	ISC_INT64_FORMAT	"I64"
 #else
 #define	ISC_INT64_FORMAT	"ll"

@@ -206,15 +206,9 @@ static void* intl_back_compat_obj_init_lookup(USHORT, SSHORT, SSHORT);
 #define INTL_MODULE2 "fbintl2"
 #endif
 
-#ifndef __BORLANDC__
 #define INTL_LOOKUP_ENTRY1      "LD_lookup"
 #define INTL_LOOKUP_ENTRY2      "LD2_lookup"
 #define INTL_USER_ENTRY         "USER_TEXTTYPE_%03d"
-#else
-#define INTL_LOOKUP_ENTRY1      "_LD_lookup"
-#define INTL_LOOKUP_ENTRY2      "_LD2_lookup"
-#define INTL_USER_ENTRY         "_USER_TEXTTYPE_%03d"
-#endif
 
 
 // Classes and structures used internally to this file and intl implementation

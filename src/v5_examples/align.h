@@ -22,7 +22,7 @@
  *
  */
 /*
-$Id: align.h,v 1.5 2003-02-10 19:27:09 brodsom Exp $
+$Id: align.h,v 1.6 2003-02-14 02:50:10 brodsom Exp $
 */
 
 #ifdef VMS
@@ -43,8 +43,7 @@ $Id: align.h,v 1.5 2003-02-10 19:27:09 brodsom Exp $
 #define FB_ALIGN(n,b)          ((n + b - 1) & ~(b - 1))
 #endif
  
-#if (defined(_MSC_VER) && defined(WIN32)) || (defined(__BORLANDC__) \
-    && defined(__WIN32__))
+#if (defined(_MSC_VER) && defined(WIN32)) 
 #define FB_ALIGN(n,b)          ((n + b - 1) & ~(b - 1))
 #endif
 

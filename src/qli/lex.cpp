@@ -169,31 +169,13 @@ void LEX_edit( SLONG start, SLONG stop)
  **************************************/
 	IB_FILE *scratch;
 	TEXT filename[128];
-#ifdef __BORLANDC__
-	TEXT *p;
-#endif
 	SSHORT c;
 
-#ifndef __BORLANDC__
 	scratch = (IB_FILE *) gds__temp_file(TRUE, SCRATCH, filename);
 	if (scratch == (IB_FILE *) - 1)
 		IBERROR(61);			/* Msg 61 couldn't open scratch file */
 #ifdef WIN_NT
 	stop--;
-#endif
-#else
-/* When using Borland C, routine gds__temp_file is in a DLL which maps
-   a set of I/O handles that are different from the ones in the QLI
-   process!  So we will get a temp name on our own.  [Note that
-   gds__temp_file returns -1 on error, not 0] */
-
-	p = tempnam(NULL, SCRATCH);
-	strcpy(filename, p);
-	free(p);
-	scratch = ib_fopen(filename, "w+");
-	stop--;
-	if (!scratch)
-		IBERROR(61);			/* Msg 61 couldn't open scratch file */
 #endif
 
 	if (ib_fseek(trace_file, start, 0)) {
@@ -576,27 +558,9 @@ void LEX_init(void)
  *
  **************************************/
 
-#ifdef __BORLANDC__
-	TEXT *p;
-#endif
-
-#ifndef __BORLANDC__
 	trace_file = (IB_FILE*) gds__temp_file(TRUE, SCRATCH, (TEXT*) trace_file_name);
 	if (trace_file == (IB_FILE *) - 1)
 		IBERROR(61);			/* Msg 61 couldn't open scratch file */
-#else
-/* When using Borland C, routine gds__temp_file is in a DLL which maps
-   a set of I/O handles that are different from the ones in the QLI
-   process!  So we will get a temp name on our own.  [Note that
-   gds__temp_file returns -1 on error, not 0] */
-
-	p = tempnam(NULL, SCRATCH);
-	strcpy(trace_file_name, p);
-	free(p);
-	trace_file = ib_fopen(trace_file_name, "w+");
-	if (!trace_file)
-		IBERROR(61);			/* Msg 61 couldn't open scratch file */
-#endif
 
 	QLI_token = (TOK) ALLOCPV(type_tok, MAXSYMLEN);
 

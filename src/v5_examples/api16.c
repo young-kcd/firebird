@@ -40,7 +40,7 @@
 
 
 /*  Sleep for Windows is a stupid loop with I/O */
-#if defined  __BORLANDC__ || defined _MSC_VER
+#if defined _MSC_VER
 #include <windows.h>
 #define SLEEP(x)	Sleep(x * 1000 )
 #else

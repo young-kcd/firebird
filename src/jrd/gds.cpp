@@ -636,11 +636,7 @@ static const struct
 
 #ifdef WIN_NT
 #define EXPAND_PATH(relative, absolute)		_fullpath(absolute, relative, MAXPATHLEN)
-#ifdef __BORLANDC__
-#define COMPARE_PATH(a,b)			stricmp(a,b)
-#else
 #define COMPARE_PATH(a,b)			_stricmp(a,b)
-#endif
 #else
 #define EXPAND_PATH(relative, absolute)		realpath(relative, absolute)
 #define COMPARE_PATH(a,b)			strcmp(a,b)

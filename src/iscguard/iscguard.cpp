@@ -42,7 +42,7 @@
 #include "../remote/chop_proto.h"
 #include "../common/config/config.h"
 
-#if defined(_MSC_VER) || defined(__BORLANDC__)
+#if defined(_MSC_VER)
 #include <process.h>			/* _beginthread */
 #endif
 

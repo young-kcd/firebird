@@ -237,28 +237,11 @@ void LEX_init( void *file)
  *	scratch trace file to keep all input.
  *
  **************************************/
-#ifdef __BORLANDC__
-	TEXT *p;
-#endif
 
 #if !(defined WIN_NT)
 	trace_file = (IB_FILE *) gds__temp_file(TRUE, SCRATCH, 0);
 #else
-#ifndef __BORLANDC__
 	trace_file = (IB_FILE *) gds__temp_file(TRUE, SCRATCH, trace_file_name);
-#else
-/* When using Borland C, routine gds__temp_file is in a DLL which maps
-   a set of I/O handles that are different from the ones in the GDEF
-   process!  So we will get a temp name on our own.  [Note that
-   gds__temp_file returns -1 on error, not 0] */
-
-	p = tempnam(NULL, SCRATCH);
-	strcpy(trace_file_name, p);
-	free(p);
-	trace_file = ib_fopen(trace_file_name, "w+");
-	if (!trace_file)
-		trace_file = (IB_FILE *) - 1;
-#endif
 #endif
 	if (trace_file == (IB_FILE *) - 1)
 		DDL_err(276, NULL, NULL, NULL, NULL, NULL);	/* msg 276: couldn't open scratch file */
