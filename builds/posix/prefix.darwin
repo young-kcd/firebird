@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin,v 1.8.2.6 2003-11-09 18:34:07 bellardo Exp $
+#$Id: prefix.darwin,v 1.8.2.7 2003-11-10 00:01:40 bellardo Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 CC=@CXX@
@@ -26,6 +26,7 @@ OS_ServerFiles=inet_server.cpp
 PROD_FLAGS=-O3 -DNDEBUG -DDARWIN -pipe -MMD -p -fPIC
 DEV_FLAGS=-g -DDARWIN -DDEBUG_GDS_ALLOC -pipe -MMD -p -fPIC -Wall
 LIB_LINK_OPTIONS:=-bundle -flat_namespace -undefined suppress
+LIB_SHLIB_LINK_OPTIONS:=-dynamiclib -flat_namespace
 #LIB_LINK_RPATH:=-Wl,-rpath,
 #LIB_LINK_SONAME:=-Wl,-soname,
 LIB_LINK_RPATH_LINE:=

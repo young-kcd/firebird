@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.25.2.2 2003-10-09 23:08:33 skidder Exp $
+#   $Id: make.defaults,v 1.25.2.3 2003-11-10 00:01:40 bellardo Exp $
 # 
 
 
@@ -177,6 +177,8 @@ LIBFBCOMMON_A = $(LIB)/libfbcommon.a
 LIBFBSTATIC_A = $(LIB)/libfbstatic.a
 LIBFBSERVER_A = $(LIB)/libfbserver.a
 LIBEDITLINE_A = $(LIB)/libeditline.a
+
+LIB_SHLIB_LINK_OPTIONS = $(LIB_LINK_OPTIONS)
 
 # Shared library name for usage inside of the UDF
 IbUtilLibraryName = libib_util.$(SHRLIB_EXT)
