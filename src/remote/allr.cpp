@@ -70,9 +70,18 @@ SLONG allr_delta_alloc = 0;
 //
 //	Allocate a block.
 //
-UCHAR* DLL_EXPORT ALLR_alloc(ULONG size)
+UCHAR* DLL_EXPORT funALLR_alloc(ULONG size
+#ifdef DEBUG_GDS_ALLOC
+							 , TEXT* __f__, ULONG __l__
+#endif
+							 )
 {
-	UCHAR* block = (UCHAR*)gds__alloc((SLONG) size);
+	UCHAR* block = (UCHAR*)
+#ifdef DEBUG_GDS_ALLOC
+		gds__alloc_debug ((SLONG)size, __f__, __l__);
+#else
+		gds__alloc((SLONG) size);
+#endif
 
 	if (block)
 	{
@@ -104,7 +113,11 @@ UCHAR* DLL_EXPORT ALLR_alloc(ULONG size)
 //	Allocate a block from a given pool and initialize the block.
 //	This is the primary block allocation routine.
 //
-BLK DLL_EXPORT ALLR_block(UCHAR type, ULONG count)
+BLK DLL_EXPORT funALLR_block(UCHAR type, ULONG count
+#ifdef DEBUG_GDS_ALLOC
+							 , TEXT* __f__, ULONG __l__
+#endif
+							 )
 {
 	if (type <= (UCHAR) type_MIN || type >= (UCHAR) type_MAX)
 	{
@@ -153,7 +166,11 @@ BLK DLL_EXPORT ALLR_block(UCHAR type, ULONG count)
 		size += (ucount - 1) * tail;
 	}
 
-	BLK block = (BLK) ALLR_alloc((ULONG) size);
+	BLK block = (BLK) funALLR_alloc((ULONG) size
+#ifdef DEBUG_GDS_ALLOC
+							 , __f__, __l__
+#endif
+							 );
 
 	// NOMEM: callee handled
 	// FREE:  caller must handle - use ALLR_release

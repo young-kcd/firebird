@@ -28,8 +28,23 @@
 extern "C" {
 #endif
 
-extern UCHAR		* DLL_EXPORT ALLR_alloc (ULONG);
-extern struct blk	* DLL_EXPORT ALLR_block (UCHAR, ULONG);
+#ifdef DEBUG_GDS_ALLOC
+#define ALLR_alloc(s)	funALLR_alloc ((s),(TEXT*)__FILE__,(ULONG)__LINE__)
+#define ALLR_block(s, sz)	funALLR_block ((s), (sz), (TEXT*)__FILE__,(ULONG)__LINE__)
+#else
+#define ALLR_alloc(s)	funALLR_alloc ((s))
+#define ALLR_block(s, sz)	funALLR_block ((s), (sz))
+#endif
+extern UCHAR		* DLL_EXPORT funALLR_alloc (ULONG
+#ifdef DEBUG_GDS_ALLOC
+												, TEXT*, ULONG
+#endif
+												);
+extern struct blk	* DLL_EXPORT funALLR_block (UCHAR, ULONG
+#ifdef DEBUG_GDS_ALLOC
+												, TEXT*, ULONG
+#endif
+											    );
 extern struct blk	*ALLR_clone (struct blk *);
 extern void		ALLR_free (void *);
 extern void		DLL_EXPORT ALLR_release (void *);
