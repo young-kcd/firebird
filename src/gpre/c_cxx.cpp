@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.16 2003-02-27 16:05:17 brodsom Exp $
+//	$Id: c_cxx.cpp,v 1.17 2003-02-27 21:43:11 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -154,13 +154,8 @@ static TEXT *make_name(TEXT *, SYM);
 static void make_ok_test(ACT, GPRE_REQ, int);
 static void make_port(POR, int);
 static void make_ready(DBB, TEXT *, TEXT *, USHORT, GPRE_REQ);
-#ifdef __GNUC__
-static void printa(int, const char *, ...) __attribute__ ((format(printf,2,3)));
-static void printb(TEXT *, ...) __attribute__ ((format(printf,1,2)));
-#else
-static void printa(int, const char *, ...);
-static void printb(TEXT *, ...);
-#endif
+static void printa(int, const char *, ...) ATTRIBUTE_FORMAT(2,3);
+static void printb(TEXT *, ...) ATTRIBUTE_FORMAT(1,2);
 static TEXT *request_trans(ACT, GPRE_REQ);
 static TEXT *status_vector(ACT);
 static void t_start_auto(ACT, GPRE_REQ, TEXT *, int, SSHORT);

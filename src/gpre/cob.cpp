@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.18 2003-02-27 16:05:07 brodsom Exp $
+//	$Id: cob.cpp,v 1.19 2003-02-27 21:43:11 brodsom Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -412,13 +412,8 @@ static TEXT	*make_name (TEXT *, SYM);
 static TEXT	*make_name_formatted (TEXT *, TEXT *, SYM);
 static void	make_port (POR);
 static void	make_ready (DBB, TEXT *, TEXT *, GPRE_REQ, USHORT);
-#ifdef __GNUC__
-static void	printa (TEXT *, BOOLEAN, TEXT *, ...) __attribute__ ((format(printf,3,4)));
-static void	printb (TEXT *, ... ) __attribute__ ((format(printf,1,2)));
-#else
-static void	printa (TEXT *, BOOLEAN, TEXT *, ...);
-static void	printb (TEXT *, ... );
-#endif
+static void	printa (TEXT *, BOOLEAN, TEXT *, ...) ATTRIBUTE_FORMAT(3,4);
+static void	printb (TEXT *, ... ) ATTRIBUTE_FORMAT(1,2);
 static TEXT	*request_trans (ACT, GPRE_REQ);
 static void	set_sqlcode (ACT);
 static TEXT	*status_vector (ACT);
