@@ -33,23 +33,6 @@
 #include "../jrd/gds_proto.h"
 #include "../remote/merge_proto.h"
 
-#ifdef PIPE_SERVER
-#ifdef VMS
-#include descrip
-#include libdef
-#include ssdef
-#include jpidef
-#include pqldef
-#include "../jrd/lnmdef.h"
-
-#ifndef ORACLE_ALT
-#define GDS_PIPE	"[sysexe]gds_pipe_orcl.exe"
-#else
-#define GDS_PIPE	"[sysexe]gds_pipe_orcl_alt.exe"
-#endif
-#endif
-#endif	// PIPE_SERVER
-
 #define ALLOC(type, length)	CSS_alloc_local (type, length)
 #define FREE(block)		CSS_free_local (block)
 
@@ -59,33 +42,6 @@
 
 static RDB CSI_databases, CSI_free_servers;
 static TEXT error_buffer[1024];
-
-#ifdef PIPE_SERVER
-#ifdef VMS
-/* Define logical names that sub-process should inherit */
-
-static SCHAR *inherit_logicals[] = {
-	"SYS$LOGIN",
-	"SYS$SCRATCH",
-	"SYS$NODE",
-	"SYS$INTERBASE",
-	0
-};
-
-typedef struct itm {
-	SSHORT itm_length;
-	SSHORT itm_code;
-	SCHAR *itm_buffer;
-	SSHORT *itm_return_length;
-} ITM;
-
-typedef struct itmq {
-	SCHAR itmq_code;
-	SLONG itmq_value;
-} ITMQ;
-#endif
-
-#endif
 
 #ifndef MULTI_THREAD
 static void event_handler(PTR);
@@ -111,13 +67,6 @@ static void release_request(RRQ);
 static void release_sql_request(RSR);
 static void release_transaction(RTR);
 static STATUS send_blob(STATUS *, RBL, USHORT, UCHAR *);
-#ifdef PIPE_SERVER
-#ifdef VMS
-static void setup_creprc_info(SLONG **, ITMQ **, SLONG *);
-static int spawn(STATUS *, UCHAR *, PTR *);
-static void trans_logicals(void);
-#endif
-#endif
 
 #define CHECK_HANDLE(blk, type, error) if (!blk || ((BLK) blk)->blk_type != (SCHAR) type) \
 	return handle_error (user_status, error)
@@ -133,7 +82,6 @@ typedef struct teb {
 } TEB;
 
 
-#ifndef PIPE_SERVER
 #define GDS_ATTACH_DATABASE	CSI_attach_database
 #define GDS_BLOB_INFO		CSI_blob_info
 #define GDS_CANCEL_BLOB		CSI_cancel_blob
@@ -181,58 +129,6 @@ typedef struct teb {
 #define GDS_DSQL_PREPARE	CSI_prepare
 #define GDS_DSQL_SET_CURSOR	CSI_set_cursor_name
 #define GDS_DSQL_SQL_INFO	CSI_sql_info
-#else
-#define GDS_ATTACH_DATABASE	PSI_attach_database
-#define GDS_BLOB_INFO		PSI_blob_info
-#define GDS_CANCEL_BLOB		PSI_cancel_blob
-#define GDS_CLOSE_BLOB		PSI_close_blob
-#define GDS_COMMIT		PSI_commit_transaction
-#define GDS_COMMIT_RETAINING	PSI_commit_retaining
-#define GDS_COMPILE		PSI_compile_request
-#define GDS_CREATE_BLOB		PSI_create_blob
-#define GDS_CREATE_BLOB2	PSI_create_blob2
-#define GDS_CREATE_DATABASE	PSI_create_database
-#define GDS_DATABASE_INFO	PSI_database_info
-#define GDS_DDL			PSI_ddl
-#define GDS_DETACH		PSI_detach_database
-#define GDS_DROP_DATABASE	PSI_drop_database
-#define GDS_GET_SEGMENT		PSI_get_segment
-#define GDS_GET_SLICE		PSI_get_slice
-#define GDS_OPEN_BLOB		PSI_open_blob
-#define GDS_OPEN_BLOB2		PSI_open_blob2
-#define GDS_PREPARE		PSI_prepare_transaction
-#define GDS_PUT_SEGMENT		PSI_put_segment
-#define GDS_PUT_SLICE		PSI_put_slice
-#define GDS_RECEIVE		PSI_receive
-#define GDS_RECONNECT		PSI_reconnect_transaction
-#define GDS_RELEASE_REQUEST	PSI_release_request
-#define GDS_REQUEST_INFO	PSI_request_info
-#define GDS_ROLLBACK		PSI_rollback_transaction
-#define GDS_SEND		PSI_send
-#define GDS_SEEK_BLOB		PSI_seek_blob
-#define GDS_START_AND_SEND	PSI_start_and_send
-#define GDS_START		PSI_start_request
-#define GDS_START_MULTIPLE	PSI_start_multiple
-#define GDS_START_TRANSACTION	PSI_start_transaction
-#define GDS_TRANSACT_REQUEST	PSI_transact_request
-#define GDS_TRANSACTION_INFO	PSI_transaction_info
-#define GDS_UNWIND		PSI_unwind_request
-#define GDS_QUE_EVENTS		PSI_que_events
-#define GDS_CANCEL_EVENTS	PSI_cancel_events
-
-#define GDS_DSQL_ALLOCATE	PSI_allocate_statement
-#define GDS_DSQL_EXECUTE	PSI_execute
-#define GDS_DSQL_EXECUTE2	PSI_execute2
-#define GDS_DSQL_EXECUTE_IMMED	PSI_execute_immediate
-#define GDS_DSQL_EXECUTE_IMMED2	PSI_execute_immediate2
-#define GDS_DSQL_FETCH		PSI_fetch
-#define GDS_DSQL_FREE		PSI_free_statement
-#define GDS_DSQL_INSERT		PSI_insert
-#define GDS_DSQL_PREPARE	PSI_prepare
-#define GDS_DSQL_SET_CURSOR	PSI_set_cursor_name
-#define GDS_DSQL_SQL_INFO	PSI_sql_info
-#endif
-
 
 STATUS GDS_ATTACH_DATABASE(
 						   STATUS * user_status,
@@ -549,29 +445,6 @@ STATUS GDS_CREATE_BLOB2(STATUS * user_status,
 	return user_status[1];
 }
 
-
-#ifdef PIPE_SERVER
-STATUS GDS_CREATE_BLOB(STATUS * user_status,
-					   RDB * db_handle,
-					   RTR * rtr_handle, RBL * blob_handle, BID blob_id)
-{
-/**************************************
- *
- *	g d s _ c r e a t e _ b l o b
- *
- **************************************
- *
- * Functional description
- *	Open an existing blob.
- *
- **************************************/
-
-	return GDS_CREATE_BLOB2(user_status, db_handle, rtr_handle, blob_handle,
-							blob_id, 0, NULL);
-}
-#endif
-
-
 STATUS GDS_CREATE_DATABASE(STATUS * user_status,
 						   SSHORT file_length,
 						   SCHAR * file_name,
@@ -630,11 +503,7 @@ STATUS GDS_DATABASE_INFO(STATUS * user_status,
 		return user_status[1];
 
 	MERGE_database_info(temp, buffer, buffer_length,
-#ifndef PIPE_SERVER
 						IMPLEMENTATION, 9, 1, GDS_VERSION, "", 0);
-#else
-						IMPLEMENTATION, 7, 1, GDS_VERSION, "", 0);
-#endif
 
 	return user_status[1];
 }
@@ -1631,28 +1500,6 @@ STATUS GDS_OPEN_BLOB2(STATUS * user_status,
 }
 
 
-#ifdef PIPE_SERVER
-STATUS GDS_OPEN_BLOB(STATUS * user_status,
-					 RDB * db_handle,
-					 RTR * rtr_handle, RBL * blob_handle, BID blob_id)
-{
-/**************************************
- *
- *	g d s _ o p e n _ b l o b
- *
- **************************************
- *
- * Functional description
- *	Open an existing blob.
- *
- **************************************/
-
-	return GDS_OPEN_BLOB2(user_status, db_handle, rtr_handle, blob_handle,
-						  blob_id, 0, NULL);
-}
-#endif
-
-
 STATUS GDS_PREPARE(STATUS * user_status,
 				   RTR * rtr_handle, USHORT buffer_length, UCHAR * buffer)
 {
@@ -2496,7 +2343,6 @@ USHORT item_length, UCHAR * items, USHORT buffer_length, UCHAR * buffer)
 }
 
 
-#ifndef PIPE_SERVER
 static RDB init(
 				STATUS * user_status,
 				MSG_T type,
@@ -2598,252 +2444,6 @@ USHORT client_flags, TEXT * buffer, USHORT * buffer_length)
 
 	return NULL;
 }
-#endif
-
-
-#ifdef PIPE_SERVER
-static RDB init(
-				STATUS * user_status,
-				MSG_T type,
-				UCHAR * file_name,
-				USHORT file_length,
-				UCHAR * dpb,
-USHORT dpb_length,
-TEXT * expanded_filename,
-USHORT server_flags,
-USHORT client_flags, TEXT * buffer, USHORT * buffer_length)
-{
-/**************************************
- *
- *	i n i t		( p i p e _ s e r v e r )
- *
- **************************************
- *
- * Functional description
- *	Initialize for database access.  First call from both CREATE and
- *	OPEN.
- *
- **************************************/
-	MSG_ATT message;
-	MSG_RESP response;
-	RDB rdb;
-	SRQ *que;
-	PRB process;
-	PTR connection, client;
-	CSH CSS_header;
-	HANDLE handle;
-	USHORT expanded_length, length;
-	TEXT local_expanded[256], pipe_xl[64], version[16], var_name[16];
-	SLONG status, len, itemnums[4], items[4], isc_level, var_type;
-	STATUS local_status[ISC_STATUS_LENGTH];
-
-/* Assume that we don't want a PIPE. */
-
-	user_status[0] = gds_arg_gds;
-	user_status[1] = gds__unavailable;
-	user_status[2] = 0;
-
-/* If the user has explicitly asked for a local attachment, skip the pipe */
-
-	if (!
-		(length =
-		 strncmp(expanded_filename, AM_SENTINEL, sizeof(AM_SENTINEL) - 1))
-|| !CSS_init(local_status, FALSE, 0)) {
-		if (!length) {
-			/* Re-expand the filename, minus the sentinel */
-
-			strcpy(local_expanded,
-				   expanded_filename + sizeof(AM_SENTINEL) - 1);
-			ISC_expand_filename(local_expanded, strlen(local_expanded),
-								expanded_filename);
-		}
-		return NULL;
-	}
-
-/* See if the user explicitly requested a pipe attachment! */
-
-	if (!strncmp(expanded_filename, PIPE_SENTINEL, sizeof(PIPE_SENTINEL) - 1)) {
-		/* Re-expand the filename, minus the sentinel */
-
-		expanded_filename += sizeof(PIPE_SENTINEL) - 1;
-		ISC_expand_filename(expanded_filename, strlen(expanded_filename),
-							local_expanded);
-		expanded_filename = local_expanded;
-	}
-	else {
-		/* Don't use a pipe for non-interactive attachments */
-
-		HPCIGETVAR("HPINTERACTIVE", &status, VAR_BOOL_VALUE, &isc_level,
-				   VAR_TYPE, &var_type);
-		if (!status && var_type == VAR_BOOL_VALUE && isc_level == 0)
-			return NULL;
-
-		/* Also don't use a pipe when variable ISC_LOCAL[ISC_UDCLVL] is true */
-
-		HPCIGETVAR("ISC_UDCLVL", &status, VAR_INT_VALUE, &isc_level, VAR_TYPE,
-				   &var_type);
-		if (!status && var_type == VAR_INT_VALUE) {
-			sprintf(var_name, "ISC_LOCAL%d", isc_level);
-			HPCIGETVAR(var_name, &status, VAR_BOOL_VALUE, &isc_level,
-					   VAR_TYPE, &var_type);
-			if (!status && var_type == VAR_BOOL_VALUE && isc_level == 1)
-				return NULL;
-		}
-	}
-
-	if (!file_length)
-		file_length = strlen(file_name);
-
-	expanded_length = strlen(expanded_filename);
-	client_flags |= PRB_client;
-	client = CSS_create_process(client_flags);
-
-/* Check to see if child process has already been created.
-   If so, make sure it is still alive. */
-
-	if (child_pin) {
-		GETPROCINFO(child_pin);
-		if (ccode() != CCE)
-			child_pin = 0;
-	}
-
-/* Create a child process if one doesn't yet exist. */
-
-	if (child_pin)
-		connection = CSS_connect(pipe_server);
-	else {
-		/* Create a program fid and an XL fid for the CREATEPROCESS call */
-
-		version[0] = 0;
-		HPCIGETVAR("ISC_UDCLVL", &status, VAR_INT_VALUE, &isc_level, VAR_TYPE,
-				   &var_type);
-		if (!status && var_type == VAR_INT_VALUE) {
-			sprintf(var_name, "ISC_VERS%d", isc_level);
-			HPCIGETVAR(var_name, &status, VAR_STR_VALUE, version, VAR_LENGTH,
-					   &len);
-			if (!status && len)
-				version[len] = 0;
-		}
-
-		sprintf(pipe_program, GDS_PIPE, version);
-
-		HPMYFILE(pipe_xl, &status, &len);
-		if (!status && len
-			&& !strncmp(pipe_xl, " GDSLIB.", sizeof(" GDSLIB.") - 1))
-			pipe_xl[len - 1] = 0;
-		else
-			pipe_xl[0] = pipe_xl[1] = 0;
-
-		/* Create an item list for CREATEPROCESS.  The XL items must be at the
-		   end because if we can't lookup the XL name we don't pass one in. */
-
-		itemnums[0] = CP_ACT;
-		items[0] = 0;
-		itemnums[1] = pipe_xl[0] ? CP_XL : ITM_END;
-		items[1] = (SLONG) & pipe_xl[1];
-		itemnums[2] = CP_XLLEN;
-		items[2] = strlen(items[1]);
-		itemnums[3] = ITM_END;
-
-		CREATEPROCESS(&status, &child_pin, pipe_program, itemnums, items);
-		if (ccode() == CCL) {
-			*user_status++ = gds_arg_gds;
-			*user_status++ = gds__sys_request;
-			*user_status++ = gds_arg_string;
-			*user_status++ = (STATUS) "CREATEPROCESS";
-			*user_status++ = gds_arg_string;
-			*user_status++ = (STATUS) pipe_program;
-			*user_status = gds_arg_end;
-			return NULL;
-		}
-
-		gds__register_cleanup(exit_handler, 0);
-
-		/* Wait for a message from our dear child. */
-
-		while (!(response = CSS_get_message((SLONG) 0, 0, 10))) {
-			GETPROCINFO(child_pin);
-			if (ccode() != CCE) {
-				child_pin = 0;
-				return NULL;
-			}
-		}
-
-		connection = response->msg_resp_header.msg_connection;
-		CSS_free_global(response);
-
-		/* Search for the child process. */
-
-		CSS_header = ACQUIRE;
-		pipe_server = 0;
-		pipe_util_cnct = 0;
-
-		QUE_LOOP(CSS_header->csh_processes, que) {
-			process = (PRB) ((UCHAR *) que - OFFSET(PRB, prb_processes));
-			if (client != REL_PTR(process) &&
-				process->prb_protocol_version == CSI_PROTOCOL_VERSION &&
-				process->prb_process_id == child_pin) {
-				pipe_server = REL_PTR(process);
-				break;
-			}
-		}
-
-		RELEASE;
-	}
-
-/* We've got a candidate server.  Now go back and talk to it. */
-
-	if (pipe_server) {
-		length =
-			sizeof(struct msg_att) + file_length + expanded_length +
-			dpb_length;
-		message = (MSG_ATT) CSS_alloc_message(type_msg, (int) length);
-		message->msg_att_header.msg_type = type;
-		message->msg_att_dpb_length = dpb_length;
-		message->msg_att_file_length = file_length;
-		message->msg_att_expanded_length = expanded_length;
-		MOVE(file_name, message->msg_att_data, file_length);
-		MOVE(expanded_filename, message->msg_att_data + file_length,
-			 expanded_length);
-		MOVE(dpb, message->msg_att_data + file_length + expanded_length,
-			 dpb_length);
-		if (CSS_put_message(connection, message, 0)
-			&& (response = CSS_get_message(connection, 0, 0))
-			&& !process_response(response, user_status, &handle, 0, 0, 0)) {
-			rdb = (RDB) ALLOC(type_rdb, sizeof(struct rdb));
-			rdb->rdb_handle = handle;
-			rdb->rdb_connection = connection;
-			rdb->rdb_server = pipe_server;
-
-			/* At all times, keep a utility connection open to the pipe server.
-			   This is for the sake of efficiency.  It will force the port to
-			   remain open. */
-
-			if (!pipe_util_cnct) {
-				pipe_util_cnct = CSS_connect(pipe_server);
-				message =
-					(MSG_ATT) CSS_alloc_message(type_msg,
-												sizeof(struct msg_util));
-				((MSG_UTIL) message)->msg_util_header.msg_type = MSG_util_cmd;
-				((MSG_UTIL) message)->msg_util_cmd = UTIL_noop;
-				if (CSS_put_message(pipe_util_cnct, message, 0) &&
-					(response = CSS_get_message(pipe_util_cnct, 0, 0)))
-					CSS_free_global(response);
-				else {
-					CSS_disconnect(pipe_util_cnct);
-					pipe_util_cnct = 0;
-				}
-			}
-
-			return rdb;
-		}
-		CSS_disconnect(connection);
-	}
-
-	return NULL;
-}
-#endif
-
 
 static RTR make_transaction( RDB rdb, HANDLE handle)
 {
@@ -2937,11 +2537,7 @@ USHORT buffer_length, UCHAR * buffer, USHORT * return_length)
 		*status++ = gds_arg_gds;
 		*status++ = gds__random;
 		*status++ = gds_arg_string;
-#ifndef PIPE_SERVER
 		*status++ = (STATUS) "connection lost to central server";
-#else
-		*status++ = (STATUS) "connection lost to pipe server";
-#endif
 		*status = gds_arg_end;
 		return user_status[1];
 	}
@@ -3162,296 +2758,3 @@ static STATUS send_blob(
 
 	return get_response(blob->rbl_rdb, message, user_status, 0, 0, 0, 0);
 }
-
-
-#ifdef PIPE_SERVER
-#ifdef VMS
-static void setup_creprc_info(
-							  SLONG ** privileges,
-							  ITMQ ** quotas, SLONG * priority)
-{
-/**************************************
- *
- *	s e t u p _ c r e p r c _ i n f o
- *
- **************************************
- *
- * Functional description
- *	Get the information relating to process quotas and
- *	privileges that is useful when creating a sub-process.
- *
- **************************************/
-	ITM items[16];
-	SLONG values[16];
-	SSHORT lengths[16];
-	ITMQ *quota;
-	int i;
-
-	for (i = FB_NELEM(items); i--;) {
-		items[i].itm_length = sizeof(SLONG);
-		items[i].itm_buffer = &values[i];
-		items[i].itm_return_length = &lengths[i];
-	}
-	items[10].itm_buffer = priority;
-	items[11].itm_length = sizeof(SLONG) * 2;
-	items[11].itm_buffer = *privileges;
-
-	items[0].itm_code = JPI$_ASTLM;
-	items[1].itm_code = JPI$_BIOLM;
-	items[2].itm_code = JPI$_BYTLM;
-	items[3].itm_code = JPI$_CPULIM;
-	items[4].itm_code = JPI$_DIOLM;
-	items[5].itm_code = JPI$_ENQLM;
-	items[6].itm_code = JPI$_DFWSCNT;
-	items[7].itm_code = JPI$_FILLM;
-	items[8].itm_code = JPI$_PGFLQUOTA;
-	items[9].itm_code = JPI$_PRCLM;
-	items[10].itm_code = JPI$_PRIB;
-	items[11].itm_code = JPI$_PROCPRIV;
-	items[12].itm_code = JPI$_TQLM;
-	items[13].itm_code = JPI$_WSQUOTA;
-	items[14].itm_code = JPI$_WSAUTHEXT;
-
-	items[15].itm_code = 0;
-	items[15].itm_length = 0;
-
-	if (sys$getjpiw(NULL, NULL, NULL, items, NULL, NULL, NULL) & 1) {
-		for (quota = *quotas, i = FB_NELEM(items); i--;)
-			if (lengths[i]) {
-				switch (items[i].itm_code) {
-				case JPI$_ASTLM:
-					quota->itmq_code = PQL$_ASTLM;
-					break;
-
-				case JPI$_BIOLM:
-					quota->itmq_code = PQL$_BIOLM;
-					break;
-
-				case JPI$_BYTLM:
-					quota->itmq_code = PQL$_BYTLM;
-					break;
-
-				case JPI$_CPULIM:
-					quota->itmq_code = PQL$_CPULM;
-					break;
-
-				case JPI$_DIOLM:
-					quota->itmq_code = PQL$_DIOLM;
-					break;
-
-				case JPI$_ENQLM:
-					quota->itmq_code = PQL$_ENQLM;
-					break;
-
-				case JPI$_DFWSCNT:
-					quota->itmq_code = PQL$_FILLM;
-					break;
-
-				case JPI$_FILLM:
-					quota->itmq_code = PQL$_PGFLQUOTA;
-					break;
-
-				case JPI$_PGFLQUOTA:
-					quota->itmq_code = PQL$_PRCLM;
-					break;
-
-				case JPI$_PRCLM:
-					quota->itmq_code = PQL$_TQELM;
-					break;
-
-				case JPI$_TQLM:
-					quota->itmq_code = PQL$_WSDEFAULT;
-					break;
-
-				case JPI$_WSQUOTA:
-					quota->itmq_code = PQL$_WSEXTENT;
-					break;
-
-				case JPI$_WSAUTHEXT:
-					quota->itmq_code = PQL$_WSQUOTA;
-					break;
-
-				default:
-					continue;
-				}
-				
-					(quota++)->itmq_value =
-					(lengths[i] == 4) ? values[i] : (SSHORT) (values[i]);
-			}
-			else {
-				if (items[i].itm_code == JPI$_PRIB)
-					*priority = 4;
-				else if (items[i].itm_code == JPI$_PROCPRIV)
-					*privileges = NULL;
-			}
-
-		quota->itmq_code = PQL$_LISTEND;
-	}
-	else {
-		*privileges = NULL;
-		*quotas = NULL;
-		*priority = 4;
-	}
-}
-#endif
-#endif
-
-
-#ifdef PIPE_SERVER
-#ifdef VMS
-static int spawn( STATUS * user_status, UCHAR * gbl_file, PTR * connection)
-{
-/**************************************
- *
- *	s p a w n
- *
- **************************************
- *
- * Functional description
- *	Spawn a sub-process using SYS$CREPRC.  Return > 0 if a
- *	process was created, -1 if create process failed.  Also
- *	return a pointer to the created process's connection block.
- *
- **************************************/
-	UCHAR output[128], error[128], *p, *q, process_name[16],
-		pipe_temp[MAXPATHLEN], pipe_file[MAXPATHLEN];
-	USHORT i, len;
-	ULONG status, pid, flags, item;
-	SLONG *privileges, procpriv[2], priority;
-	ITMQ quota_list[14], *quotas;
-	MSG_RESP response;
-	struct dsc$descriptor_s desc1, desc2, desc3, desc4;
-
-	privileges = procpriv;
-	quotas = quota_list;
-	setup_creprc_info(&privileges, &quotas, &priority);
-
-/* Tell the sub-process about the values of some important logical names. */
-
-	trans_logicals();
-
-	gds__prefix(pipe_temp, GDS_PIPE);
-	for (p = pipe_temp, q = p - 1; *p; p++)
-		if (*p == ':')
-			q = p;
-	if (q < pipe_temp)
-		strcpy(pipe_file, pipe_temp);
-	else {
-		len = ISC_expand_logical(pipe_temp, q - pipe_temp, pipe_file);
-		if (pipe_file[len - 1] != ']')
-			pipe_file[len++] = ':';
-		strcpy(&pipe_file[len], q + 1);
-	}
-
-	q = error - 1;
-	if (ISC_expand_logical_once("SYS$LOGIN", sizeof("SYS$LOGIN") - 1, error)) {
-		for (p = error; *p; p++)
-			if (*p == ':' || *p == ']')
-				q = p;
-		if (q < error)
-			*(q = p) = ':';
-	}
-	for (p = "GDS_PIPE.ERR"; *++q = *p++;);
-	len = q - error;
-
-	strcpy(output, error);
-	strcpy(&output[len - 3], "OUT");
-
-	ISC_make_desc(pipe_file, &desc1, 0);
-	ISC_make_desc(output, &desc2, len);
-	ISC_make_desc(error, &desc3, len);
-	i = 0;
-	do {
-		/* Loop until the sub-process is given a unique process name */
-
-		sprintf(process_name, "%s_%02x", gbl_file, i++);
-		ISC_make_desc(process_name, &desc4, 0);
-		status = sys$creprc(&pid,	/* pidadr */
-							&desc1,	/* image */
-							NULL,	/* input */
-							&desc2,	/* output */
-							&desc3,	/* error */
-							privileges,	/* prvadr */
-							quotas,	/* quota */
-							&desc4,	/* prcnam */
-							priority,	/* baspri */
-							NULL, NULL, NULL);
-	} while (status == SS$_DUPLNAM);
-
-	if (!(status & 1)) {
-		/* We failed.  Fill in the status vector. */
-
-		*user_status++ = gds_arg_gds;
-		*user_status++ = gds__sys_request;
-		*user_status++ = gds_arg_string;
-		*user_status++ = (STATUS) "sys$creprc";
-		*user_status++ = gds_arg_vms;
-		*user_status++ = status;
-		*user_status = gds_arg_end;
-		return -1;
-	}
-
-	while (!(response = CSS_get_message((SLONG) 0, 0, 10))) {
-		item = JPI$_PID;
-		if (lib$getjpi(&item, &pid, NULL, NULL, NULL, NULL) != SS$_NORMAL)
-			return -1;
-	}
-
-	*connection = response->msg_resp_header.msg_connection;
-	CSS_free_global(response);
-
-	return pid;
-}
-#endif
-#endif
-
-
-#ifdef PIPE_SERVER
-#ifdef VMS
-static void trans_logicals(void)
-{
-/**************************************
- *
- *	t r a n s _ l o g i c a l s
- *
- **************************************
- *
- * Functional description
- *	Translate some logicals and write their values
- *	to the job logical table.
- *
- **************************************/
-	UCHAR **logicals, value[256], job_logical[32], buffer[256];
-	int attr;
-	SSHORT len;
-	ITM items[2];
-	struct dsc$descriptor_s tab_desc, log_desc;
-
-	for (logicals = inherit_logicals; *logicals; logicals++) {
-		items[0].itm_code = LNM$_STRING;
-		items[0].itm_buffer = value;
-		items[0].itm_length = sizeof(value);
-		items[0].itm_return_length = &len;
-		items[1].itm_length = 0;
-		items[1].itm_code = 0;
-
-		attr = LNM$M_CASE_BLIND;
-
-		ISC_make_desc(*logicals, &log_desc, 0);
-		ISC_make_desc("LNM$PROCESS", &tab_desc, sizeof("LNM$PROCESS") - 1);
-		if (!(sys$trnlnm(&attr, &tab_desc, &log_desc, NULL, items) & 1))
-			continue;
-
-		/* We have a value to set.  Do so in the JOB table. */
-
-		items[0].itm_length = len;
-
-		sprintf(job_logical, "GDS_PIPE_%s", *logicals);
-		ISC_make_desc(job_logical, &log_desc, 0);
-		ISC_make_desc("LNM$JOB", &tab_desc, sizeof("LNM$JOB") - 1);
-
-		sys$crelnm(NULL, &tab_desc, &log_desc, NULL, items);
-	}
-}
-#endif
-#endif

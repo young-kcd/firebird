@@ -47,9 +47,6 @@
 
 #ifdef VMS
 #include lckdef
-#ifdef PIPE_SERVER
-#include rms
-#endif
 #define SYS_ARG		gds_arg_vms
 
 static LKSB CSS_lksb;
@@ -88,12 +85,6 @@ static void release_semaphore(USHORT);
 static void remove_que(SRQ *);
 static void set_timer(USHORT, PRB);
 
-#ifdef PIPE_SERVER
-#ifdef VMS
-static void shutdown_section(void);
-#endif
-#endif	// PIPE_SERVER
-
 #ifdef VMS
 static void timeout_ast(PRB);
 #endif
@@ -101,13 +92,6 @@ static void timeout_ast(PRB);
 static USHORT acquire_count, resignal;
 static CSH CSS_header, CSS_region;
 static SLONG CSS_length, CSS_process;
-
-#ifdef PIPE_SERVER
-#ifdef VMS
-static SH_MEM_T shmem_data;
-#endif
-#endif
-
 
 CSH CSS_acquire(void)
 {
@@ -490,77 +474,6 @@ CSV_MSG CSS_get_message(PTR partner, CSV_MSG old_message, SSHORT timeout)
 	return message;
 }
 
-
-#ifdef PIPE_SERVER
-CSH CSS_init(STATUS * status_vector, USHORT server_flag, SSHORT id)
-{
-/**************************************
- *
- *	C S S _ i n i t		( p i p e _ s e r v e r )
- *
- **************************************
- *
- * Functional description
- *	Initialize for access to shared global region.  Return
- *	address of header if region exits, otherwise return NULL.
- *
- **************************************/
-	TEXT *filename, csi_file[128], *p;
-	int (*init_routine) ();
-	SH_MEM_T shmem_data;
-	SLONG desc[2];
-	STATUS status;
-
-/* If we're already initialized, there's nothing to do */
-
-	if (CSS_region)
-		return CSS_region;
-
-	init_routine = server_flag ? init : NULL;
-
-	if (!(filename = getenv("CSS_DEBUG")))
-		filename = CSI_FILE;
-
-#ifdef VMS
-	shmem_data->sh_mem_system_flag = FALSE;
-#endif
-#ifdef UNIX
-	shmem_data->sh_mem_semaphores = MAX_PROCESSES;
-#endif
-	if (!(CSS_header = ISC_map_file(status_vector,
-									filename, init_routine, 0,
-									CSI_DEFAULT_SIZE,
-									&shmem_data))) return NULL;
-
-	CSS_length = shmem_data.sh_mem_length_mapped;
-
-#ifdef VMS
-/* Strip off any device prefix. */
-
-	for (p = filename; *p; p++)
-		if (*p == ':' || *p == ']')
-			filename = p + 1;
-	ISC_make_desc(filename, desc, 0);
-
-	status = sys$enqw(EVENT_FLAG, LCK$K_NLMODE, &CSS_lksb, LCK$M_SYSTEM | LCK$M_NODLCKWT, &desc, NULL,	/* Lock parent (not used) */
-					  0,		/* AST routine when granted */
-					  0, 0, NULL, NULL);
-
-	if (!(status & 1) || !((status = CSS_lksb.lksb_status) & 1)) {
-		error(status_vector, "sys$enqw", status);
-		return NULL;
-	}
-#endif
-
-	CSS_region = CSS_header;
-	gds__register_cleanup(exit_handler, 0);
-
-	return CSS_header;
-}
-#endif
-
-
-#ifndef PIPE_SERVER
 CSH CSS_init(STATUS * status_vector, USHORT server_flag)
 {
 /**************************************
@@ -626,8 +539,6 @@ CSH CSS_init(STATUS * status_vector, USHORT server_flag)
 
 	return CSS_header;
 }
-#endif
-
 
 void CSS_probe_processes(void)
 {
@@ -1193,12 +1104,6 @@ static void exit_handler( void *arg)
 	while (acquire_count > 0)
 		RELEASE;
 
-#ifdef PIPE_SERVER
-#ifdef VMS
-	shutdown_section();
-#endif
-#endif
-
 #ifdef UNIX
 #ifndef MAP_TYPE
 	shmdt(CSS_region);
@@ -1513,45 +1418,6 @@ static void set_timer( USHORT timeout, PRB process)
 }
 #endif
 
-
-#ifdef PIPE_SERVER
-#ifdef VMS
-static void shutdown_section(void)
-{
-/**************************************
- *
- *	s h u t d o w n _ s e c t i o n
- *
- **************************************
- *
- * Functional description
- *	Remove the mapped file.
- *
- **************************************/
-	struct FAB fab;
-
-/* Delete the shared address space and deassign the file. */
-
-	sys$deltva(shmem_data->sh_mem_retadr, 0, 0);
-	sys$dassgn((USHORT) shmem_data->sh_mem_channel);
-
-/* Now try to delete the file by opening it with the delete flag set. */
-
-	fab = cc$rms_fab;
-	fab.fab$l_fna = shmem_data->sh_mem_filename
-		fab.fab$b_fns = strlen(shmem_data->sh_mem_filename);
-	fab.fab$l_fop = FAB$M_DLT;
-	fab.fab$b_fac = FAB$M_UPD | FAB$M_PUT;
-	fab.fab$b_shr = FAB$M_SHRGET | FAB$M_SHRPUT | FAB$M_UPI;
-	fab.fab$b_rfm = FAB$C_UDF;
-
-	if (sys$open(&fab) & 1)
-		sys$dassgn(fab.fab$l_stv);
-}
-#endif
-#endif
-
-
 #ifdef VMS
 static void timeout_ast( PRB process)
 {
@@ -1574,4 +1440,3 @@ static void timeout_ast( PRB process)
 	RELEASE;
 }
 #endif
-

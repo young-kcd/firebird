@@ -618,22 +618,9 @@ static void open_log(TEXT * file_name, SSHORT file_length, SCHAR * mode)
  **************************************/
 	DBB dbb;
 	LOG log;
-#ifndef STACK_REDUCTION
 	SCHAR *log_name, buffer[MAXPATHLEN];
-#else
-	SCHAR *log_name, *buffer;
-#endif /* !STACK_REDUCTION */
 	void *log_file;
 	int mask;
-
-#ifdef STACK_REDUCTION
-	assert(MAXPATHLEN <= BUFFER_MEDIUM);
-	buffer = (SCHAR *) gds__alloc((SLONG) BUFFER_MEDIUM);
-	if (!buffer) {				/* NOMEM: */
-		error("can't open log file (out of memory)");
-		return;
-	}
-#endif /* STACK_REDUCTION */
 
 	dbb = GET_DBB;
 
@@ -658,9 +645,5 @@ static void open_log(TEXT * file_name, SSHORT file_length, SCHAR * mode)
 		log->log_string = FB_NEW_RPT(*dbb->dbb_permanent, LOG_BUFFER_LENGTH) str();
 		log->log_ptr = log->log_buffer = log->log_string->str_data;
 	}
-#ifdef STACK_REDUCTION
-	if (buffer)
-		gds__free((SLONG *) buffer);
-#endif /* STACK_REDUCTION */
 }
 #endif /* REPLAY_OSRI_API_CALLS_SUBSYSTEM */

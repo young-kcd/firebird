@@ -1040,7 +1040,6 @@ int API_ROUTINE gds__get_client_minor_version()
 }
 
 
-#ifndef PIPE_CLIENT
 void API_ROUTINE gds__map_blobs(int *handle1, int *handle2)
 {
 /**************************************
@@ -1069,7 +1068,6 @@ void API_ROUTINE gds__map_blobs(int *handle1, int *handle2)
 #endif
 #endif
 }
-#endif
 
 
 #if !(defined REQUESTER)

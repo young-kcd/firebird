@@ -114,18 +114,7 @@ extern "C" {
 				}
 #define RESTORE_THREAD_DATA     THD_restore_specific()
 
-#ifdef STACK_REDUCTION
-#define FREE_MEM_RETURN		{\
-				if (buffer)\
-				    {\
-				    gds__free ((SLONG *)buffer);\
-				    buffer = (TEXT*) NULL;\
-				    }\
-				return;\
-				}
-#else
 #define FREE_MEM_RETURN		return
-#endif
 
 static void		cleanup(void*);
 static void		cleanup_database(FRBRD**, SLONG);
@@ -1772,18 +1761,10 @@ void DSQL_pretty(DSQL_NOD node, int column)
 	STR string;
 	VAR variable;
 
-#ifdef STACK_REDUCTION
-	TEXT* buffer;
-#else
 	TEXT buffer[1024];
-#endif
 
 	TEXT* verb;
 	TEXT s[64];
-
-#ifdef STACK_REDUCTION
-	buffer = (TEXT *) gds__alloc(BUFFER_LARGE);
-#endif
 
 	TEXT* p = buffer;
 	p += sprintf(p, "%.7X ", node);

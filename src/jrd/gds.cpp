@@ -116,9 +116,7 @@
 #endif
 
 #ifdef SOLARIS_MT
-#ifndef PIPE_LIBRARY
 #define V4_THREADING
-#endif
 #endif
 
 #ifdef SUPERSERVER
@@ -1866,11 +1864,7 @@ void API_ROUTINE gds__log(TEXT * text, ...)
 	IB_FILE *file;
 	int oldmask;
 	time_t now;
-#if defined(STACK_EFFICIENT) && !defined(DEV_BUILD) && !defined(DEBUG_GDS_ALLOC)
-	TEXT *name = (TEXT *) gds__alloc((SLONG) (sizeof(TEXT) * MAXPATHLEN));
-#else /* STACK_EFFICIENT */
 	TEXT name[MAXPATHLEN];
-#endif /* STACK_EFFICIENT */
 
 #ifdef HAVE_GETTIMEOFDAY
 	{
@@ -1901,10 +1895,6 @@ void API_ROUTINE gds__log(TEXT * text, ...)
 	}
 
 	umask(oldmask);
-
-#if defined(STACK_EFFICIENT) && !defined(DEV_BUILD) && !defined(DEBUG_GDS_ALLOC)
-	gds__free((SLONG *) name);
-#endif /* STACK_EFFICIENT */
 
 }
 
@@ -2265,19 +2255,11 @@ TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
  *	as fits in callers buffer.
  *
  **************************************/
-#ifdef STACK_EFFICIENT
-	TEXT *formatted =
-		(TEXT *) gds__alloc((SLONG) (sizeof(TEXT) * BUFFER_MEDIUM));
-#else /* STACK_EFFICIENT */
 	TEXT formatted[512];
-#endif /* STACK_EFFICIENT */
 
 	gds__msg_format(handle, facility, number, sizeof(TEXT) * BUFFER_MEDIUM,
 					formatted, arg1, arg2, arg3, arg4, arg5);
 	gds__put_error(formatted);
-#ifdef STACK_EFFICIENT
-	gds__free((SLONG *) formatted);
-#endif /* STACK_EFFICIENT */
 }
 
 

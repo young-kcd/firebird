@@ -301,16 +301,10 @@ RSB OPT_compile(TDBB tdbb,
 	JRD_REL relation;
 	SLONG idx_size, conjunct_count;
 	SSHORT i, stream;
-#ifndef STACK_REDUCTION
 	UCHAR *p, *q, streams[MAX_STREAMS], beds[MAX_STREAMS],
 		*k, *b_end, *k_end, key_streams[MAX_STREAMS],
 		local_streams[MAX_STREAMS], outer_streams[MAX_STREAMS],
 		sub_streams[MAX_STREAMS]
-#else
-	UCHAR *local_streams, *outer_streams, *sub_streams;
-	UCHAR *p, *q, *streams, *beds, *k, *b_end, *k_end, *key_streams;
-#endif
-
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(rse, type_nod);
 	DEV_BLKCHK(parent_stack, type_lls);
@@ -338,51 +332,7 @@ RSB OPT_compile(TDBB tdbb,
 	idx = (IDX *) NULL;
 	idx_size = 0;
 
-#ifdef STACK_REDUCTION
-
-/* allocate local memory, make a block allocation for similar items */
-
-	streams =
-		(UCHAR *) ALLOC_LIB_MEMORY((DWORD) (sizeof(UCHAR) * MAX_STREAMS));
-	beds = (UCHAR *) ALLOC_LIB_MEMORY((DWORD) (sizeof(UCHAR) * MAX_STREAMS));
-	key_streams =
-		(UCHAR *) ALLOC_LIB_MEMORY((DWORD) (sizeof(UCHAR) * MAX_STREAMS));
-	local_streams =
-		(UCHAR *) ALLOC_LIB_MEMORY((DWORD) (sizeof(UCHAR) * MAX_STREAMS));
-	outer_streams =
-		(UCHAR *) ALLOC_LIB_MEMORY((DWORD) (sizeof(UCHAR) * MAX_STREAMS));
-	sub_streams =
-		(UCHAR *) ALLOC_LIB_MEMORY((DWORD) (sizeof(UCHAR) * MAX_STREAMS));
-	opt_ = (OPT) ALLOC_LIB_MEMORY((DWORD) (sizeof(Opt)));
-	if (streams == NULL || beds == NULL || key_streams == NULL ||
-		local_streams == NULL || opt_ == NULL) {
-		if (local_streams != NULL)
-			FREE_LIB_MEMORY(local_streams);
-		if (key_streams != NULL)
-			FREE_LIB_MEMORY(key_streams);
-		if (beds != NULL)
-			FREE_LIB_MEMORY(beds);
-		if (streams != NULL)
-			FREE_LIB_MEMORY(streams);
-		if (outer_streams != NULL)
-			FREE_LIB_MEMORY(outer_streams);
-		if (sub_streams != NULL)
-			FREE_LIB_MEMORY(sub_streams);
-		if (opt_ != NULL)
-			FREE_LIB_MEMORY(opt_);
-		ERR_post(isc_virmemexh, 0);
-	}
-
-/* clear block and set block type */
-
-	MOVE_CLEAR(opt_, sizeof(Opt));
-	((BLK) opt_)->blk_type = type_opt;
-
-#else
-
 	opt_ = FB_NEW(*dbb->dbb_permanent) Opt();
-
-#endif
 
 	try {
 
@@ -747,19 +697,7 @@ RSB OPT_compile(TDBB tdbb,
 
 	DEBUG
 /* free up memory for optimizer structures */
-#ifdef STACK_REDUCTION
-	FREE_LIB_MEMORY(sub_streams);
-	FREE_LIB_MEMORY(outer_streams);
-	FREE_LIB_MEMORY(local_streams);
-	FREE_LIB_MEMORY(key_streams);
-	FREE_LIB_MEMORY(beds);
-	FREE_LIB_MEMORY(streams);
-	FREE_LIB_MEMORY(opt_);
-
-#else
-		delete opt_;
-
-#endif
+	delete opt_;
 
 #ifdef OPT_DEBUG
 	if (opt_debug_file) {
@@ -777,17 +715,7 @@ RSB OPT_compile(TDBB tdbb,
 				delete csb->csb_rpt[stream].csb_idx_allocation;
 			csb->csb_rpt[stream].csb_idx_allocation = 0;
 		}
-#ifdef STACK_REDUCTION
-		FREE_LIB_MEMORY(sub_streams);
-		FREE_LIB_MEMORY(outer_streams);
-		FREE_LIB_MEMORY(local_streams);
-		FREE_LIB_MEMORY(key_streams);
-		FREE_LIB_MEMORY(beds);
-		FREE_LIB_MEMORY(streams);
-		FREE_LIB_MEMORY(opt_);
-#else
 		delete opt_;
-#endif
 		ERR_punt();
 	}
 	

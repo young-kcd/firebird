@@ -37,7 +37,7 @@
 #include "../jrd/thd.h"
 #include "../jrd/isc.h"
 #include "../jrd/license.h"
-#include "../jrd/time.h"
+#include "../jrd/jrd_time.h"
 #include "../remote/merge_proto.h"
 #include "../remote/parse_proto.h"
 #include "../remote/remot_proto.h"
@@ -2301,9 +2301,7 @@ STATUS port::get_segment(P_SGMT* segment, PACKET* send)
 	USHORT length, buffer_length;
 	UCHAR *p;
 	STATUS state, status, status_vector[ISC_STATUS_LENGTH];
-#ifndef STACK_EFFICIENT
 	UCHAR temp_buffer[BLOB_LENGTH];
-#endif
 
 	CHECK_HANDLE_MEMBER(blob,
 						RBL,
@@ -2312,11 +2310,9 @@ STATUS port::get_segment(P_SGMT* segment, PACKET* send)
 						isc_bad_segstr_handle);
 
 	buffer_length = segment->p_sgmt_length;
-#ifndef STACK_EFFICIENT
 	if (buffer_length <= sizeof(temp_buffer))
 		buffer = temp_buffer;
 	else
-#endif
 	{
 		if (buffer_length > blob->rbl_buffer_length) {
 			if (blob->rbl_buffer != blob->rbl_data) {
@@ -2436,9 +2432,7 @@ STATUS port::get_slice(P_SLC * stuff, PACKET* send)
 	UCHAR *slice;
 	P_SLR *response;
 	STATUS status, status_vector[ISC_STATUS_LENGTH];
-#ifndef STACK_EFFICIENT
 	UCHAR temp_buffer[4096];
-#endif
 
 	rdb = this->port_context;
 	CHECK_HANDLE_MEMBER(transaction,
@@ -2450,11 +2444,9 @@ STATUS port::get_slice(P_SLC * stuff, PACKET* send)
 	if (!stuff->p_slc_length)
 		slice = 0;
 	else {
-#ifndef STACK_EFFICIENT
 		if (stuff->p_slc_length <= sizeof(temp_buffer))
 			slice = temp_buffer;
 		else
-#endif
 			slice = ALLR_alloc((SLONG) stuff->p_slc_length);
 	}
 
@@ -2497,9 +2489,7 @@ STATUS port::get_slice(P_SLC * stuff, PACKET* send)
 #ifdef DEBUG_REMOTE_MEMORY
 		ib_printf("get_slice(server)         free buffer      %x\n", slice);
 #endif
-#ifndef STACK_EFFICIENT
 		if (slice != temp_buffer)
-#endif
 			ALLR_free(slice);
 	}
 

@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.57 2003-02-13 15:33:50 brodsom Exp $
+$Id: common.h,v 1.58 2003-02-14 02:24:44 brodsom Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -313,13 +313,11 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 
 #ifdef SOLARIS
 
-#ifndef PIPE_IS_SHRLIB
 /* This is NOT defined when building the special shared-pipe library
  * which customers can use to avoid the problems with signals & threads
  * in Solaris
  */
 #define SOLARIS_MT	1
-#endif
 
 /*  Define the following only on platforms whose standard I/O
  *  implementation is so weak that we wouldn't be able to fopen

@@ -290,12 +290,8 @@ int ISC_analyze_nfs(TEXT * expanded_filename, TEXT * node_name)
  **************************************/
 
 
-#ifdef STACK_EFFICIENT
-	TEXT *mnt_buffer, *remote_filename, *max_node, *max_path, *expand_mount;
-#else /* STACK_EFFICIENT */
 	TEXT mnt_buffer[BUFFER_LARGE], remote_filename[MAXPATHLEN],
 		max_node[MAXHOSTLEN], max_path[MAXPATHLEN], expand_mount[MAXPATHLEN];
-#endif /* STACK_EFFICIENT */
 
 	MNT mount;
 	TEXT *p, *q, *temp;
@@ -311,18 +307,6 @@ int ISC_analyze_nfs(TEXT * expanded_filename, TEXT * node_name)
         return FALSE;
     }
 
-#ifdef STACK_EFFICIENT
-/* allocate all strings in one block */
-	mnt_buffer = (TEXT *)
-		gds__alloc((SLONG)
-				   (sizeof(TEXT) *
-					(BUFFER_LARGE + 3 * MAXPATHLEN + MAXHOSTLEN)));
-	remote_filename = mnt_buffer + BUFFER_LARGE;
-	max_node = remote_filename + MAXPATHLEN;
-	max_path = max_node + MAXHOSTLEN;
-	expand_mount = max_path + MAXPATHLEN;
-#endif /* STACK_EFFICIENT */
-
 	len = 0;
 	*max_path = 0;
 	flag = FALSE;
@@ -336,9 +320,6 @@ int ISC_analyze_nfs(TEXT * expanded_filename, TEXT * node_name)
 	while (get_mounts(&mount, mnt_buffer, &temp, &context))
 #else
 	if (!(mtab = MTAB_OPEN(MTAB, "r"))) {
-#ifdef STACK_EFFICIENT
-		gds__free((SLONG *) mnt_buffer);
-#endif /* STACK_EFFICIENT */
 		return flag;
 	}
 	while (get_mounts(&mount, mnt_buffer, mtab))
@@ -425,10 +406,6 @@ int ISC_analyze_nfs(TEXT * expanded_filename, TEXT * node_name)
 	if (temp)
 		gds__free(temp);
 #endif
-
-#ifdef STACK_EFFICIENT
-	gds__free((SLONG *) mnt_buffer);
-#endif /* STACK_EFFICIENT */
 
 	return flag;
 }
@@ -583,25 +560,14 @@ BOOLEAN DLL_EXPORT ISC_check_if_remote(TEXT * file_name,
  *	check for an explicit node name.
  *
  **************************************/
-#ifdef STACK_EFFICIENT
-	TEXT *temp_name;
-#else /* STACK_EFFICIENT */
 	TEXT temp_name[MAXPATHLEN];
-#endif /* STACK_EFFICIENT */
 	TEXT host_name[64];
-
-#ifdef STACK_EFFICIENT
-	temp_name = (TEXT *) gds__alloc((SLONG) (sizeof(TEXT) * MAXPATHLEN));
-#endif /* STACK_EFFICIENT */
 
 	strcpy(temp_name, file_name);
 
 /* Always check for an explicit TCP node name */
 
 	if (ISC_analyze_tcp(temp_name, host_name)) {
-#ifdef STACK_EFFICIENT
-		gds__free((SLONG *) temp_name);
-#endif /* STACK_EFFICIENT */
 
 		return TRUE;
 	}
@@ -610,10 +576,6 @@ BOOLEAN DLL_EXPORT ISC_check_if_remote(TEXT * file_name,
 		/* Check for a file on an NFS mounted device */
 
 		if (ISC_analyze_nfs(temp_name, host_name)) {
-#ifdef STACK_EFFICIENT
-			gds__free((SLONG *) temp_name);
-#endif /* STACK_EFFICIENT */
-
 			return TRUE;
 		}
 	}
@@ -623,20 +585,12 @@ BOOLEAN DLL_EXPORT ISC_check_if_remote(TEXT * file_name,
 /* Check for an explicit named pipe node name */
 
 	if (ISC_analyze_pclan(temp_name, host_name)) {
-#ifdef STACK_EFFICIENT
-		gds__free((SLONG *) temp_name);
-#endif /* STACK_EFFICIENT */
 
 		return TRUE;
 	}
 
 	if (implicit_flag) {
-#ifdef STACK_EFFICIENT
-		TEXT *temp_name2;
-		temp_name2 = (TEXT *) gds__alloc((SLONG) (sizeof(TEXT) * MAXPATHLEN));
-#else /* STACK_EFFICIENT */
 		TEXT temp_name2[MAXPATHLEN];
-#endif /* STACK_EFFICIENT */
 
 		/* Check for a file on a shared drive.  First try to expand
 		   the path.  Then check the expanded path for a TCP or
@@ -645,24 +599,11 @@ BOOLEAN DLL_EXPORT ISC_check_if_remote(TEXT * file_name,
 		ISC_expand_share(temp_name, temp_name2);
 		if (ISC_analyze_tcp(temp_name2, host_name) ||
 			ISC_analyze_pclan(temp_name2, host_name)) {
-#ifdef STACK_EFFICIENT
-			gds__free((SLONG *) temp_name2);
-			gds__free((SLONG *) temp_name);
-#endif /* STACK_EFFICIENT */
-
 			return TRUE;
 		}
 
-#ifdef STACK_EFFICIENT
-		gds__free((SLONG *) temp_name2);
-#endif /* STACK_EFFICIENT */
-
 	}
 #endif	// WIN_NT
-
-#ifdef STACK_EFFICIENT
-	gds__free((SLONG *) temp_name);
-#endif /* STACK_EFFICIENT */
 
 	return FALSE;
 }
@@ -1166,19 +1107,10 @@ static int expand_filename2(TEXT * from_buff, USHORT length, TEXT * to_buff)
  *	shows up, stop translating.
  *
  **************************************/
-#ifdef STACK_EFFICIENT
-	TEXT *temp, *temp2;
-#else /* STACK_EFFICIENT */
 	TEXT temp[MAXPATHLEN], temp2[MAXPATHLEN];
-#endif /* STACK_EFFICIENT */
 	TEXT *from, *to, *p, *segment;
 	SSHORT n;
 	struct passwd *passwd;
-
-#ifdef STACK_EFFICIENT
-	temp = (TEXT *) gds__alloc((SLONG) (sizeof(TEXT) * 2 * MAXPATHLEN));
-	temp2 = temp + MAXPATHLEN;
-#endif /* STACK_EFFICIENT */
 
 	if (length) {
 		strncpy(temp2, from_buff, length);
@@ -1194,9 +1126,6 @@ static int expand_filename2(TEXT * from_buff, USHORT length, TEXT * to_buff)
 
 	if (strchr(from, INET_FLAG)) {
 		strcpy(to, from);
-#ifdef STACK_EFFICIENT
-		gds__free((SLONG *) temp);
-#endif /* STACK_EFFICIENT */
 		return strlen(to);
 	}
 
@@ -1286,9 +1215,6 @@ static int expand_filename2(TEXT * from_buff, USHORT length, TEXT * to_buff)
 
 		if (strchr(temp, INET_FLAG)) {
 			strcpy(to_buff, temp);
-#ifdef STACK_EFFICIENT
-			gds__free((SLONG *) temp);
-#endif /* STACK_EFFICIENT */
 			return n;
 		}
 
@@ -1308,10 +1234,6 @@ static int expand_filename2(TEXT * from_buff, USHORT length, TEXT * to_buff)
 	}
 
 	*to = 0;
-
-#ifdef STACK_EFFICIENT
-	gds__free((SLONG *) temp);
-#endif /* STACK_EFFICIENT */
 
 	return to - to_buff;
 }
@@ -1339,11 +1261,7 @@ static void expand_share_name(TEXT * share_name)
  *
  **************************************/
 
-#ifdef STACK_EFFICIENT
-	TEXT *data_buf, *workspace;
-#else /* STACK_EFFICIENT */
 	TEXT data_buf[MAXPATHLEN], workspace[MAXPATHLEN];
-#endif /* STACK_EFFICIENT */
 	TEXT *p, *q, *data;
 	HKEY hkey;
 	DWORD ret, d_size, type_code;
@@ -1354,27 +1272,17 @@ static void expand_share_name(TEXT * share_name)
 		return;
 	}
 
-#ifdef STACK_EFFICIENT
-	data_buf = (TEXT *) gds__alloc((SLONG) (sizeof(TEXT) * 2 * MAXPATHLEN));
-	workspace = data_buf + MAXPATHLEN;
-#endif /* STACK_EFFICIENT */
 	strcpy(workspace, p);
 	for (q = workspace; *p && *p != '!'; p++, q++);
 
 	*q = '\0';
 	if (*p++ != '!' || *p++ != '\\') {
-#ifdef STACK_EFFICIENT
-		gds__free((SLONG *) data_buf);
-#endif /* STACK_EFFICIENT */
 		return;
 	}
 
 	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE,
 					 "SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Shares",
 					 0, KEY_QUERY_VALUE, &hkey) != ERROR_SUCCESS) {
-#ifdef STACK_EFFICIENT
-		gds__free((SLONG *) data_buf);
-#endif /* STACK_EFFICIENT */
 		return;
 	}
 
@@ -1389,9 +1297,6 @@ static void expand_share_name(TEXT * share_name)
 		data = (TEXT *) gds__alloc((SLONG) d_size);
 		/* FREE: unknown */
 		if (!data) {			/* NOMEM: */
-#ifdef STACK_EFFICIENT
-			gds__free((SLONG *) data_buf);
-#endif /* STACK_EFFICIENT */
 			RegCloseKey(hkey);
 			return;				/* Error not really handled */
 		}
@@ -1425,10 +1330,6 @@ static void expand_share_name(TEXT * share_name)
 	if (data != data_buf) {
 		gds__free(data);
 	}
-
-#ifdef STACK_EFFICIENT
-	gds__free((SLONG *) data_buf);
-#endif /* STACK_EFFICIENT */
 
 	RegCloseKey(hkey);
 }

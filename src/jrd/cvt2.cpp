@@ -539,12 +539,7 @@ SSHORT CVT2_blob_compare(DSC * arg1, DSC * arg2, FPTR_VOID err)
 	if (arg2->dsc_dtype == dtype_blob)
 	{
 		BLB	blob1, blob2;
-#ifndef STACK_REDUCTION
 		UCHAR buffer1[BUFFER_LARGE], buffer2[BUFFER_LARGE];
-#else
-		STR	temp_str = 0;
-		UCHAR *buffer1 = 0, *buffer2 = 0;
-#endif
 	
 	    /* Same blob id address? */
 		if (arg1->dsc_address == arg2->dsc_address)
@@ -613,13 +608,6 @@ SSHORT CVT2_blob_compare(DSC * arg1, DSC * arg2, FPTR_VOID err)
 				reinterpret_cast < pfn_cvt_private_cludge2 >
 					(err) (gds_wish_list, gds_arg_gds, gds_datnotsup, 0);
 	    }
-
-#ifdef STACK_REDUCTION
-		/* do a block allocate */
-		temp_str = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(UCHAR) * (2 * BUFFER_LARGE)) str();
-		buffer1 = temp_str->str_data;
-	    buffer2 = buffer1 + BUFFER_LARGE;
-#endif
 
 		while (!(blob1->blb_flags & BLB_eof) && !(blob2->blb_flags & BLB_eof))
 	    {
@@ -715,11 +703,6 @@ SSHORT CVT2_blob_compare(DSC * arg1, DSC * arg2, FPTR_VOID err)
 		}
 		BLB_close(tdbb, blob1);
 		BLB_close(tdbb, blob2);
-#ifdef STACK_REDUCTION
-		/*  do a block deallocation of local variables */
-		if (temp_str)
-			delete temp_str;
-#endif
 	}
 	/* We do not accept arrays for now. Maybe ADS in the future. */
 	else if (arg2->dsc_dtype == dtype_array)
@@ -729,11 +712,7 @@ SSHORT CVT2_blob_compare(DSC * arg1, DSC * arg2, FPTR_VOID err)
 	else
 	{
 		BLB blob1;
-#ifndef STACK_REDUCTION
 		UCHAR buffer1[BUFFER_LARGE];
-#else
-		UCHAR *buffer1 = 0;
-#endif
 		STR temp_str = 0;
 		UCHAR *dbuf = 0;
 	
@@ -781,11 +760,6 @@ SSHORT CVT2_blob_compare(DSC * arg1, DSC * arg2, FPTR_VOID err)
 			reinterpret_cast < pfn_cvt_private_cludge2 >
 			 (err) (gds_wish_list, gds_arg_gds, gds_datnotsup, 0);
 
-#ifdef STACK_REDUCTION
-		/* do a block allocate */
-		temp_str = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(UCHAR) * arg2->dsc_length) str();
-	    dbuf = temp_str->str_data;
-#else
 		if (arg2->dsc_length > BUFFER_LARGE)
 		{
 			temp_str = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(UCHAR) * arg2->dsc_length) str();
@@ -793,7 +767,6 @@ SSHORT CVT2_blob_compare(DSC * arg1, DSC * arg2, FPTR_VOID err)
 	    }
 		else
 			dbuf = buffer1;
-#endif
 
 		desc1.dsc_address = dbuf;
 		blob1 = BLB_open(tdbb, tdbb->tdbb_request->req_transaction, (BID) arg1->dsc_address);

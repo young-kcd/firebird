@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.28 2003-02-13 17:28:38 tamlin Exp $ 
+  * $Id: evl.cpp,v 1.29 2003-02-14 02:24:44 brodsom Exp $ 
  */
 
 /*
@@ -117,11 +117,7 @@
 
 #define TEMP_LENGTH     128
 
-#ifdef STACK_REDUCTION
-#define TEMP_SIZE(x)	TEMP_LENGTH
-#else
 #define TEMP_SIZE(x)	sizeof (x)
-#endif
 
 #define MAX_INT64_LIMIT	(MAX_SINT64 / 10)
 #define MIN_INT64_LIMIT	(MIN_SINT64 / 10)
@@ -4522,13 +4518,8 @@ static SSHORT sleuth(TDBB tdbb, JRD_NOD node, DSC * desc1, DSC * desc2)
  **************************************/
 	BLB blob;
 	DSC *desc3;
-#ifndef STACK_REDUCTION
 	UCHAR *p1, *p2, temp1[TEMP_LENGTH], temp2[TEMP_LENGTH],
 		buffer[BUFFER_LARGE], control[BUFFER_SMALL];
-#else
-	STR temp_str;
-	UCHAR *p1, *p2, *temp1, *temp2, *buffer, *control;
-#endif
 	SSHORT l1, l2;
 	USHORT ttype;
 	STR data_str = NULL, match_str = NULL, sleuth_str = NULL;
@@ -4537,18 +4528,6 @@ static SSHORT sleuth(TDBB tdbb, JRD_NOD node, DSC * desc1, DSC * desc2)
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(node, type_nod);
-
-#ifdef STACK_REDUCTION
-/* do a block allocate */
-	temp_str = FB_NEW_RPT(*tdbb->tdbb_default, ((SLONG)
-										(sizeof(UCHAR) *
-										 (2 * TEMP_LENGTH + BUFFER_LARGE +
-										  BUFFER_SMALL)))) str();
-	temp1 = temp_str->str_data;
-	temp2 = temp1 + TEMP_LENGTH;
-	buffer = temp2 + TEMP_LENGTH;
-	control = buffer + BUFFER_LARGE;
-#endif
 
 /* Choose interpretation for the operation */
 
@@ -4604,11 +4583,7 @@ static SSHORT sleuth(TDBB tdbb, JRD_NOD node, DSC * desc1, DSC * desc2)
 		ret_val = FALSE;
 		while (!(blob->blb_flags & BLB_eof))
 		{
-#ifdef STACK_REDUCTION
-			l1 = BLB_get_segment(tdbb, blob, buffer, BUFFER_LARGE);
-#else
 			l1 = BLB_get_segment(tdbb, blob, buffer, sizeof(buffer));
-#endif
 			if (obj->sleuth_check(tdbb, 0, buffer, l1, control, l2))
 			{
 				ret_val = TRUE;
@@ -4626,10 +4601,6 @@ static SSHORT sleuth(TDBB tdbb, JRD_NOD node, DSC * desc1, DSC * desc2)
 	if (match_str)
 		delete match_str;
 
-#ifdef STACK_REDUCTION
-/*  block de-alloc all local variables */
-	delete temp_str;
-#endif
 	return ret_val;
 }
 
@@ -4649,13 +4620,8 @@ static SSHORT string_boolean(TDBB tdbb, JRD_NOD node, DSC * desc1, DSC * desc2)
  **************************************/
 	BLB blob;
 
-#ifndef STACK_REDUCTION
 	UCHAR *p1, *p2, temp1[TEMP_LENGTH], temp2[TEMP_LENGTH],
 		buffer[BUFFER_LARGE];
-#else
-	STR temp_str;
-	UCHAR *p1, *p2, *temp1, *temp2, *buffer;
-#endif
 	SSHORT l1, l2;
 	USHORT type1, xtype1;
 	STR match_str = NULL;
@@ -4664,17 +4630,6 @@ static SSHORT string_boolean(TDBB tdbb, JRD_NOD node, DSC * desc1, DSC * desc2)
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(node, type_nod);
-
-#ifdef STACK_REDUCTION
-/*  do a block allocation of local variables */
-	temp_str =
-		FB_NEW_RPT(*tdbb->tdbb_default,
-					  (SLONG) (sizeof(UCHAR) *
-							   (2 * TEMP_LENGTH + BUFFER_LARGE))) str();
-	temp1 = temp_str->str_data;
-	temp2 = temp1 + TEMP_LENGTH;
-	buffer = temp2 + TEMP_LENGTH;
-#endif
 
 	if (desc1->dsc_dtype != dtype_blob) {
 		/* Source is not a blob, do a simple search */
@@ -4727,11 +4682,7 @@ static SSHORT string_boolean(TDBB tdbb, JRD_NOD node, DSC * desc1, DSC * desc2)
 
 		ret_val = FALSE;
 		while (!(blob->blb_flags & BLB_eof)) {
-#ifdef STACK_REDUCTION
-			l1 = BLB_get_segment(tdbb, blob, buffer, BUFFER_LARGE);
-#else
 			l1 = BLB_get_segment(tdbb, blob, buffer, sizeof(buffer));
-#endif
 			if (string_function(tdbb, node, l1, buffer, l2, p2, type1)) {
 				ret_val = TRUE;
 				break;
@@ -4746,10 +4697,6 @@ static SSHORT string_boolean(TDBB tdbb, JRD_NOD node, DSC * desc1, DSC * desc2)
 	if (match_str)
 		delete match_str;
 
-#ifdef STACK_REDUCTION
-/*  do a block deallocation of local variables */
-	delete temp_str;
-#endif
 	return ret_val;
 }
 
@@ -4805,16 +4752,7 @@ static SSHORT string_function(
 		if (node->nod_count == 3) {
 			const char* q1;
 			USHORT l3, consumed;
-#ifndef STACK_REDUCTION
 			UCHAR temp3[TEMP_LENGTH];
-#else
-			STR temp_str;
-			UCHAR *temp3;
-
-			SET_TDBB(tdbb);
-			temp_str = FB_NEW_RPT(*tdbb->tdbb_default, (sizeof(UCHAR) * TEMP_LENGTH)) str();
-			temp3 = temp_str->str_data;
-#endif
 
 			/* Convert ESCAPE to operation character set */
 			l3 = MOV_make_string(EVL_expr(tdbb, node->nod_arg[2]),
@@ -4829,9 +4767,6 @@ static SSHORT string_function(
 			if (consumed <= 0 || consumed != l3 || (escape == 0))
 				ERR_post(gds_like_escape_invalid, 0);
 
-#ifdef STACK_REDUCTION
-			delete temp_str;
-#endif
 		}
 		return obj->like(tdbb, p1, l1, p2, l2, escape);
 	}
@@ -4897,11 +4832,7 @@ static DSC *substring(
 			{
 				/* Both cases are the same for now. Let's see if we can optimize in the future. */
 				USHORT waste = MIN(bufflen, offset);
-#ifdef STACK_REDUCTION
 				USHORT l1 = BLB_get_segment(tdbb, blob, buffer, waste);
-#else
-				USHORT l1 = BLB_get_segment(tdbb, blob, buffer, waste);
-#endif
 				offset -= l1;
 			}
 			assert(!offset && !(blob->blb_flags & BLB_eof));

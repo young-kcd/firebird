@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.24 2003-02-13 13:33:54 dimitr Exp $
+$Id: blb.cpp,v 1.25 2003-02-14 02:24:44 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -1814,15 +1814,9 @@ static BLB copy_blob(TDBB tdbb, BID source, JRD_REL relation, BID destination)
  *
  **************************************/
 
-#ifndef STACK_REDUCTION
 	UCHAR buffer[2000];
-#endif
 	UCHAR* buff;
 	STR string;
-
-#ifdef STACK_REDUCTION
-	UCHAR* buffer = (UCHAR*) gds__alloc((SLONG) (sizeof(UCHAR) * BUFFER_XLARGE));
-#endif
 
 	SET_TDBB(tdbb);
 
@@ -1835,11 +1829,7 @@ static BLB copy_blob(TDBB tdbb, BID source, JRD_REL relation, BID destination)
 		output->blb_flags |= BLB_stream;
 	}
 
-#ifdef STACK_REDUCTION
-	if (input->blb_max_segment > BUFFER_XLARGE)
-#else
 	if (input->blb_max_segment > sizeof(buffer))
-#endif
 
 	{
 		string = FB_NEW_RPT(*tdbb->tdbb_default, input->blb_max_segment) str();
@@ -1859,10 +1849,6 @@ static BLB copy_blob(TDBB tdbb, BID source, JRD_REL relation, BID destination)
 	}
 
 	delete string;
-
-#ifdef STACK_REDUCTION
-	gds__free((SLONG *) buffer);
-#endif
 
 	BLB_close(tdbb, input);
 	BLB_close(tdbb, output);

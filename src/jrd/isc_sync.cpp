@@ -397,24 +397,18 @@ int ISC_event_init(EVENT event, int semid, int semnum)
 
 	event->event_count = 0;
 
-#ifdef PIPE_IS_SHRLIB
-	assert(semnum == 0);
-#endif /* PIPE_IS_SHRLIB */
-
 	if (!semnum) {
 		/* Prepare an Inter-Thread event block */
 		event->event_semid = -1;
 		mutex_init(event->event_mutex, USYNC_THREAD, NULL);
 		cond_init(event->event_semnum, USYNC_THREAD, NULL);
 	}
-#ifndef PIPE_IS_SHRLIB
 	else {
 		/* Prepare an Inter-Process event block */
 		event->event_semid = semid;
 		mutex_init(event->event_mutex, USYNC_PROCESS, NULL);
 		cond_init(event->event_semnum, USYNC_PROCESS, NULL);
 	}
-#endif /* PIPE_IS_SHRLIB */
 
 	return TRUE;
 }
@@ -433,10 +427,6 @@ int ISC_event_post(EVENT event)
  *
  **************************************/
 	int ret;
-
-#ifdef PIPE_IS_SHRLIB
-	assert(event->event_semid == -1);
-#endif /* PIPE_IS_SHRLIB */
 
 /* For Solaris, we use cond_broadcast rather than cond_signal so that
    all waiters on the event are notified and awakened */
@@ -627,10 +617,6 @@ int ISC_event_init(EVENT event, int semid, int semnum)
 
 	event->event_count = 0;
 
-#ifdef PIPE_IS_SHRLIB
-	assert(semnum == 0);
-#endif /* PIPE_IS_SHRLIB */
-
 	if (!semnum) {
 		/* Prepare an Inter-Thread event block */
 		event->event_semid = -1;
@@ -646,7 +632,6 @@ int ISC_event_init(EVENT event, int semid, int semnum)
 		pthread_cond_init(event->event_semnum, NULL);
 #endif /* HP10 */
 	}
-#ifndef PIPE_IS_SHRLIB
 	else {
 		/* Prepare an Inter-Process event block */
 		event->event_semid = semid;
@@ -678,7 +663,6 @@ int ISC_event_init(EVENT event, int semid, int semnum)
 #endif
 #endif
 	}
-#endif /* PIPE_IS_SHRLIB */
 
 	return TRUE;
 }
@@ -697,10 +681,6 @@ int ISC_event_post(EVENT event)
  *
  **************************************/
 	int ret;
-
-#ifdef PIPE_IS_SHRLIB
-	assert(event->event_semid == -1);
-#endif /* PIPE_IS_SHRLIB */
 
 	pthread_mutex_lock(event->event_mutex);
 	++event->event_count;
@@ -877,16 +857,10 @@ SLONG ISC_event_clear(EVENT event)
 	int ret;
 	union semun arg;
 
-#ifdef PIPE_IS_SHRLIB
-	assert(event->event_semid == -1);
-#endif /* PIPE_IS_SHRLIB */
-
-#ifndef PIPE_IS_SHRLIB
 	if (event->event_semid != -1) {
 		arg.val = 1;
 		ret = semctl(event->event_semid, event->event_semnum, SETVAL, arg);
 	}
-#endif /* PIPE_IS_SHRLIB */
 
 	return (event->event_count + 1);
 }
@@ -928,22 +902,16 @@ int ISC_event_init(EVENT event, int semid, int semnum)
 
 	event->event_count = 0;
 
-#ifdef PIPE_IS_SHRLIB
-	assert(semnum == 0);
-#endif /* PIPE_IS_SHRLIB */
-
 	if (!semnum) {
 		event->event_semid = -1;
 		event->event_semnum = 0;
 	}
-#ifndef PIPE_IS_SHRLIB
 	else {
 		event->event_semid = semid;
 		event->event_semnum = semnum;
 		arg.val = 0;
 		n = semctl(semid, semnum, SETVAL, arg);
 	}
-#endif /* PIPE_IS_SHRLIB */
 
 	return TRUE;
 }
@@ -968,12 +936,6 @@ int ISC_event_post(EVENT event)
 
 	++event->event_count;
 
-#ifdef PIPE_IS_SHRLIB
-
-	assert(event->event_semid == -1);
-
-#else
-
 	while (event->event_semid != -1) {
 		arg.val = 0;
 		ret = semctl(event->event_semid, event->event_semnum, SETVAL, arg);
@@ -984,8 +946,6 @@ int ISC_event_post(EVENT event)
 			return errno;
 		}
 	}
-
-#endif /* PIPE_IS_SHRLIB */
 
 	return 0;
 }
@@ -1055,9 +1015,6 @@ int ISC_event_wait(
 		}
 	}
 
-#ifdef PIPE_IS_SHRLIB
-	assert(FALSE);
-#else
 /* Only the internal event work is available in the SHRLIB version of pipe server
  */
 
@@ -1108,13 +1065,11 @@ int ISC_event_wait(
 	ISC_reset_timer(timeout_handler, handler_arg, (SLONG*)&user_timer, (void**)&user_handler);
 
 	return ret;
-#endif /* PIPE_IS_SHRLIB */
 }
 #endif /* EVENTS */
 #endif /* UNIX */
 
 
-#ifndef PIPE_IS_SHRLIB
 #ifdef VMS
 #define EVENTS
 int ISC_event_blocked(USHORT count, EVENT * events, SLONG * values)
@@ -4320,8 +4275,6 @@ static BOOLEAN semaphore_wait_isc_sync(int count, int semid, int *semnums)
 		return FB_SUCCESS;
 }
 #endif
-
-#endif /* PIPE_IS_SHRLIB */
 
 
 } // extern "C"

@@ -34,7 +34,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.29 2002-11-20 13:37:22 kkuznetsov Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.30 2003-02-14 02:24:44 brodsom Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -827,7 +827,6 @@ void DLL_EXPORT ISC_signal_init(void)
  **************************************/
 
 #ifndef REQUESTER
-#ifndef PIPE_CLIENT
 	if (initialized_signals)
 		return;
 
@@ -844,7 +843,6 @@ void DLL_EXPORT ISC_signal_init(void)
 	isc_signal2(SIGFPE, (SIG_FPTR) overflow_handler, 0, SIG_informs);
 #endif
 
-#endif /* PIPE_CLIENT */
 #endif /* REQUESTER */
 
 #ifdef WIN_NT

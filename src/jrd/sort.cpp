@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.28 2003-02-13 13:33:57 dimitr Exp $
+ * $Id: sort.cpp,v 1.29 2003-02-14 02:24:43 brodsom Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -2679,9 +2679,7 @@ static ULONG order(SCB scb)
 	SORT_RECORD **ptr;
 	SORTP* buffer = 0;
 	SSHORT length;
-#ifndef STACK_EFFICIENT
 	ULONG temp[1024];
-#endif
 
 	ptr = scb->scb_first_pointer + 1;	/* 1st ptr is low key */
 
@@ -2693,17 +2691,12 @@ static ULONG order(SCB scb)
 												  >(scb->scb_last_record));
 
 	try {
-#ifdef STACK_EFFICIENT
-	buffer =
-		(ULONG *) gds__alloc((SLONG) (scb->scb_longs * sizeof(ULONG)));
-#else
 	if ((scb->scb_longs * sizeof(ULONG)) > sizeof(temp))
 		buffer =
 			(ULONG *) gds__alloc((SLONG) (scb->scb_longs*sizeof(ULONG)));
 	/* FREE: buffer is freed later in this routine */
 	else
 		buffer = temp;
-#endif /* STACK_EFFICIENT */
 	} catch(const std::exception&) {
 		if (!buffer)
 			error_memory(scb);
@@ -2788,9 +2781,7 @@ static ULONG order(SCB scb)
  * only fatal failures possible there 
  */
 
-#ifndef STACK_EFFICIENT
 	if (buffer != temp)
-#endif
 		if (buffer != NULL)
 			gds__free(buffer);
 

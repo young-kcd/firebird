@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: y-valve.cpp,v 1.22 2003-02-13 10:11:23 dimitr Exp $
+$Id: y-valve.cpp,v 1.23 2003-02-14 02:24:42 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -154,12 +154,6 @@ extern int access();
 
 #ifdef REQUESTER
 #define NO_LOCAL_DSQL
-#endif
-
-#ifdef PIPE_CLIENT
-#define NO_LOCAL_DSQL
-#define THREAD_ENTER
-#define THREAD_EXIT
 #endif
 
 #ifdef SUPERCLIENT
@@ -284,7 +278,7 @@ static SLONG why_enabled = 0;
 #define FPE_RESET_NEXT_API_CALL		0x1	/* Reset FPE on next gds call */
 #define FPE_RESET_ALL_API_CALL		0x2	/* Reset FPE on all gds call */
 
-#if !(defined REQUESTER || defined PIPE_CLIENT || defined SUPERCLIENT || defined SUPERSERVER)
+#if !(defined REQUESTER || defined SUPERCLIENT || defined SUPERSERVER)
 extern ULONG isc_enter_count;
 static ULONG subsystem_usage = 0;
 static USHORT subsystem_FPE_reset = FPE_RESET_INIT_ONLY;
@@ -478,58 +472,12 @@ typedef struct
 	TEXT *path;
 } IMAGE;
 
-#ifdef INITIALIZE_PATHS
-#define CONST_IMAGE				/* nothing */
-#else
 #define CONST_IMAGE	const
-#endif
-
-
-
-#ifdef PIPE_CLIENT
-
-/* Define simple table for pipe server client-side */
-
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe, win,winipi)	extern STATUS	pipe(), bridge_pipe();
-#include "../jrd/entry.h"
-
-static CONST_IMAGE IMAGE images[] =
-{
-	"PIPE", "PIPE",				/* Pipe interface */
-	"PIPE5", "PIPE5"			/* Pipe interface bridge to V3 */
-};
-
-#else /* PIPE_CLIENT */
 
 /* Define complicated table for multi-subsystem world */
 
 #ifdef VMS
-#define V3
 #define RDB
-#endif
-
-#if (defined UNIX) && \
-    !(defined SUPERCLIENT || defined SUPERSERVER || defined linux || defined FREEBSD || defined NETBSD || defined AIX_PPC || defined DARWIN /* platforms without a V3 bridge */)
-#ifndef PIPE_SERVER_YVALUE
-#define PIPE_BRIDGE_TO_V3
-#endif
-#endif
-
-#ifdef PIPE_BRIDGE_TO_V3
-#if !(defined BACKEND) && (defined hpux)
-#undef PIPE_BRIDGE_TO_V3
-#define V3
-#define V3_PATH		"lib/bridge5"
-#define GDS_A_PATH	"lib/gds_1"
-#define GDS_B_PATH	"lib/gds_2"
-#define GDS_C_PATH	"lib/gds_3"
-#define GDS_D_PATH	"lib/gds_4"
-#define INITIALIZE_PATHS
-#endif
-#endif
-
-#ifndef V3_PATH
-#define V3_PATH		"GDSSHR5"
 #endif
 
 #ifndef GDS_A_PATH
@@ -538,12 +486,6 @@ static CONST_IMAGE IMAGE images[] =
 #define GDS_C_PATH	"GDS_C"
 #define GDS_D_PATH	"GDS_D"
 #endif
-
-#ifdef INITIALIZE_PATHS
-static SSHORT paths_initialized = 0;
-#endif
-
-
 
 #ifdef CSI
 #define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	extern STATUS	rem(), cur(), csi();
@@ -558,16 +500,6 @@ static SSHORT paths_initialized = 0;
 
 #ifdef RDB
 #define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	extern STATUS	rdb();
-#include "../jrd/entry.h"
-#endif
-
-#ifdef PIPE_BRIDGE_TO_V3
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	extern STATUS	bridge_pipe();
-#include "../jrd/entry.h"
-#endif
-
-#ifdef ALTPIPE
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	extern STATUS	pipe();
 #include "../jrd/entry.h"
 #endif
 
@@ -586,22 +518,10 @@ static CONST_IMAGE IMAGE images[] =
 	{"CSI", "CSI"},				/* Central server interface */
 #endif
 
-#ifdef ALTPIPE
-	{"GDSPIPE", "ALTPIPE"},		/* Alternate pipe interface */
-#endif
-
 #ifndef REQUESTER
 #ifndef SUPERCLIENT
 	{"GDSSHR", "GDSSHR"},			/* Primary access method */
 #endif
-#endif
-
-#ifdef V3
-	{"GDSSHR5", V3_PATH},			/* Previous access method */
-#endif
-
-#ifdef PIPE_BRIDGE_TO_V3
-	{"PIPE5", "PIPE5"},			/* Pipe interface bridge to V3 */
 #endif
 
 #ifdef RDB
@@ -619,22 +539,12 @@ static CONST_IMAGE IMAGE images[] =
 #endif
 
 };
-#endif /* PIPE_CLIENT */
 
 
 #define SUBSYSTEMS		sizeof (images) / (sizeof (IMAGE))
 
 static const ENTRY entrypoints[PROC_count * SUBSYSTEMS] =
 {
-#ifdef PIPE_CLIENT
-
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, pipe},
-#include "../jrd/entry.h"
-
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, bridge_pipe},
-#include "../jrd/entry.h"
-
-#else
 
 #define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, rem},
 #include "../jrd/entry.h"
@@ -644,26 +554,11 @@ static const ENTRY entrypoints[PROC_count * SUBSYSTEMS] =
 #include "../jrd/entry.h"
 #endif
 
-#ifdef ALTPIPE
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, pipe},
-#include "../jrd/entry.h"
-#endif
-
 #ifndef REQUESTER
 #ifndef SUPERCLIENT
 #define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, cur},
 #include "../jrd/entry.h"
 #endif
-#endif
-
-#ifdef V3
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{bridge, NULL},
-#include "../jrd/entry.h"
-#endif
-
-#ifdef PIPE_BRIDGE_TO_V3
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, bridge_pipe},
-#include "../jrd/entry.h"
 #endif
 
 #ifdef RDB
@@ -678,7 +573,6 @@ static const ENTRY entrypoints[PROC_count * SUBSYSTEMS] =
 #endif
 #endif
 
-#endif
 };
 
 static const TEXT *generic[] = {
@@ -770,13 +664,9 @@ STATUS API_ROUTINE GDS_ATTACH_DATABASE(STATUS*	user_status,
 	USHORT n, length, org_length, temp_length;
 	DBB database;
 	SCHAR *current_dpb_ptr, *last_dpb_ptr;
-#ifdef STACK_EFFICIENT
-	TEXT *expanded_filename, *temp_filebuf;
-#else
 	TEXT expanded_filename[MAXPATHLEN], temp_filebuf[MAXPATHLEN];
-#endif
 	TEXT *p, *q, *temp_filename;
-#if defined(UNIX) && !defined(PIPE_CLIENT)
+#if defined(UNIX)
 	TEXT single_user[5];
 #endif
 
@@ -814,28 +704,6 @@ STATUS API_ROUTINE GDS_ATTACH_DATABASE(STATUS*	user_status,
 	subsystem_enter();
 	SUBSYSTEM_USAGE_INCR;
 
-#ifdef STACK_EFFICIENT
-	expanded_filename =
-		(TEXT *) gds__alloc((SLONG) (sizeof(TEXT) * MAXPATHLEN));
-	if (!expanded_filename)
-	{
-		status[0] = isc_arg_gds;
-		status[1] = isc_virmemexh;
-		status[2] = isc_arg_end;
-		SUBSYSTEM_USAGE_DECR;
-		return error(status, local);
-	}
-	temp_filebuf = (TEXT *) gds__alloc((SLONG) (sizeof(TEXT) * MAXPATHLEN));
-	if (!temp_filebuf)
-	{
-		gds__free((SLONG *) expanded_filename);
-		status[0] = isc_arg_gds;
-		status[1] = isc_virmemexh;
-		status[2] = isc_arg_end;
-		SUBSYSTEM_USAGE_DECR;
-		return error(status, local);
-	}
-#endif
 	temp_filename = temp_filebuf;
 
 	ptr = status;
@@ -873,7 +741,6 @@ STATUS API_ROUTINE GDS_ATTACH_DATABASE(STATUS*	user_status,
 
 #ifdef UNIX
 /* added so that only the pipe_server goes in here */
-#ifndef PIPE_CLIENT
 	single_user[0] = 0;
 	if (open_marker_file(status, expanded_filename, single_user))
 	{
@@ -884,7 +751,6 @@ STATUS API_ROUTINE GDS_ATTACH_DATABASE(STATUS*	user_status,
 	if (single_user[0]) {
 		isc_set_single_user((UCHAR**)&current_dpb_ptr, &dpb_length, single_user);
 	}
-#endif
 #endif
 
 /* Special handling of dpb pointers to handle multiple extends of the dpb */
@@ -939,10 +805,6 @@ STATUS API_ROUTINE GDS_ATTACH_DATABASE(STATUS*	user_status,
 				gds__free((SLONG *) current_dpb_ptr);
 			}
 
-#ifdef STACK_EFFICIENT
-			gds__free((SLONG *) expanded_filename);
-			gds__free((SLONG *) temp_filebuf);
-#endif
 			database->cleanup = NULL;
 			status[0] = isc_arg_gds;
 			status[1] = 0;
@@ -970,11 +832,6 @@ STATUS API_ROUTINE GDS_ATTACH_DATABASE(STATUS*	user_status,
 	if (current_dpb_ptr != dpb) {
 		gds__free((SLONG *) current_dpb_ptr);
 	}
-
-#ifdef STACK_EFFICIENT
-	gds__free((SLONG *) expanded_filename);
-	gds__free((SLONG *) temp_filebuf);
-#endif
 
 	SUBSYSTEM_USAGE_DECR;
 	return error(status, local);
@@ -1423,11 +1280,7 @@ STATUS API_ROUTINE GDS_CREATE_DATABASE(STATUS * user_status,
 	STATUS local[ISC_STATUS_LENGTH], *status, temp[ISC_STATUS_LENGTH], *ptr;
 	USHORT n, length, org_length, temp_length;
 	DBB database;
-#ifdef STACK_EFFICIENT
-	TEXT *expanded_filename, *temp_filebuf;
-#else
 	TEXT expanded_filename[MAXPATHLEN], temp_filebuf[MAXPATHLEN];
-#endif
 	TEXT *p, *q, *temp_filename;
 	UCHAR *current_dpb_ptr, *last_dpb_ptr;
 #ifdef UNIX
@@ -1467,27 +1320,6 @@ STATUS API_ROUTINE GDS_CREATE_DATABASE(STATUS * user_status,
 	subsystem_enter();
 	SUBSYSTEM_USAGE_INCR;
 
-#ifdef STACK_EFFICIENT
-	expanded_filename = (TEXT*)gds__alloc((SLONG) (sizeof(TEXT) * MAXPATHLEN));
-	if (!expanded_filename)
-	{
-		status[0] = isc_arg_gds;
-		status[1] = isc_virmemexh;
-		status[2] = isc_arg_end;
-		SUBSYSTEM_USAGE_DECR;
-		return error(status, local);
-	}
-	temp_filebuf = (TEXT *) gds__alloc((SLONG) (sizeof(TEXT) * MAXPATHLEN));
-	if (!temp_filebuf)
-	{
-		gds__free((SLONG *) expanded_filename);
-		status[0] = isc_arg_gds;
-		status[1] = isc_virmemexh;
-		status[2] = isc_arg_end;
-		SUBSYSTEM_USAGE_DECR;
-		return error(status, local);
-	}
-#endif
 	temp_filename = temp_filebuf;
 
 	ptr = status;
@@ -1590,10 +1422,6 @@ STATUS API_ROUTINE GDS_CREATE_DATABASE(STATUS * user_status,
 
 			if (current_dpb_ptr != dpb)
 				gds__free((SLONG *) current_dpb_ptr);
-#ifdef STACK_EFFICIENT
-			gds__free((SLONG *) expanded_filename);
-			gds__free((SLONG *) temp_filebuf);
-#endif
 			database->cleanup = NULL;
 			status[0] = isc_arg_gds;
 			status[1] = 0;
@@ -1609,10 +1437,6 @@ STATUS API_ROUTINE GDS_CREATE_DATABASE(STATUS * user_status,
 
 	if (current_dpb_ptr != dpb)
 		gds__free((SLONG *) current_dpb_ptr);
-#ifdef STACK_EFFICIENT
-	gds__free((SLONG *) expanded_filename);
-	gds__free((SLONG *) temp_filebuf);
-#endif
 
 	SUBSYSTEM_USAGE_DECR;
 	return error(status, local);
@@ -1719,7 +1543,7 @@ STATUS API_ROUTINE GDS_DDL(STATUS * user_status,
 	ATT database;
 	JRD_TRA transaction;
 
-#if !defined(PIPE_CLIENT) && !defined(SUPERCLIENT)
+#if !defined(SUPERCLIENT)
 	TEXT *image;
 	PTR entrypoint;
 #endif
@@ -1753,7 +1577,6 @@ STATUS API_ROUTINE GDS_DDL(STATUS * user_status,
 
 	no_entrypoint(status);
 
-#ifndef PIPE_CLIENT
 #ifndef SUPERCLIENT
 	if ((image = images[database->implementation].path) != NULL &&
 		((entrypoint = (PTR) ISC_lookup_entrypoint(image, "DYN_ddl", NULL)) !=
@@ -1763,7 +1586,6 @@ STATUS API_ROUTINE GDS_DDL(STATUS * user_status,
 		CHECK_STATUS_SUCCESS(status);
 		return FB_SUCCESS;
 	}
-#endif
 #endif
 
 	return error2(status, local);
@@ -2142,11 +1964,7 @@ STATUS API_ROUTINE isc_dsql_describe(STATUS * user_status,
  **************************************/
 	STATUS *status, local[ISC_STATUS_LENGTH];
 	USHORT buffer_len;
-#ifdef STACK_EFFICIENT
-	SCHAR *buffer, local_buffer[1];
-#else
 	SCHAR *buffer, local_buffer[512];
-#endif /* STACK_EFFICIENT */
 
 	GET_STATUS;
 	CHECK_HANDLE(*stmt_handle, HANDLE_statement, isc_bad_stmt_handle);
@@ -2205,11 +2023,7 @@ STATUS API_ROUTINE isc_dsql_describe_bind(STATUS * user_status,
  **************************************/
 	STATUS *status, local[ISC_STATUS_LENGTH];
 	USHORT buffer_len;
-#ifdef STACK_EFFICIENT
-	SCHAR *buffer, local_buffer[1];
-#else
 	SCHAR *buffer, local_buffer[512];
-#endif /* STACK_EFFICIENT */
 
 	GET_STATUS;
 	CHECK_HANDLE(*stmt_handle, HANDLE_statement, isc_bad_stmt_handle);
@@ -3300,11 +3114,7 @@ STATUS API_ROUTINE GDS_DSQL_PREPARE(STATUS * user_status,
  **************************************/
 	STATUS *status, local[ISC_STATUS_LENGTH];
 	USHORT buffer_len;
-#ifdef STACK_EFFICIENT
-	SCHAR *buffer, local_buffer[1];
-#else
 	SCHAR *buffer, local_buffer[BUFFER_MEDIUM];
-#endif /* STACK_EFFICIENT */
 	DASUP dasup;
 
 	GET_STATUS;
@@ -4189,7 +3999,7 @@ SLONG API_ROUTINE isc_reset_fpe(USHORT fpe_status)
  *	Prior setting of the FPE reset flag
  *
  **************************************/
-#if !(defined REQUESTER || defined PIPE_CLIENT || defined SUPERCLIENT || defined SUPERSERVER)
+#if !(defined REQUESTER || defined SUPERCLIENT || defined SUPERSERVER)
 	SLONG prior;
 	prior = (SLONG) subsystem_FPE_reset;
 	switch (fpe_status) {
@@ -5359,7 +5169,7 @@ static void exit_handler(EVENT why_event)
 
 	why_initialized = FALSE;
 	why_enabled = 0;
-#if !(defined REQUESTER || defined PIPE_CLIENT || defined SUPERCLIENT || defined SUPERSERVER)
+#if !(defined REQUESTER || defined SUPERCLIENT || defined SUPERSERVER)
 	isc_enter_count = 0;
 	subsystem_usage = 0;
 	subsystem_FPE_reset = FPE_RESET_INIT_ONLY;
@@ -5455,7 +5265,7 @@ static PTR get_entrypoint(int proc, int implementation)
 	ENTRY *ent;
 	PTR entrypoint;
 
-#if !defined(PIPE_CLIENT) && !defined(SUPERCLIENT)
+#if !defined(SUPERCLIENT)
 	TEXT *image, *name;
 #endif
 
@@ -5467,15 +5277,7 @@ static PTR get_entrypoint(int proc, int implementation)
 		return entrypoint;
 	}
 
-#ifndef PIPE_CLIENT
 #ifndef SUPERCLIENT
-#ifdef INITIALIZE_PATHS
-	if (!paths_initialized)
-	{
-		paths_initialized = TRUE;
-		init_paths();
-	}
-#endif
 
 	image = images[implementation].path;
 	name = ent->name;
@@ -5493,7 +5295,6 @@ static PTR get_entrypoint(int proc, int implementation)
 			return entrypoint;
 		}
 	}
-#endif
 #endif
 
 	return &no_entrypoint;
@@ -5640,48 +5441,6 @@ static void iterative_sql_info(STATUS * user_status,
 		}
 	}
 }
-
-
-#ifdef INITIALIZE_PATHS
-static void init_paths(void)
-{
-/**************************************
- *
- *	i n i t _ p a t h s
- *
- **************************************
- *
- * Functional description
- *	Initialize the paths to use in dynamically
- *	looking up entrypoints.
- *
- **************************************/
-	USHORT n;
-	IMAGE *sys;
-#ifdef STACK_EFFICIENT
-	TEXT *path;
-#else
-	TEXT path[MAXPATHLEN];
-#endif /* STACK_EFFICIENT */
-
-#ifdef STACK_EFFICIENT
-	if (path = (TEXT *) gds__alloc((SLONG) (sizeof(TEXT) * MAXPATHLEN)))
-/* if we fail don't try to do the remainder of the function since*/
-/* we will probably die a horrible death in gds_prefix */
-#endif /* STACK_EFFICIENT */
-		for (n = 0, sys = images; n < SUBSYSTEMS; n++, sys++)
-			if (sys->path) {
-				gds__prefix(path, sys->path);
-				sys->path = alloc((SLONG) (strlen(path) + 1));
-				strcpy(sys->path, path);
-			}
-#ifdef STACK_EFFICIENT
-	if (path)
-		gds__free((SLONG *) path);
-#endif /* STACK_EFFICIENT */
-}
-#endif
-
 
 static STATUS open_blob(STATUS * user_status,
 						ATT * db_handle,
@@ -6160,7 +5919,7 @@ static void subsystem_enter(void)
  **************************************/
 
 	THREAD_ENTER;
-#if !(defined REQUESTER || defined PIPE_CLIENT || defined SUPERCLIENT || defined SUPERSERVER)
+#if !(defined REQUESTER || defined SUPERCLIENT || defined SUPERSERVER)
 	isc_enter_count++;
 	if (subsystem_usage == 0 ||
 		(subsystem_FPE_reset &
@@ -6199,7 +5958,7 @@ static void subsystem_exit(void)
  *
  **************************************/
 
-#if !(defined REQUESTER || defined PIPE_CLIENT || defined SUPERCLIENT || defined SUPERSERVER)
+#if !(defined REQUESTER || defined SUPERCLIENT || defined SUPERSERVER)
 	if (subsystem_usage == 0 ||
 		(subsystem_FPE_reset &
 		 (FPE_RESET_NEXT_API_CALL | FPE_RESET_ALL_API_CALL)))

@@ -603,11 +603,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
  *
  **************************************/
 	DBB dbb;
-#ifdef STACK_REDUCTION
-	TEXT *allocated_space = NULL;
-#else
 	TEXT opt_buffer[DPB_EXPAND_BUFFER];
-#endif
 	TEXT alias_buffer[MAXPATHLEN];
 	TEXT file_name_buffer[MAXPATHLEN];
 	TEXT temp_buffer[MAXPATHLEN];
@@ -703,21 +699,11 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 
 /* Allocate buffer space */
 
-#ifdef STACK_REDUCTION
-	allocated_space =
-		ALL_malloc(DPB_EXPAND_BUFFER + (4 * MAXPATHLEN), ERR_jmp);
-	TEXT*	opt_ptr			= allocated_space;
-	TEXT*	archive_name	= opt_ptr + MAXPATHLEN;
-	TEXT*	journal_name	= archive_name + MAXPATHLEN;
-	TEXT*	journal_dir		= journal_name + MAXPATHLEN;
-	UCHAR*	data			= (UCHAR*) (journal_dir + MAXPATHLEN);
-#else
 	TEXT*	opt_ptr = opt_buffer;
 	TEXT	archive_name[MAXPATHLEN];
 	TEXT	journal_name[MAXPATHLEN];
 	TEXT	journal_dir[MAXPATHLEN];
 	UCHAR	data[MAXPATHLEN];
-#endif
 
 /* Process database parameter block */
 
@@ -1317,10 +1303,6 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 	LOG_call(log_handle_returned, *handle);
 #endif
 
-#ifdef STACK_REDUCTION
-	ALL_free(allocated_space);
-#endif
-
 	return return_success(tdbb);
 
 	}	// try
@@ -1340,11 +1322,6 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 
 			/* At this point, mutex dbb->dbb_mutexes [DBB_MUTX_init_fini] has been
 			   unlocked and mutex databases_mutex has been locked. */
-#ifdef STACK_REDUCTION
-			if (allocated_space) {
-				ALL_free(allocated_space);
-			}
-#endif
 			if (MemoryPool::blk_type(dbb) == type_dbb)
 			{
 				if (!dbb->dbb_attachments)
@@ -1780,11 +1757,7 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
  **************************************/
 	DBB dbb;
 	TEXT expanded_name[MAXPATHLEN];
-#ifdef STACK_REDUCTION
-	TEXT *allocated_space = NULL;
-#else
 	TEXT opt_buffer[DPB_EXPAND_BUFFER];
-#endif
 	TEXT *opt_ptr;
 	USHORT length, page_size;
 	ATT attachment;
@@ -1839,12 +1812,7 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 
 /* Process database parameter block */
 
-#ifdef STACK_REDUCTION
-	allocated_space = ALL_malloc(DPB_EXPAND_BUFFER, ERR_jmp);
-	opt_ptr = allocated_space;
-#else
 	opt_ptr = opt_buffer;
-#endif
 
 	get_options((UCHAR *)dpb, dpb_length, &opt_ptr, DPB_EXPAND_BUFFER, &options);
 	if (invalid_client_SQL_dialect == FALSE && options.dpb_sql_dialect == 99)
@@ -2075,10 +2043,6 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 	*handle = attachment;
 	CCH_flush(tdbb, (USHORT) FLUSH_FINI, 0);
 
-#ifdef STACK_REDUCTION
-	ALL_free(allocated_space);
-#endif
-
 	return return_success(tdbb);
 
 	}	// try
@@ -2098,11 +2062,6 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 
 			/* At this point, mutex dbb->dbb_mutexes [DBB_MUTX_init_fini] has been
 			   unlocked and mutex databases_mutex has been locked. */
-#ifdef STACK_REDUCTION
-			if (allocated_space) {
-				ALL_free(allocated_space);
-			}
-#endif
 			if (MemoryPool::blk_type(dbb) == type_dbb)
 			{
 				if (!dbb->dbb_attachments)

@@ -609,13 +609,8 @@ void AIL_get_file_list(LLS * stack)
 	SLONG prev_log_partition_offset;
 	SLONG log_flags;
 
-#ifndef STACK_REDUCTION
 	SCHAR log_name1[MAXPATHLEN];
 	SCHAR log_name2[MAXPATHLEN];
-#else
-	SCHAR *log_name1;
-	SCHAR *log_name2;
-#endif
 
 	SCHAR *temp_name;
 	SLONG log_seqno;
@@ -657,12 +652,6 @@ void AIL_get_file_list(LLS * stack)
 */
 
 /* WAL_segment->wals_logname is the current log file */
-#ifdef STACK_REDUCTION
-	log_name1 = (SCHAR *) gds__alloc((SLONG) (sizeof(SCHAR) * MAXPATHLEN));
-	log_name2 = (SCHAR *) gds__alloc((SLONG) (sizeof(SCHAR) * MAXPATHLEN));
-#endif
-
-
 	curr_name = log_name1;
 	prev_name = log_name2;
 	strcpy(curr_name, WAL_segment->wals_logname);
@@ -697,10 +686,6 @@ void AIL_get_file_list(LLS * stack)
 		curr_name = temp_name;
 		curr_log_partition_offset = prev_log_partition_offset;
 	}
-#ifdef STACK_REDUCTION
-	gds__free((SLONG *) log_name1);
-	gds__free((SLONG *) log_name2);
-#endif
 }
 
 

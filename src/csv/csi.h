@@ -34,13 +34,8 @@
 #ifdef VMS
 #define CSI_FILE		"[000000]isc_csv_gbl.%s"
 #if !(defined MULTI_THREAD) || defined (__ALPHA)
-#ifndef PIPE_SERVER
 #define CSV_SIGNAL              33
 #define EVENT_SIGNAL            3
-#else
-#define CSV_SIGNAL              34
-#define EVENT_SIGNAL            4
-#endif
 #endif
 #endif
 
@@ -560,24 +555,5 @@ typedef struct csu_list {
 	USHORT csu_list_length;
 	TEXT csu_list_name[1];
 } *CSU_LIST;
-
-#ifdef PIPE_SERVER
-#define CSS_acquire	 	PSS_acquire
-#define CSS_alloc_message	PSS_alloc_message
-#define CSS_alloc_local		PSS_alloc_local
-#define CSS_check_partner	PSS_check_partner
-#define CSS_connect		PSS_connect
-#define CSS_create_process	PSS_create_process
-#define CSS_disconnect		PSS_disconnect
-#define CSS_free_global		PSS_free_global
-#define CSS_free_local		PSS_free_local
-#define CSS_find_process	PSS_find_process
-#define CSS_get_message		PSS_get_message
-#define CSS_init		PSS_init
-#define CSS_probe_processes	PSS_probe_processes
-#define CSS_put_message		PSS_put_message
-#define CSS_release		PSS_release
-#define CSS_validate		PSS_validate
-#endif
 
 #endif /* _CSV_CSI_H_ */

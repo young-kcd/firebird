@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: csv.cpp,v 1.10 2003-02-10 13:28:10 eku Exp $
+$Id: csv.cpp,v 1.11 2003-02-14 02:19:47 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -33,15 +33,6 @@ $Id: csv.cpp,v 1.10 2003-02-10 13:28:10 eku Exp $
 #include "../jrd/gds_proto.h"
 #include "../remote/merge_proto.h"
 
-#ifdef PIPE_SERVER
-#ifdef VMS
-#include "../jrd/lnmdef.h"
-#include jpidef
-#include descrip
-#endif
-
-#endif
-
 #define ALLOC(type, length)	CSS_alloc_local (type, length)
 #define FREE(block)		CSS_free_local (block)
 #define EVENT_FLAG		65
@@ -49,9 +40,7 @@ $Id: csv.cpp,v 1.10 2003-02-10 13:28:10 eku Exp $
 static void allocate_statement(MSG_OP);
 static void alt_connection(MSG_OP);
 static void attach_database(MSG_ATT);
-#ifndef PIPE_SERVER
 static STATUS attach_for_servicing(DBN, STATUS *, USHORT);
-#endif
 static void cancel_events(MSG_OP);
 static void check_if_done(DBN);
 static void compile(MSG_OP);
@@ -105,11 +94,6 @@ static void server_utility(MSG_UTIL);
 static void thread(void);
 #endif
 static void transact_request(MSG_TRRQ);
-#ifdef PIPE_SERVER
-#ifdef VMS
-static void trans_logicals(void);
-#endif
-#endif
 static void unwind(MSG_OP);
 
 static RDB CSV_databases;
@@ -137,21 +121,6 @@ typedef struct req {
 
 static REQ request_que, free_requests;
 static EVENT_T thread_event[1];
-
-#ifdef PIPE_SERVER
-#ifdef VMS
-/* Define logical names that sub-process should inherit */
-
-static SCHAR *inherit_logicals[] = {
-	"SYS$LOGIN",
-	"SYS$SCRATCH",
-	"SYS$NODE",
-	"SYS$INTERBASE",
-	0
-};
-#endif
-#endif
-
 
 #define GDS_ATTACH_DATABASE	gds__attach_database
 #define GDS_BLOB_INFO		gds__blob_info
@@ -199,7 +168,6 @@ static SCHAR *inherit_logicals[] = {
 #define GDS_DSQL_SET_CURSOR	isc_dsql_set_cursor_name
 #define GDS_DSQL_SQL_INFO	isc_dsql_sql_info
 
-#ifndef PIPE_SERVER
 int CLIB_ROUTINE main( int argc, char **argv)
 {
 /**************************************
@@ -337,75 +305,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			process_message(message);
 		}
 }
-#endif
-
-
-#ifdef PIPE_SERVER
-int CLIB_ROUTINE main( int argc, char **argv)
-{
-/**************************************
- *
- *	m a i n		( p i p e _ s e r v e r )
- *
- **************************************
- *
- * Functional description
- *	Start up single user server.
- *
- **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
-	CSH CSS_header;
-	SRQ *que;
-	PRB process;
-	PTR connection, server, client;
-	MSG_RESP response;
-	CSV_MSG message;
-	SSHORT parent_pin;
-
-	THREAD_ENTER;
-
-	gds__enable_subsystem("GDSSHR");
-	gds__enable_subsystem("GDSSHR5");
-
-	parent_pin = FATHER();
-
-	if (!(CSS_header = CSS_init(status_vector, FALSE, parent_pin))) {
-		gds__print_status(status_vector);
-		exit(FINI_ERROR);
-	}
-
-	client = (PRB) ABS_PTR(CSS_create_process(PRB_client));
-
-	CSS_header = ACQUIRE;
-	server = (PTR) 0;
-
-	QUE_LOOP(CSS_header->csh_processes, que) {
-		process = (PRB) ((UCHAR *) que - OFFSET(PRB, prb_processes));
-		if (client != REL_PTR(process) &&
-			process->prb_protocol_version == CSI_PROTOCOL_VERSION &&
-			process->prb_process_id == parent_pin) {
-			server = REL_PTR(process);
-			break;
-		}
-	}
-
-	RELEASE;
-
-	if (!server) {
-		printf("Unable to find parent process.\n");
-		exit(FINI_ERROR);
-	}
-
-	connection = CSS_connect(server);
-	response = CSS_alloc_message(type_msg, sizeof(struct msg_resp));
-	response->msg_resp_header.msg_type = MSG_response;
-	response->msg_resp_length = 0;
-	if (CSS_put_message(connection, response, 0))
-		while (!sw_shutdown && (message = CSS_get_message((SLONG) 0, 0, 0)))
-			process_message(message);
-}
-#endif
-
 
 static void allocate_statement( MSG_OP message)
 {
@@ -545,7 +444,6 @@ static void attach_database( MSG_ATT message)
 }
 
 
-#ifndef PIPE_SERVER
 static STATUS attach_for_servicing(
 								   DBN db_name,
 								   STATUS * status_vector, USHORT detach_flag)
@@ -609,8 +507,6 @@ static STATUS attach_for_servicing(
 
 	return status_vector[1];
 }
-#endif
-
 
 static void cancel_events( MSG_OP message)
 {
@@ -769,7 +665,6 @@ static void ddl( MSG_DDL message)
 }
 
 
-#ifndef PIPE_SERVER
 static void disable_or_kill( DBN db_name, USHORT cmd)
 {
 /**************************************
@@ -810,8 +705,6 @@ static void disable_or_kill( DBN db_name, USHORT cmd)
 		else
 			ptr = &(*ptr)->rdb_next;
 }
-#endif
-
 
 static void disconnect( PTR connection)
 {
@@ -1228,8 +1121,6 @@ static void fetch( MSG_SQLMSG message)
 	free_buffer(msg, msg_length);
 }
 
-
-#ifndef PIPE_SERVER
 static DBN find_dbname(
 					   TEXT * expanded_name,
 					   USHORT expanded_length, USHORT search_flag)
@@ -1254,33 +1145,6 @@ static DBN find_dbname(
 
 	return NULL;
 }
-#endif
-
-
-#ifdef PIPE_SERVER
-static DBN find_dbname(
-					   TEXT * expanded_name,
-					   USHORT expanded_length, USHORT search_flag)
-{
-/**************************************
- *
- *	f i n d _ d b n a m e	( p i p e _ s e r v e r )
- *
- **************************************
- *
- * Functional description
- *	Find a database name in the list of database that
- *	can be serviced by this server.
- *
- **************************************/
-
-	if (!CSV_dbnames)
-		CSV_dbnames = (DBN) ALLOC(type_dbn, sizeof(struct dbn));
-
-	return CSV_dbnames;
-}
-#endif
-
 
 static void free_buffer( UCHAR * buffer, USHORT length)
 {
@@ -1574,12 +1438,8 @@ static void info( MSG_INFO message)
 							   temp))
 				MERGE_database_info(temp, buffer,
 									message->msg_info_buffer_length,
-#ifndef PIPE_SERVER
 									IMPLEMENTATION, 10, 1, GDS_VERSION, "",
 									0);
-#else
-									IMPLEMENTATION, 8, 1, GDS_VERSION, "", 0);
-#endif
 		break;
 
 	case MSG_blob_info:
@@ -2855,7 +2715,6 @@ static void start_transaction( MSG_TRANS message)
 }
 
 
-#ifndef PIPE_SERVER
 static void server_utility( MSG_UTIL message)
 {
 /**************************************
@@ -2979,50 +2838,6 @@ static void server_utility( MSG_UTIL message)
 		break;
 	}
 }
-#endif
-
-
-#ifdef PIPE_SERVER
-static void server_utility( MSG_UTIL message)
-{
-/**************************************
- *
- *	s e r v e r _ u t i l i t y
- *
- **************************************
- *
- * Functional description
- *	Process a message from the central server utility.
- *
- **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
-	RDB *ptr, rdb;
-	PTR connection;
-
-	switch (message->msg_util_cmd) {
-	case UTIL_kill:
-		/* Loop through the database attachments and zap them all */
-
-		for (ptr = &CSV_databases; rdb = *ptr;)
-			disconnect(rdb->rdb_connection);
-
-		sw_shutdown = TRUE;
-
-		connection = message->msg_util_header.msg_connection;
-		CSS_free_global(message);
-		CSS_disconnect(connection);
-		return;
-
-	default:
-		status_vector[0] = gds_arg_gds;
-		status_vector[1] = gds__unavailable;
-		status_vector[2] = gds_arg_end;
-		send_response(message, status_vector, (SLONG) 0, 0, 0);
-		break;
-	}
-}
-#endif
-
 
 #ifdef MULTI_THREAD
 static void thread(void)
@@ -3130,57 +2945,6 @@ static void transact_request( MSG_TRRQ message)
 				  message->msg_trrq_out_msg_length, out_msg);
 	free_buffer(out_msg, buffer_length);
 }
-
-
-#ifdef PIPE_SERVER
-#ifdef VMS
-static void trans_logicals(void)
-{
-/**************************************
- *
- *	t r a n s _ l o g i c a l s
- *
- **************************************
- *
- * Functional description
- *	Translate logicals and write their values to
- *	the process logical table.
- *
- **************************************/
-	UCHAR **logicals, value[256], job_logical[32];
-	int attr, status;
-	SSHORT len;
-	ITM items[2];
-	struct dsc$descriptor_s tab_desc, log_desc;
-
-	for (logicals = inherit_logicals; *logicals; logicals++) {
-		items[0].itm_length = sizeof(value);
-		items[0].itm_code = LNM$_STRING;
-		items[0].itm_buffer = value;
-		items[0].itm_return_length = &len;
-		items[1].itm_length = 0;
-		items[1].itm_code = 0;
-
-		attr = LNM$M_CASE_BLIND;
-
-		sprintf(job_logical, "GDS_PIPE_%s", *logicals);
-		ISC_make_desc(job_logical, &log_desc, 0);
-
-		ISC_make_desc("LNM$JOB", &tab_desc, sizeof("LNM$JOB") - 1);
-		if (!(sys$trnlnm(&attr, &tab_desc, &log_desc, NULL, items) & 1))
-			continue;
-
-		/* Logical must be copied into the process logical table */
-
-		items[0].itm_length = len;
-		ISC_make_desc(*logicals, &log_desc, 0);
-		ISC_make_desc("LNM$PROCESS", &tab_desc, sizeof("LNM$PROCESS") - 1);
-		sys$crelnm(NULL, &tab_desc, &log_desc, NULL, items);
-	}
-}
-#endif
-#endif
-
 
 static void unwind( MSG_OP message)
 {
