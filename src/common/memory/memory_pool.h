@@ -93,15 +93,17 @@ public:
 
 	/// Allocates at least the given number of bytes from the pool and
 	///  returns a pointer to the memory.
-	void* allocate(size_t, SSHORT = 0);
+	void* allocate(size_t, short = 0);
 
 	/// Deallocates memory that has been allocated from ANY MemoryPool.
 	static int deallocate(void*);
 
 	/// Allocate memory directly from the OS
 	static void* malloc_from_system(size_t);
+	static void* virtual_alloc_from_system(size_t);
 	/// Deallocate memory allocated directly from the OS
-	static SLONG free_from_system(void* mem);
+	static long free_from_system(void* mem);
+	static long virtual_free_from_system(void* mem);
 
 	/// Pool debugging calls
 	void print_contents(IB_FILE*, const char* (*)(int) = 0,
@@ -115,7 +117,7 @@ public:
 	void setExtendSize(size_t);
 
 	/// Returns the type associated with the allocated memory.
-	static SSHORT blk_type(const void* mem);
+	static short blk_type(const void* mem);
 	/// Returns the pool the memory was allocated from.
 	static MemoryPool* blk_pool(const void* mem);
 
@@ -124,7 +126,7 @@ private:
 	class MemoryPool	*parent;
 	size_t				extend_inc;
 
-	void* allocate_int(size_t, SSHORT);
+	void* allocate_int(size_t, short);
 	friend class FBMemoryPool;
 };
 

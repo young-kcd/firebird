@@ -27,6 +27,15 @@ static FirebirdConfigFile sysConfig;
 //
 //
 
+bool FirebirdConfig::doesSysKeyExist(const FirebirdConfig::string& key) {
+  return sysConfig.doesKeyExist(key);
+}
+
+//-----------------------------------------------------------------------------
+//
+//
+//
+
 FirebirdConfig::string FirebirdConfig::getSysString(const FirebirdConfig::string& key) {
   return sysConfig.getString(key);
 }

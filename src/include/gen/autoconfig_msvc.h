@@ -46,6 +46,8 @@
 /* types */
 #undef socklen_t
 
+/* functions */
+#define snprintf _snprintf
 
 /* Is the platform big endian? */
 #define WORDS_BIGENDIAN 0

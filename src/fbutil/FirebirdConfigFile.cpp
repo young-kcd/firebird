@@ -90,6 +90,21 @@ void stripComments(FirebirdConfig::string& s)
 //
 //
 
+bool FirebirdConfigFile::doesKeyExist(const FirebirdConfig::string& key) {
+
+    checkLoadConfig();
+
+    Firebird::string data = getString(key);
+
+    return !data.empty();
+}
+
+
+//-----------------------------------------------------------------------------
+//
+//
+//
+
 FirebirdConfig::string FirebirdConfigFile::getString(const FirebirdConfig::string& key) {
 
     checkLoadConfig();

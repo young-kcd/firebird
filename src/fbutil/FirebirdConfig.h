@@ -10,6 +10,7 @@ class FirebirdConfig
 public:
 	typedef Firebird::string string;
 
+	static bool doesSysKeyExist(const string& key);
     static string getSysString(const string& key);
     static int    getSysInt(const string& key);
     static bool    getSysBoolean(const string& key);

@@ -106,7 +106,11 @@ namespace Firebird
 
 		pointer allocate(size_type s, const void * = 0)
 			{ return (pointer) (pool ? pool->allocate(sizeof(T) * s) : gds__alloc(sizeof(T)*s)); }
+		char *_Charalloc(size_type n)
+			{ return (char*) (pool ? pool->allocate(n) : gds__alloc(n)); }
 		void deallocate(pointer p, size_type s)
+			{ if (pool) MemoryPool::deallocate(p); else gds__free(p); }
+		void deallocate(void* p, size_type s)
 			{ if (pool) MemoryPool::deallocate(p); else gds__free(p); }
 		void construct(pointer p, const T& v) { new(p) T(v); }
 		void destroy(pointer p) { p->~T(); }
@@ -120,7 +124,6 @@ namespace Firebird
 			typedef Firebird::allocator<_Tp1> other;
 		};
 
-
 		bool operator==(const allocator<T>& rhs) const
 		{
 			return pool == rhs.pool && type == rhs.type;
@@ -128,7 +131,7 @@ namespace Firebird
 
 		MemoryPool *getPool() const { return pool; }
 		SSHORT getType() const { return type; }
-	
+
 	private:
 		MemoryPool *pool;
 		SSHORT type;

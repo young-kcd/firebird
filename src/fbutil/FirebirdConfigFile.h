@@ -21,6 +21,7 @@ public:
 
     virtual void loadConfig();
     virtual void checkLoadConfig();
+    virtual bool doesKeyExist(const string& key);
     virtual string getString(const string& key);
     virtual int    getInt(const string& key);
     virtual bool    getBoolean(const string& key);

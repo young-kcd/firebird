@@ -424,6 +424,7 @@ void *MemoryPool::allocate_int(size_t size, SSHORT type)
 **/
 int MemoryPool::deallocate(void *mem)
 {
+	if (!mem) return 0;
 	MemoryPool* pool = FBMemoryPool::blk_pool(mem);
 	assert(pool);
 	if (!pool || !pool->pimpl) {
@@ -454,6 +455,11 @@ void *MemoryPool::malloc_from_system(size_t size)
 #endif	// 0
 }
 
+void *MemoryPool::virtual_alloc_from_system(size_t size)
+{
+	return FBMemoryPool::mmap_alloc(size);
+}
+
 /**	Deallocate memory from the host operating system.  This function
 	MUST be called to deallocate any memory obtained from a call to
 	MemoryPool::malloc_from_system.  It returns the number of bytes
@@ -471,6 +477,11 @@ SLONG MemoryPool::free_from_system(void *mem)
 #else	// 0
 		return FBMemoryPool::malloc_free(mem);
 #endif	// 0
+}
+
+SLONG MemoryPool::virtual_free_from_system(void *mem)
+{
+	return FBMemoryPool::mmap_free(mem);
 }
 
 /**	This is a debugging aid function.  It walks the memory pool, in its
