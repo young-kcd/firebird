@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.85 2004-11-08 05:13:16 robocop Exp $
+$Id: why.cpp,v 1.86 2004-11-29 11:15:09 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -1658,11 +1658,11 @@ ISC_STATUS API_ROUTINE GDS_DDL(ISC_STATUS* user_status,
 	no_entrypoint(status);
 
 #ifndef SUPERCLIENT
-	char DYN_ddl[] = "DYN_ddl";
+	const char DYN_ddl[] = "DYN_ddl";
 	PTR entrypoint;
 	TEXT* image = images[database->implementation].path;
 	if (image != NULL &&
-		((entrypoint = (PTR) ISC_lookup_entrypoint(image, DYN_ddl, NULL, false)) !=
+		((entrypoint = (PTR) Jrd::Module::lookup(image, DYN_ddl)) !=
 		 NULL ||
 		 FALSE) &&
 		!((*entrypoint) (status, db_handle, tra_handle, length, ddl)))
@@ -5462,7 +5462,7 @@ static const PTR get_entrypoint(int proc,
 		fb_assert(NameLength < BufSize);
 		TEXT *NamePointer = Buffer;
 		memcpy(NamePointer, name, NameLength);
-		PTR entry = (PTR) ISC_lookup_entrypoint(image, NamePointer, NULL, false);
+		PTR entry = (PTR) Jrd::Module::lookup(image, NamePointer);
 		if (entry)
 		{
 			ent->address = entry;

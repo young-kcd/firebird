@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.146 2004-11-01 03:18:42 robocop Exp $
+$Id: met.epp,v 1.147 2004-11-29 11:15:09 alexpeshkoff Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -1522,11 +1522,8 @@ BlobFilter* MET_lookup_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 
         if (!REQUEST(irq_r_filters))
             REQUEST(irq_r_filters) = request;
-		fb_utils::exact_name(X.RDB$MODULE_NAME);
-		fb_utils::exact_name(X.RDB$ENTRYPOINT);
 		filter = (FPTR_BFILTER_CALLBACK)
-			ISC_lookup_entrypoint(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT,
-								  ISC_EXT_LIB_PATH_ENV, true);
+			Module::lookup(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT, dbb->modules);
 		if (filter)
 		{
 			blf = FB_NEW(*dbb->dbb_permanent) BlobFilter(*dbb->dbb_permanent);
@@ -1536,35 +1533,6 @@ BlobFilter* MET_lookup_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 			blf->blf_filter = filter;
 			blf->blf_exception_message.printf(EXCEPTION_MESSAGE,
 					X.RDB$FUNCTION_NAME, X.RDB$ENTRYPOINT, X.RDB$MODULE_NAME);
-		}
-		
-		MOD module = FLU_lookup_module(X.RDB$MODULE_NAME);
-		if (module)
-		{
-			/* Register interest in the module by database. */
-
-			Firebird::Stack<MOD>::iterator stack(dbb->dbb_modules);
-			while (stack.hasData())
-			{
-				if (module == stack.object())
-				{
-					break;
-				}
-				++stack;
-			}
-
-			/* If the module was already registered with this database
-			   then decrement the use count that was incremented in
-			   ISC_lookup_entrypoint() above. Otherwise push it onto
-			   the stack of registered modules. */
-
-			if (stack.hasData()) {
-				FLU_unregister_module(module);
-			}
-			else
-			{
-				dbb->dbb_modules.push(module);
-			}
 		}
 	END_FOR;
 

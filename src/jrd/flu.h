@@ -27,31 +27,146 @@
 #ifndef JRD_FLU_H
 #define JRD_FLU_H
 
-/* RITTER - changed HP10 to HPUX in the line below */
-#if defined(HPUX)
-#  include <dl.h>
-#  include <shl.h>
-typedef shl_t HMOD;
-#elif defined(SOLARIS)
-#  include <dlfcn.h>
-typedef void *HMOD;
-#elif defined(WIN_NT)
-#  include <windows.h>
-typedef HMODULE HMOD;
-#else
-typedef void *HMOD;
-#endif
+/* External modules for UDFs/BLOB filters/y-valve loader */
 
-/* External function module descriptor */
+#include "../common/classes/objects_array.h"
+#include "../jrd/os/mod_loader.h"
 
-struct mod {
-	HMOD mod_handle;			/* Handle to search for entrypoints */
-	mod* mod_next;				/* Linked list of open modules */
-	SLONG mod_use_count;		/* Databases interested in module */
-	USHORT mod_length;			/* Module name length */
-	TEXT mod_name[1];			/* Module name */
-};
+namespace Jrd
+{
+	class Module
+	{
+	private:
+		class InternalModule
+		{
+		private:
+			InternalModule(const InternalModule &im);
+			void operator=(const InternalModule &im);
 
-typedef mod *MOD;
+		public:
+			long useCount;
+			ModuleLoader::Module* handle;
+			Firebird::PathName originalName, loadName;
+
+			void *findSymbol(const Firebird::string& name)
+			{
+				if (! handle)
+				{
+					return 0;
+				}
+				return handle->findSymbol(name);
+			}
+
+/*			explicit InternalModule(MemoryPool& p)
+				: useCount(0), handle(0), 
+				originalName(p), loadName(p) { } */
+			InternalModule(MemoryPool& p, 
+						   ModuleLoader::Module* h,
+						   const Firebird::PathName& on, 
+						   const Firebird::PathName& ln)
+				: useCount(0), handle(h), 
+				originalName(p, on), loadName(p, ln) { }
+
+			~InternalModule()
+			{
+				fb_assert(useCount == 0);
+				if (handle)
+				{
+					delete handle;
+				}
+			}
+
+			bool operator==(const Firebird::PathName &pn) const
+			{
+				return originalName == pn || loadName == pn;
+			}
+
+			bool inUse() const
+			{
+				return useCount > 0;
+			}
+
+			void aquire()
+			{
+				fb_assert(handle);
+				++useCount;
+			}
+
+			void release()
+			{
+				fb_assert(useCount > 0);
+				--useCount;
+			}
+		};
+
+		InternalModule* interMod;
+
+		Module(InternalModule* h) : interMod(h)
+		{
+			if (interMod)
+			{
+				interMod->aquire();
+			}
+		}
+
+		static Module lookupModule(const char*, bool);
+
+		static InternalModule* scanModule(const Firebird::PathName& name);
+			
+	public:
+		typedef Firebird::Array<InternalModule*> LoadedModules;
+
+		Module() : interMod(0) { }
+
+		Module(MemoryPool&) : interMod(0) { }
+
+		Module(MemoryPool&, const Module& m) : interMod(m.interMod)
+		{
+			if (interMod)
+			{
+				interMod->aquire();
+			}
+		}
+
+		Module(const Module& m) : interMod(m.interMod)
+		{
+			if (interMod)
+			{
+				interMod->aquire();
+			}
+		}
+
+		~Module();
+
+		// used for UDF/BLOB Filter
+		static FPTR_INT lookup(const char*, const char*, Firebird::SortedObjectsArray<Module>&);
+
+		// used in y-valve
+		static FPTR_INT lookup(const char*, const char*);
+
+		bool operator>(const Module &im) const
+		{
+			// we need it to sort on some key
+			return interMod - im.interMod > 0;
+		}
+
+		void *lookupSymbol(const Firebird::string& name)
+		{
+			if (! interMod)
+			{
+				return 0;
+			}
+			return interMod->findSymbol(name);
+		}
+
+		operator bool()
+		{
+			return interMod;
+		}
+	};
+
+	typedef Firebird::SortedObjectsArray<Module> DatabaseModules;
+
+} // namespace Jrd
 
 #endif /* JRD_FLU_H */

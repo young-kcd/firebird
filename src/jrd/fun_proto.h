@@ -27,8 +27,6 @@
 class Jrd::CompilerScratch;
 
 void		FUN_evaluate(Jrd::UserFunction*, Jrd::jrd_nod*, Jrd::impure_value*);
-void		FUN_fini(Jrd::thread_db*);
-void		FUN_init(void);
 Jrd::UserFunction*	FUN_lookup_function(const Firebird::string&, bool ShowAccessError);
 Jrd::UserFunction*	FUN_resolve(Jrd::CompilerScratch*, Jrd::UserFunction*, Jrd::jrd_nod*);
 

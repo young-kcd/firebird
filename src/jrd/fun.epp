@@ -30,7 +30,7 @@
  * 2003.08.10 Claudio Valderrama: Fix SF Bugs #544132 and #728839.
  */
 /*
-$Id: fun.epp,v 1.67 2004-11-10 04:41:59 robocop Exp $
+$Id: fun.epp,v 1.68 2004-11-29 11:15:08 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -557,42 +557,6 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 }
 
 
-void FUN_fini( thread_db* tdbb)
-{
-/**************************************
- *
- *	F U N _ f i n i
- *
- **************************************
- *
- * Functional description
- *	Unregister interest in external function modules.
- *
- **************************************/
-	Database* dbb = tdbb->tdbb_database;
-
-	while (dbb->dbb_modules.hasData()) 
-	{
-		FLU_unregister_module(dbb->dbb_modules.pop());
-	}
-}
-
-
-void FUN_init(void)
-{
-/**************************************
- *
- *	F U N _ i n i t
- *
- **************************************
- *
- * Functional description
- *	Initialize external function mechanism.
- *
- **************************************/
-}
-
-
 UserFunction* FUN_lookup_function(const Firebird::string& name, bool ShowAccessError)
 {
 /**************************************
@@ -669,14 +633,6 @@ UserFunction* FUN_lookup_function(const Firebird::string& name, bool ShowAccessE
 		MOVE_FAST(temp, function->fun_rpt,
 				  (count + 1) * sizeof(fun_repeat));
 				  
-		TEXT* p;
-#ifndef	WIN_NT					/* NT allows blanks in file paths */
-		for (p = X.RDB$MODULE_NAME; *p && *p != ' '; p++);
-		*p = 0;
-#endif
-		for (p = X.RDB$ENTRYPOINT; *p && *p != ' '; p++);
-		*p = 0;
-
 		/* Prepare the exception message to be used in case this function ever
 		   causes an exception.  This is done at this time to save us from preparing
 		   (thus allocating) this message every time the function is called. */
@@ -684,37 +640,7 @@ UserFunction* FUN_lookup_function(const Firebird::string& name, bool ShowAccessE
 				X.RDB$ENTRYPOINT, X.RDB$MODULE_NAME);
 
 		function->fun_entrypoint =
-			ISC_lookup_entrypoint(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT,
-								  ISC_EXT_LIB_PATH_ENV, ShowAccessError);
-
-		MOD module = FLU_lookup_module(X.RDB$MODULE_NAME);
-		if (module) {
-			/* Register interest in the module by database. */
-
-			Firebird::Stack<mod*>::const_iterator stack(dbb->dbb_modules);
-			while (stack.hasData())
-			{
-				if (module == stack.object())
-				{
-					break;
-				}
-				++stack;
-			}
-
-			/* If the module was already registered with this database
-			   then decrement the use count that was incremented in
-			   ISC_lookup_entrypoint() above. Otherwise push it onto
-			   the stack of registered modules. */
-
-			if (stack.hasData())
-			{
-				FLU_unregister_module(module);
-			}
-			else
-			{
-				dbb->dbb_modules.push(module);
-			}
-		}
+			Module::lookup(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT, dbb->modules);
 
 		/* Could not find a function with given MODULE, ENTRYPOINT,
 		 * Try the list of internally implemented functions.

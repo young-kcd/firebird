@@ -93,6 +93,9 @@
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
+// Definition of DatabasePlugins
+#include "../jrd/flu.h"
+
 class str;
 class CharSetContainer;
 struct dsc;
@@ -159,6 +162,8 @@ public:
 		if (toDelete == 0)
 			return;
 		JrdMemoryPool *perm = toDelete->dbb_permanent;
+		// No ideas, why ~modules() not done?
+		// modules.clear();
 #ifdef SUPERSERVER
 		// Memory pool destruction below decrements memory statistics for 
 		// SuperServer situated in database block we are about to deallocate
@@ -186,7 +191,8 @@ public:
 	vcl*		dbb_t_pages;	/* pages number for transactions */
 	vcl*		dbb_gen_id_pages;	/* known pages for gen_id */
 	BlobFilter*	dbb_blob_filters;	/* known blob filters */
-	Firebird::Stack<mod*>	dbb_modules;	/* external function/filter modules */
+
+	DatabaseModules	modules;	/* external function/filter modules */
 	MUTX_T *dbb_mutexes;		/* Database block mutexes */
 	WLCK_T *dbb_rw_locks;		/* Database block read/write locks */
 	REC_MUTX_T dbb_sp_rec_mutex;	/* Recursive mutex for accessing/updating stored procedure metadata */
@@ -272,7 +278,7 @@ public:
 
 private:
 	explicit Database(MemoryPool& p)
-	:	dbb_modules(p),
+	:	modules(p),
 		dbb_spare_string(p),
 		dbb_filename(p),
 		dbb_database_name(p),

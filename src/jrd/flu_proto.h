@@ -25,34 +25,7 @@
 #ifndef JRD_FLU_PROTO_H
 #define JRD_FLU_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-mod*	FLU_lookup_module(TEXT*);
-void	FLU_unregister_module(mod*);
-// int (*ISC_lookup_entrypoint(TEXT*, TEXT*, const TEXT*, bool)) (void);
-// int (*FUNCTIONS_entrypoint(TEXT*, TEXT*)) (void);
-// int (*BUILTIN_entrypoint(TEXT*, TEXT*)) (void);
-FPTR_INT ISC_lookup_entrypoint(TEXT*, TEXT*, const TEXT*, bool);
 FPTR_INT BUILTIN_entrypoint(const TEXT*, const TEXT*);
-
-/*
-   This shouldn't be in a production server,
-   If we should ever need this again, 
-   this should be enabled *ONLY* for
-   the debug version.
-   FSG 18.Dez.2000
-   
-*/
-
-/*int		       QATEST_entrypoint (ULONG *, void *, void *, void *);
-*/
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
-
 FPTR_INT FUNCTIONS_entrypoint(const char*, const char*);
 
 #endif // JRD_FLU_PROTO_H

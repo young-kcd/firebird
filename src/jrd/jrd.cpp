@@ -757,7 +757,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		LCK_init(tdbb, LCK_OWNER_database);
 		dbb->dbb_flags |= DBB_lck_init_done;
 		INI_init();
-		FUN_init();
+		// FUN_init();
 		dbb->dbb_file =
 			PIO_open(dbb, expanded_name.c_str(), expanded_name.length(),
 					 options.dpb_trace != 0, NULL, file_name, file_length);
@@ -1871,7 +1871,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	LCK_init(tdbb, LCK_OWNER_database);
 	dbb->dbb_flags |= DBB_lck_init_done;
 	INI_init();
-	FUN_init();
+	// FUN_init();
 	PAG_init();
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
@@ -5784,7 +5784,7 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 	CMP_fini(tdbb);
 	CCH_fini(tdbb);
 	delete dbb->backup_manager;
-	FUN_fini(tdbb);
+	// FUN_fini(tdbb);
 
 	if (dbb->dbb_shadow_lock)
 		LCK_release(tdbb, dbb->dbb_shadow_lock);
