@@ -75,7 +75,7 @@ private:
 	bool lookup_user(TEXT*, int*, int*, TEXT*);
 	bool prepare();
 
-	static SecurityDatabase& instance();
+	static SecurityDatabase instance;
 
 	SecurityDatabase();
 };

@@ -98,16 +98,10 @@ const UCHAR SecurityDatabase::TPB[4] = {
 	isc_tpb_wait
 };
 
-/******************************************************************************
- *
- *	Static instance of the database
- */
+/* Static instance of the database */
 
-SecurityDatabase& SecurityDatabase::instance()
-{
-	static SecurityDatabase db;
-	return db;
-}
+SecurityDatabase SecurityDatabase::instance;
+
 
 /******************************************************************************
  *
@@ -142,16 +136,13 @@ void SecurityDatabase::unlock()
 
 void SecurityDatabase::fini()
 {
+	counter -= (is_cached) ? 1 : 0;
 #ifndef EMBEDDED
-	if (is_cached && counter > 0)
+	if (counter == 1 && lookup_db)
 	{
-		if (--counter == 1)
-		{
-			counter = 0;
-			THREAD_EXIT;
-			isc_detach_database(status, &lookup_db);
-			THREAD_ENTER;
-		}
+		THREAD_EXIT;
+		isc_detach_database(status, &lookup_db);
+		THREAD_ENTER;
 	}
 #endif
 }
@@ -239,7 +230,7 @@ bool SecurityDatabase::prepare()
 	/* dimitr: access to the class members in this routine should be synchronized
 			   when fine grained locking will be implemented for the SS architecture */
 
-	if (counter > 1)
+	if (lookup_db)
 	{
 		THREAD_EXIT;
 		return true;
@@ -336,12 +327,12 @@ void SecurityDatabase::getPath(TEXT* path_buffer)
 
 void SecurityDatabase::initialize()
 {
-	instance().init();
+	instance.init();
 }
 
 void SecurityDatabase::shutdown()
 {
-	instance().fini();
+	instance.fini();
 }
 
 void SecurityDatabase::verifyUser(TEXT* name,
@@ -372,10 +363,10 @@ void SecurityDatabase::verifyUser(TEXT* name,
 	return;
 #else
 	THREAD_EXIT;
-	instance().lock();
+	instance.lock();
 	THREAD_ENTER;
-	notfound = instance().lookup_user(name, uid, gid, pw1);
-	instance().unlock();
+	notfound = instance.lookup_user(name, uid, gid, pw1);
+	instance.unlock();
 #endif
 
 	/* Punt if the user has specified neither a raw nor an encrypted password,
