@@ -20,15 +20,15 @@ class pool_alloc : public blk
         void* operator new(size_t s, MemoryPool& p )
             { return p.allocate(s, TYPE); }
         void operator delete(void* mem, MemoryPool& p)
-            { p.deallocate(mem); }
+            { if (mem) p.deallocate(mem); }
 
         void* operator new[](size_t s, MemoryPool& p)
             { return p.allocate(s, TYPE); }
         void operator delete[](void* mem, MemoryPool& p)
-            { p.deallocate(mem); }
+            { if (mem) p.deallocate(mem); }
 
-        void operator delete(void* mem) { MemoryPool::deallocate(mem); }
-        void operator delete[](void* mem) { MemoryPool::deallocate(mem); }
+        void operator delete(void* mem) { if (mem) MemoryPool::deallocate(mem); }
+        void operator delete[](void* mem) { if (mem) MemoryPool::deallocate(mem); }
 
 private:
     /* These operators are off-limits */
@@ -43,8 +43,8 @@ class pool_alloc_rpt : public blk
         void* operator new(size_t s, MemoryPool& p, int rpt)
             { return p.allocate(s + sizeof(RPT)*rpt, TYPE); }
         void operator delete(void* mem, MemoryPool& p,int rpt)
-            { p.deallocate(mem); }
-        void operator delete(void* mem) { MemoryPool::deallocate(mem); }
+            { if (mem) p.deallocate(mem); }
+        void operator delete(void* mem) { if (mem) MemoryPool::deallocate(mem); }
 
     private:
         // These operations are not supported on static repeat-base objects

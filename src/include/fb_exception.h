@@ -41,7 +41,7 @@ public:
 	STATUS value() const { return m_s; }
 
 	// TMN: to be moved into its own source file!
-	static void raise(STATUS s) { throw status_exception(s); }
+	static void raise(STATUS s);
 
 private:
 	STATUS m_s;
