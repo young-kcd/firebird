@@ -441,8 +441,8 @@ GDS_DSQL_ALLOCATE_CPP(	ISC_STATUS*    user_status,
 
 	DSQL_set_thread_data(tdsql, &thd_context);
 
-    try
-    {
+	try
+	{
 		init(0);
 
 // If we haven't been initialized yet, do it now 
@@ -512,8 +512,8 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 
 	DSQL_set_thread_data(tdsql, &thd_context);
 
-    try
-    {
+	try
+	{
 		init(0);
 		sing_status = 0;
 
@@ -584,7 +584,7 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 				((request->
 			  	req_type == REQ_EMBED_SELECT) ? REQ_embedded_sql_cursor : 0);
 
-            dsql_opn* open_cursor = FB_NEW(*DSQL_permanent_pool) dsql_opn;
+			dsql_opn* open_cursor = FB_NEW(*DSQL_permanent_pool) dsql_opn;
 			request->req_open_cursor = open_cursor;
 			open_cursor->opn_request = request;
 			open_cursor->opn_transaction = *trans_handle;
@@ -650,8 +650,8 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
 
 	DSQL_set_thread_data(tdsql, &thd_context);
 
-    try
-    {
+	try
+	{
 		dsql_dbb* database = init(db_handle);
 
 		DsqlContextPoolHolder context(tdsql, DsqlMemoryPool::createPool());
@@ -796,19 +796,20 @@ ISC_STATUS	dsql8_execute_immediate(
 static bool check_for_create_database(const Firebird::string& sql,
 									  const TEXT* crdb)
 {
-	for (Firebird::string::size_type i = 0; i < sql.length(); i++) {
-    	switch (sql[i]) {
-        	case '\t':
-        	case '\n':
-        	case '\r':
-        	case ' ':
-            	continue;
-        }
-	    if (tolower(sql[i]) != *crdb++)
-    	    break;
-	    if (! *crdb)
-    	    return true;
-    }
+	for (Firebird::string::size_type i = 0; i < sql.length(); i++)
+	{
+		switch (sql[i]) {
+			case '\t':
+			case '\n':
+			case '\r':
+			case ' ':
+				continue;
+		}
+		if (tolower(sql[i]) != *crdb++)
+			break;
+		if (! *crdb)
+			return true;
+	}
 
 	return false;
 }
@@ -847,19 +848,19 @@ ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
 	dsql_dbb* database;
 	for (database = databases; database; database = database->dbb_next)
 	{
-	    if (WHY_translate_handle(database->dbb_database_handle)->handle.h_dbb == jrd_attachment_handle)
+		if (WHY_translate_handle(database->dbb_database_handle)->handle.h_dbb == jrd_attachment_handle)
 		{
 			break;
 		}
 	}
 	if (! database) {
-    	status[0] = isc_arg_gds;
-    	status[1] = isc_bad_db_handle;
-    	status[2] = isc_arg_end;
-    	THD_MUTEX_UNLOCK(&databases_mutex);
-        THREAD_ENTER();
-    	return status[1];
-    }
+		status[0] = isc_arg_gds;
+		status[1] = isc_bad_db_handle;
+		status[2] = isc_arg_end;
+		THD_MUTEX_UNLOCK(&databases_mutex);
+		THREAD_ENTER();
+		return status[1];
+	}
 	WHY_DBB	why_db_handle = WHY_translate_handle(database->dbb_database_handle);
 
 	/* 2. Create why_trans_handle - it's new, but points to the same jrd
@@ -869,9 +870,9 @@ ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
 		status[0] = isc_arg_gds;
 		status[1] = isc_virmemexh;
 		status[2] = isc_arg_end;
-    	THD_MUTEX_UNLOCK(&databases_mutex);
-        THREAD_ENTER();
-    	return status[1];
+		THD_MUTEX_UNLOCK(&databases_mutex);
+		THREAD_ENTER();
+		return status[1];
 	}
 	why_trans_handle->handle.h_tra = jrd_transaction_handle;
 	why_trans_handle->parent = why_db_handle;
@@ -900,18 +901,18 @@ WHY_DBB	GetWhyAttachment (ISC_STATUS* status,
 	for (database = databases; database; database = database->dbb_next)
 	{
 		db_handle = WHY_translate_handle(database->dbb_database_handle);
-	    if (db_handle->handle.h_dbb == jrd_attachment_handle)
+		if (db_handle->handle.h_dbb == jrd_attachment_handle)
 		{
 			break;
 		}
 	}
 	if (! database) {
-    	status[0] = isc_arg_gds;
-    	status[1] = isc_bad_db_handle;
-    	status[2] = isc_arg_end;
+		status[0] = isc_arg_gds;
+		status[1] = isc_bad_db_handle;
+		status[2] = isc_arg_end;
 	}
 	THD_MUTEX_UNLOCK (&databases_mutex);
-    THREAD_ENTER();
+	THREAD_ENTER();
 	return database ? db_handle : 0;
 }
 
@@ -954,8 +955,8 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 
 	DSQL_set_thread_data(tdsql, &thd_context);
 
-    try
-    {
+	try
+	{
 		init(0);
 
 		dsql_req* request = *req_handle;
@@ -1171,8 +1172,8 @@ ISC_STATUS GDS_DSQL_FREE_CPP(ISC_STATUS*	user_status,
 
 	DSQL_set_thread_data(tdsql, &thd_context);
 
-    try
-    {
+	try
+	{
 		init(0);
 
 		request = *req_handle;
@@ -1234,8 +1235,8 @@ ISC_STATUS GDS_DSQL_INSERT_CPP(	ISC_STATUS*	user_status,
 
 	DSQL_set_thread_data(tdsql, &thd_context);
 
-    try
-    {
+	try
+	{
 		init(0);
 
 		dsql_req* request = *req_handle;
@@ -1337,8 +1338,8 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -901,
 		                   isc_arg_gds, isc_bad_req_handle,
 			               0);
-	        }
-	    }
+			}
+		}
 
 // check to see if old request has an open cursor 
 
@@ -1481,8 +1482,8 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 
 	DSQL_set_thread_data(tdsql, &thd_context);
 
-    try
-    {
+	try
+	{
 		init(0);
 
 		dsql_req* request = *req_handle;
@@ -1588,8 +1589,8 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 
 	DSQL_set_thread_data(tdsql, &thd_context);
 
-    try
-    {
+	try
+	{
 		init(0);
 		memset(buffer, 0, sizeof(buffer));
 
@@ -1873,7 +1874,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		verb = "agg_count";
 		break;
 /* count2
-    case nod_agg_distinct: verb = "agg_distinct";	break;
+	case nod_agg_distinct: verb = "agg_distinct";	break;
 */
 	case nod_agg_max:
 		verb = "agg_max";
@@ -1964,10 +1965,10 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_def_relation:
 		verb = "define relation";
 		break;
-   // CVC: New node redef_relation. 
-    case nod_redef_relation:    
-        verb = "redefine relation";    
-        break;
+	// CVC: New node redef_relation.
+	case nod_redef_relation:
+		verb = "redefine relation";
+		break;
 	case nod_def_view:
 		verb = "define view";
 		break;
@@ -1998,10 +1999,10 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_del_relation:
 		verb = "delete relation";
 		break;
-    // CVC: New node del_view. 
-    case nod_del_view:     
-        verb = "delete view";       
-        break;
+	// CVC: New node del_view.
+	case nod_del_view:
+		verb = "delete view";
+		break;
 	case nod_def_procedure:
 		verb = "define procedure";
 		break;
@@ -2011,10 +2012,10 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_replace_procedure:
 		verb = "replace procedure";
 		break;
-    // CVC: New node redef_procedure. 
-    case nod_redef_procedure:  
-        verb = "redefine procedure"; 
-        break;
+	// CVC: New node redef_procedure.
+	case nod_redef_procedure:
+		verb = "redefine procedure";
+		break;
 	case nod_del_procedure:
 		verb = "delete procedure";
 		break;
@@ -2222,10 +2223,10 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_user_name:
 		verb = "user_name";
 		break;
-        // CVC: New node current_role. 
-    case nod_current_role: 
-        verb = "current_role";  
-        break;
+	// CVC: New node current_role.
+	case nod_current_role:
+		verb = "current_role";
+		break;
 	case nod_via:
 		verb = "via";
 		break;
@@ -2652,12 +2653,12 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		const dsql_prc* procedure = context->ctx_procedure;
 		const dsql_fld* field = (dsql_fld*) node->nod_arg[e_fld_field];
 		trace_line("%sfield %s.%s, context %d\n", buffer,
- 			(relation != NULL ? 
- 				relation->rel_name : 
- 				(procedure != NULL ? 
- 					procedure->prc_name : 
- 					"unknown_db_object")), 
- 			field->fld_name, context->ctx_context);
+			(relation != NULL ?
+				relation->rel_name :
+				(procedure != NULL ?
+					procedure->prc_name :
+					"unknown_db_object")),
+			field->fld_name, context->ctx_context);
 		return;
 		}
 	
@@ -2667,12 +2668,12 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		if (string)
 			trace_line("%s.", string->str_data);
 		string = (dsql_str*) node->nod_arg[e_fln_name];
-        if (string != 0) {
-            trace_line("%s\"\n", string->str_data);
-        }
-        else {
-            trace_line("%s\"\n", "*");
-        }
+		if (string != 0) {
+			trace_line("%s\"\n", string->str_data);
+		}
+		else {
+			trace_line("%s\"\n", "*");
+		}
 		return;
 
 	case nod_map:
@@ -2695,27 +2696,27 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		const dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_rel_context];
 		const dsql_rel* relation = context->ctx_relation;
 		const dsql_prc* procedure = context->ctx_procedure;
- 		if ( relation != NULL ) {
- 			trace_line("%srelation %s, context %d\n",
- 				buffer, relation->rel_name, context->ctx_context);
- 		}
+		if ( relation != NULL ) {
+			trace_line("%srelation %s, context %d\n",
+				buffer, relation->rel_name, context->ctx_context);
+		}
 		else if ( procedure != NULL ) {
- 			trace_line("%sprocedure %s, context %d\n",
- 				buffer, procedure->prc_name, context->ctx_context);
- 		}
+			trace_line("%sprocedure %s, context %d\n",
+				buffer, procedure->prc_name, context->ctx_context);
+		}
 		else {
- 			trace_line("%sUNKNOWN DB OBJECT, context %d\n",
- 				buffer, context->ctx_context);
- 		}
+			trace_line("%sUNKNOWN DB OBJECT, context %d\n",
+				buffer, context->ctx_context);
+		}
 		return;
 		}
 
 	case nod_variable:
 		{
 		const dsql_var* variable = (dsql_var*) node->nod_arg[e_var_variable];
-        // Adding variable->var_variable_number to display, obviously something
-        // is missing from the printf, and Im assuming this was it.
-        // (anyway can't be worse than it was MOD 05-July-2002.
+		// Adding variable->var_variable_number to display, obviously something
+		// is missing from the printf, and Im assuming this was it.
+		// (anyway can't be worse than it was MOD 05-July-2002.
 		trace_line("%svariable %s %d\n", buffer, variable->var_name, variable->var_variable_number);
 		return;
 		}
@@ -2738,31 +2739,31 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		return;
 
 
-    case nod_udf:
-        trace_line ("%sfunction: \"", buffer);  
-    /* nmcc: how are we supposed to tell which type of nod_udf this is ?? */
-    /* CVC: The answer is that nod_arg[0] can be either the udf name or the
-    pointer to udf struct returned by METD_get_function, so we should resort
-    to the block type. The replacement happens in pass1_udf(). */
-        //        switch (node->nod_arg[e_udf_name]->nod_header.blk_type) {
-        switch (MemoryPool::blk_type(node->nod_arg[e_udf_name])) {
-        case dsql_type_udf:
-            trace_line ("%s\"\n", ((dsql_udf*) node->nod_arg[e_udf_name])->udf_name);
-            break;
-        case dsql_type_str:  
-            string = (dsql_str*) node->nod_arg[e_udf_name];
-            trace_line ("%s\"\n", string->str_data);
-            break;
-        default:
-            trace_line ("%s\"\n", "<ERROR>");
-            break;
-        }
-        ptr++;
+	case nod_udf:
+		trace_line ("%sfunction: \"", buffer);
+		/* nmcc: how are we supposed to tell which type of nod_udf this is ?? */
+		/* CVC: The answer is that nod_arg[0] can be either the udf name or the
+		pointer to udf struct returned by METD_get_function, so we should resort
+		to the block type. The replacement happens in pass1_udf(). */
+		//switch (node->nod_arg[e_udf_name]->nod_header.blk_type) {
+		switch (MemoryPool::blk_type(node->nod_arg[e_udf_name])) {
+		case dsql_type_udf:
+			trace_line ("%s\"\n", ((dsql_udf*) node->nod_arg[e_udf_name])->udf_name);
+			break;
+		case dsql_type_str:
+			string = (dsql_str*) node->nod_arg[e_udf_name];
+			trace_line ("%s\"\n", string->str_data);
+			break;
+		default:
+			trace_line ("%s\"\n", "<ERROR>");
+			break;
+		}
+		ptr++;
 
-        if (node->nod_count == 2) {
-            DSQL_pretty (*ptr, column + 1);
-        }
-        return;
+		if (node->nod_count == 2) {
+			DSQL_pretty (*ptr, column + 1);
+		}
+		return;
 
 	default:
 		sprintf(s, "unknown type %d", node->nod_type);
@@ -2771,9 +2772,9 @@ void DSQL_pretty(const dsql_nod* node, int column)
 
 	if (node->nod_desc.dsc_dtype) {
 		trace_line("%s%s (%d,%d,%p)\n",
-			   buffer, verb,
-			   node->nod_desc.dsc_dtype,
-			   node->nod_desc.dsc_length, node->nod_desc.dsc_address);
+				buffer, verb,
+				node->nod_desc.dsc_dtype,
+				node->nod_desc.dsc_length, node->nod_desc.dsc_address);
 	}
 	else {
 		trace_line("%s%s\n", buffer, verb);
@@ -3665,9 +3666,9 @@ static USHORT get_plan_info(
 
 		plan = buffer_ptr;
 
-        /* CVC: What if we need to do 2nd pass? Those variables were only initialized
-           at the begining of the function hence they had trash the second time. */
-        USHORT join_count = 0, level = 0;
+		/* CVC: What if we need to do 2nd pass? Those variables were only initialized
+		at the begining of the function hence they had trash the second time. */
+		USHORT join_count = 0, level = 0;
 
 		// keep going until we reach the end of the explain info 
 
@@ -3824,10 +3825,10 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 		break;
 
 	case isc_info_rsb_end:
-        if (*level_ptr) {
-            (*level_ptr)--;
-        }
-        /* else --*parent_join_count; ??? */
+		if (*level_ptr) {
+			(*level_ptr)--;
+		}
+		/* else --*parent_join_count; ??? */
 		break;
 
 	case isc_info_rsb_relation:
@@ -3931,11 +3932,11 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			if (rsb_type == isc_info_rsb_cross ||
 				rsb_type == isc_info_rsb_left_cross)
 			{
-                p = "JOIN (";
-            }
+				p = "JOIN (";
+			}
 			else {
 				p = "MERGE (";
-            }
+			}
 
 			if ((plan_length -= strlen(p)) < 0)
 				return false;
@@ -4006,7 +4007,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			if (rsb_type == isc_info_rsb_navigate &&
 				*explain == isc_info_rsb_indexed)
 			{
-		        USHORT idx_count = 1;
+				USHORT idx_count = 1;
 				if (!get_rsb_item(&explain_length, &explain, &plan_length,
 								  &plan, &idx_count, level_ptr))
 				{
