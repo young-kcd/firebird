@@ -1,3 +1,21 @@
+2005-03-07 23:59  arnobrinkman
+
+	* firebird2/src/jrd/Optimizer.cpp (1.11):
+	
+	fix divide by zero issues and add some comments
+
+2005-03-07 16:14  dimitr
+
+	* firebird2/doc/WhatsNew (1.59):
+	
+	Decribed recent changes.
+
+2005-03-07 08:37  robocop
+
+	* firebird2/builds/win32/make_all.bat (1.32):
+	
+	Include fbembed in MSVC6 build.
+
 2005-03-05 02:43  robocop
 
 	* firebird2/: builds/install/arch-specific/freebsd/install.sh.in
