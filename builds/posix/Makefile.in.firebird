@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.37.2.5 2003-10-28 18:21:42 skidder Exp $
+#  $Id: Makefile.in.firebird,v 1.37.2.6 2003-11-10 22:57:17 bellardo Exp $
 #
 
 ROOT=..
@@ -337,8 +337,9 @@ otherfiles: misc_files
 .PHONY: libfbembed inet_server embed_gfix embed_gbak embed_isql 
 .PHONY: embed_gpre embed_util
 
-classic_targets: libfbembed inet_server embed_gfix embed_gbak embed_isql \
-	embed_gpre embed_util embed_gdef embed_qli libfbclient
+classic_targets: $(PLAT_CLASSIC_PRE_TARGET) libfbembed inet_server \
+	embed_gfix embed_gbak embed_isql embed_gpre embed_util embed_gdef \
+	embed_qli libfbclient $(PLAT_CLASSIC_POST_TARGET)
 
 libfbembed:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.libfbembed $@

@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin,v 1.8.2.7 2003-11-10 00:01:40 bellardo Exp $
+#$Id: prefix.darwin,v 1.8.2.8 2003-11-10 22:57:17 bellardo Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 CC=@CXX@
@@ -36,3 +36,62 @@ CLIENT_UTIL_TARGETS=gds_drop gds_delay gstat gsec fbguard fbmgr_bin fb_lock_prin
 
 Physical_IO_Module=unix.cpp
 PLATFORM_PATH := jrd/os/darwin
+
+PLAT_CLASSIC_PRE_TARGET=darwin_setup_framework
+PLAT_CLASSIC_POST_TARGET=darwin_finish_cs_framework
+
+
+darwin_setup_framework: ../gen/firebird/Firebird.framework
+
+../gen/firebird/Firebird.framework: FB_FW = ../gen/firebird/Firebird.framework
+../gen/firebird/Firebird.framework:
+	-$(RM) -rf $(FB_FW) ../gen/firebird/Firebird.framework
+	mkdir -p $(FB_FW)/Versions/A/Resources/English.lproj/var
+	ln -s Versions/Current/Firebird $(FB_FW)/Firebird
+	ln -s Versions/Current/Headers $(FB_FW)/Headers
+	ln -s Versions/Current/Resources $(FB_FW)/Resources
+	ln -s A $(FB_FW)/Versions/Current
+	ln -s ../../../include $(FB_FW)/Versions/A/Headers
+	ln -s ../../../lib/libfbembbed.dylib $(FB_FW)/Versions/A/Firebird
+	ln -s ../../../../../../firebird.msg \
+			$(FB_FW)/Resources/English.lproj/var/firebird.msg
+	ln -s ../../../../../../bin $(FB_FW)/Resources/English.lproj/var/bin
+	ln -s ../../../../../../UDF $(FB_FW)/Resources/English.lproj/var/UDF
+	ln -s ../../../../../../intl $(FB_FW)/Resources/English.lproj/var/intl
+	ln -s ../../../../../../security.fdb \
+				$(FB_FW)/Resources/English.lproj/var/security.fdb
+	ln -s ../../../../../../help $(FB_FW)/Resources/English.lproj/var/help
+	#sed "s/__VERSION__/`$(VERS_UTIL)`/g" source/firebird/bellardo/darwin/FrameworkInfo.plist > source/interbase/Firebird.framework/Resources/Info.plist
+
+darwin_finish_cs_framework: FB_FW = ../gen/firebird/frameworks/FirebirdCS.framework
+darwin_finish_cs_framework:
+	-$(RM) -rf $(FB_FW)
+	mkdir -p $(FB_FW)/Versions/A/Resources/English.lproj/var
+	ln -s Versions/Current/Firebird $(FB_FW)/Firebird
+	ln -s Versions/Current/Headers $(FB_FW)/Headers
+	ln -s Versions/Current/Resources $(FB_FW)/Resources
+	ln -s A $(FB_FW)/Versions/Current
+	cp -r ../gen/firebird/include $(FB_FW)/Versions/A/Headers
+	cp ../gen/firebird/lib/libfbembed.dylib $(FB_FW)/Versions/A/Firebird
+	cp ../gen/firebird/firebird.msg \
+			$(FB_FW)/Resources/English.lproj/var/firebird.msg
+	cp -r ../gen/firebird/UDF $(FB_FW)/Resources/English.lproj/var/UDF
+	cp -r ../gen/firebird/intl $(FB_FW)/Resources/English.lproj/var/intl
+	cp -r ../gen/firebird/help $(FB_FW)/Resources/English.lproj/var/help
+	cp ../gen/firebird/security.fdb $(FB_FW)/Resources/English.lproj/var
+	mkdir -p $(FB_FW)/Resources/bin
+	ln -s ../../bin $(FB_FW)/Resources/English.lproj/var/bin
+	cp ../gen/firebird/bin/fb_inet_server $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/gfix $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/gbak $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/isql $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/gpre $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/gdef $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/qli $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/fb_lock_mgr $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/fb_lock_print $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/gds_drop $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/gds_relay $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/gsec $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/gstat $(FB_FW)/Resources/bin
+	#sed "s/__VERSION__/`$(VERS_UTIL)`/g" source/firebird/bellardo/darwin/FrameworkInfo.plist > source/interbase/Firebird.framework/Resources/Info.plist
