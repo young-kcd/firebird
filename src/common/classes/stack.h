@@ -276,7 +276,8 @@ namespace Firebird {
 			const_iterator& operator++()
 			{
 				fb_assert(stk);
-				if (--elem <= 0) {
+				fb_assert(elem);
+				if (--elem == 0) {
 					if ((stk = stk->next))
 					{
 						elem = stk->getCount();
