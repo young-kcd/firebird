@@ -3615,7 +3615,7 @@ static void pass1_erase(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 	for (;;) {
 		USHORT new_stream = (USHORT)(IPTR) node->nod_arg[e_erase_stream];
-		USHORT stream = new_stream;
+		const USHORT stream = new_stream;
 		CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
 		tail->csb_flags |= csb_erase;
 		jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
@@ -4299,7 +4299,7 @@ static jrd_nod* pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node
 
 	for (;;) {
 		jrd_nod* original = node->nod_arg[e_sto_relation];
-		USHORT stream = (USHORT)(IPTR) original->nod_arg[e_rel_stream];
+		const USHORT stream = (USHORT)(IPTR) original->nod_arg[e_rel_stream];
 		CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
 		tail->csb_flags |= csb_store;
 		jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
@@ -4843,7 +4843,7 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 		{
 			stream = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
 			// SMB_set uses SLONG, not USHORT
-			SLONG id = (SLONG)(IPTR) node->nod_arg[e_fld_id];
+			const SLONG id = (SLONG)(IPTR) node->nod_arg[e_fld_id];
 			SBM_set(tdbb, &csb->csb_rpt[stream].csb_fields, id);
 			if (node->nod_flags & nod_value) {
 				csb->csb_impure += sizeof(impure_value_ex);
@@ -5018,9 +5018,10 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 	if (node->nod_flags & nod_invariant)
 	{
 		if (csb->csb_current_nodes.getCount()) {
-			jrd_node_base* rse_node = csb->csb_current_nodes[0];
-			fb_assert(rse_node->nod_type == nod_rse);
-			RecordSelExpr* top_rse = static_cast<RecordSelExpr*>(rse_node);
+			// CVC: Nickolay says this rse_node is local. Therefore, renamed to aux_rse_node.
+			jrd_node_base* aux_rse_node = csb->csb_current_nodes[0];
+			fb_assert(aux_rse_node->nod_type == nod_rse);
+			RecordSelExpr* top_rse = static_cast<RecordSelExpr*>(aux_rse_node);
 			if (!top_rse->rse_invariants)
 				top_rse->rse_invariants = 
 					FB_NEW(*tdbb->tdbb_default) VarInvariantArray(*tdbb->tdbb_default);
@@ -5513,15 +5514,15 @@ static RecordSource* post_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelEx
 	{
 		jrd_nod* node = *ptr;
 		if (node->nod_type == nod_relation) {
-			USHORT stream = (USHORT)(IPTR) node->nod_arg[e_rel_stream];
+			const USHORT stream = (USHORT)(IPTR) node->nod_arg[e_rel_stream];
 			csb->csb_rpt[stream].csb_flags &= ~csb_active;
 		}
 		else if (node->nod_type == nod_procedure) {
-			USHORT stream = (USHORT)(IPTR) node->nod_arg[e_prc_stream];
+			const USHORT stream = (USHORT)(IPTR) node->nod_arg[e_prc_stream];
 			csb->csb_rpt[stream].csb_flags &= ~csb_active;
 		}
 		else if (node->nod_type == nod_aggregate) {
-			USHORT stream = (USHORT)(IPTR) node->nod_arg[e_agg_stream];
+			const USHORT stream = (USHORT)(IPTR) node->nod_arg[e_agg_stream];
 			fb_assert(stream <= MAX_STREAMS);
 			csb->csb_rpt[stream].csb_flags &= ~csb_active;
 		}
