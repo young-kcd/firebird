@@ -4260,7 +4260,7 @@ static RSB gen_retrieval(TDBB     tdbb,
 									break;
 								}
 							}
-							if (conjunct_position[j] == -1) {
+							if (conjunct_position[j] == -1 && !csb_tail->csb_plan) {
 								// Nevertheless we have a resulting count
 								// from match_index, still a node could not
 								// be assigned, because equal nodes are
