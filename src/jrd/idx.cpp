@@ -1263,7 +1263,6 @@ static IDX_E check_partner_index(
 }
 
 
-
 static bool duplicate_key(const UCHAR* record1, const UCHAR* record2, void* ifl_void)
 {
 /**************************************
