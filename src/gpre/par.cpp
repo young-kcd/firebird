@@ -672,12 +672,13 @@ void PAR_error(const TEXT* string)
 
 act* PAR_event_init(bool sql)
 {
-	char req_name[128];
+//	char req_name[128];
 
 //  make up statement node 
 
-	SQL_resolve_identifier("<identifier>", req_name);
-	strcpy(gpreGlob.token_global.tok_string, req_name);
+	SQL_resolve_identifier("<identifier>", NULL, MAX_EVENT_SIZE);
+	//SQL_resolve_identifier("<identifier>", req_name, sizeof(req_name));
+	//strcpy(gpreGlob.token_global.tok_string, req_name); Why? It's already done.
 	gpre_nod* init = MSC_node(nod_event_init, 4);
 	init->nod_arg[0] = (GPRE_NOD) PAR_symbol(SYM_dummy);
 	init->nod_arg[3] = (GPRE_NOD) gpreGlob.isc_databases;
@@ -756,13 +757,14 @@ act* PAR_event_init(bool sql)
 
 act* PAR_event_wait(bool sql)
 {
-	char req_name[132];
+//	char req_name[132];
 
 //  this is a simple statement, just add a handle 
 
 	act* action = MSC_action(0, ACT_event_wait);
-	SQL_resolve_identifier("<identifier>", req_name);
-	strcpy(gpreGlob.token_global.tok_string, req_name);
+	SQL_resolve_identifier("<identifier>", NULL, MAX_EVENT_SIZE);
+	//SQL_resolve_identifier("<identifier>", req_name, sizeof(req_name));
+	//strcpy(gpreGlob.token_global.tok_string, req_name); redundant
 	action->act_object = (REF) PAR_symbol(SYM_dummy);
 	if (!sql)
 		PAR_end();
@@ -960,7 +962,7 @@ TEXT* PAR_native_value(bool array_ref,
 	}
 
 	int length = string - buffer;
-	SCHAR* s2 = string = (SCHAR *) MSC_alloc(length + 1);
+	SCHAR* const s2 = string = (SCHAR *) MSC_alloc(length + 1);
 	const SCHAR* s1 = buffer;
 
 	if (length) {
@@ -1307,7 +1309,6 @@ static act* par_at()
 
 static act* par_based()
 {
-	TEXT t_str[NAME_SIZE + 1];
 	bool notSegment = false;	// a COBOL specific patch
 
 	MSC_match(KW_ON);
@@ -1321,7 +1322,7 @@ static act* par_based()
 		gpre_rel* relation = EXP_relation();
 		if (!MSC_match(KW_DOT))
 			CPR_s_error("dot in qualified field reference");
-		SQL_resolve_identifier("<fieldname>", t_str);
+		SQL_resolve_identifier("<fieldname>", NULL, NAME_SIZE + 1);
 		gpre_fld* field = MET_field(relation, gpreGlob.token_global.tok_string);
 		if (!field) {
 			fb_utils::snprintf(s, sizeof(s),
@@ -1609,8 +1610,7 @@ static act* par_derived_from()
 	if (!MSC_match(KW_DOT))
 		CPR_s_error("dot in qualified field reference");
 
-	TEXT dummy[64];
-	SQL_resolve_identifier("<Field Name>", dummy);
+	SQL_resolve_identifier("<Field Name>", NULL, NAME_SIZE);
 	
 	gpre_fld* field = MET_field(relation, gpreGlob.token_global.tok_string);
 	if (!field) {
@@ -3004,8 +3004,7 @@ static act* par_type()
 
 //  Look for field name.  No field name, punt
 
-	TEXT dummy[64];
-	SQL_resolve_identifier("<Field Name>", dummy);
+	SQL_resolve_identifier("<Field Name>", NULL, NAME_SIZE);
 	gpre_fld* field = MET_field(relation, gpreGlob.token_global.tok_string);
 	if (!field)
 		return NULL;
@@ -3040,9 +3039,7 @@ static act* par_type()
 
 static act* par_variable()
 {
-	bool is_null = false;
-
-//  
+//
 //  Since fortran is fussy about continuations and the like,
 //  see if this variable token is the first thing in a statement.
 //  
@@ -3058,6 +3055,7 @@ static act* par_variable()
 		dot = MSC_match(KW_DOT);
 	}
 
+	bool is_null = false;
 	if (dot && MSC_match(KW_NULL)) {
 		is_null = true;
 		dot = false;

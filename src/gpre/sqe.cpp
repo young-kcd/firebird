@@ -327,7 +327,6 @@ GPRE_NOD SQE_field(gpre_req* request,
 {
 	GPRE_NOD node;
 	gpre_req* slice_req;
-	TEXT s[ERROR_LENGTH];
 
 	assert_IS_REQ(request);
 
@@ -343,11 +342,13 @@ GPRE_NOD SQE_field(gpre_req* request,
 
 //  if the token isn't an identifier, complain 
 
-	SQL_resolve_identifier("<column name>", s);
+	SQL_resolve_identifier("<column name>", NULL, NAME_SIZE);
 
 //  For domains we can't be resolving tokens to field names
 //  in the CHECK constraint. 
 
+	TEXT s[ERROR_LENGTH];
+		
 	act* action;
 	if (request &&
 		request->req_type == REQ_ddl &&
@@ -382,7 +383,7 @@ GPRE_NOD SQE_field(gpre_req* request,
 		TOK f_token = (TOK) MSC_alloc(TOK_LEN);
 		node->nod_arg[0] = (GPRE_NOD) f_token;
 		f_token->tok_length = gpreGlob.token_global.tok_length;
-		SQL_resolve_identifier("<identifier>", f_token->tok_string);
+		SQL_resolve_identifier("<identifier>", f_token->tok_string, f_token->tok_length + 1);
 		CPR_token();
 
 		if (MSC_match(KW_DOT)) {
@@ -397,7 +398,7 @@ GPRE_NOD SQE_field(gpre_req* request,
 				f_token = (TOK) MSC_alloc(TOK_LEN);
 				node->nod_arg[0] = (GPRE_NOD) f_token;
 				f_token->tok_length = gpreGlob.token_global.tok_length;
-				SQL_resolve_identifier("<identifier>", f_token->tok_string);
+				SQL_resolve_identifier("<identifier>", f_token->tok_string, f_token->tok_length + 1);
 			}
 			CPR_token();
 		}
@@ -491,7 +492,7 @@ GPRE_NOD SQE_field(gpre_req* request,
 					CPR_s_error("<period> in qualified column");
 				if (context->ctx_request != request)
 					PAR_error("context not part of this request");
-				SQL_resolve_identifier("<Column Name>", s);
+				SQL_resolve_identifier("<Column Name>", NULL, NAME_SIZE);
 				if (!
 					(reference->ref_field =
 					 MET_context_field(context, gpreGlob.token_global.tok_string)))
@@ -535,7 +536,7 @@ GPRE_NOD SQE_field(gpre_req* request,
 				}
 				else {
 		/** We've got the column name. resolve it **/
-					SQL_resolve_identifier("<Columnn Name>", s);
+					SQL_resolve_identifier("<Columnn Name>", NULL, NAME_SIZE);
 					for (context = request->req_contexts; context;
 						 context = context->ctx_next)
 					{
@@ -578,7 +579,7 @@ GPRE_NOD SQE_field(gpre_req* request,
 				CPR_token();
 				if (!MSC_match(KW_DOT))
 					CPR_s_error("<period> in qualified column");
-				SQL_resolve_identifier("<Column Name>", s);
+				SQL_resolve_identifier("<Column Name>", NULL, NAME_SIZE);
 				for (context = request->req_contexts; context;
 					 context = context->ctx_next)
 				{
@@ -616,7 +617,7 @@ GPRE_NOD SQE_field(gpre_req* request,
 
 //  Hmmm.  So it wasn't a qualified field.  Try any field. 
 
-	SQL_resolve_identifier("<Column Name>", s);
+	SQL_resolve_identifier("<Column Name>", NULL, NAME_SIZE);
 	for (context = request->req_contexts; context;
 		 context = context->ctx_next)
 	{
@@ -2958,10 +2959,6 @@ static void par_terminating_parens(
 
 static GPRE_NOD par_udf( gpre_req* request)
 {
-	GPRE_NOD node;
-	USHORT local_count;
-	SCHAR s[ERROR_LENGTH];
-
 	if (!request)
 		return NULL;
 
@@ -2970,8 +2967,11 @@ static GPRE_NOD par_udf( gpre_req* request)
 //  Check for user defined functions 
 // ** resolve only if an identifier *
 	if ((isQuoted(gpreGlob.token_global.tok_type)) || gpreGlob.token_global.tok_type == tok_ident)
-		SQL_resolve_identifier("<Udf Name>", s);
+		SQL_resolve_identifier("<Udf Name>", NULL, NAME_SIZE);
 
+	GPRE_NOD node;
+	USHORT local_count;
+	
 	udf* an_udf;
 	if (request->req_database)
 		an_udf = MET_get_udf(request->req_database, gpreGlob.token_global.tok_string);
@@ -2986,6 +2986,7 @@ static GPRE_NOD par_udf( gpre_req* request)
 			if (tmp_udf)
 				if (an_udf) {
 					// udf was found in more than one database 
+					SCHAR s[ERROR_LENGTH];
 					sprintf(s, "UDF %s is ambiguous", gpreGlob.token_global.tok_string);
 					PAR_error(s);
 				}
@@ -3044,7 +3045,7 @@ static GPRE_NOD par_udf( gpre_req* request)
 		node = MSC_node(nod_gen_id, 2);
 		node->nod_count = 1;
 		EXP_left_paren(0);
-		SQL_resolve_identifier("<Generator Name>", gen_name);
+		SQL_resolve_identifier("<Generator Name>", gen_name, NAME_SIZE);
 		node->nod_arg[1] = (GPRE_NOD) gen_name;
 		PAR_get_token();
 		if (!MSC_match(KW_COMMA))

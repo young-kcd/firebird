@@ -135,7 +135,7 @@ static bool		par_transaction_modes(gpre_tra*, bool);
 static bool		par_using(DYN);
 static USHORT	resolve_dtypes(KWWORDS, bool);
 static bool		tail_database(enum act_t, DBB);
-static void		to_upcase(const TEXT *, TEXT *);
+static void		to_upcase(const TEXT*, TEXT*, int);
 
 static swe* global_whenever[SWE_max];
 static swe* global_whenever_list;
@@ -579,8 +579,8 @@ void SQL_par_field_dtype(gpre_req* request,
 				CPR_s_error("<data type>");
 		}
 		else {
-			char s[ERROR_LENGTH];
-			SQL_resolve_identifier("<domain name>", s);
+			char s[NAME_SIZE];
+			SQL_resolve_identifier("<domain name>", s, NAME_SIZE);
 			gpre_sym* symbol =
 				MSC_symbol(SYM_field, s, (USHORT) strlen(s), (gpre_ctx*) field);
 			field->fld_global = symbol;
@@ -970,19 +970,20 @@ void SQL_relation_name(TEXT* r_name,
 	db_name[0] = 0;
 	owner_name[0] = 0;
 
-	TEXT t_str[NAME_SIZE + 1];
-	SQL_resolve_identifier("<Table name>", t_str);
+	SQL_resolve_identifier("<Database name>", NULL, NAME_SIZE);
 
 	gpre_sym* symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_database);
 	if (symbol) {
-		strcpy(db_name, symbol->sym_name);
+		if (strlen(symbol->sym_name) >= NAME_SIZE)
+			PAR_error("Database alias too long");
+		strcpy(db_name, symbol->sym_name); // this is the alias, not the path
 		PAR_get_token();
 		if (!MSC_match(KW_DOT))
 			CPR_s_error(". (period)");
 	}
 
-	SQL_resolve_identifier("<Table name>", t_str);
-	if (gpreGlob.token_global.tok_length > NAME_SIZE)
+	SQL_resolve_identifier("<Table name>", NULL, NAME_SIZE + 1);
+	if (gpreGlob.token_global.tok_length >= NAME_SIZE)
 		PAR_error("Table, owner, or database name too long");
 
 	strcpy(r_name, gpreGlob.token_global.tok_string);
@@ -991,10 +992,10 @@ void SQL_relation_name(TEXT* r_name,
 	if (MSC_match(KW_DOT)) {
 		// the table name was really a owner specifier 
 
-		if (gpreGlob.token_global.tok_length > NAME_SIZE)
+		if (gpreGlob.token_global.tok_length >= NAME_SIZE)
 			PAR_error("TABLE name too long");
 		strcpy(owner_name, r_name);
-		SQL_resolve_identifier("<Table name>", t_str);
+		SQL_resolve_identifier("<Table name>", NULL, NAME_SIZE);
 		strcpy(r_name, gpreGlob.token_global.tok_string);
 		PAR_get_token();
 	}
@@ -1273,8 +1274,8 @@ static act* act_alter_index(void)
 	if (gpreGlob.token_global.tok_length > NAME_SIZE)
 		PAR_error("Index name too long");
 
-	SCHAR i_name[NAME_SIZE + 1];
-	SQL_resolve_identifier("<column name>", i_name);
+	char i_name[NAME_SIZE];
+	SQL_resolve_identifier("<column name>", i_name, NAME_SIZE);
 
 	PAR_get_token();
 
@@ -1362,8 +1363,8 @@ static act* act_alter_table(void)
 				cnstrt_str->cnstrt_flags |= CNSTRT_delete;
 				cnstrt_str->cnstrt_name = (STR) MSC_alloc(NAME_SIZE + 1);
 				SQL_resolve_identifier("<constraint name>",
-									   cnstrt_str->cnstrt_name->str_string);
-				if (gpreGlob.token_global.tok_length > NAME_SIZE)
+									   cnstrt_str->cnstrt_name->str_string, NAME_SIZE + 1);
+				if (gpreGlob.token_global.tok_length >= NAME_SIZE)
 					PAR_error("Constraint name too long");
 				*cnstrt_ptr = cnstrt_str;
 				cnstrt_ptr = &cnstrt_str->cnstrt_next;
@@ -1804,7 +1805,7 @@ static act* act_create_domain(void)
 static act* act_create_generator(void)
 {
 	TEXT* generator_name = (TEXT*) MSC_alloc(NAME_SIZE + 1);
-	SQL_resolve_identifier("<identifier>", generator_name);
+	SQL_resolve_identifier("<identifier>", generator_name, NAME_SIZE + 1);
 
 	gpre_req* request = MSC_request(REQ_ddl);
 	if (gpreGlob.isc_databases && !gpreGlob.isc_databases->dbb_next)
@@ -1812,7 +1813,7 @@ static act* act_create_generator(void)
 	else
 		PAR_error("Can only CREATE GENERATOR in context of single database");
 
-	if (gpreGlob.token_global.tok_length > NAME_SIZE)
+	if (gpreGlob.token_global.tok_length >= NAME_SIZE)
 		PAR_error("Generator name too long");
 
 
@@ -1844,7 +1845,7 @@ static act* act_create_index(bool dups,
 		PAR_error("Index name too long");
 
 	SCHAR i_name[NAME_SIZE + 1];
-	SQL_resolve_identifier("<column name>", i_name);
+	SQL_resolve_identifier("<column name>", i_name, NAME_SIZE + 1);
 
 	PAR_get_token();
 
@@ -2187,12 +2188,9 @@ static act* act_declare(void)
 	}
 
 	bool delimited = false;
-#ifdef SCROLLABLE_CURSORS
-	bool scroll = false;
-#endif
 
-	TEXT t_str[132];  // CVC: is it always enough?
-	SQL_resolve_identifier("<Cursor Name>", t_str);
+	TEXT t_str[MAX_CURSOR_SIZE];
+	SQL_resolve_identifier("<Cursor Name>", t_str, MAX_CURSOR_SIZE);
 	if (gpreGlob.token_global.tok_type == tok_dblquoted)
 		delimited = true;
 	else {
@@ -2207,6 +2205,9 @@ static act* act_declare(void)
 		}
 	}
 
+#ifdef SCROLLABLE_CURSORS
+	bool scroll = false;
+#endif
 	act* action = NULL;
 	gpre_sym* symbol = PAR_symbol(SYM_cursor);
 
@@ -2314,7 +2315,7 @@ static act* act_declare_filter(void)
 	PAR_get_token();
 	FLTR filter = (FLTR) MSC_alloc(FLTR_LEN);
 	filter->fltr_name = (TEXT*) MSC_alloc(NAME_SIZE + 1);
-	SQL_resolve_identifier("<identifier>", filter->fltr_name);
+	SQL_resolve_identifier("<identifier>", filter->fltr_name, NAME_SIZE + 1);
 	if (gpreGlob.token_global.tok_length > NAME_SIZE)
 		PAR_error("Filter name too long");
 
@@ -2462,7 +2463,7 @@ static act* act_declare_udf(void)
 
 	decl_udf* udf_declaration = (decl_udf*) MSC_alloc(DECL_UDF_LEN);
 	TEXT* udf_name = (TEXT*) MSC_alloc(NAME_SIZE + 1);
-	SQL_resolve_identifier("<identifier>", udf_name);
+	SQL_resolve_identifier("<identifier>", udf_name, NAME_SIZE + 1);
 	udf_declaration->decl_udf_name = udf_name;
 	if (gpreGlob.token_global.tok_length > NAME_SIZE)
 		PAR_error("external function name too long");
@@ -2769,7 +2770,7 @@ static act* act_drop(void)
 			PAR_error("Can only DROP DOMAIN in context of single database");
 		PAR_get_token();
 		identifier_name = (TEXT*) MSC_alloc(NAME_SIZE + 1);
-		SQL_resolve_identifier("<identifier>", identifier_name);
+		SQL_resolve_identifier("<identifier>", identifier_name, NAME_SIZE + 1);
 		action = MSC_action(request, ACT_drop_domain);
 		action->act_whenever = gen_whenever();
 		action->act_object = (REF) identifier_name;
@@ -2784,7 +2785,7 @@ static act* act_drop(void)
 			PAR_error("Can only DROP FILTER in context of single database");
 		PAR_get_token();
 		identifier_name = (TEXT*) MSC_alloc(NAME_SIZE + 1);
-		SQL_resolve_identifier("<identifier>", identifier_name);
+		SQL_resolve_identifier("<identifier>", identifier_name, NAME_SIZE + 1);
 		action = MSC_action(request, ACT_drop_filter);
 		action->act_whenever = gen_whenever();
 		action->act_object = (REF) identifier_name;
@@ -2804,7 +2805,7 @@ static act* act_drop(void)
 				("Can only DROP EXTERNAL FUNCTION in context of a single database");
 
 		identifier_name = (TEXT*) MSC_alloc(NAME_SIZE + 1);
-		SQL_resolve_identifier("<identifier>", identifier_name);
+		SQL_resolve_identifier("<identifier>", identifier_name, NAME_SIZE + 1);
 		action = MSC_action(request, ACT_drop_udf);
 		action->act_whenever = gen_whenever();
 		action->act_object = (REF) identifier_name;
@@ -2815,11 +2816,7 @@ static act* act_drop(void)
 		{
 		request = MSC_request(REQ_ddl);
 		PAR_get_token();
-		TEXT identifier_name_tmp[NAME_SIZE + 1]; // unused
-		SQL_resolve_identifier("<identifier>", identifier_name_tmp);
-		// CVC: Why this line isn't like the commented one that matches other
-		// places before make_index()?
-		//IND index = make_index(request, identifier_name_tmp);
+		SQL_resolve_identifier("<identifier>", NULL, NAME_SIZE + 1);
 		IND index = make_index(request, gpreGlob.token_global.tok_string);
 		action = MSC_action(request, ACT_drop_index);
 		action->act_whenever = gen_whenever();
@@ -3171,7 +3168,7 @@ static act* act_grant_revoke( enum act_t type)
 				if (MSC_match(KW_LEFT_PAREN)) {
 					SCHAR col_name[NAME_SIZE + 1];
 					do {
-						SQL_resolve_identifier("<column name>", col_name);
+						SQL_resolve_identifier("<column name>", col_name, NAME_SIZE + 1);
 						STR field_name = (STR) MSC_string(col_name);
 						MSC_push((GPRE_NOD) field_name, fields);
 						fields = &(*fields)->lls_next;
@@ -3266,7 +3263,7 @@ static act* act_grant_revoke( enum act_t type)
 			if (gpreGlob.token_global.tok_type != tok_ident)
 				CPR_s_error("<user name identifier>");
 			else
-				to_upcase(gpreGlob.token_global.tok_string, r_name);
+				to_upcase(gpreGlob.token_global.tok_string, r_name, sizeof(r_name));
 			user_dyn = isc_dyn_grant_user;
 			CPR_token();
 		}
@@ -3684,7 +3681,8 @@ static act* act_open_blob( ACT_T act_op, gpre_sym* symbol)
 	TOK f_token = (TOK) MSC_alloc(TOK_LEN);
 	f_token->tok_length = gpreGlob.token_global.tok_length;
 
-	SQL_resolve_identifier("<column_name>", f_token->tok_string);
+	// Funny, as if we can have relation names up to MAX_SYM_SIZE.
+	SQL_resolve_identifier("<column_name>", f_token->tok_string, f_token->tok_length + 1);
 	CPR_token();
 
 	if (act_op == ACT_blob_open) {
@@ -4096,8 +4094,8 @@ static act* act_set_generator(void)
 		PAR_error("Generator name too long");
 
 	SGEN setgen = (SGEN) MSC_alloc(SGEN_LEN);
-	setgen->sgen_name = (TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 1);
-	SQL_resolve_identifier("<identifier>", setgen->sgen_name);
+	setgen->sgen_name = (TEXT*) MSC_alloc(NAME_SIZE + 1);
+	SQL_resolve_identifier("<identifier>", setgen->sgen_name, NAME_SIZE + 1);
 	if (!MET_generator(setgen->sgen_name, request->req_database)) {
 		SCHAR s[ERROR_LENGTH];
 		fb_utils::snprintf(s, sizeof(s),
@@ -4218,7 +4216,7 @@ static act* act_set_statistics(void)
 	if (MSC_match(KW_INDEX)) {
 		stats->sts_flags = STS_index;
 		stats->sts_name = (STR) MSC_alloc(NAME_SIZE + 1);
-		SQL_resolve_identifier("<index name>", stats->sts_name->str_string);
+		SQL_resolve_identifier("<index name>", stats->sts_name->str_string, NAME_SIZE + 1);
 		if (gpreGlob.token_global.tok_length > NAME_SIZE)
 			PAR_error("Index name too long");
 		PAR_get_token();
@@ -4733,11 +4731,11 @@ static void connect_opts(
 		else if (MSC_match(KW_ROLE)) {
 			if (gpreGlob.token_global.tok_type == tok_ident) {
 				// reserve extra bytes for quotes and NULL
-				TEXT* s = (TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 3);
+				//TEXT* s = (TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 3);
+				TEXT* s = (TEXT*) MSC_alloc(NAME_SIZE + 2);
 											   
-				SQL_resolve_identifier("<Role Name>", s);
+				SQL_resolve_identifier("<Role Name>", s + 1, NAME_SIZE);
 				s[0] = '\"';
-				strcpy(s + 1, gpreGlob.token_global.tok_string);
 				strcat(s, "\"");
 				*sql_role = s;
 			}
@@ -5037,9 +5035,9 @@ static void into( gpre_req* request, GPRE_NOD field_list, GPRE_NOD var_list)
 
 static gpre_fld* make_field( gpre_rel* relation)
 {
-	char s[ERROR_LENGTH];
+	char s[NAME_SIZE];
 
-	SQL_resolve_identifier("<column name>", s);
+	SQL_resolve_identifier("<column name>", s, NAME_SIZE);
 	gpre_fld* field = MET_make_field(s, 0, 0, true);
 	field->fld_relation = relation;
 	field->fld_flags |= FLD_meta;
@@ -5293,7 +5291,7 @@ static gpre_req* par_cursor( gpre_sym** symbol_ptr)
 //   par_cursor() is called to use a previously declared cursor.
 //   tok_symbol == NULL means one of the two things.
 //   a) The name does not belong to a cursor. OR
-//   b) get_token() function in gpre.c was not able to find the cursor
+//   b) get_token() function in gpre.cpp was not able to find the cursor
 //      in hash table.
 //  
 //   case a) is an error condition.
@@ -5305,8 +5303,7 @@ static gpre_req* par_cursor( gpre_sym** symbol_ptr)
 //   it still cannot be located, Its an error
 //*  
 
-	TEXT t_cur[128];
-	SQL_resolve_identifier("<cursor name>", t_cur);
+	SQL_resolve_identifier("<cursor name>", NULL, MAX_CURSOR_SIZE);
 	gpre_sym* symbol = HSH_lookup(gpreGlob.token_global.tok_string);
 	gpreGlob.token_global.tok_symbol = symbol;
 	if (symbol && symbol->sym_type == SYM_keyword)
@@ -5343,8 +5340,7 @@ static DYN par_dynamic_cursor(void)
 	gpre_sym* symbol = NULL;
 
 	if (gpreGlob.token_global.tok_symbol == NULL) {
-		TEXT t_cur[128];
-		SQL_resolve_identifier("<cursor name>", t_cur);
+		SQL_resolve_identifier("<cursor name>", NULL, MAX_CURSOR_SIZE);
 		gpreGlob.token_global.tok_symbol = symbol = HSH_lookup(gpreGlob.token_global.tok_string);
 		if (symbol && symbol->sym_type == SYM_keyword)
 			gpreGlob.token_global.tok_keyword = (KWWORDS) symbol->sym_keyword;
@@ -5475,7 +5471,7 @@ static CNSTRT par_field_constraint( gpre_req* request, gpre_fld* for_field,
 		PAR_get_token();
 		new_constraint->cnstrt_name = (STR) MSC_alloc(NAME_SIZE + 1);
 		SQL_resolve_identifier("<constraint name>",
-							   new_constraint->cnstrt_name->str_string);
+							   new_constraint->cnstrt_name->str_string, NAME_SIZE + 1);
 		if (gpreGlob.token_global.tok_length > NAME_SIZE)
 			PAR_error("Constraint name too long");
 		PAR_get_token();
@@ -5518,7 +5514,8 @@ static CNSTRT par_field_constraint( gpre_req* request, gpre_fld* for_field,
 
 			new_constraint->cnstrt_referred_rel = (STR) MSC_alloc(NAME_SIZE + 1);
 			SQL_resolve_identifier("referred <table name>",
-								   new_constraint->cnstrt_referred_rel->str_string);
+								   new_constraint->cnstrt_referred_rel->str_string,
+								   NAME_SIZE + 1);
 			if (gpreGlob.token_global.tok_length > NAME_SIZE)
 				PAR_error("Referred table name too long");
 			PAR_get_token();
@@ -5527,7 +5524,7 @@ static CNSTRT par_field_constraint( gpre_req* request, gpre_fld* for_field,
 				// Field specified for referred relation  
 
 				field_name = (STR) MSC_alloc(NAME_SIZE + 1);
-				SQL_resolve_identifier("<column name>", field_name->str_string);
+				SQL_resolve_identifier("<column name>", field_name->str_string, NAME_SIZE + 1);
 				MSC_push((GPRE_NOD) field_name, &new_constraint->cnstrt_referred_fields);
 				CPR_token();
 				EXP_match_paren();
@@ -5765,7 +5762,7 @@ static CNSTRT par_table_constraint( gpre_req* request, gpre_rel* relation)
 		PAR_get_token();
 		constraint->cnstrt_name = (STR) MSC_alloc(NAME_SIZE + 1);
 		SQL_resolve_identifier("<constraint name>",
-							   constraint->cnstrt_name->str_string);
+							   constraint->cnstrt_name->str_string, NAME_SIZE + 1);
 		if (gpreGlob.token_global.tok_length > NAME_SIZE)
 			PAR_error("Constraint name too long");
 		PAR_get_token();
@@ -5801,7 +5798,7 @@ static CNSTRT par_table_constraint( gpre_req* request, gpre_rel* relation)
 		fields = &constraint->cnstrt_fields;
 		do {
 			STR field_name = (STR) MSC_alloc(NAME_SIZE + 1);
-			SQL_resolve_identifier("<column name>", field_name->str_string);
+			SQL_resolve_identifier("<column name>", field_name->str_string, NAME_SIZE + 1);
 			MSC_push((GPRE_NOD) field_name, fields);
 			fields = &(*fields)->lls_next;
 			++num_for_key_flds;
@@ -5820,7 +5817,8 @@ static CNSTRT par_table_constraint( gpre_req* request, gpre_rel* relation)
 
 			constraint->cnstrt_referred_rel = (STR) MSC_alloc(NAME_SIZE + 1);
 			SQL_resolve_identifier("referred <table name>",
-								   constraint->cnstrt_referred_rel->str_string);
+								   constraint->cnstrt_referred_rel->str_string,
+								   NAME_SIZE + 1);
 			if (gpreGlob.token_global.tok_length > NAME_SIZE)
 				PAR_error("Referred table name too long");
 			PAR_get_token();
@@ -5834,7 +5832,7 @@ static CNSTRT par_table_constraint( gpre_req* request, gpre_rel* relation)
 				do {
 					STR field_name = (STR) MSC_alloc(NAME_SIZE + 1);
 					SQL_resolve_identifier("<column name>",
-										   field_name->str_string);
+										   field_name->str_string, NAME_SIZE + 1);
 					MSC_push((GPRE_NOD) field_name, fields);
 					fields = &(*fields)->lls_next;
 					++num_prim_key_flds;
@@ -6067,6 +6065,7 @@ static bool tail_database(enum act_t action_type,
 					(TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 1);
 				MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string);
 
+				// - 2 here ???
 				string[gpreGlob.token_global.tok_length - 2] = '\0';
 				PAR_get_token();
 			}
@@ -6234,12 +6233,12 @@ static bool tail_database(enum act_t action_type,
 //		Upcase a string into another string.
 //  
 
-static void to_upcase(const TEXT * p, TEXT * q)
+static void to_upcase(const TEXT* p, TEXT* q, int target_size)
 {
 	UCHAR c;
 	USHORT l = 0;
 
-	while ((c = *p++) && (++l <= NAME_SIZE)) {
+	while ((c = *p++) && (++l < target_size)) {
 		*q++ = UPPER(c);
 	}
 	*q = 0;
@@ -6249,11 +6248,34 @@ static void to_upcase(const TEXT * p, TEXT * q)
 //____________________________________________________________
 //  
 //  To do: move these to the correct position in the file.
+// Idea: if we don't need a result in a variable, we don't pass it, since the
+// internal buffer will be used instead (in that case, bigger size cannot surpass
+// the size of a cursor). We can provide a size smaller than MAX_CURSOR size
+// with the internal buffer. We should provide the correct size if we provide
+// the output variable to put the result in it.
 
-void SQL_resolve_identifier( const TEXT* err_mesg, TEXT* str)
+void SQL_resolve_identifier( const TEXT* err_mesg, TEXT* str_in, int in_size)
 {
-	// Ripe for B.O.
-	// Beware to_upcase() works only in the first 32 bytes.
+	static TEXT internal_buffer[MAX_CURSOR_SIZE];
+	TEXT* str;
+	int len;
+	if (str_in)
+	{
+		str = str_in;
+		len = in_size - 1;
+	}
+	else
+	{
+		str = internal_buffer;
+		len = sizeof(internal_buffer) - 1;
+		if (in_size > 0 && in_size <= len)
+		    len = in_size - 1;
+		else if (in_size > len + 1)
+		    PAR_error("Provide your own buffer for sizes bigger than 64.");
+	}
+	
+	TEXT* const tk_string = gpreGlob.token_global.tok_string;
+
 	switch (gpreGlob.sw_sql_dialect) {
 	case 2:
 		if (gpreGlob.token_global.tok_type == tok_dblquoted)
@@ -6262,21 +6284,24 @@ void SQL_resolve_identifier( const TEXT* err_mesg, TEXT* str)
 		if (gpreGlob.token_global.tok_type != tok_ident)
 			CPR_s_error(err_mesg);
 		else
-			to_upcase(gpreGlob.token_global.tok_string, str);
+			to_upcase(tk_string, str, len + 1);
 		break;
 	case 3:
 		if (gpreGlob.token_global.tok_type == tok_dblquoted) {
-			if (gpreGlob.token_global.tok_string[0] == '\"')
+			// strip_quotes is too dumb to handle C escape sequences
+			// or SQL escape sequences in quoted identifiers.
+			if (tk_string[0] == '\"')
 				strip_quotes(gpreGlob.token_global);
-			strcpy(str, gpreGlob.token_global.tok_string);
+			strncpy(str, tk_string, len);
+			str[len] = 0;
 		}
 		else if (gpreGlob.token_global.tok_type == tok_ident)
-			to_upcase(gpreGlob.token_global.tok_string, str);
+			to_upcase(tk_string, str, len + 1);
 		else
 			CPR_s_error(err_mesg);
 		break;
 	}
-	strcpy(gpreGlob.token_global.tok_string, str);
+	strcpy(tk_string, str);
 }
 
 

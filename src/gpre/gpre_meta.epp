@@ -59,6 +59,21 @@ static const UCHAR blr_bpb[] = {
 static const SCHAR db_version_info[] = { isc_info_base_level };
 #endif
 
+// CVC: I made this class as a quick solution for the many buffer overruns
+// that would result in erratic behavior.
+class MetIdentifier
+{
+	char name[NAME_SIZE];
+public:
+	MetIdentifier(const char* s)
+	{
+		strncpy(name, s, NAME_SIZE);
+		name[NAME_SIZE - 1] = 0;
+	}
+	operator char*() {return name;}
+};
+
+
 static SLONG array_size(gpre_fld*);
 static void get_array(dbb*, const TEXT*, gpre_fld*);
 static bool get_intl_char_subtype(SSHORT*, const UCHAR*, USHORT, dbb*);
@@ -83,8 +98,7 @@ gpre_fld* MET_context_field( gpre_ctx* context, const char* string)
 		return NULL;
 	}
 
-	SCHAR name[NAME_SIZE];
-	strcpy(name, string);
+	MetIdentifier name(string);
 	gpre_prc* procedure = context->ctx_procedure;
 
 /*  At this point the procedure should have been scanned, so all
@@ -325,10 +339,8 @@ bool MET_database(dbb* database, bool print_version)
 
 bool MET_domain_lookup(gpre_req* request, gpre_fld* field, const char* string)
 {
-	SCHAR name[NAME_SIZE];
+	MetIdentifier name(string);
 	bool found = false;
-
-	strcpy(name, string);
 
 /*  Lookup domain.  If we find it in the hash table, and it is not the
  *  field we a currently looking at, use it.  Else look it up from the
@@ -441,11 +453,6 @@ bool MET_get_domain_default(dbb* database,
 							TEXT* buffer,
 							USHORT buff_length)
 {
-	SCHAR name[NAME_SIZE];
-	ISC_STATUS_ARRAY status_vect;
-
-	strcpy(name, domain_name);
-
 	if (database == NULL)
 		return false;
 
@@ -453,8 +460,10 @@ bool MET_get_domain_default(dbb* database,
 		CPR_exit(FINI_ERROR);
 
 	fb_assert(database->dbb_transaction == 0);
+	MetIdentifier name(domain_name);
 	gds_trans = 0;
 	DB = database->dbb_handle;
+	ISC_STATUS_ARRAY status_vect;
 
 	START_TRANSACTION;
 
@@ -536,10 +545,7 @@ bool MET_get_column_default(const gpre_rel* relation,
 							TEXT* buffer,
 							USHORT buff_length)
 {
-	SCHAR name[NAME_SIZE];
-	ISC_STATUS_ARRAY status_vect;
-
-	strcpy(name, column_name);
+	MetIdentifier name(column_name);
 
 	dbb* database = relation->rel_database;
 	if (database == NULL)
@@ -551,6 +557,7 @@ bool MET_get_column_default(const gpre_rel* relation,
 	fb_assert(database->dbb_transaction == 0);
 	gds_trans = 0;
 	DB = database->dbb_handle;
+	ISC_STATUS_ARRAY status_vect;
 
 	START_TRANSACTION;
 
@@ -637,9 +644,7 @@ bool MET_get_column_default(const gpre_rel* relation,
 
 gpre_lls* MET_get_primary_key(dbb* database, const TEXT* relation_name)
 {
-	SCHAR name[NAME_SIZE];
-
-	strcpy(name, relation_name);
+	MetIdentifier name(relation_name);
 
 	if (database == NULL)
 		return NULL;
@@ -692,9 +697,7 @@ gpre_lls* MET_get_primary_key(dbb* database, const TEXT* relation_name)
 
 gpre_fld* MET_field(gpre_rel* relation, const char* string)
 {
-	SCHAR name[NAME_SIZE];
-
-	strcpy(name, string);
+	MetIdentifier name(string);
 	const SSHORT length = strlen(name);
 
 //  Lookup field.  If we find it, nifty.  If not, look it up in the
@@ -965,9 +968,7 @@ void MET_fini(dbb* end)
 
 const SCHAR* MET_generator(const TEXT* string, dbb* database)
 {
-	SCHAR name[NAME_SIZE];
-
-	strcpy(name, string);
+	MetIdentifier name(string);
 
 	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 		if ((symbol->sym_type == SYM_generator) &&
@@ -1079,10 +1080,8 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT* length)
 
 gpre_prc* MET_get_procedure(dbb* database, const TEXT* string, const TEXT* owner_name)
 {
-	SCHAR name[NAME_SIZE], owner[NAME_SIZE];
+	MetIdentifier name(string), owner(owner_name);
 
-	strcpy(name, string);
-	strcpy(owner, owner_name);
 	gpre_prc* procedure = NULL;
 
 	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
@@ -1195,10 +1194,7 @@ gpre_prc* MET_get_procedure(dbb* database, const TEXT* string, const TEXT* owner
 gpre_rel* MET_get_relation(dbb* database, const TEXT* string, const TEXT* owner_name)
 {
 	gpre_rel* relation;
-	SCHAR name[NAME_SIZE], owner[NAME_SIZE];
-
-	strcpy(name, string);
-	strcpy(owner, owner_name);
+	MetIdentifier name(string), owner(owner_name);
 
 	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_relation &&
@@ -1239,9 +1235,8 @@ INTLSYM MET_get_text_subtype(SSHORT ttype)
 
 udf* MET_get_udf(dbb* database, const TEXT* string)
 {
-	SCHAR name[NAME_SIZE];
-
-	strcpy(name, string);
+	MetIdentifier name(string);
+	
 	udf* the_udf = NULL;
 	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_udf &&
@@ -1390,9 +1385,7 @@ gpre_rel* MET_get_view_relation(gpre_req* request,
 IND MET_index(dbb* database, const TEXT* string)
 {
 	IND index;
-	SCHAR name[NAME_SIZE];
-
-	strcpy(name, string);
+	MetIdentifier name(string);
 	const USHORT length = strlen(name);
 
 	gpre_sym* symbol;
@@ -1899,9 +1892,7 @@ bool MET_type(gpre_fld* field,
 bool MET_trigger_exists(dbb* database,
 						const TEXT* trigger_name)
 {
-	char name[NAME_SIZE];
-
-	strcpy(name, trigger_name);
+	MetIdentifier name(trigger_name);
 
 	DB = database->dbb_handle;
 	gds_trans = database->dbb_transaction;

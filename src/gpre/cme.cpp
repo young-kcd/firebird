@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cme.cpp,v 1.33 2004-08-27 04:50:00 robocop Exp $
+//	$Id: cme.cpp,v 1.34 2005-01-17 05:02:08 robocop Exp $
 //
 
 #include "firebird.h"
@@ -1516,7 +1516,7 @@ static void cmp_literal( const gpre_nod* node, gpre_req* request)
 	else
 	{
 		// Remove surrounding quotes from string, etc. 
-		char buffer[MAXSYMLEN];
+		char buffer[MAX_SYM_SIZE];
 		char* p = buffer;
 
 		// Skip introducing quote mark 
@@ -1693,8 +1693,6 @@ static void cmp_plan(const gpre_nod* plan_expression, gpre_req* request)
 
 static void cmp_sdl_dtype( const gpre_fld* field, REF reference)
 {
-	TEXT s[50];
-
 	switch (field->fld_dtype)
 	{
 	case dtype_cstring:
@@ -1789,8 +1787,11 @@ static void cmp_sdl_dtype( const gpre_fld* field, REF reference)
 		break;
 
 	default:
-		sprintf(s, "datatype %d not understood", field->fld_dtype);
-		CPR_error(s);
+		{
+			TEXT s[50];
+			sprintf(s, "datatype %d not understood", field->fld_dtype);
+			CPR_error(s);
+		}
 	}
 }
 

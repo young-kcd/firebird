@@ -1173,7 +1173,7 @@ void CPR_get_text( TEXT* buffer, const gpre_txt* text)
 
 void CPR_raw_read()
 {
-	SCHAR token_string[MAXSYMLEN];
+	SCHAR token_string[MAX_SYM_SIZE];
 	bool continue_char = false;
 
 	SCHAR* p = token_string;

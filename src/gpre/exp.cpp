@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exp.cpp,v 1.36 2004-08-26 21:44:11 brodsom Exp $
+//	$Id: exp.cpp,v 1.37 2005-01-17 05:02:08 robocop Exp $
 //
 
 #include "firebird.h"
@@ -272,10 +272,10 @@ gpre_fld* EXP_field(gpre_ctx** rcontext)
 	if (!MSC_match(KW_DOT))
 		CPR_s_error("dot after context variable");
 
-	TEXT s[128];
-	SQL_resolve_identifier("<Field Name>", s);
+	SQL_resolve_identifier("<Field Name>", NULL, NAME_SIZE);
 	gpre_fld* field = MET_field(relation, gpreGlob.token_global.tok_string);
 	if (!field) {
+		TEXT s[ERROR_LENGTH];
 		sprintf(s, "field \"%s\" is not defined in relation %s",
 				gpreGlob.token_global.tok_string, relation->rel_symbol->sym_string);
 		PAR_error(s);
@@ -325,6 +325,7 @@ GPRE_NOD EXP_literal(void)
 		strcat(string, "\'");
 		MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string + 1);
 		strcat((string + gpreGlob.token_global.tok_length + 1), "\'");
+		// What kind of hack is this? The token has not been enlarged nor modified.
 		gpreGlob.token_global.tok_length += 2;
 	}
 	else {
@@ -624,13 +625,11 @@ bool EXP_match_paren(void)
 
 //____________________________________________________________
 //  
-//		Parse and look up a qualfied relation name.
+//		Parse and look up a qualified relation name.
 //  
 
 gpre_rel* EXP_relation(void)
 {
-	TEXT s[256];
-
 	if (!gpreGlob.isc_databases)
 		PAR_error("no database for operation");
 
@@ -641,14 +640,14 @@ gpre_rel* EXP_relation(void)
 
 	gpre_rel* relation = NULL;
 
-	SQL_resolve_identifier("<identifier>", s);
+	SQL_resolve_identifier("<identifier>", NULL, NAME_SIZE);
 	gpre_sym* symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_database);
 	if (symbol) {
 		dbb* db = (DBB) symbol->sym_object;
 		PAR_get_token();
 		if (!MSC_match(KW_DOT))
 			CPR_s_error("period after database name");
-		SQL_resolve_identifier("<Table name>", s);
+		SQL_resolve_identifier("<Table name>", NULL, NAME_SIZE);
 		relation = MET_get_relation(db, gpreGlob.token_global.tok_string, "");
 	}
 	else {
@@ -658,6 +657,7 @@ gpre_rel* EXP_relation(void)
 				if (!relation)
 					relation = temp;
 				else {
+					TEXT s[ERROR_LENGTH];
 					sprintf(s, "relation %s is ambiguous", gpreGlob.token_global.tok_string);
 					PAR_get_token();
 					PAR_error(s);
@@ -918,9 +918,7 @@ static bool check_relation(void)
 
 static GPRE_NOD lookup_field(gpre_ctx* context)
 {
-	char s[132];
-
-	SQL_resolve_identifier("<Field Name>", s);
+	SQL_resolve_identifier("<Field Name>", NULL, NAME_SIZE);
 	gpre_fld* field = MET_field(context->ctx_relation, gpreGlob.token_global.tok_string);
 	if (!field)
 		return NULL;
