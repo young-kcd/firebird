@@ -55,7 +55,7 @@ static const char* LOCK_FILE	= "[000000]isc_lock1.%s";
 static const char* LOCK_HEADER	= "[000000]isc_config";
 static const char* INIT_FILE	= "[000000]isc_init1.%s";
 static const char* GUARD_FILE	= "[000000]isc_guard1.%s";
-#elif WIN_NT
+#elif defined(WIN_NT)
 static const char* EVENT_FILE	= "%s.evn";
 static const char* LOCK_FILE	= "%s.lck";
 static const char* LOCK_HEADER	= "ibconfig";
