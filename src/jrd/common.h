@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.50 2002-11-14 13:35:35 dimitr Exp $
+$Id: common.h,v 1.51 2002-11-18 07:57:41 eku Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -742,6 +742,14 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define FB_SUCCESS         0
 #define FB_FAILURE         1
 
+/* sys/paramh.h : compatibility purposes */
+#ifndef NOFILE
+#ifdef VMS
+#define NOFILE      32
+#else
+#define NOFILE      20
+#endif
+#endif
 
 /* data type definitions */
 

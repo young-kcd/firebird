@@ -39,9 +39,6 @@
 #include <string.h>
 #endif
 
-#ifndef NOFILE
-#define NOFILE		20
-#endif
 
 
 int CLIB_ROUTINE main( int argc, char **argv)

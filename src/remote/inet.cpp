@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.40 2002-11-14 07:35:51 eku Exp $
+$Id: inet.cpp,v 1.41 2002-11-18 07:57:43 eku Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -447,13 +447,6 @@ static XDR::xdr_ops inet_ops =
 	inet_destroy
 };
 
-#ifndef NOFILE
-#ifdef VMS
-#define NOFILE		32
-#else
-#define NOFILE		20
-#endif
-#endif
 
 #ifndef MAX_PTYPE
 #define MAX_PTYPE	ptype_out_of_band

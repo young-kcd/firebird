@@ -84,10 +84,6 @@
 #include <fcntl.h>
 #endif
 
-#ifndef NOFILE
-#define NOFILE     20
-#endif
-
 
 
 void divorce_terminal(int mask)

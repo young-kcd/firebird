@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: inet_server.cpp,v 1.16 2002-10-31 05:05:59 seanleyne Exp $
+$Id: inet_server.cpp,v 1.17 2002-11-18 07:57:43 eku Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -115,14 +115,6 @@ $Id: inet_server.cpp,v 1.16 2002-10-31 05:05:59 seanleyne Exp $
 
 #ifndef hpux
 #define sigvector	sigvec
-#endif
-
-#ifndef NOFILE
-#ifdef VMS
-#define NOFILE		32
-#else
-#define NOFILE		20
-#endif
 #endif
 
 #ifndef NBBY

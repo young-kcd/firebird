@@ -37,9 +37,6 @@
 #endif
 #include "../jrd/common.h"
 
-#ifndef NOFILE
-#define NOFILE		20
-#endif
 
 #ifndef NBBY
 #define	NBBY	8
