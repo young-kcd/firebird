@@ -78,6 +78,7 @@
 #undef SETPGRP_VOID
 #undef HAVE_FLOCK
 #undef HAVE_INITGROUPS
+#undef HAVE_GETPAGESIZE
 
 /* Types */
 #undef socklen_t
