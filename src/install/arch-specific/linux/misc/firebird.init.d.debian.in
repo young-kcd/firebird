@@ -19,7 +19,7 @@ FIREBIRD=@prefix@
 ISC_USER=SYSDBA
 ISC_PASSWORD=masterke
 FBRunUser=firebird
-FB_OPTS=-start -forever
+FB_OPTS="-start -forever"
 # WARNING: in a real-world installation, you should not put the 
 # SYSDBA password in a publicly-readable file. 
 # Eventually this file should not need to contain any passwords.
