@@ -89,10 +89,10 @@ static inline int get(TGBL tdgbl)
 	return (--(tdgbl->mvol_io_cnt) >= 0 ? *(tdgbl->mvol_io_ptr)++ : 255);
 }
 
-static inline void put(TGBL tdgbl, ULONG c)
+static inline void put(TGBL tdgbl, UCHAR c)
 {
 	--(tdgbl->mvol_io_cnt);
-	*(tdgbl->mvol_io_ptr)++ = (UCHAR) (c);
+	*(tdgbl->mvol_io_ptr)++ = c;
 }
 
 #ifdef DEBUG
@@ -204,7 +204,7 @@ void MVOL_init_read(const UCHAR*	database_name, // unused?
 		tdgbl->mvol_old_file[0] = 0;
 	}
 
-    ULONG temp_buffer_size = tdgbl->mvol_io_buffer_size;
+	ULONG temp_buffer_size = tdgbl->mvol_io_buffer_size;
 	tdgbl->mvol_actual_buffer_size = temp_buffer_size;
 	tdgbl->mvol_io_buffer = BURP_alloc(temp_buffer_size);
 	tdgbl->gbl_backup_start_time[0] = 0;
@@ -389,9 +389,9 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 //
 UCHAR* MVOL_read_block(TGBL tdgbl, UCHAR * ptr, ULONG count)
 {
-/* To handle tape drives & Multi-volume boundaries, use the normal
- * read function, instead of doing a more optimal bulk read.
- */
+// To handle tape drives & Multi-volume boundaries, use the normal
+// read function, instead of doing a more optimal bulk read.
+
 
 	while (count)
 	{
@@ -429,9 +429,9 @@ UCHAR* MVOL_read_block(TGBL tdgbl, UCHAR * ptr, ULONG count)
 //
 void MVOL_skip_block( TGBL tdgbl, ULONG count)
 {
-/* To handle tape drives & Multi-volume boundaries, use the normal
- * read function, instead of doing a more optimal seek.
- */
+// To handle tape drives & Multi-volume boundaries, use the normal
+// read function, instead of doing a more optimal seek.
+
 
 	while (count)
 	{
@@ -478,42 +478,38 @@ DESC MVOL_open(const char * name, ULONG mode, ULONG create)
 	else
 	{
 		// it's a tape device 
-		/* Note: we *want* to open the tape in Read-only mode or in
-		 * write-only mode, but it turns out that on NT SetTapePosition 
-		 * will fail (thereby not rewinding the tape) if the tape is 
-		 * opened write-only, so we will make sure that we always have 
-		 * read access. So much for standards!
-		 * Ain't Windows wonderful???
-		 */
-		/* Note: we *want* to open the tape in FILE_EXCLUSIVE_WRITE, but
-		 * during testing discovered that several NT tape drives do not
-		 * work unless we specify FILE_SHARE_WRITE as the open mode.
-		 * So it goes...
-		 */
-		handle = CreateFile(name,
-							mode | MODE_READ,
-							mode ==
-								MODE_WRITE ? FILE_SHARE_WRITE : FILE_SHARE_READ,
+		// Note: we *want* to open the tape in Read-only mode or in
+		// write-only mode, but it turns out that on NT SetTapePosition 
+		// will fail (thereby not rewinding the tape) if the tape is 
+		// opened write-only, so we will make sure that we always have 
+		// read access. So much for standards!
+		// Ain't Windows wonderful???
+		//
+		// Note: we *want* to open the tape in FILE_EXCLUSIVE_WRITE, but
+		// during testing discovered that several NT tape drives do not
+		// work unless we specify FILE_SHARE_WRITE as the open mode.
+		// So it goes...
+		//
+		handle = CreateFile(name, mode | MODE_READ,
+							mode == MODE_WRITE ? FILE_SHARE_WRITE : FILE_SHARE_READ,
 							0, OPEN_EXISTING, 0, NULL);
 		if (handle != INVALID_HANDLE_VALUE)
 		{
-			/* emulate UNIX rewinding the tape on open:
-			 * This MUST be done since Windows does NOT have anything
-			 * like mt to allow the user to do tape management. The 
-			 * implication here is that we will be able to write ONLY
-			 * one (1) database per tape. This is bad if the user wishes to
-			 * backup several small databases.
-			 * Note: We are intentionally NOT trapping for errors during
-			 * rewind, since if we can not rewind, we are either a non-rewind
-			 * device (then it is user controlled) or we have a problem with
-			 * the physical media.  In the latter case I would rather wait for 
-			 * the write to fail so that we can loop and prompt the user for 
-			 * a different file/device. 
-			 */
+			// emulate UNIX rewinding the tape on open:
+			// This MUST be done since Windows does NOT have anything
+			// like mt to allow the user to do tape management. The 
+			// implication here is that we will be able to write ONLY
+			// one (1) database per tape. This is bad if the user wishes to
+			// backup several small databases.
+			// Note: We are intentionally NOT trapping for errors during
+			// rewind, since if we can not rewind, we are either a non-rewind
+			// device (then it is user controlled) or we have a problem with
+			// the physical media.  In the latter case I would rather wait for 
+			// the write to fail so that we can loop and prompt the user for 
+			// a different file/device. 
+			//
 			SetTapePosition(handle, TAPE_REWIND, 0, 0, 0, FALSE);
-			if (GetTapeParameters(	handle,
-									GET_TAPE_MEDIA_INFORMATION,
-									&size,
+			if (GetTapeParameters(handle, GET_TAPE_MEDIA_INFORMATION, &size,
 									&param) == NO_ERROR)
 			{
 				tdgbl->io_buffer_size = param.BlockSize;
@@ -544,8 +540,8 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 	{
 		if (tdgbl->action->act_action == ACT_backup_split)
 		{
-			/* Write to the current file till fil_lingth > 0, otherwise
-			   switch to the next one */
+			// Write to the current file till fil_lingth > 0, otherwise
+			// switch to the next one
 			if (tdgbl->action->act_file->fil_length == 0)
 			{
 				if (tdgbl->action->act_file->fil_next)
@@ -562,8 +558,8 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 				}
 				else
 				{
-					/* This is a last file. Keep writing in a hope that there is
-					   enough free disk space ... */
+					// This is a last file. Keep writing in a hope that there is
+					// enough free disk space ...
 					tdgbl->action->act_file->fil_length = MAX_LENGTH;
 				}
 			}
@@ -579,12 +575,11 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 			 (tdgbl->action->act_file->fil_length < left) ?
 			 tdgbl->action->act_file->fil_length : left);
 			 
-        DWORD err = 0;
-        // Assumes DWORD <==> ULONG
-		if (!WriteFile(tdgbl->file_desc,
-					   ptr,
-					   nBytesToWrite,
-					   reinterpret_cast < DWORD * >(&cnt), NULL)) {
+		DWORD err = 0;
+		// Assumes DWORD <==> ULONG
+		if (!WriteFile(tdgbl->file_desc, ptr, nBytesToWrite,
+					   reinterpret_cast <DWORD *>(&cnt), NULL)) 
+		{
 			err = GetLastError();
 		}
 #endif // !WIN_NT 
@@ -613,9 +608,9 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 			{
 				if (tdgbl->action->act_action == ACT_backup_split)
 				{
-					/* Close the current file and switch to the next one.
-					   If there is no more specified files left then
-					   issue an error and give up */
+					// Close the current file and switch to the next one.
+					// If there is no more specified files left then
+					// issue an error and give up
 					if (tdgbl->action->act_file->fil_next)
 					{
 						close_platf(tdgbl->file_desc);
@@ -644,17 +639,17 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 					cnt = 0;
 					continue;
 				}
-				/* Note: there is an assumption here, that if header data is being
-				   written, it is really being rewritten, so at least all the
-				   header data will be written */
+				// Note: there is an assumption here, that if header data is being
+				// written, it is really being rewritten, so at least all the
+				// header data will be written
 
 				if (left != size_to_write)
 				{
 					// Wrote some, move remainder up in buffer. 
 
-					/* NOTE: We should NOT use memcpy here.  We're moving overlapped
-					   data and memcpy does not guanantee the order the data
-					   is moved in */
+					// NOTE: We should NOT use memcpy here.  We're moving overlapped
+					// data and memcpy does not guanantee the order the data
+					// is moved in
 					memcpy(tdgbl->mvol_io_data, ptr, left);
 				}
 				left += tdgbl->mvol_io_data - tdgbl->mvol_io_header;
@@ -663,16 +658,15 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 					full_buffer = true;
 				else
 					full_buffer = false;
-				tdgbl->file_desc =
-					next_volume(tdgbl->file_desc, MODE_WRITE, full_buffer);
+				tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_WRITE, 
+											   full_buffer);
 				if (full_buffer)
 				{
 					left -= tdgbl->mvol_io_buffer_size;
 					memcpy(tdgbl->mvol_io_data,
 						   tdgbl->mvol_io_header + tdgbl->mvol_io_buffer_size,
 						   left);
-					tdgbl->mvol_cumul_count +=
-						tdgbl->mvol_io_buffer_size;
+					tdgbl->mvol_cumul_count += tdgbl->mvol_io_buffer_size;
 					tdgbl->mvol_io_buffer = tdgbl->mvol_io_data;
 				}
 				else
@@ -685,9 +679,9 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 				// msg 221 Unexpected I/O error while writing to backup file 
 			}
 		}
-        if (left < cnt) {    // this is impossible, but...
-            cnt = left;
-        }
+		if (left < cnt) {	// this is impossible, but...
+			cnt = left;
+		}
 
 	} // for
 
@@ -700,9 +694,9 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 	}
 #endif
 
-/* After the first block of first volume is written (using a default block size)
-   change the block size to one that reflects the user's blocking factor.  By
-   making the first block a standard size we will avoid restore problems. */
+// After the first block of first volume is written (using a default block size)
+// change the block size to one that reflects the user's blocking factor.  By
+// making the first block a standard size we will avoid restore problems.
 
 	tdgbl->mvol_io_buffer_size = tdgbl->mvol_actual_buffer_size;
 
@@ -722,9 +716,8 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 //
 const UCHAR *MVOL_write_block(TGBL tdgbl, const UCHAR * ptr, ULONG count)
 {
-/* To handle tape drives & Multi-volume boundaries, use the normal
- * write function, instead of doing a more optimal bulk write.
- */
+// To handle tape drives & Multi-volume boundaries, use the normal
+// write function, instead of doing a more optimal bulk write.
 
 	while (count)
 	{
@@ -843,8 +836,8 @@ static DESC next_volume( DESC handle, int mode, bool full_buffer)
 {
 	TGBL tdgbl = GET_THREAD_DATA;
 
-/* We must  close the old handle before the user inserts
-   another tape, or something. */
+// We must  close the old handle before the user inserts
+// another tape, or something.
 
 #ifdef WIN_NT
 	if (handle != INVALID_HANDLE_VALUE)
@@ -868,8 +861,8 @@ static DESC next_volume( DESC handle, int mode, bool full_buffer)
 		BURP_error_redirect(0, 50, NULL, NULL);	// msg 50 unexpected end of file on backup file 
 	}
 
-/* If we got here, we've got a live one... Up the volume number unless
-   the old file was empty */
+// If we got here, we've got a live one... Up the volume number unless
+// the old file was empty
 
 	if (!tdgbl->mvol_empty_file)
 		(tdgbl->mvol_volume_count)++;
@@ -879,7 +872,7 @@ static DESC next_volume( DESC handle, int mode, bool full_buffer)
 // Loop until we have opened a file successfully 
 
 	SCHAR new_file[MAX_FILE_NAME_LENGTH];
-    DESC new_desc = INVALID_HANDLE_VALUE;
+	DESC new_desc = INVALID_HANDLE_VALUE;
 	for (;;)
 	{
 		// We aim to keep our descriptors clean 
@@ -902,7 +895,7 @@ static DESC next_volume( DESC handle, int mode, bool full_buffer)
 #endif // WIN_NT 
 		{
 			BURP_print(222, new_file, 0, 0, 0, 0);
-			/* msg 222 \n\nCould not open file name \"%s\"\n */
+			// msg 222 \n\nCould not open file name \"%s\"\n 
 			continue;
 		}
 
@@ -917,7 +910,7 @@ static DESC next_volume( DESC handle, int mode, bool full_buffer)
 			if (!write_header(new_desc, 0L, full_buffer))
 			{
 				BURP_print(223, new_file, 0, 0, 0, 0);
-				/* msg223 \n\nCould not write to file \"%s\"\n */
+				// msg223 \n\nCould not write to file \"%s\"\n
 				continue;
 			}
 			else
@@ -965,8 +958,8 @@ static void prompt_for_name(SCHAR* name, int length)
 
 	TGBL tdgbl = GET_THREAD_DATA;
 
-/* Unless we are operating as a service, stdin can't necessarily be trusted.
-   Get a location to read from. */
+// Unless we are operating as a service, stdin can't necessarily be trusted.
+// Get a location to read from.
 
 	if (tdgbl->gbl_sw_service_gbak ||
 		isatty(ib_fileno(ib_stdout)) ||
@@ -993,7 +986,8 @@ static void prompt_for_name(SCHAR* name, int length)
 						 tdgbl->mvol_old_file, 0, 0, 0);
 			ib_fprintf(term_out, msg);
 			BURP_msg_get(226, msg, 0, 0, 0, 0, 0);
-			/* \tPress return to reopen that file, or type a new\n\tname followed by return to open a different file.\n */
+			// \tPress return to reopen that file, or type a new\n\tname 
+			// followed by return to open a different file.\n
 			ib_fprintf(term_out, msg);
 		}
 		else	// First volume 
@@ -1013,13 +1007,13 @@ static void prompt_for_name(SCHAR* name, int length)
 		if (ib_fgets(name, length, term_in) == NULL)
 		{
 			BURP_msg_get(229, msg, 0, 0, 0, 0, 0);
-			/* \n\nERROR: Backup incomplete\n */
+			// \n\nERROR: Backup incomplete\n
 			ib_fprintf(term_out, msg);
 			exit(FINI_ERROR);
 		}
 
-		/* If the user typed just a carriage return, they
-		   want the old file.  If there isn't one, reprompt */
+		// If the user typed just a carriage return, they
+		// want the old file.  If there isn't one, reprompt
 
 		if (name[0] == '\n')
 		{
@@ -1034,7 +1028,7 @@ static void prompt_for_name(SCHAR* name, int length)
 
 		// OK, its a file name, strip the carriage return 
 
-        SCHAR* name_ptr = name;
+		SCHAR* name_ptr = name;
 		while (*name_ptr && *name_ptr != '\n')
 		{
 			name_ptr++;
@@ -1103,9 +1097,9 @@ static void put_numeric( SCHAR attribute, int value)
 //
 // Functional description
 //
-static bool read_header(DESC    handle,
-						ULONG*  buffer_size,
-						USHORT* format,
+static bool read_header(DESC	handle,
+						ULONG*	buffer_size,
+						USHORT*	format,
 						bool	init_flag)
 {
 	SSHORT l;
@@ -1119,8 +1113,8 @@ static bool read_header(DESC    handle,
 // CVC: Nobody does an explicit check for the read operation, assuming
 // that GET_ATTRIBUTE() != rec_burp will provide an implicit test.
 #ifndef WIN_NT
-	tdgbl->mvol_io_cnt =
-		read(handle, tdgbl->mvol_io_buffer, tdgbl->mvol_actual_buffer_size);
+	tdgbl->mvol_io_cnt = read(handle, tdgbl->mvol_io_buffer, 
+							  tdgbl->mvol_actual_buffer_size);
 #else
 	ReadFile(handle, tdgbl->mvol_io_buffer, tdgbl->mvol_actual_buffer_size,
 			 reinterpret_cast<DWORD*>(&tdgbl->mvol_io_cnt), NULL);
@@ -1164,7 +1158,7 @@ static bool read_header(DESC    handle,
 			{
 				BURP_msg_get(230, msg,
 							 tdgbl->gbl_backup_start_time, buffer, 0, 0, 0);
-				/* Expected backup start time %s, found %s\n */
+				// Expected backup start time %s, found %s\n
 				ib_printf(msg);
 				return false;
 			}
@@ -1191,7 +1185,7 @@ static bool read_header(DESC    handle,
 			{
 				BURP_msg_get(231, msg,
 							 tdgbl->gbl_database_file_name, buffer, 0, 0, 0);
-				/* Expected backup database %s, found %s\n */
+				// Expected backup database %s, found %s\n
 				ib_printf(msg);
 				return false;
 			}
@@ -1222,7 +1216,7 @@ static bool read_header(DESC    handle,
 				BURP_msg_get(232, msg,
 							 (void*) (SLONG) (tdgbl->mvol_volume_count),
 							 (void*) (SLONG) temp, 0, 0, 0);
-				/* Expected volume number %d, found volume %d\n */
+				// Expected volume number %d, found volume %d\n
 				ib_printf(msg);
 				return false;
 			}
@@ -1274,9 +1268,8 @@ static bool write_header(DESC   handle,
 	}
 	else
 	{
-		ULONG vax_value =
-			gds__vax_integer((UCHAR*) &(tdgbl->mvol_volume_count),
-							 sizeof(tdgbl->mvol_volume_count));
+		ULONG vax_value = gds__vax_integer((UCHAR*) &(tdgbl->mvol_volume_count),
+											sizeof(tdgbl->mvol_volume_count));
 		const UCHAR *p = (UCHAR *) &vax_value;
 		UCHAR *q = tdgbl->mvol_io_volume;
 		// CVC: Warning, do we want sizeof(int) or sizeof(some_abstract_FB_type)???
@@ -1290,12 +1283,11 @@ static bool write_header(DESC   handle,
 	if (full_buffer)
 	{
 #ifdef WIN_NT
-        DWORD bytes_written = 0;
-        DWORD err =
-			WriteFile(handle, tdgbl->mvol_io_header,
-					  tdgbl->mvol_io_buffer_size, &bytes_written, NULL);
+		DWORD bytes_written = 0;
+		DWORD err = WriteFile(handle, tdgbl->mvol_io_header,
+							  tdgbl->mvol_io_buffer_size, &bytes_written, NULL);
 #else
-        ULONG bytes_written = write(handle, tdgbl->mvol_io_header,
+		ULONG bytes_written = write(handle, tdgbl->mvol_io_header,
 							  tdgbl->mvol_io_buffer_size);
 #endif // WIN_NT 
 
@@ -1342,19 +1334,13 @@ bool MVOL_split_hdr_write(void)
 	time_t seconds = time(NULL);
 
 	sprintf(buffer, "%s%.24s      , file No. %4d of %4d, %-27.27s",
-			HDR_SPLIT_TAG,
-			ctime(&seconds),
-			tdgbl->action->act_file->fil_seq,
-			tdgbl->action->act_total,
-			tdgbl->action->act_file->fil_name);
+			HDR_SPLIT_TAG, ctime(&seconds), tdgbl->action->act_file->fil_seq,
+			tdgbl->action->act_total, tdgbl->action->act_file->fil_name);
 
 #ifdef WIN_NT
-    DWORD bytes_written = 0;
-	WriteFile(tdgbl->action->act_file->fil_fd,
-							buffer,
-							HDR_SPLIT_SIZE,
-							&bytes_written,
-							NULL);
+	DWORD bytes_written = 0;
+	WriteFile(tdgbl->action->act_file->fil_fd, buffer, HDR_SPLIT_SIZE,
+							&bytes_written, NULL);
 #else
 	ULONG bytes_written =
 		write(tdgbl->action->act_file->fil_fd, buffer, HDR_SPLIT_SIZE);
@@ -1386,11 +1372,8 @@ bool MVOL_split_hdr_read(void)
 		int cnt;
 
 #ifdef WIN_NT
-		ReadFile(tdgbl->action->act_file->fil_fd,
-					buffer,
-					HDR_SPLIT_SIZE,
-					reinterpret_cast<DWORD*>(&cnt),
-					NULL);
+		ReadFile(tdgbl->action->act_file->fil_fd, buffer, HDR_SPLIT_SIZE,
+					reinterpret_cast<DWORD*>(&cnt), NULL);
 #else
 		cnt = read(tdgbl->action->act_file->fil_fd, buffer, HDR_SPLIT_SIZE);
 #endif

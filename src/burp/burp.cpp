@@ -1226,11 +1226,7 @@ void BURP_msg_get(	USHORT number,
  **************************************/
 	TEXT buffer[128];
 
-	gds__msg_format(NULL,
-					burp_msg_fac,
-					number,
-					sizeof(buffer),
-					buffer,
+	gds__msg_format(NULL, burp_msg_fac, number, sizeof(buffer), buffer,
 					static_cast<const char*>(arg1),
 					static_cast<const char*>(arg2),
 					static_cast<const char*>(arg3),
@@ -2143,15 +2139,9 @@ static int api_gbak(int argc,
 
 	const char *sl;
 	do {
-		if (isc_service_query(	status,
-								(&svc_handle),
-								NULL,
-								0,
-								NULL,
-								sizeof(sendbuf),
-								sendbuf,
-								sizeof(respbuf),
-								respbuf))
+		if (isc_service_query(status, (&svc_handle), NULL, 0,NULL,
+								sizeof(sendbuf), sendbuf,
+								sizeof(respbuf), respbuf))
 		{
 			BURP_print_status(status);
 			gds__free(spb);

@@ -697,7 +697,7 @@ typedef struct fil {
 	SIZE_CODE	fil_size_code;
 } *FIL;
 
-const int FIL_LEN	= sizeof(fil);
+const size_t FIL_LEN	= sizeof(fil);
 
 /* Split & Join stuff */
 
@@ -715,7 +715,7 @@ typedef struct act {
 		ACT_T	act_action;
 } *ACT;
 
-const int ACT_LEN = sizeof(act);
+const size_t ACT_LEN = sizeof(act);
 
 #define MAX_LENGTH	-1UL
 
@@ -735,7 +735,7 @@ typedef struct hdr_split {
 /* NOTE: size of the hdr_split_tag and HDR_SPLIT_TAG must be the same and equal
    to 18. Otherwise we will not be able to join the gbk files v5.x */
 
-const int HDR_SPLIT_SIZE			= sizeof(hdr_split);
+const size_t HDR_SPLIT_SIZE	= sizeof(hdr_split);
 static const char *HDR_SPLIT_TAG5	= "InterBase/gsplit, ";
 static const char *HDR_SPLIT_TAG6	= "InterBase/gbak,   ";
 static const char *HDR_SPLIT_TAG	= HDR_SPLIT_TAG6;

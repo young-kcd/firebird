@@ -96,7 +96,7 @@ struct header_rec {
 	TEXT fl_name[MAX_FILE_NM_LEN];
 };
 
-const int header_rec_len = sizeof(header_rec);
+const size_t header_rec_len = sizeof(header_rec);
 static const char *header_rec_name	= "InterBase/gsplit, ";
 
 /*************************************
@@ -111,7 +111,7 @@ struct b_fil {
 	double b_fil_size;
 };
 
-const int b_fil_len = sizeof(b_fil);
+const size_t b_fil_len = sizeof(b_fil);
 
 
 	/*****************************************************
