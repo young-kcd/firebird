@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.39 2002-11-14 06:48:09 eku Exp $
+$Id: inet.cpp,v 1.40 2002-11-14 07:35:51 eku Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -130,7 +130,6 @@ extern int h_errno;
 #include "../remote/tcptypes.h"
 #include <ib_perror.h>
 #include <socket.h>
-#define NO_ITIMER
 #define NO_FORK
 #define MAX_PTYPE	ptype_batch_send
 #define PROXY_FILE	"[sysmgr]gds_proxy.dat"
@@ -143,7 +142,6 @@ extern int h_errno;
 #include <process.h>
 #include <signal.h>
 #include "../utilities/install_nt.h"
-#define NO_ITIMER
 #define ERRNO		WSAGetLastError()
 #define H_ERRNO		WSAGetLastError()
 #define SOCLOSE		closesocket
@@ -3764,14 +3762,14 @@ static bool_t packet_send( PORT port, SCHAR * buffer, SSHORT buffer_length)
 	SSHORT n, length, count;
 	SCHAR *data;
 
-#ifndef NO_ITIMER
+#ifdef HAVE_SETITIMER
 	struct itimerval internal_timer, client_timer;
 #ifdef HAVE_SIGACTION
 	struct sigaction internal_handler, client_handler;
 #else
 	struct sigvec internal_handler, client_handler;
 #endif
-#endif
+#endif /* HAVE_SETITIMER */
 
 	data = buffer;
 	length = buffer_length;
@@ -3821,14 +3819,14 @@ static bool_t packet_send( PORT port, SCHAR * buffer, SSHORT buffer_length)
 				break;
 			}
 
-#ifdef NO_ITIMER
+#ifndef HAVE_SETITIMER
 #ifdef WIN_NT
 			SleepEx(50, TRUE);
 #else
 			sleep(1);
 #endif
 		}
-#else
+#else /* HAVE_SETITIMER */
 			if (count == 1)
 			{
 				/* Wait in a loop until the lock becomes available */
@@ -3872,7 +3870,7 @@ static bool_t packet_send( PORT port, SCHAR * buffer, SSHORT buffer_length)
 #endif
 			setitimer(ITIMER_REAL, &client_timer, NULL);
 		}
-#endif
+#endif /* HAVE_SETITIMER */
 
 		THREAD_ENTER;
 		if (n == -1) {

@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.85 2002-11-14 06:53:17 eku Exp $
+dnl $Id: configure.in,v 1.86 2002-11-14 07:35:50 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -300,7 +300,7 @@ if test "$ac_cv_func_dirname" = "no"; then
      unset ac_cv_func_dirname
      AC_CHECK_FUNCS(dirname)],, $LIBS)
 fi
-AC_CHECK_FUNCS(sigaction)
+AC_CHECK_FUNCS(sigaction setitimer)
 AC_CHECK_FUNCS(snprintf)
 AC_FUNC_MMAP 
 AC_CHECK_FUNCS(atexit on_exit)

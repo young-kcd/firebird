@@ -86,6 +86,7 @@
 #define HAVE_STRICMP
 #define HAVE_DIRNAME
 #undef HAVE_SIGACTION
+#undef HAVE_SETITIMER
 #define HAVE_SNPRINTF
 #undef HAVE_MMAP
 #undef HAVE_ATEXIT
