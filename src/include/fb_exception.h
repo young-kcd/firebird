@@ -119,6 +119,7 @@ class fatal_exception : public status_exception
 {
 public:
 	explicit fatal_exception(const char* message);
+	static void raiseFmt(const char* format, ...);
 	// Keep in sync with the constructor above, please; "message" becomes 4th element
 	// after status_exception's constructor invokes fill_status().
 	const char* what() const throw()
