@@ -8,7 +8,7 @@
 ::  for the specific language governing rights and limitations under the
 ::  License.
 ::
-::  The Original Code is copyright 2003 Paul Reeves.
+::  The Original Code is copyright 2003-2004 Paul Reeves.
 ::
 ::  The Initial Developer of the Original Code is Paul Reeves
 ::
@@ -35,10 +35,15 @@
 set BUILDTYPE=release
 ::Don't ship pdb files by default
 set SHIP_PDB=no_pdb
-::Reset "make" vars to null
-if DEFINED FBBUILD_ZIP_PACK (set FBBUILD_ZIP_PACK=)
-if DEFINED FBBUILD_ISX_PACK (set FBBUILD_ISX_PACK=)
-if DEFINED FBBUILD_EMB_PACK (set FBBUILD_EMB_PACK=)
+
+:: Reset "make" vars to null
+set FBBUILD_ZIP_PACK=0
+set FBBUILD_ISX_PACK=0
+set FBBUILD_EMB_PACK=0
+
+:: Hard code our package number - it only needs to be changed if the
+:: kit is repackaged but the engine is not rebuilt
+set FBBUILD_PACKAGE_NUMBER=0_RC1
 
 :: See what we have on the command line
 for %%v in ( %1 %2 %3 %4 %5 )  do (
@@ -49,6 +54,17 @@ for %%v in ( %1 %2 %3 %4 %5 )  do (
   ( if /I "%%v"=="EMB" (set FBBUILD_EMB_PACK=1) )
   ( if /I "%%v"=="ALL" ( (set FBBUILD_ZIP_PACK=1) & (set FBBUILD_ISX_PACK=1) & (set FBBUILD_EMB_PACK=1) ) )
 )
+:: Now check whether we are debugging the InnoSetup script
+
+@if %FB2_ISS_DEBUG% equ 0 (@set ISS_BUILD_TYPE=iss_release) else (@set ISS_BUILD_TYPE=iss_debug)
+@if %FB2_ISS_DEBUG% equ 0 (@set ISS_COMPRESS=compression) else (@set ISS_COMPRESS=nocompression)
+:: And check whether we have built examples
+@if %FB2_EXAMPLES% equ 0 (@set ISS_EXAMPLES=noexamples) else (@set ISS_EXAMPLES=examples)
+
+
+
+
+
 @goto :EOF
 
 
@@ -59,20 +75,24 @@ for %%v in ( %1 %2 %3 %4 %5 )  do (
 :: the path this will fail! Use of the cygwin tools has not
 :: been tested and may produce unexpected results.
 ::========================================================
-sed /"#define PRODUCT_VER_STRING"/!d %ROOT_PATH%\src\jrd\build_no.h > %temp%.\b$1.bat
-sed -n -e s/\"//g -e s/"#define PRODUCT_VER_STRING "//w%temp%.\b$2.bat %temp%.\b$1.bat
-for /f "tokens=*" %%a in ('type %temp%.\b$2.bat') do set PRODUCT_VER_STRING=%%a
-@echo s/1.5.0/%PRODUCT_VER_STRING%/ > %temp%.\b$3.bat
-::@echo s/define super_server_install/define %PACKAGE_TYPE%/ >> %temp%.\b$3.bat
-@echo s/define release/define %BUILDTYPE%/ >> %temp%.\b$3.bat
-@echo s/define msvc_version 6/define msvc_version %MSVC_VERSION%/ >> %temp%.\b$3.bat
-@echo s/define no_pdb/define %SHIP_PDB%/ >> %temp%.\b$3.bat
+find "#define PRODUCT_VER_STRING" %ROOT_PATH%\src\jrd\build_no.h > %temp%.\b$1.txt
+sed -n -e s/\"//g -e s/"#define PRODUCT_VER_STRING "//w%temp%.\b$2.txt %temp%.\b$1.txt
+for /f "tokens=*" %%a in ('type %temp%.\b$2.txt') do set PRODUCT_VER_STRING=%%a
+@echo s/1.5.0/%PRODUCT_VER_STRING%/ > %temp%.\b$3.txt
+@echo s/define release/define %BUILDTYPE%/ >> %temp%.\b$3.txt
+@echo s/define msvc_version 6/define msvc_version %MSVC_VERSION%/ >> %temp%.\b$3.txt
+@echo s/define no_pdb/define %SHIP_PDB%/ >> %temp%.\b$3.txt
+@echo s/define package_number=\"0\"/define package_number=\"%FBBUILD_PACKAGE_NUMBER%\"/ >> %temp%.\b$3.txt
+@echo s/define iss_release/define %ISS_BUILD_TYPE%/ >> %temp%.\b$3.txt
+@echo s/define examples/define %ISS_EXAMPLES%/ >> %temp%.\b$3.txt
+@echo s/define compression/define %ISS_COMPRESS%/ >> %temp%.\b$3.txt
+@echo s/PRODUCT_VER_STRING/%PRODUCT_VER_STRING%/ >> %temp%.\b$3.txt
 
-@echo s/PRODUCT_VER_STRING/%PRODUCT_VER_STRING%/ >> %temp%.\b$3.bat
+sed -f  %temp%.\b$3.txt FirebirdInstall_15.iss > FirebirdInstall_%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%.iss
 
-sed -f  %temp%.\b$3.bat FirebirdInstall_15.iss > FirebirdInstall_%PRODUCT_VER_STRING%.iss
-
-del %temp%.\b$?.bat
+del %temp%.\b$?.txt
+::End of SED_MAGIC
+::----------------
 @goto :EOF
 
 
@@ -105,6 +125,11 @@ for %%v in (fbclient ib_util) do @(
 	((copy %ROOT_PATH%\temp\%BUILDTYPE%\%%v\%%v.lib %ROOT_PATH%\output\lib\%%v_ms.lib > nul) || (@echo Copying %%v.lib failed.))
 )
 
+::Allow fbserver to access upto 3GB RAM, if it is available.
+dumpbin /headers %ROOT_PATH%\output\bin\fbserver.exe | findstr /C:"Application can handle large (>2GB) addresses" || editbin /largeaddressaware %ROOT_PATH%\output\fbserver.exe
+
+
+::Generate .lib compatible with Borland compiler.
 @implib.exe | findstr "Borland" > nul
 @if errorlevel 0 (@echo generating fbclient_bor.lib && @implib %ROOT_PATH%\output\lib\fbclient_bor.lib %ROOT_PATH%\output\bin\fbclient.dll)
 
@@ -153,7 +178,7 @@ for %%v in (fbclient ib_util) do @(
 
 if DEFINED FB_EXTERNAL_DOCS (
 	@echo copying pdf docs.
-	@for %%v in (QuickStartGuide.pdf Firebird_v1.5.ReleaseNotes.pdf Firebird_v1.5.1.ReleaseNotes.pdf ) do @copy %FB_EXTERNAL_DOCS%\%%v %ROOT_PATH%\output\doc\%%v > nul
+	@for %%v in (Firebird-1.5-QuickStart.pdf Firebird_v1.5.ReleaseNotes.pdf Firebird_v1.5.1.ReleaseNotes.pdf Firebird_v1.5.2.ReleaseNotes.pdf ) do @copy %FB_EXTERNAL_DOCS%\%%v %ROOT_PATH%\output\doc\%%v > nul
 ) else (
  @echo.
  @echo The FB_EXTERNAL_DOCS environment var is not defined
@@ -174,6 +199,9 @@ if EXIST %ROOT_PATH%\output\v5_examples (
 @move /Y %ROOT_PATH%\output\v5_examples %ROOT_PATH%\output\examples > nul 2>&1
 )
 
+@echo Completed copying docs.
+::End of COPY_XTRA
+::----------------
 @goto :EOF
 
 :IBASE_H
@@ -201,6 +229,8 @@ ren %OUTPATH%\ibase.h ibase.sed
 sed -e "/#include \"fb_types\.h\"/r %OUTPATH%\fb_types.h" -e "/#include \"fb_types\.h\"/d" -e "/#include \"blr\.h\"/r %OUTPATH%\blr.h" -e "/#include \"blr\.h\"/d" %OUTPATH%\ibase.sed > %OUTPATH%\ibase.h
 del %OUTPATH%\ibase.sed %OUTPATH%\fb_types.* %OUTPATH%\blr.*
 endlocal
+::End of IBASE_H
+::--------------
 @goto :EOF
 
 
@@ -216,6 +246,8 @@ endlocal
 @echo # >> %ROOT_PATH%\output\aliases.conf
 @echo #   dummy = c:\data\dummy.fdb >> %ROOT_PATH%\output\aliases.conf
 @echo #  >> %ROOT_PATH%\output\aliases.conf
+::End of ALIAS_CONF
+::-----------------
 @goto :EOF
 
 
@@ -234,6 +266,8 @@ endlocal
 	(@if %ERRORLEVEL% GEQ 1 ( (call :ERROR Could not copy qli help database ) & (goto :EOF)))
 )
 
+::End of GBAK_SEC_DB
+::------------------
 @goto :EOF
 
 :FB_MSG
@@ -285,6 +319,8 @@ for %%v in (IPLicense.txt IDPLicense.txt ) do (
 ::And readme
 @copy %ROOT_PATH%\src\install\arch-specific\win32\readme.txt %ROOT_PATH%\zip_pack\ > nul
 
+::End of GEN_ZIP
+::--------------
 goto :EOF
 
 
@@ -294,11 +330,11 @@ if "%FBBUILD_ZIP_PACK%" NEQ "1" goto :EOF
 mkdir %ROOT_PATH%\builds\win32\install_image 2>nul
 if defined PKZIP (
 	if "%SHIP_PDB%" == "ship_pdb" (
-		del %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_win32_pdb.zip
-		%PKZIP%\pkzip25.exe -level=9 -add=update -rec -path=relative %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_win32_pdb.zip %ROOT_PATH%\zip_pack\*.*
+		del %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32_pdb.zip
+		%PKZIP%\pkzip25.exe -level=9 -add=update -rec -path=relative %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32_pdb.zip %ROOT_PATH%\zip_pack\*.*
 	) else (
-		del %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_win32.zip
-	 	%PKZIP%\pkzip25.exe -level=9 -add=update -rec -path=relative -exclude=*.pdb %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_win32.zip %ROOT_PATH%\zip_pack\*.*
+		del %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32.zip
+	 	%PKZIP%\pkzip25.exe -level=9 -add=update -rec -path=relative -exclude=*.pdb %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32.zip %ROOT_PATH%\zip_pack\*.*
 	)
 ) else (
 @Echo.
@@ -306,7 +342,8 @@ if defined PKZIP (
 @Echo.
 )
 
-
+::Endo of ZIP_PACK
+::----------------
 @goto :EOF
 
 
@@ -339,6 +376,8 @@ for %%v in (IPLicense.txt IDPLicense.txt ) do (
 @copy %ROOT_PATH%\src\install\arch-specific\win32\readme.txt %ROOT_PATH%\emb_pack\ > nul
 
 
+::End of GEN_EMBEDDED
+::-------------------
 @goto :EOF
 
 
@@ -350,11 +389,11 @@ mkdir %ROOT_PATH%\builds\win32\install_image 2>nul
 ::Now we can zip it up and copy the package to the install images directory.
 if defined PKZIP (
 	if "%SHIP_PDB%" == "ship_pdb" (
-		del %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_embed_win32_pdb.zip
-		%PKZIP%\pkzip25.exe -level=9 -add=update -rec -path=relative %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_embed_win32_pdb.zip %ROOT_PATH%\emb_pack\*.*
+		del %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_embed_win32_pdb.zip
+		%PKZIP%\pkzip25.exe -level=9 -add=update -rec -path=relative %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_embed_win32_pdb.zip %ROOT_PATH%\emb_pack\*.*
 	) else (
-	 	del %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_embed_win32.zip
-	 	%PKZIP%\pkzip25.exe -level=9 -add=update -rec -path=relative -exclude=*.pdb %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_embed_win32.zip %ROOT_PATH%\emb_pack\*.*
+	 	del %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_embed_win32.zip
+	 	%PKZIP%\pkzip25.exe -level=9 -add=update -rec -path=relative -exclude=*.pdb %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_embed_win32.zip %ROOT_PATH%\emb_pack\*.*
 	)
 ) else (
 @Echo.
@@ -362,6 +401,8 @@ if defined PKZIP (
 @Echo.
 )
 
+::End of EMB_PACK
+::---------------
 goto :EOF
 
 
@@ -371,10 +412,12 @@ goto :EOF
 ::While building and testing this feature might be annoying, so we don't do it.
 ::==========================================================
 @if /I "%BUILDTYPE%"=="release" (
-	(@echo Touching release build files with 01:05:10 timestamp) & (touch -s -D -t01:05:10 %ROOT_PATH%\output\*.*)
-	(@echo Touching release build files with 01:05:10 timestamp) & (touch -s -D -t01:05:10 %ROOT_PATH%\emb_pack\*.*)
-	(@echo Touching release build files with 01:05:10 timestamp) & (touch -s -D -t01:05:10 %ROOT_PATH%\zip_pack\*.*)
+	(@echo Touching release build files with 01:05:20 timestamp) & (touch -s -D -t01:05:20 %ROOT_PATH%\output\*.*)
+	(@echo Touching release build files with 01:05:20 timestamp) & (touch -s -D -t01:05:20 %ROOT_PATH%\emb_pack\*.*)
+	(@echo Touching release build files with 01:05:20 timestamp) & (touch -s -D -t01:05:20 %ROOT_PATH%\zip_pack\*.*)
 )
+::End of TOUCH_ALL
+::----------------
 @goto :EOF
 
 
@@ -388,7 +431,9 @@ if "%FBBUILD_ISX_PACK%" NEQ "1" goto :EOF
 if NOT DEFINED INNO_SETUP_PATH (@echo INNO_SETUP_PATH variable not defined & goto :EOF)
 @Echo Now let's compile the InnoSetup scripts
 @Echo.
-%INNO_SETUP_PATH%\iscc %ROOT_PATH%\src\install\arch-specific\win32\FirebirdInstall_%PRODUCT_VER_STRING%.iss
+%INNO_SETUP_PATH%\iscc %ROOT_PATH%\src\install\arch-specific\win32\FirebirdInstall_%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%.iss
+::End of ISX_PACK
+::---------------
 @goto :EOF
 
 
@@ -419,23 +464,37 @@ if NOT DEFINED INNO_SETUP_PATH (@echo INNO_SETUP_PATH variable not defined & got
 @echo.
 @echo       HELP   This help screen.
 @echo.
+@echo   In addition, the following environment variables are checked:
 @echo.
+@echo     FB2_ISS_DEBUG=1 - Prepare an InnoSetup script that is
+@echo                       easier to debug
+@echo.
+@echo     FB2_EXAMPLES=0  - Don't include examples in the install kit.
+@echo.
+::End of HELP
+::-----------
 @goto :EOF
 
 
 :ERROR
 ::====
 @echo.
-@echo Error  - %*
+@echo   Error  - %*
 @echo.
+cancel_script > nul 2>&1
+::End of ERROR
+::------------
 @goto :EOF
 
 
 :MAIN
 ::====
+@if not defined FB2_ISS_DEBUG (set FB2_ISS_DEBUG=0)
+@if %FB2_ISS_DEBUG% equ 0 (SETLOCAL)
 
+@if not defined FB2_EXAMPLES (set FB2_EXAMPLES=1)
 @Echo.
-@Echo Reading command-line parameters
+@Echo Reading command-line parameters...
 @(@call :SET_PARAMS %1 %2 %3 %4 %5)|| (@echo Error calling SET_PARAMS & @goto :EOF)
 @Echo.
 @Echo Setting version number
@@ -456,21 +515,42 @@ if NOT DEFINED INNO_SETUP_PATH (@echo INNO_SETUP_PATH variable not defined & got
 @Echo fb_msg
 @(@call :FB_MSG ) || (@echo Error calling FB_MSG & @goto :EOF)
 @Echo.
+if %FBBUILD_EMB_PACK% EQU 1 (
 @Echo gen_embedded
 @(@call :GEN_EMBEDDED ) || (@echo Error calling GEN_EMBEDDED & @goto :EOF)
 @Echo.
+)
+if %FBBUILD_ZIP_PACK% EQU 1 (
 @Echo gen_zip
 @(@call :GEN_ZIP ) || (@echo Error calling GEN_ZIP & @goto :EOF)
+@echo.
+)
 ::@Echo Creating .local files for libraries
 ::@(@call :TOUCH_LOCAL ) || (@echo Error calling TOUCH_LOCAL & @goto :EOF)
-@Echo.
+::@Echo.
 @(@call :TOUCH_ALL ) || (@echo Error calling TOUCH_ALL & @goto :EOF)
 @Echo.
+if %FBBUILD_ZIP_PACK% EQU 1 (
 @(@call :ZIP_PACK ) || (@echo Error calling ZIP_PACK & @goto :EOF)
 @Echo.
+)
+if %FBBUILD_EMB_PACK% EQU 1 (
 @(@call :EMB_PACK ) || (@echo Error calling EMB_PACK & @goto :EOF)
 @Echo.
+)
+if %FBBUILD_ISX_PACK% EQU 1 (
 @(@call :ISX_PACK ) || (@echo Error calling ISX_PACK & @goto :EOF)
+@goto :EOF
+)
+
+@echo.
+@echo Completed building installation kit(s)
+@echo.
+
+@if %FB2_ISS_DEBUG% equ 0 (ENDLOCAL)
+::End of MAIN
+::-----------
 @goto :EOF
 
 :END
+

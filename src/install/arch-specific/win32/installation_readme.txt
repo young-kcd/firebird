@@ -1,4 +1,4 @@
-Firebird Database Server 1.5.1 
+Firebird Database Server 1.5.2 
 ==================================================
 
 This document is a guide to installing this package of 
@@ -6,28 +6,12 @@ Firebird 1.5 on the Win32 platform. These notes refer
 to the installation package itself, rather than 
 Firebird 1.5 in general.
 
-** IMPORTANT NOTE **
-
-If you used one of the installable binaries from 
-Sourceforge to install RC2 it is recommended that you 
-uninstall directly from the installation directory 
-with unins000.exe.
-
-Do not use the Control Panel as the path to the 
-uninstaller. There appears to be a bug that prevents 
-the server service from being shut down if the 
-uninstaller is run from there. 
-
-This only applies to the uninstaller with RC2 from 
-Firebird on Sourceforge. Later installable binaries 
-can be uninstalled via any available means.
-
-**       END      **
 
 Contents
 --------
 
 o Before installation
+o Installation on systems with Firebird 2.0
 o New features of the installer
 o Deprecated Features related to installation
 o Uninstallation
@@ -41,6 +25,24 @@ Before installation
 It is recommended that you UNINSTALL all previous 
 versions of Firebird 1.0, Firebird 1.5 or InterBase 
 before installing this package.
+
+
+Installation on systems with Firebird 2.0 Unstable
+--------------------------------------------------
+
+The Firebird 1.5.2 installation process cannot detect 
+a running version of Firebird 2.0 Unstable. If you have 
+been running an early unstable version of Firebird 2.0 
+it is essential that you stop the server before 
+attempting to install Firebird 1.5.2.
+
+
+New features of the installer in Firebird 1.5.2
+-----------------------------------------------
+
+Support for several languages has been added to the
+installer. This support extends ONLY to the 
+installation process.
 
 
 New features of the installer in Firebird 1.5

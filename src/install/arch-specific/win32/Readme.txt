@@ -1,6 +1,6 @@
 
 ==================================
-Firebird 1.5.1       (Win32 Build)
+Firebird 1.5.2       (Win32 Build)
 ==================================
 
 
@@ -18,7 +18,7 @@ o Requesting New Features
 Introduction
 ============
 
-Welcome to Firebird 1.5.1. This the first maintenance release of 
+Welcome to Firebird 1.5.2. This the second maintenance release of 
 Firebird 1.5. Full details of the fixes and minor enhancements in 
 this release are contained in the release notes. These are in the
 doc/ directory.
@@ -107,7 +107,6 @@ SQL Language Documentation
 ========================== 
 New language features, keywords, extensions and restrictions introduced 
 in this release are documented in detail in the release notes. 
-The Firebird 1.5 release notes version for this release is 1.0.8. 
 
 
 Reporting Bugs

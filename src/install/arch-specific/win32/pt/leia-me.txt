@@ -1,0 +1,145 @@
+
+==================================
+Firebird 1.5.1       (Versão Win32)
+==================================
+
+
+o Introdução
+o Estabilidade
+o Instalação dos binários do kit
+o Instalação a partir dum kit comprimido (zip)
+o Instalação de um servidor embutido
+o Questões Conhecidas
+o Documentação da Linguagem SQL
+o Erros Reportados
+o Pedido de Novas Funcionalidades
+
+
+Introdução
+==========
+
+Bemvindo ao Firebird 1.5.1. Esta é a primeira versão de manutenção
+do Firebird 1.5. Detalhes completos das correcções e pequenas
+melhorias desta versão estão relatadas nas Notas de Lançamento.
+Estas encontram-se disponíveis na pasta doc/.
+
+
+Estabilidade
+============
+
+O Firebird 1.5 é a primeira versão do Firebird compilada com o C++.
+Foi sujeito a um longo processo de testes com versões beta e versões
+"Release candidate" e pode ser considerado tão estável como o seu
+predecessor, Firebird 1.0.3.
+Nenhum problema significativo foi descoberto desde a versão original do
+Firebird 1.5.0 e como tal é considerado tão ou mais estável que a versão
+anterior do Firebird 1 (v1.0.3).
+
+Não existe nenhuma razão que impeça que esta versão possa ser usada em
+ambientes de produção. Contudo, antes de instalar qualquer novo software
+num ambiente de produção este deverá ser sempre primeiro testado num sistema
+de desnvolvimento. Esta é a prática corrente e aconselhada.
+
+
+Instalando o executável de auto-instalação
+==========================================
+
+Por favor corra o executável e leia as notas de instalação que o acompanham
+e que estão contidas dentro do assistente de instalação. Após a instalação
+encontrará este documento em
+  doc/instalação_leia-me.txt.
+Para informação mais detalhada recorra às notas de instalação.
+
+Muitas modificações foram implementadas nesta versão. Se possuir uma
+instalação anterior do Firebird (incluindo a v.1.5 beta ou outra "release
+candidate") terá que ler as últimas Notas de Lançamento e compreender
+os novos nomes e localizações de todos os binários e ficheiros associados.
+Isto aplica-se quer à instalação do servidor quer à do cliente.
+
+Não instale esta versão "em cima de" uma instalação já existente do Firebird
+ou do Interbase.
+
+
+Instalação a partir de um kit comprimido
+========================================
+
+Por favor siga as instruções contidas em doc/README_installation.txt para
+instalar o kit comprimido. (Este documento é apenas fornecido com o kit
+comprimido.)
+
+
+Instalação de um servidor embutido
+==================================
+
+O servidor embutido foi desenhado para ser instalado com parte de uma
+aplicação existente. Leia o doc/README_embedded.txt para mais detalhes de
+como distribuir um servidor embutido. (Este documento é apenas fornecido
+com o kit comprimido.)
+
+
+Questões Conhecidas
+===================
+
+Bilioteca Cliente
+-----------------
+Algumas ferramentas windows anteriores não irá reconhecer a biblioteca
+fbclient.dll e/ou não a irão encontrar na sua localização por omissão,
+agora encontra-se situada abaixo da raiz do Firebird na pasta ..\bin.
+Por exemplo, o programa IBConsole da Borland não trabalha com o fbclient.dll,
+mesmo que seja copiado para a pasta de sistema e renomeado para gds32.dll.
+
+Os kits windows contêm um programa de nome instclient.exe que poderá ser
+usado para construir uma solução de "retro-compatibilidade" para o gds32.dll
+e opcionalmente instalá-lo na sua pasta de sistema. È essencial ler as
+Notas de Lançamento que o ficheiro instalação_leia-me.txt (na sub-pasta
+..\doc) antes de efectuar tal modificação.
+
+UDFs e Filtros Blob
+-------------------
+Algumas modicações nesta versão relacionadas com a Segurança poderão ser a
+causa de as suas UDFs se tornarem invisíveis para o servidor, até que a sua
+localização seja configurada no ficheiro firebird.conf.  Para mais
+informação, leia as anotações em firebird.conf e a documentação nas
+Notas de Lançamento.
+
+
+Documentação da Linguagem SQL
+=============================
+Novas funcionalidades de linguagem, palavras, extensões e restrições foram
+introduzidas nesta versão e são documentas em detalhe nas Notas de Lançamento.
+A versão das Notas de Lançamento para o Firebird 1.5 é a 1.0.8.
+
+
+Erros Reportados
+================
+
+o Tem a certeza que compreende como o Firebird funciona?
+
+  Talvez se encontre perante um comportamento correcto e a sua questão seja
+  seja apenas uma questão de suporte. Neste caso poderá contactar o
+  suporte-firebird na lista do servidor.
+
+  Poderá subscrevê-la aqui:
+
+    mailto:firebird-support-subscribe@yahoogroups.com
+
+o Ainda assim pensa que se trata dum erro?
+
+  Verifique primeiro a lista de Erros Abertos. Esta poderá ser encontrada no
+  Firebird "bug tracker":
+
+    http://sourceforge.net/tracker/?group_id=9028&atid=109028
+
+Se todavia, está convicto que encontrou um erro, então tente construir primeiro
+código ou um contexto de teste para o erro. E então reporte-o no "bug tracker".
+
+
+Pedido de Novas Funcionalidades
+===============================
+
+Antes de submeter novos pedidos de funcionalidades por favor reveja
+primeiro a lista ja existente. Existe a probabilidade de que alguém já
+tenha pensado primeiro pensado em tal. Use o seguinte link para rever a
+lista actual e submeter novos pedidos, se necessário, em:
+
+  http://sourceforge.net/tracker/?group_id=9028&atid=3590288

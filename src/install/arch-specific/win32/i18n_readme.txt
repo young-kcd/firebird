@@ -16,15 +16,17 @@ the following languages:
     Catalan, Czech, Dutch, French, German, Norwegian, Polish,
     PortugueseStd, Russian and Slovenian.
 
-Therefore adding i18n support to the Firebird installer is extremely
-simple if you are working with one of these languages. If you wish to
-translate into a language that is not supported out of the box by
-InnoSetup you will need to provide a full translation of Default.isl for
-your language.
+In addition, the InnoSetup user community has made other language packs
+available for download. See here for details:
 
-Currently Firebird only has support for English and French installs. So
-there are opportunities for others to provide support for their native
-language.
+  http://www.jrsoftware.org/files/istrans/
+
+Therefore adding i18n support to the Firebird installer is extremely
+simple as all we need are translations of the Firebird specific messages.
+
+Currently the Firebird installer has support for English, French, German
+Portuguese (standard) and Hungarian installs. So there are still 
+opportunities for others to provide support for their native language.
 
 
 How to add new languages
@@ -39,10 +41,26 @@ o The Win32 install files are located in install\arch-specific\win32.
     Firebird 1.5  - firebird2\src
     Firebird 2.0  - firebird2\builds
 
+o You can use anonymous CVS to checkout the Win32 install kit with these
+  commands:
+
+  [login]
+
+    cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/firebird login
+
+  [checkout the Fb 1.5 Win32 installation kit]
+
+    cvs -z3 -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/firebird co -r B1_5_Release firebird2/src/install/arch-specific/win32
+
+  [checkout the Fb 2.0 Win32 installation kit (When it is ready)]
+
+    cvs -z3 -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/firebird co firebird2/builds/install/arch-specific/win32
+
 
 o Each language has its own sub-directory under install\arch-specific\win32.
   If possible a two-letter language code should be used for the
-  directory name.
+  directory name. This two letter code should, if possible, be the 
+  internationally recognised two-letter identifier for the langauge.
 
 
 o Three files are required:
@@ -58,14 +76,23 @@ o Three files are required:
 
     where the actual file name can be either in english or in the
     translated equivalent of the name. The readme file stores last
-	minute documentation changes as well as general notes on using
-	firebird. It is displayed at the end of the installation process.
+    minute documentation changes as well as general notes on using
+    firebird. It is displayed at the end of the installation process.
+
+    The readme file is always subject to change from one beta or 
+    pre-release to the next (or final release.) For this reason the 
+    translated readme should always explain that the english language 
+    readme.txt is the definitive version. This is because it will 
+    not be possible to hold up a release while waiting for translators 
+    to complete their work.
 
   * installation_readme.txt
 
     This filename can be translated or left with the original english
     title. It contains installation specific details. It is displayed
-    near the beginning of the installation process.
+    near the beginning of the installation process. The installation 
+    readme is usually static and only changes from point release to 
+    point release.
 
 
 o Adding the new language to the InnoSetup install script
