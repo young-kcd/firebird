@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.141 2004-09-26 01:49:45 robocop Exp $
+$Id: met.epp,v 1.142 2004-09-26 07:24:04 robocop Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -1210,7 +1210,7 @@ void MET_lookup_cnstrt_for_index(thread_db* tdbb,
         if (!REQUEST(irq_l_cnstrt))
             REQUEST(irq_l_cnstrt) = request;
 
-		X.RDB$CONSTRAINT_NAME[fb_utils::name_length(X.RDB$CONSTRAINT_NAME)] = 0;
+		fb_utils::exact_name(X.RDB$CONSTRAINT_NAME);
 		strcpy(constraint_name, X.RDB$CONSTRAINT_NAME);
 
 	END_FOR;
@@ -1264,7 +1264,7 @@ void MET_lookup_cnstrt_for_trigger(
             if (!REQUEST(irq_l_check2))
 				REQUEST(irq_l_check2) = request2;
 
-			X.RDB$CONSTRAINT_NAME[fb_utils::name_length(X.RDB$CONSTRAINT_NAME)] = 0;
+			fb_utils::exact_name(X.RDB$CONSTRAINT_NAME);
 			strcpy(constraint_name, X.RDB$CONSTRAINT_NAME);
 
 		END_FOR;
@@ -1272,7 +1272,7 @@ void MET_lookup_cnstrt_for_trigger(
 		if (!REQUEST(irq_l_check2))
 			REQUEST(irq_l_check2) = request2;
 
-		Y.RDB$RELATION_NAME[fb_utils::name_length(Y.RDB$RELATION_NAME)] = 0;
+		fb_utils::exact_name(Y.RDB$RELATION_NAME);
 		strcpy(relation_name, Y.RDB$RELATION_NAME);
 
 	END_FOR;
@@ -1652,7 +1652,7 @@ void MET_lookup_index(thread_db* tdbb,
         if (!REQUEST(irq_l_index))
             REQUEST(irq_l_index) = request;
 
-		X.RDB$INDEX_NAME[fb_utils::name_length(X.RDB$INDEX_NAME)] = 0;
+		fb_utils::exact_name(X.RDB$INDEX_NAME);
 		strcpy(index_name, X.RDB$INDEX_NAME);
 
 	END_FOR;
@@ -2638,7 +2638,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 
 			if (procedure->prc_name.empty())
 			{
-				P.RDB$PROCEDURE_NAME[fb_utils::name_length(P.RDB$PROCEDURE_NAME)] = 0;
+				fb_utils::exact_name(P.RDB$PROCEDURE_NAME);
 				procedure->prc_name = P.RDB$PROCEDURE_NAME;
 			}
 			procedure->prc_id = P.RDB$PROCEDURE_ID;
