@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD data definition language parser
- *	MODULE:		parse.c
+ *	MODULE:		parse.cpp
  *	DESCRIPTION:	Statement parser
  *
  * The contents of this file are subject to the Interbase Public
@@ -44,8 +44,8 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_f_proto.h"
 
-const char* PROMPT			= "GDEF> ";
-const char* CONTINUATION	= "CON>  ";
+const char* const PROMPT			= "GDEF> ";
+const char* const CONTINUATION	= "CON>  ";
 const int GDS_NAME_LEN		= 31;
 
 const int MAX_DIMENSION		= 16;
@@ -90,7 +90,7 @@ static TRG_T trig_table[] = {
 	trg_erase
 };
 
-extern const TEXT *DDL_prompt;
+extern const TEXT* DDL_prompt;
 
 static bool check_filename(SYM, bool);
 static SYM copy_symbol(SYM);

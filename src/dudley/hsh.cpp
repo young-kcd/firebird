@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Data Definition Language
- *	MODULE:		hsh.c
+ *	MODULE:		hsh.cpp
  *	DESCRIPTION:	Hash table and symbol manager
  *
  * The contents of this file are subject to the Interbase Public
@@ -31,9 +31,8 @@
 
 const int HASH_SIZE = 101;
 
-static USHORT hash(SCHAR *, USHORT);
-static bool scompare(SCHAR *, USHORT, SCHAR *,
-						USHORT);
+static USHORT hash(const SCHAR*, USHORT);
+static bool scompare(const SCHAR*, USHORT, const SCHAR*, const USHORT);
 
 static SYM hash_table[HASH_SIZE];
 static SYM key_symbols;
@@ -383,7 +382,7 @@ void HSH_remove( SYM symbol)
 }
 
 
-SYM HSH_typed_lookup(TEXT * string,
+SYM HSH_typed_lookup(TEXT* string,
 					 USHORT length, enum sym_t type)
 {
 /**************************************
@@ -419,7 +418,7 @@ SYM HSH_typed_lookup(TEXT * string,
 }
 
 
-static USHORT hash( SCHAR * string, USHORT length)
+static USHORT hash(const SCHAR* string, USHORT length)
 {
 /**************************************
  *
@@ -431,13 +430,10 @@ static USHORT hash( SCHAR * string, USHORT length)
  *	Returns the hash function of a string.
  *
  **************************************/
-	USHORT value;
-	SCHAR c;
-
-	value = 0;
+	USHORT value = 0;
 
 	while (length--) {
-		c = *string++;
+		const SCHAR c = *string++;
 		value = (value << 1) + UPPER(c);
 	}
 
@@ -445,10 +441,10 @@ static USHORT hash( SCHAR * string, USHORT length)
 }
 
 
-static bool scompare(SCHAR * string1,
+static bool scompare(const SCHAR* string1,
 					 USHORT length1,
-					 SCHAR * string2,
-					 USHORT length2)
+					 const SCHAR* string2,
+					 const USHORT length2)
 {
 /**************************************
  *
