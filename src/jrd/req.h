@@ -189,7 +189,7 @@ public:
 	USHORT		req_label;			/* label for leave */
 	ULONG		req_flags;			/* misc request flags */
 	Savepoint*	req_proc_sav_point;	/* procedure savepoint list */
-	ULONG		req_timestamp;		/* Start time of request */
+	time_t		req_timestamp;		/* Start time of request */
 
 	enum req_ta {
 		req_trigger_insert = 1,

@@ -719,9 +719,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	attachment->att_charset = options.dpb_interp;
 
-	const time_t clock = time(NULL);
-	const tm times = *localtime(&clock);
-	isc_encode_timestamp(&times, &attachment->att_timestamp);
+	attachment->att_timestamp = time(NULL);
 
 	if (options.dpb_lc_messages) {
 		attachment->att_lc_messages = options.dpb_lc_messages;
@@ -1855,9 +1853,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 
 	attachment->att_charset = options.dpb_interp;
 
-	const time_t clock = time(NULL);
-	const tm times = *localtime(&clock);
-	isc_encode_timestamp(&times, &attachment->att_timestamp);
+	attachment->att_timestamp = time(NULL);
 
 	if (options.dpb_lc_messages) {
 		attachment->att_lc_messages = options.dpb_lc_messages;

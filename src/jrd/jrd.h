@@ -480,7 +480,7 @@ public:
 	class vcl*	att_val_errors;
 	Firebird::PathName	att_working_directory;	// Current working directory is cached
 	Firebird::PathName	att_filename;			// alias used to attach the database
-	GDS_TIMESTAMP	att_timestamp;		// connection date and time
+	time_t		att_timestamp;		// connection date and time
 };
 
 
