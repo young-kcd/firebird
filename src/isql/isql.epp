@@ -5803,7 +5803,7 @@ static SSHORT print_item(TEXT** s,
 // one digit more than the specified precision when the value is 0
 // The bug appears in TCS DSQL_DOMAIN_12 and 13
 //
-#if (defined(_MSC_VER) && (_MSC_VER <= 1200))
+#if (defined(_MSC_VER) && (_MSC_VER <= 1200)) || defined(MINGW)
 			if ((double) *(float*) (var->sqldata)==0){
 				sprintf(p, "% #*.*g ", (int) length,
 						(int) MIN(8, (length - 6))-1,
@@ -5851,7 +5851,7 @@ static SSHORT print_item(TEXT** s,
 				}
 			}
 			else {
-#if (defined(_MSC_VER) && (_MSC_VER <= 1200))
+#if (defined(_MSC_VER) && (_MSC_VER <= 1200)) || defined(MINGW)
 				if (*(double*) (var->sqldata)==0){
 					sprintf(p, "% #*.*g ", (int) length,
 							(int) MIN(16, (int) (length - 7)) - 1,
