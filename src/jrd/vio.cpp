@@ -3016,6 +3016,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 				RecordBitmap::Accessor accessor(action->vct_records);
 				if (accessor.getFirst()) do
 				{
+					rpb.rpb_number.setValue(accessor.current());
 					if (!action->vct_undo ||
 						!action->vct_undo->locate(Firebird::locEqual, rpb.rpb_number.getValue()))
 					{
@@ -4767,7 +4768,7 @@ static void verb_post(
 		action->vct_relation = rpb->rpb_relation;
 	}
 
-	if (RecordBitmap::test(action->vct_records, rpb->rpb_number.getValue())) {
+	if (!RecordBitmap::test(action->vct_records, rpb->rpb_number.getValue())) {
 		RBM_SET(tdbb->getDefaultPool(), &action->vct_records, rpb->rpb_number.getValue());
 		if (old_data) {
 			/* An update-in-place is being posted to this savepoint, and this
