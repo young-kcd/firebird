@@ -93,7 +93,9 @@ class Config
 		KEY_REMOTE_SERVICE_NAME,					// 26
 		KEY_REMOTE_SERVICE_PORT,					// 27
 		KEY_REMOTE_PIPE_NAME,						// 28
-		KEY_IPC_NAME								// 29
+		KEY_IPC_NAME,								// 29
+		KEY_MAX_UNFLUSHED_WRITES,					// 30
+		KEY_MAX_UNFLUSHED_WRITE_TIME				// 31
 	};
 
 public:
@@ -247,6 +249,16 @@ public:
 		Name for IPC-related objects
 	*/
 	static const char *getIpcName();
+
+	/*
+		Unflushed writes number
+	*/
+	static int getMaxUnflushedWrites();
+
+	/*
+		Unflushed write time
+	*/
+	static int getMaxUnflushedWriteTime();
 };
 
 #endif // CONFIG_H

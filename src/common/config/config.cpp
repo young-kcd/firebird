@@ -90,7 +90,9 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_STRING,		"RemoteServiceName",		(ConfigValue) FB_SERVICE_NAME},
 	{TYPE_INTEGER,		"RemoteServicePort",		(ConfigValue) FB_SERVICE_PORT},
 	{TYPE_STRING,		"RemotePipeName",			(ConfigValue) FB_PIPE_NAME},
-	{TYPE_STRING,		"IpcName",					(ConfigValue) FB_IPC_NAME}
+	{TYPE_STRING,		"IpcName",					(ConfigValue) FB_IPC_NAME},
+	{TYPE_STRING,		"MaxUnflushedWrites",		(ConfigValue) 100},
+	{TYPE_STRING,		"MaxUnflushedWriteTime",	(ConfigValue) 30}
 };
 
 /******************************************************************************
@@ -373,4 +375,14 @@ const char *Config::getRemotePipeName()
 const char *Config::getIpcName()
 {
 	return (const char*) sysConfig.values[KEY_IPC_NAME];
+}
+
+int Config::getMaxUnflushedWrites()
+{
+	return (int) sysConfig.values[KEY_MAX_UNFLUSHED_WRITES];
+}
+
+int Config::getMaxUnflushedWriteTime()
+{
+	return (int) sysConfig.values[KEY_MAX_UNFLUSHED_WRITE_TIME];
 }
