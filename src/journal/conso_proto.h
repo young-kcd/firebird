@@ -21,10 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JOURNAL_CONSO_PROTO_H_
-#define _JOURNAL_CONSO_PROTO_H_
+#ifndef JOURNAL_CONSO_PROTO_H
+#define JOURNAL_CONSO_PROTO_H
 
-extern bool CONSOLE_start_console(int, SCHAR **);
-extern bool CONSOLE_test_server(SCHAR *);
+bool	CONSOLE_start_console(int, SCHAR **);
+bool	CONSOLE_test_server(SCHAR *);
 
-#endif /* _JOURNAL_CONSO_PROTO_H_ */
+#endif // JOURNAL_CONSO_PROTO_H

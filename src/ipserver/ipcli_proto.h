@@ -29,8 +29,8 @@
 extern "C" {
 #endif
 
-extern void IPC_process_event(DWORD, DWORD, LPVOID);
-extern void IPC_release_all(void);
+void IPC_process_event(DWORD, DWORD, LPVOID);
+void IPC_release_all(void);
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -21,13 +21,13 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JOURNAL_GJRN_PROTO_H_
-#define _JOURNAL_GJRN_PROTO_H_
+#ifndef JOURNAL_GJRN_PROTO_H
+#define JOURNAL_GJRN_PROTO_H
 
-extern void GJRN_abort(int);
-extern void GJRN_get_msg(USHORT, TEXT *, TEXT *, TEXT *, TEXT *);
-extern void GJRN_output(TEXT *, ...);
-extern void GJRN_printf(USHORT, TEXT *, TEXT *, TEXT *, TEXT *);
-extern void GJRN_print_syntax(void);
+void	GJRN_abort(int);
+void	GJRN_get_msg(USHORT, TEXT *, TEXT *, TEXT *, TEXT *);
+void	GJRN_output(TEXT *, ...);
+void	GJRN_printf(USHORT, TEXT *, TEXT *, TEXT *, TEXT *);
+void	GJRN_print_syntax(void);
 
-#endif /* _JOURNAL_GJRN_PROTO_H_ */
+#endif // JOURNAL_GJRN_PROTO_H

@@ -24,7 +24,7 @@
 #ifndef ALICE_EXE_PROTO_H
 #define ALICE_EXE_PROTO_H
 
-extern int EXE_action(TEXT *, ULONG);
-extern int EXE_two_phase(TEXT *, ULONG);
+int EXE_action(TEXT *, ULONG);
+int EXE_two_phase(TEXT *, ULONG);
 
 #endif // ALICE_EXE_PROTO_H

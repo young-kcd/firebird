@@ -25,6 +25,6 @@
 #ifndef _IPEVT_PROTO_H_
 #define _IPEVT_PROTO_H_
 
-extern int IPC_window_init(char *, char *, HWND *, HANDLE);
+int IPC_window_init(char *, char *, HWND *, HANDLE);
 
 #endif /* _IPEVT_PROTO_H_ */

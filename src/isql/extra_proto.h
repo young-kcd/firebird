@@ -24,9 +24,9 @@
 #ifndef ISQL_EXTRA_PROTO_H
 #define ISQL_EXTRA_PROTO_H
 
-extern SSHORT EXTRACT_ddl(int, SCHAR *);
-extern SSHORT EXTRACT_list_table(SCHAR *, SCHAR *, bool, SSHORT);
-extern void EXTRACT_list_view(SCHAR *);
-extern int	EXTRACT_list_grants (SCHAR *);
+SSHORT	EXTRACT_ddl(int, SCHAR *);
+SSHORT	EXTRACT_list_table(SCHAR *, SCHAR *, bool, SSHORT);
+void	EXTRACT_list_view(SCHAR *);
+int		EXTRACT_list_grants (SCHAR *);
 
-#endif /* ISQL_EXTRA_PROTO_H */
+#endif // ISQL_EXTRA_PROTO_H

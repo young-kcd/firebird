@@ -24,13 +24,13 @@
 #ifndef ISQL_SHOW_PROTO_H
 #define ISQL_SHOW_PROTO_H
 
-extern bool	SHOW_dbb_parameters (FRBRD*, SCHAR*, SCHAR*, USHORT, bool);
-extern int	SHOW_grants (SCHAR*, const SCHAR*, USHORT);
-extern int	SHOW_grants2 (SCHAR*, const SCHAR*, USHORT, TEXT*);
-extern void	SHOW_grant_roles (const SCHAR*, bool*);
-extern void	SHOW_grant_roles2 (const SCHAR*, bool*, TEXT*);
-extern void SHOW_print_metadata_text_blob(IB_FILE*, GDS__QUAD*);
-extern int SHOW_metadata(SCHAR**, SCHAR**);
+bool	SHOW_dbb_parameters (FRBRD*, SCHAR*, SCHAR*, USHORT, bool);
+int		SHOW_grants (SCHAR*, const SCHAR*, USHORT);
+int		SHOW_grants2 (SCHAR*, const SCHAR*, USHORT, TEXT*);
+void	SHOW_grant_roles (const SCHAR*, bool*);
+void	SHOW_grant_roles2 (const SCHAR*, bool*, TEXT*);
+void	SHOW_print_metadata_text_blob(IB_FILE*, GDS__QUAD*);
+int		SHOW_metadata(SCHAR**, SCHAR**);
 
-#endif /* ISQL_SHOW_PROTO_H */
+#endif // ISQL_SHOW_PROTO_H
 

@@ -21,9 +21,9 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JOURNAL_REBUI_PROTO_H_
-#define _JOURNAL_REBUI_PROTO_H_
+#ifndef JOURNAL_REBUI_PROTO_H
+#define JOURNAL_REBUI_PROTO_H
 
-extern bool REBUILD_start_restore(int, char **);
+bool	REBUILD_start_restore(int, char **);
 
-#endif /* _JOURNAL_REBUI_PROTO_H_ */
+#endif // JOURNAL_REBUI_PROTO_H

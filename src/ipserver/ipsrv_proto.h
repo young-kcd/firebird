@@ -24,7 +24,7 @@
 #ifndef _IPSRV_PROTO_H_
 #define _IPSRV_PROTO_H_
 
-extern USHORT IPS_init(HWND, USHORT, USHORT, USHORT);
-extern ULONG IPS_start_thread(ULONG);
+USHORT IPS_init(HWND, USHORT, USHORT, USHORT);
+ULONG IPS_start_thread(ULONG);
 
 #endif /* _IPSRV_PROTO_H */

@@ -21,14 +21,14 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _REMOTE_CNTL_PROTO_H_
-#define _REMOTE_CNTL_PROTO_H_
+#ifndef REMOTE_CNTL_PROTO_H
+#define REMOTE_CNTL_PROTO_H
 
-extern void CNTL_init(FPTR_VOID, TEXT *);
-extern void *CNTL_insert_thread(void);
-extern void CNTL_main_thread(SLONG, SCHAR *[]);
-extern void CNTL_remove_thread(void *);
-extern void CNTL_shutdown_service(TEXT *);
-extern void CNTL_stop_service(TEXT *);
+void	CNTL_init(FPTR_VOID, TEXT *);
+void*	CNTL_insert_thread(void);
+void	CNTL_main_thread(SLONG, SCHAR *[]);
+void	CNTL_remove_thread(void *);
+void	CNTL_shutdown_service(TEXT *);
+void	CNTL_stop_service(TEXT *);
 
-#endif /* _REMOTE_CNTL_PROTO_H */
+#endif // REMOTE_CNTL_PROTO_H

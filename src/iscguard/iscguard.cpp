@@ -73,7 +73,7 @@ static bool parse_args(LPSTR, bool *);
 #ifdef NOT_USED_OR_REPLACED
 static void HelpCmd(HWND, HINSTANCE, WPARAM);
 #endif
-//extern char* ChopFileName (char*, char*, long);
+//char* ChopFileName (char*, char*, long);
 
 void start_and_watch_server(char *);
 void swap_icons(HWND);

@@ -31,23 +31,23 @@
 #include "../burp/burp.h"
 
 
-UINT64  MVOL_fini_read();
-UINT64  MVOL_fini_write(int*, UCHAR**);
-void    MVOL_init(ULONG);
-void    MVOL_init_read(const UCHAR*, const UCHAR*, USHORT*, int*, UCHAR**);
-void    MVOL_init_write(const UCHAR*, const UCHAR*, int*, UCHAR**);
-bool    MVOL_split_hdr_write();
-bool    MVOL_split_hdr_read();
-int     MVOL_read(int*, UCHAR**);
-UCHAR*  MVOL_read_block(TGBL, UCHAR*, ULONG);
-void    MVOL_skip_block(TGBL, ULONG);
-UCHAR   MVOL_write(UCHAR, int*, UCHAR**);
-const UCHAR*  MVOL_write_block(TGBL, const UCHAR*, ULONG);
+UINT64			MVOL_fini_read();
+UINT64			MVOL_fini_write(int*, UCHAR**);
+void			MVOL_init(ULONG);
+void			MVOL_init_read(const UCHAR*, const UCHAR*, USHORT*, int*, UCHAR**);
+void			MVOL_init_write(const UCHAR*, const UCHAR*, int*, UCHAR**);
+bool			MVOL_split_hdr_write();
+bool			MVOL_split_hdr_read();
+int				MVOL_read(int*, UCHAR**);
+UCHAR*			MVOL_read_block(TGBL, UCHAR*, ULONG);
+void			MVOL_skip_block(TGBL, ULONG);
+UCHAR			MVOL_write(UCHAR, int*, UCHAR**);
+const UCHAR*	MVOL_write_block(TGBL, const UCHAR*, ULONG);
 
 #if defined WIN_NT
-extern DESC MVOL_open (const char *, ULONG, ULONG);
+DESC			MVOL_open(const char *, ULONG, ULONG);
 #endif
 
 
-#endif	/* BURP_MVOL_PROTO_H */
+#endif	// BURP_MVOL_PROTO_H
 

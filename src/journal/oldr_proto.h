@@ -21,12 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JOURNAL_OLDR_PROTO_H_
-#define _JOURNAL_OLDR_PROTO_H_
+#ifndef JOURNAL_OLDR_PROTO_H
+#define JOURNAL_OLDR_PROTO_H
 
-extern int OLDR_close(OLD *);
-extern int OLDR_get(OLD, SCHAR *, SSHORT *);
-extern void OLDR_get_info(OLD, SSHORT *, SSHORT *, SLONG *, SLONG *, SLONG *);
-extern int OLDR_open(OLD *, SCHAR *, SSHORT, SCHAR **);
+int		OLDR_close(OLD *);
+int		OLDR_get(OLD, SCHAR *, SSHORT *);
+void	OLDR_get_info(OLD, SSHORT *, SSHORT *, SLONG *, SLONG *, SLONG *);
+int		OLDR_open(OLD *, SCHAR *, SSHORT, SCHAR **);
 
-#endif /* _JOURNAL_OLDR_PROTO_H_ */
+#endif // JOURNAL_OLDR_PROTO_H

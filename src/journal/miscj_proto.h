@@ -21,17 +21,17 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JOURNAL_MISC_PROTO_H_
-#define _JOURNAL_MISC_PROTO_H_
+#ifndef JOURNAL_MISC_PROTO_H
+#define JOURNAL_MISC_PROTO_H
 
-extern UCHAR *MISC_alloc_jrnl(SLONG);
-extern void MISC_down_case(UCHAR *, UCHAR *);
-extern void MISC_free_jrnl(int *);
-extern bool MISC_get_line(TEXT *, TEXT *, SSHORT);
-extern void MISC_get_new_value(SCHAR *, SCHAR *, int);
-extern void MISC_get_time(timeval*);
-extern void MISC_get_wal_info(ltjc*, SCHAR*, SCHAR*);
-extern void MISC_print_journal_syntax(void);
-extern int MISC_time_convert(TEXT *, USHORT, SLONG[2]);
+UCHAR*	MISC_alloc_jrnl(SLONG);
+void	MISC_down_case(UCHAR *, UCHAR *);
+void	MISC_free_jrnl(int *);
+bool	MISC_get_line(TEXT *, TEXT *, SSHORT);
+void	MISC_get_new_value(SCHAR *, SCHAR *, int);
+void	MISC_get_time(timeval*);
+void	MISC_get_wal_info(ltjc*, SCHAR*, SCHAR*);
+void	MISC_print_journal_syntax(void);
+int		MISC_time_convert(TEXT *, USHORT, SLONG[2]);
 
-#endif /* _JOURNAL_MISC_PROTO_H_ */
+#endif // JOURNAL_MISC_PROTO_H

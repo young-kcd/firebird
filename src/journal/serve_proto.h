@@ -21,9 +21,9 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JOURNAL_SERVE_PROTO_H_
-#define _JOURNAL_SERVE_PROTO_H_
+#ifndef JOURNAL_SERVE_PROTO_H
+#define JOURNAL_SERVE_PROTO_H
 
-extern bool SERVER_start_server(int, char **);
+bool	SERVER_start_server(int, char **);
 
-#endif /* _JOURNAL_SERVE_PROTO_H_ */
+#endif // JOURNAL_SERVE_PROTO_H
