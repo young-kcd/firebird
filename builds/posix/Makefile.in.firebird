@@ -28,7 +28,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.4 2002-09-03 13:24:21 eku Exp $
+#  $Id: Makefile.in.firebird,v 1.5 2002-09-09 05:48:22 eku Exp $
 #
 
 ROOT=..
@@ -300,7 +300,8 @@ includes:	include_generic
 
                        # examples still need a good makefile to ship with them
 examples:
-#	$(MAKE) -C ../gen/v5_examples -f $(MAKE_ROOT)/Makefile.v5_examples
+	$(MAKE) -C ../gen/v5_examples -f $(MAKE_ROOT)/Makefile.v5_examples
+#	$(MAKE) -f $(MAKE_ROOT)/Makefile.v5_examples
 
 otherfiles: misc_files script_files
 
@@ -326,7 +327,7 @@ embed_gbak:
 	$(MAKE) -f $(MAKE_ROOT)/Makefile.embed.gbak
 
 embed_isql:
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.embed.gbak
+	$(MAKE) -f $(MAKE_ROOT)/Makefile.embed.isql
 
 embed_gpre:
 	$(MAKE) -f $(MAKE_ROOT)/Makefile.embed.gpre
@@ -642,26 +643,25 @@ superMiscFiles:	force
 	$(CP) firebird/skywalker/install/misc/firebird.init.d.* source/interbase/misc
 
 #install: force
-#	make -f firebird/skywalker/install/Makefile install
+#	$(MAKE) -f firebird/skywalker/install/Makefile install
 
 runclassicinstall: force
-	make -f firebird/skywalker/install/Makefile runclassicinstall
+	$(MAKE) -f firebird/skywalker/install/Makefile runclassicinstall
 
 classicpackages: force
-	make -f firebird/skywalker/install/Makefile classicpackages
+	$(MAKE) -f firebird/skywalker/install/Makefile classicpackages
 
 classictarfile: force
-	make -f firebird/skywalker/install/Makefile classictarfile
+	$(MAKE) -f firebird/skywalker/install/Makefile classictarfile
 
 classicrpmfile: force
-	make -f firebird/skywalker/install/Makefile classicrpmfile
-
+	$(MAKE) -f firebird/skywalker/install/Makefile classicrpmfile
 
 superpackages: force
-	make -f firebird/skywalker/install/Makefile superpackages
+	$(MAKE) -f firebird/skywalker/install/Makefile superpackages
 
 supertarfile: force
-	make -f firebird/skywalker/install/Makefile supertarfile
+	$(MAKE) -f firebird/skywalker/install/Makefile supertarfile
 
 superrpmfile: force
-	make -f firebird/skywalker/install/Makefile superrpmfile
+	$(MAKE) -f firebird/skywalker/install/Makefile superrpmfile
