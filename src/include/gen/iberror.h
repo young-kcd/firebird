@@ -553,6 +553,17 @@
 #define isc_bad_skip_param                   335544818L
 #define isc_io_32bit_exceeded_err            335544819L
 #define isc_invalid_savepoint                335544820L
+#define isc_dsql_column_pos_err              335544821L
+#define isc_dsql_agg_where_err               335544822L
+#define isc_dsql_agg_group_err               335544823L
+#define isc_dsql_agg_column_err              335544824L
+#define isc_dsql_agg_having_err              335544825L
+#define isc_dsql_agg_nested_err              335544826L
+#define isc_exec_sql_invalid_arg             335544827L
+#define isc_exec_sql_invalid_req             335544828L
+#define isc_exec_sql_invalid_var             335544829L
+#define isc_exec_sql_max_call_exceeded       335544830L
+#define isc_conf_access_denied               335544831L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -593,6 +604,7 @@
 #define isc_dsql_warn_precision_ambiguous2   336003084L
 #define isc_dsql_ambiguous_field_name        336003085L
 #define isc_dsql_udf_return_pos_err          336003086L
+#define isc_dsql_invalid_label               336003087L
 #define isc_dyn_role_does_not_exist          336068796L
 #define isc_dyn_no_grant_admin_opt           336068797L
 #define isc_dyn_user_not_role_member         336068798L
@@ -753,6 +765,6 @@
 #define isc_gstat_open_err                   336920605L
 #define isc_gstat_read_err                   336920606L
 #define isc_gstat_sysmemex                   336920607L
-#define isc_err_max                          700
+#define isc_err_max                          712
 
 #endif /* JRD_GEN_IBERROR_H */

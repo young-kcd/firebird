@@ -754,25 +754,19 @@ DSQL_NOD PASS1_node(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
 					  gds_arg_gds, gds_dsql_command_err, 0);
 		}
-		// AB: request->req_inhibit_map tells if we are already in an 
-		// aggregate-function, but i disabled the error-message for
-		// this because invalid_reference can check if it's really
-		// allowed or not.
-		if (//request->req_inhibit_map || 
-			!(request->req_in_select_list || request->req_in_having_clause ||
+		if (!(request->req_in_select_list || request->req_in_where_clause  ||
+			request->req_in_group_by_clause  || request->req_in_having_clause ||
 			request->req_in_order_by_clause)) {
-			/* either nested aggregate, or not part of a select
-			   list, having clause, or order by clause */
+			/* not part of a select list, where clause, group by clause,
+			   having clause, or order by clause */
 			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
 					  gds_arg_gds, gds_dsql_agg_ref_err, 0);
 		}
-		++request->req_inhibit_map;
 		node = MAKE_node(input->nod_type, input->nod_count);
 		node->nod_flags = input->nod_flags;
 		if (input->nod_count) {
 			node->nod_arg[0] = PASS1_node(request, input->nod_arg[0], proc_flag);
 		}
-		--request->req_inhibit_map;
 		return node;
 
 		/* access plan node types */
@@ -2225,16 +2219,15 @@ static BOOLEAN invalid_reference(DSQL_CTX context, DSQL_NOD node, DSQL_NOD list,
 					// an lower one then it's a invalid aggregate, because
 					// aggregate-functions from the same or lower context can't 
 					// part of each other. 
-					invalid |= 
-						pass1_found_aggregate(node->nod_arg[0], context->ctx_scope_level,
-							FIELD_MATCH_TYPE_EQUAL, TRUE);
-					// It would be nicer to call a error at this point with
-					// a more clear message that aggregates with the same
-					// aggregate-context can't be nested.
+					if (pass1_found_aggregate(node->nod_arg[0], context->ctx_scope_level,
+											  FIELD_MATCH_TYPE_EQUAL, TRUE)) {
+						ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
+							gds_arg_gds, gds_dsql_agg_nested_err, 0);
+						// Nested aggregate functions are not allowed
+					}
 				}
 			}			
 			break;
-
 			
 		case nod_gen_id:
 		case nod_gen_id2:
@@ -4285,12 +4278,12 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 		--request->req_in_where_clause;
 
 		/* AB: An aggregate pointing to it's own parent_context isn't
-		   allowed, HAVING should be used in stead */
+		   allowed, HAVING should be used instead */
 		if (pass1_found_aggregate(rse->nod_arg[e_rse_boolean], 
 				request->req_scope_level, FIELD_MATCH_TYPE_EQUAL, TRUE))
 			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-				gds_arg_gds, gds_field_ref_err, 0);
-		/* invalid field reference */
+				gds_arg_gds, gds_dsql_agg_where_err, 0);
+			// Cannot use an aggregate in a WHERE clause, use HAVING instead
 	}
 
 #ifdef DEV_BUILD
@@ -4384,6 +4377,7 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 	{
 		/* if there are positions in the group by clause then replace them 
 		   by the (newly pass) items from the select_list */
+		++request->req_in_group_by_clause;
 		aggregate->nod_arg[e_agg_group] = MAKE_node(node->nod_type,node->nod_count);
 		ptr2 = aggregate->nod_arg[e_agg_group]->nod_arg;
 		for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end; ptr++, ptr2++)
@@ -4395,13 +4389,13 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 					(slist_node->nod_type == nod_list))
 				{
 					/* an select list is there */
-					position = (ULONG) (sub->nod_arg[0]);
+					position = (ULONG) sub->nod_arg[0];
 					if ((position < 1) || (position > (ULONG) slist_node->nod_count)) 
 					{
-	/* !! This error should be replaced by an good GROUP BY clause error !! */
 						ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-								gds_arg_gds, gds_dsql_command_err, 
-								gds_arg_gds, gds_field_aggregate_err, 0);
+								gds_arg_gds, gds_dsql_column_pos_err, 
+								gds_arg_string, "GROUP BY", 0);
+						// Invalid column position used in the GROUP BY clause
 					}
 					*ptr2 = PASS1_node(request, slist_node->nod_arg[position - 1], 0);
 				}
@@ -4411,6 +4405,7 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 				*ptr2 = PASS1_node(request, sub, 0);
 			}
 		}
+		--request->req_in_group_by_clause;
 
 		/* AB: An field pointing to another parent_context isn't
 		   allowed and GROUP BY items can't contain aggregates */
@@ -4419,8 +4414,8 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 		    pass1_found_aggregate(aggregate->nod_arg[e_agg_group], 
 				request->req_scope_level, FIELD_MATCH_TYPE_LOWER_EQUAL, TRUE))
 			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-				gds_arg_gds, gds_field_ref_err, 0);
-		/* invalid field reference */
+				gds_arg_gds, gds_dsql_agg_group_err, 0);
+			// Cannot use an aggregate in a GROUP BY clause
     }
 
 /* parse a user-specified access plan */
@@ -4478,7 +4473,10 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++) {
 		if (invalid_reference(parent_context, *ptr, aggregate->nod_arg[e_agg_group], FALSE))
 			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-			  gds_arg_gds, gds_field_ref_err, 0); /* invalid field reference */
+			  gds_arg_gds, gds_dsql_agg_column_err,
+			  gds_arg_string, "select list", 0);
+			// Invalid expression in the select list
+			// (not contained in either an aggregate or the GROUP BY clause)
 	}
 
 /* Reset context of order items to point to the parent stream */
@@ -4492,7 +4490,10 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 		for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++) {
 			if (invalid_reference(parent_context, *ptr, aggregate->nod_arg[e_agg_group], FALSE))
 				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-				  gds_arg_gds, gds_field_ref_err, 0); /* invalid field reference */
+				  gds_arg_gds, gds_dsql_agg_column_err,
+				  gds_arg_string, "ORDER BY clause", 0);
+				// Invalid expression in the ORDER BY clause
+				// (not contained in either an aggregate or the GROUP BY clause)
 		}
 	}
 
@@ -4517,7 +4518,10 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 		for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++) {
 			if (invalid_reference(parent_context, *ptr, aggregate->nod_arg[e_agg_group], FALSE))
 				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-				  gds_arg_gds, gds_field_ref_err, 0); /* invalid field reference */
+				  gds_arg_gds, gds_dsql_agg_having_err,
+				  gds_arg_string, "HAVING clause", 0);
+				// Invalid expression in the HAVING clause
+				// (neither an aggregate nor contained in the GROUP BY clause)
 		}
 
 #ifdef	CHECK_HAVING
@@ -4525,9 +4529,8 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 			if (invalid_reference(parent_rse->nod_arg[e_rse_boolean],
 								  aggregate->nod_arg[e_agg_group]))
 				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-						  gds_arg_gds, gds_field_ref_err,
-						  /* invalid field reference */
-						  0);
+						  gds_arg_gds, gds_field_ref_err, 0);
+				/* invalid field reference */
 #endif
 	}
 
@@ -4735,7 +4738,7 @@ static DSQL_NOD pass1_simple_case( DSQL_REQ request, DSQL_NOD input, USHORT proc
 static DSQL_NOD pass1_sort( DSQL_REQ request, DSQL_NOD input, DSQL_NOD s_list)
 {
 	DSQL_NOD node, *ptr, *end, *ptr2;
-	SLONG position;
+	ULONG position;
 
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
@@ -4774,11 +4777,13 @@ static DSQL_NOD pass1_sort( DSQL_REQ request, DSQL_NOD input, DSQL_NOD s_list)
 		}
 
 		if (node1->nod_type == nod_constant && node1->nod_desc.dsc_dtype == dtype_long) {
-			position = (SLONG) (node1->nod_arg[0]);
+			position = (ULONG) (node1->nod_arg[0]);
 			if ((position < 1) || !s_list || 
-				((ULONG) position > s_list->nod_count)) {
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, gds_arg_gds,
-					gds_dsql_command_err, gds_arg_gds, gds_order_by_err, 0);	/* invalid ORDER BY clause */
+				(position > (ULONG) s_list->nod_count)) {
+				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
+					gds_arg_gds, gds_dsql_column_pos_err,
+					gds_arg_string, "ORDER BY", 0);
+				// Invalid column position used in the ORDER BY clause
 			}
 			// substitute ordinal with appropriate field
 			node1 = s_list->nod_arg[position - 1];

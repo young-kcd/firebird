@@ -1052,6 +1052,28 @@ C --
       PARAMETER (GDS__io_32bit_exceeded_err            = 335544819)
       INTEGER*4 GDS__invalid_savepoint               
       PARAMETER (GDS__invalid_savepoint                = 335544820)
+      INTEGER*4 GDS__dsql_column_pos_err             
+      PARAMETER (GDS__dsql_column_pos_err              = 335544821)
+      INTEGER*4 GDS__dsql_agg_where_err              
+      PARAMETER (GDS__dsql_agg_where_err               = 335544822)
+      INTEGER*4 GDS__dsql_agg_group_err              
+      PARAMETER (GDS__dsql_agg_group_err               = 335544823)
+      INTEGER*4 GDS__dsql_agg_column_err             
+      PARAMETER (GDS__dsql_agg_column_err              = 335544824)
+      INTEGER*4 GDS__dsql_agg_having_err             
+      PARAMETER (GDS__dsql_agg_having_err              = 335544825)
+      INTEGER*4 GDS__dsql_agg_nested_err             
+      PARAMETER (GDS__dsql_agg_nested_err              = 335544826)
+      INTEGER*4 GDS__exec_sql_invalid_arg            
+      PARAMETER (GDS__exec_sql_invalid_arg             = 335544827)
+      INTEGER*4 GDS__exec_sql_invalid_req            
+      PARAMETER (GDS__exec_sql_invalid_req             = 335544828)
+      INTEGER*4 GDS__exec_sql_invalid_var            
+      PARAMETER (GDS__exec_sql_invalid_var             = 335544829)
+      INTEGER*4 GDS__exec_sql_max_call_exceeded      
+      PARAMETER (GDS__exec_sql_max_call_exceeded       = 335544830)
+      INTEGER*4 GDS__conf_access_denied              
+      PARAMETER (GDS__conf_access_denied               = 335544831)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
@@ -1132,6 +1154,8 @@ C --
       PARAMETER (GDS__dsql_ambiguous_field_name        = 336003085)
       INTEGER*4 GDS__dsql_udf_return_pos_err         
       PARAMETER (GDS__dsql_udf_return_pos_err          = 336003086)
+      INTEGER*4 GDS__dsql_invalid_label              
+      PARAMETER (GDS__dsql_invalid_label               = 336003087)
       INTEGER*4 GDS__dyn_role_does_not_exist         
       PARAMETER (GDS__dyn_role_does_not_exist          = 336068796)
       INTEGER*4 GDS__dyn_no_grant_admin_opt          

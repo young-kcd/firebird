@@ -532,6 +532,17 @@ const
 	gds_bad_skip_param                   = 335544818;
 	gds_io_32bit_exceeded_err            = 335544819;
 	gds_invalid_savepoint                = 335544820;
+	gds_dsql_column_pos_err              = 335544821;
+	gds_dsql_agg_where_err               = 335544822;
+	gds_dsql_agg_group_err               = 335544823;
+	gds_dsql_agg_column_err              = 335544824;
+	gds_dsql_agg_having_err              = 335544825;
+	gds_dsql_agg_nested_err              = 335544826;
+	gds_exec_sql_invalid_arg             = 335544827;
+	gds_exec_sql_invalid_req             = 335544828;
+	gds_exec_sql_invalid_var             = 335544829;
+	gds_exec_sql_max_call_exceeded       = 335544830;
+	gds_conf_access_denied               = 335544831;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;
@@ -572,6 +583,7 @@ const
 	gds_dsql_warn_precision_ambiguous2   = 336003084;
 	gds_dsql_ambiguous_field_name        = 336003085;
 	gds_dsql_udf_return_pos_err          = 336003086;
+	gds_dsql_invalid_label               = 336003087;
 	gds_dyn_role_does_not_exist          = 336068796;
 	gds_dyn_no_grant_admin_opt           = 336068797;
 	gds_dyn_user_not_role_member         = 336068798;

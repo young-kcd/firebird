@@ -434,9 +434,9 @@ public:
 	USHORT	req_scope_level;		//!< Scope level for parsing aliases in subqueries
 	USHORT	req_message_number;	//!< Next available message number
 	USHORT	req_loop_level;		//!< Loop level
-	SSHORT	req_inhibit_map;		//!< Map inhibit count
 	USHORT	req_in_select_list;	//!< now processing "select list"
 	USHORT	req_in_where_clause;	//!< processing "where clause"
+	USHORT	req_in_group_by_clause;	//!< processing "group by clause"
 	USHORT	req_in_having_clause;	//!< processing "having clause"
 	USHORT	req_in_order_by_clause;	//!< processing "order by clause"
 	USHORT	req_error_handlers;	//!< count of active error handlers

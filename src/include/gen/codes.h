@@ -543,6 +543,17 @@ const SLONG gds_bad_limit_param                  = 335544817L;
 const SLONG gds_bad_skip_param                   = 335544818L;
 const SLONG gds_io_32bit_exceeded_err            = 335544819L;
 const SLONG gds_invalid_savepoint                = 335544820L;
+const SLONG gds_dsql_column_pos_err              = 335544821L;
+const SLONG gds_dsql_agg_where_err               = 335544822L;
+const SLONG gds_dsql_agg_group_err               = 335544823L;
+const SLONG gds_dsql_agg_column_err              = 335544824L;
+const SLONG gds_dsql_agg_having_err              = 335544825L;
+const SLONG gds_dsql_agg_nested_err              = 335544826L;
+const SLONG gds_exec_sql_invalid_arg             = 335544827L;
+const SLONG gds_exec_sql_invalid_req             = 335544828L;
+const SLONG gds_exec_sql_invalid_var             = 335544829L;
+const SLONG gds_exec_sql_max_call_exceeded       = 335544830L;
+const SLONG gds_conf_access_denied               = 335544831L;
 const SLONG gds_gfix_db_name                     = 335740929L;
 const SLONG gds_gfix_invalid_sw                  = 335740930L;
 const SLONG gds_gfix_incmp_sw                    = 335740932L;
@@ -583,6 +594,7 @@ const SLONG gds_dsql_warn_precision_ambiguous1   = 336003083L;
 const SLONG gds_dsql_warn_precision_ambiguous2   = 336003084L;
 const SLONG gds_dsql_ambiguous_field_name        = 336003085L;
 const SLONG gds_dsql_udf_return_pos_err          = 336003086L;
+const SLONG gds_dsql_invalid_label               = 336003087L;
 const SLONG gds_dyn_role_does_not_exist          = 336068796L;
 const SLONG gds_dyn_no_grant_admin_opt           = 336068797L;
 const SLONG gds_dyn_user_not_role_member         = 336068798L;
@@ -743,7 +755,7 @@ const SLONG gds_gstat_unexpected_eof             = 336920580L;
 const SLONG gds_gstat_open_err                   = 336920605L;
 const SLONG gds_gstat_read_err                   = 336920606L;
 const SLONG gds_gstat_sysmemex                   = 336920607L;
-const SLONG gds_err_max                          = 700L;
+const SLONG gds_err_max                          = 712L;
 
 #else /* c definitions */
 
@@ -1267,6 +1279,17 @@ const SLONG gds_err_max                          = 700L;
 #define gds__bad_skip_param                   335544818L
 #define gds__io_32bit_exceeded_err            335544819L
 #define gds__invalid_savepoint                335544820L
+#define gds__dsql_column_pos_err              335544821L
+#define gds__dsql_agg_where_err               335544822L
+#define gds__dsql_agg_group_err               335544823L
+#define gds__dsql_agg_column_err              335544824L
+#define gds__dsql_agg_having_err              335544825L
+#define gds__dsql_agg_nested_err              335544826L
+#define gds__exec_sql_invalid_arg             335544827L
+#define gds__exec_sql_invalid_req             335544828L
+#define gds__exec_sql_invalid_var             335544829L
+#define gds__exec_sql_max_call_exceeded       335544830L
+#define gds__conf_access_denied               335544831L
 #define gds__gfix_db_name                     335740929L
 #define gds__gfix_invalid_sw                  335740930L
 #define gds__gfix_incmp_sw                    335740932L
@@ -1307,6 +1330,7 @@ const SLONG gds_err_max                          = 700L;
 #define gds__dsql_warn_precision_ambiguous2   336003084L
 #define gds__dsql_ambiguous_field_name        336003085L
 #define gds__dsql_udf_return_pos_err          336003086L
+#define gds__dsql_invalid_label               336003087L
 #define gds__dyn_role_does_not_exist          336068796L
 #define gds__dyn_no_grant_admin_opt           336068797L
 #define gds__dyn_user_not_role_member         336068798L
@@ -1467,7 +1491,7 @@ const SLONG gds_err_max                          = 700L;
 #define gds__gstat_open_err                   336920605L
 #define gds__gstat_read_err                   336920606L
 #define gds__gstat_sysmemex                   336920607L
-#define gds_err_max                          700
+#define gds_err_max                          712
 
 #endif
 

@@ -36,7 +36,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.22 2003-04-16 10:16:38 aafemt Exp $
+$Id: backup.epp,v 1.23 2003-06-13 07:52:29 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -492,7 +492,6 @@ int BACKUP_backup(TEXT* dbb_file, TEXT* file_name)
 
 	PUT(rec_end);
 	cumul_count = MVOL_fini_write(&tdgbl->io_cnt, &tdgbl->io_ptr);
-#ifdef TMN_THINKS_NS_SHOULD_FIX_THIS
 	if (cumul_count <= MAX_SLONG) {
 		SLONG tempcount = cumul_count;
 		BURP_verbose(176, (TEXT *) tempcount, NULL, NULL, NULL, NULL);
@@ -501,24 +500,17 @@ int BACKUP_backup(TEXT* dbb_file, TEXT* file_name)
 		// To localize the damage (no common 64-bit integer printf format
 		// string between compilers), we here convert the > MAX_SLONG
 		// value to a string using standard C++.
-		#ifndef SOLX86
+#ifndef SOLX86
 		std::ostringstream foo;
 		foo << cumul_count << std::ends;
 		const char* psz = foo.str().c_str();
-		#else
-		 const char  psz [64];
-		    ib_sprintf (psz,"%ll", cumul_count ); 
-		#endif
-		BURP_verbose(WHAT?, psz, 0, 0, 0, 0);
-		/* msg N closing file, committing, and finishing.  %s bytes written */
-	}
 #else
-	// TMN: Temoprarily added / 1024 to get the same behaviour
-	// (however wrong) as previous version.
-	SLONG tempcount = cumul_count / 1024;
-	BURP_verbose(176, (TEXT *) tempcount, NULL, NULL, NULL, NULL);
-	/* msg 176 closing file, committing, and finishing.  %ld bytes written */
+		const char psz[64];
+		ib_sprintf(psz, "%ll", cumul_count);
 #endif
+		BURP_verbose(283, psz, NULL, NULL, NULL, NULL);
+		/* msg 283 closing file, committing, and finishing.  %s bytes written */
+	}
 	COMMIT;
 	ON_ERROR
 	    general_on_error ();
