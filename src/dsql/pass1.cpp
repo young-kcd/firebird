@@ -5307,7 +5307,7 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 		fb_assert(input->nod_type == nod_query_spec);
 	}
 
-// Save the original base of the context stack and process relations 
+	// Save the original base of the context stack and process relations 
 
 	dsql_nod* target_rse = MAKE_node(nod_rse, e_rse_count);
 	dsql_nod* rse = target_rse;
@@ -5336,7 +5336,7 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 	}
 	} // end scope block
 	
-// Process LIMIT and/or ROWS, if any 
+	// Process LIMIT and/or ROWS, if any 
 
 	dsql_nod* node = input->nod_arg[e_qry_limit];
 	if (node && rows) {
@@ -5364,7 +5364,7 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
         }
     }
 
-// Process boolean, if any 
+	// Process boolean, if any 
 
 	if ( (node = input->nod_arg[e_qry_where]) ) {
 		++request->req_in_where_clause;
@@ -5387,7 +5387,7 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 	}
 #endif
 
-// Process select list, if any. If not, generate one 
+	// Process select list, if any. If not, generate one 
 
 	node = input->nod_arg[e_qry_list];
 
@@ -5435,7 +5435,7 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 		*/
 	}
 
-// Process ORDER clause, if any 
+	// Process ORDER clause, if any 
 
 	if (order) {
 		++request->req_in_order_by_clause;
@@ -5445,6 +5445,7 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 
 /* A GROUP BY, HAVING, or any aggregate function in the select list 
    will force an aggregate */
+
 	dsql_ctx* parent_context = NULL;
 	dsql_nod* parent_rse = NULL;
 	dsql_nod* aggregate = NULL;
@@ -5488,7 +5489,7 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 		remap_streams_to_parent_context(rse->nod_arg[e_rse_streams], parent_context);
 	}
 
-// Process GROUP BY clause, if any 
+	// Process GROUP BY clause, if any 
 
 	if ( (node = input->nod_arg[e_qry_group]) )
 	{
@@ -5513,7 +5514,7 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 		}
     }
 
-// parse a user-specified access plan 
+	// Parse a user-specified access plan 
 
 	rse->nod_arg[e_rse_plan] =
 		PASS1_node(request, input->nod_arg[e_qry_plan], false);
@@ -5544,17 +5545,48 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 		}		
 	}
 
-	if (parent_context)
+	// Unless there was a parent, we're done
+
+	if (!parent_context)
 	{
-		// Reset context of select items to point to the parent stream 
+		rse->nod_flags = flags;
+		return rse;
+	}
 
-		parent_rse->nod_arg[e_rse_items] =
-			remap_fields(request, rse->nod_arg[e_rse_items], parent_context);
-		rse->nod_arg[e_rse_items] = NULL;
+	// Reset context of select items to point to the parent stream 
 
-		// AB: Check for invalid contructions inside selected-items list
-		list = parent_rse->nod_arg[e_rse_items];
-		{ // scope block
+	parent_rse->nod_arg[e_rse_items] =
+		remap_fields(request, rse->nod_arg[e_rse_items], parent_context);
+	rse->nod_arg[e_rse_items] = NULL;
+
+	// AB: Check for invalid contructions inside selected-items list
+	list = parent_rse->nod_arg[e_rse_items];
+	{ // scope block
+	const dsql_nod* const* ptr = list->nod_arg;
+	for (const dsql_nod* const* const end = ptr + list->nod_count;
+		ptr < end; ptr++)
+	{
+		if (invalid_reference(parent_context, *ptr,
+			aggregate->nod_arg[e_agg_group], false, false))
+		{
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+				isc_arg_gds, isc_dsql_agg_column_err,
+				isc_arg_string, "select list", 0);
+			// Invalid expression in the select list
+			// (not contained in either an aggregate or the GROUP BY clause)
+		}
+	}
+	} // end scope block
+
+	// Reset context of order items to point to the parent stream 
+
+	if (order) {
+		parent_rse->nod_arg[e_rse_sort] =
+			remap_fields(request, rse->nod_arg[e_rse_sort], parent_context);
+		rse->nod_arg[e_rse_sort] = NULL;
+
+		// AB: Check for invalid contructions inside the ORDER BY clause
+		list = target_rse->nod_arg[e_rse_sort];
 		const dsql_nod* const* ptr = list->nod_arg;
 		for (const dsql_nod* const* const end = ptr + list->nod_count;
 			ptr < end; ptr++)
@@ -5564,90 +5596,63 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_dsql_agg_column_err,
-					isc_arg_string, "select list", 0);
-				// Invalid expression in the select list
+					isc_arg_string, "ORDER BY clause", 0);
+				// Invalid expression in the ORDER BY clause
 				// (not contained in either an aggregate or the GROUP BY clause)
 			}
 		}
-		} // end scope block
-
-		// Reset context of order items to point to the parent stream 
-
-		if (order) {
-			parent_rse->nod_arg[e_rse_sort] =
-				remap_fields(request, rse->nod_arg[e_rse_sort], parent_context);
-			rse->nod_arg[e_rse_sort] = NULL;
-
-			// AB: Check for invalid contructions inside the ORDER BY clause
-			list = target_rse->nod_arg[e_rse_sort];
-			const dsql_nod* const* ptr = list->nod_arg;
-			for (const dsql_nod* const* const end = ptr + list->nod_count;
-				ptr < end; ptr++)
-			{
-				if (invalid_reference(parent_context, *ptr,
-					aggregate->nod_arg[e_agg_group], false, false))
-				{
-					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-						isc_arg_gds, isc_dsql_agg_column_err,
-						isc_arg_string, "ORDER BY clause", 0);
-					// Invalid expression in the ORDER BY clause
-					// (not contained in either an aggregate or the GROUP BY clause)
-				}
-			}
-		}
-
-		// And, of course, reduction clauses must also apply to the parent 
-
-		if (input->nod_arg[e_qry_distinct]) {
-			parent_rse->nod_arg[e_rse_reduced] =
-				remap_fields(request, parent_rse->nod_arg[e_rse_reduced], parent_context);
-		}
-
-		// Process HAVING clause, if any 
-
-		if ( (node = input->nod_arg[e_qry_having]) ) {
-			++request->req_in_having_clause;
-			parent_rse->nod_arg[e_rse_boolean] = PASS1_node(request, node, false);
-			--request->req_in_having_clause;
-
-			parent_rse->nod_arg[e_rse_boolean] =
-				remap_fields(request, parent_rse->nod_arg[e_rse_boolean], parent_context);
-
-			// AB: Check for invalid contructions inside the HAVING clause
-			list = parent_rse->nod_arg[e_rse_boolean];
-			dsql_nod** ptr = list->nod_arg;
-			for (const dsql_nod* const* const end = ptr + list->nod_count;
-				ptr < end; ptr++)
-			{
-				if (invalid_reference(parent_context, *ptr,
-					aggregate->nod_arg[e_agg_group], false, false))
-				{
-					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-						isc_arg_gds, isc_dsql_agg_having_err,
-						isc_arg_string, "HAVING clause", 0);
-					// Invalid expression in the HAVING clause
-					// (neither an aggregate nor contained in the GROUP BY clause)
-				}
-			}
-
-#ifdef CHECK_HAVING
-			if (aggregate)
-			{
-				if (invalid_reference(parent_rse->nod_arg[e_rse_boolean],
-									aggregate->nod_arg[e_agg_group]))
-				{
-					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-							isc_arg_gds, isc_field_ref_err, 0);
-					// invalid field reference 
-				}
-			}
-#endif
-		}
-		rse = parent_rse;
 	}
 
-	rse->nod_flags = flags;
-	return rse;
+	// And, of course, reduction clauses must also apply to the parent 
+
+	if (input->nod_arg[e_qry_distinct]) {
+		parent_rse->nod_arg[e_rse_reduced] =
+			remap_fields(request, parent_rse->nod_arg[e_rse_reduced], parent_context);
+	}
+
+	// Process HAVING clause, if any 
+
+	if ( (node = input->nod_arg[e_qry_having]) ) {
+		++request->req_in_having_clause;
+		parent_rse->nod_arg[e_rse_boolean] = PASS1_node(request, node, false);
+		--request->req_in_having_clause;
+
+		parent_rse->nod_arg[e_rse_boolean] =
+			remap_fields(request, parent_rse->nod_arg[e_rse_boolean], parent_context);
+
+		// AB: Check for invalid contructions inside the HAVING clause
+		list = parent_rse->nod_arg[e_rse_boolean];
+		dsql_nod** ptr = list->nod_arg;
+		for (const dsql_nod* const* const end = ptr + list->nod_count;
+			ptr < end; ptr++)
+		{
+			if (invalid_reference(parent_context, *ptr,
+				aggregate->nod_arg[e_agg_group], false, false))
+			{
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+					isc_arg_gds, isc_dsql_agg_having_err,
+					isc_arg_string, "HAVING clause", 0);
+				// Invalid expression in the HAVING clause
+				// (neither an aggregate nor contained in the GROUP BY clause)
+			}
+		}
+
+#ifdef CHECK_HAVING
+		if (aggregate)
+		{
+			if (invalid_reference(parent_rse->nod_arg[e_rse_boolean],
+								aggregate->nod_arg[e_agg_group]))
+			{
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+						isc_arg_gds, isc_field_ref_err, 0);
+				// invalid field reference 
+			}
+		}
+#endif
+	}
+
+	parent_rse->nod_flags = flags;
+	return parent_rse;
 }
 
 
