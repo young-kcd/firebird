@@ -120,7 +120,7 @@ static void gen_update(const act*, int);
 static void gen_variable(const act*, int);
 static void gen_whenever(const swe*, int);
 static void make_array_declaration(ref*);
-static TEXT* make_name(TEXT* const, gpre_sym*);
+static TEXT* make_name(TEXT* const, const gpre_sym*);
 static void make_ok_test(const act*, const gpre_req*, int);
 static void make_port(const gpre_port*, int);
 static void make_ready(const dbb*, const TEXT*, const TEXT*, USHORT,
@@ -3638,7 +3638,7 @@ static void make_array_declaration(ref* reference)
 // CVC: this code in unclear to me: it's advancing sym_string pointer,
 // so after this call the pointer is at the position of the null terminator.
 
-static TEXT* make_name( TEXT* const string, gpre_sym* symbol)
+static TEXT* make_name( TEXT* const string, const gpre_sym* symbol)
 {
 
 	if (symbol->sym_type == SYM_delimited_cursor)
@@ -3647,17 +3647,18 @@ static TEXT* make_name( TEXT* const string, gpre_sym* symbol)
 		// the cursor names and to escape any embeded quotes.
 		int i = 0;
 		strcpy(string, "\"\\\"");
-		for (i = strlen(string); *symbol->sym_string && i + 4 < MAX_CURSOR_SIZE; i++)
+		const char* source = symbol->sym_string;
+		for (i = strlen(string); *source && i + 4 < MAX_CURSOR_SIZE; i++)
 		{
-			if (*symbol->sym_string == '\"' || *symbol->sym_string == '\'') {
+			if (*source == '\"' || *source == '\'') {
 				if (i + 7 >= MAX_CURSOR_SIZE)
 					break;
 
 				string[i++] = '\\';
-				string[i++] = *symbol->sym_string;
+				string[i++] = *source;
 				string[i++] = '\\';
 			}
-			string[i] = *symbol->sym_string++;
+			string[i] = *source++;
 		}
 		string[i] = 0;
 		strcat(string, "\\\"\"");
