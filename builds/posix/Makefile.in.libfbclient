@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbclient,v 1.7 2003-02-10 12:26:25 dimitr Exp $
+#  $Id: Makefile.in.libfbclient,v 1.8 2003-03-05 17:16:32 brodsom Exp $
 #
 ROOT=..
 ObjModuleName=libfbclient
@@ -96,6 +96,8 @@ FBCLIENT_Objects =  $(JRD_ClientObjects) \
 					$(FBUTIL_ClientObjects) \
 					$(FBCOMMON_ClientObjects)\
 					$(FBCLASSES_ClientObjects)
+					$(OS_SPECIFIC_Objects)\
+					$(FBCONFIG_Objects)
 
 
 .PHONY: libfbclient
@@ -104,11 +106,10 @@ FBCLIENT_Objects =  $(JRD_ClientObjects) \
 libfbclient : $(LIBFBCLIENT_SO)
 
 $(LIBFBCLIENT_SO):	$(FBCLIENT_Objects)
-#	$(LIB_LINK) -Wl,-soname,libfbclient.so.1 -Wl,-rpath,/usr/lib -o $@ $^
-	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)libfbclient.so.1 $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^
+#	$(LIB_LINK) -Wl,-soname,libfbclient.$(SHRLIB_EXT).1 -Wl,-rpath,/usr/lib -o $@ $^
+	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)libfbclient.$(SHRLIB_EXT).1 $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ $(WIN_LIBS)
 	-$(LN) $(@F) $(LIBFBCLIENT_SOBASENAME) 
 	-$(LN) $(notdir $(LIBFBCLIENT_SOBASENAME)) $(LIBFBCLIENT_SONAME)
-
 
 
 AllObjects = $(FBCLIENT_Objects)
