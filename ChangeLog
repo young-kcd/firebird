@@ -1,3 +1,54 @@
+2005-01-05 03:06  robocop
+
+	* firebird2/src/gpre/: gpre.cpp (1.70), gpre.h (1.76):
+	
+	More constants.
+
+2005-01-04 14:37  dimitr
+
+	* firebird2/src/jrd/tra.cpp (1.97):
+	
+	Don't forget to remove user savepoints in the no-op part of the
+	commit-retaining implementation.
+
+2005-01-04 14:17  dimitr
+
+	* firebird2/src/dsql/ddl.cpp (1.124):
+	
+	1. Allowed implicit NOT NULL declaration for a PRIMARY KEY
+	constraint (per SQL-99) 2. Minor fixes and cleanup
+
+2005-01-04 14:09  dimitr
+
+	* firebird2/src/jrd/exe.cpp (1.138):
+	
+	Looper fixes: 1. Slightly changed the error handling to exactly
+	correspond the FB1 logic 2. Added code to always cleanup the active
+	savepoints, even after nested error handlers 3. Fixed one little
+	debug-time issue 4. Replaced VERB_CLEANUP macro with an inline
+	function
+
+2005-01-04 11:53  dimitr
+
+	* firebird2/src/gpre/sql.cpp (1.55):
+	
+	Fixed the build.
+
+2005-01-04 06:42  robocop
+
+	* firebird2/src/isql/show.epp (1.65):
+	
+	Show system UDF's. According to Ann, she seems to remember that
+	"there hasn't been a missing RDB$SYSTEM_FLAG since V2 except
+	objects created with direct system table inserts." but if there are
+	problems, I will have to do two loops.
+
+2005-01-04 06:19  robocop
+
+	* firebird2/src/gpre/sql.cpp (1.54):
+	
+	More constants.
+
 2005-01-04 02:16  stryqx
 
 	* firebird2/src/extern/editline/makelist (1.2):
