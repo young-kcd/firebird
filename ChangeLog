@@ -1,3 +1,45 @@
+2003-05-09 18:18  skidder
+
+	* firebird2/src/jrd/: gds.cpp, gds_proto.h, sort.cpp:
+	
+	1. Cleanup 2. Rework temporary files management. In particular: -
+	fix security hole on all POSIX platforms except FREEBSD/OPENBSD
+	related to mktemp usage (possible DoS attacks or privileges
+	elevation) via switching to mkstemp - fix problem with only 27
+	unique filenames generated on Win32 (which could cause
+	unpredictable behavior in SS builds) - pass appropriate flags to
+	CreateFile on Win32 to indicate that files are temporary (this may
+	improve performance a little)
+
+2003-05-09 18:05  skidder
+
+	* firebird2/src/jrd/: all_old.cpp, all_old.h:
+	
+	Cleanup
+
+2003-05-09 18:02  skidder
+
+	* firebird2/src/: jrd/all.cpp, jrd/jrd.cpp, dsql/alld.cpp,
+	remote/inet_server.cpp, remote/window.cpp:
+	
+	Cleanup
+
+2003-05-09 17:10  hippoman
+
+	* firebird2/builds/win32/msvc7/: engine.vcproj,
+	engine_classic.vcproj, Firebird2.sln, common.vcproj,
+	common_classic.vcproj, engine_embed.vcproj, fbclient.vcproj,
+	fbembed.vcproj:
+	
+	* Synced the msvc7 build files
+
+2003-05-09 16:45  skidder
+
+	* firebird2/src/intl/lc_ascii.c:
+	
+	Strange, but MSVC fails to compile C code that uses "inline"
+	keyword directly. Replace it with "__inline" in my previous commit
+
 2003-05-08 21:47  skidder
 
 	* firebird2/src/intl/lc_ascii.c:
