@@ -2562,11 +2562,13 @@ static DSQL_NOD pass1_any( DSQL_REQ request, DSQL_NOD input, NOD_TYPE ntype)
 	base = request->req_context;
 
 	node = MAKE_node(ntype, 1);
+	temp = MAKE_node(input->nod_type, 2);
+/* Build first the node from our base-context so that the right context is
+   used while parsing the nodes */
+	temp->nod_arg[0] = PASS1_node(request, input->nod_arg[0], 0);
 	node->nod_arg[0] = rse = 
 		PASS1_rse(request, select, select->nod_arg[e_sel_order], NULL);
 
-	temp = MAKE_node(input->nod_type, 2);
-	temp->nod_arg[0] = PASS1_node(request, input->nod_arg[0], 0);
 
 /* adjust the scope level back to the sub-rse, so that 
    the fields in the select list will be properly recognized */
