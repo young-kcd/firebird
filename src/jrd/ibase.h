@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.75 2004-05-07 10:48:06 brodsom Exp $
+$Id: ibase.h,v 1.76 2004-05-07 11:07:12 brodsom Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -247,49 +247,8 @@ typedef struct paramvary {
 } PARAMVARY;
 #endif /* !defined(JRD_VAL_H) */
 
-/* values for dsc_flags */
-/* Note: DSC_null is only reliably set for local variables
-   (blr_variable) */
-#define DSC_null		1
-#define DSC_no_subtype		2	/* dsc has no sub type specified */
-#define DSC_nullable  		4	/* not stored. instead, is derived
-                                	from metadata primarily to flag
-                                 	SQLDA (in DSQL)               */
+#include "../jrd/dsc_pub.h"
 
-/* Overload text typing information into the dsc_sub_type field.
-   See intl.h for definitions of text types */ 
-
-#ifndef dsc_ttype
-#define dsc_ttype	dsc_sub_type
-#endif
-
-
-/* Note that dtype_null actually means that we do not yet know the
-   dtype for this descriptor.  A nice cleanup item would be to globally
-   change it to dtype_unknown.  --chrisj 1999-02-17 */
-/* Name changed on 2003.12.17 by CVC. */
-
-/* #define dtype_null      0 Enable it if some apps use the old name */
-#define dtype_unknown	0
-#define dtype_text	1
-#define dtype_cstring	2
-#define dtype_varying	3
-
-#define dtype_packed	6
-#define dtype_byte	7
-#define dtype_short	8
-#define dtype_long	9
-#define dtype_quad	10
-#define dtype_real	11
-#define dtype_double	12
-#define dtype_d_float	13
-#define dtype_sql_date	14
-#define dtype_sql_time	15
-#define dtype_timestamp	16
-#define dtype_blob	17
-#define dtype_array	18
-#define dtype_int64     19
-#define DTYPE_TYPE_MAX	20
 #endif /* !defined(JRD_DSC_H) */
 
 

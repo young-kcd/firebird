@@ -26,7 +26,7 @@
 #ifndef JRD_DSC_H
 #define JRD_DSC_H
 
-#include "dsc_pub.h"
+#include "../jrd/dsc_pub.h"
 
 /* Descriptor format */
 
@@ -67,8 +67,6 @@ typedef struct alt_dsc {
 
 #define DSC_EQUIV(d1,d2) ((((ALT_DSC*) d1)->dsc_combined_type == ((ALT_DSC*) d2)->dsc_combined_type) && \
 			  ((DSC_GET_CHARSET (d1) == DSC_GET_CHARSET (d2)) || d1->dsc_dtype > dtype_any_text))
-
-#define DTYPE_TYPE_MAX	20
 
 /* In DSC_*_result tables, DTYPE_CANNOT means that the two operands
    cannot participate together in the requested operation. */
