@@ -144,11 +144,11 @@ public:
 	SCHAR	nod_scale;			/* Target scale factor */
 	USHORT	nod_count;			/* Number of arguments */
 	dsc		lit_desc;
-	UCHAR	lit_data[1];
+	SINT64	lit_data[1]; // Defined this way to prevent SIGBUS error in 64-bit ports
 };
 typedef lit* LIT;
 
-#define lit_delta	(sizeof(dsc) / sizeof(JRD_NOD*))
+#define lit_delta	((sizeof(struct lit)-sizeof(struct jrd_nod)-sizeof(SINT64)) / sizeof(JRD_NOD*))
 
 
 /* Aggregate Sort Block (for DISTINCT aggregates) */

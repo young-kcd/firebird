@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.86 2003-10-07 09:55:59 robocop Exp $
+$Id: common.h,v 1.87 2003-10-10 23:56:55 skidder Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -121,6 +121,10 @@ $Id: common.h,v 1.86 2003-10-07 09:55:59 robocop Exp $
 #define I386    1
 #define IMPLEMENTATION  isc_info_db_impl_i386 /* 60  next higher unique number, See you later  */
 #endif /* i386 */
+
+#ifdef sparc
+#define IMPLEMENTATION  isc_info_db_impl_linux_sparc /* 20  */
+#endif /* sparc */
 
 #define MEMMOVE(from,to,length)		memmove ((void *)to, (void *)from, (size_t) length)
 #define MOVE_FAST(from,to,length)       memcpy (to, from, (int) (length))

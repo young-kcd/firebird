@@ -87,12 +87,6 @@
 
 #define statistics		stat
 
-#ifdef sparc
-#ifndef SOLARIS
-extern int ib_printf();
-#endif
-#endif
-
 #ifdef UNIX
 #define GDS_EDIT	gds__edit
 #endif
@@ -253,7 +247,8 @@ static const TEXT *const impl_implementation[] = {
     "Firebird/FreeBSD/i386",	/* 61 */
     "Firebird/NetBSD/i386",	/* 62 */
     "Firebird/Darwin/PowerPC",	/* 63 */
-    "Firebird/SINIX-Z"	/* 64 */
+    "Firebird/SINIX-Z",	/* 64 */
+    "Firebird/linux Sparc"	/* 65 */
 };
 
 

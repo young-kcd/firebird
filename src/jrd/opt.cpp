@@ -6217,14 +6217,14 @@ static JRD_NOD optimize_like(TDBB tdbb, JRD_NOD like_node)
 /* allocate a literal node to store the starting with string;
    assume it will be shorter than the search string */
 	count =
-		lit_delta + (search_desc->dsc_length + sizeof(int) -
-					 1) / sizeof(int);
+		lit_delta + (search_desc->dsc_length + sizeof(jrd_nod*) -
+					 1) / sizeof(jrd_nod*);
 	node = PAR_make_node(tdbb, count);
 	node->nod_type = nod_literal;
 	node->nod_count = 0;
 	literal = (LIT) node;
 	literal->lit_desc = *search_desc;
-	literal->lit_desc.dsc_address = q = literal->lit_data;
+	literal->lit_desc.dsc_address = q = reinterpret_cast<UCHAR*>(literal->lit_data);
 /* copy the string into the starting with literal, up to the first wildcard character */
 	p_count = search_desc->dsc_length;
 	for (p = search_desc->dsc_address, end =

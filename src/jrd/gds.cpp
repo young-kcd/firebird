@@ -185,12 +185,6 @@ static const char * FB_PID_FILE = "fb_%d";
 
 extern "C" {
 
-#ifdef sparc
-#ifndef SOLARIS
-extern int ib_printf();
-#endif
-#endif
-
 // Number of times to try to generate new name for temporary file
 #define MAX_TMPFILE_TRIES 256
 

@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.53 2003-09-30 17:21:04 skidder Exp $
+$Id: par.cpp,v 1.54 2003-10-10 23:56:56 skidder Exp $
 */
 
 #include "firebird.h"
@@ -1350,12 +1350,12 @@ static JRD_NOD par_literal(TDBB tdbb, CSB csb)
 
 
 	PAR_desc(csb, &desc);
-	count = lit_delta + (desc.dsc_length + sizeof(int) - 1) / sizeof(int);
+	count = lit_delta + (desc.dsc_length+sizeof(jrd_nod*)-1)/sizeof(jrd_nod*);
 	node = PAR_make_node(tdbb, count);
 	literal = (LIT) node;
 	node->nod_count = 0;
 	literal->lit_desc = desc;
-	literal->lit_desc.dsc_address = p = literal->lit_data;
+	literal->lit_desc.dsc_address = p = reinterpret_cast<UCHAR*>(literal->lit_data);
 	literal->lit_desc.dsc_flags = 0;
 	q = csb->csb_running;
 	l = desc.dsc_length;

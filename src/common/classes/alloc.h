@@ -34,7 +34,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.h,v 1.25 2003-09-08 20:23:32 skidder Exp $
+ *  $Id: alloc.h,v 1.26 2003-10-10 23:56:54 skidder Exp $
  *
  */
 
@@ -59,7 +59,7 @@
 
 #define MAX_TREE_DEPTH 4
 // Must be a power of 2
-#define ALLOC_ALIGNMENT 4
+#define ALLOC_ALIGNMENT ALIGNMENT
 
 #define MEM_ALIGN(X) FB_ALIGN(X,ALLOC_ALIGNMENT)
 
