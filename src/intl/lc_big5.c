@@ -93,10 +93,10 @@ TEXTTYPE_ENTRY(BIG5_init)
  */
 STATIC USHORT big5_to_upper(obj, ch)
 	 TEXTTYPE obj;
-	 WCHAR ch;
+	 UCS2_CHAR ch;
 {
-	if (ch >= (WCHAR) ASCII_LOWER_A && ch <= (WCHAR) ASCII_LOWER_Z)
-		return (ch - (WCHAR) ASCII_LOWER_A + (WCHAR) ASCII_UPPER_A);
+	if (ch >= (UCS2_CHAR) ASCII_LOWER_A && ch <= (UCS2_CHAR) ASCII_LOWER_Z)
+		return (ch - (UCS2_CHAR) ASCII_LOWER_A + (UCS2_CHAR) ASCII_UPPER_A);
 	return ch;
 }
 
@@ -151,9 +151,9 @@ STATIC SSHORT big5_str_to_upper(obj, iLen, pStr, iOutLen, pOutStr)
  */
 STATIC USHORT big5_to_lower(obj, ch)
 	 TEXTTYPE obj;
-	 WCHAR ch;
+	 UCS2_CHAR ch;
 {
-	if (ch >= (WCHAR) ASCII_UPPER_A && ch <= (WCHAR) ASCII_UPPER_Z)
-		return (ch - (WCHAR) ASCII_UPPER_A + (WCHAR) ASCII_LOWER_A);
+	if (ch >= (UCS2_CHAR) ASCII_UPPER_A && ch <= (UCS2_CHAR) ASCII_UPPER_Z)
+		return (ch - (UCS2_CHAR) ASCII_UPPER_A + (UCS2_CHAR) ASCII_LOWER_A);
 	return ch;
 }

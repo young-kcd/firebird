@@ -58,7 +58,7 @@ CHARSET_ENTRY(CS_unicode_fss)
 
 SSHORT CS_UTFFSS_fss_mbtowc(obj, wc, p, n)
 	 TEXTTYPE *obj;
-	 WCHAR *wc;
+	 UCS2_CHAR *wc;
 	 NCHAR *p;
 	 USHORT n;
 {

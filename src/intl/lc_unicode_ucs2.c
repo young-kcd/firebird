@@ -105,7 +105,7 @@ TEXTTYPE_ENTRY(UNI201_init)
 
 static SSHORT wc_mbtowc(obj, wc, p, n)
 	 TEXTTYPE *obj;
-	 WCHAR *wc;
+	 UCS2_CHAR *wc;
 	 NCHAR *p;
 	 USHORT n;
 {
@@ -113,10 +113,10 @@ static SSHORT wc_mbtowc(obj, wc, p, n)
 	assert(wc);
 	assert(p);
 
-	if (n < sizeof(WCHAR))
+	if (n < sizeof(UCS2_CHAR))
 		return -1;
-	*wc = *(WCHAR *) p;
-	return sizeof(WCHAR);
+	*wc = *(UCS2_CHAR *) p;
+	return sizeof(UCS2_CHAR);
 }
 
 

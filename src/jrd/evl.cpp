@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.31 2003-02-16 16:55:57 alexpeshkoff Exp $ 
+  * $Id: evl.cpp,v 1.32 2003-02-18 05:24:34 aafemt Exp $ 
  */
 
 /*
@@ -160,12 +160,12 @@ static SSHORT sleuth(TDBB, JRD_NOD, DSC *, DSC *);
 static BOOLEAN nc_sleuth_check(class TextType*, USHORT, UCHAR *, UCHAR *, UCHAR *,
 							   UCHAR *);
 static BOOLEAN nc_sleuth_class(class TextType*, USHORT, UCHAR *, UCHAR *, UCHAR);
-static BOOLEAN wc_sleuth_check(class TextType*, USHORT, WCHAR *, WCHAR *, WCHAR *,
-							   WCHAR *);
-static BOOLEAN wc_sleuth_class(class TextType*, USHORT, WCHAR *, WCHAR *, WCHAR);
+static BOOLEAN wc_sleuth_check(class TextType*, USHORT, UCS2_CHAR *, UCS2_CHAR *,
+						UCS2_CHAR *, UCS2_CHAR *);
+static BOOLEAN wc_sleuth_class(class TextType*, USHORT, UCS2_CHAR *, UCS2_CHAR *,
+						UCS2_CHAR);
 static SSHORT string_boolean(TDBB, JRD_NOD, DSC *, DSC *);
-static SSHORT string_function(TDBB, JRD_NOD, SSHORT, UCHAR *,
-							  SSHORT, UCHAR *, USHORT);
+static SSHORT string_function(TDBB, JRD_NOD, SSHORT, UCHAR *, SSHORT, UCHAR *, USHORT);
 static DSC *substring(TDBB, VLU, DSC *, USHORT, USHORT);
 static DSC *upcase(TDBB, DSC *, VLU);
 static DSC *internal_info(TDBB, DSC *, VLU);
@@ -1869,9 +1869,9 @@ USHORT DLL_EXPORT EVL_mb_contains(TDBB tdbb,
  * Functional description
  *
  **************************************/
-	USHORT buffer1[100], buffer2[100];	/* arbitrary size for optimization */
-	USHORT *pp1 = buffer1;
-	USHORT *pp2 = buffer2;
+	UCS2_CHAR buffer1[100], buffer2[100];	/* arbitrary size for optimization */
+	UCS2_CHAR *pp1 = buffer1;
+	UCS2_CHAR *pp2 = buffer2;
 	USHORT len1, len2;			/* byte counts */
 	STR buf1, buf2;
 	USHORT ret_val;
@@ -1885,15 +1885,15 @@ USHORT DLL_EXPORT EVL_mb_contains(TDBB tdbb,
 
 	if (len1 > sizeof(buffer1)) {
 		buf1 = FB_NEW_RPT(*tdbb->tdbb_default, len1) str();
-		pp1 = (USHORT *) buf1->str_data;
+		pp1 = (UCS2_CHAR *) buf1->str_data;
 	}
 	if (len2 > sizeof(buffer2)) {
 		buf2 = FB_NEW_RPT(*tdbb->tdbb_default, len2) str();
-		pp2 = (USHORT *) buf2->str_data;
+		pp2 = (UCS2_CHAR *) buf2->str_data;
 	}
 
-	len1 = obj->to_wc((unsigned char*)pp1, len1, p1, l1, &err_code, &err_pos);
-	len2 = obj->to_wc((unsigned char*)pp2, len2, p2, l2, &err_code, &err_pos);
+	len1 = obj->to_wc(pp1, len1, p1, l1, &err_code, &err_pos);
+	len2 = obj->to_wc(pp2, len2, p2, l2, &err_code, &err_pos);
 
 	ret_val = EVL_wc_contains(tdbb, obj, pp1, len1, pp2, len2);
 
@@ -1910,7 +1910,7 @@ USHORT DLL_EXPORT EVL_mb_like(TDBB tdbb,
 							  class TextType* obj,
 							  UCHAR * p1,
 							  SSHORT l1,
-							  UCHAR * p2, SSHORT l2, WCHAR escape_char)
+							  UCHAR * p2, SSHORT l2, UCS2_CHAR escape_char)
 {
 /**************************************
  *
@@ -1923,13 +1923,13 @@ USHORT DLL_EXPORT EVL_mb_like(TDBB tdbb,
  *      Front-end of like() in Japanese version.
  *      
  *      Prepare buffer of short, then "copy" char-based data
- *      into the new short-based buffer. Use the new buffer for
+ *      into the new ucs2-based buffer. Use the new buffer for
  *      later processing with wc_like().
  *
  **************************************/
-	USHORT buffer1[100], buffer2[100];	/* arbitrary size for optimization */
-	USHORT *pp1 = buffer1;
-	USHORT *pp2 = buffer2;
+	UCS2_CHAR buffer1[100], buffer2[100];	/* arbitrary size for optimization */
+	UCS2_CHAR *pp1 = buffer1;
+	UCS2_CHAR *pp2 = buffer2;
 	USHORT len1, len2;
 	STR buf1, buf2;
 	USHORT ret_val;
@@ -1942,15 +1942,16 @@ USHORT DLL_EXPORT EVL_mb_like(TDBB tdbb,
 	len2 = obj->to_wc(NULL, 0, p2, l2, &err_code, &err_pos);
 	if (len1 > sizeof(buffer1)) {
 		buf1 = FB_NEW_RPT(*tdbb->tdbb_default, len1) str();
-		pp1 = (USHORT *) buf1->str_data;
+		pp1 = (UCS2_CHAR *) buf1->str_data;
 	}
 	if (len2 > sizeof(buffer2)) {
 		buf2 = FB_NEW_RPT(*tdbb->tdbb_default, len2) str();
-		pp2 = (USHORT *) buf2->str_data;
+		pp2 = (UCS2_CHAR *) buf2->str_data;
 	}
 
-	len1 = obj->to_wc((unsigned char*)pp1, len1, p1, l1, &err_code, &err_pos);
-	len2 = obj->to_wc((unsigned char*)pp2, len2, p2, l2, &err_code, &err_pos);
+	len1 = obj->to_wc(pp1, len1, p1, l1, &err_code, &err_pos);
+	len2 = obj->to_wc(pp2, len2, p2, l2, &err_code, &err_pos);
+// CHECK ME: Shouldn't errors to be handled?
 
 	ret_val = EVL_wc_like(tdbb, obj, pp1, len1, pp2, len2, escape_char);
 
@@ -1980,9 +1981,9 @@ USHORT DLL_EXPORT EVL_mb_matches(TDBB tdbb,
  *      later processing with EVL_wc_matches().
  *
  **************************************/
-	USHORT buffer1[100], buffer2[100];	/* arbitrary size for optimization */
-	USHORT *pp1 = buffer1;
-	USHORT *pp2 = buffer2;
+	UCS2_CHAR buffer1[100], buffer2[100];	/* arbitrary size for optimization */
+	UCS2_CHAR *pp1 = buffer1;
+	UCS2_CHAR *pp2 = buffer2;
 	USHORT len1, len2;
 	STR buf1, buf2;
 	USHORT ret_val;
@@ -1995,15 +1996,15 @@ USHORT DLL_EXPORT EVL_mb_matches(TDBB tdbb,
 	len2 = obj->to_wc(NULL, 0, p2, l2, &err_code, &err_pos);
 	if (len1 > sizeof(buffer1)) {
 		buf1 = FB_NEW_RPT(*tdbb->tdbb_default, len1) str();
-		pp1 = (USHORT *) buf1->str_data;
+		pp1 = (UCS2_CHAR *) buf1->str_data;
 	}
 	if (len2 > sizeof(buffer2)) {
 		buf2 = FB_NEW_RPT(*tdbb->tdbb_default, len2) str();
-		pp2 = (USHORT *) buf2->str_data;
+		pp2 = (UCS2_CHAR *) buf2->str_data;
 	}
 
-	len1 = obj->to_wc((unsigned char*)pp1, len1, p1, l1, &err_code, &err_pos);
-	len2 = obj->to_wc((unsigned char*)pp2, len2, p2, l2, &err_code, &err_pos);
+	len1 = obj->to_wc(pp1, len1, p1, l1, &err_code, &err_pos);
+	len2 = obj->to_wc(pp2, len2, p2, l2, &err_code, &err_pos);
 
 	ret_val = EVL_wc_matches(tdbb, obj, pp1, len1, pp2, len2);
 
@@ -2036,8 +2037,8 @@ USHORT DLL_EXPORT EVL_mb_sleuth_check(TDBB tdbb,
  *      later processing with sleuth_check().
  *
  **************************************/
-	USHORT buffer1[100];		/* arbitrary size for optimization */
-	USHORT *pp1 = buffer1;
+	UCS2_CHAR buffer1[100];		/* arbitrary size for optimization */
+	UCS2_CHAR *pp1 = buffer1;
 	USHORT len1;
 	STR buf1;
 	USHORT ret_val;
@@ -2055,14 +2056,14 @@ USHORT DLL_EXPORT EVL_mb_sleuth_check(TDBB tdbb,
 	len1 = obj->to_wc(NULL, 0, search, search_bytes, &err_code, &err_pos);
 	if (len1 > sizeof(buffer1)) {
 		buf1 = FB_NEW_RPT(*tdbb->tdbb_default, len1) str();
-		pp1 = (USHORT *) buf1->str_data;
+		pp1 = (UCS2_CHAR *) buf1->str_data;
 	}
 
-	len1 = obj->to_wc((unsigned char*)pp1, len1, search, search_bytes, &err_code, &err_pos);
+	len1 = obj->to_wc(pp1, len1, search, search_bytes, &err_code, &err_pos);
 
 	ret_val =
 		EVL_wc_sleuth_check(tdbb, obj, 0, pp1, len1,
-							reinterpret_cast < USHORT * >(match),
+							reinterpret_cast < UCS2_CHAR * >(match),
 							match_bytes);
 
 	if (pp1 != buffer1)
@@ -2090,9 +2091,9 @@ USHORT DLL_EXPORT EVL_mb_sleuth_merge(TDBB tdbb,
  *      Front-end of sleuth_merge() in Japanese version.
  *
  **************************************/
-	USHORT buffer1[100], buffer2[100];	/* arbitrary size for optimization */
-	USHORT *pp1 = buffer1;
-	USHORT *pp2 = buffer2;
+	UCS2_CHAR buffer1[100], buffer2[100];	/* arbitrary size for optimization */
+	UCS2_CHAR *pp1 = buffer1;
+	UCS2_CHAR *pp2 = buffer2;
 	USHORT len1, len2;
 	STR buf1, buf2;
 	USHORT ret_val;
@@ -2109,22 +2110,19 @@ USHORT DLL_EXPORT EVL_mb_sleuth_merge(TDBB tdbb,
 	len2 = obj->to_wc(NULL, 0, control, control_bytes, &err_code, &err_pos);
 	if (len1 > sizeof(buffer1)) {
 		buf1 = FB_NEW_RPT(*tdbb->tdbb_default, len1) str();
-		pp1 = (USHORT *) buf1->str_data;
+		pp1 = (UCS2_CHAR *) buf1->str_data;
 	}
 	if (len2 > sizeof(buffer2)) {
 		buf2 = FB_NEW_RPT(*tdbb->tdbb_default, len2) str();
-		pp2 = (USHORT *) buf2->str_data;
+		pp2 = (UCS2_CHAR *) buf2->str_data;
 	}
 
-	len1 = obj->to_wc((unsigned char*)pp1, len1, match, match_bytes,
-												&err_code, &err_pos);
-	len2 = obj->to_wc((unsigned char*)pp2, len2, control, control_bytes,
-												&err_code, &err_pos);
+	len1 = obj->to_wc(pp1, len1, match, match_bytes, &err_code, &err_pos);
+	len2 = obj->to_wc(pp2, len2, control, control_bytes, &err_code, &err_pos);
 
-	ret_val = EVL_wc_sleuth_merge(tdbb, obj, pp1, len1, pp2,
-								  len2,
-								  reinterpret_cast < USHORT * >(combined),
-								  combined_bytes);
+	ret_val = EVL_wc_sleuth_merge(tdbb, obj, pp1, len1, pp2, len2,
+				      reinterpret_cast < UCS2_CHAR * >(combined),
+				      combined_bytes);
 
 	if (pp1 != buffer1)
 		delete buf1;
@@ -2214,8 +2212,8 @@ USHORT DLL_EXPORT EVL_nc_contains(TDBB tdbb_dummy,
 
 
 USHORT DLL_EXPORT EVL_wc_contains(TDBB tdbb_dumm,
-								  class TextType* obj, WCHAR * p1, USHORT l1,	/* byte count */
-								  WCHAR * p2, USHORT l2)
+								  class TextType* obj, UCS2_CHAR * p1, USHORT l1,	/* byte count */
+								  UCS2_CHAR * p2, USHORT l2)
 {
 /**************************************
  *
@@ -2226,7 +2224,7 @@ USHORT DLL_EXPORT EVL_wc_contains(TDBB tdbb_dumm,
  * Functional description
  *
  **************************************/
-	WCHAR *q1, *q2, c1, c2;
+	UCS2_CHAR *q1, *q2, c1, c2;
 	SSHORT l;
 
 	while (l1 >= l2) {
@@ -2265,14 +2263,14 @@ USHORT DLL_EXPORT EVL_wc_contains(TDBB tdbb_dumm,
  **************************************
  */
 #define LIKENAME                EVL_wc_like
-#define LIKETYPE                WCHAR
+#define LIKETYPE                UCS2_CHAR
 #define MATCHESNAME             EVL_wc_matches
-#define MATCHESTYPE             WCHAR
+#define MATCHESTYPE             UCS2_CHAR
 #define SLEUTHNAME              EVL_wc_sleuth_check
 #define SLEUTH_MERGE_NAME       EVL_wc_sleuth_merge
 #define SLEUTH_AUX              wc_sleuth_check
 #define SLEUTH_CLASS_NAME       wc_sleuth_class
-#define SLEUTHTYPE              WCHAR
+#define SLEUTHTYPE              UCS2_CHAR
 
 #define EVL_LIKE_INCLUDED_BY_EVL_CPP
 #include "../jrd/evl_like.cpp"
@@ -4557,7 +4555,7 @@ static SSHORT sleuth(TDBB tdbb, JRD_NOD node, DSC * desc1, DSC * desc2)
 
 /* l2 is result's byte-count */
 
-/* Note: resulting string from sleuth_merge is either WCHAR or NCHAR 
+/* Note: resulting string from sleuth_merge is either UCS2_CHAR or NCHAR 
    and never Multibyte (see note in EVL_mb_sleuth_check) */
 
 	if (desc1->dsc_dtype != dtype_blob) {
@@ -4741,7 +4739,7 @@ static SSHORT string_function(
 /* Handle LIKE and MATCHES*/
 
 	if (node->nod_type == nod_like) {
-		WCHAR escape;
+		UCS2_CHAR escape;
 
 		escape = 0;
 		/* ensure 3rd argument (escape char) is in operation text type */

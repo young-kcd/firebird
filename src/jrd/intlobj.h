@@ -53,7 +53,7 @@ typedef SSHORT COLLATE_ID;
 typedef USHORT TTYPE_ID;
 typedef SCHAR ASCII;
 typedef unsigned char NCHAR;	/* Narrow Char */
-typedef unsigned short WCHAR;	/* Wide   Char */
+typedef unsigned short UCS2_CHAR;	/* Not very Wide Char */
 typedef unsigned char MBCHAR;	/* Multibyte Char */
 
 #define type_texttype 54

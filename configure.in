@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.117 2003-02-13 22:49:17 bellardo Exp $
+dnl $Id: configure.in,v 1.118 2003-02-18 05:24:31 aafemt Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -345,6 +345,7 @@ AC_SEARCH_LIBS(dirname,gen)
 AC_CHECK_FUNCS(dirname)
 AC_CHECK_FUNCS(sigaction setitimer)
 AC_CHECK_FUNCS(snprintf)
+AC_CHECK_FUNCS(swab _swab)
 AC_FUNC_MMAP 
 AC_CHECK_FUNCS(atexit on_exit)
 AC_FUNC_FORK

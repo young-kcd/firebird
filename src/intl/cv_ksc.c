@@ -41,16 +41,16 @@
 USHORT CVKSC_ksc_to_unicode(obj, dest_ptr, dest_len, ksc_str, ksc_len,
 							err_code, err_position)
 	 CSCONVERT obj;
-	 USHORT *dest_ptr;
+	 UCS2_CHAR *dest_ptr;
 	 USHORT dest_len;
 	 UCHAR *ksc_str;
 	 USHORT ksc_len;
 	 short *err_code;
 	 USHORT *err_position;
 {
-	USHORT *start;
-	WCHAR ch;
-	WCHAR wide;
+	UCS2_CHAR *start;
+	UCS2_CHAR ch;
+	UCS2_CHAR wide;
 	UCHAR c1, c2;
 	USHORT src_start = ksc_len;
 	USHORT this_len;
@@ -66,7 +66,7 @@ USHORT CVKSC_ksc_to_unicode(obj, dest_ptr, dest_len, ksc_str, ksc_len,
 	*err_code = 0;
 
 	if (dest_ptr == NULL)
-		return (ksc_len * 2);
+		return (ksc_len * sizeof(UCS2_CHAR));
 
 	start = dest_ptr;
 	while (ksc_len && dest_len > 1) {
@@ -106,7 +106,7 @@ USHORT CVKSC_ksc_to_unicode(obj, dest_ptr, dest_len, ksc_str, ksc_len,
 			break;
 		}
 		*dest_ptr++ = ch;
-		dest_len -= 2;
+		dest_len -= sizeof(*dest_ptr);
 		ksc_len -= this_len;
 	}
 
@@ -122,14 +122,14 @@ USHORT CVKSC_unicode_to_ksc(obj, ksc_str, ksc_len, unicode_str, unicode_len,
 	 CSCONVERT obj;
 	 UCHAR *ksc_str;
 	 USHORT ksc_len;
-	 USHORT *unicode_str;
+	 UCS2_CHAR *unicode_str;
 	 USHORT unicode_len;
 	 short *err_code;
 	 USHORT *err_position;
 {
 	UCHAR *start;
-	WCHAR ksc_ch;
-	WCHAR wide;
+	UCS2_CHAR ksc_ch;
+	UCS2_CHAR wide;
 	int tmp1, tmp2;
 	USHORT src_start = unicode_len;
 
@@ -150,13 +150,9 @@ USHORT CVKSC_unicode_to_ksc(obj, ksc_str, ksc_len, unicode_str, unicode_len,
 	while (ksc_len && unicode_len > 1) {
 		wide = *unicode_str++;
 
-		ksc_ch = ((USHORT *) obj->csconvert_datatable)[
-													   ((USHORT *) obj->
-														csconvert_misc)[
-																		(USHORT)
-																		wide /
-																		256] +
-													   (wide % 256)];
+		ksc_ch = ((USHORT *) obj->csconvert_datatable)
+				[((USHORT *) obj->csconvert_misc)
+					[wide /	256] + (wide % 256)];
 		if ((ksc_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
 			break;
@@ -283,7 +279,7 @@ USHORT CVKSC_ksc_byte2short(obj, dst, dst_len, src, src_len, err_code,
 
 short CVKSC_ksc_mbtowc(obj, wc, src, src_len)
 	 CSCONVERT obj;
-	 WCHAR *wc;
+	 UCS2_CHAR *wc;
 	 UCHAR *src;
 	 USHORT src_len;
 {

@@ -35,16 +35,16 @@
 USHORT CVGB_gb2312_to_unicode(obj, dest_ptr, dest_len, src_ptr, src_len,
 							  err_code, err_position)
 	 CSCONVERT obj;
-	 USHORT *dest_ptr;
+	 UCS2_CHAR *dest_ptr;
 	 USHORT dest_len;
 	 UCHAR *src_ptr;
 	 USHORT src_len;
 	 SSHORT *err_code;
 	 USHORT *err_position;
 {
-	USHORT *start;
-	WCHAR ch;
-	WCHAR wide;
+	UCS2_CHAR *start;
+	UCS2_CHAR ch;
+	UCS2_CHAR wide;
 	USHORT src_start = src_len;
 	USHORT this_len;
 	UCHAR c1, c2;
@@ -61,10 +61,9 @@ USHORT CVGB_gb2312_to_unicode(obj, dest_ptr, dest_len, src_ptr, src_len,
 
 /* See if we're only after a length estimate */
 	if (dest_ptr == NULL)
-		return (src_len * 2);
+		return (src_len * sizeof(UCS2_CHAR));
 
 	start = dest_ptr;
-	src_start = src_len;
 	while ((src_len) && (dest_len > 1)) {
 		if (*src_ptr & 0x80) {
 			c1 = *src_ptr++;
@@ -104,7 +103,7 @@ USHORT CVGB_gb2312_to_unicode(obj, dest_ptr, dest_len, src_ptr, src_len,
 		}
 
 		*dest_ptr++ = ch;
-		dest_len -= 2;
+		dest_len -= sizeof(*dest_ptr);
 		src_len -= this_len;
 	};
 	if (src_len && !*err_code) {
@@ -120,14 +119,14 @@ USHORT CVGB_unicode_to_gb2312(obj, gb_str, gb_len, unicode_str, unicode_len,
 	 CSCONVERT obj;
 	 UCHAR *gb_str;
 	 USHORT gb_len;
-	 USHORT *unicode_str;
+	 UCS2_CHAR *unicode_str;
 	 USHORT unicode_len;
 	 SSHORT *err_code;
 	 USHORT *err_position;
 {
 	UCHAR *start;
-	WCHAR gb_ch;
-	WCHAR wide;
+	UCS2_CHAR gb_ch;
+	UCS2_CHAR wide;
 	int tmp1, tmp2;
 	USHORT src_start = unicode_len;
 
@@ -150,13 +149,10 @@ USHORT CVGB_unicode_to_gb2312(obj, gb_str, gb_len, unicode_str, unicode_len,
 		/* Convert from UNICODE to GB2312 code */
 		wide = *unicode_str++;
 
-		gb_ch = ((USHORT *) obj->csconvert_datatable)[
-													  ((USHORT *) obj->
-													   csconvert_misc)[
-																	   (USHORT)
-																	   wide /
-																	   256] +
-													  (wide % 256)];
+		gb_ch = ((USHORT *) obj->csconvert_datatable)
+				[((USHORT *) obj->csconvert_misc)
+					[(USHORT)wide / 256]
+				 + (wide % 256)];
 		if ((gb_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
 			break;
@@ -285,7 +281,7 @@ USHORT CVGB_gb2312_byte2short(obj, dst, dst_len, src, src_len, err_code,
 
 SSHORT CVGB_gb2312_mbtowc(obj, wc, src, src_len)
 	 CSCONVERT obj;
-	 WCHAR *wc;
+	 UCS2_CHAR *wc;
 	 UCHAR *src;
 	 USHORT src_len;
 {

@@ -9,7 +9,6 @@
 typedef USHORT fss_wchar_t;
 typedef int fss_size_t;
 typedef unsigned char FILECHAR;   
-typedef USHORT UNICODE;
 
 // internal functions
 static fss_size_t fss_wctomb(UCHAR *, fss_wchar_t);
@@ -29,7 +28,7 @@ static unsigned short internal_unicode_to_fss(
 							short *,
 							unsigned short *);
 static USHORT  internal_fss_to_unicode (
-    UNICODE*,
+    UCS2_CHAR*,
     USHORT,
     NCHAR*,
     USHORT,
@@ -112,15 +111,15 @@ public:
 							   unsigned char *d)
 		{ return internal_str_to_upper(a,b,c,d); }
 
-	unsigned short to_wc(unsigned char *a,
+	unsigned short to_wc(UCS2_CHAR *a,
 									unsigned short b,
 									unsigned char *c,
 									unsigned short d,
 									short *e,
 									unsigned short *f)
-		{ return internal_fss_to_unicode((UNICODE*)a,b,c,d,e,f); }
+		{ return internal_fss_to_unicode(a,b,c,d,e,f); }
 
-	unsigned short mbtowc(WCHAR *wc, unsigned char *p, unsigned short n)
+	unsigned short mbtowc(UCS2_CHAR *wc, unsigned char *p, unsigned short n)
 		{ return fss_mbtowc(wc, p, n); }
 };
 
@@ -409,7 +408,7 @@ public:
 		{ return FB_NEW(p) CharSet_Unicode(p); }
 	CharSet_Unicode(MemoryPool &p) : CharSet(CS_UNICODE_UCS2, "UNICODE_UCS2", 2, 2, 2, 0)
 	{
-		static const WCHAR space = 0x0020;
+		static const UCS2_CHAR space = 0x0020;
 		charset_space_character = (const char *) & space;	/* 0x0020 */
 	}
 };
@@ -428,6 +427,21 @@ public:
 
 /********************************************************************************/
 
+#ifndef HAVE_SWAB
+#ifdef HAVE__SWAB
+#define swab _swab
+#else // use generic swab(). Slow (but faster than previous implementation) and buggy
+void swab(char * a, char * b, int n)
+{
+ while(--n>0)
+ {
+  *b++ = a[1];
+  *b++ = *a++;
+  a++; n--;
+ }
+}
+#endif
+#endif
 
 unsigned short CsConvert_Unicode_Binary::convert(
 							unsigned char *pDest,
@@ -448,30 +462,26 @@ unsigned short CsConvert_Unicode_Binary::convert(
  *      byte stream.
  *
  *************************************/
-	MBCHAR *pStart;
-	WCHAR *pStart_src, *pSrc = (WCHAR*)pSrcUC;
+	unsigned short res;
 
-	assert((pSrc != NULL) || (pDest == NULL));
+	assert((pSrcUC != NULL) || (pDest == NULL));
 	assert(err_code != NULL);
 	assert(err_position != NULL);
 
 	*err_code = 0;
 	if (pDest == NULL)			/* length estimate needed? */
 		return (nSrc);
-	pStart = pDest;
-	pStart_src = pSrc;
-	while (nDest > 1 && nSrc > 1) {
-		*pDest++ = *pSrc / 256;
-		*pDest++ = *pSrc++ % 256;
-		nDest -= 2;
-		nSrc -= 2;
-	}
-	if (!*err_code && nSrc) {
+
+	assert(nSrc&1 == 0); // check for even length
+
+	if (nSrc>nDest) {
 		*err_code = CS_TRUNCATION_ERROR;
 	}
-	*err_position = (pSrc - pStart_src) * sizeof(*pSrc);
+	res = nSrc>nDest?nDest:nSrc;
+	swab((char *)pSrcUC,(char *)pDest,res);
+	*err_position = res;
 
-	return ((pDest - pStart) * sizeof(*pDest));
+	return res;
 }
 
 
@@ -492,32 +502,30 @@ unsigned short CsConvert_Binary_Unicode::convert(
  * Functional description
  *      Convert a wc string from network form - high-endian
  *      byte stream.
+ *	Symmetrical with CsConvert_Unicode_Binary::convert
+ *	but really the same
  *
  *************************************/
-	WCHAR *pStart, *pDest = (WCHAR*)pDestUC;
-	MBCHAR *pStart_src;
+	unsigned short res;
 
-	assert((pSrc != NULL) || (pDest == NULL));
+	assert((pSrc != NULL) || (pDestUC == NULL));
 	assert(err_code != NULL);
 	assert(err_position != NULL);
 
 	*err_code = 0;
-	if (pDest == NULL)			/* length estimate needed? */
+	if (pDestUC == NULL)			/* length estimate needed? */
 		return (nSrc);
-	pStart = pDest;
-	pStart_src = pSrc;
-	while (nDest > 1 && nSrc > 1) {
-		*pDest++ = *pSrc * 256 + *(pSrc + 1);
-		pSrc += 2;
-		nDest -= 2;
-		nSrc -= 2;
-	}
-	if (!*err_code && nSrc) {
+
+	assert(nSrc&1 == 0);
+
+	if (nSrc>nDest) {
 		*err_code = CS_TRUNCATION_ERROR;
 	}
-	*err_position = (pSrc - pStart_src) * sizeof(*pSrc);
+	res = nSrc>nDest?nDest:nSrc;
+	swab((char *)pSrc,(char *)pDestUC,res);
+	*err_position = res;
 
-	return ((pDest - pStart) * sizeof(*pDest));
+	return res;
 }
 
 unsigned short CsConvert_UFSS_Unicode::convert(
@@ -528,7 +536,7 @@ unsigned short CsConvert_UFSS_Unicode::convert(
 							short *err_code,
 							unsigned short *err_position)
 {
-	UNICODE *start, *dest_ptr = (UNICODE*)dest_ptrUC;
+	UCS2_CHAR *start, *dest_ptr = (UCS2_CHAR*)dest_ptrUC;
 	USHORT src_start = src_len;
 	fss_size_t res;
 
@@ -584,7 +592,7 @@ unsigned short CsConvert_Unicode_ASCII::convert(
  *
  *************************************/
 	NCHAR *pStart;
-	WCHAR *pStart_src, *pSrc = (WCHAR*)pSrcUC;
+	UCS2_CHAR *pStart_src, *pSrc = (UCS2_CHAR*)pSrcUC;
 
 	assert((pSrc != NULL) || (pDest == NULL));
 	assert(err_code != NULL);
@@ -631,7 +639,7 @@ unsigned short CsConvert_ASCII_Unicode::convert(
  *      Byte values >= 128 create BAD_INPUT
  *
  *************************************/
-	WCHAR *pStart, *pDest = (WCHAR*)pDestUC;
+	UCS2_CHAR *pStart, *pDest = (UCS2_CHAR*)pDestUC;
 	UCHAR *pStart_src;
 
 	assert((pSrc != NULL) || (pDest == NULL));
@@ -677,7 +685,7 @@ unsigned short CsConvert_Unicode_None::convert(
  *
  **************************************/
 	NCHAR *pStart;
-	WCHAR *pStart_src, *pSrc = (WCHAR*)pSrcUC;
+	UCS2_CHAR *pStart_src, *pSrc = (UCS2_CHAR*)pSrcUC;
 
 	assert((pSrc != NULL) || (pDest == NULL));
 	assert(err_code != NULL);
@@ -725,7 +733,7 @@ unsigned short CsConvert_None_Unicode::convert(
  *      Byte values >= 128 create CONVERT ERROR
  *
  *************************************/
-	WCHAR *pStart, *pDest = (WCHAR*)pDestUC;
+	UCS2_CHAR *pStart, *pDest = (UCS2_CHAR*)pDestUC;
 	UCHAR *pStart_src;
 
 	assert((pSrc != NULL) || (pDest == NULL));
@@ -1148,7 +1156,7 @@ unsigned short internal_unicode_to_fss(
 							unsigned short *err_position)
 {
 	MBCHAR *fss_str = (MBCHAR*)fss_strUC;
-	UNICODE *unicode_str = (UNICODE*)unicode_strUC;
+	UCS2_CHAR *unicode_str = (UCS2_CHAR*)unicode_strUC;
 	UCHAR *start;
 	USHORT src_start = unicode_len;
 	UCHAR tmp_buffer[6];
@@ -1193,14 +1201,14 @@ unsigned short internal_unicode_to_fss(
 }
 
 static USHORT  internal_fss_to_unicode (
-    UNICODE     *dest_ptr,
+    UCS2_CHAR     *dest_ptr,
     USHORT      dest_len,               /* BYTE count */
     NCHAR       *src_ptr,
     USHORT      src_len,
     SSHORT      *err_code,
     USHORT      *err_position)
 {
-	UNICODE         *start;
+	UCS2_CHAR         *start;
 	USHORT          src_start = src_len;
 	fss_size_t      res;
 	
@@ -1522,7 +1530,7 @@ static USHORT cs_unicode_ucs2_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
  * Functional description
  *
  *************************************/
-	static const WCHAR space = 0x0020;
+	static const UCS2_CHAR space = 0x0020;
 
 	csptr->charset_version = 40;
 	csptr->charset_id = CS_UNICODE;

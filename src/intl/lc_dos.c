@@ -657,7 +657,7 @@ STATIC USHORT fam1_to_lower(obj, ch)
 
 SSHORT LC_DOS_nc_mbtowc(obj, wc, ptr, count)
 	 TEXTTYPE obj;
-	 WCHAR *wc;
+	 UCS2_CHAR *wc;
 	 UCHAR *ptr;
 	 USHORT count;
 {

@@ -30,16 +30,16 @@
 USHORT CVJIS_eucj_to_unicode(obj, dest_ptr, dest_len, src_ptr, src_len,
 							 err_code, err_position)
 	 CSCONVERT obj;
-	 USHORT *dest_ptr;
+	 UCS2_CHAR *dest_ptr;
 	 USHORT dest_len;
 	 UCHAR *src_ptr;
 	 USHORT src_len;
 	 SSHORT *err_code;
 	 USHORT *err_position;
 {
-	USHORT *start;
-	WCHAR ch;
-	WCHAR wide;
+	UCS2_CHAR *start;
+	UCS2_CHAR ch;
+	UCS2_CHAR wide;
 	UCHAR ch1;
 	USHORT src_start = src_len;
 	USHORT this_len;
@@ -59,7 +59,6 @@ USHORT CVJIS_eucj_to_unicode(obj, dest_ptr, dest_len, src_ptr, src_len,
 		return (src_len);
 
 	start = dest_ptr;
-	src_start = src_len;
 	while ((src_len) && (dest_len > 1)) {
 		ch1 = *src_ptr++;
 
@@ -83,13 +82,10 @@ USHORT CVJIS_eucj_to_unicode(obj, dest_ptr, dest_len, src_ptr, src_len,
 			this_len = 2;
 
 			/* Step 2: Convert from JIS to UNICODE */
-			ch = ((USHORT *) obj->csconvert_datatable)[
-													   ((USHORT *) obj->
-														csconvert_misc)[
-																		(USHORT)
-																		wide /
-																		256] +
-													   (wide % 256)];
+			ch = ((USHORT *) obj->csconvert_datatable)
+				[((USHORT *) obj->csconvert_misc)
+					[(USHORT)wide /	256]
+				 + (wide % 256)];
 		};
 
 
@@ -98,7 +94,7 @@ USHORT CVJIS_eucj_to_unicode(obj, dest_ptr, dest_len, src_ptr, src_len,
 		 */
 
 		*dest_ptr++ = ch;
-		dest_len -= 2;
+		dest_len -= sizeof(*dest_ptr);
 		src_len -= this_len;
 	};
 	if (src_len && !*err_code) {
@@ -127,16 +123,16 @@ USHORT CVJIS_eucj_to_unicode(obj, dest_ptr, dest_len, src_ptr, src_len,
 USHORT CVJIS_sjis_to_unicode(obj, dest_ptr, dest_len, sjis_str, sjis_len,
 							 err_code, err_position)
 	 CSCONVERT obj;
-	 USHORT *dest_ptr;
+	 UCS2_CHAR *dest_ptr;
 	 USHORT dest_len;
 	 UCHAR *sjis_str;
 	 USHORT sjis_len;
 	 SSHORT *err_code;
 	 USHORT *err_position;
 {
-	USHORT *start;
-	WCHAR ch;
-	WCHAR wide;
+	UCS2_CHAR *start;
+	UCS2_CHAR ch;
+	UCS2_CHAR wide;
 	UCHAR c1, c2;
 	UCHAR tmp1, tmp2;
 	USHORT src_start = sjis_len;
@@ -201,20 +197,15 @@ USHORT CVJIS_sjis_to_unicode(obj, dest_ptr, dest_len, sjis_str, sjis_len,
 
 		/* Step 2: Convert from JIS code (in wide) to UNICODE */
 		if (table == 1)
-			ch = ((USHORT *) obj->csconvert_datatable)[
-													   ((USHORT *) obj->
-														csconvert_misc)[
-																		(USHORT)
-																		wide /
-																		256] +
-													   (wide % 256)];
+			ch = ((USHORT *) obj->csconvert_datatable)
+				[((USHORT *) obj->csconvert_misc)
+					[(USHORT)wide /	256]
+				 + (wide % 256)];
 		else {
 			assert(table == 2);
 			assert(wide <= 255);
-			ch =
-				sjis_to_unicode_mapping_array[sjis_to_unicode_map
-											  [(USHORT) wide / 256]
-											  + (wide % 256)];
+			ch = sjis_to_unicode_mapping_array
+				[sjis_to_unicode_map[(USHORT) wide / 256] + (wide % 256)];
 		};
 
 		/* This is only important for bad-SJIS in input stream */
@@ -223,7 +214,7 @@ USHORT CVJIS_sjis_to_unicode(obj, dest_ptr, dest_len, sjis_str, sjis_len,
 			break;
 		};
 		*dest_ptr++ = ch;
-		dest_len -= 2;
+		dest_len -= sizeof(*dest_ptr);
 		sjis_len -= this_len;
 	}
 	if (sjis_len && !*err_code) {
@@ -396,14 +387,14 @@ USHORT CVJIS_unicode_to_sjis(obj, sjis_str, sjis_len, unicode_str,
 	 CSCONVERT obj;
 	 UCHAR *sjis_str;
 	 USHORT sjis_len;
-	 USHORT *unicode_str;
+	 UCS2_CHAR *unicode_str;
 	 USHORT unicode_len;
 	 SSHORT *err_code;
 	 USHORT *err_position;
 {
 	UCHAR *start;
-	WCHAR jis_ch;
-	WCHAR wide;
+	UCS2_CHAR jis_ch;
+	UCS2_CHAR wide;
 	USHORT tmp1, tmp2;
 	USHORT src_start = unicode_len;
 
@@ -426,21 +417,16 @@ USHORT CVJIS_unicode_to_sjis(obj, sjis_str, sjis_len, unicode_str,
 		/* Step 1: Convert from UNICODE to JIS code */
 		wide = *unicode_str++;
 
-		jis_ch = ((USHORT *) obj->csconvert_datatable)[
-													   ((USHORT *) obj->
-														csconvert_misc)[
-																		(USHORT)
-																		wide /
-																		256] +
-													   (wide % 256)];
+		jis_ch = ((USHORT *) obj->csconvert_datatable)
+				[((USHORT *) obj->csconvert_misc)
+					[(USHORT)wide /	256]
+				 + (wide % 256)];
 
 		if ((jis_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 
 			/* Handle the non-JIS codes in SJIS (ASCII & half-width Kana) */
-			jis_ch =
-				sjis_from_unicode_mapping_array[sjis_from_unicode_map
-												[(USHORT) wide / 256]
-												+ (wide % 256)];
+			jis_ch = sjis_from_unicode_mapping_array
+					[sjis_from_unicode_map[(USHORT) wide / 256] + (wide % 256)];
 			if ((jis_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 				*err_code = CS_CONVERT_ERROR;
 				break;
@@ -489,14 +475,14 @@ USHORT CVJIS_unicode_to_eucj(obj, eucj_str, eucj_len, unicode_str,
 	 CSCONVERT obj;
 	 UCHAR *eucj_str;
 	 USHORT eucj_len;
-	 USHORT *unicode_str;
+	 UCS2_CHAR *unicode_str;
 	 USHORT unicode_len;
 	 SSHORT *err_code;
 	 USHORT *err_position;
 {
 	UCHAR *start;
-	WCHAR jis_ch;
-	WCHAR wide;
+	UCS2_CHAR jis_ch;
+	UCS2_CHAR wide;
 	USHORT tmp1, tmp2;
 	USHORT src_start = unicode_len;
 
@@ -523,14 +509,10 @@ USHORT CVJIS_unicode_to_eucj(obj, eucj_str, eucj_len, unicode_str,
 		if (wide <= 0x007F)
 			jis_ch = wide;
 		else
-			jis_ch = ((USHORT *) obj->csconvert_datatable)[
-														   ((USHORT *) obj->
-															csconvert_misc)[
-																			(USHORT)
-																			wide
-																			/
-																			256]
-														   + (wide % 256)];
+			jis_ch = ((USHORT *) obj->csconvert_datatable)
+					[((USHORT *) obj->csconvert_misc)
+						[(USHORT)wide /	256]
+					 + (wide % 256)];
 		if ((jis_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
 			break;
@@ -812,7 +794,7 @@ USHORT CVJIS_euc_byte2short(obj, dst, dst_len, src, src_len, err_code,
 
 SSHORT CVJIS_euc_mbtowc(obj, wc, src, src_len)
 	 CSCONVERT obj;
-	 WCHAR *wc;
+	 UCS2_CHAR *wc;
 	 UCHAR *src;
 	 USHORT src_len;
 {
@@ -1002,7 +984,7 @@ USHORT CVJIS_sjis_byte2short(obj, dst, dst_len, src, src_len, err_code,
 
 SSHORT CVJIS_sjis_mbtowc(obj, wc, src, src_len)
 	 CSCONVERT obj;
-	 WCHAR *wc;
+	 UCS2_CHAR *wc;
 	 UCHAR *src;
 	 USHORT src_len;
 {

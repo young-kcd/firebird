@@ -126,6 +126,8 @@
 #undef HAVE_SIGACTION
 #undef HAVE_SETITIMER
 #define HAVE_SNPRINTF
+#define HAVE_SWAB
+#define HAVE__SWAB
 #undef HAVE_MMAP
 #undef HAVE_ATEXIT
 #undef HAVE_ON_EXIT

@@ -29,7 +29,7 @@
 typedef unsigned short CHARSET_ID;
 typedef unsigned short COLLATE_ID;
 typedef unsigned short TTYPE_ID;
-typedef unsigned short WCHAR;
+typedef unsigned short UCS2_CHAR;
 typedef unsigned char NCHAR;
 typedef unsigned char MBCHAR;
 typedef class tdbb *TDBB;
@@ -74,12 +74,14 @@ public:
 							   unsigned char*,
 							   unsigned short,
 							   unsigned char*) = 0;
-	virtual unsigned short to_wc(unsigned char*,
-									unsigned short,
-									unsigned char*,
-									unsigned short,
-									short*,
-									unsigned short*) = 0;
+	/* SD: to_wc returns estimated or real length of the result string in bytes that is rather strange */
+	virtual unsigned short to_wc(UCS2_CHAR*,	// destination buffer
+				     unsigned short,	// length of the destination buffer in bytes
+				     unsigned char*,	// source buffer
+				     unsigned short,	// length of source buffer in bytes
+				     short*,		// variable to return error code
+				     unsigned short*) = 0;	// variable to return offset of the first
+							// unprocessed char
 	virtual unsigned short contains(TDBB, unsigned char*,
 									unsigned short,
 									unsigned char*,
@@ -102,7 +104,7 @@ public:
 										unsigned short,
 										unsigned char*,
 										unsigned short) = 0;
-	virtual unsigned short mbtowc(WCHAR*, unsigned char*, unsigned short) = 0;
+	virtual unsigned short mbtowc(UCS2_CHAR*, unsigned char*, unsigned short) = 0;
 	//virtual short get_wchar(unsigned short*, unsigned char*, unsigned short) = 0;
 
 	//unsigned short getVersion() { return texttype_version; }
@@ -129,12 +131,13 @@ public:
     		TextType(type, name, cs_id, country, bpc)
 		{}
 
-	unsigned short to_wc(unsigned char*,
-									unsigned short,
-									unsigned char*,
-									unsigned short,
-									short*,
-									unsigned short*);
+	unsigned short to_wc(UCS2_CHAR*,	// destination buffer
+			     unsigned short,	// length of the destination buffer in bytes
+			     unsigned char*,	// source buffer
+			     unsigned short,	// length of source buffer in bytes
+			     short*,		// variable to return error code
+			     unsigned short*);	// variable to return offset of the first
+						// unprocessed char
 	unsigned short contains(TDBB, unsigned char*,
 									unsigned short,
 									unsigned char*,
@@ -157,7 +160,7 @@ public:
 										unsigned short,
 										unsigned char*,
 										unsigned short);
-	unsigned short mbtowc(WCHAR*, unsigned char*, unsigned short);
+	unsigned short mbtowc(UCS2_CHAR*, unsigned char*, unsigned short);
 };
 
 class TextTypeWC : public TextType
@@ -168,12 +171,13 @@ public:
     		TextType(type, name, cs_id, country, bpc)
 		{}
 
-	unsigned short to_wc(unsigned char*,
-									unsigned short,
-									unsigned char*,
-									unsigned short,
-									short*,
-									unsigned short*);
+	unsigned short to_wc(UCS2_CHAR*,	// destination buffer
+			     unsigned short,	// length of the destination buffer in bytes
+			     unsigned char*,	// source buffer
+			     unsigned short,	// length of source buffer in bytes
+			     short*,		// variable to return error code
+			     unsigned short*);	// variable to return offset of the first
+						// unprocessed char
 	unsigned short contains(TDBB, unsigned char*,
 									unsigned short,
 									unsigned char*,
@@ -196,7 +200,7 @@ public:
 										unsigned short,
 										unsigned char*,
 										unsigned short);
-	unsigned short mbtowc(WCHAR*, unsigned char*, unsigned short);
+	unsigned short mbtowc(UCS2_CHAR*, unsigned char*, unsigned short);
 };
 
 class TextTypeMB : public TextType
@@ -229,7 +233,7 @@ public:
 										unsigned short,
 										unsigned char*,
 										unsigned short);
-	unsigned short mbtowc(WCHAR*, unsigned char*, unsigned short);
+	unsigned short mbtowc(UCS2_CHAR*, unsigned char*, unsigned short);
 };
 
 #define TEXTTYPE_init               1	/* object has been init'ed */

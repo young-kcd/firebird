@@ -143,7 +143,6 @@
 
 
 typedef unsigned char FILECHAR;
-typedef USHORT UNICODE;
 
 typedef USHORT fss_wchar_t;
 typedef int fss_size_t;
@@ -161,16 +160,16 @@ static SSHORT internal_str_to_upper(TextType*, USHORT, UCHAR *, USHORT,
 									UCHAR *);
 static USHORT internal_string_to_key(TextType*, USHORT, UCHAR *, USHORT,
 									 UCHAR *, USHORT);
-static USHORT mb_to_wc(CsConvert*, WCHAR *, USHORT, MBCHAR *, USHORT, SSHORT *,
+static USHORT mb_to_wc(CsConvert*, UCS2_CHAR *, USHORT, MBCHAR *, USHORT, SSHORT *,
 					   USHORT *);
-static USHORT nc_to_wc(CsConvert*, WCHAR *, USHORT, UCHAR *, USHORT, SSHORT *,
+static USHORT nc_to_wc(CsConvert*, UCS2_CHAR *, USHORT, UCHAR *, USHORT, SSHORT *,
 					   USHORT *);
 static void pad_spaces(TDBB, CHARSET_ID, BYTE *, USHORT);
-static USHORT wc_to_mb(CsConvert*, MBCHAR *, USHORT, WCHAR *, USHORT, SSHORT *,
+static USHORT wc_to_mb(CsConvert*, MBCHAR *, USHORT, UCS2_CHAR *, USHORT, SSHORT *,
 					   USHORT *);
-static USHORT wc_to_nc(CsConvert*, NCHAR *, USHORT, WCHAR *, USHORT, SSHORT *,
+static USHORT wc_to_nc(CsConvert*, NCHAR *, USHORT, UCS2_CHAR *, USHORT, SSHORT *,
 					   USHORT *);
-static USHORT wc_to_wc(CsConvert*, WCHAR *, USHORT, WCHAR *, USHORT, SSHORT *,
+static USHORT wc_to_wc(CsConvert*, UCS2_CHAR *, USHORT, UCS2_CHAR *, USHORT, SSHORT *,
 					   USHORT *);
 					   
 static CharSetContainer *internal_charset_container_lookup(TDBB, SSHORT, STATUS *);
@@ -482,9 +481,9 @@ CHARSET_ID src_type, BYTE * src_ptr, USHORT src_len, FPTR_VOID err)
 														(SLONG) src_type, 0);
 
 		/* 
-		   ** allocate a temporary buffer that is large enough. 2 = sizeof WCHAR
+		   ** allocate a temporary buffer that is large enough.
 		 */
-		tmp_buffer = (BYTE *) FB_NEW(*getDefaultMemoryPool()) char[(SLONG) src_len * 2];
+		tmp_buffer = (BYTE *) FB_NEW(*getDefaultMemoryPool()) char[(SLONG) src_len * sizeof(UCS2_CHAR)];
 
 		cs_obj = from_cs->getConvToUnicode();
 		assert(cs_obj != NULL);
@@ -836,7 +835,7 @@ int DLL_EXPORT INTL_defined_type(TDBB tdbb, STATUS * status, SSHORT t_type)
 }
 
 
-WCHAR DLL_EXPORT INTL_getch(TDBB tdbb,
+UCS2_CHAR DLL_EXPORT INTL_getch(TDBB tdbb,
 							TextType* * obj,
 							SSHORT t_type, UCHAR ** ptr, USHORT * count)
 {
@@ -851,7 +850,7 @@ WCHAR DLL_EXPORT INTL_getch(TDBB tdbb,
  *
  **************************************/
 	SSHORT used;
-	USHORT wc;
+	UCS2_CHAR wc;
 
 	SET_TDBB(tdbb);
 
@@ -1401,7 +1400,7 @@ static USHORT internal_keylength(TextType* obj, USHORT iLength)
 	return (iLength);
 }
 
-static USHORT nc_to_wc(CsConvert* obj, WCHAR * pWide, USHORT nWide,	/* byte count */
+static USHORT nc_to_wc(CsConvert* obj, UCS2_CHAR * pWide, USHORT nWide,	/* byte count */
 					   UCHAR * pNarrow, USHORT nNarrow,	/* byte count */
 					   SSHORT * err_code, USHORT * err_position)
 {
@@ -1412,9 +1411,10 @@ static USHORT nc_to_wc(CsConvert* obj, WCHAR * pWide, USHORT nWide,	/* byte coun
  **************************************
  *
  * Functional description
+ *   Copies narrow chars buffer into wide chars buffer for charset NONE
  *
  **************************************/
-	WCHAR *pStart;
+	UCS2_CHAR *pStart;
 	UCHAR *pNarrowStart;
 
 	assert(obj != NULL);
@@ -1424,12 +1424,12 @@ static USHORT nc_to_wc(CsConvert* obj, WCHAR * pWide, USHORT nWide,	/* byte coun
 
 	*err_code = 0;
 	if (pWide == NULL)
-		return (2 * nNarrow);	/* all cases */
+		return (sizeof(UCS2_CHAR) * nNarrow);	/* all cases */
 	pStart = pWide;
 	pNarrowStart = pNarrow;
 	while (nWide-- > 1 && nNarrow) {
 		/* YYY - Byte order issues here */
-		*pWide++ = (WCHAR) * pNarrow++;
+		*pWide++ = (UCS2_CHAR) * pNarrow++;
 		nWide--;
 		nNarrow--;
 	}
@@ -1535,7 +1535,7 @@ static void dump_latin(UCHAR * p, USHORT len)
 }
 #endif
 
-unsigned short TextTypeNC::to_wc(unsigned char *pWideUC,
+unsigned short TextTypeNC::to_wc(UCS2_CHAR *pWideUC,
 									unsigned short nWide,
 									unsigned char *pNarrow,
 									unsigned short nNarrow,
@@ -1551,7 +1551,7 @@ unsigned short TextTypeNC::to_wc(unsigned char *pWideUC,
  *
  **************************************/
 {
-	WCHAR *pStart, *pWide = (WCHAR*)pWideUC;
+	UCS2_CHAR *pStart, *pWide = pWideUC;
 	UCHAR *pNarrowStart;
 
 	assert((pNarrow != NULL) || (pWide == NULL));
@@ -1560,12 +1560,12 @@ unsigned short TextTypeNC::to_wc(unsigned char *pWideUC,
 
 	*err_code = 0;
 	if (pWide == NULL)
-		return (2 * nNarrow);	/* all cases */
+		return (sizeof(UCS2_CHAR) * nNarrow);	/* all cases */
 	pStart = pWide;
 	pNarrowStart = pNarrow;
 	while (nWide-- > 1 && nNarrow) {
 		/* YYY - Byte order issues here */
-		*pWide++ = (WCHAR) * pNarrow++;
+		*pWide++ = (UCS2_CHAR) * pNarrow++;
 		nWide--;
 		nNarrow--;
 	}
@@ -1619,7 +1619,7 @@ unsigned short TextTypeNC::sleuth_merge(TDBB a, unsigned char *b,
 	return EVL_nc_sleuth_merge(a,this,b,c,d,e,f,g);
 }
 
-unsigned short TextTypeNC::mbtowc(WCHAR *wc, unsigned char *ptr, unsigned short count)
+unsigned short TextTypeNC::mbtowc(UCS2_CHAR *wc, unsigned char *ptr, unsigned short count)
 /**************************************
  *
  *      i n t e r n a l _ n c _ m b t o w c 
@@ -1689,7 +1689,7 @@ unsigned short TextTypeMB::sleuth_merge(TDBB a, unsigned char *b,
 	return EVL_mb_sleuth_merge(a,this,b,c,d,e,f,g);
 }
 
-unsigned short TextTypeMB::mbtowc(WCHAR *wc, unsigned char *ptr, unsigned short count)
+unsigned short TextTypeMB::mbtowc(UCS2_CHAR *wc, unsigned char *ptr, unsigned short count)
 {
 /**************************************
  *
@@ -1710,7 +1710,7 @@ unsigned short TextTypeMB::mbtowc(WCHAR *wc, unsigned char *ptr, unsigned short 
 
 	if (count >= 2) {
 		if (wc)
-			*wc = *(WCHAR *) ptr;
+			*wc = *(UCS2_CHAR *) ptr;
 		return 2;
 	}
 	if (wc)
@@ -1718,7 +1718,7 @@ unsigned short TextTypeMB::mbtowc(WCHAR *wc, unsigned char *ptr, unsigned short 
 	return (unsigned short)-1;			/* No more characters */
 }
 
-unsigned short TextTypeWC::to_wc(unsigned char *pDestUC,
+unsigned short TextTypeWC::to_wc(UCS2_CHAR *pDestUC,
 									unsigned short nDest,
 									unsigned char *pSrcUC,
 									unsigned short nSrc,
@@ -1734,8 +1734,8 @@ unsigned short TextTypeWC::to_wc(unsigned char *pDestUC,
  * Functional description
  *
  *************************************/
-	WCHAR *pStart, *pDest = (WCHAR*)pDestUC;
-	WCHAR *pStart_src, *pSrc = (WCHAR*)pSrcUC;
+	UCS2_CHAR *pStart, *pDest = pDestUC;
+	UCS2_CHAR *pStart_src, *pSrc = (UCS2_CHAR*)pSrcUC;
 	
 	assert((pSrc != NULL) || (pDest == NULL));
 	assert(err_code != NULL);
@@ -1765,7 +1765,7 @@ unsigned short TextTypeWC::contains(TDBB a, unsigned char *b,
 									unsigned char *d,
 									unsigned short e)
 {
-	return EVL_wc_contains(a,this,(WCHAR*)b,c,(WCHAR*)d,e);
+	return EVL_wc_contains(a,this,(UCS2_CHAR*)b,c,(UCS2_CHAR*)d,e);
 }
 
 unsigned short TextTypeWC::like(TDBB a, unsigned char *b,
@@ -1774,13 +1774,13 @@ unsigned short TextTypeWC::like(TDBB a, unsigned char *b,
 								short e,
 								short f)
 {
-	return EVL_wc_like(a,this,(WCHAR*)b,c,(WCHAR*)d,e,f);
+	return EVL_wc_like(a,this,(UCS2_CHAR*)b,c,(UCS2_CHAR*)d,e,f);
 }
 
 unsigned short TextTypeWC::matches(TDBB a, unsigned char *b, short c,
 								   unsigned char *d, short e)
 {
-	return EVL_wc_matches(a,this,(WCHAR*)b,c,(WCHAR*)d,e);
+	return EVL_wc_matches(a,this,(UCS2_CHAR*)b,c,(UCS2_CHAR*)d,e);
 }
 
 unsigned short TextTypeWC::sleuth_check(TDBB a, unsigned short b,
@@ -1789,7 +1789,7 @@ unsigned short TextTypeWC::sleuth_check(TDBB a, unsigned short b,
 										unsigned char *e,
 										unsigned short f)
 {
-	return EVL_wc_sleuth_check(a,this,b,(WCHAR*)c,d,(WCHAR*)e,f);
+	return EVL_wc_sleuth_check(a,this,b,(UCS2_CHAR*)c,d,(UCS2_CHAR*)e,f);
 }
 
 unsigned short TextTypeWC::sleuth_merge(TDBB a, unsigned char *b,
@@ -1799,10 +1799,10 @@ unsigned short TextTypeWC::sleuth_merge(TDBB a, unsigned char *b,
 										unsigned char *f,
 										unsigned short g)
 {
-	return EVL_wc_sleuth_merge(a,this,(WCHAR*)b,c,(WCHAR*)d,e,(WCHAR*)f,g);
+	return EVL_wc_sleuth_merge(a,this,(UCS2_CHAR*)b,c,(UCS2_CHAR*)d,e,(UCS2_CHAR*)f,g);
 }
 
-unsigned short TextTypeWC::mbtowc(WCHAR *wc, unsigned char *ptr, unsigned short count)
+unsigned short TextTypeWC::mbtowc(UCS2_CHAR *wc, unsigned char *ptr, unsigned short count)
 {
 /**************************************
  *
@@ -1823,7 +1823,7 @@ unsigned short TextTypeWC::mbtowc(WCHAR *wc, unsigned char *ptr, unsigned short 
 
 	if (count >= 2) {
 		if (wc)
-			*wc = *(WCHAR *) ptr;
+			*wc = *(UCS2_CHAR *) ptr;
 		return 2;
 	}
 	if (wc)
@@ -2017,7 +2017,7 @@ public:
 							(tt,a,b,c,d);
 	}
 	
-	unsigned short to_wc(unsigned char *a,
+	unsigned short to_wc(UCS2_CHAR *a,
 						 unsigned short b,
 						 unsigned char *c,
 						 unsigned short d,
@@ -2027,18 +2027,18 @@ public:
 		assert(tt);
 		assert(tt->texttype_fn_to_wc);
 		return (*(reinterpret_cast
-					<USHORT (*)(TEXTTYPE,UCHAR*,USHORT,UCHAR*,USHORT,short*,USHORT*)>
+					<USHORT (*)(TEXTTYPE,UCS2_CHAR*,USHORT,UCHAR*,USHORT,short*,USHORT*)>
 						(tt->texttype_fn_to_wc)))
 							(tt,a,b,c,d,e,f);
 	}
 									
-	unsigned short mbtowc(WCHAR *a, unsigned char *b, unsigned short c)
+	unsigned short mbtowc(UCS2_CHAR *a, unsigned char *b, unsigned short c)
 	{
 		assert(tt);
 		if (!tt->texttype_fn_mbtowc)
 			return T::mbtowc(a,b,c);
 		return (*(reinterpret_cast<
-					USHORT (*)(TEXTTYPE, WCHAR*, UCHAR*, USHORT)>
+					USHORT (*)(TEXTTYPE, UCS2_CHAR*, UCHAR*, USHORT)>
 						(tt->texttype_fn_mbtowc)))(tt,a,b,c);
 	}
 

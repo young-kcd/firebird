@@ -52,7 +52,7 @@
 
 USHORT LIKENAME(TDBB tdbb, class TextType* obj, LIKETYPE * p1, SSHORT l1_bytes,	/* byte count */
 				LIKETYPE * p2, SSHORT l2_bytes,	/* byte count */
-				WCHAR escape_char)
+				UCS2_CHAR escape_char)
 {
 /**************************************
  *
@@ -72,7 +72,7 @@ USHORT LIKENAME(TDBB tdbb, class TextType* obj, LIKETYPE * p1, SSHORT l1_bytes,	
  *	instead of UCHAR-based.
  *
  *	Note Bene: LIKETYPE is defined by including file (evl.c) to either
- *	    WCHAR or NCHAR, depending on the varient being compiled here.
+ *	    UCS2_CHAR or NCHAR, depending on the varient being compiled here.
  *
  *	(escape_char == 0) means no escape character is specified.
  *
@@ -93,13 +93,13 @@ USHORT LIKENAME(TDBB tdbb, class TextType* obj, LIKETYPE * p1, SSHORT l1_bytes,	
 
 	while (l2-- > 0) {
 		c = *p2++;
-		if (escape_char && ((WCHAR) c == escape_char)) {
+		if (escape_char && ((UCS2_CHAR) c == escape_char)) {
 			if (l2-- > 0) {
 				c = *p2++;
 				/* Note: SQL II says <escape_char><escape_char> is error condition */
-				if (((WCHAR) c == escape_char) ||
-					((WCHAR) c == (WCHAR) SQL_MATCH_ANY) ||
-					((WCHAR) c == (WCHAR) SQL_MATCH_ONE))
+				if (((UCS2_CHAR) c == escape_char) ||
+					((UCS2_CHAR) c == (UCS2_CHAR) SQL_MATCH_ANY) ||
+					((UCS2_CHAR) c == (UCS2_CHAR) SQL_MATCH_ONE))
 					escape = TRUE;
 			}
 			if (!escape)
