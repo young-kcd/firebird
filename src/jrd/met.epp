@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.57 2003-05-16 20:35:06 skidder Exp $
+$Id: met.epp,v 1.58 2003-05-19 06:57:08 alexpeshkoff Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -3692,6 +3692,7 @@ static int blocking_ast_procedure(void *ast_object)
 /* Restore the prior thread context */
 
 	RESTORE_THREAD_DATA;
+	return 0;
 }
 
 
