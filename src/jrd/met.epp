@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.32 2002-11-14 09:17:35 skidder Exp $
+$Id: met.epp,v 1.33 2002-11-14 12:16:50 skidder Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -296,7 +296,7 @@ void MET_clear_cache(TDBB tdbb, PRC proc)
 			ptr < end; ptr++) 
 		{
 			if ( (procedure = PRC(*ptr)) && !(procedure->prc_flags & PRC_obsolete) && 
-				procedure->prc_use_count != procedure->prc_int_use_count )
+				(procedure->prc_use_count != procedure->prc_int_use_count || procedure==proc) )
 			{
 				adjust_dependencies(procedure);
 			}
