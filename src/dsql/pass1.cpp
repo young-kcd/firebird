@@ -1783,8 +1783,10 @@ static bool aggregate_found2(const dsql_req* request, const dsql_nod* node,
 
 		case nod_exists:
 		case nod_singular:
-			aggregate = aggregate_found2(request, node->nod_arg[0], current_level, 
-				deepest_level, ignore_sub_selects);
+			if (!ignore_sub_selects) {
+				aggregate = aggregate_found2(request, node->nod_arg[0], current_level, 
+					deepest_level, ignore_sub_selects);
+			}
 			return aggregate;
 
 		case nod_aggregate:
