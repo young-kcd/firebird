@@ -3520,13 +3520,10 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	TemporaryField* stack;
 	TemporaryField* external;
 	jrd_rel* relation;
-	blb* blob;
 	bid blob_id = {0, {0}};
-	jrd_req* temp;
-	USHORT version, n, external_flag;
+	USHORT n, external_flag = 0;
 	bool computed_field;
 	ISC_STATUS_ARRAY status;
-	SSHORT collation;
 	trig_vec* triggers[TRIGGER_MAX];
 
 	SET_TDBB(tdbb);
@@ -3576,7 +3573,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				/* Msg357: too many versions */
 			}
 			MODIFY REL USING
-				blob = BLB_create(tdbb,
+				blb* blob = BLB_create(tdbb,
 								dbb->dbb_sys_trans,
 								&REL.RDB$RUNTIME);
 				jrd_req* request_fmtx = CMP_find_request(tdbb, irq_format2, IRQ_REQUESTS);
@@ -3625,7 +3622,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 							}
 							if (!null_view && REL.RDB$DBKEY_LENGTH > 8)
 							{
-								temp = NULL;
+								jrd_req* temp = NULL;
 								RFR.RDB$UPDATE_FLAG = 0;
 								FOR(REQUEST_HANDLE temp) X IN RDB$TRIGGERS WITH
 									X.RDB$RELATION_NAME EQ work->dfw_name AND
@@ -3695,7 +3692,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					if (FLD.RDB$CHARACTER_SET_ID.NULL)
 						FLD.RDB$CHARACTER_SET_ID = CS_NONE;
 
-					collation = COLLATE_NONE;	/* codepoint collation */
+					SSHORT collation = COLLATE_NONE;	/* codepoint collation */
 					if (!FLD.RDB$COLLATION_ID.NULL)
 						collation = FLD.RDB$COLLATION_ID;
 					if (!RFR.RDB$COLLATION_ID.NULL)
@@ -3749,7 +3746,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				blob = setup_triggers(tdbb, relation, null_view, triggers, blob);
 
 				BLB_close(tdbb, blob);
-				version = REL.RDB$FORMAT;
+				USHORT version = REL.RDB$FORMAT;
 				version++;
 				relation->rel_current_format = make_format(tdbb, relation,
 														   &version, stack);
@@ -3781,7 +3778,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 		if (external_flag)
 		{
-			temp = NULL;
+			jrd_req* temp = NULL;
 			FOR(REQUEST_HANDLE temp) FMTS IN RDB$FORMATS WITH
 				FMTS.RDB$RELATION_ID EQ relation->rel_id AND
                 FMTS.RDB$FORMAT EQ 0
