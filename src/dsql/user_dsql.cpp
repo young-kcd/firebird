@@ -1524,7 +1524,7 @@ static void init(FRBRD** db_handle)
 	dbb->dbb_database_handle = *db_handle;
 
 	ISC_STATUS_ARRAY local_status;
-	gds__database_cleanup(local_status, db_handle, cleanup_database, (SLONG) 0);
+	isc_database_cleanup(local_status, db_handle, cleanup_database, NULL);
 }
 
 

@@ -2800,7 +2800,7 @@ static void cleanup( void *arg)
   
     @brief	Clean up DSQL globals.
  
-  N.B., the cleanup handlers (registered with gds__database_cleanup)
+  N.B., the cleanup handlers (registered with isc_database_cleanup)
   are called outside of the ISC thread mechanism...
  
   These do not make use of the context at this time.
@@ -4131,7 +4131,7 @@ static DBB init(FRBRD** db_handle)
 	ISC_STATUS_ARRAY user_status;
 
 	THREAD_EXIT;
-	gds__database_cleanup(user_status, db_handle, cleanup_database, (SLONG) 0);
+	isc_database_cleanup(user_status, db_handle, cleanup_database, NULL);
 	THREAD_ENTER;
 
 /* Determine if the database is V3 or V4 */
