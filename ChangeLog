@@ -1,3 +1,85 @@
+2002-10-12 22:27  skidder
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Move nulls first/last code out of SCROLLABLE_CURSORS ifdef
+
+2002-10-12 21:46  skidder
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Fixed problem which caused complex outer joins to produce wrong
+	results
+
+2002-10-12 21:39  skidder
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Fixed problem which caused complex outer joins to produce wrong
+	results
+
+2002-10-12 13:14  dimitr
+
+	* firebird2/src/: remote/cntl.cpp, remote/nt_server.cpp,
+	remote/srvr_w32.cpp, utilities/install_nt.h,
+	utilities/install_svc.cpp:
+	
+	Made the codebase ready for the win32 classic builds.
+
+2002-10-12 13:07  dimitr
+
+	* firebird2/src/jrd/svc.cpp:
+	
+	Made the codebase ready for the win32 classic builds.
+
+2002-10-12 12:02  dimitr
+
+	* firebird2/: src/jrd/isc_version.rc,
+	builds/win32/msvc6/fbclient.dsp, builds/win32/msvc6/gds32.dsp:
+	
+	Added proper version information for the both client libraries.
+
+2002-10-12 10:13  stryqx
+
+	* firebird2/src/qli/err.cpp:
+	
+	Implicit cast breaks FreeBSD build.
+
+2002-10-12 07:21  stryqx
+
+	* firebird2/src/jrd/os/: mod_loader.h, path_utils.h:
+	
+	Quiet newline warning
+
+2002-10-12 06:59  stryqx
+
+	* firebird2/builds/posix/prefix.freebsd:
+	
+	Add prefix.freebsd.
+
+2002-10-12 06:16  stryqx
+
+	* firebird2/src/: common/memory/memory_pool.cpp, jrd/common.h,
+	jrd/flu.cpp, jrd/gds.cpp, jrd/isc_file.cpp, jrd/isc_sync.cpp,
+	jrd/jrd.h, jrd/thd.cpp, jrd/thd.h:
+	
+	Add FreeBSD support.  This allows me to compile CS on FreeBSD 4.7
+	using gcc 3.2.1.
+
+2002-10-12 06:12  stryqx
+
+	* firebird2/src/extlib/fbudf/: fbudf.cpp, fbudf.h, fbudf.sql:
+	
+	Rename truncate to fbtruncate to avoid conflict with standard C/C++
+	library.
+
+2002-10-12 06:05  stryqx
+
+	* firebird2/src/qli/exe.cpp:
+	
+	Include string.h for memcpy definition for those systems that need
+	it.
+
 2002-10-11 23:41  skywalker
 
 	* firebird2/builds/posix/Makefile.in.refDatabases:
