@@ -959,21 +959,9 @@ jrd_nod* OPT_make_index(thread_db* tdbb, OptimizerBlk* opt, jrd_rel* relation,
 	retrieval->irb_upper_count =
 		(upper - retrieval->irb_value) - idx->idx_count;
 
-#ifdef IGNORE_NULL_IDX_KEY
-/* when lower bound is given, and upper bound is not,
-  do not look at index keys which have <null> value in their first
-  segment. This is because these records will not satisfy the query
-  since <null> is a state and not a value, and thus cannot be compared
-  to a value. 
-
-	AB: Change to optimizer needed to handle these cases, but
-	no index-structure change is needed for this.
-
-*/
-	if (retrieval->irb_lower_count && retrieval->irb_upper_count == 0) {
-		retrieval->irb_generic |= irb_ignore_null_value_key;
-	}
-#endif /* IGNORE_NULL_IDX_KEY */
+	// This index is never used for IS NULL, thus we can ignore NULLs
+	// already at index scan
+	retrieval->irb_generic |= irb_ignore_null_value_key;
 
 /* Check to see if this is really an equality retrieval */
 
@@ -6267,6 +6255,11 @@ static jrd_nod* make_starts(thread_db* tdbb,
 	IndexRetrieval* retrieval = (IndexRetrieval*) node->nod_arg[e_idx_retrieval];
 	retrieval->irb_relation = relation;
 	retrieval->irb_generic = irb_starting;
+
+	// STARTING WITH can never include NULL values, thus ignore 
+	// them already at index scan
+	retrieval->irb_generic |= irb_ignore_null_value_key;
+
 	retrieval->irb_lower_count = retrieval->irb_upper_count = 1;
 	// If we are matching less than the full index, this is a partial match
 	if (retrieval->irb_upper_count < idx->idx_count) {

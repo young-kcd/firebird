@@ -208,8 +208,8 @@ static void print_int64_key(SINT64, SSHORT, INT64_KEY);
 #endif
 static CONTENTS remove_node(thread_db*, index_insertion*, WIN*);
 static CONTENTS remove_leaf_node(thread_db*, index_insertion*, WIN*);
-static bool scan(thread_db*, UCHAR*, SparseBitmap**, USHORT, USHORT, 
-				 temporary_key*, USHORT, const SCHAR);
+static bool scan(thread_db*, UCHAR*, SparseBitmap**, index_desc*, 
+				 IndexRetrieval*, USHORT, temporary_key*, const SCHAR);
 static void update_selectivity(index_root_page*, USHORT, const SelectivityList&);
 
 USHORT BTR_all(thread_db*		tdbb,
@@ -417,6 +417,12 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, SparseBitmap** bit
 	SET_TDBB(tdbb);
 	SBM_reset(bitmap);
 
+	// Remove ignore_nulls flag for older ODS
+	const Database* dbb = tdbb->tdbb_database;
+	if (dbb->dbb_ods_version < ODS_VERSION11) {
+		retrieval->irb_generic &= ~irb_ignore_null_value_key;
+	}
+
 	index_desc idx;
 	WIN window(-1);
 	temporary_key lower, upper;
@@ -450,11 +456,7 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, SparseBitmap** bit
 	const SCHAR flags = page->btr_header.pag_flags;
 	// if there is an upper bound, scan the index pages looking for it
 	if (retrieval->irb_upper_count)	{
-		while (scan(tdbb, pointer, bitmap, (idx.idx_count - retrieval->irb_upper_count), 
-				prefix, &upper, (USHORT) (retrieval->irb_generic &
-				(irb_partial | irb_descending | irb_starting | irb_equality)),
-				flags))
-		{
+		while (scan(tdbb, pointer, bitmap, &idx, retrieval, prefix, &upper, flags)) {
 			page = (btree_page*) CCH_HANDOFF(tdbb, &window, page->btr_sibling,
 				LCK_read, pag_index);
 			pointer = BTreeNode::getPointerFirstNode(page);
@@ -463,6 +465,10 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, SparseBitmap** bit
 	}
 	else {
 		// if there isn't an upper bound, just walk the index to the end of the level
+		const bool descending = (idx.idx_flags & idx_descending);
+		const bool ignoreNulls = 
+			(retrieval->irb_generic & irb_ignore_null_value_key) && (idx.idx_count == 1);
+
 		IndexNode node;
 		pointer = BTreeNode::readNode(&node, pointer, flags, true);
 		while (true) {
@@ -472,6 +478,14 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, SparseBitmap** bit
 			}
 
 			if (!node.isEndBucket) {
+				// If we're walking in a descending index and we need to ignore NULLs
+				// then stop at the first NULL we see (only for single segment!)
+				if (descending && ignoreNulls && (node.prefix == 0) && 
+					(node.length >= 1) && (node.data[0] == 255)) 
+				{
+					break;
+				}
+
 				SBM_set(tdbb, bitmap, node.recordNumber);
 				pointer = BTreeNode::readNode(&node, pointer, flags, true);
 				continue;
@@ -825,12 +839,14 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 				missing_unique_segments++;
 			}
 
+			key->key_flags |= key_empty;
 			compress(tdbb, desc_ptr, key, tail->idx_itype, isNull,
 				(idx->idx_flags & idx_descending), false);
 		}
 		else {
 			UCHAR* p = key->key_data;
 			SSHORT stuff_count = 0;
+			temp.key_flags |= key_empty;
 			for (USHORT n = 0; n < idx->idx_count; n++, tail++) {
 				for (; stuff_count; --stuff_count) {
 					*p++ = 0;
@@ -859,6 +875,9 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 				}
 			}
 			key->key_length = (p - key->key_data);
+			if (temp.key_flags & key_empty) {
+				key->key_flags |= key_empty;
+			}
 		}
 
 		if (key->key_length >= MAX_KEY_LIMIT) {
@@ -1156,14 +1175,18 @@ void BTR_make_key(thread_db* tdbb,
 	if (idx->idx_count == 1) {
 		bool isNull;
 		const dsc* desc = eval(tdbb, *exprs, &temp_desc, &isNull);
+		key->key_flags |= key_empty;
 		compress(tdbb, desc, key, tail->idx_itype, isNull,
 			(idx->idx_flags & idx_descending), fuzzy);
+		if (fuzzy & (key->key_flags & key_empty)) {
+			key->key_length = 0;
+		}
 	}
 	else {
 		// Make a compound key
 		UCHAR* p = key->key_data;
 		SSHORT stuff_count = 0;
-
+		temp.key_flags |= key_empty;
 		for (USHORT n = 0; n < count; n++, tail++) {
 			for (; stuff_count; --stuff_count) {
 				*p++ = 0;
@@ -1184,6 +1207,12 @@ void BTR_make_key(thread_db* tdbb,
 			}
 		}
 		key->key_length = (p - key->key_data);
+		if (temp.key_flags & key_empty) {
+			key->key_flags |= key_empty;
+			if (fuzzy) {
+				key->key_length = 0;
+			}
+		}
 	}
 
 	if (idx->idx_flags & idx_descending) {
@@ -1871,6 +1900,14 @@ static void compress(thread_db* tdbb,
 	bool temp_is_negative = false;
 	bool int64_key_op = false;
 
+	// For descending index and new index structure we insert 0xFE at the begin. 
+	// This is only done for values which begin with 0xFE (254) or 0xFF (255) and
+	// is needed to make a difference between a NULL state and a VALUE.
+	// Note! By descending index key is complemented after this compression routine.
+	// Further a NULL state is always returned as 1 byte 0xFF (descending index).
+	const UCHAR desc_end_value_prefix = 0x01; //0xFE
+	const UCHAR desc_end_value_check = 0x00; //0xFF;
+
 	SET_TDBB(tdbb);
 	const Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
@@ -1879,6 +1916,7 @@ static void compress(thread_db* tdbb,
 
 	if (isNull && dbb->dbb_ods_version >= ODS_VERSION7) {
 		UCHAR pad = 0;
+		key->key_flags &= ~key_empty;
 		// AB: NULL should be threated as lowest value possible.
 		//     Therefore don't complement pad when we have an
 		//     ascending index.
@@ -1888,7 +1926,14 @@ static void compress(thread_db* tdbb,
 			}
 		}
 		else {
-			if (!descending) {
+			if (descending) {
+				// DESC NULLs are stored as 1 byte
+				*p++ = pad;
+				key->key_length = (p - key->key_data);
+				return;
+			}
+			else {
+				// ASC NULLs are stored with no data
 				key->key_length = 0;
 				return;
 			}
@@ -1962,14 +2007,28 @@ static void compress(thread_db* tdbb,
 		}
 
 		if (length) {
+			// clear key_empty flag, because length is >= 1
+			key->key_flags &= ~key_empty;
 			if (length > sizeof(key->key_data)) {
 				length = sizeof(key->key_data);
 			}
-			do {
-				*p++ = *ptr++;
-			} while (--length);
+			if (descending && (dbb->dbb_ods_version >= ODS_VERSION11) && 
+				((*ptr == desc_end_value_prefix) || (*ptr == desc_end_value_check))) 
+			{
+				*p++ = desc_end_value_prefix;
+				if ((length + 1) > sizeof(key->key_data)) {
+					length = sizeof(key->key_data) - 1;
+				}
+			}
+			memcpy(p, ptr, length);	
+			p += length; 
 		}
 		else {
+			// Leave key_empty flag, because the string is an empty string
+			if (descending && (dbb->dbb_ods_version >= ODS_VERSION11) && 
+				((pad == desc_end_value_prefix) || (pad == desc_end_value_check))) {
+				*p++ = desc_end_value_prefix;
+			}
 			*p++ = pad;
 		}
 		while (p > key->key_data) {
@@ -1989,6 +2048,9 @@ static void compress(thread_db* tdbb,
 	// For idx_numeric2...
 	//   Convert the value to a INT64_KEY struct,
 	//   then zap it to compare in a byte-wise order. 
+
+	// clear key_empty flag for all other types
+	key->key_flags &= ~key_empty;
 
 	size_t temp_copy_length = sizeof(double);
 	if (isNull) {
@@ -2173,6 +2235,20 @@ static void compress(thread_db* tdbb,
 	}
 
 	key->key_length = (p - key->key_data) + 1;
+
+	// By descending index, check first byte
+	q = key->key_data;
+	if (descending && (dbb->dbb_ods_version >= ODS_VERSION11) && 
+		(key->key_length >= 1) && 
+		((*q == desc_end_value_prefix) || (*q == desc_end_value_check))) 
+	{		
+		p = key->key_data;
+		p++;	
+		memmove(p, q, key->key_length);
+		key->key_data[0] = desc_end_value_prefix;
+		key->key_length++;
+	}
+
 #ifdef DEBUG_INDEXKEY
 	{
 		fprintf(stderr, "temporary_key: length: %d Bytes: ", key->key_length);
@@ -5708,8 +5784,8 @@ static CONTENTS remove_leaf_node(thread_db* tdbb, index_insertion* insertion, WI
 
 
 static bool scan(thread_db* tdbb, UCHAR* pointer, SparseBitmap** bitmap,
-				 USHORT to_segment, USHORT prefix, temporary_key* key, USHORT flag,
-				 const SCHAR page_flags)
+				 index_desc* idx, IndexRetrieval* retrieval, USHORT prefix, 
+				 temporary_key* key, const SCHAR page_flags)
 {
 /**************************************
  *
@@ -5730,6 +5806,7 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, SparseBitmap** bitmap,
 	// if the search key is flagged to indicate a multi-segment index
 	// stuff the key to the stuff boundary
 	ULONG count;
+	USHORT flag = retrieval->irb_generic;
 	if ((flag & irb_partial) && (flag & irb_equality)
 		&& !(flag & irb_starting) && !(flag & irb_descending)) 
 	{
@@ -5745,14 +5822,17 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, SparseBitmap** bitmap,
 		count = key->key_length;
 	}
 
+	const USHORT to_segment = (idx->idx_count - retrieval->irb_upper_count);
 	const UCHAR* const end_key = key->key_data + count;
 	count -= key->key_length;
 
-	// reset irb_equality flag passed for optimization
-	flag &= ~irb_equality;
-
 	const bool descending = (flag & irb_descending);
+	const bool ignoreNulls = (flag & irb_ignore_null_value_key) && (idx->idx_count == 1);
 	bool done = false;
+	bool ignore = false;
+
+	// reset irb_equality flag passed for optimization
+	flag &= ~(irb_equality | irb_ignore_null_value_key);
 
 	if (page_flags & btr_large_keys) {
 		IndexNode node;
@@ -5771,7 +5851,7 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, SparseBitmap** bitmap,
 				return false;
 			}
 
-			if (key->key_length == 0) {
+			if ((key->key_length == 0) && !(key->key_flags & key_empty)) {
 				// Scanning for NULL keys
 				if (to_segment == 0) {
 					// All segments are expected to be NULL
@@ -5811,7 +5891,12 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, SparseBitmap** bitmap,
 						}
 					}
 					if (*p < *q) {
-						return false;
+						if ((flag & irb_starting) && (key->key_flags & key_empty)) {
+							break;
+						}
+						else {
+							return false;
+						}
 					}
 					if (*p++ > *q++) {
 						break;
@@ -5827,11 +5912,26 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, SparseBitmap** bitmap,
 				return true;
 			}
 
-			if ((flag & irb_starting) || !count) {
-				SBM_set(tdbb, bitmap, node.recordNumber);
+			// Ignore NULL-values, this is currently only available for single segment indexes.
+			if (ignoreNulls) {
+				ignore = false;
+				if (descending) {
+					if ((node.prefix == 0) && (node.length >= 1) && (node.data[0] == 255)) {
+						return false;
+					}
+				}
+				else {
+					ignore = (node.prefix + node.length == 0); // Ascending (prefix + length == 0)
+				}
 			}
-			else if (p > (end_key - count)) {
-				SBM_set(tdbb, bitmap, node.recordNumber);
+
+			if (!ignore) {
+				if ((flag & irb_starting) || !count) {
+					SBM_set(tdbb, bitmap, node.recordNumber);
+				}
+				else if (p > (end_key - count)) {
+					SBM_set(tdbb, bitmap, node.recordNumber);
+				}
 			}
 
 			pointer = BTreeNode::readNode(&node, pointer, page_flags, true);
@@ -5855,7 +5955,7 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, SparseBitmap** bitmap,
 				return false;
 			}
 
-			if (key->key_length == 0) {
+			if ((key->key_length == 0) && !(key->key_flags & key_empty)) {
 				// Scanning for NULL keys
 				if (to_segment == 0) {
 					// All segments are expected to be NULL
@@ -5895,7 +5995,12 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, SparseBitmap** bitmap,
 						}
 					}
 					if (*p < *q) {
-						return false;
+						if ((flag & irb_starting) && (key->key_flags & key_empty)) {
+							break;
+						}
+						else {
+							return false;
+						}
 					}
 					if (*p++ > *q++) {
 						break;
@@ -5911,11 +6016,29 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, SparseBitmap** bitmap,
 				return true;
 			}
 
-			if ((flag & irb_starting) || !count) {
-				SBM_set(tdbb, bitmap, number);
+			// Ignore NULL-values, this is currently only available for single segment indexes.
+			if (ignoreNulls) {
+				ignore = false;
+				if (descending) {
+					if ((node->btn_prefix == 0) && 
+						(node->btn_length >= 1) && (node->btn_data[0] == 255)) 
+					{
+						return false;
+					}
+				}
+				else {
+					// Ascending (prefix + length == 0)
+					ignore = (node->btn_prefix + node->btn_length == 0); 
+				}
 			}
-			else if (p > (end_key - count)) {
-				SBM_set(tdbb, bitmap, number);
+
+			if (!ignore) {
+				if ((flag & irb_starting) || !count) {
+					SBM_set(tdbb, bitmap, number);
+				}
+				else if (p > (end_key - count)) {
+					SBM_set(tdbb, bitmap, number);
+				}
 			}
 
 			node = NEXT_NODE(node);

@@ -142,11 +142,16 @@ struct index_insertion {
 };
 
 
+/* these flags are for the key_flags */
+
+const int key_empty	= 1;	/* Key contains empty data / empty string */
+
 /* Temporary key block */
 
 struct temporary_key {
 	USHORT key_length;
 	UCHAR key_data[MAX_KEY];
+	UCHAR key_flags;
  /* AB: I don't see the use of multiplying with 2 anymore. */
 	//UCHAR key_data[MAX_KEY * 2];	
 		// This needs to be on a SHORT boundary. 
