@@ -1,3 +1,40 @@
+2004-12-28 22:12  skidder
+
+	* firebird2/builds/posix/: Makefile.in.boot.gpre (1.21),
+	Makefile.in.client.fbudf (1.4), Makefile.in.client.gsec (1.3),
+	Makefile.in.embed.lockmgr (1.8), Makefile.in.extlib (1.19),
+	Makefile.in.fbserver (1.17), Makefile.in.intl (1.20),
+	Makefile.in.libfbclient (1.26), Makefile.in.libfbstatic (1.7),
+	Makefile.in.static.gbak (1.9), Makefile.in.static.gpre (1.16),
+	Makefile.in.static.isql (1.8):
+	
+	Honor CFLAGS given by the user in POSIX builds
+
+2004-12-28 22:07  skidder
+
+	* firebird2/configure.in (1.213):
+	
+	Add support for generic Linux builds (misc platforms)
+
+2004-12-28 22:00  skidder
+
+	* firebird2/builds/posix/prefix.linux_generic (1.1):
+	
+	Add support for generic Linux builds (misc platforms)
+
+2004-12-28 21:57  skidder
+
+	* firebird2/builds/posix/prefix.linux_sparc32 (1.5):
+	
+	Update Linux/Sparc build
+
+2004-12-28 06:20  robocop
+
+	* firebird2/src/: iscguard/iscguard.cpp (1.43), remote/protocol.h
+	(1.25), remote/xnet.cpp (1.61), remote/os/win32/wnet.cpp (1.30):
+	
+	Misc.
+
 2004-12-26 16:32  alexpeshkoff
 
 	* firebird2/src/dsql/dsql.cpp (1.137):
