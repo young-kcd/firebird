@@ -26,7 +26,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.18 2002-09-20 10:23:15 eku Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.19 2002-09-21 08:00:48 dimitr Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -749,7 +749,7 @@ static void isc_signal2(
 	if (!sig) {
 #if (defined WIN_NT || defined PC_PLATFORM)
 #pragma FB_COMPILER_MESSAGE("Fix! Ugly function pointer casts!")
-		ptr = (SIG_FPTR) signal(signal_number, (SIG_FPTR) signal_handler);
+		ptr = (SIG_FPTR) signal(signal_number, (void (*)(int)) signal_handler);
 #else
 
 		SIGVEC vec, old_vec;
