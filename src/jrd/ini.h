@@ -35,7 +35,7 @@
 #define NAME(name, id) id,
 
 typedef ENUM nam_i { nam_MIN,
-#include "../jrd/names.h"
+#include "gen/names.h"
 nam_MAX} name_ids;
 
 #undef NAME
@@ -47,7 +47,7 @@ nam_MAX} name_ids;
 static const TEXT* const names[] =
 {
 	0,
-#include "../jrd/names.h"
+#include "gen/names.h"
 };
 #undef NAME
 
@@ -57,7 +57,7 @@ static const TEXT* const names[] =
 
 #define FIELD(type,name,dtype,length,sub_type,ods,dflt_blr)	type,
 typedef ENUM gflds {
-#include "../jrd/fields.h"
+#include "gen/fields.h"
 gfld_MAX} GFLDS;
 #undef FIELD
 
@@ -82,7 +82,7 @@ typedef struct gfld
 } GFLD;
 
 static const struct gfld gfields[] = {
-#include "../jrd/fields.h"
+#include "gen/fields.h"
 	{ 0, 0, dtype_null, 0, 0, 0, NULL, 0 }
 };
 #undef FIELD
@@ -94,7 +94,7 @@ static const struct gfld gfields[] = {
 #define FIELD(symbol, name, id, update, ods, upd_id, upd_ods)
 #define END_RELATION
 typedef ENUM rids {
-#include "../jrd/relations.h"
+#include "gen/relations.h"
 rel_MAX} RIDS;
 #undef RELATION
 #undef FIELD
@@ -122,7 +122,7 @@ rel_MAX} RIDS;
 
 static const UCHAR relfields[] =
 {
-#include "../jrd/relations.h"
+#include "gen/relations.h"
 	0
 };
 

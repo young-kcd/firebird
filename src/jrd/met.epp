@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.61 2003-06-30 13:11:40 alexpeshkoff Exp $
+$Id: met.epp,v 1.62 2003-07-12 13:24:30 brodsom Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -116,7 +116,7 @@ $Id: met.epp,v 1.61 2003-06-30 13:11:40 alexpeshkoff Exp $
 #define END_RELATION
 
 typedef ENUM rids {
-#include "../jrd/relations.h"
+#include "gen/relations.h"
 	rel_MAX
 } RIDS;
 
