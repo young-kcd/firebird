@@ -35,14 +35,6 @@
 #include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
 
-#define IS_VALID_SERVER(server) if (!server || !*server) \
-				    { \
-                                    status[0] = isc_arg_gds; \
-                                    status[1] = isc_bad_protocol; \
-                                    status[2] = isc_arg_end; \
-                                    return NULL; \
-				    }
-
 #include <stdarg.h>
 #include "../jrd/gds.h"
 #include "../jrd/jrd_pwd.h"
@@ -62,8 +54,11 @@ typedef struct teb {
 	UCHAR *teb_tpb;
 } TEB;
 
-FRBRD *open_security_db(ISC_STATUS *, TEXT *, TEXT *, int, TEXT *);
-void get_security_error(ISC_STATUS *, int);
+#if !defined(BOOT_BUILD)
+bool is_valid_server(ISC_STATUS* status, const TEXT* server);
+#endif
+FRBRD *open_security_db(ISC_STATUS*, const TEXT*, const TEXT*, int, const TEXT*);
+void get_security_error(ISC_STATUS*, int);
 
 SLONG API_ROUTINE_VARARG isc_event_block(SCHAR ** event_buffer,
 										 SCHAR ** result_buffer,
@@ -1220,10 +1215,30 @@ return 1;
 #endif
 }
 
+
+#if !defined(BOOT_BUILD)
+// Replaces the original ugly macro. Now the function that calls is_valid_server
+// is responsible for returning NULL to its invoker in turn.
+// It simply makes sure there's something in the string containing the
+// server's name; otherwise it fills the status vector with an error.
+bool is_valid_server(ISC_STATUS* status, const TEXT* server)
+{
+	if (!server || !*server)
+	{
+	    status[0] = isc_arg_gds;
+	    status[1] = isc_bad_protocol;
+	    status[2] = isc_arg_end;
+	    return false;
+	}
+	return true;
+}
+#endif
+
+
 FRBRD *open_security_db(
-					   ISC_STATUS * status,
-					   TEXT * username,
-					   TEXT * password, int protocol, TEXT * server)
+					   ISC_STATUS* status,
+					   const TEXT* username,
+					   const TEXT* password, int protocol, const TEXT* server)
 {
 /**************************************
  *
@@ -1241,24 +1256,24 @@ FRBRD *open_security_db(
 #ifdef BOOT_BUILD
 return 0;
 #else
-	short dpb_length;
-	char dpb_buffer[256], *dpb, *p;
-	TEXT default_security_db[MAXPATHLEN], connect_string[1024], *database;
-	FRBRD *db_handle;
+	char dpb_buffer[256];
+	TEXT default_security_db[MAXPATHLEN], connect_string[1024];
 	TEXT sec_server[256];
 
-	db_handle = NULL;
+	FRBRD* db_handle = NULL;
 
 	switch (protocol) {
 	case sec_protocol_tcpip:
-		IS_VALID_SERVER(server);
+		if (!is_valid_server(status, server))
+			return NULL;
 		sprintf(sec_server, "%s:", server);
 		SECURITY_get_db_path(sec_server, default_security_db);
 		sprintf(connect_string, "%s%s", sec_server, default_security_db);
 		break;
 
 	case sec_protocol_netbeui:
-		IS_VALID_SERVER(server);
+		if (!is_valid_server(status, server))
+			return NULL;
 		sprintf(sec_server, "\\\\%s\\", server);
 		SECURITY_get_db_path(sec_server, default_security_db);
 		sprintf(connect_string, "%s%s", sec_server, default_security_db);
@@ -1270,41 +1285,41 @@ return 0;
 		break;
 
 	default:
-		status[0] = isc_arg_gds;
-		status[1] = isc_bad_protocol;
-		status[2] = isc_arg_end;
+	    is_valid_server(status, NULL); // let it to set the error status
 		return NULL;
 	}
 
-	database = connect_string;
-	dpb = dpb_buffer;
+	TEXT* database = connect_string;
+	char* dpb = dpb_buffer;
 	*dpb++ = isc_dpb_version1;
 
 	if (username) {
 		*dpb++ = isc_dpb_user_name;
 		*dpb++ = strlen(username);
-		for (p = username; *p;)
+		for (const char* p = username; *p;)
 			*dpb++ = *p++;
 	}
 
 	if (password) {
 		*dpb++ = isc_dpb_password;
 		*dpb++ = strlen(password);
-		for (p = password; *p;)
+		for (const char* p = password; *p;)
 			*dpb++ = *p++;
 	}
 
-	dpb_length = dpb - dpb_buffer;
+	SSHORT dpb_length = dpb - dpb_buffer;
 
-	if (isc_attach_database
-		(status, 0, database, &db_handle, dpb_length, dpb_buffer)) db_handle =
-			NULL;
+	if (isc_attach_database(status, 0, database, &db_handle, dpb_length,
+		dpb_buffer))
+	{
+		db_handle = NULL;
+	}
 
 	return db_handle;
 #endif
 }
 
-void get_security_error(ISC_STATUS * status, int gsec_err)
+void get_security_error(ISC_STATUS* status, int gsec_err)
 {
 /**************************************
  *
@@ -1365,3 +1380,4 @@ void get_security_error(ISC_STATUS * status, int gsec_err)
 		return;
 	}
 }
+
