@@ -2,13 +2,50 @@
   * v1.5.2
   **************
 
-    * Fixed v1.5.1 regression
+    * Fixed bug SF #728839.
+        Left join defeats UDF by mangling a null descriptor.
+      Contributor(s):
+        Claudio Varderrama <cvalde at usa.net>
+
+    * Fixed bug SF #544132.
+        UDF with NULL input parameter.
+      Contributor(s):
+        Claudio Varderrama <cvalde at usa.net>
+
+    * Fixed bug SF #1045970.
+        CPU 100% with FB 1.5.1 (when events are used and client network connection is terminated)
+      Note:
+        Related to the previous events bugfix introduced in v1.5.1
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed v1.5.0 regression.
+        Failed UDF name is never reported in the server log
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed v1.5.1 regression.
         1.5.0 was doing exit(3) on critical errors on Windows. No way you could use JIT debugger to analyse problems in your UDF routines
         1.5.1 was calling debugger always and this introduced problem with automatic restarts of server
         1.5.2 now calls debugger only if you set BugcheckAbort configuration file option to 1
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed unregistered bug.
+        Error trying to delete from a naturally updatable view containing computed expressions
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Numeric datatypes represented by floating-point variables are processed incorrect in EXECUTE STATEMENT
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed unregistered bug.
+        Memory leak when a query contains both GROUP BY and DISTINCT and result set is empty
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
 
     * Fixed unregistered bug.
         Server leaks resources when an exception is thrown from the selectable stored procedure
