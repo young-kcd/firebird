@@ -55,8 +55,8 @@
 
 using namespace Jrd;
 
-#define JRD_FAILURE_SPACE	2048
-#define JRD_FAILURE_UNKNOWN	"<UNKNOWN>"	/* Used when buffer fails */
+//#define JRD_FAILURE_SPACE	2048
+//#define JRD_FAILURE_UNKNOWN	"<UNKNOWN>"	/* Used when buffer fails */
 
 
 static void internal_error(ISC_STATUS, int);

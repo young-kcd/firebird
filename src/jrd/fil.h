@@ -33,18 +33,6 @@
 
 #include "../jrd/thd.h"
 
-#ifdef UNIX
-#define WORKDIR        "/tmp/"
-#endif
-
-#ifdef WIN_NT
-#define WORKDIR        "/temp/"
-#endif
-
-#ifdef VMS
-#define WORKDIR        "SYS$SCRATCH:"
-#endif
-
 #define	ALLROOM		-1UL		/* use all available space */
 
 /* Defined the directory list structures. */
