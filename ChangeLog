@@ -1,3 +1,15 @@
+2004-02-11 12:16  aafemt
+
+	* firebird2/src/utilities/nbackup.cpp:
+	
+	Now it is buildable
+
+2004-02-11 12:14  aafemt
+
+	* firebird2/builds/posix/make.shared.variables:
+	
+	Fix for my previous commit
+
 2004-02-10 19:53  dimitr
 
 	* firebird2/src/jrd/isc_version.h:
