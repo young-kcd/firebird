@@ -12,7 +12,7 @@
  *     language governing rights and limitations under the License.
  *
  *
- *  The Original Code was created by Claudio Valderama C. for IBPhoenix.
+ *  The Original Code was created by Claudio Valderrama C. for IBPhoenix.
  *  The development of the Original Code was sponsored by Craig Leonardi.
  *
  *  Copyright (c) 2001 IBPhoenix
