@@ -221,22 +221,20 @@ static DSQL_NOD pass1_savepoint(DSQL_REQ, DSQL_NOD);
 
 STR temp_collation_name = NULL;
 
-#define DB_KEY_STRING	"DB_KEY"	/* NTX: pseudo field name */
-#define MAX_MEMBER_LIST	1500	/* Maximum members in "IN" list.
-								   * For eg. SELECT * FROM T WHERE
-								   *         F IN (1, 2, 3, ...)
-								   *
-								   * Bug 10061, bsriram - 19-Apr-1999
-								 */
-#define FIELD_MATCH_TYPE_EQUAL			0
-#define FIELD_MATCH_TYPE_LOWER			1
-#define FIELD_MATCH_TYPE_LOWER_EQUAL	2
-#define FIELD_MATCH_TYPE_HIGHER			3
-#define FIELD_MATCH_TYPE_HIGHER_EQUAL	4
-
-#ifndef PRINTF
-#define PRINTF		ib_printf
-#endif
+const char* DB_KEY_STRING	= "DB_KEY"; // NTX: pseudo field name
+const int MAX_MEMBER_LIST	= 1500;	// Maximum members in "IN" list.
+									// For eg. SELECT * FROM T WHERE
+									//         F IN (1, 2, 3, ...)
+									// 
+									// Bug 10061, bsriram - 19-Apr-1999
+									//
+enum field_match_val {
+	FIELD_MATCH_TYPE_EQUAL = 0,
+	FIELD_MATCH_TYPE_LOWER = 1,
+	FIELD_MATCH_TYPE_LOWER_EQUAL = 2,
+	FIELD_MATCH_TYPE_HIGHER = 3,
+	FIELD_MATCH_TYPE_HIGHER_EQUAL = 4
+};
 
 
 /**
@@ -3249,8 +3247,8 @@ static DSQL_NOD pass1_dbkey( DSQL_REQ request, DSQL_NOD input)
 
 /* field unresolved */
 
-	field_error(reinterpret_cast <
-				char *>(qualifier ? qualifier->str_data : 0), DB_KEY_STRING, input);
+	field_error(reinterpret_cast <char *>(qualifier ? qualifier->str_data : 0),
+				const_cast <char *>(DB_KEY_STRING), input);
 
 	return NULL;
 }

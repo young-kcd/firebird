@@ -63,11 +63,18 @@ ASSERT_BLKCHK_MSG
  * contexts where it makes sense.  This macro checks a descriptor to
  * see if it is something that *could* represent a date value
  */
-#define COULD_BE_DATE(d)	(DTYPE_IS_DATE((d).dsc_dtype) || ((d).dsc_dtype <= dtype_any_text))
+static inline bool could_be_date(DSC d)
+{
+	return (DTYPE_IS_DATE(d.dsc_dtype) || (d.dsc_dtype <= dtype_any_text));
+}
+
+
 /* One of d1,d2 is time, the other is date */
-#define IS_DATE_AND_TIME(d1,d2)	\
-  ((((d1).dsc_dtype==dtype_sql_time)&&((d2).dsc_dtype==dtype_sql_date)) || \
-   (((d2).dsc_dtype==dtype_sql_time)&&((d1).dsc_dtype==dtype_sql_date)))
+static inline bool is_date_and_time(DSC d1, DSC d2)
+{
+	return (((d1.dsc_dtype == dtype_sql_time)&&(d2.dsc_dtype == dtype_sql_date)) ||
+	((d2.dsc_dtype == dtype_sql_time)&&(d1.dsc_dtype == dtype_sql_date)));
+}
 
 
 /**
@@ -499,7 +506,7 @@ void MAKE_desc( DSC * desc, DSQL_NOD node)
 		case dtype_timestamp:
 
 			/* Allow <timestamp> +- <string> (historical) */
-			if (COULD_BE_DATE(desc1) && COULD_BE_DATE(desc2)) {
+			if (could_be_date(desc1) && could_be_date(desc2)) {
 				if (node->nod_type == nod_subtract) {
 					/* <any date> - <any date> */
 
@@ -545,7 +552,7 @@ void MAKE_desc( DSC * desc, DSQL_NOD node)
 						desc->dsc_scale = 0;
 					}
 				}
-				else if (IS_DATE_AND_TIME(desc1, desc2)) {
+				else if (is_date_and_time(desc1, desc2)) {
 					/* <date> + <time> */
 					/* <time> + <date> */
 					desc->dsc_dtype = dtype_timestamp;
@@ -685,7 +692,7 @@ void MAKE_desc( DSC * desc, DSQL_NOD node)
 						desc->dsc_scale = -9;
 					}
 				}
-				else if (IS_DATE_AND_TIME(desc1, desc2)) {
+				else if (is_date_and_time(desc1, desc2)) {
 					/* <date> + <time> */
 					/* <time> + <date> */
 					desc->dsc_dtype = dtype_timestamp;

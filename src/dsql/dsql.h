@@ -99,28 +99,6 @@ typedef dsql_lls* DLLS;
 
 #include "../jrd/dsc.h"
 
-#ifdef NOT_USED_OR_REPLACED
-
-#define irq_relation    0   
-#define irq_fields      1   
-#define irq_dimensions  2   
-#define irq_primary_key 3   
-#define irq_view        4   
-#define irq_function    5   
-#define irq_func_return 6   
-#define irq_procedure   7   
-#define irq_parameters  8   
-#define irq_collation   9   
-#define irq_charset     10  
-#define irq_trigger     11  
-#define irq_domain      12  
-#define irq_type        13  
-#define irq_col_default 14  
-#define irq_domain_2    15  
-
-#define irq_MAX         16
-
-#else
 //! internal DSQL requests
 enum irq_type_t {
     irq_relation    = 0,     //!< lookup a relation                     
@@ -142,8 +120,6 @@ enum irq_type_t {
 
     irq_MAX         = 16
 };
-
-#endif
 
 
 // blocks used to cache metadata
@@ -598,6 +574,13 @@ typedef tsql* TSQL;
     64      Display BLR in dsql/prepare
     > 256   Display yacc parser output level = DSQL_level>>8
 */
+#define SET_THREAD_DATA         {\
+				tdsql = &thd_context;\
+				THD_put_specific ((THDD) tdsql);\
+				tdsql->tsql_thd_data.thdd_type = THDD_TYPE_TSQL;\
+				}
+#define RESTORE_THREAD_DATA     THD_restore_specific()
+
 
 // macros for error generation
 
@@ -607,11 +590,7 @@ typedef tsql* TSQL;
 #define BLKCHK(blk, type) if (MemoryPool::blk_type(blk) != (SSHORT) type) BUGCHECK ("expected type")
 
 #ifdef DEV_BUILD
-#ifdef DSQL_MAIN
-unsigned DSQL_debug;
-#else
 extern unsigned DSQL_debug;
-#endif
 
 /* Verifies that a pointed to block matches the expected type.
  Useful to find coding errors & memory globbers.

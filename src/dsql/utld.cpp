@@ -30,7 +30,7 @@
  */
 
 /*
-$Id: utld.cpp,v 1.15 2003-09-20 23:28:10 brodsom Exp $
+$Id: utld.cpp,v 1.16 2003-09-28 00:36:27 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -58,10 +58,6 @@ static void print_xsqlda(XSQLDA *);
 static void sqlvar_to_xsqlvar(SQLVAR *, XSQLVAR *);
 static void xsqlvar_to_sqlvar(XSQLVAR *, SQLVAR *);
 
-#ifndef PRINTF
-#define PRINTF	ib_printf
-#endif
-
 #define CH_STUFF(p,value)	{if ((SCHAR) *(p) == (SCHAR) (value)) (p)++; else\
 				{*(p)++ = (value); same_flag = false;}}
 #define CH_STUFF_WORD(p,value)	{CH_STUFF (p, (value) & 255);\
@@ -72,7 +68,7 @@ static void xsqlvar_to_sqlvar(XSQLVAR *, SQLVAR *);
 
 static TEXT *DSQL_failures, *DSQL_failures_ptr;
 
-#define DSQL_FAILURE_SPACE	2048
+const int  DSQL_FAILURE_SPACE = 2048;
 
 
 /**
@@ -842,15 +838,15 @@ static void print_xsqlda( XSQLDA * xsqlda)
 	if (!xsqlda)
 		return;
 
-	PRINTF("SQLDA Version %d\n", xsqlda->version);
-	PRINTF("      sqldaid %.8s\n", xsqlda->sqldaid);
-	PRINTF("      sqldabc %d\n", xsqlda->sqldabc);
-	PRINTF("      sqln    %d\n", xsqlda->sqln);
-	PRINTF("      sqld    %d\n", xsqlda->sqld);
+	ib_printf("SQLDA Version %d\n", xsqlda->version);
+	ib_printf("      sqldaid %.8s\n", xsqlda->sqldaid);
+	ib_printf("      sqldabc %d\n", xsqlda->sqldabc);
+	ib_printf("      sqln    %d\n", xsqlda->sqln);
+	ib_printf("      sqld    %d\n", xsqlda->sqld);
 
 	xvar = xsqlda->sqlvar;
 	for (end_var = xvar + xsqlda->sqld; xvar < end_var; xvar++)
-		PRINTF("         %.31s %.31s type: %d, scale %d, len %d subtype %d\n",
+		ib_printf("         %.31s %.31s type: %d, scale %d, len %d subtype %d\n",
 			   xvar->sqlname, xvar->relname, xvar->sqltype,
 			   xvar->sqlscale, xvar->sqllen, xvar->sqlsubtype);
 }

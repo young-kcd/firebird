@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.62 2003-09-21 13:33:41 skidder Exp $
+ * $Id: ddl.cpp,v 1.63 2003-09-28 00:36:28 brodsom Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -92,7 +92,7 @@
 #endif
 
 
-#define BLOB_BUFFER_SIZE   4096	/* to read in blr blob for default values */
+const int BLOB_BUFFER_SIZE    = 4096;	// to read in blr blob for default values
 
 
 static void assign_field_length(DSQL_FLD, USHORT);
@@ -171,23 +171,26 @@ static inline void BLKCHK(const void* p, USHORT type)
 	}
 }
 #else
-#define BLKCHK(blk, typ)
+static inline void BLKCHK(const void* p, USHORT type){
+}
 #endif
 
-#define PRE_STORE_TRIGGER	1
-#define POST_STORE_TRIGGER	2
-#define PRE_MODIFY_TRIGGER	3
-#define POST_MODIFY_TRIGGER	4
-#define PRE_ERASE_TRIGGER	5
-#define POST_ERASE_TRIGGER	6
+enum trigger_type {
+	PRE_STORE_TRIGGER = 1,
+	POST_STORE_TRIGGER = 2,
+	PRE_MODIFY_TRIGGER = 3,
+	POST_MODIFY_TRIGGER = 4,
+	PRE_ERASE_TRIGGER = 5,
+	POST_ERASE_TRIGGER = 6
+};
 
-#define OLD_CONTEXT		"OLD"
-#define NEW_CONTEXT		"NEW"
-#define TEMP_CONTEXT		"TEMP"
+const char *OLD_CONTEXT		= "OLD";
+const char *NEW_CONTEXT		= "NEW";
+const char *TEMP_CONTEXT	= "TEMP";
 
-#define DEFAULT_BUFFER		2048
+const int DEFAULT_BUFFER	= 2048;
 
-#define DEFAULT_BLOB_SEGMENT_SIZE	80	/* bytes */
+const int DEFAULT_BLOB_SEGMENT_SIZE = 80; // bytes
 
 
 static const USHORT blr_dtypes[] = {

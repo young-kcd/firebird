@@ -59,8 +59,6 @@ nested FOR loops are added.
     THREAD_ENTER;               // First statment after FOR loop
 ***************************************************************/
 
-#define DSQL_MAIN
-
 #include "firebird.h"
 #include "fb_exception.h"
 #include "../jrd/ib_stdio.h"
@@ -101,19 +99,6 @@ ASSERT_FILENAME
 #include <descrip.h>
 #endif
 
-#ifndef PRINTF
-#define PRINTF		ib_printf
-#endif
-
-#define SET_THREAD_DATA         {\
-				tdsql = &thd_context;\
-				THD_put_specific ((THDD) tdsql);\
-				tdsql->tsql_thd_data.thdd_type = THDD_TYPE_TSQL;\
-				}
-#define RESTORE_THREAD_DATA     THD_restore_specific()
-
-#define FREE_MEM_RETURN		return
-
 static void		cleanup(void*);
 static void		cleanup_database(FRBRD**, SLONG);
 static void		cleanup_transaction(FRBRD*, SLONG);
@@ -142,6 +127,9 @@ static ISC_STATUS	return_success(void);
 static UCHAR*	var_info(DSQL_MSG, const UCHAR*, const UCHAR*, UCHAR*, UCHAR*, USHORT);
 
 extern DSQL_NOD DSQL_parse;
+#ifdef DEV_BUILD
+unsigned DSQL_debug;
+#endif
 
 static bool init_flag = false;
 static DBB databases;
@@ -250,26 +238,17 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*		user_status,
 								TEXT*		input_cursor,
 								USHORT		type);
 
-#define GDS_DSQL_ALLOCATE		dsql8_allocate_statement
-#define GDS_DSQL_EXECUTE		dsql8_execute
-#define GDS_DSQL_EXECUTE_IMMED	dsql8_execute_immediate
-#define GDS_DSQL_FETCH			dsql8_fetch
-#define GDS_DSQL_FREE			dsql8_free_statement
-#define GDS_DSQL_INSERT			dsql8_insert
-#define GDS_DSQL_PREPARE		dsql8_prepare
-#define GDS_DSQL_SET_CURSOR		dsql8_set_cursor
-#define GDS_DSQL_SQL_INFO		dsql8_sql_info
 
 //////////////////////////////////////////////////////////////////
 // Begin : C API -> C++ wrapper functions
-// Note that we don't wrap GDS_DSQL_EXECUTE_IMMED since it
+// Note that we don't wrap dsql8_execute_immediate since it
 // contains no req in its parameter list.
 //////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////
 
 ISC_STATUS DLL_EXPORT
-GDS_DSQL_ALLOCATE(	ISC_STATUS*    user_status,
+dsql8_allocate_statement(	ISC_STATUS*    user_status,
 					FRBRD**    db_handle,
 					dsql_req** req_handle)
 {
@@ -279,7 +258,7 @@ GDS_DSQL_ALLOCATE(	ISC_STATUS*    user_status,
 //////////////////////////////////////////////////////////////////
 
 ISC_STATUS DLL_EXPORT
-GDS_DSQL_EXECUTE(	ISC_STATUS*    user_status,
+dsql8_execute(	ISC_STATUS*    user_status,
 					WHY_TRA*   trans_handle,
 					dsql_req** req_handle,
 					USHORT     in_blr_length,
@@ -311,7 +290,7 @@ GDS_DSQL_EXECUTE(	ISC_STATUS*    user_status,
 //////////////////////////////////////////////////////////////////
 
 ISC_STATUS DLL_EXPORT
-GDS_DSQL_FETCH(	ISC_STATUS*    user_status,
+dsql8_fetch(	ISC_STATUS*    user_status,
 				dsql_req** req_handle,
 				USHORT     blr_length,
 				SCHAR*     blr,
@@ -339,7 +318,7 @@ GDS_DSQL_FETCH(	ISC_STATUS*    user_status,
 //////////////////////////////////////////////////////////////////
 
 ISC_STATUS DLL_EXPORT
-GDS_DSQL_FREE(	ISC_STATUS*    user_status,
+dsql8_free_statement(	ISC_STATUS*    user_status,
 				dsql_req** req_handle,
 				USHORT     option)
 {
@@ -349,7 +328,7 @@ GDS_DSQL_FREE(	ISC_STATUS*    user_status,
 //////////////////////////////////////////////////////////////////
 
 ISC_STATUS DLL_EXPORT
-GDS_DSQL_INSERT(ISC_STATUS*				user_status,
+dsql8_insert(ISC_STATUS*				user_status,
 				struct dsql_req**	req_handle,
 				USHORT				blr_length,
 				SCHAR*				blr,
@@ -369,7 +348,7 @@ GDS_DSQL_INSERT(ISC_STATUS*				user_status,
 //////////////////////////////////////////////////////////////////
 
 ISC_STATUS DLL_EXPORT
-GDS_DSQL_PREPARE(	ISC_STATUS*				user_status,
+dsql8_prepare(	ISC_STATUS*				user_status,
 					WHY_TRA*			trans_handle,
 					struct dsql_req**	req_handle,
 					USHORT				length,
@@ -396,7 +375,7 @@ GDS_DSQL_PREPARE(	ISC_STATUS*				user_status,
 //////////////////////////////////////////////////////////////////
 
 ISC_STATUS DLL_EXPORT
-GDS_DSQL_SQL_INFO(	ISC_STATUS*				user_status,
+dsql8_sql_info(	ISC_STATUS*				user_status,
 					struct dsql_req**	req_handle,
 					USHORT				item_length,
 					const SCHAR*		items,
@@ -414,7 +393,7 @@ GDS_DSQL_SQL_INFO(	ISC_STATUS*				user_status,
 //////////////////////////////////////////////////////////////////
 
 ISC_STATUS DLL_EXPORT
-GDS_DSQL_SET_CURSOR(ISC_STATUS*		user_status,
+dsql8_set_cursor(ISC_STATUS*		user_status,
 					dsql_req**	req_handle,
 					TEXT*		input_cursor,
 					USHORT		type)
@@ -691,7 +670,7 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
 			}
 
 /* Figure out which parser version to use */
-/* Since the API to GDS_DSQL_EXECUTE_IMMED is public and can not be changed, there needs to
+/* Since the API to dsql8_execute_immediate is public and can not be changed, there needs to
  * be a way to send the parser version to DSQL so that the parser can compare the keyword
  * version to the parser version.  To accomplish this, the parser version is combined with
  * the client dialect and sent across that way.  In dsql8_execute_immediate, the parser version
@@ -757,7 +736,7 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
 	return return_success();
 }
 
-ISC_STATUS DLL_EXPORT GDS_DSQL_EXECUTE_IMMED(ISC_STATUS*	user_status,
+ISC_STATUS DLL_EXPORT dsql8_execute_immediate(ISC_STATUS*	user_status,
 					 WHY_DBB*	db_handle,
 					 WHY_TRA*	trans_handle,
 					 USHORT		length,
@@ -1387,7 +1366,7 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 				length = strlen(string);
 
 /* Figure out which parser version to use */
-/* Since the API to GDS_DSQL_PREPARE is public and can not be changed, there needs to
+/* Since the API to dsql8_prepare is public and can not be changed, there needs to
  * be a way to send the parser version to DSQL so that the parser can compare the keyword
  * version to the parser version.  To accomplish this, the parser version is combined with
  * the client dialect and sent across that way.  In dsql8_prepare_statement, the parser version
@@ -1829,29 +1808,29 @@ void DSQL_pretty(DSQL_NOD node, int column)
 	*p = 0;
 
 	if (!node) {
-		PRINTF("%s *** null ***\n", buffer);
-		FREE_MEM_RETURN;
+		ib_printf("%s *** null ***\n", buffer);
+		return;
 	}
 
 	switch (MemoryPool::blk_type(node)) {
 	case (TEXT) dsql_type_str:
-		PRINTF("%sSTRING: \"%s\"\n", buffer, ((STR) node)->str_data);
-		FREE_MEM_RETURN;
+		ib_printf("%sSTRING: \"%s\"\n", buffer, ((STR) node)->str_data);
+		return;
 
 	case (TEXT) dsql_type_fld:
-		PRINTF("%sFIELD: %s\n", buffer, ((DSQL_FLD) node)->fld_name);
-		FREE_MEM_RETURN;
+		ib_printf("%sFIELD: %s\n", buffer, ((DSQL_FLD) node)->fld_name);
+		return;
 
 	case (TEXT) dsql_type_sym:
-		PRINTF("%sSYMBOL: %s\n", buffer, ((SYM) node)->sym_string);
-		FREE_MEM_RETURN;
+		ib_printf("%sSYMBOL: %s\n", buffer, ((SYM) node)->sym_string);
+		return;
 
 	case (TEXT) dsql_type_nod:
 		break;
 
 	default:
-		PRINTF("%sUNKNOWN BLOCK TYPE\n", buffer);
-		FREE_MEM_RETURN;
+		ib_printf("%sUNKNOWN BLOCK TYPE\n", buffer);
+		return;
 	}
 
 	DSQL_NOD* ptr = node->nod_arg;
@@ -2311,19 +2290,19 @@ void DSQL_pretty(DSQL_NOD node, int column)
 
 	case nod_aggregate:
 		verb = "aggregate";
-		PRINTF("%s%s\n", buffer, verb);
+		ib_printf("%s%s\n", buffer, verb);
 		context = (DSQL_CTX) node->nod_arg[e_agg_context];
-		PRINTF("%s   context %d\n", buffer, context->ctx_context);
+		ib_printf("%s   context %d\n", buffer, context->ctx_context);
 		if ((map = context->ctx_map) != NULL)
-			PRINTF("%s   map\n", buffer);
+			ib_printf("%s   map\n", buffer);
 		while (map) {
-			PRINTF("%s      position %d\n", buffer, map->map_position);
+			ib_printf("%s      position %d\n", buffer, map->map_position);
 			DSQL_pretty(map->map_node, column + 2);
 			map = map->map_next;
 		}
 		DSQL_pretty(node->nod_arg[e_agg_group], column + 1);
 		DSQL_pretty(node->nod_arg[e_agg_rse], column + 1);
-		FREE_MEM_RETURN;
+		return;
 
 	case nod_constant:
 		verb = "constant";
@@ -2342,87 +2321,87 @@ void DSQL_pretty(DSQL_NOD node, int column)
 		relation = context->ctx_relation;
  		procedure = context->ctx_procedure;
 		field = (DSQL_FLD) node->nod_arg[e_fld_field];
-		PRINTF("%sfield %s.%s, context %d\n", buffer,
+		ib_printf("%sfield %s.%s, context %d\n", buffer,
  			(relation != NULL ? 
  				relation->rel_name : 
  				(procedure != NULL ? 
  					procedure->prc_name : 
  					"unknown_db_object")), 
  			field->fld_name, context->ctx_context);
-		FREE_MEM_RETURN;
+		return;
 	
 	case nod_field_name:
-		PRINTF("%sfield name: \"", buffer);
+		ib_printf("%sfield name: \"", buffer);
 		string = (STR) node->nod_arg[e_fln_context];
 		if (string)
-			PRINTF("%s.", string->str_data);
+			ib_printf("%s.", string->str_data);
 		string = (STR) node->nod_arg[e_fln_name];
         if (string != 0) {
-            PRINTF("%s\"\n", string->str_data);
+            ib_printf("%s\"\n", string->str_data);
         }
         else {
-            PRINTF("%s\"\n", "*");
+            ib_printf("%s\"\n", "*");
         }
-		FREE_MEM_RETURN;
+		return;
 
 	case nod_map:
 		verb = "map";
-		PRINTF("%s%s\n", buffer, verb);
+		ib_printf("%s%s\n", buffer, verb);
 		context = (DSQL_CTX) node->nod_arg[e_map_context];
-		PRINTF("%s   context %d\n", buffer, context->ctx_context);
+		ib_printf("%s   context %d\n", buffer, context->ctx_context);
 		for (map = (DSQL_MAP) node->nod_arg[e_map_map]; map; map = map->map_next) {
-			PRINTF("%s   position %d\n", buffer, map->map_position);
+			ib_printf("%s   position %d\n", buffer, map->map_position);
 			DSQL_pretty(map->map_node, column + 1);
 		}
-		FREE_MEM_RETURN;
+		return;
 
 	case nod_position:
 		// nod_position is an ULONG according to pass1.cpp
-		PRINTF("%sposition %"ULONGFORMAT"\n", buffer, (ULONG) *ptr);
-		FREE_MEM_RETURN;
+		ib_printf("%sposition %"ULONGFORMAT"\n", buffer, (ULONG) *ptr);
+		return;
 
 	case nod_relation:
 		context = (DSQL_CTX) node->nod_arg[e_rel_context];
 		relation = context->ctx_relation;
 		procedure = context->ctx_procedure;
  		if( relation != NULL ){ 
- 			PRINTF("%srelation %s, context %d\n",
+ 			ib_printf("%srelation %s, context %d\n",
  				buffer, relation->rel_name, context->ctx_context);
  		} else if ( procedure != NULL ) { 
- 			PRINTF("%sprocedure %s, context %d\n",
+ 			ib_printf("%sprocedure %s, context %d\n",
  				buffer, procedure->prc_name, context->ctx_context);
  		} else {
- 			PRINTF("%sUNKNOWN DB OBJECT, context %d\n",
+ 			ib_printf("%sUNKNOWN DB OBJECT, context %d\n",
  			buffer, context->ctx_context);
  		}
-		FREE_MEM_RETURN;
+		return;
 
 	case nod_variable:
 		variable = (VAR) node->nod_arg[e_var_variable];
         // Adding variable->var_variable_number to display, obviously something
         // is missing from the printf, and Im assuming this was it.
         // (anyway can't be worse than it was MOD 05-July-2002.
-		PRINTF("%svariable %s %d\n", buffer, variable->var_name, variable->var_variable_number);
-		FREE_MEM_RETURN;
+		ib_printf("%svariable %s %d\n", buffer, variable->var_name, variable->var_variable_number);
+		return;
 
 	case nod_var_name:
-		PRINTF("%svariable name: \"", buffer);
+		ib_printf("%svariable name: \"", buffer);
 		string = (STR) node->nod_arg[e_vrn_name];
-		PRINTF("%s\"\n", string->str_data);
-		FREE_MEM_RETURN;
+		ib_printf("%s\"\n", string->str_data);
+		return;
 
 	case nod_parameter:
 		if (node->nod_column){
-			PRINTF("%sparameter: %d\n",	buffer,(USHORT)(ULONG)node->nod_arg[e_par_parameter]);
+			ib_printf("%sparameter: %d\n",	buffer,(USHORT)(ULONG)node->nod_arg[e_par_parameter]);
 		}else{
 			PAR	par=(PAR)node->nod_arg[e_par_parameter];
-			PRINTF("%sparameter: %d\n",	buffer,par->par_index);
+			ib_printf("%sparameter: %d\n",	buffer,par->par_index);
 		}
-		FREE_MEM_RETURN;
+		return;
 
 
     case nod_udf:
-        PRINTF ("%sfunction: \"", buffer);  
+        ib_printf ("%sfunction: \"", buffer);  
     /* nmcc: how are we supposed to tell which type of nod_udf this is ?? */
     /* CVC: The answer is that nod_arg[0] can be either the udf name or the
     pointer to udf struct returned by METD_get_function, so we should resort
@@ -2430,14 +2409,14 @@ void DSQL_pretty(DSQL_NOD node, int column)
         //        switch (node->nod_arg [e_udf_name]->nod_header.blk_type) {
         switch (MemoryPool::blk_type(node->nod_arg [e_udf_name])) {
         case dsql_type_udf:
-            PRINTF ("%s\"\n", ((UDF) node->nod_arg [e_udf_name])->udf_name);
+            ib_printf ("%s\"\n", ((UDF) node->nod_arg [e_udf_name])->udf_name);
             break;
         case dsql_type_str:  
             string = (STR) node->nod_arg [e_udf_name];
-            PRINTF ("%s\"\n", string->str_data);
+            ib_printf ("%s\"\n", string->str_data);
             break;
         default:
-            PRINTF ("%s\"\n", "<ERROR>");
+            ib_printf ("%s\"\n", "<ERROR>");
             break;
         }
         ptr++;
@@ -2445,7 +2424,7 @@ void DSQL_pretty(DSQL_NOD node, int column)
         if (node->nod_count == 2) {
             DSQL_pretty (*ptr, column + 1);
         }
-        FREE_MEM_RETURN;
+        return;
 
 	default:
 		sprintf(s, "unknown type %d", node->nod_type);
@@ -2453,12 +2432,12 @@ void DSQL_pretty(DSQL_NOD node, int column)
 	}
 
 	if (node->nod_desc.dsc_dtype) {
-		PRINTF("%s%s (%d,%d,%p)\n",
+		ib_printf("%s%s (%d,%d,%p)\n",
 			   buffer, verb,
 			   node->nod_desc.dsc_dtype,
 			   node->nod_desc.dsc_length, node->nod_desc.dsc_address);
 	} else {
-		PRINTF("%s%s\n", buffer, verb);
+		ib_printf("%s%s\n", buffer, verb);
 	}
 	++column;
 
@@ -2466,7 +2445,7 @@ void DSQL_pretty(DSQL_NOD node, int column)
 		DSQL_pretty(*ptr++, column);
 	}
 
-	FREE_MEM_RETURN;
+	return;
 }
 #endif
 
@@ -2589,7 +2568,7 @@ static void cleanup_transaction (FRBRD * tra_handle, SLONG arg)
 			/*
 			 * we are expected to be within the subsystem when we do this
 			 * cleanup, for now do a thread_enter/thread_exit here.
-			 * Note that the function GDS_DSQL_FREE() calls the local function.
+			 * Note that the function dsql8_free_statement() calls the local function.
 			 * Over the long run, it might be better to move the subsystem_exit()
 			 * call in why.c below the cleanup handlers. smistry 9-27-98
 			 */
@@ -4038,7 +4017,7 @@ static void map_in_out(	DSQL_REQ		request,
 static USHORT name_length( TEXT * name)
 {
 	TEXT *p, *q;
-#define	BLANK	'\040'
+	const char BLANK = '\040';
 
 	q = name - 1;
 	for (p = name; *p; p++) {
@@ -4645,9 +4624,6 @@ static ISC_STATUS return_success(void)
 }
 
 
-#define ToUC(s) (reinterpret_cast<UCHAR *>(s))
-#define ToSC(s) (reinterpret_cast<SCHAR *>(s))
-
 /**
   
  	var_info
@@ -4781,29 +4757,29 @@ static UCHAR *var_info(
 					break;
 
 				case gds_info_sql_field:
-					if (buffer = ToUC(par->par_name))
-						length = strlen(ToSC(buffer));
+					if (buffer = reinterpret_cast<UCHAR *>(par->par_name))
+						length = strlen(reinterpret_cast<SCHAR *>(buffer));
 					else
 						length = 0;
 					break;
 
 				case gds_info_sql_relation:
-					if (buffer = ToUC(par->par_rel_name))
-						length = strlen(ToSC(buffer));
+					if (buffer = reinterpret_cast<UCHAR *>(par->par_rel_name))
+						length = strlen(reinterpret_cast<SCHAR *>(buffer));
 					else
 						length = 0;
 					break;
 
 				case gds_info_sql_owner:
-					if (buffer = ToUC(par->par_owner_name))
-						length = strlen(ToSC(buffer));
+					if (buffer = reinterpret_cast<UCHAR *>(par->par_owner_name))
+						length = strlen(reinterpret_cast<SCHAR *>(buffer));
 					else
 						length = 0;
 					break;
 
 				case gds_info_sql_alias:
-					if (buffer = ToUC(par->par_alias))
-						length = strlen(ToSC(buffer));
+					if (buffer = reinterpret_cast<UCHAR *>(par->par_alias))
+						length = strlen(reinterpret_cast<SCHAR *>(buffer));
 					else
 						length = 0;
 					break;

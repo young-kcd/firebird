@@ -56,9 +56,10 @@
 #include <descrip.h>
 #endif
 
-
-#define NAME_statement	1
-#define NAME_cursor		2
+enum name_type {
+	NAME_statement = 1,
+	NAME_cursor = 2
+};
 
 typedef FRBRD* HNDL;
 

@@ -32,21 +32,23 @@
 #include "../dsql/utld_proto.h"
 #include "../jrd/gds_proto.h"
 
-#define PP_CREATE	0
-#define PP_DATABASE	1
-#define PP_SCHEMA	2
-#define PP_PAGE_SIZE	3
-#define PP_USER		4
-#define PP_PASSWORD	5
-#define PP_PAGESIZE	6
-#define PP_LENGTH	7
-#define PP_PAGES	8
-#define PP_PAGE		9
-#define PP_SET		10
-#define PP_NAMES	11
+enum pp_vals {
+	PP_CREATE = 0,
+	PP_DATABASE = 1,
+	PP_SCHEMA = 2,
+	PP_PAGE_SIZE = 3,
+	PP_USER = 4,
+	PP_PASSWORD = 5,
+	PP_PAGESIZE = 6,
+	PP_LENGTH = 7,
+	PP_PAGES = 8,
+	PP_PAGE = 9,
+	PP_SET = 10,
+	PP_NAMES = 11
+};
 
 
-#define MAX_TOKEN_SIZE	1024
+const int MAX_TOKEN_SIZE = 1024;
 
 
 /* use STUFF_DPB in place of STUFF to avoid confusion with BLR STUFF
@@ -84,14 +86,15 @@ static const PP_TABLE pp_symbols[] = {
 
 /* define the tokens */
 
-#define NO_MORE_TOKENS		-1
-#define TOKEN_TOO_LONG		-2
-#define UNEXPECTED_END_OF_COMMAND -3
-#define UNEXPECTED_TOKEN	-4
-#define STRING			257
-#define NUMERIC			258
-#define SYMBOL			259
-
+enum token_vals {
+	NO_MORE_TOKENS = -1,
+	TOKEN_TOO_LONG = -2,
+	UNEXPECTED_END_OF_COMMAND = -3,
+	UNEXPECTED_TOKEN = -4,
+	STRING = 257,
+	NUMERIC = 258,
+	SYMBOL = 259
+};
 
 /**
   

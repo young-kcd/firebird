@@ -42,7 +42,7 @@
 
 DATABASE DB = STATIC FILENAME "yachts.lnk";
 
-#define ARRAY_DESC_COLUMN_MAJOR		1	/* Set for FORTRAN */
+const int array_desc_column_major = 1;	// Set for FORTRAN
 
 typedef struct gen {
 	UCHAR *gen_sdl;
@@ -428,7 +428,7 @@ static ISC_STATUS gen_sdl(ISC_STATUS * status,
 	if (stuff_string(gen, gds_sdl_field, desc->array_desc_field_name))
 		return status[1];
 
-	if (desc->array_desc_flags & ARRAY_DESC_COLUMN_MAJOR) {
+	if (desc->array_desc_flags & array_desc_column_major) {
 		from = dimensions - 1;
 		to = -1;
 		increment = -1;

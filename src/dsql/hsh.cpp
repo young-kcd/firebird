@@ -35,7 +35,7 @@
 
 
 ASSERT_FILENAME
-#define HASH_SIZE 211
+const int HASH_SIZE = 211;
 static SSHORT hash(SCHAR *, USHORT);
 static bool remove_symbol(struct sym **, struct sym *);
 static bool scompare(TEXT *, USHORT, TEXT *, USHORT);
@@ -54,11 +54,21 @@ static SYM *hash_table;
 #ifdef  SUPERSERVER
 static MUTX_T hash_mutex;
 static USHORT hash_mutex_inited = 0;
-#define LOCK_HASH       THD_mutex_lock (&hash_mutex)
-#define UNLOCK_HASH     THD_mutex_unlock (&hash_mutex);
+static inline void lock_hash()
+{
+	THD_mutex_lock (&hash_mutex);
+}
+static inline void unlock_hash()
+{
+	THD_mutex_unlock (&hash_mutex);
+}
 #else
-#define LOCK_HASH
-#define UNLOCK_HASH
+static inline void lock_hash()
+{
+}
+static inline void unlock_hash()
+{
+}
 #endif
 
 
@@ -110,7 +120,7 @@ void HSHD_debug(void)
 
 /* dump each hash table entry */
 
-	LOCK_HASH;
+	lock_hash();
 	for (h = 0; h < HASH_SIZE; h++) {
 		for (collision = hash_table[h]; collision;
 			 collision = collision->sym_collision) {
@@ -127,7 +137,7 @@ void HSHD_debug(void)
 			}
 		}
 	}
-	UNLOCK_HASH;
+	unlock_hash();
 }
 #endif
 
@@ -177,7 +187,7 @@ void HSHD_finish( void *database)
 
 /* check each hash table entry */
 
-	LOCK_HASH;
+	lock_hash();
 	for (h = 0; h < HASH_SIZE; h++) {
 		for (collision = &hash_table[h]; *collision;) {
 			/* check any homonyms first */
@@ -208,7 +218,7 @@ void HSHD_finish( void *database)
 				collision = &chain->sym_collision;
 		}
 	}
-	UNLOCK_HASH;
+	unlock_hash();
 }
 
 
@@ -228,7 +238,7 @@ void HSHD_insert(SYM symbol)
 	void *database;
 	SYM old;
 
-	LOCK_HASH;
+	lock_hash();
 	h = hash(symbol->sym_string, symbol->sym_length);
 	database = symbol->sym_dbb;
 
@@ -241,13 +251,13 @@ void HSHD_insert(SYM symbol)
 		{
 			symbol->sym_homonym = old->sym_homonym;
 			old->sym_homonym = symbol;
-			UNLOCK_HASH;
+			unlock_hash();
 			return;
 		}
 
 	symbol->sym_collision = hash_table[h];
 	hash_table[h] = symbol;
-	UNLOCK_HASH;
+	unlock_hash();
 }
 
 
@@ -273,7 +283,7 @@ SYM HSHD_lookup(void*    database,
 				USHORT   parser_version)
 {
 
-	LOCK_HASH;
+	lock_hash();
 	SSHORT h = hash(string, length);
 	for (SYM symbol = hash_table[h]; symbol; symbol = symbol->sym_collision)
 	{
@@ -284,7 +294,7 @@ SYM HSHD_lookup(void*    database,
 			while (symbol && symbol->sym_type != type) {
 				symbol = symbol->sym_homonym;
 			}
-			UNLOCK_HASH;
+			unlock_hash();
 
 			/* If the symbol found was not part of the list of keywords for the
 			 * client connecting, then assume nothing was found
@@ -301,7 +311,7 @@ SYM HSHD_lookup(void*    database,
 		}
 	}
 
-	UNLOCK_HASH;
+	unlock_hash();
 	return NULL;
 }
 
@@ -321,19 +331,19 @@ void HSHD_remove( SYM symbol)
 	SYM *collision;
 	SSHORT h;
 
-	LOCK_HASH;
+	lock_hash();
 	h = hash(symbol->sym_string, symbol->sym_length);
 
 	for (collision = &hash_table[h]; *collision;
 		 collision = &(*collision)->sym_collision)
 	{
 		if (remove_symbol(collision, symbol)) {
-			UNLOCK_HASH;
+			unlock_hash();
 			return;
 		}
 	}
 
-	UNLOCK_HASH;
+	unlock_hash();
 	IBERROR(-1, "HSHD_remove failed");
 }
 
@@ -386,7 +396,7 @@ void HSHD_set_flag(
 		return;
 	}
 
-	LOCK_HASH;
+	lock_hash();
 	h = hash(string, length);
 	for (symbol = hash_table[h]; symbol; symbol = symbol->sym_collision) {
 		if (symbol->sym_dbb && (database != symbol->sym_dbb) &&
@@ -418,7 +428,7 @@ void HSHD_set_flag(
 			}
 		}
 	}
-	UNLOCK_HASH;
+	unlock_hash();
 }
 
 
