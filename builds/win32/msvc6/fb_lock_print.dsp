@@ -113,7 +113,7 @@ SOURCE=..\..\..\src\jrd\isc_ipc.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\isc_sync_win32.cpp
+SOURCE=..\..\..\src\jrd\isc_sync.cpp
 # End Source File
 # Begin Source File
 
