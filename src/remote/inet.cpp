@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.63 2003-03-19 13:14:09 dimitr Exp $
+$Id: inet.cpp,v 1.64 2003-03-27 10:39:56 paul_reeves Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -425,9 +425,12 @@ static XDR::xdr_ops inet_ops =
 	inet_destroy
 };
 
-
 #ifndef MAX_PTYPE
-#define MAX_PTYPE	ptype_out_of_band
+#ifdef MULTI_THREAD
+#define MAX_PTYPE       ptype_batch_send
+#else
+#define MAX_PTYPE       ptype_out_of_band
+#endif
 #endif
 
 #define MAXCLIENTS	NOFILE - 10
