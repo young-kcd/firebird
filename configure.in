@@ -75,12 +75,22 @@ case "$target" in
     SHRLIB_EXT=so
     ;;
 
-  *-*-linux*)
+  i*86*-*-linux*)
     MAKEFILE_PREFIX=linux
     PLATFORM=LINUX
     AC_DEFINE(LINUX)
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=N
+    SHRLIB_EXT=so
+    ;;
+
+  *-*-linux*)
+    MAKEFILE_PREFIX=linux_generic
+    INSTALL_PREFIX=linux
+    PLATFORM=LINUX
+    AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
+    LOCK_MANAGER_FLG=Y
+    EDITLINE_FLG=Y
     SHRLIB_EXT=so
     ;;
 
