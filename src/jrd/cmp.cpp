@@ -3064,13 +3064,16 @@ static JRD_NOD pass1(TDBB tdbb,
 			// can't be invariant. This won't optimize all cases, but it is the simplest 
 			// operating assumption for now.
 
-			for (RSE *rse = csb->csb_current_rses.end()-1; 
-				 rse >= csb->csb_current_rses.begin(); rse--) 
-			{
+			if (csb->csb_current_rses.getCount()) {
+				for (RSE *rse = csb->csb_current_rses.end() - 1; 
+					 rse >= csb->csb_current_rses.begin(); rse--) 
+				{
 
-				if (stream_in_rse(stream, *rse))
-					break;
-				(*rse)->nod_flags |= rse_variant;
+					if (stream_in_rse(stream, *rse)) {
+						break;
+					}
+					(*rse)->nod_flags |= rse_variant;
+				}
 			}
 			tail = &csb->csb_rpt[stream];
 			if (!(relation = tail->csb_relation) ||
