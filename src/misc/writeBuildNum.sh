@@ -3,14 +3,14 @@
 # This file is used both to rebuild the header file and to set the 
 # environment variables on the config call
 
-BuildVersion="$Id: writeBuildNum.sh,v 1.1970 2003-01-19 14:42:17 dimitr Exp $"
+BuildVersion="$Id: writeBuildNum.sh,v 1.1971 2003-01-19 14:46:42 dimitr Exp $"
 
 BuildType=T
 MajorVer=1
 MinorVer=5
 RevNo=0
 BuildNum=1987
-BuildSuffix="Firebird 1.5 Alpha 5"
+BuildSuffix="Firebird 1.5 Beta 1"
 
 FIREBIRD_VERSION="$MajorVer.$MinorVer.$RevNo"
 PRODUCT_VER_STRING="$MajorVer.$MinorVer.$RevNo.$BuildNum"
