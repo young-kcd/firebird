@@ -170,6 +170,8 @@ and trigger-new is:
 
 #define SERIES	1
 
+const USHORT MAX_UPDATE_DBKEY_RECURSION_DEPTH = 16;
+
 enum att_type {
     att_end = 0,		/* end of major record */
 
