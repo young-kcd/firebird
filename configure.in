@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.202 2004-08-19 13:50:50 kkuznetsov Exp $
+dnl $Id: configure.in,v 1.203 2004-09-15 09:36:50 kkuznetsov Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -680,6 +680,7 @@ mkdir -p gen/examples
 
 dnl # some .o and .d in this directory (to be removed)
 mkdir -p gen/remote/os/win32
+mkdir -p gen/remote/os/sun
 
 dnl # databases and output
 mkdir -p gen/refDatabases
@@ -724,6 +725,7 @@ mkdir -p temp/boot/msgs
 mkdir -p temp/boot/qli
 mkdir -p temp/boot/remote
 mkdir -p temp/boot/remote/os/win32
+mkdir -p temp/boot/remote/os/sun
 mkdir -p temp/boot/utilities/common
 mkdir -p temp/boot/utilities/gsec
 mkdir -p temp/boot/utilities/gstat
@@ -754,6 +756,7 @@ mkdir -p temp/std/msgs
 mkdir -p temp/std/qli
 mkdir -p temp/std/remote
 mkdir -p temp/std/remote/os/win32
+mkdir -p temp/std/remote/os/sun
 mkdir -p temp/std/utilities/common
 mkdir -p temp/std/utilities/gsec
 mkdir -p temp/std/utilities/gstat
@@ -785,6 +788,7 @@ mkdir -p temp/superclient/msgs
 mkdir -p temp/superclient/qli
 mkdir -p temp/superclient/remote
 mkdir -p temp/superclient/remote/os/win32
+mkdir -p temp/superclient/remote/os/sun
 mkdir -p temp/superclient/utilities/common
 mkdir -p temp/superclient/utilities/gsec
 mkdir -p temp/superclient/utilities/gstat
@@ -815,6 +819,7 @@ mkdir -p temp/superserver/msgs
 mkdir -p temp/superserver/qli
 mkdir -p temp/superserver/remote
 mkdir -p temp/superserver/remote/os/win32
+mkdir -p temp/superserver/remote/os/sun
 mkdir -p temp/superserver/utilities/common
 mkdir -p temp/superserver/utilities/gsec
 mkdir -p temp/superserver/utilities/gstat
