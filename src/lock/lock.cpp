@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.58 2003-07-30 15:14:14 skidder Exp $
+$Id: lock.cpp,v 1.59 2003-08-09 21:51:33 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -281,7 +281,9 @@ static SSHORT LOCK_bugcheck = 0;
 static LHB volatile LOCK_header = NULL;
 static PTR LOCK_owner_offset = 0;
 static OWN LOCK_owner = 0;
+#if defined(USE_BLOCKING_SIGNALS) || defined(DEBUG)
 static SSHORT volatile LOCK_asts = -1;
+#endif
 static int LOCK_pid = 0, LOCK_version = 0;
 static SLONG LOCK_shm_size, LOCK_sem_count;
 
@@ -1642,7 +1644,7 @@ static UCHAR *alloc( SSHORT size, ISC_STATUS * status_vector)
 				*status_vector++ = gds_arg_end;
 			}
 
-			return (UCHAR *) NULL;
+			return NULL;
 		}
 	}
 
@@ -2070,7 +2072,7 @@ static void bug( ISC_STATUS * status_vector, const TEXT * string)
 		}
 	}
 
-	sprintf(s, "Fatal lock manager error: %s, errno: %d", string, ERRNO);
+	sprintf(s, "Fatal lock manager error: %s, errno: %ld", string, ERRNO);
 	gds__log(s);
 	ib_fprintf(ib_stderr, "%s\n", s);
 
@@ -2879,7 +2881,7 @@ static OWN get_manager( BOOLEAN flag)
 /* Oops -- no lock manager.  */
 
 	if (flag)
-		fork_lock_manager((ISC_STATUS *) NULL);
+		fork_lock_manager(NULL);
 
 	return NULL;
 }
@@ -2998,7 +3000,7 @@ static PTR grant_or_que( LRQ request, LBL lock, SSHORT lck_wait)
 
 	if (lck_wait)
 	{
-		(void) wait_for_request(request, lck_wait, (ISC_STATUS *) NULL);
+		(void) wait_for_request(request, lck_wait, NULL);
 
 		/* For performance reasons, we're going to look at the 
 		 * request's status without re-acquiring the lock table.
@@ -5059,8 +5061,7 @@ static USHORT wait_for_request(
    monopolizing the engine
 */
 		THREAD_EXIT;		
-		ret =
-			WaitForSingleObject(owner->own_wakeup_hndl,
+		ret = WaitForSingleObject(owner->own_wakeup_hndl,
 								(timeout - current_time) * 1000);
 		if (ret == WAIT_OBJECT_0 || ret == WAIT_ABANDONED)
 			ret = FB_SUCCESS;
