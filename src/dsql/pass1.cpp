@@ -2241,23 +2241,29 @@ static BOOLEAN invalid_reference(DSQL_REQ request, DSQL_NOD node, DSQL_NOD list,
 				/* Wouldn't it be better to call a error from this 
 				   point where return is TRUE. Then we could give 
 				   the fieldname that's making the trouble */
-				if (!exact_field || !request) {
+				if (!request) {
 					return TRUE;
 				}
 
-				/* If we come here then this Field is used inside a 
-				   sub-select, singular- or exists-predicate.
-				   The ctx_scope_level gives the info how deep the
-				   context is inside the request.
-				   So if the context-scope-level from the field is 
-				   lower as the scope-level from the request then
-				   it is an invalid field */
 				field_context = (DSQL_CTX) node->nod_arg[e_fld_context];
-
 				DEV_BLKCHK(field_context, dsql_type_ctx);
 
-				if (field_context->ctx_scope_level <= request->req_scope_level) {
-					return TRUE;
+				if (!exact_field) {
+					if (field_context->ctx_scope_level >= request->req_scope_level) {
+						return TRUE;
+					}
+				}
+				else {
+					/* If we come here then this Field is used inside a 
+					   sub-select, singular- or exists-predicate.
+					   The ctx_scope_level gives the info how deep the
+					   context is inside the request.
+					   So if the context-scope-level from the field is 
+					   lower as the scope-level from the request then
+					   it is an invalid field */
+					if (field_context->ctx_scope_level <= request->req_scope_level) {
+						return TRUE;
+					}
 				}
 
 				break;
