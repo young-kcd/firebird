@@ -151,40 +151,40 @@ typedef sav *SAV;
 
 ENUM dfw_t {
 	dfw_null,
-		dfw_create_relation,
-		dfw_delete_relation,
-		dfw_update_format,
-		dfw_create_index,
-		dfw_delete_index,
-		dfw_compute_security,
-		dfw_add_file,
-		dfw_add_shadow,
-		dfw_delete_shadow,
-		dfw_modify_file,
-		dfw_erase_file,
-		dfw_delete_field,
-		dfw_delete_global,
-		dfw_delete_rfr,
-		dfw_post_event,
-		dfw_create_trigger,
-		dfw_delete_trigger,
-		dfw_modify_trigger,
-		dfw_load_triggers,
-		dfw_grant,
-		dfw_revoke,
-		dfw_scan_relation,
-		dfw_create_expression_index,
-		dfw_delete_expression_index,
-		dfw_delete_log,
-		dfw_create_log,
-		dfw_create_procedure,
-		dfw_modify_procedure,
-		dfw_delete_procedure,
-		dfw_delete_prm, 
-        dfw_delete_exception, 
-        dfw_unlink_file,
-        dfw_delete_generator,
-        dfw_delete_udf
+	dfw_create_relation,
+	dfw_delete_relation,
+	dfw_update_format,
+	dfw_create_index,
+	dfw_delete_index,
+	dfw_compute_security,
+	dfw_add_file,
+	dfw_add_shadow,
+	dfw_delete_shadow,
+	dfw_modify_file,
+	dfw_erase_file,
+	dfw_delete_field,
+	dfw_delete_global,
+	dfw_delete_rfr,
+	dfw_post_event,
+	dfw_create_trigger,
+	dfw_delete_trigger,
+	dfw_modify_trigger,
+	dfw_load_triggers,
+	dfw_grant,
+	dfw_revoke,
+	dfw_scan_relation,
+	dfw_create_expression_index,
+	dfw_delete_expression_index,
+	dfw_delete_log,
+	dfw_create_log,
+	dfw_create_procedure,
+	dfw_modify_procedure,
+	dfw_delete_procedure,
+	dfw_delete_prm, 
+	dfw_delete_exception, 
+	dfw_unlink_file,
+	dfw_delete_generator,
+	dfw_delete_udf
 };
 
 class dfw : public pool_alloc_rpt<SCHAR, type_dfw>
@@ -193,6 +193,7 @@ class dfw : public pool_alloc_rpt<SCHAR, type_dfw>
 	ENUM dfw_t dfw_type;		/* type of work deferred */
 	struct dfw *dfw_next;		/* next block in transaction */
 	struct lck *dfw_lock;		/* relation creation lock */
+	struct dfw *dfw_args;		/* arguments */
 	SLONG dfw_sav_number;		/* save point number */
 	USHORT dfw_name_length;		/* length of object name */
 	USHORT dfw_id;				/* object id, if appropriate */

@@ -189,6 +189,7 @@ static void get_trigger_dependencies(DFW);
 static void	load_trigs(TDBB, JRD_REL, TRIG_VEC *);
 static FMT	make_format(TDBB, JRD_REL, USHORT *, TFB);
 static USHORT name_length(TEXT *);
+static DFW	post_work(JRD_TRA, SLONG, DFW, ENUM dfw_t, DSC *, USHORT);
 static void put_summary_blob(BLB, enum rsr_t, SLONG[2]);
 static void put_summary_record(BLB, enum rsr_t, UCHAR *, USHORT);
 static void	setup_array(TDBB, BLB, TEXT *, USHORT, TFB);
@@ -643,7 +644,7 @@ void DFW_perform_post_commit_work(JRD_TRA transaction)
 }
 
 
-void DFW_post_work( JRD_TRA transaction, ENUM dfw_t type, DSC * desc, USHORT id)
+class dfw * DFW_post_work( JRD_TRA transaction, ENUM dfw_t type, DSC * desc, USHORT id)
 {
 /**************************************
  *
@@ -652,85 +653,45 @@ void DFW_post_work( JRD_TRA transaction, ENUM dfw_t type, DSC * desc, USHORT id)
  **************************************
  *
  * Functional description
- *	Post a piece of work to be deferred to commit time.
- *	If we already know about it, so much the better.
+ *	Post work to be deferred to commit time.
  *
  **************************************/
-	DFW work, *ptr;
-	const char* string;
-	USHORT length;
-	TEXT temp[256];				/* Must hold largest metadata field */
-	SLONG sav_number;
-
-	if (!desc)
-	{
-		string = NULL;
-		length = 0;
-	}
-	else
-	{
-		/* Find the actual length of the string, searching until the claimed
-		   end of the string, or the terminating \0, whichever comes first. */
-
-		length = MOV_make_string(desc,
-								ttype_metadata,
-								&string,
-								(VARY*)temp,
-								sizeof(temp));
-
-		const char* p = string;
-		const char* q = string + length;
-		while (p < q && *p)
-		{
-			++p;
-		}
-
-		/* Trim trailing blanks (bug 3355) */
-
-		while (--p >= string && *p == ' ')
-			;
-		length = (p + 1) - string;
-	}
 
 /* get the current save point number */
 
-	sav_number = transaction->tra_save_point ?
+	SLONG sav_number = transaction->tra_save_point ?
 		transaction->tra_save_point->sav_number : 0;
 
-/* Check to see if work is already posted */
+/* post work */
 
-	for (ptr = &transaction->tra_deferred_work; (work = *ptr);
-		 ptr = &(*ptr)->dfw_next)
-	{
-		if (work->dfw_type == type &&
-			work->dfw_id == id &&
-			work->dfw_name_length == length &&
-			work->dfw_sav_number == sav_number)
-		{
-			if (!length)
-				return;
-			if (!memcmp(string, work->dfw_name, length)) {
-				++work->dfw_count;
-				return;
-			}
-		}
-	}
+	return post_work(transaction,
+					 sav_number,
+					 transaction->tra_deferred_work,
+					 type,
+					 desc,
+					 id);
+}
 
-/* Not already posted, so do so now. */
 
-	*ptr = work = FB_NEW_RPT(*transaction->tra_pool, length) dfw;
-	work->dfw_type = type;
-	work->dfw_id = id;
-	work->dfw_count = 1;
-	work->dfw_name_length = length;
-	work->dfw_sav_number = sav_number;
-	if (length)
-		MOVE_FAST(string, work->dfw_name, length);
+void DFW_post_work_arg( JRD_TRA transaction, DFW work, DSC * desc, USHORT id)
+{
+/**************************************
+ *
+ *	D F W _ p o s t _ w o r k _ a r g
+ *
+ **************************************
+ *
+ * Functional description
+ *	Post an argument for work to be deferred to commit time.
+ *
+ **************************************/
 
-	if (type != dfw_post_event)
-		transaction->tra_flags |= TRA_deferred_meta;
-	else if (transaction->tra_save_point)
-		transaction->tra_save_point->sav_flags |= SAV_event_post;
+	post_work(transaction,
+			  work->dfw_sav_number,
+			  work->dfw_args,
+			  work->dfw_type,
+			  desc,
+			  id);
 }
 
 
@@ -4030,6 +3991,97 @@ static USHORT name_length(TEXT* name)
 	}
 
 	return ((q + 1) - name);
+}
+
+
+static DFW post_work(JRD_TRA transaction,
+					 SLONG sav_number,
+					 DFW list,
+					 ENUM dfw_t type,
+					 DSC * desc,
+					 USHORT id)
+{
+/**************************************
+ *
+ *	p o s t _ w o r k
+ *
+ **************************************
+ *
+ * Functional description
+ *	Post a piece of work to be deferred to commit time.
+ *	If we already know about it, so much the better.
+ *
+ **************************************/
+	DFW work, *ptr;
+	const char* string;
+	USHORT length;
+	TEXT temp[256];				/* Must hold largest metadata field */
+
+	if (!desc)
+	{
+		string = NULL;
+		length = 0;
+	}
+	else
+	{
+		/* Find the actual length of the string, searching until the claimed
+		   end of the string, or the terminating \0, whichever comes first. */
+
+		length = MOV_make_string(desc,
+								ttype_metadata,
+								&string,
+								(VARY*)temp,
+								sizeof(temp));
+
+		const char* p = string;
+		const char* q = string + length;
+		while (p < q && *p)
+		{
+			++p;
+		}
+
+		/* Trim trailing blanks (bug 3355) */
+
+		while (--p >= string && *p == ' ')
+			;
+		length = (p + 1) - string;
+	}
+
+/* Check to see if work is already posted */
+
+	for (ptr = &list; (work = *ptr); ptr = &(*ptr)->dfw_next)
+	{
+		if (work->dfw_type == type &&
+			work->dfw_id == id &&
+			work->dfw_name_length == length &&
+			work->dfw_sav_number == sav_number)
+		{
+			if (!length)
+				return *ptr;
+			if (!memcmp(string, work->dfw_name, length)) {
+				++work->dfw_count;
+				return *ptr;
+			}
+		}
+	}
+
+/* Not already posted, so do so now. */
+
+	*ptr = work = FB_NEW_RPT(*transaction->tra_pool, length) dfw;
+	work->dfw_type = type;
+	work->dfw_id = id;
+	work->dfw_count = 1;
+	work->dfw_name_length = length;
+	work->dfw_sav_number = sav_number;
+	if (length)
+		MOVE_FAST(string, work->dfw_name, length);
+
+	if (type != dfw_post_event)
+		transaction->tra_flags |= TRA_deferred_meta;
+	else if (transaction->tra_save_point)
+		transaction->tra_save_point->sav_flags |= SAV_event_post;
+
+	return *ptr;
 }
 
 
