@@ -1,3 +1,24 @@
+2003-07-28 21:20  arnobrinkman
+
+	* firebird2/src/dsql/: pass1.cpp, pass1.cpp:
+	
+	bugfix RC4: a higher context was supported with nested aggregates,
+	but this isn't possible.  Only a lower context is possible with
+	nested aggregates.
+
+2003-07-28 11:29  skidder
+
+	* firebird2/doc/sql.extensions/README.explicit_locks:
+	
+	Fix a couple typos
+
+2003-07-28 11:21  skidder
+
+	* firebird2/doc/sql.extensions/: README.explicit_locks,
+	README.order_by_expressions_nulls:
+	
+	Correct docs a little
+
 2003-07-27 20:00  skidder
 
 	* firebird2/doc/sql.extensions/README.order_by_expressions_nulls:
