@@ -122,7 +122,8 @@ const int DEF_CACHE_BUFFERS	= 1000;
 // Using this option causes build problems on Win32 with bison 1.28
 //#define YYSTACK_USE_ALLOCA 1
 
-#define YYSTYPE  dsql_nod*
+typedef dsql_nod* YYSTYPE;
+#define YYSTYPE YYSTYPE
 #if defined(DEBUG) || defined(DEV_BUILD)
 #define YYDEBUG		1
 #endif
