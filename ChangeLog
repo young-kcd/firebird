@@ -1,3 +1,16 @@
+2003-06-15 08:03  stryqx
+
+	* firebird2/configure.in:
+	
+	The check for socklen_t fails on FreeBSD as socklen_t is defined in
+	sys/socket.h. Write a specific check for this on FreeBSD.
+
+2003-06-15 07:57  stryqx
+
+	* firebird2/configure.in:
+	
+	Fix a typo.
+
 2003-06-13 09:56  dimitr
 
 	* firebird2/src/dsql/: dsql.h, pass1.cpp:
