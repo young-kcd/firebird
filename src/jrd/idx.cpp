@@ -901,21 +901,30 @@ static IDX_E check_duplicates(
 	IDX_E result = idx_e_ok;
 	index_desc* insertion_idx = insertion->iib_descriptor;
 
-	record_param rpb;
+	record_param rpb, old_rpb;
 	rpb.rpb_relation = insertion->iib_relation;
 	rpb.rpb_record = NULL;
 	// rpb.rpb_window.win_flags = 0; redundant.
+
+	old_rpb.rpb_relation = insertion->iib_relation;
+	old_rpb.rpb_record = NULL;
+
 	jrd_rel* relation_1 = insertion->iib_relation;
 
 	RecordBitmap::Accessor accessor(insertion->iib_duplicates);
 
 	if (accessor.getFirst())
 	do {
+		bool hasOldValues;
+		const bool isFK = (record_idx->idx_flags & idx_foreign) != 0;
+
 		rpb.rpb_number.setValue(accessor.current());
+
 		if (rpb.rpb_number != insertion->iib_number
-			&& VIO_get_current(tdbb, &rpb, insertion->iib_transaction,
+			&& VIO_get_current(tdbb, &old_rpb, &rpb, insertion->iib_transaction,
 							   tdbb->getDefaultPool(),
-							   (record_idx->idx_flags & idx_foreign) != 0))
+							   isFK, 
+							   hasOldValues) )
 		{
 			// dimitr: we shouldn't ignore status exceptions which take place
 			//		   inside the lock manager. Namely, they are: isc_deadlock,
@@ -931,7 +940,7 @@ static IDX_E check_duplicates(
 			// P.S. I think the check for a status vector should be enough,
 			//      but for sure let's keep the old one as well.
 			//														2003.05.27
-
+/*
 			const bool lock_error =
 				(tdbb->tdbb_status_vector[1] == isc_deadlock ||
 				tdbb->tdbb_status_vector[1] == isc_lock_conflict ||
@@ -939,6 +948,12 @@ static IDX_E check_duplicates(
 			// the above errors are not thrown but returned silently
 
 			if (rpb.rpb_flags & rpb_deleted || lock_error) {
+				result = idx_e_duplicate;
+				break;
+			}
+*/
+			const bool hasCurValues = !(rpb.rpb_flags & rpb_deleted);
+			if (!hasCurValues && !hasOldValues) {
 				result = idx_e_duplicate;
 				break;
 			}
@@ -1010,22 +1025,46 @@ static IDX_E check_duplicates(
 			{
 				bool all_nulls = true;
 				USHORT i;
-				for (i = 0; i < insertion_idx->idx_count; i++) {
-					USHORT field_id = insertion_idx->idx_rpt[i].idx_field;
-					/* In order to "map a null to a default" value (in EVL_field()), 
-					* the relation block is referenced. 
-					* Reference: Bug 10116, 10424 
-					*/
-					const bool flag =
-						EVL_field(relation_1, rpb.rpb_record, field_id, &desc1);
+				for (i = 0; i < insertion_idx->idx_count; i++) 
+				{
+					bool flag_cur = false;
+					USHORT field_id = record_idx->idx_rpt[i].idx_field;
+					const bool flag_idx = EVL_field(relation_2, record, field_id, &desc2);
 
-					field_id = record_idx->idx_rpt[i].idx_field;
-					const bool flag_2 = EVL_field(relation_2, record, field_id, &desc2);
-
-					if (flag != flag_2 || MOV_compare(&desc1, &desc2) != 0) {
-						break;
+					if (hasCurValues)
+					{
+						field_id = insertion_idx->idx_rpt[i].idx_field;
+						/* In order to "map a null to a default" value (in EVL_field()), 
+						* the relation block is referenced. 
+						* Reference: Bug 10116, 10424 
+						*/
+						flag_cur = EVL_field(relation_1, rpb.rpb_record, field_id, &desc1);
 					}
-					all_nulls = all_nulls && !flag && !flag_2;
+
+					const bool notEqualCur = !hasCurValues || 
+						hasCurValues && ( (flag_cur != flag_idx) || (MOV_compare(&desc1, &desc2) != 0) );
+
+					if((isFK || !hasOldValues) && notEqualCur)
+						break;
+
+					if (hasOldValues)
+					{
+						field_id = insertion_idx->idx_rpt[i].idx_field;
+						const bool flag_old = EVL_field(relation_1, old_rpb.rpb_record, field_id, &desc1);
+
+						const bool notEqualOld = (flag_old != flag_idx || MOV_compare(&desc1, &desc2) != 0);
+
+						if(isFK) {
+							if (notEqualCur || notEqualOld)
+								break;
+						}
+						else {
+							if (notEqualCur && notEqualOld)
+								break;
+						}
+					}
+
+					all_nulls = all_nulls && !flag_cur && !flag_idx;
 				}
 
 				if (i >= insertion_idx->idx_count && !all_nulls) {
@@ -1038,6 +1077,9 @@ static IDX_E check_duplicates(
 
 	if (rpb.rpb_record)
 		delete rpb.rpb_record;
+
+	if (old_rpb.rpb_record)
+		delete old_rpb.rpb_record;
 
 	return result;
 }

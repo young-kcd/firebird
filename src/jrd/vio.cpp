@@ -1769,10 +1769,12 @@ bool VIO_get(thread_db* tdbb, record_param* rpb, RecordSource* rsb, jrd_tra* tra
 
 bool VIO_get_current(
 					thread_db* tdbb,
+					record_param* old_rpb, 
 					record_param* rpb, 
 					jrd_tra* transaction, 
 					JrdMemoryPool* pool, 
-					bool foreign_key)
+					bool foreign_key, 
+					bool &has_old_values)
 {
 /**************************************
  *
@@ -1802,6 +1804,8 @@ bool VIO_get_current(
 				  (void*) pool);
 	}
 #endif
+
+	has_old_values = false;
 
 	while (true) {
 		/* If the record doesn't exist, no problem. */
@@ -1951,7 +1955,55 @@ bool VIO_get_current(
 			return true;
 
 		case tra_active:
-			return !foreign_key;
+			// 1. if record just inserted 
+			//	  than FK can't reference it but PK must check it's new value
+			// 2. if record just deleted 
+			//    than FK can't reference it but PK must check it's old value
+			// 3. if record just modified
+			//	  than FK can reference it if old key values are equal to new 
+			//	  key values and equal FK values
+			//	  PK is ok if PK values are not equal to old and not equal to 
+			//	  new values 
+
+			if (!rpb->rpb_b_page)
+				return !foreign_key;
+			else if (old_rpb)
+			{
+				Record* data = rpb->rpb_prior;
+				*old_rpb = *rpb;
+				old_rpb->rpb_record = NULL;
+				
+				if(!DPM_fetch(tdbb, old_rpb, LCK_read))
+				{
+					return false; // record deleted 
+				}
+
+				// if record was changed between reads  
+				// start all over again
+				if (old_rpb->rpb_b_page != rpb->rpb_b_page ||
+					old_rpb->rpb_b_line != rpb->rpb_b_line ||
+					old_rpb->rpb_f_page != rpb->rpb_f_page ||
+					old_rpb->rpb_f_line != rpb->rpb_f_line ||
+					old_rpb->rpb_flags != rpb->rpb_flags)
+				{
+					continue;
+				}
+
+				if (!old_rpb->rpb_b_page)
+					return !foreign_key;
+
+				old_rpb->rpb_prior = (old_rpb->rpb_flags & rpb_delta) ? data : NULL;
+				if(!DPM_fetch_back(tdbb, old_rpb, LCK_read, 1))
+				{
+					return !foreign_key; 
+				}
+
+				VIO_data(tdbb, old_rpb, pool);
+				has_old_values = true;
+				return true;
+			}
+			else
+				return !foreign_key;
 
 		case tra_dead:
 			if (transaction->tra_attachment->att_flags & ATT_no_cleanup) {
