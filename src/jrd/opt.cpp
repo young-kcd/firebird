@@ -5642,10 +5642,13 @@ static jrd_nod* make_inference_node(CompilerScratch* csb, jrd_nod* boolean,
 /* Arguments after the first two are just cloned (eg: LIKE ESCAPE clause) */
 	for (USHORT n = 2; n < boolean->nod_count; n++)
 		node->nod_arg[n] = CMP_clone_node(tdbb, csb, boolean->nod_arg[n]);
-	// Assign impure area for cached invariant value if needed --
-	// used to hold pre-compiled patterns for new LIKE and CONTAINING algorithms
+	// Share impure area for cached invariant value used to hold pre-compiled
+	// pattern for new LIKE and CONTAINING algorithms.
+	// Proper cloning of impure area for this node would require careful accounting
+	// of new invariant dependencies - we avoid such hassles via using single 
+	// cached pattern value for all node clones. This is faster too.
 	if (node->nod_flags & nod_invariant)
-		node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+		node->nod_impure = boolean->nod_impure;
 	return node;
 }
 
