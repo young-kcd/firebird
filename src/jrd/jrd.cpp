@@ -5494,28 +5494,31 @@ static Database* init(thread_db*	tdbb,
 
 	if ((dbb->dbb_flags & (DBB_gc_cooperative | DBB_gc_background)) == 0)
 	{
-		const char* gc_policy = Config::getGCPolicy();
-		if (stricmp(gc_policy, GCPolicyCooperative) == 0) {
+		Firebird::string gc_policy = Config::getGCPolicy();
+		if (gc_policy == GCPolicyCooperative) {
 			dbb->dbb_flags |= DBB_gc_cooperative;
 		}
-		else if (stricmp(gc_policy, GCPolicyBackground) == 0) {
+		else if (gc_policy == GCPolicyBackground) {
 			dbb->dbb_flags |= DBB_gc_background;
 		}
-		else if (stricmp(gc_policy, GCPolicyCombined) == 0) {
+		else if (gc_policy == GCPolicyCombined) {
 			dbb->dbb_flags |= DBB_gc_cooperative | DBB_gc_background;
 		}
 		else // config value is invalid, use default
-			if (stricmp(GCPolicyDefault, GCPolicyCooperative) == 0) {
+		{
+			gc_policy = GCPolicyDefault;
+			if (gc_policy == GCPolicyCooperative) {
 				dbb->dbb_flags |= DBB_gc_cooperative;
 			}
-			else if (stricmp(GCPolicyDefault, GCPolicyBackground) == 0) {
+			else if (gc_policy == GCPolicyBackground) {
 				dbb->dbb_flags |= DBB_gc_background;
 			}
-			else if (stricmp(GCPolicyDefault, GCPolicyCombined) == 0) {
+			else if (gc_policy == GCPolicyCombined) {
 				dbb->dbb_flags |= DBB_gc_cooperative | DBB_gc_background;
 			}
 			else 
 				fb_assert(false);
+		}
 	}
 
 /* Initialize a number of subsystems */
