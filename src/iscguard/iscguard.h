@@ -19,8 +19,8 @@
 #define APP_NAME        "Firebird Guardian"
 #define APP_LABEL       "Firebird Guardian"
 #define CLASS_NAME      "IB_Guard"
-#define	IBSERVER	    "ibserver.exe"
-#define GUARDIAN_HELP_FILE "ibserver.hlp"
+#define	IBSERVER	    "fbserver.exe"
+#define GUARDIAN_HELP_FILE "fbserver.hlp"
 
 /* Help Constants */
 #define ibs_server_directory    8060

@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.linux:	DEV	$(PLATFORM)
-#$Id: makefile.old,v 1.1 2001-07-23 16:05:46 skywalker Exp $
+#$Id: makefile.old,v 1.2 2002-09-08 07:56:51 dimitr Exp $
 #Revision 1.6  2000/12/01 11:20:31  fsg
 #Added SHRLIB_EXT to  prefix.linux
 #
@@ -140,7 +140,7 @@ UTILITIES=
 WAL_P_OBJS=		wal_p_objects
 
 
-SUPER_SERVER_DEST=	source/interbase/bin/ibserver
+SUPER_SERVER_DEST=	source/interbase/bin/fbserver
 INET_SERVER_DEST=	source/interbase/bin/gds_inet_server
 DNET_SERVER_DEST=	source/interbase/bin/gds_dnet_server
 AMBX_SERVER_DEST=	source/interbase/bin/gds_server

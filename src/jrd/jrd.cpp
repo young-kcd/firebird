@@ -4169,7 +4169,7 @@ USHORT JRD_getdir(TEXT * buf, USHORT len)
    /**
     An older version of client will not be sending isc_dpb_working directory
     so in all probabilities attachment->att_working_directory will be null.
-    return 0 so that ISC_expand_filename will create the file in ibserver's dir
+    return 0 so that ISC_expand_filename will create the file in fbserver's dir
    **/
 		if (!attachment->att_working_directory ||
 			len - 1 < attachment->att_working_directory->str_length) return 0;

@@ -15,7 +15,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: guard.cpp,v 1.4 2002-07-29 15:37:55 skywalker Exp $
+ * $Id: guard.cpp,v 1.5 2002-09-08 07:56:50 dimitr Exp $
  */
  /* contains the main() and not shared routines for ibguard */
 
@@ -62,7 +62,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
  *
  * Functional description
  *      The main for ibguard. This process is used to start
- *      the super server (ibserver) and keep it running
+ *      the super server (fbserver) and keep it running
  *	after an abnormal termination.
  *
  *      process takes 1 argument:  -f (default) or -o

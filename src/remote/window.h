@@ -28,7 +28,7 @@
 #define APP_VSIZE			150
 
 /* This is the title used by the hidden msgs window in the engine.
-Both gds32.dll and ibserver.exe should use the same. */
+   Both fbclient.dll and fbserver.exe should use the same. */
 #define APP_NAME			"InterBase Server"
 #define APP_LABEL			"Firebird Server"
 
@@ -44,7 +44,7 @@ Both gds32.dll and ibserver.exe should use the same. */
 #define CHECK_USAGE(a)		((a)->dbcv_unitmask & ulInUseMask)
 
 /* This is the class name used by the hidden msgs window in the engine.
-Both gds32.dll and ibserver.exe should use the same. */
+   Both fbclient.dll and fbserver.exe should use the same. */
 static  char *szClassName       = "IB_Server";
 
 #define	IP_CONNECT_MESSAGE	WM_USER + 1

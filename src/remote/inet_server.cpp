@@ -23,7 +23,7 @@
  * FSG 16.03.2001 
  */
 /*
-$Id: inet_server.cpp,v 1.8 2002-08-28 07:10:32 eku Exp $
+$Id: inet_server.cpp,v 1.9 2002-09-08 07:56:50 dimitr Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -365,7 +365,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				/* invalid user -- bail out */
 				ib_fprintf(ib_stderr,
 						   "%s: Invalid user (must be %s, %s, %s or root).\n",
-						   "ibserver", FIREBIRD_USER_NAME,
+						   "fbserver", FIREBIRD_USER_NAME,
 						   INTERBASE_USER_NAME, INTERBASE_USER_SHORT);
 				exit(STARTUP_ERROR);
 			}
@@ -402,7 +402,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		port = INET_server(channel);
 		THREAD_EXIT;
 		if (!port) {
-			ib_fprintf(ib_stderr, "ibserver: Unable to start INET_server\n");
+			ib_fprintf(ib_stderr, "fbserver: Unable to start INET_server\n");
 			exit(STARTUP_ERROR);
 		}
 	}

@@ -1129,7 +1129,7 @@ void HelpCmd(HWND hWnd, HINSTANCE hInst, WPARAM wId)
 /* Show hour glass cursor */
 	hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
 
-	strcpy(strrchr(szPathFileName, '\\') + 1, "ibserver.hlp");
+	strcpy(strrchr(szPathFileName, '\\') + 1, "fbserver.hlp");
 	WinHelp(hWnd, szPathFileName, HELP_CONTEXT, wId);
 
 /* Restore old cursor */

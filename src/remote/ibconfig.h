@@ -25,7 +25,7 @@
 #define IBPAGE_H
 
 #define SERVICE_LEN			128	// MAXIMUM SERVICE PATH LENGTH
-#define SERVER_HELP_FILE	"ibserver.hlp"
+#define SERVER_HELP_FILE	"fbserver.hlp"
 
 void AddConfigPages(HWND, HINSTANCE);
 #ifdef __cplusplus

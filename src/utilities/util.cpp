@@ -1,7 +1,7 @@
 /*
  *      PROGRAM:        InterBase Utility programs
  *      MODULE:         util.c
- *      DESCRIPTION:    Utility routines for ibguard & ibserver
+ *      DESCRIPTION:    Utility routines for fbguard & fbserver
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: util.cpp,v 1.4 2002-07-29 15:37:55 skywalker Exp $
+$Id: util.cpp,v 1.5 2002-09-08 07:56:50 dimitr Exp $
 */
 
 #include "firebird.h"
