@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.42 2003-08-07 10:37:33 aafemt Exp $
+$Id: ibase.h,v 1.43 2003-08-26 07:23:58 dimitr Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -1880,6 +1880,8 @@ enum info_db_provider
 #define isc_spb_sts_hdr_pages		0x04
 #define isc_spb_sts_idx_pages		0x08
 #define isc_spb_sts_sys_relations	0x10
+#define isc_spb_sts_record_versions	0x20
+#define isc_spb_sts_table			0x40
 
 /*************************/
 /* SQL information items */
