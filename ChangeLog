@@ -1,3 +1,10 @@
+2004-08-29 13:24  dimitr
+
+	* firebird2/src/jrd/: cch.cpp (1.102), cch.h (1.23):
+	
+	Removed unused JOURNAL remains and make database statistics working
+	again.
+
 2004-08-29 09:37  robocop
 
 	* firebird2/src/jrd/ini.epp (1.58):
