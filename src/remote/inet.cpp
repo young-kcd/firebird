@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.121 2004-09-22 08:54:39 robocop Exp $
+$Id: inet.cpp,v 1.122 2004-09-22 20:33:07 dimitr Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -455,15 +455,15 @@ rem_port* INET_analyze(	TEXT*	file_name,
 /* We need to establish a connection to a remote server.  Allocate the necessary
    blocks and get ready to go. */
 
-	RDB		rdb		= (RDB) ALLR_block(type_rdb, 0);
-	PACKET*	packet	= &rdb->rdb_packet;
+	RDB rdb = (RDB) ALLR_block(type_rdb, 0);
+	PACKET* packet = &rdb->rdb_packet;
 
 /* Pick up some user identification information */
-	UCHAR	user_id[200];
+	UCHAR user_id[BUFFER_SMALL];
 	user_id[0] = CNCT_user;
 	UCHAR* p = user_id + 2;
-	int		eff_gid;
-	int		eff_uid;
+	int eff_gid;
+	int eff_uid;
 	ISC_get_user(reinterpret_cast<char*>(p), &eff_uid, &eff_gid, 0, 0, 0,
 				 user_string);
 	user_id[1] = (UCHAR) strlen((SCHAR *) p);
@@ -471,7 +471,7 @@ rem_port* INET_analyze(	TEXT*	file_name,
 
 	*p++ = CNCT_host;
 	p++;
-	ISC_get_host(reinterpret_cast <char*>(p), 64);
+	ISC_get_host(reinterpret_cast <char*>(p), MAXHOSTLEN);
 	p[-1] = (UCHAR) strlen((SCHAR *) p);
 
 	for (; *p; p++) {
@@ -605,10 +605,10 @@ rem_port* INET_analyze(	TEXT*	file_name,
 /* once we've decided on a protocol, concatenate the version
    string to reflect it...  */
 
-	TEXT	buffer[64];
-	sprintf(buffer, "%s/P%d", port->port_version->str_data, port->port_protocol);
+	Firebird::string temp;
+	temp.printf("%s/P%d", port->port_version->str_data, port->port_protocol);
 	ALLR_free(port->port_version);
-	port->port_version = REMOTE_make_string(buffer);
+	port->port_version = REMOTE_make_string(temp.c_str());
 
 	if (packet->p_acpt.p_acpt_architecture == ARCHITECTURE) {
 		port->port_flags |= PORT_symmetric;
@@ -668,7 +668,7 @@ rem_port* INET_connect(const TEXT* name,
 #endif
 
 	const TEXT* protocol = NULL;
-	TEXT temp[128];
+	TEXT temp[BUFFER_TINY];
 
 	if (name) {
 		strcpy(temp, name);
@@ -742,8 +742,9 @@ rem_port* INET_connect(const TEXT* name,
 		// client connection
 		host_addr = get_host_address(name);
 
-		if (host_addr.s_addr == INADDR_NONE) {
-			sprintf(msg,
+		if (host_addr.s_addr == INADDR_NONE)
+		{
+			SNPRINTF(msg, FB_NELEM(msg),
 					"INET/INET_connect: gethostbyname (%s) failed, error code = %d",
 					name, H_ERRNO);
 			gds__log(msg, 0);
@@ -811,10 +812,11 @@ rem_port* INET_connect(const TEXT* name,
 			address.sin_port = htons(atoi(protocol));
 		}
 
-		if (address.sin_port == 0) {
+		if (address.sin_port == 0)
+		{
 			/* end of modification by FSG */
 			/* this is the original code */
-			sprintf(msg,
+			SNPRINTF(msg, FB_NELEM(msg),
 					"INET/INET_connect: getservbyname failed, error code = %d",
 					H_ERRNO);
 			gds__log(msg, 0);
@@ -1081,7 +1083,7 @@ static int accept_connection(rem_port* port,
  *	response for protocol selection.
  *
  **************************************/
-	TEXT name[64], password[64];
+	TEXT name[BUFFER_SMALL], password[BUFFER_TINY];
 
 /* Default account to "guest" (in theory all packets contain a name) */
 
@@ -1208,7 +1210,7 @@ static int accept_connection(rem_port* port,
 			eff_gid = passwd->pw_gid;
 #else
 
-			SLONG gids[128];
+			SLONG gids[BUFFER_TINY];
 
 			initgroups(passwd->pw_name, passwd->pw_gid);
 			if (eff_gid != -1) {
@@ -1268,9 +1270,9 @@ static int accept_connection(rem_port* port,
 
 /* store FULL user identity in port_user_name for security purposes */
 
-	SNPRINTF(name, FB_NELEM(name), "%s.%ld.%ld",
-			 name, eff_gid, eff_uid);
-	port->port_user_name = REMOTE_make_string(name);
+	Firebird::string temp;
+	temp.printf("%s.%ld.%ld", name, eff_gid, eff_uid);
+	port->port_user_name = REMOTE_make_string(temp.c_str());
 
 	return TRUE;
 }
@@ -1300,7 +1302,7 @@ static rem_port* alloc_port( rem_port* parent)
  *
  **************************************/
 
-	TEXT buffer[64];
+	TEXT buffer[BUFFER_SMALL];
 
 #ifdef WIN_NT
 	if (!INET_initialized) {
@@ -1309,9 +1311,9 @@ static rem_port* alloc_port( rem_port* parent)
 			if (parent)
 				inet_error(parent, "WSAStartup", isc_net_init_error, INET_ERRNO);
 			else {
-				sprintf(buffer,
-						"INET/alloc_port: WSAStartup failed, error code = %d",
-						INET_ERRNO);
+				SNPRINTF(buffer, FB_NELEM(buffer),
+						 "INET/alloc_port: WSAStartup failed, error code = %d",
+						 INET_ERRNO);
 				gds__log(buffer, 0);
 			}
 			return NULL;
@@ -1338,9 +1340,9 @@ static rem_port* alloc_port( rem_port* parent)
 		INET_max_data = INET_remote_buffer;
 #ifdef DEBUG
 		{
-			char messg[128];
-			sprintf(messg, " Info: Remote Buffer Size set to %ld",
-					INET_remote_buffer);
+			char msg[BUFFER_SMALL];
+			SNPRINTF(msg, FB_NELEM(msg), " Info: Remote Buffer Size set to %ld",
+					 INET_remote_buffer);
 			gds__log(messg, 0);
 		}
 #endif
@@ -1354,7 +1356,7 @@ static rem_port* alloc_port( rem_port* parent)
 	gethostname(buffer, sizeof(buffer));
 	port->port_host = REMOTE_make_string(buffer);
 	port->port_connection = REMOTE_make_string(buffer);
-	sprintf(buffer, "tcp (%s)", port->port_host->str_data);
+	SNPRINTF(buffer, FB_NELEM(buffer), "tcp (%s)", port->port_host->str_data);
 	port->port_version = REMOTE_make_string(buffer);
 
 	START_PORT_CRITICAL();
@@ -1649,7 +1651,7 @@ static int check_host(
 
 	strcpy(host_name, host->h_name);
 
-	TEXT user[64], rhosts[MAXPATHLEN];
+	TEXT user[BUFFER_TINY], rhosts[MAXPATHLEN];
 	if (passwd) {
 		strcpy(user, passwd->pw_name);
 		strcpy(rhosts, passwd->pw_dir);
@@ -1691,10 +1693,10 @@ static bool check_proxy(rem_port* port,
  *
  **************************************/
 	TEXT proxy_file[MAXPATHLEN];
-	TEXT source_user[64];
+	TEXT source_user[BUFFER_TINY];
 	TEXT source_host[MAXHOSTLEN];
-	TEXT target_user[64];
-	TEXT line[128];
+	TEXT target_user[BUFFER_TINY];
+	TEXT line[BUFFER_SMALL];
 
 #ifndef VMS
 	strcpy(proxy_file, PROXY_FILE);
@@ -2163,7 +2165,7 @@ static int parse_hosts( const TEXT* file_name, const TEXT* host_name,
  *	if user_name on host_name should be allowed access.
  *
  *****************************************************************/
-	TEXT line[256], entry1[256], entry2[256];
+	TEXT line[BUFFER_SMALL], entry1[BUFFER_SMALL], entry2[BUFFER_SMALL];
 
 	int result = -1;
 	FILE* fp = fopen(file_name, "r");
@@ -2422,8 +2424,8 @@ static rem_port* select_accept( rem_port* main_port)
 	if (n >= INET_max_clients) {
 		main_port->port_state = state_closed;
 		SOCLOSE((int) main_port->port_handle);
-		TEXT msg[64];
-		sprintf(msg,
+		TEXT msg[BUFFER_SMALL];
+		SNPRINTF(msg, FB_NELEM(msg),
 				"INET/select_accept: exec new server at client limit: %d", n);
 		gds__log(msg, 0);
 
@@ -2524,7 +2526,7 @@ static int select_wait( rem_port* main_port, SLCT * selct)
  *	to read from them.
  *
  **************************************/
-	TEXT msg[64];
+	TEXT msg[BUFFER_SMALL];
 	struct timeval timeout;
 
 	for (;;)
@@ -2632,8 +2634,9 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 #endif
 			else {
 				THREAD_ENTER();
-				sprintf(msg, "INET/select_wait: select failed, errno = %d",
-						INET_ERRNO);
+				SNPRINTF(msg, FB_NELEM(msg),
+						 "INET/select_wait: select failed, errno = %d",
+						 INET_ERRNO);
 				gds__log(msg, 0);
 				return FALSE;
 			}
@@ -2973,7 +2976,7 @@ static int inet_error(
  *	is used to indicate an error.
  *
  **************************************/
-	TEXT msg[64];
+	TEXT msg[BUFFER_SMALL];
 
 	if (status) {
 #ifdef VMS
@@ -2993,7 +2996,8 @@ static int inet_error(
 						   (ISC_STATUS) port->port_connection->str_data,
 						   isc_arg_gds, operation, SYS_ERR, status, 0);
 
-		sprintf(msg, "INET/inet_error: %s errno = %d", function, status);
+		SNPRINTF(msg, FB_NELEM(msg),
+				 "INET/inet_error: %s errno = %d", function, status);
 		gds__log(msg, 0);
 	}
 	else {
