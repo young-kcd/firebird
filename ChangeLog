@@ -1,3 +1,16 @@
+2004-08-10 16:18  kkuznetsov
+
+	* firebird2/doc/README.install.Solaris_on_Intel (1.1.2.2):
+	
+	Some coorections
+
+2004-08-10 16:15  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/Makefile.in
+	(1.1.2.4):
+	
+	Some corrections
+
 2004-08-06 15:49  kkuznetsov
 
 	* firebird2/src/install/arch-specific/solx86gcc/LIBGCC/pkginfolg.in
