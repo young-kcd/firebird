@@ -1010,7 +1010,7 @@ const char gds_info_db_class_cache = 12;
 #define gds__info_rsb_sim_cross		  19
 #define gds__info_rsb_once		  20
 #define gds__info_rsb_procedure		  21
-#define gds__info_rsb_procedure		  22
+#define gds__info_rsb_skip		  22
 
 /**********************/
 /* bitmap expressions */
