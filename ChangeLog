@@ -1,3 +1,162 @@
+2003-01-23 13:25  skidder
+
+	* firebird2/doc/: WhatsNew, WhatsNew:
+	
+	[no log message]
+
+2003-01-23 11:38  skidder
+
+	* firebird2/doc/WhatsNew:
+	
+	Little Beta 1 description change
+
+2003-01-23 10:30  dimitr
+
+	* firebird2/doc/WhatsNew:
+	
+	Added Beta 1 changes. Please review this file and correct, if
+	necessary.
+
+2003-01-23 10:18  dimitr
+
+	* firebird2/src/dsql/: parse.cpp, parse.y:
+	
+	Disallowed PLAN clause in views until it works.
+
+2003-01-23 04:36  brodsom
+
+	* firebird2/builds/win32/msvc6/intl.dsp:
+	
+	Update msvc6 build
+
+2003-01-23 04:34  brodsom
+
+	* firebird2/src/utilities/dba_full.epp:
+	
+	Patch FINISH;
+
+2003-01-23 04:33  brodsom
+
+	* firebird2/src/jrd/: ibase.h, ini.epp, ini_proto.h, intl.h,
+	jrd.cpp:
+	
+	- Move default attachment character set to header - Mode default
+	database character set to header - Add isc_dpb_set_db_charset to
+	use in create_database and apply it
+
+2003-01-23 04:29  brodsom
+
+	* firebird2/src/intl/: hun852dc.h, iceland.h, intl.h, lt2czech.h,
+	mac_437.h, mac_865.h, mac_lat1.h, make.maps, mapcompare.cpp,
+	mapdump.c, mapgen4.c, maptest.cpp, maptest2.c, nordan40.h,
+	polish.h, slovene.h, swedfin.h, turk.h, tx437_865.h, tx437_lat1.h,
+	tx865_lat1.h, undef.h, win1251_ua.h, cs_latin1.h, cs_latin2.h,
+	cs_next.h, cs_sjis.h, cs_w1250.h, cs_w1251.h, cs_w1252.h,
+	cs_w1253.h, cs_w1254.h, csjis2_p.h, cyrr.h, czech.h, db437de0.h,
+	db437es1.h, db437fi0.h, db437fr0.h, db437it0.h, db437nl0.h,
+	db437sv0.h, db437uk0.h, db437us0.h, db850cf0.h, db850de0.h,
+	db850es0.h, db850fr0.h, db850it1.h, db850nl0.h, db850pt0.h,
+	db850sv1.h, db850uk0.h, db850us0.h, db852cz0.h, db852hdc.h,
+	db852po0.h, db852sl0.h, db857tr0.h, db860pt0.h, db863cf1.h,
+	db865da0.h, db865no0.h, db866ru0.h, dtest.c, dtest2.c, cs_860.h,
+	cs_861.h, cs_863.h, cs_865.h, cs_big5.h, cs_cyrl.h, cs_gb2312.h,
+	cs_jis_0208_1990.h, cs_jis_20208_1990.c, cs_ksc5601.h, ansinor4.h,
+	ansislov.h, ansispan.h, ansiswfn.h, anturk.h, ascii.h, ascii2.h,
+	bllt1ca0.h, bllt1da0.h, bllt1de0.h, bllt1es0.h, bllt1fi0.h,
+	bllt1fr0.h, bllt1is0.h, bllt1it0.h, bllt1nl0.h, bllt1no0.h,
+	bllt1pt0.h, bllt1sv0.h, bllt1uk0.h, bllt1us0.h, blnxtde0.h,
+	blnxtes0.h, blnxtfr0.h, blnxtit0.h, blnxtus0.h, cs_437.h, cs_850.h,
+	cs_852.h, cs_857.h, ancyrr.h, anczech.h, angreek1.h, anhun.h,
+	anhundc.h, anpolish.h, ansii850.h, ansiintl.h:
+	
+	Remove moved files
+
+2003-01-23 04:28  brodsom
+
+	* firebird2/src/intl/: cs_big5.c, cs_gb2312.c, cs_jis.c, cs_ksc.c,
+	cs_narrow.c, cv_jis.c, cv_narrow.c, depends.mak, lc_ascii.c,
+	lc_big5.c, lc_dos.c, lc_gb2312.c, lc_jis.c, lc_ksc.c, lc_latin1.c,
+	lc_latin2.c, lc_unicode.c, moved_files.txt:
+	
+	Update moved files references
+
+2003-01-23 04:27  brodsom
+
+	* firebird2/src/intl/: lc_narrow.c, ldcommon.h:
+	
+	Remove DEBUG_LD switch
+
+2003-01-23 04:27  brodsom
+
+	* firebird2/src/intl/charsets.h:
+	
+	Remove CS_ANSI (not used) Add DEFAULT_ATTACHMEN_CHARSET
+
+2003-01-23 04:22  brodsom
+
+	* firebird2/src/intl/utils/: dtest.c, dtest2.c, make.maps,
+	mapcompare.cpp, mapdump.c, mapgen4.c, maptest.cpp, maptest2.c:
+	
+	Create utils directory
+
+2003-01-23 04:21  brodsom
+
+	* firebird2/src/intl/conversions/: tx437_865.h, tx437_lat1.h,
+	tx865_lat1.h:
+	
+	Create conversions directory
+
+2003-01-23 04:21  brodsom
+
+	* firebird2/src/intl/collations/: blNEXTit0.h, blNEXTus0.h,
+	db437de0.h, db437es1.h, db437fi0.h, db437fr0.h, db437it0.h,
+	db437nl0.h, db437sv0.h, db437uk0.h, db437us0.h, db850cf0.h,
+	db850de0.h, db850es0.h, db850fr0.h, db850it1.h, db850nl0.h,
+	db850pt0.h, db850sv1.h, db850uk0.h, db850us0.h, db852cz0.h,
+	db852hdc.h, db852po0.h, db852sl0.h, db857tr0.h, db860pt0.h,
+	db863cf1.h, db865da0.h, db865no0.h, db866ru0.h, pd437intl.h,
+	pd437swedfin.h, pd852czech.h, pd852hundc.h, pd852polish.h,
+	pd852slovene.h, pd857turk.h, pd861iceland.h, pd865nordan40.h,
+	pd866cyrr.h, pw1250czech.h, pw1250hun.h, pw1250hundc.h,
+	pw1250polish.h, pw1250slov.h, pw1251cyrr.h, pw1252i850.h,
+	pw1252intl.h, pw1252nor4.h, pw1252span.h, pw1252swfn.h,
+	pw1253greek1.h, pw1254turk.h, undef.h, xx1251_ua.h, xx88592czech.h,
+	ascii.h, ascii2.h, bl88591ca0.h, bl88591da0.h, bl88591de0.h,
+	bl88591es0.h, bl88591fi0.h, bl88591fr0.h, bl88591is0.h,
+	bl88591it0.h, bl88591nl0.h, bl88591no0.h, bl88591pt0.h,
+	bl88591sv0.h, bl88591uk0.h, bl88591us0.h, blNEXTde0.h, blNEXTes0.h,
+	blNEXTfr0.h:
+	
+	Create collations directory
+
+2003-01-23 04:19  brodsom
+
+	* firebird2/src/intl/charsets/: cs_437.h, cs_850.h, cs_852.h,
+	cs_857.h, cs_860.h, cs_861.h, cs_863.h, cs_865.h, cs_big5.h,
+	cs_cyrl.h, cs_gb2312.h, cs_jis_0208_1990.h, cs_ksc5601.h,
+	cs_latin1.h, cs_latin2.h, cs_next.h, cs_sjis.h, cs_w1250.h,
+	cs_w1251.h, cs_w1252.h, cs_w1253.h, cs_w1254.h:
+	
+	Create charsets directory
+
+2003-01-22 17:37  alexpeshkoff
+
+	* firebird2/src/: jrd/why.cpp, jrd/why_proto.h, jrd/alt.cpp,
+	jrd/perf.cpp, jrd/perf_proto.h, dsql/user_dsql.cpp,
+	remote/interface.cpp, remote/remote.h, remote/server.cpp,
+	utilities/gsec.cpp, utilities/secur_proto.h:
+	
+	Finished y-valve C++ conversion cleanup
+
+2003-01-22 01:17  arnobrinkman
+
+	* firebird2/src/jrd/: cmp.cpp, opt.cpp:
+	
+	More and better optimizations with "complex" JOIN queries (LEFT
+	JOIN, views, sp etc...).  bugfix: An SORT can't be generated when
+	there are already RSBs on the stack, because this will lead to
+	strange values. See also SF BUG # [ 221921 ].
+
 2003-01-21 17:58  alexpeshkoff
 
 	* firebird2/src/ipserver/: ipc.h, ipclient.cpp, ipserver.cpp:
