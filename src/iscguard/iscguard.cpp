@@ -138,7 +138,15 @@ int WINAPI WinMain(
 /* since the flag is set we run as a service */
 	if (service_flag == true) {
 		CNTL_init((FPTR_VOID) WINDOW_main, ISCGUARD_SERVICE);
+//
+// BRS There is a error in MinGW (3.1.0) headers 
+// the parameter of StartServiceCtrlDispatcher is declared const in msvc headers
+//
+#if defined(MINGW)
 		if (!StartServiceCtrlDispatcher(const_cast<SERVICE_TABLE_ENTRY*>(service_table))) {
+#else
+		if (!StartServiceCtrlDispatcher(service_table)) {
+#endif
 			if (GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
 				CNTL_shutdown_service("StartServiceCtrlDispatcher failed");
 		}
