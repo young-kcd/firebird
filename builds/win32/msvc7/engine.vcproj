@@ -360,7 +360,7 @@
 				RelativePath="..\..\..\src\jrd\sdw.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\win32\sha.cpp">
+				RelativePath="..\..\..\src\jrd\sha.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\shut.cpp">
@@ -938,7 +938,7 @@
 				RelativePath="..\..\..\src\jrd\seg_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\sha.h">
+				RelativePath="..\..\..\src\jrd\sha.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\shdef.h">
