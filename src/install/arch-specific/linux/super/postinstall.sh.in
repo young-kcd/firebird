@@ -260,6 +260,7 @@ installInitdScript() {
       then
         srcScript=firebird.init.d.suse
         initScript=/etc/init.d/firebird
+        rm -f /usr/sbin/rcfirebird
         ln -s ../../etc/init.d/firebird /usr/sbin/rcfirebird
 
 # Debian specific
@@ -268,6 +269,7 @@ installInitdScript() {
       then
         srcScript=firebird.init.d.debian
         initScript=/etc/init.d/firebird
+        rm -f /usr/sbin/rcfirebird
         ln -s ../../etc/init.d/firebird /usr/sbin/rcfirebird
 
 # Gentoo specific
