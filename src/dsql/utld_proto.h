@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002-02-23 Sean Leyne - Code Cleanup, removed old Win3.1 port (Windows_Only)
+ *
  */
 
 #ifndef _DSQL_UTLD_PROTO_H_
@@ -34,10 +37,6 @@ extern STATUS DLL_EXPORT UTLD_parse_sqlda(STATUS *, struct dasup *, USHORT *,
 										  USHORT *, USHORT *, USHORT,
 										  XSQLDA *, USHORT);
 extern void DLL_EXPORT UTLD_save_status_strings(STATUS *);
-
-#ifdef  WINDOWS_ONLY
-extern void UTLD_wep(void);
-#endif
 
 #ifdef __cplusplus
 } /* extern "C" */

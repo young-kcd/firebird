@@ -22,6 +22,9 @@
  *
  * 23-Feb-2002 Dmitry Yemanov - Events wildcarding
  *
+ *
+ * 2002-02-23 Sean Leyne - Code Cleanup, removed old Win3.1 port (Windows_Only)
+ *
  */
 
 #ifndef _JRD_EVENT_H_
@@ -31,15 +34,9 @@
 #include "../jrd/file_params.h"
 
 #define PTR			SLONG
-#ifdef WINDOWS_ONLY
-#define BASE                  ((UCHAR huge *) EVENT_header)
-#define REL_PTR(item)         ((UCHAR huge *) item - BASE)
-#define ABS_PTR(item)         (BASE + (UCHAR huge *)item)
-#else
 #define BASE                  ((UCHAR *) EVENT_header)
 #define REL_PTR(item)         ((UCHAR *) item - BASE)
 #define ABS_PTR(item)		(BASE + item)
-#endif /* WINDOWS_ONLY */
 #define ACQUIRE			acquire()
 #define RELEASE			release()
 

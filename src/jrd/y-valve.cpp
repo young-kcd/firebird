@@ -19,9 +19,12 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002-02-23 Sean Leyne - Code Cleanup, removed old Win3.1 port (Windows_Only)
+ *
  */
 /*
-$Id: y-valve.cpp,v 1.1 2001-12-24 02:50:52 tamlin Exp $
+$Id: y-valve.cpp,v 1.2 2002-02-23 22:08:37 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -481,7 +484,7 @@ static CONST_IMAGE IMAGE images[] =
 	"PIPE5", "PIPE5"			/* Pipe interface bridge to V3 */
 };
 
-#else
+#else /* PIPE_CLIENT */
 
 /* Define complicated table for multi-subsystem world */
 
@@ -563,11 +566,6 @@ static SSHORT paths_initialized = 0;
 
 static CONST_IMAGE IMAGE images[] =
 {
-#ifdef WINDOWS_ONLY
-	{"REMOTE", "REMOTE.DLL"},
-	{"STACK", "STACK.DLL"}
-#else
-
 	{"REMINT", "REMINT"},			/* Remote */
 
 #ifdef CSI
@@ -608,9 +606,8 @@ static CONST_IMAGE IMAGE images[] =
 #endif
 #endif
 
-#endif							/* WINDOWS_ONLY */
 };
-#endif
+#endif /* PIPE_CLIENT */
 
 
 #define SUBSYSTEMS		sizeof (images) / (sizeof (IMAGE))
@@ -640,17 +637,12 @@ static CONST ENTRY entrypoints[PROC_count * SUBSYSTEMS] =
 #include "../jrd/entry.h"
 #endif
 
-#ifdef WINDOWS_ONLY
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{win, NULL},
-#include "../jrd/entry.h"
-#else
 #ifndef REQUESTER
 #ifndef SUPERCLIENT
 #define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, cur},
 #include "../jrd/entry.h"
 #endif
 #endif
-#endif							/* WINDOWS_ONLY */
 
 #ifdef V3
 #define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{bridge, NULL},
@@ -777,10 +769,6 @@ STATUS API_ROUTINE GDS_ATTACH_DATABASE(STATUS*	user_status,
 #endif
 
 	GET_STATUS;
-
-#if defined(DEBUG_GDS_ALLOC) && defined(WINDOWS_ONLY)
-	gds_alloc_report(ALLOC_mark_current | ALLOC_silent, __FILE__, __LINE__);
-#endif
 
 	NULL_CHECK(handle, isc_bad_db_handle, HANDLE_database);
 	if (!file_name)
@@ -1867,10 +1855,6 @@ STATUS API_ROUTINE GDS_DETACH(STATUS * user_status, ATT * handle)
 
 	release_handle(dbb);
 	*handle = NULL;
-
-#if defined(DEBUG_GDS_ALLOC) && defined(WINDOWS_ONLY)
-	gds_alloc_report(0L, __FILE__, __LINE__);
-#endif
 
 	CHECK_STATUS_SUCCESS(status);
 	return SUCCESS;
@@ -5152,11 +5136,7 @@ static void check_status_vector(STATUS * status, STATUS expected)
 	STATUS *s, code;
 	ULONG length;
 
-#ifdef	WINDOWS_ONLY
-#define SV_MSG(x)	{ ib_fprintf (ib_stderr, "%s %d check_status_vector: %s\n", __FILE__, __LINE__, (x)); }
-#else
 #define SV_MSG(x)	{ ib_fprintf (ib_stderr, "%s %d check_status_vector: %s\n", __FILE__, __LINE__, (x)); BREAKPOINT (__LINE__); }
-#endif
 
 	s = status;
 	if (!s) {

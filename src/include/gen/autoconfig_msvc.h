@@ -3,6 +3,9 @@
  *                          - MAC (MAC, MAC_AUX and "MAC_CP" defines)
  *                          - EPSON, DELTA, IMP, NCR3000, NeXT, M88K, Cray
  *                          - OS/2, Apollo
+ *
+ * 2002-02-23 Sean Leyne - Code Cleanup, removed old Win3.1 port (Windows_Only)
+ *
  */
 
 #ifndef AUTOCONFIG_H
@@ -65,7 +68,6 @@
 #undef ultrix
 #undef PC_PLATFORM
 #undef NETWARE_386
-#undef WINDOWS_ONLY
 #undef VMS
 #undef AIX
 #define WIN_NT
