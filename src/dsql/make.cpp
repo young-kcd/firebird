@@ -416,16 +416,16 @@ void MAKE_desc(dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 			else
 				desc->dsc_ttype() = ttype_ascii;
 
-			ULONG length = sizeof(USHORT) +
+			ULONG length =
 				((node->nod_arg[0]->nod_type == nod_null) ? 0 : DSC_string_length(&desc1)) +
 				((node->nod_arg[1]->nod_type == nod_null) ? 0 : DSC_string_length(&desc2));
 
-			if (length > MAX_COLUMN_SIZE)
+			if (length > MAX_COLUMN_SIZE - sizeof(USHORT))
 			{
 				length = MAX_COLUMN_SIZE - sizeof(USHORT);
 			}
 
-			desc->dsc_length = length;
+			desc->dsc_length = length + sizeof(USHORT);
 			desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
 		}
 		return;
