@@ -54,7 +54,7 @@ static const struct
 	{type_rpr	, sizeof(rpr)		, 0},
 	{type_rmtque	, sizeof(rmtque)	, 0},
 
-	{type_MIN,	0, 0}
+	{type_MAX,	0, 0}
 };
 
 
