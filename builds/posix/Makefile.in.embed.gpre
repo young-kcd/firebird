@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.gpre,v 1.12 2004-03-25 23:12:31 skidder Exp $
+#  $Id: Makefile.in.embed.gpre,v 1.13 2004-03-28 05:34:47 skidder Exp $
 #
 ROOT=..
 ObjModuleName=embed.gpre
@@ -39,7 +39,7 @@ include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@
 
-GPRE_Other_Sources = jrd/dsc.cpp
+GPRE_Other_Sources = jrd/dsc.cpp jrd/isc.cpp
 GPRE_Files = gpre_meta.epp \
 		cmd.cpp cme.cpp cmp.cpp c_cxx.cpp exp.cpp gpre.cpp \
 		hsh.cpp int_cxx.cpp jrdmet.cpp movg.cpp msc.cpp par.cpp \
