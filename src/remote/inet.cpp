@@ -1268,16 +1268,6 @@ static int accept_connection(rem_port* port,
 }
 
 
-#if defined(SUPERSERVER) && defined(WIN_NT)
-extern "C" {
-	static void atexit_shutdown_winsock()
-	{
-		WSACleanup();
-	}
-}
-#endif	// SUPERSERVER && WIN_NT
-
-
 static rem_port* alloc_port( rem_port* parent)
 {
 /**************************************
@@ -1309,12 +1299,6 @@ static rem_port* alloc_port( rem_port* parent)
 			return NULL;
 		}
 		gds__register_cleanup(exit_handler, 0);
-#if defined(SUPERSERVER) && defined(WIN_NT)
-		// TMN: 2003-03-11: Shutdown Winsock at program exit
-		// Possibly this is also needed for CS, but since I can't test that
-		// I decided to only do it for SS.
-		atexit(&atexit_shutdown_winsock);
-#endif
 		INET_initialized = true;
 	}
 #endif
@@ -1906,6 +1890,7 @@ static void exit_handler( void *arg)
 
 #ifdef WIN_NT
 	if (!main_port) {
+		THD_yield();	// let select in other thread(s) shutdown gracefully
 		WSACleanup();
 		return;
 	}
