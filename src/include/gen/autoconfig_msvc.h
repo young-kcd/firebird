@@ -73,6 +73,7 @@
 #undef HAVE_NETINET_IN_H
 #undef HAVE_RPC_RPC_H
 #undef HAVE_RPC_XDR_H
+#undef HAVE_AIO_H
 
 
 /* Functions */
@@ -98,6 +99,8 @@
 #undef HAVE_INITGROUPS
 #undef HAVE_GETPAGESIZE
 #undef HAVE_XDR_HYPER
+#undef HAVE_PREAD
+#undef HAVE_PWRITE
 
 /* Types */
 #undef socklen_t

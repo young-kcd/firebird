@@ -41,9 +41,13 @@
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <string.h>
+#include <errno.h>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+#ifdef HAVE_AIO_H
+#include <aio.h>
 #endif
 
 #include "../jrd/jrd.h"
@@ -68,19 +72,12 @@
 
 /* SUPERSERVER uses a mutex to allow atomic seek/read(write) sequences.
    SUPERSERVER_V2 uses "positioned" read (write) calls to avoid a seek
-   and allow multiple threads to overlap database I/O.
-    17-Oct-1996  Enabled positioned I/O calls on SOLARIS Superserver. */
-
-#if (defined SUPERSERVER && (defined SOLARIS_MT || defined LINUX))
+   and allow multiple threads to overlap database I/O. */
+#if defined SUPERSERVER
+#if (defined PREAD && defined PWRITE) || defined HAVE_AIO_H
 #define PREAD_PWRITE
-#if !(defined SOLARIS_MT || defined LINUX)
-	/* pread() and pwrite() function calls are provided on SOLARIS.
-	   The aio_read(), aio_*() etc. calls are not implemented on
-	   the HP-UX systems. Once it is implemented, this #include could
-	   be enabled only for HP-UX systems (POSIX). */
-#include <aio.h>
-#endif /* SOLARIS_MT */
-#endif /* SUPERSERVER && (SOLARIS_MT || LINUX) */
+#endif
+#endif
 
 
 extern "C" {
@@ -123,22 +120,20 @@ extern "C" {
 #define O_BINARY	0
 #endif
 
-#ifndef EINTR
-#define EINTR		0
-#endif
-
 #ifdef SUPERSERVER
 #define MASK		0600
 #else
 #define MASK		0666
 #endif
 
-extern int errno;
-
 static void close_marker_file(TEXT *);
 static FIL seek_file(FIL, BDB, UINT64 *, STATUS *);
 static FIL setup_file(DBB, TEXT *, USHORT, int);
 static BOOLEAN unix_error(TEXT *, FIL, STATUS, STATUS *);
+#if defined PREAD_PWRITE && !(defined HAVE_PREAD && defined HAVE_PWRITE)
+static SLONG pread(int, SCHAR *, SLONG, SLONG);
+static SLONG pwrite(int, SCHAR *, SLONG, SLONG);
+#endif
 #ifdef SUPPORT_RAW_DEVICES
 static BOOLEAN  raw_devices_check_file (TEXT *);
 static BOOLEAN  raw_devices_validate_database (int, TEXT *, USHORT);
@@ -1113,7 +1108,7 @@ static BOOLEAN unix_error(
     return FALSE;
 }
 
-#if ((defined PREAD_PWRITE) && !(defined SOLARIS_MT || defined LINUX))
+#if defined PREAD_PWRITE && !(defined HAVE_PREAD && defined HAVE_PWRITE)
 
 /* pread() and pwrite() behave like read() and write() except that they
    take an additional 'offset' argument. The I/O takes place at the specified
@@ -1126,7 +1121,7 @@ static BOOLEAN unix_error(
    using the POSIX asynchronous I/O calls.
 
    NOTE: pread() and pwrite() are defined in UNIX International system
-         interface and are a part of Solaris 2.
+         interface and are a part of POSIX systems.
 */
 
 static SLONG pread(int fd, SCHAR * buf, SLONG nbytes, SLONG offset)
@@ -1195,7 +1190,8 @@ static SLONG pwrite(int fd, SCHAR * buf, SLONG nbytes, SLONG offset)
 	return (aio_return(&io));	/* return I/O status */
 }
 
-#endif /* defined PREAD_PWRITE && ! (defined SOLARIS_MT || LINUX) */
+#endif /* PREAD_PWRITE && !(HAVE_PREAD && HAVE_PWRITE)*/
+
 
 int PIO_unlink (
 	TEXT *file_name)
