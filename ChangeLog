@@ -1,3 +1,98 @@
+2002-10-31 17:07  alexpeshkoff
+
+	* firebird2/builds/win32/msvc6/fbserver.dsp:
+	
+	Minor bug while cleaning netware port
+
+2002-10-31 14:08  dimitr
+
+	* firebird2/src/dsql/parse.y:
+	
+	A bit more cleanup.
+
+2002-10-31 13:22  dimitr
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	Let's report real statement, not it's internal meaning.
+
+2002-10-31 13:15  dimitr
+
+	* firebird2/src/jrd/ail.cpp:
+	
+	A bit more cleanup.
+
+2002-10-31 13:11  dimitr
+
+	* firebird2/src/jrd/ail.cpp:
+	
+	Finilized Sean's cleanup.
+
+2002-10-31 13:01  dimitr
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	Disallowed Nickolay's SAVEPOINT feature for SPs/triggers.
+
+2002-10-31 12:58  dimitr
+
+	* firebird2/src/: jrd/isc_file.cpp, jrd/par.cpp,
+	remote/property.cpp, remote/server.cpp, wal/wal_prnt.cpp:
+	
+	Finilized Sean's cleanup.
+
+2002-10-31 12:28  dimitr
+
+	* firebird2/src/dsql/parse.cpp:
+	
+	Cleaned up to remove those damned line numbers.
+
+2002-10-31 12:26  dimitr
+
+	* firebird2/src/jrd/os/thd_priority.h:
+	
+	Disallowed new priority scheduler for CS builds.
+
+2002-10-31 11:38  dimitr
+
+	* firebird2/src/jrd/: blb.cpp, dpm.epp:
+	
+	Fixed a porting error that led up to database corruption (damaged
+	blob pages).
+
+2002-10-31 06:33  seanleyne
+
+	* firebird2/src/: journal/server.e, jrd/file_params.h, jrd/isc.cpp,
+	jrd/isc_file.cpp, jrd/license.h, lock/fparamv3.h, remote/inet.cpp:
+	
+	Removed obsolete "SUN3_3" port
+
+2002-10-31 06:09  seanleyne
+
+	* firebird2/src/intl/ld.h:
+	
+	Removed support for obsolete "MS_DOS" define
+
+2002-10-31 06:05  seanleyne
+
+	* firebird2/src/: alice/alice.cpp, alice/exe.cpp, burp/burp.cpp,
+	burp/burp.h, burp/canonical.cpp, csv/csi.h, csv/css.cpp,
+	dudley/lex.cpp, dudley/parse.cpp, gpre/gpre.cpp, gpre/gpre.h,
+	include/gen/autoconfig_msvc.h, isql/isql.h, jrd/ail.cpp, jrd/ail.h,
+	jrd/all_old.h, jrd/alt.cpp, jrd/arg.h, jrd/btr.cpp, jrd/cmp.cpp,
+	jrd/common.h, jrd/dpm.epp, jrd/enc.cpp, jrd/exe.cpp, jrd/fil.h,
+	jrd/file_params.h, jrd/gds.cpp, jrd/intl.cpp, jrd/isc.cpp,
+	jrd/isc.h, jrd/isc_file.cpp, jrd/isc_ipc.cpp, jrd/isc_s_proto.h,
+	jrd/jio.cpp, jrd/lck.cpp, jrd/license.h, jrd/ods.h, jrd/perf.cpp,
+	jrd/perf.h, jrd/pio.h, jrd/rse.cpp, jrd/sbm.h, jrd/sort.cpp,
+	jrd/utl.cpp, jrd/val.h, jrd/why.c, jrd/y-valve.cpp,
+	make.new/config/config.h.in, msgs/build_file.epp, qli/dtr.cpp,
+	qli/help.epp, qli/lex.cpp, qli/proc.epp, remote/inet.cpp,
+	remote/inet_server.cpp, remote/remote.h, remote/server.cpp,
+	wal/wal_proto.h:
+	
+	Removed support for obsolete "PC_PLATFORM" define
+
 2002-10-30 15:49  kkuznetsov
 
 	* firebird2/configure.in:
