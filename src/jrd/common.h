@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.69 2003-04-10 07:06:20 eku Exp $
+$Id: common.h,v 1.70 2003-04-13 08:21:49 fsg Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -97,8 +97,12 @@ $Id: common.h,v 1.69 2003-04-10 07:06:20 eku Exp $
 #ifdef LINUX
 #define QUADFORMAT "ll"
 #define QUADCONST(n) (n##LL)
-#define XLONGFORMAT "X"
-#define xLONGFORMAT "x"
+#define SLONGFORMAT "ld"
+#define ULONGFORMAT "lu"
+#define XLONGFORMAT "lX"
+#define xLONGFORMAT "lx"
+
+
 #define __LINE__IS_INT
 
 #ifdef SUPERSERVER
