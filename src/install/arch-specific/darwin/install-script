@@ -1,5 +1,7 @@
 #!/bin/sh
 #
+# $Id: install-script,v 1.1.2.7 2003-12-29 02:12:45 tmcsys Exp $
+#
 # Script args:
 # $0: full path to script
 # $1: full path to top level package dir, no trailing slash
@@ -68,7 +70,7 @@ if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
 	echo -n
 else
 	$FB_FW/Resources/bin/fbmgr.bin -shut -user sysdba -password masterkey
-	rm -rf /Library/StartupItems/Firebird
+	rm -rf /System/Library/StartupItems/Firebird
 fi
 
 # Shutdown any existing servers
@@ -97,11 +99,11 @@ else
     chmod 777 "$FB_FW/Resources/English.lproj/var/security.fdb"
     chmod 777 "$FB_FW/Resources/English.lproj/var/help/help.fdb"
 
-    #chmod a+s "$FB_FW/Resources/bin/gds_drop"
+#	 chmod a+s "$FB_FW/Resources/bin/gds_drop"
     chmod a+s "$FB_FW/Resources/bin/fb_lock_mgr"
     chmod a+s "$FB_FW/Resources/bin/fb_inet_server"
 
-    #chown root "$FB_FW/Resources/bin/gds_drop"
+#	 chown root "$FB_FW/Resources/bin/gds_drop"
     chown root "$FB_FW/Resources/bin/fb_lock_mgr"
     chown root "$FB_FW/Resources/bin/fb_inet_server"
 fi
@@ -109,19 +111,19 @@ fi
 # Install the startup item
 if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
 	if [ -e "$INST_RES/Firebird.startup" ]; then
-		mkdir -p /Library/StartupItems
-		rm -rf /Library/StartupItems/Firebird
-		cp -r "$INST_RES/Firebird.startup" /Library/StartupItems/Firebird
+#		mkdir -p /Library/StartupItems
+		rm -rf /System/Library/StartupItems/Firebird
+		cp -r "$INST_RES/Firebird.startup" /System/Library/StartupItems/Firebird
 	fi
 else
-	rm -rf /Library/StartupItems/Firebird
+	rm -rf /System/Library/StartupItems/Firebird
 fi
 
 
 # Install FBConsole
 #if [ -e FBConsole.app ]; then
-	#mkdir -p /Applications
-	#cp -r FBConsole.app /Applications
+#	mkdir -p /Applications
+#	cp -r FBConsole.app /Applications
 #fi
 
 #
@@ -160,7 +162,7 @@ fi
 
 # Install ourselves in the correct place
 if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
-	cp -r $1/Contents/Resources/StartupItem /Library/StartupItems/Firebird
+	cp -r $1/Contents/Resources/StartupItem /System/Library/StartupItems/Firebird
 else
 	if [ -f /var/run/xinetd.pid -a -d /etc/xinetd.d ]; then
 		cat > /etc/xinetd.d/firebird <<EOF
@@ -229,5 +231,5 @@ fi
 # And last but not least, start the server
 if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
 	#echo Starting Firebird Database Server
-	/Library/StartupItems/Firebird/Firebird start
+	/System/Library/StartupItems/Firebird/Firebird start
 fi
