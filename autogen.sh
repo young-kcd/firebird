@@ -2,7 +2,7 @@
 #
 # Run this to generate all the initial makefiles, etc.
 #
-# $id: $
+# $Id: autogen.sh,v 1.2 2002-08-14 05:44:28 eku Exp $
 
 PKG_NAME=Firebird2
 SRCDIR=`dirname $0`
