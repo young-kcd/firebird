@@ -1,3 +1,23 @@
+2002-11-26 10:00  dimitr
+
+	* firebird2/builds/win32/msvc6/: engine.dsp, engine_classic.dsp,
+	fb_lock_print.dsp, fbclient.dsp, gbak.dsp, gdef.dsp, gfix.dsp,
+	qli.dsp:
+	
+	Updated project files.
+
+2002-11-26 09:58  dimitr
+
+	* firebird2/src/jrd/isc_win32.cpp:
+	
+	Removed isc_win32.cpp.
+
+2002-11-26 09:56  dimitr
+
+	* firebird2/src/jrd/os/win32/mod_loader.cpp:
+	
+	no message
+
 2002-11-25 21:29  arnobrinkman
 
 	* firebird2/src/dsql/pass1.cpp:
