@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.31 2003-05-26 15:46:20 dimitr Exp $
+$Id: btr.cpp,v 1.32 2003-06-27 16:55:58 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -4455,8 +4455,7 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 
 
 static BOOLEAN scan(TDBB tdbb,
-					BTN
-					node,
+					BTN node,
 					SBM * bitmap,
 					UCHAR prefix, KEY * key, USHORT flag)
 {
@@ -4503,7 +4502,7 @@ static BOOLEAN scan(TDBB tdbb,
 
 	flag &= ~irb_equality;
 
-	while (TRUE) {
+	while (true) {
 		number = BTR_get_quad(BTN_NUMBER(node));
 
 		if (number == END_LEVEL) {
@@ -4543,8 +4542,7 @@ static BOOLEAN scan(TDBB tdbb,
 		if (number == END_BUCKET)
 			return TRUE;
 
-		if ((flag & irb_starting)
-			|| !count)
+		if ((flag & irb_starting) || !count)
 			SBM_set(tdbb, bitmap, number);
 		else if (p > (end_key - count))
 			SBM_set(tdbb, bitmap, number);
