@@ -5322,10 +5322,10 @@ static processing_state parse_arg(int argc,
 				BailOnError = true;
 			else if (c == 'E')
 				Echo = true;
+			else if (c == 'M' && s[2] == '2') // It must be before single M option.
+			    Merge_diagnostic = true;
 			else if (c == 'M')
 				Merge_stderr = true;
-			else if (c == 'M' && s[2] == '2')
-			    Merge_diagnostic = true;
 			else if (c == 'N' && UPPER(s[2]) == 'O' && UPPER(s[3]) == 'W')
 				Warnings = false;
 			else if (c == 'N' &&
