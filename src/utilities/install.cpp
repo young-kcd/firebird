@@ -3,24 +3,20 @@
  *	MODULE:			install.cpp
  *	DESCRIPTION:	Functions which help installing components to WinSysDir
  *
- * The contents of this file are subject to the Interbase Public
- * License Version 1.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy
- * of the License at http://www.Inprise.com/IPL.html
+ * The contents of this file are subject to the Independant Developer's
+ * Public License Version 1.0 (the "License"); you may not use this
+ * file except in compliance with the License. You may obtain a copy
+ * of the License at http://www.ibphoenix.com/idpl.html
  *
  * Software distributed under the License is distributed on an
  * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
  * or implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * The Original Code was created by Inprise Corporation
- * and its predecessors. Portions created by Inprise Corporation are
- * Copyright (C) Inprise Corporation.
+ * The Original Code was created by Olivier Mascia
+ * Copyright (C) Olivier Mascia.
  *
- * All Rights Reserved.
  * Contributor(s): ______________________________________.
- *
- * Dec-2003 Olivier Mascia: Initial implementation
  *
  */
 
@@ -151,7 +147,7 @@ USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
 
 	if (client == CLIENT_GDS)
 	{
-		// Patch File Version, this is needed only for GDS32.DLL indeed.
+		// Patch File Version, this is needed only for GDS32.DLL.
 		status = PatchVersion(workfile, newverMS, err_handler);
 		if (status != FB_SUCCESS)
 			return status;
@@ -199,6 +195,7 @@ USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
 				{
 					ULONG werr = GetLastError();
 					FreeLibrary(kernel32);
+					DeleteFile(workfile);
 					return (*err_handler) (werr, "MoveFileEx(delete 'target')");
 				}
 
@@ -206,6 +203,7 @@ USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
 				{
 					ULONG werr = GetLastError();
 					FreeLibrary(kernel32);
+					DeleteFile(workfile);
 					return (*err_handler) (werr, "MoveFileEx(replace 'target')");
 				}
 					
@@ -238,14 +236,18 @@ USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
 		if (WritePrivateProfileString("rename", "NUL", starget,
 				"WININIT.INI") == 0)
 		{
-			return (*err_handler) (GetLastError(),
+			ULONG werr = GetLastError();
+			DeleteFile(workfile);
+			return (*err_handler) (werr,
 				"WritePrivateProfileString(delete 'target')");
 		}
 
 		if (WritePrivateProfileString("rename", starget, sworkfile,
 				"WININIT.INI") == 0)
 		{
-			return (*err_handler) (GetLastError(),
+			ULONG werr = GetLastError();
+			DeleteFile(workfile);
+			return (*err_handler) (werr,
 				"WritePrivateProfileString(replace 'target')");
 		}
 
