@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: srvrmgr.cpp,v 1.17 2004-07-11 10:04:58 robocop Exp $
+ * $Id: srvrmgr.cpp,v 1.18 2004-10-08 08:11:54 robocop Exp $
  */
 
 #include "firebird.h"
@@ -198,100 +198,104 @@ gds__msg_format (0, MSG_FAC, number, MSG_LEN, msg,
     NULL, NULL, NULL, NULL, NULL);
 */
 
+	const char* rs = 0;
+	
 	switch (number) {
 	case MSG_PROMPT:
-		strcpy(msg, "IBMGR>");
+		rs = "IBMGR>";
 		break;
 	case MSG_OPSPEC:
-		strcpy(msg, "operation already specified");
+		rs = "operation already specified";
 		break;
 	case MSG_NOOPSPEC:
-		strcpy(msg, "no operation specified");
+		rs = "no operation specified";
 		break;
 	case MSG_INVSWOP:
-		strcpy(msg, "illegal operation/switch combination");
+		rs = "illegal operation/switch combination";
 		break;
 	case MSG_SHUTDOWN:
-		strcpy(msg, "warning: shutdown is in progress");
+		rs = "warning: shutdown is in progress";
 		break;
 	case MSG_CANTCHANGE:
-		strcpy(msg, "can not change host, password or user");
+		rs = "can not change host, password or user";
 		break;
 	case MSG_VERSION:
-		strcpy(msg, "ibmgr version");
+		rs = "ibmgr version";
 		break;
 	case MSG_INVSW:
-		strcpy(msg, "invalid switch");
+		rs = "invalid switch";
 		break;
 	case MSG_AMBSW:
-		strcpy(msg, "ambiguous switch");
+		rs = "ambiguous switch";
 		break;
 	case MSG_INVSWSW:
-		strcpy(msg, "invalid switch combination");
+		rs = "invalid switch combination";
 		break;
 	case MSG_WARNPASS:
-		strcpy(msg, "warning: only 8 significant bytes of password used");
+		rs = "warning: only 8 significant bytes of password used";
 		break;
 	case MSG_INVUSER:
-		strcpy(msg, "invalid user (only 32 bytes allowed");
+		rs = "invalid user (only 32 bytes allowed";
 		break;
 	case MSG_INVPAR:
-		strcpy(msg, "invalid parameter, no switch specified");
+		rs = "invalid parameter, no switch specified";
 		break;
 	case MSG_SWNOPAR:
-		strcpy(msg, "switch does not take any parameter");
+		rs = "switch does not take any parameter";
 		break;
 	case MSG_REQPAR:
-		strcpy(msg, "switch requires parameter");
+		rs = "switch requires parameter";
 		break;
 	case MSG_SYNTAX:
-		strcpy(msg, "syntax error in command line");
+		rs = "syntax error in command line";
 		break;
 	case MSG_GETPWFAIL:
-		strcpy(msg, "can not get password entry");
+		rs = "can not get password entry";
 		break;
 	case MSG_ATTFAIL:
-		strcpy(msg, "can not attach to server");
+		rs = "can not attach to server";
 		break;
 	case MSG_CANTSHUT:
-		strcpy(msg, "can not start another shutdown");
+		rs = "can not start another shutdown";
 		break;
 	case MSG_SSHUTFAIL:
-		strcpy(msg, "can not start server shutdown");
+		rs = "can not start server shutdown";
 		break;
 	case MSG_SHUTOK:
-		strcpy(msg, "server shutdown completed");
+		rs = "server shutdown completed";
 		break;
 	case MSG_CANTQUIT:
-		strcpy(msg, "can not quit now, use shut -ign");
+		rs = "can not quit now, use shut -ign";
 		break;
 	case MSG_STARTERR:
-		strcpy(msg, "check $FIREBIRD/firebird.log file for errors");
+		rs = "check $FIREBIRD/firebird.log file for errors";
 		break;
 	case MSG_STARTFAIL:
-		strcpy(msg, "can not start server");
+		rs = "can not start server";
 		break;
 	case MSG_SRVUP:
-		strcpy(msg, "server is already running");
+		rs = "server is already running";
 		break;
 	case MSG_SRVUPOK:
-		strcpy(msg, "server has been successfully started");
+		rs = "server has been successfully started";
 		break;
 	case MSG_NOPERM:
-		strcpy(msg, "no permissions to perform operation");
+		rs = "no permissions to perform operation";
 		break;
 	case MSG_PRPOOLFAIL:
-		strcpy(msg, "Failed to print pool info");
+		rs = "Failed to print pool info";
 		break;
 	case MSG_PRPOOLOK:
-		strcpy(msg, "Print pool Successfull");
+		rs = "Print pool Successfull";
 		break;
 	case MSG_FLNMTOOLONG:
-		strcpy(msg, "File name too long");
+		rs = "File name too long";
 		break;
 	default:
-		strcpy(msg, "can not get an error message");
+		rs = "can not get an error message";
 	}
+	
+	strcpy(msg, rs);
 }
 
 
