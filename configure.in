@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.19 2003-12-15 04:32:42 skywalker Exp $
+dnl $Id: configure.in,v 1.141.2.20 2003-12-23 23:23:54 skywalker Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -721,6 +721,7 @@ case "$PLATFORM" in
                      gen/install/scripts/rpmheader.txt:${INSTALL_SRC_DIR}/rpmheader.txt.in
                      gen/install/scripts/rpmfiles.txt:${INSTALL_SRC_DIR}/rpmfiles.txt.in
                      gen/install/misc/firebird.conf:src/install/misc/firebird.conf
+                     gen/install/misc/aliases.conf:src/install/misc/aliases.conf.in
                      gen/install/misc/firebird.xinetd:src/install/arch-specific/linux/misc/firebird.xinetd.in
                      gen/install/misc/firebird.init.d.generic:src/install/arch-specific/linux/misc/firebird.init.d.generic.in
                      gen/install/misc/firebird.init.d.mandrake:src/install/arch-specific/linux/misc/firebird.init.d.mandrake.in
@@ -729,6 +730,8 @@ case "$PLATFORM" in
                      gen/install/misc/firebird.init.d.gentoo:src/install/arch-specific/linux/misc/firebird.init.d.gentoo.in
                      gen/install/misc/rc.config.firebird:src/install/arch-specific/linux/misc/rc.config.firebird.in
                      gen/install/bin/changeDBAPassword.sh:src/install/arch-specific/linux/misc/changeDBAPassword.sh.in
+                     gen/install/bin/changeGdsLibraryCompatibleLink.sh:src/install/arch-specific/linux/misc/changeGdsLibraryCompatibleLink.sh.in
+                     gen/install/bin/createAliasDB.sh:src/install/arch-specific/linux/misc/createAliasDB.sh.in
                      gen/install/bin/fb_config:src/install/misc/fb_config.in
                      gen/install/bin/CSchangeRunUser.sh:src/install/misc/CSchangeRunUser.sh.in
                      gen/install/bin/CSrestoreRootRunUser.sh:src/install/misc/CSrestoreRootRunUser.sh.in
