@@ -1,3 +1,110 @@
+2004-05-17 17:14  brodsom
+
+	* firebird2/src/lock/: lock.cpp (1.99), lock.h (1.27), print.cpp
+	(1.37):
+	
+	Macro cleaning
+
+2004-05-17 17:05  brodsom
+
+	* firebird2/src/: jrd/ods.h (1.24), common/classes/class_perf.cpp
+	(1.10), common/classes/class_test.cpp (1.14), ipserver/ipc.h
+	(1.17):
+	
+	Macro cleaning
+
+2004-05-17 17:02  brodsom
+
+	* firebird2/src/: utilities/sbc_print.cpp (1.25), jrd/que.h (1.6):
+	
+	Use common srq
+
+2004-05-17 17:00  brodsom
+
+	* firebird2/src/intl/: cv_ksc.h (1.6), lc_ksc.cpp (1.12):
+	
+	Move the definition to where it is used
+
+2004-05-17 12:19  brodsom
+
+	* firebird2/src/: intl/charsets/cs_big5.h (1.4),
+	intl/charsets/cs_gb2312.h (1.4), intl/charsets/cs_jis_0208_1990.h
+	(1.4), intl/charsets/cs_ksc5601.h (1.4), jrd/cch.cpp (1.90),
+	jrd/isc.h (1.14), jrd/lck.cpp (1.44), jrd/svc.cpp (1.121),
+	remote/inet.cpp (1.107), remote/inet_server.cpp (1.41),
+	remote/interface.cpp (1.82), remote/parser.cpp (1.18),
+	remote/protocol.cpp (1.44), remote/protocol.h (1.20),
+	remote/remote.cpp (1.34), remote/remote.h (1.33),
+	remote/remote_def.h (1.25), remote/server.cpp (1.81),
+	remote/xdr.cpp (1.18), remote/xdr.h (1.7), remote/xnet.cpp (1.46),
+	remote/xnet.h (1.7), remote/os/win32/cntl.cpp (1.8),
+	remote/os/win32/ibconfig.cpp (1.7), remote/os/win32/ibconfig.h
+	(1.2), remote/os/win32/ibsvrhlp.h (1.2),
+	remote/os/win32/property.cpp (1.9), remote/os/win32/window.cpp
+	(1.8), remote/os/win32/window.h (1.3), remote/os/win32/winmain.cpp
+	(1.8), remote/os/win32/wnet.cpp (1.22):
+	
+	Macro cleaning
+
+2004-05-17 12:16  brodsom
+
+	* firebird2/src/: remote/os/vms/chuser.cpp (1.5), lock/lock.cpp
+	(1.98), misc/codes.epp (1.16), intl/lc_ascii.cpp (1.11),
+	intl/lc_ascii.h (1.7), intl/lc_big5.cpp (1.11), intl/lc_dos.cpp
+	(1.9), intl/lc_iso8859_1.cpp (1.9), intl/lc_jis.cpp (1.11),
+	intl/lc_ksc.cpp (1.11), intl/lc_narrow.cpp (1.10), intl/ld.h
+	(1.24):
+	
+	Macro cleaning
+
+2004-05-17 12:13  brodsom
+
+	* firebird2/src/utilities/: rebuild/rebuild.cpp (1.14),
+	install/services.cpp (1.11), ibmgr/srvrmgr.cpp (1.13), drop.cpp
+	(1.28):
+	
+	Macro cleaning
+
+2004-05-17 03:52  brodsom
+
+	* firebird2/src/jrd/thd.h (1.24):
+	
+	Correction (Pointed by Claudio)
+
+2004-05-17 02:52  brodsom
+
+	* firebird2/src/utilities/install/: install.cpp (1.4), install_nt.h
+	(1.9), install_proto.h (1.2), install_svc.cpp (1.11), registry.cpp
+	(1.10), registry.h (1.5), servi_proto.h (1.7), services.cpp (1.10):
+	
+	Macro cleaning
+
+2004-05-17 02:28  brodsom
+
+	* firebird2/src/utilities/ibmgr/: ibmgr.cpp (1.16), ibmgr.h (1.7),
+	ibmgrswi.h (1.4), srvrmgr.cpp (1.12):
+	
+	Macro cleaning
+
+2004-05-17 02:21  brodsom
+
+	* firebird2/src/utilities/guard/guard.cpp (1.7):
+	
+	Macro cleaning
+
+2004-05-17 02:17  brodsom
+
+	* firebird2/src/: iscguard/iscguard.cpp (1.34),
+	remote/os/win32/srvr_w32.cpp (1.17), utilities/analyse.cpp (1.10),
+	utilities/drop.cpp (1.27), utilities/nbackup.cpp (1.27),
+	utilities/sbc_print.cpp (1.24), utilities/stats.epp (1.10),
+	utilities/gsec/gsec.cpp (1.28), utilities/gsec/gsec.h (1.14),
+	utilities/gsec/gsecswi.h (1.3), utilities/gsec/security.epp (1.11),
+	utilities/gstat/dba.epp (1.37), utilities/gstat/dba_full.epp
+	(1.25), utilities/gstat/dbaswi.h (1.4):
+	
+	Macro cleaning
+
 2004-05-16 04:53  brodsom
 
 	* firebird2/src/intl/: langdrv.h (1.10), ld.h (1.23),
