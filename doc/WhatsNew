@@ -1,6 +1,11 @@
   **************
   * v2.0 Alpha 1
   **************
+
+    * Fixed SF #1116809
+        Incorrect data type conversion
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
   
     * Cleanup
         Command line switch L for SuperServer is no longer recognized as the old local protocol was deleted.

@@ -960,8 +960,14 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 			/* That didn't work - try to force sub2 same type as sub 1 eg: FIELD = ? case */
 			set_parameter_type(sub2, sub1, false);
 		if (sub3)
+		{
 			/* X BETWEEN Y AND ? case */
-			set_parameter_type(sub3, sub2, false);
+			if (!set_parameter_type(sub3, sub1, false))
+			{
+				/* ? BETWEEN Y AND ? case */
+				set_parameter_type(sub3, sub2, false);
+			}
+		}
 		break;
 
 	case nod_like:
