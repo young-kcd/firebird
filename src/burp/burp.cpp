@@ -981,13 +981,6 @@ int DLL_EXPORT BURP_gbak(int		argc,
 	if (*p == '\n')
 		*p = 0;
 
-#ifdef DEV_BUILD
-	if (sw_ods7) {
-		gds__enable_subsystem("GDSSHR5");
-		gds__enable_subsystem("PIPE5");
-	}
-#endif
-
 	tdgbl->action = (ACT) BURP_ALLOC_ZERO(ACT_LEN);
 	tdgbl->action->act_total = 0;
 	tdgbl->action->act_file = NULL;

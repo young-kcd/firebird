@@ -132,9 +132,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	}
 
 	gds__disable_subsystem("REMINT");
-	gds__disable_subsystem("CSI");
-	gds__disable_subsystem("GDSSHR5");
-	gds__disable_subsystem("PIPE5");
 
 	do {
 		db_handle = NULL;

@@ -77,7 +77,6 @@ static TEXT DDL_message[256];
 #define IN_SW_GDEF_PLI 		13	/* source is pli */
 #define IN_SW_GDEF_ADA 		14	/* source is ada */
 #define IN_SW_GDEF_CXX 		15	/* source is C++ */
-#define IN_SW_GDEF_7		16	/* force creation of an ODS 7 database */
 #define IN_SW_GDEF_USER		17	/* user name for PC security */
 #define IN_SW_GDEF_PASSWORD	18	/* password for PC security */
 
@@ -99,9 +98,6 @@ static struct in_sw_tab_t gdef_in_sw_table[] = {
 	{ IN_SW_GDEF_PLI, 0, "PLI", 0, 0, 0, FALSE, 0, 0, "\t\tDYN for PLI" },
 	{ IN_SW_GDEF_ADA, 0, "ADA", 0, 0, 0, FALSE, 0, 0, "\t\tDYN for ADA" },
 	{ IN_SW_GDEF_CXX, 0, "CXX", 0, 0, 0, FALSE, 0, 0, "\t\tDYN for C++" },
-#ifdef DEV_BUILD
-	{ IN_SW_GDEF_7, 0, "7", 0, 0, 0, FALSE, 0, 0, NULL },
-#endif
 	{ IN_SW_GDEF_USER, 0, "USER", 0, 0, 0, FALSE, 0, 0,
 		"\t\tuser name to use in attaching database" },
 	{ IN_SW_GDEF_PASSWORD, 0, "PASSWORD", 0, 0, 0, FALSE, 0, 0,
@@ -133,9 +129,6 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	ACT temp, stack;
 	FIL file;
 	SLONG redir_in, redir_out, redir_err;
-#ifdef DEV_BUILD
-	USHORT sw_ods7;
-#endif
 
 #ifdef VMS
 	argc = VMS_parse(&argv, argc);
@@ -180,9 +173,6 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	DDL_drop_database = DDL_quit = DDL_extract = DDL_dynamic = DDL_trace =
 		DDL_version = FALSE;
 	DDL_default_user = DDL_default_password = NULL;
-#ifdef DEV_BUILD
-	sw_ods7 = FALSE;
-#endif
 
 	file_name_1[0] = file_name_2[0] = 0;
 
@@ -305,12 +295,6 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			}
 			break;
 
-#ifdef DEV_BUILD
-		case IN_SW_GDEF_7:
-			sw_ods7 = TRUE;
-			break;
-#endif
-
 		case IN_SW_GDEF_0:
 			if (*string != '?')
 				DDL_msg_put(1, string, 0, 0, 0, 0);	/* msg 1: gdef: unknown switch %s */
@@ -390,13 +374,6 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		if (!input_file)
 			DDL_exit(FINI_ERROR);
 	}
-
-#ifdef DEV_BUILD
-	if (sw_ods7) {
-		gds__enable_subsystem("GDSSHR5");
-		gds__enable_subsystem("PIPE5");
-	}
-#endif
 
 	LEX_init(input_file);
 	HSH_init();
