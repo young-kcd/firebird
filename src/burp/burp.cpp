@@ -919,7 +919,7 @@ int common_main(int		argc,
 
 	// Initialize 'dpb' and 'dpb_length'
 	UCHAR* dpb = const_cast<UCHAR*>(tdgbl->dpb_string);
-	*dpb++ = gds_dpb_version1;
+	*dpb++ = isc_dpb_version1;
 	*dpb++ = isc_dpb_gbak_attach;
 	*dpb++ = strlen(GDS_VERSION);
 	for (const TEXT* gvp = GDS_VERSION; *gvp;)
@@ -954,8 +954,8 @@ int common_main(int		argc,
 
 			case (IN_SW_BURP_G):
 				if (!tdgbl->dpb_length)
-					*dpb++ = gds_dpb_version1;
-				*dpb++ = gds_dpb_no_garbage_collect;
+					*dpb++ = isc_dpb_version1;
+				*dpb++ = isc_dpb_no_garbage_collect;
 				*dpb++ = 0;
 				tdgbl->dpb_length = dpb - tdgbl->dpb_string;
 				break;
@@ -966,8 +966,8 @@ int common_main(int		argc,
 
 			case (IN_SW_BURP_IG):
 				if (!tdgbl->dpb_length)
-					*dpb++ = gds_dpb_version1;
-				*dpb++ = gds_dpb_damaged;
+					*dpb++ = isc_dpb_version1;
+				*dpb++ = isc_dpb_damaged;
 				*dpb++ = 1;
 				*dpb++ = 1;
 				tdgbl->dpb_length = dpb - tdgbl->dpb_string;
@@ -1007,11 +1007,11 @@ int common_main(int		argc,
 
 			case (IN_SW_BURP_PASS):
 				if (!tdgbl->dpb_length)
-					*dpb++ = gds_dpb_version1;
+					*dpb++ = isc_dpb_version1;
 				if (!tdgbl->gbl_sw_service_gbak)
-					*dpb++ = gds_dpb_password;
+					*dpb++ = isc_dpb_password;
 				else
-					*dpb++ = gds_dpb_password_enc;
+					*dpb++ = isc_dpb_password_enc;
 				*dpb++ = strlen(tdgbl->gbl_sw_password);
 				for (q = tdgbl->gbl_sw_password; *q;)
 					*dpb++ = *q++;
@@ -1050,8 +1050,8 @@ int common_main(int		argc,
 
 			case (IN_SW_BURP_USER):
 				if (!tdgbl->dpb_length)
-					*dpb++ = gds_dpb_version1;
-				*dpb++ = gds_dpb_user_name;
+					*dpb++ = isc_dpb_version1;
+				*dpb++ = isc_dpb_user_name;
 				*dpb++ = strlen(tdgbl->gbl_sw_user);
 				for (q = tdgbl->gbl_sw_user; *q;)
 					*dpb++ = *q++;
@@ -1526,7 +1526,7 @@ void BURP_print_warning(const ISC_STATUS* status_vector)
  **************************************/
 	if (status_vector) {
 		// skip the error, assert that one does not exist 
-		fb_assert(status_vector[0] == gds_arg_gds);
+		fb_assert(status_vector[0] == isc_arg_gds);
 		fb_assert(status_vector[1] == 0);
 		// print the warning message 
 		const ISC_STATUS* vector = &status_vector[2];
@@ -1698,8 +1698,8 @@ static gbak_action open_files(const TEXT* file1,
 				// msg 166: readied database %s for backup 
 		}
 		else if (sw_replace == IN_SW_BURP_B ||
-				 (status_vector[1] != gds_io_error
-				  && status_vector[1] != gds_bad_db_format)) {
+				 (status_vector[1] != isc_io_error
+				  && status_vector[1] != isc_bad_db_format)) {
 			BURP_print_status(status_vector);
 			return QUIT;
 		}
@@ -2015,7 +2015,7 @@ static gbak_action open_files(const TEXT* file1,
 				/* Complain only if the drop database entrypoint is available.
 				   If it isn't, the database will simply be overwritten. */
 
-				if (status_vector[1] != gds_unavailable)
+				if (status_vector[1] != isc_unavailable)
 					BURP_error(233, true, *file2, 0, 0, 0, 0);
 				// msg 233 Cannot drop database %s, might be in use 
 			}

@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.53 2003-11-07 08:05:38 robocop Exp $
+$Id: restore.epp,v 1.54 2003-11-07 23:15:31 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -272,8 +272,8 @@ int RESTORE_restore (const TEXT* file_name,
 		{
 			switch (error_code)
 			{
-				case gds_sort_mem_err:
-				case gds_no_dup:
+				case isc_sort_mem_err:
+				case isc_no_dup:
 					strcpy(index_name, (TEXT *)tdgbl->status_vector[3]);
 					BURP_print_status(tdgbl->status_vector);
 					FOR (REQUEST_HANDLE req_handle3)
@@ -284,7 +284,7 @@ int RESTORE_restore (const TEXT* file_name,
 					 }
 						BURP_print(240, index_name, NULL, NULL, NULL, NULL);
 						/* msg 240 Index \"%s\" failed to activate because: */
-						if ( error_code == gds_no_dup )
+						if ( error_code == isc_no_dup )
 						{
 							BURP_print(241, NULL, NULL, NULL, NULL, NULL);
 							// msg 241 The unique index has duplicate values or NULLs 
@@ -416,8 +416,8 @@ int RESTORE_restore (const TEXT* file_name,
 		if (gds_status [1])
 			general_on_error ();
 		// Check to see if there is a warning 
-		if (gds_status [0] == gds_arg_gds && gds_status [1] == 0
-			&& gds_status [2] != gds_arg_end)
+		if (gds_status [0] == isc_arg_gds && gds_status [1] == 0
+			&& gds_status [2] != isc_arg_end)
 		{
 			BURP_print_warning(gds_status);
 		}
@@ -517,8 +517,8 @@ int RESTORE_restore (const TEXT* file_name,
 	END_ERROR;
 
 	// Check to see if there is a warning 
-	if (gds_status [0] == gds_arg_gds && gds_status [1] == 0
-		&& gds_status [2] != gds_arg_end)
+	if (gds_status [0] == isc_arg_gds && gds_status [1] == 0
+		&& gds_status [2] != isc_arg_end)
 	{
 		BURP_print_warning(gds_status);
 	}
@@ -532,17 +532,17 @@ int RESTORE_restore (const TEXT* file_name,
 
 	UCHAR dpb[128];
 	UCHAR *d = dpb;
-	*d++ = (UCHAR) gds_dpb_version1;
+	*d++ = (UCHAR) isc_dpb_version1;
 
 	if (flag_on_line)
 	{
-		*d++ = (UCHAR) gds_dpb_online;
+		*d++ = (UCHAR) isc_dpb_online;
 		*d++ = 0;
 	}
 
 	if (tdgbl->gbl_sw_user)
 	{
-		*d++ = (UCHAR) gds_dpb_user_name;
+		*d++ = (UCHAR) isc_dpb_user_name;
 		*d++ = (UCHAR) strlen (tdgbl->gbl_sw_user);
 		for (UCHAR* q = (UCHAR*) tdgbl->gbl_sw_user; *q;)
 		*d++ = *q++;
@@ -551,16 +551,16 @@ int RESTORE_restore (const TEXT* file_name,
 	if (tdgbl->gbl_sw_password)
 	{
 		if (!tdgbl->gbl_sw_service_gbak)
-			*d++ = (UCHAR) gds_dpb_password;
+			*d++ = (UCHAR) isc_dpb_password;
 		else
-			*d++ = (UCHAR) gds_dpb_password_enc;
+			*d++ = (UCHAR) isc_dpb_password_enc;
 		*d++ = (UCHAR) strlen (tdgbl->gbl_sw_password);
 		for (UCHAR* q = (UCHAR*) tdgbl->gbl_sw_password; *q;)
 		*d++ = *q++;
 	}
 
 	// set sync writes to engine default 
-	*d++ = (UCHAR) gds_dpb_force_write;
+	*d++ = (UCHAR) isc_dpb_force_write;
 	*d++ = 1;
 	*d++ = (UCHAR) tdgbl->hdr_forced_writes;
 	// set forced writes to the value which was in the header
@@ -597,10 +597,10 @@ int RESTORE_restore (const TEXT* file_name,
 		// msg 280: setting database to read-only access 
 
 		d = dpb;
-		*d++ = (UCHAR) gds_dpb_version1;
+		*d++ = (UCHAR) isc_dpb_version1;
 		if (tdgbl->gbl_sw_user)
 		{
-			*d++ = (UCHAR) gds_dpb_user_name;
+			*d++ = (UCHAR) isc_dpb_user_name;
 			*d++ = (UCHAR) strlen (tdgbl->gbl_sw_user);
 			for (UCHAR* q = (UCHAR*) tdgbl->gbl_sw_user; *q;)
 				*d++ = *q++;
@@ -609,9 +609,9 @@ int RESTORE_restore (const TEXT* file_name,
 		if (tdgbl->gbl_sw_password)
 		{
 			if (!tdgbl->gbl_sw_service_gbak)
-				*d++ = (UCHAR) gds_dpb_password;
+				*d++ = (UCHAR) isc_dpb_password;
 			else
-				*d++ = (UCHAR) gds_dpb_password_enc;
+				*d++ = (UCHAR) isc_dpb_password_enc;
 			*d++ = (UCHAR) strlen (tdgbl->gbl_sw_password);
 			for (UCHAR* q = (UCHAR*) tdgbl->gbl_sw_password; *q;)
 				*d++ = *q++;
@@ -1192,21 +1192,21 @@ bool get_acl (const TEXT	*owner_nm,
 
 	if (isc_open_blob (status_vector, &DB,  &gds_trans, &blob, blob_id))
 	{
-		// msg 24 gds__open_blob failed 
+		// msg 24 isc_open_blob failed 
 		BURP_error_redirect (status_vector, 24, NULL, NULL);
 	}
 
 	if (isc_blob_info (status_vector,  &blob, sizeof(blr_items),
 				   (SCHAR *) blr_items, sizeof(blob_info), (SCHAR*) blob_info))
 	{
-		// msg 20 gds__blob_info failed 
+		// msg 20 isc_blob_info failed 
 		BURP_error_redirect (status_vector, 20, NULL, NULL);
 	}
 
 	SLONG length = 0;
 	p = blob_info;
 
-	while ((item = *p++) != gds_info_end)
+	while ((item = *p++) != isc_info_end)
 	{
 		USHORT l = (USHORT) gds__vax_integer (p, 2);
 		p += 2;
@@ -1241,7 +1241,7 @@ bool get_acl (const TEXT	*owner_nm,
 			// CVC: do you return, without closing the blob, dear function???
 			if (isc_close_blob (status_vector,  &blob))
 				BURP_error_redirect (status_vector, 23, NULL, NULL);
-				// msg 23 gds__close_blob failed
+				// msg 23 isc_close_blob failed
 			return false;
 		}
 	}
@@ -1250,7 +1250,7 @@ bool get_acl (const TEXT	*owner_nm,
 	{
 		if (isc_close_blob (status_vector,  &blob))
 			BURP_error_redirect (status_vector, 23, NULL, NULL);
-			// msg 23 gds__close_blob failed 
+			// msg 23 isc_close_blob failed 
 		return false;
 	}
 
@@ -1279,7 +1279,7 @@ bool get_acl (const TEXT	*owner_nm,
 	{
 		if (buffer != static_buffer)
 			BURP_free (buffer);
-		// msg 23 gds__close_blob failed 
+		// msg 23 isc_close_blob failed 
 		BURP_error_redirect (status_vector, 23, NULL, NULL);
 	}
 
@@ -1319,7 +1319,7 @@ bool get_acl (const TEXT	*owner_nm,
 			BURP_free (buffer);
 		if (new_buffer != NULL)
 			BURP_free (new_buffer);
-		// msg 37 gds__create_blob failed 
+		// msg 37 isc_create_blob failed 
 		BURP_error_redirect (status_vector, 37, 0, 0);
 	}
 
@@ -1330,7 +1330,7 @@ bool get_acl (const TEXT	*owner_nm,
 			BURP_free (buffer);
 		if (new_buffer != NULL)
 			BURP_free (new_buffer);
-		// msg 38 gds__put_segment failed 
+		// msg 38 isc_put_segment failed 
 		BURP_error_redirect (status_vector, 38, 0, 0);
 	}
 
@@ -1340,7 +1340,7 @@ bool get_acl (const TEXT	*owner_nm,
 			BURP_free (buffer);
 		if (new_buffer != NULL)
 			BURP_free (new_buffer);
-		// msg 23 gds__close_blob failed 
+		// msg 23 isc_close_blob failed 
 		BURP_error_redirect (status_vector, 23, 0, 0);
 	}
 
@@ -1508,9 +1508,9 @@ void get_array (BURP_REL	relation,
 
 			// build the sdl 
 
-			stuff(&blr, gds_sdl_version1);
+			stuff(&blr, isc_sdl_version1);
 
-			stuff(&blr, gds_sdl_struct);
+			stuff(&blr, isc_sdl_struct);
 			stuff(&blr, 1);
 
 			if (field->fld_type == blr_text || field->fld_type == blr_varying)
@@ -1532,9 +1532,9 @@ void get_array (BURP_REL	relation,
 				stuff(&blr, field->fld_type);
 
 
-			stuff(&blr, gds_sdl_relation);
+			stuff(&blr, isc_sdl_relation);
 			stuff_string(&blr, relation->rel_name);
-			stuff(&blr, gds_sdl_field);
+			stuff(&blr, isc_sdl_field);
 			stuff_string(&blr, field->fld_name);
 
 			// each element spec starts here  
@@ -1565,7 +1565,7 @@ void get_array (BURP_REL	relation,
 			for (range = field->fld_ranges, count = 0; range < end_ranges;
 				range += 2, count++)
 			{
-				stuff(&blr, gds_sdl_do2);
+				stuff(&blr, isc_sdl_do2);
 				stuff(&blr, count);
 				//
 				// Normally we loop through all dimensions chopping off slices
@@ -1587,21 +1587,21 @@ void get_array (BURP_REL	relation,
 				  field->fld_dimensions-count == 2       &&
 				   last_element_dim[count + 1]  == range[3])
 				{
-					stuff(&blr, gds_sdl_long_integer);
+					stuff(&blr, isc_sdl_long_integer);
 					stuff_long(&blr, range[0]);
 					lower = range[0];
-					stuff(&blr, gds_sdl_long_integer);
+					stuff(&blr, isc_sdl_long_integer);
 					stuff_long(&blr, last_element_dim [count]);
 					upper = last_element_dim[count];
 					elements_written *= (upper - lower + 1);
 					range += 2;
 					count++;
-					stuff(&blr, gds_sdl_do2);
+					stuff(&blr, isc_sdl_do2);
 					stuff(&blr, count);
-					stuff(&blr, gds_sdl_long_integer);
+					stuff(&blr, isc_sdl_long_integer);
 					stuff_long(&blr, range[0]);
 					lower = range[0];
-					stuff(&blr, gds_sdl_long_integer);
+					stuff(&blr, isc_sdl_long_integer);
 					stuff_long(&blr, last_element_dim[count]);
 					upper=last_element_dim[count];
 					elements_written *= (upper - lower + 1);
@@ -1610,10 +1610,10 @@ void get_array (BURP_REL	relation,
 				}
 				if (current_dim == count)
 				{
-					stuff(&blr, gds_sdl_long_integer);
+					stuff(&blr, isc_sdl_long_integer);
 					stuff_long(&blr, range [0]);
 					lower = range [0];
-					stuff(&blr, gds_sdl_long_integer);
+					stuff(&blr, isc_sdl_long_integer);
 					upper = (current_dim == field->fld_dimensions - 1) ?
 					 last_element_dim [count] : (last_element_dim [count] - 1);
 					if (upper < range[0])
@@ -1628,18 +1628,18 @@ void get_array (BURP_REL	relation,
 				}
 				else if (current_dim < count)
 				{
-					stuff(&blr, gds_sdl_long_integer);
+					stuff(&blr, isc_sdl_long_integer);
 					stuff_long(&blr, range [0]);
-					stuff(&blr, gds_sdl_long_integer);
+					stuff(&blr, isc_sdl_long_integer);
 					stuff_long(&blr, range [1]);
 					upper = range[1];
 					lower = range[0];
 				}
 				else if (current_dim > count)
 				{
-					stuff(&blr, gds_sdl_long_integer);
+					stuff(&blr, isc_sdl_long_integer);
 					stuff_long(&blr, last_element_dim [count]);
-					stuff(&blr, gds_sdl_long_integer);
+					stuff(&blr, isc_sdl_long_integer);
 					stuff_long(&blr, last_element_dim [count]);
 					upper = lower = last_element_dim[count];
 				}
@@ -1655,19 +1655,19 @@ void get_array (BURP_REL	relation,
 			ib_fprintf(ib_stderr,"\n Elements Written=%d  ",elements_written);
 #endif
 
-			stuff(&blr, gds_sdl_element);
+			stuff(&blr, isc_sdl_element);
 			stuff(&blr, 1);
-			stuff(&blr, gds_sdl_scalar);
+			stuff(&blr, isc_sdl_scalar);
 			stuff(&blr, 0);
 			stuff(&blr, field->fld_dimensions);
 
 			for (count = 0; count < field->fld_dimensions; count++)
 			{
-				stuff(&blr, gds_sdl_variable);
+				stuff(&blr, isc_sdl_variable);
 				stuff(&blr, count);
 			}
 
-			stuff(&blr, gds_sdl_eoc);
+			stuff(&blr, isc_sdl_eoc);
 
 #ifdef DEBUG
 			if (debug_on)
@@ -1738,9 +1738,9 @@ void get_array (BURP_REL	relation,
 
 		// build the sdl 
 
-		stuff(&blr, gds_sdl_version1);
+		stuff(&blr, isc_sdl_version1);
 
-		stuff(&blr, gds_sdl_struct);
+		stuff(&blr, isc_sdl_struct);
 		stuff(&blr, 1);
 
 		if (field->fld_type == blr_text || field->fld_type == blr_varying)
@@ -1762,36 +1762,36 @@ void get_array (BURP_REL	relation,
 			stuff(&blr, field->fld_type);
 
 
-		stuff(&blr, gds_sdl_relation);
+		stuff(&blr, isc_sdl_relation);
 		stuff_string(&blr, relation->rel_name);
-		stuff(&blr, gds_sdl_field);
+		stuff(&blr, isc_sdl_field);
 		stuff_string(&blr, field->fld_name);
 
 		// each element spec starts here  
 
 		for (range = fld_ranges, count = 0; range < end_ranges; range += 2, count++)
 		{
-			stuff(&blr, gds_sdl_do2);
+			stuff(&blr, isc_sdl_do2);
 			stuff(&blr, count);
-			stuff(&blr, gds_sdl_long_integer);
+			stuff(&blr, isc_sdl_long_integer);
 			stuff_long(&blr, range [0]);
-			stuff(&blr, gds_sdl_long_integer);
+			stuff(&blr, isc_sdl_long_integer);
 			stuff_long(&blr, range [1]);
 		}
 
-		stuff(&blr, gds_sdl_element);
+		stuff(&blr, isc_sdl_element);
 		stuff(&blr, 1);
-		stuff(&blr, gds_sdl_scalar);
+		stuff(&blr, isc_sdl_scalar);
 		stuff(&blr, 0);
 		stuff(&blr, field->fld_dimensions);
 
 		for (count = 0; count < field->fld_dimensions; count++)
 		{
-			stuff(&blr, gds_sdl_variable);
+			stuff(&blr, isc_sdl_variable);
 			stuff(&blr, count);
 		}
 
-		stuff(&blr, gds_sdl_eoc);
+		stuff(&blr, isc_sdl_eoc);
 
 #ifdef DEBUG
 		if (debug_on)
@@ -1929,7 +1929,7 @@ void get_blob (BURP_FLD		fields,
 		(ISC_QUAD*) blob_id))
 	{
 		BURP_error_redirect (status_vector, 37, 0, 0);
-		// msg 37 gds__create_blob failed 
+		// msg 37 isc_create_blob failed 
 	}
 
 	// Allocate blob buffer is static buffer is too short 
@@ -1953,13 +1953,13 @@ void get_blob (BURP_FLD		fields,
 			reinterpret_cast<const SCHAR*>(buffer)))
 		{
 			BURP_error_redirect (status_vector, 38, 0, 0);
-		// msg 38 gds__put_segment failed 
+		// msg 38 isc_put_segment failed 
 		}
 	}
 
 	if (isc_close_blob (status_vector,  &blob))
 		BURP_error_redirect (status_vector, 23, 0, 0);
-		// msg 23 gds__close_blob failed 
+		// msg 23 isc_close_blob failed 
 
 	if (buffer != static_buffer)
 		BURP_free (buffer);
@@ -2000,7 +2000,7 @@ void get_blr_blob (ISC_QUAD	*blob_id,
 	if (isc_create_blob (status_vector, &DB, &local_trans, &blob, blob_id))
 	{
 		BURP_error_redirect (status_vector, 37, 0, 0);
-		// msg 37 gds__create_blob failed 
+		// msg 37 isc_create_blob failed 
 	}
 
 	// Allocate blob buffer is static buffer is too short 
@@ -2028,12 +2028,12 @@ void get_blr_blob (ISC_QUAD	*blob_id,
 		reinterpret_cast<const SCHAR*>(buffer)))
 	{
 		BURP_error_redirect (status_vector, 38, 0, 0);
-		// msg 38 gds__put_segment failed 
+		// msg 38 isc_put_segment failed 
 	}
 
 	if (isc_close_blob (status_vector,  &blob))
 		BURP_error_redirect (status_vector, 23, 0, 0);
-		// msg 23 gds__close_blob failed 
+		// msg 23 isc_close_blob failed 
 
 	if (buffer != static_buffer)
 		BURP_free (buffer);
@@ -2477,7 +2477,7 @@ rec_type get_data (BURP_REL	relation)
 		isc_print_blr(reinterpret_cast<char*>(blr_buffer), NULL, NULL, 0);
 		if (!tdgbl->gbl_sw_incremental)
 			BURP_error_redirect (status_vector, 27, 0, 0);
-			// msg 27 gds__compile_request failed 
+			// msg 27 isc_compile_request failed 
 		else
 		{
 			BURP_print_status (status_vector);
@@ -2583,7 +2583,7 @@ rec_type get_data (BURP_REL	relation)
 		if (isc_start_and_send (status_vector, &request, &gds_trans, 0,
 								(USHORT) length, buffer, 0))
 		{
-			if (status_vector [1] == gds_not_valid)
+			if (status_vector [1] == isc_not_valid)
 			{
 				if (tdgbl->gbl_sw_incremental)
 				{
@@ -2604,7 +2604,7 @@ rec_type get_data (BURP_REL	relation)
 				}
 				else
 					BURP_error_redirect (status_vector, 48, 0, 0);
-					// msg 48 gds__send failed 
+					// msg 48 isc_send failed 
 			}
 		}
 		if (record != rec_data)
@@ -2632,8 +2632,8 @@ rec_type get_data (BURP_REL	relation)
 			{
 				switch (error_code)
 				{
-					case gds_sort_mem_err:
-					case gds_no_dup:
+					case isc_sort_mem_err:
+					case isc_no_dup:
 						strcpy(index_name, (TEXT *)tdgbl->status_vector[3]);
 						BURP_print_status(tdgbl->status_vector);
 						FOR (REQUEST_HANDLE req_handle)
@@ -2641,7 +2641,7 @@ rec_type get_data (BURP_REL	relation)
 							MODIFY IDX USING IDX.RDB$INDEX_INACTIVE = TRUE;
 							BURP_print(240, index_name, NULL, NULL, NULL, NULL);
 							/* msg 240 Index \"%s\" failed to activate because: */
-							if ( error_code == gds_no_dup )
+							if ( error_code == isc_no_dup )
 							{
 								BURP_print(241, NULL, NULL, NULL, NULL, NULL);
 								// msg 241 The unique index has duplicate values or NULLs 
@@ -4230,7 +4230,7 @@ void get_misc_blob (ISC_QUAD	*blob_id,
 						  reinterpret_cast<const SCHAR*>(bpb)))
 	{
 		BURP_error_redirect (status_vector, 37, 0, 0);
-		// msg 37 gds__create_blob failed 
+		// msg 37 isc_create_blob failed 
 	}
 
 	// Allocate blob buffer is static buffer is too short 
@@ -4250,12 +4250,12 @@ void get_misc_blob (ISC_QUAD	*blob_id,
 		reinterpret_cast<const SCHAR*>(buffer)))
 	{
 		BURP_error_redirect (status_vector, 38, 0, 0);
-		// msg 38 gds__put_segment failed 
+		// msg 38 isc_put_segment failed 
 	}
 
 	if (isc_close_blob (status_vector, &blob))
 		BURP_error_redirect (status_vector, 23, 0, 0);
-		// msg 23 gds__close_blob failed 
+		// msg 23 isc_close_blob failed 
 
 	if (buffer != static_buffer)
 		BURP_free (buffer);
@@ -5191,7 +5191,7 @@ void get_source_blob (
 	if (isc_create_blob (status_vector, &DB, &local_trans, &blob, blob_id))
 	{
 		BURP_error_redirect (status_vector, 37, 0, 0);
-		// msg 37 gds__create_blob failed 
+		// msg 37 isc_create_blob failed 
 	}
 
 	// Allocate blob buffer is static buffer is too short 
@@ -5215,13 +5215,13 @@ void get_source_blob (
 			reinterpret_cast<const SCHAR*>(buffer)))
 		{
 			BURP_error_redirect (status_vector, 38, 0, 0);
-			// msg 38 gds__put_segment failed 
+			// msg 38 isc_put_segment failed 
 		}
 	}
 
 	if (isc_close_blob (status_vector,  &blob))
 		BURP_error_redirect (status_vector, 23, 0, 0);
-		// msg 23 gds__close_blob failed 
+		// msg 23 isc_close_blob failed 
 
 	if (buffer != static_buffer)
 		BURP_free (buffer);

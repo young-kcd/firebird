@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.44 2003-11-07 08:05:36 robocop Exp $
+$Id: backup.epp,v 1.45 2003-11-07 23:15:33 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -1404,7 +1404,7 @@ void put_blob( BURP_FLD field, ISC_QUAD * blob_id, ULONG count)
 		{
 			BURP_error_redirect(status_vector, 22, NULL, NULL);
 		}
-		// msg 22 gds__get_segment failed 
+		// msg 22 isc_get_segment failed 
 
 		put(tdgbl, (UCHAR) (segment_length));
 		put(tdgbl, (UCHAR) (segment_length >> 8));

@@ -31,7 +31,8 @@
 
 #include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/dsc.h"
 #include "../burp/misc_proto.h"
 #include "../jrd/gds_proto.h"
@@ -558,14 +559,14 @@ typedef struct burp_fld {
 	/* Can't do here
 	   BASED_ON RDB$RDB$RELATION_FIELDS.RDB$EDIT_STRING fld_edit_string; */
 	TEXT		fld_edit_string [126]; /* was [256] */
-	GDS__QUAD	fld_description;
-	GDS__QUAD	fld_query_header;
+	GDS_QUAD	fld_description;
+	GDS_QUAD	fld_query_header;
 	TEXT		fld_complex_name [GDS_NAME_LEN];
 	SSHORT		fld_dimensions;
 	SLONG		fld_ranges [2 * MAX_DIMENSION];
 	SSHORT		fld_null_flag;
-	GDS__QUAD	fld_default_value;
-	GDS__QUAD	fld_default_source;
+	GDS_QUAD	fld_default_value;
+	GDS_QUAD	fld_default_source;
 	SSHORT		fld_character_length;
 	SSHORT		fld_character_set_id;
 	SSHORT		fld_collation_id;
@@ -591,12 +592,12 @@ typedef struct burp_rel {
 	SSHORT		rel_name_length;
 	GDS_NAME	rel_name;
 	GDS_NAME	rel_owner;		/* relation owner, if not us */
-	GDS__QUAD	rel_store_blr;		/* trigger blr blob id */
-	GDS__QUAD	rel_store_source;	/* trigger source blob id */
-	GDS__QUAD	rel_modify_blr;		/* trigger blr blob id */
-	GDS__QUAD	rel_modify_source;	/* trigger source blob id */
-	GDS__QUAD	rel_erase_blr;		/* trigger blr blob id */
-	GDS__QUAD	rel_erase_source;	/* trigger source blob id */
+	GDS_QUAD	rel_store_blr;		/* trigger blr blob id */
+	GDS_QUAD	rel_store_source;	/* trigger source blob id */
+	GDS_QUAD	rel_modify_blr;		/* trigger blr blob id */
+	GDS_QUAD	rel_modify_source;	/* trigger source blob id */
+	GDS_QUAD	rel_erase_blr;		/* trigger blr blob id */
+	GDS_QUAD	rel_erase_source;	/* trigger source blob id */
 } *BURP_REL;
 
 enum burp_rel_flags_vals {
