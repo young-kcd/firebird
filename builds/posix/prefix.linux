@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.linux:	$(VERSION)	$(PLATFORM)
-#$Id: prefix.linux,v 1.13 2002-12-29 01:38:20 nmcc Exp $
+#$Id: prefix.linux,v 1.14 2003-02-11 05:13:36 aafemt Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major cleanup
 
 # The foillowing has been commented out since gcc 3.2 has some problems
@@ -27,3 +27,5 @@ DEV_FLAGS=-ggdb -DLINUX -DDEBUG_GDS_ALLOC -pipe -MMD -p -fPIC -Wall -Wno-switch
 LIB_LINK_OPTIONS:=-shared
 LIB_LINK_RPATH:=-Wl,-rpath,
 LIB_LINK_SONAME:=-Wl,-soname,
+
+Physical_IO_Module=unix.cpp

@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.113 2003-02-10 15:59:01 skidder Exp $
+dnl $Id: configure.in,v 1.114 2003-02-11 05:13:34 aafemt Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -557,6 +557,7 @@ mkdir -p gen/libfbserver/fbutil
 mkdir -p gen/libfbserver/wal
 mkdir -p gen/libfbserver/common/classes
 mkdir -p gen/libfbserver/jrd/os/posix
+mkdir -p gen/libfbserver/jrd/os/win32
 mkdir -p gen/fbserver/remote
 mkdir -p gen/libfbclient/jrd
 mkdir -p gen/libfbclient/dsql
@@ -578,6 +579,7 @@ mkdir -p gen/libfbcommon/common/classes
 mkdir -p gen/libfbcommon/common/config
 mkdir -p gen/libfbcommon/fbutil
 mkdir -p gen/boot.gpre/jrd/os/posix
+mkdir -p gen/boot.gpre/jrd/os/win32
 mkdir -p gen/boot.gpre/gpre
 mkdir -p gen/static.gpre
 mkdir -p gen/static.gpre/jrd
@@ -590,6 +592,7 @@ mkdir -p gen/static.gpre/alice
 mkdir -p gen/static.gpre/utilities
 mkdir -p gen/static.gpre/fbutil
 mkdir -p gen/static.gpre/jrd/os/posix
+mkdir -p gen/static.gpre/jrd/os/win32
 mkdir -p gen/static.gpre/burp
 mkdir -p gen/static.gpre/wal
 mkdir -p gen/static.gbak/burp
@@ -606,6 +609,7 @@ mkdir -p gen/libfbstatic/alice
 mkdir -p gen/libfbstatic/utilities
 mkdir -p gen/libfbstatic/fbutil
 mkdir -p gen/libfbstatic/jrd/os/posix
+mkdir -p gen/libfbstatic/jrd/os/win32
 mkdir -p gen/libfbstatic/burp
 mkdir -p gen/libfbstatic/wal
 mkdir -p gen/libfbstatic/common
@@ -634,6 +638,7 @@ mkdir -p gen/libfbembed/alice
 mkdir -p gen/libfbembed/utilities
 mkdir -p gen/libfbembed/fbutil
 mkdir -p gen/libfbembed/jrd/os/posix
+mkdir -p gen/libfbembed/jrd/os/win32
 mkdir -p gen/libfbembed/burp
 mkdir -p gen/libfbembed/wal
 mkdir -p gen/libfbembed/common/classes

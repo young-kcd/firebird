@@ -26,3 +26,5 @@ JRDBOOT_Extra_Files=isc_sync.cpp thd.cpp
 LIB_LINK_OPTIONS:=-shared
 LIB_LINK_RPATH:=-Wl,-rpath,
 LIB_LINK_SONAME:=-Wl,-soname,
+
+Physical_IO_Module=winnt.cpp
