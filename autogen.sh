@@ -2,7 +2,7 @@
 #
 # Run this to generate all the initial makefiles, etc.
 #
-# $Id: autogen.sh,v 1.7 2003-03-13 06:50:04 eku Exp $
+# $Id: autogen.sh,v 1.8 2003-04-17 18:41:28 bellardo Exp $
 
 PKG_NAME=Firebird2
 SRCDIR=`dirname $0`
@@ -64,6 +64,7 @@ autoconf || exit 1
 if test "x$NOCONFIGURE" = "x"; then
   echo Running $SRCDIR/configure $conf_flags "$@" ...
   rm -f config.cache config.log
+  chmod a+x $SRCDIR/configure
   $SRCDIR/configure $conf_flags "$@" \
   && echo Now type \`make\' to compile $PKG_NAME
 else
