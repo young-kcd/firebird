@@ -92,6 +92,8 @@ typedef struct que {
 
 #define SRQ_LOOP(header,que)    for (que = SRQ_NEXT (header);\
 	que != &header; que = SRQ_NEXT ((*que)))
+#define SRQ_LOOP_BACK(header,que)	for (que = SRQ_PREV (header);\
+	que != &header; que = SRQ_PREV ((*que)))
 
 /* Self-relative que block.  Offsets are from the block itself. */
 

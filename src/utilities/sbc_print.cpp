@@ -51,20 +51,7 @@
 #define TEXT		SCHAR
 #endif
 
-#define BASE 			((UCHAR*) CASH_header)
-#define REL_PTR(item)		((UCHAR*) item - BASE)
-#define ABS_PTR(item)		(BASE + item)
-
-#define QUE_INIT(que)		{que.srq_forward = que.srq_backward = REL_PTR (&que);}
-#define QUE_EMPTY(que)		(que.srq_forward == REL_PTR (&que))
-#define QUE_NOT_EMPTY(que)	(que.srq_forward != REL_PTR (&que))
-#define QUE_NEXT(que)		ABS_PTR (que.srq_forward)
-#define QUE_PREV(que)		ABS_PTR (que.srq_backward)
-
-#define QUE_LOOP(que_head,que)	for (que = (SRQ) QUE_NEXT (que_head);\
-	que != &que_head; que = (SRQ) QUE_NEXT ((*que)))
-#define QUE_LOOP_BACK(que_head,que)	for (que = (SRQ) QUE_PREV (que_head);\
-	que != &que_head; que = (SRQ) QUE_PREV ((*que)))
+#define SRQ_BASE 			((UCHAR*) CASH_header)
 
 const SLONG DEFAULT_SIZE	= 8192;
 
@@ -284,7 +271,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 
 	print_header(expanded_filename);
 
-	sccb = (SCCB) ABS_PTR(CASH_header->shb_sccb);
+	sccb = (SCCB) SRQ_ABS_PTR(CASH_header->shb_sccb);
 
 /* Print shared cache header block */
 
@@ -658,7 +645,7 @@ static void print_page_header( SDB sdb)
 		 sdb->sdb_page, sdb->sdb_generation, sdb->sdb_length, sdb->sdb_flags,
 		 sdb->sdb_precedence);
 
-	const pag* page = (pag*) ABS_PTR(sdb->sdb_buffer);
+	const pag* page = (pag*) SRQ_ABS_PTR(sdb->sdb_buffer);
 
 /* Print page header */
 
@@ -705,7 +692,7 @@ static void print_page_header( SDB sdb)
 	}
 
 	if (sdb->sdb_journal) {
-		SDB journal_sdb = (SDB) ABS_PTR(sdb->sdb_journal);
+		SDB journal_sdb = (SDB) SRQ_ABS_PTR(sdb->sdb_journal);
 		printf("\tJournal buffer information:\n");
 		printf("\t\tCurrent Length %d\n", journal_sdb->sdb_length);
 	}
@@ -728,7 +715,7 @@ static void print_process( PRB process)
  *
  **************************************/
 
-	printf("PROCESS BLOCK %d\n", REL_PTR(process));
+	printf("PROCESS BLOCK %d\n", SRQ_REL_PTR(process));
 
 	printf("\tProcess id: %d, IO wait: %d, IO read: %d, flags: %d\n",
 			  process->prb_process_id, process->prb_waiter,
@@ -762,7 +749,7 @@ static void prt_que(
  *	param 2	- if specified, the number of entries to print.
  *
  **************************************/
-	const SLONG offset = REL_PTR(que);
+	const SLONG offset = SRQ_REL_PTR(que);
 
 	if (offset == que->srq_forward && offset == que->srq_backward) {
 		printf("%s: *empty*\n\n", string);
@@ -772,7 +759,7 @@ static void prt_que(
 	SLONG count = 0;
 
 	SRQ next;
-	QUE_LOOP((*que), next) {
+	SRQ_LOOP((*que), next) {
 		++count;
 
 		if ((param2) && (count > param2))
@@ -801,7 +788,7 @@ static void prt_que_back(
  *	Same as prt_que, but traverse in reverse order.
  *
  **************************************/
-	const SLONG offset = REL_PTR(que);
+	const SLONG offset = SRQ_REL_PTR(que);
 
 	if (offset == que->srq_forward && offset == que->srq_backward) {
 		printf("%s: *empty*\n\n", string);
@@ -811,7 +798,7 @@ static void prt_que_back(
 	SLONG count = 0;
 
 	SRQ next;
-	QUE_LOOP_BACK((*que), next) {
+	SRQ_LOOP_BACK((*que), next) {
 		++count;
 
 		if ((param2) && (count > param2))
