@@ -55,6 +55,7 @@ static char yysccsid[] = "@(#)yaccpar	1.9 (Berkeley) 02/21/93";
 #include "../jrd/gds_proto.h"
 #include "../jrd/thd_proto.h"
 /* #include "../jrd/err_proto.h" */
+#include "../wal/wal.h"
 
 extern "C" TEXT *DLL_EXPORT ERR_string(CONST TEXT*, int);
 
@@ -3397,6 +3398,7 @@ static void	stack_nodes (NOD, DLLS*);
 static int	yylex (USHORT, USHORT, USHORT, BOOLEAN *);
 static void	yyerror (TEXT*);
 static void	yyabandon (SSHORT, STATUS);
+static void check_log_file_attrs (void);
 static TEXT	*ptr, *end, *last_token, *line_start;
 static SSHORT	lines, att_charset;
 
@@ -4919,8 +4921,8 @@ case 166:
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 167:
-{ 
-			 yyval = (NOD) make_node (nod_log_file_desc, (int) 1,
+{ check_log_file_attrs(); 		 
+			yyval = (NOD) make_node (nod_log_file_desc, (int) 1,
                                                 (NOD) file); }
 break;
 case 168:
