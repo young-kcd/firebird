@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.54 2003-08-30 01:54:25 brodsom Exp $
+ * $Id: ddl.cpp,v 1.55 2003-09-01 07:39:54 brodsom Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -859,7 +859,7 @@ static void check_constraint(	DSQL_REQ		request,
 //   (DSQL_NOD) MAKE_cstring ("insert violates CHECK constraint on table");
 
 	element->nod_arg[e_cnstr_type] =
-		MAKE_constant((STR) PRE_STORE_TRIGGER, 1);
+		MAKE_constant((STR) PRE_STORE_TRIGGER, CONSTANT_SLONG);
 	define_constraint_trigger(request, element);
 
 	// create the UPDATE trigger
@@ -868,7 +868,7 @@ static void check_constraint(	DSQL_REQ		request,
 //  (DSQL_NOD) MAKE_cstring ("update violates CHECK constraint on table");
 
 	element->nod_arg[e_cnstr_type] =
-		MAKE_constant((STR) PRE_MODIFY_TRIGGER, 1);
+		MAKE_constant((STR) PRE_MODIFY_TRIGGER, CONSTANT_SLONG);
 	define_constraint_trigger(request, element);
 
 	// create the DELETE trigger, if required
@@ -879,7 +879,7 @@ static void check_constraint(	DSQL_REQ		request,
 //			(DSQL_NOD) MAKE_cstring ("delete violates CHECK constraint on table");
 //
 		element->nod_arg[e_cnstr_type] =
-			MAKE_constant((STR) PRE_ERASE_TRIGGER, 1);
+			MAKE_constant((STR) PRE_ERASE_TRIGGER, CONSTANT_SLONG);
 		define_constraint_trigger(request, element);
 	}
 
@@ -949,7 +949,7 @@ static void create_view_triggers(DSQL_REQ request, DSQL_NOD element, DSQL_NOD it
 //   (DSQL_NOD) MAKE_cstring ("update violates CHECK constraint on view");
 
 	element->nod_arg[e_cnstr_type] =
-		MAKE_constant((STR) PRE_MODIFY_TRIGGER, 1);
+		MAKE_constant((STR) PRE_MODIFY_TRIGGER, CONSTANT_SLONG);
 	define_update_action(request, &base_and_node, &base_relation);
 
 	DSQL_NOD rse = MAKE_node(nod_rse, e_rse_count);
@@ -964,7 +964,7 @@ static void create_view_triggers(DSQL_REQ request, DSQL_NOD element, DSQL_NOD it
 //   (DSQL_NOD) MAKE_cstring ("insert violates CHECK constraint on view");
 
 	element->nod_arg[e_cnstr_type] =
-		MAKE_constant((STR) PRE_STORE_TRIGGER, 1);
+		MAKE_constant((STR) PRE_STORE_TRIGGER, CONSTANT_SLONG);
 	define_view_trigger(request, element, NULL, items);
 
 	request->append_uchar(gds_dyn_end);	// For triggers definition
@@ -3779,7 +3779,7 @@ static void define_view_trigger( DSQL_REQ request, DSQL_NOD node, DSQL_NOD rse, 
 				{
 					temp_rse = action_node->nod_arg[e_mod_rse];
 					temp_rse->nod_arg[e_rse_first] =
-						MAKE_constant((STR) 1, 1);
+						MAKE_constant((STR) 1, CONSTANT_SLONG);
 				}
 				GEN_statement(request, action_node);
 			}
