@@ -1,4 +1,64 @@
   **************
+  * v1.5 RC 8
+  **************
+
+    * Fixed unregistered bug.
+        Server crash when closing a blob after a transaction is finished.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Server crash in some cases of sort finilization.
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+        Oleg LOA <loa at mail.ru>
+
+    * Fixed RC7 bug.
+        Wrong behaviour of CreateInternalWindow flag in the service mode.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC7 bug.
+        Wrong pathname resolution in the database creation.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Server crash when GBAK is running as a service in multi-volume operations.
+      Contributor(s):
+        Oleg LOA <loa at mail.ru>
+
+    * Fixed unregistered bug.
+        Server crash when NULL is evaluated in the BETWEEN predicate.
+      Contributor(s):
+        Oleg LOA <loa at mail.ru>
+
+    * New win32 installation tool.
+        Added instclient.exe tool as a replacement for the previous instgds.exe.
+      Contributor(s):
+        Olivier Mascia <om at tipgroup.com>
+
+    * Fixed RC7 bug.
+        Fixed some race conditions in the server initialization code.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed RC7 bugs.
+        Some packaging/installation issues on Linux.
+      Contributor(s):
+        Mark O'Donohue <mark.odonohue at cytopia.com.au>
+
+    * Fixed unregistered bug.
+        Charset problem when mixing none (constants)/ascii charset and other character-sets in concatenation.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed RC7 bug.
+        Forcedly set SO_KEEPALIVE flag for POSIX CS connections independently of what was given by xinetd/inetd to us.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+  **************
   * v1.5 RC 7
   **************
 
