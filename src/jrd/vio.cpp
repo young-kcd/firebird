@@ -2063,7 +2063,8 @@ void VIO_init(thread_db* tdbb)
 	Attachment* attachment = tdbb->tdbb_attachment;
 
 	if ((dbb->dbb_flags & DBB_read_only) ||
-		!(dbb->dbb_flags & DBB_gc_background) ) {
+		!(dbb->dbb_flags & DBB_gc_background))
+	{
 		return;
 	}
 

@@ -5516,7 +5516,7 @@ static Database* init(thread_db*	tdbb,
 			}
 			else 
 				fb_assert(false);
-	};
+	}
 
 /* Initialize a number of subsystems */
 
