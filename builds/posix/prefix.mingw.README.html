@@ -12,11 +12,12 @@
 <H2>MINGW Notes</H2>
 <hr/>
 Date: March 25 2003<br>
-Author: Blas Rodriguez Somoza<br>
+Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 
 <h3>0.-Introduction</h3>
 <p>The 1.5 beta 4 is the first available MSYS/MINGW build.<p>
 <p>The only difference between the msvc build and the mingw build, is that the later one does not support the ms SEH exception handling. This is an important difference because some exceptions will not be catched and thus FB will abort, the sources using this exception handling are jrd/blob_filter.cpp, jrd/exe.cpp and jrd/fun.epp.</p>
+<p>This port is maintained by Blas Rodriguez Somoza and Dmitry Sibiriakov.</p>
 
 <h3>1.-TODO</h3>
 <ul>
@@ -52,8 +53,13 @@ Author: Blas Rodriguez Somoza<br>
 <h3>3.- PATCHES TO BUILD FILES</h3>
 
 <ul>
-<li>The MSYS environment can't process yacc files as delivered, it is necessary to comment out yacc 
-in 'make.shared.targets'</li>
+<li>The MSYS environment can't process yacc files as delivered, it is necessary to comment out the following lines in 'make.shared.targets' or apply the changes mentioned in 5.<br><br>
+<code>
+$(SRC)/dsql/parse.cpp: $(SRC)/dsql/parse.y $(SRC)/dsql/parse.sed<br>
+$(YACC) -l -d -b $(SRC)/dsql/dsql $&lt;<br>
+sed -f $(SRC)/dsql/parse2.sed &lt;$(SRC)/dsql/dsql.tab.c &gt; $@<br><br>
+</code>
+</li>
 <li>The example target in Make.in.firebird is not valid remove it.</li>
 <li>The fb_util target in Make.in.extlib is not valid remove it.</li>
 </ul>
@@ -72,5 +78,84 @@ The valid switches for autogen are<br>
 <li>Make the build. For instance<br> make > make.log 2>&1</li>
 <li>After the build finish, the firebird directory with the binaries is created as gen/firebird.</li> 
 </ol>
+
+<h3>5.- USING BISON</h3>
+<p>If you want to use bison to regenerate dsql/parse.cpp then you don't need to apply the patch included in 3 for make.shared.targets. To regenerate parse.cpp are only needed for developers who modify parse.cpp.<p> 
+<p>5.1.-Download bison-1.875.0-2003.02.10-1.exe from mingw site and install it.</p>
+<p>5.2.-Patches to the build files</p>
+<ul>
+<li>In builds/posix/make.shared.target </li>
+<ul>
+<li>replace the following line<br><br>
+<code>
+sed -f $(SRC)/dsql/parse.sed &lt; $(SRC)/dsql/dsql.tab.c &gt; $@ <br><br>
+</code>
+with<br><br>
+<code>
+sed -e 's/\\r//g' $(SRC)/dsql/parse.sed > $(SRC)/dsql/parse2.sed<br>
+sed -f $(SRC)/dsql/parse2.sed &lt; $(SRC)/dsql/dsql.tab.c &gt; $@  <br>
+-rm $(SRC)/dsql/parse2.sed<br><br>
+</code>
+</li>
+<li>This change is only needed to be sure the newline used is the unix one, sed will fail if the newline is the dos one.</li> 
+</ul>
+</ul>
+<p>5.3.-Patches to the source files</p>
+<ul>
+<li>dsql/parse.sed</li>
+<ul>
+<li>add the following lines at the end of the file<br><br>
+<code>
+s/void \*YYPARSE_PARAM/YYPARSE_PARAM/g<br>
+s/((__unused__))/((__unused__));/g<br>
+/static int yydebug/d<br>
+s/yydebug/dsql_debug/g<br>
+s/yylex ()/yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous)/g<br><br>
+</code>
+</li>
+</ul>
+<li>In keywords.cpp</li>
+<ul>
+<li>change the macro SIZE to KW_SIZE.<br><br></li>
+</ul>
+<li>In parse.y </li>
+<ul>
+<li>move the following declaration lines<br><br>
+<code>
+static TEXT	*lex_position (void);<br>
+static BOOLEAN	long_int (DSQL_NOD, SLONG *);<br>
+static DSQL_FLD	make_field (DSQL_NOD);<br>
+static FIL	make_file (void);<br>
+static DSQL_NOD	make_list (DSQL_NOD);<br>
+static DSQL_NOD	make_node (NOD_TYPE, int, ...);<br>
+static DSQL_NOD	make_parameter (void);<br>
+static DSQL_NOD	make_flag_node (NOD_TYPE, SSHORT, int, ...);<br>
+static void	prepare_console_debug (int, int  *);<br>
+static BOOLEAN	short_int (DSQL_NOD, SLONG *, SSHORT);<br>
+static void	stack_nodes (DSQL_NOD, DLLS *);<br>
+static int	yylex (USHORT, USHORT, USHORT, BOOLEAN *);<br>
+static void	yyabandon (SSHORT, STATUS);<br>
+static void	check_log_file_attrs (void);<br>
+
+static TEXT	*ptr, *end, *last_token, *line_start;<br>
+static TEXT	*last_token_bk, *line_start_bk;<br>
+static SSHORT	lines, att_charset;<br>
+static SSHORT	lines_bk;<br>
+static USHORT   param_number;<br><br>
+</code>
+between the following two lines<br><br>
+<code>
+#define CHECK_COPY_INCR(to,ch){CHECK_BOUND(to); *to++=ch;}<br>
+}%<br><br>
+</code>
+</li>
+<li>Add the following line after the declaration block moved before<br><br>
+<code>
+static int dsql_debug;<br><br>
+</code>
+</li>
+<li>Change the macros SIZE and FLOAT to KW_SIZE and FLOAT_NUMBER</li>
+</ul>
+</ul>
 </BODY>
 </HTML>
