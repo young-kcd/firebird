@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.50.2.3 2004-10-05 15:09:47 hvlad Exp $
+ * $Id: ddl.cpp,v 1.50.2.4 2005-02-06 10:50:01 alexpeshkoff Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -162,6 +162,7 @@ static void stuff_default_blr(DSQL_REQ, TEXT *, USHORT);
 static void stuff_matching_blr(DSQL_REQ, DSQL_NOD, DSQL_NOD);
 static void stuff_trg_firing_cond(DSQL_REQ, DSQL_NOD);
 static void set_nod_value_attributes(DSQL_NOD, DSQL_FLD);
+static void clearPermanentField (DSQL_REL, bool);
 
 #ifdef BLKCHK
 #undef BLKCHK
@@ -1843,10 +1844,21 @@ static void define_field(
 
 /* add the field to the relation being defined for parsing purposes */
 
+	bool permanent = false;
 	if ((relation = request->req_relation) != NULL) {
+		if (! (relation->rel_flags & REL_new_relation)) {
+			DSQL_FLD perm_field = FB_NEW_RPT(*request->req_dbb->dbb_pool,
+								strlen(field->fld_name)) dsql_fld;
+			*perm_field = *field;
+			strcpy(perm_field->fld_name, field->fld_name);
+			field = perm_field;
+			permanent = true;
+		}
 		field->fld_next = relation->rel_fields;
 		relation->rel_fields = field;
 	}
+
+	try {
 
 	if (domain_node = element->nod_arg[e_dfl_domain]) {
 		request->append_cstring(gds_dyn_def_local_fld, field->fld_name);
@@ -2020,6 +2032,14 @@ static void define_field(
 	if (cnstrt_flag == FALSE) {
 		request->append_uchar(gds_dyn_end);
 	}
+
+	} // try
+	catch (...)
+	{
+		clearPermanentField (relation, permanent);
+		throw;
+	}
+	clearPermanentField (relation, permanent);
 }
 
 
@@ -5664,7 +5684,9 @@ static void save_field(DSQL_REQ request, TEXT* field_name)
 		return;
 	}
 
-	DSQL_FLD field = FB_NEW_RPT(*tdsql->tsql_default, strlen(field_name) + 1) dsql_fld;
+	MemoryPool* p = relation->rel_flags & REL_new_relation ? 
+					tdsql->tsql_default : request->req_dbb->dbb_pool;
+	DSQL_FLD field = FB_NEW_RPT(*p, strlen(field_name) + 1) dsql_fld;
 	strcpy(field->fld_name, field_name);
 	field->fld_next = relation->rel_fields;
 	relation->rel_fields = field;
@@ -5705,6 +5727,7 @@ static void save_relation( DSQL_REQ request, STR relation_name)
 	else
 	{
 		relation = FB_NEW_RPT(*tdsql->tsql_default, relation_name->str_length) dsql_rel;
+		relation->rel_flags |= REL_new_relation;
 		relation->rel_name = relation->rel_data;
 		relation->rel_owner =
 			relation->rel_data + relation_name->str_length + 1;
@@ -5897,11 +5920,22 @@ static void modify_field(DSQL_REQ	request,
 	request->append_cstring(isc_dyn_mod_sql_fld, field->fld_name);
 
 // add the field to the relation being defined for parsing purposes
+	bool permanent = false;
 	if ((relation = request->req_relation) != NULL)
 	{
+		if (! (relation->rel_flags & REL_new_relation)) {
+			DSQL_FLD perm_field = FB_NEW_RPT(*request->req_dbb->dbb_pool,
+								strlen(field->fld_name)) dsql_fld;
+			*perm_field = *field;
+			strcpy(perm_field->fld_name, field->fld_name);
+			field = perm_field;
+			permanent = true;
+		}
 		field->fld_next = relation->rel_fields;
 		relation->rel_fields = field;
 	}
+
+	try {
 
 	if (domain_node = element->nod_arg[e_mod_fld_type_dom_name])
 	{
@@ -5934,6 +5968,14 @@ static void modify_field(DSQL_REQ	request,
 		put_field(request, field, FALSE);
 	}
 	request->append_uchar(gds_dyn_end);
+	} // try
+
+	catch (...)
+	{
+		clearPermanentField (relation, permanent);
+		throw;
+	}
+	clearPermanentField (relation, permanent);
 }
 
 
@@ -6090,3 +6132,15 @@ void dsql_req::generate_unnamed_trigger_beginning(	bool		on_update_trigger,
 	append_uchar(blr_begin);
 }
 
+// removes temporary pool pointers from field, stored in permanent cache
+void clearPermanentField (DSQL_REL relation, bool perm) 
+{
+	if (relation && relation->rel_fields && perm)
+	{
+		relation->rel_fields->fld_procedure = 0;
+		relation->rel_fields->fld_ranges = 0;
+		relation->rel_fields->fld_character_set = 0;
+		relation->rel_fields->fld_sub_type_name = 0;
+		relation->rel_fields->fld_relation = relation;
+	}
+}
