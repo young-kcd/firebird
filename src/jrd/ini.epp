@@ -1473,6 +1473,15 @@ static void store_global_field(TDBB tdbb, GFLD* gfield, BLK* handle)
 				X.RDB$FIELD_SUB_TYPE.NULL = FALSE;
 				X.RDB$FIELD_SUB_TYPE = gfield->gfld_sub_type;
 			}
+			else if (gfield->gfld_sub_type == dsc_text_type_fixed)
+			{
+				X.RDB$CHARACTER_SET_ID.NULL = FALSE;
+				X.RDB$CHARACTER_SET_ID = CS_BINARY;
+				X.RDB$COLLATION_ID.NULL = FALSE;
+				X.RDB$COLLATION_ID = COLLATE_NONE;
+				X.RDB$FIELD_SUB_TYPE.NULL = FALSE;
+				X.RDB$FIELD_SUB_TYPE = gfield->gfld_sub_type;
+			}
 			else
 			{
 				X.RDB$CHARACTER_SET_ID.NULL = FALSE;
