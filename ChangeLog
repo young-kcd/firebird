@@ -1,3 +1,104 @@
+2004-08-22 03:00  arnobrinkman
+
+	* firebird2/src/jrd/btr.cpp (1.110):
+	
+	add missing initializations
+
+2004-08-22 02:53  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp (1.156):
+	
+	Fix unneeded error-message with simple CASE and NULL (NULL as text
+	in SQL) CASE NULL WHEN NULL THEN 1 END
+
+2004-08-22 02:29  skidder
+
+	* firebird2/src/jrd/: isc.h (1.19), sch_proto.h (1.6):
+	
+	Fix GCC build I accedentally broken by my previous commit
+
+2004-08-21 11:42  robocop
+
+	* firebird2/src/jrd/functions.cpp (1.15):
+	
+	Example built-in UDF.
+
+2004-08-21 11:39  robocop
+
+	* firebird2/src/jrd/ini.epp (1.55):
+	
+	1.- Get rid of redundant cast to jrd_req* 2.- Post example code
+	(disabled) to register a built-in UDF.
+
+2004-08-21 11:36  robocop
+
+	* firebird2/src/jrd/fun.epp (1.64):
+	
+	1.- Put an indication on how to enable UDF params that signal SQL
+	NULL with the null pointer 2.- In case the result of the function
+	is a descriptor with FREE_IT, free not only the data but the
+	descriptor, too.
+
+2004-08-21 11:30  robocop
+
+	* firebird2/src/jrd/cmp.cpp (1.144):
+	
+	Simplify expression
+
+2004-08-21 11:29  robocop
+
+	* firebird2/src/jrd/: evl.cpp (1.103), exe.cpp (1.121), ext.cpp
+	(1.57):
+	
+	Misc: format
+
+2004-08-21 11:26  robocop
+
+	* firebird2/src/jrd/: cch.cpp (1.101), err.cpp (1.53), opt.cpp
+	(1.185):
+	
+	Misc: format
+
+2004-08-21 11:21  robocop
+
+	* firebird2/src/: gpre/jrdmet.cpp (1.19), isql/isql.epp (1.92):
+	
+	Misc: format
+
+2004-08-21 11:20  robocop
+
+	* firebird2/src/dsql/dsql.cpp (1.118):
+	
+	Not an aesthetical achievement, but prevent us from making mistakes
+	in the same place again. Put variables in their minimal scope.
+
+2004-08-21 11:18  robocop
+
+	* firebird2/src/common/classes/alloc.cpp (1.60):
+	
+	Misc: formatting
+
+2004-08-21 11:16  robocop
+
+	* firebird2/src/burp/burp.cpp (1.85):
+	
+	Delete useless line and avoid memory leak after talking to Dmitry
+	Yemanov.
+
+2004-08-21 11:13  robocop
+
+	* firebird2/builds/win32/make_boot.bat (1.24):
+	
+	Misc: fix misleading message
+
+2004-08-21 09:55  skidder
+
+	* firebird2/src/jrd/: common.h (1.123), isc.h (1.18),
+	thread_proto.h (1.6):
+	
+	Fix very hard-to-track Windows CS stability problem introduced by
+	Blas on 15-May-2004
+
 2004-08-20 12:57  aafemt
 
 	* firebird2/src/msgs/msg.sql (1.1):
