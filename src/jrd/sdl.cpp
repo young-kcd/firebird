@@ -228,7 +228,7 @@ STATUS API_ROUTINE SDL_info(STATUS * status_vector,
 				range.rng_info = info;
 				min = max = -1;
 				if (!(p = get_range(p - 1, &range, &min, &max))
-					|| (((SCHAR) * p) != gds_sdl_eoc))
+					|| (((UCHAR) * p) != gds_sdl_eoc))
 					info->sdl_info_dimensions = 0;
 			}
 			return FB_SUCCESS;
@@ -259,7 +259,7 @@ UCHAR *DLL_EXPORT SDL_prepare_slice(UCHAR * sdl, USHORT sdl_length)
 	if (*sdl++ != gds_sdl_version1)
 		return old_sdl;
 
-	while ((SCHAR) * sdl != gds_sdl_eoc)
+	while ((UCHAR) * sdl != gds_sdl_eoc)
 	{
 		switch (*sdl++)
 		{
