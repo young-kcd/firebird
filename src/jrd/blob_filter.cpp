@@ -370,16 +370,16 @@ USHORT bpb_length, UCHAR * bpb, PTR callback, USHORT action, BLF filter)
 /* utilize a temporary control block just to pass the three 
    necessary internal parameters to the filter */
 
-	temp.ctl_internal[0] = (void *) dbb;
-	temp.ctl_internal[1] = (void *) tra_handle;
-	temp.ctl_internal[2] = (void *) NULL;
+	temp.ctl_internal[0] = dbb;
+	temp.ctl_internal[1] = tra_handle;
+	temp.ctl_internal[2] = NULL;
 	prior = (CTL) (*callback) (ACTION_alloc, &temp);
 	prior->ctl_source = callback;
 	prior->ctl_status = user_status;
 
-	prior->ctl_internal[0] = (void *) dbb;
-	prior->ctl_internal[1] = (void *) tra_handle;
-	prior->ctl_internal[2] = (void *) blob_id;
+	prior->ctl_internal[0] = dbb;
+	prior->ctl_internal[1] = tra_handle;
+	prior->ctl_internal[2] = blob_id;
 	if ((*callback) (action, prior)) {
 		BLF_close_blob(tdbb, &prior);
 		return user_status[1];
