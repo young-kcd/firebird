@@ -1,6 +1,3 @@
-#ifndef lint
-static char yysccsid[] = "@(#)yaccpar	1.9 (Berkeley) 02/21/93";
-#endif
 #define YYBYACC 1
 #define YYMAJOR 1
 #define YYMINOR 9
@@ -5374,15 +5371,7 @@ yyloop:
         goto yyreduce;
     }
     if (DSQL_yyerrflag) goto yyinrecovery;
-#ifdef lint
-    goto yynewerror;
-yynewerror:
-#endif
     yyerror("syntax error");
-#ifdef lint
-    goto yyerrlab;
-yyerrlab:
-#endif
     ++yynerrs;
 yyinrecovery:
     if (DSQL_yyerrflag < 3)

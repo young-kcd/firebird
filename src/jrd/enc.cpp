@@ -86,10 +86,6 @@ TEXT *DLL_EXPORT ENC_crypt(TEXT *string, TEXT *salt)
 int des_setkey(const char *key);
 int des_cipher(const char *in, char *out, long salt, int num_iter);
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)crypt.c	5.11 (Berkeley) 6/25/91";
-#endif /* LIBC_SCCS and not lint */
-
 /*
  * UNIX password, and DES, encryption.
  * By Tom Truscott, trt@rti.rti.org,
