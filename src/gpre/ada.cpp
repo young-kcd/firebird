@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.40 2004-05-13 09:46:00 brodsom Exp $
+//	$Id: ada.cpp,v 1.41 2004-05-23 23:24:41 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -3652,7 +3652,7 @@ static void printa( int column, const TEXT* string, ...)
 {
 	va_list ptr;
 
-	VA_START(ptr, string);
+	va_start(ptr, string);
 	align(column);
 	vsprintf(output_buffer, string, ptr);
 	ADA_print_buffer(output_buffer, column);

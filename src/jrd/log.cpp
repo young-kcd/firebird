@@ -210,7 +210,7 @@ void LOG_call(enum log_t call_type, ...)
 
 	log_char((SCHAR) call_type);
 
-	VA_START(ptr, call_type);
+	va_start(ptr, call_type);
 
 /* using the argument types described in the table, 
    pop the arguments off the call stack and put

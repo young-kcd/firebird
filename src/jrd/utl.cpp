@@ -362,7 +362,7 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR** dpb, SSHORT* dpb_size, ...)
 		new_dpb_length = 1;
 	}
 
-	VA_START(args, dpb_size);
+	va_start(args, dpb_size);
 
 	while (type = va_arg(args, int))
 	{
@@ -431,7 +431,7 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR** dpb, SSHORT* dpb_size, ...)
 
 /* copy in the new runtime items */
 
-	VA_START(args, dpb_size);
+	va_start(args, dpb_size);
 
 	while (type = va_arg(args, int))
 	{
@@ -704,7 +704,7 @@ SLONG API_ROUTINE gds__event_block(SCHAR ** event_buffer,
 	va_list ptr;
 	USHORT i;
 
-	VA_START(ptr, count);
+	va_start(ptr, count);
 
 /* calculate length of event parameter block, 
    setting initial length to include version
@@ -741,7 +741,7 @@ SLONG API_ROUTINE gds__event_block(SCHAR ** event_buffer,
 
 	*p++ = EPB_version1;
 
-	VA_START(ptr, count);
+	va_start(ptr, count);
 
 	i = count;
 	while (i--) {

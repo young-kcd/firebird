@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.47 2004-05-13 22:34:27 brodsom Exp $
+//	$Id: c_cxx.cpp,v 1.48 2004-05-23 23:24:41 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -3861,7 +3861,7 @@ static void printa( int column, const char* string, ...)
 {
 	va_list ptr;
 
-	VA_START(ptr, string);
+	va_start(ptr, string);
 	align(column);
 	vfprintf(out_file, string, ptr);
 }
@@ -3876,7 +3876,7 @@ static void printb( const TEXT* string, ...)
 {
 	va_list ptr;
 
-	VA_START(ptr, string);
+	va_start(ptr, string);
 	vfprintf(out_file, string, ptr);
 }
 

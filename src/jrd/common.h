@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.117 2004-05-20 23:04:44 skidder Exp $
+$Id: common.h,v 1.118 2004-05-23 23:26:30 brodsom Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -110,9 +110,8 @@ $Id: common.h,v 1.117 2004-05-20 23:04:44 skidder Exp $
 #define SET_TCP_NO_DELAY
 #endif
 
-#define KILLER_SIGNALS
+//#define KILLER_SIGNALS
 
-#define VA_START(list,parmN)    va_start (list, parmN)
 #define UNIX
 #define IEEE
 
@@ -219,9 +218,8 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 #define SET_TCP_NO_DELAY
 #endif
 
-#define KILLER_SIGNALS
+//#define KILLER_SIGNALS
 
-#define VA_START(list,parmN)    va_start (list, parmN)
 #define UNIX
 #define IEEE
 
@@ -269,7 +267,7 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 
 //#define ALIGNMENT       4
 //#define DOUBLE_ALIGN    4
-#define BSD_UNIX
+//#define BSD_UNIX
 #define UNIX
 #define IMPLEMENTATION  63
 #define IEEE
@@ -307,7 +305,7 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 
 #define QUADFORMAT "ll"
 #define QUADCONST(n) (n##LL)
-#define KILLER_SIGNALS
+//#define KILLER_SIGNALS
 #define NO_NFS					/* no MTAB_OPEN or MTAB_CLOSE in isc_file.c */
 
 #define MEMMOVE(from,to,length)     memmove ((void *)to, (void *)from, (size_t) length)
@@ -338,7 +336,7 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 
 #define UNIX
 
-#define KILLER_SIGNALS
+//#define KILLER_SIGNALS
 #define NO_NFS					/* no MTAB_OPEN or MTAB_CLOSE in isc_file.c */
 
 #define MEMMOVE(from,to,length)     memmove ((void *)(to), (void *)(from), (size_t) length)
@@ -359,7 +357,7 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
  * using pipe server.
  * 1995-February-24 David Schnepper
  */
-#define KILLER_SIGNALS
+//#define KILLER_SIGNALS
 
 #ifdef SOLARIS
 
@@ -421,9 +419,9 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
    which is too large to fit in a long int. */
 #define QUADCONST(n) (n##LL)
 
-#else /* SOLARIS */
+//#else /* SOLARIS */
 
-#define BSD_UNIX
+//#define BSD_UNIX
 
 #endif /* SOLARIS */
 
@@ -462,9 +460,9 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 #define hpux
 #endif
 
-#define KILLER_SIGNALS
+//#define KILLER_SIGNALS
 #define UNIX
-#define CURSES_KEYPAD
+//#define CURSES_KEYPAD
 
 //#define ALIGNMENT       8
 //#define DOUBLE_ALIGN    8
@@ -529,9 +527,9 @@ typedef unsigned int64 UATOM;
 #ifdef _AIX						/* IBM AIX */
 #ifndef _POWER					/* IBM RS/6000 */
 #define AIX
-#define KILLER_SIGNALS
+//#define KILLER_SIGNALS
 #define UNIX
-#define CURSES_KEYPAD
+//#define CURSES_KEYPAD
 //*#define ALIGNMENT       4
 #define IMPLEMENTATION  isc_info_db_impl_isc_rt_aix /* 35 */
 #define IEEE
@@ -542,9 +540,9 @@ typedef unsigned int64 UATOM;
 #define SYSCALL_INTERRUPTED(err)        (((err) == EINTR) || ((err) == ERESTART))	/* pjpg 20001102 */
 #else /* AIX PowerPC */
 #define AIX_PPC
-#define KILLER_SIGNALS
+//#define KILLER_SIGNALS
 #define UNIX
-#define CURSES_KEYPAD
+//#define CURSES_KEYPAD
 //#define ALIGNMENT       4
 #define IMPLEMENTATION  isc_info_db_impl_isc_rt_aix /* 35 */
 #define IEEE
@@ -554,7 +552,6 @@ typedef unsigned int64 UATOM;
 #define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
 #define SYSCALL_INTERRUPTED(err)        (((err) == EINTR) || ((err) == ERESTART))	/* pjpg 20001102 */
 
-#define VA_START(list,parmN)    va_start (list, parmN)	/* TMC 081700 */
 #define QUADFORMAT "ll"			/* TMC 081700 */
 #define QUADCONST(n) (n##LL)	/* TMC 081700 */
 
@@ -614,7 +611,6 @@ typedef unsigned __int64 UINT64;
 #endif
 
 #define IEEE
-#define VA_START(list,parmN)    va_start (list, parmN)
 #define API_ROUTINE     __stdcall
 #define API_ROUTINE_VARARG      __cdecl
 #define CLIB_ROUTINE    __cdecl
@@ -829,10 +825,6 @@ typedef struct
 #ifndef LINEFORMAT
 #define LINEFORMAT "ld"
 #endif
-
-/* variable argument definitions */
-
-#define VA_START(list,parmN)    va_start (list, parmN)
 
 /* conditional compilation macros */
 

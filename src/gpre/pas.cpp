@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.37 2004-05-02 23:04:17 skidder Exp $
+//	$Id: pas.cpp,v 1.38 2004-05-23 23:24:42 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -3588,7 +3588,7 @@ static void printa( int column, const char* string, ...)
 {
 	va_list ptr;
 
-	VA_START(ptr, string);
+	va_start(ptr, string);
 	align(column);
 	vfprintf(out_file, string, ptr);
 }

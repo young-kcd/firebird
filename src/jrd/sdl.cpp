@@ -569,7 +569,7 @@ static ISC_STATUS error(ISC_STATUS * status_vector, ...)
 /* Get the addresses of the argument vector and the status vector, and do
    word-wise copy. */
 
-	VA_START(args, status_vector);
+	va_start(args, status_vector);
 	p = status_vector;
 
 /* Copy first argument */

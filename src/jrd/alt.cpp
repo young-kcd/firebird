@@ -73,7 +73,7 @@ SLONG API_ROUTINE_VARARG isc_event_block(SCHAR** event_buffer,
  **************************************/
 	va_list ptr;
 
-	VA_START(ptr, count);
+	va_start(ptr, count);
 
 /* calculate length of event parameter block, 
    setting initial length to include version
@@ -108,7 +108,7 @@ SLONG API_ROUTINE_VARARG isc_event_block(SCHAR** event_buffer,
 
 	*p++ = EPB_version1;
 
-	VA_START(ptr, count);
+	va_start(ptr, count);
 
 	i = count;
 	while (i--) {
@@ -261,7 +261,7 @@ struct teb_t {
 	}
 
 	const teb_t* const end = teb + count;
-	VA_START(ptr, count);
+	va_start(ptr, count);
 
 	for (teb_t* teb_iter = teb; teb_iter < end; ++teb_iter) {
 		teb_iter->teb_database = va_arg(ptr, FB_API_HANDLE*);

@@ -605,7 +605,7 @@ static void error(CompilerScratch* csb, ...)
 /* Don't bother to pass tdbb for error handling */
 	thread_db* tdbb = JRD_get_thread_data();
 
-	VA_START(args, csb);
+	va_start(args, csb);
 
 	csb->csb_running--;
 	offset = csb->csb_running - csb->csb_blr;
@@ -2997,7 +2997,7 @@ static void warning(CompilerScratch* csb, ...)
 
 	thread_db* tdbb = JRD_get_thread_data();
 
-	VA_START(args, csb);
+	va_start(args, csb);
 
 	p = tdbb->tdbb_status_vector;
 

@@ -764,7 +764,7 @@ static RTN corrupt(thread_db* tdbb, VDR control, USHORT err_code, jrd_rel* relat
 	TEXT s[256];
 	va_list ptr;
 
-	VA_START(ptr, relation);
+	va_start(ptr, relation);
 
 	SET_TDBB(tdbb);
 	Attachment* att = tdbb->tdbb_attachment;

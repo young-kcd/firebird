@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.44 2004-05-13 09:46:01 brodsom Exp $
+//	$Id: ftn.cpp,v 1.45 2004-05-23 23:24:41 brodsom Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -4001,7 +4001,7 @@ static void printa(const TEXT* column, const TEXT* string, ...)
 	va_list ptr;
 	SCHAR s[256];
 
-	VA_START(ptr, string);
+	va_start(ptr, string);
 	strcpy(s, column);
 	strcat(s, string);
 	strcat(s, "\n");
@@ -4346,7 +4346,7 @@ static void printb(const TEXT* string, ...)
 {
 	va_list ptr;
 
-	VA_START(ptr, string);
+	va_start(ptr, string);
 	vfprintf(out_file, string, ptr);
 }
 #endif

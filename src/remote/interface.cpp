@@ -6129,7 +6129,7 @@ static void move_error( ISC_STATUS status, ...)
    have been handed to us, then post the error.
    N.B., one of the supplied errors should be a 'isc_arg_end' */
 
-	VA_START(ap, status);
+	va_start(ap, status);
 
 	TRDB tdrdb = REM_get_thread_data();
 	p_args = tdrdb->trdb_status_vector;

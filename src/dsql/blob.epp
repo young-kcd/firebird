@@ -292,7 +292,7 @@ static ISC_STATUS error( ISC_STATUS* status, SSHORT count, ...)
 	ISC_STATUS *stat;
 	va_list ptr;
 
-	VA_START(ptr, count);
+	va_start(ptr, count);
 	stat = status;
 	*stat++ = isc_arg_gds;
 

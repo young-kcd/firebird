@@ -3260,7 +3260,7 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
 
 	// point to communications area 
 
-	VA_START(args, count);
+	va_start(args, count);
 	idb = *(va_arg(args, IDB *));
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 	GET_OBJECT(idb->idb_thread);

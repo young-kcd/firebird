@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.42 2004-05-12 19:34:42 brodsom Exp $
+//	$Id: cob.cpp,v 1.43 2004-05-23 23:24:41 brodsom Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -4409,7 +4409,7 @@ static void printa(const TEXT* column,
 	va_list ptr;
 	TEXT s[256];
 
-	VA_START(ptr, string);
+	va_start(ptr, string);
 	strcpy(s, column);
 	strcat(s, string);
 	strcat(s, "\n");
@@ -4428,7 +4428,7 @@ static void printb(const TEXT* string, ...)
 {
 	va_list ptr;
 
-	VA_START(ptr, string);
+	va_start(ptr, string);
 	vfprintf(out_file, string, ptr);
 }
 #endif

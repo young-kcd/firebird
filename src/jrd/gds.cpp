@@ -1140,7 +1140,7 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
 	{
 		fprintf(file, "\n%s%s\t%.25s\t", 
 				   ISC_get_host(name, MAXPATHLEN), gdslogid, ctime(&now));
-		VA_START(ptr, text);
+		va_start(ptr, text);
 		vfprintf(file, text, ptr);
 		fprintf(file, "\n\n");
 		fclose(file);
@@ -2733,7 +2733,7 @@ static void blr_error(gds_ctl* control, const TEXT* string, ...)
 	USHORT offset;
 	va_list args;
 
-	VA_START(args, string);
+	va_start(args, string);
 	blr_format(control, string, args);
 	offset = 0;
 	blr_print_line(control, (SSHORT) offset);
@@ -2755,7 +2755,7 @@ static void blr_format(gds_ctl* control, const char* string, ...)
  **************************************/
 	va_list ptr;
 
-	VA_START(ptr, string);
+	va_start(ptr, string);
 	vsprintf(control->ctl_ptr, string, ptr);
 	while (*control->ctl_ptr)
 		control->ctl_ptr++;

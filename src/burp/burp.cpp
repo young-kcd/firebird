@@ -2062,7 +2062,7 @@ static void burp_output( const SCHAR* format, ...)
 							   (UCHAR*)(""));
 	}
 	else if (tdgbl->sw_redirect == REDIRECT && tdgbl->output_file != NULL) {
-		VA_START(arglist, format);
+		va_start(arglist, format);
 		vfprintf(tdgbl->output_file, format, arglist);
 		va_end(arglist);
 		exit_code =
@@ -2070,7 +2070,7 @@ static void burp_output( const SCHAR* format, ...)
 							   (UCHAR*)(""));
 	}
 	else {
-		VA_START(arglist, format);
+		va_start(arglist, format);
 		vsprintf((char *) buf, format, arglist);
 		va_end(arglist);
 

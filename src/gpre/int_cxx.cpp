@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int_cxx.cpp,v 1.33 2004-05-02 23:04:17 skidder Exp $
+//	$Id: int_cxx.cpp,v 1.34 2004-05-23 23:24:42 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -743,7 +743,7 @@ static void printa(const int column, const TEXT* string, ...)
 {
 	va_list ptr;
 
-	VA_START(ptr, string);
+	va_start(ptr, string);
 	align(column);
 	vfprintf(out_file, string, ptr);
 }

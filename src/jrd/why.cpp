@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.72 2004-05-21 06:15:42 robocop Exp $
+$Id: why.cpp,v 1.73 2004-05-23 23:26:31 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -4823,7 +4823,7 @@ ISC_STATUS API_ROUTINE_VARARG GDS_START_TRANSACTION(ISC_STATUS * user_status,
 	}
 
 	end = teb + count;
-	VA_START(ptr, count);
+	va_start(ptr, count);
 
 	for (; teb < end; teb++) {
 		teb->teb_database = va_arg(ptr, FB_API_HANDLE*);

@@ -1437,7 +1437,7 @@ static void error_post(ISC_STATUS status, ...)
 /* Get the addresses of the argument vector and the status vector, and do
    word-wise copy. */
 
-	VA_START(args, status);
+	va_start(args, status);
 	p = UDSQL_error->dsql_status;
 
 // Copy first argument 

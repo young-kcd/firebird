@@ -314,7 +314,7 @@ bool ERR_post_warning(ISC_STATUS status, ...)
 	int indx = 0, warning_indx = 0;
 	ISC_STATUS* status_vector;
 
-	VA_START(args, status);
+	va_start(args, status);
 	status_vector = ((thread_db*) JRD_get_thread_data())->tdbb_status_vector;
 
 	if (status_vector[0] != isc_arg_gds ||

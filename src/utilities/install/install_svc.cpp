@@ -530,7 +530,7 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
 {
 	va_list ptr;
 
-	VA_START(ptr, text);
+	va_start(ptr, text);
 	vprintf(text, ptr);
 	printf("\n\n");
 }

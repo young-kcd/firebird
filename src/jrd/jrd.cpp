@@ -3647,7 +3647,7 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
 	TEB* teb;
 	const TEB* end;
 	va_list ptr;
-	VA_START(ptr, count);
+	va_start(ptr, count);
 
 	for (teb = tebs, end = teb + count; teb < end; teb++) {
 		teb->teb_database = va_arg(ptr, Attachment**);

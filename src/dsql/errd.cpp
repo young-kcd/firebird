@@ -164,7 +164,7 @@ bool ERRD_post_warning(ISC_STATUS status, ...)
 // meaning; if sizeof(long) != sizeof(void*), this code WILL crash something.
 
 
-	VA_START(args, status);
+	va_start(args, status);
 
 	ISC_STATUS* status_vector = ((tsql*) DSQL_get_thread_data())->tsql_status;
 	int indx = 0;

@@ -4446,7 +4446,7 @@ static dsql_nod* make_node (NOD_TYPE	type,
 	node->nod_count = count;
 	dsql_nod** p = node->nod_arg;
 	va_list	ptr;
-	VA_START (ptr, count);
+	va_start (ptr, count);
 
 	while (--count >= 0)
 		*p++ = va_arg (ptr, dsql_nod*);
@@ -4480,7 +4480,7 @@ static dsql_nod* make_flag_node (NOD_TYPE	type,
 	node->nod_count = count;
 	dsql_nod** p = node->nod_arg;
 	va_list	ptr;
-	VA_START (ptr, count);
+	va_start (ptr, count);
 
 	while (--count >= 0)
 		*p++ = va_arg (ptr, dsql_nod*);

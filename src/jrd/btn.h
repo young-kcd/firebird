@@ -24,8 +24,8 @@
  *  Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_BTN_H_
-#define JRD_BTN_H_
+#ifndef JRD_BTN_H
+#define JRD_BTN_H
 
 #include "firebird.h"			// needed for get_long
 #include "memory_routines.h"	// needed for get_long
@@ -110,5 +110,5 @@ namespace BTreeNode {
 
 } // namespace BTreeNode
 
-#endif // JRD_BTN_H_
+#endif // JRD_BTN_H
 

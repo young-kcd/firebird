@@ -52,7 +52,7 @@
 #define STUFF_STATUS(status_vector,status)              \
 {                                                       \
     va_list args;                                       \
-    VA_START (args, status);                            \
+    va_start (args, status);                            \
     STUFF_STATUS_function(status_vector, status, args); \
 }
 
