@@ -5247,7 +5247,7 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 			river1->riv_rsb = gen_boolean(tdbb, opt, river1->riv_rsb, node);
 		}
 		set_inactive(opt, river1);
-		org_rivers = newRivers;
+		org_rivers.takeOwnership(newRivers);
 
 		for (stream_nr = 0, fv = flag_vector; 
 			stream_nr < opt->opt_csb->csb_n_stream; stream_nr++) 

@@ -47,11 +47,13 @@ namespace Firebird
 			iterator(ObjectsArray *l, int p) : lst(l), pos(p) { }
 		public:
 			iterator() : lst(0), pos(0) { }
+/*
 			iterator& operator=(ObjectsArray& a)
 			{
-				lst = a.l;
+				lst = &a;
 				pos = 0;
 			}
+ */
 			iterator& operator++() {++pos; return (*this);}
 			iterator operator++(int) {iterator tmp = *this; ++pos; 
 									  return tmp;}

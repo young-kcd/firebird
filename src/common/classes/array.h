@@ -133,7 +133,7 @@ public:
 		memmove(data + index + 1, data + index, sizeof(T) * (count++ - index));
 		data[index] = item;
 	}
-	void insert(int index, Array<T>& L) {
+	void insert(int index, const Array<T, Storage>& L) {
 		fb_assert(index >= 0 && index <= count);
 		ensureCapacity(count + L.count);
 		memmove(data + index + L.count, data + index, sizeof(T) * (count - index));

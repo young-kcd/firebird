@@ -3,24 +3,25 @@
  *	MODULE:		stack.h
  *	DESCRIPTION:	Stack.
  *
- * The contents of this file are subject to the Interbase Public
- * License Version 1.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy
- * of the License at http://www.Inprise.com/IPL.html
+ *  The contents of this file are subject to the Initial
+ *  Developer's Public License Version 1.0 (the "License");
+ *  you may not use this file except in compliance with the
+ *  License. You may obtain a copy of the License at
+ *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
  *
- * Software distributed under the License is distributed on an
- * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
- * or implied. See the License for the specific language governing
- * rights and limitations under the License.
+ *  Software distributed under the License is distributed AS IS,
+ *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing rights
+ *  and limitations under the License.
  *
- * Stack is implemented as a linked list of vectors.
- * This makes implementation of merge and split operations
- * enough efficcient for large stacks (used in opt.cpp).
+ *  The Original Code was created by Alexander Peshkoff
+ *  for the Firebird Open Source RDBMS project.
  *
- * Created by: Alex Peshkov <peshkoff@mail.ru>
+ *  Copyright (c) 2004 Alexander Peshkoff <peshkoff@mail.ru>
+ *  and all contributors signed below.
  *
- * All Rights Reserved.
- * Contributor(s): ______________________________________.
+ *  All Rights Reserved.
+ *  Contributor(s): ______________________________________.
  *
  */
 
@@ -80,6 +81,7 @@ namespace Firebird {
 
 			void split(int elem, Entry* target) 
 			{
+				fb_assert(elem > 0 && elem < count);
 				memcpy(target->data, data, elem * sizeof(Object));
 				target->count += elem;
 				count -= elem;
@@ -126,12 +128,15 @@ namespace Firebird {
 			return tmp;
 		}
 
-		Stack<Object, Capacity>& operator= (Stack<Object, Capacity>& s) {
+	private:
+		Stack<Object, Capacity>& operator= (Stack<Object, Capacity>& s);
+
+	public:
+		void takeOwnership (Stack<Object, Capacity>& s) {
 			fb_assert(&getPool() == &s.getPool());
 			delete stk;
 			stk = s.stk;
 			s.stk = 0;
-			return *this;
 		}
 
 		class iterator {
@@ -151,7 +156,7 @@ namespace Firebird {
 			{
 				fb_assert(stk);
 				if (--elem <= 0) {
-					if ((stk = stk->next))
+					if ((stk = stk->next)) 
 					{
 						elem = stk->getCount();
 					}
