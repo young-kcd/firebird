@@ -40,9 +40,7 @@
  * 2002.10.30 Sean Leyne - Code Cleanup, removed obsolete "SUN3_3" port
  *
  */
-/*
-$Id: inet.cpp,v 1.130 2004-12-17 05:56:04 robocop Exp $
-*/
+
 #include "firebird.h"
 #include <stdio.h>
 #ifdef HAVE_SYS_TYPES_H
