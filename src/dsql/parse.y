@@ -264,7 +264,6 @@ static void	yyerror (TEXT *);
 %token LPAREN
 %token LEFT
 %token LEQ
-%token LEAVE
 %token LEVEL
 %token LIKE
 %token LOG_BUF_SIZE
@@ -422,6 +421,7 @@ static void	yyerror (TEXT *);
 %token LOCK
 %token SAVEPOINT
 %token STATEMENT
+%token LEAVE
 
 /* precedence declarations for expression evaluation */
 
