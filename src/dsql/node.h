@@ -35,8 +35,6 @@
 #ifndef DSQL_NODE_H
 #define DSQL_NODE_H
 
-#include "../dsql/dsql.h"
-
 /* an enumeration of the possible node types in a syntax tree */
 
 typedef enum nod_t 
@@ -341,7 +339,7 @@ public:
 	USHORT nod_column;			/* Source column of the statement. */
 	USHORT nod_count;			/* Number of arguments */
 	USHORT nod_flags;
-	struct dsql_nod *nod_arg[1];
+	dsql_nod* nod_arg[1];
 	
 	dsql_nod() : nod_type(nod_unknown_type), nod_count(0), nod_flags(0) {}
 };

@@ -24,12 +24,12 @@
 #ifndef _DSQL_GEN_PROTO_H_
 #define _DSQL_GEN_PROTO_H_
 
-extern UCHAR GEN_expand_buffer(struct dsql_req *, UCHAR);
-extern void GEN_expr(struct dsql_req *, struct dsql_nod *);
-extern void GEN_port(struct dsql_req *, struct dsql_msg *);
-extern void GEN_request(struct dsql_req *, struct dsql_nod *);
+extern UCHAR GEN_expand_buffer(dsql_req*, UCHAR);
+extern void GEN_expr(dsql_req*, dsql_nod*);
+extern void GEN_port(dsql_req*, dsql_msg*);
+extern void GEN_request(dsql_req*, dsql_nod*);
 extern void GEN_return(DSQL_REQ, DSQL_NOD, bool);
-extern void GEN_start_transaction(struct dsql_req *, struct dsql_nod *);
-extern void GEN_statement(struct dsql_req *, struct dsql_nod *);
+extern void GEN_start_transaction(dsql_req*, dsql_nod*);
+extern void GEN_statement(dsql_req*, dsql_nod*);
 
 #endif /*  _DSQL_GEN_PROTO_H_  */

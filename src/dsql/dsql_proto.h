@@ -59,7 +59,6 @@ extern ISC_STATUS DLL_EXPORT dsql8_set_cursor(ISC_STATUS *, struct dsql_req**, T
 										  USHORT);
 extern ISC_STATUS DLL_EXPORT dsql8_sql_info(ISC_STATUS *, struct dsql_req**, USHORT,
 										const SCHAR*, USHORT, SCHAR *);
-extern void DSQL_pretty(struct dsql_nod *, int);
 
 extern ISC_STATUS callback_execute_immediate(
 		ISC_STATUS *status,

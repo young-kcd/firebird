@@ -65,8 +65,6 @@ nested FOR loops are added.
 #include <stdlib.h>
 #include <string.h>
 #include "../dsql/dsql.h"
-#include "../dsql/node.h"
-#include "../dsql/sym.h"
 #include "../jrd/gds.h"
 #include "../jrd/thd.h"
 #include "../jrd/align.h"
@@ -339,7 +337,7 @@ dsql8_free_statement(	ISC_STATUS*    user_status,
 
 ISC_STATUS DLL_EXPORT
 dsql8_insert(ISC_STATUS*				user_status,
-				struct dsql_req**	req_handle,
+				dsql_req**			req_handle,
 				USHORT				blr_length,
 				SCHAR*				blr,
 				USHORT				msg_type,
@@ -360,7 +358,7 @@ dsql8_insert(ISC_STATUS*				user_status,
 ISC_STATUS DLL_EXPORT
 dsql8_prepare(	ISC_STATUS*				user_status,
 					WHY_TRA*			trans_handle,
-					struct dsql_req**	req_handle,
+					dsql_req**	req_handle,
 					USHORT				length,
 					TEXT*				string,
 					USHORT				dialect,
@@ -386,7 +384,7 @@ dsql8_prepare(	ISC_STATUS*				user_status,
 
 ISC_STATUS DLL_EXPORT
 dsql8_sql_info(	ISC_STATUS*				user_status,
-					struct dsql_req**	req_handle,
+					dsql_req**			req_handle,
 					USHORT				item_length,
 					const SCHAR*		items,
 					USHORT				info_length,
@@ -441,7 +439,8 @@ GDS_DSQL_ALLOCATE_CPP(	ISC_STATUS*    user_status,
 {
 	DBB database;
 	DSQL_REQ request;
-	struct tsql thd_context, *tdsql;
+	tsql thd_context;
+	tsql* tdsql;
 
 	SET_THREAD_DATA;
 
@@ -515,7 +514,8 @@ ISC_STATUS DLL_EXPORT GDS_DSQL_EXECUTE_CPP(ISC_STATUS*		user_status,
 	DSQL_REQ request;
 	OPN open_cursor;
 	ISC_STATUS_ARRAY local_status;
-	struct tsql thd_context, *tdsql;
+	tsql thd_context;
+	tsql* tdsql;
 	bool singleton;
 	ISC_STATUS sing_status;
 
@@ -653,7 +653,8 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
 	DBB database;
 	USHORT parser_version;
 	ISC_STATUS status;
-	struct tsql thd_context, *tdsql;
+	tsql thd_context;
+	tsql* tdsql;
 
 	SET_THREAD_DATA;
 
@@ -950,7 +951,8 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 	DSQL_MSG message;
 	PAR parameter;
 	ISC_STATUS s;
-	struct tsql thd_context, *tdsql;
+	tsql thd_context;
+	tsql* tdsql;
 
 	SET_THREAD_DATA;
 
@@ -1165,7 +1167,8 @@ ISC_STATUS GDS_DSQL_FREE_CPP(ISC_STATUS*	user_status,
 						 USHORT		option)
 {
 	DSQL_REQ request;
-	struct tsql thd_context, *tdsql;
+	tsql thd_context;
+	tsql* tdsql;
 
 	SET_THREAD_DATA;
 
@@ -1234,7 +1237,8 @@ ISC_STATUS GDS_DSQL_INSERT_CPP(	ISC_STATUS*	user_status,
 	PAR parameter;
 	SCHAR *buffer;
 	ISC_STATUS s;
-	struct tsql thd_context, *tdsql;
+	tsql thd_context;
+	tsql* tdsql;
 
 	SET_THREAD_DATA;
 
@@ -1322,7 +1326,8 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 	USHORT parser_version;
 	DBB database;
 	ISC_STATUS status;
-	struct tsql thd_context, *tdsql;
+	tsql thd_context;
+	tsql* tdsql;
 
 	SET_THREAD_DATA;
 
@@ -1474,9 +1479,10 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 								USHORT	type)
 {
 	DSQL_REQ request;
-	SYM symbol;
+	DSQL_SYM symbol;
 	USHORT length;
-	struct tsql thd_context, *tdsql;
+	tsql thd_context;
+	tsql* tdsql;
 	TEXT cursor[132];
 
 
@@ -1583,7 +1589,8 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 	UCHAR item, *end_info, buffer[256], *buffer_ptr;
 	const UCHAR *end_items, *end_describe;
 	USHORT length, number, first_index;
-	struct tsql thd_context, *tdsql;
+	tsql thd_context;
+	tsql* tdsql;
 
 	SET_THREAD_DATA;
 
@@ -1847,7 +1854,7 @@ void DSQL_pretty(DSQL_NOD node, int column)
 		return;
 
 	case (TEXT) dsql_type_sym:
-		trace_line("%sSYMBOL: %s\n", buffer, ((SYM) node)->sym_string);
+		trace_line("%sSYMBOL: %s\n", buffer, ((DSQL_SYM) node)->sym_string);
 		return;
 
 	case (TEXT) dsql_type_nod:
@@ -4772,9 +4779,7 @@ static DSQL_REQ prepare(
  **/
 static void punt(void)
 {
-	struct tsql *tdsql;
-
-	tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	Firebird::status_exception::raise(tdsql->tsql_status[1]);
 }

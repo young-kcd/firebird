@@ -24,7 +24,7 @@
 #ifndef DSQL_MOVD_PROTO_H
 #define DSQL_MOVD_PROTO_H
 
-extern void MOVD_move(struct dsc *, struct dsc *);
+extern void MOVD_move(dsc*, dsc*);
 
 #endif //  DSQL_MOVD_PROTO_H
 

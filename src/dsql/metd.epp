@@ -32,8 +32,6 @@
 #include "firebird.h"
 #include <string.h>
 #include "../dsql/dsql.h"
-#include "../dsql/node.h"
-#include "../dsql/sym.h"
 #include "../jrd/gds.h"
 #include "../jrd/align.h"
 #include "../jrd/intl.h"
@@ -145,7 +143,7 @@ void METD_drop_function (DSQL_REQ request, STR name)
  *
  **************************************/
     UDF	udf;
-    SYM	symbol;
+    DSQL_SYM symbol;
 
     metd_rec_lock();
 
@@ -196,7 +194,7 @@ void METD_drop_procedure( DSQL_REQ request, STR name)
  *
  **************************************/
 	DSQL_PRC procedure;
-	SYM symbol;
+	DSQL_SYM symbol;
 
 	metd_rec_lock();
 
@@ -243,7 +241,7 @@ void METD_drop_relation( DSQL_REQ request, STR name)
  *
  **************************************/
 	DSQL_REL relation;
-	SYM symbol;
+	DSQL_SYM symbol;
 
 
 	metd_rec_lock();
@@ -288,7 +286,7 @@ INTLSYM METD_get_collation(DSQL_REQ request, STR name)
 	FRBRD *DB, *gds_trans;
 	DBB dbb;
 	INTLSYM iname;
-	SYM symbol;
+	DSQL_SYM symbol;
 
 /* Start by seeing if symbol is already defined */
 
@@ -340,7 +338,7 @@ INTLSYM METD_get_collation(DSQL_REQ request, STR name)
 
 /* Store in the symbol table */
 
-	symbol = iname->intlsym_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) sym;
+	symbol = iname->intlsym_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) dsql_sym;
 	symbol->sym_object = (BLK) iname;
 	symbol->sym_string = iname->intlsym_name;
 	symbol->sym_length = name->str_length;
@@ -489,7 +487,7 @@ INTLSYM METD_get_charset(DSQL_REQ request, USHORT length, const char* name /* UT
 	FRBRD *DB, *gds_trans;
 	DBB dbb;
 	INTLSYM iname;
-	SYM symbol;
+	DSQL_SYM symbol;
 
 /* Start by seeing if symbol is already defined */
 
@@ -546,7 +544,7 @@ INTLSYM METD_get_charset(DSQL_REQ request, USHORT length, const char* name /* UT
 
 /* Store in the symbol table */
 
-	symbol = iname->intlsym_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) sym;
+	symbol = iname->intlsym_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) dsql_sym;
 	symbol->sym_object = (BLK) iname;
 	symbol->sym_string = iname->intlsym_name;
 	symbol->sym_length = length;
@@ -878,7 +876,7 @@ UDF METD_get_function(DSQL_REQ request, STR name)
 	DBB dbb;
 	UDF udf_, temp;
 	USHORT return_arg, arg_count;
-	SYM symbol;
+	DSQL_SYM symbol;
     DLLS stack, stack_temp;
     DSQL_NOD	udf_param_node, *ptr;
 
@@ -1106,7 +1104,7 @@ UDF METD_get_function(DSQL_REQ request, STR name)
 /* Store in the symbol table */
 /* The UDF_new_udf flag is not used, so nothing extra to check. */
 
-	symbol = udf_->udf_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) sym;
+	symbol = udf_->udf_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) dsql_sym;
 	symbol->sym_object = (BLK) udf_;
 	symbol->sym_string = udf_->udf_name;
 	symbol->sym_length = name->str_length;
@@ -1198,7 +1196,7 @@ DSQL_PRC METD_get_procedure(DSQL_REQ request, STR name)
 	DBB dbb;
 	DSQL_FLD parameter, *ptr;
 	DSQL_PRC procedure, temp;
-	SYM symbol;
+	DSQL_SYM symbol;
 	SSHORT type, count;
 
 
@@ -1359,7 +1357,7 @@ DSQL_PRC METD_get_procedure(DSQL_REQ request, STR name)
 		procedure->prc_next = dbb->dbb_procedures;
 		dbb->dbb_procedures = procedure;
 
-		symbol = procedure->prc_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) sym;
+		symbol = procedure->prc_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) dsql_sym;
 		symbol->sym_object = (BLK) procedure;
 		symbol->sym_string = procedure->prc_name;
 		symbol->sym_length = name->str_length;
@@ -1390,7 +1388,7 @@ DSQL_REL METD_get_relation(DSQL_REQ request, STR name)
 	DBB dbb;
 	DSQL_FLD field, *ptr;
 	DSQL_REL relation, temp;
-	SYM symbol;
+	DSQL_SYM symbol;
 	TSQL tdsql;
 
 	tdsql = GET_THREAD_DATA;
@@ -1634,7 +1632,7 @@ DSQL_REL METD_get_relation(DSQL_REQ request, STR name)
 
 		/* store in the symbol table unless the relation is not yet committed */
 
-		symbol = relation->rel_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) sym;
+		symbol = relation->rel_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) dsql_sym;
 		symbol->sym_object = (BLK) relation;
 		symbol->sym_string = relation->rel_name;
 		symbol->sym_length = name->str_length;

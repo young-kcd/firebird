@@ -24,7 +24,6 @@
 #include "firebird.h"
 #include <string.h>
 #include "../dsql/dsql.h"
-#include "../dsql/sym.h"
 #include "../jrd/gds.h"
 #include "../jrd/gds_proto.h"
 #include "../dsql/alld_proto.h"
@@ -37,10 +36,10 @@
 ASSERT_FILENAME
 const int HASH_SIZE = 211;
 static SSHORT hash(SCHAR *, USHORT);
-static bool remove_symbol(struct sym **, struct sym *);
+static bool remove_symbol(dsql_sym**, dsql_sym*);
 static bool scompare(TEXT *, USHORT, TEXT *, USHORT);
 
-static SYM *hash_table;
+static DSQL_SYM* hash_table;
 
 /*
    SUPERSERVER can end up with many hands in the pie, so some
@@ -94,10 +93,10 @@ void HSHD_init(void)
 	}
 #endif
 
-	p = (UCHAR *) gds__alloc(sizeof(SYM) * HASH_SIZE);
-	memset(p, 0, sizeof(SYM) * HASH_SIZE);
+	p = (UCHAR *) gds__alloc(sizeof(DSQL_SYM) * HASH_SIZE);
+	memset(p, 0, sizeof(DSQL_SYM) * HASH_SIZE);
 
-	hash_table = (SYM *) p;
+	hash_table = (DSQL_SYM *) p;
 }
 
 
@@ -116,8 +115,8 @@ void HSHD_init(void)
  **/
 void HSHD_debug(void)
 {
-	SYM collision;
-	SYM homptr;
+	DSQL_SYM collision;
+	DSQL_SYM homptr;
 	SSHORT h;
 
 /* dump each hash table entry */
@@ -181,10 +180,10 @@ void HSHD_fini(void)
  **/
 void HSHD_finish( void *database)
 {
-	SYM *collision;
-	SYM *homptr;
-	SYM symbol;
-	SYM chain;
+	DSQL_SYM* collision;
+	DSQL_SYM* homptr;
+	DSQL_SYM symbol;
+	DSQL_SYM chain;
 	SSHORT h;
 
 /* check each hash table entry */
@@ -234,11 +233,11 @@ void HSHD_finish( void *database)
     @param symbol
 
  **/
-void HSHD_insert(SYM symbol)
+void HSHD_insert(DSQL_SYM symbol)
 {
 	SSHORT h;
 	void *database;
-	SYM old;
+	DSQL_SYM old;
 
 	lock_hash();
 	h = hash(symbol->sym_string, symbol->sym_length);
@@ -278,7 +277,7 @@ void HSHD_insert(SYM symbol)
     @param parser_version
 
  **/
-SYM HSHD_lookup(void*    database,
+DSQL_SYM HSHD_lookup(void*    database,
 				TEXT*    string,
 				SSHORT   length,
 				SYM_TYPE type,
@@ -287,7 +286,7 @@ SYM HSHD_lookup(void*    database,
 
 	lock_hash();
 	SSHORT h = hash(string, length);
-	for (SYM symbol = hash_table[h]; symbol; symbol = symbol->sym_collision)
+	for (DSQL_SYM symbol = hash_table[h]; symbol; symbol = symbol->sym_collision)
 	{
 		if ((database == symbol->sym_dbb) &&
 			scompare(string, length, symbol->sym_string, symbol->sym_length))
@@ -328,9 +327,9 @@ SYM HSHD_lookup(void*    database,
     @param symbol
 
  **/
-void HSHD_remove( SYM symbol)
+void HSHD_remove(DSQL_SYM symbol)
 {
-	SYM *collision;
+	DSQL_SYM* collision;
 	SSHORT h;
 
 	lock_hash();
@@ -379,7 +378,7 @@ void HSHD_set_flag(
 				   void *database,
 				   TEXT * string, SSHORT length, SYM_TYPE type, SSHORT flag)
 {
-	SYM symbol, homonym;
+	DSQL_SYM symbol, homonym;
 	SSHORT h;
 	DSQL_REL sym_rel;
 	DSQL_PRC sym_prc;
@@ -474,9 +473,10 @@ static SSHORT hash(SCHAR * string, USHORT length)
     @param symbol
 
  **/
-static bool remove_symbol( SYM * collision, SYM symbol)
+static bool remove_symbol(DSQL_SYM* collision, DSQL_SYM symbol)
 {
-	SYM *ptr, homonym;
+	DSQL_SYM* ptr;
+	DSQL_SYM homonym;
 
 	if (symbol == *collision) {
 		if ((homonym = symbol->sym_homonym) != NULL) {

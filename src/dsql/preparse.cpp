@@ -28,6 +28,7 @@
 #include "../jrd/common.h"
 #include "../jrd/gds.h"
 #include "../dsql/chars.h"
+#include "../dsql/sqlda.h"
 #include "../dsql/prepa_proto.h"
 #include "../dsql/utld_proto.h"
 #include "../jrd/gds_proto.h"
@@ -62,13 +63,13 @@ static SSHORT get_next_token(SCHAR **, SCHAR *, SCHAR *, USHORT *);
 static SSHORT get_token(ISC_STATUS *, SSHORT, bool, SCHAR **, SCHAR *,
 						SCHAR *, USHORT *);
 
-typedef struct pp_table {
+struct pp_table {
 	SCHAR symbol[10];
 	SSHORT length;
 	SSHORT code;
-} PP_TABLE;
+};
 
-static const PP_TABLE pp_symbols[] = {
+static const pp_table pp_symbols[] = {
 	{"CREATE", 6, PP_CREATE},
 	{"DATABASE", 8, PP_DATABASE},
 	{"SCHEMA", 6, PP_SCHEMA},

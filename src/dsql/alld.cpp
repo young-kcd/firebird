@@ -55,8 +55,6 @@ nested FOR loops are added.
 #include <string.h>
 #include "../jrd/ib_stdio.h"
 #include "../dsql/dsql.h"
-#include "../dsql/node.h"
-#include "../dsql/sym.h"
 #include "gen/codes.h"
 #include "../dsql/alld_proto.h"
 #include "../dsql/errd_proto.h"

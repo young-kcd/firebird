@@ -138,8 +138,6 @@
 #include "../jrd/ib_stdio.h"
 #include "../jrd/gds.h"
 #include "../dsql/dsql.h"
-#include "../dsql/node.h"
-#include "../dsql/sym.h"
 #include "gen/codes.h"
 #include "../jrd/thd.h"
 #include "../jrd/intl.h"
@@ -156,7 +154,7 @@
 #include "../jrd/thd_proto.h"
 
 #ifdef DEV_BUILD
-#include "../dsql/dsql_proto.h"
+extern void DSQL_pretty(dsql_nod*, int);
 #endif
 
 ASSERT_FILENAME					/* Define things assert() needs */
@@ -2549,7 +2547,7 @@ static bool node_match( DSQL_NOD node1, DSQL_NOD node2, bool ignore_map_cast)
 
 	// This is to get rid of assertion failures when trying
 	// to node_match nod_aggregate's children. This was happening because not
-	// all of the chilren are of type "struct dsql_nod". Pointer to the first child
+	// all of the chilren are of type "dsql_nod". Pointer to the first child
 	// (argument) is actually a pointer to context structure.
 	// To compare two nodes of type nod_aggregate we need first to see if they
 	// both refer to same context structure. If they do not they are different
@@ -3034,7 +3032,7 @@ static DSQL_NOD pass1_constant( DSQL_REQ request, DSQL_NOD constant)
  **/
 static DSQL_NOD pass1_cursor( DSQL_REQ request, DSQL_NOD cursor, DSQL_NOD relation_name)
 {
-	SYM symbol;
+	DSQL_SYM symbol;
 	DSQL_NOD rse, node, temp, relation_node;
 	DSQL_REQ parent;
 	STR string;

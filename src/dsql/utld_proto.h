@@ -33,7 +33,7 @@ extern "C" {
 
 extern ISC_STATUS DLL_EXPORT UTLD_parse_sql_info(ISC_STATUS *, USHORT, SCHAR *,
 											 XSQLDA *, USHORT *);
-extern ISC_STATUS DLL_EXPORT UTLD_parse_sqlda(ISC_STATUS *, struct dasup *, USHORT *,
+extern ISC_STATUS DLL_EXPORT UTLD_parse_sqlda(ISC_STATUS*, dasup*, USHORT*,
 										  USHORT *, USHORT *, USHORT,
 										  XSQLDA *, USHORT);
 extern void DLL_EXPORT UTLD_save_status_strings(ISC_STATUS *);

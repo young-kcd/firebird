@@ -44,7 +44,7 @@ typedef enum sym_type {
 
 /* symbol block */
 
-class sym : public pool_alloc_rpt<UCHAR, dsql_type_sym> {
+class dsql_sym : public pool_alloc_rpt<UCHAR, dsql_type_sym> {
 public:
 	void *sym_dbb;				/* generic DB structure handle */
 	TEXT *sym_string;			/* address of asciz string */
@@ -52,12 +52,12 @@ public:
 	SYM_TYPE sym_type;			/* symbol type */
 	USHORT sym_keyword;			/* keyword number, if keyword */
 	void *sym_object;			/* general pointer to object */
-	struct sym *sym_collision;	/* collision pointer */
-	struct sym *sym_homonym;	/* homonym pointer */
+	dsql_sym* sym_collision;	/* collision pointer */
+	dsql_sym* sym_homonym;		/* homonym pointer */
 	TEXT sym_name[2];			/* space for name, if necessary */
 	USHORT sym_version;			/* dialect version the symbol was introduced */
 };
-typedef sym *SYM;
+typedef dsql_sym *DSQL_SYM;
 
 #endif // DSQL_SYM_H
 

@@ -77,6 +77,8 @@ dsql_type_MAX};
 #include "../include/fb_blk.h"
 #endif
 
+#include "../dsql/sym.h"
+
 //! generic data type used to store strings
 class str : public pool_alloc_rpt<char, dsql_type_str>
 {
@@ -136,6 +138,8 @@ enum irq_type_t {
     irq_MAX         = 16
 };
 
+// dsql_node definition
+#include "../dsql/node.h"
 
 // blocks used to cache metadata
 
@@ -169,7 +173,7 @@ class dsql_rel : public pool_alloc_rpt<SCHAR, dsql_type_dsql_rel>
 {
 public:
 	dsql_rel*	rel_next;			//!< Next relation in database
-	struct sym*	rel_symbol;			//!< Hash symbol for relation
+	dsql_sym*	rel_symbol;			//!< Hash symbol for relation
 	class dsql_fld*	rel_fields;		//!< Field block
 	dsql_rel*	rel_base_relation;	//!< base relation for an updatable view
 	TEXT*		rel_name;			//!< Name of relation
@@ -195,9 +199,9 @@ public:
 	dsql_fld*		fld_next;				//!< Next field in relation
 	dsql_rel*	fld_relation;			//!< Parent relation
 	class dsql_prc*	fld_procedure;			//!< Parent procedure
-	struct dsql_nod*	fld_ranges;				//!< ranges for multi dimension array
-	struct dsql_nod*	fld_character_set;		//!< null means not specified
-	struct dsql_nod*	fld_sub_type_name;		//!< Subtype name for later resolution
+	dsql_nod*	fld_ranges;				//!< ranges for multi dimension array
+	dsql_nod*	fld_character_set;		//!< null means not specified
+	dsql_nod*	fld_sub_type_name;		//!< Subtype name for later resolution
 	USHORT		fld_flags;
 	USHORT		fld_id;					//!< Field in in database
 	USHORT		fld_dtype;				//!< Data type of field
@@ -247,7 +251,7 @@ class dsql_prc : public pool_alloc_rpt<SCHAR, dsql_type_prc>
 {
 public:
 	dsql_prc*		prc_next;		//!< Next relation in database
-	struct sym*	prc_symbol;		//!< Hash symbol for procedure
+	dsql_sym*	prc_symbol;		//!< Hash symbol for procedure
 	dsql_fld*		prc_inputs;		//!< Input parameters
 	dsql_fld*		prc_outputs;	//!< Output parameters
 	TEXT*		prc_name;		//!< Name of procedure
@@ -270,14 +274,14 @@ class udf : public pool_alloc_rpt<SCHAR, dsql_type_udf>
 {
 public:
 	udf*		udf_next;
-	struct sym*	udf_symbol;		//!< Hash symbol for udf
+	dsql_sym*	udf_symbol;		//!< Hash symbol for udf
 	USHORT		udf_dtype;
 	SSHORT		udf_scale;
 	SSHORT		udf_sub_type;
 	USHORT		udf_length;
 	SSHORT		udf_character_set_id;
 	USHORT		udf_character_length;
-    struct dsql_nod  *udf_arguments;
+    dsql_nod*	udf_arguments;
     USHORT      udf_flags;
 
 	TEXT		udf_name[2];
@@ -329,7 +333,7 @@ typedef var* VAR;
 class intlsym : public pool_alloc_rpt<SCHAR, dsql_type_intlsym>
 {
 public:
-	struct sym*	intlsym_symbol;	//!< Hash symbol for intlsym
+	dsql_sym*	intlsym_symbol;		//!< Hash symbol for intlsym
 	USHORT		intlsym_type;		//!< what type of name
 	USHORT		intlsym_flags;
 	SSHORT		intlsym_ttype;		//!< id of implementation
@@ -378,9 +382,9 @@ public:
 	void		append_file_start(ULONG start);
 	void		generate_unnamed_trigger_beginning(	bool		on_update_trigger,
 													const char*	prim_rel_name,
-													struct dsql_nod* prim_columns,
+													dsql_nod* prim_columns,
 													const char*	for_rel_name,
-													struct dsql_nod* for_columns);
+													dsql_nod* for_columns);
 	// end - member functions that should be private
 
 	dsql_req*	req_parent;		//!< Source request, if cursor update
@@ -390,12 +394,12 @@ public:
 	DLLS	req_context;
     DLLS    req_union_context;	//!< Save contexts for views of unions
     DLLS    req_dt_context;		//!< Save contexts for views of derived tables
-	struct sym* req_name;		//!< Name of request
-	struct sym* req_cursor;		//!< Cursor symbol, if any
+	dsql_sym* req_name;			//!< Name of request
+	dsql_sym* req_cursor;		//!< Cursor symbol, if any
 	dbb*	req_dbb;			//!< Database handle
 	FRBRD*	req_trans;			//!< Database transaction handle
 	class opn* req_open_cursor;
-	struct dsql_nod* req_ddl_node;	//!< Store metadata request
+	dsql_nod* req_ddl_node;		//!< Store metadata request
 	class blb* req_blob;			//!< Blob info for blob requests
 	FRBRD*	req_handle;				//!< OSRI request handle
 	str*	req_blr_string;			//!< String block during BLR generation
@@ -456,11 +460,11 @@ typedef dsql_req* DSQL_REQ;
 class blb : public pool_alloc<dsql_type_blb>
 {
 public:
-	struct dsql_nod*	blb_field;			//!< Related blob field
+	dsql_nod*	blb_field;			//!< Related blob field
 	class par*	blb_blob_id;		//!< Parameter to hold blob id
 	class par*	blb_segment;		//!< Parameter for segments
-	struct dsql_nod* blb_from;
-	struct dsql_nod* blb_to;
+	dsql_nod* blb_from;
+	dsql_nod* blb_to;
 	class dsql_msg*	blb_open_in_msg;	//!< Input message to open cursor
 	class dsql_msg*	blb_open_out_msg;	//!< Output message from open cursor
 	class dsql_msg*	blb_segment_msg;	//!< Segment message
@@ -493,9 +497,9 @@ public:
 	dsql_req*			ctx_request;		//!< Parent request
 	dsql_rel*			ctx_relation;		//!< Relation for context
 	dsql_prc*			ctx_procedure;		//!< Procedure for context
-	struct dsql_nod*	ctx_proc_inputs;	//!< Procedure input parameters
+	dsql_nod*			ctx_proc_inputs;	//!< Procedure input parameters
 	class dsql_map*		ctx_map;			//!< Map for aggregates
-	struct dsql_nod*	ctx_rse;			//!< Sub-rse for aggregates
+	dsql_nod*			ctx_rse;			//!< Sub-rse for aggregates
 	dsql_ctx*			ctx_parent;			//!< Parent context for aggregates
 	TEXT*				ctx_alias;			//!< Context alias
 	USHORT				ctx_context;		//!< Context id
@@ -514,9 +518,9 @@ typedef dsql_ctx* DSQL_CTX;
 class dsql_map : public pool_alloc<dsql_type_map>
 {
 public:
-	dsql_map*			map_next;			//!< Next map in item
-	struct dsql_nod*	map_node;			//!< Value for map item
-	USHORT				map_position;		//!< Position in map
+	dsql_map*	map_next;			//!< Next map in item
+	dsql_nod*	map_node;			//!< Value for map item
+	USHORT		map_position;		//!< Position in map
 };
 typedef dsql_map* DSQL_MAP;
 
@@ -542,7 +546,7 @@ public:
 	class par*	par_next;			//!< Next parameter in linked list
 	class par*	par_ordered;		//!< Next parameter in order of index
 	class par*	par_null;			//!< Null parameter, if used
-	struct dsql_nod*	par_node;			//!< Associated value node, if any
+	dsql_nod*	par_node;			//!< Associated value node, if any
 	dsql_ctx*	par_dbkey_ctx;		//!< Context of internally requested dbkey
 	dsql_ctx*	par_rec_version_ctx;	//!< Context of internally requested record version
 	TEXT*	par_name;			//!< Parameter name, if any

@@ -85,8 +85,6 @@
 
 #include "gen/iberror.h"
 #include "../dsql/dsql.h"
-#include "../dsql/node.h"
-#include "../dsql/sym.h"
 #include "../jrd/gds.h"
 #include "../jrd/flags.h"
 #include "../dsql/alld_proto.h"
@@ -203,7 +201,7 @@ struct LexerState {
 
 /* Get ready for thread-safety. Move this to BISON object pointer when we 
    switch to generating "pure" reenterant parser. */
-static struct LexerState lex;
+static LexerState lex;
 
 %}
 
@@ -4074,7 +4072,7 @@ void LEX_dsql_init (void)
  **************************************/
 	for (const TOK *token = KEYWORD_getTokens(); token->tok_string; ++token)
 	{
-		SYM symbol = FB_NEW_RPT(*DSQL_permanent_pool, 0) sym;
+		DSQL_SYM symbol = FB_NEW_RPT(*DSQL_permanent_pool, 0) dsql_sym;
 		symbol->sym_string = (TEXT *) token->tok_string;
 		symbol->sym_length = strlen(token->tok_string);
 		symbol->sym_type = SYM_keyword;
@@ -4596,7 +4594,7 @@ int LexerState::yylex (
 	char* buffer;
 	char* buffer_end;
 	char* new_buffer;
-	SYM	sym;
+	DSQL_SYM	sym;
 	SSHORT	c;
 	USHORT	buffer_len;
 

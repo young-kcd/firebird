@@ -44,7 +44,7 @@ DATABASE DB = STATIC FILENAME "yachts.lnk";
 
 const int array_desc_column_major = 1;	// Set for FORTRAN
 
-typedef struct gen {
+typedef struct gen_t {
 	UCHAR *gen_sdl;
 	UCHAR **gen_sdl_ptr;
 	UCHAR *gen_end;
@@ -384,7 +384,8 @@ static ISC_STATUS gen_sdl(ISC_STATUS * status,
  **************************************/
 	SSHORT n, from, to, increment, dimensions;
 	ISC_ARRAY_BOUND *tail;
-	struct gen *gen, gen_block;
+	gen_t* gen;
+	gen_t gen_block;
 
 
 	dimensions = desc->array_desc_dimensions;

@@ -41,8 +41,6 @@
 #include <ctype.h>
 #include <string.h>
 #include "../dsql/dsql.h"
-#include "../dsql/node.h"
-#include "../dsql/sym.h"
 #include "../jrd/gds.h"
 #include "../jrd/intl.h"
 #include "../jrd/constants.h"
@@ -1616,10 +1614,10 @@ STR MAKE_string(const char* str, int length)
     @param object
 
  **/
-SYM MAKE_symbol(DBB database,
+DSQL_SYM MAKE_symbol(DBB database,
 				const TEXT * name, USHORT length, SYM_TYPE type, DSQL_REQ object)
 {
-	SYM symbol;
+	DSQL_SYM symbol;
 	TEXT *p;
 	TSQL tdsql;
 
@@ -1630,7 +1628,7 @@ SYM MAKE_symbol(DBB database,
 
 	tdsql = GET_THREAD_DATA;
 
-	symbol = FB_NEW_RPT(*tdsql->tsql_default, length) sym;
+	symbol = FB_NEW_RPT(*tdsql->tsql_default, length) dsql_sym;
 	symbol->sym_type = type;
 	symbol->sym_object = (BLK) object;
 	symbol->sym_dbb = database;
