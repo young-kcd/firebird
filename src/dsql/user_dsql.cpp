@@ -93,8 +93,8 @@ typedef struct name
 
 static void		cleanup(void*);
 static void		cleanup_database(FRBRD**, SLONG);
-static STATUS	error();
-static void		error_post(STATUS, ...);
+static ISC_STATUS	error();
+static void		error_post(ISC_STATUS, ...);
 static NAME		lookup_name(SCHAR*, NAME);
 static STMT		lookup_stmt(SCHAR*, NAME, USHORT);
 static void		init(FRBRD**);
@@ -114,13 +114,13 @@ static NAME		statement_names	= NULL;
 static NAME		cursor_names	= NULL;
 static DBB		databases		= NULL;
 
-static inline void set_global_private_status(STATUS* user_status, STATUS* local_status)
+static inline void set_global_private_status(ISC_STATUS* user_status, ISC_STATUS* local_status)
 {
 	UDSQL_error->dsql_user_status = user_status;
 	UDSQL_error->dsql_status = (user_status) ? user_status : local_status;
 }
 
-static inline void INIT_DSQL(STATUS* user_status, STATUS* local_status)
+static inline void INIT_DSQL(ISC_STATUS* user_status, ISC_STATUS* local_status)
 {
 	init(0);
 	set_global_private_status(user_status, local_status);
@@ -131,9 +131,9 @@ static inline void INIT_DSQL(STATUS* user_status, STATUS* local_status)
 //
 //	Close a dynamic SQL cursor.
 //
-STATUS API_ROUTINE isc_embed_dsql_close(STATUS* user_status, SCHAR* name)
+ISC_STATUS API_ROUTINE isc_embed_dsql_close(ISC_STATUS* user_status, SCHAR* name)
 {
-	STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS local_status[ISC_STATUS_LENGTH];
 
 	INIT_DSQL(user_status, local_status);
 	try
@@ -158,11 +158,11 @@ STATUS API_ROUTINE isc_embed_dsql_close(STATUS* user_status, SCHAR* name)
 //
 //	Declare a cursor for a dynamic request.
 //
-STATUS API_ROUTINE isc_embed_dsql_declare(	STATUS*	user_status,
+ISC_STATUS API_ROUTINE isc_embed_dsql_declare(	ISC_STATUS*	user_status,
 											SCHAR*	stmt_name,
 											SCHAR*	cursor)
 {
-	STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS local_status[ISC_STATUS_LENGTH];
 
 	INIT_DSQL(user_status, local_status);
 	try
@@ -171,7 +171,7 @@ STATUS API_ROUTINE isc_embed_dsql_declare(	STATUS*	user_status,
 
 		STMT statement = lookup_stmt(stmt_name, statement_names, NAME_statement);
 
-		STATUS s =
+		ISC_STATUS s =
 			isc_dsql_set_cursor_name(user_status,
 								 &statement->stmt_handle,
 								 cursor,
@@ -195,11 +195,11 @@ STATUS API_ROUTINE isc_embed_dsql_declare(	STATUS*	user_status,
 //
 //	Describe output parameters for a prepared statement.
 //
-STATUS API_ROUTINE isc_embed_dsql_describe(STATUS* user_status,
+ISC_STATUS API_ROUTINE isc_embed_dsql_describe(ISC_STATUS* user_status,
 										   SCHAR* stmt_name,
 										   USHORT dialect, XSQLDA* sqlda)
 {
-	STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS local_status[ISC_STATUS_LENGTH];
 
 	INIT_DSQL(user_status, local_status);
 
@@ -225,7 +225,7 @@ STATUS API_ROUTINE isc_embed_dsql_describe(STATUS* user_status,
 //
 //	isc_embed_dsql_descr_bind
 //
-STATUS API_ROUTINE isc_embed_dsql_descr_bind(	STATUS*	user_status,
+ISC_STATUS API_ROUTINE isc_embed_dsql_descr_bind(	ISC_STATUS*	user_status,
 												SCHAR*	stmt_name,
 												USHORT	dialect,
 												XSQLDA*	sqlda)
@@ -241,12 +241,12 @@ STATUS API_ROUTINE isc_embed_dsql_descr_bind(	STATUS*	user_status,
 //
 //	Describe input parameters for a prepared statement.
 //
-STATUS API_ROUTINE isc_embed_dsql_describe_bind(STATUS*	user_status,
+ISC_STATUS API_ROUTINE isc_embed_dsql_describe_bind(ISC_STATUS*	user_status,
 												SCHAR*	stmt_name,
 												USHORT	dialect,
 												XSQLDA*	sqlda)
 {
-	STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS local_status[ISC_STATUS_LENGTH];
 
 	INIT_DSQL(user_status, local_status);
 	try
@@ -271,7 +271,7 @@ STATUS API_ROUTINE isc_embed_dsql_describe_bind(STATUS*	user_status,
 //
 //	Execute a non-SELECT dynamic SQL statement.
 //
-STATUS API_ROUTINE isc_embed_dsql_execute(STATUS*	user_status,
+ISC_STATUS API_ROUTINE isc_embed_dsql_execute(ISC_STATUS*	user_status,
 										  FRBRD**	trans_handle,
 										  SCHAR*	stmt_name,
 										  USHORT	dialect,
@@ -290,14 +290,14 @@ STATUS API_ROUTINE isc_embed_dsql_execute(STATUS*	user_status,
 //
 //	Execute a non-SELECT dynamic SQL statement.
 //
-STATUS API_ROUTINE isc_embed_dsql_execute2(STATUS*	user_status,
+ISC_STATUS API_ROUTINE isc_embed_dsql_execute2(ISC_STATUS*	user_status,
 										   FRBRD**	trans_handle,
 										   SCHAR*	stmt_name,
 										   USHORT	dialect,
 										   XSQLDA*	in_sqlda,
 										   XSQLDA*	out_sqlda)
 {
-	STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS local_status[ISC_STATUS_LENGTH];
 
 	INIT_DSQL(user_status, local_status);
 	try
@@ -324,7 +324,7 @@ STATUS API_ROUTINE isc_embed_dsql_execute2(STATUS*	user_status,
 //
 //	isc_embed_dsql_exec_immed
 //
-STATUS API_ROUTINE isc_embed_dsql_exec_immed(STATUS*	user_status,
+ISC_STATUS API_ROUTINE isc_embed_dsql_exec_immed(ISC_STATUS*	user_status,
 											 FRBRD**	db_handle,
 											 FRBRD**	trans_handle,
 											 USHORT		length,
@@ -346,7 +346,7 @@ STATUS API_ROUTINE isc_embed_dsql_exec_immed(STATUS*	user_status,
 //
 //	Prepare a statement for execution.
 //
-STATUS API_ROUTINE isc_embed_dsql_execute_immed(STATUS*	user_status,
+ISC_STATUS API_ROUTINE isc_embed_dsql_execute_immed(ISC_STATUS*	user_status,
 												FRBRD**	db_handle,
 												FRBRD**	trans_handle,
 												USHORT	length,
@@ -369,7 +369,7 @@ STATUS API_ROUTINE isc_embed_dsql_execute_immed(STATUS*	user_status,
 //
 //	Prepare a statement for execution.
 //
-STATUS API_ROUTINE isc_embed_dsql_exec_immed2(	STATUS*	user_status,
+ISC_STATUS API_ROUTINE isc_embed_dsql_exec_immed2(	ISC_STATUS*	user_status,
 												FRBRD**	db_handle,
 												FRBRD**	trans_handle,
 												USHORT	length,
@@ -394,7 +394,7 @@ STATUS API_ROUTINE isc_embed_dsql_exec_immed2(	STATUS*	user_status,
 //
 //	An execute immediate for COBOL to call
 //
-STATUS API_ROUTINE isc_embed_dsql_execute_immed_d(STATUS* user_status,
+ISC_STATUS API_ROUTINE isc_embed_dsql_execute_immed_d(ISC_STATUS* user_status,
 												  FRBRD** db_handle,
 												  FRBRD** trans_handle,
 												  struct dsc$descriptor_s *
@@ -413,7 +413,7 @@ STATUS API_ROUTINE isc_embed_dsql_execute_immed_d(STATUS* user_status,
 //
 //	An execute immediate for COBOL to call
 //
-STATUS API_ROUTINE isc_embed_dsql_exec_immed2_d(STATUS* user_status,
+ISC_STATUS API_ROUTINE isc_embed_dsql_exec_immed2_d(ISC_STATUS* user_status,
 												FRBRD** db_handle,
 												FRBRD** trans_handle,
 												struct dsc$descriptor_s *
@@ -435,11 +435,11 @@ STATUS API_ROUTINE isc_embed_dsql_exec_immed2_d(STATUS* user_status,
 //
 //	Fetch next record from a dynamic SQL cursor
 //
-STATUS API_ROUTINE isc_embed_dsql_fetch(STATUS* user_status,
+ISC_STATUS API_ROUTINE isc_embed_dsql_fetch(ISC_STATUS* user_status,
 										SCHAR* cursor_name,
 										USHORT dialect, XSQLDA* sqlda)
 {
-	STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS local_status[ISC_STATUS_LENGTH];
 
 	INIT_DSQL(user_status, local_status);
 	try
@@ -463,14 +463,14 @@ STATUS API_ROUTINE isc_embed_dsql_fetch(STATUS* user_status,
 //
 //	Fetch next record from a dynamic SQL cursor
 //
-STATUS API_ROUTINE isc_embed_dsql_fetch2(	STATUS*	user_status,
+ISC_STATUS API_ROUTINE isc_embed_dsql_fetch2(	ISC_STATUS*	user_status,
 											SCHAR*	cursor_name,
 											USHORT	dialect,
 											XSQLDA*	sqlda,
 											USHORT	direction,
 											SLONG	offset)
 {
-	STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS local_status[ISC_STATUS_LENGTH];
 
 	INIT_DSQL(user_status, local_status);
 	try
@@ -498,7 +498,7 @@ STATUS API_ROUTINE isc_embed_dsql_fetch2(	STATUS*	user_status,
 //
 //	Fetch next record from a dynamic SQL cursor (ADA version)
 //
-STATUS API_ROUTINE isc_embed_dsql_fetch_a(	STATUS*	user_status,
+ISC_STATUS API_ROUTINE isc_embed_dsql_fetch_a(	ISC_STATUS*	user_status,
 											int*	sqlcode,
 											SCHAR*	cursor_name,
 											USHORT	dialect,
@@ -506,7 +506,7 @@ STATUS API_ROUTINE isc_embed_dsql_fetch_a(	STATUS*	user_status,
 {
 	*sqlcode = 0;
 
-	STATUS s = isc_embed_dsql_fetch(user_status, cursor_name, dialect, sqlda);
+	ISC_STATUS s = isc_embed_dsql_fetch(user_status, cursor_name, dialect, sqlda);
 	if (s == 100) {
 		*sqlcode = 100;
 	}
@@ -516,7 +516,7 @@ STATUS API_ROUTINE isc_embed_dsql_fetch_a(	STATUS*	user_status,
 
 
 #ifdef SCROLLABLE_CURSORS
-STATUS API_ROUTINE isc_embed_dsql_fetch2_a(STATUS* user_status,
+ISC_STATUS API_ROUTINE isc_embed_dsql_fetch2_a(ISC_STATUS* user_status,
 										   int *sqlcode,
 										   SCHAR* cursor_name,
 										   USHORT dialect,
@@ -533,7 +533,7 @@ STATUS API_ROUTINE isc_embed_dsql_fetch2_a(STATUS* user_status,
  *	Fetch next record from a dynamic SQL cursor (ADA version)
  *
  **************************************/
-	STATUS s;
+	ISC_STATUS s;
 
 	*sqlcode = 0;
 
@@ -548,7 +548,7 @@ STATUS API_ROUTINE isc_embed_dsql_fetch2_a(STATUS* user_status,
 #endif
 
 
-STATUS API_ROUTINE isc_embed_dsql_insert(STATUS* user_status,
+ISC_STATUS API_ROUTINE isc_embed_dsql_insert(ISC_STATUS* user_status,
 										 SCHAR* cursor_name,
 										 USHORT dialect, XSQLDA* sqlda)
 {
@@ -562,7 +562,7 @@ STATUS API_ROUTINE isc_embed_dsql_insert(STATUS* user_status,
  *	Insert next record into a dynamic SQL cursor
  *
  **************************************/
-	STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS local_status[ISC_STATUS_LENGTH];
 	STMT statement;
 
 	INIT_DSQL(user_status, local_status);
@@ -609,7 +609,7 @@ void API_ROUTINE isc_embed_dsql_length( UCHAR * string, USHORT * length)
 }
 
 
-STATUS API_ROUTINE isc_embed_dsql_open(STATUS* user_status,
+ISC_STATUS API_ROUTINE isc_embed_dsql_open(ISC_STATUS* user_status,
 									   FRBRD** trans_handle,
 									   SCHAR* cursor_name,
 									   USHORT dialect, XSQLDA* sqlda)
@@ -630,7 +630,7 @@ STATUS API_ROUTINE isc_embed_dsql_open(STATUS* user_status,
 }
 
 
-STATUS API_ROUTINE isc_embed_dsql_open2(STATUS* user_status,
+ISC_STATUS API_ROUTINE isc_embed_dsql_open2(ISC_STATUS* user_status,
 										FRBRD** trans_handle,
 										SCHAR* cursor_name,
 										USHORT dialect,
@@ -646,7 +646,7 @@ STATUS API_ROUTINE isc_embed_dsql_open2(STATUS* user_status,
  *	Open a dynamic SQL cursor.
  *
  **************************************/
-	STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS local_status[ISC_STATUS_LENGTH];
 	STMT stmt;
 
 	INIT_DSQL(user_status, local_status);
@@ -668,7 +668,7 @@ STATUS API_ROUTINE isc_embed_dsql_open2(STATUS* user_status,
 }
 
 
-STATUS API_ROUTINE isc_embed_dsql_prepare(STATUS*	user_status,
+ISC_STATUS API_ROUTINE isc_embed_dsql_prepare(ISC_STATUS*	user_status,
 										  FRBRD**	db_handle,
 										  FRBRD**	trans_handle,
 										  SCHAR*	stmt_name,
@@ -687,7 +687,7 @@ STATUS API_ROUTINE isc_embed_dsql_prepare(STATUS*	user_status,
  *	Prepare a statement for execution.
  *
  **************************************/
-	STATUS s, local_status[ISC_STATUS_LENGTH], local_status2[ISC_STATUS_LENGTH];
+	ISC_STATUS s, local_status[ISC_STATUS_LENGTH], local_status2[ISC_STATUS_LENGTH];
 	STMT statement;
 	HNDL stmt_handle;
 
@@ -780,7 +780,7 @@ STATUS API_ROUTINE isc_embed_dsql_prepare(STATUS*	user_status,
 
 
 #ifdef VMS
-STATUS API_ROUTINE isc_embed_dsql_prepare_d(STATUS* user_status,
+ISC_STATUS API_ROUTINE isc_embed_dsql_prepare_d(ISC_STATUS* user_status,
 											FRBRD** db_handle,
 											FRBRD** trans_handle,
 											SCHAR* stmt_name,
@@ -808,7 +808,7 @@ STATUS API_ROUTINE isc_embed_dsql_prepare_d(STATUS* user_status,
 #endif
 
 
-STATUS API_ROUTINE isc_embed_dsql_release(STATUS* user_status,
+ISC_STATUS API_ROUTINE isc_embed_dsql_release(ISC_STATUS* user_status,
 										  SCHAR* stmt_name)
 {
 /**************************************
@@ -821,7 +821,7 @@ STATUS API_ROUTINE isc_embed_dsql_release(STATUS* user_status,
  *	Release request for a dsql statement
  *
  **************************************/
-	STATUS	local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS	local_status[ISC_STATUS_LENGTH];
 	STMT*	stmt_ptr, p;
 
 	INIT_DSQL(user_status, local_status);
@@ -831,7 +831,7 @@ STATUS API_ROUTINE isc_embed_dsql_release(STATUS* user_status,
 
 		STMT statement = lookup_stmt(stmt_name, statement_names, NAME_statement);
 
-		STATUS s =
+		ISC_STATUS s =
 			isc_dsql_free_statement(user_status,
 								&statement->stmt_handle,
 								DSQL_drop);
@@ -867,7 +867,7 @@ STATUS API_ROUTINE isc_embed_dsql_release(STATUS* user_status,
 
 #ifdef VMS
 int API_ROUTINE isc_dsql_execute_immediate_d(
-											 STATUS* user_status,
+											 ISC_STATUS* user_status,
 											 int db_handle,
 											 int trans_handle,
 											 struct dsc$descriptor_s *string,
@@ -894,7 +894,7 @@ int API_ROUTINE isc_dsql_execute_immediate_d(
 #endif
 
 
-STATUS API_ROUTINE isc_dsql_fetch_a(STATUS* user_status,
+ISC_STATUS API_ROUTINE isc_dsql_fetch_a(ISC_STATUS* user_status,
 									int *sqlcode,
 									int *stmt_handle,
 									USHORT dialect, int *sqlda)
@@ -909,7 +909,7 @@ STATUS API_ROUTINE isc_dsql_fetch_a(STATUS* user_status,
  *	Fetch next record from a dynamic SQL cursor (ADA version)
  *
  **************************************/
-	STATUS s;
+	ISC_STATUS s;
 
 	*sqlcode = 0;
 
@@ -926,7 +926,7 @@ STATUS API_ROUTINE isc_dsql_fetch_a(STATUS* user_status,
 
 
 #ifdef SCROLLABLE_CURSORS
-STATUS API_ROUTINE isc_dsql_fetch2_a(STATUS* user_status,
+ISC_STATUS API_ROUTINE isc_dsql_fetch2_a(ISC_STATUS* user_status,
 									 int *sqlcode,
 									 int *stmt_handle,
 									 USHORT dialect,
@@ -943,7 +943,7 @@ STATUS API_ROUTINE isc_dsql_fetch2_a(STATUS* user_status,
  *	Fetch next record from a dynamic SQL cursor (ADA version)
  *
  **************************************/
-	STATUS s;
+	ISC_STATUS s;
 
 	*sqlcode = 0;
 
@@ -959,7 +959,7 @@ STATUS API_ROUTINE isc_dsql_fetch2_a(STATUS* user_status,
 
 
 #ifdef VMS
-int API_ROUTINE isc_dsql_prepare_d(	STATUS*						user_status,
+int API_ROUTINE isc_dsql_prepare_d(	ISC_STATUS*						user_status,
 									int							trans_handle,
 									int							stmt_handle,
 									struct dsc$descriptor_s*	string,
@@ -997,19 +997,19 @@ int API_ROUTINE isc_dsql_prepare_d(	STATUS*						user_status,
  *	old isc_ entrypoints.
  *
  **************************************/
-STATUS API_ROUTINE isc_close(STATUS* status_vector, SCHAR* statement_name)
+ISC_STATUS API_ROUTINE isc_close(ISC_STATUS* status_vector, SCHAR* statement_name)
 {
 	return isc_embed_dsql_close(status_vector, statement_name);
 }
 
-STATUS API_ROUTINE isc_declare(	STATUS*	status_vector,
+ISC_STATUS API_ROUTINE isc_declare(	ISC_STATUS*	status_vector,
 								SCHAR*	statement_name,
 								SCHAR*	cursor_name)
 {
 	return isc_embed_dsql_declare(status_vector, statement_name, cursor_name);
 }
 
-STATUS API_ROUTINE isc_describe(STATUS* status_vector,
+ISC_STATUS API_ROUTINE isc_describe(ISC_STATUS* status_vector,
 								SCHAR* statement_name, SQLDA* sqlda)
 {
 	return isc_embed_dsql_describe(status_vector,
@@ -1018,7 +1018,7 @@ STATUS API_ROUTINE isc_describe(STATUS* status_vector,
 								   reinterpret_cast<XSQLDA*>(sqlda));
 }
 
-STATUS API_ROUTINE isc_describe_bind(STATUS* status_vector,
+ISC_STATUS API_ROUTINE isc_describe_bind(ISC_STATUS* status_vector,
 									 SCHAR* statement_name,
 									 SQLDA* sqlda)
 {
@@ -1028,12 +1028,12 @@ STATUS API_ROUTINE isc_describe_bind(STATUS* status_vector,
 										reinterpret_cast<XSQLDA*>(sqlda));
 }
 
-STATUS API_ROUTINE isc_dsql_finish(HNDL * db_handle)
+ISC_STATUS API_ROUTINE isc_dsql_finish(HNDL * db_handle)
 {
 	return 0;
 }
 
-STATUS API_ROUTINE isc_execute(STATUS* status_vector,
+ISC_STATUS API_ROUTINE isc_execute(ISC_STATUS* status_vector,
 							   FRBRD** tra_handle,
 							   SCHAR* statement_name, SQLDA* sqlda)
 {
@@ -1044,7 +1044,7 @@ STATUS API_ROUTINE isc_execute(STATUS* status_vector,
 								  reinterpret_cast<XSQLDA*>(sqlda));
 }
 
-STATUS API_ROUTINE isc_execute_immediate(STATUS* status_vector,
+ISC_STATUS API_ROUTINE isc_execute_immediate(ISC_STATUS* status_vector,
 										 FRBRD** db_handle,
 										 FRBRD** tra_handle,
 										 SSHORT * sql_length, SCHAR* sql)
@@ -1057,7 +1057,7 @@ STATUS API_ROUTINE isc_execute_immediate(STATUS* status_vector,
 }
 
 #ifdef VMS
-STATUS API_ROUTINE isc_execute_immediate_d(STATUS* status_vector,
+ISC_STATUS API_ROUTINE isc_execute_immediate_d(ISC_STATUS* status_vector,
 										   SLONG* db_handle,
 										   SLONG* tra_handle,
 										   struct dsc$descriptor_s * string)
@@ -1072,7 +1072,7 @@ STATUS API_ROUTINE isc_execute_immediate_d(STATUS* status_vector,
 }
 #endif
 
-STATUS API_ROUTINE isc_fetch(STATUS* status_vector,
+ISC_STATUS API_ROUTINE isc_fetch(ISC_STATUS* status_vector,
 							 SCHAR* cursor_name, SQLDA* sqlda)
 {
 	return isc_embed_dsql_fetch(status_vector,
@@ -1081,7 +1081,7 @@ STATUS API_ROUTINE isc_fetch(STATUS* status_vector,
 								reinterpret_cast<XSQLDA*>(sqlda));
 }
 
-STATUS API_ROUTINE isc_fetch_a(STATUS* status_vector,
+ISC_STATUS API_ROUTINE isc_fetch_a(ISC_STATUS* status_vector,
 							   int *sqlcode,
 							   SCHAR* cursor_name, SQLDA* sqlda)
 {
@@ -1092,7 +1092,7 @@ STATUS API_ROUTINE isc_fetch_a(STATUS* status_vector,
 								  reinterpret_cast<XSQLDA*>(sqlda));
 }
 
-STATUS API_ROUTINE isc_open(STATUS* status_vector,
+ISC_STATUS API_ROUTINE isc_open(ISC_STATUS* status_vector,
 							FRBRD** tra_handle,
 							SCHAR* cursor_name, SQLDA* sqlda)
 {
@@ -1103,7 +1103,7 @@ STATUS API_ROUTINE isc_open(STATUS* status_vector,
 							   reinterpret_cast<XSQLDA*>(sqlda));
 }
 
-STATUS API_ROUTINE isc_prepare(	STATUS*	status_vector,
+ISC_STATUS API_ROUTINE isc_prepare(	ISC_STATUS*	status_vector,
 								FRBRD**	db_handle,
 								FRBRD**	tra_handle,
 								SCHAR*	statement_name,
@@ -1122,7 +1122,7 @@ STATUS API_ROUTINE isc_prepare(	STATUS*	status_vector,
 }
 
 #ifdef VMS
-STATUS API_ROUTINE isc_prepare_d(STATUS* status_vector,
+ISC_STATUS API_ROUTINE isc_prepare_d(ISC_STATUS* status_vector,
 								 SLONG* db_handle,
 								 SLONG* tra_handle,
 								 SCHAR* statement_name,
@@ -1140,7 +1140,7 @@ STATUS API_ROUTINE isc_prepare_d(STATUS* status_vector,
 }
 #endif
 
-STATUS API_ROUTINE isc_dsql_release(STATUS*	status_vector,
+ISC_STATUS API_ROUTINE isc_dsql_release(ISC_STATUS*	status_vector,
 									SCHAR*	statement_name)
 {
 	return isc_embed_dsql_release(status_vector, statement_name);
@@ -1167,38 +1167,38 @@ int API_ROUTINE isc_to_sqlda(	SQLDA*	sqlda,
 //	identifiers, and as such should probably be moved into a C file.
 //
 
-STATUS API_ROUTINE gds__close(STATUS* status_vector, SCHAR* statement_name)
+ISC_STATUS API_ROUTINE gds__close(ISC_STATUS* status_vector, SCHAR* statement_name)
 {
 	return isc_close(status_vector, statement_name);
 }
 
-STATUS API_ROUTINE gds__declare(STATUS*	status_vector,
+ISC_STATUS API_ROUTINE gds__declare(ISC_STATUS*	status_vector,
 								SCHAR*	statement_name,
 								SCHAR*	cursor_name)
 {
 	return isc_declare(status_vector, statement_name, cursor_name);
 }
 
-STATUS API_ROUTINE gds__describe(	STATUS*	status_vector,
+ISC_STATUS API_ROUTINE gds__describe(	ISC_STATUS*	status_vector,
 									SCHAR*	statement_name,
 									SQLDA*	sqlda)
 {
 	return isc_describe(status_vector, statement_name, sqlda);
 }
 
-STATUS API_ROUTINE gds__describe_bind(STATUS*	status_vector,
+ISC_STATUS API_ROUTINE gds__describe_bind(ISC_STATUS*	status_vector,
 									  SCHAR*	statement_name,
 									  SQLDA*	sqlda)
 {
 	return isc_describe_bind(status_vector, statement_name, sqlda);
 }
 
-STATUS API_ROUTINE gds__dsql_finish(HNDL* db_handle)
+ISC_STATUS API_ROUTINE gds__dsql_finish(HNDL* db_handle)
 {
 	return isc_dsql_finish(db_handle);
 }
 
-STATUS API_ROUTINE gds__execute(STATUS*	status_vector,
+ISC_STATUS API_ROUTINE gds__execute(ISC_STATUS*	status_vector,
 								FRBRD**	tra_handle,
 								SCHAR*	statement_name,
 								SQLDA*	sqlda)
@@ -1206,7 +1206,7 @@ STATUS API_ROUTINE gds__execute(STATUS*	status_vector,
 	return isc_execute(status_vector, tra_handle, statement_name, sqlda);
 }
 
-STATUS API_ROUTINE gds__execute_immediate(STATUS*	status_vector,
+ISC_STATUS API_ROUTINE gds__execute_immediate(ISC_STATUS*	status_vector,
 										  FRBRD**	db_handle,
 										  FRBRD**	tra_handle,
 										  SSHORT*	sql_length,
@@ -1220,7 +1220,7 @@ STATUS API_ROUTINE gds__execute_immediate(STATUS*	status_vector,
 }
 
 #ifdef VMS
-STATUS API_ROUTINE gds__execute_immediate_d(STATUS*	status_vector,
+ISC_STATUS API_ROUTINE gds__execute_immediate_d(ISC_STATUS*	status_vector,
 											SLONG*	db_handle,
 											SLONG*	tra_handle,
 											SCHAR*	sql_string)
@@ -1230,14 +1230,14 @@ STATUS API_ROUTINE gds__execute_immediate_d(STATUS*	status_vector,
 }
 #endif
 
-STATUS API_ROUTINE gds__fetch(STATUS*	status_vector,
+ISC_STATUS API_ROUTINE gds__fetch(ISC_STATUS*	status_vector,
 							  SCHAR*	statement_name,
 							  SQLDA*	sqlda)
 {
 	return isc_fetch(status_vector, statement_name, sqlda);
 }
 
-STATUS API_ROUTINE gds__fetch_a(STATUS*	status_vector,
+ISC_STATUS API_ROUTINE gds__fetch_a(ISC_STATUS*	status_vector,
 								int*	sqlcode,
 								SCHAR*	statement_name,
 								SQLDA*	sqlda)
@@ -1245,7 +1245,7 @@ STATUS API_ROUTINE gds__fetch_a(STATUS*	status_vector,
 	return isc_fetch_a(status_vector, sqlcode, statement_name, sqlda);
 }
 
-STATUS API_ROUTINE gds__open(STATUS*	status_vector,
+ISC_STATUS API_ROUTINE gds__open(ISC_STATUS*	status_vector,
 							 FRBRD**	tra_handle,
 							 SCHAR*		cursor_name,
 							 SQLDA*		sqlda)
@@ -1253,7 +1253,7 @@ STATUS API_ROUTINE gds__open(STATUS*	status_vector,
 	return isc_open(status_vector, tra_handle, cursor_name, sqlda);
 }
 
-STATUS API_ROUTINE gds__prepare(STATUS*	status_vector,
+ISC_STATUS API_ROUTINE gds__prepare(ISC_STATUS*	status_vector,
 								FRBRD**	db_handle,
 								FRBRD**	tra_handle,
 								SCHAR*	statement_name,
@@ -1271,7 +1271,7 @@ STATUS API_ROUTINE gds__prepare(STATUS*	status_vector,
 }
 
 #ifdef VMS
-STATUS API_ROUTINE gds__prepare_d(STATUS* status_vector,
+ISC_STATUS API_ROUTINE gds__prepare_d(ISC_STATUS* status_vector,
 								  SLONG* db_handle,
 								  SLONG* tra_handle,
 								  SCHAR* statement_name,
@@ -1283,7 +1283,7 @@ STATUS API_ROUTINE gds__prepare_d(STATUS* status_vector,
 }
 #endif
 
-STATUS API_ROUTINE gds__to_sqlda(SQLDA* sqlda,
+ISC_STATUS API_ROUTINE gds__to_sqlda(SQLDA* sqlda,
 								 int number,
 								 SCHAR* host_variable,
 								 int host_variable_size,
@@ -1407,7 +1407,7 @@ static void cleanup_database(FRBRD** db_handle, SLONG dummy)
 //	a status vector, return a status code.  Otherwise print the
 //	error code(s) and abort.
 //
-static STATUS error()
+static ISC_STATUS error()
 {
 	if (UDSQL_error->dsql_user_status) {
 		return UDSQL_error->dsql_user_status[1];
@@ -1429,10 +1429,10 @@ static STATUS error()
 //	exception that it uses a different error block - one which
 //	is local to the V3 DSQL routines...
 //
-static void error_post(STATUS status, ...)
+static void error_post(ISC_STATUS status, ...)
 {
 	va_list	args;
-	STATUS*	p;
+	ISC_STATUS*	p;
 	int		type;
 
 /* Get the addresses of the argument vector and the status vector, and do
@@ -1452,11 +1452,11 @@ static void error_post(STATUS status, ...)
 	{
 		switch (*p++ = type) {
 		case gds_arg_gds:
-			*p++ = (STATUS) va_arg(args, STATUS);
+			*p++ = (ISC_STATUS) va_arg(args, ISC_STATUS);
 			break;
 
 		case gds_arg_number:
-			*p++ = (STATUS) va_arg(args, SLONG);
+			*p++ = (ISC_STATUS) va_arg(args, SLONG);
 			break;
 
 		case gds_arg_vms:
@@ -1467,12 +1467,12 @@ static void error_post(STATUS status, ...)
 
 		case gds_arg_string:
 		case gds_arg_interpreted:
-			*p++ = (STATUS) va_arg(args, TEXT *);
+			*p++ = (ISC_STATUS) va_arg(args, TEXT *);
 			break;
 
 		case gds_arg_cstring:
-			*p++ = (STATUS) va_arg(args, int);
-			*p++ = (STATUS) va_arg(args, TEXT *);
+			*p++ = (ISC_STATUS) va_arg(args, int);
+			*p++ = (ISC_STATUS) va_arg(args, TEXT *);
 			break;
 		}
 	}
@@ -1525,7 +1525,7 @@ static void init(FRBRD** db_handle)
 	databases = dbb;
 	dbb->dbb_database_handle = *db_handle;
 
-	STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS local_status[ISC_STATUS_LENGTH];
 	gds__database_cleanup(local_status,
 						  db_handle,
 						  cleanup_database,

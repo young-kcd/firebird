@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: restore.epp,v 1.26 2003-04-07 21:51:17 brodsom Exp $
+$Id: restore.epp,v 1.27 2003-04-10 06:06:43 aafemt Exp $
 */
 
 #include "firebird.h"
@@ -246,7 +246,7 @@ UINT64	cumul_count;
 BURP_REL		relation;
 BURP_PRC		procedure;
 isc_req_handle  req_handle1 = NULL, req_handle2 = NULL, req_handle4 = NULL;
-STATUS		req_status[ISC_STATUS_LENGTH];
+ISC_STATUS	req_status[ISC_STATUS_LENGTH];
 TGBL		tdgbl;
 long		db_handle;
 UCHAR		dpb[128], *d, *q;
@@ -650,7 +650,7 @@ static void add_files (
 SLONG		start, count;
 FIL		file;
 isc_req_handle  req_handle1 = NULL;
-STATUS		req_status[ISC_STATUS_LENGTH];
+ISC_STATUS	req_status[ISC_STATUS_LENGTH];
 TGBL		tdgbl;
 
 tdgbl = GET_THREAD_DATA;
@@ -781,7 +781,7 @@ static USHORT check_db_version (void)
  **************************************/
 USHORT	db_version;
 isc_req_handle  req_handle1 = NULL, req_handle2 = NULL;
-STATUS		req_status[ISC_STATUS_LENGTH];
+ISC_STATUS	req_status[ISC_STATUS_LENGTH];
 TGBL	        tdgbl;
 
 tdgbl = GET_THREAD_DATA;
@@ -827,7 +827,7 @@ static void create_database (
  *
  **************************************/
 SSHORT		l;
-STATUS		status_vector[ISC_STATUS_LENGTH];
+ISC_STATUS	status_vector[ISC_STATUS_LENGTH];
 REC_TYPE	record;
 ATT_TYPE	attribute;
 UCHAR		dpb [128], *d, *q;
@@ -894,7 +894,7 @@ if (GET_RECORD (record) == rec_physical_db)
     }
 
 if (record != rec_database)
-    BURP_error_redirect ((STATUS*) NULL_PTR, 32, 0, 0);
+    BURP_error_redirect ((ISC_STATUS*) NULL_PTR, 32, 0, 0);
 /* msg 32 Expected database description record */
 
 if (tdgbl->gbl_sw_page_size &&
@@ -1090,7 +1090,7 @@ while (p < end)
     }
 
 if (p > end)
-    BURP_error_redirect ((STATUS*) NULL_PTR, 34, 0, 0); 
+    BURP_error_redirect ((ISC_STATUS*) NULL_PTR, 34, 0, 0); 
     /* msg 34 RESTORE: decompression length error */
 }
 
@@ -1141,7 +1141,7 @@ for (relation = tdgbl->relations; relation; relation = relation->rel_next)
 	if (!*p)
 	    return relation;
 
-BURP_error_redirect ((STATUS *) NULL_PTR, 35, name, 0); 
+BURP_error_redirect ((ISC_STATUS *) NULL_PTR, 35, name, 0); 
 /* msg 35 can't find relation %s */
 
 return NULL;
@@ -1192,7 +1192,7 @@ static int get_acl (
 static const SCHAR blr_items [] = {isc_info_blob_max_segment, 
 			     isc_info_blob_total_length,
 			     isc_info_blob_num_segments};
-STATUS	status_vector[ISC_STATUS_LENGTH];
+ISC_STATUS	status_vector[ISC_STATUS_LENGTH];
 SLONG	length, n;
 FRBRD	*blob;
 UCHAR	*p, blob_info [32], item, *buffer, static_buffer [1024], 
@@ -1395,7 +1395,7 @@ static void get_array (
  **************************************/
 BURP_FLD		field;
 ATT_TYPE	attribute;
-STATUS		status_vector[ISC_STATUS_LENGTH];
+ISC_STATUS	status_vector[ISC_STATUS_LENGTH];
 SLONG		last_element_dim[MAX_DIMENSION];
 SLONG		fld_ranges[2*MAX_DIMENSION];
 SLONG		*blob_id, return_length, slice_length, *range, *end_ranges,
@@ -1425,7 +1425,7 @@ while (SKIP_SCAN, GET_ATTRIBUTE (attribute) != att_blob_data)
 		if (field->fld_number == field_number)
 		    break;
 	    if (!field)
-		BURP_error_redirect ((STATUS *) NULL_PTR, 36, 0, 0); 
+		BURP_error_redirect ((ISC_STATUS *) NULL_PTR, 36, 0, 0); 
 		/* msg 36 Can't find field for blob */
 
 	    field_length = field->fld_length;
@@ -1696,7 +1696,7 @@ if (return_length != slice_length)
 		{
                 if (GET_ATTRIBUTE (attribute) != att_xdr_array)
 		        /* msg 55 Expected XDR record length */
-	                BURP_error_redirect ((STATUS *) NULL_PTR, 55, 0, 0); 
+	                BURP_error_redirect ((ISC_STATUS *) NULL_PTR, 55, 0, 0); 
                 else 
 		    {
 	            xdr_buffer.lstr_allocated = GET();
@@ -1818,7 +1818,7 @@ else
     if (tdgbl->gbl_sw_transportable)
         {
         if (GET_ATTRIBUTE (attribute) != att_xdr_array)
-            BURP_error_redirect ((STATUS *) NULL_PTR, 55, 0, 0); 
+            BURP_error_redirect ((ISC_STATUS *) NULL_PTR, 55, 0, 0); 
 	    /* msg 55 Expected XDR record length */
         else 
 	    {
@@ -1889,7 +1889,7 @@ static void get_blob (
  **************************************/
 BURP_FLD		field;
 ATT_TYPE	attribute;
-STATUS		status_vector[ISC_STATUS_LENGTH];
+ISC_STATUS	status_vector[ISC_STATUS_LENGTH];
 ULONG		segments;
 ISC_QUAD	*blob_id;
 FRBRD	*blob;
@@ -1937,7 +1937,7 @@ for (field = fields; field; field = field->fld_next)
 	break;
 
 if (!field)
-    BURP_error_redirect ((STATUS *) NULL_PTR, 36, 0, 0); 
+    BURP_error_redirect ((ISC_STATUS *) NULL_PTR, 36, 0, 0); 
     /* msg 36 Can't find field for blob */
 
 /* Create new blob */
@@ -2001,7 +2001,7 @@ static void get_blr_blob (
  *	shiney, new blob.
  *
  **************************************/
-STATUS		status_vector[ISC_STATUS_LENGTH];
+ISC_STATUS	status_vector[ISC_STATUS_LENGTH];
 FRBRD	*blob;
 USHORT		length, l;
 UCHAR		*buffer, static_buffer [1024], *p;
@@ -2322,7 +2322,7 @@ ULONG		length, old_length;
 SSHORT		count, blr_length, alignment, dtype;
 SSHORT		*buffer;
 LSTRING		data;
-STATUS		status_vector[ISC_STATUS_LENGTH];
+ISC_STATUS	status_vector[ISC_STATUS_LENGTH];
 SLONG		*blob_id;
 REC_TYPE	record;
 TGBL	    tdgbl;
@@ -2526,7 +2526,7 @@ old_length = 0;
 while (TRUE)
     {
     if (GET() != att_data_length)
-	BURP_error_redirect ((STATUS *) NULL_PTR, 39, 0, 0);
+	BURP_error_redirect ((ISC_STATUS *) NULL_PTR, 39, 0, 0);
 /* msg 39 expected record length */
     l = (USHORT) get_numeric();
     if (!tdgbl->gbl_sw_transportable && l != length)
@@ -2548,7 +2548,7 @@ while (TRUE)
 
     if (tdgbl->gbl_sw_transportable) 
 	if (GET () != att_xdr_length)
-	    BURP_error_redirect ((STATUS *) NULL_PTR, 55, 0, 0);
+	    BURP_error_redirect ((ISC_STATUS *) NULL_PTR, 55, 0, 0);
 /* msg 55 Expected XDR record length */
 	else
 	    {
@@ -2565,7 +2565,7 @@ while (TRUE)
     else
 	p = (TEXT*) buffer;
     if (GET () != att_data_data)
-	BURP_error_redirect ((STATUS *) NULL_PTR, 41, 0, 0);
+	BURP_error_redirect ((ISC_STATUS *) NULL_PTR, 41, 0, 0);
 /* msg 41 expected data attribute */
 
     if (tdgbl->gbl_sw_compress)
@@ -4422,7 +4422,7 @@ static void get_misc_blob (
  *	shiney, new blob.
  *
  **************************************/
-STATUS		status_vector[ISC_STATUS_LENGTH];
+ISC_STATUS	status_vector[ISC_STATUS_LENGTH];
 FRBRD	*blob;
 USHORT		length;
 UCHAR		*buffer, static_buffer [1024];
@@ -5158,7 +5158,7 @@ while (SKIP_SCAN, GET_ATTRIBUTE (attribute) != att_end)
 	}
 
 if (!relation)
-    BURP_error_redirect ((STATUS *) NULL_PTR, 49, 0, 0);
+    BURP_error_redirect ((ISC_STATUS *) NULL_PTR, 49, 0, 0);
 /* msg 49 no relation name for data */
 
 /* Eat up misc. records */
@@ -5394,7 +5394,7 @@ static void get_source_blob (
  *	input file to nice, shiney, new blob.
  *
  **************************************/
-STATUS		status_vector[ISC_STATUS_LENGTH];
+ISC_STATUS	status_vector[ISC_STATUS_LENGTH];
 SLONG		length;
 FRBRD	*blob;
 USHORT		seg_len;
@@ -5477,7 +5477,7 @@ tdgbl = GET_THREAD_DATA;
 l = GET();
 
 if (length <= l)
-    BURP_error_redirect ((STATUS *) NULL_PTR, 46, 0, 0); 
+    BURP_error_redirect ((ISC_STATUS *) NULL_PTR, 46, 0, 0); 
     /* msg 46 string truncated */
 
 if (l)
@@ -6214,7 +6214,7 @@ while (SKIP_SCAN, GET_ATTRIBUTE (attribute) != att_blob_data)
 		if (field->fld_number == field_number)
 		    break;
 	    if (!field)
-		BURP_error_redirect ((STATUS *) NULL_PTR, 36, 0, 0);
+		BURP_error_redirect ((ISC_STATUS *) NULL_PTR, 36, 0, 0);
 /* msg 36 Can't find field for blob */
 	    break;
 
@@ -6250,7 +6250,7 @@ length |= GET() << 24;
 if (tdgbl->gbl_sw_transportable)
     {
     if (GET_ATTRIBUTE (attribute) != att_xdr_array)
-	BURP_error_redirect ((STATUS *) NULL_PTR, 55, 0, 0);
+	BURP_error_redirect ((ISC_STATUS *) NULL_PTR, 55, 0, 0);
 /* msg 55 Expected XDR record length */
     else 
 	{
@@ -6356,17 +6356,17 @@ records = 0;
 while (TRUE)
     {
     if (GET () != att_data_length)
-	BURP_error_redirect ((STATUS *) NULL_PTR, 39, 0, 0);
+	BURP_error_redirect ((ISC_STATUS *) NULL_PTR, 39, 0, 0);
 /* msg 39 expected record length */
     l = (USHORT) get_numeric();
     if (tdgbl->gbl_sw_transportable) 
 	if (GET () != att_xdr_length)
-	    BURP_error_redirect ((STATUS *) NULL_PTR, 55, 0, 0);
+	    BURP_error_redirect ((ISC_STATUS *) NULL_PTR, 55, 0, 0);
 /* msg 55 Expected XDR record length */
 	else
 	    l = (USHORT) get_numeric();
     if (GET () != att_data_data)
-	BURP_error_redirect ((STATUS *) NULL_PTR, 41, 0, 0);
+	BURP_error_redirect ((ISC_STATUS *) NULL_PTR, 41, 0, 0);
 /* msg 41 expected data attribute */
     if (l)
         if (tdgbl->gbl_sw_compress)
@@ -6544,7 +6544,7 @@ ATT_TYPE	attribute;
 USHORT		db_version;
 isc_req_handle  req_handle1 = NULL, req_handle2 = NULL, req_handle3 = NULL,
                 req_handle5 = NULL;
-STATUS		req_status[ISC_STATUS_LENGTH];
+ISC_STATUS	req_status[ISC_STATUS_LENGTH];
 TGBL		tdgbl;
 SSHORT		flag_norel=TRUE;	/* To fix bug 10098 */
 
@@ -6882,7 +6882,7 @@ static void restore_security_class (
 isc_tr_handle   local_trans;
 isc_req_handle  req_handle2 = NULL;
 ISC_QUAD	new_blob_id;
-STATUS		req_status[ISC_STATUS_LENGTH];
+ISC_STATUS	req_status[ISC_STATUS_LENGTH];
 TGBL            tdgbl;
 
 tdgbl = GET_THREAD_DATA;
@@ -6934,7 +6934,7 @@ UCHAR	*blr;
 UCHAR	blr_buffer [100];  /* enough to fit blr */
 SSHORT	blr_length;
 FRBRD	*gen_id_reqh;
-STATUS	status_vector[ISC_STATUS_LENGTH];
+ISC_STATUS	status_vector[ISC_STATUS_LENGTH];
 TGBL	tdgbl;
 
 tdgbl = GET_THREAD_DATA;
@@ -7068,7 +7068,7 @@ GFLD		n_gfld, gfld;
 USHORT		length;
 UCHAR		*p, *q;
 isc_req_handle  req_handle1 = NULL;
-STATUS		req_status[ISC_STATUS_LENGTH];
+ISC_STATUS	req_status[ISC_STATUS_LENGTH];
 TGBL		tdgbl;
 
 tdgbl = GET_THREAD_DATA;

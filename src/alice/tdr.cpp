@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.15 2003-03-13 16:54:04 skidder Exp $
+//	$Id: tdr.cpp,v 1.16 2003-04-10 06:04:42 aafemt Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -175,7 +175,7 @@ USHORT TDR_analyze(TDR trans)
 //		Attempt to attach a database with a given pathname.
 //
 
-BOOLEAN TDR_attach_database(STATUS * status_vector,
+BOOLEAN TDR_attach_database(ISC_STATUS * status_vector,
 							TDR trans, TEXT * pathname)
 {
 	UCHAR dpb[128], *d, *q;
@@ -254,7 +254,7 @@ BOOLEAN TDR_attach_database(STATUS * status_vector,
 
 void TDR_get_states(TDR trans)
 {
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	TDR ptr;
 
 	for (ptr = trans; ptr; ptr = ptr->tdr_next)
@@ -272,7 +272,7 @@ void TDR_get_states(TDR trans)
 void TDR_shutdown_databases(TDR trans)
 {
 	TDR ptr;
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 
 	for (ptr = trans; ptr; ptr = ptr->tdr_next)
 		gds__detach_database(status_vector,
@@ -296,7 +296,7 @@ void TDR_shutdown_databases(TDR trans)
 void TDR_list_limbo(FRBRD *handle, TEXT * name, ULONG switches)
 {
 	UCHAR buffer[1024], *ptr;
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	SLONG id;
 	USHORT item, flag, length;
 	TDR trans;
@@ -390,7 +390,7 @@ BOOLEAN TDR_reconnect_multiple(FRBRD *handle,
 							   SLONG id, TEXT * name, ULONG switches)
 {
 	TDR trans, ptr;
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	USHORT advice;
 	BOOLEAN error = FALSE;
 
@@ -757,7 +757,7 @@ static ULONG ask(void)
 
 static void reattach_database(TDR trans)
 {
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	UCHAR buffer[1024], *p, *q, *start;
 	STR string;
 	TGBL tdgbl;
@@ -878,7 +878,7 @@ static BOOLEAN reconnect(FRBRD *handle,
 {
 	FRBRD *transaction;
 	SLONG id;
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 
 	id = gds__vax_integer((UCHAR *) & number, 4);
 	transaction = NULL;

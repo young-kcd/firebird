@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.17 2003-03-03 08:36:04 brodsom Exp $
+ *	$Id: gpre_meta.epp,v 1.18 2003-04-10 06:21:49 aafemt Exp $
  */
 
 #include "firebird.h"
@@ -465,7 +465,7 @@ BOOLEAN MET_get_domain_default(DBB dbb,
 	isc_blob_handle blob_handle = NULL;
 	ISC_QUAD *blob_id;
 	TEXT *ptr_in_buffer;
-	STATUS stat;
+	ISC_STATUS stat;
 
 
 	strcpy(name, domain_name);
@@ -564,7 +564,7 @@ BOOLEAN MET_get_column_default(GPRE_REL relation,
 	isc_blob_handle blob_handle = NULL;
 	ISC_QUAD *blob_id;
 	TEXT *ptr_in_buffer;
-	STATUS stat;
+	ISC_STATUS stat;
 
 	strcpy(name, column_name);
 	has_default = FALSE;

@@ -70,7 +70,7 @@
 #define START_COMMAND	"status"
 
 static void close_connection(SLONG);
-static void error(STATUS, UCHAR *);
+static void error(ISC_STATUS, UCHAR *);
 static void expand_dbname(TEXT *);
 
 #ifdef BSD_SOCKETS
@@ -272,7 +272,7 @@ static void close_connection( SLONG channel)
  **************************************/
 
 	if (close(channel) < 0)
-		error((STATUS) errno, "close socket");
+		error((ISC_STATUS) errno, "close socket");
 }
 #endif
 
@@ -298,7 +298,7 @@ static void close_connection( SLONG channel)
 
 
 #ifdef BSD_SOCKETS
-static void error( STATUS status, UCHAR * string)
+static void error( ISC_STATUS status, UCHAR * string)
 {
 /**************************************
  *
@@ -321,7 +321,7 @@ static void error( STATUS status, UCHAR * string)
 
 
 #ifdef WIN_NT
-static void error( STATUS status, UCHAR * string)
+static void error( ISC_STATUS status, UCHAR * string)
 {
 /**************************************
  *

@@ -366,12 +366,12 @@ void METD_get_col_default(DSQL_REQ    request,
  **************************************************************/
 	FRBRD *DB, *gds_trans;
 	DBB dbb;
-	STATUS status_vect[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vect[ISC_STATUS_LENGTH];
 
 	ISC_QUAD *blob_id;
 	TEXT *ptr_in_buffer;
 
-	STATUS stat;
+	ISC_STATUS stat;
 	USHORT length;
 	isc_blob_handle blob_handle = NULL;
 
@@ -764,7 +764,7 @@ void METD_get_domain_default(DSQL_REQ request,
 	ISC_QUAD *blob_id;
 	TEXT *ptr_in_buffer;
 
-	STATUS stat;
+	ISC_STATUS stat;
 	USHORT length;
 	isc_blob_handle blob_handle = NULL;
 

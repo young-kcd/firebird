@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.28 2003-04-08 10:38:59 brodsom Exp $
+  $Id: isql.epp,v 1.29 2003-04-10 06:29:04 aafemt Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -766,7 +766,7 @@ void ISQL_copy_SQL_id( TEXT * in_str, TEXT * output_str, TEXT escape_char)
 }
 
 
-void ISQL_errmsg( STATUS * status)
+void ISQL_errmsg( ISC_STATUS * status)
 {
 /**************************************
  *
@@ -779,7 +779,7 @@ void ISQL_errmsg( STATUS * status)
  *	Simulate isc_print_status exactly, to control ib_stderr 
  **************************************/
 	TEXT errbuf[MSG_LENGTH];
-	STATUS *vec;
+	ISC_STATUS *vec;
 #if defined (WIN95)
 #define TRANSLATE_CP if (!fAnsiCP) AnsiToOem(errbuf, errbuf)
 #else
@@ -815,7 +815,7 @@ void ISQL_errmsg( STATUS * status)
 }
 
 
-void ISQL_warning( STATUS * status)
+void ISQL_warning( ISC_STATUS * status)
 {
 /**************************************
  *
@@ -827,7 +827,7 @@ void ISQL_warning( STATUS * status)
  *	Report warning
  *	Simulate isc_print_status exactly, to control ib_stderr
  **************************************/
-	STATUS *vec;
+	ISC_STATUS *vec;
 	TEXT buf[MSG_LENGTH];
 #if defined (WIN95)
 #define TRANSLATE_CP if (!fAnsiCP) AnsiToOem(buf, buf)

@@ -25,10 +25,10 @@
 #define _DUDLEY_DDL_PROTO_H_
 
 extern UCHAR *DDL_alloc(int);
-extern int DDL_db_error(STATUS *, USHORT, TEXT *, TEXT *, TEXT *, TEXT *,
+extern int DDL_db_error(ISC_STATUS *, USHORT, TEXT *, TEXT *, TEXT *, TEXT *,
 						TEXT *);
 extern int DDL_err(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
-extern void DDL_error_abort(STATUS *, USHORT, TEXT *, TEXT *, TEXT *, TEXT *,
+extern void DDL_error_abort(ISC_STATUS *, USHORT, TEXT *, TEXT *, TEXT *, TEXT *,
 							TEXT *);
 extern void DDL_exit(int);
 extern void DDL_msg_partial(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);

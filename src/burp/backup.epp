@@ -36,7 +36,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.20 2003-04-07 21:51:21 brodsom Exp $
+$Id: backup.epp,v 1.21 2003-04-10 06:06:42 aafemt Exp $
 */
 
 #include "firebird.h"
@@ -257,12 +257,12 @@ int BACKUP_backup(TEXT* dbb_file, TEXT* file_name)
  *
  **************************************/
 	BURP_REL relation;
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	ULONG l;
 	TEXT temp[GDS_NAME_LEN];
 	UINT64 cumul_count = 0;
 	isc_req_handle req_handle1 = NULL;
-	STATUS req_status[ISC_STATUS_LENGTH];
+	ISC_STATUS req_status[ISC_STATUS_LENGTH];
 	TGBL tdgbl;
 	FIL fil;
 
@@ -738,7 +738,7 @@ static BURP_FLD get_fields( BURP_REL relation)
 	            field->fld_flags |= FLD_array;
 	            field->fld_dimensions = Y.RDB$DIMENSIONS;
 	            if (field->fld_dimensions < 0) {
-	                BURP_error_redirect ((STATUS*) NULL_PTR, 52, field->fld_name, NULL);
+	                BURP_error_redirect ((ISC_STATUS*) NULL_PTR, 52, field->fld_name, NULL);
                 }
 	         /* msg 52 array dimension for field %s is invalid */
                 get_ranges (field);
@@ -860,7 +860,7 @@ static BURP_FLD get_fields( BURP_REL relation)
 	                field->fld_flags |= FLD_array;
 	                field->fld_dimensions = RF.RDB$DIMENSIONS;
 	                if (field->fld_dimensions < 0)
-	                    BURP_error_redirect ((STATUS*) NULL_PTR, 52, field->fld_name, NULL);
+	                    BURP_error_redirect ((ISC_STATUS*) NULL_PTR, 52, field->fld_name, NULL);
 	           /* msg 52 array dimension for field %s is invalid */
 	           get_ranges (field);
 	                }
@@ -937,7 +937,7 @@ static SINT64 get_gen_id( TEXT * name, SSHORT name_len)
     FRBRD *gen_id_reqh;
 	SINT64 read_msg1;
 	SSHORT blr_length;
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	TGBL tdgbl;
 
 	tdgbl = GET_THREAD_DATA;
@@ -1091,7 +1091,7 @@ static void get_ranges( BURP_FLD field)
 	    SORTED BY X.RDB$DIMENSION 
 	
 	    if (count != X.RDB$DIMENSION)
-	        BURP_error_redirect ((STATUS*) NULL_PTR, 52, field->fld_name, NULL);
+	        BURP_error_redirect ((ISC_STATUS*) NULL_PTR, 52, field->fld_name, NULL);
 	   /* msg 52 array dimension for field %s is invalid */
 	    *rp++ = X.RDB$LOWER_BOUND;
 	    *rp++ = X.RDB$UPPER_BOUND;
@@ -1103,7 +1103,7 @@ static void get_ranges( BURP_FLD field)
 	END_ERROR;
 
 	if (count != field->fld_dimensions)
-		BURP_error_redirect((STATUS*) NULL_PTR, 52, field->fld_name, NULL);
+		BURP_error_redirect((ISC_STATUS*) NULL_PTR, 52, field->fld_name, NULL);
 	/* msg 52 array dimension for field %s is invalid */
 }
 
@@ -1120,7 +1120,7 @@ static void put_array( BURP_FLD field, BURP_REL relation, ISC_QUAD * blob_id)
  *	Write out an array.  If, however, it's null, don't even bother.
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	SLONG *range, *end_ranges, returned_elements;
 	ULONG return_length, slice_length;
 	SLONG *returned_range, range_buffer[16];	/* enough for 16 dimensions */
@@ -1348,7 +1348,7 @@ static void put_blob( BURP_FLD field, ISC_QUAD * blob_id, ULONG count)
  *	Write out a blob.  If, however, it's null, don't even bother.
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	FRBRD *blob;
 	ULONG segments;
 	UCHAR *p, blob_info[32], item, *buffer, static_buffer[1024];
@@ -1418,7 +1418,7 @@ static void put_blob( BURP_FLD field, ISC_QUAD * blob_id, ULONG count)
 			break;
 
 		default:
-			BURP_error_redirect((STATUS*) NULL_PTR, 21, (void*) (ULONG) item, NULL);
+			BURP_error_redirect((ISC_STATUS*) NULL_PTR, 21, (void*) (ULONG) item, NULL);
 			/* msg 21 don't understand blob info item %ld */
 		}
 	}
@@ -1475,7 +1475,7 @@ static int put_blr_blob( SCHAR attribute, ISC_QUAD * blob_id)
  *	Return TRUE is there was the blob was present, FALSE otherwise.
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	ULONG length, n;
 	FRBRD *blob;
 	UCHAR *p, blob_info[32], item, *buffer, static_buffer[1024];
@@ -1604,7 +1604,7 @@ static void put_data(BURP_REL relation)
 	int records;
 	UCHAR *p, *blr, *blr_buffer, *buffer;
 	LSTRING xdr_buffer;
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	RCRD_OFFSET offset, eof_offset, record_length;
 	FLD_LENGTH length;
 	SSHORT alignment, blr_length, count, dtype, *eof, eof_parameter;
@@ -1717,7 +1717,7 @@ static void put_data(BURP_REL relation)
 			break;
 
 		default:
-			BURP_error_redirect((STATUS*) NULL_PTR, 26, (void *) (SLONG) field->fld_type, NULL);
+			BURP_error_redirect((ISC_STATUS*) NULL_PTR, 26, (void *) (SLONG) field->fld_type, NULL);
 			/* msg 26 datatype %ld not understood */
 			break;
 		}
@@ -2406,7 +2406,7 @@ static int put_source_blob(SCHAR		attribute,
  *	Return TRUE is there was the blob was present, FALSE otherwise.
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	SLONG length, n;
 	FRBRD *blob;
 	UCHAR *p, blob_info[48], item, *buffer, static_buffer[1024];
@@ -2687,7 +2687,7 @@ static void write_character_sets(void)
  *
  **************************************/
 	isc_req_handle req_handle1 = NULL;
-	STATUS req_status[ISC_STATUS_LENGTH];
+	ISC_STATUS req_status[ISC_STATUS_LENGTH];
 	TGBL tdgbl;
 
 	tdgbl = GET_THREAD_DATA;
@@ -2735,7 +2735,7 @@ static void write_check_constraints(void)
  *
  **************************************/
 	isc_req_handle req_handle1 = NULL;
-	STATUS req_status[ISC_STATUS_LENGTH];
+	ISC_STATUS req_status[ISC_STATUS_LENGTH];
 	TGBL tdgbl;
 
 	tdgbl = GET_THREAD_DATA;
@@ -2772,7 +2772,7 @@ static void write_collations(void)
  *
  **************************************/
 	isc_req_handle req_handle1 = NULL;
-	STATUS req_status[ISC_STATUS_LENGTH];
+	ISC_STATUS req_status[ISC_STATUS_LENGTH];
 	TGBL tdgbl;
 
 	tdgbl = GET_THREAD_DATA;
@@ -2815,13 +2815,13 @@ static void write_database( TEXT * dbb_file)
  *	the database itself.  
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	USHORT page_size, forced_writes, no_reserve,
 		length, SQL_dialect, db_read_only;
 	ULONG sweep_interval, page_buffers;
 	SCHAR buffer[256], *d, item;
 	isc_req_handle req_handle1 = NULL, req_handle2 = NULL, req_handle3 = NULL;
-	STATUS req_status[ISC_STATUS_LENGTH];
+	ISC_STATUS req_status[ISC_STATUS_LENGTH];
 	TGBL tdgbl;
 
 	tdgbl = GET_THREAD_DATA;
@@ -2990,7 +2990,7 @@ static void write_exceptions(void)
     SSHORT l;
     TEXT temp[GDS_NAME_LEN];
     isc_req_handle req_handle1 = NULL;
-    STATUS req_status[ISC_STATUS_LENGTH];
+    ISC_STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
 
     tdgbl = GET_THREAD_DATA;
@@ -3028,7 +3028,7 @@ static void write_field_dimensions(void)
  *
  **************************************/
     isc_req_handle req_handle1 = NULL;
-    STATUS req_status[ISC_STATUS_LENGTH];
+    ISC_STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
 
     tdgbl = GET_THREAD_DATA;
@@ -3067,7 +3067,7 @@ static void write_filters(void)
     SSHORT l;
     TEXT temp[GDS_NAME_LEN];
     isc_req_handle req_handle1 = NULL;
-    STATUS req_status[ISC_STATUS_LENGTH];
+    ISC_STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
 
     tdgbl = GET_THREAD_DATA;
@@ -3111,7 +3111,7 @@ static void write_functions(void)
     GDS_NAME func;
     TEXT temp[GDS_NAME_LEN];
     isc_req_handle req_handle1 = NULL;
-    STATUS req_status[ISC_STATUS_LENGTH];
+    ISC_STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
 
     tdgbl = GET_THREAD_DATA;
@@ -3254,7 +3254,7 @@ static void write_generators(void)
  **************************************/
     SINT64 value;
     isc_req_handle req_handle1 = NULL;
-    STATUS req_status[ISC_STATUS_LENGTH];
+    ISC_STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
     SSHORT l;
     TEXT temp[GDS_NAME_LEN];
@@ -3299,7 +3299,7 @@ static void write_global_fields(void)
     TEXT temp[GDS_NAME_LEN];
     isc_req_handle req_handle1 = NULL, req_handle2 = NULL,
         req_handle3 = NULL, req_handle4 = NULL;
-    STATUS req_status[ISC_STATUS_LENGTH];
+    ISC_STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
 
     tdgbl = GET_THREAD_DATA;
@@ -3494,7 +3494,7 @@ static void write_procedures(void)
     GDS_NAME proc;
     TEXT temp[GDS_NAME_LEN];
     isc_req_handle req_handle1 = NULL;
-    STATUS req_status[ISC_STATUS_LENGTH];
+    ISC_STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
 
     tdgbl = GET_THREAD_DATA;
@@ -3581,7 +3581,7 @@ static void write_ref_constraints(void)
  *
  **************************************/
     isc_req_handle req_handle1 = NULL;
-    STATUS req_status[ISC_STATUS_LENGTH];
+    ISC_STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
 
     tdgbl = GET_THREAD_DATA;
@@ -3620,7 +3620,7 @@ static void write_rel_constraints(void)
     SSHORT l;
     TEXT temp[GDS_NAME_LEN];
     isc_req_handle req_handle1 = NULL;
-    STATUS req_status[ISC_STATUS_LENGTH];
+    ISC_STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
 
     tdgbl = GET_THREAD_DATA;
@@ -3666,7 +3666,7 @@ static void write_relations(void)
     TEXT temp[32];
     isc_req_handle req_handle1 = NULL, req_handle2 = NULL, req_handle3 =
         NULL, req_handle4 = NULL;
-    STATUS req_status[ISC_STATUS_LENGTH];
+    ISC_STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
 
     tdgbl = GET_THREAD_DATA;
@@ -3834,7 +3834,7 @@ static void write_shadow_files(void)
     SSHORT l;
     TEXT temp[GDS_NAME_LEN];
     isc_req_handle req_handle1 = NULL;
-    STATUS req_status[ISC_STATUS_LENGTH];
+    ISC_STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
 
     tdgbl = GET_THREAD_DATA;
@@ -3877,7 +3877,7 @@ static void write_sql_roles(void)
  *
  **************************************/
     isc_req_handle req_handle1 = NULL;
-    STATUS req_status[ISC_STATUS_LENGTH];
+    ISC_STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
     TEXT temp[GDS_NAME_LEN];
     SSHORT l;
@@ -3919,7 +3919,7 @@ static void write_triggers(void)
     SSHORT l;
     TEXT temp[GDS_NAME_LEN];
     isc_req_handle req_handle1 = NULL, req_handle2 = NULL;
-    STATUS req_status[ISC_STATUS_LENGTH];
+    ISC_STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
 
     tdgbl = GET_THREAD_DATA;
@@ -4030,7 +4030,7 @@ static void write_trigger_messages(void)
     SSHORT l;
     TEXT temp[32];
     isc_req_handle req_handle1 = NULL;
-    STATUS req_status[ISC_STATUS_LENGTH];
+    ISC_STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
 
     tdgbl = GET_THREAD_DATA;
@@ -4071,7 +4071,7 @@ static void write_types(void)
  *
  **************************************/
     isc_req_handle req_handle1 = NULL;
-    STATUS req_status[ISC_STATUS_LENGTH];
+    ISC_STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
     
     tdgbl = GET_THREAD_DATA;
@@ -4115,7 +4115,7 @@ static void write_user_privileges(void)
     SSHORT l;
     TEXT temp[32];
     isc_req_handle req_handle1 = NULL;
-    STATUS req_status[ISC_STATUS_LENGTH];
+    ISC_STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
     
     tdgbl = GET_THREAD_DATA;

@@ -32,7 +32,7 @@ void	TDR_list_limbo(FRBRD*, TEXT*, ULONG);
 BOOLEAN	TDR_reconnect_multiple(FRBRD*, SLONG, TEXT*, ULONG);
 void	TDR_shutdown_databases(TDR);
 USHORT	TDR_analyze(TDR);
-BOOLEAN	TDR_attach_database(STATUS*, TDR, TEXT*);
+BOOLEAN	TDR_attach_database(ISC_STATUS*, TDR, TEXT*);
 void	TDR_get_states(TDR);
 
 #ifdef __cplusplus

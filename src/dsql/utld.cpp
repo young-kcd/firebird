@@ -30,7 +30,7 @@
  */
 
 /*
-$Id: utld.cpp,v 1.11 2003-03-03 08:29:18 brodsom Exp $
+$Id: utld.cpp,v 1.12 2003-04-10 06:14:59 aafemt Exp $
 */
 
 #include "firebird.h"
@@ -50,7 +50,7 @@ extern "C" {
 
 
 static void cleanup(void *);
-static STATUS error_dsql_804(STATUS *, STATUS);
+static ISC_STATUS error_dsql_804(ISC_STATUS *, ISC_STATUS);
 static SLONG get_numeric_info(SCHAR **);
 static SLONG get_string_info(SCHAR **, SCHAR *, int);
 #ifdef NOT_USED_OR_REPLACED
@@ -93,8 +93,8 @@ static TEXT *DSQL_failures, *DSQL_failures_ptr;
     @param return_index
 
  **/
-STATUS DLL_EXPORT UTLD_parse_sql_info(
-									  STATUS * status,
+ISC_STATUS DLL_EXPORT UTLD_parse_sql_info(
+									  ISC_STATUS * status,
 									  USHORT dialect,
 									  SCHAR * info,
 XSQLDA * xsqlda, USHORT * return_index)
@@ -244,7 +244,7 @@ XSQLDA * xsqlda, USHORT * return_index)
     @param clause
 
  **/
-STATUS DLL_EXPORT UTLD_parse_sqlda(STATUS * status,
+ISC_STATUS DLL_EXPORT UTLD_parse_sqlda(ISC_STATUS * status,
 								   DASUP dasup,
 								   USHORT * blr_length,
 								   USHORT * msg_type,
@@ -661,10 +661,10 @@ STATUS DLL_EXPORT UTLD_parse_sqlda(STATUS * status,
     @param vector
 
  **/
-void DLL_EXPORT UTLD_save_status_strings( STATUS * vector)
+void DLL_EXPORT UTLD_save_status_strings( ISC_STATUS * vector)
 {
 	TEXT *p;
-	STATUS status;
+	ISC_STATUS status;
 	USHORT l;
 
 /* allocate space for failure strings if it hasn't already been allocated */
@@ -703,7 +703,7 @@ void DLL_EXPORT UTLD_save_status_strings( STATUS * vector)
 
 			if (DSQL_failures_ptr + l > DSQL_failures + DSQL_FAILURE_SPACE)
 				DSQL_failures_ptr = DSQL_failures;
-			*vector++ = (STATUS) DSQL_failures_ptr;
+			*vector++ = (ISC_STATUS) DSQL_failures_ptr;
 			if (l)
 				do
 					*DSQL_failures_ptr++ = *p++;
@@ -752,9 +752,9 @@ static void cleanup( void *arg)
     @param err
 
  **/
-static STATUS error_dsql_804( STATUS * status, STATUS err)
+static ISC_STATUS error_dsql_804( ISC_STATUS * status, ISC_STATUS err)
 {
-	STATUS *p;
+	ISC_STATUS *p;
 
 	p = status;
 	*p++ = gds_arg_gds;

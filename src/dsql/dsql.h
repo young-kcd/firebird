@@ -43,8 +43,8 @@
 //! Dynamic SQL Error Status Block
 struct err
 {
-	STATUS* dsql_status;
-	STATUS* dsql_user_status;
+	ISC_STATUS* dsql_status;
+	ISC_STATUS* dsql_user_status;
 };
 typedef err* ERR;
 
@@ -575,8 +575,8 @@ struct tsql
 {
 	thdd		tsql_thd_data;
 	DsqlMemoryPool*		tsql_default;
-	STATUS*		tsql_status;
-	STATUS*		tsql_user_status;
+	ISC_STATUS*		tsql_status;
+	ISC_STATUS*		tsql_user_status;
 };
 typedef tsql* TSQL;
 

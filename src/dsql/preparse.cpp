@@ -58,9 +58,9 @@ extern "C" {
 #define STUFF_DPB(blr)	{*dpb++ = (SCHAR)(blr);}
 #define STUFF_DPB_INT(blr)	{STUFF_DPB (blr); STUFF_DPB ((blr) >> 8); STUFF_DPB ((blr) >> 16); STUFF_DPB ((blr) >> 24);}
 
-static void generate_error(STATUS *, SCHAR *, SSHORT, SSHORT);
+static void generate_error(ISC_STATUS *, SCHAR *, SSHORT, SSHORT);
 static SSHORT get_next_token(SCHAR **, SCHAR *, SCHAR *, USHORT *);
-static SSHORT get_token(STATUS *, SSHORT, BOOLEAN, SCHAR **, SCHAR *,
+static SSHORT get_token(ISC_STATUS *, SSHORT, BOOLEAN, SCHAR **, SCHAR *,
 						SCHAR *, USHORT *);
 
 typedef struct pp_table {
@@ -112,7 +112,7 @@ static const PP_TABLE pp_symbols[] = {
 
  **/
 int DLL_EXPORT PREPARSE_execute(
-								STATUS * user_status,
+								ISC_STATUS * user_status,
 								FRBRD ** db_handle,
 								FRBRD ** trans_handle,
 USHORT stmt_length, SCHAR * stmt, BOOLEAN * stmt_eaten, USHORT dialect)
@@ -123,7 +123,7 @@ USHORT stmt_length, SCHAR * stmt, BOOLEAN * stmt_eaten, USHORT dialect)
 	USHORT dpb_len = 0, token_length;
 	SSHORT i, l, result;
 	BOOLEAN matched, get_out;
-	STATUS temp_status[ISC_STATUS_LENGTH];
+	ISC_STATUS temp_status[ISC_STATUS_LENGTH];
 	FRBRD *temp_db_handle = NULL;
 
 	token = (SCHAR *) gds__alloc((SLONG) MAX_TOKEN_SIZE + 1);
@@ -309,9 +309,9 @@ USHORT stmt_length, SCHAR * stmt, BOOLEAN * stmt_eaten, USHORT dialect)
 			user_status[0] = gds_arg_gds;
 			user_status[1] = gds_io_error;
 			user_status[2] = gds_arg_string;
-			user_status[3] = (STATUS) "open";
+			user_status[3] = (ISC_STATUS) "open";
 			user_status[4] = gds_arg_string;
-			user_status[5] = (STATUS) file_name;
+			user_status[5] = (ISC_STATUS) file_name;
 			user_status[6] = gds_arg_gds;
 			user_status[7] = gds_db_or_file_exists;
 			user_status[8] = gds_arg_end;
@@ -348,7 +348,7 @@ USHORT stmt_length, SCHAR * stmt, BOOLEAN * stmt_eaten, USHORT dialect)
 
  **/
 static void generate_error(
-						   STATUS * user_status,
+						   ISC_STATUS * user_status,
 						   SCHAR * token, SSHORT error, SSHORT result)
 {
 	TEXT err_string[MAX_TOKEN_SIZE + 3];
@@ -381,7 +381,7 @@ static void generate_error(
 		user_status[6] = gds_arg_gds;
 		user_status[7] = gds_random;
 		user_status[8] = gds_arg_string;
-		user_status[9] = (STATUS) err_string;
+		user_status[9] = (ISC_STATUS) err_string;
 		user_status[10] = gds_arg_end;
 		UTLD_save_status_strings(user_status);
 		break;
@@ -533,7 +533,7 @@ static SSHORT get_next_token(
 
  **/
 static SSHORT get_token(
-						STATUS * status,
+						ISC_STATUS * status,
 						SSHORT token_type,
 						BOOLEAN optional,
 						SCHAR ** stmt,

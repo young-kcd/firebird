@@ -40,8 +40,8 @@
 DATABASE DB = STATIC "yachts.lnk";
 
 static void copy_exact_name (UCHAR *, UCHAR *, SSHORT);
-static STATUS copy_status(STATUS *, STATUS *);
-static STATUS error(STATUS *, SSHORT, ...);
+static ISC_STATUS copy_status(ISC_STATUS *, ISC_STATUS *);
+static ISC_STATUS error(ISC_STATUS *, SSHORT, ...);
 
 
 void API_ROUTINE isc_blob_default_desc(
@@ -73,8 +73,8 @@ void API_ROUTINE isc_blob_default_desc(
 }
 
 
-STATUS API_ROUTINE isc_blob_gen_bpb(
-									STATUS * status,
+ISC_STATUS API_ROUTINE isc_blob_gen_bpb(
+									ISC_STATUS * status,
 									ISC_BLOB_DESC * to_desc,
 									ISC_BLOB_DESC * from_desc,
 USHORT bpb_buffer_length, UCHAR * bpb_buffer, USHORT * bpb_length)
@@ -96,9 +96,9 @@ USHORT bpb_buffer_length, UCHAR * bpb_buffer, USHORT * bpb_length)
 	UCHAR *p;
 
 	if (bpb_buffer_length < 17)
-		return error(status, 3, (STATUS) gds_random,
-					 (STATUS) gds_arg_string,
-					 (STATUS) "BPB buffer too small");
+		return error(status, 3, (ISC_STATUS) gds_random,
+					 (ISC_STATUS) gds_arg_string,
+					 (ISC_STATUS) "BPB buffer too small");
 
 	p = bpb_buffer;
 	*p++ = isc_bpb_version1;
@@ -121,11 +121,11 @@ USHORT bpb_buffer_length, UCHAR * bpb_buffer, USHORT * bpb_length)
 
 	*bpb_length = p - bpb_buffer;
 
-	return error(status, 1, (STATUS) FB_SUCCESS);
+	return error(status, 1, (ISC_STATUS) FB_SUCCESS);
 }
 
 
-STATUS API_ROUTINE isc_blob_lookup_desc(STATUS * status,
+ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS * status,
 										FRBRD **db_handle,
 										FRBRD **trans_handle,
 										UCHAR * relation_name,
@@ -181,17 +181,17 @@ STATUS API_ROUTINE isc_blob_lookup_desc(STATUS * status,
 	END_ERROR;
 
 	if (!flag)
-		return error(status, 5, (STATUS) gds_fldnotdef,
-					 (STATUS) gds_arg_string,
-					 (STATUS) desc->blob_desc_field_name,
-					 (STATUS) gds_arg_string,
-					 (STATUS) desc->blob_desc_relation_name);
+		return error(status, 5, (ISC_STATUS) gds_fldnotdef,
+					 (ISC_STATUS) gds_arg_string,
+					 (ISC_STATUS) desc->blob_desc_field_name,
+					 (ISC_STATUS) gds_arg_string,
+					 (ISC_STATUS) desc->blob_desc_relation_name);
 
-	return error(status, 1, (STATUS) FB_SUCCESS);
+	return error(status, 1, (ISC_STATUS) FB_SUCCESS);
 }
 
 
-STATUS API_ROUTINE isc_blob_set_desc(STATUS * status,
+ISC_STATUS API_ROUTINE isc_blob_set_desc(ISC_STATUS * status,
 									 UCHAR * relation_name,
 									 UCHAR * field_name,
 									 SSHORT subtype,
@@ -223,7 +223,7 @@ STATUS API_ROUTINE isc_blob_set_desc(STATUS * status,
 	desc->blob_desc_charset = charset;
 	desc->blob_desc_segment_size = segment_size;
 
-	return error(status, 1, (STATUS) FB_SUCCESS);
+	return error(status, 1, (ISC_STATUS) FB_SUCCESS);
 }
 
 
@@ -257,7 +257,7 @@ static void copy_exact_name (
 }
 
 
-static STATUS copy_status( STATUS * from, STATUS * to)
+static ISC_STATUS copy_status( ISC_STATUS * from, ISC_STATUS * to)
 {
 /**************************************
  *
@@ -269,7 +269,7 @@ static STATUS copy_status( STATUS * from, STATUS * to)
  *	Copy a status vector.
  *
  **************************************/
-	STATUS status, *end;
+	ISC_STATUS status, *end;
 
 	status = from[1];
 
@@ -280,7 +280,7 @@ static STATUS copy_status( STATUS * from, STATUS * to)
 }
 
 
-static STATUS error( STATUS * status, SSHORT count, ...)
+static ISC_STATUS error( ISC_STATUS * status, SSHORT count, ...)
 {
 /**************************************
  *
@@ -292,7 +292,7 @@ static STATUS error( STATUS * status, SSHORT count, ...)
  *	Stuff a status vector.
  *
  **************************************/
-	STATUS *stat;
+	ISC_STATUS *stat;
 	va_list ptr;
 
 	VA_START(ptr, count);
@@ -300,7 +300,7 @@ static STATUS error( STATUS * status, SSHORT count, ...)
 	*stat++ = gds_arg_gds;
 
 	for (; count; --count)
-		*stat++ = (STATUS) va_arg(ptr, STATUS);
+		*stat++ = (ISC_STATUS) va_arg(ptr, ISC_STATUS);
 
 	*stat = gds_arg_end;
 

@@ -60,15 +60,15 @@ extern "C" {
 
 typedef void (*PTR) ();
 
-static STATUS check_response(ICC, STATUS *);
+static ISC_STATUS check_response(ICC, ISC_STATUS *);
 static void clear_statement_cache(IPSERVER_ISR);
 static void clear_transaction_statements(ITR);
 static void event_packer(ICC);
 static void event_thread(void);
-static void extract_status(ICC, STATUS *);
-static STATUS handle_error(STATUS *, STATUS);
-static SSHORT init(STATUS *, ICC *);
-static ITR make_transaction(STATUS *, IDB, FRBRD *);
+static void extract_status(ICC, ISC_STATUS *);
+static ISC_STATUS handle_error(ISC_STATUS *, ISC_STATUS);
+static SSHORT init(ISC_STATUS *, ICC *);
+static ITR make_transaction(ISC_STATUS *, IDB, FRBRD *);
 static SSHORT name_length(TEXT *);
 static BOOL pack_strings(ICC);
 static void release_blob(IBL);
@@ -219,8 +219,8 @@ static HANDLE server_process_handle = 0;
 #define GDS_DSQL_SQL_INFO       IPI_sql_info
 
 
-STATUS GDS_ATTACH_DATABASE(
-						   STATUS * user_status,
+ISC_STATUS GDS_ATTACH_DATABASE(
+						   ISC_STATUS * user_status,
 						   USHORT GDS_VAL(file_length),
 						   SCHAR * file_name,
 IDB * handle,
@@ -300,7 +300,7 @@ USHORT GDS_VAL(dpb_length), SCHAR * dpb, SCHAR * expanded_filename)
 }
 
 
-STATUS GDS_BLOB_INFO(STATUS * user_status,
+ISC_STATUS GDS_BLOB_INFO(ISC_STATUS * user_status,
 					 IBL * blob,
 					 USHORT GDS_VAL(item_length),
 					 UCHAR * items,
@@ -348,7 +348,7 @@ STATUS GDS_BLOB_INFO(STATUS * user_status,
 }
 
 
-STATUS GDS_CANCEL_BLOB(STATUS * user_status, IBL * blob_handle)
+ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS * user_status, IBL * blob_handle)
 {
 /**************************************
  *
@@ -402,7 +402,7 @@ STATUS GDS_CANCEL_BLOB(STATUS * user_status, IBL * blob_handle)
 }
 
 
-STATUS GDS_CANCEL_EVENTS(STATUS * user_status, IDB * handle, SLONG * id)
+ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS * user_status, IDB * handle, SLONG * id)
 {
 /**************************************
  *
@@ -416,7 +416,7 @@ STATUS GDS_CANCEL_EVENTS(STATUS * user_status, IDB * handle, SLONG * id)
  **************************************/
 	IDB idb;
 	IVNT event;
-	STATUS result;
+	ISC_STATUS result;
 	ips_object *ips;
 	ips_comm_area *comm;
 	USHORT commi;
@@ -456,7 +456,7 @@ STATUS GDS_CANCEL_EVENTS(STATUS * user_status, IDB * handle, SLONG * id)
 }
 
 
-STATUS GDS_CLOSE_BLOB(STATUS * user_status, IBL * blob_handle)
+ISC_STATUS GDS_CLOSE_BLOB(ISC_STATUS * user_status, IBL * blob_handle)
 {
 /**************************************
  *
@@ -508,7 +508,7 @@ STATUS GDS_CLOSE_BLOB(STATUS * user_status, IBL * blob_handle)
 }
 
 
-STATUS GDS_COMMIT(STATUS * user_status, ITR * itr_handle)
+ISC_STATUS GDS_COMMIT(ISC_STATUS * user_status, ITR * itr_handle)
 {
 /**************************************
  *
@@ -553,7 +553,7 @@ STATUS GDS_COMMIT(STATUS * user_status, ITR * itr_handle)
 }
 
 
-STATUS GDS_COMMIT_RETAINING(STATUS * user_status, ITR * itr_handle)
+ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS * user_status, ITR * itr_handle)
 {
 /**************************************
  *
@@ -596,7 +596,7 @@ STATUS GDS_COMMIT_RETAINING(STATUS * user_status, ITR * itr_handle)
 }
 
 
-STATUS GDS_COMPILE(STATUS * user_status,
+ISC_STATUS GDS_COMPILE(ISC_STATUS * user_status,
 				   IDB * db_handle,
 				   IRQ * req_handle, USHORT GDS_VAL(blr_length), UCHAR * blr)
 {
@@ -650,7 +650,7 @@ STATUS GDS_COMPILE(STATUS * user_status,
 }
 
 
-STATUS GDS_CREATE_BLOB(STATUS * user_status,
+ISC_STATUS GDS_CREATE_BLOB(ISC_STATUS * user_status,
 					   IDB * db_handle,
 					   ITR * itr_handle, IBL * blob_handle, BID blob_id)
 {
@@ -713,7 +713,7 @@ STATUS GDS_CREATE_BLOB(STATUS * user_status,
 }
 
 
-STATUS GDS_CREATE_BLOB2(STATUS * user_status,
+ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS * user_status,
 						IDB * db_handle,
 						ITR * itr_handle,
 						IBL * blob_handle,
@@ -780,7 +780,7 @@ STATUS GDS_CREATE_BLOB2(STATUS * user_status,
 }
 
 
-STATUS GDS_CREATE_DATABASE(STATUS * user_status,
+ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS * user_status,
 						   USHORT GDS_VAL(file_length),
 						   SCHAR * file_name,
 						   IDB * handle,
@@ -859,7 +859,7 @@ STATUS GDS_CREATE_DATABASE(STATUS * user_status,
 }
 
 
-STATUS GDS_DATABASE_INFO(STATUS * user_status,
+ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS * user_status,
 						 IDB * handle,
 						 USHORT GDS_VAL(item_length),
 						 UCHAR * items,
@@ -906,7 +906,7 @@ STATUS GDS_DATABASE_INFO(STATUS * user_status,
 }
 
 
-STATUS GDS_DDL(STATUS * user_status,
+ISC_STATUS GDS_DDL(ISC_STATUS * user_status,
 			   IDB * db_handle,
 			   ITR * itr_handle, USHORT GDS_VAL(length), UCHAR * msg)
 {
@@ -953,7 +953,7 @@ STATUS GDS_DDL(STATUS * user_status,
 }
 
 
-STATUS GDS_DETACH(STATUS * user_status, IDB * handle)
+ISC_STATUS GDS_DETACH(ISC_STATUS * user_status, IDB * handle)
 {
 /**************************************
  *
@@ -1035,7 +1035,7 @@ STATUS GDS_DETACH(STATUS * user_status, IDB * handle)
 }
 
 
-STATUS GDS_DROP_DATABASE(STATUS * user_status, IDB * handle)
+ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS * user_status, IDB * handle)
 {
 /**************************************
  *
@@ -1049,7 +1049,7 @@ STATUS GDS_DROP_DATABASE(STATUS * user_status, IDB * handle)
  **************************************/
 	IDB idb;
 	IRQ irq;
-	STATUS code;
+	ISC_STATUS code;
 	ips_object *ips;
 	ips_comm_area *comm;
 	USHORT commi;
@@ -1099,7 +1099,7 @@ STATUS GDS_DROP_DATABASE(STATUS * user_status, IDB * handle)
 }
 
 
-STATUS GDS_DSQL_ALLOCATE(STATUS * user_status,
+ISC_STATUS GDS_DSQL_ALLOCATE(ISC_STATUS * user_status,
 						 IDB * db_handle, IPSERVER_ISR * stmt_handle)
 {
 /**************************************
@@ -1156,7 +1156,7 @@ STATUS GDS_DSQL_ALLOCATE(STATUS * user_status,
 }
 
 
-STATUS GDS_DSQL_EXECUTE(STATUS * user_status,
+ISC_STATUS GDS_DSQL_EXECUTE(ISC_STATUS * user_status,
 						ITR * itr_handle,
 						IPSERVER_ISR * stmt_handle,
 						USHORT blr_length,
@@ -1227,7 +1227,7 @@ STATUS GDS_DSQL_EXECUTE(STATUS * user_status,
 }
 
 
-STATUS GDS_DSQL_EXECUTE2(STATUS * user_status,
+ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS * user_status,
 						 ITR * itr_handle,
 						 IPSERVER_ISR * stmt_handle,
 						 USHORT in_blr_length,
@@ -1312,7 +1312,7 @@ STATUS GDS_DSQL_EXECUTE2(STATUS * user_status,
 }
 
 
-STATUS GDS_DSQL_EXECUTE_IMMED(STATUS * user_status,
+ISC_STATUS GDS_DSQL_EXECUTE_IMMED(ISC_STATUS * user_status,
 							  IDB * db_handle,
 							  ITR * itr_handle,
 							  USHORT length,
@@ -1388,7 +1388,7 @@ STATUS GDS_DSQL_EXECUTE_IMMED(STATUS * user_status,
 }
 
 
-STATUS GDS_DSQL_EXECUTE_IMMED2(STATUS * user_status,
+ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS * user_status,
 							   IDB * db_handle,
 							   ITR * itr_handle,
 							   USHORT length,
@@ -1479,7 +1479,7 @@ STATUS GDS_DSQL_EXECUTE_IMMED2(STATUS * user_status,
 }
 
 
-STATUS GDS_DSQL_FETCH(STATUS * user_status,
+ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS * user_status,
 					  IPSERVER_ISR * stmt_handle,
 					  USHORT blr_length,
 					  UCHAR * blr,
@@ -1628,7 +1628,7 @@ STATUS GDS_DSQL_FETCH(STATUS * user_status,
 }
 
 
-STATUS GDS_DSQL_FREE(STATUS * user_status,
+ISC_STATUS GDS_DSQL_FREE(ISC_STATUS * user_status,
 					 IPSERVER_ISR * stmt_handle, USHORT option)
 {
 /**************************************
@@ -1684,7 +1684,7 @@ STATUS GDS_DSQL_FREE(STATUS * user_status,
 }
 
 
-STATUS GDS_DSQL_INSERT(STATUS * user_status,
+ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS * user_status,
 					   IPSERVER_ISR * stmt_handle,
 					   USHORT blr_length,
 					   UCHAR * blr,
@@ -1735,7 +1735,7 @@ STATUS GDS_DSQL_INSERT(STATUS * user_status,
 }
 
 
-STATUS GDS_DSQL_PREPARE(STATUS * user_status,
+ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status,
 						ITR * itr_handle,
 						IPSERVER_ISR * stmt_handle,
 						USHORT length,
@@ -1807,7 +1807,7 @@ STATUS GDS_DSQL_PREPARE(STATUS * user_status,
 }
 
 
-STATUS GDS_DSQL_SET_CURSOR(STATUS * user_status,
+ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS * user_status,
 						   IPSERVER_ISR * stmt_handle,
 						   UCHAR * cursor, USHORT type)
 {
@@ -1856,7 +1856,7 @@ STATUS GDS_DSQL_SET_CURSOR(STATUS * user_status,
 }
 
 
-STATUS GDS_DSQL_SQL_INFO(STATUS * user_status,
+ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS * user_status,
 						 IPSERVER_ISR * stmt_handle,
 						 USHORT item_length,
 						 UCHAR * items, USHORT buffer_length, UCHAR * buffer)
@@ -1905,7 +1905,7 @@ STATUS GDS_DSQL_SQL_INFO(STATUS * user_status,
 }
 
 
-STATUS GDS_GET_SEGMENT(STATUS * user_status,
+ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 					   IBL * blob_handle,
 					   USHORT * length,
 					   USHORT GDS_VAL(buffer_length), UCHAR * buffer)
@@ -1955,7 +1955,7 @@ STATUS GDS_GET_SEGMENT(STATUS * user_status,
 }
 
 
-STATUS GDS_GET_SLICE(STATUS * user_status,
+ISC_STATUS GDS_GET_SLICE(ISC_STATUS * user_status,
 					 IDB * db_handle,
 					 ITR * tra_handle,
 					 BID array_id,
@@ -2022,7 +2022,7 @@ STATUS GDS_GET_SLICE(STATUS * user_status,
 }
 
 
-STATUS GDS_OPEN_BLOB(STATUS * user_status,
+ISC_STATUS GDS_OPEN_BLOB(ISC_STATUS * user_status,
 					 IDB * db_handle,
 					 ITR * itr_handle, IBL * blob_handle, BID blob_id)
 {
@@ -2084,7 +2084,7 @@ STATUS GDS_OPEN_BLOB(STATUS * user_status,
 }
 
 
-STATUS GDS_OPEN_BLOB2(STATUS * user_status,
+ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS * user_status,
 					  IDB * db_handle,
 					  ITR * itr_handle,
 					  IBL * blob_handle,
@@ -2150,7 +2150,7 @@ STATUS GDS_OPEN_BLOB2(STATUS * user_status,
 }
 
 
-STATUS GDS_PREPARE(STATUS * user_status,
+ISC_STATUS GDS_PREPARE(ISC_STATUS * user_status,
 				   ITR * itr_handle,
 				   USHORT GDS_VAL(buffer_length), UCHAR * buffer)
 {
@@ -2195,7 +2195,7 @@ STATUS GDS_PREPARE(STATUS * user_status,
 }
 
 
-STATUS GDS_PUT_SEGMENT(STATUS * user_status,
+ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS * user_status,
 					   IBL * blob_handle,
 					   USHORT GDS_VAL(buffer_length), UCHAR * buffer)
 {
@@ -2241,7 +2241,7 @@ STATUS GDS_PUT_SEGMENT(STATUS * user_status,
 }
 
 
-STATUS GDS_PUT_SLICE(STATUS * user_status,
+ISC_STATUS GDS_PUT_SLICE(ISC_STATUS * user_status,
 					 IDB * db_handle,
 					 ITR * tra_handle,
 					 BID array_id,
@@ -2305,7 +2305,7 @@ STATUS GDS_PUT_SLICE(STATUS * user_status,
 }
 
 
-STATUS GDS_QUE_EVENTS(STATUS * user_status,
+ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS * user_status,
 					  IDB * handle,
 					  SLONG * id,
 					  USHORT GDS_VAL(length),
@@ -2420,7 +2420,7 @@ STATUS GDS_QUE_EVENTS(STATUS * user_status,
 }
 
 
-STATUS GDS_RECEIVE(STATUS * user_status,
+ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 				   IRQ * req_handle,
 				   SSHORT GDS_VAL(msg_type),
 				   USHORT GDS_VAL(msg_length),
@@ -2478,7 +2478,7 @@ STATUS GDS_RECEIVE(STATUS * user_status,
 }
 
 
-STATUS GDS_RECONNECT(STATUS * user_status,
+ISC_STATUS GDS_RECONNECT(ISC_STATUS * user_status,
 					 IDB * db_handle,
 					 ITR * itr_handle, USHORT GDS_VAL(length), UCHAR * id)
 {
@@ -2493,7 +2493,7 @@ STATUS GDS_RECONNECT(STATUS * user_status,
  *
  **************************************/
 	IDB idb;
-	STATUS l;
+	ISC_STATUS l;
 	ips_reconnect *ips;
 	ips_string *ips_id;
 	ips_comm_area *comm;
@@ -2526,7 +2526,7 @@ STATUS GDS_RECONNECT(STATUS * user_status,
 }
 
 
-STATUS GDS_RELEASE_REQUEST(STATUS * user_status, IRQ * req_handle)
+ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, IRQ * req_handle)
 {
 /**************************************
  *
@@ -2573,7 +2573,7 @@ STATUS GDS_RELEASE_REQUEST(STATUS * user_status, IRQ * req_handle)
 }
 
 
-STATUS GDS_REQUEST_INFO(STATUS * user_status,
+ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS * user_status,
 						IRQ * request,
 						USHORT GDS_VAL(level),
 						USHORT GDS_VAL(item_length),
@@ -2623,7 +2623,7 @@ STATUS GDS_REQUEST_INFO(STATUS * user_status,
 }
 
 
-STATUS GDS_ROLLBACK_RETAINING(STATUS * user_status, ITR * itr_handle)
+ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS * user_status, ITR * itr_handle)
 {
 /**************************************
  *
@@ -2666,7 +2666,7 @@ STATUS GDS_ROLLBACK_RETAINING(STATUS * user_status, ITR * itr_handle)
 }
 
 
-STATUS GDS_ROLLBACK(STATUS * user_status, ITR * itr_handle)
+ISC_STATUS GDS_ROLLBACK(ISC_STATUS * user_status, ITR * itr_handle)
 {
 /**************************************
  *
@@ -2714,7 +2714,7 @@ STATUS GDS_ROLLBACK(STATUS * user_status, ITR * itr_handle)
 }
 
 
-STATUS GDS_SEEK_BLOB(STATUS * user_status,
+ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS * user_status,
 					 IBL * blob_handle,
 					 SSHORT GDS_VAL(mode),
 					 SLONG GDS_VAL(offset), SLONG * result)
@@ -2762,7 +2762,7 @@ STATUS GDS_SEEK_BLOB(STATUS * user_status,
 }
 
 
-STATUS GDS_SEND(STATUS * user_status,
+ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
 				IRQ * req_handle,
 				SSHORT GDS_VAL(msg_type),
 				USHORT GDS_VAL(msg_length),
@@ -2811,7 +2811,7 @@ STATUS GDS_SEND(STATUS * user_status,
 	RETURN_SUCCESS;
 }
 
-STATUS GDS_SERVICE_ATTACH(STATUS * user_status,
+ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS * user_status,
 						  USHORT service_length,
 						  TEXT * service_name,
 						  IDB * handle, USHORT spb_length, SCHAR * spb)
@@ -2877,7 +2877,7 @@ STATUS GDS_SERVICE_ATTACH(STATUS * user_status,
 	RETURN_SUCCESS;
 }
 
-STATUS GDS_SERVICE_DETACH(STATUS * user_status, IDB * handle)
+ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS * user_status, IDB * handle)
 {
 /**************************************
  *
@@ -2937,7 +2937,7 @@ STATUS GDS_SERVICE_DETACH(STATUS * user_status, IDB * handle)
 	RETURN_SUCCESS;
 }
 
-STATUS GDS_SERVICE_QUERY(STATUS * user_status,
+ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS * user_status,
 						 IDB * service,
 						 ULONG * reserved,
 						 USHORT send_item_length,
@@ -2990,7 +2990,7 @@ STATUS GDS_SERVICE_QUERY(STATUS * user_status,
 	RETURN_SUCCESS;
 }
 
-STATUS GDS_SERVICE_START(STATUS * user_status,
+ISC_STATUS GDS_SERVICE_START(ISC_STATUS * user_status,
 						 IDB * service,
 						 ULONG * reserved, USHORT spb_length, SCHAR * spb)
 {
@@ -3030,7 +3030,7 @@ STATUS GDS_SERVICE_START(STATUS * user_status,
 }
 
 
-STATUS GDS_START(STATUS * user_status,
+ISC_STATUS GDS_START(ISC_STATUS * user_status,
 				 IRQ * req_handle,
 				 ITR * itr_handle, SSHORT GDS_VAL(level))
 {
@@ -3079,7 +3079,7 @@ STATUS GDS_START(STATUS * user_status,
 }
 
 
-STATUS GDS_START_AND_SEND(STATUS * user_status,
+ISC_STATUS GDS_START_AND_SEND(ISC_STATUS * user_status,
 						  IRQ * req_handle,
 						  ITR * itr_handle,
 						  SSHORT GDS_VAL(msg_type),
@@ -3134,7 +3134,7 @@ STATUS GDS_START_AND_SEND(STATUS * user_status,
 }
 
 
-STATUS GDS_START_MULTIPLE(STATUS * user_status,
+ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
 						  ITR * itr_handle,
 						  SSHORT GDS_VAL(count), int **vector)
 {
@@ -3213,7 +3213,7 @@ STATUS GDS_START_MULTIPLE(STATUS * user_status,
 }
 
 
-STATUS GDS_START_TRANSACTION(STATUS * user_status,
+ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
 							 ITR * itr_handle, SSHORT GDS_VAL(count), ...)
 {
 /**************************************
@@ -3291,7 +3291,7 @@ STATUS GDS_START_TRANSACTION(STATUS * user_status,
 }
 
 
-STATUS GDS_TRANSACTION_INFO(STATUS * user_status,
+ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS * user_status,
 							ITR * transaction,
 							USHORT GDS_VAL(item_length),
 							UCHAR * items,
@@ -3339,7 +3339,7 @@ STATUS GDS_TRANSACTION_INFO(STATUS * user_status,
 }
 
 
-STATUS GDS_TRANSACT_REQUEST(STATUS * user_status,
+ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS * user_status,
 							IDB * db_handle,
 							ITR * tra_handle,
 							USHORT blr_length,
@@ -3395,7 +3395,7 @@ STATUS GDS_TRANSACT_REQUEST(STATUS * user_status,
 }
 
 
-STATUS GDS_UNWIND(STATUS * user_status,
+ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status,
 				  IRQ * req_handle, SSHORT GDS_VAL(level))
 {
 /**************************************
@@ -3437,7 +3437,7 @@ STATUS GDS_UNWIND(STATUS * user_status,
 }
 
 
-static STATUS check_response( ICC icc, STATUS * user_status)
+static ISC_STATUS check_response( ICC icc, ISC_STATUS * user_status)
 {
 /**************************************
  *
@@ -3597,7 +3597,7 @@ static void event_thread(void)
 	IVNT ivnt;
 	IVNT event;
 	EVENTQ queued;
-	STATUS status[ISC_STATUS_LENGTH];
+	ISC_STATUS status[ISC_STATUS_LENGTH];
 
 
 	/* loop to wait for events */
@@ -3658,7 +3658,7 @@ static void event_thread(void)
 }
 
 
-static void extract_status( ICC icc, STATUS * user_status)
+static void extract_status( ICC icc, ISC_STATUS * user_status)
 {
 /**************************************
  *
@@ -3673,7 +3673,7 @@ static void extract_status( ICC icc, STATUS * user_status)
  **************************************/
 	USHORT i, length;
 	TEXT *text;
-	STATUS *v, code, *server_status;
+	ISC_STATUS *v, code, *server_status;
 	ips_comm_area *comm;
 	ULONG *comm_ptr;
 	TEXT *p;
@@ -3684,7 +3684,7 @@ static void extract_status( ICC icc, STATUS * user_status)
 	/* extract the status information */
 
 	text = error_text;
-	server_status = reinterpret_cast < STATUS * >(comm->ips_status);
+	server_status = reinterpret_cast < ISC_STATUS * >(comm->ips_status);
 	comm_ptr = comm->ips_data;
 	v = user_status;
 
@@ -3703,7 +3703,7 @@ static void extract_status( ICC icc, STATUS * user_status)
 				/* get a string from the comm area, aligning the
 				   pointer accordingly */
 
-				*v++ = (STATUS) text;
+				*v++ = (ISC_STATUS) text;
 				length = (USHORT) * comm_ptr++;
 				p = (TEXT *) comm_ptr;
 				comm_ptr = comm_ptr +
@@ -3733,7 +3733,7 @@ static void extract_status( ICC icc, STATUS * user_status)
 }
 
 
-static STATUS handle_error( STATUS * user_status, STATUS code)
+static ISC_STATUS handle_error( ISC_STATUS * user_status, ISC_STATUS code)
 {
 /**************************************
  *
@@ -3755,7 +3755,7 @@ static STATUS handle_error( STATUS * user_status, STATUS code)
 }
 
 
-static SSHORT init( STATUS * user_status, ICC * picc)
+static SSHORT init( ISC_STATUS * user_status, ICC * picc)
 {
 /**************************************
  *
@@ -3983,7 +3983,7 @@ static SSHORT init( STATUS * user_status, ICC * picc)
 }
 
 
-static ITR make_transaction( STATUS * user_status, IDB idb, FRBRD * handle)
+static ITR make_transaction( ISC_STATUS * user_status, IDB idb, FRBRD * handle)
 {
 /**************************************
  *

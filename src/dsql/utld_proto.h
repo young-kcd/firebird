@@ -31,12 +31,12 @@
 extern "C" {
 #endif
 
-extern STATUS DLL_EXPORT UTLD_parse_sql_info(STATUS *, USHORT, SCHAR *,
+extern ISC_STATUS DLL_EXPORT UTLD_parse_sql_info(ISC_STATUS *, USHORT, SCHAR *,
 											 XSQLDA *, USHORT *);
-extern STATUS DLL_EXPORT UTLD_parse_sqlda(STATUS *, struct dasup *, USHORT *,
+extern ISC_STATUS DLL_EXPORT UTLD_parse_sqlda(ISC_STATUS *, struct dasup *, USHORT *,
 										  USHORT *, USHORT *, USHORT,
 										  XSQLDA *, USHORT);
-extern void DLL_EXPORT UTLD_save_status_strings(STATUS *);
+extern void DLL_EXPORT UTLD_save_status_strings(ISC_STATUS *);
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -36,8 +36,8 @@ extern int ISQL_create_database(TEXT *,
 								SCHAR *, IB_FILE *, IB_FILE *, IB_FILE *);
 extern BOOLEAN ISQL_dbcheck(void);
 extern void ISQL_disconnect_database(int);
-extern void ISQL_errmsg(STATUS *);
-extern void ISQL_warning(STATUS *);
+extern void ISQL_errmsg(ISC_STATUS *);
+extern void ISQL_warning(ISC_STATUS *);
 extern void ISQL_exit_db(void);
 extern int ISQL_extract(TEXT *, int, IB_FILE *, IB_FILE *, IB_FILE *);
 extern int ISQL_frontend_command(TEXT *, IB_FILE *, IB_FILE *, IB_FILE *);

@@ -165,7 +165,7 @@ static void close_database(DRB);
 static BOOLEAN commit(DRB, LTJC *, USHORT);
 static SSHORT compress(DRB, DPG);
 static void disable(DRB, LTJC *);
-static int error(TEXT *, STATUS, TEXT *, STATUS);
+static int error(TEXT *, ISC_STATUS, TEXT *, ISC_STATUS);
 static void expand_num_alloc(SCHAR ***, SSHORT *);
 static void fixup_header(DRB);
 static void format_time(SLONG[2], TEXT *);
@@ -242,7 +242,7 @@ static COUNTER totals[JRNP_MAX + 1 - JRN_PAGE];
 
 static UCHAR wal_buff[MAX_WALBUFLEN];
 static WALRS WALR_handle;
-static STATUS wal_status[20];
+static ISC_STATUS wal_status[ISC_STATUS_LENGTH];
 
 
 #ifndef FILE_OPEN_WRITE
@@ -1102,7 +1102,7 @@ static void close_database(DRB database)
 	FIL fil;
 	SLONG *tr2 = 0;
 	SSHORT ret_val;
-	STATUS status[20];
+	ISC_STATUS status[ISC_STATUS_LENGTH];
 
 	if (sw_trace)
 		return;
@@ -1293,7 +1293,7 @@ static void disable(DRB database, LTJC * record)
 	close_database(database);
 }
 static int error(TEXT * filename,
-				 STATUS err_num, TEXT * string, STATUS operation)
+				 ISC_STATUS err_num, TEXT * string, ISC_STATUS operation)
 {
 /**************************************
  *
@@ -1305,14 +1305,14 @@ static int error(TEXT * filename,
  *	We've had an unexpected error -- punt.
  *
  **************************************/
-	STATUS status_vector[20], *s;
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH], *s;
 
 	s = status_vector;
 	*s++ = isc_arg_gds;
 	*s++ = isc_io_error, *s++ = gds_arg_string;
-	*s++ = (STATUS) string;
+	*s++ = (ISC_STATUS) string;
 	*s++ = gds_arg_string;
-	*s++ = (STATUS) filename;
+	*s++ = (ISC_STATUS) filename;
 	*s++ = isc_arg_gds;
 	*s++ = operation;
 	*s++ = SYS_ERROR;
@@ -2013,7 +2013,7 @@ static BOOLEAN open_database_file(DRB database,
  *	Open database and create blocks.
  *
  **************************************/ SSHORT ret_val;
-	STATUS status[20];
+	ISC_STATUS status[ISC_STATUS_LENGTH];
 
 	if (new_file) {
 		if (LLIO_open(status, name, LLIO_OPEN_NEW_RW, TRUE,
@@ -2068,7 +2068,7 @@ static int open_journal(SCHAR * dbname,
 				  files, start_p_offset, start_offset, until_ptr, stop_flag);
 
 	if (n != SUCCESS) {
-		error(files[0], (STATUS) ERRNO, "open", isc_io_open_err);
+		error(files[0], (ISC_STATUS) ERRNO, "open", isc_io_open_err);
 		return 0;
 	}
 
@@ -2804,7 +2804,7 @@ static void read_page(DRB database, CACHE buffer)
  *
  **************************************/
 	FIL fil;
-	STATUS status[20];
+	ISC_STATUS status[ISC_STATUS_LENGTH];
 	SLONG len_read, new_offset;
 	fil = seek_file(database, database->drb_file, buffer, &new_offset);
 	if (!fil)
@@ -3558,7 +3558,7 @@ static FIL seek_file(DRB database, FIL fil, CACHE buffer, SLONG * new_offset)
  *
  **************************************/
 	ULONG page;
-	STATUS status[20];
+	ISC_STATUS status[ISC_STATUS_LENGTH];
 	page = buffer->cache_page_number;
 	for (;; fil = fil->fil_next)
 		if (!fil)
@@ -3696,7 +3696,7 @@ static void write_page(DRB database, CACHE buffer)
 	PAG page;
 	FIL fil;
 	SLONG len_written, new_offset;
-	STATUS status[20];
+	ISC_STATUS status[ISC_STATUS_LENGTH];
 	page = buffer->cache_page;
 	page->pag_checksum = checksum(database, page);
 	fil = seek_file(database, database->drb_file, buffer, &new_offset);

@@ -6,7 +6,7 @@
 
 namespace Firebird {
 
-void status_exception::raise(STATUS s)
+void status_exception::raise(ISC_STATUS s)
 {
 	throw status_exception(s);
 }

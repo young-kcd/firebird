@@ -129,7 +129,7 @@ void ERRD_error( int code, const char* text)
 {
 	TEXT s[256];
 	TSQL tdsql;
-    STATUS	*status_vector;
+    ISC_STATUS	*status_vector;
 
 	tdsql = GET_THREAD_DATA;
 
@@ -161,7 +161,7 @@ void ERRD_error( int code, const char* text)
     @param 
 
  **/
-BOOLEAN ERRD_post_warning(STATUS status, ...)
+BOOLEAN ERRD_post_warning(ISC_STATUS status, ...)
 {
 	va_list args;
 
@@ -171,7 +171,7 @@ BOOLEAN ERRD_post_warning(STATUS status, ...)
 
 	VA_START(args, status);
 
-	STATUS* status_vector = ((TSQL) GET_THREAD_DATA)->tsql_status;
+	ISC_STATUS* status_vector = ((TSQL) GET_THREAD_DATA)->tsql_status;
 	int indx = 0;
 
 	if (status_vector[0] != gds_arg_gds ||
@@ -211,7 +211,7 @@ BOOLEAN ERRD_post_warning(STATUS status, ...)
 		switch (status_vector[indx++] = type)
 		{
 		case gds_arg_warning:
-			status_vector[indx++] = (STATUS) va_arg(args, STATUS);
+			status_vector[indx++] = (ISC_STATUS) va_arg(args, ISC_STATUS);
 			break;
 
 		case gds_arg_string: 
@@ -231,20 +231,20 @@ BOOLEAN ERRD_post_warning(STATUS status, ...)
 		case gds_arg_cstring:
             len = va_arg(args, int);
             status_vector[indx++] =
-                (STATUS) (len >= MAX_ERRSTR_LEN) ? MAX_ERRSTR_LEN : len;
+                (ISC_STATUS) (len >= MAX_ERRSTR_LEN) ? MAX_ERRSTR_LEN : len;
             pszTmp = va_arg(args, char*);
             status_vector[indx++] = reinterpret_cast<long>(ERR_cstring(pszTmp));
 			break;
 
 		case gds_arg_number:
-			status_vector[indx++] = (STATUS) va_arg(args, SLONG);
+			status_vector[indx++] = (ISC_STATUS) va_arg(args, SLONG);
 			break;
 
 		case gds_arg_vms:
 		case gds_arg_unix:
 		case gds_arg_win32:
 		default:
-			status_vector[indx++] = (STATUS) va_arg(args, int);
+			status_vector[indx++] = (ISC_STATUS) va_arg(args, int);
 			break;
 		}
     }
@@ -265,16 +265,16 @@ BOOLEAN ERRD_post_warning(STATUS status, ...)
     @param 
 
  **/
-void ERRD_post(STATUS status, ...)
+void ERRD_post(ISC_STATUS status, ...)
 {
 
-	STATUS tmp_status[ISC_STATUS_LENGTH];
-	STATUS warning_status[ISC_STATUS_LENGTH];
+	ISC_STATUS tmp_status[ISC_STATUS_LENGTH];
+	ISC_STATUS warning_status[ISC_STATUS_LENGTH];
 	int tmp_status_len = 0;
 	int status_len = 0;
 	int warning_indx = 0;
 
-	STATUS*status_vector = ((TSQL) GET_THREAD_DATA)->tsql_status;
+	ISC_STATUS*status_vector = ((TSQL) GET_THREAD_DATA)->tsql_status;
 
 /* stuff the status into temp buffer */
 	MOVE_CLEAR(tmp_status, sizeof(tmp_status));
@@ -314,7 +314,7 @@ void ERRD_post(STATUS status, ...)
 			status_vector[i - 1] != gds_arg_warning &&
 			i + tmp_status_len - 2 < ISC_STATUS_LENGTH &&
 			(memcmp(&status_vector[i], &tmp_status[1],
-					sizeof(STATUS) * (tmp_status_len - 2)) == 0))
+					sizeof(ISC_STATUS) * (tmp_status_len - 2)) == 0))
 		{
 			/* duplicate found */
 			ERRD_punt();
@@ -333,7 +333,7 @@ void ERRD_post(STATUS status, ...)
 		/* copy current warning(s) to a temp buffer */
 		MOVE_CLEAR(warning_status, sizeof(warning_status));
 		MOVE_FASTER(&status_vector[warning_indx], warning_status,
-					sizeof(STATUS) * (ISC_STATUS_LENGTH - warning_indx));
+					sizeof(ISC_STATUS) * (ISC_STATUS_LENGTH - warning_indx));
 		PARSE_STATUS(warning_status, warning_count, warning_indx);
 	}
 
@@ -344,12 +344,12 @@ void ERRD_post(STATUS status, ...)
 	if (i < ISC_STATUS_LENGTH)
 	{
 		MOVE_FASTER(tmp_status, &status_vector[err_status_len],
-					sizeof(STATUS) * tmp_status_len);
+					sizeof(ISC_STATUS) * tmp_status_len);
 		/* copy current warning(s) to the status_vector */
 		if (warning_count && i + warning_count - 1 < ISC_STATUS_LENGTH)
 		{
 			MOVE_FASTER(warning_status, &status_vector[i - 1],
-						sizeof(STATUS) * warning_count);
+						sizeof(ISC_STATUS) * warning_count);
 
 		}
 	}

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.26 2003-03-07 00:35:10 brodsom Exp $
+//	$Id: alice.cpp,v 1.27 2003-04-10 06:04:41 aafemt Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -695,9 +695,9 @@ void ALICE_print(USHORT	number,
 //		to allow redirecting output.
 //
 
-void ALICE_print_status(STATUS* status_vector)
+void ALICE_print_status(ISC_STATUS* status_vector)
 {
-	STATUS*	vector;
+	ISC_STATUS*	vector;
 	SCHAR	s[1024];
 
 	if (status_vector)
@@ -706,7 +706,7 @@ void ALICE_print_status(STATUS* status_vector)
 #ifdef SUPERSERVER
 		int i = 0, j;
 		TGBL tdgbl = GET_THREAD_DATA;
-		STATUS* status = tdgbl->service_blk->svc_status;
+		ISC_STATUS* status = tdgbl->service_blk->svc_status;
 		if (status != status_vector) {
 			while (*status && (++i < ISC_STATUS_LENGTH)) {
 				status++;
@@ -746,7 +746,7 @@ void ALICE_error(USHORT	number,
 	TEXT buffer[256];
 
 #ifdef SUPERSERVER
-	STATUS* status = tdgbl->service_blk->svc_status;
+	ISC_STATUS* status = tdgbl->service_blk->svc_status;
 
 	CMD_UTIL_put_svc_status(status, ALICE_MSG_FAC, number,
 							isc_arg_string, arg1,

@@ -237,7 +237,7 @@ void BURP_svc_error(USHORT errcode,
  *
  **************************************/
 	TGBL tdgbl;
-	STATUS *status;
+	ISC_STATUS *status;
 
 	tdgbl = GET_THREAD_DATA;
 
@@ -1043,7 +1043,7 @@ int DLL_EXPORT BURP_gbak(int		argc,
 			if (isc_detach_database(const_cast<ISC_STATUS*>(tdgbl->status_vector),
 									const_cast<isc_db_handle*>(&tdgbl->db_handle)))
 			{
-				BURP_print_status(const_cast<STATUS*>(tdgbl->status_vector));
+				BURP_print_status(const_cast<ISC_STATUS*>(tdgbl->status_vector));
 			}
 		}
 
@@ -1121,7 +1121,7 @@ void BURP_error(USHORT errcode,
  **************************************/
 #ifdef SUPERSERVER
 	TGBL tdgbl;
-	STATUS *status;
+	ISC_STATUS *status;
 
 	tdgbl = GET_THREAD_DATA;
 	status = tdgbl->service_blk->svc_status;
@@ -1140,7 +1140,7 @@ void BURP_error(USHORT errcode,
 }
 
 
-void BURP_print_status( STATUS * status_vector)
+void BURP_print_status( ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -1155,10 +1155,10 @@ void BURP_print_status( STATUS * status_vector)
  **************************************/
 #ifdef SUPERSERVER
 	TGBL tdgbl;
-	STATUS *status;
+	ISC_STATUS *status;
 	int i = 0, j;
 #endif
-	STATUS *vector;
+	ISC_STATUS *vector;
 	SCHAR s[1024];
 
 	if (status_vector) {
@@ -1188,7 +1188,7 @@ void BURP_print_status( STATUS * status_vector)
 }
 
 
-void BURP_print_warning( STATUS * status_vector)
+void BURP_print_warning( ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -1201,7 +1201,7 @@ void BURP_print_warning( STATUS * status_vector)
  *	to allow redirecting output.
  *
  **************************************/
-	STATUS *vector;
+	ISC_STATUS *vector;
 	SCHAR s[1024];
 
 	if (status_vector) {
@@ -1224,7 +1224,7 @@ void BURP_print_warning( STATUS * status_vector)
 }
 
 
-void BURP_error_redirect(	STATUS* status_vector,
+void BURP_error_redirect(	ISC_STATUS* status_vector,
 							USHORT errcode,
 							void* arg1,
 							void* arg2)
@@ -1438,7 +1438,7 @@ static void close_out_transaction(volatile  SSHORT action,
  *	returned to the system.
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 
 	if (*handle != 0) {
 		if (action == RESTORE) {
@@ -1512,7 +1512,7 @@ static SSHORT open_files(TEXT * file1,
  *	and db handle.
  *
  **************************************/
-	STATUS *status_vector, status_vector2[ISC_STATUS_LENGTH];
+	ISC_STATUS *status_vector, status_vector2[ISC_STATUS_LENGTH];
 	TGBL tdgbl;
 	FIL fil;
 	int seq, total;
@@ -1887,7 +1887,7 @@ static SSHORT open_files(TEXT * file1,
  * like it should have (if creating a database).
  */
 	if (tdgbl->gbl_sw_service_thd)
-		memset(tdgbl->status, 0, ISC_STATUS_LENGTH * sizeof(STATUS));
+		memset(tdgbl->status, 0, ISC_STATUS_LENGTH * sizeof(ISC_STATUS));
 
 /* check the file size specification */
 	for (fil = tdgbl->gbl_sw_files; fil; fil = fil->fil_next) {
@@ -2023,7 +2023,7 @@ static int api_gbak(int argc,
  *	Run gbak using services APIs
  *
  **********************************************/
-	STATUS status[ISC_STATUS_LENGTH];
+	ISC_STATUS status[ISC_STATUS_LENGTH];
 	TEXT **begin, **end, *x, *p, *usr, *pswd;
 	USHORT spblen, thdlen;
 	char sendbuf[] = { isc_info_svc_line };

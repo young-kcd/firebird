@@ -27,7 +27,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: alice_meta.epp,v 1.10 2003-02-11 20:14:54 brodsom Exp $
+ *	$Id: alice_meta.epp,v 1.11 2003-04-10 06:04:42 aafemt Exp $
  */
 
 #include "firebird.h"
@@ -66,7 +66,7 @@ DATABASE DB = STATIC FILENAME "yachts.lnk";
 #define gds_trans   tdgbl->tr_handle
 
 static STR alloc_string(TEXT **);
-static USHORT get_capabilities(STATUS *);
+static USHORT get_capabilities(ISC_STATUS *);
 static TDR get_description(SLONG[2]);
 static void parse_fullpath(TDR);
 static USHORT snarf_blob(SLONG[2], USHORT, TEXT *);
@@ -99,7 +99,7 @@ static struct rfr_tab_t rfr_table[] = {
  *		Drop all the entries from RDB$LOG_FILES
  */  
 
-void MET_disable_wal(STATUS * user_status, isc_db_handle handle)
+void MET_disable_wal(ISC_STATUS * user_status, isc_db_handle handle)
 {
 	FRBRD *request = NULL;
 	TGBL tdgbl;
@@ -123,7 +123,7 @@ void MET_disable_wal(STATUS * user_status, isc_db_handle handle)
  *		already been attached.
  */  
 
-void MET_get_state(STATUS * user_status, TDR trans)
+void MET_get_state(ISC_STATUS * user_status, TDR trans)
 {
 	FRBRD *request = NULL;
 	TGBL tdgbl;
@@ -160,7 +160,7 @@ void MET_get_state(STATUS * user_status, TDR trans)
  *		in other databases.
  */  
 
-TDR MET_get_transaction(STATUS * user_status, isc_db_handle handle, SLONG id)
+TDR MET_get_transaction(ISC_STATUS * user_status, isc_db_handle handle, SLONG id)
 {
 	FRBRD *request = NULL;
 	TDR trans = NULL;
@@ -205,7 +205,7 @@ TDR MET_get_transaction(STATUS * user_status, isc_db_handle handle, SLONG id)
  *		the database for a particular transaction.
  */  
 
-void MET_set_capabilities(STATUS * user_status, TDR trans)
+void MET_set_capabilities(ISC_STATUS * user_status, TDR trans)
 {
 	TGBL tdgbl;
 
@@ -259,7 +259,7 @@ static STR alloc_string(TEXT ** ptr)
  *		the database for a particular transaction.
  */  
 
-static USHORT get_capabilities(STATUS * user_status)
+static USHORT get_capabilities(ISC_STATUS * user_status)
 {
 	FRBRD *req;
 	RFR_TAB rel_field_table;
@@ -447,7 +447,7 @@ static USHORT snarf_blob(SLONG blob_id[2],
 {
 	USHORT returned_length;
 	TEXT *ptr, *end;
-	STATUS status;
+	ISC_STATUS status;
 	FRBRD *blob;
 	TGBL tdgbl;
 

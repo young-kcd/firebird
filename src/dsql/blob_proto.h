@@ -24,13 +24,13 @@
 #ifndef _DSQL_BLOB_PROTO_H_
 #define _DSQL_BLOB_PROTO_H_
 
-extern STATUS API_ROUTINE isc_blob_gen_bpb(STATUS *, ISC_BLOB_DESC *,
+extern ISC_STATUS API_ROUTINE isc_blob_gen_bpb(ISC_STATUS *, ISC_BLOB_DESC *,
 										   ISC_BLOB_DESC *, USHORT, UCHAR *,
 										   USHORT *);
-extern STATUS API_ROUTINE isc_blob_lookup_desc(STATUS *, void **, void **,
+extern ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS *, void **, void **,
 											   UCHAR *, UCHAR *,
 											   ISC_BLOB_DESC *, UCHAR *);
-extern STATUS API_ROUTINE isc_blob_set_desc(STATUS *, UCHAR *, UCHAR *,
+extern ISC_STATUS API_ROUTINE isc_blob_set_desc(ISC_STATUS *, UCHAR *, UCHAR *,
 											SSHORT, SSHORT, SSHORT,
 											ISC_BLOB_DESC *);
 

@@ -220,8 +220,8 @@ static void divorce_terminal(fd_set *);
 #endif
 
 static void enable(CNCT, LTJC *);
-static void error(STATUS, TEXT *);
-static void error_exit(STATUS, TEXT *);
+static void error(ISC_STATUS, TEXT *);
+static void error_exit(ISC_STATUS, TEXT *);
 static void free_database_entry(DJB);
 static void get_message(JRNH *, int);
 
@@ -586,7 +586,7 @@ static void close_mailbox(int slot)
 	unlink(address_files[slot]);
 
 	if (close(handles[slot]) < 0)
-		error((STATUS) errno, "close socket");
+		error((ISC_STATUS) errno, "close socket");
 }
 #endif
 
@@ -887,7 +887,7 @@ static void delete_wal(void)
  *
  **************************************/
 	DJB database;
-	STATUS status[20];
+	ISC_STATUS status[ISC_STATUS_LENGTH];
 
 	commit();
 
@@ -980,7 +980,7 @@ static void disconnect(CNCT connection)
  **************************************/
 
 	if (close(connection->cnct_handle) < 0)
-		error((STATUS) errno, "close connection");
+		error((ISC_STATUS) errno, "close connection");
 }
 #endif
 
@@ -1108,7 +1108,7 @@ static void enable(CNCT connection, LTJC * msg)
 
 
 #ifdef BSD_SOCKETS
-static void error(STATUS status, TEXT * string)
+static void error(ISC_STATUS status, TEXT * string)
 {
 /**************************************
  *
@@ -1128,7 +1128,7 @@ static void error(STATUS status, TEXT * string)
 
 
 #ifdef WIN_NT
-static void error(STATUS status, TEXT * string)
+static void error(ISC_STATUS status, TEXT * string)
 {
 /**************************************
  *
@@ -1159,7 +1159,7 @@ static void error(STATUS status, TEXT * string)
 #endif
 
 
-static void error_exit(STATUS status, TEXT * string)
+static void error_exit(ISC_STATUS status, TEXT * string)
 {
 /**************************************
  *
@@ -1243,7 +1243,7 @@ static void get_message(JRNH * buffer, int length)
 		if (ready_cnt > 0)
 			break;
 		if (ready_cnt < 0 && errno != EINTR)
-			error((STATUS) errno, "select");
+			error((ISC_STATUS) errno, "select");
 	}
 
 	if (ready_cnt) {
@@ -1267,7 +1267,7 @@ static void get_message(JRNH * buffer, int length)
 			if (handle) {
 				nfd = accept(handle, NULL_PTR, NULL);
 				if (nfd < 0)
-					error((STATUS) errno, "accept");
+					error((ISC_STATUS) errno, "accept");
 				connection = alloc_connect(nfd, 0);
 				if (handle == handles[slot_console]) {
 					connection->cnct_flags = CNCT_console;
@@ -1285,7 +1285,7 @@ static void get_message(JRNH * buffer, int length)
 			p += len;
 		}
 		if (len < 0)
-			error((STATUS) errno, "recv");
+			error((ISC_STATUS) errno, "recv");
 		else if (!len) {
 			if (!(connection->cnct_flags & CNCT_console))
 				put_message(96, connection->cnct_database);
@@ -1529,17 +1529,17 @@ static void open_mailbox(SCHAR * filename, USHORT slot)
 	namelen = MAXHOSTNAMELEN;
 
 	if ((gethostname(name, namelen) == -1))
-		error_exit((STATUS) errno, "gethostname");
+		error_exit((ISC_STATUS) errno, "gethostname");
 
 	if (!(host = gethostbyname(name)))
-		error_exit((STATUS) errno, "gethostbyname");
+		error_exit((ISC_STATUS) errno, "gethostbyname");
 
 /* Allocate a port block and initialize a socket for communications */
 
 	handle = (SLONG) socket(AF_INET, SOCK_STREAM, 0);
 
 	if (handle == -1)
-		error_exit((STATUS) errno, "socket");
+		error_exit((ISC_STATUS) errno, "socket");
 
 	memset(&address, 0, sizeof(address));
 	memcpy(&address.sin_addr, host->h_addr, sizeof(address.sin_addr));
@@ -1554,10 +1554,10 @@ static void open_mailbox(SCHAR * filename, USHORT slot)
 	length = sizeof(address);
 
 	if (bind((int) handle, (struct sockaddr *) &address, length) < 0)
-		error_exit((STATUS) errno, "bind");
+		error_exit((ISC_STATUS) errno, "bind");
 
 	if (getsockname((int) handle, (struct sockaddr *) &address, &length) < 0)
-		error_exit((STATUS) errno, "getsockname");
+		error_exit((ISC_STATUS) errno, "getsockname");
 
 /* now that we've settled on the socket, go advertize the address */
 
@@ -1566,7 +1566,7 @@ static void open_mailbox(SCHAR * filename, USHORT slot)
 /* current system limit for queue = 5 */
 
 	if (listen(handle, 5) < 0)
-		error_exit((STATUS) errno, "listen");
+		error_exit((ISC_STATUS) errno, "listen");
 
 	handles[slot] = handle;
 }
@@ -1667,7 +1667,7 @@ static void post_address(USHORT slot, struct sockaddr_in address)
 	strcat(full_name, address_files[slot]);
 
 	if (!(file = fopen(full_name, "w")))
-		error_exit((STATUS) errno, "socket address file open");
+		error_exit((ISC_STATUS) errno, "socket address file open");
 
 	fprintf(file, "%d %d %d %d",
 			JOURNAL_VERSION,
@@ -1848,7 +1848,7 @@ static void process_archive_end(CNCT connection, LTJA * msg)
 	DJB database;
 	SLONG file_id, db_id;
 	SCHAR name[MAX_PATH_LENGTH], file_name[MAX_PATH_LENGTH];
-	STATUS status[20];
+	ISC_STATUS status[ISC_STATUS_LENGTH];
 	SCHAR db[MAX_PATH_LENGTH], arch[MAX_PATH_LENGTH];
 
 	db_id = msg->ltja_db_id;
@@ -2961,7 +2961,7 @@ static void send_reply(CNCT connection, JRNH * msg, USHORT length)
 	msg->jrnh_length = length;
 
 	if (send(connection->cnct_handle, (SCHAR *) msg, length, 0) < 0)
-		error((STATUS) errno, "send journal");
+		error((ISC_STATUS) errno, "send journal");
 }
 #endif
 
@@ -3229,7 +3229,7 @@ static int start_server(UCHAR * journal_dir,
 	TEXT logfile[MAX_PATH_LENGTH], journal_db[MAX_PATH_LENGTH];
 	SLONG message_buffer[(MAX_RECORD + 6 + sizeof(SLONG) - 1) /
 						 sizeof(SLONG)];
-	STATUS status[20];
+	ISC_STATUS status[ISC_STATUS_LENGTH];
 	SSHORT msg_count;
 
 #ifdef SIGQUIT

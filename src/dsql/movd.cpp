@@ -35,7 +35,7 @@
 #include "../jrd/cvt_proto.h"
 #include "../jrd/thd_proto.h"
 
-static void post_error(STATUS, ...);
+static void post_error(ISC_STATUS, ...);
 
 
 /**
@@ -67,10 +67,10 @@ void MOVD_move( DSC * from, DSC * to)
     @param 
 
  **/
-static void post_error( STATUS status, ...)
+static void post_error( ISC_STATUS status, ...)
 {
 	TSQL tdsql;
-	STATUS *v, *v_end, *temp, temp_status[ISC_STATUS_LENGTH];
+	ISC_STATUS *v, *v_end, *temp, temp_status[ISC_STATUS_LENGTH];
 
 	tdsql = GET_THREAD_DATA;
 

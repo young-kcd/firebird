@@ -24,21 +24,21 @@
 #ifndef _DSQL_ARRAY_PROTO_H_
 #define _DSQL_ARRAY_PROTO_H_
 
-extern STATUS API_ROUTINE isc_array_gen_sdl(STATUS *, ISC_ARRAY_DESC *,
+extern ISC_STATUS API_ROUTINE isc_array_gen_sdl(ISC_STATUS *, ISC_ARRAY_DESC *,
 											SSHORT *, SCHAR *, SSHORT *);
-extern STATUS API_ROUTINE isc_array_get_slice(STATUS *, void **, void **,
+extern ISC_STATUS API_ROUTINE isc_array_get_slice(ISC_STATUS *, void **, void **,
 											  GDS_QUAD *, ISC_ARRAY_DESC *,
 											  void *, SLONG *);
-extern STATUS API_ROUTINE isc_array_lookup_bounds(STATUS *, void **, void **,
+extern ISC_STATUS API_ROUTINE isc_array_lookup_bounds(ISC_STATUS *, void **, void **,
 												  SCHAR *, SCHAR *,
 												  ISC_ARRAY_DESC *);
-extern STATUS API_ROUTINE isc_array_lookup_desc(STATUS *, void **, void **,
+extern ISC_STATUS API_ROUTINE isc_array_lookup_desc(ISC_STATUS *, void **, void **,
 												SCHAR *, SCHAR *,
 												ISC_ARRAY_DESC *);
-extern STATUS API_ROUTINE isc_array_put_slice(STATUS *, void **, void **,
+extern ISC_STATUS API_ROUTINE isc_array_put_slice(ISC_STATUS *, void **, void **,
 											  GDS_QUAD *, ISC_ARRAY_DESC *,
 											  void *, SLONG *);
-extern STATUS API_ROUTINE isc_array_set_desc(STATUS *, SCHAR *, SCHAR *,
+extern ISC_STATUS API_ROUTINE isc_array_set_desc(ISC_STATUS *, SCHAR *, SCHAR *,
 											 SSHORT *, SSHORT *, SSHORT *,
 											 ISC_ARRAY_DESC *);
 

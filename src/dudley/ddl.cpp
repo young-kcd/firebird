@@ -468,7 +468,7 @@ UCHAR *DDL_alloc(int size)
 
 
 int DDL_db_error(
-				 STATUS * status_vector,
+				 ISC_STATUS * status_vector,
 				 USHORT number,
 				 TEXT * arg1,
 				 TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
@@ -520,7 +520,7 @@ int DDL_err(
 
 
 void DDL_error_abort(
-					 STATUS * status_vector,
+					 ISC_STATUS * status_vector,
 					 USHORT number,
 					 TEXT * arg1,
 					 TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)

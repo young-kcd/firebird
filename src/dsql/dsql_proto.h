@@ -28,41 +28,41 @@
 extern "C" {
 #endif
 
-extern STATUS DLL_EXPORT dsql8_allocate_statement(	STATUS*,
+extern ISC_STATUS DLL_EXPORT dsql8_allocate_statement(	ISC_STATUS*,
 													FRBRD **,
 													struct dsql_req **);
-extern STATUS DLL_EXPORT dsql8_execute(STATUS *, FRBRD **, struct dsql_req**,
+extern ISC_STATUS DLL_EXPORT dsql8_execute(ISC_STATUS *, FRBRD **, struct dsql_req**,
 									   USHORT, SCHAR *, USHORT, USHORT,
 									   SCHAR *, USHORT, SCHAR *, USHORT,
 									   USHORT, SCHAR *);
-extern STATUS DLL_EXPORT dsql8_execute_immediate(STATUS *, FRBRD **, FRBRD **,
+extern ISC_STATUS DLL_EXPORT dsql8_execute_immediate(ISC_STATUS *, FRBRD **, FRBRD **,
 												 USHORT, TEXT *, USHORT,
 												 USHORT, SCHAR *, USHORT,
 												 USHORT, SCHAR *, USHORT,
 												 SCHAR *, USHORT, USHORT,
 												 SCHAR *);
 #ifdef SCROLLABLE_CURSORS
-extern STATUS DLL_EXPORT dsql8_fetch(STATUS *, struct dsql_req**, USHORT, SCHAR *,
+extern ISC_STATUS DLL_EXPORT dsql8_fetch(ISC_STATUS *, struct dsql_req**, USHORT, SCHAR *,
 									 USHORT, USHORT, SCHAR *, USHORT, SLONG);
 #else
-extern STATUS DLL_EXPORT dsql8_fetch(STATUS *, struct dsql_req**, USHORT, SCHAR *,
+extern ISC_STATUS DLL_EXPORT dsql8_fetch(ISC_STATUS *, struct dsql_req**, USHORT, SCHAR *,
 									 USHORT, USHORT, SCHAR *);
 #endif /* SCROLLABLE_CURSORS */
-extern STATUS DLL_EXPORT dsql8_free_statement(STATUS *, struct dsql_req**,
+extern ISC_STATUS DLL_EXPORT dsql8_free_statement(ISC_STATUS *, struct dsql_req**,
 											  USHORT);
-extern STATUS DLL_EXPORT dsql8_insert(STATUS *, struct dsql_req**, USHORT,
+extern ISC_STATUS DLL_EXPORT dsql8_insert(ISC_STATUS *, struct dsql_req**, USHORT,
 									  SCHAR *, USHORT, USHORT, SCHAR *);
-extern STATUS DLL_EXPORT dsql8_prepare(STATUS *, FRBRD **, struct dsql_req**,
+extern ISC_STATUS DLL_EXPORT dsql8_prepare(ISC_STATUS *, FRBRD **, struct dsql_req**,
 									   USHORT, TEXT *, USHORT, USHORT,
 									   const SCHAR *, USHORT, SCHAR *);
-extern STATUS DLL_EXPORT dsql8_set_cursor(STATUS *, struct dsql_req**, TEXT *,
+extern ISC_STATUS DLL_EXPORT dsql8_set_cursor(ISC_STATUS *, struct dsql_req**, TEXT *,
 										  USHORT);
-extern STATUS DLL_EXPORT dsql8_sql_info(STATUS *, struct dsql_req**, USHORT,
+extern ISC_STATUS DLL_EXPORT dsql8_sql_info(ISC_STATUS *, struct dsql_req**, USHORT,
 										const SCHAR*, USHORT, SCHAR *);
 extern void DSQL_pretty(struct dsql_nod *, int);
 
-extern STATUS callback_execute_immediate(
-		STATUS *status,
+extern ISC_STATUS callback_execute_immediate(
+		ISC_STATUS *status,
 		class att* jrd_attachment_handle,
 		class jrd_tra* jrd_transaction_handle,
 		TEXT *sql_operator,

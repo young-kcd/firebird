@@ -28,7 +28,7 @@
  *
  */
 /*
-$Id: canonical.cpp,v 1.18 2003-04-03 17:14:22 brodsom Exp $
+$Id: canonical.cpp,v 1.19 2003-04-10 06:06:42 aafemt Exp $
 */
 
 #include "firebird.h"
@@ -667,7 +667,7 @@ static bool_t xdr_slice(XDR* xdrs,
  *	Move a slice of an array under
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	ULONG n;
 	UCHAR *p, *end;
 	DSC *desc;

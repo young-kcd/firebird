@@ -41,7 +41,7 @@
 #include "../jrd/llio_proto.h"
 
 static USHORT copy_file(SLONG, SLONG, SLONG);
-static void error_exit(STATUS *, JRN *, SLONG, SLONG, SLONG);
+static void error_exit(ISC_STATUS *, JRN *, SLONG, SLONG, SLONG);
 static USHORT open_file(TEXT *, SLONG, USHORT, SLONG *);
 
 
@@ -68,7 +68,7 @@ int CLIB_ROUTINE main( int argc,
 	USHORT ret_val;
 	SLONG size;
 	SLONG db_id;
-	STATUS status[ISC_STATUS_LENGTH];
+	ISC_STATUS status[ISC_STATUS_LENGTH];
 	JRN journal;
 	journal = (JRN) 0;
 
@@ -152,7 +152,7 @@ static USHORT copy_file( SLONG s_fd, SLONG d_fd, SLONG size)
 
 
 static void error_exit(
-					   STATUS * status_vector,
+					   ISC_STATUS * status_vector,
 					   JRN * ret_journal,
 					   SLONG db_id, SLONG file_id, SLONG error_code)
 {

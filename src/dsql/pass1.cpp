@@ -249,7 +249,7 @@ DSQL_CTX PASS1_make_context( DSQL_REQ request, DSQL_NOD relation_node)
 	DSQL_NOD *input;
 	DLLS stack;
 	TEXT *conflict_name;
-	STATUS error_code;
+	ISC_STATUS error_code;
 	TSQL tdsql;
 	USHORT count;
 

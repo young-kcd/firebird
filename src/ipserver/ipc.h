@@ -290,7 +290,7 @@ typedef struct ipserver_isr {
 	USHORT isr_max_recs;
 	USHORT isr_eof_flag;
 	USHORT isr_batch_flag;
-	STATUS isr_status[ISC_STATUS_LENGTH];
+	ISC_STATUS isr_status[ISC_STATUS_LENGTH];
 	UCHAR *isr_cursor;
 	UCHAR *isr_packed;
 } *IPSERVER_ISR;
@@ -596,7 +596,7 @@ typedef struct {
 typedef struct {
 	ULONG ips_server_protocol;	/* server's protocol level */
 	ULONG ips_client_protocol;	/* client's protocol level */
-	ULONG ips_status[ISC_STATUS_LENGTH];	/* status vector */
+	ISC_STATUS ips_status[ISC_STATUS_LENGTH];	/* status vector */
 	ips_string ips_buffers[MAX_IPS_STRINGS];
 	/* array of buffer controllers */
 	USHORT ips_ops_count;		/* operations performed */
@@ -655,7 +655,7 @@ typedef struct eventq {
 typedef struct tidb {
 	struct thdd tidb_thd_data;
 	struct rdb *tidb_database;
-	STATUS *tidb_status_vector;
+	ISC_STATUS *tidb_status_vector;
 	UCHAR *tidb_setjmp;
 } *TIDB;
 

@@ -32,18 +32,18 @@ namespace Firebird {
 class status_exception : public std::exception
 {
 public:
-	explicit status_exception(STATUS s)
+	explicit status_exception(ISC_STATUS s)
 	:	m_s(s)
 	{}
 	virtual ~status_exception() throw() {}
 	virtual const char* what() const throw()
 		{ return "Firebird::status_exception"; }
-	STATUS value() const { return m_s; }
+	ISC_STATUS value() const { return m_s; }
 
-	static void raise(STATUS s);
+	static void raise(ISC_STATUS s);
 
 private:
-	STATUS m_s;
+	ISC_STATUS m_s;
 };
 
 class red_zone_error : public std::exception

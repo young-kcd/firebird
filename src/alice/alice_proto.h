@@ -34,7 +34,7 @@ void	ALICE_down_case(TEXT*, TEXT*);
 int		ALICE_gfix(int, char**, OUTPUTPROC, SLONG);
 void	ALICE_print(USHORT, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*);
 void	ALICE_error(USHORT, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*);
-void	ALICE_print_status(STATUS*);
+void	ALICE_print_status(ISC_STATUS*);
 
 #ifdef __cplusplus
 } /* extern "C" */

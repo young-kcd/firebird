@@ -195,7 +195,7 @@ main(argc, argv)
 	UCHAR **arg_end, *p, *prompt;
 	JRN journal;
 	USHORT wait, position[2];
-	STATUS status_vector[20];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	SLONG sequence;
 	SSHORT poll, n;
 
@@ -399,7 +399,7 @@ main(argc, argv)
 
 
 ERR_post(stuff)
-	 STATUS stuff;
+	 ISC_STATUS stuff;
 {
 /**************************************
  *
@@ -413,7 +413,7 @@ ERR_post(stuff)
  *	trick to get the address of the argument vector.
  *
  **************************************/
-	STATUS *p, *q, status_vector[20];
+	ISC_STATUS *p, *q, status_vector[ISC_STATUS_LENGTH];
 	int type;
 
 /* Get the addresses of the argument vector and the status vector, and do
@@ -804,7 +804,7 @@ static error(filename, errno, string)
  *	We've had an unexpected error -- punt.
  *
  **************************************/
-	STATUS status_vector[20], *s;
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH], *s;
 
 	s = status_vector;
 	*s++ = gds_arg_gds;
@@ -1055,7 +1055,7 @@ static get_message(journal, buffer, size, position)
 
 static JRN init(position, status_vector)
 	 USHORT position[2];
-	 STATUS *status_vector;
+	 ISC_STATUS *status_vector;
 {
 /**************************************
  *

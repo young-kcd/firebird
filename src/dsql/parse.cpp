@@ -199,7 +199,7 @@ static BOOLEAN	short_int (DSQL_NOD, SLONG *, SSHORT);
 #endif
 static void	stack_nodes (DSQL_NOD, DLLS *);
 static int	yylex (USHORT, USHORT, USHORT, BOOLEAN *);
-static void	yyabandon (SSHORT, STATUS);
+static void	yyabandon (SSHORT, ISC_STATUS);
 static void	check_log_file_attrs (void);
 
 static TEXT	*ptr, *end, *last_token, *line_start;
@@ -5690,7 +5690,7 @@ else
 
 static void yyabandon (
     SSHORT      sql_code,
-    STATUS      error_symbol)
+    ISC_STATUS      error_symbol)
 {
 /**************************************
  *

@@ -34,14 +34,14 @@ extern int  BURP_gbak (int, char **, OUTPUTPROC, SLONG);
 extern void	BURP_abort (void);
 extern void	BURP_svc_error (USHORT, USHORT, void *, USHORT, void *, USHORT, void *, USHORT, void *, USHORT, void *);
 extern void	BURP_error (USHORT, const void*, const void*, const void*, const void*, const void*);
-extern void	BURP_print_status (STATUS *);
-extern void	BURP_error_redirect (STATUS *, USHORT, void*, void*);
+extern void	BURP_print_status (ISC_STATUS *);
+extern void	BURP_error_redirect (ISC_STATUS *, USHORT, void*, void*);
 extern void	BURP_msg_partial (USHORT, const void*, const void*, const void*, const void*, const void*);
 extern void	BURP_msg_put (USHORT, const void*, const void*, const void*, const void*, const void*);
 extern void	BURP_msg_get (USHORT, void*, void*, void*, void*, void*, void*);
 extern void	BURP_output_version (TEXT *, TEXT *);
 extern void	BURP_print (USHORT, const void*, const void*, const void*, const void*, const void*);
-extern void	BURP_print_warning (STATUS*);
+extern void	BURP_print_warning (ISC_STATUS*);
 extern void	BURP_verbose (USHORT, const void*, const void*, const void*, const void*, const void*);
 
 #ifdef __cplusplus
