@@ -62,6 +62,16 @@ void getRootFromRegistry(TEXT *buffer, DWORD buffer_length)
 ConfigRoot::ConfigRoot()
 {
 	TEXT buffer[MAXPATHLEN];
+	const char* FirebirdEnv = "FIREBIRD";
+
+	if (getenv(FirebirdEnv)) {
+		root_dir = getenv(FirebirdEnv);
+		if (root_dir.rfind(PathUtils::dir_sep) != root_dir.length() - 1)
+		{
+			root_dir += PathUtils::dir_sep;
+		}
+		return;
+	}
 
 	buffer[0] = 0;
 
