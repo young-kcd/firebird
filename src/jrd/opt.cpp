@@ -155,7 +155,8 @@ static void set_inactive(OPT, RIV);
 static void set_made_river(OPT, RIV);
 static void set_position(JRD_NOD, JRD_NOD, JRD_NOD);
 static void set_rse_inactive(CSB, RSE);
-static void sort_indices(csb_repeat *);
+static void sort_indices_by_selectivity(csb_repeat *);
+static SSHORT sort_indices_by_priority(csb_repeat *, IDX **, SLONG *);
 
 
 /* macro definitions */
@@ -497,7 +498,7 @@ RSB OPT_compile(TDBB tdbb,
 							&csb->csb_rpt[stream].csb_idx,
 							&csb->csb_rpt[stream].csb_idx_allocation,
 							&idx_size);
-				sort_indices(&csb->csb_rpt[stream]);
+				sort_indices_by_selectivity(&csb->csb_rpt[stream]);
 				mark_indices(&csb->csb_rpt[stream], relation->rel_id);
 			}
 			else
@@ -3910,7 +3911,8 @@ static RSB gen_retrieval(TDBB tdbb,
 						 JRD_NOD * sort_ptr,
 						 JRD_NOD * project_ptr,
 						 BOOLEAN outer_flag,
-						 BOOLEAN inner_flag, JRD_NOD * return_boolean)
+						 BOOLEAN inner_flag,
+						 JRD_NOD * return_boolean)
 {
 /**************************************
  *
@@ -3925,9 +3927,9 @@ static RSB gen_retrieval(TDBB tdbb,
  **************************************/
 
 	IDX *idx;
-	static IDX *idx_walk[MAX_INDICES], *idx_csb[MAX_INDICES];
+	static IDX *idx_walk[MAX_INDICES];
 	JRD_NOD node, opt_boolean;
-	SSHORT i, j, count, last_idx, idx_walk_count, position;
+	SSHORT i, j, count, position;
 	static SSHORT conjunct_position[MAX_INDICES];
 	static SLONG idx_priority_level[MAX_INDICES];
 	Opt::opt_repeat *tail, *idx_tail, *idx_end;
@@ -4016,7 +4018,7 @@ static RSB gen_retrieval(TDBB tdbb,
 		for (i = 0, idx = csb_tail->csb_idx; i < csb_tail->csb_indices;
 			 i++, idx = NEXT_IDX(idx->idx_rpt, idx->idx_count)) {
 
-			idx_csb[i] = idx;
+			idx_walk[i] = idx;
 			idx_priority_level[i] = LOWEST_PRIORITY_LEVEL;
 			/* skip this part if the index wasn't specified for indexed 
 			   retrieval (still need to look for navigational retrieval) */
@@ -4085,52 +4087,15 @@ static RSB gen_retrieval(TDBB tdbb,
 			if (opt->opt_rpt[0].opt_lower || opt->opt_rpt[0].opt_upper) {
 
 				/* Calculate the priority level for this index */
-				idx_priority_level[i] = calculate_priority_level(opt,idx);
+				idx_priority_level[i] = calculate_priority_level(opt, idx);
 			}
 
 		}
 
 		/* Sort indices based on the priority level into idx_walk */
-		idx_walk_count = 0;
-		float selectivity = 1; /* Real maximum selectivity possible is 1 */
-		for (i = 0; i < csb_tail->csb_indices; i++)
-		{
-			last_idx = -1;
-			SLONG last_priority_level = 0;
-			for (j = csb_tail->csb_indices - 1; j >= 0; j--)
-			{
-				if (!(idx_priority_level[j] == 0) && 
-					(idx_priority_level[j] >= last_priority_level))
-				{
-					last_priority_level = idx_priority_level[j];
-					last_idx = j;
-				}
-			}
-			if (last_idx >= 0) {
-				/* dimitr: Empirically, it's better to use less indices with very good selectivity
-						   than using all available ones. Here we're deciding how many indices we
-						   should use. Since all indices are already ordered by their selectivity,
-						   it becomes a trivial task. But note that indices with zero (unknown)
-						   selectivity are always used, because we don't have a clue how useful
-						   they are in fact, so we should be optimistic in this case. Unique
-						   indices are also always used, because they are good by definition,
-						   regardless of their (probably old) selectivity value. */
-				idx = idx_csb[last_idx];
-				bool should_be_used = true;
-				if (!(idx->idx_flags & idx_unique) && idx->idx_selectivity && !(csb_tail->csb_plan)) {
-					if (selectivity * SELECTIVITY_THRESHOLD_FACTOR < idx->idx_selectivity) {
-						should_be_used = false;
-					}
-					selectivity = idx->idx_selectivity;
-				}
-				idx_priority_level[last_idx] = 0; /* Mark as used by setting priority_level to 0 */
-				if (should_be_used) {
-					idx_walk[idx_walk_count] = idx_csb[last_idx];
-					idx_walk_count++;
-				}
-			}
-		}
 
+		SSHORT idx_walk_count =
+			sort_indices_by_priority(csb_tail, idx_walk, idx_priority_level);
 
 		/* Walk through the indicies based on earlier calculated count and
 		   when necessary build the index */
@@ -5216,10 +5181,10 @@ static JRD_NOD make_inversion(TDBB tdbb,
  **************************************/
 
 	IDX *idx;
-	static IDX *idx_walk[MAX_INDICES], *idx_csb[MAX_INDICES];
+	static IDX *idx_walk[MAX_INDICES];
 	static SLONG idx_priority_level[MAX_INDICES];
 	JRD_NOD inversion, inversion2, node;
-	SSHORT i, j, last_idx, idx_walk_count;
+	SSHORT i;
 	float compound_selectivity;
 	BOOLEAN accept, used_in_compound, accept_starts, accept_missing;
 
@@ -5272,8 +5237,8 @@ static JRD_NOD make_inversion(TDBB tdbb,
 	if (opt->opt_count) {
 		for (i = 0; i < csb_tail->csb_indices; i++) {
 
-			idx_csb[i] = idx;
-			idx_priority_level[i] = 0;
+			idx_walk[i] = idx;
+			idx_priority_level[i] = LOWEST_PRIORITY_LEVEL;
 
 			clear_bounds(opt, idx);
 			if (match_index(tdbb, opt, stream, boolean, idx) &&
@@ -5315,48 +5280,14 @@ static JRD_NOD make_inversion(TDBB tdbb,
 	}
 
 	/* Sort indices based on the priority level into idx_walk */
-	idx_walk_count = 0;
-	float selectivity = 1; /* Real maximum selectivity possible is 1 */
-	for (i = 0; i < csb_tail->csb_indices; i++) {
-		last_idx = -1;
-		SLONG last_priority_level = 0;
-		for (j = csb_tail->csb_indices - 1; j >= 0; j--)
-		{
-			if (!(idx_priority_level[j] == 0) && 
-				(idx_priority_level[j] >= last_priority_level))
-			{
-				last_priority_level = idx_priority_level[j];
-				last_idx = j;
-			}
-		}
-		if (last_idx >= 0) {
-			/* dimitr: Empirically, it's better to use less indices with very good selectivity
-					   than using all available ones. Here we're deciding how many indices we
-					   should use. Since all indices are already ordered by their selectivity,
-					   it becomes a trivial task. But note that indices with zero (unknown)
-					   selectivity are always used, because we don't have a clue how useful
-					   they are in fact, so we should be optimistic in this case. */
-			idx = idx_csb[last_idx];
-			bool should_be_used = true;
-			if (idx->idx_selectivity && !(csb_tail->csb_plan)) {
-				if (selectivity * SELECTIVITY_THRESHOLD_FACTOR < idx->idx_selectivity) {
-					should_be_used = false;
-				}
-				selectivity = idx->idx_selectivity;
-			}
-			idx_priority_level[last_idx] = 0; /* Mark as used by setting priority_level to 0 */
-			if (should_be_used) {
-				idx_walk[idx_walk_count] = idx_csb[last_idx];
-				idx_walk_count++;
-			}
-		}
-	}
+
+	SSHORT idx_walk_count =
+		sort_indices_by_priority(csb_tail, idx_walk, idx_priority_level);
 
 	accept = TRUE;
 	idx = csb_tail->csb_idx;
 	if (opt->opt_count) {
 		for (i = 0; i < idx_walk_count; i++) {
-
 			idx = idx_walk[i];
 			if (idx->idx_runtime_flags & idx_plan_dont_use) {
 				continue;
@@ -5378,6 +5309,7 @@ static JRD_NOD make_inversion(TDBB tdbb,
 
 	if (!inversion)
 		inversion = OPT_make_dbkey(opt, boolean, stream);
+
 	return inversion;
 }
 
@@ -6245,11 +6177,12 @@ static void set_rse_inactive(CSB csb, RSE rse)
 	}
 }
 
-static void sort_indices(csb_repeat * csb_tail)
+
+static void sort_indices_by_selectivity(csb_repeat * csb_tail)
 {
 /***************************************************
  *
- *  s o r t _ i n d i c e s
+ *  s o r t _ i n d i c e s _ b y _ s e l e c t i v i t y
  *
  ***************************************************
  *
@@ -6314,4 +6247,68 @@ static void sort_indices(csb_repeat * csb_tail)
 			idx = NEXT_IDX(idx->idx_rpt, idx->idx_count);
 		}
 	}
+}
+
+
+static SSHORT sort_indices_by_priority(csb_repeat * csb_tail,
+									   IDX ** idx_walk,
+									   SLONG * idx_priority_level)
+{
+/***************************************************
+ *
+ *  s o r t _ i n d i c e s _ b y _ p r i o r i t y
+ *
+ ***************************************************
+ *
+ * Functional Description:
+ *    Sort indices based on the priority level.
+ *
+ ***************************************************/
+	IDX * idx_csb[MAX_INDICES];
+	memcpy(idx_csb, idx_walk, sizeof(idx_csb));
+	
+	SSHORT idx_walk_count = 0;
+	float selectivity = 1; /* Real maximum selectivity possible is 1 */
+
+	for (SSHORT i = 0; i < csb_tail->csb_indices; i++)
+	{
+		SSHORT last_idx = -1;
+		SLONG last_priority_level = 0;
+
+		for (SSHORT j = csb_tail->csb_indices - 1; j >= 0; j--)
+		{
+			if (!(idx_priority_level[j] == 0) && 
+				(idx_priority_level[j] >= last_priority_level))
+			{
+				last_priority_level = idx_priority_level[j];
+				last_idx = j;
+			}
+		}
+
+		if (last_idx >= 0) {
+			/* dimitr: Empirically, it's better to use less indices with very good selectivity
+					   than using all available ones. Here we're deciding how many indices we
+					   should use. Since all indices are already ordered by their selectivity,
+					   it becomes a trivial task. But note that indices with zero (unknown)
+					   selectivity are always used, because we don't have a clue how useful
+					   they are in fact, so we should be optimistic in this case. Unique
+					   indices are also always used, because they are good by definition,
+					   regardless of their (probably old) selectivity value. */
+			IDX *idx = idx_csb[last_idx];
+			bool should_be_used = true;
+			if (!(idx->idx_flags & idx_unique) && idx->idx_selectivity && !(csb_tail->csb_plan)) {
+				if (selectivity * SELECTIVITY_THRESHOLD_FACTOR < idx->idx_selectivity) {
+					should_be_used = false;
+				}
+				selectivity = idx->idx_selectivity;
+			}
+			idx_priority_level[last_idx] = 0; /* Mark as used by setting priority_level to 0 */
+			if (should_be_used) {
+				idx_walk[idx_walk_count] = idx_csb[last_idx];
+				idx_walk_count++;
+			}
+		}
+	}
+
+	return idx_walk_count;
 }
