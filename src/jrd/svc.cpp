@@ -156,12 +156,14 @@ static inline void is_service_running(SVC service)
 	}
 }
 
-static inline void need_admin_privs(ISC_STATUS *status, char* message)
+static inline void need_admin_privs(ISC_STATUS **status, char* message)
 {
-	*status++ = isc_insufficient_svc_privileges;
-	*status++ = isc_arg_string;
-	*status++ = (ISC_STATUS) ERR_string(message,strlen(message)); 
-	*status++ = isc_arg_end;
+	ISC_STATUS *stat = *status;
+	*stat++ = isc_insufficient_svc_privileges;
+	*stat++ = isc_arg_string;
+	*stat++ = (ISC_STATUS) ERR_string(message,strlen(message)); 
+	*stat++ = isc_arg_end;
+	*status = stat;
 }
 
 /* Option block for service parameter block */
@@ -1008,7 +1010,7 @@ int SVC_output(SLONG output_data, UCHAR * output_buf)
 				WHY_set_shutdown(FALSE);
 			}
 			else
-				need_admin_privs(status, "isc_info_svc_svr_online");
+				need_admin_privs(&status, "isc_info_svc_svr_online");
 			break;
 
 		case isc_info_svc_svr_offline:
@@ -1018,7 +1020,7 @@ int SVC_output(SLONG output_data, UCHAR * output_buf)
 				WHY_set_shutdown(TRUE);
 			}
 			else
-				need_admin_privs(status, "isc_info_svc_svr_offline");
+				need_admin_privs(&status, "isc_info_svc_svr_offline");
 			break;
 #endif /* SERVER_SHUTDOWN */
 
@@ -1079,7 +1081,7 @@ int SVC_output(SLONG output_data, UCHAR * output_buf)
 				THREAD_EXIT;
 			}
 			else
-				need_admin_privs("isc_info_svc_default_config");
+				need_admin_privs(&status, "isc_info_svc_default_config");
 			break;
 
 		case isc_info_svc_set_config:
@@ -1090,7 +1092,7 @@ int SVC_output(SLONG output_data, UCHAR * output_buf)
 				THREAD_EXIT;
 			}
 			else {
-				need_admin_privs("isc_info_svc_set_config");
+				need_admin_privs(&status, "isc_info_svc_set_config");
 			}
 			break;
 */
@@ -1478,7 +1480,7 @@ void SVC_query(SVC		service,
 				THREAD_EXIT;
 			}
 			else
-				need_admin_privs("isc_info_svc_default_config");
+				need_admin_privs(&status, "isc_info_svc_default_config");
 			break;
 
 		case isc_info_svc_set_config:
@@ -1489,7 +1491,7 @@ void SVC_query(SVC		service,
 				THREAD_EXIT;
 			}
 			else {
-				need_admin_privs("isc_info_svc_set_config");
+				need_admin_privs(&status, "isc_info_svc_set_config");
 			}
 			break;
 */
