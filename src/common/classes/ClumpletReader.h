@@ -42,24 +42,24 @@ public:
 	ClumpletReader(bool isTagged, const UCHAR* buffer, size_t buffLen);
 
 	// Navigation in clumplet buffer
-	bool isEof() { return cur_offset >= getBufferLength(); }
+	bool isEof() const { return cur_offset >= getBufferLength(); }
 	void moveNext();
 	void rewind();
 	bool find(UCHAR tag);
 
     // Methods which work with currently selected clumplet
-	UCHAR getClumpTag();
-	size_t getClumpLength();
+	UCHAR getClumpTag() const;
+	size_t getClumpLength() const;
 
-	SLONG getInt();
-	bool getBoolean();
-	SINT64 getBigInt();
-	string& getString(string& str);
-	PathName& getPath(PathName& str);
-	const UCHAR* getBytes() { return getBuffer() + cur_offset + 2; }
+	SLONG getInt() const;
+	bool getBoolean() const;
+	SINT64 getBigInt() const;
+	string& getString(string& str) const;
+	PathName& getPath(PathName& str) const;
+	const UCHAR* getBytes() const { return getBuffer() + cur_offset + 2; }
 
 	// Return the tag for buffer (usually structure version)
-	UCHAR getBufferTag();
+	UCHAR getBufferTag() const;
 	size_t getBufferLength() const 
 	{
 		size_t rc = getBufferEnd() - getBuffer();
@@ -84,10 +84,10 @@ protected:
 	// sensible, certainly not overwrite memory or read past the end of buffer
 
 	// This appears to be a programming error in buffer access pattern
-	virtual void usage_mistake(const char* what);
+	virtual void usage_mistake(const char* what) const;
 
 	// This is called when passed buffer appears invalid
-	virtual void invalid_structure();
+	virtual void invalid_structure() const;
 private:
 	// Assignment and copy constructor not implemented.
 	ClumpletReader(const ClumpletReader& from);
@@ -99,4 +99,5 @@ private:
 
 } // namespace Firebird
 
-#endif
+#endif // CLUMPLETREADER_H
+

@@ -39,16 +39,17 @@ ClumpletReader::ClumpletReader(bool isTagged, const UCHAR* buffer, size_t buffLe
 {
 }
 
-void ClumpletReader::usage_mistake(const char* what) {
+void ClumpletReader::usage_mistake(const char* what) const {
 	fatal_exception::raiseFmt(
 		"Internal error when using clumplet API: %s", what);
 }
 
-void ClumpletReader::invalid_structure() {
+void ClumpletReader::invalid_structure() const {
 	fatal_exception::raise("Invalid clumplet buffer structure");
 }
 
-UCHAR ClumpletReader::getBufferTag() {
+UCHAR ClumpletReader::getBufferTag() const
+{
 	if (!mIsTagged) {
 		usage_mistake("buffer is not tagged");
 		return 0;
@@ -63,7 +64,8 @@ UCHAR ClumpletReader::getBufferTag() {
 	return buffer_start[0];
 }
 
-void ClumpletReader::moveNext() {
+void ClumpletReader::moveNext()
+{
 	const UCHAR* clumplet = getBuffer() + cur_offset;
 	const UCHAR* buffer_end = getBufferEnd();
 
@@ -103,7 +105,8 @@ bool ClumpletReader::find(UCHAR tag)
 }
 
 // Methods which work with currently selected clumplet
-UCHAR ClumpletReader::getClumpTag() {
+UCHAR ClumpletReader::getClumpTag() const
+{
 	const UCHAR* clumplet = getBuffer() + cur_offset;
 	const UCHAR* buffer_end = getBufferEnd();
 
@@ -116,7 +119,8 @@ UCHAR ClumpletReader::getClumpTag() {
 	return clumplet[0];
 }
 
-size_t ClumpletReader::getClumpLength() {
+size_t ClumpletReader::getClumpLength() const
+{
 	const UCHAR* clumplet = getBuffer() + cur_offset;
 	const UCHAR* buffer_end = getBufferEnd();
 
@@ -142,7 +146,8 @@ size_t ClumpletReader::getClumpLength() {
 	return length;
 }
 
-SLONG ClumpletReader::getInt() {
+SLONG ClumpletReader::getInt() const
+{
 	const UCHAR* clumplet = getBuffer() + cur_offset;
 	size_t length = getClumpLength();
 
@@ -163,7 +168,8 @@ SLONG ClumpletReader::getInt() {
 	return value;
 }
 
-SINT64 ClumpletReader::getBigInt() {
+SINT64 ClumpletReader::getBigInt() const
+{
 	const UCHAR* clumplet = getBuffer() + cur_offset;
 	size_t length = getClumpLength();
 
@@ -184,14 +190,7 @@ SINT64 ClumpletReader::getBigInt() {
 	return value;
 }
 
-string& ClumpletReader::getString(string& str) {
-	const UCHAR* clumplet = getBuffer() + cur_offset;
-	size_t length = getClumpLength();
-	str.assign(reinterpret_cast<const char*>(clumplet + 2), length);
-	return str;
-}
-
-PathName& ClumpletReader::getPath(PathName& str) 
+string& ClumpletReader::getString(string& str) const
 {
 	const UCHAR* clumplet = getBuffer() + cur_offset;
 	size_t length = getClumpLength();
@@ -199,11 +198,21 @@ PathName& ClumpletReader::getPath(PathName& str)
 	return str;
 }
 
-bool ClumpletReader::getBoolean()
+PathName& ClumpletReader::getPath(PathName& str) const
 {
 	const UCHAR* clumplet = getBuffer() + cur_offset;
+	size_t length = getClumpLength();
+	str.assign(reinterpret_cast<const char*>(clumplet + 2), length);
+	return str;
+}
+
+bool ClumpletReader::getBoolean() const
+{
+	const UCHAR* clumplet = getBuffer() + cur_offset;
+	// CVC: Maybe we should assert here that length == 1?
 	size_t length = getClumpLength();
 	return length && clumplet[2];
 }
 
-}
+} // namespace
+
