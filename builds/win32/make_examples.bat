@@ -105,6 +105,7 @@ if "%VS_VER%"=="msvc6" (
 @mkdir %ROOT_PATH%\output\examples\udf
 @echo Moving files to output directory
 @copy %ROOT_PATH%\examples\* %ROOT_PATH%\output\examples > nul
+@ren %ROOT_PATH%\output\examples\readme readme.txt > nul
 @copy %ROOT_PATH%\examples\api\* %ROOT_PATH%\output\examples\api > nul
 @copy %ROOT_PATH%\examples\build_unix\* %ROOT_PATH%\output\examples\build_unix > nul
 @copy %ROOT_PATH%\examples\build_win32\* %ROOT_PATH%\output\examples\build_win32 > nul
