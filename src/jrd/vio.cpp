@@ -4162,6 +4162,9 @@ static REC replace_gc_record(REL relation, REC * gc_record, USHORT length)
 			memcpy(temp, *rec_ptr, sizeof(rec) + sizeof(SCHAR)*(*gc_record)->rec_length);
 			delete *rec_ptr;
 			*rec_ptr = temp;
+			// 26 Sep 2002, SKIDDER: Failure to do so causes nasty memory corruption in 
+			// some cases.
+			*gc_record = temp;
 /*	V4_MUTEX_UNLOCK (&relation->rel_mutex); */
 			return (REC)*rec_ptr;
 		}
