@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.54 2004-03-11 05:43:14 skidder Exp $
+//	$Id: alice.cpp,v 1.55 2004-03-11 05:46:07 skidder Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -583,7 +583,6 @@ int common_main(int			argc,
 	{
 		ret = EXE_action(database, switches);
 
-		// cast away volatile
 		const SLONG* ua_val_errors = tdgbl->ALICE_data.ua_val_errors;
 
 		if (!ua_val_errors[VAL_INVALID_DB_VERSION])
