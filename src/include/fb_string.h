@@ -198,6 +198,12 @@ namespace Firebird
 		inline size_type length() const {
 			return stringLength;
 		}
+		// Almost same as c_str(), but return 0, not "",
+		// when string has no data. Useful when interacting
+		// with old code, which does check for NULL.
+		inline const_pointer nullStr() const {
+			return stringLength ? stringBuffer : 0;
+		}
 		// Call it only when you have worked with at() or operator[]
 		// in case a null ASCII was inserted in the middle of the string.
 		inline size_type recalculate_length()
