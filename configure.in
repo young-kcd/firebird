@@ -18,15 +18,12 @@ AC_PROG_LN_S
 AC_PROG_RANLIB
 AC_PROG_YACC
  
-FIREBIRD_ARCH_TYPE=super
+# You need to change this to get super/classic built.  Main reason is for
+# the include of the pthread libraries, but there may be other dependancies.
+FIREBIRD_ARCH_TYPE=classic
 #FIREBIRD_ARCH_TYPE=super
 AC_SUBST(FIREBIRD_ARCH_TYPE)
 
-if `test "$FIREBIRD_ARCH_TYPE" = "super"` 
-  then
-     SUPERSERVER_DEF="-DSUPERSERVER"
-     AC_SUBST(SUPERSERVER_DEF)
-fi
 PROD_BUILD_FLG=
 #PROD_BUILD_FLG=Y
 AC_SUBST(PROD_BUILD_FLG)
