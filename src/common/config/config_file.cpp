@@ -169,7 +169,7 @@ string ConfigFile::getString(const string& key)
 
 string ConfigFile::parseKeyFrom(const string& inputLine, string::size_type& endPos)
 {
-    endPos = inputLine.find_first_of("= \t");
+    endPos = inputLine.find_first_of("=\t");
     if (endPos == string::npos)
     {
         return inputLine;
@@ -257,6 +257,7 @@ void ConfigFile::loadConfig()
         string::size_type endPos;
 
         string key   = parseKeyFrom(inputLine, endPos);
+		stripTrailingWhiteSpace(key);
         string value = parseValueFrom(inputLine, endPos);
 
 		// std::cout << "adding \"" << key << "\" \"" << value << "\"" << std::endl;
