@@ -1514,7 +1514,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	
 #ifdef GARBAGE_THREAD
 	// VIO_erase
-	if (tdbb->tdbb_database->dbb_flags | DBB_gc_background)
+	if (tdbb->tdbb_database->dbb_flags & DBB_gc_background)
 		notify_garbage_collector(tdbb, rpb, transaction->tra_number);
 #endif
 }
@@ -2387,7 +2387,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 
 #ifdef GARBAGE_THREAD
 	// VIO_modify
-	if (tdbb->tdbb_database->dbb_flags | DBB_gc_background)
+	if (tdbb->tdbb_database->dbb_flags & DBB_gc_background)
 		notify_garbage_collector(tdbb, org_rpb, transaction->tra_number);
 #endif
 }
@@ -3504,7 +3504,7 @@ static void expunge(thread_db* tdbb, record_param* rpb,
 	if (!DPM_get(tdbb, rpb, LCK_write)) {
 #ifdef GARBAGE_THREAD
 		// expunge
-		if (tdbb->tdbb_database->dbb_flags | DBB_gc_background)
+		if (tdbb->tdbb_database->dbb_flags & DBB_gc_background)
 			notify_garbage_collector(tdbb, rpb);
 #endif
 		return;
@@ -3528,7 +3528,7 @@ static void expunge(thread_db* tdbb, record_param* rpb,
 
 #ifdef GARBAGE_THREAD
 		// expunge
-		if (tdbb->tdbb_database->dbb_flags | DBB_gc_background)
+		if (tdbb->tdbb_database->dbb_flags & DBB_gc_background)
 			notify_garbage_collector(tdbb, rpb);
 #endif
 
@@ -4582,7 +4582,7 @@ static void purge(thread_db* tdbb, record_param* rpb)
 
 #ifdef GARBAGE_THREAD
 		// purge
-		if (tdbb->tdbb_database->dbb_flags | DBB_gc_background)
+		if (tdbb->tdbb_database->dbb_flags & DBB_gc_background)
 			notify_garbage_collector(tdbb, rpb);
 #endif
 		return; //false;
