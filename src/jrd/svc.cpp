@@ -864,18 +864,16 @@ ISC_STATUS SVC_query2(Service* service,
 	SCHAR item;
 	char buffer[MAXPATHLEN];
 	USHORT l, length, version, get_flags;
-	ISC_STATUS *status;
-	USHORT timeout;
 
 	THREAD_EXIT();
 
 /* Setup the status vector */
-	status = tdbb->tdbb_status_vector;
+	ISC_STATUS* status = tdbb->tdbb_status_vector;
 	*status++ = isc_arg_gds;
 
 /* Process the send portion of the query first. */
 
-	timeout = 0;
+	USHORT timeout = 0;
 	const SCHAR* items = send_items;
 	const SCHAR* const end_items = items + send_item_length;
 	while (items < end_items && *items != isc_info_end)
@@ -957,12 +955,11 @@ ISC_STATUS SVC_query2(Service* service,
 		case isc_info_svc_svr_db_info:
 			{
 				UCHAR dbbuf[1024];
-				USHORT num_dbs = 0, num = 0;
+				USHORT num_dbs = 0;
 				USHORT num_att = 0;
-				TEXT *ptr, *ptr2;
 
 				*info++ = item;
-				ptr =
+				TEXT* const ptr =
 					JRD_num_attachments(reinterpret_cast<char*>(dbbuf),
 										sizeof(dbbuf), JRD_info_dbnames,
 										&num_att, &num_dbs);
@@ -979,8 +976,9 @@ ISC_STATUS SVC_query2(Service* service,
 				ADD_SPB_NUMERIC(info, num_dbs);
 
 				/* Move db names into the info buffer */
-				if (ptr2 = ptr) {
-					num = (USHORT) isc_vax_integer(ptr2, sizeof(USHORT));
+				TEXT* ptr2 = ptr;
+				if (ptr2) {
+					USHORT num = (USHORT) isc_vax_integer(ptr2, sizeof(USHORT));
 					fb_assert(num == num_dbs);
 					ptr2 += sizeof(USHORT);
 					for (; num; num--) {
@@ -990,14 +988,17 @@ ISC_STATUS SVC_query2(Service* service,
 						if (!
 							(info =
 							 INF_put_item(isc_spb_dbname, length, ptr2, info,
-										  end))) {
+										  end)))
+						{
+							// CVC: Shouldn't this place try to free ptr
+							// if it's different than dbbuf, too?
 							THREAD_ENTER();
 							return 0;
 						}
 						ptr2 += length;
 					}
 
-					if (ptr != reinterpret_cast < TEXT * >(dbbuf))
+					if (ptr != reinterpret_cast<TEXT*>(dbbuf))
 						gds__free(ptr);	/* memory has been allocated by
 										   JRD_num_attachments() */
 				}
@@ -1157,7 +1158,8 @@ ISC_STATUS SVC_query2(Service* service,
 			SecurityDatabase::getPath(buffer);
 
 			if (!(info = INF_put_item(item, strlen(buffer), buffer,
-									  info, end))) {
+									  info, end)))
+			{
 				THREAD_ENTER();
 				return 0;
 			}
@@ -1196,7 +1198,7 @@ ISC_STATUS SVC_query2(Service* service,
 					THREAD_EXIT();
 				}
 				service_get(service,
-							reinterpret_cast < char *>(service->svc_resp_buf),
+							reinterpret_cast<char*>(service->svc_resp_buf),
 							l, GET_BINARY, 0, &length);
 				service->svc_resp_ptr = service->svc_resp_buf;
 				service->svc_resp_len = l;
@@ -1226,8 +1228,7 @@ ISC_STATUS SVC_query2(Service* service,
 			service_put(service, &item, 1);
 			service_get(service, &item, 1, GET_BINARY, 0, &length);
 			service_get(service, buffer, 2, GET_BINARY, 0, &length);
-			l =
-				(USHORT) gds__vax_integer(reinterpret_cast <
+			l = (USHORT) gds__vax_integer(reinterpret_cast<
 										  UCHAR*>(buffer), 2);
 			service_get(service, buffer, l, GET_BINARY, 0, &length);
 			if (!(info = INF_put_item(item, length, buffer, info, end))) {
@@ -1326,13 +1327,12 @@ void SVC_query(Service*		service,
 	char buffer[256];
 	TEXT PathBuffer[MAXPATHLEN];
 	USHORT l, length, version, get_flags;
-	USHORT timeout;
 
 	THREAD_EXIT();
 
 /* Process the send portion of the query first. */
 
-	timeout = 0;
+	USHORT timeout = 0;
 	const SCHAR* items = send_items;
 	const SCHAR* const end_items = items + send_item_length;
 	while (items < end_items && *items != isc_info_end)
@@ -1719,10 +1719,6 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb)
  *
  **************************************/
  	
-#ifndef SUPERSERVER
-	TEXT service_path[MAXPATHLEN];
-#endif
-
 /* 	NOTE: The parameter RESERVED must not be used
  *	for any purpose as there are networking issues
  *	involved (as with any handle that goes over the
@@ -1871,6 +1867,8 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb)
 		ERR_post(isc_bad_spb_form, 0);
 
 #ifndef SUPERSERVER
+	TEXT service_path[MAXPATHLEN];
+
 	if (serv->serv_executable) {
 		gds__prefix(service_path, serv->serv_executable);
 		service->svc_flags = SVC_forked;
@@ -1974,7 +1972,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb)
 	if (serv->serv_thd) {
 #pragma FB_COMPILER_MESSAGE("Fix! Probable bug!")
 		event_t* evnt_ptr =
-			reinterpret_cast<event_t*> (&(service->svc_start_event));
+			reinterpret_cast<event_t*>(&(service->svc_start_event));
 
 		THREAD_EXIT();
 		/* create an event for the service.  The event will be signaled once the
@@ -2045,7 +2043,6 @@ THREAD_ENTRY_DECLARE SVC_read_ib_log(THREAD_ENTRY_PARAM arg)
  *   log file into the service buffers.
  *
  **************************************/
-	TEXT name[MAXPATHLEN], buffer[100];
 	bool svc_started = false;
 	Service* service = (Service*)arg;
 #ifdef SUPERSERVER
@@ -2053,6 +2050,7 @@ THREAD_ENTRY_DECLARE SVC_read_ib_log(THREAD_ENTRY_PARAM arg)
 	*status++ = isc_arg_gds;
 #endif
 
+	TEXT name[MAXPATHLEN];
 	gds__prefix(name, LOGFILE);
 	FILE* file = fopen(name, "r");
 	if (file != NULL) {
@@ -2062,6 +2060,7 @@ THREAD_ENTRY_DECLARE SVC_read_ib_log(THREAD_ENTRY_PARAM arg)
 #endif
 		service->svc_started();
 		svc_started = true;
+		TEXT buffer[100];
 		while (!feof(file) && !ferror(file)) {
 			fgets(buffer, sizeof(buffer), file);
 #ifdef SUPERSERVER
@@ -2295,13 +2294,11 @@ static void service_fork(TEXT* service_path, Service* service)
 		   the file created.  This handle will be used in subsequent
 		   calls to the windows API functions for working with the files
 		 */
-		int tmp;
-		char *fname;
 		char tmpPath[MAXPATHLEN];
 
 		GetTempPath(MAXPATHLEN, tmpPath);
-		fname = _tempnam(tmpPath, "ibsvc");
-		tmp =
+		const char* fname = _tempnam(tmpPath, "ibsvc");
+		int tmp =
 			_open(fname, _O_RDWR | _O_CREAT | _O_TEMPORARY,
 				  _S_IREAD | _S_IWRITE);
 		my_input = (HANDLE) _get_osfhandle(tmp);
@@ -2688,7 +2685,10 @@ static USHORT service_full(Service* service)
  *
  **************************************/
 	if (service_add_one(service_add_one(service->svc_stdout_tail)) ==
-		service->svc_stdout_head) return (1);
+		service->svc_stdout_head)
+	{
+		return (1);
+	}
 	else
 		return (0);
 }
@@ -2816,7 +2816,6 @@ static void service_get(Service*		service,
  *
  **************************************/
 	int ch = 'Z';
-	time_t elapsed_time;
 
 #ifdef HAVE_GETTIMEOFDAY
 	struct timeval start_time, end_time;
@@ -2834,10 +2833,10 @@ static void service_get(Service*		service,
 			THREAD_SLEEP(1);
 #ifdef HAVE_GETTIMEOFDAY
 		GETTIMEOFDAY(&end_time);
-		elapsed_time = end_time.tv_sec - start_time.tv_sec;
+		const time_t elapsed_time = end_time.tv_sec - start_time.tv_sec;
 #else
 		time(&end_time);
-		elapsed_time = end_time - start_time;
+		const time_t elapsed_time = end_time - start_time;
 #endif
 		if ((timeout) && (elapsed_time >= timeout)) {
 			service->svc_flags &= SVC_timeout;

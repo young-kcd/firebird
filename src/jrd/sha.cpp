@@ -3,7 +3,7 @@
 /* from Peter C. Gutmann's implementation as found in */
 /* Applied Cryptography by Bruce Schneier */
 /* This code is in the public domain */
-/* $Id: sha.cpp,v 1.1 2004-11-14 18:08:41 alexpeshkoff Exp $ */
+/* $Id: sha.cpp,v 1.2 2004-11-16 08:52:29 robocop Exp $ */
 
 // Adopted and added to firebird cvs tree - A.Peshkov, 2004
 
@@ -71,7 +71,7 @@ void sha_final(unsigned char [SHA_DIGESTSIZE], SHA_INFO *);
  *
  * This code is in the public domain
  *
- * $Id: sha.cpp,v 1.1 2004-11-14 18:08:41 alexpeshkoff Exp $
+ * $Id: sha.cpp,v 1.2 2004-11-16 08:52:29 robocop Exp $
  */
 
 /* UNRAVEL should be fastest & biggest */
@@ -135,10 +135,9 @@ void sha_final(unsigned char [SHA_DIGESTSIZE], SHA_INFO *);
 static void sha_transform(SHA_INFO *sha_info)
 {
     int i;
-    BYTE *dp;
-    LONG T, A, B, C, D, E, W[80], *WP;
+    LONG T, W[80];
 
-    dp = sha_info->data;
+    const BYTE* dp = sha_info->data;
 
 /*
 the following makes sure that at least one code block below is
@@ -200,12 +199,12 @@ nether regions of the anatomy...
 	W[i] = R32(W[i], 1);
 #endif /* SHA_VERSION */
     }
-    A = sha_info->digest[0];
-    B = sha_info->digest[1];
-    C = sha_info->digest[2];
-    D = sha_info->digest[3];
-    E = sha_info->digest[4];
-    WP = W;
+    LONG A = sha_info->digest[0];
+    LONG B = sha_info->digest[1];
+    LONG C = sha_info->digest[2];
+    LONG D = sha_info->digest[3];
+    LONG E = sha_info->digest[4];
+    const LONG* WP = W;
 #ifdef UNRAVEL
     FA(1); FB(1); FC(1); FD(1); FE(1); FT(1); FA(1); FB(1); FC(1); FD(1);
     FE(1); FT(1); FA(1); FB(1); FC(1); FD(1); FE(1); FT(1); FA(1); FB(1);
@@ -262,17 +261,14 @@ void sha_init(SHA_INFO *sha_info)
 
 void sha_update(SHA_INFO *sha_info, const BYTE *buffer, int count)
 {
-    int i;
-    LONG clo;
-
-    clo = T32(sha_info->count_lo + ((LONG) count << 3));
+    const LONG clo = T32(sha_info->count_lo + ((LONG) count << 3));
     if (clo < sha_info->count_lo) {
 	++sha_info->count_hi;
     }
     sha_info->count_lo = clo;
     sha_info->count_hi += (LONG) count >> 29;
     if (sha_info->local) {
-	i = SHA_BLOCKSIZE - sha_info->local;
+	int i = SHA_BLOCKSIZE - sha_info->local;
 	if (i > count) {
 	    i = count;
 	}
@@ -300,12 +296,9 @@ void sha_update(SHA_INFO *sha_info, const BYTE *buffer, int count)
 
 void sha_final(unsigned char digest[SHA_DIGESTSIZE], SHA_INFO *sha_info)
 {
-    int count;
-    LONG lo_bit_count, hi_bit_count;
-
-    lo_bit_count = sha_info->count_lo;
-    hi_bit_count = sha_info->count_hi;
-    count = (int) ((lo_bit_count >> 3) & 0x3f);
+    const LONG lo_bit_count = sha_info->count_lo;
+    const LONG hi_bit_count = sha_info->count_hi;
+    int count = (int) ((lo_bit_count >> 3) & 0x3f);
     ((BYTE *) sha_info->data)[count++] = 0x80;
     if (count > SHA_BLOCKSIZE - 8) {
 	memset(((BYTE *) sha_info->data) + count, 0, SHA_BLOCKSIZE - count);
@@ -362,7 +355,7 @@ void base64(Firebird::string& b64, const BinHash& bin)
 	{
 		if (i >= 3)
 		{
-			ULONG l = (ULONG(f[0]) << 16) |
+			const ULONG l = (ULONG(f[0]) << 16) |
 					  (ULONG(f[1]) <<  8) | f[2];
 			b64 += conv_bin2ascii(l >> 18);
 			b64 += conv_bin2ascii(l >> 12);
@@ -372,8 +365,9 @@ void base64(Firebird::string& b64, const BinHash& bin)
 		else
 		{
 			ULONG l = ULONG(f[0]) << 16;
-			if (i == 2) l |= (ULONG(f[1]) << 8);
-				b64 += conv_bin2ascii(l >> 18);
+			if (i == 2)
+				l |= (ULONG(f[1]) << 8);
+			b64 += conv_bin2ascii(l >> 18);
 			b64 += conv_bin2ascii(l >> 12);
 			b64 += (i == 1 ? '=' : conv_bin2ascii(l >> 6));
 			b64 += '=';
@@ -387,7 +381,7 @@ void Jrd::CryptSupport::hash(Firebird::string& hashValue, const Firebird::string
 {
 	SHA_INFO si;
 	sha_init(&si);
-	sha_update(&si, reinterpret_cast<const unsigned char *>(data.c_str()), data.length());
+	sha_update(&si, reinterpret_cast<const unsigned char*>(data.c_str()), data.length());
 	BinHash bh;
 	sha_final(bh.getBuffer(SHA_DIGESTSIZE), &si);
 	base64(hashValue, bh);
@@ -400,3 +394,4 @@ void Jrd::CryptSupport::random(Firebird::string& randomValue, size_t length)
 	base64(randomValue, binRand);
 	randomValue.resize(length, '$');
 }
+

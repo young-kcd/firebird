@@ -800,8 +800,6 @@ void ThreadData::start(ThreadEntryPoint* routine,
  *
  **************************************/
 
-	HANDLE handle;
-	DWORD thread_id;
 	int priority;
 
 	switch (priority_arg) {
@@ -838,14 +836,15 @@ void ThreadData::start(ThreadEntryPoint* routine,
 	 * CreateThread() can lead to memory leaks caused by C-runtime library.
 	 * Advanced Windows by Richter pg. # 109. */
 
+	DWORD thread_id;
 	unsigned long real_handle = 
 		_beginthreadex(NULL, 0, THREAD_ENTRYPOINT, THREAD_ARG, CREATE_SUSPENDED,
-					   reinterpret_cast <unsigned *>(&thread_id));
+					   reinterpret_cast<unsigned*>(&thread_id));
 	if (!real_handle)
 	{
 		Firebird::system_call_failed::raise("_beginthreadex", GetLastError());
 	}
-	handle = reinterpret_cast<HANDLE>(real_handle);
+	HANDLE handle = reinterpret_cast<HANDLE>(real_handle);
 
 	SetThreadPriority(handle, priority);
 
