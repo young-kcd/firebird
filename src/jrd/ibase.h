@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.62 2003-12-22 10:00:47 robocop Exp $
+$Id: ibase.h,v 1.63 2003-12-27 22:03:27 skidder Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -41,6 +41,7 @@ $Id: ibase.h,v 1.62 2003-12-22 10:00:47 robocop Exp $
 
 #include "fb_types.h"
 
+#define FB_API_VER 20
 #define isc_version4
 
 #define  ISC_TRUE	1
