@@ -385,7 +385,7 @@ static void THREAD_ROUTINE wnet_connect_wait_thread( void *dummy)
 		thread = CNTL_insert_thread();
 	}
 
-	while (TRUE)
+	while (true)
 	{
 		THREAD_ENTER;
 		PORT port = WNET_connect(protocol_wnet, 0, status_vector, server_flag);
