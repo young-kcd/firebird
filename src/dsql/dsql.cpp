@@ -2260,8 +2260,11 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_subtract2:
 		verb = "subtract2";
 		break;
-	case nod_limit:	   
-		verb = "limit";		
+	case nod_limit:
+		verb = "limit";
+		break;
+	case nod_rows:
+		verb = "rows";
 		break;
 	/* IOL:	missing	node types */
 	case nod_on_error:

@@ -499,6 +499,7 @@ static LexerState lex;
 %token OPEN
 %token CLOSE
 %token FETCH
+%token ROWS
 
 /* precedence declarations for expression evaluation */
 
@@ -1811,7 +1812,7 @@ alter_view_clause	: symbol_view_name column_parens_opt AS begin_string union_vie
 */
 
 union_view	  : union_view_expr
-			{ $$ = make_node (nod_select, (int) e_select_count, $1, NULL, NULL, NULL); }
+			{ $$ = make_node (nod_select, (int) e_select_count, $1, NULL, NULL, NULL, NULL); }
 		;
 
 union_view_expr	: select_view_expr
@@ -1830,7 +1831,7 @@ select_view_expr: SELECT
 			 group_clause 
 			 having_clause
 			{ $$ = make_node (nod_select_expr, (int) e_sel_count, 
-					NULL, $2, $3, $4, $5, $6, $7, NULL, NULL); }
+					NULL, $2, $3, $4, $5, $6, $7, NULL, NULL, NULL); }
 		;											   
 
 from_view_clause : FROM from_view_list
@@ -2105,6 +2106,7 @@ keyword_or_column	: valid_symbol_name
 		| OPEN					/* added in FB 2.0 */
 		| CLOSE
 		| FETCH
+		| ROWS
 		;
 
 col_opt		: ALTER
@@ -2849,8 +2851,8 @@ set_statistics	: SET STATISTICS INDEX symbol_index_name
 
 /* SELECT statement */
 
-select		: union_expr order_clause for_update_clause lock_clause
-			{ $$ = make_node (nod_select, (int) e_select_count, $1, $2, $3, $4); }
+select		: union_expr order_clause rows_clause for_update_clause lock_clause
+			{ $$ = make_node (nod_select, (int) e_select_count, $1, $2, $3, $4, $5); }
 		;
 
 union_expr	: select_expr
@@ -2896,6 +2898,21 @@ nulls_clause : NULLS begin_first nulls_placement end_first
 			{ $$ = 0; }
 		;
 
+rows_clause	: ROWS value
+			// equivalent to FIRST value
+			{ $$ = make_node (nod_rows, (int) e_rows_count, NULL, $2); }
+		| ROWS value TO value
+			// equivalent to FIRST (upper_value - lower_value + 1) SKIP (lower_value - 1)
+			{ $$ = make_node (nod_rows, (int) e_rows_count,
+				make_node (nod_subtract, 2, $2,
+					MAKE_constant ((STR) 1, CONSTANT_SLONG)),
+				make_node (nod_add, 2,
+					make_node (nod_subtract, 2, $4, $2),
+					MAKE_constant ((STR) 1, CONSTANT_SLONG))); }
+		|
+			{ $$ = NULL; }
+		;
+
 for_update_clause : FOR UPDATE for_update_list
 			{ $$ = make_node (nod_for_update, 1, $3); }
 		|
@@ -2926,7 +2943,7 @@ select_expr	: SELECT limit_clause
 			 having_clause
 			 plan_clause
 			{ $$ = make_node (nod_select_expr, (int) e_sel_count, 
-					$2, $3, $4, $5, $6, $7, $8, $9, NULL, NULL); }
+					$2, $3, $4, $5, $6, $7, $8, $9, NULL, NULL, NULL); }
 		;											   
 
 ordered_select_expr	: SELECT limit_clause
@@ -2938,8 +2955,9 @@ ordered_select_expr	: SELECT limit_clause
 			 having_clause
 			 plan_clause
 			 order_clause
+			 rows_clause
 			{ $$ = make_node (nod_select_expr, (int) e_sel_count, 
-					$2, $3, $4, $5, $6, $7, $8, $9, $10, NULL); }
+					$2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NULL); }
 		;											   
 
 begin_limit	: 
@@ -3562,8 +3580,9 @@ column_select	: SELECT limit_clause
 			having_clause
 			plan_clause
 			order_clause
+			rows_clause
 			{ $$ = make_node (nod_select_expr, (int) e_sel_count, 
-				$2, $3, make_list ($4), $5, $6, $7, $8, $9, $10, NULL); }
+				$2, $3, make_list ($4), $5, $6, $7, $8, $9, $10, $11, NULL); }
 		;
 
 column_singleton : SELECT limit_clause
@@ -3575,8 +3594,9 @@ column_singleton : SELECT limit_clause
 			having_clause
 			plan_clause
 			order_clause
+			rows_clause
 			{ $$ = make_node (nod_select_expr, (int) e_sel_count, 
-				$2, $3, make_list ($4), $5, $6, $7, $8, $9, $10,
+				$2, $3, make_list ($4), $5, $6, $7, $8, $9, $10, $11,
 				MAKE_constant ((STR) 1, CONSTANT_SLONG)); }
 		;
 

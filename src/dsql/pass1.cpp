@@ -197,14 +197,14 @@ static DSQL_NOD pass1_label(DSQL_REQ, DSQL_NOD);
 static DSQL_NOD pass1_make_derived_field(DSQL_REQ, TSQL, DSQL_NOD);
 static void	pass1_put_args_on_stack(DSQL_REQ, DSQL_NOD, DLLS*, bool);
 static DSQL_NOD pass1_relation(DSQL_REQ, DSQL_NOD);
-static DSQL_NOD pass1_rse(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD);
+static DSQL_NOD pass1_rse(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD, DSQL_NOD);
 static DSQL_NOD pass1_searched_case(DSQL_REQ, DSQL_NOD, bool);
 static DSQL_NOD pass1_sel_list(DSQL_REQ, DSQL_NOD);
 static DSQL_NOD pass1_simple_case(DSQL_REQ, DSQL_NOD, bool);
 static DSQL_NOD pass1_sort(DSQL_REQ, DSQL_NOD, DSQL_NOD);
 static DSQL_NOD pass1_udf(DSQL_REQ, DSQL_NOD, USHORT);
 static void pass1_udf_args(DSQL_REQ, DSQL_NOD, UDF, USHORT, DLLS*, bool);
-static DSQL_NOD pass1_union(DSQL_REQ, DSQL_NOD, DSQL_NOD);
+static DSQL_NOD pass1_union(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD);
 static void pass1_union_auto_cast(DSQL_NOD, const dsc&, SSHORT,
 	bool in_select_list = false);
 static DSQL_NOD pass1_update(DSQL_REQ, DSQL_NOD);
@@ -611,7 +611,8 @@ DSQL_NOD PASS1_node(DSQL_REQ request, DSQL_NOD input, bool proc_flag)
 		base = request->req_context;
 		node = MAKE_node(nod_via, e_via_count);
 		node->nod_arg[e_via_rse] = rse =
-			PASS1_rse(request, input, input->nod_arg[e_sel_order], NULL);
+			PASS1_rse(request, input, input->nod_arg[e_sel_order],
+					  input->nod_arg[e_sel_rows], NULL);
 		node->nod_arg[e_via_value_1] = rse->nod_arg[e_rse_items]->nod_arg[0];
 		node->nod_arg[e_via_value_2] = MAKE_node(nod_null, (int) 0);
 		// Finish off by cleaning up contexts
@@ -624,7 +625,9 @@ DSQL_NOD PASS1_node(DSQL_REQ request, DSQL_NOD input, bool proc_flag)
 		base = request->req_context;
 		node = MAKE_node(input->nod_type, 1);
 		input = input->nod_arg[0];
-		node->nod_arg[0] = PASS1_rse(request, input, input->nod_arg[e_sel_order], NULL);
+		node->nod_arg[0] =
+			PASS1_rse(request, input, input->nod_arg[e_sel_order],
+					  input->nod_arg[e_sel_rows], NULL);
 
 		/* Finish off by cleaning up contexts */
 
@@ -733,7 +736,8 @@ DSQL_NOD PASS1_node(DSQL_REQ request, DSQL_NOD input, bool proc_flag)
 				node->nod_arg[0] = PASS1_node(request, input->nod_arg[0], false);
 				node->nod_arg[1] = temp = MAKE_node(nod_via, e_via_count);
 				temp->nod_arg[e_via_rse] = rse =
-					PASS1_rse(request, sub2, sub2->nod_arg[e_sel_order], NULL);
+					PASS1_rse(request, sub2, sub2->nod_arg[e_sel_order],
+							  sub2->nod_arg[e_sel_rows], NULL);
 				temp->nod_arg[e_via_value_1] =
 					rse->nod_arg[e_rse_items]->nod_arg[0];
 				temp->nod_arg[e_via_value_2] = MAKE_node(nod_null, (int) 0);
@@ -942,14 +946,14 @@ DSQL_NOD PASS1_node(DSQL_REQ request, DSQL_NOD input, bool proc_flag)
     @param update_lock
 
  **/
-DSQL_NOD PASS1_rse(DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQL_NOD update_lock)
+DSQL_NOD PASS1_rse(DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQL_NOD rows, DSQL_NOD update_lock)
 {
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 	DEV_BLKCHK(order, dsql_type_nod);
 
 	request->req_scope_level++;
-	DSQL_NOD node = pass1_rse(request, input, order, update_lock);
+	DSQL_NOD node = pass1_rse(request, input, order, rows, update_lock);
 	request->req_scope_level--;
 
 	return node;
@@ -1351,7 +1355,8 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, bool proc_flag)
 
 	case nod_select:
 		node = PASS1_rse(request, input->nod_arg[e_select_expr], input->nod_arg[e_select_order],
-			input->nod_arg[e_select_lock]);
+			input->nod_arg[e_select_rows], input->nod_arg[e_select_lock]);
+
 		if (input->nod_arg[e_select_update]) {
 			request->req_type = REQ_SELECT_UPD;
 			request->req_flags |= REQ_no_batch;
@@ -1462,7 +1467,8 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, bool proc_flag)
 		request->req_context = NULL;
 		input->nod_arg[e_cur_rse] =
 			PASS1_rse(request, input->nod_arg[e_cur_rse],
-					  input->nod_arg[e_cur_rse]->nod_arg[e_sel_order], NULL);
+					  input->nod_arg[e_cur_rse]->nod_arg[e_sel_order],
+					  input->nod_arg[e_cur_rse]->nod_arg[e_sel_rows], NULL);
 		while (request->req_context)
 			LLS_POP(&request->req_context);
 		request->req_context = base_context;
@@ -2718,7 +2724,9 @@ static DSQL_NOD pass1_any( DSQL_REQ request, DSQL_NOD input, NOD_TYPE ntype)
 // Build first the node from our base-context so that the right context is
 // used while parsing the nodes
 	temp->nod_arg[0] = PASS1_node(request, input->nod_arg[0], false);
-	DSQL_NOD rse = PASS1_rse(request, select, select->nod_arg[e_sel_order], NULL);
+	DSQL_NOD rse =
+		PASS1_rse(request, select, select->nod_arg[e_sel_order],
+				  select->nod_arg[e_sel_rows], NULL);
 	node->nod_arg[0] = rse;
 
 
@@ -4310,7 +4318,8 @@ static DSQL_NOD pass1_insert( DSQL_REQ request, DSQL_NOD input)
 	DSQL_NOD rse = input->nod_arg[e_ins_select];
 	if (rse) {
 		node->nod_arg[e_sto_rse] = rse =
-			PASS1_rse(request, rse, rse->nod_arg[e_sel_order], NULL);
+			PASS1_rse(request, rse, rse->nod_arg[e_sel_order],
+					  rse->nod_arg[e_sel_rows], NULL);
 		values = rse->nod_arg[e_rse_items];
 	}
 	else
@@ -5000,7 +5009,7 @@ static DSQL_REL pass1_base_table( DSQL_REQ request, DSQL_REL relation, STR alias
 
  **/
 static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order,
-	DSQL_NOD update_lock)
+	DSQL_NOD rows, DSQL_NOD update_lock)
 {
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
@@ -5014,13 +5023,13 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order,
 
 	if (input->nod_type == nod_list) {
 		if (input->nod_count == 1)
-			return PASS1_rse(request, input->nod_arg[0], order, update_lock);
+			return PASS1_rse(request, input->nod_arg[0], order, rows, update_lock);
 		else {
 			if (update_lock)
 				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, gds_arg_gds, 
 						  gds_token_err, /* Token unknown */
 						  gds_arg_gds, gds_random, gds_arg_string, "WITH LOCK", 0);
-			return pass1_union(request, input, order);
+			return pass1_union(request, input, order, rows);
 		}
 	}
 
@@ -5044,26 +5053,35 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order,
 				gds_arg_gds, gds_random, gds_arg_string, "WITH LOCK", 0);
 	}
 	
-/* Process LIMIT, if any */
+	DSQL_NOD node;
 
-	DSQL_NOD node = input->nod_arg[e_sel_limit];
-    if (node) {
-        /* CVC: This line is a hint because set_parameter_type() doesn't receive
+/* Process LIMIT and/or ROWS, if any */
+
+	if ( (node = input->nod_arg[e_sel_limit]) && rows) {
+		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
+				  gds_arg_gds, gds_token_err,	/* Token unknown */
+				  gds_arg_gds, gds_random, gds_arg_string, "ROWS", 0);
+	}
+    else if (node || (node = rows) ) {
+		/* CVC: This line is a hint because set_parameter_type() doesn't receive
            the dialect currently as an argument. */
         node->nod_desc.dsc_scale = request->req_client_dialect;
-        
-        if (node->nod_arg[e_limit_length]) {
-            DSQL_NOD sub = PASS1_node(request, node->nod_arg[e_limit_length], false);
+
+		const int length_index = rows ? e_rows_length : e_limit_length;
+		const int skip_index = rows ? e_rows_skip : e_limit_skip;
+
+        if (node->nod_arg[length_index]) {
+            DSQL_NOD sub = PASS1_node(request, node->nod_arg[length_index], false);
             rse->nod_arg[e_rse_first] = sub;
             set_parameter_type(sub, node, false);
         }
-        if (node->nod_arg[e_limit_skip]) {
-            DSQL_NOD sub = PASS1_node(request, node->nod_arg[e_limit_skip], false);
+        if (node->nod_arg[skip_index]) {
+            DSQL_NOD sub = PASS1_node(request, node->nod_arg[skip_index], false);
             rse->nod_arg[e_rse_skip] = sub;
             set_parameter_type(sub, node, false);
         }
     }
-    
+
 /* Process boolean, if any */
 
 	if (node = input->nod_arg[e_sel_where]) {
@@ -5694,9 +5712,10 @@ static void pass1_udf_args(DSQL_REQ request, DSQL_NOD input, UDF udf, USHORT arg
     @param request
     @param input
     @param order_list
+	@param rows
 
  **/
-static DSQL_NOD pass1_union( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order_list)
+static DSQL_NOD pass1_union( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order_list, DSQL_NOD rows)
 {
 	DSQL_NOD *ptr, *end;
 
@@ -5717,7 +5736,7 @@ static DSQL_NOD pass1_union( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order_li
 	for (ptr = input->nod_arg, end = ptr + input->nod_count; ptr < end;
 		 ++ptr, ++uptr)
 	{
-		*uptr = PASS1_rse(request, *ptr, 0, NULL);
+		*uptr = PASS1_rse(request, *ptr, NULL, NULL, NULL);
         while (request->req_context != base) {
             LLS_PUSH(request->req_context->lls_object, &request->req_union_context);
             LLS_POP(&request->req_context);
@@ -5851,6 +5870,23 @@ static DSQL_NOD pass1_union( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order_li
 			order2->nod_arg[e_order_nulls] = order1->nod_arg[e_order_nulls];
 		}
 		union_rse->nod_arg[e_rse_sort] = sort;
+	}
+
+	if (rows) {
+		/* CVC: This line is a hint because set_parameter_type() doesn't receive
+           the dialect currently as an argument. */
+        rows->nod_desc.dsc_scale = request->req_client_dialect;
+
+        if (rows->nod_arg[e_rows_length]) {
+            DSQL_NOD sub = PASS1_node(request, rows->nod_arg[e_rows_length], false);
+            union_rse->nod_arg[e_rse_first] = sub;
+            set_parameter_type(sub, rows, false);
+        }
+        if (rows->nod_arg[e_rows_skip]) {
+            DSQL_NOD sub = PASS1_node(request, rows->nod_arg[e_rows_skip], false);
+            union_rse->nod_arg[e_rse_skip] = sub;
+            set_parameter_type(sub, rows, false);
+        }
 	}
 
 	// PROJECT on all the select items unless UNION ALL was specified.
@@ -6595,7 +6631,8 @@ static bool set_parameter_type(DSQL_NOD in_node, DSQL_NOD node, bool force_varch
 	DEV_BLKCHK(in_node, dsql_type_nod);
 	DEV_BLKCHK(node, dsql_type_nod);
 
-	if (in_node == NULL) return false;
+	if (in_node == NULL)
+		return false;
 
 	switch (in_node->nod_type) {
 		case nod_parameter:
@@ -6652,6 +6689,7 @@ static bool set_parameter_type(DSQL_NOD in_node, DSQL_NOD node, bool force_varch
 		case nod_upcase:
 		case nod_extract:
 		case nod_limit:
+		case nod_rows:
 			{
 				bool result = false;
 				DSQL_NOD *ptr, *end;

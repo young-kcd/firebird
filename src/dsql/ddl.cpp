@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.75 2003-11-03 23:51:11 brodsom Exp $
+ * $Id: ddl.cpp,v 1.76 2003-11-07 14:10:15 dimitr Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -3372,7 +3372,9 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 	request->req_context_number++;
 	dsql_nod* select = node->nod_arg[e_view_select];
 	dsql_nod* select_expr = select->nod_arg[0];
-	dsql_nod* rse = PASS1_rse(request, select_expr, select->nod_arg[1], NULL);
+	dsql_nod* rse =
+		PASS1_rse(request, select_expr, select->nod_arg[e_select_order],
+				  select->nod_arg[e_select_rows], NULL);
 
 	// store the blr and source string for the view definition
 

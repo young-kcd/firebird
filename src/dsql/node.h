@@ -326,7 +326,8 @@ typedef enum nod_t
 	nod_cursor_open,
 	nod_cursor_fetch,
 	nod_cursor_close,
-	nod_fetch_seek
+	nod_fetch_seek,
+	nod_rows	// ROWS support
 } NOD_TYPE;
 
 
@@ -408,6 +409,7 @@ enum dsql_constant_type {
 enum node_args {
 	e_select_expr = 0,		// nod_select
 	e_select_order,
+	e_select_rows,
 	e_select_update,
 	e_select_lock,
 	e_select_count,
@@ -496,6 +498,10 @@ enum node_args {
 	e_limit_length,
 	e_limit_count,
 
+	e_rows_skip = 0,		// nod_rows
+	e_rows_length,
+	e_rows_count,
+
 	e_par_parameter = 0,	// nod_parameter
 	e_par_count,
 
@@ -537,6 +543,7 @@ enum node_args {
 	e_sel_having,
 	e_sel_plan,
 	e_sel_order,
+	e_sel_rows,
 	e_sel_singleton,
 	e_sel_count,
 
