@@ -80,16 +80,17 @@
 
 DATABASE DB = STATIC "ODS.RDB";
 
+using namespace Jrd;
 
 
-static void grant(GBL, const UCHAR**);
-static bool grantor_can_grant_role(thread_db*, GBL, const TEXT*, const TEXT*);
-static bool grantor_can_grant(GBL, const TEXT*, const TEXT*, const TEXT*,
+static void grant(gbl*, const UCHAR**);
+static bool grantor_can_grant_role(thread_db*, gbl*, const TEXT*, const TEXT*);
+static bool grantor_can_grant(gbl*, const TEXT*, const TEXT*, const TEXT*,
 	const TEXT*, bool);
-static void	revoke_permission(GBL, const UCHAR**);
-static void store_privilege(GBL, const TEXT*, const TEXT*, const TEXT*,
+static void	revoke_permission(gbl*, const UCHAR**);
+static void store_privilege(gbl*, const TEXT*, const TEXT*, const TEXT*,
 	const TEXT*, SSHORT, SSHORT, int);
-static void	set_field_class_name(GBL, const TEXT*, const TEXT*);
+static void	set_field_class_name(gbl*, const TEXT*, const TEXT*);
 
 
 void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
@@ -284,7 +285,7 @@ void DYN_error_punt(bool	status_flag,
 }
 
 
-bool DYN_is_it_sql_role(GBL		gbl,
+bool DYN_is_it_sql_role(gbl*		gbl,
 						   const TEXT*	input_name,
 						   TEXT*	output_name,
 						   thread_db*		tdbb)
@@ -311,7 +312,7 @@ bool DYN_is_it_sql_role(GBL		gbl,
 	if (ENCODE_ODS(major_version, minor_original) < ODS_9_0)
 		return found;
 
-	BLK request = CMP_find_request(tdbb, drq_get_role_nm, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, drq_get_role_nm, DYN_REQUESTS);
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$ROLES WITH
@@ -350,7 +351,7 @@ void DYN_unsupported_verb(void)
 
 
 void DYN_execute(
-				 GBL gbl,
+				 gbl* gbl,
 				 const UCHAR** ptr,
 				 const TEXT* relation_name,
 				 TEXT* field_name,
@@ -666,7 +667,7 @@ USHORT DYN_get_string(const TEXT** ptr, TEXT* field, USHORT size, bool err_flag)
 	return length;
 }
 
-USHORT DYN_put_blr_blob(GBL gbl, const UCHAR** ptr, bid* blob_id)
+USHORT DYN_put_blr_blob(gbl* gbl, const UCHAR** ptr, bid* blob_id)
 {
 /**************************************
  *
@@ -705,7 +706,7 @@ USHORT DYN_put_blr_blob(GBL gbl, const UCHAR** ptr, bid* blob_id)
 	return length;
 }
 
-USHORT DYN_put_text_blob(GBL gbl, const UCHAR** ptr, bid* blob_id)
+USHORT DYN_put_text_blob(gbl* gbl, const UCHAR** ptr, bid* blob_id)
 {
 /**************************************
  *
@@ -752,7 +753,7 @@ USHORT DYN_put_text_blob(GBL gbl, const UCHAR** ptr, bid* blob_id)
 	return length;
 }
 
-void DYN_rundown_request(BLK handle, SSHORT id)
+void DYN_rundown_request(jrd_req* handle, SSHORT id)
 {
 /**************************************
  *
@@ -804,7 +805,7 @@ USHORT DYN_skip_attribute(const UCHAR** ptr)
 }
 
 
-static void grant( GBL gbl, const UCHAR** ptr)
+static void grant( gbl* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -953,7 +954,7 @@ static void grant( GBL gbl, const UCHAR** ptr)
 		}
 	}
 
-	BLK request = NULL;
+	jrd_req* request = NULL;
 
 	try {
 
@@ -1104,7 +1105,7 @@ static void grant( GBL gbl, const UCHAR** ptr)
 		/* we need to rundown as we have to set the env.
 		   But in case the error is from store_priveledge we have already
 		   unwound the request so passing that as null */
-		BLK req1 = (id == drq_s_grant || id == drq_gcg1) ? NULL : request;
+		jrd_req* req1 = (id == drq_s_grant || id == drq_gcg1) ? NULL : request;
 		DYN_rundown_request(req1, -1);
 
 		switch (id)
@@ -1141,7 +1142,7 @@ do_punt:	// ugly, rethink logic of this function
 }
 
 
-static bool grantor_can_grant(	GBL		gbl,
+static bool grantor_can_grant(	gbl*		gbl,
 								const TEXT*	grantor,
 								const TEXT*	privilege,
 								const TEXT*	relation_name,
@@ -1166,7 +1167,7 @@ static bool grantor_can_grant(	GBL		gbl,
 
 /* Verify that the input relation exists. */
 
-	BLK request = CMP_find_request(tdbb, drq_gcg4, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, drq_gcg4, DYN_REQUESTS);
 
 
 	try {
@@ -1425,7 +1426,7 @@ static bool grantor_can_grant(	GBL		gbl,
 
 
 static bool grantor_can_grant_role(	thread_db*	tdbb,
-									GBL		gbl,
+									gbl*		gbl,
 									const TEXT* grantor,
 									const TEXT* role_name)
 {
@@ -1471,7 +1472,7 @@ static bool grantor_can_grant_role(	thread_db*	tdbb,
 		return false;
 	}
 
-	BLK request = CMP_find_request(tdbb, drq_get_role_au, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, drq_get_role_au, DYN_REQUESTS);
 
 	// The 'grantor' is not the owner of the ROLE, see if they
 	// have admin privilege on the role
@@ -1519,7 +1520,7 @@ static bool grantor_can_grant_role(	thread_db*	tdbb,
 }
 
 
-static void revoke_permission(GBL gbl, const UCHAR** ptr)
+static void revoke_permission(gbl* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -1677,7 +1678,7 @@ static void revoke_permission(GBL gbl, const UCHAR** ptr)
 		}
 
 
-	BLK request = CMP_find_request(tdbb,
+	jrd_req* request = CMP_find_request(tdbb,
 						(USHORT)(field[0] ? drq_e_grant1 : drq_e_grant2),
 						DYN_REQUESTS);
 	USHORT id = field[0] ? drq_e_grant1 : drq_e_grant2;
@@ -1790,7 +1791,7 @@ static void revoke_permission(GBL gbl, const UCHAR** ptr)
 }
 
 
-static void set_field_class_name(GBL gbl, const TEXT* relation, const TEXT* field)
+static void set_field_class_name(gbl* gbl, const TEXT* relation, const TEXT* field)
 {
 /**************************************
  *
@@ -1806,8 +1807,8 @@ static void set_field_class_name(GBL gbl, const TEXT* relation, const TEXT* fiel
 	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
-	BLK request = CMP_find_request(tdbb, drq_s_f_class, DYN_REQUESTS);
-	BLK request2 = NULL;
+	jrd_req* request = CMP_find_request(tdbb, drq_s_f_class, DYN_REQUESTS);
+	jrd_req* request2 = NULL;
 	
 	bool unique = false;
 
@@ -1847,7 +1848,7 @@ static void set_field_class_name(GBL gbl, const TEXT* relation, const TEXT* fiel
 }
 
 
-static void store_privilege(GBL		gbl,
+static void store_privilege(gbl*		gbl,
 							const TEXT*	object,
 							const TEXT*	user,
 							const TEXT*	field,
@@ -1870,7 +1871,7 @@ static void store_privilege(GBL		gbl,
 	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
-	BLK request = CMP_find_request(tdbb, drq_s_grant, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, drq_s_grant, DYN_REQUESTS);
 
 /* need to unwind our own request here!! SM 27-Sep-96 */
 
