@@ -1,3 +1,62 @@
+2004-03-18 20:19  skidder
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Fix SF#918653, nulls placement ignored with queries using UNION,
+	GROUP BY and DISTINCT clauses
+
+2004-03-18 06:54  robocop
+
+	* firebird2/src/: alice/alice.cpp, alice/alice.h,
+	alice/alice_proto.h, alice/all.h, burp/burp.cpp, burp/burp.h,
+	burp/burp_proto.h, common/classes/array.h, common/classes/auto.h,
+	common/classes/fb_pair.h, common/classes/objects_array.h,
+	common/classes/rwlock.h, common/classes/semaphore.h,
+	common/config/config.h, common/config/config_file.h,
+	common/config/dir_list.cpp, common/config/dir_list.h, dsql/all.h,
+	dsql/dsql.cpp, dsql/dsql_proto.h, dsql/parse.y,
+	include/fb_string.h, include/fb_vector.h,
+	include/gen/autoconfig_msvc.h, ipserver/ipc.h, jrd/all.cpp,
+	jrd/all.h, jrd/blb.cpp, jrd/blb.h, jrd/blk.h, jrd/bookmark.cpp,
+	jrd/btn.cpp, jrd/btr.cpp, jrd/btr.h, jrd/btr_proto.h, jrd/cch.cpp,
+	jrd/cch.h, jrd/cch_proto.h, jrd/cmp.cpp, jrd/cmp_proto.h,
+	jrd/common.h, jrd/db_alias.h, jrd/dbg.cpp, jrd/dbg_proto.h,
+	jrd/dbt.cpp, jrd/dfw.epp, jrd/dfw_proto.h, jrd/dmp.cpp,
+	jrd/dpm.epp, jrd/dpm_proto.h, jrd/dyn.epp, jrd/dyn_proto.h,
+	jrd/entry.h, jrd/evl.cpp, jrd/evl_proto.h, jrd/evl_string.h,
+	jrd/exe.cpp, jrd/exe.h, jrd/execute_statement.cpp, jrd/ext.cpp,
+	jrd/ext.h, jrd/ext_proto.h, jrd/functions.cpp, jrd/grant.epp,
+	jrd/grant_proto.h, jrd/idx.cpp, jrd/idx_proto.h, jrd/inf.cpp,
+	jrd/isc_f_proto.h, jrd/isc_file.cpp, jrd/jrd.cpp, jrd/jrd.h,
+	jrd/jrd_proto.h, jrd/lck.cpp, jrd/lck.h, jrd/lck_proto.h,
+	jrd/log.h, jrd/met.epp, jrd/met_proto.h, jrd/mov_proto.h,
+	jrd/nav.cpp, jrd/nav_proto.h, jrd/nbak.cpp, jrd/nbak.h, jrd/ods.h,
+	jrd/opt.cpp, jrd/opt_proto.h, jrd/pag.cpp, jrd/par.cpp,
+	jrd/par_proto.h, jrd/pcmet.epp, jrd/pcmet_proto.h, jrd/qatest.cpp,
+	jrd/req.h, jrd/rlck.cpp, jrd/rlck_proto.h, jrd/rng.cpp, jrd/rng.h,
+	jrd/rng_proto.h, jrd/rpb_chain.cpp, jrd/rpb_chain.h, jrd/rse.cpp,
+	jrd/rse.h, jrd/rse_proto.h, jrd/sbm.cpp, jrd/sbm.h,
+	jrd/sbm_proto.h, jrd/sch.cpp, jrd/sch_proto.h, jrd/scl.epp,
+	jrd/sdl.cpp, jrd/sdw.cpp, jrd/sdw_proto.h, jrd/shut.cpp,
+	jrd/sort.cpp, jrd/sort.h, jrd/sort_proto.h, jrd/sqz.cpp,
+	jrd/sqz_proto.h, jrd/svc.cpp, jrd/svc.h, jrd/svc_proto.h,
+	jrd/tpc.cpp, jrd/tpc_proto.h, jrd/tra.cpp, jrd/tra.h,
+	jrd/tra_proto.h, jrd/val.cpp, jrd/vio.cpp, jrd/vio_proto.h,
+	jrd/why.cpp, jrd/y_handle.h, jrd/os/pio_proto.h,
+	jrd/os/posix/unix.cpp, jrd/os/vms/extvms.cpp, jrd/os/vms/vms.cpp,
+	jrd/os/win32/winnt.cpp, lock/lock.cpp, lock/lock.h, qli/all.cpp,
+	remote/allr_proto.h, remote/inet.cpp, remote/remot_proto.h,
+	remote/remote.h, utilities/nbackup.cpp, utilities/gsec/gsec.cpp,
+	utilities/gsec/gsec.h, utilities/gsec/gsec_proto.h,
+	utilities/gstat/dba.epp, utilities/gstat/dba_full.epp,
+	utilities/gstat/ppg.cpp, utilities/gstat/ppg_proto.h,
+	utilities/rebuild/rebuild.cpp:
+	
+	Cleanup. In geeky words: PandoraBox* pbox =
+	reinterpret_cast<PandoraBox*>(&can_of_worms); pbox->open();
+	pbox->flush(); Nickolay may want to undo my ods.h changes if gcc
+	insists in its crusade against non-PODs and poodles.
+
 2004-03-16 19:01  bellardo
 
 	* firebird2/src/install/arch-specific/darwin/Makefile.in:
