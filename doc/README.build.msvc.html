@@ -66,16 +66,16 @@ Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 <ol>
 <li>Open a command line window.</li>
 <li>Go to the firebird2 builds\win32 directory.</li>
-<li>Run the following batches in order (where X is the version number of your VisualStudio)</li>
+<li>Run the following batches in order (your version of VisualStudio is detected automatically)</li>
 <ol>
 <li>prepare.bat [FIREBIRD]</li>
-<li>makeX_boot.bat</li>
-<li>makeX_all.bat [DEBUG] [CLEAN]</li>
-<li>makeX_examples.bat [DEBUG] [CLEAN] (this is only needed if you want to build examples)</li>
+<li>make_boot.bat</li>
+<li>make_all.bat [DEBUG] [CLEAN]</li>
+<li>make_examples.bat [DEBUG] [CLEAN] (this is only needed if you want to build examples)</li>
 </ol>
 </ol>
 <ul>
-<p>After the build finish, the firebird directory with the binaries is created as "output".</p> 
+<p>After the build finish, the firebird directory with the binaries is created as "output" below your firebird directory.</p> 
 <li>To make a clean build from scratch after making changes to the code use the clean_all.bat script</li>
 </ul>
 <h4>4.2.-Parser rebuild</h4>
@@ -86,8 +86,8 @@ Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 <li>Open a command line window.</li>
 <li>Go to the firebird2 src\install\arch-specific\win32 directory.</li>
 <li>The batch to build the installer is<br>
-BuildExecutableInstall.bat [MSVC_VERSION] [DEBUG] [CS]<br>
-Where MSVC_VERSION can be 6 o 7, DEBUG means if the build is a debug one or not and CS means classic server installer.</li>
+BuildExecutableInstall.bat [DEBUG] [CS]<br>
+Where DEBUG means if the build is a debug one or not and CS means classic server installer.</li>
 
 </blockquote>
 </BODY>
