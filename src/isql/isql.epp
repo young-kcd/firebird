@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.32 2003-07-06 08:14:44 dimitr Exp $
+  $Id: isql.epp,v 1.32.2.1 2003-08-28 08:21:59 dimitr Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -5731,7 +5731,7 @@ static SSHORT print_item( TEXT ** s, XSQLVAR * var, SLONG printlength)
 				TEXT *buff2 = (TEXT*) ISQL_ALLOC(2 * var->sqllen + 1);
 				/* Convert the string to hex digits */
 				for (i = 0; i < var->sqllen; i++) {
-					sprintf(&buff2[i * 2], "%02X", string[i]);
+					sprintf(&buff2[i * 2], "%02X", (UCHAR) string[i]);
 				}
 				buff2[(2 * var->sqllen + 1) - 1] = 0;
 				if (List) {
