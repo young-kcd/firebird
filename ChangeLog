@@ -1,3 +1,31 @@
+2002-12-09 02:46  nmcc
+
+	* firebird2/src/install/arch-specific/linux/:
+	classic/makeInstallImage.sh.in, classic/preinstall.sh.in,
+	classic/preuninstall.sh.in, super/preinstall.sh.in:
+	
+	Changed gds_lock_mgr to fb_lock_mgr.
+
+2002-12-09 02:43  nmcc
+
+	* firebird2/builds/posix/Makefile.in.firebird:
+	
+	add clean_config and clean_makefiles targets.
+
+2002-12-09 02:38  nmcc
+
+	* firebird2/builds/posix/: Makefile.in.embed.lockmgr,
+	Makefile.in.refDatabases, make.defaults:
+	
+	Change gds_lock_mgr to fb_lock_mgr as code now defaults to this.
+
+2002-12-09 02:28  nmcc
+
+	* firebird2/src/lock/lock.cpp:
+	
+	Improve error message to report the lock manager that was actually
+	tried.
+
 2002-12-07 14:50  kkuznetsov
 
 	* firebird2/builds/posix/: make.defaults, prefix.solx86:
