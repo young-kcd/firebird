@@ -1,3 +1,9 @@
+2005-02-10 11:25  kkuznetsov
+
+	* firebird2/src/gpre/gpre.h (1.33.2.1):
+	
+	Fix refences to FTN_fini in grpre_boot if configured with fortran
+
 2005-02-10 00:25  skidder
 
 	* firebird2/src/jrd/pag.cpp (1.37.2.8):
