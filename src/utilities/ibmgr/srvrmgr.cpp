@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: srvrmgr.cpp,v 1.1 2003-07-15 02:39:53 brodsom Exp $
+ * $Id: srvrmgr.cpp,v 1.2 2003-08-10 00:41:14 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -71,7 +71,9 @@ static BOOLEAN detach_service(IBMGR_DATA *);
 static BOOLEAN print_pool(IBMGR_DATA *);
 static BOOLEAN start_shutdown(IBMGR_DATA *);
 static BOOLEAN start_server(IBMGR_DATA *);
+#ifdef NOT_USED_OR_REPLACED
 static BOOLEAN server_is_ok(IBMGR_DATA *);
+#endif
 static BOOLEAN server_is_up(IBMGR_DATA *);
 
 void SRVRMGR_cleanup( IBMGR_DATA * data)
@@ -173,9 +175,15 @@ USHORT SRVRMGR_exec_line(IBMGR_DATA * data)
 
 	default:
 #ifdef DEV_BUILD
+#ifdef __LINE__IS_INT
+		ib_fprintf(OUTFILE,
+				   "ASSERT: file %s line %d: unknown operation %d\n",
+				   __FILE__, __LINE__, data->operation);
+#else
 		ib_fprintf(OUTFILE,
 				   "ASSERT: file %s line %ld: unknown operation %d\n",
 				   __FILE__, __LINE__, data->operation);
+#endif
 #endif
 		;
 	}
@@ -548,6 +556,7 @@ static BOOLEAN start_server( IBMGR_DATA * data)
 }
 
 
+#ifdef NOT_USED_OR_REPLACED
 static BOOLEAN server_is_ok( IBMGR_DATA * data)
 {
 /**************************************
@@ -591,7 +600,7 @@ static BOOLEAN server_is_ok( IBMGR_DATA * data)
 	}
 	return TRUE;
 }
-
+#endif
 
 static BOOLEAN server_is_up( IBMGR_DATA * data)
 {

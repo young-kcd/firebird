@@ -23,7 +23,7 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
- * $Id: ibmgr.cpp,v 1.1 2003-07-15 02:39:53 brodsom Exp $
+ * $Id: ibmgr.cpp,v 1.2 2003-08-10 00:41:14 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -411,9 +411,15 @@ static SSHORT get_switches(
 
 			default:
 #ifdef DEV_BUILD
+#ifdef __LINE__IS_INT
+				ib_fprintf(OUTFILE,
+						   "ASSERT: file %s line %d: last_sw = %d\n",
+						   __FILE__, __LINE__, last_sw);
+#else
 				ib_fprintf(OUTFILE,
 						   "ASSERT: file %s line %ld: last_sw = %d\n",
 						   __FILE__, __LINE__, last_sw);
+#endif
 #endif
 				;
 			}
@@ -681,8 +687,13 @@ static SSHORT get_switches(
 
 			default:
 #ifdef DEV_BUILD
+#ifdef __LINE__IS_INT
+				ib_fprintf(OUTFILE, "ASSERT: file %s line %d: in_sw = %d\n",
+						   __FILE__, __LINE__, in_sw);
+#else
 				ib_fprintf(OUTFILE, "ASSERT: file %s line %ld: in_sw = %d\n",
 						   __FILE__, __LINE__, in_sw);
+#endif
 #endif
 				;
 			}
@@ -709,9 +720,15 @@ static SSHORT get_switches(
 
 #ifdef DEV_BUILD
 	if (!ibmgr_data->operation)
+#ifdef __LINE__IS_INT
+		ib_fprintf(OUTFILE,
+				   "ASSERT: file %s line %d: no operation has been specified\n",
+				   __FILE__, __LINE__);
+#else
 		ib_fprintf(OUTFILE,
 				   "ASSERT: file %s line %ld: no operation has been specified\n",
 				   __FILE__, __LINE__);
+#endif
 #endif
 
 	return FB_SUCCESS;
