@@ -733,7 +733,7 @@ bool NAV_get_record(thread_db* tdbb,
 
 		if ((rsb->rsb_arg[RSB_NAV_inversion] &&
 			 (!impure->irsb_nav_bitmap
-			  || !RecordBitmap::test(impure->irsb_nav_bitmap, number.getValue())))
+			  || !RecordBitmap::test(*impure->irsb_nav_bitmap, number.getValue())))
 			|| RecordBitmap::test(impure->irsb_nav_records_visited, number.getValue())
 			|| ((rsb->rsb_flags & rsb_project)
 				&& !(impure->irsb_flags & irsb_key_changed))) 

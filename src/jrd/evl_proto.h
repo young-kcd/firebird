@@ -28,7 +28,7 @@
 
 // Implemented in evl.cpp
 dsc*		EVL_assign_to(Jrd::thread_db* tdbb, Jrd::jrd_nod*);
-Jrd::RecordBitmap*	EVL_bitmap(Jrd::thread_db* tdbb, Jrd::jrd_nod*);
+Jrd::RecordBitmap**	EVL_bitmap(Jrd::thread_db* tdbb, Jrd::jrd_nod*);
 bool		EVL_boolean(Jrd::thread_db* tdbb, Jrd::jrd_nod*);
 dsc*		EVL_expr(Jrd::thread_db* tdbb, Jrd::jrd_nod*);
 bool		EVL_field(Jrd::jrd_rel*, Jrd::Record*, USHORT, dsc*);

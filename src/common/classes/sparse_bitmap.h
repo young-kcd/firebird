@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: sparse_bitmap.h,v 1.7 2004-10-27 09:27:22 aafemt Exp $
+ *  $Id: sparse_bitmap.h,v 1.8 2004-10-28 23:23:46 skidder Exp $
  *
  */
 
@@ -195,11 +195,11 @@ public:
 
  	// Compute the union of two bitmaps. 
 	// Note: this method uses one of the bitmaps to return result
-	static SparseBitmap* bit_or(SparseBitmap* s1, SparseBitmap* s2);
+	static SparseBitmap** bit_or(SparseBitmap** bitmap1, SparseBitmap** bitmap2);
 
  	// Compute the intersection of two bitmaps.
 	// Note: this method uses one of the bitmaps to return result
-	static SparseBitmap* bit_and(SparseBitmap* s1, SparseBitmap* s2);
+	static SparseBitmap** bit_and(SparseBitmap** bitmap1, SparseBitmap** bitmap2);
 
 protected:
 	// Internal types and constants
@@ -546,59 +546,62 @@ private:
 };
 
 template <typename T, typename InternalTypes>
-SparseBitmap<T, InternalTypes>* 
+SparseBitmap<T, InternalTypes>**
 SparseBitmap<T, InternalTypes>::bit_or(
-	SparseBitmap<T, InternalTypes>* dest, 
-	SparseBitmap<T, InternalTypes>* source
+	SparseBitmap<T, InternalTypes>** bitmap1, 
+	SparseBitmap<T, InternalTypes>** bitmap2
 ) 
-{
+{	
+	SparseBitmap *map1, *map2;
+
 	// Handle the case when one or the other of the bitmaps is NULL
-	if (!dest) {
-		return source;
+	if (!bitmap1 || !(map1 = *bitmap1)) {
+		return bitmap2;
 	}
 
-	if (!source) {
-		return dest;
+	if (!bitmap2 || !(map2 = *bitmap2)) {
+		return bitmap1;
 	}
 
-	// Make sure target differs from destination
-	fb_assert(dest != source);
+	// Make sure we work on 2 different bitmaps
+	fb_assert(map1 != map2);
 
 	// First bitmap is singular. Set appropriate bit in second and return it
-	if (dest->singular) {
-		source->set(dest->singular_value);
-		//delete dest;
-		return source;		
+	if (map1->singular) {
+		map2->set(map1->singular_value);
+		return bitmap2;
 	}
 
 	// Second bitmap is singular. Set appropriate bit in first and return it
-	if (source->singular) {
-		dest->set(source->singular_value);
-		//delete source;
-		return dest;		
+	if (map2->singular) {
+		map1->set(map2->singular_value);
+		return bitmap1;
 	}
 
+	SparseBitmap *source, *dest, **result;
+	
 	// If second bitmap seems larger then use it as a target
-	if (source->tree.seemsBiggerThan(dest->tree)) {
-		// Flip bitmaps
-		SparseBitmap* temp = dest;
-		dest = source;
-		source = temp;
+	if (map2->tree.seemsBiggerThan(map1->tree)) {
+		dest = map2;
+		source = map1;
+		result = bitmap2;
+	} else {
+		dest = map1;
+		source = map2;
+		result = bitmap1;
 	}
 
 	bool sourceFound = source->tree.getFirst();
 
 	// Source bitmap is empty. We have nothing to do thus return.
 	if (!sourceFound) {
-		//delete source;
-		return dest;
+		return result;
 	}
 
 	// Both source and destination are empty. Return destination FWIW.
 	bool destFound = dest->tree.getFirst();
 	if (!destFound) {
-		//delete source;
-		return dest;
+		return result;
 	}
 		
 	T destValue = dest->tree.current().start_value;
@@ -651,68 +654,66 @@ SparseBitmap<T, InternalTypes>::bit_or(
 		}
 	} 
 
-	//delete source;
-	return dest;
+	return result;
 }
 
 template <typename T, typename InternalTypes>
-SparseBitmap<T, InternalTypes>* 
+SparseBitmap<T, InternalTypes>** 
 SparseBitmap<T, InternalTypes>::bit_and(
-	SparseBitmap<T, InternalTypes>* dest, 
-	SparseBitmap<T, InternalTypes>* source
+	SparseBitmap<T, InternalTypes>** bitmap1, 
+	SparseBitmap<T, InternalTypes>** bitmap2
 ) 
 {
+	SparseBitmap *map1, *map2;
+
 	// Handle the case when one or the other of the bitmaps is NULL
-	if (!dest) {
-		//delete source;
+	if (!bitmap1 || !bitmap2 || !(map1 = *bitmap1) || !(map2 = *bitmap2)) {
 		return NULL;
 	}
 
-	if (!source) {
-		//delete dest;
-		return NULL;
-	}
-
-	// Make sure target differs from destination
-	fb_assert(dest != source);
+	// Make sure we work on 2 different bitmaps
+	fb_assert(map1 != map2);
 
 	// First bitmap is singular. Test appropriate bit in second and return first
-	if (dest->singular) {
-		if (!source->test(dest->singular_value))
-			dest->singular = false;
-		return dest;
+	if (map1->singular) {
+		if (map2->test(map1->singular_value))
+			return bitmap1;
+		else
+			return NULL;
 	}
 
 	// Second bitmap is singular. Test appropriate bit in first and return second
-	if (source->singular) {
-		if (!dest->test(source->singular_value))
-			source->singular = false;
-		return source;
+	if (map2->singular) {
+		if (map1->test(map2->singular_value))
+			return bitmap2;
+		else
+			return NULL;
 	}
 
+	SparseBitmap *source, *dest, **result;
+
 	// If second bitmap seems smaller then use it as a target
-	if (dest->tree.seemsBiggerThan(source->tree)) {
-		// Flip bitmaps
-		SparseBitmap* temp = dest;
-		dest = source;
-		source = temp;
+	if (map1->tree.seemsBiggerThan(map2->tree)) {
+		dest = map2;
+		source = map1;
+		result = bitmap2;
+	} else {
+		dest = map1;
+		source = map2;
+		result = bitmap1;
 	}
 
 	bool destFound = dest->tree.getFirst();
 
 	// Destination bitmap is empty. We have nothing to do thus return.
-	if (!destFound) {
-		//delete source;
-		return dest;
-	}
+	if (!destFound)
+		return result;
 		
 	bool sourceFound = source->tree.getFirst();
 
 	// Both source and destination are empty. Return destination FWIW.
-	if (!sourceFound) {
-		//delete source;
-		return dest;
-	}
+	if (!sourceFound)
+		return result;
 
 	T destValue = dest->tree.current().start_value;
 	T sourceValue = source->tree.current().start_value;
@@ -757,8 +758,7 @@ SparseBitmap<T, InternalTypes>::bit_and(
 		}
 	}
 
-	//delete source;
-	return dest;
+	return result;
 }
 
 } // namespace Firebird

@@ -183,7 +183,7 @@ struct irsb_index {
 	ULONG irsb_flags;
 	SLONG irsb_number;
 	SLONG irsb_prefetch_number;
-	RecordBitmap*	irsb_bitmap;
+	RecordBitmap**	irsb_bitmap;
 };
 
 typedef irsb_index *IRSB_INDEX;
@@ -244,7 +244,7 @@ struct irsb_nav {
 	SLONG irsb_nav_page;					// index page number
 	SLONG irsb_nav_incarnation;				// buffer/page incarnation counter
 	ULONG irsb_nav_count;					// record count of last record returned
-	RecordBitmap*	irsb_nav_bitmap;			// bitmap for inversion tree
+	RecordBitmap**	irsb_nav_bitmap;			// bitmap for inversion tree
 	RecordBitmap*	irsb_nav_records_visited;	// bitmap of records already retrieved
 	USHORT irsb_nav_offset;					// page offset of current index node
 	USHORT irsb_nav_lower_length;			// length of lower key value

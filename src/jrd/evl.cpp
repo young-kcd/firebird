@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.115 2004-10-27 13:27:30 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.116 2004-10-28 23:26:15 skidder Exp $ 
  */
 
 /*
@@ -303,7 +303,7 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 }
 
 
-RecordBitmap* EVL_bitmap(thread_db* tdbb, jrd_nod* node)
+RecordBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node)
 {
 /**************************************
  *
@@ -338,10 +338,10 @@ RecordBitmap* EVL_bitmap(thread_db* tdbb, jrd_nod* node)
 
 	case nod_bit_in:
 		{
-			RecordBitmap* inv_bitmap = EVL_bitmap(tdbb, node->nod_arg[0]);
+			RecordBitmap** inv_bitmap = EVL_bitmap(tdbb, node->nod_arg[0]);
 			BTR_evaluate(tdbb,
 						 reinterpret_cast<IndexRetrieval*>(node->nod_arg[1]->nod_arg[e_idx_retrieval]),
-						 &inv_bitmap);
+						 inv_bitmap);
 			return inv_bitmap;
 		}
 
@@ -358,7 +358,7 @@ RecordBitmap* EVL_bitmap(thread_db* tdbb, jrd_nod* node)
 			// NS: Why the heck we decrement record number here? I have no idea, but retain the algorithm for now.
 			rel_dbkey.decrement();
 			RBM_SET(tdbb->getDefaultPool(), &impure->inv_bitmap, rel_dbkey.getValue());
-			return impure->inv_bitmap;
+			return &impure->inv_bitmap;
 		}
 
 	case nod_index:
@@ -368,7 +368,7 @@ RecordBitmap* EVL_bitmap(thread_db* tdbb, jrd_nod* node)
 			BTR_evaluate(tdbb,
 						 reinterpret_cast<IndexRetrieval*>(node->nod_arg[e_idx_retrieval]),
 						 &impure->inv_bitmap);
-			return impure->inv_bitmap;
+			return &impure->inv_bitmap;
 		}
 
 	default:
