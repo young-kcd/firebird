@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.10 2005-03-15 11:46:11 alexpeshkoff Exp $
+#   $Id: makeInstallImage.sh.in,v 1.11 2005-03-20 10:59:49 alexpeshkoff Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -129,15 +129,12 @@ copyFiles() {
 
     # Copy examples only if we have them
 
-    exampleFiles=`find $BuiltFBDir/examples/v5 -type f -print`
+    exampleFiles=`find $BuiltFBDir/examples/README -type f -print`
     if [ -z "$exampleFiles" ]
       then
         echo "Example files have not been built!"
       else
-        for i in $exampleFiles
-          do
-             cp $i $DestDir/examples
-          done
+		(cd $BuiltFBDir/examples; tar cf - .) | (cd $DestDir/examples; tar xf -)
     fi
 
     copyIfExists $BuiltFBDir/help/help.gbak $DestDir/help 
