@@ -1,3 +1,72 @@
+2003-11-03 22:40  skidder
+
+	* firebird2/src/jrd/met.epp:
+	
+	Fix one more problem in my cyclic metadata dependency handling
+	code. Noted and fixed by Dmitry Emanov
+
+2003-11-03 22:33  skidder
+
+	* firebird2/src/jrd/met.epp:
+	
+	Fix one more problem in cyclic metadata dependency handling code
+
+2003-11-03 21:16  skidder
+
+	* firebird2/src/jrd/: intl.cpp, intl_builtin.cpp, intl_classes.h,
+	intl_proto.h:
+	
+	Make GCC content with recent changes
+
+2003-11-03 18:14  skidder
+
+	* firebird2/src/: common/classes/array.h, dsql/make.cpp,
+	dsql/movd.cpp, gpre/movg.cpp, include/fb_types.h, jrd/blk.h,
+	jrd/btr.h, jrd/constants.h, jrd/cvt.cpp, jrd/cvt2.cpp,
+	jrd/cvt2_proto.h, jrd/cvt_proto.h, jrd/dyn.h, jrd/evl.cpp,
+	jrd/evl_like.cpp, jrd/evl_proto.h, jrd/filters.cpp, jrd/intl.cpp,
+	jrd/intl_builtin.cpp, jrd/intl_classes.h, jrd/intl_proto.h,
+	jrd/intlobj.h, jrd/mov.cpp, jrd/opt.cpp, jrd/par.cpp, jrd/quad.cpp,
+	jrd/quad_proto.h, remote/interface.cpp:
+	
+	Basic INTL cleanup.  - Rework (mostly undo) John's changes - Some
+	function type safety - Make INTL OO layer very thin (this should
+	slightly improve performance)
+
+2003-11-03 17:21  dimitr
+
+	* firebird2/src/jrd/tra.cpp:
+	
+	Bugfix by Eugene Kilin.
+
+2003-11-03 03:05  brodsom
+
+	* firebird2/src/: include/firebird.h, common/classes/tree.h,
+	common/classes/alloc.cpp, common/classes/alloc.h:
+	
+	- Make MinGW build again after Nickolay patch (There is a multiple
+	definition of std::bad_alloc::~bad_alloc())
+
+2003-11-03 02:13  brodsom
+
+	* firebird2/src/jrd/common.h:
+	
+	- Finish removal of DLL_EXPORT macro
+
+2003-11-03 02:12  brodsom
+
+	* firebird2/src/burp/: backup.epp, burp.cpp, burp_proto.h,
+	misc.cpp, mvol.cpp, restore.epp:
+	
+	- Decrease SUPERSERVER ifdefs (join & use common error) - Remove
+	obsolete code - Fix warning in mvol.cpp
+
+2003-11-03 01:37  brodsom
+
+	* firebird2/src/remote/server.cpp:
+	
+	Style
+
 2003-11-02 18:08  dimitr
 
 	* firebird2/src/jrd/: cmp.cpp, cmp_proto.h:
