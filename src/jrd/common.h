@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.115 2004-05-07 06:36:34 eku Exp $
+$Id: common.h,v 1.116 2004-05-18 23:38:37 brodsom Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -95,12 +95,12 @@ $Id: common.h,v 1.115 2004-05-07 06:36:34 eku Exp $
 #define QUADCONST(n) (n##LL)
 
 // SLONG is a 32-bit integer on 64-bit platforms
-/*#if SIZEOF_LONG == 4
-#define SLONGFORMAT "ld"
-#define ULONGFORMAT "lu"
-#define XLONGFORMAT "lX"
-#define xLONGFORMAT "lx"
-#endif*/
+//#if SIZEOF_LONG == 4
+//#define SLONGFORMAT "ld"
+//#define ULONGFORMAT "lu"
+//#define XLONGFORMAT "lX"
+//#define xLONGFORMAT "lx"
+//#endif
 
 
 //format for __LINE__
@@ -212,8 +212,8 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 #define QUADFORMAT "ll"
 #define QUADCONST(n) (n##LL)
 
-/*#define ALIGNMENT	4*/
-/*#define DOUBLE_ALIGN	8*/
+//#define ALIGNMENT	4
+//#define DOUBLE_ALIGN	8
 
 #ifdef SUPERSERVER
 #define SET_TCP_NO_DELAY
@@ -242,10 +242,10 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 //format for __LINE__
 #define LINEFORMAT "d"
 
-/*#define SLONGFORMAT "ld"
-#define ULONGFORMAT "lu"
-#define XLONGFORMAT "lX"
-#define xLONGFORMAT "lx"*/
+//#define SLONGFORMAT "ld"
+//#define ULONGFORMAT "lu"
+//#define XLONGFORMAT "lX"
+//#define xLONGFORMAT "lx"
 
 #define O_BINARY 0
 #endif /* SINIXZ */
@@ -254,21 +254,21 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 * Darwin Platforms 
 *****************************************************/
 #ifdef DARWIN
-/* EKU: obsolete, replaced by _FILE_OFFSET_BITS
-#ifndef UNIX_64_BIT_IO
-#define UNIX_64_BIT_IO
-#endif
-*/
+// EKU: obsolete, replaced by _FILE_OFFSET_BITS
+//#ifndef UNIX_64_BIT_IO
+//#define UNIX_64_BIT_IO
+//#endif
+//
 //format for __LINE__
 #define LINEFORMAT "d"
 
-/*#define SLONGFORMAT	"ld"
-#define ULONGFORMAT "lu"
-#define XLONGFORMAT "lX"
-#define xLONGFORMAT "lx"*/
+//#define SLONGFORMAT	"ld"
+//#define ULONGFORMAT "lu"
+//#define XLONGFORMAT "lX"
+//#define xLONGFORMAT "lx"
 
-/*#define ALIGNMENT       4*/
-/*#define DOUBLE_ALIGN    4*/
+//#define ALIGNMENT       4
+//#define DOUBLE_ALIGN    4
 #define BSD_UNIX
 #define UNIX
 #define IMPLEMENTATION  63
@@ -291,14 +291,14 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 *****************************************************/
 #ifdef FREEBSD
 
-/* EKU: obsolete, replaced by _FILE_OFFSET_BITS
-#ifndef UNIX_64_BIT_IO
-#define UNIX_64_BIT_IO
-#endif
-*/
+// EKU: obsolete, replaced by _FILE_OFFSET_BITS
+//#ifndef UNIX_64_BIT_IO
+//#define UNIX_64_BIT_IO
+//#endif
+//
 
-/*#define ALIGNMENT     4*/
-/*#define DOUBLE_ALIGN  4*/
+//#define ALIGNMENT     4
+//#define DOUBLE_ALIGN  4
 
 #define UNIX
 #define IEEE
@@ -323,8 +323,8 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 #ifdef NETBSD
 
 #if defined(__i386__)
-/*#define ALIGNMENT     4*/
-/*#define DOUBLE_ALIGN  4*/
+//#define ALIGNMENT     4
+//#define DOUBLE_ALIGN  4
 
 #define IEEE
 #define I386
@@ -431,8 +431,8 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 #define IEEE
 
 #ifdef sparc
-/*#define ALIGNMENT       4*/
-/*#define DOUBLE_ALIGN    8*/
+//#define ALIGNMENT       4
+//#define DOUBLE_ALIGN    8
 #define IMPLEMENTATION  isc_info_db_impl_isc_sun4 /* 30 */
 #else /* sparc */
 
@@ -466,8 +466,8 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 #define UNIX
 #define CURSES_KEYPAD
 
-/*#define ALIGNMENT       8*/
-/*#define DOUBLE_ALIGN    8*/
+//#define ALIGNMENT       8
+//#define DOUBLE_ALIGN    8
 #define IMPLEMENTATION  isc_info_db_impl_isc_hp_ux /* 31 */
 
 #define IEEE
@@ -497,7 +497,7 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 *****************************************************/
 #ifdef VMS
 #define VAX_FLOAT
-/*#define ALIGNMENT       4*/
+//#define ALIGNMENT       4
 #define NO_NFS
 #define NO_CHECKSUM
 #define ISC_EXT_LIB_PATH_ENV	"interbase_ext_lib_path:"
@@ -532,7 +532,7 @@ typedef unsigned int64 UATOM;
 #define KILLER_SIGNALS
 #define UNIX
 #define CURSES_KEYPAD
-/*#define ALIGNMENT       4*/
+//*#define ALIGNMENT       4
 #define IMPLEMENTATION  isc_info_db_impl_isc_rt_aix /* 35 */
 #define IEEE
 #define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)
@@ -545,7 +545,7 @@ typedef unsigned int64 UATOM;
 #define KILLER_SIGNALS
 #define UNIX
 #define CURSES_KEYPAD
-/*#define ALIGNMENT       4*/
+//#define ALIGNMENT       4
 #define IMPLEMENTATION  isc_info_db_impl_isc_rt_aix /* 35 */
 #define IEEE
 #define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)
@@ -579,10 +579,10 @@ typedef unsigned int64 UATOM;
 
 #define SYS_ARG		isc_arg_win32
 #define SYS_ERR		isc_arg_win32
-/*#define SLONGFORMAT	"ld"
-#define ULONGFORMAT	"lu"
-#define XLONGFORMAT "lX"
-#define xLONGFORMAT "lx"*/
+//#define SLONGFORMAT	"ld"
+//#define ULONGFORMAT	"lu"
+//#define XLONGFORMAT "lX"
+//#define xLONGFORMAT "lx"
 
 //format for __LINE__
 #define LINEFORMAT "d"
@@ -657,19 +657,19 @@ typedef unsigned __int64 UINT64;
 #define UNIX
 #define SCO_UNIX
 #define IEEE
-/*
-#define KILLER_SIGNALS
-*/
+//
+//#define KILLER_SIGNALS
+//
 #define IMPLEMENTATION  isc_info_db_impl_sco_ev /* 59 */
 #define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)
 #define MOVE_FAST(from,to,length)    memcpy (to, from, (unsigned int) (length))
 #define MOVE_FASTER(from,to,length)  memcpy (to, from, (unsigned int) (length))
 #define MOVE_CLEAR(to,length)        memset (to, 0, (unsigned int) (length))
 
-/*  These functions are supported so we don't need the defines
-#define setreuid(ruid,euid)     setuid(euid)
-#define setregid(rgid,egid)     setgid(egid)
-*/
+//  These functions are supported so we don't need the defines
+//#define setreuid(ruid,euid)     setuid(euid)
+//#define setregid(rgid,egid)     setgid(egid)
+//
 
 #endif /* SCO_EV */
 
@@ -722,13 +722,13 @@ typedef unsigned __int64 UINT64;
 #ifdef I386
 /* Using internal alignment optimal for 386 processor and above
  */
-/*#define ALIGNMENT       4*/
-/*#define DOUBLE_ALIGN    8*/
+//#define ALIGNMENT       4
+//#define DOUBLE_ALIGN    8
 #endif
 #endif
 
 #ifndef ALIGNMENT
-/*#define ALIGNMENT       2*/
+//#define ALIGNMENT       2
 #error must define ALIGNMENT for your system
 #endif
 
@@ -740,7 +740,7 @@ typedef unsigned __int64 UINT64;
 #endif
 
 #ifndef DOUBLE_ALIGN
-/*#define DOUBLE_ALIGN    4*/
+//#define DOUBLE_ALIGN    4
 #error must define DOUBLE_ALIGN for your system
 #endif
 
