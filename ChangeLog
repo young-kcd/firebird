@@ -1,3 +1,113 @@
+2005-03-26 17:09  dimitr
+
+	* firebird2/src/: dsql/ddl.cpp (1.130), dsql/dsql.cpp (1.141),
+	dsql/dsql.h (1.72), dsql/dsql.tab.h (1.52), dsql/metd.epp (1.71),
+	dsql/metd_proto.h (1.22), dsql/node.h (1.55), dsql/parse.cpp
+	(1.146), dsql/parse.y (1.171), dsql/pass1.cpp (1.198),
+	jrd/dyn_del.epp (1.44):
+	
+	Implemented RECREATE EXCEPTION and CREATE OR ALTER EXCEPTION.
+
+2005-03-26 15:05  dimitr
+
+	* firebird2/src/dsql/pass1.cpp (1.197):
+	
+	More parameter checks in the PSQL case.
+
+2005-03-26 14:30  dimitr
+
+	* firebird2/src/dsql/: parse.y (1.170), pass1.cpp (1.196),
+	parse.cpp (1.145):
+	
+	Parser simplification and minor cleanup.
+
+2005-03-26 12:43  hvlad
+
+	* firebird2/src/jrd/vio.cpp (1.128):
+	
+	Attempt to fix bug "cannot find record fragment"
+
+2005-03-26 12:41  hvlad
+
+	* firebird2/src/jrd/tpc.cpp (1.21):
+	
+	Always report system transaction state as tra_commited - missing
+	part. Thanks to Oleg LOA
+
+2005-03-26 06:50  robocop
+
+	* firebird2/src/isql/isql.h (1.44):
+	
+	More WAL deletion.
+
+2005-03-26 06:40  robocop
+
+	* firebird2/src/qli/picstr.cpp (1.27):
+	
+	Little simplification.
+
+2005-03-26 06:39  robocop
+
+	* firebird2/src/jrd/gds.cpp (1.167):
+	
+	Use static_cast when converting from void*, not reinterpret_cast.
+
+2005-03-26 06:37  robocop
+
+	* firebird2/src/jrd/: ext.cpp (1.60), ext.h (1.11):
+	
+	Avoid some casts and unused data members.
+
+2005-03-26 06:33  robocop
+
+	* firebird2/src/isql/: extract.epp (1.53), isql.epp (1.134), isql.h
+	(1.43), isql_proto.h (1.20), show.epp (1.66):
+	
+	1.- Some small buffers with predefined lengths don't need to be
+	allocated dynamically.	2.- ISQL_get_index_segments shouldn't
+	overflow in extreme cases. Better print an indication that the
+	extraction wasn't completed (ellipsis).  3.- Fix bug with
+	EXTRACT_list table that was printing ); if it didn't find the
+	required table. This in turn caused bugs in other functions.  4.-
+	STDERROUT is used in all places with second argument set to true.
+	Simplify it.  5.- Delete the code previously commented for WAL. 
+	6.- Fix add_row and copy_table. These features were requested to be
+	made available in release mode at v1 time by Paul Beach. They
+	should now be able to cope with quoted identifiers, too.  7.-
+	Complement usage of readNextInputLine when called directly to avoid
+	reading garbage or causing memory errors.  8.- Fix several strings
+	that should have been declared with MAXPATHLEN since the first
+	moment.  9.- Misc bug fixes and B.O. closed.
+
+2005-03-26 06:05  robocop
+
+	* firebird2/src/msgs/: facilities.sql (1.13), history.sql (1.8),
+	messages.sql (1.20):
+	
+	Fixed one msg for isql and added others to support add_row (ADD
+	command).
+
+2005-03-26 06:02  robocop
+
+	* firebird2/src/remote/inet_server.cpp (1.51):
+	
+	Simplify B.O. protection.
+
+2005-03-26 06:01  robocop
+
+	* firebird2/src/extlib/fbudf/: fbudf.cpp (1.21), fbudf.h (1.8),
+	fbudf.sql (1.8):
+	
+	Solve bug with AddMonth when facing January.  Include little
+	IsLeapYear function.
+
+2005-03-26 03:36  asfernandes
+
+	* firebird2/builds/posix/Makefile.in.extern.icu (1.1):
+	
+	file Makefile.in.extern.icu was initially added on branch
+	B2_0_intl.
+
 2005-03-25 09:05  dimitr
 
 	* firebird2/src/jrd/opt.cpp (1.232):
