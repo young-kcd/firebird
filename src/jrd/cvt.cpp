@@ -2412,7 +2412,6 @@ static void string_to_datetime(
 	USHORT position_day = 2;
 	bool have_english_month = false;
 	bool dot_separator_seen = false;
-	tm times, times2;
 	TEXT buffer[100];			/* arbitrarily large */
 
 	const char* string;
@@ -2572,6 +2571,7 @@ static void string_to_datetime(
 		return;
 	}
 
+	tm times, times2;
 	memset(&times, 0, sizeof(times));
 
 	if (expect_type != expect_sql_time) {
