@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.16 2003-02-28 05:22:09 aafemt Exp $
+#   $Id: make.defaults,v 1.17 2003-03-05 15:49:07 brodsom Exp $
 # 
 
 
@@ -92,8 +92,7 @@ YACC=			@YACC@
 
 ARCH_EXT=		.a
 EXEC_EXT=		@EXEEXT@
-#      FSG 1.Dez.2000
-#SHRLIB_EXT=             .so
+SHRLIB_EXT=@SHRLIB_EXT@
 
 
 #_____________________________________________________________________________
@@ -117,18 +116,18 @@ LIBGDS_A = $(LIB)/libgds.a
 # Shared library names for client side of fbserver (or super) version
 # used to link all the utilities to enable them to connect over the wire
 # to the fbserver. MOD 28-July-2002
-LIBFBCLIENT_SO = $(LIB)/libfbclient.so.1.0.0
-LIBFBCLIENT_SOBASENAME=$(LIB)/libfbclient.so.1
-LIBFBCLIENT_SONAME=$(LIB)/libfbclient.so
+LIBFBCLIENT_SO = $(LIB)/libfbclient.$(SHRLIB_EXT).1.0.0
+LIBFBCLIENT_SOBASENAME=$(LIB)/libfbclient.$(SHRLIB_EXT).1
+LIBFBCLIENT_SONAME=$(LIB)/libfbclient.$(SHRLIB_EXT)
 
 
 # intl will load dynamically, and having the whole soname set with version
-# confuses the dynamic load process.  So we only have the .so file
+# confuses the dynamic load process.  So we only have the .$(SHRLIB_EXT) file
 # MOD 28-July-2002
 
-LIBFBINTL_SO = $(FIREBIRD)/intl/libfbintl.so
-#LIBFBINTL_SOBASENAME=$(FIREBIRD)/intl/libfbintl.so.1
-#LIBFBINTL_SONAME=$(FIREBIRD)/intl/libfbintl.so
+LIBFBINTL_SO = $(FIREBIRD)/intl/libfbintl.$(SHRLIB_EXT)
+#LIBFBINTL_SOBASENAME=$(FIREBIRD)/intl/libfbintl.$(SHRLIB_EXT).1
+#LIBFBINTL_SONAME=$(FIREBIRD)/intl/libfbintl.$(SHRLIB_EXT)
 
 LIBFBCOMMON_A = $(LIB)/libfbcommon.a
 LIBFBSTATIC_A = $(LIB)/libfbstatic.a
@@ -142,7 +141,7 @@ ifdef UseSharedLibraries
 #    LINK_LIBS := -L$(LIB) -lgdssuper  $(LINK_LIBS)
 #    LINK_LIBS := -L$(LIB) -lgds $(LINK_LIBS)
 
-#    LIBGDS_LINK_OPTIONS = -soname libgds.so -rpath /usr/lib 
+#    LIBGDS_LINK_OPTIONS = -soname libgds.$(SHRLIB_EXT) -rpath /usr/lib 
     LIBGDS_LINK_OPTIONS = $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)$(SharedLibrarySoName) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib 
     LINK_OPTS:= $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/intl  
 #    LIBGDS_LINK_OPTIONS = -Wl,-soname,$(SharedLibrarySoName) -Wl,-rpath,/usr/lib 
@@ -167,7 +166,10 @@ GDS_RELAY       = $(BIN)/gds_relay$(EXEC_EXT)
 GDS_INSTALL     = $(BIN)/gds_install$(EXEC_EXT)
 GDS_INSTALL     = $(BIN)/gds_install_service$(EXEC_EXT)
 FBGUARD         = $(BIN)/fbguard$(EXEC_EXT)
+IBGUARD         = $(BIN)/ibguard$(EXEC_EXT)
 FBMGR_BIN       = $(BIN)/fbmgr.bin$(EXEC_EXT)
+INSTREG         = $(BIN)/instreg$(EXEC_EXT)
+INSTSVC         = $(BIN)/instsvc$(EXEC_EXT)
 ISC_GDB         = $(FIREBIRD)/security.fdb
 ISC_GBAK        = $(BIN)/security.gbak
 
