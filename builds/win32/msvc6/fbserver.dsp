@@ -120,13 +120,5 @@ SOURCE=..\..\..\src\remote\os\win32\server.ico
 SOURCE=..\..\..\src\remote\os\win32\window.rc
 # End Source File
 # End Group
-# Begin Source File
-
-SOURCE=..\..\..\src\dsql\gen.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\dsql\utld.cpp
-# End Source File
 # End Target
 # End Project
