@@ -22,12 +22,12 @@
  */
 
 #ifdef NOHOSTNAME
-#define LOCK_FILE	"/usr/interbase/isc_lock.gbl"
-#define EVENT_FILE	"/usr/interbase/isc_event.gbl"
+#define LOCK_FILE	ISC_PREFIX "/isc_lock.gbl"
+#define EVENT_FILE	ISC_PREFIX "/isc_event.gbl"
 #else
 #ifdef SMALL_FILE_NAMES
-#define LOCK_FILE	"/usr/interbase/isclm.%s"
-#define EVENT_FILE	"/usr/interbase/iscev.%s"
+#define LOCK_FILE	ISC_PREFIX "/isclm.%s"
+#define EVENT_FILE	ISC_PREFIX "/iscev.%s"
 #endif
 #endif
 
@@ -40,7 +40,7 @@
 #endif
 
 #ifndef EVENT_FILE
-#define EVENT_FILE		"/usr/interbase/isc_event.gbl.%s"
+#define EVENT_FILE		ISC_PREFIX "/isc_event.gbl.%s"
 #endif
 
 #define EVENT_DEFAULT_SIZE	32768
@@ -49,11 +49,11 @@
 #define EVENT_SEMAPHORES	1
 
 #ifndef LOCK_FILE
-#define LOCK_FILE	"/usr/interbase/gds.lock.%s"
+#define LOCK_FILE	ISC_PREFIX "/gds.lock.%s"
 #endif
 
 #ifndef LOCK_HEADER
-#define LOCK_HEADER	"/usr/interbase/lock_header"
+#define LOCK_HEADER	ISC_PREFIX "/lock_header"
 #endif
 
 #ifdef sun
@@ -79,7 +79,7 @@
 #ifdef CSV
 /* Central server definitions taken from source/csv/csi.h */
 
-#define CSI_FILE                "/usr/interbase/isc_csv.%s"
+#define CSI_FILE                ISC_PREFIX "/isc_csv.%s"
 #define CSI_DEFAULT_SIZE        262144
 #define MAX_PROCESSES           16
 #endif

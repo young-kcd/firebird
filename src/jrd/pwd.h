@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: pwd.h,v 1.4 2002-07-06 05:31:56 skywalker Exp $
+$Id: pwd.h,v 1.5 2002-09-30 06:00:21 eku Exp $
 */
 
 #ifndef _JRD_PWD_H_
@@ -67,7 +67,7 @@ $Id: pwd.h,v 1.4 2002-07-06 05:31:56 skywalker Exp $
 #ifdef SUPERSERVER
 #define USER_INFO_NAME   "isc4.gdb"
 #else
-#define USER_INFO_NAME   "/usr/interbase/isc4.gdb"
+#define USER_INFO_NAME   ISC_PREFIX "/isc4.gdb"
 #endif /* SUPERSERVER */
 #endif /* USER_INFO_NAME */
 
