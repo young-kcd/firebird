@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.60 2004-03-14 13:39:46 alexpeshkoff Exp $
+ * $Id: rse.cpp,v 1.61 2004-03-18 05:55:25 robocop Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -108,21 +108,21 @@ static bool fetch_left(thread_db*, Rsb*, IRSB, RSE_GET_MODE);
 static bool fetch_left(thread_db*, Rsb*, IRSB);
 #endif
 static UCHAR *get_merge_data(thread_db*, MFB, SLONG);
-static bool get_procedure(thread_db*, Rsb*, IRSB_PROCEDURE, RPB *);
+static bool get_procedure(thread_db*, Rsb*, IRSB_PROCEDURE, record_param*);
 static BOOLEAN get_record(thread_db*, Rsb*, Rsb*, RSE_GET_MODE);
 static bool get_union(thread_db*, Rsb*, IRSB);
 static void join_to_nulls(thread_db*, Rsb*, USHORT);
-static void map_sort_data(jrd_req*, SMB, UCHAR *);
+static void map_sort_data(jrd_req*, SortMap*, UCHAR *);
 static void open_merge(thread_db*, Rsb*, IRSB_MRG);
 static void open_procedure(thread_db*, Rsb*, IRSB_PROCEDURE);
 static void open_sort(thread_db*, Rsb*, IRSB_SORT, UINT64);
-static void proc_assignment(const dsc*, const dsc*, UCHAR*, dsc*, SSHORT, REC);
+static void proc_assignment(const dsc*, const dsc*, UCHAR*, dsc*, SSHORT, Record*);
 static void pop_rpbs(jrd_req*, Rsb*);
 static void push_rpbs(thread_db*, jrd_req*, Rsb*);
 static ULONG read_merge_block(thread_db*, MFB, ULONG);
 static bool reject(const UCHAR*, const UCHAR*, void*);
-static void restore_record(RPB *);
-static void save_record(thread_db*, RPB *);
+static void restore_record(record_param*);
+static void save_record(thread_db*, record_param*);
 static void write_merge_block(thread_db*, MFB, ULONG);
 
 #ifdef SMALL_FILE_NAMES
@@ -161,7 +161,7 @@ void RSE_close(thread_db* tdbb, Rsb* rsb)
 		case rsb_sequential:
 			{
 				jrd_req* request = tdbb->tdbb_request;
-				RPB* rpb = &request->req_rpb[rsb->rsb_stream];
+				record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 				if (rpb->rpb_window.win_flags & WIN_large_scan &&
 					rpb->rpb_relation->rel_scan_count)
 						--rpb->rpb_relation->rel_scan_count;
@@ -242,10 +242,6 @@ bool RSE_find_dbkey(thread_db* tdbb, Rsb* rsb, jrd_nod* find_key, jrd_nod* recor
  *	check for a record version also.
  *
  **************************************/
-	RPB *rpb;
-	ULONG dbkey[2], version_number;
-	IRSB_INDEX impure;
-	SBM *bitmap;
 
 	SET_TDBB(tdbb);
 	jrd_req* request = tdbb->tdbb_request;
@@ -253,6 +249,8 @@ bool RSE_find_dbkey(thread_db* tdbb, Rsb* rsb, jrd_nod* find_key, jrd_nod* recor
 /* get the record number from the passed dbkey */
 
 	const dsc* desc = EVL_expr(tdbb, find_key);
+
+	ULONG dbkey[2];
 	dsc desc2;
 	desc2.dsc_address = (UCHAR *) dbkey;
 	desc2.dsc_length = sizeof(dbkey);
@@ -266,6 +264,7 @@ bool RSE_find_dbkey(thread_db* tdbb, Rsb* rsb, jrd_nod* find_key, jrd_nod* recor
 /* now get the record version to use in comparing
    against the tid of the record */
 
+	ULONG version_number;
 	if (record_version) {
 		desc = EVL_expr(tdbb, record_version);
 
@@ -278,6 +277,10 @@ bool RSE_find_dbkey(thread_db* tdbb, Rsb* rsb, jrd_nod* find_key, jrd_nod* recor
 
 		MOV_move(desc, &desc2);
 	}
+
+	record_param* rpb;
+	IRSB_INDEX impure;
+	SparseBitmap** bitmap;
 
 	switch (rsb->rsb_type) {
 	case rsb_boolean:
@@ -303,7 +306,7 @@ bool RSE_find_dbkey(thread_db* tdbb, Rsb* rsb, jrd_nod* find_key, jrd_nod* recor
 		{
 			return false;
 		}
-		if (record_version && version_number != rpb->rpb_transaction)
+		if (record_version && version_number != rpb->rpb_transaction_nr)
 			return false;
 
 		/* next, set the stream position to that of the fetched record */
@@ -321,7 +324,7 @@ bool RSE_find_dbkey(thread_db* tdbb, Rsb* rsb, jrd_nod* find_key, jrd_nod* recor
 		RSE_MARK_CRACK(tdbb, rsb, 0);
 		if (VIO_get
 			(tdbb, rpb, rsb, request->req_transaction, request->req_pool)
-			&& (!record_version || version_number == rpb->rpb_transaction))
+			&& (!record_version || version_number == rpb->rpb_transaction_nr))
 		{
 			return true;
 		}
@@ -338,7 +341,7 @@ bool RSE_find_dbkey(thread_db* tdbb, Rsb* rsb, jrd_nod* find_key, jrd_nod* recor
 			SBM_next(*bitmap, &rpb->rpb_number, RSE_get_current) &&
 			VIO_get(tdbb, rpb, rsb, request->req_transaction,
 					request->req_pool) &&
-			(!record_version || version_number == rpb->rpb_transaction))
+			(!record_version || version_number == rpb->rpb_transaction_nr))
 		{
 				return true;
 		}
@@ -457,12 +460,12 @@ BOOLEAN RSE_get_record(thread_db* tdbb, Rsb* rsb, RSE_GET_MODE mode)
 			else
 				test_rsb = rsb;
 
-			RPB* org_rpb = request->req_rpb + test_rsb->rsb_stream;
+			record_param* org_rpb = request->req_rpb + test_rsb->rsb_stream;
 			jrd_rel* relation = org_rpb->rpb_relation;
 			
 			if (relation && !relation->rel_view_rse && !relation->rel_file) 
 			{
-				RLCK_reserve_relation(tdbb, transaction, relation, TRUE, TRUE);
+				RLCK_reserve_relation(tdbb, transaction, relation, true, true);
 				
 				// Fetch next record if current was deleted before being locked
 				if (!VIO_writelock(tdbb, org_rpb, rsb, transaction)) {
@@ -522,7 +525,7 @@ BKM RSE_get_bookmark(thread_db* tdbb, Rsb* rsb)
 	case rsb_indexed:
 	case rsb_sequential:
 		{
-			RPB* rpb = request->req_rpb + rsb->rsb_stream;
+			record_param* rpb = request->req_rpb + rsb->rsb_stream;
 			bkm* bookmark = BKM_allocate(rsb, (USHORT) 0);
 			bookmark->bkm_number = rpb->rpb_number;
 			bookmark->bkm_key_desc.dsc_dtype = dtype_long;
@@ -573,7 +576,7 @@ void RSE_mark_crack(thread_db* tdbb, Rsb* rsb, USHORT flags)
    that no one erroneously tries to retrieve it */
 
 	if (flags) {
-		RPB* rpb = &request->req_rpb[rsb->rsb_stream];
+		record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 		if (rpb->rpb_record) {
 			delete rpb->rpb_record;
 			rpb->rpb_record = NULL;
@@ -611,7 +614,7 @@ void RSE_open(thread_db* tdbb, Rsb* rsb)
 		impure->irsb_flags |= irsb_first | irsb_open;
 		impure->irsb_flags &=
 			~(irsb_singular_processed | irsb_checking_singular);
-		RPB* rpb = &request->req_rpb[rsb->rsb_stream];
+		record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 		rpb->rpb_window.win_flags = 0;
 
 		switch (rsb->rsb_type) {
@@ -629,13 +632,13 @@ void RSE_open(thread_db* tdbb, Rsb* rsb)
 #endif
 			if (rsb->rsb_type == rsb_sequential) {
 				Database* dbb = tdbb->tdbb_database;
-				BCB bcb = dbb->dbb_bcb;
+				BufferControl* bcb = dbb->dbb_bcb;
 
 				/* Unless this is the only attachment, limit the cache flushing
 				   effect of large sequential scans on the page working sets of
 				   other attachments. */
 
-				ATT attachment = tdbb->tdbb_attachment;
+				Attachment* attachment = tdbb->tdbb_attachment;
 				if (attachment &&
 					(attachment != dbb->dbb_attachments
 					 || attachment->att_next))
@@ -661,7 +664,7 @@ void RSE_open(thread_db* tdbb, Rsb* rsb)
 			}
 
 			RLCK_reserve_relation(tdbb, request->req_transaction,
-								  rpb->rpb_relation, FALSE, TRUE);
+								  rpb->rpb_relation, false, true);
 
 			rpb->rpb_number = -1;
 			return;
@@ -777,7 +780,7 @@ void RSE_open(thread_db* tdbb, Rsb* rsb)
 
 
 #ifdef PC_ENGINE
-bool RSE_reset_position(thread_db* tdbb, Rsb* rsb, RPB* new_rpb)
+bool RSE_reset_position(thread_db* tdbb, Rsb* rsb, record_param* new_rpb)
 {
 /**************************************
  *
@@ -790,9 +793,9 @@ bool RSE_reset_position(thread_db* tdbb, Rsb* rsb, RPB* new_rpb)
  *	the position indicated by the passed record.
  *
  **************************************/
-	RPB *rpb;
+	record_param* rpb;
 	IRSB_INDEX impure;
-	SBM *bitmap;
+	SparseBitmap** bitmap;
 
 	SET_TDBB(tdbb);
 	jrd_req* request = tdbb->tdbb_request;
@@ -851,7 +854,7 @@ bool RSE_reset_position(thread_db* tdbb, Rsb* rsb, RPB* new_rpb)
 
 
 #ifdef PC_ENGINE
-bool RSE_set_bookmark(thread_db* tdbb, Rsb* rsb, RPB* rpb, BKM bookmark)
+bool RSE_set_bookmark(thread_db* tdbb, Rsb* rsb, record_param* rpb, BKM bookmark)
 {
 /**************************************
  *
@@ -1539,7 +1542,7 @@ static bool get_merge_fetch(
 	current record in the record parameter block */
 
 	MFB mfb = &tail->irsb_mrg_file;
-	map_sort_data(tdbb->tdbb_request, (SMB) sub_rsb->rsb_arg[0],
+	map_sort_data(tdbb->tdbb_request, (SortMap*) sub_rsb->rsb_arg[0],
 			  get_merge_data(tdbb, mfb, record));
 
 	return true;
@@ -1578,7 +1581,7 @@ static bool get_merge_fetch(thread_db* tdbb, Rsb* rsb, SSHORT stream)
 	tail->irsb_mrg_equal_current = record;
 
 	MFB mfb = &tail->irsb_mrg_file;
-	map_sort_data(tdbb->tdbb_request, (SMB) sub_rsb->rsb_arg[0],
+	map_sort_data(tdbb->tdbb_request, (SortMap*) sub_rsb->rsb_arg[0],
 				  get_merge_data(tdbb, mfb, record));
 
 	return true;
@@ -1635,7 +1638,7 @@ static bool get_merge_join(
 		 ptr += 2, tail++)
 	{
 		Rsb* sort_rsb = *ptr;
-		SMB map = (SMB) sort_rsb->rsb_arg[0];
+		SortMap* map = (SortMap*) sort_rsb->rsb_arg[0];
 		MFB mfb = &tail->irsb_mrg_file;
 
 		/* reset equality group record positions */
@@ -1713,7 +1716,7 @@ static bool get_merge_join(
 						get_merge_record(tdbb, sort_rsb, tail, mode);
 					if (record < 0)
 						return false;
-					map_sort_data(request, (SMB) sort_rsb->rsb_arg[0],
+					map_sort_data(request, (SortMap*) sort_rsb->rsb_arg[0],
 								  get_merge_data(tdbb, mfb, record));
 				}
 			}
@@ -1731,7 +1734,7 @@ static bool get_merge_join(
 		ULONG key[32];
 
 		Rsb* sort_rsb = *ptr;
-		SMB map = (SMB) sort_rsb->rsb_arg[0];
+		SortMap* map = (SortMap*) sort_rsb->rsb_arg[0];
 		MFB mfb = &tail->irsb_mrg_file;
 		const ULONG key_length = map->smb_key_length * sizeof(ULONG);
 		UCHAR* first_data;
@@ -1840,7 +1843,7 @@ static bool get_merge_join(thread_db* tdbb, Rsb* rsb, IRSB_MRG impure)
 		 ptr += 2, tail++)
 	{
 		Rsb* sort_rsb = *ptr;
-		SMB map = (SMB) sort_rsb->rsb_arg[0];
+		SortMap* map = (SortMap*) sort_rsb->rsb_arg[0];
 		MFB mfb = &tail->irsb_mrg_file;
 
 		/* reset equality group record positions */
@@ -1905,7 +1908,7 @@ static bool get_merge_join(thread_db* tdbb, Rsb* rsb, IRSB_MRG impure)
 					const SLONG record = get_merge_record(tdbb, sort_rsb, tail);
 					if (record < 0)
 						return false;
-					map_sort_data(request, (SMB) sort_rsb->rsb_arg[0],
+					map_sort_data(request, (SortMap*) sort_rsb->rsb_arg[0],
 								  get_merge_data(tdbb, mfb, record));
 				}
 			}
@@ -1922,7 +1925,7 @@ static bool get_merge_join(thread_db* tdbb, Rsb* rsb, IRSB_MRG impure)
 		ULONG key[64];
 
 		Rsb* sort_rsb = *ptr;
-		SMB map = (SMB) sort_rsb->rsb_arg[0];
+		SortMap* map = (SortMap*) sort_rsb->rsb_arg[0];
 		MFB mfb = &tail->irsb_mrg_file;
 		const ULONG key_length = map->smb_key_length * sizeof(ULONG);
 		UCHAR* first_data;
@@ -2030,7 +2033,7 @@ static SLONG get_merge_record(
 	if (!sort_data)
 		return -1;
 
-	SMB map = (SMB) rsb->rsb_arg[0];
+	SortMap* map = (SortMap*) rsb->rsb_arg[0];
 	MFB mfb = &impure->irsb_mrg_file;
 	const SLONG record = mfb->mfb_equal_records;
 
@@ -2061,7 +2064,7 @@ static SLONG get_merge_record(
 static bool get_procedure(thread_db*			tdbb,
 							 Rsb*				rsb,
 							 IRSB_PROCEDURE		impure,
-							 RPB*				rpb)
+							 record_param*		rpb)
 {
 /**************************************
  *
@@ -2093,10 +2096,10 @@ static bool get_procedure(thread_db*			tdbb,
 						   ALIGNMENT);
 	USHORT oml = impure->irsb_message->str_length - ALIGNMENT;
 
-	REC record;
+	Record* record;
 	if (!rpb->rpb_record) {
 		record = rpb->rpb_record =
-			FB_NEW_RPT(*tdbb->tdbb_default, rec_format->fmt_length) rec();
+			FB_NEW_RPT(*tdbb->tdbb_default, rec_format->fmt_length) Record();
 		record->rec_format = rec_format;
 		record->rec_length = rec_format->fmt_length;
 	}
@@ -2179,7 +2182,7 @@ static BOOLEAN get_record(thread_db*	tdbb,
 		return FALSE;
 	}
 
-	RPB* rpb = request->req_rpb + rsb->rsb_stream;
+	record_param* rpb = request->req_rpb + rsb->rsb_stream;
 
 #ifdef SCROLLABLE_CURSORS
 /* do bof and eof handling for streams which may be navigated */
@@ -2237,7 +2240,7 @@ static BOOLEAN get_record(thread_db*	tdbb,
 		{
 			bool result = false;
 
-			SBM* bitmap = ((IRSB_INDEX) impure)->irsb_bitmap;
+			SparseBitmap** bitmap = ((IRSB_INDEX) impure)->irsb_bitmap;
 			if (bitmap)
 			{
 				while (SBM_next(*bitmap, &rpb->rpb_number, mode))
@@ -2660,7 +2663,7 @@ static BOOLEAN get_record(thread_db*	tdbb,
 				return FALSE;
 			}
 
-			map_sort_data(request, (SMB) rsb->rsb_arg[0], data);
+			map_sort_data(request, (SortMap*) rsb->rsb_arg[0], data);
 
 #ifdef SCROLLABLE_CURSORS
 			/* fix up the sort data in case we need to retrieve it again */
@@ -2861,12 +2864,12 @@ static void join_to_nulls(thread_db* tdbb, Rsb* rsb, USHORT streams)
 	jrd_req* request = tdbb->tdbb_request;
 	lls* stack = (LLS) rsb->rsb_arg[streams];
 	for (; stack; stack = stack->lls_next) {
-		RPB* rpb = &request->req_rpb[(USHORT)(IPTR) stack->lls_object];
+		record_param* rpb = &request->req_rpb[(USHORT)(IPTR) stack->lls_object];
 
 		/* Make sure a record block has been allocated.  If there isn't
 		   one, first find the format, then allocate the record block */
 
-		REC record = rpb->rpb_record;
+		Record* record = rpb->rpb_record;
 		if (!record) {
 			const fmt* format = rpb->rpb_relation->rel_current_format;
 			if (!format) {
@@ -2883,7 +2886,7 @@ static void join_to_nulls(thread_db* tdbb, Rsb* rsb, USHORT streams)
 }
 
 
-static void map_sort_data(jrd_req* request, SMB map, UCHAR * data)
+static void map_sort_data(jrd_req* request, SortMap* map, UCHAR * data)
 {
 /**************************************
  *
@@ -2923,17 +2926,17 @@ static void map_sort_data(jrd_req* request, SMB map, UCHAR * data)
 			continue;
 		}
 
-		RPB* rpb = &request->req_rpb[item->smb_stream];
+		record_param* rpb = &request->req_rpb[item->smb_stream];
 		const SSHORT id = item->smb_field_id;
 		if (id < 0) {
 			if (id == SMB_TRANS_ID)
-				rpb->rpb_transaction = *(SLONG *) (from.dsc_address);
+				rpb->rpb_transaction_nr = *(SLONG *) (from.dsc_address);
 			else
 				rpb->rpb_number = *(SLONG *) (from.dsc_address);
 			rpb->rpb_stream_flags |= RPB_s_refetch;
 			continue;
 		}
-		REC record = rpb->rpb_record;
+		Record* record = rpb->rpb_record;
 
         if (record && !flag && !record->rec_format && record->rec_fmt_bk) {
             record->rec_format = record->rec_fmt_bk; // restore the format
@@ -2979,7 +2982,7 @@ static void open_merge(thread_db* tdbb, Rsb* rsb, IRSB_MRG impure)
 		RSE_open(tdbb, *ptr);
 
 		Rsb* sort_rsb = *ptr;
-		smb* map = (SMB) sort_rsb->rsb_arg[0];
+		SortMap* map = (SortMap*) sort_rsb->rsb_arg[0];
 
 		/* Reset equality group record positions */
 
@@ -3022,7 +3025,7 @@ static void open_procedure(thread_db* tdbb, Rsb* rsb, IRSB_PROCEDURE impure)
 
 /* get rid of any lingering record */
 
-	RPB* rpb = request->req_rpb + rsb->rsb_stream;
+	record_param* rpb = request->req_rpb + rsb->rsb_stream;
 	if (rpb->rpb_record) {
 		delete rpb->rpb_record;
 		rpb->rpb_record = NULL;
@@ -3083,7 +3086,7 @@ static void open_sort(thread_db* tdbb, Rsb* rsb, IRSB_SORT impure, UINT64 max_re
 	jrd_req* request = tdbb->tdbb_request;
 
 	RSE_open(tdbb, rsb->rsb_next);
-	SMB map = (SMB) rsb->rsb_arg[0];
+	SortMap* map = (SortMap*) rsb->rsb_arg[0];
 	ULONG records = 0;
 
 	// Get rid of the old sort areas if this request has been used already
@@ -3147,10 +3150,10 @@ static void open_sort(thread_db* tdbb, Rsb* rsb, IRSB_SORT impure, UINT64 max_re
 			}
 			else {
 				from = &temp;
-				RPB* rpb = &request->req_rpb[item->smb_stream];
+				record_param* rpb = &request->req_rpb[item->smb_stream];
 				if (item->smb_field_id < 0) {
 					if (item->smb_field_id == SMB_TRANS_ID)
-						*(SLONG *) (to.dsc_address) = rpb->rpb_transaction;
+						*(SLONG *) (to.dsc_address) = rpb->rpb_transaction_nr;
 					else
 						*(SLONG *) (to.dsc_address) = rpb->rpb_number;
 					continue;
@@ -3199,7 +3202,7 @@ static void open_sort(thread_db* tdbb, Rsb* rsb, IRSB_SORT impure, UINT64 max_re
 		if (item->smb_stream == stream)
 			continue;
 		stream = item->smb_stream;
-		RPB* rpb = &request->req_rpb[stream];
+		record_param* rpb = &request->req_rpb[stream];
 		if (rpb->rpb_relation)
 			VIO_record(tdbb, rpb, MET_current(tdbb, rpb->rpb_relation),
 					   tdbb->tdbb_default);
@@ -3211,7 +3214,7 @@ static void proc_assignment(
 							const dsc* from_desc,
 							const dsc* flag_desc,
 							UCHAR* msg, // this param is logically const
-							dsc* to_desc, SSHORT to_id, REC record)
+							dsc* to_desc, SSHORT to_id, Record* record)
 {
 /**************************************
  *
@@ -3324,7 +3327,7 @@ static void pop_rpbs(jrd_req* request, Rsb* rsb)
 	case rsb_union:
 	case rsb_aggregate:
 		{
-			RPB* rpb = request->req_rpb + rsb->rsb_stream;
+			record_param* rpb = request->req_rpb + rsb->rsb_stream;
 			restore_record(rpb);
 			break;
 		}
@@ -3333,7 +3336,7 @@ static void pop_rpbs(jrd_req* request, Rsb* rsb)
 		{
 			streams.grow(request->req_count);
 			memset(streams.begin(), 0, request->req_count * sizeof(UCHAR));
-			const smb* map = (smb*) rsb->rsb_arg[0];
+			const SortMap* map = (SortMap*) rsb->rsb_arg[0];
 			const smb_repeat* const end_item = map->smb_rpt + map->smb_count;
 			for (const smb_repeat* item = map->smb_rpt; item < end_item; item++)
 			{
@@ -3343,7 +3346,7 @@ static void pop_rpbs(jrd_req* request, Rsb* rsb)
 			{
 				if (streams[i])
 				{
-					RPB* rpb = request->req_rpb + i;
+					record_param* rpb = request->req_rpb + i;
 					restore_record(rpb);
 				}
 			}
@@ -3359,7 +3362,7 @@ static void pop_rpbs(jrd_req* request, Rsb* rsb)
 			for (const Rsb* const* ptr = rsb->rsb_arg; ptr < end; ptr += 2)
 			{
 				const Rsb* sort_rsb = *ptr;
-				const smb* map = (smb*) sort_rsb->rsb_arg[0];
+				const SortMap* map = (SortMap*) sort_rsb->rsb_arg[0];
 				const smb_repeat* const end_item = map->smb_rpt + map->smb_count;
 				for (const smb_repeat* item = map->smb_rpt; item < end_item; item += 2)
 				{
@@ -3370,7 +3373,7 @@ static void pop_rpbs(jrd_req* request, Rsb* rsb)
 			{
 				if (streams[i])
 				{
-					RPB* rpb = request->req_rpb + i;
+					record_param* rpb = request->req_rpb + i;
 					restore_record(rpb);
 				}
 			}
@@ -3437,7 +3440,7 @@ static void push_rpbs(thread_db* tdbb, jrd_req* request, Rsb* rsb)
 	case rsb_union:
 	case rsb_aggregate:
 		{
-			RPB* rpb = request->req_rpb + rsb->rsb_stream;
+			record_param* rpb = request->req_rpb + rsb->rsb_stream;
 			save_record(tdbb, rpb);
 			break;
 		}
@@ -3446,7 +3449,7 @@ static void push_rpbs(thread_db* tdbb, jrd_req* request, Rsb* rsb)
 		{
 			streams.grow(request->req_count);
 			memset(streams.begin(), 0, request->req_count * sizeof(UCHAR));
-			const smb* map = (smb*) rsb->rsb_arg[0];
+			const SortMap* map = (SortMap*) rsb->rsb_arg[0];
 			const smb_repeat* const end_item = map->smb_rpt + map->smb_count;
 			for (const smb_repeat* item = map->smb_rpt; item < end_item; item++)
 			{
@@ -3456,7 +3459,7 @@ static void push_rpbs(thread_db* tdbb, jrd_req* request, Rsb* rsb)
 			{
 				if (streams[i])
 				{
-					RPB* rpb = request->req_rpb + i;
+					record_param* rpb = request->req_rpb + i;
 					save_record(tdbb, rpb);
 				}
 			}
@@ -3472,7 +3475,7 @@ static void push_rpbs(thread_db* tdbb, jrd_req* request, Rsb* rsb)
 			for (const Rsb* const* ptr = rsb->rsb_arg; ptr < end; ptr += 2)
 			{
 				const Rsb* sort_rsb = *ptr;
-				const smb* map = (smb*) sort_rsb->rsb_arg[0];
+				const SortMap* map = (SortMap*) sort_rsb->rsb_arg[0];
 				const smb_repeat* const end_item = map->smb_rpt + map->smb_count;
 				for (const smb_repeat* item = map->smb_rpt; item < end_item; item++)
 				{
@@ -3483,7 +3486,7 @@ static void push_rpbs(thread_db* tdbb, jrd_req* request, Rsb* rsb)
 			{
 				if (streams[i])
 				{
-					RPB* rpb = request->req_rpb + i;
+					record_param* rpb = request->req_rpb + i;
 					save_record(tdbb, rpb);
 				}
 			}
@@ -3565,7 +3568,7 @@ static bool reject(const UCHAR* record_a, const UCHAR* record_b, void* user_arg)
 }
 
 
-static void restore_record(RPB * rpb)
+static void restore_record(record_param* rpb)
 {
 /**************************************
  *
@@ -3577,10 +3580,10 @@ static void restore_record(RPB * rpb)
  *	Restore record to prior state
  *
  **************************************/
-	REC rec_copy;
+	Record* rec_copy;
 	SRPB rpb_copy = rpb->rpb_copy;
 	if (rpb_copy && (rec_copy = rpb_copy->srpb_rpb->rpb_record)) {
-		REC record = rpb->rpb_record;
+		Record* record = rpb->rpb_record;
 		const USHORT size = rec_copy->rec_length;
 		if (!record || size > record->rec_length)
 			/* msg 284 cannot restore singleton select data */
@@ -3589,7 +3592,7 @@ static void restore_record(RPB * rpb)
 		record->rec_number = rec_copy->rec_number;
 		MOVE_FAST(rec_copy->rec_data, record->rec_data, size);
 
-		MOVE_FAST(rpb_copy->srpb_rpb, rpb, sizeof(struct rpb));
+		MOVE_FAST(rpb_copy->srpb_rpb, rpb, sizeof(record_param));
 		rpb->rpb_record = record;
 
 		delete rec_copy;
@@ -3663,7 +3666,7 @@ static void resynch_merge(
 #endif
 
 
-static void save_record(thread_db* tdbb, RPB * rpb)
+static void save_record(thread_db* tdbb, record_param* rpb)
 {
 /**************************************
  *
@@ -3677,20 +3680,20 @@ static void save_record(thread_db* tdbb, RPB * rpb)
  **************************************/
 	SET_TDBB(tdbb);
 
-	REC record = rpb->rpb_record;
+	Record* record = rpb->rpb_record;
 	if (record) {
 		const SLONG size = record->rec_length;
 		SRPB rpb_copy = rpb->rpb_copy;
 		if (rpb_copy) {
-			REC rec_copy = rpb_copy->srpb_rpb->rpb_record;
+			Record* rec_copy = rpb_copy->srpb_rpb->rpb_record;
 			if (rec_copy)
 				delete rec_copy;
 		}
 		else
 			rpb->rpb_copy = rpb_copy = FB_NEW(*tdbb->tdbb_default) srpb(); 
 
-		MOVE_FAST(rpb, rpb_copy->srpb_rpb, sizeof(struct rpb));
-		REC rec_copy = FB_NEW_RPT(*tdbb->tdbb_default, size) rec();
+		MOVE_FAST(rpb, rpb_copy->srpb_rpb, sizeof(record_param));
+		Record* rec_copy = FB_NEW_RPT(*tdbb->tdbb_default, size) Record();
 		rpb_copy->srpb_rpb->rpb_record = rec_copy;
 
 		rec_copy->rec_length = size;

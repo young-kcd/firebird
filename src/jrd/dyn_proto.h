@@ -24,7 +24,7 @@
 #ifndef JRD_DYN_PROTO_H
 #define JRD_DYN_PROTO_H
 
-void	DYN_ddl(class att*, class jrd_tra*, USHORT, const UCHAR*);
+void	DYN_ddl(class Attachment*, class jrd_tra*, USHORT, const UCHAR*);
 
 #endif // JRD_DYN_PROTO_H
 

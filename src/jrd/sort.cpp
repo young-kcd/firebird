@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.56 2004-03-11 05:03:58 robocop Exp $
+ * $Id: sort.cpp,v 1.57 2004-03-18 05:55:25 robocop Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -137,7 +137,7 @@ static void error_memory(SCB);
 static ULONG find_file_space(SCB, ULONG, SFB *);
 static void free_file_space(SCB, SFB, ULONG, ULONG);
 static void init(SCB);
-static bool local_fini(SCB, ATT);
+static bool local_fini(SCB, Attachment*);
 static void merge_runs(SCB, USHORT);
 static void quick(SLONG, SORTP **, USHORT);
 static ULONG order(SCB);
@@ -547,7 +547,7 @@ void SORT_error(ISC_STATUS* status_vector,
 }
 
 
-void SORT_fini(SCB scb, ATT att)
+void SORT_fini(SCB scb, Attachment* att)
 {
 /**************************************
  *
@@ -708,7 +708,7 @@ SCB SORT_init(ISC_STATUS* status_vector,
 			  const sort_key_def* key_description,
 			  FPTR_REJECT_DUP_CALLBACK call_back,
 			  void* user_arg,
-			  ATT att,
+			  Attachment* att,
 			  UINT64 max_records)
 {
 /**************************************
@@ -964,7 +964,7 @@ ULONG SORT_read_block(
 }
 
 
-void SORT_shutdown(ATT att)
+void SORT_shutdown(Attachment* att)
 {
 /**************************************
  *
@@ -2154,7 +2154,7 @@ static void init(SCB scb)
 }
 
 
-static bool local_fini(SCB scb, ATT att)
+static bool local_fini(SCB scb, Attachment* att)
 {
 /**************************************
  *

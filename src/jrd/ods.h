@@ -152,7 +152,8 @@
 
 /* Basic page header */
 
-typedef struct pag {
+typedef struct pag
+{
 	SCHAR pag_type;
 	SCHAR pag_flags;
 	USHORT pag_checksum;
@@ -165,8 +166,9 @@ typedef struct pag {
 
 /* Blob page */
 
-struct blob_page {
-	pag blp_header;
+struct blob_page : public pag
+{
+	//pag blp_header;
 	SLONG blp_lead_page;		/* First page of blob (for redundancy only) */
 	SLONG blp_sequence;			/* Sequence within blob */
 	USHORT blp_length;			/* Bytes on page */
@@ -192,8 +194,9 @@ typedef struct btn
 #define BTN_SIZE	6
 
 // B-tree page ("bucket")
-struct btree_page {
-	pag btr_header;
+struct btree_page : public pag
+{
+	//pag btr_header;
 	SLONG btr_sibling;			// right sibling page
 	SLONG btr_left_sibling;		// left sibling page
 	SLONG btr_prefix_total;		// sum of all prefixes on page
@@ -246,8 +249,9 @@ struct IndexJumpInfo {
 
 /* Data Page */
 
-struct data_page {
-	pag dpg_header;
+struct data_page : public pag
+{
+	// pag dpg_header;
 	SLONG dpg_sequence;			/* Sequence number in relation */
 	USHORT dpg_relation;		/* Relation id */
 	USHORT dpg_count;			/* Number of record segments on page */
@@ -266,8 +270,9 @@ struct data_page {
 
 /* Index root page */
 
-struct index_root_page {
-	pag irt_header;
+struct index_root_page : public pag
+{
+	//pag irt_header;
 	USHORT irt_relation;		/* relation id (for consistency) */
 	USHORT irt_count;			/* Number of indices */
 	struct irt_repeat {
@@ -306,8 +311,9 @@ typedef struct irtd : public irtd_ods10 {
 
 /* Header page */
 
-struct header_page {
-	pag hdr_header;
+struct header_page : public pag
+{
+	//pag hdr_header;
 	USHORT hdr_page_size;		/* Page size of database */
 	USHORT hdr_ods_version;		/* Version of on-disk structure */
 	SLONG hdr_PAGES;			/* Page number of PAGES relation */
@@ -390,8 +396,9 @@ typedef struct sfd {
 
 /* Page Inventory Page */
 
-struct page_inv_page {
-	pag pip_header;
+struct page_inv_page : public pag
+{
+	//pag pip_header;
 	SLONG pip_min;				/* Lowest (possible) free page */
 	UCHAR pip_bits[1];
 };
@@ -399,8 +406,9 @@ struct page_inv_page {
 
 /* Pointer Page */
 
-struct pointer_page {
-	pag ppg_header;
+struct pointer_page : public pag
+{
+	//pag ppg_header;
 	SLONG ppg_sequence;			/* Sequence number in relation */
 	SLONG ppg_next;				/* Next pointer page in relation */
 	USHORT ppg_count;			/* Number of slots active */
@@ -416,8 +424,9 @@ struct pointer_page {
 
 /* Transaction Inventory Page */
 
-struct tx_inv_page {
-	pag tip_header;
+struct tx_inv_page : public pag
+{
+	//pag tip_header;
 	SLONG tip_next;				/* Next transaction inventory page */
 	UCHAR tip_transactions[1];
 };
@@ -425,8 +434,9 @@ struct tx_inv_page {
 
 /* Generator Page */
 
-struct generator_page {
-	pag gpg_header;
+struct generator_page : public pag
+{
+	//pag gpg_header;
 	SLONG gpg_sequence;			/* Sequence number */
 	SLONG gpg_waste1;			/* overhead carried for backward compatibility */
 	USHORT gpg_waste2;			/* overhead carried for backward compatibility */
@@ -494,12 +504,6 @@ typedef struct blh {
 #define rhd_damaged	128			/* object is known to be damaged */
 #define rhd_gc_active	256		/* garbage collecting dead record version */
 
-/* additions for write ahead log */
-
-#define CTRL_FILE_LEN		255	/* Pre allocated size of file name */
-#define CLUMP_ADD		0
-#define CLUMP_REPLACE		1
-#define CLUMP_REPLACE_ONLY	2
 
 /* Log page */
 
@@ -510,8 +514,9 @@ struct ctrl_pt {
 	SSHORT cp_fn_length;
 };
 
-struct log_info_page {
-	pag log_header;
+struct log_info_page : public pag
+{
+	//pag log_header;
 	SLONG log_flags;			/* flags, OBSOLETE      */
 	ctrl_pt log_cp_1;			/* control point 1      */
 	ctrl_pt log_cp_2;			/* control point 2      */
@@ -527,7 +532,9 @@ struct log_info_page {
 
 #define LIP_SIZE	OFFSETA (log_info_page*, log_data);
 
-#define CTRL_FILE_LEN		255	/* Pre allocated size of file name */
+/* additions for write ahead log, almost obsolete. */
+
+//#define CTRL_FILE_LEN		255	/* Pre allocated size of file name */
 #define CLUMP_ADD		0
 #define CLUMP_REPLACE		1
 #define CLUMP_REPLACE_ONLY	2
@@ -535,14 +542,14 @@ struct log_info_page {
 /* Log Clumplet types */
 
 #define LOG_end			HDR_end
-#define LOG_ctrl_file1		1	/* file name of 2nd last control pt */
-#define LOG_ctrl_file2		2	/* file name of last ctrl pt */
-#define LOG_logfile		3		/* Primary WAL file name */
-#define LOG_backup_info		4	/* Journal backup directory */
-#define LOG_chkpt_len		5	/* checkpoint length */
-#define LOG_num_bufs		6	/* Number of log buffers */
-#define LOG_bufsize		7		/* Buffer size */
-#define LOG_grp_cmt_wait	8	/* Group commit wait time */
+//#define LOG_ctrl_file1		1	/* file name of 2nd last control pt */
+//#define LOG_ctrl_file2		2	/* file name of last ctrl pt */
+//#define LOG_logfile		3		/* Primary WAL file name */
+//#define LOG_backup_info		4	/* Journal backup directory */
+//#define LOG_chkpt_len		5	/* checkpoint length */
+//#define LOG_num_bufs		6	/* Number of log buffers */
+//#define LOG_bufsize		7		/* Buffer size */
+//#define LOG_grp_cmt_wait	8	/* Group commit wait time */
 #define LOG_max			8		/* Maximum LOG_clump value */
 
 #endif // JRD_ODS_H

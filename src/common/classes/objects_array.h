@@ -25,8 +25,8 @@
  *  Contributor(s): ______________________________________.
  */
 
-#ifndef FB_LIST_H
-#define FB_LIST_H
+#ifndef CLASSES_OBJECTS_ARRAY_H
+#define CLASSES_OBJECTS_ARRAY_H
  
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
@@ -156,7 +156,8 @@ namespace Firebird
 		typename KeyOfValue = ObjectKeyValue<Value>, 
 		typename Cmp = DefaultComparator<Key> >
 	class SortedObjectsArray : public ObjectsArray<Value, 
-			SortedArray <Value*, Storage, Key, KeyOfValue, Cmp> > {
+			SortedArray <Value*, Storage, Key, KeyOfValue, Cmp> >
+	{
 	private:
 		typedef ObjectsArray <Value, SortedArray<Value*, 
 				Storage, Key, KeyOfValue, Cmp> > inherited;
@@ -170,4 +171,4 @@ namespace Firebird
 	};
 }
 
-#endif	// FB_LIST_H
+#endif	// CLASSES_OBJECTS_ARRAY_H

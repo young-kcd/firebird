@@ -38,7 +38,7 @@
 
 #define COMPILE_SIZE	256
 
-typedef struct sdl_arg {
+struct sdl_arg {
 	USHORT sdl_arg_mode;
 	ADS sdl_arg_desc;
 	const UCHAR* sdl_arg_sdl;
@@ -50,23 +50,26 @@ typedef struct sdl_arg {
 	IPTR sdl_arg_compiled[COMPILE_SIZE];
 	IPTR* sdl_arg_next;
 	IPTR* sdl_arg_end;
-} *SDL_ARG;
+};
 
 /* Structure to computes ranges */
 
-typedef struct rng {
+// Let's stop this insanity! The header rng.h defined rng for the purposes
+// of refresh range and emulation of file-based data formats like Pdx.
+// Therefore, I renamed this struct array_range.
+struct array_range {
 	SLONG rng_minima[64];
 	SLONG rng_maxima[64];
 	SDL_INFO rng_info;
-} *RNG;
+};
 
-static const UCHAR* compile(const UCHAR*, SDL_ARG);
+static const UCHAR* compile(const UCHAR*, sdl_arg*);
 static ISC_STATUS error(ISC_STATUS*, ...);
-static BOOLEAN execute(SDL_ARG);
-static const UCHAR* get_range(const UCHAR*, RNG, SLONG*, SLONG*);
+static bool execute(sdl_arg*);
+static const UCHAR* get_range(const UCHAR*, array_range*, SLONG*, SLONG*);
 static SSHORT get_word(const UCHAR*&);
 static const UCHAR* sdl_desc(const UCHAR*, DSC*);
-static IPTR* stuff(IPTR, SDL_ARG);
+static IPTR* stuff(IPTR, sdl_arg*);
 
 
 #define op_literal	1
@@ -170,10 +173,10 @@ ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS* status_vector,
  *	element descriptor.
  *
  **************************************/
-	TEXT *q;
+	TEXT* q;
 	USHORT n, offset;
 	SLONG min, max;
-	struct rng range;
+	array_range range;
 
 	const UCHAR* p = sdl;
 	info->sdl_info_fid = info->sdl_info_rid = 0;
@@ -333,7 +336,7 @@ int	SDL_walk(ISC_STATUS* status_vector,
  **************************************/
 	DSC junk;
 	USHORT n, offset;
-	struct sdl_arg arg;
+	sdl_arg arg;
 
 	arg.sdl_arg_mode = mode ? TRUE: FALSE;
 	arg.sdl_arg_array = array;
@@ -388,7 +391,7 @@ int	SDL_walk(ISC_STATUS* status_vector,
 }
 
 
-static const UCHAR* compile(const UCHAR* sdl, SDL_ARG arg)
+static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
 {
 /**************************************
  *
@@ -402,7 +405,7 @@ static const UCHAR* compile(const UCHAR* sdl, SDL_ARG arg)
  *
  **************************************/
 	SLONG n, count, variable, value, sdl_operator;
-	IPTR *label;
+	IPTR* label;
 	const UCHAR* expressions[16];
 	const UCHAR** expr;
 
@@ -606,7 +609,7 @@ static ISC_STATUS error(ISC_STATUS * status_vector, ...)
 }
 
 
-static BOOLEAN execute(SDL_ARG arg)
+static bool execute(sdl_arg* arg)
 {
 /**************************************
  *
@@ -618,23 +621,21 @@ static BOOLEAN execute(SDL_ARG arg)
  *	Execute compiled slice description language.
  *
  **************************************/
-	SLONG *variables, *variable, stack[64], *stack_ptr,
-		value, count, n, subscript, x;
-	IPTR *next;
-	ADS array_desc;
-	DSC element_desc;
-	ads::ads_repeat * range;
-	ads::ads_repeat * range_end;
-	DSC *slice_desc;
+	SLONG* variable;
+	SLONG stack[64];
+	SLONG value, count, subscript;
+	dsc element_desc;
+	const ads::ads_repeat* range;
 
-	array_desc = arg->sdl_arg_desc;
-	range_end = array_desc->ads_rpt + array_desc->ads_dimensions;
-	variables = arg->sdl_arg_variables;
-	next = arg->sdl_arg_compiled;
-	stack_ptr = stack + 64;
+	ADS array_desc = arg->sdl_arg_desc;
+	const ads::ads_repeat* const range_end = 
+		array_desc->ads_rpt + array_desc->ads_dimensions;
+	SLONG* variables = arg->sdl_arg_variables;
+	const IPTR* next = arg->sdl_arg_compiled;
+	SLONG* stack_ptr = stack + 64;
 
 	for (;;) {
-		x = *next++;
+		const SLONG x = *next++;
 		switch (x) {
 		case op_literal:
 			*--stack_ptr = *next++;
@@ -665,14 +666,14 @@ static BOOLEAN execute(SDL_ARG arg)
 			break;
 
 		case op_goto:
-			next = (IPTR *) * next;
+			next = (IPTR*) *next;
 			break;
 
 		case op_loop:
 			variable = variables + next[1];
 			*variable = *stack_ptr++;
 			if (*variable > stack_ptr[1]) {
-				next = (IPTR *) next[2];
+				next = (IPTR*) next[2];
 				stack_ptr += 2;
 			}
 			else
@@ -694,11 +695,12 @@ static BOOLEAN execute(SDL_ARG arg)
 			value = *next++;
 			next++;				/* Skip count, unsupported. */
 			for (range = array_desc->ads_rpt, subscript = 0;
-				 range < range_end; ++range) {
-				n = *stack_ptr++;
+				 range < range_end; ++range) 
+			{
+				const SLONG n = *stack_ptr++;
 				if (n < range->ads_lower || n > range->ads_upper) {
 					error(arg->sdl_arg_status_vector, isc_out_of_bounds, 0);
-					return FALSE;
+					return false;
 				}
 				subscript += (n - range->ads_lower) * range->ads_length;
 			}
@@ -729,14 +731,15 @@ static BOOLEAN execute(SDL_ARG arg)
 				/* Fetching FROM array */
 
 				if ((BLOB_PTR *) element_desc.dsc_address <
-					(BLOB_PTR *) arg->sdl_arg_argument->slice_high_water) {
+					(BLOB_PTR *) arg->sdl_arg_argument->slice_high_water) 
+				{
 
 					(*arg->sdl_arg_callback) (arg->sdl_arg_argument,
 										count,
 										&element_desc);
 				}
 				else {
-					slice_desc = &arg->sdl_arg_argument->slice_desc;
+					dsc* slice_desc = &arg->sdl_arg_argument->slice_desc;
 					slice_desc->dsc_address +=
 						arg->sdl_arg_argument->slice_element_length;
 				}
@@ -744,17 +747,18 @@ static BOOLEAN execute(SDL_ARG arg)
 			break;
 
 		case op_exit:
-			return TRUE;
+			return true;
 
 		default:
 			fb_assert_continue(FALSE);
-			return FALSE;
+			return false;
 		}
 	}
 }
 
 
-static const UCHAR* get_range(const UCHAR* sdl, RNG arg, SLONG* min, SLONG* max)
+static const UCHAR* get_range(const UCHAR* sdl, array_range* arg, 
+							  SLONG* min, SLONG* max)
 {
 /**************************************
  *
@@ -768,12 +772,12 @@ static const UCHAR* get_range(const UCHAR* sdl, RNG arg, SLONG* min, SLONG* max)
  *
  **************************************/
 	SLONG n, variable, value, min1, max1, min2, max2, junk1, junk2;
-	UCHAR op;
 	SDL_INFO info;
 
 	const UCHAR* p = sdl;
 
-	switch (op = *p++) {
+	const UCHAR op = *p++;
+	switch (op) {
 	case isc_sdl_do1:
 	case isc_sdl_do2:
 	case isc_sdl_do3:
@@ -848,10 +852,15 @@ static const UCHAR* get_range(const UCHAR* sdl, RNG arg, SLONG* min, SLONG* max)
 		info = arg->rng_info;
 		info->sdl_info_dimensions = *p++;
 		for (n = 0; n < info->sdl_info_dimensions; n++)
+		{
 			if (!
 				(p =
 				 get_range(p, arg, &info->sdl_info_lower[n],
-						   &info->sdl_info_upper[n]))) return NULL;
+						   &info->sdl_info_upper[n])))
+			{
+					return NULL;
+			}
+		}
 		return p;
 
 	case isc_sdl_element:
@@ -1022,7 +1031,7 @@ static const UCHAR* sdl_desc(const UCHAR* ptr, DSC* desc)
 }
 
 
-static IPTR* stuff(IPTR value, SDL_ARG arg)
+static IPTR* stuff(IPTR value, sdl_arg* arg)
 {
 /**************************************
  *
@@ -1036,7 +1045,7 @@ static IPTR* stuff(IPTR value, SDL_ARG arg)
  **************************************/
 
 	if (!arg)
-		return (IPTR *) TRUE;
+		return (IPTR*) TRUE;
 
 	if (arg->sdl_arg_next >= arg->sdl_arg_end)
 		error(arg->sdl_arg_status_vector, isc_virmemexh, isc_arg_end);

@@ -101,7 +101,7 @@ static void retain_context(thread_db*, jrd_tra*, const bool);
 static void compute_oldest_retaining(thread_db*, jrd_tra*, const bool);
 #endif
 #ifdef PC_ENGINE
-static void downgrade_lock(jrd_tra*);
+static int downgrade_lock(void*);
 #endif
 static void expand_view_lock(jrd_tra*, jrd_rel*, SCHAR);
 static tx_inv_page* fetch_inventory_page(thread_db*, WIN *, SLONG, USHORT);
@@ -114,7 +114,7 @@ static void THREAD_ROUTINE sweep_database(char*);
 #endif
 static void transaction_options(thread_db*, jrd_tra*, const UCHAR*, USHORT);
 #ifdef VMS
-static BOOLEAN vms_convert(lck*, SLONG *, SCHAR, BOOLEAN);
+static BOOLEAN vms_convert(Lock*, SLONG *, SCHAR, BOOLEAN);
 #endif
 
 static const UCHAR sweep_tpb[] =
@@ -169,13 +169,14 @@ bool TRA_active_transactions(thread_db* tdbb, Database* dbb)
 
 	const ULONG base = oldest & ~TRA_MASK;
 
-	jrd_tra* trans = FB_NEW_RPT(*dbb->dbb_permanent, (number - base + TRA_MASK) / 4) jrd_tra();
+	jrd_tra* trans =
+		FB_NEW_RPT(*dbb->dbb_permanent, (number - base + TRA_MASK) / 4) jrd_tra();
 
 /* Build transaction bitmap to scan for active transactions. */
 
 	TRA_get_inventory(tdbb, trans->tra_transactions, base, number);
 
-	lck temp_lock;
+	Lock temp_lock;
 	temp_lock.lck_dbb = dbb;
 	temp_lock.lck_object = trans;
 	temp_lock.lck_type = LCK_tra;
@@ -229,7 +230,7 @@ void TRA_cleanup(thread_db* tdbb)
 
 /* First, make damn sure there are no outstanding transactions */
 
-	for (att* attachment = dbb->dbb_attachments; attachment;
+	for (Attachment* attachment = dbb->dbb_attachments; attachment;
 		 attachment = attachment->att_next)
 	{
 		if (attachment->att_transactions)
@@ -308,7 +309,7 @@ void TRA_cleanup(thread_db* tdbb)
 		tip = (tx_inv_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_transactions);
 		CCH_MARK(tdbb, &window);
 		for (number = 0; number < trans_per_tip; number++) {
-			trans_offset = TRANS_OFFSET(number);
+			const SLONG trans_offset = TRANS_OFFSET(number);
 			UCHAR* byte = tip->tip_transactions + trans_offset;
 			const USHORT shift = TRANS_SHIFT(number);
 			*byte &= ~(TRA_MASK << shift);
@@ -409,7 +410,7 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
    there could be no lock if this transaction is being reconnected */
 
 	++transaction->tra_use_count;
-	lck* lock = transaction->tra_lock;
+	Lock* lock = transaction->tra_lock;
 	if (lock && (lock->lck_logical < LCK_write))
 		LCK_convert(tdbb, lock, LCK_write, TRUE);
 	--transaction->tra_use_count;
@@ -447,7 +448,7 @@ void TRA_extend_tip(thread_db* tdbb, ULONG sequence, WIN * precedence_window)
 /* Allocate and format new page */
 	WIN window(-1);
 	tx_inv_page* tip = (tx_inv_page*) DPM_allocate(tdbb, &window);
-	tip->tip_header.pag_type = pag_transactions;
+	tip->pag_type = pag_transactions;
 
 	CCH_must_write(&window);
 	CCH_RELEASE(tdbb, &window);
@@ -496,13 +497,13 @@ int TRA_fetch_state(thread_db* tdbb, SLONG number)
 	const SLONG trans_per_tip = dbb->dbb_pcontrol->pgc_tpt;
 	const ULONG tip_seq = tip_number / trans_per_tip;
 	WIN window(-1);
-	tx_inv_page* tip = fetch_inventory_page(tdbb, &window, tip_seq, LCK_read);
+	const tx_inv_page* tip = fetch_inventory_page(tdbb, &window, tip_seq, LCK_read);
 
 /* calculate the state of the desired transaction */
 
 	const ULONG byte = TRANS_OFFSET(tip_number % trans_per_tip);
 	const USHORT shift = TRANS_SHIFT(tip_number);
-	USHORT state = (tip->tip_transactions[byte] >> shift) & TRA_MASK;
+	const USHORT state = (tip->tip_transactions[byte] >> shift) & TRA_MASK;
 
 	CCH_RELEASE(tdbb, &window);
 
@@ -510,7 +511,7 @@ int TRA_fetch_state(thread_db* tdbb, SLONG number)
 }
 
 
-void TRA_get_inventory(thread_db* tdbb, UCHAR * bit_vector, ULONG base, ULONG top)
+void TRA_get_inventory(thread_db* tdbb, UCHAR* bit_vector, ULONG base, ULONG top)
 {
 /**************************************
  *
@@ -537,7 +538,8 @@ void TRA_get_inventory(thread_db* tdbb, UCHAR * bit_vector, ULONG base, ULONG to
 /* fetch the first inventory page */
 
 	WIN window(-1);
-	tx_inv_page* tip = fetch_inventory_page(tdbb, &window, (SLONG) sequence++, LCK_read);
+	const tx_inv_page* tip =
+		fetch_inventory_page(tdbb, &window, (SLONG) sequence++, LCK_read);
 
 /* move the first page into the bit vector */
 
@@ -699,7 +701,7 @@ void TRA_invalidate(Database* database, ULONG mask)
  *	modified a page that couldn't be written.
  *
  **************************************/
-	for (att* attachment = database->dbb_attachments; attachment;
+	for (Attachment* attachment = database->dbb_attachments; attachment;
 		 attachment = attachment->att_next)
 	{
 			 
@@ -729,7 +731,7 @@ void TRA_link_transaction(thread_db* tdbb, jrd_tra* transaction)
  **************************************/
 	SET_TDBB(tdbb);
 
-	att* attachment  = tdbb->tdbb_attachment;
+	Attachment* attachment  = tdbb->tdbb_attachment;
 	transaction->tra_attachment = attachment;
 	transaction->tra_next = attachment->att_transactions;
 	attachment->att_transactions = transaction;
@@ -1035,7 +1037,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 			 i++, lock++)
 		{
 			if (*lock)
-				LCK_release(tdbb, (lck*)*lock);
+				LCK_release(tdbb, (Lock*)*lock);
 		}
 	}
 
@@ -1100,17 +1102,22 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 
 /*  Find out if there is a transaction savepoint we can use to rollback our transaction */
 	bool tran_sav = false;
-	for (SAV temp = transaction->tra_save_point; temp; temp=temp->sav_next)
+	for (const Savepoint* temp = transaction->tra_save_point; temp;
+		temp = temp->sav_next)
+	{
 		if (temp->sav_flags & SAV_trans_level) {
 			tran_sav = true;
 			break;
 		}
+	}
 	
 /* Measure transaction savepoint size if there is one. We'll use it for undo
   only if it is small enough */
 	SLONG count = SAV_LARGE;
 	if (tran_sav) {
-		for (SAV temp = transaction->tra_save_point; temp; temp=temp->sav_next) {
+		for (const Savepoint* temp = transaction->tra_save_point; temp;
+			temp = temp->sav_next)
+		{
 		    count = VIO_savepoint_large(temp, count);
 			if (count < 0)
 				break;
@@ -1129,8 +1136,10 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 		// Free all savepoint data
 		// We can do it in reverse order because nothing except simple deallocation
 		// of memory is really done in VIO_verb_cleanup when we pass NULL as sav_next
-		while (transaction->tra_save_point && transaction->tra_save_point->sav_flags & SAV_user) {
-			SAV next=transaction->tra_save_point->sav_next;
+		while (transaction->tra_save_point &&
+			transaction->tra_save_point->sav_flags & SAV_user)
+		{
+			Savepoint* const next = transaction->tra_save_point->sav_next;
 			transaction->tra_save_point->sav_next = NULL;
 			VIO_verb_cleanup(tdbb, transaction);
 			transaction->tra_save_point = next;				
@@ -1247,7 +1256,7 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, SLONG number, SSHORT s
 
 #ifdef SUPERSERVER_V2
 	CCH_MARK(tdbb, &window);
-	ULONG generation = tip->tip_header.pag_generation;
+	const ULONG generation = tip->pag_generation;
 #else
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 #endif
@@ -1277,7 +1286,7 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, SLONG number, SSHORT s
 		THREAD_EXIT;
 		THREAD_ENTER;
 		tip = reinterpret_cast<tx_inv_page*>(CCH_FETCH(tdbb, &window, LCK_write, pag_transactions));
-		if (generation == tip->tip_header.pag_generation)
+		if (generation == tip->pag_generation)
 			CCH_MARK_MUST_WRITE(tdbb, &window);
 		CCH_RELEASE(tdbb, &window);
 	}
@@ -1286,7 +1295,7 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, SLONG number, SSHORT s
 }
 
 
-void TRA_shutdown_attachment(thread_db* tdbb, ATT attachment)
+void TRA_shutdown_attachment(thread_db* tdbb, Attachment* attachment)
 {
 /**************************************
  *
@@ -1310,7 +1319,7 @@ void TRA_shutdown_attachment(thread_db* tdbb, ATT attachment)
 			vec::iterator lock = vector->begin();
 			for (ULONG i = 0; i < vector->count(); i++, lock++) {
 				if (*lock)
-					LCK_release(tdbb, (lck*)*lock);
+					LCK_release(tdbb, (Lock*)*lock);
 			}
 		}
 
@@ -1324,7 +1333,7 @@ void TRA_shutdown_attachment(thread_db* tdbb, ATT attachment)
 }
 
 
-int TRA_snapshot_state(thread_db* tdbb, jrd_tra* trans, SLONG number)
+int TRA_snapshot_state(thread_db* tdbb, const jrd_tra* trans, SLONG number)
 {
 /**************************************
  *
@@ -1366,7 +1375,10 @@ int TRA_snapshot_state(thread_db* tdbb, jrd_tra* trans, SLONG number)
 		return TPC_snapshot_state(tdbb, number);
 
 	if (trans->tra_commit_sub_trans &&
-		SBM_test(trans->tra_commit_sub_trans, number)) return tra_committed;
+		SBM_test(trans->tra_commit_sub_trans, number))
+	{
+		return tra_committed;
+	}
 
 /* If the transaction is younger than we are, it must be considered
    active. */
@@ -1392,7 +1404,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
  **************************************/
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
-	att* attachment = tdbb->tdbb_attachment;
+	Attachment* attachment = tdbb->tdbb_attachment;
 	WIN window(-1);
 
 	if (dbb->dbb_ast_flags & DBB_shut_tran) {
@@ -1412,7 +1424,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
 	transaction_options(tdbb, temp, reinterpret_cast<const UCHAR*>(tpb),
 						tpb_length);
 
-	lck* lock = TRA_transaction_lock(tdbb, temp);
+	Lock* lock = TRA_transaction_lock(tdbb, temp);
 
 /* Read header page and allocate transaction number.  Since
    the transaction inventory page was initialized to zero, it
@@ -1525,7 +1537,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
    more complicated by the fact that existing transaction may have oldest
    actives older than they are. */
 
-	lck temp_lock;
+	Lock temp_lock;
 	temp_lock.lck_dbb = dbb;
 	temp_lock.lck_object = trans;
 	temp_lock.lck_type = LCK_tra;
@@ -1701,7 +1713,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
 }
 
 
-int TRA_state(UCHAR * bit_vector, ULONG oldest, ULONG number)
+int TRA_state(const UCHAR* bit_vector, ULONG oldest, ULONG number)
 {
 /**************************************
  *
@@ -1725,7 +1737,7 @@ int TRA_state(UCHAR * bit_vector, ULONG oldest, ULONG number)
 }
 
 
-int TRA_sweep(thread_db* tdbb, jrd_tra* trans)
+bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 {
 /**************************************
  *
@@ -1743,14 +1755,14 @@ int TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 
 /* No point trying to sweep a ReadOnly database */
 	if (dbb->dbb_flags & DBB_read_only)
-		return FALSE;
+		return false;
 
 	if (dbb->dbb_flags & DBB_sweep_in_progress)
-		return TRUE;
+		return true;
 
 /* fill out a lock block, zeroing it out first */
 
-	lck temp_lock;
+	Lock temp_lock;
 	temp_lock.lck_dbb = dbb;
 	temp_lock.lck_object = trans;
 	temp_lock.lck_type = LCK_sweep;
@@ -1762,7 +1774,7 @@ int TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 	if (!LCK_lock_non_blocking
 		(tdbb, &temp_lock, LCK_EX, (trans) ? FALSE : TRUE))
 	{
-		return TRUE;
+		return true;
 	}
 
 	dbb->dbb_flags |= DBB_sweep_in_progress;
@@ -1881,15 +1893,15 @@ int TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 			LCK_release(tdbb, &temp_lock);
 			dbb->dbb_flags &= ~DBB_sweep_in_progress;
 			tdbb->tdbb_flags &= ~TDBB_sweeper;
-			return FALSE;
+			return false;
 		}
 	}
 
-	return TRUE;
+	return true;
 }
 
 
-lck* TRA_transaction_lock(thread_db* tdbb, BLK object)
+Lock* TRA_transaction_lock(thread_db* tdbb, BLK object)
 {
 /**************************************
  *
@@ -1904,7 +1916,7 @@ lck* TRA_transaction_lock(thread_db* tdbb, BLK object)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	lck* lock = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(SLONG)) lck();
+	Lock* lock = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(SLONG)) Lock();
 	lock->lck_type = LCK_tra;
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 	lock->lck_length = sizeof(SLONG);
@@ -1944,7 +1956,7 @@ int TRA_wait(thread_db* tdbb, jrd_tra* trans, SLONG number, bool wait)
    we can't get the lock due to deadlock */
 
 	if (wait) {
-		lck temp_lock;
+		Lock temp_lock;
 		temp_lock.lck_dbb = dbb;
 		temp_lock.lck_type = LCK_tra;
 		temp_lock.lck_owner_handle =
@@ -1952,7 +1964,7 @@ int TRA_wait(thread_db* tdbb, jrd_tra* trans, SLONG number, bool wait)
 		temp_lock.lck_parent = dbb->dbb_lock;
 		temp_lock.lck_length = sizeof(SLONG);
 		temp_lock.lck_key.lck_long = number;
-		temp_lock.lck_owner = (BLK) trans;
+		temp_lock.lck_owner = trans;
 
 		const USHORT wait_flag = (trans->tra_flags & TRA_nowait) ? FALSE : TRUE;
 		if (!LCK_lock_non_blocking(tdbb, &temp_lock, LCK_read, wait_flag))
@@ -2123,15 +2135,15 @@ static void compute_oldest_retaining(
 
 /* Get a commit retaining lock, if not present. */
 
-	lck* lock = dbb->dbb_retaining_lock;
+	Lock* lock = dbb->dbb_retaining_lock;
 	if (!lock) {
-		lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) lck();
+		lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();
 		lock->lck_dbb = dbb;
 		lock->lck_type = LCK_retaining;
 		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 		lock->lck_parent = dbb->dbb_lock;
 		lock->lck_length = sizeof(SLONG);
-		lock->lck_object = dbb;
+		lock->lck_object = reinterpret_cast<blk*>(dbb);
 #ifdef VMS
 		if (LCK_lock(tdbb, lock, LCK_EX, FALSE)) {
 			number = 0;
@@ -2179,7 +2191,7 @@ static void compute_oldest_retaining(
 			return;
 
 		/* fill out a lock block, zeroing it out first */
-		struct lck temp_lock;
+		Lock temp_lock;
 		temp_lock.lck_dbb = dbb;
 		temp_lock.lck_type = LCK_tra;
 		temp_lock.lck_owner_handle =
@@ -2199,7 +2211,7 @@ static void compute_oldest_retaining(
 #endif
 
 #ifdef PC_ENGINE
-static void downgrade_lock(jrd_tra* transaction)
+static int downgrade_lock(void* transaction_void)
 {
 /**************************************
  *
@@ -2216,6 +2228,7 @@ static void downgrade_lock(jrd_tra* transaction)
  *
  **************************************/
 	ISC_ast_enter();
+	jrd_tra* transaction = static_cast<jrd_tra*>(transaction_void);
 
 /* Since this routine will be called asynchronously, we must establish
    a thread context. */
@@ -2235,7 +2248,7 @@ static void downgrade_lock(jrd_tra* transaction)
 		tdbb->tdbb_transaction = transaction;
 
 		++transaction->tra_use_count;
-		lck* lock = transaction->tra_lock;
+		Lock* lock = transaction->tra_lock;
 		if (lock && lock->lck_logical == LCK_write) {
 			lock->lck_ast = NULL;
 			LCK_convert(tdbb, lock, LCK_SW, TRUE);
@@ -2248,6 +2261,7 @@ static void downgrade_lock(jrd_tra* transaction)
 	RESTORE_THREAD_DATA;
 
 	ISC_ast_exit();
+	return 0;
 }
 #endif
 
@@ -2269,11 +2283,11 @@ static void expand_view_lock(jrd_tra* transaction, jrd_rel* relation, SCHAR lock
 
 	/* set up the lock on the relation/view */
 
-	lck* lock = RLCK_transaction_relation_lock(transaction, relation);
+	Lock* lock = RLCK_transaction_relation_lock(transaction, relation);
 
 	lock->lck_logical = lock_type;
 
-	vcx* ctx = relation->rel_view_contexts;
+	ViewContext* ctx = relation->rel_view_contexts;
 	if (!ctx) {
 		return;
 	}
@@ -2321,7 +2335,8 @@ static tx_inv_page* fetch_inventory_page(
 	SET_TDBB(tdbb);
 
 	window->win_page = inventory_page(tdbb, (int) sequence);
-	tx_inv_page* tip = (tx_inv_page*) CCH_FETCH(tdbb, window, lock_level, pag_transactions);
+	tx_inv_page* tip =
+		(tx_inv_page*) CCH_FETCH(tdbb, window, lock_level, pag_transactions);
 
 	TPC_update_cache(tdbb, tip, sequence);
 
@@ -2399,7 +2414,7 @@ static SSHORT limbo_transaction(thread_db* tdbb, SLONG id)
 	const SLONG number = id % trans_per_tip;
 
 	WIN window(-1);
-	tx_inv_page* tip = fetch_inventory_page(tdbb, &window, page, LCK_write);
+	const tx_inv_page* tip = fetch_inventory_page(tdbb, &window, page, LCK_write);
 
 	const SLONG trans_offset = TRANS_OFFSET(number);
 	const UCHAR* byte = tip->tip_transactions + trans_offset;
@@ -2499,12 +2514,11 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, const bool com
 	}
 #endif
 
-	lck* new_lock = 0;
-	lck* old_lock = transaction->tra_lock;
+	Lock* new_lock = 0;
+	Lock* old_lock = transaction->tra_lock;
 	if (old_lock) {
 		new_lock =
-			TRA_transaction_lock(tdbb,
-								 reinterpret_cast < blk * >(transaction));
+			TRA_transaction_lock(tdbb, transaction);
 		new_lock->lck_key.lck_long = new_number;
 		new_lock->lck_data = transaction->tra_lock->lck_data;
 
@@ -2578,7 +2592,7 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, const bool com
 	while (transaction->tra_save_point && 
 		transaction->tra_save_point->sav_flags & SAV_user) 
 	{
-		SAV next=transaction->tra_save_point->sav_next;
+		Savepoint* const next = transaction->tra_save_point->sav_next;
 		transaction->tra_save_point->sav_next = NULL;
 		VIO_verb_cleanup(tdbb, transaction);
 		transaction->tra_save_point = next;				
@@ -2628,7 +2642,7 @@ static BOOLEAN start_sweeper(thread_db* tdbb, Database* dbb)
 	SET_TDBB(tdbb);
 
 	// fill out the lock block
-	lck temp_lock;
+	Lock temp_lock;
 	temp_lock.lck_dbb			= dbb;
 	temp_lock.lck_type			= LCK_sweep;
 	temp_lock.lck_owner_handle	= LCK_get_owner_handle(tdbb, temp_lock.lck_type);
@@ -2841,7 +2855,7 @@ static void transaction_options(
 		case isc_tpb_lock_read:
 			{
 			TEXT name[32];
-			UCHAR* p = reinterpret_cast < UCHAR * >(name);
+			UCHAR* p = reinterpret_cast<UCHAR*>(name);
 			USHORT l = *tpb++;
 			if (l) {
 				if (l >= sizeof(name)) {
@@ -2915,7 +2929,7 @@ static void transaction_options(
    If any can't be seized, release all and try again. */
 
 	for (ULONG id = 0; id < vector->count(); id++) {
-		lck* lock = (lck*) (*vector)[id];
+		Lock* lock = (Lock*) (*vector)[id];
 		if (!lock)
 			continue;
 		USHORT level = lock->lck_logical;
@@ -2925,7 +2939,7 @@ static void transaction_options(
 			continue;
 		}
 		for (USHORT l = 0; l < id; l++) {
-			if ( (lock = (lck*) (*vector)[l]) ) {
+			if ( (lock = (Lock*) (*vector)[l]) ) {
 				level = lock->lck_logical;
 				LCK_release(tdbb, lock);
 				lock->lck_logical = level;
@@ -2941,7 +2955,7 @@ static void transaction_options(
 
 
 #ifdef VMS
-static BOOLEAN vms_convert(lck* lock, SLONG * data, SCHAR type, BOOLEAN wait)
+static BOOLEAN vms_convert(Lock* lock, SLONG * data, SCHAR type, BOOLEAN wait)
 {
 /**************************************
  *

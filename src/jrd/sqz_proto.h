@@ -28,8 +28,9 @@
 #include "../jrd/sqz.h"
 
 class Dcc;
+class Record;
 
-USHORT	SQZ_apply_differences(class rec*, const SCHAR*, const SCHAR* const);
+USHORT	SQZ_apply_differences(Record*, const SCHAR*, const SCHAR* const);
 USHORT	SQZ_compress(Dcc*, const SCHAR*, SCHAR*, int);
 USHORT	SQZ_compress_length(Dcc*, const SCHAR*, int);
 SCHAR*	SQZ_decompress(const SCHAR*, USHORT, SCHAR*, const SCHAR* const);

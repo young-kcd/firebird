@@ -87,7 +87,7 @@ static const TEXT elements[][10] =
 #include "gen/codetext.h"
 
 static void error(Csb*, ...);
-static SSHORT find_proc_field(jrd_prc*, TEXT *);
+static SSHORT find_proc_field(const jrd_prc*, const TEXT*);
 static jrd_nod* par_args(thread_db*, Csb*, USHORT);
 static jrd_nod* par_cast(thread_db*, Csb*);
 static XCP par_condition(thread_db*, Csb*);
@@ -102,7 +102,7 @@ static jrd_nod* par_literal(thread_db*, Csb*);
 static jrd_nod* par_map(thread_db*, Csb*, USHORT);
 static jrd_nod* par_message(thread_db*, Csb*);
 static jrd_nod* par_modify(thread_db*, Csb*);
-static USHORT par_name(Csb*, TEXT *);
+static USHORT par_name(Csb*, TEXT*);
 static jrd_nod* par_plan(thread_db*, Csb*);
 static jrd_nod* par_procedure(thread_db*, Csb*, SSHORT);
 static void par_procedure_parms(thread_db*, Csb*, jrd_prc*, jrd_nod**, jrd_nod**, USHORT);
@@ -128,7 +128,7 @@ jrd_nod* PAR_blr(thread_db*	tdbb,
 			Csb*		view_csb,
 			Csb**	csb_ptr,
 			jrd_req**	request_ptr,
-			BOOLEAN	trigger,
+			const bool trigger,
 			USHORT	flags)
 {
 /**************************************
@@ -142,10 +142,6 @@ jrd_nod* PAR_blr(thread_db*	tdbb,
  *	Caller must do pool handling.
  *
  **************************************/
-	Csb* csb;
-	SSHORT stream, count;
-	csb_repeat *t1, *t2;
-
 	SET_TDBB(tdbb);
 
 #ifdef CMP_DEBUG
@@ -154,8 +150,9 @@ jrd_nod* PAR_blr(thread_db*	tdbb,
 	gds__print_blr(blr, gds__trace_printer, 0, 0);
 #endif
 
+	Csb* csb;
 	if (!(csb_ptr && (csb = *csb_ptr))) {
-		count = 5;
+		size_t count = 5;
 		if (view_csb)
 			count += view_csb->csb_rpt.getCapacity();
 		csb = Csb::newCsb(*tdbb->tdbb_default, count);
@@ -166,8 +163,8 @@ jrd_nod* PAR_blr(thread_db*	tdbb,
    the target relation */
 
 	if (trigger) {
-		stream = csb->nextStream();
-		t1 = CMP_csb_element(csb, 0);
+		SSHORT stream = csb->nextStream();
+		Csb::csb_repeat* t1 = CMP_csb_element(csb, 0);
 		t1->csb_flags |= csb_used | csb_active | csb_trigger;
 		t1->csb_relation = relation;
 		t1->csb_stream = (UCHAR) stream;
@@ -179,7 +176,7 @@ jrd_nod* PAR_blr(thread_db*	tdbb,
 		t1->csb_stream = (UCHAR) stream;
 	}
 	else if (relation) {
-		t1 = CMP_csb_element(csb, 0);
+		Csb::csb_repeat* t1 = CMP_csb_element(csb, 0);
 		t1->csb_stream = csb->nextStream();
 		t1->csb_relation = relation;
 		t1->csb_flags = csb_used | csb_active;
@@ -192,9 +189,9 @@ jrd_nod* PAR_blr(thread_db*	tdbb,
 		// AB: csb_n_stream replaced by view_csb->csb_rpt.getCount(), because there could
 		// be more then just csb_n_stream-numbers that hold data. 
 		// Certainly csb_stream (see par_context where the context is retrieved)
-		const Csb::rpt_itr end = view_csb->csb_rpt.end();
-		for (stream = 0; ptr != end; ++ptr, ++stream) {
-			t2 = CMP_csb_element(csb, stream);
+		const Csb::rpt_itr const end = view_csb->csb_rpt.end();
+		for (SSHORT stream = 0; ptr != end; ++ptr, ++stream) {
+			Csb::csb_repeat* t2 = CMP_csb_element(csb, stream);
 			t2->csb_relation = ptr->csb_relation;
 			t2->csb_stream = ptr->csb_stream;
 			t2->csb_flags = ptr->csb_flags & csb_used;
@@ -435,7 +432,7 @@ jrd_nod* PAR_make_field(thread_db* tdbb, Csb* csb, USHORT context,
  * been resolved, because we would have fully loaded the
  * relation, but if it can not be loaded, then we have this
  * problem. The only thing that can be done to remedy this
- * problem is to rollback.  This will clear the Deferred_work list and
+ * problem is to rollback.  This will clear the DeferredWork list and
  * allow the user to remedy the original error.  Note: it would
  * be incorrect for us (the server) to perform the rollback
  * implicitly, because this is a task for the user to do, and
@@ -660,7 +657,7 @@ static void error(Csb* csb, ...)
 }
 
 
-static SSHORT find_proc_field(jrd_prc* procedure, TEXT * name)
+static SSHORT find_proc_field(const jrd_prc* procedure, const TEXT* name)
 {
 /**************************************
  *
@@ -672,9 +669,12 @@ static SSHORT find_proc_field(jrd_prc* procedure, TEXT * name)
  *	Look for named field in procedure output fields.
  *
  **************************************/
+#pragma FB_COMPILER_MESSAGE("Vector's last element still unresolved")
 	// JMB: Is there a reason we are skipping the last element in the array?
-	VEC list = procedure->prc_output_fields;
-	for (vec::iterator ptr = list->begin(), end = list->end() - 1; ptr < end;
+	// CVC: This should be const vec*, but then the compiler rejects the iterator!
+	vec* list = procedure->prc_output_fields;
+	vec::const_iterator ptr = list->begin();
+	for (const vec::const_iterator end = list->end() - 1; ptr < end;
 		 ptr++)
 	{
 		const prm* param = (PRM) * ptr;
@@ -916,7 +916,7 @@ static SSHORT par_context(Csb* csb, SSHORT* context_ptr)
 	}
 	const SSHORT context = (unsigned int) BLR_BYTE;
 	CMP_csb_element(csb, stream);
-	csb_repeat* tail = CMP_csb_element(csb, context);
+	Csb::csb_repeat* tail = CMP_csb_element(csb, context);
 
 	if (tail->csb_flags & csb_used)
 		error(csb, isc_ctxinuse, 0);
@@ -1094,13 +1094,6 @@ static jrd_nod* par_field(thread_db* tdbb, Csb* csb, SSHORT blr_operator)
  *	Parse a field.
  *
  **************************************/
-	jrd_rel* relation;
-	jrd_prc* procedure;
-	TEXT name[32];
-	SSHORT id;
-	csb_repeat *tail;
-	jrd_prc* scan_proc;
-
 	SET_TDBB(tdbb);
 
 	const SSHORT context = (unsigned int) BLR_BYTE;
@@ -1111,6 +1104,9 @@ static jrd_nod* par_field(thread_db* tdbb, Csb* csb, SSHORT blr_operator)
 		error(csb, isc_ctxnotdef, 0);
 	}
 
+	SqlIdentifier name;
+	name[0] = 0;
+	SSHORT id;
 	const SSHORT stream = csb->csb_rpt[context].csb_stream;
 	SSHORT flags = 0;
 	bool is_column = false;
@@ -1120,8 +1116,8 @@ static jrd_nod* par_field(thread_db* tdbb, Csb* csb, SSHORT blr_operator)
 		is_column = true;
 	}
 	else if (blr_operator == blr_field) {
-		tail = &csb->csb_rpt[stream];
-		procedure = tail->csb_procedure;
+		Csb::csb_repeat* tail = &csb->csb_rpt[stream];
+		const jrd_prc* procedure = tail->csb_procedure;
 
 		/* make sure procedure has been scanned before using it */
 
@@ -1129,7 +1125,7 @@ static jrd_nod* par_field(thread_db* tdbb, Csb* csb, SSHORT blr_operator)
 						  || (procedure->prc_flags & PRC_being_scanned)
 						  || (procedure->prc_flags & PRC_being_altered)))
 		{
-			scan_proc = MET_procedure(tdbb, procedure->prc_id, false, 0);
+			const jrd_prc* scan_proc = MET_procedure(tdbb, procedure->prc_id, false, 0);
 			if (scan_proc != procedure)
 				procedure = NULL;
 		}
@@ -1143,7 +1139,8 @@ static jrd_nod* par_field(thread_db* tdbb, Csb* csb, SSHORT blr_operator)
 					  isc_arg_string, procedure->prc_name->str_data, 0);
 		}
 		else {
-			if (!(relation = tail->csb_relation))
+			jrd_rel* relation = tail->csb_relation;
+			if (!relation)
 				error(csb, isc_ctxnotdef, 0);
 
 			/* make sure relation has been scanned before using it */
@@ -1222,7 +1219,7 @@ static jrd_nod* par_function(thread_db* tdbb, Csb* csb)
  **************************************/
 	SET_TDBB(tdbb);
 	
-	TEXT name[32];
+	SqlIdentifier name;
 	const USHORT count = par_name(csb, name);
 
 	fun* function = FUN_lookup_function(name,
@@ -1291,21 +1288,21 @@ static jrd_nod* par_literal(thread_db* tdbb, Csb* csb)
  *	Parse a literal value.
  *
  **************************************/
-	DSC desc;
-	UCHAR* p;
 	SSHORT scale;
 	UCHAR dtype;
 
 	SET_TDBB(tdbb);
 
+	DSC desc;
 	PAR_desc(csb, &desc);
 	const SSHORT count = lit_delta +
 		(desc.dsc_length + sizeof(jrd_nod*) - 1) / sizeof(jrd_nod*);
 	jrd_nod* node = PAR_make_node(tdbb, count);
-	LIT literal = (LIT) node;
+	Literal* literal = (Literal*) node;
 	node->nod_count = 0;
 	literal->lit_desc = desc;
-	literal->lit_desc.dsc_address = p = reinterpret_cast<UCHAR*>(literal->lit_data);
+	UCHAR* p = reinterpret_cast<UCHAR*>(literal->lit_data);
+	literal->lit_desc.dsc_address = p;
 	literal->lit_desc.dsc_flags = 0;
 	const UCHAR* q = csb->csb_running;
 	SSHORT l = desc.dsc_length;
@@ -1434,7 +1431,7 @@ static jrd_nod* par_message(thread_db* tdbb, Csb* csb)
    allocate a node to represent the message */
 
 	USHORT n = (unsigned int) BLR_BYTE;
-	csb_repeat* tail = CMP_csb_element(csb, n);
+	Csb::csb_repeat* tail = CMP_csb_element(csb, n);
 	jrd_nod* node = PAR_make_node(tdbb, e_msg_length);
 	tail->csb_message = node;
 	node->nod_count = 0;
@@ -1502,7 +1499,7 @@ static jrd_nod* par_modify(thread_db* tdbb, Csb* csb)
 /* Make sure the compiler scratch block is big enough to hold
    everything */
 
-	csb_repeat* tail = CMP_csb_element(csb, context);
+	Csb::csb_repeat* tail = CMP_csb_element(csb, context);
 	tail->csb_stream = (UCHAR) new_stream;
 	tail->csb_flags |= csb_used;
 
@@ -1827,7 +1824,7 @@ static void par_procedure_parms(
 		USHORT n = ++csb->csb_msg_number;
 		if (n < 2)
 			csb->csb_msg_number = n = 2;
-		csb_repeat* tail = CMP_csb_element(csb, n);
+		Csb::csb_repeat* tail = CMP_csb_element(csb, n);
 		jrd_nod* message = PAR_make_node(tdbb, e_msg_length);
 		tail->csb_message = message;
 		message->nod_type = nod_message;

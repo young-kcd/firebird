@@ -27,17 +27,20 @@
 /* refresh range block used to store info about a particular
    set of records in a refresh range */
 
+class Attachment;
+class vec;
+
 class rng : public pool_alloc_rpt<SCHAR, type_rng>
 {
     public:
-	rng*		rng_next;		/* next in list of ranges being created */
-	class att *rng_attachment;	/* attachment that owns range */
-	rng*		rng_lck_next;	/* next in list of ranges interested in a lock */
-	struct vec *rng_relation_locks;	/* relation locks */
-	struct vec *rng_relation_trans;	/* relation transactions */
-	struct vec *rng_record_locks;	/* record locks */
-	struct vec *rng_page_locks;	/* page locks */
-	struct vec *rng_transaction_locks;	/* transaction locks */
+	rng*		rng_next;			/* next in list of ranges being created */
+	Attachment*	rng_attachment;		/* attachment that owns range */
+	rng*		rng_lck_next;		/* next in list of ranges interested in a lock */
+	vec*		rng_relation_locks;	/* relation locks */
+	vec*		rng_relation_trans;	/* relation transactions */
+	vec*		rng_record_locks;	/* record locks */
+	vec*		rng_page_locks;		/* page locks */
+	vec*		rng_transaction_locks;	/* transaction locks */
 	USHORT rng_relations;		/* count of relations in range */
 	USHORT rng_records;			/* count of records in range */
 	USHORT rng_pages;			/* count of index pages in range */

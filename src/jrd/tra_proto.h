@@ -26,17 +26,18 @@
 
 #include "../jrd/req.h"
 
-class att;
+class Attachment;
 class jrd_tra;
 class Resource;
 class Database;
+struct blk;
 
 bool	TRA_active_transactions(thread_db*, Database*);
 void	TRA_cleanup(thread_db*);
 void	TRA_commit(thread_db*, jrd_tra*, const bool);
 void	TRA_extend_tip(thread_db*, ULONG, struct win *);
 int		TRA_fetch_state(thread_db*, SLONG);
-void	TRA_get_inventory(thread_db*, UCHAR *, ULONG, ULONG);
+void	TRA_get_inventory(thread_db*, UCHAR*, ULONG, ULONG);
 int		TRA_get_state(thread_db*, SLONG);
 
 #ifdef SUPERSERVER_V2
@@ -44,21 +45,21 @@ void	TRA_header_write(thread_db*, Database*, SLONG);
 #endif
 void	TRA_init(thread_db*);
 void	TRA_invalidate(Database*, ULONG);
-void	TRA_link_transaction(thread_db*, jrd_tra *);
-void	TRA_post_resources(thread_db*, jrd_tra *, Resource*);
+void	TRA_link_transaction(thread_db*, jrd_tra*);
+void	TRA_post_resources(thread_db*, jrd_tra*, Resource*);
 bool	TRA_precommited(thread_db*, SLONG, SLONG);
 void	TRA_prepare(thread_db*, jrd_tra*, USHORT, const UCHAR*);
 jrd_tra*	TRA_reconnect(thread_db*, const UCHAR*, USHORT);
-void	TRA_release_transaction(thread_db*, jrd_tra *);
+void	TRA_release_transaction(thread_db*, jrd_tra*);
 void	TRA_rollback(thread_db*, jrd_tra*, const bool);
-void	TRA_set_state(thread_db*, jrd_tra *, SLONG, SSHORT);
-void	TRA_shutdown_attachment(thread_db*, att *);
-int		TRA_snapshot_state(thread_db*, jrd_tra *, SLONG);
+void	TRA_set_state(thread_db*, jrd_tra*, SLONG, SSHORT);
+void	TRA_shutdown_attachment(thread_db*, Attachment*);
+int		TRA_snapshot_state(thread_db*, const jrd_tra*, SLONG);
 jrd_tra*	TRA_start(thread_db*, int, const SCHAR*);
-int		TRA_state(UCHAR *, ULONG, ULONG);
-int		TRA_sweep(thread_db*, jrd_tra *);
-lck*	TRA_transaction_lock(thread_db*, struct blk *);
-int		TRA_wait(thread_db*, jrd_tra *, SLONG, bool);
+int		TRA_state(const UCHAR*, ULONG, ULONG);
+bool	TRA_sweep(thread_db*, jrd_tra*);
+Lock*	TRA_transaction_lock(thread_db*, blk*);
+int		TRA_wait(thread_db*, jrd_tra*, SLONG, bool);
 
 #endif // JRD_TRA_PROTO_H
 

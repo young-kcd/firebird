@@ -24,6 +24,9 @@
 #ifndef JRD_LCK_H
 #define JRD_LCK_H
 
+struct blk;
+class BlockingThread;
+
 /* Lock types */
 
 enum lck_t {
@@ -60,10 +63,10 @@ enum lck_owner_t {
 
 void MP_GDB_print(MemoryPool*);
 
-class lck : public pool_alloc_rpt<SCHAR, type_lck>
+class Lock : public pool_alloc_rpt<SCHAR, type_lck>
 {
 public:
-	lck()
+	Lock()
 	:	lck_test_field(666),
 		lck_parent(0),
 		lck_next(0),
@@ -92,19 +95,19 @@ public:
 	}
 
 	int		lck_test_field;
-	lck*	lck_parent;
-	lck*	lck_next;		/* Next lock in chain owned by Database */
-	lck*	lck_att_next;	/* Next in chain owned by attachment */
-	lck*	lck_prior;
-	lck*	lck_collision;	/* collisions in compatibility table */
-	lck*	lck_identical;	/* identical locks in compatibility table */
+	Lock*	lck_parent;
+	Lock*	lck_next;		/* Next lock in chain owned by Database */
+	Lock*	lck_att_next;	/* Next in chain owned by attachment */
+	Lock*	lck_prior;
+	Lock*	lck_collision;	/* collisions in compatibility table */
+	Lock*	lck_identical;	/* identical locks in compatibility table */
 	class Database*	lck_dbb;		/* database object is contained in */
-	class blk*	lck_object;		/* argument to be passed to ast */
-	class blk*	lck_owner;		/* Logical owner block (transaction, etc.) */
-	class blk*	lck_compatible;	/* Enter into internal_enqueue() and treat as compatible */
-	class blk*	lck_compatible2;	/* Sub-level for internal compatibility */
-	class att* lck_attachment;	/* Attachment that owns lock */
-	struct btb* lck_blocked_threads;	/* Threads blocked by lock */
+	blk*	lck_object;		/* argument to be passed to ast */
+	blk*	lck_owner;		/* Logical owner block (transaction, etc.) */
+	blk*	lck_compatible;	/* Enter into internal_enqueue() and treat as compatible */
+	blk*	lck_compatible2;	/* Sub-level for internal compatibility */
+	class Attachment* lck_attachment;	/* Attachment that owns lock */
+	BlockingThread* lck_blocked_threads;	/* Threads blocked by lock */
 	lock_ast_t	lck_ast;	        /* Blocking AST routine */
 	SLONG		lck_id;				/* Lock id from lock manager */
 	SLONG		lck_owner_handle;		/* Lock owner handle from the lock manager's point of view */

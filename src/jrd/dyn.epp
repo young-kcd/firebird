@@ -92,7 +92,7 @@ static void store_privilege(GBL, const TEXT*, const TEXT*, const TEXT*,
 static void	set_field_class_name(GBL, const TEXT*, const TEXT*);
 
 
-void DYN_ddl(att* attachment, jrd_tra* transaction, USHORT length,
+void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 	const UCHAR* ddl)
 {
 /**************************************
@@ -162,7 +162,7 @@ void DYN_ddl(att* attachment, jrd_tra* transaction, USHORT length,
 	}
 	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		const sav* savepoint = transaction->tra_save_point;
+		const Savepoint* savepoint = transaction->tra_save_point;
 		if (savepoint && savepoint->sav_verb_count)
 		{
 			// An error during undo is very bad and has to be dealt with

@@ -51,8 +51,8 @@ static struct RAB rab;
 static bool check_sort(NOD, IDX *, USHORT);
 static bool compare(const UCHAR*, const UCHAR*, USHORT);
 static int compare_segment(NOD, UCHAR *, DSC *);
-static int connect(external_file*, USHORT);
-static void disconnect(external_file*);
+static int connect(ExternalFile*, USHORT);
+static void disconnect(ExternalFile*);
 static void expand_format(fmt*, const fmt*);
 static SLONG find_field(const fmt*, USHORT, USHORT, USHORT);
 static bool get_dbkey(Rsb*);
@@ -62,9 +62,9 @@ static bool get_sequential(Rsb*);
 static bool match_index(const fmt*, struct XABKEY *, IDX *);
 static int open_indexed(Rsb*);
 static int open_sequential(Rsb*);
-static void position_by_rfa(external_file*, USHORT *);
-static void set_flags(jrd_rel*, REC);
-static void set_missing(jrd_rel*, REC);
+static void position_by_rfa(ExternalFile*, USHORT *);
+static void set_flags(jrd_rel*, Record*);
+static void set_missing(jrd_rel*, Record*);
 
 
 void EXT_close(Rsb* rsb)
@@ -82,9 +82,9 @@ void EXT_close(Rsb* rsb)
 	thread_db* tdbb = GET_THREAD_DATA;
 
 	jrd_rel* relation = rsb->rsb_relation;
-	external_file* file = relation->rel_file;
+	ExternalFile* file = relation->rel_file;
 	jrd_req* request = tdbb->tdbb_request;
-	RPB* rpb = &request->req_rpb[rsb->rsb_stream];
+	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 
 	if ((rab.rab$w_isi = rpb->rpb_ext_isi) &&
 		rpb->rpb_ext_isi != file->ext_isi)
@@ -95,7 +95,7 @@ void EXT_close(Rsb* rsb)
 }
 
 
-void EXT_erase(RPB * rpb, int *transaction)
+void EXT_erase(record_param* rpb, int *transaction)
 {
 /**************************************
  *
@@ -111,7 +111,7 @@ void EXT_erase(RPB * rpb, int *transaction)
 		IBERROR(180);			/* msg 180 can't reposition for update after sort for RMS */
 
 	jrd_rel* relation = rpb->rpb_relation;
-	external_file* file = relation->rel_file;
+	ExternalFile* file = relation->rel_file;
 	rab.rab$w_isi = rpb->rpb_ext_isi;
 	rab.rab$l_rop = 0;
 
@@ -127,7 +127,7 @@ void EXT_erase(RPB * rpb, int *transaction)
 
 
 // Third param is unused.
-external_file* EXT_file(jrd_rel* relation, TEXT* file_name, bid* description)
+ExternalFile* EXT_file(jrd_rel* relation, TEXT* file_name, bid* description)
 {
 /**************************************
  *
@@ -149,7 +149,7 @@ external_file* EXT_file(jrd_rel* relation, TEXT* file_name, bid* description)
    format. */
 
 	USHORT l = strlen(file_name);
-	external_file* file = FB_NEW_RPT(dbb->dbb_permanent, l) external_file();
+	ExternalFile* file = FB_NEW_RPT(dbb->dbb_permanent, l) ExternalFile();
 	relation->rel_file = file;
 	strcpy(file->ext_filename, file_name);
 	fmt* format = file->ext_format = MET_format(tdbb, relation, 0);
@@ -261,7 +261,7 @@ void EXT_fini(jrd_rel* relation)
  *	Close the file associated with a relation.
  *
  **************************************/
-	external_file* file = relation->rel_file;
+	ExternalFile* file = relation->rel_file;
 
 	if (fab.fab$w_ifi = file->ext_ifi) {
 		const int status = sys$close(&fab);
@@ -309,7 +309,7 @@ int EXT_get(Rsb* rsb)
 }
 
 
-void EXT_modify(RPB * old_rpb, RPB * new_rpb, int *transaction)
+void EXT_modify(record_param* old_rpb, record_param* new_rpb, int *transaction)
 {
 /**************************************
  *
@@ -324,9 +324,9 @@ void EXT_modify(RPB * old_rpb, RPB * new_rpb, int *transaction)
 	if (old_rpb->rpb_stream_flags & RPB_s_refetch)
 		IBERROR(180);			/* msg 180 cannot reposition for update after sort for RMS */
 
-	REC record = new_rpb->rpb_record;
+	Record* record = new_rpb->rpb_record;
 	jrd_rel* relation = new_rpb->rpb_relation;
-	external_file* file = relation->rel_file;
+	ExternalFile* file = relation->rel_file;
 	const fmt* format = record->rec_format;
 	set_missing(old_rpb->rpb_relation, record);
 	const int offset = FLAG_BYTES(format->fmt_count);
@@ -363,10 +363,10 @@ EXT_open(Rsb* rsb)
 
 	jrd_rel* relation = rsb->rsb_relation;
 	jrd_req* request = tdbb->tdbb_request;
-	RPB* rpb = &request->req_rpb[rsb->rsb_stream];
+	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 
 	const fmt* format;
-	REC record = rpb->rpb_record;
+	Record* record = rpb->rpb_record;
 	if (!record || !(format = record->rec_format)) {
 		format = MET_current(tdbb, relation);
 		record = VIO_record(tdbb, rpb, format, request->req_pool);
@@ -381,7 +381,7 @@ EXT_open(Rsb* rsb)
 
 	case rsb_ext_dbkey:
 		{
-			const external_file* file = relation->rel_file;
+			const ExternalFile* file = relation->rel_file;
 			rpb->rpb_ext_isi = file->ext_isi;
 			return;
 		}
@@ -411,9 +411,9 @@ Rsb* EXT_optimize(OPT opt, SSHORT stream, NOD * sort_ptr)
    data structures */
 
 	Csb* csb = opt->opt_csb;
-	csb_repeat* csb_tail = &csb->csb_rpt[stream];
+	Csb::csb_repeat* csb_tail = &csb->csb_rpt[stream];
 	jrd_rel* relation = csb_tail->csb_relation;
-	external_file* file = relation->rel_file;
+	ExternalFile* file = relation->rel_file;
 	NOD dbkey, inversion;
 	dbkey = inversion = NULL;
 
@@ -499,7 +499,7 @@ void EXT_ready(jrd_rel* relation)
 }
 
 
-void EXT_store(RPB * rpb, int *transaction)
+void EXT_store(record_param* rpb, int *transaction)
 {
 /**************************************
  *
@@ -511,8 +511,8 @@ void EXT_store(RPB * rpb, int *transaction)
  *	Update an external  *
  **************************************/
 	jrd_rel* relation = rpb->rpb_relation;
-	external_file* file = relation->rel_file;
-	REC record = rpb->rpb_record;
+	ExternalFile* file = relation->rel_file;
+	Record* record = rpb->rpb_record;
 	const fmt* format = record->rec_format;
 	set_missing(relation, record);
 	const USHORT offset = FLAG_BYTES(format->fmt_count);
@@ -686,7 +686,7 @@ static int compare_segment(NOD node, UCHAR * buffer, DSC * target)
 }
 
 
-static int connect(external_file* file, USHORT key)
+static int connect(ExternalFile* file, USHORT key)
 {
 /**************************************
  *
@@ -712,7 +712,7 @@ static int connect(external_file* file, USHORT key)
 }
 
 
-static void disconnect(external_file* file)
+static void disconnect(ExternalFile* file)
 {
 /**************************************
  *
@@ -840,12 +840,12 @@ static bool get_dbkey(Rsb* rsb)
 /* Chase down misc pointers */
 
 	jrd_rel* relation = rsb->rsb_relation;
-	external_file* file = relation->rel_file;
+	ExternalFile* file = relation->rel_file;
 	jrd_req* request = tdbb->tdbb_request;
 
 	irsb_ext* impure = (irsb_ext*) ((UCHAR *) request + rsb->rsb_impure);
-	RPB* rpb = &request->req_rpb[rsb->rsb_stream];
-	REC record = rpb->rpb_record;
+	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
+	Record* record = rpb->rpb_record;
 	const fmt* format = record->rec_format;
 
 /* If this isn't the first time thru its the last time thru */
@@ -902,11 +902,11 @@ static bool get_indexed(Rsb* rsb)
    are mainly used to initialize the stream at some particular key value */
 
 	jrd_rel* relation = rsb->rsb_relation;
-	external_file* file = relation->rel_file;
+	ExternalFile* file = relation->rel_file;
 	const fmt* format = file->ext_format;
 
 	jrd_req* request = tdbb->tdbb_request;
-	RPB* rpb = &request->req_rpb[rsb->rsb_stream];
+	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 	irsb_ext* impure = (irsb_ext*) ((UCHAR *) request + rsb->rsb_impure);
 
 	NOD node = rsb->rsb_arg[0];
@@ -1016,12 +1016,12 @@ static bool get_sequential(Rsb* rsb)
 	thread_db* tdbb = GET_THREAD_DATA;
 
 	jrd_rel* relation = rsb->rsb_relation;
-	external_file* file = relation->rel_file;
+	ExternalFile* file = relation->rel_file;
 	jrd_req* request = tdbb->tdbb_request;
 
 	irsb_ext* impure = (irsb_ext*) ((UCHAR *) request + rsb->rsb_impure);
-	RPB* rpb = &request->req_rpb[rsb->rsb_stream];
-	REC record = rpb->rpb_record;
+	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
+	Record* record = rpb->rpb_record;
 	const fmt* format = record->rec_format;
 
 	const SSHORT offset = FLAG_BYTES(format->fmt_count);
@@ -1118,9 +1118,9 @@ static open_indexed(Rsb* rsb)
 	thread_db* tdbb = GET_THREAD_DATA;
 
 	jrd_rel* relation = rsb->rsb_relation;
-	external_file* file = relation->rel_file;
+	ExternalFile* file = relation->rel_file;
 	jrd_req* request = tdbb->tdbb_request;
-	RPB* rpb = &request->req_rpb[rsb->rsb_stream];
+	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 	NOD node = (NOD) rsb->rsb_arg[0];
 	IRB retrieval = (IRB) node->nod_arg[e_idx_retrieval];
 	IDX* index = &retrieval->irb_desc;
@@ -1148,9 +1148,9 @@ static open_sequential(Rsb* rsb)
 	thread_db* tdbb = GET_THREAD_DATA;
 
 	jrd_rel* relation = rsb->rsb_relation;
-	external_file* file = relation->rel_file;
+	ExternalFile* file = relation->rel_file;
 	jrd_req* request = tdbb->tdbb_request;
-	RPB* rpb = &request->req_rpb[rsb->rsb_stream];
+	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 
 	if (file->ext_file_type == FAB$C_IDX) {
 		fab.fab$w_ifi = file->ext_ifi;
@@ -1169,7 +1169,7 @@ static open_sequential(Rsb* rsb)
 }
 
 
-static void position_by_rfa(external_file* file, USHORT * rfa)
+static void position_by_rfa(ExternalFile* file, USHORT * rfa)
 {
 /**************************************
  *
@@ -1194,7 +1194,7 @@ static void position_by_rfa(external_file* file, USHORT * rfa)
 }
 
 
-static void set_flags(jrd_rel* relation, REC record)
+static void set_flags(jrd_rel* relation, Record* record)
 {
 /**************************************
  *
@@ -1217,7 +1217,7 @@ static void set_flags(jrd_rel* relation, REC record)
 		jrd_fld* field;
 		if (!desc_ptr->dsc_length || !(field = *field_ptr))
 			continue;
-		LIT literal = field->fld_missing_value;
+		Literal* literal = field->fld_missing_value;
 		if (literal) {
 			desc = *desc_ptr;
 			desc.dsc_address = record->rec_data + (int) desc.dsc_address;
@@ -1229,7 +1229,7 @@ static void set_flags(jrd_rel* relation, REC record)
 }
 
 
-static void set_missing(jrd_rel* relation, REC record)
+static void set_missing(jrd_rel* relation, Record* record)
 {
 /**************************************
  *
@@ -1255,7 +1255,7 @@ static void set_missing(jrd_rel* relation, REC record)
 			(l = desc_ptr->dsc_length) && TEST_NULL(record, i))
 		{
 			UCHAR* p = record->rec_data + (int) desc_ptr->dsc_address;
-			LIT literal = field->fld_missing_value;
+			Literal* literal = field->fld_missing_value;
 			if (literal) {
 				desc = *desc_ptr;
 				desc.dsc_address = p;

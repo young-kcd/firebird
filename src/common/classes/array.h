@@ -66,7 +66,7 @@ class Array : protected Storage {
 public:
 	explicit Array(MemoryPool& p) : 
 		Storage(p), count(0), capacity(getStorageSize()), data(getStorage()) { }
-	explicit Array(MemoryPool& p, int InitialCapacity) : 
+	Array(MemoryPool& p, int InitialCapacity) : 
 		Storage(p), count(0), capacity(getStorageSize()), data(getStorage())
 	{
 		ensureCapacity(InitialCapacity);
@@ -197,7 +197,7 @@ template <typename Value,
 	typename Cmp = DefaultComparator<Key> >
 class SortedArray : public Array<Value, Storage> {
 public:
-	explicit SortedArray(MemoryPool& p, int s) : Array<Value, Storage>(p, s) {}
+	SortedArray(MemoryPool& p, int s) : Array<Value, Storage>(p, s) {}
 	explicit SortedArray(MemoryPool& p) : Array<Value, Storage>(p) {}
 	explicit SortedArray(int s) : Array<Value, Storage>(s) {}
 	SortedArray() : Array<Value, Storage>() {}
@@ -227,7 +227,7 @@ template <typename T, int InlineCapacity>
 class HalfStaticArray : public Array<T, InlineStorage<T, InlineCapacity> > {
 public:
 	explicit HalfStaticArray(MemoryPool& p) : Array<T,InlineStorage<T, InlineCapacity> > (p) {}
-	explicit HalfStaticArray(MemoryPool& p, int InitialCapacity) : 
+	HalfStaticArray(MemoryPool& p, int InitialCapacity) : 
 		Array<T, InlineStorage<T, InlineCapacity> > (p, InitialCapacity) {}
 	HalfStaticArray() : Array<T,InlineStorage<T, InlineCapacity> > () {}
 	explicit HalfStaticArray(int InitialCapacity) : 

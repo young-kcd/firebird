@@ -139,6 +139,8 @@ typedef struct bid {
 
 /* Block types */
 
+struct blk;
+
 #ifndef INCLUDE_FB_BLK
 #include "../include/old_fb_blk.h"
 #endif
@@ -171,7 +173,7 @@ typedef struct ipm {
 
 typedef struct icc
 {
-	struct blk	icc_header;
+	blk			icc_header;
 	struct icc*	icc_next;			/* pointer to next thread */
 	struct idb*	icc_databases;		/* linked list of attachments */
 	struct ipm*	icc_ipm;			/* pointer back to ipm */
@@ -200,7 +202,7 @@ typedef struct icc
 
 typedef struct idb
 {
-	struct blk				idb_header;
+	blk						idb_header;
 	struct icc*				idb_thread;			/* back pointer to thread */
 	FRBRD*					idb_handle;			/* database handle */
 	struct itr*				idb_transactions;	/* linked list of transactions */
@@ -221,7 +223,7 @@ typedef struct idb
 
 typedef struct itr
 {
-	struct blk	itr_header;
+	blk			itr_header;
 	struct idb*	itr_idb;
 	struct itr*	itr_next;
 	struct ibl*	itr_blobs;
@@ -235,7 +237,7 @@ typedef struct itr
 
 typedef struct ibl
 {
-	struct blk	ibl_header;
+	blk			ibl_header;
 	struct idb*	ibl_idb;
 	struct itr*	ibl_itr;
 	struct ibl*	ibl_next;
@@ -257,7 +259,7 @@ typedef struct ibl
 /* request block */
 
 typedef struct irq {
-	struct blk irq_header;
+	blk			irq_header;
 	struct idb *irq_idb;
 	struct tra *irq_itr;
 	struct irq *irq_next;
@@ -268,7 +270,7 @@ typedef struct irq {
 /* event structure */
 
 typedef struct ivnt {
-	struct blk ivnt_header;
+	blk			ivnt_header;
 	struct ivnt *ivnt_next;
 	struct idb *ivnt_idb;
 	FPTR_EVENT_CALLBACK ivnt_ast;
@@ -281,7 +283,7 @@ typedef struct ivnt {
 /* remote SQL request */
 
 typedef struct ipserver_isr {
-	struct blk isr_header;
+	blk		isr_header;
 	struct ipserver_isr *isr_next;
 	struct idb *isr_idb;
 	struct itr *isr_itr;

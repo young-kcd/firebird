@@ -26,40 +26,42 @@
 
 #ifdef PC_ENGINE
 
-class lck;
+class Lock;
 class jrd_rel;
 class jrd_tra;
-struct rpb;
+struct record_param;
+struct blk;
+class Attachment;
 
-lck* RLCK_lock_record(rpb*, USHORT, lock_ast_t, struct blk*);
+Lock* RLCK_lock_record(record_param*, USHORT, lock_ast_t, blk*);
 									
-lck* RLCK_lock_record_implicit(jrd_tra*, rpb*,
-											 USHORT, lock_ast_t, struct blk*);
-lck* RLCK_lock_relation(jrd_rel*, USHORT, lock_ast_t, struct blk*);
-lck* RLCK_range_relation(jrd_tra*, jrd_rel*, lock_ast_t, struct blk*);
-lck* RLCK_record_locking(jrd_rel*);
-void RLCK_release_lock(lck*);
-void RLCK_release_locks(class att *);
+Lock* RLCK_lock_record_implicit(jrd_tra*, record_param*,
+											 USHORT, lock_ast_t, blk*);
+Lock* RLCK_lock_relation(jrd_rel*, USHORT, lock_ast_t, blk*);
+Lock* RLCK_range_relation(jrd_tra*, jrd_rel*, lock_ast_t, blk*);
+Lock* RLCK_record_locking(jrd_rel*);
+void RLCK_release_lock(Lock*);
+void RLCK_release_locks(class Attachment*);
 #endif
-lck* RLCK_reserve_relation(struct thread_db*, jrd_tra*,
-										 jrd_rel*, USHORT, USHORT);
+Lock* RLCK_reserve_relation(struct thread_db*, jrd_tra*,
+										 jrd_rel*, bool, bool);
 
 /* TMN: This header did not match the implementation.
  * I moved the #ifdef as noted
  */
 /* #ifdef PC_ENGINE */
-void RLCK_shutdown_attachment(class att*);
+void RLCK_shutdown_attachment(class Attachment*);
 void RLCK_shutdown_database(class Database*);
 #ifdef PC_ENGINE
 void RLCK_signal_refresh(jrd_tra*);
 #endif
 
-lck* RLCK_transaction_relation_lock(jrd_tra*, jrd_rel*);
+Lock* RLCK_transaction_relation_lock(jrd_tra*, jrd_rel*);
 
 #ifdef PC_ENGINE
-void RLCK_unlock_record(lck*, rpb*);
-void RLCK_unlock_record_implicit(lck*, rpb*);
-void RLCK_unlock_relation(lck*, jrd_rel*);
+void RLCK_unlock_record(Lock*, record_param*);
+void RLCK_unlock_record_implicit(Lock*, record_param*);
+void RLCK_unlock_relation(Lock*, jrd_rel*);
 #endif
 
 #endif // JRD_RLCK_PROTO_H

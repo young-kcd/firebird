@@ -90,7 +90,7 @@ bool SHUT_blocking_ast(Database* dbb)
 		}
 					
 		dbb->dbb_shutdown_delay = 0;
-		for (att* attachment = dbb->dbb_attachments; attachment;
+		for (Attachment* attachment = dbb->dbb_attachments; attachment;
 			 attachment = attachment->att_next)
 		{
 			 attachment->att_flags &= ~ATT_shutdown_notify;
@@ -126,7 +126,7 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
  *
  **************************************/
 	thread_db* tdbb = GET_THREAD_DATA;
-	att* attachment = tdbb->tdbb_attachment;
+	Attachment* attachment = tdbb->tdbb_attachment;
 
 /* Only platform's user locksmith can shutdown or bring online
    a database. */
@@ -295,7 +295,7 @@ bool SHUT_online(Database* dbb, SSHORT flag)
  **************************************/
 
 	thread_db* tdbb = GET_THREAD_DATA;
-	att* attachment = tdbb->tdbb_attachment;
+	Attachment* attachment = tdbb->tdbb_attachment;
 
 /* Only platform's user locksmith can shutdown or bring online
    a database. */
@@ -470,7 +470,7 @@ static bool shutdown_locks(Database* dbb, SSHORT flag)
 		break;
 	}
 
-	att* attachment;
+	Attachment* attachment;
 	
 	for (attachment = dbb->dbb_attachments; attachment;
 		 attachment = attachment->att_next)
@@ -491,7 +491,7 @@ static bool shutdown_locks(Database* dbb, SSHORT flag)
 /* Since no attachment is actively running, release all
    attachment-specfic locks while they're not looking. */
 
-	att* shut_attachment = NULL;
+	Attachment* shut_attachment = NULL;
 
 	for (attachment = dbb->dbb_attachments; attachment;
 		 attachment = attachment->att_next)

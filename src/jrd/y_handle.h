@@ -40,7 +40,7 @@
 union any_handle {
 	struct why_hndl* h_why;
 	class dsql_req* h_dsql;
-	class att* h_dbb;
+	class Attachment* h_dbb;
 	class jrd_tra* h_tra;
 };
 

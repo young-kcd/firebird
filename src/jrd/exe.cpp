@@ -142,12 +142,13 @@ SLONG status_xcp::as_sqlcode() const
 	return gds__sqlcode(status);
 }
 
-static void cleanup_rpb(thread_db*, RPB *);
+static void cleanup_rpb(thread_db*, record_param*);
 static jrd_nod* erase(thread_db*, jrd_nod*, SSHORT);
 static void execute_looper(thread_db*, jrd_req*, jrd_tra*, enum jrd_req::req_s);
 static void exec_sql(thread_db*, jrd_req*, DSC *);
 static void execute_procedure(thread_db*, jrd_nod*);
-static jrd_req* execute_triggers(thread_db*, trig_vec**, REC, REC, enum jrd_req::req_ta);
+static jrd_req* execute_triggers(thread_db*, trig_vec**, Record*, Record*,
+	enum jrd_req::req_ta);
 static jrd_nod* looper(thread_db*, jrd_req*, jrd_nod*);
 static jrd_nod* modify(thread_db*, jrd_nod*, SSHORT);
 static jrd_nod* receive_msg(thread_db*, jrd_nod*);
@@ -165,12 +166,13 @@ static jrd_nod* store(thread_db*, jrd_nod*, SSHORT);
 static bool test_and_fixup_error(thread_db*, const XCP, jrd_req*);
 static void trigger_failure(thread_db*, jrd_req*);
 static void validate(thread_db*, jrd_nod*);
-inline void PreModifyEraseTriggers(thread_db*, trig_vec**, SSHORT, RPB*, REC, jrd_req::req_ta);
+inline void PreModifyEraseTriggers(thread_db*, trig_vec**, SSHORT, record_param*,
+	Record*, jrd_req::req_ta);
 
 #ifdef PC_ENGINE
 static jrd_nod* find(thread_db*, jrd_nod*);
 static jrd_nod* find_dbkey(thread_db*, jrd_nod*);
-static lck* implicit_record_lock(jrd_tra*, RPB *);
+static Lock* implicit_record_lock(jrd_tra*, record_param*);
 static jrd_nod* release_bookmark(thread_db*, jrd_nod*);
 static jrd_nod* set_bookmark(thread_db*, jrd_nod*);
 static jrd_nod* set_index(thread_db*, jrd_nod*);
@@ -214,7 +216,7 @@ static SLONG memory_count = 0;
 #define RECORD_LOCK_CHECK_INTERVAL	10
 
 #ifdef PC_ENGINE
-// TMN: RAII class for lck. Unlocks the lck on destruction.
+// TMN: RAII class for Lock. Unlocks the Lock on destruction.
 class LCK_RAII_wrapper
 {
 	LCK_RAII_wrapper() : l(0) {}
@@ -223,9 +225,9 @@ class LCK_RAII_wrapper
 			RLCK_unlock_record_implicit(l, 0);
 		}
 	}
-	void assign(lck* lock) { l = lock; }
+	void assign(Lock* lock) { l = lock; }
 
-	lck* l;
+	Lock* l;
 
 private:
 	LCK_RAII_wrapper(const LCK_RAII_wrapper&);	// no impl.
@@ -406,7 +408,8 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 	if (to->nod_type == nod_field)
 	{
 		const SSHORT id = (USHORT)(IPTR) to->nod_arg[e_fld_id];
-		REC record = request->req_rpb[(int) (IPTR) to->nod_arg[e_fld_stream]].rpb_record;
+		Record* record =
+			request->req_rpb[(int) (IPTR) to->nod_arg[e_fld_stream]].rpb_record;
 		if (null) {
 			SET_NULL(record, id);
 		}
@@ -623,7 +626,7 @@ void EXE_receive(thread_db*		tdbb,
 		   stored procedure savepoints into the current transaction
 		   savepoint, which is the savepoint for fetch. */
 
-		sav* save_sav_point = transaction->tra_save_point;
+		Savepoint* const save_sav_point = transaction->tra_save_point;
 		transaction->tra_save_point = request->req_proc_sav_point;
 		request->req_proc_sav_point = save_sav_point;
 
@@ -672,7 +675,7 @@ void EXE_receive(thread_db*		tdbb,
 	{
 		if (request->req_flags & req_proc_fetch)
 		{
-			sav* save_sav_point = transaction->tra_save_point;
+			Savepoint* const save_sav_point = transaction->tra_save_point;
 			transaction->tra_save_point = request->req_proc_sav_point;
 			request->req_proc_sav_point = save_sav_point;
 			release_proc_save_points(request);
@@ -681,7 +684,7 @@ void EXE_receive(thread_db*		tdbb,
 	}
 
 	if (request->req_flags & req_proc_fetch) {
-		sav* save_sav_point = transaction->tra_save_point;
+		Savepoint* const save_sav_point = transaction->tra_save_point;
 		transaction->tra_save_point = request->req_proc_sav_point;
 		request->req_proc_sav_point = save_sav_point;
 		VIO_merge_proc_sav_points(tdbb, transaction,
@@ -992,7 +995,7 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 
 
 /* CVC: Moved to its own routine, originally in store(). */
-static void cleanup_rpb(thread_db* tdbb, RPB *rpb)
+static void cleanup_rpb(thread_db* tdbb, record_param* rpb)
 {
 /**************************************
  *
@@ -1006,7 +1009,7 @@ static void cleanup_rpb(thread_db* tdbb, RPB *rpb)
  * when the RLE algorithm is applied.
  *
  **************************************/
-	rec* record = rpb->rpb_record;
+	Record* record = rpb->rpb_record;
 	const fmt* format = record->rec_format;
 
 	SET_TDBB(tdbb); /* Is it necessary? */
@@ -1055,8 +1058,8 @@ static void cleanup_rpb(thread_db* tdbb, RPB *rpb)
 inline void PreModifyEraseTriggers(thread_db* tdbb,
 								   trig_vec** trigs, 
 								   SSHORT which_trig, 
-								   RPB *rpb, 
-								   REC rec,
+								   record_param* rpb, 
+								   Record* rec,
 								   jrd_req::req_ta op)
 {
 /******************************************************
@@ -1105,7 +1108,7 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 
 	jrd_req* request = tdbb->tdbb_request;
 	jrd_tra* transaction = request->req_transaction;
-	RPB* rpb = &request->req_rpb[(int) (IPTR) node->nod_arg[e_erase_stream]];
+	record_param* rpb = &request->req_rpb[(int) (IPTR) node->nod_arg[e_erase_stream]];
 	jrd_rel* relation = rpb->rpb_relation;
 
 #ifdef PC_ENGINE
@@ -1124,7 +1127,7 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		if (!node->nod_arg[e_erase_statement])
 			break;
 		const fmt* format = MET_current(tdbb, rpb->rpb_relation);
-		rec* record = VIO_record(tdbb, rpb, format, tdbb->tdbb_default);
+		Record* record = VIO_record(tdbb, rpb, format, tdbb->tdbb_default);
 		rpb->rpb_address = record->rec_data;
 		rpb->rpb_length = format->fmt_length;
 		rpb->rpb_format_number = format->fmt_version;
@@ -1150,14 +1153,14 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 #endif
 
 	request->req_operation = jrd_req::req_return;
-	RLCK_reserve_relation(tdbb, transaction, relation, TRUE, TRUE);
+	RLCK_reserve_relation(tdbb, transaction, relation, true, true);
 
 /* If the stream was sorted, the various fields in the rpb are
    probably junk.  Just to make sure that everything is cool,
    refetch and release the record. */
 
 	if (rpb->rpb_stream_flags & RPB_s_refetch) {
-		const SLONG tid_fetch = rpb->rpb_transaction;
+		const SLONG tid_fetch = rpb->rpb_transaction_nr;
 		if ((!DPM_get(tdbb, rpb, LCK_read)) ||
 			(!VIO_chase_record_version(tdbb,
 									   rpb,
@@ -1177,7 +1180,7 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		 */
 
 		if ((transaction->tra_flags & TRA_read_committed) &&
-			(tid_fetch != rpb->rpb_transaction))
+			(tid_fetch != rpb->rpb_transaction_nr))
 		{
 				ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
 		}
@@ -1196,7 +1199,7 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	{
 		/* check whether record locking is turned on */
 
-		lck* record_locking = RLCK_record_locking(relation);
+		Lock* record_locking = RLCK_record_locking(relation);
 		if (record_locking->lck_physical != LCK_PR)
 		{
 			/* get an implicit lock on the record */
@@ -1369,7 +1372,7 @@ static void exec_sql(thread_db* tdbb, jrd_req* request, DSC* dsc)
 			callback_execute_immediate(status,
 									   tdbb->tdbb_attachment,
 									   tdbb->tdbb_transaction,
-									   reinterpret_cast<TEXT *>(p), l);
+									   reinterpret_cast<TEXT*>(p), l);
 			tdbb->tdbb_transaction->tra_callback_count--;
 		}
 	}
@@ -1476,7 +1479,7 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
    procedure */
 
 	if (transaction != tdbb->tdbb_database->dbb_sys_trans) {
-		for (sav* save_point = transaction->tra_save_point;
+		for (const Savepoint* save_point = transaction->tra_save_point;
 			 save_point && save_point_number < save_point->sav_number;
 			 save_point = transaction->tra_save_point)
 		{
@@ -1520,8 +1523,8 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 
 static jrd_req* execute_triggers(thread_db* tdbb,
 								trig_vec** triggers,
-								REC old_rec,
-								REC new_rec,
+								Record* old_rec,
+								Record* new_rec,
 								enum jrd_req::req_ta trigger_action)
 {
 /**************************************
@@ -1715,7 +1718,7 @@ static jrd_nod* find_dbkey(thread_db* tdbb, jrd_nod* node)
 
 
 #ifdef PC_ENGINE
-static lck* implicit_record_lock(jrd_tra* transaction, RPB * rpb)
+static Lock* implicit_record_lock(jrd_tra* transaction, record_param* rpb)
 {
 /**************************************
  *
@@ -1736,7 +1739,7 @@ static lck* implicit_record_lock(jrd_tra* transaction, RPB * rpb)
 	DEV_BLKCHK(transaction, type_tra);
 
 	jrd_rel* relation = rpb->rpb_relation;
-	lck* record_locking = relation->rel_record_locking;
+	Lock* record_locking = relation->rel_record_locking;
 
 /* occasionally we should check whether we really still need to 
    do record locking; this is defined as RECORD_LOCK_CHECK_INTERVAL--
@@ -1750,7 +1753,7 @@ static lck* implicit_record_lock(jrd_tra* transaction, RPB * rpb)
 		return NULL;
 	}
 
-	lck* lock = RLCK_lock_record_implicit(transaction, rpb, LCK_SW, 0, 0);
+	Lock* lock = RLCK_lock_record_implicit(transaction, rpb, LCK_SW, 0, 0);
 	if (!lock) {
 		ERR_post(isc_record_lock, 0);
 	}
@@ -2076,12 +2079,12 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			case jrd_req::req_evaluate:
 				if (transaction != dbb->dbb_sys_trans) {
 
-					UCHAR operation = (UCHAR) (IPTR) node->nod_arg[e_sav_operation];
-					TEXT * node_savepoint_name = (TEXT*) node->nod_arg[e_sav_name]; 
+					const UCHAR operation = (UCHAR) (IPTR) node->nod_arg[e_sav_operation];
+					const TEXT* node_savepoint_name = (TEXT*) node->nod_arg[e_sav_name];
 
 					// Skip the savepoint created by EXE_start
-					SAV savepoint = transaction->tra_save_point->sav_next;
-					SAV previous = transaction->tra_save_point;
+					Savepoint* savepoint = transaction->tra_save_point->sav_next;
+					Savepoint* previous = transaction->tra_save_point;
 
 					// Find savepoint
 					bool found = false;
@@ -2108,7 +2111,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 						// Release the savepoint
 						if (found) {
 							previous->sav_next = savepoint->sav_next;
-							SAV current = transaction->tra_save_point;
+							Savepoint* const current = transaction->tra_save_point;
 							transaction->tra_save_point = savepoint;
 							VERB_CLEANUP;
 							transaction->tra_save_point = current;
@@ -2122,7 +2125,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					{
 						// Release the savepoint
 						previous->sav_next = savepoint->sav_next;
-						SAV current = transaction->tra_save_point;
+						Savepoint* const current = transaction->tra_save_point;
 						transaction->tra_save_point = savepoint;
 						VERB_CLEANUP;
 						transaction->tra_save_point = current;
@@ -2224,14 +2227,14 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			break;
 
 		case nod_block:
-			switch (request->req_operation) {
-				SLONG count;
-				SAV save_point;
-
+			switch (request->req_operation)
+			{
+			SLONG count;
+			
 			case jrd_req::req_evaluate:
 				if (transaction != dbb->dbb_sys_trans) {
 					VIO_start_save_point(tdbb, transaction);
-					save_point = transaction->tra_save_point;
+					const Savepoint* save_point = transaction->tra_save_point;
 					count = save_point->sav_number;
 					MOVE_FAST(&count,
 							  (SCHAR *) request + node->nod_impure,
@@ -2252,7 +2255,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 						if (transaction != dbb->dbb_sys_trans) {
 							MOVE_FAST((SCHAR *) request + node->nod_impure,
 									  &count, sizeof(SLONG));
-							for (save_point = transaction->tra_save_point;
+							for (const Savepoint* save_point = transaction->tra_save_point;
 								 save_point && count <= save_point->sav_number;
 								 save_point = transaction->tra_save_point)
 							{
@@ -2269,7 +2272,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 						/* Since there occurred an error (req_unwind), undo all savepoints
 						   up to, but not including, the savepoint of this block.  The
 						   savepoint of this block will be dealt with below. */
-						for (save_point = transaction->tra_save_point;
+						for (const Savepoint* save_point = transaction->tra_save_point;
 							 save_point && count < save_point->sav_number;
 							 save_point = transaction->tra_save_point)
 						{
@@ -2336,7 +2339,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 								if (transaction != dbb->dbb_sys_trans)
 								{
-									for (save_point = transaction->tra_save_point;
+									for (const Savepoint* save_point = transaction->tra_save_point;
 										 save_point &&
 											 count <= save_point->sav_number;
 										 save_point = transaction->tra_save_point)
@@ -2367,7 +2370,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 				if (transaction != dbb->dbb_sys_trans) {
 					MOVE_FAST((SCHAR *) request + node->nod_impure,
 							  &count, sizeof(SLONG));
-					for (save_point = transaction->tra_save_point;
+					for (const Savepoint* save_point = transaction->tra_save_point;
 						 save_point && count <= save_point->sav_number;
 						 save_point = transaction->tra_save_point)
 					{
@@ -2398,7 +2401,8 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 			case jrd_req::req_unwind:
 				if ((request->req_label == (USHORT)(IPTR) node->nod_arg[e_lbl_label]) &&
-						(request->req_flags & (req_leave | req_error_handler))) {
+						(request->req_flags & (req_leave | req_error_handler)))
+				{
 					request->req_flags &= ~req_leave;
 					request->req_operation = jrd_req::req_return;
 				}
@@ -2547,7 +2551,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 		case nod_post:
 			{
-			Deferred_work* work = DFW_post_work(transaction, dfw_post_event,
+			DeferredWork* work = DFW_post_work(transaction, dfw_post_event,
 									 EVL_expr(tdbb, node->nod_arg[0]), 0);
 			if (node->nod_arg[1])
 				DFW_post_work_arg(transaction, work,
@@ -2668,16 +2672,16 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 				desc = EVL_expr(tdbb, node->nod_arg[e_rellock_lock]);
 #if SIZEOF_VOID_P != 8
-				RLCK_release_lock(*(lck**) desc->dsc_address);
+				RLCK_release_lock(*(Lock**) desc->dsc_address);
 #else
 				{
-					att* attachment = tdbb->tdbb_attachment;
+					Attachment* attachment = tdbb->tdbb_attachment;
 
-					lck* lock = NULL;
+					Lock* lock = NULL;
 					const ULONG slot = *(ULONG *) desc->dsc_address;
 					vec* vector = attachment->att_lck_quick_ref;
 					if (vector && slot < vector->vec_count) {
-						lock = (lck*) vector->vec_object[slot];
+						lock = (Lock*) vector->vec_object[slot];
 					}
 					RLCK_release_lock(lock);
 					vector->vec_object[slot] = NULL;
@@ -2808,7 +2812,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	
 	if (error_pending) {
 		if (transaction != dbb->dbb_sys_trans) {
-			for (sav* save_point = transaction->tra_save_point;
+			for (const Savepoint* save_point = transaction->tra_save_point;
 				((save_point) && (save_point_number <= save_point->sav_number));
 				 save_point = transaction->tra_save_point)
 			{
@@ -2853,11 +2857,11 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	sta* impure = (STA) ((SCHAR *) request + node->nod_impure);
 
 	const SSHORT org_stream = (USHORT)(IPTR) node->nod_arg[e_mod_org_stream];
-	RPB* org_rpb = &request->req_rpb[org_stream];
+	record_param* org_rpb = &request->req_rpb[org_stream];
 	jrd_rel* relation = org_rpb->rpb_relation;
 
 	const SSHORT new_stream = (USHORT)(IPTR) node->nod_arg[e_mod_new_stream];
-	RPB* new_rpb = &request->req_rpb[new_stream];
+	record_param* new_rpb = &request->req_rpb[new_stream];
 
 #ifdef PC_ENGINE
 /* for navigational streams, retrieve the rsb */
@@ -2883,7 +2887,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
    refetch and release the record. */
 
 	if (org_rpb->rpb_stream_flags & RPB_s_refetch) {
-		const SLONG tid_fetch = org_rpb->rpb_transaction;
+		const SLONG tid_fetch = org_rpb->rpb_transaction_nr;
 		if ((!DPM_get(tdbb, org_rpb, LCK_read)) ||
 			(!VIO_chase_record_version(tdbb,
 									   org_rpb,
@@ -2903,7 +2907,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		 */
 
 		if ((transaction->tra_flags & TRA_read_committed) &&
-			(tid_fetch != org_rpb->rpb_transaction))
+			(tid_fetch != org_rpb->rpb_transaction_nr))
 		{
 				ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
 		}
@@ -2918,8 +2922,8 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	case jrd_req::req_return:
 		if (impure->sta_state) {
 			impure->sta_state = 0;
-			rec* org_record = org_rpb->rpb_record;
-			const rec* new_record = new_rpb->rpb_record;
+			Record* org_record = org_rpb->rpb_record;
+			const Record* new_record = new_rpb->rpb_record;
 			MOVE_FASTER(new_record->rec_data, org_record->rec_data,
 						new_record->rec_length);
 			request->req_operation = jrd_req::req_evaluate;
@@ -2940,7 +2944,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 
 		if (!(transaction->tra_flags & TRA_degree3))
 		{
-			const lck* record_locking = RLCK_record_locking(relation);
+			const Lock* record_locking = RLCK_record_locking(relation);
 			if (record_locking->lck_physical != LCK_PR)
 			{
 				implicit_lock.assign(implicit_record_lock(transaction, org_rpb));
@@ -3051,7 +3055,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		}
 
 		if (which_trig != PRE_TRIG) {
-			rec* org_record = org_rpb->rpb_record;
+			Record* org_record = org_rpb->rpb_record;
 			org_rpb->rpb_record = new_rpb->rpb_record;
 			new_rpb->rpb_record = org_record;
 		}
@@ -3061,7 +3065,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	}
 
 	impure->sta_state = 0;
-	RLCK_reserve_relation(tdbb, transaction, relation, TRUE, TRUE);
+	RLCK_reserve_relation(tdbb, transaction, relation, true, true);
 
 /* Fall thru on evaluate to set up for modify before executing sub-statement.
    This involves finding the appropriate format, making sure a record block
@@ -3069,13 +3073,13 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
    original record to the new record. */
 
 	const fmt* new_format = MET_current(tdbb, new_rpb->rpb_relation);
-	rec* new_record = VIO_record(tdbb, new_rpb, new_format, tdbb->tdbb_default);
+	Record* new_record = VIO_record(tdbb, new_rpb, new_format, tdbb->tdbb_default);
 	new_rpb->rpb_address = new_record->rec_data;
 	new_rpb->rpb_length = new_format->fmt_length;
 	new_rpb->rpb_format_number = new_format->fmt_version;
 
 	const fmt* org_format;
-	rec* org_record = org_rpb->rpb_record;
+	Record* org_record = org_rpb->rpb_record;
 	if (!org_record) {
 		org_record =
 			VIO_record(tdbb, org_rpb, new_format, tdbb->tdbb_default);
@@ -3250,11 +3254,11 @@ static void release_proc_save_points(jrd_req* request)
  *	Release temporary blobs assigned by this request.
  *
  **************************************/
-	sav* sav_point = request->req_proc_sav_point;
+	Savepoint* sav_point = request->req_proc_sav_point;
 
 	if (request->req_transaction) {
 		while (sav_point) {
-			sav* temp_sav_point = sav_point->sav_next;
+			Savepoint* const temp_sav_point = sav_point->sav_next;
 			delete sav_point;
 			sav_point = temp_sav_point;
 		}
@@ -3571,7 +3575,7 @@ static jrd_nod* set_bookmark(thread_db* tdbb, jrd_nod* node)
 	if (request->req_operation == jrd_req::req_evaluate) {
 		bkm* bookmark = BKM_lookup(node->nod_arg[e_setmark_id]);
 		const USHORT stream = (USHORT)(ULONG) node->nod_arg[e_setmark_stream];
-		RPB* rpb = &request->req_rpb[stream];
+		record_param* rpb = &request->req_rpb[stream];
 		Rsb* rsb = *((Rsb**) node->nod_arg[e_setmark_rsb]);
 		irsb* impure = (IRSB) ((UCHAR *) request + rsb->rsb_impure);
 
@@ -3723,7 +3727,7 @@ static jrd_nod* set_index(thread_db* tdbb, jrd_nod* node)
 	if (request->req_operation == jrd_req::req_evaluate) {
 		const USHORT stream = (USHORT)(ULONG) node->nod_arg[e_index_stream];
 
-		RPB* rpb = &request->req_rpb[stream];
+		record_param* rpb = &request->req_rpb[stream];
 		jrd_rel* relation = rpb->rpb_relation;
 
 		/* if id is non-zero, get the index definition;
@@ -3801,7 +3805,7 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
  *
  **************************************/
 	jrd_req* trigger;
-	REC record;
+	Record* record;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -3811,13 +3815,13 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	jrd_tra*    transaction = request->req_transaction;
 	STA    impure      = (STA) ((SCHAR *) request + node->nod_impure);
 	SSHORT stream      = (USHORT)(IPTR) node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
-	RPB*   rpb         = &request->req_rpb[stream];
+	record_param* rpb  = &request->req_rpb[stream];
 	jrd_rel*    relation    = rpb->rpb_relation;
 
 	switch (request->req_operation) {
 	case jrd_req::req_evaluate:
 		impure->sta_state = 0;
-		RLCK_reserve_relation(tdbb, transaction, relation, TRUE, TRUE);
+		RLCK_reserve_relation(tdbb, transaction, relation, true, true);
 		break;
 
 	case jrd_req::req_return:

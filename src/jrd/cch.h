@@ -26,41 +26,43 @@
 
 #include "../include/fb_blk.h"
 
-class lck;
+class Lock;
 class Precedence;
 struct thread_db;
 struct que;
-class Buffer_desc;
+class BufferDesc;
+class SparseBitmap;
+class BlockingThread;
 
 /* Page buffer cache size constraints. */
 
 #define MIN_PAGE_BUFFERS	50L
 #define MAX_PAGE_BUFFERS	65535L
 
-/* BCB -- Buffer control block -- one per system */
-	struct bcb_repeat
-	{
-		Buffer_desc*	bcb_bdb;		/* Buffer descriptor block */
-		que				bcb_page_mod;	/* Que of buffers with page mod n */
-	};
+/* BufferControl -- Buffer control block -- one per system */
 
-class bcb : public pool_alloc_rpt<bcb_repeat, type_bcb>
+struct bcb_repeat
+{
+	BufferDesc*	bcb_bdb;		/* Buffer descriptor block */
+	que				bcb_page_mod;	/* Que of buffers with page mod n */
+};
+
+class BufferControl : public pool_alloc_rpt<bcb_repeat, type_bcb>
 {
     public:
 	class lls*	bcb_memory;			/* Large block partitioned into buffers */
 	que			bcb_in_use;			/* Que of buffers in use */
 	que			bcb_empty;			/* Que of empty buffers */
-	Buffer_desc*	bcb_btree;			/* root of dirty page btree */
+	BufferDesc*	bcb_btree;		/* root of dirty page btree */
 	Precedence*	bcb_free;			/* Free precedence blocks */
 	que			bcb_free_lwt;		/* Free latch wait blocks */
 	SSHORT		bcb_flags;			/* see below */
 	SSHORT		bcb_free_minimum;	/* Threshold to activate cache writer */
 	ULONG		bcb_count;			/* Number of buffers allocated */
 	ULONG		bcb_checkpoint;		/* Count of buffers to checkpoint */
-	struct sbm*	bcb_prefetch;		/* Bitmap of pages to prefetch */
-	bcb_repeat bcb_rpt[1];
+	SparseBitmap*	bcb_prefetch;		/* Bitmap of pages to prefetch */
+	bcb_repeat	bcb_rpt[1];
 };
-typedef bcb *BCB;
 
 #define BCB_keep_pages		1	/* set during btc_flush(), pages not removed from dirty binary tree */
 #define BCB_cache_writer	2	/* cache writer thread has been started */
@@ -71,28 +73,28 @@ typedef bcb *BCB;
 #define BCB_free_pending	64	/* request cache writer to free pages */
 
 
-/* Buffer_desc -- Buffer descriptor block */
+/* BufferDesc -- Buffer descriptor block */
 
-#define BDB_max_shared		20	/* maximum number of shared latch owners per Buffer_desc */
+#define BDB_max_shared		20	/* maximum number of shared latch owners per BufferDesc */
 
-class Buffer_desc : public pool_alloc<type_bdb>
+class BufferDesc : public pool_alloc<type_bdb>
 {
     public:
 	class Database*	bdb_dbb;				/* Database block (for ASTs) */
-	lck*		bdb_lock;				/* Lock block for buffer */
+	Lock*		bdb_lock;				/* Lock block for buffer */
 	que			bdb_que;				/* Buffer que */
 	que			bdb_in_use;				/* queue of buffers in use */
 	struct pag*	bdb_buffer;				/* Actual buffer */
 	struct jrd_exp*	bdb_expanded_buffer;	/* expanded index buffer */
-	struct btb*	bdb_blocked;			/* Blocked attachments block */
+	BlockingThread*	bdb_blocked;			/* Blocked attachments block */
 	SLONG		bdb_page;				/* Database page number in buffer */
 	ULONG		bdb_sequence;
 	SLONG		bdb_incarnation;
 	ULONG		bdb_transactions;		/* vector of dirty flags to reduce commit overhead */
 	SLONG		bdb_mark_transaction;	/* hi-water mark transaction to defer header page I/O */
-	Buffer_desc*	bdb_left;				/* dirty page binary tree link */
-	Buffer_desc*	bdb_right;				/* dirty page binary tree link */
-	Buffer_desc*	bdb_parent;				/* dirty page binary tree link */
+	BufferDesc*	bdb_left;				/* dirty page binary tree link */
+	BufferDesc*	bdb_right;				/* dirty page binary tree link */
+	BufferDesc*	bdb_parent;				/* dirty page binary tree link */
 	que			bdb_lower;				/* lower precedence que */
 	que			bdb_higher;				/* higher precedence que */
 	que			bdb_waiters;			/* latch wait que */
@@ -146,8 +148,8 @@ class Buffer_desc : public pool_alloc<type_bdb>
 class Precedence : public pool_alloc<type_pre>
 {
     public:
-	Buffer_desc*	pre_hi;
-	Buffer_desc*	pre_low;
+	BufferDesc*	pre_hi;
+	BufferDesc*	pre_low;
 	que				pre_lower;
 	que				pre_higher;
 	SSHORT			pre_flags;
@@ -192,7 +194,7 @@ typedef enum
 
 /* LWT -- Latch wait block */
 
-class Latch_wait : public pool_alloc<type_lwt>
+class LatchWait : public pool_alloc<type_lwt>
 {
     public:
 	thread_db*		lwt_tdbb;
@@ -224,7 +226,7 @@ class Prefetch : public pool_alloc<type_prf>
 	SCHAR*		prf_aligned_buffer;	/* buffer address aligned for raw (OS cache bypass) I/O */
 	SCHAR*		prf_io_buffer;		/* I/O buffer address */
 	UCHAR		prf_flags;
-	Buffer_desc*	prf_bdbs[PREFETCH_MAX_TRANSFER / MIN_PAGE_SIZE];
+	BufferDesc*	prf_bdbs[PREFETCH_MAX_TRANSFER / MIN_PAGE_SIZE];
 	SCHAR		prf_unaligned_buffer[PREFETCH_MAX_TRANSFER + MIN_PAGE_SIZE];
 };
 

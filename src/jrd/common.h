@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.109 2004-03-14 13:39:44 alexpeshkoff Exp $
+$Id: common.h,v 1.110 2004-03-18 05:55:22 robocop Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -1081,13 +1081,6 @@ inline int fb_stricmp(const char* a, const char* b)
 #error dont know how to compare strings case insensitive on this system
 #endif
 }
-
-#ifdef WIN_NT
-#include <direct.h>
-#endif
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 
 #endif /* JRD_COMMON_H */
 

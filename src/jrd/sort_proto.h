@@ -24,7 +24,7 @@
 #ifndef JRD_SORT_PROTO_H
 #define JRD_SORT_PROTO_H
 
-class att;
+class Attachment;
 struct sort_key_def;
 
 #ifdef SCROLLABLE_CURSORS
@@ -38,11 +38,11 @@ ULONG	SORT_read_block(ISC_STATUS *, struct sfb *, ULONG, BLOB_PTR *,
 #endif
 
 void	SORT_error(ISC_STATUS *, struct sfb *, TEXT *, ISC_STATUS, int);
-void	SORT_fini(struct scb *, att*);
+void	SORT_fini(struct scb *, Attachment*);
 struct scb*	SORT_init(ISC_STATUS*, USHORT, USHORT, const sort_key_def*,
-						FPTR_REJECT_DUP_CALLBACK, void*, att*, UINT64);
+						FPTR_REJECT_DUP_CALLBACK, void*, Attachment*, UINT64);
 void	SORT_put(ISC_STATUS *, struct scb *, ULONG **);
-void	SORT_shutdown(att*);
+void	SORT_shutdown(Attachment*);
 bool	SORT_sort(ISC_STATUS *, struct scb *);
 ULONG	SORT_write_block(ISC_STATUS *, struct sfb *, ULONG, BLOB_PTR *,
 							  ULONG);

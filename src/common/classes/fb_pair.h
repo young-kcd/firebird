@@ -26,8 +26,8 @@
  *  Contributor(s): ______________________________________.
  */
 
-#ifndef FB_PAIR_H
-#define FB_PAIR_H
+#ifndef CLASSES_FB_PAIR_H
+#define CLASSES_FB_PAIR_H
  
 #include "../common/classes/alloc.h"
 
@@ -132,4 +132,4 @@ template <typename P>
 	};
 };
 
-#endif	// FB_PAIR_H
+#endif	// CLASSES_FB_PAIR_H

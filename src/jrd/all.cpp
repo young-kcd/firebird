@@ -311,7 +311,7 @@ void ALL_print_memory_pool_info(IB_FILE* fptr, Database* databases)
 	STR string;
 	VEC vector;
 	HNK hnk;
-	ATT att;
+	Attachment* att;
 	int i, j, k, col;
 
 	ib_fprintf(fptr, "\n\tALL_xx block types\n");

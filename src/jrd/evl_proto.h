@@ -28,10 +28,10 @@
 
 // Implemented in evl.cpp
 dsc*		EVL_assign_to(thread_db* tdbb, jrd_nod*);
-sbm**		EVL_bitmap(thread_db* tdbb, jrd_nod*);
+SparseBitmap**	EVL_bitmap(thread_db* tdbb, jrd_nod*);
 BOOLEAN		EVL_boolean(thread_db* tdbb, jrd_nod*);
 dsc*		EVL_expr(thread_db* tdbb, jrd_nod*);
-bool		EVL_field(jrd_rel*, rec*, USHORT, dsc*);
+bool		EVL_field(jrd_rel*, Record*, USHORT, dsc*);
 USHORT		EVL_group(thread_db* tdbb, Rsb*, jrd_nod*, USHORT);
 void		EVL_make_value(thread_db* tdbb, const dsc*, vlu*);
 

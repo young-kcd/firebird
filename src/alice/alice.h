@@ -175,9 +175,9 @@ public:
 	pool_vec_t		pools;
 	int				exit_code;
 	pfn_svc_output  output_proc;
-	svc*			output_data;
+	Service*		output_data;
 	IB_FILE*		output_file;
-	svc*			service_blk;
+	Service*		service_blk;
 	isc_db_handle	db_handle;
 	isc_tr_handle	tr_handle;
 	ISC_STATUS*		status;

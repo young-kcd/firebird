@@ -587,15 +587,15 @@ static USHORT VAL_debug_level = 0;
 
 typedef struct vdr
 {
-	SBM vdr_page_bitmap;
+	SparseBitmap* vdr_page_bitmap;
 	SLONG vdr_max_page;
 	USHORT vdr_flags;
 	USHORT vdr_errors;
 	SLONG vdr_max_transaction;
 	ULONG vdr_rel_backversion_counter;	/* Counts slots w/rhd_chain */
 	ULONG vdr_rel_chain_counter;	/* Counts chains w/rdr_chain */
-	SBM vdr_rel_records;		/* 1 bit per valid record */
-	SBM vdr_idx_records;		/* 1 bit per index item */
+	SparseBitmap* vdr_rel_records;		/* 1 bit per valid record */
+	SparseBitmap* vdr_idx_records;		/* 1 bit per index item */
 } *VDR;
 
 #define vdr_update		2		/* fix simple things */
@@ -686,7 +686,7 @@ bool VAL_validate(thread_db* tdbb, USHORT switches)
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
-	ATT att = tdbb->tdbb_attachment;
+	Attachment* att = tdbb->tdbb_attachment;
 
 	try {
 
@@ -762,7 +762,7 @@ static RTN corrupt(thread_db* tdbb, VDR control, USHORT err_code, jrd_rel* relat
 	VA_START(ptr, relation);
 
 	SET_TDBB(tdbb);
-	ATT att = tdbb->tdbb_attachment;
+	Attachment* att = tdbb->tdbb_attachment;
 	if (err_code < att->att_val_errors->count())
 		(*att->att_val_errors)[err_code]++;
 
@@ -1409,13 +1409,13 @@ static RTN walk_index(thread_db* tdbb,
 		WIN window(-1);
 		fetch_page(tdbb, control, next, pag_index, &window, &page);
 		if ((next != page_number) &&
-			(page->btr_header.pag_flags & BTR_FLAG_COPY_MASK) != 
+			(page->pag_flags & BTR_FLAG_COPY_MASK) !=
 			(flags & BTR_FLAG_COPY_MASK))
 		{
 			corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
 				id + 1, next);
 		}
-		flags = page->btr_header.pag_flags;
+		flags = page->pag_flags;
 		bool leafPage = (page->btr_level == 0);
 		bool useJumpInfo = (flags & btr_jump_info);
 		bool useAllRecordNumbers = (flags & btr_all_record_number);
@@ -1782,7 +1782,7 @@ static RTN walk_pointer_page(	thread_db*	tdbb,
 
 /* If this is the last pointer page in the relation, we're done */
 
-	if (page->ppg_header.pag_flags & ppg_eof) {
+	if (page->pag_flags & ppg_eof) {
 		CCH_RELEASE(tdbb, &window);
 		return rtn_eof;
 	}

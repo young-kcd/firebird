@@ -66,7 +66,7 @@ jrd_prc*	MET_lookup_procedure_id(thread_db*, SSHORT, bool, bool, USHORT);
 jrd_rel*	MET_lookup_relation(thread_db*, const char*);
 jrd_rel*	MET_lookup_relation_id(thread_db*, SLONG, bool);
 jrd_nod*	MET_parse_blob(thread_db*, jrd_rel*, struct bid*, Csb**,
-								  jrd_req**, BOOLEAN, BOOLEAN);
+								  jrd_req**, const bool, const bool);
 void		MET_parse_sys_trigger(thread_db*, jrd_rel*);
 int			MET_post_existence(thread_db*, jrd_rel*);
 void		MET_prepare(thread_db*, jrd_tra*, USHORT, const UCHAR*);

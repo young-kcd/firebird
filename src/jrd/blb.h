@@ -49,7 +49,7 @@ struct bid {
 class blb : public pool_alloc_rpt<UCHAR, type_blb>
 {
     public:
-	att *blb_attachment;	/* database attachment */
+	Attachment*	blb_attachment;	/* database attachment */
 	jrd_rel *blb_relation;	/* Relation, if known */
 	class jrd_tra *blb_transaction;	/* Parent transaction block */
 	blb *blb_next;		/* Next blob in transaction */

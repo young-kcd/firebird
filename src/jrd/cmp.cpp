@@ -310,10 +310,11 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 	clone->req_invariants.join(request->req_invariants);
 	clone->req_fors.join(request->req_fors);
 
-	RPB* rpb1 = clone->req_rpb;
-	const RPB* const end = rpb1 + clone->req_count;
+	record_param* rpb1 = clone->req_rpb;
+	const record_param* const end = rpb1 + clone->req_count;
 
-	for (RPB* rpb2 = request->req_rpb; rpb1 < end; rpb1++, rpb2++) {
+	for (const record_param* rpb2 = request->req_rpb; rpb1 < end; rpb1++, rpb2++)
+	{
 		if (rpb2->rpb_stream_flags & RPB_s_update) {
 			rpb1->rpb_stream_flags |= RPB_s_update;
 		}
@@ -406,7 +407,7 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag)
 }
 
 
-csb_repeat* CMP_csb_element(Csb* csb, USHORT element)
+Csb::csb_repeat* CMP_csb_element(Csb* csb, USHORT element)
 {
 /**************************************
  *
@@ -420,7 +421,7 @@ csb_repeat* CMP_csb_element(Csb* csb, USHORT element)
  *
  **************************************/
 	DEV_BLKCHK(csb, type_csb);
-	csb_repeat empty_item;
+	Csb::csb_repeat empty_item;
 	while (element >= csb->csb_rpt.getCount()) {
 		csb->csb_rpt.add(empty_item);
 	}
@@ -551,7 +552,7 @@ fmt* CMP_format(thread_db* tdbb, Csb* csb, USHORT stream)
 
 	DEV_BLKCHK(csb, type_csb);
 
-	csb_repeat* tail = &csb->csb_rpt[stream];
+	Csb::csb_repeat* tail = &csb->csb_rpt[stream];
 
 	if (tail->csb_format) {
 		return tail->csb_format;
@@ -1545,7 +1546,7 @@ void CMP_get_desc(thread_db* tdbb, Csb* csb, jrd_nod* node, DSC * desc)
 		return;
 
 	case nod_literal:
-		*desc = ((LIT) node)->lit_desc;
+		*desc = ((Literal*) node)->lit_desc;
 		return;
 
 	case nod_cast:
@@ -1702,7 +1703,7 @@ IDL CMP_get_index_lock(thread_db* tdbb, jrd_rel* relation, USHORT id)
 	index->idl_id = id;
 	index->idl_count = 0;
 
-	lck* lock = FB_NEW_RPT(*dbb->dbb_permanent, 0) lck;
+	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, 0) Lock;
 	index->idl_lock = lock;
 	lock->lck_parent = dbb->dbb_lock;
 	lock->lck_dbb = dbb;
@@ -1928,11 +1929,11 @@ jrd_req* CMP_make_request(thread_db* tdbb, Csb* csb)
 		}
 	}
 
-    csb_repeat* tail = csb->csb_rpt.begin();
-	const csb_repeat* const streams_end  = tail + csb->csb_n_stream;
+    Csb::csb_repeat* tail = csb->csb_rpt.begin();
+	const Csb::csb_repeat* const streams_end  = tail + csb->csb_n_stream;
 	DEBUG;
 
-	for (RPB* rpb = request->req_rpb; tail < streams_end; rpb++, tail++)
+	for (record_param* rpb = request->req_rpb; tail < streams_end; rpb++, tail++)
 	{
 		// fetch input stream for update if all booleans matched against indices
 
@@ -2200,7 +2201,7 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
 
 	// release existence locks on references
 
-	att* attachment = request->req_attachment;
+	Attachment* attachment = request->req_attachment;
 	if (!attachment || !(attachment->att_flags & ATT_shutdown)) {
 		for (Resource* resource = request->req_resources;
 			 resource; resource = resource->rsc_next)
@@ -2673,7 +2674,7 @@ static jrd_nod* copy(thread_db* tdbb,
 			node->nod_arg[e_rel_relation] = input->nod_arg[e_rel_relation];
 			node->nod_arg[e_rel_view] = input->nod_arg[e_rel_view];
 
-			csb_repeat* element = CMP_csb_element(csb, new_stream);
+			Csb::csb_repeat* element = CMP_csb_element(csb, new_stream);
 			element->csb_relation = (jrd_rel*) node->nod_arg[e_rel_relation];
 			element->csb_view = (jrd_rel*) node->nod_arg[e_rel_view];
 			element->csb_view_stream = remap[0];
@@ -2741,7 +2742,7 @@ static jrd_nod* copy(thread_db* tdbb,
 			node->nod_arg[e_prc_stream] = (jrd_nod*) (IPTR) new_stream;
 			remap[stream] = (UCHAR) new_stream;
 			node->nod_arg[e_prc_procedure] = input->nod_arg[e_prc_procedure];
-			csb_repeat* element = CMP_csb_element(csb, new_stream);
+			Csb::csb_repeat* element = CMP_csb_element(csb, new_stream);
 			// SKIDDER: Maybe we need to check if we really found a procedure?
 			element->csb_procedure = MET_lookup_procedure_id(tdbb,
 			  (SSHORT)(IPTR) node->nod_arg[e_prc_procedure], false, false, 0);
@@ -2930,7 +2931,7 @@ static void ignore_dbkey(thread_db* tdbb, Csb* csb, RSE rse, const jrd_rel* view
 		{
 			const USHORT stream = (USHORT)(IPTR) node->nod_arg[e_rel_stream];
 			csb->csb_rpt[stream].csb_flags |= csb_no_dbkey;
-			const csb_repeat* tail = &csb->csb_rpt[stream];
+			const Csb::csb_repeat* tail = &csb->csb_rpt[stream];
 			const jrd_rel* relation = tail->csb_relation;
 			if (relation) {
 				CMP_post_access(tdbb, csb, relation->rel_security_name,
@@ -3121,7 +3122,7 @@ static jrd_nod* pass1(thread_db* tdbb,
  **************************************/
 	jrd_nod* sub, **ptr, **end;
 	USHORT stream;
-	csb_repeat *tail;
+	Csb::csb_repeat* tail;
 	jrd_prc* procedure;
 
 	SET_TDBB(tdbb);
@@ -3183,10 +3184,6 @@ static jrd_nod* pass1(thread_db* tdbb,
 
 	case nod_field:
 		{
-			jrd_rel* relation;
-			jrd_fld* field;
-			UCHAR *map, local_map[MAP_LENGTH];
-
 			stream = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
 
 			// Look at all rse's which are lower in scope than the rse which this field 
@@ -3210,8 +3207,10 @@ static jrd_nod* pass1(thread_db* tdbb,
 					}
 				}
 			}
+			jrd_fld* field;
 			tail = &csb->csb_rpt[stream];
-			if (!(relation = tail->csb_relation) ||
+			jrd_rel* relation = tail->csb_relation;
+			if (!relation ||
 				!(field =
 				  MET_get_field(relation,
 								(USHORT)(IPTR) node->nod_arg[e_fld_id])))
@@ -3309,7 +3308,9 @@ static jrd_nod* pass1(thread_db* tdbb,
 					break;
 			}
 
-			if (!(map = tail->csb_map)) {
+			UCHAR local_map[MAP_LENGTH];
+			UCHAR* map = tail->csb_map;
+			if (!map) {
 				map = local_map;
 				fb_assert(stream + 2 <= MAX_STREAMS);
 				local_map[0] = (UCHAR) stream;
@@ -3538,7 +3539,7 @@ static void pass1_erase(thread_db* tdbb, Csb* csb, jrd_nod* node)
 	for (;;) {
 		USHORT new_stream = (USHORT)(IPTR) node->nod_arg[e_erase_stream];
 		USHORT stream = new_stream;
-		csb_repeat* tail = &csb->csb_rpt[stream];
+		Csb::csb_repeat* tail = &csb->csb_rpt[stream];
 		tail->csb_flags |= csb_erase;
 		jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
 		view = (relation->rel_view_rse) ? relation : view;
@@ -3706,7 +3707,7 @@ static void pass1_modify(thread_db* tdbb, Csb* csb, jrd_nod* node)
 	for (;;) {
 		USHORT stream = (USHORT)(IPTR) node->nod_arg[e_mod_org_stream];
 		USHORT new_stream = (USHORT)(IPTR) node->nod_arg[e_mod_new_stream];
-		csb_repeat* tail = &csb->csb_rpt[new_stream];
+		Csb::csb_repeat* tail = &csb->csb_rpt[new_stream];
 		tail->csb_flags |= csb_modify;
 		jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
 		view = (relation->rel_view_rse) ? relation : view;
@@ -4064,7 +4065,7 @@ static void pass1_source(thread_db*     tdbb,
 	source->nod_arg[e_rel_view] = (jrd_nod*) parent_view;
 
 	const USHORT stream = (USHORT)(IPTR) source->nod_arg[e_rel_stream];
-	csb_repeat* element = CMP_csb_element(csb, stream);
+	Csb::csb_repeat* element = CMP_csb_element(csb, stream);
 	element->csb_view = parent_view;
 	fb_assert(view_stream <= MAX_STREAMS);
 	element->csb_view_stream = (UCHAR) view_stream;
@@ -4072,7 +4073,7 @@ static void pass1_source(thread_db*     tdbb,
 	// in the case where there is a parent view, find the context name
 
 	if (parent_view) {
-		for (vcx** vcx_ptr = &parent_view->rel_view_contexts; *vcx_ptr;
+		for (ViewContext** vcx_ptr = &parent_view->rel_view_contexts; *vcx_ptr;
 			 vcx_ptr = &(*vcx_ptr)->vcx_next)
 		{
 			if ((*vcx_ptr)->vcx_context ==
@@ -4223,7 +4224,7 @@ static jrd_nod* pass1_store(thread_db* tdbb, Csb* csb, jrd_nod* node)
 	for (;;) {
 		jrd_nod* original = node->nod_arg[e_sto_relation];
 		USHORT stream = (USHORT)(IPTR) original->nod_arg[e_rel_stream];
-		csb_repeat* tail = &csb->csb_rpt[stream];
+		Csb::csb_repeat* tail = &csb->csb_rpt[stream];
 		tail->csb_flags |= csb_store;
 		jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
 		view = (relation->rel_view_rse) ? relation : view;
@@ -5173,7 +5174,7 @@ static void plan_set(Csb* csb, RSE rse, jrd_nod* plan)
 	// find the tail for the relation specified in the rse
 
 	const USHORT stream = (USHORT)(IPTR) plan_relation_node->nod_arg[e_rel_stream];
-	csb_repeat* tail = &csb->csb_rpt[stream];
+	Csb::csb_repeat* tail = &csb->csb_rpt[stream];
 
 	// if the plan references a view, find the real base relation 
 	// we are interested in by searching the view map */
@@ -5243,7 +5244,7 @@ static void plan_set(Csb* csb, RSE rse, jrd_nod* plan)
 				UCHAR* duplicate_map = map_base;
 				map = NULL;
 				for (duplicate_map++; *duplicate_map; duplicate_map++) {
-					csb_repeat* duplicate_tail = &csb->csb_rpt[*duplicate_map];
+					Csb::csb_repeat* duplicate_tail = &csb->csb_rpt[*duplicate_map];
 					const jrd_rel* relation = duplicate_tail->csb_relation;
 					if (relation && relation->rel_id == plan_relation->rel_id) {
 						if (duplicate_relation) {
@@ -5278,7 +5279,7 @@ static void plan_set(Csb* csb, RSE rse, jrd_nod* plan)
 				// CVC: I found that "relation" can be NULL, too. This may be an
 				// indication of a logic flaw while parsing the user supplied SQL plan
 				// and not an oversight here. It's hard to imagine a csb->csb_rpt with
-				// a NULL relation. See exe.h for csb struct and its inner csb_repeat struct.
+				// a NULL relation. See exe.h for Csb struct and its inner csb_repeat struct.
 
 				if (
 					(alias

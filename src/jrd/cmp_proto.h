@@ -25,13 +25,14 @@
 #define JRD_CMP_PROTO_H
 
 #include "../jrd/req.h"
+// req.h includes exe.h => Csb and Csb::csb_repeat.
 
 bool CMP_clone_is_active(const jrd_req*);
 jrd_nod* CMP_clone_node(thread_db*, Csb*, jrd_nod*);
 jrd_req* CMP_clone_request(thread_db*, jrd_req*, USHORT, bool);
 jrd_req* CMP_compile(USHORT, const UCHAR*, USHORT);
 jrd_req* CMP_compile2(thread_db*, const UCHAR*, USHORT);
-csb_repeat* CMP_csb_element(Csb*, USHORT);
+Csb::csb_repeat* CMP_csb_element(Csb*, USHORT);
 void CMP_expunge_transaction(jrd_tra*);
 void CMP_decrement_prc_use_count(thread_db*, jrd_prc*);
 jrd_req* CMP_find_request(thread_db*, USHORT, USHORT);

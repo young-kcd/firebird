@@ -35,24 +35,29 @@
 
 #include <vector>
 
-class lck;
+class Lock;
 class fmt;
 class jrd_rel;
 class jrd_prc;
-class rec;
+class Record;
 class jrd_nod;
+struct srpb;
+class vec;
+class jrd_tra;
+class Savepoint;
+class Resource;
 
 /* record parameter block */
 
-typedef struct rpb {
-	rpb() : rpb_window(-1) {}
+struct record_param {
+	record_param() : rpb_window(-1) {}
 	SLONG rpb_number;			/* record number in relation */
-	SLONG rpb_transaction;		/* transaction number */
+	SLONG rpb_transaction_nr;	/* transaction number */
 	jrd_rel*	rpb_relation;	/* relation of record */
-	rec*		rpb_record;		/* final record block */
-	rec*		rpb_prior;		/* prior record block if this is a delta record */
-	struct srpb *rpb_copy;		/* rpb copy for singleton verification */
-	rec*		rpb_undo;		/* our first version of data if this is a second modification */
+	Record*		rpb_record;		/* final record block */
+	Record*		rpb_prior;		/* prior record block if this is a delta record */
+	srpb*		rpb_copy;		/* record_param copy for singleton verification */
+	Record*		rpb_undo;		/* our first version of data if this is a second modification */
 	USHORT rpb_format_number;	/* format number in relation */
 
 	SLONG rpb_page;				/* page number */
@@ -64,13 +69,13 @@ typedef struct rpb {
 	SLONG rpb_b_page;			/* back page */
 	USHORT rpb_b_line;			/* back line */
 
-	UCHAR *rpb_address;			/* address of record sans header */
+	UCHAR*	rpb_address;		/* address of record sans header */
 	USHORT rpb_length;			/* length of record */
 	USHORT rpb_flags;			/* record ODS flags replica */
 	USHORT rpb_stream_flags;	/* stream flags */
 	SSHORT rpb_org_scans;		/* relation scan count at stream open */
 	struct win rpb_window;
-} RPB;
+};
 
 /* Record flags must be an exact replica of ODS record header flags */
 
@@ -103,7 +108,7 @@ typedef struct rpb {
 
 /* Record block (holds data, remember data?) */
 
-class rec : public pool_alloc_rpt<SCHAR, type_rec>
+class Record : public pool_alloc_rpt<SCHAR, type_rec>
 {
     public:
 	const fmt* rec_format;		/* what the data looks like */
@@ -111,55 +116,54 @@ class rec : public pool_alloc_rpt<SCHAR, type_rec>
 	USHORT rec_length;			/* how much there is */
 	const fmt* rec_fmt_bk;   	// backup format to cope with Borland's ill null signaling
 	UCHAR rec_flags;			/* misc record flags */
-	SLONG rec_number;			/* original rpb number - used for undoing multiple updates */
+	SLONG rec_number;			/* original record_param number - used for undoing multiple updates */
 	double rec_dummy;			/* this is to force next field to a double boundary */
 	UCHAR rec_data[1];			/* THIS VARIABLE MUST BE ALIGNED ON A DOUBLE BOUNDARY */
 };
-typedef rec *REC;
 
 #define REC_same_tx	1			/* record inserted/updated and deleted by same tx */
 #define REC_gc_active	2		/* relation garbage collect record block in use */
 #define REC_new_version 4		/* savepoint created new record version and deleted it */
 
-/* save rpb block */
+/* save record_param block */
 
 class srpb : public pool_alloc<type_srpb>
 {
     public:
-	rpb srpb_rpb[1];		/* record parameter blocks */
+	record_param srpb_rpb[1];		/* record parameter blocks */
 };
-typedef srpb *SRPB;
+typedef srpb* SRPB;
 
 /* request block */
 
-class jrd_req : public pool_alloc_rpt<rpb, type_req>
+class jrd_req : public pool_alloc_rpt<record_param, type_req>
 {
 public:
 	jrd_req(JrdMemoryPool* pool) : req_fors(*pool), req_invariants(*pool) { };
-	ATT			req_attachment;		// database attachment
+	Attachment*	req_attachment;		// database attachment
 	USHORT		req_count;			// number of streams
 	USHORT		req_incarnation;	// incarnation number
 	ULONG		req_impure_size;	// size of impure area
 	JrdMemoryPool* req_pool;
-	struct vec*	req_sub_requests;	// vector of sub-requests
-	class jrd_tra* req_transaction;
-	jrd_req*		req_request;	/* next request in Database */
-	struct acc*	req_access;		/* Access items to be checked */
-	struct vec*	req_variables;	/* Vector of variables, if any */
-	class Resource*	req_resources;	/* Resources (relations and indices) */
-	jrd_nod*	req_message;	/* Current message for send/receive */
+	vec*		req_sub_requests;	// vector of sub-requests
+	jrd_tra*	req_transaction;
+	jrd_req*	req_request;		/* next request in Database */
+	struct acc*	req_access;			/* Access items to be checked */
+	vec*		req_variables;		/* Vector of variables, if any */
+	Resource*	req_resources;		/* Resources (relations and indices) */
+	jrd_nod*	req_message;		/* Current message for send/receive */
 #ifdef SCROLLABLE_CURSORS
 	jrd_nod*	req_async_message;	/* Asynchronous message (used in scrolling) */
 #endif
-	struct vec*	req_refresh_ranges;	/* Vector of refresh_ranges */
+	vec*		req_refresh_ranges;	/* Vector of refresh_ranges */
 	struct rng*	req_begin_ranges;	/* Vector of refresh_ranges */
 	jrd_prc*	req_procedure;		/* procedure, if any */
-	const TEXT*		req_trg_name;		/* name of request (trigger), if any */
-	USHORT req_length;			/* message length for send/receive */
-	USHORT req_nmsgs;			/* number of message types */
-	USHORT req_mmsg;			/* highest message type */
-	USHORT req_msend;			/* longest send message */
-	USHORT req_mreceive;		/* longest receive message */
+	const TEXT*	req_trg_name;		/* name of request (trigger), if any */
+	USHORT		req_length;			/* message length for send/receive */
+	USHORT		req_nmsgs;			/* number of message types */
+	USHORT		req_mmsg;			/* highest message type */
+	USHORT		req_msend;			/* longest send message */
+	USHORT		req_mreceive;		/* longest receive message */
 
 	ULONG req_records_selected;	/* count of records selected by request (meeting selection criteria) */
 	ULONG req_records_inserted;	/* count of records inserted by request */
@@ -168,26 +172,26 @@ public:
 
 	ULONG req_records_affected; /* count of records affected by the last statement */
 
-	USHORT req_view_flags;		/* special flags for virtual ops on views */
+	USHORT req_view_flags;			/* special flags for virtual ops on views */
 	jrd_rel* 	req_top_view_store;	/* the top view in store(), if any */
-	jrd_rel*	req_top_view_modify;	/* the top view in modify(), if any */
+	jrd_rel*	req_top_view_modify;/* the top view in modify(), if any */
 	jrd_rel*	req_top_view_erase;	/* the top view in erase(), if any */
 
-	jrd_nod*	req_top_node;	/* top of execution tree */
-	jrd_nod*	req_next;		/* next node for execution */
-	Firebird::Array<class Rsb*> req_fors;		/* Vector of for loops, if any */
-	struct vec* req_cursors;	/* Vector of named cursors, if any */
+	jrd_nod*	req_top_node;		/* top of execution tree */
+	jrd_nod*	req_next;			/* next node for execution */
+	Firebird::Array<class Rsb*> req_fors;	/* Vector of for loops, if any */
+	vec* 		req_cursors;		/* Vector of named cursors, if any */
 	Firebird::Array<jrd_nod*> req_invariants;	/* Vector of invariant nodes, if any */
-	USHORT req_label;			/* label for leave */
-	ULONG req_flags;			/* misc request flags */
-	struct sav *req_proc_sav_point;	/* procedure savepoint list */
-	ULONG req_timestamp;		/* Start time of request */
+	USHORT		req_label;			/* label for leave */
+	ULONG		req_flags;			/* misc request flags */
+	Savepoint*	req_proc_sav_point;	/* procedure savepoint list */
+	ULONG		req_timestamp;		/* Start time of request */
 
 	enum req_ta {
 		req_trigger_insert = 1,
 		req_trigger_update = 2,
 		req_trigger_delete = 3
-	} req_trigger_action;		/* action that caused trigger to fire */
+	} req_trigger_action;			/* action that caused trigger to fire */
 
 	enum req_s {
 		req_evaluate,
@@ -197,11 +201,11 @@ public:
 		req_proceed,
 		req_sync,
 		req_unwind
-	} req_operation;	/* operation for next node */
+	} req_operation;				/* operation for next node */
 
-    status_xcp req_last_xcp;	/* last known exception */
+    status_xcp req_last_xcp;		/* last known exception */
 
-	rpb req_rpb[1];		/* record parameter blocks */
+	record_param req_rpb[1];		/* record parameter blocks */
 };
 typedef jrd_req* JRD_REQ;  // CVC: Scheduled for termination, don't use the uppercase type!!!
 
@@ -272,7 +276,7 @@ class Resource : public pool_alloc<type_rsc>
 	jrd_rel*	rsc_rel;		/* Relation block */
 	jrd_prc*	rsc_prc;		/* Relation block */
 	USHORT		rsc_id;			/* Id of parent */
-	enum rsc_s rsc_type;
+	enum rsc_s	rsc_type;
 };
 
 /* Index lock block */
@@ -281,7 +285,7 @@ class idl : public pool_alloc<type_idl>
 {
     public:
 	idl*		idl_next;		/* Next index lock block for relation */
-	lck*		idl_lock;		/* Lock block */
+	Lock*		idl_lock;		/* Lock block */
 	jrd_rel*	idl_relation;	/* Parent relation */
 	USHORT		idl_id;			/* Index id */
 	USHORT		idl_count;		/* Use count */

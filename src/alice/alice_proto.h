@@ -26,7 +26,7 @@
 #define ALICE_ALICE_PROTO_H
 
 #ifdef SUPERSERVER
-int ALICE_main(svc* service);
+int ALICE_main(Service* service);
 #endif
 
 void	ALICE_down_case(const TEXT*, TEXT*, const size_t);

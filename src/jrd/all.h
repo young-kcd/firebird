@@ -34,7 +34,13 @@ void ALL_fini(void);
 void ALL_init(void);
 //void ALL_push(BLK , LLS *);
 //BLK ALL_pop(LLS *);
-void ALL_print_memory_pool_info(IB_FILE*, class Database*);
+
+struct blk;
+class SparseBitmap;
+class BitmapSegment;
+class Database;
+
+void ALL_print_memory_pool_info(IB_FILE*, Database*);
 
 #ifdef DEV_BUILD
 void ALL_check_memory(void);
@@ -52,11 +58,11 @@ public:
 	static void deletePool(JrdMemoryPool* pool);
 	static void noDbbDeletePool(JrdMemoryPool* pool);
 
-	static class blk* ALL_pop(class lls**);
-	static void       ALL_push(class blk*, class lls**);
+	static blk* ALL_pop(class lls**);
+	static void       ALL_push(blk*, class lls**);
 
-    struct sbm* plb_buckets;   /* available bit map buckets */
-    struct bms* plb_segments;  /* available bit map segments */
+    SparseBitmap* plb_buckets;   /* available bit map buckets */
+    BitmapSegment* plb_segments;  /* available bit map segments */
 	class Dcc* plb_dccs;
 
 private:
@@ -64,3 +70,4 @@ private:
 };
 
 #endif	// JRD_ALL_H
+

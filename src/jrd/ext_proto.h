@@ -25,14 +25,14 @@
 #define JRD_EXT_PROTO_H
 
 struct bid;
-class external_file;
+class ExternalFile;
 
 void	EXT_close(Rsb*);
-void	EXT_erase(rpb*, int*);
-external_file*	EXT_file(jrd_rel*, const TEXT*, bid*);
+void	EXT_erase(record_param*, int*);
+ExternalFile*	EXT_file(jrd_rel*, const TEXT*, bid*);
 void	EXT_fini(jrd_rel*);
 int	EXT_get(Rsb*);
-void	EXT_modify(rpb*, rpb*, int*);
+void	EXT_modify(record_param*, record_param*, int*);
 
 #ifdef VMS
 int	EXT_open(Rsb*);
@@ -41,7 +41,7 @@ void	EXT_open(Rsb*);
 #endif
 Rsb*	EXT_optimize(Opt*, SSHORT, jrd_nod**);
 void	EXT_ready(jrd_rel*);
-void	EXT_store(rpb*, int*);
+void	EXT_store(record_param*, int*);
 void	EXT_trans_commit(jrd_tra*);
 void	EXT_trans_prepare(jrd_tra*);
 void	EXT_trans_rollback(jrd_tra*);

@@ -188,7 +188,7 @@ int SDW_add_file(const TEXT* file_name, SLONG start, USHORT shadow_number)
 /* create the header using the spare_buffer */
 
 	header_page* header = (header_page*) spare_page;
-	header->hdr_header.pag_type = pag_header;
+	header->pag_type = pag_header;
 	header->hdr_sequence = sequence;
 	header->hdr_page_size = dbb->dbb_page_size;
 	header->hdr_data[0] = HDR_end;
@@ -196,14 +196,14 @@ int SDW_add_file(const TEXT* file_name, SLONG start, USHORT shadow_number)
 	header->hdr_next_page = 0;
 
 /* fool PIO_write into writing the scratch page into the correct place */
-	Buffer_desc temp_bdb;
+	BufferDesc temp_bdb;
 	temp_bdb.bdb_page = next->fil_min_page;
 	temp_bdb.bdb_dbb = dbb;
 	temp_bdb.bdb_buffer = (PAG) header;
-	header->hdr_header.pag_checksum = CCH_checksum(&temp_bdb);
+	header->pag_checksum = CCH_checksum(&temp_bdb);
 	if (!PIO_write(	shadow_file,
 					&temp_bdb,
-					reinterpret_cast<pag*>(header),
+					header,
 					0))
 	{
 		if (spare_buffer)
@@ -247,10 +247,10 @@ else
 							 (UCHAR *) & start);
 		file->fil_fudge = 0;
 		temp_bdb.bdb_page = file->fil_min_page;
-		header->hdr_header.pag_checksum = CCH_checksum(&temp_bdb);
+		header->pag_checksum = CCH_checksum(&temp_bdb);
 		if (!PIO_write(	shadow_file,
 						&temp_bdb,
-						reinterpret_cast<pag*>(header),
+						header,
 						0))
 		{
 			if (spare_buffer)
@@ -324,7 +324,7 @@ void SDW_check(void)
 
 	if (SDW_check_conditional()) {
 		if (SDW_lck_update((SLONG) 0)) {
-			lck* lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) lck();
+			Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();
 			lock->lck_dbb = dbb;
 			lock->lck_attachment = tdbb->tdbb_attachment;
 			lock->lck_length = sizeof(SLONG);
@@ -333,7 +333,7 @@ void SDW_check(void)
 			lock->lck_owner_handle =
 				LCK_get_owner_handle(tdbb, lock->lck_type);
 			lock->lck_parent = dbb->dbb_lock;
-			lock->lck_owner = (BLK) tdbb->tdbb_attachment;
+			lock->lck_owner = tdbb->tdbb_attachment;
 
 			LCK_lock(tdbb, lock, LCK_EX, FALSE);
 			if (lock->lck_physical == LCK_EX) {
@@ -536,7 +536,7 @@ void SDW_get_shadows(void)
 
 	dbb->dbb_ast_flags &= ~DBB_get_shadows;
 
-	lck* lock = dbb->dbb_shadow_lock;
+	Lock* lock = dbb->dbb_shadow_lock;
 
 	if (lock->lck_physical != LCK_SR) {
 		/* fb_assert (lock->lck_physical == LCK_none); */
@@ -582,7 +582,7 @@ void SDW_init(bool activate, bool delete_)
 
 	header_page* header; // for sizeof here, used later
 	const USHORT key_length = sizeof(header->hdr_shadow_count);
-	lck* lock = FB_NEW_RPT(*dbb->dbb_permanent, key_length) lck();
+	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, key_length) Lock();
 	dbb->dbb_shadow_lock = lock;
 	lock->lck_type = LCK_shadow;
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
@@ -617,7 +617,7 @@ bool SDW_lck_update(SLONG sdw_update_flags)
  **************************************
  *
  * Functional description
- *  update the lck struct with the flag 
+ *  update the Lock struct with the flag
  *  The update type flag indicates the type fo corrective action
  *  to be taken by the ASTs of other procs attached to this DB.	
  *	
@@ -633,7 +633,7 @@ bool SDW_lck_update(SLONG sdw_update_flags)
  *
  **************************************/
 	Database* dbb = GET_DBB;
-	lck* lock = dbb->dbb_shadow_lock;
+	Lock* lock = dbb->dbb_shadow_lock;
 	if (!lock)
 		return false;
 
@@ -690,7 +690,7 @@ void SDW_notify(void)
    notify other processes to find my shadow -- if we have a shared
    on it already, convert to exclusive */
 
-	lck* lock = dbb->dbb_shadow_lock;
+	Lock* lock = dbb->dbb_shadow_lock;
 
 	if (lock->lck_physical == LCK_SR) {
 		if (lock->lck_key.lck_long != header->hdr_shadow_count)
@@ -731,8 +731,8 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
 	if (file != dbb->dbb_file)
 		return true;
 
-	lck temp_lock;
-	lck* update_lock = &temp_lock;
+	Lock temp_lock;
+	Lock* update_lock = &temp_lock;
 	update_lock->lck_dbb = dbb;
 	update_lock->lck_attachment = tdbb->tdbb_attachment;
 	update_lock->lck_length = sizeof(SLONG);
@@ -741,7 +741,7 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
 	update_lock->lck_owner_handle =
 		LCK_get_owner_handle(tdbb, update_lock->lck_type);
 	update_lock->lck_parent = dbb->dbb_lock;
-	update_lock->lck_owner = (BLK) tdbb->tdbb_attachment;
+	update_lock->lck_owner = tdbb->tdbb_attachment;
 
 	SLONG sdw_update_flags = SDW_rollover;
 
@@ -805,7 +805,7 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
 	dbb->dbb_file = shadow->sdw_file;
 	shadow->sdw_flags |= SDW_rollover;
 
-	lck* shadow_lock = dbb->dbb_shadow_lock;
+	Lock* shadow_lock = dbb->dbb_shadow_lock;
 
 /* check conditional does a meta data update - since we were
    successfull updating LCK_data we will be the only one doing so */
@@ -1084,7 +1084,7 @@ int SDW_start_shadowing(void* ast_object)
  **************************************/
 	Database* new_dbb = reinterpret_cast<Database*>(ast_object);
 
-	lck* lock = new_dbb->dbb_shadow_lock;
+	Lock* lock = new_dbb->dbb_shadow_lock;
 	if (lock->lck_physical != LCK_SR)
 		return 0;
 
@@ -1245,7 +1245,7 @@ static void check_if_got_ast(jrd_file* file)
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	lck* lock = dbb->dbb_shadow_lock;
+	Lock* lock = dbb->dbb_shadow_lock;
 	if (!lock || (file != dbb->dbb_file)) {
 		return;
 	}

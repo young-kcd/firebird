@@ -150,33 +150,33 @@ DATABASE DB = FILENAME "ODS.RDB";
 **
 **==================================================================
 */
-static bool add_file(thread_db*, SSHORT, Deferred_work*, jrd_tra*);
-static bool add_shadow(thread_db*, SSHORT, Deferred_work*, jrd_tra*);
-static bool delete_shadow(thread_db*, SSHORT, Deferred_work*, jrd_tra*);
-static bool compute_security(thread_db*, SSHORT, Deferred_work*, jrd_tra*);
-static bool create_index(thread_db*, SSHORT, Deferred_work*, jrd_tra*);
-static bool delete_index(thread_db*, SSHORT, Deferred_work*, jrd_tra*);
-static bool create_procedure(thread_db*, SSHORT, Deferred_work*, jrd_tra*);
-static bool delete_procedure(thread_db*, SSHORT, Deferred_work*, jrd_tra*);
-static bool modify_procedure(thread_db*, SSHORT, Deferred_work*, jrd_tra*);
-static bool create_relation(thread_db*, SSHORT, Deferred_work*, jrd_tra*);
-static bool delete_relation(thread_db*, SSHORT, Deferred_work*, jrd_tra*);
-static bool scan_relation(thread_db*, SSHORT, Deferred_work*, jrd_tra*);
-static bool create_trigger(thread_db*, SSHORT, Deferred_work*, jrd_tra*);
-static bool delete_trigger(thread_db*, SSHORT, Deferred_work*, jrd_tra*);
-static bool modify_trigger(thread_db*, SSHORT, Deferred_work*, jrd_tra*);
-static bool delete_exception(thread_db*, SSHORT, Deferred_work*, jrd_tra*);
-static bool delete_generator(thread_db*, SSHORT, Deferred_work*, jrd_tra*);
-static bool delete_udf(thread_db*, SSHORT, Deferred_work*, jrd_tra*);
-static bool delete_field(thread_db*, SSHORT, Deferred_work*, jrd_tra*);
-static bool delete_global(thread_db*, SSHORT, Deferred_work*, jrd_tra*);
-static bool delete_parameter(thread_db*, SSHORT, Deferred_work*, jrd_tra*);
-static bool delete_rfr(thread_db*, SSHORT, Deferred_work*, jrd_tra*);
-static bool make_version(thread_db*, SSHORT, Deferred_work*, jrd_tra*);
-static bool add_difference(thread_db*, SSHORT, Deferred_work*, jrd_tra*);
-static bool delete_difference(thread_db*, SSHORT, Deferred_work*, jrd_tra*);
-static bool begin_backup(thread_db*, SSHORT, Deferred_work*, jrd_tra*);
-static bool end_backup(thread_db*, SSHORT, Deferred_work*, jrd_tra*);
+static bool add_file(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool add_shadow(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool delete_shadow(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool compute_security(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool create_index(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool delete_index(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool create_procedure(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool delete_procedure(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool modify_procedure(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool create_relation(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool delete_relation(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool scan_relation(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool create_trigger(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool delete_trigger(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool modify_trigger(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool delete_exception(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool delete_generator(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool delete_udf(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool delete_field(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool delete_global(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool delete_parameter(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool delete_rfr(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool make_version(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool add_difference(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool delete_difference(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool begin_backup(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool end_backup(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 
 /* ---------------------------------------------------------------- */
 
@@ -185,12 +185,12 @@ static void check_filename(const TEXT*, USHORT);
 static bool formatsAreEqual(const fmt*, const fmt*);
 static bool	find_depend_in_dfw(thread_db*, TEXT*, USHORT, USHORT, jrd_tra*);
 static void get_array_desc(thread_db*, const TEXT*, ads*);
-static void get_procedure_dependencies(Deferred_work*);
-static void get_trigger_dependencies(Deferred_work*);
+static void get_procedure_dependencies(DeferredWork*);
+static void get_trigger_dependencies(DeferredWork*);
 static void	load_trigs(thread_db*, jrd_rel*, trig_vec**);
 static fmt*	make_format(thread_db*, jrd_rel*, USHORT *, TFB);
 static USHORT name_length(const TEXT*);
-static Deferred_work*	post_work(jrd_tra*, SLONG, Deferred_work**, enum dfw_t,
+static DeferredWork*	post_work(jrd_tra*, SLONG, DeferredWork**, enum dfw_t,
 	dsc*, USHORT);
 static void put_summary_blob(blb*, enum rsr_t, bid*);
 static void put_summary_record(blb*, enum rsr_t, const UCHAR*, USHORT);
@@ -214,7 +214,7 @@ static const UCHAR nonnull_validation_blr[] =
 typedef struct task
 {
 	enum dfw_t task_type;
-	bool (*task_routine) (thread_db*, SSHORT, Deferred_work*, jrd_tra*);
+	bool (*task_routine) (thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 } TASK;
 
 static const TASK task_table[] =
@@ -255,7 +255,7 @@ static const TASK task_table[] =
 };
 
 
-USHORT DFW_assign_index_type(Deferred_work* work, SSHORT field_type, SSHORT ttype)
+USHORT DFW_assign_index_type(DeferredWork* work, SSHORT field_type, SSHORT ttype)
 {
 /**************************************
  *
@@ -341,8 +341,8 @@ void DFW_delete_deferred( jrd_tra* transaction, SLONG sav_number)
 
 /* Remove deferred work and events which are to be rolled back */
 	bool deferred_meta = false;
-	Deferred_work* work;
-	for (Deferred_work** ptr = &transaction->tra_deferred_work; (work = *ptr);)
+	DeferredWork* work;
+	for (DeferredWork** ptr = &transaction->tra_deferred_work; (work = *ptr);)
 	{
 		if ((work->dfw_sav_number == sav_number) || (sav_number == -1))
 		{
@@ -387,8 +387,8 @@ void DFW_merge_work(jrd_tra* transaction,
 /* Decrement the save point number in the deferred block
  * i.e. merge with the previous level.
  */
-	Deferred_work* work;
-	for (Deferred_work** ptr = &transaction->tra_deferred_work; (work = *ptr);)
+	DeferredWork* work;
+	for (DeferredWork** ptr = &transaction->tra_deferred_work; (work = *ptr);)
 	{
 		if (work->dfw_sav_number == old_sav_number)
 		{
@@ -398,8 +398,8 @@ void DFW_merge_work(jrd_tra* transaction,
 			 * same save point level. Start from the beginning and
 			 * stop with the that is being merged.
 			 */
-			Deferred_work* work_m;
-			for (Deferred_work** ptr_m = &transaction->tra_deferred_work;
+			DeferredWork* work_m;
+			for (DeferredWork** ptr_m = &transaction->tra_deferred_work;
 				 ((work_m = *ptr_m) && (work_m != work));
 				 ptr_m = &(*ptr_m)->dfw_next)
 			{
@@ -502,7 +502,7 @@ void DFW_perform_work(jrd_tra* transaction)
 		try {
 			for (const TASK* task = task_table; task->task_type != dfw_null; ++task)
 			{
-				for (Deferred_work* work = transaction->tra_deferred_work;
+				for (DeferredWork* work = transaction->tra_deferred_work;
 					work;
 					work = work->dfw_next)
 				{
@@ -540,8 +540,8 @@ void DFW_perform_work(jrd_tra* transaction)
    commit retaining transactions don't re-execute them. Leave
    events to be posted after commit */
 
-	Deferred_work* work;
-	for (Deferred_work** ptr = &transaction->tra_deferred_work; (work = *ptr);)
+	DeferredWork* work;
+	for (DeferredWork** ptr = &transaction->tra_deferred_work; (work = *ptr);)
 	{
 		if ((work->dfw_type == dfw_post_event) ||
 			(work->dfw_type == dfw_delete_shadow))
@@ -587,10 +587,10 @@ void DFW_perform_post_commit_work(jrd_tra* transaction)
 	bool pending_events = false;
 
 	Database* dbb = GET_DBB;
-	lck* lock = dbb->dbb_lock;
+	Lock* lock = dbb->dbb_lock;
 
-	Deferred_work* work;
-	for (Deferred_work** ptr = &transaction->tra_deferred_work; (work = *ptr);)
+	DeferredWork* work;
+	for (DeferredWork** ptr = &transaction->tra_deferred_work; (work = *ptr);)
 	{
 		if (work->dfw_type == dfw_post_event)
 		{
@@ -621,7 +621,7 @@ void DFW_perform_post_commit_work(jrd_tra* transaction)
 }
 
 
-Deferred_work* DFW_post_work(jrd_tra* transaction, enum dfw_t type, DSC* desc,
+DeferredWork* DFW_post_work(jrd_tra* transaction, enum dfw_t type, DSC* desc,
 	USHORT id)
 {
 /**************************************
@@ -651,7 +651,7 @@ Deferred_work* DFW_post_work(jrd_tra* transaction, enum dfw_t type, DSC* desc,
 }
 
 
-void DFW_post_work_arg( jrd_tra* transaction, Deferred_work* work, DSC* desc,
+void DFW_post_work_arg( jrd_tra* transaction, DeferredWork* work, DSC* desc,
 	USHORT id)
 {
 /**************************************
@@ -725,7 +725,7 @@ void DFW_update_index(const TEXT* name, USHORT id, const SelectivityList& select
 }
 
 
-static bool add_file(thread_db* tdbb, SSHORT phase, Deferred_work* work,
+static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	jrd_tra* transaction)
 {
 /**************************************
@@ -858,7 +858,7 @@ static bool add_file(thread_db* tdbb, SSHORT phase, Deferred_work* work,
 
 
 
-static bool add_shadow( thread_db* tdbb, SSHORT phase, Deferred_work* work,
+static bool add_shadow( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	jrd_tra* transaction)
 {
 /**************************************
@@ -1036,7 +1036,7 @@ static bool add_shadow( thread_db* tdbb, SSHORT phase, Deferred_work* work,
 	return false;
 }
 
-static bool add_difference( thread_db* tdbb, SSHORT phase, Deferred_work* work,
+static bool add_difference( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	jrd_tra* transaction)
 {
 /**************************************
@@ -1087,7 +1087,7 @@ static bool add_difference( thread_db* tdbb, SSHORT phase, Deferred_work* work,
 
 static bool delete_difference(	thread_db*	tdbb,
 								SSHORT	phase,
-								Deferred_work*		work,
+								DeferredWork*		work,
 								jrd_tra*		transaction)
 {
 /**************************************
@@ -1133,7 +1133,7 @@ static bool delete_difference(	thread_db*	tdbb,
 
 static bool begin_backup(	thread_db*	tdbb,
 							SSHORT	phase,
-							Deferred_work*		work,
+							DeferredWork*		work,
 							jrd_tra*		transaction)
 {
 /**************************************
@@ -1166,7 +1166,7 @@ static bool begin_backup(	thread_db*	tdbb,
 
 static bool end_backup(	thread_db*	tdbb,
 						SSHORT	phase,
-						Deferred_work*		work,
+						DeferredWork*		work,
 						jrd_tra*		transaction)
 {
 /**************************************
@@ -1410,7 +1410,7 @@ static bool formatsAreEqual(const fmt* old_format, const fmt* new_format)
 
 static bool compute_security(	thread_db*	tdbb,
 								SSHORT	phase,
-								Deferred_work*		work,
+								DeferredWork*		work,
 								jrd_tra*		transaction)
 {
 /**************************************
@@ -1483,7 +1483,7 @@ CMP_release (tdbb, handle);
 
 static bool create_index(	thread_db*	tdbb,
 							SSHORT	phase,
-							Deferred_work*		work,
+							DeferredWork*		work,
 							jrd_tra*		transaction)
 {
 /**************************************
@@ -1798,7 +1798,7 @@ static bool create_index(	thread_db*	tdbb,
 
 static bool create_procedure(	thread_db*	tdbb,
 								SSHORT	phase,
-								Deferred_work*		work,
+								DeferredWork*		work,
 								jrd_tra*		transaction)
 {
 /**************************************
@@ -1838,7 +1838,7 @@ static bool create_procedure(	thread_db*	tdbb,
 
 static bool create_relation(thread_db*	tdbb,
 							SSHORT	phase,
-							Deferred_work*		work,
+							DeferredWork*		work,
 							jrd_tra*		transaction)
 {
 /**************************************
@@ -1856,7 +1856,7 @@ static bool create_relation(thread_db*	tdbb,
 	USHORT rel_id, external_flag;
 	bid blob_id;
 	BLK handle;
-	lck* lock;
+	Lock* lock;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -1889,7 +1889,7 @@ static bool create_relation(thread_db*	tdbb,
 		/* Take a relation lock on rel id -1 before actually
 		   generating a relation id. */
 
-		work->dfw_lock = lock = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(SLONG)) lck;
+		work->dfw_lock = lock = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(SLONG)) Lock;
 		lock->lck_dbb = dbb;
 		lock->lck_attachment = tdbb->tdbb_attachment;
 		lock->lck_length = sizeof(SLONG);
@@ -2006,7 +2006,7 @@ static bool create_relation(thread_db*	tdbb,
 }
 
 
-static bool create_trigger(thread_db* tdbb, SSHORT phase, Deferred_work* work,
+static bool create_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	jrd_tra* transaction)
 {
 /**************************************
@@ -2039,7 +2039,7 @@ static bool create_trigger(thread_db* tdbb, SSHORT phase, Deferred_work* work,
 
 static bool delete_exception(	thread_db*	tdbb,
 								SSHORT	phase,
-								Deferred_work*		work,
+								DeferredWork*		work,
 								jrd_tra*		transaction)
 {
 /**************************************
@@ -2080,7 +2080,7 @@ static bool delete_exception(	thread_db*	tdbb,
 }
 
 
-static bool delete_generator(thread_db* tdbb, SSHORT phase, Deferred_work* work,
+static bool delete_generator(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	jrd_tra* transaction)
 {
 /**************************************
@@ -2118,7 +2118,7 @@ static bool delete_generator(thread_db* tdbb, SSHORT phase, Deferred_work* work,
 }
 
 
-static bool delete_udf(thread_db* tdbb, SSHORT phase, Deferred_work* work,
+static bool delete_udf(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	jrd_tra* transaction)
 {
 /**************************************
@@ -2158,7 +2158,7 @@ static bool delete_udf(thread_db* tdbb, SSHORT phase, Deferred_work* work,
 
 static bool delete_field(	thread_db*	tdbb,
 							SSHORT	phase,
-							Deferred_work*		work,
+							DeferredWork*		work,
 							jrd_tra*		transaction)
 {
 /**************************************
@@ -2227,7 +2227,7 @@ static bool delete_field(	thread_db*	tdbb,
 }
 
 
-static bool delete_global(thread_db* tdbb, SSHORT phase, Deferred_work* work,
+static bool delete_global(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	jrd_tra* transaction)
 {
 /**************************************
@@ -2274,7 +2274,7 @@ static bool delete_global(thread_db* tdbb, SSHORT phase, Deferred_work* work,
 }
 
 
-static bool delete_index(thread_db* tdbb, SSHORT phase, Deferred_work* work,
+static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	jrd_tra* transaction)
 {
 /**************************************
@@ -2421,7 +2421,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, Deferred_work* work,
 
 static bool delete_parameter(	thread_db*	tdbb,
 								SSHORT	phase,
-								Deferred_work*		work,
+								DeferredWork*		work,
 								jrd_tra*		transaction)
 {
 /**************************************
@@ -2461,7 +2461,7 @@ static bool delete_parameter(	thread_db*	tdbb,
 
 static bool delete_procedure(	thread_db*	tdbb,
 								SSHORT	phase,
-								Deferred_work*		work,
+								DeferredWork*		work,
 								jrd_tra*		transaction)
 {
 /**************************************
@@ -2584,7 +2584,7 @@ static bool delete_procedure(	thread_db*	tdbb,
 }
 
 
-static bool delete_relation(thread_db* tdbb, SSHORT phase, Deferred_work* work,
+static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	jrd_tra* transaction)
 {
 /**************************************
@@ -2797,7 +2797,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, Deferred_work* work,
 }
 
 
-static bool delete_rfr(thread_db* tdbb, SSHORT phase, Deferred_work* work,
+static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	jrd_tra* transaction)
 {
 /**************************************
@@ -2940,7 +2940,7 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, Deferred_work* work,
 
 static bool delete_shadow(	thread_db*	tdbb,
 							SSHORT	phase,
-							Deferred_work*		work,
+							DeferredWork*		work,
 							jrd_tra*		transaction)
 {
 /**************************************
@@ -2974,7 +2974,7 @@ static bool delete_shadow(	thread_db*	tdbb,
 
 static bool delete_trigger(	thread_db*	tdbb,
 							SSHORT	phase,
-							Deferred_work*		work,
+							DeferredWork*		work,
 							jrd_tra*		transaction)
 {
 /**************************************
@@ -3054,7 +3054,7 @@ static bool find_depend_in_dfw(	thread_db*	tdbb,
 
 /* Look to see if an object of the desired type is being deleted. */
 
-	for (Deferred_work* work = transaction->tra_deferred_work; work;
+	for (DeferredWork* work = transaction->tra_deferred_work; work;
 		work = work->dfw_next)
 	{
 		if (work->dfw_type == dfw_type &&
@@ -3154,7 +3154,7 @@ static void get_array_desc(thread_db* tdbb, const TEXT* field_name, ads* desc)
 }
 
 
-static void get_procedure_dependencies(Deferred_work* work)
+static void get_procedure_dependencies(DeferredWork* work)
 {
 /**************************************
  *
@@ -3217,7 +3217,7 @@ static void get_procedure_dependencies(Deferred_work* work)
 }
 
 
-static void get_trigger_dependencies( Deferred_work* work)
+static void get_trigger_dependencies( DeferredWork* work)
 {
 /**************************************
  *
@@ -3455,7 +3455,7 @@ static fmt* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version, TFB
 }
 
 
-static bool make_version(thread_db* tdbb, SSHORT phase, Deferred_work* work,
+static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	jrd_tra* transaction)
 {
 /**************************************
@@ -3757,7 +3757,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, Deferred_work* work,
 
 static bool modify_procedure(	thread_db*	tdbb,
 								SSHORT	phase,
-								Deferred_work*		work,
+								DeferredWork*		work,
 								jrd_tra*		transaction)
 {
 /**************************************
@@ -3953,7 +3953,7 @@ static bool modify_procedure(	thread_db*	tdbb,
 }
 
 
-static bool modify_trigger(thread_db* tdbb, SSHORT phase, Deferred_work* work,
+static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	jrd_tra* transaction)
 {
 /**************************************
@@ -4011,9 +4011,9 @@ static USHORT name_length(const TEXT* name)
 }
 
 
-static Deferred_work* post_work(jrd_tra* transaction,
+static DeferredWork* post_work(jrd_tra* transaction,
 					 SLONG sav_number,
-					 Deferred_work** list,
+					 DeferredWork** list,
 					 enum dfw_t type,
 					 DSC * desc,
 					 USHORT id)
@@ -4063,8 +4063,8 @@ static Deferred_work* post_work(jrd_tra* transaction,
 		length = (p + 1) - string;
 	}
 
-	Deferred_work* work;
-	Deferred_work** ptr;
+	DeferredWork* work;
+	DeferredWork** ptr;
 	
 /* Check to see if work is already posted */
 
@@ -4086,7 +4086,7 @@ static Deferred_work* post_work(jrd_tra* transaction,
 
 /* Not already posted, so do so now. */
 
-	*ptr = work = FB_NEW_RPT(*transaction->tra_pool, length) Deferred_work;
+	*ptr = work = FB_NEW_RPT(*transaction->tra_pool, length) DeferredWork;
 	work->dfw_type = type;
 	work->dfw_id = id;
 	work->dfw_count = 1;
@@ -4194,7 +4194,7 @@ static void put_summary_record(blb*		blob,
 }
 
 
-static bool scan_relation(thread_db* tdbb, SSHORT phase, Deferred_work* work,
+static bool scan_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	jrd_tra* transaction)
 {
 /**************************************

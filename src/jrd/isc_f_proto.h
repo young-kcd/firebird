@@ -40,7 +40,7 @@ int			ISC_expand_filename(const Firebird::PathName&, Firebird::PathName&);
 // Temporary hack to make old files happy
 inline int	ISC_expand_filename(const TEXT* unexp, USHORT len, TEXT* exp) {
 	Firebird::PathName pn(unexp, len ? len : strlen(unexp));
-	int rc = ISC_expand_filename(pn, pn);
+	const int rc = ISC_expand_filename(pn, pn);
 	strcpy(exp, pn.c_str());
 	return rc;
 }

@@ -38,15 +38,20 @@
 #include "../jrd/rpb_chain.h"
 
 class blb;
-class lck;
+class Lock;
 class jrd_rel;
+class SparseBitmap;
+class vec;
+class Savepoint;
+class Record;
+class VerbAction;
 
 /* Transaction block */
 
 class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 {
     public:
-	class att *tra_attachment;	/* database attachment */
+	class Attachment* tra_attachment;	/* database attachment */
 	SLONG tra_number;			/* transaction number */
 	SLONG tra_top;				/* highest transaction in snapshot */
 	SLONG tra_oldest;			/* oldest interesting transaction */
@@ -57,21 +62,21 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 	JrdMemoryPool* tra_pool;		/* pool for transaction */
 	blb*		tra_blobs;		/* Linked list of active blobs */
 	struct arr *tra_arrays;		/* Linked list of active arrays */
-	lck*		tra_lock;		/* lock for transaction */
-	struct vec *tra_relation_locks;	/* locks for relations */
-	struct sbm *tra_commit_sub_trans;	/* commited sub-transactions */
-	struct sav *tra_save_point;	/* list of savepoints  */
+	Lock*		tra_lock;		/* lock for transaction */
+	vec*		tra_relation_locks;	/* locks for relations */
+	SparseBitmap*	tra_commit_sub_trans;	/* commited sub-transactions */
+	Savepoint*	tra_save_point;	/* list of savepoints  */
 	SLONG tra_save_point_number;	/* next save point number to use */
 	ULONG tra_flags;
 #ifdef PC_ENGINE
 	SLONG tra_range_id;				/* unique id of cache range within transaction */
 #endif
-	class Deferred_work*	tra_deferred_work;	/* work deferred to commit time */
+	class DeferredWork*	tra_deferred_work;	/* work deferred to commit time */
 	class Resource*	tra_resources;		/* resource existence list */
-	class traRpbList *tra_rpblist;	/* active RPB's of given transaction */
-	UCHAR tra_use_count;			/* use count for safe AST delivery */
-	UCHAR tra_callback_count;		/* callback count for 'execute statement' */
-	ULONG tra_next_blob_id;         // ID of the previous blob or array created in this transaction
+	traRpbList* tra_rpblist;	/* active record_param's of given transaction */
+	UCHAR tra_use_count;		/* use count for safe AST delivery */
+	UCHAR tra_callback_count;	/* callback count for 'execute statement' */
+	ULONG tra_next_blob_id;     // ID of the previous blob or array created in this transaction
 	UCHAR tra_transactions[1];
 };
 
@@ -129,17 +134,16 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 #define MAX_TRA_NUMBER		 (~(1L << (BITS_PER_LONG - 1)))
 /* Savepoint block */
 
-class sav : public pool_alloc<type_sav>
+class Savepoint : public pool_alloc<type_sav>
 {
     public:
-	struct vct *sav_verb_actions;	/* verb action list */
-	USHORT sav_verb_count;		/* Active verb count */
-	SLONG sav_number;			/* save point number */
-	sav *sav_next;
-	USHORT sav_flags;
-	TEXT sav_name[32]; /* Savepoint name */
+	VerbAction*	sav_verb_actions;	/* verb action list */
+	USHORT			sav_verb_count;		/* Active verb count */
+	SLONG			sav_number;			/* save point number */
+	Savepoint*		sav_next;
+	USHORT			sav_flags;
+	TEXT			sav_name[32]; /* Savepoint name */
 };
-typedef sav *SAV;
 
 /* Savepoint block flags. */
 
@@ -194,13 +198,13 @@ enum dfw_t {
 	dfw_end_backup
 };
 
-class Deferred_work : public pool_alloc_rpt<SCHAR, type_dfw>
+class DeferredWork : public pool_alloc_rpt<SCHAR, type_dfw>
 {
     public:
 	enum dfw_t 		dfw_type;		/* type of work deferred */
-	Deferred_work*	dfw_next;		/* next block in transaction */
-	lck*			dfw_lock;		/* relation creation lock */
-	Deferred_work*	dfw_args;		/* arguments */
+	DeferredWork*	dfw_next;		/* next block in transaction */
+	Lock*			dfw_lock;		/* relation creation lock */
+	DeferredWork*	dfw_args;		/* arguments */
 	SLONG			dfw_sav_number;	/* save point number */
 	USHORT			dfw_name_length;/* length of object name */
 	USHORT			dfw_id;			/* object id, if appropriate */
@@ -213,13 +217,13 @@ class Deferred_work : public pool_alloc_rpt<SCHAR, type_dfw>
 class UndoItem {
 public:
 	SLONG rec_number;
-	class rec* rec_data;
+	Record* rec_data;
     static const SLONG& generate(void *sender, const UndoItem& item) {
 		return item.rec_number;
     }
 	UndoItem() {
 	}
-	UndoItem(SLONG rec_number, rec* rec_data) {
+	UndoItem(SLONG rec_number, Record* rec_data) {
 		this->rec_number = rec_number;
 		this->rec_data = rec_data;
 	}
@@ -227,15 +231,14 @@ public:
 
 typedef Firebird::BePlusTree<UndoItem, SLONG, MemoryPool, UndoItem> UndoItemTree;
 
-class vct : public pool_alloc<type_vct>
+class VerbAction : public pool_alloc<type_vct>
 {
     public:
-	vct* 			vct_next;		/* Next action within verb */
+	VerbAction* 	vct_next;		/* Next action within verb */
 	jrd_rel*		vct_relation;	/* Relation involved */
-	struct sbm*		vct_records;	/* Record involved */
+	SparseBitmap*	vct_records;	/* Record involved */
 	UndoItemTree*	vct_undo;		/* Data for undo records */
 };
-typedef vct *VCT;
 
 
 #endif // JRD_TRA_H

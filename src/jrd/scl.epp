@@ -150,7 +150,7 @@ void SCL_check_access(const scl* s_class,
 				 0);
 	}
 
-	att* attachment = tdbb->tdbb_attachment;
+	Attachment* attachment = tdbb->tdbb_attachment;
 
 	const scl* att_class = attachment->att_security_class;
 	if (att_class && !(att_class->scl_flags & mask))
@@ -469,7 +469,7 @@ SCL SCL_get_class(/* INOUT */ TEXT* string)
 		return NULL;
 	}
 
-	ATT attachment = tdbb->tdbb_attachment;
+	Attachment* attachment = tdbb->tdbb_attachment;
 
 	// Look for the class already known
 
@@ -518,7 +518,7 @@ int SCL_get_mask(const TEXT* relation_name, const TEXT* field_name)
  *
  **************************************/
 	thread_db* tdbb = GET_THREAD_DATA;
-	ATT attachment = tdbb->tdbb_attachment;
+	Attachment* attachment = tdbb->tdbb_attachment;
 
 	// Start with database security class
 
@@ -869,7 +869,7 @@ void SCL_release(SCL s_class)
  *
  **************************************/
 	thread_db* tdbb = GET_THREAD_DATA;
-	ATT attachment = tdbb->tdbb_attachment;
+	Attachment* attachment = tdbb->tdbb_attachment;
 
 	for (scl** next = &attachment->att_security_classes; *next;
 		 next = &(*next)->scl_next)

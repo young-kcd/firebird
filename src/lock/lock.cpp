@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.87 2004-03-11 05:04:22 robocop Exp $
+$Id: lock.cpp,v 1.88 2004-03-18 05:55:38 robocop Exp $
 */
 
 #include "firebird.h"
@@ -1685,7 +1685,7 @@ static USHORT alloc_semaphore( OWN owner, ISC_STATUS * status_vector)
  **************************************/
 	for (USHORT h = 0; h < 2; h++) {
 		ASSERT_ACQUIRED;
-		smb* semaphores = (SMB) ABS_PTR(LOCK_header->lhb_mask);
+		semaphore_mask* semaphores = (semaphore_mask*) ABS_PTR(LOCK_header->lhb_mask);
 		for (USHORT i = 1; i < (USHORT) LOCK_sem_count; i++) {
 			if (semaphores->
 				smb_mask[i / BITS_PER_LONG] & (1L << (i % BITS_PER_LONG)))
@@ -3294,7 +3294,7 @@ static void lock_initialize(void* arg, SH_MEM shmem_data, bool initialize)
 #ifdef USE_STATIC_SEMAPHORES
 /* Initialize the semaphores. Allocate semaphore block. */
 
-	SMB semaphores = (SMB) alloc(sizeof(smb) +
+	semaphore_mask* semaphores = (semaphore_mask*) alloc(sizeof(semaphore_mask) +
 								   (LOCK_sem_count / BITS_PER_LONG) *
 								   sizeof(ULONG), NULL);
 	if (!semaphores)
@@ -3640,11 +3640,11 @@ static void post_wakeup( OWN owner)
  *	Wakeup whoever is waiting on a lock.
  *
  **************************************/
-	USHORT semaphore;
 
 /* Note: own_semaphore is set to 1 if we are in wait_for_request() */
 
-	if (!(semaphore = owner->own_semaphore) || (semaphore & OWN_semavail))
+	const USHORT semaphore = owner->own_semaphore;
+	if (!semaphore || (semaphore & OWN_semavail))
 		return;
 
 	++LOCK_header->lhb_wakeups;
@@ -4066,12 +4066,10 @@ static void release_semaphore( OWN owner)
  *	Release an un-used and unloved semaphore.
  *
  **************************************/
-	USHORT semaphore;
-	SMB semaphores;
-
-	if (semaphore = owner->own_semaphore) {
+	USHORT semaphore = owner->own_semaphore;
+	if (semaphore) {
 		semaphore &= ~OWN_semavail;
-		semaphores = (SMB) ABS_PTR(LOCK_header->lhb_mask);
+		semaphore_mask* semaphores = (semaphore_mask*) ABS_PTR(LOCK_header->lhb_mask);
 		semaphores->smb_mask[semaphore / BITS_PER_LONG] |=
 			1L << (semaphore % BITS_PER_LONG);
 		owner->own_semaphore = 0;
@@ -4702,12 +4700,12 @@ static void validate_owner( PTR own_ptr, USHORT freed)
 	}
 #ifdef USE_STATIC_SEMAPHORES
 	{
-		USHORT semaphore;
-		if ((semaphore = owner->own_semaphore) && (freed == EXPECT_inuse)) {
-			SMB semaphores;
+		const USHORT semaphore = owner->own_semaphore;
+		if (semaphore && (freed == EXPECT_inuse)) {
 			if (!(semaphore & OWN_semavail)) {
 				/* Check that the semaphore allocated is flagged as in use */
-				semaphores = (SMB) ABS_PTR(LOCK_header->lhb_mask);
+				semaphore_mask* semaphores =
+					(semaphore_mask*) ABS_PTR(LOCK_header->lhb_mask);
 				CHECK(!
 					  (semaphores->
 					   smb_mask[semaphore /

@@ -72,6 +72,8 @@ DEFINE_TRACE_ROUTINE(remote_trace);
 
 /* Block types */
 
+struct blk;
+
 #ifndef INCLUDE_FB_BLK
 #include "../include/old_fb_blk.h"
 #endif
@@ -81,7 +83,7 @@ struct rem_port;
 
 typedef struct rdb
 {
-	struct blk		rdb_header;
+	blk				rdb_header;
 	USHORT			rdb_id;
 	USHORT			rdb_flags;
 	FRBRD*			rdb_handle;			/* database handle */
@@ -98,7 +100,7 @@ typedef struct rdb
 
 typedef struct rtr
 {
-	struct blk	rtr_header;
+	blk			rtr_header;
 	rdb*		rtr_rdb;
 	rtr*		rtr_next;
 	struct rbl*	rtr_blobs;
@@ -111,7 +113,7 @@ typedef struct rtr
 
 typedef struct rbl
 {
-	struct blk	rbl_header;
+	blk			rbl_header;
 	rdb*		rbl_rdb;
 	rtr*		rbl_rtr;
 	rbl*		rbl_next;
@@ -136,7 +138,7 @@ typedef struct rbl
 
 typedef struct rvnt
 {
-	struct blk	rvnt_header;
+	blk			rvnt_header;
 	rvnt*		rvnt_next;
 	rdb*		rvnt_rdb;
 	FPTR_EVENT_CALLBACK	rvnt_ast;
@@ -150,14 +152,14 @@ typedef struct rvnt
 
 struct rem_vec
 {
-	struct blk	vec_header;
+	blk			vec_header;
 	ULONG		vec_count;
-	struct blk*	vec_object[1];
+	blk*		vec_object[1];
 };
 
 //struct rem_vcl
 //{
-//	struct blk	vcl_header;
+//	blk			vcl_header;
 //	ULONG		vcl_count;
 //	SLONG		vcl_long[1];
 //};
@@ -166,7 +168,7 @@ struct rem_vec
 
 struct rem_str
 {
-	struct blk	str_header;
+	blk			str_header;
 	USHORT		str_length;
 	SCHAR		str_data[2];
 };
@@ -179,7 +181,7 @@ struct rem_str
 
 struct rem_fmt
 {
-	struct blk	fmt_header;
+	blk			fmt_header;
 	USHORT		fmt_length;
 	USHORT		fmt_net_length;
 	USHORT		fmt_count;
@@ -195,7 +197,7 @@ struct rem_fmt
 
 typedef struct message
 {
-	struct blk	msg_header;
+	blk			msg_header;
 	message*	msg_next;	/* Next available message */
 #ifdef SCROLLABLE_CURSORS
 	message*	msg_prior;	/* Next available message */
@@ -214,7 +216,7 @@ typedef struct message
 
 typedef struct rpr
 {
-	struct blk	rpr_header;
+	blk			rpr_header;
 	rdb*		rpr_rdb;
 	rtr*		rpr_rtr;
 	FRBRD*		rpr_handle;
@@ -229,7 +231,7 @@ typedef struct rpr
 
 struct rrq
 {
-	struct blk	rrq_header;
+	blk		rrq_header;
 	rdb*	rrq_rdb;
 	rtr*	rrq_rtr;
 	rrq*	rrq_next;
@@ -267,7 +269,7 @@ struct rrq
 
 typedef struct rsr
 {
-	struct blk		rsr_header;
+	blk				rsr_header;
 	rsr*			rsr_next;
 	rdb*			rsr_rdb;
 	rtr*			rsr_rtr;
@@ -369,7 +371,7 @@ typedef rem_port* (*t_port_connect)(rem_port*, PACKET*, t_event_ast);
 
 struct rem_port
 {
-	struct blk		port_header;
+	blk				port_header;
 	enum rem_port_t	port_type;			/* type of port */
 	enum state_t	port_state;			/* state of port */
 	P_ARCH			port_client_arch;	/* so we can tell arch of client */
@@ -523,7 +525,7 @@ typedef bool (*t_rmtque_fn)(trdb*, rem_port*, rmtque*, ISC_STATUS*, USHORT);
 
 typedef struct rmtque
 {
-	struct blk			rmtque_header;	// Memory allocator header
+	blk					rmtque_header;	// Memory allocator header
 	rmtque*				rmtque_next;	// Next entry in queue
 	void*				rmtque_parm;	// What request has response in queue
 	rrq::rrq_repeat*	rmtque_message;	// What message is pending

@@ -129,7 +129,7 @@ STR GRANT_realloc_acl(STR		start_ptr,
 }
 
 
-bool GRANT_privileges( thread_db* tdbb, SSHORT phase, Deferred_work* work,
+bool GRANT_privileges( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					jrd_tra*) // unused param, makes dfw.epp happy
 {
 /**************************************

@@ -70,7 +70,7 @@ static void release_io_event(jrd_file*, OVERLAPPED*);
 #endif
 static ULONG get_number_of_pages(const jrd_file*, const USHORT);
 static bool	MaybeCloseFile(SLONG*);
-static jrd_file* seek_file(jrd_file*, Buffer_desc*, ISC_STATUS*, OVERLAPPED*, OVERLAPPED**);
+static jrd_file* seek_file(jrd_file*, BufferDesc*, ISC_STATUS*, OVERLAPPED*, OVERLAPPED**);
 static jrd_file* setup_file(Database*, const TEXT*, USHORT, HANDLE);
 static bool nt_error(TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS*);
 
@@ -572,7 +572,7 @@ jrd_file* PIO_open(Database* dbb,
 }
 
 
-bool PIO_read(jrd_file* file, Buffer_desc* bdb, PAG page, ISC_STATUS* status_vector)
+bool PIO_read(jrd_file* file, BufferDesc* bdb, PAG page, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -666,9 +666,7 @@ bool PIO_read_ahead(Database*		dbb,
  *	file boundaries.
  *
  **************************************/
-	DWORD actual_length;
 	OVERLAPPED overlapped, *overlapped_ptr;
-	class bdb bdb;
 
 /* If an I/O status block was passed the caller wants to
    queue an asynchronous I/O. */
@@ -681,6 +679,7 @@ bool PIO_read_ahead(Database*		dbb,
 		piob->piob_flags = 0;
 	}
 
+	BufferDesc bdb;
 	while (pages) {
 		/* Setup up a dummy buffer descriptor block for seeking file. */
 
@@ -710,6 +709,7 @@ bool PIO_read_ahead(Database*		dbb,
 		HANDLE desc = (HANDLE) ((file->fil_flags & FIL_force_write) ?
 						 file->fil_force_write_desc : file->fil_desc);
 
+		DWORD actual_length;
 		if (ReadFile(	desc,
 						buffer,
 						segmented_length,
@@ -765,12 +765,12 @@ bool PIO_status(phys_io_blk* piob, ISC_STATUS* status_vector)
  *	Check the status of an asynchronous I/O.
  *
  **************************************/
-	DWORD actual_length;
 
 	if (!(piob->piob_flags & PIOB_success)) {
 		if (piob->piob_flags & PIOB_error) {
 			return false;
 		}
+		DWORD actual_length;
 		if (!GetOverlappedResult((HANDLE) piob->piob_desc,
 								 (OVERLAPPED *) & piob->piob_io_event,
 								 &actual_length,
@@ -790,7 +790,7 @@ bool PIO_status(phys_io_blk* piob, ISC_STATUS* status_vector)
 #endif
 
 
-bool PIO_write(jrd_file* file, Buffer_desc* bdb, PAG page, ISC_STATUS* status_vector)
+bool PIO_write(jrd_file* file, BufferDesc* bdb, PAG page, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -802,12 +802,10 @@ bool PIO_write(jrd_file* file, Buffer_desc* bdb, PAG page, ISC_STATUS* status_ve
  *	Write a data page.
  *
  **************************************/
-
-	DWORD actual_length;
 	OVERLAPPED overlapped, *overlapped_ptr;
 
 	Database*   dbb  = bdb->bdb_dbb;
-	DWORD size = dbb->dbb_page_size;
+	const DWORD size = dbb->dbb_page_size;
 
 	file = seek_file(file, bdb, status_vector, &overlapped,
 				   &overlapped_ptr);
@@ -824,6 +822,7 @@ bool PIO_write(jrd_file* file, Buffer_desc* bdb, PAG page, ISC_STATUS* status_ve
 		(*dbb->dbb_encrypt) (dbb->dbb_encrypt_key.c_str(),
 							 page, size, spare_buffer);
 
+		DWORD actual_length;
 		if (!WriteFile(desc, spare_buffer, size, &actual_length, overlapped_ptr)
 			|| actual_length != size)
 		{
@@ -835,6 +834,7 @@ bool PIO_write(jrd_file* file, Buffer_desc* bdb, PAG page, ISC_STATUS* status_ve
 	}
 	else
 	{
+		DWORD actual_length;
 		if (!WriteFile(desc, page, size, &actual_length, overlapped_ptr) &&
 			actual_length == size)
 		{
@@ -929,7 +929,7 @@ static void release_io_event(jrd_file* file, OVERLAPPED* overlapped)
 
 
 static jrd_file* seek_file(jrd_file*			file,
-					 Buffer_desc*			bdb,
+					 BufferDesc*			bdb,
 					 ISC_STATUS*		status_vector,
 					 OVERLAPPED*	overlapped,
 					 OVERLAPPED**	overlapped_ptr)
@@ -1025,8 +1025,6 @@ static jrd_file* setup_file(Database*		dbb,
  *	Set up file and lock blocks for a file.
  *
  **************************************/
-	UCHAR lock_string[32];
-	BY_HANDLE_FILE_INFORMATION file_info;
 
 /* Allocate file block and copy file name string */
 
@@ -1056,7 +1054,9 @@ static jrd_file* setup_file(Database*		dbb,
 
 /* Build unique lock string for file and construct lock block */
 
+	BY_HANDLE_FILE_INFORMATION file_info;
 	GetFileInformationByHandle((HANDLE) desc, &file_info);
+	UCHAR lock_string[32];
 	UCHAR* p = lock_string;
 
 	const UCHAR* q = (UCHAR *) &file_info.dwVolumeSerialNumber;
@@ -1080,7 +1080,7 @@ static jrd_file* setup_file(Database*		dbb,
 	// We know p only was incremented, so can use safely size_t instead of ptrdiff_t
 	l = p - lock_string;
 
-	lck* lock = FB_NEW_RPT(*dbb->dbb_permanent, l) lck;
+	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, l) Lock;
 	dbb->dbb_lock = lock;
 	lock->lck_type = LCK_database;
 	lock->lck_owner_handle = LCK_get_owner_handle(NULL, lock->lck_type);

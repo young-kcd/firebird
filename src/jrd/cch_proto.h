@@ -26,8 +26,8 @@
 
 void		CCH_shutdown_database(Database*);
 
-USHORT		CCH_checksum(Buffer_desc*);
-int			CCH_down_grade_dbb(void* ast_argument);
+USHORT		CCH_checksum(BufferDesc*);
+int			CCH_down_grade_dbb(void*);
 bool		CCH_exclusive(thread_db*, USHORT, SSHORT);
 bool		CCH_exclusive_attachment(thread_db*, USHORT, SSHORT);
 void		CCH_expand(thread_db*, ULONG);
@@ -44,7 +44,7 @@ void		CCH_init(thread_db*, ULONG);
 void		CCH_mark(thread_db*, win*, USHORT);
 void		CCH_mark_must_write(thread_db*, win*);
 void		CCH_must_write(win*);
-lck*		CCH_page_lock(thread_db*);
+Lock*		CCH_page_lock(thread_db*);
 void		CCH_precedence(thread_db*, win*, SLONG);
 void		CCH_prefetch(thread_db*, SLONG*, SSHORT);
 bool		CCH_prefetch_pages(thread_db*);
@@ -55,7 +55,7 @@ bool		CCH_rollover_to_shadow(Database*, jrd_file*, const bool);
 void		CCH_unwind(thread_db*, bool);
 bool		CCH_validate(win*);
 void		CCH_flush_database(thread_db*);
-bool		CCH_write_all_shadows(thread_db*, Shadow*, Buffer_desc*,
+bool		CCH_write_all_shadows(thread_db*, Shadow*, BufferDesc*,
 					 ISC_STATUS*, USHORT, const bool);
 
 /* macros for dealing with cache pages */

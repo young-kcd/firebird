@@ -19,8 +19,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef DIR_LIST_H
-#define DIR_LIST_H
+#ifndef CONFIG_DIR_LIST_H
+#define CONFIG_DIR_LIST_H
 
 #include "fb_types.h"
 #include "fb_string.h"
@@ -41,12 +41,12 @@ class ParsedPath : public ObjectsArray<PathName>
 	typedef ObjectsArray<PathName> inherited;
 public:
 	explicit ParsedPath(MemoryPool& p) : ObjectsArray<PathName>(p) { }
-	explicit ParsedPath(MemoryPool& p, const PathName& path)
+	ParsedPath(MemoryPool& p, const PathName& path)
 		: ObjectsArray<PathName>(p) 
 	{ 
 		parse(path);
 	}
-	explicit ParsedPath() : ObjectsArray<PathName>() { }
+	ParsedPath() : ObjectsArray<PathName>() { }
 	explicit ParsedPath(const PathName& path)
 		: ObjectsArray<PathName>() 
 	{ 
@@ -160,4 +160,4 @@ private:
 
 } //namespace Firebird
 
-#endif //	DIR_LIST_H
+#endif //	CONFIG_DIR_LIST_H

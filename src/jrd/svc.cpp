@@ -144,7 +144,7 @@
 /* This checks if the service has forked a process.  If not,
    it will post the isc_svcnoexe error. */
 
-static inline void is_service_running(const svc* service)
+static inline void is_service_running(const Service* service)
 {
 	if (!(service->svc_flags & SVC_forked)) {
 		THREAD_ENTER;
@@ -196,7 +196,7 @@ static void get_options(const UCHAR*, USHORT, TEXT*, Serv_param_block*);
 static TEXT* get_string_parameter(const UCHAR**, TEXT**);
 #ifndef SUPERSERVER
 static void io_error(const TEXT*, SLONG, const TEXT*, ISC_STATUS, bool);
-static void service_close(svc*);
+static void service_close(Service*);
 #endif
 static bool get_action_svc_bitmask(const TEXT**, const in_sw_tab_t*,
 									TEXT**, USHORT*, USHORT*);
@@ -206,26 +206,26 @@ static bool get_action_svc_parameter(const TEXT**, const in_sw_tab_t*,
 									TEXT**, USHORT*, USHORT*);
 
 #ifdef SUPERSERVER
-static UCHAR service_dequeue_byte(svc*);
-static void service_enqueue_byte(UCHAR, svc*);
+static UCHAR service_dequeue_byte(Service*);
+static void service_enqueue_byte(UCHAR, Service*);
 static USHORT service_add_one(USHORT i);
-static USHORT service_empty(svc* service);
-static USHORT service_full(svc* service);
-static void service_fork(pfn_svc_main, svc*);
+static USHORT service_empty(Service* service);
+static USHORT service_full(Service* service);
+static void service_fork(pfn_svc_main, Service*);
 #else
-static void service_fork(TEXT*, svc*);
+static void service_fork(TEXT*, Service*);
 #endif
-static void service_get(svc*, SCHAR *, USHORT, USHORT, USHORT, USHORT *);
-static void service_put(svc*, const SCHAR*, USHORT);
+static void service_get(Service*, SCHAR *, USHORT, USHORT, USHORT, USHORT *);
+static void service_put(Service*, const SCHAR*, USHORT);
 #if !defined(WIN_NT) && !defined(SUPERSERVER)
 static void timeout_handler(void* service);
 #endif
 #if defined(WIN_NT) && !defined(SUPERSERVER)
-static USHORT service_read(svc*, SCHAR *, USHORT, USHORT);
+static USHORT service_read(Service*, SCHAR *, USHORT, USHORT);
 #endif
 
 #ifdef DEBUG
-int test_thread(svc*);
+int test_thread(Service*);
 void test_cmd(USHORT, SCHAR *, TEXT **);
 #define TEST_THREAD test_thread
 #define TEST_CMD test_cmd
@@ -246,13 +246,13 @@ static bool svc_initialized = false, thd_initialized = false;
 
 /* Service Functions */
 #ifdef SUPERSERVER
-//int main_gbak(svc* service);
+//int main_gbak(Service* service);
 #include "../burp/burp_proto.h"
-//int main_gfix(svc* service);
+//int main_gfix(Service* service);
 #include "../alice/alice_proto.h"
 int main_lock_print();
-int main_gstat(svc* service);
-//int main_gsec(svc* service);
+int main_gstat(Service* service);
+//int main_gsec(Service* service);
 #include "../utilities/gsec/gsec_proto.h"
 
 #define MAIN_GBAK		BURP_main
@@ -376,7 +376,7 @@ static serv_entry services[] =
 #endif /* SERVER_CAPABILITIES */
 
 
-svc* SVC_attach(USHORT	service_length,
+Service* SVC_attach(USHORT	service_length,
 			   const TEXT*	service_name,
 			   USHORT	spb_length,
 			   const SCHAR*	spb)
@@ -433,7 +433,7 @@ svc* SVC_attach(USHORT	service_length,
 	SCHAR* spb_buf = 0;
 	TEXT* switches = 0;
 	TEXT* misc = 0;
-	svc* service = 0;
+	Service* service = 0;
 
 	try {
 
@@ -568,13 +568,13 @@ svc* SVC_attach(USHORT	service_length,
 /* Services operate outside of the context of databases.  Therefore
    we cannot use the JRD allocator. */
 
-//	service = (svc*) gds__alloc((SLONG) (sizeof(svc)));
-	service = FB_NEW(*getDefaultMemoryPool()) svc;
+//	service = (Service*) gds__alloc((SLONG) (sizeof(Service)));
+	service = FB_NEW(*getDefaultMemoryPool()) Service;
 /* FREE: by exception handler */
 	if (!service)
 		ERR_post(isc_virmemexh, 0);
 
-	memset((void *) service, 0, sizeof(svc));
+	memset((void *) service, 0, sizeof(Service));
 
 	service->svc_status =
 		(ISC_STATUS *) gds__alloc(ISC_STATUS_LENGTH * sizeof(ISC_STATUS));
@@ -589,13 +589,13 @@ svc* SVC_attach(USHORT	service_length,
 	//service->blk_pool_id = 0;
 	//service->blk_length = 0;
 	service->svc_service = serv;
-	service->svc_resp_buf = service->svc_resp_ptr = NULL;
+	service->svc_resp_ptr = service->svc_resp_buf = NULL;
 	service->svc_resp_buf_len = service->svc_resp_len = 0;
 	service->svc_flags = serv->serv_executable ? SVC_forked : 0;
 	service->svc_switches = switches;
 	service->svc_handle = 0;
 	service->svc_user_flag = user_flag;
-	service->svc_do_shutdown = FALSE;
+	service->svc_do_shutdown = false;
 #ifdef SUPERSERVER
 	service->svc_stdout_head = 1;
 	service->svc_stdout_tail = SVC_STDOUT_BUFFER_SIZE;
@@ -706,7 +706,7 @@ static int shutdown_thread(void *arg) {
 #endif // defined(SUPERSERVER) && defined(SERVER_SHUTDOWN)
 
 
-void SVC_detach(svc* service)
+void SVC_detach(Service* service)
 {
 /**************************************
  *
@@ -801,7 +801,7 @@ void SVC_shutdown_init(shutdown_fct_t fptr,
 
 
 #ifdef SUPERSERVER
-void SVC_fprintf(svc* service, const SCHAR* format, ...)
+void SVC_fprintf(Service* service, const SCHAR* format, ...)
 {
 /**************************************
  *
@@ -845,7 +845,7 @@ void SVC_fprintf(svc* service, const SCHAR* format, ...)
 }
 
 
-void SVC_putc(svc* service, const UCHAR ch)
+void SVC_putc(Service* service, const UCHAR ch)
 {
 /**************************************
  *
@@ -863,7 +863,7 @@ void SVC_putc(svc* service, const UCHAR ch)
 //
 // CVC: Now we are using a SLONG to hold a pointer to the Service!
 
-int SVC_output(svc* output_data, const UCHAR* output_buf)
+int SVC_output(Service* output_data, const UCHAR* output_buf)
 {
 	SVC_fprintf(output_data, "%s", output_buf);
 
@@ -871,7 +871,7 @@ int SVC_output(svc* output_data, const UCHAR* output_buf)
 }
 
 #endif /*SUPERSERVER*/
-	ISC_STATUS SVC_query2(svc* service,
+	ISC_STATUS SVC_query2(Service* service,
 					  thread_db* tdbb,
 					  USHORT send_item_length,
 					  const SCHAR* send_items,
@@ -1040,7 +1040,7 @@ int SVC_output(svc* output_data, const UCHAR* output_buf)
 		case isc_info_svc_svr_online:
 			*info++ = item;
 			if (service->svc_user_flag & SVC_user_dba) {
-				service->svc_do_shutdown = FALSE;
+				service->svc_do_shutdown = false;
 				WHY_set_shutdown(FALSE);
 			}
 			else
@@ -1050,7 +1050,7 @@ int SVC_output(svc* output_data, const UCHAR* output_buf)
 		case isc_info_svc_svr_offline:
 			*info++ = item;
 			if (service->svc_user_flag & SVC_user_dba) {
-				service->svc_do_shutdown = TRUE;
+				service->svc_do_shutdown = true;
 				WHY_set_shutdown(TRUE);
 			}
 			else
@@ -1238,8 +1238,10 @@ int SVC_output(svc* output_data, const UCHAR* output_buf)
 			if (!
 				(info =
 				 INF_put_item(item, length,
-							  reinterpret_cast <
-							  char *>(service->svc_resp_ptr), info, end))) {
+							  reinterpret_cast<const char*>
+								  (service->svc_resp_ptr), 
+							  info, end))) 
+			{
 				THREAD_ENTER;
 				return 0;
 			}
@@ -1326,7 +1328,7 @@ int SVC_output(svc* output_data, const UCHAR* output_buf)
 	return tdbb->tdbb_status_vector[1];
 }
 
-void SVC_query(svc*		service,
+void SVC_query(Service*		service,
 			   USHORT	send_item_length,
 			   const SCHAR*	send_items,
 			   USHORT	recv_item_length,
@@ -1441,7 +1443,7 @@ void SVC_query(svc*		service,
 		case isc_info_svc_svr_online:
 			*info++ = item;
 			if (service->svc_user_flag & SVC_user_dba) {
-				service->svc_do_shutdown = FALSE;
+				service->svc_do_shutdown = false;
 				WHY_set_shutdown(FALSE);
 				*info++ = 0;	/* Success */
 			}
@@ -1452,7 +1454,7 @@ void SVC_query(svc*		service,
 		case isc_info_svc_svr_offline:
 			*info++ = item;
 			if (service->svc_user_flag & SVC_user_dba) {
-				service->svc_do_shutdown = TRUE;
+				service->svc_do_shutdown = true;
 				WHY_set_shutdown(TRUE);
 				*info++ = 0;	/* Success */
 			}
@@ -1654,7 +1656,8 @@ void SVC_query(svc*		service,
 				length = MIN(end - (info + 4), l);
 			if (!(info = INF_put_item(item,
 									length,
-									reinterpret_cast<char*>(service->svc_resp_ptr),
+									reinterpret_cast<const char*>
+										(service->svc_resp_ptr),
 									info,
 									end)))
 			{
@@ -1722,7 +1725,7 @@ void SVC_query(svc*		service,
 }
 
 
-void* SVC_start(svc* service, USHORT spb_length, const SCHAR* spb)
+void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb)
 {
 /**************************************
  *
@@ -2054,7 +2057,7 @@ void* SVC_start(svc* service, USHORT spb_length, const SCHAR* spb)
 }
 
 
-int SVC_read_ib_log(svc* service)
+int SVC_read_ib_log(Service* service)
 {
 /**************************************
  *
@@ -2247,7 +2250,7 @@ static void io_error(
 
 #ifdef WIN_NT
 #ifndef SUPERSERVER
-static void service_close(svc* service)
+static void service_close(Service* service)
 {
 /**************************************
  *
@@ -2265,7 +2268,7 @@ static void service_close(svc* service)
 }
 
 
-static void service_fork(TEXT* service_path, svc* service)
+static void service_fork(TEXT* service_path, Service* service)
 {
 /**************************************
  *
@@ -2474,7 +2477,7 @@ static void service_fork(TEXT* service_path, svc* service)
 }
 
 
-static void service_get(svc* service,
+static void service_get(Service* service,
 						SCHAR * buffer,
 						USHORT length,
 						USHORT flags,
@@ -2580,7 +2583,7 @@ static void service_get(svc* service,
 }
 
 
-static void service_put(svc* service, const SCHAR* buffer, USHORT length)
+static void service_put(Service* service, const SCHAR* buffer, USHORT length)
 {
 /**************************************
  *
@@ -2614,7 +2617,7 @@ static void service_put(svc* service, const SCHAR* buffer, USHORT length)
 }
 
 
-static USHORT service_read(svc* service, SCHAR * buffer, USHORT length, USHORT flags)
+static USHORT service_read(Service* service, SCHAR * buffer, USHORT length, USHORT flags)
 {
 /**************************************
  *
@@ -2679,7 +2682,7 @@ static USHORT service_add_one(USHORT i)
 }
 
 
-static USHORT service_empty(svc* service)
+static USHORT service_empty(Service* service)
 {
 /**************************************
  *
@@ -2697,7 +2700,7 @@ static USHORT service_empty(svc* service)
 }
 
 
-static USHORT service_full(svc* service)
+static USHORT service_full(Service* service)
 {
 /**************************************
  *
@@ -2715,7 +2718,7 @@ static USHORT service_full(svc* service)
 }
 
 
-static UCHAR service_dequeue_byte(svc* service)
+static UCHAR service_dequeue_byte(Service* service)
 {
 /**************************************
  *
@@ -2733,7 +2736,7 @@ static UCHAR service_dequeue_byte(svc* service)
 }
 
 
-static void service_enqueue_byte(UCHAR ch, svc* service)
+static void service_enqueue_byte(UCHAR ch, Service* service)
 {
 /**************************************
  *
@@ -2756,7 +2759,7 @@ static void service_enqueue_byte(UCHAR ch, svc* service)
 }
 
 
-static void service_fork(pfn_svc_main service_executable, svc* service)
+static void service_fork(pfn_svc_main service_executable, Service* service)
 {
 /**************************************
  *
@@ -2820,7 +2823,7 @@ static void service_fork(pfn_svc_main service_executable, svc* service)
 }
 
 
-static void service_get(svc*		service,
+static void service_get(Service*		service,
 						SCHAR*	buffer,
 						USHORT	length,
 						USHORT	flags,
@@ -2887,7 +2890,7 @@ static void service_get(svc*		service,
 }
 
 
-static void service_put(svc* service, const SCHAR* buffer, USHORT length)
+static void service_put(Service* service, const SCHAR* buffer, USHORT length)
 {
 /**************************************
  *
@@ -2907,7 +2910,7 @@ static void service_put(svc* service, const SCHAR* buffer, USHORT length)
 
 
 #if !defined(WIN_NT) && !defined(SUPERSERVER)
-static void service_close(svc* service)
+static void service_close(Service* service)
 {
 /**************************************
  *
@@ -2926,7 +2929,7 @@ static void service_close(svc* service)
 }
 
 
-static void service_fork(TEXT* service_path, svc* service)
+static void service_fork(TEXT* service_path, Service* service)
 {
 /**************************************
  *
@@ -3123,7 +3126,7 @@ static void service_fork(TEXT* service_path, svc* service)
 
 
 static void service_get(
-						svc* service,
+						Service* service,
 						SCHAR * buffer,
 						USHORT length,
 						USHORT flags, USHORT timeout, USHORT * return_length)
@@ -3195,7 +3198,7 @@ static void service_get(
 }
 
 
-static void service_put(svc* service, const SCHAR* buffer, USHORT length)
+static void service_put(Service* service, const SCHAR* buffer, USHORT length)
 {
 /**************************************
  *
@@ -3246,7 +3249,7 @@ static void timeout_handler(void* service)
 #endif // !defined(WIN_NT) && !defined(SUPERSERVER)
 
 
-void SVC_cleanup(svc* service)
+void SVC_cleanup(Service* service)
 {
 /**************************************
  *
@@ -3294,7 +3297,7 @@ void SVC_cleanup(svc* service)
 }
 
 
-void SVC_finish(svc* service, USHORT flag)
+void SVC_finish(Service* service, USHORT flag)
 {
 /**************************************
  *
@@ -3852,7 +3855,7 @@ static bool get_action_svc_parameter(
  * test that the paths for starting services and parsing command-lines
  * are followed correctly.
  */
-int test_thread(svc* service)
+int test_thread(Service* service)
 {
 	gds__log("Starting service");
 	return FINI_OK;

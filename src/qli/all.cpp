@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: all.cpp,v 1.25 2004-03-14 05:51:48 skidder Exp $
+$Id: all.cpp,v 1.26 2004-03-18 05:55:40 robocop Exp $
 */
 
 /***************************************************
@@ -303,7 +303,7 @@ PLB ALLQ_pool(void)
  *	In SHORT, by mirrors.
  *
  **************************************/
-	UCHAR pool_id;
+	USHORT pool_id;
 
 // Start by assigning a pool id
 

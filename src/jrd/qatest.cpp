@@ -147,7 +147,7 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 		/* Parameter 1: SLONG *testvalue */
 		/* Entrypoint for testing the QA entrypoint method */
 
-		return 2 * *(SLONG *) arg1;
+		return 2 * (*(SLONG*) arg1);
 
 	case QATEST_delete_database:
 		/* Parameters: NONE */

@@ -65,12 +65,12 @@ typedef struct thread {
 #define	THREAD_ast_pending	8	/* AST waiting to be delivered */
 
 static THREAD alloc_thread(void);
-static BOOLEAN ast_enable(void);
+static bool ast_enable(void);
 static void ast_disable(void);
 static void cleanup(void *);
-static void mutex_bugcheck(TEXT *, int);
-static BOOLEAN schedule(void);
-static BOOLEAN schedule_active(int);
+static void mutex_bugcheck(const TEXT*, int);
+static bool schedule(void);
+static bool schedule_active(bool);
 static void stall(THREAD);
 static void stall_ast(THREAD);
 
@@ -78,7 +78,7 @@ static THREAD free_threads = NULL;
 static THREAD active_thread = NULL;
 static THREAD ast_thread = NULL;
 static MUTX_T thread_mutex[1];
-volatile static USHORT init_flag = FALSE;
+volatile static bool init_flag = false;
 static USHORT enabled = FALSE;
 
 #define ABORT	abort()
@@ -211,9 +211,6 @@ void SCH_abort(void)
  *	unlink it.
  *
  **************************************/
-	THREAD *ptr, thread;
-	SLONG id;
-	int mutex_state;
 
 /* If threading isn't active, don't sweat it */
 
@@ -222,8 +219,9 @@ void SCH_abort(void)
 
 /* See if we can find thread.  If not, don't worry about it */
 
-	id = THD_get_thread_id();
-	for (ptr = &active_thread; thread = *ptr; ptr = &thread->thread_next) {
+	const SLONG id = THD_get_thread_id();
+	THREAD thread;
+	for (THREAD* ptr = &active_thread; thread = *ptr; ptr = &thread->thread_next) {
 		if (thread->thread_id == id)
 			break;
 		if (thread->thread_next == active_thread)
@@ -239,7 +237,8 @@ void SCH_abort(void)
 
 /* We're on the list but not active.  Remove from list */
 
-	if (mutex_state = THD_mutex_lock(thread_mutex))
+	int mutex_state = THD_mutex_lock(thread_mutex);
+	if (mutex_state)
 		mutex_bugcheck("mutex lock", mutex_state);
 	thread->thread_prior->thread_next = thread->thread_next;
 	thread->thread_next->thread_prior = thread->thread_prior;
@@ -266,9 +265,6 @@ void SCH_ast(enum ast_t action)
  *	In case you're wondering: AST = Asynchronous System Trap
  *
  **************************************/
-	int mutex_state;
-	THREAD thread;
-
 	if (!ast_thread && !(action == AST_alloc || action == AST_disable ||
 						 action == AST_enable)) {
 		/* Better be an AST thread before we do anything to it! */
@@ -284,7 +280,8 @@ void SCH_ast(enum ast_t action)
 	if (!init_flag)
 		SCH_init();
 
-	if (mutex_state = THD_mutex_lock(thread_mutex))
+	int mutex_state = THD_mutex_lock(thread_mutex);
+	if (mutex_state)
 		mutex_bugcheck("mutex lock", mutex_state);
 
 	switch (action) {
@@ -349,9 +346,11 @@ void SCH_ast(enum ast_t action)
 
 		/* Post non-active threads that have requested AST disabling */
 
-		for (thread = ast_thread->thread_next; thread != ast_thread;
-			 thread =
-			 thread->thread_next) ISC_event_post(thread->thread_stall);
+		for (THREAD thread = ast_thread->thread_next; thread != ast_thread;
+			 thread = thread->thread_next)
+		{
+				 ISC_event_post(thread->thread_stall);
+		}
 		break;
 	}
 
@@ -391,14 +390,12 @@ void SCH_enter(void)
  *	Humor him.
  *
  **************************************/
-	THREAD thread, prior;
-	int mutex_state;
 
 /* Special case single thread case */
 
 #ifndef MULTI_THREAD
 	if (free_threads) {
-		thread = active_thread = free_threads;
+		THREAD thread = active_thread = free_threads;
 		free_threads = NULL;
 		thread->thread_next = thread->thread_prior = thread;
 		thread->thread_flags = 0;
@@ -413,11 +410,12 @@ void SCH_enter(void)
 
 /* Get mutex on scheduler data structures to prevent tragic misunderstandings */
 
-	if (mutex_state = THD_mutex_lock(thread_mutex)) {
+	int mutex_state = THD_mutex_lock(thread_mutex);
+	if (mutex_state) {
 		mutex_bugcheck("mutex lock", mutex_state);
 	}
 
-	thread = alloc_thread();
+	THREAD thread = alloc_thread();
 	thread->thread_id = THD_get_thread_id();
 
 /* Link thread block into circular list of active threads */
@@ -429,7 +427,8 @@ void SCH_enter(void)
 		fb_assert(thread->thread_id != active_thread->thread_id);
 
 		thread->thread_next = active_thread;
-		thread->thread_prior = prior = active_thread->thread_prior;
+		THREAD prior = active_thread->thread_prior;
+		thread->thread_prior = prior;
 		active_thread->thread_prior = thread;
 		prior->thread_next = thread;
 	}
@@ -471,15 +470,13 @@ void SCH_exit(void)
 	active_thread = NULL;
 	free_threads->thread_next = NULL;
 #else
-	THREAD thread, prior, next;
-	int mutex_state;
-
-	if (mutex_state = THD_mutex_lock(thread_mutex))
+	int mutex_state = THD_mutex_lock(thread_mutex);
+	if (mutex_state)
 		mutex_bugcheck("mutex lock", mutex_state);
 
 	ast_enable();				/* Reenable AST delivery */
 
-	thread = active_thread;
+	THREAD thread = active_thread;
 
 	// This is to prevent nasty crash if error (for example, IO error) 
 	// happens during attach to database in SS builds. Exception
@@ -490,8 +487,9 @@ void SCH_exit(void)
 	if (thread == thread->thread_next)
 		active_thread = NULL;
 	else {
-		next = thread->thread_next;
-		active_thread = prior = thread->thread_prior;
+		THREAD next = thread->thread_next;
+		THREAD prior = thread->thread_prior;
+		active_thread = prior;
 		prior->thread_next = next;
 		next->thread_prior = prior;
 	}
@@ -521,7 +519,7 @@ void SCH_hiber(void)
  *
  **************************************/
 
-	schedule_active(TRUE);
+	schedule_active(true);
 }
 
 #ifdef MULTI_THREAD
@@ -550,10 +548,10 @@ void SCH_init(void)
 		if (!init_flag) {
 #endif
 			gds__register_cleanup(cleanup, 0);
-			int mutex_state;
-			if (mutex_state = THD_mutex_init(thread_mutex))
+			const int mutex_state = THD_mutex_init(thread_mutex);
+			if (mutex_state)
 				mutex_bugcheck("mutex init", mutex_state);
-			init_flag = TRUE;
+			init_flag = true;
 #ifdef MULTI_THREAD
 			THD_INIT;
 		}
@@ -566,7 +564,7 @@ void SCH_init(void)
 }
 
 
-int SCH_schedule(void)
+bool SCH_schedule(void)
 {
 /**************************************
  *
@@ -576,15 +574,14 @@ int SCH_schedule(void)
  *
  * Functional description
  *	Voluntarily relinquish control so that others may run.
- *	If a context switch actually happened, return TRUE.
+ *	If a context switch actually happened, return true.
  *
  **************************************/
-
-	return schedule_active(FALSE);
+	return schedule_active(false);
 }
 
 
-BOOLEAN SCH_thread_enter_check(void)
+bool SCH_thread_enter_check(void)
 {
 /**************************************
  *
@@ -601,14 +598,14 @@ BOOLEAN SCH_thread_enter_check(void)
 /* if active thread is not null and thread_id matches the we are the
    active thread */
 	if ((active_thread) && (active_thread->thread_id == THD_get_thread_id()))
-		return (TRUE);
+		return true;
 
-	return (FALSE);
+	return false;
 
 }
 
 
-BOOLEAN SCH_validate(void)
+bool SCH_validate(void)
 {
 /**************************************
  *
@@ -625,17 +622,17 @@ BOOLEAN SCH_validate(void)
 		gds__log("SCH_validate -- not entered");
 		if (getenv("ISC_PUNT"))
 			ABORT;
-		return FALSE;
+		return false;
 	}
 
 #ifdef MULTI_THREAD
 	if (active_thread->thread_id != THD_get_thread_id()) {
 		gds__log("SCH_validate -- wrong thread");
-		return FALSE;
+		return false;
 	}
 #endif
 
-	return TRUE;
+	return true;
 }
 
 
@@ -651,7 +648,6 @@ void SCH_wake(THREAD thread)
  *	Take thread out of hibernation.
  *
  **************************************/
-
 	thread->thread_flags &= ~THREAD_hiber;
 	ISC_event_post(thread->thread_stall);
 }
@@ -669,11 +665,11 @@ static THREAD alloc_thread(void)
  *	Allocate a thread block.
  *
  **************************************/
-	THREAD thread;
 
 /* Find a useable thread block.  If there isn't one, allocate one */
 
-	if (thread = free_threads)
+	THREAD thread = free_threads;
+	if (thread)
 		free_threads = thread->thread_next;
 	else {
 		thread = (THREAD) gds__alloc((SLONG) sizeof(struct thread));
@@ -694,7 +690,7 @@ static THREAD alloc_thread(void)
 }
 
 
-static BOOLEAN ast_enable(void)
+static bool ast_enable(void)
 {
 /**************************************
  *
@@ -707,24 +703,23 @@ static BOOLEAN ast_enable(void)
  *	TRUE is an AST is deliverable.
  *
  **************************************/
-
 	if (!ast_thread)
-		return FALSE;
+		return false;
 
 	if (ast_thread->thread_flags & THREAD_ast_active &&
 		ast_thread->thread_id == THD_get_thread_id())
-		return FALSE;
+		return false;
 
 	if (!ast_thread->thread_count || !--ast_thread->thread_count) {
 		ast_thread->thread_flags &= ~THREAD_ast_disabled;
 		if (ast_thread->thread_flags & THREAD_ast_pending) {
 			ast_thread->thread_flags |= THREAD_ast_active;
 			ISC_event_post(ast_thread->thread_stall);
-			return TRUE;
+			return true;
 		}
 	}
 
-	return FALSE;
+	return false;
 }
 
 
@@ -742,8 +737,6 @@ static void ast_disable(void)
  *	before returning.
  *
  **************************************/
-	THREAD thread;
-
 	if (!ast_thread)
 		return;
 
@@ -752,12 +745,13 @@ static void ast_disable(void)
 			return;
 		else {
 			if (active_thread
-				&& active_thread->thread_id == THD_get_thread_id()) {
+				&& active_thread->thread_id == THD_get_thread_id()) 
+			{
 				stall(active_thread);
 				return;
 			}
 			else {
-				thread = alloc_thread();
+				THREAD thread = alloc_thread();
 				stall_ast(thread);
 				thread->thread_next = free_threads;
 				free_threads = thread;
@@ -782,12 +776,7 @@ static void cleanup(void *arg)
  *	Exit handler for image exit.
  *
  **************************************/
-
-#ifdef SUPERCLIENT
-	THREAD temp_thread;
-#endif
-
-	if (init_flag == FALSE)
+	if (!init_flag)
 		return;
 
 /* this is added to make sure that we release the memory
@@ -798,11 +787,12 @@ static void cleanup(void *arg)
 /* use locks */
 	THD_mutex_lock(thread_mutex);
 
-	if (init_flag == FALSE)
+	if (!init_flag)
 		return;
 
 /* loop through the list of active threads and free the events */
-	if (temp_thread = active_thread) {
+	THREAD temp_thread = active_thread;
+	if (temp_thread) {
 		/* reach to the starting of the list */
 		while (temp_thread != temp_thread->thread_prior)
 			temp_thread = temp_thread->thread_prior;
@@ -813,8 +803,7 @@ static void cleanup(void *arg)
 			/* the thread structures are freed as a part of the 
 			 * gds_alloc cleanup, so do not worry about them here
 			 */
-		}
-		while (temp_thread->thread_next != temp_thread
+		} while (temp_thread->thread_next != temp_thread
 			   && (temp_thread = temp_thread->thread_next));
 
 	}
@@ -844,11 +833,11 @@ static void cleanup(void *arg)
 	THD_mutex_destroy(thread_mutex);
 #endif /* SUPERCLIENT */
 
-	init_flag = FALSE;
+	init_flag = false;
 }
 
 
-static void mutex_bugcheck(TEXT * string, int mutex_state)
+static void mutex_bugcheck(const TEXT* string, int mutex_state)
 {
 /**************************************
  *
@@ -871,7 +860,8 @@ static void mutex_bugcheck(TEXT * string, int mutex_state)
 }
 
 
-static BOOLEAN schedule(void)
+// CVC: Nobody checks the result from this function.
+static bool schedule(void)
 {
 /**************************************
  *
@@ -881,33 +871,31 @@ static BOOLEAN schedule(void)
  *
  * Functional description
  *	Loop thru active thread to find the next runable task.  If we find one,
- *	set "active_tasks" to point to it and return TRUE.  Otherwise simply
- *	return FALSE.
+ *	set "active_tasks" to point to it and return true.  Otherwise simply
+ *	return false.
  *
  **************************************/
-	THREAD thread;
-
 	if (!active_thread)
-		return FALSE;
+		return false;
 
-	thread = active_thread;
+	THREAD thread = active_thread;
 
 	for (;;) {
 		thread = thread->thread_next;
 		if (!(thread->thread_flags & THREAD_hiber))
 			break;
 		if (thread == active_thread)
-			return FALSE;
+			return false;
 	}
 
 	active_thread = thread;
 	ISC_event_post(active_thread->thread_stall);
 
-	return TRUE;
+	return true;
 }
 
 
-static BOOLEAN schedule_active(int hiber_flag)
+static bool schedule_active(bool hiber_flag)
 {
 /**************************************
  *
@@ -917,20 +905,17 @@ static BOOLEAN schedule_active(int hiber_flag)
  *
  * Functional description
  *	Voluntarily relinquish control so that others may run.
- *	If a context switch actually happened, return TRUE.
+ *	If a context switch actually happened, return true.
  *
  **************************************/
 #ifndef MULTI_THREAD
-	return FALSE;
+	return false;
 #else
-	THREAD thread;
-	int mutex_state;
-	BOOLEAN ret;
-
 	if (!active_thread)
-		return FALSE;
+		return false;
 
-	if (mutex_state = THD_mutex_lock(thread_mutex))
+	int mutex_state = THD_mutex_lock(thread_mutex);
+	if (mutex_state)
 		mutex_bugcheck("mutex lock", mutex_state);
 
 /* Take this opportunity to check for pending ASTs
@@ -943,14 +928,15 @@ static BOOLEAN schedule_active(int hiber_flag)
 
 	if (hiber_flag)
 		active_thread->thread_flags |= THREAD_hiber;
-	thread = active_thread;
+	THREAD thread = active_thread;
 	schedule();
+	bool ret;
 	if (thread == active_thread && !(thread->thread_flags & THREAD_hiber))
-		ret = FALSE;
+		ret = false;
 	else {
 		ast_enable();
 		stall(thread);
-		ret = TRUE;
+		ret = true;
 	}
 
 	if (mutex_state = THD_mutex_unlock(thread_mutex))
@@ -973,13 +959,10 @@ static void stall(THREAD thread)
  *	Stall until our thread is made active.
  *
  **************************************/
-	SLONG value;
-	int mutex_state;
-
 	if (thread != active_thread || thread->thread_flags & THREAD_hiber ||
 		(ast_thread && ast_thread->thread_flags & THREAD_ast_active))
 		for (;;) {
-			value = ISC_event_clear(thread->thread_stall);
+			SLONG value = ISC_event_clear(thread->thread_stall);
 			if (thread == active_thread
 				&& !(thread->thread_flags & THREAD_hiber)
 				&& (!ast_thread
@@ -987,7 +970,8 @@ static void stall(THREAD thread)
 			{
 				break;
 			}
-			if (mutex_state = THD_mutex_unlock(thread_mutex))
+			int mutex_state = THD_mutex_unlock(thread_mutex);
+			if (mutex_state)
 				mutex_bugcheck("mutex unlock", mutex_state);
 			event_t* ptr = thread->thread_stall;
 			ISC_event_wait(1, &ptr, &value, 0, 0, 0);
@@ -1016,15 +1000,14 @@ static void stall_ast(THREAD thread)
  *	AST is complete.
  *
  **************************************/
-	int mutex_state;
-
 	if (thread == ast_thread) {
 		if (ast_thread->thread_flags & THREAD_ast_disabled)
 			for (;;) {
 				SLONG value = ISC_event_clear(thread->thread_stall);
 				if (!(ast_thread->thread_flags & THREAD_ast_disabled))
 					break;
-				if (mutex_state = THD_mutex_unlock(thread_mutex))
+				int mutex_state = THD_mutex_unlock(thread_mutex);
+				if (mutex_state)
 					mutex_bugcheck("mutex unlock", mutex_state);
 				event_t* ptr = thread->thread_stall;
 				ISC_event_wait(1, &ptr, &value, 0, 0, 0);
@@ -1047,7 +1030,8 @@ static void stall_ast(THREAD thread)
 				SLONG value = ISC_event_clear(thread->thread_stall);
 				if (!(ast_thread->thread_flags & THREAD_ast_active))
 					break;
-				if (mutex_state = THD_mutex_unlock(thread_mutex))
+				int mutex_state = THD_mutex_unlock(thread_mutex);
+				if (mutex_state)
 					mutex_bugcheck("mutex unlock", mutex_state);
 				event_t* ptr = thread->thread_stall;
 				ISC_event_wait(1, &ptr, &value, 0, 0, 0);

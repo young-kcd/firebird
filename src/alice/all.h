@@ -27,6 +27,8 @@
 #include "../jrd/block_cache.h"
 #include "../alice/lls.h"
 
+struct blk;
+
 class AliceMemoryPool : public MemoryPool
 {
 protected:
@@ -46,8 +48,8 @@ public:
 //		lls_cache(*this)
 //	{}
 
-	static class blk* ALLA_pop(alice_lls**);
-	static void ALLA_push(class blk*, alice_lls**);
+	static blk* ALLA_pop(alice_lls**);
+	static void ALLA_push(blk*, alice_lls**);
 
 private:
 	BlockCache<alice_lls> lls_cache;  // Was plb_lls

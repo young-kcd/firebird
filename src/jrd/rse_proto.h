@@ -28,7 +28,7 @@
 #include "../jrd/rse.h"
 
 class Rsb;
-struct rpb;
+struct record_param;
 class jrd_nod;
 
 void RSE_close(thread_db*, Rsb*);
@@ -43,8 +43,8 @@ void RSE_mark_crack(thread_db*, Rsb*, USHORT);
 #endif
 void RSE_open(thread_db*, Rsb*);
 #ifdef PC_ENGINE
-bool RSE_reset_position(thread_db*, Rsb*, rpb*);
-bool RSE_set_bookmark(thread_db*, Rsb*, rpb*, struct bkm*);
+bool RSE_reset_position(thread_db*, Rsb*, record_param*);
+bool RSE_set_bookmark(thread_db*, Rsb*, record_param*, struct bkm*);
 #endif
 
 #ifdef PC_ENGINE

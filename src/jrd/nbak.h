@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.h,v 1.10 2004-03-12 20:19:39 skidder Exp $
+ *  $Id: nbak.h,v 1.11 2004-03-18 05:55:24 robocop Exp $
  *
  */
  
@@ -55,13 +55,14 @@ DEFINE_TRACE_ROUTINE(nbak_trace);
 #define NBAK_TRACE_AST(message) /* nothing */
 #endif
 
-class lck;
+class Lock;
+class Record;
 
 class AllocItem {
 public:
 	ULONG db_page; // Page number in the main database file
 	ULONG diff_page; // Page number in the difference file
-	class rec* rec_data;
+	Record* rec_data;
     static const ULONG& generate(void *sender, const AllocItem& item) {
 		return item.db_page;
     }
@@ -170,9 +171,9 @@ private:
 	// in case of errors.
 	Firebird::Mutex* adjust_state_lock; 
 #else
-	lck* alloc_lock; // Lock to protect allocation table
-	lck* state_lock; // Lock to protect backup state
-	lck* database_lock; // Lock to protect writing to database
+	Lock* alloc_lock; // Lock to protect allocation table
+	Lock* state_lock; // Lock to protect backup state
+	Lock* database_lock; // Lock to protect writing to database
 
 	// Absense of 'volatile' REALLY causes database corruption
 	// with optimized build on Linux CS. Do not remove it !

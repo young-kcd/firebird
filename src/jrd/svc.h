@@ -96,7 +96,7 @@ void SVC_STATUS_ARG(ISC_STATUS*& status, USHORT type, const void* value);
 struct serv_entry; // forward decl.
 
 /* Service manager block */
-class svc : public pool_alloc<type_svc>
+class Service : public pool_alloc<type_svc>
 {
 public:
 	SLONG	svc_handle;			/* "handle" of process/thread running service */
@@ -111,18 +111,18 @@ public:
 	event_t	svc_start_event[1];	/* fired once service has started successfully */
 	serv_entry*	svc_service;
 	UCHAR*	svc_resp_buf;
-	UCHAR*	svc_resp_ptr;
+	const UCHAR*	svc_resp_ptr;
 	USHORT	svc_resp_buf_len;
 	USHORT	svc_resp_len;
 	USHORT	svc_flags;
 	USHORT	svc_user_flag;
 	USHORT	svc_spb_version;
-	BOOLEAN	svc_do_shutdown;
+	bool	svc_do_shutdown;
 	TEXT	svc_username[33];
 	TEXT	svc_enc_password[MAX_PASSWORD_ENC_LENGTH];
 	TEXT	svc_reserved[1];
 	TEXT*	svc_switches;
-	void svc_started();
+	void	svc_started();
 };
 
 /* Bitmask values for the svc_flags variable */
@@ -141,14 +141,14 @@ public:
 
 #ifndef SUPERSERVER
 
-inline void svc::svc_started()
+inline void Service::svc_started()
 {
 	// null definition, no overhead.
 }
 
 #else /* SUPERSERVER */
 
-inline void svc::svc_started()
+inline void Service::svc_started()
 {
 	event_t* evnt_ptr = svc_start_event;
 	if (!(svc_flags & SVC_evnt_fired)) {
@@ -159,8 +159,8 @@ inline void svc::svc_started()
 
 #endif /* SUPERSERVER */
 
-typedef int (*pfn_svc_main) (svc*);
-typedef int (*pfn_svc_output)(svc*, const UCHAR*);
+typedef int (*pfn_svc_main) (Service*);
+typedef int (*pfn_svc_output)(Service*, const UCHAR*);
 
 struct serv_entry
 {

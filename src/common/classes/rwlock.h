@@ -32,12 +32,12 @@
  *  Contributor(s):
  * 
  *
- *  $Id: rwlock.h,v 1.12 2004-03-11 05:30:07 skidder Exp $
+ *  $Id: rwlock.h,v 1.13 2004-03-18 05:54:22 robocop Exp $
  *
  */
 
-#ifndef RWLOCK_H
-#define RWLOCK_H
+#ifndef CLASSES_RWLOCK_H
+#define CLASSES_RWLOCK_H
 
 #ifdef WIN_NT
 
@@ -338,5 +338,5 @@ public:
 
 #endif /*!WIN_NT*/
 
-#endif // #ifndef RWLOCK_H
+#endif // #ifndef CLASSES_RWLOCK_H
 

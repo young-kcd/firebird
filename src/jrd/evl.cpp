@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.67 2004-03-11 05:03:57 robocop Exp $ 
+  * $Id: evl.cpp,v 1.68 2004-03-18 05:55:22 robocop Exp $ 
  */
 
 /*
@@ -225,7 +225,7 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 	dsc* desc;
 	fmt* format;
 	jrd_nod* message;
-	REC record;
+	Record* record;
 
 	SET_TDBB(tdbb);
 
@@ -322,7 +322,7 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 }
 
 
-SBM* EVL_bitmap(thread_db* tdbb, jrd_nod* node)
+SparseBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node)
 {
 /**************************************
  *
@@ -845,7 +845,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 
 	case nod_field:
 		{
-			rec* record =
+			Record* record =
 				request->req_rpb[(int) (IPTR)node->nod_arg[e_fld_stream]].rpb_record;
 			/* In order to "map a null to a default" value (in EVL_field()), 
 			 * the relation block is referenced. 
@@ -869,7 +869,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 		return &impure->vlu_desc;
 
 	case nod_literal:
-		return &((LIT) node)->lit_desc;
+		return &((Literal*) node)->lit_desc;
 
 	case nod_lock_state:
 		return lock_state(tdbb, node, impure);
@@ -1208,7 +1208,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 }
 
 
-bool EVL_field(jrd_rel* relation, REC record, USHORT id, dsc* desc)
+bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 {
 /**************************************
  *
@@ -1309,8 +1309,8 @@ bool EVL_field(jrd_rel* relation, REC record, USHORT id, dsc* desc)
 					}
 					else
 					{
-						const lit* default_literal =
-							reinterpret_cast<lit*>(temp_field->fld_default_value);
+						const Literal* default_literal =
+							reinterpret_cast<Literal*>(temp_field->fld_default_value);
 
 						if (default_literal->nod_type == nod_null)
 						{
@@ -1711,7 +1711,7 @@ USHORT EVL_group(thread_db* tdbb, Rsb* rsb, jrd_nod* node, USHORT state)
 		jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
 		jrd_nod* field = (*ptr)->nod_arg[e_asgn_to];
 		const USHORT id = (USHORT)(IPTR) field->nod_arg[e_fld_id];
-		rec* record =
+		Record* record =
 			request->req_rpb[(int) (IPTR) field->nod_arg[e_fld_stream]].rpb_record;
 		vlux* impure = (vlux*) ((SCHAR *) request + from->nod_impure);
 		
@@ -3185,7 +3185,7 @@ static dsc* dbkey(thread_db* tdbb, const jrd_nod* node, VLU impure)
 
 	jrd_req* request = tdbb->tdbb_request;
 	impure = (VLU) ((SCHAR *) request + node->nod_impure);
-	const RPB* rpb = &request->req_rpb[(int) (IPTR) node->nod_arg[0]];
+	const record_param* rpb = &request->req_rpb[(int) (IPTR) node->nod_arg[0]];
 	const jrd_rel* relation = rpb->rpb_relation;
 
 /* Format dbkey as vector of relation id, record number */
@@ -3584,15 +3584,9 @@ static dsc* lock_record(thread_db* tdbb, jrd_nod* node, VLU impure)
  *      pointing to the lock handle.
  *
  **************************************/
-	jrd_req* request;
-	USHORT lock_level;
-	Rsb* rsb;
-	RPB* rpb;
-	lck* lock = NULL;
-
 	SET_TDBB(tdbb);
 
-	request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->tdbb_request;
 
 	DEV_BLKCHK(node, type_nod);
 
@@ -3606,14 +3600,15 @@ static dsc* lock_record(thread_db* tdbb, jrd_nod* node, VLU impure)
 /* get the locking level */
 
 	dsc* desc = EVL_expr(tdbb, node->nod_arg[e_lockrec_level]);
-	lock_level = (USHORT) MOV_get_long(desc, 0);
+	const USHORT lock_level = (USHORT) MOV_get_long(desc, 0);
 	if (lock_level > LCK_EX)
 		ERR_post(isc_bad_lock_level, isc_arg_number, (SLONG) lock_level, 0);
 
 /* perform the actual lock (or unlock) */
 
-	rsb = *(Rsb**) node->nod_arg[e_lockrec_rsb];
-	rpb = request->req_rpb + rsb->rsb_stream;
+	Rsb* rsb = *(Rsb**) node->nod_arg[e_lockrec_rsb];
+	record_param* rpb = request->req_rpb + rsb->rsb_stream;
+	Lock* lock = NULL;
 	if (!lock_level)
 		RLCK_unlock_record(0, rpb);
 	else if (!(lock = RLCK_lock_record(rpb, lock_level, 0, 0)))
@@ -3625,17 +3620,14 @@ static dsc* lock_record(thread_db* tdbb, jrd_nod* node, VLU impure)
 	impure->vlu_misc.vlu_long = (ULONG) lock;
 #else
 	{
-		ATT att;
-		ULONG slot;
-
 		/* The lock pointer can't be stored in a ULONG.  Therefore we must
 		   generate a ULONG value that can be used to retrieve the pointer.
 		   Basically we will keep a vector of user locks and give the user
 		   an index into this vector.  When the user releases a lock, its
 		   slot in the vector is zeroed and it becomes available for reuse. */
 
-		att = tdbb->tdbb_attachment;
-		slot = ALL_get_free_object(tdbb->tdbb_database->dbb_permanent,
+		Attachment* att = tdbb->tdbb_attachment;
+		const ULONG slot = ALL_get_free_object(tdbb->tdbb_database->dbb_permanent,
 								   &att->att_lck_quick_ref, 50);
 		att->att_lck_quick_ref->vec_object[slot] = lock;
 		impure->vlu_misc.vlu_long = slot;
@@ -3682,7 +3674,7 @@ static dsc* lock_relation(thread_db* tdbb, jrd_nod* node, VLU impure)
 
 	jrd_nod* relation_node = node->nod_arg[e_lockrel_relation];
 	jrd_rel* relation = (jrd_rel*) relation_node->nod_arg[e_rel_relation];
-	lck* lock = NULL;
+	Lock* lock = NULL;
 	if (!lock_level)
 		RLCK_unlock_relation(0, relation);
 	else
@@ -3702,7 +3694,7 @@ static dsc* lock_relation(thread_db* tdbb, jrd_nod* node, VLU impure)
 		   an index into this vector.  When the user releases a lock, its
 		   slot in the vector is zeroed and it becomes available for reuse. */
 
-		ATT att = tdbb->tdbb_attachment;
+		Attachment* att = tdbb->tdbb_attachment;
 		const ULONG slot =
 			ALL_get_free_object(tdbb->tdbb_database->dbb_permanent,
 								   &att->att_lck_quick_ref, 50);
@@ -3759,7 +3751,7 @@ static dsc* lock_state(thread_db* tdbb, jrd_nod* node, VLU impure)
 		if (id == PAG_attachment_id())
 			impure->vlu_misc.vlu_long = 2;
 		else {
-			struct lck temp_lock;
+			Lock temp_lock;
 			/* fill out a lock block, zeroing it out first */
 
 			temp_lock.lck_parent = dbb->dbb_lock;
@@ -4200,7 +4192,7 @@ static dsc* record_version(thread_db* tdbb, const jrd_nod* node, VLU impure)
 
 	jrd_req* request = tdbb->tdbb_request;
 	impure = (VLU) ((SCHAR *) request + node->nod_impure);
-	RPB* rpb = &request->req_rpb[(int) (IPTR) node->nod_arg[0]];
+	const record_param* rpb = &request->req_rpb[(int) (IPTR) node->nod_arg[0]];
 
 /* If the current transaction has updated the record, the record version
  * coming in from DSQL will have the original transaction # (or current
@@ -4210,7 +4202,7 @@ static dsc* record_version(thread_db* tdbb, const jrd_nod* node, VLU impure)
  */
 
 	if (tdbb->tdbb_request->req_transaction->tra_number ==
-		rpb->rpb_transaction)
+		rpb->rpb_transaction_nr)
 	{
 		request->req_flags |= req_same_tx_upd;
 	}
@@ -4223,7 +4215,7 @@ static dsc* record_version(thread_db* tdbb, const jrd_nod* node, VLU impure)
 		if (request->req_transaction->tra_commit_sub_trans)
 		{
 			if (SBM_test(request->req_transaction->tra_commit_sub_trans,
-			             rpb->rpb_transaction))
+			             rpb->rpb_transaction_nr))
 			{
 				 request->req_flags |= req_same_tx_upd;
 			}
@@ -4232,7 +4224,7 @@ static dsc* record_version(thread_db* tdbb, const jrd_nod* node, VLU impure)
 
 /* Initialize descriptor */
 
-	impure->vlu_misc.vlu_long    = rpb->rpb_transaction;
+	impure->vlu_misc.vlu_long    = rpb->rpb_transaction_nr;
 	impure->vlu_desc.dsc_address = (UCHAR *) & impure->vlu_misc.vlu_long;
 	impure->vlu_desc.dsc_dtype   = dtype_text;
 	impure->vlu_desc.dsc_length  = 4;

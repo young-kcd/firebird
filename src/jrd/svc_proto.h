@@ -24,20 +24,20 @@
 #ifndef JRD_SVC_PROTO_H
 #define JRD_SVC_PROTO_H
 
-class svc* SVC_attach(USHORT, const TEXT*, USHORT, const SCHAR*);
-void   SVC_cleanup(class svc*);
-void   SVC_detach(class svc*);
-void   SVC_fprintf(class svc*, const SCHAR*, ...);
-void   SVC_putc(class svc*, const UCHAR);
-void   SVC_query(class svc*, USHORT, const SCHAR*, USHORT, const SCHAR*,
+class Service* SVC_attach(USHORT, const TEXT*, USHORT, const SCHAR*);
+void   SVC_cleanup(class Service*);
+void   SVC_detach(class Service*);
+void   SVC_fprintf(class Service*, const SCHAR*, ...);
+void   SVC_putc(class Service*, const UCHAR);
+void   SVC_query(class Service*, USHORT, const SCHAR*, USHORT, const SCHAR*,
 	USHORT, SCHAR*);
-ISC_STATUS SVC_query2(class svc*, struct thread_db*, USHORT, const SCHAR*,
+ISC_STATUS SVC_query2(class Service*, struct thread_db*, USHORT, const SCHAR*,
 	USHORT, const SCHAR*, USHORT, SCHAR*);
-void*  SVC_start(class svc*, USHORT, const SCHAR*);
-void   SVC_finish(class svc*, USHORT);
-int   SVC_read_ib_log(class svc*);
+void*  SVC_start(class Service*, USHORT, const SCHAR*);
+void   SVC_finish(class Service*, USHORT);
+int   SVC_read_ib_log(class Service*);
 const TEXT* SVC_err_string(const TEXT*, USHORT);
-int SVC_output(class svc*, const UCHAR*);
+int SVC_output(class Service*, const UCHAR*);
 
 #ifdef SERVER_SHUTDOWN
 typedef void (*shutdown_fct_t) (ULONG);

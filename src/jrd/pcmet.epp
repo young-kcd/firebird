@@ -55,7 +55,7 @@ DATABASE DB = FILENAME "ODS.RDB";
 
 #ifdef EXPRESSION_INDICES
 int PCMET_expression_index(
-						   thread_db* tdbb, SSHORT phase, Deferred_work* work,
+						   thread_db* tdbb, SSHORT phase, DeferredWork* work,
 						   jrd_tra* transaction)
 {
 /**************************************
@@ -250,7 +250,7 @@ void PCMET_lookup_index( jrd_rel* relation, IDX * idx)
 		tdbb->tdbb_default = ALL_pool(&jrd_alloc_info);
 		idx->idx_expression =
 			MET_parse_blob(tdbb, relation, &IDX.RDB$EXPRESSION_BLR, &csb,
-						   &idx->idx_expression_request, FALSE, FALSE);
+						   &idx->idx_expression_request, false, false);
 		tdbb->tdbb_default = old_pool;
 
 	END_FOR;

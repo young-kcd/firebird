@@ -30,7 +30,7 @@
 
 class jrd_rel;
 class jrd_tra;
-struct rpb;
+struct record_param;
 
 void IDX_check_access(thread_db*, class Csb *, jrd_rel*, jrd_rel*,
 							 class jrd_fld*);
@@ -39,16 +39,16 @@ void IDX_create_index(thread_db*, jrd_rel*, struct idx*, const TEXT*,
 struct idb* IDX_create_index_block(thread_db*, jrd_rel*, USHORT);
 void IDX_delete_index(thread_db*, jrd_rel*, USHORT);
 void IDX_delete_indices(thread_db*, jrd_rel*);
-enum idx_e IDX_erase(thread_db*, rpb*, jrd_tra*, jrd_rel**,
+enum idx_e IDX_erase(thread_db*, record_param*, jrd_tra*, jrd_rel**,
 							USHORT *);
-void IDX_garbage_collect(thread_db*, rpb*, class lls*, class lls*);
-enum idx_e IDX_modify(thread_db*, rpb*, rpb*,
+void IDX_garbage_collect(thread_db*, record_param*, class lls*, class lls*);
+enum idx_e IDX_modify(thread_db*, record_param*, record_param*,
 							 jrd_tra*, jrd_rel**, USHORT *);
-enum idx_e IDX_modify_check_constraints(thread_db*, rpb*, rpb*,
+enum idx_e IDX_modify_check_constraints(thread_db*, record_param*, record_param*,
 											  jrd_tra*, jrd_rel**,
 											  USHORT *);
 void IDX_statistics(thread_db*, jrd_rel*, USHORT, SelectivityList&);
-enum idx_e IDX_store(thread_db*, rpb*, jrd_tra*,
+enum idx_e IDX_store(thread_db*, record_param*, jrd_tra*,
 							jrd_rel**, USHORT *);
 
 

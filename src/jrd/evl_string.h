@@ -32,12 +32,12 @@
  *  Contributor(s):
  * 
  *
- *  $Id: evl_string.h,v 1.8 2004-03-14 13:39:45 alexpeshkoff Exp $
+ *  $Id: evl_string.h,v 1.9 2004-03-18 05:55:22 robocop Exp $
  *
  */
 
-#ifndef EVL_STRING_H
-#define EVL_STRING_H
+#ifndef JRD_EVL_STRING_H
+#define JRD_EVL_STRING_H
 
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
@@ -74,11 +74,15 @@ public:
 	bool getResult() {
 		return offset >= pattern_len && result;
 	}
-	bool processNextChunk(const CharType* data, SSHORT data_len) {
+	bool processNextChunk(const CharType* data, SSHORT data_len) 
+	{
 		fb_assert(data_len);
-		if (!result || offset >= pattern_len) return false;
-		SSHORT comp_length = data_len < pattern_len - offset ? data_len : pattern_len-offset;
-		if (memcmp(data, pattern_str + offset, sizeof(CharType)*comp_length)!=0) {
+		if (!result || offset >= pattern_len)
+			return false;
+		const SSHORT comp_length = 
+			data_len < pattern_len - offset ? data_len : pattern_len-offset;
+		if (memcmp(data, pattern_str + offset, sizeof(CharType) * comp_length) != 0) 
+		{
 			result = false;
 			return false;
 		}
@@ -93,21 +97,20 @@ private:
 };
 
 template <typename CharType>
-static void preKmp(const CharType *x, int m, SSHORT kmpNext[]) {
-   SSHORT i, j;
-
-   i = 0;
-   j = kmpNext[0] = -1;
-   while (i < m) {
-      while (j > -1 && x[i] != x[j])
-         j = kmpNext[j];
-      i++;
-      j++;
-      if (x[i] == x[j])
-         kmpNext[i] = kmpNext[j];
-      else
-         kmpNext[i] = j;
-   }
+static void preKmp(const CharType *x, int m, SSHORT kmpNext[]) 
+{
+	SSHORT i = 0;
+	SSHORT j = kmpNext[0] = -1;
+	while (i < m) {
+		while (j > -1 && x[i] != x[j])
+			j = kmpNext[j];
+		i++;
+		j++;
+		if (x[i] == x[j])
+			kmpNext[i] = kmpNext[j];
+		else
+			kmpNext[i] = j;
+	}
 }
 
 class StaticAllocator {
@@ -115,7 +118,7 @@ public:
 	StaticAllocator(MemoryPool& _pool) : chunksToFree(_pool), pool(_pool), allocated(0) {};
 
 	~StaticAllocator() {
-		for (int i=0; i < chunksToFree.getCount(); i++)
+		for (int i = 0; i < chunksToFree.getCount(); i++)
 			pool.deallocate(chunksToFree[i]);
 	}
 
@@ -145,10 +148,10 @@ public:
 	ContainsEvaluator(MemoryPool& _pool, const CharType* _pattern_str, SSHORT _pattern_len) : 
 		StaticAllocator(_pool),	pattern_len(_pattern_len)
 	{
-		CharType* temp = reinterpret_cast<CharType*>(alloc(_pattern_len*sizeof(CharType)));
+		CharType* temp = reinterpret_cast<CharType*>(alloc(_pattern_len * sizeof(CharType)));
 		memcpy(temp, _pattern_str, _pattern_len);
 		pattern_str = temp;
-		kmpNext = reinterpret_cast<SSHORT*>(alloc((_pattern_len+1)*sizeof(SSHORT)));
+		kmpNext = reinterpret_cast<SSHORT*>(alloc((_pattern_len + 1) * sizeof(SSHORT)));
 		preKmp<CharType>(_pattern_str, _pattern_len, kmpNext);
 		reset();
 	}
@@ -164,7 +167,8 @@ public:
 
 	bool processNextChunk(const CharType* data, SSHORT data_len) {		
 		fb_assert(data_len);
-		if (result) return false;
+		if (result)
+			return false;
 		SSHORT data_pos = 0;
 		while (data_pos < data_len) {
 			while (offset > -1 && pattern_str[offset] != data[data_pos])
@@ -282,8 +286,8 @@ LikeEvaluator<CharType>::LikeEvaluator(
 					switch (item->type) {
 					case piSkipFixed:
 					case piSkipMore:
-						patternItems.grow(patternItems.getCount()+1);
-						item = patternItems.end()-1;
+						patternItems.grow(patternItems.getCount() + 1);
+						item = patternItems.end() - 1;
 						// Note: fall into
 					case piNone:
 						item->type = piEscapedString;
@@ -307,8 +311,8 @@ LikeEvaluator<CharType>::LikeEvaluator(
 			switch (item->type) {
 			case piSearch:
 			case piEscapedString:
-				patternItems.grow(patternItems.getCount()+1);
-				item = patternItems.end()-1;
+				patternItems.grow(patternItems.getCount() + 1);
+				item = patternItems.end() - 1;
 				// Note: fall into
 			case piSkipFixed:
 			case piNone:
@@ -322,8 +326,8 @@ LikeEvaluator<CharType>::LikeEvaluator(
 			switch (item->type) {
 			case piSearch:
 			case piEscapedString:
-				patternItems.grow(patternItems.getCount()+1);
-				item = patternItems.end()-1;
+				patternItems.grow(patternItems.getCount() + 1);
+				item = patternItems.end() - 1;
 				// Note: fall into
 			case piNone:
 				item->type = piSkipFixed;
@@ -340,8 +344,8 @@ LikeEvaluator<CharType>::LikeEvaluator(
 		switch (item->type) {
 		case piSkipFixed:
 		case piSkipMore:
-			patternItems.grow(patternItems.getCount()+1);
-			item = patternItems.end()-1;
+			patternItems.grow(patternItems.getCount() + 1);
+			item = patternItems.end() - 1;
 			// Note: fall into
 		case piNone:
 			item->type = piSearch;
@@ -359,14 +363,14 @@ LikeEvaluator<CharType>::LikeEvaluator(
 	// Unescape strings, mark direct match items, pre-compile KMP tables and
 	// optimize out piSkipMore nodes
 	bool directMatch = true;
-	for (int i=0; i < patternItems.getCount();) {
+	for (int i = 0; i < patternItems.getCount();) {
 		PatternItem *item = &patternItems[i];
 		switch (item->type) {
 		case piEscapedString: {
 			const CharType *curPos = item->str.data;
 			item->str.data = 
-				reinterpret_cast<CharType*>(alloc(item->str.length*sizeof(CharType)));
-			for (SSHORT j=0; j < item->str.length; j++) {
+				reinterpret_cast<CharType*>(alloc(item->str.length * sizeof(CharType)));
+			for (SSHORT j = 0; j < item->str.length; j++) {
 				if (*curPos == escape_char) 
 					curPos++;
 				item->str.data[j] = *curPos++;
@@ -379,7 +383,7 @@ LikeEvaluator<CharType>::LikeEvaluator(
 				item->type = piDirectMatch;
 			else {
 				item->str.kmpNext = 
-					reinterpret_cast<SSHORT*>(alloc((item->str.length+1)*sizeof(SSHORT)));
+					reinterpret_cast<SSHORT*>(alloc((item->str.length + 1) * sizeof(SSHORT)));
 				preKmp<CharType>(item->str.data, item->str.length, item->str.kmpNext);
 				directMatch = true;
 			}
@@ -395,7 +399,7 @@ LikeEvaluator<CharType>::LikeEvaluator(
 			else {
 				if (i > 0) {
 					// Mark previous node if it exists
-					patternItems[i-1].match_any = true;
+					patternItems[i - 1].match_any = true;
 					patternItems.remove(i);
 					continue;
 				}
@@ -469,7 +473,7 @@ bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SSHORT data
 						finishCandidate = data_pos;
 						branches.remove(branch_number);
 						if (branches.getCount() == 0) {
-							if (data_pos == data_len-1) {
+							if (data_pos == data_len - 1) {
 								match_type = MATCH_FIXED;
 								return true;
 							}
@@ -511,7 +515,7 @@ bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SSHORT data
 							// Try to apply further non-search patterns and continue searching
 							current_branch->offset = current_pattern->str.kmpNext[current_branch->offset];
 							BranchItem temp = {next_pattern, 0};
-							branches.insert(branch_number+1, temp); // +1 is to reduce movement effort :)
+							branches.insert(branch_number + 1, temp); // +1 is to reduce movement effort :)
 							branch_number++; // Skip newly inserted branch in this cycle
 						}
 					}
@@ -529,4 +533,4 @@ bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SSHORT data
 
 }
 
-#endif
+#endif // JRD_EVL_STRING_H

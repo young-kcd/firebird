@@ -39,8 +39,8 @@
  *
  */
 
-#ifndef _ISC_LOCK_LOCK_H_
-#define _ISC_LOCK_LOCK_H_
+#ifndef ISC_LOCK_LOCK_H
+#define ISC_LOCK_LOCK_H
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -358,11 +358,13 @@ typedef struct own
    likely historical - a flag bit could be used for this instead. */
 
 /* Semaphore mask block */
+// How can this thing use type_smb if this is unrelated?
+// There was a clash between this smb and rse's smb (Sort Map Block).
 
-typedef struct smb {
+struct semaphore_mask {
 	UCHAR smb_type;				/* memory tag - always type_smb */
 	ULONG smb_mask[1];			/* Mask of available semaphores */
-} *SMB;
+};
 
 /* Lock manager history block */
 
@@ -397,4 +399,5 @@ typedef struct his {
 #define his_del_owner   19
 #define his_MAX         his_del_owner
 
-#endif /* _ISC_LOCK_LOCK_H_ */
+#endif // ISC_LOCK_LOCK_H
+

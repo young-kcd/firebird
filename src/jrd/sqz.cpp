@@ -34,7 +34,7 @@
 
 
 
-USHORT SQZ_apply_differences(REC record, const SCHAR* differences,
+USHORT SQZ_apply_differences(Record* record, const SCHAR* differences,
 	const SCHAR* const end)
 {
 /**************************************

@@ -102,7 +102,6 @@ struct dba_fil {
 #endif
 	USHORT fil_length;			/* Length of expanded file name */
 	SCHAR fil_string[1];		/* Expanded file name */
-
 };
 
 
@@ -662,7 +661,7 @@ static bool analyze_data_page( dba_rel* relation, const data_page* page)
  **************************************/
 	tdba* tddba = GET_THREAD_DATA;
 
-	if (page->dpg_header.pag_type != pag_data)
+	if (page->pag_type != pag_data)
 		return false;
 
 	SSHORT space = page->dpg_count * sizeof(data_page::dpg_repeat);
@@ -756,7 +755,7 @@ static void analyze_index( dba_rel* relation, idx* index)
 
 			prior_page = right_sibling;
 
-			if (bucket->btr_header.pag_flags & btr_not_propogated) {
+			if (bucket->pag_flags & btr_not_propogated) {
 				FPRINTF(tddba->sw_outfile,
 						"\n***ERROR: non-leaf bucket marked not propogated\n");
 				return;
@@ -845,7 +844,7 @@ static void analyze_index( dba_rel* relation, idx* index)
 
 /*** print the pages involved at the leaf ***/
 
-		if (bucket->btr_header.pag_flags & btr_not_propogated)
+		if (bucket->pag_flags & btr_not_propogated)
 			FPRINTF(tddba->sw_outfile, "\n\n(page %ld):", page);
 		else
 			FPRINTF(tddba->sw_outfile, "\n\npage %ld:", page);
@@ -935,7 +934,7 @@ static void analyze_index( dba_rel* relation, idx* index)
 		page = bucket->btr_sibling;
 		bucket = (const btree_page*) db_read(page);
 
-		if (bucket->btr_header.pag_type != pag_index) {
+		if (bucket->pag_type != pag_index) {
 			FPRINTF(tddba->sw_outfile,
 					"\n***ERROR: Expected b-tree bucket on page %ld from %ld\n",
 					page, number);

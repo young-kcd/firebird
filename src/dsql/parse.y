@@ -4290,15 +4290,15 @@ static bool long_int(dsql_nod* string,
  *
  *************************************/
 
-	for (const char* p = ((dsql_str*) string)->str_data; 
-		 classes[static_cast<UCHAR>(*p)] & CHR_DIGIT; p++)
+	for (const UCHAR* p = (UCHAR*)((dsql_str*) string)->str_data; 
+		 classes[*p] & CHR_DIGIT; p++)
 	{
-		if (!(classes[static_cast<UCHAR>(*p)] & CHR_DIGIT)) {
+		if (!(classes[*p] & CHR_DIGIT)) {
 			return false;
 		}
 	}
 
-	*long_value = atol ((char *)((dsql_str*) string)->str_data);
+	*long_value = atol(((dsql_str*) string)->str_data);
 
 	return true;
 }
@@ -4527,9 +4527,10 @@ static bool short_int(dsql_nod* string,
 		return false;
 	}
 
-	for (char* p = ((dsql_str*) string)->str_data; classes[static_cast<UCHAR>(*p)] & CHR_DIGIT; p++)
+	for (UCHAR* p = (UCHAR*)((dsql_str*) string)->str_data; 
+		classes[*p] & CHR_DIGIT; p++)
 	{
-		if (!(classes[static_cast<UCHAR>(*p)] & CHR_DIGIT)) {
+		if (!(classes[*p] & CHR_DIGIT)) {
 			return false;
 		}
 	}

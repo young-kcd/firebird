@@ -27,7 +27,7 @@
 class jrd_nod;
 
 jrd_nod*	PAR_blr(thread_db*, class jrd_rel*, const UCHAR*, class Csb*,
-					class Csb**, class jrd_req**, BOOLEAN, USHORT);
+					class Csb**, class jrd_req**, const bool, USHORT);
 USHORT		PAR_desc(class Csb*, struct dsc*);
 jrd_nod*	PAR_gen_field(thread_db*, USHORT, USHORT);
 jrd_nod*	PAR_make_field(thread_db*, class Csb*, USHORT, const TEXT*);

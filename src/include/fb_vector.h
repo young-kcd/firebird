@@ -7,8 +7,8 @@
  *
  */
 
-#ifndef FB_VECTOR_H
-#define FB_VECTOR_H
+#ifndef INCLUDE_FB_VECTOR_H
+#define INCLUDE_FB_VECTOR_H
  
 #include "../include/fb_types.h"
 #include "../common/classes/alloc.h"
@@ -31,5 +31,5 @@ namespace Firebird
 	};
 };
 
-#endif	// FB_VECTOR_H
+#endif	// INCLUDE_FB_VECTOR_H
 

@@ -58,7 +58,7 @@ BKM BKM_allocate(Rsb* rsb, USHORT length)
 
 	bkm* bookmark = FB_NEW_RPT(*dbb->dbb_permanent, length) bkm();
 
-	att* attachment = tdbb->tdbb_attachment;
+	Attachment* attachment = tdbb->tdbb_attachment;
 	bookmark->bkm_next = attachment->att_bookmarks;
 	attachment->att_bookmarks = bookmark;
 
@@ -125,7 +125,7 @@ BKM BKM_lookup(NOD node)
 #else
 	{
 		thread_db* tdbb = GET_THREAD_DATA;
-		att* attachment = tdbb->tdbb_attachment;
+		Attachment* attachment = tdbb->tdbb_attachment;
 
 		bookmark = NULL;
 		const ULONG slot = MOV_get_long(EVL_expr(tdbb, node), 0);
@@ -158,7 +158,7 @@ void BKM_release(NOD node)
  *
  **************************************/
 	thread_db* tdbb = GET_THREAD_DATA;
-	att* attachment = tdbb->tdbb_attachment;
+	Attachment* attachment = tdbb->tdbb_attachment;
 
 	bkm* bookmark = BKM_lookup(node);
 

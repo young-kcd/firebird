@@ -86,7 +86,7 @@
 
 static bool augment_stack(const jrd_nod*, LLS*);
 static UINT64 calculate_priority_level(OPT, IDX *);
-static void check_indices(csb_repeat *);
+static void check_indices(Csb::csb_repeat*);
 static bool check_relationship(OPT, USHORT, USHORT);
 static void check_sorts(RSE);
 static void class_mask(USHORT, jrd_nod**, ULONG *);
@@ -136,7 +136,7 @@ static bool gen_sort_merge(thread_db*, OPT, LLS *);
 static Rsb* gen_union(thread_db*, OPT, jrd_nod*, UCHAR *, USHORT);
 static void get_inactivities(Csb*, ULONG *);
 static IRL indexed_relationship(thread_db*, OPT, USHORT);
-static STR make_alias(thread_db*, Csb*, csb_repeat *);
+static STR make_alias(thread_db*, Csb*, Csb::csb_repeat*);
 static jrd_nod* make_binary_node(NOD_T, jrd_nod*, jrd_nod*, bool);
 static Rsb* make_cross(thread_db*, OPT, LLS);
 static jrd_nod* make_index_node(thread_db*, jrd_rel*, Csb*, IDX *);
@@ -145,7 +145,7 @@ static jrd_nod* make_inversion(thread_db*, OPT, jrd_nod*, USHORT);
 static jrd_nod* make_missing(thread_db*, OPT, jrd_rel*, jrd_nod*, USHORT, IDX *);
 static jrd_nod* make_starts(thread_db*, OPT, jrd_rel*, jrd_nod*, USHORT, IDX *);
 static bool map_equal(const jrd_nod*, const jrd_nod*, const jrd_nod*);
-static void mark_indices(csb_repeat *, SSHORT);
+static void mark_indices(Csb::csb_repeat*, SSHORT);
 static SSHORT match_index(thread_db*, OPT, SSHORT, jrd_nod*, IDX *);
 static bool match_indices(thread_db*, OPT, SSHORT, jrd_nod*, IDX *);
 static USHORT nav_rsb_size(Rsb*, USHORT, USHORT);
@@ -155,16 +155,16 @@ static jrd_nod* optimize_like(thread_db*, jrd_nod*);
 static void print_order(OPT, USHORT, double, double);
 #endif
 static USHORT river_count(USHORT, jrd_nod**);
-static bool river_reference(const riv*, const jrd_nod*, bool* field_found = NULL);
+static bool river_reference(const River*, const jrd_nod*, bool* field_found = NULL);
 static bool search_stack(jrd_nod*, LLS);
-static void set_active(OPT, riv*);
+static void set_active(OPT, River*);
 static void set_direction(const jrd_nod*, jrd_nod*);
-static void set_inactive(OPT, riv*);
-static void set_made_river(OPT, riv*);
+static void set_inactive(OPT, River*);
+static void set_made_river(OPT, River*);
 static void set_position(const jrd_nod*, jrd_nod*, const jrd_nod*);
 static void set_rse_inactive(Csb*, const class rse*);
-static void sort_indices_by_selectivity(csb_repeat *);
-static SSHORT sort_indices_by_priority(csb_repeat *, IDX **, UINT64 *);
+static void sort_indices_by_selectivity(Csb::csb_repeat*);
+static SSHORT sort_indices_by_priority(Csb::csb_repeat*, IDX **, UINT64 *);
 
 
 /* macro definitions */
@@ -482,7 +482,7 @@ Rsb* OPT_compile(thread_db* tdbb,
 
 		if (rsb) {
 			const SSHORT i = local_streams[0];
-			riv* river = FB_NEW_RPT(*tdbb->tdbb_default, i) riv();
+			River* river = FB_NEW_RPT(*tdbb->tdbb_default, i) River();
 			river->riv_count = (UCHAR) i;
 			river->riv_rsb = rsb;
 			MOVE_FAST(local_streams + 1, river->riv_streams, i);
@@ -639,7 +639,7 @@ Rsb* OPT_compile(thread_db* tdbb,
 	else {
 		bool sort_present = (sort);
 		bool outer_rivers = false;
-		jrd_nod* saved_sort_node = sort;
+		jrd_nod* const saved_sort_node = sort;
 
 		// AB: If previous rsb's are already on the stack we can't use
 		// an navigational-retrieval for an ORDER BY cause the next
@@ -1239,7 +1239,7 @@ static UINT64 calculate_priority_level(OPT opt, IDX * idx)
 }
 
 
-static void check_indices(csb_repeat * csb_tail)
+static void check_indices(Csb::csb_repeat* csb_tail)
 {
 /**************************************
  *
@@ -2553,7 +2553,7 @@ static bool estimate_cost(thread_db* tdbb,
 	SET_TDBB(tdbb);
 
 	Csb* csb = opt->opt_csb;
-	csb_repeat* csb_tail = &csb->csb_rpt[stream];
+	Csb::csb_repeat* csb_tail = &csb->csb_rpt[stream];
 	csb_tail->csb_flags |= csb_active;
 	double cardinality = MAX(csb_tail->csb_cardinality, 10);
 	double index_selectivity = 1.0;
@@ -3392,7 +3392,7 @@ static bool form_river(thread_db* tdbb,
 	Csb* csb = opt->opt_csb;
 
 	// Allocate a river block and move the best order into it.
-	riv* river = FB_NEW_RPT(*tdbb->tdbb_default, count) riv();
+	River* river = FB_NEW_RPT(*tdbb->tdbb_default, count) River();
 	LLS_PUSH(river, river_stack);
 	river->riv_count = (UCHAR) count;
 
@@ -3689,7 +3689,7 @@ static void gen_join(thread_db*     tdbb,
 		// compute the cardinality even though we don't
 		// need it to optimize retrieval.
 
-		csb_repeat* csb_tail = &csb->csb_rpt[streams[1]];
+		Csb::csb_repeat* csb_tail = &csb->csb_rpt[streams[1]];
 		fb_assert(csb_tail);
 		if (csb_tail->csb_flags & csb_compute) {
 			jrd_rel* relation = csb_tail->csb_relation;
@@ -3701,7 +3701,7 @@ static void gen_join(thread_db*     tdbb,
 				        dbb->dbb_page_size / format->fmt_length;
 		}
 
-		riv* river = FB_NEW_RPT(*tdbb->tdbb_default, 1) riv();
+		River* river = FB_NEW_RPT(*tdbb->tdbb_default, 1) River();
 		river->riv_count = 1;
 
 		fb_assert(csb->csb_rpt[streams[1]].csb_relation);
@@ -3717,7 +3717,7 @@ static void gen_join(thread_db*     tdbb,
 	// Compute cardinality and indexed relationships for all streams.
 	const UCHAR* end_stream = streams + 1 + streams[0];
 	for (UCHAR* stream = streams + 1; stream < end_stream; stream++) {
-		csb_repeat* csb_tail = &csb->csb_rpt[*stream];
+		Csb::csb_repeat* csb_tail = &csb->csb_rpt[*stream];
 		fb_assert(csb_tail);
 		jrd_rel* relation = csb_tail->csb_relation;
 		fb_assert(relation);
@@ -3746,7 +3746,7 @@ static void gen_join(thread_db*     tdbb,
 		csb_tail->csb_flags |= csb_active;
 		for (UCHAR* t2 = streams + 1; t2 < end_stream; t2++) {
 			if (*t2 != *stream) {
-				csb_repeat* csb_tail2 = &csb->csb_rpt[*t2];
+				Csb::csb_repeat* csb_tail2 = &csb->csb_rpt[*t2];
 				csb_tail2->csb_flags |= csb_active;
 				IRL relationship = indexed_relationship(tdbb, opt, *t2);
 				if (relationship) {
@@ -4028,7 +4028,7 @@ static Rsb* gen_outer(thread_db* tdbb,
 
 	// Loop through the outer join sub-streams in
 	// reverse order because rivers may have been PUSHed
-	riv* river;
+	River* river;
 	SSHORT i;
 	jrd_nod* node;
 	for (i = 1; i >= 0; i--) {
@@ -4037,7 +4037,7 @@ static Rsb* gen_outer(thread_db* tdbb,
 			node->nod_type == nod_aggregate ||
 			node->nod_type == nod_procedure || node->nod_type == nod_rse)
 		{
-			river = (riv*) LLS_POP(&river_stack);
+			river = (River*) LLS_POP(&river_stack);
 			stream_ptr[i]->stream_rsb = river->riv_rsb;
 		}
 		else {
@@ -4228,7 +4228,7 @@ static Rsb* gen_retrieval(thread_db*     tdbb,
 	}
 
 	Csb*         csb      = opt->opt_csb;
-	csb_repeat* csb_tail = &csb->csb_rpt[stream];
+	Csb::csb_repeat* csb_tail = &csb->csb_rpt[stream];
 	jrd_rel*     relation = csb_tail->csb_relation;
 
 	fb_assert(relation);
@@ -4753,7 +4753,7 @@ static Rsb* gen_sort(thread_db* tdbb,
 	const USHORT count = items +
 		(sizeof(sort_key_def) * 2 * sort->nod_count + sizeof(smb_repeat) -
 		 1) / sizeof(smb_repeat);
-	smb* map = FB_NEW_RPT(*tdbb->tdbb_default, count) smb();
+	SortMap* map = FB_NEW_RPT(*tdbb->tdbb_default, count) SortMap();
 	map->smb_keys = sort->nod_count * 2;
 	map->smb_count = items;
 	if (project_flag) {
@@ -4979,7 +4979,7 @@ static bool gen_sort_merge(thread_db* tdbb, OPT opt, LLS * org_rivers)
 	// classes.
 	USHORT cnt = 0;
 	for (stack1 = *org_rivers; stack1; stack1 = stack1->lls_next) {
-		riv* river1 = (riv*) stack1->lls_object;
+		River* river1 = (River*) stack1->lls_object;
 		river1->riv_number = cnt++;
 	}
 
@@ -5004,7 +5004,7 @@ static bool gen_sort_merge(thread_db* tdbb, OPT opt, LLS * org_rivers)
 		jrd_nod* node1 = node->nod_arg[0];
 		jrd_nod* node2 = node->nod_arg[1];
 		for (stack1 = *org_rivers; stack1; stack1 = stack1->lls_next) {
-			riv* river1 = (riv*) stack1->lls_object;
+			River* river1 = (River*) stack1->lls_object;
 			if (!river_reference(river1, node1)) {
 				if (river_reference(river1, node2)) {
 					node = node1;
@@ -5017,7 +5017,7 @@ static bool gen_sort_merge(thread_db* tdbb, OPT opt, LLS * org_rivers)
 			}
 			for (lls* stack2 = stack1->lls_next; stack2; stack2 = stack2->lls_next)
 			{
-				riv* river2 = (riv*) stack2->lls_object;
+				River* river2 = (River*) stack2->lls_object;
 				if (river_reference(river2, node2)) {
 					for (eq_class = classes; eq_class < last_class; eq_class += cnt)
 					{
@@ -5078,7 +5078,7 @@ static bool gen_sort_merge(thread_db* tdbb, OPT opt, LLS * org_rivers)
 	Rsb** rsb_tail = merge_rsb->rsb_arg;
 	stream_cnt = 0;
 	for (stack1 = *org_rivers; stack1; stack1 = stack1->lls_next) {
-		riv* river1 = (riv*) stack1->lls_object;
+		River* river1 = (River*) stack1->lls_object;
 		if (!(TEST_DEP_BIT(selected_rivers, river1->riv_number))) {
 			continue;
 		}
@@ -5099,13 +5099,13 @@ static bool gen_sort_merge(thread_db* tdbb, OPT opt, LLS * org_rivers)
 
 	// Finally, merge selected rivers into a single river, and rebuild 
 	// original river stack.
-	riv* river1 = FB_NEW_RPT(*tdbb->tdbb_default, stream_cnt) riv();
+	River* river1 = FB_NEW_RPT(*tdbb->tdbb_default, stream_cnt) River();
 	river1->riv_count = (UCHAR) stream_cnt;
 	river1->riv_rsb = merge_rsb;
 	UCHAR* stream = river1->riv_streams;
 	stack1 = NULL;
 	while (*org_rivers) {
-		riv* river2 = (riv*) LLS_POP(org_rivers);
+		River* river2 = (River*) LLS_POP(org_rivers);
 		if (TEST_DEP_BIT(selected_rivers, river2->riv_number)) {
 			MOVE_FAST(river2->riv_streams, stream, river2->riv_count);
 			stream += river2->riv_count;
@@ -5113,7 +5113,7 @@ static bool gen_sort_merge(thread_db* tdbb, OPT opt, LLS * org_rivers)
 		else {
 			// AB: Be sure that the rivers 'order' will be kept.
 			if (stack1) {
-				riv* river3 = (riv*) LLS_POP(&stack1);
+				River* river3 = (River*) LLS_POP(&stack1);
 				LLS_PUSH(river2, &stack1);
 				LLS_PUSH(river3, &stack1);
 			}
@@ -5230,7 +5230,7 @@ static void get_inactivities(Csb* csb, ULONG * dependencies)
 		dependencies[n] = (ULONG) - 1;
 	n = 0;
 	Csb::rpt_itr tail = csb->csb_rpt.begin();
-	for (const Csb::rpt_itr end = tail + csb->csb_n_stream;
+	for (const Csb::rpt_itr const end = tail + csb->csb_n_stream;
 		 tail < end; n++, tail++)
 	{
 		if (tail->csb_flags & csb_active)
@@ -5265,7 +5265,7 @@ static IRL indexed_relationship(thread_db* tdbb, OPT opt, USHORT stream)
 	}
 
 	Csb*              csb       = opt->opt_csb;
-	csb_repeat*      csb_tail  = &csb->csb_rpt[stream];
+	Csb::csb_repeat*      csb_tail  = &csb->csb_rpt[stream];
 	Opt::opt_conjunct* opt_end = opt->opt_conjuncts.begin() + opt->opt_base_conjuncts;
 	IRL relationship = NULL;
 
@@ -5313,7 +5313,7 @@ static IRL indexed_relationship(thread_db* tdbb, OPT opt, USHORT stream)
 }
 
 
-static STR make_alias(thread_db* tdbb, Csb* csb, csb_repeat * base_tail)
+static STR make_alias(thread_db* tdbb, Csb* csb, Csb::csb_repeat* base_tail)
 {
 /**************************************
  *
@@ -5333,7 +5333,7 @@ static STR make_alias(thread_db* tdbb, Csb* csb, csb_repeat * base_tail)
 	if (!base_tail->csb_view && !base_tail->csb_alias)
 		return NULL;
 		
-	const csb_repeat* csb_tail;
+	const Csb::csb_repeat* csb_tail;
 /* calculate the length of the alias by going up through
    the view stack to find the lengths of all aliases;
    adjust for spaces and a null terminator */
@@ -5434,7 +5434,7 @@ static Rsb* make_cross(thread_db* tdbb, OPT opt, LLS stack)
 		temp = temp->lls_next;
 	}
 	if (count == 1) {
-		riv* river = (riv*) LLS_POP(&stack);
+		River* river = (River*) LLS_POP(&stack);
 		return river->riv_rsb;
 	}
 
@@ -5445,7 +5445,7 @@ static Rsb* make_cross(thread_db* tdbb, OPT opt, LLS stack)
 	rsb->rsb_impure = CMP_impure(csb, sizeof(struct irsb));
 	Rsb** ptr = rsb->rsb_arg + count;
 	while (stack) {
-		riv* river = (riv*) LLS_POP(&stack);
+		River* river = (River*) LLS_POP(&stack);
 		*--ptr = river->riv_rsb;
 	}
 
@@ -5568,7 +5568,7 @@ static jrd_nod* make_inversion(thread_db* tdbb, OPT opt, jrd_nod* boolean, USHOR
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(boolean, type_nod);
 
-	csb_repeat* csb_tail = &opt->opt_csb->csb_rpt[stream];
+	Csb::csb_repeat* csb_tail = &opt->opt_csb->csb_rpt[stream];
 	jrd_rel* relation = csb_tail->csb_relation;
 
 	if ((!relation) || (relation->rel_file)) {
@@ -5803,7 +5803,7 @@ static jrd_nod* make_starts(thread_db* tdbb,
    don't bother using an index in that case. */
 
 	if (value->nod_type == nod_literal) {
-		const dsc* literal_desc = &((LIT) value)->lit_desc;
+		const dsc* literal_desc = &((Literal*) value)->lit_desc;
 		if ((literal_desc->dsc_dtype == dtype_text &&
 			 literal_desc->dsc_length == 0) ||
 			(literal_desc->dsc_dtype == dtype_varying &&
@@ -5894,7 +5894,7 @@ static bool map_equal(const jrd_nod* field1, const jrd_nod* field2, const jrd_no
 
 
 
-static void mark_indices(csb_repeat* csb_tail, SSHORT relation_id)
+static void mark_indices(Csb::csb_repeat* csb_tail, SSHORT relation_id)
 {
 /**************************************
  *
@@ -6263,10 +6263,10 @@ static jrd_nod* optimize_like(thread_db* tdbb, jrd_nod* like_node)
 	{
 		return NULL;
 	}
-	dsc* search_desc = &((LIT) search_node)->lit_desc;
+	dsc* search_desc = &((Literal*) search_node)->lit_desc;
 	dsc* escape_desc = 0;
 	if (escape_node)
-		escape_desc = &((LIT) escape_node)->lit_desc;
+		escape_desc = &((Literal*) escape_node)->lit_desc;
 
 /* if either is not a character expression, forget it */
 	if ((search_desc->dsc_dtype > dtype_any_text) ||
@@ -6312,13 +6312,12 @@ static jrd_nod* optimize_like(thread_db* tdbb, jrd_nod* like_node)
 	// allocate a literal node to store the starting with string;
 	// assume it will be shorter than the search string
 	// CVC: This assumption may not be true if we use "value like field".
-	const SSHORT count =
-		lit_delta + (search_desc->dsc_length + sizeof(jrd_nod*) -
-					 1) / sizeof(jrd_nod*);
+	const SSHORT count = lit_delta + 
+		(search_desc->dsc_length + sizeof(jrd_nod*) - 1) / sizeof(jrd_nod*);
 	jrd_nod* node = PAR_make_node(tdbb, count);
 	node->nod_type = nod_literal;
 	node->nod_count = 0;
-	LIT literal = (LIT) node;
+	Literal* literal = (Literal*) node;
 	literal->lit_desc = *search_desc;
 	UCHAR* q = reinterpret_cast<UCHAR*>(literal->lit_data);
 	literal->lit_desc.dsc_address = q;
@@ -6420,7 +6419,7 @@ static USHORT river_count(USHORT count, jrd_nod** eq_class)
 }
 
 
-static bool river_reference(const riv* river, const jrd_nod* node, bool* field_found)
+static bool river_reference(const River* river, const jrd_nod* node, bool* field_found)
 {
 /**************************************
  *
@@ -6533,7 +6532,7 @@ static bool search_stack(jrd_nod* node, LLS stack)
 }
 
 
-static void set_active(OPT opt, riv* river)
+static void set_active(OPT opt, River* river)
 {
 /**************************************
  *
@@ -6585,7 +6584,7 @@ static void set_direction(const jrd_nod* from_clause, jrd_nod* to_clause)
 
 
 
-static void set_inactive(OPT opt, riv* river)
+static void set_inactive(OPT opt, River* river)
 {
 /**************************************
  *
@@ -6609,7 +6608,7 @@ static void set_inactive(OPT opt, riv* river)
 }
 
 
-static void set_made_river(OPT opt, riv* river)
+static void set_made_river(OPT opt, River* river)
 {
 /**************************************
  *
@@ -6718,7 +6717,7 @@ static void set_rse_inactive(Csb* csb, const class rse* rse)
 }
 
 
-static void sort_indices_by_selectivity(csb_repeat* csb_tail)
+static void sort_indices_by_selectivity(Csb::csb_repeat* csb_tail)
 {
 /***************************************************
  *
@@ -6794,7 +6793,7 @@ static void sort_indices_by_selectivity(csb_repeat* csb_tail)
 }
 
 
-static SSHORT sort_indices_by_priority(csb_repeat * csb_tail,
+static SSHORT sort_indices_by_priority(Csb::csb_repeat* csb_tail,
 									   IDX ** idx_walk,
 									   UINT64 * idx_priority_level)
 {

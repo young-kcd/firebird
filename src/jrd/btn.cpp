@@ -80,7 +80,7 @@ SLONG findPageInDuplicates(const btree_page* page, UCHAR* pointer,
  *
  **************************************/
 	const bool leafPage = (page->btr_level == 0);
-	const SCHAR flags = page->btr_header.pag_flags;
+	const SCHAR flags = page->pag_flags;
 
 	IndexNode node, previousNode;
 	pointer = readNode(&node, pointer, flags, leafPage);
@@ -326,7 +326,7 @@ UCHAR* getPointerFirstNode(btree_page* page, IndexJumpInfo* jumpInfo)
  *  node is returned.
  *
  **************************************/
-	if (page->btr_header.pag_flags & btr_jump_info) {
+	if (page->pag_flags & btr_jump_info) {
 		if (jumpInfo) {
 			UCHAR* pointer = reinterpret_cast<UCHAR*>(page->btr_nodes);
 			return readJumpInfo(jumpInfo, pointer);
@@ -402,7 +402,7 @@ UCHAR* lastNode(btree_page* page, jrd_exp* expanded_page, BTX* expanded_node)
 	// starting at the end of the page, find the
 	// first node that is not an end marker
 	UCHAR* pointer = ((UCHAR*) page + page->btr_length);
-	const SCHAR flags = page->btr_header.pag_flags;
+	const SCHAR flags = page->pag_flags;
 	IndexNode node;
 	while (true) {
 		pointer = previousNode(&node, pointer, flags, &enode);
@@ -533,28 +533,28 @@ UCHAR* readJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer,
 	jumpNode->nodePointer = pagePointer;
 	if (flags & btr_large_keys) {
 		// Get prefix
-		UCHAR tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
+		UCHAR tmp = *pagePointer;
 		pagePointer++;
 		jumpNode->prefix = (tmp & 0x7F);
 		if (tmp & 0x80) {
-			tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
+			tmp = *pagePointer;
 			pagePointer++;
 			jumpNode->prefix |= (tmp & 0x7F) << 7; // We get 14 bits at this point
 		}
 		// Get length
-		tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
+		tmp = *pagePointer;
 		pagePointer++;
 		jumpNode->length = (tmp & 0x7F);
 		if (tmp & 0x80) {
-			tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
+			tmp = *pagePointer;
 			pagePointer++;
 			jumpNode->length |= (tmp & 0x7F) << 7; // We get 14 bits at this point
 		}
 	}
 	else {
-		jumpNode->prefix = (USHORT)(UCHAR)(*pagePointer);
+		jumpNode->prefix = (USHORT)(*pagePointer);
 		pagePointer++;
-		jumpNode->length = (USHORT)(UCHAR)(*pagePointer);
+		jumpNode->length = (USHORT)(*pagePointer);
 		pagePointer++;
 	}
 	jumpNode->offset = *reinterpret_cast<const USHORT*>(pagePointer);
@@ -587,7 +587,7 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 		bool duplicate = false;
 
 		// Get first byte that contains internal flags and 6 bits from number
-		UCHAR internalFlags = *reinterpret_cast<const UCHAR*>(pagePointer);
+		UCHAR internalFlags = *pagePointer;
 		SLONG number = (internalFlags & 0x3F);
 		internalFlags = ((internalFlags & 0xC0) >> 6);
 		pagePointer++;
@@ -597,19 +597,19 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 		}
 
 		// Get remaining bits for number
-		SLONG tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
+		SLONG tmp = *pagePointer;
 		pagePointer++;
 		number |= (tmp & 0x7F) << 6;
 		if (tmp & 0x80) {
-			tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
+			tmp = *pagePointer;
 			pagePointer++;
 			number |= (tmp & 0x7F) << 13;
 			if (tmp & 0x80) {
-				tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
+				tmp = *pagePointer;
 				pagePointer++;
 				number |= (tmp & 0x7F) << 20;
 				if (tmp & 0x80) {
-					tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
+					tmp = *pagePointer;
 					pagePointer++;
 					number |= (tmp & 0x1F) << 27;
 
@@ -618,19 +618,19 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 
 					number |= (tmp & 0x7F) << 27;
 					if (tmp & 0x80) {
-						tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
+						tmp = *pagePointer;
 						pagePointer++;
 						number |= (tmp & 0x7F) << 34;
 						if (tmp & 0x80) {
-							tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
+							tmp = *pagePointer;
 							pagePointer++;
 							number |= (tmp & 0x7F) << 41;
 							if (tmp & 0x80) {
-								tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
+								tmp = *pagePointer;
 								pagePointer++;
 								number |= (tmp & 0x7F) << 48;
 								if (tmp & 0x80) {
-									tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
+									tmp = *pagePointer;
 									pagePointer++;
 									number |= (tmp & 0x7F) << 55; // We get 62 bits at this point!
 								}
@@ -660,23 +660,23 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 
 		if (!leafNode) {
 			// Get page number for non-leaf pages
-			tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
+			tmp = *pagePointer;
 			pagePointer++;
 			number = (tmp & 0x7F);
 			if (tmp & 0x80) {
-				tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
+				tmp = *pagePointer;
 				pagePointer++;
 				number |= (tmp & 0x7F) << 7;
 				if (tmp & 0x80) {
-					tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
+					tmp = *pagePointer;
 					pagePointer++;
 					number |= (tmp & 0x7F) << 14;
 					if (tmp & 0x80) {
-						tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
+						tmp = *pagePointer;
 						pagePointer++;
 						number |= (tmp & 0x7F) << 21;
 						if (tmp & 0x80) {
-							tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
+							tmp = *pagePointer;
 							pagePointer++;
 							number |= (tmp & 0x0F) << 28;
 /*
@@ -684,19 +684,19 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 
 							number |= (tmp & 0x7F) << 28;
 							if (tmp & 0x80) {
-								tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
+								tmp = *pagePointer;
 								pagePointer++;
 								number |= (tmp & 0x7F) << 35;
 								if (tmp & 0x80) {
-									tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
+									tmp = *pagePointer;
 									pagePointer++;
 									number |= (tmp & 0x7F) << 42;
 									if (tmp & 0x80) {
-										tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
+										tmp = *pagePointer;
 										pagePointer++;
 										number |= (tmp & 0x7F) << 49;
 										if (tmp & 0x80) {
-											tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
+											tmp = *pagePointer;
 											pagePointer++;
 											number |= (tmp & 0x7F) << 56; // We get 63 bits at this point!
 										}
@@ -728,20 +728,20 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 		// Get prefix and length if it isn't a duplicate
 		if (!duplicate) {
 			// Get prefix
-			tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
+			tmp = *pagePointer;
 			pagePointer++;
 			indexNode->prefix = (tmp & 0x7F);
 			if (tmp & 0x80) {
-				tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
+				tmp = *pagePointer;
 				pagePointer++;
 				indexNode->prefix |= (tmp & 0x7F) << 7; // We get 14 bits at this point
 			}
 			// Get length
-			tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
+			tmp = *pagePointer;
 			pagePointer++;
 			indexNode->length = (tmp & 0x7F);
 			if (tmp & 0x80) {
-				tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
+				tmp = *pagePointer;
 				pagePointer++;
 				indexNode->length |= (tmp & 0x7F) << 7; // We get 14 bits at this point
 			}
@@ -755,9 +755,9 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 		indexNode->isEndLevel = (internalFlags == BTN_END_LEVEL_FLAG);
 	}
 	else {
-		indexNode->prefix = (*pagePointer);
+		indexNode->prefix = *pagePointer;
 		pagePointer++;
-		indexNode->length = (*pagePointer);
+		indexNode->length = *pagePointer;
 		pagePointer++;
 		if (leafNode) {
 			indexNode->recordNumber = get_long(pagePointer);
@@ -796,7 +796,7 @@ UCHAR* writeJumpInfo(btree_page* page, const IndexJumpInfo* jumpInfo)
  *  given pointer.
  *
  **************************************/
-	UCHAR* pointer = reinterpret_cast<UCHAR*> (page->btr_nodes);
+	UCHAR* pointer = reinterpret_cast<UCHAR*>(page->btr_nodes);
 	*reinterpret_cast<USHORT*>(pointer) = jumpInfo->firstNodeOffset;
 	pointer += sizeof(USHORT);
 	*reinterpret_cast<USHORT*>(pointer) = jumpInfo->jumpAreaSize;

@@ -27,7 +27,8 @@
 
 namespace Firebird {
 
-void ParsedPath::parse(const PathName& path) {
+void ParsedPath::parse(const PathName& path) 
+{
 	clear();
 
 	if (path.length() == 1) {
@@ -44,7 +45,8 @@ void ParsedPath::parse(const PathName& path) {
 	} while (oldpath.length() > 0);
 }
 
-PathName ParsedPath::subPath(int n) const {
+PathName ParsedPath::subPath(int n) const 
+{
 	PathName rc = (*this)[0];
 	if (PathUtils::isRelative(rc + PathUtils::dir_sep))
 		rc = PathUtils::dir_sep + rc;
@@ -56,13 +58,15 @@ PathName ParsedPath::subPath(int n) const {
 	return rc;
 }
 
-ParsedPath::operator PathName() const {
+ParsedPath::operator PathName() const 
+{
 	if (!getCount())
 		return "";
 	return subPath(getCount());
 }
 
-bool ParsedPath::contains(const ParsedPath& pPath) const {
+bool ParsedPath::contains(const ParsedPath& pPath) const 
+{
 	int nFullElem = getCount();
 	if (nFullElem > 1 && (*this)[nFullElem - 1].length() == 0)
 		nFullElem--;
@@ -89,8 +93,8 @@ bool DirectoryList::keyword(
 		const ListMode keyMode, 
 		PathName& value, 
 		PathName key, 
-		PathName next
-) {
+		PathName next) 
+{
 	if (value.length() < key.length()) {
 		return false;
 	}
@@ -122,7 +126,8 @@ bool DirectoryList::keyword(
 	return true;
 }
 
-void DirectoryList::initialize(bool simple_mode) {
+void DirectoryList::initialize(bool simple_mode) 
+{
 	if (mode != NotInitialized)
 		return;
 
@@ -178,7 +183,8 @@ void DirectoryList::initialize(bool simple_mode) {
 	add(ParsedPath(dir));
 }
 
-bool DirectoryList::isPathInList(const PathName& path) const {
+bool DirectoryList::isPathInList(const PathName& path) const 
+{
 #ifdef BOOT_BUILD
 	return true;
 #else  //BOOT_BUILD
@@ -222,8 +228,9 @@ bool DirectoryList::isPathInList(const PathName& path) const {
 void DirectoryList::expandFileName (
 					PathName& path, 
 					const PathName& name,
-					int access
-) const {
+					int access) 
+const 
+{
 	fb_assert(mode != NotInitialized);
     for (int i = 0; i < getCount(); i++) {
 		PathUtils::concatPath(path, (*this)[i], name);

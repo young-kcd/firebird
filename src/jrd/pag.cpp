@@ -217,8 +217,8 @@ void PAG_add_clump(
  *		1 - replace		CLUMP_REPLACE
  *		2 - replace only!	CLUMP_REPLACE_ONLY
  *	returns
- *		TRUE - modified page
- *		FALSE - nothing done
+ *		true - modified page
+ *		false - nothing done => nobody checks this function's result.
  *
  **************************************/
 	thread_db* tdbb = GET_THREAD_DATA;
@@ -379,7 +379,7 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
 
 	WIN window(next->fil_min_page);
 	header_page* header = (header_page*) CCH_fake(tdbb, &window, 1);
-	header->hdr_header.pag_type = pag_header;
+	header->pag_type = pag_header;
 	header->hdr_sequence = sequence;
 	header->hdr_page_size = dbb->dbb_page_size;
 	header->hdr_data[0] = HDR_end;
@@ -398,7 +398,7 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
     		header->hdr_flags |= hdr_SQL_dialect_3;
 #endif
 
-	header->hdr_header.pag_checksum = CCH_checksum(window.win_bdb);
+	header->pag_checksum = CCH_checksum(window.win_bdb);
 	PIO_write(dbb->dbb_file, window.win_bdb, window.win_buffer,
 			  tdbb->tdbb_status_vector);
 	CCH_RELEASE(tdbb, &window);
@@ -429,7 +429,7 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
 					  (UCHAR *) & start, CLUMP_REPLACE, 1);
 	}
 
-	header->hdr_header.pag_checksum = CCH_checksum(window.win_bdb);
+	header->pag_checksum = CCH_checksum(window.win_bdb);
 	PIO_write(dbb->dbb_file, window.win_bdb, window.win_buffer,
 			  tdbb->tdbb_status_vector);
 	CCH_RELEASE(tdbb, &window);
@@ -652,7 +652,7 @@ PAG PAG_allocate(WIN * window)
    than returning it, format it as a page inventory page, and recurse. */
 
 	page_inv_page* new_pip_page = (page_inv_page*) new_page;
-	new_pip_page->pip_header.pag_type = pag_pages;
+	new_pip_page->pag_type = pag_pages;
 	// CVC: If some tips on web sites are true, this can be improved by
 	// a pointer to ULONG setting memory to 0xffffffff.
 	const UCHAR* end = (UCHAR *) new_pip_page + dbb->dbb_page_size;
@@ -684,7 +684,7 @@ SLONG PAG_attachment_id(void)
 	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
-	att* attachment = tdbb->tdbb_attachment;
+	Attachment* attachment = tdbb->tdbb_attachment;
 	WIN window(-1);
 
 /* If we've been here before just return the id */
@@ -708,7 +708,7 @@ SLONG PAG_attachment_id(void)
 
 /* Take out lock on attachment id */
 
-	lck* lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) lck();
+	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();
 	attachment->att_id_lock = lock;
 	lock->lck_type = LCK_attachment;
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
@@ -807,10 +807,10 @@ void PAG_format_header(void)
 
 	WIN window(HEADER_PAGE);
 	header_page* header = (header_page*) CCH_fake(tdbb, &window, 1);
-	header->hdr_header.pag_scn = 0;
+	header->pag_scn = 0;
 	MOV_time_stamp(reinterpret_cast <
 				   ISC_TIMESTAMP * >(header->hdr_creation_date));
-	header->hdr_header.pag_type = pag_header;
+	header->pag_type = pag_header;
 	header->hdr_page_size = dbb->dbb_page_size;
 	header->hdr_ods_version = ODS_VERSION;
 	header->hdr_implementation = CLASS;
@@ -855,7 +855,7 @@ void PAG_format_log(void)
 
 	WIN window(LOG_PAGE);
 	log_info_page* logp = (log_info_page*) CCH_fake(tdbb, &window, 1);
-	logp->log_header.pag_type = pag_log;
+	logp->pag_type = pag_log;
 
 	CCH_RELEASE(tdbb, &window);
 }
@@ -885,7 +885,7 @@ void PAG_format_pip(void)
 	dbb->dbb_pcontrol->pgc_pip = 1;
 	page_inv_page* pages = (page_inv_page*) CCH_fake(tdbb, &window, 1);
 
-	pages->pip_header.pag_type = pag_pages;
+	pages->pag_type = pag_pages;
 	pages->pip_min = 4;
 	UCHAR* p = pages->pip_bits;
 	int i = dbb->dbb_page_size - OFFSETA(page_inv_page*, pip_bits);
@@ -986,7 +986,7 @@ void PAG_header(const TEXT* file_name, USHORT file_length)
 	header_page* header = (header_page*) temp_page;
 	PIO_header(dbb, temp_page, MIN_PAGE_SIZE);
 
-	if (header->hdr_header.pag_type != pag_header || header->hdr_sequence) {
+	if (header->pag_type != pag_header || header->hdr_sequence) {
 		ERR_post(isc_bad_db_format,
 				 isc_arg_cstring, file_length, ERR_string(file_name,
 														  file_length), 0);
@@ -1245,7 +1245,7 @@ void PAG_init2(USHORT shadow_number)
 		window.win_page = file->fil_min_page;
 		USHORT file_length = 0;
 		ULONG last_page = 0;
-		Buffer_desc temp_bdb;
+		BufferDesc temp_bdb;
 		SLONG next_page = 0;
 		do {
 			/* note that we do not have to get a read lock on
@@ -1795,7 +1795,7 @@ static void find_clump_space(
 	UCHAR* p;
 	if (page_num == HEADER_PAGE) {
 		new_header = (header_page*) new_page;
-		new_header->hdr_header.pag_type = pag_header;
+		new_header->pag_type = pag_header;
 		new_header->hdr_end = HDR_SIZE;
 		new_header->hdr_page_size = dbb->dbb_page_size;
 		new_header->hdr_data[0] = HDR_end;
@@ -1805,7 +1805,7 @@ static void find_clump_space(
 	}
 	else {
 		new_logp = (log_info_page*) new_page;
-		new_logp->log_header.pag_type = pag_log;
+		new_logp->pag_type = pag_log;
 		new_logp->log_data[0] = LOG_end;
 		new_logp->log_end = LIP_SIZE;
 		next_page = new_window.win_page;

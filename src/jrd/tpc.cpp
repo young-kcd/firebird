@@ -43,7 +43,7 @@
 #include <memory>
 
 static TPC allocate_tpc(thread_db*, ULONG);
-static void cache_transactions(thread_db*, TPC *, ULONG);
+static void cache_transactions(thread_db*, TPC*, ULONG);
 static int extend_cache(thread_db*, SLONG);
 
 
@@ -63,7 +63,7 @@ int TPC_cache_state(thread_db* tdbb, SLONG number)
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	tpc* tip_cache = dbb->dbb_tip_cache;
+	const tpc* tip_cache = dbb->dbb_tip_cache;
 	if (!tip_cache) {
 		TPC_initialize_tpc(tdbb, number);
 		tip_cache = dbb->dbb_tip_cache;
@@ -197,7 +197,7 @@ int TPC_snapshot_state(thread_db* tdbb, SLONG number)
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	tpc* tip_cache = dbb->dbb_tip_cache;
+	const tpc* tip_cache = dbb->dbb_tip_cache;
 	if (!tip_cache) {
 		cache_transactions(tdbb, NULL, (ULONG) 0);
 		tip_cache = dbb->dbb_tip_cache;
@@ -239,8 +239,8 @@ int TPC_snapshot_state(thread_db* tdbb, SLONG number)
 			// We need to create this one in a pool since the
 			// receiver of this (ptr) checks its type.
 			// Please review this. This lock has _nothing_ to do in the
-			// permamnent pool!
-			std::auto_ptr<lck> temp_lock(FB_NEW_RPT(*dbb->dbb_permanent, 0) lck);
+			// permanent pool!
+			std::auto_ptr<Lock> temp_lock(FB_NEW_RPT(*dbb->dbb_permanent, 0) Lock);
 
 			//temp_lock.blk_type = type_lck;
 			temp_lock->lck_dbb = dbb;
@@ -277,7 +277,7 @@ int TPC_snapshot_state(thread_db* tdbb, SLONG number)
 }
 
 
-void TPC_update_cache(thread_db* tdbb, tx_inv_page* tip_page, SLONG sequence)
+void TPC_update_cache(thread_db* tdbb, const tx_inv_page* tip_page, SLONG sequence)
 {
 /**************************************
  *
@@ -362,7 +362,7 @@ static TPC allocate_tpc(thread_db* tdbb, ULONG base)
 }
 
 
-static void cache_transactions(thread_db* tdbb, TPC * tip_cache_ptr, ULONG oldest)
+static void cache_transactions(thread_db* tdbb, TPC* tip_cache_ptr, ULONG oldest)
 {
 /**************************************
  *
@@ -387,7 +387,8 @@ static void cache_transactions(thread_db* tdbb, TPC * tip_cache_ptr, ULONG oldes
 	oldest = MAX(oldest, dbb->dbb_oldest_transaction);
 #else
 	WIN window(HEADER_PAGE);
-	const header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
+	const header_page* header =
+		(header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 	const ULONG top = header->hdr_next_transaction;
 	oldest = MAX(oldest, (ULONG) header->hdr_oldest_transaction);
 	CCH_RELEASE(tdbb, &window);
@@ -436,7 +437,7 @@ static int extend_cache(thread_db* tdbb, SLONG number)
    all transactions from that point up to the
    most recent transaction */
 
-	tpc* tip_cache = 0;
+	const tpc* tip_cache = 0;
 	tpc** tip_cache_ptr;
 	for (tip_cache_ptr = &dbb->dbb_tip_cache; *tip_cache_ptr;
 		 tip_cache_ptr = &(*tip_cache_ptr)->tpc_next)

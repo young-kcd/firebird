@@ -22,7 +22,7 @@
 #ifndef AUTOCONFIG_H
 #define AUTOCONFIG_H
 
-#pragma warning(disable:4099)	// class/struct mixups
+//#pragma warning(disable:4099)	// class/struct mixups
 #pragma warning(disable:4251)	// needs to have dll-interface
 #pragma warning(disable:4291)	// no matching op. delete (there are)
 #pragma warning(disable:4355)	// 'this' used in base member initializer list
@@ -34,7 +34,7 @@
 #pragma warning(disable:4018)  // signed/unsigned mismatch
 #pragma warning(disable:4100)  // unreferenced formal parameter
 #pragma warning(disable:4127)  // conditional expression is constant
-#pragma warning(disable:4131)  // uses old-style declarator
+//#pragma warning(disable:4131)  // uses old-style declarator
 #pragma warning(disable:4146)  // unary minus operator applied to unsigned type, result still unsigned
 #pragma warning(disable:4189)  // local variable is initialized but not referenced
 #pragma warning(disable:4211)  // nonstandard extension used : redefined extern to static

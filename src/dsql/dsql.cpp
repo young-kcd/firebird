@@ -842,8 +842,8 @@ static bool check_for_create_database(const TEXT* sql,
 
  **/
 ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
-								   class att* jrd_attachment_handle,
-								   class jrd_tra* jrd_transaction_handle,
+								   Attachment* jrd_attachment_handle,
+								   jrd_tra* jrd_transaction_handle,
     							   const TEXT* sql_operator,
     							   int len)
 {
@@ -899,7 +899,7 @@ ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
 
 
 WHY_DBB	GetWhyAttachment (ISC_STATUS* status,
-						  class att* jrd_attachment_handle)
+						  Attachment* jrd_attachment_handle)
 {
 	THREAD_EXIT;
 	THD_MUTEX_LOCK (&databases_mutex);

@@ -26,6 +26,8 @@
 #ifndef JRD_RSE_H
 #define JRD_RSE_H
 
+// This is really funny: class rse is not defined here but in exe.h!!!
+
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
@@ -38,6 +40,8 @@ class jrd_req;
 class jrd_rel;
 class jrd_nod;
 struct sort_key_def;
+class SparseBitmap;
+class str;
 
 // Record source block (RSB) types
 
@@ -76,8 +80,8 @@ public:
 	ULONG rsb_cardinality;				// estimated cardinality of stream
 	ULONG rsb_record_count;				// count of records returned from rsb (not candidate records processed)
 	Rsb* rsb_next;						// next rsb, if appropriate
-	jrd_rel* 		rsb_relation;		// relation, if appropriate
-	struct str*	rsb_alias;				// SQL alias for relation
+	jrd_rel*	rsb_relation;			// relation, if appropriate
+	str*		rsb_alias;				// SQL alias for relation
 	class jrd_prc* rsb_procedure;		// procedure, if appropriate
 	class fmt* rsb_format;				// format, if appropriate
 	jrd_nod* rsb_any_boolean;	// any/all boolean
@@ -152,7 +156,7 @@ typedef struct irsb_index {
 	ULONG irsb_flags;
 	SLONG irsb_number;
 	SLONG irsb_prefetch_number;
-	struct sbm **irsb_bitmap;
+	SparseBitmap**	irsb_bitmap;
 } *IRSB_INDEX;
 
 typedef struct irsb_sort {
@@ -161,9 +165,9 @@ typedef struct irsb_sort {
 } *IRSB_SORT;
 
 typedef struct irsb_procedure {
-	ULONG irsb_flags;
-	jrd_req *irsb_req_handle;
-	struct str *irsb_message;
+	ULONG 		irsb_flags;
+	jrd_req*	irsb_req_handle;
+	str*		irsb_message;
 } *IRSB_PROCEDURE;
 
 typedef struct irsb_mrg {
@@ -203,8 +207,8 @@ typedef struct irsb_nav {
 	SLONG irsb_nav_page;					// index page number
 	SLONG irsb_nav_incarnation;				// buffer/page incarnation counter
 	ULONG irsb_nav_count;					// record count of last record returned
-	struct sbm **irsb_nav_bitmap;			// bitmap for inversion tree
-	struct sbm *irsb_nav_records_visited;	// bitmap of records already retrieved
+	SparseBitmap**	irsb_nav_bitmap;			// bitmap for inversion tree
+	SparseBitmap*	irsb_nav_records_visited;	// bitmap of records already retrieved
 	USHORT irsb_nav_offset;					// page offset of current index node
 	USHORT irsb_nav_lower_length;			// length of lower key value
 	USHORT irsb_nav_upper_length;			// length of upper key value
@@ -242,7 +246,7 @@ struct smb_repeat {
 	jrd_nod*	smb_node;	// expression node
 };
 
-class smb : public pool_alloc_rpt<smb_repeat, type_smb>
+class SortMap : public pool_alloc_rpt<smb_repeat, type_smb>
 {
 public:
 	USHORT smb_keys;			// number of keys
@@ -253,7 +257,6 @@ public:
 	USHORT smb_flags;			// misc sort flags
     smb_repeat smb_rpt[1];
 };
-typedef smb *SMB;
 
 // values for smb_field_id
 
@@ -306,7 +309,7 @@ typedef irl *IRL;
 class Opt : public pool_alloc<type_opt>
 {
 public:
-	class Csb *opt_csb;						// compiler scratch block
+	class Csb*	opt_csb;					// compiler scratch block
 	SLONG opt_combinations;					// number of partial orders considered
 	double opt_best_cost;					// cost of best join order
 	SSHORT opt_base_conjuncts;				// number of conjuncts in our rse, next conjuncts are from parent
@@ -358,8 +361,9 @@ const USHORT opt_g_stream = 1;				// indicate that this is a blr_stream
 
 
 // River block - used to hold temporary information about a group of streams
+// CVC: River is a "secret" of opt.cpp, maybe a new opt.h would be adequate.
 
-class riv : public pool_alloc_rpt<SCHAR, type_riv>
+class River : public pool_alloc_rpt<SCHAR, type_riv>
 {
 public:
 	Rsb* riv_rsb;				// record source block for river

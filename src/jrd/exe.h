@@ -62,6 +62,10 @@ DEFINE_TRACE_ROUTINE(cmp_trace);
 class jrd_rel;
 class jrd_nod;
 struct sort_key_def;
+class SparseBitmap;
+class vec;
+class Resource;
+class str;
 
 // NOTE: The definition of structures rse and lit must be defined in
 //       exactly the same way as structure jrd_nod through item nod_count.
@@ -112,8 +116,8 @@ public:
 class rse : public jrd_node_base
 {
 public:
-	USHORT	rse_count;
-	USHORT	rse_jointype;		/* inner, left, full */
+	USHORT		rse_count;
+	USHORT		rse_jointype;		/* inner, left, full */
 	bool		rse_writelock;
 	Rsb*		rse_rsb;
 	jrd_nod*	rse_first;
@@ -135,7 +139,7 @@ typedef rse* RSE;
 #define rse_variant	4			/* flags rse as variant (not invariant?) */
 
 // Number of nodes may fit into nod_arg of normal node to get to rse_relation
-const size_t rse_delta = (sizeof(rse)-sizeof(jrd_nod))/sizeof(jrd_nod::blk_repeat_type);
+const size_t rse_delta = (sizeof(rse) - sizeof(jrd_nod)) / sizeof(jrd_nod::blk_repeat_type);
 
 // Types of nulls placement for each column in sort order
 #define rse_nulls_default 0
@@ -145,15 +149,14 @@ const size_t rse_delta = (sizeof(rse)-sizeof(jrd_nod))/sizeof(jrd_nod::blk_repea
 
 /* Literal value */
 
-class lit : public jrd_node_base
+class Literal : public jrd_node_base
 {
 public:
 	dsc		lit_desc;
 	SINT64	lit_data[1]; // Defined this way to prevent SIGBUS error in 64-bit ports
 };
-typedef lit* LIT;
 
-#define lit_delta	((sizeof(class lit) - sizeof(jrd_nod) - sizeof(SINT64)) / sizeof(jrd_nod**))
+#define lit_delta	((sizeof(Literal) - sizeof(jrd_nod) - sizeof(SINT64)) / sizeof(jrd_nod**))
 
 
 /* Aggregate Sort Block (for DISTINCT aggregates) */
@@ -185,7 +188,7 @@ typedef struct sta {
 typedef struct vlu {
 	struct dsc vlu_desc;
 	USHORT vlu_flags; // Computed/invariant flags
-	struct str* vlu_string;
+	str* vlu_string;
 	union {
 		SSHORT vlu_short;
 		SLONG vlu_long;
@@ -213,7 +216,7 @@ struct vlux : public vlu {
 /* Inversion (i.e. nod_index) impure area */
 
 typedef struct inv {
-	struct sbm* inv_bitmap;
+	SparseBitmap* inv_bitmap;
 } *INV;
 
 
@@ -247,7 +250,7 @@ struct iasb {
 #define	e_fld_stream		0
 #define	e_fld_id		1
 #define	e_fld_default_value	2	/* hold column default value info if any,
-								   (LIT) */
+								   (Literal*) */
 #define	e_fld_length		3
 
 #define	e_sto_statement		0
@@ -516,50 +519,9 @@ struct iasb {
  * TMN: I had to move the enclosed csb_repeat outside this class,
  * since it's part of the C API. Compiling as C++ would enclose it.
  */
-
-struct csb_repeat
-{
-	// We must zero-initialize this one
-	csb_repeat()
-	:	csb_stream(0),
-		csb_view_stream(0),
-		csb_flags(0),
-		csb_indices(0),
-		csb_relation(0),
-		csb_alias(0),
-		csb_procedure(0),
-		csb_view(0),
-		csb_idx(0),
-		csb_idx_allocation(0),
-		csb_message(0),
-		csb_format(0),
-		csb_fields(0),
-		csb_cardinality(0.0f),	// TMN: Non-natural cardinality?!
-		csb_plan(0),
-		csb_map(0),
-		csb_rsb_ptr(0)
-	{}
-
-	UCHAR csb_stream;			/* Map user context to internal stream */
-	UCHAR csb_view_stream;		/* stream number for view relation, below */
-	USHORT csb_flags;
-	USHORT csb_indices;			/* Number of indices */
-
-	jrd_rel* csb_relation;
-	struct str* csb_alias;		/* SQL alias name for this instance of relation */
-	class jrd_prc* csb_procedure;
-	jrd_rel* csb_view;		/* parent view */
-
-	struct idx* csb_idx;		/* Packed description of indices */
-	struct str* csb_idx_allocation;	/* Memory allocated to hold index descriptions */
-	jrd_nod* csb_message;			/* Msg for send/receive */
-	class fmt* csb_format;		/* Default fmt for stream */
-	struct sbm* csb_fields;		/* Fields referenced */
-	float csb_cardinality;		/* Cardinality of relation */
-	jrd_nod* csb_plan;				/* user-specified plan for this relation */
-	UCHAR* csb_map;				/* Stream map for views */
-	Rsb** csb_rsb_ptr;	/* point to rsb for nod_stream */
-};
+// CVC: Mike comment seems to apply only when the conversion to C++
+// was being done. It's almost impossible that a repeating structure of
+// the compile scratch block be available to outsiders.
 
 typedef Firebird::SortedArray<SLONG> VarInvariantArray;
 typedef Firebird::Array<VarInvariantArray*> MsgInvariantArray;
@@ -603,27 +565,72 @@ public:
 		return csb_n_stream++;
 	}
 
-	const UCHAR*		csb_blr;
-	const UCHAR*		csb_running;
+	const UCHAR*	csb_blr;
+	const UCHAR*	csb_running;
 	jrd_nod*		csb_node;
-	struct acc*	csb_access;		/* Access items to be checked */
-	struct vec*	csb_variables;	/* Vector of variables, if any */
-	class Resource*	csb_resources;	/* Resources (relations and indexes) */
-	class lls*	csb_dependencies;	/* objects this request depends upon */
+	struct acc*		csb_access;			/* Access items to be checked */
+	vec*			csb_variables;		/* Vector of variables, if any */
+	Resource*		csb_resources;		/* Resources (relations and indexes) */
+	class lls*		csb_dependencies;	/* objects this request depends upon */
 	Firebird::Array<Rsb*> csb_fors;		/* stack of fors */
 	Firebird::Array<jrd_nod*> csb_invariants;	/* stack of invariant nodes */
 	Firebird::Array<jrd_node_base*> csb_current_nodes;	/* rse's and other invariant candidates within whose scope we are */
 #ifdef SCROLLABLE_CURSORS
-	rse*	csb_current_rse;	/* this holds the rse currently being processed;
+	rse*			csb_current_rse;	/* this holds the rse currently being processed;
 									   unlike the current_rses stack, it references any expanded view rse */
 #endif
 	jrd_nod*		csb_async_message;	/* asynchronous message to send to request */
-	USHORT		csb_n_stream;		/* Next available stream */
-	USHORT		csb_msg_number;		/* Highest used message number */
-	SLONG		csb_impure;			/* Next offset into impure area */
-	USHORT		csb_g_flags;
+	USHORT			csb_n_stream;		/* Next available stream */
+	USHORT			csb_msg_number;		/* Highest used message number */
+	SLONG			csb_impure;			/* Next offset into impure area */
+	USHORT			csb_g_flags;
 
-	typedef		csb_repeat* rpt_itr;
+    struct csb_repeat
+	{
+		// We must zero-initialize this one
+		csb_repeat()
+		:	csb_stream(0),
+			csb_view_stream(0),
+			csb_flags(0),
+			csb_indices(0),
+			csb_relation(0),
+			csb_alias(0),
+			csb_procedure(0),
+			csb_view(0),
+			csb_idx(0),
+			csb_idx_allocation(0),
+			csb_message(0),
+			csb_format(0),
+			csb_fields(0),
+			csb_cardinality(0.0f),	// TMN: Non-natural cardinality?!
+			csb_plan(0),
+			csb_map(0),
+			csb_rsb_ptr(0)
+		{}
+
+		UCHAR csb_stream;			/* Map user context to internal stream */
+		UCHAR csb_view_stream;		/* stream number for view relation, below */
+		USHORT csb_flags;
+		USHORT csb_indices;			/* Number of indices */
+
+		jrd_rel* csb_relation;
+		str* csb_alias;		/* SQL alias name for this instance of relation */
+		class jrd_prc* csb_procedure;
+		jrd_rel* csb_view;		/* parent view */
+
+		struct idx* csb_idx;		/* Packed description of indices */
+		str* csb_idx_allocation;	/* Memory allocated to hold index descriptions */
+		jrd_nod* csb_message;			/* Msg for send/receive */
+		class fmt* csb_format;		/* Default fmt for stream */
+		SparseBitmap* csb_fields;		/* Fields referenced */
+		float csb_cardinality;		/* Cardinality of relation */
+		jrd_nod* csb_plan;				/* user-specified plan for this relation */
+		UCHAR* csb_map;				/* Stream map for views */
+		Rsb** csb_rsb_ptr;	/* point to rsb for nod_stream */
+	};
+
+
+	typedef csb_repeat* rpt_itr;
 	Firebird::Array<csb_repeat> csb_rpt;
 };
 

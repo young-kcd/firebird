@@ -26,8 +26,8 @@
  *  Contributor(s): ______________________________________.
  */
 
-#ifndef FB_STRING_H
-#define FB_STRING_H
+#ifndef INCLUDE_FB_STRING_H
+#define INCLUDE_FB_STRING_H
 
 #include "../jrd/ib_stdio.h"
 #include <string.h>
@@ -118,7 +118,7 @@ namespace Firebird
 			char_type oldSmallStorage[smallStorageSize];
 			~StoragePair() {
 				if (oldSize >= AbstractString::smallStorageSize)
-					delete oldStorage;
+					delete[] oldStorage;
 			}
 		};
 		friend struct StoragePair;
@@ -178,7 +178,7 @@ namespace Firebird
 			userSize = 0;
 			smallStorage[0] = 0;
 		}
-		inline explicit AbstractString(MemoryPool& p, const AbstractString& v) 
+		inline AbstractString(MemoryPool& p, const AbstractString& v) 
 			: AutoStorage(p)
 		{
 			memcpy(createStorage(v.length()), v.c_str(), v.length());
@@ -337,7 +337,7 @@ namespace Firebird
 		bool LoadFromFile(IB_FILE *file);
 		inline ~AbstractString() {
 			if (actualSize > smallStorageSize)
-				delete bigStorage;
+				delete[] bigStorage;
 		}
 	};
 
@@ -372,7 +372,7 @@ namespace Firebird
 		inline StringBase<Comparator>(char_type c) : AbstractString(1, c) {}
 		inline StringBase<Comparator>(const_iterator first, const_iterator last) : AbstractString(last - first, first) {}
 		inline explicit StringBase<Comparator>(MemoryPool& p) : AbstractString(p) {}
-		inline explicit StringBase<Comparator>(MemoryPool& p, const AbstractString& v) : AbstractString(p, v) {}
+		inline StringBase<Comparator>(MemoryPool& p, const AbstractString& v) : AbstractString(p, v) {}
 
 		inline StringType& append(const StringType& str) {
 			fb_assert(&str != this);
@@ -604,4 +604,4 @@ namespace Firebird
 }
 
 
-#endif	// FB_STRING_H
+#endif	// INCLUDE_FB_STRING_H

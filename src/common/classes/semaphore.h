@@ -32,12 +32,12 @@
  *  Contributor(s):
  * 
  *
- *  $Id: semaphore.h,v 1.8 2004-03-11 05:30:07 skidder Exp $
+ *  $Id: semaphore.h,v 1.9 2004-03-18 05:54:22 robocop Exp $
  *
  */
 
-#ifndef SEMAPHORE_H
-#define SEMAPHORE_H
+#ifndef CLASSES_SEMAPHORE_H
+#define CLASSES_SEMAPHORE_H
 
 #ifdef WIN_NT
 
@@ -163,5 +163,5 @@ public:
 
 #endif /*!WIN_NT*/
 
-#endif
+#endif // CLASSES_SEMAPHORE_H
 

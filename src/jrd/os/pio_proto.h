@@ -26,6 +26,7 @@
 
 class jrd_file;
 class Database;
+struct blk;
 
 int		PIO_add_file(Database*, jrd_file*, const TEXT*, SLONG);
 void	PIO_close(jrd_file*);
@@ -38,8 +39,8 @@ void	PIO_header(Database*, SCHAR*, int);
 SLONG	PIO_max_alloc(Database*);
 SLONG	PIO_act_alloc(Database*);
 jrd_file*	PIO_open(Database*, const TEXT*, SSHORT, bool,
-							struct blk*, const TEXT*, USHORT);
-bool	PIO_read(jrd_file*, class Buffer_desc*, struct pag*, ISC_STATUS*);
+							blk*, const TEXT*, USHORT);
+bool	PIO_read(jrd_file*, class BufferDesc*, struct pag*, ISC_STATUS*);
 
 #ifdef SUPERSERVER_V2
 bool	PIO_read_ahead(Database*, SLONG, SCHAR*, SLONG, struct phys_io_blk*,
@@ -48,7 +49,7 @@ bool		PIO_status(struct phys_io_blk*, ISC_STATUS*);
 #endif
 
 int		PIO_unlink(const TEXT*);
-bool	PIO_write(jrd_file*, class Buffer_desc*, struct pag*, ISC_STATUS*);
+bool	PIO_write(jrd_file*, class BufferDesc*, struct pag*, ISC_STATUS*);
 
 #endif // JRD_PIO_PROTO_H
 

@@ -28,8 +28,8 @@
  *  Contributor(s):
  */
 
-#ifndef CONFIG_FILE_H
-#define CONFIG_FILE_H
+#ifndef CONFIG_CONFIG_FILE_H
+#define CONFIG_CONFIG_FILE_H
 
 #include <functional>
 #include <map>
@@ -67,7 +67,7 @@ class ConfigFile : public Firebird::AutoStorage
 		string, Firebird::FirstObjectKey<Parameter> > mymap_t;
 
 public:
-    explicit ConfigFile(MemoryPool& p, bool ExitOnError) 
+	ConfigFile(MemoryPool& p, bool ExitOnError) 
 		: AutoStorage(p), isLoadedFlg(false), 
 		  fExitOnError(ExitOnError), parameters(getPool()) {}
     explicit ConfigFile(bool ExitOnError) 
@@ -99,4 +99,4 @@ private:
     mymap_t parameters;
 };
 
-#endif	// CONFIG_FILE_H
+#endif	// CONFIG_CONFIG_FILE_H

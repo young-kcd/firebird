@@ -20,8 +20,8 @@
  *  Contributor(s): ______________________________________.
  */
 
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef COMMON_CONFIG_H
+#define COMMON_CONFIG_H
 
 #include "fb_string.h"
 #include "fb_vector.h"
@@ -329,4 +329,4 @@ inline void Prefix(PathName& result, const PathName& file)
 
 } //namespace Firebird
 
-#endif // CONFIG_H
+#endif // COMMON_CONFIG_H

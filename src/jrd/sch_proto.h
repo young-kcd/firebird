@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access method
  *	MODULE:		sch_proto.h
- *	DESCRIPTION:	Prototype Header file for sch.c
+ *	DESCRIPTION:	Prototype Header file for sch.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -46,10 +46,10 @@ void	SCH_enter(void);
 void	SCH_exit(void);
 void	SCH_hiber(void);
 void	SCH_init(void);
-int		SCH_schedule(void);
-BOOLEAN	SCH_thread_enter_check(void);
-BOOLEAN	SCH_validate(void);
-void	SCH_wake(struct thread *);
+bool	SCH_schedule(void);
+bool	SCH_thread_enter_check(void);
+bool	SCH_validate(void);
+void	SCH_wake(struct thread*);
 
 
 #endif // JRD_SCH_PROTO_H

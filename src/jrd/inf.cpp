@@ -201,7 +201,6 @@ int INF_database_info(const SCHAR* items,
 	SCHAR site[256];
 	SSHORT length, l;
 	SLONG id;
-	ATT err_att, att;
 	USR user;
 	SLONG err_val;
 	bool header_refreshed = false;
@@ -214,7 +213,8 @@ int INF_database_info(const SCHAR* items,
 	const SCHAR* const end_items = items + item_length;
 	const SCHAR* const end = info + output_length;
 
-	err_att = att = NULL;
+	Attachment* err_att = 0;
+	Attachment* att = 0;
 	const SCHAR* q;
 
 	while (items < end_items && *items != isc_info_end) {

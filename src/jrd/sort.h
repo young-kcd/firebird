@@ -272,7 +272,7 @@ typedef struct scb
 	void *scb_dup_callback_arg;	/* Duplicate handling callback arg */
 	struct dls *scb_dls;
 	struct mrg *scb_merge_pool;	/* ALLOC: pool of mrg blocks */
-	class att *scb_attachment;	/* back pointer to attachment */
+	class Attachment*	scb_attachment;	/* back pointer to attachment */
 	struct irsb_sort *scb_impure;	/* back pointer to request's impure area */
 	sort_key_def scb_description[1];
 } *SCB;

@@ -24,6 +24,8 @@
 #ifndef REMOTE_REMOT_PROTO_H
 #define REMOTE_REMOT_PROTO_H
 
+struct blk;
+
 void		REMOTE_cleanup_transaction (struct rtr *);
 ULONG		REMOTE_compute_batch_size (rem_port*, USHORT, P_OP, const rem_fmt*);
 void		REMOTE_get_timeout_params (rem_port*, const UCHAR*, USHORT);
@@ -35,7 +37,7 @@ void		REMOTE_release_request (struct rrq *);
 void		REMOTE_reset_request (struct rrq *, struct message *);
 void		REMOTE_reset_statement (struct rsr *);
 void		REMOTE_save_status_strings (ISC_STATUS *);
-OBJCT		REMOTE_set_object (rem_port*, struct blk *, OBJCT);
+OBJCT		REMOTE_set_object (rem_port*, blk*, OBJCT);
 
 #endif // REMOTE_REMOT_PROTO_H
 

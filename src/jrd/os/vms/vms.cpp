@@ -57,7 +57,7 @@
 gds__completion_ast();
 
 static bool extend_file(jrd_file*, ISC_STATUS *);
-static jrd_file* seek_file(jrd_file*, Buffer_desc*, int *);
+static jrd_file* seek_file(jrd_file*, BufferDesc*, int *);
 static jrd_file* setup_file(Database*, const TEXT*, USHORT, USHORT, struct NAM*);
 static void setup_trace(jrd_file*, SSHORT);
 static void trace_event(jrd_file*, SSHORT, SCHAR *, SSHORT);
@@ -162,11 +162,9 @@ void PIO_close(jrd_file* main_file)
  *	have been locked before entry.
  *
  **************************************/
-	jrd_file* file;
-	int status;
-
-	for (file = main_file; file; file = file->fil_next) {
-		if (!((status = sys$dassgn(file->fil_desc)) & 1))
+	for (jrd_file* file = main_file; file; file = file->fil_next) {
+		const int status = sys$dassgn(file->fil_desc);
+		if (!(status & 1))
 			V4_MUTEX_DESTROY(file->fil_mutex);
 #ifdef TRACE
 		if (file->fil_trace) {
@@ -216,13 +214,9 @@ jrd_file* PIO_create(Database* dbb, const TEXT* string, SSHORT length, bool over
  *	have been locked before entry.
  *
  **************************************/
-	int status;
-	TEXT *address, expanded_name[NAM$C_MAXRSS];
-	struct FAB fab;
-	struct NAM nam;
-
-	fab = cc$rms_fab;
-	nam = cc$rms_nam;
+	TEXT expanded_name[NAM$C_MAXRSS];
+	struct FAB fab = cc$rms_fab;
+	struct NAM nam = cc$rms_nam;
 	fab.fab$l_nam = &nam;
 	nam.nam$l_rsa = expanded_name;
 	nam.nam$b_rss = sizeof(expanded_name);
@@ -237,7 +231,7 @@ jrd_file* PIO_create(Database* dbb, const TEXT* string, SSHORT length, bool over
 	fab.fab$l_alq = 200;
 	fab.fab$w_deq = 100;
 	fab.fab$b_fac = FAB$M_UPD | FAB$M_PUT;
-	status = sys$create(&fab);
+	const int status = sys$create(&fab);
 
 	if (!(status & 1)) {
 		ERR_post(isc_io_error,
@@ -265,15 +259,12 @@ int PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name)
  *	intelligent.
  *
  **************************************/
-	int length, status;
-	TEXT *address, temp[NAM$C_MAXRSS], temp2[NAM$C_MAXRSS];
-	struct FAB fab;
-	struct NAM nam;
+	TEXT temp[NAM$C_MAXRSS], temp2[NAM$C_MAXRSS];
 
-	length = ISC_expand_logical(file_name, file_length, expanded_name);
+	int length = ISC_expand_logical(file_name, file_length, expanded_name);
 
-	fab = cc$rms_fab;
-	nam = cc$rms_nam;
+	struct FAB fab = cc$rms_fab;
+	struct NAM nam = cc$rms_nam;
 	fab.fab$l_nam = &nam;
 	nam.nam$l_esa = temp;
 	nam.nam$b_ess = sizeof(temp);
@@ -324,7 +315,7 @@ void PIO_force_write(jrd_file* file, bool flag)
 }
 
 
-void PIO_header(Database* dbb, SCHAR * address, int length)
+void PIO_header(Database* dbb, SCHAR* address, int length)
 {
 /**************************************
  *
@@ -338,16 +329,13 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
  *
  **************************************/
 	SSHORT iosb[4];
-	int status, block;
-	jrd_file* file;
-
-	file = dbb->dbb_file;
+	jrd_file* file = dbb->dbb_file;
 
 #ifdef ISC_DATABASE_ENCRYPTION
 	if (dbb->dbb_encrypt_key) {
 		SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
 
-		status = sys$qio(EVENT_FLAG,	/* Event flag */
+		const int status = sys$qio(EVENT_FLAG,	/* Event flag */
 						 file->fil_desc,	/* Channel */
 						 IO$_READVBLK,	/* Function */
 						 iosb,	/* IO status block */
@@ -374,7 +362,7 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 	else
 #endif
 	{
-		status = sys$qio(EVENT_FLAG,	/* Event flag */
+		const int status = sys$qio(EVENT_FLAG,	/* Event flag */
 						 file->fil_desc,	/* Channel */
 						 IO$_READVBLK,	/* Function */
 						 iosb,	/* IO status block */
@@ -410,21 +398,18 @@ SLONG PIO_max_alloc(Database* dbb)
  *	Compute last physically allocated page of database.
  *
  **************************************/
-	USHORT length;
-	jrd_file* file;
-	USHORT iosb[4];
-	ATR$ atr;
-	FIB$ fib;
-	FAT$ fat;
-	int status, size;
-	struct dsc$descriptor_s desc;
 
 /* Get last file block */
 
+	jrd_file* file;
 	for (file = dbb->dbb_file; file->fil_next; file = file->fil_next);
 
+	FIB$ fib;
+	struct dsc$descriptor_s desc;
 	ISC_make_desc(&fib, &desc, sizeof(fib));
 
+	FAT$ fat;
+	ATR$ atr;
 	atr.atr$w_size = ATR$S_RECATTR;
 	atr.atr$w_type = ATR$C_RECATTR;
 	atr.atr$l_addr = &fat;
@@ -437,7 +422,8 @@ SLONG PIO_max_alloc(Database* dbb)
 	MOVE_FAST(file->fil_fid, fib.fib$w_fid, sizeof(fib.fib$w_fid));
 	fib.fib$w_nmctl = FIB$M_FINDFID;
 
-	status = sys$qiow(EVENT_FLAG,	/* Event flag */
+	USHORT iosb[4];
+	int status = sys$qiow(EVENT_FLAG,	/* Event flag */
 					  file->fil_desc,	/* Channel */
 					  IO$_ACCESS,	/* Function */
 					  iosb,		/* IO status block */
@@ -457,7 +443,7 @@ SLONG PIO_max_alloc(Database* dbb)
 				 ERR_string(file->fil_string, file->fil_length), isc_arg_gds,
 				 isc_io_access_err, isc_arg_vms, status, 0);
 
-	size = (fat.fat$w_hiblk[1] + (fat.fat$w_hiblk[0] << 16)) * 512;
+	const int size = (fat.fat$w_hiblk[1] + (fat.fat$w_hiblk[0] << 16)) * 512;
 
 
 	return file->fil_min_page - file->fil_fudge + size / dbb->dbb_page_size;
@@ -482,14 +468,10 @@ jrd_file* PIO_open(Database* dbb,
  *	the connection to communication with a page/lock server.
  *
  **************************************/
-	jrd_file* file;
-	int status;
-	TEXT *address, expanded_name[NAM$C_MAXRSS], temp[256];
-	struct FAB fab;
-	struct NAM nam;
+	TEXT expanded_name[NAM$C_MAXRSS];
 
-	fab = cc$rms_fab;
-	nam = cc$rms_nam;
+	struct FAB fab = cc$rms_fab;
+	struct NAM nam = cc$rms_nam;
 	fab.fab$l_nam = &nam;
 	nam.nam$l_rsa = expanded_name;
 	nam.nam$b_rss = sizeof(expanded_name);
@@ -502,7 +484,7 @@ jrd_file* PIO_open(Database* dbb,
 	fab.fab$b_rfm = FAB$C_UDF;
 	fab.fab$b_shr = FAB$M_SHRGET | FAB$M_SHRPUT | FAB$M_UPI;
 	fab.fab$b_fac = FAB$M_UPD | FAB$M_PUT;
-	status = sys$open(&fab);
+	const int status = sys$open(&fab);
 
 	if (!(status & 1))
 		ERR_post(isc_io_error,
@@ -513,7 +495,7 @@ jrd_file* PIO_open(Database* dbb,
 
 /* File open succeeded.  Now expand the file name. */
 
-	file = setup_file(dbb, string, length, fab.fab$l_stv, &nam);
+	jrd_file* file = setup_file(dbb, string, length, fab.fab$l_stv, &nam);
 	MOVE_FAST(nam.nam$w_did, file->fil_did, sizeof(file->fil_did));
 	MOVE_FAST(nam.nam$w_fid, file->fil_fid, sizeof(file->fil_fid));
 
@@ -526,7 +508,7 @@ jrd_file* PIO_open(Database* dbb,
 }
 
 
-bool PIO_read(jrd_file* file, Buffer_desc* bdb, PAG page, ISC_STATUS* status_vector)
+bool PIO_read(jrd_file* file, BufferDesc* bdb, PAG page, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -595,7 +577,7 @@ bool PIO_read(jrd_file* file, Buffer_desc* bdb, PAG page, ISC_STATUS* status_vec
 }
 
 
-bool PIO_write(jrd_file* file, Buffer_desc* bdb, PAG page, ISC_STATUS* status_vector)
+bool PIO_write(jrd_file* file, BufferDesc* bdb, PAG page, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -608,12 +590,13 @@ bool PIO_write(jrd_file* file, Buffer_desc* bdb, PAG page, ISC_STATUS* status_ve
  *
  **************************************/
 	SSHORT iosb[4];
-	int status, block;
 
+	int block;
 	Database* dbb = bdb->bdb_dbb;
 	file = seek_file(file, bdb, &block);
 
 	for (;;) {
+		int status;
 #ifdef ISC_DATABASE_ENCRYPTION
 		if (dbb->dbb_encrypt_key) {
 			SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
@@ -682,15 +665,12 @@ static bool extend_file(jrd_file* file, ISC_STATUS* status_vector)
  *	Extend the length of a file.
  *
  **************************************/
-	USHORT iosb[4], l;
-	struct dsc$descriptor_s desc;
-	ATR$ atr;
 	FIB$ fib;
-	FAT$ fat;
-	int status, old_size, new_size, delta;
-	SCHAR *p;
-
+	struct dsc$descriptor_s desc;
 	ISC_make_desc(&fib, &desc, sizeof(fib));
+	
+	FAT$ fat;
+	ATR$ atr;
 	atr.atr$w_size = ATR$S_RECATTR;
 	atr.atr$w_type = ATR$C_RECATTR;
 	atr.atr$l_addr = &fat;
@@ -698,17 +678,18 @@ static bool extend_file(jrd_file* file, ISC_STATUS* status_vector)
 
 /* Get current size */
 
-	p = &fib;
-	l = sizeof(fib);
-	do
+	char* p = &fib;
+	size_t l = sizeof(fib);
+	do {
 		*p++ = 0;
-	while (--l);
+	} while (--l);
 
 	MOVE_FAST(file->fil_did, fib.fib$w_did, sizeof(fib.fib$w_did));
 	MOVE_FAST(file->fil_fid, fib.fib$w_fid, sizeof(fib.fib$w_fid));
 	fib.fib$w_nmctl = FIB$M_FINDFID;
 
-	status = sys$qiow(EVENT_FLAG,	/* Event flag */
+	USHORT iosb[4];
+	int status = sys$qiow(EVENT_FLAG,	/* Event flag */
 					  file->fil_desc,	/* Channel */
 					  IO$_ACCESS,	/* Function */
 					  iosb,		/* IO status block */
@@ -725,9 +706,9 @@ static bool extend_file(jrd_file* file, ISC_STATUS* status_vector)
 		return vms_io_error(status_vector, "QIO IO$_ACCESS",
 							isc_io_access_err, status, file);
 
-	old_size = fat.fat$w_hiblk[1] + (fat.fat$w_hiblk[0] << 16);
-	new_size = old_size + MIN(old_size, 16000);
-	delta = new_size - old_size;
+	const int old_size = fat.fat$w_hiblk[1] + (fat.fat$w_hiblk[0] << 16);
+	const int new_size = old_size + MIN(old_size, 16000);
+	const int delta = new_size - old_size;
 
 /* Extend file */
 
@@ -760,7 +741,7 @@ static bool extend_file(jrd_file* file, ISC_STATUS* status_vector)
 }
 
 
-static jrd_file* seek_file(jrd_file* file, Buffer_desc* bdb, int *block)
+static jrd_file* seek_file(jrd_file* file, BufferDesc* bdb, int *block)
 {
 /**************************************
  *
@@ -805,10 +786,6 @@ static jrd_file* setup_file(Database* dbb,
  *	Set up file and lock blocks for a file.
  *
  **************************************/
-	UCHAR lock_id[64], devlock[64], *p, *q;
-	USHORT l, iosb[4];
-	ITM items[2];
-	int status;
 
 /* Allocate file block and move in file name */
 
@@ -827,6 +804,9 @@ static jrd_file* setup_file(Database* dbb,
 
 /* Get device lock string */
 
+	UCHAR devlock[64];
+	USHORT l;
+	ITM items[2];
 	items[0].itm_code = DVI$_DEVLOCKNAM;
 	items[0].itm_length = sizeof(devlock);
 	items[0].itm_buffer = devlock;
@@ -836,7 +816,8 @@ static jrd_file* setup_file(Database* dbb,
 	items[1].itm_length = 0;
 	items[1].itm_buffer = 0;
 
-	status = sys$getdviw(15, chan, NULL, items, iosb, NULL, NULL, NULL);
+	USHORT iosb[4];
+	const int status = sys$getdviw(15, chan, NULL, items, iosb, NULL, NULL, NULL);
 	if (status != 1)
 		ERR_post(isc_io_error,
 				 isc_arg_string, "sys$getdviw",
@@ -846,21 +827,22 @@ static jrd_file* setup_file(Database* dbb,
 
 /* Build lock string */
 
-	p = lock_id;
-	q = devlock;
+	UCHAR lock_id[64];
+	UCHAR* p = lock_id;
+	const UCHAR* q = devlock;
 	if (l)
-		do
+		do {
 			*p++ = *q++;
-		while (--l);
+		} while (--l);
 
 	q = &nam->nam$w_fid;
 	l = 6;
-	do
+	do {
 		*p++ = *q++;
-	while (--l);
+	} while (--l);
 	l = p - lock_id;
 
-	lck* lock = FB_NEW_RPT(dbb->dbb_permanent, l) lck();
+	Lock* lock = FB_NEW_RPT(dbb->dbb_permanent, l) Lock();
 	dbb->dbb_lock = lock;
 	lock->lck_type = LCK_database;
 	lock->lck_owner_handle = LCK_get_owner_handle(NULL, lock->lck_type);
@@ -895,7 +877,6 @@ static void setup_trace(jrd_file* file, SSHORT event)
  *	Perform setup to create trace file.
  *
  **************************************/
-
 	file->fil_trace = ib_fopen("trace.log", "w");
 	trace_event(file, event, file->fil_string, strlen(file->fil_string));
 }
@@ -913,7 +894,6 @@ static void trace_event(jrd_file* file, SSHORT type, SCHAR * ptr, SSHORT length)
  *	Write trace event to the trace file.
  *
  **************************************/
-
 	if (!file->fil_trace)
 		return;
 
@@ -941,7 +921,6 @@ static bool vms_io_error(
  *	Report I/O error.
  *
  **************************************/
-
 	*status_vector++ = isc_arg_gds;
 	*status_vector++ = isc_io_error;
 	*status_vector++ = isc_arg_string;

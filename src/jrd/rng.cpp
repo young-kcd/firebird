@@ -54,7 +54,7 @@
 #ifdef PC_ENGINE
 static void delete_range(RNG);
 static void post_event(RNG);
-static void post_event_ast(blk*);
+static int post_event_ast(void*);
 static void stop_creating(RNG);
 #endif
 
@@ -73,15 +73,11 @@ void RNG_add_page(ULONG page_number)
  *	currently being defined.
  *
  **************************************/
-	RNG refresh_range, next_refresh_range;
-	VEC page_locks;
-	lck* page_lock;
-	USHORT i, next_range;
-
 	thread_db* tdbb = GET_THREAD_DATA;
 	jrd_req* request = tdbb->tdbb_request;
 
-	for (refresh_range = request->req_begin_ranges; refresh_range;
+	RNG next_refresh_range;
+	for (RNG refresh_range = request->req_begin_ranges; refresh_range;
 		 refresh_range = next_refresh_range)
 	{
 		next_refresh_range = refresh_range->rng_next;
@@ -90,24 +86,26 @@ void RNG_add_page(ULONG page_number)
 
 		/* see if this refresh range already has a page lock on this page */
 
-		next_range = FALSE;
-		if (page_locks = refresh_range->rng_page_locks)
-			for (i = 0; i < refresh_range->rng_pages; i++) {
-				page_lock = (lck*) page_locks->vec_object[i];
+		bool next_range = false;
+		VEC page_locks = refresh_range->rng_page_locks;
+		if (page_locks) {
+			for (size_t i = 0; i < refresh_range->rng_pages; i++) {
+				Lock* page_lock = (Lock*) page_locks->vec_object[i];
 				if (page_lock->lck_key.lck_long == page_number) {
-					next_range = TRUE;
+					next_range = true;
 					break;
 				}
 			}
+		}
 		if (next_range)
 			continue;
 
 		/* allocate and set up the page lock for this page */
 
-		page_lock = CCH_page_lock(tdbb, ERR_jmp);
+		Lock* page_lock = CCH_page_lock(tdbb);
 		page_lock->lck_key.lck_long = page_number;
 		page_lock->lck_ast = post_event_ast;
-		page_lock->lck_object = reinterpret_cast<blk*>(refresh_range);
+		page_lock->lck_object = refresh_range;
 
 		/* if we can get the lock, place it in a vector of page locks for this
 		   refresh range; otherwise just post the range event assuming that the
@@ -133,7 +131,7 @@ void RNG_add_page(ULONG page_number)
 
 
 #ifdef PC_ENGINE
-void RNG_add_record(RPB * rpb)
+void RNG_add_record(record_param* rpb)
 {
 /**************************************
  *
@@ -146,15 +144,11 @@ void RNG_add_record(RPB * rpb)
  *	currently being defined.
  *
  **************************************/
-	RNG refresh_range, next_refresh_range;
-	VEC record_locks;
-	lck* record_lock;
-	USHORT i, next_range;
-
 	thread_db* tdbb = GET_THREAD_DATA;
 	jrd_req* request = tdbb->tdbb_request;
 
-	for (refresh_range = request->req_begin_ranges; refresh_range;
+	RNG next_refresh_range;
+	for (RNG refresh_range = request->req_begin_ranges; refresh_range;
 		 refresh_range = next_refresh_range)
 	{
 		next_refresh_range = refresh_range->rng_next;
@@ -163,15 +157,17 @@ void RNG_add_record(RPB * rpb)
 
 		/* see if this refresh range already has a lock on this record */
 
-		next_range = FALSE;
-		if (record_locks = refresh_range->rng_record_locks)
-			for (i = 0; i < refresh_range->rng_records; i++) {
-				record_lock = (lck*) record_locks->vec_object[i];
+		bool next_range = false;
+		VEC record_locks = refresh_range->rng_record_locks;
+		if (record_locks) {
+			for (size_t i = 0; i < refresh_range->rng_records; i++) {
+				Lock* record_lock = (Lock*) record_locks->vec_object[i];
 				if (record_lock->lck_key.lck_long == rpb->rpb_number) {
-					next_range = TRUE;
+					next_range = true;
 					break;
 				}
 			}
+		}
 		if (next_range)
 			continue;
 
@@ -181,9 +177,9 @@ void RNG_add_record(RPB * rpb)
 		   the lock will be released before the client tries to reestablish
 		   the refresh range, otherwise we will thrash trying to establish */
 
-		record_lock = RLCK_lock_record(rpb, LCK_PR,
+		Lock* record_lock = RLCK_lock_record(rpb, LCK_PR,
 									   post_event_ast,
-									   (BLK) refresh_range);
+									   refresh_range);
 		if (!record_lock) {
 			post_event(refresh_range);
 			delete_range(refresh_range);
@@ -217,38 +213,32 @@ jrd_nod* RNG_add_relation(jrd_nod* node)
  *	currently being defined.
  *
  **************************************/
-	DSC *desc;
-	USHORT range_number;
-	VEC refresh_ranges;
-	RNG refresh_range;
-	jrd_nod* relation_node;
-	jrd_rel* relation;
-	lck* relation_lock;
-	VEC relation_locks;
-
 	thread_db* tdbb = GET_THREAD_DATA;
 	jrd_req* request = tdbb->tdbb_request;
 
 	if (request->req_operation == req_evaluate) {
-		desc = EVL_expr(tdbb, node->nod_arg[e_range_relation_number]);
-		range_number = (USHORT) MOV_get_long(desc, 0);
+		const dsc* desc = EVL_expr(tdbb, node->nod_arg[e_range_relation_number]);
+		const size_t range_number = (USHORT) MOV_get_long(desc, 0);
 
-		relation_node = node->nod_arg[e_range_relation_relation];
-		relation = (jrd_rel*) relation_node->nod_arg[e_rel_relation];
+		jrd_nod* relation_node = node->nod_arg[e_range_relation_relation];
+		jrd_rel* relation = (jrd_rel*) relation_node->nod_arg[e_rel_relation];
 
 		/* check to see if the range exists */
 
-		if ((refresh_ranges = request->req_refresh_ranges) &&
+		RNG refresh_range;
+		VEC refresh_ranges = request->req_refresh_ranges;
+		if (refresh_ranges &&
 			(range_number < refresh_ranges->vec_count) &&
-			(refresh_range = (RNG) refresh_ranges->vec_object[range_number])) {
+			(refresh_range = (RNG) refresh_ranges->vec_object[range_number]))
+		{
 			/* lock the relation in such a way that we'll be notified 
 			   if it is locked for update; if we can't get the lock just
 			   give up and post the range */
 
-			relation_lock = RLCK_range_relation(request->req_transaction,
+			Lock* relation_lock = RLCK_range_relation(request->req_transaction,
 												relation,
 												post_event_ast,
-												(BLK) refresh_range);
+												refresh_range);
 			if (!relation_lock) {
 				post_event(refresh_range);
 				delete_range(refresh_range);
@@ -256,7 +246,7 @@ jrd_nod* RNG_add_relation(jrd_nod* node)
 
 			/* place all relation locks into a vector for easy access later */
 
-			relation_locks = ALL_vector(request->req_pool,
+			VEC relation_locks = ALL_vector(request->req_pool,
 										&refresh_range->rng_relation_locks,
 										EXTEND(refresh_range->rng_relations));
 			relation_locks->vec_object[refresh_range->rng_relations] =
@@ -279,7 +269,7 @@ jrd_nod* RNG_add_relation(jrd_nod* node)
 
 
 #ifdef PC_ENGINE
-void RNG_add_uncommitted_record(RPB * rpb)
+void RNG_add_uncommitted_record(record_param* rpb)
 {
 /**************************************
  *
@@ -293,40 +283,44 @@ void RNG_add_uncommitted_record(RPB * rpb)
  *	registering interest in the transaction that created it.
  *
  **************************************/
-	RNG refresh_range, next_refresh_range;
-	VEC transaction_locks;
-	lck* transaction_lock;
-	USHORT i, next_range;
-
 	thread_db* tdbb = GET_THREAD_DATA;
 	jrd_req* request = tdbb->tdbb_request;
 
-	for (refresh_range = request->req_begin_ranges; refresh_range;
-		 refresh_range = next_refresh_range) {
+	RNG next_refresh_range;
+	for (RNG refresh_range = request->req_begin_ranges; refresh_range;
+		 refresh_range = next_refresh_range)
+	{
 		next_refresh_range = refresh_range->rng_next;
 		if (refresh_range->rng_flags & RNG_posted)
 			continue;
 
 		/* see if this refresh range already has a lock on this record */
 
-		next_range = FALSE;
-		if (transaction_locks = refresh_range->rng_transaction_locks)
-			for (i = 0; i < refresh_range->rng_transactions; i++) {
-				transaction_lock = (lck*) transaction_locks->vec_object[i];
+		bool next_range = false;
+		VEC transaction_locks = refresh_range->rng_transaction_locks;
+		if (transaction_locks)
+		{
+			for (size_t i = 0; i < refresh_range->rng_transactions; i++) {
+				Lock* transaction_lock = (Lock*) transaction_locks->vec_object[i];
 				if (transaction_lock->lck_key.lck_long ==
-					rpb->rpb_transaction) {
-					next_range = TRUE;
+					rpb->rpb_transaction_nr)
+				{
+					next_range = true;
 					break;
 				}
 			}
+		}
 		if (next_range)
 			continue;
 
-		transaction_lock =
-			TRA_transaction_lock(tdbb, (BLK) rpb->rpb_transaction);
-		transaction_lock->lck_key.lck_long = rpb->rpb_transaction;
+		// We aren't using this code, but passing txn number is plain wrong.
+		// Passing refresh_range (type compatible) will achieve the same result
+		// than having to correct the lck_object data member.
+		Lock* transaction_lock =
+			TRA_transaction_lock(tdbb, refresh_range);//rpb->rpb_transaction_nr);
+		transaction_lock->lck_key.lck_long = rpb->rpb_transaction_nr;
 		transaction_lock->lck_ast = post_event_ast;
-		transaction_lock->lck_object = reinterpret_cast<blk*>(refresh_range);
+		//transaction_lock->lck_object = refresh_range;
 
 		/* try to get a shared read on the transaction lock, which will force
 		   the holder of an exclusive lock to downgrade; this is also his notification
@@ -365,12 +359,6 @@ DSC *RNG_begin(jrd_nod* node, VLU impure)
  *	Initialize a refresh range.
  *
  **************************************/
-	DSC desc;
-	RNG refresh_range;
-	USHORT range_number;
-	VEC refresh_ranges;
-	char event_name[RANGE_NAME_LENGTH], *p, *q;
-
 	thread_db* tdbb = GET_THREAD_DATA;
 	jrd_req* request = tdbb->tdbb_request;
 	Database* dbb = tdbb->tdbb_database;
@@ -379,9 +367,11 @@ DSC *RNG_begin(jrd_nod* node, VLU impure)
 /* check to make sure the range number is not already in use */
 
 	const dsc* desc2 = EVL_expr(tdbb, node->nod_arg[e_brange_number]);
-	range_number = (USHORT) MOV_get_long(desc2, 0);
+	const size_t range_number = (USHORT) MOV_get_long(desc2, 0);
 
-	if ((refresh_ranges = request->req_refresh_ranges) &&
+	RNG refresh_range;
+	VEC refresh_ranges = request->req_refresh_ranges;
+	if (refresh_ranges &&
 		(range_number < refresh_ranges->vec_count) &&
 		(refresh_range = (RNG) refresh_ranges->vec_object[range_number]))
 	{
@@ -398,7 +388,9 @@ DSC *RNG_begin(jrd_nod* node, VLU impure)
    related to the transction per se; it is just a means of generating
    an id unique to the database */
 
-	for (p = event_name, q = "ISC$RANGE_"; *q;)
+	char event_name[RANGE_NAME_LENGTH];
+	char* p = event_name;
+	for (const char* q = "ISC$RANGE_"; *q;)
 		*p++ = *q++;
 
 /* move in the transaction id */
@@ -472,7 +464,7 @@ jrd_nod* RNG_delete(jrd_nod* node)
 
 	if (request->req_operation == req_evaluate) {
 		const dsc* desc = EVL_expr(tdbb, node->nod_arg[e_drange_number]);
-		const USHORT range_number = (USHORT) MOV_get_long(desc, 0);
+		const size_t range_number = (USHORT) MOV_get_long(desc, 0);
 
 		/* check to see if the range exists */
 		RNG refresh_range;
@@ -512,7 +504,7 @@ void RNG_delete_ranges(jrd_req* request)
 /* release all refresh ranges associated with request */
 	VEC refresh_ranges = request->req_refresh_ranges;
 	if (refresh_ranges) {
-		for (USHORT range_number = 0; range_number < refresh_ranges->vec_count;
+		for (size_t range_number = 0; range_number < refresh_ranges->vec_count;
 			 range_number++)
 		{
 			RNG refresh_range = (RNG) refresh_ranges->vec_object[range_number];
@@ -542,7 +534,7 @@ jrd_nod* RNG_end(jrd_nod* node)
 
 	if (request->req_operation == req_evaluate) {
 		const dsc* desc = EVL_expr(tdbb, node->nod_arg[e_erange_number]);
-		const USHORT range_number = (USHORT) MOV_get_long(desc, 0);
+		const size_t range_number = (USHORT) MOV_get_long(desc, 0);
 
 		/* check to see if the range exists */
 		RNG refresh_range;
@@ -586,7 +578,7 @@ void RNG_release_locks(RNG refresh_range)
 /* release all the relation locks */
 
 	if (refresh_range->rng_relation_locks) {
-		lck** lock_ptr = (lck**) refresh_range->rng_relation_locks->vec_object;
+		Lock** lock_ptr = (Lock**) refresh_range->rng_relation_locks->vec_object;
 		for (int i = 0; i < refresh_range->rng_relations; i++) {
 			LCK_release(tdbb, *lock_ptr);
 			ALL_release(*lock_ptr);
@@ -599,7 +591,7 @@ void RNG_release_locks(RNG refresh_range)
 /* release all the record locks */
 
 	if (refresh_range->rng_record_locks) {
-		lck** lock_ptr = (lck**) refresh_range->rng_record_locks->vec_object;
+		Lock** lock_ptr = (Lock**) refresh_range->rng_record_locks->vec_object;
 		for (int i = 0; i < refresh_range->rng_records; i++) {
 			RLCK_unlock_record(*lock_ptr, 0);
 			*lock_ptr = NULL;
@@ -611,7 +603,7 @@ void RNG_release_locks(RNG refresh_range)
 /* release all page locks */
 
 	if (refresh_range->rng_page_locks) {
-		lck** lock_ptr = (lck**) refresh_range->rng_page_locks->vec_object;
+		Lock** lock_ptr = (Lock**) refresh_range->rng_page_locks->vec_object;
 		for (int i = 0; i < refresh_range->rng_pages; i++) {
 			LCK_release(tdbb, *lock_ptr);
 			ALL_release(*lock_ptr);
@@ -624,7 +616,7 @@ void RNG_release_locks(RNG refresh_range)
 /* release all transaction locks */
 
 	if (refresh_range->rng_transaction_locks) {
-		lck** lock_ptr = (lck**) refresh_range->rng_transaction_locks->vec_object;
+		Lock** lock_ptr = (Lock**) refresh_range->rng_transaction_locks->vec_object;
 		for (int i = 0; i < refresh_range->rng_transactions; i++) {
 			LCK_release(tdbb, *lock_ptr);
 			ALL_release(*lock_ptr);
@@ -655,7 +647,7 @@ void RNG_release_ranges(jrd_req* request)
 
 	VEC refresh_ranges = request->req_refresh_ranges;
 	if (refresh_ranges) {
-		for (USHORT range_number = 0; range_number < refresh_ranges->vec_count;
+		for (size_t range_number = 0; range_number < refresh_ranges->vec_count;
 			 range_number++)
 		{
 			RNG refresh_range = (RNG) refresh_ranges->vec_object[range_number];
@@ -670,7 +662,7 @@ void RNG_release_ranges(jrd_req* request)
 
 
 #ifdef PC_ENGINE
-void RNG_shutdown_attachment(ATT attachment)
+void RNG_shutdown_attachment(Attachment* attachment)
 {
 /**************************************
  *
@@ -691,7 +683,7 @@ void RNG_shutdown_attachment(ATT attachment)
 		VEC refresh_ranges = request->req_refresh_ranges;
 		if (refresh_ranges)
 		{
-			for (int range_number = 0; range_number < refresh_ranges->vec_count;
+			for (size_t range_number = 0; range_number < refresh_ranges->vec_count;
 				range_number++)
 			{
 				RNG refresh_range = (RNG) refresh_ranges->vec_object[range_number];
@@ -700,8 +692,8 @@ void RNG_shutdown_attachment(ATT attachment)
 					/* Shutdown range page locks */
 
 					if (refresh_range->rng_page_locks) {
-						lck** lock_ptr =
-							(lck**) refresh_range->rng_page_locks->vec_object;
+						Lock** lock_ptr =
+							(Lock**) refresh_range->rng_page_locks->vec_object;
 						for (int i = 0; i < refresh_range->rng_pages; i++) {
 							LCK_release(tdbb, *lock_ptr);
 							lock_ptr++;
@@ -710,8 +702,8 @@ void RNG_shutdown_attachment(ATT attachment)
 					/* Shutdown range transaction locks */
 
 					if (refresh_range->rng_transaction_locks) {
-						lck** lock_ptr =
-							(lck**) refresh_range->
+						Lock** lock_ptr =
+							(Lock**) refresh_range->
 							rng_transaction_locks->vec_object;
 						for (int i = 0; i < refresh_range->rng_transactions; i++) {
 							LCK_release(tdbb, *lock_ptr);
@@ -774,10 +766,8 @@ static void post_event(RNG refresh_range)
  *	refresh range.
  *
  **************************************/
-	ISC_STATUS_ARRAY status;
-
 	Database* dbb = GET_DBB;
-	lck* dbb_lock = dbb->dbb_lock;
+	Lock* dbb_lock = dbb->dbb_lock;
 
 /* detect duplicate posts and filter them out */
 
@@ -787,6 +777,7 @@ static void post_event(RNG refresh_range)
 
 /* post the event to the interested client */
 
+	ISC_STATUS_ARRAY status;
 	EVENT_post(status,
 			   dbb_lock->lck_length,
 			   (TEXT *) & dbb_lock->lck_key,
@@ -796,7 +787,7 @@ static void post_event(RNG refresh_range)
 
 
 #ifdef PC_ENGINE
-static void post_event_ast(void* refresh_range_void)
+static int post_event_ast(void* refresh_range_void)
 {
 /**************************************
  *
@@ -829,6 +820,7 @@ static void post_event_ast(void* refresh_range_void)
 /* Restore the prior thread context */
 
 	RESTORE_THREAD_DATA;
+	return 0;
 }
 #endif
 

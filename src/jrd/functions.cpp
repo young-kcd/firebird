@@ -77,7 +77,7 @@ FPTR_INT FUNCTIONS_entrypoint(char* module, char* entrypoint)
 		*p++ = *module++;
 
 	*p++ = 0;
-	const char* ep = p;
+	const char* const ep = p;
 
 	while (*entrypoint && *entrypoint != ' ')
 		*p++ = *entrypoint++;

@@ -66,10 +66,10 @@ static bool find_record(Rsb*, RSE_GET_MODE, KEY *, USHORT, USHORT);
 static BTX find_current(jrd_exp*, btree_page*, const UCHAR*);
 static bool find_saved_node(Rsb*, IRSB_NAV, WIN *, UCHAR **);
 static UCHAR* get_position(thread_db*, Rsb*, IRSB_NAV, WIN *, RSE_GET_MODE, BTX *);
-static bool get_record(Rsb*, IRSB_NAV, RPB *, KEY *, bool);
+static bool get_record(Rsb*, IRSB_NAV, record_param*, KEY *, bool);
 static void init_fetch(IRSB_NAV);
 static UCHAR* nav_open(thread_db*, Rsb*, IRSB_NAV, WIN *, RSE_GET_MODE, BTX *);
-static void set_position(IRSB_NAV, RPB*, WIN*, const UCHAR*, BTX, const UCHAR*, USHORT);
+static void set_position(IRSB_NAV, record_param*, WIN*, const UCHAR*, BTX, const UCHAR*, USHORT);
 static void setup_bitmaps(Rsb*, IRSB_NAV);
 
 
@@ -461,7 +461,7 @@ void NAV_get_bookmark(Rsb* rsb, IRSB_NAV impure, BKM bookmark)
 
 bool NAV_get_record(thread_db* tdbb,
 					   Rsb* rsb,
-					   IRSB_NAV impure, RPB * rpb, RSE_GET_MODE direction)
+					   IRSB_NAV impure, record_param* rpb, RSE_GET_MODE direction)
 {
 /**************************************
  *
@@ -577,7 +577,7 @@ bool NAV_get_record(thread_db* tdbb,
 	IndexNode node;
 	while (true) {
 		btree_page* page = (btree_page*) window.win_buffer;
-		const SCHAR flags = page->btr_header.pag_flags;
+		const SCHAR flags = page->pag_flags;
 
 		UCHAR* pointer = nextPointer;
 		BTX expanded_node = expanded_next;
@@ -785,7 +785,7 @@ bool NAV_get_record(thread_db* tdbb,
 
 
 #ifdef PC_ENGINE
-bool NAV_reset_position(Rsb* rsb, RPB * new_rpb)
+bool NAV_reset_position(Rsb* rsb, record_param* new_rpb)
 {
 /**************************************
  *
@@ -836,7 +836,7 @@ bool NAV_reset_position(Rsb* rsb, RPB * new_rpb)
 
 
 #ifdef PC_ENGINE
-bool NAV_set_bookmark(Rsb* rsb, IRSB_NAV impure, RPB * rpb, BKM bookmark)
+bool NAV_set_bookmark(Rsb* rsb, IRSB_NAV impure, record_param* rpb, BKM bookmark)
 {
 /**************************************
  *
@@ -1012,7 +1012,7 @@ static void expand_index(WIN * window)
 	UCHAR* pointer = BTreeNode::getPointerFirstNode(page);
 	const UCHAR* const endPointer = ((UCHAR*) page + page->btr_length);
 
-	const SCHAR flags = page->btr_header.pag_flags;
+	const SCHAR flags = page->pag_flags;
 	IndexNode node, priorNode;
 
 	while (pointer < endPointer) {
@@ -1077,7 +1077,7 @@ static bool find_dbkey(Rsb* rsb, ULONG record_number)
 	thread_db* tdbb = GET_THREAD_DATA;
 	jrd_req* request = tdbb->tdbb_request;
 	irsb_nav* impure = (IRSB_NAV) ((UCHAR *) request + rsb->rsb_impure);
-	RPB* rpb = request->req_rpb + rsb->rsb_stream;
+	record_param* rpb = request->req_rpb + rsb->rsb_stream;
 
 	init_fetch(impure);
 
@@ -1161,7 +1161,7 @@ static bool find_record(
 	thread_db* tdbb = GET_THREAD_DATA;
 	jrd_req* request = tdbb->tdbb_request;
 	irsb_nav* impure = (IRSB_NAV) ((UCHAR *) request + rsb->rsb_impure);
-	RPB* rpb = request->req_rpb + rsb->rsb_stream;
+	record_param* rpb = request->req_rpb + rsb->rsb_stream;
 	WIN window(-1);
 
 	jrd_nod* retrieval_node = (jrd_nod*) rsb->rsb_arg[RSB_NAV_index];
@@ -1190,7 +1190,7 @@ static bool find_record(
 	// find the appropriate leaf node
 	BTN node;
 	while (!(node = BTR_find_leaf(page, find_key, impure->irsb_nav_data,
-								  0, idx->idx_flags & idx_descending, true)))
+								  0, (idx->idx_flags & idx_descending) != 0, true)))
 	{
 		page =
 			(btree_page*) CCH_HANDOFF(tdbb, &window, page->btr_sibling, LCK_read,
@@ -1319,7 +1319,7 @@ static BTX find_current(jrd_exp* expanded_page, btree_page* page, const UCHAR* c
 	}
 
 	BTX expanded_node = expanded_page->exp_nodes;
-	const SCHAR flags = page->btr_header.pag_flags;
+	const SCHAR flags = page->pag_flags;
 	UCHAR* pointer = BTreeNode::getPointerFirstNode(page);
 	const UCHAR* const endPointer = ((UCHAR*) page + page->btr_length);
 	IndexNode node;
@@ -1363,7 +1363,7 @@ static bool find_saved_node(Rsb* rsb, IRSB_NAV impure,
 	// looking for the node (in case the page has split);
 	// the inner loop goes through the nodes on each page
 	KEY key;
-	const SCHAR flags = page->btr_header.pag_flags;
+	const SCHAR flags = page->pag_flags;
 	IndexNode node;
 	while (true) {
 		UCHAR* pointer = BTreeNode::getPointerFirstNode(page);
@@ -1476,7 +1476,7 @@ static UCHAR* get_position(
 #endif
 
 	UCHAR* pointer = 0;
-	const SCHAR flags = page->btr_header.pag_flags;
+	const SCHAR flags = page->pag_flags;
 	const SLONG incarnation = CCH_get_incarnation(window);
 	IndexNode node;
 	if (incarnation == impure->irsb_nav_incarnation) {
@@ -1552,7 +1552,7 @@ static UCHAR* get_position(
 static bool get_record(
 						  Rsb* rsb,
 						  IRSB_NAV impure,
-						  RPB * rpb, KEY * key, bool inhibit_cleanup)
+						  record_param* rpb, KEY * key, bool inhibit_cleanup)
 {
 /**************************************
  *
@@ -1766,14 +1766,14 @@ static UCHAR* nav_open(
 		
 		// If END_BUCKET is reached BTR_find_leaf will return NULL
 		while (!(pointer = BTR_find_leaf(page, limit_ptr, impure->irsb_nav_data,
-									  0, idx->idx_flags & idx_descending, true)))
+									  0, (idx->idx_flags & idx_descending) != 0, true)))
 		{
 			  page = (btree_page*) CCH_HANDOFF(tdbb, window, page->btr_sibling,
 				  LCK_read, pag_index);
 		}
 
 		IndexNode node;
-		BTreeNode::readNode(&node, pointer, page->btr_header.pag_flags, true);
+		BTreeNode::readNode(&node, pointer, page->pag_flags, true);
 
 		impure->irsb_nav_length = node.prefix + node.length;
 
@@ -1812,7 +1812,7 @@ static UCHAR* nav_open(
 }
 
 
-static void set_position(IRSB_NAV impure, RPB* rpb, WIN* window,
+static void set_position(IRSB_NAV impure, record_param* rpb, WIN* window,
 				const UCHAR* pointer, BTX expanded_node, 
 				const UCHAR* key_data, USHORT length)
 {

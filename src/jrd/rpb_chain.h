@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Server Code
  *	MODULE:		rpb_chain.h
- *	DESCRIPTION:	Keeps track of rpb's, updated_in_place by
+ *	DESCRIPTION:	Keeps track of record_param's, updated_in_place by
  *	        		single transcation
  *
  * The contents of this file are subject to the Interbase Public
@@ -30,12 +30,14 @@
 #include "../jrd/jrd.h"
 #include "../jrd/req.h"
 
+// req.h defines struct record_param
+
 class traRpbListElement
 {
 public:
-	struct rpb* lr_rpb;
+	record_param* lr_rpb;
 	int level;
-	traRpbListElement(struct rpb *r, USHORT l) : 
+	traRpbListElement(record_param* r, USHORT l) : 
 			lr_rpb(r), level(l) {}
 	traRpbListElement() {}
 
@@ -63,8 +65,8 @@ class traRpbList : public traRpbArray
 public:
 	traRpbList(Firebird::MemoryPool& p) : 
 		traRpbArray(p, 16) {}
-	int PushRpb(struct rpb* value);
-	bool PopRpb(struct rpb* value, int Level);
+	int PushRpb(record_param* value);
+	bool PopRpb(record_param* value, int Level);
 };
 #endif	//JRD_RPB_CHAIN_H
 

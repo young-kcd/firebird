@@ -24,8 +24,8 @@
  *
  */
 
-#ifndef JRD_BTR_H_
-#define JRD_BTR_H_
+#ifndef JRD_BTR_H
+#define JRD_BTR_H
 
 #include "../jrd/constants.h"
 #include "../common/classes/array.h"
@@ -40,6 +40,8 @@
 #define MAX_KEY_LIMIT		(dbb->dbb_page_size / 4)
 
 class jrd_rel;
+class SparseBitmap;
+class vec;
 
 enum idx_null_state {
   idx_nulls_none,
@@ -58,9 +60,9 @@ typedef struct idx {
 	USHORT idx_primary_index;	/* id for primary key partner index */
 	USHORT idx_primary_relation;	/* id for primary key partner relation */
 	USHORT idx_count;			/* number of keys */
-	struct vec *idx_foreign_primaries;	/* ids for primary/unique indexes with partners */
-	struct vec *idx_foreign_relations;	/* ids for foreign key partner relations */
-	struct vec *idx_foreign_indexes;	/* ids for foreign key partner indexes */
+	vec*	idx_foreign_primaries;	/* ids for primary/unique indexes with partners */
+	vec*	idx_foreign_relations;	/* ids for foreign key partner relations */
+	vec*	idx_foreign_indexes;	/* ids for foreign key partner indexes */
 	jrd_nod* idx_expression;	/* node tree for indexed expresssion */
 	struct dsc idx_expression_desc;	/* descriptor for expression result */
 	class jrd_req* idx_expression_request;	/* stored request for expression evaluation */
@@ -128,7 +130,7 @@ typedef struct iib {
 	idx* iib_descriptor;		/* index descriptor */
 	jrd_rel*	iib_relation;	/* relation block */
 	struct key *iib_key;		/* varying string for insertion */
-	struct sbm *iib_duplicates;	/* spare bit map of duplicates */
+	SparseBitmap* iib_duplicates;	/* spare bit map of duplicates */
 	class jrd_tra *iib_transaction;	/* insertion transaction */
 } IIB;
 
@@ -171,7 +173,7 @@ class irb : public pool_alloc_rpt<jrd_nod*, type_irb>
 	jrd_rel*	irb_relation;	/* Relation for retrieval */
 	USHORT irb_lower_count;		/* Number of segments for retrieval */
 	USHORT irb_upper_count;		/* Number of segments for retrieval */
-	KEY *irb_key;				/* key for equality retrival */
+	KEY *irb_key;				/* key for equality retrieval */
 	jrd_nod* irb_value[1];
 };
 typedef irb *IRB;
@@ -195,4 +197,5 @@ typedef irb *IRB;
 
 typedef Firebird::HalfStaticArray<float, 4> SelectivityList;
 
-#endif /* JRD_BTR_H_ */
+#endif /* JRD_BTR_H */
+

@@ -103,7 +103,6 @@ namespace {
 #endif
 
 
-//static void io_error(EXT, TEXT *, ISC_STATUS, SLONG);
 
 void EXT_close(Rsb* rsb)
 {
@@ -120,7 +119,7 @@ void EXT_close(Rsb* rsb)
 }
 
 
-void EXT_erase(RPB * rpb, int *transaction)
+void EXT_erase(record_param* rpb, int* transaction)
 {
 /**************************************
  *
@@ -138,7 +137,7 @@ void EXT_erase(RPB * rpb, int *transaction)
 
 
 // Third param is unused.
-EXT EXT_file(jrd_rel* relation, const TEXT* file_name, bid* description)
+ExternalFile* EXT_file(jrd_rel* relation, const TEXT* file_name, bid* description)
 {
 /**************************************
  *
@@ -173,8 +172,8 @@ EXT EXT_file(jrd_rel* relation, const TEXT* file_name, bid* description)
 		file_name = Path.c_str();
 	}
 
-	external_file* file =
-		FB_NEW_RPT(*dbb->dbb_permanent, (strlen(file_name) + 1)) external_file();
+	ExternalFile* file =
+		FB_NEW_RPT(*dbb->dbb_permanent, (strlen(file_name) + 1)) ExternalFile();
 	relation->rel_file = file;
 	strcpy(reinterpret_cast<char*>(file->ext_filename), file_name);
 	file->ext_flags = 0;
@@ -219,7 +218,7 @@ void EXT_fini(jrd_rel* relation)
  *
  **************************************/
 	if (relation->rel_file) {
-		external_file* file = relation->rel_file;
+		ExternalFile* file = relation->rel_file;
 		if (file->ext_ifi)
 			ib_fclose((IB_FILE *) file->ext_ifi);
 		/* before zeroing out the rel_file we need to deallocate the memory */
@@ -244,14 +243,14 @@ int EXT_get(Rsb* rsb)
  	thread_db* tdbb = GET_THREAD_DATA;
 
 	jrd_rel* relation = rsb->rsb_relation;
-	external_file* file = relation->rel_file;
+	ExternalFile* file = relation->rel_file;
 	jrd_req* request = tdbb->tdbb_request;
 
 	if (request->req_flags & req_abort)
 		return FALSE;
 
-	RPB* rpb = &request->req_rpb[rsb->rsb_stream];
-	rec* record = rpb->rpb_record;
+	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
+	Record* record = rpb->rpb_record;
 	const fmt* format = record->rec_format;
 
 	const SSHORT offset = (SSHORT) (IPTR) format->fmt_desc[0].dsc_address;
@@ -290,7 +289,7 @@ int EXT_get(Rsb* rsb)
 		SET_NULL(record, i);
 		if (!desc_ptr->dsc_length || !field)
 			continue;
-		const lit* literal = (LIT) field->fld_missing_value;
+		const Literal* literal = (Literal*) field->fld_missing_value;
 		if (literal) {
 			desc = *desc_ptr;
 			desc.dsc_address = record->rec_data + (IPTR) desc.dsc_address;
@@ -304,7 +303,7 @@ int EXT_get(Rsb* rsb)
 }
 
 
-void EXT_modify(RPB * old_rpb, RPB * new_rpb, int *transaction)
+void EXT_modify(record_param* old_rpb, record_param* new_rpb, int* transaction)
 {
 /**************************************
  *
@@ -338,10 +337,10 @@ void EXT_open(Rsb* rsb)
 
 	jrd_rel* relation = rsb->rsb_relation;
 	jrd_req* request = tdbb->tdbb_request;
-	RPB* rpb = &request->req_rpb[rsb->rsb_stream];
+	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 
 	const fmt* format;
-	rec* record = rpb->rpb_record;
+	Record* record = rpb->rpb_record;
 	if (!record || !(format = record->rec_format)) {
 		format = MET_current(tdbb, relation);
 		VIO_record(tdbb, rpb, format, request->req_pool);
@@ -373,7 +372,7 @@ SSHORT		i, size;
 	thread_db* tdbb = GET_THREAD_DATA;
 
 	Csb* csb = opt->opt_csb;
-	csb_repeat* csb_tail = &csb->csb_rpt[stream];
+	Csb::csb_repeat* csb_tail = &csb->csb_rpt[stream];
 	jrd_rel* relation = csb_tail->csb_relation;
 
 /* Time to find inversions.  For each index on the relation
@@ -408,16 +407,16 @@ if (opt->opt_count)
 */
 
 
-	Rsb* rsb_ = FB_NEW_RPT(*tdbb->tdbb_default,0) Rsb;
-	rsb_->rsb_type = rsb_ext_sequential;
+	Rsb* rsb = FB_NEW_RPT(*tdbb->tdbb_default,0) Rsb;
+	rsb->rsb_type = rsb_ext_sequential;
 	const SSHORT size = sizeof(irsb);
 
-	rsb_->rsb_stream = stream;
-	rsb_->rsb_relation = relation;
-	rsb_->rsb_impure = csb->csb_impure;
+	rsb->rsb_stream = stream;
+	rsb->rsb_relation = relation;
+	rsb->rsb_impure = csb->csb_impure;
 	csb->csb_impure += size;
 
-	return rsb_;
+	return rsb;
 }
 
 
@@ -436,7 +435,7 @@ void EXT_ready(jrd_rel* relation)
 }
 
 
-void EXT_store(RPB * rpb, int *transaction)
+void EXT_store(record_param* rpb, int* transaction)
 {
 /**************************************
  *
@@ -449,8 +448,8 @@ void EXT_store(RPB * rpb, int *transaction)
  *
  **************************************/
 	jrd_rel* relation = rpb->rpb_relation;
-	external_file* file = relation->rel_file;
-	rec* record = rpb->rpb_record;
+	ExternalFile* file = relation->rel_file;
+	Record* record = rpb->rpb_record;
 	const fmt* format = record->rec_format;
 
 /* Loop thru fields setting missing fields to either blanks/zeros
@@ -486,7 +485,7 @@ void EXT_store(RPB * rpb, int *transaction)
 			TEST_NULL(record, i))
 		{
 			UCHAR* p = record->rec_data + (IPTR) desc_ptr->dsc_address;
-			const lit* literal = (LIT) field->fld_missing_value;
+			const Literal* literal = (Literal*) field->fld_missing_value;
 			if (literal) {
 				desc = *desc_ptr;
 				desc.dsc_address = p;

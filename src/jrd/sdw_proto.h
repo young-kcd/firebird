@@ -37,7 +37,7 @@ void	SDW_notify(void);
 bool	SDW_rollover_to_shadow(class jrd_file*, const bool);
 void	SDW_shutdown_shadow(class Shadow*);
 void	SDW_start(const TEXT*, USHORT, USHORT, bool);
-int		SDW_start_shadowing(void* ast_object);
+int		SDW_start_shadowing(void*);
 
 #endif // JRD_SDW_PROTO_H
 

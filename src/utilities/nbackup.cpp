@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbackup.cpp,v 1.20 2004-03-16 06:16:48 skidder Exp $
+ *  $Id: nbackup.cpp,v 1.21 2004-03-18 05:56:00 robocop Exp $
  *
  */
  
@@ -108,7 +108,7 @@ public:
 		va_list params;
 		va_start(params, message);
 		VSNPRINTF(temp, sizeof(temp), message, params);
-		temp[sizeof(temp)-1] = 0;
+		temp[sizeof(temp) - 1] = 0;
 		fprintf(stderr, "Failure: %s\n", temp);
 		va_end(params);
 		throw b_error(temp);
@@ -211,16 +211,16 @@ size_t nbackup::read_file(FILE_HANDLE &file, void *buffer, size_t bufsize)
 	if (!ReadFile(file, buffer, bufsize, &bytesDone, NULL))
 		b_error::raise("IO error (%d) reading file: %s", 
 			GetLastError(),
-			&file==&dbase ? dbname.c_str() :
-			&file==&backup ? bakname.c_str() : "unknown");
+			&file == &dbase ? dbname.c_str() :
+			&file == &backup ? bakname.c_str() : "unknown");
 	return bytesDone;
 #else
-	ssize_t res = read(file, buffer, bufsize);
+	const ssize_t res = read(file, buffer, bufsize);
 	if (res < 0)
 		b_error::raise("IO error (%d) reading file: %s", 
 			errno,
-			&file==&dbase ? dbname.c_str() :
-			&file==&backup ? bakname.c_str() : "unknown");
+			&file == &dbase ? dbname.c_str() :
+			&file == &backup ? bakname.c_str() : "unknown");
 	return res;
 #endif
 }
@@ -234,15 +234,15 @@ void nbackup::write_file(FILE_HANDLE &file, void *buffer, size_t bufsize)
 	{
 		b_error::raise("IO error (%d) writing file: %s", 
 			GetLastError(),
-			&file==&dbase ? dbname.c_str() :
-			&file==&backup ? bakname.c_str() : "unknown");
+			&file == &dbase ? dbname.c_str() :
+			&file == &backup ? bakname.c_str() : "unknown");
 	}
 #else
 	if (write(file, buffer, bufsize) != (ssize_t)bufsize)
 		b_error::raise("IO error (%d) writing file: %s", 
 			errno,
-			&file==&dbase ? dbname.c_str() :
-			&file==&backup ? bakname.c_str() : "unknown");
+			&file == &dbase ? dbname.c_str() :
+			&file == &backup ? bakname.c_str() : "unknown");
 #endif
 }
 
@@ -258,19 +258,20 @@ void nbackup::seek_file(FILE_HANDLE &file, SINT64 pos)
 	{
 		b_error::raise("IO error (%d) seeking file: %s", 
 			error,
-			&file==&dbase ? dbname.c_str() :
-			&file==&backup ? bakname.c_str() : "unknown");
+			&file == &dbase ? dbname.c_str() :
+			&file == &backup ? bakname.c_str() : "unknown");
 	}
 #else
 	if (lseek(file, pos, SEEK_SET) == (off_t)-1)
 		b_error::raise("IO error (%d) seeking file: %s", 
 			errno,
-			&file==&dbase ? dbname.c_str() :
-			&file==&backup ? bakname.c_str() : "unknown");
+			&file == &dbase ? dbname.c_str() :
+			&file == &backup ? bakname.c_str() : "unknown");
 #endif
 }
 
-void nbackup::open_database_write() {
+void nbackup::open_database_write()
+{
 #ifdef WIN_NT
 	dbase = CreateFile(dbname.c_str(), GENERIC_READ | GENERIC_WRITE, 
 		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 
@@ -284,7 +285,8 @@ void nbackup::open_database_write() {
 #endif
 }
 
-void nbackup::open_database_scan() {
+void nbackup::open_database_scan()
+{
 #ifdef WIN_NT
 	dbase = CreateFile(dbname.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 
 		NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
@@ -297,7 +299,8 @@ void nbackup::open_database_scan() {
 #endif
 }
 
-void nbackup::create_database() {
+void nbackup::create_database()
+{
 #ifdef WIN_NT
 	dbase = CreateFile(dbname.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_DELETE, 
 		NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
@@ -310,7 +313,8 @@ void nbackup::create_database() {
 #endif
 }
 
-void nbackup::close_database() {
+void nbackup::close_database()
+{
 #ifdef WIN_NT
 	CloseHandle(dbase);
 #else
@@ -318,7 +322,8 @@ void nbackup::close_database() {
 #endif
 }
 
-void nbackup::open_backup_scan() {
+void nbackup::open_backup_scan()
+{
 #ifdef WIN_NT
 	backup = CreateFile(bakname.c_str(), GENERIC_READ, 0, 
 		NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
@@ -331,7 +336,8 @@ void nbackup::open_backup_scan() {
 #endif
 }
 
-void nbackup::create_backup() {
+void nbackup::create_backup()
+{
 #ifdef WIN_NT
 	if (bakname == "stdout") {
 		backup = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -354,8 +360,10 @@ void nbackup::create_backup() {
 #endif
 }
 
-void nbackup::close_backup() {
-	if (bakname == "stdout") return;
+void nbackup::close_backup()
+{
+	if (bakname == "stdout")
+		return;
 #ifdef WIN_NT
 	CloseHandle(backup);
 #else
@@ -363,7 +371,8 @@ void nbackup::close_backup() {
 #endif
 }
 
-void nbackup::fixup_database() {
+void nbackup::fixup_database()
+{
 	open_database_write();
 	header_page header;
 	if (read_file(dbase, &header, sizeof(header)) != sizeof(header))
@@ -395,12 +404,14 @@ void nbackup::pr_error (const ISC_STATUS* status, const char* operation)
 	b_error::raise("Database error");
 }
 
-void nbackup::attach_database() {
+void nbackup::attach_database()
+{
     if (isc_attach_database(status, 0, database, &newdb, 0, NULL))
         pr_error(status, "attach database");
 }
 
-void nbackup::detach_database() {
+void nbackup::detach_database()
+{
 	if (trans) {
 		if (isc_rollback_transaction(status, &trans))
 			pr_error(status, "rollback transaction");
@@ -409,7 +420,8 @@ void nbackup::detach_database() {
 		pr_error(status, "detach database");
 }
 
-void nbackup::internal_lock_database() {
+void nbackup::internal_lock_database()
+{
     if (isc_start_transaction(status, &trans, 1, &newdb, 0, NULL))
 		pr_error(status, "start transaction");
 	if (isc_dsql_execute_immediate(status, &newdb, &trans, 0, 
@@ -419,7 +431,8 @@ void nbackup::internal_lock_database() {
 		pr_error(status, "begin backup: commit");
 }
 
-void nbackup::internal_unlock_database() {
+void nbackup::internal_unlock_database()
+{
     if (isc_start_transaction(status, &trans, 1, &newdb, 0, NULL))
 		pr_error(status, "start transaction");
 	if (isc_dsql_execute_immediate(status, &newdb, &trans, 0, 
@@ -429,7 +442,8 @@ void nbackup::internal_unlock_database() {
 		pr_error(status, "end backup: commit");
 }
 
-void nbackup::lock_database() {
+void nbackup::lock_database()
+{
 	attach_database();
 	try {
 		internal_lock_database();
@@ -443,7 +457,8 @@ void nbackup::lock_database() {
 	detach_database();
 }
 
-void nbackup::unlock_database() {
+void nbackup::unlock_database()
+{
 	attach_database();
 	try {
 		internal_unlock_database();
@@ -457,7 +472,8 @@ void nbackup::unlock_database() {
 	detach_database();
 }
 
-void nbackup::backup_database(int level, const char* fname) {
+void nbackup::backup_database(int level, const char* fname)
+{
 	bool database_locked = false;
 	// We set this flag when backup file is in inconsistent state
 	bool delete_backup = false;
@@ -517,7 +533,7 @@ void nbackup::backup_database(int level, const char* fname) {
 		database_locked = true;	
 
 		time_t _time = time(NULL);
-		struct tm *today = localtime(&_time);
+		const struct tm *today = localtime(&_time);
 	
 		if (fname)
 			bakname = fname;
@@ -529,7 +545,7 @@ void nbackup::backup_database(int level, const char* fname) {
 			SNPRINTF(temp, sizeof(temp), "%s-%d-%04d%02d%02d-%02d%02d", fil.c_str(), level,
 				today->tm_year + 1900, today->tm_mon+1, today->tm_mday,
 				today->tm_hour, today->tm_min);
-			temp[sizeof(temp)-1] = 0;
+			temp[sizeof(temp) - 1] = 0;
 			bakname = temp;
 			printf("%s", bakname.c_str()); // Print out generated filename for script processing
 		}
@@ -592,7 +608,7 @@ void nbackup::backup_database(int level, const char* fname) {
 	
 	
 		// Write data to backup file
-		ULONG backup_scn = header.hdr_header.pag_scn - 1;
+		ULONG backup_scn = header.pag_scn - 1;
 		if (level) {
 			inc_header bh;
 			memcpy(bh.signature, backup_signature, sizeof(backup_signature));
@@ -697,7 +713,8 @@ void nbackup::backup_database(int level, const char* fname) {
 	detach_database();
 }
 
-void nbackup::restore_database(int filecount, const char* const* files) {
+void nbackup::restore_database(int filecount, const char* const* files)
+{
 	// We set this flag when database file is in inconsistent state
 	bool delete_database = false; 
 #ifndef WIN_NT

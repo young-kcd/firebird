@@ -24,20 +24,23 @@
 #ifndef REMOTE_ALLR_PROTO_H
 #define REMOTE_ALLR_PROTO_H
 
+struct blk;
+struct rem_vec;
+
 #ifdef DEBUG_GDS_ALLOC
 #define ALLR_alloc(s)	  ALLR_alloc_debug((s),(TEXT*)__FILE__,(ULONG)__LINE__)
 #define ALLR_block(s, sz) ALLR_block_debug((s), (sz), (TEXT*)__FILE__,(ULONG)__LINE__)
-UCHAR*		ALLR_alloc_debug(ULONG, const TEXT*, ULONG);
-struct blk*	ALLR_block_debug(UCHAR, ULONG, const TEXT*, ULONG);
+UCHAR*	ALLR_alloc_debug(ULONG, const TEXT*, ULONG);
+blk*	ALLR_block_debug(UCHAR, ULONG, const TEXT*, ULONG);
 #else  //DEBUG_GDS_ALLOC
-UCHAR*		ALLR_alloc(ULONG);
-struct blk*	ALLR_block(UCHAR, ULONG);
+UCHAR*	ALLR_alloc(ULONG);
+blk*	ALLR_block(UCHAR, ULONG);
 #endif //DEBUG_GDS_ALLOC
 
-struct blk*	ALLR_clone(struct blk *);
-void		ALLR_free (void *);
-void		ALLR_release (void *);
-struct rem_vec*	ALLR_vector (struct rem_vec**, ULONG);
+blk*	ALLR_clone(blk*);
+void	ALLR_free (void *);
+void	ALLR_release (void *);
+rem_vec*	ALLR_vector (rem_vec**, ULONG);
 
 #endif // REMOTE_ALLR_PROTO_H
 

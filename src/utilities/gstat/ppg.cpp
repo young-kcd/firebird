@@ -57,7 +57,7 @@
 
 void PPG_print_header(const header_page* header, SLONG page,
 #ifdef SUPERSERVER
-					  svc* outfile)
+					  Service* outfile)
 #else
 					  IB_FILE* outfile)
 #endif
@@ -84,11 +84,11 @@ void PPG_print_header(const header_page* header, SLONG page,
 
 
 	if (page == HEADER_PAGE) {
-		FPRINTF(outfile, "\tFlags\t\t\t%d\n", header->hdr_header.pag_flags);
+		FPRINTF(outfile, "\tFlags\t\t\t%d\n", header->pag_flags);
 		FPRINTF(outfile, "\tChecksum\t\t%d\n",
-				header->hdr_header.pag_checksum);
+				header->pag_checksum);
 		FPRINTF(outfile, "\tGeneration\t\t%"ULONGFORMAT"\n",
-				header->hdr_header.pag_generation);
+				header->pag_generation);
 		FPRINTF(outfile, "\tPage size\t\t%d\n", header->hdr_page_size);
 		FPRINTF(outfile, "\tODS version\t\t%d.%d\n", header->hdr_ods_version,
 				header->hdr_ods_minor);
@@ -285,7 +285,7 @@ void PPG_print_header(const header_page* header, SLONG page,
 
 void PPG_print_log(const log_info_page* logp, SLONG page,
 #ifdef SUPERSERVER
-				   svc* outfile)
+				   Service* outfile)
 #else
 				   IB_FILE* outfile)
 #endif
@@ -300,14 +300,6 @@ void PPG_print_log(const log_info_page* logp, SLONG page,
  *	Print log page information
  *
  **************************************/
-	SLONG ltemp;
-	SSHORT stemp;
-	USHORT ustemp;
-	struct tm time;
-	TEXT temp[257];
-
-	const UCHAR* p = logp->log_data;
-
 	if (page == LOG_PAGE)
 		FPRINTF(outfile, "Database log page information:\n");
 	else
@@ -326,6 +318,7 @@ void PPG_print_log(const log_info_page* logp, SLONG page,
 		}
 		else
 		{
+			struct tm time;
 			isc_decode_date(reinterpret_cast<const ISC_QUAD*>(logp->log_creation_date),
 								&time);
 			FPRINTF(outfile,
@@ -347,9 +340,15 @@ void PPG_print_log(const log_info_page* logp, SLONG page,
 	FPRINTF(outfile, "\tClumplet End\t%d\n", logp->log_end);
 #endif
 
+	/* Firebird doesn't pay attention to this legacy WAL/JOURNAL data.
 	FPRINTF(outfile, "\n    Variable log data:\n");
 
-	for (p = logp->log_data; *p != HDR_end; p += 2 + p[1]) {
+	SLONG ltemp;
+	SSHORT stemp;
+	USHORT ustemp;
+	TEXT temp[257];
+
+	for (const UCHAR* p = logp->log_data; *p != HDR_end; p += 2 + p[1]) {
 		switch (*p) {
 		case LOG_ctrl_file1:
 			FPRINTF(outfile, "\tControl Point 1:\n");
@@ -420,6 +419,7 @@ void PPG_print_log(const log_info_page* logp, SLONG page,
 			break;
 		}
 	}
+	*/
 	FPRINTF(outfile, "\t*END*\n");
 }
 

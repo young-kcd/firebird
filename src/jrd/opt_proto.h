@@ -36,11 +36,15 @@ class jrd_nod;
 bool OPT_access_path(const jrd_req*, SCHAR*, SSHORT, USHORT*);
 class Rsb* OPT_compile(thread_db*, class Csb *,
 							   class rse*, class lls*);
+							   
+// Begin only exported for VMS
 jrd_nod* OPT_make_dbkey(struct opt *, jrd_nod*,
 								  USHORT);
 jrd_nod* OPT_make_index(thread_db*, struct opt *, jrd_rel*,
 								  struct idx *);
 int OPT_match_index(struct opt *, USHORT, struct idx *);
+// End only exported for VMS
+
 void OPT_set_index(thread_db*, jrd_req *, class Rsb **, jrd_rel*,
 						  struct idx *);
 

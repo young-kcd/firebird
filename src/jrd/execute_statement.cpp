@@ -47,7 +47,7 @@
 #include "../jrd/execute_statement.h"
 
 WHY_DBB GetWhyAttachment(ISC_STATUS* status,
-						  class att* jrd_attachment_handle);
+						  Attachment* jrd_attachment_handle);
 
 const static struct {
 	SSHORT SqlType;

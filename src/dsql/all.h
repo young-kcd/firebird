@@ -27,6 +27,8 @@
 #include "../common/classes/alloc.h"
 #include "../jrd/block_cache.h"
 
+struct blk;
+
 class DsqlMemoryPool : public MemoryPool
 {
 protected:
@@ -38,8 +40,8 @@ public:
 	
 	static void deletePool(DsqlMemoryPool* pool);
 
-	static class blk* ALLD_pop(class dsql_lls**);
-	static void ALLD_push(class blk*, class dsql_lls**);
+	static blk* ALLD_pop(class dsql_lls**);
+	static void ALLD_push(blk*, class dsql_lls**);
 
 private:
 	BlockCache<class dsql_lls> lls_cache;  // Was plb_lls

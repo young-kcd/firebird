@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.57 2004-03-11 05:03:57 robocop Exp $
+$Id: blb.cpp,v 1.58 2004-03-18 05:55:20 robocop Exp $
 */
 
 #include "firebird.h"
@@ -263,7 +263,7 @@ blb* BLB_create2(thread_db* tdbb,
 /* Set up for a "small" blob -- a blob that fits on an ordinary data page */
 
 	blob_page* page = (blob_page*) blob->blb_data;
-	page->blp_header.pag_type = pag_blob;
+	page->pag_type = pag_blob;
 	blob->blb_segment = (UCHAR *) page->blp_page;
 
 /* Format blob id and return blob handle */
@@ -306,7 +306,7 @@ void BLB_garbage_collect(
 /* Loop thru records on the way out looking for blobs to garbage collect */
 
 	for (lls* stack1 = going; stack1; stack1 = stack1->lls_next) {
-		rec* rec1 = (REC) stack1->lls_object;
+		Record* rec1 = (Record*) stack1->lls_object;
 		if (!rec1)
 			continue;
 		const fmt* format = (fmt*) rec1->rec_format;
@@ -325,7 +325,7 @@ void BLB_garbage_collect(
 
 			lls* stack2;
 			for (stack2 = stack1->lls_next; stack2; stack2 = stack2->lls_next) {
-				rec* rec2 = (REC) stack2->lls_object;
+				Record* rec2 = (Record*) stack2->lls_object;
 				if (!EVL_field(0, rec2, id, &desc2))
 					continue;
 				const bid* blob2 = (bid*) desc2.dsc_address;
@@ -339,7 +339,7 @@ void BLB_garbage_collect(
 			/* Make sure the blob doesn't stack in any record remaining */
 
 			for (stack2 = staying; stack2; stack2 = stack2->lls_next) {
-				rec* rec2 = (REC) stack2->lls_object;
+				Record* rec2 = (Record*) stack2->lls_object;
 				if (!EVL_field(0, rec2, id, &desc2))
 					continue;
 				const bid* blob2 = (bid*) desc2.dsc_address;
@@ -851,9 +851,9 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	bid* source = (bid*) from_desc->dsc_address;
 	bid* destination = (bid*) to_desc->dsc_address;
 	const USHORT id = (USHORT) (IPTR) field->nod_arg[e_fld_id];
-	RPB* rpb = &request->req_rpb[(IPTR)field->nod_arg[e_fld_stream]];
+	record_param* rpb = &request->req_rpb[(IPTR)field->nod_arg[e_fld_stream]];
 	jrd_rel* relation = rpb->rpb_relation;
-	rec* record = rpb->rpb_record;
+	Record* record = rpb->rpb_record;
 
 /* If nothing changed, do nothing.  If it isn't broken,
    don't fix it. */
@@ -2209,8 +2209,8 @@ static void insert_page(thread_db* tdbb, blb* blob)
 
 		blob->blb_level = 2;
 		page = (blob_page*) DPM_allocate(tdbb, &window);
-		page->blp_header.pag_flags = blp_pointers;
-		page->blp_header.pag_type = pag_blob;
+		page->pag_flags = blp_pointers;
+		page->pag_type = pag_blob;
 		page->blp_lead_page = blob->blb_lead_page;
 		page->blp_length = vector->count() << SHIFTLONG;
 		MOVE_FASTER(vector->memPtr(), page->blp_page, page->blp_length);
@@ -2231,8 +2231,8 @@ static void insert_page(thread_db* tdbb, blb* blob)
 	}
 	else {
 		page = (blob_page*) DPM_allocate(tdbb, &window);
-		page->blp_header.pag_flags = blp_pointers;
-		page->blp_header.pag_type = pag_blob;
+		page->pag_flags = blp_pointers;
+		page->pag_type = pag_blob;
 		page->blp_lead_page = blob->blb_lead_page;
 		vector->resize(l + 1);
 		(*vector)[l] = window.win_page;

@@ -122,7 +122,7 @@
 #endif
 
 static void close_marker_file(TEXT *);
-static jrd_file* seek_file(jrd_file*, Buffer_desc*, UINT64 *, ISC_STATUS *);
+static jrd_file* seek_file(jrd_file*, BufferDesc*, UINT64 *, ISC_STATUS *);
 static jrd_file* setup_file(Database*, const TEXT*, USHORT, int);
 static bool unix_error(TEXT*, jrd_file*, ISC_STATUS, ISC_STATUS*);
 #if defined PREAD_PWRITE && !(defined HAVE_PREAD && defined HAVE_PWRITE)
@@ -678,7 +678,7 @@ jrd_file* PIO_open(Database* dbb,
 }
 
 
-bool PIO_read(jrd_file* file, Buffer_desc* bdb, PAG page, ISC_STATUS* status_vector)
+bool PIO_read(jrd_file* file, BufferDesc* bdb, PAG page, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -771,7 +771,7 @@ bool PIO_read(jrd_file* file, Buffer_desc* bdb, PAG page, ISC_STATUS* status_vec
 }
 
 
-bool PIO_write(jrd_file* file, Buffer_desc* bdb, PAG page, ISC_STATUS* status_vector)
+bool PIO_write(jrd_file* file, BufferDesc* bdb, PAG page, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -865,18 +865,18 @@ static void close_marker_file(TEXT * marker_filename)
  *
  ***************************************/
 	TEXT fildes_str[5], marker_file_path[MAXPATHLEN];
-	IB_FILE *fp;
-	int fd;
 
 /* Open the marker file and save the marker_file_path for later. */
 
-	if ((fp = ib_fopen(marker_filename, "r")) == NULL)
+	IB_FILE* fp = ib_fopen(marker_filename, "r");
+	if (fp == NULL)
 		return;
 	if (ib_fgets(marker_file_path, sizeof(marker_file_path), fp) == NULL)
 		return;
 
 /* Read the fildes string, convert it into a file descriptor and close. */
 
+	int fd;
 	while (ib_fgets(fildes_str, sizeof(fildes_str), fp) != NULL) {
 		sscanf(fildes_str, "%d", &fd);
 		close(fd);
@@ -893,7 +893,7 @@ static void close_marker_file(TEXT * marker_filename)
 #endif
 
 
-static jrd_file* seek_file(jrd_file* file, Buffer_desc* bdb, UINT64* offset,
+static jrd_file* seek_file(jrd_file* file, BufferDesc* bdb, UINT64* offset,
 	ISC_STATUS* status_vector)
 {
 /**************************************
@@ -907,8 +907,6 @@ static jrd_file* seek_file(jrd_file* file, Buffer_desc* bdb, UINT64* offset,
  *	file block and seek to the proper page in that file.
  *
  **************************************/
-    UINT64 lseek_offset;
-
 	Database* dbb = bdb->bdb_dbb;
 	ULONG page = bdb->bdb_page;
 
@@ -930,7 +928,7 @@ static jrd_file* seek_file(jrd_file* file, Buffer_desc* bdb, UINT64* offset,
 
 	page -= file->fil_min_page - file->fil_fudge;
 
-    lseek_offset = page;
+    UINT64 lseek_offset = page;
     lseek_offset *= dbb->dbb_page_size;
 
     if (lseek_offset != (UINT64) LSEEK_OFFSET_CAST lseek_offset)
@@ -969,9 +967,6 @@ static jrd_file* setup_file(Database* dbb, const TEXT* file_name, USHORT file_le
  *	Set up file and lock blocks for a file.
  *
  **************************************/
-	UCHAR *p, *q, lock_string[32];
-	USHORT l;
-	struct stat statistics;
 
 /* Allocate file block and copy file name string */
 
@@ -992,24 +987,26 @@ static jrd_file* setup_file(Database* dbb, const TEXT* file_name, USHORT file_le
 
 /* Build unique lock string for file and construct lock block */
 
+	struct stat statistics;
 	fstat(desc, &statistics);
-	p = lock_string;
+	UCHAR lock_string[32];
+	UCHAR* p = lock_string;
 
-	q = (UCHAR *) & statistics.st_dev;
-	l = sizeof(statistics.st_dev);
-	do
+	const UCHAR* q = (UCHAR *) & statistics.st_dev;
+	USHORT l = sizeof(statistics.st_dev);
+	do {
 		*p++ = *q++;
-	while (--l);
+	} while (--l);
 
 	q = (UCHAR *) & statistics.st_ino;
 	l = sizeof(statistics.st_ino);
-	do
+	do {
 		*p++ = *q++;
-	while (--l);
+	} while (--l);
 
 	l = p - lock_string;
 
-	lck* lock = FB_NEW_RPT(*dbb->dbb_permanent, l) lck();
+	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, l) Lock();
 	dbb->dbb_lock = lock;
 	lock->lck_type = LCK_database;
 	lock->lck_owner_handle = LCK_get_owner_handle(NULL, lock->lck_type);
@@ -1256,7 +1253,6 @@ raw_devices_validate_database (
  **************************************/
 	char header[MIN_PAGE_SIZE];
 	header_page* hp = (header_page*)header;
-	ssize_t bytes;
 	BOOLEAN retval = FALSE;
 	int i;
 
@@ -1276,7 +1272,8 @@ raw_devices_validate_database (
 						isc_arg_string, ERR_string (file_name, file_length),
 						isc_arg_gds, isc_io_read_err,
 						isc_arg_unix, errno, 0);
-		if ((bytes = read (desc, header, sizeof(header))) == sizeof(header))
+		const ssize_t bytes = read (desc, header, sizeof(header));
+		if (bytes == sizeof(header))
 			goto read_finished;
 		if (bytes == -1 && !SYSCALL_INTERRUPTED(errno))
 			ERR_post (isc_io_error,
@@ -1302,7 +1299,7 @@ raw_devices_validate_database (
 					isc_arg_unix, errno, 0);
 
 	/* Validate database header. Code lifted from PAG_header. */
-	if (hp->hdr_header.pag_type != pag_header /*|| hp->hdr_sequence*/)
+	if (hp->pag_type != pag_header /*|| hp->hdr_sequence*/)
 		goto quit;
 
 #ifdef ODS_8_TO_CURRENT

@@ -71,7 +71,8 @@ class CharArrayDelete
 public:
 	static void clear(What *ptr)
 	{
-		delete reinterpret_cast<char*>(ptr);
+		char* p = reinterpret_cast<char*>(ptr);
+		delete[] p;
 	}
 };
 	

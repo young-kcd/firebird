@@ -761,7 +761,8 @@ int ISC_expand_filename(const Firebird::PathName& file_name,
 
 	if ((file_name.length() >= 2) && 
 		((file_name[0] == '\\' && file_name[1] == '\\') ||
-		 (file_name[0] == '/' && file_name[1] == '/'))) {
+		 (file_name[0] == '/' && file_name[1] == '/')))
+	{
 		expanded_name = temp;
 
 		/* Translate forward slashes to back slashes */
@@ -778,7 +779,7 @@ int ISC_expand_filename(const Firebird::PathName& file_name,
 			return expanded_name.length();
 		device = temp[0];
 		device += ":\\";
-		USHORT dtype = GetDriveType(device.c_str());
+		const USHORT dtype = GetDriveType(device.c_str());
 		if (dtype <= 1)
 			return expanded_name.length();
 		
@@ -1087,9 +1088,9 @@ static int expand_filename2(const Firebird::PathName& from_buff, Firebird::PathN
 		string q;
 		while (*from && *from != '/')
 			q += *from++;
-		struct passwd* password = q ? getpwnam(q.c_str()) : getpwuid(geteuid());
+		const struct passwd* password =
+			q ? getpwnam(q.c_str()) : getpwuid(geteuid());
 		if (password) {
-			string temp;
 			expand_filename2(password->pw_dir, to_buff);
 		}
 	}
@@ -1126,7 +1127,7 @@ static int expand_filename2(const Firebird::PathName& from_buff, Firebird::PathN
 			if (*++from == '.') {
 				++from;
 				if (to_buff.length() > 2) {
-					size slash = to_buff.rfind('/', to_buff.length() - 2);
+					const size slash = to_buff.rfind('/', to_buff.length() - 2);
 					to_buff = slash != npos ? to_buff.substr(0, slash + 1) : "/";
 				}
 			}
@@ -1134,14 +1135,14 @@ static int expand_filename2(const Firebird::PathName& from_buff, Firebird::PathN
 		}
 
 		// Copy the rest of the segment name
-		int segment = to_buff.length();
+		const int segment = to_buff.length();
 		while (*from && *from != '/') {
 			to_buff += *from++;
 		}
 
 		// If the file is local, check for a symbol link
 		TEXT temp[MAXPATHLEN];
-		int n = readlink(to_buff.c_str(), temp, MAXPATHLEN);
+		const int n = readlink(to_buff.c_str(), temp, MAXPATHLEN);
 		if (n < 0)
 			continue;
 
@@ -1262,10 +1263,11 @@ static void expand_share_name(Firebird::PathName& share_name)
 }
 
 static bool get_full_path(const Firebird::PathName& part, 
-						  Firebird::PathName& full) {
+						  Firebird::PathName& full)
+{
 	TEXT buf[MAXPATHLEN];
 	TEXT *p;
-	int l = GetFullPathName(part.c_str(), MAXPATHLEN, buf, &p);
+	const int l = GetFullPathName(part.c_str(), MAXPATHLEN, buf, &p);
 	if (l && l < MAXPATHLEN) {
 		full = buf;
 		return true;

@@ -57,7 +57,7 @@
 int debug;
 #endif
 
-extern int *dbt_blocks[], dbt_window[], dbt_rpb[];
+extern int *dbt_blocks[], dbt_window[], dbt_record_param[];
 extern SLONG gds_delta_alloc, gds_max_alloc;
 
 typedef int (*DBG_PFN_V) ();
@@ -72,7 +72,7 @@ int (*dbg_close) () = DBG_close;
 int (*dbg_pool) (JrdMemoryPool*) = DBG_pool;
 int (*dbg_pretty) (const jrd_nod*, int) = DBG_pretty;
 int (*dbg_window) (int *) = DBG_window;
-int (*dbg_rpb) (rpb *) = DBG_rpb;
+int (*dbg_rpb) (record_param*) = DBG_rpb;
 static int (*dbg_bdbs) () = DBG_bdbs;
 int (*dbg_examine) (int *) = DBG_examine;
 int (*dbg_check) (int) = DBG_check;
@@ -310,7 +310,7 @@ int DBG_bdbs(void)
  **************************************/
 	Database* dbb = GET_DBB;
 
-	BCB bcb = dbb->dbb_bcb;
+	BufferControl* bcb = dbb->dbb_bcb;
 	for (unsigned int i = 0; i < bcb->bcb_count; i++)
 		DBG_block(bcb->bcb_rpt[i].bcb_bdb);
 
@@ -331,16 +331,16 @@ int DBG_precedence(void)
  **************************************/
 	QUE que;
 	Precedence* precedence;
-	Buffer_desc* hi_bdb;
-	Buffer_desc* lo_bdb;
+	BufferDesc* hi_bdb;
+	BufferDesc* lo_bdb;
 
 	Database* dbb = GET_DBB;
 
-	BCB bcb = dbb->dbb_bcb;
+	BufferControl* bcb = dbb->dbb_bcb;
 	for (unsigned int i = 0; i < bcb->bcb_count; i++) {
-		const Buffer_desc* bdb = bcb->bcb_rpt[i].bcb_bdb;
+		const BufferDesc* bdb = bcb->bcb_rpt[i].bcb_bdb;
 		if (bdb->bdb_flags || bdb->bdb_ast_flags) {
-			ib_fprintf(dbg_file, "Buffer_desc %d:\tpage %"SLONGFORMAT"", i, bdb->bdb_page);
+			ib_fprintf(dbg_file, "BufferDesc %d:\tpage %"SLONGFORMAT"", i, bdb->bdb_page);
 			if (bdb->bdb_flags & BDB_dirty)
 				ib_fprintf(dbg_file, ", dirty");
 			if (bdb->bdb_ast_flags & BDB_blocking)
@@ -480,25 +480,25 @@ int DBG_block(BLK block)
 		break;
 
 	case type_bcb:
-		prt_que("Empty", &BLOCK(BCB)->bcb_empty);
-		for (i = 0; i < BLOCK(BCB)->bcb_count; i++) {
+		prt_que("Empty", &BLOCK(BufferControl*)->bcb_empty);
+		for (i = 0; i < BLOCK(BufferControl*)->bcb_count; i++) {
 			sprintf(s, "mod %d", i);
-			prt_que(s, &BLOCK(BCB)->bcb_rpt[i].bcb_page_mod);
+			prt_que(s, &BLOCK(BufferControl*)->bcb_rpt[i].bcb_page_mod);
 		}
 		break;
 
 	case type_bdb:
 		ib_fprintf(dbg_file,
 				   "\tUse count: %d, page: %d, flags: %x, ast flags: %x\n",
-				   ((Buffer_desc*) block)->bdb_use_count, ((Buffer_desc*) block)->bdb_page,
-				   ((Buffer_desc*) block)->bdb_flags, ((Buffer_desc*) block)->bdb_ast_flags);
+				   ((BufferDesc*) block)->bdb_use_count, ((BufferDesc*) block)->bdb_page,
+				   ((BufferDesc*) block)->bdb_flags, ((BufferDesc*) block)->bdb_ast_flags);
 		ib_fprintf(dbg_file,
 				   "\tParent: %X, left: %X, right: %X, dirty mask: %X\n",
-				   ((Buffer_desc*) block)->bdb_parent, ((Buffer_desc*) block)->bdb_left,
-				   ((Buffer_desc*) block)->bdb_right, ((Buffer_desc*) block)->bdb_transactions);
-		prt_que("Que", &BLOCK(Buffer_desc*)->bdb_que);
-		prt_que("Higher", &BLOCK(Buffer_desc*)->bdb_higher);
-		prt_que("Lower", &BLOCK(Buffer_desc*)->bdb_lower);
+				   ((BufferDesc*) block)->bdb_parent, ((BufferDesc*) block)->bdb_left,
+				   ((BufferDesc*) block)->bdb_right, ((BufferDesc*) block)->bdb_transactions);
+		prt_que("Que", &BLOCK(BufferDesc*)->bdb_que);
+		prt_que("Higher", &BLOCK(BufferDesc*)->bdb_higher);
+		prt_que("Lower", &BLOCK(BufferDesc*)->bdb_lower);
 		break;
 
 	case type_pre:
@@ -885,7 +885,7 @@ int DBG_supervisor(int arg)
 }
 
 
-int DBG_rpb(RPB * rpb)
+int DBG_rpb(record_param* rpb)
 {
 /**************************************
  *
@@ -898,13 +898,13 @@ int DBG_rpb(RPB * rpb)
  *
  **************************************/
 	ib_fprintf(dbg_file, "\n%X\tRECORD PARAMETER BLOCK", rpb);
-	prt_fields(reinterpret_cast<char*>(rpb), dbt_rpb);
+	prt_fields(reinterpret_cast<char*>(rpb), dbt_record_param);
 	DBG_window(reinterpret_cast<int*>(&rpb->rpb_window));
 	return TRUE;
 }
 
 
-int DBG_smb(SMB smb, int column)
+int DBG_smb(SortMap* smb, int column)
 {
 /**************************************
  *
@@ -913,13 +913,13 @@ int DBG_smb(SMB smb, int column)
  **************************************
  *
  * Functional description
- *	Pretty print an smb (Sort Memory Block)
+ *	Pretty print an SortMap (Sort Memory Block)
  *
  **************************************/
 	int i;
 
 	go_column(column);
-	ib_fprintf(dbg_file, "SMB\n");
+	ib_fprintf(dbg_file, "SortMap\n");
 	go_column(column);
 	ib_fprintf(dbg_file,
 			   "keys = %d, count = %d length = %d, key_length = %d\n",

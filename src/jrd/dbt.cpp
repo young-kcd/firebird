@@ -70,29 +70,28 @@ typedef SCHAR* TEXT_PTR;
 int* ptr;
 
 TEXT_PTR dbt_window[] = {
-	FLD(WIN *, "Page: %ld", win_page),
-	FLD(WIN *, "Buffer: %x", win_buffer),
-	FLD(WIN *, "Buffer_desc: %x", win_bdb),
-	FLD(WIN *, "Scans: %d", win_scans),
-	FLD(WIN *, "Flags: %x", win_flags),
+	FLD(WIN*, "Page: %ld", win_page),
+	FLD(WIN*, "Buffer: %x", win_buffer),
+	FLD(WIN*, "BufferDesc: %x", win_bdb),
+	FLD(WIN*, "Scans: %d", win_scans),
+	FLD(WIN*, "Flags: %x", win_flags),
 	0
 },
-dbt_rpb[] = {
-
-	FLD(RPB *, "Relation %x", rpb_relation),
-	FLD(RPB *, "Number %ld", rpb_number),
-	FLD(RPB *, "Trans %ld", rpb_transaction),
-	FLD(RPB *, "Page %ld", rpb_page),
-	FLD(RPB *, "Line %x", rpb_line),
-	FLD(RPB *, "Back page %ld", rpb_b_page),
-	FLD(RPB *, "Line %x", rpb_b_line),
-	FLD(RPB *, "Fragment page %ld", rpb_f_page),
-	FLD(RPB *, "Line %x", rpb_f_line),
-	FLD(RPB *, "Format %x", rpb_format_number),
-	FLD(RPB *, "Address: %x ", rpb_address),
-	FLD(RPB *, "Length %x", rpb_length),
-	FLD(RPB *, "Record %x", rpb_record),
-	FLD(RPB *, "Flags %x", rpb_flags),
+dbt_record_param[] = {
+	FLD(record_param*, "Relation %x", rpb_relation),
+	FLD(record_param*, "Number %ld", rpb_number),
+	FLD(record_param*, "Trans %ld", rpb_transaction_nr),
+	FLD(record_param*, "Page %ld", rpb_page),
+	FLD(record_param*, "Line %x", rpb_line),
+	FLD(record_param*, "Back page %ld", rpb_b_page),
+	FLD(record_param*, "Line %x", rpb_b_line),
+	FLD(record_param*, "Fragment page %ld", rpb_f_page),
+	FLD(record_param*, "Line %x", rpb_f_line),
+	FLD(record_param*, "Format %x", rpb_format_number),
+	FLD(record_param*, "Address: %x ", rpb_address),
+	FLD(record_param*, "Length %x", rpb_length),
+	FLD(record_param*, "Record %x", rpb_record),
+	FLD(record_param*, "Flags %x", rpb_flags),
 	0
 };
 
@@ -145,35 +144,35 @@ vcl[] = {
 		0
 };*/
 
-static TEXT_PTR bcb[] = {
+static TEXT_PTR BufferControl[] = {
 	"BUFFER CONTROL",
-		FLD(BCB, "Count: %x", bcb_count),
+		FLD(BufferControl*, "Count: %x", bcb_count),
 		0
 },
-bdb[] = {
+BufferDesc[] = {
 	"BUFFER DESCRIPTOR",
-		FLD(Buffer_desc*, "Page: %ld", bdb_page),
-		FLD(Buffer_desc*, "Lock: %x", bdb_lock),
-		FLD(Buffer_desc*, "Buffer: %x", bdb_buffer),
-		FLD(Buffer_desc*, "Use count: %x", bdb_use_count),
-		FLD(Buffer_desc*, "Flags: %x", bdb_flags),
+		FLD(BufferDesc*, "Page: %ld", bdb_page),
+		FLD(BufferDesc*, "Lock: %x", bdb_lock),
+		FLD(BufferDesc*, "Buffer: %x", bdb_buffer),
+		FLD(BufferDesc*, "Use count: %x", bdb_use_count),
+		FLD(BufferDesc*, "Flags: %x", bdb_flags),
 		0
 },
-pre[] = {
+Precedence[] = {
 	"PRECEDENCE",
 		FLD(Precedence*, "Flags: %x", pre_flags),
 		FLD(Precedence*, "Low: %x", pre_low),
 		FLD(Precedence*, "High: %x", pre_hi),
 		0
 },
-lck[] = {
+Lock[] = {
 	"LOCK",
-		FLD(lck*, "Parent: %x", lck_parent),
-		FLD(lck*, "Object: %x", lck_object),
-		FLD(lck*, "Type: %x", lck_type),
-		FLD(lck*, "Physical: %x", lck_physical),
-		FLD(lck*, "Logical: %x", lck_logical),
-		FLD(lck*, "Length: %x", lck_length),
+		FLD(Lock*, "Parent: %x", lck_parent),
+		FLD(Lock*, "Object: %x", lck_object),
+		FLD(Lock*, "Type: %x", lck_type),
+		FLD(Lock*, "Physical: %x", lck_physical),
+		FLD(Lock*, "Logical: %x", lck_logical),
+		FLD(Lock*, "Length: %x", lck_length),
 		0
 },
 jrd_file[] = {
@@ -251,9 +250,9 @@ lls[] = {
 		FLD(LLS, "Next: %x", lls_next),
 		0
 },
-rec[] = {
+VerbAction[] = {
 	"RECORD",
-		FLD(REC, "Format: %x", rec_format),
+		FLD(Record*, "Format: %x", rec_format),
 		0
 },
 Rsb[] = {
@@ -271,17 +270,17 @@ opt[] = {
 		FLD(OPT, "Cnt: %x", opt_count),
 		0
 },
-bms[] = {
+BitmapSegment[] = {
 	"BIT MAP SEGMENT",
-		FLD(BMS, "Min: %x", bms_min),
-		FLD(BMS, "Max: %x", bms_max),
+		FLD(BitmapSegment*, "Min: %x", bms_min),
+		FLD(BitmapSegment*, "Max: %x", bms_max),
 		0
 },
-Deferred_work[] = {
+DeferredWork[] = {
 	"DEFERRED WORK BLOCK",
-		FLD(Deferred_work*, "type: %d", dfw_type),
-		FLD(Deferred_work*, "next: %x", dfw_next),
-		FLD(Deferred_work*, "name: %s", dfw_name),
+		FLD(DeferredWork*, "type: %d", dfw_type),
+		FLD(DeferredWork*, "next: %x", dfw_next),
+		FLD(DeferredWork*, "name: %s", dfw_name),
 		0
 },
 tfb[] = {
@@ -303,21 +302,21 @@ Dcc[] = {
 		FLD(Dcc*, "end: %x", dcc_end),
 		0
 },
-sbm[] = {
-	"SPARE BIT MAP",
-		FLD(SBM, "state: %d", sbm_state),
-		FLD(SBM, "count: %d", sbm_count),
-		FLD(SBM, "used: %d", sbm_used),
-		FLD(SBM, "high water: %d", sbm_high_water),
-		FLD(SBM, "number: %d", sbm_number),
+SparseBitmap[] = {
+	"SPARSE BIT MAP",
+		FLD(SparseBitmap*, "state: %d", sbm_state),
+		FLD(SparseBitmap*, "count: %d", sbm_count),
+		FLD(SparseBitmap*, "used: %d", sbm_used),
+		FLD(SparseBitmap*, "high water: %d", sbm_high_water),
+		FLD(SparseBitmap*, "number: %d", sbm_number),
 		0
 },
-smb[] = {
+SortMap[] = {
 	"SORT MAP",
-		FLD(SMB, "count: %d", smb_count),
-		FLD(SMB, "keys: %d", smb_keys),
-		FLD(SMB, "length: %d", smb_length),
-		FLD(SMB, "sort key: %x", smb_key_desc),
+		FLD(SortMap*, "count: %d", smb_count),
+		FLD(SortMap*, "keys: %d", smb_keys),
+		FLD(SortMap*, "length: %d", smb_length),
+		FLD(SortMap*, "sort key: %x", smb_key_desc),
 		0
 },
 blb[] = {
@@ -346,12 +345,12 @@ ctl[] = {
 
 static TEXT_PTR scl[] = {	"SECURITY CLASS", 0};
 static TEXT_PTR fld[] = {	"FIELD", 0};
-static TEXT_PTR ext[] = {	"EXTERNAL FILE", 0};
+static TEXT_PTR ExternalFile[] = {	"EXTERNAL FILE", 0};
 static TEXT_PTR mfb[] = {	"MERGE EQUIVALENCE FILE BLOCK", 0};
-static TEXT_PTR riv[] = {	"SORT MERGE RIVER", 0};
+static TEXT_PTR River[] = {	"SORT MERGE RIVER", 0};
 static TEXT_PTR plc[] = {	"PAGE/LOCK SERVER CONNECTION", 0};
 static TEXT_PTR usr[] = {	"USER IDENTIFICATION BLOCK ", 0};
-static TEXT_PTR att[] = {	"ATTACHMENT BLOCK", 0};
+static TEXT_PTR Attachment[] = {	"ATTACHMENT BLOCK", 0};
 static TEXT_PTR sym[] = {	"SYMBOL", 0};
 static TEXT_PTR fun[] = {	"FUNCTION", 0};
 static TEXT_PTR irl[] = {	"INDEXED RELATIONSHIP", 0};
@@ -359,13 +358,13 @@ static TEXT_PTR acc[] = {	"ACCESS", 0};
 static TEXT_PTR Resource[] = {	"RESOURCE", 0};
 static TEXT_PTR idl[] = {	"INDEX LOCK", 0};
 static TEXT_PTR Shadow[] = {	"SHADOW", 0};
-static TEXT_PTR sav[] = {	"SAVE POINT", 0};
-static TEXT_PTR vct[] = {	"VERB", 0};
-static TEXT_PTR btb[] = {	"BLOCKED THREAD", 0};
+static TEXT_PTR Savepoint[] = {	"SAVE POINT", 0};
+static TEXT_PTR VerbAction[] = {	"VERB", 0};
+static TEXT_PTR BlockingThread[] = {	"BLOCKED THREAD", 0};
 static TEXT_PTR blf[] = {	"BLOB FILTER", 0};
 static TEXT_PTR arr[] = {	"ARRAY DESCRIPTION", 0};
 static TEXT_PTR blb_map[] = {	"MAP BLOCK", 0};
-static TEXT_PTR log[] = {	"LOG BLOCK", 0};
+static TEXT_PTR fblog[] = {	"LOG BLOCK", 0};
 static TEXT_PTR dls[] = {	"DIR LIST BLOCK", 0};
 static TEXT_PTR jrd_prc[] =
 {
@@ -382,7 +381,7 @@ static TEXT_PTR xcp[] = {	"EXCEPTION LIST BLOCK", 0};
 static TEXT_PTR Opt[] = {	"OPTIMIZATION BLOCK", 0};
 static TEXT_PTR Prefetch[] = {	"PRF", 0};
 static TEXT_PTR rse[] = {	"RECORD SELECTION EXPRESSION", 0};
-static TEXT_PTR lit[] = {	"LITERAL", 0};
+static TEXT_PTR Literal[] = {	"LITERAL", 0};
 static TEXT_PTR asb[] = {	"ASB", 0};
 static TEXT_PTR srl[] = {	"SRL", 0};
 
@@ -436,9 +435,9 @@ static TEXT_PTR thread_db[] = {
 		FLD(thread_db*, "Default: %x", tdbb_default),
 		0
 };
-static TEXT_PTR svc[] =		{	"SERVICE MANAGER BLOCK", 0};
-static TEXT_PTR Latch_wait[] =		{	"LATCH WAIT BLOCK", 0};
-static TEXT_PTR vcx[] =		{	"VIEW CONTEXT BLOCK", 0};
+static TEXT_PTR Service[] =		{	"SERVICE MANAGER BLOCK", 0};
+static TEXT_PTR LatchWait[] =		{	"LATCH WAIT BLOCK", 0};
+static TEXT_PTR ViewContext[] =		{	"VIEW CONTEXT BLOCK", 0};
 static TEXT_PTR srpb[] =	{	"RPB BLOCK", 0};
 
 

@@ -108,13 +108,20 @@ typedef union {
 // fwd. decl.
 class vec;
 struct thread_db;
-class att;
+class Attachment;
 class jrd_tra;
 class jrd_req;
-class lck;
+class Lock;
 class jrd_file;
 class fmt;
 class jrd_nod;
+class BufferControl;
+class SparseBitmap;
+class BlockingThread;
+class str;
+class jrd_rel;
+class ExternalFile;
+class ViewContext;
 
 
 class Database : private pool_alloc<type_dbb>
@@ -142,17 +149,17 @@ public:
 	}
 	
 	Database*	dbb_next;		/* Next database block in system */
-	att *dbb_attachments;	/* Active attachments */
-	struct bcb *dbb_bcb;		/* Buffer control block */
+	Attachment* dbb_attachments;	/* Active attachments */
+	BufferControl*	dbb_bcb;		/* Buffer control block */
 	vec*		dbb_relations;	/* relation vector */
 	vec*		dbb_procedures;	/* scanned procedures */
-	lck* 		dbb_lock;		/* granddaddy lock */
+	Lock* 		dbb_lock;		/* granddaddy lock */
 	jrd_tra*	dbb_sys_trans;	/* system transaction */
 	jrd_file* dbb_file;		/* files for I/O operations */
 	class Shadow*	dbb_shadow;		/* shadow control block */
-	lck*		dbb_shadow_lock;	/* lock for synchronizing addition of shadows */
+	Lock*		dbb_shadow_lock;	/* lock for synchronizing addition of shadows */
 	SLONG dbb_shadow_sync_count;	/* to synchronize changes to shadows */
-	lck*		dbb_retaining_lock;	/* lock for preserving commit retaining snapshot */
+	Lock*		dbb_retaining_lock;	/* lock for preserving commit retaining snapshot */
 	struct plc *dbb_connection;	/* connection block */
 	struct pgc *dbb_pcontrol;	/* page control */
 	class vcl *dbb_t_pages;	/* pages number for transactions */
@@ -210,9 +217,9 @@ public:
 	event_t dbb_gc_event_init[1];	/* Event for initialization garbage collector */
 	event_t dbb_gc_event_fini[1];	/* Event for finalization garbage collector */
 #endif
-	att *dbb_update_attachment;	/* Attachment with update in process */
-	class btb *dbb_update_que;	/* Attachments waiting for update */
-	class btb *dbb_free_btbs;	/* Unused btb blocks */
+	Attachment* dbb_update_attachment;	/* Attachment with update in process */
+	BlockingThread*	dbb_update_que;	/* Attachments waiting for update */
+	BlockingThread*	dbb_free_btbs;	/* Unused BlockingThread blocks */
 
 	SLONG dbb_current_memory;
 	SLONG dbb_max_memory;
@@ -393,15 +400,15 @@ private:
 //
 // the attachment block; one is created for each attachment to a database
 //
-class att : public pool_alloc<type_att>
+class Attachment : public pool_alloc<type_att>
 {
 public:
-	att(Database* dbb) :
+	Attachment(Database* dbb) :
 		att_database(dbb), 
 		att_lc_messages(*dbb->dbb_permanent),
 		att_working_directory(*dbb->dbb_permanent), 
 		att_filename(*dbb->dbb_permanent) { }
-/*	att()
+/*	Attachment()
 	:	att_database(0),
 		att_next(0),
 		att_blocking(0),
@@ -433,14 +440,14 @@ public:
 	}*/
 
 	Database*	att_database;		// Parent databasea block
-	att*		att_next;			// Next attachment to database
-	att*		att_blocking;		// Blocking attachment, if any
+	Attachment*	att_next;			// Next attachment to database
+	Attachment*	att_blocking;		// Blocking attachment, if any
 	class usr*	att_user;			// User identification
 	jrd_tra*	att_transactions;	// Transactions belonging to attachment
 	jrd_tra*	att_dbkey_trans;	// transaction to control db-key scope
 	jrd_req*	att_requests;		// Requests belonging to attachment
 	struct scb*	att_active_sorts;	// Active sorts
-	lck*		att_id_lock;		// Attachment lock (if any)
+	Lock*		att_id_lock;		// Attachment lock (if any)
 	SLONG		att_attachment_id;	// Attachment ID
 	SLONG		att_lock_owner_handle;	// Handle for the lock manager
 	SLONG		att_event_session;	// Event session id, if any
@@ -449,20 +456,19 @@ public:
 	class vcl*	att_counts[DBB_max_count];
 	vec*		att_relation_locks;	// explicit persistent locks for relations
 	struct bkm*	att_bookmarks;		// list of bookmarks taken out using this attachment
-	lck*		att_record_locks;	// explicit or implicit record locks taken out during attachment
+	Lock*		att_record_locks;	// explicit or implicit record locks taken out during attachment
 	vec*		att_bkm_quick_ref;	// correspondence table of bookmarks
 	vec*		att_lck_quick_ref;	// correspondence table of locks
 	ULONG		att_flags;			// Flags describing the state of the attachment
 	SSHORT		att_charset;		// user's charset specified in dpb
 	Firebird::string	att_lc_messages;	// attachment's preference for message natural language
-	lck*		att_long_locks;		// outstanding two phased locks
+	Lock*		att_long_locks;		// outstanding two phased locks
 	vec*		att_compatibility_table;	// hash table of compatible locks
 	class vcl*	att_val_errors;
 	Firebird::PathName	att_working_directory;	// Current working directory is cached
 	Firebird::PathName	att_filename;			// alias used to attach the database
 	GDS_TIMESTAMP	att_timestamp;		// connection date and time
 };
-typedef att* ATT;
 
 
 /* Attachment flags */
@@ -508,21 +514,21 @@ class jrd_prc : public pool_alloc_rpt<SCHAR, type_prc>
 	USHORT prc_outputs;
 	jrd_nod*	prc_input_msg;
 	jrd_nod*	prc_output_msg;
-	fmt*	prc_input_fmt;
-	fmt*	prc_output_fmt;
-	fmt*	prc_format;
+	fmt*		prc_input_fmt;
+	fmt*		prc_output_fmt;
+	fmt*		prc_format;
 	vec*		prc_input_fields;	/* vector of field blocks */
 	vec*		prc_output_fields;	/* vector of field blocks */
-	jrd_req *prc_request;	/* compiled procedure request */
-	class str *prc_security_name;	/* pointer to security class name for procedure */
+	jrd_req*	prc_request;	/* compiled procedure request */
+	str*		prc_security_name;	/* pointer to security class name for procedure */
 	USHORT prc_use_count;		/* requests compiled with procedure */
 	SSHORT prc_int_use_count;	/* number of procedures compiled with procedure, set and 
 	                               used internally in the MET_clear_cache procedure 
 								   no code should rely on value of this field 
 								   (it will usually be 0)
 								*/
-	lck* prc_existence_lock;	/* existence lock, if any */
-	class str *prc_name;		/* pointer to ascic name */
+	Lock* prc_existence_lock;	/* existence lock, if any */
+	str*		prc_name;		/* pointer to ascic name */
 	USHORT prc_alter_count;		/* No. of times the procedure was altered */
 };
 
@@ -572,13 +578,13 @@ typedef struct frgn {
 
 // Relation trigger definition
 struct trig {
-    class str* blr; // BLR code
-	jrd_req* request; // Compiled request. Gets filled on first invocation
-	bool compile_in_progress;
-	bool sys_trigger;
-	USHORT flags; // Flags as they are in RDB$TRIGGERS table
-	class jrd_rel* relation; // Trigger parent relation
-	class str* name; // Trigger name
+    str*		blr; // BLR code
+	jrd_req*	request; // Compiled request. Gets filled on first invocation
+	bool		compile_in_progress;
+	bool		sys_trigger;
+	USHORT		flags; // Flags as they are in RDB$TRIGGERS table
+	jrd_rel*	relation; // Trigger parent relation
+	str*		name; // Trigger name
 	void compile(thread_db*); // Ensure that trigger is compiled
 	void release(thread_db*); // Try to free trigger request
 };
@@ -605,16 +611,16 @@ public:
 	vec*	rel_fields;		/* vector of field blocks */
 
 	class rse* rel_view_rse;	/* view record select expression */
-	class vcx *rel_view_contexts;	/* linked list of view contexts */
+	ViewContext*	rel_view_contexts;	/* linked list of view contexts */
 
 	TEXT *rel_security_name;	/* pointer to security class name for relation */
-	class external_file* rel_file;		/* external file name */
+	ExternalFile* rel_file;		/* external file name */
 	SLONG rel_index_root;		/* index root page number */
 	SLONG rel_data_pages;		/* count of relation data pages */
 
 	vec*	rel_gc_rec;		/* vector of records for garbage collection */
 #ifdef GARBAGE_THREAD
-	struct sbm *rel_gc_bitmap;	/* garbage collect bitmap of data page sequences */
+	SparseBitmap*	rel_gc_bitmap;	/* garbage collect bitmap of data page sequences */
 #endif
 
 	USHORT rel_slot_space;		/* lowest pointer page with slot space */
@@ -623,9 +629,9 @@ public:
 	USHORT rel_sweep_count;		/* sweep and/or garbage collector threads active */
 	SSHORT rel_scan_count;		/* concurrent sequential scan count */
 
-	lck*	rel_existence_lock;	/* existence lock, if any */
-	lck*	rel_interest_lock;	/* interest lock to ensure compatibility of relation and record locks */
-	lck*	rel_record_locking;	/* lock to start record locking on relation */
+	Lock*	rel_existence_lock;	/* existence lock, if any */
+	Lock*	rel_interest_lock;	/* interest lock to ensure compatibility of relation and record locks */
+	Lock*	rel_record_locking;	/* lock to start record locking on relation */
 
 	ULONG rel_explicit_locks;	/* count of records explicitly locked in relation */
 	ULONG rel_read_locks;		/* count of records read locked in relation (implicit or explicit) */
@@ -688,7 +694,7 @@ class idb : public pool_alloc<type_idb>
 	jrd_nod*	idb_expression;			/* node tree for index expression */
 	jrd_req*	idb_expression_request;	/* request in which index expression is evaluated */
 	struct dsc	idb_expression_desc;	/* descriptor for expression result */
-	lck*		idb_lock;				/* lock to synchronize changes to index */
+	Lock*		idb_lock;				/* lock to synchronize changes to index */
 	UCHAR idb_id;
 };
 typedef idb *IDB;
@@ -696,15 +702,14 @@ typedef idb *IDB;
 
 /* view context block to cache view aliases */
 
-class vcx: public pool_alloc<type_vcx>
+class ViewContext: public pool_alloc<type_vcx>
 {
     public:
-	vcx* vcx_next;
-	class str* vcx_context_name;
-	class str* vcx_relation_name;
-	USHORT vcx_context;
+	ViewContext*	vcx_next;
+	str*	vcx_context_name;
+	str*	vcx_relation_name;
+	USHORT	vcx_context;
 };
-typedef vcx* VCX;
 
 
 /* general purpose vector */
@@ -874,20 +879,19 @@ typedef str *STR;
 // Transaction element block
 //
 typedef struct teb {
-	att** teb_database;
+	Attachment** teb_database;
 	int teb_tpb_length;
 	UCHAR* teb_tpb;
 } TEB;
 
 /* Blocking Thread Block */
 
-class btb : public pool_alloc<type_btb>
+class BlockingThread : public pool_alloc<type_btb>
 {
     public:
-	btb *btb_next;
+	BlockingThread* btb_next;
 	SLONG btb_thread_id;
 };
-typedef btb *BTB;
 
 /* Lock levels */
 
@@ -924,7 +928,7 @@ typedef struct win {
 	SLONG win_page;
 	struct pag* win_buffer;
 	struct jrd_exp* win_expanded_buffer;
-	class Buffer_desc* win_bdb;
+	class BufferDesc* win_bdb;
 	SSHORT win_scans;
 	USHORT win_flags;
 	explicit win(SLONG wp) : win_page(wp), win_flags(0) {}
@@ -955,7 +959,7 @@ struct thread_db
 {
 	struct thdd	tdbb_thd_data;
 	Database*	tdbb_database;
-	att*		tdbb_attachment;
+	Attachment*		tdbb_attachment;
 	jrd_tra*	tdbb_transaction;
 	jrd_req*	tdbb_request;
 	JrdMemoryPool*	tdbb_default;

@@ -123,10 +123,10 @@ static void close_out_transaction(gbak_action, isc_tr_handle*);
 static SLONG get_number(const SCHAR*);
 static ULONG get_size(const SCHAR*, burp_fil*);
 static gbak_action open_files(const TEXT *, const TEXT**, bool, USHORT);
-static int common_main(int, char**, pfn_svc_output, svc*);
+static int common_main(int, char**, pfn_svc_output, Service*);
 #ifndef SUPERSERVER
 tgbl *gdgbl;
-static int output_main(svc*, const UCHAR*);
+static int output_main(Service*, const UCHAR*);
 static int api_gbak(int, char**, USHORT, TEXT*, TEXT*, TEXT *, bool, bool);
 #endif
 static void burp_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
@@ -149,7 +149,7 @@ static inline void translate_cp(SCHAR* a)
 }
 #endif
 
-static int output_svc(svc* output_data, const UCHAR* output_buf)
+static int output_svc(Service* output_data, const UCHAR* output_buf)
 {
 /**************************************
  *
@@ -167,7 +167,7 @@ static int output_svc(svc* output_data, const UCHAR* output_buf)
 }
 
 #ifdef SUPERSERVER
-int BURP_main(svc* service)
+int BURP_main(Service* service)
 {
 /**************************************
  *
@@ -320,7 +320,7 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 }
 
 
-static int output_main(svc* output_data, const UCHAR* output_buf)
+static int output_main(Service* output_data, const UCHAR* output_buf)
 {
 /**************************************
  *
@@ -555,7 +555,7 @@ static int api_gbak(int argc,
 int common_main(int		argc,
 				char*		argv[],
 				pfn_svc_output output_proc,
-				svc*		output_data)
+				Service*		output_data)
 {
 /**************************************
  *
@@ -580,7 +580,7 @@ int common_main(int		argc,
 // NOMEM: return error, FREE: during function exit in the SETJMP 
 	if (tdgbl == NULL)
 	{
-		svc* service = (svc*) output_data;
+		Service* service = (Service*) output_data;
 		service->svc_started();
 		return FINI_ERROR;
 	}
@@ -627,7 +627,7 @@ int common_main(int		argc,
 	else if (argc > 1 && !strcmp(argv[1], "-svc_thd")) {
 		tdgbl->gbl_sw_service_gbak = true;
 		tdgbl->gbl_sw_service_thd = true;
-		tdgbl->service_blk = (svc*) output_data;
+		tdgbl->service_blk = (Service*) output_data;
 		tdgbl->status = tdgbl->service_blk->svc_status;
 		argv++;
 		argc--;
