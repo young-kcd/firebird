@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.30 2003-11-08 16:31:39 brodsom Exp $
+//	$Id: pas.cpp,v 1.31 2003-11-11 12:08:12 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -3413,7 +3413,7 @@ static void make_array_declaration( const ref* reference)
 
 	case dtype_date:
 	case dtype_quad:
-		ib_fprintf(out_file, "GDS_QUAD");
+		ib_fprintf(out_file, "ISC_QUAD");
 		break;
 
 	case dtype_real:

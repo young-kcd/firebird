@@ -28,7 +28,7 @@
 DATABASE DB = "yachts.lnk";
 
 extern SCHAR *gds__alloc();
-extern SLONG gds__vax_integer();
+extern SLONG isc_vax_integer();
 
 #define ITEM_seq_reads	0
 #define ITEM_idx_reads	1
@@ -153,7 +153,7 @@ int stats_fetch(SLONG *status_vector, int **db_handle, STATS *stats_ptr)
 
 	for (p = info_buffer;
 		 p < info_buffer + sizeof(info_buffer) && *p != isc_info_end;) {
-		length = gds__vax_integer(p + 1, 2);
+		length = isc_vax_integer(p + 1, 2);
 		item = -1;
 		switch (*p) {
 		case isc_info_read_seq_count:
@@ -282,7 +282,7 @@ static int get_counts(ISC_STATUS *status_vector, SCHAR *info, SSHORT length,
 	stats = *stats_ptr;
 
 	for (p = info, end = p + length; p < end; p += 6) {
-		relation_id = gds__vax_integer(p, 2);
+		relation_id = isc_vax_integer(p, 2);
 		if (relation_id >= stats->stats_count)
 			if (!expand_stats(&stats, relation_id)) {
 				status_vector[0] = isc_arg_gds;
@@ -291,7 +291,7 @@ static int get_counts(ISC_STATUS *status_vector, SCHAR *info, SSHORT length,
 				return status_vector[1];
 			}
 		stats->stats_counts[relation_id * ITEM_count + item] =
-			gds__vax_integer(p + 2, 4);
+			isc_vax_integer(p + 2, 4);
 	}
 	return status_vector[1];
 }

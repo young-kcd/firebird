@@ -25,7 +25,7 @@
 #include <string.h>
 #include "../jrd/ib_stdio.h"
 
-#include "gen/codes.h"
+#include "gen/iberror.h"
 //#include "../jrd/common.h"
 //#include "../jrd/isc.h"
 #include "../jrd/jrd.h"

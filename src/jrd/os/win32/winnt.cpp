@@ -40,7 +40,7 @@
 #include "../jrd/ods.h"
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/err_proto.h"
@@ -216,12 +216,12 @@ FIL PIO_create(DBB dbb, const TEXT* string, SSHORT length, BOOLEAN overwrite)
 	if (desc == INVALID_HANDLE_VALUE)
 	{
 		ERR_post(isc_io_error,
-				 gds_arg_string, "CreateFile (create)",
-				 gds_arg_cstring,
+				 isc_arg_string, "CreateFile (create)",
+				 isc_arg_cstring,
 				 length,
 				 ERR_string(string, length),
 				 isc_arg_gds,
-				 isc_io_create_err, gds_arg_win32, GetLastError(), 0);
+				 isc_io_create_err, isc_arg_win32, GetLastError(), 0);
 	}
 
 /* File open succeeded.  Now expand the file name. */
@@ -311,13 +311,13 @@ void PIO_force_write(FIL file, USHORT flag)
 		if (hNew == INVALID_HANDLE_VALUE)
 		{
 			ERR_post(isc_io_error,
-					 gds_arg_string,
+					 isc_arg_string,
 					 "CreateFile (force write)",
-					 gds_arg_cstring,
+					 isc_arg_cstring,
 					 file->fil_length,
 					 ERR_string(file->fil_string, file->fil_length),
 					 isc_arg_gds, isc_io_access_err,
-					 gds_arg_win32,
+					 isc_arg_win32,
 					 GetLastError(),
 					 0);
 		}
@@ -533,13 +533,13 @@ FIL PIO_open(DBB dbb,
 
 		if (desc == INVALID_HANDLE_VALUE) {
 			ERR_post(isc_io_error,
-					 gds_arg_string,
+					 isc_arg_string,
 					 "CreateFile (open)",
-					 gds_arg_cstring,
+					 isc_arg_cstring,
 					 file_length,
 					 ERR_string(file_name, file_length),
 					 isc_arg_gds,
-					 isc_io_open_err, gds_arg_win32, GetLastError(), 0);
+					 isc_io_open_err, isc_arg_win32, GetLastError(), 0);
 		}
 		else {
 			/* If this is the primary file, set DBB flag to indicate that it is
@@ -1128,23 +1128,23 @@ static BOOLEAN nt_error(TEXT*	string,
 	if (status_vector) {
 		*status_vector++ = isc_arg_gds;
 		*status_vector++ = isc_io_error;
-		*status_vector++ = gds_arg_string;
+		*status_vector++ = isc_arg_string;
 		*status_vector++ = (ISC_STATUS) string;
-		*status_vector++ = gds_arg_string;
+		*status_vector++ = isc_arg_string;
 		*status_vector++ =
 			(ISC_STATUS) ERR_string(file->fil_string, file->fil_length);
 		*status_vector++ = isc_arg_gds;
 		*status_vector++ = operation;
-		*status_vector++ = gds_arg_win32;
+		*status_vector++ = isc_arg_win32;
 		*status_vector++ = GetLastError();
-		*status_vector++ = gds_arg_end;
+		*status_vector++ = isc_arg_end;
 		return FALSE;
 	}
 
 	ERR_post(isc_io_error,
-			 gds_arg_string, string,
-			 gds_arg_string, ERR_string(file->fil_string, file->fil_length),
-			 isc_arg_gds, operation, gds_arg_win32, GetLastError(), 0);
+			 isc_arg_string, string,
+			 isc_arg_string, ERR_string(file->fil_string, file->fil_length),
+			 isc_arg_gds, operation, isc_arg_win32, GetLastError(), 0);
 
 	return TRUE;
 }

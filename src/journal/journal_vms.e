@@ -38,7 +38,7 @@
 #include descrip
 #include ssdef
 #include jpidef
-#define SYS_ERROR	gds_arg_vms
+#define SYS_ERROR	isc_arg_vms
 #endif
 
 #ifndef VMS
@@ -47,7 +47,7 @@
 #include <sys/types.h>
 #include <sys/timeb.h>
 #include <sys/file.h>
-#define SYS_ERROR	gds_arg_unix
+#define SYS_ERROR	isc_arg_unix
 
 extern int errno;
 #endif
@@ -426,26 +426,26 @@ ERR_post(stuff)
 
 /* Copy first argument */
 
-	*p++ = gds_arg_gds;
+	*p++ = isc_arg_gds;
 	*p++ = *((SLONG *) q)++;
 
 /* Pick up remaining args */
 
 	while (*p++ = type = *((int *) q)++)
 		switch (type) {
-		case gds_arg_gds:
+		case isc_arg_gds:
 			*p++ = *((SLONG *) q)++;
 			break;
 
-		case gds_arg_number:
-		case gds_arg_vms:
-		case gds_arg_unix:
-		case gds_arg_string:
-		case gds_arg_interpreted:
+		case isc_arg_number:
+		case isc_arg_vms:
+		case isc_arg_unix:
+		case isc_arg_string:
+		case isc_arg_interpreted:
 			*p++ = *q++;
 			break;
 
-		case gds_arg_cstring:
+		case isc_arg_cstring:
 			*p++ = *((int *) q)++;
 			*p++ = *q++;
 			break;
@@ -810,10 +810,10 @@ static error(filename, errno, string)
 	ISC_STATUS *s;
 
 	s = status_vector;
-	*s++ = gds_arg_gds;
-	*s++ = gds__io_error, *s++ = gds_arg_string;
+	*s++ = isc_arg_gds;
+	*s++ = isc_io_error, *s++ = isc_arg_string;
 	*s++ = (SLONG) string;
-	*s++ = gds_arg_string;
+	*s++ = isc_arg_string;
 	*s++ = (SLONG) filename;
 	*s++ = SYS_ERROR;
 	*s++ = errno;

@@ -26,7 +26,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/exe.h"
 #include "../jrd/rse.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/bookmark.h"
 #include "../jrd/err_proto.h"

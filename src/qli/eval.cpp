@@ -656,7 +656,7 @@ static DSC *execute_edit( QLI_NOD node)
 		id[0] = id[1] = 0;
 
 	TEXT* field_name = (TEXT *) node->nod_arg[e_edt_name];
-	BLOB_edit((GDS_QUAD_t*)id, dbb->dbb_handle, dbb->dbb_transaction, field_name);
+	BLOB_edit((ISC_QUAD*)id, dbb->dbb_handle, dbb->dbb_transaction, field_name);
 
 	node->nod_desc.dsc_missing = (id[0] || id[1]) ? 0 : DSC_missing;
 

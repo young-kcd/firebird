@@ -23,7 +23,7 @@
 
 #include "firebird.h"
 #include "../jrd/common.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/thd.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/event_proto.h"
@@ -430,7 +430,7 @@ SLONG EVENT_que(ISC_STATUS * status_vector,
 		*ptr = interest;
 		ptr = &interest->rint_req_interests;
 		interest->rint_request = request;
-		interest->rint_count = gds__vax_integer(p, 4);
+		interest->rint_count = isc_vax_integer(p, 4);
 		p += 4;
 		if (interest->rint_count <= event->evnt_count)
 			flag = true;

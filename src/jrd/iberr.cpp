@@ -27,7 +27,7 @@
 #include <string.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/iberr.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/iberr_proto.h"
@@ -106,8 +106,8 @@ void IBERR_bugcheck(
 	len = strlen(errmsg);
 	sprintf(errmsg + len, " (%d)", number);
 
-	post_error(status_vector, dbname, longjmp_addr, gds_bug_check,
-			   gds_arg_string, errmsg, 0);
+	post_error(status_vector, dbname, longjmp_addr, isc_bug_check,
+			   isc_arg_string, errmsg, 0);
 }
 
 
@@ -133,8 +133,8 @@ void IBERR_error(
 						&flags) < 1)
 		sprintf(errmsg, "error code %d", number);
 
-	post_error(status_vector, dbname, longjmp_addr, gds_random,
-			   gds_arg_string, errmsg, 0);
+	post_error(status_vector, dbname, longjmp_addr, isc_random,
+			   isc_arg_string, errmsg, 0);
 }
 
 
@@ -156,8 +156,8 @@ static void post_error(
 
 	STUFF_STATUS(status_vector, status);
 
-	if (status_vector[1] == gds_db_corrupt ||
-		status_vector[1] == gds_bug_check)
+	if (status_vector[1] == isc_db_corrupt ||
+		status_vector[1] == isc_bug_check)
 	{
 			gds__log_status(dbname, status_vector);
 	}

@@ -35,7 +35,7 @@
 #include "../jrd/common.h"
 #include "../wal/wal.h"
 #include "../jrd/jrn.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../wal/wal_proto.h"
 #include "../wal/walc_proto.h"
 #include "../wal/walw_proto.h"
@@ -1073,8 +1073,8 @@ static SSHORT fork_writer( ISC_STATUS * status_vector, WAL WAL_handle)
 	if (gds__thread_start
 		(reinterpret_cast < FPTR_INT_VOID_PTR > (main_walw), argv, 0, 0, 0)) {
 		WALC_release(WAL_handle);
-		IBERR_build_status(status_vector, gds_bug_check,
-						   gds_arg_string, "cannot start thread", 0);
+		IBERR_build_status(status_vector, isc_bug_check,
+						   isc_arg_string, "cannot start thread", 0);
 		return FB_FAILURE;
 	}
 
@@ -1517,7 +1517,7 @@ static SSHORT sync_with_wal_writer( ISC_STATUS * status_vector, WAL WAL_handle)
 	}
 
 	if (done != FB_SUCCESS)
-		WAL_ERROR(status_vector, gds_wal_err_ww_sync,
+		WAL_ERROR(status_vector, isc_wal_err_ww_sync,
 				  WAL_handle->wal_dbname);
 
 	return done;

@@ -97,7 +97,7 @@ defined APIs for this function.
 #include "../jrd/jrd.h"
 #include "../jrd/sdw.h"
 #include "../jrd/os/pio.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/flu_proto.h"
 #include "../jrd/sch_proto.h"
@@ -223,8 +223,8 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 		sprintf(filename, "Unknown QATEST_entrypoint #%lu",	/* TXNN */
 				*function);
 		THREAD_ENTER;
-		ERR_post(gds_random,
-				 gds_arg_string, ERR_cstring((TEXT *) filename), 0);
+		ERR_post(isc_random,
+				 isc_arg_string, ERR_cstring((TEXT *) filename), 0);
 		THREAD_EXIT;
 		return 0;
 	}

@@ -61,7 +61,7 @@
 #include "../jrd/val.h"
 #include "../jrd/exe.h"
 #include "../jrd/tra.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/ods.h"
 #include "../jrd/btr.h"
 #include "../jrd/rse.h"
@@ -539,7 +539,7 @@ JRD_REQ EXE_find_request(TDBB tdbb, JRD_REQ request, bool validate)
 
 		if (count > MAX_CLONES) {
 			THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_clone);
-			ERR_post(gds_req_max_clones_exceeded, 0);
+			ERR_post(isc_req_max_clones_exceeded, 0);
 		}
 		if (!clone)
 			clone = CMP_clone_request(tdbb, request, n, validate);
@@ -578,11 +578,11 @@ void EXE_mark_crack(TDBB tdbb, RSB rsb, USHORT flag)
 	RSE_MARK_CRACK(tdbb, rsb, flag);
 
 	if (flag == irsb_eof)
-		ERR_warning(gds_stream_eof, 0);
+		ERR_warning(isc_stream_eof, 0);
 	else if (flag == irsb_bof)
-		ERR_warning(gds_stream_bof, 0);
+		ERR_warning(isc_stream_bof, 0);
 	else if (flag & irsb_crack)
-		ERR_warning(gds_stream_crack, 0);
+		ERR_warning(isc_stream_crack, 0);
 }
 #endif
 
@@ -616,7 +616,7 @@ void EXE_receive(TDBB		tdbb,
 	transaction = request->req_transaction;
 
 	if (!(request->req_flags & req_active)) {
-		ERR_post(gds_req_sync, 0);
+		ERR_post(isc_req_sync, 0);
 	}
 
 	if (request->req_flags & req_proc_fetch)
@@ -651,19 +651,19 @@ void EXE_receive(TDBB		tdbb,
 	if (!(request->req_flags & req_active) ||
 		request->req_operation != jrd_req::req_send)
 	{
-		ERR_post(gds_req_sync, 0);
+		ERR_post(isc_req_sync, 0);
 	}
 
 	message = request->req_message;
 	format = (FMT) message->nod_arg[e_msg_format];
 
 	if (msg != (USHORT)(ULONG) message->nod_arg[e_msg_number])
-		ERR_post(gds_req_sync, 0);
+		ERR_post(isc_req_sync, 0);
 
 	if (length != format->fmt_length)
-		ERR_post(gds_port_len,
-				 gds_arg_number, (SLONG) length,
-				 gds_arg_number, (SLONG) format->fmt_length, 0);
+		ERR_post(isc_port_len,
+				 isc_arg_number, (SLONG) length,
+				 isc_arg_number, (SLONG) format->fmt_length, 0);
 
 	if ((U_IPTR) buffer & (ALIGNMENT - 1))
 		MOVE_FAST((SCHAR *) request + message->nod_impure, buffer, length);
@@ -767,7 +767,7 @@ void EXE_send(TDBB		tdbb,
 	DEV_BLKCHK(request, type_req);
 
 	if (!(request->req_flags & req_active))
-		ERR_post(gds_req_sync, 0);
+		ERR_post(isc_req_sync, 0);
 
 #ifdef SCROLLABLE_CURSORS
 /* look for an asynchronous send message--if such 
@@ -795,7 +795,7 @@ void EXE_send(TDBB		tdbb,
 	else {
 #endif
 		if (request->req_operation != jrd_req::req_receive)
-			ERR_post(gds_req_sync, 0);
+			ERR_post(isc_req_sync, 0);
 		node = request->req_message;
 #ifdef SCROLLABLE_CURSORS
 	}
@@ -820,12 +820,12 @@ void EXE_send(TDBB		tdbb,
 	format = (FMT) message->nod_arg[e_msg_format];
 
 	if (msg != (USHORT)(ULONG) message->nod_arg[e_msg_number])
-		ERR_post(gds_req_sync, 0);
+		ERR_post(isc_req_sync, 0);
 
 	if (length != format->fmt_length)
-		ERR_post(gds_port_len,
-				 gds_arg_number, (SLONG) length,
-				 gds_arg_number, (SLONG) format->fmt_length, 0);
+		ERR_post(isc_port_len,
+				 isc_arg_number, (SLONG) length,
+				 isc_arg_number, (SLONG) format->fmt_length, 0);
 
 	if ((U_IPTR) buffer & (ALIGNMENT - 1))
 		MOVE_FAST(buffer, (SCHAR *) request + message->nod_impure, length);
@@ -869,10 +869,10 @@ void EXE_start(TDBB tdbb, JRD_REQ request, JRD_TRA transaction)
 	BLKCHK(transaction, type_tra);
 
 	if (request->req_flags & req_active)
-		ERR_post(gds_req_sync, gds_arg_gds, gds_reqinuse, 0);
+		ERR_post(isc_req_sync, isc_arg_gds, isc_reqinuse, 0);
 
 	if (transaction->tra_flags & TRA_prepared)
-		ERR_post(gds_req_no_trans, 0);
+		ERR_post(isc_req_no_trans, 0);
 
 /* Post resources to transaction block.  In particular, the interest locks
    on relations/indices are copied to the transaction, which is very
@@ -1219,7 +1219,7 @@ static JRD_NOD erase(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 									   reinterpret_cast <
 									   blk *
 									   >(tdbb->tdbb_default), FALSE)))
-				ERR_post(gds_deadlock, gds_arg_gds, gds_update_conflict, 0);
+				ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
 		VIO_data(tdbb, rpb,
 				 reinterpret_cast < blk * >(tdbb->tdbb_request->req_pool));
 
@@ -1230,7 +1230,7 @@ static JRD_NOD erase(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 
 		if ((transaction->tra_flags & TRA_read_committed) &&
 			(tid_fetch != rpb->rpb_transaction))
-				ERR_post(gds_deadlock, gds_arg_gds, gds_update_conflict, 0);
+				ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
 
 		rpb->rpb_stream_flags &= ~RPB_s_refetch;
 	}
@@ -1421,9 +1421,9 @@ static void exec_sql(TDBB tdbb, JRD_REQ request, DSC* dsc)
 		MOV_get_string(dsc, &p, v, BUFFER_LARGE) : 0; // !!! How call Msgs ?
 	if (p) {
 		if (tdbb->tdbb_transaction->tra_callback_count >= MAX_CALLBACKS) {
-			status[0] = gds_arg_gds;
-			status[1] = gds_exec_sql_max_call_exceeded;
-			status[2] = gds_arg_end;
+			status[0] = isc_arg_gds;
+			status[1] = isc_exec_sql_max_call_exceeded;
+			status[2] = isc_arg_end;
 		}
 		else {
 			tdbb->tdbb_transaction->tra_callback_count++;
@@ -1435,9 +1435,9 @@ static void exec_sql(TDBB tdbb, JRD_REQ request, DSC* dsc)
 		}
 	}
 	else {
-		status[0] = gds_arg_gds;
-		status[1] = gds_exec_sql_invalid_arg;
-		status[4] = gds_arg_end;
+		status[0] = isc_arg_gds;
+		status[1] = isc_exec_sql_invalid_arg;
+		status[4] = isc_arg_end;
 	}
 
 	if (status[1]) {
@@ -1685,7 +1685,7 @@ static JRD_NOD find(TDBB tdbb, JRD_NOD node)
 			operator_ != blr_geq &&
 			operator_ != blr_gtr)
 		{
-			ERR_post(gds_invalid_operator, 0);
+			ERR_post(isc_invalid_operator, 0);
 		}
 
 		USHORT direction = (USHORT) MOV_get_long(EVL_expr(tdbb,
@@ -1697,7 +1697,7 @@ static JRD_NOD find(TDBB tdbb, JRD_NOD node)
 			direction != blr_backward_starting &&
 			direction != blr_forward_starting)
 		{
-			ERR_post(gds_invalid_direction, 0);
+			ERR_post(isc_invalid_direction, 0);
 		}
 
 		/* try to find the record; the position is defined to be on a crack 
@@ -1809,7 +1809,7 @@ static LCK implicit_record_lock(JRD_TRA transaction, RPB * rpb)
 
 	LCK lock = RLCK_lock_record_implicit(transaction, rpb, LCK_SW, 0, 0);
 	if (!lock) {
-		ERR_post(gds_record_lock, 0);
+		ERR_post(isc_record_lock, 0);
 	}
 
 	return lock;
@@ -1857,7 +1857,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 	}
 
 	if (!(transaction = request->req_transaction)) {
-		ERR_post(gds_req_no_trans, 0);
+		ERR_post(isc_req_no_trans, 0);
 	}
 
 	SET_TDBB(tdbb);
@@ -2040,7 +2040,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 				if (request->req_operation == jrd_req::req_evaluate) {
 					// check cursor state
 					if (impure->irsb_flags & irsb_open) {
-						ERR_post(gds_invalid_cursor_state, gds_arg_string, "open", 0);
+						ERR_post(isc_invalid_cursor_state, isc_arg_string, "open", 0);
 					}
 					// open cursor
 					RSE_open(tdbb, rsb);
@@ -2052,7 +2052,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 				if (request->req_operation == jrd_req::req_evaluate) {
 					// check cursor state
 					if (!(impure->irsb_flags & irsb_open)) {
-						ERR_post(gds_invalid_cursor_state, gds_arg_string, "closed", 0);
+						ERR_post(isc_invalid_cursor_state, isc_arg_string, "closed", 0);
 					}
 					// close cursor
 					RSE_close(tdbb, rsb);
@@ -2065,7 +2065,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 				case jrd_req::req_evaluate:
 					// check cursor state
 					if (!(impure->irsb_flags & irsb_open)) {
-						ERR_post(gds_invalid_cursor_state, gds_arg_string, "closed", 0);
+						ERR_post(isc_invalid_cursor_state, isc_arg_string, "closed", 0);
 					}
 					// perform preliminary navigation, if specified
 					if (node->nod_arg[e_cursor_stmt_seek]) {
@@ -2154,8 +2154,8 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 						savepoint = savepoint->sav_next;
 					}
 					if (!found && operation != blr_savepoint_set) {
-						ERR_post(gds_invalid_savepoint,
-							gds_arg_string, node_savepoint_name, 0);
+						ERR_post(isc_invalid_savepoint,
+							isc_arg_string, node_savepoint_name, 0);
 					}
 
 					if (operation == blr_savepoint_set) {
@@ -2877,7 +2877,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 	// last savepoint has already been deleted
 
 	if (request->req_flags & req_abort) {
-		ERR_post(gds_req_sync, 0);
+		ERR_post(isc_req_sync, 0);
 	}
 
 	return node;
@@ -2958,7 +2958,7 @@ static JRD_NOD modify(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 									   transaction,
 									   reinterpret_cast<BLK>(tdbb->tdbb_default), FALSE)))
 		{
-				ERR_post(gds_deadlock, gds_arg_gds, gds_update_conflict, 0);
+				ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
 		}
 		VIO_data(tdbb, org_rpb,
 				 reinterpret_cast<BLK>(tdbb->tdbb_request->req_pool));
@@ -2971,7 +2971,7 @@ static JRD_NOD modify(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 		if ((transaction->tra_flags & TRA_read_committed) &&
 			(tid_fetch != org_rpb->rpb_transaction))
 		{
-				ERR_post(gds_deadlock, gds_arg_gds, gds_update_conflict, 0);
+				ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
 		}
 
 		org_rpb->rpb_stream_flags &= ~RPB_s_refetch;
@@ -3749,7 +3749,7 @@ static void set_error(TDBB tdbb, const xcp_repeat* exception, JRD_NOD msg_node)
 					   replace the above assignment with the following lines:
 
 			if (length > sizeof(message) - 1)
-				ERR_post(gds_imp_exc, gds_arg_gds, gds_blktoobig, 0);
+				ERR_post(isc_imp_exc, isc_arg_gds, isc_blktoobig, 0);
 			*/
 
 			memcpy(message, string, length);
@@ -3763,18 +3763,18 @@ static void set_error(TDBB tdbb, const xcp_repeat* exception, JRD_NOD msg_node)
 
 	switch (exception->xcp_type) {
 	case xcp_sql_code:
-		ERR_post(gds_sqlerr, gds_arg_number, exception->xcp_code, 0);
+		ERR_post(isc_sqlerr, isc_arg_number, exception->xcp_code, 0);
 
 	case xcp_gds_code:
-		if (exception->xcp_code == gds_check_constraint) {
+		if (exception->xcp_code == isc_check_constraint) {
 			MET_lookup_cnstrt_for_trigger(tdbb, name, relation_name,
 										  request->req_trg_name);
 			// const CAST
 			s = (name[0]) ? name : (TEXT*) "";
 			r = (relation_name[0]) ? relation_name : (TEXT*) "";
 			ERR_post(exception->xcp_code,
-					 gds_arg_string, ERR_cstring(s),
-					 gds_arg_string, ERR_cstring(r), 0);
+					 isc_arg_string, ERR_cstring(s),
+					 isc_arg_string, ERR_cstring(r), 0);
 		}
 		else
 			ERR_post(exception->xcp_code, 0);
@@ -3790,12 +3790,12 @@ static void set_error(TDBB tdbb, const xcp_repeat* exception, JRD_NOD msg_node)
 		else
 			s = NULL;
 		if (s)
-			ERR_post(gds_except,
-					 gds_arg_number, exception->xcp_code,
-					 gds_arg_gds, gds_random, gds_arg_string, ERR_cstring(s),
+			ERR_post(isc_except,
+					 isc_arg_number, exception->xcp_code,
+					 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(s),
 					 0);
 		else
-			ERR_post(gds_except, gds_arg_number, exception->xcp_code, 0);
+			ERR_post(isc_except, isc_arg_number, exception->xcp_code, 0);
 	}
 }
 
@@ -3834,8 +3834,8 @@ static JRD_NOD set_index(TDBB tdbb, JRD_NOD node)
 
 		id = MOV_get_long(EVL_expr(tdbb, node->nod_arg[e_index_index]), 0);
 		if (id && BTR_lookup(tdbb, relation, id - 1, &idx))
-			ERR_post(gds_indexnotdefined, gds_arg_string, relation->rel_name,
-					 gds_arg_number, (SLONG) id, 0);
+			ERR_post(isc_indexnotdefined, isc_arg_string, relation->rel_name,
+					 isc_arg_number, (SLONG) id, 0);
 
 		/* generate a new rsb in place of the old */
 
@@ -4137,7 +4137,7 @@ static bool test_and_fixup_error(TDBB tdbb, XCP conditions, JRD_REQ request)
 			break;
 
 		case xcp_xcp_code:
-			if ((status_vector[1] == gds_except) &&
+			if ((status_vector[1] == isc_except) &&
 				(status_vector[3] == conditions->xcp_rpt[i].xcp_code))
 			{
 				found = true;
@@ -4196,18 +4196,18 @@ static void trigger_failure(TDBB tdbb, JRD_REQ trigger)
 				ISC_STATUS code = PAR_symbol_to_gdscode(msg);
 				if (code)
 				{
-					ERR_post(gds_integ_fail,
-							 gds_arg_number, (SLONG) trigger->req_label,
-							 gds_arg_gds, code, 0);
+					ERR_post(isc_integ_fail,
+							 isc_arg_number, (SLONG) trigger->req_label,
+							 isc_arg_gds, code, 0);
 				}
 			}
-			ERR_post(gds_integ_fail,
-					 gds_arg_number, (SLONG) trigger->req_label,
-					 gds_arg_gds, gds_random, gds_arg_string, msg, 0);
+			ERR_post(isc_integ_fail,
+					 isc_arg_number, (SLONG) trigger->req_label,
+					 isc_arg_gds, isc_random, isc_arg_string, msg, 0);
 		}
 		else
 		{
-			ERR_post(gds_integ_fail, gds_arg_number,
+			ERR_post(isc_integ_fail, isc_arg_number,
 					 (SLONG) trigger->req_label, 0);
 		}
 	}
@@ -4294,8 +4294,8 @@ static void validate(TDBB tdbb, JRD_NOD list)
 				name = "*** unknown ***";
 			}
 
-			ERR_post(gds_not_valid, gds_arg_string, name,
-					 gds_arg_string, value, 0);
+			ERR_post(isc_not_valid, isc_arg_string, name,
+					 isc_arg_string, value, 0);
 		}
 	}
 }

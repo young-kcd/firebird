@@ -141,8 +141,8 @@ void DYN_modify_database( GBL gbl, const UCHAR** ptr)
 
 	request = (BLK) CMP_find_request(tdbb, drq_m_database, DYN_REQUESTS);
 
-	const SSHORT length = gds__vax_integer(s + 1, 2);
-	SLONG start = gds__vax_integer(s + 3, length);
+	const SSHORT length = isc_vax_integer(reinterpret_cast<const SCHAR*>(s + 1), 2);
+	SLONG start = isc_vax_integer(reinterpret_cast<const SCHAR*>(s + 3), length);
 	bool log_params_defined = false;
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)

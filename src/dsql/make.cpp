@@ -1442,7 +1442,7 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 		}
 		else {
 			node->nod_desc.dsc_dtype = dtype_array;
-			node->nod_desc.dsc_length = sizeof(GDS_QUAD);
+			node->nod_desc.dsc_length = sizeof(ISC_QUAD);
 			node->nod_desc.dsc_scale =
 				static_cast<SCHAR>(field->fld_scale);
 			node->nod_desc.dsc_sub_type = field->fld_sub_type;

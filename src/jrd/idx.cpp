@@ -40,7 +40,7 @@
 #include "../jrd/sort.h"
 #include "../jrd/lls.h"
 #include "../jrd/tra.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/sbm.h"
 #include "../jrd/exe.h"
 #include "../jrd/scl.h"
@@ -202,8 +202,8 @@ void IDX_create_index(
 	dbb = tdbb->tdbb_database;
 
 	if (relation->rel_file)
-		ERR_post(gds_no_meta_update, gds_arg_gds, gds_extfile_uns_op,
-				 gds_arg_string, ERR_cstring(relation->rel_name), 0);
+		ERR_post(isc_no_meta_update, isc_arg_gds, isc_extfile_uns_op,
+				 isc_arg_string, ERR_cstring(relation->rel_name), 0);
 
 	BTR_reserve_slot(tdbb, relation, transaction, idx);
 
@@ -218,10 +218,10 @@ void IDX_create_index(
 
 	key_length = ROUNDUP(BTR_key_length(relation, idx), sizeof(SLONG));
 	if (key_length >= MAX_KEY)
-		ERR_post(gds_no_meta_update,
-				 gds_arg_gds,
-				 gds_keytoobig,
-				 gds_arg_string,
+		ERR_post(isc_no_meta_update,
+				 isc_arg_gds,
+				 isc_keytoobig,
+				 isc_arg_string,
 				 ERR_cstring(reinterpret_cast < char *>(index_name)), 0);
 	stack = NULL;
 	pad = (idx->idx_flags & idx_descending) ? -1 : 0;
@@ -380,7 +380,7 @@ void IDX_create_index(
 				gc_record->rec_flags &= ~REC_gc_active;
 				if (primary.rpb_window.win_flags & WIN_large_scan)
 					--relation->rel_scan_count;
-				ERR_post(gds_no_dup, gds_arg_string,
+				ERR_post(isc_no_dup, isc_arg_string,
 						 ERR_cstring(reinterpret_cast < char *>(index_name)), 0);
 			}
 
@@ -421,7 +421,7 @@ void IDX_create_index(
 
 	if (ifl_data.ifl_duplicates > 0) {
 		SORT_fini(sort_handle, tdbb->tdbb_attachment);
-		ERR_post(gds_no_dup, gds_arg_string,
+		ERR_post(isc_no_dup, isc_arg_string,
 				 ERR_cstring(reinterpret_cast < char *>(index_name)), 0);
 	}
 
@@ -429,7 +429,7 @@ void IDX_create_index(
 
 	if (ifl_data.ifl_duplicates > 0) {
 		// we don't need SORT_fini() here, as it's called inside BTR_create()
-		ERR_post(gds_no_dup, gds_arg_string,
+		ERR_post(isc_no_dup, isc_arg_string,
 				 ERR_cstring(reinterpret_cast < char *>(index_name)), 0);
 	}
 }
@@ -908,8 +908,8 @@ static IDX_E check_duplicates(
 							   record_idx->idx_flags & idx_foreign))
 		{
 			// dimitr: we shouldn't ignore status exceptions which take place
-			//		   inside the lock manager. Namely, they are: gds_deadlock,
-			//		   gds_lock_conflict, gds_lock_timeout. Otherwise we may
+			//		   inside the lock manager. Namely, they are: isc_deadlock,
+			//		   isc_lock_conflict, isc_lock_timeout. Otherwise we may
 			//		   have logically corrupted database as a result. If any
 			//		   of the mentioned errors appeared, it means that there's
 			//		   an active transaction out there which has modified our
@@ -923,9 +923,9 @@ static IDX_E check_duplicates(
 			//														2003.05.27
 
 			bool lock_error =
-				(tdbb->tdbb_status_vector[1] == gds_deadlock ||
-				tdbb->tdbb_status_vector[1] == gds_lock_conflict ||
-				tdbb->tdbb_status_vector[1] == gds_lock_timeout);
+				(tdbb->tdbb_status_vector[1] == isc_deadlock ||
+				tdbb->tdbb_status_vector[1] == isc_lock_conflict ||
+				tdbb->tdbb_status_vector[1] == isc_lock_timeout);
 			// the above errors are not thrown but returned silently
 
 			if (rpb.rpb_flags & rpb_deleted || lock_error) {

@@ -1678,10 +1678,8 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 			}
 			else if (item == isc_info_sql_sqlda_start) {
 				length = *items++;
-				first_index =
-					static_cast<USHORT>
-					(gds__vax_integer
-				 	(items, length));
+				first_index = static_cast<USHORT>(isc_vax_integer(reinterpret_cast
+													<const SCHAR*>(items), length));
 				items += length;
 			}
 			else if (item == isc_info_sql_batch_fetch) {
@@ -3085,9 +3083,9 @@ static void execute_blob(	dsql_req*		request,
 
 	if (request->req_type == REQ_GET_SEGMENT)
 	{
-		ISC_QUAD* blob_id = (GDS_QUAD*) parameter->par_desc.dsc_address;
+		ISC_QUAD* blob_id = (ISC_QUAD*) parameter->par_desc.dsc_address;
 		if (null && *((SSHORT *) null->par_desc.dsc_address) < 0) {
-			memset(blob_id, 0, sizeof(GDS_QUAD));
+			memset(blob_id, 0, sizeof(ISC_QUAD));
 		}
 		THREAD_EXIT;
 		s = isc_open_blob2(tdsql->tsql_status,
@@ -3103,8 +3101,8 @@ static void execute_blob(	dsql_req*		request,
 	else
 	{
 		request->req_handle = NULL;
-		ISC_QUAD* blob_id = (GDS_QUAD *) parameter->par_desc.dsc_address;
-		memset(blob_id, 0, sizeof(GDS_QUAD));
+		ISC_QUAD* blob_id = (ISC_QUAD*) parameter->par_desc.dsc_address;
+		memset(blob_id, 0, sizeof(ISC_QUAD));
 		THREAD_EXIT;
 		s = isc_create_blob2(tdsql->tsql_status,
 							 &request->req_dbb->dbb_database_handle,
@@ -3710,33 +3708,28 @@ static USHORT get_request_info(
 	UCHAR p;
 	while ((p = *data++) != isc_info_end) {
 		const USHORT data_length =
-			static_cast < USHORT >
-			(gds__vax_integer(reinterpret_cast<UCHAR*>(data), 2));
+			static_cast <USHORT>(isc_vax_integer(data, 2));
 		data += 2;
 
 		switch (p) {
 		case isc_info_req_update_count:
 			request->req_updates =
-				gds__vax_integer(reinterpret_cast<UCHAR*>(data),
-								 data_length);
+				isc_vax_integer(data, data_length);
 			break;
 
 		case isc_info_req_delete_count:
 			request->req_deletes =
-				gds__vax_integer(reinterpret_cast<UCHAR*>(data),
-								 data_length);
+				isc_vax_integer(data, data_length);
 			break;
 
 		case isc_info_req_select_count:
 			request->req_selects =
-				gds__vax_integer(reinterpret_cast<UCHAR*>(data),
-								 data_length);
+				isc_vax_integer(data, data_length);
 			break;
 
 		case isc_info_req_insert_count:
 			request->req_inserts =
-				gds__vax_integer(reinterpret_cast<UCHAR*>(data),
-								 data_length);
+				isc_vax_integer(data, data_length);
 			break;
 
 		default:
@@ -4166,9 +4159,7 @@ static DBB init(FRBRD** db_handle)
 	UCHAR p;
 	while ((p = *data++) != isc_info_end)
 	{
-		SSHORT l =
-			static_cast<SSHORT>(
-				gds__vax_integer(reinterpret_cast<UCHAR*>(data), 2));
+		SSHORT l = static_cast<SSHORT>(isc_vax_integer(data, 2));
 		data += 2;
 
 		switch (p)
@@ -4178,7 +4169,7 @@ static DBB init(FRBRD** db_handle)
 			break;
 
 		case isc_info_ods_version:
-			if (gds__vax_integer(reinterpret_cast<UCHAR*>(data), l) > 7)
+			if (isc_vax_integer(data, l) > 7)
 				database->dbb_flags &= ~DBB_v3;
 			break;
 
@@ -4212,7 +4203,7 @@ static DBB init(FRBRD** db_handle)
 		case frb_info_att_charset:
 			database->dbb_att_charset =
 				static_cast<short>(
-					gds__vax_integer(reinterpret_cast<UCHAR*>(data), 2));
+					isc_vax_integer(data, 2));
 			break;
 
 		default:

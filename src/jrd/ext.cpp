@@ -44,7 +44,7 @@
 #include "../jrd/rse.h"
 #include "../jrd/ext.h"
 #include "../jrd/tra.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/ext_proto.h"
@@ -69,10 +69,10 @@ class ExternalFileDirectoryList : public DirectoryList {
 
 IB_FILE *ext_fopen(const char *filename, const char *mode) {
 	if (!iExternalFileDirectoryList.IsPathInList(filename))
-		ERR_post(gds_conf_access_denied,
-			gds_arg_string, "external file",
-			gds_arg_string, ERR_cstring(const_cast <TEXT *>(filename)),
-			gds_arg_end);
+		ERR_post(isc_conf_access_denied,
+			isc_arg_string, "external file",
+			isc_arg_string, ERR_cstring(const_cast <TEXT *>(filename)),
+			isc_arg_end);
 
 	return ib_fopen(filename, mode);
 }
@@ -84,7 +84,7 @@ IB_FILE *ext_fopen(const char *filename, const char *mode) {
 #include <io.h>
 #define FOPEN_TYPE	"a+b"
 #define FOPEN_READ_ONLY	"rb"
-#define	SYS_ERR		gds_arg_win32
+#define	SYS_ERR		isc_arg_win32
 #endif
 
 #ifndef FOPEN_TYPE
@@ -93,7 +93,7 @@ IB_FILE *ext_fopen(const char *filename, const char *mode) {
 #endif
 
 #ifndef SYS_ERR
-#define SYS_ERR		gds_arg_unix
+#define SYS_ERR		isc_arg_unix
 #endif
 
 
@@ -186,8 +186,8 @@ EXT EXT_file(JRD_REL relation, const TEXT * file_name, SLONG * description)
 		/* could not open the file as read write attempt as read only */
 		if (!(file->ext_ifi = (int *) ext_fopen(file_name, FOPEN_READ_ONLY)))
 			ERR_post(isc_io_error,
-					 gds_arg_string, "ib_fopen",
-					 gds_arg_string,
+					 isc_arg_string, "ib_fopen",
+					 isc_arg_string,
 					 ERR_cstring(reinterpret_cast <
 								 char *>(file->ext_filename)),
 					isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
@@ -270,8 +270,8 @@ int EXT_get(RSB rsb)
 	if (file->ext_ifi == 0 ||
 		(ib_fseek((IB_FILE *) file->ext_ifi, rpb->rpb_ext_pos, 0) != 0))
 		ERR_post(isc_io_error,
-				 gds_arg_string, "ib_fseek",
-				 gds_arg_string,
+				 isc_arg_string, "ib_fseek",
+				 isc_arg_string,
 				 ERR_cstring(reinterpret_cast < char *>(file->ext_filename)),
 				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
 
@@ -320,7 +320,7 @@ void EXT_modify(RPB * old_rpb, RPB * new_rpb, int *transaction)
  *
  **************************************/
 
-/* ERR_post (gds_wish_list, gds_arg_interpreted, "EXT_modify: not yet implemented", 0); */
+/* ERR_post (isc_wish_list, isc_arg_interpreted, "EXT_modify: not yet implemented", 0); */
 	ERR_post(isc_ext_file_modify, 0);
 }
 
@@ -492,10 +492,10 @@ void EXT_store(RPB * rpb, int *transaction)
 			ERR_post(isc_read_only_database, 0);
 		else
 			ERR_post(isc_io_error,
-					 gds_arg_string, "insert",
-					 gds_arg_string, file->ext_filename,
+					 isc_arg_string, "insert",
+					 isc_arg_string, file->ext_filename,
 					 isc_arg_gds, isc_io_write_err,
-					 gds_arg_gds, gds_ext_readonly_err, 0);
+					 isc_arg_gds, isc_ext_readonly_err, 0);
 	}
 
 	vec::iterator field_ptr = relation->rel_fields->begin();
@@ -531,7 +531,7 @@ void EXT_store(RPB * rpb, int *transaction)
 
 	if (file->ext_ifi == 0
 		|| (ib_fseek((IB_FILE *) file->ext_ifi, (SLONG) 0, 2) != 0))
-		ERR_post(isc_io_error, gds_arg_string, "ib_fseek", gds_arg_string,
+		ERR_post(isc_io_error, isc_arg_string, "ib_fseek", isc_arg_string,
 				 ERR_cstring(reinterpret_cast < char *>(file->ext_filename)),
 				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
 	for (; l--; ++p)

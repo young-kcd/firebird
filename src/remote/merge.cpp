@@ -105,7 +105,7 @@ USHORT MERGE_database_info(const UCHAR* in,
 			break;
 
 		default:
-			length = (SSHORT) gds__vax_integer(in, 2);
+			length = (SSHORT) isc_vax_integer(reinterpret_cast<const SCHAR*>(in), 2);
 			in += 2;
 			if (out + length + 2 >= end) {
 				out[-1] = isc_info_truncated;
@@ -177,7 +177,7 @@ static ISC_STATUS merge_setup(
  *	already there.
  *
  **************************************/
-	USHORT length = (USHORT) gds__vax_integer(*in, 2);
+	USHORT length = (USHORT) isc_vax_integer(reinterpret_cast<const SCHAR*>(*in), 2);
 	const USHORT new_length = length + delta_length;
 
 	if (*out + new_length + 2 >= end) {

@@ -101,7 +101,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		while (p < buffer + sizeof(buffer) &&
 			   (item = *p) != isc_info_end &&
 			   item != isc_info_truncated && item != isc_info_svc_timeout) {
-			len = gds__vax_integer(p + 1, 2);
+			len = isc_vax_integer(p + 1, 2);
 			p += 2;
 			while (len--) {
 				p++;

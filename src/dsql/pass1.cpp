@@ -141,7 +141,6 @@
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../dsql/dsql.h"
-#include "gen/codes.h"
 #include "../jrd/thd.h"
 #include "../jrd/intl.h"
 #include "../jrd/blr.h"
@@ -294,21 +293,13 @@ dsql_ctx* PASS1_make_context(dsql_req* request, dsql_nod* relation_node)
 		procedure = METD_get_procedure(request, relation_name);
 		if (!procedure)
 		{
-            TEXT linecol[64];
-            sprintf (linecol, "At line %d, column %d.",
-                     (int) relation_node->nod_line, (int) relation_node->nod_column);
-			ERRD_post(	gds_sqlerr,
-						gds_arg_number,
-						(SLONG) - 204,
-						gds_arg_gds,
-						gds_dsql_procedure_err,
-						gds_arg_gds,
-						gds_random,
-						gds_arg_string,
-						relation_name->str_data,
-                        gds_arg_gds, gds_random,
-                        gds_arg_string, linecol,
-                        0);
+			TEXT linecol[64];
+			sprintf (linecol, "At line %d, column %d.",
+					(int) relation_node->nod_line, (int) relation_node->nod_column);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 204, isc_arg_gds,
+						isc_dsql_procedure_err, isc_arg_gds, isc_random,
+						isc_arg_string, relation_name->str_data, isc_arg_gds,
+						isc_random, isc_arg_string, linecol, 0);
 		}
 	}
 	else
@@ -320,35 +311,25 @@ dsql_ctx* PASS1_make_context(dsql_req* request, dsql_nod* relation_node)
 		}
 		if (!relation && !procedure)
 		{
-            TEXT linecol[64];
-            sprintf (linecol, "At line %d, column %d.",
-                     (int) relation_node->nod_line, (int) relation_node->nod_column);
-			ERRD_post(	gds_sqlerr,
-						gds_arg_number,
-						(SLONG) - 204,
-						gds_arg_gds,
-						gds_dsql_relation_err,
-						gds_arg_gds,
-						gds_random,
-						gds_arg_string,
-						relation_name->str_data,
-                        gds_arg_gds, gds_random,
-                        gds_arg_string, linecol,
-						0);
+			TEXT linecol[64];
+			sprintf (linecol, "At line %d, column %d.",
+					(int) relation_node->nod_line, (int) relation_node->nod_column);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 204, isc_arg_gds,
+						isc_dsql_relation_err, isc_arg_gds, isc_random,
+						isc_arg_string, relation_name->str_data, isc_arg_gds, 
+						isc_random, isc_arg_string, linecol, 0);
 		}
 	}
 
 	if (procedure && !procedure->prc_out_count) {
-        TEXT linecol[64];
-        sprintf (linecol, "At line %d, column %d.",
-                 (int) relation_node->nod_line, (int) relation_node->nod_column);
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 84,
-				  gds_arg_gds, gds_dsql_procedure_use_err,
-				  gds_arg_string, relation_name->str_data, 
-                  gds_arg_gds, gds_random,
-                  gds_arg_string, linecol,
-                  0);
-    }
+		TEXT linecol[64];
+		sprintf (linecol, "At line %d, column %d.",
+				(int) relation_node->nod_line, (int) relation_node->nod_column);
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 84, isc_arg_gds, 
+					isc_dsql_procedure_use_err, isc_arg_string, 
+					relation_name->str_data,  isc_arg_gds, isc_random,
+					isc_arg_string, linecol, 0);
+	}
 
 	// Set up context block.
 	dsql_ctx* context = FB_NEW(*tdsql->tsql_default) dsql_ctx;
@@ -403,17 +384,17 @@ dsql_ctx* PASS1_make_context(dsql_req* request, dsql_nod* relation_node)
 			ISC_STATUS error_code;
 			if (conflict->ctx_alias) {
 				conflict_name = conflict->ctx_alias;
-				error_code = gds_alias_conflict_err;
+				error_code = isc_alias_conflict_err;
 				// alias %s conflicts with an alias in the same statement.
 			}
 			else if (conflict->ctx_procedure) {
 				conflict_name = conflict->ctx_procedure->prc_name;
-				error_code = gds_procedure_conflict_error;
+				error_code = isc_procedure_conflict_error;
 				// alias %s conflicts with a procedure in the same statement.
 			}
 			else if (conflict->ctx_relation) {
 				conflict_name = conflict->ctx_relation->rel_name;
-				error_code = gds_relation_conflict_err;
+				error_code = isc_relation_conflict_err;
 				// alias %s conflicts with a relation in the same statement.
 			}
 			else {
@@ -421,9 +402,9 @@ dsql_ctx* PASS1_make_context(dsql_req* request, dsql_nod* relation_node)
 			}
 
 			if (!strcmp(conflict_name, context->ctx_alias)) {
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 204,
-						  gds_arg_gds, error_code,
-						  gds_arg_string, conflict_name, 0);
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 204,
+						  isc_arg_gds, error_code,
+						  isc_arg_string, conflict_name, 0);
 			}
 		}
 	}
@@ -445,15 +426,15 @@ dsql_ctx* PASS1_make_context(dsql_req* request, dsql_nod* relation_node)
 
 		if (!(request->req_flags & REQ_procedure)) {
 			if (count != procedure->prc_in_count)
-            {
-                    ERRD_post(gds_prcmismat, gds_arg_string,
-                              relation_name->str_data, 0);
+			{
+				ERRD_post(isc_prcmismat, isc_arg_string,
+							relation_name->str_data, 0);
 			}
 
 			if (count)
 			{
 				// Initialize this stack variable, and make it look like a node
-                std::auto_ptr<dsql_nod> desc_node(FB_NEW_RPT(*tdsql->tsql_default, 0) dsql_nod);
+				std::auto_ptr<dsql_nod> desc_node(FB_NEW_RPT(*tdsql->tsql_default, 0) dsql_nod);
 
 				dsql_nod* const* input = context->ctx_proc_inputs->nod_arg;
 				for (dsql_fld* field = procedure->prc_inputs;
@@ -461,8 +442,8 @@ dsql_ctx* PASS1_make_context(dsql_req* request, dsql_nod* relation_node)
 				{
 					DEV_BLKCHK(field, dsql_type_fld);
 					DEV_BLKCHK(*input, dsql_type_nod);
-                    // MAKE_desc_from_field(&desc_node.nod_desc, field);
-                    //	set_parameter_type(*input, &desc_node, false);
+					// MAKE_desc_from_field(&desc_node.nod_desc, field);
+					//	set_parameter_type(*input, &desc_node, false);
 					MAKE_desc_from_field(&(desc_node->nod_desc), field);
 					set_parameter_type(*input, desc_node.get(), false);
 				}
@@ -470,13 +451,13 @@ dsql_ctx* PASS1_make_context(dsql_req* request, dsql_nod* relation_node)
 		}
 	}
 
-    /* push the context onto the request context stack 
-       for matching fields against */
+	// push the context onto the request context stack 
+	// for matching fields against
 
 	LLS_PUSH(context, &request->req_context);
-    
+
 	return context;
-}       
+}
 
 
 /**
@@ -577,16 +558,16 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		case blr_extract_yearday:
 			if (sub1->nod_desc.dsc_dtype != dtype_sql_date &&
 				sub1->nod_desc.dsc_dtype != dtype_timestamp)
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 105,
-						  gds_arg_gds, gds_extract_input_mismatch, 0);
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 105,
+						  isc_arg_gds, isc_extract_input_mismatch, 0);
 			break;
 		case blr_extract_hour:
 		case blr_extract_minute:
 		case blr_extract_second:
 			if (sub1->nod_desc.dsc_dtype != dtype_sql_time &&
 				sub1->nod_desc.dsc_dtype != dtype_timestamp)
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 105,
-						  gds_arg_gds, gds_extract_input_mismatch, 0);
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 105,
+						  isc_arg_gds, isc_extract_input_mismatch, 0);
 			break;
 		default:
 			fb_assert(FALSE);
@@ -604,8 +585,8 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 	case nod_insert:
 	case nod_order:
 	case nod_select:
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-				  gds_arg_gds, gds_dsql_command_err, 0);
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+				  isc_arg_gds, isc_dsql_command_err, 0);
 
 	case nod_derived_table:
 		return pass1_derived_table(request, input, proc_flag);
@@ -613,8 +594,8 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 	case nod_select_expr:
 		{
 		if (proc_flag)
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 206,
-					  gds_arg_gds, gds_dsql_subselect_err, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 206,
+					  isc_arg_gds, isc_dsql_subselect_err, 0);
 
 		base = request->req_context;
 		node = MAKE_node(nod_via, e_via_count);
@@ -652,8 +633,8 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 	case nod_array:
 		if (proc_flag)
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-					  gds_arg_gds, gds_dsql_invalid_array, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+					  isc_arg_gds, isc_dsql_invalid_array, 0);
 		else
 			return pass1_field(request, input, 0);
 
@@ -678,8 +659,8 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 	case nod_parameter:
 		if (proc_flag)
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-					  gds_arg_gds, gds_dsql_command_err, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+					  isc_arg_gds, isc_dsql_command_err, 0);
 		node = MAKE_node(input->nod_type, e_par_count);
 		node->nod_count = 0;
 		node->nod_arg[e_par_parameter] = 
@@ -729,18 +710,18 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 				node = compose(node, temp, nod_or);
 			}
 			if (list_item_count >= MAX_MEMBER_LIST)
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 901,
-						  gds_arg_gds, isc_imp_exc,
-						  gds_arg_gds, gds_random,
-						  gds_arg_string,
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
+						  isc_arg_gds, isc_imp_exc,
+						  isc_arg_gds, isc_random,
+						  isc_arg_string,
 						  "too many values (more than 1500) in member list to match against",
 						  0);
 			return PASS1_node(request, node, proc_flag);
 		}
 		if (sub2->nod_type == nod_select_expr) {
 			if (proc_flag)
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 206,
-						  gds_arg_gds, gds_dsql_subselect_err, 0);
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 206,
+						  isc_arg_gds, isc_dsql_subselect_err, 0);
 
 			if (sub2->nod_arg[e_sel_singleton]) {
 				base = request->req_context;
@@ -802,16 +783,16 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 	case nod_agg_average2:
 	case nod_agg_total2:
 		if (proc_flag) {
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-					  gds_arg_gds, gds_dsql_command_err, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+					  isc_arg_gds, isc_dsql_command_err, 0);
 		}
 		if (!(request->req_in_select_list || request->req_in_where_clause  ||
 			request->req_in_group_by_clause  || request->req_in_having_clause ||
 			request->req_in_order_by_clause)) {
 			/* not part of a select list, where clause, group by clause,
 			   having clause, or order by clause */
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-					  gds_arg_gds, gds_dsql_agg_ref_err, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+					  isc_arg_gds, isc_dsql_agg_ref_err, 0);
 		}
 		node = MAKE_node(input->nod_type, input->nod_count);
 		node->nod_flags = input->nod_flags;
@@ -852,9 +833,9 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 			*reinterpret_cast<internal_info_id*>(input->nod_arg[0]->nod_desc.dsc_address);
 		USHORT req_mask = InternalInfo::getMask(id);
 		if (req_mask && !(request->req_flags & req_mask))
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-				gds_arg_gds, gds_token_err, /* Token unknown */
-				gds_arg_gds, gds_random, gds_arg_string, InternalInfo::getAlias(id), 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+				isc_arg_gds, isc_token_err, /* Token unknown */
+				isc_arg_gds, isc_random, isc_arg_string, InternalInfo::getAlias(id), 0);
 		}
 		break;
 
@@ -1095,9 +1076,9 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 								(dsql_fld*) (*ptr2)->nod_arg[e_dfl_field];
 							DEV_BLKCHK(field2, dsql_type_fld);
 							if (!strcmp(field->fld_name, field2->fld_name))
-								ERRD_post(gds_sqlerr, gds_arg_number,
-										  (SLONG) - 901, gds_arg_gds,
-										  gds_dsql_var_conflict, gds_arg_string,
+								ERRD_post(isc_sqlerr, isc_arg_number,
+										  (SLONG) - 901, isc_arg_gds,
+										  isc_dsql_var_conflict, isc_arg_string,
 										  field->fld_name, 0);
 						}
 					}
@@ -1112,9 +1093,9 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 								(dsql_fld*) (*ptr2)->nod_arg[e_dfl_field];
 							DEV_BLKCHK(field2, dsql_type_fld);
 							if (!strcmp(field->fld_name, field2->fld_name))
-								ERRD_post(gds_sqlerr, gds_arg_number,
-										  (SLONG) - 901, gds_arg_gds,
-										  gds_dsql_var_conflict, gds_arg_string,
+								ERRD_post(isc_sqlerr, isc_arg_number,
+										  (SLONG) - 901, isc_arg_gds,
+										  isc_dsql_var_conflict, isc_arg_string,
 										  field->fld_name, 0);
 						}
 					}
@@ -1149,10 +1130,10 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 			name = (dsql_str*) input->nod_arg[e_exe_procedure];
 			DEV_BLKCHK(name, dsql_type_str);
 			if (!(request->req_procedure = METD_get_procedure(request, name)))
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 204,
-						  gds_arg_gds, gds_dsql_procedure_err,
-						  gds_arg_gds, gds_random,
-						  gds_arg_string, name->str_data, 0);
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 204,
+						  isc_arg_gds, isc_dsql_procedure_err,
+						  isc_arg_gds, isc_random,
+						  isc_arg_string, name->str_data, 0);
 			request->req_type = REQ_EXEC_PROCEDURE;
 		}
 		node = MAKE_node(input->nod_type, input->nod_count);
@@ -1169,7 +1150,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 			if (node->nod_arg[e_exe_inputs])
 				count = node->nod_arg[e_exe_inputs]->nod_count;
 			if (count != request->req_procedure->prc_in_count)
-				ERRD_post(gds_prcmismat, gds_arg_string, name->str_data, 0);
+				ERRD_post(isc_prcmismat, isc_arg_string, name->str_data, 0);
 			if (count) {
 				// Initialize this stack variable, and make it look like a node
                 std::auto_ptr<dsql_nod> desc_node(FB_NEW_RPT(*getDefaultMemoryPool(), 0) dsql_nod);
@@ -1366,18 +1347,18 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
     case nod_breakleave:
 		{
 		if (!request->req_loop_level)
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-				gds_arg_gds, gds_token_err,	/* Token unknown */
-				gds_arg_gds, gds_random, gds_arg_string, "BREAK/LEAVE", 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+				isc_arg_gds, isc_token_err,	/* Token unknown */
+				isc_arg_gds, isc_random, isc_arg_string, "BREAK/LEAVE", 0);
 		input->nod_arg[e_breakleave_label] = pass1_label(request, input);
 		}
         return input;
 
 	case nod_return:
 		if (request->req_flags & REQ_trigger)
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-					gds_arg_gds, gds_token_err,	/* Token unknown */
-					gds_arg_gds, gds_random, gds_arg_string, "SUSPEND", 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+					isc_arg_gds, isc_token_err,	/* Token unknown */
+					isc_arg_gds, isc_random, isc_arg_string, "SUSPEND", 0);
 
 		input->nod_arg[e_rtn_procedure] = request->req_ddl_node;
 		return input;
@@ -1443,25 +1424,25 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		
 	case nod_user_savepoint:
 		if (request->req_flags & REQ_procedure)
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-					gds_arg_gds, gds_token_err,	/* Token unknown */
-					gds_arg_gds, gds_random, gds_arg_string, "SAVEPOINT", 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+					isc_arg_gds, isc_token_err,	/* Token unknown */
+					isc_arg_gds, isc_random, isc_arg_string, "SAVEPOINT", 0);
 		request->req_type = REQ_SAVEPOINT;	
 		return input;
 
 	case nod_release_savepoint:
 		if (request->req_flags & REQ_procedure)
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-					gds_arg_gds, gds_token_err,	/* Token unknown */
-					gds_arg_gds, gds_random, gds_arg_string, "RELEASE", 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+					isc_arg_gds, isc_token_err,	/* Token unknown */
+					isc_arg_gds, isc_random, isc_arg_string, "RELEASE", 0);
 		request->req_type = REQ_SAVEPOINT;	
 		return input;
 
 	case nod_undo_savepoint:
 		if (request->req_flags & REQ_procedure)
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-					gds_arg_gds, gds_token_err,	/* Token unknown */
-					gds_arg_gds, gds_random, gds_arg_string, "ROLLBACK", 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+					isc_arg_gds, isc_token_err,	/* Token unknown */
+					isc_arg_gds, isc_random, isc_arg_string, "ROLLBACK", 0);
 		request->req_type = REQ_SAVEPOINT;	
 		return input;
 
@@ -1485,9 +1466,9 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		break;
 
 	case nod_union:
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 901,
-				  gds_arg_gds, gds_dsql_command_err,
-				  gds_arg_gds, gds_union_err,	/* union not supported */
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
+				  isc_arg_gds, isc_dsql_command_err,
+				  isc_arg_gds, isc_union_err,	/* union not supported */
 				  0);
 		break;
 
@@ -1528,9 +1509,9 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		return input;
 
 	default:
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 901,
-				  gds_arg_gds, gds_dsql_command_err,
-				  gds_arg_gds, gds_dsql_construct_err,	/* Unsupported DSQL construct */
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
+				  isc_arg_gds, isc_dsql_command_err,
+				  isc_arg_gds, isc_dsql_construct_err,	/* Unsupported DSQL construct */
 				  0);
 		break;
 	}
@@ -1911,22 +1892,22 @@ static dsql_nod* ambiguity_check(dsql_req* request, dsql_nod* node,
 		if (node) {
 			delete node;
 		}
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -204,
-					gds_arg_gds, isc_dsql_ambiguous_field_name,
-					gds_arg_string, buffer,
-					gds_arg_string, ++p,
-					gds_arg_gds, gds_random,
-					gds_arg_string, name->str_data,
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,
+					isc_arg_gds, isc_dsql_ambiguous_field_name,
+					isc_arg_string, buffer,
+					isc_arg_string, ++p,
+					isc_arg_gds, isc_random,
+					isc_arg_string, name->str_data,
 					0);
 		return NULL;
 	}
 
-	ERRD_post_warning(isc_sqlwarn, gds_arg_number, (SLONG) 204,
-						gds_arg_warning, isc_dsql_ambiguous_field_name,
-						gds_arg_string, buffer,
-						gds_arg_string, ++p,
-						gds_arg_gds, gds_random,
-						gds_arg_string, name->str_data,
+	ERRD_post_warning(isc_sqlwarn, isc_arg_number, (SLONG) 204,
+						isc_arg_warning, isc_dsql_ambiguous_field_name,
+						isc_arg_string, buffer,
+						isc_arg_string, ++p,
+						isc_arg_gds, isc_random,
+						isc_arg_string, name->str_data,
 						0);
 
 	return node;
@@ -2032,8 +2013,8 @@ static void explode_asterisk(dsql_req* request, dsql_nod* node, dsql_nod* aggreg
 				//
 				// !!! THIS MESSAGE SHOULD BE CHANGED !!!
 				//
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-					  gds_arg_gds, gds_dsql_command_err, 0);
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+					  isc_arg_gds, isc_dsql_command_err, 0);
 			}
 			dsql_nod* derived_field = MAKE_node(nod_derived_field, e_derived_field_count);
 			derived_field->nod_arg[e_derived_field_value] = select_item->nod_arg[e_derived_field_value];
@@ -2057,8 +2038,8 @@ static void explode_asterisk(dsql_req* request, dsql_nod* node, dsql_nod* aggreg
 					if (invalid_reference(NULL, node,
 						aggregate->nod_arg[e_agg_group], false, false))
 					{
-						ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-						        gds_arg_gds, gds_field_ref_err, /* invalid field reference */
+						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+						        isc_arg_gds, isc_field_ref_err, /* invalid field reference */
 						        0);
 					}
 				}
@@ -2075,8 +2056,8 @@ static void explode_asterisk(dsql_req* request, dsql_nod* node, dsql_nod* aggreg
 					if (invalid_reference(NULL, node,
                         aggregate->nod_arg[e_agg_group], false, false))
 					{
-						ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-						        gds_arg_gds, gds_field_ref_err, /* invalid field reference */
+						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+						        isc_arg_gds, isc_field_ref_err, /* invalid field reference */
 						        0);
 					}
 				}
@@ -2156,17 +2137,17 @@ static void field_error(const TEXT* qualifier_name, const TEXT* field_name,
         sprintf (linecol, "At unknown line and column.");
 
 	if (field_name)
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 206,
-				  gds_arg_gds, gds_dsql_field_err,
-				  gds_arg_gds, gds_random, gds_arg_string, field_name,
-                  gds_arg_gds, gds_random,
-                  gds_arg_string, linecol,
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 206,
+				  isc_arg_gds, isc_dsql_field_err,
+				  isc_arg_gds, isc_random, isc_arg_string, field_name,
+                  isc_arg_gds, isc_random,
+                  isc_arg_string, linecol,
                   0);
 	else
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 206,
-				  gds_arg_gds, gds_dsql_field_err, 
-                  gds_arg_gds, gds_random,
-                  gds_arg_string, linecol,
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 206,
+				  isc_arg_gds, isc_dsql_field_err, 
+                  isc_arg_gds, isc_random,
+                  isc_arg_string, linecol,
                   0);
 }
 
@@ -2371,8 +2352,8 @@ static bool invalid_reference(const dsql_ctx* context, const dsql_nod* node,
 					if (pass1_found_aggregate(node->nod_arg[0], context->ctx_scope_level,
 							FIELD_MATCH_TYPE_EQUAL, true)) 
 					{
-						ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-							gds_arg_gds, gds_dsql_agg_nested_err, 0);
+						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+							isc_arg_gds, isc_dsql_agg_nested_err, 0);
 						// Nested aggregate functions are not allowed
 					}
 				}
@@ -2855,8 +2836,8 @@ static void pass1_blob( dsql_req* request, dsql_nod* input)
 	PASS1_make_context(request, input->nod_arg[e_blb_relation]);
 	dsql_nod* field = pass1_field(request, input->nod_arg[e_blb_field], 0);
 	if (field->nod_desc.dsc_dtype != dtype_blob)
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 206,
-				  gds_arg_gds, gds_dsql_blob_err, 0);
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 206,
+				  isc_arg_gds, isc_dsql_blob_err, 0);
 
 	request->req_type =
 		(input->nod_type ==
@@ -3015,9 +2996,9 @@ static dsql_nod* pass1_collate( dsql_req* request, dsql_nod* sub1, dsql_str* col
 			field->fld_length += sizeof(USHORT);
 	}
 	else {
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 204,
-				  gds_arg_gds, gds_dsql_datatype_err,
-				  gds_arg_gds, gds_collation_requires_text, 0);
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 204,
+				  isc_arg_gds, isc_dsql_datatype_err,
+				  isc_arg_gds, isc_collation_requires_text, 0);
 	}
 	DDL_resolve_intl_type(request, field, collation);
 	MAKE_desc_from_field(&node->nod_desc, field);
@@ -3059,8 +3040,8 @@ static dsql_nod* pass1_constant( dsql_req* request, dsql_nod* constant)
 	if (!resolved)
 	{
 		/* character set name is not defined */
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 504, gds_arg_gds,
-				  gds_charset_not_found, gds_arg_string, string->str_charset,
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 504, isc_arg_gds,
+				  isc_charset_not_found, isc_arg_string, string->str_charset,
 				  0);
 	}
 
@@ -3071,9 +3052,9 @@ static dsql_nod* pass1_constant( dsql_req* request, dsql_nod* constant)
 			/* 
 			   ** Specified collation not found 
 			 */
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 204, gds_arg_gds,
-					  gds_dsql_datatype_err, gds_arg_gds,
-					  gds_collation_not_found, gds_arg_string,
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 204, isc_arg_gds,
+					  isc_dsql_datatype_err, isc_arg_gds,
+					  isc_collation_not_found, isc_arg_string,
 					  temp_collation_name->str_data, 0);
 
 		resolved = resolved_collation;
@@ -3119,11 +3100,11 @@ static dsql_ctx* pass1_cursor_context( dsql_req* request, dsql_nod* cursor, dsql
 	if (temp->nod_type == nod_for_select)
 		temp = temp->nod_arg[e_flp_select];
 	else
-		ERRD_post(gds_sqlerr, gds_arg_number,
-				  (SLONG) - 504, gds_arg_gds,
-				  gds_dsql_cursor_err,
-				  gds_arg_string, string->str_data,
-				  gds_arg_string, "is not updatable",
+		ERRD_post(isc_sqlerr, isc_arg_number,
+				  (SLONG) - 504, isc_arg_gds,
+				  isc_dsql_cursor_err,
+				  isc_arg_string, string->str_data,
+				  isc_arg_string, "is not updatable",
 				  0);
 	temp = temp->nod_arg[e_rse_streams];
 
@@ -3143,11 +3124,11 @@ static dsql_ctx* pass1_cursor_context( dsql_req* request, dsql_nod* cursor, dsql
 				 relation->rel_name))
 			{
 				if (context)
-					ERRD_post(gds_sqlerr, gds_arg_number,
-							  (SLONG) - 504, gds_arg_gds,
-							  gds_dsql_cursor_err,
-							  gds_arg_string, string->str_data,
-							  gds_arg_string, "is ambiguous",
+					ERRD_post(isc_sqlerr, isc_arg_number,
+							  (SLONG) - 504, isc_arg_gds,
+							  isc_dsql_cursor_err,
+							  isc_arg_string, string->str_data,
+							  isc_arg_string, "is ambiguous",
 							  0);
 				else
 					context = candidate;
@@ -3156,11 +3137,11 @@ static dsql_ctx* pass1_cursor_context( dsql_req* request, dsql_nod* cursor, dsql
 	}
 
 	if (!context)
-		ERRD_post(gds_sqlerr, gds_arg_number,
-				  (SLONG) - 504, gds_arg_gds,
-				  gds_dsql_cursor_err,
-				  gds_arg_string, string->str_data,
-				  gds_arg_string, "cannot be matched",
+		ERRD_post(isc_sqlerr, isc_arg_number,
+				  (SLONG) - 504, isc_arg_gds,
+				  isc_dsql_cursor_err,
+				  isc_arg_string, string->str_data,
+				  isc_arg_string, "cannot be matched",
 				  0);
 
 	return context;
@@ -3193,10 +3174,10 @@ static dsql_nod* pass1_cursor_name(const dsql_req* request, const dsql_str* stri
 	}
 
 	if ((!cursor && existance_flag) || (cursor && !existance_flag)) {
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 504,
-				  gds_arg_gds, gds_dsql_cursor_err,
-				  gds_arg_string, string->str_data,
-				  gds_arg_string, (existance_flag) ? "is not defined" : "already exists",
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 504,
+				  isc_arg_gds, isc_dsql_cursor_err,
+				  isc_arg_string, string->str_data,
+				  isc_arg_string, (existance_flag) ? "is not defined" : "already exists",
 				  0);
 	}
 
@@ -3236,10 +3217,10 @@ static dsql_nod* pass1_cursor_reference( dsql_req* request, dsql_nod* cursor,
 
 	if (!symbol)
 		/* cursor is not defined */
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 504,
-				  gds_arg_gds, gds_dsql_cursor_err,
-				  gds_arg_string, string->str_data,
-				  gds_arg_string, "is not defined",
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 504,
+				  isc_arg_gds, isc_dsql_cursor_err,
+				  isc_arg_string, string->str_data,
+				  isc_arg_string, "is not defined",
 				  0);
 
 	dsql_req* parent = (dsql_req*) symbol->sym_object;
@@ -3254,8 +3235,8 @@ static dsql_nod* pass1_cursor_reference( dsql_req* request, dsql_nod* cursor,
 		(!rv_source && !(request->req_dbb->dbb_flags & DBB_v3)))
 	{
 		/* cursor is not updatable */
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 510,
-				  gds_arg_gds, gds_dsql_cursor_update_err, 0);
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 510,
+				  isc_arg_gds, isc_dsql_cursor_update_err, 0);
 	}
 
 	request->req_parent = parent;
@@ -3518,10 +3499,10 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 			//
 			// !!! THIS MESSAGE SHOULD BE CHANGED !!!
 			//
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-					  gds_arg_gds, gds_dsql_command_err,
-					  gds_arg_gds, gds_field_name,
-					  gds_arg_string, err_message, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+					  isc_arg_gds, isc_dsql_command_err,
+					  isc_arg_gds, isc_field_name,
+					  isc_arg_string, err_message, 0);
 		}
 
 		// Generate derived fields and assign alias-name to it.
@@ -3556,10 +3537,10 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 			//
             TEXT columnnumber[80];
             sprintf (columnnumber, "%d is specified without a name", count + 1);
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-					  gds_arg_gds, gds_dsql_command_err,
-					  gds_arg_gds, gds_field_name,
-					  gds_arg_string, columnnumber, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+					  isc_arg_gds, isc_dsql_command_err,
+					  isc_arg_gds, isc_field_name,
+					  isc_arg_string, columnnumber, 0);
 		}		
 	}
 
@@ -3589,10 +3570,10 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 						"The column %s was specified multiple times for derived table %s", 
 						name1->str_data, "unnamed");
 				}
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-						  gds_arg_gds, gds_dsql_command_err,
-						  gds_arg_gds, gds_field_name,
-						  gds_arg_string, columnnumber, 0);
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+						  isc_arg_gds, isc_dsql_command_err,
+						  isc_arg_gds, isc_field_name,
+						  isc_arg_string, columnnumber, 0);
 			}
 		}		
 	}
@@ -3756,14 +3737,14 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input, USHORT list)
                      field->fld_dtype == dtype_sql_time ||
                      field->fld_dtype == dtype_int64))
 				{
-						ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 206,
-								  gds_arg_gds, gds_dsql_field_err,
-								  gds_arg_gds, gds_random,
-								  gds_arg_string, field->fld_name,
-								  gds_arg_gds,
+						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 206,
+								  isc_arg_gds, isc_dsql_field_err,
+								  isc_arg_gds, isc_random,
+								  isc_arg_string, field->fld_name,
+								  isc_arg_gds,
 								  isc_sql_dialect_datatype_unsupport,
-								  gds_arg_number, request->req_client_dialect,
-								  gds_arg_string,
+								  isc_arg_number, request->req_client_dialect,
+								  isc_arg_string,
 								  DSC_dtype_tostring(static_cast < UCHAR >
 													 (field->fld_dtype)), 0);
 						return NULL;
@@ -3847,8 +3828,8 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input, USHORT list)
 					//
 					// !!! THIS MESSAGE SHOULD BE CHANGED !!!
 					//
-					ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-						  gds_arg_gds, gds_dsql_command_err, 0);
+					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+						  isc_arg_gds, isc_dsql_command_err, 0);
 				}
 			}
 
@@ -4332,9 +4313,9 @@ static dsql_nod* pass1_group_by_list(dsql_req* request, dsql_nod* input, dsql_no
 			ULONG position = (ULONG) (sub->nod_arg[0]);
 			if ((position < 1) || !select_list || 
 				(position > (ULONG) select_list->nod_count)) {
-					ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-							gds_arg_gds, gds_dsql_column_pos_err, 
-							gds_arg_string, "GROUP BY", 0);
+					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+							isc_arg_gds, isc_dsql_column_pos_err, 
+							isc_arg_string, "GROUP BY", 0);
 					// Invalid column position used in the GROUP BY clause
 			}
 			LLS_PUSH(PASS1_node(request, select_list->nod_arg[position - 1], false), &stack);
@@ -4437,8 +4418,8 @@ static dsql_nod* pass1_insert( dsql_req* request, dsql_nod* input)
 
 	if (fields->nod_count != values->nod_count)
 		/* count of column list and value list don't match */
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 804,
-				  gds_arg_gds, gds_dsql_var_count_err, 0);
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
+				  isc_arg_gds, isc_dsql_var_count_err, 0);
 
 	stack = NULL;
 
@@ -4597,11 +4578,11 @@ static dsql_nod* pass1_label(dsql_req* request, dsql_nod* input)
 		}
 		else if (label) {
 			// ERROR: Label %s is not found in the current scope
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-				gds_arg_gds, gds_dsql_command_err,
-				gds_arg_gds, gds_dsql_invalid_label,
-				gds_arg_string, string->str_data,
-				gds_arg_string, "is not found", 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+				isc_arg_gds, isc_dsql_command_err,
+				isc_arg_gds, isc_dsql_invalid_label,
+				isc_arg_string, string->str_data,
+				isc_arg_string, "is not found", 0);
 		}
 		else {
 			// break the current loop
@@ -4611,11 +4592,11 @@ static dsql_nod* pass1_label(dsql_req* request, dsql_nod* input)
 	else {
 		if (position > 0) {
 			// ERROR: Label %s already exists in the current scope
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-				gds_arg_gds, gds_dsql_command_err,
-				gds_arg_gds, gds_dsql_invalid_label,
-				gds_arg_string, string->str_data,
-				gds_arg_string, "already exists", 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+				isc_arg_gds, isc_dsql_command_err,
+				isc_arg_gds, isc_dsql_invalid_label,
+				isc_arg_string, string->str_data,
+				isc_arg_string, "already exists", 0);
 		}
 		else {
 			// store label name, if specified
@@ -4840,10 +4821,10 @@ static dsql_nod* pass1_alias_list(dsql_req* request, dsql_nod* alias_list)
 
 	if (!context) {
 		// there is no alias or table named %s at this scope level.
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-				  gds_arg_gds, gds_dsql_command_err,
-				  gds_arg_gds, gds_dsql_no_relation_alias,
-				  gds_arg_string, ((dsql_str*) *arg)->str_data, 0);
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+				  isc_arg_gds, isc_dsql_command_err,
+				  isc_arg_gds, isc_dsql_no_relation_alias,
+				  isc_arg_string, ((dsql_str*) *arg)->str_data, 0);
 	}
 
 	// Is this context a derived table.
@@ -4860,10 +4841,10 @@ static dsql_nod* pass1_alias_list(dsql_req* request, dsql_nod* alias_list)
 
 		if (!dt_context) {
 			// there is no alias or table named %s at this scope level.
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-				  gds_arg_gds, gds_dsql_command_err,
-				  gds_arg_gds, gds_dsql_no_relation_alias,
-				  gds_arg_string, ((dsql_str*) *arg)->str_data, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+				  isc_arg_gds, isc_dsql_command_err,
+				  isc_arg_gds, isc_dsql_no_relation_alias,
+				  isc_arg_string, ((dsql_str*) *arg)->str_data, 0);
 		}
 		return (dsql_nod*) dt_context;
 	}
@@ -4878,10 +4859,10 @@ static dsql_nod* pass1_alias_list(dsql_req* request, dsql_nod* alias_list)
 
 	if (!relation) {
 		// there is no alias or table named %s at this scope level.
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-				  gds_arg_gds, gds_dsql_command_err,
-				  gds_arg_gds, gds_dsql_no_relation_alias,
-				  gds_arg_string, ((dsql_str*) *arg)->str_data, 0);
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+				  isc_arg_gds, isc_dsql_command_err,
+				  isc_arg_gds, isc_dsql_no_relation_alias,
+				  isc_arg_string, ((dsql_str*) *arg)->str_data, 0);
 	}
 
 	// make up a dummy context to hold the resultant relation.
@@ -4968,10 +4949,10 @@ static dsql_ctx* pass1_alias(dsql_req* request, dsql_lls* stack, dsql_str* alias
 		{
 			if (relation_context) {
 				/* the table %s is referenced twice; use aliases to differentiate */
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-						  gds_arg_gds, gds_dsql_command_err,
-						  gds_arg_gds, gds_dsql_self_join,
-						  gds_arg_string, alias->str_data, 0);
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+						  isc_arg_gds, isc_dsql_command_err,
+						  isc_arg_gds, isc_dsql_self_join,
+						  isc_arg_string, alias->str_data, 0);
 			}
 			relation_context = context;
 		}
@@ -5087,9 +5068,9 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 			return PASS1_rse(request, input->nod_arg[0], order, rows, update_lock);
 		else {
 			if (update_lock)
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, gds_arg_gds, 
-						  gds_token_err, /* Token unknown */
-						  gds_arg_gds, gds_random, gds_arg_string, "WITH LOCK", 0);
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, isc_arg_gds, 
+						  isc_token_err, /* Token unknown */
+						  isc_arg_gds, isc_random, isc_arg_string, "WITH LOCK", 0);
 			return pass1_union(request, input, order, rows);
 		}
 	}
@@ -5109,9 +5090,9 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 	  !(relation = ((dsql_ctx*)list->nod_arg[0]->nod_arg[e_rel_context])->ctx_relation) ||
 	  (relation->rel_flags & REL_view) || (relation->rel_flags & REL_external) )) 
 	{
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-				gds_arg_gds, gds_token_err,	/* Token unknown */
-				gds_arg_gds, gds_random, gds_arg_string, "WITH LOCK", 0);
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+				isc_arg_gds, isc_token_err,	/* Token unknown */
+				isc_arg_gds, isc_random, isc_arg_string, "WITH LOCK", 0);
 	}
 	
 	dsql_nod* node;
@@ -5119,9 +5100,9 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 /* Process LIMIT and/or ROWS, if any */
 
 	if ( (node = input->nod_arg[e_sel_limit]) && rows) {
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-				  gds_arg_gds, gds_token_err,	/* Token unknown */
-				  gds_arg_gds, gds_random, gds_arg_string, "ROWS", 0);
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+				  isc_arg_gds, isc_token_err,	/* Token unknown */
+				  isc_arg_gds, isc_random, isc_arg_string, "ROWS", 0);
 	}
     else if (node || (node = rows) ) {
 		/* CVC: This line is a hint because set_parameter_type() doesn't receive
@@ -5154,8 +5135,8 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 		   allowed, HAVING should be used instead */
 		if (pass1_found_aggregate(rse->nod_arg[e_rse_boolean], 
 				request->req_scope_level, FIELD_MATCH_TYPE_EQUAL, true))
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-				gds_arg_gds, gds_dsql_agg_where_err, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+				isc_arg_gds, isc_dsql_agg_where_err, 0);
 			// Cannot use an aggregate in a WHERE clause, use HAVING instead
 	}
 
@@ -5222,9 +5203,9 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 		// dimitr: don't allow WITH LOCK for aggregates
 
 		if (update_lock) {
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-					gds_arg_gds, gds_token_err,	/* Token unknown */
-					gds_arg_gds, gds_random, gds_arg_string, "WITH LOCK", 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+					isc_arg_gds, isc_token_err,	/* Token unknown */
+					isc_arg_gds, isc_random, isc_arg_string, "WITH LOCK", 0);
 		}
 
 		parent_context = FB_NEW(*tdsql->tsql_default) dsql_ctx;
@@ -5269,8 +5250,8 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 				request->req_scope_level, FIELD_MATCH_TYPE_LOWER, &field) ||
 		    pass1_found_aggregate(aggregate->nod_arg[e_agg_group], 
 				request->req_scope_level, FIELD_MATCH_TYPE_LOWER_EQUAL, true))
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-				gds_arg_gds, gds_dsql_agg_group_err, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+				isc_arg_gds, isc_dsql_agg_group_err, 0);
 			// Cannot use an aggregate in a GROUP BY clause
     }
 
@@ -5286,8 +5267,8 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 				   for the mentioned bug #6057 is already fixed (2002-10-25)
 
 		if (request->req_flags & REQ_trigger)
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, gds_arg_gds, gds_token_err,
-					  gds_arg_gds, gds_random, gds_arg_string, "PLAN", 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, isc_arg_gds, isc_token_err,
+					  isc_arg_gds, isc_random, isc_arg_string, "PLAN", 0);
 		
 		*/
 
@@ -5298,9 +5279,9 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 	// sub-selects a new contextnumber should be generated
 	if (input->nod_arg[e_sel_distinct]) {
 		if (update_lock) {
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-					gds_arg_gds, gds_token_err,	/* Token unknown */
-					gds_arg_gds, gds_random, gds_arg_string, "WITH LOCK", 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+					isc_arg_gds, isc_token_err,	/* Token unknown */
+					isc_arg_gds, isc_random, isc_arg_string, "WITH LOCK", 0);
 		}
 		if (node = input->nod_arg[e_sel_list]) {
 			++request->req_in_select_list;
@@ -5335,9 +5316,9 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 		if (invalid_reference(parent_context, *ptr,
 			aggregate->nod_arg[e_agg_group], false, false))
 		{
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-				gds_arg_gds, gds_dsql_agg_column_err,
-				gds_arg_string, "select list", 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+				isc_arg_gds, isc_dsql_agg_column_err,
+				isc_arg_string, "select list", 0);
 			// Invalid expression in the select list
 			// (not contained in either an aggregate or the GROUP BY clause)
 		}
@@ -5355,9 +5336,9 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 			if (invalid_reference(parent_context, *ptr,
 				aggregate->nod_arg[e_agg_group], false, false))
 			{
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-					gds_arg_gds, gds_dsql_agg_column_err,
-					gds_arg_string, "ORDER BY clause", 0);
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+					isc_arg_gds, isc_dsql_agg_column_err,
+					isc_arg_string, "ORDER BY clause", 0);
 				// Invalid expression in the ORDER BY clause
 				// (not contained in either an aggregate or the GROUP BY clause)
 			}
@@ -5386,9 +5367,9 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 			if (invalid_reference(parent_context, *ptr,
 				aggregate->nod_arg[e_agg_group], false, false))
 			{
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-					gds_arg_gds, gds_dsql_agg_having_err,
-					gds_arg_string, "HAVING clause", 0);
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+					isc_arg_gds, isc_dsql_agg_having_err,
+					isc_arg_string, "HAVING clause", 0);
 				// Invalid expression in the HAVING clause
 				// (neither an aggregate nor contained in the GROUP BY clause)
 			}
@@ -5399,8 +5380,8 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 			if (invalid_reference(parent_rse->nod_arg[e_rse_boolean],
 								  aggregate->nod_arg[e_agg_group]))
 			{
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-						  gds_arg_gds, gds_field_ref_err, 0);
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+						  isc_arg_gds, isc_field_ref_err, 0);
 				/* invalid field reference */
 			}
 #endif
@@ -5618,8 +5599,8 @@ static dsql_nod* pass1_sort( dsql_req* request, dsql_nod* input, dsql_nod* s_lis
 	DEV_BLKCHK(s_list, dsql_type_nod);
 
 	if (input->nod_type != nod_list) {
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, gds_arg_gds, 
-			gds_dsql_command_err, gds_arg_gds, gds_order_by_err, 0);
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, isc_arg_gds, 
+			isc_dsql_command_err, isc_arg_gds, isc_order_by_err, 0);
 			/* invalid ORDER BY clause */				  
 	}
 
@@ -5633,8 +5614,8 @@ static dsql_nod* pass1_sort( dsql_req* request, dsql_nod* input, dsql_nod* s_lis
 		DEV_BLKCHK(*ptr, dsql_type_nod);
 		dsql_nod* node1 = *ptr;
 		if (node1->nod_type != nod_order) {
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, gds_arg_gds, 
-				gds_dsql_command_err, gds_arg_gds, gds_order_by_err, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, isc_arg_gds, 
+				isc_dsql_command_err, isc_arg_gds, isc_order_by_err, 0);
 				/* invalid ORDER BY clause */
 		}					  
 		dsql_nod* node2 = MAKE_node(nod_order, e_order_count);
@@ -5656,9 +5637,9 @@ static dsql_nod* pass1_sort( dsql_req* request, dsql_nod* input, dsql_nod* s_lis
 			const ULONG position = (ULONG) (node1->nod_arg[0]);
 			if ((position < 1) || !s_list || 
 				(position > (ULONG) s_list->nod_count)) {
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-					gds_arg_gds, gds_dsql_column_pos_err,
-					gds_arg_string, "ORDER BY", 0);
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+					isc_arg_gds, isc_dsql_column_pos_err,
+					isc_arg_string, "ORDER BY", 0);
 				// Invalid column position used in the ORDER BY clause
 			}
 			// substitute ordinal with appropriate field
@@ -5701,10 +5682,10 @@ static dsql_nod* pass1_udf( dsql_req* request, dsql_nod* input, USHORT proc_flag
 	DEV_BLKCHK(name, dsql_type_str);
 	dsql_udf* userFunc = METD_get_function(request, name);
 	if (!userFunc)
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 804,
-				  gds_arg_gds, gds_dsql_function_err,
-				  gds_arg_gds, gds_random,
-				  gds_arg_string, name->str_data, 0);
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
+				  isc_arg_gds, isc_dsql_function_err,
+				  isc_arg_gds, isc_random,
+				  isc_arg_string, name->str_data, 0);
 
 	dsql_nod* node = MAKE_node(nod_udf, input->nod_count);
 	node->nod_arg[0] = (dsql_nod*) userFunc;
@@ -5823,9 +5804,9 @@ static dsql_nod* pass1_union( dsql_req* request, dsql_nod* input, dsql_nod* orde
 	for (i = 1; i < union_node->nod_count; i++) {
 		const dsql_nod* nod1 = union_node->nod_arg[i]->nod_arg[e_rse_items];
 		if (items->nod_count != nod1->nod_count) {
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-					  gds_arg_gds, gds_dsql_command_err,
-					  gds_arg_gds, gds_dsql_count_mismatch,	/* overload of msg */
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+					  isc_arg_gds, isc_dsql_command_err,
+					  isc_arg_gds, isc_dsql_count_mismatch,	/* overload of msg */
 					  0);
 		}
 	}
@@ -5910,16 +5891,16 @@ static dsql_nod* pass1_union( dsql_req* request, dsql_nod* input, dsql_nod* orde
 			if (position->nod_type != nod_constant ||
 				position->nod_desc.dsc_dtype != dtype_long)
 			{
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-						  gds_arg_gds, gds_dsql_command_err,
-						  gds_arg_gds, gds_order_by_err,	// invalid ORDER BY clause.
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+						  isc_arg_gds, isc_dsql_command_err,
+						  isc_arg_gds, isc_order_by_err,	// invalid ORDER BY clause.
 						  0);
 			}
 			const SLONG number = (SLONG) position->nod_arg[0];
 			if (number < 1 || number > union_items->nod_count) {
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-						  gds_arg_gds, gds_dsql_command_err,
-						  gds_arg_gds, gds_order_by_err,	// invalid ORDER BY clause.
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+						  isc_arg_gds, isc_dsql_command_err,
+						  isc_arg_gds, isc_order_by_err,	// invalid ORDER BY clause.
 						  0);
 			}
 
@@ -5996,8 +5977,8 @@ static void pass1_union_auto_cast(dsql_nod* input, const dsc& desc, SSHORT posit
 					//
 					// !!! THIS MESSAGE SHOULD BE CHANGED !!!
 					//
-					ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-						  gds_arg_gds, gds_dsql_command_err, 0);
+					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+						  isc_arg_gds, isc_dsql_command_err, 0);
 				}
 				else {
 					dsql_nod* select_item = input->nod_arg[position];

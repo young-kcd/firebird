@@ -275,7 +275,7 @@ static void CLIB_ROUTINE signal_quit(void);
 static DJB start_database(CNCT, SCHAR *, SCHAR *, SSHORT, SLONG, ULONG);
 static bool start_server(UCHAR *, bool, bool, bool);
 static bool test_dup_entry(DJB, SLONG);
-static void time_stamp(GDS_QUAD *);
+static void time_stamp(ISC_QUAD*);
 
 static TEXT journal_directory[MAX_PATH_LENGTH];
 static DJB databases;
@@ -2186,7 +2186,7 @@ static void process_dump_file(CNCT connection,
 		X.FILE_SEQNO = msg->ltjw_count;
 		X.DUMP_ID = msg->ltjw_mode;
 		X.FILE_SIZE = msg->ltjw_offset;
-		time_stamp((GDS_QUAD_t*) &X.CREATION_DATE);
+		time_stamp((ISC_QUAD*) &X.CREATION_DATE);
 	END_STORE
 	ON_ERROR
 		put_line(NULL, 119, 0, 0, 0);
@@ -2228,7 +2228,7 @@ static void process_end_dump(CNCT connection,
 			X.END_SEQNO = msg->ltjw_seqno;
 			X.END_OFFSET = msg->ltjw_offset;
 			X.END_PARTITION_OFFSET = msg->ltjw_p_offset;
-			time_stamp((GDS_QUAD_t*) &X.DUMP_DATE);
+			time_stamp((ISC_QUAD*) &X.DUMP_DATE);
 		END_MODIFY
 		ON_ERROR
 			put_line(NULL, 121, 0, 0, 0);
@@ -2669,7 +2669,7 @@ static void process_wal_file(CNCT connection,
 				X.FILE_SEQUENCE = msg->ltjw_seqno;
 				strcpy(X.LOG_NAME, msg->ltjw_data);
 				MOVE_CLEAR(X.ARCHIVE_NAME, sizeof(X.ARCHIVE_NAME));
-				time_stamp((GDS_QUAD_t*) &X.ARCHIVE_DATE);
+				time_stamp((ISC_QUAD*) &X.ARCHIVE_DATE);
 				X.PARTITION_OFFSET = msg->ltjw_p_offset;
 				X.FILE_SIZE = msg->ltjw_offset;
 			END_STORE
@@ -3246,7 +3246,7 @@ static DJB start_database(CNCT connection,
 			strcpy(X.ARCHIVE_BASE_NAME, (const char*) database->djb_dir_name);
 		else
 			MOVE_CLEAR(X.ARCHIVE_BASE_NAME, sizeof(X.ARCHIVE_BASE_NAME));
-		time_stamp((GDS_QUAD_t*) &X.DATE_ENABLED);
+		time_stamp((ISC_QUAD*) &X.DATE_ENABLED);
 		strcpy(X.STATUS, DB_ACTIVE);
 
 		strcpy(X.DEVICE_TYPE, MEDIA_DISK);
@@ -3407,7 +3407,7 @@ static bool start_server(UCHAR * journal_dir,
 		STORE X IN JOURNAL
 			strcpy(X.STATUS, DB_ACTIVE);
 			X.USE_COUNT = 1;
-			time_stamp((GDS_QUAD_t*) &X.DATE_INIT);
+			time_stamp((ISC_QUAD*) &X.DATE_INIT);
 		END_STORE;
 
 // Initialize list of valid databases
@@ -3586,7 +3586,7 @@ static bool test_dup_entry(DJB dbb,
 }
 
 
-static void time_stamp(GDS_QUAD* date)
+static void time_stamp(ISC_QUAD* date)
 {
 /**************************************
  *

@@ -32,7 +32,7 @@
 #include "../jrd/jrn.h"
 #include "../jrd/old.h"
 #include "../jrd/llio.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../wal/wal.h"
 #include "../jrd/ail.h"
 #include "../jrd/all_proto.h"
@@ -116,7 +116,7 @@ int OLD_dump(
 	journal_dir[jd_len] = 0;
 
 	if (!jd_len)
-		ERR_post(gds_jrn_enable, 0);
+		ERR_post(isc_jrn_enable, 0);
 
 	if ((ret_val = JRN_init(tdbb->tdbb_status_vector,
 							&dbb->dbb_journal,
@@ -170,7 +170,7 @@ int OLD_dump(
 				 start_seqno, start_file,
 				 JRND_SIZE + dbb->dbb_page_size, seqno, offset, p_offset)) {
 		old_fini(&OLD_handle, 0);
-		ERR_post(gds_old_failure, gds_arg_string,
+		ERR_post(isc_old_failure, isc_arg_string,
 				 "Online Dump Initialize failed", 0);
 	}
 
@@ -222,11 +222,11 @@ int OLD_dump(
 		file_seqno = OLD_handle->old_file_seqno;
 		block_seqno = OLD_handle->old_block->ob_cur_seqno;
 		old_fini(&OLD_handle, OLD_EOF);
-		ERR_post(gds_old_no_space,
-				 gds_arg_number, (SLONG) dump_id,
-				 gds_arg_number, (SLONG) last_page,
-				 gds_arg_number, (SLONG) block_seqno,
-				 gds_arg_number, (SLONG) file_seqno, 0);
+		ERR_post(isc_old_no_space,
+				 isc_arg_number, (SLONG) dump_id,
+				 isc_arg_number, (SLONG) last_page,
+				 isc_arg_number, (SLONG) block_seqno,
+				 isc_arg_number, (SLONG) file_seqno, 0);
 	}
 
 /* Add record to JOURNAL SERVER */

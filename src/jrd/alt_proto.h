@@ -31,108 +31,112 @@ extern "C" {
 //
 // gds_ functions using isc_ functions (OK)
 //
-ISC_STATUS API_ROUTINE_VARARG gds__start_transaction(ISC_STATUS*, FRBRD**, 
+ISC_STATUS	API_ROUTINE_VARARG gds__start_transaction(ISC_STATUS*, FRBRD**, 
 													SSHORT, ...);
-ISC_STATUS API_ROUTINE gds__attach_database(ISC_STATUS*, SSHORT, const SCHAR*,
+ISC_STATUS	API_ROUTINE gds__attach_database(ISC_STATUS*, SSHORT, const SCHAR*,
 										FRBRD**, SSHORT, const SCHAR*);
-ISC_STATUS API_ROUTINE gds__blob_info(ISC_STATUS*, FRBRD**, SSHORT, const SCHAR*,
+ISC_STATUS	API_ROUTINE gds__blob_info(ISC_STATUS*, FRBRD**, SSHORT, const SCHAR*,
 										SSHORT, SCHAR*);
-ISC_STATUS API_ROUTINE gds__cancel_blob(ISC_STATUS*, FRBRD**);
-ISC_STATUS API_ROUTINE gds__cancel_events(ISC_STATUS*, FRBRD**, SLONG*);
-ISC_STATUS API_ROUTINE gds__close_blob(ISC_STATUS*, FRBRD**);
-ISC_STATUS API_ROUTINE gds__commit_retaining(ISC_STATUS*, FRBRD**);
-ISC_STATUS API_ROUTINE gds__commit_transaction(ISC_STATUS*, FRBRD**);
-ISC_STATUS API_ROUTINE gds__compile_request(ISC_STATUS*, FRBRD**, FRBRD**,
+ISC_STATUS	API_ROUTINE gds__cancel_blob(ISC_STATUS*, FRBRD**);
+ISC_STATUS	API_ROUTINE gds__cancel_events(ISC_STATUS*, FRBRD**, SLONG*);
+ISC_STATUS	API_ROUTINE gds__close_blob(ISC_STATUS*, FRBRD**);
+ISC_STATUS	API_ROUTINE gds__commit_retaining(ISC_STATUS*, FRBRD**);
+ISC_STATUS	API_ROUTINE gds__commit_transaction(ISC_STATUS*, FRBRD**);
+ISC_STATUS	API_ROUTINE gds__compile_request(ISC_STATUS*, FRBRD**, FRBRD**,
 											SSHORT, const SCHAR*);
-ISC_STATUS API_ROUTINE gds__compile_request2(ISC_STATUS*, FRBRD**, FRBRD**,
+ISC_STATUS	API_ROUTINE gds__compile_request2(ISC_STATUS*, FRBRD**, FRBRD**,
 											SSHORT, const SCHAR*);
-ISC_STATUS API_ROUTINE gds__create_blob(ISC_STATUS*, FRBRD**, FRBRD**, FRBRD**,
+ISC_STATUS	API_ROUTINE gds__create_blob(ISC_STATUS*, FRBRD**, FRBRD**, FRBRD**,
 										GDS_QUAD*);
-ISC_STATUS API_ROUTINE gds__create_blob2(ISC_STATUS*, FRBRD**, FRBRD**, FRBRD**,
+ISC_STATUS	API_ROUTINE gds__create_blob2(ISC_STATUS*, FRBRD**, FRBRD**, FRBRD**,
 										GDS_QUAD*, SSHORT, const SCHAR*);
-ISC_STATUS API_ROUTINE gds__create_database(ISC_STATUS*, SSHORT, const SCHAR*,
+ISC_STATUS	API_ROUTINE gds__create_database(ISC_STATUS*, SSHORT, const SCHAR*,
 											FRBRD**, SSHORT, const SCHAR*, SSHORT);
-ISC_STATUS API_ROUTINE gds__database_cleanup(ISC_STATUS*, FRBRD**,
+ISC_STATUS	API_ROUTINE gds__database_cleanup(ISC_STATUS*, FRBRD**,
 											DatabaseCleanupRoutine*, SLONG);
-ISC_STATUS API_ROUTINE gds__database_info(ISC_STATUS*, FRBRD**, SSHORT, const SCHAR*,
+ISC_STATUS	API_ROUTINE gds__database_info(ISC_STATUS*, FRBRD**, SSHORT, const SCHAR*,
 											SSHORT, SCHAR*);
-ISC_STATUS API_ROUTINE gds__detach_database(ISC_STATUS*, FRBRD**);
-void API_ROUTINE gds__event_counts(ULONG*, SSHORT, SCHAR*, SCHAR*);
-void API_ROUTINE gds__get_client_version(SCHAR*);
-int API_ROUTINE gds__get_client_major_version();
-int API_ROUTINE gds__get_client_minor_version();
+ISC_STATUS	API_ROUTINE gds__detach_database(ISC_STATUS*, FRBRD**);
+void		API_ROUTINE gds__event_counts(ULONG*, SSHORT, SCHAR*, SCHAR*);
+void		API_ROUTINE gds__get_client_version(SCHAR*);
+int			API_ROUTINE gds__get_client_major_version();
+int			API_ROUTINE gds__get_client_minor_version();
 #ifndef REQUESTER
-ISC_STATUS API_ROUTINE gds__event_wait(ISC_STATUS*, FRBRD**, SSHORT,
+ISC_STATUS	API_ROUTINE gds__event_wait(ISC_STATUS*, FRBRD**, SSHORT,
 											UCHAR*, UCHAR*);
 #endif
-ISC_STATUS API_ROUTINE gds__get_segment(ISC_STATUS*, FRBRD**, USHORT*, 
+ISC_STATUS	API_ROUTINE gds__get_segment(ISC_STATUS*, FRBRD**, USHORT*, 
 										USHORT, SCHAR*);
-ISC_STATUS API_ROUTINE gds__get_slice(ISC_STATUS*, FRBRD**, FRBRD**, GDS_QUAD*,
+ISC_STATUS	API_ROUTINE gds__get_slice(ISC_STATUS*, FRBRD**, FRBRD**, GDS_QUAD*,
 										SSHORT, SCHAR*, SSHORT, SLONG*, SLONG,
 										void*, SLONG*);
-ISC_STATUS API_ROUTINE gds__open_blob(ISC_STATUS*, FRBRD**, FRBRD**, FRBRD**,
+ISC_STATUS	API_ROUTINE gds__open_blob(ISC_STATUS*, FRBRD**, FRBRD**, FRBRD**,
 										GDS_QUAD*);
-ISC_STATUS API_ROUTINE gds__open_blob2(ISC_STATUS*, FRBRD**, FRBRD**, FRBRD**,
+ISC_STATUS	API_ROUTINE gds__open_blob2(ISC_STATUS*, FRBRD**, FRBRD**, FRBRD**,
 										GDS_QUAD*, SSHORT, const SCHAR*);
-ISC_STATUS API_ROUTINE gds__prepare_transaction(ISC_STATUS*, FRBRD**);
-ISC_STATUS API_ROUTINE gds__prepare_transaction2(ISC_STATUS*, FRBRD**, SSHORT,
+ISC_STATUS	API_ROUTINE gds__prepare_transaction(ISC_STATUS*, FRBRD**);
+ISC_STATUS	API_ROUTINE gds__prepare_transaction2(ISC_STATUS*, FRBRD**, SSHORT,
 												SCHAR*);
-ISC_STATUS API_ROUTINE gds__put_segment(ISC_STATUS*, FRBRD**, USHORT, const SCHAR*);
-ISC_STATUS API_ROUTINE gds__put_slice(ISC_STATUS*, FRBRD**, FRBRD**, GDS_QUAD*,
+ISC_STATUS	API_ROUTINE gds__put_segment(ISC_STATUS*, FRBRD**, USHORT, const SCHAR*);
+ISC_STATUS	API_ROUTINE gds__put_slice(ISC_STATUS*, FRBRD**, FRBRD**, GDS_QUAD*,
 										SSHORT, SCHAR*, SSHORT, SLONG*, SLONG, void*);
-ISC_STATUS API_ROUTINE gds__que_events(ISC_STATUS*, FRBRD**, SLONG*, SSHORT, SCHAR*,
+ISC_STATUS	API_ROUTINE gds__que_events(ISC_STATUS*, FRBRD**, SLONG*, SSHORT, SCHAR*,
 										void(*)(), void*);
-ISC_STATUS API_ROUTINE gds__receive(ISC_STATUS*, FRBRD**, SSHORT, SSHORT,
+ISC_STATUS	API_ROUTINE gds__receive(ISC_STATUS*, FRBRD**, SSHORT, SSHORT,
 										void*, SSHORT);
-ISC_STATUS API_ROUTINE gds__reconnect_transaction(ISC_STATUS*, FRBRD**, FRBRD**,
+ISC_STATUS	API_ROUTINE gds__reconnect_transaction(ISC_STATUS*, FRBRD**, FRBRD**,
 													SSHORT, const SCHAR*);
-ISC_STATUS API_ROUTINE gds__release_request(ISC_STATUS*, FRBRD**);
-ISC_STATUS API_ROUTINE gds__request_info(ISC_STATUS*, FRBRD**, SSHORT, SSHORT,
+ISC_STATUS	API_ROUTINE gds__release_request(ISC_STATUS*, FRBRD**);
+ISC_STATUS	API_ROUTINE gds__request_info(ISC_STATUS*, FRBRD**, SSHORT, SSHORT,
 										const SCHAR*, SSHORT, SCHAR*);
-ISC_STATUS API_ROUTINE gds__rollback_transaction(ISC_STATUS*, FRBRD**);
-ISC_STATUS API_ROUTINE gds__seek_blob(ISC_STATUS*, FRBRD**, SSHORT, SLONG, SLONG*);
-ISC_STATUS API_ROUTINE gds__send(ISC_STATUS*, FRBRD**, SSHORT, SSHORT, void*,
+ISC_STATUS	API_ROUTINE gds__rollback_transaction(ISC_STATUS*, FRBRD**);
+ISC_STATUS	API_ROUTINE gds__seek_blob(ISC_STATUS*, FRBRD**, SSHORT, SLONG, SLONG*);
+ISC_STATUS	API_ROUTINE gds__send(ISC_STATUS*, FRBRD**, SSHORT, SSHORT, void*,
 								SSHORT);
-ISC_STATUS API_ROUTINE gds__start_and_send(ISC_STATUS*, FRBRD**, FRBRD**,
+ISC_STATUS	API_ROUTINE gds__start_and_send(ISC_STATUS*, FRBRD**, FRBRD**,
 											SSHORT, SSHORT, void*, SSHORT);
-ISC_STATUS API_ROUTINE gds__start_multiple(ISC_STATUS*, FRBRD**, SSHORT, void*);
-ISC_STATUS API_ROUTINE gds__start_request(ISC_STATUS*, FRBRD**, FRBRD**, SSHORT);
-ISC_STATUS API_ROUTINE gds__transaction_info(ISC_STATUS*, FRBRD**, SSHORT,
+ISC_STATUS	API_ROUTINE gds__start_multiple(ISC_STATUS*, FRBRD**, SSHORT, void*);
+ISC_STATUS	API_ROUTINE gds__start_request(ISC_STATUS*, FRBRD**, FRBRD**, SSHORT);
+ISC_STATUS	API_ROUTINE gds__transaction_info(ISC_STATUS*, FRBRD**, SSHORT,
 										 const SCHAR*, SSHORT, SCHAR*);
-ISC_STATUS API_ROUTINE gds__unwind_request(ISC_STATUS*, FRBRD**, SSHORT);
-ISC_STATUS API_ROUTINE gds__ddl(ISC_STATUS*, FRBRD**, FRBRD**, SSHORT, const SCHAR*);
-void API_ROUTINE gds__decode_date(const GDS_QUAD*, void*);
-void API_ROUTINE gds__encode_date(const void*, GDS_QUAD*);
-int API_ROUTINE gds__version(FRBRD**, void(*) (), void*);
-void API_ROUTINE gds__set_debug(int);
+ISC_STATUS	API_ROUTINE gds__unwind_request(ISC_STATUS*, FRBRD**, SSHORT);
+ISC_STATUS	API_ROUTINE gds__ddl(ISC_STATUS*, FRBRD**, FRBRD**, SSHORT, const SCHAR*);
+void		API_ROUTINE gds__decode_date(const GDS_QUAD*, void*);
+void		API_ROUTINE gds__encode_date(const void*, GDS_QUAD*);
+int			API_ROUTINE gds__version(FRBRD**, void(*) (), void*);
+void		API_ROUTINE gds__set_debug(int);
+SLONG		API_ROUTINE gds__vax_integer(const UCHAR*, SSHORT);
+
 //
-// isc_ functions which are not mapped to gds_ functions (the gds_ ones are in utl.cpp)
+// gds_ functions which don't use isc_ functions (the isc_ ones are in utl.cpp)
 // Should be analyzed
 //
-SLONG API_ROUTINE_VARARG isc_event_block(SCHAR**, SCHAR**, USHORT, ...);
-USHORT API_ROUTINE isc_event_block_a(SCHAR**, SCHAR**, USHORT, TEXT**);
-void API_ROUTINE isc_event_block_s(SCHAR**, SCHAR**, USHORT, TEXT**, USHORT*);
+SLONG		API_ROUTINE gds__event_block(SCHAR **, SCHAR **, USHORT, ...);
+USHORT		API_ROUTINE gds__event_block_a(SCHAR **, SCHAR **, SSHORT, SCHAR **);
+void		API_ROUTINE gds__event_block_s(SCHAR **, SCHAR **, SSHORT,
+										   SCHAR **, SSHORT *);
+
 //
 // isc functions using gds_ functions (gds_ functions defined in gds.cpp)
 //
-SLONG API_ROUTINE isc_free(SCHAR*);
-SLONG API_ROUTINE isc_ftof(const SCHAR*, const USHORT, SCHAR*, const USHORT);
-ISC_STATUS API_ROUTINE isc_print_blr(const SCHAR*, void (*) (), void*, SSHORT);
-ISC_STATUS API_ROUTINE isc_print_status(const ISC_STATUS*);
-void API_ROUTINE isc_qtoq(const GDS_QUAD*, GDS_QUAD*);
-SLONG API_ROUTINE isc_sqlcode(const ISC_STATUS*);
-void API_ROUTINE isc_sqlcode_s(const ISC_STATUS*, ULONG*);
-void API_ROUTINE isc_vtof(const SCHAR*, SCHAR*, USHORT);
-void API_ROUTINE isc_vtov(const SCHAR*, SCHAR*, SSHORT);
-SLONG API_ROUTINE isc_vax_integer(const SCHAR*, SSHORT);
-SLONG API_ROUTINE isc_interprete(SCHAR*, ISC_STATUS**);
-SLONG API_ROUTINE isc_interprete_cpp(SCHAR* const, const ISC_STATUS**);
+SLONG		API_ROUTINE isc_free(SCHAR*);
+SLONG		API_ROUTINE isc_ftof(const SCHAR*, const USHORT, SCHAR*, const USHORT);
+ISC_STATUS	API_ROUTINE isc_print_blr(const SCHAR*, void (*) (), void*, SSHORT);
+ISC_STATUS	API_ROUTINE isc_print_status(const ISC_STATUS*);
+void		API_ROUTINE isc_qtoq(const ISC_QUAD*, ISC_QUAD*);
+SLONG		API_ROUTINE isc_sqlcode(const ISC_STATUS*);
+void		API_ROUTINE isc_sqlcode_s(const ISC_STATUS*, ULONG*);
+void		API_ROUTINE isc_vtof(const SCHAR*, SCHAR*, USHORT);
+void		API_ROUTINE isc_vtov(const SCHAR*, SCHAR*, SSHORT);
+SLONG		API_ROUTINE isc_interprete(SCHAR*, ISC_STATUS**);
+SLONG		API_ROUTINE isc_interprete_cpp(SCHAR* const, const ISC_STATUS**);
+
 //
 // isc_ functions with no gds_ equivalence
 //
-int API_ROUTINE isc_add_user(ISC_STATUS*, USER_SEC_DATA*);
-int API_ROUTINE isc_delete_user(ISC_STATUS*, USER_SEC_DATA*);
-int API_ROUTINE isc_modify_user(ISC_STATUS*, USER_SEC_DATA*);
+int		API_ROUTINE isc_add_user(ISC_STATUS*, USER_SEC_DATA*);
+int		API_ROUTINE isc_delete_user(ISC_STATUS*, USER_SEC_DATA*);
+int		API_ROUTINE isc_modify_user(ISC_STATUS*, USER_SEC_DATA*);
 
 } // extern "C"
 

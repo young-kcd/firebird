@@ -90,7 +90,7 @@ static void store_headers( RBDB rbdb)
 	IRT index_root;
 	PIP pip;
 	PPG pointer;
-	GDS_QUAD temp;
+	ISC_QUAD temp;
 
 	page_number = 0;
 

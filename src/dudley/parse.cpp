@@ -3516,7 +3516,7 @@ static void parse_field_dtype( DUDLEY_FLD field)
 
 	case KW_QUAD:
 		field->fld_dtype = blr_quad;
-		field->fld_length = sizeof(GDS_QUAD);
+		field->fld_length = sizeof(ISC_QUAD);
 		break;
 
 	case KW_FLOAT:
@@ -3531,12 +3531,12 @@ static void parse_field_dtype( DUDLEY_FLD field)
 
 	case KW_DATE:
 		field->fld_dtype = blr_timestamp;
-		field->fld_length = sizeof(GDS_QUAD);
+		field->fld_length = sizeof(ISC_QUAD);
 		break;
 
 	case KW_BLOB:
 		field->fld_dtype = blr_blob;
-		field->fld_length = sizeof(GDS_QUAD);
+		field->fld_length = sizeof(ISC_QUAD);
 		break;
 
 	default:

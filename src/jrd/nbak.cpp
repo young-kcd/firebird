@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.cpp,v 1.13 2003-11-03 23:53:50 brodsom Exp $
+ *  $Id: nbak.cpp,v 1.14 2003-11-11 12:13:37 brodsom Exp $
  *
  */
 
@@ -48,7 +48,7 @@
 #include "isc_proto.h"
 #include "thd_proto.h"
 #include "os/pio_proto.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "gds_proto.h"
 #include "os/guid.h"
 #include "sch_proto.h"
@@ -147,7 +147,7 @@ void BackupManager::lock_state_write(bool thread_exit) {
 		flags &= ~NBAK_state_in_use; // Lock should be released at this point
 		gds__log("Cannot lock database backup state for writing");
 		// This is OK because state changing code expect it
-		ERR_post(gds_lock_conflict, 0); 
+		ERR_post(isc_lock_conflict, 0); 
 	}
 	NBAK_TRACE(("backup state locked for writing"));
 #endif
@@ -808,10 +808,10 @@ bool BackupManager::actualize_alloc() throw() {
 				if (!alloc_table->add(AllocItem(alloc_buffer[i+1], temp_bdb.bdb_page+i+1))) {
 					database->dbb_flags |= DBB_bugcheck;
 					status[0] = isc_arg_gds;
-					status[1] = gds_bug_check;
-					status[2] = gds_arg_string;
+					status[1] = isc_bug_check;
+					status[2] = isc_arg_string;
 					status[3] = (ISC_STATUS)ERR_cstring("Duplicated item in allocation table detected");
-					status[4] = gds_arg_end;
+					status[4] = isc_arg_end;
 					return false;
 				}
 			}
@@ -1119,10 +1119,10 @@ bool BackupManager::actualize_state() throw() {
 	if (diff_use_count && new_backup_state == nbak_state_normal) {				
 		database->dbb_flags |= DBB_bugcheck;
 		status[0] = isc_arg_gds;
-		status[1] = gds_bug_check;
-		status[2] = gds_arg_string;
+		status[1] = isc_bug_check;
+		status[2] = isc_arg_string;
 		status[3] = (ISC_STATUS)ERR_cstring("Difference file is in use while backup is already finished");
-		status[4] = gds_arg_end;
+		status[4] = isc_arg_end;
 		return false;
 	}
 #endif

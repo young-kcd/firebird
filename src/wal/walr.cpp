@@ -24,7 +24,7 @@
 #include "firebird.h"
 #include <string.h>
 #include "../wal/wal.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/llio.h"
 #include "../wal/walf_proto.h"
 #include "../wal/walr_proto.h"
@@ -164,7 +164,7 @@ SSHORT WALR_get(ISC_STATUS * status_vector,
 	if (reclen > remaining_logrec_bytes) {
 		/* The record is incomplete */
 
-		WAL_FORMAT_ERROR(status_vector, gds_logr_incomplete,
+		WAL_FORMAT_ERROR(status_vector, isc_logr_incomplete,
 						 WALR_handle->walr_logname, *log_offset);
 		return FB_FAILURE;
 	}
@@ -431,7 +431,7 @@ static SSHORT log_open(
 			IO_ERR_RETURN;
 
 		if (read_len < (offset - sector_offset + (SLONG) REC_HDROVHD))
-			FORMAT_ERR_RETURN(gds_logr_header_small, offset)
+			FORMAT_ERR_RETURN(isc_logr_header_small, offset)
 
 				if (memcmp(log_terminator_block, sector_bytes, REC_HDROVHD) ==
 					0) {
@@ -465,7 +465,7 @@ static SSHORT log_open(
 	}
 
 	if (read_len < (SLONG) BLK_HDROVHD)
-		FORMAT_ERR_RETURN(gds_logb_small, blk_offset)
+		FORMAT_ERR_RETURN(isc_logb_small, blk_offset)
 
 			memcpy((SCHAR *) & blkhdr, sector_bytes, BLK_HDROVHD);
 
@@ -632,7 +632,7 @@ static SSHORT read_next_block( ISC_STATUS * status_vector, WALRS WALRS_handle)
 				WALR_handle->walr_log_header->walfh_hibsn) {
 				/* unexpected end of log file. */
 
-				WAL_FORMAT_ERROR(status_vector, gds_logf_unexpected_eof,
+				WAL_FORMAT_ERROR(status_vector, isc_logf_unexpected_eof,
 								 WALR_handle->walr_logname,
 								 WALR_handle->walr_offset);
 				return FB_FAILURE;

@@ -41,7 +41,7 @@
 *       Define location of DLL on OS/2
 *
 *       17149   katz    20-MAY-1994
-*       In JRD, gds_arg_number arguments are SLONG's not int's
+*       In JRD, isc_arg_number arguments are SLONG's not int's
 *
 *       16633   daves   19-APR-1994
 *       Bug 6202: International licensing uses INTERNATIONAL product code
@@ -96,7 +96,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/req.h"
 #include "../jrd/val.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/intl.h"
 #include "../jrd/intl_classes.h"
 #include "../jrd/ods.h"
@@ -734,12 +734,12 @@ USHORT INTL_convert_bytes(TDBB tdbb,
 		if (!len || all_spaces(tdbb, src_type, src_ptr, len, 0))
 			return (dest_ptr - start_dest_ptr);
 		else
-			(*err) (gds_arith_except, 0);
+			(*err) (isc_arith_except, 0);
 	}
 	else if (src_len == 0)
 		return (0);
 	else if (src_type == CS_BINARY)
-		(*err)(gds_arith_except, gds_arg_gds, gds_transliteration_failed, 0);
+		(*err)(isc_arith_except, isc_arg_gds, isc_transliteration_failed, 0);
 	else
 		/* character sets are known to be different */
 	{
@@ -753,16 +753,16 @@ USHORT INTL_convert_bytes(TDBB tdbb,
 							  && all_spaces(tdbb, src_type, src_ptr, src_len,
 											err_position))) return (len);
 			else if (err_code == CS_TRUNCATION_ERROR)
-				(*err) (gds_arith_except, 0);
+				(*err) (isc_arith_except, 0);
 			else
-				(*err) (gds_arith_except, gds_arg_gds, gds_transliteration_failed, 0);
+				(*err) (isc_arith_except, isc_arg_gds, isc_transliteration_failed, 0);
 		}
 
 		/* Find a CS1 to UNICODE object */
 
 		CharSet from_cs = INTL_charset_lookup(tdbb, src_type, NULL);
 		if (from_cs == NULL)
-			(*err)(gds_arith_except, gds_arg_gds, gds_text_subtype, gds_arg_number, 
+			(*err)(isc_arith_except, isc_arg_gds, isc_text_subtype, isc_arg_number, 
 				(ISC_STATUS) src_type, 0);
 
 		/* 
@@ -779,9 +779,9 @@ USHORT INTL_convert_bytes(TDBB tdbb,
 										err_position))) {
 			delete [] tmp_buffer;
 			if (err_code == CS_TRUNCATION_ERROR)
-				(*err) (gds_arith_except, 0);
+				(*err) (isc_arith_except, 0);
 			else
-				(*err) (gds_arith_except, gds_arg_gds, gds_transliteration_failed, 0);
+				(*err) (isc_arith_except, isc_arg_gds, isc_transliteration_failed, 0);
 		}
 
 		/* Find a UNICODE to CS2 object */
@@ -789,7 +789,7 @@ USHORT INTL_convert_bytes(TDBB tdbb,
 		CharSet to_cs = INTL_charset_lookup(tdbb, dest_type, NULL);
 		if (to_cs == NULL) {
 			delete [] tmp_buffer;
-			(*err) (gds_arith_except, gds_arg_gds, gds_text_subtype, gds_arg_number, 
+			(*err) (isc_arith_except, isc_arg_gds, isc_text_subtype, isc_arg_number, 
 				   (ISC_STATUS) dest_type, 0);
 		}
 		cs_obj = to_cs.getConvFromUnicode();
@@ -803,9 +803,9 @@ USHORT INTL_convert_bytes(TDBB tdbb,
 		{
 			delete [] tmp_buffer;
 			if (err_code == CS_TRUNCATION_ERROR)
-				(*err) (gds_arith_except, 0);
+				(*err) (isc_arith_except, 0);
 			else
-				(*err) (gds_arith_except, gds_arg_gds, gds_transliteration_failed, 0);
+				(*err) (isc_arith_except, isc_arg_gds, isc_transliteration_failed, 0);
 		}
 
 		delete [] tmp_buffer;
@@ -974,7 +974,7 @@ int INTL_convert_string(dsc* to, const dsc* from, FPTR_ERROR err)
 	if (from_fill)
 		/* Make sure remaining characters on From string are spaces */
 		if (!all_spaces(tdbb, from_cs, q, from_fill, 0))
-			(*err) (gds_arith_except, 0);
+			(*err) (isc_arith_except, 0);
 
 	return 0;
 }
@@ -1046,7 +1046,7 @@ int INTL_defined_type(TDBB tdbb, ISC_STATUS * status, SSHORT t_type)
 	SET_TDBB(tdbb);
 
 	if (status)
-		status[0] = gds_arg_end;
+		status[0] = isc_arg_end;
 	TextType obj = INTL_texttype_lookup(tdbb, t_type, NULL, status);
 	if (obj == NULL)
 		return FALSE;

@@ -36,7 +36,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.7 2003-11-07 08:06:23 robocop Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.8 2003-11-11 12:17:04 brodsom Exp $ */
 
 #include <windows.h>
 #include <process.h>
@@ -45,7 +45,7 @@
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include "../jrd/common.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/isc.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.47 2003-11-03 23:53:49 brodsom Exp $
+ * $Id: sort.cpp,v 1.48 2003-11-11 12:14:06 brodsom Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -36,7 +36,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/sort.h"
 #include "../jrd/sort_mem.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/intl.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/rse.h"
@@ -164,11 +164,11 @@ IB_FILE *trace_file = NULL;
 #endif
 
 #ifdef WIN_NT
-#define	SYS_ERR		gds_arg_win32
+#define	SYS_ERR		isc_arg_win32
 #endif
 
 #ifndef SYS_ERR
-#define SYS_ERR		gds_arg_unix
+#define SYS_ERR		isc_arg_unix
 #endif
 
 
@@ -529,11 +529,11 @@ void SORT_error(ISC_STATUS * status_vector,
 
 	fb_assert(status_vector != NULL);
 
-	*status_vector++ = gds_arg_gds;
+	*status_vector++ = isc_arg_gds;
 	*status_vector++ = isc_io_error;
-	*status_vector++ = gds_arg_string;
+	*status_vector++ = isc_arg_string;
 	*status_vector++ = (ISC_STATUS) string;
-	*status_vector++ = gds_arg_string;
+	*status_vector++ = isc_arg_string;
 	*status_vector++ = (ISC_STATUS) ERR_cstring(sfb->sfb_file_name);
 	*status_vector++ = isc_arg_gds;
 	*status_vector++ = operation;
@@ -541,9 +541,9 @@ void SORT_error(ISC_STATUS * status_vector,
 		*status_vector++ = SYS_ERR;
 		*status_vector++ = errcode;
 	}
-	*status_vector++ = gds_arg_gds;
-	*status_vector++ = gds_sort_err;	// Msg355: sort error
-	*status_vector = gds_arg_end;
+	*status_vector++ = isc_arg_gds;
+	*status_vector++ = isc_sort_err;	// Msg355: sort error
+	*status_vector = isc_arg_end;
 
 	ERR_punt();
 }
@@ -740,9 +740,9 @@ SCB SORT_init(ISC_STATUS * status_vector,
 	} catch(const std::exception&) {
 		// FREE: scb is freed by SORT_fini(), called by higher level cleanup
 		// FREE: or later in this module in error cases
-		*status_vector++ = gds_arg_gds;
-		*status_vector++ = gds_sort_mem_err;
-		*status_vector = gds_arg_end;
+		*status_vector++ = isc_arg_gds;
+		*status_vector++ = isc_sort_mem_err;
+		*status_vector = isc_arg_end;
 		return NULL;
 	}
 	memset((UCHAR*) scb, 0, SCB_LEN(keys));
@@ -790,9 +790,9 @@ SCB SORT_init(ISC_STATUS * status_vector,
 				break;
 #endif // DEBUG_MERGE
 	} catch(const std::exception&) {
-		*status_vector++ = gds_arg_gds;
-		*status_vector++ = gds_sort_mem_err; // Msg356: sort error: not enough memory
-		*status_vector = gds_arg_end;
+		*status_vector++ = isc_arg_gds;
+		*status_vector++ = isc_sort_mem_err; // Msg356: sort error: not enough memory
+		*status_vector = isc_arg_end;
 		gds__free(scb);
 		return NULL;
 	}
@@ -1061,9 +1061,9 @@ bool SORT_sort(ISC_STATUS * status_vector, SCB scb)
 		else
 			streams = streams_local;
 	} catch(const std::exception&) {
-		*status_vector++ = gds_arg_gds;
-		*status_vector++ = gds_sort_mem_err;
-		*status_vector = gds_arg_end;
+		*status_vector++ = isc_arg_gds;
+		*status_vector++ = isc_sort_mem_err;
+		*status_vector = isc_arg_end;
 		return false;
 	}
 
@@ -1084,9 +1084,9 @@ bool SORT_sort(ISC_STATUS * status_vector, SCB scb)
 			merge_pool = scb->scb_merge_pool;
 		} catch(const std::exception&) {
 			gds__free(streams);
-			*status_vector++ = gds_arg_gds;
-			*status_vector++ = gds_sort_mem_err;
-			*status_vector = gds_arg_end;
+			*status_vector++ = isc_arg_gds;
+			*status_vector++ = isc_sort_mem_err;
+			*status_vector = isc_arg_end;
 			return false;
 		}
 		memset(merge_pool, 0, (count - 1) * sizeof(struct mrg));
@@ -1177,9 +1177,9 @@ bool SORT_sort(ISC_STATUS * status_vector, SCB scb)
 				(ULONG *) gds__alloc((SLONG) (size * sizeof(ULONG)));
 			// FREE: smb_merge_space freed in local_fini() when the scb is released
 		} catch(const std::exception&) {
-			*status_vector++ = gds_arg_gds;
-			*status_vector++ = gds_sort_mem_err;
-			*status_vector = gds_arg_end;
+			*status_vector++ = isc_arg_gds;
+			*status_vector++ = isc_sort_mem_err;
+			*status_vector = isc_arg_end;
 			return false;
 		}
 		// Link the new buffer into the chain of buffers
@@ -1682,9 +1682,9 @@ static void error_memory(SCB scb)
 
 	fb_assert(status_vector != NULL);
 
-	*status_vector++ = gds_arg_gds;
-	*status_vector++ = gds_sort_mem_err;
-	*status_vector = gds_arg_end;
+	*status_vector++ = isc_arg_gds;
+	*status_vector++ = isc_sort_mem_err;
+	*status_vector = isc_arg_end;
 	ERR_punt();
 }
 
@@ -2954,9 +2954,9 @@ static void validate(SCB scb)
 		record = *ptr;
 		if (record[-1] != (SORTP) ptr) {
 			status_vector = scb->scb_status_vector;
-			*status_vector++ = gds_arg_gds;
-			*status_vector++ = gds_crrp_data_err; // Msg360: corruption in data structure
-			*status_vector = gds_arg_end;
+			*status_vector++ = isc_arg_gds;
+			*status_vector++ = isc_crrp_data_err; // Msg360: corruption in data structure
+			*status_vector = isc_arg_end;
 			ERR_punt();
 		}
 	}

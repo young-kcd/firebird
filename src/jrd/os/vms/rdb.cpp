@@ -366,11 +366,11 @@ int rdb$create_database(
 }
 
 
-int rdb$create_segmented_string(
-								int *user_status,
+int rdb$create_segmented_string(int *user_status,
 								HANDLE * db_handle,
 								HANDLE * tra_handle,
-HANDLE * blob_handle, GDS_QUAD * blob_id)
+								HANDLE * blob_handle, 
+								ISC_QUAD* blob_id)
 {
 /**************************************
  *
@@ -640,11 +640,11 @@ int rdb$get_segment(
 }
 
 
-int rdb$open_segmented_string(
-							  int *user_status,
+int rdb$open_segmented_string(int *user_status,
 							  HANDLE * db_handle,
 							  HANDLE * tra_handle,
-							  HANDLE * blob_handle, GDS_QUAD * blob_id)
+							  HANDLE * blob_handle, 
+							  ISC_QUAD* blob_id)
 {
 /**************************************
  *

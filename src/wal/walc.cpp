@@ -34,7 +34,7 @@
 #include "../jrd/jrn.h"
 #include "../jrd/flags.h"
 #include "../jrd/isc_signal.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/llio.h"
 #include "../wal/walc_proto.h"
 #include "../wal/walf_proto.h"
@@ -207,16 +207,16 @@ SSHORT WALC_bug( ISC_STATUS * status_vector, TEXT * dbname, TEXT * string)
  **************************************/
 	ISC_STATUS_ARRAY local_status;
 
-	IBERR_build_status(local_status, gds_wal_bugcheck,
-					   gds_arg_string, dbname,
-					   gds_arg_number, (SLONG) getpid(),
-					   gds_arg_string, string, 0);
+	IBERR_build_status(local_status, isc_wal_bugcheck,
+					   isc_arg_string, dbname,
+					   isc_arg_number, (SLONG) getpid(),
+					   isc_arg_string, string, 0);
 	gds__log_status(dbname, local_status);
 	gds__print_status(local_status);
 
 	if (status_vector) {
-		IBERR_build_status(status_vector, gds_bug_check,
-						   gds_arg_string, string, 0);
+		IBERR_build_status(status_vector, isc_bug_check,
+						   isc_arg_string, string, 0);
 		return FB_FAILURE;
 	}
 
@@ -423,9 +423,9 @@ SSHORT WALC_init(ISC_STATUS * status_vector,
 	WAL wal = wal_args.walc_wal = (WAL) gds__alloc(sizeof(struct wal));
 /* NOMEM: return error status, FREE: error returns & WAL_fini() */
 	if (!wal) {
-		status_vector[0] = gds_arg_gds;
-		status_vector[1] = gds_virmemexh;
-		status_vector[2] = gds_arg_end;
+		status_vector[0] = isc_arg_gds;
+		status_vector[1] = isc_virmemexh;
+		status_vector[2] = isc_arg_end;
 		return FB_FAILURE;
 	}
 
@@ -436,7 +436,7 @@ SSHORT WALC_init(ISC_STATUS * status_vector,
 										   (void(*)(void *, sh_mem *, int))wal_init_routine,
 										   (void *) &wal_args, length,
 										   &wal->wal_shmem_data)) == NULL) {
-		WAL_ERROR_APPEND(status_vector, gds_wal_illegal_attach, dbname);
+		WAL_ERROR_APPEND(status_vector, isc_wal_illegal_attach, dbname);
 		WALC_save_status_strings(status_vector);
 		gds__free((SLONG *) wal);
 		return FB_FAILURE;
@@ -540,13 +540,13 @@ void WALC_save_status_strings( ISC_STATUS * vector)
 
 	while (*vector) {
 		switch (status = *vector++) {
-		case gds_arg_cstring:
+		case isc_arg_cstring:
 			l = *vector++;
 
-		case gds_arg_interpreted:
-		case gds_arg_string:
+		case isc_arg_interpreted:
+		case isc_arg_string:
 			p = (TEXT *) * vector;
-			if (status != gds_arg_cstring)
+			if (status != isc_arg_cstring)
 				l = strlen(p) + 1;
 
 			/* If there isn't any more room in the buffer,
@@ -820,7 +820,7 @@ static SSHORT setup_wal_params(
 
 		default:
 			sprintf(err_buffer, "%d", (int) *(p - 1));
-			WAL_ERROR(status_vector, gds_wal_invalid_wpb, err_buffer);
+			WAL_ERROR(status_vector, isc_wal_invalid_wpb, err_buffer);
 			WALC_save_status_strings(status_vector);
 			return FB_FAILURE;
 		}
@@ -883,7 +883,7 @@ static SSHORT setup_wal_params(
 	if (wal_args->walc_log_names_count && wal_args->walc_log_rr_files_info) {
 		/* First make sure that an overflow log file specification is provided */
 		if (!wal_args->walc_log_ovflow_file_info) {
-			IBERR_build_status(status_vector, gds_wal_ovflow_log_required,
+			IBERR_build_status(status_vector, isc_wal_ovflow_log_required,
 							   0);
 			return FB_FAILURE;
 		}

@@ -29,7 +29,7 @@
 #include "../jrd/tra.h"
 #include "../jrd/lck.h"
 #include "../jrd/pag.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/iberr.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/cch_proto.h"

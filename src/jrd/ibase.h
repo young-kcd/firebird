@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.57 2003-11-10 09:16:13 robocop Exp $
+$Id: ibase.h,v 1.58 2003-11-11 12:13:37 brodsom Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -112,9 +112,6 @@ typedef struct
 #if !(defined __cplusplus)
 typedef GDS_QUAD GDS__QUAD;
 #endif /* !(defined __cplusplus) */
-
-typedef struct GDS_QUAD_t ISC_QUAD;
-
 
 typedef struct
 {

@@ -53,7 +53,7 @@
 #include "../jrd/thd_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/all_proto.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 
 /* System provided internal filters for filtering internal
  * subtypes to text.
@@ -193,7 +193,7 @@ ISC_STATUS BLF_get_segment(TDBB tdbb,
 
 	status = (*control->ctl_source) (ACTION_get_segment, control);
 
-	if (!status || status == gds_segment)
+	if (!status || status == isc_segment)
 		*length = control->ctl_segment_length;
 	else
 		*length = 0;
@@ -358,13 +358,13 @@ static ISC_STATUS open_blob(
 
 	if ((!filter) || (!filter->blf_filter)) {
 		*user_status++ = isc_arg_gds;
-		*user_status++ = gds_nofilter;
+		*user_status++ = isc_nofilter;
 		*user_status++ = isc_arg_number;
 		*user_status++ = (ISC_STATUS) from;
 		*user_status++ = isc_arg_number;
 		*user_status++ = (ISC_STATUS) to;
 		*user_status = isc_arg_end;
-		return gds_nofilter;
+		return isc_nofilter;
 	}
 
 /* Allocate a filter control block and open blob */

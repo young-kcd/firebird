@@ -615,7 +615,7 @@ SLONG DYN_get_number(const UCHAR** ptr)
 	length |= (*p++) << 8;
 	*ptr = p + length;
 
-	return gds__vax_integer(p, length);
+	return isc_vax_integer(reinterpret_cast<const SCHAR*>(p), length);
 }
 
 
@@ -665,7 +665,7 @@ USHORT DYN_get_string(const TEXT** ptr, TEXT* field, USHORT size, bool err_flag)
 	return length;
 }
 
-USHORT DYN_put_blr_blob(GBL gbl, const UCHAR** ptr, GDS_QUAD* blob_id)
+USHORT DYN_put_blr_blob(GBL gbl, const UCHAR** ptr, ISC_QUAD* blob_id)
 {
 /**************************************
  *
@@ -703,7 +703,7 @@ USHORT DYN_put_blr_blob(GBL gbl, const UCHAR** ptr, GDS_QUAD* blob_id)
 	return length;
 }
 
-USHORT DYN_put_text_blob(GBL gbl, const UCHAR** ptr, GDS_QUAD* blob_id)
+USHORT DYN_put_text_blob(GBL gbl, const UCHAR** ptr, ISC_QUAD* blob_id)
 {
 /**************************************
  *

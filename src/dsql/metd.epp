@@ -1586,7 +1586,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
                 field->fld_element_dtype = field->fld_dtype;
                 field->fld_element_length = field->fld_length;
                 field->fld_dtype = dtype_array;
-                field->fld_length = sizeof(GDS_QUAD);
+                field->fld_length = sizeof(ISC_QUAD);
                 field->fld_dimensions = FLX.RDB$DIMENSIONS;
             }
             
@@ -1835,7 +1835,7 @@ static void check_array( dsql_req* request, const TEXT* field_name, dsql_fld* fi
             field->fld_element_dtype = field->fld_dtype;
             field->fld_element_length = field->fld_length;
             field->fld_dtype = dtype_array;
-            field->fld_length = sizeof(GDS_QUAD);
+            field->fld_length = sizeof(ISC_QUAD);
             field->fld_dimensions = X.RDB$DIMENSIONS;
         }
         

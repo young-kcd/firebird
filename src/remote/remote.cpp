@@ -787,7 +787,7 @@ static SLONG get_parameter(const UCHAR** ptr)
  *
  **************************************/
 	const SSHORT l = *(*ptr)++;
-	const SLONG parameter = gds__vax_integer(*ptr, l);
+	const SLONG parameter = isc_vax_integer(reinterpret_cast<const SCHAR*>(*ptr), l);
 	*ptr += l;
 
 	return parameter;

@@ -54,7 +54,7 @@
 #include "../jrd/cch.h"
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/err_proto.h"
@@ -284,9 +284,9 @@ FIL PIO_create(DBB dbb, const TEXT* string, SSHORT length, BOOLEAN overwrite)
 
 	if ((desc = open(file_name, flag, MASK)) == -1)
 		ERR_post(isc_io_error,
-				 gds_arg_string, "open O_CREAT",
-				 gds_arg_cstring, length, ERR_string(string, length),
-				 isc_arg_gds, isc_io_create_err, gds_arg_unix, errno, 0);
+				 isc_arg_string, "open O_CREAT",
+				 isc_arg_cstring, length, ERR_string(string, length),
+				 isc_arg_gds, isc_io_create_err, isc_arg_unix, errno, 0);
 
 /* File open succeeded.  Now expand the file name. */
 
@@ -374,10 +374,10 @@ void PIO_force_write(FIL file, USHORT flag)
 	if (fcntl(file->fil_desc, F_SETFL, control) == -1)
 	{
 		ERR_post(isc_io_error,
-				 gds_arg_string, "fcntl SYNC",
-				 gds_arg_cstring, file->fil_length,
+				 isc_arg_string, "fcntl SYNC",
+				 isc_arg_cstring, file->fil_length,
 				 ERR_string(file->fil_string, file->fil_length), isc_arg_gds,
-				 isc_io_access_err, gds_arg_unix, errno, 0);
+				 isc_io_access_err, isc_arg_unix, errno, 0);
 	}
 	else 
 	{
@@ -628,10 +628,10 @@ FIL PIO_open(DBB dbb,
 		flag |= O_RDONLY;
 		if ((desc = open(ptr, flag)) == -1) {
 			ERR_post(isc_io_error,
-					 gds_arg_string, "open",
-					 gds_arg_cstring, file_length, ERR_string(file_name,
+					 isc_arg_string, "open",
+					 isc_arg_cstring, file_length, ERR_string(file_name,
 															  file_length),
-					 isc_arg_gds, isc_io_open_err, gds_arg_unix, errno, 0);
+					 isc_arg_gds, isc_io_open_err, isc_arg_unix, errno, 0);
 		}
 		else {
 			/* If this is the primary file, set DBB flag to indicate that it is
@@ -653,11 +653,11 @@ FIL PIO_open(DBB dbb,
 		&& !raw_devices_validate_database(desc, file_name, file_length))
 	{
 		ERR_post (isc_io_error,
-					gds_arg_string, "open",
-					gds_arg_cstring, file_length,
+					isc_arg_string, "open",
+					isc_arg_cstring, file_length,
 						ERR_string (file_name, file_length),
 					isc_arg_gds, isc_io_open_err,
-					gds_arg_unix, ENOENT, 0);
+					isc_arg_unix, ENOENT, 0);
 	}
 #endif /* SUPPORT_RAW_DEVICES */
 
@@ -1039,24 +1039,24 @@ static BOOLEAN unix_error(
 	if (status = status_vector) {
 		*status++ = isc_arg_gds;
 		*status++ = isc_io_error;
-		*status++ = gds_arg_string;
+		*status++ = isc_arg_string;
 		*status++ = (ISC_STATUS) string;
-		*status++ = gds_arg_string;
+		*status++ = isc_arg_string;
 		*status++ = (ISC_STATUS) ERR_string(file->fil_string, file->fil_length);
 		*status++ = isc_arg_gds;
 		*status++ = operation;
-		*status++ = gds_arg_unix;
+		*status++ = isc_arg_unix;
 		*status++ = errno;
-		*status++ = gds_arg_end;
+		*status++ = isc_arg_end;
 		gds__log_status(0, status_vector);
 		return FALSE;
 	}
 	else
 		ERR_post(isc_io_error,
-				 gds_arg_string, string,
-				 gds_arg_string, ERR_string(file->fil_string,
+				 isc_arg_string, string,
+				 isc_arg_string, ERR_string(file->fil_string,
 											file->fil_length), isc_arg_gds,
-				 operation, gds_arg_unix, errno, 0);
+				 operation, isc_arg_unix, errno, 0);
 
 
     // Added a FALSE for final return - which seems to be the answer, 
@@ -1219,43 +1219,43 @@ raw_devices_validate_database (
 	/* Read in database header. Code lifted from PIO_header. */
 	if (desc == -1)
 		ERR_post (isc_io_error,
-					gds_arg_string, "raw_devices_validate_database",
-					gds_arg_string, ERR_string (file_name, file_length),
+					isc_arg_string, "raw_devices_validate_database",
+					isc_arg_string, ERR_string (file_name, file_length),
 					isc_arg_gds, isc_io_read_err,
-					gds_arg_unix, errno, 0);
+					isc_arg_unix, errno, 0);
 
 	for (i = 0; i < IO_RETRY; i++)
 	{
 		if (lseek (desc, LSEEK_OFFSET_CAST 0, 0) == (off_t) -1)
 			ERR_post (isc_io_error,
-						gds_arg_string, "lseek",
-						gds_arg_string, ERR_string (file_name, file_length),
+						isc_arg_string, "lseek",
+						isc_arg_string, ERR_string (file_name, file_length),
 						isc_arg_gds, isc_io_read_err,
-						gds_arg_unix, errno, 0);
+						isc_arg_unix, errno, 0);
 		if ((bytes = read (desc, header, sizeof(header))) == sizeof(header))
 			goto read_finished;
 		if (bytes == -1 && !SYSCALL_INTERRUPTED(errno))
 			ERR_post (isc_io_error,
-						gds_arg_string, "read",
-						gds_arg_string, ERR_string (file_name, file_length),
+						isc_arg_string, "read",
+						isc_arg_string, ERR_string (file_name, file_length),
 						isc_arg_gds, isc_io_read_err,
-						gds_arg_unix, errno, 0);
+						isc_arg_unix, errno, 0);
 	}
 
 	ERR_post (isc_io_error,
-				gds_arg_string, "read_retry",
-				gds_arg_string, ERR_string (file_name, file_length),
+				isc_arg_string, "read_retry",
+				isc_arg_string, ERR_string (file_name, file_length),
 				isc_arg_gds, isc_io_read_err,
-				gds_arg_unix, errno, 0);
+				isc_arg_unix, errno, 0);
 
   read_finished:
 	/* Rewind file pointer */
 	if (lseek (desc, LSEEK_OFFSET_CAST 0, 0) == (off_t)-1)
 		ERR_post (isc_io_error,
-					gds_arg_string, "lseek",
-					gds_arg_string, ERR_string (file_name, file_length),
+					isc_arg_string, "lseek",
+					isc_arg_string, ERR_string (file_name, file_length),
 					isc_arg_gds, isc_io_read_err,
-					gds_arg_unix, errno, 0);
+					isc_arg_unix, errno, 0);
 
 	/* Validate database header. Code lifted from PAG_header. */
 	if (hp->hdr_header.pag_type != pag_header /*|| hp->hdr_sequence*/)
@@ -1305,10 +1305,10 @@ raw_devices_unlink_database (
 			break;
 		if (!SYSCALL_INTERRUPTED(errno))
 			ERR_post (isc_io_error,
-						gds_arg_string, "open",
-						gds_arg_string, ERR_string (file_name, file_length),
+						isc_arg_string, "open",
+						isc_arg_string, ERR_string (file_name, file_length),
 						isc_arg_gds, isc_io_open_err,
-						gds_arg_unix, errno, 0);
+						isc_arg_unix, errno, 0);
 	}
 
 	memset(header, 0xa5, sizeof(header));
@@ -1320,10 +1320,10 @@ raw_devices_unlink_database (
 		if (bytes == -1 && SYSCALL_INTERRUPTED(errno))
 			continue;
 		ERR_post (isc_io_error,
-			gds_arg_string, "write",
-			gds_arg_string, ERR_string (file_name, file_length),
+			isc_arg_string, "write",
+			isc_arg_string, ERR_string (file_name, file_length),
 			isc_arg_gds, isc_io_write_err,
-			gds_arg_unix, errno, 0);
+			isc_arg_unix, errno, 0);
 	}
 
 	(void)close(desc);

@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.54 2003-11-07 23:15:31 brodsom Exp $
+$Id: restore.epp,v 1.55 2003-11-11 12:05:48 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -1208,9 +1208,9 @@ bool get_acl (const TEXT	*owner_nm,
 
 	while ((item = *p++) != isc_info_end)
 	{
-		USHORT l = (USHORT) gds__vax_integer (p, 2);
+		USHORT l = (USHORT) isc_vax_integer(reinterpret_cast<const SCHAR*>(p), 2);
 		p += 2;
-		SLONG n = gds__vax_integer (p, l);
+		SLONG n = isc_vax_integer(reinterpret_cast<const SCHAR*>(p), l);
 		p += l;
 		switch (item)
 		{
@@ -4596,7 +4596,7 @@ bool get_relation (void)
 
 	SLONG		rel_flags = 0, sys_flag = 0;
 	bool		rel_flags_null = true, sys_flag_null = true;
-	GDS_QUAD	view_blr = isc_blob_null, view_src = isc_blob_null,
+	ISC_QUAD	view_blr = isc_blob_null, view_src = isc_blob_null,
 				rel_desc = isc_blob_null, ext_desc = isc_blob_null;
 	bool		view_blr_null = true, view_src_null = true, rel_desc_null = true,
 				ext_desc_null = true;

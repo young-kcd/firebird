@@ -245,7 +245,7 @@ FRBRD *EXEC_open_blob( QLI_NOD node)
 
 	ISC_STATUS_ARRAY status_vector;
 	if (isc_open_blob2(status_vector, &dbb->dbb_handle, &dbb->dbb_transaction,
-						&blob, (GDS_QUAD*) desc->dsc_address, bpb_length,
+						&blob, (ISC_QUAD*) desc->dsc_address, bpb_length,
 						bpb))
 	{
 		ERRQ_database_error(dbb, status_vector);
@@ -688,14 +688,14 @@ static bool copy_blob( QLI_NOD value, PAR parameter)
 	ISC_STATUS_ARRAY status_vector;
 	if (isc_create_blob(status_vector, &to_dbb->dbb_handle,
 						 &to_dbb->dbb_transaction, &to_blob,
-						 (GDS_QUAD*) to_desc->dsc_address))
+						 (ISC_QUAD*) to_desc->dsc_address))
 	{
 		ERRQ_database_error(to_dbb, status_vector);
 	}
 
 	if (isc_open_blob2(status_vector, &from_dbb->dbb_handle,
 						&from_dbb->dbb_transaction, &from_blob,
-						(GDS_QUAD*) from_desc->dsc_address, bpb_length,
+						(ISC_QUAD*) from_desc->dsc_address, bpb_length,
 						bpb))
 	{
 		ERRQ_database_error(from_dbb, status_vector);
@@ -1104,9 +1104,9 @@ static void print_counts( QLI_REQ request)
 	int length = 0;
 	for (SCHAR* c = count_buffer; *c != isc_info_end; c += length) {
 		UCHAR item = *c++;
-		length = gds__vax_integer((UCHAR*) c, 2);
+		length = isc_vax_integer(c, 2);
 		c += 2;
-		const ULONG number = gds__vax_integer((UCHAR*) c, length);
+		const ULONG number = isc_vax_integer(c, length);
 
 		if (number)
 			switch (item) {

@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.77 2003-11-03 23:55:40 brodsom Exp $
+$Id: lock.cpp,v 1.78 2003-11-11 12:14:39 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -50,7 +50,7 @@ $Id: lock.cpp,v 1.77 2003-11-03 23:55:40 brodsom Exp $
 #include "../jrd/isc.h"
 #include "../lock/lock.h"
 #include "../lock/lock_proto.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/isc_proto.h"
@@ -629,10 +629,10 @@ SLONG LOCK_enq(	PTR		prior_request,
 		insert_tail(&lock->lbl_requests, &request->lrq_lbl_requests);
 		request->lrq_data = data;
 		if (!(lock_id = grant_or_que(request, lock, lck_wait))) {
-			*status_vector++ = gds_arg_gds;
-			*status_vector++ = (lck_wait > 0) ? gds_deadlock :
-				((lck_wait < 0) ? gds_lock_timeout : gds_lock_conflict);
-			*status_vector++ = gds_arg_end;
+			*status_vector++ = isc_arg_gds;
+			*status_vector++ = (lck_wait > 0) ? isc_deadlock :
+				((lck_wait < 0) ? isc_lock_timeout : isc_lock_conflict);
+			*status_vector++ = isc_arg_end;
 		}
 		ASSERT_RELEASED;
 		return lock_id;
@@ -831,15 +831,15 @@ int LOCK_init(
 	if (gds__thread_start
 		(reinterpret_cast < FPTR_INT_VOID_PTR > (blocking_action_thread),
 		 &LOCK_owner_offset, THREAD_critical, 0, &blocking_action_thread_handle)) {
-		*status_vector++ = gds_arg_gds;
-		*status_vector++ = gds_lockmanerr;
-		*status_vector++ = gds_arg_gds;
-		*status_vector++ = gds_sys_request;
-		*status_vector++ = gds_arg_string;
+		*status_vector++ = isc_arg_gds;
+		*status_vector++ = isc_lockmanerr;
+		*status_vector++ = isc_arg_gds;
+		*status_vector++ = isc_sys_request;
+		*status_vector++ = isc_arg_string;
 		*status_vector++ = (ISC_STATUS) "CreateThread";
-		*status_vector++ = gds_arg_win32;
+		*status_vector++ = isc_arg_win32;
 		*status_vector++ = GetLastError();
-		*status_vector++ = gds_arg_end;
+		*status_vector++ = isc_arg_end;
 		CloseHandle(blocking_event[0]);
 		CloseHandle(wakeup_event[0]);
 		return FB_FAILURE;
@@ -862,15 +862,15 @@ int LOCK_init(
 	ULONG status = gds__thread_start( reinterpret_cast < FPTR_INT_VOID_PTR > ( 
 		blocking_action_thread ), &LOCK_owner_offset, THREAD_high, 0, 0);
 	if (status) {
-		*status_vector++ = gds_arg_gds;
-		*status_vector++ = gds_lockmanerr;
-		*status_vector++ = gds_arg_gds;
-		*status_vector++ = gds_sys_request;
-		*status_vector++ = gds_arg_string;
+		*status_vector++ = isc_arg_gds;
+		*status_vector++ = isc_lockmanerr;
+		*status_vector++ = isc_arg_gds;
+		*status_vector++ = isc_sys_request;
+		*status_vector++ = isc_arg_string;
 		*status_vector++ = (ISC_STATUS) "thr_create";
-		*status_vector++ = gds_arg_unix;
+		*status_vector++ = isc_arg_unix;
 		*status_vector++ = status;
-		*status_vector++ = gds_arg_end;
+		*status_vector++ = isc_arg_end;
 		return FB_FAILURE;
 	}
 #endif
@@ -1630,11 +1630,11 @@ static UCHAR *alloc( SSHORT size, ISC_STATUS * status_vector)
 			   return an error */
 
 			if (status_vector) {
-				*status_vector++ = gds_arg_gds;
-				*status_vector++ = gds_random;
-				*status_vector++ = gds_arg_string;
+				*status_vector++ = isc_arg_gds;
+				*status_vector++ = isc_random;
+				*status_vector++ = isc_arg_string;
 				*status_vector++ = (ISC_STATUS) "lock manager out of room";
-				*status_vector++ = gds_arg_end;
+				*status_vector++ = isc_arg_end;
 			}
 
 			return NULL;
@@ -2062,13 +2062,13 @@ static void bug( ISC_STATUS * status_vector, const TEXT * string)
 		}
 
 		if (status_vector) {
-			*status_vector++ = gds_arg_gds;
-			*status_vector++ = gds_lockmanerr;
-			*status_vector++ = gds_arg_gds;
-			*status_vector++ = gds_random;
-			*status_vector++ = gds_arg_string;
+			*status_vector++ = isc_arg_gds;
+			*status_vector++ = isc_lockmanerr;
+			*status_vector++ = isc_arg_gds;
+			*status_vector++ = isc_random;
+			*status_vector++ = isc_arg_string;
 			*status_vector++ = (ISC_STATUS) string;
-			*status_vector++ = gds_arg_end;
+			*status_vector++ = isc_arg_end;
 			return;
 		}
 	}
@@ -2178,10 +2178,10 @@ static bool convert(PTR		request_offset,
 	if (lck_wait < 0)
 		++LOCK_header->lhb_timeouts;
 	release(owner_offset);
-	*status_vector++ = gds_arg_gds;
-	*status_vector++ = (lck_wait > 0) ? gds_deadlock :
-		((lck_wait < 0) ? gds_lock_timeout : gds_lock_conflict);
-	*status_vector++ = gds_arg_end;
+	*status_vector++ = isc_arg_gds;
+	*status_vector++ = (lck_wait > 0) ? isc_deadlock :
+		((lck_wait < 0) ? isc_lock_timeout : isc_lock_conflict);
+	*status_vector++ = isc_arg_end;
 
 	return false;
 }

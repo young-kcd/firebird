@@ -28,7 +28,7 @@
 #include <string.h>
 
 #include "../dsql/dsql.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/iberr.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/movd_proto.h"
@@ -83,17 +83,17 @@ static void post_error( ISC_STATUS status, ...)
 
 	v = tdsql->tsql_status;
 	v_end = v + 20;
-	*v++ = gds_arg_gds;
-	*v++ = gds_dsql_error;
-	*v++ = gds_arg_gds;
-	*v++ = gds_sqlerr;
-	*v++ = gds_arg_number;
+	*v++ = isc_arg_gds;
+	*v++ = isc_dsql_error;
+	*v++ = isc_arg_gds;
+	*v++ = isc_sqlerr;
+	*v++ = isc_arg_number;
 	*v++ = -303;
 
-	for (temp = temp_status; v < v_end && (*v = *temp) != gds_arg_end;
+	for (temp = temp_status; v < v_end && (*v = *temp) != isc_arg_end;
 		 v++, temp++)
 		switch (*v) {
-		case gds_arg_cstring:
+		case isc_arg_cstring:
 			*++v = *++temp;
 			*++v = *++temp;
 			break;

@@ -30,7 +30,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/quad.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/intl.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/all_proto.h"
@@ -491,8 +491,8 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 		return CVT2_blob_compare(arg1, arg2, err);
 
 	case dtype_array:
-		(*err) (gds_wish_list, gds_arg_gds, gds_blobnotsup,
-				gds_arg_string, "compare", 0);
+		(*err) (isc_wish_list, isc_arg_gds, isc_blobnotsup,
+				isc_arg_string, "compare", 0);
 		break;
 
 	default:
@@ -533,7 +533,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 /* DEV_BLKCHK (node, type_nod); */
 
 	if (arg1->dsc_dtype != dtype_blob)
-		(*err) (gds_wish_list, gds_arg_gds, gds_datnotsup, 0);
+		(*err) (isc_wish_list, isc_arg_gds, isc_datnotsup, 0);
 
 	/* Is arg2 a blob? */
 	if (arg2->dsc_dtype == dtype_blob)
@@ -605,7 +605,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 			fb_assert(obj1 != NULL);
 			fb_assert(obj2 != NULL);
 			if (obj1.getBytesPerChar() != 1 || obj2.getBytesPerChar() != 1)
-				(*err) (gds_wish_list, gds_arg_gds, gds_datnotsup, 0);
+				(*err) (isc_wish_list, isc_arg_gds, isc_datnotsup, 0);
 		}
 
 		while (!(blob1->blb_flags & BLB_eof) && !(blob2->blb_flags & BLB_eof))
@@ -705,7 +705,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 	}
 	/* We do not accept arrays for now. Maybe ADS in the future. */
 	else if (arg2->dsc_dtype == dtype_array)
-		(*err) (gds_wish_list, gds_arg_gds, gds_datnotsup, 0);
+		(*err) (isc_wish_list, isc_arg_gds, isc_datnotsup, 0);
 	/* The second parameter should be a string. */
 	else
 	{
@@ -755,7 +755,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 
 		/* I will stop execution here until I can complete this function. */
 		if (!bin_cmp)
-			(*err) (gds_wish_list, gds_arg_gds, gds_datnotsup, 0);
+			(*err) (isc_wish_list, isc_arg_gds, isc_datnotsup, 0);
 
 		if (arg2->dsc_length > BUFFER_LARGE)
 		{

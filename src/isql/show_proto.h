@@ -29,7 +29,7 @@ int		SHOW_grants (SCHAR*, const SCHAR*, USHORT);
 int		SHOW_grants2 (SCHAR*, const SCHAR*, USHORT, TEXT*);
 void	SHOW_grant_roles (const SCHAR*, bool*);
 void	SHOW_grant_roles2 (const SCHAR*, bool*, TEXT*);
-void	SHOW_print_metadata_text_blob(IB_FILE*, GDS_QUAD*);
+void	SHOW_print_metadata_text_blob(IB_FILE*, ISC_QUAD*);
 int		SHOW_metadata(SCHAR**, SCHAR**);
 
 #endif // ISQL_SHOW_PROTO_H

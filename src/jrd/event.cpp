@@ -31,7 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../jrd/common.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/thd.h"
 #include "../jrd/event.h"
 #include "../jrd/gdsassert.h"
@@ -304,9 +304,9 @@ EVH EVENT_init(ISC_STATUS * status_vector, USHORT server_flag)
 		(EVH) gds__alloc((SLONG) EVENT_default_size);
 /* FREE: apparently only freed at process exit */
 	if (!EVENT_header) {		/* NOMEM: */
-		status_vector[0] = gds_arg_gds;
-		status_vector[1] = gds__virmemexh;
-		status_vector[2] = gds_arg_end;
+		status_vector[0] = isc_arg_gds;
+		status_vector[1] = isc_virmemexh;
+		status_vector[2] = isc_arg_end;
 		return NULL;
 	}
 #ifdef DEBUG_GDS_ALLOC
@@ -506,7 +506,7 @@ SLONG EVENT_que(ISC_STATUS * status_vector,
 		ptr = &interest->rint_next;
 		ptr_offset = REL_PTR(ptr);
 		interest->rint_request = request_offset;
-		interest->rint_count = gds__vax_integer(p, 4);
+		interest->rint_count = isc_vax_integer(reinterpret_cast<const SCHAR*>(p), 4);
 		p += 4;
 		if (interest->rint_count <= event->evnt_count)
 			flag = TRUE;
@@ -1564,9 +1564,9 @@ static ISC_STATUS return_ok(ISC_STATUS * status_vector)
  *
  **************************************/
 
-	*status_vector++ = gds_arg_gds;
+	*status_vector++ = isc_arg_gds;
 	*status_vector++ = 0;
-	*status_vector = gds_arg_end;
+	*status_vector = isc_arg_end;
 
 	return 0;
 }

@@ -2070,7 +2070,7 @@ static void get_slice( ICC icc)
 	/* get and return slice */
 
 	GDS_GET_SLICE(status_vector, &idb->idb_handle, &transaction->itr_handle,
-				  (GDS_QUAD *) &array_id, sdl_length,
+				  (ISC_QUAD*) &array_id, sdl_length,
 				  reinterpret_cast < char *>(sdl), param_length,
 				  reinterpret_cast < long *>(params), slice_length,
 				  slice, reinterpret_cast < long *>(&return_length));
@@ -2440,13 +2440,13 @@ static void open_blob( ICC icc, P_OP op)
 		blob_id.bid_number = ips->ips_bid_number;
 		result = GDS_OPEN_BLOB(status_vector, &idb->idb_handle,
 							   &transaction->itr_handle, &handle, 
-							   (GDS_QUAD *) & blob_id);
+							   (ISC_QUAD*) & blob_id);
 		break;
 
 	case op_create_blob:
 		result = GDS_CREATE_BLOB(status_vector, &idb->idb_handle,
 								 &transaction->itr_handle,
-								 &handle, (GDS_QUAD *) & blob_id);
+								 &handle, (ISC_QUAD*) & blob_id);
 		ips->ips_rel_id = blob_id.bid_relation_id;
 		ips->ips_bid_number = blob_id.bid_number;
 		break;
@@ -2456,7 +2456,7 @@ static void open_blob( ICC icc, P_OP op)
 		blob_id.bid_number = ips->ips_bid_number;
 		result = GDS_OPEN_BLOB2(status_vector, &idb->idb_handle,
 								&transaction->itr_handle, &handle,
-								(GDS_QUAD *) & blob_id,
+								(ISC_QUAD*) & blob_id,
 								bpb_length,
 								bpb);
 		break;
@@ -2464,7 +2464,7 @@ static void open_blob( ICC icc, P_OP op)
 	case op_create_blob2:
 		result = GDS_CREATE_BLOB2(status_vector, &idb->idb_handle,
 								  &transaction->itr_handle, &handle,
-								  (GDS_QUAD *) & blob_id, bpb_length,
+								  (ISC_QUAD*) & blob_id, bpb_length,
 								  reinterpret_cast<const char*>(bpb));
 		ips->ips_rel_id = blob_id.bid_relation_id;
 		ips->ips_bid_number = blob_id.bid_number;
@@ -2730,9 +2730,9 @@ static void put_slice( ICC icc)
 	/* put the slice into the database */
 
 	GDS_PUT_SLICE(status_vector, &idb->idb_handle, &transaction->itr_handle,
-				  (GDS_QUAD *) & array_id, sdl_length,
-				  reinterpret_cast < char *>(sdl), param_length,
-				  reinterpret_cast < long *>(params), slice_length, slice);
+				  (ISC_QUAD*) & array_id, sdl_length,
+				  reinterpret_cast <char*>(sdl), param_length,
+				  reinterpret_cast <long*>(params), slice_length, slice);
 	ips->ips_rel_id = array_id.bid_relation_id;
 	ips->ips_number = array_id.bid_number;
 	send_response(icc, status_vector);

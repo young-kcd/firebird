@@ -36,7 +36,7 @@
 #include "../jrd/req.h"
 #include "../jrd/tra.h"
 #include "../jrd/intl.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/common.h"
 #include "../jrd/jrn.h"
 #include "../jrd/lck.h"
@@ -1501,8 +1501,8 @@ void BTR_reserve_slot(TDBB tdbb, JRD_REL relation, JRD_TRA transaction, IDX * id
 	// check that we create no more indexes than will fit on a single root page
 	if (root->irt_count > dbb->dbb_max_idx) {
 		CCH_RELEASE(tdbb, &window);
-		ERR_post(gds_no_meta_update, gds_arg_gds, gds_max_idx,
-				 gds_arg_number, (SLONG) dbb->dbb_max_idx, 0);
+		ERR_post(isc_no_meta_update, isc_arg_gds, isc_max_idx,
+				 isc_arg_number, (SLONG) dbb->dbb_max_idx, 0);
 	}
 	// Scan the index page looking for the high water mark of the descriptions and,
 	// perhaps, an empty index slot
@@ -1538,8 +1538,8 @@ retry:
 		// If this is the second try already, then there really is no more room.
 		if (maybe_no_room) {
 			CCH_RELEASE(tdbb, &window);
-			ERR_post(gds_no_meta_update, gds_arg_gds,
-					 gds_index_root_page_full, 0);
+			ERR_post(isc_no_meta_update, isc_arg_gds,
+					 isc_index_root_page_full, 0);
 		}
 		compress_root(tdbb, root);
 		maybe_no_room = true;

@@ -39,7 +39,7 @@ DATABASE DB = EXTERN FILENAME "yachts.lnk" RUNTIME DB_file_name;
 
 static const char* const FOPEN_WRITE_TYPE	= "w";
 
-inline bool blob_null(const GDS_QUAD id)
+inline bool blob_null(const ISC_QUAD id)
 {
 	return !id.gds_quad_low && !id.gds_quad_high;
 }
@@ -275,7 +275,7 @@ static void decompile_blr_literal(const SCHAR * string)
 
 	switch (*p++) {
 	case (blr_text):
-		size = gds__vax_integer((UCHAR*) p, 2);
+		size = isc_vax_integer(p, 2);
 		p += 2;
 		*b++ = '"';
 		while (size--)
@@ -286,13 +286,13 @@ static void decompile_blr_literal(const SCHAR * string)
 
 	case (blr_long):
 		scale = *p++;
-		value = gds__vax_integer((UCHAR*) p, 4);
+		value = isc_vax_integer(p, 4);
 		binary_to_ascii(value, scale, buffer);
 		break;
 
 	case (blr_short):
 		scale = *p++;
-		value = gds__vax_integer((UCHAR*) p, 2);
+		value = isc_vax_integer(p, 2);
 		binary_to_ascii(value, scale, buffer);
 		break;
 
@@ -512,9 +512,9 @@ static void extract_database(const TEXT * DB_file_name)
 
         TEXT* d = buffer;
         if (*d++ == isc_info_page_size) {
-            SSHORT length = gds__vax_integer((UCHAR*) d, 2);
+            SSHORT length = isc_vax_integer(d, 2);
             d += 2;
-            page_size = gds__vax_integer((UCHAR*) d, length);
+            page_size = isc_vax_integer(d, length);
             if (page_size)
                 ib_fprintf(output_file, "\n\tpage_size %"SLONGFORMAT, page_size);
         }
@@ -1779,7 +1779,7 @@ static void print_blob(SLONG* blob_id, TEXT type)
 	bpb = r = bpb_buffer;
 
 	if (isc_open_blob2(status_vector, &DB, &gds_trans, &blob,
-						(GDS_QUAD*) blob_id, (USHORT) (r - bpb),
+						(ISC_QUAD*) blob_id, (USHORT) (r - bpb),
 						bpb))
 	{
 		gds__print_status(status_vector);
@@ -2103,23 +2103,23 @@ static void wal_info(const UCHAR* db_info_buffer,
 	const UCHAR* p = db_info_buffer;
 
 	while ((item = *p++) != isc_info_end) {
-		USHORT length = gds__vax_integer(p, 2);
+		USHORT length = isc_vax_integer(reinterpret_cast<const SCHAR*>(p), 2);
 		p += 2;
 		switch (item) {
 		case isc_info_num_wal_buffers:
-			*num_buf = gds__vax_integer(p, length);
+			*num_buf = isc_vax_integer(reinterpret_cast<const SCHAR*>(p), length);
 			break;
 
 		case isc_info_wal_buffer_size:
-			*buf_size = gds__vax_integer(p, length);
+			*buf_size = isc_vax_integer(reinterpret_cast<const SCHAR*>(p), length);
 			break;
 
 		case isc_info_wal_ckpt_length:
-			*chkpt_len = gds__vax_integer(p, length);
+			*chkpt_len = isc_vax_integer(reinterpret_cast<const SCHAR*>(p), length);
 			break;
 
 		case isc_info_wal_grpc_wait_usecs:
-			*grp_commit = gds__vax_integer(p, length);
+			*grp_commit = isc_vax_integer(reinterpret_cast<const SCHAR*>(p), length);
 			break;
 
 		default:

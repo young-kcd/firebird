@@ -28,7 +28,7 @@
 #include "../jrd/exe.h"
 #include "../jrd/rse.h"
 #include "../jrd/ext.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/tra.h"
 #include "../jrd/ods.h"
 #include "../jrd/btr.h"

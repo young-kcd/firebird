@@ -55,7 +55,7 @@
 #include "../jrd/thd_proto.h"
 #include "../jrd/why_proto.h"
 #ifdef DEBUG
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #endif
 #ifdef SUPERSERVER
 #include "../jrd/os/isc_i_proto.h"
@@ -1038,8 +1038,8 @@ static USHORT check_statement_type( RSR statement)
 	{
 		for (info = buffer; (*info != isc_info_end) && !done;)
 		{
-			l = (USHORT) gds__vax_integer(info + 1, 2);
-			type = (USHORT) gds__vax_integer(info + 3, l);
+			l = (USHORT) isc_vax_integer(reinterpret_cast<const SCHAR*>(info + 1), 2);
+			type = (USHORT) isc_vax_integer(reinterpret_cast<const SCHAR*>(info + 3), l);
 			switch (*info)
 			{
 			case isc_info_sql_stmt_type:
@@ -2251,8 +2251,8 @@ static bool get_next_msg_no(RRQ request,
 
 	bool result = false;
 	for (info = info_buffer; *info != isc_info_end;) {
-		l = (USHORT) gds__vax_integer(info + 1, 2);
-		n = (USHORT) gds__vax_integer(info + 3, l);
+		l = (USHORT) isc_vax_integer(reinterpret_cast<const SCHAR*>(info + 1), 2);
+		n = (USHORT) isc_vax_integer(reinterpret_cast<const SCHAR*>(info + 3), l);
 		switch (*info) {
 		case isc_info_state:
 			if (n != isc_info_req_send)
@@ -2447,7 +2447,7 @@ ISC_STATUS port::get_slice(P_SLC * stuff, PACKET* send)
 
 	THREAD_EXIT;
 	isc_get_slice(status_vector, &rdb->rdb_handle, &transaction->rtr_handle,
-				  (GDS_QUAD *) &stuff->p_slc_id, stuff->p_slc_sdl.cstr_length,
+				  (ISC_QUAD*) &stuff->p_slc_id, stuff->p_slc_sdl.cstr_length,
 				  reinterpret_cast<char*>(stuff->p_slc_sdl.cstr_address),
 				  stuff->p_slc_parameters.cstr_length,
 				  (ISC_LONG *) stuff->p_slc_parameters.cstr_address,
@@ -2763,10 +2763,10 @@ ISC_STATUS port::open_blob(P_OP op, P_BLOB* stuff, PACKET* send)
 	if (op == op_open_blob || op == op_open_blob2)
 		isc_open_blob2(status_vector, &rdb->rdb_handle, 
 					   &transaction->rtr_handle, &handle,
-					   (GDS_QUAD *) &stuff->p_blob_id, bpb_length, bpb);
+					   (ISC_QUAD*) &stuff->p_blob_id, bpb_length, bpb);
 	else
 		isc_create_blob2(status_vector, &rdb->rdb_handle, &transaction->rtr_handle,
-						 &handle, (GDS_QUAD *) &send->p_resp.p_resp_blob_id,
+						 &handle, (ISC_QUAD*) &send->p_resp.p_resp_blob_id,
 						 bpb_length, reinterpret_cast<const char*>(bpb));
 	THREAD_ENTER;
 
@@ -3327,7 +3327,7 @@ ISC_STATUS port::put_slice(P_SLC * stuff, PACKET* send)
 	THREAD_EXIT;
 	send->p_resp.p_resp_blob_id = stuff->p_slc_id;
 	isc_put_slice(status_vector, &rdb->rdb_handle, &transaction->rtr_handle,
-				  (GDS_QUAD *) &send->p_resp.p_resp_blob_id,
+				  (ISC_QUAD*) &send->p_resp.p_resp_blob_id,
 				  stuff->p_slc_sdl.cstr_length,
 				  reinterpret_cast<char*>(stuff->p_slc_sdl.cstr_address),
 				  stuff->p_slc_parameters.cstr_length,

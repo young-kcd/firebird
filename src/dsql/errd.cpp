@@ -39,7 +39,7 @@
 
 #include "../dsql/dsql.h"
 #include "../dsql/sqlda.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/iberr.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/utld_proto.h"
@@ -132,12 +132,12 @@ void ERRD_error( int code, const char* text)
 
 	ISC_STATUS* status_vector = tdsql->tsql_status;
     if (status_vector) {
-        *status_vector++ = gds_arg_gds;
-        *status_vector++ = gds_random;
-        *status_vector++ = gds_arg_cstring;
+        *status_vector++ = isc_arg_gds;
+        *status_vector++ = isc_random;
+        *status_vector++ = isc_arg_cstring;
         *status_vector++ = strlen(s);
         *status_vector++ = reinterpret_cast<long>(s);
-        *status_vector++ = gds_arg_end;
+        *status_vector++ = isc_arg_end;
     }
 
     ERRD_punt();
@@ -169,14 +169,14 @@ bool ERRD_post_warning(ISC_STATUS status, ...)
 	ISC_STATUS* status_vector = ((TSQL) GET_THREAD_DATA)->tsql_status;
 	int indx = 0;
 
-	if (status_vector[0] != gds_arg_gds ||
-		(status_vector[0] == gds_arg_gds && status_vector[1] == 0 &&
-		 status_vector[2] != gds_arg_warning))
+	if (status_vector[0] != isc_arg_gds ||
+		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
+		 status_vector[2] != isc_arg_warning))
 	{
 		/* this is a blank status vector */
-		status_vector[0] = gds_arg_gds;
+		status_vector[0] = isc_arg_gds;
 		status_vector[1] = 0;
-		status_vector[2] = gds_arg_end;
+		status_vector[2] = isc_arg_end;
 		indx = 2;
 	}
 	else
@@ -196,7 +196,7 @@ bool ERRD_post_warning(ISC_STATUS status, ...)
 		return false;
 	}
 
-	status_vector[indx++] = gds_arg_warning;
+	status_vector[indx++] = isc_arg_warning;
 	status_vector[indx++] = status;
 	int type, len;
 	while ((type = va_arg(args, int)) && (indx + 3 < ISC_STATUS_LENGTH))
@@ -205,25 +205,25 @@ bool ERRD_post_warning(ISC_STATUS status, ...)
         char* pszTmp = NULL;
 		switch (status_vector[indx++] = type)
 		{
-		case gds_arg_warning:
+		case isc_arg_warning:
 			status_vector[indx++] = (ISC_STATUS) va_arg(args, ISC_STATUS);
 			break;
 
-		case gds_arg_string: 
+		case isc_arg_string: 
             pszTmp = va_arg(args, char*);
             if (strlen(pszTmp) >= MAX_ERRSTR_LEN) {
-                status_vector[(indx - 1)] = gds_arg_cstring;
+                status_vector[(indx - 1)] = isc_arg_cstring;
                 status_vector[indx++] = MAX_ERRSTR_LEN;
             }
             status_vector[indx++] = reinterpret_cast<long>(ERR_cstring(pszTmp));
 			break;
 
-		case gds_arg_interpreted: 
+		case isc_arg_interpreted: 
             pszTmp = va_arg(args, char*);
             status_vector[indx++] = reinterpret_cast<long>(ERR_cstring(pszTmp));
 			break;
 
-		case gds_arg_cstring:
+		case isc_arg_cstring:
             len = va_arg(args, int);
             status_vector[indx++] =
                 (ISC_STATUS) (len >= MAX_ERRSTR_LEN) ? MAX_ERRSTR_LEN : len;
@@ -231,19 +231,19 @@ bool ERRD_post_warning(ISC_STATUS status, ...)
             status_vector[indx++] = reinterpret_cast<long>(ERR_cstring(pszTmp));
 			break;
 
-		case gds_arg_number:
+		case isc_arg_number:
 			status_vector[indx++] = (ISC_STATUS) va_arg(args, SLONG);
 			break;
 
-		case gds_arg_vms:
-		case gds_arg_unix:
-		case gds_arg_win32:
+		case isc_arg_vms:
+		case isc_arg_unix:
+		case isc_arg_win32:
 		default:
 			status_vector[indx++] = (ISC_STATUS) va_arg(args, int);
 			break;
 		}
     }
-	status_vector[indx] = gds_arg_end;
+	status_vector[indx] = isc_arg_end;
 	return true;
 }
 
@@ -278,14 +278,14 @@ void ERRD_post(ISC_STATUS status, ...)
 	PARSE_STATUS(tmp_status, tmp_status_len, warning_indx);
 	fb_assert(warning_indx == 0);
 
-	if (status_vector[0] != gds_arg_gds ||
-		(status_vector[0] == gds_arg_gds && status_vector[1] == 0 &&
-		 status_vector[2] != gds_arg_warning))
+	if (status_vector[0] != isc_arg_gds ||
+		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
+		 status_vector[2] != isc_arg_warning))
 	{
 		/* this is a blank status vector */
-		status_vector[0] = gds_arg_gds;
-		status_vector[1] = gds_dsql_error;
-		status_vector[2] = gds_arg_end;
+		status_vector[0] = isc_arg_gds;
+		status_vector[1] = isc_dsql_error;
+		status_vector[2] = isc_arg_end;
 	}
 
 	PARSE_STATUS(status_vector, status_len, warning_indx);
@@ -296,7 +296,7 @@ void ERRD_post(ISC_STATUS status, ...)
 	int i;
 	for (i = 0; i < ISC_STATUS_LENGTH; i++)
 	{
-		if (status_vector[i] == gds_arg_end && i == status_len) {
+		if (status_vector[i] == isc_arg_end && i == status_len) {
 			break;				/* end of argument list */
 		}
 
@@ -305,7 +305,7 @@ void ERRD_post(ISC_STATUS status, ...)
 		}
 
 		if (status_vector[i] == tmp_status[1] && i &&
-			status_vector[i - 1] != gds_arg_warning &&
+			status_vector[i - 1] != isc_arg_warning &&
 			i + tmp_status_len - 2 < ISC_STATUS_LENGTH &&
 			(memcmp(&status_vector[i], &tmp_status[1],
 					sizeof(ISC_STATUS) * (tmp_status_len - 2)) == 0))

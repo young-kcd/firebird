@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.42 2003-11-01 10:26:39 robocop Exp $
+$Id: isc.cpp,v 1.43 2003-11-11 12:13:37 brodsom Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -49,7 +49,7 @@ $Id: isc.cpp,v 1.42 2003-11-01 10:26:39 robocop Exp $
 #include <errno.h>
 #include "../jrd/common.h"
 
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/isc.h"
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.24 2003-11-07 23:09:04 brodsom Exp $
+//	$Id: exe.cpp,v 1.25 2003-11-11 12:05:30 brodsom Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -342,52 +342,52 @@ static void extract_db_info(const UCHAR* db_info_buffer)
 
 	UCHAR item;
 	while ((item = *p++) != isc_info_end) {
-		const SLONG length = gds__vax_integer(p, 2);
+		const SLONG length = isc_vax_integer(reinterpret_cast<const SCHAR*>(p), 2);
 		p += 2;
 
 		// TMN: Here we should really have the following assert 
 		// fb_assert(length <= MAX_SSHORT);
-		// for all cases that use 'length' as input to 'gds__vax_integer' 
+		// for all cases that use 'length' as input to 'isc_vax_integer' 
 		switch (item) {
 		case isc_info_page_errors:
 			tdgbl->ALICE_data.ua_val_errors[VAL_PAGE_ERRORS] =
-				gds__vax_integer(p, (SSHORT) length);
+				isc_vax_integer(reinterpret_cast<const SCHAR*>(p), (SSHORT) length);
 			p += length;
 			break;
 
 		case isc_info_record_errors:
 			tdgbl->ALICE_data.ua_val_errors[VAL_RECORD_ERRORS] =
-				gds__vax_integer(p, (SSHORT) length);
+				isc_vax_integer(reinterpret_cast<const SCHAR*>(p), (SSHORT) length);
 			p += length;
 			break;
 
 		case isc_info_bpage_errors:
 			tdgbl->ALICE_data.ua_val_errors[VAL_BLOB_PAGE_ERRORS] =
-				gds__vax_integer(p, (SSHORT) length);
+				isc_vax_integer(reinterpret_cast<const SCHAR*>(p), (SSHORT) length);
 			p += length;
 			break;
 
 		case isc_info_dpage_errors:
 			tdgbl->ALICE_data.ua_val_errors[VAL_DATA_PAGE_ERRORS] =
-				gds__vax_integer(p, (SSHORT) length);
+				isc_vax_integer(reinterpret_cast<const SCHAR*>(p), (SSHORT) length);
 			p += length;
 			break;
 
 		case isc_info_ipage_errors:
 			tdgbl->ALICE_data.ua_val_errors[VAL_INDEX_PAGE_ERRORS] =
-				gds__vax_integer(p, (SSHORT) length);
+				isc_vax_integer(reinterpret_cast<const SCHAR*>(p), (SSHORT) length);
 			p += length;
 			break;
 
 		case isc_info_ppage_errors:
 			tdgbl->ALICE_data.ua_val_errors[VAL_POINTER_PAGE_ERRORS] =
-				gds__vax_integer(p, (SSHORT) length);
+				isc_vax_integer(reinterpret_cast<const SCHAR*>(p), (SSHORT) length);
 			p += length;
 			break;
 
 		case isc_info_tpage_errors:
 			tdgbl->ALICE_data.ua_val_errors[VAL_TIP_PAGE_ERRORS] =
-				gds__vax_integer(p, (SSHORT) length);
+				isc_vax_integer(reinterpret_cast<const SCHAR*>(p), (SSHORT) length);
 			p += length;
 			break;
 

@@ -512,7 +512,7 @@ static void log_long(SLONG number)
 	USHORT i;
 	SCHAR *p;
 
-	vax_number = gds__vax_integer(&number, sizeof(number));
+	vax_number = isc_vax_integer(&number, sizeof(number));
 	p = (SCHAR *) & vax_number;
 	for (i = 0; i < sizeof(number); i++)
 		PUT(*p++);
@@ -556,7 +556,7 @@ static void log_short(SSHORT number)
 	USHORT i;
 	SCHAR *p;
 
-	vax_number = (USHORT) gds__vax_integer(&number, sizeof(number));
+	vax_number = (USHORT) isc_vax_integer(&number, sizeof(number));
 	p = (SCHAR *) & vax_number;
 	for (i = 0; i < sizeof(number); i++)
 		PUT(*p++);

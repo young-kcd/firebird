@@ -1067,7 +1067,7 @@ static void save_security_class(TDBB	tdbb,
 	DBB dbb;
 	BLK request;
 	USHORT found;
-	GDS_QUAD blob_id;
+	ISC_QUAD blob_id;
 	BLB blob;
 
 	SET_TDBB(tdbb);

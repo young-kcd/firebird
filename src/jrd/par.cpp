@@ -308,7 +308,7 @@ int PAR_desc(CSB csb, DSC * desc)
 
 	case blr_quad:
 		desc->dsc_dtype = dtype_quad;
-		desc->dsc_length = sizeof(GDS_QUAD);
+		desc->dsc_length = sizeof(ISC_QUAD);
 		desc->dsc_scale = (int) BLR_BYTE;
 		break;
 
@@ -319,7 +319,7 @@ int PAR_desc(CSB csb, DSC * desc)
 
 	case blr_timestamp:
 		desc->dsc_dtype = dtype_timestamp;
-		desc->dsc_length = sizeof(GDS_QUAD);
+		desc->dsc_length = sizeof(ISC_QUAD);
 		break;
 
 	case blr_sql_date:
@@ -350,7 +350,7 @@ int PAR_desc(CSB csb, DSC * desc)
 	default:
 		if (dtype == blr_blob) {
 			desc->dsc_dtype = dtype_blob;
-			desc->dsc_length = sizeof(GDS_QUAD);
+			desc->dsc_length = sizeof(ISC_QUAD);
 			break;
 		}
 		error(csb, isc_datnotsup, 0);
@@ -1351,22 +1351,22 @@ static JRD_NOD par_literal(TDBB tdbb, CSB csb)
 	switch (desc.dsc_dtype) {
 	case dtype_short:
 		l = 2;
-		*(SSHORT *) p = (SSHORT) gds__vax_integer(q, l);
+		*(SSHORT *) p = (SSHORT) isc_vax_integer(reinterpret_cast<const SCHAR*>(q), l);
 		break;
 
 	case dtype_long:
 	case dtype_sql_date:
 	case dtype_sql_time:
 		l = 4;
-		*(SLONG *) p = (SLONG) gds__vax_integer(q, l);
+		*(SLONG *) p = (SLONG) isc_vax_integer(reinterpret_cast<const SCHAR*>(q), l);
 		break;
 
 	case dtype_timestamp:
 		l = 8;
-		*(SLONG *) p = (SLONG) gds__vax_integer(q, 4);
+		*(SLONG *) p = (SLONG) isc_vax_integer(reinterpret_cast<const SCHAR*>(q), 4);
 		p += 4;
 		q += 4;
-		*(SLONG *) p = (SLONG) gds__vax_integer(q, 4);
+		*(SLONG *) p = (SLONG) isc_vax_integer(reinterpret_cast<const SCHAR*>(q), 4);
 		break;
 
 	case dtype_int64:

@@ -1040,7 +1040,7 @@ static void sql_date_to_text( SLONG date[1], DSC * to)
 
 	date2[0] = date[0];
 	date2[1] = 0;
-	isc_decode_date((GDS_QUAD*) date2, &times);
+	isc_decode_date((ISC_QUAD*) date2, &times);
 
 	TEXT temp[35];
 	sprintf(temp, "%2d-%.3s-%04d", times.tm_mday,
@@ -1078,7 +1078,7 @@ static void sql_time_to_text( ULONG date[1], DSC * to)
 	date2[0] = 0;
 	date2[1] = date[0];
 
-	isc_decode_date((GDS_QUAD*) date2, &times);
+	isc_decode_date((ISC_QUAD*) date2, &times);
 
 	TEXT temp[35];
 	sprintf(temp, " %2d:%.2d:%.2d.%.4"SLONGFORMAT, times.tm_hour, times.tm_min,
@@ -1111,7 +1111,7 @@ static void timestamp_to_text( SLONG date[2], DSC * to)
  *
  **************************************/
 	tm times;
-	isc_decode_date((GDS_QUAD*)date, &times);
+	isc_decode_date((ISC_QUAD*)date, &times);
 
     TEXT temp[35];
 	sprintf(temp, "%2d-%.3s-%04d", times.tm_mday,
@@ -1189,7 +1189,7 @@ static void now_to_date(const tm* time, SLONG date[2])
  *
  **************************************/
 
-	isc_encode_date(time, (GDS_QUAD*)date);
+	isc_encode_date(time, (ISC_QUAD*)date);
 }
 
 
@@ -1394,7 +1394,7 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
 						return;
 					}
 					today->tm_hour = today->tm_min = today->tm_sec = 0;
-					isc_encode_date(today, (GDS_QUAD*)date);
+					isc_encode_date(today, (ISC_QUAD*)date);
 					if (strcmp(temp, TODAY) == 0)
 						return;
 					if (strcmp(temp, TOMORROW) == 0) {
@@ -1466,9 +1466,9 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
 
 // convert day/month/year to Julian and validate result
 
-	isc_encode_date(&times, (GDS_QUAD*)date);
+	isc_encode_date(&times, (ISC_QUAD*)date);
 	tm times2;
-	isc_decode_date((GDS_QUAD*)date, &times2);
+	isc_decode_date((ISC_QUAD*)date, &times2);
 
 	if (times.tm_year != times2.tm_year ||
 		times.tm_mon != times2.tm_mon || times.tm_mday != times2.tm_mday)
@@ -1577,7 +1577,7 @@ static void string_to_time( TEXT * string, USHORT length, SLONG date[2])
 
 // convert day/month/year to Julian and validate result
 
-	isc_encode_date(&times, (GDS_QUAD*)date);
+	isc_encode_date(&times, (ISC_QUAD*)date);
 
 	while (precision++ < 4)
 		components[6] *= 10;

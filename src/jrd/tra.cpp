@@ -1008,7 +1008,7 @@ jrd_tra* TRA_reconnect(TDBB tdbb, const UCHAR* id, USHORT length)
 	tdbb->tdbb_default = JrdMemoryPool::createPool();
 	jrd_tra* trans = FB_NEW_RPT(*tdbb->tdbb_default, 0) jrd_tra();
 	trans->tra_pool = tdbb->tdbb_default;
-	trans->tra_number = gds__vax_integer(id, length);
+	trans->tra_number = isc_vax_integer(reinterpret_cast<const SCHAR*>(id), length);
 	trans->tra_flags |= TRA_prepared | TRA_reconnected | TRA_write;
 
 	const UCHAR state = limbo_transaction(tdbb, trans->tra_number);

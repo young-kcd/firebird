@@ -1159,7 +1159,7 @@ static void add_security_to_sys_rel(TDBB	tdbb,
  **************************************/
 
 	DBB dbb;
-	GDS_QUAD blob_id_1, blob_id_2;
+	ISC_QUAD blob_id_1, blob_id_2;
 	BLB blob;
 	BLK handle1;
 	TEXT sec_class_name[100];

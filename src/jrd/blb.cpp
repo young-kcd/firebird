@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.41 2003-11-06 03:01:06 brodsom Exp $
+$Id: blb.cpp,v 1.42 2003-11-11 12:12:17 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -46,7 +46,7 @@ $Id: blb.cpp,v 1.41 2003-11-06 03:01:06 brodsom Exp $
 #include "../jrd/blb.h"
 #include "../jrd/ods.h"
 #include "../jrd/lls.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/blob_filter.h"
 #include "../jrd/sdl.h"
 #include "../jrd/intl.h"
@@ -466,9 +466,9 @@ USHORT BLB_get_segment(TDBB tdbb,
 			BLF_get_segment(tdbb, &blob->blb_filter, &tmp_len, buffer_length,
 							segment)) )
 		{
-			if (status == gds_segstr_eof)
+			if (status == isc_segstr_eof)
 				blob->blb_flags |= BLB_eof;
-			else if (status == gds_segment)
+			else if (status == isc_segment)
 				blob->blb_fragment_size = 1;
 			else
 				ERR_punt();
@@ -762,7 +762,7 @@ SLONG BLB_lseek(BLB blob, USHORT mode, SLONG offset)
  **************************************/
 
 	if (!(blob->blb_flags & BLB_stream))
-		ERR_post(gds_bad_segstr_type, 0);
+		ERR_post(isc_bad_segstr_type, 0);
 
 	if (mode == 1)
 		offset += blob->blb_seek;
@@ -840,7 +840,7 @@ void BLB_move(TDBB tdbb, const dsc* from_desc, dsc* to_desc, JRD_NOD field)
 	if (from_desc->dsc_dtype != dtype_quad
 		&& from_desc->dsc_dtype != dtype_blob) 
 	{
-		ERR_post(gds_convert_error, gds_arg_string, "BLOB", 0);
+		ERR_post(isc_convert_error, isc_arg_string, "BLOB", 0);
 	}
 
 	JRD_REQ request = tdbb->tdbb_request;
@@ -920,7 +920,7 @@ void BLB_move(TDBB tdbb, const dsc* from_desc, dsc* to_desc, JRD_NOD field)
 			!(blob->blb_flags & BLB_closed) ||
 			(blob->blb_request && blob->blb_request != request))
 		{
-			ERR_post(gds_bad_segstr_id, 0);
+			ERR_post(isc_bad_segstr_id, 0);
 		}
 
 		if (materialized_blob && !(blob->blb_flags & BLB_temporary)) {
@@ -960,7 +960,7 @@ void BLB_move_from_string(TDBB tdbb, const dsc* from_desc, dsc* to_desc, JRD_NOD
 	SET_TDBB (tdbb);
 
 	if (from_desc->dsc_dtype > dtype_varying)
-	    ERR_post(gds_convert_error, gds_arg_string,
+	    ERR_post(isc_convert_error, isc_arg_string,
 		DSC_dtype_tostring(from_desc->dsc_dtype), 0);
 	else
 	{
@@ -1155,7 +1155,7 @@ BLB BLB_open2(TDBB tdbb,
 		!(blob->blb_relation =
 		  reinterpret_cast<jrd_rel*>( (*vector)[blob_id->bid_relation_id]) ) )
 	{
-			ERR_post(gds_bad_segstr_id, 0);
+			ERR_post(isc_bad_segstr_id, 0);
 	}
 
 	DPM_get_blob(tdbb, blob, blob_id->bid_stuff.bid_number, FALSE, (SLONG) 0);
@@ -1387,8 +1387,8 @@ void BLB_put_slice(	TDBB	tdbb,
 	ARR array_desc = field->fld_array;
 	if (!array_desc)
 	{
-		ERR_post(gds_invalid_dimension, gds_arg_number, (SLONG) 0,
-				 gds_arg_number, (SLONG) 1, 0);
+		ERR_post(isc_invalid_dimension, isc_arg_number, (SLONG) 0,
+				 isc_arg_number, (SLONG) 1, 0);
 	}
 
 /* Find and/or allocate array block.  There are three distinct cases:
@@ -1718,10 +1718,10 @@ static ISC_STATUS blob_filter(	USHORT	action,
 			BLB_get_segment(tdbb, blob, control->ctl_buffer,
 							control->ctl_buffer_length);
 		if (blob->blb_flags & BLB_eof) {
-			return gds_segstr_eof;
+			return isc_segstr_eof;
 		}
 		if (blob->blb_fragment_size) {
-			return gds_segment;
+			return isc_segment;
 		}
 		return FB_SUCCESS;
 
@@ -1753,7 +1753,7 @@ static ISC_STATUS blob_filter(	USHORT	action,
 		return BLB_lseek((BLB) control->ctl_source_handle, mode, offset);
 
 	default:
-		ERR_post(gds_uns_ext, 0);
+		ERR_post(isc_uns_ext, 0);
 		return FB_SUCCESS;
 	}
 }
@@ -1795,7 +1795,7 @@ static void check_BID_validity(BLB blob, TDBB tdbb)
 		blob->blb_attachment != tdbb->tdbb_attachment ||
 		blob->blb_level > 2 || !(blob->blb_flags & BLB_temporary))
 	{
-		ERR_post(gds_bad_segstr_id, 0);
+		ERR_post(isc_bad_segstr_id, 0);
 	}
 }
 
@@ -2311,7 +2311,7 @@ static void slice_callback(SLICE arg, ULONG count, DSC * descriptors)
 		(BLOB_PTR*) slice_desc->dsc_address + arg->slice_element_length;
 
 	if (next > arg->slice_end)
-		ERR_post(gds_out_of_bounds, 0);
+		ERR_post(isc_out_of_bounds, 0);
 
 	if ((BLOB_PTR *) array_desc->dsc_address < arg->slice_base)
 		ERR_error(198);			/* msg 198 array subscript computation error */

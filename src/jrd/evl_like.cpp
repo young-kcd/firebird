@@ -102,7 +102,7 @@ USHORT LIKENAME(TDBB tdbb, TextType obj, LIKETYPE * p1, SSHORT l1_bytes,	/* byte
 					escape = TRUE;
 			}
 			if (!escape)
-				ERR_post(gds_like_escape_invalid, 0);
+				ERR_post(isc_like_escape_invalid, 0);
 		}
 		if (!escape && (c == (LIKETYPE) SQL_MATCH_ANY)) {
 			while ((l2 > 0) && (*p2 == (LIKETYPE) SQL_MATCH_ANY)) {

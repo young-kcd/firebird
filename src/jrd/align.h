@@ -114,15 +114,15 @@ static const USHORT type_lengths[DTYPE_TYPE_MAX] = {
 	sizeof(SCHAR),				/* dtype_byte */
 	sizeof(SSHORT),				/* dtype_short */
 	sizeof(SLONG),				/* dtype_long */
-	sizeof(GDS_QUAD),			/* dtype_quad */
+	sizeof(ISC_QUAD),			/* dtype_quad */
 	sizeof(float),				/* dtype_real */
 	sizeof(double),				/* dtype_double */
 	sizeof(double),				/* dtype_d_float */
 	sizeof(GDS_DATE),			/* dtype_sql_date */
 	sizeof(GDS_TIME),			/* dtype_sql_time */
 	sizeof(GDS_TIMESTAMP),		/* dtype_timestamp */
-	sizeof(GDS_QUAD),			/* dtype_blob */
-	sizeof(GDS_QUAD),			/* dtype_array */
+	sizeof(ISC_QUAD),			/* dtype_blob */
+	sizeof(ISC_QUAD),			/* dtype_array */
 	sizeof(SINT64)				/* dtype_int64 */
 };
 

@@ -1957,7 +1957,7 @@ static SSHORT add_row(TEXT* tabname)
 						ULONG date[2];
 						stringvalue =
 							(SCHAR*) ISQL_ALLOC((SLONG) (ivar->sqllen + 1));
-						isc_encode_date(&times, (GDS_QUAD_t*) date);
+						isc_encode_date(&times, (ISC_QUAD*) date);
 						ivar->sqldata = stringvalue;
 						*(ULONG*) stringvalue = date[1];
 					};
@@ -1977,7 +1977,7 @@ static SSHORT add_row(TEXT* tabname)
 						times.tm_mon--;
 						stringvalue =
 							(SCHAR*) ISQL_ALLOC((SLONG) (ivar->sqllen + 1));
-						isc_encode_date(&times, (GDS_QUAD_t*) date);
+						isc_encode_date(&times, (ISC_QUAD*) date);
 						ivar->sqldata = stringvalue;
 						((ULONG*) stringvalue)[0] = date[0];
 						if (type == SQL_TIMESTAMP)
@@ -5920,7 +5920,7 @@ static SSHORT print_item(TEXT** s,
 			break;
 
 		case SQL_TIMESTAMP:
-			isc_decode_date((GDS_QUAD_t*)var->sqldata, &times);
+			isc_decode_date((ISC_QUAD*)var->sqldata, &times);
 
 			if (SQL_dialect > SQL_DIALECT_V5) {
 				sprintf(d, "%4.4d-%2.2d-%2.2d %2.2d:%2.2d:%2.2d.%4.4"ULONGFORMAT,
@@ -5958,7 +5958,7 @@ static SSHORT print_item(TEXT** s,
 				ULONG time_and_date[2];
 				time_and_date[0] = 0;
 				time_and_date[1] = *(ULONG*) var->sqldata;
-				isc_decode_date((GDS_QUAD_t*)time_and_date, &times);
+				isc_decode_date((ISC_QUAD*)time_and_date, &times);
 				sprintf(d, "%2.2d:%2.2d:%2.2d.%4.4"ULONGFORMAT,
 						times.tm_hour, times.tm_min, times.tm_sec,
 						(*(ULONG*) var->sqldata) %
@@ -5979,7 +5979,7 @@ static SSHORT print_item(TEXT** s,
 				ULONG time_and_date[2];
 				time_and_date[0] = *(ULONG*) var->sqldata;
 				time_and_date[1] = 0;
-				isc_decode_date((GDS_QUAD_t*)time_and_date, &times);
+				isc_decode_date((ISC_QUAD*)time_and_date, &times);
 
 				sprintf(d, "%4.4d-%2.2d-%2.2d", times.tm_year + 1900,
 						(times.tm_mon + 1), times.tm_mday);
@@ -6437,8 +6437,8 @@ static int process_statement(TEXT* string,
 	}
 	else {
 		if (info_buffer [0] == isc_info_sql_stmt_type) {
-			l = gds__vax_integer((UCHAR*) info_buffer + 1, 2);
-			statement_type = gds__vax_integer( (UCHAR*) info_buffer + 3, l);
+			l = isc_vax_integer(info_buffer + 1, 2);
+			statement_type = isc_vax_integer(info_buffer + 3, l);
 		}
 	}
 
@@ -6531,7 +6531,7 @@ static int process_statement(TEXT* string,
 			ISQL_errmsg(isc_status);
 		}
 		else if (plan_buffer[0] == isc_info_sql_get_plan) {
-			l = gds__vax_integer((UCHAR*) plan_buffer + 1, 2);
+			l = isc_vax_integer(plan_buffer + 1, 2);
 			sprintf(Print_buffer, "%.*s%s", l, plan_buffer + 3, NEWLINE);
 			ISQL_printf(Diag, Print_buffer);
 		}
@@ -6613,9 +6613,9 @@ static int process_statement(TEXT* string,
 
 				for (p = count_buffer + 3; *p != isc_info_end;) {
 					count_is = *p++;
-					l = gds__vax_integer((UCHAR*) p, 2);
+					l = isc_vax_integer(p, 2);
 					p += 2;
-					count = gds__vax_integer((UCHAR*) p, l);
+					count = isc_vax_integer(p, l);
 					p += l;
 					if (count_is == count_type)
 						break;

@@ -934,7 +934,7 @@ static const UCHAR* sdl_desc(const UCHAR* ptr, DSC* desc)
 
 	case blr_quad:
 		desc->dsc_dtype = dtype_quad;
-		desc->dsc_length = sizeof(GDS_QUAD);
+		desc->dsc_length = sizeof(ISC_QUAD);
 		break;
 
 	case blr_float:
@@ -959,7 +959,7 @@ static const UCHAR* sdl_desc(const UCHAR* ptr, DSC* desc)
 
 	case blr_timestamp:
 		desc->dsc_dtype = dtype_timestamp;
-		desc->dsc_length = sizeof(GDS_QUAD);
+		desc->dsc_length = sizeof(ISC_QUAD);
 		break;
 
 	case blr_sql_date:

@@ -87,9 +87,10 @@ static inline ISC_STATUS stuff_sdl_long(gen_t* gen, int word)
 ISC_STATUS API_ROUTINE isc_array_get_slice(ISC_STATUS* status,
 									   FRBRD** db_handle,
 									   FRBRD** trans_handle,
-									   GDS_QUAD* array_id,
+									   ISC_QUAD* array_id,
 									   const ISC_ARRAY_DESC* desc,
-									   void* array, SLONG* slice_length)
+									   void* array, 
+									   SLONG* slice_length)
 {
 /**************************************
  *
@@ -185,9 +186,10 @@ ISC_STATUS API_ROUTINE isc_array_lookup_desc(ISC_STATUS* status,
 ISC_STATUS API_ROUTINE isc_array_put_slice(ISC_STATUS* status,
 									   FRBRD** db_handle,
 									   FRBRD** trans_handle,
-									   GDS_QUAD* array_id,
+									   ISC_QUAD* array_id,
 									   const ISC_ARRAY_DESC* desc,
-									   void* array, SLONG* slice_length)
+									   void* array, 
+									   SLONG* slice_length)
 {
 /**************************************
  *

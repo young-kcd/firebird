@@ -85,7 +85,7 @@
 #include <stdlib.h>
 #include <windows.h>
 #include "../remote/remote.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/license.h"
 #include "../jrd/thd.h"
 #include "../jrd/license.h"
@@ -397,8 +397,8 @@ static void THREAD_ROUTINE wnet_connect_wait_thread( void *dummy)
 		PORT port = WNET_connect(protocol_wnet, 0, status_vector, server_flag);
 		THREAD_EXIT;
 		if (!port) {
-			if (status_vector[1] != gds_io_error ||
-				status_vector[6] != gds_arg_win32 ||
+			if (status_vector[1] != isc_io_error ||
+				status_vector[6] != isc_arg_win32 ||
 				status_vector[7] != ERROR_CALL_NOT_IMPLEMENTED) {
 				gds__log_status(0, status_vector);
 			}

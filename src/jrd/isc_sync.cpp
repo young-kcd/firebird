@@ -59,7 +59,7 @@
 
 #include "../jrd/jrd_time.h"
 #include "../jrd/common.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/isc.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
@@ -2049,9 +2049,9 @@ UCHAR *ISC_map_file(ISC_STATUS * status_vector,
 			munmap((char *) address, length);
 			close(fd);
 			close(fd_init);
-			*status_vector++ = gds_arg_gds;
-			*status_vector++ = gds_unavailable;
-			*status_vector++ = gds_arg_end;
+			*status_vector++ = isc_arg_gds;
+			*status_vector++ = isc_unavailable;
+			*status_vector++ = isc_arg_end;
 			return NULL;
 		}
 
@@ -2476,9 +2476,9 @@ UCHAR *ISC_map_file(ISC_STATUS * status_vector,
 			shmdt(address);
 			next_shared_memory -= length;
 			ib_fclose(fp);
-			*status_vector++ = gds_arg_gds;
-			*status_vector++ = gds_unavailable;
-			*status_vector++ = gds_arg_end;
+			*status_vector++ = isc_arg_gds;
+			*status_vector++ = isc_unavailable;
+			*status_vector++ = isc_arg_end;
 			return NULL;
 		}
 		buf.shm_perm.mode = 0666;
@@ -2619,9 +2619,9 @@ UCHAR* ISC_map_file(
 	if (init_flag && !init_routine) {
 		CloseHandle(event_handle);
 		CloseHandle(file_handle);
-		*status_vector++ = gds_arg_gds;
-		*status_vector++ = gds_unavailable;
-		*status_vector++ = gds_arg_end;
+		*status_vector++ = isc_arg_gds;
+		*status_vector++ = isc_unavailable;
+		*status_vector++ = isc_arg_end;
 		return NULL;
 	}
 
@@ -2821,9 +2821,9 @@ UCHAR *ISC_map_file(ISC_STATUS * status_vector,
  *
  **************************************/
 
-	*status_vector++ = gds_arg_gds;
-	*status_vector++ = gds_unavailable;
-	*status_vector++ = gds_arg_end;
+	*status_vector++ = isc_arg_gds;
+	*status_vector++ = isc_unavailable;
+	*status_vector++ = isc_arg_end;
 
 	return NULL;
 }
@@ -3680,9 +3680,9 @@ UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
  *
  **************************************/
 
-	*status_vector++ = gds_arg_gds;
-	*status_vector++ = gds_unavailable;
-	*status_vector++ = gds_arg_end;
+	*status_vector++ = isc_arg_gds;
+	*status_vector++ = isc_unavailable;
+	*status_vector++ = isc_arg_end;
 
 	return NULL;
 }
@@ -3930,9 +3930,9 @@ void ISC_unmap_file(ISC_STATUS * status_vector,
  *
  **************************************/
 
-	*status_vector++ = gds_arg_gds;
-	*status_vector++ = gds_unavailable;
-	*status_vector++ = gds_arg_end;
+	*status_vector++ = isc_arg_gds;
+	*status_vector++ = isc_unavailable;
+	*status_vector++ = isc_arg_end;
 }
 #endif
 
@@ -3967,13 +3967,13 @@ static void error(ISC_STATUS * status_vector, TEXT * string, ISC_STATUS status)
  *
  **************************************/
 
-	*status_vector++ = gds_arg_gds;
-	*status_vector++ = gds_sys_request;
-	*status_vector++ = gds_arg_string;
+	*status_vector++ = isc_arg_gds;
+	*status_vector++ = isc_sys_request;
+	*status_vector++ = isc_arg_string;
 	*status_vector++ = (ISC_STATUS) string;
 	*status_vector++ = SYS_ARG;
 	*status_vector++ = status;
-	*status_vector++ = gds_arg_end;
+	*status_vector++ = isc_arg_end;
 }
 
 

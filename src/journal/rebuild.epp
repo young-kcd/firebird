@@ -1520,7 +1520,7 @@ static void format_time(SLONG date[2],
  **************************************/
 	tm times;
 
-	isc_decode_date((GDS_QUAD_t*) date, &times);
+	isc_decode_date((ISC_QUAD*) date, &times);
 
 	sprintf(string, "%.2d:%.2d:%.2d %.2d/%.2d/%.2d",
 			times.tm_hour, times.tm_min, times.tm_sec,

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cme.cpp,v 1.18 2003-11-08 16:31:40 brodsom Exp $
+//	$Id: cme.cpp,v 1.19 2003-11-11 12:08:12 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -590,7 +590,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 		{
 			f->fld_dtype = dtype_quad;
 			f->fld_scale = field1.fld_scale + field2.fld_scale;
-			f->fld_length = sizeof(GDS_QUAD);
+			f->fld_length = sizeof(ISC_QUAD);
 		}
 #endif
 		else if (dtype_max == dtype_int64)
@@ -687,7 +687,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 		{
 			f->fld_dtype = dtype_quad;
 			f->fld_scale = MIN(field1.fld_scale, field2.fld_scale);
-			f->fld_length = sizeof(GDS_QUAD);
+			f->fld_length = sizeof(ISC_QUAD);
 		}
 #endif
 // ** Begin date/time/timestamp support *

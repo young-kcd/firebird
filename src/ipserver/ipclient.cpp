@@ -35,7 +35,7 @@
 #include <windows.h>
 
 #include "../ipserver/ipc.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/license.h"
 #include "../jrd/inf.h"
 #include "../jrd/gds_proto.h"

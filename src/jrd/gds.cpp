@@ -153,7 +153,6 @@ static const char * FB_PID_FILE = "fb_%d";
 #include "gen/sql_code.h"
 #include "../jrd/thd.h"
 #include "../jrd/gdsold.h"
-//#include "../jrd/gen/codes.h" // is already included in gdsold.h
 #include "../jrd/blr.h"
 #include "../jrd/msg.h"
 #include "../jrd/fil.h"
@@ -479,7 +478,7 @@ ISC_STATUS API_ROUTINE gds__decode(ISC_STATUS code, USHORT* fac, USHORT* class_)
 }
 
 
-void API_ROUTINE isc_decode_date(const GDS_QUAD* date, void* times_arg)
+void API_ROUTINE isc_decode_date(const ISC_QUAD* date, void* times_arg)
 {
 /**************************************
  *
@@ -594,7 +593,7 @@ ISC_STATUS API_ROUTINE gds__encode(ISC_STATUS code, USHORT facility)
 }
 
 
-void API_ROUTINE isc_encode_date(const void* times_arg, GDS_QUAD* date)
+void API_ROUTINE isc_encode_date(const void* times_arg, ISC_QUAD* date)
 {
 /**************************************
  *
@@ -713,9 +712,9 @@ SINT64 API_ROUTINE isc_portable_integer(const UCHAR* ptr, SSHORT length)
  *
  * **Note**
  *
- *   This function is similar to gds__vax_integer() in functionality.
+ *   This function is similar to isc_vax_integer() in functionality.
  *   The difference is in the return type. Changed from SLONG to SINT64
- *   Since gds__vax_integer() is a public API routine, it could not be
+ *   Since isc_vax_integer() is a public API routine, it could not be
  *   changed. This function has been made public so gbak can use it.
  *
  **************************************/
@@ -847,12 +846,12 @@ SLONG API_ROUTINE gds__interprete(char* s, ISC_STATUS** vector)
 	for (;;) {
 		const UCHAR x = (UCHAR) *v++;
 		switch (x) {
-		case gds_arg_string:
-		case gds_arg_number:
+		case isc_arg_string:
+		case isc_arg_number:
 			*arg++ = (TEXT*) *v++;
 			continue;
 
-		case gds_arg_cstring:
+		case isc_arg_cstring:
 			if (!temp) {
 				/* We need a temporary buffer when cstrings are involved.
 				   Give up if we can't get one. */
@@ -886,7 +885,7 @@ SLONG API_ROUTINE gds__interprete(char* s, ISC_STATUS** vector)
 
 	switch ((UCHAR) (*vector)[0]) {
 	case isc_arg_warning:
-	case gds_arg_gds:
+	case isc_arg_gds:
 		{
 			USHORT fac = 0, class_ = 0;
 			const ISC_STATUS decoded = gds__decode(code, &fac, &class_);
@@ -903,24 +902,24 @@ SLONG API_ROUTINE gds__interprete(char* s, ISC_STATUS** vector)
 		}
 		break;
 
-	case gds_arg_interpreted:
+	case isc_arg_interpreted:
 		p = s;
 		q = (const TEXT*) (*vector)[1];
 		while ((*p++ = *q++) /*!= NULL*/);
 		break;
 
-	case gds_arg_unix:
+	case isc_arg_unix:
 		/* The  strerror()  function  returns  the appropriate description
 		   string, or an unknown error message if the error code is unknown. */
 		p = (TEXT*) strerror(code);
 		break;
 
-	case gds_arg_dos:
+	case isc_arg_dos:
 		sprintf(s, "unknown dos error %ld", code);	/* TXNN */
 		break;
 
 #ifdef VMS
-	case gds_arg_vms:
+	case isc_arg_vms:
 		{
 			l = 0;
 			struct dsc$descriptor_s desc;
@@ -939,7 +938,7 @@ SLONG API_ROUTINE gds__interprete(char* s, ISC_STATUS** vector)
 #endif
 
 #ifdef WIN_NT
-	case gds_arg_win32:
+	case isc_arg_win32:
 		if (!(l = (SSHORT) FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
 										 NULL,
 										 code,
@@ -1910,7 +1909,7 @@ ISC_STATUS API_ROUTINE gds__print_status(const ISC_STATUS* vec)
  *	Interprete a status vector.
  *
  **************************************/
-	if (!vec || (!vec[1] && vec[2] == gds_arg_end))
+	if (!vec || (!vec[1] && vec[2] == isc_arg_end))
 		return FB_SUCCESS;
 
 	TEXT* s = (TEXT *) gds__alloc((SLONG) BUFFER_LARGE);
@@ -2003,25 +2002,32 @@ USHORT API_ROUTINE gds__parse_bpb2(USHORT bpb_length,
 		length = *p++;
 		switch (op) {
 		case gds_bpb_source_type:
-			*source = (USHORT) gds__vax_integer(p, length);
+			*source = (USHORT) isc_vax_integer(reinterpret_cast<const SCHAR*>(p),
+												length);
 			break;
 
 		case gds_bpb_target_type:
-			*target = (USHORT) gds__vax_integer(p, length);
+			*target = (USHORT) isc_vax_integer(reinterpret_cast<const SCHAR*>(p),
+												length);
 			break;
 
 		case gds_bpb_type:
-			type = (USHORT) gds__vax_integer(p, length);
+			type = (USHORT) isc_vax_integer(reinterpret_cast<const SCHAR*>(p),
+											length);
 			break;
 
 		case gds_bpb_source_interp:
 			if (source_interp)
-				*source_interp = (USHORT) gds__vax_integer(p, length);
+				*source_interp = (USHORT) isc_vax_integer(reinterpret_cast
+															<const SCHAR*>(p),
+															length);
 			break;
 
 		case gds_bpb_target_interp:
 			if (target_interp)
-				*target_interp = (USHORT) gds__vax_integer(p, length);
+				*target_interp = (USHORT) isc_vax_integer(reinterpret_cast
+															<const SCHAR*>(p), 
+															length);
 			break;
 
 		default:
@@ -2180,7 +2186,7 @@ void API_ROUTINE gds__qtoq(const void* quad_in, void* quad_out)
  *
  **************************************/
 
-	*((GDS_QUAD *) quad_out) = *((GDS_QUAD *) quad_in);
+	*((ISC_QUAD*) quad_out) = *((ISC_QUAD*) quad_in);
 }
 
 
@@ -2255,9 +2261,9 @@ SLONG API_ROUTINE gds__sqlcode(const ISC_STATUS* status_vector)
  */
 
 	const ISC_STATUS* s = status_vector;
-	while (*s != gds_arg_end)
+	while (*s != isc_arg_end)
 	{
-		if (*s == gds_arg_gds)
+		if (*s == isc_arg_gds)
 		{
 			s++;
 			if (*s == gds_sqlerr)
@@ -2281,10 +2287,10 @@ SLONG API_ROUTINE gds__sqlcode(const ISC_STATUS* status_vector)
 			}
 			s++;
 		}
-		else if (*s == gds_arg_cstring)
-			s += 3;				/* skip: gds_arg_cstring <len> <ptr> */
+		else if (*s == isc_arg_cstring)
+			s += 3;				/* skip: isc_arg_cstring <len> <ptr> */
 		else
-			s += 2;				/* skip: gds_arg_* <item> */
+			s += 2;				/* skip: isc_arg_* <item> */
 	};
 
 	return sqlcode;
@@ -2598,11 +2604,11 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
 #endif
 
 
-SLONG API_ROUTINE gds__vax_integer(const UCHAR* ptr, SSHORT length)
+SLONG API_ROUTINE isc_vax_integer(const SCHAR* ptr, SSHORT length)
 {
 /**************************************
  *
- *	g d s _ $ v a x _ i n t e g e r
+ *	i s c _ v a x _ i n t e g e r
  *
  **************************************
  *
@@ -2617,7 +2623,7 @@ SLONG API_ROUTINE gds__vax_integer(const UCHAR* ptr, SSHORT length)
 	value = shift = 0;
 
 	while (--length >= 0) {
-		value += ((SLONG) * ptr++) << shift;
+		value += ((SLONG) (UCHAR) *ptr++) << shift;
 		shift += 8;
 	}
 

@@ -44,7 +44,6 @@
 #include "../dsql/chars.h"
 #include "../dsql/sqlda.h"
 #include "../jrd/blr.h"
-#include "gen/codes.h"
 #include "gen/iberror.h"
 #include "../jrd/align.h"
 #include "../jrd/gds_proto.h"
@@ -1441,7 +1440,7 @@ static void error_post(ISC_STATUS status, ...)
 
 /* Copy first argument */
 
-	*p++ = gds_arg_gds;
+	*p++ = isc_arg_gds;
 	*p++ = status;
 
 /* Pick up remaining args */
@@ -1449,33 +1448,33 @@ static void error_post(ISC_STATUS status, ...)
 	while (type = va_arg(args, int))
 	{
 		switch (*p++ = type) {
-		case gds_arg_gds:
+		case isc_arg_gds:
 			*p++ = (ISC_STATUS) va_arg(args, ISC_STATUS);
 			break;
 
-		case gds_arg_number:
+		case isc_arg_number:
 			*p++ = (ISC_STATUS) va_arg(args, SLONG);
 			break;
 
-		case gds_arg_vms:
-		case gds_arg_unix:
-		case gds_arg_win32:
+		case isc_arg_vms:
+		case isc_arg_unix:
+		case isc_arg_win32:
 			*p++ = va_arg(args, int);
 			break;
 
-		case gds_arg_string:
-		case gds_arg_interpreted:
+		case isc_arg_string:
+		case isc_arg_interpreted:
 			*p++ = (ISC_STATUS) va_arg(args, TEXT *);
 			break;
 
-		case gds_arg_cstring:
+		case isc_arg_cstring:
 			*p++ = (ISC_STATUS) va_arg(args, int);
 			*p++ = (ISC_STATUS) va_arg(args, TEXT *);
 			break;
 		}
 	}
 
-	*p = gds_arg_end;
+	*p = isc_arg_end;
 
 	// Give up whatever we were doing and return to the user.
 
@@ -1548,7 +1547,7 @@ static NAME insert_name( TEXT * symbol, NAME* list_ptr, STMT stmt)
 	name = (NAME) gds__alloc((SLONG) sizeof(name) + l);
 /* FREE: by exit handler cleanup() or database_cleanup() */
 	if (!name)					/* NOMEM: */
-		error_post(gds_virmemexh, 0);
+		error_post(isc_virmemexh, 0);
 	name->name_stmt = stmt;
 	name->name_length = l;
 	p = name->name_symbol;
@@ -1606,13 +1605,13 @@ static STMT lookup_stmt(TEXT* name, NAME list, USHORT type)
 		return found->name_stmt;
 
 	if (type == NAME_statement) {
-		error_post(gds_dsql_error,
-				   gds_arg_gds, gds_sqlerr, gds_arg_number, (SLONG) - 518,
-				   gds_arg_gds, gds_dsql_request_err, 0);
+		error_post(isc_dsql_error,
+				   isc_arg_gds, isc_sqlerr, isc_arg_number, (SLONG) - 518,
+				   isc_arg_gds, isc_dsql_request_err, 0);
 	} else {
-		error_post(gds_dsql_error,
-				   gds_arg_gds, gds_sqlerr, gds_arg_number, (SLONG) - 504,
-				   gds_arg_gds, gds_dsql_cursor_err, 0);
+		error_post(isc_dsql_error,
+				   isc_arg_gds, isc_sqlerr, isc_arg_number, (SLONG) - 504,
+				   isc_arg_gds, isc_dsql_cursor_err, 0);
 	}
 	return NULL;
 }

@@ -1283,7 +1283,7 @@ static bool_t wnet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
 
 /* Use memcpy to optimize bulk transfers. */
 
-	while (bytecount > (SLONG) sizeof(GDS_QUAD)) {
+	while (bytecount > (SLONG) sizeof(ISC_QUAD)) {
 		if (xdrs->x_handy >= bytecount) {
 			memcpy(buff, xdrs->x_private, bytecount);
 			xdrs->x_private += bytecount;
@@ -1404,7 +1404,7 @@ static bool_t wnet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 
 /* Use memcpy to optimize bulk transfers. */
 
-	while (bytecount > (SLONG) sizeof(GDS_QUAD)) {
+	while (bytecount > (SLONG) sizeof(ISC_QUAD)) {
 		if (xdrs->x_handy >= bytecount) {
 			memcpy(xdrs->x_private, buff, bytecount);
 			xdrs->x_private += bytecount;

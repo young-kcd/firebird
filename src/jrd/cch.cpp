@@ -36,7 +36,7 @@
 #include "../jrd/ods.h"
 #include "../jrd/os/pio.h"
 #include "../jrd/cch.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/jrn.h"
 #include "../jrd/lls.h"
 #include "../jrd/req.h"
@@ -590,7 +590,7 @@ BOOLEAN CCH_exclusive(TDBB tdbb, USHORT level, SSHORT wait_flag)
    but can't get the lock, generate an error */
 
 	if (wait_flag == LCK_WAIT)
-		ERR_post(gds_deadlock, 0);
+		ERR_post(isc_deadlock, 0);
 
 	dbb->dbb_flags &= ~DBB_exclusive;
 
@@ -672,7 +672,7 @@ BOOLEAN CCH_exclusive_attachment(TDBB tdbb, USHORT level, SSHORT wait_flag)
 					tdbb->tdbb_attachment->att_flags &=
 						~ATT_exclusive_pending;
 					if (wait_flag == LCK_WAIT)
-						ERR_post(gds_deadlock, 0);
+						ERR_post(isc_deadlock, 0);
 					else
 						return FALSE;
 				}
@@ -1172,11 +1172,11 @@ void CCH_fetch_page(
 		THREAD_ENTER;
 #endif
 		IBERR_build_status(tdbb->tdbb_status_vector,
-						   gds_db_corrupt,
-						   gds_arg_string, "",
-						   gds_arg_gds, gds_bad_checksum,
-						   gds_arg_gds, gds_badpage,
-						   gds_arg_number, (SLONG) bdb->bdb_page, 0);
+						   isc_db_corrupt,
+						   isc_arg_string, "",
+						   isc_arg_gds, isc_bad_checksum,
+						   isc_arg_gds, isc_badpage,
+						   isc_arg_number, (SLONG) bdb->bdb_page, 0);
 		/* We should invalidate this bad buffer. */
 
 		PAGE_LOCK_RELEASE(bdb->bdb_lock);
@@ -2918,7 +2918,7 @@ BOOLEAN CCH_write_all_shadows(TDBB tdbb,
 						SDW_notify();
 						CCH_unwind(tdbb, FALSE);
 						SDW_dump_pages();
-						ERR_post(gds_deadlock, 0);
+						ERR_post(isc_deadlock, 0);
 					}
 				}
 			}
@@ -4765,7 +4765,7 @@ static SSHORT latch_bdb(
 	if ((lwt_->lwt_flags & LWT_pending) && timeout_occurred) {
 		LATCH_MUTEX_RELEASE;
 		if (latch_wait == 1) {
-			IBERR_build_status(tdbb->tdbb_status_vector, gds_deadlock, 0);
+			IBERR_build_status(tdbb->tdbb_status_vector, isc_deadlock, 0);
 			CCH_unwind(tdbb, TRUE);
 		}
 		else
@@ -4939,7 +4939,7 @@ static SSHORT lock_buffer(
 		   return the error. */
 
 		if ((wait == LCK_NO_WAIT)
-			|| ((wait < 0) && (status[1] == gds_lock_timeout))) {
+			|| ((wait < 0) && (status[1] == isc_lock_timeout))) {
 			release_bdb(tdbb, bdb, FALSE, FALSE, FALSE);
 			return -1;
 		}
@@ -4951,7 +4951,7 @@ static SSHORT lock_buffer(
 		gds__msg_format(0, JRD_BUGCHK, 215, sizeof(errmsg), errmsg,
 						(TEXT *) bdb->bdb_page, 
 						(TEXT *) (SLONG) page_type, 0, 0, 0);
-		IBERR_append_status(status, gds_random, gds_arg_string,
+		IBERR_append_status(status, isc_random, isc_arg_string,
 							ERR_cstring(errmsg), 0);
 		ERR_log(JRD_BUGCHK, 215, errmsg);	/* msg 215 page %ld, page type %ld lock conversion denied */
 
@@ -4984,7 +4984,7 @@ static SSHORT lock_buffer(
 /* Case: a timeout was specified, or the caller didn't want to wait,
    return the error. */
 
-	if ((wait < 0) && (status[1] == gds_lock_timeout)) 
+	if ((wait < 0) && (status[1] == isc_lock_timeout)) 
 	{
 		release_bdb(tdbb, bdb, FALSE, FALSE, FALSE);
 		return -1;
@@ -4997,7 +4997,7 @@ static SSHORT lock_buffer(
 	gds__msg_format(0, JRD_BUGCHK, 216, sizeof(errmsg), errmsg,
 					(TEXT*) bdb->bdb_page, 
 					(TEXT*) (SLONG) page_type, 0, 0, 0);
-	IBERR_append_status(status, gds_random, gds_arg_string,
+	IBERR_append_status(status, isc_random, isc_arg_string,
 						ERR_cstring(errmsg), 0);
 	ERR_log(JRD_BUGCHK, 216, errmsg);	/* msg 216 page %ld, page type %ld lock denied */
 
@@ -5126,13 +5126,13 @@ static void page_validation_error(TDBB tdbb, WIN * window, SSHORT type)
 	page = bdb->bdb_buffer;
 
 	IBERR_build_status(tdbb->tdbb_status_vector,
-					   gds_db_corrupt,
-					   gds_arg_string, "",
-					   gds_arg_gds, gds_page_type_err,
-					   gds_arg_gds, gds_badpagtyp,
-					   gds_arg_number, (SLONG) bdb->bdb_page,
-					   gds_arg_number, (SLONG) type,
-					   gds_arg_number, (SLONG) page->pag_type, 0);
+					   isc_db_corrupt,
+					   isc_arg_string, "",
+					   isc_arg_gds, isc_page_type_err,
+					   isc_arg_gds, isc_badpagtyp,
+					   isc_arg_number, (SLONG) bdb->bdb_page,
+					   isc_arg_number, (SLONG) type,
+					   isc_arg_number, (SLONG) page->pag_type, 0);
 /* We should invalidate this bad buffer. */
 	CCH_unwind(tdbb, TRUE);
 }
@@ -5823,11 +5823,11 @@ static BOOLEAN write_page(
 	FIL file;
 
 	if (bdb->bdb_flags & BDB_not_valid) {
-		*status++ = gds_arg_gds;
-		*status++ = gds_buf_invalid;
-		*status++ = gds_arg_number;
+		*status++ = isc_arg_gds;
+		*status++ = isc_buf_invalid;
+		*status++ = isc_arg_number;
 		*status++ = bdb->bdb_page;
-		*status++ = gds_arg_end;
+		*status++ = isc_arg_end;
 		return FALSE;
 	}
 
@@ -5879,10 +5879,10 @@ static BOOLEAN write_page(
 			if (bdb->bdb_write_direction == BDB_write_undefined) {
 				dbb->dbb_flags |= DBB_bugcheck;
 				status[0] = isc_arg_gds;
-				status[1] = gds_bug_check;
-				status[2] = gds_arg_string;
+				status[1] = isc_bug_check;
+				status[2] = isc_arg_string;
 				status[3] = (ISC_STATUS)ERR_cstring("Undefined page write direction");
-				status[4] = gds_arg_end;
+				status[4] = isc_arg_end;
 				return FALSE;
 			}
 			page->pag_checksum = CCH_checksum(bdb);

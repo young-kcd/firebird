@@ -29,7 +29,7 @@
 #include "../jrd/tra.h"
 #include "../jrd/lck.h"
 #include "../jrd/req.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/all.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/err_proto.h"
@@ -224,7 +224,7 @@ LCK RLCK_lock_relation(JRD_REL relation,
 	lock->lck_object = ast_arg;
 
 	if (!obtain_lock(0, lock, lock_level))
-		ERR_post(gds_relation_lock, gds_arg_string, relation->rel_name, 0);
+		ERR_post(isc_relation_lock, isc_arg_string, relation->rel_name, 0);
 
 	return lock;
 }
@@ -351,9 +351,9 @@ void RLCK_release_lock(LCK lock)
 /* first do basic validation of the handle */
 
 	if (!lock)
-		ERR_post(gds_bad_lock_handle, 0);
+		ERR_post(isc_bad_lock_handle, 0);
 	if (((BLK) lock)->blk_type != (UCHAR) type_lck)
-		ERR_post(gds_bad_lock_handle, 0);
+		ERR_post(isc_bad_lock_handle, 0);
 /* now use the lock type to determine the type
    of lock to release */
 	if (lock->lck_type == LCK_relation)
@@ -361,7 +361,7 @@ void RLCK_release_lock(LCK lock)
 	else if (lock->lck_type == LCK_record)
 		RLCK_unlock_record(lock, 0);
 	else
-		ERR_post(gds_bad_lock_handle, 0);
+		ERR_post(isc_bad_lock_handle, 0);
 }
 #endif
 
@@ -422,7 +422,7 @@ LCK RLCK_reserve_relation(TDBB tdbb,
 	if (write_flag && (tdbb->tdbb_database->dbb_flags & DBB_read_only))
 		ERR_post(isc_read_only_database, 0);
 	if (write_flag && (transaction->tra_flags & TRA_readonly))
-		ERR_post(gds_read_only_trans, 0);
+		ERR_post(isc_read_only_trans, 0);
 	lock = RLCK_transaction_relation_lock(transaction, relation);
 /* Next, figure out what kind of lock we need */
 	if (transaction->tra_flags & TRA_degree3) {
@@ -443,7 +443,7 @@ LCK RLCK_reserve_relation(TDBB tdbb,
 	if (level <= lock->lck_logical)
 		return lock;
 	if (transaction->tra_flags & TRA_reserving)
-		ERR_post(gds_unres_rel, gds_arg_string, relation->rel_name, 0);
+		ERR_post(isc_unres_rel, isc_arg_string, relation->rel_name, 0);
 	wait = (transaction->tra_flags & TRA_nowait) ? FALSE : TRUE;
 /* get lock */
 	if (lock->lck_logical)
@@ -454,7 +454,7 @@ LCK RLCK_reserve_relation(TDBB tdbb,
 		return lock;
 	else {
 		if (error_flag)
-			ERR_post((wait) ? gds_deadlock : gds_lock_conflict, 0);
+			ERR_post((wait) ? isc_deadlock : isc_lock_conflict, 0);
 		return NULL;
 	}
 }
@@ -799,7 +799,7 @@ static LCK allocate_record_lock(JRD_TRA transaction, RPB * rpb)
 	dbb = tdbb->tdbb_database;
 	attachment = tdbb->tdbb_attachment;
 	if (!rpb->rpb_record)
-		ERR_post(gds_no_cur_rec, 0);
+		ERR_post(isc_no_cur_rec, 0);
 /* allocate a lock block for the record lock */
 	lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) lck();
 	lock->lck_dbb = dbb;

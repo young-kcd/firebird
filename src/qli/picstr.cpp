@@ -558,7 +558,7 @@ static void edit_date( const dsc* desc, PICS picture, TEXT** output)
 	MOVQ_move(desc, &temp_desc);
 
     tm times;
-	isc_decode_date((GDS_QUAD*) date, &times);
+	isc_decode_date((ISC_QUAD*) date, &times);
 	TEXT* p = temp;
 
 	TEXT* nmonth = p;

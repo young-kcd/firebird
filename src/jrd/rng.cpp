@@ -29,7 +29,7 @@
 #include "../jrd/ods.h"
 #include "../jrd/val.h"
 #include "../jrd/exe.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/rse.h"
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
@@ -397,7 +397,7 @@ DSC *RNG_begin(JRD_NOD node, VLU impure)
 		if (refresh_range->rng_flags & RNG_posted)
 			delete_range(refresh_range);
 		else
-			ERR_post(gds__range_in_use, gds_arg_number, (SLONG) range_number,
+			ERR_post(isc_range_in_use, isc_arg_number, (SLONG) range_number,
 					 0);
 	}
 
@@ -495,7 +495,7 @@ JRD_NOD RNG_delete(JRD_NOD node)
 		if (!(refresh_ranges = request->req_refresh_ranges) ||
 			(range_number >= refresh_ranges->vec_count) ||
 			!(refresh_range = (RNG) refresh_ranges->vec_object[range_number]))
-			ERR_post(gds__range_not_found, gds_arg_number,
+			ERR_post(isc_range_not_found, isc_arg_number,
 					 (SLONG) range_number, 0);
 
 		delete_range(refresh_range);

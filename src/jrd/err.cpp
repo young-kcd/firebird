@@ -32,7 +32,7 @@
 #include "../jrd/common.h"
 #include <stdarg.h>
 #include "../jrd/ibsetjmp.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/iberr.h"
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
@@ -84,7 +84,7 @@ void ERR_bugcheck(int number)
 
 	CCH_shutdown_database(dbb);
 
-	internal_error(gds_bug_check, number);
+	internal_error(isc_bug_check, number);
 }
 #endif
 
@@ -111,7 +111,7 @@ void ERR_bugcheck_msg(const TEXT* msg)
 
 	CCH_shutdown_database(dbb);
 
-	ERR_post(gds_bug_check, gds_arg_string, ERR_cstring(msg), 0);
+	ERR_post(isc_bug_check, isc_arg_string, ERR_cstring(msg), 0);
 }
 #endif
 
@@ -130,7 +130,7 @@ void ERR_corrupt(int number)
  *
  **************************************/
 
-	internal_error(gds_db_corrupt, number);
+	internal_error(isc_db_corrupt, number);
 }
 #endif
 
@@ -193,8 +193,8 @@ void ERR_duplicate_error(IDX_E	code,
 
 	switch (code) {
 	case idx_e_keytoobig:
-		ERR_post(gds_imp_exc, gds_arg_gds, gds_keytoobig,
-				 gds_arg_string, ERR_cstring(index_name), 0);
+		ERR_post(isc_imp_exc, isc_arg_gds, isc_keytoobig,
+				 isc_arg_string, ERR_cstring(index_name), 0);
 		break;
 
 	case idx_e_conversion:
@@ -202,18 +202,18 @@ void ERR_duplicate_error(IDX_E	code,
 		break;
 
 	case idx_e_foreign:
-		ERR_post(gds_foreign_key,
-				 gds_arg_string, ERR_cstring(constraint_name),
-				 gds_arg_string, relation->rel_name, 0);
+		ERR_post(isc_foreign_key,
+				 isc_arg_string, ERR_cstring(constraint_name),
+				 isc_arg_string, relation->rel_name, 0);
 		break;
 
 	default:
 		if (constraint[0])
-			ERR_post(gds_unique_key_violation,
-					 gds_arg_string, ERR_cstring(constraint_name),
-					 gds_arg_string, relation->rel_name, 0);
+			ERR_post(isc_unique_key_violation,
+					 isc_arg_string, ERR_cstring(constraint_name),
+					 isc_arg_string, relation->rel_name, 0);
 		else
-			ERR_post(gds_no_dup, gds_arg_string, ERR_cstring(index_name), 0);
+			ERR_post(isc_no_dup, isc_arg_string, ERR_cstring(index_name), 0);
 	}
 }
 #endif
@@ -239,7 +239,7 @@ void ERR_error(int number)
 	if (gds__msg_lookup(0, JRD_BUGCHK, number, sizeof(errmsg), errmsg, NULL) <
 		1) sprintf(errmsg, "error code %d", number);
 
-	ERR_post(gds_random, gds_arg_string, ERR_cstring(errmsg), 0);
+	ERR_post(isc_random, isc_arg_string, ERR_cstring(errmsg), 0);
 }
 #endif
 
@@ -260,7 +260,7 @@ void ERR_error_msg(const TEXT* msg)
  **************************************/
 
 	DEBUG;
-	ERR_post(gds_random, gds_arg_string, ERR_cstring(msg), 0);
+	ERR_post(isc_random, isc_arg_string, ERR_cstring(msg), 0);
 }
 #endif
 
@@ -324,13 +324,13 @@ BOOLEAN ERR_post_warning(ISC_STATUS status, ...)
 	VA_START(args, status);
 	status_vector = ((TDBB) GET_THREAD_DATA)->tdbb_status_vector;
 
-	if (status_vector[0] != gds_arg_gds ||
-		(status_vector[0] == gds_arg_gds && status_vector[1] == 0 &&
-		 status_vector[2] != gds_arg_warning)) {
+	if (status_vector[0] != isc_arg_gds ||
+		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
+		 status_vector[2] != isc_arg_warning)) {
 		/* this is a blank status vector */
-		status_vector[0] = gds_arg_gds;
+		status_vector[0] = isc_arg_gds;
 		status_vector[1] = 0;
-		status_vector[2] = gds_arg_end;
+		status_vector[2] = isc_arg_end;
 		indx = 2;
 	}
 	else {
@@ -342,46 +342,46 @@ BOOLEAN ERR_post_warning(ISC_STATUS status, ...)
 
 /* stuff the warning */
 	if (indx + 3 < ISC_STATUS_LENGTH) {
-		status_vector[indx++] = gds_arg_warning;
+		status_vector[indx++] = isc_arg_warning;
 		status_vector[indx++] = status;
 		while ((type = va_arg(args, int)) && (indx + 3 < ISC_STATUS_LENGTH))
 			switch (status_vector[indx++] = type) {
-			case gds_arg_warning:
+			case isc_arg_warning:
 				status_vector[indx++] = (ISC_STATUS) va_arg(args, ISC_STATUS);
 				break;
 
-			case gds_arg_string:
+			case isc_arg_string:
 				q = reinterpret_cast < ISC_STATUS * >(va_arg(args, TEXT *));
 				if (strlen((TEXT *) q) >= MAX_ERRSTR_LEN) {
-					status_vector[(indx - 1)] = gds_arg_cstring;
+					status_vector[(indx - 1)] = isc_arg_cstring;
 					status_vector[indx++] = MAX_ERRSTR_LEN;
 				}
 				status_vector[indx++] = reinterpret_cast < ISC_STATUS > (q);
 				break;
 
-			case gds_arg_interpreted:
+			case isc_arg_interpreted:
 				status_vector[indx++] = va_arg(args, ISC_STATUS);
 				break;
 
-			case gds_arg_cstring:
+			case isc_arg_cstring:
 				len = va_arg(args, int);
 				status_vector[indx++] =
 					(ISC_STATUS) (len >= MAX_ERRSTR_LEN) ? MAX_ERRSTR_LEN : len;
 				status_vector[indx++] = (ISC_STATUS) va_arg(args, TEXT *);
 				break;
 
-			case gds_arg_number:
+			case isc_arg_number:
 				status_vector[indx++] = (ISC_STATUS) va_arg(args, SLONG);
 				break;
 
-			case gds_arg_vms:
-			case gds_arg_unix:
-			case gds_arg_win32:
+			case isc_arg_vms:
+			case isc_arg_unix:
+			case isc_arg_win32:
 			default:
 				status_vector[indx++] = (ISC_STATUS) va_arg(args, int);
 				break;
 			}
-		status_vector[indx] = gds_arg_end;
+		status_vector[indx] = isc_arg_end;
 		return TRUE;
 	}
 	else {
@@ -420,9 +420,9 @@ void ERR_post(ISC_STATUS status, ...)
 	PARSE_STATUS(tmp_status, tmp_status_len, warning_indx);
 	fb_assert(warning_indx == 0);
 
-	if (status_vector[0] != gds_arg_gds ||
-		(status_vector[0] == gds_arg_gds && status_vector[1] == 0 &&
-		 status_vector[2] != gds_arg_warning)) {
+	if (status_vector[0] != isc_arg_gds ||
+		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
+		 status_vector[2] != isc_arg_warning)) {
 		/* this is a blank status vector just stuff the status */
 		MOVE_FASTER(tmp_status, status_vector,
 					sizeof(ISC_STATUS) * tmp_status_len);
@@ -436,14 +436,14 @@ void ERR_post(ISC_STATUS status, ...)
 
 /* check for duplicated error code */
 	for (i = 0; i < ISC_STATUS_LENGTH; i++) {
-		if (status_vector[i] == gds_arg_end && i == status_len)
+		if (status_vector[i] == isc_arg_end && i == status_len)
 			break;				/* end of argument list */
 
 		if (i && i == warning_indx)
 			break;				/* vector has no more errors */
 
 		if (status_vector[i] == tmp_status[1] && i &&
-			status_vector[i - 1] != gds_arg_warning &&
+			status_vector[i - 1] != isc_arg_warning &&
 			i + tmp_status_len - 2 < ISC_STATUS_LENGTH &&
 			(memcmp(&status_vector[i], &tmp_status[1],
 					sizeof(ISC_STATUS) * (tmp_status_len - 2)) == 0)) {
@@ -637,6 +637,6 @@ static void internal_error(ISC_STATUS status, int number)
 
 	sprintf(errmsg + strlen(errmsg), " (%d)", number);
 
-	ERR_post(status, gds_arg_string, ERR_cstring(errmsg), 0);
+	ERR_post(status, isc_arg_string, ERR_cstring(errmsg), 0);
 }
 #endif

@@ -17,7 +17,7 @@
  * Contributor(s): ______________________________________.
  */
 #include "firebird.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 
 #define entry(r)	r(status) int	*status; {return error (status); };
 
@@ -63,7 +63,7 @@ entry(gds__attach_database)
 	entry(perf_get_info)
 	entry(perf_report)
 	entry(gds__temp_file)
-	entry(gds__vax_integer)
+	entry(isc_vax_integer)
 	entry(gds__encode)
 	entry(gds__decode)
 	entry(gds__interprete)

@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.41 2003-11-04 11:35:51 aafemt Exp $
+ * $Id: rse.cpp,v 1.42 2003-11-11 12:14:07 brodsom Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -51,7 +51,7 @@
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
 #include "../jrd/tra.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/bookmark.h"
@@ -707,7 +707,7 @@ void RSE_open(TDBB tdbb, RSB rsb)
                 MOV_get_int64(EVL_expr(tdbb, (JRD_NOD) rsb->rsb_arg[0]), 0);
 
             if (((IRSB_FIRST) impure)->irsb_count < 0)
-                ERR_post(gds_bad_limit_param, 0);
+                ERR_post(isc_bad_limit_param, 0);
 
             rsb = rsb->rsb_next;
             break;
@@ -717,7 +717,7 @@ void RSE_open(TDBB tdbb, RSB rsb)
                 MOV_get_int64(EVL_expr(tdbb, (JRD_NOD) rsb->rsb_arg[0]), 0);
 
             if (((IRSB_SKIP) impure)->irsb_count < 0)
-                ERR_post(gds_bad_skip_param, 0);
+                ERR_post(isc_bad_skip_param, 0);
             ((IRSB_SKIP) impure)->irsb_count++;
 
             rsb = rsb->rsb_next;
@@ -2808,7 +2808,7 @@ static BOOLEAN get_record(TDBB			tdbb,
 		impure->irsb_flags |= irsb_checking_singular;
 		if (get_record(tdbb, rsb, parent_rsb, mode)) {
 			impure->irsb_flags &= ~irsb_checking_singular;
-			ERR_post(gds_sing_select_err, 0);
+			ERR_post(isc_sing_select_err, 0);
 		}
 		pop_rpbs(request, rsb);
 		impure->irsb_flags &= ~irsb_checking_singular;

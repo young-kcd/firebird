@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.78 2003-11-10 09:15:50 robocop Exp $
+ * $Id: ddl.cpp,v 1.79 2003-11-11 12:06:54 brodsom Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -76,7 +76,6 @@
 #include "../jrd/intl.h"
 #include "../jrd/flags.h"
 #include "../jrd/constants.h"
-#include "gen/codes.h"
 #include "../dsql/alld_proto.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/ddl_proto.h"
@@ -454,9 +453,9 @@ void DDL_resolve_intl_type2(dsql_req* request,
 		if (field->fld_character_set || collation_name ||
 			field->fld_flags & FLD_national)
 		{
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -204,
-						  gds_arg_gds, gds_dsql_datatype_err,
-						  gds_arg_gds, gds_collation_requires_text, 0);
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,
+						  isc_arg_gds, isc_dsql_datatype_err,
+						  isc_arg_gds, isc_collation_requires_text, 0);
 		}
 		return;
 	}
@@ -471,16 +470,10 @@ void DDL_resolve_intl_type2(dsql_req* request,
 								"RDB$FIELD_SUB_TYPE",
 								&blob_sub_type))
 			{
-				ERRD_post(	gds_sqlerr,
-							gds_arg_number,
-							(SLONG) -204,
-							gds_arg_gds,
-							gds_dsql_datatype_err,
-							gds_arg_gds,
-							gds_dsql_blob_type_unknown,
-							gds_arg_string,
-							((dsql_str*) field->fld_sub_type_name)->str_data,
-							0);
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204, isc_arg_gds,
+							isc_dsql_datatype_err, isc_arg_gds, 
+							isc_dsql_blob_type_unknown, isc_arg_string,
+							((dsql_str*) field->fld_sub_type_name)->str_data, 0);
 			}
 			field->fld_sub_type = blob_sub_type;
 		}
@@ -490,25 +483,15 @@ void DDL_resolve_intl_type2(dsql_req* request,
 		}
 		if (field->fld_character_set && (field->fld_sub_type != BLOB_text))
 		{
-			ERRD_post(	gds_sqlerr,
-						gds_arg_number,
-						(SLONG) -204,
-						gds_arg_gds,
-						gds_dsql_datatype_err,
-						gds_arg_gds,
-						gds_collation_requires_text,
-						0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204, isc_arg_gds,
+						isc_dsql_datatype_err, isc_arg_gds,
+						isc_collation_requires_text, 0);
 		}
 		if (collation_name)
 		{
-			ERRD_post(	gds_sqlerr,
-						gds_arg_number,
-						(SLONG) -204,
-						gds_arg_gds,
-						gds_dsql_datatype_err,
-						gds_arg_gds,
-						gds_collation_requires_text,
-						0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204, isc_arg_gds,
+						isc_dsql_datatype_err, isc_arg_gds,
+						isc_collation_requires_text, 0);
 		}
 		if (field->fld_sub_type != BLOB_text) {
 			return;
@@ -604,9 +587,9 @@ void DDL_resolve_intl_type2(dsql_req* request,
 		if (!resolved_charset)
 		{
 			// specified character set not found
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -204,
-					  gds_arg_gds, gds_dsql_datatype_err,
-					  gds_arg_gds, gds_charset_not_found, gds_arg_string,
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,
+					  isc_arg_gds, isc_dsql_datatype_err,
+					  isc_arg_gds, isc_charset_not_found, isc_arg_string,
 					  charset_name, 0);
 		}
 		field->fld_character_set_id = resolved_charset->intlsym_charset_id;
@@ -621,9 +604,9 @@ void DDL_resolve_intl_type2(dsql_req* request,
 		if (!resolved_collation)
 		{
 			// Specified collation not found
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -204,
-					  gds_arg_gds, gds_dsql_datatype_err,
-					  gds_arg_gds, gds_collation_not_found, gds_arg_string,
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,
+					  isc_arg_gds, isc_dsql_datatype_err,
+					  isc_arg_gds, isc_collation_not_found, isc_arg_string,
 					  collation_name->str_data, 0);
 		}
 
@@ -634,9 +617,9 @@ void DDL_resolve_intl_type2(dsql_req* request,
 		if ((field->fld_character_set_id != resolved_type->intlsym_charset_id)
 			&& (field->fld_character_set_id != ttype_dynamic))
 		{
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -204, gds_arg_gds,
-					  gds_dsql_datatype_err, gds_arg_gds,
-					  gds_collation_not_for_charset, gds_arg_string,
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204, isc_arg_gds,
+					  isc_dsql_datatype_err, isc_arg_gds,
+					  isc_collation_not_for_charset, isc_arg_string,
 					  collation_name->str_data, 0);
 		}
 	}
@@ -680,10 +663,10 @@ static void assign_field_length (
 		}
 		if (field_length > (ULONG) MAX_COLUMN_SIZE)
 		{
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -204,
-					  gds_arg_gds, gds_dsql_datatype_err,
-					  gds_arg_gds, gds_imp_exc,
-					  gds_arg_gds, gds_field_name, gds_arg_string,
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,
+					  isc_arg_gds, isc_dsql_datatype_err,
+					  isc_arg_gds, isc_imp_exc,
+					  isc_arg_gds, isc_field_name, isc_arg_string,
 					  field->fld_name, 0);
 		}
 		field->fld_length = (USHORT) field_length;
@@ -907,9 +890,9 @@ static void check_one_call (USHORT* repetition_count,
  *
  **************************************/
 	if (++repetition_count[pos] > 1) {
-		ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -637,
-				   gds_arg_gds, gds_dsql_duplicate_spec,
-                   gds_arg_string, error_msg,
+		ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -637,
+				   isc_arg_gds, isc_dsql_duplicate_spec,
+                   isc_arg_string, error_msg,
                    0);
 	}
 }
@@ -1029,8 +1012,8 @@ static void define_computed(dsql_req* request,
 
 	if (check_array_or_blob(input))
 	{
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -607,
-				  gds_arg_gds, gds_dsql_no_blob_array, 0);
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+				  isc_arg_gds, isc_dsql_no_blob_array, 0);
 	}
 
 
@@ -1633,8 +1616,8 @@ static void define_dimensions( dsql_req* request, dsql_fld* field)
 
 	if (dims > MAX_ARRAY_DIMENSIONS)
 	{
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -604,
-				  gds_arg_gds, gds_dsql_max_arr_dim_exceeded, 0);
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -604,
+				  isc_arg_gds, isc_dsql_max_arr_dim_exceeded, 0);
 	}
 
 	request->append_number(isc_dyn_fld_dimensions, (SSHORT) dims);
@@ -1656,8 +1639,8 @@ static void define_dimensions( dsql_req* request, dsql_fld* field)
 		request->append_uchar(isc_dyn_end);
 		if (lrange >= hrange)
 		{
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -604,
-					  gds_arg_gds, gds_dsql_arr_range_error, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -604,
+					  isc_arg_gds, isc_dsql_arr_range_error, 0);
 		}
 	}
 }
@@ -1733,18 +1716,18 @@ static void define_domain(dsql_req* request)
 					}
 					else
 					{
-						ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -637,
-								  gds_arg_gds, gds_dsql_duplicate_spec,
-								  gds_arg_string, "NOT NULL", 0);
+						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -637,
+								  isc_arg_gds, isc_dsql_duplicate_spec,
+								  isc_arg_string, "NOT NULL", 0);
 					}
 				}
 				else if (node1->nod_type == nod_def_constraint)
 				{
 					if (check_flag)
 					{
-						ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -637,
-								  gds_arg_gds, gds_dsql_duplicate_spec,
-								  gds_arg_string, "DOMAIN CHECK CONSTRAINT",
+						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -637,
+								  isc_arg_gds, isc_dsql_duplicate_spec,
+								  isc_arg_string, "DOMAIN CHECK CONSTRAINT",
 								  0);
 					}
 					check_flag = true;
@@ -1862,10 +1845,10 @@ static void define_field(
 		/* Get the domain information */
 
 		if (!(METD_get_domain(request, field, domain_name->str_data)))
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -607,
-					  gds_arg_gds, gds_dsql_command_err,
-					  gds_arg_gds, gds_dsql_domain_not_found,
-                      gds_arg_string, domain_name->str_data,
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+					  isc_arg_gds, isc_dsql_command_err,
+					  isc_arg_gds, isc_dsql_domain_not_found,
+                      isc_arg_string, domain_name->str_data,
 					  /* Specified domain or source field does not exist */
 					  0);
 
@@ -1945,10 +1928,10 @@ static void define_field(
 				{
 					if (default_null_flag)
 					{
-						ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -204,
-								  gds_arg_gds, isc_bad_default_value,
-								  gds_arg_gds, isc_invalid_clause,
-								  gds_arg_string, "default null not null", 0);
+						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,
+								  isc_arg_gds, isc_bad_default_value,
+								  isc_arg_gds, isc_invalid_clause,
+								  isc_arg_string, "default null not null", 0);
 					}
 					request->append_uchar(isc_dyn_fld_not_null);
 					if (!cnstrt_flag) {
@@ -2663,9 +2646,9 @@ static void define_shadow(dsql_req* request)
 
 	if (!ptr[e_shadow_number])
 	{
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -607,
-				  gds_arg_gds, gds_dsql_command_err,
-				  gds_arg_gds, gds_dsql_shadow_number_err, 0);
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+				  isc_arg_gds, isc_dsql_command_err,
+				  isc_arg_gds, isc_dsql_shadow_number_err, 0);
 	}
 
 	request->append_number(isc_dyn_def_shadow, (SSHORT)(SLONG) (ptr[e_shadow_number]));
@@ -2693,10 +2676,10 @@ static void define_shadow(dsql_req* request)
 
 			if (!length && !file->fil_start)
 			{
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -607,
-						  gds_arg_gds, gds_dsql_command_err,
-						  gds_arg_gds, gds_dsql_file_length_err,
-						  gds_arg_number, (SLONG) file->fil_name->str_data,
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+						  isc_arg_gds, isc_dsql_command_err,
+						  isc_arg_gds, isc_dsql_file_length_err,
+						  isc_arg_number, (SLONG) file->fil_name->str_data,
 						  /* Preceding file did not specify length, so %s must include starting page number */
 						  0);
 			}
@@ -2778,9 +2761,9 @@ static void define_trigger( dsql_req* request, dsql_nod* node)
 											&trig_type);
 			if (!relation_name)
 			{
-					ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -204,
-							  gds_arg_gds, gds_dsql_trigger_err, gds_arg_gds,
-							  gds_random, gds_arg_string,
+					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,
+							  isc_arg_gds, isc_dsql_trigger_err, isc_arg_gds,
+							  isc_random, isc_arg_string,
 							  trigger_name->str_data, 0);
 			}
 			relation_node = FB_NEW_RPT(*tdsql->tsql_default, e_rln_count) dsql_nod;
@@ -2959,9 +2942,9 @@ static void define_udf( dsql_req* request)
 			 field->fld_dtype == dtype_blob ||
 			 field->fld_dtype == dtype_timestamp))
 		{
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -607,
-						  gds_arg_gds, gds_dsql_command_err,
-						  gds_arg_gds, gds_return_mode_err,
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+						  isc_arg_gds, isc_dsql_command_err,
+						  isc_arg_gds, isc_return_mode_err,
 						  /* Return mode by value not allowed for this data type */
 						  0);
 		}
@@ -2974,9 +2957,9 @@ static void define_udf( dsql_req* request)
 			blob_position = (arguments) ? arguments->nod_count + 1 : 1;
 			if (blob_position > MAX_UDF_ARGUMENTS)
 			{
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -607,
-						  gds_arg_gds, gds_dsql_command_err,
-						  gds_arg_gds, gds_extern_func_err,
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+						  isc_arg_gds, isc_dsql_command_err,
+						  isc_arg_gds, isc_extern_func_err,
 						  /* External functions can not have more than 10 parameters */
 						  /* Or 9 if the function returns a BLOB */
 						  0);
@@ -2999,9 +2982,9 @@ static void define_udf( dsql_req* request)
 		/* Function modifies an argument whose value is the function return value */
 
 		if (!arguments || position > arguments->nod_count || position < 1) {
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -607,
-                      gds_arg_gds, isc_dsql_udf_return_pos_err, /*gds__extern_func_err, */
-                      gds_arg_number, (SLONG) (arguments ? arguments->nod_count : 0),
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+                      isc_arg_gds, isc_dsql_udf_return_pos_err, /*gds__extern_func_err, */
+                      isc_arg_number, (SLONG) (arguments ? arguments->nod_count : 0),
                       // CVC: We should devise new msg "position should be between 1 and #params";
                       // here it is: dsql_udf_return_pos_err
 
@@ -3054,9 +3037,9 @@ static void define_udf( dsql_req* request)
 		{
 			if (position > MAX_UDF_ARGUMENTS)
 			{
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -607,
-						  gds_arg_gds, gds_dsql_command_err,
-						  gds_arg_gds, gds_extern_func_err,
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+						  isc_arg_gds, isc_dsql_command_err,
+						  isc_arg_gds, isc_extern_func_err,
 						  /* External functions can not have more than 10 parameters */
 						  0);
 			}
@@ -3355,12 +3338,12 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 		}
 		else
 		{
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -607,
-					  /* gds_arg_gds, gds__dsql_command_err,
-						 gds_arg_gds, gds__dsql_view_not_found, */
-					  gds_arg_gds, 336068783L,
-					  gds_arg_string, view_name->str_data,
-					  gds_arg_end);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+					  /* isc_arg_gds, isc_dsql_command_err,
+						 isc_arg_gds, isc_dsql_view_not_found, */
+					  isc_arg_gds, 336068783L,
+					  isc_arg_string, view_name->str_data,
+					  isc_arg_end);
 		}
 	}
 
@@ -3463,9 +3446,9 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 
 		if (!ptr && !field)
 		{
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -607,
-					  gds_arg_gds, gds_dsql_command_err,
-					  gds_arg_gds, gds_specify_field_err,
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+					  isc_arg_gds, isc_dsql_command_err,
+					  isc_arg_gds, isc_specify_field_err,
 					  /* must specify field name for view select expression */
 					  0);
 		}
@@ -3519,9 +3502,9 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 
 	if (ptr != end)
 	{
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -607,
-				  gds_arg_gds, gds_dsql_command_err,
-				  gds_arg_gds, gds_num_field_err,
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+				  isc_arg_gds, isc_dsql_command_err,
+				  isc_arg_gds, isc_num_field_err,
 				  /* number of fields does not match select list */
 				  0);
 	}
@@ -3534,18 +3517,18 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 	{
 		if (!updatable)
 		{
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -607,
-					  gds_arg_gds, gds_dsql_command_err,
-					  gds_arg_gds, gds_col_name_err,
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+					  isc_arg_gds, isc_dsql_command_err,
+					  isc_arg_gds, isc_col_name_err,
 					  /* Only simple column names permitted for VIEW WITH CHECK OPTION */
 					  0);
 		}
 
 		if (select_expr->nod_count != 1)
 		{
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -607,
-					  gds_arg_gds, gds_dsql_command_err,
-					  gds_arg_gds, gds_table_view_err,
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+					  isc_arg_gds, isc_dsql_command_err,
+					  isc_arg_gds, isc_table_view_err,
 					  /* Only one table allowed for VIEW WITH CHECK OPTION */
 					  0);
 		}
@@ -3555,9 +3538,9 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 		 */
 		else if (select_expr->nod_arg[0]->nod_arg[e_sel_from]->nod_count != 1)
 		{
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -607,
-					  gds_arg_gds, gds_dsql_command_err,
-					  gds_arg_gds, gds_table_view_err,
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+					  isc_arg_gds, isc_dsql_command_err,
+					  isc_arg_gds, isc_table_view_err,
 					  /* Only one table allowed for VIEW WITH CHECK OPTION */
 					  0);
 		}
@@ -3569,9 +3552,9 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 		select_expr = select_expr->nod_arg[0];
 		if (!(select_expr->nod_arg[e_sel_where]))
 		{
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -607,
-					  gds_arg_gds, gds_dsql_command_err,
-					  gds_arg_gds, gds_where_err,
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+					  isc_arg_gds, isc_dsql_command_err,
+					  isc_arg_gds, isc_where_err,
 					  /* No where clause for VIEW WITH CHECK OPTION */
 					  0);
 		}
@@ -3580,9 +3563,9 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 			select_expr->nod_arg[e_sel_group] ||
 			select_expr->nod_arg[e_sel_having])
 		{
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -607,
-						  gds_arg_gds, gds_dsql_command_err,
-						  gds_arg_gds, gds_distinct_err,
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+						  isc_arg_gds, isc_dsql_command_err,
+						  isc_arg_gds, isc_distinct_err,
 						  /* DISTINCT, GROUP or HAVING not permitted for VIEW WITH CHECK OPTION */
 						  0);
 		}
@@ -3885,23 +3868,23 @@ static void delete_relation_view (
         if (!relation && !silent_deletion || 
             relation && (relation->rel_flags & REL_view))
 		{
-            ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -607,
-                       /* gds_arg_gds, gds__dsql_command_err,
-                          gds_arg_gds, gds__dsql_table_not_found, */
-                       gds_arg_gds, 336068783L,
-                       gds_arg_string, string->str_data,
-                       gds_arg_end);
+            ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -607,
+                       /* isc_arg_gds, isc_dsql_command_err,
+                          isc_arg_gds, isc_dsql_table_not_found, */
+                       isc_arg_gds, 336068783L,
+                       isc_arg_string, string->str_data,
+                       isc_arg_end);
         }
     }
     else { /* node->nod_type == nod_del_view, nod_redef_view */
         if (!relation && !silent_deletion ||
 			relation && !(relation->rel_flags & REL_view)) {
-            ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -607,
-                       /* gds_arg_gds, gds__dsql_command_err,
-                          gds_arg_gds, gds__dsql_view_not_found, */
-                       gds_arg_gds, 336068783L,
-                       gds_arg_string, string->str_data,
-                       gds_arg_end);
+            ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -607,
+                       /* isc_arg_gds, isc_dsql_command_err,
+                          isc_arg_gds, isc_dsql_view_not_found, */
+                       isc_arg_gds, 336068783L,
+                       isc_arg_string, string->str_data,
+                       isc_arg_end);
         }
     }
     if (relation) {
@@ -3960,9 +3943,9 @@ static void foreign_key( dsql_req* request, dsql_nod* element, const char* index
 		   referenced field, fail. */
 		if (!columns2)
 		{
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -607,
-					  gds_arg_gds, gds_dsql_command_err,
-					  gds_arg_gds, gds_reftable_requires_pk,
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+					  isc_arg_gds, isc_dsql_command_err,
+					  isc_arg_gds, isc_reftable_requires_pk,
 					  /* "REFERENCES table" without "(column)" requires PRIMARY
 					     KEY on referenced table */
 					  0);
@@ -3971,9 +3954,9 @@ static void foreign_key( dsql_req* request, dsql_nod* element, const char* index
 
 	if (columns2 && (columns1->nod_count != columns2->nod_count))
 	{
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -607,
-				  gds_arg_gds, gds_dsql_command_err,
-				  gds_arg_gds, gds_key_field_count_err,
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+				  isc_arg_gds, isc_dsql_command_err,
+				  isc_arg_gds, isc_key_field_count_err,
 				  /* foreign key field count does not match primary key */
 				  0);
 	}
@@ -4694,8 +4677,8 @@ static void modify_domain( dsql_req* request)
 			/* CVC: So do you want to crash me with ALTER DOMAIN dom SET; ??? */
 			if (!element->nod_arg[e_dft_default]) 
 			{
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -104,
-							gds_arg_gds, gds_command_end_err,    /* Unexpected end of command */
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -104,
+							isc_arg_gds, isc_command_end_err,    /* Unexpected end of command */
 							0);
 			}
 			/* CVC End modification. */
@@ -4726,10 +4709,10 @@ static void modify_domain( dsql_req* request)
 			   correct type, length, scale, etc. */
 			if (!METD_get_domain(request, &local_field, domain_name->str_data))
 			{
-					ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -607,
-							  gds_arg_gds, gds_dsql_command_err,
-							  gds_arg_gds, gds_dsql_domain_not_found,
-                              gds_arg_string, domain_name->str_data,
+					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+							  isc_arg_gds, isc_dsql_command_err,
+							  isc_arg_gds, isc_dsql_domain_not_found,
+                              isc_arg_string, domain_name->str_data,
 							  /* Specified domain or source field does not exist */
 							  0);
 			}
@@ -5121,9 +5104,9 @@ static void modify_relation( dsql_req* request)
 			if ((element->nod_arg[1])->nod_type == nod_cascade)
 			{
 				/* Unsupported DSQL construct */
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -901,
-						  gds_arg_gds, gds_dsql_command_err,
-						  gds_arg_gds, gds_dsql_construct_err, 0);
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -901,
+						  isc_arg_gds, isc_dsql_command_err,
+						  isc_arg_gds, isc_dsql_construct_err, 0);
 			}
 
 			fb_assert((element->nod_arg[1])->nod_type == nod_restrict);
@@ -5437,9 +5420,9 @@ static void put_local_variables(dsql_req* request, dsql_nod* parameters,
 					{
 						dsql_fld* rest_field = (dsql_fld*) (*rest)->nod_arg[e_dfl_field];
 						if (!strcmp(field->fld_name, rest_field->fld_name))
-							ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -637,
-									  gds_arg_gds, gds_dsql_duplicate_spec,
-									  gds_arg_string, field->fld_name, 0);
+							ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -637,
+									  isc_arg_gds, isc_dsql_duplicate_spec,
+									  isc_arg_string, field->fld_name, 0);
 					}
 				}
 
@@ -5576,9 +5559,9 @@ static dsql_nod* replace_field_names(dsql_nod*		input,
 
 		if ((*ptr)->nod_type == nod_select_expr)
 		{
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -607,
-					  gds_arg_gds, gds_dsql_command_err,
-					  gds_arg_gds, gds_subquery_err,
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+					  isc_arg_gds, isc_dsql_command_err,
+					  isc_arg_gds, isc_subquery_err,
 					  /* No subqueries permitted for VIEW WITH CHECK OPTION */
 					  0);
 		}
@@ -5925,9 +5908,9 @@ static void modify_field(dsql_req*	request,
 
 		if (!METD_get_domain(request, field, domain_name->str_data))
 		{
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -607,
-					  gds_arg_gds, gds_dsql_command_err,
-					  gds_arg_gds, gds_dsql_domain_not_found,
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+					  isc_arg_gds, isc_dsql_command_err,
+					  isc_arg_gds, isc_dsql_domain_not_found,
 					  /* Specified domain or source field does not exist */
 					  0);
 		}

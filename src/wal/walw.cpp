@@ -39,7 +39,7 @@
 #include "../jrd/jrn.h"
 #include "../jrd/iberr.h"
 #include "../jrd/llio.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/license.h"
 #include "../wal/wal_proto.h"
 #include "../wal/walc_proto.h"
@@ -115,7 +115,7 @@ typedef struct walwl
 #define WALW_WRITER_TIMEOUT_USECS	3000000
 #define WALW_DISABLING_JRN		1
 #define MAXLOGS				32
-#define WALW_ERROR(status_vector)	IBERR_build_status (status_vector, gds_walw_err, 0)
+#define WALW_ERROR(status_vector)	IBERR_build_status (status_vector, isc_walw_err, 0)
 
 #define ENV			((WALWL)WAL_handle->wal_local_info_ptr)->walwl_env
 #define LOG_FD			((WALWL)WAL_handle->wal_local_info_ptr)->walwl_log_fd
@@ -286,35 +286,35 @@ void ERR_post(ISC_STATUS stuff)
 
 /* Copy first argument */
 
-	*p++ = gds_arg_gds;
+	*p++ = isc_arg_gds;
 	*p++ = *((SLONG *) q)++;
 
 /* Pick up remaining args */
 
 	while (*p++ = type = *((int *) q)++)
 		switch (type) {
-		case gds_arg_gds:
+		case isc_arg_gds:
 			*p++ = *((ISC_STATUS *) q)++;
 			break;
 
-		case gds_arg_number:
+		case isc_arg_number:
 			*p++ = *((SLONG *) q)++;
 			break;
 
-		case gds_arg_vms:
-		case gds_arg_unix:
-		case gds_arg_domain:
-		case gds_arg_mpexl:
+		case isc_arg_vms:
+		case isc_arg_unix:
+		case isc_arg_domain:
+		case isc_arg_mpexl:
 		default:
 			*p++ = *((int *) q)++;
 			break;
 
-		case gds_arg_string:
-		case gds_arg_interpreted:
+		case isc_arg_string:
+		case isc_arg_interpreted:
 			*p++ = *q++;
 			break;
 
-		case gds_arg_cstring:
+		case isc_arg_cstring:
 			*p++ = *((int *) q)++;
 			*p++ = *q++;
 			break;
@@ -409,7 +409,7 @@ static SSHORT walw_writer(ISC_STATUS * status_vector, WAL WAL_handle)
 							 &WAL_segment->wals_log_partition_offset,
 							 &log_type) != FB_SUCCESS)
 				report_walw_bug_or_error(status_vector, WAL_handle, FB_FAILURE,
-										 (ISC_STATUS) gds_wal_err_rollover2);
+										 (ISC_STATUS) isc_wal_err_rollover2);
 	}
 
 	if (strlen(WAL_segment->wals_jrn_dirname))
@@ -445,7 +445,7 @@ static SSHORT walw_writer(ISC_STATUS * status_vector, WAL WAL_handle)
 
 	if (ret != FB_SUCCESS) {
 		report_walw_bug_or_error(status_vector, WAL_handle, ret,
-								 (ISC_STATUS) gds_wal_err_setup);
+								 (ISC_STATUS) isc_wal_err_setup);
 		if (JOURNAL_HANDLE)
 			JRN_fini(status_vector, &(JOURNAL_HANDLE));
 		WALW_WRITER_RETURN(ret);
@@ -512,7 +512,7 @@ static SSHORT walw_writer(ISC_STATUS * status_vector, WAL WAL_handle)
 				FB_SUCCESS) report_walw_bug_or_error(status_vector, WAL_handle,
 												  ret,
 												  (ISC_STATUS)
-												  gds_wal_err_logwrite);
+												  isc_wal_err_logwrite);
 
 			WALC_acquire(WAL_handle, &WAL_segment);
 			acquired = true;
@@ -666,7 +666,7 @@ static void close_log(ISC_STATUS * status_vector,
 	if ((ret = write_log_header_and_reposition(status_vector, logname, LOG_FD,
 											   log_header)) != FB_SUCCESS)
 		report_walw_bug_or_error(status_vector, WAL_handle, ret,
-								 (ISC_STATUS) gds_wal_err_logwrite);
+								 (ISC_STATUS) isc_wal_err_logwrite);
 	LLIO_close(0, LOG_FD);
 
 	if (PRINT_DEBUG_MSGS) {
@@ -697,7 +697,7 @@ static void close_log(ISC_STATUS * status_vector,
 
 		if (ret != FB_SUCCESS)
 			report_walw_bug_or_error(status_vector, WAL_handle, ret,
-									 (ISC_STATUS) gds_wal_err_jrn_comm);
+									 (ISC_STATUS) isc_wal_err_jrn_comm);
 	}
 }
 
@@ -884,7 +884,7 @@ static SSHORT flush_all_buffers( ISC_STATUS * status_vector, WAL WAL_handle)
 									   WAL_segment->wals_logname,
 									   LOG_FD)) != FB_SUCCESS) {
 				report_walw_bug_or_error(status_vector, WAL_handle, ret,
-										 gds_wal_err_logwrite);
+										 isc_wal_err_logwrite);
 				return FB_FAILURE;
 			}
 			release_wal_block(WAL_segment, wblk);
@@ -1316,7 +1316,7 @@ static void get_time_stamp( SLONG * date)
  **************************************/
 	const time_t clock = time(NULL);
 	const tm times = *localtime(&clock);
-	isc_encode_date(&times, (GDS_QUAD *) date);
+	isc_encode_date(&times, (ISC_QUAD*) date);
 }
 
 
@@ -1366,16 +1366,16 @@ static SSHORT increase_buffers(
 										&WAL_handle->wal_shmem_data,
 										new_wal_length, TRUE);
 
-	if (status_vector[1] == gds_unavailable) {
+	if (status_vector[1] == isc_unavailable) {
 		WAL_segment = WAL_handle->wal_segment;
 		WAL_segment->wals_flags2 |= WALS2_CANT_EXPAND;
 		return FB_SUCCESS;
 	}
 	if (WAL_segment == NULL) {
-		WAL_ERROR(status_vector, gds_wal_cant_expand, DBNAME);
+		WAL_ERROR(status_vector, isc_wal_cant_expand, DBNAME);
 		WAL_handle->wal_segment = NULL;
 		report_walw_bug_or_error(status_vector, WAL_handle, FB_FAILURE,
-								 (ISC_STATUS) gds_wal_err_expansion);
+								 (ISC_STATUS) isc_wal_err_expansion);
 	}
 
 	old_num_buffers = WAL_segment->wals_maxbufs;
@@ -1439,7 +1439,7 @@ static SSHORT init_raw_partitions( ISC_STATUS * status_vector, WAL WAL_handle)
 									  logf->logf_partitions);
 			if (ret_val != FB_SUCCESS)
 				report_walw_bug_or_error(status_vector, WAL_handle, ret_val,
-										 (ISC_STATUS) gds_wal_err_logwrite);
+										 (ISC_STATUS) isc_wal_err_logwrite);
 		}
 	}
 
@@ -1486,7 +1486,7 @@ static SSHORT journal_connect( ISC_STATUS * status_vector, WAL WAL_handle)
 		WAL_segment->wals_flags |= WALS_JOURNAL_ENABLED;
 	else
 		report_walw_bug_or_error(status_vector, WAL_handle, ret,
-								 (ISC_STATUS) gds_wal_err_jrn_comm);
+								 (ISC_STATUS) isc_wal_err_jrn_comm);
 
 	return ret;
 }
@@ -1573,7 +1573,7 @@ static SSHORT journal_enable( ISC_STATUS * status_vector, WAL WAL_handle)
 	if (ret != FB_SUCCESS) {
 		WAL_segment->wals_flags &= ~WALS_JOURNAL_ENABLED;
 		report_walw_bug_or_error(status_vector, WAL_handle, ret,
-								 (ISC_STATUS) gds_wal_err_jrn_comm);
+								 (ISC_STATUS) isc_wal_err_jrn_comm);
 	}
 	else {
 		WAL_segment->wals_flags &= ~WALS_ENABLE_JOURNAL;
@@ -1767,9 +1767,9 @@ static SSHORT rollover_log(
 	SLONG log_type = 0L;
 	if (get_next_logname(status_vector, WAL_segment, new_logname,
 						 &new_log_partition_offset, &log_type) != FB_SUCCESS) {
-		WAL_ERROR_APPEND(status_vector, gds_wal_err_rollover, new_logname);
+		WAL_ERROR_APPEND(status_vector, isc_wal_err_rollover, new_logname);
 		report_walw_bug_or_error(status_vector, WAL_handle, FB_FAILURE,
-								 gds_wal_err_rollover2);
+								 isc_wal_err_rollover2);
 		ROLLOVER_LOG_RETURN(FB_FAILURE);
 	}
 
@@ -1842,7 +1842,7 @@ static SSHORT rollover_log(
 
 			if (ret != FB_SUCCESS)
 				report_walw_bug_or_error(status_vector, WAL_handle, ret,
-										 gds_wal_err_jrn_comm);
+										 isc_wal_err_jrn_comm);
 		}
 
 		WAL_segment->wals_flags |= WALS_ROLLOVER_HAPPENED;
@@ -1856,7 +1856,7 @@ static SSHORT rollover_log(
 	}
 	else {
 		report_walw_bug_or_error(status_vector, WAL_handle, ret,
-								 gds_wal_err_rollover2);
+								 isc_wal_err_rollover2);
 		ROLLOVER_LOG_RETURN(FB_FAILURE);
 	}
 }
@@ -2070,12 +2070,12 @@ static SSHORT setup_log_header_info(ISC_STATUS * status_vector,
 	}
 	else if (read_len < (SLONG) sizeof(struct walfh)) {
 		LLIO_close(0, log_fd);
-		WAL_ERROR(status_vector, gds_logh_small, logname);
+		WAL_ERROR(status_vector, isc_logh_small, logname);
 		return FB_FAILURE;
 	}
 	else if (log_header->walfh_version != WALFH_VERSION) {
 		LLIO_close(0, log_fd);
-		WAL_ERROR(status_vector, gds_logh_inv_version, logname);
+		WAL_ERROR(status_vector, isc_logh_inv_version, logname);
 		return FB_FAILURE;
 	}
 	else if (log_header->walfh_flags & WALFH_OPEN) {
@@ -2098,7 +2098,7 @@ static SSHORT setup_log_header_info(ISC_STATUS * status_vector,
 
 			if (strlen(log_header->walfh_next_logname) != 0) {
 				LLIO_close(0, log_fd);
-				WAL_ERROR(status_vector, gds_logh_open_flag, logname);
+				WAL_ERROR(status_vector, isc_logh_open_flag, logname);
 				return FB_FAILURE;
 			}
 		}
@@ -2109,7 +2109,7 @@ static SSHORT setup_log_header_info(ISC_STATUS * status_vector,
 			   'valid looking' block. */
 
 			LLIO_close(0, log_fd);
-			WAL_ERROR(status_vector, gds_logh_open_flag2, logname);
+			WAL_ERROR(status_vector, isc_logh_open_flag2, logname);
 			return FB_FAILURE;
 		}
 	}

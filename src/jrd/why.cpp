@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.38 2003-11-09 15:38:31 brodsom Exp $
+$Id: why.cpp,v 1.39 2003-11-11 12:14:06 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -56,7 +56,7 @@ $Id: why.cpp,v 1.38 2003-11-09 15:38:31 brodsom Exp $
 #include "../jrd/gdsassert.h"
 
 #include "../jrd/y_handle.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/msg_encode.h"
 #include "gen/msg_facs.h"
 #include "../jrd/acl.h"
@@ -133,9 +133,9 @@ $Id: why.cpp,v 1.38 2003-11-09 15:38:31 brodsom Exp $
 
 inline void init_status(ISC_STATUS* vector)
 {
-	vector[0] = gds_arg_gds;
+	vector[0] = isc_arg_gds;
 	vector[1] = FB_SUCCESS;
-	vector[2] = gds_arg_end;
+	vector[2] = isc_arg_end;
 }
 
 inline bool is_network_error(const ISC_STATUS* vector)
@@ -877,9 +877,9 @@ ISC_STATUS API_ROUTINE GDS_CANCEL_BLOB(ISC_STATUS * user_status,
 
 	if (!*blob_handle) {
 		if (user_status) {
-			user_status[0] = gds_arg_gds;
+			user_status[0] = isc_arg_gds;
 			user_status[1] = 0;
-			user_status[2] = gds_arg_end;
+			user_status[2] = isc_arg_end;
 			CHECK_STATUS_SUCCESS(user_status);
 		}
 		return FB_SUCCESS;
@@ -1493,9 +1493,9 @@ ISC_STATUS API_ROUTINE isc_database_cleanup(ISC_STATUS * user_status,
 	clean->DatabaseRoutine = routine;
 	clean->clean_arg = (SLONG) arg;
 
-	status[0] = gds_arg_gds;
+	status[0] = isc_arg_gds;
 	status[1] = 0;
-	status[2] = gds_arg_end;
+	status[2] = isc_arg_end;
 	CHECK_STATUS_SUCCESS(status);
 	return FB_SUCCESS;
 }
@@ -4898,9 +4898,9 @@ ISC_STATUS API_ROUTINE gds__transaction_cleanup(ISC_STATUS * user_status,
 		}
 	}
 
-	status[0] = gds_arg_gds;
+	status[0] = isc_arg_gds;
 	status[1] = FB_SUCCESS;
-	status[2] = gds_arg_end;
+	status[2] = isc_arg_end;
 	CHECK_STATUS_SUCCESS(status);
 	return FB_SUCCESS;
 }
@@ -4960,7 +4960,7 @@ ISC_STATUS API_ROUTINE GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 			ptr = buffer;
 			end = buffer + buffer_len;
 			while (ptr < end && *ptr == isc_info_tra_id)
-				ptr += 3 + gds__vax_integer(ptr + 1, 2);
+				ptr += 3 + isc_vax_integer(reinterpret_cast<const SCHAR*>(ptr + 1), 2);
 
 			if (ptr >= end || *ptr != isc_info_end) {
 				RETURN_SUCCESS;
@@ -5080,8 +5080,8 @@ static void check_status_vector(ISC_STATUS * status,
 		return;
 	}
 
-	if (*s != gds_arg_gds) {
-		SV_MSG("Must start with gds_arg_gds");
+	if (*s != isc_arg_gds) {
+		SV_MSG("Must start with isc_arg_gds");
 		return;
 	}
 
@@ -5089,15 +5089,15 @@ static void check_status_vector(ISC_STATUS * status,
    in either case the status vector is a success */
 	if ((expected == FB_SUCCESS)
 		&& (s[1] != FB_SUCCESS
-			|| (s[2] != gds_arg_end && s[2] != gds_arg_gds
+			|| (s[2] != isc_arg_end && s[2] != isc_arg_gds
 				&& s[2] !=
 				isc_arg_warning))) SV_MSG("Success vector expected");
 
-	while (*s != gds_arg_end) {
+	while (*s != isc_arg_end) {
 		code = *s++;
 		switch (code) {
 		case isc_arg_warning:
-		case gds_arg_gds:
+		case isc_arg_gds:
 			/* The next element must either be 0 (indicating no error) or a
 			 * valid isc error message, let's check */
 			if (*s && (*s & ISC_MASK) != ISC_MASK) {
@@ -5138,8 +5138,8 @@ static void check_status_vector(ISC_STATUS * status,
 			s++;
 			break;
 
-		case gds_arg_interpreted:
-		case gds_arg_string:
+		case isc_arg_interpreted:
+		case isc_arg_string:
 			length = strlen((char *) *s);
 			/* This check is heuristic, not deterministic */
 			if (length > 1024 - 1)
@@ -5149,7 +5149,7 @@ static void check_status_vector(ISC_STATUS * status,
 			s++;
 			break;
 
-		case gds_arg_cstring:
+		case isc_arg_cstring:
 			length = (ULONG) * s;
 			s++;
 			/* This check is heuristic, not deterministic */
@@ -5162,10 +5162,10 @@ static void check_status_vector(ISC_STATUS * status,
 			s++;
 			break;
 
-		case gds_arg_number:
-		case gds_arg_vms:
-		case gds_arg_unix:
-		case gds_arg_win32:
+		case isc_arg_number:
+		case isc_arg_vms:
+		case isc_arg_unix:
+		case isc_arg_win32:
 			s++;
 			break;
 
@@ -5513,7 +5513,7 @@ static ISC_STATUS get_transaction_info(ISC_STATUS * status,
 	q = buffer + 3;
 	*p++ = TDR_TRANSACTION_ID;
 
-	length = (USHORT)gds__vax_integer(reinterpret_cast<UCHAR*>(buffer + 1), 2);
+	length = (USHORT)isc_vax_integer(reinterpret_cast<SCHAR*>(buffer + 1), 2);
 	*p++ = length;
 	if (length) {
 		do {

@@ -36,7 +36,7 @@
 #include <string.h>
 #include "../jrd/common.h"
 #include "../jrd/llio.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/iberr_proto.h"
 #include "../jrd/llio_proto.h"
 
@@ -392,9 +392,9 @@ static void io_error(ISC_STATUS* status_vector,
  *
  **************************************/
 
-	IBERR_build_status(status_vector, isc_io_error, gds_arg_string, op,
-					   gds_arg_string, filename, isc_arg_gds, operation,
-					   gds_arg_win32, GetLastError(), 0);
+	IBERR_build_status(status_vector, isc_io_error, isc_arg_string, op,
+					   isc_arg_string, filename, isc_arg_gds, operation,
+					   isc_arg_win32, GetLastError(), 0);
 }
 #endif
 
@@ -641,9 +641,9 @@ static void io_error(
  *
  **************************************/
 
-	IBERR_build_status(status_vector, isc_io_error, gds_arg_string, op,
-					   gds_arg_string, filename, isc_arg_gds, operation,
-					   gds_arg_unix, errno, 0);
+	IBERR_build_status(status_vector, isc_io_error, isc_arg_string, op,
+					   isc_arg_string, filename, isc_arg_gds, operation,
+					   isc_arg_unix, errno, 0);
 }
 #endif
 

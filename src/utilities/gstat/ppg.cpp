@@ -142,8 +142,8 @@ void PPG_print_header( HDR header, SLONG page,
 			FPRINTF(outfile, "\tDatabase dialect\t1\n");
 
 
-		isc_decode_date(reinterpret_cast <
-						 GDS_QUAD * >(header->hdr_creation_date), &time);
+		isc_decode_date(reinterpret_cast<ISC_QUAD* >(header->hdr_creation_date), 
+						&time);
 		FPRINTF(outfile, "\tCreation date\t\t%s %d, %d %d:%02d:%02d\n",
 				months[time.tm_mon], time.tm_mday, time.tm_year + 1900,
 				time.tm_hour, time.tm_min, time.tm_sec);
@@ -320,7 +320,7 @@ void PPG_print_log( LIP logp, SLONG page,
 		}
 		else
 		{
-			isc_decode_date(reinterpret_cast<GDS_QUAD*>(logp->log_creation_date),
+			isc_decode_date(reinterpret_cast<ISC_QUAD*>(logp->log_creation_date),
 								&time);
 			FPRINTF(outfile,
 					"\tCreation date\t%s %d, %d %d:%02d:%02d\n",

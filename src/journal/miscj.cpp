@@ -426,7 +426,7 @@ int MISC_time_convert(const TEXT* string,
 						return FB_SUCCESS;
 					}
 					times2.tm_hour = times2.tm_min = times2.tm_sec = 0;
-					isc_encode_date(&times2, (GDS_QUAD_t*) date);
+					isc_encode_date(&times2, (ISC_QUAD*) date);
 					if (strcmp(temp, TODAY) == 0)
 						return FB_SUCCESS;
 					if (strcmp(temp, TOMORROW) == 0) {
@@ -500,8 +500,8 @@ int MISC_time_convert(const TEXT* string,
 
 // convert day/month/year to Julian and validate result
 
-	isc_encode_date(&times, (GDS_QUAD_t*) date);
-	isc_decode_date((GDS_QUAD_t*)date, &times2);
+	isc_encode_date(&times, (ISC_QUAD*) date);
+	isc_decode_date((ISC_QUAD*)date, &times2);
 
 	if (times.tm_year != times2.tm_year ||
 		times.tm_mon != times2.tm_mon || times.tm_mday != times2.tm_mday)
@@ -529,5 +529,5 @@ static void now_to_date(const tm* xtime,
  *
  **************************************/
 
-	isc_encode_date(xtime, (GDS_QUAD_t*) date);
+	isc_encode_date(xtime, (ISC_QUAD*) date);
 }

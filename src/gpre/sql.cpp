@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.34 2003-11-08 16:31:39 brodsom Exp $
+//	$Id: sql.cpp,v 1.35 2003-11-11 12:08:12 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -442,7 +442,7 @@ void SQL_adjust_field_dtype( GPRE_FLD field)
 			break;
 
 		case dtype_blob:
-			field->fld_length = sizeof(GDS_QUAD);
+			field->fld_length = sizeof(ISC_QUAD);
 			field->fld_flags |= FLD_blob;
 			if (field->fld_character_set) {
 				field->fld_charset_id =

@@ -472,7 +472,7 @@ static void display_blob(
 	FRBRD* blob = NULL;
 
 	if (isc_open_blob2(status_vector, &dbb->dbb_handle, &dbb->dbb_meta_trans,
-						&blob, (GDS_QUAD*) blob_id, bpb_length,
+						&blob, (ISC_QUAD*) blob_id, bpb_length,
 						bpb))
 	{
 			ERRQ_database_error(dbb, status_vector);
@@ -820,15 +820,15 @@ static void show_dbb_parameters( DBB database)
 
 	for (UCHAR *d = buffer; *d != isc_info_end;) {
 		UCHAR item = *d++;
-		int length = gds__vax_integer(d, 2);
+		int length = isc_vax_integer(reinterpret_cast<const SCHAR*>(d), 2);
 		d += 2;
 		switch (item) {
 		case (isc_info_db_size_in_pages):
-			allocation = gds__vax_integer(d, length);
+			allocation = isc_vax_integer(reinterpret_cast<const SCHAR*>(d), length);
 			break;
 
 		case (isc_info_page_size):
-			page_size = gds__vax_integer(d, length);
+			page_size = isc_vax_integer(reinterpret_cast<const SCHAR*>(d), length);
 			break;
 
 		case (isc_info_error):

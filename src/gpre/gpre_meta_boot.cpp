@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.33 2003-11-08 16:31:40 brodsom Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.34 2003-11-11 12:08:12 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -409,7 +409,7 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT* length)
 
 	case blr_quad:
 		dtype = dtype_quad;
-		l = sizeof(GDS_QUAD);
+		l = sizeof(ISC_QUAD);
 		break;
 
 	case blr_float:
@@ -424,7 +424,7 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT* length)
 
 	case blr_blob:
 		dtype = dtype_blob;
-		l = sizeof(GDS_QUAD);
+		l = sizeof(ISC_QUAD);
 		break;
 
 /** Begin sql date/time/timestamp **/

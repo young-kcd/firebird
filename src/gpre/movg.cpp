@@ -25,14 +25,13 @@
 //
 //____________________________________________________________
 //
-//	$Id: movg.cpp,v 1.6 2003-11-05 09:02:13 robocop Exp $
+//	$Id: movg.cpp,v 1.7 2003-11-11 12:08:12 brodsom Exp $
 //
 
 #include "firebird.h"
 #include "../jrd/common.h"
 #include <stdarg.h>
 
-#include "gen/codes.h"
 #include "../jrd/iberr.h"
 #include "../jrd/dsc.h"
 #include "../gpre/movg_proto.h"

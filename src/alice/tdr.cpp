@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.28 2003-11-07 23:09:04 brodsom Exp $
+//	$Id: tdr.cpp,v 1.29 2003-11-11 12:05:29 brodsom Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -309,11 +309,11 @@ void TDR_list_limbo(FRBRD* handle, const TEXT* name, const ULONG switches)
 
 	while (flag) {
 		const USHORT item = *ptr++;
-		const USHORT length = (USHORT) gds__vax_integer(ptr, 2);
+		const USHORT length = (USHORT) isc_vax_integer(reinterpret_cast<const SCHAR*>(ptr), 2);
 		ptr += 2;
 		switch (item) {
 		case isc_info_limbo:
-			id = gds__vax_integer(ptr, length);
+			id = isc_vax_integer(reinterpret_cast<const SCHAR*>(ptr), length);
 			if (switches &
 				(sw_commit | sw_rollback | sw_two_phase | sw_prompt))
 			{
@@ -879,7 +879,7 @@ static bool reconnect(FRBRD* handle,
 {
 	ISC_STATUS_ARRAY status_vector;
 
-	const SLONG id = gds__vax_integer((UCHAR *) &number, 4);
+	const SLONG id = isc_vax_integer((SCHAR*) &number, 4);
 	FRBRD* transaction = NULL;
 	if (isc_reconnect_transaction(status_vector, &handle, &transaction,
 								   sizeof(id),

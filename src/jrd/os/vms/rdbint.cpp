@@ -338,11 +338,11 @@ int RDB_compile_request(
 }
 
 
-int RDB_create_blob(
-					int *user_status,
+int RDB_create_blob(int *user_status,
 					HANDLE * db_handle,
 					HANDLE * tra_handle,
-					HANDLE * blob_handle, GDS_QUAD * blob_id)
+					HANDLE * blob_handle, 
+					ISC_QUAD* blob_id)
 {
 /**************************************
  *
@@ -535,11 +535,11 @@ int RDB_get_segment(
 }
 
 
-int RDB_open_blob(
-				  int *user_status,
+int RDB_open_blob(int *user_status,
 				  HANDLE * db_handle,
 				  HANDLE * tra_handle,
-				  HANDLE * blob_handle, GDS_QUAD * blob_id)
+				  HANDLE * blob_handle, 
+				  ISC_QUAD* blob_id)
 {
 /**************************************
  *

@@ -43,7 +43,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.38 2003-11-07 08:06:10 robocop Exp $
+$Id: flu.cpp,v 1.39 2003-11-11 12:12:56 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -64,7 +64,7 @@ using namespace std;
 #include "../jrd/dls_proto.h"
 #include "../jrd/err_proto.h"
 
-#include "../include/gen/codes.h"
+#include "gen/iberror.h"
 
 #include <string.h>
 
@@ -875,10 +875,10 @@ static MOD search_for_module(TEXT* module, TEXT* name, bool ShowAccessError)
 	// must satisfy UdfAccess entry in config file.
 	if (!iUdfDirectoryList.IsPathInList(absolute_module)) {
 		if (ShowAccessError) {
-			ERR_post(gds_conf_access_denied,
-				gds_arg_string, "UDF library",
-				gds_arg_string, ERR_cstring(const_cast <TEXT *>(absolute_module.c_str())),
-				gds_arg_end);
+			ERR_post(isc_conf_access_denied,
+				isc_arg_string, "UDF library",
+				isc_arg_string, ERR_cstring(const_cast <TEXT *>(absolute_module.c_str())),
+				isc_arg_end);
 		}
 		return NULL;
 	}

@@ -31,7 +31,7 @@
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../remote/remote.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/sdl.h"
 #include "../jrd/gdsassert.h"
 #include "../remote/parse_proto.h"
@@ -1720,11 +1720,11 @@ static bool_t xdr_status_vector(
 		if (xdrs->x_op == XDR_DECODE)
 			*vector++ = (ISC_STATUS) vec;
 		switch ((USHORT) vec) {
-		case gds_arg_end:
+		case isc_arg_end:
 			return TRUE;
 
-		case gds_arg_interpreted:
-		case gds_arg_string:
+		case isc_arg_interpreted:
+		case isc_arg_string:
 			if (xdrs->x_op == XDR_ENCODE) {
 				if (!xdr_wrapstring
 					(xdrs, reinterpret_cast < SCHAR ** >(vector++)))
@@ -1752,7 +1752,7 @@ static bool_t xdr_status_vector(
 			}
 			break;
 
-		case gds_arg_number:
+		case isc_arg_number:
 		default:
 			if (xdrs->x_op == XDR_ENCODE)
 				vec = (SLONG) * vector++;

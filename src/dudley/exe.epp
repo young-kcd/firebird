@@ -1060,8 +1060,8 @@ static void add_files( DBB dbb, FIL files)
 			DDL_err(38, NULL, NULL, NULL, NULL, NULL);
 			/* msg 38: isc_database_info failed */
 
-		length = gds__vax_integer((UCHAR*) s + 1, 2);
-		start = gds__vax_integer((UCHAR*) s + 3, length);
+		length = isc_vax_integer(reinterpret_cast<const SCHAR*>(s + 1), 2);
+		start = isc_vax_integer(reinterpret_cast<const SCHAR*>(s + 3), length);
 
 		length = (dbb->dbb_length) ? dbb->dbb_length + 1 : 0;
 		start = MAX(start, length);
@@ -2132,7 +2132,7 @@ static FRBRD* create_blob( SLONG* blob_id, USHORT bpb_length, const UCHAR* bpb)
 	FRBRD *blob = NULL;
 
 	if (isc_create_blob2(status_vector, &DB, &gds_trans, &blob,
-						 (GDS_QUAD*) blob_id, bpb_length,
+						 (ISC_QUAD*) blob_id, bpb_length,
 						 reinterpret_cast<const SCHAR*>(bpb)))
 	{
 		DDL_db_error(status_vector, 59, NULL, NULL, NULL, NULL, NULL);
@@ -4305,11 +4305,11 @@ static void wal_info(UCHAR * db_info_buffer,
 	p = db_info_buffer;
 
 	while ((item = *p++) != isc_info_end) {
-		length = gds__vax_integer(p, 2);
+		length = isc_vax_integer(reinterpret_cast<const SCHAR*>(p), 2);
 		p += 2;
 		switch (item) {
 		case isc_info_logfile:
-			*log = gds__vax_integer(p, length);
+			*log = isc_vax_integer(reinterpret_cast<const SCHAR*>(p), length);
 			p += length;
 			break;
 
@@ -4322,7 +4322,7 @@ static void wal_info(UCHAR * db_info_buffer,
 			break;
 
 		case isc_info_cur_log_part_offset:
-			*part_offset = gds__vax_integer(p, length);
+			*part_offset = isc_vax_integer(reinterpret_cast<const SCHAR*>(p), length);
 			p += length;
 			break;
 

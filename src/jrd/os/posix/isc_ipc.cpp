@@ -36,14 +36,14 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.6 2003-11-06 03:02:24 brodsom Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.7 2003-11-11 12:17:35 brodsom Exp $ */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include "../jrd/gdsassert.h"
 #include "../jrd/common.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/isc.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"

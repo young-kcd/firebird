@@ -38,7 +38,7 @@
 #include "../jrd/ib_stdio.h"
 #include "../jrd/jrd.h"
 #include "../jrd/jrn.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 
 #ifdef VMS
 #include <file.h>
