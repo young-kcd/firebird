@@ -3280,6 +3280,11 @@ static DSQL_NOD pass1_derived_table(DSQL_REQ request, DSQL_NOD input)
 	DSQL_NOD *ptr, *end;
 	int count;
 
+
+	// NOTE! nod_flags from nod_alias is used to store also scope_level,
+	// because the scope_level will never become extreme high this will
+	// be never a problem.
+
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
@@ -3427,6 +3432,14 @@ static DSQL_NOD pass1_derived_table(DSQL_REQ request, DSQL_NOD input)
 				node_alias->nod_flags = (request->req_scope_level << 1) | NOD_DERIVED_TABLE;
 
 				rse->nod_arg[e_rse_items]->nod_arg[count] = node_alias;
+			} 
+			else if (map_->map_node && (map_->map_node->nod_type == nod_alias)) {
+				// Switch nod_map <=> nod_alias
+				DSQL_NOD node_alias = map_->map_node;
+				map_->map_node = node_alias->nod_arg[e_alias_value];
+				node_alias->nod_arg[e_alias_value] = node_select_item;
+				rse->nod_arg[e_rse_items]->nod_arg[count] = node_alias;
+				node_alias->nod_flags = (request->req_scope_level << 1) | NOD_DERIVED_TABLE;
 			}
 		}
 		else if (node_select_item->nod_type == nod_alias) {
