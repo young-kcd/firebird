@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.157 2003-09-30 09:41:40 fsg Exp $
+dnl $Id: configure.in,v 1.158 2003-09-30 17:48:55 brodsom Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -599,6 +599,7 @@ mkdir -p temp/libfbclient/common/classes
 mkdir -p temp/libfbclient/common/config
 mkdir -p temp/libfbclient/jrd/os/posix
 mkdir -p temp/libfbclient/jrd/os/win32
+mkdir -p temp/client.fbudf/fbudf
 mkdir -p temp/client.gbak/burp
 mkdir -p temp/client.gfix/alice
 mkdir -p temp/client.gpre/gpre
@@ -647,6 +648,7 @@ mkdir -p temp/embed.gfix/alice
 mkdir -p temp/embed.isql/isql
 mkdir -p temp/embed.gdef/dudley
 mkdir -p temp/embed.qli/qli
+mkdir -p temp/embed.fbudf/fbudf
 mkdir -p temp/embed.gpre/gpre
 mkdir -p temp/inet_server/remote/os/win32
 mkdir -p temp/inet_server/ipserver
@@ -740,6 +742,7 @@ gen/Makefile.refDatabases:${MAKE_SRC_DIR}/Makefile.in.refDatabases
 gen/Makefile.libfbserver:${MAKE_SRC_DIR}/Makefile.in.libfbserver
 gen/Makefile.fbserver:${MAKE_SRC_DIR}/Makefile.in.fbserver
 gen/Makefile.libfbclient:${MAKE_SRC_DIR}/Makefile.in.libfbclient
+gen/Makefile.client.fbudf:${MAKE_SRC_DIR}/Makefile.in.client.fbudf
 gen/Makefile.client.gbak:${MAKE_SRC_DIR}/Makefile.in.client.gbak
 gen/Makefile.client.gfix:${MAKE_SRC_DIR}/Makefile.in.client.gfix
 gen/Makefile.client.gdef:${MAKE_SRC_DIR}/Makefile.in.client.gdef
@@ -756,6 +759,7 @@ gen/Makefile.libfbembed:${MAKE_SRC_DIR}/Makefile.in.libfbembed
 gen/Makefile.inet_server:${MAKE_SRC_DIR}/Makefile.in.inet_server
 gen/Makefile.embed.lockmgr:${MAKE_SRC_DIR}/Makefile.in.embed.lockmgr
 gen/Makefile.embed.util:${MAKE_SRC_DIR}/Makefile.in.embed.util
+gen/Makefile.embed.fbudf:${MAKE_SRC_DIR}/Makefile.in.embed.fbudf
 gen/Makefile.embed.gfix:${MAKE_SRC_DIR}/Makefile.in.embed.gfix
 gen/Makefile.embed.gbak:${MAKE_SRC_DIR}/Makefile.in.embed.gbak
 gen/Makefile.embed.isql:${MAKE_SRC_DIR}/Makefile.in.embed.isql
