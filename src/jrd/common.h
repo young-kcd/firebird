@@ -35,7 +35,7 @@
  * 2002.04.16  Paul Beach - HP10 and unistd.h
  */
 /*
-$Id: common.h,v 1.33 2002-09-25 06:22:42 kkuznetsov Exp $
+$Id: common.h,v 1.34 2002-09-27 13:12:46 kkuznetsov Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -399,7 +399,7 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
 #define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
 
-typedef RETSIGTYPE (*SIG_FPTR) ();
+typedef RETSIGTYPE (*SIG_FPTR) (int);
 #endif /* sun */
 
 

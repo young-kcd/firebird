@@ -30,7 +30,7 @@
  *       John Bellardo  <bellardo@cs.ucsd.edu>
  *
  *
- *  $Id: firebird.h,v 1.3 2001-12-28 05:15:46 tamlin Exp $
+ *  $Id: firebird.h,v 1.4 2002-09-27 13:12:46 kkuznetsov Exp $
  *
  */
 
@@ -41,6 +41,9 @@
 #define FB_DLL_EXPORT __declspec(dllexport)
 #else
 #define FB_DLL_EXPORT
+#endif
+#if defined(SOLX86)
+#define __PRAGMA_REDEFINE_EXTNAME 
 #endif
 
 #ifdef __cplusplus
