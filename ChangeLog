@@ -1,3 +1,77 @@
+2003-12-24 00:23  skywalker
+
+	* firebird2/configure.in:
+	
+	Added generation of new script files from .in templates
+
+2003-12-24 00:22  skywalker
+
+	* firebird2/src/install/arch-specific/linux/super/:
+	makeInstallImage.sh.in, postinstall.sh.in:
+	
+	Update install image to have new script files Update generation of
+	password for rpm installs Alias file set as default option (trial
+	go)
+
+2003-12-24 00:21  skywalker
+
+	* firebird2/src/install/arch-specific/linux/classic/:
+	makeInstallImage.sh.in, postinstall.sh.in, preinstall.sh.in:
+	
+	Update install image to have two new script files Update generation
+	of password for rpm installs Make default for libgds.so point to
+	libfbembed.so Alias file set as default option (trial go)
+
+2003-12-24 00:17  skywalker
+
+	*
+	
+	updated to use the openssl passwd generation for random, and to
+	write out SYSDBA.password file
+	firebird2/src/install/arch-specific/linux/misc/changeDBAPassword.sh
+	.in:
+
+2003-12-24 00:14  skywalker
+
+	*
+	firebird2/src/install/arch-specific/linux/misc/createAliasDB.sh.in:
+	
+	file createAliasDB.sh.in was initially added on branch
+	B1_5_Release.
+
+2003-12-24 00:14  skywalker
+
+	*
+	firebird2/src/install/arch-specific/linux/misc/createAliasDB.sh.in:
+	
+	A new script to add an entry into aliases.conf and to create an
+	empty database
+
+2003-12-24 00:13  skywalker
+
+	*
+	
+	Add a script to help change the libgds.so links between
+	libfbembed.so and libfbclient.so for classic distributions
+	firebird2/src/install/arch-specific/linux/misc/changeGdsLibraryComp
+	atibleLink.sh.in:
+
+2003-12-24 00:13  skywalker
+
+	*
+	
+	file changeGdsLibraryCompatibleLink.sh.in was initially added on
+	branch B1_5_Release.
+	firebird2/src/install/arch-specific/linux/misc/changeGdsLibraryComp
+	atibleLink.sh.in:
+
+2003-12-23 21:39  skywalker
+
+	* firebird2/src/install/misc/changeDBAPassword.sh.in:
+	
+	Update password generate method, and change format of the local
+	SYSDBA.password file it writes.
+
 2003-12-22 19:30  dimitr
 
 	* firebird2/src/jrd/: isc_file.cpp, isc_file.cpp:
