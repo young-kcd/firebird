@@ -3911,9 +3911,7 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input, const bool lis
 
 				for (; field; field = field->fld_next) {
 					if (!strcmp(reinterpret_cast<const char*>(name->str_data), field->fld_name)) {
-						if (!is_check_constraint && !qualifier) {
-							ambiguous_ctx_stack.push(context);
-						}					
+						ambiguous_ctx_stack.push(context);
 						break;					
 					}
 				}
@@ -3960,10 +3958,6 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input, const bool lis
 						indices = PASS1_node(request, indices, false);
 					}
 					node = MAKE_field(context, field, indices);
-
-					if (is_check_constraint || qualifier) {
-						break;
-					}
 				}
 			} 
 			else if (is_derived_table) {
@@ -4013,9 +4007,7 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input, const bool lis
 						{
 
 							// This is a matching item so add the context to the ambiguous list.
-							if (!is_check_constraint && !qualifier) {
-								ambiguous_ctx_stack.push(context);
-							}
+							ambiguous_ctx_stack.push(context);
 
 							// Stop here if this is our second or more iteration.
 							if (node) {
@@ -4036,12 +4028,6 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input, const bool lis
 					}
 				}
 
-				// If we found the field and qualifier is present or this
-				// is a check constraint we're done.
-				if (node && (is_check_constraint || qualifier)) {
-					break;
-				}
-
 				if (!node && qualifier) {
 					// If a qualifier was present and we don't have found
 					// a matching field then we should stop searching.
@@ -4058,7 +4044,7 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input, const bool lis
 	// call this function pass1_field() don't expect a NULL pointer, hence will crash.
 	// Don't check ambiguity if we don't have a field.
 
-	if (!is_check_constraint && !qualifier && node && name) {
+	if (node && name) {
 		node = ambiguity_check(request, node, name, ambiguous_ctx_stack);
 	}
 
@@ -7107,14 +7093,15 @@ static dsql_fld* resolve_context( dsql_req* request, const dsql_str* qualifier,
 		table_name = context->ctx_alias;
 	}
 // AB: For a check constraint we should ignore the alias if the alias
-//     contains "NEW" or "OLD" alias. This is because it is possible
+//     contains the "NEW" alias. This is because it is possible
 //     to reference a field by the complete table-name as alias 
 //     (see EMPLOYEE table in examples for a example).
-	if (isCheckConstraint && table_name) {
+	if (isCheckConstraint && table_name) 
+	{
 		// If a qualifier is present and it's equal to the alias then we've already the right table-name
-		if (!(qualifier && !strcmp(reinterpret_cast<const char*>(qualifier->str_data), table_name))) {
-			if ((!strcmp(table_name, OLD_CONTEXT)) ||
-				(!strcmp(table_name, NEW_CONTEXT)))
+		if (!(qualifier && !strcmp(reinterpret_cast<const char*>(qualifier->str_data), table_name))) 
+		{
+			if (!strcmp(table_name, NEW_CONTEXT)) 
 			{
 				table_name = NULL;
 			}
