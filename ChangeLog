@@ -1,3 +1,111 @@
+2003-08-19 23:34  skidder
+
+	* firebird2/src/isql/isql.epp:
+	
+	Apply patch by Peter Jacobi to display OCTETS strings in hex
+	correctly
+
+2003-08-19 23:20  skidder
+
+	* firebird2/configure.in:
+	
+	Apply writebuildnum.sh at configure time to simplify building rpm
+	packages in release branch
+
+2003-08-19 15:02  skidder
+
+	* firebird2/src/burp/backup.epp:
+	
+	Backport Blas' fix to 1.5 tree
+
+2003-08-19 14:49  skidder
+
+	* firebird2/src/jrd/: opt.cpp, opt.cpp:
+	
+	Get rid of alloca usage
+
+2003-08-19 13:44  brodsom
+
+	* firebird2/src/lock/lock.cpp:
+	
+	-Fix NULL usage warning
+
+2003-08-19 13:42  brodsom
+
+	* firebird2/builds/posix/prefix.linux:
+	
+	-Fix parse.cpp (yacc generated) warnings
+
+2003-08-19 13:16  brodsom
+
+	* firebird2/src/qli/: command.cpp, eval.cpp, exe.cpp, parse.cpp,
+	show.epp:
+	
+	-Fix cast warnings -Fix signed/unsigned comparison warning
+
+2003-08-19 13:10  brodsom
+
+	* firebird2/src/jrd/vio.cpp:
+	
+	-Fix cast warning in a recent commit (Please review the warnings
+	before commits)
+
+2003-08-19 13:09  brodsom
+
+	* firebird2/src/burp/backup.epp:
+	
+	-Fix wrong format in a recent commit (Please review the warnings
+	before commits)
+
+2003-08-19 12:25  robocop
+
+	* firebird2/src/dsql/utld.cpp:
+	
+	Damn loop
+
+2003-08-19 11:25  brodsom
+
+	* firebird2/builds/posix/prefix.mingw:
+	
+	-Remove parse.cpp (yacc generated) warnings
+
+2003-08-19 11:24  brodsom
+
+	* firebird2/src/dudley/: ddl.cpp, ddl.h, trn.cpp:
+	
+	-Remove basic and pli remains
+
+2003-08-19 11:22  brodsom
+
+	* firebird2/src/dudley/extract.epp:
+	
+	-Fix cast warning
+
+2003-08-19 10:59  brodsom
+
+	* firebird2/src/dudley/: exe.epp, expr.cpp, parse.cpp:
+	
+	-Fix cast warnings -Break long lines
+
+2003-08-19 08:03  robocop
+
+	* firebird2/builds/win32/msvc6/: Firebird2Boot.dsw, relations.dsp:
+	
+	We no longer have a "relations" project.  Static metadata
+	definitions came back.
+
+2003-08-19 03:26  brodsom
+
+	* firebird2/src/jrd/os/posix/unix.cpp:
+	
+	-Fix cast warnings
+
+2003-08-19 03:25  brodsom
+
+	* firebird2/src/jrd/isc_sync.cpp:
+	
+	-Fix unused warnings
+
 2003-08-18 23:44  skidder
 
 	* firebird2/src/jrd/: btr.cpp, btr.h, dfw.epp, idx.cpp,
