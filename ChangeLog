@@ -1,3 +1,50 @@
+2005-03-23 21:35  hvlad
+
+	* firebird2/src/jrd/tra.cpp (1.99):
+	
+	Mark system transaction state as tra_commited in TIP (it was
+	wrongly marked as tra_dead)
+
+2005-03-23 21:28  hvlad
+
+	* firebird2/src/jrd/tpc.cpp (1.20):
+	
+	Patch by Adriano dos Santos Fernandes : always report system
+	transaction state as tra_commited (it can be wrongly marked as
+	tra_dead in the TIP)
+
+2005-03-23 11:32  alexpeshkoff
+
+	* firebird2/src/remote/inet_server.cpp (1.50):
+	
+	fixed 2 BOFs, cleanup
+
+2005-03-23 11:24  aafemt
+
+	* firebird2/configure.in (1.219):
+	
+	Missed directories
+
+2005-03-23 11:10  aafemt
+
+	* firebird2/src/isql/isql.epp (1.133):
+	
+	Fix for Field-test item #1168910
+
+2005-03-23 09:20  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	BuildExecutableInstall.bat (1.8), FirebirdInstall_20.iss (1.7):
+	
+	Install msvc runtimes in <sys>; ship msvc runtimes with embedded;
+	Assume MSVC 7 is default compiler.
+
+2005-03-23 08:14  dimitr
+
+	* firebird2/src/dsql/dsql.cpp (1.140):
+	
+	Fixed server crashes related to some plan buffer overflows.
+
 2005-03-22 14:36  tsteinmaurer
 
 	* firebird2/builds/install/arch-specific/win32/de/:
