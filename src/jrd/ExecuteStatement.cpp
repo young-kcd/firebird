@@ -21,10 +21,12 @@
  */
 
 #include "firebird.h"
+#include "fb_types.h"
 #include "gen/codes.h"
 
 #include "../jrd/common.h"
 #include <string.h>
+#include <math.h>
 #include "../jrd/jrd.h"
 #include "../jrd/tra.h"
 #include "../jrd/dsc.h"
@@ -130,7 +132,7 @@ void ExecuteStatement::Open(TDBB tdbb, JRD_NOD sql, SSHORT nVars, bool SingleTon
 	Chk(isc_dsql_allocate_statement(status, &Attachment, &Statement));
 
 	Chk(isc_dsql_prepare(status, &Transaction, &Statement,
-            (USHORT)l, (TEXT *)p, SQL_DIALECT_V5, Sqlda));
+            (USHORT)l, (TEXT *)p, SQL_DIALECT_CURRENT, Sqlda));
     if (! Sqlda->sqld) {  // Non-select statement - reject for a while
 		/*Chk(isc_dsql_execute(status, &Transaction,
                &Statement, SQLDA_VERSION1, 0)); */
@@ -223,6 +225,27 @@ rec_err:
 		if (! length)
 			length = d->dsc_length;
 		memcpy(d->dsc_address, var->sqldata, length);
+		if (d->dsc_scale != var->sqlscale) {
+			double DeltaPow = pow(10, var->sqlscale - d->dsc_scale);
+#define ReScaleLike(t) *((t *)d->dsc_address) *= DeltaPow
+			switch (d->dsc_dtype) {
+			case dtype_short:
+				ReScaleLike(SSHORT);
+				break;
+			case dtype_long: 
+				ReScaleLike(SLONG);
+				break;
+			case dtype_int64:
+				ReScaleLike(ISC_INT64);
+				break;
+			case dtype_real:
+				ReScaleLike(float);
+				break;
+			case dtype_double:
+				ReScaleLike(double);
+				break;
+			}
+		}
     }
 
 	if (SingleMode) {
