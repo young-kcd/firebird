@@ -30,7 +30,7 @@
  *       John Bellardo  <bellardo@cs.ucsd.edu>
  *
  *
- *  $Id: firebird.h,v 1.26 2004-06-08 13:40:19 alexpeshkoff Exp $
+ *  $Id: firebird.h,v 1.27 2004-06-25 01:44:13 skidder Exp $
  *
  */
 
@@ -114,7 +114,7 @@
 // Comment this definition to build without priority scheduler 
 //	OR:
 // Uncomment this definition to build with priority scheduler
-#define THREAD_PSCHED
+//#define THREAD_PSCHED
 #endif
 
 #endif /* INCLUDE_Firebird_H */
