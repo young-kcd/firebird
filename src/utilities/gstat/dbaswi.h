@@ -36,7 +36,7 @@ const int IN_SW_DBA_DATA		= 2;	/* analyze data pages */
 const int IN_SW_DBA_INDEX		= 3;	/* analyze index leaf pages */
 const int IN_SW_DBA_VERSION		= 4;	/* display version number */
 const int IN_SW_DBA_HEADER		= 5;	/* analyze header page */
-const int IN_SW_DBA_LOG			= 6;	/* analze log pages */
+//const int IN_SW_DBA_LOG			= 6;	analze log pages
 const int IN_SW_DBA_DATAIDX		= 7;	/* analyze data and index pages */
 const int IN_SW_DBA_USERNAME	= 8;	/* username */
 const int IN_SW_DBA_PASSWORD	= 9;	/* password */
@@ -49,7 +49,7 @@ static struct in_sw_tab_t dba_in_sw_table [] = {
     {IN_SW_DBA_DATA,		isc_spb_sts_data_pages,		"DATA",		0,0,0,	FALSE,	23,	0, NULL},	/* msg 23: -d      analyze data pages*/
     {IN_SW_DBA_HEADER,		isc_spb_sts_hdr_pages,		"HEADER",	0,0,0,	FALSE,	24,	0, NULL},	/* msg 24: -h      analyze header page */
     {IN_SW_DBA_INDEX,		isc_spb_sts_idx_pages,		"INDEX",	0,0,0,	FALSE,	25,	0, NULL},	/* msg 25: -i      analyze index leaf pages */
-    {IN_SW_DBA_LOG,			isc_spb_sts_db_log,		"LOG",		0,0,0,	FALSE,	26,	0, NULL},	/* msg 26: -l      analyze log page */
+//    {IN_SW_DBA_LOG,			isc_spb_sts_db_log,		"LOG",		0,0,0,	FALSE,	26,	0, NULL},	 msg 26: -l      analyze log page
     {IN_SW_DBA_SYSTEM,		isc_spb_sts_sys_relations,	"SYSTEM",	0,0,0,	FALSE,	27,	0, NULL},	/* msg 27: -s      analyze system relations */
     {IN_SW_DBA_USERNAME,		0,				"USERNAME",	0,0,0,	FALSE,	32,	0, NULL},	/* msg 32: -u      username */
     {IN_SW_DBA_PASSWORD,		0,				"PASSWORD",	0,0,0,	FALSE,	33,	0, NULL},	/* msg 33: -p      password */

@@ -26,10 +26,14 @@
 
 #ifdef SUPERSERVER
 void	PPG_print_header (const Ods::header_page*, SLONG, bool, Jrd::Service*);
+#ifdef NOT_USED_OR_REPLACED
 void	PPG_print_log (const Ods::log_info_page*, SLONG, bool, Jrd::Service*);
+#endif
 #else
 void	PPG_print_header (const Ods::header_page*, SLONG, bool, FILE*);
+#ifdef NOT_USED_OR_REPLACED
 void	PPG_print_log (const Ods::log_info_page*, SLONG, bool, FILE*);
+#endif
 #endif
 
 #endif // UTILITIES_PPG_PROTO_H

@@ -59,6 +59,7 @@
 #endif
 #include "../common/utils_proto.h"
 #include "../common/classes/ClumpletWriter.h"
+#include "../jrd/constants.h"
 
 
 #ifdef HAVE_UNISTD_H
@@ -311,7 +312,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 	bool sw_index = false;
 	bool sw_version = false;
 	bool sw_header = false;
-	bool sw_log = false;
+//	bool sw_log = false;
 	bool sw_record = false;
 	bool sw_relation = false;
 	bool sw_nocreation = false;
@@ -462,9 +463,9 @@ int CLIB_ROUTINE main(int argc, char** argv)
 			case IN_SW_DBA_HEADER:
 				sw_header = true;
 				break;
-			case IN_SW_DBA_LOG:
-				sw_log = true;
-				break;
+//			case IN_SW_DBA_LOG:
+//				sw_log = true;
+//				break;
 			case IN_SW_DBA_DATAIDX:
 				sw_index = sw_data = true;
 				break;
@@ -474,7 +475,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 			case IN_SW_DBA_RELATION:
 				sw_relation = true;
 				while (argv < end && **argv != '-') {
-					if (strlen(*argv) > 31) {
+					if (strlen(*argv) > MAX_SQL_IDENTIFIER_LEN) {
 						argv++;
 						continue;
 					}
@@ -633,8 +634,8 @@ int CLIB_ROUTINE main(int argc, char** argv)
 		 (const TEXT*)((current == tddba->files) ? "only" : "last"), 0, 0, 0);
 		 // msg 9: File %s is the %s file\n
 
-/* print log page */
-
+// print log page, deprecated.
+/*
 	page = LOG_PAGE;
 	do {
 		const log_info_page* logp = (const log_info_page*) db_read((SLONG) page);
@@ -644,6 +645,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 
 	if (sw_log)
 		dba_exit(FINI_OK, tddba);
+*/
 
 /* Check to make sure that the user accessing the database is either
  * SYSDBA or owner of the database */
@@ -728,21 +730,23 @@ int CLIB_ROUTINE main(int argc, char** argv)
 		END_ERROR
 		
 		if (sw_index)
-		FOR(TRANSACTION_HANDLE transact1 REQUEST_HANDLE request3)
-			Y IN RDB$INDICES WITH Y.RDB$RELATION_NAME EQ relation->rel_name
-				SORTED BY DESC Y.RDB$INDEX_NAME 
-            if (Y.RDB$INDEX_INACTIVE)
-				  continue;
-			dba_idx* index = (dba_idx*) alloc(sizeof(struct dba_idx));
-			index->idx_next = relation->rel_indexes;
-			relation->rel_indexes = index;
-			strcpy(index->idx_name, Y.RDB$INDEX_NAME);
-			fb_utils::exact_name(index->idx_name);
-			index->idx_id = Y.RDB$INDEX_ID - 1;
-        END_FOR;
-		ON_ERROR
-			dba_exit(FINI_ERROR, tddba);
-		END_ERROR
+		{
+			FOR(TRANSACTION_HANDLE transact1 REQUEST_HANDLE request3)
+				Y IN RDB$INDICES WITH Y.RDB$RELATION_NAME EQ relation->rel_name
+					SORTED BY DESC Y.RDB$INDEX_NAME
+	            if (Y.RDB$INDEX_INACTIVE)
+					  continue;
+				dba_idx* index = (dba_idx*) alloc(sizeof(struct dba_idx));
+				index->idx_next = relation->rel_indexes;
+				relation->rel_indexes = index;
+				strcpy(index->idx_name, Y.RDB$INDEX_NAME);
+				fb_utils::exact_name(index->idx_name);
+				index->idx_id = Y.RDB$INDEX_ID - 1;
+	        END_FOR;
+			ON_ERROR
+				dba_exit(FINI_ERROR, tddba);
+			END_ERROR
+		}
 	END_FOR;
 	ON_ERROR
 		dba_exit(FINI_ERROR, tddba);
