@@ -1,3 +1,92 @@
+2003-04-09 15:20  dimitr
+
+	* firebird2/src/remote/: inet.cpp, protocol.h, wnet.cpp, xnet.cpp:
+	
+	1. Ask for only asymmetric protocols from the client side.  2.
+	Cleanup.
+
+2003-04-09 14:45  brodsom
+
+	* firebird2/src/utilities/dba.epp:
+	
+	Patch for delete void* not defined (Claudio's patch)
+
+2003-04-09 13:41  brodsom
+
+	* firebird2/src/jrd/sort_mem.cpp:
+	
+	Patch wrong condition in loop
+
+2003-04-09 12:51  dimitr
+
+	* firebird2/src/dsql/parse.y:
+	
+	Misprint.
+
+2003-04-09 12:48  dimitr
+
+	* firebird2/src/remote/server.cpp:
+	
+	Accept only asymmetric protocols on the server side.
+
+2003-04-09 12:18  dimitr
+
+	* firebird2/src/dsql/parse.y:
+	
+	no message
+
+2003-04-09 12:14  dimitr
+
+	* firebird2/src/dsql/: dsql.tab.h, parse.cpp, parse.y:
+	
+	Fixed migration rule in the parser which allows columns to be
+	renamed.
+
+2003-04-09 12:08  dimitr
+
+	* firebird2/builds/win32/msvc6/: alice.dsp, alice_classic.dsp,
+	burp.dsp, burp_classic.dsp, common.dsp, common_classic.dsp,
+	dsql_server.dsp, dsql_server_classic.dsp, engine.dsp,
+	engine_classic.dsp, engine_embed.dsp, fb_inet_server.dsp,
+	fb_lock_print.dsp, fbclient.dsp, fbembed.dsp, fbguard.dsp,
+	fbserver.dsp, fbudf.dsp, gbak.dsp, gdef.dsp, gds32.dsp, gfix.dsp,
+	gpre.dsp, gpre_boot.dsp, gsec.dsp, gsplit.dsp, gstat.dsp,
+	ib_udf.dsp, ib_util.dsp, instreg.dsp, instsvc.dsp, intl.dsp,
+	intlcpp.dsp, ipserver.dsp, isql.dsp, lock.dsp, lock_classic.dsp,
+	qli.dsp, remote.dsp, remote_classic.dsp, utilities.dsp,
+	utilities_classic.dsp, wal.dsp, wal_classic.dsp:
+	
+	Fixed win32 build.
+
+2003-04-09 11:18  paul_reeves
+
+	* firebird2/src/install/arch-specific/win32/FirebirdInstall_15.iss:
+	
+	Initial (non-working) draft of Win32 install script.
+
+2003-04-09 11:07  paul_reeves
+
+	* firebird2/src/install/:
+	arch-specific/win32/BuildExecutableInstall.bat,
+	arch-specific/win32/Readme.txt,
+	arch-specific/win32/firebird_install_logo1.bmp,
+	arch-specific/win32/installation_readme.txt, misc/IDPLicense.txt,
+	misc/IPLicense.txt:
+	
+	Preparatory work for Win32 install script.
+
+2003-04-09 10:57  brodsom
+
+	* firebird2/src/jrd/common.h:
+	
+	Needed & Forgoten commit
+
+2003-04-09 07:57  fsg
+
+	* firebird2/src/jrd/common.h:
+	
+	xLONGFORMAT and XLONGFORMAT aren't defined for linux
+
 2003-04-08 12:41  brodsom
 
 	* firebird2/builds/posix/prefix.mingw.README.html:
