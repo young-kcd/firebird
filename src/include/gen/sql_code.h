@@ -538,6 +538,7 @@ static const SSHORT gds__sql_code [] = {
 -204 /* 517 bad_substring_param              */,
 -530 /* 518 foreign_key_target_doesnt_exist  */,
 -530 /* 519 foreign_key_references_present   */,
+-901 /* 520 no_update                        */,
 -901 /*   1 gfix_db_name                     */,
 -901 /*   2 gfix_invalid_sw                  */,
 -901 /*   4 gfix_incmp_sw                    */,

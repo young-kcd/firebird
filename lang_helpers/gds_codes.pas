@@ -552,6 +552,7 @@ const
 	gds_bad_substring_param              = 335544837;
 	gds_foreign_key_target_doesnt_exist  = 335544838;
 	gds_foreign_key_references_present   = 335544839;
+	gds_no_update                        = 335544840;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

@@ -541,6 +541,7 @@ static const struct {
 	{"bad_substring_param", 335544837},
 	{"foreign_key_target_doesnt_exist", 335544838},
 	{"foreign_key_references_present", 335544839},
+	{"no_update", 335544840},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

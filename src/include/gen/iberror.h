@@ -574,6 +574,7 @@ const SLONG isc_concat_overflow                  = 335544836L;
 const SLONG isc_bad_substring_param              = 335544837L;
 const SLONG isc_foreign_key_target_doesnt_exist  = 335544838L;
 const SLONG isc_foreign_key_references_present   = 335544839L;
+const SLONG isc_no_update                        = 335544840L;
 const SLONG isc_gfix_db_name                     = 335740929L;
 const SLONG isc_gfix_invalid_sw                  = 335740930L;
 const SLONG isc_gfix_incmp_sw                    = 335740932L;
@@ -776,7 +777,7 @@ const SLONG isc_gstat_unexpected_eof             = 336920580L;
 const SLONG isc_gstat_open_err                   = 336920605L;
 const SLONG isc_gstat_read_err                   = 336920606L;
 const SLONG isc_gstat_sysmemex                   = 336920607L;
-const SLONG isc_err_max                          = 721;
+const SLONG isc_err_max                          = 722;
 
 #else /* c definitions */
 
@@ -1320,6 +1321,7 @@ const SLONG isc_err_max                          = 721;
 #define isc_bad_substring_param              335544837L
 #define isc_foreign_key_target_doesnt_exist  335544838L
 #define isc_foreign_key_references_present   335544839L
+#define isc_no_update                        335544840L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -1522,7 +1524,7 @@ const SLONG isc_err_max                          = 721;
 #define isc_gstat_open_err                   336920605L
 #define isc_gstat_read_err                   336920606L
 #define isc_gstat_sysmemex                   336920607L
-#define isc_err_max                          721
+#define isc_err_max                          722
 
 #endif
 
