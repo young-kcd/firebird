@@ -1241,7 +1241,7 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle,
 							  buf_len, reinterpret_cast<char*>(buf))) 
 		{
 			if (buf != buffer)
-				gds__free((SLONG *) buf);
+				gds__free(buf);
 			return FB_FAILURE;
 		}
 
@@ -1267,7 +1267,7 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle,
 
 			default:
 				if (buf != buffer)
-					gds__free((SLONG *) buf);
+					gds__free(buf);
 				return FB_FAILURE;
 			}
 			p += len;
@@ -1278,7 +1278,7 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle,
 		 */
 		if (redo) {
 			if (buf != buffer)
-				gds__free((SLONG *) buf);
+				gds__free(buf);
 			buf_len += 1024;
 			buf = (UCHAR *) gds__alloc((SLONG) (sizeof(UCHAR) * buf_len));
 			/* FREE: freed within this module */
@@ -1317,7 +1317,7 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle,
 	}
 
 	if (buf != buffer)
-		gds__free((SLONG *) buf);
+		gds__free(buf);
 
 	USHORT ods_version, ods_minor_version;
 	if (get_ods_version(handle, &ods_version, &ods_minor_version) == FB_FAILURE)

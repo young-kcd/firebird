@@ -489,7 +489,7 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 
 	case isc_blob_filter_close:
 		if (control->ctl_data[1]) {
-			gds__free((SLONG *) control->ctl_data[1]);
+			gds__free((void*) control->ctl_data[1]);
 			control->ctl_data[1] = 0;
 		}
 		return FB_SUCCESS;
@@ -573,7 +573,7 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 			if (control->ctl_data[1]
 				&& (control->ctl_data[0] > control->ctl_data[3]))
 			{
-				gds__free((SLONG *) control->ctl_data[1]);
+				gds__free((void*) control->ctl_data[1]);
 				control->ctl_data[1] = 0;
 				control->ctl_data[3] = 0;
 			}
@@ -818,7 +818,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 
 	case isc_blob_filter_close:
 		if (aux && aux->ctlaux_buffer1) {
-			gds__free((SLONG *) aux->ctlaux_buffer1);
+			gds__free(aux->ctlaux_buffer1);
 			aux->ctlaux_buffer1 = NULL;
 			aux->ctlaux_buffer1_len = 0;
 		}
@@ -843,7 +843,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 
 		/* Allocate a new buffer if we don't have enough */
 		if (result_length > aux->ctlaux_buffer1_len) {
-			gds__free((SLONG *) aux->ctlaux_buffer1);
+			gds__free(aux->ctlaux_buffer1);
 			aux->ctlaux_buffer1_len = result_length;
 			aux->ctlaux_buffer1 = (BYTE *) gds__alloc((SLONG) result_length);
 			/* FREE: above & isc_blob_filter_close in this routine */

@@ -627,28 +627,28 @@ Service* SVC_attach(USHORT	service_length,
 	}
 
 	if (spb_buf) {
-		gds__free((SLONG *) spb_buf);
+		gds__free(spb_buf);
 	}
 	if (misc != misc_buf) {
-		gds__free((SLONG *) misc);
+		gds__free(misc);
 	}
 
 	}	// try
 	catch (const std::exception&) {
 		if (spb_buf) {
-			gds__free((SLONG *) spb_buf);
+			gds__free(spb_buf);
 		}
 		if (misc && misc != misc_buf) {
-			gds__free((SLONG *) misc);
+			gds__free(misc);
 		}
 		if (switches) {
-			gds__free((SLONG *) switches);
+			gds__free(switches);
 		}
 		if (service) {
 			if (service->svc_status) {
-				gds__free((SLONG *) service->svc_status);
+				gds__free(service->svc_status);
 			}
-//			gds__free((SLONG *) service);
+//			gds__free(service);
 			delete service;
 		}
 		throw;
@@ -1187,7 +1187,7 @@ ISC_STATUS SVC_query2(Service* service,
 				if (l > service->svc_resp_buf_len) {
 					THREAD_ENTER();
 					if (service->svc_resp_buf)
-						gds__free((SLONG *) service->svc_resp_buf);
+						gds__free(service->svc_resp_buf);
 					service->svc_resp_buf = (UCHAR *) gds__alloc((SLONG) l);
 					/* FREE: in SVC_detach() */
 					if (!service->svc_resp_buf) {	/* NOMEM: */
@@ -1607,7 +1607,7 @@ void SVC_query(Service*		service,
 				{
 					THREAD_ENTER();
 					if (service->svc_resp_buf)
-						gds__free((SLONG *) service->svc_resp_buf);
+						gds__free(service->svc_resp_buf);
 					service->svc_resp_buf = (UCHAR *) gds__alloc((SLONG) l);
 					/* FREE: in SVC_detach() */
 					if (!service->svc_resp_buf)
@@ -2022,10 +2022,10 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb)
 	}	// try
 	catch (const std::exception&) {
 		if (service->svc_switches) {
-			gds__free((SLONG *) service->svc_switches);
+			gds__free(service->svc_switches);
 		}
 		if (service) {
-//			gds__free((SLONG *) service);
+//			gds__free(service);
 			delete service;
 		}
 		throw;
@@ -2438,7 +2438,7 @@ static void service_fork(TEXT* service_path, Service* service)
 	THREAD_ENTER();
 
 	if (argv_data != argv_data_buf)
-		gds__free((SLONG *) argv_data);
+		gds__free(argv_data);
 
 	if (!ret)
 		ERR_post(isc_sys_request, isc_arg_string, "CreateProcess", SYS_ERR,
@@ -3249,29 +3249,29 @@ void SVC_cleanup(Service* service)
 #else
 
 	if (service->svc_stdout) {
-		gds__free((SLONG *) service->svc_stdout);
+		gds__free(service->svc_stdout);
 		service->svc_stdout = NULL;
 	}
 	if (service->svc_argv) {
-		gds__free((SLONG *) service->svc_argv);
+		gds__free(service->svc_argv);
 		service->svc_argv = NULL;
 	}
 #endif
 
 	if (service->svc_resp_buf)
-		gds__free((SLONG *) service->svc_resp_buf);
+		gds__free(service->svc_resp_buf);
 
 	if (service->svc_switches != NULL)
-		gds__free((SLONG *) service->svc_switches);
+		gds__free(service->svc_switches);
 
 	if (service->svc_status != NULL)
-		gds__free((SLONG *) service->svc_status);
+		gds__free(service->svc_status);
 
 #ifdef WIN_NT
 	CloseHandle((HANDLE) service->svc_handle);
 #endif
 
-//	gds__free((SLONG *) service);
+//	gds__free(service);
 	delete service;
 }
 

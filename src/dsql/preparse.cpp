@@ -150,7 +150,7 @@ bool PREPARSE_execute(
 		token_length != pp_symbols[PP_CREATE].length ||
 		strcmp(token, pp_symbols[PP_CREATE].symbol)) 
 	{
-		gds__free((SLONG *) token);
+		gds__free(token);
 		return false;
 	}
 
@@ -161,14 +161,14 @@ bool PREPARSE_execute(
 		(strcmp(token, pp_symbols[PP_DATABASE].symbol) &&
 		 strcmp(token, pp_symbols[PP_SCHEMA].symbol))) 
 	{
-		gds__free((SLONG *) token);
+		gds__free(token);
 		return false;
 	}
 
 	if (get_token(user_status, STRING, false, &stmt, stmt_end, token,
 				  &token_length))
 	{
-		gds__free((SLONG *) token);
+		gds__free(token);
 		return true;
 	}
 
@@ -182,7 +182,7 @@ bool PREPARSE_execute(
 		user_status[0] = isc_arg_gds;
 		user_status[1] = isc_virmemexh;
 		user_status[2] = isc_arg_end;
-		gds__free((SLONG *) token);
+		gds__free(token);
 		return true;
 	}
 
@@ -311,8 +311,8 @@ bool PREPARSE_execute(
 				}
 
 				if (get_out) {
-					gds__free((SLONG *) dpb_array);
-					gds__free((SLONG *) token);
+					gds__free(dpb_array);
+					gds__free(token);
 					return true;
 				}
 			}
@@ -326,7 +326,8 @@ bool PREPARSE_execute(
 	FB_API_HANDLE temp_db_handle = 0;
 	if (!isc_attach_database(user_status, 0, file_name, &temp_db_handle,
 							 dpb_len, dpb_array) ||
-		user_status[1] != isc_io_error) {
+		user_status[1] != isc_io_error)
+	{
 		if (!user_status[1]) {
 			// Swallow status from detach.
 			ISC_STATUS_ARRAY temp_status;
@@ -345,8 +346,8 @@ bool PREPARSE_execute(
 			UTLD_save_status_strings(user_status);
 		}
 		if (dpb_array)
-			gds__free((SLONG *) dpb_array);
-		gds__free((SLONG *) token);
+			gds__free(dpb_array);
+		gds__free(token);
 		return true;
 	}
 
@@ -355,8 +356,8 @@ bool PREPARSE_execute(
 						dpb_array, 0);
 
 	if (dpb_array)
-		gds__free((SLONG *) dpb_array);
-	gds__free((SLONG *) token);
+		gds__free(dpb_array);
+	gds__free(token);
 
 	return true;
 }

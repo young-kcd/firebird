@@ -618,7 +618,7 @@ void API_ROUTINE gds__event_counts(
 SLONG API_ROUTINE isc_free(SCHAR * blk)
 {
 
-	return gds__free((SLONG *) blk);
+	return gds__free(blk);
 }
 
 SLONG API_ROUTINE isc_ftof(const SCHAR* string1,

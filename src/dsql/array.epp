@@ -136,7 +136,7 @@ ISC_STATUS API_ROUTINE isc_array_get_slice(ISC_STATUS* status,
 				  0, NULL, *slice_length, array, slice_length);
 
 	if (sdl != sdl_buffer)
-		gds__free((SLONG *) sdl);
+		gds__free(sdl);
 
 	return status[1];
 }
@@ -235,7 +235,7 @@ ISC_STATUS API_ROUTINE isc_array_put_slice(ISC_STATUS* status,
 				  0, NULL, *slice_length, array);
 
 	if (sdl != sdl_buffer)
-		gds__free((SLONG *) sdl);
+		gds__free(sdl);
 
 	return status[1];
 }

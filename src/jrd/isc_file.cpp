@@ -950,7 +950,7 @@ int ISC_expand_share(const TEXT* file_name, TEXT* expanded_name)
 		
 	DWORD ret = WNetEnumResource(handle, &nument, resources, &size);
 	if (ret == ERROR_MORE_DATA) {
-		gds__free((UCHAR *) resources);
+		gds__free(resources);
 		resources = (LPNETRESOURCE) gds__alloc((SLONG) size);
 		/* FREE: in this routine */
 		if (!resources)			/* NOMEM: don't expand the filename */
@@ -978,7 +978,7 @@ int ISC_expand_share(const TEXT* file_name, TEXT* expanded_name)
 		ret =
 			WNetGetUniversalName(device, REMOTE_NAME_INFO_LEVEL, res2, &size);
 		if (ret == ERROR_MORE_DATA) {
-			gds__free((UCHAR *) resources);
+			gds__free(resources);
 			resources = (LPNETRESOURCE) gds__alloc((SLONG) size);
 			if (!resources)		/* NOMEM: don't expand the filename */
 				return strlen(expanded_name);
@@ -993,7 +993,7 @@ int ISC_expand_share(const TEXT* file_name, TEXT* expanded_name)
 
 
 	if (resources)
-		gds__free((UCHAR *) resources);
+		gds__free(resources);
 	return strlen(expanded_name);
 }
 #endif	// WIN_NT

@@ -348,7 +348,7 @@ int common_main(int argc,
 
 		if (tdsec->tsec_user_data != NULL)
 		{
-			gds__free((SLONG *) tdsec->tsec_user_data);
+			gds__free(tdsec->tsec_user_data);
 		}
 
 		/* All returns occur from this point - even normal returns */
