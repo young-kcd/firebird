@@ -146,7 +146,7 @@ static const TEXT gdslogid[] = "";
 #endif
 #endif
 
-static const char * FB_PID_FILE = "fb_%d";
+static const char* FB_PID_FILE = "fb_%d";
 
 #include "gen/sql_code.h"
 #include "../jrd/thd.h"
@@ -191,6 +191,7 @@ static char ib_prefix_msg_val[MAXPATHLEN];
 
 #include "../include/fb_types.h"
 #include "../jrd/jrd.h"
+#include "../common/utils_proto.h"
 
 
 // This structure is used to parse the firebird.msg file.
@@ -203,7 +204,6 @@ struct gds_msg
 	SCHAR msg_bucket[1];
 };
 
-typedef gds_msg *GDS_MSG;
 
 // CVC: This structure has a totally different layout than "class ctl" from
 // blob_filter.h and "struct isc_blob_ctl" from ibase.h. These two should match
@@ -846,7 +846,7 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 	
 	TEXT* p = 0;
 	const TEXT* q;
-	const SSHORT temp_len = (SSHORT) BUFFER_SMALL;
+	const int temp_len = BUFFER_SMALL;
 	TEXT* temp = NULL;
 	SSHORT l;
 
@@ -903,10 +903,10 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 								args[4]) < 0)
 			{
 				if ((decoded < FB_NELEM(messages) - 1) && (decoded >= 0))
-					SNPRINTF(s, bufsize, messages[decoded], args[0], args[1], args[2],
+					fb_utils::snprintf(s, bufsize, messages[decoded], args[0], args[1], args[2],
 							args[3], args[4]);
 				else
-					SNPRINTF(s, bufsize, "unknown ISC error %ld", code);	/* TXNN */
+					fb_utils::snprintf(s, bufsize, "unknown ISC error %ld", code);	/* TXNN */
 			}
 		}
 		break;
@@ -928,7 +928,7 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 		break;
 
 	case isc_arg_dos:
-		SNPRINTF(s, bufsize, "unknown dos error %ld", code);	/* TXNN */
+		fb_utils::snprintf(s, bufsize, "unknown dos error %ld", code);	/* TXNN */
 		break;
 
 #ifdef VMS
@@ -967,7 +967,7 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 										 bufsize,
 										 NULL)))
 		{
-			SNPRINTF(s, bufsize, "unknown Win32 error %ld", code);	/* TXNN */
+			fb_utils::snprintf(s, bufsize, "unknown Win32 error %ld", code);	/* TXNN */
 		}
 		break;
 #endif
@@ -1429,8 +1429,8 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
  **************************************/
 // Handle default message file
 	int status = -1;
-	gds_msg* messageL;
-	if (!(messageL = (GDS_MSG) handle) && !(messageL = global_default_msg)) {
+	gds_msg* messageL = (gds_msg*) handle;
+	if (!messageL && !(messageL = global_default_msg)) {
 		/* Try environment variable setting first */
 
 		TEXT* p = getenv("ISC_MSGS");
@@ -1568,7 +1568,7 @@ int API_ROUTINE gds__msg_open(void** handle, const TEXT* filename)
 	}
 
 	gds_msg* messageL =
-		(GDS_MSG) ALLOC_LIB_MEMORY((SLONG) sizeof(gds_msg) +
+		(gds_msg*) ALLOC_LIB_MEMORY((SLONG) sizeof(gds_msg) +
 							   header.msghdr_bucket_size - 1);
 /* FREE: in gds__msg_close */
 	if (!messageL) {				/* NOMEM: return non-open error */
@@ -1751,7 +1751,7 @@ void API_ROUTINE gds__prefix(TEXT* string, const TEXT* root)
 			break;
 
 	const SSHORT len = p - temp;
-	for (ISC_VMS_PREFIX prefix = trans_prefix; prefix->isc_prefix; prefix++)
+	for (const isc_vms_prefix* prefix = trans_prefix; prefix->isc_prefix; prefix++)
 		if (!strncmp(temp, prefix->isc_prefix, len)) {
 			strcpy(string, prefix->vms_prefix);
 			strcat(string, &root[len]);
@@ -1843,7 +1843,7 @@ void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
 			break;
 
 	const SSHORT len = p - temp;
-	for (ISC_VMS_PREFIX prefix = trans_prefix; prefix->isc_prefix; prefix++)
+	for (const isc_vms_prefix* prefix = trans_prefix; prefix->isc_prefix; prefix++)
 		if (!strncmp(temp, prefix->isc_prefix, len)) {
 			strcpy(string, prefix->vms_prefix);
 			strcat(string, &root[len]);
@@ -1928,7 +1928,7 @@ void API_ROUTINE gds__prefix_msg(TEXT* string, const TEXT* root)
 			break;
 
 	const SSHORT len = p - temp;
-	for (ISC_VMS_PREFIX prefix = trans_prefix; prefix->isc_prefix; prefix++)
+	for (const isc_vms_prefix* prefix = trans_prefix; prefix->isc_prefix; prefix++)
 		if (!strncmp(temp, prefix->isc_prefix, len)) {
 			strcpy(string, prefix->vms_prefix);
 			strcat(string, &root[len]);

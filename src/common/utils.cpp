@@ -41,6 +41,7 @@
 namespace fb_utils
 {
 
+
 char* exact_name(char* const str)
 {
 /**************************************
@@ -140,7 +141,11 @@ int snprintf(char* buffer, size_t count, const char* format...)
 	// We don't have the safe functions, then check if we overflowed the buffer.
 	// I would prefer to make this functionality available in prod build, too.
 	// If the docs are right, the null terminator is not counted => rc < count.
-	fb_assert_and_continue(rc >= 0 && rc < count);
+#if defined(fb_assert_continue)
+	fb_assert_continue(rc >= 0 && rc < count);
+#else
+	fb_assert(rc >= 0 && rc < count);
+#endif
 #endif
 	return rc;
 }
