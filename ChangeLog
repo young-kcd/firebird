@@ -1,3 +1,89 @@
+2005-01-26 05:44  robocop
+
+	* firebird2/src/jrd/met.epp (1.153):
+	
+	Solve metadata bug with MET_lookup_relation not finding the already
+	loaded relation and hence not locking rel_existence_lock when
+	required.
+
+2005-01-26 05:21  robocop
+
+	* firebird2/src/misc/headers.sed (1.4):
+	
+	Our public ibase.h contains references to internal files. Fix the
+	build process.
+
+2005-01-26 04:33  robocop
+
+	* firebird2/builds/win32/make_examples.bat (1.11):
+	
+	Hide error message if there's nothing to delete.
+
+2005-01-26 02:27  robocop
+
+	* firebird2/doc/README.sha1 (1.2):
+	
+	Minor corrections.
+
+2005-01-25 17:57  alexpeshkoff
+
+	* firebird2/doc/README.sha1 (1.1):
+	
+	readme for security review
+
+2005-01-25 07:46  robocop
+
+	* firebird2/src/jrd/dfw.epp (1.143):
+	
+	Fix items 1 & 2 from SF Bug #217042.  A table should have at least
+	one "physical" field. A table with only computed fields cannot
+	accept data, same than a table with only a check constraint.
+
+2005-01-25 07:41  robocop
+
+	* firebird2/src/jrd/met.epp (1.152):
+	
+	1.- More variables in context.	2.- Close the blob.
+
+2005-01-25 07:40  robocop
+
+	* firebird2/src/jrd/: inf.cpp (1.51), jrd.h (1.131):
+	
+	We are only asking for information, so use const.
+
+2005-01-25 07:38  robocop
+
+	* firebird2/src/jrd/: cvt2.cpp (1.44), opt.cpp (1.216):
+	
+	Misc.
+
+2005-01-25 07:33  robocop
+
+	* firebird2/src/jrd/: btr.cpp (1.134), cch.cpp (1.118), cmp.cpp
+	(1.168), idx.cpp (1.85), jrd.cpp (1.201), vio.cpp (1.126):
+	
+	Welcome to paranoid programming.
+
+2005-01-25 07:24  robocop
+
+	* firebird2/doc/sql.extensions/: README.plan (1.2),
+	README.sequence_generators (1.2):
+	
+	Minor fixes.
+
+2005-01-25 07:23  robocop
+
+	* firebird2/src/jrd/tra.cpp (1.98):
+	
+	Misc.
+
+2005-01-25 07:22  robocop
+
+	* firebird2/doc/WhatsNew (1.53):
+	
+	Assigned more documents to myself and others. Did little
+	corrections. Please review.
+
 2005-01-25 00:12  arnobrinkman
 
 	* firebird2/src/jrd/opt.cpp (1.215):
