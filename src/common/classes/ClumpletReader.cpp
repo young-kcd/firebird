@@ -40,7 +40,7 @@ void ClumpletReader::moveNext() {
 	}
 
 	size_t length = clumplet[1];
-	current_pos += length + 1;
+	cur_offset += length + 1;
 }
 
 // Methods which work with currently selected clumplet
@@ -51,7 +51,7 @@ UCHAR ClumpletReader::getClumpTag() {
 	// Check for EOF
 	if (clumplet >= buffer_end) {
 		read_past_eof();
-		return;
+		return 0;
 	}
 
 	return clumplet[0];
@@ -64,7 +64,7 @@ size_t ClumpletReader::getClumpLength() {
 	// Check for EOF
 	if (clumplet >= buffer_end) {
 		read_past_eof();
-		return;
+		return 0;
 	}
 
 	// See if we have length byte available
@@ -79,6 +79,8 @@ size_t ClumpletReader::getClumpLength() {
 		invalid_structure();
 		return buffer_end - clumplet - 1;
 	}
+
+	return length;
 }
 
 SLONG ClumpletReader::getInt() {
@@ -124,7 +126,7 @@ SINT64 ClumpletReader::getBigInt() {
 string& ClumpletReader::getString(string& str) {
 	UCHAR* clumplet = getBuffer() + cur_offset;
 	size_t length = getClumpLength();
-	str.assign(clumplet + 2, length);
+	str.assign(reinterpret_cast<char*>(clumplet + 2), length);
 	return str;
 }
 

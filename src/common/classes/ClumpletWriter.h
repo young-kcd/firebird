@@ -24,12 +24,12 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: ClumpletWriter.h,v 1.1 2004-10-22 06:24:40 skidder Exp $
+ *  $Id: ClumpletWriter.h,v 1.2 2004-10-23 01:21:11 skidder Exp $
  *
  */
 
-#ifndef CLUMPLET_BUFFER_H
-#define CLUMPLET_BUFFER_H
+#ifndef CLUMPLETWRITER_H
+#define CLUMPLETWRITER_H
 
 #include "../common/classes/ClumpletReader.h"
 
@@ -38,13 +38,17 @@ namespace Firebird {
 // At the moment you can only declare it on stack, permanent objects are not allowed
 class ClumpletWriter : public ClumpletReader {
 public:
-	// Create new clumplet buffer
-	ClumpletWriter(UCHAR tag, size_t limit) : 
-	  ClumpletReader(NULL, 0), sizeLimit(limit), dynamic_buffer(getPool()) { }
+	// Create empty clumplet writer (unusable before you call one of reset methods)
+	ClumpletWriter(size_t limit);
+
+	// Create empty, initialized writer
+	ClumpletWriter(UCHAR tag, size_t limit);
  
-	// Open existing clumplet buffer (taking a copy of it)
-	ClumpletWriter(const UCHAR* buffer, size_t buffLen, size_t limit) :
-	  ClumpletReader(NULL, 0), sizeLimit(limit), dynamic_buffer(getPool(), buffer, buffLen) { }
+	// Create writer from a given buffer
+	ClumpletWriter(const UCHAR* buffer, size_t buffLen, size_t limit);
+
+	void reset(UCHAR tag);
+	void reset(const UCHAR* buffer, size_t buffLen);
 
 	// Methods to create new clumplet at current position
 	void insertInt(UCHAR tag, SLONG value);
@@ -56,9 +60,13 @@ public:
     // Delete currently selected clumplet from buffer
 	void deleteClumplet();
 
-	virtual UCHAR* getBuffer() { return dynamic_buffer.begin(); }
+	virtual UCHAR* getBuffer() { 
+		return reinterpret_cast<UCHAR*>(dynamic_buffer.begin()); 
+	}
 protected:
-	virtual UCHAR* getBufferEnd() { return dynamic_buffer.end(); }
+	virtual UCHAR* getBufferEnd() { 
+		return reinterpret_cast<UCHAR*>(dynamic_buffer.end()); 
+	}
 	virtual void size_overflow();
 private:
 	size_t sizeLimit;

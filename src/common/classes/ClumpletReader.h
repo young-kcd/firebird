@@ -24,12 +24,12 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: ClumpletReader.h,v 1.1 2004-10-22 06:24:40 skidder Exp $
+ *  $Id: ClumpletReader.h,v 1.2 2004-10-23 01:21:11 skidder Exp $
  *
  */
 
-#ifndef CLUMPLET_BUFFER_H
-#define CLUMPLET_BUFFER_H
+#ifndef CLUMPLETREADER_H
+#define CLUMPLETREADER_H
 
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
@@ -46,7 +46,7 @@ public:
 		  static_buffer_end(buffer + buffLen) { };
 
 	// Navigation in clumplet buffer
-	bool isEof() { return current_pos >= getBufferLength(); }
+	bool isEof() { return cur_offset >= getBufferLength(); }
 	void moveNext();
 
     // Methods which work with currently selected clumplet
@@ -56,11 +56,13 @@ public:
 	SLONG getInt();
 	SINT64 getBigInt();
 	string& getString(string& str);
-	const char* getBytes() { return clumplet + 2; }
+	const UCHAR* getBytes() { return getBuffer() + cur_offset + 2; }
 
 	// Return the tag for buffer (usually structure version)
 	UCHAR getBufferTag();
 	size_t getBufferLength() { return getBufferEnd() - getBuffer(); }
+	size_t getCurOffset() { return cur_offset; }
+	size_t setCurOffset(size_t newOffset) { cur_offset = newOffset; }
 protected:
 	size_t cur_offset;
 
@@ -80,7 +82,7 @@ private:
 
 	const UCHAR* static_buffer;
 	const UCHAR* static_buffer_end;
-}
+};
 
 } // namespace Firebird
 
