@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.67 2002-11-06 13:38:49 dimitr Exp $
+dnl $Id: configure.in,v 1.68 2002-11-06 20:25:12 skidder Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -366,6 +366,7 @@ mkdir -p gen/install/sinixz
 
 mkdir -p gen/common
 mkdir -p gen/common/memory
+mkdir -p gen/common/config
 
 mkdir -p gen/firebird/include
 mkdir -p gen/firebird/intl
@@ -450,6 +451,8 @@ mkdir -p gen/libfbstatic/fbutil
 mkdir -p gen/libfbstatic/jrd/os/posix
 mkdir -p gen/libfbstatic/burp
 mkdir -p gen/libfbstatic/wal
+mkdir -p gen/libfbstatic/common
+mkdir -p gen/libfbstatic/common/config
 mkdir -p gen/embed.lockmgr/lock
 mkdir -p gen/embed.util/utilities
 mkdir -p gen/embed.gbak/burp
