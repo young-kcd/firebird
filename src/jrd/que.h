@@ -83,7 +83,7 @@ typedef struct que {
 #define SRQ_PTR SLONG
 
 #define SRQ_REL_PTR(item)           (SRQ_PTR) ((UCHAR*) item - SRQ_BASE)
-#define SRQ_ABS_PTR(item)           (SRQ_PTR) (SRQ_BASE + item)
+#define SRQ_ABS_PTR(item)           (SRQ_BASE + item)
 
 #define SRQ_INIT(que)   {que.srq_forward = que.srq_backward = SRQ_REL_PTR (&que);}
 #define SRQ_EMPTY(que)  (que.srq_forward == SRQ_REL_PTR (&que))
