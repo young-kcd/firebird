@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.49 2003-02-13 13:33:56 dimitr Exp $
+$Id: met.epp,v 1.50 2003-02-18 10:00:19 eku Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -1398,7 +1398,7 @@ int MET_lookup_field(TDBB tdbb, JRD_REL relation, const TEXT* name, const TEXT* 
 
 /* Not found.  Next, try system relations directly */
 
-	id = -1;
+	id = -1U;
 
 	if (!relation->rel_name)
 	{

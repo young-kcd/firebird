@@ -159,7 +159,7 @@ static void unmark(TDBB, WIN *);
 #define PRE_MUTEX_ACQUIRE
 #define PRE_MUTEX_RELEASE
 
-#define BTC_MUTEX_ACQUIRE { 0; }	/* TMN: Silence compilers */
+#define BTC_MUTEX_ACQUIRE
 #define BTC_MUTEX_RELEASE
 
 #define LATCH_MUTEX_ACQUIRE

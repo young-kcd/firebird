@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.59 2003-02-14 14:55:44 brodsom Exp $
+$Id: common.h,v 1.60 2003-02-18 10:00:11 eku Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -196,6 +196,8 @@ int shutdown(int s, int how);
 #define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
 
 typedef RETSIGTYPE (*SIG_FPTR) ();
+
+#define __LINE__IS_INT
 #endif /* SINIXZ */
 
 /*****************************************************
