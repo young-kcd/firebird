@@ -41,12 +41,9 @@
 // with missing / wrong configuration.
 #if (! defined(BOOT_BUILD)) && (! defined(EMBEDDED)) && (! defined(SUPERCLIENT))
 #define EXIT_ON_NO_CONF
-#else
-#undef EXIT_ON_NO_CONF
-#endif
-#if (! defined(BOOT_BUILD)) && (! defined(SUPERCLIENT))
 #define INFORM_ON_NO_CONF
 #else
+#undef EXIT_ON_NO_CONF
 #undef INFORM_ON_NO_CONF
 #endif
 
