@@ -1,3 +1,20 @@
+2004-11-04 07:16  robocop
+
+	* firebird2/src/isql/isql.epp (1.32.2.8):
+	
+	Make add_row() usable: 1.- Since the engine doesn't validate dates,
+	do it here.  2.- Since the tm struct maps zero to 1900, account for
+	that after receiving the input from the user.  (FW porting fixes I
+	never committed to FB1.)
+
+2004-11-04 06:31  robocop
+
+	* firebird2/src/isql/isql.epp (1.32.2.7):
+	
+	Fix addrow when sqlda should be expanded.  Fix a couple memory
+	leaks in case errors happen.  (FW porting fixes I never committed
+	to FB1.)
+
 2004-11-03 18:00  skidder
 
 	* firebird2/builds/win32/msvc7/Firebird2.sln (1.9.2.5):
