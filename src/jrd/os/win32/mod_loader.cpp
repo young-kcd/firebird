@@ -6,6 +6,8 @@
 #include "../jrd/os/mod_loader.h"
 #include <windows.h>
 
+typedef Firebird::string string;
+
 /// This is the Win32 implementation of the mod_loader abstraction.
 
 class Win32Module : public ModuleLoader::Module
@@ -13,22 +15,23 @@ class Win32Module : public ModuleLoader::Module
 public:
 	Win32Module(HMODULE m) : module(m) {}
 	~Win32Module();
-	void *findSymbol(const Firebird::string&);
+	void *findSymbol(const string&);
 	
 private:
 	HMODULE module;
 };
 
-bool ModuleLoader::isLoadableModule(const Firebird::string& module)
+bool ModuleLoader::isLoadableModule(const string& module)
 {
-	return (GetModuleHandle(module.c_str()) || LoadLibrary(module.c_str()));
+	DWORD handle;
+	return (GetFileVersionInfoSize(const_cast<char*>(module.c_str()), &handle) > 0);
 }
 
 void ModuleLoader::doctorModuleExtention(Firebird::string& name)
 {
-	Firebird::string::size_type pos = name.rfind(".dll");
-	if (pos != Firebird::string::npos && pos == name.length() - 4)
-		return;		// No doctoring necessary
+	string::size_type pos = name.rfind(".dll");
+	if (pos != string::npos && pos == name.length() - 4)
+		return;
 	name += ".dll";
 }
 
@@ -51,13 +54,10 @@ Win32Module::~Win32Module()
 
 void *Win32Module::findSymbol(const Firebird::string& symName)
 {
-	FARPROC result;
-
-	result = GetProcAddress(module, symName.c_str());
+	FARPROC result = GetProcAddress(module, symName.c_str());
 	if (!result)
 	{
-		Firebird::string newSym = '_' + symName;
-
+		string newSym = '_' + symName;
 		result = GetProcAddress(module, newSym.c_str());
 	}
 	return static_cast<void*>(result);

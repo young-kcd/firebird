@@ -32,6 +32,7 @@
 
 #include "../jrd/os/config_root.h"
 #include "../jrd/os/path_utils.h"
+#include "../utilities/registry.h"
 
 typedef Firebird::string string;
 
@@ -42,9 +43,35 @@ const string CONFIG_FILE = "firebird.conf";
  *	Platform-specific root locator
  */
 
+void getRootFromRegistry(TEXT *buffer, DWORD buffer_length)
+{
+	HKEY hkey;
+	DWORD type;
+
+	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, REG_KEY_ROOT_CUR_VER,
+		0, KEY_QUERY_VALUE, &hkey) != ERROR_SUCCESS)
+	{
+		return;
+	}
+
+	RegQueryValueEx(hkey, "RootDirectory", NULL, &type,
+		reinterpret_cast<UCHAR*>(buffer), &buffer_length);
+	RegCloseKey(hkey);
+}
+
 ConfigRoot::ConfigRoot()
 {
 	TEXT buffer[MAXPATHLEN];
+
+	buffer[0] = 0;
+
+	// check the registry first
+	getRootFromRegistry(buffer, sizeof(buffer));
+	if (buffer[0])
+	{
+		root_dir = buffer;
+		return;
+	}
 
 	// get the pathname of the running executable
 	GetModuleFileName(NULL, buffer, sizeof(buffer));
@@ -71,3 +98,4 @@ string ConfigRoot::getConfigFile() const
 {
 	return root_dir + CONFIG_FILE;
 }
+
