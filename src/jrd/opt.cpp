@@ -3531,22 +3531,7 @@ static void find_best(thread_db* tdbb,
 	// code path for SET PLAN as for a normal optimization--it reduces 
 	// chances for bugs to be introduced, and forces the person maintaining
 	// the optimizer to think about SET PLAN when new features are added --deej
-	if (plan_node)
-	{
-		if (streams[position + 1] == stream)
-		{
-			opt->opt_streams[position].opt_best_stream = stream;
-			++position;
-			if (position < streams[0])
-			{
-				find_best(tdbb, opt, streams[position + 1], position, streams, plan_node, 
-					(double) 0, (double) 1);
-			}
-			else
-			{
-				opt->opt_best_count = streams[0];
-			}
-		}
+	if (plan_node && (streams[position + 1] != stream)) {
 		return;
 	}
 
@@ -3739,6 +3724,12 @@ static void find_index_relationship_streams(thread_db* tdbb,
 
 			// Walk through all indexes from this relation
 			for (USHORT i = 0; i < csb_tail->csb_indices; i++) {
+
+				// Ignore index when not specified in explicit PLAN
+				if (idx->idx_runtime_flags & idx_plan_dont_use) {
+					continue;
+				}
+
 				clear_bounds(opt, idx);
 				const OptimizerBlk::opt_conjunct* const opt_end =
 					opt->opt_conjuncts.end();
