@@ -105,7 +105,7 @@ static bool dump_index(const jrd_nod*, SCHAR**, SSHORT*);
 static bool dump_rsb(const jrd_req*, const RecordSource*, SCHAR**, SSHORT*);
 static bool estimate_cost(thread_db*, OptimizerBlk*, USHORT, double *, double *);
 static bool expression_possible_unknown(const jrd_nod*);
-static bool expression_contains_stream(const jrd_nod*, UCHAR);
+static bool expression_contains_stream(CompilerScratch*, const jrd_nod*, UCHAR, bool*);
 #ifdef EXPRESSION_INDICES
 static bool expression_equal(thread_db*, OptimizerBlk*, const index_desc*,
 							 jrd_nod*, USHORT);
@@ -2946,7 +2946,10 @@ static bool expression_possible_unknown(const jrd_nod* node)
 }
 
 
-static bool expression_contains_stream(const jrd_nod* node, UCHAR stream)
+static bool expression_contains_stream(CompilerScratch* csb,
+									   const jrd_nod* node, 
+									   UCHAR stream, 
+									   bool* otherActiveStreamFound)
 {
 /**************************************
  *
@@ -2967,33 +2970,51 @@ static bool expression_contains_stream(const jrd_nod* node, UCHAR stream)
 
 	RecordSelExpr* rse = NULL;
 
+	USHORT n;
 	switch (node->nod_type) {
 
 		case nod_field:
+			n = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
+			if (otherActiveStreamFound && (n != stream)) {
+				if (csb->csb_rpt[n].csb_flags & csb_active) {
+					*otherActiveStreamFound = true;
+				}
+			}
 			return ((USHORT)(IPTR) node->nod_arg[e_fld_stream] == stream);
 
 		case nod_rec_version:
 		case nod_dbkey:
+			n = (USHORT)(IPTR) node->nod_arg[0];
+			if (otherActiveStreamFound && (n != stream)) {
+				if (csb->csb_rpt[n].csb_flags & csb_active) {
+					*otherActiveStreamFound = true;
+				}
+			}
 			return ((USHORT)(IPTR) node->nod_arg[0] == stream);
 
 		case nod_cast:
-			return expression_contains_stream(node->nod_arg[e_cast_source], stream);
+			return expression_contains_stream(csb, 
+				node->nod_arg[e_cast_source], stream, otherActiveStreamFound);
 
 		case nod_extract:
-			return expression_contains_stream(node->nod_arg[e_extract_value], stream);
+			return expression_contains_stream(csb,
+				node->nod_arg[e_extract_value], stream, otherActiveStreamFound);
 
 		case nod_function:
-			return expression_contains_stream(node->nod_arg[e_fun_args], stream);
+			return expression_contains_stream(csb,
+				node->nod_arg[e_fun_args], stream, otherActiveStreamFound);
 
 		case nod_procedure:
-			return expression_contains_stream(node->nod_arg[e_prc_inputs], stream);
+			return expression_contains_stream(csb, node->nod_arg[e_prc_inputs], 
+				stream, otherActiveStreamFound);
 
 		case nod_any:
 		case nod_unique:
 		case nod_ansi_any:
 		case nod_ansi_all:
 		case nod_exists:
-			return expression_contains_stream(node->nod_arg[e_any_rse], stream);
+			return expression_contains_stream(csb, node->nod_arg[e_any_rse], 
+				stream, otherActiveStreamFound);
 
 		case nod_argument:
 		case nod_current_date:
@@ -3022,14 +3043,28 @@ static bool expression_contains_stream(const jrd_nod* node, UCHAR stream)
 		case nod_total:
 			{
 				const jrd_nod* nodeDefault = node->nod_arg[e_stat_rse];
-				if (nodeDefault && expression_contains_stream(nodeDefault, stream)) {
-					return true;
+				bool result = false;
+				if (nodeDefault && 
+					expression_contains_stream(csb, nodeDefault, 
+						stream, otherActiveStreamFound)) 
+				{
+					result = true;
+					if (!otherActiveStreamFound) {
+						return result;
+					}
 				}
 				rse = (RecordSelExpr*) node->nod_arg[e_stat_rse];
 				const jrd_nod* value = node->nod_arg[e_stat_value];
-				if (value && expression_contains_stream(value, stream)) {
-					return true;
+				if (value && 
+					expression_contains_stream(csb, value, 
+						stream, otherActiveStreamFound)) 
+				{
+					result = true;
+					if (!otherActiveStreamFound) {
+						return result;
+					}
 				}
+				return result;
 			}
 			break;
 
@@ -3076,15 +3111,20 @@ static bool expression_contains_stream(const jrd_nod* node, UCHAR stream)
 		{
 			const jrd_nod* const* ptr = node->nod_arg;
 			// Check all sub-nodes of this node.
+			bool result = false;
 			for (const jrd_nod* const* const end = ptr + node->nod_count;
 				ptr < end; ptr++)
 			{
-				if (expression_contains_stream(*ptr, stream)) {
-					return true;
+				if (expression_contains_stream(csb, *ptr, 
+					stream, otherActiveStreamFound)) 
+				{
+					result = true;
+					if (!otherActiveStreamFound) {
+						return result;
+					}
 				}
 			}
-
-			return false;
+			return result;
 		}
 
 		default :
@@ -3094,23 +3134,30 @@ static bool expression_contains_stream(const jrd_nod* node, UCHAR stream)
 	if (rse) {
 
 		jrd_nod* sub;
-		if ((sub = rse->rse_first) && expression_contains_stream(sub, stream)) {
+		if ((sub = rse->rse_first) && 
+			expression_contains_stream(csb, sub, stream, otherActiveStreamFound)) 
+		{
 			return true;
 		}
 
-		if ((sub = rse->rse_skip) && expression_contains_stream(sub, stream)) {
+		if ((sub = rse->rse_skip) && 
+			expression_contains_stream(csb, sub, stream, otherActiveStreamFound)) 
+		{
 			return true;
 		}
 
-		if ((sub = rse->rse_boolean) && expression_contains_stream(sub, stream)) {
+		if ((sub = rse->rse_boolean) && 
+			expression_contains_stream(csb, sub, stream, otherActiveStreamFound)) {
 			return true;
 		}
 
-		if ((sub = rse->rse_sorted) && expression_contains_stream(sub, stream)) {
+		if ((sub = rse->rse_sorted) && 
+			expression_contains_stream(csb, sub, stream, otherActiveStreamFound)) {
 			return true;
 		}
 
-		if ((sub = rse->rse_projection) && expression_contains_stream(sub, stream)) {
+		if ((sub = rse->rse_projection) && 
+			expression_contains_stream(csb, sub, stream, otherActiveStreamFound)) {
 			return true;
 		}
 
@@ -3700,10 +3747,13 @@ static void find_index_relationship_streams(thread_db* tdbb,
 				{
 					jrd_nod* node = tail->opt_conjunct_node;
 					// Try to match conjunction against index
+					bool activeStreamFound = false;
 					if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
-						computable(csb, node, -1, true, false))
+						expression_contains_stream(csb, node, *stream, &activeStreamFound))
 					{
-						match_index(tdbb, opt, *stream, node, idx);
+						if (activeStreamFound) {
+							match_index(tdbb, opt, *stream, node, idx);
+						}
 					}
 				}
 
@@ -5351,7 +5401,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 			}
 			// If no index is used then leave other nodes alone, because they 
 			// could be used for building a SORT/MERGE.
-			if ((inversion && expression_contains_stream(node, stream)) ||
+			if ((inversion && expression_contains_stream(csb, node, stream, NULL)) ||
 				(!inversion && computable(csb, node, stream, false, true))) 
 			{
 				compose(&opt_boolean, node, nod_and);
