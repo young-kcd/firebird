@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.72 2004-11-30 20:17:31 skidder Exp $
+$Id: backup.epp,v 1.73 2004-12-01 00:02:52 skidder Exp $
 */
 
 #include "firebird.h"
@@ -1376,9 +1376,9 @@ void put_blob( burp_fld* field, ISC_QUAD* blob_id, ULONG count)
 	UCHAR item;
 	while ((item = *p++) != isc_info_end)
 	{
-		const USHORT l = (USHORT) isc_vax_integer((const char*) p, 2);
+		const USHORT l = isc_vax_integer((const char*) p, 2);
 		p += 2;
-		const USHORT n = (USHORT) isc_vax_integer((const char*) p, l);
+		const ULONG n = isc_vax_integer((const char*) p, l);
 		p += l;
 		switch (item)
 		{
@@ -1506,9 +1506,9 @@ bool put_blr_blob( SCHAR attribute, ISC_QUAD * blob_id)
 
 	while ((item = *p++) != isc_info_end)
 	{
-		const USHORT l = (USHORT) isc_vax_integer((const char*) p, 2);
+		const USHORT l = isc_vax_integer((const char*) p, 2);
 		p += 2;
-		const USHORT n = (USHORT) isc_vax_integer((const char*) p, l);
+		const ULONG n = isc_vax_integer((const char*) p, l);
 		p += l;
 		switch (item)
 		{
@@ -2419,9 +2419,9 @@ bool put_source_blob(SCHAR		attribute,
 
 	while ((item = *p++) != isc_info_end)
 	{
-		const USHORT l = (USHORT) isc_vax_integer((const SCHAR*) p, 2);
+		const USHORT l = isc_vax_integer((const SCHAR*) p, 2);
 		p += 2;
-		const USHORT n = (USHORT) isc_vax_integer((const SCHAR*) p, l);
+		const ULONG n = isc_vax_integer((const SCHAR*) p, l);
 		p += l;
 		switch (item)
 		{
