@@ -414,6 +414,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	CMP_release(tdbb, handle1);
 
 // Store IUDFs declared automatically as system functions.
+// CVC: Demonstration code to register IUDF automatically moved to functions.h
 
 	store_functions(tdbb, dbb);
 

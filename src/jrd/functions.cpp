@@ -81,11 +81,15 @@ static const char
 #define FUNCTION_ARGUMENT(MECHANISM, TYPE, SCALE, LENGTH, SUB_TYPE, CHARSET, PRECISION, CHAR_LENGTH)
 
 static const FN isc_functions[] = {
-	{"test_module", "test_function", (FPTR_INT) test},
+#ifndef DECLARE_EXAMPLE_IUDF_AUTOMATICALLY
+	{"test_module", "test_function", (FPTR_INT) test}, // see functions.h
+#endif
 	{"test_module", "ni", (FPTR_INT) ni},
 	{"test_module", "ns", (FPTR_INT) ni},
 	{"test_module", "nn", (FPTR_INT) ni},
-	{"test_module", "byte_len", (FPTR_INT) byteLen},
+#ifndef DECLARE_EXAMPLE_IUDF_AUTOMATICALLY
+	{"test_module", "byte_len", (FPTR_INT) byteLen}, // see functions.h
+#endif
 
 #include "../jrd/functions.h"
 

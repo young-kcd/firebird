@@ -28,6 +28,22 @@
 // FUNCTION(<routine>, "<function_name>", "<module_name>", "<entrypoint>", <return_argument>)
 // FUNCTION_ARGUMENT(<mechanism>, <type>, <scale>, <length>, <sub_type>, <charset>, <precision>, <char_length>)
 
+// Uncomment this to have the two example functions registered automatically in system tables.
+//#define DECLARE_EXAMPLE_IUDF_AUTOMATICALLY
+// CVC: Starting demonstration code to register IUDF automatically.
+#ifdef DECLARE_EXAMPLE_IUDF_AUTOMATICALLY
+FUNCTION(byteLen, "SYS_BYTE_LEN", "test_module", "byte_len", 0)
+  FUNCTION_ARGUMENT(-FUN_reference, (int) blr_long, 0, 4, 0, 0, 0, 0)
+  FUNCTION_ARGUMENT(FUN_descriptor, (int) blr_long, 0, 4, 0, 0, 0, 0)
+END_FUNCTION
+
+FUNCTION(test, "TEST", "test_module", "test_function", 2)
+  FUNCTION_ARGUMENT(FUN_ref_with_null, (int) blr_long, 0, 4, 0, 0, 0, 0)
+  FUNCTION_ARGUMENT(FUN_reference, (int) blr_text, 0, 20, 0, 0, 0, 20)
+#endif
+// CVC: Finishing demonstration code to register IUDF automatically.
+
+
 FUNCTION(get_context, "RDB$GET_CONTEXT", "system_module", "get_context", 0)
   // Result, variable value
   FUNCTION_ARGUMENT(-FUN_reference, blr_varying, 0, 255, 0, 0, 0, 255)
@@ -47,3 +63,4 @@ FUNCTION(set_context, "RDB$SET_CONTEXT", "system_module", "set_context", 0)
   // Variable, value
   FUNCTION_ARGUMENT(FUN_ref_with_null, blr_varying, 0, 255, 0, 0, 0, 255)
 END_FUNCTION
+
