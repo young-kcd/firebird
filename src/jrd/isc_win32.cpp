@@ -24,7 +24,7 @@
  * Solaris x86 changes - Konstantin Kuznetsov, Neil McCalden
  */
 /*
-$Id: isc_win32.cpp,v 1.5 2002-08-27 11:07:36 dimitr Exp $
+$Id: isc_win32.cpp,v 1.6 2002-11-06 07:19:01 eku Exp $
 */
 
 #include "firebird.h"
@@ -56,11 +56,6 @@ $Id: isc_win32.cpp,v 1.5 2002-08-27 11:07:36 dimitr Exp $
 
 static USHORT				os_type;
 static SECURITY_ATTRIBUTES	security_attr;
-
-#ifdef MAXPATHLEN
-#undef MAXPATHLEN
-#endif
-#define MAXPATHLEN      512
 
 static TEXT interbase_directory[MAXPATHLEN];
 

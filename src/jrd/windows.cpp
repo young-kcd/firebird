@@ -62,7 +62,6 @@ extern "C" {
 #define V4_MUTEX_LOCK(mutx)	THD_MUTEX_LOCK (mutx)
 #endif
 
-#define MAXPATHLEN	1024
 #define IO_RETRY	20
 
 #ifdef O_SYNC

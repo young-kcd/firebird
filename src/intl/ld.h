@@ -406,10 +406,6 @@ typedef UINT16 PDXResult;
 */
 #define LD_LIBNAME_LEN           13
 
-#ifndef MAXPATHLEN
-#define MAXPATHLEN               81
-#endif
-
 #define LDSUCCESS                 0
 #define LDFAILURE                -1
 
@@ -1034,9 +1030,12 @@ pVOID CALLTYPE LdCalloc(UINT16 NumberItems, UINT16 SizeItem);
 // VCS AREA
 //-----------------------------------------------------------------
 
-//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.11 2002-10-31 05:09:27 seanleyne Exp $
+//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.12 2002-11-06 07:19:00 eku Exp $
 
 //	$Log: not supported by cvs2svn $
+//	Revision 1.11  2002/10/31 05:09:27  seanleyne
+//	Removed support for obsolete "MS_DOS" define
+//	
 //	Revision 1.10  2002/10/30 06:40:46  seanleyne
 //	Removed obsolete "Netware" port
 //	

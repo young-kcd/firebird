@@ -49,7 +49,6 @@
 extern "C" {
 
 
-#define MAXPATHLEN		1024
 #define DEFAULTBUFFERSIZE	1024
 
 static BOOLEAN check_network(TEXT *);

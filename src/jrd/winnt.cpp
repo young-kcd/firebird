@@ -70,10 +70,6 @@
 #endif
 #define TEXT		SCHAR
 
-#ifdef MAXPATHLEN
-#undef MAXPATHLEN
-#endif
-#define MAXPATHLEN		512
 #define DEFAULTBUFFERSIZE	1024
 
 #define OS_WINDOWS_NT		1

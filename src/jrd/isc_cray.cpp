@@ -87,7 +87,6 @@ static SIGVEC client_sigfpe;
 
 /* Unix specific stuff */
 
-#define MAXPATHLEN	1024
 #define MAXHOSTLEN	64
 
 #define FTOK_KEY	15
