@@ -51,7 +51,7 @@
 #define TEXT		SCHAR
 #endif
 
-#define SRQ_BASE 			((UCHAR*) CASH_header)
+static const UCHAR* SRQ_BASE = (UCHAR*) CASH_header;
 
 const SLONG DEFAULT_SIZE	= 8192;
 
