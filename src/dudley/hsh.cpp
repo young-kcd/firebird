@@ -262,8 +262,6 @@ struct word {
 		{KW_WITH, "WITH"}
 };
 
-#define NUMWORDS (sizeof (keywords) / sizeof (struct word))
-
 
 void HSH_init(void)
 {
@@ -280,10 +278,10 @@ void HSH_init(void)
  **************************************/
 	register SCHAR *string;
 	register SYM symbol;
-	register USHORT i;
+	register int i;
 	register SSHORT length;
 
-	for (i = 0; i < (USHORT)NUMWORDS; i++) {
+	for (i = 0; i < FB_NELEM(keywords); i++) {
 		string = keywords[i].keyword;
 		for (length = 0; string[length] != '\0'; length++);
 		symbol = (SYM) DDL_alloc(SYM_LEN);

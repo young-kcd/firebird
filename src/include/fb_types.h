@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.9 2002-11-22 14:09:36 dimitr Exp $
+ *  $Id: fb_types.h,v 1.10 2002-12-02 08:25:16 eku Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -54,8 +54,8 @@
 #endif
 
 
-#if (defined(__osf__) && defined(__alpha))
-/* It appears the alpha has a 32 bit int and a 64 bit long. */
+#if SIZEOF_LONG == 8
+	/* EKU: Firebird requires (S)LONG to be 32 bit */
 #   define LONG_DEFINED
     typedef int SLONG;
     typedef unsigned int ULONG;
@@ -64,8 +64,7 @@
     typedef long SQUAD;
     typedef unsigned long UQUAD;
 #   define NATIVE_QUAD
-
-#endif /* DEC osf */
+#endif /* SIZEOF_LONG == 8 */
 
 
 
@@ -152,19 +151,7 @@ typedef ULONG RCRD_OFFSET;
 typedef USHORT FLD_LENGTH;
 
 
-#define GDS_TRUE	1
-#define GDS_FALSE	0
-
-#if !(defined __cplusplus)
-#define GDS__TRUE	GDS_TRUE
-#define GDS__FALSE	GDS_FALSE
-#endif
-
-/* We can remove these three #defines if we change gdsold.h and gen/codes.h */
-#define GDS_LONG SLONG
-#define GDS_ULONG ULONG
-
-#define GDS_STATUS	long
+/* Number of elements in an arry */
+#define FB_NELEM(x)	((int)(sizeof(x) / sizeof(x[0])))
 
 #endif /* INCLUDE_FB_TYPES_H */
-

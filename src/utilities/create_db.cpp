@@ -17,12 +17,12 @@ int main(int argc, char **argv)
         printf("Usage: %s <new db name>\n", argv[0]);
         return -1;
     }
-	
+
     d = dpb;
     *d++ = (UCHAR) isc_dpb_version1;
     *d++ = (UCHAR) isc_dpb_set_db_readonly;
     *d++ = 1;
-    *d++ = GDS_TRUE;
+    *d++ = TRUE;
     len = d - dpb;
 
     isc_create_database(sv, 0, argv[1], &db, 0, 0, 0);

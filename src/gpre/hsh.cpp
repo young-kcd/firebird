@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: hsh.cpp,v 1.7 2002-11-17 00:04:18 hippoman Exp $
+//	$Id: hsh.cpp,v 1.8 2002-12-02 08:25:16 eku Exp $
 //
 
 #include "firebird.h"
@@ -58,10 +58,6 @@ static struct word {
 #include "../gpre/hsh.h"
 };
 
-#define NUMWORDS (sizeof (keywords) / sizeof (struct word))
-
-
-
 
 //____________________________________________________________
 //  
@@ -91,14 +87,14 @@ void HSH_init(void)
 {
 	register SCHAR *string;
 	register SYM symbol, *ptr;
-	SSHORT i;
+	register int i;
 	register struct word *word;
 
 	for (ptr = hash_table, i = 0; i < HASH_SIZE; i++)
 		*ptr++ = NULL;
 
 	fflush(stdout);
-	for (i = 0, word = keywords; i < (SSHORT)NUMWORDS; i++, word++) {
+	for (i = 0, word = keywords; i < FB_NELEM(keywords); i++, word++) {
 		for (string = word->keyword; *string; string++);
 		symbol = (SYM) ALLOC(SYM_LEN);
 		symbol->sym_type = SYM_keyword;

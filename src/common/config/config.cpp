@@ -76,7 +76,7 @@ ConfigImpl::ConfigImpl()
 	ConfigFile file;
 	root_dir = getRootDirectory().c_str();
 	MemoryPool *pool = getDefaultMemoryPool();
-	int size = sizeof(entries) / sizeof(entries[0]);
+	int size = FB_NELEM(entries);
 	values = FB_NEW(*pool) ConfigValue[size];
 
 	string val_sep = ",";
@@ -123,9 +123,11 @@ ConfigImpl::ConfigImpl()
 
 ConfigImpl::~ConfigImpl()
 {
+	int size = FB_NELEM(entries);
+
 	/* Free allocated memory */
 
-	for (int i = 0; i < sizeof(entries) / sizeof(entries[0]); i++)
+	for (int i = 0; i < size; i++)
 	{
 		if (values[i] == entries[i].default_value)
 			continue;

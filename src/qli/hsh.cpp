@@ -48,8 +48,6 @@ struct word {
    {KW_continuation, "-\n"}
 };
 
-#define NUMWORDS	(sizeof (keywords) / sizeof (struct word))
-
 
 void HSH_fini(void)
 {
@@ -89,10 +87,10 @@ void HSH_init(void)
  **************************************/
 	register SCHAR *string;
 	register SYM symbol;
-	register SSHORT i;
+	register int i;
 	struct word *word;
 
-	for (i = 0, word = keywords; i < (SSHORT)NUMWORDS; i++, word++) {
+	for (i = 0, word = keywords; i < FB_NELEM(keywords); i++, word++) {
 		for (string = word->keyword; *string; string++);
 		symbol = (SYM) ALLOCPV(type_sym, 0);
 		symbol->sym_type = SYM_keyword;

@@ -39,8 +39,6 @@
 #define GDS_REF(val)	&val
 #endif
 
-#define GDS_TYPE	GDS_STATUS
-
 #define CANCEL_disable	1
 #define CANCEL_enable	2
 #define CANCEL_raise	3
@@ -50,7 +48,7 @@
 /******************************************************************/
 
 #ifndef GDS_FAR
-#define  GDS_FAR
+#define GDS_FAR
 #endif
 
 
@@ -62,7 +60,7 @@ typedef void GDS_FAR *gds_win_handle;
 typedef void GDS_FAR *gds_form_handle;
 typedef void GDS_FAR *gds_stmt_handle;
 typedef void GDS_FAR *gds_svc_handle;
-typedef void (GDS_FAR * gds_callback) ();
+typedef void (GDS_FAR * gds_callback)();
 
 
 /*************************/
@@ -85,48 +83,48 @@ typedef GDS_QUAD GDS__QUAD;
 	defined(__cplusplus)
 
 
-GDS_STATUS GDS_EXPORT gds__attach_database(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__attach_database(STATUS GDS_FAR *,
 										   short,
 										   char GDS_FAR *,
 										   void GDS_FAR * GDS_FAR *,
 										   short,
 										   char GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__blob_info(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__blob_info(STATUS GDS_FAR *,
 									 void GDS_FAR * GDS_FAR *,
 									 short,
 									 char GDS_FAR *,
 									 short,
 									 char GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__cancel_blob(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__cancel_blob(STATUS GDS_FAR *,
 									   void GDS_FAR * GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__close_blob(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__close_blob(STATUS GDS_FAR *,
 									  void GDS_FAR * GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__commit_transaction(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__commit_transaction(STATUS GDS_FAR *,
 											  void GDS_FAR * GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__compile_request(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__compile_request(STATUS GDS_FAR *,
 										   void GDS_FAR * GDS_FAR *,
 										   void GDS_FAR * GDS_FAR *,
 										   short,
 										   char GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__compile_request2(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__compile_request2(STATUS GDS_FAR *,
 											void GDS_FAR * GDS_FAR *,
 											void GDS_FAR * GDS_FAR *,
 											short,
 											char GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__create_blob(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__create_blob(STATUS GDS_FAR *,
 									   void GDS_FAR * GDS_FAR *,
 									   void GDS_FAR * GDS_FAR *,
 									   void GDS_FAR * GDS_FAR *,
 									   GDS__QUAD GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__create_blob2(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__create_blob2(STATUS GDS_FAR *,
 										void GDS_FAR * GDS_FAR *,
 										void GDS_FAR * GDS_FAR *,
 										void GDS_FAR * GDS_FAR *,
@@ -134,7 +132,7 @@ GDS_STATUS GDS_EXPORT gds__create_blob2(GDS_STATUS GDS_FAR *,
 										short,
 										char GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__create_database(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__create_database(STATUS GDS_FAR *,
 										   short,
 										   char GDS_FAR *,
 										   void GDS_FAR * GDS_FAR *,
@@ -142,7 +140,7 @@ GDS_STATUS GDS_EXPORT gds__create_database(GDS_STATUS GDS_FAR *,
 										   char GDS_FAR *,
 										   short);
 
-GDS_STATUS GDS_EXPORT gds__database_info(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__database_info(STATUS GDS_FAR *,
 										 void GDS_FAR * GDS_FAR *,
 										 short,
 										 char GDS_FAR *,
@@ -152,24 +150,24 @@ GDS_STATUS GDS_EXPORT gds__database_info(GDS_STATUS GDS_FAR *,
 void GDS_EXPORT gds__decode_date(GDS__QUAD GDS_FAR *,
 								 void GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__detach_database(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__detach_database(STATUS GDS_FAR *,
 										   void GDS_FAR * GDS_FAR *);
 
-GDS_ULONG GDS_EXPORT gds__free(void GDS_FAR *);
+ULONG GDS_EXPORT gds__free(void GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__get_segment(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__get_segment(STATUS GDS_FAR *,
 									   void GDS_FAR * GDS_FAR *,
 									   unsigned short GDS_FAR *,
 									   unsigned short,
 									   char GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__open_blob(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__open_blob(STATUS GDS_FAR *,
 									 void GDS_FAR * GDS_FAR *,
 									 void GDS_FAR * GDS_FAR *,
 									 void GDS_FAR * GDS_FAR *,
 									 GDS__QUAD GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__open_blob2(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__open_blob2(STATUS GDS_FAR *,
 									  void GDS_FAR * GDS_FAR *,
 									  void GDS_FAR * GDS_FAR *,
 									  void GDS_FAR * GDS_FAR *,
@@ -177,33 +175,33 @@ GDS_STATUS GDS_EXPORT gds__open_blob2(GDS_STATUS GDS_FAR *,
 									  short,
 									  char GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__prepare_transaction(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__prepare_transaction(STATUS GDS_FAR *,
 											   void GDS_FAR * GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__prepare_transaction2(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__prepare_transaction2(STATUS GDS_FAR *,
 												void GDS_FAR * GDS_FAR *,
 												short,
 												char GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__put_segment(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__put_segment(STATUS GDS_FAR *,
 									   void GDS_FAR * GDS_FAR *,
 									   unsigned short,
 									   char GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__receive(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__receive(STATUS GDS_FAR *,
 								   void GDS_FAR * GDS_FAR *,
 								   short,
 								   short,
 								   void GDS_FAR *,
 								   short);
 
-GDS_STATUS GDS_EXPORT gds__reconnect_transaction(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__reconnect_transaction(STATUS GDS_FAR *,
 												 void GDS_FAR * GDS_FAR *,
 												 void GDS_FAR * GDS_FAR *,
 												 short,
 												 char GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__request_info(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__request_info(STATUS GDS_FAR *,
 										void GDS_FAR * GDS_FAR *,
 										short,
 										short,
@@ -211,19 +209,19 @@ GDS_STATUS GDS_EXPORT gds__request_info(GDS_STATUS GDS_FAR *,
 										short,
 										char GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__release_request(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__release_request(STATUS GDS_FAR *,
 										   void GDS_FAR * GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__rollback_transaction(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__rollback_transaction(STATUS GDS_FAR *,
 												void GDS_FAR * GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__seek_blob(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__seek_blob(STATUS GDS_FAR *,
 									 void GDS_FAR * GDS_FAR *,
 									 short,
-									 GDS_LONG,
-									 GDS_LONG GDS_FAR *);
+									 SLONG,
+									 SLONG GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__send(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__send(STATUS GDS_FAR *,
 								void GDS_FAR * GDS_FAR *,
 								short,
 								short,
@@ -232,7 +230,7 @@ GDS_STATUS GDS_EXPORT gds__send(GDS_STATUS GDS_FAR *,
 
 void GDS_EXPORT gds__set_debug(int);
 
-GDS_STATUS GDS_EXPORT gds__start_and_send(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__start_and_send(STATUS GDS_FAR *,
 										  void GDS_FAR * GDS_FAR *,
 										  void GDS_FAR * GDS_FAR *,
 										  short,
@@ -240,32 +238,32 @@ GDS_STATUS GDS_EXPORT gds__start_and_send(GDS_STATUS GDS_FAR *,
 										  void GDS_FAR *,
 										  short);
 
-GDS_STATUS GDS_EXPORT gds__start_multiple(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__start_multiple(STATUS GDS_FAR *,
 										  void GDS_FAR * GDS_FAR *,
 										  short,
 										  void GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__start_request(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__start_request(STATUS GDS_FAR *,
 										 void GDS_FAR * GDS_FAR *,
 										 void GDS_FAR * GDS_FAR *,
 										 short);
 
-GDS_STATUS GDS_EXPORT gds__start_transaction(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__start_transaction(STATUS GDS_FAR *,
 											 void GDS_FAR * GDS_FAR *,
 											 short, ...);
 
-GDS_STATUS GDS_EXPORT gds__transaction_info(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__transaction_info(STATUS GDS_FAR *,
 											void GDS_FAR * GDS_FAR *,
 											short,
 											char GDS_FAR *,
 											short,
 											char GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__unwind_request(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__unwind_request(STATUS GDS_FAR *,
 										  void GDS_FAR * GDS_FAR *,
 										  short);
 
-GDS_LONG GDS_EXPORT gds__ftof(char GDS_FAR *,
+SLONG GDS_EXPORT gds__ftof(char GDS_FAR *,
 							  unsigned short,
 							  char GDS_FAR *,
 							  unsigned short);
@@ -280,35 +278,35 @@ int GDS_EXPORT gds__disable_subsystem(char GDS_FAR *);
 
 int GDS_EXPORT gds__enable_subsystem(char GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__print_status(GDS_STATUS GDS_FAR *);
+STATUS GDS_EXPORT gds__print_status(STATUS GDS_FAR *);
 
-GDS_LONG GDS_EXPORT gds__sqlcode(GDS_STATUS GDS_FAR *);
+SLONG GDS_EXPORT gds__sqlcode(STATUS GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__ddl(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__ddl(STATUS GDS_FAR *,
 							   void GDS_FAR * GDS_FAR *,
 							   void GDS_FAR * GDS_FAR *,
 							   short,
 							   char GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__commit_retaining(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__commit_retaining(STATUS GDS_FAR *,
 											void GDS_FAR * GDS_FAR *);
 
 void GDS_EXPORT gds__encode_date(void GDS_FAR *,
 								 GDS__QUAD GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__que_events(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__que_events(STATUS GDS_FAR *,
 									  void GDS_FAR * GDS_FAR *,
-									  GDS_LONG GDS_FAR *,
+									  SLONG GDS_FAR *,
 									  short,
 									  char GDS_FAR *,
 									  void (GDS_FAR *) (),
 									  void GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__cancel_events(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__cancel_events(STATUS GDS_FAR *,
 										 void GDS_FAR * GDS_FAR *,
-										 GDS_LONG GDS_FAR *);
+										 SLONG GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__event_wait(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__event_wait(STATUS GDS_FAR *,
 									  void GDS_FAR * GDS_FAR *,
 									  short,
 									  char GDS_FAR *,
@@ -319,31 +317,31 @@ void GDS_EXPORT gds__event_counts(ULONG GDS_FAR *,
 								  char GDS_FAR *,
 								  char GDS_FAR *);
 
-GDS_LONG GDS_EXPORT gds__event_block(char GDS_FAR * GDS_FAR *,
+SLONG GDS_EXPORT gds__event_block(char GDS_FAR * GDS_FAR *,
 									 char GDS_FAR * GDS_FAR *,
 									 unsigned short, ...);
 
-GDS_STATUS GDS_EXPORT gds__get_slice(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__get_slice(STATUS GDS_FAR *,
 									 void GDS_FAR * GDS_FAR *,
 									 void GDS_FAR * GDS_FAR *,
 									 GDS__QUAD GDS_FAR *,
 									 short,
 									 char GDS_FAR *,
 									 short,
-									 GDS_LONG GDS_FAR *,
-									 GDS_LONG,
+									 SLONG GDS_FAR *,
+									 SLONG,
 									 void GDS_FAR *,
-									 GDS_LONG GDS_FAR *);
+									 SLONG GDS_FAR *);
 
-GDS_STATUS GDS_EXPORT gds__put_slice(GDS_STATUS GDS_FAR *,
+STATUS GDS_EXPORT gds__put_slice(STATUS GDS_FAR *,
 									 void GDS_FAR * GDS_FAR *,
 									 void GDS_FAR * GDS_FAR *,
 									 GDS__QUAD GDS_FAR *,
 									 short,
 									 char GDS_FAR *,
 									 short,
-									 GDS_LONG GDS_FAR *,
-									 GDS_LONG,
+									 SLONG GDS_FAR *,
+									 SLONG,
 									 void GDS_FAR *);
 
 void GDS_EXPORT gds__vtof(char GDS_FAR *,
@@ -356,49 +354,49 @@ void GDS_EXPORT gds__vtof(char GDS_FAR *,
 
 #ifndef _Windows
 #ifndef _WINDOWS
-GDS_TYPE GDS_EXPORT gds__attach_database();
-GDS_TYPE GDS_EXPORT gds__blob_info();
-GDS_TYPE GDS_EXPORT gds__cancel_blob();
-GDS_TYPE GDS_EXPORT gds__close_blob();
-GDS_TYPE GDS_EXPORT gds__commit_transaction();
-GDS_TYPE GDS_EXPORT gds__compile_request();
-GDS_TYPE GDS_EXPORT gds__compile_request2();
-GDS_TYPE GDS_EXPORT gds__create_blob();
-GDS_TYPE GDS_EXPORT gds__create_blob2();
-GDS_TYPE GDS_EXPORT gds__create_database();
-GDS_TYPE GDS_EXPORT gds__database_info();
-GDS_TYPE GDS_EXPORT gds__detach_database();
-GDS_TYPE GDS_EXPORT gds__get_segment();
-GDS_TYPE GDS_EXPORT gds__open_blob();
-GDS_TYPE GDS_EXPORT gds__open_blob2();
-GDS_TYPE GDS_EXPORT gds__prepare_transaction();
-GDS_TYPE GDS_EXPORT gds__prepare_transaction2();
-GDS_TYPE GDS_EXPORT gds__put_segment();
-GDS_TYPE GDS_EXPORT gds__receive();
-GDS_TYPE GDS_EXPORT gds__reconnect_transaction();
-GDS_TYPE GDS_EXPORT gds__request_info();
-GDS_TYPE GDS_EXPORT gds__release_request();
-GDS_TYPE GDS_EXPORT gds__rollback_transaction();
-GDS_TYPE GDS_EXPORT gds__seek_blob();
-GDS_TYPE GDS_EXPORT gds__send();
-GDS_TYPE GDS_EXPORT gds__start_and_send();
-GDS_TYPE GDS_EXPORT gds__start_multiple();
-GDS_TYPE GDS_EXPORT gds__start_request();
-GDS_TYPE GDS_EXPORT gds__start_transaction();
-GDS_TYPE GDS_EXPORT gds__transaction_info();
-GDS_TYPE GDS_EXPORT gds__unwind_request();
-GDS_TYPE GDS_EXPORT gds__ftof();
-GDS_TYPE GDS_EXPORT gds__print_status();
-GDS_TYPE GDS_EXPORT gds__sqlcode();
-GDS_TYPE GDS_EXPORT gds__ddl();
-GDS_TYPE GDS_EXPORT gds__commit_retaining();
-GDS_TYPE GDS_EXPORT gds__que_events();
-GDS_TYPE GDS_EXPORT gds__cancel_events();
-GDS_TYPE GDS_EXPORT gds__event_wait();
-GDS_TYPE GDS_EXPORT gds__event_block();
-GDS_TYPE GDS_EXPORT gds__get_slice();
-GDS_TYPE GDS_EXPORT gds__put_slice();
-GDS_TYPE GDS_EXPORT gds__seek_blob();
+STATUS GDS_EXPORT gds__attach_database();
+STATUS GDS_EXPORT gds__blob_info();
+STATUS GDS_EXPORT gds__cancel_blob();
+STATUS GDS_EXPORT gds__close_blob();
+STATUS GDS_EXPORT gds__commit_transaction();
+STATUS GDS_EXPORT gds__compile_request();
+STATUS GDS_EXPORT gds__compile_request2();
+STATUS GDS_EXPORT gds__create_blob();
+STATUS GDS_EXPORT gds__create_blob2();
+STATUS GDS_EXPORT gds__create_database();
+STATUS GDS_EXPORT gds__database_info();
+STATUS GDS_EXPORT gds__detach_database();
+STATUS GDS_EXPORT gds__get_segment();
+STATUS GDS_EXPORT gds__open_blob();
+STATUS GDS_EXPORT gds__open_blob2();
+STATUS GDS_EXPORT gds__prepare_transaction();
+STATUS GDS_EXPORT gds__prepare_transaction2();
+STATUS GDS_EXPORT gds__put_segment();
+STATUS GDS_EXPORT gds__receive();
+STATUS GDS_EXPORT gds__reconnect_transaction();
+STATUS GDS_EXPORT gds__request_info();
+STATUS GDS_EXPORT gds__release_request();
+STATUS GDS_EXPORT gds__rollback_transaction();
+STATUS GDS_EXPORT gds__seek_blob();
+STATUS GDS_EXPORT gds__send();
+STATUS GDS_EXPORT gds__start_and_send();
+STATUS GDS_EXPORT gds__start_multiple();
+STATUS GDS_EXPORT gds__start_request();
+STATUS GDS_EXPORT gds__start_transaction();
+STATUS GDS_EXPORT gds__transaction_info();
+STATUS GDS_EXPORT gds__unwind_request();
+STATUS GDS_EXPORT gds__ftof();
+STATUS GDS_EXPORT gds__print_status();
+STATUS GDS_EXPORT gds__sqlcode();
+STATUS GDS_EXPORT gds__ddl();
+STATUS GDS_EXPORT gds__commit_retaining();
+STATUS GDS_EXPORT gds__que_events();
+STATUS GDS_EXPORT gds__cancel_events();
+STATUS GDS_EXPORT gds__event_wait();
+STATUS GDS_EXPORT gds__event_block();
+STATUS GDS_EXPORT gds__get_slice();
+STATUS GDS_EXPORT gds__put_slice();
+STATUS GDS_EXPORT gds__seek_blob();
 
 void GDS_EXPORT gds__event_counts();
 void GDS_EXPORT gds__set_debug();

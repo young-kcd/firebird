@@ -1,4 +1,4 @@
-#ident "$Id: config.h.in,v 1.61 2002-11-21 08:56:28 eku Exp $"
+#ident "$Id: config.h.in,v 1.62 2002-12-02 08:25:18 eku Exp $"
 
  /*
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
@@ -108,6 +108,7 @@
 
 /* sizeof(void *) = 8 ==> HAS_64BIT_POINTERS */
 #define SIZEOF_VOID_P 4
+#define SIZEOF_LONG 4
 
 /* Is union semun defined? */
 #undef HAVE_SEMUN

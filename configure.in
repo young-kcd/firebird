@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.98 2002-11-30 15:08:00 skidder Exp $
+dnl $Id: configure.in,v 1.99 2002-12-02 08:25:14 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -344,6 +344,7 @@ AC_TYPE_SIGNAL
 AC_CHECK_TYPE(socklen_t,int)
 AC_SYS_LARGEFILE
 AC_CHECK_SIZEOF(void*)
+AC_CHECK_SIZEOF(long)
 AC_CHECK_TYPE(semun)
 AC_CHECK_TYPES([struct XDR::xdr_ops],,,[#include <rpc/rpc.h> 
 #include <rpc/xdr.h>])

@@ -17,7 +17,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: align.cpp,v 1.5 2002-09-17 05:58:35 eku Exp $
+$Id: align.cpp,v 1.6 2002-12-02 08:25:17 eku Exp $
 */
 
 #include "firebird.h"
@@ -75,7 +75,7 @@ int main(argc, argv)
 #endif
 {
 	double *p, d1;
-#if (defined __osf__ && defined __alpha)
+#if SIZEOF_LONG == 8
 	int vector[3];
 #else
 	long vector[3];
@@ -131,7 +131,7 @@ static int check_double()
 #endif
 {
 	double *p, d1;
-#if (defined __osf__ && defined __alpha)
+#if SIZEOF_LONG == 8
 	int vector[3];
 #else
 	long vector[3];

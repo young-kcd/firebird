@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.17 2002-11-17 16:21:41 dimitr Exp $
+$Id: ibase.h,v 1.18 2002-12-02 08:25:17 eku Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -51,7 +51,7 @@ $Id: ibase.h,v 1.17 2002-11-17 16:21:41 dimitr Exp $
 #define  ISC__FALSE	ISC_FALSE
 #endif
 
-#if (defined __osf__ && defined __alpha)
+#if SIZEOF_LONG == 8
 #define  ISC_LONG	int
 #define  ISC_ULONG	unsigned int
 #else

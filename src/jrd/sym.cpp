@@ -29,8 +29,6 @@
 #include "../jrd/sym_proto.h"
 #include "../jrd/thd_proto.h"
 
-#define NUMWORDS (sizeof (keywords) / sizeof (struct word))
-
 
 extern "C" {
 

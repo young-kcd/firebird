@@ -126,6 +126,7 @@
 
 /* sizeof(void *) = 8 ==> HAS_64BIT_POINTERS */
 #define SIZEOF_VOID_P 4
+#define SIZEOF_LONG 4
 
 /* Is union semun defined? */
 #undef HAVE_SEMUN

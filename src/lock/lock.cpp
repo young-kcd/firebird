@@ -29,7 +29,7 @@
  *
  */
 /*
-$Id: lock.cpp,v 1.24 2002-11-14 08:25:29 dimitr Exp $
+$Id: lock.cpp,v 1.25 2002-12-02 08:25:18 eku Exp $
 */
 
 #include "firebird.h"
@@ -341,7 +341,7 @@ static struct ipccfg LOCK_hdrtbl[] =
 #define OWN_BLOCK_dummy		3
 
 #ifndef LOCK_MANAGER
-#define LOCK_MANAGER	"bin/gds_lock_mgr"
+#define LOCK_MANAGER	"bin/fb_lock_mgr"
 #endif
 
 

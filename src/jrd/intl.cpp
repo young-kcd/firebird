@@ -187,8 +187,6 @@ static void* intl_back_compat_alloc_func_lookup(USHORT, CHARSET_ID, CHARSET_ID);
 static void* intl_back_compat_obj_init_lookup(USHORT, SSHORT, SSHORT);
 
 
-#define NUM_ELEMENTS(x)         (sizeof ((x))/sizeof ((x)[0]))
-
 /* Name of module that implements text-type (n) */
 
 #ifdef VMS
