@@ -2,13 +2,31 @@
 #
 # Run this to generate all the initial makefiles, etc.
 #
-# $Id: autogen.sh,v 1.10 2003-11-10 11:25:05 aafemt Exp $
+# $Id: autogen.sh,v 1.11 2004-09-28 05:56:07 stryqx Exp $
 
 PKG_NAME=Firebird2
 SRCDIR=`dirname $0`
 DIE=0
 
-VER=`autoconf --version|grep '^[Aa]utoconf'|sed 's/^[^0-9]*//'`
+if [ -z $AUTOCONF ]
+then
+  AUTOCONF=autoconf
+fi
+if [ -z $LIBTOOL ]
+then
+  LIBTOOL=libtool
+fi
+if [ -z $LIBTOOLIZE ]
+then
+  LIBTOOLIZE=libtoolize
+fi
+
+echo "AUTOCONF="$AUTOCONF
+echo "LIBTOOL="$LIBTOOL
+echo "LIBTOOLiZE="$LIBTOOLIZE
+AUTOHEADER=`echo $AUTOCONF |sed 's/conf/header/'`
+
+VER=`$AUTOCONF --version|grep '^[Aa]utoconf'|sed 's/^[^0-9]*//'`
 case "$VER" in
  0* | 1\.* | 2\.[0-9] | 2\.[0-9][a-z]* | \
  2\.[1-4][0-9] | 2\.5[0-5][a-z]* )
@@ -20,7 +38,7 @@ case "$VER" in
   ;;
 esac
 
-VER=`libtool --version|grep ' libtool)'|sed 's/.*) \([0-9][0-9.]*\) .*/\1/'`
+VER=`$LIBTOOL --version|grep ' libtool)'|sed 's/.*) \([0-9][0-9.]*\) .*/\1/'`
 case "$VER" in
  0* | 1\.[0-2] | 1\.[0-2][a-z]* | \
  1\.3\.[0-2] | 1\.3\.[0-2][a-z]* )
@@ -50,18 +68,18 @@ fi
 
 # Generate configure from configure.in
 echo "Running libtoolize ..."
-LIBTOOL_M4=`libtoolize --copy --force --dry-run|grep 'You should add the contents of'|sed "s,^[^/]*\(/[^']*\).*$,\1,"`
+LIBTOOL_M4=`$LIBTOOLIZE --copy --force --dry-run|grep 'You should add the contents of'|sed "s,^[^/]*\(/[^']*\).*$,\1,"`
 if test "x$LIBTOOL_M4" != "x"; then
  rm -f aclocal.m4
  cp $LIBTOOL_M4 aclocal.m4
 fi
-libtoolize --copy --force || exit 1
+$LIBTOOLIZE --copy --force || exit 1
 
 echo "Running autoheader ..."
-autoheader || exit 1
+$AUTOHEADER || exit 1
 
 echo "Running autoconf ..."
-autoconf || exit 1
+$AUTOCONF || exit 1
 
 # If NOCONFIGURE is set, skip the call to configure
 if test "x$NOCONFIGURE" = "x"; then
