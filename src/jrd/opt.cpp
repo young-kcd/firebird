@@ -190,6 +190,7 @@ static int opt_debug_flag = DEBUG_NONE;
 #define INVERSE_ESTIMATE	10
 #define INDEX_COST		30.0
 #define CACHE_PAGES_PER_STREAM	15
+#define SELECTIVITY_THRESHOLD_FACTOR	10
 
 #define SQL_MATCH_1_CHAR	'_'	/* Not translatable */
 #define SQL_MATCH_ANY_CHARS	'%'	/* Not translatable */
@@ -3843,6 +3844,7 @@ static RSB gen_retrieval(TDBB tdbb,
 
 		/* Sort indices based on the priority level into idx_walk */
 		idx_walk_count = 0;
+		float selectivity = 1; /* Real maximum selectivity possible is 1 */
 		for (i = 0; i < csb_tail->csb_indices; i++) {
 			last_idx = -1;
 			last_priority_level = 0;
@@ -3854,9 +3856,25 @@ static RSB gen_retrieval(TDBB tdbb,
 				}
 			}
 			if (last_idx >= 0) {
+				/* dimitr: Empirically, it's better to use less indices with very good selectivity
+						   than using all available ones. Here we're deciding how many indices we
+						   should use. Since all indices are already ordered by their selectivity,
+						   it becomes a trivial task. But note that indices with zero (unknown)
+						   selectivity are always used, because we don't have a clue how useful
+						   they are in fact, so we should be optimistic in this case. */
+				IDX *idx = idx_csb[last_idx];
+				bool should_be_used = true;
+				if (idx->idx_selectivity) {
+					if (selectivity * SELECTIVITY_THRESHOLD_FACTOR < idx->idx_selectivity) {
+						should_be_used = false;
+					}
+					selectivity = idx->idx_selectivity;
+				}
 				idx_priority_level[last_idx] = 0; /* Mark as used by setting priority_level to 0 */
-				idx_walk[idx_walk_count] = idx_csb[last_idx];
-				idx_walk_count++;
+				if (should_be_used) {
+					idx_walk[idx_walk_count] = idx_csb[last_idx];
+					idx_walk_count++;
+				}
 			}
 		}
 
@@ -5920,10 +5938,10 @@ static void sort_indices(csb_repeat * csb_tail)
 
 	if (csb_tail->csb_idx && (csb_tail->csb_indices > 1)) {
 		for (j = 0; j < csb_tail->csb_indices; j++) {
-			selectivity = 1000; /* Maximum selectivity is 1 (when all keys are the same) */
+			selectivity = 1; /* Maximum selectivity is 1 (when all keys are the same) */
 			idx = csb_tail->csb_idx;
 			for (i = 0; i < csb_tail->csb_indices; i++) {
-				/* By alomst same selectivity's use ASC as first */
+				/* Prefer ASC indices in the case of almost same selectivities */
 				if (selectivity > idx->idx_selectivity) {
 					same_selectivity = ((selectivity - idx->idx_selectivity) <= 0.00001);
 				}
@@ -5960,6 +5978,4 @@ static void sort_indices(csb_repeat * csb_tail)
 			idx = NEXT_IDX(idx->idx_rpt, idx->idx_count);
 		}
 	}
-
 }
-
