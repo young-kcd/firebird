@@ -19,6 +19,8 @@
 @echo.
 @echo Preprocessing the entire source tree...
 @call preprocess.bat
+@echo Building message file and codes header...
+@call build_msg.bat
 @goto :END
 
 :END
