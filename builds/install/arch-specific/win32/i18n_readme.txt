@@ -23,7 +23,7 @@ available for download. See here for details:
 Therefore adding i18n support to the Firebird installer is extremely
 simple as all we need are translations of the Firebird specific messages.
 
-Currently the Firebird installer has support for English, French, German
+Currently the Firebird installer has support for English, French, German,
 Portuguese (standard), Hungarian and Slovenian installs. So there are still 
 opportunities for others to provide support for their native language.
 
