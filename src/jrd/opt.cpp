@@ -262,7 +262,7 @@ BOOLEAN OPT_access_path(JRD_REQ request,
    go backwards because items were popped
    off the stack backwards */
 
-	for (i = request->req_fors.getCount() - 1; i >= 0; i--) {
+	for (i = 0; i < request->req_fors.getCount(); i++) {
 		rsb = request->req_fors[i];
 		if (rsb && !dump_rsb(request, rsb, &buffer, &buffer_length))
 			break;
@@ -270,7 +270,7 @@ BOOLEAN OPT_access_path(JRD_REQ request,
 
 	*return_length = buffer - begin;
 
-	if (i >= 0)
+	if (i >= request->req_fors.getCount())
 		return FALSE;
 	else
 		return TRUE;
