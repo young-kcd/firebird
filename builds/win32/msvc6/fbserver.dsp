@@ -2850,6 +2850,10 @@ SOURCE=..\..\..\src\jrd\thd.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\os\win32\thd_priority.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\thd_win32.cpp
 # End Source File
 # Begin Source File
