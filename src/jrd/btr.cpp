@@ -1346,7 +1346,8 @@ bool BTR_next_index(thread_db* tdbb,
 		{
 			const SLONG trans = irt_desc->irt_stuff.irt_transaction;
 			CCH_RELEASE(tdbb, window);
-			const int trans_state = TRA_wait(tdbb, transaction, trans, true);
+			const int trans_state =
+				TRA_wait(tdbb, transaction, trans, jrd_tra::tra_wait);
 			if ((trans_state == tra_dead) || (trans_state == tra_committed))
 			{
 				// clean up this left-over index

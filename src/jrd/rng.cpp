@@ -327,7 +327,7 @@ void RNG_add_uncommitted_record(record_param* rpb)
 		   the holder of an exclusive lock to downgrade; this is also his notification
 		   that he needs to upgrade back to exclusive at transaction commit  */
 
-		if (LCK_lock_non_blocking(tdbb, transaction_lock, LCK_SR, TRUE)) {
+		if (LCK_lock_non_blocking(tdbb, transaction_lock, LCK_SR, LCK_WAIT)) {
 			/* place all transaction locks into a vector */
 
 			transaction_locks = ALL_vector(request->req_pool,

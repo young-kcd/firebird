@@ -80,6 +80,12 @@ typedef Firebird::BePlusTree<BlobIndex, ULONG, MemoryPool, BlobIndex> BlobIndexT
 class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 {
     public:
+	enum wait_t {
+		tra_no_wait,
+		tra_probe,
+		tra_wait
+	};
+
 	jrd_tra(MemoryPool& p) : tra_blobs(&p), tra_resources(p) {}
 	Attachment* tra_attachment;	/* database attachment */
 	SLONG tra_number;			/* transaction number */
@@ -106,11 +112,14 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 	traRpbList* tra_rpblist;	/* active record_param's of given transaction */
 	UCHAR tra_use_count;		/* use count for safe AST delivery */
 	UCHAR tra_callback_count;	/* callback count for 'execute statement' */
-	SSHORT tra_lock_timeout;	/* in seconds, -1 infinite */
+	SSHORT tra_lock_timeout;	/* in seconds, -1 means infinite, 0 means NOWAIT */
 	ULONG tra_next_blob_id;     // ID of the previous blob or array created in this transaction
 	UCHAR tra_transactions[1];
 
-	SSHORT getLockWait() const;
+	SSHORT getLockWait() const
+	{
+		return -tra_lock_timeout;
+	}
 };
 
 const ULONG TRA_system			= 1L;		/* system transaction */
@@ -122,7 +131,7 @@ const ULONG TRA_degree3			= 32L;		/* serializeable transaction */
 const ULONG TRA_committing		= 64L;		/* commit in progress */
 const ULONG TRA_write			= 128L;		/* transaction has written */
 const ULONG TRA_readonly		= 256L;		/* transaction is readonly */
-const ULONG TRA_nowait			= 512L;		/* don't wait on relations, give up */
+//const ULONG TRA_nowait			= 512L;		/* don't wait on relations, give up */
 const ULONG TRA_prepare2		= 1024L;	/* transaction has updated RDB$TRANSACTIONS */
 const ULONG TRA_ignore_limbo	= 2048L;	/* ignore transactions in limbo */
 const ULONG TRA_invalidated 	= 4096L;	/* transaction invalidated by failed write */

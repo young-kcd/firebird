@@ -5234,8 +5234,8 @@ static SSHORT lock_buffer(
  *	below READ, indicate that the page must be read.
  *
  * input:
- *	wait: LCK_WAIT = TRUE = 1	=> Wait as long a necessary to get the lock.
- *	      LCK_NO_WAIT = FALSE = 0	=> If the lock can't be acquired immediately,
+ *	wait: LCK_WAIT = 1	=> Wait as long a necessary to get the lock.
+ *	      LCK_NO_WAIT = 0	=> If the lock can't be acquired immediately,
  *						give up and return -1.
  *	      <negative number>		=> Lock timeout interval in seconds.
  *

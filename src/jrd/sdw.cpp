@@ -338,7 +338,7 @@ void SDW_check(void)
 			lock->lck_parent = dbb->dbb_lock;
 			lock->lck_owner = tdbb->tdbb_attachment;
 
-			LCK_lock(tdbb, lock, LCK_EX, FALSE);
+			LCK_lock(tdbb, lock, LCK_EX, LCK_NO_WAIT);
 			if (lock->lck_physical == LCK_EX) {
 				SDW_notify();
 				SDW_dump_pages();
@@ -547,7 +547,7 @@ void SDW_get_shadows(void)
 		WIN window(HEADER_PAGE);
 		const header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 		lock->lck_key.lck_long = header->hdr_shadow_count;
-		LCK_lock(tdbb, lock, LCK_SR, TRUE);
+		LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 		CCH_RELEASE(tdbb, &window);
 	}
 
@@ -604,7 +604,7 @@ void SDW_init(bool activate, bool delete_files)
 
 	header = (header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 	lock->lck_key.lck_long = header->hdr_shadow_count;
-	LCK_lock(tdbb, lock, LCK_SR, TRUE);
+	LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 	CCH_RELEASE(tdbb, &window);
 
 	MET_get_shadow_files(tdbb, delete_files);
@@ -702,7 +702,7 @@ void SDW_notify(void)
 	}
 	else {
 		lock->lck_key.lck_long = header->hdr_shadow_count;
-		LCK_lock(tdbb, lock, LCK_EX, TRUE);
+		LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
 	}
 
 	LCK_release(tdbb, lock);
@@ -711,7 +711,7 @@ void SDW_notify(void)
    we will get notification of the next shadow add */
 
 	lock->lck_key.lck_long = ++(header->hdr_shadow_count);
-	LCK_lock(tdbb, lock, LCK_SR, TRUE);
+	LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 
 	CCH_RELEASE(tdbb, &window);
 }

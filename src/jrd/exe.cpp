@@ -1737,7 +1737,7 @@ static Lock* implicit_record_lock(jrd_tra* transaction, record_param* rpb)
 
 	if ((record_locking->lck_physical == LCK_none) &&
 		!(relation->rel_lock_total % RECORD_LOCK_CHECK_INTERVAL) &&
-		LCK_lock_non_blocking(tdbb, record_locking, LCK_PR, FALSE))
+		LCK_lock_non_blocking(tdbb, record_locking, LCK_PR, LCK_NO_WAIT))
 	{
 		return NULL;
 	}

@@ -576,7 +576,8 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 		if (state == tra_limbo
 			&& !(transaction->tra_flags & TRA_ignore_limbo))
 		{
-			state = TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr, true);
+			state = TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr,
+							 jrd_tra::tra_wait);
 			if (state == tra_active)
 				state = tra_limbo;
 		}
@@ -589,7 +590,8 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 			if (state == tra_limbo) {
 				CCH_RELEASE(tdbb, &rpb->rpb_window);
 				state =
-					TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr, true);
+					TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr,
+							 jrd_tra::tra_wait);
 
 				if (!DPM_get(tdbb, rpb, LCK_read))
 					return false;
@@ -620,7 +622,8 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 
 				CCH_RELEASE(tdbb, &rpb->rpb_window);
 				state =
-					TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr, true);
+					TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr,
+							 jrd_tra::tra_wait);
 				if (state == tra_active)
 					ERR_post(isc_deadlock, 0);
 
@@ -1899,16 +1902,12 @@ bool VIO_get_current(
 		   finish shortly. */
 
 		if (!(rpb->rpb_flags & rpb_gc_active)) {
-			state = TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr, true);
+			state = TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr,
+							 jrd_tra::tra_wait);
 		}
 		else {
-			const bool wait_flag =
-				(transaction->tra_flags & TRA_nowait) == 0;
-			transaction->tra_flags |= TRA_nowait;
-			state = TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr, true);
-			if (wait_flag) {
-				transaction->tra_flags &= ~TRA_nowait;
-			}
+			state = TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr,
+							 jrd_tra::tra_probe);
 
 			if (state == tra_active) {
 				THREAD_EXIT();
@@ -4307,16 +4306,13 @@ static int prepare_update(	thread_db*		tdbb,
 
 			if (!(rpb->rpb_flags & rpb_gc_active)) {
 				state =
-					TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr, true);
+					TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr,
+							 jrd_tra::tra_wait);
 			}
 			else {
-				const bool wait_flag = (transaction->tra_flags & TRA_nowait) == 0;
-				transaction->tra_flags |= TRA_nowait;
 				state =
-					TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr, true);
-				if (wait_flag) {
-					transaction->tra_flags &= ~TRA_nowait;
-				}
+					TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr,
+							 jrd_tra::tra_probe);
 
 				if (state == tra_active) {
 					THREAD_EXIT();

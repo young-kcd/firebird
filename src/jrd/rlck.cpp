@@ -107,10 +107,10 @@ Lock* RLCK_lock_record(record_param* rpb,
 		   that are doing record locking, but incompatible with those who aren't */
 
 		if (record_locking->lck_logical == LCK_none)
-			LCK_lock_non_blocking(tdbb, record_locking, LCK_SW, TRUE);
+			LCK_lock_non_blocking(tdbb, record_locking, LCK_SW, LCK_WAIT);
 		else
 			LCK_convert_non_blocking(tdbb, tdbb, record_locking, LCK_SW,
-									 TRUE);
+									 LCK_WAIT);
 	}
 
 	relation->rel_explicit_locks++;
@@ -312,7 +312,7 @@ Lock* RLCK_record_locking(jrd_rel* relation)
 /* now attempt to get a PR on the lock to detect when
    anyone locks a record explicitly */
 
-	LCK_lock(tdbb, _non_blocking(lock, LCK_PR, FALSE));
+	LCK_lock(tdbb, _non_blocking(lock, LCK_PR, LCK_NO_WAIT));
 	return lock;
 }
 #endif
@@ -451,7 +451,7 @@ Lock* RLCK_reserve_relation(thread_db* tdbb,
 		return lock;
 	else {
 		if (error_flag)
-			ERR_post(transaction->getLockWait() ? isc_deadlock : isc_lock_conflict, 0);
+			ERR_punt();
 		return NULL;
 	}
 }
@@ -564,7 +564,7 @@ void RLCK_signal_refresh(jrd_tra* transaction)
 				jrd_rel* relation = (jrd_rel*) lock->lck_object;
 				local_lock->lck_key.lck_long = relation->rel_id;
 				local_lock->lck_object = relation;
-				LCK_lock_non_blocking(tdbb, local_lock, LCK_SW, 0);
+				LCK_lock_non_blocking(tdbb, local_lock, LCK_SW, LCK_NO_WAIT);
 				LCK_release(tdbb, local_lock);
 			}
 		}
@@ -650,7 +650,7 @@ void RLCK_unlock_record(Lock* lock, record_param* rpb)
    record locks taken out and we should just release the lock */
 	if (relation && !--relation->rel_explicit_locks) {
 		Lock* record_locking = relation->rel_record_locking;
-		if (!LCK_convert_non_blocking(tdbb, record_locking, LCK_PR, FALSE))
+		if (!LCK_convert_non_blocking(tdbb, record_locking, LCK_PR, LCK_NO_WAIT))
 			LCK_release(tdbb, record_locking);
 	}
 
@@ -699,7 +699,7 @@ void RLCK_unlock_record_implicit(Lock* lock, record_param* rpb)
 				LCK_release(tdbb, relation->rel_interest_lock);
 			else
 				LCK_convert_non_blocking(tdbb, relation->rel_interest_lock,
-										 LCK_SR, TRUE);
+										 LCK_SR, LCK_WAIT);
 	}
 	else if (lock_level == LCK_PR) {
 		if (!--relation->rel_read_locks && !relation->rel_write_locks)
@@ -962,11 +962,8 @@ static bool obtain_lock(jrd_tra* transaction, Lock* lock, USHORT lock_level)
  *	necessary level.
  *
  **************************************/
-	USHORT wait_flag;
-	if (transaction)
-		wait_flag = transaction->getLockWait();
-	else
-		wait_flag = FALSE;
+	const SSHORT wait_flag =
+		transaction ? transaction->getLockWait() : 0;
 /* return if lock level OK and if the lock has not been released
    (like as part of a refresh range)  */
 	if ((lock_level <= lock->lck_logical) && (lock->lck_id != -1))

@@ -2058,7 +2058,7 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 						LCK_lock_non_blocking(	tdbb,
 												index->idl_lock,
 												LCK_SR,
-												TRUE);
+												LCK_WAIT);
 					}
 					++index->idl_count;
 				}

@@ -495,7 +495,7 @@ int INF_database_info(const SCHAR* items,
 				 id < transaction->tra_number; id++)
 			{
 				if (TRA_snapshot_state(tdbb, transaction, id) == tra_limbo &&
-					TRA_wait(tdbb, transaction, id, true) == tra_limbo)
+					TRA_wait(tdbb, transaction, id, jrd_tra::tra_wait) == tra_limbo)
 				{
 					length = INF_convert(id, buffer);
 					if (!

@@ -25,10 +25,10 @@
 #define JRD_TRA_PROTO_H
 
 #include "../jrd/req.h"
+#include "../jrd/tra.h"
 
 namespace Jrd {
 	class Attachment;
-	class jrd_tra;
 	class Database;
 }
 
@@ -61,7 +61,7 @@ Jrd::jrd_tra*	TRA_start(Jrd::thread_db*, int, const SCHAR*);
 int		TRA_state(const UCHAR*, ULONG, ULONG);
 bool	TRA_sweep(Jrd::thread_db*, Jrd::jrd_tra*);
 Jrd::Lock*	TRA_transaction_lock(Jrd::thread_db*, blk*);
-int		TRA_wait(Jrd::thread_db*, Jrd::jrd_tra*, SLONG, bool);
+int		TRA_wait(Jrd::thread_db*, Jrd::jrd_tra*, SLONG, Jrd::jrd_tra::wait_t);
 
 #endif // JRD_TRA_PROTO_H
 

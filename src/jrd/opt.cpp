@@ -1189,7 +1189,7 @@ void OPT_set_index(thread_db* tdbb,
 		IndexLock* index = CMP_get_index_lock(tdbb, relation, idx->idx_id);
 		if (index) {
 			if (!index->idl_count) {
-				LCK_lock_non_blocking(tdbb, index->idl_lock, LCK_SR, TRUE);
+				LCK_lock_non_blocking(tdbb, index->idl_lock, LCK_SR, LCK_WAIT);
 			}
 			++index->idl_count;
 		}

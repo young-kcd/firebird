@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.142 2004-09-26 07:24:04 robocop Exp $
+$Id: met.epp,v 1.143 2004-10-07 09:15:30 dimitr Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -2003,7 +2003,7 @@ jrd_prc* MET_lookup_procedure(thread_db* tdbb, const Firebird::string& name, boo
 					{
 						check_procedure = procedure;
 						LCK_lock(tdbb, check_procedure->prc_existence_lock,
-							LCK_SR, TRUE);
+							LCK_SR, LCK_WAIT);
 						break;
 					}
 					else {
@@ -2076,7 +2076,7 @@ jrd_prc* MET_lookup_procedure_id(thread_db* tdbb, SSHORT id,
 	{
 		if (procedure->prc_flags & PRC_check_existence) {
 			check_procedure = procedure;
-			LCK_lock(tdbb, check_procedure->prc_existence_lock, LCK_SR, TRUE);
+			LCK_lock(tdbb, check_procedure->prc_existence_lock, LCK_SR, LCK_WAIT);
 		}
 		else {
 			return procedure;
@@ -2164,7 +2164,7 @@ jrd_rel* MET_lookup_relation(thread_db* tdbb, const char* name)
 					{
 						check_relation = relation;
 						LCK_lock(tdbb, check_relation->rel_existence_lock,
-								 LCK_SR, TRUE);
+								 LCK_SR, LCK_WAIT);
 						break;
 					}
 					else
@@ -2257,7 +2257,7 @@ jrd_rel* MET_lookup_relation_id(thread_db* tdbb, SLONG id, bool return_deleted)
 		else if (relation->rel_flags & REL_check_existence)
 		{
 			check_relation = relation;
-			LCK_lock(tdbb, check_relation->rel_existence_lock, LCK_SR, TRUE);
+			LCK_lock(tdbb, check_relation->rel_existence_lock, LCK_SR, LCK_WAIT);
 		}
 		else
 		{
@@ -2621,7 +2621,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 		lock->lck_object = procedure;
 		lock->lck_ast = blocking_ast_procedure;
 
-		LCK_lock(tdbb, procedure->prc_existence_lock, LCK_SR, TRUE);
+		LCK_lock(tdbb, procedure->prc_existence_lock, LCK_SR, LCK_WAIT);
 	}
 
 	if (!noscan) {

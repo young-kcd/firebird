@@ -316,7 +316,7 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 
 /* if we can't get the lock, no big deal: just give up on caching the index info */
 
-	if (!LCK_lock_non_blocking(tdbb, index_block->idb_lock, LCK_SR, FALSE))
+	if (!LCK_lock_non_blocking(tdbb, index_block->idb_lock, LCK_SR, LCK_NO_WAIT))
 		return;
 
 /* whether the index block already existed or was just created,

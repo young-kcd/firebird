@@ -711,7 +711,7 @@ SLONG PAG_attachment_id(void)
 	lock->lck_length = sizeof(SLONG);
 	lock->lck_key.lck_long = attachment->att_attachment_id;
 	lock->lck_dbb = dbb;
-	LCK_lock(tdbb, lock, LCK_write, TRUE);
+	LCK_lock(tdbb, lock, LCK_write, LCK_WAIT);
 
 	return attachment->att_attachment_id;
 }

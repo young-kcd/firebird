@@ -90,15 +90,10 @@ static const SCHAR lock_types[] =
 };
 #endif /* VMS */
 
-const int DEFAULT_LOCK_TIMEOUT = -1;
+const int DEFAULT_LOCK_TIMEOUT = -1; // infinite
 
 using namespace Jrd;
 using namespace Ods;
-
-SSHORT jrd_tra::getLockWait() const
-{
-	return (tra_flags & TRA_nowait) ? 0 : -tra_lock_timeout;
-}
 
 #ifdef SUPERSERVER_V2
 static SLONG bump_transaction_id(thread_db*, WIN *);
@@ -200,7 +195,7 @@ bool TRA_active_transactions(thread_db* tdbb, Database* dbb)
 		const USHORT state = (trans->tra_transactions[byte] >> shift) & TRA_MASK;
 		if (state == tra_active) {
 			temp_lock.lck_key.lck_long = active;
-			if (!LCK_lock_non_blocking(tdbb, &temp_lock, LCK_read, FALSE)) {
+			if (!LCK_lock_non_blocking(tdbb, &temp_lock, LCK_read, LCK_NO_WAIT)) {
 				delete trans;
 				return true;
 			}
@@ -1509,7 +1504,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
 	lock->lck_data = active;
 	lock->lck_object = trans;
 
-	if (!LCK_lock_non_blocking(tdbb, lock, LCK_write, TRUE)) {
+	if (!LCK_lock_non_blocking(tdbb, lock, LCK_write, LCK_WAIT)) {
 #ifndef SUPERSERVER_V2
 		if (!(dbb->dbb_flags & DBB_read_only))
 			CCH_RELEASE(tdbb, &window);
@@ -1577,7 +1572,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
 			SLONG data = LCK_read_data(&temp_lock);
 			if (!data) {
 				if (cleanup) {
-					if (TRA_wait(tdbb, trans, active, false) == tra_committed)
+					if (TRA_wait(tdbb, trans, active, jrd_tra::tra_no_wait) == tra_committed)
 						cleanup = false;
 					continue;
 				}
@@ -1784,7 +1779,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 	temp_lock.lck_length = sizeof(SLONG);
 
 	if (!LCK_lock_non_blocking
-		(tdbb, &temp_lock, LCK_EX, (trans) ? FALSE : TRUE))
+		(tdbb, &temp_lock, LCK_EX, (trans) ? LCK_NO_WAIT : LCK_WAIT))
 	{
 		return true;
 	}
@@ -1943,11 +1938,11 @@ Lock* TRA_transaction_lock(thread_db* tdbb, BLK object)
 }
 
 
-int TRA_wait(thread_db* tdbb, jrd_tra* trans, SLONG number, bool wait)
+int TRA_wait(thread_db* tdbb, jrd_tra* trans, SLONG number, jrd_tra::wait_t wait)
 {
 /**************************************
  *
- *	T R A _ w a i t			( n o n - G A T E W A Y )
+ *	T R A _ w a i t
  *
  **************************************
  *
@@ -1969,7 +1964,7 @@ int TRA_wait(thread_db* tdbb, jrd_tra* trans, SLONG number, bool wait)
 /* Create, wait on, and release lock on target transaction.  If
    we can't get the lock due to deadlock */
 
-	if (wait) {
+	if (wait != jrd_tra::tra_no_wait) {
 		Lock temp_lock;
 		temp_lock.lck_dbb = dbb;
 		temp_lock.lck_type = LCK_tra;
@@ -1980,8 +1975,10 @@ int TRA_wait(thread_db* tdbb, jrd_tra* trans, SLONG number, bool wait)
 		temp_lock.lck_key.lck_long = number;
 		temp_lock.lck_owner = trans;
 
-		if (!LCK_lock_non_blocking(tdbb, &temp_lock, LCK_read,
-								   trans->getLockWait()))
+		const SSHORT timeout =
+			(wait == jrd_tra::tra_wait) ? trans->getLockWait() : 0;
+
+		if (!LCK_lock_non_blocking(tdbb, &temp_lock, LCK_read, timeout))
 			return tra_active;
 
 		LCK_release(tdbb, &temp_lock);
@@ -1989,7 +1986,7 @@ int TRA_wait(thread_db* tdbb, jrd_tra* trans, SLONG number, bool wait)
 
 	USHORT state = TRA_get_state(tdbb, number);
 
-	if (wait && state == tra_committed)
+	if (wait != jrd_tra::tra_no_wait && state == tra_committed)
 		return state;
 
 	if (state == tra_precommitted)
@@ -2159,14 +2156,14 @@ static void compute_oldest_retaining(
 		lock->lck_length = sizeof(SLONG);
 		lock->lck_object = reinterpret_cast<blk*>(dbb);
 #ifdef VMS
-		if (LCK_lock(tdbb, lock, LCK_EX, FALSE)) {
+		if (LCK_lock(tdbb, lock, LCK_EX, LCK_NO_WAIT)) {
 			number = 0;
 			vms_convert(lock, &number, LCK_SR, true);
 		}
 		else
-			LCK_lock(tdbb, lock, LCK_SR, TRUE);
+			LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 #else
-		LCK_lock_non_blocking(tdbb, lock, LCK_SR, TRUE);
+		LCK_lock_non_blocking(tdbb, lock, LCK_SR, LCK_WAIT);
 #endif
 		dbb->dbb_retaining_lock = lock;
 	}
@@ -2542,7 +2539,7 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, const bool com
 		new_lock->lck_ast = downgrade_lock;
 #endif
 
-		if (!LCK_lock_non_blocking(tdbb, new_lock, LCK_write, TRUE)) {
+		if (!LCK_lock_non_blocking(tdbb, new_lock, LCK_write, LCK_WAIT)) {
 #ifndef SUPERSERVER_V2
 			if (!(dbb->dbb_flags & DBB_read_only))
 				CCH_RELEASE(tdbb, &window);
@@ -2663,7 +2660,7 @@ static void start_sweeper(thread_db* tdbb, Database* dbb)
 	temp_lock.lck_parent		= dbb->dbb_lock;
 	temp_lock.lck_length		= sizeof(SLONG);
 
-	if (!LCK_lock(tdbb, &temp_lock, LCK_EX, FALSE))
+	if (!LCK_lock(tdbb, &temp_lock, LCK_EX, LCK_NO_WAIT))
 	{
 		return; // false;
 	}
@@ -2782,6 +2779,7 @@ static void transaction_options(
 		ERR_post(isc_bad_tpb_form, isc_arg_gds, isc_wrotpbver, 0);
 
 	transaction->tra_lock_timeout = DEFAULT_LOCK_TIMEOUT;
+	bool wait = true, lock_timeout = false;
 
 	++tpb;
 
@@ -2820,7 +2818,12 @@ static void transaction_options(
 			break;
 
 		case isc_tpb_nowait:
-			transaction->tra_flags |= TRA_nowait;
+			if (lock_timeout)
+			{
+				ERR_post(isc_bad_tpb_content, 0);
+			}
+			transaction->tra_lock_timeout = 0;
+			wait = false;
 			break;
 
 		case isc_tpb_read:
@@ -2904,9 +2907,14 @@ static void transaction_options(
 
 		case isc_tpb_lock_timeout:
 			{
+			if (!wait)
+			{
+				ERR_post(isc_bad_tpb_content, 0);
+			}
 			const USHORT l = *tpb++;
 			transaction->tra_lock_timeout = gds__vax_integer(tpb, l);
 			tpb += l;
+			lock_timeout = true;
 			break;
 			}
 
@@ -2929,9 +2937,9 @@ static void transaction_options(
 		if (!lock)
 			continue;
 		USHORT level = lock->lck_logical;
-		const SSHORT wait = transaction->getLockWait();
 		if (level == LCK_none
-			|| LCK_lock_non_blocking(tdbb, lock, level, wait))
+			|| LCK_lock_non_blocking(tdbb, lock, level,
+									 transaction->getLockWait()))
 		{
 			continue;
 		}
@@ -2943,10 +2951,7 @@ static void transaction_options(
 			}
 		}
 		id = 0;
-		if (!wait)
-			ERR_post(isc_lock_conflict, 0);
-		else
-			ERR_post(isc_deadlock, 0);
+		ERR_punt();
 	}
 }
 

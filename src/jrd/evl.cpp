@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.108 2004-10-03 12:10:19 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.109 2004-10-07 09:15:30 dimitr Exp $ 
  */
 
 /*
@@ -3913,7 +3913,7 @@ static dsc* lock_state(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 			temp_lock.lck_length = sizeof(SLONG);
 			temp_lock.lck_key.lck_long = id;
 
-			if (LCK_lock(tdbb, &temp_lock, LCK_write, FALSE)) {
+			if (LCK_lock(tdbb, &temp_lock, LCK_write, LCK_NO_WAIT)) {
 				impure->vlu_misc.vlu_long = 1;
 				LCK_release(tdbb, &temp_lock);
 			}

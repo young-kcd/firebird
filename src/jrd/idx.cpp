@@ -1461,10 +1461,10 @@ static void signal_index_deletion(thread_db* tdbb, jrd_rel* relation, USHORT id)
 /* signal other processes to clear out the index block */
 
 	if (lock->lck_physical == LCK_SR) {
-		LCK_convert_non_blocking(tdbb, lock, LCK_EX, TRUE);
+		LCK_convert_non_blocking(tdbb, lock, LCK_EX, LCK_WAIT);
 	}
 	else {
-		LCK_lock_non_blocking(tdbb, lock, LCK_EX, TRUE);
+		LCK_lock_non_blocking(tdbb, lock, LCK_EX, LCK_WAIT);
 	}
 
 /* and clear out our index block as well */
