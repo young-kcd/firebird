@@ -1603,9 +1603,8 @@ static BOOLEAN aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT * curren
 			return aggregate;	
 
 		case nod_order:
-			aggregate |= 
-				aggregate_found2(request, node->nod_arg[e_order_field], current_level, deepest_level);
-			break;
+			aggregate = aggregate_found2(request, node->nod_arg[e_order_field], current_level, deepest_level);
+			return aggregate;
 
 		case nod_or:
 		case nod_and:
