@@ -1545,7 +1545,7 @@ static BOOLEAN aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT * curren
 								USHORT * deepest_level, BOOLEAN ignore_sub_selects)
 {
 	DSQL_NOD *ptr, *end;
-	DSQL_CTX lcontext;
+	DSQL_CTX lcontext, lrelation_context;
 	BOOLEAN aggregate = FALSE;
 
 	DEV_BLKCHK(request, dsql_type_req);
@@ -1705,6 +1705,17 @@ static BOOLEAN aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT * curren
 
 		case nod_constant:
 			return FALSE;
+
+		case nod_relation:
+			lrelation_context = reinterpret_cast<DSQL_CTX>(node->nod_arg[e_rel_context]);
+			// Check if relation is a procedure
+			if (lrelation_context->ctx_procedure) {
+				// If input parameters exists check if a aggregate is burried inside
+				if (lrelation_context->ctx_proc_inputs) {
+					aggregate |= aggregate_found2(request, lrelation_context->ctx_proc_inputs, current_level, deepest_level, ignore_sub_selects);
+				}
+			}
+			return aggregate;
 
 		default:
 			return FALSE;
@@ -2149,7 +2160,7 @@ static BOOLEAN invalid_reference(DSQL_CTX context, DSQL_NOD node, DSQL_NOD list,
 {
 	DSQL_NOD *ptr, *end;
 	BOOLEAN invalid;
-	DSQL_CTX lcontext;
+	DSQL_CTX lcontext, lrelation_context;
 	MAP lmap;
 
 	DEV_BLKCHK(node, dsql_type_nod);
@@ -2316,6 +2327,17 @@ static BOOLEAN invalid_reference(DSQL_CTX context, DSQL_NOD node, DSQL_NOD list,
 			break;
 
 		case nod_relation:
+			lrelation_context = reinterpret_cast<DSQL_CTX>(node->nod_arg[e_rel_context]);
+			// Check if relation is a procedure
+			if (lrelation_context->ctx_procedure) {
+				// If input parameters exists check if the parameters are valid
+				if (lrelation_context->ctx_proc_inputs) {
+					invalid |=
+						invalid_reference(context, lrelation_context->ctx_proc_inputs, list, inside_map);
+				}
+			}
+			break;
+
 		case nod_variable:
 		case nod_constant:
 		case nod_parameter:
