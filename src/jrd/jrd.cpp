@@ -527,6 +527,22 @@ void	JRD_thread_security_disable(bool disable)
 }
 
 
+bool	JRD_get_thread_security_disabled()
+{
+/**************************************
+ *
+ *	J R D _ g e t _ t h r e a d _ s e c u r i t y _ d i s a b l e d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Don't run internal handles thru the security gauntlet.
+ *
+ **************************************/
+	return TLS_GET(thread_security_disabled);
+}
+
+
 void JRD_print_pools(const char* filename) {
 	FILE *out = fopen(filename, "w");
 	ALL_print_memory_pool_info(out, databases);
@@ -930,18 +946,13 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	options.dpb_sql_dialect = 0;
 
-	// Don't run internal handles thru the security gauntlet.
-
-	const bool internal = TLS_GET(thread_security_disabled);
-
 	SCL_init(false,
 			 options.dpb_sys_user_name.nullStr(),
 			 options.dpb_user_name.nullStr(),
 			 options.dpb_password.nullStr(),
 			 options.dpb_password_enc.nullStr(),
 			 options.dpb_role_name.nullStr(),
-			 tdbb,
-			 internal);
+			 tdbb);
 
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	initing_security = false;
@@ -1878,18 +1889,13 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	initing_security = true;
 #endif
 
-	// Don't run internal handles thru the security gauntlet.
-
-	const bool internal = TLS_GET(thread_security_disabled);
-
 	SCL_init(true,
 			 options.dpb_sys_user_name.nullStr(),
 			 options.dpb_user_name.nullStr(),
 			 options.dpb_password.nullStr(),
 			 options.dpb_password_enc.nullStr(),
 			 options.dpb_role_name.nullStr(),
-			 tdbb,
-			 internal);
+			 tdbb);
 
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	initing_security = false;

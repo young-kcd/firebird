@@ -53,7 +53,7 @@ const bool SecurityDatabase::is_cached = false;
 
 // BLR to search database for user name record
 
-const UCHAR SecurityDatabase::PWD_REQUEST[256] = {
+const UCHAR SecurityDatabase::PWD_REQUEST[] = {
 	blr_version5,
 	blr_begin,
 	blr_message, 1, 4, 0,
@@ -67,7 +67,7 @@ const UCHAR SecurityDatabase::PWD_REQUEST[256] = {
 	blr_begin,
 	blr_for,
 	blr_rse, 1,
-	blr_relation, 5, 'U', 'S', 'E', 'R', 'S', 0,
+	blr_relation, 8, 'U', 'S', 'E', 'R', 'S', '_', 'B', 'G', 0,
 	blr_first,
 	blr_literal, blr_short, 0, 1, 0,
 	blr_boolean,
@@ -275,7 +275,9 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 	{
 		if (lookup_db)
 		{
-			isc_detach_database(status, &lookup_db);
+			isc_db_handle tmp = lookup_db;
+			lookup_db = 0;
+			isc_detach_database(status, &tmp);
 		}
 		THREAD_ENTER();
 		ERR_post(isc_psw_attach, 0);
@@ -362,10 +364,10 @@ bool SecurityDatabase::prepare()
 		dpb.getBufferLength(), 
 		reinterpret_cast<const char*>(dpb.getBuffer()));
 	
-	JRD_thread_security_disable(false);
-
 	isc_compile_request(status, &lookup_db, &lookup_req, sizeof(PWD_REQUEST),
 						reinterpret_cast<const char*>(PWD_REQUEST));
+
+	JRD_thread_security_disable(false);
 
 	if (status[1])
 	{

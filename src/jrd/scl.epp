@@ -153,6 +153,12 @@ void SCL_check_access(const SecurityClass* s_class,
 				 0);
 	}
 
+	// Don't run internal handles thru the security gauntlet.
+	if (JRD_get_thread_security_disabled())
+	{
+		return;
+	}
+
 	Attachment* attachment = tdbb->tdbb_attachment;
 
 	const SecurityClass* att_class = attachment->att_security_class;
@@ -567,8 +573,7 @@ void SCL_init(bool create,
 			  const TEXT* password,
 			  const TEXT* password_enc,
 			  const TEXT* sql_role,
-			  thread_db* tdbb,
-			  const bool internal)
+			  thread_db* tdbb)
 {
 /**************************************
  *
@@ -622,7 +627,7 @@ void SCL_init(bool create,
 			ERR_post(isc_login, 0);
 		}
 
-		if (!internal)
+		if (!JRD_get_thread_security_disabled())
 		{
 			SecurityDatabase::verifyUser(name, user_name, password, password_enc,
 										 &id, &group, &node_id);

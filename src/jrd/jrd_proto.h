@@ -160,6 +160,7 @@ void	JRD_unblock(Jrd::BlockingThread**);
 void	JRD_wlck_lock(struct mutx_t *);
 void	JRD_wlck_unlock(struct mutx_t *);
 void	JRD_thread_security_disable(bool disable);
+bool	JRD_get_thread_security_disabled();
 
 // Call this function from the debugger if desired
 void	JRD_print_pools(const char* filename);
