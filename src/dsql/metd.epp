@@ -561,14 +561,14 @@ USHORT METD_get_charset_bpc (DSQL_REQ request,
  *	charset' id, not by name.
  *
  **************************************/
-    FRBRD *DB, *gds__trans;
+    FRBRD *DB, *gds_trans;
     DBB	dbb;
     isc_req_handle handle;
     USHORT	bpc = 0;
     
     dbb = request->req_dbb;
     DB = dbb->dbb_database_handle;
-    gds__trans = request->req_trans;
+    gds_trans = request->req_trans;
     
     handle = 0;
     
