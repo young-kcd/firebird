@@ -1756,7 +1756,18 @@ static void share_name_from_unc(
 }
 #endif /* WIN_NT */
 
-bool ISC_verify_database_access(TEXT *name) {
+bool ISC_verify_database_access(TEXT *name)
+{
+/**************************************
+ *
+ *      I S C _ v e r i f y _ d a t a b a s e _ a c c e s s
+ *
+ **************************************
+ *
+ * Functional description
+ *      Verify 'name' against DatabaseAccess entry of firebird.conf.
+ *
+ **************************************/
 #ifndef SUPERCLIENT
 	static class DatabaseDirectoryList : public DirectoryList {
 		const Firebird::PathName GetConfigString(void) const {
