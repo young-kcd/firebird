@@ -75,7 +75,7 @@ Jrd::jrd_rel*	MET_lookup_relation_id(Jrd::thread_db*, SLONG, bool);
 Jrd::jrd_nod*	MET_parse_blob(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::bid*, Jrd::CompilerScratch**,
 								  Jrd::jrd_req**, const bool, const bool);
 void		MET_parse_sys_trigger(Jrd::thread_db*, Jrd::jrd_rel*);
-int			MET_post_existence(Jrd::thread_db*, Jrd::jrd_rel*);
+bool		MET_post_existence(Jrd::thread_db*, Jrd::jrd_rel*);
 void		MET_prepare(Jrd::thread_db*, Jrd::jrd_tra*, USHORT, const UCHAR*);
 Jrd::jrd_prc*	MET_procedure(Jrd::thread_db*, int, bool, USHORT);
 Jrd::jrd_rel*	MET_relation(Jrd::thread_db*, USHORT);

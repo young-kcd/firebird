@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.68 2004-12-09 02:50:39 robocop Exp $
+
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr

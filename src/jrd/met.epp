@@ -2441,7 +2441,8 @@ void MET_parse_sys_trigger(thread_db* tdbb, jrd_rel* relation)
 }
 
 
-int MET_post_existence( thread_db* tdbb, jrd_rel* relation)
+// Currently, nobody checks the result of this function, but let's keep it.
+bool MET_post_existence( thread_db* tdbb, jrd_rel* relation)
 {
 /**************************************
  *
@@ -2458,10 +2459,10 @@ int MET_post_existence( thread_db* tdbb, jrd_rel* relation)
 	if (++relation->rel_use_count == 1 &&
 		!MET_lookup_relation_id(tdbb, relation->rel_id, false))
 	{
-		return FALSE;
+		return false;
 	}
 
-	return TRUE;
+	return true;
 }
 
 

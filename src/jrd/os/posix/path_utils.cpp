@@ -40,12 +40,12 @@ class PosixDirItr : public PathUtils::dir_iterator
 {
 public:
 	PosixDirItr(MemoryPool& p, const Firebird::PathName& path)
-		: dir_iterator(p, path), dir(0), file(p), done(0)
+		: dir_iterator(p, path), dir(0), file(p), done(false)
 	{
 		init();
 	}
 	PosixDirItr(const Firebird::PathName& path)
-		: dir_iterator(path), dir(0), done(0)
+		: dir_iterator(path), dir(0), done(false)
 	{
 		init();
 	}
@@ -57,7 +57,7 @@ public:
 private:
 	DIR *dir;
 	Firebird::PathName file;
-	int done;
+	bool done;
 	void init();
 };
 
@@ -65,7 +65,7 @@ void PosixDirItr::init()
 {
 	dir = opendir(dirPrefix.c_str());
 	if (!dir)
-		done = 1;
+		done = true;
 	else
 		++(*this);
 }
@@ -75,7 +75,7 @@ PosixDirItr::~PosixDirItr()
 	if (dir)
 		closedir(dir);
 	dir = 0;
-	done = 1;
+	done = true;
 }
 
 const PosixDirItr& PosixDirItr::operator++()
@@ -85,7 +85,7 @@ const PosixDirItr& PosixDirItr::operator++()
 	struct dirent *ent = readdir(dir);
 	if (ent == NULL)
 	{
-		done = 1;
+		done = true;
 	}
 	else
 	{

@@ -70,8 +70,8 @@ private:
 	// use separate bytes for flags in order to guarantee there 
 	// modification independence by different threads without
 	// affecting each other
-	UCHAR inside;			// executing between ENTER and EXIT
-	UCHAR gonein;			// pass through ENTER since last scheduling
+	bool inside;			// executing between ENTER and EXIT
+	bool gonein;			// pass through ENTER since last scheduling
 	UCHAR flags;			// flags that can't be modified concurrently
 	
 	// Scheduler Thread
@@ -93,7 +93,7 @@ private:
 
 public:
 	ThreadPriorityScheduler(ThreadEntryPoint* r, void* a, UCHAR f)
-		: routine(r), arg(a), inside(0), gonein(0), flags(f) {}
+		: routine(r), arg(a), inside(false), gonein(false), flags(f) {}
 	// Unregister thread from priorities scheduler
 	void detach();
 
@@ -114,8 +114,8 @@ public:
 	{
 		ThreadPriorityScheduler *t = get();
 		fb_assert(t);
-		t->inside = 1;
-		t->gonein = 1;
+		t->inside = true;
+		t->gonein = true;
 	}
 	
 	// Goes from low priority zone
@@ -123,7 +123,7 @@ public:
 	{
 		ThreadPriorityScheduler *t = get();
 		fb_assert(t);
-		t->inside = 0;
+		t->inside = false;
 	}
 	
 	// Check whether current thread has high priority

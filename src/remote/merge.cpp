@@ -133,11 +133,10 @@ static SSHORT convert( ULONG number, UCHAR * buffer)
  *	Return the length.
  *
  **************************************/
-	ULONG n;
-	UCHAR *p;
+	const UCHAR *p;
 
 #ifndef WORDS_BIGENDIAN
-	n = number;
+	ULONG n = number;
 	p = (UCHAR *) & n;
 	*buffer++ = *p++;
 	*buffer++ = *p++;

@@ -190,7 +190,7 @@ unsigned int __stdcall ThreadPriorityScheduler::schedulerMain(LPVOID)
 			break;
 		}
 		Sleep(Config::getPrioritySwitchDelay());
-		UCHAR StateCloseHandles = 0;
+		//UCHAR StateCloseHandles = 0;
 		// We needn't lock mutex, because we don't modify
 		// next here, and new thps object may be added
 		// only in the beginning of the chain - even if it 
@@ -199,11 +199,11 @@ unsigned int __stdcall ThreadPriorityScheduler::schedulerMain(LPVOID)
 		// toDetach member is added to this class.
 		for (ThreadPriorityScheduler *t = chain; t; t = t->next) 
 		{
-			UCHAR p_flags = t->flags;
+			const UCHAR p_flags = t->flags;
 			if (p_flags & THPS_PSCHED) 
 			{
-				UCHAR gonein = t->gonein;
-				t->gonein = 0;
+				const bool gonein = t->gonein;
+				t->gonein = false;
 				t->flags &= ~(THPS_UP | THPS_LOW); // clean them
 #pragma FB_COMPILER_MESSAGE("Fix! May have problems with long running UDFs.")
 				if ((! gonein) && (! (p_flags & THPS_BOOSTED))) 

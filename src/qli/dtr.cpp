@@ -79,7 +79,7 @@ struct answer_t {
 	bool value;
 };
 
-static int yes_no_loaded = 0;
+static bool yes_no_loaded = false;
 static answer_t answer_table[] =
 {
 	{ "NO", false },					// NO   
@@ -622,7 +622,7 @@ static bool yes_no(USHORT number, const TEXT* arg1)
 	ERRQ_msg_format(number, sizeof(prompt), prompt, arg1, NULL, NULL, NULL,
 					NULL);
 	if (!yes_no_loaded) {
-		yes_no_loaded = 1;
+		yes_no_loaded = true;
 		if (!ERRQ_msg_get(498, answer_table[0].answer))	// Msg498 NO    
 			strcpy(answer_table[0].answer, "NO");	// default if msg_get fails 
 		if (!ERRQ_msg_get(497, answer_table[1].answer))	// Msg497 YES   
