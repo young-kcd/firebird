@@ -24,6 +24,8 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  *
+ * 2002.10.27 Sean Leyne - Completed removal of "DELTA" port
+ *
  */
 
 #include "firebird.h"
@@ -657,7 +659,7 @@ int LLIO_sync(STATUS * status_vector, SLONG file_desc)
  *
  **************************************/
 
-#if (defined DELTA || defined NETWARE_386)
+#if defined NETWARE_386
 	return SUCCESS;
 #else
 	return (fsync((int) file_desc) != -1) ? SUCCESS : FAILURE;

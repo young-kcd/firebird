@@ -22,9 +22,11 @@
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  *
+ * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
+ *
  */
 /*
-$Id: lock.cpp,v 1.16 2002-10-27 12:51:37 dimitr Exp $
+$Id: lock.cpp,v 1.17 2002-10-28 03:47:45 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -87,7 +89,7 @@ $Id: lock.cpp,v 1.16 2002-10-27 12:51:37 dimitr Exp $
 #include <vfork.h>
 #endif
 
-#if ( defined DELTA || defined IMP )
+#ifdef IMP
 #define waitpid(x,y,z)	wait (y)
 #endif
 

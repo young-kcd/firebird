@@ -23,12 +23,13 @@
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
  *
- *
  * 2002-02-23 Sean Leyne - Code Cleanup, removed old M88K and NCR3000 port
+ *
+ * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
  *
  */
 
- /* $Id: head.cpp,v 1.11 2002-09-11 11:30:45 eku Exp $ */
+ /* $Id: head.cpp,v 1.12 2002-10-28 03:47:46 seanleyne Exp $ */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -73,7 +74,7 @@
 #include <fcntl.h>
 #endif
 
-#if (defined DELTA || defined M88K || defined SCO_UNIX || defined SINIXZ)
+#if (defined SCO_UNIX || defined SINIXZ)
 #include <fcntl.h>
 #endif
 

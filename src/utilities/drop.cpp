@@ -19,16 +19,18 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- */
-/*
-$Id: drop.cpp,v 1.10 2002-10-24 09:01:32 eku Exp $
+ *
+ * $Id: drop.cpp,v 1.11 2002-10-28 03:47:46 seanleyne Exp $
+ *
+ * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
+ *
 */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <errno.h>
 #include <sys/param.h>
-#if ( defined DELTA || defined IMP)
+#if (defined IMP)
 #include <sys/types.h>
 #endif
 #include <sys/stat.h>

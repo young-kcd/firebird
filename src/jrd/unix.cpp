@@ -22,6 +22,9 @@
  * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
  *                         conditionals, as the engine now fully supports
  *                         readonly databases.
+ *
+ * 2002.10.27 Sean Leyne - Completed removal of "DELTA" port
+ *
  */
 
 #ifdef SHLIB_DEFS
@@ -386,7 +389,6 @@ void PIO_flush(FIL main_file)
    is a no-op. */
 
 #ifndef SUPERSERVER_V2
-#if !(defined DELTA)
 	for (file = main_file; file; file = file->fil_next) {
 		if (file->fil_desc != -1) {	/* This really should be an error */
 			THD_MUTEX_LOCK(file->fil_mutex);
@@ -394,7 +396,6 @@ void PIO_flush(FIL main_file)
 			THD_MUTEX_UNLOCK(file->fil_mutex);
 		}
 	}
-#endif
 #endif
 }
 

@@ -22,6 +22,8 @@
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  *
+ * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
+ *
  */
 
 #include "firebird.h"
@@ -64,7 +66,7 @@
 #endif
 #endif
 
-#if (defined DELTA || defined VMS || defined IMP)
+#if (defined VMS || defined IMP)
 #define waitpid(x,y,z)	wait (y)
 #endif
 

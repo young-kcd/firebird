@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
+ *
  */
 
 #include "firebird.h"
@@ -46,7 +49,7 @@
 #include <unistd.h>
 #endif
 
-#if (defined DELTA || defined sgi || defined ultrix)
+#if (defined sgi || defined ultrix)
 #include <sys/types.h>
 #endif
 #include <sys/stat.h>
