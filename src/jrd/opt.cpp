@@ -95,6 +95,7 @@ static bool computable(CSB, JRD_NOD, SSHORT, bool);
 static void compute_dependencies(JRD_NOD, ULONG *);
 static void compute_dbkey_streams(CSB, JRD_NOD, UCHAR *);
 static void compute_rse_streams(CSB, RSE, UCHAR *);
+static bool check_for_nod_from(JRD_NOD);
 static SLONG decompose(TDBB, JRD_NOD, LLS *, CSB);
 static USHORT distribute_equalities(LLS *, CSB);
 static BOOLEAN dump_index(JRD_NOD, SCHAR **, SSHORT *);
@@ -253,28 +254,7 @@ BOOLEAN OPT_access_path(JRD_REQ request,
 
 	DEV_BLKCHK(request, type_req);
 
-	// dimitr:	dump_xxx routines may overrun the passed buffer before
-	//			returning FALSE. Yes, we live in the very cruel world.
-	//			Since INF_request_info uses quite small stack buffer
-	//			by default, any non-trivial access path may lead to
-	//			memory corruption. Below we allocate as much memory as
-	//			looks to be safe (I don't have a clue how much memory
-	//			we should have reserved in the tail of the buffer, but
-	//			think 256 bytes should be enough), work with it and
-	//			only if the final result is TRUE we write data to the
-	//			high level buffer.
-	//
-	// P.S.		I don't like it much to deal with pool allocations here
-	//			but our buffer is freed immediately and GDS_REQUEST_INFO
-	//			isn't a most commonly used routine, so probably my
-	//			worries shouldn't be taken seriously. Stack allocations
-	//			shouldn't be used here, because OPT_access_path can be
-	//			called recursively.
-
-	SCHAR * temp_buffer = (SCHAR*) gds__alloc(BUFFER_XLARGE + 256);
-	SCHAR * ptr = temp_buffer;
-
-	USHORT length = 0;
+	SCHAR * begin = buffer;
 
 /* loop through all RSEs in the request, 
    and describe the rsb tree for that rsb;
@@ -287,20 +267,16 @@ BOOLEAN OPT_access_path(JRD_REQ request,
 
 	for (i = vector->count() - 1; i >= 0; i--) {
 		rsb = (RSB) (*vector)[i];
-		if (rsb && !dump_rsb(request, rsb, &ptr, &buffer_length))
+		if (rsb && !dump_rsb(request, rsb, &buffer, &buffer_length))
 			break;
 	}
 
-	if (i < 0) {
-		length = ptr - temp_buffer;
-		memcpy(buffer, temp_buffer, length);
-	}
+	*return_length = buffer - begin;
 
-	*return_length = length;
-
-	gds__free(temp_buffer);
-
-	return (length > 0);
+	if (i >= 0)
+		return FALSE;
+	else
+		return TRUE;
 }
 
 
@@ -1923,6 +1899,24 @@ static void compute_rse_streams(CSB csb, RSE rse, UCHAR * streams)
 	}
 }
 
+static bool check_for_nod_from(JRD_NOD node)
+{
+/**************************************
+ *
+ *	c h e c k _ f o r _ n o d _ f r o m
+ *
+ **************************************
+ *
+ * Functional description
+ *	Check for nod_from under >=0 nod_cast nodes.
+ *
+ **************************************/
+	if (node->nod_type == nod_from)
+		return true;
+	if (node->nod_type == nod_cast)
+		return check_for_nod_from(node->nod_arg[e_cast_source]);
+	return false;
+}
 
 static SLONG decompose(TDBB tdbb,
 					   JRD_NOD boolean_node, LLS * stack, CSB csb)
@@ -1953,7 +1947,7 @@ static SLONG decompose(TDBB tdbb,
 
 	if (boolean_node->nod_type == nod_between) {
 		arg = boolean_node->nod_arg[0];
-		if (arg->nod_type == nod_from) {
+		if (check_for_nod_from(arg)) {
 			/* Without this ERR_punt(), server was crashing with sub queries 
 			 * under "between" predicate, Bug No. 73766 */
 			ERR_post(isc_optimizer_between_err, 0);
@@ -2190,12 +2184,13 @@ static BOOLEAN dump_index(JRD_NOD node,
 						 (USHORT) (retrieval->irb_index + 1));
 		length = strlen(index_name);
 
-		if ((*buffer_length -= (length + 1)) >= 0) {
-			*buffer++ = (SCHAR) length;
-			i = index_name;
-			while (length--)
-				*buffer++ = *i++;
-		}
+		*buffer_length -= 1 + length;
+		if (*buffer_length < 0)
+			return FALSE;
+		*buffer++ = (SCHAR) length;
+		i = index_name;
+		while (length--)
+			*buffer++ = *i++;
 	}
 
 	*buffer_ptr = buffer;
@@ -2232,7 +2227,8 @@ static BOOLEAN dump_rsb(JRD_REQ request,
 
 /* leave room for the rsb begin, type, and end */
 
-	if ((*buffer_length -= 4) < 0)
+	*buffer_length -= 4;
+	if (*buffer_length < 0)
 		return FALSE;
 	*buffer++ = gds_info_rsb_begin;
 
@@ -2269,8 +2265,6 @@ static BOOLEAN dump_rsb(JRD_REQ request,
 		*buffer++ = gds_info_rsb_indexed;
 		if (!dump_index((JRD_NOD) rsb->rsb_arg[0], &buffer, buffer_length))
 			return FALSE;
-		if (--(*buffer_length) < 0)
-			return FALSE;
 		break;
 
 	case rsb_navigate:
@@ -2278,8 +2272,6 @@ static BOOLEAN dump_rsb(JRD_REQ request,
 		if (!dump_index
 			((JRD_NOD) rsb->rsb_arg[RSB_NAV_index], &buffer,
 			 buffer_length)) return FALSE;
-		if (--(*buffer_length) < 0)
-			return FALSE;
 		break;
 
 	case rsb_sequential:
@@ -2315,7 +2307,7 @@ static BOOLEAN dump_rsb(JRD_REQ request,
         if (!procedure->prc_request->req_fors) {
             STR n = procedure->prc_name;
             length = (n && n->str_data) ? n->str_length : 0;
-            *buffer_length -= 5 + length;
+            *buffer_length -= 6 + length;
             if (*buffer_length < 0)
                 return FALSE;
             *buffer++ = gds_info_rsb_begin;
@@ -2326,7 +2318,6 @@ static BOOLEAN dump_rsb(JRD_REQ request,
                 *buffer++ = *name++;
             *buffer++ = gds_info_rsb_type;
             *buffer++ = gds_info_rsb_sequential;
-            /* *buffer++ = gds__info_rsb_unknown; */
             *buffer++ = gds_info_rsb_end;
             break;
         }
@@ -2335,7 +2326,8 @@ static BOOLEAN dump_rsb(JRD_REQ request,
 			(procedure->prc_request, buffer, *buffer_length,
 			 reinterpret_cast < USHORT * >(&return_length)))
 			return FALSE;
-		if ((*buffer_length -= return_length) < 0)
+		*buffer_length -= return_length;
+		if (*buffer_length < 0)
 			return FALSE;
 		buffer += return_length;
 		break;
@@ -2409,6 +2401,9 @@ static BOOLEAN dump_rsb(JRD_REQ request,
    and merge, dump out the count of streams first, then
    loop through the substreams and dump them out */
 
+	if (--(*buffer_length) < 0)
+		return FALSE;
+
 	switch (rsb->rsb_type) {
 	case rsb_cross:
 		*buffer++ = (UCHAR) rsb->rsb_count;
@@ -2443,8 +2438,9 @@ static BOOLEAN dump_rsb(JRD_REQ request,
 			(request, rsb->rsb_arg[RSB_LEFT_inner], &buffer,
 			 buffer_length)) return FALSE;
 		break;
-        default:    /* Shut up compiler warnings */
-                break;
+  
+	default:    /* Shut up compiler warnings */
+		break;
 	}
 
 /* dump out the next rsb */
