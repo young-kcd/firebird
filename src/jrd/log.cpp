@@ -640,7 +640,7 @@ static void open_log(TEXT * file_name, SSHORT file_length, SCHAR * mode)
 	if (!log_file)
 		error("can't open log file");
 	else {
-		dbb->dbb_log = log = FB_NEW(*dbb->dbb_permanent) log();
+		dbb->dbb_log = log = FB_NEW(*dbb->dbb_permanent) fblog();
 		log->log_file = log_file;
 		log->log_string = FB_NEW_RPT(*dbb->dbb_permanent, LOG_BUFFER_LENGTH) str();
 		log->log_ptr = log->log_buffer = log->log_string->str_data;

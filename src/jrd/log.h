@@ -35,7 +35,7 @@
 
 /* replay log block */
 
-class log : public pool_alloc<type_log>
+class fblog : public pool_alloc<type_log>
 {
     public:
 	struct str *log_string;		/* string block allocated to hold log buffer */
@@ -43,7 +43,7 @@ class log : public pool_alloc<type_log>
 	UCHAR *log_ptr;				/* current end of buffer for logging */
 	void *log_file;				/* db-specific file to write */
 };
-typedef log *LOG;
+typedef fblog *LOG;
 
 
 
