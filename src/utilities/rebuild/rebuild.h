@@ -24,13 +24,14 @@
 
 const ULONG BIG_NUMBER = (ULONG) -1;
 
-typedef struct fil {
+struct fil {
     int		fil_file;
     SSHORT	fil_length;
     SCHAR	fil_name[1];
-} *FIL;
+};
+typedef fil* FIL;
 
-typedef struct rbdb {
+struct rbdb {
     ULONG	rbdb_map_length; 
     int		rbdb_map_base;
     int		rbdb_map_count;
@@ -41,15 +42,17 @@ typedef struct rbdb {
     SLONG	rbdb_last_page;
     PAG		rbdb_buffer1;
     PAG		rbdb_buffer2;
-    struct rbdb	*rbdb_next;
-    struct fil	rbdb_file;
-} *RBDB;
+    rbdb	*rbdb_next;
+    fil		rbdb_file;
+};
+typedef rbdb* RBDB;
 
-typedef struct swc { 
+struct swc { 
     SCHAR    swc_switch;
     SCHAR    swc_comma;
     TEXT    *swc_string;
-} *SWC;
+};
+typedef swc* SWC;
 
 #endif /* UTILITIES_REBUILD_H */
 

@@ -39,11 +39,12 @@ const SSHORT ITEM_purges	= 6;
 const SSHORT ITEM_expunges	= 7;
 const SSHORT ITEM_count		= 8;
 
-typedef struct stats {
+struct stats {
 	SSHORT stats_count;
 	SSHORT stats_items;			/* Number of item per relation */
 	SLONG stats_counts[1];
-} *STATS;
+};
+typedef stats* STATS;
 
 static STATS expand_stats();
 static int print_line();
