@@ -1558,7 +1558,6 @@ static SSHORT open_files(TEXT * file1,
 
 	if (sw_replace == IN_SW_BURP_B) {
 
-
 		/* Now it is safe to skip a db file */
 		tdgbl->gbl_sw_backup_files = tdgbl->gbl_sw_files->fil_next;
 		tdgbl->gbl_sw_files = tdgbl->gbl_sw_files->fil_next;
@@ -1583,7 +1582,7 @@ static SSHORT open_files(TEXT * file1,
 				fil->fil_length *= GBYTE;
 				break;
 			case size_e:
-				BURP_error(262, fil->fil_name, 0, 0, 0, 0);	/* msg 262 size spe cification either missing or incorrect for file %s  */
+				BURP_error(262, fil->fil_name, 0, 0, 0, 0);	/* msg 262 size specification either missing or incorrect for file %s  */
 				break;
 			default:
 				assert(FALSE);
