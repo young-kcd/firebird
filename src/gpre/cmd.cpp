@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmd.cpp,v 1.37 2004-05-31 02:34:21 robocop Exp $
+//	$Id: cmd.cpp,v 1.38 2004-10-03 04:48:49 robocop Exp $
 //
 
 #include "firebird.h"
@@ -57,7 +57,7 @@ typedef void (*pfn_local_trigger_cb) (gpre_nod*, gpre_req*);
 
 
 
-static void add_cache(gpre_req*, const act*, DBB);
+//static void add_cache(gpre_req*, const act*, DBB);
 static void alter_database(gpre_req*, act*);
 static void alter_domain(gpre_req*, const act*);
 static void alter_index(gpre_req*, const act*);
@@ -264,7 +264,7 @@ int CMD_compile_ddl(gpre_req* request)
 //  
 //		Add cache file to a database.
 //  
-
+/*
 static void add_cache( gpre_req* request, const act* action, dbb* database)
 {
 	TEXT file_name[254]; // CVC: Maybe MAXPATHLEN?
@@ -280,7 +280,7 @@ static void add_cache( gpre_req* request, const act* action, dbb* database)
 	request->add_long(file->fil_length);
 	request->add_end();
 }
-
+*/
 
 //____________________________________________________________
 //  
@@ -317,12 +317,13 @@ static void alter_database( gpre_req* request, act* action)
 	}
 
 //  Drop cache
-
+/*
 	if (db->dbb_flags & DBB_drop_cache)
 		request->add_byte(isc_dyn_drop_cache);
 
 	if (db->dbb_cache_file)
 		add_cache(request, action, db);
+*/
 
 	if (db->dbb_def_charset)
 		put_cstring(request, isc_dyn_fld_character_set_name,
@@ -1473,8 +1474,10 @@ static void create_database_modify_dyn( gpre_req* request, act* action)
 		start += file->fil_length;
 	}
 
+/*
 	if (db->dbb_cache_file)
 		add_cache(request, action, db);
+*/
 
 	if (db->dbb_def_charset)
 		put_cstring(request, isc_dyn_fld_character_set_name,

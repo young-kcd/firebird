@@ -319,9 +319,9 @@ const ULONG DBB_gc_pending			= 0x40L;	/* garbage collection requested */
 #endif
 const ULONG DBB_force_write			= 0x80L;	/* Database is forced write */
 const ULONG DBB_no_reserve			= 0x100L;	/* No reserve space for versions */
-const ULONG DBB_add_log				= 0x200L;	/* write ahead log has been added */
-const ULONG DBB_delete_log			= 0x400L;	/* write ahead log has been deleted */
-const ULONG DBB_cache_manager		= 0x800L;	/* Shared cache manager */
+//const ULONG DBB_add_log				= 0x200L;	// write ahead log has been added
+//const ULONG DBB_delete_log			= 0x400L;	// write ahead log has been deleted
+//const ULONG DBB_cache_manager		= 0x800L;	// Shared cache manager
 const ULONG DBB_DB_SQL_dialect_3	= 0x1000L;	/* database SQL dialect 3 */
 const ULONG DBB_read_only			= 0x2000L;	/* DB is ReadOnly (RO). If not set, DB is RW */
 const ULONG DBB_being_opened_read_only	= 0x4000L;	/* DB is being opened RO. If unset, opened as RW */

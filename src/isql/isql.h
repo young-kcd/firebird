@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.36 2004-09-22 01:55:37 robocop Exp $
+ * $Id: isql.h,v 1.37 2004-10-03 04:48:51 robocop Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -113,11 +113,11 @@ const int VERSION					= 10;		// Version string for -z
 const int USAGE2 					= 11;		// Usage message 2 
 const int NUMBER_PAGES				= 12;		// Number of DB pages allocated = %d \n 
 const int SWEEP_INTERV				= 13;		// Sweep interval = %d \n 
-const int NUM_WAL_BUFF				= 14;		// Number of wal buffers = %d \n 
-const int WAL_BUFF_SIZE				= 15;		// Wal buffer size = %d \n 
+//const int NUM_WAL_BUFF				= 14;		// Number of wal buffers = %d \n
+//const int WAL_BUFF_SIZE				= 15;		// Wal buffer size = %d \n
 const int CKPT_LENGTH				= 16;		// Check point length = %d \n 
 const int CKPT_INTERV				= 17;		// Check point interval = %d \n 
-const int WAL_GRPC_WAIT				= 18;		// Wal group commit wait = %d \n 
+//const int WAL_GRPC_WAIT				= 18;		// Wal group commit wait = %d \n
 const int BASE_LEVEL				= 19;		// Base level = %d \n 
 const int LIMBO						= 20;		// Transaction in limbo = %d \n 
 // Help list	

@@ -2322,6 +2322,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_def_constraint:
 		verb = "def_constraint";
 		break;
+/*
 	case nod_def_trigger_msg:
 		verb = "def_trigger_msg";
 		break;
@@ -2331,6 +2332,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_del_trigger_msg:
 		verb = "del_trigger_msg";
 		break;
+*/
 	case nod_def_exception:
 		verb = "def_exception";
 		break;
@@ -2448,6 +2450,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_file_desc:
 		verb = "file_desc";
 		break;
+/*
 	case nod_log_file_desc:
 		verb = "log_file_desc";
 		break;
@@ -2472,6 +2475,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_drop_cache:
 		verb = "drop_cache";
 		break;
+*/
 	case nod_dfl_charset:
 		verb = "dfl_charset";
 		break;

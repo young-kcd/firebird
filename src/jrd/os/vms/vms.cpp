@@ -866,9 +866,7 @@ static jrd_file* setup_file(Database* dbb,
 	dbb->dbb_flags |= DBB_exclusive;
 	if (!LCK_lock(NULL, lock, LCK_EX, LCK_NO_WAIT)) {
 		dbb->dbb_flags &= ~DBB_exclusive;
-		LCK_lock(NULL, lock,
-				 (dbb->dbb_flags & DBB_cache_manager) ? LCK_SR : LCK_PW,
-				 LCK_WAIT);
+		LCK_lock(NULL, lock, LCK_PW, LCK_WAIT);
 	}
 
 	return file;

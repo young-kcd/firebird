@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: RecordNumber.h,v 1.2 2004-10-02 09:33:02 robocop Exp $
+ *  $Id: RecordNumber.h,v 1.3 2004-10-03 04:48:54 robocop Exp $
  *
  */
 
@@ -119,7 +119,7 @@ public:
 	) const
 	{
 		line = value % records_per_page;
-		ULONG sequence = value / records_per_page;
+		const ULONG sequence = value / records_per_page;
 		slot = sequence % data_pages_per_pointer_page;
 		pp_sequence = sequence / data_pages_per_pointer_page;
 	}

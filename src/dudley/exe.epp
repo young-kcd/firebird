@@ -50,7 +50,7 @@
 
 DATABASE DB = FILENAME "yachts.lnk";
 
-static void add_cache(DBB);
+//static void add_cache(DBB);
 static void add_field(DUDLEY_FLD);
 static void add_files(DBB, FIL);
 static void add_filter(FILTER);
@@ -59,7 +59,7 @@ static void add_function_arg(FUNCARG);
 static void add_generator(SYM);
 static void add_global_field(DUDLEY_FLD);
 static void add_index(DUDLEY_IDX);
-static void add_log_files(DBB);
+//static void add_log_files(DBB);
 static void add_relation(DUDLEY_REL);
 static void add_security_class(SCL);
 static void add_trigger(DUDLEY_TRG);
@@ -74,7 +74,7 @@ static bool check_range(DUDLEY_FLD);
 static bool check_relation(SYM);
 static void close_blob(FB_API_HANDLE);
 static FB_API_HANDLE create_blob(ISC_QUAD*, USHORT, const UCHAR*);
-static void drop_cache(DBB);
+//static void drop_cache(DBB);
 static void drop_field(DUDLEY_FLD);
 static void drop_filter(FILTER);
 static void drop_function(FUNC);
@@ -120,12 +120,14 @@ static const TEXT alloc_info[] = { isc_info_allocation, isc_info_end };
 
 #define MOVE_SYMBOL(symbol, field)	move_symbol (symbol, field, sizeof (field) - 1)
 
+/*
 static const SCHAR db_info[] =
 {
 	isc_info_logfile,
 	isc_info_cur_logfile_name,
 	isc_info_cur_log_part_offset
 };
+*/
 
 SLONG EXE_check_db_version( DBB dbb)
 {
@@ -294,7 +296,7 @@ void EXE_create_database( DBB dbb)
 	dbb->dbb_transaction = gds_trans;
 
 /* Don't allow cache and WAL configurations for pre-ODS8 databases */
-
+/*
 	if (ods_version < DB_VERSION_DDL8) {
 		if ((dbb->dbb_flags & DBB_log_default) ||
 			(dbb->dbb_logfiles) ||
@@ -304,15 +306,18 @@ void EXE_create_database( DBB dbb)
 		// msg 32: database version is too old to modify: use GBAK first
 		}
 	}
+*/
 
 	if (dbb->dbb_files)
 		add_files(dbb, dbb->dbb_files);
 
+/*
 	if (dbb->dbb_cache_file)
 		add_cache(dbb);
 
 	if ((dbb->dbb_flags & DBB_log_default) || (dbb->dbb_logfiles))
 		add_log_files(dbb);
+*/
 
 /* If there is a description of the database, store it now */
 
@@ -334,19 +339,21 @@ void EXE_create_database( DBB dbb)
 	get_udfs(dbb);
 	get_triggers(dbb);
 
+/*
 	if ((dbb->dbb_flags & DBB_log_default) || (dbb->dbb_logfiles)) {
-		/* setup enough information to drop log files created */
+		// setup enough information to drop log files created
 
 		SCHAR db_info_buffer[512];
 		if (isc_database_info(gds_status, &DB, sizeof(db_info), db_info,
 							   sizeof(db_info_buffer), db_info_buffer))
 				DDL_error_abort(gds_status, 327, NULL, NULL, NULL, NULL, NULL);
-				/* msg 327: error in getting write ahead log information */
+				// msg 327: error in getting write ahead log information
 
 		SLONG log = 0, part_offset;
 		SCHAR cur_log[512];
 		wal_info((const UCHAR*) db_info_buffer, &log, cur_log, &part_offset);
 	}
+*/
 }
 
 
@@ -404,11 +411,12 @@ void EXE_drop_database( DBB dbb)
 	ROLLBACK;
 	END_ERROR;
 
+/*
 	SCHAR db_info_buffer[512];
 	if (isc_database_info(gds_status, &DB, sizeof(db_info), db_info,
 						   sizeof(db_info_buffer), db_info_buffer))
 			DDL_error_abort(gds_status, 327, NULL, NULL, NULL, NULL, NULL);
-			/* msg 327: error in getting write ahead log information */
+			// msg 327: error in getting write ahead log information
 
 	SLONG log, part_offset;
 	SCHAR cur_log[512];
@@ -416,7 +424,8 @@ void EXE_drop_database( DBB dbb)
 
 	if (isc_detach_database(gds_status, &DB))
 		DDL_error_abort(gds_status, 27, NULL, NULL, NULL, NULL, NULL);
-		/* msg 27: Couldn't release database */
+		// msg 27: Couldn't release database
+*/
 
 	for (FIL file = dbb->dbb_files; file; file = file->fil_next)
 	{
@@ -687,6 +696,7 @@ void EXE_modify_database( DBB dbb)
 			*d++ = *p++;
 	}
 
+/*
 	if (dbb->dbb_flags & DBB_drop_log) {
 		*d++ = isc_dpb_drop_walfile;
 		*d++ = 1;
@@ -723,6 +733,7 @@ void EXE_modify_database( DBB dbb)
 		for (len = 0; len < 4; len++, llen = llen >> 8)
 			*d++ = llen;
 	}
+*/
 
 	dpb_length = d - dpb;
 	if (dpb_length == 1)
@@ -749,6 +760,7 @@ void EXE_modify_database( DBB dbb)
 
 /* Don't allow cache and WAL configurations for pre-ODS8 databases */
 
+/*
 	if (ods_version < DB_VERSION_DDL8) {
 		if ((dbb->dbb_flags & DBB_log_default) ||
 			(dbb->dbb_logfiles) ||
@@ -756,21 +768,22 @@ void EXE_modify_database( DBB dbb)
 			(dbb->dbb_cache_file) || (dbb->dbb_flags & DBB_drop_cache))
 		{
 			DDL_error_abort(NULL, 32, NULL, NULL, NULL, NULL, NULL);
-		// msg 32: database version is too old to modify: use GBAK first
+			// msg 32: database version is too old to modify: use GBAK first
 		}
 	}
+*/
 
 	dbb->dbb_handle = DB;
 	dbb->dbb_transaction = gds_trans;
 
 /* erase log files and commit transaction */
-
+/*
 	if (dbb->dbb_flags & DBB_drop_log) {
 		SCHAR db_info_buffer[512];
 		if (isc_database_info(gds_status, &DB, sizeof(db_info), db_info,
 							   sizeof(db_info_buffer), db_info_buffer))
 				DDL_error_abort(gds_status, 327, NULL, NULL, NULL, NULL, NULL);
-				/* msg 327: error in getting write ahead log information */
+				// msg 327: error in getting write ahead log information
 
 		FIL log_files = NULL;
 		SLONG log = 0, part_offset;
@@ -783,7 +796,7 @@ void EXE_modify_database( DBB dbb)
 		FOR X IN RDB$LOG_FILES ERASE X;
 		END_FOR;
 		COMMIT ON_ERROR DDL_db_error(gds_status, 321, NULL, NULL, NULL, NULL, NULL);
-		/* msg 321: error commiting new write ahead log declarations */
+		// msg 321: error commiting new write ahead log declarations
 		ROLLBACK;
 		END_ERROR;
 		START_TRANSACTION;
@@ -797,35 +810,38 @@ void EXE_modify_database( DBB dbb)
 
 	if (dbb->dbb_flags & DBB_drop_cache)
 		drop_cache(dbb);
+*/
 
 /* adding new files */
 
 	if (dbb->dbb_files)
 		add_files(dbb, dbb->dbb_files);
 
+/*
 	if (dbb->dbb_cache_file)
 		add_cache(dbb);
 
 	if ((dbb->dbb_flags & DBB_log_default) || (dbb->dbb_logfiles)) {
-		/* check if log files exist */
+		// check if log files exist
 
 		FOR X IN RDB$LOG_FILES
 			DDL_error_abort(NULL, 333, NULL, NULL, NULL, NULL, NULL);
 			// msg 333: Cannot modify log file specification.  Drop and redefine log files 
 		END_FOR;
 
-		/* add the new log files. */
+		// add the new log files.
 
 		add_log_files(dbb);
 
-		/* commit log file changes */
+		// commit log file changes
 
 		COMMIT ON_ERROR DDL_db_error(gds_status, 321, NULL, NULL, NULL, NULL, NULL);
-		/* msg 321: error commiting new write ahead log declarations */
+		// msg 321: error commiting new write ahead log declarations
 		ROLLBACK;
 		END_ERROR;
 		START_TRANSACTION;
 	}
+*/
 
 /* If there is a description of the database, modify it now */
 
@@ -884,18 +900,19 @@ bool EXE_relation( DUDLEY_REL relation)
 }
 
 
+/*
 static void add_cache( DBB dbb)
 {
-/**************************************
- *
- *	a d d _ c a c h e
- *
- **************************************
- *
- * Functional description
- *	Add a shared cache file to database.  
- *
- **************************************/
+// **************************************
+// *
+// *	a d d _ c a c h e
+// *
+// **************************************
+// *
+// * Functional description
+// *	Add a shared cache file to database.
+// *
+// **************************************
 	bool result = false;
 
 	FOR FIL IN RDB$FILES WITH FIL.RDB$FILE_FLAGS EQ FILE_cache 
@@ -916,16 +933,17 @@ static void add_cache( DBB dbb)
 		FIL.RDB$FILE_FLAGS = FILE_cache;
 	END_STORE;
 
-/* Unless there are errors, commit the new shared cache immediately! */
+// Unless there are errors, commit the new shared cache immediately!
 
 	if (!dudleyGlob.DDL_errors) {
 		COMMIT ON_ERROR DDL_db_error(gds_status, 324, NULL, NULL, NULL, NULL, NULL);
-		/* msg 324: error commiting new shared cache declaration */
+		// msg 324: error commiting new shared cache declaration
 		ROLLBACK;
 		END_ERROR;
 		START_TRANSACTION;
 	}
 }
+*/
 
 
 static void add_field( DUDLEY_FLD field)
@@ -1426,21 +1444,22 @@ static void add_index( DUDLEY_IDX index)
 }
 
 
+/*
 static void add_log_files( DBB dbb)
 {
-/**************************************
- *
- *	a d d _ l o g _ f i l e s
- *
- **************************************
- *
- * Functional description
- *	Add log files to a database.  
- *
- **************************************/
+// **************************************
+// *
+// *	a d d _ l o g _ f i l e s
+// *
+// **************************************
+// *
+// * Functional description
+// *	Add log files to a database.
+// *
+// **************************************
 	FIL file, next;
 
-/* Reverse the order of files (parser left them backwards) */
+// Reverse the order of files (parser left them backwards)
 
 	for (file = dbb->dbb_logfiles, dbb->dbb_logfiles = NULL; file;
 		 file = next)
@@ -1452,7 +1471,7 @@ static void add_log_files( DBB dbb)
 
 	SSHORT number = 0;
 
-/* Add default values for file size */
+// Add default values for file size
 
 	if (dbb->dbb_flags & DBB_log_default) {
 		STORE X IN RDB$LOG_FILES MOVE_SYMBOL(dbb->dbb_name, X.RDB$FILE_NAME);
@@ -1484,7 +1503,7 @@ static void add_log_files( DBB dbb)
 		END_STORE;
 	}
 
-/* Unless there were errors , commit immediately! */
+// Unless there were errors , commit immediately!
 
 	if (!dudleyGlob.DDL_errors) {
 		COMMIT ON_ERROR DDL_db_error(gds_status, 321, NULL, NULL, NULL, NULL, NULL);
@@ -1494,6 +1513,7 @@ static void add_log_files( DBB dbb)
 		START_TRANSACTION;
 	}
 }
+*/
 
 
 static void add_relation( DUDLEY_REL relation)
@@ -2109,18 +2129,19 @@ static FB_API_HANDLE create_blob( ISC_QUAD* blob_id, USHORT bpb_length, const UC
 }
 
 
+/*
 static void drop_cache( DBB dbb)
 {
-/**************************************
- *
- *	d r o p _ c a c h e
- *
- **************************************
- *
- * Functional description
- *	Get rid of shared cache file in the database.
- *
- **************************************/
+// **************************************
+// *
+// *	d r o p _ c a c h e
+// *
+// **************************************
+// *
+// * Functional description
+// *	Get rid of shared cache file in the database.
+// *
+// **************************************
 	bool found = false;
 
 	FOR FIL IN RDB$FILES WITH FIL.RDB$FILE_FLAGS EQ FILE_cache 
@@ -2130,7 +2151,7 @@ static void drop_cache( DBB dbb)
 
 	if (!found)
 		DDL_err(325, NULL, NULL, NULL, NULL, NULL);
-		/* msg 325: no shared cache file exists to drop */
+		// msg 325: no shared cache file exists to drop
 
 	if (!dudleyGlob.DDL_errors) {
 		COMMIT 
@@ -2142,6 +2163,7 @@ static void drop_cache( DBB dbb)
 		START_TRANSACTION;
 	}
 }
+*/
 
 
 static void drop_field( DUDLEY_FLD field)
@@ -4112,19 +4134,20 @@ static int string_length( SCHAR dtype)
 }
 
 
+/*
 static void wal_info(const UCHAR* db_info_buffer,
 					 SLONG * log, SCHAR * cur_log, SLONG * part_offset)
 {
-/**************************************
- *
- *	w a l _ i n f o
- *
- **************************************
- *
- * Functional description
- *	Extract wal name and offset from wal_info string.
- *
- **************************************/
+// **************************************
+// *
+// *	w a l _ i n f o
+// *
+// **************************************
+// *
+// * Functional description
+// *	Extract wal name and offset from wal_info string.
+// *
+// **************************************
 	UCHAR item;
 
 	const UCHAR* p = db_info_buffer;
@@ -4158,4 +4181,5 @@ static void wal_info(const UCHAR* db_info_buffer,
 		}
 	}
 }
+*/
 

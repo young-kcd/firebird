@@ -1660,19 +1660,20 @@ void PAG_sweep_interval(SLONG interval)
 }
 
 
+/*
 int PAG_unlicensed(void)
 {
-/**************************************
- *
- *	P A G _ u n l i c e n s e d
- *
- **************************************
- *
- * Functional description
- *	Log unlicensed activity.  Return current count of this
- *	sort of non-sense.
- *
- **************************************/
+// **************************************
+// *
+// *	P A G _ u n l i c e n s e d
+// *
+// **************************************
+// *
+// * Functional description
+// *	Log unlicensed activity.  Return current count of this
+// *	sort of non-sense.
+// *
+// **************************************
 	thread_db* tdbb = JRD_get_thread_data();
 
 	WIN window(HEADER_PAGE);
@@ -1695,6 +1696,7 @@ int PAG_unlicensed(void)
 
 	return count;
 }
+*/
 
 
 static void find_clump_space(

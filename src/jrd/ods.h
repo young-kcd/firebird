@@ -186,7 +186,7 @@ const SCHAR pag_root			= 6;		/* Index root page */
 const SCHAR pag_index			= 7;		/* Index (B-tree) page */
 const SCHAR pag_blob			= 8;		/* Blob data page */
 const SCHAR pag_ids			= 9;		/* Gen-ids */
-const SCHAR pag_log			= 10;		/* Write ahead log information */
+const SCHAR pag_log			= 10;		// Write ahead log information DEPRECATED
 const SCHAR pag_max			= 10;		/* Max page type */
 
 const SCHAR HEADER_PAGE		= 0;
@@ -404,16 +404,16 @@ struct header_page
 
 const UCHAR HDR_end				= 0;
 const UCHAR HDR_root_file_name	= 1;	/* Original name of root file */
-const UCHAR HDR_journal_server	= 2;	/* Name of journal server */
+//const UCHAR HDR_journal_server	= 2;	// Name of journal server
 const UCHAR HDR_file			= 3;	/* Secondary file */
 const UCHAR HDR_last_page		= 4;	/* Last logical page number of file */
-const UCHAR HDR_unlicensed		= 5;	/* Count of unlicensed activity */
+//const UCHAR HDR_unlicensed		= 5;	// Count of unlicensed activity
 const UCHAR HDR_sweep_interval	= 6;	/* Transactions between sweeps */
 const UCHAR HDR_log_name		= 7;	/* replay log name */
-const UCHAR HDR_journal_file	= 8;	/* Intermediate journal file */
+//const UCHAR HDR_journal_file	= 8;	// Intermediate journal file
 const UCHAR HDR_password_file_key	= 9;	/* Key to compare to password db */
-const UCHAR HDR_backup_info		= 10;	/* WAL backup information */
-const UCHAR HDR_cache_file		= 11;	/* Shared cache file */
+//const UCHAR HDR_backup_info		= 10;	// WAL backup information
+//const UCHAR HDR_cache_file		= 11;	// Shared cache file
 const UCHAR HDR_difference_file	= 12;	/* Delta file that is used during backup lock */
 const UCHAR HDR_backup_guid		= 13;	/* UID generated on each switch into backup mode */
 const UCHAR HDR_max				= 14;	/* Maximum HDR_clump value */
@@ -422,12 +422,12 @@ const UCHAR HDR_max				= 14;	/* Maximum HDR_clump value */
 
 const USHORT hdr_active_shadow		= 0x1;	/* 1    file is an active shadow file */
 const USHORT hdr_force_write		= 0x2;	/* 2    database is forced write */
-const USHORT hdr_short_journal		= 0x4;	/* 4    short-term journalling */
-const USHORT hdr_long_journal		= 0x8;	/* 8    long-term journalling */
+//const USHORT hdr_short_journal		= 0x4;	  // 4    short-term journalling
+//const USHORT hdr_long_journal		= 0x8;	  // 8    long-term journalling
 const USHORT hdr_no_checksums		= 0x10;	/* 16   don't calculate checksums */
 const USHORT hdr_no_reserve		= 0x20;	/* 32   don't reserve space for versions */
-const USHORT hdr_disable_cache		= 0x40;	/* 64   disable using shared cache file */
-//const USHORT hdr_shutdown		= 0x80;	/* 128  database is shutdown */
+//const USHORT hdr_disable_cache		= 0x40;	// 64   disable using shared cache file
+//const USHORT hdr_shutdown		= 0x80;	  // 128  database is shutdown
 const USHORT hdr_SQL_dialect_3		= 0x100;	/* 256  database SQL dialect 3 */
 const USHORT hdr_read_only			= 0x200;	/* 512  Database in ReadOnly. If not set, DB is RW */
 /* backup status mask - see bit values in nbak.h */
@@ -604,15 +604,15 @@ const USHORT CLUMP_REPLACE_ONLY= 2;
 /* Log Clumplet types */
 
 const UCHAR LOG_end			= HDR_end;
-//const int LOG_ctrl_file1		1	/* file name of 2nd last control pt */
-//const int LOG_ctrl_file2		2	/* file name of last ctrl pt */
-//const int LOG_logfile			3	/* Primary WAL file name */
-//const int LOG_backup_info		4	/* Journal backup directory */
-//const int LOG_chkpt_len		5	/* checkpoint length */
-//const int LOG_num_bufs		6	/* Number of log buffers */
-//const int LOG_bufsize			7	/* Buffer size */
-//const int LOG_grp_cmt_wait	8	/* Group commit wait time */
-const int LOG_max			= 8;	/* Maximum LOG_clump value */
+//const int LOG_ctrl_file1		1	// file name of 2nd last control pt
+//const int LOG_ctrl_file2		2	// file name of last ctrl pt
+//const int LOG_logfile			3	// Primary WAL file name
+//const int LOG_backup_info		4	// Journal backup directory
+//const int LOG_chkpt_len		5	// checkpoint length
+//const int LOG_num_bufs		6	// Number of log buffers
+//const int LOG_bufsize			7	// Buffer size
+//const int LOG_grp_cmt_wait	8	// Group commit wait time
+const int LOG_max			= 8;	// Maximum LOG_clump value
 
 } //namespace Ods
 

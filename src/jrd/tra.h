@@ -50,6 +50,7 @@ class Savepoint;
 class Record;
 class VerbAction;
 class ArrayField;
+class Attachment;
 
 // Blobs active in transaction identified by bli_temp_id. Please keep this 
 // structure small as there can be huge amount of them floating in memory.
@@ -80,7 +81,7 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 {
     public:
 	jrd_tra(MemoryPool& p) : tra_blobs(&p), tra_resources(p) {}
-	class Attachment* tra_attachment;	/* database attachment */
+	Attachment* tra_attachment;	/* database attachment */
 	SLONG tra_number;			/* transaction number */
 	SLONG tra_top;				/* highest transaction in snapshot */
 	SLONG tra_oldest;			/* oldest interesting transaction */

@@ -96,7 +96,7 @@ static void define_filter(void);
 static void define_function(void);
 static void define_generator(void);
 static void define_index(void);
-static FIL define_log_file(USHORT);
+//static FIL define_log_file(USHORT);
 static void define_old_trigger(void);
 static void define_relation(void);
 static void define_security_class(void);
@@ -678,8 +678,8 @@ static void define_database( enum act_t action_type)
 	}
 
 	if (action_type == act_d_database) {
-		if (PARSE_match(KW_CASCADE))
-			dudleyGlob.database->dbb_flags |= DBB_cascade;
+//		if (PARSE_match(KW_CASCADE))
+//			dudleyGlob.database->dbb_flags |= DBB_cascade;
 		EXE_drop_database(dudleyGlob.database);
 		dudleyGlob.DDL_drop_database = true;
 		return;
@@ -698,6 +698,7 @@ static void define_database( enum act_t action_type)
 				dudleyGlob.database->dbb_flags |= DBB_null_description;
 			else if (PARSE_match(KW_SECURITY_CLASS))
 				dudleyGlob.database->dbb_flags |= DBB_null_security_class;
+/*
 			else if (PARSE_match(KW_LOG_FILE)) {
 				if ((dudleyGlob.database->dbb_flags & DBB_log_default)
 					|| (dudleyGlob.database->dbb_logfiles))
@@ -712,7 +713,8 @@ static void define_database( enum act_t action_type)
 #ifdef FLINT_CACHE
 			else if (PARSE_match(KW_CACHE))
 				dudleyGlob.database->dbb_flags |= DBB_drop_cache;
-#endif /* FLINT_CACHE */
+#endif // FLINT_CACHE
+*/
 			else
 				PARSE_error(121, 0, 0);
 			// msg 121 only SECURITY_CLASS, DESCRIPTION and CACHE can be dropped 
@@ -727,6 +729,7 @@ static void define_database( enum act_t action_type)
 				PARSE_error(122, 0, 0);	/* msg 122: PAGE_SIZE can not be modified */
 			dudleyGlob.database->dbb_page_size = parse_page_size();
 		}
+/*
 		else if (PARSE_match(KW_CHECK_POINT_LEN)) {
 			PARSE_match(KW_EQUALS);
 			dudleyGlob.database->dbb_chkptlen = PARSE_number();
@@ -764,7 +767,10 @@ static void define_database( enum act_t action_type)
 				}
 
 				if (!PARSE_match(KW_RIGHT_PAREN))
-					PARSE_error(341, dudleyGlob.DDL_token.tok_string, 0);	/* msg 341: expected comma or ')', encountered \"%s\" */
+				{
+					PARSE_error(341, dudleyGlob.DDL_token.tok_string, 0);
+					// msg 341: expected comma or ')', encountered \"%s\"
+				}
 
 				if (PARSE_match(KW_OVERFLOW))
 					dudleyGlob.database->dbb_overflow = define_log_file(DBB_log_serial);
@@ -781,7 +787,8 @@ static void define_database( enum act_t action_type)
 #ifdef FLINT_CACHE
 		else if (PARSE_match(KW_CACHE))
 			dudleyGlob.database->dbb_cache_file = define_cache();
-#endif /* FLINT_CACHE */
+#endif // FLINT_CACHE
+*/
 		else
 			break;
 	}
@@ -1056,18 +1063,19 @@ static void define_index(void)
 }
 
 
+/*
 static FIL define_log_file( USHORT log_type)
 {
-/**************************************
- *
- *	d e f i n e _ l o g _ f i l e
- *
- **************************************
- *
- * Functional description
- *	define a log file 
- *
- **************************************/
+// **************************************
+// *
+// *	d e f i n e _ l o g _ f i l e
+// *
+// **************************************
+// *
+// * Functional description
+// *	define a log file
+// *
+// **************************************
 	FIL file = (FIL) DDL_alloc(sizeof(fil));
 	file->fil_name = PARSE_symbol(tok_quoted);
 	if (!check_filename(file->fil_name, false))
@@ -1091,7 +1099,7 @@ static FIL define_log_file( USHORT log_type)
 			break;
 	}
 
-/* Check for the specified length of the log file */
+// Check for the specified length of the log file
 
 	if (file->fil_partitions) {
 		if (!file->fil_length)
@@ -1101,6 +1109,7 @@ static FIL define_log_file( USHORT log_type)
 
 	return file;
 }
+*/
 
 
 static void define_old_trigger(void)

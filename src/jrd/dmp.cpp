@@ -700,11 +700,11 @@ static void dmp_header(const header_page* page)
 		case HDR_root_file_name:
 			printf("\tRoot file name: %*s\n", p[1], p + 2);
 			break;
-
+/*
 		case HDR_journal_server:
 			printf("\tJournal server: %*s\n", p[1], p + 2);
 			break;
-
+*/
 		case HDR_file:
 			printf("\tContinuation file: %*s\n", p[1], p + 2);
 			break;
@@ -713,12 +713,12 @@ static void dmp_header(const header_page* page)
 			memcpy(&number, p + 2, sizeof(number));
 			printf("\tLast logical page: %ld\n", number);
 			break;
-
+/*
 		case HDR_unlicensed:
 			memcpy(&number, p + 2, sizeof(number));
 			printf("\tUnlicensed accesses: %ld\n", number);
 			break;
-
+*/
 		case HDR_sweep_interval:
 			memcpy(&number, p + 2, sizeof(number));
 			printf("\tSweep interval: %ld\n", number);
@@ -727,15 +727,15 @@ static void dmp_header(const header_page* page)
 		case HDR_log_name:
 			printf("\tLog file name: %*s\n", p[1], p + 2);
 			break;
-
+/*
 		case HDR_journal_file:
 			printf("\tJournal file: %*s\n", p[1], p + 2);
 			break;
-
+*/
 		case HDR_password_file_key:
 			printf("\tPassword file key: (can't print)\n");
 			break;
-
+/*
 		case HDR_backup_info:
 			printf("\tBackup info: (can't print)\n");
 			break;
@@ -743,7 +743,7 @@ static void dmp_header(const header_page* page)
 		case HDR_cache_file:
 			printf("\tShared cache file: %*s\n", p[1], p + 2);
 			break;
-
+*/
 		default:
 			printf("\tUnrecognized option %d, length %d\n", p[0], p[1]);
 		}

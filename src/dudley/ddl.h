@@ -138,12 +138,12 @@ enum dbb_flags_vals {
 	DBB_null_description = 1,
 	DBB_null_security_class = 2,
 	DBB_create_database = 4,
-	DBB_drop_log = 8,
-	DBB_log_serial = 16,
-	DBB_log_preallocated = 32,
-	DBB_log_default = 64,
-	DBB_cascade = 128,
-	DBB_drop_cache = 256
+//	DBB_drop_log = 8,
+//	DBB_log_serial = 16,
+//	DBB_log_preallocated = 32,
+//	DBB_log_default = 64,
+//	DBB_cascade = 128,
+//	DBB_drop_cache = 256
 };
 
 enum ods_versions {

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pretty.cpp,v 1.28 2004-09-25 10:27:33 robocop Exp $
+//	$Id: pretty.cpp,v 1.29 2004-10-03 04:48:49 robocop Exp $
 //
 
 #include "firebird.h"
@@ -594,10 +594,10 @@ static int print_dyn_verb( CTL control, SSHORT level)
 		return 0;
 
 	case isc_dyn_scl_acl:
-	case isc_dyn_log_check_point_length:
-	case isc_dyn_log_num_of_buffers:
-	case isc_dyn_log_buffer_size:
-	case isc_dyn_log_group_commit_wait:
+//	case isc_dyn_log_check_point_length:
+//	case isc_dyn_log_num_of_buffers:
+//	case isc_dyn_log_buffer_size:
+//	case isc_dyn_log_group_commit_wait:
 	case isc_dyn_idx_inactive:
 		length = print_word(control, offset);
 		while (length--)
@@ -626,12 +626,12 @@ static int print_dyn_verb( CTL control, SSHORT level)
 
 	case isc_dyn_fld_not_null:
 	case isc_dyn_sql_object:
-	case isc_dyn_drop_log:
-	case isc_dyn_drop_cache:
-	case isc_dyn_def_default_log:
-	case isc_dyn_log_file_serial:
-	case isc_dyn_log_file_raw:
-	case isc_dyn_log_file_overflow:
+//	case isc_dyn_drop_log:
+//	case isc_dyn_drop_cache:
+//	case isc_dyn_def_default_log:
+//	case isc_dyn_log_file_serial:
+//	case isc_dyn_log_file_raw:
+//	case isc_dyn_log_file_overflow:
 	case isc_dyn_single_validation:
 	case isc_dyn_del_default:
 	case isc_dyn_del_validation:
@@ -663,8 +663,8 @@ static int print_dyn_verb( CTL control, SSHORT level)
 	case isc_dyn_def_dimension:
 	case isc_dyn_def_exception:
 	case isc_dyn_def_file:
-	case isc_dyn_def_log_file:
-	case isc_dyn_def_cache_file:
+//	case isc_dyn_def_log_file:
+//	case isc_dyn_def_cache_file:
 	case isc_dyn_def_filter:
 	case isc_dyn_def_function:
 	case isc_dyn_def_function_arg:

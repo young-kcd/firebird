@@ -1016,11 +1016,11 @@ fprintf ("    Creation date    \n", header->hdr_creation_date);
 		case HDR_root_file_name:
 			fprintf(file, "\tRoot file name: %*s\n", p[1], p + 2);
 			break;
-
+/*
 		case HDR_journal_server:
 			fprintf(file, "\tJournal server: %*s\n", p[1], p + 2);
 			break;
-
+*/
 		case HDR_file:
 			fprintf(file, "\tContinuation file: %*s\n", p[1], p + 2);
 			break;
@@ -1029,12 +1029,12 @@ fprintf ("    Creation date    \n", header->hdr_creation_date);
 			move(p + 2, &number, sizeof(number));
 			fprintf(file, "\tLast logical page: %ld\n", number);
 			break;
-
+/*
 		case HDR_unlicensed:
 			move(p + 2, &number, sizeof(number));
 			fprintf(file, "\tUnlicensed accesses: %ld\n", number);
 			break;
-
+*/
 		case HDR_sweep_interval:
 			move(p + 2, &number, sizeof(number));
 			fprintf(file, "\tSweep interval: %ld\n", number);
@@ -1043,15 +1043,15 @@ fprintf ("    Creation date    \n", header->hdr_creation_date);
 		case HDR_log_name:
 			fprintf(file, "\tReplay logging file: %*s\n", p[1], p + 2);
 			break;
-
+/*
 		case HDR_journal_file:
 			fprintf(file, "\tJournal file: %*s\n", p[1], p + 2);
 			break;
-
+*/
 		case HDR_password_file_key:
 			fprintf(file, "\tPassword file key: (can't print)\n");
 			break;
-
+/*
 		case HDR_backup_info:
 			fprintf(file, "\tBackup info: (can't print)\n");
 			break;
@@ -1059,7 +1059,7 @@ fprintf ("    Creation date    \n", header->hdr_creation_date);
 		case HDR_cache_file:
 			fprintf(file, "\tShared cache file: %*s\n", p[1], p + 2);
 			break;
-
+*/
 		default:
 			fprintf(file, "\tUnrecognized option %d, length %d\n", p[0],
 					   p[1]);

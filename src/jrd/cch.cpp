@@ -496,9 +496,7 @@ if (dbb->dbb_use_count)
 		LCK_convert(tdbb, lock, LCK_PW, LCK_WAIT);	/* This lets waiting cache manager in first */
 	}
 	else {
-		LCK_convert(tdbb, lock,
-					(dbb->dbb_flags & DBB_cache_manager) ? LCK_SR : LCK_SW,
-					LCK_WAIT);
+		LCK_convert(tdbb, lock, LCK_SW, LCK_WAIT);
 	}
 
 	dbb->dbb_ast_flags &= ~DBB_blocking;
@@ -3292,7 +3290,7 @@ static void btc_remove_balanced(BufferDesc* bdb)
 	const SLONG page = bdb->bdb_page;
 
 	BufferDesc* p = bcb->bcb_btree;
-	int stackp_save, stackp = -1;
+	int stackp = -1;
 	SCHAR comp;
 
 	while (true)
@@ -3410,7 +3408,7 @@ static void btc_remove_balanced(BufferDesc* bdb)
 		}
 		else
 		{
-			stackp_save = stackp; 
+			const int stackp_save = stackp; 
 
 			while (p->bdb_right)
 			{

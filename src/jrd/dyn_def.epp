@@ -123,18 +123,19 @@ static bool is_it_user_name(Global*, const TEXT*, thread_db*);
 static USHORT skip_blr_blob(const UCHAR** ptr);
 
 
+/*
 void DYN_define_cache( Global* gbl, const UCHAR** ptr)
 {
-/**************************************
- *
- *	D Y N _ d e f i n e _ c a c h e
- *
- **************************************
- *
- * Functional description
- *	Define a database cache file.
- *
- **************************************/
+// **************************************
+// *
+// *	D Y N _ d e f i n e _ c a c h e
+// *
+// **************************************
+// *
+// * Functional description
+// *	Define a database cache file.
+// *
+// **************************************
 	SSHORT id = -1;
 
 	thread_db* tdbb = JRD_get_thread_data();
@@ -199,13 +200,13 @@ void DYN_define_cache( Global* gbl, const UCHAR** ptr)
 		{
 			DYN_rundown_request(request, drq_s_cache);
 			DYN_error_punt(true, 150, NULL, NULL, NULL, NULL, NULL);
-			/* msg 150: STORE RDB$FILES failed */
+			// msg 150: STORE RDB$FILES failed
 		}
 		else
 		{
 			DYN_rundown_request(request, drq_l_cache);
 			DYN_error_punt(true, 156, NULL, NULL, NULL, NULL, NULL);
-			/* msg 156: Shared cache lookup failed */
+			// msg 156: Shared cache lookup failed
 		}
 	}
 
@@ -213,8 +214,9 @@ void DYN_define_cache( Global* gbl, const UCHAR** ptr)
 
 dyn_punt_148:
 	DYN_error_punt(false, 148, NULL, NULL, NULL, NULL, NULL);
-	/* msg 148: "Shared cache file already exists" */
+	// msg 148: "Shared cache file already exists"
 }
+*/
 
 
 void DYN_define_constraint(Global*		gbl,
@@ -2474,21 +2476,22 @@ void DYN_define_local_field(Global*		gbl,
 }
 
 
+/*
 void DYN_define_log_file(
 						 Global* gbl,
 						 const UCHAR** ptr,
 						 bool first_log_file, bool default_log)
 {
-/**************************************
- *
- *	D Y N _ d e f i n e _ l o g _ f i l e
- *
- **************************************
- *
- * Functional description
- *	Define log files for WAL (obsolete).
- *
- **************************************/
+// **************************************
+// *
+// *	D Y N _ d e f i n e _ l o g _ f i l e
+// *
+// **************************************
+// *
+// * Functional description
+// *	Define log files for WAL (obsolete).
+// *
+// **************************************
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
@@ -2586,12 +2589,12 @@ void DYN_define_log_file(
 		if (id == drq_s_log_files) {
 			DYN_rundown_request(request, drq_s_log_files);
 			DYN_error_punt(true, 154, NULL, NULL, NULL, NULL, NULL);
-			/* msg 154: STORE RDB$LOG_FILES failed */
+			// msg 154: STORE RDB$LOG_FILES failed
 		}
 		else {
 			DYN_rundown_request(request, drq_l_log_files);
 			DYN_error_punt(true, 155, NULL, NULL, NULL, NULL, NULL);
-			/* msg 155: Write ahead log lookup failed */
+			// msg 155: Write ahead log lookup failed
 		}
 	}
 
@@ -2599,8 +2602,9 @@ void DYN_define_log_file(
 
 local_punt_false_151:
 	DYN_error_punt(false, 151, NULL, NULL, NULL, NULL, NULL);
-	/* msg 151: "Write ahead log already exists" */
+	// msg 151: "Write ahead log already exists"
 }
+*/
 
 
 void DYN_define_parameter( Global* gbl, const UCHAR** ptr, TEXT* procedure_name)

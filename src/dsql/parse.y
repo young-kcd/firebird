@@ -109,8 +109,8 @@ const int POSITIVE	= 0;
 const int NEGATIVE	= 1;
 const int UNSIGNED	= 2;
 
-const int MIN_CACHE_BUFFERS	= 250;
-const int DEF_CACHE_BUFFERS	= 1000;
+//const int MIN_CACHE_BUFFERS	= 250;
+//const int DEF_CACHE_BUFFERS	= 1000;
 
 /* Fix 69th procedure problem - solution from Oleg Loa */
 #define YYSTACKSIZE	2048
@@ -237,17 +237,17 @@ static LexerState lex;
 %token AT
 %token AVG
 %token AUTO
-%token BASENAME
+//%token BASENAME
 %token BEFORE
 %token BEGIN
 %token BETWEEN
 %token BLOB
 %token BY
-%token CACHE
+//%token CACHE
 %token CAST
 %token CHARACTER
 %token CHECK
-%token CHECK_POINT_LEN
+//%token CHECK_POINT_LEN
 %token COLLATE
 %token COMMA
 %token COMMIT
@@ -297,7 +297,7 @@ static LexerState lex;
 %token GEN_ID
 %token GRANT
 %token GROUP
-%token GROUP_COMMIT_WAIT
+//%token GROUP_COMMIT_WAIT
 %token GTR
 %token HAVING
 %token IF
@@ -325,13 +325,13 @@ static LexerState lex;
 %token KW_UPPER
 %token KW_VALUE
 %token LENGTH
-%token LOGFILE
+//%token LOGFILE
 %token LPAREN
 %token LEFT
 %token LEQ
 %token LEVEL
 %token LIKE
-%token LOG_BUF_SIZE
+//%token LOG_BUF_SIZE
 %token LSS
 %token MANUAL
 %token MAXIMUM
@@ -349,7 +349,7 @@ static LexerState lex;
 %token NOT
 %token NOT_GTR
 %token NOT_LSS
-%token NUM_LOG_BUFS
+//%token NUM_LOG_BUFS
 %token OF
 %token ON
 %token ONLY
@@ -372,7 +372,7 @@ static LexerState lex;
 %token PRIVILEGES
 %token PROCEDURE
 %token PROTECTED
-%token RAW_PARTITIONS
+//%token RAW_PARTITIONS
 %token READ
 %token REAL
 %token REFERENCES

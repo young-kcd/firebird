@@ -29,7 +29,7 @@
 const USHORT FILE_shadow	= 1;
 const USHORT FILE_inactive	= 2;
 const USHORT FILE_manual	= 4;
-const USHORT FILE_cache		= 8;
+//const USHORT FILE_cache		= 8;
 const USHORT FILE_conditional = 16;
 /* Flags for backup difference files */
 // File is difference
@@ -38,11 +38,12 @@ const USHORT FILE_difference = 32;
 const USHORT FILE_backing_up = 64;
 
 /* flags for RDB$LOG_FILES */
-
+/*
 const USHORT LOG_serial		= 1;
 const USHORT LOG_default	= 2;
 const USHORT LOG_raw		= 4;
 const USHORT LOG_overflow	= 8;
+*/
 
 /* flags for RDB$RELATIONS */
 

@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.32 2004-08-27 04:52:24 robocop Exp $
+ *  $Id: keywords.cpp,v 1.33 2004-10-03 04:48:37 robocop Exp $
  *
  */
 
@@ -71,7 +71,7 @@ static const TOK tokens[] = {
 	{AUTO, "AUTO", 1},
 	{AVG, "AVG", 1},
 	{BACKUP, "BACKUP", 2},
-	{BASENAME, "BASE_NAME", 1},
+//	{BASENAME, "BASE_NAME", 1},
 	{BEFORE, "BEFORE", 1},
 	{BEGIN, "BEGIN", 1},
 	{BETWEEN, "BETWEEN", 1},
@@ -80,14 +80,14 @@ static const TOK tokens[] = {
 	{BLOCK, "BLOCK", 1},
 	{KW_BREAK, "BREAK", 2}, 
 	{BY, "BY", 1},
-	{CACHE, "CACHE", 1},
+//	{CACHE, "CACHE", 1},
 	{CASCADE, "CASCADE", 1},
 	{CASE, "CASE", 2},
 	{CAST, "CAST", 1},
 	{KW_CHAR, "CHAR", 1},
 	{CHARACTER, "CHARACTER", 1},
 	{CHECK, "CHECK", 1},
-	{CHECK_POINT_LEN, "CHECK_POINT_LENGTH", 1},
+//	{CHECK_POINT_LEN, "CHECK_POINT_LENGTH", 1},
 	{CLOSE, "CLOSE", 2},
 	{COALESCE, "COALESCE", 2},
 	{COLLATE, "COLLATE", 1},
@@ -155,7 +155,7 @@ static const TOK tokens[] = {
 	{GEN_ID, "GEN_ID", 1},
 	{GRANT, "GRANT", 1},
 	{GROUP, "GROUP", 1},
-	{GROUP_COMMIT_WAIT, "GROUP_COMMIT_WAIT_TIME", 1},
+//	{GROUP_COMMIT_WAIT, "GROUP_COMMIT_WAIT_TIME", 1},
 	{HAVING, "HAVING", 1},
 	{HOUR, "HOUR", 2},
 	{IF, "IF", 1},
@@ -180,8 +180,8 @@ static const TOK tokens[] = {
 	{LENGTH, "LENGTH", 1},
 	{LEVEL, "LEVEL", 1},
 	{LIKE, "LIKE", 1},
-	{LOGFILE, "LOGFILE", 1},
-	{LOG_BUF_SIZE, "LOG_BUFFER_SIZE", 1},
+//	{LOGFILE, "LOGFILE", 1},
+//	{LOG_BUF_SIZE, "LOG_BUFFER_SIZE", 1},
 	{KW_LONG, "LONG", 1},
 	{MANUAL, "MANUAL", 1},
 	{MAXIMUM, "MAX", 1},
@@ -203,7 +203,7 @@ static const TOK tokens[] = {
 	{NULLS, "NULLS", 2},
 	{LOCK, "LOCK", 2},
 	{KW_NUMERIC, "NUMERIC", 1},
-	{NUM_LOG_BUFS, "NUM_LOG_BUFFERS", 1},
+//	{NUM_LOG_BUFS, "NUM_LOG_BUFFERS", 1},
 	{OF, "OF", 1},
 	{ON, "ON", 1},
 	{ONLY, "ONLY", 1},
@@ -227,7 +227,7 @@ static const TOK tokens[] = {
 	{PRIVILEGES, "PRIVILEGES", 1},
 	{PROCEDURE, "PROCEDURE", 1},
 	{PROTECTED, "PROTECTED", 1},
-	{RAW_PARTITIONS, "RAW_PARTITIONS", 1},
+//	{RAW_PARTITIONS, "RAW_PARTITIONS", 1},
 	{DB_KEY, "RDB$DB_KEY", 1},
 	{READ, "READ", 1},
 	{REAL, "REAL", 1},

@@ -123,7 +123,7 @@ static const rfr_tab_t rfr_table[] = {
 	{ "RDB$VIEW_RELATIONS", "RDB$CONTEXT_NAME", EXT_context_name },
 	{ "RDB$DATABASE", "RDB$DESCRIPTION", EXT_db_description },
 	{ "RDB$FUNCTIONS", "RDB$FUNCTION_NAME", EXT_v3 },
-	{ "RDB$LOG_FILES", "RDB$FILE_PARTITIONS", EXT_v4 },
+//	{ "RDB$LOG_FILES", "RDB$FILE_PARTITIONS", EXT_v4 },
 	{ 0, 0, 0 }
 };
 
@@ -541,11 +541,13 @@ static void extract_database(const TEXT * DB_file_nameL)
 
 /* print log info. */
 
+/*
 		if (EXT_capabilities & EXT_v4) {
 			bool first_time = true;
 			bool need_close = false;
 
-	       FOR F IN RDB$LOG_FILES if (F.RDB$FILE_FLAGS & LOG_overflow)
+	       FOR F IN RDB$LOG_FILES
+	       if (F.RDB$FILE_FLAGS & LOG_overflow)
 	             continue;
 	
 	       if (first_time) {
@@ -580,7 +582,8 @@ static void extract_database(const TEXT * DB_file_nameL)
 			if (need_close)
 				fprintf(output_file, "\n\t\t)");
 
-	       FOR F IN RDB$LOG_FILES if (!(F.RDB$FILE_FLAGS & LOG_overflow))
+	       FOR F IN RDB$LOG_FILES
+		   if (!(F.RDB$FILE_FLAGS & LOG_overflow))
 	             continue;
 	
 	       fprintf(output_file, "\n\toverflow");
@@ -597,7 +600,7 @@ static void extract_database(const TEXT * DB_file_nameL)
 			SCHAR db_info_buffer[64];
 			if (isc_database_info(gds_status, &DB, sizeof(db_info), db_info,
 								   sizeof(db_info_buffer), db_info_buffer)) {
-				put_error(254, 0);	/* msg 254: ***isc_database_info failed*** */
+				put_error(254, 0);	// msg 254: ***isc_database_info failed***
 				gds__print_status(status_vector);
 			}
 
@@ -617,6 +620,7 @@ static void extract_database(const TEXT * DB_file_nameL)
 				fprintf(output_file, "\n\tgroup_commit_wait_time %"SLONGFORMAT,
 						   grp_commit);
 		}
+*/
 
 	fprintf(output_file, ";\n");
 

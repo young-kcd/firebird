@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.114 2004-09-09 08:58:13 robocop Exp $
+ * $Id: ddl.cpp,v 1.115 2004-10-03 04:48:37 robocop Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -1245,9 +1245,9 @@ request->append_number(isc_dyn_rel_sql_protection, 1);
 		
 	const dsql_str* name;
 	const dsql_fil* file;
-	SLONG temp_long;
-	SSHORT temp_short;
-	SSHORT number = 0;
+	//SLONG temp_long;
+	//SSHORT temp_short;
+	//SSHORT number = 0;
 	elements = ddl_node->nod_arg[e_database_rem_desc];
 	if (elements)
 	{
@@ -1274,6 +1274,7 @@ request->append_number(isc_dyn_rel_sql_protection, 1);
 				start += file->fil_length;
 				break;
 
+/*
 			case nod_log_file_desc:
 				file = (dsql_fil*) element->nod_arg[0];
 
@@ -1332,6 +1333,7 @@ request->append_number(isc_dyn_rel_sql_protection, 1);
 				temp_short = (SSHORT)(IPTR) (element->nod_arg[0]);
 				request->append_ushort_with_length(temp_short);
 				break;
+*/
 
 			case nod_dfl_charset:
 				name = (dsql_str*) element->nod_arg[0];
@@ -3061,7 +3063,7 @@ static void define_trigger( dsql_req* request, dsql_nod* node)
 		request->req_type = REQ_DDL;
 	}
 
-	const dsql_nod* temp = node->nod_arg[e_trg_messages];
+	/* const dsql_nod* temp = node->nod_arg[e_trg_messages];
 	if (temp)
 	{
 		const dsql_nod* const* ptr = temp->nod_arg;
@@ -3092,6 +3094,7 @@ static void define_trigger( dsql_req* request, dsql_nod* node)
 			}
 		}
 	}
+	*/
 
 	request->append_uchar(isc_dyn_end);
 }
@@ -4674,8 +4677,8 @@ static void modify_database( dsql_req* request)
 
 	request->append_uchar(isc_dyn_mod_database);
 // request->append_number(isc_dyn_rel_sql_protection, 1);
-	bool drop_log = false;
-	bool drop_cache = false;
+//	bool drop_log = false;
+//	bool drop_cache = false;
 	bool drop_difference = false;
 
 	const dsql_nod* elements = ddl_node->nod_arg[e_adb_all];
@@ -4686,12 +4689,14 @@ static void modify_database( dsql_req* request)
 	{
 		const dsql_nod* element = *ptr;
 		switch (element->nod_type) {
+/*
 		case nod_drop_log:
 			drop_log = true;
 			break;
 		case nod_drop_cache:
 			drop_cache = true;
 			break;
+*/
 		case nod_drop_difference:
 			drop_difference = true;
 			break;
@@ -4701,20 +4706,22 @@ static void modify_database( dsql_req* request)
 		}
 	}
 
+/*
 	if (drop_log) {
 		request->append_uchar(isc_dyn_drop_log);
 	}
 	if (drop_cache) {
 		request->append_uchar(isc_dyn_drop_cache);
 	}
+*/
 	if (drop_difference) {
 		request->append_uchar(isc_dyn_drop_difference);
 	}
 
 	SLONG start = 0;
-	SSHORT number = 0;
-	SLONG temp_long;
-	SSHORT temp_short;
+	//SSHORT number = 0;
+	//SLONG temp_long;
+	//SSHORT temp_short;
 
 	elements = ddl_node->nod_arg[e_adb_all];
 	end = elements->nod_arg + elements->nod_count;
@@ -4737,6 +4744,7 @@ static void modify_database( dsql_req* request)
 			start += file->fil_length;
 			break;
 
+/*
 		case nod_log_file_desc:
 			file = (dsql_fil*) element->nod_arg[0];
 
@@ -4795,6 +4803,8 @@ static void modify_database( dsql_req* request)
 			temp_short = (SSHORT)(IPTR) (element->nod_arg[0]);
 			request->append_ushort_with_length(temp_short);
 			break;
+*/
+
 		case nod_difference_file:
 			request->append_cstring(isc_dyn_def_difference, 
 				((dsql_str*)element->nod_arg[0])->str_data);
@@ -4805,9 +4815,9 @@ static void modify_database( dsql_req* request)
 		case nod_end_backup:
 			request->append_uchar(isc_dyn_end_backup);
 			break;
-		case nod_drop_log:
-		case nod_drop_cache:
-			break;
+//		case nod_drop_log:
+//		case nod_drop_cache:
+//			break;
 
 		default:
 			break;

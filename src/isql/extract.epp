@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.42 2004-09-26 01:49:42 robocop Exp $
+ * $Id: extract.epp,v 1.43 2004-10-03 04:48:51 robocop Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -1527,6 +1527,7 @@ static void list_create_db()
 			ISQL_printf (isqlGlob.Out, Print_buffer);
 		}
 
+/*
 		if (FIL.RDB$FILE_FLAGS & FILE_cache)
 		{
 			sprintf (Print_buffer, "%sALTER DATABASE ADD CACHE '%s' LENGTH %ld%s",
@@ -1536,6 +1537,7 @@ static void list_create_db()
 					NEWLINE);
 			ISQL_printf (isqlGlob.Out, Print_buffer);
 		}
+*/
 
 		if (FIL.RDB$FILE_FLAGS & FILE_shadow)
 		{

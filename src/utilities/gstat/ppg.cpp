@@ -153,13 +153,13 @@ void PPG_print_header(const header_page* header, SLONG page, bool nocreation,
 				FPRINTF(outfile, ", ");
 			FPRINTF(outfile, "no reserve");
 		}
-
+/*
 		if (flags & hdr_disable_cache) {
 			if (flag_count++)
 				FPRINTF(outfile, ", ");
 			FPRINTF(outfile, "shared cache disabled");
 		}
-
+*/
 		if (flags & hdr_active_shadow) {
 			if (flag_count++)
 				FPRINTF(outfile, ", ");
@@ -216,13 +216,13 @@ void PPG_print_header(const header_page* header, SLONG page, bool nocreation,
 			temp[p[1]] = '\0';
 			FPRINTF(outfile, "\tRoot file name:\t\t%s\n", temp);
 			break;
-
+/*
 		case HDR_journal_server:
 			memcpy(temp, p + 2, p[1]);
 			temp[p[1]] = '\0';
 			FPRINTF(outfile, "\tJournal server:\t\t%s\n", temp);
 			break;
-
+*/
 		case HDR_file:
 			memcpy(temp, p + 2, p[1]);
 			temp[p[1]] = '\0';
@@ -233,12 +233,12 @@ void PPG_print_header(const header_page* header, SLONG page, bool nocreation,
 			memcpy(&number, p + 2, sizeof(number));
 			FPRINTF(outfile, "\tLast logical page:\t\t%ld\n", number);
 			break;
-
+/*
 		case HDR_unlicensed:
 			memcpy(&number, p + 2, sizeof(number));
 			FPRINTF(outfile, "\tUnlicensed accesses:\t\t%ld\n", number);
 			break;
-
+*/
 		case HDR_sweep_interval:
 			memcpy(&number, p + 2, sizeof(number));
 			FPRINTF(outfile, "\tSweep interval:\t\t%ld\n", number);
@@ -249,13 +249,13 @@ void PPG_print_header(const header_page* header, SLONG page, bool nocreation,
 			temp[p[1]] = '\0';
 			FPRINTF(outfile, "\tReplay logging file:\t\t%s\n", temp);
 			break;
-
+/*
 		case HDR_cache_file:
 			memcpy(temp, p + 2, p[1]);
 			temp[p[1]] = '\0';
 			FPRINTF(outfile, "\tShared Cache file:\t\t%s\n", temp);
 			break;
-
+*/
 		case HDR_difference_file:
 			memcpy(temp, p + 2, p[1]);
 			temp[p[1]] = '\0';

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.88 2004-09-28 20:25:52 dimitr Exp $
+$Id: ibase.h,v 1.89 2004-10-03 04:48:54 robocop Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -1611,14 +1611,18 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 #define isc_dyn_def_parameter             135
 #define isc_dyn_delete_parameter          136
 #define isc_dyn_mod_procedure             175
+/* Deprecated.
 #define isc_dyn_def_log_file              176
 #define isc_dyn_def_cache_file            180
+*/
 #define isc_dyn_def_exception             181
 #define isc_dyn_mod_exception             182
 #define isc_dyn_del_exception             183
+/* Deprecated.
 #define isc_dyn_drop_log                  194
 #define isc_dyn_drop_cache                195
 #define isc_dyn_def_default_log           202
+*/
 #define isc_dyn_def_difference            220
 #define isc_dyn_drop_difference           221
 #define isc_dyn_begin_backup              222
@@ -1765,21 +1769,23 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 /********************************/
 /* Log file specific attributes */
 /********************************/
-
+/* Deprecated.
 #define isc_dyn_log_file_sequence         177
 #define isc_dyn_log_file_partitions       178
 #define isc_dyn_log_file_serial           179
 #define isc_dyn_log_file_overflow         200
 #define isc_dyn_log_file_raw		  201
+*/
 
 /***************************/
 /* Log specific attributes */
 /***************************/
-
+/* Deprecated.
 #define isc_dyn_log_group_commit_wait     189
 #define isc_dyn_log_buffer_size           190
 #define isc_dyn_log_check_point_length    191
 #define isc_dyn_log_num_of_buffers        192
+*/
 
 /********************************/
 /* Function specific attributes */

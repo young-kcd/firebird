@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.57 2004-09-26 01:49:42 robocop Exp $
+ * $Id: show.epp,v 1.58 2004-10-03 04:48:51 robocop Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -1656,13 +1656,8 @@ static void show_db()
 			FIL.RDB$FILE_SEQUENCE = 0;
 		if (FIL.RDB$FILE_START.NULL)
 			FIL.RDB$FILE_START = 0;
-	/*
-	This line used to terminate the file name at the first space.  This does
-	not seem necessary, and creates problems since Windows 95 allows embeded
-	spaces in file names.
 
 		fb_utils::exact_name(FIL.RDB$FILE_NAME);
-	*/
 
 		if (FIL.RDB$FILE_FLAGS == 0) {
 			sprintf (Print_buffer, " File %d: \"%s\", length %ld, start %ld%s",
@@ -1671,11 +1666,13 @@ static void show_db()
 			ISQL_printf (isqlGlob.Out, Print_buffer);
 		}
 
+/*
 		if (FIL.RDB$FILE_FLAGS & FILE_cache) {
 			sprintf (Print_buffer, " Cache: %s, length %ld%s",
 					 FIL.RDB$FILE_NAME, FIL.RDB$FILE_LENGTH, NEWLINE);
 			ISQL_printf (isqlGlob.Out, Print_buffer);
 		}
+*/
 
 		if (FIL.RDB$FILE_FLAGS & FILE_shadow) {
 			if (FIL.RDB$FILE_SEQUENCE) {
