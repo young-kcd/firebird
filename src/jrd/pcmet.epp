@@ -181,7 +181,6 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 										  idx.idx_expression_desc.dsc_dtype,
 										  0);
 				idx.idx_rpt[0].idx_selectivity = 0;
-				TRA_attach_request(transaction, idx.idx_expression_request);
 		
 				delete csb;
 			}
@@ -205,9 +204,11 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 		current_request = tdbb->tdbb_request;
 		current_transaction = tdbb->tdbb_transaction;
+		TRA_attach_request(transaction, idx.idx_expression_request);
 		tdbb->tdbb_request = idx.idx_expression_request;
 		IDX_create_index(tdbb, relation, &idx, work->dfw_name, NULL,
 						 transaction, selectivity);
+		TRA_detach_request(idx.idx_expression_request);
 		tdbb->tdbb_request = current_request;
 		tdbb->tdbb_transaction = current_transaction; 
 	

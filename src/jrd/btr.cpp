@@ -899,6 +899,7 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 					isNull = (tdbb->tdbb_request->req_flags & req_null);
 
 				}
+				TRA_detach_request(idx->idx_expression_request);
 				tdbb->tdbb_request = idx->idx_expression_request->req_caller;
 				idx->idx_expression_request->req_caller = NULL;
 			}

@@ -1302,7 +1302,7 @@ static const dsc* eval_expr_idx(thread_db* tdbb, const index_desc* idx, Record* 
 	SET_TDBB(tdbb);
 
 	idx->idx_expression_request->req_caller = tdbb->tdbb_request;
-	
+
 	if (tdbb->tdbb_request)
 	{
 		TRA_attach_request(tdbb->tdbb_request->req_transaction, idx->idx_expression_request);
@@ -1322,6 +1322,7 @@ static const dsc* eval_expr_idx(thread_db* tdbb, const index_desc* idx, Record* 
 
 	not_null = !(tdbb->tdbb_request->req_flags & req_null);
 
+	TRA_detach_request(idx->idx_expression_request);
 	tdbb->tdbb_request = idx->idx_expression_request->req_caller;
 	idx->idx_expression_request->req_caller = NULL;
 
