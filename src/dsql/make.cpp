@@ -1088,8 +1088,15 @@ void MAKE_desc(dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 		return;
 
 	case nod_field:
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 203,
-				  isc_arg_gds, isc_dsql_field_ref, 0);
+		if (node->nod_desc.dsc_dtype)
+		{
+			*desc = node->nod_desc;
+		}
+		else
+		{
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 203,
+					  isc_arg_gds, isc_dsql_field_ref, 0);
+		}
 		return;
 
 	case nod_user_name:
