@@ -1,3 +1,21 @@
+2002-12-10 12:53  eku
+
+	* firebird2/: builds/posix/prefix.sinixz, src/burp/restore.epp,
+	src/dsql/errd.cpp, src/dsql/make.cpp, src/dsql/parse.cpp,
+	src/dsql/parse.y, src/intl/cv_big5.c, src/intl/cv_gb2312.c,
+	src/intl/cv_jis.c, src/intl/cv_ksc.c, src/intl/cv_narrow.c,
+	src/isql/isql.epp, src/isql/show.epp, src/jrd/all.cpp,
+	src/jrd/blrtable.cpp, src/jrd/codes.epp, src/jrd/event.cpp,
+	src/jrd/exe.cpp, src/jrd/flu.cpp, src/jrd/gds.cpp, src/jrd/ini.epp,
+	src/jrd/isc.cpp, src/jrd/isc_file.cpp, src/jrd/isc_sync.cpp,
+	src/jrd/lck.cpp, src/jrd/par.cpp, src/jrd/unix.cpp,
+	src/jrd/vio.cpp, src/jrd/why.c, src/msgs/build_file.epp,
+	src/msgs/change_msgs.epp, src/msgs/enter_msgs.epp,
+	src/msgs/modify_msgs.epp, src/pipe/allp.cpp, src/pipe/head.cpp,
+	src/remote/inet.cpp, src/wal/walc.cpp:
+	
+	Removed unused variables.
+
 2002-12-09 02:46  nmcc
 
 	* firebird2/src/install/arch-specific/linux/:
