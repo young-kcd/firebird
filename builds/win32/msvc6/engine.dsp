@@ -1261,7 +1261,7 @@ SOURCE=..\..\..\src\jrd\syidef.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\sym_proto.h
+SOURCE=..\..\..\src\jrd\sym.h
 # End Source File
 # Begin Source File
 
