@@ -4009,8 +4009,10 @@ static NOD pass1_simple_case( REQ request, NOD input, USHORT proc_flag)
  *	Handle a reference to a simple case expression.
  *
  **************************************/
-	NOD	node, list, *ptr, *end;
+	USHORT i;
+	NOD	node, node1, list, *ptr, *end;
 	DLLS stack;
+
 
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
@@ -4027,30 +4029,43 @@ static NOD pass1_simple_case( REQ request, NOD input, USHORT proc_flag)
 	/* build when_operand list */
 	stack = NULL;
 	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++,ptr++)
-	{
 		pass1_put_args_on_stack(request, *ptr, &stack, proc_flag);
-	}
 	node->nod_arg[e_simple_case_when_operands] = MAKE_list(stack);
 
 	/* build when_result list including else_result at the end */
 	/* else_result is included for easy handling in MAKE_desc() */
 	stack = NULL;
 	for (ptr = list->nod_arg, end = ptr + list->nod_count, ptr++; ptr < end; ptr++,ptr++)
-	{
 		pass1_put_args_on_stack(request, *ptr, &stack, proc_flag);
-	}
 	pass1_put_args_on_stack(request, input->nod_arg [2], &stack, proc_flag);
 	node->nod_arg[e_simple_case_results] = MAKE_list(stack);
 
+	/* build list for making describe information from 
+	   case_operand and when_operands this is used for
+	   setting parameter describers if used in this case */
+	list = node->nod_arg[e_simple_case_when_operands];
+	node1 = MAKE_node(nod_list, list->nod_count + 1);
+	i = 0;
+	node1->nod_arg[i++] = node->nod_arg[e_simple_case_case_operand];
+	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++, i++)
+		node1->nod_arg[i] = *ptr;
+	MAKE_desc_from_list(&node1->nod_desc, node1);
+	/* Set parameter describe information */
+	set_parameter_type(node->nod_arg[e_simple_case_case_operand], node1, FALSE);
+	for (ptr = node->nod_arg[e_simple_case_when_operands]->nod_arg, 
+		 end = ptr + node->nod_arg[e_simple_case_when_operands]->nod_count; 
+		 ptr < end; ptr++) {
+		set_parameter_type(*ptr, node1, FALSE);
+	}
+	/* Clean up temporary used node */
+	delete node1;
+
 	/* Set describer for output node */
 	MAKE_desc(&node->nod_desc, node);
-
-	/* Set parameter-types if parameters are there */
-	set_parameter_type(node->nod_arg[e_simple_case_case_operand], node, FALSE);
+	/* Set parameter describe information for evt. results parameters */
 	for (ptr = node->nod_arg[e_simple_case_results]->nod_arg, 
 		 end = ptr + node->nod_arg[e_simple_case_results]->nod_count; 
-		 ptr < end; ptr++)
-	{
+		 ptr < end; ptr++) {
 		set_parameter_type(*ptr, node, FALSE);
 	}
 
