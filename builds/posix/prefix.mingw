@@ -35,7 +35,7 @@ EMBED_UTIL_TARGETS:=gstat gsec
 CLIENT_UTIL_TARGETS:=gstat gsec ibguard instsvc instreg 
 WIN_IPSERVER_Files:=ipserver.cpp alli.cpp
 
-Physical_IO_Module=winnt.cpp
+Physical_IO_Module=os/win32/winnt.cpp
 
 # Add resources to some files
 FilesToAddVersionInfo=$(LIBFBEMBED_SO) $(LIBFBCLIENT_SO) $(LIBFBINTL_SO) \
