@@ -49,11 +49,9 @@
 #ifdef DEV_BUILD
 #define DEBUG                   if (debug) DBG_supervisor(debug);
 #define VIO_DEBUG				/* remove this for production build */
-#define WALW_DEBUG				/* remove this for production build */
 #else /* PROD */
 #define DEBUG
 #undef VIO_DEBUG
-#undef WALW_DEBUG
 #endif
 
 #define BUGCHECK(number)        ERR_bugcheck (number, __FILE__, __LINE__)
