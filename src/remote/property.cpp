@@ -317,6 +317,7 @@ static char *MakeVersionString(char *pchBuf, int nLen,
 	if (usServerFlagMask & SRVR_ipc) {
 		p += LoadString(hInstance, IDS_IPC, p, end - p);
 	}
+	*p = '\0';
 	return pchBuf;
 }
 

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: license.h,v 1.27 2002-10-31 05:33:35 seanleyne Exp $
+ * $Id: license.h,v 1.28 2002-11-03 22:03:29 dimitr Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -109,15 +109,7 @@
 
 #ifdef WIN_NT
 #ifdef i386
-#if (defined SUPERCLIENT || defined SUPERSERVER)
-#if (defined WIN95)
 #define FB_PLATFORM	"WI"
-#else
-#define FB_PLATFORM	"NIS"
-#endif /* WIN95 */
-#else
-#define FB_PLATFORM	"NI"
-#endif /* SUPERCLIENT or SUPERSERVER */
 #else
 #define FB_PLATFORM	"NP"
 #endif /* i386 */
@@ -140,7 +132,7 @@
 #endif
 
 #ifdef DARWIN
-#define FB_PLATFORM	"UP"	/* Darwin/PowerPC */
+#define FB_PLATFORM     "UP"	/* Darwin/PowerPC */
 #endif
 
 #ifndef FB_VERSION

@@ -60,7 +60,6 @@ extern "C" {
 
 #define JRD_info_drivemask 1	// TEMPORARY ONLY
 
-char szWindowText[WIN_TEXTLEN];
 HWND hPSDlg = NULL;
 static HINSTANCE hInstance = NULL;
 static USHORT usServerFlags;
@@ -197,8 +196,6 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 */
 	ISC_set_config(NULL, WND_hdrtbl);
 	WND_ipc_map /= 1024;
-
-	MakeVersionString(szWindowText, WIN_TEXTLEN, usServerFlagMask);
 
 /* initialize main window */
 	wcl.hInstance = hInstance;
@@ -660,48 +657,6 @@ static void GetDriveLetter(ULONG ulDriveMask, char pchBuf[DRV_STRINGLEN])
 }
 
 
-static char *MakeVersionString(char *pchBuf, int nLen,
-							   USHORT usServerFlagMask)
-{
-/******************************************************************************
- *
- *  M a k e V e r s i o n S t r i n g
- *
- ******************************************************************************
- *
- *  Input:  pchBuf - Buffer to be filled into
- *          nLen - Length of the buffer
- *          usServerFlagMask - Bit flag mask encoding the server flags
- *
- *  Return: Buffer containing the version string
- *
- *  Description: This method is called to get the Version String. This string
- *               is based on the flag set in usServerFlagMask.
- *****************************************************************************/
-	char *p = pchBuf;
-	char *end = p + nLen;
-
-	if (usServerFlagMask & SRVR_inet) {
-		p += LoadString(hInstance, IDS_TCP, p, end - p);
-		if (p < end)
-			*p++ = '\r';
-		if (p < end)
-			*p++ = '\n';
-	}
-	if (usServerFlagMask & SRVR_pipe) {
-		p += LoadString(hInstance, IDS_NP, p, end - p);
-		if (p < end)
-			*p++ = '\r';
-		if (p < end)
-			*p++ = '\n';
-	}
-	if (usServerFlagMask & SRVR_ipc) {
-		p += LoadString(hInstance, IDS_IPC, p, end - p);
-	}
-	return pchBuf;
-}
-
-
 BOOL CanEndServer(HWND hWnd, BOOL bSysExit)
 {
 /******************************************************************************
@@ -735,6 +690,5 @@ BOOL CanEndServer(HWND hWnd, BOOL bSysExit)
 	return (MessageBox(hWnd, szMsgString, APP_LABEL,
 					   MB_ICONQUESTION | MB_OKCANCEL) == IDOK);
 }
-
 
 } // extern "C"
