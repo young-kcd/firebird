@@ -28,18 +28,26 @@ LOCAL_CFLAGS=@CFLAGS@
 LOCAL_CPPFLAGS=@CPPFLAGS@
 LOCAL_LDFLAGS=@LDFLAGS@
 
+# don't clear cflags here as some module makefiles set it (BOOTBUILD) before this 
+# file is included but not all so cflags get duplicated when compiling some modules
+
 # if we keep sfio this needs to be set by configure (or move in to extern directory)
 # must use full sfio not stdio emulation to get file handle number fix
-SFIO_DIR=$(SRC)/../../../sfio/sfio_2002
-SFIO_FLAGS= -DSFIO -I$(SFIO_DIR)/include
-SFIO_LDFLAGS= -L$(SFIO)/lib
+#SFIO_DIR=$(SRC)/../../../sfio/sfio_2002
+#SFIO_DIR=/data01/fb-dev/sfio/sfio_2002
+#SFIO_FLAGS= -DSFIO -I$(SFIO_DIR)/include
+#SFIO_LDFLAGS= -L$(SFIO)/lib
 
+#these come from configure --with-sfio=/path/to/sfio
+SFIO_DIR=@SFIO_DIR@
+SFIO_FLAGS=@SFIO_FLAGS@
+SFIO_LDFLAGS=@SFIO_LDFLAGS@
 
-PROD_FLAGS= $(CFLAGS_COMMON) $(COMMON_GCC_CFLAGS) $(PROD_GCC_FLAGS) $(LOCAL_CFLAGS) \
-			$(SFIO_FLAGS)
+PROD_FLAGS= $(CFLAGS_COMMON) $(SFIO_FLAGS) $(COMMON_GCC_CFLAGS) $(PROD_GCC_FLAGS) \
+			$(LOCAL_CFLAGS)
 
-DEV_FLAGS= $(CFLAGS_COMMON) $(COMMON_GCC_CFLAGS) $(DEBUG_GCC_FLAGS) $(LOCAL_CFLAGS) \
-			$(SFIO_FLAGS)
+DEV_FLAGS= $(CFLAGS_COMMON) $(SFIO_FLAGS) $(COMMON_GCC_CFLAGS) $(DEBUG_GCC_FLAGS) \
+			$(LOCAL_CFLAGS)
 
 # extra modules needed on this platform during bootstrap phase
 JRDBOOT_Extra_Files=isc_sync.cpp thd.cpp
