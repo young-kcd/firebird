@@ -33,7 +33,7 @@ static void event_dump_list(void);
 
 static EVH EVENT_header = NULL;
 
-static const UCHAR* SRQ_BASE	= (UCHAR *) EVENT_header;
+#define SRQ_BASE                  ((UCHAR *) EVENT_header)
 
 int main(int argc, char *argv[])
 {
