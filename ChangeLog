@@ -1,3 +1,145 @@
+2003-09-28 23:35  skidder
+
+	* firebird2/: builds/win32/defs/fbclient.def,
+	builds/win32/defs/fbclient_debug.def, builds/win32/defs/gds32.def,
+	builds/win32/defs/gds32_debug.def, src/common/classes/array.h,
+	src/common/config/config.cpp, src/common/config/config.h,
+	src/dsql/ddl.cpp, src/dsql/dsql.cpp, src/dsql/dsql.h,
+	src/dsql/node.h, src/dsql/parse.cpp, src/dsql/parse.y,
+	src/dsql/pass1.cpp, src/dudley/ddl.h, src/dudley/exe.epp,
+	src/dudley/lex.cpp, src/dudley/lex_proto.h, src/dudley/trn.cpp,
+	src/gpre/ada.cpp, src/gpre/c_cxx.cpp, src/gpre/cme.cpp,
+	src/gpre/cob.cpp, src/gpre/dyntable.h, src/gpre/ftn.cpp,
+	src/gpre/gpre.h, src/gpre/gpre_meta_boot.cpp, src/gpre/int.cpp,
+	src/gpre/int_cxx.cpp, src/gpre/pas.cpp, src/gpre/prett_proto.h,
+	src/gpre/pretty.cpp, src/include/fb_types.h, src/jrd/alt.cpp,
+	src/jrd/blp.h, src/jrd/cmp.cpp, src/jrd/cmp_proto.h,
+	src/jrd/constants.h, src/jrd/cvt2.cpp, src/jrd/exe.h,
+	src/jrd/filters.cpp, src/jrd/gds.cpp, src/jrd/gds_proto.h,
+	src/jrd/gdsold.h, src/jrd/jrd.cpp, src/jrd/met.epp,
+	src/jrd/opt.cpp, src/jrd/par.cpp, src/jrd/par_proto.h,
+	src/qli/meta.epp:
+	
+	Ok, i'm joining Firebird destruction team with my cleanup: 1. Bring
+	trace DSQL, DYN and BLR trace logging up-to-date 2. Remove
+	redundant CSB pointer dereferences in BLR parser and request
+	compiler 3. Convert RIGHT JOIN to LEFT JOIN early during BLR
+	parsing 4. Check BLR syntax for unititalized contexts usage 5. Some
+	type-safety and const-correctness fixes
+
+2003-09-28 22:51  skidder
+
+	* firebird2/builds/win32/msvc7/Firebird2.sln:
+	
+	Update MSVC7 makefiles
+
+2003-09-28 22:50  skidder
+
+	* firebird2/src/lock/lock.cpp:
+	
+	Re-enable automatic lock manager pool resizing on Win32 CS
+
+2003-09-28 20:49  dimitr
+
+	* firebird2/src/jrd/: evl.cpp, idx.cpp, rse.cpp, sort.cpp,
+	sort_proto.h:
+	
+	A bit more cleanup.
+
+2003-09-28 20:26  dimitr
+
+	* firebird2/src/jrd/btr.h:
+	
+	Fixed a typo.
+
+2003-09-28 20:23  dimitr
+
+	* firebird2/src/jrd/: rse.cpp, sort.cpp, sort.h, sort_proto.h:
+	
+	Cleanup and some optimization.
+
+2003-09-28 18:54  dimitr
+
+	* firebird2/src/jrd/: sort.cpp, sort.h:
+	
+	Small cleanup.
+
+2003-09-28 17:46  dimitr
+
+	* firebird2/src/jrd/sort.h:
+	
+	Small cleanup.
+
+2003-09-28 17:38  dimitr
+
+	* firebird2/src/jrd/: idx.cpp, idx.cpp:
+	
+	Fixed bug in the cleanup after unsuccessful index creation.
+
+2003-09-28 16:41  dimitr
+
+	* firebird2/src/jrd/idx.cpp:
+	
+	Don't waste time counting duplicates for non-unique indices.
+
+2003-09-28 16:03  dimitr
+
+	* firebird2/src/jrd/: btr.h, idx.cpp:
+	
+	Fixed bug in unique indices.
+
+2003-09-28 15:51  dimitr
+
+	* firebird2/src/jrd/: btr.h, idx.cpp:
+	
+	Fixed bug in unique indices.
+
+2003-09-28 14:05  dimitr
+
+	* firebird2/src/dsql/: gen.cpp, pass1.cpp:
+	
+	Fixed types convertion.
+
+2003-09-28 13:11  dimitr
+
+	* firebird2/src/dsql/: dsql.tab.h, gen.cpp, node.h, parse.cpp,
+	parse.y, pass1.cpp:
+	
+	Slightly reworked my labels implementation.
+
+2003-09-28 02:36  brodsom
+
+	* firebird2/src/dsql/: parse.cpp, pass1.cpp, preparse.cpp,
+	user_dsql.cpp, utld.cpp, array.epp, ddl.cpp, dsql.cpp, dsql.h,
+	dsql.tab.h, gen.cpp, hsh.cpp, make.cpp, metd.epp:
+	
+	Macro cleaning
+
+2003-09-28 02:35  brodsom
+
+	* firebird2/src/burp/: burp.cpp, burp.h, mvol.cpp, spit.cpp:
+	
+	Style and Corrections
+
+2003-09-28 02:33  brodsom
+
+	* firebird2/src/alice/aliceswi.h:
+	
+	Correction
+
+2003-09-28 01:29  brodsom
+
+	* firebird2/builds/posix/: Makefile.in.client.fbudf,
+	Makefile.in.embed.fbudf, Makefile.in.extlib, Makefile.in.firebird:
+	
+	Solve fbudf build in MinGW
+
+2003-09-28 01:28  brodsom
+
+	* firebird2/builds/posix/prefix.mingw:
+	
+	Remove ipserver from mingw build
+
 2003-09-26 17:25  dimitr
 
 	* firebird2/src/: jrd/intlnames.h, intl/lc_iso8859_2.cpp,
