@@ -90,6 +90,11 @@ public:
 		List of directories to store temporary files in
 	*/
 	static string_vector getTempDirectories(string default_value = "");
+
+	/*
+		Startup option for the guardian
+	*/
+	static int getGuardianOption(int default_value = 0);
 };
 
 #endif // CONFIG_H

@@ -44,7 +44,8 @@ enum ConfigKey
 	SORT_MEM_BLOCK_SIZE,					// 1
 	SORT_MEM_UPPER_LIMIT,					// 2
 	REMOTE_FILE_OPEN_ABILITY,				// 3
-	TEMP_DIRECTORIES						// 4
+	TEMP_DIRECTORIES,						// 4
+	GUARDIAN_OPTION							// 5
 };
 
 /******************************************************************************

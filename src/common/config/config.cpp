@@ -52,7 +52,8 @@ const string keys[] = {
 	"SortMemBlockSize",						// 1
 	"SortMemUpperLimit",					// 2
 	"RemoteFileOpenAbility",				// 3
-	"TempDirectories"						// 4
+	"TempDirectories",						// 4
+	"GuardianOption"						// 5
 };
 
 /******************************************************************************
@@ -183,5 +184,12 @@ string_vector Config::getTempDirectories(string default_value)
 	string_vector result(0);
 	result.push_back(default_value);
 	ConfigImpl::instance().getValueList(TEMP_DIRECTORIES, result);
+	return result;
+}
+
+int Config::getGuardianOption(int default_value)
+{
+	int result = default_value;
+	ConfigImpl::instance().getValue(GUARDIAN_OPTION, result);
 	return result;
 }
