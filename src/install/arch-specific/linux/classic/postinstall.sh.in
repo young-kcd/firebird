@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: postinstall.sh.in,v 1.8 2003-04-28 19:48:22 skidder Exp $
+#   $Id: postinstall.sh.in,v 1.9 2003-05-29 10:14:55 skidder Exp $
 # 
 
 # The post install script for Firebird Classic
@@ -394,6 +394,7 @@ fixFilePermissions() {
 
     chmod ug=rw,o= firebird.log
 
+	chmod a=r firebird.conf
     chmod a=r firebird.msg
     chmod a=r README
     chmod ug=rw,o= help/help.fdb
@@ -509,6 +510,7 @@ fixFilePermissionsRoot() {
 
     chmod a=rw firebird.log
 
+	chmod a=r firebird.conf
     chmod a=r firebird.msg
     chmod a=r README
     chmod a=rw help/help.fdb
