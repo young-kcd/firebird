@@ -251,7 +251,7 @@ RRQ DLL_EXPORT REMOTE_find_request(RRQ request, USHORT level)
  *	Find sub-request if level is non-zero.
  *
  **************************************/
-	MSG msg;
+	REM_MSG msg;
 	FMT format;
 	rrq::rrq_repeat * tail, *end;
 
@@ -284,7 +284,7 @@ RRQ DLL_EXPORT REMOTE_find_request(RRQ request, USHORT level)
 	for (; tail <= end; tail++) {
 		if (!(format = tail->rrq_format))
 			continue;
-		tail->rrq_xdr = msg = (MSG) ALLOCV(type_msg, format->fmt_length);
+		tail->rrq_xdr = msg = (REM_MSG) ALLOCV(type_msg, format->fmt_length);
 #ifdef REMOTE_DEBUG_MEMORY
 		ib_printf("REMOTE_find_request       allocate message %x\n", msg);
 #endif
@@ -484,7 +484,7 @@ STR DLL_EXPORT REMOTE_make_string(SCHAR * input)
 }
 
 
-void DLL_EXPORT REMOTE_release_messages( MSG messages)
+void DLL_EXPORT REMOTE_release_messages( REM_MSG messages)
 {
 /**************************************
  *
@@ -496,7 +496,7 @@ void DLL_EXPORT REMOTE_release_messages( MSG messages)
  *	Release a circular list of messages.
  *
  **************************************/
-	MSG message, temp;
+	REM_MSG message, temp;
 
 	if (message = messages)
 		while (TRUE) {
@@ -525,7 +525,7 @@ void DLL_EXPORT REMOTE_release_request( RRQ request)
  *	Release a request block and friends.
  *
  **************************************/
-	MSG message;
+	REM_MSG message;
 	RDB rdb;
 	RRQ *p, next;
 	rrq::rrq_repeat * tail, *end;
@@ -566,7 +566,7 @@ void DLL_EXPORT REMOTE_release_request( RRQ request)
 }
 
 
-void DLL_EXPORT REMOTE_reset_request( RRQ request, MSG active_message)
+void DLL_EXPORT REMOTE_reset_request( RRQ request, REM_MSG active_message)
 {
 /**************************************
  *
@@ -580,7 +580,7 @@ void DLL_EXPORT REMOTE_reset_request( RRQ request, MSG active_message)
  *	some care to avoid zapping that message.
  *
  **************************************/
-	MSG message;
+	REM_MSG message;
 	rrq::rrq_repeat * tail, *end;
 
 	tail = request->rrq_rpt;
@@ -618,7 +618,7 @@ void DLL_EXPORT REMOTE_reset_statement( RSR statement)
  *	Reset a statement by releasing all buffers except 1
  *
  **************************************/
-	MSG message, temp;
+	REM_MSG message, temp;
 
 	if ((!statement) || (!(message = statement->rsr_message)))
 		return;

@@ -197,7 +197,7 @@ typedef struct message
 	USHORT	msg_number;			/* Message number */
 	UCHAR	*msg_address;		/* Address of message */
 	UCHAR	msg_buffer[1];		/* Allocated message */
-} *MSG;
+} *REM_MSG;
 
 /* remote stored procedure request */
 

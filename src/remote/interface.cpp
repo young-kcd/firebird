@@ -116,7 +116,7 @@ static BOOLEAN check_response(RDB, PACKET *);
 static BOOLEAN clear_queue(PORT, STATUS *);
 static void disconnect(PORT);
 #ifdef SCROLLABLE_CURSORS
-static MSG dump_cache(PORT, STATUS *, rrq::rrq_repeat *);
+static REM_MSG dump_cache(PORT, STATUS *, rrq::rrq_repeat *);
 #endif
 static void enqueue_receive(PORT,
 							BOOLEAN(*fn) (struct trdb *, PORT,
@@ -155,7 +155,7 @@ static void release_sql_request(RSR);
 static void release_transaction(RTR);
 static STATUS return_success(RDB);
 #ifdef SCROLLABLE_CURSORS
-static MSG scroll_cache(STATUS *, struct trdb *, RRQ, PORT, rrq::rrq_repeat *,
+static REM_MSG scroll_cache(STATUS *, struct trdb *, RRQ, PORT, rrq::rrq_repeat *,
 						USHORT *, ULONG *);
 #endif
 static STATUS send_and_receive(RDB, PACKET *, STATUS *);
@@ -697,7 +697,7 @@ STATUS GDS_COMPILE(STATUS * user_status,
 	PACKET *packet;
 	P_CMPL *compile;
 	RRQ request;
-	MSG message, next;
+	REM_MSG message, next;
 	USHORT max_msg;
 	struct trdb thd_context, *trdb;
 
@@ -1403,7 +1403,7 @@ STATUS GDS_DSQL_EXECUTE2(STATUS*	user_status,
 	PORT port;
 	RTR transaction;
 	RSR statement;
-	MSG message;
+	REM_MSG message;
 	PACKET *packet;
 	P_SQLDATA *sqldata;
 	struct trdb thd_context, *trdb;
@@ -1441,7 +1441,7 @@ STATUS GDS_DSQL_EXECUTE2(STATUS*	user_status,
 				ALLR_RELEASE(statement->rsr_bind_format);
 				statement->rsr_bind_format = NULL;
 			}
-			if ((message = PARSE_messages(in_blr, in_blr_length)) != (MSG) - 1) {
+			if ((message = PARSE_messages(in_blr, in_blr_length)) != (REM_MSG) - 1) {
 				statement->rsr_bind_format = (FMT) message->msg_address;
 				ALLR_RELEASE(message);
 			}
@@ -1458,7 +1458,7 @@ STATUS GDS_DSQL_EXECUTE2(STATUS*	user_status,
 				ALLR_RELEASE(port->port_statement->rsr_select_format);
 				port->port_statement->rsr_select_format = NULL;
 			}
-			if ((message = PARSE_messages(out_blr, out_blr_length)) != (MSG) - 1) {
+			if ((message = PARSE_messages(out_blr, out_blr_length)) != (REM_MSG) - 1) {
 				port->port_statement->rsr_select_format =
 					(FMT) message->msg_address;
 				ALLR_RELEASE(message);
@@ -1466,7 +1466,7 @@ STATUS GDS_DSQL_EXECUTE2(STATUS*	user_status,
 
 			if (!port->port_statement->rsr_buffer) {
 				port->port_statement->rsr_buffer = message =
-					(MSG) ALLOCV(type_msg, 0);
+					(REM_MSG) ALLOCV(type_msg, 0);
 				port->port_statement->rsr_message = message;
 				message->msg_next = message;
 #ifdef SCROLLABLE_CURSORS
@@ -1477,7 +1477,7 @@ STATUS GDS_DSQL_EXECUTE2(STATUS*	user_status,
 		}
 
 		if (!statement->rsr_buffer) {
-			statement->rsr_buffer = message = (MSG) ALLOCV(type_msg, 0);
+			statement->rsr_buffer = message = (REM_MSG) ALLOCV(type_msg, 0);
 			statement->rsr_message = message;
 
 			message->msg_next = message;
@@ -1614,7 +1614,7 @@ STATUS GDS_DSQL_EXECUTE_IMMED2(STATUS * user_status,
 	PACKET *packet;
 	P_SQLST *ex_now;
 	RSR statement;
-	MSG message;
+	REM_MSG message;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -1677,7 +1677,7 @@ STATUS GDS_DSQL_EXECUTE_IMMED2(STATUS * user_status,
 			if (in_blr_length)
 			{
 				if ((message = PARSE_messages(in_blr, in_blr_length)) !=
-					(MSG) - 1) {
+					(REM_MSG) - 1) {
 					statement->rsr_bind_format = (FMT) message->msg_address;
 					ALLR_RELEASE(message);
 				}
@@ -1685,7 +1685,7 @@ STATUS GDS_DSQL_EXECUTE_IMMED2(STATUS * user_status,
 			if (out_blr_length)
 			{
 				if ((message = PARSE_messages(out_blr, out_blr_length)) !=
-					(MSG) - 1) {
+					(REM_MSG) - 1) {
 					statement->rsr_select_format = (FMT) message->msg_address;
 					ALLR_RELEASE(message);
 				}
@@ -1694,7 +1694,7 @@ STATUS GDS_DSQL_EXECUTE_IMMED2(STATUS * user_status,
 
 		if (!statement->rsr_buffer)
 		{
-			statement->rsr_buffer = message = (MSG) ALLOCV(type_msg, 0);
+			statement->rsr_buffer = message = (REM_MSG) ALLOCV(type_msg, 0);
 			statement->rsr_message = message;
 			message->msg_next = message;
 #ifdef SCROLLABLE_CURSORS
@@ -1793,7 +1793,7 @@ STATUS GDS_DSQL_FETCH(STATUS * user_status,
  **************************************/
 	RDB rdb;
 	RSR statement;
-	MSG message;
+	REM_MSG message;
 	PORT port;
 	PACKET *packet;
 	P_SQLDATA *sqldata;
@@ -1848,7 +1848,7 @@ STATUS GDS_DSQL_FETCH(STATUS * user_status,
 			if (statement->rsr_user_select_format &&
 				statement->rsr_user_select_format != statement->rsr_select_format)
 				ALLR_RELEASE(statement->rsr_user_select_format);
-			if ((message = PARSE_messages(blr, blr_length)) != (MSG) - 1) {
+			if ((message = PARSE_messages(blr, blr_length)) != (REM_MSG) - 1) {
 				statement->rsr_user_select_format = (FMT) message->msg_address;
 				ALLR_RELEASE(message);
 			}
@@ -1872,7 +1872,7 @@ STATUS GDS_DSQL_FETCH(STATUS * user_status,
 
 
 		if (!statement->rsr_buffer) {
-			statement->rsr_buffer = (MSG) ALLOCV(type_msg, 0);
+			statement->rsr_buffer = (REM_MSG) ALLOCV(type_msg, 0);
 			statement->rsr_message = statement->rsr_buffer;
 			statement->rsr_message->msg_next = statement->rsr_message;
 #ifdef SCROLLABLE_CURSORS
@@ -2133,7 +2133,7 @@ STATUS GDS_DSQL_INSERT(STATUS * user_status,
  **************************************/
 	RDB rdb;
 	RSR statement;
-	MSG message;
+	REM_MSG message;
 	PACKET *packet;
 	P_SQLDATA *sqldata;
 	struct trdb thd_context, *trdb;
@@ -2164,14 +2164,14 @@ STATUS GDS_DSQL_INSERT(STATUS * user_status,
 				ALLR_RELEASE(statement->rsr_bind_format);
 				statement->rsr_bind_format = NULL;
 			}
-			if ((message = PARSE_messages(blr, blr_length)) != (MSG) - 1) {
+			if ((message = PARSE_messages(blr, blr_length)) != (REM_MSG) - 1) {
 				statement->rsr_bind_format = (FMT) message->msg_address;
 				ALLR_RELEASE(message);
 			}
 		}
 
 		if (!statement->rsr_buffer) {
-			statement->rsr_buffer = message = (MSG) ALLOCV(type_msg, 0);
+			statement->rsr_buffer = message = (REM_MSG) ALLOCV(type_msg, 0);
 			statement->rsr_message = message;
 			message->msg_next = message;
 #ifdef SCROLLABLE_CURSORS
@@ -3257,7 +3257,7 @@ STATUS GDS_RECEIVE(STATUS * user_status,
  **************************************/
 	RRQ request;
 	RDB rdb;
-	MSG message;
+	REM_MSG message;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -3598,7 +3598,7 @@ STATUS GDS_REQUEST_INFO(STATUS * user_status,
  **************************************/
 	RRQ request;
 	RDB rdb;
-	MSG msg;
+	REM_MSG msg;
 	UCHAR *out, item, *info_items, *end_items;
 	USHORT data;
 	FMT format;
@@ -3861,7 +3861,7 @@ STATUS GDS_SEND(STATUS * user_status,
  **************************************/
 	RRQ request;
 	RDB rdb;
-	MSG message;
+	REM_MSG message;
 	PACKET *packet;
 	P_DATA *data;
 	struct trdb thd_context, *trdb;
@@ -4228,7 +4228,7 @@ STATUS GDS_START_AND_SEND(STATUS * user_status,
 	RRQ request;
 	RTR transaction;
 	RDB rdb;
-	MSG message;
+	REM_MSG message;
 	PACKET *packet;
 	P_DATA *data;
 	struct trdb thd_context, *trdb;
@@ -4457,7 +4457,7 @@ STATUS GDS_TRANSACT_REQUEST(STATUS * user_status,
 	RTR transaction;
 	RDB rdb;
 	PORT port;
-	MSG message, temp;
+	REM_MSG message, temp;
 	PACKET *packet;
 	RPR procedure;
 	P_TRRQ *trrq;
@@ -4512,7 +4512,7 @@ STATUS GDS_TRANSACT_REQUEST(STATUS * user_status,
 			procedure->rpr_out_format = NULL;
 		}
 
-		if ((message = PARSE_messages(blr, blr_length)) != (MSG) - 1) {
+		if ((message = PARSE_messages(blr, blr_length)) != (REM_MSG) - 1) {
 			while (message) {
 				if (message->msg_number == 0) {
 					procedure->rpr_in_msg = message;
@@ -5105,10 +5105,10 @@ static BOOLEAN batch_dsql_fetch(trdb*	trdb,
 	{
 		/* Swallow up data. If a buffer isn't available, allocate another. */
 
-		MSG message = statement->rsr_buffer;
+		REM_MSG message = statement->rsr_buffer;
 		if (message->msg_address)
 		{
-			MSG new_msg = (MSG) ALLOCV(type_msg, statement->rsr_fmt_length);
+			REM_MSG new_msg = (REM_MSG) ALLOCV(type_msg, statement->rsr_fmt_length);
 			statement->rsr_buffer = new_msg;
 				
 			new_msg->msg_next = message;
@@ -5117,7 +5117,7 @@ static BOOLEAN batch_dsql_fetch(trdb*	trdb,
 			/* link the new message in a doubly linked list to make it 
 			   easier to scroll back and forth through the records */
 
-			MSG prior = message->msg_prior;
+			REM_MSG prior = message->msg_prior;
 			message->msg_prior = new_msg;
 			prior->msg_next = new_msg;
 			new_msg->msg_prior = prior;
@@ -5254,7 +5254,7 @@ static BOOLEAN batch_gds_receive(trdb*		trdb,
 
 	while (TRUE)
 	{
-		MSG message = tail->rrq_xdr;	/* First free buffer */
+		REM_MSG message = tail->rrq_xdr;	/* First free buffer */
 
 		/* If the buffer queue is full, allocate a new message and 
 		   place it in the queue--if we are clearing the queue, don't 
@@ -5264,7 +5264,7 @@ static BOOLEAN batch_gds_receive(trdb*		trdb,
 		if (message->msg_address)
 		{
 			FMT format = tail->rrq_format;
-			MSG new_msg = (MSG) ALLOCV(type_msg, format->fmt_length);
+			REM_MSG new_msg = (REM_MSG) ALLOCV(type_msg, format->fmt_length);
 			tail->rrq_xdr = new_msg;
 			new_msg->msg_next = message;
 			new_msg->msg_number = message->msg_number;
@@ -5273,7 +5273,7 @@ static BOOLEAN batch_gds_receive(trdb*		trdb,
 			/* link the new message in a doubly linked list to make it 
 			   easier to scroll back and forth through the records */
 
-			MSG prior = message->msg_prior;
+			REM_MSG prior = message->msg_prior;
 			message->msg_prior = new_msg;
 			prior->msg_next = new_msg;
 			new_msg->msg_prior = prior;
@@ -5512,7 +5512,7 @@ static void disconnect( PORT port)
 
 
 #ifdef SCROLLABLE_CURSORS
-static MSG dump_cache(
+static REM_MSG dump_cache(
 					  PORT port, STATUS * user_status, rrq::rrq_repeat * tail)
 {
 /**************************************
@@ -5527,7 +5527,7 @@ static MSG dump_cache(
  *	and empty the cache in preparation for refilling it. 
  *
  **************************************/
-	MSG message;
+	REM_MSG message;
 
 	if (!clear_queue(port, user_status))
 		return NULL;
@@ -5704,7 +5704,7 @@ USHORT msg_type, USHORT msg_length, UCHAR * msg)
  *
  **************************************/
 	RDB rdb;
-	MSG message;
+	REM_MSG message;
 	PORT port;
 	PACKET *packet;
 	P_SQLDATA *sqldata;
@@ -6325,7 +6325,7 @@ static void receive_after_start( RRQ request, USHORT msg_type)
  *
  *****************************************/
 	RDB rdb;
-	MSG message, new_;
+	REM_MSG message, new_;
 	FMT format;
 	PORT port;
 	PACKET *packet;
@@ -6352,7 +6352,7 @@ static void receive_after_start( RRQ request, USHORT msg_type)
 	while (TRUE) {
 		message = tail->rrq_xdr;
 		if (message->msg_address) {
-			tail->rrq_xdr = new_ = (MSG) ALLOCV(type_msg, format->fmt_length);
+			tail->rrq_xdr = new_ = (REM_MSG) ALLOCV(type_msg, format->fmt_length);
 			new_->msg_next = message;
 			new_->msg_number = message->msg_number;
 
@@ -6360,7 +6360,7 @@ static void receive_after_start( RRQ request, USHORT msg_type)
 			/* link the new message in a doubly linked list to make it 
 			   easier to scroll back and forth through the records */
 
-			MSG prior = message->msg_prior;
+			REM_MSG prior = message->msg_prior;
 			message->msg_prior = new_;
 			prior->msg_next = new_;
 			new_->msg_prior = prior;
@@ -6830,7 +6830,7 @@ static STATUS return_success( RDB rdb)
 
 
 #ifdef SCROLLABLE_CURSORS
-static MSG scroll_cache(
+static REM_MSG scroll_cache(
 						STATUS * user_status,
 						struct trdb *trdb,
 						RRQ request,
@@ -6868,7 +6868,7 @@ rrq::rrq_repeat * tail, USHORT * direction, ULONG * offset)
  *  In the backward direction, do the same thing but in reverse.
  *
  **************************************/
-	MSG message;
+	REM_MSG message;
 
 /* if we are to continue in the current direction, set direction to 
    the last direction scrolled; then depending on the direction asked 

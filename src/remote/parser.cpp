@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: parser.cpp,v 1.3 2001-12-24 02:50:53 tamlin Exp $
+$Id: parser.cpp,v 1.4 2002-11-19 12:40:54 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -40,7 +40,7 @@ $Id: parser.cpp,v 1.3 2001-12-24 02:50:53 tamlin Exp $
 
 
 
-MSG DLL_EXPORT PARSE_messages(UCHAR * blr, USHORT blr_length)
+REM_MSG DLL_EXPORT PARSE_messages(UCHAR * blr, USHORT blr_length)
 {
 /**************************************
  *
@@ -54,7 +54,7 @@ MSG DLL_EXPORT PARSE_messages(UCHAR * blr, USHORT blr_length)
  *	messages found.  If an error occurs, return -1;
  *
  **************************************/
-	MSG message, next;
+	REM_MSG message, next;
 	FMT format;
 	DSC *desc;
 	USHORT count, msg_number, offset, align, net_length;
@@ -62,7 +62,7 @@ MSG DLL_EXPORT PARSE_messages(UCHAR * blr, USHORT blr_length)
 
 	version = *blr++;
 	if ((version != blr_version4) && (version != blr_version5))
-		return (MSG) - 1;
+		return (REM_MSG) - 1;
 
 	if (*blr++ != blr_begin)
 		return 0;
@@ -220,7 +220,7 @@ MSG DLL_EXPORT PARSE_messages(UCHAR * blr, USHORT blr_length)
 					ALLR_release(next->msg_address);
 					ALLR_release(next);
 				}
-				return (MSG) - 1;
+				return (REM_MSG) - 1;
 			}
 			if (desc->dsc_dtype == dtype_varying)
 				net_length += 4 + ((desc->dsc_length - 2 + 3) & ~3);
@@ -233,7 +233,7 @@ MSG DLL_EXPORT PARSE_messages(UCHAR * blr, USHORT blr_length)
 		}
 		format->fmt_length = offset;
 		format->fmt_net_length = net_length;
-		next = (MSG) ALLOCV(type_msg, format->fmt_length);
+		next = (REM_MSG) ALLOCV(type_msg, format->fmt_length);
 #ifdef REMOTE_DEBUG_MEMORY
 		ib_printf("PARSE_messages            allocate message %x\n", next);
 #endif

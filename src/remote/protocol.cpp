@@ -76,10 +76,10 @@ static bool_t xdr_hyper(register XDR *, SINT64 *);
 #endif
 
 static bool_t xdr_longs(XDR *, CSTRING *);
-static bool_t xdr_message(XDR *, MSG, FMT);
+static bool_t xdr_message(XDR *, REM_MSG, FMT);
 static bool_t xdr_quad(register XDR *, register struct bid *);
 static bool_t xdr_request(XDR *, USHORT, USHORT, USHORT);
-static bool_t xdr_semi_opaque(XDR *, MSG, FMT);
+static bool_t xdr_semi_opaque(XDR *, REM_MSG, FMT);
 static bool_t xdr_semi_opaque_slice(XDR *, LSTRING *);
 static bool_t xdr_slice(XDR *, LSTRING *, USHORT, BLOB_PTR *);
 static bool_t xdr_status_vector(XDR *, STATUS *, TEXT * strings[]);
@@ -1248,7 +1248,7 @@ static bool_t xdr_longs( XDR * xdrs, CSTRING * cstring)
 }
 
 
-static bool_t xdr_message( XDR * xdrs, MSG message, FMT format)
+static bool_t xdr_message( XDR * xdrs, REM_MSG message, FMT format)
 {
 /**************************************
  *
@@ -1351,7 +1351,7 @@ static bool_t xdr_request(
  *
  **************************************/
 	PORT port;
-	MSG message;
+	REM_MSG message;
 	FMT format;
 	RRQ request;
 	rrq::rrq_repeat * tail;
@@ -1386,7 +1386,7 @@ static bool_t xdr_request(
 
 
 #ifdef VMS
-static bool_t xdr_semi_opaque( XDR * xdrs, MSG message, FMT format)
+static bool_t xdr_semi_opaque( XDR * xdrs, REM_MSG message, FMT format)
 {
 /**************************************
  *
@@ -1632,7 +1632,7 @@ static bool_t xdr_sql_blr(
 	PORT port;
 	RSR statement;
 	FMT *fmt_ptr;
-	MSG message;
+	REM_MSG message;
 
 	if (!xdr_cstring(xdrs, blr))
 		return FALSE;
@@ -1681,8 +1681,8 @@ static bool_t xdr_sql_blr(
 		if (blr->cstr_length) {
 			if (
 				(message =
-				 (MSG) PARSE_messages(blr->cstr_address,
-									  blr->cstr_length)) != (MSG) - 1) {
+				 (REM_MSG) PARSE_messages(blr->cstr_address,
+									  blr->cstr_length)) != (REM_MSG) - 1) {
 				*fmt_ptr = (FMT) message->msg_address;
 				ALLR_release(message);
 			}
@@ -1701,7 +1701,7 @@ static bool_t xdr_sql_blr(
 		REMOTE_release_messages(message);
 		statement->rsr_fmt_length = statement->rsr_format->fmt_length;
 		statement->rsr_buffer = message =
-			(MSG) ALLOCV(type_msg, statement->rsr_fmt_length);
+			(REM_MSG) ALLOCV(type_msg, statement->rsr_fmt_length);
 		statement->rsr_message = message;
 		message->msg_next = message;
 #ifdef SCROLLABLE_CURSORS
@@ -1726,7 +1726,7 @@ static bool_t xdr_sql_message( XDR * xdrs, SLONG statement_id)
  *
  **************************************/
 	PORT port;
-	MSG message;
+	REM_MSG message;
 	RSR statement;
 
 	if (xdrs->x_op == XDR_FREE)
@@ -1846,7 +1846,7 @@ static bool_t xdr_trrq_blr( XDR * xdrs, CSTRING * blr)
  **************************************/
 	PORT port;
 	RPR procedure;
-	MSG message, temp;
+	REM_MSG message, temp;
 
 	if (!xdr_cstring(xdrs, blr))
 		return FALSE;
@@ -1879,7 +1879,7 @@ static bool_t xdr_trrq_blr( XDR * xdrs, CSTRING * blr)
 		procedure->rpr_out_format = NULL;
 	}
 	if ((message = PARSE_messages(blr->cstr_address, blr->cstr_length)) !=
-		(MSG) - 1) {
+		(REM_MSG) - 1) {
 		while (message) {
 			if (message->msg_number == 0) {
 				procedure->rpr_in_msg = message;

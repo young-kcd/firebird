@@ -138,7 +138,7 @@ static BOOLEAN	check_request(RRQ, USHORT, USHORT);
 static USHORT	check_statement_type(RSR);
 
 #ifdef SCROLLABLE_CURSORS
-static MSG		dump_cache(rrq::rrq_repeat*);
+static REM_MSG		dump_cache(rrq::rrq_repeat*);
 #endif
 
 static USHORT	get_next_msg_no(RRQ, USHORT, USHORT*);
@@ -152,7 +152,7 @@ static void	release_sql_request(RSR);
 static void	release_transaction(RTR);
 
 #ifdef SCROLLABLE_CURSORS
-static MSG	scroll_cache(rrq::rrq_repeat*, USHORT *, ULONG *);
+static REM_MSG	scroll_cache(rrq::rrq_repeat*, USHORT *, ULONG *);
 #endif
 
 static void	server_ast(RVNT, USHORT, UCHAR *);
@@ -1079,7 +1079,7 @@ STATUS port::compile(P_CMPL* compile, PACKET* send)
  **************************************/
 	RDB rdb;
 	RRQ request;
-	MSG message, next;
+	REM_MSG message, next;
 	UCHAR *blr;
 	USHORT max_msg, blr_length;
 	int *handle;
@@ -1397,7 +1397,7 @@ void port::drop_database(P_RLSE* release, PACKET* send)
 
 
 #ifdef SCROLLABLE_CURSORS
-static MSG dump_cache( rrq::rrq_repeat* tail)
+static REM_MSG dump_cache( rrq::rrq_repeat* tail)
 {
 /**************************************
  *
@@ -1411,7 +1411,7 @@ static MSG dump_cache( rrq::rrq_repeat* tail)
  *	preparation for refilling it. 
  *
  **************************************/
-	MSG message;
+	REM_MSG message;
 
 	message = tail->rrq_xdr;
 	while (TRUE) {
@@ -1925,7 +1925,7 @@ STATUS port::fetch(P_SQLDATA * sqldata, PACKET* send)
  *
  *****************************************/
 	RSR statement;
-	MSG message, next;
+	REM_MSG message, next;
 	USHORT msg_length, count, count2;
 	P_SQLDATA *response;
 	STATUS s, status_vector[ISC_STATUS_LENGTH];
@@ -2078,7 +2078,7 @@ STATUS port::fetch(P_SQLDATA * sqldata, PACKET* send)
 			if (!next)
 				for (next = statement->rsr_buffer; next->msg_next != message;
 					 next = next->msg_next);
-			message = (MSG) ALLOCV(type_msg, statement->rsr_fmt_length);
+			message = (REM_MSG) ALLOCV(type_msg, statement->rsr_fmt_length);
 			message->msg_number = next->msg_number;
 			message->msg_next = next->msg_next;
 			next->msg_next = message;
@@ -2129,7 +2129,7 @@ STATUS port::fetch_blob(P_SQLDATA * sqldata, PACKET* send)
  *****************************************/
 	RSR statement;
 	USHORT msg_length;
-	MSG message;
+	REM_MSG message;
 	P_SQLDATA *response;
 	STATUS s, status_vector[ISC_STATUS_LENGTH];
 
@@ -3542,7 +3542,7 @@ STATUS port::receive_msg(P_DATA * data, PACKET* send)
  **************************************/
 
 	STATUS status_vector[ISC_STATUS_LENGTH];
-	MSG message, next, prior;
+	REM_MSG message, next, prior;
 	RRQ request;
 	FMT format;
 	USHORT msg_number, count, count2, level;
@@ -3744,7 +3744,7 @@ STATUS port::receive_msg(P_DATA * data, PACKET* send)
 
 			/* allocate a new message block and put it in the cache */
 
-			message = (MSG) ALLOCV(type_msg, format->fmt_length);
+			message = (REM_MSG) ALLOCV(type_msg, format->fmt_length);
 #ifdef REMOTE_DEBUG_MEMORY
 			ib_printf("receive_msg(server)       allocate message %x\n",
 					  message);
@@ -3978,7 +3978,7 @@ static void release_transaction( RTR transaction)
 
 
 #ifdef SCROLLABLE_CURSORS
-static MSG scroll_cache(
+static REM_MSG scroll_cache(
 						rrq::rrq_repeat* tail,
 						USHORT * direction, ULONG * offset)
 {
@@ -4008,7 +4008,7 @@ static MSG scroll_cache(
  *  in that the client already has them and would not request them from us. 
  *
  **************************************/
-	MSG message;
+	REM_MSG message;
 
 /* if we are to continue in the current direction, set direction to 
    the last direction scrolled; then depending on the direction asked 
@@ -4150,7 +4150,7 @@ STATUS port::send_msg(P_DATA * data, PACKET* send)
  **************************************/
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	RRQ request;
-	MSG message;
+	REM_MSG message;
 	FMT format;
 	USHORT number;
 
@@ -4607,7 +4607,7 @@ STATUS port::start_and_send(P_OP	operation,
  **************************************/
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	RRQ request;
-	MSG message;
+	REM_MSG message;
 	FMT format;
 	RTR transaction;
 	USHORT number;
