@@ -334,8 +334,8 @@ Source: output\misc\upgrade\security\*.*; DestDir: {app}\misc\upgrade\security; 
 Source: output\misc\upgrade\ib_udf\*.*; DestDir: {app}\misc\upgrade\ib_udf; Components: ServerComponent; Flags: ignoreversion;
 
 ;Note - Win9x requires 8.3 filenames for the uninsrestartdelete option to work
-;Source: output\system32\Firebird2Control.cpl; DestDir: {sys}; Components: SuperServerComponent; MinVersion: 0,4.0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Check: InstallCPLApplet
-;Source: output\system32\Firebird2Control.cpl; DestDir: {sys}; Destname: FIREBI~1.CPL; Components: SuperServerComponent; MinVersion: 4.0,0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Check: InstallCPLApplet
+Source: output\system32\Firebird2Control.cpl; DestDir: {sys}; Components: SuperServerComponent; MinVersion: 0,4.0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Check: InstallCPLApplet
+Source: output\system32\Firebird2Control.cpl; DestDir: {sys}; Destname: FIREBI~1.CPL; Components: SuperServerComponent; MinVersion: 4.0,0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Check: InstallCPLApplet
 #endif
 
 #ifdef examples
@@ -520,8 +520,8 @@ begin
       result := false;
       MsgBox( #13+ExpandConstant('{cm:FbRunning1,2.0}')
       +#13
-      +#13+ExpandConstant('{cm:FbRunning2,2.0}')
-      +#13+ExpandConstant('{cm:FbRunning3,2.0}')
+      +#13+ExpandConstant('{cm:FbRunning2}')
+      +#13+ExpandConstant('{cm:FbRunning3}')
       +#13, mbError, MB_OK);
       exit;
       end
@@ -582,19 +582,18 @@ begin
   InitExistingInstallRecords;
   AnalyzeEnvironment;
   result := AnalysisAssessment;
-
-  //There is a possibility that all our efforts to detect an
-  //install were in vain and a server _is_ running...
-  if ( FirebirdDefaultServerRunning ) then begin
-    result := false;
-    MsgBox( #13+ExpandConstant('{cm:FbRunning1}')
-    +#13
-    +#13+ExpandConstant('{cm:FbRunning2}')
-    +#13+ExpandConstant('{cm:FbRunning3}')
-    +#13, mbError, MB_OK);
-    exit;
-  end;
-
+  if result then
+    //There is a possibility that all our efforts to detect an
+    //install were in vain and a server _is_ running...
+    if ( FirebirdDefaultServerRunning ) then begin
+      result := false;
+      MsgBox( #13+ExpandConstant('{cm:FbRunning1, }')
+      +#13
+      +#13+ExpandConstant('{cm:FbRunning2}')
+      +#13+ExpandConstant('{cm:FbRunning3}')
+      +#13, mbError, MB_OK);
+      exit;
+    end;
 end;
 
 

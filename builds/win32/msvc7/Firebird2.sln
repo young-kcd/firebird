@@ -397,7 +397,9 @@ Global
 		{C6A31374-178C-4680-A404-76BE24D0229B}.Release.ActiveCfg = Release|Win32
 		{C6A31374-178C-4680-A404-76BE24D0229B}.Release.Build.0 = Release|Win32
 		{1AE02D41-7E24-43CC-9BCB-E4CEB6037D16}.Debug.ActiveCfg = Debug|Win32
+		{1AE02D41-7E24-43CC-9BCB-E4CEB6037D16}.Debug.Build.0 = Debug|Win32
 		{1AE02D41-7E24-43CC-9BCB-E4CEB6037D16}.Release.ActiveCfg = Release|Win32
+		{1AE02D41-7E24-43CC-9BCB-E4CEB6037D16}.Release.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection

@@ -410,8 +410,6 @@ mkdir %FBBUILD_OUTPUT%\misc\upgrade\security 2>nul
 :GEN_ZIP
 ::======
 if %FBBUILD_ZIP_PACK% EQU 0 goto :EOF
-::@Echo   Generating zip package
-
 :: Generate the directory tree to be zipped
 set FBBUILD_ZIP_PACK_ROOT=%ROOT_PATH%\builds\zip_pack
 if not exist %FBBUILD_ZIP_PACK_ROOT% @mkdir %FBBUILD_ZIP_PACK_ROOT% 2>nul
@@ -465,8 +463,9 @@ if "%FBBUILD_SHIP_PDB%" == "ship_pdb" (
 ::===========
 :: Generate the directory tree for the embedded zip pack
 if %FBBUILD_EMB_PACK% EQU 0 goto :EOF
-set FBBUILD_EMB_PACK_ROOT=%ROOT_PATH%\emb_pack
+set FBBUILD_EMB_PACK_ROOT=%ROOT_PATH%\builds\emb_pack
 @mkdir %FBBUILD_EMB_PACK_ROOT% 2>nul
+@del /s /q %FBBUILD_EMB_PACK_ROOT%\ > nul
 
 for %%v in (aliases.conf firebird.conf firebird.msg) do (	@copy /Y %FBBUILD_OUTPUT%\%%v %FBBUILD_EMB_PACK_ROOT%\%%v > nul)
 

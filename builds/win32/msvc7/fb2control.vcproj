@@ -47,7 +47,7 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="shlwapi.lib version.lib"
-				OutputFile="..\..\..\temp\release\fb2control\Firebird2Control.cpl"
+				OutputFile="..\..\..\temp\release\firebird\system32\Firebird2Control.cpl"
 				Version="1.0"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -101,7 +101,6 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\..\..\..\temp\debug\fb2control/fb2control.pch"
 				AssemblerListingLocation=".\..\..\..\temp\debug\fb2control/"
 				ObjectFile=".\..\..\..\temp\debug\fb2control/"
 				ProgramDataBaseFileName=".\..\..\..\temp\debug\fb2control/"
@@ -117,7 +116,7 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="shlwapi.lib version.lib"
-				OutputFile="..\..\..\temp\debug\fb2control\Firebird2Control.cpl"
+				OutputFile="..\..\..\temp\debug\firebird\system32\Firebird2Control.cpl"
 				Version="1.0"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -134,8 +133,7 @@
 				TargetEnvironment="1"
 				TypeLibraryName=".\..\..\..\temp\debug\fb2control/fb2control.tlb"/>
 			<Tool
-				Name="VCPostBuildEventTool"
-				CommandLine="copy $(TargetPath) %windir%\system32"/>
+				Name="VCPostBuildEventTool"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -197,64 +195,10 @@
 						PrecompiledHeaderThrough="stdafx.h"/>
 				</FileConfiguration>
 			</File>
-			<Filter
-				Name="MEMORY files"
-				Filter="">
-				<File
-					RelativePath="..\..\..\src\common\classes\alloc.cpp">
-				</File>
-				<File
-					RelativePath="..\..\..\src\common\classes\locks.cpp">
-				</File>
-			</Filter>
-			<Filter
-				Name="CONFIG files"
-				Filter="">
-				<File
-					RelativePath="..\..\..\src\common\config\config.cpp">
-				</File>
-				<File
-					RelativePath="..\..\..\src\common\config\config_file.cpp">
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\os\win32\config_root.cpp">
-				</File>
-			</Filter>
-			<Filter
-				Name="OTHER files"
-				Filter="">
-				<File
-					RelativePath="..\..\..\src\jrd\os\win32\fbsyslog.cpp">
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\os\win32\path_utils.cpp">
-				</File>
-			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl">
-			<File
-				RelativePath="..\..\..\src\common\classes\alloc.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\include\gen\autoconfig.h">
-				<FileConfiguration
-					Name="Debug|Win32">
-					<Tool
-						Name="VCCustomBuildTool"
-						CommandLine="del ..\..\..\src\include\gen\autoconfig.h 2&gt;nul
-copy ..\..\..\src\include\gen\autoconfig_msvc.h ..\..\..\src\include\gen\autoconfig.h &gt; nul
-"
-						Outputs="..\..\..\src\include\gen\autoconfig.h"/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\common.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\config\config.h">
-			</File>
 			<File
 				RelativePath="..\..\..\src\utilities\fbcpl\ctrlpan.h">
 			</File>
@@ -268,16 +212,13 @@ copy ..\..\..\src\include\gen\autoconfig_msvc.h ..\..\..\src\include\gen\autocon
 				RelativePath="..\..\..\src\utilities\fbcpl\FBPanel.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\fbsyslog.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\utilities\registry.h">
+				RelativePath="..\..\..\src\utilities\install\registry.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\utilities\fbcpl\Resource.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\servi_proto.h">
+				RelativePath="..\..\..\src\utilities\install\servi_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\utilities\fbcpl\StdAfx.h">
@@ -292,13 +233,13 @@ copy ..\..\..\src\include\gen\autoconfig_msvc.h ..\..\..\src\include\gen\autocon
 					Name="Release|Win32">
 					<Tool
 						Name="VCResourceCompilerTool"
-						AdditionalIncludeDirectories="\progs\firebird\firebird1_5\src\utilities\fbcpl;$(NoInherit)"/>
+						AdditionalIncludeDirectories=""/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug|Win32">
 					<Tool
 						Name="VCResourceCompilerTool"
-						AdditionalIncludeDirectories="\progs\firebird\firebird1_5\src\utilities\fbcpl;$(NoInherit)"/>
+						AdditionalIncludeDirectories=""/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -312,4 +253,6 @@ copy ..\..\..\src\include\gen\autoconfig_msvc.h ..\..\..\src\include\gen\autocon
 			</File>
 		</Filter>
 	</Files>
+	<Globals>
+	</Globals>
 </VisualStudioProject>
