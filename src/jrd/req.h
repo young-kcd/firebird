@@ -214,6 +214,12 @@ public:
 typedef jrd_req* JRD_REQ;  // CVC: Scheduled for termination, don't use the uppercase type!!!
 
 // Size of request without rpb items at the tail. Used to calculate impure area size
+//
+// 24-Mar-2004, Nickolay Samofatov.
+// Note it may be not accurate on 64-bit RISC targets with 32-bit pointers due to 
+// alignment quirks, but from quick glance on code it looks like it should not be
+// causing problems. Good fix for this kludgy behavior is to use some C++ means 
+// to manage impure area and array of record parameter blocks
 const size_t REQ_SIZE = sizeof (jrd_req) - sizeof (jrd_req::blk_repeat_type);
 
 /* Flags for req_flags */
