@@ -53,18 +53,7 @@
 #define TEXT char
 #endif
 
-/*
-** Had to do this messy looking stuff to get the correct version string for
-** Local Interbase Beta releases.
-*/
-#if (defined WIN_NT && defined WIN95)
-#define SUPERCLIENT
-#endif
 #include "../jrd/license.h"
-#if (defined WIN_NT && defined WIN95)
-#undef SUPERCLIENT
-#undef WIN95
-#endif
 
 #include "../jrd/jrd_time.h"
 #include "../burp/burp_proto.h"
