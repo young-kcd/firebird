@@ -2048,7 +2048,7 @@ static int xnet_destroy( XDR * xdrs)
  *
  **************************************/
 
-	return (int) NULL;
+	return 0;
 }
 
 
@@ -2093,7 +2093,7 @@ static int xnet_error(
 					   gds_arg_string, (STATUS) node_name,
 					   isc_arg_gds, operation, 0);
 	}
-	return (int) NULL;
+	return 0;
 }
 
 

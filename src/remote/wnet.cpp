@@ -730,7 +730,7 @@ static int accept_connection( PORT port, P_CNCT * cnct)
 
 		case CNCT_passwd:
 			p = password;
-			if ((length = *id++) != NULL)
+			if ((length = *id++) != 0)
 				do
 					*p++ = *id++;
 				while (--length);
@@ -1288,7 +1288,7 @@ static int wnet_destroy( XDR * xdrs)
  *
  **************************************/
 
-	return (int) NULL;
+	return 0;
 }
 
 
@@ -1334,7 +1334,7 @@ static int wnet_error(
 					   isc_arg_gds, operation, 0);
 	}
 
-	return (int) NULL;
+	return 0;
 }
 
 
