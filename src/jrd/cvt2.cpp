@@ -748,9 +748,9 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 
 		str* temp_str = 0;
 		UCHAR* dbuf = 0;
-		if (arg2->dsc_length > BUFFER_LARGE)
+		if (arg2->dsc_length+1 > BUFFER_LARGE)
 		{
-			temp_str = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(UCHAR) * arg2->dsc_length) str();
+			temp_str = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(UCHAR) * (arg2->dsc_length+1)) str();
 			dbuf = temp_str->str_data;
 	    }
 		else
@@ -758,7 +758,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 
 		desc1.dsc_address = dbuf;
 		blb* blob1 = BLB_open(tdbb, tdbb->tdbb_request->req_transaction, (bid*) arg1->dsc_address);
-	    l1 = BLB_get_segment(tdbb, blob1, dbuf, arg2->dsc_length);
+	    l1 = BLB_get_segment(tdbb, blob1, dbuf, arg2->dsc_length+1);
 		desc1.dsc_length = l1;
 	    ret_val = CVT2_compare(&desc1, arg2, err);
 		BLB_close(tdbb, blob1);
