@@ -29,15 +29,15 @@
  *       John Bellardo  <bellardo@cs.ucsd.edu>
  *
  *
- *  $Id: alt_use_sec.h.pre,v 1.2 2001-12-24 02:50:50 tamlin Exp $
+ *  $Id: alt_use_sec.h.pre,v 1.3 2003-02-10 12:47:35 eku Exp $
  *
  */
 
 
-// During the build process in the initial stages the isc4.gdb database does
-// not exist, but to build the isc4.gdb database the tools need to be built.
-// So the following #define is set/unset in the makefile depending upon which
-// stage in the compile process we are up to.
+// During the build process in the initial stages the security.fdb database
+// does not exist, but to build the security.fdb database the tools need to
+// be built. So the following #define is set/unset in the makefile depending
+// upon which stage in the compile process we are up to.
 //
 // In the earlier stages it is set to "1" then after we have build a set of
 // tools mainly gpre_static and gbak_static it is changed to an "undef".
