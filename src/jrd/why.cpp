@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.23.2.2 2004-03-29 03:50:11 skidder Exp $
+$Id: why.cpp,v 1.23.2.3 2004-09-24 15:45:01 hvlad Exp $
 */
 
 #include "firebird.h"
@@ -4139,7 +4139,8 @@ ISC_STATUS API_ROUTINE GDS_ROLLBACK(ISC_STATUS * user_status, WHY_TRA * tra_hand
 	for (sub = transaction; sub; sub = sub->next)
 		if (sub->implementation != SUBSYSTEMS &&
 			CALL(PROC_ROLLBACK, sub->implementation) (status, &sub->handle)) {
-			if (!IS_NETWORK_ERROR(status))
+			if (!IS_NETWORK_ERROR(status) ||
+				(transaction->flags & HANDLE_TRANSACTION_limbo) )
 				return error(status, local);
 		}
 
