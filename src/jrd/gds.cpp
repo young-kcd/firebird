@@ -2261,7 +2261,7 @@ void API_ROUTINE gds__temp_dir(TEXT * buffer)
 			len < sizeof(temp_dir))
 			directory = temp_dir;
 #else
-		directory = getenv("TMP"));
+		directory = getenv("TMP");
 #endif
 	}
 	if (!directory || strlen(directory) >= MAXPATHLEN)
