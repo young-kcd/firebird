@@ -625,6 +625,11 @@ void SCL_init(bool create,
 			SecurityDatabase::verifyUser(name, user_name, password, password_enc,
 										 &id, &group, &node_id);
 		}
+		else
+		{
+			strncpy(name, user_name, sizeof name);
+			name[sizeof name - 1] = 0;
+		}
 
 		// if the name from the user database is defined as SYSDBA,
 		// we define that user id as having system privileges
