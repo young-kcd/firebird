@@ -4247,19 +4247,31 @@ static RSB gen_retrieval(TDBB     tdbb,
 									-1,
 									(inner_flag || outer_flag)))
 					{
-						if (match_index(tdbb, opt, stream, node, idx))
-						{
+						if (match_index(tdbb, opt, stream, node, idx)) {
 							position = 0;
 							idx_tail = opt->opt_rpt;
 							idx_end = idx_tail + idx->idx_count;
+							conjunct_position[j] = -1;
 							for (; idx_tail < idx_end; idx_tail++, position++) {
 								if (idx_tail->opt_match == node) {
 									conjunct_position[j] = position;
 									break;
 								}
 							}
-							matching_nodes[j++] = tail;
-							count = j;
+							if (conjunct_position[j] == -1) {
+								// Nevertheless we have a resulting count
+								// from match_index, still a node could not
+								// be assigned, because equal nodes are
+								// preferred against other ones.
+								// Flag this node as used, so that no other
+								// index is used with this bad one.
+								// example: WHERE (ID = 100) and (ID >= 1)
+								tail->opt_flags |= opt_matched;
+							}
+							else {
+								matching_nodes[j++] = tail;
+								count = j;
+							}
 						}
 					}
 				}
