@@ -27,10 +27,10 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.msgs,v 1.13 2003-07-08 12:24:12 brodsom Exp $
+#  $Id: Makefile.in.msgs,v 1.14 2004-04-30 23:02:06 brodsom Exp $
 #
 ROOT=..
-ObjModuleName=msgs
+ObjModuleType=std
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform

@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.34 2004-03-25 23:12:31 skidder Exp $
+#   $Id: make.defaults,v 1.35 2004-04-30 23:02:07 brodsom Exp $
 # 
 
 
@@ -65,7 +65,7 @@ RealSrcRootPath = $(shell cd $(SRC_ROOT); pwd)
 #ModuleName:=$(notdir $(CURDIR))
 ModuleName:=$(subst $(RealSrcRootPath)/,,$(CURDIR))
 
-OBJ=$(TMP_ROOT)/$(ObjModuleName)
+OBJ=$(TMP_ROOT)/$(ObjModuleType)
 
 GEN_SRC=$(OBJ)
 
@@ -193,24 +193,24 @@ FB_SUPER_SERVER	= $(BIN)/fbserver$(EXEC_EXT)
 FB_CLASSIC_SERVER = $(BIN)/fb_inet_server$(EXEC_EXT)
 
 # From utilities 
-CREATE_DB       = $(BIN)/create_db$(EXEC_EXT)
-GDS_DROP        = $(BIN)/gds_drop$(EXEC_EXT)
-GSTAT           = $(BIN)/gstat$(EXEC_EXT)
-NBACKUP         = $(BIN)/nbackup$(EXEC_EXT)
-LOCKPRINT         = $(BIN)/fb_lock_print$(EXEC_EXT)
-GSEC            = $(BIN)/gsec$(EXEC_EXT)
+CREATE_DB	= $(BIN)/create_db$(EXEC_EXT)
+GDS_DROP	= $(BIN)/gds_drop$(EXEC_EXT)
+GSTAT		= $(BIN)/gstat$(EXEC_EXT)
+NBACKUP		= $(BIN)/nbackup$(EXEC_EXT)
+LOCKPRINT	= $(BIN)/fb_lock_print$(EXEC_EXT)
+GSEC		= $(BIN)/gsec$(EXEC_EXT)
 GFIX		= $(BIN)/gfix$(EXEC_EXT)
-GDS_REBUILD     = $(BIN)/gds_rebuild$(EXEC_EXT)
-GDS_RELAY       = $(BIN)/gds_relay$(EXEC_EXT)
-GDS_INSTALL     = $(BIN)/gds_install$(EXEC_EXT)
-GDS_INSTALL     = $(BIN)/gds_install_service$(EXEC_EXT)
-FBGUARD         = $(BIN)/fbguard$(EXEC_EXT)
-IBGUARD         = $(BIN)/ibguard$(EXEC_EXT)
-FBMGR_BIN       = $(BIN)/fbmgr.bin$(EXEC_EXT)
-INSTREG         = $(BIN)/instreg$(EXEC_EXT)
-INSTSVC         = $(BIN)/instsvc$(EXEC_EXT)
-ISC_GDB         = $(FIREBIRD)/security.fdb
-ISC_GBAK        = $(BIN)/security.gbak
+GDS_REBUILD	= $(BIN)/gds_rebuild$(EXEC_EXT)
+GDS_RELAY	= $(BIN)/gds_relay$(EXEC_EXT)
+GDS_INSTALL	= $(BIN)/gds_install$(EXEC_EXT)
+GDS_INSTALL	= $(BIN)/gds_install_service$(EXEC_EXT)
+FBGUARD		= $(BIN)/fbguard$(EXEC_EXT)
+IBGUARD		= $(BIN)/ibguard$(EXEC_EXT)
+FBMGR_BIN	= $(BIN)/fbmgr.bin$(EXEC_EXT)
+INSTREG		= $(BIN)/instreg$(EXEC_EXT)
+INSTSVC		= $(BIN)/instsvc$(EXEC_EXT)
+ISC_GDB		= $(FIREBIRD)/security.fdb
+ISC_GBAK	= $(BIN)/security.gbak
 
 # From qli
 QLI            = $(BIN)/qli$(EXEC_EXT)

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.52 2004-04-27 12:38:41 brodsom Exp $
+#  $Id: Makefile.in.firebird,v 1.53 2004-04-30 23:02:06 brodsom Exp $
 #
 
 ROOT=..
@@ -261,21 +261,21 @@ boot_phase2 : $(ISC_GDB)
 $(ISC_GDB):
 	$(MAKE) boot_phase2_build
 
-boot_phase2_build: create_db empty_db gbak_static isql_static
+boot_phase2_build: $(CREATE_DB) empty_db $(GBAK_STATIC) $(ISQL_STATIC)
 
-create_db:
+$(CREATE_DB):
 	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.util $@
 
-gbak_static: @MANAGER_PROCESS_TARGET@
+$(GBAK_STATIC): @MANAGER_PROCESS_TARGET@
 	$(MAKE) -f $(GEN_ROOT)/Makefile.static.gbak $@
 
-isql_static: 
+$(ISQL_STATIC): 
 	$(MAKE) -f $(GEN_ROOT)/Makefile.static.isql $@
 
 empty_db :
 	$(MAKE) -f $(GEN_ROOT)/Makefile.refDatabases $@
 
-ref_databases : gbak_static
+ref_databases : $(GBAK_STATIC)
 	$(MAKE) -f $(GEN_ROOT)/Makefile.refDatabases $@
 
 
@@ -432,7 +432,7 @@ include_generic: $(INCLUDE_DEST)/ib_util.h  \
 # All these files are #includes in ibase.h here we cat them all together
 # and remove the embedded #includes to make it simpler for external usage.
 
-IBASE_ExtraFiles = include/fb_types.h jrd/ibase.h jrd/blr.h include/gen/iberror.h
+IBASE_ExtraFiles = include/fb_types.h dsql/sqlda_pub.h jrd/ibase.h jrd/blr.h include/gen/iberror.h 
 SRC_IBASE_ExtraFiles = $(addprefix $(SRC_ROOT)/, $(IBASE_ExtraFiles))
 
 $(INCLUDE_DEST)/ibase.h: $(SRC_IBASE_ExtraFiles)

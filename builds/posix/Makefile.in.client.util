@@ -27,10 +27,10 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.util,v 1.19 2004-03-25 23:12:31 skidder Exp $
+#  $Id: Makefile.in.client.util,v 1.20 2004-04-30 23:02:07 brodsom Exp $
 #
 ROOT=..
-ObjModuleName=client.util
+ObjModuleType=std
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform

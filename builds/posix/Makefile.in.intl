@@ -27,10 +27,10 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.intl,v 1.17 2004-03-25 23:12:31 skidder Exp $
+#  $Id: Makefile.in.intl,v 1.18 2004-04-30 23:02:06 brodsom Exp $
 #
 ROOT=..
-ObjModuleName=intl
+ObjModuleType=superclient
 CFLAGS:=-DSUPERCLIENT
 
 include     $(ROOT)/gen/make.defaults
@@ -55,8 +55,8 @@ INTL_Files1=	ld.cpp       cv_narrow.cpp \
 INTL_Files2=	ld2.cpp
 
 
-INTL_Sources = $(INTL_Files1)
-
+# INTL_Sources =  $(INTL_Files1)
+INTL_Sources = $(addprefix intl/, $(INTL_Files1))
 INTL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(INTL_Sources))))
 
 

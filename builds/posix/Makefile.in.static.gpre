@@ -27,10 +27,10 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.static.gpre,v 1.14 2004-01-21 07:15:58 skidder Exp $
+#  $Id: Makefile.in.static.gpre,v 1.15 2004-04-30 23:02:06 brodsom Exp $
 #
 ROOT=..
-ObjModuleName=static.gpre
+ObjModuleType=boot
 CFLAGS := -DBOOT_BUILD
 
 include     $(ROOT)/gen/make.defaults

@@ -27,10 +27,10 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.static.gbak,v 1.7 2003-11-08 07:39:06 bellardo Exp $
+#  $Id: Makefile.in.static.gbak,v 1.8 2004-04-30 23:02:06 brodsom Exp $
 #
 ROOT=..
-ObjModuleName=static.gbak
+ObjModuleType=boot
 CFLAGS := -DBOOT_BUILD
 
 include     $(ROOT)/gen/make.defaults
