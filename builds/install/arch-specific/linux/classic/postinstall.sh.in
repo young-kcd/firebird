@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: postinstall.sh.in,v 1.4 2003-10-31 12:21:27 skidder Exp $
+#   $Id: postinstall.sh.in,v 1.5 2003-10-31 12:25:40 skidder Exp $
 # 
 
 # The post install script for Firebird Classic
@@ -150,7 +150,7 @@ EOF
 updateInetdEntry() {
 
     FileName=/etc/inetd.conf
-    newLine="gds_db  stream  tcp     nowait.30000      $RunUser $FBBin/fb_inet_server fb_inet_server # InterBase Database Remote Server"
+    newLine="gds_db  stream  tcp     nowait.30000      $RunUser $FBBin/fb_inet_server fb_inet_server # Firebird Database Remote Server"
     oldLine=`grep "^gds_db" $FileName`
 
     replaceLineInFile "$FileName" "$newLine" "$oldLine"
