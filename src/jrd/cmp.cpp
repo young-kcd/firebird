@@ -95,7 +95,7 @@
 #define END_RELATION
 
 typedef ENUM rids {
-#include "gen/relations.h"
+#include "../jrd/relations.h"
 rel_MAX} RIDS;
 
 #undef RELATION
