@@ -162,15 +162,11 @@ private:
 	}
 
 public:
-	AliceGlobals(MemoryPool& p, Jrd::pfn_svc_output outProc, Jrd::Service* outData) 
-		: ThreadData(ThreadData::tddALICE),	pools(p),
+	AliceGlobals(Jrd::pfn_svc_output outProc, Jrd::Service* outData) 
+		: ThreadData(ThreadData::tddALICE), 
 		output_proc(outProc), output_data(outData), 
-		ALICE_permanent_pool(0), ALICE_default_pool(0)
+		ALICE_default_pool(0)
 	{
-	}
-	~AliceGlobals()
-	{
-		subsystemCleanup();
 	}
 
 	AliceMemoryPool* getDefaultPool()
@@ -179,10 +175,7 @@ public:
 	}
 	
 	user_action		ALICE_data;
-	AliceMemoryPool* ALICE_permanent_pool;
 	ISC_STATUS_ARRAY	status_vector;
-	typedef			Firebird::HalfStaticArray<AliceMemoryPool*, 4> PoolsArray;
-	PoolsArray		pools;
 	int				exit_code;
 	Jrd::pfn_svc_output  output_proc;
 	Jrd::Service*	output_data;
@@ -197,7 +190,9 @@ public:
 
 #ifdef SUPERSERVER
 	static inline AliceGlobals* getSpecific() {
-		return (AliceGlobals*) ThreadData::getSpecific();
+		ThreadData* tData = ThreadData::getSpecific();
+		fb_assert (tData->getType() == ThreadData::tddALICE)
+		return (AliceGlobals*) tData;
 	}
 	static inline void putSpecific(AliceGlobals* tdgbl) {
 		tdgbl->ThreadData::putSpecific();
@@ -215,20 +210,6 @@ public:
 	static inline void restoreSpecific() {
 	}
 #endif
-
-private:
-	// Perform AliceGlobals cleanup
-	void subsystemCleanup(void)
-	{
-		for (int i = 0; i < pools.getCount(); ++i)
-		{
-			AliceMemoryPool::deletePool(pools[i]);
-			pools[i] = 0;
-		}
-		pools.clear();
-		setDefaultPool(0);
-		ALICE_permanent_pool = 0;
-	}
 };
 
 typedef Firebird::SubsystemContextPoolHolder <AliceGlobals, AliceMemoryPool> 

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.70 2004-08-30 18:10:28 alexpeshkoff Exp $
+//	$Id: alice.cpp,v 1.71 2004-09-01 14:51:33 alexpeshkoff Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -193,19 +193,8 @@ int common_main(int			argc,
 	fAnsiCP = (GetConsoleCP() == GetACP());
 #endif
 
-	AliceGlobals* tdgbl = 0; 
-	try
-	{
-		//  FREE: during function exit in catch
-		tdgbl = FB_NEW(*getDefaultMemoryPool()) 
-			AliceGlobals(*getDefaultMemoryPool(), output_proc, output_data);
-	}
-	catch (std::bad_alloc)
-	{
-		//  NOMEM: return error, FREE: during function exit in catch
-		return FINI_ERROR;
-	}
-
+	AliceGlobals gblInstance(output_proc, output_data);
+	AliceGlobals* tdgbl = &gblInstance; 
 	AliceGlobals::putSpecific(tdgbl);
 
 	try {
@@ -626,14 +615,13 @@ int common_main(int			argc,
 		int exit_code = tdgbl->exit_code;
 
 		// Close the status output file 
-		if (tdgbl->sw_redirect == REDIRECT && tdgbl->output_file != NULL) {
+		if (tdgbl->sw_redirect == REDIRECT && tdgbl->output_file != NULL) 
+		{
 			fclose(tdgbl->output_file);
 			tdgbl->output_file = NULL;
 		}
 
 		AliceGlobals::restoreSpecific();
-
-		delete tdgbl;
 
 #if defined(DEBUG_GDS_ALLOC) && !defined(SUPERSERVER)
 		gds_alloc_report(0, __FILE__, __LINE__);

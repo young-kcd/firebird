@@ -24,7 +24,8 @@
 #ifndef ALICE_ALL_H
 #define ALICE_ALL_H
 
-#include "../jrd/block_cache.h"
+#include "../common/classes/auto.h"
+#include "../common/classes/alloc.h"
 
 class AliceMemoryPool : public MemoryPool
 {
@@ -35,7 +36,13 @@ protected:
 public:
 	static AliceMemoryPool* createPool();
 	static void deletePool(AliceMemoryPool* pool);
+	static void clear(AliceMemoryPool* ptr)
+	{
+		deletePool(ptr);
+	}
 };
+
+typedef Firebird::AutoPtr<AliceMemoryPool, AliceMemoryPool> AliceAutoPool;
 
 #endif // ALICE_ALL_H
 

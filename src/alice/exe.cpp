@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.37 2004-08-30 18:10:28 alexpeshkoff Exp $
+//	$Id: exe.cpp,v 1.38 2004-09-01 14:51:33 alexpeshkoff Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -83,50 +83,61 @@ static inline void stuff_dpb_long(UCHAR** d, int blr)
 
 int EXE_action(const TEXT* database, const ULONG switches)
 {
-	UCHAR dpb[128];
-	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
-	AliceContextPoolHolder context(tdgbl, AliceMemoryPool::createPool());
+	bool error = false;
+	AliceAutoPool newPool(AliceMemoryPool::createPool());
+	{
+		UCHAR dpb[128];
+		AliceGlobals* tdgbl = AliceGlobals::getSpecific();
+		AliceContextPoolHolder context(tdgbl, newPool);
 
-	for (USHORT i = 0; i < MAX_VAL_ERRORS; i++)
-		tdgbl->ALICE_data.ua_val_errors[i] = 0;
+		for (USHORT i = 0; i < MAX_VAL_ERRORS; i++)
+		{
+			tdgbl->ALICE_data.ua_val_errors[i] = 0;
+		}
 
 //  generate the database parameter block for the attach,
 //  based on the various switches
 
-	const USHORT dpb_length = build_dpb(dpb, switches);
+		const USHORT dpb_length = build_dpb(dpb, switches);
 
-	bool error = false;
-	FB_API_HANDLE handle = 0;
-	isc_attach_database(tdgbl->status, 0, database, &handle, dpb_length,
+		FB_API_HANDLE handle = 0;
+		isc_attach_database(tdgbl->status, 0, database, &handle, dpb_length,
 						 reinterpret_cast<SCHAR*>(dpb));
 
-	tdgbl->service_blk->svc_started();
+		tdgbl->service_blk->svc_started();
 
-	if (tdgbl->status[1] && 
-		// Ignore isc_shutdown error produced when we switch to full shutdown mode. It is expected.
-		(tdgbl->status[1] != isc_shutdown || !(switches & sw_shut) || tdgbl->ALICE_data.ua_shutdown_mode != SHUT_FULL)
-	   )
-	{
-		error = true;
-	}
+		if (tdgbl->status[1] && 
+			// Ignore isc_shutdown error produced when we switch to full shutdown mode. It is expected.
+			(tdgbl->status[1] != isc_shutdown || !(switches & sw_shut) || tdgbl->ALICE_data.ua_shutdown_mode != SHUT_FULL)
+		)
+		{
+			error = true;
+		}
 		
-	if (tdgbl->status[2] == isc_arg_warning)
-		ALICE_print_status(tdgbl->status);
+		if (tdgbl->status[2] == isc_arg_warning)
+		{
+			ALICE_print_status(tdgbl->status);
+		}
 
-	if (handle != 0) {
-		UCHAR error_string[128];
-		if ((switches & sw_validate) && (tdgbl->status[1] != isc_bug_check)) {
-			isc_database_info(tdgbl->status, &handle, sizeof(val_errors),
+		if (handle != 0) 
+		{
+			UCHAR error_string[128];
+			if ((switches & sw_validate) && (tdgbl->status[1] != isc_bug_check))
+			{
+				isc_database_info(tdgbl->status, &handle, sizeof(val_errors),
 							   val_errors, sizeof(error_string),
 							   reinterpret_cast<char*>(error_string));
 
-			extract_db_info(error_string);
+				extract_db_info(error_string);
+			}
+
+			if (switches & sw_disable)
+			{
+				MET_disable_wal(tdgbl->status, handle);
+			}
+
+			isc_detach_database(tdgbl->status, &handle);
 		}
-
-		if (switches & sw_disable)
-			MET_disable_wal(tdgbl->status, handle);
-
-		isc_detach_database(tdgbl->status, &handle);
 	}
 
 	return ((error) ? FINI_ERROR : FINI_OK);
@@ -139,38 +150,51 @@ int EXE_action(const TEXT* database, const ULONG switches)
 
 int EXE_two_phase(const TEXT* database, const ULONG switches)
 {
-	UCHAR dpb[128];
-	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
-	AliceContextPoolHolder context(tdgbl, AliceMemoryPool::createPool());
+	bool error = false;
+	AliceAutoPool newPool(AliceMemoryPool::createPool());
+	{
+		UCHAR dpb[128];
+		AliceGlobals* tdgbl = AliceGlobals::getSpecific();
+		AliceContextPoolHolder context(tdgbl, newPool);
 
-	for (USHORT i = 0; i < MAX_VAL_ERRORS; i++)
-		tdgbl->ALICE_data.ua_val_errors[i] = 0;
+		for (USHORT i = 0; i < MAX_VAL_ERRORS; i++)
+		{
+			tdgbl->ALICE_data.ua_val_errors[i] = 0;
+		}
 
 //  generate the database parameter block for the attach,
 //  based on the various switches
 
-	const USHORT dpb_length = build_dpb(dpb, switches);
+		const USHORT dpb_length = build_dpb(dpb, switches);
 
-	bool error = false;
-	FB_API_HANDLE handle = 0;
-	isc_attach_database(tdgbl->status, 0, database, &handle,
+		FB_API_HANDLE handle = 0;
+		isc_attach_database(tdgbl->status, 0, database, &handle,
 						 dpb_length,  reinterpret_cast<char*>(dpb));
 
-	tdgbl->service_blk->svc_started();
+		tdgbl->service_blk->svc_started();
 
-	if (tdgbl->status[1])
-		error = true;
-	else if (switches & sw_list)
-		TDR_list_limbo((handle), database, switches);
-	else if (switches & (sw_commit | sw_rollback | sw_two_phase))
-		error = TDR_reconnect_multiple((handle),
+		if (tdgbl->status[1])
+		{
+			error = true;
+		}
+		else if (switches & sw_list)
+		{
+			TDR_list_limbo((handle), database, switches);
+		}
+		else if (switches & (sw_commit | sw_rollback | sw_two_phase))
+		{
+			error = TDR_reconnect_multiple((handle),
 									   tdgbl->ALICE_data.ua_transaction, database,
 									   switches);
+		}
 
-	if (handle)
-		isc_detach_database(tdgbl->status, &handle);
+		if (handle)
+		{
+			isc_detach_database(tdgbl->status, &handle);
+		}
+	}
 
-	return ((error) ? FINI_ERROR : FINI_OK);
+	return (error ? FINI_ERROR : FINI_OK);
 }
 
 //____________________________________________________________

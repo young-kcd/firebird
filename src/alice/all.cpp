@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: all.cpp,v 1.28 2004-08-30 18:10:28 alexpeshkoff Exp $
+//	$Id: all.cpp,v 1.29 2004-09-01 14:51:33 alexpeshkoff Exp $
 //
 
 #include "firebird.h"
@@ -34,114 +34,12 @@
 #include "../jrd/thd.h"
 #include "../common/classes/alloc.h"
 
-
-#ifdef NOT_USED_OR_REPLACED
-void AliceMemoryPool::ALLA_push(blk* object, alice_lls** stack)
-{
-/**************************************
- *
- *	A L L _ p u s h
- *
- **************************************
- *
- * Functional description
- *	Push an object on an LLS stack.
- *
- **************************************/
-	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
-	AliceMemoryPool* pool = tdgbl->ALICE_default_pool;
-
-	alice_lls* node = pool->lls_cache.newBlock();
-	node->lls_object = object;
-	node->lls_next = *stack;
-	*stack = node;
-}
-
-
-BLK AliceMemoryPool::ALLA_pop(alice_lls** stack)
-{
-/**************************************
- *
- *	A L L _ p o p
- *
- **************************************
- *
- * Functional description
- *	Pop an object off a linked list stack.  Save the node for
- *	further use.
- *
- **************************************/
-	alice_lls* node = *stack;
-	*stack = node->lls_next;
-	BLK object = node->lls_object;
-
-	AliceMemoryPool* pool = (AliceMemoryPool*)MemoryPool::blk _pool(node);
-	pool->lls_cache.returnBlock(node);
-
-	return object;
-}
-
-AliceMemoryPool* AliceMemoryPool::create_new_pool(MemoryPool* parent)
-{
-/**************************************
- *
- *  A L L _ p o o l
- *
- **************************************
- *
- * Functional description
- *  Allocate a new pool.
- *
- **************************************/
-
-	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
-
-	// TMN: John, is this correct?
-    AliceMemoryPool* pool = new(0, parent) AliceMemoryPool(parent);
-	AliceGlobals::pool_vec_t::iterator curr;
-
-	for (curr = tdgbl->pools.begin(); curr != tdgbl->pools.end(); ++curr)
-	{
-		if (!*curr)
-		{
-			*curr = pool;
-			return pool;
-		}
-	}
-
-	tdgbl->pools.resize(tdgbl->pools.size() + 10);
-	for (curr = tdgbl->pools.begin(); curr != tdgbl->pools.end(); ++curr)
-	{
-		if (!*curr)
-		{
-			*curr = pool;
-			return pool;
-		}
-	}
-
-	//fb_assert(0);
-	//BUGCHECK ("ALLA_fini - finishing before starting");
-    return 0;//pool;	// Never reached, but makes the compiler happy.
-}
-#endif //NOT_USED_OR_REPLACED
-
 AliceMemoryPool* AliceMemoryPool::createPool() {
 	AliceMemoryPool* result = (AliceMemoryPool*)internal_create(sizeof(AliceMemoryPool));
-	AliceGlobals::getSpecific()->pools.add(result);
 	return result;
 }
 
 void AliceMemoryPool::deletePool(AliceMemoryPool* pool) 
 {
-	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
-
-	for (int i = 0; i < tdgbl->pools.getCount(); ++i)
-	{
-		if (tdgbl->pools[i] == pool)
-		{
-			tdgbl->pools.remove(i);
-			break;
-		}
-	}
 	MemoryPool::deletePool(pool);
 }
