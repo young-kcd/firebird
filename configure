@@ -2547,6 +2547,10 @@ i386-pc-solaris*) MAKEFILE_PREFIX=solx86 ; PLATFORM=solx86 ; cat >> confdefs.h <
 #define solx86 1
 EOF
  ;;
+i*-sni-sysv4) MAKEFILE_PREFIX=sinixz ; PLATFORM="SINIX-Z" ; cat >> confdefs.h <<\EOF
+#define SINIXZ 1
+EOF
+
 esac
 
 

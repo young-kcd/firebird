@@ -71,6 +71,7 @@ case "$target" in
 *-*-netbsd*) MAKEFILE_PREFIX=netbsd ; PLATFORM=NETBSD ; AC_DEFINE(NETBSD) ;;
 *-*-hpux*) MAKEFILE_PREFIX=hpux ; PLATFORM=hpux ; AC_DEFINE(hpux) ;;
 i386-pc-solaris*) MAKEFILE_PREFIX=solx86 ; PLATFORM=solx86 ; AC_DEFINE(solx86) ;;
+i*-sni-sysv4) MAKEFILE_PREFIX=sinixz ; PLATFORM="SINIX-Z" ; AC_DEFINE(SINIXZ)
 esac
 
 AC_SUBST(PLATFORM)
