@@ -78,7 +78,7 @@ static bool_t	wnet_getbytes(XDR *, SCHAR *, u_int);
 static bool_t	wnet_getlong(XDR *, SLONG *);
 static u_int	wnet_getpostn(XDR *);
 static caddr_t	wnet_inline(XDR *, u_int);
-static bool_t	wnet_putlong(XDR *, SLONG *);
+static bool_t	wnet_putlong(XDR *, const SLONG*);
 static bool_t	wnet_putbytes(XDR*, const SCHAR*, u_int);
 static bool_t	wnet_read(XDR *);
 static bool_t	wnet_setpostn(XDR *, u_int);
@@ -1418,7 +1418,7 @@ static bool_t wnet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 }
 
 
-static bool_t wnet_putlong( XDR * xdrs, SLONG * lp)
+static bool_t wnet_putlong( XDR * xdrs, const SLONG* lp)
 {
 /**************************************
  *

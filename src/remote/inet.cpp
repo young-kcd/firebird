@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.120 2004-09-05 19:37:43 dimitr Exp $
+$Id: inet.cpp,v 1.121 2004-09-22 08:54:39 robocop Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -305,7 +305,7 @@ static void		inet_handler(void* _port);
 #endif
 static caddr_t	inet_inline(XDR *, u_int);
 static int		inet_error(rem_port*, const TEXT*, ISC_STATUS, int);
-static bool_t	inet_putlong(XDR*, SLONG*);
+static bool_t	inet_putlong(XDR*, const SLONG*);
 static bool_t	inet_putbytes(XDR*, const SCHAR*, u_int);
 static bool_t	inet_read(XDR *);
 static bool_t	inet_setpostn(XDR *, u_int);
@@ -3069,7 +3069,7 @@ static bool_t inet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 }
 
 // CVC: It could be const SLONG* lp, but it should fit into xdr_ops' signature.
-static bool_t inet_putlong( XDR* xdrs, SLONG* lp)
+static bool_t inet_putlong( XDR* xdrs, const SLONG* lp)
 {
 /**************************************
  *

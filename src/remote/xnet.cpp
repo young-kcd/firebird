@@ -77,7 +77,7 @@ static bool_t xnet_getbytes(XDR *, SCHAR *, u_int);
 static bool_t xnet_getlong(XDR *, SLONG *);
 static u_int xnet_getpostn(XDR *);
 static caddr_t xnet_inline(XDR *, u_int);
-static bool_t xnet_putlong(XDR *, SLONG *);
+static bool_t xnet_putlong(XDR *, const SLONG*);
 static bool_t xnet_putbytes(XDR*, const SCHAR*, u_int);
 static bool_t xnet_setpostn(XDR *, u_int);
 static bool_t xnet_read(XDR * xdrs);
@@ -1897,7 +1897,7 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 }
 
 
-static bool_t xnet_putlong(XDR * xdrs, SLONG * lp)
+static bool_t xnet_putlong(XDR * xdrs, const SLONG* lp)
 {
 /**************************************
  *
@@ -1910,7 +1910,7 @@ static bool_t xnet_putlong(XDR * xdrs, SLONG * lp)
  *
  **************************************/
 
-	return (*xdrs->x_ops->x_putbytes) (xdrs, reinterpret_cast<SCHAR*>(AOF32L(*lp)), 4);
+	return (*xdrs->x_ops->x_putbytes) (xdrs, reinterpret_cast<const char*>(AOF32L(*lp)), 4);
 }
 
 

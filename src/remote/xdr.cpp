@@ -95,11 +95,9 @@ static bool_t mem_getlong(XDR *, SLONG *);
 static u_int mem_getpostn(XDR *);
 static caddr_t mem_inline(XDR *, u_int);
 static bool_t mem_putbytes(XDR*, const SCHAR*, u_int);
-static bool_t mem_putlong(XDR *, SLONG *);
+static bool_t mem_putlong(XDR *, const SLONG*);
 static bool_t mem_setpostn(XDR *, u_int);
 
-
-#pragma FB_COMPILER_MESSAGE("Fix! Bad, bad functioun pointer type casts!")
 
 static const XDR::xdr_ops mem_ops =
 {
@@ -237,7 +235,9 @@ bool_t xdr_bytes(XDR * xdrs,
 		length = *lp;
 		if (length > (SLONG) maxlength ||
 			!PUTLONG(xdrs, &length) || !PUTBYTES(xdrs, *bpp, length))
+		{
 			return FALSE;
+		}
 		if ((length = (4 - length) & 3) != 0)
 			return PUTBYTES(xdrs, zeros, length);
 		return TRUE;
@@ -253,7 +253,9 @@ bool_t xdr_bytes(XDR * xdrs,
 		}
 		if (!GETLONG(xdrs, &length) ||
 			length > (SLONG) maxlength || !GETBYTES(xdrs, *bpp, length))
+		{
 			return FALSE;
+		}
 		if ((length = (4 - length) & 3) != 0)
 			return GETBYTES(xdrs, zeros, length);
 		*lp = (u_int) length;
@@ -328,11 +330,15 @@ bool_t xdr_double(XDR * xdrs, double *ip)
 #ifdef SWAP_DOUBLE
 		if (!GETLONG(xdrs, &temp.temp_long[1]) ||
 			!GETLONG(xdrs, &temp.temp_long[0]))
+		{
 			return FALSE;
+		}
 #else
 		if (!GETLONG(xdrs, &temp.temp_long[0]) ||
 			!GETLONG(xdrs, &temp.temp_long[1]))
+		{
 			return FALSE;
+		}
 #endif
 #ifdef VAX_FLOAT
 		t1 = temp.temp_short[0];
@@ -493,9 +499,6 @@ bool_t xdr_float(XDR * xdrs, float *ip)
 }
 
 
-/**
-	This routine is duplicated in remote/protocol.c for IMP.
-**/
 bool_t xdr_free(xdrproc_t proc, SCHAR * objp)
 {
 /**************************************
@@ -512,7 +515,7 @@ bool_t xdr_free(xdrproc_t proc, SCHAR * objp)
 
 	xdrs.x_op = XDR_FREE;
 
-	return reinterpret_cast < bool_t(*)(...) > (*proc) (&xdrs, objp);
+	return (*proc)(&xdrs, objp);
 }
 
 
@@ -846,13 +849,13 @@ int xdr_union(	XDR*			xdrs,
 	{
 		if (*dscmp == choices->value)
 		{
-			return reinterpret_cast<int(*)(...)>(*choices->proc)(xdrs, unp);
+			return (*choices->proc)(xdrs, unp);
 		}
 	}
 
 	if (dfault)
 	{
-		return reinterpret_cast<int(*)(...)>(*dfault)(xdrs, unp);
+		return (*dfault)(xdrs, unp);
 	}
 
 	return FALSE;
@@ -1007,7 +1010,10 @@ static caddr_t mem_inline( XDR * xdrs, u_int bytecount)
 
 	if (bytecount >
 		(u_int) ((xdrs->x_private + xdrs->x_handy) -
-				 xdrs->x_base)) return FALSE;
+				 xdrs->x_base))
+	{
+		return FALSE;
+	}
 
 	return xdrs->x_base + bytecount;
 }
@@ -1045,7 +1051,7 @@ static bool_t mem_putbytes(
 }
 
 
-static bool_t mem_putlong( XDR * xdrs, SLONG * lp)
+static bool_t mem_putlong( XDR * xdrs, const SLONG* lp)
 {
 /**************************************
  *

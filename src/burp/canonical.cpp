@@ -28,7 +28,7 @@
  *
  */
 /*
-$Id: canonical.cpp,v 1.34 2004-04-28 21:54:06 brodsom Exp $
+$Id: canonical.cpp,v 1.35 2004-09-22 08:54:36 robocop Exp $
 */
 
 #include "firebird.h"
@@ -53,7 +53,7 @@ static bool_t burp_getlong(XDR*, SLONG *);
 static u_int burp_getpostn(XDR*);
 static caddr_t burp_inline(XDR*, u_int);
 static bool_t burp_putbytes(XDR*, const SCHAR*, u_int);
-static bool_t burp_putlong(XDR*, SLONG *);
+static bool_t burp_putlong(XDR*, const SLONG*);
 static bool_t burp_setpostn(XDR*, u_int);
 static bool_t expand_buffer(XDR*);
 static bool_t xdr_datum(XDR*, DSC*, UCHAR*);
@@ -394,7 +394,7 @@ static bool_t burp_putbytes(XDR* xdrs, const SCHAR* buff, u_int bytecount)
 }
 
 
-static bool_t burp_putlong(XDR* xdrs, SLONG* lp)
+static bool_t burp_putlong(XDR* xdrs, const SLONG* lp)
 {
 /**************************************
  *

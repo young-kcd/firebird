@@ -65,7 +65,7 @@ typedef struct xdr_t
 	struct xdr_ops
 	{
 		bool_t  (*x_getlong)(struct xdr_t*, SLONG*);		/* get a long from underlying stream */
-		bool_t  (*x_putlong)(struct xdr_t*, SLONG*);		/* put a long to " */
+		bool_t  (*x_putlong)(struct xdr_t*, const SLONG*);		/* put a long to " */
 		bool_t  (*x_getbytes)(struct xdr_t*, SCHAR *, u_int);	/* get some bytes from " */
 		bool_t  (*x_putbytes)(struct xdr_t*, const SCHAR*, u_int);	/* put some bytes to " */
 		u_int   (*x_getpostn)(struct xdr_t*);	/* returns bytes offset from beginning*/
@@ -81,7 +81,9 @@ typedef struct xdr_t
 
 /* Descriminated union crud */
 
-typedef bool_t			(*xdrproc_t)();
+// CVC: Restore the old definition if some compilation failure happens.
+//typedef bool_t			(*xdrproc_t)();
+typedef bool_t          (*xdrproc_t)(xdr_t*, SCHAR*);
 #define NULL_xdrproc_t	((xdrproc_t) 0)
 
 struct xdr_discrim
