@@ -1,3 +1,39 @@
+2003-11-02 18:08  dimitr
+
+	* firebird2/src/jrd/: cmp.cpp, cmp_proto.h:
+	
+	Small cleanup.
+
+2003-11-02 13:28  dimitr
+
+	* firebird2/src/dsql/: ddl.cpp, dsql.h, dsql.tab.h, gen.cpp,
+	keywords.cpp, node.h, parse.cpp, parse.y, pass1.cpp:
+	
+	1. Reworked cursor management 2. Added explicit cursor statements
+	3. Slightly reworked LEAVE code 4. Lots of cleanup
+
+2003-11-02 13:05  dimitr
+
+	* firebird2/src/jrd/exe.cpp:
+	
+	no message
+
+2003-11-02 12:54  dimitr
+
+	* firebird2/src/: jrd/blr.h, jrd/cmp.cpp, jrd/evl.cpp, jrd/exe.cpp,
+	jrd/exe.h, jrd/nod.h, jrd/par.cpp, jrd/req.h, jrd/rse.cpp,
+	misc/blrtable.cpp:
+	
+	1. Fixed GDSCODE and SQLCODE variables 2. Enhanced ROW_COUNT
+	variable 3. Fixed EXCEPTION statement 4. Added explicit cursor
+	internals 5. Some cleanup
+
+2003-11-02 07:10  robocop
+
+	* firebird2/src/jrd/jrd.cpp:
+	
+	Fix logic bug in SEH->try/catch Thanks to Mike
+
 2003-11-01 12:32  dimitr
 
 	* firebird2/builds/win32/make_boot.bat:
