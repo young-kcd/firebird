@@ -1,3 +1,183 @@
+2003-10-03 03:59  brodsom
+
+	* firebird2/src/: dsql/alld.cpp, dsql/array_proto.h,
+	dsql/blob_proto.h, dsql/dsql.cpp, dsql/dsql.h, dsql/dsql_proto.h,
+	dsql/errd.cpp, dsql/gen_proto.h, dsql/hsh.cpp, dsql/keywords.h,
+	dsql/movd_proto.h, dsql/parse_proto.h, dsql/pass1.cpp,
+	dsql/pass1_proto.h, dsql/prepa_proto.h, dsql/preparse.cpp,
+	dsql/utld.cpp, dsql/utld_proto.h, dudley/extract.epp,
+	dudley/gener_proto.h, dudley/hsh.cpp, dudley/hsh_proto.h,
+	dudley/lex.cpp, dudley/lex_proto.h, dudley/parse.cpp,
+	dudley/parse.h, dudley/parse_proto.h, dudley/trn_proto.h,
+	dudley/ddl.cpp, dudley/ddl.h, dudley/ddl_proto.h,
+	dudley/exe_proto.h, dudley/expan_proto.h, dudley/expand.cpp,
+	dudley/expr.cpp, dudley/expr_proto.h, dudley/extra_proto.h:
+	
+	Macro cleaning extern cleaning DLL_EXPORT cleaning
+
+2003-10-03 03:51  brodsom
+
+	* firebird2/src/: intl/utils/maptest2.c, gpre/gpre.cpp,
+	gpre/gpre_meta.h, gpre/gpre_meta_boot.cpp, gpre/gpre_proto.h,
+	gpre/hsh_proto.h, gpre/jrdme_proto.h, gpre/lang_proto.h,
+	gpre/movg_proto.h, gpre/msc_proto.h, gpre/par_proto.h,
+	gpre/pat_proto.h, gpre/prett_proto.h, gpre/sqe_proto.h,
+	gpre/sql_proto.h, gpre/cmd_proto.h, gpre/cme_proto.h,
+	gpre/cmp_proto.h, gpre/exp_proto.h:
+	
+	extern cleaning removing underscores in macros DLL_EXPORT cleaning
+
+2003-10-03 03:50  brodsom
+
+	* firebird2/src/intl/: kanji.h, kanji_proto.h, ld.cpp, ldcommon.h:
+	
+	extern cleaning removing underscores in macros DLL_EXPORT cleaning
+	Removing duplicated declarations
+
+2003-10-03 03:47  brodsom
+
+	* firebird2/src/: jrd/jrd.cpp, jrd/jrd_proto.h, jrd/jrd_pwd.h,
+	jrd/jrd_time.h, jrd/jrn.h, jrd/jrn_proto.h, jrd/lck.h,
+	jrd/lck_proto.h, jrd/license.h, jrd/llio.h, jrd/llio_proto.h,
+	jrd/lls.h, jrd/log.h, jrd/log2.h, jrd/log_proto.h, jrd/met.epp,
+	jrd/met.h, jrd/met_proto.h, jrd/misc.h, jrd/misc_func_ids.h,
+	jrd/misc_proto.h, jrd/mov_proto.h, jrd/msg.h, jrd/nav_proto.h,
+	jrd/nbak.h, jrd/obj.h, jrd/ods.h, jrd/old.h, jrd/old_proto.h,
+	jrd/opt_proto.h, jrd/pag.h, jrd/pag_proto.h, jrd/par_proto.h,
+	jrd/pcmet_proto.h, jrd/perf_proto.h, jrd/quad.h, jrd/quad_proto.h,
+	jrd/que.h, jrd/rec_proto.h, jrd/req.h, jrd/rlck_proto.h, jrd/rng.h,
+	jrd/rng_proto.h, jrd/rse.h, jrd/rse_proto.h, jrd/sbm_proto.h,
+	jrd/sch_proto.h, jrd/scroll_cursors.h, jrd/sdl.cpp,
+	jrd/sdl_proto.h, jrd/sdw.h, jrd/sdw_proto.h, jrd/shut_proto.h,
+	jrd/smp.h, jrd/smp_impl.h, jrd/sort.cpp, jrd/sort.h,
+	jrd/sort_proto.h, jrd/sqz.h, jrd/sqz_proto.h, jrd/svc.cpp,
+	jrd/sym_proto.h, jrd/thd.cpp, jrd/thd.h, jrd/thd_proto.h,
+	jrd/tpc.h, jrd/tpc_proto.h, jrd/tra_proto.h, jrd/trig.h,
+	jrd/utl_proto.h, jrd/val_proto.h, jrd/vio_debug.h, jrd/vio_proto.h,
+	jrd/why_proto.h, jrd/os/guid.h, jrd/os/isc_i_proto.h, jrd/os/pio.h,
+	jrd/os/pio_proto.h, jrd/os/thd_priority.h,
+	jrd/os/posix/isc_ipc.cpp, jrd/os/win32/isc_ipc.cpp,
+	jrd/os/vms/mblr.h, jrd/os/vms/mblr_proto.h,
+	jrd/os/vms/prv_m_bypass.h, jrd/os/vms/rdb.h, jrd/os/vms/vms.h,
+	jrd/os/vms/vmslo_proto.h, jrd/os/vms/map_proto.h,
+	ipserver/ipapi_proto.h:
+	
+	extern cleaning removing underscores in macros DLL_EXPORT cleaning
+
+2003-10-03 03:43  brodsom
+
+	* firebird2/src/jrd/: ExecuteStatement.h, dflt.h, dfw_proto.h,
+	divorce.h, dls_proto.h, dmp.cpp, dmp_proto.h, drq.h, dsc.cpp,
+	dsc_proto.h, dyn.h, dyn_df_proto.h, dyn_dl_proto.h, dyn_md_proto.h,
+	dyn_proto.h, dyn_ut_proto.h, enc.cpp, enc_proto.h, err.cpp,
+	err_proto.h, event.h, event_proto.h, evl.cpp, evl_proto.h, exe.h,
+	exe_proto.h, ext.h, ext_proto.h, dbg.h, dbg_proto.h, isc_sync.cpp,
+	fil.h, file_params.h, filte_proto.h, flags.h, flu.h, flu_proto.h,
+	fun.epp, fun_proto.h, gds_proto.h, gdsold.h, grant_proto.h,
+	iberr_proto.h, ibsetjmp.h, idx.h, idx_proto.h, inf.cpp, inf.h,
+	inf_proto.h, ini_proto.h, intl.cpp, intl.h, intl_classes.h,
+	intl_proto.h, inuse_proto.h, irq.h, isc.cpp, isc.h, isc_f_proto.h,
+	isc_file.cpp, isc_proto.h, isc_s_proto.h, isc_signal.h:
+	
+	extern cleaning removing underscores in macros DLL_EXPORT cleaning
+
+2003-10-03 03:34  brodsom
+
+	* firebird2/src/jrd/: btr.cpp, btr.h, btr_proto.h, cch.cpp, cch.h,
+	cch_proto.h, cmp.cpp, cmp_proto.h, constants.h, cvt.cpp, cvt2.cpp,
+	cvt2_proto.h, cvt_proto.h, acl.h, ail.h, align.h, blb.cpp, blb.h,
+	blb_proto.h, blf_proto.h, blob_filter.cpp, block_cache.h, blr.h:
+	
+	extern cleaning removing underscores in macros DLL_EXPORT cleaning
+
+2003-10-03 03:20  brodsom
+
+	* firebird2/src/qli/: proc_proto.h, repor_proto.h, show_proto.h,
+	all_proto.h, comma_proto.h, compi_proto.h, err_proto.h,
+	eval_proto.h, exe_proto.h, expan_proto.h, forma_proto.h,
+	gener_proto.h, help_proto.h, hsh_proto.h, lex_proto.h,
+	meta_proto.h, mov_proto.h, parse_proto.h, picst_proto.h:
+	
+	extern cleaning removing underscores in macros DLL_EXPORT cleaning
+
+2003-10-03 03:17  brodsom
+
+	* firebird2/src/remote/: allr.cpp, allr_proto.h, inet.cpp,
+	inet_proto.h, inter_proto.h, merge.cpp, merge_proto.h,
+	parse_proto.h, parser.cpp, proto_proto.h, remot_proto.h,
+	remote.cpp, serve_proto.h, xdr_proto.h, xnet_proto.h, xdr.cpp,
+	protocol.cpp, os/win32/chop_proto.h, os/win32/cntl_proto.h,
+	os/win32/window_proto.h, os/win32/wnet_proto.h, os/vms/chuser.cpp:
+	
+	extern cleaning removing underscores in macros DLL_EXPORT cleaning
+
+2003-10-03 02:58  brodsom
+
+	* firebird2/src/utilities/: gsec/gsec_proto.h, gsec/secur_proto.h,
+	gstat/ppg_proto.h, guard/util_proto.h, ibmgr/srvrmgr_proto.h,
+	install/regis_proto.h, install/servi_proto.h,
+	rebuild/rebui_proto.h, rebuild/rmet_proto.h, rebuild/rstor_proto.h:
+	
+	extern cleaning removing underscores in macros
+
+2003-10-03 02:55  brodsom
+
+	* firebird2/src/wal/: wal_proto.h, walc_proto.h, walf_proto.h,
+	walr_proto.h, walw_proto.h, wstat_proto.h:
+	
+	extern cleaning
+
+2003-10-02 21:20  brodsom
+
+	* firebird2/src/journal/: conso_proto.h, gjrn_proto.h,
+	miscj_proto.h, oldr_proto.h, rebui_proto.h, serve_proto.h:
+	
+	extern cleaning
+
+2003-10-02 21:17  brodsom
+
+	* firebird2/src/: ipserver/ipapi_proto.h, ipserver/ipcli_proto.h,
+	ipserver/ipevt_proto.h, ipserver/ipsrv_proto.h,
+	iscguard/cntlg_proto.h, iscguard/iscguard.cpp, isql/extra_proto.h,
+	isql/isql_proto.h, isql/show_proto.h:
+	
+	extern cleaning
+
+2003-10-02 21:16  brodsom
+
+	* firebird2/src/burp/burp.h:
+	
+	Correction
+
+2003-10-02 21:14  brodsom
+
+	* firebird2/src/: alice/exe_proto.h, burp/backu_proto.h,
+	burp/burp_proto.h, burp/canon_proto.h, burp/misc_proto.h,
+	burp/mvol_proto.h, burp/resto_proto.h:
+	
+	extern cleaning
+
+2003-10-02 20:41  epocman
+
+	* firebird2/doc/README.instsvc:
+	
+	Sync with FB1.5 branch.
+
+2003-10-02 12:17  aafemt
+
+	* firebird2/: doc/README.build.mingw.html, src/dsql/dsql.cpp,
+	src/dsql/dsql.h, src/include/gen/autoconfig_msvc.h,
+	src/jrd/common.h, src/utilities/nbackup.cpp:
+	
+	Move MSVC-related hack of vsnprintf to MSVC header because it
+	crashed MinGW build
+
+2003-10-02 01:27  brodsom
+
+	* firebird2/src/jrd/: pag.cpp, sdw.cpp:
+	
+	Fix error in last Alex commit to HEAD to make builds work again.
+
 2003-10-01 21:43  dimitr
 
 	* firebird2/src/jrd/: opt.cpp, opt.cpp:
