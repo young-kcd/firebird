@@ -29,7 +29,7 @@ void		CVT_double_to_date(double, SLONG[2], FPTR_VOID);
 double		CVT_get_double(const struct dsc*, FPTR_VOID);
 SLONG		CVT_get_long(const struct dsc*, SSHORT, FPTR_VOID);
 SINT64		CVT_get_int64(const struct dsc*, SSHORT, FPTR_VOID);
-UCHAR		CVT_get_numeric(UCHAR*, USHORT, SSHORT*, double*, FPTR_VOID);
+UCHAR		CVT_get_numeric(const UCHAR*, const USHORT, SSHORT*, double*, FPTR_VOID);
 SQUAD		CVT_get_quad(const struct dsc*, SSHORT, FPTR_VOID);
 USHORT		CVT_get_string_ptr(const struct dsc*, USHORT*, UCHAR**,
 								 struct vary*, USHORT, FPTR_VOID);

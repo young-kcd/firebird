@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: msc.cpp,v 1.14 2003-10-15 01:18:01 brodsom Exp $
+//	$Id: msc.cpp,v 1.15 2003-10-16 08:50:59 robocop Exp $
 //
 //  
 //  
@@ -36,13 +36,12 @@
 //  LIST, PLEASE BE SURE TO CHECK THE OTHERS FOR
 //  SIMILAR CHANGES:
 //  
-//        gds/maint/pyxis/all.c
-//                  dsql/all.c
-//                  jrd/all.c
-//                  pipe/allp.c
-//                  qli/all.c
-//                  remote/allr.c
-//                  gpre/msc.c
+//                  dsql/all.cpp
+//                  jrd/all.cpp
+//                  pipe/allp.cpp
+//                  qli/all.cpp
+//                  remote/allr.cpp
+//                  gpre/msc.cpp
 //  
 //  - THANK YOU
 //**************************************************
@@ -75,9 +74,7 @@ static LLS free_lls;
 
 ACT MSC_action( GPRE_REQ request, enum act_t type)
 {
-	ACT action;
-
-	action = (ACT) MSC_alloc(ACT_LEN);
+	ACT action = (ACT) MSC_alloc(ACT_LEN);
 	action->act_type = type;
 
 	if (request) {
@@ -94,17 +91,14 @@ ACT MSC_action( GPRE_REQ request, enum act_t type)
 //  
 //  
 
-UCHAR *MSC_alloc(int size)
+UCHAR* MSC_alloc(int size)
 {
-	SPC next;
-	int n;
-	UCHAR *blk, *p, *end;
-
 	size = FB_ALIGN(size, ALIGNMENT);
 
 	if (!space || size > space->spc_remaining) {
-		n = MAX(size, 4096);
-		if (!(next = (SPC) gds__alloc((SLONG) (n + sizeof(spc)))))
+		const int n = MAX(size, 4096);
+		SPC next = (SPC) gds__alloc((SLONG) (n + sizeof(spc)));
+		if (!next)
 			CPR_error("virtual memory exhausted");
 #ifdef DEBUG_GDS_ALLOC
 		/* For V4.0 we don't care about gpre specific memory leaks */
@@ -116,8 +110,9 @@ UCHAR *MSC_alloc(int size)
 	}
 
 	space->spc_remaining -= size;
-	p = blk = ((UCHAR *) space + sizeof(spc) + space->spc_remaining);
-	end = p + size;
+	UCHAR* const blk = ((UCHAR*) space + sizeof(spc) + space->spc_remaining);
+	UCHAR* p = blk;
+	UCHAR* const end = p + size;
 
 	while (p < end)
 		*p++ = 0;
@@ -131,17 +126,14 @@ UCHAR *MSC_alloc(int size)
 //		Allocate a block in permanent memory.
 //  
 
-UCHAR *MSC_alloc_permanent(int size)
+UCHAR* MSC_alloc_permanent(int size)
 {
-	SPC next;
-	int n;
-	UCHAR *blk, *p, *end;
-
 	size = FB_ALIGN(size, ALIGNMENT);
 
 	if (!permanent_space || size > permanent_space->spc_remaining) {
-		n = MAX(size, 4096);
-		if (!(next = (SPC) gds__alloc((SLONG) (n + sizeof(spc)))))
+		const int n = MAX(size, 4096);
+		SPC next = (SPC) gds__alloc((SLONG) (n + sizeof(spc)));
+		if (!next)
 			CPR_error("virtual memory exhausted");
 #ifdef DEBUG_GDS_ALLOC
 		/* For V4.0 we don't care about gpre specific memory leaks */
@@ -153,10 +145,10 @@ UCHAR *MSC_alloc_permanent(int size)
 	}
 
 	permanent_space->spc_remaining -= size;
-	p = blk =
-		((UCHAR *) permanent_space + sizeof(spc) +
+	UCHAR* const blk = ((UCHAR*) permanent_space + sizeof(spc) +
 		 permanent_space->spc_remaining);
-	end = p + size;
+	UCHAR* p = blk;
+	UCHAR* const end = p + size;
 
 	while (p < end)
 		*p++ = 0;
@@ -172,9 +164,7 @@ UCHAR *MSC_alloc_permanent(int size)
 
 GPRE_NOD MSC_binary(NOD_T type, GPRE_NOD arg1, GPRE_NOD arg2)
 {
-	GPRE_NOD node;
-
-	node = MSC_node(type, 2);
+	GPRE_NOD node = MSC_node(type, 2);
 	node->nod_arg[0] = arg1;
 	node->nod_arg[1] = arg2;
 
@@ -189,11 +179,9 @@ GPRE_NOD MSC_binary(NOD_T type, GPRE_NOD arg1, GPRE_NOD arg2)
 
 GPRE_CTX MSC_context(GPRE_REQ request)
 {
-	GPRE_CTX context;
+//  allocate and initialize
 
-//  allocate and initialize 
-
-	context = (GPRE_CTX) MSC_alloc(CTX_LEN);
+	GPRE_CTX context = (GPRE_CTX) MSC_alloc(CTX_LEN);
 	context->ctx_request = request;
 	context->ctx_internal = request->req_internal++;
 	context->ctx_scope_level = request->req_scope_level;
@@ -216,9 +204,9 @@ void MSC_copy(const char* from, int length, char* to)
 {
 
 	if (length)
-		do
+		do {
 			*to++ = *from++;
-		while (--length);
+		} while (--length);
 
 	*to = 0;
 }
@@ -233,13 +221,13 @@ void MSC_copy_cat(const char* from1, int length1, const char* from2, int length2
 {
 
 	if (length1)
-		do
+		do {
 			*to++ = *from1++;
-		while (--length1);
+		} while (--length1);
 	if (length2)
-		do
+		do {
 			*to++ = *from2++;
-		while (--length2);
+		} while (--length2);
 
 	*to = 0;
 }
@@ -265,7 +253,7 @@ SYM MSC_find_symbol(SYM symbol, enum sym_t type)
 //		Free a block.
 //  
 
-void MSC_free( UCHAR * block)
+void MSC_free( UCHAR* block)
 {
 
 }
@@ -293,10 +281,9 @@ void MSC_free_request( GPRE_REQ request)
 
 void MSC_init(void)
 {
-	SPC stuff;
-
 	free_lls = NULL;
 
+    SPC stuff;
 	while (stuff = space) {
 		space = space->spc_next;
 		gds__free(stuff);
@@ -361,9 +348,7 @@ bool MSC_member(GPRE_NOD object, LLS stack)
 
 GPRE_NOD MSC_node(enum nod_t type, SSHORT count)
 {
-	GPRE_NOD node;
-
-	node = (GPRE_NOD) MSC_alloc(NOD_LEN(count));
+	GPRE_NOD node = (GPRE_NOD) MSC_alloc(NOD_LEN(count));
 	node->nod_count = count;
 	node->nod_type = type;
 
@@ -378,11 +363,8 @@ GPRE_NOD MSC_node(enum nod_t type, SSHORT count)
 
 GPRE_NOD MSC_pop(LLS * pointer)
 {
-	LLS stack;
-	GPRE_NOD node;
-
-	stack = *pointer;
-	node = stack->lls_object;
+	LLS stack = *pointer;
+	GPRE_NOD node = stack->lls_object;
 	*pointer = stack->lls_next;
 
 	stack->lls_next = free_lls;
@@ -399,9 +381,7 @@ GPRE_NOD MSC_pop(LLS * pointer)
 
 PRV MSC_privilege_block(void)
 {
-	PRV privilege_block;
-
-	privilege_block = (PRV) MSC_alloc(PRV_LEN);
+	PRV privilege_block = (PRV) MSC_alloc(PRV_LEN);
 	privilege_block->prv_privileges = PRV_no_privs;
 	privilege_block->prv_username = 0;
 	privilege_block->prv_relation = 0;
@@ -417,11 +397,10 @@ PRV MSC_privilege_block(void)
 //		Push an arbitrary object onto a linked list stack.
 //  
 
-void MSC_push( GPRE_NOD object, LLS * pointer)
+void MSC_push( GPRE_NOD object, LLS* pointer)
 {
-	LLS stack;
-
-	if (stack = free_lls)
+	LLS stack = free_lls;
+	if (stack)
 		free_lls = stack->lls_next;
 	else
 		stack = (LLS) MSC_alloc(LLS_LEN);
@@ -438,11 +417,9 @@ void MSC_push( GPRE_NOD object, LLS * pointer)
 //		a linked list.
 //  
 
-REF MSC_reference(REF * link)
+REF MSC_reference(REF* link)
 {
-	REF reference;
-
-	reference = (REF) MSC_alloc(REF_LEN);
+	REF reference = (REF) MSC_alloc(REF_LEN);
 
 	if (link) {
 		reference->ref_next = *link;
@@ -461,9 +438,7 @@ REF MSC_reference(REF * link)
 
 GPRE_REQ MSC_request(enum req_t type)
 {
-	GPRE_REQ request;
-
-	request = (GPRE_REQ) MSC_alloc(REQ_LEN);
+	GPRE_REQ request = (GPRE_REQ) MSC_alloc(REQ_LEN);
 	request->req_type = type;
 	request->req_next = requests;
 	requests = request;
@@ -523,9 +498,7 @@ SYM MSC_symbol(enum sym_t type, const TEXT* string, USHORT length, GPRE_CTX obje
 
 GPRE_NOD MSC_unary(NOD_T type, GPRE_NOD arg)
 {
-	GPRE_NOD node;
-
-	node = MSC_node(type, 1);
+	GPRE_NOD node = MSC_node(type, 1);
 	node->nod_arg[0] = arg;
 
 	return node;
@@ -537,12 +510,10 @@ GPRE_NOD MSC_unary(NOD_T type, GPRE_NOD arg)
 //		Set up for a new username.
 //  
 
-USN MSC_username(SCHAR * name, USHORT name_dyn)
+USN MSC_username(SCHAR* name, USHORT name_dyn)
 {
-	USN username;
-
-	username = (USN) MSC_alloc(USN_LEN);
-	username->usn_name = (SCHAR *) MSC_alloc(strlen(name) + 1);
+	USN username = (USN) MSC_alloc(USN_LEN);
+	username->usn_name = (SCHAR*) MSC_alloc(strlen(name) + 1);
 	strcpy(username->usn_name, name);
 	username->usn_dyn = name_dyn;
 

@@ -52,16 +52,18 @@ typedef struct tok {
 
 const size_t TOK_LEN = sizeof(tok);
 
-inline void strip_quotes(tok& tkn){
+inline void strip_quotes(tok& tkn)
+{
 	int ij;
-	for (ij=1; ij<tkn.tok_length-1; ij++)
-		tkn.tok_string[ij-1] = tkn.tok_string[ij];
+	for (ij = 1; ij < tkn.tok_length - 1; ij++)
+		tkn.tok_string[ij - 1] = tkn.tok_string[ij];
 	--ij;
 	tkn.tok_string[ij] = 0;
 	tkn.tok_length = ij;
 }
 
-inline bool isQuoted(int typ){
+inline bool isQuoted(const int typ)
+{
 	return (typ == tok_sglquoted || typ == tok_dblquoted);
 }
 
@@ -76,3 +78,4 @@ EXTERN tok token;
 #undef EXTERN
 
 #endif // GPRE_PARSE_H
+

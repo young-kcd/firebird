@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		isc_ipc.c
+ *	MODULE:		isc_ipc.cpp
  *	DESCRIPTION:	Handing and posting of signals (POSIX)
  *
  * The contents of this file are subject to the Interbase Public
@@ -36,7 +36,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.3 2003-10-14 13:10:05 eku Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.4 2003-10-16 08:51:03 robocop Exp $ */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -87,7 +87,7 @@
 #define LOCAL_SEMAPHORES 4
 
 typedef struct sig {
-	struct sig *sig_next;
+	struct sig* sig_next;
 	int sig_signal;
 	union {
 		FPTR_VOID_PTR user;
@@ -95,7 +95,7 @@ typedef struct sig {
 		FPTR_INT_VOID_PTR informs;
 		FPTR_VOID untyped;
 	} sig_routine;
-	void *sig_arg;
+	void* sig_arg;
 	USHORT sig_flags;
 } *SIG;
 
@@ -107,7 +107,7 @@ typedef struct sig {
 #define SIG_informs_stop	1	/* stop signal processing */
 
 
-static USHORT initialized_signals = FALSE;
+static bool initialized_signals = false;
 static SIG volatile signals = NULL;
 static SLONG volatile overflow_count = 0;
 
@@ -125,14 +125,14 @@ static int process_id = 0;
 static int volatile relay_pipe = 0;
 
 
-static void cleanup(void *arg);
-static void isc_signal2(int signal, FPTR_VOID handler, void *arg, ULONG);
-static SLONG overflow_handler(void *arg);
-static SIG que_signal(int signal, FPTR_VOID handler, void *arg, int flags);
+static void cleanup(void* arg);
+static void isc_signal2(int signal, FPTR_VOID handler, void* arg, ULONG);
+static SLONG overflow_handler(void* arg);
+static SIG que_signal(int signal, FPTR_VOID handler, void* arg, int flags);
 
 static void CLIB_ROUTINE signal_handler(int number,
-										siginfo_t *info,
-										void *pointer);
+										siginfo_t* info,
+										void* pointer);
 
 #ifndef SIG_HOLD
 #define SIG_HOLD	SIG_DFL
@@ -248,12 +248,8 @@ int ISC_kill(SLONG pid, SLONG signal_number)
  *	Notify somebody else.
  *
  **************************************/
-	SLONG msg[3];
-	int status, pipes[2];
-	TEXT process[MAXPATHLEN], arg[10];
-
 	for (;;) {
-		status = kill(pid, signal_number);
+		const int status = kill(pid, signal_number);
 
 		if (!status)
 			return status;
@@ -268,7 +264,10 @@ int ISC_kill(SLONG pid, SLONG signal_number)
 /* Process is there, but we don't have the privilege to
    send to him.  */
 
+	int pipes[2];
+	
 	if (!relay_pipe) {
+		TEXT process[MAXPATHLEN], arg[10];
 		gds__prefix(process, GDS_RELAY);
 		if (pipe(pipes)) {
 			gds__log("ISC_kill: error %d creating gds_relay", errno);
@@ -287,6 +286,7 @@ int ISC_kill(SLONG pid, SLONG signal_number)
 		close(pipes[0]);
 	}
 
+	SLONG msg[3];
 	msg[0] = pid;
 	msg[1] = signal_number;
 	msg[2] = msg[0] ^ msg[1];	/* XOR for a consistancy check */
@@ -301,7 +301,7 @@ int ISC_kill(SLONG pid, SLONG signal_number)
 #endif
 
 
-void API_ROUTINE ISC_signal(int signal_number, FPTR_VOID_PTR handler, void *arg)
+void API_ROUTINE ISC_signal(int signal_number, FPTR_VOID_PTR handler, void* arg)
 {
 /**************************************
  *
@@ -319,7 +319,7 @@ void API_ROUTINE ISC_signal(int signal_number, FPTR_VOID_PTR handler, void *arg)
 
 static void isc_signal2(
 						int signal_number,
-						FPTR_VOID handler, void *arg, ULONG flags)
+						FPTR_VOID handler, void* arg, ULONG flags)
 {
 /**************************************
  *
@@ -387,7 +387,7 @@ static void isc_signal2(
 
 void API_ROUTINE ISC_signal_cancel(
 								   int signal_number,
-								   FPTR_VOID_PTR handler, void *arg)
+								   FPTR_VOID_PTR handler, void* arg)
 {
 /**************************************
  *
@@ -401,7 +401,7 @@ void API_ROUTINE ISC_signal_cancel(
  *
  **************************************/
 	SIG sig;
-	volatile SIG *ptr;
+	volatile SIG* ptr;
 
 	THD_MUTEX_LOCK(&sig_mutex);
 
@@ -438,7 +438,7 @@ void ISC_signal_init(void)
 	if (initialized_signals)
 		return;
 
-	initialized_signals = TRUE;
+	initialized_signals = true;
 
 	overflow_count = 0;
 	gds__register_cleanup(cleanup, 0);
@@ -452,7 +452,7 @@ void ISC_signal_init(void)
 }
 
 
-static void cleanup(void *arg)
+static void cleanup(void* arg)
 {
 /**************************************
  *
@@ -470,10 +470,10 @@ static void cleanup(void *arg)
 
 	process_id = 0;
 
-	initialized_signals = FALSE;
+	initialized_signals = false;
 }
 
-static SLONG overflow_handler(void *arg)
+static SLONG overflow_handler(void* arg)
 {
 /**************************************
  *
@@ -514,7 +514,7 @@ static SLONG overflow_handler(void *arg)
 
 static SIG que_signal(
 					  int signal_number,
-					  FPTR_VOID handler, void *arg, int flags)
+					  FPTR_VOID handler, void* arg, int flags)
 {
 /**************************************
  *
@@ -526,10 +526,9 @@ static SIG que_signal(
  *	Que signal for later action.
  *
  **************************************/
-	SIG sig;
 	IPTR thread_id = 0;
 
-	sig = (SIG) gds__alloc((SLONG) sizeof(struct sig));
+	SIG sig = (SIG) gds__alloc((SLONG) sizeof(struct sig));
 /* FREE: unknown */
 	if (!sig) {					/* NOMEM: */
 		DEV_REPORT("que_signal: out of memory");

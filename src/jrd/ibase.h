@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.49 2003-10-10 23:56:55 skidder Exp $
+$Id: ibase.h,v 1.50 2003-10-16 08:51:01 robocop Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -405,12 +405,12 @@ ISC_STATUS ISC_EXPORT isc_array_put_slice(ISC_STATUS *,
 										  ISC_LONG *);
 
 void ISC_EXPORT isc_blob_default_desc(ISC_BLOB_DESC *,
-									  unsigned char *,
-									  unsigned char *);
+									  const unsigned char*,
+									  const unsigned char*);
 
 ISC_STATUS ISC_EXPORT isc_blob_gen_bpb(ISC_STATUS *,
-									   ISC_BLOB_DESC *,
-									   ISC_BLOB_DESC *,
+									   const ISC_BLOB_DESC*,
+									   const ISC_BLOB_DESC*,
 									   unsigned short,
 									   unsigned char *,
 									   unsigned short *);
@@ -425,14 +425,14 @@ ISC_STATUS ISC_EXPORT isc_blob_info(ISC_STATUS *,
 ISC_STATUS ISC_EXPORT isc_blob_lookup_desc(ISC_STATUS *,
 										   isc_db_handle *,
 										   isc_tr_handle *,
-										   unsigned char *,
-										   unsigned char *,
+										   const unsigned char*,
+										   const unsigned char*,
 										   ISC_BLOB_DESC *,
 										   unsigned char *);
 
 ISC_STATUS ISC_EXPORT isc_blob_set_desc(ISC_STATUS *,
-										unsigned char *,
-										unsigned char *,
+										const unsigned char*,
+										const unsigned char*,
 										short,
 										short,
 										short,

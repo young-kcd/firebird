@@ -86,12 +86,12 @@ static const UCHAR blr_bpb[] = { isc_bpb_version1,
 	isc_bpb_target_type, 1, BLOB_blr
 };
 
-static void check_array(DSQL_REQ, SCHAR *, DSQL_FLD);
+static void check_array(DSQL_REQ, const SCHAR*, DSQL_FLD);
 static void convert_dtype(DSQL_FLD, SSHORT);
 static void	free_function (UDF);
 static void free_procedure(DSQL_PRC);
 static void free_relation(DSQL_REL);
-static TEXT *metd_exact_name(TEXT *);
+static TEXT* metd_exact_name(TEXT*);
 
 #ifdef  SUPERSERVER
 static REC_MUTX_T rec_mutex;	/* Recursive metadata mutex */
@@ -123,7 +123,7 @@ static inline void metd_rec_unlock()
 }
 #endif
 
-void METD_drop_function (DSQL_REQ request, STR name)
+void METD_drop_function (DSQL_REQ request, const str* name)
 {
 /**************************************
  *
@@ -149,7 +149,7 @@ void METD_drop_function (DSQL_REQ request, STR name)
     /* If the symbol wasn't defined, we've got nothing to do */
     
     symbol = HSHD_lookup(request->req_dbb,
-						 reinterpret_cast<TEXT*>(name->str_data),
+						 reinterpret_cast<const TEXT*>(name->str_data),
                          name->str_length, SYM_udf, 0);
     for (; symbol; symbol = symbol->sym_homonym) {
         if ((symbol->sym_type == SYM_udf) &&
@@ -167,14 +167,14 @@ void METD_drop_function (DSQL_REQ request, STR name)
     /* mark other potential candidates as maybe dropped */
 
     HSHD_set_flag(request->req_dbb,
-				  reinterpret_cast<TEXT*>(name->str_data),
+				  reinterpret_cast<const TEXT*>(name->str_data),
 				  name->str_length, SYM_udf, UDF_dropped);
 
     metd_rec_unlock();
 }
 
 
-void METD_drop_procedure( DSQL_REQ request, STR name)
+void METD_drop_procedure( DSQL_REQ request, const str* name)
 {
 /**************************************
  *
@@ -221,7 +221,7 @@ void METD_drop_procedure( DSQL_REQ request, STR name)
 }
 
 
-void METD_drop_relation( DSQL_REQ request, STR name)
+void METD_drop_relation( DSQL_REQ request, const str* name)
 {
 /**************************************
  *
@@ -269,7 +269,7 @@ void METD_drop_relation( DSQL_REQ request, STR name)
 }
 
 
-INTLSYM METD_get_collation(DSQL_REQ request, STR name)
+INTLSYM METD_get_collation(DSQL_REQ request, const str* name)
 {
 /**************************************
  *
@@ -752,9 +752,9 @@ USHORT METD_get_domain(DSQL_REQ request, DSQL_FLD field, const char* name /* UTF
 
 
 void METD_get_domain_default(DSQL_REQ request,
-							 TEXT * domain_name,
-							 bool * has_default,
-							 TEXT * buffer, USHORT buff_length)
+							 const TEXT* domain_name,
+							 bool* has_default,
+							 TEXT* buffer, USHORT buff_length)
 {
 /*************************************************************
  *
@@ -787,7 +787,9 @@ void METD_get_domain_default(DSQL_REQ request,
 	THREAD_EXIT;
 
 	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_domain_2])
-        FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ domain_name THREAD_ENTER;
+        FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ domain_name
+        
+		THREAD_ENTER;
 
 	    if (!FLD.RDB$DEFAULT_VALUE.NULL) {
             blob_id = &FLD.RDB$DEFAULT_VALUE;
@@ -858,7 +860,7 @@ void METD_get_domain_default(DSQL_REQ request,
 }
 
 
-UDF METD_get_function(DSQL_REQ request, STR name)
+UDF METD_get_function(DSQL_REQ request, const str* name)
 {
 /**************************************
  *
@@ -884,8 +886,9 @@ UDF METD_get_function(DSQL_REQ request, STR name)
 
 /* Start by seeing if symbol is already defined */
 
-	symbol = HSHD_lookup(request->req_dbb, (TEXT*) name->str_data,
-						 name->str_length, SYM_udf, 0);
+	symbol = HSHD_lookup(request->req_dbb,
+						reinterpret_cast<const TEXT*>(name->str_data),
+						name->str_length, SYM_udf, 0);
     if (symbol && (symbol->sym_type == SYM_udf) &&
 	    ((udf_ = (UDF) symbol->sym_object) &&
          (!(udf_->udf_flags & UDF_dropped)))) {
@@ -1030,7 +1033,8 @@ UDF METD_get_function(DSQL_REQ request, STR name)
                     }
                 }
                 
-                if (X.RDB$MECHANISM != FUN_value && X.RDB$MECHANISM != FUN_reference) {
+                if (X.RDB$MECHANISM != FUN_value && X.RDB$MECHANISM != FUN_reference)
+				{
                     d->dsc_flags = DSC_nullable;
                 }
                 
@@ -1080,7 +1084,7 @@ UDF METD_get_function(DSQL_REQ request, STR name)
      */
     
     symbol = HSHD_lookup(request->req_dbb,
-						 reinterpret_cast<TEXT*>(name->str_data),
+						 reinterpret_cast<const TEXT*>(name->str_data),
                          name->str_length, SYM_udf, 0);
 
     for (; symbol; symbol = symbol->sym_homonym) {
@@ -1116,7 +1120,7 @@ UDF METD_get_function(DSQL_REQ request, STR name)
 }
 
 
-DSQL_NOD METD_get_primary_key(DSQL_REQ request, STR relation_name)
+DSQL_NOD METD_get_primary_key(DSQL_REQ request, const str* relation_name)
 {
 /**************************************
  *
@@ -1177,7 +1181,7 @@ DSQL_NOD METD_get_primary_key(DSQL_REQ request, STR relation_name)
 }
 
 
-DSQL_PRC METD_get_procedure(DSQL_REQ request, STR name)
+DSQL_PRC METD_get_procedure(DSQL_REQ request, const str* name)
 {
 /**************************************
  *
@@ -1370,7 +1374,7 @@ DSQL_PRC METD_get_procedure(DSQL_REQ request, STR name)
 }
 
 
-DSQL_REL METD_get_relation(DSQL_REQ request, STR name)
+DSQL_REL METD_get_relation(DSQL_REQ request, const str* name)
 {
 /**************************************
  *
@@ -1542,7 +1546,9 @@ DSQL_REL METD_get_relation(DSQL_REQ request, STR name)
 			RFR IN RDB$RELATION_FIELDS
 			WITH FLX.RDB$FIELD_NAME EQ RFR.RDB$FIELD_SOURCE
 			AND RFR.RDB$RELATION_NAME EQ name->str_data
-			SORTED BY RFR.RDB$FIELD_POSITION THREAD_ENTER;
+			SORTED BY RFR.RDB$FIELD_POSITION
+
+			THREAD_ENTER;
 
 		    /* allocate the field block */
 
@@ -1644,7 +1650,7 @@ DSQL_REL METD_get_relation(DSQL_REQ request, STR name)
 }
 
 
-STR METD_get_trigger_relation(DSQL_REQ request, STR name, USHORT* trig_type)
+STR METD_get_trigger_relation(DSQL_REQ request, const str* name, USHORT* trig_type)
 {
 /**************************************
  *
@@ -1669,15 +1675,16 @@ STR METD_get_trigger_relation(DSQL_REQ request, STR name, USHORT* trig_type)
 	THREAD_EXIT;
 
 	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_trigger])
-	    X IN RDB$TRIGGERS WITH X.RDB$TRIGGER_NAME EQ name->str_data 
-        THREAD_ENTER;
+		X IN RDB$TRIGGERS WITH X.RDB$TRIGGER_NAME EQ name->str_data
 
-	    metd_exact_name(X.RDB$RELATION_NAME);
+		THREAD_ENTER;
 
-        relation = MAKE_string(X.RDB$RELATION_NAME, strlen(X.RDB$RELATION_NAME));
-        *trig_type = X.RDB$TRIGGER_TYPE;
-        
-        THREAD_EXIT;
+		metd_exact_name(X.RDB$RELATION_NAME);
+
+		relation = MAKE_string(X.RDB$RELATION_NAME, strlen(X.RDB$RELATION_NAME));
+		*trig_type = X.RDB$TRIGGER_TYPE;
+
+		THREAD_EXIT;
 
 	END_FOR 
     ON_ERROR 
@@ -1689,7 +1696,7 @@ STR METD_get_trigger_relation(DSQL_REQ request, STR name, USHORT* trig_type)
 }
 
 
-USHORT METD_get_type(DSQL_REQ request, STR name, char* field, SSHORT * value)
+USHORT METD_get_type(DSQL_REQ request, const str* name, char* field, SSHORT* value)
 {
 /**************************************
  *
@@ -1714,15 +1721,15 @@ USHORT METD_get_type(DSQL_REQ request, STR name, char* field, SSHORT * value)
 	THREAD_EXIT;
 
 	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_type])
-	    X IN RDB$TYPES WITH
+		X IN RDB$TYPES WITH
 		X.RDB$FIELD_NAME EQ field AND X.RDB$TYPE_NAME EQ name->str_data;
 
-	    THREAD_ENTER;
+		THREAD_ENTER;
 
-        found = TRUE;
-        *value = X.RDB$TYPE;
-        
-        THREAD_EXIT;
+		found = TRUE;
+		*value = X.RDB$TYPE;
+
+		THREAD_EXIT;
         
 	END_FOR 
     ON_ERROR 
@@ -1761,31 +1768,31 @@ DSQL_REL METD_get_view_relation(DSQL_REQ    request,
 	THREAD_EXIT;
 
 	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_view], LEVEL level)
-	    X IN RDB$VIEW_RELATIONS WITH X.RDB$VIEW_NAME EQ view_name 
+		X IN RDB$VIEW_RELATIONS WITH X.RDB$VIEW_NAME EQ view_name
 
-        THREAD_ENTER;
+		THREAD_ENTER;
 
-	    metd_exact_name(X.RDB$CONTEXT_NAME);
-        metd_exact_name(X.RDB$RELATION_NAME);
-        
-        if (!strcmp(X.RDB$RELATION_NAME, relation_or_alias) ||
-            !strcmp(X.RDB$CONTEXT_NAME, relation_or_alias))
+		metd_exact_name(X.RDB$CONTEXT_NAME);
+		metd_exact_name(X.RDB$RELATION_NAME);
+
+		if (!strcmp(X.RDB$RELATION_NAME, relation_or_alias) ||
+			!strcmp(X.RDB$CONTEXT_NAME, relation_or_alias))
 		{
-            STR relation_name = MAKE_string(X.RDB$RELATION_NAME,
-                                        strlen(X.RDB$RELATION_NAME));
-            relation = METD_get_relation(request, relation_name);
-            delete relation_name;
-            return relation;
-        }
-
-		relation =
-            METD_get_view_relation(request, X.RDB$RELATION_NAME,
-                                   relation_or_alias, (USHORT)level + 1);
-        if (relation) {
-            return relation;
+			STR relation_name = MAKE_string(X.RDB$RELATION_NAME,
+		                                strlen(X.RDB$RELATION_NAME));
+			relation = METD_get_relation(request, relation_name);
+			delete relation_name;
+			return relation;
 		}
 
-        THREAD_EXIT;
+		relation =
+			METD_get_view_relation(request, X.RDB$RELATION_NAME,
+		                           relation_or_alias, (USHORT)level + 1);
+		if (relation) {
+			return relation;
+		}
+
+		THREAD_EXIT;
 
 	END_FOR 
     ON_ERROR 
@@ -1797,7 +1804,7 @@ DSQL_REL METD_get_view_relation(DSQL_REQ    request,
 }
 
 
-static void check_array( DSQL_REQ request, TEXT * field_name, DSQL_FLD field)
+static void check_array( DSQL_REQ request, const TEXT* field_name, DSQL_FLD field)
 {
 /**************************************
  *
@@ -1973,7 +1980,7 @@ static void free_relation( DSQL_REL relation)
 }
 
 
-static TEXT *metd_exact_name( TEXT * str)
+static TEXT* metd_exact_name( TEXT* str)
 {
 /**************************************
  *
@@ -1990,11 +1997,10 @@ static TEXT *metd_exact_name( TEXT * str)
  *	Returns:     str
  *
  **************************************/
-	TEXT *p, *q;
 	const char BLANK = '\040';
 
-	q = str - 1;
-	for (p = str; *p; p++) {
+	TEXT* q = str - 1;
+	for (TEXT* p = str; *p; p++) {
 		if (*p != BLANK)
 			q = p;
 	}
@@ -2003,3 +2009,4 @@ static TEXT *metd_exact_name( TEXT * str)
 
 	return str;
 }
+

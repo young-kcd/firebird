@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int_cxx.cpp,v 1.20 2003-10-14 22:21:49 brodsom Exp $
+//	$Id: int_cxx.cpp,v 1.21 2003-10-16 08:50:59 robocop Exp $
 //
 
 #include "firebird.h"
@@ -71,9 +71,9 @@ static int first_flag = 0;
 
 const int INDENT = 3;
 
-static const char* GDS_VTOV = "gds__vtov";
-static const char* JRD_VTOF = "jrd_vtof";
-static const char* VTO_CALL = "%s ((const char*)%s, (char*)%s, %d);";
+static const char* const GDS_VTOV = "gds__vtov";
+static const char* const JRD_VTOF = "jrd_vtof";
+static const char* const VTO_CALL = "%s ((const char*)%s, (char*)%s, %d);";
 
 static inline void begin(const int column)
 {

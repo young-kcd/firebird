@@ -44,13 +44,13 @@ extern USHORT QLI_columns, QLI_lines;
 static bool compare_names(NAM, SYM);
 static bool compare_symbols(SYM, SYM);
 static SYM copy_symbol(SYM);
-static void declare_global(QLI_FLD, SYN);
+static void declare_global(qli_fld*, SYN);
 static SYN decompile_field(QLI_FLD, QLI_CTX);
 static NAM decompile_symbol(SYM);
 static QLI_NOD expand_assignment(SYN, LLS, LLS);
 static QLI_NOD expand_any(SYN, LLS);
 static QLI_NOD expand_boolean(SYN, LLS);
-static void expand_control_break(BRK *, LLS);
+static void expand_control_break(BRK*, LLS);
 static void expand_distinct(QLI_NOD, QLI_NOD);
 static void expand_edit_string(QLI_NOD, ITM);
 static QLI_NOD expand_erase(SYN, LLS, LLS);
@@ -60,13 +60,13 @@ static QLI_NOD expand_for(SYN, LLS, LLS);
 static QLI_NOD expand_function(SYN, LLS);
 static QLI_NOD expand_group_by(SYN, LLS, QLI_CTX);
 static QLI_NOD expand_modify(SYN, LLS, LLS);
-static QLI_NOD expand_output(SYN, LLS, PRT *);
+static QLI_NOD expand_output(SYN, LLS, PRT*);
 static QLI_NOD expand_print(SYN, LLS, LLS);
 static ITM expand_print_item(SYN, LLS);
 static QLI_NOD expand_print_list(SYN, LLS);
 static QLI_NOD expand_report(SYN, LLS, LLS);
 static QLI_NOD expand_restructure(SYN, LLS, LLS);
-static QLI_NOD expand_rse(SYN, LLS *);
+static QLI_NOD expand_rse(SYN, LLS*);
 static QLI_NOD expand_sort(SYN, LLS, QLI_NOD);
 static QLI_NOD expand_statement(SYN, LLS, LLS);
 static QLI_NOD expand_store(SYN, LLS, LLS);
@@ -85,8 +85,8 @@ static QLI_NOD make_node(NOD_T, USHORT);
 static QLI_NOD negate(QLI_NOD);
 static QLI_NOD possible_literal(SYN, LLS, bool);
 static QLI_NOD post_map(QLI_NOD, QLI_CTX);
-static QLI_FLD resolve(SYN, LLS, QLI_CTX *);
-static void resolve_really(QLI_FLD, SYN);
+static QLI_FLD resolve(SYN, LLS, QLI_CTX*);
+static void resolve_really(QLI_FLD, const syn*);
 
 static LLS global_output_stack;
 
@@ -346,7 +346,7 @@ static SYM copy_symbol( SYM old)
 }
 
 
-static void declare_global( QLI_FLD variable, SYN field_node)
+static void declare_global( qli_fld* variable, SYN field_node)
 {
 /**************************************
  *
@@ -360,7 +360,6 @@ static void declare_global( QLI_FLD variable, SYN field_node)
  *	Allocate all strings off the field block.
  *
  **************************************/
-	QLI_FLD field, *ptr;
 
 // If it's based_on, flesh it out & check datatype.
 
@@ -374,7 +373,8 @@ static void declare_global( QLI_FLD variable, SYN field_node)
 
 // Get rid of any other variables of the same name
 
-	for (ptr = &QLI_variables; field = *ptr; ptr = &field->fld_next)
+	QLI_FLD field;
+	for (QLI_FLD* ptr = &QLI_variables; field = *ptr; ptr = &field->fld_next)
 		if (!strcmp
 			(field->fld_name->sym_string, variable->fld_name->sym_string))
 		{
@@ -441,7 +441,7 @@ static SYN decompile_field( QLI_FLD field, QLI_CTX context)
  *	(Needed to support SQL idiocies)
  *
  **************************************/
-	int args = (context) ? 2 : 1;
+	const int args = (context) ? 2 : 1;
 
 	SYN node = (SYN) ALLOCDV(type_syn, args);
 	node->syn_type = nod_field;
@@ -476,22 +476,18 @@ static NAM decompile_symbol( SYM symbol)
  *	(Needed to support SQL idiocies)
  *
  **************************************/
-	NAM name;
-	int l;
-	TEXT *p, *q, c;
+	int l = symbol->sym_length;
 
-	l = symbol->sym_length;
-
-	name = (NAM) ALLOCDV(type_nam, l);
+	NAM name = (NAM) ALLOCDV(type_nam, l);
 	name->nam_length = l;
 	name->nam_symbol = symbol;
 
-	p = name->nam_string;
-	q = symbol->sym_string;
+	TEXT* p = name->nam_string;
+	const TEXT* q = symbol->sym_string;
 
 	if (l)
 		do {
-			c = *q++;
+			const TEXT c = *q++;
 			*p++ = UPPER(c);
 
 		} while (--l);
@@ -512,13 +508,11 @@ static QLI_NOD expand_assignment( SYN input, LLS right, LLS left)
  *	Expand an assigment statement.  All in all, not too tough.
  *
  **************************************/
-	QLI_NOD from, to;
-
 	QLI_NOD node = MAKE_NODE(input->syn_type, e_asn_count);
-	node->nod_arg[e_asn_to] = to =
-		expand_expression(input->syn_arg[s_asn_to], left);
-	node->nod_arg[e_asn_from] = from =
-		expand_expression(input->syn_arg[s_asn_from], right);
+	QLI_NOD to = expand_expression(input->syn_arg[s_asn_to], left);
+	node->nod_arg[e_asn_to] = to;
+	QLI_NOD from = expand_expression(input->syn_arg[s_asn_from], right);
+	node->nod_arg[e_asn_from] = from;
 
 	if (to->nod_type == nod_field || to->nod_type == nod_variable) {
 		QLI_FLD field = (QLI_FLD) to->nod_arg[e_fld_field];
@@ -555,11 +549,10 @@ static QLI_NOD expand_any( SYN input, LLS stack)
  *	for existence.
  *
  **************************************/
-	QLI_NOD rse;
-
 	QLI_NOD node = MAKE_NODE(input->syn_type, e_any_count);
 	node->nod_count = 0;
-	node->nod_arg[e_any_rse] = rse = expand_rse(input->syn_arg[0], &stack);
+	QLI_NOD rse = expand_rse(input->syn_arg[0], &stack);
+	node->nod_arg[e_any_rse] = rse;
 
 	if (input->syn_count >= 2 && input->syn_arg[1]) {
 		QLI_NOD boolean = MAKE_NODE(nod_missing, 1);
@@ -586,15 +579,14 @@ static QLI_NOD expand_boolean( SYN input, LLS stack)
  *	Expand a statement.
  *
  **************************************/
-	QLI_NOD value;
-	SSHORT i;
-
 // Make node and process arguments
 
 	QLI_NOD node = MAKE_NODE(input->syn_type, input->syn_count);
 	QLI_NOD* ptr = node->nod_arg;
-	*ptr++ = value = expand_expression(input->syn_arg[0], stack);
+	QLI_NOD value = expand_expression(input->syn_arg[0], stack);
+	*ptr++ = value;
 
+	SSHORT i;
 	for (i = 1; i < input->syn_count; i++, ptr++)
 		if (!(*ptr = possible_literal(input->syn_arg[i], stack, true)))
 			*ptr = expand_expression(input->syn_arg[i], stack);
@@ -661,15 +653,14 @@ static void expand_distinct( QLI_NOD rse, QLI_NOD node)
  *	clause to it's parent.
  *
  **************************************/
-	QLI_NOD list;
-
 	if (rse->nod_arg[e_rse_reduced])
 		return;
 
 	LLS stack = NULL;
 	LLS_PUSH(node, &stack);
 	LLS_PUSH(0, &stack);
-	rse->nod_arg[e_rse_reduced] = list = make_list(stack);
+	QLI_NOD list = make_list(stack);
+	rse->nod_arg[e_rse_reduced] = list;
 	list->nod_count = 1;
 }
 
@@ -772,7 +763,6 @@ static QLI_NOD expand_erase( SYN input, LLS right, LLS left)
  *
  **************************************/
 	QLI_NOD loop = NULL;
-	USHORT count = 0;
 
 // If there is an rse, make up a FOR loop
 
@@ -783,7 +773,7 @@ static QLI_NOD expand_erase( SYN input, LLS right, LLS left)
 	}
 
 // Loop thru contexts counting them.
-
+	USHORT count = 0;
 	QLI_CTX context = NULL;
 	for (LLS contexts = right; contexts; contexts = contexts->lls_next) {
 		context = (QLI_CTX) contexts->lls_object;
@@ -1183,12 +1173,11 @@ static QLI_NOD expand_group_by( SYN input, LLS stack, QLI_CTX context)
  *	Expand a GROUP BY clause.
  *
  **************************************/
-	SYN *ptr, *end;
-
 	QLI_NOD node = MAKE_NODE(input->syn_type, input->syn_count);
 	QLI_NOD* ptr2 = node->nod_arg;
 
-	for (ptr = input->syn_arg, end = ptr + input->syn_count; ptr < end;
+	SYN* ptr = input->syn_arg;
+	for (SYN* const end = ptr + input->syn_count; ptr < end;
 		 ptr++, ptr2++)
 	{
 		*ptr2 = expand_expression(*ptr, stack);
@@ -1211,10 +1200,7 @@ static QLI_NOD expand_modify( SYN input, LLS right, LLS left)
  *	Expand a statement.
  *
  **************************************/
-	LLS contexts;
-
 	QLI_NOD loop = NULL;
-	USHORT count = 0;
 
 // If there is an rse, make up a FOR loop
 
@@ -1224,13 +1210,15 @@ static QLI_NOD expand_modify( SYN input, LLS right, LLS left)
 											  &right);
 	}
 
-// Loop thru contexts counting them.
+    LLS contexts;
 
+// Loop thru contexts counting them.
+	USHORT count = 0;
 	for (contexts = right; contexts; contexts = contexts->lls_next) {
 		QLI_CTX context = (QLI_CTX) contexts->lls_object;
 		if (context->ctx_variable)
 			continue;
-		count++;
+		++count;
 		if (context->ctx_rse)
 			break;
 	}
@@ -1339,11 +1327,6 @@ static QLI_NOD expand_print( SYN input, LLS right, LLS left)
  *
  **************************************/
 	SYN syn_rse = input->syn_arg[s_prt_rse];
-
-	QLI_NOD loop = NULL;
-	LLS items = NULL;
-	QLI_NOD rse = NULL;
-	USHORT count = 0;
 	LLS new_right = right;
 
 // If an output file or pipe is present, make up an output node
@@ -1354,6 +1337,8 @@ static QLI_NOD expand_print( SYN input, LLS right, LLS left)
 // If a record select expression is present, expand it and build a FOR
 // statement.
 
+	QLI_NOD loop = NULL;
+	QLI_NOD rse = NULL;
 	if (syn_rse) {
 		loop = MAKE_NODE(nod_for, e_for_count);
 		loop->nod_arg[e_for_rse] = rse = expand_rse(syn_rse, &new_right);
@@ -1362,7 +1347,8 @@ static QLI_NOD expand_print( SYN input, LLS right, LLS left)
 /* If there were any print items, process them now.  Look first for things that
    look like items, but are actually lists.  If there aren't items of any kind,
    pick up all fields in the relations from the record selection expression. */
-
+	LLS items = NULL;
+	USHORT count = 0;
 	SYN syn_item, *sub, *end;
 	SYN syn_list = input->syn_arg[s_prt_list];
 	if (syn_list)
@@ -1543,9 +1529,9 @@ static QLI_NOD expand_print_list( SYN input, LLS stack)
  *
  **************************************/
 	LLS items = NULL;
-	SYN *ptr, *end;
+	SYN* ptr = input->syn_arg;
 
-	for (ptr = input->syn_arg, end = ptr + input->syn_count; ptr < end; ptr++)
+	for (SYN* const end = ptr + input->syn_count; ptr < end; ptr++)
 		LLS_PUSH(expand_print_item(*ptr, stack), &items);
 
 	return make_list(items);
@@ -1932,7 +1918,8 @@ static QLI_NOD expand_statement( SYN input, LLS right, LLS left)
  *	Expand a statement.
  *
  **************************************/
-	SYN *syn_ptr, syn_node, field_node;
+	SYN* syn_ptr;
+	SYN syn_node, field_node;
 	QLI_CTX context;
 	QLI_NOD node, (*routine) (SYN, LLS, LLS);
 	LLS stack;
@@ -2306,7 +2293,6 @@ static int generate_items( SYN symbol, LLS right, LLS items, QLI_NOD rse)
  *	include only the grouping fields.
  *
  **************************************/
-	int count = 0;
 	QLI_NOD group_list = (rse) ? rse->nod_arg[e_rse_group_by] : NULL;
 
 // first identify the relation or context
@@ -2323,13 +2309,15 @@ static int generate_items( SYN symbol, LLS right, LLS items, QLI_NOD rse)
 		IBERROR(154);			// Msg154 unrecognized context
 
 	QLI_REL relation = context->ctx_relation;
-
+	int count = 0;
 	for (QLI_FLD field = relation->rel_fields; field; field = field->fld_next) {
 		if (
 			(field->fld_system_flag
 			 && field->fld_system_flag != relation->rel_system_flag)
 			|| field->fld_flags & FLD_array)
+		{
 			continue;
+		}
 		QLI_NOD node = make_field(field, context);
 		if (group_list && invalid_nod_field(node, group_list))
 			continue;
@@ -2338,7 +2326,7 @@ static int generate_items( SYN symbol, LLS right, LLS items, QLI_NOD rse)
 		item->itm_value = make_field(field, context);
 		expand_edit_string(item->itm_value, item);
 		LLS_PUSH(item, (LLS*) items);
-		count++;
+		++count;
 	}
 
 	return count;
@@ -2833,7 +2821,7 @@ static QLI_FLD resolve( SYN node, LLS stack, QLI_CTX * out_context)
    that the context name be given explicitly (used for special STORE
    context). */
 
-	NAM* base = (NAM *) node->syn_arg;
+	NAM* base = (NAM*) node->syn_arg;
 
 	for (; stack; stack = stack->lls_next) {
 		QLI_CTX context = (QLI_CTX) stack->lls_object;
@@ -2893,7 +2881,7 @@ static QLI_FLD resolve( SYN node, LLS stack, QLI_CTX * out_context)
 
 
 
-static void resolve_really( QLI_FLD variable, SYN field_node)
+static void resolve_really( QLI_FLD variable, const syn* field_node)
 {
 /**************************************
  *

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.48 2003-10-15 01:18:01 brodsom Exp $
+ * $Id: gpre.h,v 1.49 2003-10-16 08:50:59 robocop Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -86,9 +86,9 @@
    BLR string definitions */
 
 #if (defined (SOLARIS) || defined (AIX) || defined (WIN_NT))
-static const char* CONST_STR	= "const ";
+static const char* const CONST_STR	= "const ";
 #else
-static const char* CONST_STR	= "";
+static const char* const CONST_STR	= "";
 #endif
 
 const int MAXSYMLEN		= 512;		// max length of symbol + terminator

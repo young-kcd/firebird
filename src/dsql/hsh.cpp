@@ -83,8 +83,6 @@ static inline void unlock_hash()
  **/
 void HSHD_init(void)
 {
-	UCHAR *p;
-
 #ifdef SUPERSERVER
 	if (!hash_mutex_inited) {
 		hash_mutex_inited = 1;
@@ -92,7 +90,7 @@ void HSHD_init(void)
 	}
 #endif
 
-	p = (UCHAR *) gds__alloc(sizeof(DSQL_SYM) * HASH_SIZE);
+	UCHAR* p = (UCHAR *) gds__alloc(sizeof(DSQL_SYM) * HASH_SIZE);
 	memset(p, 0, sizeof(DSQL_SYM) * HASH_SIZE);
 
 	hash_table = (DSQL_SYM *) p;
@@ -114,23 +112,21 @@ void HSHD_init(void)
  **/
 void HSHD_debug(void)
 {
-	DSQL_SYM collision;
-	DSQL_SYM homptr;
-	SSHORT h;
-
 /* dump each hash table entry */
 
 	lock_hash();
-	for (h = 0; h < HASH_SIZE; h++) {
-		for (collision = hash_table[h]; collision;
-			 collision = collision->sym_collision) {
+	for (SSHORT h = 0; h < HASH_SIZE; h++) {
+		for (DSQL_SYM collision = hash_table[h]; collision;
+			 collision = collision->sym_collision)
+		{
 			/* check any homonyms first */
 
 			ib_fprintf(ib_stderr, "Symbol type %d: %s %p\n",
 					   collision->sym_type, collision->sym_string,
 					   collision->sym_dbb);
-			for (homptr = collision->sym_homonym; homptr;
-				 homptr = homptr->sym_homonym) {
+			for (DSQL_SYM homptr = collision->sym_homonym; homptr;
+				 homptr = homptr->sym_homonym)
+			{
 				ib_fprintf(ib_stderr, "Homonym Symbol type %d: %s %p\n",
 						   homptr->sym_type, homptr->sym_string,
 						   homptr->sym_dbb);
@@ -154,7 +150,6 @@ void HSHD_debug(void)
  **/
 void HSHD_fini(void)
 {
-
 	for (SSHORT i = 0; i < HASH_SIZE; i++)
 	{
 		hash_table[i] = NULL;
@@ -177,24 +172,18 @@ void HSHD_fini(void)
     @param database
 
  **/
-void HSHD_finish( void *database)
+void HSHD_finish( const void* database)
 {
-	DSQL_SYM* collision;
-	DSQL_SYM* homptr;
-	DSQL_SYM symbol;
-	DSQL_SYM chain;
-	SSHORT h;
-
 /* check each hash table entry */
 
 	lock_hash();
-	for (h = 0; h < HASH_SIZE; h++) {
-		for (collision = &hash_table[h]; *collision;) {
+	for (SSHORT h = 0; h < HASH_SIZE; h++) {
+		for (DSQL_SYM* collision = &hash_table[h]; *collision;) {
 			/* check any homonyms first */
 
-			chain = *collision;
-			for (homptr = &chain->sym_homonym; *homptr;) {
-				symbol = *homptr;
+			DSQL_SYM chain = *collision;
+			for (DSQL_SYM* homptr = &chain->sym_homonym; *homptr;) {
+				DSQL_SYM symbol = *homptr;
 				if (symbol->sym_dbb == database) {
 					*homptr = symbol->sym_homonym;
 					symbol = symbol->sym_homonym;
@@ -234,17 +223,13 @@ void HSHD_finish( void *database)
  **/
 void HSHD_insert(DSQL_SYM symbol)
 {
-	SSHORT h;
-	void *database;
-	DSQL_SYM old;
-
 	lock_hash();
-	h = hash(symbol->sym_string, symbol->sym_length);
-	database = symbol->sym_dbb;
+	const SSHORT h = hash(symbol->sym_string, symbol->sym_length);
+	const void* database = symbol->sym_dbb;
 
 	assert(symbol->sym_type >= SYM_statement && symbol->sym_type <= SYM_eof);
 
-	for (old = hash_table[h]; old; old = old->sym_collision)
+	for (DSQL_SYM old = hash_table[h]; old; old = old->sym_collision)
 		if ((!database || (database == old->sym_dbb)) &&
 			scompare(symbol->sym_string, symbol->sym_length, old->sym_string,
 					 old->sym_length)) 
@@ -276,15 +261,15 @@ void HSHD_insert(DSQL_SYM symbol)
     @param parser_version
 
  **/
-DSQL_SYM HSHD_lookup(void*    database,
-				TEXT*    string,
+DSQL_SYM HSHD_lookup(const void*    database,
+				const TEXT*    string,
 				SSHORT   length,
 				SYM_TYPE type,
 				USHORT   parser_version)
 {
 
 	lock_hash();
-	SSHORT h = hash(string, length);
+	const SSHORT h = hash(string, length);
 	for (DSQL_SYM symbol = hash_table[h]; symbol; symbol = symbol->sym_collision)
 	{
 		if ((database == symbol->sym_dbb) &&
@@ -328,13 +313,10 @@ DSQL_SYM HSHD_lookup(void*    database,
  **/
 void HSHD_remove(DSQL_SYM symbol)
 {
-	DSQL_SYM* collision;
-	SSHORT h;
-
 	lock_hash();
-	h = hash(symbol->sym_string, symbol->sym_length);
+	const SSHORT h = hash(symbol->sym_string, symbol->sym_length);
 
-	for (collision = &hash_table[h]; *collision;
+	for (DSQL_SYM* collision = &hash_table[h]; *collision;
 		 collision = &(*collision)->sym_collision)
 	{
 		if (remove_symbol(collision, symbol)) {
@@ -374,15 +356,9 @@ void HSHD_remove(DSQL_SYM symbol)
 
  **/
 void HSHD_set_flag(
-				   void *database,
-				   TEXT * string, SSHORT length, SYM_TYPE type, SSHORT flag)
+				   const void* database,
+				   const TEXT* string, SSHORT length, SYM_TYPE type, SSHORT flag)
 {
-	DSQL_SYM symbol, homonym;
-	SSHORT h;
-	DSQL_REL sym_rel;
-	DSQL_PRC sym_prc;
-
-
 /* as of now, there's no work to do if there is no database or if
    the type is not a relation or procedure */
 
@@ -397,14 +373,17 @@ void HSHD_set_flag(
 	}
 
 	lock_hash();
-	h = hash(string, length);
-	for (symbol = hash_table[h]; symbol; symbol = symbol->sym_collision) {
+	const SSHORT h = hash(string, length);
+	for (DSQL_SYM symbol = hash_table[h]; symbol; symbol = symbol->sym_collision)
+	{
 		if (symbol->sym_dbb && (database != symbol->sym_dbb) &&
 			scompare(string, length, symbol->sym_string, symbol->sym_length)) {
 
 			/* the symbol name matches and it's from a different database */
 
-			for (homonym = symbol; homonym; homonym = homonym->sym_homonym) {
+			for (DSQL_SYM homonym = symbol; homonym;
+				homonym = homonym->sym_homonym)
+			{
 				if (homonym->sym_type == type) {
 
 					/* the homonym is of the correct type */
@@ -415,14 +394,18 @@ void HSHD_set_flag(
 
 					switch (type) {
 					case SYM_relation:
-						sym_rel = (DSQL_REL) homonym->sym_object;
-						sym_rel->rel_flags |= flag;
-						break;
+						{
+							DSQL_REL sym_rel = (DSQL_REL) homonym->sym_object;
+							sym_rel->rel_flags |= flag;
+							break;
+						}
 
 					case SYM_procedure:
-						sym_prc = (DSQL_PRC) homonym->sym_object;
-						sym_prc->prc_flags |= flag;
-						break;
+						{
+							DSQL_PRC sym_prc = (DSQL_PRC) homonym->sym_object;
+							sym_prc->prc_flags |= flag;
+							break;
+						}
 					}
 				}
 			}
@@ -471,11 +454,9 @@ static SSHORT hash(const SCHAR* string, USHORT length)
  **/
 static bool remove_symbol(DSQL_SYM* collision, DSQL_SYM symbol)
 {
-	DSQL_SYM* ptr;
-	DSQL_SYM homonym;
-
 	if (symbol == *collision) {
-		if ((homonym = symbol->sym_homonym) != NULL) {
+	    DSQL_SYM homonym = symbol->sym_homonym;
+		if (homonym != NULL) {
 			homonym->sym_collision = symbol->sym_collision;
 			*collision = homonym;
 		}
@@ -485,11 +466,14 @@ static bool remove_symbol(DSQL_SYM* collision, DSQL_SYM symbol)
 		return true;
 	}
 
-	for (ptr = &(*collision)->sym_homonym; *ptr; ptr = &(*ptr)->sym_homonym)
+	for (DSQL_SYM* ptr = &(*collision)->sym_homonym; *ptr;
+		ptr = &(*ptr)->sym_homonym)
+	{
 		if (symbol == *ptr) {
 			*ptr = symbol->sym_homonym;
 			return true;
 		}
+	}
 
 	return false;
 }

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		opt.c
+ *	MODULE:		opt.cpp
  *	DESCRIPTION:	Optimizer / record selection expression compiler
  *
  * The contents of this file are subject to the Interbase Public
@@ -6159,8 +6159,7 @@ static JRD_NOD optimize_like(TDBB tdbb, JRD_NOD like_node)
  *	still needed.
  *
  **************************************/
-	JRD_NOD search_node, escape_node, node;
-	DSC *search_desc, *escape_desc;
+	DSC* escape_desc;
 	UCHAR *p, *end, *q, *p_start;
 	SSHORT count;
 	LIT literal;
@@ -6170,14 +6169,14 @@ static JRD_NOD optimize_like(TDBB tdbb, JRD_NOD like_node)
 	TextType *text_obj;
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(like_node, type_nod);
-	search_node = like_node->nod_arg[1];
-	escape_node = (like_node->nod_count > 2) ? like_node->nod_arg[2] : NULL;
+	JRD_NOD search_node = like_node->nod_arg[1];
+	JRD_NOD escape_node = (like_node->nod_count > 2) ? like_node->nod_arg[2] : NULL;
 /* if the matching string or the escape string can't 
    be evaluated at compile time, forget it */
 	if ((search_node->nod_type != nod_literal) ||
 		(escape_node && escape_node->nod_type != nod_literal))
 		return NULL;
-	search_desc = &((LIT) search_node)->lit_desc;
+	dsc* search_desc = &((LIT) search_node)->lit_desc;
 	if (escape_node)
 		escape_desc = &((LIT) escape_node)->lit_desc;
 /* if either is not a character expression, forget it */
@@ -6219,7 +6218,7 @@ static JRD_NOD optimize_like(TDBB tdbb, JRD_NOD like_node)
 	count =
 		lit_delta + (search_desc->dsc_length + sizeof(jrd_nod*) -
 					 1) / sizeof(jrd_nod*);
-	node = PAR_make_node(tdbb, count);
+	JRD_NOD node = PAR_make_node(tdbb, count);
 	node->nod_type = nod_literal;
 	node->nod_count = 0;
 	literal = (LIT) node;

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	External Data Representation
- *	MODULE:		xdr.c
+ *	MODULE:		xdr.cpp
  *	DESCRIPTION:	GDS version of Sun's register XDR Package.
  *
  * The contents of this file are subject to the Interbase Public
@@ -582,9 +582,8 @@ bool_t xdr_opaque(XDR * xdrs, SCHAR * p, u_int len)
  *
  **************************************/
 	SCHAR trash[4];
-	SSHORT l;
 
-	l = (4 - len) & 3;
+	const SSHORT l = (4 - len) & 3;
 
 	switch (xdrs->x_op)
 	{
@@ -920,7 +919,7 @@ static bool_t mem_getbytes(	XDR*	xdrs,
  *	Get a bunch of bytes from a memory stream if it fits.
  *
  **************************************/
-	SLONG bytecount = count;
+	const SLONG bytecount = count;
 
 	if ((xdrs->x_handy -= bytecount) < 0)
 	{
@@ -950,15 +949,13 @@ static bool_t mem_getlong( XDR * xdrs, SLONG * lp)
  *	Fetch a longword into a memory stream if it fits.
  *
  **************************************/
-	SLONG *p;
-
 	if ((xdrs->x_handy -= sizeof(SLONG)) < 0)
 	{
 		xdrs->x_handy += sizeof(SLONG);
 		return FALSE;
 	}
 
-	p = (SLONG *) xdrs->x_private;
+	SLONG* p = (SLONG *) xdrs->x_private;
 	*lp = ntohl(*p++);
 	xdrs->x_private = (SCHAR *) p;
 
@@ -1018,7 +1015,7 @@ static bool_t mem_putbytes(
  *	Put a bunch of bytes to a memory stream if it fits.
  *
  **************************************/
-	SLONG bytecount = count;
+	const SLONG bytecount = count;
 
 	if ((xdrs->x_handy -= bytecount) < 0)
 	{
@@ -1048,15 +1045,13 @@ static bool_t mem_putlong( XDR * xdrs, SLONG * lp)
  *	Fetch a longword into a memory stream if it fits.
  *
  **************************************/
-	SLONG *p;
-
 	if ((xdrs->x_handy -= sizeof(SLONG)) < 0)
 	{
 		xdrs->x_handy += sizeof(SLONG);
 		return FALSE;
 	}
 
-	p = (SLONG *) xdrs->x_private;
+	SLONG* p = (SLONG *) xdrs->x_private;
 	*p++ = htonl(*lp);
 	xdrs->x_private = (SCHAR *) p;
 
@@ -1076,9 +1071,7 @@ static bool_t mem_setpostn( XDR * xdrs, u_int bytecount)
  *	Set the current position (which is also current length) from stream.
  *
  **************************************/
-	u_int length;
-
-	length = (u_int) ((xdrs->x_private - xdrs->x_base) + xdrs->x_handy);
+	const u_int length = (u_int) ((xdrs->x_private - xdrs->x_base) + xdrs->x_handy);
 
 	if (bytecount > length)
 		return FALSE;
@@ -1088,3 +1081,4 @@ static bool_t mem_setpostn( XDR * xdrs, u_int bytecount)
 
 	return TRUE;
 }
+

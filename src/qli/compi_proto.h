@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
  *	MODULE:		compi_proto.h
- *	DESCRIPTION:	Prototype header file for compile.c
+ *	DESCRIPTION:	Prototype header file for compile.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -26,7 +26,7 @@
 
 qli_nod*	CMPQ_compile(qli_nod*);
 void		CMP_alloc_temp(qli_nod*);
-int			CMP_node_match(qli_nod*, qli_nod*);
+bool		CMP_node_match(const qli_nod*, const qli_nod*);
 
 #endif /* QLI_COMPI_PROTO_H */
 

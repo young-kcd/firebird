@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.38 2003-09-29 12:42:58 robocop Exp $
+//	$Id: alice.cpp,v 1.39 2003-10-16 08:50:54 robocop Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -94,7 +94,8 @@ struct tgbl *gdgbl;
 
 const int ALICE_MSG_FAC = 3;
 
-static inline void exit_local(int code, volatile tgbl* tdgbl){
+static inline void exit_local(int code, volatile tgbl* tdgbl)
+{
 	tdgbl->exit_code = code;
 	Firebird::status_exception::raise(1);
 }
@@ -123,7 +124,7 @@ static void alice_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
 
 int ALICE_main(SVC service)
 {
-	int exit_code = common_main(service->svc_argc, service->svc_argv,
+	const int exit_code = common_main(service->svc_argc, service->svc_argv,
 					SVC_output, (SLONG) service);
 
 	service->svc_handle = 0;
@@ -152,7 +153,7 @@ int ALICE_main(SVC service)
 
 int CLIB_ROUTINE main(int argc, char *argv[])
 {
-	int exit_code = common_main(argc, argv, output_main, (SLONG) NULL);
+	const int exit_code = common_main(argc, argv, output_main, (SLONG) NULL);
 
 	return exit_code;
 }

@@ -178,22 +178,20 @@ void CMD_extract( SYN node)
  *	Extract a series of procedures.
  *
  **************************************/
-	SYN list, *ptr, *end;
-	QPR proc;
 	DBB database;
-	NAM name;
-	FRBRD *blob;
 
 	IB_FILE* file = (IB_FILE*) EXEC_open_output((QLI_NOD) node->syn_arg[1]);
 
-	if (list = node->syn_arg[0])
-		for (ptr = list->syn_arg, end = ptr + list->syn_count; ptr < end;
-			 ptr++) {
-			proc = (QPR) * ptr;
+	SYN list = node->syn_arg[0];
+	if (list) {
+		SYN* ptr = list->syn_arg;
+		for (SYN* const end = ptr + list->syn_count; ptr < end; ptr++) {
+			QPR proc = (QPR) *ptr;
 			if (!(database = proc->qpr_database))
 				database = QLI_databases;
-			name = proc->qpr_name;
-			if (!(blob = PRO_fetch_procedure(database, name->nam_string))) {
+			NAM name = proc->qpr_name;
+			FRBRD* blob = PRO_fetch_procedure(database, name->nam_string);
+			if (!blob) {
 				ERRQ_msg_put(89,	// Msg89 Procedure %s not found in database %s
 							 name->nam_string,
 							 database->dbb_symbol->sym_string, NULL, NULL,
@@ -203,11 +201,15 @@ void CMD_extract( SYN node)
 			dump_procedure(database, file, name->nam_string, name->nam_length,
 						   blob);
 		}
+	}
 	else {
 		CMD_check_ready();
 		for (database = QLI_databases; database;
 			 database =
-			 database->dbb_next) PRO_scan(database, (void (*)()) extract_procedure, file);
+			 database->dbb_next)
+		{
+			PRO_scan(database, (void (*)()) extract_procedure, file);
+		}
 	}
 
 #ifdef WIN_NT
@@ -255,12 +257,11 @@ void CMD_rename_proc( SYN node)
  *	or the most recently readied database.
  *
  **************************************/
-	DBB database;
-
 	QPR old_proc = (QPR) node->syn_arg[0];
 	QPR new_proc = (QPR) node->syn_arg[1];
-
-	if (!(database = old_proc->qpr_database))
+	
+	DBB database = old_proc->qpr_database;
+	if (!database)
 		database = QLI_databases;
 
 	if (new_proc->qpr_database && (new_proc->qpr_database != database))
@@ -269,7 +270,10 @@ void CMD_rename_proc( SYN node)
 	NAM new_name = new_proc->qpr_name;
 
 	if (PRO_rename_procedure
-		(database, old_name->nam_string, new_name->nam_string)) return;
+		(database, old_name->nam_string, new_name->nam_string))
+	{
+		return;
+	}
 
 	ERRQ_error(85,				// Msg85 Procedure %s not found in database %s
 			   old_name->nam_string, database->dbb_symbol->sym_string, NULL,
@@ -429,13 +433,12 @@ void CMD_shell( SYN node)
  **************************************/
 	TEXT buffer[256];
 	USHORT l;
-	CON constant;
 
 // Copy command, inserting extra blank at end.
 
 	TEXT* p = buffer;
-
-	if (constant = (CON) node->syn_arg[0]) {
+	CON constant = (CON) node->syn_arg[0];
+	if (constant) {
 		const TEXT* q = (TEXT*) constant->con_data;
 		if (l = constant->con_desc.dsc_length)
 			do {
@@ -494,7 +497,6 @@ void CMD_transaction( SYN node)
  *      on listed databases or everything.
  *
  **************************************/
-	SYN *ptr, *end;
 
 /* If there aren't any open databases then obviously
    there isn't anything to commit. */
@@ -539,7 +541,8 @@ void CMD_transaction( SYN node)
 		return;
 	}
 
-	for (ptr = node->syn_arg, end = ptr + node->syn_count; ptr < end; ptr++) {
+	SYN* ptr = node->syn_arg;
+	for (SYN* const end = ptr + node->syn_count; ptr < end; ptr++) {
 		DBB database = (DBB) *ptr;
 		if ((node->syn_type == nod_commit) &&
 			!(database->dbb_flags & DBB_prepared))
@@ -586,7 +589,7 @@ static void dump_procedure(
 static void extract_procedure(
 							  IB_FILE* file,
 							  const TEXT* name,
-							  USHORT length, DBB database, SLONG * blob_id)
+							  USHORT length, DBB database, SLONG* blob_id)
 {
 /**************************************
  *

@@ -2329,9 +2329,9 @@ void API_ROUTINE gds__temp_dir(TEXT * buffer)
 }
 
 	
-void * API_ROUTINE gds__temp_file(
-					 BOOLEAN stdio_flag, TEXT * string, 
-					 TEXT * expanded_string, TEXT * dir, BOOLEAN unlink_flag)
+void* API_ROUTINE gds__temp_file(
+					 BOOLEAN stdio_flag, const TEXT* string,
+					 TEXT* expanded_string, TEXT* dir, BOOLEAN unlink_flag)
 {
 /**************************************
  *

@@ -54,18 +54,18 @@ inline bool is_printable(const char x)
 }
 #endif
 
-static int decompose_header(SCHAR*, SCHAR**, SSHORT*);
+static USHORT decompose_header(SCHAR*, SCHAR**, USHORT*);
 static void format_index(ITM, QLI_NOD, const bool);
-static TEXT *format_report(VEC, USHORT, USHORT *);
+static TEXT* format_report(VEC, USHORT, USHORT*);
 static void format_value(ITM, int);
 static TEXT* get_buffer(STR*, TEXT*, USHORT);
-static int match_expr(QLI_NOD, QLI_NOD);
-static void print_blobs(PRT, ITM *, ITM *);
-static int print_line(ITM, TEXT **);
-static void put_line(PRT, TEXT **, TEXT *, TEXT);
-static void report_break(BRK, VEC *, const bool);
-static void report_item(ITM, VEC *, USHORT *);
-static void report_line(QLI_NOD, VEC *);
+static bool match_expr(const qli_nod*, const qli_nod*);
+static void print_blobs(PRT, itm**, itm**);
+static int print_line(itm*, TEXT**);
+static void put_line(PRT, TEXT**, TEXT*, TEXT);
+static void report_break(BRK, VEC*, const bool);
+static void report_item(ITM, VEC*, USHORT*);
+static void report_line(QLI_NOD, VEC*);
 
 static STR global_fmt_buffer, global_blob_buffer;
 
@@ -91,8 +91,6 @@ int FMT_expression( QLI_NOD node)
  *	length.
  *
  **************************************/
-	QLI_FLD field;
-
 	QLI_NOD sub = node->nod_arg[e_fmt_value];
 	PICS picture = PIC_analyze((TEXT*) node->nod_arg[e_fmt_edit], &sub->nod_desc);
 	node->nod_arg[e_fmt_picture] = (QLI_NOD) picture;
@@ -100,6 +98,7 @@ int FMT_expression( QLI_NOD node)
 	if (node->nod_type == nod_reference)
 		node = node->nod_arg[0];
 
+	QLI_FLD field;
 	if (!(picture->pic_missing) && (node->nod_type == nod_field) &&
 		(field = (QLI_FLD) node->nod_arg[e_fld_field]) && field->fld_missing)
 		PIC_missing(field->fld_missing, picture);
@@ -108,7 +107,7 @@ int FMT_expression( QLI_NOD node)
 }
 
 
-TEXT *FMT_format(LLS stack)
+TEXT* FMT_format(LLS stack)
 {
 /**************************************
  *
@@ -182,7 +181,7 @@ TEXT *FMT_format(LLS stack)
 			else {
 				n =
 					decompose_header(item->itm_query_header, segments,
-									 (SSHORT*) lengths);
+									 lengths);
 				number_segments = MAX(n, number_segments);
 				for (j = 0, ptr = lengths; j < n; j++, ptr++)
 					item->itm_header_length =
@@ -281,7 +280,7 @@ TEXT *FMT_format(LLS stack)
 			item = (ITM) temp->lls_object;
 			if (item->itm_type != item_value)
 				continue;
-			n = decompose_header(item->itm_query_header, segments, (SSHORT*) lengths);
+			n = decompose_header(item->itm_query_header, segments, lengths);
 			segment = j - (number_segments - n);
 			if (segment < 0)
 				continue;
@@ -332,8 +331,6 @@ QLI_NOD FMT_list(QLI_NOD list)
 	SYM name;
 	QLI_FLD field;
 	QLI_NOD value;
-	STR header;
-	TEXT *p, *q, c;
 
 	QLI_NOD new_nod = (QLI_NOD) ALLOCDV(type_nod, list->nod_count * 2 + 1);
 	new_nod->nod_type = nod_list;
@@ -341,7 +338,8 @@ QLI_NOD FMT_list(QLI_NOD list)
 	USHORT column = 0;
 
 	for (item = (ITM*) list->nod_arg, end = item + list->nod_count;
-		 item < end; item++) {
+		 item < end; item++)
+	{
 		if ((*item)->itm_type != item_value || !(value = (*item)->itm_value))
 			continue;
 		(*item)->itm_flags |= ITM_overlapped;
@@ -351,7 +349,8 @@ QLI_NOD FMT_list(QLI_NOD list)
 		bool expression = true;
 		if (value->nod_type == nod_field ||
 			value->nod_type == nod_variable ||
-			value->nod_type == nod_function) {
+			value->nod_type == nod_function)
+		{
 			expression = false;
 			if (value->nod_type != nod_function) {
 				field = (QLI_FLD) value->nod_arg[e_fld_field];
@@ -367,14 +366,16 @@ QLI_NOD FMT_list(QLI_NOD list)
 		value->nod_type = nod_constant;
 		value->nod_flags |= NOD_local;
 		value->nod_desc.dsc_dtype = dtype_text;
+		TEXT* q;
 		if (!expression && (!(q = (*item)->itm_query_header) || *q != '-')) {
 			if (q) {
 				if (*q != '"' && *q != '\'')
 					value->nod_desc.dsc_address = (UCHAR *) q;
 				else {
-					header = (STR) ALLOCDV(type_str, strlen(q));
-					p = header->str_data;
-					value->nod_desc.dsc_address = (UCHAR *) p;
+					STR header = (STR) ALLOCDV(type_str, strlen(q));
+					TEXT* p = header->str_data;
+					value->nod_desc.dsc_address = (UCHAR*) p;
+					TEXT c;
 					while (c = *q++) {
 						while (*q != c)
 							*p++ = *q++;
@@ -411,7 +412,8 @@ QLI_NOD FMT_list(QLI_NOD list)
 	column += 2;
 
 	for (item = (ITM *) list->nod_arg, end = item + list->nod_count;
-		 item < end; item++) {
+		 item < end; item++)
+	{
 		if ((*item)->itm_type != item_value || !(value = (*item)->itm_value))
 			continue;
 		if (value->nod_type == nod_reference)
@@ -438,11 +440,8 @@ void FMT_print( QLI_NOD list, PRT print)
  *
  **************************************/
 	USHORT l;
-	DSC *desc;
-	TEXT *q;
-	QLI_NOD *ptr;
+	QLI_NOD* ptr;
 	RPT report;
-	ISC_STATUS_ARRAY status_vector;
 
 // Now go thru and make up the first line
 
@@ -468,7 +467,7 @@ void FMT_print( QLI_NOD list, PRT print)
 		case item_new_page:
 			if (print->prt_new_page) {
 				put_line(print, &p, buffer, '\n');
-				(*(void(*)(PRT, int))print->prt_new_page) (print, FALSE);
+				(*print->prt_new_page) (print, false);
 			}
 			else {
 				put_line(print, &p, buffer, '\f');
@@ -506,7 +505,7 @@ void FMT_print( QLI_NOD list, PRT print)
 
 		BUFFER_CHECK(p, item->itm_print_offset + item->itm_print_length + 2);
 		buffer = BUFFER_BEGINNING;
-		q = buffer + item->itm_print_offset;
+		const TEXT* const q = buffer + item->itm_print_offset;
 		if (p > q) {
 			put_line(print, &p, buffer, '\n');
 			print_blobs(print, (ITM*) list->nod_arg, (ITM*) ptr);
@@ -517,7 +516,7 @@ void FMT_print( QLI_NOD list, PRT print)
 		// Next, handle simple formated values
 
 		if (item->itm_dtype != dtype_blob) {
-			desc = EVAL_value(item->itm_value);
+			const dsc* desc = EVAL_value(item->itm_value);
 			if (!(desc->dsc_missing & DSC_missing))
 				PIC_edit(desc, item->itm_picture, &p, BUFFER_REMAINING(p));
 			else if (item->itm_picture->pic_missing)
@@ -549,7 +548,7 @@ void FMT_print( QLI_NOD list, PRT print)
 	print_blobs(print, (ITM*) list->nod_arg, (ITM*) end);
 
 // Finish by closing all blobs
-
+	ISC_STATUS_ARRAY status_vector;
 	for (ptr = list->nod_arg; ptr < end; ptr++) {
 		ITM item = (ITM) *ptr;
 		if (item->itm_dtype == dtype_blob && item->itm_stream)
@@ -625,17 +624,13 @@ void FMT_report( RPT report)
  *	Format a report.
  *
  **************************************/
-	QLI_NOD list;
-	USHORT lengths[16];
-	TEXT* segments[16];
-
 	if (global_fmt_buffer) {
 		ALL_release((FRB) global_fmt_buffer);
 		global_fmt_buffer = NULL;
 	}
 
 	USHORT width = report->rpt_columns;
-	VEC columns_vec = (VEC) ALLOCDV(type_vec, 256);
+	vec* columns_vec = (VEC) ALLOCDV(type_vec, 256);
 	columns_vec->vec_count = 256;
 	columns_vec->vec_object[0] = NULL;
 
@@ -643,7 +638,8 @@ void FMT_report( RPT report)
 	report_break(report->rpt_top_page, &columns_vec, false);
 	report_break(report->rpt_top_breaks, &columns_vec, false);
 
-	if (list = report->rpt_detail_line)
+	QLI_NOD list = report->rpt_detail_line;
+	if (list)
 		report_line(list, &columns_vec);
 
 	report_break(report->rpt_bottom_breaks, &columns_vec, true);
@@ -655,8 +651,10 @@ void FMT_report( RPT report)
 // Handle report name, if any
 
 	if (report->rpt_name) {
+		USHORT lengths[16];
+		TEXT* segments[16];
 		const USHORT n =
-			decompose_header(report->rpt_name, segments, (SSHORT*) lengths);
+			decompose_header(report->rpt_name, segments, lengths);
 		USHORT i;
 		for (i = 0; i < n; i++)
 			width = MAX(width, lengths[i] + 15);
@@ -680,9 +678,9 @@ void FMT_report( RPT report)
 }
 
 
-static int decompose_header(SCHAR* string,
+static USHORT decompose_header(SCHAR* string,
 							SCHAR** segments,
-							SSHORT* lengths)
+							USHORT* lengths)
 {
 /**************************************
  *
@@ -701,7 +699,7 @@ static int decompose_header(SCHAR* string,
 	if (!string)
 		return 0;
 
-	SSHORT n = 0;
+	USHORT n = 0;
 
 // Handle simple name first
 
@@ -711,7 +709,7 @@ static int decompose_header(SCHAR* string,
 			while (*string && *string != '_')
 				string++;
 			*lengths++ = string - *segments++;
-			n++;
+			++n;
 			if (*string == '_')
 				string++;
 		}
@@ -720,7 +718,7 @@ static int decompose_header(SCHAR* string,
 			*segments = string;
 			while (*string++ != c);
 			*lengths++ = string - *segments++ - 1;
-			n++;
+			++n;
 		}
 
 	return n;
@@ -821,7 +819,7 @@ static void format_index( ITM item, QLI_NOD field, const bool print_flag)
 }
 
 
-static TEXT *format_report( VEC columns_vec, USHORT width, USHORT * max_width)
+static TEXT* format_report( VEC columns_vec, USHORT width, USHORT* max_width)
 {
 /**************************************
  *
@@ -886,7 +884,7 @@ static TEXT *format_report( VEC columns_vec, USHORT width, USHORT * max_width)
 			if (item->itm_query_header) {
 				n =
 					decompose_header(item->itm_query_header, segments,
-									 (SSHORT*) lengths);
+									 lengths);
 				number_segments = MAX(n, number_segments);
 				for (j = 0, ptr = lengths; j < n; j++, ptr++)
 					item->itm_header_length =
@@ -978,7 +976,7 @@ static TEXT *format_report( VEC columns_vec, USHORT width, USHORT * max_width)
 					continue;
 				n =
 					decompose_header(item->itm_query_header, segments,
-									 (SSHORT*) lengths);
+									 lengths);
 				SSHORT segment = j - (number_segments - n);
 				if (segment < 0)
 					continue;
@@ -1024,13 +1022,8 @@ static void format_value( ITM item, int flags)
  * Functional description
  *
  **************************************/
-	QLI_NOD node;
-	DSC *desc;
-	PICS picture;
-	QLI_FLD field;
-
-	node = item->itm_value;
-	desc = &node->nod_desc;
+	QLI_NOD node = item->itm_value;
+	dsc* desc = &node->nod_desc;
 	item->itm_dtype = desc->dsc_dtype;
 	item->itm_sub_type = desc->dsc_sub_type;
 
@@ -1039,18 +1032,19 @@ static void format_value( ITM item, int flags)
 		if (node->nod_type == nod_reference)
 			node = node->nod_arg[0];
 		if (node->nod_type == nod_field) {
-			field = (QLI_FLD) node->nod_arg[e_fld_field];
+			const qli_fld* field = (QLI_FLD) node->nod_arg[e_fld_field];
 			if (field->fld_segment_length)
 				item->itm_print_length = field->fld_segment_length;
 		}
 	}
 	else {
-		item->itm_picture = picture =
-			PIC_analyze(item->itm_edit_string, desc);
+		PICS picture = PIC_analyze(item->itm_edit_string, desc);
+		item->itm_picture = picture;
 
 		if (node->nod_type == nod_reference)
 			node = node->nod_arg[0];
 
+		const qli_fld* field;
 		if (node->nod_type == nod_field) {
 			field = (QLI_FLD) node->nod_arg[e_fld_field];
 			if ((field->fld_flags & FLD_array) && !node->nod_arg[e_fld_subs])
@@ -1061,7 +1055,9 @@ static void format_value( ITM item, int flags)
 		if (!(item->itm_picture->pic_missing) &&
 			(node->nod_type == nod_field) &&
 			(field = (QLI_FLD) node->nod_arg[e_fld_field]) && field->fld_missing)
+		{
 			PIC_missing(field->fld_missing, picture);
+		}
 		item->itm_print_length = picture->pic_length;
 		picture->pic_flags |= flags;
 	}
@@ -1110,7 +1106,7 @@ static TEXT* get_buffer(STR* str, TEXT* ptr, USHORT length)
 }
 
 
-static int match_expr( QLI_NOD node1, QLI_NOD node2)
+static bool match_expr(const qli_nod* node1, const qli_nod* node2)
 {
 /**************************************
  *
@@ -1122,12 +1118,11 @@ static int match_expr( QLI_NOD node1, QLI_NOD node2)
  *	Compare two nodes for equality of value.
  *
  **************************************/
-	QLI_NOD *ptr1, *ptr2, *end;
 
 // If either is missing, they can't match.
 
 	if (!node1 || !node2)
-		return FALSE;
+		return false;
 
 	if (node1->nod_type == nod_reference)
 		node1 = node1->nod_arg[0];
@@ -1138,7 +1133,7 @@ static int match_expr( QLI_NOD node1, QLI_NOD node2)
 // A constant more or less matches anything
 
 	if (node1->nod_type == nod_constant)
-		return TRUE;
+		return true;
 
 // Hasn't matched yet.  Check for statistical expression
 
@@ -1184,22 +1179,28 @@ static int match_expr( QLI_NOD node1, QLI_NOD node2)
 		if (node1->nod_type == nod_field) {
 			if (node1->nod_arg[e_fld_field] != node2->nod_arg[e_fld_field] ||
 				node1->nod_arg[e_fld_context] !=
-				node2->nod_arg[e_fld_context]) return FALSE;
-			return TRUE;
+				node2->nod_arg[e_fld_context])
+			{
+				return false;
+			}
+			return true;
 		}
-		ptr1 = node1->nod_arg;
-		ptr2 = node2->nod_arg;
-		for (end = ptr1 + node1->nod_count; ptr1 < end; ptr1++, ptr2++)
+		const qli_nod* const* ptr1 = node1->nod_arg;
+		const qli_nod* const* ptr2 = node2->nod_arg;
+		for (const qli_nod* const* end = ptr1 + node1->nod_count; ptr1 < end;
+			++ptr1, ++ptr2)
+		{
 			if (!match_expr(*ptr1, *ptr2))
-				return FALSE;
-		return TRUE;
+				return false;
+		}
+		return true;
 	}
 
-	return FALSE;
+	return false;
 }
 
 
-static void print_blobs( PRT print, ITM * first, ITM * last)
+static void print_blobs( PRT print, itm** first, itm** last)
 {
 /**************************************
  *
@@ -1211,14 +1212,14 @@ static void print_blobs( PRT print, ITM * first, ITM * last)
  *	Print any blobs still active in item list.
  *
  **************************************/
-	ITM *ptr, item;
-
 	if (QLI_abort)
 		return;
 
+	itm** ptr;
+	
 	USHORT length = 0;
 	for (ptr = first; ptr < last; ptr++) {
-		item = *ptr;
+		const itm* item = *ptr;
 		if (item->itm_dtype == dtype_blob && item->itm_stream)
 			length =
 				MAX(length,
@@ -1233,7 +1234,7 @@ static void print_blobs( PRT print, ITM * first, ITM * last)
 		TEXT* p = buffer;
 		bool do_line = false;
 		for (ptr = first; ptr < last; ptr++) {
-			item = *ptr;
+			itm* item = *ptr;
 			if (item->itm_dtype != dtype_blob || !item->itm_stream)
 				continue;
 			const TEXT* const end = buffer + item->itm_print_offset;
@@ -1254,7 +1255,7 @@ static void print_blobs( PRT print, ITM * first, ITM * last)
 }
 
 
-static int print_line( ITM item, TEXT ** ptr)
+static int print_line( itm* item, TEXT** ptr)
 {
 /**************************************
  *
@@ -1267,10 +1268,6 @@ static int print_line( ITM item, TEXT ** ptr)
  *	last thing printed.
  *
  **************************************/
-	USHORT length;
-	ISC_STATUS_ARRAY status_vector;
-	ISC_STATUS status;
-
 	EXEC_poll_abort();
 
 // If we're already at end of stream, there's nothing to do
@@ -1279,12 +1276,14 @@ static int print_line( ITM item, TEXT ** ptr)
 		return EOF;
 
 	TEXT* p = *ptr;
-	USHORT l = item->itm_print_length;
+	const USHORT l = item->itm_print_length;
 
-
-	if ((status = gds__get_segment(status_vector, &item->itm_stream, &length,
-								   l, p)) && status != gds_segment) {
-		long *null_status = 0;
+	USHORT length;
+	ISC_STATUS_ARRAY status_vector;
+	const ISC_STATUS status = gds__get_segment(status_vector, &item->itm_stream,
+						&length, l, p);
+	if (status && status != gds_segment) {
+		ISC_STATUS* null_status = 0;
 		gds__close_blob(null_status, &item->itm_stream);
 		if (status != gds_segstr_eof)
 			ERRQ_database_error(0, status_vector);
@@ -1309,7 +1308,7 @@ static int print_line( ITM item, TEXT ** ptr)
 }
 
 
-static void put_line( PRT print, TEXT ** ptr, TEXT * buffer, TEXT terminator)
+static void put_line( PRT print, TEXT** ptr, TEXT* buffer, TEXT terminator)
 {
 /**************************************
  *
@@ -1331,7 +1330,7 @@ static void put_line( PRT print, TEXT ** ptr, TEXT * buffer, TEXT terminator)
 }
 
 
-static void report_break( BRK control, VEC * columns_vec, const bool bottom_flag)
+static void report_break( BRK control, VEC* columns_vec, const bool bottom_flag)
 {
 /**************************************
  *
@@ -1361,7 +1360,7 @@ static void report_break( BRK control, VEC * columns_vec, const bool bottom_flag
 }
 
 
-static void report_item( ITM item, VEC * columns_vec, USHORT * col_ndx)
+static void report_item( ITM item, VEC* columns_vec, USHORT* col_ndx)
 {
 /**************************************
  *
@@ -1374,20 +1373,16 @@ static void report_item( ITM item, VEC * columns_vec, USHORT * col_ndx)
  *	someplace reasonable, stick it there.
  *
  **************************************/
-	ITM item2;
-	VEC columns;
-	LLS *col, *col_end, temp;
-	QLI_NOD node;
-	USHORT new_index;
-
 	if (item->itm_query_header && *item->itm_query_header == '-')
 		item->itm_query_header = NULL;
 
 // If it's a constant, dump it in the next logical column
 
-	columns = *columns_vec;
+	QLI_NOD node;
+	VEC columns = *columns_vec;
 	if (columns->vec_object[*col_ndx] &&
-		(node = item->itm_value) && node->nod_type == nod_constant) {
+		(node = item->itm_value) && node->nod_type == nod_constant)
+	{
 		LLS_PUSH(item, (LLS*) (columns->vec_object + *col_ndx));
 		return;
 	}
@@ -1396,11 +1391,11 @@ static void report_item( ITM item, VEC * columns_vec, USHORT * col_ndx)
    expression.  If we find one, the item beSLONGs in that column;
    otherwise, someplace else. */
 
-	col = (LLS *) (columns->vec_object + *col_ndx);
-	col_end = (LLS *) (columns->vec_object + columns->vec_count);
+	LLS* col = (LLS*) (columns->vec_object + *col_ndx);
+	LLS* const col_end = (LLS*) (columns->vec_object + columns->vec_count);
 	for (; col < col_end && *col; col++)
-		for (temp = *col; temp; temp = temp->lls_next) {
-			item2 = (ITM) temp->lls_object;
+		for (LLS temp = *col; temp; temp = temp->lls_next) {
+			ITM item2 = (ITM) temp->lls_object;
 			if (match_expr(item->itm_value, item2->itm_value)) {
 				LLS_PUSH(item, col);
 				*col_ndx = col - (LLS *) columns->vec_object;
@@ -1410,7 +1405,8 @@ static void report_item( ITM item, VEC * columns_vec, USHORT * col_ndx)
 
 // Didn't fit -- make a new logical column
 
-	*col_ndx = new_index = col - (LLS *) columns->vec_object;
+	const USHORT new_index = col - (LLS *) columns->vec_object;
+	*col_ndx = new_index;
 	if (new_index >= columns->vec_count) {
 		ALLQ_extend((BLK*) columns_vec, new_index + 16);
 		(*columns_vec)->vec_count = new_index + 16;
@@ -1432,13 +1428,10 @@ static void report_line( QLI_NOD list, VEC * columns_vec)
  *	Process a report line.
  *
  **************************************/
-	ITM item, *ptr, *end;
-	USHORT col_ndx;
-
-	col_ndx = 0;
-	for (ptr = (ITM *) list->nod_arg, end = ptr + list->nod_count; ptr < end;
-		 ptr++) {
-		item = *ptr;
+	USHORT col_ndx = 0;
+	ITM* ptr = (ITM *) list->nod_arg;
+	for (ITM* const end = ptr + list->nod_count; ptr < end; ptr++) {
+		ITM item = *ptr;
 		report_item(item, columns_vec, &col_ndx);
 		switch (item->itm_type) {
 		case item_skip:

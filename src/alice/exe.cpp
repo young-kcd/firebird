@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.19 2003-09-25 11:48:57 robocop Exp $
+//	$Id: exe.cpp,v 1.20 2003-10-16 08:50:54 robocop Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -136,7 +136,7 @@ int EXE_action(TEXT * database, ULONG switches)
 //
 //
 
-int EXE_two_phase(TEXT * database, ULONG switches)
+int EXE_two_phase(TEXT* database, ULONG switches)
 {
 	UCHAR dpb[128];
 	TGBL tdgbl = GET_THREAD_DATA;
@@ -182,9 +182,8 @@ int EXE_two_phase(TEXT * database, ULONG switches)
 //  based on the various switches
 //
 
-static USHORT build_dpb(UCHAR * dpb, ULONG switches)
+static USHORT build_dpb(UCHAR* dpb, ULONG switches)
 {
-	TEXT *q;
 	TGBL tdgbl = GET_THREAD_DATA;
 
 	UCHAR* dpb2 = dpb;
@@ -228,7 +227,7 @@ static USHORT build_dpb(UCHAR * dpb, ULONG switches)
 	else if (switches & sw_begin_log) {
 		*dpb2++ = gds_dpb_begin_log;
 		*dpb2++ = strlen(tdgbl->ALICE_data.ua_log_file);
-		for (q = tdgbl->ALICE_data.ua_log_file; *q;)
+		for (const char* q = tdgbl->ALICE_data.ua_log_file; *q;)
 			*dpb2++ = *q++;
 	}
 	else if (switches & sw_buffers) {
@@ -307,7 +306,7 @@ static USHORT build_dpb(UCHAR * dpb, ULONG switches)
 	if (tdgbl->ALICE_data.ua_user) {
 		*dpb2++ = gds_dpb_user_name;
 		*dpb2++ = strlen(reinterpret_cast<const char*>(tdgbl->ALICE_data.ua_user));
-		for (q = reinterpret_cast<TEXT*>(tdgbl->ALICE_data.ua_user); *q;)
+		for (const UCHAR* q = tdgbl->ALICE_data.ua_user; *q;)
 			*dpb2++ = *q++;
 	}
 
@@ -317,7 +316,7 @@ static USHORT build_dpb(UCHAR * dpb, ULONG switches)
 		else
 			*dpb2++ = gds_dpb_password_enc;
 		*dpb2++ = strlen(reinterpret_cast<const char*>(tdgbl->ALICE_data.ua_password));
-		for (q = reinterpret_cast<TEXT*>(tdgbl->ALICE_data.ua_password); *q;)
+		for (const UCHAR* q = tdgbl->ALICE_data.ua_password; *q;)
 			*dpb2++ = *q++;
 	}
 

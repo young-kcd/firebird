@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.69 2003-10-14 22:22:32 brodsom Exp $
+ * $Id: ddl.cpp,v 1.70 2003-10-16 08:50:56 robocop Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -103,12 +103,13 @@ static void create_view_triggers(DSQL_REQ, DSQL_NOD, DSQL_NOD);
 static void define_computed(DSQL_REQ, DSQL_NOD, DSQL_FLD, DSQL_NOD);
 static void define_constraint_trigger(DSQL_REQ, DSQL_NOD);
 static void define_database(DSQL_REQ);
-static void define_del_cascade_trg(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD, const char*, const char*);
-//static void define_del_default_trg(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD, TEXT *, TEXT *);
+static void define_del_cascade_trg(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD,
+	const char*, const char*);
+//static void define_del_default_trg(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD, TEXT*, TEXT*);
 static void define_dimensions(DSQL_REQ, DSQL_FLD);
 static void define_domain(DSQL_REQ);
 static void define_exception(DSQL_REQ, NOD_TYPE);
-static void define_field(DSQL_REQ, DSQL_NOD, SSHORT, STR);
+static void define_field(DSQL_REQ, DSQL_NOD, SSHORT, const str*);
 static void define_filter(DSQL_REQ);
 static void define_generator(DSQL_REQ);
 static void define_role(DSQL_REQ);
@@ -119,13 +120,16 @@ static DSQL_NOD define_insert_action(DSQL_REQ);
 static void define_procedure(DSQL_REQ, NOD_TYPE);
 static void define_rel_constraint(DSQL_REQ, DSQL_NOD);
 static void define_relation(DSQL_REQ);
-static void define_set_null_trg(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD, const char*, const char*, bool);
-static void define_set_default_trg(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD, const char*, const char*, bool);
+static void define_set_null_trg(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD,
+	const char*, const char*, bool);
+static void define_set_default_trg(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD,
+	const char*, const char*, bool);
 static void define_shadow(DSQL_REQ);
 static void define_trigger(DSQL_REQ, DSQL_NOD);
 static void define_udf(DSQL_REQ);
-static void define_update_action(DSQL_REQ, DSQL_NOD *, DSQL_NOD *);
-static void define_upd_cascade_trg(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD, const char*, const char*);
+static void define_update_action(DSQL_REQ, DSQL_NOD*, DSQL_NOD*);
+static void define_upd_cascade_trg(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD,
+	const char*, const char*);
 static void define_view(DSQL_REQ, NOD_TYPE);
 static void define_view_trigger(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD);
 static void delete_procedure(DSQL_REQ, DSQL_NOD, bool);
@@ -133,17 +137,21 @@ static void delete_relation_view(DSQL_REQ, DSQL_NOD, bool);
 static void foreign_key(DSQL_REQ, DSQL_NOD, const char* index_name);
 static void generate_dyn(DSQL_REQ, DSQL_NOD);
 static void grant_revoke(DSQL_REQ);
-static void make_index(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD, const char*, const char*);
-static void make_index_trg_ref_int(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD, const char*, const char*);
+static void make_index(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD, const char*,
+	const char*);
+static void make_index_trg_ref_int(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD,
+	const char*, const char*);
 static void modify_database(DSQL_REQ);
 static void modify_domain(DSQL_REQ);
-static void modify_field(DSQL_REQ, DSQL_NOD, SSHORT, STR);
+static void modify_field(DSQL_REQ, DSQL_NOD, SSHORT, const str*);
 static void modify_index(DSQL_REQ);
-static void modify_privilege(DSQL_REQ, NOD_TYPE, SSHORT, UCHAR *, DSQL_NOD, DSQL_NOD, STR);
-static SCHAR modify_privileges(DSQL_REQ, NOD_TYPE, SSHORT, DSQL_NOD, DSQL_NOD, DSQL_NOD);
+static void modify_privilege(DSQL_REQ, NOD_TYPE, SSHORT, const UCHAR*, DSQL_NOD,
+	DSQL_NOD, const str*);
+static SCHAR modify_privileges(DSQL_REQ, NOD_TYPE, SSHORT, DSQL_NOD, DSQL_NOD,
+	DSQL_NOD);
 static void modify_relation(DSQL_REQ);
 static void process_role_nm_list(DSQL_REQ, SSHORT, DSQL_NOD, DSQL_NOD, NOD_TYPE);
-static void put_descriptor(DSQL_REQ, DSC *);
+static void put_descriptor(DSQL_REQ, const dsc*);
 static void put_dtype(DSQL_REQ, const dsql_fld*, bool);
 static void put_field(DSQL_REQ, DSQL_FLD, bool);
 static void put_local_variable(DSQL_REQ, VAR, DSQL_NOD);
@@ -151,10 +159,10 @@ static SSHORT put_local_variables(DSQL_REQ, DSQL_NOD, SSHORT);
 static void put_msg_field(DSQL_REQ, DSQL_FLD);
 static DSQL_NOD replace_field_names(DSQL_NOD, DSQL_NOD, DSQL_NOD, bool);
 static void reset_context_stack(DSQL_REQ);
-static void save_field(DSQL_REQ, SCHAR *);
-static void save_relation(DSQL_REQ, STR);
+static void save_field(DSQL_REQ, const SCHAR*);
+static void save_relation(DSQL_REQ, const str*);
 static void set_statistics(DSQL_REQ);
-static void stuff_default_blr(DSQL_REQ, TEXT *, USHORT);
+static void stuff_default_blr(DSQL_REQ, const TEXT*, USHORT);
 static void stuff_matching_blr(DSQL_REQ, DSQL_NOD, DSQL_NOD);
 static void stuff_trg_firing_cond(DSQL_REQ, DSQL_NOD);
 static void set_nod_value_attributes(DSQL_NOD, DSQL_FLD);
@@ -164,14 +172,15 @@ static void set_nod_value_attributes(DSQL_NOD, DSQL_FLD);
 #endif
 
 #ifdef DEV_BUILD
-static inline void BLKCHK(const void* p, USHORT type)
+static inline void BLKCHK(const void* p, const USHORT type)
 {
 	if (p && MemoryPool::blk_type(p) != type) {
 		ERRD_bugcheck("Invalid block type");
 	}
 }
 #else
-static inline void BLKCHK(const void* p, USHORT type){
+static inline void BLKCHK(const void* p, const USHORT type)
+{
 }
 #endif
 
@@ -184,9 +193,9 @@ enum trigger_type {
 	POST_ERASE_TRIGGER = 6
 };
 
-const char *OLD_CONTEXT		= "OLD";
-const char *NEW_CONTEXT		= "NEW";
-const char *TEMP_CONTEXT	= "TEMP";
+const char* const OLD_CONTEXT		= "OLD";
+const char* const NEW_CONTEXT		= "NEW";
+const char* const TEMP_CONTEXT		= "TEMP";
 
 const int DEFAULT_BUFFER	= 2048;
 
@@ -224,19 +233,19 @@ static const UCHAR nonnull_validation_blr[] = {
 	blr_eoc
 };
 
-static inline bool hasOldContext(int value)
+static inline bool hasOldContext(const int value)
 {
-	int val1 = ((value + 1) >> 1) & 3;
-	int val2 = ((value + 1) >> 3) & 3;
-	int val3 = ((value + 1) >> 5) & 3;
+	const int val1 = ((value + 1) >> 1) & 3;
+	const int val2 = ((value + 1) >> 3) & 3;
+	const int val3 = ((value + 1) >> 5) & 3;
 	return (val1 && val1 != 1) || (val2 && val2 != 1) || (val3 && val3 != 1);
 }
 
-static inline bool hasNewContext(int value)
+static inline bool hasNewContext(const int value)
 {
-	int val1 = ((value + 1) >> 1) & 3;
-	int val2 = ((value + 1) >> 3) & 3;
-	int val3 = ((value + 1) >> 5) & 3;
+	const int val1 = ((value + 1) >> 1) & 3;
+	const int val2 = ((value + 1) >> 3) & 3;
+	const int val3 = ((value + 1) >> 5) & 3;
 	return (val1 && val1 != 3) || (val2 && val2 != 3) || (val3 && val3 != 3);
 }
 
@@ -280,7 +289,7 @@ void DDL_execute(DSQL_REQ request)
 
 	// for delete & modify, get rid of the cached relation metadata
 
-	STR string = NULL;
+	const str* string = NULL;
 	DSQL_NOD relation_node;
 	switch (request->req_ddl_node->nod_type)
 	{
@@ -303,19 +312,19 @@ void DDL_execute(DSQL_REQ request)
 
 	// for delete & modify, get rid of the cached procedure metadata
 
-	if ((request->req_ddl_node->nod_type == nod_mod_procedure) ||
-	    (request->req_ddl_node->nod_type == nod_del_procedure) ||
-	    (request->req_ddl_node->nod_type == nod_replace_procedure) ||
-	    (request->req_ddl_node->nod_type == nod_redef_procedure))
+	const NOD_TYPE temp_type = request->req_ddl_node->nod_type;
+	if ((temp_type == nod_mod_procedure) ||
+	    (temp_type == nod_del_procedure) ||
+	    (temp_type == nod_replace_procedure) ||
+	    (temp_type == nod_redef_procedure))
 	{
-
 		string = (STR) request->req_ddl_node->nod_arg[e_prc_name];
 		METD_drop_procedure(request, string);
 	}
 
 /* Signal UDF for obsolescence */
 
-	if (request->req_ddl_node->nod_type == nod_del_udf) {
+	if (temp_type == nod_del_udf) {
 		string = (STR) request->req_ddl_node->nod_arg [e_udf_name];
 		METD_drop_function (request, string);
 	}
@@ -404,7 +413,7 @@ void DDL_put_field_dtype(DSQL_REQ request, const dsql_fld* field, bool use_subty
 // wrapper that sets the last parameter to false to indicate
 // we are creating a field, not modifying one.
 //
-void DDL_resolve_intl_type(DSQL_REQ request, DSQL_FLD field, STR collation_name)
+void DDL_resolve_intl_type(DSQL_REQ request, DSQL_FLD field, const str* collation_name)
 {
     DDL_resolve_intl_type2 (request, field, collation_name, false);
 }
@@ -413,7 +422,7 @@ void DDL_resolve_intl_type(DSQL_REQ request, DSQL_FLD field, STR collation_name)
 
 void DDL_resolve_intl_type2(DSQL_REQ request, 
                             DSQL_FLD field, 
-                            STR      collation_name, 
+                            const str* collation_name,
                             bool     modifying)
 {
 /**************************************
@@ -440,8 +449,6 @@ void DDL_resolve_intl_type2(DSQL_REQ request,
  *	lengths of CHARACTERs, not BYTES.
  *
  **************************************/
-
-	INTLSYM resolved_type;
 
 	if ((field->fld_dtype > dtype_any_text) && field->fld_dtype != dtype_blob)
 	{
@@ -524,7 +531,8 @@ void DDL_resolve_intl_type2(DSQL_REQ request,
         while (afield) {
             /* The first test is redundant. */
             if (afield != field && afield->fld_relation
-                && !strcmp (afield->fld_name, field->fld_name)) {
+                && !strcmp (afield->fld_name, field->fld_name))
+			{
                 assert (afield->fld_relation == relation || !relation);
                 break;
             }
@@ -555,7 +563,7 @@ void DDL_resolve_intl_type2(DSQL_REQ request,
 
 		// Attach the database default character set, if not otherwise specified
 
-		STR dfl_charset = METD_get_default_charset(request);
+		const str* dfl_charset = METD_get_default_charset(request);
 		if (dfl_charset)
 		{
 			field->fld_character_set = (DSQL_NOD) dfl_charset;
@@ -585,7 +593,8 @@ void DDL_resolve_intl_type2(DSQL_REQ request,
 
 
 // Find an intlsym for any specified character set name & collation name
-
+	INTLSYM resolved_type;
+	
 	if (charset_name)
 	{
 		INTLSYM resolved_charset =
@@ -663,11 +672,10 @@ static void assign_field_length (
  *
  **************************************/
 
-
 	if (field->fld_character_length)
 	{
-		ULONG field_length = (ULONG) (bytes_per_char * 
-            field->fld_character_length);
+		ULONG field_length = (ULONG) bytes_per_char * 
+            field->fld_character_length;
 
 		if (field->fld_dtype == dtype_varying) {
 			field_length += sizeof(USHORT);
@@ -712,7 +720,7 @@ static bool check_array_or_blob(DSQL_NOD node)
  **************************************
  *
  * Functional description
- *	return TRUE if there is an array or blob in expression, else FALSE.
+ *	return true if there is an array or blob in expression, else false.
  *	Array and blob expressions have limited usefullness in a computed
  *	expression - so we detect it here to report a syntax error at
  *	definition time, rather than a runtime error at execution.
@@ -922,8 +930,6 @@ static void create_view_triggers(DSQL_REQ request, DSQL_NOD element, DSQL_NOD it
  *  
  **************************************/
 
-	DSQL_NOD temp, base_relation, base_and_node;
-
 	DSQL_NOD ddl_node = request->req_ddl_node;
 
 	if (!(element->nod_arg[e_cnstr_table])) {
@@ -947,11 +953,14 @@ static void create_view_triggers(DSQL_REQ request, DSQL_NOD element, DSQL_NOD it
 
 	element->nod_arg[e_cnstr_type] =
 		MAKE_constant((STR) PRE_MODIFY_TRIGGER, CONSTANT_SLONG);
+		
+	DSQL_NOD base_relation, base_and_node;
 	define_update_action(request, &base_and_node, &base_relation);
 
 	DSQL_NOD rse = MAKE_node(nod_rse, e_rse_count);
 	rse->nod_arg[e_rse_boolean] = base_and_node;
-	rse->nod_arg[e_rse_streams] = temp = MAKE_node(nod_list, 1);
+	DSQL_NOD temp = MAKE_node(nod_list, 1);
+	rse->nod_arg[e_rse_streams] = temp;
 	temp->nod_arg[0] = base_relation;
 	define_view_trigger(request, element, rse, items);
 
@@ -994,8 +1003,7 @@ static void define_computed(DSQL_REQ request,
 		reset_context_stack(request);
 	}
 
-	DSC save_desc;
-
+	dsc save_desc;
 	// Save the size of the field if it is specified
 	save_desc.dsc_dtype = 0;
 
@@ -1034,7 +1042,7 @@ static void define_computed(DSQL_REQ request,
 
 	// try to calculate size of the computed field. The calculated size
 	// may be ignored, but it will catch self references
-	DSC desc;
+	dsc desc;
 	MAKE_desc(&desc, input);
 
 	if (save_desc.dsc_dtype) {
@@ -1055,7 +1063,7 @@ static void define_computed(DSQL_REQ request,
 	reset_context_stack(request);
 
 	// generate the source text
-	STR source = (STR) node->nod_arg[e_cmp_text];
+	const str* source = (STR) node->nod_arg[e_cmp_text];
 	assert(source->str_length <= MAX_USHORT);
 	request->append_string(	gds_dyn_fld_computed_source,
 							source->str_data,
@@ -1089,7 +1097,7 @@ static void define_constraint_trigger(DSQL_REQ request, DSQL_NOD node)
 		return;
 	}
 
-	STR trigger_name = (STR) node->nod_arg[e_cnstr_name];
+	const str* trigger_name = (STR) node->nod_arg[e_cnstr_name];
 
 	assert(trigger_name->str_length <= MAX_USHORT);
 
@@ -1098,7 +1106,7 @@ static void define_constraint_trigger(DSQL_REQ request, DSQL_NOD node)
 							(USHORT) trigger_name->str_length);
 
 	DSQL_NOD relation_node = node->nod_arg[e_cnstr_table];
-	STR relation_name = (STR) relation_node->nod_arg[e_rln_name];
+	const str* relation_name = (STR) relation_node->nod_arg[e_rln_name];
 
 	assert(trigger_name->str_length <= MAX_USHORT);
 
@@ -1106,7 +1114,7 @@ static void define_constraint_trigger(DSQL_REQ request, DSQL_NOD node)
 							relation_name->str_data,
 							(USHORT) relation_name->str_length);
 
-	STR source = (STR) node->nod_arg[e_cnstr_source];
+	const str* source = (STR) node->nod_arg[e_cnstr_source];
 	if (source)
 	{
 		assert(source->str_length <= MAX_USHORT);
@@ -1130,7 +1138,7 @@ static void define_constraint_trigger(DSQL_REQ request, DSQL_NOD node)
 
 	request->append_uchar(gds_dyn_sql_object);
 
-	STR message = (STR) node->nod_arg[e_cnstr_message];
+	const str* message = (STR) node->nod_arg[e_cnstr_message];
 	if (message)
 	{
 		request->append_number(gds_dyn_def_trigger_msg, 0);
@@ -1159,7 +1167,7 @@ static void define_constraint_trigger(DSQL_REQ request, DSQL_NOD node)
 		}
 
         // CVC: check_constraint() is the only caller and it always receives 
-        // FALSE for the delete_trigger_required flag. Hence, I thought I could
+        // false for the delete_trigger_required flag. Hence, I thought I could
         // disable the OLD context here to avoid "ambiguous field name" errors
         // in pre_store and pre_modify triggers. Also, what sense can I make 
         // from NEW in pre_delete? However, we clash at JRD with "no current 
@@ -1239,27 +1247,23 @@ static void define_database( DSQL_REQ request)
  *	options.
  *
  **************************************/
-	DSQL_NOD ddl_node, elements, element, *ptr, *end;
-	STR name;
+	DSQL_NOD *ptr, *end;
 	SLONG start = 0;
-	FIL file;
-	SSHORT number = 0;
-	SLONG temp_long;
-	SSHORT temp_short;
 
-	ddl_node = request->req_ddl_node;
+	DSQL_NOD ddl_node = request->req_ddl_node;
 
 	request->append_uchar(gds_dyn_mod_database);
 /*
 request->append_number(gds_dyn_rel_sql_protection, 1);
 */
 
-	elements = ddl_node->nod_arg[e_database_initial_desc];
+	DSQL_NOD elements = ddl_node->nod_arg[e_database_initial_desc];
 
 	if (elements)
 		for (ptr = elements->nod_arg, end = ptr + elements->nod_count;
-			 ptr < end; ptr++) {
-			element = *ptr;
+			 ptr < end; ptr++)
+		{
+			const dsql_nod* element = *ptr;
 
 			switch (element->nod_type) {
 			case nod_file_length:
@@ -1270,14 +1274,19 @@ request->append_number(gds_dyn_rel_sql_protection, 1);
 				break;
 			}
 		}
-
+		
+	const str* name;
+	const fil* file;
+	SLONG temp_long;
+	SSHORT temp_short;
+	SSHORT number = 0;
 	elements = ddl_node->nod_arg[e_database_rem_desc];
 	if (elements)
 	{
 		for (ptr = elements->nod_arg, end = ptr + elements->nod_count;
 			 ptr < end; ptr++)
 		{
-			element = *ptr;
+			const dsql_nod* element = *ptr;
 
 			switch (element->nod_type) {
 			case nod_difference_file:
@@ -1471,7 +1480,7 @@ static void define_set_default_trg(	DSQL_REQ    request,
 
 	do {
 		/* for every column in the foreign key .... */
-		STR for_key_fld_name_str = (STR) (*for_key_flds)->nod_arg[1];
+		const str* for_key_fld_name_str = (STR) (*for_key_flds)->nod_arg[1];
 
 		request->append_uchar(blr_assignment);
 
@@ -1520,17 +1529,17 @@ static void define_set_default_trg(	DSQL_REQ    request,
 			{
 				/* case (1-a) above: there is a col. level default */
 				GEN_expr(request, default_node);
-				found_default = TRUE;
+				found_default = true;
 				search_for_default = false;
 			}
 			else
 			{
-				TEXT* domain_name;
-				STR   domain_name_str;
-				DSQL_NOD   domain_node;
+				const TEXT* domain_name;
+				const str* domain_name_str;
 				DSQL_NOD   tmp_node;
 
-				if (!(domain_node = elem->nod_arg[e_dfl_domain]) ||
+				DSQL_NOD domain_node = elem->nod_arg[e_dfl_domain];
+				if (!domain_node ||
 					!(tmp_node = domain_node->nod_arg[e_dom_name]) ||
 					!(domain_name_str = (STR) tmp_node->nod_arg[e_fln_name])
 					|| !(domain_name = domain_name_str->str_data))
@@ -1616,7 +1625,7 @@ static void define_dimensions( DSQL_REQ request, DSQL_FLD field)
  **************************************/
 
 	DSQL_NOD elements = field->fld_ranges;
-	USHORT dims = elements->nod_count / 2;
+	const USHORT dims = elements->nod_count / 2;
 
 	if (dims > MAX_ARRAY_DIMENSIONS)
 	{
@@ -1685,7 +1694,7 @@ static void define_domain(DSQL_REQ request)
 		GEN_expr(request, node);
 		request->end_blr();
 
-		STR string = (STR) element->nod_arg[e_dom_default_source];
+		const str* string = (STR) element->nod_arg[e_dom_default_source];
 		if (string)
 		{
 			assert(string->str_length <= MAX_USHORT);
@@ -1736,7 +1745,7 @@ static void define_domain(DSQL_REQ request)
 					}
 					check_flag = true;
 
-					STR string = (STR) node1->nod_arg[e_cnstr_source];
+					const str* string = (STR) node1->nod_arg[e_cnstr_source];
 					if (string)
 					{
 						assert(string->str_length <= MAX_USHORT);
@@ -1792,12 +1801,9 @@ static void define_exception( DSQL_REQ request, NOD_TYPE op)
  *	Generate ddl to create an exception code.
  *
  **************************************/
-	DSQL_NOD ddl_node;
-	STR text, name;
-
-	ddl_node = request->req_ddl_node;
-	name = (STR) ddl_node->nod_arg[e_xcp_name];
-	text = (STR) ddl_node->nod_arg[e_xcp_text];
+	DSQL_NOD ddl_node = request->req_ddl_node;
+	const str* name = (STR) ddl_node->nod_arg[e_xcp_name];
+	const str* text = (STR) ddl_node->nod_arg[e_xcp_text];
 
 	if (op == nod_def_exception)
 		request->append_cstring(gds_dyn_def_exception, name->str_data);
@@ -1816,7 +1822,8 @@ static void define_exception( DSQL_REQ request, NOD_TYPE op)
 
 static void define_field(
 						 DSQL_REQ request,
-						 DSQL_NOD element, SSHORT position, STR relation_name)
+						 DSQL_NOD element, SSHORT position,
+						 const str* relation_name)
 {
 /**************************************
  *
@@ -1829,27 +1836,23 @@ static void define_field(
  *	table or an alter table statement.
  *
  **************************************/
-	DSQL_NOD domain_node, node, node1, *ptr;
-	DSQL_FLD field;
-	DSQL_REL relation;
-	STR string, domain_name;
-	bool cnstrt_flag = false;
-	DSQL_NOD computed_node;
-	bool default_null_flag = false;
+	DSQL_NOD node1;
 
-	field = (DSQL_FLD) element->nod_arg[e_dfl_field];
+	DSQL_FLD field = (DSQL_FLD) element->nod_arg[e_dfl_field];
 
 /* add the field to the relation being defined for parsing purposes */
 
-	if ((relation = request->req_relation) != NULL) {
+	DSQL_REL relation = request->req_relation;
+	if (relation != NULL) {
 		field->fld_next = relation->rel_fields;
 		relation->rel_fields = field;
 	}
 
-	if (domain_node = element->nod_arg[e_dfl_domain]) {
+	DSQL_NOD domain_node = element->nod_arg[e_dfl_domain];
+	if (domain_node) {
 		request->append_cstring(gds_dyn_def_local_fld, field->fld_name);
 		node1 = domain_node->nod_arg[e_dom_name];
-		domain_name = (STR) node1->nod_arg[e_fln_name];
+		const str* domain_name = (STR) node1->nod_arg[e_fln_name];
 		request->append_cstring(gds_dyn_fld_source, domain_name->str_data);
 
 		/* Get the domain information */
@@ -1880,7 +1883,7 @@ static void define_field(
 		if (element->nod_arg[e_dfl_computed])
 		{
 			field->fld_flags |= FLD_computed;
-			computed_node = element->nod_arg[e_dfl_computed];
+			DSQL_NOD computed_node = element->nod_arg[e_dfl_computed];
 			define_computed(request,
 							request->req_ddl_node->nod_arg[e_drl_name], field,
 							computed_node);
@@ -1894,9 +1897,11 @@ static void define_field(
 	if (position != -1)
 		request->append_number(gds_dyn_fld_position, position);
 
+	const str* string;
+	
 	// check for a default value
-
-	node = element->nod_arg[e_dfl_default];
+	bool default_null_flag = false;
+	DSQL_NOD node = element->nod_arg[e_dfl_default];
 	if (node)
 	{
 		node = PASS1_node(request, node, false);
@@ -1920,12 +1925,12 @@ static void define_field(
 		define_dimensions(request, field);
 	}
 
-/* check for constraints */
-
+	// check for constraints
+	bool cnstrt_flag = false;
 	if (node = element->nod_arg[e_dfl_constraint])
 	{
-		DSQL_NOD* end_ptr = node->nod_arg + node->nod_count;
-		for (ptr = node->nod_arg; ptr < end_ptr; ++ptr)
+		DSQL_NOD* const end_ptr = node->nod_arg + node->nod_count;
+		for (DSQL_NOD* ptr = node->nod_arg; ptr < end_ptr; ++ptr)
 		{
 			if ((*ptr)->nod_type == nod_rel_constraint)
 			{
@@ -2033,10 +2038,8 @@ static void define_filter( DSQL_REQ request)
  *	define a filter to the database.
  *
  **************************************/
-	DSQL_NOD *ptr, filter_node;
-
-	filter_node = request->req_ddl_node;
-	ptr = filter_node->nod_arg;
+	const dsql_nod* filter_node = request->req_ddl_node;
+	dsql_nod* const* ptr = filter_node->nod_arg;
 	request->append_cstring(gds_dyn_def_filter,
 				((STR) (ptr[e_filter_name]))->str_data);
 	request->append_number(gds_dyn_filter_in_subtype,
@@ -2065,7 +2068,7 @@ static void define_generator( DSQL_REQ request)
  *
  **************************************/
 
-	STR gen_name = (STR) request->req_ddl_node->nod_arg[e_gen_name];
+	const str* gen_name = (STR) request->req_ddl_node->nod_arg[e_gen_name];
 	request->append_cstring(gds_dyn_def_generator, gen_name->str_data);
 	request->append_uchar(gds_dyn_end);
 }
@@ -2083,16 +2086,13 @@ static void define_index(DSQL_REQ request)
  *	Generate ddl to create an index.
  *
  **************************************/
-	DSQL_NOD ddl_node, relation_node, field_list, *ptr, *end;
-	STR relation_name, index_name;
-
 	request->append_uchar(gds_dyn_begin);
 
-	ddl_node = request->req_ddl_node;
-	relation_node = (DSQL_NOD) ddl_node->nod_arg[e_idx_table];
-	relation_name = (STR) relation_node->nod_arg[e_rln_name];
-	field_list = ddl_node->nod_arg[e_idx_fields];
-	index_name = (STR) ddl_node->nod_arg[e_idx_name];
+	DSQL_NOD ddl_node = request->req_ddl_node;
+	DSQL_NOD relation_node = (DSQL_NOD) ddl_node->nod_arg[e_idx_table];
+	const str* relation_name = (STR) relation_node->nod_arg[e_rln_name];
+	DSQL_NOD field_list = ddl_node->nod_arg[e_idx_fields];
+	const str* index_name = (STR) ddl_node->nod_arg[e_idx_name];
 
 	request->append_cstring(gds_dyn_def_idx, index_name->str_data);
 	request->append_cstring(gds_dyn_rel_name, relation_name->str_data);
@@ -2101,10 +2101,13 @@ static void define_index(DSQL_REQ request)
    unless we have a computation, in which case generate an expression index */
 
 	if (field_list->nod_type == nod_list)
-		for (ptr = field_list->nod_arg, end = ptr + field_list->nod_count;
-			 ptr < end; ptr++)
+	{
+	    DSQL_NOD* ptr = field_list->nod_arg;
+	    DSQL_NOD* const end = ptr + field_list->nod_count;
+		for (; ptr < end; ptr++)
 			request->append_cstring(gds_dyn_fld_name,
 						((STR) (*ptr)->nod_arg[1])->str_data);
+	}
 #ifdef EXPRESSION_INDICES
 	else if (field_list->nod_type == nod_def_computed)
 		define_computed(request, relation_node, NULL, field_list);
@@ -2140,15 +2143,14 @@ static DSQL_NOD define_insert_action( DSQL_REQ request)
  *	base relation.
  *
  **************************************/
-	DSQL_NOD ddl_node, action_node, insert_node;
-	DSQL_NOD select_node, select_expr, from_list, relation_node;
+	DSQL_NOD select_node, select_expr, from_list;
 	DSQL_NOD fields_node, values_node, field_node, value_node;
 	DSQL_NOD *ptr, *end, *ptr2, *end2;
 	DLLS field_stack, value_stack;
 	DSQL_REL relation;
 	DSQL_FLD field;
 
-	ddl_node = request->req_ddl_node;
+	DSQL_NOD ddl_node = request->req_ddl_node;
 
 /* check whether this is an updatable view definition */
 
@@ -2165,13 +2167,13 @@ static DSQL_NOD define_insert_action( DSQL_REQ request)
 
 /* make up an action node consisting of a list of 1 insert statement */
 
-	action_node = MAKE_node(nod_list, (int) 1);
-	action_node->nod_arg[0] = insert_node =
-		MAKE_node(nod_insert, (int) e_ins_count);
+	DSQL_NOD action_node = MAKE_node(nod_list, (int) 1);
+	DSQL_NOD insert_node = MAKE_node(nod_insert, (int) e_ins_count);
+	action_node->nod_arg[0] = insert_node;
 
 /* use the relation referenced in the select statement to insert into */
 
-	relation_node = MAKE_node(nod_relation_name, (int) e_rln_count);
+	DSQL_NOD relation_node = MAKE_node(nod_relation_name, (int) e_rln_count);
 	insert_node->nod_arg[e_ins_relation] = relation_node;
 	relation_node->nod_arg[e_rln_name] =
 		from_list->nod_arg[0]->nod_arg[e_rln_name];
@@ -2261,7 +2263,7 @@ static void define_procedure( DSQL_REQ request, NOD_TYPE op)
 	SSHORT outputs = 0;
 	SSHORT locals  = 0;
 	DSQL_NOD procedure_node = request->req_ddl_node;
-	STR procedure_name = (STR) procedure_node->nod_arg[e_prc_name];
+	const str* procedure_name = (STR) procedure_node->nod_arg[e_prc_name];
 
 	if (op == nod_replace_procedure)
 	{
@@ -2305,7 +2307,7 @@ static void define_procedure( DSQL_REQ request, NOD_TYPE op)
 		}
 	}
 
-	STR source = (STR) procedure_node->nod_arg[e_prc_source];
+	const str* source = (STR) procedure_node->nod_arg[e_prc_source];
 	if (source)
 	{
 		assert(source->str_length <= MAX_USHORT);
@@ -2481,19 +2483,26 @@ static void define_procedure( DSQL_REQ request, NOD_TYPE op)
 //
 static void define_rel_constraint( DSQL_REQ request, DSQL_NOD element)
 {
-	STR         string          = (STR) element->nod_arg[e_rct_name];
+	const str* string           = (STR) element->nod_arg[e_rct_name];
 	const char* constraint_name = string ? string->str_data : 0;
 
 	request->append_cstring(gds_dyn_rel_constraint, constraint_name);
 
 	DSQL_NOD node = element->nod_arg[e_rct_type];
 
-	if (node->nod_type == nod_unique || node->nod_type == nod_primary) {
+	switch(node->nod_type) {
+	case nod_unique:
+	case nod_primary:
 		make_index(request, node, node->nod_arg[0], 0, 0, constraint_name);
-	} else if (node->nod_type == nod_foreign) {
+		break;
+	case nod_foreign:
 		foreign_key(request, node, constraint_name);
-	} else if (node->nod_type == nod_def_constraint) {
-		check_constraint(request, node, false /* No delete trigger */ );
+		break;
+	case nod_def_constraint:
+		check_constraint(request, node, false); // false = No delete trigger
+		break;
+	default:   // silence compiler
+	    break;
 	}
 }
 
@@ -2511,16 +2520,13 @@ static void define_relation( DSQL_REQ request)
  *	global fields for the local fields.
  *
  **************************************/
-	DSQL_NOD ddl_node, elements, element, *ptr, *end, relation_node;
-	STR relation_name, external_file;
-	SSHORT position;
+	DSQL_NOD ddl_node = request->req_ddl_node;
 
-	ddl_node = request->req_ddl_node;
-
-	relation_node = ddl_node->nod_arg[e_drl_name];
-	relation_name = (STR) relation_node->nod_arg[e_rln_name];
+	DSQL_NOD relation_node = ddl_node->nod_arg[e_drl_name];
+	const str* relation_name = (STR) relation_node->nod_arg[e_rln_name];
 	request->append_cstring(gds_dyn_def_rel, relation_name->str_data);
-	if (external_file = (STR) ddl_node->nod_arg[e_drl_ext_file])
+	const str* external_file = (STR) ddl_node->nod_arg[e_drl_ext_file];
+	if (external_file)
 	{
 		request->append_cstring(gds_dyn_rel_ext_file, external_file->str_data);
 	}
@@ -2529,14 +2535,17 @@ static void define_relation( DSQL_REQ request)
 
 /* now do the actual metadata definition */
 
-	elements = ddl_node->nod_arg[e_drl_elements];
-	for (ptr = elements->nod_arg, end = ptr + elements->nod_count, position =
-		 0; ptr < end; ptr++) {
-		element = *ptr;
+	DSQL_NOD elements = ddl_node->nod_arg[e_drl_elements];
+	SSHORT position = 0;
+	DSQL_NOD* ptr = elements->nod_arg;
+	for (DSQL_NOD* const end = ptr + elements->nod_count;
+		ptr < end; ptr++)
+	{
+		dsql_nod* element = *ptr;
 		switch (element->nod_type) {
 		case nod_def_field:
 			define_field(request, element, position, relation_name);
-			position++;
+			++position;
 			break;
 
 		case nod_rel_constraint:
@@ -2557,7 +2566,7 @@ static void define_relation( DSQL_REQ request)
 //
 static void define_role(DSQL_REQ request)
 {
-	STR gen_name = (STR) request->req_ddl_node->nod_arg[e_gen_name];
+	const str* gen_name = (STR) request->req_ddl_node->nod_arg[e_gen_name];
 	request->append_cstring(isc_dyn_def_sql_role, gen_name->str_data);
 	request->append_uchar(gds_dyn_end);
 }
@@ -2581,7 +2590,7 @@ static void define_set_null_trg(DSQL_REQ    request,
  *	define "on delete/update set null" trigger (for referential integrity)
  *      The trigger blr is the same for both the delete and update
  *      cases. Only difference is its TRIGGER_TYPE (ON DELETE or ON UPDATE)
- *      The on_upd_trg parameter == TRUE is an update trigger.
+ *      The on_upd_trg parameter == true is an update trigger.
  *
  *****************************************************/
 
@@ -2603,7 +2612,7 @@ static void define_set_null_trg(DSQL_REQ    request,
 	DSQL_NOD*   for_key_flds = for_columns->nod_arg;
 
 	do {
-		STR for_key_fld_name_str = (STR) (*for_key_flds)->nod_arg[1];
+		const str* for_key_fld_name_str = (STR) (*for_key_flds)->nod_arg[1];
 
 		request->append_uchar(blr_assignment);
 		request->append_uchar(blr_null);
@@ -2698,7 +2707,7 @@ static void define_shadow(DSQL_REQ request)
 //
 static void define_trigger( DSQL_REQ request, DSQL_NOD node)
 {
-	STR relation_name;
+	const str* relation_name;
 	DSQL_NOD temp, constant, relation_node;
 	USHORT trig_type;
 
@@ -2709,7 +2718,7 @@ static void define_trigger( DSQL_REQ request, DSQL_NOD node)
 
 	request->req_ddl_node = node;
 
-	STR trigger_name = (STR) node->nod_arg[e_trg_name];
+	const str* trigger_name = (STR) node->nod_arg[e_trg_name];
 
 	if (node->nod_type == nod_replace_trigger)
 	{
@@ -2771,7 +2780,7 @@ static void define_trigger( DSQL_REQ request, DSQL_NOD node)
 		}
 	}
 
-	STR source = (STR) node->nod_arg[e_trg_source];
+	const str* source = (STR) node->nod_arg[e_trg_source];
 	DSQL_NOD actions = (node->nod_arg[e_trg_actions]) ?
 		node->nod_arg[e_trg_actions]->nod_arg[1] : NULL;
 
@@ -2879,7 +2888,7 @@ static void define_trigger( DSQL_REQ request, DSQL_NOD node)
 			}
 			else
 			{
-				STR message_text = (STR) message->nod_arg[e_msg_text];
+				const str* message_text = (STR) message->nod_arg[e_msg_text];
 				if (message->nod_type == nod_def_trigger_msg) {
 					request->append_number(gds_dyn_def_trigger_msg, number);
 				} else {
@@ -2910,24 +2919,23 @@ static void define_udf( DSQL_REQ request)
  *	define a udf to the database.
  *
  **************************************/
-	DSQL_NOD *end, *ret_val_ptr, *param_node;
-	DSQL_FLD field;
+	DSQL_NOD* end;
 	SSHORT position, blob_position;
 
 	DSQL_NOD  udf_node = request->req_ddl_node;
 	DSQL_NOD  arguments = udf_node->nod_arg[e_udf_args];
 	DSQL_NOD* ptr = udf_node->nod_arg;
 	const char* udf_name = ((STR) (ptr[e_udf_name]))->str_data;
-	const STR func_entry_point_name = reinterpret_cast<STR>(ptr[e_udf_entry_pt]);
-	const STR func_module_name      = reinterpret_cast<STR>(ptr[e_udf_module]);
+	const str* func_entry_point_name = reinterpret_cast<STR>(ptr[e_udf_entry_pt]);
+	const str* func_module_name      = reinterpret_cast<STR>(ptr[e_udf_module]);
 	request->append_cstring(gds_dyn_def_function, udf_name);
 	request->append_cstring(gds_dyn_func_entry_point, func_entry_point_name->str_data);
 	request->append_cstring(gds_dyn_func_module_name, func_module_name->str_data);
 
-	ret_val_ptr = ptr[e_udf_return_value]->nod_arg;
+	DSQL_NOD* ret_val_ptr = ptr[e_udf_return_value]->nod_arg;
 
-
-	if (field = (DSQL_FLD) ret_val_ptr[0]) {
+	DSQL_FLD field = (DSQL_FLD) ret_val_ptr[0];
+	if (field) {
 
         // CVC: This is case of "returns <type> [by value|reference]"
 		/* Some data types can not be returned as value */
@@ -2975,7 +2983,6 @@ static void define_udf( DSQL_REQ request)
 
         // CVC: This is case of "returns parameter <N>"
 
-
 		position = (SSHORT)(SLONG) (ret_val_ptr[1]->nod_arg[0]);
 		/* Function modifies an argument whose value is the function return value */
 
@@ -3001,7 +3008,8 @@ static void define_udf( DSQL_REQ request)
     /* CVC: This is case of "returns <type> [by value|reference]" */
 		if (field->fld_dtype == dtype_blob)
 		{
-        /* CVC: I need to test returning blobs by descriptor before allowing the        change there. For now, I ignore the return type specification. */
+        /* CVC: I need to test returning blobs by descriptor before allowing the
+		change there. For now, I ignore the return type specification. */
 			bool free_it = ((SSHORT)(SLONG) ret_val_ptr[1]->nod_arg[0] < 0);
 			request->append_number(gds_dyn_def_function_arg, blob_position);
 			request->append_number(gds_dyn_func_mechanism,
@@ -3042,7 +3050,7 @@ static void define_udf( DSQL_REQ request)
 			}
 
             /*field = (DSQL_FLD) *ptr; */
-            param_node = (*ptr)->nod_arg;
+            DSQL_NOD* param_node = (*ptr)->nod_arg;
             field = (DSQL_FLD) param_node [e_udf_param_field];
 
 			request->append_number(gds_dyn_def_function_arg, (SSHORT) position);
@@ -3074,7 +3082,7 @@ static void define_udf( DSQL_REQ request)
 
 static void define_update_action(
 								 DSQL_REQ request,
-								 DSQL_NOD * base_and_node, DSQL_NOD * base_relation)
+								 DSQL_NOD* base_and_node, DSQL_NOD* base_relation)
 {
 /* *************************************
  *
@@ -3089,20 +3097,11 @@ static void define_update_action(
  *	base relation.
  *
  **************************************/
-	DSQL_NOD ddl_node, eql_node, and_node, old_and;
-	DSQL_NOD select_node, select_expr, from_list, relation_node;
-	DSQL_NOD fields_node, values_node, field_node, value_node, old_value_node;
-	DSQL_NOD *ptr, *end, *ptr2, *end2;
-	DSQL_NOD iand_node, or_node, anull_node, bnull_node;
-	DLLS field_stack;
-	DSQL_REL relation;
-	DSQL_FLD field;
-	SSHORT and_arg = 0;
-
-	ddl_node = request->req_ddl_node;
+	DSQL_NOD ddl_node = request->req_ddl_node;
 
 /* check whether this is an updatable view definition */
 
+	DSQL_NOD select_node, select_expr, from_list;
 	if ((ddl_node->nod_type != nod_def_view && ddl_node->nod_type != nod_redef_view) ||
 		!(select_node = ddl_node->nod_arg[e_view_select]) ||
 		/*
@@ -3112,11 +3111,13 @@ static void define_update_action(
 		!(select_expr = select_node->nod_arg[0]->nod_arg[0]) ||
 		!(from_list = select_expr->nod_arg[e_sel_from]) ||
 		from_list->nod_count != 1)
+	{
 		return;
+	}
 
 /* use the relation referenced in the select statement for rse*/
 
-	relation_node = MAKE_node(nod_relation_name, (int) e_rln_count);
+	DSQL_NOD relation_node = MAKE_node(nod_relation_name, (int) e_rln_count);
 	relation_node->nod_arg[e_rln_name] =
 		from_list->nod_arg[0]->nod_arg[e_rln_name];
 	relation_node->nod_arg[e_rln_alias] = (DSQL_NOD) MAKE_cstring(TEMP_CONTEXT);
@@ -3126,18 +3127,19 @@ static void define_update_action(
    no list of fields, get all fields in the base relation that
    are not computed */
 
-	values_node = ddl_node->nod_arg[e_view_fields];
-	if (!(fields_node = select_expr->nod_arg[e_sel_list]))
+	DSQL_NOD values_node = ddl_node->nod_arg[e_view_fields];
+	DSQL_NOD fields_node = select_expr->nod_arg[e_sel_list];
+	if (!fields_node)
 	{
-		relation =
+		DSQL_REL relation =
 			METD_get_relation(request,
 							  reinterpret_cast<STR>(relation_node->nod_arg[e_rln_name]));
-		field_stack = NULL;
-		for (field = relation->rel_fields; field; field = field->fld_next)
+		DLLS field_stack = NULL;
+		for (DSQL_FLD field = relation->rel_fields; field; field = field->fld_next)
 		{
 			if (field->fld_flags & FLD_computed)
 				continue;
-			field_node = MAKE_node(nod_field_name, (int) e_fln_count);
+			dsql_nod* field_node = MAKE_node(nod_field_name, (int) e_fln_count);
 			field_node->nod_arg[e_fln_name] =
 				(DSQL_NOD) MAKE_cstring(field->fld_name);
 			LLS_PUSH(field_node, &field_stack);
@@ -3149,15 +3151,14 @@ static void define_update_action(
 
 /* generate the list of assignments to fields in the base relation */
 
-	ptr = fields_node->nod_arg;
-	end = ptr + fields_node->nod_count;
-	ptr2 = values_node->nod_arg;
-	end2 = ptr2 + values_node->nod_count;
-	field_stack = NULL;
-	and_node = MAKE_node(nod_and, (int) 2);
-	and_arg = 0;
+	DSQL_NOD* ptr = fields_node->nod_arg;
+	DSQL_NOD* const end = ptr + fields_node->nod_count;
+	DSQL_NOD* ptr2 = values_node->nod_arg;
+	DSQL_NOD* const end2 = ptr2 + values_node->nod_count;
+	DSQL_NOD and_node = MAKE_node(nod_and, (int) 2);
+	SSHORT and_arg = 0;
 	for (; (ptr < end) && (ptr2 < end2); ptr++, ptr2++) {
-		field_node = *ptr;
+		dsql_nod* field_node = *ptr;
 		if (field_node->nod_type == nod_alias)
 			field_node = field_node->nod_arg[e_alias_value];
 
@@ -3167,37 +3168,38 @@ static void define_update_action(
 			field_node->nod_arg[e_fln_context] =
 				(DSQL_NOD) MAKE_cstring(TEMP_CONTEXT);
 
-			value_node = MAKE_node(nod_field_name, (int) e_fln_count);
+			DSQL_NOD value_node = MAKE_node(nod_field_name, (int) e_fln_count);
 			value_node->nod_arg[e_fln_name] = (*ptr2)->nod_arg[e_fln_name];
 			value_node->nod_arg[e_fln_context] =
 				(DSQL_NOD) MAKE_cstring(NEW_CONTEXT);
 
-			old_value_node = MAKE_node(nod_field_name, (int) e_fln_count);
+			DSQL_NOD old_value_node = MAKE_node(nod_field_name, (int) e_fln_count);
 			old_value_node->nod_arg[e_fln_name] =
 				(*ptr2)->nod_arg[e_fln_name];
 			old_value_node->nod_arg[e_fln_context] =
 				(DSQL_NOD) MAKE_cstring(OLD_CONTEXT);
-			eql_node = MAKE_node(nod_eql, (int) 2);
+				
+			DSQL_NOD eql_node = MAKE_node(nod_eql, (int) 2);
 			eql_node->nod_arg[0] = old_value_node;
 			eql_node->nod_arg[1] = field_node;
 
-			anull_node = MAKE_node(nod_missing, 1);
+			DSQL_NOD anull_node = MAKE_node(nod_missing, 1);
 			anull_node->nod_arg[0] = old_value_node;
-			bnull_node = MAKE_node(nod_missing, 1);
+			DSQL_NOD bnull_node = MAKE_node(nod_missing, 1);
 			bnull_node->nod_arg[0] = field_node;
 
-			iand_node = MAKE_node(nod_and, (int) 2);
+			DSQL_NOD iand_node = MAKE_node(nod_and, (int) 2);
 			iand_node->nod_arg[0] = anull_node;
 			iand_node->nod_arg[1] = bnull_node;
 
-			or_node = MAKE_node(nod_or, (int) 2);
+			DSQL_NOD or_node = MAKE_node(nod_or, (int) 2);
 			or_node->nod_arg[0] = eql_node;
 			or_node->nod_arg[1] = iand_node;
 
 			if (and_arg <= 1)
 				and_node->nod_arg[and_arg++] = or_node;
 			else {
-				old_and = and_node;
+				DSQL_NOD old_and = and_node;
 				and_node = MAKE_node(nod_and, (int) 2);
 				and_node->nod_arg[0] = old_and;
 				and_node->nod_arg[1] = or_node;
@@ -3208,7 +3210,7 @@ static void define_update_action(
 	if (and_arg <= 1)
 		and_node->nod_arg[and_arg] = select_expr->nod_arg[e_sel_where];
 	else {
-		old_and = and_node;
+		DSQL_NOD old_and = and_node;
 		and_node = MAKE_node(nod_and, (int) 2);
 		and_node->nod_arg[0] = old_and;
 		and_node->nod_arg[1] = select_expr->nod_arg[e_sel_where];
@@ -3255,8 +3257,8 @@ static void define_upd_cascade_trg(	DSQL_REQ    request,
 	DSQL_NOD*   prim_key_flds = prim_columns->nod_arg;
 
 	do {
-		STR for_key_fld_name_str  = (STR) (*for_key_flds)->nod_arg[1];
-		STR prim_key_fld_name_str = (STR) (*prim_key_flds)->nod_arg[1];
+		const str* for_key_fld_name_str  = (STR) (*for_key_flds)->nod_arg[1];
+		const str* prim_key_fld_name_str = (STR) (*prim_key_flds)->nod_arg[1];
 
 		request->append_uchar(blr_assignment);
 		request->append_uchar(blr_field);
@@ -3298,21 +3300,8 @@ static void define_view( DSQL_REQ request, NOD_TYPE op)
  *	statement as the source of the view.
  *
  **************************************/
-	DSQL_NOD node, select, select_expr, rse, field_node;
-	DSQL_NOD check, relation_node;
-	DSQL_NOD view_fields, *ptr, *end;
-	DSQL_NOD items, *i_ptr, *i_end;
-	DSQL_REL relation;
-	DSQL_FLD field;
-	DSQL_CTX context;
-	STR view_name, field_name, source;
-	SSHORT position;
-	bool updatable = true;
-	TEXT *field_string;
-	DLLS temp;
-
-	node = request->req_ddl_node;
-	view_name = (STR) node->nod_arg[e_view_name];
+	DSQL_NOD node = request->req_ddl_node;
+	const str* view_name = (STR) node->nod_arg[e_view_name];
 
 	if (op == nod_replace_view)
 	{
@@ -3337,10 +3326,10 @@ static void define_view( DSQL_REQ request, NOD_TYPE op)
 	{
 		request->append_cstring(gds_dyn_mod_view,
 					view_name->str_data);
-		relation = METD_get_relation(request, view_name);
+		const dsql_rel* relation = METD_get_relation(request, view_name);
 		if (relation)
 		{
-			for (field = relation->rel_fields; field;
+			for (const dsql_fld* field = relation->rel_fields; field;
 				 field = field->fld_next)
 			{
 				request->append_cstring(gds_dyn_delete_local_fld,
@@ -3367,9 +3356,9 @@ static void define_view( DSQL_REQ request, NOD_TYPE op)
 	if (request->req_context_number)
 		reset_context_stack(request);
 	request->req_context_number++;
-	select = node->nod_arg[e_view_select];
-	select_expr = select->nod_arg[0];
-	rse = PASS1_rse(request, select_expr, select->nod_arg[1], NULL);
+	DSQL_NOD select = node->nod_arg[e_view_select];
+	DSQL_NOD select_expr = select->nod_arg[0];
+	DSQL_NOD rse = PASS1_rse(request, select_expr, select->nod_arg[1], NULL);
 
 	// store the blr and source string for the view definition
 
@@ -3381,13 +3370,14 @@ static void define_view( DSQL_REQ request, NOD_TYPE op)
    We need to add something to rdb$views to indicate source type.
    Source will be for documentation purposes. */
 
-	source = (STR) node->nod_arg[e_view_source];
+	const str* source = (STR) node->nod_arg[e_view_source];
 	assert(source->str_length <= MAX_USHORT);
 	request->append_string(	gds_dyn_view_source,
 							source->str_data,
 							source->str_length);
 
 /* define the view source relations from the request contexts & union contexts*/
+	DSQL_CTX context;
 
     while (request->req_dt_context) {
         context = reinterpret_cast<DSQL_CTX>(LLS_POP(&request->req_dt_context));
@@ -3399,10 +3389,11 @@ static void define_view( DSQL_REQ request, NOD_TYPE op)
         LLS_PUSH(context, &request->req_context);
     }
 
-	for (temp = request->req_context; temp; temp = temp->lls_next)
+	for (DLLS temp = request->req_context; temp; temp = temp->lls_next)
 	{
 		context = (DSQL_CTX) temp->lls_object;
-		if (relation = context->ctx_relation)
+		const dsql_rel* relation = context->ctx_relation;
+		if (relation)
 		{
 			request->append_cstring(gds_dyn_view_relation, relation->rel_name);
 			request->append_number(gds_dyn_view_context, context->ctx_context);
@@ -3417,26 +3408,31 @@ static void define_view( DSQL_REQ request, NOD_TYPE op)
    with the items from the SELECT.  Otherwise use all the fields from
    the rse node that was created from the select expression */
 
-	items = rse->nod_arg[e_rse_items];
-	i_ptr = items->nod_arg;
-	i_end = i_ptr + items->nod_count;
+	DSQL_NOD items = rse->nod_arg[e_rse_items];
+	DSQL_NOD* i_ptr = items->nod_arg;
+	DSQL_NOD* const i_end = i_ptr + items->nod_count;
 
-	ptr = end = NULL;
-	if ((view_fields = node->nod_arg[e_view_fields]) != NULL) {
+    dsql_nod* const* ptr = NULL;
+	dsql_nod* const* end =  NULL;
+	const dsql_nod* view_fields = node->nod_arg[e_view_fields];
+	if (view_fields != NULL) {
 		ptr = view_fields->nod_arg;
 		end = ptr + view_fields->nod_count;
 	}
 
+	const TEXT* field_string;
+	bool updatable = true;
+	SSHORT position;
 /* go through the fields list, defining the local fields;
    if an expression is specified rather than a field, define
    a global field for the computed value as well */
 
 	for (position = 0; i_ptr < i_end; i_ptr++, position++) {
-		field_node = *i_ptr;
+		dsql_nod* field_node = *i_ptr;
 
 		/* check if this is a field or an expression */
 
-		field = NULL;
+		const dsql_fld* field = NULL;
 		context = NULL;
 		if (field_node->nod_type == nod_field) {
 			field = (DSQL_FLD) field_node->nod_arg[e_fld_field];
@@ -3468,8 +3464,8 @@ static void define_view( DSQL_REQ request, NOD_TYPE op)
 		{
 			if (ptr < end)
 			{
-				field_name = (STR) (*ptr)->nod_arg[1];
-				field_string = (TEXT *) field_name->str_data;
+				const str* field_name = (STR) (*ptr)->nod_arg[1];
+				field_string = (TEXT*) field_name->str_data;
 			}
 			ptr++;
 		}
@@ -3514,7 +3510,7 @@ static void define_view( DSQL_REQ request, NOD_TYPE op)
 
 	// setup to define triggers for WITH CHECK OPTION
 
-	check = node->nod_arg[e_view_check];
+	DSQL_NOD check = node->nod_arg[e_view_check];
 
 	if (check)
 	{
@@ -3573,7 +3569,7 @@ static void define_view( DSQL_REQ request, NOD_TYPE op)
 						  0);
 		}
 
-		relation_node = MAKE_node(nod_relation_name, e_rln_count);
+		DSQL_NOD relation_node = MAKE_node(nod_relation_name, e_rln_count);
 		relation_node->nod_arg[e_rln_name] = (DSQL_NOD) view_name;
 		check->nod_arg[e_cnstr_table] = relation_node;
 
@@ -3595,7 +3591,8 @@ static void define_view( DSQL_REQ request, NOD_TYPE op)
 }
 
 
-static void define_view_trigger( DSQL_REQ request, DSQL_NOD node, DSQL_NOD rse, DSQL_NOD items)
+static void define_view_trigger( DSQL_REQ request, DSQL_NOD node, DSQL_NOD rse,
+	DSQL_NOD items)
 {								/* The fields in VIEW actually  */
 /**************************************
  *
@@ -3607,33 +3604,28 @@ static void define_view_trigger( DSQL_REQ request, DSQL_NOD node, DSQL_NOD rse, 
  *	Create the ddl to define a trigger for a VIEW WITH CHECK OPTION.
  *
  **************************************/
-	STR trigger_name, relation_name;
-	DSQL_NOD temp_rse, temp, ddl_node, actions, *ptr, *end, constant;
+	const str* relation_name;
+	DSQL_NOD *ptr, *end;
 	DSQL_NOD relation_node;
-	USHORT trig_type;
-	DSQL_NOD action_node, condition, select, select_expr, view_fields;
-	DSQL_CTX context, sav_context = 0;
-	DLLS stack;
-	TSQL tdsql;
+	DSQL_CTX context;
+	TSQL tdsql = GET_THREAD_DATA;
 
-	tdsql = GET_THREAD_DATA;
+	DSQL_NOD ddl_node = request->req_ddl_node;
 
-	ddl_node = request->req_ddl_node;
-
-	select = ddl_node->nod_arg[e_view_select];
+	DSQL_NOD select = ddl_node->nod_arg[e_view_select];
 /*
    Handle VIEWS with UNION : nod_select now points to nod_list
    which in turn points to nod_select_expr
 */
-	select_expr = select->nod_arg[0]->nod_arg[0];
-	view_fields = ddl_node->nod_arg[e_view_fields];
+	DSQL_NOD select_expr = select->nod_arg[0]->nod_arg[0];
+	DSQL_NOD view_fields = ddl_node->nod_arg[e_view_fields];
 
 /* make the "define trigger" node the current request ddl node so
    that generating of BLR will be appropriate for trigger */
 
 	request->req_ddl_node = node;
 
-	trigger_name = (STR) node->nod_arg[e_cnstr_name];
+	const str* trigger_name = (STR) node->nod_arg[e_cnstr_name];
 
 	if (node->nod_type == nod_def_constraint)
 	{
@@ -3653,7 +3645,7 @@ static void define_view_trigger( DSQL_REQ request, DSQL_NOD node, DSQL_NOD rse, 
 		return;
 	}
 
-	constant = node->nod_arg[e_cnstr_position];
+	DSQL_NOD constant = node->nod_arg[e_cnstr_position];
 	if (constant)
 	{
 		request->append_number(gds_dyn_trg_sequence,
@@ -3661,6 +3653,7 @@ static void define_view_trigger( DSQL_REQ request, DSQL_NOD node, DSQL_NOD rse, 
 	}
 
 	constant = node->nod_arg[e_cnstr_type];
+	USHORT trig_type;
 	if (constant)
 	{
 		trig_type = (USHORT)(ULONG) constant->nod_arg[0];
@@ -3676,7 +3669,7 @@ static void define_view_trigger( DSQL_REQ request, DSQL_NOD node, DSQL_NOD rse, 
 
 	request->append_uchar(gds_dyn_sql_object);
 
-	STR message = (STR) node->nod_arg[e_cnstr_message];
+	const str* message = (STR) node->nod_arg[e_cnstr_message];
 	if (message)
 	{
 		request->append_number(gds_dyn_def_trigger_msg, 0);
@@ -3699,11 +3692,12 @@ static void define_view_trigger( DSQL_REQ request, DSQL_NOD node, DSQL_NOD rse, 
 		   fields to that context but prevent relations referenced in
 		   the trigger actions from referencing the predefined "1" context */
 
+		dsql_ctx* sav_context = 0;
 		if (request->req_context_number) {
 			/* If an alias is specified for the single base table involved,
 			   save and then add the context                               */
 
-			stack = request->req_context;
+			dsql_lls* stack = request->req_context;
 			context = (DSQL_CTX) stack->lls_object;
 			if (context->ctx_alias) {
 				sav_context = FB_NEW(*tdsql->tsql_default) dsql_ctx;
@@ -3711,12 +3705,12 @@ static void define_view_trigger( DSQL_REQ request, DSQL_NOD node, DSQL_NOD rse, 
 			}
 		}
 		reset_context_stack(request);
-		temp = relation_node->nod_arg[e_rln_alias];
+		DSQL_NOD temp_alias = relation_node->nod_arg[e_rln_alias];
 		relation_node->nod_arg[e_rln_alias] = (DSQL_NOD) MAKE_cstring(OLD_CONTEXT);
 		PASS1_make_context(request, relation_node);
 		relation_node->nod_arg[e_rln_alias] = (DSQL_NOD) MAKE_cstring(NEW_CONTEXT);
 		PASS1_make_context(request, relation_node);
-		relation_node->nod_arg[e_rln_alias] = temp;
+		relation_node->nod_arg[e_rln_alias] = temp_alias;
 
 		if (sav_context) {
 			sav_context->ctx_context = request->req_context_number++;
@@ -3726,13 +3720,13 @@ static void define_view_trigger( DSQL_REQ request, DSQL_NOD node, DSQL_NOD rse, 
 
 		if (trig_type == PRE_MODIFY_TRIGGER) {
 			request->append_uchar(blr_for);
-			temp = rse->nod_arg[e_rse_streams];
+			DSQL_NOD temp = rse->nod_arg[e_rse_streams];
 			temp->nod_arg[0] = PASS1_node(request, temp->nod_arg[0], false);
 			temp = rse->nod_arg[e_rse_boolean];
 			rse->nod_arg[e_rse_boolean] = PASS1_node(request, temp, false);
 			GEN_expr(request, rse);
 
-			condition = MAKE_node(nod_not, 1);
+			DSQL_NOD condition = MAKE_node(nod_not, 1);
 			condition->nod_arg[0] =
 				replace_field_names(select_expr->nod_arg[e_sel_where], items,
 									view_fields, false);
@@ -3744,7 +3738,7 @@ static void define_view_trigger( DSQL_REQ request, DSQL_NOD node, DSQL_NOD rse, 
 		}
 
 		if (trig_type == PRE_STORE_TRIGGER) {
-			condition = MAKE_node(nod_not, 1);
+			DSQL_NOD condition = MAKE_node(nod_not, 1);
 			condition->nod_arg[0] =
 				replace_field_names(select_expr->nod_arg[e_sel_where], items,
 									view_fields, true);
@@ -3756,7 +3750,7 @@ static void define_view_trigger( DSQL_REQ request, DSQL_NOD node, DSQL_NOD rse, 
 
 		/* generate the action statements for the trigger */
 
-		actions = node->nod_arg[e_cnstr_actions];
+		DSQL_NOD actions = node->nod_arg[e_cnstr_actions];
 		for (ptr = actions->nod_arg, end = ptr + actions->nod_count;
 			 ptr < end; ptr++)
 		{
@@ -3772,10 +3766,10 @@ static void define_view_trigger( DSQL_REQ request, DSQL_NOD node, DSQL_NOD rse, 
 			for (ptr = actions->nod_arg, end = ptr + actions->nod_count;
 				 ptr < end; ptr++)
 			{
-				action_node = PASS1_statement(request, *ptr, false);
+				DSQL_NOD action_node = PASS1_statement(request, *ptr, false);
 				if (action_node->nod_type == nod_modify)
 				{
-					temp_rse = action_node->nod_arg[e_mod_rse];
+					DSQL_NOD temp_rse = action_node->nod_arg[e_mod_rse];
 					temp_rse->nod_arg[e_rse_first] =
 						MAKE_constant((STR) 1, CONSTANT_SLONG);
 				}
@@ -3819,7 +3813,7 @@ static void delete_procedure (DSQL_REQ     request,
  *  CVC: Created this function to not clutter generate_dyn().
  *
  **************************************/
-    STR string = (STR) node->nod_arg [e_prc_name];
+    const str* string = (STR) node->nod_arg [e_prc_name];
     assert (string);
     if (node->nod_type == nod_redef_procedure || silent_deletion) {
         DSQL_PRC procedure = METD_get_procedure (request, string);
@@ -3852,9 +3846,7 @@ static void delete_relation_view (
  *  CVC: Created this function to not clutter generate_dyn().
  *
  **************************************/
-
-    STR string = 0;
-    DSQL_REL relation = 0;
+	const str* string = 0;
 
     if (node->nod_type == nod_redef_relation) {
         DSQL_NOD relation_node = node->nod_arg [e_alt_name];
@@ -3867,12 +3859,14 @@ static void delete_relation_view (
 
     assert (string);
 
-    relation = METD_get_relation (request, string);
+    DSQL_REL relation = METD_get_relation (request, string);
 
     if (node->nod_type == nod_del_relation || 
-        node->nod_type == nod_redef_relation) {
+        node->nod_type == nod_redef_relation)
+	{
         if (!relation && !silent_deletion || 
-            relation && (relation->rel_flags & REL_view)) {
+            relation && (relation->rel_flags & REL_view))
+		{
             ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -607,
                        /* gds_arg_gds, gds__dsql_command_err,
                           gds_arg_gds, gds__dsql_table_not_found, */
@@ -3911,7 +3905,7 @@ void dsql_req::end_blr()
 	// go back and stuff in the proper length
 
 	char* blr_base = req_blr_string->str_data + req_base_offset;
-	USHORT length   = (SSHORT) (reinterpret_cast<char*>(req_blr) - blr_base) - 2;
+	const USHORT length   = (USHORT) (reinterpret_cast<char*>(req_blr) - blr_base) - 2;
 	*blr_base++ = (UCHAR) length;
 	*blr_base = (UCHAR) (length >> 8);
 }
@@ -3930,18 +3924,15 @@ static void foreign_key( DSQL_REQ request, DSQL_NOD element, const char* index_n
  *	constraint.
  *
  **************************************/
-	DSQL_NOD relation2_node;
-	DSQL_NOD columns1, columns2;
-	STR relation2;
+	DSQL_NOD columns1 = element->nod_arg[e_for_columns];
 
-	columns1 = element->nod_arg[e_for_columns];
-
-	relation2_node = element->nod_arg[e_for_reftable];
-	relation2 = (STR) relation2_node->nod_arg[e_rln_name];
+	DSQL_NOD relation2_node = element->nod_arg[e_for_reftable];
+	const str* relation2 = (STR) relation2_node->nod_arg[e_rln_name];
 
 /* If there is a referenced table name but no referenced field names, the
    primary key of the referenced table designates the referenced fields. */
-	if (!(columns2 = element->nod_arg[e_for_refcolumns]))
+	DSQL_NOD columns2 = element->nod_arg[e_for_refcolumns];
+	if (!columns2)
 	{
 		element->nod_arg[e_for_refcolumns] =
 			columns2 = METD_get_primary_key(request, relation2);
@@ -3992,7 +3983,7 @@ static void generate_dyn( DSQL_REQ request, DSQL_NOD node)
  *	DYN string.
  *
  **************************************/
-	STR string;
+	const str* string;
 
 	request->req_ddl_node = node;
 
@@ -4187,12 +4178,12 @@ static void grant_revoke( DSQL_REQ request)
 
 	DSQL_NOD* uptr;
 	DSQL_NOD* uend;
-	bool process_grant_role = false;
 
-	SSHORT option = FALSE;
+	SSHORT option = 0; // no grant/admin option
 	DSQL_NOD    ddl_node = request->req_ddl_node;
 	DSQL_NOD    privs    = ddl_node->nod_arg[e_grant_privs];
 
+    bool process_grant_role = false;
 	if (privs->nod_arg[0] != NULL) {
 		if (privs->nod_arg[0]->nod_type == nod_role_name) {
 			process_grant_role = true;
@@ -4204,7 +4195,7 @@ static void grant_revoke( DSQL_REQ request)
 		DSQL_NOD table = ddl_node->nod_arg[e_grant_table];
 		DSQL_NOD users = ddl_node->nod_arg[e_grant_users];
 		if (ddl_node->nod_arg[e_grant_grant]) {
-			option = TRUE;
+			option = 1; // with grant option
 		}
 
 		request->append_uchar(gds_dyn_begin);
@@ -4225,7 +4216,7 @@ static void grant_revoke( DSQL_REQ request)
 		DSQL_NOD role_list = ddl_node->nod_arg[0];
 		DSQL_NOD users = ddl_node->nod_arg[1];
 		if (ddl_node->nod_arg[3]) {
-			option = 2;
+			option = 2; // with admin option
 		}
 		request->append_uchar(isc_dyn_begin);
 
@@ -4278,7 +4269,7 @@ static void make_index(	DSQL_REQ    request,
 	DSQL_NOD index = element->nod_arg[e_pri_index];
 	assert(index);
 
-	STR string = (STR) index->nod_arg[e_idx_name];
+	const str* string = (STR) index->nod_arg[e_idx_name];
 	if (string)
 	{
 		index_name = string->str_data;
@@ -4303,7 +4294,7 @@ static void make_index(	DSQL_REQ    request,
 	const DSQL_NOD* end = columns->nod_arg + columns->nod_count;
 	for (DSQL_NOD* ptr = columns->nod_arg; ptr < end; ++ptr)
 	{
-		STR field_name = (STR) (*ptr)->nod_arg[1];
+		const str* field_name = (STR) (*ptr)->nod_arg[1];
 		request->append_cstring(gds_dyn_fld_name,
 					field_name->str_data);
 	}
@@ -4345,7 +4336,7 @@ static void make_index_trg_ref_int(	DSQL_REQ    request,
 
 	DSQL_NOD ddl_node         = request->req_ddl_node;
 	DSQL_NOD for_rel_node     = ddl_node->nod_arg[e_drl_name];
-	STR      for_rel_name_str = (STR) for_rel_node->nod_arg[e_rln_name];
+	const str* for_rel_name_str = (STR) for_rel_node->nod_arg[e_rln_name];
 
 	/* stuff either user-defined name or
 	   zero-length name, indicating that an index name
@@ -4354,7 +4345,7 @@ static void make_index_trg_ref_int(	DSQL_REQ    request,
 	DSQL_NOD index = element->nod_arg[e_for_index];
 	assert(index);
 
-	STR string = (STR) index->nod_arg[e_idx_name];
+	const str* string = (STR) index->nod_arg[e_idx_name];
 	if (string)
 	{
 		index_name = string->str_data;
@@ -4454,7 +4445,7 @@ static void make_index_trg_ref_int(	DSQL_REQ    request,
 	DSQL_NOD* end = columns->nod_arg + columns->nod_count;
 	for (ptr = columns->nod_arg; ptr < end; ++ptr)
 	{
-		STR field_name = (STR) (*ptr)->nod_arg[1];
+		const str* field_name = (STR) (*ptr)->nod_arg[1];
 		request->append_cstring(gds_dyn_fld_name,
 					field_name->str_data);
 	}
@@ -4465,7 +4456,7 @@ static void make_index_trg_ref_int(	DSQL_REQ    request,
 		end = referenced_columns->nod_arg + referenced_columns->nod_count;
 		for (ptr = referenced_columns->nod_arg; ptr < end; ++ptr)
 		{
-			STR field_name = (STR) (*ptr)->nod_arg[1];
+			const str* field_name = (STR) (*ptr)->nod_arg[1];
 			request->append_cstring(gds_dyn_idx_ref_column,
 						field_name->str_data);
 		}
@@ -4487,7 +4478,6 @@ static void modify_database( DSQL_REQ request)
  *	Modify a database.
  *
  **************************************/
-	DSQL_NOD ddl_node, element, *ptr;
 	SLONG start = 0;
 	FIL file;
 	SSHORT number = 0;
@@ -4497,7 +4487,7 @@ static void modify_database( DSQL_REQ request)
 	bool drop_cache = false;
 	bool drop_difference = false;
 
-	ddl_node = request->req_ddl_node;
+	DSQL_NOD ddl_node = request->req_ddl_node;
 
 	request->append_uchar(gds_dyn_mod_database);
 /*
@@ -4505,9 +4495,11 @@ request->append_number(gds_dyn_rel_sql_protection, 1);
 */
 	DSQL_NOD  elements = ddl_node->nod_arg[e_adb_all];
 	DSQL_NOD* end      = elements->nod_arg + elements->nod_count;
+	DSQL_NOD* ptr;
+	
 	for (ptr = elements->nod_arg; ptr < end; ptr++)
 	{
-		element = *ptr;
+		DSQL_NOD element = *ptr;
 		switch (element->nod_type) {
 		case nod_drop_log:
 			drop_log = true;
@@ -4538,7 +4530,7 @@ request->append_number(gds_dyn_rel_sql_protection, 1);
 	end = elements->nod_arg + elements->nod_count;
 	for (ptr = elements->nod_arg; ptr < end; ptr++)
 	{
-		element = *ptr;
+		DSQL_NOD element = *ptr;
 
 		switch (element->nod_type) {
 		case nod_file_desc:
@@ -4647,8 +4639,7 @@ static void modify_domain( DSQL_REQ request)
  *	Alter an SQL domain.
  *
  **************************************/
-	DSQL_NOD ddl_node, domain_node, ops, element, *ptr, *end;
-	STR string, domain_name;
+	const str* string;
 	DSQL_FLD field;
 	dsql_fld local_field;
 	/* CVC: This array used with check_one_call to ensure each modification 
@@ -4656,29 +4647,28 @@ static void modify_domain( DSQL_REQ request)
 	   cases. */
 	USHORT repetition_count[6];
 
-	ddl_node = request->req_ddl_node;
+	DSQL_NOD ddl_node = request->req_ddl_node;
 
-	domain_node = ddl_node->nod_arg[e_alt_dom_name];
-	domain_name = (STR) domain_node->nod_arg[e_fln_name];
+	DSQL_NOD domain_node = ddl_node->nod_arg[e_alt_dom_name];
+	const str* domain_name = (STR) domain_node->nod_arg[e_fln_name];
 
 	request->append_cstring(gds_dyn_mod_global_fld,
 				domain_name->str_data);
 
 
-
 	/* Is MOVE_CLEAR enough for all platforms?
 	MOVE_CLEAR (repetition_count, sizeof (repetition_count)); */
-	USHORT rtop = FB_NELEM(repetition_count);
-	USHORT *p = repetition_count;
+	const USHORT rtop = FB_NELEM(repetition_count);
+	USHORT* p = repetition_count;
 	while (p < repetition_count + rtop) {
 		*p++ = 0;
 	}
 
-
-	ops = ddl_node->nod_arg[e_alt_dom_ops];
-	for (ptr = ops->nod_arg, end = ptr + ops->nod_count; ptr < end; ptr++)
+	DSQL_NOD ops = ddl_node->nod_arg[e_alt_dom_ops];
+	DSQL_NOD* ptr = ops->nod_arg;
+	for (DSQL_NOD* const end = ptr + ops->nod_count; ptr < end; ptr++)
 	{
-		element = *ptr;
+		DSQL_NOD element = *ptr;
 		switch (element->nod_type)
 		{
 		case nod_def_default:
@@ -4765,9 +4755,7 @@ static void modify_domain( DSQL_REQ request)
 			{
 				check_one_call(repetition_count, 3, "DOMAIN NAME");
 
-				STR new_dom_name;
-
-				new_dom_name = (STR) element->nod_arg[e_fln_name];
+				const str* new_dom_name = (STR) element->nod_arg[e_fln_name];
 				request->append_cstring(gds_dyn_fld_name,
 							new_dom_name->str_data);
 				break;
@@ -4804,13 +4792,10 @@ static void modify_index( DSQL_REQ request)
  *	Alter an index (only active or inactive for now)
  *
  **************************************/
-	DSQL_NOD ddl_node, index_node;
-	STR index_name;
+	DSQL_NOD ddl_node = request->req_ddl_node;
 
-	ddl_node = request->req_ddl_node;
-
-	index_node = ddl_node->nod_arg[e_alt_index];
-	index_name = (STR) index_node->nod_arg[e_alt_idx_name];
+	DSQL_NOD index_node = ddl_node->nod_arg[e_alt_index];
+	const str* index_name = (STR) index_node->nod_arg[e_alt_idx_name];
 
 	request->append_cstring(gds_dyn_mod_idx, index_name->str_data);
 
@@ -4827,10 +4812,10 @@ static void modify_index( DSQL_REQ request)
 static void modify_privilege(	DSQL_REQ			request,
 								NOD_TYPE	type,
 								SSHORT		option,
-								UCHAR*		privs,
+								const UCHAR*		privs,
 								DSQL_NOD			table,
 								DSQL_NOD			user,
-								STR			field_name)
+								const str*			field_name)
 {
 /**************************************
  *
@@ -4866,13 +4851,14 @@ static void modify_privilege(	DSQL_REQ			request,
 	*dynsave++ = (UCHAR) priv_count;
 	*dynsave = (UCHAR) (priv_count >> 8);
 
-	STR name = (STR) table->nod_arg[0];
+	const str* name = (STR) table->nod_arg[0];
 	if (table->nod_type == nod_procedure_name) {
 		request->append_cstring(gds_dyn_prc_name, name->str_data);
 	} else {
 		request->append_cstring(gds_dyn_rel_name, name->str_data);
 	}
 	name = (STR) user->nod_arg[0];
+	
 	switch (user->nod_type) {
 	case nod_user_group:		/* GRANT priv ON tbl TO GROUP unix_group */
 		request->append_cstring(isc_dyn_grant_user_group, name->str_data);
@@ -5028,17 +5014,14 @@ static void modify_relation( DSQL_REQ request)
  *	global fields for the local fields.
  *
  **************************************/
-	DSQL_NOD ddl_node, ops, element, *ptr, *end, relation_node, field_node;
-	STR relation_name, field_name;
-	TSQL tdsql;
+	DSQL_NOD *ptr, *end, field_node;
+	const str* field_name;
+	TSQL tdsql = GET_THREAD_DATA;
 
+	DSQL_NOD ddl_node = request->req_ddl_node;
 
-	tdsql = GET_THREAD_DATA;
-
-	ddl_node = request->req_ddl_node;
-
-	relation_node = ddl_node->nod_arg[e_alt_name];
-	relation_name = (STR) relation_node->nod_arg[e_rln_name];
+	DSQL_NOD relation_node = ddl_node->nod_arg[e_alt_name];
+	const str* relation_name = (STR) relation_node->nod_arg[e_rln_name];
 
 	request->append_cstring(gds_dyn_mod_rel, relation_name->str_data);
 	save_relation(request, relation_name);
@@ -5049,22 +5032,19 @@ static void modify_relation( DSQL_REQ request)
 
 	try {
 
-	ops = ddl_node->nod_arg[e_alt_ops];
+	DSQL_NOD ops = ddl_node->nod_arg[e_alt_ops];
 	for (ptr = ops->nod_arg, end = ptr + ops->nod_count; ptr < end; ptr++) {
-		element = *ptr;
+		dsql_nod* element = *ptr;
 		switch (element->nod_type) {
 		case nod_mod_field_name:
 			{
-				DSQL_NOD old_field, new_field;
-				STR old_field_name, new_field_name;
-
-				old_field = element->nod_arg[e_mod_fld_name_orig_name];
-				old_field_name = (STR) old_field->nod_arg[e_fln_name];
+				DSQL_NOD old_field = element->nod_arg[e_mod_fld_name_orig_name];
+				const str* old_field_name = (STR) old_field->nod_arg[e_fln_name];
 				request->append_cstring(gds_dyn_mod_local_fld,
 							old_field_name->str_data);
 
-				new_field = element->nod_arg[e_mod_fld_name_new_name];
-				new_field_name = (STR) new_field->nod_arg[e_fln_name];
+				DSQL_NOD new_field = element->nod_arg[e_mod_fld_name_new_name];
+				const str* new_field_name = (STR) new_field->nod_arg[e_fln_name];
 				request->append_cstring(gds_dyn_rel_name,
 							relation_name->str_data);
 				request->append_cstring(isc_dyn_new_fld_name,
@@ -5095,11 +5075,11 @@ static void modify_relation( DSQL_REQ request)
 
 
 		case nod_mod_field_type:
-			modify_field(request, element, (SSHORT) - 1, relation_name);
+			modify_field(request, element, (SSHORT) -1, relation_name);
 			break;
 
 		case nod_def_field:
-			define_field(request, element, (SSHORT) - 1, relation_name);
+			define_field(request, element, (SSHORT) -1, relation_name);
 			break;
 
 		case nod_del_field:
@@ -5173,8 +5153,6 @@ static void process_role_nm_list(	DSQL_REQ			request,
  *     Build req_blr for grant & revoke role stmt
  *
  **************************************/
-	STR role_nm, user_nm;
-
 	if (type == nod_grant) {
 		request->append_uchar(isc_dyn_grant);
 	} else {
@@ -5184,10 +5162,10 @@ static void process_role_nm_list(	DSQL_REQ			request,
 	request->append_ushort(1);
 	request->append_uchar('M');
 
-	role_nm = (STR) role_ptr->nod_arg[0];
+	const str* role_nm = (STR) role_ptr->nod_arg[0];
 	request->append_cstring(isc_dyn_sql_role_name, role_nm->str_data);
 
-	user_nm = (STR) user_ptr->nod_arg[0];
+	const str* user_nm = (STR) user_ptr->nod_arg[0];
 	request->append_cstring(isc_dyn_grant_user, user_nm->str_data);
 
 	if (option) {
@@ -5198,7 +5176,7 @@ static void process_role_nm_list(	DSQL_REQ			request,
 }
 
 
-static void put_descriptor(DSQL_REQ request, DSC * desc)
+static void put_descriptor(DSQL_REQ request, const dsc* desc)
 {
 /**************************************
  *
@@ -5360,7 +5338,8 @@ static void put_field( DSQL_REQ request, DSQL_FLD field, bool udf_flag)
 }
 
 
-static void put_local_variable( DSQL_REQ request, VAR variable, DSQL_NOD host_param)
+static void put_local_variable( DSQL_REQ request, VAR variable,
+	DSQL_NOD host_param)
 {
 /**************************************
  *
@@ -5407,7 +5386,8 @@ static void put_local_variable( DSQL_REQ request, VAR variable, DSQL_NOD host_pa
 }
 
 
-static SSHORT put_local_variables(DSQL_REQ request, DSQL_NOD parameters, SSHORT locals)
+static SSHORT put_local_variables(DSQL_REQ request, DSQL_NOD parameters,
+	SSHORT locals)
 {
 /**************************************
  *
@@ -5580,17 +5560,17 @@ static DSQL_NOD replace_field_names(DSQL_NOD		input,
 		{
 			// found a field node, check if it needs to be replaced
 
-			STR  field_name = (STR) (*ptr)->nod_arg[e_fln_name];
+			const str* field_name = (STR) (*ptr)->nod_arg[e_fln_name];
 			DSQL_NOD* search     = search_fields->nod_arg;
 			DSQL_NOD* end        = search + search_fields->nod_count;
-			DSQL_NOD* replace;
+			DSQL_NOD* replace = NULL;
 			if (replace_fields) {
 				replace = replace_fields->nod_arg;
 			}
 			bool found = false;
 			for (; search < end; search++, (replace_fields) ? replace++ : NULL)
 			{
-				STR replace_name;
+				const str* replace_name;
 				if (replace_fields) {
 					replace_name = (STR) (*replace)->nod_arg[e_fln_name];
 				}
@@ -5653,7 +5633,7 @@ static void reset_context_stack( DSQL_REQ request)
 }
 
 
-static void save_field(DSQL_REQ request, TEXT* field_name)
+static void save_field(DSQL_REQ request, const TEXT* field_name)
 {
 /**************************************
  *
@@ -5683,7 +5663,7 @@ static void save_field(DSQL_REQ request, TEXT* field_name)
 }
 
 
-static void save_relation( DSQL_REQ request, STR relation_name)
+static void save_relation( DSQL_REQ request, const str* relation_name)
 {
 /**************************************
  *
@@ -5739,23 +5719,16 @@ static void set_statistics( DSQL_REQ request)
  *	Alter an index/.. statistics
  *
  **************************************/
-	DSQL_NOD ddl_node;
-	STR index_name;
-
-	ddl_node = request->req_ddl_node;
-
-	index_name = (STR) ddl_node->nod_arg[e_stat_name];
-
+	DSQL_NOD ddl_node = request->req_ddl_node;
+	const str* index_name = (STR) ddl_node->nod_arg[e_stat_name];
 	request->append_cstring(gds_dyn_mod_idx, index_name->str_data);
-
 	request->append_uchar(gds_dyn_idx_statistic);
-
 	request->append_uchar(gds_dyn_end);
 }
 
 
 static void stuff_default_blr(	DSQL_REQ		request,
-								TEXT*	default_buff,
+								const TEXT*	default_buff,
 								USHORT	buff_size)
 {
 /********************************************
@@ -5770,11 +5743,12 @@ static void stuff_default_blr(	DSQL_REQ		request,
  *   blr in the blr stream in the request.
  *
  *********************************************/
-	unsigned int i;
 	assert((*default_buff == blr_version4)
 		   || (*default_buff == blr_version5));
 
-	for (i = 1; ((i < buff_size) && (default_buff[i] != blr_eoc)); i++) {
+	for (unsigned int i = 1; ((i < buff_size) && (default_buff[i] != blr_eoc));
+		++i)
+	{
 		request->append_uchar(default_buff[i]);
 	}
 
@@ -5813,8 +5787,8 @@ static void stuff_matching_blr(DSQL_REQ request, DSQL_NOD for_columns, DSQL_NOD 
 	do {
 		request->append_uchar(blr_eql);
 
-		STR for_key_fld_name_str = (STR) (*for_key_flds)->nod_arg[1];
-		STR prim_key_fld_name_str = (STR) (*prim_key_flds)->nod_arg[1];
+		const str* for_key_fld_name_str = (STR) (*for_key_flds)->nod_arg[1];
+		const str* prim_key_fld_name_str = (STR) (*prim_key_flds)->nod_arg[1];
 
 		request->append_uchar(blr_field);
 		request->append_uchar(2);
@@ -5852,7 +5826,6 @@ static void stuff_trg_firing_cond(DSQL_REQ request, DSQL_NOD prim_columns)
  *
  **************************************/
 
-
 	request->append_uchar(blr_if);
 
 	if (prim_columns->nod_count > 1) {
@@ -5865,7 +5838,7 @@ static void stuff_trg_firing_cond(DSQL_REQ request, DSQL_NOD prim_columns)
 	do {
 		request->append_uchar(blr_neq);
 
-		STR prim_key_fld_name_str = (STR) (*prim_key_flds)->nod_arg[1];
+		const str* prim_key_fld_name_str = (STR) (*prim_key_flds)->nod_arg[1];
 
 		request->append_uchar(blr_field);
 		request->append_uchar(0);
@@ -5888,7 +5861,7 @@ static void stuff_trg_firing_cond(DSQL_REQ request, DSQL_NOD prim_columns)
 static void modify_field(DSQL_REQ	request,
 						 DSQL_NOD	element,
 						 SSHORT	position,
-						 STR	relation_name)
+						 const str*	relation_name)
 {
 /**************************************
  *
@@ -5901,27 +5874,22 @@ static void modify_field(DSQL_REQ	request,
  *	alter table or alter domain statement.
  *
  **************************************/
-	DSQL_NOD domain_node;
-	DSQL_FLD field;
-	DSQL_REL relation;
-
-	field = (DSQL_FLD) element->nod_arg[e_dfl_field];
+	DSQL_FLD field = (DSQL_FLD) element->nod_arg[e_dfl_field];
 	request->append_cstring(isc_dyn_mod_sql_fld, field->fld_name);
 
 // add the field to the relation being defined for parsing purposes
-	if ((relation = request->req_relation) != NULL)
+	DSQL_REL relation = request->req_relation;
+	if (relation != NULL)
 	{
 		field->fld_next = relation->rel_fields;
 		relation->rel_fields = field;
 	}
 
-	if (domain_node = element->nod_arg[e_mod_fld_type_dom_name])
+	DSQL_NOD domain_node = element->nod_arg[e_mod_fld_type_dom_name];
+	if (domain_node)
 	{
-		DSQL_NOD node1;
-		STR domain_name;
-
-		node1 = domain_node->nod_arg[e_dom_name];
-		domain_name = (STR) node1->nod_arg[e_fln_name];
+		DSQL_NOD node1 = domain_node->nod_arg[e_dom_name];
+		const str* domain_name = (STR) node1->nod_arg[e_fln_name];
 		request->append_cstring(gds_dyn_fld_source, domain_name->str_data);
 
 		// Get the domain information
@@ -5963,9 +5931,7 @@ static void set_nod_value_attributes( DSQL_NOD node, DSQL_FLD field)
  *      to those of the field argument
  *
  **************************************/
-	ULONG child_number;
-
-	for (child_number = 0; child_number < node->nod_count; ++child_number)
+	for (ULONG child_number = 0; child_number < node->nod_count; ++child_number)
 	{
 		DSQL_NOD child = node->nod_arg[child_number];
 		if (child && MemoryPool::blk_type(child) == dsql_type_nod)

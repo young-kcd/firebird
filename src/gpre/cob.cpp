@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.32 2003-10-14 22:21:49 brodsom Exp $
+//	$Id: cob.cpp,v 1.33 2003-10-16 08:50:59 robocop Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -59,178 +59,178 @@
 
 #ifdef VMS
 #define GIVING_SUPPORTED
-static const char* COMMIT			= "COMMIT";
-static const char* ROLLBACK		= "ROLLBACK";
-static const char* OMITTED 		= "OMITTED";
-static const char* RAW_BLR_TEMPLATE= "03  %s%d%s%d PIC S9(9) USAGE COMP VALUE IS %"SLONGFORMAT".";
-static const char* RAW_TPB_TEMPLATE= "03  %s%d%s%d PIC S9(9) USAGE COMP VALUE IS %"SLONGFORMAT".";
-static const char* BY_VALUE		= "BY VALUE ";
-static const char* END_VALUE		= "";
-static const char* BY_REF			= "BY REFERENCE ";
-static const char* BY_DESC			= "BY DESCRIPTOR ";
-static const char* ISC_BLOB		= "ISC_%s_BLOB";
-static const char* CLOSE			= "CLOSE";
-static const char* CANCEL			= "CANCEL";
-static const char* COMP_VALUE		= "COMP";
-static const char* ISC_CANCEL_BLOB				= "ISC_CANCEL_BLOB";
-static const char* ISC_COMPILE_REQUEST			="ISC_COMPILE_REQUEST";
-static const char* ISC_CREATE_DATABASE			= "ISC_CREATE_DATABASE";
-static const char* ISC_DDL						= "ISC_DDL";
-static const char* ISC_COMMIT_TRANSACTION		= "ISC_COMMIT_TRANSACTION";
-static const char* ISC_ROLLBACK_TRANSACTION	= "ISC_ROLLBACK_TRANSACTION";
-static const char* ISC_DROP_DATABASE 			= "ISC_DROP_DATABASE";
-static const char* ISC_CLOSE 					= "ISC_EMBED_DSQL_CLOSE";
-static const char* ISC_DECLARE 		= "ISC_EMBED_DSQL_DECLARE";
-static const char* ISC_DESCRIBE 		= "ISC_EMBED_DSQL_DESCRIBE";
-static const char* ISC_DESCRIBE_BIND	= "ISC_EMBED_DSQL_DESCRIBE_BIND";
-static const char* ISC_EXECUTE 		= "ISC_EMBED_DSQL_EXECUTE";
-static const char* ISC_EXECUTE2 		= "ISC_EMBED_DSQL_EXECUTE2";
-static const char* ISC_EXECUTE_IMMEDIATE	= "ISC_EMBED_DSQL_EXECUTE_IMMED_D";
-static const char* ISC_EXECUTE_IMMEDIATE2	= "ISC_EMBED_DSQL_EXECUTE_IMMED2_D";
-static const char* ISC_FETCH 			= "ISC_EMBED_DSQL_FETCH";
-static const char* ISC_INSERT 			= "ISC_EMBED_DSQL_INSERT";
-static const char* ISC_OPEN			= "ISC_EMBED_DSQL_OPEN";
-static const char* ISC_OPEN2			= "ISC_EMBED_DSQL_OPEN2";
-static const char* ISC_PREPARE	 		= "ISC_EMBED_DSQL_PREPARE_D";
-static const char* ISC_DSQL_ALLOCATE	= "ISC_DSQL_ALLOC_STATEMENT2";
-static const char* ISC_DSQL_EXECUTE	= "ISC_DSQL_EXECUTE_M";
-static const char* ISC_DSQL_FREE		= "ISC_DSQL_FREE_STATEMENT";
-static const char* ISC_DSQL_SET_CURSOR	= "ISC_DSQL_SET_CURSOR_NAME";
-static const char* ISC_SQLCODE_CALL	= "ISC_SQLCODE";
-static const char* ISC_DETACH_DATABASE = "ISC_DETACH_DATABASE";
-static const char* ISC_GET_SLICE 		= "ISC_GET_SLICE";
-static const char* ISC_PUT_SLICE 		= "ISC_PUT_SLICE";
-static const char* ISC_GET_SEGMENT 	= "ISC_GET_SEGMENT";
-static const char* ISC_PUT_SEGMENT 	= "ISC_PUT_SEGMENT";
-static const char* ISC_RECEIVE 		= "ISC_RECEIVE";
-static const char* ISC_RELEASE_REQUEST	= "ISC_RELEASE_REQUEST";
-static const char* ISC_UNWIND_REQUEST 	= "ISC_UNWIND_REQUEST";
-static const char* ISC_SEND 			= "ISC_SEND";
-static const char* ISC_START_TRANSACTION 	= "ISC_START_TRANSACTION";
-static const char* ISC_START_AND_SEND 	= "ISC_START_AND_SEND";
-static const char* ISC_START_REQUEST 	= "ISC_START_REQUEST";
-static const char* ISC_TRANSACT_REQUEST 	= "ISC_TRANSACT_REQUEST";
-static const char* ISC_COMMIT_RETAINING 	= "ISC_COMMIT_RETAINING";
-static const char* ISC_ATTACH_DATABASE_D 	= "ISC_ATTACH_DATABASE_D";
-static const char* ISC_ATTACH_DATABASE 	= "ISC_ATTACH_DATABASE";
-static const char* ISC_MODIFY_DPB 			= "ISC_MODIFY_DPB";
-static const char* ISC_FREE				= "ISC_FREE";
-static const char* ISC_PREPARE_TRANSACTION	= "ISC_PREPARE_TRANSACTION";
-static const char* ISC_EVENT_BLOCK		= "ISC_EVENT_BLOCK_A";
-static const char* ISC_EVENT_COUNTS	= "ISC_EVENT_COUNTS";
-static const char* ISC_EVENT_WAIT		= "ISC_EVENT_WAIT";
-static const char* ISC_BADDRESS		= "ISC_BADDRESS";
+static const char* const COMMIT			= "COMMIT";
+static const char* const ROLLBACK		= "ROLLBACK";
+static const char* const OMITTED 		= "OMITTED";
+static const char* const RAW_BLR_TEMPLATE= "03  %s%d%s%d PIC S9(9) USAGE COMP VALUE IS %"SLONGFORMAT".";
+static const char* const RAW_TPB_TEMPLATE= "03  %s%d%s%d PIC S9(9) USAGE COMP VALUE IS %"SLONGFORMAT".";
+static const char* const BY_VALUE		= "BY VALUE ";
+static const char* const END_VALUE		= "";
+static const char* const BY_REF			= "BY REFERENCE ";
+static const char* const BY_DESC			= "BY DESCRIPTOR ";
+static const char* const ISC_BLOB		= "ISC_%s_BLOB";
+static const char* const CLOSE			= "CLOSE";
+static const char* const CANCEL			= "CANCEL";
+static const char* const COMP_VALUE		= "COMP";
+static const char* const ISC_CANCEL_BLOB				= "ISC_CANCEL_BLOB";
+static const char* const ISC_COMPILE_REQUEST			="ISC_COMPILE_REQUEST";
+static const char* const ISC_CREATE_DATABASE			= "ISC_CREATE_DATABASE";
+static const char* const ISC_DDL						= "ISC_DDL";
+static const char* const ISC_COMMIT_TRANSACTION		= "ISC_COMMIT_TRANSACTION";
+static const char* const ISC_ROLLBACK_TRANSACTION	= "ISC_ROLLBACK_TRANSACTION";
+static const char* const ISC_DROP_DATABASE 			= "ISC_DROP_DATABASE";
+static const char* const ISC_CLOSE 					= "ISC_EMBED_DSQL_CLOSE";
+static const char* const ISC_DECLARE 		= "ISC_EMBED_DSQL_DECLARE";
+static const char* const ISC_DESCRIBE 		= "ISC_EMBED_DSQL_DESCRIBE";
+static const char* const ISC_DESCRIBE_BIND	= "ISC_EMBED_DSQL_DESCRIBE_BIND";
+static const char* const ISC_EXECUTE 		= "ISC_EMBED_DSQL_EXECUTE";
+static const char* const ISC_EXECUTE2 		= "ISC_EMBED_DSQL_EXECUTE2";
+static const char* const ISC_EXECUTE_IMMEDIATE	= "ISC_EMBED_DSQL_EXECUTE_IMMED_D";
+static const char* const ISC_EXECUTE_IMMEDIATE2	= "ISC_EMBED_DSQL_EXECUTE_IMMED2_D";
+static const char* const ISC_FETCH 			= "ISC_EMBED_DSQL_FETCH";
+static const char* const ISC_INSERT 			= "ISC_EMBED_DSQL_INSERT";
+static const char* const ISC_OPEN			= "ISC_EMBED_DSQL_OPEN";
+static const char* const ISC_OPEN2			= "ISC_EMBED_DSQL_OPEN2";
+static const char* const ISC_PREPARE	 		= "ISC_EMBED_DSQL_PREPARE_D";
+static const char* const ISC_DSQL_ALLOCATE	= "ISC_DSQL_ALLOC_STATEMENT2";
+static const char* const ISC_DSQL_EXECUTE	= "ISC_DSQL_EXECUTE_M";
+static const char* const ISC_DSQL_FREE		= "ISC_DSQL_FREE_STATEMENT";
+static const char* const ISC_DSQL_SET_CURSOR	= "ISC_DSQL_SET_CURSOR_NAME";
+static const char* const ISC_SQLCODE_CALL	= "ISC_SQLCODE";
+static const char* const ISC_DETACH_DATABASE = "ISC_DETACH_DATABASE";
+static const char* const ISC_GET_SLICE 		= "ISC_GET_SLICE";
+static const char* const ISC_PUT_SLICE 		= "ISC_PUT_SLICE";
+static const char* const ISC_GET_SEGMENT 	= "ISC_GET_SEGMENT";
+static const char* const ISC_PUT_SEGMENT 	= "ISC_PUT_SEGMENT";
+static const char* const ISC_RECEIVE 		= "ISC_RECEIVE";
+static const char* const ISC_RELEASE_REQUEST	= "ISC_RELEASE_REQUEST";
+static const char* const ISC_UNWIND_REQUEST 	= "ISC_UNWIND_REQUEST";
+static const char* const ISC_SEND 			= "ISC_SEND";
+static const char* const ISC_START_TRANSACTION 	= "ISC_START_TRANSACTION";
+static const char* const ISC_START_AND_SEND 	= "ISC_START_AND_SEND";
+static const char* const ISC_START_REQUEST 	= "ISC_START_REQUEST";
+static const char* const ISC_TRANSACT_REQUEST 	= "ISC_TRANSACT_REQUEST";
+static const char* const ISC_COMMIT_RETAINING 	= "ISC_COMMIT_RETAINING";
+static const char* const ISC_ATTACH_DATABASE_D 	= "ISC_ATTACH_DATABASE_D";
+static const char* const ISC_ATTACH_DATABASE 	= "ISC_ATTACH_DATABASE";
+static const char* const ISC_MODIFY_DPB 			= "ISC_MODIFY_DPB";
+static const char* const ISC_FREE				= "ISC_FREE";
+static const char* const ISC_PREPARE_TRANSACTION	= "ISC_PREPARE_TRANSACTION";
+static const char* const ISC_EVENT_BLOCK		= "ISC_EVENT_BLOCK_A";
+static const char* const ISC_EVENT_COUNTS	= "ISC_EVENT_COUNTS";
+static const char* const ISC_EVENT_WAIT		= "ISC_EVENT_WAIT";
+static const char* const ISC_BADDRESS		= "ISC_BADDRESS";
 
 #else // VMS
 
-static const char* COMMIT			= "commit";
-static const char* ROLLBACK		= "rollback";
+static const char* const COMMIT			= "commit";
+static const char* const ROLLBACK		= "rollback";
 
 #if defined AIX || defined AIX_PPC || defined sparc || defined SOLX86 || defined HP10 || defined HP11 || defined SINIXZ || defined LINUX || defined DARWIN || defined FREEBSD || defined NETBSD || defined WIN_NT
-static const char* OMITTED 		= "BY VALUE 0";
-static const char* BY_VALUE		= "BY VALUE ";
-static const char* END_VALUE		= "";
-static const char* BY_REF			= "BY REFERENCE ";
-static const char* BY_DESC 		= "BY REFERENCE ";
-static const char* RAW_BLR_TEMPLATE	= "03  %s%d%s%d PIC XXXX USAGE COMP-X VALUE IS %"ULONGFORMAT".";
-static const char* RAW_TPB_TEMPLATE	= "03  %s%d%s%d PIC XXXX USAGE COMP-X VALUE IS %"ULONGFORMAT".";
-static const char* COMP_VALUE		= "COMP-5";
+static const char* const OMITTED 		= "BY VALUE 0";
+static const char* const BY_VALUE		= "BY VALUE ";
+static const char* const END_VALUE		= "";
+static const char* const BY_REF			= "BY REFERENCE ";
+static const char* const BY_DESC 		= "BY REFERENCE ";
+static const char* const RAW_BLR_TEMPLATE	= "03  %s%d%s%d PIC XXXX USAGE COMP-X VALUE IS %"ULONGFORMAT".";
+static const char* const RAW_TPB_TEMPLATE	= "03  %s%d%s%d PIC XXXX USAGE COMP-X VALUE IS %"ULONGFORMAT".";
+static const char* const COMP_VALUE		= "COMP-5";
 #else
-static const char* COMP_VALUE		= "COMP";
+static const char* const COMP_VALUE		= "COMP";
 #endif // MICROFOCUS
 
-static const char* STRING_LENGTH	= "\"isc_embed_dsql_length\"";
+static const char* const STRING_LENGTH	= "\"isc_embed_dsql_length\"";
 
-static const char* ISC_BLOB		= "isc_%s_blob";
-static const char* CLOSE			= "close";
-static const char* CANCEL			= "cancel";
-static const char* ISC_CANCEL_BLOB		= "isc_cancel_blob";
-static const char* ISC_COMPILE_REQUEST	= "isc_compile_request";
-static const char* ISC_CREATE_DATABASE	= "isc_create_database";
-static const char* ISC_DDL 			= "isc_ddl";
-static const char* ISC_COMMIT_TRANSACTION		= "isc_commit_transaction";
-static const char* ISC_ROLLBACK_TRANSACTION	= "isc_rollback_transaction";
-static const char* ISC_DROP_DATABASE 	= "isc_drop_database";
-static const char* ISC_CLOSE 			= "isc_embed_dsql_close";
-static const char* ISC_DECLARE 		= "isc_embed_dsql_declare";
-static const char* ISC_DESCRIBE 		= "isc_embed_dsql_describe";
-static const char* ISC_DESCRIBE_BIND	= "isc_embed_dsql_describe_bind";
-static const char* ISC_EXECUTE 		= "isc_embed_dsql_execute";
-static const char* ISC_EXECUTE2 		= "isc_embed_dsql_execute2";
-static const char* ISC_EXECUTE_IMMEDIATE	= "isc_embed_dsql_execute_immed";
-static const char* ISC_EXECUTE_IMMEDIATE2	= "isc_embed_dsql_execute_immed2";
-static const char* ISC_INSERT 			= "isc_embed_dsql_insert";
-static const char* ISC_OPEN			= "isc_embed_dsql_open";
-static const char* ISC_OPEN2			= "isc_embed_dsql_open2";
-static const char* ISC_PREPARE	 		= "isc_embed_dsql_prepare";
-static const char* ISC_DSQL_ALLOCATE	= "isc_dsql_alloc_statement2";
-static const char* ISC_DSQL_EXECUTE	= "isc_dsql_execute_m";
-static const char* ISC_DSQL_FREE		= "isc_dsql_free_statement";
-static const char* ISC_DSQL_SET_CURSOR	= "isc_dsql_set_cursor_name";
-static const char* ISC_COMMIT_ROLLBACK_TRANSACTION	= "isc_%s_transaction";
-static const char* ISC_DETACH_DATABASE	= "isc_detach_database";
-static const char* ISC_GET_SLICE 		= "isc_get_slice";
-static const char* ISC_PUT_SLICE 		= "isc_put_slice";
-static const char* ISC_GET_SEGMENT 	= "isc_get_segment";
-static const char* ISC_PUT_SEGMENT 	= "isc_put_segment";
-static const char* ISC_RECEIVE 		= "isc_receive";
-static const char* ISC_RELEASE_REQUEST	= "isc_release_request";
-static const char* ISC_UNWIND_REQUEST	= "isc_unwind_request";
-static const char* ISC_SEND 			= "isc_send";
-static const char* ISC_START_TRANSACTION	= "isc_start_transaction";
-static const char* ISC_START_AND_SEND 	= "isc_start_and_send";
-static const char* ISC_START_REQUEST 	= "isc_start_request";
-static const char* ISC_TRANSACT_REQUEST 	= "isc_transact_request";
-static const char* ISC_COMMIT_RETAINING 	= "isc_commit_retaining";
-static const char* ISC_ATTACH_DATABASE_D 	= "isc_attach_database";
-static const char* ISC_ATTACH_DATABASE 	= "isc_attach_database";
-static const char* ISC_MODIFY_DPB		= "isc_modify_dpb";
-static const char* ISC_FREE			= "isc_free";
+static const char* const ISC_BLOB		= "isc_%s_blob";
+static const char* const CLOSE			= "close";
+static const char* const CANCEL			= "cancel";
+static const char* const ISC_CANCEL_BLOB		= "isc_cancel_blob";
+static const char* const ISC_COMPILE_REQUEST	= "isc_compile_request";
+static const char* const ISC_CREATE_DATABASE	= "isc_create_database";
+static const char* const ISC_DDL 			= "isc_ddl";
+static const char* const ISC_COMMIT_TRANSACTION		= "isc_commit_transaction";
+static const char* const ISC_ROLLBACK_TRANSACTION	= "isc_rollback_transaction";
+static const char* const ISC_DROP_DATABASE 	= "isc_drop_database";
+static const char* const ISC_CLOSE 			= "isc_embed_dsql_close";
+static const char* const ISC_DECLARE 		= "isc_embed_dsql_declare";
+static const char* const ISC_DESCRIBE 		= "isc_embed_dsql_describe";
+static const char* const ISC_DESCRIBE_BIND	= "isc_embed_dsql_describe_bind";
+static const char* const ISC_EXECUTE 		= "isc_embed_dsql_execute";
+static const char* const ISC_EXECUTE2 		= "isc_embed_dsql_execute2";
+static const char* const ISC_EXECUTE_IMMEDIATE	= "isc_embed_dsql_execute_immed";
+static const char* const ISC_EXECUTE_IMMEDIATE2	= "isc_embed_dsql_execute_immed2";
+static const char* const ISC_INSERT 			= "isc_embed_dsql_insert";
+static const char* const ISC_OPEN			= "isc_embed_dsql_open";
+static const char* const ISC_OPEN2			= "isc_embed_dsql_open2";
+static const char* const ISC_PREPARE	 		= "isc_embed_dsql_prepare";
+static const char* const ISC_DSQL_ALLOCATE	= "isc_dsql_alloc_statement2";
+static const char* const ISC_DSQL_EXECUTE	= "isc_dsql_execute_m";
+static const char* const ISC_DSQL_FREE		= "isc_dsql_free_statement";
+static const char* const ISC_DSQL_SET_CURSOR	= "isc_dsql_set_cursor_name";
+static const char* const ISC_COMMIT_ROLLBACK_TRANSACTION	= "isc_%s_transaction";
+static const char* const ISC_DETACH_DATABASE	= "isc_detach_database";
+static const char* const ISC_GET_SLICE 		= "isc_get_slice";
+static const char* const ISC_PUT_SLICE 		= "isc_put_slice";
+static const char* const ISC_GET_SEGMENT 	= "isc_get_segment";
+static const char* const ISC_PUT_SEGMENT 	= "isc_put_segment";
+static const char* const ISC_RECEIVE 		= "isc_receive";
+static const char* const ISC_RELEASE_REQUEST	= "isc_release_request";
+static const char* const ISC_UNWIND_REQUEST	= "isc_unwind_request";
+static const char* const ISC_SEND 			= "isc_send";
+static const char* const ISC_START_TRANSACTION	= "isc_start_transaction";
+static const char* const ISC_START_AND_SEND 	= "isc_start_and_send";
+static const char* const ISC_START_REQUEST 	= "isc_start_request";
+static const char* const ISC_TRANSACT_REQUEST 	= "isc_transact_request";
+static const char* const ISC_COMMIT_RETAINING 	= "isc_commit_retaining";
+static const char* const ISC_ATTACH_DATABASE_D 	= "isc_attach_database";
+static const char* const ISC_ATTACH_DATABASE 	= "isc_attach_database";
+static const char* const ISC_MODIFY_DPB		= "isc_modify_dpb";
+static const char* const ISC_FREE			= "isc_free";
 #ifdef GIVING_SUPPORTED
-static const char* ISC_SQLCODE_CALL	= "isc_sqlcode";
-static const char* ISC_FETCH 			= "isc_embed_dsql_fetch";
-static const char* ISC_EVENT_BLOCK		= "isc_event_block_a";
+static const char* const ISC_SQLCODE_CALL	= "isc_sqlcode";
+static const char* const ISC_FETCH 			= "isc_embed_dsql_fetch";
+static const char* const ISC_EVENT_BLOCK		= "isc_event_block_a";
 #else
-static const char* ISC_SQLCODE_CALL 	= "isc_sqlcode_s";
-static const char* ISC_FETCH 			= "isc_embed_dsql_fetch_a";
-static const char* ISC_EVENT_BLOCK		= "isc_event_block_s";
+static const char* const ISC_SQLCODE_CALL 	= "isc_sqlcode_s";
+static const char* const ISC_FETCH 			= "isc_embed_dsql_fetch_a";
+static const char* const ISC_EVENT_BLOCK		= "isc_event_block_s";
 #endif
-static const char* ISC_PREPARE_TRANSACTION	= "isc_prepare_transaction";
-static const char* ISC_EVENT_WAIT		= "isc_wait_for_event";
-static const char* ISC_EVENT_COUNTS	= "isc_event_counts";
+static const char* const ISC_PREPARE_TRANSACTION	= "isc_prepare_transaction";
+static const char* const ISC_EVENT_WAIT		= "isc_wait_for_event";
+static const char* const ISC_EVENT_COUNTS	= "isc_event_counts";
 #ifdef GIVING_SUPPORTED
-static const char* ISC_BADDRESS		= "isc_baddress";
+static const char* const ISC_BADDRESS		= "isc_baddress";
 #else
-static const char* ISC_BADDRESS		= "isc_baddress_s";
+static const char* const ISC_BADDRESS		= "isc_baddress_s";
 #endif
 
 #endif // VMS
 
 #ifdef GIVING_SUPPORTED
-static const char* FETCH_CALL_TEMPLATE		= "CALL \"%s\" USING %s, %s%s, %s%d%s, %s%s GIVING SQLCODE";
-static const char* GET_LEN_CALL_TEMPLATE	= "CALL %s USING %s GIVING %s";
-static const char* EVENT_MOVE_TEMPLATE		= "CALL \"%s\" USING %s(%d) GIVING %s(%d)";
-static const char* GET_SEG_CALL_TEMPLATE	= "%sCALL \"%s\" USING %s, %s%d, %s%d, %s%d%s, %s%s%d GIVING %s (2)\n";
-static const char* PUT_SEG_CALL_TEMPLATE	= "%sCALL \"%s\" USING %s, %s%s%d, %s%s%d%s, %s%s%d GIVING %s (2)\n"
-static const char* SQLCODE_CALL_TEMPLATE	= "CALL \"%s\" USING %s GIVING SQLCODE";
+static const char* const FETCH_CALL_TEMPLATE		= "CALL \"%s\" USING %s, %s%s, %s%d%s, %s%s GIVING SQLCODE";
+static const char* const GET_LEN_CALL_TEMPLATE	= "CALL %s USING %s GIVING %s";
+static const char* const EVENT_MOVE_TEMPLATE		= "CALL \"%s\" USING %s(%d) GIVING %s(%d)";
+static const char* const GET_SEG_CALL_TEMPLATE	= "%sCALL \"%s\" USING %s, %s%d, %s%d, %s%d%s, %s%s%d GIVING %s (2)\n";
+static const char* const PUT_SEG_CALL_TEMPLATE	= "%sCALL \"%s\" USING %s, %s%s%d, %s%s%d%s, %s%s%d GIVING %s (2)\n"
+static const char* const SQLCODE_CALL_TEMPLATE	= "CALL \"%s\" USING %s GIVING SQLCODE";
 #else
-static const char* FETCH_CALL_TEMPLATE		= "CALL \"%s\" USING %s, BY REFERENCE SQLCODE, %s%s, %s%d%s, %s%s";
-static const char* GET_LEN_CALL_TEMPLATE	= "CALL %s USING %s, %s";
-static const char* EVENT_MOVE_TEMPLATE		= "CALL \"%s\" USING %s(%d), %s(%d)";
-static const char* GET_SEG_CALL_TEMPLATE	= "%sCALL \"%s\" USING %s, %s%d, %s%d, %s%d%s, %s%s%d\n";
-static const char* PUT_SEG_CALL_TEMPLATE	= "%sCALL \"%s\" USING %s, %s%s%d, %s%s%d%s, %s%s%d\n";
-static const char* SQLCODE_CALL_TEMPLATE	= "CALL \"%s\" USING %s, BY REFERENCE SQLCODE";
+static const char* const FETCH_CALL_TEMPLATE		= "CALL \"%s\" USING %s, BY REFERENCE SQLCODE, %s%s, %s%d%s, %s%s";
+static const char* const GET_LEN_CALL_TEMPLATE	= "CALL %s USING %s, %s";
+static const char* const EVENT_MOVE_TEMPLATE		= "CALL \"%s\" USING %s(%d), %s(%d)";
+static const char* const GET_SEG_CALL_TEMPLATE	= "%sCALL \"%s\" USING %s, %s%d, %s%d, %s%d%s, %s%s%d\n";
+static const char* const PUT_SEG_CALL_TEMPLATE	= "%sCALL \"%s\" USING %s, %s%s%d, %s%s%d%s, %s%s%d\n";
+static const char* const SQLCODE_CALL_TEMPLATE	= "CALL \"%s\" USING %s, BY REFERENCE SQLCODE";
 #endif // GIVING_SUPPORTED
 
 #if defined AIX || defined AIX_PPC || defined sparc || defined SOLX86 || defined HP10 || defined HP11
-static const char* USAGE_COMP			= " USAGE IS COMP";
+static const char* const USAGE_COMP			= " USAGE IS COMP";
 #else
-static const char* USAGE_COMP			= " USAGE IS COMP";
+static const char* const USAGE_COMP			= " USAGE IS COMP";
 #endif
 
 #ifndef FLOATS_COMPS_DECLARED
-static const char* DCL_FLOAT			= "USAGE IS COMP-1";
-static const char* DCL_DOUBLE			= "USAGE IS COMP-2";
+static const char* const DCL_FLOAT			= "USAGE IS COMP-1";
+static const char* const DCL_DOUBLE			= "USAGE IS COMP-2";
 #endif
 
 
@@ -427,7 +427,7 @@ enum {
 	ISC_EVENT_NAMES2
 };
 
-static const char* INDENT		= "   ";
+static const char* const INDENT		= "   ";
 
 
 //____________________________________________________________
@@ -2082,7 +2082,7 @@ static void gen_dyn_fetch( const act* action)
 	make_name(s, statement->dyn_cursor_name);
 #endif
 
-	printa(names[COLUMN], true, const_cast<char*>(FETCH_CALL_TEMPLATE),
+	printa(names[COLUMN], true, FETCH_CALL_TEMPLATE,
 		   ISC_FETCH,
 		   status_vector(action),
 		   BY_REF, s,
@@ -2126,7 +2126,7 @@ static void gen_dyn_immediate( const act* action)
 
 #ifndef VMS
 	s2 = "ISC-CONST-DYN-IMMEDL";
-	printa(names[COLUMN], true,  const_cast<char*>(GET_LEN_CALL_TEMPLATE),
+	printa(names[COLUMN], true, GET_LEN_CALL_TEMPLATE,
 		   STRING_LENGTH, statement->dyn_string, s2);
 	sprintf(s, " %s%s%s,", BY_VALUE, s2, END_VALUE);
 #else
@@ -2272,7 +2272,7 @@ static void gen_dyn_prepare( const act* action)
 #ifndef VMS
 	make_name_formatted(s, "ISC-CONST-%s", statement->dyn_statement_name);
 	sprintf(s2, "%sL", s);
-	printa(names[COLUMN], true,  const_cast<char*>(GET_LEN_CALL_TEMPLATE),
+	printa(names[COLUMN], true, GET_LEN_CALL_TEMPLATE,
 		   STRING_LENGTH, statement->dyn_string, s2);
 	sprintf(s3, " %s%s%s,", BY_VALUE, s2, END_VALUE);
 #else
@@ -2463,9 +2463,9 @@ static void gen_event_init( const act* action)
 	args.pat_vector1 = status_vector(action);
 	args.pat_value1 = (int) init->nod_arg[2];
 	args.pat_value2 = (int) event_list->nod_count;
-	args.pat_string1 =  const_cast<char*>(ISC_EVENT_BLOCK);
-	args.pat_string2 =  const_cast<char*>(ISC_EVENT_WAIT);
-	args.pat_string3 =  const_cast<char*>(ISC_EVENT_COUNTS);
+	args.pat_string1 = ISC_EVENT_BLOCK;
+	args.pat_string2 = ISC_EVENT_WAIT;
+	args.pat_string3 = ISC_EVENT_COUNTS;
 	args.pat_string4 = names[isc_a_pos];
 	args.pat_string5 = names[ISC_EVENTS_VECTOR];
 	args.pat_string6 = names[ISC_EVENT_NAMES_VECTOR];
@@ -2486,8 +2486,7 @@ static void gen_event_init( const act* action)
 			printa(names[COLUMN], false, "MOVE %s TO %s(%d)",
 				   (TEXT *) node->nod_arg[0], names[ISC_EVENT_NAMES2], count);
 
-		printa(names[COLUMN], true,  const_cast<char*>(EVENT_MOVE_TEMPLATE),
-				ISC_BADDRESS,
+		printa(names[COLUMN], true, EVENT_MOVE_TEMPLATE, ISC_BADDRESS,
 				names[ISC_EVENT_NAMES2], count, names[ISC_EVENT_NAMES], count);
 	}
 
@@ -2552,8 +2551,8 @@ static void gen_event_wait( const act* action)
 	args.pat_database = database;
 	args.pat_vector1 = status_vector(action);
 	args.pat_value1 = (int) ident;
-	args.pat_string2 =  const_cast<char*>(ISC_EVENT_WAIT);
-	args.pat_string3 =  const_cast<char*>(ISC_EVENT_COUNTS);
+	args.pat_string2 = ISC_EVENT_WAIT;
+	args.pat_string3 = ISC_EVENT_COUNTS;
 	args.pat_string4 = names[isc_a_pos];
 	args.pat_string5 = names[ISC_EVENTS_VECTOR];
 
@@ -3872,7 +3871,7 @@ static void gen_tpb(tpb* tpb_buffer)
 				break;
 		}
 
-		printa(names[COLUMN], false,  const_cast<char*>(RAW_TPB_TEMPLATE),
+		printa(names[COLUMN], false, RAW_TPB_TEMPLATE,
 			   names[isc_tpb_pos], tpb_buffer->tpb_ident,
 			   names[UNDER], length++, tpb_hunk.longword_tpb);
 	}
@@ -4498,7 +4497,7 @@ static const TEXT* status_vector( const act* action)
 	if (action && (action->act_error || (action->act_flags & ACT_sql)))
 		return names[isc_status_vector_pos];
 
-	return(const_cast<char*>(OMITTED));
+	return (OMITTED);
 }
 
 

@@ -103,10 +103,10 @@ static void		cleanup_transaction(FRBRD*, SLONG);
 static void		close_cursor(DSQL_REQ);
 static USHORT	convert(SLONG, UCHAR*);
 static ISC_STATUS	error();
-static void		execute_blob(DSQL_REQ, USHORT, UCHAR*, USHORT, UCHAR*,
+static void		execute_blob(DSQL_REQ, USHORT, const UCHAR*, USHORT, UCHAR*,
 						 USHORT, UCHAR*, USHORT, UCHAR*);
-static ISC_STATUS	execute_request(DSQL_REQ, FRBRD**, USHORT, UCHAR*, USHORT, UCHAR*,
-							  USHORT, UCHAR*, USHORT, UCHAR*, bool);
+static ISC_STATUS	execute_request(DSQL_REQ, FRBRD**, USHORT, const UCHAR*,
+	USHORT, UCHAR*, USHORT, UCHAR*, USHORT, UCHAR*, bool);
 static SSHORT	filter_sub_type(DSQL_REQ, DSQL_NOD);
 static bool		get_indices(SSHORT*, SCHAR**, SSHORT*, SCHAR**);
 static USHORT	get_plan_info(DSQL_REQ, SSHORT, SCHAR**);
@@ -114,15 +114,16 @@ static USHORT	get_request_info(DSQL_REQ, SSHORT, SCHAR*);
 static bool		get_rsb_item(SSHORT*, SCHAR**, SSHORT*, SCHAR**, USHORT*,
 							USHORT*);
 static DBB		init(FRBRD**);
-static void		map_in_out(DSQL_REQ, DSQL_MSG, USHORT, UCHAR*, USHORT, UCHAR*);
-static USHORT	name_length(TEXT*);
-static USHORT	parse_blr(USHORT, UCHAR*, USHORT, PAR);
+static void		map_in_out(DSQL_REQ, DSQL_MSG, USHORT, const UCHAR*, USHORT, UCHAR*);
+static USHORT	name_length(const TEXT*);
+static USHORT	parse_blr(USHORT, const UCHAR*, const USHORT, PAR);
 static DSQL_REQ		prepare(DSQL_REQ, USHORT, TEXT*, USHORT, USHORT);
 static void		punt(void);
-static UCHAR*	put_item(UCHAR, USHORT, UCHAR*, UCHAR*, UCHAR*);
+static UCHAR*	put_item(UCHAR, USHORT, const UCHAR*, UCHAR*, const UCHAR* const);
 static void		release_request(DSQL_REQ, bool);
 static ISC_STATUS	return_success(void);
-static UCHAR*	var_info(DSQL_MSG, const UCHAR*, const UCHAR*, UCHAR*, UCHAR*, USHORT);
+static UCHAR*	var_info(DSQL_MSG, const UCHAR*, const UCHAR* const, UCHAR*,
+	UCHAR*, USHORT);
 
 extern DSQL_NOD DSQL_parse;
 
@@ -178,7 +179,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_CPP(   ISC_STATUS*			user_status,
 							   FRBRD**			trans_handle,
 							   dsql_req**		req_handle,
 							   USHORT			in_blr_length,
-							   UCHAR*			in_blr,
+							   const UCHAR*			in_blr,
 							   USHORT			in_msg_type,
 							   USHORT			in_msg_length,
 							   UCHAR*			in_msg,
@@ -497,7 +498,7 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 				FRBRD**		trans_handle,
 				dsql_req**	req_handle,
 				USHORT		in_blr_length,
-				UCHAR*		in_blr,
+				const UCHAR*		in_blr,
 				USHORT		in_msg_type,
 				USHORT		in_msg_length,
 				UCHAR*		in_msg,
@@ -3027,7 +3028,7 @@ static ISC_STATUS error()
  **/
 static void execute_blob(	DSQL_REQ		request,
 							USHORT	in_blr_length,
-							UCHAR*	in_blr,
+							const UCHAR*	in_blr,
 							USHORT	in_msg_length,
 							UCHAR*	in_msg,
 							USHORT	out_blr_length,
@@ -3035,18 +3036,16 @@ static void execute_blob(	DSQL_REQ		request,
 							USHORT	out_msg_length,
 							UCHAR*	out_msg)
 {
-	BLB blob;
 	SSHORT filter;
 	USHORT bpb_length;
 	GDS__QUAD *blob_id;
 	UCHAR bpb[24], *p;
 	PAR parameter, null;
 	ISC_STATUS s;
-	TSQL tdsql;
 
-	tdsql = GET_THREAD_DATA;
+	TSQL tdsql = GET_THREAD_DATA;
 
-	blob = request->req_blob;
+	BLB blob = request->req_blob;
 	map_in_out(request, blob->blb_open_in_msg, in_blr_length, in_blr,
 			   in_msg_length, in_msg);
 
@@ -3132,7 +3131,7 @@ static void execute_blob(	DSQL_REQ		request,
 static ISC_STATUS execute_request(DSQL_REQ			request,
 								  WHY_TRA*			trans_handle,
 								  USHORT			in_blr_length,
-								  UCHAR*			in_blr,
+								  const UCHAR*			in_blr,
 								  USHORT			in_msg_length,
 								  UCHAR*			in_msg,
 								  USHORT			out_blr_length,
@@ -4227,7 +4226,7 @@ static DBB init(FRBRD** db_handle)
 static void map_in_out(	DSQL_REQ		request,
 						DSQL_MSG		message,
 						USHORT	blr_length,
-						UCHAR*	blr,
+						const UCHAR*	blr,
 						USHORT	msg_length,
 						UCHAR*	dsql_msg)
 {
@@ -4328,13 +4327,12 @@ static void map_in_out(	DSQL_REQ		request,
     @param name
 
  **/
-static USHORT name_length( TEXT * name)
+static USHORT name_length( const TEXT* name)
 {
-	TEXT *p, *q;
 	const char BLANK = '\040';
 
-	q = name - 1;
-	for (p = name; *p; p++) {
+	const TEXT* q = name - 1;
+	for (const TEXT* p = name; *p; p++) {
 		if (*p != BLANK)
 			q = p;
 	}
@@ -4358,26 +4356,22 @@ static USHORT name_length( TEXT * name)
  **/
 static USHORT parse_blr(
 						USHORT blr_length,
-						UCHAR * blr, USHORT msg_length, PAR parameters)
+						const UCHAR* blr, const USHORT msg_length, PAR parameters)
 {
-	PAR parameter, null;
-	USHORT count, index, offset, align, null_offset;
-	DSC desc;
-
 /* If there's no blr length, then the format of the current message buffer
    is identical to the format of the previous one. */
 
 	if (!blr_length)
 	{
-		count = 0;
-		for (parameter = parameters; parameter;
+		USHORT par_count = 0;
+		for (PAR parameter = parameters; parameter;
 			 parameter = parameter->par_next)
 		{
 			if (parameter->par_index) {
-				count++;
+				++par_count;
 			}
 		}
-		return count;
+		return par_count;
 	}
 
 	if (*blr != blr_version4 && *blr != blr_version5)
@@ -4392,17 +4386,19 @@ static USHORT parse_blr(
 				  gds_arg_gds, gds_dsql_sqlda_err, 0);
 	}
 
-	blr++;						/* skip the message number */
-	count = *blr++;
+	++blr;						/* skip the message number */
+	USHORT count = *blr++;
 	count += (*blr++) << 8;
 	count /= 2;
 
-	offset = 0;
-	for (index = 1; index <= count; index++)
+	USHORT offset = 0;
+	for (USHORT index = 1; index <= count; index++)
 	{
+		dsc desc;
 		desc.dsc_scale = 0;
 		desc.dsc_sub_type = 0;
 		desc.dsc_flags = 0;
+		
 		switch (*blr++)
 		{
 		case blr_text:
@@ -4499,7 +4495,7 @@ static USHORT parse_blr(
 					  gds_arg_gds, gds_dsql_sqlda_err, 0);
 		}
 
-		align = type_alignments[desc.dsc_dtype];
+		USHORT align = type_alignments[desc.dsc_dtype];
 		if (align)
 			offset = FB_ALIGN(offset, align);
 		desc.dsc_address = (UCHAR *) (ULONG) offset;
@@ -4512,18 +4508,19 @@ static USHORT parse_blr(
 		align = type_alignments[dtype_short];
 		if (align)
 			offset = FB_ALIGN(offset, align);
-		null_offset = offset;
+		USHORT null_offset = offset;
 		offset += sizeof(SSHORT);
 
-		for (parameter = parameters; parameter; parameter = parameter->par_next)
+		for (PAR parameter = parameters; parameter; parameter = parameter->par_next)
 		{
 			if (parameter->par_index == index) {
 				parameter->par_user_desc = desc;
-				if (null = parameter->par_null) {
+				PAR null = parameter->par_null;
+				if (null) {
 					null->par_user_desc.dsc_dtype = dtype_short;
 					null->par_user_desc.dsc_scale = 0;
 					null->par_user_desc.dsc_length = sizeof(SSHORT);
-					null->par_user_desc.dsc_address = (UCHAR *)(ULONG) null_offset;
+					null->par_user_desc.dsc_address = (UCHAR*)(ULONG) null_offset;
 				}
 			}
 		}
@@ -4565,11 +4562,10 @@ static DSQL_REQ prepare(
 	DSQL_MSG message;
 	TEXT *p;
 	USHORT length;
-	TSQL tdsql;
 	BOOLEAN stmt_ambiguous = FALSE;
 	ISC_STATUS_ARRAY local_status;
 
-	tdsql = GET_THREAD_DATA;
+	TSQL tdsql = GET_THREAD_DATA;
 
 	MOVE_CLEAR(local_status, sizeof(ISC_STATUS) * ISC_STATUS_LENGTH);
 
@@ -4800,9 +4796,9 @@ static void punt(void)
  **/
 static UCHAR* put_item(	UCHAR	item,
 						USHORT	length,
-						UCHAR*	string,
+						const UCHAR* string,
 						UCHAR*	ptr,
-						UCHAR*	end)
+						const UCHAR* const end)
 {
 
 	if (ptr + length + 3 >= end) {
@@ -4923,7 +4919,7 @@ static ISC_STATUS return_success(void)
 
 	TSQL tdsql = GET_THREAD_DATA;
 
-	ISC_STATUS*p = tdsql->tsql_status;
+	ISC_STATUS* p = tdsql->tsql_status;
 	*p++ = gds_arg_gds;
 	*p++ = FB_SUCCESS;
 
@@ -4953,13 +4949,12 @@ static ISC_STATUS return_success(void)
     @param first_index
 
  **/
-static UCHAR *var_info(
+static UCHAR* var_info(
 					   DSQL_MSG message,
-					   const UCHAR * items,
-					   const UCHAR * end_describe,
-					   UCHAR * info, UCHAR * end, USHORT first_index)
+					   const UCHAR* items,
+					   const UCHAR* const end_describe,
+					   UCHAR* info, UCHAR* end, USHORT first_index)
 {
-	PAR par;
 	UCHAR item, *buffer, buf[128];
 	const UCHAR *describe;
 	USHORT length;
@@ -4968,12 +4963,12 @@ static UCHAR *var_info(
 	if (!message || !message->msg_index)
 		return info;
 
-	for (par = message->msg_par_ordered; par; par = par->par_ordered)
-		if (par->par_index && par->par_index >= first_index) {
-			sql_len = par->par_desc.dsc_length;
+	for (PAR param = message->msg_par_ordered; param; param = param->par_ordered)
+		if (param->par_index && param->par_index >= first_index) {
+			sql_len = param->par_desc.dsc_length;
 			sql_sub_type = 0;
 			sql_scale = 0;
-			switch (par->par_desc.dsc_dtype) {
+			switch (param->par_desc.dsc_dtype) {
 			case dtype_real:
 				sql_type = SQL_FLOAT;
 				break;
@@ -4993,42 +4988,42 @@ static UCHAR *var_info(
 
 			case dtype_double:
 				sql_type = SQL_DOUBLE;
-				sql_scale = par->par_desc.dsc_scale;
+				sql_scale = param->par_desc.dsc_scale;
 				break;
 
 			case dtype_text:
 				sql_type = SQL_TEXT;
-				sql_sub_type = par->par_desc.dsc_sub_type;
+				sql_sub_type = param->par_desc.dsc_sub_type;
 				break;
 
 			case dtype_blob:
 				sql_type = SQL_BLOB;
-				sql_sub_type = par->par_desc.dsc_sub_type;
+				sql_sub_type = param->par_desc.dsc_sub_type;
 				break;
 
 			case dtype_varying:
 				sql_type = SQL_VARYING;
 				sql_len -= sizeof(USHORT);
-				sql_sub_type = par->par_desc.dsc_sub_type;
+				sql_sub_type = param->par_desc.dsc_sub_type;
 				break;
 
 			case dtype_short:
 			case dtype_long:
 			case dtype_int64:
-				if (par->par_desc.dsc_dtype == dtype_short)
+				if (param->par_desc.dsc_dtype == dtype_short)
 					sql_type = SQL_SHORT;
-				else if (par->par_desc.dsc_dtype == dtype_long)
+				else if (param->par_desc.dsc_dtype == dtype_long)
 					sql_type = SQL_LONG;
 				else
 					sql_type = SQL_INT64;
-				sql_scale = par->par_desc.dsc_scale;
-				if (par->par_desc.dsc_sub_type)
-					sql_sub_type = par->par_desc.dsc_sub_type;
+				sql_scale = param->par_desc.dsc_scale;
+				if (param->par_desc.dsc_sub_type)
+					sql_sub_type = param->par_desc.dsc_sub_type;
 				break;
 
 			case dtype_quad:
 				sql_type = SQL_QUAD;
-				sql_scale = par->par_desc.dsc_scale;
+				sql_scale = param->par_desc.dsc_scale;
 				break;
 
 			default:
@@ -5036,14 +5031,14 @@ static UCHAR *var_info(
 						  gds_arg_gds, gds_dsql_datatype_err, 0);
 			}
 
-			if (sql_type && (par->par_desc.dsc_flags & DSC_nullable))
+			if (sql_type && (param->par_desc.dsc_flags & DSC_nullable))
 				sql_type++;
 
 			for (describe = items; describe < end_describe;) {
 				buffer = buf;
 				switch (item = *describe++) {
 				case gds_info_sql_sqlda_seq:
-					length = convert((SLONG) par->par_index, buffer);
+					length = convert((SLONG) param->par_index, buffer);
 					break;
 
 				case gds_info_sql_message_seq:
@@ -5071,29 +5066,29 @@ static UCHAR *var_info(
 					break;
 
 				case gds_info_sql_field:
-					if (buffer = reinterpret_cast<UCHAR *>(par->par_name))
-						length = strlen(reinterpret_cast<SCHAR *>(buffer));
+					if (buffer = reinterpret_cast<UCHAR*>(param->par_name))
+						length = strlen(reinterpret_cast<SCHAR*>(buffer));
 					else
 						length = 0;
 					break;
 
 				case gds_info_sql_relation:
-					if (buffer = reinterpret_cast<UCHAR *>(par->par_rel_name))
-						length = strlen(reinterpret_cast<SCHAR *>(buffer));
+					if (buffer = reinterpret_cast<UCHAR*>(param->par_rel_name))
+						length = strlen(reinterpret_cast<SCHAR*>(buffer));
 					else
 						length = 0;
 					break;
 
 				case gds_info_sql_owner:
-					if (buffer = reinterpret_cast<UCHAR *>(par->par_owner_name))
-						length = strlen(reinterpret_cast<SCHAR *>(buffer));
+					if (buffer = reinterpret_cast<UCHAR*>(param->par_owner_name))
+						length = strlen(reinterpret_cast<SCHAR*>(buffer));
 					else
 						length = 0;
 					break;
 
 				case gds_info_sql_alias:
-					if (buffer = reinterpret_cast<UCHAR *>(par->par_alias))
-						length = strlen(reinterpret_cast<SCHAR *>(buffer));
+					if (buffer = reinterpret_cast<UCHAR*>(param->par_alias))
+						length = strlen(reinterpret_cast<SCHAR*>(buffer));
 					else
 						length = 0;
 					break;

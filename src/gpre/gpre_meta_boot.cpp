@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.28 2003-10-15 01:18:01 brodsom Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.29 2003-10-16 08:50:59 robocop Exp $
  */
 
 #include "firebird.h"
@@ -45,8 +45,8 @@
 #include "../jrd/constants.h"
 #include "../jrd/gds_proto.h"
 
-const int MAX_USER_LENGTH		= 33;
-const int MAX_PASSWORD_LENGTH	= 33;
+//const int MAX_USER_LENGTH		= 33;
+//const int MAX_PASSWORD_LENGTH	= 33;
 
 extern enum lang_t sw_language;
 extern bool sw_cstring;

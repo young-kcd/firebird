@@ -27,7 +27,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: alice_meta.epp,v 1.21 2003-09-25 11:48:57 robocop Exp $
+ *	$Id: alice_meta.epp,v 1.22 2003-10-16 08:50:54 robocop Exp $
  */
 
 #include "firebird.h"
@@ -57,11 +57,11 @@ DATABASE DB = STATIC FILENAME "yachts.lnk";
 #define DB			tdgbl->db_handle
 #define gds_trans	tdgbl->tr_handle
 
-static STR alloc_string(TEXT **);
-static USHORT get_capabilities(ISC_STATUS *);
+static STR alloc_string(TEXT**);
+static USHORT get_capabilities(ISC_STATUS*);
 static TDR get_description(SLONG[2]);
 static void parse_fullpath(TDR);
-static USHORT snarf_blob(SLONG[2], USHORT, TEXT *);
+static USHORT snarf_blob(SLONG[2], USHORT, TEXT*);
 
 
 /* 
@@ -80,7 +80,7 @@ static const rfr_tab_t rfr_table[] = {
 	{ 0, 0, 0 }
 };
 
-static inline void return_error(ISC_STATUS* user_status)
+static inline void return_error(const ISC_STATUS* user_status)
 {
 	ALICE_print_status(gds_status);
 	Firebird::status_exception::raise(0);
@@ -94,7 +94,7 @@ static inline void return_error(ISC_STATUS* user_status)
 
 void MET_disable_wal(ISC_STATUS* user_status, isc_db_handle handle)
 {
-	FRBRD *request = NULL;
+	FRBRD* request = NULL;
 	TGBL tdgbl = GET_THREAD_DATA;
 
 	if (!(DB = handle))
@@ -310,13 +310,12 @@ static USHORT get_capabilities(ISC_STATUS* user_status)
 
 static TDR get_description(SLONG blob_id[2])
 {
-	SLONG id_length, id;
-	USHORT length;
 	TEXT buffer[1024], *bigger_buffer;
 	TGBL tdgbl = GET_THREAD_DATA;
 
 	TEXT* p = buffer;
-	if (length = snarf_blob(blob_id, (USHORT) sizeof(buffer), buffer)) {
+	const USHORT length = snarf_blob(blob_id, (USHORT) sizeof(buffer), buffer);
+	if (length) {
 		p = bigger_buffer = (TEXT *) gds__alloc((SLONG) length);
 		snarf_blob(blob_id, length, bigger_buffer);
 	}
@@ -325,9 +324,10 @@ static TDR get_description(SLONG blob_id[2])
 	STR host_site = NULL, database_path = NULL;
 
 //  skip version number 
-	p++;
+	++p;
 	
 	TDR ptr;
+	SLONG id_length, id;
 
 	while (*p)
 		switch (*p++) {
@@ -380,26 +380,28 @@ static TDR get_description(SLONG blob_id[2])
 
 static void parse_fullpath(TDR trans)
 {
-	TEXT *start, *p, *q, *end;
-	USHORT length;
 	TGBL tdgbl = GET_THREAD_DATA;
 
 //  start at the end of the full pathname 
 
-	start = p = (TEXT*) trans->tdr_fullpath->str_data;
+ 	const TEXT* p = (TEXT*) trans->tdr_fullpath->str_data;
+	const TEXT* const start = p;
 	while (*p)
 		p++;
-	end = p;
+	const TEXT* const end = p;
 
 /*  Check for a named pipes name - \\node\path\db or //node/path/db */
 	while (p > start &&
 		   !(*p == '/' && *(p - 1) == '/') &&
-		   !(*p == '\\' && *(p - 1) == '\\')) p--;
+		   !(*p == '\\' && *(p - 1) == '\\'))
+	{
+		--p;
+	}
 
 	if (p > start) {
 		/* Increment p past slash, & search forward for end of node name */
 		p = p + 1;
-		q = p;
+		const TEXT* q = p;
 
 		while (*q && *q != '/' && *q != '\\')
 			q++;
@@ -430,14 +432,15 @@ static void parse_fullpath(TDR trans)
 
 		while (p > start && (*p == ':' || *p == '^' || *p == '@'))
 			p--;
-		for (length = 0; p >= start && (*p != '^' && *p != ':' && *p != '@');
-			 length++)
-			p--;
-		p++;
+			
+		USHORT length = 0;
+		for (; p >= start && (*p != '^' && *p != ':' && *p != '@'); ++length)
+			--p;
+		++p;
 
 		if (length) {
 			trans->tdr_remote_site = FB_NEW_RPT(*tdgbl->ALICE_default_pool, length + 1) str;
-			q = (TEXT *) trans->tdr_remote_site->str_data;
+			TEXT* q = (TEXT *) trans->tdr_remote_site->str_data;
 			while (length--)
 				*q++ = *p++;
 			*q = 0;

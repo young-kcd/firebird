@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.27 2003-10-14 22:21:49 brodsom Exp $
+//	$Id: pas.cpp,v 1.28 2003-10-16 08:50:59 robocop Exp $
 //
 
 #include "firebird.h"
@@ -132,32 +132,32 @@ static int first_flag;
 const int INDENT = 3;
 
 #ifdef VMS
-const char* SHORT_DCL		= "gds__short";
-const char* LONG_DCL		= "integer";
-const char* POINTER_DCL		= "gds__ptr_type";
-const char* PACKED_ARRAY	= "packed array";
-const char* OPEN_BRACKET	= "(";
-const char* CLOSE_BRACKET	= ")";
-const char* REF_PAR			= "%REF ";
-const char* SIZEOF			= "size";
-const char* STATIC_STRING	= "[STATIC]";
-const char* ISC_BADDRESS	= "ISC_BADDRESS";
+const char* const SHORT_DCL		= "gds__short";
+const char* const LONG_DCL		= "integer";
+const char* const POINTER_DCL		= "gds__ptr_type";
+const char* const PACKED_ARRAY	= "packed array";
+const char* const OPEN_BRACKET	= "(";
+const char* const CLOSE_BRACKET	= ")";
+const char* const REF_PAR			= "%REF ";
+const char* const SIZEOF			= "size";
+const char* const STATIC_STRING	= "[STATIC]";
+const char* const ISC_BADDRESS	= "ISC_BADDRESS";
 #else
-const char* SHORT_DCL		= "integer16";
-const char* LONG_DCL		= "integer32";
-const char* POINTER_DCL		= "UNIV_PTR";
-const char* PACKED_ARRAY	= "array";
-const char* OPEN_BRACKET	= "[";
-const char* CLOSE_BRACKET	= "]";
-const char* REF_PAR			= "";
-const char* SIZEOF			= "sizeof";
-const char* STATIC_STRING	= "STATIC";
-const char* ISC_BADDRESS	= "ADDR";
+const char* const SHORT_DCL		= "integer16";
+const char* const LONG_DCL		= "integer32";
+const char* const POINTER_DCL		= "UNIV_PTR";
+const char* const PACKED_ARRAY	= "array";
+const char* const OPEN_BRACKET	= "[";
+const char* const CLOSE_BRACKET	= "]";
+const char* const REF_PAR			= "";
+const char* const SIZEOF			= "sizeof";
+const char* const STATIC_STRING	= "STATIC";
+const char* const ISC_BADDRESS	= "ADDR";
 #endif
 
-const char* FB_DP_VOLATILE		= "";
-const char* GDS_EVENT_COUNTS	= "GDS__EVENT_COUNTS";
-const char* GDS_EVENT_WAIT		= "GDS__EVENT_WAIT";
+const char* const FB_DP_VOLATILE		= "";
+const char* const GDS_EVENT_COUNTS	= "GDS__EVENT_COUNTS";
+const char* const GDS_EVENT_WAIT		= "GDS__EVENT_WAIT";
 
 static inline void begin(const int column)
 {
@@ -1953,8 +1953,8 @@ static void gen_event_init( const act* action, int column)
 	args.pat_vector1 = status_vector(action);
 	args.pat_value1 = (int) init->nod_arg[2];
 	args.pat_value2 = (int) event_list->nod_count;
-	args.pat_string1 =  const_cast<char*>(GDS_EVENT_WAIT);
-	args.pat_string2 =  const_cast<char*>(GDS_EVENT_COUNTS);
+	args.pat_string1 = GDS_EVENT_WAIT;
+	args.pat_string2 = GDS_EVENT_COUNTS;
 
 //  generate call to dynamically generate event blocks 
 
@@ -2038,8 +2038,8 @@ static void gen_event_wait( const act* action, int column)
 	args.pat_database = database;
 	args.pat_vector1 = status_vector(action);
 	args.pat_value1 = (int) ident;
-	args.pat_string1 =  const_cast<char*>(GDS_EVENT_WAIT);
-	args.pat_string2 =  const_cast<char*>(GDS_EVENT_COUNTS);
+	args.pat_string1 = GDS_EVENT_WAIT;
+	args.pat_string2 = GDS_EVENT_COUNTS;
 
 //  generate calls to wait on the event and to fill out the events array 
 
@@ -2324,7 +2324,7 @@ static void gen_get_segment( const act* action, int column)
 	args.pat_condition = true;
 	args.pat_ident1 = blob->blb_len_ident;
 	args.pat_ident2 = blob->blb_buff_ident;
-	args.pat_string1 =  const_cast<char*>(SIZEOF);
+	args.pat_string1 = SIZEOF;
 	PATTERN_expand(column, pattern1, &args);
 
 	if (action->act_flags & ACT_sql) {
@@ -2648,12 +2648,12 @@ static void gen_request( const gpre_req* request, int column)
 {
 	BLB blob;
 	POR port;
-	TEXT *sw_volatile, *string_type;
+	TEXT *string_type;
 	const ref* reference;
 
 //  generate request handle, blob handles, and ports 
 
-	sw_volatile =  const_cast<char*>(FB_DP_VOLATILE);
+	const TEXT* sw_volatile = FB_DP_VOLATILE;
 	printa(column, " ");
 
 	if (!(request->req_flags & (REQ_exp_hand | REQ_sql_blob_open |

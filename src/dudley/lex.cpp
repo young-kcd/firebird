@@ -240,10 +240,9 @@ void LEX_init( void *file)
  **************************************/
 
 #if !(defined WIN_NT)
-	trace_file = (IB_FILE*) gds__temp_file(TRUE, const_cast<TEXT*>(SCRATCH), 0);
+	trace_file = (IB_FILE*) gds__temp_file(TRUE, SCRATCH, 0);
 #else
-	trace_file = (IB_FILE*) gds__temp_file(TRUE, const_cast<TEXT*>(SCRATCH),
-											trace_file_name);
+	trace_file = (IB_FILE*) gds__temp_file(TRUE, SCRATCH, trace_file_name);
 #endif
 	if (trace_file == (IB_FILE*) - 1)
 		DDL_err(276, NULL, NULL, NULL, NULL, NULL);

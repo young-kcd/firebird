@@ -53,8 +53,8 @@ enum val_errors {
 typedef struct user_action
 {
 	ULONG ua_switches;
-	UCHAR *ua_user;
-	UCHAR *ua_password;
+	UCHAR* ua_user;
+	UCHAR* ua_password;
 	bool ua_use;
 	bool ua_force;
 	bool ua_read_only;
@@ -85,14 +85,14 @@ typedef str *STR;
 
 typedef struct tdr : public pool_alloc<alice_type_tdr>
 {
-	tdr *tdr_next;				/* next subtransaction */
+	tdr* tdr_next;				/* next subtransaction */
 	SLONG tdr_id;				/* database-specific transaction id */
-	str *tdr_fullpath;			/* full (possibly) remote pathname */
-	TEXT *tdr_filename;			/* filename within full pathname */
-	str *tdr_host_site;			/* host for transaction */
-	str *tdr_remote_site;		/* site for remote transaction */
-	FRBRD *tdr_handle;			/* reconnected transaction handle */
-	FRBRD *tdr_db_handle;		/* reattached database handle */
+	str* tdr_fullpath;			/* full (possibly) remote pathname */
+	const TEXT* tdr_filename;	/* filename within full pathname */
+	str* tdr_host_site;			/* host for transaction */
+	str* tdr_remote_site;		/* site for remote transaction */
+	FRBRD* tdr_handle;			/* reconnected transaction handle */
+	FRBRD* tdr_db_handle;		/* reattached database handle */
 	USHORT tdr_db_caps;			/* capabilities of database */
 	USHORT tdr_state;			/* see flags below */
 } *TDR;
@@ -134,14 +134,14 @@ public:
 	ULONG vec_count;
 	blk *vec_object[1];
 };
-typedef vec *VEC;
+typedef vec* VEC;
 
 class vcl : public pool_alloc_rpt<SLONG, alice_type_vcl>
 {
 	ULONG vcl_count;
 	SLONG vcl_long[1];
 };
-typedef vcl *VCL;
+typedef vcl* VCL;
 
 /* Global switches and data */
 
@@ -156,13 +156,13 @@ enum redirect_vals {
 class tgbl
 {
 public:
-	tgbl(AliceMemoryPool *p) : pools(0, (AliceMemoryPool*)0,
+	tgbl(AliceMemoryPool* p) : pools(0, (AliceMemoryPool*)0,
 				pool_vec_t::allocator_type(*p)) {}
 	
 	thdd			tgbl_thd_data;
 	user_action		ALICE_data;
-	AliceMemoryPool	*ALICE_permanent_pool;
-	AliceMemoryPool *ALICE_default_pool;
+	AliceMemoryPool* ALICE_permanent_pool;
+	AliceMemoryPool* ALICE_default_pool;
 	ISC_STATUS_ARRAY	status_vector;
 	typedef			std::vector<AliceMemoryPool*, Firebird::allocator<AliceMemoryPool*> > pool_vec_t;
 	pool_vec_t		pools;
@@ -178,7 +178,7 @@ public:
 	bool			sw_service;
 	bool			sw_service_thd;
 };
-typedef tgbl *TGBL;
+typedef tgbl* TGBL;
 
 #ifdef GET_THREAD_DATA
 #undef GET_THREAD_DATA

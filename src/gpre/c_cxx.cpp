@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.35 2003-10-15 01:18:01 brodsom Exp $
+//	$Id: c_cxx.cpp,v 1.36 2003-10-16 08:50:59 robocop Exp $
 //
 
 #include "firebird.h"
@@ -47,7 +47,7 @@
 #include "../jrd/gds_proto.h"
 
 
-extern TEXT *transaction_name;
+extern TEXT* transaction_name;
 
 static void align(int);
 static void asgn_from(const act*, REF, int);
@@ -62,7 +62,7 @@ static void gen_blob_for(const act*, USHORT);
 static void gen_blob_open(const act*, USHORT);
 static void gen_blr(void*, SSHORT, const char*);
 static void gen_clear_handles(const act*, int);
-static void gen_compatibility_symbol(TEXT *, TEXT *, TEXT *);
+static void gen_compatibility_symbol(TEXT*, TEXT*, TEXT*);
 static void gen_compile(const act*, int);
 static void gen_create_database(const act*, int);
 static int gen_cursor_close(const act*, GPRE_REQ, int);
@@ -94,7 +94,7 @@ static void gen_function(const act*, int);
 static void gen_get_or_put_slice(const act*, REF, bool, int);
 static void gen_get_segment(const act*, int);
 static void gen_loop(const act*, int);
-static TEXT *gen_name(char *, REF, bool);
+static TEXT* gen_name(char *, REF, bool);
 static void gen_on_error(const act*, USHORT);
 static void gen_procedure(const act*, int);
 static void gen_put_segment(const act*, int);
@@ -122,35 +122,35 @@ static void gen_update(const act*, int);
 static void gen_variable(const act*, int);
 static void gen_whenever(SWE, int);
 static void make_array_declaration(REF);
-static TEXT *make_name(TEXT *, SYM);
+static TEXT* make_name(TEXT*, SYM);
 static void make_ok_test(const act*, GPRE_REQ, int);
 static void make_port(POR, int);
-static void make_ready(DBB, TEXT *, TEXT *, USHORT, GPRE_REQ);
+static void make_ready(DBB, const TEXT*, const TEXT*, USHORT, GPRE_REQ);
 static void printa(int, const char *, ...) ATTRIBUTE_FORMAT(2,3);
-static void printb(TEXT *, ...) ATTRIBUTE_FORMAT(1,2);
+static void printb(TEXT*, ...) ATTRIBUTE_FORMAT(1,2);
 static const TEXT* request_trans(const act*, GPRE_REQ);
-static TEXT *status_vector(const act*);
-static void t_start_auto(const act*, GPRE_REQ, TEXT *, int, bool);
+static const TEXT* status_vector(const act*);
+static void t_start_auto(const act*, GPRE_REQ, const TEXT*, int, bool);
 
 static int global_first_flag;
-static TEXT *status_name;
+static TEXT* status_name;
 
 const int INDENT	= 3;
 
-static const char* NULL_STRING	= "(char *)0";
-static const char* NULL_STATUS	= "(long*) 0L";
-static const char* NULL_SQLDA	= "(XSQLDA*) 0L";
+static const char* const NULL_STRING	= "(char *)0";
+static const char* const NULL_STATUS	= "(long*) 0L";
+static const char* const NULL_SQLDA	= "(XSQLDA*) 0L";
 
 #ifdef VMS
-static const char* GDS_INCLUDE	= "\"interbase:[syslib]gds.h\"";
+static const char* const GDS_INCLUDE	= "\"interbase:[syslib]gds.h\"";
 #elif DARWIN
-static const char* GDS_INCLUDE	= "<Firebird/ibase.h>";
+static const char* const GDS_INCLUDE	= "<Firebird/ibase.h>";
 #else
-static const char* GDS_INCLUDE	= "<ibase.h>";
+static const char* const GDS_INCLUDE	= "<ibase.h>";
 #endif
 
-static const char* DCL_LONG	= "long";
-static const char* DCL_QUAD	= "ISC_QUAD";
+static const char* const DCL_LONG	= "long";
+static const char* const DCL_QUAD	= "ISC_QUAD";
 
 static inline void begin(const int column)
 {
@@ -859,7 +859,7 @@ static void gen_based( const act* action, int column)
 	bool first = true;
 
 	while (based_on->bas_variables) {
-		variable = (TEXT *) MSC_pop(&based_on->bas_variables);
+		variable = (TEXT*) MSC_pop(&based_on->bas_variables);
 		if (!first)
 			ib_fprintf(out_file, ",");
 		first = false;
@@ -905,7 +905,7 @@ static void gen_blob_close( const act* action, USHORT column)
 {
 	BLB blob;
 	PAT args;
-	TEXT *pattern1 = "isc_%IFcancel%ELclose%EN_blob (%V1, &%BH);";
+	const TEXT* pattern1 = "isc_%IFcancel%ELclose%EN_blob (%V1, &%BH);";
 
 	if (action->act_error)
 		begin(column);
@@ -941,7 +941,7 @@ static void gen_blob_end( const act* action, USHORT column)
 	BLB blob;
 	PAT args;
 	TEXT s1[32];
-	TEXT *pattern1 = "}\n\
+	const TEXT* pattern1 = "}\n\
 isc_close_blob (%V1, &%BH);\n\
 }";
 
@@ -965,7 +965,7 @@ isc_close_blob (%V1, &%BH);\n\
 static void gen_blob_for( const act* action, USHORT column)
 {
 	PAT args;
-	TEXT *pattern1 = "%IFif (!%S1 [1]) {\n\
+	const TEXT* pattern1 = "%IFif (!%S1 [1]) {\n\
 %ENwhile (1)\n\
    {";
 
@@ -991,9 +991,9 @@ static void gen_blob_open( const act* action, USHORT column)
 	PAT args;
 	REF reference;
 	TEXT s[20];
-	TEXT *pattern1 =
-		"isc_%IFcreate%ELopen%EN_blob2 (%V1, &%DH, &%RT, &%BH, &%FR, (short) %N1, %I1);",
-		*pattern2 =
+	const TEXT* pattern1 =
+		"isc_%IFcreate%ELopen%EN_blob2 (%V1, &%DH, &%RT, &%BH, &%FR, (short) %N1, %I1);";
+	const TEXT* pattern2 =
 		"isc_%IFcreate%ELopen%EN_blob2 (%V1, &%DH, &%RT, &%BH, &%FR, (short) 0, (%IFchar%ELunsigned char%EN*) 0);";
 
 	if (sw_auto && (action->act_flags & ACT_sql)) {
@@ -1140,8 +1140,8 @@ static void gen_clear_handles( const act* action, int column)
 //  
 
 static void gen_compatibility_symbol(
-									 TEXT * symbol,
-									 TEXT * v4_prefix, TEXT * trailer)
+									 TEXT* symbol,
+									 TEXT* v4_prefix, TEXT* trailer)
 {
 	const char* v3_prefix = (isLangCpp(sw_language)) ? "gds_" : "gds__";
     //	v3_prefix = (sw_language == lang_cxx) ? "gds_" : "gds__";
@@ -1159,9 +1159,9 @@ static void gen_compatibility_symbol(
 static void gen_compile( const act* action, int column)
 {
 	PAT args;
-	TEXT *pattern1 =
-		"isc_compile_request%IF2%EN (%V1, (FRBRD**) &%DH, (FRBRD**) &%RH, (short) sizeof (%RI), (char *) %RI);",
-		*pattern2 = "if (!%RH%IF && %S1%EN)";
+	const TEXT* pattern1 =
+		"isc_compile_request%IF2%EN (%V1, (FRBRD**) &%DH, (FRBRD**) &%RH, (short) sizeof (%RI), (char *) %RI);";
+	const TEXT* pattern2 = "if (!%RH%IF && %S1%EN)";
 
 	GPRE_REQ request = action->act_request;
 	args.pat_request = request;
@@ -1203,7 +1203,7 @@ static void gen_compile( const act* action, int column)
 static void gen_create_database( const act* action, int column)
 {
 	PAT args;
-	TEXT *pattern1 =
+	const TEXT* pattern1 =
 		"isc_create_database (%V1, %N1, \"%DF\", &%DH, %IF%S1, %S2%EL(short) 0, (char*) 0%EN, 0);";
 	TEXT s1[32], s2[32], trname[32];
 
@@ -1293,7 +1293,7 @@ static void gen_create_database( const act* action, int column)
 static int gen_cursor_close( const act* action, GPRE_REQ request, int column)
 {
 	PAT args;
-	TEXT *pattern1 =
+	const TEXT* pattern1 =
 		"if (%RIs && !isc_dsql_free_statement (%V1, &%RIs, %N1))";
 
 	args.pat_request = request;
@@ -1337,12 +1337,12 @@ static int gen_cursor_open( const act* action, GPRE_REQ request, int column)
 {
 	PAT args;
 	TEXT s[64];
-	TEXT *pattern1 = "if (!%RIs && %RH%IF && %DH%EN)",
-		*pattern2 = "if (!%RIs%IF && %DH%EN)",
-		*pattern3 = "isc_dsql_alloc_statement2 (%V1, &%DH, &%RIs);",
-		*pattern4 = "if (%RIs%IF && %S3%EN)",
-		*pattern5 = "if (!isc_dsql_set_cursor_name (%V1, &%RIs, %S1, 0) &&",
-		*pattern6 =
+	const TEXT* pattern1 = "if (!%RIs && %RH%IF && %DH%EN)";
+	const TEXT* pattern2 = "if (!%RIs%IF && %DH%EN)";
+	const TEXT* pattern3 = "isc_dsql_alloc_statement2 (%V1, &%DH, &%RIs);";
+	const TEXT* pattern4 = "if (%RIs%IF && %S3%EN)";
+	const TEXT* pattern5 = "if (!isc_dsql_set_cursor_name (%V1, &%RIs, %S1, 0) &&";
+	const TEXT* pattern6 =
 		"!isc_dsql_execute_m (%V1, &%S3, &%RIs, 0, %S2, %N2, 0, %S2))";
 
 	args.pat_request = request;
@@ -1350,7 +1350,7 @@ static int gen_cursor_open( const act* action, GPRE_REQ request, int column)
 	args.pat_vector1 = status_vector(action);
 	args.pat_condition = sw_auto;
 	args.pat_string1 = make_name(s, ((OPN) action->act_object)->opn_cursor);
-	args.pat_string2 = const_cast<char*>(NULL_STRING);
+	args.pat_string2 = NULL_STRING;
 	args.pat_string3 = request_trans(action, request);
 	args.pat_value2 = -1;
 
@@ -1997,12 +1997,11 @@ static void gen_event_init( const act* action, int column)
 	REF reference;
 	PAT args;
 	TEXT variable[20];
-	TEXT
-		* pattern1 =
-		"isc_%N1l = isc_event_block (&isc_%N1a, &isc_%N1b, (short) %N2",
-		*pattern2 =
-		"isc_wait_for_event (%V1, &%DH, isc_%N1l, isc_%N1a, isc_%N1b);",
-		*pattern3 =
+	const TEXT* pattern1 =
+		"isc_%N1l = isc_event_block (&isc_%N1a, &isc_%N1b, (short) %N2";
+	const TEXT* pattern2 =
+		"isc_wait_for_event (%V1, &%DH, isc_%N1l, isc_%N1a, isc_%N1b);";
+	const TEXT* pattern3 =
 		"isc_event_counts (isc_events, isc_%N1l, isc_%N1a, isc_%N1b);";
 
 	if (action->act_error)
@@ -2030,7 +2029,7 @@ static void gen_event_init( const act* action, int column)
 			printb(", %s", variable);
 		}
 		else
-			printb(", %s", (TEXT *) node->nod_arg[0]);
+			printb(", %s", (TEXT* ) node->nod_arg[0]);
 	}
 
 	printb(");");
@@ -2058,10 +2057,9 @@ static void gen_event_wait( const act* action, int column)
 {
 	PAT args;
 	TEXT s[64];
-	TEXT
-		* pattern1 =
-		"isc_wait_for_event (%V1, &%DH, isc_%N1l, isc_%N1a, isc_%N1b);",
-		*pattern2 =
+	const TEXT* pattern1 =
+		"isc_wait_for_event (%V1, &%DH, isc_%N1l, isc_%N1a, isc_%N1b);";
+	const TEXT* pattern2 =
 		"isc_event_counts (isc_events, isc_%N1l, isc_%N1a, isc_%N1b);";
 
 	if (action->act_error)
@@ -2214,7 +2212,7 @@ static void gen_fetch( const act* action, int column)
 static void gen_finish( const act* action, int column)
 {
 	PAT args;
-	TEXT *pattern1 = "if (%S2)\n\
+	const TEXT* pattern1 = "if (%S2)\n\
     isc_%S1_transaction (%V1, (FRBRD**) &%S2);";
 
 	args.pat_vector1 = status_vector(action);
@@ -2300,7 +2298,7 @@ static void gen_for( const act* action, int column)
 static void gen_function( const act* function, int column)
 {
 	REF reference;
-	TEXT *dtype, s[64];
+	TEXT s[64];
 
 	const act* action = (const act*) function->act_object;
 
@@ -2329,6 +2327,7 @@ static void gen_function( const act* function, int column)
 		for (reference = port->por_references; reference;
 			 reference = reference->ref_next)
 		{
+			const TEXT* dtype;
 			GPRE_FLD field = reference->ref_field;
 			switch (field->fld_dtype) {
 			case dtype_short:
@@ -2336,7 +2335,7 @@ static void gen_function( const act* function, int column)
 				break;
 
 			case dtype_long:
-				dtype = const_cast<char*>(DCL_LONG);
+				dtype = DCL_LONG;
 				break;
 
 			case dtype_cstring:
@@ -2345,7 +2344,7 @@ static void gen_function( const act* function, int column)
 				break;
 
 			case dtype_quad:
-				dtype = const_cast<char*>(DCL_QUAD);
+				dtype = DCL_QUAD;
 				break;
 
 // ** Begin date/time/timestamp *
@@ -2421,9 +2420,9 @@ static void gen_get_or_put_slice(const act* action,
 {
 	PAT args;
 	TEXT s1[25], s2[10], s4[10];
-	TEXT *pattern1 =
+	const TEXT* pattern1 =
 		"isc_get_slice (%V1, &%DH, &%RT, &%S2, (short) %N1, (char *) %S3, 0, (%S6*) 0, (%S6) %L1, %S5, &isc_array_length);";
-	TEXT *pattern2 =
+	const TEXT* pattern2 =
 		"isc_put_slice (%V1, &%DH, &%RT, &%S2, (short) %N1, (char *) %S3, 0, (%S6*) 0, (%S6) %L1, (void *)%S5);";
 
 	if (!(reference->ref_flags & REF_fetch_array))
@@ -2450,7 +2449,7 @@ static void gen_get_or_put_slice(const act* action,
 		args.pat_string5 = s4;	/* array name */
 	}
 
-	args.pat_string6 = const_cast<char*>(DCL_LONG);
+	args.pat_string6 = DCL_LONG;
 
 	PATTERN_expand((USHORT) column, (get) ? pattern1 : pattern2, &args);
 
@@ -2469,7 +2468,7 @@ static void gen_get_segment( const act* action, int column)
 {
 	BLB blob;
 	PAT args;
-	TEXT *pattern1 =
+	const TEXT* pattern1 =
 		"%IF%S1 [1] = %ENisc_get_segment (%V1, &%BH, &%I1, (short) sizeof (%I2), %I2);";
 
 	if (action->act_error && (action->act_type != ACT_blob_for))
@@ -2540,7 +2539,7 @@ static void gen_loop( const act* action, int column)
 //		port and parameter idents.
 //  
 
-static TEXT *gen_name(char *string,
+static TEXT* gen_name(char *string,
 					  REF reference,
 					  bool as_blob)
 {
@@ -2586,21 +2585,20 @@ static void gen_on_error( const act* action, USHORT column)
 
 static void gen_procedure( const act* action, int column)
 {
-	PAT args;
-	TEXT *pattern;
-
 	column += INDENT;
 	GPRE_REQ request = action->act_request;
 	POR in_port = request->req_vport;
 	POR out_port = request->req_primary;
 
 	dbb* database = request->req_database;
+	PAT args;
 	args.pat_database = database;
 	args.pat_request = action->act_request;
 	args.pat_vector1 = status_vector(action);
 	args.pat_request = request;
 	args.pat_port = in_port;
 	args.pat_port2 = out_port;
+	const TEXT* pattern;
 	if (in_port && in_port->por_length)
 		pattern =
 			"isc_transact_request (%V1, %RF%DH%RE, %RF%RT%RE, sizeof (%RI), %RI, (short) %PL, (char *) %RF%PI%RE, (short) %QL, (char *) %RF%QI%RE);";
@@ -2643,7 +2641,7 @@ static void gen_put_segment( const act* action, int column)
 {
 	BLB blob;
 	PAT args;
-	TEXT *pattern1 = "%IF%S1 [1] = %ENisc_put_segment (%V1, &%BH, %I1, %I2);";
+	const TEXT* pattern1 = "%IF%S1 [1] = %ENisc_put_segment (%V1, &%BH, %I1, %I2);";
 
 	if (!action->act_error)
 		begin(column);
@@ -2721,7 +2719,7 @@ static void gen_raw( UCHAR * blr, int request_length)
 
 static void gen_ready( const act* action, int column)
 {
-	TEXT* vector = status_vector(action);
+	const TEXT* vector = status_vector(action);
 
 	for (RDY ready = (RDY) action->act_object; ready; ready = ready->rdy_next) {
 		DBB db = ready->rdy_database;
@@ -2752,7 +2750,7 @@ static void gen_ready( const act* action, int column)
 static void gen_receive( const act* action, int column, POR port)
 {
 	PAT args;
-	TEXT *pattern =
+	const TEXT* pattern =
 		"isc_receive (%V1, (FRBRD**) &%RH, (short) %PN, (short) %PL, &%PI, (short) %RL);";
 
 	args.pat_request = action->act_request;
@@ -3151,7 +3149,7 @@ static void gen_select( const act* action, int column)
 static void gen_send( const act* action, POR port, int column)
 {
 	PAT args;
-	TEXT *pattern =
+	const TEXT* pattern =
 		"isc_send (%V1, (FRBRD**) &%RH, (short) %PN, (short) %PL, &%PI, (short) %RL);";
 
 	args.pat_request = action->act_request;
@@ -3171,9 +3169,9 @@ static void gen_send( const act* action, POR port, int column)
 static void gen_slice( const act* action, REF var_reference, int column)
 {
 	PAT args;
-	TEXT *pattern1 = "isc_get_slice (%V1, &%DH, &%RT, &%FR, (short) %N1, \
+	const TEXT* pattern1 = "isc_get_slice (%V1, &%DH, &%RT, &%FR, (short) %N1, \
 (char *) %I1, (short) %N2, %I1v, %I1s, %S5, &isc_array_length);";
-	TEXT *pattern2 = "isc_put_slice (%V1, &%DH, &%RT, &%FR, (short) %N1, \
+	const TEXT* pattern2 = "isc_put_slice (%V1, &%DH, &%RT, &%FR, (short) %N1, \
 (char *) %I1, (short) %N2, %I1v, %I1s, %S5);";
 
 	GPRE_REQ request = action->act_request;
@@ -3250,9 +3248,9 @@ static void gen_start(const act* action,
 					  bool sending)
 {
 	PAT args;
-	TEXT *pattern1 =
+	const TEXT* pattern1 =
 		"isc_start_and_send (%V1, (FRBRD**) &%RH, (FRBRD**) &%S1, (short) %PN, (short) %PL, &%PI, (short) %RL);";
-	TEXT *pattern2 = "isc_start_request (%V1, (FRBRD**) &%RH, (FRBRD**) &%S1, (short) %RL);";
+	const TEXT* pattern2 = "isc_start_request (%V1, (FRBRD**) &%RH, (FRBRD**) &%S1, (short) %RL);";
 	REF reference;
 
 	if (port && sending) {
@@ -3318,7 +3316,7 @@ static void gen_t_start( const act* action, int column)
 	GPRE_TRA trans;
 	tpb* tpb_iterator;
 
-	TEXT* vector = status_vector(action);
+	const TEXT* vector = status_vector(action);
 
 //  if this is a purely default transaction, just let it through 
 
@@ -3435,7 +3433,7 @@ static void gen_trans( const act* action, int column)
 	if (action->act_type == ACT_commit_retain_context)
 		printa(column, "isc_commit_retaining (%s, (FRBRD**) &%s);",
 			   status_vector(action),
-			   (action->act_object) ? (TEXT *) (action->
+			   (action->act_object) ? (TEXT* ) (action->
 												act_object) :
 			   transaction_name);
 	else
@@ -3444,7 +3442,7 @@ static void gen_trans( const act* action, int column)
 				ACT_commit) ? "commit" : (action->act_type ==
 										  ACT_rollback) ? "rollback" :
 			   "prepare", status_vector(action),
-			   (action->act_object) ? (TEXT *) (action->
+			   (action->act_object) ? (TEXT* ) (action->
 												act_object) :
 			   transaction_name);
 
@@ -3498,7 +3496,7 @@ static void gen_variable( const act* action, int column)
 
 static void gen_whenever( SWE label, int column)
 {
-	TEXT *condition;
+	TEXT* condition;
 
 	while (label) {
 		switch (label->swe_condition) {
@@ -3533,7 +3531,6 @@ static void make_array_declaration( REF reference)
 	GPRE_FLD field = reference->ref_field;
 	const TEXT* name = field->fld_symbol->sym_string;
 	TEXT s[64];
-	TEXT *dtype;
 
 //  Don't generate multiple declarations for the array.  V3 Bug 569.  
 
@@ -3541,6 +3538,7 @@ static void make_array_declaration( REF reference)
 		return;
 
 	field->fld_array_info->ary_declared = true;
+	const TEXT* dtype;
 
 	switch (field->fld_array_info->ary_dtype) {
 	case dtype_short:
@@ -3548,7 +3546,7 @@ static void make_array_declaration( REF reference)
 		break;
 
 	case dtype_long:
-		dtype = const_cast<char*>(DCL_LONG);
+		dtype = DCL_LONG;
 		break;
 
 	case dtype_cstring:
@@ -3558,7 +3556,7 @@ static void make_array_declaration( REF reference)
 		break;
 
 	case dtype_quad:
-		dtype = const_cast<char*>(DCL_QUAD);
+		dtype = DCL_QUAD;
 		break;
 
 // ** Begin date/time/timestamp *
@@ -3620,7 +3618,7 @@ static void make_array_declaration( REF reference)
 //		Turn a symbol into a varying string.
 //  
 
-static TEXT *make_name( TEXT * string, SYM symbol)
+static TEXT* make_name( TEXT* string, SYM symbol)
 {
 
 	if (symbol->sym_type == SYM_delimited_cursor) {
@@ -3672,7 +3670,6 @@ static void make_ok_test( const act* action, GPRE_REQ request, int column)
 static void make_port( POR port, int column)
 {
 	TEXT s[80];
-	TEXT *dtype;
 
 	printa(column, "struct {");
 
@@ -3690,13 +3687,15 @@ static void make_port( POR port, int column)
 		if (reference->ref_value && (reference->ref_flags & REF_array_elem))
 			field = field->fld_array;
 		int fld_len = 0;
+		const TEXT* dtype;
+
 		switch (field->fld_dtype) {
 		case dtype_short:
 			dtype = "short";
 			break;
 
 		case dtype_long:
-			dtype = const_cast<char*>(DCL_LONG);
+			dtype = DCL_LONG;
 			break;
 
 		case dtype_cstring:
@@ -3707,7 +3706,7 @@ static void make_port( POR port, int column)
 			break;
 
 		case dtype_quad:
-			dtype = const_cast<char*>(DCL_QUAD);
+			dtype = DCL_QUAD;
 			break;
 
 // ** Begin date/time/timestamp *
@@ -3765,8 +3764,8 @@ static void make_port( POR port, int column)
 
 static void make_ready(
 					   DBB db,
-					   TEXT * filename,
-					   TEXT * vector, USHORT column, GPRE_REQ request)
+					   const TEXT* filename,
+					   const TEXT* vector, USHORT column, GPRE_REQ request)
 {
 	TEXT s1[32], s2[32];
 
@@ -3890,13 +3889,13 @@ static const TEXT* request_trans( const act* action, GPRE_REQ request)
 //		call depending on where or not the action has an error clause.
 //  
 
-static TEXT* status_vector( const act* action)
+static const TEXT* status_vector( const act* action)
 {
 
 	if (action && (action->act_error || (action->act_flags & ACT_sql)))
 		return status_name;
 
-	return const_cast<char*>(NULL_STATUS);
+	return NULL_STATUS;
 }
 
 
@@ -3910,7 +3909,7 @@ static TEXT* status_vector( const act* action)
 
 static void t_start_auto(const act* action,
 						 GPRE_REQ request,
-						 TEXT* vector,
+						 const TEXT* vector,
 						 int column,
 						 bool test)
 {

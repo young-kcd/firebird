@@ -58,7 +58,7 @@ void	ISQL_print_validation(IB_FILE*, GDS__QUAD*, bool, FRBRD*);
 void	ISQL_printf(IB_FILE*, TEXT*);
 void	ISQL_query_database(SSHORT*, IB_FILE*, IB_FILE*, IB_FILE*);
 void	ISQL_reset_settings(void);
-void	ISQL_ri_action_print(TEXT*, TEXT*, bool);
+void	ISQL_ri_action_print(const TEXT*, const TEXT*, bool);
 int		ISQL_sql_statement(TEXT*, IB_FILE*, IB_FILE*, IB_FILE*);
 void	ISQL_truncate_term(TEXT*, USHORT);
 void	ISQL_win_err(SCHAR*);

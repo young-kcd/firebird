@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.29 2003-10-15 14:43:35 brodsom Exp $
+//	$Id: sql.cpp,v 1.30 2003-10-16 08:50:59 robocop Exp $
 //
 
 #include "firebird.h"
@@ -155,11 +155,13 @@ static inline bool end_of_command(void)
 		 ((int) token.tok_keyword == (int) KW_END_EXEC));
 }
 
-static inline bool range_short_integer(SLONG x){
-	return (x < 32768  && x >= -32768);
+static inline bool range_short_integer(const SLONG x)
+{
+	return (x < 32768 && x >= -32768);
 }
 
-static inline bool range_positive_short_integer(SLONG x){
+static inline bool range_positive_short_integer(const SLONG x)
+{
 	return (x < 32768 && x >= 0);
 }
 
@@ -168,7 +170,7 @@ static inline bool range_positive_short_integer(SLONG x){
 //		Parse and return a sequel action.
 //  
 
-ACT SQL_action(const TEXT*  base_directory)
+ACT SQL_action(const TEXT* base_directory)
 {
 	ACT action;
 	enum kwwords keyword;
@@ -345,7 +347,6 @@ ACT SQL_action(const TEXT*  base_directory)
 void SQL_adjust_field_dtype( GPRE_FLD field)
 {
 	ULONG field_length;
-
 
 	if (field->fld_dtype <= dtype_any_text) {
 		/* Adjust the string data types and their lengths */

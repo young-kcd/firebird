@@ -45,24 +45,24 @@ DATABASE DB = STATIC FILENAME "yachts.lnk";
 const int array_desc_column_major = 1;	// Set for FORTRAN
 
 typedef struct gen_t {
-	UCHAR *gen_sdl;
-	UCHAR **gen_sdl_ptr;
-	UCHAR *gen_end;
-	ISC_STATUS *gen_status;
+	UCHAR* gen_sdl;
+	UCHAR** gen_sdl_ptr;
+	UCHAR* gen_end;
+	ISC_STATUS* gen_status;
 	USHORT gen_internal;
 } *GEN_T;
 
-static void adjust_length(ISC_ARRAY_DESC *);
-static void copy_exact_name (char *, char*, SSHORT);
-static ISC_STATUS copy_status(ISC_STATUS *, ISC_STATUS *);
-static ISC_STATUS error(ISC_STATUS *, SSHORT, ...);
-static ISC_STATUS gen_sdl(ISC_STATUS *, ISC_ARRAY_DESC *, SSHORT *, UCHAR **,
-					  SSHORT *);
-static ISC_STATUS lookup_desc(ISC_STATUS *, FRBRD **, FRBRD **, SCHAR *, SCHAR *,
-						  ISC_ARRAY_DESC *, SCHAR *);
+static void adjust_length(ISC_ARRAY_DESC*);
+static void copy_exact_name (const char*, char*, SSHORT);
+static ISC_STATUS copy_status(const ISC_STATUS*, ISC_STATUS*);
+static ISC_STATUS error(ISC_STATUS*, SSHORT, ...);
+static ISC_STATUS gen_sdl(ISC_STATUS*, ISC_ARRAY_DESC*, SSHORT*, UCHAR**,
+					  SSHORT*);
+static ISC_STATUS lookup_desc(ISC_STATUS*, FRBRD**, FRBRD**, const SCHAR*,
+						const SCHAR*, ISC_ARRAY_DESC*, SCHAR*);
 static ISC_STATUS stuff_args(gen_t*, SSHORT, ...);
 static ISC_STATUS stuff_literal(gen_t*, SLONG);
-static ISC_STATUS stuff_string(gen_t*, UCHAR, SCHAR *);
+static ISC_STATUS stuff_string(gen_t*, UCHAR, const SCHAR*);
 
 // stuff_sdl used in place of STUFF to avoid confusion with BLR STUFF
 // macro defined in dsql.h
@@ -83,12 +83,12 @@ static inline ISC_STATUS stuff_sdl_long(gen_t* gen, int word)
 }
 
 
-ISC_STATUS API_ROUTINE isc_array_get_slice(ISC_STATUS * status,
-									   FRBRD **db_handle,
-									   FRBRD **trans_handle,
-									   GDS_QUAD * array_id,
-									   ISC_ARRAY_DESC * desc,
-									   void *array, SLONG * slice_length)
+ISC_STATUS API_ROUTINE isc_array_get_slice(ISC_STATUS* status,
+									   FRBRD** db_handle,
+									   FRBRD** trans_handle,
+									   GDS_QUAD* array_id,
+									   ISC_ARRAY_DESC* desc,
+									   void* array, SLONG* slice_length)
 {
 /**************************************
  *
@@ -99,11 +99,10 @@ ISC_STATUS API_ROUTINE isc_array_get_slice(ISC_STATUS * status,
  * Functional description
  *
  **************************************/
-	UCHAR *sdl, sdl_buffer[512];
-	SSHORT sdl_length;
+	UCHAR sdl_buffer[512];
 
-	sdl_length = sizeof(sdl_buffer);
-	sdl = sdl_buffer;
+	SSHORT sdl_length = sizeof(sdl_buffer);
+	UCHAR* sdl = sdl_buffer;
 
 	if (gen_sdl(status, desc, &sdl_length, &sdl, &sdl_length))
 		return status[1];
@@ -121,12 +120,12 @@ ISC_STATUS API_ROUTINE isc_array_get_slice(ISC_STATUS * status,
 }
 
 
-ISC_STATUS API_ROUTINE isc_array_lookup_bounds(ISC_STATUS * status,
-										   FRBRD **db_handle,
-										   FRBRD **trans_handle,
-										   SCHAR * relation_name,
-										   SCHAR * field_name,
-										   ISC_ARRAY_DESC * desc)
+ISC_STATUS API_ROUTINE isc_array_lookup_bounds(ISC_STATUS* status,
+										   FRBRD** db_handle,
+										   FRBRD** trans_handle,
+										   const SCHAR* relation_name,
+										   const SCHAR* field_name,
+										   ISC_ARRAY_DESC* desc)
 {
 /**************************************
  *
@@ -137,16 +136,17 @@ ISC_STATUS API_ROUTINE isc_array_lookup_bounds(ISC_STATUS * status,
  * Functional description
  *
  **************************************/
-	ISC_ARRAY_BOUND *tail;
 	SCHAR global[32];
 
 	if (lookup_desc(status, db_handle, trans_handle,
 					field_name, relation_name, desc, global))
 		  return status[1];
 
-	tail = desc->array_desc_bounds;
+	ISC_ARRAY_BOUND* tail = desc->array_desc_bounds;
 
-	FOR X IN RDB$FIELD_DIMENSIONS WITH X.RDB$FIELD_NAME EQ global SORTED BY X.RDB$DIMENSION
+	FOR X IN RDB$FIELD_DIMENSIONS
+	WITH X.RDB$FIELD_NAME EQ global
+	SORTED BY X.RDB$DIMENSION
         tail->array_bound_lower = (SSHORT)X.RDB$LOWER_BOUND;
 	    tail->array_bound_upper = (SSHORT)X.RDB$UPPER_BOUND;
         ++tail;
@@ -159,12 +159,12 @@ ISC_STATUS API_ROUTINE isc_array_lookup_bounds(ISC_STATUS * status,
 }
 
 
-ISC_STATUS API_ROUTINE isc_array_lookup_desc(ISC_STATUS * status,
-										 FRBRD **db_handle,
-										 FRBRD **trans_handle,
-										 SCHAR * relation_name,
-										 SCHAR * field_name,
-										 ISC_ARRAY_DESC * desc)
+ISC_STATUS API_ROUTINE isc_array_lookup_desc(ISC_STATUS* status,
+										 FRBRD** db_handle,
+										 FRBRD** trans_handle,
+										 const SCHAR* relation_name,
+										 const SCHAR* field_name,
+										 ISC_ARRAY_DESC* desc)
 {
 /**************************************
  *
@@ -181,12 +181,12 @@ ISC_STATUS API_ROUTINE isc_array_lookup_desc(ISC_STATUS * status,
 }
 
 
-ISC_STATUS API_ROUTINE isc_array_put_slice(ISC_STATUS * status,
-									   FRBRD **db_handle,
-									   FRBRD **trans_handle,
-									   GDS_QUAD * array_id,
-									   ISC_ARRAY_DESC * desc,
-									   void *array, SLONG * slice_length)
+ISC_STATUS API_ROUTINE isc_array_put_slice(ISC_STATUS* status,
+									   FRBRD** db_handle,
+									   FRBRD** trans_handle,
+									   GDS_QUAD* array_id,
+									   ISC_ARRAY_DESC* desc,
+									   void* array, SLONG* slice_length)
 {
 /**************************************
  *
@@ -197,11 +197,10 @@ ISC_STATUS API_ROUTINE isc_array_put_slice(ISC_STATUS * status,
  * Functional description
  *
  **************************************/
-	UCHAR *sdl, sdl_buffer[512];
-	SSHORT sdl_length;
+	UCHAR sdl_buffer[512];
 
-	sdl_length = sizeof(sdl_buffer);
-	sdl = sdl_buffer;
+	SSHORT sdl_length = sizeof(sdl_buffer);
+	UCHAR* sdl = sdl_buffer;
 
 	if (gen_sdl(status, desc, &sdl_length, &sdl, &sdl_length))
 		return status[1];
@@ -217,13 +216,13 @@ ISC_STATUS API_ROUTINE isc_array_put_slice(ISC_STATUS * status,
 }
 
 
-ISC_STATUS API_ROUTINE isc_array_set_desc(ISC_STATUS * status,
-									  SCHAR * relation_name,
-									  SCHAR * field_name,
-									  SSHORT * sql_dtype,
-									  SSHORT * sql_length,
-									  SSHORT * dimensions,
-									  ISC_ARRAY_DESC * desc)
+ISC_STATUS API_ROUTINE isc_array_set_desc(ISC_STATUS* status,
+									  const SCHAR* relation_name,
+									  const SCHAR* field_name,
+									  const SSHORT* sql_dtype,
+									  const SSHORT* sql_length,
+									  const SSHORT* dimensions,
+									  ISC_ARRAY_DESC* desc)
 {
 /**************************************
  *
@@ -234,8 +233,6 @@ ISC_STATUS API_ROUTINE isc_array_set_desc(ISC_STATUS * status,
  * Functional description
  *
  **************************************/
-	SSHORT dtype;
-
     copy_exact_name (field_name, desc->array_desc_field_name,
                      sizeof(desc->array_desc_field_name));
     copy_exact_name (relation_name, desc->array_desc_relation_name,
@@ -247,44 +244,58 @@ ISC_STATUS API_ROUTINE isc_array_set_desc(ISC_STATUS * status,
 	desc->array_desc_length = *sql_length;
 	desc->array_desc_scale = 0;
 
-	dtype = *sql_dtype & ~1;
+	const SSHORT dtype = *sql_dtype & ~1;
 
-	if (dtype == SQL_VARYING)
+	switch(dtype) {
+	case SQL_VARYING:
 		desc->array_desc_dtype = blr_varying;
-	else if (dtype == SQL_TEXT)
+		break;
+	case SQL_TEXT:
 		desc->array_desc_dtype = blr_text;
-	else if (dtype == SQL_DOUBLE)
+		break;
+	case SQL_DOUBLE:
 		desc->array_desc_dtype = blr_double;
-	else if (dtype == SQL_FLOAT)
+		break;
+	case SQL_FLOAT:
 		desc->array_desc_dtype = blr_float;
-	else if (dtype == SQL_D_FLOAT)
+		break;
+	case SQL_D_FLOAT:
 		desc->array_desc_dtype = blr_d_float;
-	else if (dtype == SQL_TIMESTAMP)
+		break;
+	case SQL_TIMESTAMP:
 		desc->array_desc_dtype = blr_timestamp;
-	else if (dtype == SQL_TYPE_DATE)
+		break;
+	case SQL_TYPE_DATE:
 		desc->array_desc_dtype = blr_sql_date;
-	else if (dtype == SQL_TYPE_TIME)
+		break;
+	case SQL_TYPE_TIME:
 		desc->array_desc_dtype = blr_sql_time;
-	else if (dtype == SQL_LONG)
+		break;
+	case SQL_LONG:
 		desc->array_desc_dtype = blr_long;
-	else if (dtype == SQL_SHORT)
+		break;
+	case SQL_SHORT:
 		desc->array_desc_dtype = blr_short;
-	else if (dtype == SQL_INT64)
+		break;
+	case SQL_INT64:
 		desc->array_desc_dtype = blr_int64;
-	else if (dtype == SQL_QUAD)
+		break;
+	case SQL_QUAD:
 		desc->array_desc_dtype = blr_quad;
-	else
+		break;
+	default:
 		return error(status, 7, (ISC_STATUS) gds_sqlerr,
 					 (ISC_STATUS) gds_arg_number, (ISC_STATUS) - 804,
 					 (ISC_STATUS) gds_arg_gds, (ISC_STATUS) gds_random,
 					 (ISC_STATUS) gds_arg_string,
 					 (ISC_STATUS) "data type not understood");
+	}
 
 	return error(status, 1, (ISC_STATUS) FB_SUCCESS);
 }
 
 
-static void adjust_length( ISC_ARRAY_DESC * desc)
+static void adjust_length( ISC_ARRAY_DESC* desc)
 {
 /**************************************
  *
@@ -299,9 +310,9 @@ static void adjust_length( ISC_ARRAY_DESC * desc)
 }
 
 static void copy_exact_name ( 
-    char   *from,
-    char   *to,
-    SSHORT  bsize)
+    const char* from,
+    char* to,
+    SSHORT bsize)
 {
 /**************************************
  *
@@ -314,20 +325,19 @@ static void copy_exact_name (
  *  CVC: This is just another fc like DYN_terminate.
  *
  **************************************/
- 
-    char *from_end = from + bsize - 1, *to2 = to - 1;
-    while (*from && from < from_end) {
-        if (*from != ' ') {
-            to2 = to;
-        }
-        *to++ = *from++;
-    }
-    *++to2 = 0;
+	const char* const from_end = from + bsize - 1;
+	char* to2 = to - 1;
+	while (*from && from < from_end) {
+		if (*from != ' ') {
+			to2 = to;
+		}
+		*to++ = *from++;
+	}
+	*++to2 = 0;
 }
 
 
-
-static ISC_STATUS copy_status( ISC_STATUS * from, ISC_STATUS * to)
+static ISC_STATUS copy_status( const ISC_STATUS* from, ISC_STATUS* to)
 {
 /**************************************
  *
@@ -339,18 +349,17 @@ static ISC_STATUS copy_status( ISC_STATUS * from, ISC_STATUS * to)
  *	Copy a status vector.
  *
  **************************************/
-	ISC_STATUS status, *end;
+	const ISC_STATUS status = from[1];
 
-	status = from[1];
-
-	for (end = from + ISC_STATUS_LENGTH; from < end;)
+	const ISC_STATUS* const end = from + ISC_STATUS_LENGTH;
+	while (from < end)
 		*to++ = *from++;
 
 	return status;
 }
 
 
-static ISC_STATUS error( ISC_STATUS * status, SSHORT count, ...)
+static ISC_STATUS error( ISC_STATUS* status, SSHORT count, ...)
 {
 /**************************************
  *
@@ -362,7 +371,7 @@ static ISC_STATUS error( ISC_STATUS * status, SSHORT count, ...)
  *	Stuff a status vector.
  *
  **************************************/
-	ISC_STATUS *stat;
+	ISC_STATUS* stat;
 	va_list ptr;
 
 	VA_START(ptr, count);
@@ -378,11 +387,11 @@ static ISC_STATUS error( ISC_STATUS * status, SSHORT count, ...)
 }
 
 
-static ISC_STATUS gen_sdl(ISC_STATUS * status,
-					  ISC_ARRAY_DESC * desc,
-					  SSHORT * sdl_buffer_length,
-					  UCHAR ** sdl_buffer,
-                      SSHORT * sdl_length)
+static ISC_STATUS gen_sdl(ISC_STATUS* status,
+					  ISC_ARRAY_DESC* desc,
+					  SSHORT* sdl_buffer_length,
+					  UCHAR** sdl_buffer,
+                      SSHORT* sdl_length)
 {
 /**************************************
  *
@@ -393,20 +402,15 @@ static ISC_STATUS gen_sdl(ISC_STATUS * status,
  * Functional description
  *
  **************************************/
-	SSHORT n, from, to, increment, dimensions;
-	ISC_ARRAY_BOUND *tail;
-	gen_t* gen;
-	gen_t gen_block;
-
-
-	dimensions = desc->array_desc_dimensions;
+	const SSHORT dimensions = desc->array_desc_dimensions;
 
 	if (dimensions > 16)
 		return error(status, 5, (ISC_STATUS) gds_invalid_dimension,
 					 (ISC_STATUS) gds_arg_number, (ISC_STATUS) dimensions,
 					 (ISC_STATUS) gds_arg_number, (ISC_STATUS) 16);
 
-	gen = &gen_block;
+	gen_t gen_block;
+	gen_t* gen = &gen_block;
 	gen->gen_sdl = *sdl_buffer;
 	gen->gen_sdl_ptr = sdl_buffer;
 	gen->gen_end = *sdl_buffer + *sdl_buffer_length;
@@ -444,6 +448,7 @@ static ISC_STATUS gen_sdl(ISC_STATUS * status,
 	if (stuff_string(gen, gds_sdl_field, desc->array_desc_field_name))
 		return status[1];
 
+	SSHORT from, to, increment;
 	if (desc->array_desc_flags & array_desc_column_major) {
 		from = dimensions - 1;
 		to = -1;
@@ -455,8 +460,9 @@ static ISC_STATUS gen_sdl(ISC_STATUS * status,
 		increment = 1;
 	}
 
+    SSHORT n;
 	for (n = from; n != to; n += increment) {
-		tail = desc->array_desc_bounds + n;
+		const ISC_ARRAY_BOUND* tail = desc->array_desc_bounds + n;
 		if (tail->array_bound_lower == 1) {
 			if (stuff_args(gen, 2, gds_sdl_do1, n))
 				return status[1];
@@ -487,11 +493,13 @@ static ISC_STATUS gen_sdl(ISC_STATUS * status,
 
 
 
-static ISC_STATUS lookup_desc(ISC_STATUS * status,
-						  FRBRD **db_handle,
-						  FRBRD **trans_handle,
-						  SCHAR * field_name,
-SCHAR * relation_name, ISC_ARRAY_DESC * desc, SCHAR * global)
+static ISC_STATUS lookup_desc(ISC_STATUS* status,
+						  FRBRD** db_handle,
+						  FRBRD** trans_handle,
+						  const SCHAR* field_name,
+						  const SCHAR* relation_name,
+						  ISC_ARRAY_DESC* desc,
+						  SCHAR* global)
 {
 /**************************************
  *
@@ -502,8 +510,6 @@ SCHAR * relation_name, ISC_ARRAY_DESC * desc, SCHAR * global)
  * Functional description
  *
  **************************************/
-	SSHORT flag;
-
 	if (DB && DB != *db_handle)
 		RELEASE_REQUESTS;
 
@@ -518,13 +524,13 @@ SCHAR * relation_name, ISC_ARRAY_DESC * desc, SCHAR * global)
 
 	desc->array_desc_flags = 0;
 
-	flag = FALSE;
+	bool flag = false;
 
 	FOR X IN RDB$RELATION_FIELDS CROSS Y IN RDB$FIELDS
 		WITH X.RDB$FIELD_SOURCE EQ Y.RDB$FIELD_NAME AND
 		X.RDB$RELATION_NAME EQ desc->array_desc_relation_name AND
 		X.RDB$FIELD_NAME EQ desc->array_desc_field_name
-		flag = TRUE;
+		flag = true;
 	    desc->array_desc_dtype = (UCHAR)Y.RDB$FIELD_TYPE;
         desc->array_desc_scale = (SCHAR)Y.RDB$FIELD_SCALE;
         desc->array_desc_length = Y.RDB$FIELD_LENGTH;
@@ -562,23 +568,22 @@ static ISC_STATUS stuff_args(gen_t* gen, SSHORT count, ...)
  *	Stuff a SDL byte.
  *
  **************************************/
-	UCHAR c, *new_sdl;
+	UCHAR c;
 	va_list ptr;
-	SSHORT new_len, current_len;
 
 	if (gen->gen_sdl + count >= gen->gen_end) {
 
 		/* The sdl buffer is too small.  Allocate a larger one. */
 
-		new_len = gen->gen_end - *gen->gen_sdl_ptr + 512 + count;
-		new_sdl = (UCHAR *) gds__alloc(new_len);
+		const SSHORT new_len = gen->gen_end - *gen->gen_sdl_ptr + 512 + count;
+		UCHAR* const new_sdl = (UCHAR*) gds__alloc(new_len);
 		if (!new_sdl)
 			return error(gen->gen_status, 5, (ISC_STATUS) gds_misc_interpreted,
 						 (ISC_STATUS) gds_arg_string,
 						 (ISC_STATUS) "SDL buffer overflow", (ISC_STATUS) gds_arg_gds,
 						 (ISC_STATUS) gds_virmemexh);
 
-		current_len = gen->gen_sdl - *gen->gen_sdl_ptr;
+		const SSHORT current_len = gen->gen_sdl - *gen->gen_sdl_ptr;
 		memcpy(new_sdl, *gen->gen_sdl_ptr, current_len);
 		if (gen->gen_internal++)
 			gds__free(*gen->gen_sdl_ptr);
@@ -610,9 +615,7 @@ static ISC_STATUS stuff_literal(gen_t* gen, SLONG literal)
  *	Stuff an SDL literal.
  *
  **************************************/
-	ISC_STATUS *status;
-
-	status = gen->gen_status;
+	ISC_STATUS*	status = gen->gen_status;
 
 	if (literal >= -128 && literal <= 127)
 		return stuff_args(gen, 2, gds_sdl_tiny_integer, literal);
@@ -629,7 +632,7 @@ static ISC_STATUS stuff_literal(gen_t* gen, SLONG literal)
 }
 
 
-static ISC_STATUS stuff_string(gen_t* gen, UCHAR sdl, SCHAR * string)
+static ISC_STATUS stuff_string(gen_t* gen, UCHAR sdl, const SCHAR* string)
 {
 /**************************************
  *
@@ -641,9 +644,7 @@ static ISC_STATUS stuff_string(gen_t* gen, UCHAR sdl, SCHAR * string)
  *	Stuff a "thing" then a counted string.
  *
  **************************************/
-	ISC_STATUS *status;
-
-	status = gen->gen_status;
+	ISC_STATUS* status = gen->gen_status;
 
 	if (stuff_sdl(gen, sdl))
 		return status[1];
@@ -657,3 +658,4 @@ static ISC_STATUS stuff_string(gen_t* gen, UCHAR sdl, SCHAR * string)
 
 	return FB_SUCCESS;
 }
+

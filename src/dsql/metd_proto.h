@@ -34,23 +34,23 @@
 class dsql_req;
 class str;
 
-void METD_drop_function(dsql_req*, str*);
-void METD_drop_procedure(dsql_req*, str*);
-void METD_drop_relation(dsql_req*, str*);
+void METD_drop_function(dsql_req*, const str*);
+void METD_drop_procedure(dsql_req*, const str*);
+void METD_drop_relation(dsql_req*, const str*);
 
 INTLSYM  METD_get_charset(dsql_req*, USHORT, const char* name /* UTF-8 */);
 USHORT   METD_get_charset_bpc(dsql_req*, SSHORT);
-INTLSYM  METD_get_collation(dsql_req*, str*);
+INTLSYM  METD_get_collation(dsql_req*, const str*);
 void     METD_get_col_default(DSQL_REQ, const char*, const char*, bool*, TEXT*, USHORT);
 STR      METD_get_default_charset(dsql_req*);
 USHORT   METD_get_domain(dsql_req*, class dsql_fld*, const char* name /* UTF-8 */);
-void     METD_get_domain_default(dsql_req*, TEXT*, bool*, TEXT*, USHORT);
-UDF      METD_get_function(dsql_req*, str*);
-DSQL_NOD METD_get_primary_key(dsql_req*, str*);
-DSQL_PRC METD_get_procedure(dsql_req*, str*);
-DSQL_REL METD_get_relation(dsql_req*, str*);
-STR      METD_get_trigger_relation(dsql_req*, str*, USHORT*);
-USHORT   METD_get_type(dsql_req*, str*, char*, SSHORT*);
+void     METD_get_domain_default(dsql_req*, const TEXT*, bool*, TEXT*, USHORT);
+UDF      METD_get_function(dsql_req*, const str*);
+DSQL_NOD METD_get_primary_key(dsql_req*, const str*);
+DSQL_PRC METD_get_procedure(dsql_req*, const str*);
+DSQL_REL METD_get_relation(dsql_req*, const str*);
+STR      METD_get_trigger_relation(dsql_req*, const str*, USHORT*);
+USHORT   METD_get_type(dsql_req*, const str*, char*, SSHORT*);
 DSQL_REL METD_get_view_relation(dsql_req*   request,
 								const char* view_name         /* UTF-8 */,
 								const char* relation_or_alias /* UTF-8 */,

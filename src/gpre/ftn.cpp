@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.34 2003-10-15 01:18:01 brodsom Exp $
+//	$Id: ftn.cpp,v 1.35 2003-10-16 08:50:59 robocop Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -168,192 +168,192 @@ static bool first_flag;
 static ADL array_decl_list;
 
 #ifdef VMS
-const char* INCLUDE_ISC_FTN		="       include  'interbase:[syslib]gds.for\' \n\n";
-const char* DOUBLE_DCL			= "DOUBLE PRECISION";
-const char* I2CONST_1			= "%VAL(";
-const char* I2CONST_2			= ")";
-const char* I2_1				= "";
-const char* I2_2				= "";
-const char* VAL_1				= "%VAL(";
-const char* VAL_2				= ")";
-const char* REF_1				= "%REF(";
-const char* REF_2				= ")";
-const char* I4CONST_1			= "%VAL(";
-const char* I4CONST_2			= ")";
-const char* COMMENT				= "C     ";
-const char* INLINE_COMMENT		= "!";
-const char* COMMA				= ",";
+const char* const INCLUDE_ISC_FTN	= "       include  'interbase:[syslib]gds.for\' \n\n";
+const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
+const char* const I2CONST_1			= "%VAL(";
+const char* const I2CONST_2			= ")";
+const char* const I2_1				= "";
+const char* const I2_2				= "";
+const char* const VAL_1				= "%VAL(";
+const char* const VAL_2				= ")";
+const char* const REF_1				= "%REF(";
+const char* const REF_2				= ")";
+const char* const I4CONST_1			= "%VAL(";
+const char* const I4CONST_2			= ")";
+const char* const COMMENT			= "C     ";
+const char* const INLINE_COMMENT	= "!";
+const char* const COMMA				= ",";
 #elif (defined AIX || defined AIX_PPC)
-const char* INCLUDE_ISC_FTN		="       INCLUDE  '%s\' \n\n";
-const char* INCLUDE_FTN_FILE	="include/gds.f";
-const char* DOUBLE_DCL			= "DOUBLE PRECISION";
-const char* I2CONST_1			= "%VAL(";
-const char* I2CONST_2			= ")";
-const char* I2_1				= "";
-const char* I2_2				= "";
-const char* VAL_1				= "%VAL(";
-const char* VAL_2				= ")";
-const char* REF_1				= "%REF(";
-const char* REF_2				= ")";
-const char* I4CONST_1			= "%VAL(";
-const char* I4CONST_2			= ")";
-const char* COMMENT				= "C     ";
-const char* INLINE_COMMENT		= "!";
-const char* COMMA				= ",";
+const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '%s\' \n\n";
+const char* const INCLUDE_FTN_FILE	= "include/gds.f";
+const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
+const char* const I2CONST_1			= "%VAL(";
+const char* const I2CONST_2			= ")";
+const char* const I2_1				= "";
+const char* const I2_2				= "";
+const char* const VAL_1				= "%VAL(";
+const char* const VAL_2				= ")";
+const char* const REF_1				= "%REF(";
+const char* const REF_2				= ")";
+const char* const I4CONST_1			= "%VAL(";
+const char* const I4CONST_2			= ")";
+const char* const COMMENT			= "C     ";
+const char* const INLINE_COMMENT	= "!";
+const char* const COMMA				= ",";
 #elif defined(sun)
-const char* INCLUDE_ISC_FTN		= "       INCLUDE  '%s\' \n\n";
-const char* INCLUDE_FTN_FILE	="include/gds.f";
-const char* DOUBLE_DCL			= "DOUBLE PRECISION";
-const char* I2CONST_1			= "";
-const char* I2CONST_2			= "";
-const char* I2_1				= "";
-const char* I2_2				= "";
-const char* VAL_1				= "";
-const char* VAL_2				= "";
-const char* REF_1				= "";
-const char* REF_2				= "";
-const char* I4CONST_1			= "";
-const char* I4CONST_2			= "";
-const char* COMMENT				= "*     ";
-const char* INLINE_COMMENT		= "\n*                ";
-const char* COMMA				= ",";
+const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '%s\' \n\n";
+const char* const INCLUDE_FTN_FILE	= "include/gds.f";
+const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
+const char* const I2CONST_1			= "";
+const char* const I2CONST_2			= "";
+const char* const I2_1				= "";
+const char* const I2_2				= "";
+const char* const VAL_1				= "";
+const char* const VAL_2				= "";
+const char* const REF_1				= "";
+const char* const REF_2				= "";
+const char* const I4CONST_1			= "";
+const char* const I4CONST_2			= "";
+const char* const COMMENT			= "*     ";
+const char* const INLINE_COMMENT	= "\n*                ";
+const char* const COMMA				= ",";
 #elif defined(SINIXZ)
-const char* INCLUDE_ISC_FTN		= "       INCLUDE  '/usr/interbase/include/gds.f\' \n\n"
-const char* INCLUDE_FTN_FILE	= "include/gds.f";
-const char* DOUBLE_DCL			= "DOUBLE PRECISION";
-const char* I2CONST_1			= "";
-const char* I2CONST_2			= "";
-const char* I2_1				= "";
-const char* I2_2				= "";
-const char* VAL_1				= "";
-const char* VAL_2				= "";
-const char* REF_1				= "";
-const char* REF_2				= "";
-const char* I4CONST_1			= "";
-const char* I4CONST_2			= "";
-const char* COMMENT				= "*     ";
-const char* INLINE_COMMENT		= "\n*                ";
-const char* COMMA				= ",";
+const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '/usr/interbase/include/gds.f\' \n\n"
+const char* const INCLUDE_FTN_FILE	= "include/gds.f";
+const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
+const char* const I2CONST_1			= "";
+const char* const I2CONST_2			= "";
+const char* const I2_1				= "";
+const char* const I2_2				= "";
+const char* const VAL_1				= "";
+const char* const VAL_2				= "";
+const char* const REF_1				= "";
+const char* const REF_2				= "";
+const char* const I4CONST_1			= "";
+const char* const I4CONST_2			= "";
+const char* const COMMENT			= "*     ";
+const char* const INLINE_COMMENT	= "\n*                ";
+const char* const COMMA				= ",";
 #elif defined(LINUX)
-const char* INCLUDE_ISC_FTN		= "       INCLUDE  '/usr/interbase/include/gds.f\' \n\n";
-const char* INCLUDE_FTN_FILE	= "include/gds.f";
-const char* DOUBLE_DCL			= "DOUBLE PRECISION";
-const char* I2CONST_1			= "";
-const char* I2CONST_2			= "";
-const char* I2_1				= "";
-const char* I2_2				= "";
-const char* VAL_1				= "";
-const char* VAL_2				= "";
-const char* REF_1				= "";
-const char* REF_2				= "";
-const char* I4CONST_1			= "";
-const char* I4CONST_2			= "";
-const char* COMMENT				= "*     ";
-const char* INLINE_COMMENT		= "\n*                ";
-const char* COMMA				= ",";
+const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '/usr/interbase/include/gds.f\' \n\n";
+const char* const INCLUDE_FTN_FILE	= "include/gds.f";
+const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
+const char* const I2CONST_1			= "";
+const char* const I2CONST_2			= "";
+const char* const I2_1				= "";
+const char* const I2_2				= "";
+const char* const VAL_1				= "";
+const char* const VAL_2				= "";
+const char* const REF_1				= "";
+const char* const REF_2				= "";
+const char* const I4CONST_1			= "";
+const char* const I4CONST_2			= "";
+const char* const COMMENT			= "*     ";
+const char* const INLINE_COMMENT	= "\n*                ";
+const char* const COMMA				= ",";
 #elif defined(WIN_NT)
-const char* INCLUDE_ISC_FTN		= "       INCLUDE  \'%s\' \n\n";
-const char* INCLUDE_FTN_FILE	= "include/gds.f";
-const char* DOUBLE_DCL			= "DOUBLE PRECISION";
-const char* I2CONST_1			= "";
-const char* I2CONST_2			= "";
-const char* I2_1				= "";
-const char* I2_2				= "";
-const char* VAL_1				= "";
-const char* VAL_2				= "";
-const char* REF_1				= "";
-const char* REF_2				= "";
-const char* I4CONST_1			= "";
-const char* I4CONST_2			= "";
-const char* COMMENT				= "*     ";
-const char* INLINE_COMMENT		= "\n*                ";
-const char* COMMA				= ",";
+const char* const INCLUDE_ISC_FTN	= "       INCLUDE  \'%s\' \n\n";
+const char* const INCLUDE_FTN_FILE	= "include/gds.f";
+const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
+const char* const I2CONST_1			= "";
+const char* const I2CONST_2			= "";
+const char* const I2_1				= "";
+const char* const I2_2				= "";
+const char* const VAL_1				= "";
+const char* const VAL_2				= "";
+const char* const REF_1				= "";
+const char* const REF_2				= "";
+const char* const I4CONST_1			= "";
+const char* const I4CONST_2			= "";
+const char* const COMMENT			= "*     ";
+const char* const INLINE_COMMENT	= "\n*                ";
+const char* const COMMA				= ",";
 #elif (defined FREEBSD || defined NETBSD)
-const char* INCLUDE_ISC_FTN		= "       INCLUDE  '/usr/interbase/include/gds.f\' \n\n";
-const char* INCLUDE_FTN_FILE	= "include/gds.f";
-const char* DOUBLE_DCL			= "DOUBLE PRECISION";
-const char* I2CONST_1			= "";
-const char* I2CONST_2			= "";
-const char* I2_1				= "";
-const char* I2_2				= "";
-const char* VAL_1				= "";
-const char* VAL_2				= "";
-const char* REF_1				= "";
-const char* REF_2				= "";
-const char* I4CONST_1			= "";
-const char* I4CONST_2			= "";
-const char* COMMENT				= "*     ";
-const char* INLINE_COMMENT		= "\n*                ";
-const char* COMMA				= ",";
+const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '/usr/interbase/include/gds.f\' \n\n";
+const char* const INCLUDE_FTN_FILE	= "include/gds.f";
+const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
+const char* const I2CONST_1			= "";
+const char* const I2CONST_2			= "";
+const char* const I2_1				= "";
+const char* const I2_2				= "";
+const char* const VAL_1				= "";
+const char* const VAL_2				= "";
+const char* const REF_1				= "";
+const char* const REF_2				= "";
+const char* const I4CONST_1			= "";
+const char* const I4CONST_2			= "";
+const char* const COMMENT			= "*     ";
+const char* const INLINE_COMMENT	= "\n*                ";
+const char* const COMMA				= ",";
 #elif defined(DARWIN)
-const char* INCLUDE_ISC_FTN		= "       INCLUDE  '/Library/Frameworks/Firebird.framework/Headers/gds.f\' \n\n";
-const char* INCLUDE_FTN_FILE	= "Firebird/gds.f";
-const char* DOUBLE_DCL			= "DOUBLE PRECISION";
-const char* I2CONST_1			= "";
-const char* I2CONST_2			= "";
-const char* I2_1				= "";
-const char* I2_2				= "";
-const char* VAL_1				= "";
-const char* VAL_2				= "";
-const char* REF_1				= "";
-const char* REF_2				= "";
-const char* I4CONST_1			= "";
-const char* I4CONST_2			= "";
-const char* COMMENT				= "*     ";
-const char* INLINE_COMMENT		= "\n*                ";
-const char* COMMA				= ",";
+const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '/Library/Frameworks/Firebird.framework/Headers/gds.f\' \n\n";
+const char* const INCLUDE_FTN_FILE	= "Firebird/gds.f";
+const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
+const char* const I2CONST_1			= "";
+const char* const I2CONST_2			= "";
+const char* const I2_1				= "";
+const char* const I2_2				= "";
+const char* const VAL_1				= "";
+const char* const VAL_2				= "";
+const char* const REF_1				= "";
+const char* const REF_2				= "";
+const char* const I4CONST_1			= "";
+const char* const I4CONST_2			= "";
+const char* const COMMENT			= "*     ";
+const char* const INLINE_COMMENT	= "\n*                ";
+const char* const COMMA				= ",";
 #elif defined(hpux)
-const char* INCLUDE_ISC_FTN		= "       INCLUDE  '%s\' \n\n";
-const char* INCLUDE_FTN_FILE	= "include/gds.f";
-const char* DOUBLE_DCL			= "DOUBLE PRECISION";
-const char* I2CONST_1			= "ISC_INT2(";
-const char* I2CONST_2			= ")";
-const char* I2_1				= "ISC_INT2(";
-const char* I2_2				= ")";
-const char* VAL_1				= "";
-const char* VAL_2				= "";
-const char* REF_1				= "";
-const char* REF_2				= "";
-const char* I4CONST_1			= "";
-const char* I4CONST_2			= "";
-const char* COMMENT				= "*     ";
-const char* INLINE_COMMENT		= "!";
-const char* COMMA				= ",";
+const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '%s\' \n\n";
+const char* const INCLUDE_FTN_FILE	= "include/gds.f";
+const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
+const char* const I2CONST_1			= "ISC_INT2(";
+const char* const I2CONST_2			= ")";
+const char* const I2_1				= "ISC_INT2(";
+const char* const I2_2				= ")";
+const char* const VAL_1				= "";
+const char* const VAL_2				= "";
+const char* const REF_1				= "";
+const char* const REF_2				= "";
+const char* const I4CONST_1			= "";
+const char* const I4CONST_2			= "";
+const char* const COMMENT			= "*     ";
+const char* const INLINE_COMMENT	= "!";
+const char* const COMMA				= ",";
 #endif
 
-const char* COLUMN				= "      ";
-const char* INDENT				= "   ";
-const char* CONTINUE			= "     +   ";
-const char* COLUMN_INDENT		= "          ";
+const char* const COLUMN			= "      ";
+const char* const INDENT			= "   ";
+const char* const CONTINUE			= "     +   ";
+const char* const COLUMN_INDENT		= "          ";
 
-const char* ISC_EMBED_DSQL_CLOSE		= "isc_embed_dsql_close";
-const char* ISC_EMBED_DSQL_DECLARE		= "isc_embed_dsql_declare";
-const char* ISC_EMBED_DSQL_DESCRIBE		= "isc_embed_dsql_describe";
-const char* ISC_EMBED_DSQL_DESCRIBE_BIND	= "isc_embed_dsql_describe_bind";
-const char* ISC_EMBED_DSQL_EXECUTE 		= "isc_embed_dsql_execute";
-const char* ISC_EMBED_DSQL_EXECUTE2		= "isc_embed_dsql_execute2";
-const char* ISC_EMBED_DSQL_EXECUTE_IMMEDIATE	= "isc_embed_dsql_execute_immed";
-const char* ISC_EMBED_DSQL_EXECUTE_IMMEDIATE2	= "isc_embed_dsql_execute_immed2";
-const char* ISC_EMBED_DSQL_FETCH		= "isc_embed_dsql_fetch";
-const char* ISC_EMBED_DSQL_INSERT		= "isc_embed_dsql_insert";
-const char* ISC_EMBED_DSQL_OPEN			= "isc_embed_dsql_open";
-const char* ISC_EMBED_DSQL_OPEN2		= "isc_embed_dsql_open2";
-const char* ISC_EMBED_DSQL_PREPARE		= "isc_embed_dsql_prepare";
-const char* ISC_DSQL_ALLOCATE			= "isc_dsql_alloc_statement2";
-const char* ISC_DSQL_EXECUTE			= "isc_dsql_execute_m";
-const char* ISC_DSQL_FREE				= "isc_dsql_free_statement";
-const char* ISC_DSQL_SET_CURSOR			= "isc_dsql_set_cursor_name";
+const char* const ISC_EMBED_DSQL_CLOSE			= "isc_embed_dsql_close";
+const char* const ISC_EMBED_DSQL_DECLARE		= "isc_embed_dsql_declare";
+const char* const ISC_EMBED_DSQL_DESCRIBE		= "isc_embed_dsql_describe";
+const char* const ISC_EMBED_DSQL_DESCRIBE_BIND	= "isc_embed_dsql_describe_bind";
+const char* const ISC_EMBED_DSQL_EXECUTE 		= "isc_embed_dsql_execute";
+const char* const ISC_EMBED_DSQL_EXECUTE2		= "isc_embed_dsql_execute2";
+const char* const ISC_EMBED_DSQL_EXECUTE_IMMEDIATE	= "isc_embed_dsql_execute_immed";
+const char* const ISC_EMBED_DSQL_EXECUTE_IMMEDIATE2	= "isc_embed_dsql_execute_immed2";
+const char* const ISC_EMBED_DSQL_FETCH		= "isc_embed_dsql_fetch";
+const char* const ISC_EMBED_DSQL_INSERT		= "isc_embed_dsql_insert";
+const char* const ISC_EMBED_DSQL_OPEN		= "isc_embed_dsql_open";
+const char* const ISC_EMBED_DSQL_OPEN2		= "isc_embed_dsql_open2";
+const char* const ISC_EMBED_DSQL_PREPARE	= "isc_embed_dsql_prepare";
+const char* const ISC_DSQL_ALLOCATE			= "isc_dsql_alloc_statement2";
+const char* const ISC_DSQL_EXECUTE			= "isc_dsql_execute_m";
+const char* const ISC_DSQL_FREE				= "isc_dsql_free_statement";
+const char* const ISC_DSQL_SET_CURSOR		= "isc_dsql_set_cursor_name";
 
-const char* ISC_EVENT_WAIT				= "ISC_EVENT_WAIT";
-const char* ISC_EVENT_COUNTS			= "ISC_EVENT_COUNTS";
+const char* const ISC_EVENT_WAIT			= "ISC_EVENT_WAIT";
+const char* const ISC_EVENT_COUNTS			= "ISC_EVENT_COUNTS";
 
-const char* DSQL_I2CONST_1				= I2CONST_1;
-const char* DSQL_I2CONST_2				= I2CONST_2;
+const char* const DSQL_I2CONST_1			= I2CONST_1;
+const char* const DSQL_I2CONST_2			= I2CONST_2;
 
 #ifdef VMS
-const char* NULL_SQLDA	= "%VAL(0)";
+const char* const NULL_SQLDA	= "%VAL(0)";
 #else
-const char* NULL_SQLDA	= "0";
+const char* const NULL_SQLDA	= "0";
 #endif
 
 
@@ -2176,10 +2176,10 @@ static void gen_event_init(const act* action)
 	args.pat_vector1 = status_vector(action);
 	args.pat_value1 = (int) init->nod_arg[2];
 	args.pat_value2 = (int) event_list->nod_count;
-	args.pat_string1 = const_cast<char*>(ISC_EVENT_WAIT);
-	args.pat_string2 = const_cast<char*>(ISC_EVENT_COUNTS);
-	args.pat_string3 = const_cast<char*>(I2_1);
-	args.pat_string4 = const_cast<char*>(I2_2);
+	args.pat_string1 = ISC_EVENT_WAIT;
+	args.pat_string2 = ISC_EVENT_COUNTS;
+	args.pat_string3 = I2_1;
+	args.pat_string4 = I2_2;
 
 //  generate call to dynamically generate event blocks 
 
@@ -2265,8 +2265,8 @@ static void gen_event_wait(const act* action)
 	args.pat_database = database;
 	args.pat_vector1 = status_vector(action);
 	args.pat_value1 = (int) ident;
-	args.pat_string1 = const_cast<char*>(ISC_EVENT_WAIT);
-	args.pat_string2 = const_cast<char*>(ISC_EVENT_COUNTS);
+	args.pat_string1 = ISC_EVENT_WAIT;
+	args.pat_string2 = ISC_EVENT_COUNTS;
 
 //  generate calls to wait on the event and to fill out the events array 
 
@@ -4198,7 +4198,7 @@ static void gen_clear_handles(const act* action)
 {
 	for (const gpre_req* request = requests; request; request = request->req_next) {
 		if (!(request->req_flags & REQ_exp_hand))
-			printa("%s%s = 0;", const_cast<char*>(COLUMN), request->req_handle);
+			printa("%s%s = 0;", COLUMN, request->req_handle);
 	}
 }
 
@@ -4332,7 +4332,7 @@ static void gen_function(const act* function)
 static void gen_type(const act* action)
 {
 	// CVC: If I'm not mistaken, assumes sizeof(long) == sizeof(ref*)
-	printa("%s%ld", const_cast<char*>(COLUMN), action->act_object);
+	printa("%s%ld", COLUMN, action->act_object);
 }
 
 #ifdef NOT_USED_OR_REPLACED

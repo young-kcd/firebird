@@ -148,7 +148,7 @@ public:
 };
 typedef lit* LIT;
 
-#define lit_delta	((sizeof(struct lit)-sizeof(struct jrd_nod)-sizeof(SINT64)) / sizeof(JRD_NOD*))
+#define lit_delta	((sizeof(struct lit) - sizeof(struct jrd_nod) - sizeof(SINT64)) / sizeof(JRD_NOD*))
 
 
 /* Aggregate Sort Block (for DISTINCT aggregates) */

@@ -25,11 +25,12 @@
 #define DSQL_HSH_PROTO_H
 
 void HSHD_fini(void);
-void HSHD_finish(void *);
+void HSHD_finish(const void*);
 void HSHD_init(void);
 void HSHD_insert(dsql_sym*);
-DSQL_SYM HSHD_lookup(void*, TEXT*, SSHORT, SYM_TYPE, USHORT);
+DSQL_SYM HSHD_lookup(const void*, const TEXT*, SSHORT, SYM_TYPE, USHORT);
 void HSHD_remove(dsql_sym*);
-void HSHD_set_flag(void *, TEXT *, SSHORT, SYM_TYPE, SSHORT);
+void HSHD_set_flag(const void *, const TEXT*, SSHORT, SYM_TYPE, SSHORT);
 
 #endif /*DSQL_HSH_PROTO_H*/
+

@@ -65,14 +65,13 @@ void RPT_report( QLI_NOD loop)
  *	absolutely nothing to do.
  *
  **************************************/
-	QLI_REQ request;
 
 // Get to actual report node
 
 	QLI_NOD node = loop->nod_arg[e_for_statement];
 	RPT report = (RPT) node->nod_arg[e_prt_list];
 	PRT print = (PRT) node->nod_arg[e_prt_output];
-	print->prt_new_page = (int(*)()) top_of_page;
+	print->prt_new_page = top_of_page;
 	print->prt_page_number = 0;
 
 // Get to actual report node
@@ -81,7 +80,8 @@ void RPT_report( QLI_NOD loop)
    send a message slong with it. */
 
 	QLI_MSG message;
-	if (request = (QLI_REQ) loop->nod_arg[e_for_request])
+	QLI_REQ request = (QLI_REQ) loop->nod_arg[e_for_request];
+	if (request)
 		EXEC_start_request(request, (QLI_MSG) loop->nod_arg[e_for_send]);
 	else if (message = (QLI_MSG) loop->nod_arg[e_for_send])
 		EXEC_send(message);
@@ -94,8 +94,8 @@ void RPT_report( QLI_NOD loop)
 /* Get the first record of the record.  If there isn't anything,
    don't worry about anything. */
 
-	dsc* desc = EXEC_receive(message, (PAR) loop->nod_arg[e_for_eof]);
-	if (*(USHORT *) desc->dsc_address)
+	const dsc* desc = EXEC_receive(message, (PAR) loop->nod_arg[e_for_eof]);
+	if (*(USHORT*) desc->dsc_address)
 		return;
 
 	if (!report->rpt_buffer) {
@@ -316,7 +316,10 @@ static void top_break( BRK control, PRT print)
 
 	for (; control; control = control->brk_next) {
 		for (stack = control->brk_statisticals; stack;
-			 stack = stack->lls_next) EVAL_break_compute((QLI_NOD) stack->lls_object);
+			 stack = stack->lls_next)
+		{
+			EVAL_break_compute((QLI_NOD) stack->lls_object);
+		}
 		FMT_print((QLI_NOD) control->brk_line, print);
 	}
 }

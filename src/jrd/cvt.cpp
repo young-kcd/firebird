@@ -346,7 +346,7 @@ double CVT_get_double(const dsc* desc, FPTR_VOID err)
 		break;
 
 	case dtype_real:
-		return *((float *) desc->dsc_address);
+		return *((float*) desc->dsc_address);
 
 	case DEFAULT_DOUBLE:
 		/* a MOVE_FAST is done in case dsc_address is on a platform dependant
@@ -356,7 +356,7 @@ double CVT_get_double(const dsc* desc, FPTR_VOID err)
 
 #ifdef VMS
 	case SPECIAL_DOUBLE:
-		return CNVT_TO_DFLT((double *) desc->dsc_address);
+		return CNVT_TO_DFLT((double*) desc->dsc_address);
 #endif
 
 	case dtype_varying:
@@ -592,21 +592,21 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, FPTR_VOID err)
 	case dtype_d_float:
 #endif
 		if (desc->dsc_dtype == dtype_real)
-			d = *((float *) p);
+			d = *((float*) p);
 		else if (desc->dsc_dtype == DEFAULT_DOUBLE)
-			d = *((double *) p);
+			d = *((double*) p);
 #ifdef VMS
 		else
-			d = CNVT_TO_DFLT((double *) p);
+			d = CNVT_TO_DFLT((double*) p);
 #endif
 		if (scale > 0)
-			do
+			do {
 				d /= 10.;
-			while (--scale);
+			} while (--scale);
 		else if (scale < 0)
-			do
+			do {
 				d *= 10.;
-			while (++scale);
+			} while (++scale);
 		if (d > 0)
 			d += 0.5;
 		else
@@ -675,9 +675,9 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, FPTR_VOID err)
 				value--;
 		}
 		else
-			do
+			do {
 				value /= 10;
-			while (--scale);
+			} while (--scale);
 	}
 	else if (scale < 0)
 		do {
@@ -691,8 +691,8 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, FPTR_VOID err)
 }
 
 
-UCHAR CVT_get_numeric(UCHAR* string,
-					  USHORT length,
+UCHAR CVT_get_numeric(const UCHAR* string,
+					  const USHORT length,
 					  SSHORT* scale, double* ptr, FPTR_VOID err)
 {
 /**************************************
@@ -721,7 +721,9 @@ UCHAR CVT_get_numeric(UCHAR* string,
 	desc.dsc_dtype = dtype_text;
 	desc.dsc_ttype = ttype_ascii;
 	desc.dsc_length = length;
-	desc.dsc_address = string;
+	desc.dsc_address = const_cast<UCHAR*>(string);
+	// The above line allows the assignment, but "string" is treated as const
+	// for all the purposes here.
 
 	SINT64 value = 0;
 	SSHORT local_scale = 0, sign = 0;
@@ -858,21 +860,21 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, FPTR_VOID err)
 	case dtype_d_float:
 #endif
 		if (desc->dsc_dtype == dtype_real)
-			d = *((float *) p);
+			d = *((float*) p);
 		else if (desc->dsc_dtype == DEFAULT_DOUBLE)
-			d = *((double *) p);
+			d = *((double*) p);
 #ifdef VMS
 		else
-			d = CNVT_TO_DFLT((double *) p);
+			d = CNVT_TO_DFLT((double*) p);
 #endif
 		if (scale > 0)
-			do
+			do {
 				d /= 10.;
-			while (--scale);
+			} while (--scale);
 		else if (scale < 0)
-			do
+			do {
 				d *= 10.;
-			while (++scale);
+			} while (++scale);
 		if (d > 0)
 			d += 0.5;
 		else
@@ -945,9 +947,9 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, FPTR_VOID err)
 				value--;
 		}
 		else
-			do
+			do {
 				value /= 10;
-			while (--scale);
+			} while (--scale);
 	}
 	else
 		do {
@@ -1011,21 +1013,21 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, FPTR_VOID err)
 	case dtype_d_float:
 #endif
 		if (desc->dsc_dtype == dtype_real)
-			d = *((float *) p);
+			d = *((float*) p);
 		else if (desc->dsc_dtype == DEFAULT_DOUBLE)
-			d = *((double *) p);
+			d = *((double*) p);
 #ifdef VMS
 		else
-			d = CNVT_TO_DFLT((double *) p);
+			d = CNVT_TO_DFLT((double*) p);
 #endif
 		if (scale > 0)
-			do
+			do {
 				d /= 10.;
-			while (--scale);
+			} while (--scale);
 		else if (scale < 0)
-			do
+			do {
 				d *= 10.;
-			while (++scale);
+			} while (++scale);
 		if (d > 0)
 			d += 0.5;
 		else
@@ -1093,9 +1095,9 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, FPTR_VOID err)
 				value--;
 		}
 		else
-			do
+			do {
 				value /= 10;
-			while (--scale);
+			} while (--scale);
 	}
 	else if (scale < 0)
 		do {
@@ -1621,9 +1623,9 @@ void CVT_move(const dsc* from, dsc* to, FPTR_VOID err)
 #endif
 #endif
 						fill_char = ASCII_SPACE;
-					do
+					do {
 						*p++ = fill_char;
-					while (--fill);
+					} while (--fill);
 					/* Note: above is correct only for narrow 
 					   and multi-byte character sets which 
 					   use ASCII for the SPACE character.  */
@@ -1659,11 +1661,11 @@ void CVT_move(const dsc* from, dsc* to, FPTR_VOID err)
 				   character sets which use ASCII for the SPACE
 				   character. */
 
-				do
+				do {
 					if (*q++ != ASCII_SPACE)
 						reinterpret_cast < pfn_cvt_private_cludge >
 							(err) (gds_arith_except, 0);
-				while (--l);
+				} while (--l);
 			}
 			return;
 
@@ -1754,18 +1756,18 @@ void CVT_move(const dsc* from, dsc* to, FPTR_VOID err)
 			if (ABSOLUT(d_value) > FLOAT_MAX)
 				reinterpret_cast < pfn_cvt_private_cludge >
 					(err) (gds_arith_except, 0);
-			*(float *) p = (float) d_value;
+			*(float*) p = (float) d_value;
 		}
 		return;
 
 	case DEFAULT_DOUBLE:
-		*(double *) p = CVT_get_double(from, err);
+		*(double*) p = CVT_get_double(from, err);
 		return;
 
 #ifdef VMS
 	case SPECIAL_DOUBLE:
-		*(double *) p = CVT_get_double(from, err);
-		*(double *) p = CNVT_FROM_DFLT((double *) p);
+		*(double*) p = CVT_get_double(from, err);
+		*(double*) p = CNVT_FROM_DFLT((double*) p);
 		return;
 #endif
 	}
@@ -2144,12 +2146,12 @@ static void float_to_text(const dsc* from, dsc* to, FPTR_VOID err)
 	int precision;
 	if (dtype_double == from->dsc_dtype) {
 		precision = 16;			/* minimum significant digits in a double */
-		d = *(double *) from->dsc_address;
+		d = *(double*) from->dsc_address;
 	}
 	else {
 		assert(dtype_real == from->dsc_dtype);
 		precision = 8;			/* minimum significant digits in a float */
-		d = (double) *(float *) from->dsc_address;
+		d = (double) *(float*) from->dsc_address;
 	}
 
 /* If this is a double with non-zero scale, then it is an old-style

@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.40 2003-10-15 01:18:01 brodsom Exp $
+//  $Id: gpre.cpp,v 1.41 2003-10-16 08:50:59 robocop Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -81,13 +81,13 @@ extern "C" {
 #endif
 
 #ifdef SMALL_FILE_NAMES
-const char* SCRATCH		= "fb_q";
+const char* const SCRATCH		= "fb_q";
 #else
-const char* SCRATCH		= "fb_query_";
+const char* const SCRATCH		= "fb_query_";
 #endif
 
-const char* FOPEN_READ_TYPE		= "r";
-const char* FOPEN_WRITE_TYPE	= "w";
+const char* const FOPEN_READ_TYPE		= "r";
+const char* const FOPEN_WRITE_TYPE	= "w";
 
 static bool			all_digits(const char*);
 static bool			arg_is_string(SLONG, TEXT**, const TEXT*);
@@ -1367,8 +1367,7 @@ static SLONG compile_module( SLONG start_position, const TEXT* base_directory)
 //  PC-like platforms can't delete a file that is open.  Therefore
 //  we will save the name of the temp file for later deletion. 
 
-	trace_file = (IB_FILE *) gds__temp_file(TRUE,  const_cast<char*>(SCRATCH),
-											trace_file_name);
+	trace_file = (IB_FILE *) gds__temp_file(TRUE, SCRATCH, trace_file_name);
 #endif
 
 	if (trace_file == (IB_FILE *) - 1) {

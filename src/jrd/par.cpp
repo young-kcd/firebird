@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		par.c
+ *	MODULE:		par.cpp
  *	DESCRIPTION:	BLR Parser
  *
  * The contents of this file are subject to the Interbase Public
@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.54 2003-10-10 23:56:56 skidder Exp $
+$Id: par.cpp,v 1.55 2003-10-16 08:51:01 robocop Exp $
 */
 
 #include "firebird.h"
@@ -1339,26 +1339,23 @@ static JRD_NOD par_literal(TDBB tdbb, CSB csb)
  *	Parse a literal value.
  *
  **************************************/
-	LIT literal;
-	JRD_NOD node;
 	DSC desc;
-	UCHAR *p, *q;
-	SSHORT count, l, scale;
+	UCHAR* p;
+	SSHORT scale;
 	UCHAR dtype;
 
 	SET_TDBB(tdbb);
 
-
 	PAR_desc(csb, &desc);
-	count = lit_delta + (desc.dsc_length+sizeof(jrd_nod*)-1)/sizeof(jrd_nod*);
-	node = PAR_make_node(tdbb, count);
-	literal = (LIT) node;
+	SSHORT count = lit_delta + (desc.dsc_length + sizeof(jrd_nod*) - 1) / sizeof(jrd_nod*);
+	JRD_NOD node = PAR_make_node(tdbb, count);
+	LIT literal = (LIT) node;
 	node->nod_count = 0;
 	literal->lit_desc = desc;
 	literal->lit_desc.dsc_address = p = reinterpret_cast<UCHAR*>(literal->lit_data);
 	literal->lit_desc.dsc_flags = 0;
-	q = csb->csb_running;
-	l = desc.dsc_length;
+	const UCHAR* q = csb->csb_running;
+	SSHORT l = desc.dsc_length;
 
 	switch (desc.dsc_dtype) {
 	case dtype_short:

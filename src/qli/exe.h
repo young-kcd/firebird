@@ -40,6 +40,17 @@ typedef struct rlb {
 #define RLB_SAFETY_MARGIN	48
 
 #define CHECK_RLB(in)	(!in || (in->rlb_data > in->rlb_limit)) ? (in = GEN_rlb_extend (in)) : in;
+
+// If used to replace the macro shown above, this function should be declared
+// in gener_proto.h and defined in gener.cpp or declared and defined in gener_proto.h
+// if "inline" is preserved.
+//static inline rlb* check_rlb(rlb*& in)
+//{
+//	if (!in || (in->rlb_data > in->rlb_limit))
+//	    in = GEN_rlb_extend(in);
+//	return in;
+//}
+
 #define RELEASE_RLB	GEN_rlb_release (rlb);
 #define STUFF(blr)	*rlb->rlb_data++ = blr
 #define STUFF_WORD(blr)	{STUFF (blr); STUFF (blr >> 8);}
@@ -172,9 +183,9 @@ typedef struct itm {
 
 typedef struct prt {
     blk		prt_header;
-    struct file	*prt_file;		/* IB_FILE pointer */
-    struct rpt	*prt_report;		/* Report block (if report) */
-    int		(*prt_new_page)();	/* New page routine, if any */
+    struct file* prt_file;		/* IB_FILE pointer */
+    struct rpt*	prt_report;		/* Report block (if report) */
+    void		(*prt_new_page)(prt*, bool);	/* New page routine, if any */
     USHORT	prt_lines_per_page;
     SSHORT	prt_lines_remaining;
     USHORT	prt_page_number;

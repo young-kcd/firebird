@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.35 2003-10-15 01:18:01 brodsom Exp $
+//  $Id: par.cpp,v 1.36 2003-10-16 08:50:59 robocop Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -530,7 +530,7 @@ ACT PAR_database(bool sql, const TEXT* base_directory)
 				: PAR_native_value(false, false);
 	}
 
-	if ((sw_language == lang_ada) && (token.tok_keyword ==KW_HANDLES)) {
+	if ((sw_language == lang_ada) && (token.tok_keyword == KW_HANDLES)) {
 		PAR_get_token();
 		if (isQuoted(token.tok_type))
 			CPR_s_error("quoted file name");
@@ -782,7 +782,6 @@ TOK PAR_get_token()
 
 void PAR_init()
 {
-
 	SQL_init();
 
 	cur_error = cur_fetch = cur_for = cur_modify = cur_store = NULL;
@@ -798,8 +797,10 @@ void PAR_init()
 	brace_count = 0;
 }
 
-static inline void gobble(SCHAR*& string, SCHAR*& s1){
-	for (s1= token.tok_string; *s1;) 
+static inline void gobble(SCHAR*& string, SCHAR*& s1)
+{
+	s1 = token.tok_string;
+	while (*s1) 
 		*string++ = *s1++; 
 	PAR_get_token();
 }
@@ -831,7 +832,7 @@ TEXT* PAR_native_value(bool array_ref,
 				typ = token.tok_type;
 				token.tok_length += 2;
 				*string++ = '\"';
-				gobble(string, s1);;
+				gobble(string, s1);
 				*string++ = '\"';
 				break;
 			}
@@ -842,7 +843,7 @@ TEXT* PAR_native_value(bool array_ref,
 			else if (token.tok_type == tok_sglquoted) {
 				token.tok_length += 2;
 				*string++ = '\"';
-				gobble(string, s1);;
+				gobble(string, s1);
 				*string++ = '\"';
 				break;
 			}
@@ -851,22 +852,22 @@ TEXT* PAR_native_value(bool array_ref,
 			if (token.tok_type == tok_sglquoted) {
 				token.tok_length += 2;
 				*string++ = '\"';
-				gobble(string, s1);;
+				gobble(string, s1);
 				*string++ = '\"';
 				break;
 			}
 		}
 
 		if (token.tok_keyword == KW_AMPERSAND || token.tok_keyword == KW_ASTERISK)
-			gobble(string, s1);;
+			gobble(string, s1);
 		if (token.tok_type != tok_ident)
 			CPR_s_error("identifier");
-		gobble(string, s1);;
+		gobble(string, s1);
 
 		/* For ADA, gobble '<attribute> */
 
 		if ((sw_language == lang_ada) && (token.tok_string[0] == '\'')) {
-			gobble(string, s1);;
+			gobble(string, s1);
 		}
 		keyword = token.tok_keyword;
 		if (keyword == KW_LEFT_PAREN) {
@@ -876,7 +877,7 @@ TEXT* PAR_native_value(bool array_ref,
 				typ = token.tok_type;
 				if (isQuoted(typ))
 					*string++ = (typ == tok_sglquoted) ? '\'' : '\"';
-				gobble(string, s1);;
+				gobble(string, s1);
 				if (isQuoted(typ))
 					*string++ = (typ == tok_sglquoted) ? '\'' : '\"';
 				keyword = token.tok_keyword;
@@ -885,25 +886,25 @@ TEXT* PAR_native_value(bool array_ref,
 				else if (keyword == KW_LEFT_PAREN)
 					parens++;
 			}
-			gobble(string, s1);;
+			gobble(string, s1);
 			keyword = token.tok_keyword;
 		}
 		while (keyword == KW_L_BRCKET) {
 			brackets = 1;
 			while (brackets) {
-				gobble(string, s1);;
+				gobble(string, s1);
 				keyword = token.tok_keyword;
 				if (keyword == KW_R_BRCKET)
 					brackets--;
 				else if (keyword == KW_L_BRCKET)
 					brackets++;
 			}
-			gobble(string, s1);;
+			gobble(string, s1);
 			keyword = token.tok_keyword;
 		}
 
 		while ((keyword == KW_CARAT) && (sw_language == lang_pascal)) {
-			gobble(string, s1);;
+			gobble(string, s1);
 			keyword = token.tok_keyword;
 		}
 
@@ -912,7 +913,7 @@ TEXT* PAR_native_value(bool array_ref,
 			 && (!handle_ref || sw_language == lang_c
 				 || sw_language == lang_ada)) || keyword == KW_POINTS
 			|| (keyword == KW_COLON && !sw_sql && !array_ref)) {
-			gobble(string, s1);;
+			gobble(string, s1);
 		}
 		else
 			break;
@@ -1434,7 +1435,7 @@ static ACT par_based()
 
 	if (notSegment)
 		return action;
-	if (token.tok_keyword ==KW_SEMI_COLON ||
+	if (token.tok_keyword == KW_SEMI_COLON ||
 		(sw_language == lang_cobol && token.tok_keyword == KW_DOT)) {
 		strcpy(based_on->bas_terminator, token.tok_string);
 		PAR_get_token();
@@ -1610,7 +1611,7 @@ static ACT par_derived_from()
 	based_on->bas_field = field;
 
 
-	based_on->bas_variables = (LLS) MSC_alloc(LLS_LEN);;
+	based_on->bas_variables = (LLS) MSC_alloc(LLS_LEN);
 	based_on->bas_variables->lls_next = NULL;
 	based_on->bas_variables->lls_object =
 		(GPRE_NOD) PAR_native_value(false, false);

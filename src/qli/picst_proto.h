@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
  *	MODULE:		picst_proto.h
- *	DESCRIPTION:	Prototype header file for picstr.c
+ *	DESCRIPTION:	Prototype header file for picstr.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -25,7 +25,7 @@
 #define QLI_PICST_PROTO_H
 
 pics*	PIC_analyze(TEXT*, const dsc*);
-void		PIC_edit(dsc*, pics*, TEXT**, USHORT);
+void		PIC_edit(const dsc*, pics*, TEXT**, USHORT);
 void		PIC_missing(con*, pics*);
 
 #endif /* QLI_PICST_PROTO_H */

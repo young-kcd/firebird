@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.30 2003-10-14 22:21:49 brodsom Exp $
+//	$Id: ada.cpp,v 1.31 2003-10-16 08:50:59 robocop Exp $
 //
 
 #include "firebird.h"
@@ -130,18 +130,18 @@ static void	t_start_auto (const act*, GPRE_REQ, TEXT *, int, bool);
 static TEXT output_buffer[512];
 static int first_flag;
 
-static const char* COMMENT = "--- ";
+static const char* const COMMENT = "--- ";
 const int INDENT	= 3;
 
-static const char* BYTE_DCL			= "interbase.isc_byte";
-static const char* BYTE_VECTOR_DCL	= "interbase.isc_vector_byte";
-static const char* SHORT_DCL		= "interbase.isc_short";
-static const char* USHORT_DCL		= "interbase.isc_ushort";
-static const char* LONG_DCL			= "interbase.isc_long";
-static const char* LONG_VECTOR_DCL	= "interbase.isc_vector_long";
-static const char* EVENT_LIST_DCL	= "interbase.event_list";
-static const char* REAL_DCL			= "interbase.isc_float";
-static const char* DOUBLE_DCL		= "interbase.isc_double";
+static const char* const BYTE_DCL			= "interbase.isc_byte";
+static const char* const BYTE_VECTOR_DCL	= "interbase.isc_vector_byte";
+static const char* const SHORT_DCL		= "interbase.isc_short";
+static const char* const USHORT_DCL		= "interbase.isc_ushort";
+static const char* const LONG_DCL			= "interbase.isc_long";
+static const char* const LONG_VECTOR_DCL	= "interbase.isc_vector_long";
+static const char* const EVENT_LIST_DCL	= "interbase.event_list";
+static const char* const REAL_DCL			= "interbase.isc_float";
+static const char* const DOUBLE_DCL		= "interbase.isc_double";
 
 static inline void endif(const int column)
 {

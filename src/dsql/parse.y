@@ -128,7 +128,8 @@ const int DEF_CACHE_BUFFERS	= 1000;
 static const char INTERNAL_FIELD_NAME [] = "DSQL internal"; /* NTX: placeholder */
 static const char NULL_STRING [] = "";	
 
-inline SLONG trigger_type_suffix(int slot1, int slot2, int slot3){
+inline SLONG trigger_type_suffix(const int slot1, const int slot2, const int slot3)
+{
 	return ((slot1 << 1) | (slot2 << 3) | (slot3 << 5));
 }
 
@@ -163,16 +164,16 @@ inline static int	yylex (USHORT, USHORT, USHORT, BOOLEAN *);
 static void	yyabandon (SSHORT, ISC_STATUS);
 static void	check_log_file_attrs (void);
 
-inline void check_bound(char *to, char *string)
+inline void check_bound(const char* const to, const char* const string)
 {
 	if ((to - string) >= MAX_TOKEN_LEN)
 		yyabandon (-104, isc_token_too_long);
 }
 
-inline void check_copy_incr(char*& to, char ch, char* string)
+inline void check_copy_incr(char*& to, const char ch, const char* const string)
 {
 	check_bound(to, string); 
-	*to++=ch;
+	*to++ = ch;
 }
 
 struct LexerState {

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.24 2003-09-25 11:48:57 robocop Exp $
+//	$Id: tdr.cpp,v 1.25 2003-10-16 08:50:54 robocop Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -53,7 +53,7 @@ static ULONG ask(void);
 static void print_description(TDR);
 static void reattach_database(TDR);
 static void reattach_databases(TDR);
-static bool reconnect(FRBRD *, SLONG, TEXT *, ULONG);
+static bool reconnect(FRBRD*, SLONG, const TEXT*, ULONG);
 
 
 const char* NEWLINE = "\n";
@@ -178,9 +178,9 @@ USHORT TDR_analyze(TDR trans)
 //		Attempt to attach a database with a given pathname.
 //
 
-bool TDR_attach_database(ISC_STATUS * status_vector,
+bool TDR_attach_database(ISC_STATUS* status_vector,
 						 TDR trans,
-						 TEXT * pathname)
+						 TEXT* pathname)
 {
 	UCHAR dpb[128];
 	TGBL tdgbl = GET_THREAD_DATA;
@@ -379,9 +379,9 @@ void TDR_list_limbo(FRBRD *handle, TEXT * name, ULONG switches)
 //		gfix user.
 //
 
-bool TDR_reconnect_multiple(FRBRD *handle,
+bool TDR_reconnect_multiple(FRBRD* handle,
 							SLONG id,
-							TEXT * name,
+							const TEXT* name,
 							ULONG switches)
 {
 	ISC_STATUS_ARRAY status_vector;
@@ -399,7 +399,7 @@ bool TDR_reconnect_multiple(FRBRD *handle,
 //  analyze what to do with them; if the advice contradicts the user's
 //  desire, make them confirm it; otherwise go with the flow.
 
-	USHORT advice = TDR_analyze(trans);
+	const USHORT advice = TDR_analyze(trans);
 
 	if (!advice) {
 		print_description(trans);
@@ -478,7 +478,7 @@ bool TDR_reconnect_multiple(FRBRD *handle,
 		}
 	}
 
-	if (switches != (ULONG) - 1)
+	if (switches != (ULONG) -1)
 	{
 		// now do the required operation with all the subtransactions
 
@@ -727,7 +727,7 @@ static ULONG ask(void)
 		for (p = response; (c = ib_getchar()) != '\n' && c != EOF;)
 			*p++ = c;
 		if (c == EOF && p == response)
-			return (ULONG) - 1;
+			return (ULONG) -1;
 		*p = 0;
 		ALICE_down_case(resp_ptr, resp_ptr, sizeof(response));
 		if (!strcmp(resp_ptr, "n") || !strcmp(resp_ptr, "c")
@@ -755,7 +755,9 @@ static ULONG ask(void)
 static void reattach_database(TDR trans)
 {
 	ISC_STATUS_ARRAY status_vector;
-	UCHAR buffer[1024], *p, *q;
+	UCHAR buffer[1024];
+	// sizeof(buffer) - 1 => leave space for the terminator.
+	const UCHAR* const end = buffer + sizeof(buffer) - 1;
 	TGBL tdgbl = GET_THREAD_DATA;
 
 	ISC_get_host(reinterpret_cast<char*>(buffer), sizeof(buffer));
@@ -773,17 +775,19 @@ static void reattach_database(TDR trans)
 			return;
 		}
 	}
-//  try going through the previous host with all available
-//  protocols, using chaining to try the same method of
-//  attachment originally used from that host
-
     else if (trans->tdr_host_site) {
-		for (p = buffer, q = trans->tdr_host_site->str_data; *q;)
+		//  try going through the previous host with all available
+		//  protocols, using chaining to try the same method of
+		//  attachment originally used from that host
+		UCHAR* p = buffer;
+		const UCHAR* q = trans->tdr_host_site->str_data;
+		while (*q && p < end)
 			*p++ = *q++;
 		*p++ = ':';
-		for (q = trans->tdr_fullpath->str_data; *q;)
+		q = trans->tdr_fullpath->str_data;
+		while (*q && p < end)
 			*p++ = *q++;
-		*q = 0;
+		*p = 0;
 		if (TDR_attach_database(status_vector, trans,
 								reinterpret_cast<char*>(buffer)))
 		{
@@ -795,12 +799,15 @@ static void reattach_database(TDR trans)
 //  try attaching to the remote node directly
 
 	if (trans->tdr_remote_site) {
-		for (p = buffer, q = trans->tdr_remote_site->str_data; *q;)
+	    UCHAR* p = buffer;
+		const UCHAR* q = trans->tdr_remote_site->str_data;
+		while (*q && p < end)
 			*p++ = *q++;
 		*p++ = ':';
-		for (q = (UCHAR *) trans->tdr_filename; *q;)
+		q = (UCHAR *) trans->tdr_filename;
+		while (*q && p < end)
 			*p++ = *q++;
-		*q = 0;
+		*p = 0;
 		if (TDR_attach_database (status_vector, trans,
 								 reinterpret_cast<char*>(buffer)))
 		{
@@ -818,13 +825,15 @@ static void reattach_database(TDR trans)
 
 	for (;;) {
 		ALICE_print(88, 0, 0, 0, 0, 0);	// msg 88: Enter a valid path:
-		for (p = buffer; (*p = ib_getchar()) != '\n'; p++);
+		UCHAR* p = buffer;
+		while (p < end && (*p = ib_getchar()) != '\n')
+			++p;
 		*p = 0;
 		if (!buffer[0])
 			break;
 		p = buffer;
 		while (*p == ' ')
-			*p++;
+			++p;
 		if (TDR_attach_database(status_vector, trans,
 								reinterpret_cast<char*>(p)))
 		{
@@ -862,14 +871,14 @@ static void reattach_databases(TDR trans)
 //		Commit or rollback a named transaction.
 //
 
-static bool reconnect(FRBRD *handle,
+static bool reconnect(FRBRD* handle,
 					  SLONG number,
-					  TEXT * name,
+					  const TEXT* name,
 					  ULONG switches)
 {
 	ISC_STATUS_ARRAY status_vector;
 
-	SLONG id = gds__vax_integer((UCHAR *) & number, 4);
+	SLONG id = gds__vax_integer((UCHAR *) &number, 4);
 	FRBRD* transaction = NULL;
 	if (gds__reconnect_transaction(status_vector, &handle, &transaction,
 								   sizeof(id), reinterpret_cast<char*>(&id))) {
@@ -883,7 +892,7 @@ static bool reconnect(FRBRD *handle,
 		ALICE_print(91, reinterpret_cast<char*>(number), 0, 0, 0, 0);
 		// msg 91: Transaction %ld:
 		switches = ask();
-		if (switches == (ULONG) - 1) {
+		if (switches == (ULONG) -1) {
 			ALICE_print(84, 0, 0, 0, 0, 0);
 			// msg 84: unexpected end of input
 			return true;

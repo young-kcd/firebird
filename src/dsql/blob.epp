@@ -39,15 +39,15 @@
 
 DATABASE DB = STATIC "yachts.lnk";
 
-static void copy_exact_name (UCHAR *, UCHAR *, SSHORT);
-static ISC_STATUS copy_status(ISC_STATUS *, ISC_STATUS *);
-static ISC_STATUS error(ISC_STATUS *, SSHORT, ...);
+static void copy_exact_name (const UCHAR*, UCHAR*, SSHORT);
+static ISC_STATUS copy_status(const ISC_STATUS*, ISC_STATUS*);
+static ISC_STATUS error(ISC_STATUS*, SSHORT, ...);
 
 
 void API_ROUTINE isc_blob_default_desc(
-									   ISC_BLOB_DESC * desc,
-									   UCHAR * relation_name,
-									   UCHAR * field_name)
+									   ISC_BLOB_DESC* desc,
+									   const UCHAR* relation_name,
+									   const UCHAR* field_name)
 {
 /**************************************
  *
@@ -74,10 +74,12 @@ void API_ROUTINE isc_blob_default_desc(
 
 
 ISC_STATUS API_ROUTINE isc_blob_gen_bpb(
-									ISC_STATUS * status,
-									ISC_BLOB_DESC * to_desc,
-									ISC_BLOB_DESC * from_desc,
-USHORT bpb_buffer_length, UCHAR * bpb_buffer, USHORT * bpb_length)
+									ISC_STATUS* status,
+									const ISC_BLOB_DESC* to_desc,
+									const ISC_BLOB_DESC* from_desc,
+									USHORT bpb_buffer_length,
+									UCHAR* bpb_buffer,
+									USHORT* bpb_length)
 {
 /**************************************
  *
@@ -93,14 +95,12 @@ USHORT bpb_buffer_length, UCHAR * bpb_buffer, USHORT * bpb_length)
  *	character set information.
  *
  **************************************/
-	UCHAR *p;
-
 	if (bpb_buffer_length < 17)
 		return error(status, 3, (ISC_STATUS) gds_random,
 					 (ISC_STATUS) gds_arg_string,
 					 (ISC_STATUS) "BPB buffer too small");
 
-	p = bpb_buffer;
+	UCHAR* p = bpb_buffer;
 	*p++ = isc_bpb_version1;
 	*p++ = isc_bpb_target_type;
 	*p++ = 2;
@@ -125,12 +125,12 @@ USHORT bpb_buffer_length, UCHAR * bpb_buffer, USHORT * bpb_length)
 }
 
 
-ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS * status,
-										FRBRD **db_handle,
-										FRBRD **trans_handle,
-										UCHAR * relation_name,
-										UCHAR * field_name,
-										ISC_BLOB_DESC * desc, UCHAR * global)
+ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
+										FRBRD** db_handle,
+										FRBRD** trans_handle,
+										const UCHAR* relation_name,
+										const UCHAR* field_name,
+										ISC_BLOB_DESC* desc, UCHAR* global)
 {
 /***********************************************
  *
@@ -147,8 +147,6 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS * status,
  *	in the BLOB_DESC.	
  *
  ***********************************************/
-	SSHORT flag;
-
 	if (DB && DB != *db_handle)
 		RELEASE_REQUESTS;
 
@@ -160,19 +158,20 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS * status,
     copy_exact_name (relation_name, desc->blob_desc_relation_name, 
                      sizeof(desc->blob_desc_relation_name));
 
-	flag = FALSE;
+	bool flag = false;
 
 	FOR X IN RDB$RELATION_FIELDS CROSS Y IN RDB$FIELDS
 		WITH X.RDB$FIELD_SOURCE EQ Y.RDB$FIELD_NAME AND
 		X.RDB$RELATION_NAME EQ desc->blob_desc_relation_name AND
-		X.RDB$FIELD_NAME EQ desc->blob_desc_field_name flag = TRUE;
+		X.RDB$FIELD_NAME EQ desc->blob_desc_field_name
+		flag = true;
 
 	    desc->blob_desc_subtype = Y.RDB$FIELD_SUB_TYPE;
         desc->blob_desc_charset = Y.RDB$CHARACTER_SET_ID;
         desc->blob_desc_segment_size = Y.RDB$SEGMENT_LENGTH;
 
         if (global) {
-            copy_exact_name ((UCHAR *) Y.RDB$FIELD_NAME, global, 
+            copy_exact_name ((UCHAR*) Y.RDB$FIELD_NAME, global,
                              sizeof(Y.RDB$FIELD_NAME));
         }
 	END_FOR 
@@ -191,13 +190,13 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS * status,
 }
 
 
-ISC_STATUS API_ROUTINE isc_blob_set_desc(ISC_STATUS * status,
-									 UCHAR * relation_name,
-									 UCHAR * field_name,
+ISC_STATUS API_ROUTINE isc_blob_set_desc(ISC_STATUS* status,
+									 const UCHAR* relation_name,
+									 const UCHAR* field_name,
 									 SSHORT subtype,
 									 SSHORT charset,
 									 SSHORT segment_size,
-									 ISC_BLOB_DESC * desc)
+									 ISC_BLOB_DESC* desc)
 {
 /**************************************
  *
@@ -230,9 +229,9 @@ ISC_STATUS API_ROUTINE isc_blob_set_desc(ISC_STATUS * status,
 
 
 static void copy_exact_name ( 
-    UCHAR   *from,
-    UCHAR   *to,
-    SSHORT  bsize)
+    const UCHAR* from,
+    UCHAR* to,
+    SSHORT bsize)
 {
 /**************************************
  *
@@ -245,19 +244,19 @@ static void copy_exact_name (
  *  CVC: This is just another fc like DYN_terminate.
  *
  **************************************/
- 
-    UCHAR *from_end = from + bsize - 1, *to2 = to - 1;
-    while (*from && from < from_end) {
-        if (*from != ' ') {
-            to2 = to;
-        }
-        *to++ = *from++;
-    }
-    *++to2 = 0;
+	const UCHAR* const from_end = from + bsize - 1;
+	UCHAR *to2 = to - 1;
+	while (*from && from < from_end) {
+		if (*from != ' ') {
+			to2 = to;
+		}
+		*to++ = *from++;
+	}
+	*++to2 = 0;
 }
 
 
-static ISC_STATUS copy_status( ISC_STATUS * from, ISC_STATUS * to)
+static ISC_STATUS copy_status( const ISC_STATUS* from, ISC_STATUS* to)
 {
 /**************************************
  *
@@ -269,18 +268,17 @@ static ISC_STATUS copy_status( ISC_STATUS * from, ISC_STATUS * to)
  *	Copy a status vector.
  *
  **************************************/
-	ISC_STATUS status, *end;
+	const ISC_STATUS status = from[1];
 
-	status = from[1];
-
-	for (end = from + 20; from < end;)
+	const ISC_STATUS* const end = from + ISC_STATUS_LENGTH;
+	while (from < end)
 		*to++ = *from++;
 
 	return status;
 }
 
 
-static ISC_STATUS error( ISC_STATUS * status, SSHORT count, ...)
+static ISC_STATUS error( ISC_STATUS* status, SSHORT count, ...)
 {
 /**************************************
  *

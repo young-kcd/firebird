@@ -319,21 +319,22 @@ static TEXT report_2[MSG_LENGTH];
 static TEXT rec_count[MSG_LENGTH];
 
 /* if the action is rrstrict, do not print anything at all */
-static ri_actions ri_actions_all[] = {
+static const ri_actions ri_actions_all[] =
+{
 	{RI_ACTION_CASCADE, RI_ACTION_CASCADE, "Cascade"},
 	{RI_ACTION_NULL, RI_ACTION_NULL, "Set Null"},
 	{RI_ACTION_DEFAULT, RI_ACTION_DEFAULT, "Set Default"},
 	{RI_ACTION_NONE, RI_ACTION_NONE, "No Action"},
 	{RI_RESTRICT, "", ""},
 	{"", "", ""},
-     {0, 0, 0}
+	{0, 0, 0}
 };
 
 // We statically link ISQL against CLIB in MSVC6 and
 // hence we've got problems sharing file handles with FBCLIENT.
 // Since temp files are deleted by ISQL, let's create them here as well.
 #if defined(_MSC_VER) && (_MSC_VER <= 1200)
-static IB_FILE* create_temp_file(TEXT* string, TEXT* expanded_string)
+static IB_FILE* create_temp_file(const TEXT* string, TEXT* expanded_string)
 {
 	gds__temp_dir(expanded_string);
 	strcat(expanded_string, string);
@@ -4348,8 +4349,8 @@ void ISQL_truncate_term(TEXT* str,
 }
 
 
-void ISQL_ri_action_print(TEXT* ri_action_str,
-						  TEXT* ri_action_prefix_str,
+void ISQL_ri_action_print(const TEXT* ri_action_str,
+						  const TEXT* ri_action_prefix_str,
 						  bool all_caps)
 {
 /**************************************
@@ -4365,9 +4366,9 @@ void ISQL_ri_action_print(TEXT* ri_action_str,
  *      actions, so do not print it out.
  *
  **************************************/
-	ri_actions* ref_int;
-
-	for (ref_int = ri_actions_all; ref_int->ri_action_name; ref_int++) {
+	for (const ri_actions* ref_int = ri_actions_all; ref_int->ri_action_name;
+		++ref_int)
+	{
 		if (!strcmp(ref_int->ri_action_name, ri_action_str)) {
 			if (*ref_int->ri_action_print_caps)
 				/* we have something to print  */
