@@ -80,7 +80,7 @@ if "%VS_VER%"=="msvc6" (
 @echo Moving files to output directory
 @copy %ROOT_PATH%\src\v5_examples\* %ROOT_PATH%\output\v5_examples > nul
 @copy %ROOT_PATH%\gen\v5_examples\* %ROOT_PATH%\output\v5_examples > nul
-@copy %ROOT_PATH%\builds\win32\%VS_VER%\%DBG_DIR%\v5_examples\v5_examples.exe %ROOT_PATH%\gen\v5_examples\empbuild.exe > nul
+@copy %ROOT_PATH%\temp\%DBG_DIR%\v5_examples\v5_examples.exe %ROOT_PATH%\gen\v5_examples\empbuild.exe > nul
 @goto :EOF
 
 ::===========

@@ -53,8 +53,8 @@ if "%VS_VER%"=="msvc6" (
 ::===========
 :MOVE
 @echo Copying files to output
-@del %ROOT_PATH%\builds\win32\%VS_VER%\%DBG_DIR%\firebird\bin\*.exp 2>nul
-@del %ROOT_PATH%\builds\win32\%VS_VER%\%DBG_DIR%\firebird\bin\*.lib 2>nul
+@del %ROOT_PATH%\temp\%DBG_DIR%\firebird\bin\*.exp 2>nul
+@del %ROOT_PATH%\temp\%DBG_DIR%\firebird\bin\*.lib 2>nul
 @rmdir /q /s %ROOT_PATH%\output 2>nul
 @mkdir %ROOT_PATH%\output
 @mkdir %ROOT_PATH%\output\bin
@@ -64,12 +64,14 @@ if "%VS_VER%"=="msvc6" (
 @mkdir %ROOT_PATH%\output\doc
 @mkdir %ROOT_PATH%\output\include
 @mkdir %ROOT_PATH%\output\lib
-@copy %ROOT_PATH%\builds\win32\%VS_VER%\%DBG_DIR%\firebird\bin\* %ROOT_PATH%\output\bin >nul
-@copy %ROOT_PATH%\builds\win32\%VS_VER%\%DBG_DIR%\firebird\intl\* %ROOT_PATH%\output\intl >nul
-@copy %ROOT_PATH%\builds\win32\%VS_VER%\%DBG_DIR%\firebird\udf\* %ROOT_PATH%\output\udf >nul
-@copy %ROOT_PATH%\builds\win32\gpre.exe %ROOT_PATH%\output\bin >nul
-@copy %ROOT_PATH%\builds\win32\dbs\jrd\SECURITY.FDB %ROOT_PATH%\output\security.fdb >nul
-@copy %ROOT_PATH%\builds\win32\dbs\qli\HELP.fdb %ROOT_PATH%\output\help\help.fdb >nul
+@copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\bin\* %ROOT_PATH%\output\bin >nul
+@copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\intl\* %ROOT_PATH%\output\intl >nul
+@copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\udf\* %ROOT_PATH%\output\udf >nul
+
+@copy %ROOT_PATH%\gen\SECURITY.FDB %ROOT_PATH%\output\security.fdb >nul
+@copy %ROOT_PATH%\gen\HELP.fdb %ROOT_PATH%\output\help\help.fdb >nul
+@copy %ROOT_PATH%\gen\firebird.msg %ROOT_PATH%\output\firebird.msg >nul
+
 @copy %ROOT_PATH%\ChangeLog %ROOT_PATH%\output\doc\ChangeLog.txt >nul
 @copy %ROOT_PATH%\doc\WhatsNew %ROOT_PATH%\output\doc\WhatsNew.txt >nul
 @copy %ROOT_PATH%\src\jrd\ibase.h %ROOT_PATH%\output\include >nul

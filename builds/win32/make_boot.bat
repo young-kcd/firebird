@@ -71,7 +71,7 @@ if "%VS_VER%"=="msvc6" (
 ) else (
 	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_boot /rebuild /OUT boot1.log
 )
-@copy %ROOT_PATH%\builds\win32\%VS_VER%\release\firebird\bin\gpre_boot.exe %ROOT_PATH%\gen\ > nul
+@copy %ROOT_PATH%\temp\release\firebird\bin\gpre_boot.exe %ROOT_PATH%\gen\ > nul
 goto :EOF
 
 ::===================
@@ -84,7 +84,7 @@ if "%VS_VER%"=="msvc6" (
 ) else (
 	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_static /REBUILD /OUT boot2.log
 )
-@copy %ROOT_PATH%\builds\win32\%VS_VER%\release\firebird\bin\gpre_static.exe   %ROOT_PATH%\gen\ > nul
+@copy %ROOT_PATH%\temp\release\firebird\bin\gpre_static.exe   %ROOT_PATH%\gen\ > nul
 @goto :EOF
 
 
@@ -99,8 +99,8 @@ if "%VS_VER%"=="msvc6" (
 	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project build_msg /REBUILD /OUT boot3.log
 	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project codes  /REBUILD /OUT boot4.log
 )
-@copy %ROOT_PATH%\builds\win32\%VS_VER%\release\build_msg\build_msg.exe   %ROOT_PATH%\gen\ > nul
-@copy %ROOT_PATH%\builds\win32\%VS_VER%\release\codes\codes.exe   %ROOT_PATH%\gen\ > nul
+@copy %ROOT_PATH%\temp\release\build_msg\build_msg.exe   %ROOT_PATH%\gen\ > nul
+@copy %ROOT_PATH%\temp\release\codes\codes.exe   %ROOT_PATH%\gen\ > nul
 @goto :EOF
 
 ::==============

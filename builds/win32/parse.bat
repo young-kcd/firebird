@@ -33,7 +33,7 @@
 @set PARSER=BISON
 @echo .
 @echo Processing with bison
-@bison -y -l -d -b dsql ..\..\src\dsql\parse.y
+@bison -y -l -d -b dsql %ROOT_PATH%\src\dsql\parse.y
 @goto :EOF
 
 ::=====================================
@@ -41,15 +41,15 @@
 @set PARSER=YACC
 @echo .
 @echo Processing with yacc
-@yacc -l -d -b dsql ..\..\src\dsql\parse.y
+@yacc -l -d -b dsql %ROOT_PATH%\src\dsql\parse.y
 @goto :EOF
 
 ::=====================================
 :SED_PROC
 @echo .
 @echo Processing with sed
-@sed -f ..\..\src\dsql\parse.sed <dsql.tab.c >..\..\src\dsql\parse.cpp
-@copy dsql.tab.h ..\..\src\dsql\dsql.tab.h > nul
+@sed -f %ROOT_PATH%\src\dsql\parse.sed <dsql.tab.c >%ROOT_PATH%\src\dsql\parse.cpp
+@copy dsql.tab.h %ROOT_PATH%\src\dsql\dsql.tab.h > nul
 @del dsql.tab.c
 @del dsql.tab.h
 @goto :EOF

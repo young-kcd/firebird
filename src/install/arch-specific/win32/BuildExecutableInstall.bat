@@ -84,10 +84,10 @@ mkdir %ROOT_PATH%\output\examples 2>nul
 copy %ROOT_PATH%\src\v5_examples\*.* %ROOT_PATH%\output\examples\ > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY examples failed  ) & (goto :EOF))
 
-copy %ROOT_PATH%\builds\win32\msvc%msvc_version%\%BUILDTYPE%\fbclient\fbclient.lib %ROOT_PATH%\output\lib\fbclient_ms.lib > nul
+copy %ROOT_PATH%\temp\%BUILDTYPE%\fbclient\fbclient.lib %ROOT_PATH%\output\lib\fbclient_ms.lib > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY *.lib failed ) & (goto :EOF))
 
-copy %ROOT_PATH%\builds\win32\msvc%msvc_version%\%BUILDTYPE%\gds32\gds32.lib %ROOT_PATH%\output\lib\gds32_ms.lib > nul
+copy %ROOT_PATH%\temp\%BUILDTYPE%\gds32\gds32.lib %ROOT_PATH%\output\lib\gds32_ms.lib > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY *.lib failed ) & (goto :EOF))
 
 copy %ROOT_PATH%\doc\*.* %ROOT_PATH%\output\doc\ > nul
@@ -142,7 +142,7 @@ copy %ROOT_PATH%\src\misc\security.gbak %ROOT_PATH%\output\security.fbk > nul
 :: Next time it will have the .fdb file extension
 ::===============================================
 if not exist %ROOT_PATH%\output\help\help.fdb (
-	copy %ROOT_PATH%\builds\win32\dbs\qli\help.fdb %ROOT_PATH%\output\help\help.fdb
+	copy %ROOT_PATH%\gen\help.fdb %ROOT_PATH%\output\help\help.fdb
 )
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR Could not copy qli help database ) & (goto :EOF))
 @goto :EOF
@@ -154,14 +154,10 @@ if not exist %ROOT_PATH%\output\help\help.fdb (
 ::	To Do !!!
 ::						copy %INTERBASE%\udf\fbudf.dll %ROOT_PATH%\output\udf
 ::=================================================================
-@if not exist %ROOT_PATH%\gen\firebird.msg (( 
-						echo Cannot locate firebird.msg file. 
-						) & ( 
-						echo You need to run the build_msg scriptfile.
-						)
-						) else (
-						copy %ROOT_PATH%\gen\firebird.msg %ROOT_PATH%\output\firebird.msg > nul
-						)
+@if not exist %ROOT_PATH%\output\firebird.msg ( 
+	copy %ROOT_PATH%\gen\firebird.msg %ROOT_PATH%\output\firebird.msg > nul
+)
+@if %ERRORLEVEL% GEQ 1 ( (call :ERROR Could not copy firebird.msg ) & (goto :EOF))
 @goto :EOF
 
 :TOUCH_ALL
