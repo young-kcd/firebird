@@ -1,3 +1,39 @@
+2004-10-20 03:03  robocop
+
+	* firebird2/builds/win32/msvc6/ib_udf.dsp (1.17):
+	
+	Switch the NSVC6 version to use the new ib_udf2.sql with ib_udf.cpp
+
+2004-10-20 02:16  robocop
+
+	* firebird2/src/jrd/vio.cpp (1.116):
+	
+	Style and typo.
+
+2004-10-20 02:15  robocop
+
+	* firebird2/src/jrd/dyn_util.epp (1.36):
+	
+	Be consistent with SecurityClass's flags
+
+2004-10-20 02:13  robocop
+
+	* firebird2/src/jrd/: cmp.cpp (1.156), scl.epp (1.63):
+	
+	Redundant cast.
+
+2004-10-20 02:09  robocop
+
+	* firebird2/src/jrd/btr.cpp (1.123):
+	
+	const.
+
+2004-10-20 02:07  robocop
+
+	* firebird2/src/jrd/idx.cpp (1.77):
+	
+	a) Two vars in scope.  b) Style.
+
 2004-10-18 22:48  skidder
 
 	* firebird2/builds/install/misc/firebird.conf (1.9):
