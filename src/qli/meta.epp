@@ -46,11 +46,6 @@
 #include <unistd.h>
 #endif
 
-// needed for unlink in MinGW 3.0 rc2
-#ifdef MINGW
-#include <io.h>
-#endif
-
 DATABASE DB = FILENAME "yachts.lnk";
 DATABASE DB1 = FILENAME "yachts.lnk";
 

@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.41 2003-10-16 08:50:59 robocop Exp $
+//  $Id: gpre.cpp,v 1.42 2003-10-29 00:30:10 brodsom Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -75,10 +75,6 @@ extern "C" {
 } // extern "C"
 #endif
 
-// needed for unlink in MinGW 3.0 rc2
-#ifdef MINGW 
-#include <io.h>
-#endif
 
 #ifdef SMALL_FILE_NAMES
 const char* const SCRATCH		= "fb_q";

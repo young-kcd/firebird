@@ -42,9 +42,6 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#ifdef MINGW
-#include <io.h>
-#endif
 #ifdef HAVE_PWD_H
 #include <pwd.h>
 #endif

@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.cpp,v 1.11 2003-09-13 18:35:39 skidder Exp $
+ *  $Id: nbak.cpp,v 1.12 2003-10-29 00:30:57 brodsom Exp $
  *
  */
 
@@ -56,10 +56,6 @@
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#endif
-
-#ifdef MINGW
-#include <io.h>
 #endif
 
 #ifdef NBAK_DEBUG
