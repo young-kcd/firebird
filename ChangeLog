@@ -1,3 +1,91 @@
+2003-01-17 14:46  dimitr
+
+	* firebird2/src/jrd/rse.cpp:
+	
+	Fixed problem with uninitialized structure.
+
+2003-01-17 13:52  dimitr
+
+	* firebird2/src/dsql/metd.epp:
+	
+	Fixed porting bug which caused zero to be returned as
+	bytes-per-character value.
+
+2003-01-17 13:47  skidder
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	Fix intermittent bug in aggregate reference tracking
+
+2003-01-17 13:40  dimitr
+
+	* firebird2/src/dsql/ddl.cpp:
+	
+	Rolled back previous commit.
+
+2003-01-17 12:11  dimitr
+
+	* firebird2/src/dsql/ddl.cpp:
+	
+	Restored compatibility with FB1. Index name is no longer assigned
+	automatically for constraints.
+
+2003-01-17 10:59  dimitr
+
+	* firebird2/src/common/classes/alloc.cpp:
+	
+	Fixed problems with the memory manager. Oddly enough, but the
+	server seems to work ;-)
+
+2003-01-17 10:53  dimitr
+
+	* firebird2/builds/win32/msvc6/: common.dsp, common_classic.dsp,
+	Firebird2.dsw:
+	
+	Updated project files.
+
+2003-01-17 10:03  dimitr
+
+	* firebird2/builds/win32/msvc6/common.dsp:
+	
+	Updated project files.
+
+2003-01-17 09:47  dimitr
+
+	* firebird2/src/iscguard/: iscguard.cpp, iscguard.h:
+	
+	Cleanup.
+
+2003-01-17 08:11  dimitr
+
+	* firebird2/src/jrd/os/win32/thd_priority.cpp:
+	
+	Fixed memory pool usage.
+
+2003-01-17 08:10  dimitr
+
+	* firebird2/src/remote/remote.cpp:
+	
+	Fixed linkage type.
+
+2003-01-17 08:09  dimitr
+
+	* firebird2/src/jrd/sort_mem.cpp:
+	
+	Cleanup.
+
+2003-01-17 07:59  dimitr
+
+	* firebird2/src/include/firebird.h:
+	
+	no message
+
+2003-01-17 07:41  dimitr
+
+	* firebird2/src/common/classes/alloc.cpp:
+	
+	Fixed a typo.
+
 2003-01-16 18:47  skidder
 
 	* firebird2/: builds/posix/Makefile.in.libfbclient,
