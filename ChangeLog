@@ -1,3 +1,21 @@
+2003-12-29 05:40  skidder
+
+	* firebird2/src/install/arch-specific/linux/Makefile.in:
+	
+	Build external debug info packages
+
+2003-12-29 03:31  skywalker
+
+	* firebird2/src/install/misc/aliases.conf.in:
+	
+	Add original entry with employee.fdb defined.
+
+2003-12-29 03:12  tmcsys
+
+	* firebird2/src/install/arch-specific/darwin/install-script:
+	
+	change location of StartupItems for 10.3 OS/X Server
+
 2003-12-28 14:42  arnobrinkman
 
 	* firebird2/src/jrd/: btn.cpp, btr.cpp:
