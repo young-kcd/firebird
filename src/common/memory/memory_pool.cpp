@@ -81,9 +81,10 @@ static const int  BEFORE_RED_ZONE_SIZE = 3;		// The size of the red zone BEFORE 
 static const int AFTER_RED_ZONE_SIZE = 3;		// The size of the red zone AFTER the memory,
 												//  in ALLOCATION UNITS!  Does NOT need to be set to
 #if (defined SOLARIS )
- extern  UCHAR*        mmap_anon(SLONG);
+
+#include "../../jrd/gds_proto.h"
+// extern  UCHAR*        mmap_anon(SLONG);
 #endif
-												//  0 if red zones are disabled.
 
 // Helper function to reduce code size, since many compilers
 // generate quite a bit of code at the point of the throw.
