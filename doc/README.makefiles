@@ -21,6 +21,7 @@ THE REALLY QUICK INTRO
 
 For linux this is how I do a compile (classic is only one currently)
 
+autoconf
 ./configure 
 $cd src
 $make > make.log 2>&1 ; cat make.log | grep -v warning > make2.log ; vi make2.log
@@ -34,7 +35,7 @@ it will list your options - but also needs some work.
 
 MAKEFILE
 
-Makefiles are found in src/make.new 
+Makefiles are found in builds/posix
 
 make.rules
 make.defaults
