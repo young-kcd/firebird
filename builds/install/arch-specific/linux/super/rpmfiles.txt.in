@@ -1,7 +1,7 @@
 @prefix@
 
 @libdir@/libfbclient.so.2.0.0
-@libdir@/libfbclient.so.1
+@libdir@/libfbclient.so.2
 @libdir@/libfbclient.so
 @libdir@/libib_util.so
 

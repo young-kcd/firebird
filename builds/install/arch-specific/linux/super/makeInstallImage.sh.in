@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.6 2004-01-29 06:32:09 skidder Exp $
+#   $Id: makeInstallImage.sh.in,v 1.7 2004-03-25 06:01:12 skidder Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -175,8 +175,8 @@ copyFiles() {
 
 # Create links from @libdir@ to install area.
     origDir=`pwd`
-    cd $DestDir
-    for i in lib/libfb*.so*; do ln -s ../../$FBRootDir/$i $origDir/$TargetDir/usr/$i; done
+    cd $DestDir/lib
+    for i in libfb*.so*; do ln -s /$FBRootDir/lib/$i $origDir/$TargetDir@libdir@/$i; done
     cd $origDir
     ln -s ../../$FBRootDir/lib/libib_util.so $TargetDir@libdir@/libib_util.so
 
