@@ -943,7 +943,6 @@ USHORT BTR_key_length(jrd_rel* relation, index_desc* idx)
 		switch (tail->idx_itype)
 		{
 		case idx_numeric:
-		case idx_timestamp1:
 			return sizeof(double);
 
 		case idx_sql_time:
@@ -994,7 +993,6 @@ USHORT BTR_key_length(jrd_rel* relation, index_desc* idx)
 		switch (tail->idx_itype)
 		{
 		case idx_numeric:
-		case idx_timestamp1:
 			length = sizeof(double);
 			break;
 		case idx_sql_time:
@@ -1959,7 +1957,6 @@ static void compress(thread_db* tdbb,
 		switch (itype)
 		{
 		case idx_numeric:
-		case idx_timestamp1:
 			length = sizeof(double);
 			break;
 		case idx_sql_time:
@@ -2073,14 +2070,7 @@ static void compress(thread_db* tdbb,
 	if (isNull) {
 		memset(&temp, 0, sizeof(temp));
 	}
-	if (itype == idx_timestamp1) {
-		temp.temp_double = MOV_date_to_double(desc);
-		temp_is_negative = (temp.temp_double < 0);
-#ifdef DEBUG_INDEXKEY
-		fprintf(stderr, "TIMESTAMP1 %lf ", temp.temp_double);
-#endif
-	}
-	else if (itype == idx_timestamp2) {
+	if (itype == idx_timestamp2) {
 		GDS_TIMESTAMP timestamp;
 		timestamp = MOV_get_timestamp(desc);
 		const ULONG SECONDS_PER_DAY	= 24 * 60 * 60;
@@ -2088,7 +2078,6 @@ static void compress(thread_db* tdbb,
 			(SINT64) (SECONDS_PER_DAY * ISC_TIME_SECONDS_PRECISION)) +
 			(SINT64) (timestamp.timestamp_time);
 		temp_copy_length = sizeof(SINT64);
-		temp_is_negative = (temp.temp_sint64 < 0);
 #ifdef DEBUG_INDEXKEY
 		fprintf(stderr, "TIMESTAMP2: %d:%u ",
 				   ((const SLONG*) desc->dsc_address)[0],
@@ -2100,7 +2089,6 @@ static void compress(thread_db* tdbb,
 	else if (itype == idx_sql_date) {
 		temp.temp_slong = MOV_get_sql_date(desc);
 		temp_copy_length = sizeof(SLONG);
-		temp_is_negative = (temp.temp_slong < 0);
 #ifdef DEBUG_INDEXKEY
 		fprintf(stderr, "DATE %d ", temp.temp_slong);
 #endif
@@ -5000,13 +4988,13 @@ static SLONG insert_node(thread_db* tdbb,
 			}
 			// AB: Never insert a duplicate node with the same record number.
 			// This would lead to nodes which will never be deleted.
-			//if (leafPage && (newRecordNumber == beforeInsertNode.recordNumber)) {
+			/*if (leafPage && (newRecordNumber == beforeInsertNode.recordNumber)) {
 				// AB: It seems this is not enough, because on mass duplicate
 				// update to many nodes are deleted, possible staying and
 				// going are wrong checked before BTR_remove is called.
-			//	CCH_RELEASE(tdbb, window);
-			//	return 0;
-			//} 
+				CCH_RELEASE(tdbb, window);
+				return 0;
+			}*/ 
 			//else 
 			if (allRecordNumber) {
 				// if recordnumber is higher we need to insert before it.

@@ -93,16 +93,13 @@ struct IndexDescAlloc : public pool_alloc_rpt<index_desc> {
 
 const int idx_numeric		= 0;
 const int idx_string		= 1;
-const int idx_timestamp1	= 2;
+// AB: idx_timestamp1 removed
 const int idx_byte_array	= 3;
 const int idx_metadata		= 4;
 const int idx_sql_date		= 5;
 const int idx_sql_time		= 6;
 const int idx_timestamp2	= 7;
 const int idx_numeric2		= 8;	/* Introduced for 64-bit Integer support */
-
-/* Historical alias for pre v6 applications */
-const int idx_date			= idx_timestamp1;
 
 				   /* idx_itype space for future expansion */
 const int idx_first_intl_string	= 64;	/* .. MAX (short) Range of computed key strings */
