@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.25 2003-07-08 10:45:47 brodsom Exp $
+#   $Id: make.defaults,v 1.25.2.1 2003-09-01 14:18:51 alexpeshkoff Exp $
 # 
 
 
@@ -158,8 +158,8 @@ LIBGDS_A = $(LIB)/libgds.a
 # to the fbserver. MOD 28-July-2002
 
 ClientLibraryName = libfbclient.$(SHRLIB_EXT)
-ClientLibraryNameMajor = $(ClientLibraryName).1
-ClientLibraryNameFull = $(ClientLibraryNameMajor).0.0
+ClientLibraryNameMajor = $(ClientLibraryName).${MajorVer}
+ClientLibraryNameFull = $(ClientLibraryName).${FirebirdVersion}
 
 LIBFBCLIENT_SO = $(LIB)/$(ClientLibraryNameFull)
 LIBFBCLIENT_SOBASENAME=$(LIB)/$(ClientLibraryNameMajor)
