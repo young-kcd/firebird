@@ -19,7 +19,7 @@
  * Contributor(s): ______________________________________.
  */
 
-#include "Firebird.h"
+#include "firebird.h"
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
 #include "../jrd/os/path_utils.h"
