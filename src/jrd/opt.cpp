@@ -136,7 +136,7 @@ static RSB gen_union(TDBB, OPT, JRD_NOD, UCHAR *, USHORT);
 static void get_inactivities(CSB, ULONG *);
 static IRL indexed_relationship(TDBB, OPT, USHORT);
 static STR make_alias(TDBB, CSB, csb_repeat *);
-static JRD_NOD make_binary_node(NOD_T, JRD_NOD, JRD_NOD, USHORT);
+static JRD_NOD make_binary_node(NOD_T, JRD_NOD, JRD_NOD, bool);
 static RSB make_cross(TDBB, OPT, LLS);
 static JRD_NOD make_index_node(TDBB, JRD_REL, CSB, IDX *);
 static JRD_NOD make_inference_node(CSB, JRD_NOD, JRD_NOD, JRD_NOD);
@@ -607,7 +607,7 @@ RSB OPT_compile(TDBB tdbb,
 	}
 	else {
 		bool sort_present = (sort) ? true : false;
-		bool outer_rivers = FALSE;
+		bool outer_rivers = false;
 		JRD_NOD saved_sort_node = sort;
 
 		// AB: If previous rsb's are already on the stack we can't use
@@ -1544,7 +1544,7 @@ static JRD_NOD compose(JRD_NOD * node1, JRD_NOD node2, NOD_T node_type)
 		return (*node1 = node2);
 	}
 
-	return *node1 = make_binary_node(node_type, *node1, node2, FALSE);
+	return *node1 = make_binary_node(node_type, *node1, node2, false);
 }
 
 
@@ -1713,7 +1713,7 @@ static bool computable(CSB     csb,
 	{
 		if ((*ptr)->nod_type != nod_rse) {
 			if (!computable(csb, (*ptr), stream, idx_use)) {
-				result = FALSE;
+				result = false;
 			}
 		}
 	}
@@ -1963,10 +1963,10 @@ static SLONG decompose(TDBB tdbb,
 			ERR_post(isc_optimizer_between_err, 0);
 			/* Msg 493: Unsupported field type specified in BETWEEN predicate */
 		}
-		node = make_binary_node(nod_geq, arg, boolean_node->nod_arg[1], TRUE);
+		node = make_binary_node(nod_geq, arg, boolean_node->nod_arg[1], true);
 		LLS_PUSH(node, stack);
 		arg = CMP_clone_node(tdbb, csb, arg);
-		node = make_binary_node(nod_leq, arg, boolean_node->nod_arg[2], TRUE);
+		node = make_binary_node(nod_leq, arg, boolean_node->nod_arg[2], true);
 		LLS_PUSH(node, stack);
 		return 2;
 	}
@@ -1976,9 +1976,8 @@ static SLONG decompose(TDBB tdbb,
 
 	if ((boolean_node->nod_type == nod_like) &&
 		(arg = optimize_like(tdbb, boolean_node))) {
-		node =
-			make_binary_node(nod_starts, boolean_node->nod_arg[0], arg,
-							 FALSE);
+		node = make_binary_node(nod_starts, boolean_node->nod_arg[0], arg,
+							 false);
 		LLS_PUSH(node, stack);
 		LLS_PUSH(boolean_node, stack);
 		return 2;
@@ -2011,7 +2010,9 @@ static USHORT distribute_equalities(LLS * org_stack, CSB csb)
  **************************************/
 	LLS classes[MAX_OPT_ITEMS], *class_, *class2, *end, stack, temp;
 	JRD_NOD boolean, node1, node2, new_node, arg1, arg2;
-	USHORT reverse, count, n;
+	bool reverse;
+	USHORT count;
+	USHORT n;
 
 	DEV_BLKCHK(*org_stack, type_lls);
 	DEV_BLKCHK(csb, type_csb);
@@ -2075,7 +2076,7 @@ static USHORT distribute_equalities(LLS * org_stack, CSB csb)
 				for (temp = stack->lls_next; temp; temp = temp->lls_next) {
 					boolean =
 						make_binary_node(nod_eql, (JRD_NOD) stack->lls_object,
-										 (JRD_NOD) temp->lls_object, TRUE);
+										 (JRD_NOD) temp->lls_object, true);
 					if (augment_stack(boolean, org_stack)) {
 						DEBUG;
 						count++;
@@ -2099,12 +2100,12 @@ static USHORT distribute_equalities(LLS * org_stack, CSB csb)
 			boolean->nod_type != nod_like) continue;
 		node1 = boolean->nod_arg[0];
 		node2 = boolean->nod_arg[1];
-		reverse = FALSE;
+		reverse = false;
 		if (node1->nod_type != nod_field) {
 			new_node = node1;
 			node1 = node2;
 			node2 = new_node;
-			reverse = TRUE;
+			reverse = true;
 		}
 		if (node1->nod_type != nod_field)
 			continue;
@@ -2511,7 +2512,7 @@ static bool estimate_cost(TDBB tdbb,
  *	is a function of estimated cardinality of the relation, index
  *	selectivity, and total boolean selectivity.  Since none of
  *	this information is available, the estimates are likely to
- *	be a bit weak.  Return TRUE if the relation is index 
+ *	be a bit weak.  Return true if the relation is index 
  *	retrievable.
  *
  **************************************/
@@ -4857,8 +4858,8 @@ static bool gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
  *	a sort/merge join, and it's time to find out.  If there are,
  *	build a sort/merge RSB, push it on the rsb stack, and update
  *	rivers accordingly.  If two or more rivers were successfully
- *	joined, return TRUE.  If the whole things is a moby no-op,
- *	return FALSE.
+ *	joined, return true.  If the whole things is a moby no-op,
+ *	return false.
  *
  **************************************/
 	DBB dbb;
@@ -4936,7 +4937,7 @@ static bool gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 	}
 
 /* Pick both a set of classes and a set of rivers on which to join with
-   sort merge.  Obviously, if the set of classes is empty, return FALSE
+   sort merge.  Obviously, if the set of classes is empty, return false
    to indicate that nothing could be done. */
 
 	river_cnt = stream_cnt = 0;
@@ -5288,7 +5289,7 @@ static STR make_alias(TDBB tdbb, CSB csb, csb_repeat * base_tail)
 }
 
 
-static JRD_NOD make_binary_node(NOD_T type, JRD_NOD arg1, JRD_NOD arg2, USHORT flag)
+static JRD_NOD make_binary_node(NOD_T type, JRD_NOD arg1, JRD_NOD arg2, bool flag)
 {
 /**************************************
  *
@@ -5851,7 +5852,9 @@ static SSHORT match_index(TDBB tdbb,
  *
  **************************************/
 	JRD_NOD match, value;
-	SSHORT i, forward, count;
+	SSHORT i;
+	bool forward;
+	SSHORT count;
 	Opt::opt_repeat * ptr;
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(boolean, type_nod);
@@ -5861,7 +5864,7 @@ static SSHORT match_index(TDBB tdbb,
 	if (boolean->nod_type == nod_and)
 		return match_index(tdbb, opt, stream, boolean->nod_arg[0], idx) +
 			match_index(tdbb, opt, stream, boolean->nod_arg[1], idx);
-	forward = TRUE;
+	forward = true;
 	count = 0;
 	match = boolean->nod_arg[0];
 	value = boolean->nod_arg[1];
@@ -5899,7 +5902,7 @@ static SSHORT match_index(TDBB tdbb,
 			{
 				return 0;
 			}
-			forward = FALSE;
+			forward = false;
 		}
 #ifdef EXPRESSION_INDICES
 	}
@@ -6297,10 +6300,11 @@ static bool river_reference(RIV river, JRD_NOD node, bool *field_found)
  *
  * Functional description
  *	See if a value node is a reference to a given river.  Return
- *	TRUE or FALSE.
+ *	true or false.
  *
  **************************************/
-	bool lfield_found, root_caller = FALSE;
+	bool lfield_found = false;
+	bool root_caller = false;
 
 	DEV_BLKCHK(river, type_riv);
 	DEV_BLKCHK(node, type_nod);
@@ -6321,7 +6325,7 @@ static bool river_reference(RIV river, JRD_NOD node, bool *field_found)
 					return true;
 				}
 			}
-			return FALSE;
+			return false;
 
 		default : {
 			JRD_NOD *ptr, *end;
@@ -6345,12 +6349,12 @@ static bool river_reference(RIV river, JRD_NOD node, bool *field_found)
 	DEV_BLKCHK(river, type_riv);
 	DEV_BLKCHK(node, type_nod);
 	if (node->nod_type != nod_field)
-		return FALSE;
+		return false;
 	for (streams = river->riv_streams, end =
 		 streams + river->riv_count; streams < end; streams++)
 		if ((USHORT) node->nod_arg[e_fld_stream] == *streams)
-			return TRUE;
-	return FALSE; 
+			return true;
+	return false; 
 */
 	return false;
 }
