@@ -5524,6 +5524,7 @@ static Database* init(thread_db*	tdbb,
 	if ((dbb->dbb_flags & (DBB_gc_cooperative | DBB_gc_background)) == 0)
 	{
 		Firebird::string gc_policy = Config::getGCPolicy();
+		gc_policy.lower();
 		if (gc_policy == GCPolicyCooperative) {
 			dbb->dbb_flags |= DBB_gc_cooperative;
 		}
@@ -5535,14 +5536,13 @@ static Database* init(thread_db*	tdbb,
 		}
 		else // config value is invalid, use default
 		{
-			gc_policy = GCPolicyDefault;
-			if (gc_policy == GCPolicyCooperative) {
+			if (GCPolicyDefault == GCPolicyCooperative) {
 				dbb->dbb_flags |= DBB_gc_cooperative;
 			}
-			else if (gc_policy == GCPolicyBackground) {
+			else if (GCPolicyDefault == GCPolicyBackground) {
 				dbb->dbb_flags |= DBB_gc_background;
 			}
-			else if (gc_policy == GCPolicyCombined) {
+			else if (GCPolicyDefault == GCPolicyCombined) {
 				dbb->dbb_flags |= DBB_gc_cooperative | DBB_gc_background;
 			}
 			else 
