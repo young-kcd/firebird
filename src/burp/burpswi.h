@@ -28,6 +28,7 @@
 #define _BURP_BURPSWI_H_
 
 #include "../jrd/common.h"
+#include "../jrd/y_handle.h"
 #include "../jrd/ibase.h"
 
 /* Local copies of global variables.  They wil be copied into

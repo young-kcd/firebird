@@ -37,6 +37,7 @@
 #include <string.h>
 #include <signal.h>
 #include "../jrd/common.h"
+#include "../jrd/y_handle.h"
 #include "../jrd/ibase.h"
 #include <stdarg.h>
 #include "../jrd/ibsetjmp.h"
@@ -2064,7 +2065,7 @@ static int api_gbak(int argc,
 	USHORT spblen, thdlen;
 	char sendbuf[] = { isc_info_svc_line };
 	char respbuf[1024];
-	long *svc_handle = NULL;
+	FRBRD *svc_handle = NULL;
 	char *spb_ptr, *spb, *svc_name, *thd_ptr, *thd;
 	struct tgbl *tdgbl, ldgbl;
 
@@ -2165,7 +2166,7 @@ static int api_gbak(int argc,
 	if (isc_service_attach(	status,
 							0,
 							svc_name,
-							reinterpret_cast<void**>(&svc_handle),
+							(&svc_handle),
 							spblen, spb))
 	{
 		BURP_print_status(status);
@@ -2184,7 +2185,7 @@ static int api_gbak(int argc,
 		status[1] = isc_virmemexh;
 		status[2] = isc_arg_end;
 		BURP_print_status(status);
-		isc_service_detach(status, reinterpret_cast<void**>(&svc_handle));
+		isc_service_detach(status, (&svc_handle));
 		gds__free(spb);
 		gds__free(svc_name);
 		BURP_print(83, 0, 0, 0, 0, 0);	/* msg 83 Exiting before completion due to errors */
@@ -2203,7 +2204,7 @@ static int api_gbak(int argc,
 	thdlen = thd_ptr - thd;
 
 	if (isc_service_start(	status,
-							reinterpret_cast<void**>(&svc_handle),
+							(&svc_handle),
 							NULL,
 							thdlen,
 							thd))
@@ -2212,14 +2213,14 @@ static int api_gbak(int argc,
 		gds__free(spb);
 		gds__free(svc_name);
 		gds__free(thd);
-		isc_service_detach(status, reinterpret_cast<void**>(&svc_handle));
+		isc_service_detach(status, (&svc_handle));
 		BURP_print(83, 0, 0, 0, 0, 0);	/* msg 83 Exiting before completion due to errors */
 		return FINI_ERROR;
 	}
 
 	do {
 		if (isc_service_query(	status,
-								reinterpret_cast<void**>(&svc_handle),
+								(&svc_handle),
 								NULL,
 								0,
 								NULL,
@@ -2233,7 +2234,7 @@ static int api_gbak(int argc,
 			gds__free(svc_name);
 			gds__free(thd);
 			isc_service_detach(status,
-							   reinterpret_cast<void**>(&svc_handle));
+							   (&svc_handle));
 			BURP_print(83, 0, 0, 0, 0, 0);	/* msg 83 Exiting before completion due to errors */
 			return FINI_ERROR;
 		}
@@ -2262,7 +2263,7 @@ static int api_gbak(int argc,
 	}
 	while (*x == isc_info_svc_line);
 
-	isc_service_detach(status, reinterpret_cast<void**>(&svc_handle));
+	isc_service_detach(status, (&svc_handle));
 	return FINI_OK;
 }
 #endif	// !GUI_TOOLS
