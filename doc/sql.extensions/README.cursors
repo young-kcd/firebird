@@ -64,3 +64,6 @@ PSQL cursors (FB 2.0)
        the current PSQL block/procedure/trigger.
     7. ROW_COUNT system variable can be used to check whether the last FETCH statement returned
        any row.
+
+  See also:
+    README.context_variables

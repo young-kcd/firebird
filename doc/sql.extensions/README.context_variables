@@ -57,12 +57,15 @@ ROW_COUNT (FB 1.5)
       INSERT INTO TABLE1 (ID, FIELD1) VALUES (:ID, 0);
 
   Note(s):
-    1. After SELECT statements ROW_COUNT always contains zero,
-       i.e. it can be used for INSERT/UPDATE/DELETE statements only.
-       It may be a subject of change in the following versions.
-    2. ROW_COUNT also contains zero after EXECUTE STATEMENT. That's
+    1. It can be used to check whether a SELECT statement returned
+       any rows or not. Also it can be used to exit a fetch loop
+       on an explicit PSQL cursor.
+    2. ROW_COUNT contains zero after EXECUTE STATEMENT call. That's
        a design limitation, because dynamic SQL statements are
        executed as nested requests (i.e. in another context).
+
+  See also:
+    README.cursors
 
 
 SQLCODE / GDSCODE (FB 1.5)
