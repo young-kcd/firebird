@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: tree.h,v 1.32 2004-06-21 02:48:40 robocop Exp $
+ *  $Id: tree.h,v 1.33 2004-06-21 22:45:17 skidder Exp $
  *
  */
 
@@ -153,9 +153,9 @@ public:
 	// If next item doesn't exist method returns false
     bool fastRemove() { return defaultAccessor.fastRemove(); }
 	
-	bool locate(Key& key) { return defaultAccessor.locate(locEqual, key); }
+	bool locate(const Key& key) { return defaultAccessor.locate(locEqual, key); }
 	
-	bool locate(LocType lt, Key& key) {	return defaultAccessor.locate(lt, key); }
+	bool locate(LocType lt, const Key& key) {	return defaultAccessor.locate(lt, key); }
 	
 	bool getFirst() { return defaultAccessor.getFirst(); }
 	
@@ -302,13 +302,13 @@ public:
 			return true;
 		}
 	
-		bool locate(Key& key) {
+		bool locate(const Key& key) {
 			return locate(locEqual, key);
 		}
 	
 		// Position accessor on item having LocType relationship with given key
 		// If method returns false position of accessor is not defined.
-		bool locate(LocType lt, Key& key) {
+		bool locate(LocType lt, const Key& key) {
 			// Inlining is efficient here because LocType will be known in most cases
 			// and compiler will be able to eliminate most of code
 			void *list = tree->root;
