@@ -1423,7 +1423,7 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 // Now that we know that the new request exists, zap the old one. 
 
 			{
-				DsqlContextPoolHolder context(tdsql, &old_request->req_pool);
+				DsqlContextPoolHolder another_context(tdsql, &old_request->req_pool);
 				release_request(old_request, true);
 			}
 
