@@ -412,8 +412,8 @@ class StringFunctions {
 public:
 	static bool process(TDBB tdbb, TextType ttype, void* object, const UCHAR* str, SSHORT length) 
 	{
-		fb_assert(length % sizeof(CharType) == 0);
 		StrConverter cvt(tdbb, ttype, str, length);
+		fb_assert(length % sizeof(CharType) == 0);
 		return reinterpret_cast<Algorithm*>(object)->processNextChunk(
 			reinterpret_cast<const CharType*>(str), length / sizeof(CharType));
 	}
@@ -432,17 +432,17 @@ template <typename StrConverter, typename CharType>
 class ContainsFunctions : public StringFunctions<Firebird::ContainsEvaluator<CharType>, StrConverter, CharType> {
 public:
 	static void* create(TDBB tdbb, TextType ttype, const UCHAR* str, SSHORT length) {
-		fb_assert(length % sizeof(CharType) == 0);
 		StrConverter cvt(tdbb, ttype, str, length);
+		fb_assert(length % sizeof(CharType) == 0);
 		return FB_NEW(*tdbb->tdbb_default) Firebird::ContainsEvaluator<CharType>(tdbb->tdbb_default, 
 			reinterpret_cast<const CharType*>(str), length / sizeof(CharType));
 	}
-	static bool evaluate(TDBB tdbb, TextType ttype, void* object, const UCHAR* s, SSHORT sl, 
+	static bool evaluate(TDBB tdbb, TextType ttype, const UCHAR* s, SSHORT sl, 
 			const UCHAR* p, SSHORT pl) 
 	{
+		StrConverter cvt1(tdbb, ttype, p, pl), cvt2(tdbb, ttype, s, sl);
 		fb_assert(pl % sizeof(CharType) == 0);
 		fb_assert(sl % sizeof(CharType) == 0);
-		StrConverter cvt1(tdbb, ttype, p, pl), cvt2(tdbb, ttype, s, sl);
 		Firebird::ContainsEvaluator<CharType> evaluator(tdbb->tdbb_default, 
 			reinterpret_cast<const CharType*>(p), pl / sizeof(CharType));
 		evaluator.processNextChunk(reinterpret_cast<const CharType*>(s), sl / sizeof(CharType));
@@ -462,8 +462,8 @@ template <typename StrConverter, typename CharType>
 class LikeFunctions : public StringFunctions<Firebird::LikeEvaluator<CharType>, StrConverter, CharType> {
 public:
 	static void* create(TDBB tdbb, TextType ttype, const UCHAR* str, SSHORT length, UCS2_CHAR escape) {
-		fb_assert(length % sizeof(CharType) == 0);
 		StrConverter cvt(tdbb, ttype, str, length);
+		fb_assert(length % sizeof(CharType) == 0);
 		return FB_NEW(*tdbb->tdbb_default) Firebird::LikeEvaluator<CharType>(tdbb->tdbb_default, 
 			reinterpret_cast<const CharType*>(str), length / sizeof(CharType), 
 			escape, SQL_MATCH_ANY_CHARS, SQL_MATCH_1_CHAR);
@@ -471,9 +471,9 @@ public:
 	static bool evaluate(TDBB tdbb, TextType ttype, void* object, const UCHAR* s, SSHORT sl, 
 		const UCHAR* p, SSHORT pl, UCS2_CHAR escape) 
 	{
+		StrConverter cvt1(tdbb, ttype, p, pl), cvt2(tdbb, ttype, s, sl);
 		fb_assert(pl % sizeof(CharType) == 0);
 		fb_assert(sl % sizeof(CharType) == 0);
-		StrConverter cvt1(tdbb, ttype, p, pl), cvt2(tdbb, ttype, s, sl);
 		Firebird::LikeEvaluator<CharType> evaluator(tdbb->tdbb_default, 
 			reinterpret_cast<const CharType*>(p), pl / sizeof(CharType), 
 			escape, SQL_MATCH_ANY_CHARS, SQL_MATCH_1_CHAR);
