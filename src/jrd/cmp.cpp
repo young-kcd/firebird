@@ -462,10 +462,9 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 	if (validate) {
 		jrd_prc* procedure = request->req_procedure;
 		if (procedure) {
-			// can't use const
-			TEXT* prc_sec_name = 
+			const TEXT* prc_sec_name =
 				(procedure->prc_security_name.hasData() ?
-				(TEXT *) procedure->prc_security_name.c_str() : NULL);
+				procedure->prc_security_name.c_str() : NULL);
 			const SecurityClass* sec_class = SCL_get_class(prc_sec_name);
 			SCL_check_access(sec_class, 0, 0,
 							 0, SCL_execute, object_procedure,
