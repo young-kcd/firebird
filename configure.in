@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.196 2004-04-30 23:03:00 brodsom Exp $
+dnl $Id: configure.in,v 1.197 2004-05-02 08:53:23 skidder Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -733,6 +733,7 @@ mkdir -p temp/std/utilities/guard
 mkdir -p temp/std/utilities/ibmgr
 mkdir -p temp/std/utilities/install
 mkdir -p temp/std/utilities/rebuild
+mkdir -p temp/std/extern/editline
 
 mkdir -p temp/superclient/alice
 mkdir -p temp/superclient/burp
