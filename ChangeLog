@@ -1,3 +1,35 @@
+2002-10-18 16:40  dimitr
+
+	* firebird2/src/jrd/jrd.cpp:
+	
+	Fixed one more 2PC related bug.
+
+2002-10-18 15:41  dimitr
+
+	* firebird2/src/jrd/vio.cpp:
+	
+	Rolled back my bugfix. It does solve the mentioned problem, but
+	introduces much more additional (unexpected) pain.
+
+2002-10-18 15:26  dimitr
+
+	* firebird2/src/jrd/: why.c, y-valve.cpp:
+	
+	Fixed incorrect 2PC behaviour with a rollback of a distributed
+	transaction.
+
+2002-10-18 13:11  dimitr
+
+	* firebird2/builds/win32/msvc6/fbclient.dsp:
+	
+	Added proper version information for the both client libraries.
+
+2002-10-18 11:14  dimitr
+
+	* firebird2/builds/win32/msvc6/gpre.dsp:
+	
+	Small correction.
+
 2002-10-18 06:55  stryqx
 
 	* firebird2/src/jrd/thd.cpp:
