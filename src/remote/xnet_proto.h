@@ -32,13 +32,12 @@
 #define rem_port void
 #endif
 
-rem_port*	XNET_analyze(Firebird::PathName&, ISC_STATUS*, const TEXT*,
-	const TEXT*, bool);
-rem_port*	XNET_connect(const TEXT*, struct packet*, ISC_STATUS*, USHORT);
+rem_port* XNET_analyze(Firebird::PathName&, ISC_STATUS*, const TEXT*, const TEXT*, bool);
+rem_port* XNET_connect(const TEXT*, struct packet*, ISC_STATUS*);
 
 #ifndef SUPERCLIENT
-void	XNET_srv(USHORT flag);
-rem_port*	XNET_reconnect(ULONG, ISC_STATUS*);
+void XNET_srv(USHORT flag);
+rem_port* XNET_reconnect(ULONG, ISC_STATUS*);
 #endif
 
 #endif // REMOTE_XNET_PROTO_H
