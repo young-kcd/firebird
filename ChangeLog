@@ -1,3 +1,88 @@
+2003-02-05 21:42  brodsom
+
+	* firebird2/src/jrd/: winnt.cpp, unix.cpp, jrd.h, pio.h,
+	pio_proto.h, ail.cpp, cch.cpp:
+	
+	Non forced writes mode, move logic to cch, add dbb mutex, and
+	rollback changes in ail.cpp, pio.h, pio_proto.h, unix.cpp and
+	winnt.cpp
+
+2003-02-05 20:44  brodsom
+
+	* firebird2/src/dudley/trn.cpp:
+	
+	Remove unused vars
+
+2003-02-05 20:35  brodsom
+
+	* firebird2/src/dudley/parse.cpp:
+	
+	Remove unused vars
+
+2003-02-05 16:45  dimitr
+
+	* firebird2/src/: utilities/isc4.gdl, utilities/isc4.sql,
+	utilities/security.gdl, utilities/security.sql, jrd/pwd.h:
+	
+	Renamed isc4.gdb to security.gdb
+
+2003-02-05 16:43  brodsom
+
+	* firebird2/src/dudley/: expand.cpp, expr.cpp, lex.cpp:
+	
+	Remove unused vars
+
+2003-02-05 16:18  dimitr
+
+	* firebird2/src/jrd/: plugin_manager.cpp, plugin_manager.h:
+	
+	Some cosmetic changes in the plugin manager.
+
+2003-02-05 16:13  dimitr
+
+	* firebird2/src/jrd/met.epp:
+	
+	Fixed reference to released and freed blob.
+
+2003-02-05 15:40  brodsom
+
+	* firebird2/src/jrd/: winnt.cpp, ail.cpp, cch.cpp, pio.h,
+	pio_proto.h, unix.cpp, vms.cpp:
+	
+	Make non forced writes mode configurable & more secure.
+
+2003-02-05 15:32  brodsom
+
+	* firebird2/src/common/config/: config.cpp, config.h:
+	
+	New config parameters to control non forced writes mode.
+
+2003-02-05 15:30  brodsom
+
+	* firebird2/src/qli/: format.cpp, dtr.cpp, expand.cpp:
+	
+	Remove unused vars
+
+2003-02-05 03:40  brodsom
+
+	* firebird2/src/qli/: gener.cpp, noform.cpp:
+	
+	Remove unused vars
+
+2003-02-05 03:19  brodsom
+
+	* firebird2/src/intl/lc_ksc.c:
+	
+	Remove unused vars
+
+2003-02-05 02:47  brodsom
+
+	* firebird2/src/qli/: show.epp, all.cpp, compile.cpp, err.cpp,
+	eval.cpp, exe.cpp, help.epp, meta.epp, mov.cpp, picstr.cpp,
+	proc.epp, report.cpp:
+	
+	Remove unused vars
+
 2003-02-04 21:19  dimitr
 
 	* firebird2/builds/win32/msvc6/isql.dsp:
