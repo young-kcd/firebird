@@ -89,19 +89,16 @@ void MISC_free_burp( void *free)
  *	Release an unwanted block.
  *
  **************************************/
-	UCHAR **block;
-	TGBL tdgbl;
-	UCHAR **ptr;
-
-	tdgbl = GET_THREAD_DATA;
+	TGBL tdgbl = GET_THREAD_DATA;
 
 	if (free != NULL) {
 		/* Point at the head of the allocated block */
-		block =
+		UCHAR **block =
 			(UCHAR **) ((UCHAR *) free - ROUNDUP(sizeof(UCHAR *), ALIGNMENT));
 
 		/* Scan for this block in the list of blocks */
-		for (ptr = &tdgbl->head_of_mem_list; *ptr; ptr = (UCHAR **) * ptr) {
+		for (UCHAR **ptr = &tdgbl->head_of_mem_list; *ptr; ptr = (UCHAR **) *ptr)
+		{
 			if (*ptr == (UCHAR *) block) {
 				/* Found it - remove it from the list */
 				*ptr = *block;
@@ -119,7 +116,21 @@ void MISC_free_burp( void *free)
 }
 
 
-void MISC_terminate(UCHAR* from, UCHAR* to, ULONG length, ULONG max_length)
+// Since this code appears everywhere, it makes more sense to isolate it
+// in a function visible to all gbak components.
+// Given a request, if it's non-zero (compiled), deallocate it but
+// without caring about a possible error.
+void MISC_release_request_silent(isc_req_handle& req_handle)
+{
+	if (req_handle)
+	{
+		ISC_STATUS_ARRAY req_status;
+		isc_release_request(req_status, &req_handle);
+	}
+}
+
+
+void MISC_terminate(const TEXT* from, TEXT* to, ULONG length, ULONG max_length)
 {
 /**************************************
  *

@@ -21,9 +21,9 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _BURP_RESTO_PROTO_H_
-#define _BURP_RESTO_PROTO_H_
+#ifndef BURP_RESTO_PROTO_H
+#define BURP_RESTO_PROTO_H
 
 extern int	RESTORE_restore (TEXT *, TEXT *);
 
-#endif	/* _BURP_RESTO_PROTO_H_ */
+#endif	/* BURP_RESTO_PROTO_H */

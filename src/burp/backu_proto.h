@@ -21,9 +21,9 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _BURP_BACKU_PROTO_H_
-#define _BURP_BACKU_PROTO_H_
+#ifndef BURP_BACKU_PROTO_H
+#define BURP_BACKU_PROTO_H
 
-extern int	BACKUP_backup (TEXT *, TEXT *);
+extern int	BACKUP_backup (TEXT *, const TEXT *);
 
-#endif	/*  _BURP_BACKU_PROTO_H_  */
+#endif	/*  BURP_BACKU_PROTO_H  */

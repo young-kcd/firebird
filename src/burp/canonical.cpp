@@ -28,7 +28,7 @@
  *
  */
 /*
-$Id: canonical.cpp,v 1.24 2003-09-08 01:47:09 brodsom Exp $
+$Id: canonical.cpp,v 1.25 2003-09-12 09:04:38 robocop Exp $
 */
 
 #include "firebird.h"

@@ -21,11 +21,13 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _BURP_MISC_PROTO_H_
-#define _BURP_MISC_PROTO_H_
+#ifndef BURP_MISC_PROTO_H
+#define BURP_MISC_PROTO_H
 
 extern UCHAR	*MISC_alloc_burp (ULONG);
 extern void	MISC_free_burp (void *);
-extern void	MISC_terminate (UCHAR *, UCHAR *, ULONG, ULONG);
+extern void MISC_release_request_silent(isc_req_handle& req_handle);
+extern void	MISC_terminate (const TEXT *, TEXT *, ULONG, ULONG);
 
-#endif	/* _BURP_MISC_PROTO_H_ */
+#endif	/* BURP_MISC_PROTO_H */
+

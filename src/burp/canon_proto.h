@@ -21,10 +21,11 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _BURP_CANON_PROTO_H_
-#define _BURP_CANON_PROTO_H_
+#ifndef BURP_CANON_PROTO_H
+#define BURP_CANON_PROTO_H
 
 extern ULONG	CAN_encode_decode (burp_rel*, lstring*, UCHAR*, int);
 extern ULONG	CAN_slice (lstring*, lstring*, int, USHORT, UCHAR*);
 
-#endif	/* _BURP_CANON_PROTO_H_ */
+#endif	/* BURP_CANON_PROTO_H */
+

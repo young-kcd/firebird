@@ -39,3 +39,4 @@
 #endif //WIN_NT
 
 #endif  //GBAK_STD_DESC_H
+

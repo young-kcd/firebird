@@ -26,8 +26,8 @@
 //
  */
 
-#ifndef _BURP_BURP_H_
-#define _BURP_BURP_H_
+#ifndef BURP_BURP_H
+#define BURP_BURP_H
 
 #include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
@@ -53,7 +53,7 @@ typedef TEXT			GDS_NAME [GDS_NAME_LEN];
 
 /* Record types in backup file */
 
-typedef enum rec_type {
+enum rec_type {
     rec_burp,			/* Restore program attributes */
     rec_database,		/* Logical database parameters */
     rec_global_field,		/* Global field description */
@@ -73,7 +73,7 @@ typedef enum rec_type {
     rec_function_arg,		/* Function arguement description */
     rec_function_end,           /* End of function and its args */
     rec_gen_id,                 /* From blr_gen_id */
-    rec_type,			/* Type of field */
+    rec_system_type,			/* Type of field */
     rec_filter,			/* Filter */
     rec_trigger_message,	/* Trigger message texts */
     rec_user_privilege,		/* User privilege */
@@ -91,7 +91,7 @@ typedef enum rec_type {
     rec_charset,		/* Character sets */
     rec_collation,		/* Collations */
     rec_sql_roles		/* SQL roles */
-} REC_TYPE;
+};
 
 
 /* The order of battle for major records is:
@@ -696,7 +696,7 @@ typedef struct hdr_split {
 #define HDR_SPLIT_TAG6          "InterBase/gbak,   "
 #define HDR_SPLIT_TAG           HDR_SPLIT_TAG6
 #define MIN_SPLIT_SIZE          2048    /* bytes */
-
+
 /* Global switches and data */
 
 typedef struct tgbl
@@ -924,4 +924,5 @@ extern tgbl *gdgbl;
 #define msgErr_restore_collation	215
 #define msgVerbose_restore_collation	216
 
-#endif /* _BURP_BURP_H_ */
+#endif /* BURP_BURP_H */
+

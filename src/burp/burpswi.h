@@ -24,14 +24,14 @@
  *                         readonly databases.
  */
 
-#ifndef _BURP_BURPSWI_H_
-#define _BURP_BURPSWI_H_
+#ifndef BURP_BURPSWI_H
+#define BURP_BURPSWI_H
 
 #include "../jrd/common.h"
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 
-/* Local copies of global variables.  They wil be copied into
+/* Local copies of global variables.  They will be copied into
    a data structure. */
 
 /* Local variables */
@@ -47,7 +47,7 @@
 #define IN_SW_BURP_U         9       /* don't back up security information */
 #define IN_SW_BURP_V         10      /* verify actions */
 #define IN_SW_BURP_Z         11      /* print version number */
-#define IN_SW_BURP_D         12      /* backup file on tape - APOLLO only */
+/*#define IN_SW_BURP_D         12      * backup file on tape - APOLLO only */
 #define IN_SW_BURP_E         13      /* expand (no compress) */
 #define IN_SW_BURP_Y         14      /* redirect/suppress status and error output */
 #define IN_SW_BURP_L         15      /* ignore limbo transactions */
@@ -164,5 +164,5 @@ static in_sw_tab_t burp_in_sw_table [] =
 };
 
 
-#endif /* _BURP_BURP_H_ */
+#endif /* BURP_BURP_H */
 

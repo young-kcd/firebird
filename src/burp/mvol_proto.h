@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _BURP_MVOL_PROTO_H_
-#define _BURP_MVOL_PROTO_H_
+#ifndef BURP_MVOL_PROTO_H
+#define BURP_MVOL_PROTO_H
 
 #ifndef __cplusplus
 #error This is a C++ only header file
@@ -34,19 +34,20 @@
 UINT64  MVOL_fini_read();
 UINT64  MVOL_fini_write(int*, UCHAR**);
 void    MVOL_init(ULONG);
-void    MVOL_init_read(UCHAR*, UCHAR*, USHORT*, int*, UCHAR**);
-void    MVOL_init_write(UCHAR*, UCHAR*, int*, UCHAR**);
+void    MVOL_init_read(const UCHAR*, const UCHAR*, USHORT*, int*, UCHAR**);
+void    MVOL_init_write(const UCHAR*, const UCHAR*, int*, UCHAR**);
 bool    MVOL_split_hdr_write();
 bool    MVOL_split_hdr_read();
 int     MVOL_read(int*, UCHAR**);
 UCHAR*  MVOL_read_block(TGBL, UCHAR*, ULONG);
 void    MVOL_skip_block(TGBL, ULONG);
 UCHAR   MVOL_write(UCHAR, int*, UCHAR**);
-UCHAR*  MVOL_write_block(TGBL, UCHAR*, ULONG);
+const UCHAR*  MVOL_write_block(TGBL, const UCHAR*, ULONG);
 
 #if defined WIN_NT
-extern DESC MVOL_open (char *,ULONG,ULONG);
+extern DESC MVOL_open (const char *, ULONG, ULONG);
 #endif
 
 
-#endif	/* _BURP_MVOL_PROTO_H_ */
+#endif	/* BURP_MVOL_PROTO_H */
+
