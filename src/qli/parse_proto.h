@@ -24,7 +24,7 @@
 #ifndef _QLI_PARSE_PROTO_H_
 #define _QLI_PARSE_PROTO_H_
 
-extern struct syn	*PARQ_parse (void);
+extern syn*		PARQ_parse(void);
 extern int		PAR_match (KWWORDS);
 extern void		PAR_real (void);
 extern void		PAR_real_token (void);

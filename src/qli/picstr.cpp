@@ -25,6 +25,7 @@
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../qli/dtr.h"
+#include "../qli/exe.h"
 #include "../qli/format.h"
 #include "../qli/all_proto.h"
 #include "../qli/err_proto.h"
@@ -566,7 +567,7 @@ static void edit_date( DSC * desc, PICS picture, TEXT ** output)
 	temp_desc.dsc_address = (UCHAR *) date;
 	MOVQ_move(desc, &temp_desc);
 
-    struct tm times;
+    tm times;
 	isc_decode_date((GDS_QUAD*) date, &times);
 	TEXT* p = temp;
 

@@ -412,7 +412,7 @@ void PRO_invoke( DBB database, TEXT * name)
 		ERRQ_print_error(72, name, NULL, NULL, NULL, NULL);
 /* Msg 72 procedure \"%s\" is undefined */
 
-	LEX_procedure((struct dbb*) database, blob);
+	LEX_procedure((dbb*)database, blob);
 	LEX_token();
 }
 

@@ -4991,7 +4991,7 @@ static SYN parse_sql_subquery(void)
  *	return a single value.
  *
  **************************************/
-	struct nod_types *types;
+	nod_types* types;
 	SYN node;
 	KWWORDS keyword;
 
@@ -5168,7 +5168,7 @@ static SYN parse_statistical(void)
  *	Parse statistical expression.
  *
  **************************************/
-	struct nod_types *types;
+	nod_types* types;
 	SYN node;
 	KWWORDS keyword;
 

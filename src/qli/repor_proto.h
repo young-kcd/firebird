@@ -24,6 +24,6 @@
 #ifndef _QLI_REPOR_PROTO_H_
 #define _QLI_REPOR_PROTO_H_
 
-extern void	RPT_report (struct qli_nod *);
+extern void	RPT_report(qli_nod*);
 
 #endif /* _QLI_REPOR_PROTO_H_ */
