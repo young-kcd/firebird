@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.70 2004-11-10 08:16:35 robocop Exp $
+$Id: backup.epp,v 1.71 2004-11-29 20:27:34 skidder Exp $
 */
 
 #include "firebird.h"
@@ -2995,7 +2995,7 @@ void write_functions(void)
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	FOR (REQUEST_HANDLE req_handle1)
-		X IN RDB$FUNCTIONS
+		X IN RDB$FUNCTIONS WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
 		put(tdgbl, rec_function);
 		const SSHORT l = PUT_TEXT (att_function_name, X.RDB$FUNCTION_NAME);
 		MISC_terminate (X.RDB$FUNCTION_NAME, temp, l, sizeof(temp));
