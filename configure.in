@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.96 2002-11-22 14:11:28 dimitr Exp $
+dnl $Id: configure.in,v 1.97 2002-11-22 14:31:13 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -103,6 +103,10 @@ case "$target" in
     AC_DEFINE(WIN_NT)
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=N
+    ;;
+
+  *)
+    AC_MSG_ERROR(unsupported platform ${target})
     ;;
 esac
 
@@ -263,7 +267,6 @@ dnl kkuznetsov: Solaris always check for -lnsl
 if test "$PLATFORM" = "solx86" ; then
   AC_CHECK_LIB(nsl, gethostname, XE_APPEND(-lnsl,LIBS))
   AC_CHECK_LIB(thread, main)
-
 fi
 
 
