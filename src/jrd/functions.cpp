@@ -59,6 +59,8 @@ static const char
 
 // System variables names
 static const char
+	NETWORK_PROTOCOL_NAME[] = "NETWORK_PROTOCOL",
+	CLIENT_ADDRESS_NAME[] = "CLIENT_ADDRESS",
 	DATABASE_NAME[] = "DB_NAME",
 	ISOLATION_LEVEL_NAME[] = "ISOLATION_LEVEL",
 	TRANSACTION_ID_NAME[] = "TRANSACTION_ID",
@@ -171,6 +173,22 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 	// Handle system variables
 	if (ns_str == SYSTEM_NAMESPACE) 
 	{
+		if (name_str == NETWORK_PROTOCOL_NAME) 
+		{
+			if (att->att_network_protocol.isEmpty())
+				return NULL;
+
+			return make_result_str(att->att_network_protocol);
+		}
+
+		if (name_str == CLIENT_ADDRESS_NAME) 
+		{
+			if (att->att_remote_address.isEmpty())
+				return NULL;
+
+			return make_result_str(att->att_remote_address);
+		}
+
 		if (name_str == DATABASE_NAME) 
 		{
 			return make_result_str(dbb->dbb_database_name.c_str(),

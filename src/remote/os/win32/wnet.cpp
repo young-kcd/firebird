@@ -621,6 +621,10 @@ static int accept_connection( rem_port* port, P_CNCT * cnct)
 			id += *id + 1;
 		}
 
+	// NS: Put in connection address. I have no good idea where to get an
+	// address of the remote end of named pipe so let's live without it for now
+	port->port_protocol_str = REMOTE_make_string("WNET");
+
 	return TRUE;
 }
 
@@ -913,6 +917,12 @@ static void cleanup_port( rem_port* port)
 
 	if (port->port_user_name)
 		ALLR_free((UCHAR *) port->port_user_name);
+
+	if (port->port_protocol_str)
+		ALLR_free((UCHAR *) port->port_protocol_str);
+
+	if (port->port_address_str)
+		ALLR_free((UCHAR *) port->port_address_str);
 
 	if (port->port_host)
 		ALLR_free((UCHAR *) port->port_host);

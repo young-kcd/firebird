@@ -40,6 +40,7 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
+#include "fb_string.h"
 #include <time.h>
 
 #ifdef WIN_NT
@@ -825,6 +826,19 @@ static int accept_connection(rem_port* port, P_CNCT * cnct)
  *	Accept an incoming request for connection.
  *
  **************************************/
+	port->port_protocol_str = REMOTE_make_string("XNET");
+
+	// Use client process ID as remote address for XNET protocol
+	XCC xcc = (XCC) port->port_xcc;
+	if (xcc) {
+		XPS xps = (XPS) xcc->xcc_mapped_addr;
+		if (xps) {
+			Firebird::string address;
+			address.printf("%u", xps->xps_client_proc_id);
+			port->port_address_str = REMOTE_make_string(address.c_str());
+		}
+	}
+
 	return TRUE;
 }
 
@@ -1298,6 +1312,14 @@ static void xnet_cleanup_port(rem_port* port)
 
 	if (port->port_object_vector) {
 		ALLR_free((UCHAR *) port->port_object_vector);
+	}
+
+	if (port->port_protocol_str) {
+		ALLR_free((UCHAR *) port->port_protocol_str);
+	}
+
+	if (port->port_address_str) {
+		ALLR_free((UCHAR *) port->port_address_str);
 	}
 
 #ifdef SUPERSERVER

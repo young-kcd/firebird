@@ -416,6 +416,8 @@ struct rem_port
 	rem_str*		port_connection;	/* Name of connection */
 	rem_str*		port_user_name;
 	rem_str*		port_passwd;
+	rem_str*		port_protocol_str;	// String containing protocol name for this port
+	rem_str*		port_address_str;	// Protocol-specific address string for the port
 	rpr*			port_rpr;			/* port stored procedure reference */
 	rsr*			port_statement;		/* Statement for execute immediate */
 	rmtque*			port_receive_rmtque;	/* for client, responses waiting */

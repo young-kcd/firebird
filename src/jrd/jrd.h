@@ -433,7 +433,9 @@ public:
 		att_lc_messages(*dbb->dbb_permanent),
 		att_working_directory(*dbb->dbb_permanent), 
 		att_filename(*dbb->dbb_permanent),
-		att_context_vars(*dbb->dbb_permanent) { }
+		att_context_vars(*dbb->dbb_permanent),
+		att_network_protocol(*dbb->dbb_permanent),
+		att_remote_address(*dbb->dbb_permanent) { }
 /*	Attachment()
 	:	att_database(0),
 		att_next(0),
@@ -495,6 +497,8 @@ public:
 	Firebird::PathName	att_filename;			// alias used to attach the database
 	Firebird::TimeStamp	att_timestamp;	// connection date and time
 	Firebird::StringMap att_context_vars;  // Context variables for the connection
+	Firebird::string att_network_protocol; // Network protocol used by client for connection
+	Firebird::string att_remote_address; // Protocol-specific addess of remote client
 };
 
 

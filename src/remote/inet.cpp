@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.128 2004-11-16 06:16:19 robocop Exp $
+$Id: inet.cpp,v 1.129 2004-11-26 01:01:16 skidder Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -1274,6 +1274,25 @@ static int accept_connection(rem_port* port,
 	temp.printf("%s.%ld.%ld", name, eff_gid, eff_uid);
 	port->port_user_name = REMOTE_make_string(temp.c_str());
 
+	port->port_protocol_str = REMOTE_make_string("TCPv4");
+
+	struct sockaddr_in address;
+	socklen_t l = sizeof(address);
+
+	inet_zero((SCHAR *) &address, sizeof(address));
+	int status = getpeername((SOCKET) port->port_handle, (struct sockaddr *) &address, &l);
+	if (status == 0) {
+		Firebird::string addr_str;
+		UCHAR* ip = (UCHAR*) &address.sin_addr;
+		addr_str.printf(
+			"%d.%d.%d.%d",
+			static_cast<int>(ip[0]), 
+			static_cast<int>(ip[1]), 
+			static_cast<int>(ip[2]),
+			static_cast<int>(ip[3]) );
+		port->port_address_str = REMOTE_make_string(addr_str.c_str());
+	}
+
 	return TRUE;
 }
 
@@ -1882,6 +1901,12 @@ static void cleanup_port( rem_port* port)
 
 	if (port->port_object_vector)
 		ALLR_free((UCHAR *) port->port_object_vector);
+
+	if (port->port_protocol_str)
+		ALLR_free((UCHAR *) port->port_protocol_str);
+
+	if (port->port_address_str)
+		ALLR_free((UCHAR *) port->port_address_str);
 
 #ifdef DEBUG_XDR_MEMORY
 	if (port->port_packet_vector)

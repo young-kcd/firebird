@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.95 2004-11-07 14:50:31 alexpeshkoff Exp $
+$Id: ibase.h,v 1.96 2004-11-26 01:00:42 skidder Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -1238,10 +1238,54 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 #define isc_dpb_sql_dialect               63
 #define isc_dpb_set_db_readonly           64
 #define isc_dpb_set_db_sql_dialect        65
-#define isc_dpb_gfix_attach			66
-#define isc_dpb_gstat_attach		67
-#define isc_dpb_set_db_charset		68
+#define isc_dpb_gfix_attach		  66
+#define isc_dpb_gstat_attach		  67
+#define isc_dpb_set_db_charset			68
 #define isc_dpb_gsec_attach         69
+#define isc_dpb_address_path			70
+
+/**************************************************/
+/* clumplet tags used inside isc_dpb_address_path */
+/**************************************************/
+
+/* Format of this clumplet is the following:
+
+ <address-path-clumplet> ::=
+	isc_dpb_address_path <byte-clumplet-length> <address-stack>
+
+ <address-stack> ::= 
+	<address-descriptor> |
+	<address-stack> <address-descriptor>
+
+ <address-descriptor> ::= 
+	isc_dpb_address <byte-clumplet-length> <address-elements>
+
+ <address-elements> ::= 
+	<address-element> | 
+	<address-elements> <address-element>
+
+ <address-element> ::= 
+	isc_dpb_addr_protocol <byte-clumplet-length> <protocol-string> |
+	isc_dpb_addr_endpoint <byte-clumplet-length> <remote-endpoint-string>
+
+ <protocol-string> ::=
+	"TCPv4" |
+	"TCPv6" |
+	"XNET" |
+	"WNET" |
+	....
+
+ <remote-endpoint-string> ::=
+	<IPv4-address> | // such as "172.20.1.1"
+	<IPv6-address> | // such as "2001:0:13FF:09FF::1"
+	<xnet-process-id> | // such as "17864"
+	...
+*/
+
+#define isc_dpb_address 1
+
+#define isc_dpb_addr_protocol 1
+#define isc_dpb_addr_endpoint 2
 
 /*********************************/
 /* isc_dpb_verify specific flags */

@@ -330,6 +330,8 @@ public:
 	Firebird::string	dpb_gbak_attach;
 	Firebird::PathName	dpb_working_directory;
 	Firebird::string	dpb_set_db_charset;
+	Firebird::string	dpb_network_protocol;
+	Firebird::string	dpb_remote_address;
 public:
 	DatabaseOptions()
 	{
@@ -692,6 +694,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	tdbb->tdbb_attachment = attachment = FB_NEW(*dbb->dbb_permanent) Attachment(dbb);
 	attachment->att_filename = expanded_name;
+	attachment->att_network_protocol = options.dpb_network_protocol;
+	attachment->att_remote_address = options.dpb_remote_address;
 
 	attachment->att_next = dbb->dbb_attachments;
 	dbb->dbb_attachments = attachment;
@@ -1802,6 +1806,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 
 	tdbb->tdbb_attachment = attachment = FB_NEW(*dbb->dbb_permanent) Attachment(dbb);
 	attachment->att_filename = expanded_name;
+	attachment->att_network_protocol = options.dpb_network_protocol;
+	attachment->att_remote_address = options.dpb_remote_address;
 	attachment->att_next = dbb->dbb_attachments;
 	dbb->dbb_attachments = attachment;
 	dbb->dbb_flags &= ~DBB_being_opened;
@@ -5197,6 +5203,34 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length)
 		case isc_dpb_set_db_charset:
 			rdr.getString(dpb_set_db_charset);
 			break;
+
+		case isc_dpb_address_path: {
+			Firebird::ClumpletReader address_stack(false, 
+				rdr.getBytes(), rdr.getClumpLength());
+			while (!address_stack.isEof()) {
+				if (address_stack.getClumpTag() != isc_dpb_address) {
+					address_stack.moveNext();
+					continue;
+				}
+				Firebird::ClumpletReader address(false, 
+					address_stack.getBytes(), address_stack.getClumpLength());
+				while (!address.isEof()) {
+					switch (address.getClumpTag()) {
+						case isc_dpb_addr_protocol:
+							address.getString(dpb_network_protocol);
+							break;
+						case isc_dpb_addr_endpoint:
+							address.getString(dpb_remote_address);
+							break;
+						default:
+							break;
+					}
+					address.moveNext();
+				}
+				break;
+			}
+			break;
+		}
 
 		default:
 			break;

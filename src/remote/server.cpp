@@ -54,6 +54,7 @@
 #include "../jrd/thread_proto.h"
 #include "../jrd/why_proto.h"
 #include "../common/classes/semaphore.h"
+#include "../common/classes/ClumpletWriter.h"
 #ifdef DEBUG
 #include "gen/iberror.h"
 #endif
@@ -750,56 +751,78 @@ static ISC_STATUS attach_database(
  *	Process an attach or create packet.
  *
  **************************************/
-	UCHAR new_dpb_buffer[512];
 	ISC_STATUS_ARRAY status_vector;
 
 	send->p_operation = op_accept;
 	FB_API_HANDLE handle = 0;
 	const char* file = reinterpret_cast<const char*>(attach->p_atch_file.cstr_address);
 	const USHORT l = attach->p_atch_file.cstr_length;
+
 	// CVC: A false sense of constness is worse than no const at all.
 	// Make "dpb" non const until we fix this instead of throwing constness later.
-	UCHAR* dpb = attach->p_atch_dpb.cstr_address;
+	// NS: Claudio, could you please remove the comment if it doesn't apply anymore?
+
+	const UCHAR* dpb = attach->p_atch_dpb.cstr_address;
 	USHORT dl = attach->p_atch_dpb.cstr_length;
 
-/* If we have user identification, append it to database parameter block */
+ 
+	Firebird::ClumpletWriter dpb_buffer(true, MAX_SSHORT);
 
-	UCHAR* new_dpb = new_dpb_buffer;
+	if (dl)
+		dpb_buffer.reset(dpb, dl);
+	else
+		dpb_buffer.reset(isc_dpb_version1);
+
+	// If we have user identification, append it to database parameter block
 	rem_str* string = port->port_user_name;
 	if (string) {
-		if ((size_t)(dl + 3 + string->str_length) > sizeof(new_dpb_buffer))
-			new_dpb = ALLR_alloc((SLONG) (dl + 3 + string->str_length));
-		UCHAR* p = new_dpb;
-		if (dl) {
-			for (const UCHAR* const end = dpb + dl; dpb < end;)
-				*p++ = *dpb++;
-		}
-		else
-			*p++ = isc_dpb_version1;
-		*p++ = isc_dpb_sys_user_name;
-		*p++ = (UCHAR) string->str_length;
-		dpb = (UCHAR *) string->str_data;
-		for (const UCHAR* const end = dpb + string->str_length; dpb < end;)
-			*p++ = *dpb++;
-		dpb = new_dpb;
-		dl = p - new_dpb;
+		dpb_buffer.setCurOffset(dpb_buffer.getBufferLength());
+		dpb_buffer.insertString(isc_dpb_sys_user_name, 
+			string->str_data, string->str_length);
 	}
+
+	// Now, insert remote endpoint data into DPB address stack
+	dpb_buffer.setCurOffset(1);
+	while (!dpb_buffer.isEof() && dpb_buffer.getClumpTag() != isc_dpb_address_path)
+		dpb_buffer.moveNext();
+
+	Firebird::ClumpletWriter address_stack_buffer(false, MAX_UCHAR - 2);
+	if (!dpb_buffer.isEof()) {
+		address_stack_buffer.reset(dpb_buffer.getBytes(), dpb_buffer.getClumpLength());
+		dpb_buffer.deleteClumplet();
+	}
+
+	Firebird::ClumpletWriter address_record(false, MAX_UCHAR - 2);
+	if (port->port_protocol_str)
+		address_record.insertString(isc_dpb_addr_protocol, 
+			port->port_protocol_str->str_data, port->port_protocol_str->str_length);
+	if (port->port_address_str)
+		address_record.insertString(isc_dpb_addr_endpoint, 
+			port->port_address_str->str_data, port->port_address_str->str_length);
+
+	// We always insert remote address descriptor as a first element
+	// of appropriate clumplet so user cannot fake it and engine may somewhat trust it.
+	fb_assert(address_stack_buffer.getCurOffset() == 0);
+	address_stack_buffer.insertBytes(isc_dpb_address, 
+		address_record.getBuffer(), address_record.getBufferLength());
+
+	dpb_buffer.insertBytes(isc_dpb_address_path,
+		address_stack_buffer.getBuffer(), address_stack_buffer.getBufferLength());
+	
+/* Disable remote gsec attachments */
+	for (dpb_buffer.setCurOffset(1); !dpb_buffer.isEof(); ) {
+		if (dpb_buffer.getClumpTag() == isc_dpb_gsec_attach)
+			dpb_buffer.deleteClumplet();
+		else
+			dpb_buffer.moveNext();
+	}
+
+	dpb = dpb_buffer.getBuffer();
+	dl = dpb_buffer.getBufferLength();
 
 /* See if user has specified parameters relevant to the connection,
    they will be stuffed in the DPB if so. */
 	REMOTE_get_timeout_params(port, dpb, dl);
-
-/* Disable remote gsec attachments */
-	UCHAR* p = dpb;
-	const UCHAR* const end = dpb + dl;
-	while (p < end)
-	{
-		if (p[0] == isc_dpb_gsec_attach && p[1])
-		{
-			p[2] = 0;
-		}
-		p += (2 + p[1]);
-	}
 
 	THREAD_EXIT();
 	if (operation == op_attach)
@@ -813,10 +836,6 @@ static ISC_STATUS attach_database(
 							&handle, dl, reinterpret_cast<const char*>(dpb), 0);
 	}
 	THREAD_ENTER();
-
-	if (new_dpb != new_dpb_buffer) {
-		ALLR_free(new_dpb);
-	}
 
 	if (!status_vector[1])
 	{
@@ -3228,10 +3247,10 @@ bool process_packet(rem_port* port,
 		ThreadData::restoreSpecific();
 	
 	}	// try
-	catch (const std::exception&) {
-		/* There must be something better to do here.  BUT WHAT? */
+	catch (const std::exception& ex) {		
+		Firebird::stuff_exception(tdrdb->trdb_status_vector, ex);
 
-		gds__log("SERVER/process_packet: out of memory", 0);
+		gds__log_status("unknown, SERVER/process_packet", tdrdb->trdb_status_vector);
 
 		/*  It would be nice to log an error to the user, instead of just terminating them!  */
 		port->send_response(sendL, 0, 0, tdrdb->trdb_status_vector);
