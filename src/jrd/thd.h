@@ -26,7 +26,7 @@
  *
  */
 /*
-$Id: thd.h,v 1.12.2.3 2003-11-09 22:59:29 bellardo Exp $
+$Id: thd.h,v 1.12.2.4 2004-09-17 23:34:14 skidder Exp $
 */
 
 #ifndef _JRD_THD_H_
@@ -232,7 +232,7 @@ typedef struct mutx_t {
 /* Recursive mutex structure */
 typedef struct rec_mutx_t {
 	MUTX_T rec_mutx_mtx[1];
-	ULONG rec_mutx_id;
+	FB_THREAD_ID rec_mutx_id;
 	SLONG rec_mutx_count;
 } REC_MUTX_T, *REC_MUTX;
 

@@ -4156,7 +4156,7 @@ void JRD_blocked(ATT blocking, BTB * que)
 		block = FB_NEW(*dbb->dbb_permanent) btb;
 	}
 
-	block->btb_thread_id = (SLONG) SCH_current_thread();
+	block->btb_thread_id = SCH_current_thread();
 	block->btb_next = *que;
 	*que = block;
 	attachment = tdbb->tdbb_attachment;
@@ -4543,7 +4543,7 @@ void JRD_unblock(BTB * que)
 	while (block = *que) {
 		*que = block->btb_next;
 		if (block->btb_thread_id) {
-			SCH_wake((struct thread *) block->btb_thread_id);
+			SCH_wake(block->btb_thread_id);
 		}
 		block->btb_next = dbb->dbb_free_btbs;
 		dbb->dbb_free_btbs = block;

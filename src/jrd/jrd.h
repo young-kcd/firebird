@@ -854,7 +854,7 @@ class btb : public pool_alloc<type_btb>
 {
     public:
 	btb *btb_next;
-	SLONG btb_thread_id;
+	struct thread* btb_thread_id;
 };
 typedef btb *BTB;
 

@@ -55,7 +55,7 @@ typedef struct thread {
 	struct thread *thread_next;	/* Next thread to be scheduled */
 	struct thread *thread_prior;	/* Prior thread */
 	EVENT_T thread_stall[1];	/* Generic event to stall thread */
-	SLONG thread_id;			/* Current thread id */
+	FB_THREAD_ID thread_id;			/* Current thread id */
 	USHORT thread_count;		/* AST disable count */
 	USHORT thread_flags;		/* Flags */
 } *THREAD;
@@ -213,7 +213,7 @@ void SCH_abort(void)
  *
  **************************************/
 	THREAD *ptr, thread;
-	SLONG id;
+	FB_THREAD_ID id;
 	int mutex_state;
 
 /* If threading isn't active, don't sweat it */
