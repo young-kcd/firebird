@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: rwlock.h,v 1.5 2003-09-08 20:23:32 skidder Exp $
+ *  $Id: rwlock.h,v 1.6 2003-09-11 21:26:20 skidder Exp $
  *
  */
 
@@ -52,12 +52,12 @@ namespace Firebird {
 // Should work pretty fast.
 class RWLock {
 private:
-	LONG lock; // This is the actual lock
+	volatile LONG lock; // This is the actual lock
 	           // -50000 - writer is active
 			   // 0 - noone owns the lock
 			   // positive value - number of concurrent readers
-	LONG blockedReaders;
-	LONG blockedWriters;
+	volatile LONG blockedReaders;
+	volatile LONG blockedWriters;
 	HANDLE writers_event, readers_semaphore;
 public:
 	RWLock() : lock(0), blockedReaders(0), blockedWriters(0) { 
@@ -66,6 +66,11 @@ public:
 		writers_event = CreateEvent(NULL, FALSE/*auto-reset*/, FALSE, NULL);
 	}
 	~RWLock() { CloseHandle(readers_semaphore); CloseHandle(writers_event); }
+	// Returns negative value if writer is active.
+	// Otherwise returns a number of readers
+	LONG getState() {
+		return lock;
+	}
 	void unblockWaiting() {
 		if (blockedWriters) 
 			SetEvent(writers_event);
