@@ -841,6 +841,7 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 
 	TEXT* args[10];
 	TEXT** arg = args;
+	const char* const* const argend = arg + FB_NELEM(args);
 
 	/* Parse and collect any arguments that may be present */
 	
@@ -848,10 +849,14 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 	const TEXT* q;
 	const int temp_len = BUFFER_SMALL;
 	TEXT* temp = NULL;
-	SSHORT l;
 
 	for (;;)
 	{
+		// CVC: Close overflow in "args".
+		if (arg >= argend)
+			break;
+
+		int l;
 		const UCHAR x = (UCHAR) *v++;
 		switch (x)
 		{
@@ -870,7 +875,7 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 				if (!temp)		/* NOMEM: */
 					return 0;
 			}
-			l = (SSHORT) *v++;
+			l = (int) *v++;
 			q = (const TEXT*) *v++;
 			*arg++ = p;
 
@@ -934,16 +939,16 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 #ifdef VMS
 	case isc_arg_vms:
 		{
-			l = 0;
+			SSHORT ll = 0;
 			struct dsc$descriptor_s desc;
 			desc.dsc$b_class = DSC$K_CLASS_S;
 			desc.dsc$b_dtype = DSC$K_DTYPE_T;
 			desc.dsc$w_length = bufsize;
 			desc.dsc$a_pointer = s;
 			TEXT flags[4];
-			ISC_STATUS status = sys$getmsg(code, &l, &desc, 15, flags);
+			ISC_STATUS status = sys$getmsg(code, &ll, &desc, 15, flags);
 			if (status & 1)
-				s[l] = 0;
+				s[ll] = 0;
 			else
 				sprintf(s, "uninterpreted VMS code %x", code);	/* TXNN */
 		}
@@ -952,20 +957,20 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 
 #ifdef WIN_NT
 	case isc_arg_win32:
-		if (!(l = (SSHORT) FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
+		if (!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
 										 NULL,
 										 code,
 										 GetUserDefaultLangID(),
 										 s,
 										 bufsize,
-						                 NULL))
-		  && !(l = (SSHORT)FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
+						                 NULL)
+		  && !FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
 										 NULL,
 										 code,
 										 0, // TMN: Fallback to system known language
 										 s,
 										 bufsize,
-										 NULL)))
+										 NULL))
 		{
 			fb_utils::snprintf(s, bufsize, "unknown Win32 error %ld", code);	/* TXNN */
 		}
