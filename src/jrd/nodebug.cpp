@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		nodebug.c
+ *	MODULE:		nodebug.cpp
  *	DESCRIPTION:	Non-debugging placeholder for debugging routines
  *
  * The contents of this file are subject to the Interbase Public
@@ -26,6 +26,5 @@
 
 extern "C" int DBG_supervisor(int arg)
 {
-
 	return TRUE;
 }
