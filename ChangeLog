@@ -1,3 +1,28 @@
+2005-01-26 15:50  kkuznetsov
+
+	* firebird2/: configure.in (1.141.2.34),
+	src/extern/editline/configure (1.1.2.2),
+	src/extern/editline/configure.in (1.1.2.2),
+	src/utilities/srvrmgr.cpp (1.13.2.5):
+	
+	Some more fixes to solaris x 86 port add ability to link with
+	editline
+
+2005-01-26 10:50  alexpeshkoff
+
+	* firebird2/src/jrd/: btr.cpp (1.33.2.3), btr_proto.h (1.7.2.2),
+	idx.cpp (1.16.2.8):
+	
+	Backported bugfix for descending indices in ref-constraints
+
+2005-01-26 08:29  kkuznetsov
+
+	* firebird2/src/common/config/config_file.cpp (1.11.2.5):
+	
+	FIX: Value of errno after successed fread is undefined accoding to
+	standard.  Using errno causes writing to syslog a lot of confusing
+	messages.  Changen checking of errno to ferror
+
 2005-01-24 03:19  stryqx
 
 	* firebird2/builds/posix/: prefix.example (1.4.2.2), prefix.freebsd
