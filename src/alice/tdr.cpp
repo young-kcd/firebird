@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.21 2003-09-15 16:25:49 brodsom Exp $
+//	$Id: tdr.cpp,v 1.22 2003-09-18 10:56:32 brodsom Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -56,7 +56,7 @@ static void reattach_databases(TDR);
 static bool reconnect(FRBRD *, SLONG, TEXT *, ULONG);
 
 
-#define NEWLINE	"\n"
+const char* NEWLINE="\n";
 
 static UCHAR limbo_info[] = { gds_info_limbo, gds_info_end };
 

@@ -28,91 +28,92 @@
 
 /* switch definitions */
 
-#define sw_list				0x00000001L	/* Byte 0, Bit 0 */
-#define sw_prompt			0x00000002L
-#define sw_commit			0x00000004L
-#define sw_rollback			0x00000008L
-#define sw_sweep			0x00000010L
-#define sw_validate			0x00000020L
-#define sw_no_update		0x00000040L
-#define sw_full				0x00000080L
-#define sw_mend				0x00000100L	/* Byte 1, Bit 0 */
-#define sw_all				0x00000200L
-#define sw_enable			0x00000400L
-#define sw_disable			0x00000800L
-#define sw_ignore			0x00001000L
-#define sw_activate			0x00002000L
-#define sw_two_phase		0x00004000L
-#define sw_housekeeping		0x00008000L
-#define sw_kill				0x00010000L	/* Byte 2, Bit 0 */
-#define sw_begin_log		0x00020000L
-#define sw_quit_log			0x00040000L
-#define sw_write			0x00080000L
-#define sw_use				0x00100000L
-#define sw_user				0x00200000L
-#define sw_password			0x00400000L
-#define sw_shut				0x00800000L
-#define sw_online			0x01000000L	/* Byte 3, Bit 0 */
-#define sw_cache			0x02000000L
-#define sw_attach			0x04000000L
-#define sw_force			0x08000000L
-#define sw_tran				0x10000000L
-#define sw_buffers			0x20000000L
-#define sw_mode				0x40000000L
-#define sw_set_db_dialect	0x80000000L
-#define sw_z				0x0L
+const long sw_list			=	0x00000001L;	/* Byte 0, Bit 0 */
+const long sw_prompt		=	0x00000002L;
+const long sw_commit		=	0x00000004L;
+const long sw_rollback		=	0x00000008L;
+const long sw_sweep			=	0x00000010L;
+const long sw_validate		=	0x00000020L;
+const long sw_no_update		=	0x00000040L;
+const long sw_full			=	0x00000080L;
+const long sw_mend			=	0x00000100L;	/* Byte 1, Bit 0 */
+const long sw_all			=	0x00000200L;
+const long sw_enable		=	0x00000400L;
+const long sw_disable		=	0x00000800L;
+const long sw_ignore		=	0x00001000L;
+const long sw_activate		=	0x00002000L;
+const long sw_two_phase		=	0x00004000L;
+const long sw_housekeeping	=	0x00008000L;
+const long sw_kill			=	0x00010000L;	/* Byte 2, Bit 0 */
+const long sw_begin_log		=	0x00020000L;
+const long sw_quit_log		=	0x00040000L;
+const long sw_write			=	0x00080000L;
+const long sw_use			=	0x00100000L;
+const long sw_user			=	0x00200000L;
+const long sw_password		=	0x00400000L;
+const long sw_shut			=	0x00800000L;
+const long sw_online		=	0x01000000L;	/* Byte 3, Bit 0 */
+const long sw_cache			=	0x02000000L;
+const long sw_attach		=	0x04000000L;
+const long sw_force			=	0x08000000L;
+const long sw_tran			=	0x10000000L;
+const long sw_buffers		=	0x20000000L;
+const long sw_mode			=	0x40000000L;
+const long sw_set_db_dialect=	0x80000000L;
+const long sw_z				=	0x0L;
 
-#define SW_MEND         sw_mend | sw_validate | sw_full
+enum alice_switches
+{
+	IN_SW_ALICE_0					=	0,	/* not a known switch */
+	IN_SW_ALICE_LIST				=	1,
+	IN_SW_ALICE_PROMPT				=	2,
+	IN_SW_ALICE_COMMIT				=	3,
+	IN_SW_ALICE_ROLLBACK			=	4,
+	IN_SW_ALICE_SWEEP				=	5,
+	IN_SW_ALICE_VALIDATE			=	6,
+	IN_SW_ALICE_NO_UPDATE			=	7,
+	IN_SW_ALICE_FULL				=	8,
+	IN_SW_ALICE_MEND				=	9,
+	IN_SW_ALICE_ALL					=	10,
+	IN_SW_ALICE_ENABLE				=	11,
+	IN_SW_ALICE_DISABLE				=	12,
+	IN_SW_ALICE_IGNORE				=	13,
+	IN_SW_ALICE_ACTIVATE			=	14,
+	IN_SW_ALICE_TWO_PHASE			=	15,
+	IN_SW_ALICE_HOUSEKEEPING		=	16,
+	IN_SW_ALICE_KILL				=	17,
+	IN_SW_ALICE_BEGIN_LOG			=	18,
+	IN_SW_ALICE_QUIT_LOG			=	19,
+	IN_SW_ALICE_WRITE				=	20,
+	IN_SW_ALICE_USE					=	21,
+	IN_SW_ALICE_USER				=	22,
+	IN_SW_ALICE_PASSWORD			=	23,
+	IN_SW_ALICE_SHUT				=	24,
+	IN_SW_ALICE_ONLINE				=	25,
+	IN_SW_ALICE_CACHE				=	26,
+	IN_SW_ALICE_ATTACH				=	27,
+	IN_SW_ALICE_FORCE				=	28,
+	IN_SW_ALICE_TRAN				=	29,
+	IN_SW_ALICE_BUFFERS				=	30,
+	IN_SW_ALICE_Z					=	31,
+	IN_SW_ALICE_X					=	32,	/* set debug mode on */
+	IN_SW_ALICE_HIDDEN_ASYNC		=	33,
+	IN_SW_ALICE_HIDDEN_SYNC			=	34,
+	IN_SW_ALICE_HIDDEN_USEALL		=	35,
+	IN_SW_ALICE_HIDDEN_RESERVE		=	36,
+	IN_SW_ALICE_HIDDEN_RDONLY		=	37,
+	IN_SW_ALICE_HIDDEN_RDWRITE		=	38,
+	IN_SW_ALICE_MODE				=	39,
+	IN_SW_ALICE_HIDDEN_FORCE		=	40,
+	IN_SW_ALICE_HIDDEN_TRAN			=	41,
+	IN_SW_ALICE_HIDDEN_ATTACH		=	42,
+	IN_SW_ALICE_SET_DB_SQL_DIALECT	=	43
+};
 
-#define IN_SW_ALICE_0					0	/* not a known switch */
-#define IN_SW_ALICE_LIST				1
-#define IN_SW_ALICE_PROMPT				2
-#define IN_SW_ALICE_COMMIT				3
-#define IN_SW_ALICE_ROLLBACK			4
-#define IN_SW_ALICE_SWEEP				5
-#define IN_SW_ALICE_VALIDATE			6
-#define IN_SW_ALICE_NO_UPDATE			7
-#define IN_SW_ALICE_FULL				8
-#define IN_SW_ALICE_MEND				9
-#define IN_SW_ALICE_ALL					10
-#define IN_SW_ALICE_ENABLE				11
-#define IN_SW_ALICE_DISABLE				12
-#define IN_SW_ALICE_IGNORE				13
-#define IN_SW_ALICE_ACTIVATE			14
-#define IN_SW_ALICE_TWO_PHASE			15
-#define IN_SW_ALICE_HOUSEKEEPING		16
-#define IN_SW_ALICE_KILL				17
-#define IN_SW_ALICE_BEGIN_LOG			18
-#define IN_SW_ALICE_QUIT_LOG			19
-#define IN_SW_ALICE_WRITE				20
-#define IN_SW_ALICE_USE					21
-#define IN_SW_ALICE_USER				22
-#define IN_SW_ALICE_PASSWORD			23
-#define IN_SW_ALICE_SHUT				24
-#define IN_SW_ALICE_ONLINE				25
-#define IN_SW_ALICE_CACHE				26
-#define IN_SW_ALICE_ATTACH				27
-#define IN_SW_ALICE_FORCE				28
-#define IN_SW_ALICE_TRAN				29
-#define IN_SW_ALICE_BUFFERS				30
-#define IN_SW_ALICE_Z					31
-#define IN_SW_ALICE_X					32	/* set debug mode on */
-#define IN_SW_ALICE_HIDDEN_ASYNC		33
-#define IN_SW_ALICE_HIDDEN_SYNC			34
-#define IN_SW_ALICE_HIDDEN_USEALL		35
-#define IN_SW_ALICE_HIDDEN_RESERVE		36
-#define IN_SW_ALICE_HIDDEN_RDONLY		37
-#define IN_SW_ALICE_HIDDEN_RDWRITE		38
-#define IN_SW_ALICE_MODE				39
-#define IN_SW_ALICE_HIDDEN_FORCE		40
-#define IN_SW_ALICE_HIDDEN_TRAN			41
-#define IN_SW_ALICE_HIDDEN_ATTACH		42
-#define IN_SW_ALICE_SET_DB_SQL_DIALECT	43
-
-#define ALICE_SW_ASYNC		"async"
-#define ALICE_SW_SYNC		"sync"
-#define ALICE_SW_MODE_RO	"read_only"
-#define ALICE_SW_MODE_RW	"read_write"
+static const char* ALICE_SW_ASYNC	= "async";
+static const char* ALICE_SW_SYNC	= "sync";
+static const char* ALICE_SW_MODE_RO	= "read_only";
+static const char* ALICE_SW_MODE_RW	= "read_write";
 
 /* Switch table */
 static in_sw_tab_t alice_in_sw_table[] =
@@ -161,7 +162,7 @@ static in_sw_tab_t alice_in_sw_table[] =
 	{IN_SW_ALICE_LIST, isc_spb_rpr_list_limbo_trans, "list", sw_list,
 	0, ~(sw_list | sw_user | sw_password), FALSE, 37, 0, NULL},
 	/* msg 37: \t-list\t\tshow limbo transactions */
-	{IN_SW_ALICE_MEND, isc_spb_rpr_mend_db, "mend", SW_MEND,
+	{IN_SW_ALICE_MEND, isc_spb_rpr_mend_db, "mend", sw_mend | sw_validate | sw_full,
 	0, ~(sw_no_update | sw_user | sw_password), FALSE, 38, 0, NULL},
 	/* msg 38: \t-mend\t\tprepare corrupt database for backup */
 	{IN_SW_ALICE_MODE, 0, "mode", sw_mode,

@@ -24,12 +24,9 @@
 #ifndef ALICE_LLS_H
 #define ALICE_LLS_H
 
-#define LLS_PUSH(object, stack)	AliceMemoryPool::ALLA_push(object, stack)
-#define LLS_POP(stack)			AliceMemoryPool::ALLA_pop(stack)
-
 typedef struct lls {
 	struct blk *lls_object;
 	struct lls *lls_next;
 } *LLS;
 
-#endif	// ALICE_LLS_H
+#endif // ALICE_LLS_H

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.34 2003-09-15 16:25:49 brodsom Exp $
+//	$Id: alice.cpp,v 1.35 2003-09-18 10:56:32 brodsom Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -40,8 +40,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-
-#define FB_FROM_ALICE_CPP
 
 #include "../alice/alice.h"
 #include "../alice/aliceswi.h"
@@ -94,10 +92,12 @@ static const USHORT val_err_table[] = {
 struct tgbl *gdgbl;
 #endif
 
-#define	ALICE_MSG_FAC	3
+const int ALICE_MSG_FAC = 3;
 
-#define EXIT(code)	{  tdgbl->exit_code = (code);	\
-						Firebird::status_exception::raise(1);  }
+static inline void exit_local(int code, volatile tgbl* tdgbl){
+	tdgbl->exit_code = code;
+	Firebird::status_exception::raise(1);
+}
 
 #if defined (WIN95)
 static bool fAnsiCP = false;
@@ -524,7 +524,7 @@ int common_main(int			argc,
 //  catch the case where -z is only command line option
 //  switches is unset since sw_z == 0
 	if (!switches && !error && table->in_sw_value == sw_z) {
-		EXIT(FINI_OK);
+		exit_local(FINI_OK, tdgbl);
 	}
 
 	if (!switches || !(switches & ~(sw_user | sw_password))) {
@@ -546,7 +546,7 @@ int common_main(int			argc,
 			ALICE_print(table->in_sw_msg, 0, 0, 0, 0, 0);
 		ALICE_print(22, 0, 0, 0, 0, 0);	/* msg 22: \n    qualifiers show the major option in parenthesis */
 #endif
-		EXIT(FINI_ERROR);
+		exit_local(FINI_ERROR, tdgbl);
 	}
 
 	if (!database) {
@@ -598,19 +598,19 @@ int common_main(int			argc,
 		ALICE_print_status(tdgbl->status);
 	}
 
-	EXIT(FINI_OK);
+	exit_local(FINI_OK, tdgbl);
 
 	}	// try
 	catch (const std::exception&)
 	{
-		/* All "calls" to EXIT(), normal and error exits, wind up here */
+		/* All "calls" to exit_local(), normal and error exits, wind up here */
 
 		SVC_STARTED(tdgbl->service_blk);
 
 		int exit_code = tdgbl->exit_code;
 
 		/* Close the status output file */
-		if (tdgbl->sw_redirect == TRUE && tdgbl->output_file != NULL) {
+		if (tdgbl->sw_redirect == REDIRECT && tdgbl->output_file != NULL) {
 			ib_fclose(tdgbl->output_file);
 			tdgbl->output_file = NULL;
 		}
@@ -743,7 +743,7 @@ void ALICE_error(USHORT	number,
 					arg2, arg3, arg4, arg5);
 	translate_cp(buffer);
 	alice_output("%s\n", buffer);
-	EXIT(FINI_ERROR);
+	exit_local(FINI_ERROR, tdgbl);
 }
 
 
@@ -773,7 +773,7 @@ static void alice_output(const SCHAR * format, ...)
 	if (tdgbl->sw_redirect == NOOUTPUT || format[0] == '\0') {
 		exit_code = tdgbl->output_proc(tdgbl->output_data, (UCHAR *)(""));
 	}
-	else if (tdgbl->sw_redirect == TRUE && tdgbl->output_file != NULL) {
+	else if (tdgbl->sw_redirect == REDIRECT && tdgbl->output_file != NULL) {
 		VA_START(arglist, format);
 		ib_vfprintf(tdgbl->output_file, format, arglist);
 		va_end(arglist);
@@ -788,7 +788,7 @@ static void alice_output(const SCHAR * format, ...)
 	}
 
 	if (exit_code != 0) {
-		EXIT(exit_code);
+		exit_local(exit_code, tdgbl);
 	}
 }
 

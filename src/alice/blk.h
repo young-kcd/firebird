@@ -21,11 +21,16 @@
  * Contributor(s): ______________________________________.
  */
 
-BLKDEF(alice_type_frb, frb, 0)
-BLKDEF(alice_type_hnk, hnk, 0)
-BLKDEF(alice_type_plb, plb, 0)
-BLKDEF(alice_type_vec, vec, sizeof(((VEC) NULL)->vec_object[0]))
-BLKDEF(alice_type_vcl, vcl, sizeof(((VCL) NULL)->vcl_long[0]))
-BLKDEF(alice_type_tdr, tdr, 0)	/* transaction description */
-BLKDEF(alice_type_str, str, 1)	/* general string block */
-BLKDEF(alice_type_lls, lls, 0)
+enum alice_blk_t
+{
+	alice_type_MIN = 0,
+	alice_type_frb,
+	alice_type_hnk,
+	alice_type_plb,
+	alice_type_vec,
+	alice_type_vcl,
+	alice_type_tdr,
+	alice_type_str,
+	alice_type_lls,
+	alice_type_MAX
+};
