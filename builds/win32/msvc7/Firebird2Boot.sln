@@ -1,27 +1,37 @@
-Microsoft Visual Studio Solution File, Format Version 7.00
+Microsoft Visual Studio Solution File, Format Version 8.00
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "build_msg", "build_msg.vcproj", "{99A84638-DF3A-417F-895D-5BD88FC29411}"
+	ProjectSection(ProjectDependencies) = postProject
+		{AD0FC634-D8A4-4E5A-BC72-AD8F8753853B} = {AD0FC634-D8A4-4E5A-BC72-AD8F8753853B}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "codes", "codes.vcproj", "{5658573B-E79E-4C84-8B15-C910C4CDB9AD}"
+	ProjectSection(ProjectDependencies) = postProject
+		{AD0FC634-D8A4-4E5A-BC72-AD8F8753853B} = {AD0FC634-D8A4-4E5A-BC72-AD8F8753853B}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "common_static", "common_static.vcproj", "{DC8E2FAB-B3E1-4A13-A1EC-60D05D0135C9}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fbclient_static", "fbclient_static.vcproj", "{AD0FC634-D8A4-4E5A-BC72-AD8F8753853B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{DC8E2FAB-B3E1-4A13-A1EC-60D05D0135C9} = {DC8E2FAB-B3E1-4A13-A1EC-60D05D0135C9}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gpre_boot", "gpre_boot.vcproj", "{F1A79981-1894-420F-AAEC-2A87B1566905}"
+	ProjectSection(ProjectDependencies) = postProject
+		{DC8E2FAB-B3E1-4A13-A1EC-60D05D0135C9} = {DC8E2FAB-B3E1-4A13-A1EC-60D05D0135C9}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gpre_static", "gpre_static.vcproj", "{A8FA63F9-9F86-49DA-96AC-2A6AB5B8F292}"
+	ProjectSection(ProjectDependencies) = postProject
+		{AD0FC634-D8A4-4E5A-BC72-AD8F8753853B} = {AD0FC634-D8A4-4E5A-BC72-AD8F8753853B}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
-		ConfigName.0 = Debug
-		ConfigName.1 = Release
-	EndGlobalSection
-	GlobalSection(ProjectDependencies) = postSolution
-		{99A84638-DF3A-417F-895D-5BD88FC29411}.0 = {AD0FC634-D8A4-4E5A-BC72-AD8F8753853B}
-		{5658573B-E79E-4C84-8B15-C910C4CDB9AD}.0 = {AD0FC634-D8A4-4E5A-BC72-AD8F8753853B}
-		{AD0FC634-D8A4-4E5A-BC72-AD8F8753853B}.0 = {DC8E2FAB-B3E1-4A13-A1EC-60D05D0135C9}
-		{F1A79981-1894-420F-AAEC-2A87B1566905}.0 = {DC8E2FAB-B3E1-4A13-A1EC-60D05D0135C9}
-		{A8FA63F9-9F86-49DA-96AC-2A6AB5B8F292}.0 = {AD0FC634-D8A4-4E5A-BC72-AD8F8753853B}
+		Debug = Debug
+		Release = Release
 	EndGlobalSection
 	GlobalSection(ProjectConfiguration) = postSolution
 		{99A84638-DF3A-417F-895D-5BD88FC29411}.Debug.ActiveCfg = Debug|Win32

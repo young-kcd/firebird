@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding = "Windows-1252"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.00"
+	Version="7.10"
 	Name="engine_classic"
 	SccProjectName=""
 	SccLocalPath="">
@@ -20,7 +20,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHc- "
+				AdditionalOptions="/EHsc-"
 				Optimization="4"
 				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="1"
@@ -30,6 +30,7 @@
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_LIB,_X86_,SERVER_SHUTDOWN"
+				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile="..\..\..\temp\release\engine_cs/engine_classic.pch"
@@ -38,6 +39,7 @@
 				ProgramDataBaseFileName="..\..\..\temp\release\engine_cs/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
@@ -59,6 +61,12 @@
 				Culture="1049"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
@@ -103,15 +111,20 @@
 				Culture="1049"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 	</Configurations>
+	<References>
+	</References>
 	<Files>
 		<Filter
 			Name="JRD files"
 			Filter="">
-			<File
-				RelativePath="..\..\..\src\jrd\ExecuteStatement.cpp">
-			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\ail.cpp">
 			</File>
@@ -198,6 +211,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\exe.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\ExecuteStatement.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\ext.cpp">
@@ -411,9 +427,6 @@
 			Name="Header files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\src\jrd\ExecuteStatement.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\acl.h">
 			</File>
 			<File
@@ -583,6 +596,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\exe_proto.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\ExecuteStatement.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\ext.h">

@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding = "Windows-1252"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.00"
+	Version="7.10"
 	Name="fb2control"
 	SccProjectName=""
 	SccLocalPath=""
@@ -21,12 +21,14 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc-"
 				Optimization="3"
 				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="1"
 				FavorSizeOrSpeed="2"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SUPERSERVER"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SUPERSERVER;WINVER=0x400"
+				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile=".\..\..\..\temp\release\fb2control/fb2control.pch"
@@ -36,6 +38,7 @@
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
@@ -48,6 +51,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\..\..\src\utilities\fbcpl\FBControl.def"
+				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\..\..\..\temp\release\fb2control/Firebird2Control.pdb"
 				SubSystem="2"
 				ImportLibrary=".\..\..\..\temp\release\fb2control/Firebird2Control.lib"/>
@@ -71,7 +75,13 @@
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
 				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
@@ -85,7 +95,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="_DEBUG;_WINDOWS;WIN32;DEV_BUILD;_USRDLL;CPL_APPLET"
+				PreprocessorDefinitions="_DEBUG;_WINDOWS;WIN32;DEV_BUILD;_USRDLL;CPL_APPLET;WINVER=0x400"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile=".\..\..\..\temp\debug\fb2control/fb2control.pch"
@@ -134,13 +144,24 @@
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
 				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 	</Configurations>
+	<References>
+	</References>
 	<Files>
 		<Filter
 			Name="Source Files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
+			<File
+				RelativePath="..\..\..\src\utilities\fbcpl\ctrlpan.cpp">
+			</File>
 			<File
 				RelativePath="..\..\..\src\utilities\fbcpl\FBControl.cpp">
 			</File>
@@ -152,6 +173,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\utilities\fbcpl\FBPanel.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\utilities\services.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\utilities\fbcpl\StdAfx.cpp">
@@ -169,12 +193,6 @@
 						UsePrecompiledHeader="1"
 						PrecompiledHeaderThrough="stdafx.h"/>
 				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\..\src\utilities\fbcpl\ctrlpan.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\utilities\services.cpp">
 			</File>
 			<Filter
 				Name="MEMORY files"
@@ -214,21 +232,6 @@
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl">
 			<File
-				RelativePath="..\..\..\src\utilities\fbcpl\FBControl.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\utilities\fbcpl\FBDialog.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\utilities\fbcpl\FBPanel.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\utilities\fbcpl\Resource.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\utilities\fbcpl\StdAfx.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\classes\alloc.h">
 			</File>
 			<File
@@ -253,13 +256,28 @@ copy ..\..\..\src\include\gen\autoconfig_msvc.h ..\..\..\src\include\gen\autocon
 				RelativePath="..\..\..\src\utilities\fbcpl\ctrlpan.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\utilities\fbcpl\FBControl.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\utilities\fbcpl\FBDialog.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\utilities\fbcpl\FBPanel.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\os\fbsyslog.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\utilities\registry.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\utilities\fbcpl\Resource.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\utilities\servi_proto.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\utilities\fbcpl\StdAfx.h">
 			</File>
 		</Filter>
 		<Filter
