@@ -21,6 +21,9 @@
  * Contributor(s): ______________________________________.
  * 2001.5.20: Claudio Valderrama: when changing a domain's name,
  * if it has dimensions, rdb$field_dimensions should be updated, too.
+ *
+ * 2002-02-24 Sean Leyne - Code Cleanup of old Win 3.1 port (WINDOWS_ONLY)
+ *
  */
 
 #include "firebird.h"
@@ -59,9 +62,7 @@
 #include "../jrd/thd_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/dsc_proto.h"
-#ifndef WINDOWS_ONLY
 #include "../jrd/ail.h"
-#endif
 
 #ifdef SUPERSERVER
 #define V4_THREADING
@@ -111,12 +112,10 @@ void DYN_modify_database( GBL gbl, UCHAR ** ptr)
 	SLONG start;
 	UCHAR verb, s[128];
 	JMP_BUF env, *old_env;
-#ifndef WINDOWS_ONLY
 	SSHORT num_log_buffers = 0;
 	USHORT log_buffer_size = 0;
 	SLONG check_point_len = 0, group_commit_wait = -1;
 	SSHORT log_params_defined = FALSE;
-#endif
 #ifdef SUPERSERVER
 	USHORT first_log_file = TRUE;
 #endif
@@ -195,31 +194,23 @@ void DYN_modify_database( GBL gbl, UCHAR ** ptr)
 					break;
 
 				case gds_dyn_log_group_commit_wait:
-#ifndef WINDOWS_ONLY
 					group_commit_wait = DYN_get_number(ptr);
 					log_params_defined = TRUE;
-#endif
 					break;
 
 				case gds_dyn_log_buffer_size:
-#ifndef WINDOWS_ONLY
 					log_buffer_size = DYN_get_number(ptr);
 					log_params_defined = TRUE;
-#endif
 					break;
 
 				case gds_dyn_log_check_point_length:
-#ifndef WINDOWS_ONLY
 					check_point_len = DYN_get_number(ptr);
 					log_params_defined = TRUE;
-#endif
 					break;
 
 				case gds_dyn_log_num_of_buffers:
-#ifndef WINDOWS_ONLY
 					num_log_buffers = DYN_get_number(ptr);
 					log_params_defined = TRUE;
-#endif
 					break;
 
 				case gds_dyn_drop_cache:
@@ -245,11 +236,9 @@ void DYN_modify_database( GBL gbl, UCHAR ** ptr)
 		END_MODIFY;
 	END_FOR;
 
-#ifndef WINDOWS_ONLY
 	if (log_params_defined)
 		AIL_set_log_options(check_point_len, num_log_buffers, log_buffer_size,
 							group_commit_wait);
-#endif
 
 	if (!DYN_REQUEST(drq_m_database))
 		DYN_REQUEST(drq_m_database) = request;

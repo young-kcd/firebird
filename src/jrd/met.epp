@@ -19,9 +19,12 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002-02-24 Sean Leyne - Code Cleanup of old Win 3.1 port (WINDOWS_ONLY)
+ *
  */
 /*
-$Id: met.epp,v 1.5 2002-01-04 11:34:15 skywalker Exp $
+$Id: met.epp,v 1.6 2002-02-24 16:39:31 seanleyne Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -93,10 +96,6 @@ $Id: met.epp,v 1.5 2002-01-04 11:34:15 skywalker Exp $
 
 #ifdef HAVE_CTYPE_H
 #include <ctype.h>
-#endif
-
-#ifdef  WINDOWS_ONLY
-#include "../jrd/seg_proto.h"
 #endif
 
 /* Pick up relation ids */
@@ -245,9 +244,7 @@ void MET_activate_shadow( TDBB tdbb)
 			ERASE X;
 		END_FOR;
 		CMP_release(tdbb, handle);
-	#ifndef WINDOWS_ONLY
 		AIL_modify_log();
-	#endif
 	************************/
 }
 
@@ -2903,7 +2900,7 @@ void MET_scan_relation( TDBB tdbb, REL relation)
 	}
 
 	relation->rel_flags |= REL_being_scanned;
-#if defined(NETWARE_386) || defined(WINDOWS_ONLY)
+#ifdef NETWARE_386
 	if ((unsigned) stackavail() < (unsigned) STACK_SAFE_LIMIT)
 		ERR_post(isc_err_stack_limit, 0);
 #endif

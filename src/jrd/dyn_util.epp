@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002-02-24 Sean Leyne - Code Cleanup of old Win 3.1 port (WINDOWS_ONLY)
+ *
  */
 
 #include "firebird.h"
@@ -54,9 +57,7 @@
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/thd_proto.h"
 #include "../jrd/vio_proto.h"
-#ifndef WINDOWS_ONLY
 #include "../jrd/ail.h"
-#endif
 
 #ifdef SUPERSERVER
 #define V4_THREADING

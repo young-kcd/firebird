@@ -22,6 +22,8 @@
  *
  * 23-Feb-2002 Dmitry Yemanov - Events wildcarding
  *
+ * 2002-02-24 Sean Leyne - Code Cleanup of old Win 3.1 port (WINDOWS_ONLY)
+ *
  */
 
 #ifdef SHLIB_DEFS
@@ -84,13 +86,7 @@
 #include "../jrd/sbm_proto.h"
 #include "../jrd/sdw_proto.h"
 #include "../jrd/thd_proto.h"
-#ifndef WINDOWS_ONLY
 #include "../jrd/event_proto.h"
-#endif
-
-#ifdef	WINDOWS_ONLY
-#include "../jrd/seg_proto.h"
-#endif
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -577,32 +573,26 @@ void DFW_perform_post_commit_work(TRA transaction)
  *	Then, delete it from chain of pending work.
  *
  **************************************/
-#ifndef WINDOWS_ONLY
 	DBB dbb;
 	LCK lock;
-#endif
 	STATUS status[20];
 	DFW work, *ptr;
 
 	if (!transaction->tra_deferred_work)
 		return;
 
-#ifndef WINDOWS_ONLY
 	dbb = GET_DBB;
 	lock = dbb->dbb_lock;
-#endif
 
 	for (ptr = &transaction->tra_deferred_work; (work = *ptr);)
 		if (work->dfw_type == dfw_post_event)
 		{
-#ifndef WINDOWS_ONLY			/* Events are not supported under LIBS */
 			EVENT_post(	status,
 						lock->lck_length,
 						(TEXT *) & lock->lck_key,
 						work->dfw_name_length,
 						work->dfw_name,
 						work->dfw_count);
-#endif
 			*ptr = work->dfw_next;
 			delete work;
 		}
@@ -618,10 +608,8 @@ void DFW_perform_post_commit_work(TRA transaction)
 		}
 
 #ifdef EVENTS_WILDCARDING
-#ifndef WINDOWS_ONLY /* Events are not supported under LIBS */
 	/* Deliver all pending events */
 	EVENT_post_finalize();
-#endif
 #endif /* EVENTS_WILDCARDING */
 }
 

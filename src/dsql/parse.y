@@ -20,6 +20,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002-02-24 Sean Leyne - Code Cleanup of old Win 3.1 port (WINDOWS_ONLY)
+ *
  */
 
 #include "firebird.h"
@@ -43,21 +46,13 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/thd_proto.h"
 /* #include "../jrd/err_proto.h" */
-#ifndef WINDOWS_ONLY
 #include "../wal/wal.h"
-#endif
 
 extern "C" TEXT *DLL_EXPORT ERR_string(CONST TEXT*, int);
 
 ASSERT_FILENAME
 
 static void	yyerror (TEXT *);
-
-/* Remove compiler warning produced by redef of WRITE & READ from WINDOWS.H */
-#ifdef WINDOWS_ONLY
-#undef READ
-#undef WRITE
-#endif
 
 /* since UNIX isn't standard, we have to define
    stuff which is in <limits.h> (which isn't available
@@ -940,9 +935,7 @@ logfiles	: logfile_desc
 		;
 logfile_desc	: logfile_name logfile_attrs 
 			{ 
-#ifndef WINDOWS_ONLY
 		         check_log_file_attrs(); 
-#endif
 			 $$ = (NOD) make_node (nod_log_file_desc, (int) 1,
                                                 (NOD) file); }
 		;
@@ -3356,9 +3349,7 @@ static void	stack_nodes (NOD, DLLS *);
 static int	yylex (USHORT, USHORT, USHORT, BOOLEAN *);
 static void	yyerror (TEXT *);
 static void	yyabandon (SSHORT, STATUS);
-#ifndef WINDOWS_ONLY
 static void	check_log_file_attrs (void);
-#endif
 
 static TEXT	*ptr, *end, *last_token, *line_start;
 static SSHORT	lines, att_charset;
@@ -3434,7 +3425,6 @@ att_charset = character_set;
 }
 
 
-#ifndef WINDOWS_ONLY
 static void check_log_file_attrs (void)
 {
 /**********************************************
@@ -3471,7 +3461,6 @@ else
 	}
     }     
 }
-#endif
 
 
 static TEXT *lex_position (void)
