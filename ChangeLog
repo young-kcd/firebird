@@ -1,3 +1,145 @@
+2003-10-30 23:25  skidder
+
+	* firebird2/src/: common/classes/alloc.cpp, common/classes/alloc.h,
+	common/classes/tree.h, gpre/cmd.cpp, gpre/sql.cpp,
+	include/firebird.h, intl/ldcommon.h:
+	
+	Backport allocation operators hack
+
+2003-10-30 23:18  skidder
+
+	* firebird2/src/utilities/: security.epp, gsec/security.epp:
+	
+	Return engine to buildable state on Linux after Alex bugfix
+
+2003-10-30 22:17  skidder
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Return engine to compilable state on Win32 after Dmitry's cleanup
+
+2003-10-30 19:06  epocman
+
+	* firebird2/: builds/win32/msvc6/gds32.dsp,
+	src/jrd/os/win32/ibinitdll.cpp:
+	
+	Win32 stub GDS32.DLL now preferably attempts to load FBCLIENT.DLL
+	from its installation location (rootdir/bin) instead of system
+	directories. Related to the finishing touches of the Win32
+	installation scheme looking forward multi-instances support after
+	V1.5.  Please build maintainers, add advapi32.lib to msvc7/mingw
+	builds of gds32.dll. Thanks.
+
+2003-10-30 18:48  epocman
+
+	* firebird2/: builds/win32/msvc6/gds32.dsp, src/jrd/ibinitdll.cpp:
+	
+	Win32 stub GDS32.DLL now preferably attempts to load FBCLIENT.DLL
+	from its installation location (rootdir/bin) instead of system
+	directories. Related to the finishing touches of the Win32
+	installation scheme looking forward multi-instances support after
+	V1.5.  Please build maintainers, add advapi32.lib to msvc7/mingw
+	builds of gds32.dll. Thanks.
+
+2003-10-30 17:46  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/security.epp:
+	
+	Forward - port: Fixed non-registered bug - buggy application might
+	add user with name, containing non-printable characters, which
+	couldn't be modified/deleted using standard tools like gsec.
+
+2003-10-30 15:38  alexpeshkoff
+
+	* firebird2/src/utilities/security.epp:
+	
+	Fixed non-registered bug - buggy application might add user with
+	name, containing non-printable characters, which couldn't be
+	modified/deleted using standard tools like gsec.
+
+2003-10-30 15:29  eku
+
+	* firebird2/src/jrd/: btr.h, btr_proto.h, cch.h, jrd.h,
+	nav_proto.h:
+	
+	exp -> jrd_exp Style
+
+2003-10-30 15:26  eku
+
+	* firebird2/builds/posix/Makefile.in.intl:
+	
+	Removed '-DSUPERCLIENT' as it breaks CS build.
+
+2003-10-30 14:43  dimitr
+
+	* firebird2/src/jrd/rse.h:
+	
+	Cleanup.
+
+2003-10-30 14:21  eku
+
+	* firebird2/src/jrd/perf.cpp:
+	
+	TICK (sys/param.h) and CLOCKS_PER_SEC (time.h) may both be defined.
+
+2003-10-30 13:47  eku
+
+	* firebird2/configure.in:
+	
+	Spelling.
+
+2003-10-30 13:09  aafemt
+
+	* firebird2/builds/posix/prefix.mingw:
+	
+	Turn off automatic CPU optimisation 'coz it doesn't work on AMD
+	K6-2
+
+2003-10-30 12:01  brodsom
+
+	* firebird2/src/lock/lock.cpp:
+	
+	Log should be first, if not there are a segfault some lines after
+	it and log is not updated with the fatal error message.
+
+2003-10-30 11:59  brodsom
+
+	* firebird2/src/common/classes/semaphore.h:
+	
+	Write fatal error messages into firebird.log
+
+2003-10-30 11:03  eku
+
+	* firebird2/src/jrd/isc_sync.cpp:
+	
+	Typo.
+
+2003-10-30 10:49  eku
+
+	* firebird2/: configure.in, src/jrd/isc_sync.cpp, src/jrd/thd.cpp,
+	src/jrd/thd.h:
+	
+	Detect POSIX threads support with autoconf. Some code cleanup.
+
+2003-10-30 10:00  robocop
+
+	* firebird2/src/gpre/ada.cpp:
+	
+	Fix ISO-C++ problem found by Frank
+
+2003-10-30 09:03  eku
+
+	* firebird2/configure.in:
+	
+	Added missing autoheader templates.
+
+2003-10-30 08:26  eku
+
+	* firebird2/: autogen.sh, configure.in,
+	builds/make.new/config/config.h.in:
+	
+	Use autoheader to generate config.h.in.
+
 2003-10-29 16:18  fsg
 
 	* firebird2/src/jrd/isc_file.cpp:
