@@ -97,7 +97,7 @@ pics* PIC_analyze(const TEXT* string, const dsc* desc)
 // Make a first pass just counting characters
 
 	bool debit = false;
-	TEXT c, d;
+	TEXT c;
 	while ((c = generate(picture)) && c != '?') {
 
 		c = UPPER(c);
@@ -144,8 +144,8 @@ pics* PIC_analyze(const TEXT* string, const dsc* desc)
 
 		case 'D':
 			// DB is ambiguous, could be Day Blank or DeBit...
-			d = UPPER(*picture->pic_pointer);
-			if (d == 'B') {
+			if (UPPER(*picture->pic_pointer) == 'B')
+			{
 				++picture->pic_pointer;
 				++picture->pic_literals;
 				debit = true;
@@ -186,8 +186,12 @@ pics* PIC_analyze(const TEXT* string, const dsc* desc)
 		case '\'':
 		case '"':
 			picture->pic_flags |= PIC_literal;
-			while ((d = generate(picture)) && d != c)
-				++picture->pic_literals;
+			{
+				TEXT d;
+				// Shouldn't UPPER be used on d before comparing with c?
+				while ((d = generate(picture)) && d != c)
+					++picture->pic_literals;
+			}
 			picture->pic_flags &= ~PIC_literal;
 			break;
 
@@ -202,7 +206,7 @@ pics* PIC_analyze(const TEXT* string, const dsc* desc)
 		case 'R':
 			picture->pic_flags |= PIC_signed;
 			++picture->pic_brackets;
-			if (d = generate(picture))
+			if (generate(picture))
 				++picture->pic_brackets;
 			else
 				++picture->pic_count;
@@ -279,7 +283,10 @@ pics* PIC_analyze(const TEXT* string, const dsc* desc)
 		picture->pic_nmonths ||
 		picture->pic_years ||
 		picture->pic_hours ||
-		picture->pic_julians) picture->pic_type = pic_date;
+		picture->pic_julians) 
+	{
+		picture->pic_type = pic_date;
+	}
 	else if (picture->pic_exponents || picture->pic_float_digits)
 		picture->pic_type = pic_float;
 	else if (picture->pic_digits || picture->pic_hex_digits)
