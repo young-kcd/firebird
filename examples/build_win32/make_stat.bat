@@ -13,7 +13,8 @@ call setenvvar.bat
 %ROOT_PATH%\bin\gpre -c -m -n -z %ROOT_PATH%\examples\stat\stat3.e %ROOT_PATH%\examples\stat\stat3.c -d localhost:%ROOT_PATH%\examples\empbuild\employee.fdb
 %ROOT_PATH%\bin\gpre -c -m -n -z %ROOT_PATH%\examples\stat\stat4.e %ROOT_PATH%\examples\stat\stat4.c -d localhost:%ROOT_PATH%\examples\empbuild\employee.fdb
 %ROOT_PATH%\bin\gpre -c -m -n -z %ROOT_PATH%\examples\stat\stat5.e %ROOT_PATH%\examples\stat\stat5.c -d localhost:%ROOT_PATH%\examples\empbuild\employee.fdb
-%ROOT_PATH%\bin\gpre -c -m -n -z %ROOT_PATH%\examples\stat\stat6.e %ROOT_PATH%\examples\stat\stat6.c -d localhost:%ROOT_PATH%\examples\empbuild\intlemp.fdb
+:: TODO
+:: %ROOT_PATH%\bin\gpre -c -m -n -z %ROOT_PATH%\examples\stat\stat6.e %ROOT_PATH%\examples\stat\stat6.c -d localhost:%ROOT_PATH%\examples\empbuild\intlemp.fdb
 %ROOT_PATH%\bin\gpre -c -m -n -z %ROOT_PATH%\examples\stat\stat7.e %ROOT_PATH%\examples\stat\stat7.c -d localhost:%ROOT_PATH%\examples\empbuild\employee.fdb
 %ROOT_PATH%\bin\gpre -c -m -n -z %ROOT_PATH%\examples\stat\stat8.e %ROOT_PATH%\examples\stat\stat8.c -d localhost:%ROOT_PATH%\examples\empbuild\employee.fdb
 %ROOT_PATH%\bin\gpre -c -m -n -z %ROOT_PATH%\examples\stat\stat9.e %ROOT_PATH%\examples\stat\stat9.c -d localhost:%ROOT_PATH%\examples\empbuild\employee.fdb
@@ -29,7 +30,8 @@ cl %CLFLAGS% %ROOT_PATH%\lib\gds32_ms.lib %ROOT_PATH%\examples\stat\stat2.c
 cl %CLFLAGS% %ROOT_PATH%\lib\gds32_ms.lib %ROOT_PATH%\examples\stat\stat3.c 
 cl %CLFLAGS% %ROOT_PATH%\lib\gds32_ms.lib %ROOT_PATH%\examples\stat\stat4.c 
 cl %CLFLAGS% %ROOT_PATH%\lib\gds32_ms.lib %ROOT_PATH%\examples\stat\stat5.c 
-cl %CLFLAGS% %ROOT_PATH%\lib\gds32_ms.lib %ROOT_PATH%\examples\stat\stat6.c 
+:: TODO
+:: cl %CLFLAGS% %ROOT_PATH%\lib\gds32_ms.lib %ROOT_PATH%\examples\stat\stat6.c 
 cl %CLFLAGS% %ROOT_PATH%\lib\gds32_ms.lib %ROOT_PATH%\examples\stat\stat7.c 
 cl %CLFLAGS% %ROOT_PATH%\lib\gds32_ms.lib %ROOT_PATH%\examples\stat\stat8.c 
 cl %CLFLAGS% %ROOT_PATH%\lib\gds32_ms.lib %ROOT_PATH%\examples\stat\stat9.c 
