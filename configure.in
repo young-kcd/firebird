@@ -1,14 +1,14 @@
-dnl $Id: configure.in,v 1.139 2003-07-03 14:44:44 brodsom Exp $
+dnl $Id: configure.in,v 1.140 2003-07-06 01:08:33 brodsom Exp $
 
 dnl ############################# INITIALISATION ###############################
 
 AC_PREREQ(2.53)
 AC_INIT(src)
-AC_CONFIG_AUX_DIR(src/make.new/config)
+AC_CONFIG_AUX_DIR(builds/make.new/config)
 AC_CACHE_VAL(ac_cv_prog_make_set, [AC_PROG_MAKE_SET])
 AC_PREFIX_DEFAULT(/usr/local/firebird)
 
-AC_CONFIG_HEADER(src/include/gen/autoconfig.h:src/make.new/config/config.h.in)
+AC_CONFIG_HEADER(src/include/gen/autoconfig.h:builds/make.new/config/config.h.in)
 
 dnl XE_APPEND(value, varname)
 define([XE_APPEND],[[$2]="$[$2] [$1]"])

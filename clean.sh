@@ -21,9 +21,9 @@ rm -f src/*.fdb 2>/dev/null
 rm -f src/*.FDB 2>/dev/null
 rm -f src/*.lnk 2>/dev/null
 rm src/Makefile 2>/dev/null
-rm src/make.new/config/config.guess 2>/dev/null
-rm src/make.new/config/config.sub 2>/dev/null
-rm src/make.new/config/ltmain.sh 2>/dev/null
+rm builds/make.new/config/config.guess 2>/dev/null
+rm builds/make.new/config/config.sub 2>/dev/null
+rm builds/make.new/config/ltmain.sh 2>/dev/null
 rm src/v5_examples/Makefile 2>/dev/null
 
 # Cpp from epp files
