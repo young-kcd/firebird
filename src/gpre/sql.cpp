@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.28 2003-10-15 01:18:01 brodsom Exp $
+//	$Id: sql.cpp,v 1.29 2003-10-15 14:43:35 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -769,16 +769,15 @@ void SQL_par_field_dtype(GPRE_REQ request,
 			(field->fld_dtype != dtype_cstring) &&
 			(field->fld_dtype != dtype_varying) &&
 			(field->fld_dtype != dtype_blob))
-				PAR_error("CHARACTER SET applies only to character columns");
+		{
+			PAR_error("CHARACTER SET applies only to character columns");
+		}
 
-		if (field->fld_dtype == dtype_blob
-			&& field->fld_sub_type == BLOB_untyped) field->fld_sub_type =
-				BLOB_text;
+		if (field->fld_dtype == dtype_blob && field->fld_sub_type == BLOB_untyped)
+			field->fld_sub_type = BLOB_text;
 
-		if (field->fld_dtype == dtype_blob
-			&& field->fld_sub_type !=
-			BLOB_text)
-PAR_error("CHARACTER SET applies only to character columns");
+		if (field->fld_dtype == dtype_blob && field->fld_sub_type != BLOB_text)
+			PAR_error("CHARACTER SET applies only to character columns");
 
 		if (field->fld_flags & FLD_national)
 			PAR_error("cannot specify CHARACTER SET with NATIONAL");
@@ -794,11 +793,11 @@ PAR_error("CHARACTER SET applies only to character columns");
 	}
 
 	if (field->fld_flags & FLD_national) {
-		if (!
-			(symbol =
-			 MSC_find_symbol(HSH_lookup(DEFAULT_CHARACTER_SET_NAME),
-							 SYM_charset)))
-	   PAR_error("NATIONAL character set missing");
+		if (!(symbol = MSC_find_symbol(HSH_lookup(DEFAULT_CHARACTER_SET_NAME),
+										SYM_charset)))
+		{
+			PAR_error("NATIONAL character set missing");
+		}
 		field->fld_character_set = (INTLSYM) symbol->sym_object;
 	}
 	else if ((field->fld_dtype <= dtype_any_text ||
@@ -806,13 +805,15 @@ PAR_error("CHARACTER SET applies only to character columns");
 			   && field->fld_sub_type == BLOB_text))
 			 && !field->fld_character_set && !field->fld_collate && request
 			 && request->req_database
-			 && request->req_database->dbb_def_charset) {
+			 && request->req_database->dbb_def_charset)
+	{
 		/* Use database default character set */
-		if (symbol =
-			MSC_find_symbol(HSH_lookup
+		if (symbol = MSC_find_symbol(HSH_lookup
 							(request->req_database->dbb_def_charset),
-							SYM_charset)) field->fld_character_set =
-				(INTLSYM) symbol->sym_object;
+							SYM_charset))
+		{
+			field->fld_character_set = (INTLSYM) symbol->sym_object;
+		}
 		else
 			PAR_error("Could not find database default character set");
 	}
@@ -861,8 +862,8 @@ GPRE_PRC SQL_procedure(GPRE_REQ request,
 		procedure = NULL; // redundant
 		for (db = isc_databases; db; db = db->dbb_next)
 		{
-			GPRE_PRC tmp_procedure =
-				MET_get_procedure(db, prc_string, owner_string);
+			GPRE_PRC tmp_procedure = MET_get_procedure(db, prc_string,
+														owner_string);
 			if (tmp_procedure) {
 				if (procedure) {
 					// relation was found in more than one database
@@ -926,8 +927,8 @@ GPRE_REL SQL_relation(GPRE_REQ request,
 	}
 
 	if (request->req_database)
-		relation =
-			MET_get_relation(request->req_database, rel_string, owner_string);
+		relation = MET_get_relation(request->req_database, rel_string, 
+									owner_string);
 	else {
 		/* no database was specified, check the metadata for all the databases
 		   for the existence of the relation */
@@ -3799,7 +3800,8 @@ static ACT act_open_blob( ACT_T act_op, SYM symbol)
 		 *  this information from the blob_id within the engine.
 		 */
 		if (field->fld_sub_type == BLOB_text
-			&& (field->fld_charset_id != CS_NONE)) {
+			&& (field->fld_charset_id != CS_NONE))
+		{
 			blob->blb_const_from_type = BLOB_text;
 			blob->blb_const_to_type = BLOB_text;
 			if (act_op == ACT_blob_create) {
