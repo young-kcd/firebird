@@ -1,3 +1,129 @@
+2003-02-18 17:06  bellardo
+
+	* firebird2/src/remote/inet.cpp:
+	
+	More cleanup after renaming header files with name conflicts.
+
+2003-02-18 13:38  eku
+
+	* firebird2/: configure.in, src/make.new/config/config.h.in,
+	src/include/gen/autoconfig_msvc.h, src/remote/inet.cpp:
+	
+	Added a test for <sys/socket.h> needed in remote/inet.cpp.
+
+2003-02-18 12:55  eku
+
+	* firebird2/src/qli/parse.cpp:
+	
+	Fixed "missing initializer for member `nod_types::nod_t_sql_node'".
+
+2003-02-18 12:53  eku
+
+	* firebird2/src/qli/parse.cpp:
+	
+	Fixed "aggregate has a partly bracketed initializer".
+
+2003-02-18 12:36  brodsom
+
+	* firebird2/src/: burp/burp.cpp, dudley/ddl.cpp,
+	utilities/cache.cpp:
+	
+	Remove W4 warnings (remains from ODS 5 and 7)
+
+2003-02-18 11:05  eku
+
+	* firebird2/src/qli/mov.cpp:
+	
+	Fixed typo.
+
+2003-02-18 11:00  eku
+
+	* firebird2/src/jrd/: common.h, met.epp, quad.cpp, cch.cpp:
+	
+	Removed lots of compiler warnings.
+
+2003-02-18 08:43  eku
+
+	* firebird2/src/gpre/exp.cpp:
+	
+	Cleanup.
+
+2003-02-18 08:42  eku
+
+	* firebird2/src/qli/: dtr.cpp, meta.epp, mov.cpp:
+	
+	Fixed "missing braces around initializer".
+
+2003-02-18 08:14  eku
+
+	* firebird2/src/jrd/: ini.epp, dyn.epp:
+	
+	Fixed "embedded `\0' in format".
+
+2003-02-18 08:13  eku
+
+	* firebird2/src/jrd/grant.epp:
+	
+	Fexed "embedded `\0' in format".
+
+2003-02-18 07:39  eku
+
+	* firebird2/src/lock/lock.cpp:
+	
+	Fixed "passing NULL used for non-pointer argument" and "return to
+	non-pointer type `SLONG' from NULL".
+
+2003-02-18 06:24  aafemt
+
+	* firebird2/: configure.in, src/include/gen/autoconfig_msvc.h,
+	src/intl/cs_jis.c, src/intl/cs_unicode_fss.c,
+	src/intl/cs_unicode_ucs2.c, src/intl/cv_big5.c,
+	src/intl/cv_gb2312.c, src/intl/cv_jis.c, src/intl/cv_ksc.c,
+	src/intl/lc_big5.c, src/intl/lc_dos.c, src/intl/lc_jis.c,
+	src/intl/lc_unicode_ucs2.c, src/jrd/evl.cpp, src/jrd/evl_like.cpp,
+	src/jrd/intl.cpp, src/jrd/intl_builtin.cpp, src/jrd/intl_classes.h,
+	src/jrd/intlobj.h, src/make.new/config/config.h.in:
+	
+	WCHAR --> UCS2_CHAR and some cleanup around it
+
+2003-02-18 06:22  aafemt
+
+	* firebird2/src/jrd/jrd.cpp:
+	
+	Occasionally Windows also has unistd.h
+
+2003-02-18 06:20  aafemt
+
+	* firebird2/src/jrd/scl.epp:
+	
+	No more security during boot phase
+
+2003-02-18 03:36  brodsom
+
+	* firebird2/src/alice/: info.h, tdr.cpp:
+	
+	Remove old protocols, only tcp is supported
+
+2003-02-18 01:08  brodsom
+
+	* firebird2/src/jrd/lck.cpp:
+	
+	Remove W4 warnings (initialized but unused var) rollback
+
+2003-02-18 00:42  brodsom
+
+	* firebird2/src/: burp/spit.cpp, burp/mvol.cpp,
+	iscguard/iscguard.cpp, jrd/isc_file.cpp, jrd/lck.cpp, jrd/alt.cpp,
+	remote/xnet.cpp, remote/ibconfig.cpp:
+	
+	Remove W4 warnings (initialized but unused var)
+
+2003-02-18 00:22  brodsom
+
+	* firebird2/src/burp/: burpswi.h, restore.epp, burp.cpp, burp.h:
+	
+	Remove W4 warnings (remains from ODS 5 and 7)
+
 2003-02-18 00:12  brodsom
 
 	* firebird2/src/jrd/: gds.def, thin.asm:
