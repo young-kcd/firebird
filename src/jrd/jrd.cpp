@@ -5824,6 +5824,9 @@ static void release_attachment(ATT attachment)
 		if (*vector)
 			delete *vector;
 
+	if (attachment->att_filename)
+		delete attachment->att_filename;
+
 	if (attachment->att_working_directory)
 		delete attachment->att_working_directory;
 
