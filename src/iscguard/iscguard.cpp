@@ -211,18 +211,18 @@ static int WINDOW_main(int option)
 	unsigned long thread_id;
 
 /* Make sure that there is only 1 instance of the guardian running */
-	hWnd = FindWindow(CLASS_NAME, APP_NAME);
+	hWnd = FindWindow(GUARDIAN_CLASS_NAME, GUARDIAN_APP_NAME);
 	if (hWnd) {
 		char szMsgString[256];
 		LoadString(hInstance_gbl, IDS_ALREADYSTARTED, szMsgString, 256);
-		MessageBox(NULL, szMsgString, APP_LABEL, MB_OK | MB_ICONHAND);
+		MessageBox(NULL, szMsgString, GUARDIAN_APP_LABEL, MB_OK | MB_ICONHAND);
 		gds__log(szMsgString);
 		return 0;
 	}
 
 /* initialize main window */
 	wcl.hInstance = hInstance_gbl;
-	wcl.lpszClassName = CLASS_NAME;
+	wcl.lpszClassName = GUARDIAN_CLASS_NAME;
 	wcl.lpfnWndProc = WindowFunc;
 	wcl.style = 0;
 	wcl.hIcon = LoadIcon(hInstance_gbl, MAKEINTRESOURCE(IDI_IBGUARD));
@@ -235,13 +235,13 @@ static int WINDOW_main(int option)
 	if (!RegisterClass(&wcl)) {
 		char szMsgString[256];
 		LoadString(hInstance_gbl, IDS_REGERROR, szMsgString, 256);
-		MessageBox(NULL, szMsgString, APP_LABEL, MB_OK);
+		MessageBox(NULL, szMsgString, GUARDIAN_APP_LABEL, MB_OK);
 		return 0;
 	}
 
 	hWnd = CreateWindowEx(0,
-						  CLASS_NAME,
-						  APP_NAME,
+						  GUARDIAN_CLASS_NAME,
+						  GUARDIAN_APP_NAME,
 						  WS_DLGFRAME | WS_SYSMENU | WS_MINIMIZEBOX,
 						  CW_USEDEFAULT,
 						  CW_USEDEFAULT,
@@ -261,7 +261,7 @@ static int WINDOW_main(int option)
 		/* error starting server thread */
 		char szMsgString[256];
 		LoadString(hInstance_gbl, IDS_CANT_START_THREAD, szMsgString, 256);
-		MessageBox(NULL, szMsgString, APP_LABEL, MB_OK);
+		MessageBox(NULL, szMsgString, GUARDIAN_APP_LABEL, MB_OK);
 		gds__log(szMsgString);
 		DestroyWindow(hWnd);
 		return (FALSE);
@@ -436,7 +436,7 @@ static LRESULT CALLBACK WindowFunc(
 			nid.uFlags = NIF_TIP | NIF_ICON | NIF_MESSAGE;
 			nid.uCallbackMessage = ON_NOTIFYICON;
 			nid.hIcon = hIcon;
-			lstrcpy(nid.szTip, APP_LABEL);
+			lstrcpy(nid.szTip, GUARDIAN_APP_LABEL);
 
 			/* This will be true if we are using the explorer interface */
 			bInTaskBar = Shell_NotifyIcon(NIM_ADD, &nid);
@@ -777,7 +777,7 @@ HWND DisplayPropSheet(HWND hParentWnd, HINSTANCE hInst)
 	PSHdr.hwndParent = hParentWnd;
 	PSHdr.hInstance = hInstance;
 	PSHdr.pszIcon = MAKEINTRESOURCE(IDI_IBGUARD);
-	PSHdr.pszCaption = (LPSTR) APP_LABEL;
+	PSHdr.pszCaption = (LPSTR) GUARDIAN_APP_LABEL;
 	PSHdr.nPages = FB_NELEM(PSPages);
 	PSHdr.nStartPage = 0;
 	PSHdr.ppsp = (LPCPROPSHEETPAGE) & PSPages;

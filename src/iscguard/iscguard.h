@@ -16,9 +16,9 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-#define APP_NAME        "Firebird Guardian"
-#define APP_LABEL       "Firebird Guardian"
-#define CLASS_NAME      "IB_Guard"
+#define GUARDIAN_APP_NAME        "Firebird Guardian"
+#define GUARDIAN_APP_LABEL       "Firebird Guardian"
+#define GUARDIAN_CLASS_NAME      "FB_Guard"
 #define	FBSERVER	    "fbserver.exe"
 #define GUARDIAN_HELP_FILE "fbserver.hlp"
 
@@ -27,8 +27,7 @@
 #define ibs_guard_version       8080
 #define ibs_guard_log           8090
 
-#define ON_NOTIFYICON   WM_USER+2
-#define WM_SWITCHICONS  WM_USER+3
+#define WM_SWITCHICONS  WM_USER + 3
 
 #define START_ONCE      0
 #define START_FOREVER   1
