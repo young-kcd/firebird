@@ -1,3 +1,63 @@
+2004-01-29 20:55  arnobrinkman
+
+	* firebird2/doc/WhatsNew:
+	
+	Add enhanced UNION behaviour to whatsnew doc
+
+2004-01-29 14:37  alexpeshkoff
+
+	* firebird2/src/install/arch-specific/linux/super/:
+	taruninstall.sh.in, postinstall.sh.in, preuninstall.sh.in,
+	tarinstall.sh.in:
+	
+	Small fixes of SS install - mostly SuSE related Thanks to Andreas
+	Bentele
+
+2004-01-29 14:07  alexpeshkoff
+
+	*
+	
+	Small fixes of SS install - mostly SuSE related Thanks to Andreas
+	Bentele
+	firebird2/src/install/arch-specific/linux/misc/firebird.init.d.suse
+	.in:
+
+2004-01-29 10:47  skidder
+
+	*
+	
+	fix AMD64 packaging issue
+	firebird2/builds/install/arch-specific/linux/classic/makeInstallIma
+	ge.sh.in:
+
+2004-01-29 09:19  skidder
+
+	* firebird2/doc/WhatsNew:
+	
+	Add descriptions for recent 2.0 changes. It is likely that I missed
+	something, please check
+
+2004-01-29 07:31  skidder
+
+	* firebird2/: configure.in,
+	builds/install/arch-specific/linux/Makefile.in,
+	builds/install/arch-specific/linux/classic/makeInstallImage.sh.in,
+	builds/install/arch-specific/linux/classic/postinstall.sh.in,
+	builds/install/arch-specific/linux/classic/preinstall.sh.in,
+	builds/install/arch-specific/linux/super/makeInstallImage.sh.in,
+	builds/install/arch-specific/linux/super/preinstall.sh.in,
+	builds/install/arch-specific/linux/super/rpmfiles.txt.in:
+	
+	Fix some packaging issues with non-x86 Linux ports. Prepare AMD64
+	port for public testing
+
+2004-01-29 06:56  skidder
+
+	* firebird2/src/: include/fb_types.h, jrd/ibase.h:
+	
+	Use better macros to detect 64-bit posix. They are non-standard,
+	anyway
+
 2004-01-28 17:26  dimitr
 
 	* firebird2/src/jrd/cmp.cpp:
