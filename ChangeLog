@@ -1,3 +1,36 @@
+2003-02-03 16:01  dimitr
+
+	* firebird2/src/jrd/pwd.cpp:
+	
+	Fixed some issues with the latest commit.
+
+2003-02-03 15:21  brodsom
+
+	* firebird2/builds/win32/: gpre_boot.mak, gpre.mak,
+	common_boot.mak, fbclient_boot.mak:
+	
+	Use bscmake non incremental
+
+2003-02-03 14:34  dimitr
+
+	* firebird2/src/: utilities/gsec.cpp, jrd/jrd.cpp, jrd/pwd.cpp,
+	jrd/pwd.h, jrd/pwd_proto.h, jrd/scl.epp, jrd/svc.cpp, jrd/tra.cpp:
+	
+	1. Re-designed PWD interface.  2. Implemented cached isc4
+	connection.  3. Cleanup.
+
+2003-02-03 14:06  dimitr
+
+	* firebird2/src/jrd/rse.h:
+	
+	Increased internal limits of the optimizer.
+
+2003-02-03 13:48  brodsom
+
+	* firebird2/builds/win32/: build_all.bat, preprocess.bat:
+	
+	Autoconfig must be copy before build_boot.bat
+
 2003-02-02 17:01  dimitr
 
 	* firebird2/src/common/config/config.cpp:
