@@ -3,9 +3,7 @@
 
 #define INCLUDE_OLD_FB_BLK
 
-#ifndef JRD_COMMON_H
 #include "../jrd/common.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {
