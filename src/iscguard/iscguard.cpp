@@ -42,7 +42,6 @@
 #include "../remote/os/win32/window.h"
 #include "../remote/os/win32/chop_proto.h"
 #include "../common/config/config.h"
-#include "../common/utils_proto.h"
 
 #ifdef WIN_NT
 #include <process.h>			/* _beginthread */
@@ -77,8 +76,8 @@ static void HelpCmd(HWND, HINSTANCE, WPARAM);
 #endif
 //char* ChopFileName (char*, char*, long);
 
-void start_and_watch_server(const char*);
-void swap_icons(HWND);
+THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM);
+THREAD_ENTRY_DECLARE swap_icons(THREAD_ENTRY_PARAM);
 void write_log(int, const char*);
 
 HWND DisplayPropSheet(HWND, HINSTANCE);
@@ -260,11 +259,10 @@ static THREAD_ENTRY_DECLARE WINDOW_main(THREAD_ENTRY_PARAM)
 	hWndGbl = hWnd;
 
 /* begin a new thread for calling the start_and_watch_server */
-	const unsigned long thread_id =
-		 _beginthread(reinterpret_cast <
-					  void (*)(void *) >(start_and_watch_server), 0,
-					  const_cast<char*>(FBSERVER));
-					  
+	unsigned long thread_id = 0;
+	gds__thread_start(start_and_watch_server, 0, 
+			THREAD_medium, 0, &thread_id);
+
 	if (thread_id == (DWORD) -1) {
 		/* error starting server thread */
 		char szMsgString[256];
@@ -328,8 +326,9 @@ static LRESULT CALLBACK WindowFunc(
 	case WM_CLOSE:
 		{
 			/* Clean up memory for log_entry */
+			log_info* tmp;
 			while (log_entry->next) {
-				log_info* tmp = log_entry->next;
+				tmp = log_entry->next;
 				free(log_entry);
 				log_entry = tmp;
 			}
@@ -403,9 +402,8 @@ static LRESULT CALLBACK WindowFunc(
 
 	case WM_SWITCHICONS:
 		nRestarts++;
-		thread_id =
-			_beginthread(reinterpret_cast < void (*)(void *) >(swap_icons), 0,
-						 hWnd);
+		gds__thread_start(swap_icons, hWnd, 
+				THREAD_medium, 0, &thread_id);
 		break;
 
 	case ON_NOTIFYICON:
@@ -521,7 +519,7 @@ static LRESULT CALLBACK WindowFunc(
 }
 
 
-void start_and_watch_server(const char* server_name)
+THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 {
 /**************************************
  *
@@ -535,6 +533,9 @@ void start_and_watch_server(const char* server_name)
  * the thread waits for this process to exit.
  *
  **************************************/
+	Firebird::ContextPoolHolder threadContext(getDefaultMemoryPool());
+
+	const char* server_name = FBSERVER;
 	char prog_name[MAXPATHLEN + 128];
 	char path[MAXPATHLEN];
 	HANDLE procHandle = NULL;
@@ -546,9 +547,8 @@ void start_and_watch_server(const char* server_name)
 /* get the guardian startup information */
 	const short option = Config::getGuardianOption();
 	gds__prefix(path, "");
-	fb_utils::snprintf(prog_name, sizeof(prog_name), "\"%s%s%s\" -a -n", path,
-		"bin\\", server_name);
-	fb_utils::snprintf(path, sizeof(path), "%s%s%s", path, "bin\\", FBSERVER);
+	sprintf(prog_name, "\"%s%s%s\" -a -n", path, "bin\\", server_name);
+	sprintf(path, "%s%s%s", path, "bin\\", FBSERVER);
 
 /* if the guardian is set to FOREVER then set the error mode */
 	UINT old_error_mode = 0;
@@ -624,8 +624,7 @@ void start_and_watch_server(const char* server_name)
 							(LPARAM) hWndGbl);
 				if (
 					(procHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE,
-								 ServerPid)) == NULL)
-				{
+								 ServerPid)) == NULL) {
 					error = GetLastError();
 					success = FALSE;
 				}
@@ -659,7 +658,7 @@ void start_and_watch_server(const char* server_name)
 				MessageBox(NULL, out_buf, NULL, MB_OK);
 				PostMessage(hWndGbl, WM_CLOSE, 0, 0);
 			}
-			return;
+			return 0;
 		}
 		else {
 			char szMsgString[256];
@@ -737,6 +736,8 @@ void start_and_watch_server(const char* server_name)
 	}
 	else
 		PostMessage(hWndGbl, WM_CLOSE, 0, 0);
+
+	return 0;
 }
 
 
@@ -756,6 +757,7 @@ HWND DisplayPropSheet(HWND hParentWnd, HINSTANCE hInst)
  *  Description: This function initializes the page(s) of the property sheet,
  *               and then calls the PropertySheet() function to display it.
  *****************************************************************************/
+	PROPSHEETHEADER PSHdr;
 	PROPSHEETPAGE PSPages[1];
 	HINSTANCE hInstance = hInst;
 
@@ -767,7 +769,6 @@ HWND DisplayPropSheet(HWND hParentWnd, HINSTANCE hInst)
 	PSPages[0].pfnDlgProc = (DLGPROC) GeneralPage;
 	PSPages[0].pfnCallback = NULL;
 
-	PROPSHEETHEADER PSHdr;
 	PSHdr.dwSize = sizeof(PROPSHEETHEADER);
 	PSHdr.dwFlags = PSH_PROPTITLE | PSH_PROPSHEETPAGE |
 		PSH_USEICONID | PSH_MODELESS;
@@ -811,7 +812,8 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
  *               are identified within the LPARAM which will be pointer to 
  *               the NMDR structure
  *****************************************************************************/
-	HINSTANCE hInstance = (HINSTANCE) GetWindowLong(hDlg, GWL_HINSTANCE);
+	HINSTANCE hInstance;
+	hInstance = (HINSTANCE) GetWindowLong(hDlg, GWL_HINSTANCE);
 
 	switch (unMsg) {
 	case WM_INITDIALOG:
@@ -934,7 +936,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 }
 
 
-void swap_icons(HWND hWnd)
+THREAD_ENTRY_DECLARE  swap_icons(THREAD_ENTRY_PARAM param)
 {
 /******************************************************************************
  *
@@ -944,6 +946,9 @@ void swap_icons(HWND hWnd)
  *
  *  Description:  Animates the icon if the server restarted
  *****************************************************************************/
+	Firebird::ContextPoolHolder threadContext(getDefaultMemoryPool());
+
+	HWND hWnd = reinterpret_cast<HWND>(param);
 	HINSTANCE hInstance = (HINSTANCE) GetWindowLong(hWnd, GWL_HINSTANCE);
 	HICON hIconNormal = (HICON) LoadImage(hInstance,
 									MAKEINTRESOURCE(IDI_IBGUARD),
@@ -985,9 +990,10 @@ displayed, stop animating the icon
 
 	if (hIconNormal)
 		DestroyIcon(hIconNormal);
-
 	if (hIconAlert)
 		DestroyIcon(hIconAlert);
+
+	return 0;
 }
 
 
@@ -1059,7 +1065,7 @@ void write_log(int log_action, const char* buff)
 						  tmp_buff, 0, 0, (LPTSTR) &lpMsgBuf, 0,
 						  reinterpret_cast<va_list*>(act_buff));
 			strncpy(act_buff[0], (LPTSTR) lpMsgBuf,
-					strlen(static_cast<const char*>(lpMsgBuf)) - 1);
+					strlen(reinterpret_cast<const char*>(lpMsgBuf)) - 1);
 			LocalFree(lpMsgBuf);
 			WORD wLogType;
 			
