@@ -1,3 +1,263 @@
+2003-02-19 17:22  dimitr
+
+	* firebird2/src/jrd/ini.epp:
+	
+	Minor ODS upgrade fail shouldn't be critical.
+
+2003-02-19 16:59  brodsom
+
+	* firebird2/src/jrd/intl_builtin.cpp:
+	
+	Replace #if 0 with NOT_USED_OR_REPLACED
+
+2003-02-19 16:32  brodsom
+
+	* firebird2/src/: iscguard/cntl_guard.cpp, remote/xnet.cpp:
+	
+	Remove unneeded include
+
+2003-02-19 16:25  dimitr
+
+	* firebird2/src/jrd/: cmp.cpp, dfw.epp, dpm.epp, jrd.h, met.epp,
+	par.cpp, rlck.cpp, tra.cpp, vio.cpp:
+	
+	Cleanup and bugfixing. VIO statistics now work properly.
+
+2003-02-19 15:06  brodsom
+
+	* firebird2/src/intlcpp/utils/: dtest.c, dtest2.c, make.maps,
+	mapdump.c, mapgen4.c, maptest.cpp, maptest2.c:
+	
+	Add C++ intl conversion
+
+2003-02-19 15:02  brodsom
+
+	* firebird2/src/intlcpp/: charsets.h, countries.h, country_codes.h,
+	cs_big5.cpp, cs_gb2312.cpp, cs_jis.cpp, cs_ksc.cpp, cs_narrow.cpp,
+	cs_unicode_fss.cpp, cs_unicode_fss.h, cs_unicode_ucs2.cpp,
+	cv_big5.cpp, cv_big5.h, cv_gb2312.cpp, cv_gb2312.h, cv_jis.cpp,
+	cv_jis.h, cv_ksc.cpp, cv_ksc.h, cv_narrow.cpp, cv_narrow.h,
+	cv_unicode_fss.cpp, cv_unicode_fss.h, depends.mak, kanji.cpp,
+	kanji.h, kanji_proto.h, langdrv.h, lc_ascii.cpp, lc_ascii.h,
+	lc_big5.cpp, lc_big5.h, lc_dos.cpp, lc_dos.h, lc_gb2312.cpp,
+	lc_iso8859_1.cpp, lc_iso8859_2.cpp, lc_jis.cpp, lc_ksc.cpp,
+	lc_narrow.cpp, lc_narrow.h, lc_unicode_ucs2.cpp, ld.cpp, ld.h,
+	ld2.cpp, ld_proto.h, ldcommon.h, moved_files.txt,
+	charsets/cs_437.h, charsets/cs_737.h, charsets/cs_775.h,
+	charsets/cs_850.h, charsets/cs_852.h, charsets/cs_857.h,
+	charsets/cs_858.h, charsets/cs_860.h, charsets/cs_861.h,
+	charsets/cs_862.h, charsets/cs_863.h, charsets/cs_864.h,
+	charsets/cs_865.h, charsets/cs_866.h, charsets/cs_869.h,
+	charsets/cs_big5.h, charsets/cs_cyrl.h, charsets/cs_gb2312.h,
+	charsets/cs_iso8859_1.h, charsets/cs_iso8859_13.h,
+	charsets/cs_iso8859_2.h, charsets/cs_iso8859_3.h,
+	charsets/cs_iso8859_4.h, charsets/cs_iso8859_5.h,
+	charsets/cs_iso8859_6.h, charsets/cs_iso8859_7.h,
+	charsets/cs_iso8859_8.h, charsets/cs_iso8859_9.h,
+	charsets/cs_jis_0208_1990.h, charsets/cs_ksc5601.h,
+	charsets/cs_next.h, charsets/cs_sjis.h, charsets/cs_w1250.h,
+	charsets/cs_w1251.h, charsets/cs_w1252.h, charsets/cs_w1253.h,
+	charsets/cs_w1254.h, charsets/cs_w1255.h, charsets/cs_w1256.h,
+	charsets/cs_w1257.h, collations/bl88591ca0.h,
+	collations/bl88591da0.h, collations/bl88591de0.h,
+	collations/bl88591es0.h, collations/bl88591fi0.h,
+	collations/bl88591fr0.h, collations/bl88591is0.h,
+	collations/bl88591it0.h, collations/bl88591nl0.h,
+	collations/bl88591no0.h, collations/bl88591pt0.h,
+	collations/bl88591sv0.h, collations/bl88591uk0.h,
+	collations/bl88591us0.h, collations/blNEXTde0.h,
+	collations/blNEXTes0.h, collations/blNEXTfr0.h,
+	collations/blNEXTit0.h, collations/blNEXTus0.h,
+	collations/db437de0.h, collations/db437es1.h,
+	collations/db437fi0.h, collations/db437fr0.h,
+	collations/db437it0.h, collations/db437nl0.h,
+	collations/db437sv0.h, collations/db437uk0.h,
+	collations/db437us0.h, collations/db850cf0.h,
+	collations/db850de0.h, collations/db850es0.h,
+	collations/db850fr0.h, collations/db850it1.h,
+	collations/db850nl0.h, collations/db850pt0.h,
+	collations/db850sv1.h, collations/db850uk0.h,
+	collations/db850us0.h, collations/db852cz0.h,
+	collations/db852po0.h, collations/db852sl0.h,
+	collations/db857tr0.h, collations/db860pt0.h,
+	collations/db863cf1.h, collations/db865da0.h,
+	collations/db865no0.h, collations/db866ru0.h,
+	collations/pd437intl.h, collations/pd437swedfin.h,
+	collations/pd852czech.h, collations/pd852hundc.h,
+	collations/pd852polish.h, collations/pd852slovene.h,
+	collations/pd861iceland.h, collations/pd865nordan40.h,
+	collations/pd866cyrr.h, collations/pw1250czech.h,
+	collations/pw1250hun.h, collations/pw1250hundc.h,
+	collations/pw1250polish.h, collations/pw1250slov.h,
+	collations/pw1251cyrr.h, collations/pw1252i850.h,
+	collations/pw1252intl.h, collations/pw1252nor4.h,
+	collations/pw1252span.h, collations/pw1252swfn.h,
+	collations/pw1253greek1.h, collations/pw1254turk.h,
+	collations/undef.h, collations/xx1251_ua.h,
+	collations/xx88592czech.h, conversions/tx437_865.h,
+	conversions/tx437_lat1.h, conversions/tx865_lat1.h:
+	
+	Add C++ intl conversion
+
+2003-02-19 14:20  brodsom
+
+	* firebird2/builds/win32/msvc6/intlcpp.dsp:
+	
+	Adding intl C++ conversion
+
+2003-02-19 14:18  brodsom
+
+	* firebird2/: src/v5_examples/api9f.def,
+	src/v5_examples/example.def, src/v5_examples/udflib.def,
+	src/v5_examples/winevent.def, builds/win32/defs/api9f.def,
+	builds/win32/defs/example.def, builds/win32/defs/udflib.def,
+	builds/win32/defs/winevent.def:
+	
+	Move def files left in the directory (but not v5_example ones)
+
+2003-02-19 14:13  brodsom
+
+	* firebird2/src/v5_examples/: api9f.def, example.def, udflib.def,
+	winevent.def:
+	
+	Move def files to builds directory
+
+2003-02-19 14:11  brodsom
+
+	* firebird2/src/: remote/makefile.mak, v5_examples/makefile.mak:
+	
+	Move old borland make files to builds directory
+
+2003-02-19 14:08  brodsom
+
+	* firebird2/src/: burp/makefile.mak, dsql/makefile.mak,
+	extlib/makefile.mak, intl/makefile.mak, jrd/makefile.mak,
+	msgs/makefile.mak:
+	
+	Move old borland make files to builds directory
+
+2003-02-19 14:04  brodsom
+
+	* firebird2/src/: intl/intl.def, isql/isql.def, jrd/gds.def,
+	jrd/iutls.def, jrd/jrd.def, jrd/utls.def, msgs/build.def,
+	remote/remote.def:
+	
+	Move def files to builds directory
+
+2003-02-19 14:01  brodsom
+
+	* firebird2/: builds/win32/fbclient_debug.def,
+	builds/win32/gds32.def, builds/win32/ib_udf.def,
+	builds/win32/ib_util.def, builds/win32/fbclient.def,
+	src/burp/burp.def, src/burp/burp32.def, src/dsql/dsql.def:
+	
+	Move def files to builds directory
+
+2003-02-19 13:58  brodsom
+
+	* firebird2/builds/win32/: msvc6/fbclient.dsp, msvc6/fbembed.dsp,
+	msvc6/gds32.dsp, msvc6/ib_udf.dsp, msvc6/ib_util.dsp,
+	msvc6/intl.dsp, fbclient_boot.mak, msvc7/intl.vcproj,
+	msvc7/ib_util.vcproj, msvc7/gds32.vcproj, msvc7/ib_udf.vcproj,
+	msvc7/fbclient.vcproj, msvc7/fbembed.vcproj:
+	
+	Move def files to builds directory
+
+2003-02-19 13:54  eku
+
+	* firebird2/src/jrd/isc.cpp:
+	
+	Fixed unterminated #if statement.
+
+2003-02-19 13:53  eku
+
+	* firebird2/src/jrd/ib_stdio.h:
+	
+	Fixed "no newline at end of file".
+
+2003-02-19 13:21  brodsom
+
+	* firebird2/builds/win32/old_makes/: remote.mak, v5_examples.mak,
+	burp.mak, dsql.mak, extlib.mak, intl.mak, intlcpp.mak, jrd.mak,
+	msgs.mak:
+	
+	Move old borland makefiles to builds directory
+
+2003-02-19 13:15  brodsom
+
+	* firebird2/builds/win32/defs/: winevent.def, remote.def,
+	udflib.def, utls.def, jrd.def, isql.def, iutls.def, intlcpp.def,
+	intl.def, gds.def, gds32.def, ib_udf.def, ib_util.def, build.def,
+	burp.def, burp32.def, dsql.def, example.def, fbclient.def,
+	fbclient_debug.def, api9f.def:
+	
+	Move .def files to builds directory
+
+2003-02-19 07:41  fsg
+
+	* firebird2/src/jrd/intl_builtin.cpp:
+	
+	swab may be defined in unistd.h so let's include it if we have it
+
+2003-02-19 07:15  eku
+
+	* firebird2/src/qli/mov.cpp:
+	
+	Small correction (GCC doesn't complain). Thanks to Claudio.
+
+2003-02-19 07:14  eku
+
+	* firebird2/src/: jrd/isc.cpp, jrd/jrd.cpp, jrd/jrd_pwd.h,
+	jrd/unix.cpp, utilities/ibmgr.cpp:
+	
+	Fixed more issues with pwd.h.
+
+2003-02-19 06:18  aafemt
+
+	* firebird2/src/burp/: mvol.cpp, mvol_proto.h:
+	
+	Some cleanup
+
+2003-02-19 06:16  aafemt
+
+	* firebird2/builds/posix/make.shared.variables:
+	
+	XNET and somewhere WNET were added to remote interfaces
+
+2003-02-19 06:14  aafemt
+
+	* firebird2/builds/posix/make.defaults:
+	
+	Propagate PLATFORM across makefiles
+
+2003-02-19 05:08  brodsom
+
+	* firebird2/src/jrd/: ib_stdio.cpp, ib_stdio.h, common.h:
+	
+	Remove SOLARIS_MT stdio emulation (need_ib_stdio)
+
+2003-02-19 04:51  brodsom
+
+	* firebird2/src/jrd/intl.cpp:
+	
+	Remove unneeded typedef
+
+2003-02-19 04:49  brodsom
+
+	* firebird2/src/: jrd/intlnames.h, intl/lc_ksc.c, intl/ld.c:
+	
+	Fix bug in intl for a korean texttype.
+
+2003-02-19 02:56  brodsom
+
+	* firebird2/src/intl/: cs_gb2312.c, cs_narrow.c, cs_unicode_fss.c,
+	cv_big5.c, cv_gb2312.c, cv_jis.c, cv_ksc.c, cv_narrow.c,
+	lc_ascii.c, lc_big5.c, lc_dos.c, lc_iso8859_1.c, lc_iso8859_2.c,
+	lc_jis.c, lc_ksc.c, lc_narrow.c, lc_unicode_ucs2.c:
+	
+	Remove W4 warnings (old style declarator) and others W3 appeared
+	when the declarator is updated.
+
 2003-02-18 17:06  bellardo
 
 	* firebird2/src/remote/inet.cpp:
