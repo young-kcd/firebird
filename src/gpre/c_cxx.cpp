@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.30 2003-09-25 11:49:02 robocop Exp $
+//	$Id: c_cxx.cpp,v 1.31 2003-09-28 21:35:58 skidder Exp $
 //
 
 #include "firebird.h"
@@ -59,7 +59,7 @@ static void gen_blob_close(ACT, USHORT);
 static void gen_blob_end(ACT, USHORT);
 static void gen_blob_for(ACT, USHORT);
 static void gen_blob_open(ACT, USHORT);
-static int gen_blr(int *, int, TEXT *);
+static void gen_blr(void*, SSHORT, const char*);
 static void gen_clear_handles(ACT, int);
 static void gen_compatibility_symbol(TEXT *, TEXT *, TEXT *);
 static void gen_compile(ACT, int);
@@ -1071,10 +1071,11 @@ static void gen_blob_open( ACT action, USHORT column)
 //		Callback routine for BLR pretty printer.
 //  
 
-static int gen_blr( int *user_arg, int offset, TEXT * string)
+static void gen_blr(void *user_arg, SSHORT offset, const char* string)
 {
 	int indent, length;
-	TEXT *p, *q, *p1, *q1, c, d, line[256];
+	const char *p, *q, *p1;
+	char *q1, d, line[256];
 	bool open_quote;
 	bool first_line = true;
 
@@ -1101,28 +1102,25 @@ static int gen_blr( int *user_arg, int offset, TEXT * string)
 				if (*q == '\'' && *(q - 1) != '\\')
 					open_quote = !open_quote;
 			}
-			c = *++q;
-			*q = 0;
+			++q;
 		}
 		else {
-			c = 0;
 			q = p + strlen(p);
 		}
 
 		/* Replace all occurrences of gds__ (or gds__) with isc_ */
 
-		for (q1 = line, p1 = p; *p1;)
+		for (q1 = line, p1 = p; p1 < q;)
 			if ((*q1++ = *p1++) == 'g')
-				if (*p1 && (*q1++ = *p1++) == 'd')
-					if (*p1 && (*q1++ = *p1++) == 's')
-						if (*p1 && (*q1++ = *p1++) == '_')
-							if (*p1 && ((d = *p1++) == '_' || d == '$'))
+				if (p1 < q && (*q1++ = *p1++) == 'd')
+					if (p1 < q && (*q1++ = *p1++) == 's')
+						if (p1 < q && (*q1++ = *p1++) == '_')
+							if (p1 < q && ((d = *p1++) == '_' || d == '$'))
 								strncpy(q1 - 4, "isc", 3);
 							else
 								*q1++ = d;
 		*q1 = 0;
 		printa(indent, line);
-		*q = c;
 		length = length - (q - p);
 		p = q;
 		if (first_line) {
@@ -1130,8 +1128,6 @@ static int gen_blr( int *user_arg, int offset, TEXT * string)
 			first_line = false;
 		}
 	} while (length > 0);
-
-	return TRUE;
 }
 
 
@@ -2954,8 +2950,7 @@ static void gen_request( GPRE_REQ request)
 			case REQ_create_database:
 			case REQ_ready:
 				string_type = "dpb";
-				if (PRETTY_print_cdb((SCHAR *) request->req_blr,
-					 reinterpret_cast < PRETTY_print_cb_pfn > (gen_blr), 0, 0))
+				if (PRETTY_print_cdb(request->req_blr, gen_blr, 0, 0))
 				{
 					IBERROR("internal error during parameter generation");
 				}
@@ -2963,16 +2958,14 @@ static void gen_request( GPRE_REQ request)
 
 			case REQ_ddl:
 				string_type = "dyn";
-				if (PRETTY_print_dyn((SCHAR *) request->req_blr,
-					 reinterpret_cast < PRETTY_print_cb_pfn > (gen_blr), 0, 0))
-				{
+				if (PRETTY_print_dyn(request->req_blr, gen_blr, 0, 0))
+				{    
 					IBERROR("internal error during dynamic DDL generation");
 				}
 				break;
 			case REQ_slice:
 				string_type = "sdl";
-				if (PRETTY_print_sdl((SCHAR *) request->req_blr,
-					 reinterpret_cast < PRETTY_print_cb_pfn > (gen_blr), 0, 0))
+				if (PRETTY_print_sdl(request->req_blr, gen_blr, 0, 0))
 				{
 					IBERROR("internal error during SDL generation");
 				}
@@ -2980,8 +2973,7 @@ static void gen_request( GPRE_REQ request)
 
 			default:
 				string_type = "blr";
-				if (isc_print_blr((char *) request->req_blr, (FPTR_VOID) gen_blr,
-					0, 0))
+				if (gds__print_blr(request->req_blr, gen_blr, 0, 0))
 				{
 					IBERROR("internal error during BLR generation");
 				}
@@ -3005,9 +2997,7 @@ static void gen_request( GPRE_REQ request)
 					gen_raw((UCHAR *) reference->ref_sdl,
 							reference->ref_sdl_length);
 				else
-					if (PRETTY_print_sdl((SCHAR *) reference->ref_sdl,
-						 reinterpret_cast < PRETTY_print_cb_pfn > (gen_blr),
-						 0, 0))
+					if (PRETTY_print_sdl(reference->ref_sdl, gen_blr, 0, 0))
 					{
 						IBERROR("internal error during SDL generation");
 					}

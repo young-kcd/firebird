@@ -58,9 +58,9 @@ static void drop_security_class(STR, SCL);
 static void drop_shadow(STR, SLONG);
 static void drop_trigger(STR, DUDLEY_TRG);
 static void drop_trigger_msg(STR, TRGMSG);
-static int gen_dyn_c(int *, int, SCHAR *);
-static int gen_dyn_cxx(int *, int, SCHAR *);
-static int gen_dyn_pas(int *, int, SCHAR *);
+static void gen_dyn_c(void*, SSHORT, const char*);
+static void gen_dyn_cxx(void*, SSHORT, const char*);
+static void gen_dyn_pas(void*, SSHORT, const char*);
 static void modify_database(STR, DBB);
 static void modify_field(STR, DUDLEY_FLD, DUDLEY_REL);
 static void modify_global_field(STR, DUDLEY_FLD);
@@ -110,7 +110,8 @@ void TRN_translate(void)
 
 /* Start by reversing the set of actions */
 	dyn = &d;
-	dyn->str_current = dyn->str_start = (SCHAR *) gds__alloc((SLONG) 8192);
+	dyn->str_current = dyn->str_start =
+		reinterpret_cast<UCHAR*>(gds__alloc(8192));
 	dyn->str_length = 8192;
 
 #ifdef DEBUG_GDS_ALLOC
@@ -260,12 +261,12 @@ void TRN_translate(void)
 	switch (language) {
 	case lan_undef:
 	case lan_c:
-		if (PRETTY_print_dyn(dyn->str_start, (int(*)()) gen_dyn_c, 0, 0))
+		if (PRETTY_print_dyn(dyn->str_start, gen_dyn_c, 0, 0))
 			DDL_err(283, NULL, NULL, NULL, NULL, NULL);	/*msg 283: internal error during DYN pretty print */
 		break;
 
 	case lan_cxx:
-		if (PRETTY_print_dyn(dyn->str_start, (int(*)()) gen_dyn_cxx, 0, 0))
+		if (PRETTY_print_dyn(dyn->str_start, gen_dyn_cxx, 0, 0))
 			DDL_err(283, NULL, NULL, NULL, NULL, NULL);	/*msg 283: internal error during DYN pretty print */
 		break;
 
@@ -276,7 +277,7 @@ void TRN_translate(void)
 		ib_fprintf(output_file,
 				   "   gds_dyn	: packed array [1..%d] of char := (\n",
 				   length);
-		if (PRETTY_print_dyn(dyn->str_start, (int(*)()) gen_dyn_pas, 0, 1))
+		if (PRETTY_print_dyn(dyn->str_start, gen_dyn_pas, 0, 1))
 			DDL_err(285, NULL, NULL, NULL, NULL, NULL);	/*msg 285: internal error during DYN pretty print */
 		ib_fprintf(output_file, "   );	(* end of DYN string *)\n");
 		break;
@@ -818,7 +819,7 @@ bool TRN_get_buffer(STR dyn, USHORT length)
  *	So, allocate an extra memory.
  *
  **************************************/
-	SCHAR *p, *q, *old;
+	UCHAR *p, *q, *old;
 	USHORT len, n;
 
 	len = dyn->str_current - dyn->str_start;
@@ -833,7 +834,7 @@ bool TRN_get_buffer(STR dyn, USHORT length)
 		return false;
 
 	q = old = dyn->str_start;
-	dyn->str_start = p = (SCHAR *) gds__alloc((SLONG) n);
+	dyn->str_start = p = reinterpret_cast<UCHAR*>(gds__alloc(n));
 
 	if (!p)
 		return false;
@@ -1063,7 +1064,7 @@ static void drop_trigger_msg( STR dyn, TRGMSG trigmsg)
 }
 
 
-static int gen_dyn_c( int *user_arg, int offset, SCHAR * string)
+static void gen_dyn_c(void *user_arg, SSHORT offset, const char* string)
 {
 /**************************************
  *
@@ -1077,12 +1078,10 @@ static int gen_dyn_c( int *user_arg, int offset, SCHAR * string)
  **************************************/
 
 	ib_fprintf(output_file, "    %s\n", string);
-
-	return TRUE;
 }
 
 
-static int gen_dyn_cxx( int *user_arg, int offset, SCHAR * string)
+static void gen_dyn_cxx(void *user_arg, SSHORT offset, const char* string)
 {
 /**************************************
  *
@@ -1094,9 +1093,12 @@ static int gen_dyn_cxx( int *user_arg, int offset, SCHAR * string)
  *	Callback routine for BLR pretty printer.
  *
  **************************************/
+	char temp[1024]; // This buffer size should be more than enough
+	strcpy(temp, string);
+
 	SCHAR *p, *q, *r;
 
-	q = p = string;
+	q = p = temp;
 
 	ib_fprintf(output_file, "    ");
 	for (; *q; *q++) {
@@ -1112,12 +1114,10 @@ static int gen_dyn_cxx( int *user_arg, int offset, SCHAR * string)
 	}
 
 	ib_fprintf(output_file, "%s\n", p);
-
-	return TRUE;
 }
 
 
-static int gen_dyn_pas( int *user_arg, int offset, SCHAR * string)
+static void gen_dyn_pas(void *user_arg, SSHORT offset, const char* string)
 {
 /**************************************
  *
@@ -1130,8 +1130,6 @@ static int gen_dyn_pas( int *user_arg, int offset, SCHAR * string)
  *
  **************************************/
 	ib_fprintf(output_file, "      %s\n", string);
-
-	return TRUE;
 }
 
 
@@ -1541,7 +1539,7 @@ static void put_blr( STR dyn, UCHAR attribute, DUDLEY_REL relation, DUDLEY_NOD n
  * Functional description
  *
  **************************************/
-	SCHAR *p;
+	UCHAR *p;
 	USHORT length, offset;
 
 	if (!node)
@@ -1598,7 +1596,7 @@ static void put_query_header( STR dyn, TEXT attribute, DUDLEY_NOD node)
  **************************************/
 	DUDLEY_NOD *ptr, *end;
 	SYM symbol;
-	SCHAR *s;
+	UCHAR *s;
 	USHORT length, offset;
 
 	if (!node)
@@ -1611,7 +1609,7 @@ static void put_query_header( STR dyn, TEXT attribute, DUDLEY_NOD node)
 	dyn->str_current = dyn->str_current + 2;
 	for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end; ptr++) {
 		symbol = (SYM) * ptr;
-		s = (SCHAR *) symbol->sym_string;
+		s = (UCHAR *) symbol->sym_string;
 		CHECK_DYN(symbol->sym_length);
 		while (*s)
 			STUFF(*s++);
@@ -1692,7 +1690,7 @@ static void raw_ada( STR dyn)
  * Functional description
  *
  **************************************/
-	SCHAR *p;
+	UCHAR *p;
 	USHORT n;
 
 	n = 0;
@@ -1724,10 +1722,10 @@ static void raw_cobol( STR dyn)
  * Functional description
  *
  **************************************/
-	SCHAR *blr, *c;
+	UCHAR *blr, *c;
 	int blr_length, length;
 	union {
-		SCHAR bytewise_blr[4];
+		UCHAR bytewise_blr[4];
 		SLONG longword_blr;
 	} blr_hunk;
 

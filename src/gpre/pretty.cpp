@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pretty.cpp,v 1.15 2003-09-11 02:13:45 brodsom Exp $
+//	$Id: pretty.cpp,v 1.16 2003-09-28 21:35:59 skidder Exp $
 //
 
 #include "firebird.h"
@@ -33,14 +33,9 @@
 #include "../jrd/common.h"
 #include <stdarg.h>
 #include "../jrd/gds.h"
+#include "../jrd/constants.h"
 #include "../gpre/prett_proto.h"
 #include "../jrd/gds_proto.h"
-
-#ifdef sun
-#ifndef SOLARIS
-extern int ib_printf();
-#endif
-#endif
 
 #define ADVANCE_PTR(ptr) while (*ptr) ptr++;
 
@@ -59,24 +54,22 @@ extern int ib_printf();
 #define CHECK_BUFFER	if (control->ctl_ptr > control->ctl_buffer + sizeof (control->ctl_buffer) - 20) PRINT_LINE
 
 
-typedef int (*pfn_ctl_routine) (SCHAR *, SSHORT, TEXT *);
-
 typedef struct ctl {
-	SCHAR *ctl_blr;				/* Running blr string */
-	SCHAR *ctl_blr_start;		/* Original start of blr string */
-	pfn_ctl_routine ctl_routine;	/* Call back */
-	SCHAR *ctl_user_arg;		/* User argument */
+	UCHAR *ctl_blr;				/* Running blr string */
+	UCHAR *ctl_blr_start;		/* Original start of blr string */
+	FPTR_PRINT_CALLBACK ctl_routine;	/* Call back */
+	void *ctl_user_arg;		/* User argument */
 	TEXT *ctl_ptr;
 	SSHORT ctl_language;
 	SSHORT ctl_level;
-	TEXT ctl_buffer[256];
+	TEXT ctl_buffer[PRETTY_BUFFER_SIZE];
 } *CTL;
 
 static int blr_format(CTL, const char *, ...);
 static int error(CTL, int, TEXT *, int);
 static int indent(CTL, SSHORT);
 static int print_blr_dtype(CTL, bool);
-static int print_blr_line(CTL, USHORT, UCHAR *);
+static void print_blr_line(void *, SSHORT, const char*);
 static int print_byte(CTL, SSHORT);
 static int print_char(CTL, SSHORT);
 static int print_dyn_verb(CTL, SSHORT);
@@ -120,8 +113,9 @@ const char *map_strings[] = {
 //		Pretty print create database parameter buffer thru callback routine.
 //  
 
-int PRETTY_print_cdb( SCHAR * blr,
-					 int (*routine) (), SCHAR * user_arg, SSHORT language)
+int PRETTY_print_cdb( UCHAR * blr,
+					  FPTR_PRINT_CALLBACK routine,
+					  void * user_arg, SSHORT language)
 {
 
 	ctl ctl_buffer;
@@ -135,11 +129,11 @@ int PRETTY_print_cdb( SCHAR * blr,
 
 
 	if (!routine) {
-		routine = (int (*)()) ib_printf;
-		user_arg = "%.4d %s\n";
+		routine = gds__default_printer;
+		user_arg = NULL;
 	}
 
-	control->ctl_routine = reinterpret_cast < pfn_ctl_routine > (routine);
+	control->ctl_routine = routine;
 	control->ctl_user_arg = user_arg;
 	control->ctl_blr = control->ctl_blr_start = blr;
 	control->ctl_ptr = control->ctl_buffer;
@@ -148,9 +142,9 @@ int PRETTY_print_cdb( SCHAR * blr,
 	indent(control, level);
 	i = BLR_BYTE;
 	if (*control->ctl_blr)
-		sprintf((SCHAR *) temp, "gds__dpb_version%d, ", i);
+		sprintf(temp, "gds__dpb_version%d, ", i);
 	else
-		sprintf((SCHAR *) temp, "gds__dpb_version%d", i);
+		sprintf(temp, "gds__dpb_version%d", i);
 	blr_format(control, temp);
 	PRINT_LINE;
 
@@ -178,13 +172,14 @@ int PRETTY_print_cdb( SCHAR * blr,
 
 
 int PRETTY_print_dyn(
-					 SCHAR * blr,
+					 UCHAR *blr,
 //____________________________________________________________
 //  
 //		Pretty print dynamic DDL thru callback routine.
 //  
 
-					 int (*routine) (), SCHAR * user_arg, SSHORT language)
+					 FPTR_PRINT_CALLBACK routine, 
+					 void *user_arg, SSHORT language)
 {
 	ctl ctl_buffer;
 	ctl* control = &ctl_buffer;
@@ -194,11 +189,11 @@ int PRETTY_print_dyn(
 	offset = level = 0;
 
 	if (!routine) {
-		routine = (int (*)()) ib_printf;
-		user_arg = "%.4d %s\n";
+		routine = gds__default_printer;
+		user_arg = NULL;
 	}
 
-	control->ctl_routine = reinterpret_cast < pfn_ctl_routine > (routine);
+	control->ctl_routine = routine;
 	control->ctl_user_arg = user_arg;
 	control->ctl_blr = control->ctl_blr_start = blr;
 	control->ctl_ptr = control->ctl_buffer;
@@ -216,40 +211,26 @@ int PRETTY_print_dyn(
 	level++;
 	PRINT_DYN_VERB;
 
-	if (BLR_BYTE != (SCHAR) gds_dyn_eoc)
+	if (BLR_BYTE != gds_dyn_eoc)
 		return error(control, offset,
 					 "*** expected dyn end-of-command  ***\n", 0);
 
-	blr_format(control, "gds__dyn_eoc");
+	blr_format(control, "gds_dyn_eoc");
 	PRINT_LINE;
 
 	return 0;
 }
 
 
-int PRETTY_print_mblr(
-					  SCHAR * blr,
-//____________________________________________________________
-//  
-//		Pretend we're printing MBLR, but print dynamic
-//		DDL instead.
-//  
-
-					  int (*routine) (), SCHAR * user_arg, SSHORT language)
-{
-
-	return PRETTY_print_dyn(blr, routine, user_arg, language);
-}
-
-
 int
-PRETTY_print_sdl(SCHAR * blr,
+PRETTY_print_sdl(UCHAR * blr,
 //____________________________________________________________
 //  
 //		Pretty print slice description language.
 //  
 
-				 int (*routine) (), SCHAR * user_arg, SSHORT language)
+				 FPTR_PRINT_CALLBACK routine,
+				 void *user_arg, SSHORT language)
 {
 	ctl ctl_buffer;
 	ctl* control = &ctl_buffer;
@@ -259,11 +240,11 @@ PRETTY_print_sdl(SCHAR * blr,
 	offset = level = 0;
 
 	if (!routine) {
-		routine = (int (*)()) ib_printf;
-		user_arg = "%.4d %s\n";
+		routine = gds__default_printer;
+		user_arg = NULL;
 	}
 
-	control->ctl_routine = reinterpret_cast < pfn_ctl_routine > (routine);
+	control->ctl_routine = routine;
 	control->ctl_user_arg = user_arg;
 	control->ctl_blr = control->ctl_blr_start = blr;
 	control->ctl_ptr = control->ctl_buffer;
@@ -280,7 +261,7 @@ PRETTY_print_sdl(SCHAR * blr,
 	PRINT_LINE;
 	level++;
 
-	while (NEXT_BYTE != (SCHAR) gds_sdl_eoc)
+	while (NEXT_BYTE != gds_sdl_eoc)
 		PRINT_SDL_VERB;
 
 	offset = control->ctl_blr - control->ctl_blr_start;
@@ -505,10 +486,11 @@ static int print_blr_dtype(CTL control,
 //		Print a line of pretty-printed BLR.
 //  
 
-static int print_blr_line( CTL control, USHORT offset, UCHAR * line)
+static void print_blr_line(void *arg, SSHORT offset, const char* line)
 {
+	CTL control = reinterpret_cast<CTL>(arg);
 	bool comma = false;
-	UCHAR c;
+	char c;
 
 	indent(control, control->ctl_level);
 
@@ -524,7 +506,6 @@ static int print_blr_line( CTL control, USHORT offset, UCHAR * line)
 		PUT_BYTE(',');
 
 	PRINT_LINE;
-	return 0;
 }
 
 
@@ -597,7 +578,12 @@ static int print_dyn_verb( CTL control, SSHORT level)
 	PUT_BYTE(' ');
 	++level;
 
+
 	switch (operator_) {
+	case isc_dyn_drop_difference:
+	case isc_dyn_begin_backup:
+	case isc_dyn_end_backup:
+		return 0;
 	case gds_dyn_begin:
 	case gds_dyn_mod_database:
 		PRINT_LINE;
@@ -618,7 +604,7 @@ static int print_dyn_verb( CTL control, SSHORT level)
 		if (length) {
 			control->ctl_level = level;
 			gds__print_blr((UCHAR *) control->ctl_blr,
-						   (FPTR_VOID) print_blr_line, (SCHAR *) control,
+						   print_blr_line, control,
 						   control->ctl_language);
 			control->ctl_blr += length;
 		}
@@ -740,6 +726,7 @@ static int print_dyn_verb( CTL control, SSHORT level)
 	case gds_dyn_grant:
 	case gds_dyn_revoke:
 	case gds_dyn_view_relation:
+	case isc_dyn_def_sql_role:
 		while (NEXT_BYTE != gds_dyn_end)
 			PRINT_DYN_VERB;
 		PRINT_DYN_VERB;
@@ -797,7 +784,7 @@ static int print_sdl_verb( CTL control, SSHORT level)
 {
 	int offset, n;
 	const char *p;
-	SCHAR operator_;
+	UCHAR operator_;
 
 	offset = control->ctl_blr - control->ctl_blr_start;
 	operator_ = BLR_BYTE;

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.27 2003-09-25 11:49:02 robocop Exp $
+//	$Id: ftn.cpp,v 1.28 2003-09-28 21:35:58 skidder Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -36,6 +36,7 @@
 #include "../jrd/common.h"
 #include <stdarg.h>
 #include "../jrd/gds.h"
+#include "../jrd/gds_proto.h"
 #include "../gpre/gpre.h"
 #include "../gpre/pat.h"
 #include "../gpre/cmp_proto.h"
@@ -70,7 +71,7 @@ static void	gen_blob_close (ACT);
 static void	gen_blob_end (ACT);
 static void	gen_blob_for (ACT);
 static void	gen_blob_open (ACT);
-static int	gen_blr (int *, int, TEXT *);
+static void	gen_blr (void *, SSHORT, const char *);
 static void	gen_clear_handles(ACT);
 #ifdef NOT_USED_OR_REPLACED
 static void	gen_compatibility_symbol( TEXT *, TEXT *, TEXT *);
@@ -1108,10 +1109,9 @@ static void gen_blob_open( ACT action)
 //		Callback routine for BLR pretty printer.
 //  
 
-static int gen_blr( int *user_arg, int offset, TEXT * string)
+static void gen_blr(void *user_arg, SSHORT offset, const char* string)
 {
 	int from, to, len, c_len;
-	TEXT c;
 
 	c_len = strlen(COMMENT);
 	len = strlen(string);
@@ -1120,17 +1120,15 @@ static int gen_blr( int *user_arg, int offset, TEXT * string)
 
 	while (from < len) {
 		if (to < len) {
-			c = string[to];
-			string[to] = 0;
-		}
-		ib_fprintf(out_file, "%s%s\n", COMMENT, &string[from]);
-		if (to < len)
-			string[to] = c;
+			char buffer[81];
+			strncpy(buffer, string+from, 80-c_len);
+			buffer[80-c_len] = 0;
+			ib_fprintf(out_file, "%s%s\n", COMMENT, buffer);
+		} else
+			ib_fprintf(out_file, "%s%s\n", COMMENT, string+from);
 		from = to;
 		to = to + 80 - c_len;
 	}
-
-	return TRUE;
 }
 
 
@@ -1825,8 +1823,8 @@ static void gen_dyn_execute( ACT action)
 
 	printa(COLUMN,
 		   (sqlda2) ?
-		   (SCHAR*) "CALL %s (isc_status, %s, %s, %s%d%s, %s, %s)" :
-		   (SCHAR*) "CALL %s (isc_status, %s, %s, %s%d%s, %s)",
+		   "CALL %s (isc_status, %s, %s, %s%d%s, %s, %s)" :
+		   "CALL %s (isc_status, %s, %s, %s%d%s, %s)",
 		   (sqlda2) ? ISC_EMBED_DSQL_EXECUTE2 : ISC_EMBED_DSQL_EXECUTE,
 		   transaction,
 		   make_name(s1, statement->dyn_statement_name),
@@ -1924,8 +1922,8 @@ static void gen_dyn_immediate( ACT action)
 
 	printa(COLUMN,
 		   (sqlda2) ?
-		   (SCHAR*) "CALL %s (isc_status, %s, %s, %sLEN(%s)%s, %s%s%s, %s%d%s, %s, %s)"
-		   : (SCHAR*) "CALL %s (isc_status, %s, %s, %sLEN(%s)%s, %s%s%s, %s%d%s, %s)",
+		   "CALL %s (isc_status, %s, %s, %sLEN(%s)%s, %s%s%s, %s%d%s, %s, %s)"
+		   : "CALL %s (isc_status, %s, %s, %sLEN(%s)%s, %s%s%s, %s%d%s, %s)",
 		   (sqlda2) ? ISC_EMBED_DSQL_EXECUTE_IMMEDIATE2 :
 		   ISC_EMBED_DSQL_EXECUTE_IMMEDIATE, transaction,
 		   database->dbb_name->sym_string, DSQL_I2CONST_1,
@@ -2021,8 +2019,8 @@ static void gen_dyn_open( ACT action)
 
 	printa(COLUMN,
 		   (sqlda2) ?
-		   (SCHAR*) "CALL %s (isc_status, %s, %s, %s%d%s, %s, %s)" :
-		   (SCHAR*) "CALL %s (isc_status, %s, %s, %s%d%s, %s)",
+		   "CALL %s (isc_status, %s, %s, %s%d%s, %s, %s)" :
+		   "CALL %s (isc_status, %s, %s, %s%d%s, %s)",
 		   (sqlda2) ? ISC_EMBED_DSQL_OPEN2 : ISC_EMBED_DSQL_OPEN,
 		   transaction,
 		   make_name(s1, statement->dyn_cursor_name),
@@ -2989,24 +2987,24 @@ static void gen_request_data( GPRE_REQ request)
 			case REQ_create_database:
 			case REQ_ready:
 				string_type = "DPB";
-				if (PRETTY_print_cdb((SCHAR*) request->req_blr, ( int(*)() ) gen_blr, 0, 0))
+				if (PRETTY_print_cdb(request->req_blr, gen_blr, 0, 0))
 					IBERROR("internal error during parameter generation");
 				break;
 
 			case REQ_ddl:
 				string_type = "DYN";
-				if (PRETTY_print_dyn((SCHAR*) request->req_blr, (int(*)()) gen_blr, 0, 0))
+				if (PRETTY_print_dyn(request->req_blr, gen_blr, 0, 0))
 					IBERROR("internal error during dynamic DDL generation");
 				break;
 			case REQ_slice:
 				string_type = "SDL";
-				if (PRETTY_print_sdl((SCHAR*)request->req_blr, (int(*)()) gen_blr, 0, 0))
+				if (PRETTY_print_sdl(request->req_blr, gen_blr, 0, 0))
 					IBERROR("internal error during SDL generation");
 				break;
 
 			default:
 				string_type = "BLR";
-				if (isc_print_blr((SCHAR*) request->req_blr, (void(*)()) gen_blr, 0, 0))
+				if (gds__print_blr(request->req_blr, gen_blr, 0, 0))
 					IBERROR("internal error during BLR generation");
 			}
 		}
@@ -3054,7 +3052,7 @@ static void gen_request_data( GPRE_REQ request)
 				}
 				if (!(sw_raw)) {
 					printa(COMMENT, " ");
-					if (PRETTY_print_sdl(reference->ref_sdl, (int(*)()) gen_blr, 0, 0))
+					if (PRETTY_print_sdl(reference->ref_sdl, gen_blr, 0, 0))
 						IBERROR("internal error during SDL generation");
 					printa(COMMENT, " ");
 					printa(COMMENT, "END OF SDL STRING FOR REQUEST isc_%d\n",

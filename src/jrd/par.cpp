@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.51 2003-09-15 08:24:08 dimitr Exp $
+$Id: par.cpp,v 1.52 2003-09-28 21:36:03 skidder Exp $
 */
 
 #include "firebird.h"
@@ -89,37 +89,37 @@ static const TEXT elements[][10] =
 
 static void error(CSB, ...);
 static SSHORT find_proc_field(JRD_PRC, TEXT *);
-static JRD_NOD par_args(TDBB, CSB *, USHORT);
-static JRD_NOD par_cast(TDBB, CSB *);
-static XCP par_condition(TDBB, CSB *);
-static XCP par_conditions(TDBB, CSB *);
-static SSHORT par_context(CSB *, SSHORT *);
-static void par_dependency(TDBB, CSB *, SSHORT, SSHORT, TEXT *);
-static JRD_NOD par_exec_proc(TDBB, CSB *, SSHORT);
-static JRD_NOD par_fetch(TDBB, CSB *, JRD_NOD);
-static JRD_NOD par_field(TDBB, CSB *, SSHORT);
-static JRD_NOD par_function(TDBB, CSB *);
-static JRD_NOD par_literal(TDBB, CSB *);
-static JRD_NOD par_map(TDBB, CSB *, USHORT);
-static JRD_NOD par_message(TDBB, CSB *);
-static JRD_NOD par_modify(TDBB, CSB *);
-static USHORT par_name(CSB *, TEXT *);
-static JRD_NOD par_plan(TDBB, CSB *);
-static JRD_NOD par_procedure(TDBB, CSB *, SSHORT);
-static void par_procedure_parms(TDBB, CSB *, JRD_PRC, JRD_NOD *, JRD_NOD *, USHORT);
-static JRD_NOD par_relation(TDBB, CSB *, SSHORT, BOOLEAN);
-static JRD_NOD par_rse(TDBB, CSB *, SSHORT);
-static JRD_NOD par_sort(TDBB, CSB *, BOOLEAN);
-static JRD_NOD par_stream(TDBB, CSB *);
-static JRD_NOD par_union(TDBB, CSB *);
-static USHORT par_word(CSB *);
-static JRD_NOD parse(TDBB, CSB *, USHORT, USHORT expected_optional = 0);
+static JRD_NOD par_args(TDBB, CSB, USHORT);
+static JRD_NOD par_cast(TDBB, CSB);
+static XCP par_condition(TDBB, CSB);
+static XCP par_conditions(TDBB, CSB);
+static SSHORT par_context(CSB, SSHORT *);
+static void par_dependency(TDBB, CSB, SSHORT, SSHORT, TEXT *);
+static JRD_NOD par_exec_proc(TDBB, CSB, SSHORT);
+static JRD_NOD par_fetch(TDBB, CSB, JRD_NOD);
+static JRD_NOD par_field(TDBB, CSB, SSHORT);
+static JRD_NOD par_function(TDBB, CSB);
+static JRD_NOD par_literal(TDBB, CSB);
+static JRD_NOD par_map(TDBB, CSB, USHORT);
+static JRD_NOD par_message(TDBB, CSB);
+static JRD_NOD par_modify(TDBB, CSB);
+static USHORT par_name(CSB, TEXT *);
+static JRD_NOD par_plan(TDBB, CSB);
+static JRD_NOD par_procedure(TDBB, CSB, SSHORT);
+static void par_procedure_parms(TDBB, CSB, JRD_PRC, JRD_NOD *, JRD_NOD *, USHORT);
+static JRD_NOD par_relation(TDBB, CSB, SSHORT, BOOLEAN);
+static JRD_NOD par_rse(TDBB, CSB, SSHORT);
+static JRD_NOD par_sort(TDBB, CSB, BOOLEAN);
+static JRD_NOD par_stream(TDBB, CSB);
+static JRD_NOD par_union(TDBB, CSB);
+static USHORT par_word(CSB);
+static JRD_NOD parse(TDBB, CSB, USHORT, USHORT expected_optional = 0);
 static void syntax_error(CSB, const TEXT *);
 static void warning(CSB, ...);
 
-#define BLR_PEEK	*((*csb)->csb_running)
-#define BLR_BYTE	*((*csb)->csb_running)++
-#define BLR_PUSH	((*csb)->csb_running)--
+#define BLR_PEEK	*(csb->csb_running)
+#define BLR_BYTE	*(csb->csb_running)++
+#define BLR_PUSH	(csb->csb_running)--
 #define BLR_WORD	par_word (csb)
 
 
@@ -150,12 +150,16 @@ JRD_NOD PAR_blr(TDBB	tdbb,
 
 	SET_TDBB(tdbb);
 
+#ifdef CMP_DEBUG
+	cmp_trace("BLR code given for JRD parsing:");
+	gds__print_blr(blr, gds__trace_printer, 0, 0);
+#endif
+
 	if (!(csb_ptr && (csb = *csb_ptr))) {
 		count = 5;
 		if (view_csb)
-			count += view_csb->csb_count;
+			count += view_csb->csb_rpt.getCapacity();
 		csb = Csb::newCsb(*tdbb->tdbb_default, count);
-		csb->csb_count = count;
 		csb->csb_g_flags |= flags;
 	}
 
@@ -164,32 +168,34 @@ JRD_NOD PAR_blr(TDBB	tdbb,
 
 	if (trigger) {
 		stream = csb->csb_n_stream++;
-		t1 = CMP_csb_element(&csb, 0);
+		t1 = CMP_csb_element(csb, 0);
 		t1->csb_flags |= csb_used | csb_active | csb_trigger;
 		t1->csb_relation = relation;
 		t1->csb_stream = (UCHAR) stream;
 
 		stream = csb->csb_n_stream++;
-		t1 = CMP_csb_element(&csb, 1);
+		t1 = CMP_csb_element(csb, 1);
 		t1->csb_flags |= csb_used | csb_active | csb_trigger;
 		t1->csb_relation = relation;
 		t1->csb_stream = (UCHAR) stream;
 	}
-	else {
-		++csb->csb_n_stream;
-		csb->csb_rpt[0].csb_relation = relation;
+	else if (relation) {
+		t1 = CMP_csb_element(csb, 0);
+		t1->csb_stream = csb->csb_n_stream++;
+		t1->csb_relation = relation;
+		t1->csb_flags = csb_used | csb_active;
 	}
 
 	csb->csb_running = csb->csb_blr = blr;
 
 	if (view_csb) {
 		Csb::rpt_itr ptr = view_csb->csb_rpt.begin();
-		// AB: csb_n_stream replaced by view_csb->csb_count, because there could
+		// AB: csb_n_stream replaced by view_csb->csb_rpt.getCount(), because there could
 		// be more then just csb_n_stream-numbers that hold data. 
 		// Certainly csb_stream (see par_context where the context is retrieved)
-		Csb::rpt_itr end = ptr + view_csb->csb_count;
+		Csb::rpt_itr end = view_csb->csb_rpt.end();
 		for (stream = 0; ptr != end; ++ptr, ++stream) {
-			t2 = CMP_csb_element(&csb, stream);
+			t2 = CMP_csb_element(csb, stream);
 			t2->csb_relation = ptr->csb_relation;
 			t2->csb_stream = ptr->csb_stream;
 		}
@@ -207,14 +213,14 @@ JRD_NOD PAR_blr(TDBB	tdbb,
 	if (version == blr_version4)
 		csb->csb_g_flags |= csb_blr_version4;
 
-	node = parse(tdbb, &csb, OTHER);
+	node = parse(tdbb, csb, OTHER);
 	csb->csb_node = node;
 
 	if (*csb->csb_running++ != (UCHAR) blr_eoc)
 		syntax_error(csb, "end_of_command");
 
 	if (request_ptr)
-		*request_ptr = CMP_make_request(tdbb, &csb);
+		*request_ptr = CMP_make_request(tdbb, csb);
 
 	if (csb_ptr)
 		*csb_ptr = csb;
@@ -225,7 +231,7 @@ JRD_NOD PAR_blr(TDBB	tdbb,
 }
 
 
-int PAR_desc(CSB * csb, DSC * desc)
+int PAR_desc(CSB csb, DSC * desc)
 {
 /**************************************
  *
@@ -350,7 +356,7 @@ int PAR_desc(CSB * csb, DSC * desc)
 			desc->dsc_length = sizeof(GDS__QUAD);
 			break;
 		}
-		error(*csb, gds_datnotsup, 0);
+		error(csb, gds_datnotsup, 0);
 	}
 
 	return type_alignments[desc->dsc_dtype];
@@ -533,8 +539,6 @@ CSB PAR_parse(TDBB tdbb, UCHAR* blr, USHORT internal_flag)
 	SET_TDBB(tdbb);
 
 	csb = Csb::newCsb(*tdbb->tdbb_default, 5);
-	csb->csb_count = 5;
-	csb->csb_rpt.resize(5);	// vec always allocates one too many
 	csb->csb_running = csb->csb_blr = blr;
 	version = *csb->csb_running++;
 	if (internal_flag)
@@ -552,7 +556,7 @@ CSB PAR_parse(TDBB tdbb, UCHAR* blr, USHORT internal_flag)
 		csb->csb_g_flags |= csb_blr_version4;
 	}
 
-	node = parse(tdbb, &csb, OTHER);
+	node = parse(tdbb, csb, OTHER);
 	csb->csb_node = node;
 
 	if (*csb->csb_running++ != (UCHAR) blr_eoc)
@@ -702,7 +706,7 @@ static SSHORT find_proc_field(JRD_PRC procedure, TEXT * name)
 }
 
 
-static JRD_NOD par_args(TDBB tdbb, CSB * csb, USHORT expected)
+static JRD_NOD par_args(TDBB tdbb, CSB csb, USHORT expected)
 {
 /**************************************
  *
@@ -734,7 +738,7 @@ static JRD_NOD par_args(TDBB tdbb, CSB * csb, USHORT expected)
 }
 
 
-static JRD_NOD par_cast(TDBB tdbb, CSB * csb)
+static JRD_NOD par_cast(TDBB tdbb, CSB csb)
 {
 /**************************************
  *
@@ -769,7 +773,7 @@ static JRD_NOD par_cast(TDBB tdbb, CSB * csb)
 }
 
 
-static XCP par_condition(TDBB tdbb, CSB * csb)
+static XCP par_condition(TDBB tdbb, CSB csb)
 {
 /**************************************
  *
@@ -818,7 +822,7 @@ static XCP par_condition(TDBB tdbb, CSB * csb)
 		if (code_number)
 			exception_list->xcp_rpt[0].xcp_code = code_number;
 		else
-			error(*csb, gds_codnotdef, gds_arg_string, ERR_cstring(name), 0);
+			error(csb, gds_codnotdef, gds_arg_string, ERR_cstring(name), 0);
 		break;
 
 	case blr_exception:
@@ -827,13 +831,13 @@ static XCP par_condition(TDBB tdbb, CSB * csb)
 		par_name(csb, name);
 		if (!(exception_list->xcp_rpt[0].xcp_code =
 			  MET_lookup_exception_number(tdbb, name)))
-			error(*csb, gds_xcpnotdef, gds_arg_string, ERR_cstring(name), 0);
+			error(csb, gds_xcpnotdef, gds_arg_string, ERR_cstring(name), 0);
 		dep_node = PAR_make_node(tdbb, e_dep_length);
 		dep_node->nod_type = nod_dependency;
 		dep_node->nod_arg[e_dep_object] =
 			(JRD_NOD) exception_list->xcp_rpt[0].xcp_code;
 		dep_node->nod_arg[e_dep_object_type] = (JRD_NOD) obj_exception;
-		LLS_PUSH(dep_node, &(*csb)->csb_dependencies);
+		LLS_PUSH(dep_node, &csb->csb_dependencies);
 		break;
 
 	default:
@@ -847,7 +851,7 @@ static XCP par_condition(TDBB tdbb, CSB * csb)
 }
 
 
-static XCP par_conditions(TDBB tdbb, CSB * csb)
+static XCP par_conditions(TDBB tdbb, CSB csb)
 {
 /**************************************
  *
@@ -889,7 +893,7 @@ static XCP par_conditions(TDBB tdbb, CSB * csb)
 			if (code_number)
 				exception_list->xcp_rpt[i].xcp_code = code_number;
 			else
-				error(*csb, gds_codnotdef,
+				error(csb, gds_codnotdef,
 					  gds_arg_string, ERR_cstring(name), 0);
 			break;
 
@@ -898,14 +902,14 @@ static XCP par_conditions(TDBB tdbb, CSB * csb)
 			par_name(csb, name);
 			if (!(exception_list->xcp_rpt[i].xcp_code =
 				  MET_lookup_exception_number(tdbb, name)))
-				error(*csb, gds_xcpnotdef,
+				error(csb, gds_xcpnotdef,
 					  gds_arg_string, ERR_cstring(name), 0);
 			dep_node = PAR_make_node(tdbb, e_dep_length);
 			dep_node->nod_type = nod_dependency;
 			dep_node->nod_arg[e_dep_object] =
 				(JRD_NOD) exception_list->xcp_rpt[0].xcp_code;
 			dep_node->nod_arg[e_dep_object_type] = (JRD_NOD) obj_exception;
-			LLS_PUSH(dep_node, &(*csb)->csb_dependencies);
+			LLS_PUSH(dep_node, &csb->csb_dependencies);
 			break;
 
 		case blr_default_code:
@@ -923,7 +927,7 @@ static XCP par_conditions(TDBB tdbb, CSB * csb)
 }
 
 
-static SSHORT par_context(CSB* csb, SSHORT* context_ptr)
+static SSHORT par_context(CSB csb, SSHORT* context_ptr)
 {
 /**************************************
  *
@@ -938,13 +942,13 @@ static SSHORT par_context(CSB* csb, SSHORT* context_ptr)
  *
  **************************************/
 
-	SSHORT stream = (*csb)->csb_n_stream++;
+	SSHORT stream = csb->csb_n_stream++;
 	if (stream > MAX_STREAMS) {
 		// TMN: Someone please review this to verify that
 		// gds_too_many_contexts is indeed the right error to report.
 		// "Too many streams" would probably be more correct, but we
 		/// don't have such an error (yet).
-		error(*csb, gds_too_many_contexts, 0);
+		error(csb, gds_too_many_contexts, 0);
 	}
 	assert(stream <= MAX_STREAMS);
 	SSHORT context = (unsigned int) BLR_BYTE;
@@ -952,7 +956,7 @@ static SSHORT par_context(CSB* csb, SSHORT* context_ptr)
 	csb_repeat* tail = CMP_csb_element(csb, context);
 
 	if (tail->csb_flags & csb_used)
-		error(*csb, gds_ctxinuse, 0);
+		error(csb, gds_ctxinuse, 0);
 
 	tail->csb_flags |= csb_used;
 	tail->csb_stream = (UCHAR) stream;
@@ -965,7 +969,7 @@ static SSHORT par_context(CSB* csb, SSHORT* context_ptr)
 
 
 static void par_dependency(TDBB   tdbb,
-						   CSB*   csb,
+						   CSB    csb,
 						   SSHORT stream,
 						   SSHORT id,
 						   TEXT*  field_name)
@@ -989,14 +993,14 @@ static void par_dependency(TDBB   tdbb,
 
 	node = PAR_make_node(tdbb, e_dep_length);
 	node->nod_type = nod_dependency;
-	if ((*csb)->csb_rpt[stream].csb_relation) {
+	if (csb->csb_rpt[stream].csb_relation) {
 		node->nod_arg[e_dep_object] =
-			(JRD_NOD) (*csb)->csb_rpt[stream].csb_relation;
+			(JRD_NOD) csb->csb_rpt[stream].csb_relation;
 		node->nod_arg[e_dep_object_type] = (JRD_NOD) obj_relation;
 	}
-	else if ((*csb)->csb_rpt[stream].csb_procedure) {
+	else if (csb->csb_rpt[stream].csb_procedure) {
 		node->nod_arg[e_dep_object] =
-			(JRD_NOD) (*csb)->csb_rpt[stream].csb_procedure;
+			(JRD_NOD) csb->csb_rpt[stream].csb_procedure;
 		node->nod_arg[e_dep_object_type] = (JRD_NOD) obj_procedure;
 	}
 
@@ -1015,11 +1019,11 @@ static void par_dependency(TDBB   tdbb,
 		field_node->nod_arg[0] = (JRD_NOD) (SLONG) id;
 	}
 
-	LLS_PUSH(node, &(*csb)->csb_dependencies);
+	LLS_PUSH(node, &csb->csb_dependencies);
 }
 
 
-static JRD_NOD par_exec_proc(TDBB tdbb, CSB * csb, SSHORT operator_)
+static JRD_NOD par_exec_proc(TDBB tdbb, CSB csb, SSHORT operator_)
 {
 /**************************************
  *
@@ -1051,7 +1055,7 @@ static JRD_NOD par_exec_proc(TDBB tdbb, CSB * csb, SSHORT operator_)
 			procedure = MET_lookup_procedure(tdbb, name, FALSE);
 		}
 		if (!procedure)
-			error(*csb, gds_prcnotdef, gds_arg_string, ERR_cstring(name), 0);
+			error(csb, gds_prcnotdef, gds_arg_string, ERR_cstring(name), 0);
 	}
 
 	node = PAR_make_node(tdbb, e_esp_length);
@@ -1069,13 +1073,13 @@ static JRD_NOD par_exec_proc(TDBB tdbb, CSB * csb, SSHORT operator_)
 	dep_node->nod_arg[e_dep_object] = (JRD_NOD) procedure;
 	dep_node->nod_arg[e_dep_object_type] = (JRD_NOD) obj_procedure;
 
-	LLS_PUSH(dep_node, &(*csb)->csb_dependencies);
+	LLS_PUSH(dep_node, &csb->csb_dependencies);
 
 	return node;
 }
 
 
-static JRD_NOD par_fetch(TDBB tdbb, CSB * csb, JRD_NOD for_node)
+static JRD_NOD par_fetch(TDBB tdbb, CSB csb, JRD_NOD for_node)
 {
 /**************************************
  *
@@ -1124,7 +1128,7 @@ static JRD_NOD par_fetch(TDBB tdbb, CSB * csb, JRD_NOD for_node)
 }
 
 
-static JRD_NOD par_field(TDBB tdbb, CSB * csb, SSHORT operator_)
+static JRD_NOD par_field(TDBB tdbb, CSB csb, SSHORT operator_)
 {
 /**************************************
  *
@@ -1149,13 +1153,15 @@ static JRD_NOD par_field(TDBB tdbb, CSB * csb, SSHORT operator_)
 
 	SET_TDBB(tdbb);
 
-
 	context = (unsigned int) BLR_BYTE;
 
-	if (context >= (*csb)->csb_count)
-		error(*csb, gds_ctxnotdef, 0);
+	if (context >= csb->csb_rpt.getCount() || 
+		!(csb->csb_rpt[context].csb_flags & csb_used) )
+	{
+		error(csb, gds_ctxnotdef, 0);
+	}
 
-	stream = (*csb)->csb_rpt[context].csb_stream;
+	stream = csb->csb_rpt[context].csb_stream;
 	flags = 0;
 
 	if (operator_ == blr_fid) {
@@ -1164,7 +1170,7 @@ static JRD_NOD par_field(TDBB tdbb, CSB * csb, SSHORT operator_)
 		is_column = TRUE;
 	}
 	else if (operator_ == blr_field) {
-		tail = &(*csb)->csb_rpt[stream];
+		tail = &csb->csb_rpt[stream];
 		procedure = tail->csb_procedure;
 
 		/* make sure procedure has been scanned before using it */
@@ -1180,14 +1186,14 @@ static JRD_NOD par_field(TDBB tdbb, CSB * csb, SSHORT operator_)
 		if (procedure) {
 			par_name(csb, name);
 			if ((id = find_proc_field(procedure, name)) == -1)
-				error(*csb,
+				error(csb,
 					  gds_fldnotdef,
 					  gds_arg_string, ERR_cstring(name),
 					  gds_arg_string, procedure->prc_name->str_data, 0);
 		}
 		else {
 			if (!(relation = tail->csb_relation))
-				error(*csb, gds_ctxnotdef, 0);
+				error(csb, gds_ctxnotdef, 0);
 
 			/* make sure relation has been scanned before using it */
 
@@ -1197,7 +1203,7 @@ static JRD_NOD par_field(TDBB tdbb, CSB * csb, SSHORT operator_)
 
 			par_name(csb, name);
 			if ((id = MET_lookup_field(tdbb, relation, name, 0)) < 0)
-				if ((*csb)->csb_g_flags & csb_validation) {
+				if (csb->csb_g_flags & csb_validation) {
 					id = 0;
 					flags |= nod_id;
 					is_column = TRUE;
@@ -1205,15 +1211,15 @@ static JRD_NOD par_field(TDBB tdbb, CSB * csb, SSHORT operator_)
 				else {
 					if (tdbb->
 						tdbb_attachment->att_flags & ATT_gbak_attachment)
-							warning(*csb, gds_fldnotdef, gds_arg_string,
+							warning(csb, gds_fldnotdef, gds_arg_string,
 									ERR_cstring(name), gds_arg_string,
 									relation->rel_name, 0);
 					else if (relation->rel_name)
-						error(*csb, gds_fldnotdef, gds_arg_string,
+						error(csb, gds_fldnotdef, gds_arg_string,
 							  ERR_cstring(name), gds_arg_string,
 							  relation->rel_name, 0);
 					else
-						error(*csb, gds_ctxnotdef, 0);
+						error(csb, gds_ctxnotdef, 0);
 				}
 		}
 	}
@@ -1222,7 +1228,7 @@ static JRD_NOD par_field(TDBB tdbb, CSB * csb, SSHORT operator_)
    use it because when restoring the database the field
    id's may not be valid yet */
 
-	if ((*csb)->csb_g_flags & csb_get_dependencies)
+	if (csb->csb_g_flags & csb_get_dependencies)
 		if (operator_ == blr_fid)
 			par_dependency(tdbb, csb, stream, id, 0);
 		else
@@ -1232,7 +1238,7 @@ static JRD_NOD par_field(TDBB tdbb, CSB * csb, SSHORT operator_)
 	node->nod_flags |= flags;
 
 	if (is_column == TRUE) {
-		if ( (temp_rel = (*csb)->csb_rpt[stream].csb_relation) ) {
+		if ( (temp_rel = csb->csb_rpt[stream].csb_relation) ) {
 			if ( (field = (JRD_FLD) (*temp_rel->rel_fields)[id]) ) {
 				if (field->fld_default_value && field->fld_not_null)
 					node->nod_arg[e_fld_default_value] =
@@ -1245,7 +1251,7 @@ static JRD_NOD par_field(TDBB tdbb, CSB * csb, SSHORT operator_)
 }
 
 
-static JRD_NOD par_function(TDBB tdbb, CSB * csb)
+static JRD_NOD par_function(TDBB tdbb, CSB csb)
 {
 /**************************************
  *
@@ -1279,8 +1285,8 @@ static JRD_NOD par_function(TDBB tdbb, CSB * csb)
 			return node;
 		}
 		else {
-			(*csb)->csb_running -= count;
-			error(*csb, gds_funnotdef, gds_arg_string, ERR_cstring(name), 0);
+			csb->csb_running -= count;
+			error(csb, gds_funnotdef, gds_arg_string, ERR_cstring(name), 0);
 		}
 	}
 
@@ -1290,13 +1296,13 @@ static JRD_NOD par_function(TDBB tdbb, CSB * csb)
 
 	if (!homonyms)
 		if (tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment)
-			warning(*csb, gds_funnotdef,
+			warning(csb, gds_funnotdef,
 					gds_arg_string, ERR_cstring(name),
 					gds_arg_interpreted,
 					"module name or entrypoint could not be found", 0);
 		else {
-			(*csb)->csb_running -= count;
-			error(*csb, gds_funnotdef,
+			csb->csb_running -= count;
+			error(csb, gds_funnotdef,
 				  gds_arg_string, ERR_cstring(name),
 				  gds_arg_interpreted,
 				  "module name or entrypoint could not be found", 0);
@@ -1308,19 +1314,19 @@ static JRD_NOD par_function(TDBB tdbb, CSB * csb)
 	node->nod_arg[e_fun_args] = par_args(tdbb, csb, VALUE);
 
     /* CVC: I will track ufds only if a proc is not being dropped. */
-    if ((*csb)->csb_g_flags & csb_get_dependencies) {
+    if (csb->csb_g_flags & csb_get_dependencies) {
         JRD_NOD dep_node = PAR_make_node (tdbb, e_dep_length);
         dep_node->nod_type = nod_dependency;
         dep_node->nod_arg [e_dep_object] = (JRD_NOD) function;
         dep_node->nod_arg [e_dep_object_type] = (JRD_NOD) obj_udf;
-        LLS_PUSH (dep_node, &(*csb)->csb_dependencies);
+        LLS_PUSH (dep_node, &csb->csb_dependencies);
     }
 
 	return node;
 }
 
 
-static JRD_NOD par_literal(TDBB tdbb, CSB * csb)
+static JRD_NOD par_literal(TDBB tdbb, CSB csb)
 {
 /**************************************
  *
@@ -1350,7 +1356,7 @@ static JRD_NOD par_literal(TDBB tdbb, CSB * csb)
 	literal->lit_desc = desc;
 	literal->lit_desc.dsc_address = p = literal->lit_data;
 	literal->lit_desc.dsc_flags = 0;
-	q = (*csb)->csb_running;
+	q = csb->csb_running;
 	l = desc.dsc_length;
 
 	switch (desc.dsc_dtype) {
@@ -1385,7 +1391,7 @@ static JRD_NOD par_literal(TDBB tdbb, CSB * csb)
 		   text string. Convert the numeric string to its binary
 		   value (int64, long or double as appropriate). */
 		l = BLR_WORD;
-		q = (*csb)->csb_running;
+		q = csb->csb_running;
 		dtype =
 			CVT_get_numeric(q, l, &scale, (double *) p, (FPTR_VOID) ERR_post);
 		literal->lit_desc.dsc_dtype = dtype;
@@ -1411,13 +1417,13 @@ static JRD_NOD par_literal(TDBB tdbb, CSB * csb)
 		break;
 	}
 
-	(*csb)->csb_running += l;
+	csb->csb_running += l;
 
 	return node;
 }
 
 
-static JRD_NOD par_map(TDBB tdbb, CSB * csb, USHORT stream)
+static JRD_NOD par_map(TDBB tdbb, CSB csb, USHORT stream)
 {
 /**************************************
  *
@@ -1437,7 +1443,7 @@ static JRD_NOD par_map(TDBB tdbb, CSB * csb, USHORT stream)
 
 
 	if (BLR_BYTE != blr_map)
-		syntax_error(*csb, "blr_map");
+		syntax_error(csb, "blr_map");
 
 	count = BLR_WORD;
 	map = NULL;
@@ -1459,7 +1465,7 @@ static JRD_NOD par_map(TDBB tdbb, CSB * csb, USHORT stream)
 }
 
 
-static JRD_NOD par_message(TDBB tdbb, CSB * csb)
+static JRD_NOD par_message(TDBB tdbb, CSB csb)
 {
 /**************************************
  *
@@ -1488,8 +1494,8 @@ static JRD_NOD par_message(TDBB tdbb, CSB * csb)
 	tail->csb_message = node = PAR_make_node(tdbb, e_msg_length);
 	node->nod_count = 0;
 	node->nod_arg[e_msg_number] = (JRD_NOD) (SLONG) n;
-	if (n > (*csb)->csb_msg_number)
-		(*csb)->csb_msg_number = n;
+	if (n > csb->csb_msg_number)
+		csb->csb_msg_number = n;
 
 /* Get the number of parameters in the message and prepare to fill
    out the format block */
@@ -1509,7 +1515,7 @@ static JRD_NOD par_message(TDBB tdbb, CSB * csb)
 	}
 
 	if (offset > MAX_FORMAT_SIZE)
-		error(*csb, gds_imp_exc, gds_arg_gds, gds_blktoobig, 0);
+		error(csb, gds_imp_exc, gds_arg_gds, gds_blktoobig, 0);
 
 	format->fmt_length = (USHORT) offset;
 
@@ -1517,7 +1523,7 @@ static JRD_NOD par_message(TDBB tdbb, CSB * csb)
 }
 
 
-static JRD_NOD par_modify(TDBB tdbb, CSB * csb)
+static JRD_NOD par_modify(TDBB tdbb, CSB csb)
 {
 /**************************************
  *
@@ -1538,10 +1544,13 @@ static JRD_NOD par_modify(TDBB tdbb, CSB * csb)
 /* Parse the original and new contexts */
 
 	context = (unsigned int) BLR_BYTE;
-	if (context >= (*csb)->csb_count)
-		error(*csb, gds_ctxnotdef, 0);
-	org_stream = (*csb)->csb_rpt[context].csb_stream;
-	new_stream = (*csb)->csb_n_stream++;
+	if (context >= csb->csb_rpt.getCount() || 
+		!(csb->csb_rpt[context].csb_flags & csb_used))
+	{
+		error(csb, gds_ctxnotdef, 0);
+	}
+	org_stream = csb->csb_rpt[context].csb_stream;
+	new_stream = csb->csb_n_stream++;
 	context = (unsigned int) BLR_BYTE;
 
 /* Make sure the compiler scratch block is big enough to hold
@@ -1549,9 +1558,10 @@ static JRD_NOD par_modify(TDBB tdbb, CSB * csb)
 
 	tail = CMP_csb_element(csb, context);
 	tail->csb_stream = (UCHAR) new_stream;
+	tail->csb_flags |= csb_used;
 
 	tail = CMP_csb_element(csb, new_stream);
-	tail->csb_relation = (*csb)->csb_rpt[org_stream].csb_relation;
+	tail->csb_relation = csb->csb_rpt[org_stream].csb_relation;
 
 /* Make the node and parse the sub-expression */
 
@@ -1565,7 +1575,7 @@ static JRD_NOD par_modify(TDBB tdbb, CSB * csb)
 }
 
 
-static USHORT par_name(CSB * csb, TEXT * string)
+static USHORT par_name(CSB csb, TEXT * string)
 {
 /**************************************
  *
@@ -1590,7 +1600,7 @@ static USHORT par_name(CSB * csb, TEXT * string)
 }
 
 
-static JRD_NOD par_plan(TDBB tdbb, CSB * csb)
+static JRD_NOD par_plan(TDBB tdbb, CSB csb)
 {
 /**************************************
  *
@@ -1642,7 +1652,7 @@ static JRD_NOD par_plan(TDBB tdbb, CSB * csb)
 		n = BLR_BYTE;
 		if (n != blr_relation && n != blr_relation2 &&
 			n != blr_rid && n != blr_rid2)
-				syntax_error(*csb, elements[RELATION]);
+				syntax_error(csb, elements[RELATION]);
 
 		/* don't have par_relation() parse the context, because
 		   this would add a new context; while this is a reference to 
@@ -1653,9 +1663,9 @@ static JRD_NOD par_plan(TDBB tdbb, CSB * csb)
 		relation = (JRD_REL) relation_node->nod_arg[e_rel_relation];
 
 		n = BLR_BYTE;
-		if (n >= (*csb)->csb_count)
-			error(*csb, gds_ctxnotdef, 0);
-		stream = (*csb)->csb_rpt[n].csb_stream;
+		if (n >= csb->csb_rpt.getCount() || !(csb->csb_rpt[n].csb_flags & csb_used))
+			error(csb, gds_ctxnotdef, 0);
+		stream = csb->csb_rpt[n].csb_stream;
 
 		relation_node->nod_arg[e_rel_stream] = (JRD_NOD) (SLONG) stream;
 		relation_node->nod_arg[e_rel_context] = (JRD_NOD) (SLONG) n;
@@ -1685,11 +1695,11 @@ static JRD_NOD par_plan(TDBB tdbb, CSB * csb)
 			if (idx_status == MET_object_unknown ||
 				idx_status == MET_object_inactive) {
 				if (tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment)
-					warning(*csb, gds_indexname, gds_arg_string,
+					warning(csb, gds_indexname, gds_arg_string,
 							ERR_cstring(name), gds_arg_string,
 							relation->rel_name, 0);
 				else
-					error(*csb, gds_indexname, gds_arg_string,
+					error(csb, gds_indexname, gds_arg_string,
 						  ERR_cstring(name), gds_arg_string,
 						  relation->rel_name, 0);
 			}
@@ -1738,11 +1748,11 @@ static JRD_NOD par_plan(TDBB tdbb, CSB * csb)
 				if (idx_status == MET_object_unknown ||
 					idx_status == MET_object_inactive) {
 					if (tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment)
-						warning(*csb, gds_indexname, gds_arg_string,
+						warning(csb, gds_indexname, gds_arg_string,
 								ERR_cstring(name), gds_arg_string,
 								relation->rel_name, 0);
 					else
-						error(*csb, gds_indexname, gds_arg_string,
+						error(csb, gds_indexname, gds_arg_string,
 							  ERR_cstring(name), gds_arg_string,
 							  relation->rel_name, 0);
 				}
@@ -1760,18 +1770,18 @@ static JRD_NOD par_plan(TDBB tdbb, CSB * csb)
 		case blr_sequential:
 			break;
 		default:
-			syntax_error(*csb, "access type");
+			syntax_error(csb, "access type");
 		}
 
 		return plan;
 	}
 
-	syntax_error(*csb, "plan item");
+	syntax_error(csb, "plan item");
 	return NULL;			/* Added to remove compiler warning */
 }
 
 
-static JRD_NOD par_procedure(TDBB tdbb, CSB * csb, SSHORT operator_)
+static JRD_NOD par_procedure(TDBB tdbb, CSB csb, SSHORT operator_)
 {
 /**************************************
  *
@@ -1803,7 +1813,7 @@ static JRD_NOD par_procedure(TDBB tdbb, CSB * csb, SSHORT operator_)
 				sprintf(name, "id %d", pid);
 		}
 		if (!procedure)
-			error(*csb, gds_prcnotdef, gds_arg_string, ERR_cstring(name), 0);
+			error(csb, gds_prcnotdef, gds_arg_string, ERR_cstring(name), 0);
 	}
 
 	node = PAR_make_node(tdbb, e_prc_length);
@@ -1813,12 +1823,12 @@ static JRD_NOD par_procedure(TDBB tdbb, CSB * csb, SSHORT operator_)
 
 	stream = par_context(csb, 0);
 	node->nod_arg[e_prc_stream] = (JRD_NOD) (SLONG) stream;
-	(*csb)->csb_rpt[stream].csb_procedure = procedure;
+	csb->csb_rpt[stream].csb_procedure = procedure;
 
 	par_procedure_parms(tdbb, csb, procedure, &node->nod_arg[e_prc_in_msg],
 						&node->nod_arg[e_prc_inputs], TRUE);
 
-	if ((*csb)->csb_g_flags & csb_get_dependencies)
+	if (csb->csb_g_flags & csb_get_dependencies)
 		par_dependency(tdbb, csb, stream, (SSHORT) - 1, 0);
 
 	return node;
@@ -1827,7 +1837,7 @@ static JRD_NOD par_procedure(TDBB tdbb, CSB * csb, SSHORT operator_)
 
 static void par_procedure_parms(
 								TDBB tdbb,
-								CSB * csb,
+								CSB csb,
 								JRD_PRC procedure,
 								JRD_NOD * message_ptr,
 								JRD_NOD * parameter_ptr, USHORT input_flag)
@@ -1857,7 +1867,7 @@ static void par_procedure_parms(
 		(input_flag ? procedure->prc_inputs : procedure->prc_outputs)) {
 	/** They don't match...Hmmm...Its OK if we were dropping the procedure **/
 		if (!(tdbb->tdbb_flags & TDBB_prc_being_dropped))
-			error(*csb,
+			error(csb,
 				  gds_prcmismat,
 				  gds_arg_string,
 				  ERR_cstring(reinterpret_cast <
@@ -1868,8 +1878,8 @@ static void par_procedure_parms(
 
 	if (count) {
 	/** We have a few parameters. Get on with creating the message block **/
-		if ((n = ++(*csb)->csb_msg_number) < 2)
-			(*csb)->csb_msg_number = n = 2;
+		if ((n = ++csb->csb_msg_number) < 2)
+			csb->csb_msg_number = n = 2;
 		tail = CMP_csb_element(csb, n);
 		tail->csb_message = message = PAR_make_node(tdbb, e_msg_length);
 		message->nod_type = nod_message;
@@ -1941,17 +1951,16 @@ static void par_procedure_parms(
 	}
 	else if ((input_flag ? procedure->prc_inputs : procedure->prc_outputs) &&
 			 !mismatch)
-			error(*csb,
+			error(csb,
 				  gds_prcmismat,
 				  gds_arg_string,
-				  ERR_cstring(reinterpret_cast <
-							  char *>(procedure->prc_name->str_data)), 0);
+				  ERR_cstring(reinterpret_cast<char*>(procedure->prc_name->str_data)), 0);
 }
 
 
 static JRD_NOD par_relation(
 						TDBB tdbb,
-						CSB * csb, SSHORT operator_, BOOLEAN parse_context)
+						CSB csb, SSHORT operator_, BOOLEAN parse_context)
 {
 /**************************************
  *
@@ -1988,7 +1997,7 @@ static JRD_NOD par_relation(
 		}
 		if (!(relation = MET_lookup_relation_id(tdbb, id, FALSE))) {
 			sprintf(name, "id %d", id);
-			error(*csb, gds_relnotdef, gds_arg_string, ERR_cstring(name), 0);
+			error(csb, gds_relnotdef, gds_arg_string, ERR_cstring(name), 0);
 		}
 	}
 	else if (operator_ == blr_relation || operator_ == blr_relation2) {
@@ -2000,7 +2009,7 @@ static JRD_NOD par_relation(
 			par_name(csb, reinterpret_cast < char *>(alias_string->str_data));
 		}
 		if (!(relation = MET_lookup_relation(tdbb, name)))
-			error(*csb, gds_relnotdef, gds_arg_string, ERR_cstring(name), 0);
+			error(csb, gds_relnotdef, gds_arg_string, ERR_cstring(name), 0);
 	}
 
 /* if an alias was passed, store with the relation */
@@ -2013,7 +2022,7 @@ static JRD_NOD par_relation(
 	if ((!(relation->rel_flags & REL_scanned)
 		 || (relation->rel_flags & REL_being_scanned))
 		&& ((relation->rel_flags & REL_force_scan)
-			|| !((*csb)->csb_g_flags & csb_internal))) {
+			|| !(csb->csb_g_flags & csb_internal))) {
 		relation->rel_flags &= ~REL_force_scan;
 		MET_scan_relation(tdbb, relation);
 	}
@@ -2031,10 +2040,10 @@ static JRD_NOD par_relation(
 		node->nod_arg[e_rel_stream] = (JRD_NOD) (SLONG) stream;
 		node->nod_arg[e_rel_context] = (JRD_NOD) (SLONG) context;
 
-		(*csb)->csb_rpt[stream].csb_relation = relation;
-		(*csb)->csb_rpt[stream].csb_alias = alias_string;
+		csb->csb_rpt[stream].csb_relation = relation;
+		csb->csb_rpt[stream].csb_alias = alias_string;
 
-		if ((*csb)->csb_g_flags & csb_get_dependencies)
+		if (csb->csb_g_flags & csb_get_dependencies)
 			par_dependency(tdbb, csb, stream, (SSHORT) - 1, 0);
 	}
 
@@ -2044,7 +2053,7 @@ static JRD_NOD par_relation(
 }
 
 
-static JRD_NOD par_rse(TDBB tdbb, CSB * csb, SSHORT rse_op)
+static JRD_NOD par_rse(TDBB tdbb, CSB csb, SSHORT rse_op)
 {
 /**************************************
  *
@@ -2084,25 +2093,25 @@ static JRD_NOD par_rse(TDBB tdbb, CSB * csb, SSHORT rse_op)
 
 		case blr_first:
 			if (rse_op == blr_rs_stream)
-				syntax_error(*csb, "rse stream clause");
+				syntax_error(csb, "rse stream clause");
 			rse->rse_first = parse(tdbb, csb, VALUE);
 			break;
 
         case blr_skip:
             if (rse_op == blr_rs_stream)
-                syntax_error (*csb, "rse stream clause");
+                syntax_error (csb, "rse stream clause");
             rse->rse_skip = parse (tdbb, csb, VALUE);
             break;
 
 		case blr_sort:
 			if (rse_op == blr_rs_stream)
-				syntax_error(*csb, "rse stream clause");
+				syntax_error(csb, "rse stream clause");
 			rse->rse_sorted = par_sort(tdbb, csb, TRUE);
 			break;
 
 		case blr_project:
 			if (rse_op == blr_rs_stream)
-				syntax_error(*csb, "rse stream clause");
+				syntax_error(csb, "rse stream clause");
 			rse->rse_projection = par_sort(tdbb, csb, FALSE);
 			break;
 
@@ -2110,7 +2119,7 @@ static JRD_NOD par_rse(TDBB tdbb, CSB * csb, SSHORT rse_op)
 			if ((rse->rse_jointype = jointype = (USHORT) BLR_BYTE) !=
 				blr_inner && jointype != blr_left && jointype != blr_right
 				&& jointype != blr_full)
-				syntax_error(*csb, "join type clause");
+				syntax_error(csb, "join type clause");
 			break;
 
 		case blr_plan:
@@ -2141,16 +2150,28 @@ static JRD_NOD par_rse(TDBB tdbb, CSB * csb, SSHORT rse_op)
 
 				if (!rse->rse_jointype ||
 					(rse->rse_count == 2 && rse->rse_boolean))
+				{
+						// Convert right outer joins to left joins to avoid
+						// RIGHT JOIN handling at lower engine levels
+						if (rse->rse_jointype == blr_right) {
+							// Swap sub-streams
+							JRD_NOD temp = rse->rse_relation[0];
+							rse->rse_relation[0] = rse->rse_relation[1];
+							rse->rse_relation[1] = temp;
+
+							rse->rse_jointype = blr_left;
+						}
 						return (JRD_NOD) rse;
+				}
 			}
-			syntax_error(*csb, (TEXT*)((rse_op == blr_rs_stream) ?
+			syntax_error(csb, (TEXT*)((rse_op == blr_rs_stream) ?
 						 "rse stream clause" :
 						 "record selection expression clause"));
 		}
 }
 
 
-static JRD_NOD par_sort(TDBB tdbb, CSB * csb, BOOLEAN flag)
+static JRD_NOD par_sort(TDBB tdbb, CSB csb, BOOLEAN flag)
 {
 /**************************************
  *
@@ -2195,7 +2216,7 @@ static JRD_NOD par_sort(TDBB tdbb, CSB * csb, BOOLEAN flag)
 }
 
 
-static JRD_NOD par_stream(TDBB tdbb, CSB * csb)
+static JRD_NOD par_stream(TDBB tdbb, CSB csb)
 {
 /**************************************
  *
@@ -2226,12 +2247,12 @@ static JRD_NOD par_stream(TDBB tdbb, CSB * csb)
 		default:
 			if (op == (UCHAR) blr_end)
 				return (JRD_NOD) rse;
-			syntax_error(*csb, "stream_clause");
+			syntax_error(csb, "stream_clause");
 		}
 }
 
 
-static JRD_NOD par_union(TDBB tdbb, CSB * csb)
+static JRD_NOD par_union(TDBB tdbb, CSB csb)
 {
 /**************************************
  *
@@ -2274,7 +2295,7 @@ static JRD_NOD par_union(TDBB tdbb, CSB * csb)
 }
 
 
-static USHORT par_word(CSB * csb)
+static USHORT par_word(CSB csb)
 {
 /**************************************
  *
@@ -2295,7 +2316,7 @@ static USHORT par_word(CSB * csb)
 }
 
 
-static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected, USHORT expected_optional)
+static JRD_NOD parse(TDBB tdbb, CSB csb, USHORT expected, USHORT expected_optional)
 {
 /**************************************
  *
@@ -2317,7 +2338,7 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected, USHORT expected_opti
 	operator_ = BLR_BYTE;
 
 	if (operator_ < 0 || operator_ >= FB_NELEM(type_table)) {
-        syntax_error(*csb, "invalid BLR code");
+        syntax_error(csb, "invalid BLR code");
     }
 
 	sub_type = sub_type_table[operator_];
@@ -2325,11 +2346,11 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected, USHORT expected_opti
 	if (expected && (expected != type_table[operator_])) {
 		if (expected_optional) {
 			if (expected_optional != type_table[operator_]) {
-				syntax_error(*csb, elements[expected]);
+				syntax_error(csb, elements[expected]);
 			}
 		}
 		else {
-			syntax_error(*csb, elements[expected]);
+			syntax_error(csb, elements[expected]);
 		}
 	}
 
@@ -2473,10 +2494,10 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected, USHORT expected_opti
 
 	case blr_erase:
 		n = BLR_BYTE;
-		if (n >= (*csb)->csb_count)
-			error(*csb, gds_ctxnotdef, 0);
+		if (n >= csb->csb_rpt.getCount() || !(csb->csb_rpt[n].csb_flags & csb_used))
+			error(csb, gds_ctxnotdef, 0);
 		node->nod_arg[e_erase_stream] =
-			(JRD_NOD) (SLONG) (*csb)->csb_rpt[n].csb_stream;
+			(JRD_NOD) (SLONG) csb->csb_rpt[n].csb_stream;
 		break;
 	
 	case blr_modify:
@@ -2563,7 +2584,7 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected, USHORT expected_opti
 			par_name(csb, name);
 			tmp = MET_lookup_generator(tdbb, name);
 			if (tmp < 0)
-				error(*csb, gds_gennotdef,
+				error(csb, gds_gennotdef,
 					  gds_arg_string, ERR_cstring(name), 0);
 			node->nod_arg[e_gen_relation] = (JRD_NOD) tmp;
 			node->nod_arg[e_gen_value] = parse(tdbb, csb, VALUE);
@@ -2572,12 +2593,12 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected, USHORT expected_opti
                in posting dependencies with set generator since it's DDL, so I will
                track only gen_id() in both dialects. */
             if ((operator_ == blr_gen_id)
-                && ((*csb)->csb_g_flags & csb_get_dependencies)) {
+                && (csb->csb_g_flags & csb_get_dependencies)) {
                 JRD_NOD dep_node = PAR_make_node (tdbb, e_dep_length);
                 dep_node->nod_type = nod_dependency;
                 dep_node->nod_arg [e_dep_object] = (JRD_NOD) tmp;
                 dep_node->nod_arg [e_dep_object_type] = (JRD_NOD) obj_generator;
-                LLS_PUSH (dep_node, &(*csb)->csb_dependencies);
+                LLS_PUSH (dep_node, &csb->csb_dependencies);
             }
 
 		}
@@ -2586,9 +2607,9 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected, USHORT expected_opti
 	case blr_record_version:
 	case blr_dbkey:
 		n = BLR_BYTE;
-		if (n >= (*csb)->csb_count)
-			error(*csb, gds_ctxnotdef, 0);
-		node->nod_arg[0] = (JRD_NOD) (SLONG) (*csb)->csb_rpt[n].csb_stream;
+		if (n >= csb->csb_rpt.getCount() || !(csb->csb_rpt[n].csb_flags & csb_used))
+			error(csb, gds_ctxnotdef, 0);
+		node->nod_arg[0] = (JRD_NOD) (SLONG) csb->csb_rpt[n].csb_stream;
 		break;
 
 	case blr_fetch:
@@ -2598,7 +2619,7 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected, USHORT expected_opti
 	case blr_send:
 	case blr_receive:
 		n = BLR_BYTE;
-		node->nod_arg[e_send_message] = (*csb)->csb_rpt[n].csb_message;
+		node->nod_arg[e_send_message] = csb->csb_rpt[n].csb_message;
 		node->nod_arg[e_send_statement] = parse(tdbb, csb, sub_type);
 		break;
 
@@ -2625,8 +2646,8 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected, USHORT expected_opti
 			n = BLR_WORD;
 			node->nod_arg[e_dcl_id] = (JRD_NOD) (SLONG) n;
 			PAR_desc(csb, (DSC *) (node->nod_arg + e_dcl_desc));
-			VEC vector = (*csb)->csb_variables = 
-				vec::newVector(*tdbb->tdbb_default, (*csb)->csb_variables, n + 1);
+			VEC vector = csb->csb_variables = 
+				vec::newVector(*tdbb->tdbb_default, csb->csb_variables, n + 1);
 			(*vector)[n] = (BLK) node;
 		}
 		break;
@@ -2637,11 +2658,13 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected, USHORT expected_opti
 
 			n = BLR_WORD;
 			node->nod_arg[e_var_id] = (JRD_NOD) (SLONG) n;
-			if (!(vector = (*csb)->csb_variables) ||
+			if (!(vector = csb->csb_variables) ||
 				n >= vector->count() ||
 				!(node->nod_arg[e_var_variable] =
-				  (JRD_NOD) (*vector)[n])) syntax_error(*csb,
-															 "variable identifier");
+				  (JRD_NOD) (*vector)[n])) 
+			{
+				syntax_error(csb, "variable identifier");
+			}
 		}
 		break;
 
@@ -2653,15 +2676,15 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected, USHORT expected_opti
 			FMT format;
 
 			n = (USHORT) BLR_BYTE;
-			if (n >= (*csb)->csb_count ||
-				!(message = (*csb)->csb_rpt[n].csb_message))
-					error(*csb, gds_badmsgnum, 0);
+			if (n >= csb->csb_rpt.getCount() ||
+				!(message = csb->csb_rpt[n].csb_message))
+					error(csb, gds_badmsgnum, 0);
 			node->nod_arg[e_arg_message] = message;
 			n = BLR_WORD;
 			node->nod_arg[e_arg_number] = (JRD_NOD) (SLONG) n;
 			format = (FMT) message->nod_arg[e_msg_format];
 			if (n >= format->fmt_count)
-				error(*csb, gds_badparnum, 0);
+				error(csb, gds_badparnum, 0);
 			if (operator_ != blr_parameter) {
 				node->nod_arg[e_arg_flag] = temp =
 					PAR_make_node(tdbb, e_arg_length);
@@ -2672,7 +2695,7 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected, USHORT expected_opti
 				n = BLR_WORD;
 				temp->nod_arg[e_arg_number] = (JRD_NOD) (SLONG) n;
 				if (n >= format->fmt_count)
-					error(*csb, gds_badparnum, 0);
+					error(csb, gds_badparnum, 0);
 			}
 			if (operator_ == blr_parameter3) {
 				node->nod_arg[e_arg_indicator] = temp =
@@ -2684,7 +2707,7 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected, USHORT expected_opti
 				n = BLR_WORD;
 				temp->nod_arg[e_arg_number] = (JRD_NOD) (SLONG) n;
 				if (n >= format->fmt_count)
-					error(*csb, gds_badparnum, 0);
+					error(csb, gds_badparnum, 0);
 			}
 		}
 		break;
@@ -2699,7 +2722,7 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected, USHORT expected_opti
 
 			while (BLR_PEEK != (UCHAR) blr_end) {
 				if (operator_ == blr_select && BLR_PEEK != blr_receive)
-					syntax_error(*csb, "blr_receive");
+					syntax_error(csb, "blr_receive");
 				LLS_PUSH(parse(tdbb, csb, sub_type), &stack);
 			}
 			BLR_BYTE;
@@ -2780,7 +2803,7 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected, USHORT expected_opti
 
 	case blr_stream:
 #ifdef PROD_BUILD
-		error(*csb, isc_cse_not_supported, 0);
+		error(csb, isc_cse_not_supported, 0);
 #endif
 		node = par_stream(tdbb, csb);
 		break;
@@ -2788,19 +2811,19 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected, USHORT expected_opti
 #ifdef PC_ENGINE
 	case blr_set_index:
 		n = BLR_BYTE;
-		if (n >= (*csb)->csb_count)
-			error(*csb, gds_ctxnotdef, 0);
+		if (n >= csb->csb_rpt.getCount() || !(csb->csb_rpt[n].csb_flags & csb_used))
+			error(csb, gds_ctxnotdef, 0);
 		node->nod_arg[e_index_stream] =
-			(JRD_NOD) (SLONG) (*csb)->csb_rpt[n].csb_stream;
+			(JRD_NOD) (SLONG) csb->csb_rpt[n].csb_stream;
 		node->nod_arg[e_index_index] = parse(tdbb, csb, VALUE);
 		break;
 
 	case blr_find:
 		n = BLR_BYTE;
-		if (n >= (*csb)->csb_count)
-			error(*csb, gds_ctxnotdef, 0);
+		if (n >= csb->csb_rpt.getCount() || !(csb->csb_rpt[n].csb_flags & csb_used))
+			error(csb, gds_ctxnotdef, 0);
 		node->nod_arg[e_find_stream] =
-			(JRD_NOD) (SLONG) (*csb)->csb_rpt[n].csb_stream;
+			(JRD_NOD) (SLONG) csb->csb_rpt[n].csb_stream;
 		node->nod_arg[e_find_operator] = parse(tdbb, csb, VALUE);
 		node->nod_arg[e_find_direction] = parse(tdbb, csb, VALUE);
 		node->nod_arg[e_find_args] = par_args(tdbb, csb, VALUE);
@@ -2809,10 +2832,10 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected, USHORT expected_opti
 	case blr_find_dbkey:
 	case blr_find_dbkey_version:
 		n = BLR_BYTE;
-		if (n >= (*csb)->csb_count)
-			error(*csb, gds_ctxnotdef, 0);
+		if (n >= csb->csb_rpt.getCount() || !(csb->csb_rpt[n].csb_flags & csb_used))
+			error(csb, gds_ctxnotdef, 0);
 		node->nod_arg[e_find_dbkey_stream] =
-			(JRD_NOD) (SLONG) (*csb)->csb_rpt[n].csb_stream;
+			(JRD_NOD) (SLONG) csb->csb_rpt[n].csb_stream;
 		node->nod_arg[e_find_dbkey_dbkey] = parse(tdbb, csb, VALUE);
 
 		if (operator_ == blr_find_dbkey_version)
@@ -2821,18 +2844,18 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected, USHORT expected_opti
 
 	case blr_get_bookmark:
 		n = BLR_BYTE;
-		if (n >= (*csb)->csb_count)
-			error(*csb, gds_ctxnotdef, 0);
+		if (n >= csb->csb_rpt.getCount() || !(csb->csb_rpt[n].csb_flags & csb_used))
+			error(csb, gds_ctxnotdef, 0);
 		node->nod_arg[e_getmark_stream] =
-			(JRD_NOD) (SLONG) (*csb)->csb_rpt[n].csb_stream;
+			(JRD_NOD) (SLONG) csb->csb_rpt[n].csb_stream;
 		break;
 
 	case blr_set_bookmark:
 		n = BLR_BYTE;
-		if (n >= (*csb)->csb_count)
-			error(*csb, gds_ctxnotdef, 0);
+		if (n >= csb->csb_rpt.getCount() || !(csb->csb_rpt[n].csb_flags & csb_used))
+			error(csb, gds_ctxnotdef, 0);
 		node->nod_arg[e_setmark_stream] =
-			(JRD_NOD) (SLONG) (*csb)->csb_rpt[n].csb_stream;
+			(JRD_NOD) (SLONG) csb->csb_rpt[n].csb_stream;
 		node->nod_arg[e_setmark_id] = parse(tdbb, csb, VALUE);
 		break;
 
@@ -2847,23 +2870,23 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected, USHORT expected_opti
 	case blr_force_crack:
 	case blr_crack:
 		n = BLR_BYTE;
-		if (n >= (*csb)->csb_count)
-			error(*csb, gds_ctxnotdef, 0);
-		node->nod_arg[0] = (JRD_NOD) (SLONG) (*csb)->csb_rpt[n].csb_stream;
+		if (n >= csb->csb_rpt.getCount() || !(csb->csb_rpt[n].csb_flags & csb_used))
+			error(csb, gds_ctxnotdef, 0);
+		node->nod_arg[0] = (JRD_NOD) (SLONG) csb->csb_rpt[n].csb_stream;
 		break;
 
 	case blr_reset_stream:
 		n = BLR_BYTE;
-		if (n >= (*csb)->csb_count)
-			error(*csb, gds_ctxnotdef, 0);
+		if (n >= csb->csb_rpt.getCount() || !(csb->csb_rpt[n].csb_flags & csb_used))
+			error(csb, gds_ctxnotdef, 0);
 		node->nod_arg[e_reset_from_stream] =
-			(JRD_NOD) (SLONG) (*csb)->csb_rpt[n].csb_stream;
+			(JRD_NOD) (SLONG) csb->csb_rpt[n].csb_stream;
 
 		n = BLR_BYTE;
-		if (n >= (*csb)->csb_count)
-			error(*csb, gds_ctxnotdef, 0);
+		if (n >= csb->csb_rpt.getCount() || !(csb->csb_rpt[n].csb_flags & csb_used))
+			error(csb, gds_ctxnotdef, 0);
 		node->nod_arg[e_reset_to_stream] =
-			(JRD_NOD) (SLONG) (*csb)->csb_rpt[n].csb_stream;
+			(JRD_NOD) (SLONG) csb->csb_rpt[n].csb_stream;
 		break;
 
 	case blr_release_lock:
@@ -2874,17 +2897,17 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected, USHORT expected_opti
 		n = BLR_BYTE;
 		if (n != blr_relation && n != blr_relation2 &&
 			n != blr_rid && n != blr_rid2)
-				syntax_error(*csb, elements[RELATION]);
+				syntax_error(csb, elements[RELATION]);
 		node->nod_arg[e_lockrel_relation] = par_relation(tdbb, csb, n, FALSE);
 		node->nod_arg[e_lockrel_level] = parse(tdbb, csb, VALUE);
 		break;
 
 	case blr_lock_record:
 		n = BLR_BYTE;
-		if (n >= (*csb)->csb_count)
-			error(*csb, gds_ctxnotdef, 0);
+		if (n >= csb->csb_rpt.getCount() || !(csb->csb_rpt[n].csb_flags & csb_used))
+			error(csb, gds_ctxnotdef, 0);
 		node->nod_arg[e_lockrec_stream] =
-			(JRD_NOD) (SLONG) (*csb)->csb_rpt[n].csb_stream;
+			(JRD_NOD) (SLONG) csb->csb_rpt[n].csb_stream;
 		node->nod_arg[e_lockrec_level] = parse(tdbb, csb, VALUE);
 		break;
 
@@ -2905,7 +2928,7 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected, USHORT expected_opti
 		n = BLR_BYTE;
 		if (n != blr_relation && n != blr_relation2 &&
 			n != blr_rid && n != blr_rid2)
-				syntax_error(*csb, elements[RELATION]);
+				syntax_error(csb, elements[RELATION]);
 		node->nod_arg[e_range_relation_relation] =
 			par_relation(tdbb, csb, n, FALSE);
 		break;
@@ -2918,10 +2941,10 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected, USHORT expected_opti
 
 	case blr_cardinality:
 		n = BLR_BYTE;
-		if (n >= (*csb)->csb_count)
-			error(*csb, gds_ctxnotdef, 0);
+		if (n >= csb->csb_rpt.getCount() || !(csb->csb_rpt[n].csb_flags & csb_used))
+			error(csb, gds_ctxnotdef, 0);
 		node->nod_arg[e_card_stream] =
-			(JRD_NOD) (SLONG) (*csb)->csb_rpt[n].csb_stream;
+			(JRD_NOD) (SLONG) csb->csb_rpt[n].csb_stream;
 		break;
 #endif
 
@@ -2934,10 +2957,10 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected, USHORT expected_opti
 #endif
 
 	default:
-		syntax_error(*csb, elements[expected]);
+		syntax_error(csb, elements[expected]);
 	}
 
-	if ((*csb)->csb_g_flags & csb_blr_version4)
+	if (csb->csb_g_flags & csb_blr_version4)
 		node->nod_type = (NOD_T) (USHORT) blr_table4[(int) operator_];
 	else
 		node->nod_type = (NOD_T) (USHORT) blr_table[(int) operator_];

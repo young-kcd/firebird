@@ -413,8 +413,8 @@ typedef struct sce {
 /* String block for build DYN & BLR strings */
 
 typedef struct str {
-	SCHAR *str_start;			/* start of string buffer */
-	SCHAR *str_current;			/* current position in string being built */
+	UCHAR *str_start;			/* start of string buffer */
+	UCHAR *str_current;			/* current position in string being built */
 	USHORT str_length;			/* length of buffer */
 } *STR;
 

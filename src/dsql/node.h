@@ -45,9 +45,9 @@ typedef enum nod_t
 	nod_commit = 1,	/* Commands, not executed. */
 	nod_rollback,
 	nod_trans,
-	nod_prepare,
-	nod_create,
-	nod_define,
+	//nod_prepare, // Not used
+	//nod_create,
+	//nod_define,
 	nod_def_default,
 	nod_del_default,
 	nod_def_database,

@@ -138,9 +138,9 @@ static const struct
 	{"extract", extract}, {"current_date", zero},	/* 160 */
 	{"current_timestamp", zero}, {"current_time", zero},
     /* These verbs were added in 6.0, primarily to support 64-bit integers */
-	{"add2", two},
-	{"subtract2", two},
-	{"multiply2", two},
+	{"post_arg", two},
+	{"exec_into", exec_into},
+	{"user_savepoint", user_savepoint},
     {"divide2", two},
 	{"agg_total2", one},
 	{"agg_total_distinct2", one}, {"agg_average2", one}, {"agg_average_distinct2", one},	/* 170 */
@@ -150,7 +150,9 @@ static const struct
     {"current_role", zero},
     {"skip", one}, 
 /* New BLR in FB2 */
-	{"execute_varchar", one},
+	{"exec_sql", one},
 	{"internal_info", one},
+	{"nullsfirst", zero},
+	{"writelock", zero},
 	{0, 0}
 };

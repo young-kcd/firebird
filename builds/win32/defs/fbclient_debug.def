@@ -118,6 +118,7 @@ EXPORTS
 	gds__version	@84
 	gds__vtof	@85
 	gds__vtov	@86
+	gds__default_printer @87
 
     gds__alloc_debug
 

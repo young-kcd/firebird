@@ -3959,7 +3959,7 @@ static void set_generator( DUDLEY_NOD node)
 	SLONG new_val;
 	SSHORT l;
 	struct str current_blr, new_blr;
-	SCHAR *blr;
+	UCHAR *blr;
 	SLONG gen_value;
 	CON constant;
 
@@ -3978,7 +3978,7 @@ static void set_generator( DUDLEY_NOD node)
 	*number = 0;
 
 	current_blr.str_current = current_blr.str_start =
-		(SCHAR *) gds__alloc((SLONG) 1028);
+		reinterpret_cast<UCHAR *>(gds__alloc(1028));
 	current_blr.str_length = 1028;
 
 #ifdef DEBUG_GDS_ALLOC
@@ -3990,8 +3990,8 @@ static void set_generator( DUDLEY_NOD node)
 	l = current_blr.str_current - current_blr.str_start;
 
 	req_handle1 = 0;
-	blr = (SCHAR *) current_blr.str_start;
-	isc_compile_request2(NULL, &DB, &req_handle1, l, blr);
+	blr = current_blr.str_start;
+	isc_compile_request2(NULL, &DB, &req_handle1, l, reinterpret_cast<SCHAR*>(blr));
 	isc_start_request(NULL, &req_handle1, &gds_trans, 0);
 	isc_receive(NULL, &req_handle1, 0, sizeof(gen_value), &gen_value, 0);
 	isc_release_request(NULL, &req_handle1);
@@ -4001,7 +4001,7 @@ static void set_generator( DUDLEY_NOD node)
 
 	*number = new_val - gen_value;
 	new_blr.str_current = new_blr.str_start =
-		(SCHAR *) gds__alloc((SLONG) 1028);
+		reinterpret_cast<UCHAR*>(gds__alloc(1028));
 	new_blr.str_length = 1028;
 
 #ifdef DEBUG_GDS_ALLOC
@@ -4013,8 +4013,8 @@ static void set_generator( DUDLEY_NOD node)
 	l = new_blr.str_current - new_blr.str_start;
 
 	req_handle2 = 0;
-	blr = (SCHAR *) new_blr.str_start;
-	isc_compile_request2(NULL, &DB, &req_handle2, l, blr);
+	blr = new_blr.str_start;
+	isc_compile_request2(NULL, &DB, &req_handle2, l, reinterpret_cast<SCHAR*>(blr));
 	isc_start_request(NULL, &req_handle2, &gds_trans, 0);
 	isc_receive(NULL, &req_handle2, 0, sizeof(gen_value), &gen_value, 0);
 	isc_release_request(NULL, &req_handle2);
@@ -4027,8 +4027,8 @@ static void set_generator( DUDLEY_NOD node)
 		l = new_blr.str_current - new_blr.str_start;
 
 		req_handle2 = 0;
-		blr = (SCHAR *) new_blr.str_start;
-		isc_compile_request2(NULL, &DB, &req_handle2, l, blr);
+		blr = new_blr.str_start;
+		isc_compile_request2(NULL, &DB, &req_handle2, l, reinterpret_cast<SCHAR*>(blr));
 		isc_start_request(NULL, &req_handle2, &gds_trans, 0);
 		isc_receive(NULL, &req_handle2, 0, sizeof(gen_value), &gen_value, 0);
 		isc_release_request(NULL, &req_handle2);
@@ -4090,7 +4090,8 @@ static void store_blr( DUDLEY_NOD node, SLONG * blob_id, DUDLEY_REL relation)
 	ISC_STATUS_ARRAY status_vector;
 	FRBRD *handle;
 
-	blr.str_current = blr.str_start = (SCHAR *) gds__alloc((SLONG) 4096);
+	blr.str_current = blr.str_start = 
+		reinterpret_cast<UCHAR*>(gds__alloc(4096));
 	blr.str_length = 4096;
 
 #ifdef DEBUG_GDS_ALLOC
@@ -4105,7 +4106,9 @@ static void store_blr( DUDLEY_NOD node, SLONG * blob_id, DUDLEY_REL relation)
 	handle = create_blob(blob_id, 0, NULL);
 	length = blr.str_current - blr.str_start;
 
-	if (gds__put_segment(status_vector, &handle, length, blr.str_start)) {
+	if (gds__put_segment(status_vector, &handle, length,
+		reinterpret_cast<SCHAR*>(blr.str_start))) 
+	{
 		DDL_db_error(status_vector, 93, NULL, NULL, NULL, NULL, NULL);
 		/* msg 93: gds__put_segment failed */
 		return;

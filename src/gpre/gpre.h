@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.43 2003-09-12 16:35:39 brodsom Exp $
+ * $Id: gpre.h,v 1.44 2003-09-28 21:35:59 skidder Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -1205,8 +1205,8 @@ typedef struct ref {
 	TEXT *ref_value;			/* value string if host language value */
 	val* ref_values;			/* linked list of values */
 	TEXT *ref_null_value;		/* value string if host language value */
-	TEXT *ref_sdl;				/* Raw slice description language for an array */
-	TEXT *ref_sdl_base;			/* base of sdl string during generation */
+	UCHAR *ref_sdl;				/* Raw slice description language for an array */
+	UCHAR *ref_sdl_base;		/* base of sdl string during generation */
 	int ref_sdl_length;			/* sdl length for this reference */
 	slc* ref_slice;				/* Slice, if field referenced is sliced */
 	USHORT ref_sdl_ident;		/* identifier of sdl structure */

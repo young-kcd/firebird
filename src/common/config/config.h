@@ -101,7 +101,8 @@ class Config
 		KEY_EXTERNAL_FILE_ACCESS,					// 37
 		KEY_DATABASE_ACCESS,						// 38
 		KEY_UDF_ACCESS,								// 39
-		KEY_TEMP_DIRECTORIES						// 40
+		KEY_TEMP_DIRECTORIES,						// 40
+		KEY_TRACE_DSQL								// 41
 	};
 
 public:
@@ -310,6 +311,11 @@ public:
 		Temporary directories list
 	*/
 	static const char *getTempDirectories();
+
+	/*
+		DSQL trace bitmask
+	*/
+	static int getTraceDSQL();
 };
 
 #endif // CONFIG_H

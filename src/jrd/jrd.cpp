@@ -3882,8 +3882,8 @@ ISC_STATUS DLL_EXPORT GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 	old_pool = tdbb->tdbb_default;
 	tdbb->tdbb_default = new_pool = JrdMemoryPool::createPool();
 
-	csb = PAR_parse(tdbb, reinterpret_cast < UCHAR * >(blr), FALSE);
-	request = CMP_make_request(tdbb, &csb);
+	csb = PAR_parse(tdbb, reinterpret_cast<UCHAR*>(blr), FALSE);
+	request = CMP_make_request(tdbb, csb);
 
 	for (access = request->req_access; access; access = access->acc_next)
 	{
@@ -3894,7 +3894,7 @@ ISC_STATUS DLL_EXPORT GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 	}
 
 	in_message = out_message = NULL;
-	for (i = 0; i < csb->csb_count; i++)
+	for (i = 0; i < csb->csb_rpt.getCount(); i++)
 	{
 		if ( (node = csb->csb_rpt[i].csb_message) )
 		{

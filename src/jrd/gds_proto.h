@@ -82,7 +82,8 @@ ULONG	API_ROUTINE gds__free(void*);
 SLONG	API_ROUTINE gds__interprete(char*, const ISC_STATUS**);
 void	API_ROUTINE gds__interprete_a(SCHAR*, SSHORT*, const ISC_STATUS*, SSHORT*);
 void	API_ROUTINE gds__log(const TEXT*, ...);
-void	API_ROUTINE gds__trace(const TEXT*);
+void	API_ROUTINE gds__trace(const char*);
+void	API_ROUTINE gds__trace_raw(const char*, int = 0);
 void	API_ROUTINE gds__log_status(TEXT*, const ISC_STATUS*);
 int		API_ROUTINE gds__msg_close(void*);
 SSHORT	API_ROUTINE gds__msg_format(void*  handle,
@@ -111,7 +112,9 @@ USHORT	API_ROUTINE gds__parse_bpb2(USHORT, UCHAR*, SSHORT*, SSHORT*,
 									  USHORT*, USHORT*);
 SLONG	API_ROUTINE gds__ftof(SCHAR*, USHORT length1, SCHAR*,
 							   USHORT length2);
-int		API_ROUTINE gds__print_blr(UCHAR*, FPTR_VOID, SCHAR*, SSHORT);
+int		API_ROUTINE gds__print_blr(UCHAR*, 
+							FPTR_PRINT_CALLBACK, 
+							void*, SSHORT);
 void	API_ROUTINE gds__put_error(TEXT*);
 void	API_ROUTINE gds__qtoq(void*, void*);
 void	API_ROUTINE gds__register_cleanup(FPTR_VOID_PTR, void*);
@@ -129,7 +132,10 @@ void	API_ROUTINE isc_print_sqlerror(SSHORT, ISC_STATUS*);
 void	API_ROUTINE isc_sql_interprete(SSHORT, TEXT*, SSHORT);
 SINT64	API_ROUTINE isc_portable_integer(UCHAR*, SSHORT);
 void	gds__cleanup(void);
-extern void gds__ulstr(char* buffer, ULONG value, int maxlen, char filler);
+void	gds__ulstr(char* buffer, ULONG value, int maxlen, char filler);
+
+void	gds__default_printer(void*, SSHORT, const TEXT*);
+void	gds__trace_printer(void*, SSHORT, const TEXT*);
 
 
 #if (defined SOLARIS && !defined(MAP_ANON))

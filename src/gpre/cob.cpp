@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.28 2003-09-13 12:22:11 brodsom Exp $
+//	$Id: cob.cpp,v 1.29 2003-09-28 21:35:58 skidder Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -42,6 +42,7 @@
 #include "../jrd/common.h"
 #include <stdarg.h>
 #include "../jrd/gds.h"
+#include "../jrd/gds_proto.h"
 #include "../gpre/gpre.h"
 #include "../gpre/pat.h"
 #include "../gpre/cmp_proto.h"
@@ -278,7 +279,7 @@ static void	gen_blob_close (ACT);
 static void	gen_blob_end (ACT);
 static void	gen_blob_for (ACT);
 static void	gen_blob_open (ACT);
-static int	gen_blr (int *, int, TEXT *);
+static void	gen_blr (void *, SSHORT, const char*);
 static void	gen_clear_handles (ACT);
 static void	gen_compile (ACT);
 static void	gen_create_database (ACT);
@@ -1281,10 +1282,10 @@ static void gen_blob_open( ACT action)
 //		Callback routine for BLR pretty printer.
 //  
 
-static int gen_blr( int *user_arg, int offset, TEXT * string)
+static void gen_blr(void *user_arg, SSHORT offset, const char* string)
 {
 	int indent, length, comment, i, max_line, max_diff;
-	TEXT *p, *q, c;
+	const char *p, *q;
 	bool open_quote;
 	bool first_line = true;
 
@@ -1322,13 +1323,14 @@ static int gen_blr( int *user_arg, int offset, TEXT * string)
 			if (*q == '\'' && *(q - 1) != '\\')
 				open_quote = !open_quote;
 		}
-		c = *++q;
-		*q = 0;
 		ib_fprintf(out_file, "%s", names[COMMENT]);
 		for (i = 0; i < indent; i++)
 			ib_fputc(' ', out_file);
-		ib_fprintf(out_file, "%s\n", p);
-		*q = c;
+		q++;
+		char buffer[256];
+		strncpy(buffer, p, q-p);
+		buffer[q-p] = 0;
+		ib_fprintf(out_file, "%s\n", buffer);
 		length = length - (q - p);
 		p = q;
 		if (first_line) {
@@ -1343,7 +1345,6 @@ static int gen_blr( int *user_arg, int offset, TEXT * string)
 	for (i = 0; i < indent; i++)
 		ib_fputc(' ', out_file);
 	ib_fprintf(out_file, "%s\n", p);
-	return TRUE;
 }
 
 
@@ -3394,25 +3395,25 @@ static void gen_request( GPRE_REQ request)
 			case REQ_create_database:
 			case REQ_ready:
 				string_type = "DPB";
-				if (PRETTY_print_cdb((SCHAR*) request->req_blr, (int(*)()) gen_blr, 0, 0))
+				if (PRETTY_print_cdb(request->req_blr, gen_blr, 0, 0))
 					IBERROR("internal error during parameter generation");
 				break;
 
 
 			case REQ_ddl:
 				string_type = "DYN";
-				if (PRETTY_print_dyn((SCHAR*) request->req_blr, (int(*)()) gen_blr, 0, 0))
+				if (PRETTY_print_dyn(request->req_blr, gen_blr, 0, 0))
 					IBERROR("internal error during dynamic DDL generation");
 				break;
 			case REQ_slice:
 				string_type = "SDL";
-				if (PRETTY_print_sdl((SCHAR*) request->req_blr, (int(*)()) gen_blr, 0, 0))
+				if (PRETTY_print_sdl(request->req_blr, gen_blr, 0, 0))
 					IBERROR("internal error during SDL generation");
 				break;
 
 			default:
 				string_type = "BLR";
-				if (isc_print_blr((SCHAR*) request->req_blr, (void(*)()) gen_blr, 0, 0))
+				if (gds__print_blr(request->req_blr, gen_blr, 0, 0))
 					IBERROR("internal error during BLR generation");
 			}
 		}
@@ -3451,7 +3452,7 @@ static void gen_request( GPRE_REQ request)
 				gen_raw((UCHAR*) reference->ref_sdl, REQ_slice,
 						reference->ref_sdl_length, reference->ref_sdl_ident);
 				if (!sw_raw)
-					if (PRETTY_print_sdl(reference->ref_sdl, (int(*)()) gen_blr, 0, 0))
+					if (PRETTY_print_sdl(reference->ref_sdl, gen_blr, 0, 0))
 						IBERROR("internal error during SDL generation");
 
 				printa(names[COMMENT], false, " ");

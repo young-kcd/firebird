@@ -36,6 +36,18 @@
 #include "../dsql/all.h"
 #include "../jrd/y_ref.h"
 
+#ifdef DEV_BUILD
+// This macro enables DSQL tracing code
+#define DSQL_DEBUG
+#endif
+
+#ifdef DSQL_DEBUG
+DEFINE_TRACE_ROUTINE(dsql_trace);
+#define DSQL_TRACE(args) dsql_trace args
+#else
+#define DSQL_TRACE(args) /* nothing */
+#endif
+
 //! Dynamic SQL Error Status Block
 struct err
 {
@@ -589,9 +601,11 @@ typedef tsql* TSQL;
 //#define BLKCHK(blk, type) if (blk->blk_type != (SCHAR) type) BUGCHECK ("expected type")
 #define BLKCHK(blk, type) if (MemoryPool::blk_type(blk) != (SSHORT) type) BUGCHECK ("expected type")
 
-#ifdef DEV_BUILD
+#ifdef DSQL_DEBUG
 extern unsigned DSQL_debug;
+#endif
 
+#ifdef DEV_BUILD
 /* Verifies that a pointed to block matches the expected type.
  Useful to find coding errors & memory globbers.
 

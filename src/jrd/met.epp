@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.70 2003-09-25 11:49:06 robocop Exp $
+$Id: met.epp,v 1.71 2003-09-28 21:36:02 skidder Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -120,7 +120,7 @@ typedef enum rids {
 #undef FIELD
 #undef END_RELATION
 
-#define BLR_BYTE        *((*csb)->csb_running)++
+#define BLR_BYTE        *(csb->csb_running)++
 #define NULL_BLOB(id)   (!id.gds_quad_high && !id.gds_quad_low)
 
 #define	BLANK			'\040'
@@ -134,8 +134,8 @@ static BOOLEAN get_type(TDBB, SSHORT *, UCHAR *, UCHAR *);
 static void lookup_view_contexts(TDBB, JRD_REL);
 static void name_copy(TEXT *, TEXT *);
 static USHORT name_length(const TEXT *);
-static JRD_NOD parse_procedure_blr(TDBB, JRD_PRC, SLONG[2], CSB *);
-static BOOLEAN par_messages(TDBB, UCHAR *, USHORT, JRD_PRC, CSB *);
+static JRD_NOD parse_procedure_blr(TDBB, JRD_PRC, SLONG[2], CSB);
+static BOOLEAN par_messages(TDBB, UCHAR *, USHORT, JRD_PRC, CSB);
 static BOOLEAN resolve_charset_and_collation(TDBB, SSHORT *, UCHAR *,
 											 UCHAR *);
 static STR save_name(TDBB, const TEXT*);
@@ -927,8 +927,6 @@ JRD_NOD MET_get_dependencies(TDBB			tdbb,
 	dbb = tdbb->tdbb_database;
 
 	csb_ = Csb::newCsb(*tdbb->tdbb_default, 5);
-	csb_->csb_rpt.resize(5); // vec always allocates one too many
-	csb_->csb_count = 5;
 	csb_->csb_g_flags |= csb_get_dependencies;
 
 	if (blob)
@@ -2813,11 +2811,9 @@ JRD_PRC MET_procedure(TDBB tdbb, int id, BOOLEAN noscan, USHORT flags)
 		old_pool = tdbb->tdbb_default;
 		tdbb->tdbb_default = JrdMemoryPool::createPool();
 		csb_ = Csb::newCsb(*tdbb->tdbb_default, 5);
-		csb_->csb_rpt.resize(5);	// vec always allocates one too many
-		csb_->csb_count = 5;
-		parse_procedure_blr(tdbb, procedure, (SLONG*)&P.RDB$PROCEDURE_BLR, &csb_);
+		parse_procedure_blr(tdbb, procedure, (SLONG*)&P.RDB$PROCEDURE_BLR, csb_);
 		procedure->prc_request->req_procedure = procedure;
-		for (i = 0; i < csb_->csb_count; i++)
+		for (i = 0; i < csb_->csb_rpt.getCount(); i++)
 		{
 			if ( (node = csb_->csb_rpt[i].csb_message) )
 			{
@@ -4007,7 +4003,7 @@ static USHORT name_length(const TEXT* name)
 
 static JRD_NOD parse_procedure_blr(
 							   TDBB tdbb,
-							   JRD_PRC procedure, SLONG blob_id[2], CSB * csb_ptr)
+							   JRD_PRC procedure, SLONG blob_id[2], CSB csb)
 {
 /**************************************
  *
@@ -4032,10 +4028,10 @@ static JRD_NOD parse_procedure_blr(
 	length = blob->blb_length + 10;
 	temp = FB_NEW_RPT(*tdbb->tdbb_default, length) str();
 	BLB_get_data(tdbb, blob, temp->str_data, length);
-	(*csb_ptr)->csb_blr = temp->str_data;
-	par_messages(tdbb, temp->str_data, (USHORT) length, procedure, csb_ptr);
+	csb->csb_blr = temp->str_data;
+	par_messages(tdbb, temp->str_data, (USHORT) length, procedure, csb);
 	node =
-		PAR_blr(tdbb, NULL, temp->str_data, NULL, csb_ptr,
+		PAR_blr(tdbb, NULL, temp->str_data, NULL, &csb,
 				&procedure->prc_request, FALSE, 0);
 	delete temp;
 
@@ -4046,8 +4042,8 @@ static JRD_NOD parse_procedure_blr(
 static BOOLEAN par_messages(TDBB	tdbb,
 							UCHAR*	blr,
 							USHORT	blr_length,
-							JRD_PRC		procedure,
-							CSB*	csb)
+							JRD_PRC	procedure,
+							CSB		csb)
 {
 /**************************************
  *
@@ -4065,7 +4061,7 @@ static BOOLEAN par_messages(TDBB	tdbb,
 	USHORT count, offset, align, msg_number;
 	SSHORT version;
 
-	(*csb)->csb_running = blr;
+	csb->csb_running = blr;
 	version = BLR_BYTE;
 	if (version != blr_version4 && version != blr_version5)
 		return FALSE;

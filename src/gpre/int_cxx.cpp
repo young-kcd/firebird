@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int_cxx.cpp,v 1.15 2003-09-25 11:49:02 robocop Exp $
+//	$Id: int_cxx.cpp,v 1.16 2003-09-28 21:35:59 skidder Exp $
 //
 
 #include "firebird.h"
@@ -44,7 +44,7 @@ static void asgn_from(REF, int);
 static void asgn_to(REF);
 #endif
 static void gen_at_end(ACT, int);
-static int gen_blr(int *, int, TEXT *);
+static void gen_blr(void*, SSHORT, const char*);
 static void gen_compile(GPRE_REQ, int);
 static void gen_database(ACT, int);
 static void gen_emodify(ACT, int);
@@ -276,12 +276,9 @@ static void gen_at_end( ACT action, int column)
 //		Callback routine for BLR pretty printer.
 //  
 
-static int gen_blr( int *user_arg, int offset, TEXT * string)
+static void gen_blr(void *user_arg, SSHORT offset, const char* string)
 {
-
 	ib_fprintf(out_file, "%s\n", string);
-
-	return TRUE;
 }
 
 
@@ -516,7 +513,7 @@ static void gen_request( GPRE_REQ request)
 	if (sw_raw)
 		gen_raw(request);
 	else
-		gds__print_blr(request->req_blr, (FPTR_VOID) gen_blr, 0, 0);
+		gds__print_blr(request->req_blr, gen_blr, 0, 0);
 
 	printa(INDENT, "};\t/* end of blr string */\n");
 }

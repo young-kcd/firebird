@@ -2674,7 +2674,7 @@ static void execute_dynamic_ddl( DBB database, RLB rlb)
 	const USHORT length = (UCHAR *) rlb->rlb_data - (UCHAR *) rlb->rlb_base;
 
 	if (QLI_blr)
-		PRETTY_print_dyn((SCHAR*) rlb->rlb_base, (FPTR_INT) ib_printf, "%4d %s\n", 0);
+		PRETTY_print_dyn(rlb->rlb_base, NULL, NULL, 0);
 
 	if (gds__ddl(gds_status, &database->dbb_handle, &database->dbb_meta_trans,
 				 length, (char*) rlb->rlb_base)) {

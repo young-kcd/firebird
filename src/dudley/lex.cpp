@@ -191,7 +191,7 @@ void LEX_flush(void)
 }
 
 
-void LEX_get_text( SCHAR * buffer, TXT text)
+void LEX_get_text(UCHAR * buffer, TXT text)
 {
 /**************************************
  *
@@ -205,7 +205,7 @@ void LEX_get_text( SCHAR * buffer, TXT text)
  **************************************/
 	SLONG start;
 	int length;
-	TEXT *p;
+	UCHAR *p;
 
 	start = text->txt_position;
 	length = text->txt_length;

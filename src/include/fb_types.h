@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.25 2003-06-05 10:12:37 aafemt Exp $
+ *  $Id: fb_types.h,v 1.26 2003-09-28 21:36:00 skidder Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -159,6 +159,7 @@ typedef void (*FPTR_VOID) ();
 typedef void (*FPTR_VOID_PTR) (void *);
 typedef int (*FPTR_INT) ();
 typedef int (*FPTR_INT_VOID_PTR) (void *);
+typedef void (*FPTR_PRINT_CALLBACK) (void*, SSHORT, const char*);
 typedef ULONG RCRD_OFFSET;
 typedef USHORT FLD_LENGTH;
 typedef int (*lock_ast_t)(void *);

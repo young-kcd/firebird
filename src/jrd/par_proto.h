@@ -30,7 +30,7 @@ extern "C" {
 
 struct jrd_nod *PAR_blr(TDBB, struct jrd_rel *, UCHAR *, class Csb *, class Csb **,
 					struct jrd_req **, BOOLEAN, USHORT);
-int PAR_desc(class Csb **, struct dsc *);
+int PAR_desc(class Csb *, struct dsc *);
 struct jrd_nod *PAR_gen_field(TDBB, USHORT, USHORT);
 struct jrd_nod *PAR_make_field(TDBB, class Csb *, USHORT, TEXT *);
 struct jrd_nod *PAR_make_list(TDBB, struct lls *);

@@ -143,3 +143,8 @@ NULL,							/* 0 */
 	"gds__dyn_foreign_key_cascade",
 	"gds__dyn_foreign_key_default",
 	"gds__dyn_foreign_key_null", "gds__dyn_foreign_key_none",	/* 210 */
+	"isc_dyn_def_sql_role", "isc_dyn_sql_role_name", "isc_dyn_grant_admin_options",
+    "isc_dyn_del_sql_role", "isc_dyn_new_fld_name", "isc_dyn_mod_sql_fld",
+	"isc_dyn_delete_generator", "isc_dyn_grant_role", "isc_dyn_grant_user_explicit",
+	"isc_dyn_def_difference", /* 220 */
+	"isc_dyn_drop_difference", "isc_dyn_begin_backup", "isc_dyn_end_backup",

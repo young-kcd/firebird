@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.21 2003-09-12 02:21:53 brodsom Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.22 2003-09-28 21:35:59 skidder Exp $
  */
 
 #include "firebird.h"
@@ -897,8 +897,9 @@ static int upcase( TEXT * from, TEXT * to)
 ISC_STATUS API_ROUTINE isc_print_blr(SCHAR * blr,
           void (*callback) (), void *callback_argument, SSHORT language)
 {
-        return gds__print_blr((UCHAR *) blr, callback,
-                                                  (SCHAR *) callback_argument, language);
+        return gds__print_blr((UCHAR *) blr, 
+							  reinterpret_cast<FPTR_PRINT_CALLBACK>(callback),
+                              callback_argument, language);
 }
 
 extern "C" {

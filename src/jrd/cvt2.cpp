@@ -663,8 +663,8 @@ SSHORT CVT2_blob_compare(DSC * arg1, DSC * arg2, FPTR_VOID err)
 		This is not safe with MBCS for now. */
 		if (!ret_val)
 		{
-			BOOLEAN eof1 = (blob1->blb_flags & BLB_eof == BLB_eof);
-			BOOLEAN eof2 = (blob2->blb_flags & BLB_eof == BLB_eof);
+			BOOLEAN eof1 = ((blob1->blb_flags & BLB_eof) == BLB_eof);
+			BOOLEAN eof2 = ((blob2->blb_flags & BLB_eof) == BLB_eof);
 			UCHAR blank_char = both_are_text ? '\x20' : '\x0';
 			if (eof1 && !eof2)
 			{

@@ -1203,8 +1203,8 @@ const char gds_info_sql_stmt_select_for_upd = 12;
 
 #else /* c++ definitions */
 
-const char gds_dyn_version_1 = 1;
-const char gds_dyn_eoc = -1;
+const unsigned char gds_dyn_version_1 = 1;
+const unsigned char gds_dyn_eoc = 0xFF;
 
 #endif
 

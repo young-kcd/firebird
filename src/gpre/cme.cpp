@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cme.cpp,v 1.11 2003-09-25 11:49:02 robocop Exp $
+//	$Id: cme.cpp,v 1.12 2003-09-28 21:35:58 skidder Exp $
 //
 
 #include "firebird.h"
@@ -63,11 +63,11 @@ static void stuff_sdl_number(SLONG, REF);
 
 #define USER_LENGTH	32
 
-#define STUFF(blr)		*request->req_blr++ = (SCHAR) (blr)
+#define STUFF(blr)		*request->req_blr++ = (UCHAR) (blr)
 #define STUFF_WORD(blr)		STUFF (blr); STUFF (blr >> 8)
 #define STUFF_CSTRING(blr)	stuff_cstring (request, blr)
 
-#define STUFF_SDL(sdl)		*reference->ref_sdl++ = (SCHAR) (sdl)
+#define STUFF_SDL(sdl)		*reference->ref_sdl++ = (UCHAR) (sdl)
 #define STUFF_SDL_WORD(sdl)	STUFF_SDL (sdl); STUFF_SDL (sdl >> 8);
 #define STUFF_SDL_LONG(sdl)	STUFF_SDL (sdl); STUFF_SDL (sdl >> 8); STUFF_SDL (sdl >>16); STUFF_SDL (sdl >> 24);
 
@@ -1232,7 +1232,8 @@ static GPRE_NOD cmp_array( GPRE_NOD node, GPRE_REQ request)
 	{
 		/*  Header stuff  */
 
-		reference->ref_sdl = reference->ref_sdl_base = (TEXT *) ALLOC(500);
+		reference->ref_sdl = reference->ref_sdl_base = 
+			reinterpret_cast<UCHAR*>(ALLOC(500));
 		reference->ref_sdl_length = 500;
 		reference->ref_sdl_ident = CMP_next_ident();
 		STUFF_SDL(gds_sdl_version1);

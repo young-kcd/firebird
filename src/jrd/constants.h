@@ -91,4 +91,7 @@ enum frb_sysflag {
 
 #define MAX_UDF_ARGUMENTS	10
 
+// Maximum length of single line returned from pretty printer
+#define PRETTY_BUFFER_SIZE 1024
+
 #endif /* _JRD_CONSTANTS_H_ */

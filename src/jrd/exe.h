@@ -32,8 +32,7 @@
 #define _JRD_EXE_H_
 
 #include "../jrd/jrd_blks.h"
-#include "../include/fb_blk.h"
-#include "../include/fb_vector.h"
+#include "../common/classes/array.h"
 
 #define NODE(type, name, keyword) type,
 
@@ -45,6 +44,16 @@ typedef enum nod_t {
 
 #include "../jrd/dsc.h"
 
+
+// This macro enables DSQL tracing code
+//#define CMP_DEBUG
+
+#ifdef CMP_DEBUG
+DEFINE_TRACE_ROUTINE(cmp_trace);
+#define CMP_TRACE(args) cmp_trace args
+#else
+#define CMP_TRACE(args) /* nothing */
+#endif
 
 /* NOTE: The definition of structures rse and lit must be defined in
 	 exactly the same way as structure jrd_nod through item nod_count.
@@ -99,7 +108,7 @@ public:
 	SCHAR	nod_scale;			/* Target scale factor */
 	USHORT	nod_count;			/* Number of arguments */
 	USHORT	rse_count;
-	USHORT	rse_jointype;		/* inner, left, right, full */
+	USHORT	rse_jointype;		/* inner, left, full */
 	BOOLEAN rse_writelock;
 	struct rsb *rse_rsb;
 	jrd_nod*	rse_first;
@@ -573,7 +582,7 @@ public:
 		csb_msg_number(0),
 		csb_impure(0),
 		csb_g_flags(0),*/
-		csb_rpt(len, p, type_csb)
+		csb_rpt(&p, len)
 	{}
 
 	static Csb* newCsb(MemoryPool& p, size_t len)
@@ -594,13 +603,13 @@ public:
 									   unlike the current_rses stack, it references any expanded view rse */
 #endif
 	jrd_nod*		csb_async_message;	/* asynchronous message to send to request */
-	USHORT		csb_count;			/* Current tail count */
 	USHORT		csb_n_stream;		/* Next available stream */
 	USHORT		csb_msg_number;		/* Highest used message number */
 	SLONG		csb_impure;			/* Next offset into impure area */
 	USHORT		csb_g_flags;
-	typedef		Firebird::vector<csb_repeat>::iterator rpt_itr;
-	Firebird::vector<csb_repeat> csb_rpt;
+
+	typedef		csb_repeat* rpt_itr;
+	Firebird::Array<csb_repeat> csb_rpt;
 };
 typedef Csb* CSB;
 
@@ -610,7 +619,7 @@ typedef Csb* CSB;
 #define csb_blr_version4 	0x8	/* The blr is of version 4 */
 
 #define csb_active 	1
-#define csb_used	2
+#define csb_used	2           /* Context have already been defined (BLR parsing only) */
 #define csb_view_update	4		/* View update w/wo trigger is in progress */
 #define csb_trigger	8			/* NEW or OLD context in trigger */
 #define csb_no_dbkey	16		/* Stream doesn't have a dbkey */

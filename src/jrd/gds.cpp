@@ -49,6 +49,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/os/path_utils.h"
 #include "../jrd/misc_proto.h"
+#include "../jrd/constants.h"
 
 #include "../common/classes/locks.h"
 
@@ -190,10 +191,6 @@ extern int ib_printf();
 #endif
 #endif
 
-#ifndef PRINTF
-#define PRINTF 			ib_printf
-#endif
-
 // Number of times to try to generate new name for temporary file
 #define MAX_TMPFILE_TRIES 256
 
@@ -237,11 +234,11 @@ typedef struct ctl
 {
 	UCHAR *ctl_blr;				/* Running blr string */
 	UCHAR *ctl_blr_start;		/* Original start of blr string */
-	void (*ctl_routine) ();		/* Call back */
-	SCHAR *ctl_user_arg;		/* User argument */
+	FPTR_PRINT_CALLBACK ctl_routine; /* Call back */
+	void *ctl_user_arg;			/* User argument */
 	TEXT *ctl_ptr;
 	SSHORT ctl_language;
-	TEXT ctl_buffer[1024];
+	TEXT ctl_buffer[PRETTY_BUFFER_SIZE];
 } *CTL;
 
 #ifdef DEV_BUILD
@@ -352,6 +349,7 @@ static struct
 #define op_set_error	 17
 #define op_literals	 18
 #define op_relation	 20
+#define op_exec_into 21
 
 static const UCHAR
 	/* generic print formats */
@@ -405,7 +403,9 @@ static const UCHAR
 	indices[]	= { op_byte, op_line, op_literals, 0},
 	lock_relation[] = { op_line, op_indent, op_relation, op_line, op_verb, 0},
 	range_relation[] = { op_line, op_verb, op_indent, op_relation, op_line, 0},
-	extract[]	= { op_line, op_byte, op_verb, 0};
+	extract[]	= { op_line, op_byte, op_verb, 0},
+	user_savepoint[]	= { op_byte, op_byte, op_literal, op_line, 0},
+	exec_into[] = { op_word, op_line, op_indent, op_exec_into, 0};
 
 #include "../jrd/blp.h"
 
@@ -990,6 +990,64 @@ Firebird::Spinlock trace_mutex;
 HANDLE trace_file_handle = INVALID_HANDLE_VALUE;
 #endif
 
+void API_ROUTINE gds__trace_raw(const char* text, int length) {
+/**************************************
+ *
+ *	g d s _ t r a c e _ r a w
+ *
+ **************************************
+ *
+ * Functional description
+ *	Write trace event to a log file
+ *  This function tries to be async-signal safe
+ *
+ **************************************/
+	if (!length) length = strlen(text);
+#ifdef WIN_NT
+	// Note: thread-safe code
+
+	// Nickolay Samofatov, 12 Sept 2003. Windows open files extremely slowly. 
+	// Slowly enough to make such trace useless. Thus we cache file handle !
+	trace_mutex.enter();
+	while (true) {
+		if (trace_file_handle == INVALID_HANDLE_VALUE) {
+			TEXT name[MAXPATHLEN];
+			gds__prefix(name, LOGFILE);
+			// We do not care to close this file. 
+			// It will be closed automatically when our process terminates.
+			trace_file_handle = CreateFile(name, GENERIC_WRITE, 
+				FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+				NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+			if (trace_file_handle == INVALID_HANDLE_VALUE) break;
+		}
+		DWORD bytesWritten;
+		SetFilePointer(trace_file_handle, 0, NULL, FILE_END);
+		WriteFile(trace_file_handle, text, length, &bytesWritten, NULL);
+		if (bytesWritten != length) {
+			// Handle the case when file was deleted by another process on Win9x
+			// On WinNT we are not going to notice that fact :(
+			CloseHandle(trace_file_handle);
+			trace_file_handle = INVALID_HANDLE_VALUE;
+			continue;
+		}
+		break;
+	}
+	trace_mutex.leave();
+#else
+	TEXT name[MAXPATHLEN];
+
+	// This function is not truly signal safe now.
+	// It calls string::c_str() and may call getenv(), not good.
+	// We can only hope that failure is unlikely in it...
+	gds__prefix(name, LOGFILE);
+
+	// Note: signal-safe code
+	int file = open(name, O_CREAT | O_APPEND | O_WRONLY, 0660);
+	if (file == -1) return;
+	write(file, text, length);
+	close(file);
+#endif
+}
 void API_ROUTINE gds__trace(const TEXT * text)
 {
 /**************************************
@@ -999,7 +1057,7 @@ void API_ROUTINE gds__trace(const TEXT * text)
  **************************************
  *
  * Functional description
- *	Post trace event to a log file.
+ *	Post trace event to a log file. Function records to date and time
  *  This function tries to be async-signal safe
  *
  **************************************/
@@ -1051,50 +1109,7 @@ void API_ROUTINE gds__trace(const TEXT * text)
 	*p++ = ' ';
 	strcpy(p, text); p += strlen(p);
 	strcat(p, "\n"); p += strlen(p);
-#ifdef WIN_NT
-	// Note: thread-safe code
-
-	// Nickolay Samofatov, 12 Sept 2003. Windows open files extremely slowly. 
-	// Slowly enough to make such trace useless. Thus we cache file handle !
-	trace_mutex.enter();
-	while (true) {
-		if (trace_file_handle == INVALID_HANDLE_VALUE) {
-			TEXT name[MAXPATHLEN];
-			gds__prefix(name, LOGFILE);
-			// We do not care to close this file. 
-			// It will be closed automatically when our process terminates.
-			trace_file_handle = CreateFile(name, GENERIC_WRITE, 
-				FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-				NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-			if (trace_file_handle == INVALID_HANDLE_VALUE) break;
-		}
-		DWORD bytesWritten;
-		SetFilePointer(trace_file_handle, 0, NULL, FILE_END);
-		WriteFile(trace_file_handle, buffer, p-buffer, &bytesWritten, NULL);
-		if (bytesWritten != (DWORD) (p - buffer) ) {
-			// Handle the case when file was deleted by another process on Win9x
-			// On WinNT we are not going to notice that fact :(
-			CloseHandle(trace_file_handle);
-			trace_file_handle = INVALID_HANDLE_VALUE;
-			continue;
-		}
-		break;
-	}
-	trace_mutex.leave();
-#else
-	TEXT name[MAXPATHLEN];
-
-	// This function is not truly signal safe now.
-	// It calls string::c_str() and may call getenv(), not good.
-	// We can only hope that failure is unlikely in it...
-	gds__prefix(name, LOGFILE);
-
-	// Note: signal-safe code
-	int file = open(name, O_CREAT | O_APPEND | O_WRONLY, 0660);
-	if (file == -1) return;
-	write(file, buffer, p-buffer);
-	close(file);
-#endif
+	gds__trace_raw(buffer, p-buffer);
 }
 
 void API_ROUTINE gds__log(const TEXT * text, ...)
@@ -2024,8 +2039,8 @@ SLONG API_ROUTINE gds__ftof(SCHAR * string,
 
 int API_ROUTINE gds__print_blr(
 							   UCHAR * blr,
-							   FPTR_VOID routine,
-							   SCHAR * user_arg, SSHORT language)
+							   FPTR_PRINT_CALLBACK routine,
+							   void* user_arg, SSHORT language)
 {
 /**************************************
  *
@@ -2049,8 +2064,8 @@ int API_ROUTINE gds__print_blr(
 	offset = 0;
 
 	if (!routine) {
-		routine = (void (*)()) PRINTF;
-		user_arg = "%4d %s\n";
+		routine = gds__default_printer;
+		user_arg = NULL;
 	}
 
 	control->ctl_routine = routine;
@@ -3136,9 +3151,7 @@ static SLONG blr_print_line(CTL control, SSHORT offset)
 
 	*control->ctl_ptr = 0;
 
-#pragma FB_COMPILER_MESSAGE("Fix! Ugly function pointer cast!")
-
-	((void (*)(...)) (*control->ctl_routine)) (control->ctl_user_arg, offset, control->ctl_buffer);
+	(*control->ctl_routine)(control->ctl_user_arg, offset, control->ctl_buffer);
 	control->ctl_ptr = control->ctl_buffer;
 
 	return control->ctl_blr - control->ctl_blr_start;
@@ -3292,6 +3305,15 @@ static void blr_print_verb(CTL control, SSHORT level)
 			else
 				PRINT_WORD;
 			break;
+		
+		case op_exec_into: {
+			PRINT_VERB;
+			if (PRINT_BYTE)
+				PRINT_VERB;
+			while (--n >= 0)
+				PRINT_VERB;
+			break;
+		}
 
 		default:
 			assert(FALSE);
@@ -3358,9 +3380,7 @@ void gds__cleanup(void)
 
 		FREE_LIB_MEMORY(clean);
 
-#pragma FB_COMPILER_MESSAGE("Fix! Ugly function pointer cast!")
-
-		((void (*)(void *)) (*routine)) (arg);
+		(*routine)(arg);
 	}
 
 #ifdef V4_THREADING
@@ -3627,6 +3647,22 @@ static void safe_concat_path(TEXT *resultString, const TEXT *appendString)
 	assert(alen >= 0);
 	memcpy(&resultString[len], appendString, alen);
 	resultString[len + alen] = 0;
+}
+
+void gds__default_printer(void* arg, SSHORT offset, const TEXT* line) {
+	ib_printf("%4d %s\n", offset, line);
+}
+
+void gds__trace_printer(void* arg, SSHORT offset, const TEXT* line) {
+	// Assume that line is not too long
+	char buffer[PRETTY_BUFFER_SIZE+10], *p = buffer;
+	gds__ulstr(p, offset, 4, ' ');
+	p += strlen(p);
+	*p++ = ' ';
+	strcpy(p, line); p+=strlen(p);
+	*p++ = '\n';
+	*p = 0;
+	gds__trace_raw(buffer);
 }
 
 #ifdef DEBUG_GDS_ALLOC

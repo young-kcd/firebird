@@ -100,7 +100,8 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_STRING,		"ExternalFileAccess",		(ConfigValue) "None"},	// location(s) of external files for tables
 	{TYPE_STRING,		"DatabaseAccess",			(ConfigValue) "Full"},	// location(s) of databases
 	{TYPE_STRING,		"UdfAccess",				(ConfigValue) "Restrict UDF"},	// location(s) of UDFs
-	{TYPE_STRING,		"TempDirectories",			(ConfigValue) 0}
+	{TYPE_STRING,		"TempDirectories",			(ConfigValue) 0},
+	{TYPE_INTEGER,		"TraceDSQL",				(ConfigValue) 0}			// bitmask
 };
 
 /******************************************************************************
@@ -446,3 +447,9 @@ const char *Config::getTempDirectories()
 {
 	return (const char*) sysConfig.values[KEY_TEMP_DIRECTORIES];
 }
+
+int Config::getTraceDSQL()
+{
+	return (int) sysConfig.values[KEY_TRACE_DSQL];
+}
+

@@ -102,6 +102,7 @@ EXPORTS
     gds__version=fbclient.gds__version @84
     gds__vtof=fbclient.gds__vtof @85
     gds__vtov=fbclient.gds__vtov @86
+	gds__default_printer=fbclient.gds__default_printer @87
     BLOB_close=fbclient.BLOB_close @91
     BLOB_display=fbclient.BLOB_display @92
     BLOB_dump=fbclient.BLOB_dump @93

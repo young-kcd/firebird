@@ -651,8 +651,9 @@ ISC_STATUS API_ROUTINE isc_print_blr(SCHAR * blr,
 								 void (*callback) (),
 								 void *callback_argument, SSHORT language)
 {
-	return gds__print_blr((UCHAR *) blr, callback,
-						  (SCHAR *) callback_argument, language);
+	return gds__print_blr((UCHAR *) blr, 
+						  reinterpret_cast<FPTR_PRINT_CALLBACK>(callback),
+						  callback_argument, language);
 }
 
 ISC_STATUS API_ROUTINE isc_print_status(ISC_STATUS * status_vector)

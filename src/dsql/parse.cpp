@@ -5188,9 +5188,9 @@ void LEX_string (
 	lex.limit_clause = false;	
 	lex.first_detection = false;
 	lex.brace_analysis = false;
-#ifdef DEV_BUILD
+#ifdef DSQL_DEBUG
 	if (DSQL_debug & 32)
-		printf("%.*s\n", (int)length, string);
+		dsql_trace("Source DSQL string:\n%.*s", (int)length, string);
 #endif
 }
 
@@ -5488,29 +5488,11 @@ static void prepare_console_debug (int level, int *yydeb)
  *	Feel free to add your platform specific code.
  *
  *************************************/
-#if defined(DEV_BUILD)
+#ifdef DSQL_DEBUG
 	DSQL_debug = level;
 #endif
 	if (level >> 8)
 		*yydeb = level >> 8;
-	/* CVC: I added this code form Mike Nordell to see the output from internal
-	   operations that's generated in DEV build when DEBUG <n> is typed into isql.exe.
-	   When n>0, the output console is activated; otherwise it's closed. */
-#if defined(DEV_BUILD) && defined(WIN_NT) && defined(SUPERSERVER)
-	static FILE* redirected_output;
-	if (level > 0) {
-		/* Console debug code inside this scope */
-		if (AllocConsole()) {
-			redirected_output = freopen("CONOUT$", "wt", stdout);
-			printf("DebugConsole - Yes, it's working.\n");
-		}
-	}
-	else if (level <= 0 && redirected_output) {
-		fclose (redirected_output);
-		redirected_output = 0;
-		FreeConsole();
-	}
-#endif
 }
 
 #ifdef NOT_USED_OR_REPLACED

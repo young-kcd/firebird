@@ -33,7 +33,7 @@ struct jrd_req* DLL_EXPORT CMP_clone_request(TDBB, struct jrd_req*, USHORT,
 												BOOLEAN);
 struct jrd_req* DLL_EXPORT CMP_compile(USHORT, UCHAR*, USHORT);
 struct jrd_req* DLL_EXPORT CMP_compile2(TDBB, UCHAR*, USHORT);
-struct csb_repeat* DLL_EXPORT CMP_csb_element(struct Csb**, USHORT);
+struct csb_repeat* DLL_EXPORT CMP_csb_element(struct Csb*, USHORT);
 extern "C" void DLL_EXPORT CMP_expunge_transaction(struct jrd_tra*);
 void DLL_EXPORT CMP_decrement_prc_use_count(TDBB, JRD_PRC);
 struct jrd_req* DLL_EXPORT CMP_find_request(TDBB, USHORT, USHORT);
@@ -43,7 +43,7 @@ void DLL_EXPORT CMP_get_desc(TDBB, struct Csb*,
 									struct jrd_nod*, struct dsc*);
 struct idl* DLL_EXPORT CMP_get_index_lock(TDBB, struct jrd_rel*, USHORT);
 SLONG DLL_EXPORT CMP_impure(struct Csb*, USHORT);
-struct jrd_req* DLL_EXPORT CMP_make_request(TDBB, struct Csb**);
+struct jrd_req* DLL_EXPORT CMP_make_request(TDBB, struct Csb*);
 int DLL_EXPORT CMP_post_access(TDBB,
 								  struct Csb*,
 								  /* INOUT */ TEXT*,

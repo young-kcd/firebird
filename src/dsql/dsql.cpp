@@ -89,6 +89,7 @@ nested FOR loops are added.
 #include "../jrd/why_proto.h"
 #include "../jrd/gds.h"
 #include "../jrd/y_handle.h"
+#include "../common/config/config.h"
 
 #ifdef HAVE_CTYPE_H
 #include <ctype.h>
@@ -127,7 +128,8 @@ static ISC_STATUS	return_success(void);
 static UCHAR*	var_info(DSQL_MSG, const UCHAR*, const UCHAR*, UCHAR*, UCHAR*, USHORT);
 
 extern DSQL_NOD DSQL_parse;
-#ifdef DEV_BUILD
+
+#ifdef DSQL_DEBUG
 unsigned DSQL_debug;
 #endif
 
@@ -159,6 +161,10 @@ static MUTX_T cursors_mutex;
 static bool mutex_inited = false;
 #endif
 
+
+#ifdef DSQL_DEBUG
+IMPLEMENT_TRACE_ROUTINE(dsql_trace, "DSQL");
+#endif
 
 //////////////////////////////////////////////////////////////////
 // declarations of the C++ implementations of the C API functions
@@ -1768,7 +1774,18 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 }
 
 
-#ifdef DEV_BUILD
+#ifdef DSQL_DEBUG
+
+static void trace_line(const char* message, ...) { \
+	char buffer[1024]; \
+	char *ptr = buffer; \
+	va_list params; \
+	va_start(params, message); \
+	vsnprintf(ptr, sizeof(buffer), message, params); \
+	va_end(params); \
+	gds__trace_raw(buffer); \
+}
+
 /**
   
  	DSQL_pretty
@@ -1808,28 +1825,28 @@ void DSQL_pretty(DSQL_NOD node, int column)
 	*p = 0;
 
 	if (!node) {
-		ib_printf("%s *** null ***\n", buffer);
+		trace_line("%s *** null ***\n", buffer);
 		return;
 	}
 
 	switch (MemoryPool::blk_type(node)) {
 	case (TEXT) dsql_type_str:
-		ib_printf("%sSTRING: \"%s\"\n", buffer, ((STR) node)->str_data);
+		trace_line("%sSTRING: \"%s\"\n", buffer, ((STR) node)->str_data);
 		return;
 
 	case (TEXT) dsql_type_fld:
-		ib_printf("%sFIELD: %s\n", buffer, ((DSQL_FLD) node)->fld_name);
+		trace_line("%sFIELD: %s\n", buffer, ((DSQL_FLD) node)->fld_name);
 		return;
 
 	case (TEXT) dsql_type_sym:
-		ib_printf("%sSYMBOL: %s\n", buffer, ((SYM) node)->sym_string);
+		trace_line("%sSYMBOL: %s\n", buffer, ((SYM) node)->sym_string);
 		return;
 
 	case (TEXT) dsql_type_nod:
 		break;
 
 	default:
-		ib_printf("%sUNKNOWN BLOCK TYPE\n", buffer);
+		trace_line("%sUNKNOWN BLOCK TYPE\n", buffer);
 		return;
 	}
 
@@ -2255,10 +2272,6 @@ void DSQL_pretty(DSQL_NOD node, int column)
 	case nod_limit:	   
 		verb = "limit";		
 		break;
-	/* CVC:	New	node breakleave. */
-	case nod_breakleave:   
-		verb = "breakleave";	
-		break;
 	/* IOL:	missing	node types */
 	case nod_on_error:
 		verb="on error";  
@@ -2287,16 +2300,337 @@ void DSQL_pretty(DSQL_NOD node, int column)
 	case nod_join_inner:
 		verb="join_inner";	
 		break;
+	/* SKIDDER: some more missing node types */
+	case nod_commit:
+		verb = "commit";
+		break;
+	case nod_rollback:
+		verb = "rollback";
+		break;
+	case nod_trans:
+		verb = "trans";
+		break;
+	case nod_def_default:
+		verb = "def_default";
+		break;
+	case nod_del_default:
+		verb = "del_default";
+		break;
+	case nod_def_domain:
+		verb = "def_domain";
+		break;
+	case nod_mod_domain:
+		verb = "mod_domain";
+		break;
+	case nod_del_domain:
+		verb = "del_domain";
+		break;
+	case nod_def_constraint:
+		verb = "def_constraint";
+		break;
+	case nod_def_trigger_msg:
+		verb = "def_trigger_msg";
+		break;
+	case nod_mod_trigger_msg:
+		verb = "mod_trigger_msg";
+		break;
+	case nod_del_trigger_msg:
+		verb = "del_trigger_msg";
+		break;
+	case nod_def_exception:
+		verb = "def_exception";
+		break;
+	case nod_mod_exception:
+		verb = "mod_exception";
+		break;
+	case nod_del_exception:
+		verb = "del_exception";
+		break;
+	case nod_def_shadow:
+		verb = "def_shadow";
+		break;
+	case nod_del_shadow:
+		verb = "del_shadow";
+		break;
+	case nod_def_udf:
+		verb = "def_udf";
+		break;
+	case nod_del_udf:
+		verb = "del_udf";
+		break;
+	case nod_rel_constraint:
+		verb = "rel_constraint";
+		break;
+	case nod_delete_rel_constraint:
+		verb = "delete_rel_constraint";
+		break;
+	case nod_references:
+		verb = "references";
+		break;
+	case nod_proc_obj:
+		verb = "proc_obj";
+		break;
+	case nod_trig_obj:
+		verb = "trig_obj";
+		break;
+	case nod_view_obj:
+		verb = "view_obj";
+		break;
+	case nod_exit:
+		verb = "exit";
+		break;
+	case nod_if:
+		verb = "if";
+		break;
+	case nod_erase_current:
+		verb = "erase_current";
+		break;
+	case nod_modify_current:
+		verb = "modify_current";
+		break;
+	case nod_post:
+		verb = "post";
+		break;
+	case nod_sqlcode:
+		verb = "sqlcode";
+		break;
+	case nod_gdscode:
+		verb = "gdscode";
+		break;
+	case nod_exception:
+		verb = "exception";
+		break;
+	case nod_exception_stmt:
+		verb = "exception_stmt";
+		break;
+	case nod_start_savepoint:
+		verb = "start_savepoint";
+		break;
+	case nod_end_savepoint:
+		verb = "end_savepoint";
+		break;
+	case nod_name:
+		verb = "name";
+		break;
+	case nod_dom_value:
+		verb = "dom_value";
+		break;
+	case nod_user_group:
+		verb = "user_group";
+		break;
+	case nod_from:
+		verb = "from";
+		break;
+	case nod_average2:
+		verb = "average2";
+		break;
+	case nod_agg_average2:
+		verb = "agg_average2";
+		break;
+	case nod_access:
+		verb = "access";
+		break;
+	case nod_wait:
+		verb = "wait";
+		break;
+	case nod_isolation:
+		verb = "isolation";
+		break;
+	case nod_version:
+		verb = "version";
+		break;
+	case nod_table_lock:
+		verb = "table_lock";
+		break;
+	case nod_lock_mode:
+		verb = "lock_mode";
+		break;
+	case nod_reserve:
+		verb = "reserve";
+		break;
+	case nod_commit_retain:
+		verb = "commit_retain";
+		break;
+	case nod_page_size:
+		verb = "page_size";
+		break;
+	case nod_file_length:
+		verb = "file_length";
+		break;
+	case nod_file_desc:
+		verb = "file_desc";
+		break;
+	case nod_log_file_desc:
+		verb = "log_file_desc";
+		break;
+	case nod_cache_file_desc:
+		verb = "cache_file_desc";
+		break;
+	case nod_group_commit_wait:
+		verb = "group_commit_wait";
+		break;
+	case nod_check_point_len:
+		verb = "check_point_len";
+		break;
+	case nod_num_log_buffers:
+		verb = "num_log_buffers";
+		break;
+	case nod_log_buffer_size:
+		verb = "log_buffer_size";
+		break;
+	case nod_drop_log:
+		verb = "drop_log";
+		break;
+	case nod_drop_cache:
+		verb = "drop_cache";
+		break;
+	case nod_dfl_charset:
+		verb = "dfl_charset";
+		break;
+	case nod_password:
+		verb = "password";
+		break;
+	case nod_lc_ctype:
+		verb = "lc_ctype";
+		break;
+	case nod_udf_return_value:
+		verb = "udf_return_value";
+		break;
+	case nod_def_computed:
+		verb = "def_computed";
+		break;
+	case nod_merge:
+		verb = "merge";
+		break;
+	case nod_set_generator:
+		verb = "set_generator";
+		break;
+	case nod_set_generator2:
+		verb = "set_generator2";
+		break;
+	case nod_mod_index:
+		verb = "mod_index";
+		break;
+	case nod_idx_active:
+		verb = "idx_active";
+		break;
+	case nod_idx_inactive:
+		verb = "idx_inactive";
+		break;
+	case nod_restrict:
+		verb = "restrict";
+		break;
+	case nod_cascade:
+		verb = "cascade";
+		break;
+	case nod_set_statistics:
+		verb = "set_statistics";
+		break;
+	case nod_ref_upd_del:
+		verb = "ref_upd_del";
+		break;
+	case nod_ref_trig_action:
+		verb = "ref_trig_action";
+		break;
+	case nod_def_role:
+		verb = "def_role";
+		break;
+	case nod_role_name:
+		verb = "role_name";
+		break;
+	case nod_grant_admin:
+		verb = "grant_admin";
+		break;
+	case nod_del_role:
+		verb = "del_role";
+		break;
+	case nod_mod_domain_type:
+		verb = "mod_domain_type";
+		break;
+	case nod_mod_field_name:
+		verb = "mod_field_name";
+		break;
+	case nod_mod_field_type:
+		verb = "mod_field_type";
+		break;
+	case nod_mod_field_pos:
+		verb = "mod_field_pos";
+		break;
+	case nod_udf_param:
+		verb = "udf_param";
+		break;
+	case nod_exec_sql:
+		verb = "exec_sql";
+		break;
+	case nod_for_update:
+		verb = "for_update";
+		break;
+	case nod_user_savepoint:
+		verb = "user_savepoint";
+		break;
+	case nod_release_savepoint:
+		verb = "release_savepoint";
+		break;
+	case nod_undo_savepoint:
+		verb = "undo_savepoint";
+		break;
+	case nod_difference_file:
+		verb = "difference_file";
+		break;
+	case nod_drop_difference:
+		verb = "drop_difference";
+		break;
+	case nod_begin_backup:
+		verb = "begin_backup";
+		break;
+	case nod_end_backup:
+		verb = "end_backup";
+		break;
+	case nod_derived_table:
+		verb = "derived_table";
+		break;
+
+	case nod_exec_into:
+		verb = "exec_into";
+		break;
+
+	case nod_breakleave:
+		verb = "breakleave";
+		break;
+
+	case nod_for_select:
+		verb = "for_select";
+		break;
+
+	case nod_while:
+		verb = "while";
+		break;
+
+	case nod_label:
+		verb = "label";
+		DSQL_pretty(node->nod_arg[e_label_name], column+1);
+		trace_line("%s   number %d\n", buffer,
+			(int)(IPTR)node->nod_arg[e_label_number]);
+		return;
+
+	case nod_derived_field:
+		verb = "derived_field";
+		trace_line("%s%s\n", buffer, verb);
+		DSQL_pretty(node->nod_arg[e_derived_field_value], column+1);
+		DSQL_pretty(node->nod_arg[e_derived_field_name], column+1);
+		trace_line("%s   scope %d\n", buffer,
+			(USHORT)(U_IPTR)node->nod_arg[e_derived_field_scope]);
+		return;
 
 	case nod_aggregate:
 		verb = "aggregate";
-		ib_printf("%s%s\n", buffer, verb);
+		trace_line("%s%s\n", buffer, verb);
 		context = (DSQL_CTX) node->nod_arg[e_agg_context];
-		ib_printf("%s   context %d\n", buffer, context->ctx_context);
+		trace_line("%s   context %d\n", buffer, context->ctx_context);
 		if ((map = context->ctx_map) != NULL)
-			ib_printf("%s   map\n", buffer);
+			trace_line("%s   map\n", buffer);
 		while (map) {
-			ib_printf("%s      position %d\n", buffer, map->map_position);
+			trace_line("%s      position %d\n", buffer, map->map_position);
 			DSQL_pretty(map->map_node, column + 2);
 			map = map->map_next;
 		}
@@ -2321,7 +2655,7 @@ void DSQL_pretty(DSQL_NOD node, int column)
 		relation = context->ctx_relation;
  		procedure = context->ctx_procedure;
 		field = (DSQL_FLD) node->nod_arg[e_fld_field];
-		ib_printf("%sfield %s.%s, context %d\n", buffer,
+		trace_line("%sfield %s.%s, context %d\n", buffer,
  			(relation != NULL ? 
  				relation->rel_name : 
  				(procedure != NULL ? 
@@ -2331,33 +2665,33 @@ void DSQL_pretty(DSQL_NOD node, int column)
 		return;
 	
 	case nod_field_name:
-		ib_printf("%sfield name: \"", buffer);
+		trace_line("%sfield name: \"", buffer);
 		string = (STR) node->nod_arg[e_fln_context];
 		if (string)
-			ib_printf("%s.", string->str_data);
+			trace_line("%s.", string->str_data);
 		string = (STR) node->nod_arg[e_fln_name];
         if (string != 0) {
-            ib_printf("%s\"\n", string->str_data);
+            trace_line("%s\"\n", string->str_data);
         }
         else {
-            ib_printf("%s\"\n", "*");
+            trace_line("%s\"\n", "*");
         }
 		return;
 
 	case nod_map:
 		verb = "map";
-		ib_printf("%s%s\n", buffer, verb);
+		trace_line("%s%s\n", buffer, verb);
 		context = (DSQL_CTX) node->nod_arg[e_map_context];
-		ib_printf("%s   context %d\n", buffer, context->ctx_context);
+		trace_line("%s   context %d\n", buffer, context->ctx_context);
 		for (map = (DSQL_MAP) node->nod_arg[e_map_map]; map; map = map->map_next) {
-			ib_printf("%s   position %d\n", buffer, map->map_position);
+			trace_line("%s   position %d\n", buffer, map->map_position);
 			DSQL_pretty(map->map_node, column + 1);
 		}
 		return;
 
 	case nod_position:
 		// nod_position is an ULONG according to pass1.cpp
-		ib_printf("%sposition %"ULONGFORMAT"\n", buffer, (ULONG) *ptr);
+		trace_line("%sposition %"ULONGFORMAT"\n", buffer, (ULONG) *ptr);
 		return;
 
 	case nod_relation:
@@ -2365,13 +2699,13 @@ void DSQL_pretty(DSQL_NOD node, int column)
 		relation = context->ctx_relation;
 		procedure = context->ctx_procedure;
  		if( relation != NULL ){ 
- 			ib_printf("%srelation %s, context %d\n",
+ 			trace_line("%srelation %s, context %d\n",
  				buffer, relation->rel_name, context->ctx_context);
  		} else if ( procedure != NULL ) { 
- 			ib_printf("%sprocedure %s, context %d\n",
+ 			trace_line("%sprocedure %s, context %d\n",
  				buffer, procedure->prc_name, context->ctx_context);
  		} else {
- 			ib_printf("%sUNKNOWN DB OBJECT, context %d\n",
+ 			trace_line("%sUNKNOWN DB OBJECT, context %d\n",
  			buffer, context->ctx_context);
  		}
 		return;
@@ -2381,27 +2715,27 @@ void DSQL_pretty(DSQL_NOD node, int column)
         // Adding variable->var_variable_number to display, obviously something
         // is missing from the printf, and Im assuming this was it.
         // (anyway can't be worse than it was MOD 05-July-2002.
-		ib_printf("%svariable %s %d\n", buffer, variable->var_name, variable->var_variable_number);
+		trace_line("%svariable %s %d\n", buffer, variable->var_name, variable->var_variable_number);
 		return;
 
 	case nod_var_name:
-		ib_printf("%svariable name: \"", buffer);
+		trace_line("%svariable name: \"", buffer);
 		string = (STR) node->nod_arg[e_vrn_name];
-		ib_printf("%s\"\n", string->str_data);
+		trace_line("%s\"\n", string->str_data);
 		return;
 
 	case nod_parameter:
 		if (node->nod_column){
-			ib_printf("%sparameter: %d\n",	buffer,(USHORT)(ULONG)node->nod_arg[e_par_parameter]);
+			trace_line("%sparameter: %d\n",	buffer,(USHORT)(ULONG)node->nod_arg[e_par_parameter]);
 		}else{
 			PAR	par=(PAR)node->nod_arg[e_par_parameter];
-			ib_printf("%sparameter: %d\n",	buffer,par->par_index);
+			trace_line("%sparameter: %d\n",	buffer,par->par_index);
 		}
 		return;
 
 
     case nod_udf:
-        ib_printf ("%sfunction: \"", buffer);  
+        trace_line ("%sfunction: \"", buffer);  
     /* nmcc: how are we supposed to tell which type of nod_udf this is ?? */
     /* CVC: The answer is that nod_arg[0] can be either the udf name or the
     pointer to udf struct returned by METD_get_function, so we should resort
@@ -2409,14 +2743,14 @@ void DSQL_pretty(DSQL_NOD node, int column)
         //        switch (node->nod_arg [e_udf_name]->nod_header.blk_type) {
         switch (MemoryPool::blk_type(node->nod_arg [e_udf_name])) {
         case dsql_type_udf:
-            ib_printf ("%s\"\n", ((UDF) node->nod_arg [e_udf_name])->udf_name);
+            trace_line ("%s\"\n", ((UDF) node->nod_arg [e_udf_name])->udf_name);
             break;
         case dsql_type_str:  
             string = (STR) node->nod_arg [e_udf_name];
-            ib_printf ("%s\"\n", string->str_data);
+            trace_line ("%s\"\n", string->str_data);
             break;
         default:
-            ib_printf ("%s\"\n", "<ERROR>");
+            trace_line ("%s\"\n", "<ERROR>");
             break;
         }
         ptr++;
@@ -2432,12 +2766,12 @@ void DSQL_pretty(DSQL_NOD node, int column)
 	}
 
 	if (node->nod_desc.dsc_dtype) {
-		ib_printf("%s%s (%d,%d,%p)\n",
+		trace_line("%s%s (%d,%d,%p)\n",
 			   buffer, verb,
 			   node->nod_desc.dsc_dtype,
 			   node->nod_desc.dsc_length, node->nod_desc.dsc_address);
 	} else {
-		ib_printf("%s%s\n", buffer, verb);
+		trace_line("%s%s\n", buffer, verb);
 	}
 	++column;
 
@@ -3770,8 +4104,8 @@ static DBB init(FRBRD** db_handle)
 		ALLD_init();
 		HSHD_init();
 
-#ifdef DEV_BUILD
-		DSQL_debug = 0;
+#ifdef DSQL_DEBUG
+		DSQL_debug = Config::getTraceDSQL();
 #endif
 
 		LEX_dsql_init();
@@ -4394,9 +4728,11 @@ static DSQL_REQ prepare(
 
 /* have the access method compile the request */
 
-#ifdef DEV_BUILD
+#ifdef DSQL_DEBUG
 	if (DSQL_debug & 64) {
-		gds__print_blr(reinterpret_cast<UCHAR*>(request->req_blr_string->str_data), 0, 0, 0);
+		dsql_trace("Resulting BLR code for DSQL:");
+		gds__print_blr(reinterpret_cast<UCHAR*>(request->req_blr_string->str_data), 
+			gds__trace_printer, 0, 0);
 	}
 #endif
 

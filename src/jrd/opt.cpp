@@ -426,8 +426,7 @@ RSB OPT_compile(TDBB tdbb,
 			// pass rse boolean only to inner substreams because join condition 
 			// should never exclude records from outer substreams 
 			if (rse->rse_jointype == blr_inner || 
-			   (rse->rse_jointype == blr_left && (ptr - rse->rse_relation)==1) ||
-			   (rse->rse_jointype == blr_right && (ptr - rse->rse_relation)==0) )
+			   (rse->rse_jointype == blr_left && (ptr - rse->rse_relation)==1) )
 			{
 				// AB: For an (X LEFT JOIN Y) mark the outer-streams (X) as 
 				// active because the inner-streams (Y) are always "dependent" 
@@ -447,8 +446,9 @@ RSB OPT_compile(TDBB tdbb,
 					}
 				}
 			} else {
-				rsb = OPT_compile(tdbb, csb, (RSE) node, parent_stack);				
-				find_used_streams(rsb, outer_streams);
+				rsb = OPT_compile(tdbb, csb, (RSE) node, parent_stack);
+				if (rse->rse_jointype == blr_left)
+					find_used_streams(rsb, outer_streams);
 			}
 		}
 
@@ -464,8 +464,7 @@ RSB OPT_compile(TDBB tdbb,
 			MOVE_FAST(local_streams + 1, river->riv_streams, i);
 			// AB: Save all inner-part streams
 			if (rse->rse_jointype == blr_inner || 
-			   (rse->rse_jointype == blr_left && (ptr - rse->rse_relation)==0) ||
-			   (rse->rse_jointype == blr_right && (ptr - rse->rse_relation)==1) )
+			   (rse->rse_jointype == blr_left && (ptr - rse->rse_relation)==0))
 			{
 				find_used_streams(rsb, sub_streams);
 			}
@@ -487,8 +486,10 @@ RSB OPT_compile(TDBB tdbb,
 		++streams[0];
 		*p++ = (UCHAR) stream;
 
-		assert(outer_streams[0] < MAX_STREAMS && outer_streams[0] < MAX_UCHAR);
-		outer_streams[++outer_streams[0]] = stream;
+		if (rse->rse_jointype == blr_left) {
+			assert(outer_streams[0] < MAX_STREAMS && outer_streams[0] < MAX_UCHAR);
+			outer_streams[++outer_streams[0]] = stream;
+		}
 
 		// if we have seen any booleans or sort fields, we may be able to
 		// use an index to optimize them; retrieve the current format of 
@@ -727,8 +728,8 @@ RSB OPT_compile(TDBB tdbb,
 #ifdef OPT_DEBUG
 	if (opt_debug_file) {
 		ib_fflush(opt_debug_file);
-		ib_fclose(opt_debug_file);
-		opt_debug_file = 0;
+		//ib_fclose(opt_debug_file);
+		//opt_debug_file = 0;
 	}
 #endif
 
@@ -1626,14 +1627,7 @@ static bool computable(CSB     csb,
 		// AB: cbs_made_river has been replaced by find_used_streams()
 		//if (idx_use &&
 		//	!(csb->csb_rpt[n].csb_flags & (csb_made_river | csb_active)))
-		if (idx_use && !(csb->csb_rpt[n].csb_flags & csb_active))
-		{
-			return false;
-		}
-		if (!idx_use && !(csb->csb_rpt[n].csb_flags & csb_active)) {
-			return false;
-		}
-		return true;
+		return csb->csb_rpt[n].csb_flags & csb_active;
 
 	case nod_dbkey:
 		if ((n = (USHORT)(ULONG) node->nod_arg[0]) == stream) {
@@ -1643,14 +1637,7 @@ static bool computable(CSB     csb,
 		//if (idx_use &&
 		//	!(csb->csb_rpt[n].
 		//		 csb_flags & (csb_made_river | csb_active)))
-		if (idx_use && !(csb->csb_rpt[n].csb_flags & csb_active))
-		{
-			return false;
-		}
-		if (!idx_use && !(csb->csb_rpt[n].csb_flags & csb_active)) {
-			return false;
-		}
-		return true;
+		return csb->csb_rpt[n].csb_flags & csb_active;
 
 	case nod_min:
 	case nod_max:

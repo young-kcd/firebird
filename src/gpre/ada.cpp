@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.26 2003-09-25 11:49:02 robocop Exp $
+//	$Id: ada.cpp,v 1.27 2003-09-28 21:35:58 skidder Exp $
 //
 
 #include "firebird.h"
@@ -58,7 +58,7 @@ static void	gen_blob_close (ACT, USHORT);
 static void	gen_blob_end (ACT, USHORT);
 static void	gen_blob_for (ACT, USHORT);
 static void	gen_blob_open (ACT, USHORT);
-static int	gen_blr (int *, int, TEXT *);
+static void	gen_blr (void *, SSHORT, const char*);
 static void	gen_clear_handles (ACT, int);
 static void	gen_compile (ACT, int);
 static void	gen_create_database (ACT, int);
@@ -900,10 +900,9 @@ static void gen_blob_open( ACT action, USHORT column)
 //		Callback routine for BLR pretty printer.
 //  
 
-static int gen_blr( int *user_arg, int offset, TEXT * string)
+static void gen_blr(void *user_arg, SSHORT offset, const char* string)
 {
 	int from, to, len, c_len;
-	SCHAR c;
 
 	c_len = strlen(COMMENT);
 	len = strlen(string);
@@ -912,17 +911,15 @@ static int gen_blr( int *user_arg, int offset, TEXT * string)
 
 	while (from < len) {
 		if (to < len) {
-			c = string[to];
-			string[to] = 0;
-		}
-		ib_fprintf(out_file, "%s%s\n", COMMENT, &string[from]);
-		if (to < len)
-			string[to] = c;
+			char buffer[121];
+			strncpy(buffer, string+from, 120-c_len);
+			buffer[120-c_len] = 0;
+			ib_fprintf(out_file, "%s%s\n", COMMENT, buffer);
+		} else
+			ib_fprintf(out_file, "%s%s\n", COMMENT, string+from);
 		from = to;
 		to = to + 120 - c_len;
 	}
-
-	return TRUE;
 }
 
 
@@ -2521,7 +2518,7 @@ static void gen_raw(
 			   enum req_t request_type, int request_length, int column)
 {
 	UCHAR *end;
-	SCHAR c;
+	UCHAR c;
 	TEXT buffer[80], *p, *limit;
 
 	p = buffer;
@@ -2715,28 +2712,28 @@ static void gen_request( GPRE_REQ request, int column)
 			case REQ_create_database:
 			case REQ_ready:
 				string_type = "DPB";
-				if (PRETTY_print_cdb((SCHAR*) request->req_blr,
-									 (int (*)()) gen_blr, 0, 0))
+				if (PRETTY_print_cdb(request->req_blr,
+									 gen_blr, 0, 0))
 					IBERROR("internal error during parameter generation");
 				break;
 
 			case REQ_ddl:
 				string_type = "DYN";
-				if (PRETTY_print_dyn((SCHAR*) request->req_blr,
-									 ( int (*)()) gen_blr, 0, 0))
+				if (PRETTY_print_dyn(request->req_blr,
+									 gen_blr, 0, 0))
 					IBERROR("internal error during dynamic DDL generation");
 				break;
 			case REQ_slice:
 				string_type = "SDL";
-				if (PRETTY_print_sdl((SCHAR*) request->req_blr,
-									 ( int (*)() ) gen_blr, 0, 0))
+				if (PRETTY_print_sdl(request->req_blr,
+									 gen_blr, 0, 0))
 					IBERROR("internal error during SDL generation");
 				break;
 
 			default:
 				string_type = "BLR";
-				if (isc_print_blr((SCHAR*) request->req_blr,
-								  ( void (*)() ) gen_blr, 0, 0))
+				if (gds__print_blr(request->req_blr,
+								   gen_blr, 0, 0))
 					IBERROR("internal error during BLR generation");
 			}
 		}
@@ -2770,7 +2767,7 @@ static void gen_request( GPRE_REQ request, int column)
 				printa(column,
 					   "isc_%d\t: CONSTANT interbase.blr (1..%d) := (",
 					   reference->ref_sdl_ident, reference->ref_sdl_length);
-				gen_raw((UCHAR*) reference->ref_sdl, REQ_slice,
+				gen_raw(reference->ref_sdl, REQ_slice,
 						reference->ref_sdl_length, column);
 				printa(column, "); \t--- end of SDL string for isc_%d\n",
 					   reference->ref_sdl_ident);
@@ -2780,7 +2777,7 @@ static void gen_request( GPRE_REQ request, int column)
 						   "--- FORMATTED REQUEST SDL FOR GDS_%d = \n",
 						   reference->ref_sdl_ident);
 					if (PRETTY_print_sdl(reference->ref_sdl,
-										 ( int(*)() ) gen_blr, 0, 1))
+										 gen_blr, 0, 1))
 						IBERROR("internal error during SDL generation");
 				}
 			}

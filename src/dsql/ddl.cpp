@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.63 2003-09-28 00:36:28 brodsom Exp $
+ * $Id: ddl.cpp,v 1.64 2003-09-28 21:35:53 skidder Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -86,6 +86,7 @@
 #include "../dsql/pass1_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thd_proto.h"
+#include "../jrd/gds_proto.h"
 
 #if defined(DEBUG) && !(defined REQUESTER && defined SUPERCLIENT)
 #include "../gpre/prett_proto.h"
@@ -262,12 +263,12 @@ void DDL_execute(DSQL_REQ request)
 
 	TSQL tdsql = GET_THREAD_DATA;
 
-#ifdef DEBUG
-#if !(defined REQUESTER && defined SUPERCLIENT)
-	if (DSQL_debug & 4)
-		PRETTY_print_dyn(request->req_blr_string->str_data,
-						 NULL, "%4d %s\n", 0);
-#endif
+#ifdef DSQL_DEBUG
+	if (DSQL_debug & 4) {
+		dsql_trace("Output DYN string for DDL:");
+		PRETTY_print_dyn(reinterpret_cast<UCHAR*>(request->req_blr_string->str_data),
+						 gds__trace_printer, NULL, 0);
+	}
 #endif
 
 	USHORT length = request->req_blr -

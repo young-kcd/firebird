@@ -37,6 +37,8 @@ namespace Firebird {
 template <typename T>
 class Array {
 public:
+	Array(MemoryPool*p) : 
+	  count(0), capacity(0), data(0), pool(p)  {}
 	Array(MemoryPool*p, int InitialSize) : 
 	  count(0), capacity(0), data(0), pool(p)  {grow(InitialSize);}
 	~Array() {pool->deallocate(data);}

@@ -41,10 +41,10 @@
 #include "../jrd/thd_proto.h"
 
 static ISC_STATUS caller(USHORT, CTL, USHORT, SCHAR *, USHORT *);
-static void dump_blr(CTL, USHORT, SCHAR *);
-static void move(SCHAR *, SCHAR *, USHORT);
+static void dump_blr(void*, SSHORT, const char*);
+static void move(const char*, char*, USHORT);
 static ISC_STATUS string_filter(USHORT, CTL);
-static void string_put(CTL, SCHAR *);
+static void string_put(CTL, const char*);
 
 /* Note:  This table is used to indicate which bytes could represent
  *	  ASCII characters - and is used to filter "untyped" blobs
@@ -234,9 +234,8 @@ ISC_STATUS filter_blr(USHORT action, CTL control)
 	if (!status) {
 		if ((l > length) && (temp[length - 1] != blr_eoc))
 			temp[length] = blr_eoc;
-		gds__print_blr(reinterpret_cast < UCHAR * >(temp),
-					   reinterpret_cast < void (*)() > (dump_blr),
-					   reinterpret_cast < char *>(control), 0);
+		gds__print_blr(reinterpret_cast<UCHAR*>(temp),
+					   dump_blr, control, 0);
 	}
 
 	control->ctl_data[1] = control->ctl_data[0];
@@ -436,9 +435,8 @@ ISC_STATUS filter_runtime(USHORT action, CTL control)
 	}
 
 	if (blr) {
-		gds__print_blr(reinterpret_cast < UCHAR * >(p),
-					   reinterpret_cast < void (*)() > (dump_blr),
-					   reinterpret_cast < char *>(control), 0);
+		gds__print_blr(reinterpret_cast<UCHAR*>(p),
+					   dump_blr, control, 0);
 		control->ctl_data[1] = control->ctl_data[0];
 	}
 
@@ -1124,7 +1122,7 @@ static ISC_STATUS caller(
 }
 
 
-static void dump_blr(CTL control, USHORT offset, TEXT * line)
+static void dump_blr(void* arg, SSHORT offset, const char* line)
 {
 /**************************************
  *
@@ -1136,6 +1134,7 @@ static void dump_blr(CTL control, USHORT offset, TEXT * line)
  *	Callback routine for BLR dumping.
  *
  **************************************/
+	CTL control = reinterpret_cast<CTL>(arg);
 	SLONG l;
 	TEXT *p, *end, *temp, buffer[256];
 
@@ -1160,7 +1159,7 @@ static void dump_blr(CTL control, USHORT offset, TEXT * line)
 }
 
 
-static void move(TEXT * from, TEXT * to, USHORT length)
+static void move(const char *from, char *to, USHORT length)
 {
 /**************************************
  *
@@ -1237,7 +1236,7 @@ static ISC_STATUS string_filter(USHORT action, CTL control)
 }
 
 
-static void string_put(CTL control, TEXT * line)
+static void string_put(CTL control, const char *line)
 {
 /**************************************
  *

@@ -989,9 +989,11 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, bool proc_flag)
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
-#ifdef DEV_BUILD
-	if (DSQL_debug & 2)
+#ifdef DSQL_DEBUG
+	if (DSQL_debug & 2) {
+		dsql_trace("Node tree at DSQL pass1 entry:");
 		DSQL_pretty(input, 0);
+	}
 #endif
 
 
@@ -1464,9 +1466,11 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, bool proc_flag)
 	while (request->req_context != base)
 		LLS_POP(&request->req_context);
 
-#ifdef DEV_BUILD
-	if (DSQL_debug & 1)
+#ifdef DSQL_DEBUG
+	if (DSQL_debug & 1) {
+		dsql_trace("Node tree at DSQL pass1 exit:");
 		DSQL_pretty(node, 0);
+	}
 #endif
 
 	return node;
@@ -4383,12 +4387,12 @@ static DSQL_NOD pass1_join(DSQL_REQ request, DSQL_NOD input, bool proc_flag)
 			request->req_in_outer_join--;
 		break;
 		case nod_join_right:
-			node->nod_arg[e_join_rght_rel] = 
-				PASS1_node(request, input->nod_arg[e_join_rght_rel], proc_flag);
 			request->req_in_outer_join++;
 			node->nod_arg[e_join_left_rel] = 
 				PASS1_node(request, input->nod_arg[e_join_left_rel], proc_flag);
 			request->req_in_outer_join--;
+			node->nod_arg[e_join_rght_rel] = 
+				PASS1_node(request, input->nod_arg[e_join_rght_rel], proc_flag);
 		break;
 		case nod_join_full:
 			request->req_in_outer_join++;
@@ -5033,9 +5037,11 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 			// Cannot use an aggregate in a WHERE clause, use HAVING instead
 	}
 
-#ifdef DEV_BUILD
-	if (DSQL_debug & 16)
+#ifdef DSQL_DEBUG
+	if (DSQL_debug & 16) {
+		dsql_trace("PASS1_rse input tree:");
 		DSQL_pretty(input, 0);
+	}
 #endif
 
 /* Process select list, if any. If not, generate one */
