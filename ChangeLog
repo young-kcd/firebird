@@ -1,3 +1,38 @@
+2003-12-17 18:54  alexpeshkoff
+
+	* firebird2/src/jrd/lck.cpp:
+	
+	Fixed 'Fatal lock manager error: invalid lock id (0), errno: 0' (at
+	least one of the reasons for this error).  Bug happened when
+	attempt was made to call LCK_convert_non_blocking() for LCK_none
+	lock.
+
+2003-12-17 15:33  paul_reeves
+
+	* firebird2/: builds/win32/make_all.bat,
+	src/install/arch-specific/win32/BuildExecutableInstall.bat,
+	
+	Integrate instclient into Win32 install script. Increment Build no
+	for Fb 1.5. Make some minor corrections to some license
+	boiler-plates.
+	src/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.in
+	c,
+	src/install/arch-specific/win32/FirebirdInstallSupportFunctions.inc
+	, src/install/arch-specific/win32/FirebirdInstall_15.iss,
+	src/jrd/isc_version.h:
+
+2003-12-17 12:05  aafemt
+
+	* firebird2/builds/posix/Makefile.in.client.util:
+	
+	Add db_alias.cpp to gstat
+
+2003-12-17 09:23  epocman
+
+	* firebird2/src/utilities/install.cpp:
+	
+	Get rid of temp file in case of errors.
+
 2003-12-15 22:10  dimitr
 
 	* firebird2/src/jrd/btr.cpp:
