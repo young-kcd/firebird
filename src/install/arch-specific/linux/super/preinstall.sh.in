@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 
 
 #------------------------------------------------------------------------
@@ -14,6 +14,7 @@ AskQuestion() {
     read Answer
 }
 
+
 #------------------------------------------------------------------------
 #  stop super server if it is running
 #  Also will only stop firebird, since that has the init script
@@ -25,7 +26,10 @@ stopServerIfRunning() {
 
     if [ ! -z "$checkString" ] 
       then
-        if [ -f /etc/rc.d/init.d/firebird ]
+        if [ -f /etc/init.d/firebird ]
+          then
+            /etc/init.d/firebird stop
+        elif [ -f /etc/rc.d/init.d/firebird ]
           then
             /etc/rc.d/init.d/firebird stop
         fi
@@ -33,7 +37,7 @@ stopServerIfRunning() {
 }
 
 #------------------------------------------------------------------------
-#  Check if server is running
+#  stop server if it is running
 
 
 checkIfServerRunning() {
@@ -41,13 +45,15 @@ checkIfServerRunning() {
 
     stopServerIfRunning
 
+
     checkString=`ps -efww| egrep "(fbserver|fbguard|ibserver|ibguard)" |grep -v grep`
 
     if [ ! -z "$checkString" ] 
       then
         echo "An instance of the Firebird/InterBase Super server seems to be running." 
-        echo "Please quit all interbase applications and then proceed"
-        exit 1 
+        echo "(the ibserver/ibguard/fbserver/fbguard process was detected running on your system)"
+        echo "Please quit all Firebird applications and then proceed"
+        exit -1 
     fi
 
 
@@ -122,8 +128,7 @@ archivePriorInstallSystemFiles() {
 
     cd /
 
-
-    DestFile="usr/local/firebird"
+    DestFile=${IBRootDir#/}   # strip off leading /
     if [ -e "$DestFile"  ]
       then
         echo ""
@@ -209,6 +214,22 @@ checkForRPMInstall() {
 }
 
 
+#------------------------------------------------------------------------
+#  Check for presence of editor 'ed'
+
+checkForEd() {
+    ed <<EOS >/dev/null 2>&1
+EOS
+    if [ $? -ne 0 ]
+      then
+	echo "+------------------- ERROR -----------------------+"
+	echo "| Your system miss traditional unix editor 'ed'.  |"
+	echo "| Please install it before running setup program. |"
+	echo "+-------------------------------------------------+"
+	exit 127
+    fi
+}
+
 
 #== Main Pre =================================================================
 
@@ -217,8 +238,8 @@ checkForRPMInstall() {
     ArchiveDateTag=`date +"%Y%m%d_%H%M"`
     ArchiveMainFile="${IBRootDir}_${ArchiveDateTag}.tar.gz"
 
-
-
+    checkForEd
+    
 # Ok so any of the following packages are a problem
 # these don't work at least in the latest rpm manager, since it 
 # has the rpm database locked and it fails.

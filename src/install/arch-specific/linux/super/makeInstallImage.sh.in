@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.1.2.3 2003-10-09 16:46:40 alexpeshkoff Exp $
+#   $Id: makeInstallImage.sh.in,v 1.1.2.4 2003-10-15 09:26:00 alexpeshkoff Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -118,7 +118,7 @@ copyFiles() {
 
     cp $BuiltFBDir/bin/SSchangeRunUser.sh $DestDir/bin
     cp $BuiltFBDir/bin/SSrestoreRootRunUser.sh $DestDir/bin
-    cp $BuildRootDir/src/install/arch-specific/linux/super/SSchangePasswd.sh $DestDir/bin/changeDBAPassword.sh
+    cp $BuiltFBDir/bin/changeDBAPassword.sh $DestDir/bin
 
     # Copy examples only if we have them
 
@@ -158,6 +158,8 @@ copyFiles() {
     cp $BuiltFBDir/misc/firebird.init.d.generic $DestDir/misc
     cp $BuiltFBDir/misc/firebird.init.d.mandrake $DestDir/misc
     cp $BuiltFBDir/misc/firebird.init.d.suse $DestDir/misc
+    cp $BuiltFBDir/misc/firebird.init.d.debian $DestDir/misc
+    cp $BuiltFBDir/misc/firebird.init.d.gentoo $DestDir/misc
     cp $BuiltFBDir/misc/rc.config.firebird $DestDir/misc
 
 #   Sample of aliases.conf

@@ -26,6 +26,7 @@ replaceLineInFile() {
     FileName=$1
     newLine=$2
     oldLine=$3
+    Silent=$4
 
     if [ -z "$oldLine" ] 
       then
@@ -33,21 +34,24 @@ replaceLineInFile() {
 
     elif [ "$oldLine" != "$newLine"  ]
       then
-        echo ""
-        echo "--- Warning ----------------------------------------------"
-        echo ""
-        echo "    In file $FileName found line: "
-        echo "    $oldLine"
-        echo "    Which differs from the expected line:"
-        echo "    $newLine"
-        echo ""
+        if [ "$Silent" != "Silent" ]
+	  then
+            echo ""
+	    echo "--- Warning ----------------------------------------------"
+    	    echo ""
+            echo "    In file $FileName found line: "
+	    echo "    $oldLine"
+    	    echo "    Which differs from the expected line:"
+            echo "    $newLine"
+	    echo ""
+	fi
 
 #        AskQuestion "Press return to update file or ^C to abort install"
 
         cat $FileName | grep -v "$oldLine" > ${FileName}.tmp
         mv ${FileName}.tmp $FileName
         echo "$newLine" >> $FileName
-        echo "Updated."
+        echo "Updated $FileName."
 
     fi
 }
@@ -85,6 +89,11 @@ changeInitPassword() {
     NewPasswd=$1
 
     InitFile=/etc/rc.d/init.d/firebird
+    if [ ! -f $InitFile ]
+      then
+	InitFile=/etc/init.d/firebird
+    fi
+
     if [ -f $InitFile ]
       then
         ed $InitFile <<EOF
@@ -117,9 +126,9 @@ keepOrigDBAPassword() {
     echo "daemon init routine in the file /etc/rc.d/init.d/firebird)" >> $DBAPasswordFile
     echo "" >> $DBAPasswordFile
     echo "Your should password can be changed to a more suitable one using the" >> $DBAPasswordFile
-    echo "/usr/local/firebird/bin/gsec program as show below:" >> $DBAPasswordFile
+    echo "@prefix@/bin/gsec program as show below:" >> $DBAPasswordFile
     echo "" >> $DBAPasswordFile
-    echo ">cd /usr/local/firebird" >> $DBAPasswordFile
+    echo ">cd @prefix@" >> $DBAPasswordFile
     echo ">bin/gsec -user sysdba -password <password>" >> $DBAPasswordFile
     echo "GSEC>modify sysdba -pw <newpassword>" >> $DBAPasswordFile
     echo "GSEC>quit" >> $DBAPasswordFile
@@ -247,17 +256,26 @@ installInitdScript() {
 
 # SuSE specific
 
-    elif [ -r /etc/SuSE-release ]; then
-#    elif [ -x /bin/fillup ]; then
-#    elif [ -d /etc/init.d ]; then
-
-# I'm not sure if this is enough to detect SuSE, but it works for now
-# (Pavel I've changed it since /etc/init.d will match quite a few It would
-# be nice of we could find a SuSE specific file we could use).
-
+    elif [ -r /etc/SuSE-release ]
+      then
         srcScript=firebird.init.d.suse
         initScript=/etc/init.d/firebird
         ln -s ../../etc/init.d/firebird /usr/sbin/rcfirebird
+
+# Debian specific
+
+    elif [ -r /etc/debian_version ]
+      then
+        srcScript=firebird.init.d.debian
+        initScript=/etc/init.d/firebird
+        ln -s ../../etc/init.d/firebird /usr/sbin/rcfirebird
+
+# Gentoo specific
+
+    elif [ -r /etc/gentoo-release ]
+      then
+        srcScript=firebird.init.d.gentoo
+        initScript=/etc/init.d/firebird
 
 # Generic...
 
@@ -275,15 +293,13 @@ installInitdScript() {
     chmod ug=rx,o= $initScript  # contains password hence no world read.
 
 
-
     # RedHat and Mandrake specific 
     if [ -x /sbin/chkconfig ]
       then
         /sbin/chkconfig --add firebird
     fi
 
-
-    # Suse specific 
+    # Suse (& Debian ?) specific 
     if [ -x /sbin/insserv ]
       then
         /sbin/insserv /etc/init.d/firebird
@@ -332,9 +348,9 @@ startInetService() {
 # The two host names that are needed there are 
 # localhost.localdomain and whatever hostname returns.
 
-updateHostsDotEquivFile() {
+updateHostsDotFile() {
 
-    hostEquivFile=/etc/hosts.equiv
+    hostEquivFile=$1 
 
     if [ ! -f $hostEquivFile ]
       then
@@ -342,6 +358,10 @@ updateHostsDotEquivFile() {
         chown root:root $hostEquivFile
         chmod u=rw,go=r $hostEquivFile
     fi
+
+    newLine="localhost"
+    oldLine=`grep "$newLine" $hostEquivFile`
+    replaceLineInFile "$hostEquivFile" "$newLine" "$oldLine" Silent
 
     newLine="localhost.localdomain"
     oldLine=`grep "$newLine" $hostEquivFile`
@@ -392,14 +412,14 @@ removeLineFromFile() {
 #= Main Post ===============================================================
 
     # Make sure the links are in place 
-    if [ ! -L /usr/local/firebird -a ! -d /usr/local/firebird ] 
+    if [ ! -L @prefix@ -a ! -d @prefix@ ] 
       then 
     # Main link and... 
-        ln -s $RPM_INSTALL_PREFIX/interbase /usr/local/firebird 
+        ln -s $RPM_INSTALL_PREFIX/interbase @prefix@
     fi 
 
 
-    IBRootDir=/usr/local/firebird
+    IBRootDir=@prefix@
     IBBin=$IBRootDir/bin
 #    RunUser=root
     RunUser=firebird
@@ -429,8 +449,9 @@ removeLineFromFile() {
     replaceLineInFile "$FileName" "$newLine" "$oldLine"
 
 
-    # Add entries to host.equiv file
-    updateHostsDotEquivFile
+    # Add entries to host.equiv & hosts.allow files
+    updateHostsDotFile /etc/hosts.equiv
+    updateHostsDotFile /etc/hosts.allow
 	
 	
     # remove any gds_db line in the /etc/inetd.conf
@@ -468,9 +489,9 @@ removeLineFromFile() {
     # Create the fbmgr shell script.
     cat > fbmgr <<EOF
 #!/bin/sh
-INTERBASE=$IBRootDir
-export INTERBASE
-exec \$INTERBASE/bin/fbmgr.bin \$@
+FIREBIRD=$IBRootDir
+export FIREBIRD
+exec \$FIREBIRD/bin/fbmgr.bin \$@
 EOF
 
     # Everyone may execute clients
