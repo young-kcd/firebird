@@ -265,8 +265,7 @@ const int e_sto_statement2	= 1;
 const int e_sto_sub_store	= 2;
 const int e_sto_validate	= 3;
 const int e_sto_relation	= 4;
-const int e_sto_stream		= 5;
-const int e_sto_length		= 6;
+const int e_sto_length		= 5;
 
 const int e_erase_statement	= 0;
 const int e_erase_sub_erase	= 1;
