@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.174 2003-10-31 12:41:44 eku Exp $
+dnl $Id: configure.in,v 1.175 2003-11-04 06:25:09 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -321,9 +321,8 @@ if test "$ac_cv_header_unistd_h" = "yes"; then
   }],
   [AC_DEFINE(HAVE_POSIX_THREADS, 1,
      [Define this if POSIX threads are available])
-   AC_SUBST(SUPERCLIENT,-DSUPERCLIENT)
    AC_MSG_RESULT(yes)],
-  [AC_SUBST(SUPERCLIENT)])
+  [AC_MSG_RESULT(no)])
 fi
 AC_CHECK_HEADERS(varargs.h)
 AC_CHECK_HEADERS(crypt.h)
