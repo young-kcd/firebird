@@ -939,29 +939,91 @@ static IDX_E check_duplicates(
 			   record retrieved -- for unique indexes the insertion index and the 
 			   record index are the same, but for foreign keys they are different */
 			
-			bool all_nulls = true;
-			USHORT i;
-			for (i = 0; i < insertion_idx->idx_count; i++) {
-				USHORT field_id = insertion_idx->idx_rpt[i].idx_field;
-				/* In order to "map a null to a default" value (in EVL_field()), 
-				 * the relation block is referenced. 
-				 * Reference: Bug 10116, 10424 
-				 */
-				const bool flag =
-					EVL_field(relation_1, rpb.rpb_record, field_id, &desc1);
+			if (record_idx->idx_flags & idx_expressn)
+			{
+				DSC *desc_ptr1, *desc_ptr2;
 
-				field_id = record_idx->idx_rpt[i].idx_field;
-				const bool flag_2 = EVL_field(relation_2, record, field_id, &desc2);
+				fb_assert(insertion_idx->idx_expression != NULL);	
 
-				if (flag != flag_2 || MOV_compare(&desc1, &desc2) != 0) {
+				fb_assert(insertion_idx->idx_expression_request->req_caller == NULL);
+				insertion_idx->idx_expression_request->req_caller = tdbb->tdbb_request;
+				
+				if (tdbb->tdbb_request)
+				{
+					insertion_idx->idx_expression_request->req_transaction =
+						tdbb->tdbb_request->req_transaction;
+				}
+
+				tdbb->tdbb_request = insertion_idx->idx_expression_request;
+				tdbb->tdbb_request->req_rpb[0].rpb_record = rpb.rpb_record;
+				tdbb->tdbb_request->req_flags &= ~req_null;
+				{
+					Jrd::ContextPoolHolder(tdbb, tdbb->tdbb_request->req_pool);
+
+					if (!(desc_ptr1 = EVL_expr(tdbb, insertion_idx->idx_expression)))
+						desc_ptr1 = &insertion_idx->idx_expression_desc;
+	
+				}
+				const bool flag1 = !(tdbb->tdbb_request->req_flags & req_null);
+
+				tdbb->tdbb_request = insertion_idx->idx_expression_request->req_caller;
+				insertion_idx->idx_expression_request->req_caller = NULL;
+
+				fb_assert(record_idx->idx_expression != NULL);	
+
+				fb_assert(record_idx->idx_expression_request->req_caller == NULL);
+				record_idx->idx_expression_request->req_caller = tdbb->tdbb_request;
+
+				if (tdbb->tdbb_request)
+				{
+					record_idx->idx_expression_request->req_transaction =
+						tdbb->tdbb_request->req_transaction;
+				}
+
+				tdbb->tdbb_request = insertion_idx->idx_expression_request;
+				tdbb->tdbb_request->req_rpb[0].rpb_record = record;
+				tdbb->tdbb_request->req_flags &= ~req_null;
+				{
+					Jrd::ContextPoolHolder(tdbb, tdbb->tdbb_request->req_pool);
+
+					if (!(desc_ptr2 = EVL_expr(tdbb, record_idx->idx_expression)))
+						desc_ptr2 = &record_idx->idx_expression_desc;
+				}
+				const bool flag2 = !(tdbb->tdbb_request->req_flags & req_null);
+
+				tdbb->tdbb_request = record_idx->idx_expression_request->req_caller;
+				record_idx->idx_expression_request->req_caller = NULL;
+
+				if (flag1 && flag2 && !MOV_compare(desc_ptr1, desc_ptr2)) {
+					result = idx_e_duplicate;
+				}
+			}
+			else
+			{
+				bool all_nulls = true;
+				USHORT i;
+				for (i = 0; i < insertion_idx->idx_count; i++) {
+					USHORT field_id = insertion_idx->idx_rpt[i].idx_field;
+					/* In order to "map a null to a default" value (in EVL_field()), 
+					* the relation block is referenced. 
+					* Reference: Bug 10116, 10424 
+					*/
+					const bool flag =
+						EVL_field(relation_1, rpb.rpb_record, field_id, &desc1);
+
+					field_id = record_idx->idx_rpt[i].idx_field;
+					const bool flag_2 = EVL_field(relation_2, record, field_id, &desc2);
+
+					if (flag != flag_2 || MOV_compare(&desc1, &desc2) != 0) {
+						break;
+					}
+					all_nulls = all_nulls && !flag && !flag_2;
+				}
+
+				if (i >= insertion_idx->idx_count && !all_nulls) {
+					result = idx_e_duplicate;
 					break;
 				}
-				all_nulls = all_nulls && !flag && !flag_2;
-			}
-
-			if (i >= insertion_idx->idx_count && !all_nulls) {
-				result = idx_e_duplicate;
-				break;
 			}
 		}
 	}

@@ -3317,7 +3317,6 @@ static bool expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 		case nod_current_time:
 		case nod_current_date:
 		case nod_current_timestamp:
-		case nod_internal_info:
 			return true;
 
 		case nod_value_if:
@@ -3348,6 +3347,7 @@ static bool expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 			break;
 
 		case nod_negate:
+		case nod_internal_info:
 			if (expression_equal2(tdbb, opt, node1->nod_arg[0],
 								  node2->nod_arg[0], stream))
 			{
