@@ -1776,14 +1776,14 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 
 #ifdef DSQL_DEBUG
 
-static void trace_line(const char* message, ...) { \
-	char buffer[1024]; \
-	char *ptr = buffer; \
-	va_list params; \
-	va_start(params, message); \
-	vsnprintf(ptr, sizeof(buffer), message, params); \
-	va_end(params); \
-	gds__trace_raw(buffer); \
+static void trace_line(const char* message, ...) {
+	char buffer[1024];
+	char *ptr = buffer;
+	va_list params;
+	va_start(params, message);
+	vsnprintf(ptr, sizeof(buffer), message, params);
+	va_end(params);
+	gds__trace_raw(buffer);
 }
 
 /**
