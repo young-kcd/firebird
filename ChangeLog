@@ -1,3 +1,45 @@
+2005-01-21 15:09  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp (1.188):
+	
+	Fix alias usage in explicit PLAN
+
+2005-01-21 14:49  alexpeshkoff
+
+	* firebird2/src/jrd/: idx.cpp (1.82), btr.cpp (1.131), btr_proto.h
+	(1.31):
+	
+	fixed my bug with descending indices in referential constraints
+
+2005-01-21 11:45  robocop
+
+	* firebird2/src/jrd/exe.cpp (1.139):
+	
+	Misc.
+
+2005-01-21 09:54  robocop
+
+	* firebird2/src/dsql/parse.cpp (1.141):
+	
+	Regenerate parse.cpp after Dmitry's changes.
+
+2005-01-21 09:39  robocop
+
+	* firebird2/src/jrd/opt.cpp (1.214):
+	
+	1.- Fix unregistered bug where an attempt to use an invalid index
+	in an explicit plan causes garbage to be shown in the error message
+	instead of the rejected index name.  2.- Use constants instead of
+	hardcoded positions in node's arguments.
+
+2005-01-21 09:36  robocop
+
+	* firebird2/src/jrd/: dfw.epp (1.142), exe.h (1.65), met.epp
+	(1.151), par.cpp (1.113):
+	
+	1.- Misc.  2.- Use constants instead of harcoded positions in
+	node's arguments.
+
 2005-01-20 13:35  dimitr
 
 	* firebird2/doc/sql.extensions/README.keywords (1.1):
