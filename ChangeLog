@@ -1,3 +1,164 @@
+2004-10-07 22:44  skidder
+
+	* firebird2/builds/posix/Makefile.in.client.fbudf (1.3):
+	
+	Build threaded version of fbudf library in SuperServer builds
+
+2004-10-07 22:25  skidder
+
+	* firebird2/builds/posix/: Makefile.in.client.gpre (1.16),
+	Makefile.in.embed.gpre (1.16):
+	
+	Fix POSIX build after recent Claudio fix
+
+2004-10-07 11:59  robocop
+
+	* firebird2/src/gpre/: gpre.cpp (1.64), gpre.h (1.71), par.cpp
+	(1.53):
+	
+	Looking at gpre.c in FB1 and the usage of the variable fatal_env,
+	it's evident that the conversion SEH->C++ try/except screwed the
+	logic. The original idea was that CPR_abort will cause the program
+	to exit gracefully, not to continue parsing, because it's useless
+	and clutters the console with hundreds of messages. As far as I can
+	test, when gpre cannot attach to the db, run-time failures can be
+	detected by gpre_static or a false result is converted in
+	exception. The new gpre_exception propagates up to the highest
+	level where it allows the program to exit gracefully as it was in
+	FB1. Until now, the behavior in FB1.5 & FB2 has been annoying. When
+	we fail to connect to the db, anything more than we do is useless;
+	we now will print a message, clean the house and exit. Hope
+	everyone can compile my change.
+
+2004-10-07 11:46  robocop
+
+	* firebird2/src/jrd/gds.cpp (1.154):
+	
+	VMS-related changes. Just in case.
+
+2004-10-07 11:42  robocop
+
+	* firebird2/src/: dudley/extract.epp (1.39), jrd/common.h (1.126):
+	
+	Treat literal strings as constants, please.
+
+2004-10-07 11:27  robocop
+
+	* firebird2/src/: common/fb_exception.cpp (1.14),
+	include/fb_exception.h (1.12):
+	
+	Fixed a bug in fatal_exception's constructor that causes
+	fill_status to write garbage in the status vector.  Overload what()
+	for the same class. It helps gpre to quit on failures (gpre changes
+	still not posted).
+
+2004-10-07 11:24  robocop
+
+	* firebird2/src/jrd/dyn_def.epp (1.80):
+	
+	Ugh, a change that belong to another, still not posted
+	"configuration" slipped in. Go back.
+
+2004-10-07 11:19  robocop
+
+	* firebird2/src/: burp/backup.epp (1.66), qli/meta.epp (1.50):
+	
+	Misc.
+
+2004-10-07 11:15  dimitr
+
+	* firebird2/src/jrd/: btr.cpp (1.122), cch.cpp (1.112), cmp.cpp
+	(1.152), evl.cpp (1.109), exe.cpp (1.125), idx.cpp (1.75), inf.cpp
+	(1.49), met.epp (1.143), opt.cpp (1.196), pag.cpp (1.83), pcmet.epp
+	(1.30), rlck.cpp (1.31), rng.cpp (1.32), sdw.cpp (1.53), tpc.cpp
+	(1.19), tra.cpp (1.91), tra.h (1.41), tra_proto.h (1.16), vio.cpp
+	(1.114):
+	
+	1) Locks related cleanup 2) Got rid of TRA_nowait + transaction
+	waits related cleanup 3) Return isc_lock_timeout when it's
+	necessary TODO: Enhance SET TRANSACTION
+
+2004-10-07 11:02  robocop
+
+	* firebird2/src/jrd/: dfw.epp (1.131), dyn_def.epp (1.79):
+	
+	Possible buffer overrun.
+
+2004-10-07 11:01  robocop
+
+	* firebird2/src/jrd/: isc.cpp (1.52), isc_proto.h (1.12):
+	
+	Possible buffer overrun (SOLARIS & VMS) strncpy does not guarantee
+	to write the null terminator!
+
+2004-10-07 10:43  robocop
+
+	* firebird2/src/jrd/utl.cpp (1.74):
+	
+	Misc
+
+2004-10-07 10:35  robocop
+
+	* firebird2/src/: common/classes/fb_string.cpp (1.23),
+	include/fb_string.h (1.30):
+	
+	recalculate_length(), copy_to(), safe copy to a char array,
+	constness, style.
+
+2004-10-07 10:33  robocop
+
+	* firebird2/src/jrd/idx.cpp (1.74):
+	
+	Little simplification.
+
+2004-10-07 10:29  robocop
+
+	* firebird2/src/dudley/extract.epp (1.38):
+	
+	Clarification on badly written old comment (problem with embedded
+	blanks in identifiers)
+
+2004-10-07 10:28  robocop
+
+	* firebird2/src/dsql/gen.cpp (1.71):
+	
+	1.- Style.  2.- The const_cast is no longer needed.
+
+2004-10-07 10:27  robocop
+
+	* firebird2/src/dsql/dsql.cpp (1.127):
+	
+	Style
+
+2004-10-07 10:25  robocop
+
+	* firebird2/src/burp/burp.h (1.59):
+	
+	Fix a problem caused by cleanup changing #define to pointer to
+	literal string.  Due to sizeof being involved, gbak could
+	misinterpret a file as been a valid part of a multi-file backup.
+
+2004-10-07 10:23  robocop
+
+	* firebird2/src/burp/spit.h (1.8):
+	
+	Unused crud
+
+2004-10-07 10:21  robocop
+
+	* firebird2/src/alice/: alice_meta.epp (1.43), tdr.cpp (1.42):
+	
+	Misc and treat string literals as constants.
+
+2004-10-07 08:15  skidder
+
+	* firebird2/src/jrd/vio.cpp (1.113):
+	
+	Report lock manager error code to the user when pessimistic lock
+	conflict is encountered. This change fixes a problem with deadlock
+	reporting for pessimistic locks so it should be backported to
+	B1_5_Release
+
 2004-10-06 13:44  arnobrinkman
 
 	* firebird2/src/jrd/idx.cpp (1.73):
