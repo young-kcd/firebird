@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.75 2003-10-27 18:42:46 skidder Exp $
+$Id: lock.cpp,v 1.76 2003-10-30 11:01:30 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -2018,6 +2018,20 @@ static void bug( ISC_STATUS * status_vector, const TEXT * string)
 	TEXT s[128];
 	OWN owner;
 
+#ifdef WIN_NT
+	sprintf(s, "Fatal lock manager error: %s, errno: %ld", string, ERRNO);
+#else
+	sprintf(s, "Fatal lock manager error: %s, errno: %d", string, ERRNO);
+#endif
+	gds__log(s);
+	ib_fprintf(ib_stderr, "%s\n", s);
+
+#if !(defined WIN_NT)
+	/* The  strerror()  function  returns  the appropriate description string,
+	   or an unknown error message if the error code is unknown. */
+	ib_fprintf(ib_stderr, "--%s\n", strerror(errno));
+#endif
+
 	if (!LOCK_bugcheck++) {
 
 #ifdef DEV_BUILD
@@ -2059,19 +2073,6 @@ static void bug( ISC_STATUS * status_vector, const TEXT * string)
 		}
 	}
 
-#ifdef WIN_NT
-	sprintf(s, "Fatal lock manager error: %s, errno: %ld", string, ERRNO);
-#else
-	sprintf(s, "Fatal lock manager error: %s, errno: %d", string, ERRNO);
-#endif
-	gds__log(s);
-	ib_fprintf(ib_stderr, "%s\n", s);
-
-#if !(defined WIN_NT)
-	/* The  strerror()  function  returns  the appropriate description string,
-	   or an unknown error message if the error code is unknown. */
-	ib_fprintf(ib_stderr, "--%s\n", strerror(errno));
-#endif
 
 #ifdef DEV_BUILD
 /* Make a core drop - we want to LOOK at this failure! */
