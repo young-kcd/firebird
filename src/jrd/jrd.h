@@ -695,12 +695,15 @@ typedef struct que {
 
 /* symbol definitions */
 
-typedef ENUM sym_t { SYM_rel,	/* relation block */
+typedef ENUM sym_t {
+	SYM_rel,					/* relation block */
 	SYM_fld,					/* field block */
 	SYM_fun,					/* UDF function block */
 	SYM_prc,					/* stored procedure block */
 	SYM_sql,					/* SQL request cache block */
-SYM_blr /* BLR request cache block */ } SYM_T;
+    SYM_blr,					/* BLR request cache block */
+    SYM_label					/* CVC: I need to track labels if LEAVE is implemented. */
+} SYM_T;
 
 class sym : public pool_alloc<type_sym>
 {
@@ -854,10 +857,11 @@ typedef struct ihndl
 #define PLATFORM_GET_THREAD_DATA ((TDBB) THD_get_specific())
 #endif
 
+/* RITTER - changed HP10 to HPUX in the expression below */
 #ifdef MULTI_THREAD
 #if (defined DECOSF || defined NETWARE_386 || \
 	defined SOLARIS_MT || defined WIN_NT || \
-	defined HP10 || defined LINUX || defined DARWIN )
+	defined HPUX || defined LINUX || defined DARWIN )
 #define PLATFORM_GET_THREAD_DATA ((TDBB) THD_get_specific())
 #endif
 #endif

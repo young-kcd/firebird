@@ -26,7 +26,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.12 2002-02-16 05:06:17 seanleyne Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.13 2002-07-02 09:49:19 dimitr Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -144,7 +144,7 @@ static int process_id = 0;
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/file.h>
-#ifdef NETBSD
+#if defined(NETBSD) || defined(SINIXZ)
 #include <signal.h>
 #else
 #include <sys/signal.h>
@@ -240,7 +240,11 @@ static SLONG overflow_handler(void *);
 static SIG que_signal(int, FPTR_VOID, void *, int);
 
 #if !(defined HANDLER_ADDR_ARG)
+#ifdef SINIXZ
+static void CLIB_ROUTINE signal_handler(int, int);
+#else
 static void CLIB_ROUTINE signal_handler(int, int, struct sigcontext *);
+#endif
 #endif
 
 #ifdef HANDLER_ADDR_ARG
@@ -1087,12 +1091,17 @@ static SIG que_signal(
 
 
 #ifndef REQUESTER
-static void CLIB_ROUTINE signal_handler(int number, int code,
+static void CLIB_ROUTINE signal_handler(int number,
+#ifdef SINIXZ
+										int code)
+#else
+										int code,
 #ifdef HANDLER_ADDR_ARG
 										void *scp, void *addr)
 #else
 										struct sigcontext *scp)
 #endif
+#endif /* SINIXZ */
 {
 /**************************************
  *
@@ -1136,6 +1145,8 @@ static void CLIB_ROUTINE signal_handler(int number, int code,
 #pragma FB_COMPILER_MESSAGE("Fix! Ugly function pointer cast!")
 #ifdef HANDLER_ADDR_ARG
 					((void (*)(...)) (*sig->sig_routine)) (number, code, scp, addr);
+#elif defined(SINIXZ)
+					((void (*)(...)) (*sig->sig_routine)) (number, code);
 #else
 					((void (*)(...)) (*sig->sig_routine)) (number, code, scp);
 #endif

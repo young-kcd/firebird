@@ -19,12 +19,16 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
  * Added TCP_NO_DELAY option for superserver on Linux
  * FSG 16.03.2001
  * Solaris x86 changes - Konstantin Kuznetsov, Neil McCalden
+ * 26-Sept-2001 Paul Beach - External File Directory Config. Parameter
+ * 17-Oct-2001 Mike Nordell: CPU affinity
+ * 01-Feb-2002 Paul Reeves: Removed hard-coded registry path
  */
 /*
-$Id: isc.cpp,v 1.8 2002-02-16 03:27:32 seanleyne Exp $
+$Id: isc.cpp,v 1.9 2002-07-02 09:49:19 dimitr Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -47,6 +51,7 @@ $Id: isc.cpp,v 1.8 2002-02-16 03:27:32 seanleyne Exp $
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/jrd_proto.h"
+#include "../utilities/registry.h"
 
 /* Initialize the structure that hold all the config information */
 
@@ -75,7 +80,10 @@ static struct cfgtbl ISC_def_cfg_tbl[] = {
 #ifdef SET_TCP_NO_DELAY
 	{ISCCFG_NO_NAGLE, ISCCFG_NO_NAGLE_KEY, ISCCFG_NO_NAGLE_DEF, ISCCFG_NO_NAGLE_DEF},
 #endif
-     {NULL, 0, 0, 0}
+#ifdef WIN_NT
+	{ISCCFG_CPU_AFFINITY_TAG, ISCCFG_CPU_AFFINITY_KEY, ISCCFG_CPU_AFFINITY_DEF, ISCCFG_CPU_AFFINITY_DEF},
+#endif
+	{NULL, 0, 0, 0}
 };
 
 static struct cfgtbl *ISC_cfg_tbl = NULL;
@@ -89,6 +97,8 @@ static BOOLEAN dls_init = FALSE;
 static BOOLEAN dls_flag = FALSE;
 static BOOLEAN fdls_init = FALSE;
 static BOOLEAN fdls_flag = FALSE;
+static BOOLEAN edls_init = FALSE;
+static BOOLEAN edls_flag = FALSE;
 
 
 /* End of temporary file management specific stuff */
@@ -144,6 +154,7 @@ static LKSB wake_lock;
 #include <pwd.h>
 #include <unistd.h>
 #include <signal.h>
+#include <ctype.h>
 
 #ifndef O_RDWR
 #include <fcntl.h>
@@ -433,6 +444,30 @@ void DLL_EXPORT ISC_get_config(TEXT * config_file, IPCCFG config_table)
 					continue;
 				}
 
+				/* The external file directory keyword can also be used
+				more than once, so handle it separately. */
+				if (0 == strncmp(buf, ISCCFG_EXT_FILE_DIR,
+								 sizeof(ISCCFG_EXT_FILE_DIR) - 1))
+				{
+#ifdef SUPERSERVER
+				/* There is external file directory definition */
+				if (!edls_init)
+					if (1 == sscanf(buf + sizeof(ISCCFG_EXT_FILE_DIR) - 1,
+						" \"%[^\"]", dir_name))
+					{
+						if  DLS_add_file_dir(dir_name))
+							edls_flag = TRUE;
+						else
+						{
+							gds__log("Unable to use config parameter %s : No memory ",
+								ISCCFG_EXT_FILE_DIR);
+							edls_flag = FALSE;
+						}
+					}
+#endif
+					continue;
+				}
+
 				for (tbl = ISC_cfg_tbl; (q = tbl->cfgtbl_keyword) ; tbl++)
 				{
 					p = buf;
@@ -489,6 +524,9 @@ void DLL_EXPORT ISC_get_config(TEXT * config_file, IPCCFG config_table)
 		dls_init = TRUE;		/* Temp dir config should be read only once */
 
 		fdls_init = TRUE;		/* Ext func dir config should be read only once. */
+	
+		edls_init = TRUE;		/* Ext file dir config should be read only once. */
+
 	}							/* if ICS_cfg_tbl == NULL */
 
 /* The master configuration options are in memory, now for

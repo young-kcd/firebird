@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2001.10.09 Claudio Valderrama: reinstall the missing "license mask" field
+ *   in the texttype struct so we remain compatible with any IB WRT intl module.
  */
 
 #ifndef _JRD_INTLOBJ_H_
@@ -82,7 +85,7 @@ typedef struct texttype {
     but never put back by Firebird until 2001.10.09. Originally it was named
     texttype_license_mask, but since it's useless in the open source version, I
     followed the new name given in the BSC tree. */
-    ULONG   texttype_obsolete_field;        /* required bits for license */
+    ULONG texttype_obsolete_field;		/* required bits for license */
 
 	/* MUST BE ALIGNED */
 	FPTR_SHORT texttype_fn_init;

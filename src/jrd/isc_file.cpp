@@ -20,12 +20,12 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
+ * 2001.06.14: Claudio Valderrama: Possible buffer overrun in
+ *	expand_share_name(TEXT*) has been closed. Parameter is return value, too.
+ *	This function and its caller in this same file don't report error conditions.
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
- *
  * 2002-02-23 Sean Leyne - Code Cleanup, removed old M88K and NCR3000 port
- *
- *
  */
 
 #ifdef SHLIB_DEFS
@@ -91,7 +91,8 @@ typedef struct itm {
 #define GETWD(buf)		getcwd (buf, MAXPATHLEN)
 #define MTAB			"/etc/mnttab"
 #include <sys/types.h>
-#ifndef HP10
+/* RITTER - added HP11 to the pre-processor condition below */
+#if !(defined HP10 || defined HP11)
 #include <cluster.h>
 #endif
 #endif
@@ -129,6 +130,15 @@ typedef struct itm {
 #include <sys/mount.h>
 #endif
 
+#ifdef SINIXZ
+#include <sys/mnttab.h>
+#define SV_MNTENT
+#define NON_MNTENT
+#define MTAB			"/etc/mnttab"
+#define MTAB_OPEN(path,type)	fopen (path, type)
+#define MTAB_CLOSE(stream)	fclose (stream)
+#endif
+
 #ifdef ultrix
 #define NON_MNTENT
 #include <sys/mount.h>
@@ -140,7 +150,7 @@ typedef struct itm {
 #include <sys/vmount.h>
 #endif
 
-#if (defined SOLARIS || defined UNIXWARE || defined linux || defined FREEBSD || defined NETBSD || defined DARWIN)
+#if (defined SOLARIS || defined UNIXWARE || defined linux || defined FREEBSD || defined NETBSD || defined DARWIN || defined SINIXZ)
 #define GETWD(buf)		getcwd (buf, MAXPATHLEN)
 #endif
 
@@ -459,7 +469,8 @@ int ISC_analyze_nfs(TEXT * expanded_filename, TEXT * node_name)
 #endif
 
 #ifdef hpux
-#ifndef HP10
+/* RITTER - added HP11 to the pre-processor condition below */
+#if !(defined HP10 || defined HP11)
 	if (!flag)
 		flag = get_server(expanded_filename, node_name);
 #endif
@@ -1180,7 +1191,7 @@ int ISC_expand_filename(
 				length =
 					(USHORT) GetShortPathName(expanded_name, expanded_name2,
 											  MAXPATHLEN);
-				if (length)
+				if (length && length < MAXPATHLEN)
 					strcpy(expanded_name, expanded_name2);
 			}
 			else
@@ -1202,13 +1213,21 @@ int ISC_expand_filename(
 			file_length =
 				(USHORT) GetShortPathName(expanded_name, expanded_name2,
 										  MAXPATHLEN);
-			if (!file_length)
-				file_length = (USHORT) strlen(expanded_name);
-			else
+			if (file_length && file_length < MAXPATHLEN)
 				strcpy(expanded_name, expanded_name2);
+			else
+	            file_length = (USHORT) strlen(expanded_name);
 		}
 		else
-			length = 0;
+			file_length = (USHORT) strlen(expanded_name);
+			/* CVC: I know this is incorrect. If _fullpath (that in turn calls GetFullPathName)
+					returns NULL, the path + file given are invalid, but the original and useless code
+					set length=0 that has no effect and setting file_length to zero stops the code below
+					from uppercasing the filename. Following the logic in the prior block of code, the
+					action to take is to get the length of the output buffer. Unfortunately, there's
+					no function that checks the result of ISC_expand_filename. Since _fullpath is
+					GetFullPathName with some checks, the code above looks strange when SUPERSERVER
+					is not defined. I decided to make file_length as the length of the output buffer. */
 	}
 
 /* Filenames are case insensitive on NT.  If filenames are
@@ -1703,6 +1722,7 @@ static void expand_share_name(TEXT * share_name)
 #ifdef STACK_EFFICIENT
 			gds__free((SLONG *) data_buf);
 #endif /* STACK_EFFICIENT */
+			RegCloseKey(hkey);
 			return;				/* Error not really handled */
 		}
 		ret =
@@ -1714,8 +1734,15 @@ static void expand_share_name(TEXT * share_name)
 		for (q = data; q && *q;
 			 q = (type_code == REG_MULTI_SZ) ? q + strlen(q) + 1 : NULL) {
 			if (!strnicmp(q, "path", 4)) {
+		    /* CVC: Paranoid protection against buffer overrun.
+				    MAXPATHLEN minus NULL terminator, the possible backslash and p==db_name.
+					Otherwise, it's possible to create long share plus long db_name => crash. */
+				idx = strlen(q + 5);
+				if (idx + 1 + (q[4 + idx] == '\\' ? 1 : 0) + strlen(p) >= MAXPATHLEN)
+					break;
+
 				strcpy(workspace, q + 5);	/* step past the "Path=" part */
-				idx = strlen(workspace);
+			    /* idx = strlen (workspace); Done previously. */
 				if (workspace[idx - 1] != '\\')
 					workspace[idx++] = '\\';
 				strcpy(workspace + idx, p);
@@ -1953,7 +1980,7 @@ static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 	p = buffer;
 
 	mptr = &mnttab;
-	while (getmntent(file, mptr) == 0) {
+	if (getmntent(file, mptr) == 0) {
 		/* Include non-NFS (local) mounts - some may be longer than
 		   NFS mount points */
 
@@ -1967,12 +1994,12 @@ static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 		if (*q)
 			q++;
 		mount->mnt_path = p;
-		while (*p++ = *q++);
+	    while ((*p++ = *q++) != 0);
 		mount->mnt_mount = mptr->mnt_mountp;
 		return TRUE;
 	}
-
-	return FALSE;
+	else
+		return FALSE;
 }
 #endif
 #ifdef SOLARIS
@@ -2215,7 +2242,8 @@ static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 
 
 #ifdef hpux
-#ifndef HP10
+/* RITTER - added HP11 to the pre-processor condition below */
+#if !(defined HP10 || defined HP11)
 static BOOLEAN get_server(TEXT * file_name, TEXT * node_name)
 {
 /**************************************

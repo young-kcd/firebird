@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: license.h,v 1.15 2002-06-29 13:33:51 skywalker Exp $
+ * $Id: license.h,v 1.16 2002-07-02 09:49:19 dimitr Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -60,6 +60,9 @@
 #ifdef HP10
 #define FB_PLATFORM	"HU"
 #endif /* HP10 */
+#ifdef HP11  /* RITTER */
+#define FB_PLATFORM     "HU"
+#endif /* HP11 */
 #endif
 
 #ifdef sun
@@ -165,6 +168,10 @@
 
 #ifdef LINUX
 #define FB_PLATFORM     "LI"	/* Linux on Intel */
+#endif
+
+#ifdef SINIXZ
+#define FB_PLATFORM     "SZ"	/* SINIX for PC  */
 #endif
 
 #ifdef FREEBSD
