@@ -19,7 +19,7 @@
 @bison --help > nul 2>nul
 @if not errorlevel 9009 ((set PARSER=BISON) & (goto :sed_pro))
 
-@yacc --help > nul 2> nul
+@byacc --help > nul 2> nul
 @if not errorlevel 9009 ((set PARSER=YACC) & (goto :sed_pro))
 
 :sed_pro
@@ -41,17 +41,17 @@
 @set PARSER=YACC
 @echo .
 @echo Processing with yacc
-@yacc -l -d -b dsql %ROOT_PATH%\src\dsql\parse.y
+@byacc -l -d -b dsql %ROOT_PATH%\src\dsql\parse.y
 @goto :EOF
 
 ::=====================================
 :SED_PROC
 @echo .
 @echo Processing with sed
-@sed -f %ROOT_PATH%\src\dsql\parse.sed <dsql.tab.c >%ROOT_PATH%\src\dsql\parse.cpp
-@copy dsql.tab.h %ROOT_PATH%\src\dsql\dsql.tab.h > nul
-@del dsql.tab.c
-@del dsql.tab.h
+@sed -f %ROOT_PATH%\src\dsql\parse.sed <dsql_tab.c >%ROOT_PATH%\src\dsql\parse.cpp
+@copy dsql.tab.h %ROOT_PATH%\src\dsql\dsql_tab.h > nul
+@del dsql_tab.c
+@del dsql_tab.h
 @goto :EOF
 
 ::=================
