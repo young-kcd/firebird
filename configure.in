@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.123 2003-03-03 06:02:29 aafemt Exp $
+dnl $Id: configure.in,v 1.124 2003-03-05 15:38:03 brodsom Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -38,6 +38,7 @@ case "$target" in
     AC_DEFINE(DARWIN)
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=N
+    SHRLIB_EXT=so
     ;;
 
   *-*-freebsd*)
@@ -46,6 +47,7 @@ case "$target" in
     AC_DEFINE(FREEBSD)
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=N
+    SHRLIB_EXT=so
     ;;
 
   *-*-linux*)
@@ -54,6 +56,7 @@ case "$target" in
     AC_DEFINE(LINUX)
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
+    SHRLIB_EXT=so
     ;;
 
   *-*-netbsd*)
@@ -62,6 +65,7 @@ case "$target" in
     AC_DEFINE(NETBSD)
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=N
+    SHRLIB_EXT=so
     ;;
 
   *-*-hpux*)
@@ -70,6 +74,7 @@ case "$target" in
     AC_DEFINE(hpux)
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=N
+    SHRLIB_EXT=so
     ;;
 
   i386-pc-solaris*)
@@ -78,6 +83,7 @@ case "$target" in
     AC_DEFINE(solx86)
     LOCK_MANAGER_FLG=N
     EDITLINE_FLG=N
+    SHRLIB_EXT=so
     ;;
 
   sparc-sun-solaris*)
@@ -86,6 +92,7 @@ case "$target" in
     AC_DEFINE(SOLARIS)
     LOCK_MANAGER_FLG=N
     EDITLINE_FLG=Y
+    SHRLIB_EXT=so
     ;;
 
   i*-sni-sysv4)
@@ -94,6 +101,7 @@ case "$target" in
     AC_DEFINE(SINIXZ)
     LOCK_MANAGER_FLG=N
     EDITLINE_FLG=N
+    SHRLIB_EXT=so
     ;;
 
   *-*-mingw*)
@@ -102,6 +110,7 @@ case "$target" in
     AC_DEFINE(WIN_NT)
     LOCK_MANAGER_FLG=N
     EDITLINE_FLG=N
+    SHRLIB_EXT=dll
     ;;
 
   *)
@@ -194,6 +203,8 @@ AC_ARG_WITH(editline,
      *)   AC_MSG_ERROR(bad value '${withval}' for --with-editline);;
    esac])
 AC_SUBST(EDITLINE_FLG)
+
+AC_SUBST(SHRLIB_EXT)
 
 FB_SERVICE_NAME=gds_db
 FB_SERVICE_PORT=3050
@@ -471,7 +482,7 @@ case "$PLATFORM" in
       [FB_PIPE_NAME=${withval}])
     AC_DEFINE_UNQUOTED(FB_PIPE_NAME,"$FB_PIPE_NAME")
     AC_SUBST(FB_PIPE_NAME)
-    XE_PREPEND(-lversion -lmpr -lws2_32,LIBS)
+    XE_PREPEND(-lmpr -lcomctl32 -lversion -lws2_32 -lgdi32 -lstdc++,LIBS)
     ;;
 
   *)
@@ -486,9 +497,9 @@ dnl The following file defines the version number strings
 FIREBIRD_PACKAGE_VERSION="0.Beta3"
 
 
-FIREBIRD_LIBGDS_SO=libfbembed.so.${FIREBIRD_VERSION}
-FIREBIRD_LIBGDS_SO_LNK=libfbembed.so
-FIREBIRD_LIBGDS_SO_X_LNK=libfbembed.so.${MajorVer}
+FIREBIRD_LIBGDS_SO=libfbembed.$SHRLIB_EXT.${FIREBIRD_VERSION}
+FIREBIRD_LIBGDS_SO_LNK=libfbembed.$SHRLIB_EXT
+FIREBIRD_LIBGDS_SO_X_LNK=libfbembed.$SHRLIB_EXT.${MajorVer}
 
 AC_SUBST(FIREBIRD_LIBGDS_SO)
 AC_SUBST(FIREBIRD_LIBGDS_SO_LNK)
@@ -575,9 +586,11 @@ mkdir -p gen/libfbserver/utilities
 mkdir -p gen/libfbserver/fbutil
 mkdir -p gen/libfbserver/wal
 mkdir -p gen/libfbserver/common/classes
+mkdir -p gen/libfbserver/common/config
 mkdir -p gen/libfbserver/jrd/os/posix
 mkdir -p gen/libfbserver/jrd/os/win32
 mkdir -p gen/fbserver/remote
+mkdir -p gen/fbserver/ipserver
 mkdir -p gen/libfbclient/jrd
 mkdir -p gen/libfbclient/dsql
 mkdir -p gen/libfbclient/gpre
@@ -587,7 +600,6 @@ mkdir -p gen/libfbclient/utilities
 mkdir -p gen/libfbclient/fbutil
 mkdir -p gen/libfbclient/common/classes
 mkdir -p gen/libfbclient/common/config
-mkdir -p gen/libfbclient/jrd/os
 mkdir -p gen/libfbclient/jrd/os/win32
 mkdir -p gen/client.gbak/burp
 mkdir -p gen/client.gfix/alice
@@ -595,6 +607,9 @@ mkdir -p gen/client.gpre/gpre
 mkdir -p gen/client.gdef/dudley
 mkdir -p gen/client.isql/isql
 mkdir -p gen/client.util/utilities
+mkdir -p gen/client.util/iscguard
+mkdir -p gen/client.util/remote
+mkdir -p gen/client.util/jrd/os/win32
 mkdir -p gen/intl/intl
 
 mkdir -p gen/libfbcommon/common/classes
