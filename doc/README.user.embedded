@@ -1,5 +1,5 @@
 -----------------------------------------------------------
-Firebird 1.5 Embedded Server notes
+Firebird 1.5.1 Embedded Server notes
 -----------------------------------------------------------
 
 1. GENERIC INFORMATION
@@ -19,16 +19,21 @@ Firebird 1.5 Embedded Server notes
 
   2.2. Database access
 
-    The embedded server can act as a true local server
-    accessing databases on a local machine, and as a remote
-    gateway which redirects all network calls to another
-    hosts (i.e. works as a client library). Note that you
-    cannot connect to the local standalone Firebird server
-    using the local connection string (without a host name).
-    It applies to IPC connections only, because they use
-    the same format of the connection string; but you can
-    connect to the local standalone server via TCP/IP localhost
-    loopback or via the named pipes protocol.
+    Client access can be only via the TCP/IP local loopback
+    protocol, i.e. a TCP/IP connection string that includes 
+    the server name "localhost" or IP address 127.0.0.1; or 
+    by using the Named Pipes protocol incorporating the 
+    Windows server name. 
+    
+    The embedded server does not support the IPServer "local
+    connect" to a database file path without a server name.
+    The client must have exclusive access to the database file.
+
+    The embedded server acts as a true local server for a single
+    client accessing databases on a local machine.  It can also
+    act as a remote gateway that redirects all network calls to
+    other hosts, just as the regular client library
+    does.
 
   2.3. Authentication and security
 

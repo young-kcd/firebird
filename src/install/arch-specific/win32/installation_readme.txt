@@ -1,4 +1,4 @@
-Firebird Database Server 1.5 Final Release
+Firebird Database Server 1.5.1 
 ==================================================
 
 This document is a guide to installing this package of 
