@@ -1,0 +1,10 @@
+Cleaning todo
+
+The order is not significative.
+
+.- Remove NOT_USED_OR_REPLACED Macro
+.- Remove PYXIS macro
+.- Remove NO_CHECKSUM macro (and CCH_Checksum function in cch.cpp)
+.- Remove GDS_VAL and GDS_REF macros.
+.- Remove NULL_PTR macro
+.- Remove TRUE and FALSE macros and replace with builtin "true" and "false"
