@@ -374,7 +374,12 @@ DSQL_CTX PASS1_make_context(DSQL_REQ request, DSQL_NOD relation_node)
 
 	DEV_BLKCHK(string, dsql_type_str);
 	if (request->req_alias_relation_prefix) {
-		string = pass1_alias_concat(request->req_alias_relation_prefix, string);
+		if (string) {
+			string = pass1_alias_concat(request->req_alias_relation_prefix, string);
+		}
+		else {
+			string = pass1_alias_concat(request->req_alias_relation_prefix, relation_name);
+		}
 	}
 
 	if (string) {
