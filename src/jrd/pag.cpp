@@ -1345,7 +1345,7 @@ void PAG_init2(USHORT shadow_number)
 			if ((shadow_number) && (!file->fil_min_page))
 				CCH_RELEASE(tdbb, &window);
 
-			for (p = reinterpret_cast <char *>(header->hdr_data); 
+			for (p = reinterpret_cast<TEXT*>(header->hdr_data); 
 				 *p != HDR_end; 
 				 p += 2 + p[1])
 				switch (*p) {
