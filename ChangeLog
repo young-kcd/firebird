@@ -1,3 +1,103 @@
+2003-07-14 18:53  brodsom
+
+	* firebird2/src/: gpre/gpre.cpp, jrd/dfw.epp, misc/codes.epp,
+	misc/relations.epp, dudley/lex.cpp, qli/meta.epp:
+	
+	Patch for MinGW 3.0
+
+2003-07-14 15:21  alexpeshkoff
+
+	* firebird2/src/jrd/exe.cpp:
+	
+	fixed bug with tdbb_transaction, overwritten in EXE_unwind
+
+2003-07-14 13:23  brodsom
+
+	* firebird2/builds/posix/: prefix.darwin, prefix.example,
+	prefix.freebsd, prefix.linux, prefix.mingw, prefix.sinixz,
+	prefix.solaris, prefix.solx86, prefix.solx86gcc:
+	
+	Move physical io to os specific
+
+2003-07-14 12:33  brodsom
+
+	* firebird2/: src/jrd/ail.cpp, src/jrd/cch.cpp, src/jrd/cch.h,
+	src/jrd/dfw.epp, src/jrd/err.cpp, src/jrd/everything.h,
+	src/jrd/inf.cpp, src/jrd/jrd.cpp, src/jrd/met.epp, src/jrd/old.cpp,
+	src/jrd/pag.cpp, src/jrd/qatest.cpp, src/jrd/sdw.cpp,
+	src/jrd/vio.cpp, src/jrd/pio.h, src/jrd/pio_proto.h,
+	src/jrd/unix.cpp, src/jrd/winnt.cpp, src/jrd/os/pio.h,
+	src/jrd/os/pio_proto.h, src/jrd/os/posix/unix.cpp,
+	src/jrd/os/win32/winnt.cpp, builds/win32/msvc7/engine.vcproj,
+	builds/win32/msvc7/engine_classic.vcproj,
+	builds/win32/msvc7/engine_embed.vcproj,
+	builds/win32/msvc6/engine.dsp,
+	builds/win32/msvc6/engine_classic.dsp,
+	builds/win32/msvc6/engine_embed.dsp:
+	
+	Move physical io to os specific
+
+2003-07-14 11:43  brodsom
+
+	* firebird2/: builds/win32/blrtable.bat,
+	builds/win32/make_boot.bat, builds/win32/preprocess.bat,
+	builds/win32/msvc6/codes.dsp, builds/win32/msvc6/fbclient.dsp,
+	builds/win32/msvc6/fbclient_static.dsp,
+	builds/win32/msvc6/fbembed.dsp, builds/win32/msvc6/gds32.dsp,
+	builds/win32/msvc6/relations.dsp,
+	builds/win32/msvc7/fbclient.vcproj,
+	builds/win32/msvc7/fbclient_static.vcproj,
+	builds/win32/msvc7/fbembed.vcproj, builds/win32/msvc7/gds32.vcproj,
+	builds/posix/Makefile.in.codes, builds/posix/Makefile.in.extlib,
+	builds/posix/make.shared.variables, clean.sh, configure.in:
+	
+	Update
+
+2003-07-14 11:39  brodsom
+
+	* firebird2/src/jrd/os/vms/: dfloat_stub.cpp, extvms.cpp, jio.cpp,
+	lnmdef.h, map.cpp, map_proto.h, mblr.cpp, mblr.h, mblr_proto.h,
+	prv_m_bypass.h, rdb.cpp, rdb.h, rdbcodes.h, rdbgpas.cpp,
+	rdbint.cpp, syidef.h, vms.cpp, vms.h, vms_command.cpp,
+	vmsevent.cpp, vmslo_proto.h, vmslock.cpp, vmsthread.cpp:
+	
+	Move vms related stuff to os/vms
+
+2003-07-14 11:30  brodsom
+
+	* firebird2/src/jrd/: dfloat_stub.cpp, extvms.cpp, jio.cpp,
+	lnmdef.h, map.cpp, map_proto.h, mblr.cpp, mblr.h, mblr_proto.h,
+	prv_m_bypass.h, rdb.cpp, rdb.h, rdbcodes.h, rdbgpas.cpp,
+	rdbint.cpp, syidef.h, vms.cpp, vms.h, vms_command.cpp,
+	vmsevent.cpp, vmslo_proto.h, vmslock.cpp, vmsthread.cpp:
+	
+	Move vms related stuff to os/vms
+
+2003-07-14 11:28  brodsom
+
+	* firebird2/src/: jrd/align.cpp, jrd/blrtable.cpp, jrd/codes.epp,
+	jrd/envelope.epp, jrd/memtest.cpp, jrd/print.cpp,
+	jrd/relations.epp, misc/align.cpp, misc/blrtable.cpp,
+	misc/codes.epp, misc/envelope.epp, misc/memtest.cpp,
+	misc/print.cpp, misc/relations.epp:
+	
+	Move utils to misc.
+
+2003-07-14 11:23  brodsom
+
+	* firebird2/src/jrd/: ibinitdll.cpp, os/win32/ibinitdll.cpp:
+	
+	Move ibinitdll to os/win32
+
+2003-07-14 11:21  brodsom
+
+	* firebird2/examples/build_win32/: clean_all.bat, clean_api.bat,
+	clean_dyn.bat, clean_empbuild.bat, clean_stat.bat, clean_udf.bat,
+	make_all.bat, make_api.bat, make_dyn.bat, make_empbuild.bat,
+	make_stat.bat, make_udf.bat:
+	
+	Corrections
+
 2003-07-13 12:30  brodsom
 
 	* firebird2/src/: dbs/dflt.gdl, dbs/grant.gdl, dbs/isc.gdl,
