@@ -416,7 +416,9 @@ static FREE		pool = NULL;
 static void**	malloced_memory = NULL;
 static GDS_MSG		default_msg = NULL;
 static SLONG	initialized = FALSE;
+#ifdef V4_THREADING
 static MUTX_T	alloc_mutex;
+#endif
 
 #ifdef DEV_BUILD
 SLONG gds_delta_alloc = 0, gds_max_alloc = 0;	/* Used in DBG_memory */
@@ -1813,10 +1815,11 @@ SLONG API_ROUTINE gds__interprete(char *s, STATUS ** vector)
 		  && !(l = (SSHORT)FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
 										 NULL,
 										 code,
-										 NULL, /* TMN: Fallback to system known language */
+										 0, /* TMN: Fallback to system known language */
 										 s,
 										 128,
-										 NULL))) sprintf(s, "unknown Win32 error %ld", code);	/* TXNN */
+										 NULL))) 
+			sprintf(s, "unknown Win32 error %ld", code);	/* TXNN */
 		break;
 #endif
 
@@ -3089,7 +3092,6 @@ void *gds__tmp_file2(
 
 	IB_FILE *file;
 	TEXT file_name[256], *p, *q, *end;
-	SSHORT i;
 
 	p = file_name;
 	end = p + sizeof(file_name) - 8;
@@ -3100,9 +3102,10 @@ void *gds__tmp_file2(
 	if (!(q = dir) && !(q = getenv("INTERBASE_TMP")) && !(q = getenv("TMP")))
 	{
 #ifdef WIN_NT
-   		TEXT temp_dir[256];
-		if ((i = (SSHORT) GetTempPath(sizeof(temp_dir), temp_dir)) &&
-			i < sizeof(temp_dir))
+		TEXT temp_dir[256];
+		USHORT j;
+		if ((j = GetTempPath(sizeof(temp_dir), temp_dir)) &&
+			j < sizeof(temp_dir))
 			q = temp_dir;
 		else
 #endif
@@ -3152,6 +3155,7 @@ void *gds__tmp_file2(
 			return (void *) -1;
 	}
 #else
+	SSHORT i;
 	if (flag) {
 		for (i = 0; i < IO_RETRY; i++) {
 			if (file = ib_fopen(file_name, "w+"))
