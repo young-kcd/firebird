@@ -44,9 +44,7 @@
 #include "../include/fb_blk.h"
 
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 
 #define SERVICE_VERSION		2
@@ -116,9 +114,7 @@ extern "C" {
 
 #endif /* SUPERSERVER */
 
-#ifdef __cplusplus
-
-void SVC_STATUS_ARG(STATUS*& status, USHORT type, const void* value)
+inline void SVC_STATUS_ARG(STATUS*& status, USHORT type, const void* value)
 {
 	if (value)
 	{
@@ -139,24 +135,6 @@ void SVC_STATUS_ARG(STATUS*& status, USHORT type, const void* value)
 		}
 	}
 }
-
-#else /* __cplusplus */
-
-#define SVC_STATUS_ARG(foo,type,value)	{if (value) { \
-					   switch (type) { \
-					     case isc_arg_number: \
-						*status++ = type; \
-						*status++ = value; \
-						break; \
-					     case isc_arg_string: \
-						*status++ = type; \
-						*status++ = (STATUS) SVC_err_string (value, strlen(value)); \
-						break; \
-					     default: \
-						break; \
-					  }}}
-
-#endif /* __cplusplus */
 
 #define CK_SPACE_FOR_NUMERIC 	{{if ((info + 1 + sizeof (ULONG)) > end) \
     				      { \
@@ -217,8 +195,6 @@ typedef struct serv
 #define SVC_evnt_fired	64
 
 
-#ifdef __cplusplus
 } /* extern "C" */
-#endif
 
 #endif /* JRD_SVC_H */
