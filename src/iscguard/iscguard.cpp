@@ -93,8 +93,8 @@ struct log_info *log_entry;
 
 /* contains the guardian service */
 static SERVICE_TABLE_ENTRY service_table[] = {
-	ISCGUARD_SERVICE, (LPSERVICE_MAIN_FUNCTION) CNTL_main_thread,
-	NULL, NULL
+	{ISCGUARD_SERVICE, (LPSERVICE_MAIN_FUNCTION) CNTL_main_thread},
+	{NULL, NULL}
 };
 
 
@@ -313,7 +313,6 @@ static LRESULT CALLBACK WindowFunc(
  *
  **************************************/
 
-	static long ulLastMask = 0L;
 	static BOOLEAN bInTaskBar = FALSE;
 	static BOOLEAN bStartup = FALSE;
 	static HINSTANCE hInstance = NULL;
@@ -701,7 +700,7 @@ void start_and_watch_server(char *server_name)
 				char szMsgString[256];
 				LoadString(hInstance_gbl, IDS_STARTUP_ERROR, szMsgString,
 						   256);
-				sprintf(out_buf, "%s: %s (%d)\n", path, szMsgString,
+				sprintf(out_buf, "%s: %s (%lu)\n", path, szMsgString,
 						exit_status);
 				write_log(IDS_STARTUP_ERROR, out_buf);
 				done = TRUE;
@@ -711,7 +710,7 @@ void start_and_watch_server(char *server_name)
 				char szMsgString[256];
 				LoadString(hInstance_gbl, IDS_ABNORMAL_TERM, szMsgString,
 						   256);
-				sprintf(out_buf, "%s: %s (%d)\n", path, szMsgString,
+				sprintf(out_buf, "%s: %s (%lu)\n", path, szMsgString,
 						exit_status);
 				write_log(IDS_LOG_TERM, out_buf);
 

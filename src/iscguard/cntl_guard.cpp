@@ -52,8 +52,10 @@ static void (*main_handler) ();
 static SERVICE_STATUS_HANDLE service_handle;
 static TEXT *service_name;
 static HANDLE stop_event_handle;
+#ifdef NOT_USED_OR_REPLACED
 static MUTX_T thread_mutex[1];
 static THREAD threads;
+#endif
 
 
 void CNTL_init( void (*handler) (), TEXT * name)
@@ -96,7 +98,7 @@ void CNTL_main_thread( SLONG argc, SCHAR * argv[])
 	if (!service_handle)
 		return;
 
-/* THD_mutex_init (thread_mutex); */
+// THD_mutex_init (thread_mutex);
 
 #if (defined SUPERCLIENT || defined SUPERSERVER)
 	flag = SRVR_multi_client;
@@ -152,7 +154,7 @@ void CNTL_main_thread( SLONG argc, SCHAR * argv[])
 
 	report_status(SERVICE_STOPPED, last_error, 0, 0);
 
-/* THD_mutex_destroy (thread_mutex); */
+// THD_mutex_destroy (thread_mutex);
 }
 
 void CNTL_shutdown_service( TEXT * message)
@@ -170,7 +172,7 @@ void CNTL_shutdown_service( TEXT * message)
 	char buffer[256];
 	HANDLE event_source;
 
-	sprintf(buffer, "%s error: %d", service_name, GetLastError());
+	sprintf(buffer, "%s error: %lu", service_name, GetLastError());
 
 	event_source = RegisterEventSource(NULL, service_name);
 	if (event_source) {
