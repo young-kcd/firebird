@@ -1,0 +1,264 @@
+
+  **************
+  * v1.5 Alpha 1
+  **************
+
+    * Fixed unregistered bug.
+        A well-known "decompression overran buffer" error appears during the schema creation.
+
+    * New ROWS_AFFECTED system variable (SF #451927).
+        Return number of rows affected by the last INSERT/UPDATE/DELETE statement.
+      Notes:
+        1. Available in PSQL only.
+        2. For any other statement than INSERT/UPDATE/DELETE, result is always zero.
+
+    * Dynamic exception messages (SF #446240).
+        Allow to throw an exception with another message than this exception has been created with.
+      Syntax:
+        EXCEPTION name [value];
+
+    * New SQLCODE and GDSCODE system variables (SF #547383).
+        Provide an access to a code of the catched error within the WHEN-block.
+      Notes:
+        1. Available in PSQL only.
+        2. Makes sense in WHEN-block only, in other places returns 0 (success).
+
+    * Exception re-initiate semantics.
+        Allow an already catched exception to be re-thrown from the WHEN-block.
+      Syntax:
+        EXCEPTION;
+      Note:
+        Makes sense in WHEN-block only, in other places evaluates to no-op.
+
+    * Fixed unregistered bug.
+        The server crashes during the garbage collection under heavy load.
+
+    * Deferred metadata compilation.
+        Solve a lot of reasons of the well-known "object in use" error.
+
+    * New NULL order handling.
+        Allow user-defined ordering of NULLs.
+      Syntax:
+        [ORDER BY <order_list>]
+        <order_list> = {col | int} [COLLATE collation]
+          [ASC[ENDING] | DESC[ENDING]] [NULLS {FIRST | LAST}]
+          [, <order_list> ...]
+      Note:
+        Default behaviour is NULLS LAST.
+
+    * Fixed unregistered bug.
+        gstat shows wrong value for maxdup element.
+
+    * New registry key is used on win32.
+        Currently it's SOFTWARE\FirebirdSQL\Firebird.
+
+    * User-defined constraint index names (SF #451925).
+        Allow an index name to be either constraint name or user-defined name.
+      Syntax:
+        <col_constraint> = [CONSTRAINT constraint]
+          {UNIQUE [<constraint_index>]
+          | PRIMARY KEY [<constraint_index>]
+          | REFERENCES other_table [( other_col [, other_col ...])]
+              [ON DELETE {NO ACTION|CASCADE|SET DEFAULT|SET NULL}]
+              [ON UPDATE {NO ACTION|CASCADE|SET DEFAULT|SET NULL}]
+              [<constraint_index>]
+          | CHECK ( <search_condition>)}
+        <tconstraint> = [CONSTRAINT constraint]
+          {{PRIMARY KEY | UNIQUE} ( col [, col ...]) [<constraint_index>]
+          | FOREIGN KEY ( col [, col ...]) REFERENCES other_table
+              [ON DELETE {NO ACTION|CASCADE|SET DEFAULT|SET NULL}]
+              [ON UPDATE {NO ACTION|CASCADE|SET DEFAULT|SET NULL}]
+              [<constraint_index>]
+          | CHECK ( <search_condition>)}
+        <constraint_index> = USING [ASC[ENDING] | DESC[ENDING]] INDEX name
+      Note:
+        Index is named the same way as a constraint by default.
+
+    * New RECREATE VIEW statement.
+        A shorthand for DROP VIEW / CREATE VIEW couple of statements.
+      Syntax:
+        RECREATE VIEW name <view_definition>;
+
+    * Fixed unregistered bug.
+        Trigger which name starts with 'RDB$' cannot be altered or dropped at all.
+
+    * Changed file names.
+        Renamed distribution files to make sure we're Firebird. Now they're fbserver, fbclient, firebird.msg etc.
+      Note:
+        The client library is fbclient now and it should be used in all new FB-based projects. gds32 contains nothing but redirected exports and is provided for compatibility only.
+
+    * Minor ODS upgrade.
+        Added new system indices (RDB$INDEX_41, RDB$INDEX_42, RDB$INDEX_43), now ODS version is 10.1.
+
+    * New CREATE OR ALTER statement (SF #451935).
+        Allow either creating or altering a database object depending on its existance.
+      Syntax:
+        CREATE OR ALTER name <object_definition>;
+      Notes:
+        1. Applicable to SPs/triggers/views only.
+        2. The statement has the same meaning as CREATE OR REPLACE one in Oracle.
+
+    * Fixed unregistered bug.
+        Broken dependencies (like DB$34) appear in the database after metadata changes.
+
+    * New ALTER VIEW statement (SF #490261).
+        Allow altering an existing view.
+      Syntax:
+        ALTER VIEW name [(<view_col> [, <view_col> ... ])] AS <select>;
+
+    * Enhanced declaration of local variables.
+        Simplify syntax and allow declaring and defining variable at the same time.
+      Syntax:
+        DECLARE [VARIABLE] name <variable_type> [{'=' | DEFAULT} value];
+      Example:
+        DECLARE my_var INTEGER = 123;
+
+    * Disabled BREAK statement for triggers (like EXIT) due to known internal limitations.
+
+    * Enhanced grouping (SF #555839, #546274).
+        Allow to GROUP BY internal functions and subqueries. Also allow to GROUP BY ordinal (i.e. column position).
+
+    * New COALESCE internal function (SF #451917).
+        Allow a column value to be calculated by a number of expressions, the first expression returning a non NULL value is returned as the column value.
+      Syntax:
+        COALESCE (value {, value} ... )
+      Notes:
+        1. COALESCE (V1, V2) is equivalent to the following case specification:
+             CASE WHEN V1 IS NOT NULL THEN V1 ELSE V2 END
+        2. COALESCE (V1, V2, ..., Vn), for n >= 3, is equivalent to the following case specification:
+             CASE WHEN V1 IS NOT NULL THEN V1 ELSE COALESCE (V2, ..., Vn) END
+        3. The function has the same meaning as NVL one in Oracle.
+      Example:
+        SELECT
+          PROJ_NAME AS Projectname,
+          COALESCE(e.FULL_NAME, '[> not assigned <]') AS Employeename
+        FROM
+          PROJECT p LEFT JOIN EMPLOYEE e ON (e.EMP_NO = p.TEAM_LEADER)
+
+    * New NULLIF internal function (SF #451917).
+        Return a NULL value for a sub-expression if it has a specific value, otherwise return the value of the sub-expression.
+      Syntax:
+        NULLIF (value, value)
+      Note:
+        NULLIF (V1, V2) is equivalent to the following case specification:
+          CASE WHEN V1 = V2 THEN NULL ELSE V1 END
+      Example:
+        UPDATE PRODUCTS
+          SET STOCK = NULLIF(STOCK, 0)
+
+    * New CASE internal function (SF #451917).
+        Allow the result of a column to be determined by a the results of a case expression.
+      Syntax:
+        <case_specification> = <simple_case> | <searched_case>
+
+        <simple_case> = CASE value <simple_when_clause> ... [ELSE value] END
+        <simple_when_clause> = WHEN value THEN value
+
+        <searched_case> = CASE <searched_when_clause> ... [ELSE value] END
+        <searched_when_clause> = WHEN <search_condition> THEN value
+      Note:
+        The function has the same meaning as DECODE one in Oracle.
+      Examples:
+        1. Simple case:
+          SELECT
+            o.ID,
+            o.Description,
+            CASE o.Status
+              WHEN 1 THEN 'confirmed'
+              WHEN 2 THEN 'in production'
+              WHEN 3 THEN 'ready'
+              WHEN 4 THEN 'shipped'
+              ELSE 'unknown status ''' || o.Status || ''''
+            END
+          FROM
+            Orders o
+        2. Searched case:
+          SELECT
+            o.ID,
+            o.Description,
+            CASE
+              WHEN (o.Status IS NULL) THEN 'new'
+              WHEN (o.Status = 1) THEN 'confirmed'
+              WHEN (o.Status = 3) THEN 'in production'
+              WHEN (o.Status = 4) THEN 'ready'
+              WHEN (o.Status = 5) THEN 'shipped'
+              ELSE 'unknown status ''' || o.Status || ''''
+            END
+          FROM
+            Orders o
+
+    * Fixed bug SF #545725.
+        Automatic/background sweep hangs.
+
+    * Fixed unregistered bug.
+        The server crashes when XSQLDA structures are prepared for not all statement parameters.
+
+    * Enabled support for empty BEGIN...END blocks.
+
+    * Partially fixed bug SF #567931.
+        Metadata security hole.
+
+    * Fixed unregistered bug.
+        INT64 arrays don't work.
+
+    * Fixed bug SF #437859.
+        Execute procedure and string concat.
+      Note:
+        This change allows any expression to be used as a SP parameter.
+
+    * Fixed bug SF #562417.
+        Aggregate concatenated empty char.
+
+    * New BIGINT datatype (SF #446206).
+        Allow native SQL usage of 64-bit exact numerics.
+      Note:
+        Available in dialect 3 only.
+
+    * Universal triggers (SF #451922).
+        Allow one trigger to be fired for a number of action types.
+      Syntax:
+        CREATE TRIGGER name FOR table
+          [ACTIVE | INACTIVE]
+          <trigger_action_prefix>
+          <trigger_action_suffix> [OR <trigger_action_suffix>] [OR <trigger_action_suffix>]
+          [POSITION number]
+          AS <trigger_body>
+        <trigger_action_prefix> = {BEFORE | AFTER}
+        <trigger_action_suffix> = {DELETE | INSERT | UPDATE}
+      Example:
+        CREATE TRIGGER my_trigger FOR my_table BEFORE INSERT OR UPDATE
+          AS BEGIN
+            IF (NEW.DOC_ID IS NULL) THEN
+              EXCEPTION my_exception;
+          END
+
+    * New CONNECTION_ID and TRANSACTION_ID system variables (SF #446238, #446243).
+        Return appropriate internal identifier stored on the database header page.
+      Notes:
+        1. Available in SQL/PSQL.
+        2. The values are reset after a database is restored.
+
+    * Server-side database aliases (SF #446180).
+        Any database can be attached to using an "alias" name instead of its physical pathname.
+        The list of known database aliases is stored in aliases.conf file under the server installation root.
+      Example:
+        alias entry in the configuration file: my_database = d:\dbs\my\database.gdb
+        connection string: localhost:my_database
+
+    * In-memory sorting.
+        If SORT plan is used for a SQL statement, the sorting is done in memory.
+        If there's not enough memory for this operation, old temporary file based method is used.
+
+    * Fixed bug SF #538201.
+        Crash with extract from null as date.
+
+    * "EXECUTE VARCHAR" statement (SF #446256).
+        Allow execution of dynamic SQL statements in SPs/triggers.
+      Syntax:
+        EXECUTE VARCHAR value;
+      Notes:
+        1. Available in PSQL only.
+        2. Currently cannot return values, so SELECT statements are not allowed.
+        3. Recursion level is limited to 500 (hardcoded).
+      Example:
+        EXECUTE VARCHAR my_var;
