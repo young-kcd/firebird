@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: pwd.cpp,v 1.5 2002-07-06 05:31:56 skywalker Exp $
+$Id: pwd.cpp,v 1.6 2002-08-12 11:32:25 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -234,7 +234,7 @@ static BOOLEAN lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * pwd)
 /* the database is opened here, but this could also be done when the
    first database is opened */
 
-	if (open_user_db(&uinfo, status))
+	if (!open_user_db(&uinfo, status))
 	{
 		THREAD_ENTER;
 		ERR_post(gds_psw_attach, 0);
@@ -313,10 +313,8 @@ static BOOLEAN open_user_db(isc_db_handle* uihandle, SLONG* status)
  *      Open the user information database
  *      and return the handle.
  *
- *	TMN: FIX!!! Reverse return values (TRUE should be success!!!)
- *
- *      returns FALSE if successfully opened
- *              TRUE if not
+ *      returns TRUE if successfully opened
+ *              FALSE if not
  *
  **************************************/
 	TEXT			user_info_name[MAX_PATH_LENGTH];
@@ -409,12 +407,10 @@ static BOOLEAN open_user_db(isc_db_handle* uihandle, SLONG* status)
 
 	if (status[1])
 	{
-		// Is this reversed logic or what?!
-		// Return TRUE to tell we did NOT open the DB.
-		return TRUE;
+		return FALSE;
 	}
 
-	return FALSE;
+	return TRUE;
 }
 
 
