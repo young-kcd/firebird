@@ -33,7 +33,7 @@
 #include "../jrd/mblr_proto.h"
 
 const char* RDB_IMAGE	= "RDBVMSSHR";
-#define RDB_CALL(name)	if (!name) find_symbol (&name,"name"); stat = (*name)
+#define RDB_CALL(name)	if (!name) find_symbol (&name, "name"); stat = (*name)
 
 //#define rdb$bad_req_handle	20480058
 

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.82 2004-06-04 14:36:29 kkuznetsov Exp $
+$Id: ibase.h,v 1.83 2004-06-29 04:37:45 robocop Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -1265,6 +1265,7 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 
 #define RDB_system                         1
 #define RDB_id_assigned                    2
+/* 2 is for QLI. See jrd/constants.h for more Firebird-specific values. */
 
 
 /*************************************/

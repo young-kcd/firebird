@@ -36,7 +36,7 @@
  *		Alex Peshkoff <peshkoff@mail.ru>
  *				added PermanentStorage and AutoStorage classes.
  *
- *  $Id: alloc.h,v 1.42 2004-06-13 03:09:14 brodsom Exp $
+ *  $Id: alloc.h,v 1.43 2004-06-29 04:37:39 robocop Exp $
  *
  */
 
@@ -513,7 +513,7 @@ namespace Firebird
 	class AutoStorage : public PermanentStorage {
 	private:
 #if defined(DEV_BUILD)
-		void ProbeStack();
+		void ProbeStack() const;
 #endif
 	public:
 		static MemoryPool& getAutoMemoryPool() { return *getDefaultMemoryPool(); }

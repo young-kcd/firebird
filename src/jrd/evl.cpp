@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.93 2004-06-25 22:12:19 skidder Exp $ 
+  * $Id: evl.cpp,v 1.94 2004-06-29 04:37:45 robocop Exp $ 
  */
 
 /*
@@ -3590,6 +3590,7 @@ static dsc* get_mask(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 
 	request->req_flags &= ~req_null;
 
+	// SecurityClass::flags_t is USHORT for now, so it fits in vlu_long.
 	impure->vlu_misc.vlu_long = SCL_get_mask(p1, p2);
 	impure->vlu_desc.dsc_dtype = dtype_long;
 	impure->vlu_desc.dsc_length = sizeof(SLONG);

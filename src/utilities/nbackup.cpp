@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbackup.cpp,v 1.27 2004-05-17 00:18:51 brodsom Exp $
+ *  $Id: nbackup.cpp,v 1.28 2004-06-29 04:37:59 robocop Exp $
  *
  */
  
@@ -659,9 +659,9 @@ void nbackup::backup_database(int level, const char* fname)
 		if (isc_dsql_allocate_statement(status, &newdb, &stmt))
 			pr_error(status, "allocate statement");
 		if (isc_dsql_prepare(status, &trans, &stmt, 0, 
-			"insert into rdb$backup_history(rdb$backup_id,rdb$timestamp,"
-			  "rdb$backup_level,rdb$guid,rdb$scn,rdb$file_name)"
-			"values(gen_id(rdb$backup_history,1),'now',?,?,?,?)",
+			"insert into rdb$backup_history(rdb$backup_id, rdb$timestamp,"
+			  "rdb$backup_level, rdb$guid, rdb$scn, rdb$file_name)"
+			"values(gen_id(rdb$backup_history, 1), 'now', ?, ?, ?, ?)",
 			1, NULL))
 		{
 			pr_error(status, "prepare history insert");
@@ -875,7 +875,7 @@ void nbackup::restore_database(int filecount, const char* const* files)
 int main( int argc, char *argv[] )
 {
 #if defined DEV_BUILD && !defined WIN_NT
-	fprintf(stderr,"Using %d-bit UNIX IO\n", sizeof(off_t) * 8);
+	fprintf(stderr, "Using %d-bit UNIX IO\n", sizeof(off_t) * 8);
 #endif
 	bool matched = false;
 	// Do not constify. GCC 3.4.0 chokes on minus below in this case

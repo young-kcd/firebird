@@ -24,25 +24,27 @@
 #ifndef JRD_SCL_PROTO_H
 #define JRD_SCL_PROTO_H
 
-namespace Jrd {
-	class SecurityClass;
-}
+#include "../jrd/scl.h"
+
+//namespace Jrd {
+//	class SecurityClass;
+//}
 
 struct dsc;
 typedef Firebird::Array<UCHAR> UCharBuffer;
 
 void SCL_check_access(const Jrd::SecurityClass*, SLONG, const TEXT*,
-					  const TEXT*, USHORT, const TEXT*, const TEXT*);
-void SCL_check_procedure(const dsc*, USHORT);
-void SCL_check_relation(const dsc*, USHORT);
+					  const TEXT*, Jrd::SecurityClass::flags_t, const TEXT*, const TEXT*);
+void SCL_check_index(Jrd::thread_db*, const TEXT*, UCHAR, Jrd::SecurityClass::flags_t);
+void SCL_check_procedure(const dsc*, Jrd::SecurityClass::flags_t);
+void SCL_check_relation(const dsc*, Jrd::SecurityClass::flags_t);
 Jrd::SecurityClass* SCL_get_class(const TEXT*);
-int SCL_get_mask(const TEXT*, const TEXT*);
+Jrd::SecurityClass::flags_t SCL_get_mask(const TEXT*, const TEXT*);
 void SCL_init(bool, const TEXT*, const TEXT*, const TEXT*, const TEXT*,
 	const TEXT*, Jrd::thread_db*, const bool);
-void SCL_move_priv(UCHAR**, USHORT, UCharBuffer&, ULONG*);
-Jrd::SecurityClass* SCL_recompute_class(Jrd::thread_db*, TEXT*);
+void SCL_move_priv(UCHAR**, Jrd::SecurityClass::flags_t, UCharBuffer&, ULONG*);
+Jrd::SecurityClass* SCL_recompute_class(Jrd::thread_db*, const TEXT*);
 void SCL_release(Jrd::SecurityClass*);
-void SCL_check_index(Jrd::thread_db*, const TEXT*, UCHAR, USHORT);
 
 #endif // JRD_SCL_PROTO_H
 

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.51 2004-05-29 04:55:23 robocop Exp $
+ * $Id: show.epp,v 1.52 2004-06-29 04:37:44 robocop Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -3353,11 +3353,11 @@ static processing_state show_trigger(
 	BASED_ON RDB$TRIGGERS.RDB$RELATION_NAME relationName;
 
 	if (isTriggerName) {
-		sprintf(triggerName,"%s",object);
+		sprintf(triggerName, "%s", object);
 		relationName[0] = '\0';
 	}
 	else {
-		sprintf(relationName,"%s",object);
+		sprintf(relationName, "%s", object);
 		triggerName[0] = '\0';
 	}
 

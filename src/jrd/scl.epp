@@ -84,11 +84,11 @@ static bool check_hex(const UCHAR*, USHORT);
 static bool check_number(const UCHAR*, USHORT);
 static bool check_user_group(const UCHAR*, USHORT, UCharBuffer&, ULONG*);
 static bool check_string(const UCHAR*, const TEXT*);
-static SLONG compute_access(thread_db*, const SecurityClass*, const jrd_rel*,
-	const TEXT*, const TEXT*);
+static SecurityClass::flags_t compute_access(thread_db*, const SecurityClass*,
+	const jrd_rel*,	const TEXT*, const TEXT*);
 static TEXT* save_string(const TEXT*, TEXT**);
-static SLONG walk_acl(thread_db*, const UCHAR*, const jrd_rel*, const TEXT*,
-	const TEXT*, UCharBuffer&, ULONG*);
+static SecurityClass::flags_t walk_acl(thread_db*, const UCHAR*, const jrd_rel*,
+	const TEXT*, const TEXT*, UCharBuffer&, ULONG*);
 
 static inline void check_and_move(UCHAR*& to, UCHAR from, UCharBuffer& start, ULONG* length_ptr)
 {
@@ -100,7 +100,7 @@ static inline void check_and_move(UCHAR*& to, UCHAR from, UCharBuffer& start, UL
 }
 
 struct P_NAMES {
-	USHORT p_names_priv;
+	SecurityClass::flags_t p_names_priv;
 	USHORT p_names_acl;
 	const TEXT* p_names_string;
 };
@@ -126,7 +126,7 @@ void SCL_check_access(const SecurityClass* s_class,
 					  SLONG view_id,
 					  const TEXT* trg_name,
 					  const TEXT* prc_name,
-					  USHORT mask,
+					  SecurityClass::flags_t mask,
 					  const TEXT* type,
 					  const TEXT* name)
 {
@@ -201,7 +201,8 @@ void SCL_check_access(const SecurityClass* s_class,
 }
 
 
-void SCL_check_index(thread_db* tdbb, const TEXT* index_name, UCHAR index_id, USHORT mask)
+void SCL_check_index(thread_db* tdbb, const TEXT* index_name, UCHAR index_id,
+	SecurityClass::flags_t mask)
 {
 /******************************************************
  *
@@ -328,7 +329,7 @@ void SCL_check_index(thread_db* tdbb, const TEXT* index_name, UCHAR index_id, US
 }
 
 
-void SCL_check_procedure(const dsc* dsc_name, USHORT mask)
+void SCL_check_procedure(const dsc* dsc_name, SecurityClass::flags_t mask)
 {
 /**************************************
  *
@@ -385,7 +386,7 @@ void SCL_check_procedure(const dsc* dsc_name, USHORT mask)
 }
 
 
-void SCL_check_relation(const dsc* dsc_name, USHORT mask)
+void SCL_check_relation(const dsc* dsc_name, SecurityClass::flags_t mask)
 {
 /**************************************
  *
@@ -492,7 +493,7 @@ SecurityClass* SCL_get_class(const TEXT* _string)
 
 	s_class = FB_NEW_RPT(*dbb->dbb_permanent, string.length()) SecurityClass();
 	strcpy(s_class->scl_name, string.c_str());
-	s_class->scl_flags = (USHORT) compute_access(tdbb, s_class, NULL, NULL, NULL);
+	s_class->scl_flags = compute_access(tdbb, s_class, NULL, NULL, NULL);
 
 	if (s_class->scl_flags & SCL_exists)
 	{
@@ -507,7 +508,7 @@ SecurityClass* SCL_get_class(const TEXT* _string)
 }
 
 
-int SCL_get_mask(const TEXT* relation_name, const TEXT* field_name)
+SecurityClass::flags_t SCL_get_mask(const TEXT* relation_name, const TEXT* field_name)
 {
 /**************************************
  *
@@ -528,7 +529,7 @@ int SCL_get_mask(const TEXT* relation_name, const TEXT* field_name)
 	// Start with database security class
 
 	const SecurityClass* s_class = attachment->att_security_class;
-	USHORT access = (s_class) ? s_class->scl_flags : -1;
+	SecurityClass::flags_t access = (s_class) ? s_class->scl_flags : -1;
 
 	// If there's a relation, track it down
 	jrd_rel* relation;
@@ -541,7 +542,7 @@ int SCL_get_mask(const TEXT* relation_name, const TEXT* field_name)
 			access &= s_class->scl_flags;
 		}
 		
-		jrd_fld* field;
+		const jrd_fld* field;
 		SSHORT id;
 		if (field_name &&
 			(id = MET_lookup_field(tdbb, relation, field_name, 0)) >= 0 &&
@@ -794,7 +795,8 @@ void SCL_init(bool create,
 }
 
 
-void SCL_move_priv(UCHAR** acl_ptr, USHORT mask, UCharBuffer& start_ptr, ULONG* length_ptr)
+void SCL_move_priv(UCHAR** acl_ptr, SecurityClass::flags_t mask,
+	UCharBuffer& start_ptr, ULONG* length_ptr)
 {
 /**************************************
  *
@@ -828,7 +830,7 @@ void SCL_move_priv(UCHAR** acl_ptr, USHORT mask, UCharBuffer& start_ptr, ULONG* 
 }
 
 
-SecurityClass* SCL_recompute_class(thread_db* tdbb, TEXT* string)
+SecurityClass* SCL_recompute_class(thread_db* tdbb, const TEXT* string)
 {
 /**************************************
  *
@@ -848,7 +850,7 @@ SecurityClass* SCL_recompute_class(thread_db* tdbb, TEXT* string)
 		return NULL;
 	}
 
-	s_class->scl_flags = (USHORT) compute_access(tdbb, s_class, NULL, NULL,
+	s_class->scl_flags = compute_access(tdbb, s_class, NULL, NULL,
 												 NULL);
 
 	if (s_class->scl_flags & SCL_exists) {
@@ -1062,7 +1064,7 @@ static bool check_string(const UCHAR* acl, const TEXT* string)
 }
 
 
-static SLONG compute_access(thread_db* tdbb,
+static SecurityClass::flags_t compute_access(thread_db* tdbb,
 							const SecurityClass* s_class,
 							const jrd_rel* view,
 							const TEXT* trg_name,
@@ -1088,7 +1090,7 @@ static SLONG compute_access(thread_db* tdbb,
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	SLONG privileges = SCL_scanned;
+	SecurityClass::flags_t privileges = SCL_scanned;
 
 	jrd_req* request = CMP_find_request(tdbb, irq_l_security, IRQ_REQUESTS);
 
@@ -1169,7 +1171,7 @@ static TEXT* save_string(const TEXT* string, TEXT** ptr)
 }
 
 
-static SLONG walk_acl(thread_db* tdbb,
+static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 					  const UCHAR* acl,
 					  const jrd_rel* view,
 					  const TEXT* trg_name,
@@ -1206,7 +1208,7 @@ static SLONG walk_acl(thread_db* tdbb,
 
 		user.usr_user_name = view->rel_owner_name;
 	}
-	SLONG privilege = 0;
+	SecurityClass::flags_t privilege = 0;
 
 	if (*acl++ != ACL_version)
 	{

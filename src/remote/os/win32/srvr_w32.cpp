@@ -306,7 +306,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	gds__prefix(name, "memdebug.log");
 	FILE* file = fopen(name, "w+b");
 	if (file) {
-	  fprintf(file,"Global memory pool allocated objects\n");
+	  fprintf(file, "Global memory pool allocated objects\n");
 	  getDefaultMemoryPool()->print_contents(file);
 	  fclose(file);
 	}

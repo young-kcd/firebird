@@ -46,3 +46,4 @@ const int obj_udf				= 15;
 const int obj_blob_filter		= 16;
 
 #endif /* JRD_OBJ_H */
+

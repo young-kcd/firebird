@@ -1568,7 +1568,7 @@ void BURP_verbose(USHORT number,
 	if (tdgbl->gbl_sw_verbose)
 		BURP_print(number, arg1, arg2, arg3, arg4, arg5);
 	else
-		burp_output("%s","");
+		burp_output("%s", "");
 }
 
 

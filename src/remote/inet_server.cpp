@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: inet_server.cpp,v 1.42 2004-05-17 22:29:41 brodsom Exp $
+$Id: inet_server.cpp,v 1.43 2004-06-29 04:37:54 robocop Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -410,7 +410,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 	gds__prefix(name, "memdebug.log");
 	FILE* file = fopen(name, "w+b");
 	if (file) {
-	  fprintf(file,"Global memory pool allocated objects\n");
+	  fprintf(file, "Global memory pool allocated objects\n");
 	  getDefaultMemoryPool()->print_contents(file);
 	  fclose(file);
 	}

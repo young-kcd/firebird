@@ -31,25 +31,26 @@ namespace Jrd {
 class SecurityClass : public pool_alloc_rpt<SCHAR, type_scl>
 {
     public:
+    typedef USHORT flags_t;
 	SecurityClass* scl_next;	/* Next security class in system */
-	USHORT scl_flags;			/* Access permissions */
+	flags_t scl_flags;			/* Access permissions */
 	TEXT scl_name[2];
 };
 
-const USHORT SCL_read			= 1;		/* Read access */
-const USHORT SCL_write			= 2;		/* Write access */
-const USHORT SCL_delete			= 4;		/* Delete access */
-const USHORT SCL_control		= 8;		/* Control access */
-const USHORT SCL_grant			= 16;		/* Grant privileges */
-const USHORT SCL_exists			= 32;		/* At least ACL exists */
-const USHORT SCL_scanned		= 64;		/* But we did look */
-const USHORT SCL_protect		= 128;		/* Change protection */
-const USHORT SCL_corrupt		= 256;		/* ACL does look too good */
-const USHORT SCL_sql_insert		= 512;
-const USHORT SCL_sql_delete		= 1024;
-const USHORT SCL_sql_update		= 2048;
-const USHORT SCL_sql_references	= 4096;
-const USHORT SCL_execute		= 8192;
+const SecurityClass::flags_t SCL_read			= 1;		/* Read access */
+const SecurityClass::flags_t SCL_write			= 2;		/* Write access */
+const SecurityClass::flags_t SCL_delete			= 4;		/* Delete access */
+const SecurityClass::flags_t SCL_control		= 8;		/* Control access */
+const SecurityClass::flags_t SCL_grant			= 16;		/* Grant privileges */
+const SecurityClass::flags_t SCL_exists			= 32;		/* At least ACL exists */
+const SecurityClass::flags_t SCL_scanned		= 64;		/* But we did look */
+const SecurityClass::flags_t SCL_protect		= 128;		/* Change protection */
+const SecurityClass::flags_t SCL_corrupt		= 256;		/* ACL does look too good */
+const SecurityClass::flags_t SCL_sql_insert		= 512;
+const SecurityClass::flags_t SCL_sql_delete		= 1024;
+const SecurityClass::flags_t SCL_sql_update		= 2048;
+const SecurityClass::flags_t SCL_sql_references	= 4096;
+const SecurityClass::flags_t SCL_execute		= 8192;
 
 
 
@@ -70,9 +71,9 @@ class UserId : public pool_alloc_rpt<SCHAR, type_usr>
 	TEXT usr_data[2];
 };
 
-const int USR_locksmith	= 1;		/* User has great karma */
-const int USR_dba		= 2;		/* User has DBA privileges */
-const int USR_owner		= 4;		/* User owns database */
+const USHORT USR_locksmith	= 1;		/* User has great karma */
+const USHORT USR_dba		= 2;		/* User has DBA privileges */
+const USHORT USR_owner		= 4;		/* User owns database */
 
 /*
  * User name assigned to any user granted USR_locksmith rights.

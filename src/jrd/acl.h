@@ -24,6 +24,8 @@
 #ifndef JRD_ACL_H
 #define JRD_ACL_H
 
+// CVC: The correct type for these ACL_ and privileges seems to be UCHAR, not int.
+
 const int ACL_version	= 1;
 
 const int ACL_end		= 0;

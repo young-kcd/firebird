@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.cpp,v 1.53 2004-06-21 22:17:51 skidder Exp $
+ *  $Id: alloc.cpp,v 1.54 2004-06-29 04:37:39 robocop Exp $
  *
  */
 
@@ -86,9 +86,22 @@ inline MemoryRedirectList* block_list_small(MemoryBlock* block)
 		block->small.mbk_length - MEM_ALIGN(sizeof(MemoryRedirectList)));
 }
 
+inline const MemoryRedirectList* block_list_small(const MemoryBlock* block)
+{
+    return (const MemoryRedirectList*)((const char*)block + MEM_ALIGN(sizeof(MemoryBlock)) +
+		block->small.mbk_length - MEM_ALIGN(sizeof(MemoryRedirectList)));
+}
+
+
 inline MemoryRedirectList* block_list_large(MemoryBlock* block)
 {
     return (MemoryRedirectList*)((char*)block + MEM_ALIGN(sizeof(MemoryBlock)) + 
+		block->mbk_large_length - MEM_ALIGN(sizeof(MemoryRedirectList)));
+}
+
+inline const MemoryRedirectList* block_list_large(const MemoryBlock* block)
+{
+    return (const MemoryRedirectList*)((const char*)block + MEM_ALIGN(sizeof(MemoryBlock)) +
 		block->mbk_large_length - MEM_ALIGN(sizeof(MemoryRedirectList)));
 }
 
@@ -109,6 +122,11 @@ inline MemoryBlock* prev_block(MemoryBlock *block)
 inline MemoryBlock* next_block(MemoryBlock *block)
 {
 	return (MemoryBlock*)((char*)block + block->small.mbk_length + MEM_ALIGN(sizeof(MemoryBlock)));
+}
+
+inline const MemoryBlock* next_block(const MemoryBlock *block)
+{
+	return (const MemoryBlock*)((const char*)block + block->small.mbk_length + MEM_ALIGN(sizeof(MemoryBlock)));
 }
 
 inline size_t FB_MAX(size_t M, size_t N)
@@ -549,7 +567,7 @@ bool MemoryPool::verify_pool() {
 	size_t blk_used_memory = 0;
 	size_t blk_mapped_memory = 0;
 	// check each block in each segment for consistency with free blocks structure
-	for (MemoryExtent *extent = extents; extent; extent = extent->mxt_next) {
+	for (const MemoryExtent *extent = extents; extent; extent = extent->mxt_next) {
 		// Verify doubly linked list
 		if (extent == extents) {
 			mem_assert(extent->mxt_prev == NULL);
@@ -559,7 +577,7 @@ bool MemoryPool::verify_pool() {
 		}
 		blk_mapped_memory += EXTENT_SIZE;
 		USHORT prev_length = 0;
-		for (MemoryBlock *blk = (MemoryBlock *)((char*)extent + MEM_ALIGN(sizeof(MemoryExtent)));
+		for (const MemoryBlock *blk = (const MemoryBlock *)((const char*)extent + MEM_ALIGN(sizeof(MemoryExtent)));
 			; 
 			blk = next_block(blk))
 		{
@@ -580,10 +598,10 @@ bool MemoryPool::verify_pool() {
 			}
 			
 			mem_assert(blk->small.mbk_prev_length == prev_length); // Prev is correct ?
-			BlockInfo temp = {blk, blk->small.mbk_length};
+			BlockInfo temp = {const_cast<MemoryBlock*>(blk), blk->small.mbk_length};
 			bool foundTree = freeBlocks.locate(temp), foundPending = false;
-			for (PendingFreeBlock *tmp = pendingFree; tmp; tmp = tmp->next)
-				if (tmp == (PendingFreeBlock *)((char*)blk+MEM_ALIGN(sizeof(MemoryBlock)))) {
+			for (const PendingFreeBlock *tmp = pendingFree; tmp; tmp = tmp->next)
+				if (tmp == (const PendingFreeBlock *)((const char*)blk + MEM_ALIGN(sizeof(MemoryBlock)))) {
 					mem_assert(!foundPending); // Block may be in pending list only one time
 					foundPending = true;
 				}
@@ -602,9 +620,9 @@ bool MemoryPool::verify_pool() {
 	}
 	
 	// Verify large blocks
-	for (MemoryBlock *large = os_redirected; large; large=block_list_large(large)->mrl_next)
+	for (const MemoryBlock *large = os_redirected; large; large = block_list_large(large)->mrl_next)
 	{
-		MemoryRedirectList* list = block_list_large(large);
+		const MemoryRedirectList* list = block_list_large(large);
 		// Verify doubly linked list
 		if (large == os_redirected) {
 			mem_assert(list->mrl_prev == NULL);
@@ -632,9 +650,9 @@ bool MemoryPool::verify_pool() {
 		parent->lock.enter();
 		// Verify redirected blocks
 		size_t blk_redirected = 0;
-		for (MemoryBlock *redirected = parent_redirected; redirected; redirected=block_list_small(redirected)->mrl_next)
+		for (const MemoryBlock *redirected = parent_redirected; redirected; redirected = block_list_small(redirected)->mrl_next)
 		{
-			MemoryRedirectList* list = block_list_small(redirected);
+			const MemoryRedirectList* list = block_list_small(redirected);
 			// Verify doubly linked list
 			if (redirected == parent_redirected) {
 				mem_assert(list->mrl_prev == NULL);
@@ -657,9 +675,9 @@ bool MemoryPool::verify_pool() {
 	return true;
 }
 
-static void print_block(FILE *file, MemoryBlock *blk, bool used_only)
+static void print_block(FILE *file, const MemoryBlock *blk, bool used_only)
 {
-	void *mem = (char*)blk + MEM_ALIGN(sizeof(MemoryBlock));
+	const void *mem = (const char*)blk + MEM_ALIGN(sizeof(MemoryBlock));
 	if (((blk->mbk_flags & MBK_USED) && blk->mbk_type >= 0) || !used_only) {
 		char flags[100];
 		flags[0] = 0;
@@ -697,16 +715,17 @@ static void print_block(FILE *file, MemoryBlock *blk, bool used_only)
 	}
 }
 
+// This member function can't be const because there are calls to the mutex.
 void MemoryPool::print_contents(FILE *file, bool used_only)
 {
 	lock.enter();
 	fprintf(file, "********* Printing contents of pool %p used=%ld mapped=%ld:\n", 
 		this, (long)used_memory, (long)mapped_memory);
 	// Print extents
-	for (MemoryExtent *extent = extents; extent; extent = extent->mxt_next) {
+	for (const MemoryExtent *extent = extents; extent; extent = extent->mxt_next) {
 		if (!used_only)
 			fprintf(file, "EXTENT %p:\n", extent);
-		for (MemoryBlock *blk = (MemoryBlock *)((char*)extent + MEM_ALIGN(sizeof(MemoryExtent))); 
+		for (const MemoryBlock *blk = (MemoryBlock *)((char*)extent + MEM_ALIGN(sizeof(MemoryExtent)));
 			; 
 			blk = next_block(blk))
 		{
@@ -718,7 +737,7 @@ void MemoryPool::print_contents(FILE *file, bool used_only)
 	// Print large blocks
 	if (os_redirected) {
 		fprintf(file, "LARGE BLOCKS:\n");
-		for (MemoryBlock *blk = os_redirected; blk; blk = block_list_large(blk)->mrl_next)
+		for (const MemoryBlock *blk = os_redirected; blk; blk = block_list_large(blk)->mrl_next)
 			print_block(file, blk, used_only);
 	}
 	lock.leave();
@@ -726,7 +745,7 @@ void MemoryPool::print_contents(FILE *file, bool used_only)
 	if (parent_redirected) {
 		fprintf(file, "REDIRECTED TO PARENT %p:\n", parent);
 		parent->lock.enter();
-		for (MemoryBlock *blk = parent_redirected; blk; blk = block_list_small(blk)->mrl_next)
+		for (const MemoryBlock *blk = parent_redirected; blk; blk = block_list_small(blk)->mrl_next)
 			print_block(file, blk, used_only);
 		parent->lock.leave();
 	}
@@ -1175,7 +1194,7 @@ void MemoryPool::deallocate(void *block)
 	if (!block)
 		return;
 
-	MemoryBlock *blk = ptr_block(block);
+	MemoryBlock* const blk = ptr_block(block);
 	
 	fb_assert(blk->mbk_flags & MBK_USED);
 	fb_assert(blk->mbk_pool==this);
@@ -1185,7 +1204,7 @@ void MemoryPool::deallocate(void *block)
 		blk->mbk_pool = parent;
 		blk->mbk_flags &= ~MBK_PARENT;
 		// Delete block from list of redirected blocks
-		MemoryRedirectList *list = block_list_small(blk);
+		MemoryRedirectList* const list = block_list_small(blk);
 		if (list->mrl_prev)
 			block_list_small(list->mrl_prev)->mrl_next = list->mrl_next;
 		else
@@ -1219,7 +1238,7 @@ void MemoryPool::deallocate(void *block)
 		const size_t size = blk->mbk_large_length - MEM_ALIGN(sizeof(MemoryRedirectList));
 		decrement_usage(size);
 		// Free the block
-		size_t ext_size = MEM_ALIGN(sizeof(MemoryBlock)) + size + 
+		size_t ext_size = MEM_ALIGN(sizeof(MemoryBlock)) + size +
 			MEM_ALIGN(sizeof(MemoryRedirectList));
 		external_free(blk, ext_size);
 		decrement_mapping(ext_size);
@@ -1279,7 +1298,7 @@ void operator delete[](void* mem) throw()
 }
 
 #if defined(DEV_BUILD)
-void Firebird::AutoStorage::ProbeStack() {
+void Firebird::AutoStorage::ProbeStack() const {
 	//
 	// AutoStorage() default constructor can be used only 
 	// for objects on the stack. ProbeStack() uses the 
@@ -1288,8 +1307,8 @@ void Firebird::AutoStorage::ProbeStack() {
 	//	2. Objects don't grow > 64K.
 	//
 	char ProbeVar = '\0';
-	char *MyStack = &ProbeVar;
-	char *ThisLocation = (char *)this;
+	const char *MyStack = &ProbeVar;
+	const char *ThisLocation = (const char *)this;
 	int distance = ThisLocation - MyStack;
 	if (distance < 0) {
 		distance = -distance;
@@ -1297,3 +1316,4 @@ void Firebird::AutoStorage::ProbeStack() {
 	fb_assert(distance < 64 * 1024);
 }
 #endif
+

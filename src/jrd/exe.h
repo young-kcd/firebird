@@ -50,6 +50,7 @@ typedef nod_t NOD_T;
 #include "../jrd/rse.h"
 
 #include "../jrd/err_proto.h"
+#include "../jrd/scl.h"
 
 // This macro enables DSQL tracing code
 //#define CMP_DEBUG
@@ -563,7 +564,7 @@ struct AccessItem
 	SLONG	acc_view_id;
 	const TEXT*	acc_name;
 	const TEXT*	acc_type;
-	USHORT		acc_mask;
+	SecurityClass::flags_t acc_mask;
 
 	static int strcmp_null(const char* s1, const char* s2) {
 		return s1 == NULL ? s2 != NULL : s2 == NULL ? -1 : strcmp(s1, s2);
@@ -590,7 +591,7 @@ struct AccessItem
 	}
 
 	AccessItem(const TEXT* security_name, SLONG view_id, const TEXT* name,
-		const TEXT* type, USHORT mask) 
+		const TEXT* type, SecurityClass::flags_t mask)
 	: acc_security_name(security_name), acc_view_id(view_id), acc_name(name),
 		acc_type(type), acc_mask(mask)
 	{}

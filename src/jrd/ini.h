@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-/* Note that this file is used by jrdmet.c in gpre 
-   as well as by ini.e in JRD.  Make sure that any
+/* Note that this file is used by jrdmet.cpp in gpre
+   as well as by ini.epp in JRD.  Make sure that any
    changes are compatible in both places. */
 
 #include "../jrd/intl.h"

@@ -1760,7 +1760,9 @@ static bool create_index(	thread_db*	tdbb,
 
 					if (!relation->rel_owner_name || !partner_relation->rel_owner_name
 						|| strcmp(relation->rel_owner_name, partner_relation->rel_owner_name))
+					{
 						SCL_check_index(tdbb, partner_relation->rel_name, idx.idx_id + 1, SCL_sql_references);
+					}
 				}
 			}
 		}

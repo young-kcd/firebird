@@ -1230,9 +1230,9 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 	if (!(transaction->tra_flags & TRA_system))
 	{
-		jrd_rel* r2;
-		jrd_prc* procedure;
-		USHORT id, rel_flags;
+		const jrd_rel* r2;
+		const jrd_prc* procedure;
+		USHORT id;
 	
 		switch ((RIDS) relation->rel_id)
 		{
@@ -1336,6 +1336,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			{
 			const bool name_defined =
 				EVL_field(0, rpb->rpb_record, f_file_name, &desc);
+			USHORT rel_flags;
 			if (EVL_field(0, rpb->rpb_record, f_file_flags, &desc2) && 
 				((rel_flags = MOV_get_long(&desc2, 0)) & FILE_difference))
 			{

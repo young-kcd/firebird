@@ -92,7 +92,7 @@ static void grant_views(TEXT**, USHORT, UCharBuffer&, ULONG*);
 static void purge_default_class(TEXT*, SSHORT);
 #endif
 static USHORT save_field_privileges(thread_db*, UCharBuffer&, UCHAR**,
-									TEXT*, TEXT*, USHORT, ULONG*);
+									TEXT*, const TEXT*, USHORT, ULONG*);
 static void save_security_class(thread_db*, const TEXT*, const UCHAR*, USHORT);
 static USHORT trans_sql_priv(const TEXT*);
 static SLONG squeeze_acl(UCHAR*, UCHAR**, TEXT*, SSHORT);
@@ -726,7 +726,10 @@ static USHORT save_field_privileges(
 									thread_db* tdbb,
 									UCharBuffer& str_relation_buffer,
 									UCHAR** acl_ptr,
-TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
+									TEXT* relation_name,
+									const TEXT* owner,
+									USHORT public_priv,
+									ULONG* length_ptr)
 {
 /**************************************
  *
@@ -1093,10 +1096,8 @@ static SLONG squeeze_acl(UCHAR*		acl_base,
  *
  **************************************/
 	UCHAR *dup_acl;
-	UCHAR *dest, *source;
 	SLONG privilege = 0;
 	UCHAR c;
-	int length;
 	UCHAR l;
 
 
@@ -1235,9 +1236,9 @@ static SLONG squeeze_acl(UCHAR*		acl_base,
 						BUGCHECK(293);	/* bad ACL */
 					}
 				/* Squeeze out duplicate acl element. */
-				dest = dup_acl;
-				source = acl;
-				length = *acl_ptr - source + 1;
+				UCHAR* dest = dup_acl;
+				const UCHAR* source = acl;
+				int length = *acl_ptr - source + 1; // ptrdiff_t
 				*acl_ptr = *acl_ptr - (source - dest);
 				acl = dup_acl;
 				for (; length; *dest++ = *source++, length--);

@@ -135,8 +135,8 @@ static void pass1_modify(thread_db*, CompilerScratch*, jrd_nod*);
 static RecordSelExpr* pass1_rse(thread_db*, CompilerScratch*, RecordSelExpr*, jrd_rel*, USHORT);
 static void pass1_source(thread_db*, CompilerScratch*, RecordSelExpr*, jrd_nod*, jrd_nod**, NodeStack&, jrd_rel*, USHORT);
 static jrd_nod* pass1_store(thread_db*, CompilerScratch*, jrd_nod*);
-static jrd_nod* pass1_update(thread_db*, CompilerScratch*, jrd_rel*, trig_vec*, USHORT, USHORT, USHORT, jrd_rel*,
-						USHORT);
+static jrd_nod* pass1_update(thread_db*, CompilerScratch*, jrd_rel*, trig_vec*, USHORT, USHORT,
+	SecurityClass::flags_t, jrd_rel*, USHORT);
 static jrd_nod* pass2(thread_db*, CompilerScratch*, jrd_nod* const, jrd_nod*);
 static void pass2_rse(thread_db*, CompilerScratch*, RecordSelExpr*);
 static jrd_nod* pass2_union(thread_db*, CompilerScratch*, jrd_nod*);
@@ -2066,7 +2066,7 @@ void CMP_post_access(thread_db* tdbb,
 					 CompilerScratch* csb,
 					 const TEXT* security_name,
 					 SLONG view_id,
-					 USHORT mask,
+					 SecurityClass::flags_t mask,
 					 const TEXT* type_name,
 					 const TEXT* name)
 {
@@ -3144,6 +3144,7 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 	return PAR_make_list(tdbb, stack);
 }
 
+
 static jrd_nod* pass1(thread_db* tdbb,
 					 CompilerScratch* csb,
 					 jrd_nod* node,
@@ -3638,7 +3639,7 @@ static void pass1_erase(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		// view by checking for read access on the base table. If field-level select
 		// privileges are implemented, this needs to be enhanced.
 
-		USHORT priv = SCL_sql_delete;
+		SecurityClass::flags_t priv = SCL_sql_delete;
 		if (parent)
 			priv |= SCL_read;
 		jrd_nod* source =
@@ -3797,7 +3798,7 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		// view by checking for read access on the base table. If field-level select
 		// privileges are implemented, this needs to be enhanced.
 
-		USHORT priv = SCL_sql_update;
+		SecurityClass::flags_t priv = SCL_sql_update;
 		if (parent)
 			priv |= SCL_read;
 		jrd_nod* source = pass1_update(tdbb, csb, relation, trigger, stream,
@@ -4315,7 +4316,7 @@ static jrd_nod* pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node
 		// view by checking for read access on the base table. If field-level select
 		// privileges are implemented, this needs to be enhanced.
 
-		USHORT priv = SCL_sql_insert;
+		SecurityClass::flags_t priv = SCL_sql_insert;
 		if (parent) {
 			priv |= SCL_read;
 		}
@@ -4376,7 +4377,7 @@ static jrd_nod* pass1_update(thread_db* tdbb,
 							trig_vec* trigger,
 							USHORT stream,
 							USHORT update_stream,
-							USHORT priv,
+							SecurityClass::flags_t priv,
 							jrd_rel* view,
 							USHORT view_stream)
 {

@@ -30,7 +30,7 @@
 #include "../jrd/common.h"
 
 const char* RDB_IMAGE	= "RDBVMSSHR";
-#define RDB_CALL(name)	if (!name) find_symbol (&name,"name"); (*name)
+#define RDB_CALL(name)	if (!name) find_symbol (&name, "name"); (*name)
 #define CHECK_HANDLE(handle,code)	if (check_handle(handle))\
 		 			return bad_handle (user_status, code)
 

@@ -1262,9 +1262,9 @@ SLONG ISQL_get_index_segments(TEXT* segs,
 		}
 
 		if (n == 1)
-			sprintf (segs + strlen (segs), "%s", SQL_identifier);
+			sprintf (segs + strlen(segs), "%s", SQL_identifier);
 		else
-			sprintf (segs + strlen (segs),", %s", SQL_identifier);
+			sprintf (segs + strlen(segs), ", %s", SQL_identifier);
 
 	END_FOR
 	ON_ERROR

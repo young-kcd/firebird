@@ -884,10 +884,10 @@ static void move_if_not_identical( const char* original, const char* new_file,
 	char buffer[1000];
 #if defined(WIN_NT) && !defined(__GNUC__)
 	if ( directory != NULL) {
-		sprintf(origName,"%s\\%s", directory, original);
+		sprintf(origName, "%s\\%s", directory, original);
 	}
 	else {
-		sprintf(origName,".\\%s", original);
+		sprintf(origName, ".\\%s", original);
 	}
 	/*
 	 * This is a trick to make on systems previous to W2K were apparently
@@ -897,10 +897,10 @@ static void move_if_not_identical( const char* original, const char* new_file,
 	sprintf(buffer, "fc %s %s | find \"FC:\" > nul", new_file, origName);
 #else
 	if ( directory != NULL) {
-		sprintf(origName,"%s/%s", directory, original);
+		sprintf(origName, "%s/%s", directory, original);
 	}
 	else {
-		sprintf(origName,"./%s", original);
+		sprintf(origName, "./%s", original);
 	}
 	sprintf(buffer, "cmp -s %s %s", new_file, origName);
 #endif
