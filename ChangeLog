@@ -1,3 +1,141 @@
+2004-03-14 15:39  alexpeshkoff
+
+	* firebird2/src/: jrd/db_alias.h, ipserver/ipclient.cpp:
+	
+	Fixed boot build
+
+2004-03-14 15:31  alexpeshkoff
+
+	* firebird2/builds/win32/msvc6/: common.dsp, common_classic.dsp:
+	
+	Added new h-files to VC6 projects. Not critical.
+
+2004-03-14 15:27  alexpeshkoff
+
+	* firebird2/src/jrd/db_alias.cpp:
+	
+	fixed release build
+
+2004-03-14 14:39  alexpeshkoff
+
+	* firebird2/src/: jrd/btr.cpp, jrd/cch.cpp, jrd/cmp.cpp,
+	jrd/common.h, jrd/db_alias.cpp, jrd/db_alias.h, jrd/dfw.epp,
+	jrd/dls.cpp, jrd/dyn_def.epp, jrd/err.cpp, jrd/evl_string.h,
+	jrd/exe.cpp, jrd/exe.h, jrd/execute_statement.cpp,
+	jrd/execute_statement.h, jrd/ext.cpp, jrd/flu.cpp, jrd/gds.cpp,
+	jrd/inf.cpp, jrd/ini.epp, jrd/jrd_proto.h, jrd/nbak.cpp,
+	jrd/opt.cpp, jrd/req.h, jrd/rse.cpp, jrd/rse.h, jrd/shut.cpp,
+	jrd/tra.cpp, jrd/val.cpp, jrd/vio.cpp, utilities/gstat/dba.epp,
+	include/fb_vector.h, remote/interface.cpp, common/classes/locks.h,
+	dsql/pass1.cpp, jrd/os/win32/winnt.cpp:
+	
+	Various cleanup to make engine compile and work after mentioned
+	earlier changes.  Mainly: 1) MemoryPool* => MemoryPool& in arrays'
+	constructors 2) use Firebird::string to keep strings data
+
+2004-03-14 14:36  alexpeshkoff
+
+	* firebird2/src/jrd/: isc_f_proto.h, isc_file.cpp:
+	
+	'char *' converted to 'PathName &' (not everywhere)
+
+2004-03-14 14:34  alexpeshkoff
+
+	* firebird2/src/jrd/: jrd.h, jrd.cpp:
+	
+	replaced str with Firebird::string (or Parhname) in Database and
+	attachment
+
+2004-03-14 14:31  alexpeshkoff
+
+	* firebird2/src/jrd/rpb_chain.h:
+	
+	use InlineStorage - should give slightly better performance
+
+2004-03-14 14:30  alexpeshkoff
+
+	* firebird2/src/jrd/os/: win32/path_utils.cpp, path_utils.h:
+	
+	1) made DitItr pooled-object 2) dropped comparePaths - it did
+	nothing more then PathName can now
+
+2004-03-14 14:26  alexpeshkoff
+
+	* firebird2/src/jrd/: intl.cpp, plugin_manager.cpp,
+	plugin_manager.h:
+	
+	Mutex-protected initialization of PluginManager
+
+2004-03-14 14:24  alexpeshkoff
+
+	* firebird2/src/common/classes/fb_pair.h:
+	
+	1. Full pair (both first and second pooled objects) added.  2. Pair
+	may be placed to AutoPool.
+
+2004-03-14 14:22  alexpeshkoff
+
+	* firebird2/src/: common/classes/fb_string.cpp,
+	include/fb_string.h:
+	
+	1) a bit more correct memory allocation debugging 2) use
+	AutoStorage to allocate string data
+
+2004-03-14 14:19  alexpeshkoff
+
+	* firebird2/src/common/classes/objects_array.h:
+	
+	Added capability to have following kinds of arrays: 1) sorted or
+	unsorted 2) POD or objects 3) with or without inline storage 4)
+	allocating from auto- or permanent-pool All array constructors take
+	MemoryPool& instead of MemoyPool*
+
+2004-03-14 14:14  alexpeshkoff
+
+	* firebird2/src/: common/config/config.cpp, common/config/config.h,
+	common/config/config_file.cpp, common/config/config_file.h,
+	common/config/config_impl.h, common/config/dir_list.cpp,
+	common/config/dir_list.h, jrd/os/config_root.h:
+	
+	Pools support
+
+2004-03-14 14:10  alexpeshkoff
+
+	* firebird2/src/common/classes/init.h:
+	
+	Templates, supporting objects initialization
+
+2004-03-14 14:08  alexpeshkoff
+
+	* firebird2/src/common/classes/auto.h:
+	
+	May use _any_ way to delete pointer, not only operator delete
+
+2004-03-14 14:07  alexpeshkoff
+
+	* firebird2/src/common/classes/array.h:
+	
+	Constructors to put arrays in local memory, use AutoStorage.
+
+2004-03-14 14:05  alexpeshkoff
+
+	* firebird2/src/common/classes/alloc.h:
+	
+	Added *Storage classes to be used as primary base for all
+	pool-oriented classes
+
+2004-03-14 06:51  skidder
+
+	* firebird2/src/: burp/spit.cpp, burp/spit.h, dudley/ddl.cpp,
+	dudley/exe.epp, dudley/expr.cpp, dudley/extract.epp,
+	dudley/generate.cpp, dudley/parse.cpp, dudley/trn.cpp, qli/all.cpp,
+	qli/command.cpp, qli/dtr.cpp, qli/eval.cpp, qli/expand.cpp,
+	qli/format.cpp, qli/gener.cpp, qli/help.epp, qli/lex.cpp,
+	qli/meta.epp, qli/mov.cpp, qli/parse.cpp, qli/picstr.cpp,
+	qli/show.epp, remote/server.cpp, utilities/gstat/dba.epp:
+	
+	Fix warnings
+
 2004-03-13 23:17  skidder
 
 	* firebird2/src/utilities/nbackup.cpp:
