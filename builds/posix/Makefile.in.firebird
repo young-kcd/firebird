@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.22 2002-12-16 21:19:17 skidder Exp $
+#  $Id: Makefile.in.firebird,v 1.23 2002-12-22 19:45:45 nmcc Exp $
 #
 
 ROOT=..
@@ -551,10 +551,10 @@ install package packages dist:
 #___________________________________________________________________________
 # 
 
-clean: clean_objects clean_dependancies clean_extern_objects clean_build
+clean: clean_objects clean_dependancies clean_extern_objects clean_build clean_gpre_gen
 
 clean_config: clean clean_makefiles
-	rm -f configure
+	rm -f $(ROOT)/configure
 
 # Not sure if this one is still needed MOD 7-Oct-2002
 clean_dbs:
@@ -587,7 +587,9 @@ clean_build:
 clean_makefiles:
 	rm -f $(GEN_ROOT)/Makefile.*
 	
-
+clean_gpre_gen:
+	-rm -f `find $(SRC_ROOT) -type f -name '*.epp' -print | sed 's/epp$$/cpp/'`
+	
 
 #___________________________________________________________________________
 # 
