@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.104 2002-12-11 20:52:57 skidder Exp $
+dnl $Id: configure.in,v 1.105 2002-12-12 12:08:33 dimitr Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -120,7 +120,6 @@ AC_PROG_AWK
 AC_PROG_CC  dnl EKU: C++ programs should not use CC, but at the moment all
             dnl makefiles use $(CC) to link objects. This has to be changed!
 AC_PROG_CXX
-AC_PROG_LEX
 AC_PROG_LN_S
 AC_PROG_RANLIB
 AC_PROG_YACC
@@ -444,6 +443,7 @@ case "$PLATFORM" in
       [FB_PIPE_NAME=${withval}])
     AC_DEFINE_UNQUOTED(FB_PIPE_NAME,"$FB_PIPE_NAME")
     AC_SUBST(FB_PIPE_NAME)
+    XE_PREPEND(-lversion,LIBS)
     ;;
 
   *)

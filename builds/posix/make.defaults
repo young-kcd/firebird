@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.11 2002-12-09 01:38:13 nmcc Exp $
+#   $Id: make.defaults,v 1.12 2002-12-12 12:08:51 dimitr Exp $
 # 
 
 
@@ -86,6 +86,7 @@ CAT=			cat
 AR=			ar crsu
 LN=    ln -s 
 RANLIB=			@RANLIB@
+YACC=			@YACC@
 
 # Default extensions
 
