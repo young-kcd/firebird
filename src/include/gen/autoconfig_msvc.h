@@ -164,6 +164,7 @@
 #undef HAVE_TCGETATTR
 #define HAVE_STRDUP
 #undef HAVE_MKSTEMP
+#undef HAVE_LLRINT
 
 
 /* Types */
