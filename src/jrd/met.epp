@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.40 2002-11-30 17:43:19 hippoman Exp $
+$Id: met.epp,v 1.41 2002-12-02 10:29:02 dimitr Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -3402,7 +3402,7 @@ void MET_scan_relation( TDBB tdbb, JRD_REL relation)
 					field->fld_name = (TEXT *) name->str_data;
 				}
 				else {
-					field = FB_NEW_RPT(*dbb->dbb_permanent, length) fld();
+					field = FB_NEW_RPT(*dbb->dbb_permanent, length) jrd_fld();
 					(*vector)[field_id] = (BLK) field;
 					field->fld_name = (TEXT *) field->fld_string;
 				}
