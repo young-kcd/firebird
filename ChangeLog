@@ -1,3 +1,17 @@
+2004-04-26 09:54  brodsom
+
+	* firebird2/src/isql/: show.epp (1.42), isql.epp (1.76), isql.h
+	(1.25), extract.epp (1.33):
+	
+	-Fix #910430 -Clean some #define -Use parametrized language
+	(pointed by Claudio)
+
+2004-04-26 01:11  brodsom
+
+	* firebird2/examples/empbuild/: empbuild.e (1.3), intlbld.e (1.3):
+	
+	Replace remaining gds.h
+
 2004-04-25 23:52  skidder
 
 	* firebird2/src/jrd/blb.cpp (1.69):
