@@ -187,7 +187,7 @@ void ConfigFile::loadConfig()
     {
         // config file does not exist
 #ifdef INFORM_ON_NO_CONF
-		string Msg = "Missing configuration file: " + configFile;
+		Firebird::string Msg = "Missing configuration file: " + configFile;
 #ifdef EXIT_ON_NO_CONF
 		if (fExitOnError)
 			Msg += ", exiting";
