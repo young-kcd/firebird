@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sqe.cpp,v 1.15 2003-09-08 11:27:51 robocop Exp $
+//	$Id: sqe.cpp,v 1.16 2003-09-08 18:46:55 skidder Exp $
 //
 #include "firebird.h"
 #include <stdio.h>
@@ -2609,7 +2609,8 @@ static GPRE_NOD par_relational( GPRE_REQ request, USHORT * paren_count)
 	}
 	else {
 		node = NULL;
-		for (const ops* op = rel_ops; (int) op->rel_kw != (int) KW_none; op++)
+		const ops* op;
+		for (op = rel_ops; (int) op->rel_kw != (int) KW_none; op++)
 			if (MATCH(op->rel_kw))
 				break;
 		if ((int) op->rel_kw == (int) KW_none) {
