@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.31 2003-04-02 11:20:09 brodsom Exp $
+$Id: isc.cpp,v 1.32 2003-04-03 10:09:58 brodsom Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -101,7 +101,9 @@ static struct cfgtbl *ISC_cfg_tbl = NULL;
 #include "../jrd/dls_proto.h"
 
 static BOOLEAN dls_init = FALSE;
+#if defined(SUPERSERVER) || !defined(SUPERCLIENT)
 static BOOLEAN dls_flag = FALSE;
+#endif
 static BOOLEAN fdls_init = FALSE;
 #ifdef SUPERSERVER
 static BOOLEAN fdls_flag = FALSE;

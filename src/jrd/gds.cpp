@@ -668,7 +668,7 @@ extern "C" {
 
 SLONG trace_pools = 0;
 SLONG free_map_debug = 0;
-#ifdef SUPERSERVER
+#if defined(NOT_USED_OR_REPLACED) && defined(SUPERSERVER)
 static void freemap(int cod);
 #endif
 void gds_print_delta_counters(IB_FILE *);
@@ -4765,7 +4765,7 @@ void* API_ROUTINE gds__alloc(SLONG size)
 }
 #endif
 
-#ifdef SUPERSERVER
+#if defined(NOT_USED_OR_REPLACED) && defined(SUPERSERVER)
 static void freemap(int cod)
 {
 	FREE *next, free_blk;
@@ -4785,7 +4785,9 @@ static void freemap(int cod)
 	ib_printf("Total Free         = %"ULONGFORMAT"\n", total_free);
 	gds_print_delta_counters(ib_stdout);
 }
+#endif
 
+#ifdef SUPERSERVER
 void gds_print_delta_counters(IB_FILE * fptr)
 {
 #ifdef DEV_BUILD

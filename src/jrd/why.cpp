@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.18 2003-03-01 17:59:41 brodsom Exp $
+$Id: why.cpp,v 1.19 2003-04-03 10:09:57 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -560,11 +560,12 @@ static const ENTRY entrypoints[PROC_count * SUBSYSTEMS] =
 
 };
 
+#ifndef SUPERCLIENT
 static const TEXT *generic[] = {
 #define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	gen,
 #include "../jrd/entry.h"
 };
-
+#endif
 
 /* Information items for two phase commit */
 

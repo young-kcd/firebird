@@ -442,7 +442,6 @@ static const serv services[] =
 
 #endif /* SERVER_CAPABILITIES */
 
-
 #ifdef SHLIB_DEFS
 #define pipe		(*_libgds_pipe)
 #define waitpid		(*_libgds_waitpid)
@@ -2440,7 +2439,6 @@ static void io_error(
 
 #ifdef WIN_NT
 #ifndef SUPERSERVER
-#define PIPE_OPERATIONS
 static void service_close(SVC service)
 {
 /**************************************
@@ -2851,8 +2849,6 @@ static USHORT service_read(SVC service, SCHAR * buffer, USHORT length, USHORT fl
 
 
 #ifdef SUPERSERVER
-#define PIPE_OPERATIONS
-
 static USHORT service_add_one(USHORT i)
 {
 /**************************************
@@ -3110,8 +3106,7 @@ static void service_put(SVC service, SCHAR * buffer, USHORT length)
 #endif /* SUPERSERVER */
 
 
-#ifndef SUPERSERVER
-#ifndef PIPE_OPERATIONS
+#if !defined(WIN_NT) && !defined(SUPERSERVER)
 static void service_close(SVC service)
 {
 /**************************************
@@ -3430,7 +3425,6 @@ static void service_put(SVC service, SCHAR * buffer, USHORT length)
 	if (ib_fflush((IB_FILE *) service->svc_output) == EOF)
 		io_error("ib_fflush", errno, "service pipe", isc_io_write_err, TRUE);
 }
-#endif /* ifndef PIPE_OPERATIONS */
 
 
 static void timeout_handler(SVC service)
@@ -3448,7 +3442,7 @@ static void timeout_handler(SVC service)
  *
  **************************************/
 }
-#endif /* ifndef SUPERSERVER */
+#endif // !defined(WIN_NT) && !defined(SUPERSERVER)
 
 
 void SVC_cleanup(SVC service)
