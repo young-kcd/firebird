@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.29 2003-04-10 06:29:04 aafemt Exp $
+  $Id: isql.epp,v 1.30 2003-06-24 10:33:04 dimitr Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -689,7 +689,6 @@ int getNextInputChar() {
     // At end of line try and read next line
     if (getColumn == -1) {
         readNextInputLine();
-        
     }
 
     // readline found EOF
@@ -2929,6 +2928,7 @@ static int end_trans(void)
 					}
 				}
 			}
+			getColumn = -1;
 		}
 		else {					/* No answer, just roll back by default */
 
