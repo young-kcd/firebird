@@ -153,6 +153,7 @@ inline void clearRecordStack(RecordStack& stack)
 		delete stack.pop();
 	}
 }
+
 SLONG VIO_savepoint_large(const Savepoint* savepoint, SLONG size)
 {
 /**************************************
