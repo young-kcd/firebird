@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.8 2003-01-15 12:11:31 dimitr Exp $
+$Id: why.cpp,v 1.9 2003-01-18 18:18:48 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -636,8 +636,10 @@ static CONST ENTRY entrypoints[PROC_count * SUBSYSTEMS] =
 
 #else
 
+#ifndef EMBEDDED
 #define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, rem},
 #include "../jrd/entry.h"
+#endif
 
 #ifdef CSI
 #define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, csi},
@@ -6160,6 +6162,10 @@ static void subsystem_enter(void)
  *	Enter subsystem.
  *
  **************************************/
+
+#ifdef EMBEDDED
+	THD_INIT;
+#endif
 
 	THREAD_ENTER;
 #if !(defined REQUESTER || defined PIPE_CLIENT || defined SUPERCLIENT || defined SUPERSERVER)

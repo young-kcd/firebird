@@ -133,7 +133,9 @@ BLK DLL_EXPORT ALLR_block(UCHAR type, ULONG count)
 			else
 			{
 				status_vector[3] = (STATUS) errmsg;
+#ifndef EMBEDDED
 				REMOTE_save_status_strings(trdb->trdb_status_vector);
+#endif
 			}
 		}
 
