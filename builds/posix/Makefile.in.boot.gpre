@@ -27,15 +27,15 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.boot.gpre,v 1.7 2002-11-09 13:23:56 skywalker Exp $
+#  $Id: Makefile.in.boot.gpre,v 1.8 2002-11-14 13:53:37 dimitr Exp $
 #
 ROOT=..
 ObjModuleName=boot.gpre
 CFLAGS := -DBOOT_BUILD
 
+include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
 include     $(ROOT)/gen/make.rules
-include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@

@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.6 2002-11-13 07:07:55 eku Exp $
+#   $Id: make.defaults,v 1.7 2002-11-14 13:53:37 dimitr Exp $
 # 
 
 
@@ -201,13 +201,6 @@ fr_FR_MSG       = $(FIREBIRD)/fr_FR.msg
 de_DE_MSG       = $(FIREBIRD)/de_DE.msg
 ja_JP_MSG       = $(FIREBIRD)/ja_JP.msg
 
-
-
-
 #Platform Manager
 #For want of a better suggestion we may as well default to posix
-PLATFORM_PATH	=	jrd/os/posix
-
-
-
-
+PLATFORM_PATH	?=	jrd/os/posix
