@@ -163,7 +163,7 @@ static CTX pass1_cursor_context(REQ, NOD, NOD);
 static NOD pass1_dbkey(REQ, NOD);
 static NOD pass1_delete(REQ, NOD);
 static NOD pass1_field(REQ, NOD, USHORT);
-static BOOLEAN pass1_found_aggregate(NOD, USHORT, USHORT);
+static BOOLEAN pass1_found_aggregate(NOD, USHORT, USHORT, BOOLEAN);
 static BOOLEAN pass1_found_field(NOD, USHORT, USHORT, BOOLEAN *);
 static NOD pass1_insert(REQ, NOD);
 static void	pass1_put_args_on_stack(REQ, NOD, DLLS *, USHORT);
@@ -3389,7 +3389,7 @@ static NOD pass1_field( REQ request, NOD input, USHORT list)
 
 
 static BOOLEAN pass1_found_aggregate(NOD node, USHORT check_scope_level, 
-									 USHORT match_type)
+									 USHORT match_type, BOOLEAN current_scope_level_equal)
 {
 /**************************************
  *
@@ -3401,6 +3401,9 @@ static BOOLEAN pass1_found_aggregate(NOD node, USHORT check_scope_level,
  *	Check the fields inside an aggregate 
  *  and check if the field scope_level 
  *  meets the specified conditions.
+ *  In the first call current_scope_level_equal
+ *  should always be true, because this is used
+ *  internally!
  *
  **************************************/
 	NOD *ptr, *end;
@@ -3421,7 +3424,7 @@ static BOOLEAN pass1_found_aggregate(NOD node, USHORT check_scope_level,
 			/* If arguments are given to the UDF then there's a node list */
 			if (node->nod_count == 2) {
 				found |= pass1_found_aggregate(node->nod_arg [1], 
-					check_scope_level, match_type);
+					check_scope_level, match_type, current_scope_level_equal);
 			}
 			break;
 
@@ -3476,32 +3479,32 @@ static BOOLEAN pass1_found_aggregate(NOD node, USHORT check_scope_level,
 		case nod_list:
 			for (ptr = node->nod_arg, end = ptr + node->nod_count;
 				 ptr < end; ptr++)
-				found |= pass1_found_aggregate(*ptr, check_scope_level, match_type);
+				found |= pass1_found_aggregate(*ptr, check_scope_level, match_type, current_scope_level_equal);
 			break;
 
 		case nod_via:
 			/* Pass only the rse from the nod_via */
 			found |= pass1_found_aggregate(node->nod_arg[e_via_rse],
-				check_scope_level, match_type);
+				check_scope_level, match_type, current_scope_level_equal);
 			break;
 
 		case nod_rse:
 			/* Pass rse_boolean (where clause) and rse_items (select items) */
 			found |= pass1_found_aggregate(node->nod_arg[e_rse_boolean],
-				check_scope_level, match_type);
+				check_scope_level, match_type, FALSE);
 			found |= pass1_found_aggregate(node->nod_arg[e_rse_items], 
-				check_scope_level, match_type);
+				check_scope_level, match_type, FALSE);
 			break;
 
 		case nod_alias:
 			found |= pass1_found_aggregate(node->nod_arg[e_alias_value],
-				check_scope_level, match_type);
+				check_scope_level, match_type, current_scope_level_equal);
 			break;
 
 		case nod_aggregate:
 			/* Pass only rse_group (group by clause) */
 			found |= pass1_found_aggregate(node->nod_arg[e_agg_group],
-				check_scope_level, match_type);
+				check_scope_level, match_type, current_scope_level_equal);
 			break;
 
 		case nod_agg_average:
@@ -3519,10 +3522,18 @@ static BOOLEAN pass1_found_aggregate(NOD node, USHORT check_scope_level,
 			if (!field) {
 				/* For example COUNT(*) is always same scope_level (node->nod_count = 0) 
 				   Normaly COUNT(*) is the only way to come here but something stupid
-				   as SUM(5) is also possible */
+				   as SUM(5) is also possible.
+				   If current_scope_level_equal is FALSE scope_level is always higher */
 				switch (match_type) {
-					case FIELD_MATCH_TYPE_EQUAL:
 					case FIELD_MATCH_TYPE_LOWER_EQUAL:
+					case FIELD_MATCH_TYPE_EQUAL:
+						if (current_scope_level_equal) {
+							return TRUE;
+						}
+						else {
+							return FALSE;
+						}
+
 					case FIELD_MATCH_TYPE_HIGHER_EQUAL:
 						return TRUE;
 
@@ -3539,9 +3550,10 @@ static BOOLEAN pass1_found_aggregate(NOD node, USHORT check_scope_level,
 		case nod_map:
 			map_ =  reinterpret_cast <MAP>(node->nod_arg[e_map_map]);
 			found |= pass1_found_aggregate(map_->map_node,
-				check_scope_level, match_type);
+				check_scope_level, match_type, current_scope_level_equal);
 			break;
 
+		case nod_dbkey:
 		case nod_field:
 		case nod_parameter:
 		case nod_relation:
@@ -3724,6 +3736,7 @@ static BOOLEAN pass1_found_field(NOD node, USHORT check_scope_level,
 					match_type, field);
 			break;
 
+		case nod_dbkey:
 		case nod_parameter:
 		case nod_relation:
 		case nod_variable:
@@ -4195,19 +4208,18 @@ static NOD pass1_rse( REQ request, NOD input, NOD order)
 
 /* Process LIMIT, if any */
     if (node = input->nod_arg [e_sel_limit]) {
-        NOD aux_rse = parent_rse ? parent_rse : rse;
         /* CVC: This line is a hint because set_parameter_type() doesn't receive
            the dialect currently as an argument. */
         node->nod_desc.dsc_scale = request->req_client_dialect;
         
         if (node->nod_arg [e_limit_length]) {
             sub = PASS1_node (request, node->nod_arg [e_limit_length], 0);
-            aux_rse->nod_arg [e_rse_first] = sub;
+            target_rse->nod_arg [e_rse_first] = sub;
             set_parameter_type (sub, node, FALSE);
         }
         if (node->nod_arg [e_limit_skip]) {
             sub = PASS1_node (request, node->nod_arg [e_limit_skip], 0);
-            aux_rse->nod_arg [e_rse_skip] = sub;
+            target_rse->nod_arg [e_rse_skip] = sub;
             set_parameter_type (sub, node, FALSE);
         }
     }
@@ -4222,7 +4234,7 @@ static NOD pass1_rse( REQ request, NOD input, NOD order)
 		/* AB: An aggregate pointing to it's own parent_context isn't
 		   allowed, HAVING should be used in stead */
 		if (pass1_found_aggregate(rse->nod_arg[e_rse_boolean], 
-				request->req_scope_level, FIELD_MATCH_TYPE_EQUAL))
+				request->req_scope_level, FIELD_MATCH_TYPE_EQUAL, TRUE))
 			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
 				gds_arg_gds, gds_field_ref_err, 0);/* invalid field reference */
 	}
@@ -4266,7 +4278,7 @@ static NOD pass1_rse( REQ request, NOD input, NOD order)
 		if (pass1_found_field(aggregate->nod_arg[e_agg_group], 
 				request->req_scope_level, FIELD_MATCH_TYPE_LOWER, &field) ||
 		    pass1_found_aggregate(aggregate->nod_arg[e_agg_group], 
-				request->req_scope_level, FIELD_MATCH_TYPE_LOWER_EQUAL))
+				request->req_scope_level, FIELD_MATCH_TYPE_LOWER_EQUAL, TRUE))
 			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
 				gds_arg_gds, gds_field_ref_err, 0); /* invalid field reference */
     }
@@ -4291,14 +4303,30 @@ static NOD pass1_rse( REQ request, NOD input, NOD order)
 		target_rse->nod_arg[e_rse_items] = list =
 			pass1_sel_list(request, node);
 		--request->req_in_select_list;
-		if (aggregate)
-			for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end;
-				 ptr++)
-				if (invalid_reference(request, *ptr, aggregate->nod_arg[e_agg_group], FALSE))
-					ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-							  gds_arg_gds, gds_field_ref_err,
-							  /* invalid field reference */
-							  0);
+		if (aggregate) {
+			if (input->nod_arg[e_sel_group] || input->nod_arg[e_sel_having] ||
+				pass1_found_aggregate(target_rse->nod_arg[e_rse_items], 
+				request->req_scope_level, FIELD_MATCH_TYPE_EQUAL, TRUE)) {
+					for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++)
+						if (invalid_reference(request, *ptr, aggregate->nod_arg[e_agg_group], FALSE))
+							ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
+								  gds_arg_gds, gds_field_ref_err, 0);/* invalid field reference */
+			}
+			else {
+				/* We've detected a aggregate in a sub-select and the current-rse 
+				   isn't a aggregate at all, so relocate and remove unneeded stuff */
+				rse->nod_arg[e_rse_items] = target_rse->nod_arg[e_rse_items];
+				rse->nod_arg[e_rse_first] = target_rse->nod_arg[e_rse_first];
+				rse->nod_arg[e_rse_skip] = target_rse->nod_arg[e_rse_skip];
+				target_rse = rse;
+				parent_rse = NULL;
+				remap_streams_to_parent_context(rse->nod_arg[e_rse_streams], NULL);
+				delete aggregate;
+				aggregate = NULL;
+				LLS_POP(&request->req_context);
+				parent_context = NULL;
+			}
+		}
 	}
 	else {
 		stack = NULL;
