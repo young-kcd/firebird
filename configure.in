@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.203 2004-09-15 09:36:50 kkuznetsov Exp $
+dnl $Id: configure.in,v 1.204 2004-09-30 16:30:05 skidder Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -53,7 +53,7 @@ case "$target" in
     SHRLIB_EXT=so
     ;;
 
-  x86_64*-*-linux-*)
+  x86_64*-*-linux*)
     MAKEFILE_PREFIX=linux_amd64
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
@@ -65,7 +65,7 @@ case "$target" in
     CPU_TYPE=amd64
     ;;
 
-  sparc*-*-linux-*)
+  sparc*-*-linux*)
     MAKEFILE_PREFIX=linux_sparc32
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
