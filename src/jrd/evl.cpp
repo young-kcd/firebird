@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.101 2004-08-17 12:28:57 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.102 2004-08-17 17:52:18 dimitr Exp $ 
  */
 
 /*
@@ -322,6 +322,15 @@ SparseBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node)
 		return SBM_or(EVL_bitmap(tdbb, node->nod_arg[0]),
 					  EVL_bitmap(tdbb, node->nod_arg[1]));
 
+	case nod_bit_in:
+		{
+			SparseBitmap** inv_bitmap = EVL_bitmap(tdbb, node->nod_arg[0]);
+			BTR_evaluate(tdbb,
+						 reinterpret_cast<IndexRetrieval*>(node->nod_arg[1]->nod_arg[e_idx_retrieval]),
+						 inv_bitmap);
+			return inv_bitmap;
+		}
+
 	case nod_bit_dbkey:
 		{
 			impure_inversion* impure = (impure_inversion*) ((SCHAR *) tdbb->tdbb_request + node->nod_impure);
@@ -340,6 +349,7 @@ SparseBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node)
 	case nod_index:
 		{
 			impure_inversion* impure = (impure_inversion*) ((SCHAR *) tdbb->tdbb_request + node->nod_impure);
+			SBM_reset(&impure->inv_bitmap);
 			BTR_evaluate(tdbb,
 						 reinterpret_cast<IndexRetrieval*>(node->nod_arg[e_idx_retrieval]),
 						 &impure->inv_bitmap);

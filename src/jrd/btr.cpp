@@ -415,7 +415,6 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, SparseBitmap** bit
  *
  **************************************/
 	SET_TDBB(tdbb);
-	SBM_reset(bitmap);
 
 	// Remove ignore_nulls flag for older ODS
 	const Database* dbb = tdbb->tdbb_database;

@@ -2290,6 +2290,7 @@ static bool dump_index(const jrd_nod* node,
 		*buffer++ = isc_info_rsb_and;
 		break;
 	case nod_bit_or:
+	case nod_bit_in:
 		*buffer++ = isc_info_rsb_or;
 		break;
 	case nod_bit_dbkey:
@@ -2302,7 +2303,10 @@ static bool dump_index(const jrd_nod* node,
 
 	SqlIdentifier index_name;
 	// dump sub-nodes or the actual index info
-	if ((node->nod_type == nod_bit_and) || (node->nod_type == nod_bit_or)) {
+	if ((node->nod_type == nod_bit_and) ||
+		(node->nod_type == nod_bit_or) ||
+		(node->nod_type == nod_bit_in))
+	{
 		if (!dump_index(node->nod_arg[0], &buffer, buffer_length)) {
 			return false;
 		}
@@ -6037,14 +6041,34 @@ static jrd_nod* make_inversion(thread_db* tdbb, OptimizerBlk* opt,
 
 	// Handle the "OR" case up front
 	jrd_nod* inversion;
-	if (boolean->nod_type == nod_or) {
+	if (boolean->nod_type == nod_or)
+	{
 		inversion = make_inversion(tdbb, opt, boolean->nod_arg[0], stream);
-		if (!inversion) {
+		if (!inversion)
+		{
 			return NULL;
 		}
 		jrd_nod* inversion2 = make_inversion(tdbb, opt, boolean->nod_arg[1], stream);
-		if (inversion2) {
-			return compose(&inversion, inversion2, nod_bit_or);
+		if (inversion2)
+		{
+			if ((inversion->nod_type == nod_index) &&
+				(inversion2->nod_type == nod_index) &&
+				(reinterpret_cast<IndexRetrieval*>(inversion->nod_arg[e_idx_retrieval])->irb_index ==
+				reinterpret_cast<IndexRetrieval*>(inversion2->nod_arg[e_idx_retrieval])->irb_index))
+			{
+				return compose(&inversion, inversion2, nod_bit_in);
+			}
+		    else if ((inversion->nod_type == nod_bit_in) &&
+				(inversion2->nod_type == nod_index) &&
+				(reinterpret_cast<IndexRetrieval*>(inversion->nod_arg[1]->nod_arg[e_idx_retrieval])->irb_index ==
+				reinterpret_cast<IndexRetrieval*>(inversion2->nod_arg[e_idx_retrieval])->irb_index))
+			{
+    			return compose(&inversion, inversion2, nod_bit_in);
+			}
+			else
+			{
+				return compose(&inversion, inversion2, nod_bit_or);
+			}
 		}
 		if (inversion->nod_type == nod_index) {
 			delete inversion->nod_arg[e_idx_retrieval];
