@@ -1706,6 +1706,7 @@ void BTR_selectivity(thread_db* tdbb, const jrd_rel* relation, USHORT id,
 	key.key_length = 0;
 	SSHORT l; 
 	bool firstNode = true;
+	const bool descending = (flags & btr_descending);
 	const ULONG segments = root->irt_rpt[id].irt_keys;
 
 	// SSHORT count, stuff_count, pos, i;
@@ -1778,6 +1779,12 @@ void BTR_selectivity(thread_db* tdbb, const jrd_rel* relation, USHORT id,
 					p1++;
 					p2++;
 					stuff_count--;
+				}
+
+				// For descending indexes the segment-number is also complemented,
+				// thus reverse it back (Note! values are complemented per UCHAR base).
+				if (descending) {
+					count = (255 - count);
 				}
 
 				if ((p1 == p1_end) && (p2 == p2_end)) {
