@@ -22,7 +22,7 @@ stopServerIfRunning() {
 
 
 
-    IBRootDir=/usr/local/firebird
+    IBRootDir=@prefix@
     IBBin=$IBRootDir/bin
     SecurityDatabase=isc4.gdb
 

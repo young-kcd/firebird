@@ -1,4 +1,4 @@
-/usr/local/firebird
+@prefix@
 
 /usr/lib/libfbclient.so.1.5.0
 /usr/lib/libfbclient.so.1

@@ -111,9 +111,9 @@ keepOrigDBAPassword() {
     echo "daemon init routine in the file /etc/rc.d/init.d/firebird)" >> $DBAPasswordFile
     echo "" >> $DBAPasswordFile
     echo "Your should password can be changed to a more suitable one using the" >> $DBAPasswordFile
-    echo "/usr/local/firebird/bin/gsec program as show below:" >> $DBAPasswordFile
+    echo "@prefix@/bin/gsec program as show below:" >> $DBAPasswordFile
     echo "" >> $DBAPasswordFile
-    echo ">cd /usr/local/firebird" >> $DBAPasswordFile
+    echo ">cd @prefix@" >> $DBAPasswordFile
     echo ">bin/gsec -user sysdba -password <password>" >> $DBAPasswordFile
     echo "GSEC>modify sysdba -pw <newpassword>" >> $DBAPasswordFile
     echo "GSEC>quit" >> $DBAPasswordFile
@@ -264,14 +264,14 @@ addFirebirdUser() {
 #= Main Post ===============================================================
 
     # Make sure the links are in place 
-    if [ ! -L /usr/local/firebird -a ! -d /usr/local/firebird ] 
+    if [ ! -L @prefix@ -a ! -d /usr/local/firebird ] 
       then 
     # Main link and... 
-        ln -s $RPM_INSTALL_PREFIX/interbase /usr/local/firebird 
+        ln -s $RPM_INSTALL_PREFIX/interbase @prefix@
     fi 
 
 
-    IBRootDir=/usr/local/firebird
+    IBRootDir=@prefix@
     export IBRootDir
     IBBin=$IBRootDir/bin
     export IBBin

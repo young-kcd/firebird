@@ -15,7 +15,7 @@
 . /etc/rc.d/init.d/functions
 
 
-: ${FIREBIRD:=/usr/local/firebird}
+: ${FIREBIRD:=@prefix@}
 : ${ISC_USER:=SYSDBA}
 : ${ISC_PASSWORD:=masterke}
 : ${FBRunUser:=firebird}

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.37.2.1 2003-09-04 15:52:29 alexpeshkoff Exp $
+#  $Id: Makefile.in.firebird,v 1.37.2.2 2003-09-23 19:07:51 skidder Exp $
 #
 
 ROOT=..
@@ -328,7 +328,7 @@ examples:
 	$(MAKE) -C ../gen/v5_examples -f ../Makefile.v5_examples
 #	$(MAKE) -f $(GEN_ROOT)/Makefile.v5_examples
 
-otherfiles: misc_files script_files
+otherfiles: misc_files
 
 
 #_ Embedded Firebird Targets (Classic)_______________________________________
@@ -500,39 +500,6 @@ misc_files : $(INSTALL_MiscFiles)
 $(FIREBIRD)/misc/% :: $(SRC_ROOT)/install/misc/%
 	$(CP) $^ $@
 
-
-
-#___________________________________________________________________________
-#
-
-#CLASSIC_ScriptFiles = CSchangeRunUser.sh CSrestoreRootRunUser.sh
-#SUPER_ScriptFiles = SSchangeRunUser.sh SSrestoreRootRunUser.sh
-
-
-#ifeq ($(ArchType),super)
-#INSTALL_ScriptFiles = $(addprefix $(BIN)/, $(SUPER_ScriptFiles))
-#else
-#INSTALL_ScriptFiles = $(addprefix $(BIN)/, $(CLASSIC_ScriptFiles))
-#endif
-
-ScriptFiles = CSchangeRunUser.sh CSrestoreRootRunUser.sh SSchangeRunUser.sh SSrestoreRootRunUser.sh
-INSTALL_ScriptFiles = $(addprefix $(BIN)/, $(ScriptFiles))
-
-
-script_files : $(INSTALL_ScriptFiles)
-
-
-$(BIN)/% :: $(SRC_ROOT)/install/classic/%
-	$(CP) $^ $@
-	$(CHMOD) ugo=rx $@
-
-$(BIN)/% :: $(SRC_ROOT)/install/super/%
-	$(CP) $^ $@
-	$(CHMOD) ugo=rx $@
-
-$(BIN)/% :: $(SRC_ROOT)/install/misc/%
-	$(CP) $^ $@
-	$(CHMOD) ugo=rx $@
 
 
 #___________________________________________________________________________
