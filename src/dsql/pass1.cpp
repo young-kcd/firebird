@@ -187,7 +187,6 @@ static dsql_nod* ambiguity_check(dsql_req*, dsql_nod*, const dsql_str*,
 static void assign_fld_dtype_from_dsc(dsql_fld*, const dsc*);
 static void check_unique_fields_names(StrArray& names, const dsql_nod* fields);
 static dsql_nod* compose(dsql_nod*, dsql_nod*, NOD_TYPE);
-static void explode_asterisk(dsql_req*, dsql_nod*, const dsql_nod*, DsqlNodStack&);
 static dsql_nod* explode_outputs(dsql_req*, const dsql_prc*);
 static void field_error(const TEXT*, const TEXT*, const dsql_nod*);
 static dsql_par* find_dbkey(const dsql_req*, const dsql_nod*);
@@ -210,7 +209,9 @@ static dsql_nod* pass1_cursor_reference(dsql_req*, const dsql_nod*, dsql_nod*);
 static dsql_nod* pass1_dbkey(dsql_req*, dsql_nod*);
 static dsql_nod* pass1_delete(dsql_req*, dsql_nod*);
 static dsql_nod* pass1_derived_table(dsql_req*, dsql_nod*, bool);
-static dsql_nod* pass1_field(dsql_req*, dsql_nod*, const bool);
+static dsql_nod* pass1_expand_select_list(dsql_req*, dsql_nod*, dsql_nod*);
+static void pass1_expand_select_node(dsql_req*, dsql_nod*, DsqlNodStack&);
+static dsql_nod* pass1_field(dsql_req*, dsql_nod*, const bool, dsql_nod*);
 static bool pass1_found_aggregate(const dsql_nod*, USHORT, USHORT, bool);
 static bool pass1_found_field(const dsql_nod*, USHORT, USHORT, bool*);
 static bool pass1_found_sub_select(const dsql_nod*);
@@ -218,6 +219,7 @@ static dsql_nod* pass1_group_by_list(dsql_req*, dsql_nod*, dsql_nod*);
 static dsql_nod* pass1_insert(dsql_req*, dsql_nod*);
 static dsql_nod* pass1_join(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_label(dsql_req*, dsql_nod*);
+static dsql_nod* pass1_lookup_alias(dsql_req*, const dsql_str*, dsql_nod*);
 static dsql_nod* pass1_make_derived_field(dsql_req*, tsql*, dsql_nod*);
 static void	pass1_put_args_on_stack(dsql_req*, dsql_nod*, DsqlNodStack&, bool);
 static dsql_nod* pass1_relation(dsql_req*, dsql_nod*);
@@ -664,14 +666,19 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		if (proc_flag)
 			return pass1_variable(request, input);
 		else
-			return pass1_field(request, input, false);
+			return pass1_field(request, input, false, NULL);
+
+	case nod_field:
+		// AB: nod_field is an already passed node.
+		// This could be done in expand_select_list.
+		return input;
 
 	case nod_array:
 		if (proc_flag)
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					  isc_arg_gds, isc_dsql_invalid_array, 0);
 		else
-			return pass1_field(request, input, false);
+			return pass1_field(request, input, false, NULL);
 
 	case nod_variable:
         node = MAKE_node (input->nod_type, e_var_count);
@@ -2139,97 +2146,6 @@ static dsql_nod* compose( dsql_nod* expr1, dsql_nod* expr2, NOD_TYPE dsql_operat
 
 /**
   
- 	explode_asterisk
-  
-    @brief	Expand an '*' in a field list to the corresponding fields.
- 
-
-    @param request
-    @param node
-    @param aggregate
-    @param stack
-
- **/
-static void explode_asterisk(dsql_req* request, dsql_nod* node,
-	const dsql_nod* aggregate, DsqlNodStack& stack)
-{
-	DEV_BLKCHK(node, dsql_type_nod);
-	DEV_BLKCHK(aggregate, dsql_type_nod);
-
-	if (node->nod_type == nod_join) {
-		explode_asterisk(request, node->nod_arg[e_join_left_rel], aggregate, stack);
-		explode_asterisk(request, node->nod_arg[e_join_rght_rel], aggregate, stack);
-	}
-	else if (node->nod_type == nod_derived_table) {
-		// AB: Derived table support
-		tsql* tdsql = DSQL_get_thread_data();
-		dsql_nod* sub_items = node->nod_arg[e_derived_table_rse]->nod_arg[e_rse_items];
-		dsql_nod** ptr = sub_items->nod_arg;
-		for (const dsql_nod* const* const end = ptr + sub_items->nod_count;
-			ptr < end; ++ptr) 
-		{
-			// Create a new alias else mappings would be mangled.
-			dsql_nod* select_item = *ptr;
-			// select-item should always be a derived field!
-			if (select_item->nod_type != nod_derived_field) {
-				// Internal dsql error: alias type expected by exploding.
-				//
-				// !!! THIS MESSAGE SHOULD BE CHANGED !!!
-				//
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-					  isc_arg_gds, isc_dsql_command_err, 0);
-			}
-			dsql_nod* derived_field = pass1_make_derived_field(request, tdsql, select_item);				
-			stack.push(derived_field);
-		}
-	}
-	else {
-		dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_rel_context];
-		DEV_BLKCHK(context, dsql_type_ctx);
-		dsql_prc* procedure;
-		dsql_rel* relation = context->ctx_relation;
-		if (relation) {
-			for (dsql_fld* field = relation->rel_fields; field;
-				field = field->fld_next)
-			{
-				DEV_BLKCHK(field, dsql_type_fld);
-				node = MAKE_field(context, field, 0);
-				if (aggregate) {
-					if (invalid_reference(NULL, node,
-						aggregate->nod_arg[e_agg_group], false, false))
-					{
-						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-						        isc_arg_gds, isc_field_ref_err, // invalid field reference 
-						        0);
-					}
-				}
-				stack.push(node);
-			}
-		}
-		else if (procedure = context->ctx_procedure) {
-			for (dsql_fld* field = procedure->prc_outputs; field;
-				 field = field->fld_next) 
-			{
-				DEV_BLKCHK(field, dsql_type_fld);
-				node = MAKE_field(context, field, 0);
-				if (aggregate) {
-					if (invalid_reference(NULL, node,
-                        aggregate->nod_arg[e_agg_group], false, false))
-					{
-						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-						        isc_arg_gds, isc_field_ref_err, // invalid field reference 
-						        0);
-					}
-				}
-				stack.push(node);
-			}
-		}
-	}
-}
-
-
-/**
-  
  	explode_outputs
   
     @brief	Generate a parameter list to correspond to procedure outputs.
@@ -2990,7 +2906,7 @@ static void pass1_blob( dsql_req* request, dsql_nod* input)
 	tsql* tdsql = DSQL_get_thread_data();
 
 	PASS1_make_context(request, input->nod_arg[e_blb_relation]);
-	dsql_nod* field = pass1_field(request, input->nod_arg[e_blb_field], false);
+	dsql_nod* field = pass1_field(request, input->nod_arg[e_blb_field], false, NULL);
 	if (field->nod_desc.dsc_dtype != dtype_blob)
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 206,
 				  isc_arg_gds, isc_dsql_blob_err, 0);
@@ -3814,6 +3730,118 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 
 /**
   
+ 	pass1_expand_select_list
+  
+    @brief	Expand asterisk nodes into fields.
+ 
+
+    @param request
+    @param list
+    @param streams
+
+ **/
+static dsql_nod* pass1_expand_select_list(dsql_req* request, dsql_nod* list, dsql_nod* streams)
+{
+	DsqlNodStack stack;
+	if (list) {
+		dsql_nod** ptr = list->nod_arg;
+		for (const dsql_nod* const* const end = ptr + list->nod_count; 
+			ptr < end; ptr++) 
+		{
+			pass1_expand_select_node(request, *ptr, stack);
+		}
+	}
+	else {
+		dsql_nod** ptr = streams->nod_arg;
+		for (const dsql_nod* const* const end = ptr + streams->nod_count;
+			ptr < end; ptr++)
+		{
+			pass1_expand_select_node(request, *ptr, stack);
+		}
+	}
+	dsql_nod* node = MAKE_list(stack);
+	return node;
+}
+
+/**
+  
+ 	pass1_expand_select_node
+  
+    @brief	Expand a select item node.
+ 
+
+    @param request
+    @param node
+    @param stack
+
+ **/
+static void pass1_expand_select_node(dsql_req* request, dsql_nod* node, DsqlNodStack& stack)
+{
+	DEV_BLKCHK(node, dsql_type_nod);
+
+	if (node->nod_type == nod_join) {
+		pass1_expand_select_node(request, node->nod_arg[e_join_left_rel], stack);
+		pass1_expand_select_node(request, node->nod_arg[e_join_rght_rel], stack);
+	}
+	else if (node->nod_type == nod_derived_table) {
+		// AB: Derived table support
+		tsql* tdsql = DSQL_get_thread_data();
+		dsql_nod* sub_items = node->nod_arg[e_derived_table_rse]->nod_arg[e_rse_items];
+		dsql_nod** ptr = sub_items->nod_arg;
+		for (const dsql_nod* const* const end = ptr + sub_items->nod_count;
+			ptr < end; ++ptr) 
+		{
+			// Create a new alias else mappings would be mangled.
+			dsql_nod* select_item = *ptr;
+			// select-item should always be a derived field!
+			if (select_item->nod_type != nod_derived_field) {
+				// Internal dsql error: alias type expected by exploding.
+				//
+				// !!! THIS MESSAGE SHOULD BE CHANGED !!!
+				//
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+					  isc_arg_gds, isc_dsql_command_err, 0);
+			}
+			stack.push(select_item);
+		}
+	}
+	else if (node->nod_type == nod_relation) {
+		dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_rel_context];
+		DEV_BLKCHK(context, dsql_type_ctx);
+		dsql_prc* procedure;
+		dsql_rel* relation = context->ctx_relation;
+		if (relation) {
+			for (dsql_fld* field = relation->rel_fields; field;
+				field = field->fld_next)
+			{
+				DEV_BLKCHK(field, dsql_type_fld);
+				dsql_nod* select_item = MAKE_field(context, field, 0);
+				stack.push(select_item);
+			}
+		}
+		else if (procedure = context->ctx_procedure) {
+			for (dsql_fld* field = procedure->prc_outputs; field;
+				 field = field->fld_next) 
+			{
+				DEV_BLKCHK(field, dsql_type_fld);
+				dsql_nod* select_item = MAKE_field(context, field, 0);
+				stack.push(select_item);
+			}
+		}
+	}
+	else if (node->nod_type == nod_field_name) {
+		dsql_nod* select_item = pass1_field(request, node, true, NULL);
+		// The node could be an relation so call recursivly.
+		pass1_expand_select_node(request, select_item, stack);
+	}
+	else {
+		stack.push(node);
+	}
+}
+
+
+/**
+  
  	pass1_field
   
     @brief	Resolve a field name to an available context.
@@ -3833,7 +3861,8 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
     @param list
 
  **/
-static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input, const bool list)
+static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input, 
+							 const bool list, dsql_nod* select_list)
 {
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
@@ -3914,11 +3943,23 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input, const bool lis
        Claudio Valderrama - 2001.1.29.
     */
 
+
+	if (select_list && !qualifier && name && name->str_data) {
+		// AB: Check first against the select list for matching column.
+		// When no matches at all are found we go on with our 
+		// normal way of field name lookup.
+		dsql_nod* node = pass1_lookup_alias(request, name, select_list);
+		if (node) {
+			return node;
+		}
+	}
+
+
 /* Try to resolve field against various contexts;
    if there is an alias, check only against the first matching */
 
-	DsqlContextStack ambiguous_ctx_stack;
 	dsql_nod* node = NULL; // This var must be initialized.
+	DsqlContextStack ambiguous_ctx_stack;
 
 	// AB: Loop through the scope_levels starting by its own.
 	bool done = false;
@@ -4043,7 +4084,8 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input, const bool lis
 				// when the caller can handle this, list is true.
 				if (!name) {
 					if (list) {
-						// Node is created so caller pass1_sel_list() can deal with it.
+						// Node is created so caller pass1_expand_select_node() 
+						// can deal with it.
 						node = MAKE_node(nod_derived_table, e_derived_table_count);
 						node->nod_arg[e_derived_table_rse] = context->ctx_rse;
 						return node;
@@ -4667,24 +4709,20 @@ static bool pass1_found_sub_select(const dsql_nod* node)
   
  	pass1_group_by_list
   
-    @brief	Process INSERT statement.
- 
+    @brief	Process GROUP BY list, which may contain
+			a ordinal or alias which references to the
+			select list. 
 
     @param request
     @param input
     @param select_list
 
  **/
-static dsql_nod* pass1_group_by_list(dsql_req* request, dsql_nod* input, dsql_nod* select_list)
+static dsql_nod* pass1_group_by_list(dsql_req* request, dsql_nod* input, dsql_nod* selectList)
 {
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
-	DEV_BLKCHK(select_list, dsql_type_nod);
-
-	// For each node in the list, if it's a field node, see if it's of
-    // the form <tablename>.*.   If so, explode the asterisk.   
-	// If it's a position pick it from the select list.
-	// If none of both then just stack up the node.
+	DEV_BLKCHK(selectList, dsql_type_nod);
 
 	DsqlNodStack stack;
 	dsql_nod** ptr = input->nod_arg;
@@ -4694,28 +4732,21 @@ static dsql_nod* pass1_group_by_list(dsql_req* request, dsql_nod* input, dsql_no
 		DEV_BLKCHK(*ptr, dsql_type_nod);
 		dsql_nod* sub = (*ptr);
 		if (sub->nod_type == nod_field_name) {
-
-			// check for field or relation node
-			dsql_nod* frnode = pass1_field(request, sub, true);
-			// AB: nod_derived_field added because that's a virtual field.
-			if (frnode->nod_type == nod_field || frnode->nod_type == nod_derived_field) {
-				stack.push(frnode);
-			}
-			else {
-				explode_asterisk(request, frnode, NULL, stack);
-			}
+			// check for alias or field node
+			dsql_nod* frnode = pass1_field(request, sub, false, selectList);
+			stack.push(frnode);
 		}
 		else if ((sub->nod_type == nod_constant) && (sub->nod_desc.dsc_dtype == dtype_long)) {
 			const ULONG position = (IPTR) (sub->nod_arg[0]);
-			if ((position < 1) || !select_list || 
-				(position > (ULONG) select_list->nod_count))
+			if ((position < 1) || !selectList || 
+				(position > (ULONG) selectList->nod_count))
 			{
 					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 							isc_arg_gds, isc_dsql_column_pos_err, 
 							isc_arg_string, "GROUP BY", 0);
 					// Invalid column position used in the GROUP BY clause
 			}
-			stack.push(PASS1_node(request, select_list->nod_arg[position - 1], false));
+			stack.push(PASS1_node(request, selectList->nod_arg[position - 1], false));
 		}
 		else
 		{
@@ -5033,6 +5064,117 @@ static dsql_nod* pass1_label(dsql_req* request, dsql_nod* input)
 	return label;
 }
 
+
+/**
+  
+ 	pass1_lookup_alias
+  
+    @brief	Lookup an matching item in the select list.
+			Return node if found else return NULL.
+			If more matches are found we raise ambiguity error.
+
+    @param request
+    @param name
+    @param selectList
+
+ **/
+static dsql_nod* pass1_lookup_alias(dsql_req* request, const dsql_str* name, dsql_nod* selectList)
+{
+	dsql_nod* returnNode = NULL;	
+	dsql_nod** ptr = selectList->nod_arg;
+	const dsql_nod* const* const end = ptr + selectList->nod_count;
+	for (; ptr < end; ptr++) {
+		dsql_nod* matchingNode = NULL;
+		dsql_nod* node = *ptr;
+		switch (node->nod_type) {
+			case nod_alias: {
+				dsql_str* alias = (dsql_str*) node->nod_arg[e_alias_alias];
+				if (!strcmp(alias->str_data, name->str_data)) {
+					matchingNode = PASS1_node(request, node, false);
+				}
+				break;
+			}
+
+			case nod_field: {
+				dsql_fld* field = (dsql_fld*) node->nod_arg[e_fld_field];
+				if (!strcmp(field->fld_name, name->str_data)) {
+					matchingNode = PASS1_node(request, node, false);
+				}
+				break;
+			}
+
+			case nod_derived_field: {
+				dsql_str* alias = (dsql_str*) node->nod_arg[e_derived_field_name];
+				if (!strcmp(alias->str_data, name->str_data)) {
+					matchingNode = PASS1_node(request, node, false);
+				}
+				break;
+			}
+
+			default:
+				break;
+		}
+		if (matchingNode) {
+			if (returnNode) {
+				// There was already a node matched, thus raise ambiguous field name error.				
+				TEXT buffer1[256];
+				buffer1[0] = 0;
+				switch (returnNode->nod_type) {
+					case nod_field:
+						strcat(buffer1, "a field");
+						break;
+
+					case nod_alias:
+						strcat(buffer1, "an alias");
+						break;
+
+					case nod_derived_field:
+						strcat(buffer1, "a derived field");
+						break;
+
+					default:
+						strcat(buffer1, "an item");
+						break;
+				}
+
+				TEXT buffer2[256];
+				buffer2[0] = 0;
+				switch (matchingNode->nod_type) {
+					case nod_field:
+						strcat(buffer2, "a field");
+						break;
+
+					case nod_alias:
+						strcat(buffer2, "an alias");
+						break;
+
+					case nod_derived_field:
+						strcat(buffer2, "a derived field");
+						break;
+
+					default:
+						strcat(buffer2, "an item");
+						break;
+				}
+				strcat(buffer2, " in the select list with name");
+
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,							
+					isc_arg_gds, isc_dsql_ambiguous_field_name,
+					isc_arg_string, buffer1,
+					isc_arg_string, buffer2,
+					isc_arg_gds, isc_random,
+					isc_arg_string, name->str_data,
+					0);
+			}
+			returnNode = matchingNode;
+		}
+	}
+
+	if (returnNode) {
+		return returnNode;
+	}
+	return NULL;
+}
 
 /**
   
@@ -5613,10 +5755,12 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 #endif
 
 	// Process select list, if any. If not, generate one 
+	dsql_nod* selectList = input->nod_arg[e_qry_list];
+	// First expand select list, this will expand nodes with asterisk.
+	++request->req_in_select_list;
+	selectList = pass1_expand_select_list(request, selectList, rse->nod_arg[e_rse_streams]);
 
-	node = input->nod_arg[e_qry_list];
-
-	if ((flags & NOD_SELECT_EXPR_VALUE) && (!node || node->nod_count > 1))
+	if ((flags & NOD_SELECT_EXPR_VALUE) && (!selectList || selectList->nod_count > 1))
 	{
 		// More than one column (or asterisk) is specified in column_singleton
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
@@ -5624,53 +5768,19 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 				  isc_arg_gds, isc_dsql_count_mismatch, 0);
 	}
 
-	if (node) {
-		++request->req_in_select_list;
-		rse->nod_arg[e_rse_items] = pass1_sel_list(request, node);
-		--request->req_in_select_list;
-	}
-	else {
-		DsqlNodStack stack;
-		list = rse->nod_arg[e_rse_streams];
-		dsql_nod** ptr = list->nod_arg;
-		for (const dsql_nod* const* const end = ptr + list->nod_count;
-			ptr < end; ptr++)
-		{
-			// CVC: Since "aggregate" wasn't used yet and was NULL always here,
-			// replaced it by NULL directly
-			explode_asterisk(request, *ptr, NULL, stack);
-		}
-		list = rse->nod_arg[e_rse_items] = MAKE_list(stack);
-		/* dimitr: the below code reconstructs the select list after creation
-				   its internal format above. It allows to order/group by
-				   ordinals without using explicit field names (e.g. with asterisk).
-				   UNTESTED!!!
-		node = MAKE_node(nod_list, rse->nod_arg[e_rse_items]->nod_count);
-		USHORT i = 0;
-		for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; i++, ptr++) {
-			node->nod_arg[i] = MAKE_node(nod_field_name, e_fln_count);
-			TEXT * temp = ((dsql_ctx*)(*ptr)->nod_arg[e_fld_context])->ctx_relation->rel_name;
-			node->nod_arg[i]->nod_arg[e_fln_context] =
-				(dsql_nod*) MAKE_string(temp, strlen(temp));
-			temp = ((dsql_fld*)(*ptr)->nod_arg[e_fld_field])->fld_name;
-			node->nod_arg[i]->nod_arg[e_fln_name] =
-				(dsql_nod*) MAKE_string(temp, strlen(temp));
-		}
-		input->nod_arg[e_sel_list] = node;
-		*/
-	}
+	// Pass select list
+	rse->nod_arg[e_rse_items] = pass1_sel_list(request, selectList);
+	--request->req_in_select_list;
 
 	// Process ORDER clause, if any 
-
 	if (order) {
 		++request->req_in_order_by_clause;
-		rse->nod_arg[e_rse_sort] = pass1_sort(request, order, input->nod_arg[e_qry_list]);
+		rse->nod_arg[e_rse_sort] = pass1_sort(request, order, selectList);
 		--request->req_in_order_by_clause;
 	}
 
-/* A GROUP BY, HAVING, or any aggregate function in the select list 
-   will force an aggregate */
-
+	// A GROUP BY, HAVING, or any aggregate function in the select list 
+	// will force an aggregate
 	dsql_ctx* parent_context = NULL;
 	dsql_nod* parent_rse = NULL;
 	dsql_nod* aggregate = NULL;
@@ -5715,18 +5825,16 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 	}
 
 	// Process GROUP BY clause, if any
-
-	if ( (node = input->nod_arg[e_qry_group]) )
-	{
-		/* if there are positions in the group by clause then replace them 
-		   by the (newly pass) items from the select_list */
+	if (node = input->nod_arg[e_qry_group]) {
+		// if there are positions in the group by clause then replace them 
+		// by the (newly pass) items from the select_list
 		++request->req_in_group_by_clause;
 		aggregate->nod_arg[e_agg_group] = 
-			pass1_group_by_list(request, input->nod_arg[e_qry_group], input->nod_arg[e_qry_list]);
+			pass1_group_by_list(request, input->nod_arg[e_qry_group], selectList);
 		--request->req_in_group_by_clause;
 
-		/* AB: An field pointing to another parent_context isn't
-		   allowed and GROUP BY items can't contain aggregates */
+		// AB: An field pointing to another parent_context isn't
+		// allowed and GROUP BY items can't contain aggregates
 		bool field;
 		if (pass1_found_field(aggregate->nod_arg[e_agg_group], 
 				request->req_scope_level, FIELD_MATCH_TYPE_LOWER, &field) ||
@@ -5739,8 +5847,7 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 		}
     }
 
-	// Parse a user-specified access plan
-
+	// Parse a user-specified access PLAN
 	rse->nod_arg[e_rse_plan] =
 		PASS1_node(request, input->nod_arg[e_qry_plan], false);
 
@@ -5752,26 +5859,13 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 					isc_arg_gds, isc_token_err,	// Token unknown 
 					isc_arg_gds, isc_random, isc_arg_string, "WITH LOCK", 0);
 		}
-		if ( (node = input->nod_arg[e_qry_list]) ) {
-			++request->req_in_select_list;
-			target_rse->nod_arg[e_rse_reduced] = pass1_sel_list(request, node);
-			--request->req_in_select_list;
-		}
-		else {
-			DsqlNodStack stack;
-			list = rse->nod_arg[e_rse_streams];
-			dsql_nod** ptr = list->nod_arg;
-			for (const dsql_nod* const* const end = ptr + list->nod_count;
-				ptr < end; ptr++)
-			{
-				explode_asterisk(request, *ptr, aggregate, stack);
-			}
-			target_rse->nod_arg[e_rse_reduced] = MAKE_list(stack);
-		}		
+
+		++request->req_in_select_list;
+		target_rse->nod_arg[e_rse_reduced] = pass1_sel_list(request, selectList);
+		--request->req_in_select_list;
 	}
 
 	// Unless there was a parent, we're done
-
 	if (!parent_context)
 	{
 		rse->nod_flags = flags;
@@ -5948,9 +6042,7 @@ static dsql_nod* pass1_searched_case( dsql_req* request, dsql_nod* input, bool p
   
  	pass1_sel_list
   
-    @brief	Compile a select list, which may contain things
- 	like "<table_name>.".
- 
+    @brief	Compile a select list.
 
     @param request
     @param input
@@ -5961,33 +6053,13 @@ static dsql_nod* pass1_sel_list( dsql_req* request, dsql_nod* input)
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
-/*
-   For each node in the list, if it's a field node, see if it's of
-   the form <tablename>.*.   If so, explode the asterisk.   If not,
-   just stack up the node.
-*/
-
 	DsqlNodStack stack;
 	dsql_nod** ptr = input->nod_arg;
 	for (const dsql_nod* const* const end = ptr + input->nod_count;
 		ptr < end; ptr++)
 	{
 		DEV_BLKCHK(*ptr, dsql_type_nod);
-		if ((*ptr)->nod_type == nod_field_name) {
-
-			// check for field or relation node 
-
-			dsql_nod* frnode = pass1_field(request, *ptr, true);
-			// AB: nod_derived_field added because that's a virtual field.
-			if (frnode->nod_type == nod_field || frnode->nod_type == nod_derived_field) {
-				stack.push(frnode);
-			}
-			else {
-				explode_asterisk(request, frnode, NULL, stack);
-			}
-		}
-		else
-			stack.push(PASS1_node(request, *ptr, false));
+		stack.push(PASS1_node(request, *ptr, false));
 	}
 	dsql_nod* node = MAKE_list(stack);
 
@@ -6117,19 +6189,20 @@ static dsql_nod* pass1_simple_case( dsql_req* request, dsql_nod* input, bool pro
   
  	pass1_sort
   
-    @brief	Compile a parsed sort list
- 
+    @brief	Process ORDER BY list, which may contain
+			a ordinal or alias which references to the
+			select list.
 
     @param request
     @param input
-    @param s_list
+    @param selectList
 
  **/
-static dsql_nod* pass1_sort( dsql_req* request, dsql_nod* input, dsql_nod* s_list)
+static dsql_nod* pass1_sort( dsql_req* request, dsql_nod* input, dsql_nod* selectList)
 {
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
-	DEV_BLKCHK(s_list, dsql_type_nod);
+	DEV_BLKCHK(selectList, dsql_type_nod);
 
 	if (input->nod_type != nod_list) {
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, isc_arg_gds, 
@@ -6168,12 +6241,16 @@ static dsql_nod* pass1_sort( dsql_req* request, dsql_nod* input, dsql_nod* s_lis
 			node1 = node1->nod_arg[e_coll_source];
 		}
 
-		if (node1->nod_type == nod_constant &&
+		if (node1->nod_type == nod_field_name) {
+			// check for alias or field node
+			node1 = pass1_field(request, node1, false, selectList);
+		} 
+		else if (node1->nod_type == nod_constant &&
 			node1->nod_desc.dsc_dtype == dtype_long)
 		{
 			const ULONG position = (IPTR) (node1->nod_arg[0]);
-			if ((position < 1) || !s_list || 
-				(position > (ULONG) s_list->nod_count))
+			if ((position < 1) || !selectList || 
+				(position > (ULONG) selectList->nod_count))
 			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_dsql_column_pos_err,
@@ -6181,10 +6258,12 @@ static dsql_nod* pass1_sort( dsql_req* request, dsql_nod* input, dsql_nod* s_lis
 				// Invalid column position used in the ORDER BY clause
 			}
 			// substitute ordinal with appropriate field
-			node1 = s_list->nod_arg[position - 1];
+			node1 = PASS1_node(request, selectList->nod_arg[position - 1], false);
         }
+		else {
+			node1 = PASS1_node(request, node1, false);
+		}
 
-		node1 = PASS1_node(request, node1, false);
 		if (collate) {
 			// finally apply collation order, if necessary
 			node1 = pass1_collate(request, node1, collate);
@@ -6793,7 +6872,7 @@ static dsql_nod* pass1_variable( dsql_req* request, dsql_nod* input)
 	if (input->nod_type == nod_field_name) {
 		if (input->nod_arg[e_fln_context]) {
 			if (request->req_flags & REQ_trigger) // triggers only
-				return pass1_field(request, input, false);
+				return pass1_field(request, input, false, NULL);
 			else
 				field_error(0, 0, input);
 		}
