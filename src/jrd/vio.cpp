@@ -3294,7 +3294,6 @@ static void garbage_collect(
  *	because we have the last existing copy of them.
  *
  **************************************/
-	LLS going;
 
 	SET_TDBB(tdbb);
 
@@ -3314,7 +3313,7 @@ static void garbage_collect(
 
 /* Delete old versions fetching data for garbage collection. */
 
-	going = NULL;
+	LLS going = NULL;
 
 	while (rpb->rpb_b_page != 0) {
 		rpb->rpb_record = NULL;
@@ -3324,8 +3323,13 @@ static void garbage_collect(
 		if (!DPM_fetch(tdbb, rpb, LCK_write))
 			BUGCHECK(291);		/* msg 291 cannot find record back version */
 		delete_(tdbb, rpb, prior_page, tdbb->tdbb_default);
-		if (rpb->rpb_record)
+		if (rpb->rpb_record) {
 			LLS_PUSH(rpb->rpb_record, &going);
+			BLB_garbage_collect(tdbb, going, staying, prior_page, rpb->rpb_relation);
+			IDX_garbage_collect(tdbb, rpb, going, staying);
+			delete LLS_POP(&going);
+			going = NULL;
+		}
 #ifdef SUPERSERVER
 		/* Don't monopolize the server while chasing long
 		   back version chains. */
@@ -3334,12 +3338,6 @@ static void garbage_collect(
 			(void) JRD_reschedule(tdbb, 0, TRUE);
 #endif
 	}
-
-	BLB_garbage_collect(tdbb, going, staying, prior_page, rpb->rpb_relation);
-	IDX_garbage_collect(tdbb, rpb, going, staying);
-
-	while (going)
-		delete LLS_POP(&going);
 }
 
 
