@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: drop.cpp,v 1.15 2003-02-11 15:22:59 brodsom Exp $
+ * $Id: drop.cpp,v 1.16 2003-02-15 00:55:08 brodsom Exp $
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
@@ -94,24 +94,19 @@ int CLIB_ROUTINE main( int argc, char *argv[])
  *
  **************************************/
 	SCHAR **end, *p;
-	BOOLEAN sw_csv, sw_lockmngr, sw_events, sw_version, sw_nobridge,
+	BOOLEAN sw_lockmngr, sw_events, sw_version, sw_nobridge,
 		sw_shutmngr;
 
 	orig_argc = argc;
 	orig_argv = argv;
 
-	sw_csv = sw_lockmngr = sw_events = sw_version = sw_nobridge =
+	sw_lockmngr = sw_events = sw_version = sw_nobridge =
 		sw_shutmngr = FALSE;
 	end = argv + argc;
 	while (++argv < end)
 		if (**argv == '-')
 			for (p = *argv + 1; *p; p++)
 				switch (UPPER(*p)) {
-#ifdef CSV
-				case 'C':
-					sw_csv = TRUE;
-					break;
-#endif
 
 				case 'E':
 					sw_events = TRUE;
@@ -122,7 +117,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 					break;
 
 				case 'A':
-					sw_csv = sw_events = sw_lockmngr = TRUE;
+					sw_events = sw_lockmngr = TRUE;
 					break;
 
 				case 'S':
@@ -152,12 +147,6 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	if (sw_lockmngr)
 		remove_resource(LOCK_FILE, Config::getLockMemSize(), Config::getLockSemCount(),
 						"lock manager");
-
-#ifdef CSV
-	if (sw_csv)
-		remove_resource(CSI_FILE, CSI_DEFAULT_SIZE, MAX_PROCESSES,
-						"central server");
-#endif
 
 #ifdef MANAGER_PROCESS
 	if (sw_shutmngr)

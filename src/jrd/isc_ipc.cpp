@@ -34,7 +34,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.30 2003-02-14 02:24:44 brodsom Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.31 2003-02-15 00:55:10 brodsom Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -578,8 +578,6 @@ int API_ROUTINE ISC_kill(SLONG pid, SLONG signal_number, void *object_hndl)
 extern "C" {
 #endif
 
-#ifndef BRIDGE
-
 void API_ROUTINE ISC_signal(int signal_number, FPTR_VOID handler, void *arg)
 {
 /**************************************
@@ -594,10 +592,8 @@ void API_ROUTINE ISC_signal(int signal_number, FPTR_VOID handler, void *arg)
  **************************************/
 	isc_signal2(signal_number, (SIG_FPTR)handler, arg, 0);
 }
-#endif /* BRIDGE */
 
 
-#ifndef BRIDGE
 #ifdef SYSV_SIGNALS
 static void isc_signal2(
 						int signal_number,
@@ -652,10 +648,8 @@ static void isc_signal2(
 	THD_MUTEX_UNLOCK(&sig_mutex);
 }
 #endif /* SYSV */
-#endif /* BRIDGE */
 
 
-#ifndef BRIDGE
 #if (defined UNIX || defined WIN_NT)
 #ifndef SYSV_SIGNALS
 static void isc_signal2(
@@ -748,10 +742,8 @@ static void isc_signal2(
 }
 #endif
 #endif
-#endif
 
 
-#ifndef BRIDGE
 #ifndef REQUESTER
 void API_ROUTINE ISC_signal_cancel(
 								   int signal_number,
@@ -810,7 +802,6 @@ void API_ROUTINE ISC_signal_cancel(
 #endif // OLD_POSIX_THREADS
 }
 #endif // ifndef REQUESTER
-#endif
 
 
 void DLL_EXPORT ISC_signal_init(void)

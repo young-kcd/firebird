@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: y-valve.cpp,v 1.23 2003-02-14 02:24:42 brodsom Exp $
+$Id: y-valve.cpp,v 1.24 2003-02-15 00:55:10 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -487,15 +487,12 @@ typedef struct
 #define GDS_D_PATH	"GDS_D"
 #endif
 
-#ifdef CSI
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	extern STATUS	rem(), cur(), csi();
-#else
 #ifdef SUPERCLIENT
 #define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	extern STATUS	rem();
 #else
 #define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	extern STATUS	rem(), cur();
 #endif
-#endif
+
 #include "../jrd/entry.h"
 
 #ifdef RDB
@@ -513,10 +510,6 @@ typedef struct
 static CONST_IMAGE IMAGE images[] =
 {
 	{"REMINT", "REMINT"},			/* Remote */
-
-#ifdef CSI
-	{"CSI", "CSI"},				/* Central server interface */
-#endif
 
 #ifndef REQUESTER
 #ifndef SUPERCLIENT
@@ -548,11 +541,6 @@ static const ENTRY entrypoints[PROC_count * SUBSYSTEMS] =
 
 #define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, rem},
 #include "../jrd/entry.h"
-
-#ifdef CSI
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, csi},
-#include "../jrd/entry.h"
-#endif
 
 #ifndef REQUESTER
 #ifndef SUPERCLIENT

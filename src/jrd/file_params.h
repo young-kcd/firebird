@@ -40,14 +40,12 @@
 #ifdef NOHOSTNAME
 #define EVENT_FILE		"isc_event1"
 #define LOCK_FILE		"isc_lock1.gbl"
-#define CSI_FILE		"isc_csv1"
 #define INIT_FILE		"isc_init1"
 #define GUARD_FILE		"isc_guard1"
 #else
 #ifdef SMALL_FILE_NAMES
 #define EVENT_FILE		"isce1.%s"
 #define LOCK_FILE		"iscl1.%s"
-#define CSI_FILE		"iscc1.%s"
 #define INIT_FILE		"isci1.%s"
 #define GUARD_FILE		"iscg1.%s"
 #endif
@@ -63,7 +61,6 @@
 #ifdef WIN_NT
 #define EVENT_FILE		"%s.evn"
 #define LOCK_FILE		"%s.lck"
-#define CSI_FILE		"%s.csv"
 #define LOCK_HEADER		"ibconfig"
 #define INIT_FILE		"%s.int"
 #define GUARD_FILE		"%s.grd"
@@ -75,10 +72,6 @@
 
 #ifndef LOCK_FILE
 #define LOCK_FILE		"isc_lock1.%s"
-#endif
-
-#ifndef CSI_FILE
-#define CSI_FILE		"isc_csv1.%s"
 #endif
 
 #ifndef LOCK_HEADER
@@ -107,12 +100,6 @@
 #if defined FREEBSD || defined NETBSD
 #include <sys/types.h>
 #include <sys/ipc.h>
-#endif
-
-#ifdef CSV
-#define CSI_DEFAULT_SIZE	262144
-#define CSI_EXTEND_SIZE		32768
-#define MAX_PROCESSES		16
 #endif
 
 #ifdef UNIX
