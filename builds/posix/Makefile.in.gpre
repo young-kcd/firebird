@@ -29,7 +29,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.gpre,v 1.5 2002-12-02 11:17:02 eku Exp $
+#  $Id: Makefile.in.gpre,v 1.6 2003-03-05 15:57:23 brodsom Exp $
 #
 ROOT=../..
 
@@ -105,7 +105,7 @@ $(SRC)/gpre_meta.cpp:  $(SRC)/gpre_meta.epp
 
 
 # In phase2 we add the same objects as before, we just rebuild them as
-# portable and load them into a shared libgds.so library.
+# portable and load them into a shared libgds.$(SHRLIB_EXT) library.
 
 .PHONY: jrdlib_dependencies
 

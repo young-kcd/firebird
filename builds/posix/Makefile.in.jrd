@@ -29,7 +29,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.jrd,v 1.6 2003-02-24 09:52:33 eku Exp $
+#  $Id: Makefile.in.jrd,v 1.7 2003-03-05 15:57:21 brodsom Exp $
 #
 ROOT=../..
 
@@ -88,7 +88,7 @@ jrdlib_dependencies: $(JRD_Objects) $(OS_SPECIFIC_Objects)
 
 
 
-# The jrdlib_main will equate to either the libgds.so or libgds.a
+# The jrdlib_main will equate to either the libgds.$(SHRLIB_EXT) or libgds.a
 # depending upon choices made in make.rules and prefix.xxx where
 # xxx is plaform.
 
@@ -300,103 +300,103 @@ gdsf_s.a $(IMP_FUNCSHR) $(SCO_FUNCSHR):	functions.bin \
 	$(TOUCH) gdsf_s.a
 	$(CHMOD_6) gdsf_s.a
 
-gdslib.so.1.0 $(SUN_GDSSHR):	$(JRD_P_OBJECTS) flu.bin $(CSI_P_MISC) \
+gdslib.$(SHRLIB_EXT).1.0 $(SUN_GDSSHR):	$(JRD_P_OBJECTS) flu.bin $(CSI_P_MISC) \
 		$(DSQL_P_MISC) $(LOCK_P_MISC) $(REMOTE_P_MISC) $(SECURITY_P_MISC) \
-		$(WAL_P_MISC) functions.bin gdslib.so.0.1
-	-$(RM) gdslib.so.1.0
+		$(WAL_P_MISC) functions.bin gdslib.$(SHRLIB_EXT).0.1
+	-$(RM) gdslib.$(SHRLIB_EXT).1.0
 	ld -assert pure-text $(JRD_P_OBJECTS) flu.bin $(CSI_P_MISC) \
 		$(DSQL_P_MISC) $(LOCK_P_MISC) $(REMOTE_P_MISC) $(SECURITY_P_MISC) \
-		$(WAL_P_MISC) functions.bin -o gdslib.so.1.0
-	$(CHMOD_6) gdslib.so.1.0
-	$(MV) gdslib.so.1.0 $(GDSSHR)
-	$(TOUCH) gdslib.so.1.0
-	$(CHMOD_6) gdslib.so.1.0
+		$(WAL_P_MISC) functions.bin -o gdslib.$(SHRLIB_EXT).1.0
+	$(CHMOD_6) gdslib.$(SHRLIB_EXT).1.0
+	$(MV) gdslib.$(SHRLIB_EXT).1.0 $(GDSSHR)
+	$(TOUCH) gdslib.$(SHRLIB_EXT).1.0
+	$(CHMOD_6) gdslib.$(SHRLIB_EXT).1.0
 
 # If you really need this and can't do this via a define of NON_DL_COMPATIBLE
 # when building flu.cpp then this should work.
 #JRD_P_OBJECTS := $(subst flu.bin, flu_non_dl.bin, $JRD_P_OBJECTS)
 
-#gdslib.so.0.1:	$(JRD_P_OBJECTS) flu_non_dl.bin $(CSI_P_MISC) $(DSQL_P_MISC) \
+#gdslib.$(SHRLIB_EXT).0.1:	$(JRD_P_OBJECTS) flu_non_dl.bin $(CSI_P_MISC) $(DSQL_P_MISC) \
 #		$(LOCK_P_MISC) $(REMOTE_P_MISC) $(WAL_P_MISC) \
 #		$(SECURITY_P_MISC) \
-#		gdsflib.so.0.0
-#	-$(RM) gdslib.so.0.1
+#		gdsflib.$(SHRLIB_EXT).0.0
+#	-$(RM) gdslib.$(SHRLIB_EXT).0.1
 #	ld -assert pure-text $(JRD_P_OBJECTS) flu_non_dl.bin $(CSI_P_MISC) \
 #		$(DSQL_P_MISC) $(LOCK_P_MISC) $(REMOTE_P_MISC) $(SECURITY_P_MISC) \
-#		$(WAL_P_MISC) -lgdsflib -o gdslib.so.0.1
-#	$(CHMOD_6) gdslib.so.0.1
-#	$(MV) gdslib.so.0.1 source/interbase/lib
-#	$(TOUCH) gdslib.so.0.1
-#	$(CHMOD_6) gdslib.so.0.1
+#		$(WAL_P_MISC) -lgdsflib -o gdslib.$(SHRLIB_EXT).0.1
+#	$(CHMOD_6) gdslib.$(SHRLIB_EXT).0.1
+#	$(MV) gdslib.$(SHRLIB_EXT).0.1 source/interbase/lib
+#	$(TOUCH) gdslib.$(SHRLIB_EXT).0.1
+#	$(CHMOD_6) gdslib.$(SHRLIB_EXT).0.1
 
-gdsflib.so.0.0 $(SUN_FUNCSHR):	functions.bin
-	-$(RM) gdsflib.so.0.0
-	ld -assert pure-text functions.bin -o gdsflib.so.0.0
-	$(CHMOD_6) gdsflib.so.0.0
-	$(MV) gdsflib.so.0.0 $(SUN_FUNCSHR)
-	$(TOUCH) gdsflib.so.0.0
-	$(CHMOD_6) gdsflib.so.0.0
+gdsflib.$(SHRLIB_EXT).0.0 $(SUN_FUNCSHR):	functions.bin
+	-$(RM) gdsflib.$(SHRLIB_EXT).0.0
+	ld -assert pure-text functions.bin -o gdsflib.$(SHRLIB_EXT).0.0
+	$(CHMOD_6) gdsflib.$(SHRLIB_EXT).0.0
+	$(MV) gdsflib.$(SHRLIB_EXT).0.0 $(SUN_FUNCSHR)
+	$(TOUCH) gdsflib.$(SHRLIB_EXT).0.0
+	$(CHMOD_6) gdsflib.$(SHRLIB_EXT).0.0
 
-gds.so.o $(SGI_GDSSHR) $(DECOSF_GDSSHR) : \
+gds.$(SHRLIB_EXT).o $(SGI_GDSSHR) $(DECOSF_GDSSHR) : \
 		$(WHY_O) $(JRD_OBJECTS) $(DSQL_MISC) $(LOCK_MISC) \
 		$(REMOTE_MISC) $(BRIDGE_MISC) \
 		$(INTL_MISC) $(WAL_MISC) $(FUNCTIONS)  $(SECURITY_MISC)
-	-$(RM) gds.so.o
-	ld $(LD_OPTS) libgds.so.0 $(ZDEFS) $(WHY_O) $(JRD_OBJECTS) \
+	-$(RM) gds.$(SHRLIB_EXT).o
+	ld $(LD_OPTS) libgds.$(SHRLIB_EXT).0 $(ZDEFS) $(WHY_O) $(JRD_OBJECTS) \
 		$(DSQL_MISC) $(LOCK_MISC) $(REMOTE_MISC) $(BRIDGE_MISC) \
 		$(INTL_MISC) $(WAL_MISC) $(FUNCTIONS) $(SECURITY_MISC) \
-		$(GDSF_LIB) $(LD_LIBS) -o gds.so.0
-	$(CHMOD_6) gds.so.0
-	$(MV) gds.so.0 $(GDSSHR)
-	$(TOUCH) gds.so.o
-	$(CHMOD_6) gds.so.o
+		$(GDSF_LIB) $(LD_LIBS) -o gds.$(SHRLIB_EXT).0
+	$(CHMOD_6) gds.$(SHRLIB_EXT).0
+	$(MV) gds.$(SHRLIB_EXT).0 $(GDSSHR)
+	$(TOUCH) gds.$(SHRLIB_EXT).o
+	$(CHMOD_6) gds.$(SHRLIB_EXT).o
 
 # For SCO_EV and LINUX the FUNCTIONS is part of JRD_OBJECTS.
-gds.so.O $(SCO_EV_GDSSHR): \
+gds.$(SHRLIB_EXT).O $(SCO_EV_GDSSHR): \
 	$(WHY_O) $(JRD_OBJECTS) $(DSQL_MISC) $(LOCK_MISC) \
 	$(REMOTE_MISC) $(BRIDGE_MISC) \
 	$(INTL_MISC) $(WAL_MISC)  $(SECURITY_MISC)
-	-$(RM) gds.so.O
-	ld $(LD_OPTS) libgds.so.0 $(ZDEFS) $(WHY_O) $(JRD_OBJECTS) \
+	-$(RM) gds.$(SHRLIB_EXT).O
+	ld $(LD_OPTS) libgds.$(SHRLIB_EXT).0 $(ZDEFS) $(WHY_O) $(JRD_OBJECTS) \
 		$(DSQL_MISC) $(LOCK_MISC) $(REMOTE_MISC) $(BRIDGE_MISC) \
 		$(INTL_MISC) $(WAL_MISC) $(SECURITY_MISC) \
-		$(GDSF_LIB) $(LD_LIBS) -o gds.so.0
-	$(CHMOD_6) gds.so.0
-	$(MV) gds.so.0 $(GDSSHR)
-	$(TOUCH) gds.so.O
-	$(CHMOD_6) gds.so.O
+		$(GDSF_LIB) $(LD_LIBS) -o gds.$(SHRLIB_EXT).0
+	$(CHMOD_6) gds.$(SHRLIB_EXT).0
+	$(MV) gds.$(SHRLIB_EXT).0 $(GDSSHR)
+	$(TOUCH) gds.$(SHRLIB_EXT).O
+	$(CHMOD_6) gds.$(SHRLIB_EXT).O
 
-libgds.so gds.so.linux: \
+libgds.$(SHRLIB_EXT) gds.$(SHRLIB_EXT).linux: \
 		$(JRD_P_OBJECTS) flu.bin $(CSI_P_MISC) $(DSQL_P_MISC) \
 		$(LOCK_P_MISC) $(REMOTE_P_MISC) $(SECURITY_P_MISC) \
 		$(INTL_P_MISC) $(WAL_P_MISC) \
 		$(FUNCTIONS)
-	-$(RM) gds.so
+	-$(RM) gds.$(SHRLIB_EXT)
 	ld $(LD_OPTS) $(ZDEFS) $(JRD_P_OBJECTS) flu.bin \
 		$(CSI_P_MISC) $(DSQL_P_MISC) $(LOCK_P_MISC) \
 		$(REMOTE_P_MISC) $(SECURITY_P_MISC) $(INTL_P_MISC) \
 		$(WAL_P_MISC) $(FUNCTIONS) $(GDSF_LIB) \
-		$(LD_LIBS) -o libgds.so
-	$(CHMOD_6) libgds.so
-	$(MV) libgds.so $(GDSSHR_DEST)
-	$(TOUCH) libgds.so
-	$(CHMOD_6) libgds.so
+		$(LD_LIBS) -o libgds.$(SHRLIB_EXT)
+	$(CHMOD_6) libgds.$(SHRLIB_EXT)
+	$(MV) libgds.$(SHRLIB_EXT) $(GDSSHR_DEST)
+	$(TOUCH) libgds.$(SHRLIB_EXT)
+	$(CHMOD_6) libgds.$(SHRLIB_EXT)
 
-gds.so.0 $(DG_GDSSHR) $(DG_X86_GDSSHR) $(UNIXWARE_GDSSHR) $(NCR3000_GDSSHR): \
+gds.$(SHRLIB_EXT).0 $(DG_GDSSHR) $(DG_X86_GDSSHR) $(UNIXWARE_GDSSHR) $(NCR3000_GDSSHR): \
 		$(JRD_P_OBJECTS) flu.bin $(CSI_P_MISC) $(DSQL_P_MISC) \
 		$(LOCK_P_MISC) $(REMOTE_P_MISC) $(SECURITY_P_MISC) \
 		$(INTL_P_MISC) $(WAL_P_MISC) \
 		$(FUNCTIONS)
-	-$(RM) gds.so.0
-	ld $(LD_OPTS) libgds.so.0 $(ZDEFS) $(JRD_P_OBJECTS) flu.bin \
+	-$(RM) gds.$(SHRLIB_EXT).0
+	ld $(LD_OPTS) libgds.$(SHRLIB_EXT).0 $(ZDEFS) $(JRD_P_OBJECTS) flu.bin \
 		$(CSI_P_MISC) $(DSQL_P_MISC) $(LOCK_P_MISC) \
 		$(REMOTE_P_MISC) $(SECURITY_P_MISC) $(INTL_P_MISC) \
 		$(WAL_P_MISC) $(FUNCTIONS) $(GDSF_LIB) \
-		$(LD_LIBS) -o gds.so.0
-	$(CHMOD_6) gds.so.0
-	$(MV) gds.so.0 $(GDSSHR)
-	$(TOUCH) gds.so.0
-	$(CHMOD_6) gds.so.0
+		$(LD_LIBS) -o gds.$(SHRLIB_EXT).0
+	$(CHMOD_6) gds.$(SHRLIB_EXT).0
+	$(MV) gds.$(SHRLIB_EXT).0 $(GDSSHR)
+	$(TOUCH) gds.$(SHRLIB_EXT).0
+	$(CHMOD_6) gds.$(SHRLIB_EXT).0
 
 # For the Darwin port
 gds.dylib: $(DO_FORCE) \
@@ -421,37 +421,37 @@ gds.dylib: $(DO_FORCE) \
 
 
 # Solaris has two Shared libraries - the traditional style one
-# is called gdsmt.so.0, as it requires v3.3 -> v4.0 customers
+# is called gdsmt.$(SHRLIB_EXT).0, as it requires v3.3 -> v4.0 customers
 # to recompile and relink.
-# In v4.0 we add a "gds.so.0" library which is really a pipe
+# In v4.0 we add a "gds.$(SHRLIB_EXT).0" library which is really a pipe
 # client library.  This is so existing 3.3 customers are
 # isolated from Solaris problems involving threads & signals.
-gds.so.solaris $(SOL_GDSSHR):  gdsmt.so.0 gdspipe.so.0
+gds.$(SHRLIB_EXT).solaris $(SOL_GDSSHR):  gdsmt.$(SHRLIB_EXT).0 gdspipe.$(SHRLIB_EXT).0
 
-gdsmt.so.0: \
+gdsmt.$(SHRLIB_EXT).0: \
 		$(JRD_P_OBJECTS) flu.bin $(CSI_P_MISC) $(DSQL_P_MISC) \
 		$(LOCK_P_MISC) \
 		$(REMOTE_P_MISC) $(SECURITY_P_MISC) \
 		$(INTL_P_MISC) $(WAL_P_MISC) \
 		$(FUNCTIONS)
-	-$(RM) gdsmt.so.0
-	ld $(LD_OPTS) libgdsmt.so.0 $(ZDEFS) $(JRD_P_OBJECTS) flu.bin \
+	-$(RM) gdsmt.$(SHRLIB_EXT).0
+	ld $(LD_OPTS) libgdsmt.$(SHRLIB_EXT).0 $(ZDEFS) $(JRD_P_OBJECTS) flu.bin \
 		$(CSI_P_MISC) $(DSQL_P_MISC) $(LOCK_P_MISC) \
 		$(REMOTE_P_MISC) $(SECURITY_P_MISC) \
 		$(INTL_P_MISC) $(WAL_P_MISC) $(FUNCTIONS) \
-		$(GDSF_LIB) $(LD_LIBS) -o gdsmt.so.0
-	$(CHMOD_6) gdsmt.so.0
-	$(MV) gdsmt.so.0 $(GDSSHR)
-	$(TOUCH) gdsmt.so.0
-	$(CHMOD_6) gdsmt.so.0
+		$(GDSF_LIB) $(LD_LIBS) -o gdsmt.$(SHRLIB_EXT).0
+	$(CHMOD_6) gdsmt.$(SHRLIB_EXT).0
+	$(MV) gdsmt.$(SHRLIB_EXT).0 $(GDSSHR)
+	$(TOUCH) gdsmt.$(SHRLIB_EXT).0
+	$(CHMOD_6) gdsmt.$(SHRLIB_EXT).0
 
-gdsf.so $(DG_FUNCSHR) $(DG_X86_FUNCSHR):	functions.bin
-	-$(RM) gdsf.so
-	ld -G functions.bin -o gdsf.so
-	$(CHMOD_6) gdsf.so
-	$(MV) gdsf.so $(FUNCSHR)
-	$(TOUCH) gdsf.so
-	$(CHMOD_6) gdsf.so
+gdsf.$(SHRLIB_EXT) $(DG_FUNCSHR) $(DG_X86_FUNCSHR):	functions.bin
+	-$(RM) gdsf.$(SHRLIB_EXT)
+	ld -G functions.bin -o gdsf.$(SHRLIB_EXT)
+	$(CHMOD_6) gdsf.$(SHRLIB_EXT)
+	$(MV) gdsf.$(SHRLIB_EXT) $(FUNCSHR)
+	$(TOUCH) gdsf.$(SHRLIB_EXT)
+	$(CHMOD_6) gdsf.$(SHRLIB_EXT)
 
 gdsshr_ss.dll:	$(WIN_NT_SS_GDSSHR)
 	$(TOUCH) gdsshr_ss.dll
@@ -545,17 +545,17 @@ gds.a:		$(HEAD_OBJECTS) $(NOLINK_MACHINES)
 
 # Solaris specific shared library that invokes a pipe-server interface
 # to isolate clients that might use signals from threads.
-# Note that its internal library name is libgds.so for compatibility
+# Note that its internal library name is libgds.$(SHRLIB_EXT) for compatibility
 # with existing applications.
-gdspipe.so.0:	$(HEAD_J_OBJECTS)
-	-$(RM) gdspipe.so.0
-	-$(RM) gds.so.0
-	ld $(LD_OPTS) libgds.so.0 $(HEAD_J_OBJECTS) $(LD_LIBS_J) \
-		-o gds.so.0
-	$(CHMOD_6) gds.so.0
-	$(MV) gds.so.0 $(PIPE_GDSSHR)
-	$(TOUCH) gdspipe.so.0
-	$(CHMOD_6) gdspipe.so.0
+gdspipe.$(SHRLIB_EXT).0:	$(HEAD_J_OBJECTS)
+	-$(RM) gdspipe.$(SHRLIB_EXT).0
+	-$(RM) gds.$(SHRLIB_EXT).0
+	ld $(LD_OPTS) libgds.$(SHRLIB_EXT).0 $(HEAD_J_OBJECTS) $(LD_LIBS_J) \
+		-o gds.$(SHRLIB_EXT).0
+	$(CHMOD_6) gds.$(SHRLIB_EXT).0
+	$(MV) gds.$(SHRLIB_EXT).0 $(PIPE_GDSSHR)
+	$(TOUCH) gdspipe.$(SHRLIB_EXT).0
+	$(CHMOD_6) gdspipe.$(SHRLIB_EXT).0
 
 # The Solaris version of gds.a uses the .j objects as they have
 # been compiled in non-Thread mode.  The .j objects are PIC code

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.gfix,v 1.4 2002-10-07 01:29:09 skywalker Exp $
+#  $Id: Makefile.in.embed.gfix,v 1.5 2003-03-05 15:57:25 brodsom Exp $
 #
 ROOT=..
 ObjModuleName=embed.gfix
@@ -56,7 +56,7 @@ Dependencies = $(AllObjects:.o=.d)
 
 gfix : $(BIN)/gfix
 
-$(BIN)/gfix:	$(GFIX_Objects) $(LIB)/libfbembed.so  
+$(BIN)/gfix:	$(GFIX_Objects) $(LIB)/libfbembed.$(SHRLIB_EXT)  
 	$(LD) $(LINK_OPTS) $(GFIX_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
 
 

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.gpre,v 1.6 2002-12-02 11:17:02 eku Exp $
+#  $Id: Makefile.in.client.gpre,v 1.7 2003-03-05 15:57:25 brodsom Exp $
 #
 ROOT=..
 ObjModuleName=client.gpre
@@ -60,7 +60,7 @@ Dependencies = $(AllObjects:.o=.d)
 
 gpre : $(BIN)/gpre
 
-$(BIN)/gpre:	$(GPRE_Objects) $(LIB)/libfbclient.so  
+$(BIN)/gpre:	$(GPRE_Objects) $(LIB)/libfbclient.$(SHRLIB_EXT)  
 	$(LD) $(LINK_OPTS) $(GPRE_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
 
 
