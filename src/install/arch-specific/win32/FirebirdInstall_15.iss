@@ -18,13 +18,15 @@
 ;     Tilo Muetze, Theo ? and Michael Rimov for improved detection
 ;     of an existing install directory.
 ;     Simon Carter for the WinSock2 detection.
+;     Philippe Makowski for internationalization and french translation
 
 ;   Usage Notes:
 ;
-;   This script has been designed to work with Inno Setup v4.0.10
-;   with Inno Setup Preprocessor v. 1.1.1.267. It is available
+;   This script has been designed to work with Inno Setup v4.2.7
+;   with Inno Setup Preprocessor v. 1.2.1.295. It is available
 ;   as a quick start pack from here:
 ;     http://www.jrsoftware.org/isdl.php#qsp
+;
 ;
 ;   Known bugs and problems etc etc.
 ;
@@ -78,7 +80,7 @@
 
 
 [Setup]
-AppName=Firebird Database Server 1.5
+AppName={cm:MyAppName}
 ;The following is important - all ISS install packages should
 ;duplicate this for v1.5. See the InnoSetup help for details.
 AppID=FBDBServer_{#BaseVer}
@@ -92,8 +94,8 @@ DefaultGroupName=Firebird_{#BaseVer}
 AllowNoIcons=true
 SourceDir=..\..\..\..\..\firebird2
 LicenseFile=src\install\misc\IPLicense.txt
-InfoBeforeFile=output\doc\installation_readme.txt
-InfoAfterFile=src\install\arch-specific\win32\readme.txt
+;InfoBeforeFile=output\doc\installation_readme.txt
+;InfoAfterFile=src\install\arch-specific\win32\readme.txt
 AlwaysShowComponentsList=true
 WizardImageFile=src\install\arch-specific\win32\firebird_install_logo1.bmp
 PrivilegesRequired=admin
@@ -102,49 +104,62 @@ OutputDir=builds\win32\install_image
 OutputBaseFilename=Firebird-1.5.0-Win32{#debug_str}{#pdb_str}
 Compression=bzip
 ShowTasksTreeLines=false
+LanguageDetectionMethod=uilanguage
+
+[Languages]
+Name: en; MessagesFile: compiler:Default.isl; InfoBeforeFile: output\doc\installation_readme.txt; InfoAfterFile: src\install\arch-specific\win32\readme.txt;
+Name: fr; MessagesFile: compiler:Languages\French.isl; InfoBeforeFile: src\install\arch-specific\win32\fr\installation_lisezmoi.txt; InfoAfterFile: src\install\arch-specific\win32\fr\lisezmoi.txt;
+
+[Messages]
+en.BeveledLabel=English
+fr.BeveledLabel=Français
+
+[CustomMessages]
+#include "custom_messages.inc"
+#include "fr\custom_messages_fr.inc"
 
 [Types]
-Name: SuperServerInstall; Description: "Full installation of Super Server and development tools."
-Name: ClassicServerInstall; Description: "Full installation of Classic Server and development tools."
-Name: DeveloperInstall; Description: "Installation of Client tools for Developers and database administrators."
-Name: ClientInstall; Description: "Minimum client install - no server, no tools."
-Name: CustomInstall; Description: "Custom installation"; Flags: iscustom;
+Name: SuperServerInstall; Description: {cm:SuperServerInstall}
+Name: ClassicServerInstall; Description: {cm:ClassicServerInstall}
+Name: DeveloperInstall; Description: {cm:DeveloperInstall}
+Name: ClientInstall; Description: {cm:ClientInstall}
+Name: CustomInstall; Description: {cm:CustomInstall}; Flags: iscustom;
 
 [Components]
-Name: SuperServerComponent; Description: Super Server binary; Types: SuperServerInstall; Flags: exclusive;
-Name: ClassicServerComponent; Description: Classic Server binary; Types: ClassicServerInstall; Flags: exclusive;
-Name: ServerComponent; Description: Server components; Types: SuperServerInstall ClassicServerInstall;
-Name: DevAdminComponent; Description: Developer and admin tools components; Types: SuperServerInstall ClassicServerInstall DeveloperInstall;
-Name: ClientComponent; Description: Client components; Types: SuperServerInstall ClassicServerInstall DeveloperInstall ClientInstall CustomInstall; Flags: fixed disablenouninstallwarning;
+Name: SuperServerComponent; Description: {cm:SuperServerComponent}; Types: SuperServerInstall; Flags: exclusive;
+Name: ClassicServerComponent; Description: {cm:ClassicServerComponent}; Types: ClassicServerInstall; Flags: exclusive;
+Name: ServerComponent; Description: {cm:ServerComponent}; Types: SuperServerInstall ClassicServerInstall;
+Name: DevAdminComponent; Description: {cm:DevAdminComponent}; Types: SuperServerInstall ClassicServerInstall DeveloperInstall;
+Name: ClientComponent; Description: {cm:ClientComponent}; Types: SuperServerInstall ClassicServerInstall DeveloperInstall ClientInstall CustomInstall; Flags: fixed disablenouninstallwarning;
 
 [Tasks]
 ;Server tasks
-Name: UseGuardianTask; Description: Use the &Guardian to control the server?; Components: ServerComponent; MinVersion: 4.0,4.0; Check: ConfigureFirebird;
-Name: UseApplicationTask; Description: Run as an &Application?; GroupDescription: Run Firebird server as:; Components: ServerComponent; MinVersion: 4,4; Flags: exclusive; Check: ConfigureFirebird;
-Name: UseServiceTask; Description: Run as a &Service?; GroupDescription: Run Firebird server as:; Components: ServerComponent; MinVersion: 0,4; Flags: exclusive; Check: ConfigureFirebird;
-Name: AutoStartTask; Description: Start &Firebird automatically everytime you boot up?; Components: ServerComponent; MinVersion: 4,4; Check: ConfigureFirebird;
+Name: UseGuardianTask; Description: {cm:UseGuardianTask}; Components: ServerComponent; MinVersion: 4.0,4.0; Check: ConfigureFirebird;
+Name: UseApplicationTask; Description: {cm:UseApplicationTaskMsg}; GroupDescription: {cm:TaskGroupDescription}; Components: ServerComponent; MinVersion: 4,4; Flags: exclusive; Check: ConfigureFirebird;
+Name: UseServiceTask; Description: {cm:UseServiceTask}; GroupDescription: {cm:TaskGroupDescription}; Components: ServerComponent; MinVersion: 0,4; Flags: exclusive; Check: ConfigureFirebird;
+Name: AutoStartTask; Description: {cm:AutoStartTask}; Components: ServerComponent; MinVersion: 4,4; Check: ConfigureFirebird;
 ;Name: MenuGroupTask; Description: Create a Menu &Group; Components: DevAdminComponent; MinVersion: 4,4
 ;Copying of client libs to <sys>
-Name: CopyFbClientToSysTask; Description: Copy &Firebird client library to <system> directory?; Components: ClientComponent; MinVersion: 4,4; Flags: Unchecked; Check: ShowCopyFbClientLibTask;
-Name: CopyFbClientAsGds32Task; Description: Generate client library as GDS32.DLL for &legacy app. support?; Components: ClientComponent; MinVersion: 4,4; Check: ShowCopyGds32Task;
+Name: CopyFbClientToSysTask; Description: {cm:CopyFbClientToSysTask}; Components: ClientComponent; MinVersion: 4,4; Flags: Unchecked; Check: ShowCopyFbClientLibTask;
+Name: CopyFbClientAsGds32Task; Description: {cm:CopyFbClientAsGds32Task}; Components: ClientComponent; MinVersion: 4,4; Check: ShowCopyGds32Task;
 ;Allow user to not install cpl applet
-Name: InstallCPLAppletTask; Description: "Install Control &Panel Applet?"; Components: SuperServerComponent; MinVersion: 4.0,4.0; Check: ShowInstallCPLAppletTask;
+Name: InstallCPLAppletTask; Description: {cm:InstallCPLAppletTask}; Components: SuperServerComponent; MinVersion: 4.0,4.0; Check: ShowInstallCPLAppletTask;
 
 
 [Run]
 ;Always register Firebird
-Filename: {app}\bin\instreg.exe; Parameters: "install "; StatusMsg: Updating the registry; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized
+Filename: {app}\bin\instreg.exe; Parameters: "install "; StatusMsg: {cm:instreg}; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized
 
-Filename: {app}\bin\instclient.exe; Parameters: "install fbclient"; StatusMsg: Copying fbclient to the <sys> directory; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized; Check: CopyFBClientLib; 
-Filename: {app}\bin\instclient.exe; Parameters: "install gds32"; StatusMsg: Generating gds32.dll for <sys> directory; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized; Check: CopyGds32
+Filename: {app}\bin\instclient.exe; Parameters: "install fbclient"; StatusMsg: {cm:instclientCopyFbClient}; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized; Check: CopyFBClientLib;
+Filename: {app}\bin\instclient.exe; Parameters: "install gds32"; StatusMsg: {cm:instclientGenGds32}; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized; Check: CopyGds32
 
 
 ;If on NT/Win2k etc and 'Install and start service' requested
-Filename: {app}\bin\instsvc.exe; Parameters: "install {code:ServiceStartFlags|""""} "; StatusMsg: Setting up the service; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; Check: ConfigureFirebird;
-Filename: {app}\bin\instsvc.exe; Description: Start Firebird Service now?; Parameters: start; StatusMsg: Starting the server; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized postinstall; Tasks: UseServiceTask; Check: StartEngine
+Filename: {app}\bin\instsvc.exe; Parameters: "install {code:ServiceStartFlags|""""} "; StatusMsg: {cm:instsvcSetup}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; Check: ConfigureFirebird;
+Filename: {app}\bin\instsvc.exe; Description: {cm:instsvcStartQuestion}; Parameters: start; StatusMsg: {cm:instsvcStartMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized postinstall; Tasks: UseServiceTask; Check: StartEngine
 
 ;If 'start as application' requested
-Filename: {code:StartApp|{app}\bin\fbserver.exe}; Description: Start Firebird now?; Parameters: -a; StatusMsg: Starting the server; MinVersion: 0,4.0; Components: ServerComponent; Flags: nowait postinstall; Tasks: UseApplicationTask; Check: StartEngine
+Filename: {code:StartApp|{app}\bin\fbserver.exe}; Description: {cm:instappStartQuestion}; Parameters: -a; StatusMsg: {cm:instappStartMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: nowait postinstall; Tasks: UseApplicationTask; Check: StartEngine
 
 
 [Registry]
@@ -171,13 +186,20 @@ Name: {group}\Firebird Guardian; Filename: {app}\bin\fbguard.exe; Parameters: -c
 #define App_Name = SetupSetting("AppName")
 Name: {group}\Firebird 1.5.1 Release Notes; Filename: {app}\doc\Firebird_v1.5.1.ReleaseNotes.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name} release notes. (Requires Acrobat Reader.)
 Name: {group}\Firebird 1.5 Release Notes; Filename: {app}\doc\Firebird_v1.5.ReleaseNotes.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name} release notes. (Requires Acrobat Reader.)
+;Always install the original english version
 Name: {group}\Firebird 1.5.1 Readme; Filename: {app}\readme.txt; MinVersion: 4.0,4.0;
+;Translated files
+Name: {group}\Firebird 1.5 Lisezmoi; Filename: {app}\readme-fr.txt; MinVersion: 4.0,4.0; Languages: fr
 Name: {group}\Uninstall Firebird; Filename: {uninstallexe}; Comment: Uninstall Firebird
 
 [Files]
 Source: src\install\misc\IPLicense.txt; DestDir: {app}; Components: ClientComponent; Flags: sharedfile ignoreversion
 Source: src\install\misc\IDPLicense.txt; DestDir: {app}; Components: ClientComponent; Flags: sharedfile ignoreversion
+;Always install the original english version
 Source: src\install\arch-specific\win32\readme.txt; DestDir: {app}; Components: DevAdminComponent; Flags: ignoreversion
+;Translated files
+Source: src\install\arch-specific\win32\fr\lisezmoi.txt; DestDir: {app}; Components: DevAdminComponent; Flags: ignoreversion; Languages: fr
+
 Source: output\firebird.conf; DestDir: {app}; DestName: firebird.conf; Components: ServerComponent; Flags: uninsneveruninstall; check: SaveFirebirdConf
 Source: output\aliases.conf; DestDir: {app}; Components: ClientComponent; Flags: uninsneveruninstall onlyifdoesntexist
 Source: output\security.fdb; DestDir: {app}; Components: ServerComponent; Flags: uninsneveruninstall onlyifdoesntexist
@@ -214,8 +236,15 @@ Source: output\system32\msvcrt.dll; DestDir: {sys}; Components: ClientComponent;
 Source: output\system32\msvcp{#msvc_version}0.dll; DestDir: {app}\bin; Components: ClientComponent; MinVersion: 0,5.0;
 Source: output\system32\msvcp{#msvc_version}0.dll; DestDir: {sys}; Components: ClientComponent; OnlyBelowVersion: 5.0,5.0; Flags: sharedfile onlyifdoesntexist uninsneveruninstall;
 
+;Always install the orignal english version
 Source: output\doc\*.*; DestDir: {app}\doc; Components: DevAdminComponent; Flags: skipifsourcedoesntexist  ignoreversion
+;Translated files
+Source: output\doc\fr\*.*; DestDir: {app}\doc; Components: DevAdminComponent; Flags: skipifsourcedoesntexist  ignoreversion; Languages: fr
+;Always install the orignal english version
 Source: output\doc\sql.extensions\*.*; DestDir: {app}\doc\sql.extensions; Components: DevAdminComponent; Flags: skipifsourcedoesntexist ignoreversion
+;Translated files
+Source: output\doc\sql.extensions\fr\*.*; DestDir: {app}\doc\sql.extensions; Components: DevAdminComponent; Flags: skipifsourcedoesntexist ignoreversion; Languages: fr
+
 Source: output\help\*.*; DestDir: {app}\help; Components: DevAdminComponent; Flags: ignoreversion;
 Source: output\include\*.*; DestDir: {app}\include; Components: DevAdminComponent; Flags: ignoreversion;
 Source: output\intl\fbintl.dll; DestDir: {app}\intl; Components: ServerComponent; Flags: sharedfile ignoreversion;
@@ -237,11 +266,11 @@ Source: output\bin\fbserver.pdb; DestDir: {app}\bin; Components: SuperServerComp
 #endif
 
 [UninstallRun]
-Filename: {app}\bin\instsvc.exe; Parameters: " stop"; StatusMsg: "Stopping the service"; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; RunOnceId: StopService
-Filename: {app}\bin\instsvc.exe; Parameters: " remove"; StatusMsg: "Removing the service"; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; RunOnceId: RemoveService
-Filename: {app}\bin\instclient.exe; Parameters: " remove gds32"; StatusMsg: "Decrementing shared lib count for gds32 and removing it if appropriate."; MinVersion: 4.0,4.0; Flags: runminimized; 
-Filename: {app}\bin\instclient.exe; Parameters: " remove fbclient"; StatusMsg: "Decrementing shared lib count for fbclient and removing it if appropriate."; MinVersion: 4.0,4.0; Flags: runminimized;  
-Filename: {app}\bin\instreg.exe; Parameters: " remove"; StatusMsg: "Updating the registry"; MinVersion: 4.0,4.0; Flags: runminimized; RunOnceId: RemoveRegistryEntry
+Filename: {app}\bin\instsvc.exe; Parameters: " stop"; StatusMsg: {cm:instsvcStopMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; RunOnceId: StopService
+Filename: {app}\bin\instsvc.exe; Parameters: " remove"; StatusMsg: {cm:instsvcRemove}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; RunOnceId: RemoveService
+Filename: {app}\bin\instclient.exe; Parameters: " remove gds32"; StatusMsg: {cm:instclientDecLibCountGds32}; MinVersion: 4.0,4.0; Flags: runminimized;
+Filename: {app}\bin\instclient.exe; Parameters: " remove fbclient"; StatusMsg: {cm:instclientDecLibCountFbClient}; MinVersion: 4.0,4.0; Flags: runminimized;
+Filename: {app}\bin\instreg.exe; Parameters: " remove"; StatusMsg: {cm:instreg}; MinVersion: 4.0,4.0; Flags: runminimized; RunOnceId: RemoveRegistryEntry
 
 [UninstallDelete]
 Type: files; Name: {app}\*.lck
@@ -280,10 +309,6 @@ Var
   NoLegacyClient: Boolean;      // pass /nogds32 on command line.
   CopyFbClient: Boolean;     // pass /copyfbclient on command line.
 
-Const
-  FB15RUNNING =    'An existing Firebird 1.5 Server is running.'
-         +#13#13 + 'You must close the application or stop the '
-         +#13    + '       service before continuing.';
 
 #include "FirebirdInstallSupportFunctions.inc"
 #include "FirebirdInstallEnvironmentChecks.inc"
@@ -303,11 +328,6 @@ begin
 if ProductsInstalledCount = 0 then
   exit;
 
-if ProductsInstalledCount = 1 then
-  prodstr := 'version has'
-else
-  prodstr := 'versions have';
-
 SetArrayLength(InstallSummaryArray,ProductsInstalledCount);
 for product := 0 to MaxProdInstalled -1 do begin
   if (ProductsInstalledArray[product].InstallType <> NotInstalled) then begin
@@ -316,23 +336,23 @@ for product := 0 to MaxProdInstalled -1 do begin
 
     if (ProductsInstalledArray[product].ServerVersion <> '') then begin
       if ((ProductsInstalledArray[product].InstallType AND ClassicServerInstall) = ClassicServerInstall) then
-        InstallSummaryArray[i] := InstallSummaryArray[i] + ' Classic Server install.'
+        InstallSummaryArray[i] := InstallSummaryArray[i] + ' '+ExpandConstant('{cm:ClassicServerInstall}')
       else
-        InstallSummaryArray[i] := InstallSummaryArray[i] + ' Super Server install.'
+        InstallSummaryArray[i] := InstallSummaryArray[i] + ' '+ExpandConstant('{cm:SuperServerInstall}')
       end
     else begin
       if (ProductsInstalledArray[product].GBAKVersion <> '') then
-        InstallSummaryArray[i] := InstallSummaryArray[i] + ' Admin and Dev. Tools install.'
+        InstallSummaryArray[i] := InstallSummaryArray[i] + ' '+ExpandConstant('{cm:DeveloperInstall}')
       else
-        InstallSummaryArray[i] := InstallSummaryArray[i] + ' Minimal client install. '
+        InstallSummaryArray[i] := InstallSummaryArray[i] + ' '+ExpandConstant('{cm:ClientInstall}')
     end;
 
     if ((ProductsInstalledArray[product].InstallType AND BrokenInstall) = BrokenInstall) then
       InstallSummaryArray[i] := InstallSummaryArray[i]
-      + #13 + '   (Install appears broken due to version string mismatch.)'
+      + #13 + ExpandConstant('{cm:PreviousInstallBroken}')
     else
       InstallSummaryArray[i] := InstallSummaryArray[i]
-      + #13 + '   (Installation appears to be correct.)'
+      + #13 + ExpandConstant('{cm:PreviousInstallGood}')
     ;
 
     i:= i+1;
@@ -345,20 +365,26 @@ for i:=0 to ProductsInstalledCount-1 do
 //If FB2 is installed
 If ((ProductsInstalled AND FB2) = FB2) then
       InstallSummary := InstallSummary
-      +#13 + 'This version of Firebird will become the default install.'
-      +#13 + 'Also, take note that installing this version of Firebird '
-      +#13 + 'when a later version is already installed may lead to '
-      +#13 + 'unpredictable results. '
-      +#13;
+      +#13 + ExpandConstant('{cm:InstallSummarySuffix1}')
+      +#13 + ExpandConstant('{cm:InstallSummarySuffix2}')
+      +#13 + ExpandConstant('{cm:InstallSummarySuffix3}')
+      +#13 + ExpandConstant('{cm:InstallSummarySuffix4}')
+      +#13
+;
 
-StatusDescription := Format2('Pre-installation analysis indicates that %s existing Firebird or Interbase %s been found.',
-        IntToStr(ProductsInstalledCount), prodstr);
-Result := StatusDescription
-    +#13 + InstallSummary
-    +#13 + ' If you continue with this installation Firebird will be installed but not configured.'
-    +#13 + ' You will have to complete installation manually.'
+if ProductsInstalledCount = 1 then
+  StatusDescription := Format2(ExpandConstant('{cm:InstallProducts}'), IntToStr(ProductsInstalledCount), ExpandConstant('{cm:InstalledProdCountSingular}'))
+else
+  StatusDescription := Format2(ExpandConstant('{cm:InstallProducts}'), IntToStr(ProductsInstalledCount), ExpandConstant('{cm:InstalledProdCountPlural}'));
+
+  Result := StatusDescription
     +#13
-    +#13 + ' Do you want to CANCEL this installation?';
+    +#13 + InstallSummary
+    +#13 + ExpandConstant('{cm:InstallSummaryCancel1}')
+    +#13 + ExpandConstant('{cm:InstallSummaryCancel2}')
+    +#13
+    +#13 + ExpandConstant('{cm:InstallSummaryCancel3}')
+    +#13
 end;
 
 function AnalysisAssessment: boolean;
@@ -375,13 +401,17 @@ begin
     //install were in vain and Firebird 1.5 _is_ running...
     if ( FirebirdOneFiveRunning ) then begin
       result := false;
-      MsgBox(FB15RUNNING, mbError, MB_OK);
+      MsgBox( #13+ExpandConstant('{cm:Fb15Running1}')
+      +#13
+      +#13+ExpandConstant('{cm:Fb15Running2}')
+      +#13+ExpandConstant('{cm:Fb15Running3}')
+      +#13, mbError, MB_OK);
       exit;
       end
     else begin
       result := true;
       exit;
-  end;
+    end;
 
   //If Fb15 RC is installed then we can install over it.
   //unless we find the server running.
@@ -390,7 +420,11 @@ begin
      ((ProductsInstalled AND FB15RC) = FB15RC)) then
     if ( FirebirdOneFiveRunning ) then begin
       result := false;
-      MsgBox(FB15RUNNING, mbError, MB_OK);
+      MsgBox( #13+ExpandConstant('{cm:Fb15Running1}')
+      +#13
+      +#13+ExpandConstant('{cm:Fb15Running2}')
+      +#13+ExpandConstant('{cm:Fb15Running3}')
+      +#13, mbError, MB_OK);
       exit;
       end
     else begin
