@@ -1,3 +1,90 @@
+  **************
+  * v1.5 Alpha 5
+  **************
+
+	* FIRST/SKIP and ORDER BY changes.
+        1. Implemented ORDER BY clause in subqueries.
+        2. Disallowed FIRST/SKIP for views.
+        3. Allowed zero as valid argument for FIRST.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+	
+	* Fixed unregistered bug.
+        Buffer overflow (MAXPATHLEN) and rewritten local function dirname.
+      Contributor(s):
+        Erik Kunze <erik.kunze@philosys.de>
+
+	* Fixed unregistered bug.
+        Make SQLDA parameter mapping consistent with order and number of parameters in source SQL string.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+	* Fixed unregistered bug.
+        Crash when grouping by invariant subquery.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Improved optimizer.
+        Let sub-selects also use indices when their parent is a stored procedure.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+	* Fixed unregistered bug.
+        Removed request size limitation.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed Alpha 4 bug.
+       Nulls first/last and collation handling in "order by" clause of unions.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Fixed alpha 4 bug.
+        Optimizer, LEFT OUTER JOIN and error "no current record for fetch operation".
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+	* Fixed Alpha 4 bug.
+        Wrong privileges checks.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed alpha 4 bug.
+        UDF node didn't contain any character set, was always NONE.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Generic code cleanup.
+		Renamings, new safe macros, support for mingw.
+      Contributor(s):
+        Erik Kunze <erik.kunze@philosys.de>,
+        Ignacio J. Ortega <nacho@siapi.es>,
+        Dimitry Sibiryakov <sd@topol.udm.net>
+
+    * Fixed Alpha 4 bug.
+       Little bug in explicit locking implementation.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Improved optimizer.
+        Better handling of AND nodes inside an OR node.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Fixed Alpha 4 bug.
+       Restore problem for databases having views that use procedures AND are used by procedures.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Fixed Alpha 4 bug.
+        Bad performance of the memory manager and some memory leaks.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed Alpha 4 bug.
+        Wrong ordinals of GDS32 exports.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
 
   **************
   * v1.5 Alpha 4
