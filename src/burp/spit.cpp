@@ -1097,7 +1097,7 @@ SLONG cnt, SLONG * total_int)
 			break;
 
 		default:
-			gds_assert(write_cnt == read_cnt);
+			fb_assert(write_cnt == read_cnt);
 			break;
 		}
 
