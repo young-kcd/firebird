@@ -64,15 +64,6 @@ if "%VS_VER%"=="msvc6" (
 @mkdir %ROOT_PATH%\output\doc
 @mkdir %ROOT_PATH%\output\include
 @mkdir %ROOT_PATH%\output\lib
-:: @mkdir %ROOT_PATH%\output\examples
-:: @mkdir %ROOT_PATH%\output\examples\api
-:: @mkdir %ROOT_PATH%\output\examples\build_unix
-:: @mkdir %ROOT_PATH%\output\examples\build_win32
-:: @mkdir %ROOT_PATH%\output\examples\dyn
-:: @mkdir %ROOT_PATH%\output\examples\empbuild
-:: @mkdir %ROOT_PATH%\output\examples\include
-:: @mkdir %ROOT_PATH%\output\examples\stat
-:: @mkdir %ROOT_PATH%\output\examples\udf
 ::
 @copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\bin\* %ROOT_PATH%\output\bin >nul
 @copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\intl\* %ROOT_PATH%\output\intl >nul
@@ -119,18 +110,6 @@ copy %ROOT_PATH%\src\include\gen\iberror.h %ROOT_PATH%\output\include > nul
 copy %ROOT_PATH%\src\extlib\ib_udf.sql %ROOT_PATH%\output\udf > nul
 copy %ROOT_PATH%\src\extlib\fbudf\fbudf.sql %ROOT_PATH%\output\udf > nul
 :: Examples
-:: @copy %ROOT_PATH%\examples\* %ROOT_PATH%\output\examples > nul
-:: @copy %ROOT_PATH%\examples\api\* %ROOT_PATH%\output\examples\api > nul
-:: @copy %ROOT_PATH%\examples\build_unix\* %ROOT_PATH%\output\examples\build_unix > nul
-:: @copy %ROOT_PATH%\examples\build_win32\* %ROOT_PATH%\output\examples\build_win32 > nul
-:: @copy %ROOT_PATH%\examples\dyn\* %ROOT_PATH%\output\examples\dyn > nul
-:: @copy %ROOT_PATH%\examples\empbuild\* %ROOT_PATH%\output\examples\empbuild > nul
-:: @copy %ROOT_PATH%\examples\include\* %ROOT_PATH%\output\examples\include > nul
-:: @copy %ROOT_PATH%\examples\stat\* %ROOT_PATH%\output\examples\stat > nul
-:: @copy %ROOT_PATH%\examples\udf\* %ROOT_PATH%\output\examples\udf > nul
-:: @copy %ROOT_PATH%\src\extlib\ib_udf* %ROOT_PATH%\output\examples\udf > nul
-:: @copy %ROOT_PATH%\src\extlib\fbudf\* %ROOT_PATH%\output\examples\udf > nul
-::
 @copy install_super.bat %ROOT_PATH%\output\bin >nul
 @copy install_classic.bat %ROOT_PATH%\output\bin >nul
 @copy uninstall.bat %ROOT_PATH%\output\bin >nul
