@@ -290,10 +290,6 @@ void CCH_flush_database(TDBB tdbb) {
 			continue;
 		}
 		NBAK_TRACE(("Redirect page=%d use=%d flags=%d", bdb->bdb_page, bdb->bdb_use_count, bdb->bdb_flags));
-		// As the result we can add a number of redundant pages to flush
-		// that were marked as dirty, but not released yet. This should
-		// not create problems except that we'll loose some time later
-		// during the flush itself
 		update_write_direction(tdbb, bdb);
 	}
 	BCB_MUTEX_RELEASE;
