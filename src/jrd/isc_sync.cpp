@@ -112,16 +112,12 @@ static UCHAR *next_shared_memory;
 #include <sys/stat.h>
 #include <sys/file.h>
 
-#if defined(FREEBSD) || defined(NETBSD) || defined(SINIXZ)
+#ifdef HAVE_SIGNAL_H
 #include <signal.h>
-#else
-#ifdef SOLARIS
-extern "C" {
-#include <sys/signal.h>
-};
-#else
-#include <sys/signal.h>
 #endif
+
+#ifdef HAVE_SYS_SIGNAL_H
+#include <sys/signal.h>
 #endif
 
 #include <errno.h>
@@ -143,16 +139,6 @@ extern "C" {
 #define FTOK_KEY	15
 #define PRIV		0666
 #define LOCAL_SEMAPHORES 4
-
-#ifdef SYSV_SIGNALS
-#define SIGVEC		FPTR_INT
-#endif
-
-#ifdef HAVE_SIGACTION 
-#ifndef SOLARIS
-#define SIGVEC		struct sigaction
-#endif
-#endif
 
 #ifndef GDS_RELAY
 #define GDS_RELAY	"/bin/gds_relay"
@@ -3906,7 +3892,6 @@ void ISC_set_timer(
 	sigvector(SIGALRM, &internal_handler, (struct sigvec *) client_handler);
 #else
 	internal_handler.sa_handler = (SIG_FPTR) SIG_DFL;
-//	internal_handler.sa_handler = (void(*)(int)) SIG_DFL;
 	memset(&internal_handler.sa_mask, 0, sizeof(internal_handler.sa_mask));
 	internal_handler.sa_flags = SA_RESTART;
 	sigaction(SIGALRM, &internal_handler,
