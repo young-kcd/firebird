@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.45 2003-01-16 17:47:04 skidder Exp $
+$Id: met.epp,v 1.46 2003-02-05 15:13:10 dimitr Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -4004,8 +4004,7 @@ static JRD_NOD parse_procedure_blr(
 	temp = FB_NEW_RPT(*tdbb->tdbb_default, length) str();
 	BLB_get_data(tdbb, blob, temp->str_data, length);
 	(*csb_ptr)->csb_blr = temp->str_data;
-	par_messages(tdbb, temp->str_data, (USHORT) blob->blb_length, procedure,
-				 csb_ptr);
+	par_messages(tdbb, temp->str_data, (USHORT) length, procedure, csb_ptr);
 	node =
 		PAR_blr(tdbb, (JRD_REL) NULL_PTR, temp->str_data, (CSB) NULL_PTR, csb_ptr,
 				&procedure->prc_request, FALSE, 0);
