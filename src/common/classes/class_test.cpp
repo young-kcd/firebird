@@ -300,9 +300,9 @@ void testAllocator() {
 	pool->verify_pool();
 	
 	printf("Deallocate the rest of small items in quasi-random order: ");
-	do {
+	while (items.getNext()) {
 		pool->free(items.current().item);
-	} while (items.getNext());
+	}
 	printf(" DONE\n");
 	pool->verify_pool();
 	

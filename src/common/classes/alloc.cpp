@@ -35,7 +35,7 @@
 #define FREE_PATTERN 0xDEADBEEF
 #define ALLOC_PATTERN 0xFEEDABED
 #ifdef DEBUG_GDS_ALLOC
-#define PATTERN_FILL(ptr,size,pattern) for (int _i=0;_i< size>>2;_i++) ((int*)(ptr))[_i]=(pattern)
+#define PATTERN_FILL(ptr,size,pattern) for (size_t _i=0;_i< size>>2;_i++) ((unsigned int*)(ptr))[_i]=(pattern)
 #else
 #define PATTERN_FILL(ptr,size,pattern) ((void)0)
 #endif
@@ -61,14 +61,7 @@ static void pool_out_of_memory()
 	throw std::bad_alloc();
 }
 
-static MemoryPool* processMemoryPool = MemoryPool::createPool(
-// Do global pool locking only for SS
-#ifdef SUPERSERVER
-	true
-#else
-	false
-#endif
-);
+static MemoryPool* processMemoryPool = MemoryPool::createPool();
 
 MemoryPool* MemoryPool::getProcessPool() {
 	return processMemoryPool;
@@ -114,7 +107,7 @@ void MemoryPool::external_free(void *blk) {
 	::free(blk);
 }
 
-inline void* MemoryPool::internal_alloc(size_t size) {
+void* MemoryPool::internal_alloc(size_t size) {
 	if (size == sizeof(FreeBlocksTree::ItemList))
 		// This condition is to handle case when nodelist and itemlist have equal size
 		if (sizeof(FreeBlocksTree::ItemList)!=sizeof(FreeBlocksTree::NodeList) || 
@@ -136,7 +129,7 @@ inline void* MemoryPool::internal_alloc(size_t size) {
 	assert(false);
 }
 
-inline void MemoryPool::internal_free(void* block) {
+void MemoryPool::internal_free(void* block) {
 	((PendingFreeBlock*)block)->next = pendingFree;
 	((MemoryBlock*)((char*)block-MEM_ALIGN(sizeof(MemoryBlock))))->used = false;
 	pendingFree = (PendingFreeBlock*)block;
@@ -149,20 +142,20 @@ void* MemoryPool::alloc(size_t size, SSHORT type
 	, char* file, int line
 #endif
 ) {
-	if (locking) lock.enter();
+	lock.enter();
 	void* result = int_alloc(size, type
 #ifdef DEBUG_GDS_ALLOC
 		, file, line
 #endif
 	);
 	if (needSpare) updateSpare();
-	if (locking) lock.leave();
+	lock.leave();
 	if (!result) pool_out_of_memory();
 	return result;
 }
 
 void MemoryPool::verify_pool() {
-	if (locking) lock.enter();
+	lock.enter();
 	assert (!pendingFree || needSpare); // needSpare flag should be set if we are in 
 										// a critically low memory condition
 	// check each block in each segment for consistency with free blocks structure
@@ -194,11 +187,11 @@ void MemoryPool::verify_pool() {
 			if (blk->last) break;
 		}
 	}
-	if (locking) lock.leave();
+	lock.leave();
 }
 
 void MemoryPool::print_pool(IB_FILE *file, bool used_only) {
-	if (locking) lock.enter();
+	lock.enter();
 	for (MemoryExtent *extent = extents; extent; extent=extent->next) {
 		if (!used_only)
 			ib_fprintf(file, "EXTENT %p:\n", extent);
@@ -228,10 +221,10 @@ void MemoryPool::print_pool(IB_FILE *file, bool used_only) {
 			if (blk->last) break;
 		}
 	}
-	if (locking) lock.leave();
+	lock.leave();
 }
 
-MemoryPool* MemoryPool::createPool(bool locking) {
+MemoryPool* MemoryPool::createPool() {
 	size_t alloc_size = FB_MAX(
 		// This is the exact initial layout of memory pool in the first extent //
 		MEM_ALIGN(sizeof(MemoryExtent)) +
@@ -254,8 +247,7 @@ MemoryPool* MemoryPool::createPool(bool locking) {
 		MEM_ALIGN(sizeof(MemoryExtent)) + 
 		MEM_ALIGN(sizeof(MemoryBlock)) + 
 		MEM_ALIGN(sizeof(MemoryPool)) + 
-		MEM_ALIGN(sizeof(MemoryBlock)),
-		locking);
+		MEM_ALIGN(sizeof(MemoryBlock)));
 	
 	MemoryBlock *poolBlk = (MemoryBlock*) (mem+MEM_ALIGN(sizeof(MemoryExtent)));
 	poolBlk->pool = pool;
@@ -308,6 +300,11 @@ void MemoryPool::deletePool(MemoryPool* pool) {
 		external_free(temp);
 		temp = next;
 	}
+#ifdef SUPERSERVER
+	pool->lock.~SpinLock();
+#else
+	pool->lock.~SharedSpinlock();
+#endif
 }
 
 void* MemoryPool::int_alloc(size_t size, SSHORT type
@@ -502,8 +499,9 @@ void MemoryPool::removeFreeBlock(MemoryBlock *blk) {
 }
 
 void MemoryPool::free(void *block) {
-	if (locking) lock.enter();
+	lock.enter();
 	MemoryBlock *blk = (MemoryBlock *)((char*)block - MEM_ALIGN(sizeof(MemoryBlock))), *prev;
+	assert(blk->used);
 	// Try to merge block with preceding free block
 	if ((prev = blk->prev) && !prev->used) {
 		removeFreeBlock(prev);
@@ -526,8 +524,8 @@ void MemoryPool::free(void *block) {
 					((MemoryBlock *)((char *)next+MEM_ALIGN(sizeof(MemoryBlock))+next->length))->prev = prev;
 			}
 		}
-		addFreeBlock(prev);
 		PATTERN_FILL((char*)prev+MEM_ALIGN(sizeof(MemoryBlock)),prev->length,FREE_PATTERN);
+		addFreeBlock(prev);
 	} else {	
 		MemoryBlock *next;
 		// Mark block as free
@@ -542,19 +540,11 @@ void MemoryPool::free(void *block) {
 			if (!next->last)
 				((MemoryBlock *)((char *)next+MEM_ALIGN(sizeof(MemoryBlock))+next->length))->prev = blk;
 		}
-		addFreeBlock(blk);
 		PATTERN_FILL((char*)blk+MEM_ALIGN(sizeof(MemoryBlock)),blk->length,FREE_PATTERN);
+		addFreeBlock(blk);
 	}
 	if (needSpare) updateSpare();
-	if (locking) lock.leave();
-}
-
-void* MemoryPool::InternalAllocator::alloc(size_t size) {
-	return ((MemoryPool*)this)->internal_alloc(size);
-}
-
-void MemoryPool::InternalAllocator::free(void* block) {
-	((MemoryPool*)this)->internal_free(block);
+	lock.leave();
 }
 
 } /* namespace Firebird */

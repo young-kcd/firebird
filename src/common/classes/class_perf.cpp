@@ -193,9 +193,9 @@ static void testAllocatorOverhead() {
 		bigItems.add(temp);
 	}
 	// Deallocate the rest of small items
-	do {
+	while (items.getNext()) {
 		items.current();
-	} while (items.getNext());
+	}
 	// Deallocate big items
 	if (bigItems.getFirst()) do {
 		bigItems.current();
@@ -230,47 +230,9 @@ static void testAllocatorMemoryPool() {
 		bigItems.add(temp);
 	}
 	// Deallocate the rest of small items
-	do {
+	while (items.getNext()) {
 		pool->free(items.current().item);
-	} while (items.getNext());
-	// Deallocate big items
-	if (bigItems.getFirst()) do {
-		pool->free(bigItems.current().item);
-	} while (bigItems.getNext());
-	Firebird::MemoryPool::deletePool(pool);
-	report();
-}
-
-static void testAllocatorMemoryPoolLocking() {
-	printf("Test run for Firebird::MemoryPool with locking...\n");
-	start();
-	Firebird::MemoryPool* pool = Firebird::MemoryPool::createPool(true);	
-	MallocAllocator allocator;
-	BePlusTree<AllocItem,AllocItem,MallocAllocator,DefaultKeyValue<AllocItem>,AllocItem> items(&allocator),
-		bigItems(&allocator);
-	// Allocate small items
-	int i, n = 0;	
-	for (i=0;i<ALLOC_ITEMS;i++) {
-		n = n * 47163 - 57412;
-		AllocItem temp = {n, pool->alloc((n % MAX_ITEM_SIZE + MAX_ITEM_SIZE)/2+1)};
-		items.add(temp);
 	}
-	// Deallocate half of small items
-	n = 0;
-	if (items.getFirst()) do {
-		pool->free(items.current().item);
-		n++;
-	} while (n < ALLOC_ITEMS/2 && items.getNext());	
-	// Allocate big items
-	for (i=0;i<BIG_ITEMS;i++) {
-		n = n * 47163 - 57412;
-		AllocItem temp = {n, pool->alloc((n % BIG_SIZE + BIG_SIZE)/2+1)};
-		bigItems.add(temp);
-	}
-	// Deallocate the rest of small items
-	do {
-		pool->free(items.current().item);
-	} while (items.getNext());
 	// Deallocate big items
 	if (bigItems.getFirst()) do {
 		pool->free(bigItems.current().item);
@@ -305,9 +267,9 @@ static void testAllocatorMalloc() {
 		bigItems.add(temp);
 	}
 	// Deallocate the rest of small items
-	do {
+	while (items.getNext()) {
 		free(items.current().item);
-	} while (items.getNext());
+	}
 	// Deallocate big items
 	if (bigItems.getFirst()) do {
 		free(bigItems.current().item);
@@ -342,10 +304,10 @@ static void testAllocatorOldPool() {
 		AllocItem temp = {n, pool->allocate((n % BIG_SIZE + BIG_SIZE)/2+1,0)};
 		bigItems.add(temp);
 	}
-/*	// Deallocate the rest of small items
-	do {
+	// Deallocate the rest of small items
+	while (items.getNext()) {
 		pool->deallocate(items.current().item);
-	} while (items.getNext());*/
+	}
 	// Deallocate big items
 	if (bigItems.getFirst()) do {
 		pool->deallocate(bigItems.current().item);
@@ -358,7 +320,6 @@ int main() {
 	testTree();
 	testAllocatorOverhead();
 	testAllocatorMemoryPool();
-	testAllocatorMemoryPoolLocking();
 	testAllocatorMalloc();
 	testAllocatorOldPool();
 }

@@ -88,8 +88,12 @@ class MemoryPool {
 private:
 	class InternalAllocator {
 	public:
-		void* alloc(size_t size);
-		void free(void* block);
+		void* alloc(size_t size) {
+			return ((MemoryPool*)this)->internal_alloc(size);
+		}
+		void free(void* block) {
+			((MemoryPool*)this)->internal_free(block);
+		}
 	};
 	typedef BePlusTree<BlockInfo, BlockInfo, InternalAllocator, 
 		DefaultKeyValue<BlockInfo>, BlockInfo> FreeBlocksTree;
@@ -103,18 +107,15 @@ private:
 #ifdef SUPERSERVER
 	Spinlock lock;
 #else
-	// FIXME: Shared memory lock needs to be here. Any attempt to use shared pool locking in CS will fail
-	Spinlock lock;
+	SharedSpinlock lock;
 #endif
-	bool locking;
 	
 	// Do not allow to create and destroy pool directly from outside
-	MemoryPool(void *first_extent, void *root_page, bool _locking) : 
+	MemoryPool(void *first_extent, void *root_page) : 
 		freeBlocks((InternalAllocator*)this, root_page),
 		extents((MemoryExtent *)first_extent), 
 		needSpare(false),
-		pendingFree(NULL),
-		locking(_locking)
+		pendingFree(NULL)
 	{
 	}
 
@@ -127,9 +128,9 @@ private:
 
 	static void external_free(void *blk);
 	
-	inline void* internal_alloc(size_t size);
+	void* internal_alloc(size_t size);
 
-	inline void internal_free(void* block);
+	void internal_free(void* block);
 
 	void updateSpare();
 	
@@ -145,7 +146,7 @@ private:
 	);
 
 public:
-	static MemoryPool* createPool(bool locking = false);
+	static MemoryPool* createPool();
 	
 	static MemoryPool* getProcessPool();
 
@@ -205,10 +206,10 @@ void* operator new[](size_t);
 
 #ifdef DEBUG_GDS_ALLOC
 inline void* operator new(size_t s, Firebird::MemoryPool* pool, char* file, int line) {
-	pool->alloc(s, 0, file, line);
+	return pool->alloc(s, 0, file, line);
 }
 inline void* operator new[](size_t s, Firebird::MemoryPool* pool, char* file, int line) {
-	pool->alloc(s, 0, pool, file, line);
+	return pool->alloc(s, 0, file, line);
 }
 #define FB_NEW(pool) new(pool,__FILE__,__LINE__)
 #define FB_NEW_RPT(pool,count) new(pool,count,__FILE__,__LINE__)

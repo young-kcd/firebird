@@ -64,6 +64,19 @@ public:
 
 #endif
 
+// Spinlock in shared memory. Not implemented yet !
+class SharedSpinlock {
+public:
+	SharedSpinlock() {
+	}
+	~SharedSpinlock() {
+	}
+	void enter() {
+	}
+	void leave() {
+	}
+};
+
 }
 
 #endif
