@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.38 2002-11-12 13:15:13 eku Exp $
+$Id: inet.cpp,v 1.39 2002-11-14 06:48:09 eku Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -106,9 +106,6 @@ $Id: inet.cpp,v 1.38 2002-11-12 13:15:13 eku Exp $
 extern "C" int innetgr(const char *, const char *, const char *, const char *);
 #endif
 
-#define GETHOSTBYNAME gethostbyname
-#define GETSERVBYNAME getservbyname
-#define GETHOSTNAME gethostname
 #define INET_RETRY_CALL		5
 
 #include "../remote/remote.h"
@@ -980,7 +977,7 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 
 /* U N I X style sockets */
 	THREAD_EXIT;
-	host = GETHOSTBYNAME(name);
+	host = gethostbyname(name);
 
 /* On Windows NT/9x, gethostbyname can only accomodate
  * 1 call at a time.  In this case it returns the error
@@ -994,7 +991,7 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 		int retry;
 		if (H_ERRNO == INET_RETRY_ERRNO) {
 			for (retry = 0; retry < INET_RETRY_CALL; retry++) {
-				host = GETHOSTBYNAME(name);
+				host = gethostbyname(name);
 				if (host)
 					break;
 			}
@@ -1031,7 +1028,7 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 
 	THREAD_EXIT;
 
-	service = GETSERVBYNAME(protocol, "tcp");
+	service = getservbyname(protocol, "tcp");
 #ifdef WIN_NT
 /* On Windows NT/9x, getservbyname can only accomodate
  * 1 call at a time.  In this case it returns the error
@@ -1043,7 +1040,7 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 		int retry;
 		if (H_ERRNO == INET_RETRY_ERRNO) {
 			for (retry = 0; retry < INET_RETRY_CALL; retry++) {
-				service = GETSERVBYNAME(protocol, "tcp");
+				service = getservbyname(protocol, "tcp");
 				if (service)
 					break;
 			}
@@ -1614,7 +1611,7 @@ static PORT alloc_port( PORT parent)
 	port->port_state = state_pending;
 	REMOTE_get_timeout_params(port, 0, 0);
 
-	GETHOSTNAME(buffer, sizeof(buffer));
+	gethostname(buffer, sizeof(buffer));
 	port->port_host = REMOTE_make_string(buffer);
 	port->port_connection = REMOTE_make_string(buffer);
 	sprintf(buffer, "tcp (%s)", port->port_host->str_data);
@@ -1817,7 +1814,7 @@ static PORT aux_request( PORT port, PACKET * packet)
 	}
 #else
 	THREAD_EXIT;
-	host = GETHOSTBYNAME(port->port_host->str_data);
+	host = gethostbyname(port->port_host->str_data);
 	THREAD_ENTER;
 	if (!host) {
 		sprintf(msg,
