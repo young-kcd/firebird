@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.44 2004-05-24 17:13:37 brodsom Exp $
+//	$Id: cob.cpp,v 1.45 2004-05-29 04:50:46 robocop Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -2648,7 +2648,8 @@ static void gen_finish( const act* action)
 	rdy* ready;
 
 	if (gpreGlob.sw_auto || ((action->act_flags & ACT_sql) &&
-					(action->act_type != ACT_disconnect))) {
+					(action->act_type != ACT_disconnect)))
+	{
 		printa(names[COLUMN], false, "IF %s NOT = 0 THEN", names[isc_trans_pos]);
 		printa(names[COLUMN], true,
 			   "    CALL \"%s\" USING %s, %s%s",

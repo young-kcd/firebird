@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.50 2004-05-24 17:16:02 brodsom Exp $
+ * $Id: show.epp,v 1.51 2004-05-29 04:55:23 robocop Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -185,11 +185,11 @@ static const UCHAR metadata_text_bpb[] = {
 
 // trigger action helpers
 
-inline int TRIGGER_ACTION_PREFIX(int value){
+inline int TRIGGER_ACTION_PREFIX(int value) {
 	return (value + 1) & 1;
 }
 
-inline int TRIGGER_ACTION_SUFFIX(int value, int slot){
+inline int TRIGGER_ACTION_SUFFIX(int value, int slot) {
 	return ((value + 1) >> (slot * 2 - 1)) & 3;
 }
 

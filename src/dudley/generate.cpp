@@ -208,9 +208,9 @@ static void generate( STR blr, DUDLEY_NOD node)
 		p = (SCHAR *) symbol->sym_string;
 		if (l) {
 			check_blr(blr, l);
-			do
+			do {
 				blr->add_byte(*p++);
-			while (--l);
+			} while (--l);
 		}
 		generate(blr, node->nod_arg[0]);
 		return;
@@ -309,9 +309,9 @@ static void generate( STR blr, DUDLEY_NOD node)
 		default:
 			if (l) {
 				check_blr(blr, l);
-				do
+				do {
 					blr->add_byte(*p++);
-				while (--l);
+				} while (--l);
 			}
 		}
 		return;
@@ -598,9 +598,9 @@ static void get_set_generator( STR blr, DUDLEY_NOD node)
 	l = sizeof(gen_prologue);
 	p = gen_prologue;
 	check_blr(blr, l);
-	do
+	do {
 		blr->add_byte(*p++);
-	while (--l);
+	} while (--l);
 
 /* stuff in the name length and the name */
 
@@ -610,9 +610,9 @@ static void get_set_generator( STR blr, DUDLEY_NOD node)
 	p = (SCHAR *) symbol->sym_string;
 	if (l) {
 		check_blr(blr, l);
-		do
+		do {
 			blr->add_byte(*p++);
-		while (--l);
+		} while (--l);
 	}
 
 /* now for the increvent value */
@@ -631,8 +631,8 @@ static void get_set_generator( STR blr, DUDLEY_NOD node)
 	l = sizeof(gen_epilogue);
 	p = (SCHAR *) gen_epilogue;
 	check_blr(blr, l);
-	do
+	do {
 		blr->add_byte(*p++);
-	while (--l);
+	} while (--l);
 }
 

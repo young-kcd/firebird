@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cme.cpp,v 1.28 2004-05-24 17:13:36 brodsom Exp $
+//	$Id: cme.cpp,v 1.29 2004-05-29 04:50:46 robocop Exp $
 //
 
 #include "firebird.h"
@@ -1029,7 +1029,9 @@ void CME_relation(gpre_ctx* context, gpre_req* request)
 		{
 			if ((context->ctx_alias) &&
 				!(request->req_database->dbb_flags & DBB_v3))
-					request->add_byte(blr_relation2);
+			{
+				request->add_byte(blr_relation2);
+			}
 			else
 				request->add_byte(blr_relation);
 			CMP_stuff_symbol(request, relation->rel_symbol);
@@ -1037,7 +1039,9 @@ void CME_relation(gpre_ctx* context, gpre_req* request)
 
 		if ((context->ctx_alias) &&
 			!(request->req_database->dbb_flags & DBB_v3))
-				request->add_cstring(context->ctx_alias);
+		{
+			request->add_cstring(context->ctx_alias);
+		}
 		request->add_byte(context->ctx_internal);
 	}
 	else if (procedure = context->ctx_procedure)

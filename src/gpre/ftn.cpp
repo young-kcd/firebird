@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.46 2004-05-24 17:13:37 brodsom Exp $
+//	$Id: ftn.cpp,v 1.47 2004-05-29 04:50:46 robocop Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -2318,7 +2318,8 @@ static void gen_finish(const act* action)
 	DBB db = NULL;
 
 	if (gpreGlob.sw_auto || ((action->act_flags & ACT_sql) &&
-					(action->act_type != ACT_disconnect))) {
+					(action->act_type != ACT_disconnect)))
+	{
 		printa(COLUMN, "IF (GDS__TRANS .NE. 0) THEN");
 		printa(COLUMN, "    CALL ISC_%s_TRANSACTION (%s, GDS__TRANS)",
 			   (action->act_type != ACT_rfinish) ? "COMMIT" : "ROLLBACK",

@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.60 2004-05-24 17:13:37 brodsom Exp $
+//  $Id: gpre.cpp,v 1.61 2004-05-29 04:52:00 robocop Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -270,7 +270,7 @@ int main(int argc, char* argv[])
 	gpreGlob.errors_global	= 0;
 	warnings_global			= 0;
 	fatals_global			= 0;
-	gpreGlob.ADA_create_database= 1;
+	gpreGlob.ADA_create_database	= 1;
 
 	bool use_lang_internal_gxx_output;
 
@@ -708,7 +708,9 @@ int main(int argc, char* argv[])
 		}
 	}	// for (...)
 
-	if ((gpreGlob.sw_auto) && (gpreGlob.default_user || gpreGlob.default_password || gpreGlob.default_lc_ctype)) {
+	if ((gpreGlob.sw_auto) && (gpreGlob.default_user || gpreGlob.default_password
+		|| gpreGlob.default_lc_ctype))
+	{
 		CPR_warn("gpre: -user, -password and -charset switches require -manual");
 	}
 //  
@@ -1048,7 +1050,8 @@ TOK CPR_eol_token()
 	gpreGlob.prior_token.tok_position = last_position;
 
 	last_position =
-		gpreGlob.token_global.tok_position + gpreGlob.token_global.tok_length + gpreGlob.token_global.tok_white_space - 1;
+		gpreGlob.token_global.tok_position + gpreGlob.token_global.tok_length
+		+ gpreGlob.token_global.tok_white_space - 1;
 	TEXT* p = gpreGlob.token_global.tok_string;
 	SSHORT num_chars = 0;
 
@@ -1575,7 +1578,8 @@ static void finish_based( act* action)
 			field = NULL;
 			for (db = gpreGlob.isc_databases; db; db = db->dbb_next)
 				if (relation =
-					MET_get_relation(db, based_on->bas_rel_name->str_string, "")) {
+					MET_get_relation(db, based_on->bas_rel_name->str_string, ""))
+				{
 					if (field) {
 						/* The field reference is ambiguous.  It exists in more
 						   than one database. */
@@ -1977,7 +1981,8 @@ static TOK get_token()
 	gpreGlob.prior_token.tok_position = last_position;
 
 	last_position =
-		gpreGlob.token_global.tok_position + gpreGlob.token_global.tok_length + gpreGlob.token_global.tok_white_space - 1;
+		gpreGlob.token_global.tok_position + gpreGlob.token_global.tok_length
+		+ gpreGlob.token_global.tok_white_space - 1;
 	int start_line = line_global;
 	SLONG start_position = position;
 	gpreGlob.token_global.tok_charset = NULL;
@@ -2123,7 +2128,8 @@ static TOK get_token()
 				}
 			}
 			else if (next == EOF
-					 || (next == '\n' && (p[-1] != '\\' || gpreGlob.sw_sql))) {
+					 || (next == '\n' && (p[-1] != '\\' || gpreGlob.sw_sql)))
+			{
 				return_char(*p);
 
 				/*  Decrement, then increment line counter, for accuracy of 
@@ -2254,7 +2260,9 @@ static TOK get_token()
 //IF symbol is null AND it is not a quoted string AND -e switch was specified
 //THEN search again using HSH_lookup2().
 //*  
-	if ((gpreGlob.token_global.tok_symbol == NULL) && (!isQuoted(gpreGlob.token_global.tok_type)) && gpreGlob.sw_case) {
+	if ((gpreGlob.token_global.tok_symbol == NULL) && (!isQuoted(gpreGlob.token_global.tok_type))
+		&& gpreGlob.sw_case)
+	{
 		gpreGlob.token_global.tok_symbol = symbol = HSH_lookup2(gpreGlob.token_global.tok_string);
 		if (symbol && symbol->sym_type == SYM_keyword)
 			gpreGlob.token_global.tok_keyword = (KWWORDS) symbol->sym_keyword;

@@ -407,10 +407,10 @@ public:
 	UCHAR* str_start;			/* start of string buffer */
 	UCHAR* str_current;			/* current position in string being built */
 	USHORT str_length;			/* length of buffer */
-	inline void add_byte(const int byte){
+	inline void add_byte(const int byte) {
 		*str_current++ = byte;
 	}
-	inline void add_word(const int word){
+	inline void add_word(const int word) {
 		add_byte(word);
 		add_byte(word >> 8);
 	}
