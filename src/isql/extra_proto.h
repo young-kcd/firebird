@@ -24,7 +24,7 @@
 #ifndef ISQL_EXTRA_PROTO_H
 #define ISQL_EXTRA_PROTO_H
 
-int	EXTRACT_ddl(int, SCHAR*);
+int	EXTRACT_ddl(int, const SCHAR*);
 int	EXTRACT_list_table(const SCHAR*, const SCHAR*, bool, SSHORT);
 // CVC: Not found.
 //void	EXTRACT_list_view(SCHAR*);

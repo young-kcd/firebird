@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.45 2004-11-10 04:20:17 robocop Exp $
+ * $Id: extract.epp,v 1.46 2004-11-23 11:03:47 robocop Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -94,7 +94,7 @@ static TEXT SQL_identifier2[BUFFER_LENGTH128];
 
 
 int EXTRACT_ddl(int flag,
-				   SCHAR* tabname)
+				   const SCHAR* tabname)
 {
 /**************************************
  *

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.59 2004-11-07 10:30:46 robocop Exp $
+ * $Id: show.epp,v 1.60 2004-11-23 11:03:47 robocop Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -437,7 +437,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 }
 
 
-processing_state SHOW_grants(SCHAR* object,
+processing_state SHOW_grants(const SCHAR* object,
 				const SCHAR* terminator,
 				USHORT obj_type)
 {
@@ -455,7 +455,7 @@ processing_state SHOW_grants(SCHAR* object,
 }
 
 
-processing_state SHOW_grants2 (SCHAR* object,
+processing_state SHOW_grants2 (const SCHAR* object,
 				  const SCHAR* terminator,
 				  USHORT obj_type,
 				  const TEXT* optional_msg)
