@@ -125,7 +125,12 @@ EXTERN_texttype (ISO88596_cp_init);
 EXTERN_texttype (ISO88597_cp_init);
 EXTERN_texttype (ISO88598_cp_init);
 EXTERN_texttype (ISO88599_cp_init);
+
+/* Latin 7 character set */
 EXTERN_texttype (ISO885913_cp_init);
+
+/* Latin 7 collations */
+EXTERN_texttype (ISO885913_c1_init);
 
 EXTERN_texttype(WIN1250_c0_init);
 EXTERN_texttype(WIN1250_c1_init);

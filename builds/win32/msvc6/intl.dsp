@@ -165,6 +165,10 @@ SOURCE=..\..\..\src\intl\lc_iso8859_1.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\intl\lc_iso8859_13.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\intl\lc_iso8859_2.c
 # End Source File
 # Begin Source File
@@ -626,6 +630,10 @@ SOURCE=..\..\..\src\intl\collations\undef.h
 # Begin Source File
 
 SOURCE=..\..\..\src\intl\collations\win1251_ua.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\collations\xx885913lt.h
 # End Source File
 # Begin Source File
 
