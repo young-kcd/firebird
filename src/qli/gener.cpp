@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gener.cpp,v 1.9 2002-11-30 17:45:02 hippoman Exp $
+$Id: gener.cpp,v 1.10 2002-12-13 14:04:15 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -708,6 +708,11 @@ static void gen_descriptor( DSC * desc, QLI_REQ request)
 	case dtype_blob:
 	case dtype_quad:
 		STUFF(blr_quad);
+		STUFF(desc->dsc_scale);
+		break;
+
+	case dtype_int64:
+		STUFF(blr_int64);
 		STUFF(desc->dsc_scale);
 		break;
 
