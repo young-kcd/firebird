@@ -314,22 +314,13 @@ int EXT_get(RSB rsb)
 
 	switch (rsb->rsb_type) {
 		case rsb_ext_sequential:
-			if (get_sequential(rsb))
-				return TRUE;
-			else 
-				return FALSE;
+			return (get_sequential(rsb)) ? TRUE : FALSE;
 	
 		case rsb_ext_indexed:
-			if (get_indexed(rsb))
-				return TRUE
-			else
-				return FALSE;
+			return (get_indexed(rsb)) ? TRUE : FALSE;
 	
 		case rsb_ext_dbkey:
-			if (get_dbkey(rsb))
-				return TRUE
-			else
-				return FALSE
+			return (get_dbkey(rsb)) ? TRUE : FALSE;
 	
 		default:
 			IBERROR(181);			/* msg 181 external access type not implemented */

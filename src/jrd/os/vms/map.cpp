@@ -456,7 +456,7 @@ int MAP_status_to_gds(ISC_STATUS * vms_status, ISC_STATUS * gds_status)
 				BUGCHECK(235);	/* msg 235 Unimplemented conversion, FAO directive X,U */
 			*tmp++ = gds_arg_number;
 			number = *tmp++ = *vms_status++;
-			flag = (number == 1) ? false : true;
+			flag = (number != 1);
 			sprintf(pw2, "%%x%x", number);
 			while (*pw2)
 				++pw2;
