@@ -98,9 +98,6 @@ private:
 	time_t seconds;
 	time_t fractions;
 
-	TimeStamp(time_t s, time_t f)
-		: seconds(s), fractions(f) {}
-
 	void generate()
 	{
 		// Only millisecond precision is supported currently
