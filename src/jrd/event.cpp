@@ -1317,7 +1317,7 @@ static void exit_handler(void *arg)
 
 #ifndef SERVER
 #ifdef SOLARIS_MT
-	ISC_unmap_object(local_status, &EVENT_data, &EVENT_process,
+	ISC_unmap_object(local_status, &EVENT_data, (UCHAR**)&EVENT_process,
 					 sizeof(struct prb));
 #endif
 	ISC_unmap_file(local_status, &EVENT_data, 0);
