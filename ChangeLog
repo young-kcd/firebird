@@ -1,3 +1,9 @@
+2005-01-29 10:22  robocop
+
+	* firebird2/src/remote/inet.cpp (1.139):
+	
+	Fix recent commit by Frank. I cannot compile to verify.
+
 2005-01-28 15:07  dimitr
 
 	* firebird2/doc/sql.extensions/: README.expression_indices (1.2),
