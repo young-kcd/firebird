@@ -28,7 +28,10 @@
 #ifndef ALLOC_H
 #define ALLOC_H
 
+#ifdef HAVE_MALLOC_H
 #include <malloc.h>
+#endif
+
 #include "../../include/fb_types.h"
 #include "../../include/firebird.h"
 #include "../jrd/common.h"

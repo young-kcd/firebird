@@ -28,7 +28,9 @@
 
 #include <assert.h>
 #include <string.h>
+#ifdef HAVE_MALLOC_H
 #include <malloc.h>
+#endif
 #include "vector.h"
 // FIXME: Temporary until we switch out of using STL
 #include <new>

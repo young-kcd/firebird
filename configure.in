@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.116 2003-02-13 12:00:22 eku Exp $
+dnl $Id: configure.in,v 1.117 2003-02-13 22:49:17 bellardo Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -260,6 +260,7 @@ AC_CHECK_HEADERS(grp.h)
 AC_CHECK_HEADERS(pwd.h)
 AC_CHECK_HEADERS(libio.h)
 AC_CHECK_HEADERS(locale.h)
+AC_CHECK_HEADERS(malloc.h)
 AC_CHECK_HEADERS(math.h)
 AC_CHECK_HEADERS(pthread.h)
 AC_CHECK_HEADERS(sys/types.h)
