@@ -1,3 +1,48 @@
+2003-08-31 21:38  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	fix: Unique index must be complete used else we keep on looking for
+	another one.
+
+2003-08-31 17:01  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	fix: Choose a unique (prefer less fields) above other indices
+
+2003-08-31 14:55  robocop
+
+	* firebird2/src/jrd/svc.cpp:
+	
+	Kill warning
+
+2003-08-31 14:27  robocop
+
+	* firebird2/src/gpre/sqe.cpp:
+	
+	Remove duplicate CVS $Id tag
+
+2003-08-31 14:23  robocop
+
+	* firebird2/src/qli/dtr.cpp:
+	
+	Unused var
+
+2003-08-31 11:08  epocman
+
+	* firebird2/src/utilities/: install_nt.h, install_reg.cpp,
+	install_svc.cpp, regis_proto.h, registry.cpp, servi_proto.h,
+	services.cpp:
+	
+	OEM/Ansi conversions, command-line password, other minor updates.
+
+2003-08-31 09:41  dimitr
+
+	* firebird2/doc/: install_win32.txt, install_win32.txt:
+	
+	Small corrections.
+
 2003-08-30 21:51  arnobrinkman
 
 	* firebird2/src/jrd/opt.cpp:
