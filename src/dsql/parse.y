@@ -71,12 +71,6 @@
  * 2003.10.05 Dmitry Yemanov: Added support for explicit cursors in PSQL.
  */
 
-#if defined(DEV_BUILD) && defined(WIN_NT) && defined(SUPERSERVER)
-#include <windows.h>
-#include <stdio.h>
-/*#include <wincon.h>*/
-#endif
-
 #include "firebird.h"
 #include <stdio.h>
 #include <stdlib.h>
