@@ -402,6 +402,7 @@ void CFBDialog::ViewRegistryEntries()
 			status_info = (LPQUERY_SERVICE_CONFIG) LocalAlloc(LPTR, 4096); 
 			if (!QueryServiceConfig(hService,status_info,4096,&dwBytesNeeded))
 			{
+				LocalFree( status_info );
 				HandleError(0, "ViewRegistryEntries - Cannot query Guardian service.");
 			}
 			else
@@ -413,6 +414,7 @@ void CFBDialog::ViewRegistryEntries()
 			}
 			
 			CloseServiceHandle (hService);
+			LocalFree( status_info );
 		}
 
 		//Now do the same again, but this time only look at the server itself
@@ -425,6 +427,7 @@ void CFBDialog::ViewRegistryEntries()
 			status_info = (LPQUERY_SERVICE_CONFIG) LocalAlloc(LPTR, 4096); 
 			if (!QueryServiceConfig(hService,status_info,4096,&dwBytesNeeded))
 			{
+				LocalFree( status_info );
 				HandleError(0, "ViewRegistryEntries - Cannot query server service.");
 			}
 			else
@@ -441,7 +444,7 @@ void CFBDialog::ViewRegistryEntries()
 			{
 				fb_status.SystemLogin = false;
 			}
-
+			LocalFree( status_info );
 			CloseServiceHandle (hService);
 		}
 	}
