@@ -1,8 +1,8 @@
-dnl $Id: configure.in,v 1.168 2003-10-29 07:57:19 eku Exp $
+dnl $Id: configure.in,v 1.169 2003-10-30 07:26:27 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
-AC_PREREQ(2.53)
+AC_PREREQ(2.57)
 AC_INIT(src)
 AC_CONFIG_AUX_DIR(builds/make.new/config)
 AC_CACHE_VAL(ac_cv_prog_make_set, [AC_PROG_MAKE_SET])
@@ -21,7 +21,7 @@ dnl ############################# ADD TESTS BELOW ##############################
 AC_CANONICAL_SYSTEM
 
 case "$target_cpu" in
-  powerpc) AC_DEFINE(PowerPC) ;;
+  powerpc) AC_DEFINE(PowerPC, 1, [Define this if CPU is PowerPC]) ;;
 esac
 
 CPU_TYPE=$host_cpu dnl EKU: Should this be target_cpu ???
@@ -35,7 +35,7 @@ case "$target" in
   *-*-darwin*)
     MAKEFILE_PREFIX=darwin
     PLATFORM=DARWIN
-    AC_DEFINE(DARWIN)
+    AC_DEFINE(DARWIN, 1, [Define this if OS is  DARWIN])
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=N
     SHRLIB_EXT=so
@@ -44,7 +44,7 @@ case "$target" in
   *-*-freebsd*)
     MAKEFILE_PREFIX=freebsd 
     PLATFORM=FREEBSD
-    AC_DEFINE(FREEBSD)
+    AC_DEFINE(FREEBSD, 1, [Define this if OS is  FreeBSD])
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=N
     SHRLIB_EXT=so
@@ -53,7 +53,7 @@ case "$target" in
   sparc*-*-linux-*)
     MAKEFILE_PREFIX=linux_sparc32
     PLATFORM=LINUX
-    AC_DEFINE(LINUX)
+    AC_DEFINE(LINUX, 1, [Define this if OS is  Linux])
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
@@ -71,7 +71,7 @@ case "$target" in
   *-*-netbsd*)
     MAKEFILE_PREFIX=netbsd
     PLATFORM=NETBSD
-    AC_DEFINE(NETBSD)
+    AC_DEFINE(NETBSD, 1, [Define this if OS is  NetBSD])
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=N
     SHRLIB_EXT=so
@@ -80,7 +80,7 @@ case "$target" in
   *-*-hpux*)
     MAKEFILE_PREFIX=hpux
     PLATFORM=hpux
-    AC_DEFINE(hpux)
+    AC_DEFINE(hpux, 1, [Define this if OS is  HP-UX])
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=N
     SHRLIB_EXT=so
@@ -89,7 +89,7 @@ case "$target" in
   i386-pc-solaris*)
     MAKEFILE_PREFIX=solx86
     PLATFORM=solx86
-    AC_DEFINE(solx86)
+    AC_DEFINE(solx86, 1, [Define this if OS is  Solarix x86])
     LOCK_MANAGER_FLG=N
     EDITLINE_FLG=N
     SHRLIB_EXT=so
@@ -98,7 +98,7 @@ case "$target" in
   sparc-sun-solaris*)
     MAKEFILE_PREFIX=solaris
     PLATFORM=SOLARIS
-    AC_DEFINE(SOLARIS)
+    AC_DEFINE(SOLARIS, 1, [Define this if OS is  Solaris Sparc])
     LOCK_MANAGER_FLG=N
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
@@ -107,7 +107,7 @@ case "$target" in
   i*-sni-sysv4)
     MAKEFILE_PREFIX=sinixz
     PLATFORM="SINIX-Z"
-    AC_DEFINE(SINIXZ)
+    AC_DEFINE(SINIXZ, 1, [Define this if OS is  SINIX-Z])
     LOCK_MANAGER_FLG=N
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
@@ -116,7 +116,7 @@ case "$target" in
   *-*-mingw*)
     MAKEFILE_PREFIX=mingw
     PLATFORM=win32
-    AC_DEFINE(WIN_NT)
+    AC_DEFINE(WIN_NT, 1, [Define this if OS is  Windows NT])
     LOCK_MANAGER_FLG=N
     EDITLINE_FLG=N
     SHRLIB_EXT=dll
@@ -138,10 +138,13 @@ AC_PROG_AWK
 AC_PROG_CC  dnl EKU: C++ programs should not use CC, but at the moment all
             dnl makefiles use $(CC) to link objects. This has to be changed!
 AC_PROG_CXX
+AC_PROG_CPP
+AC_PROG_INSTALL
 AC_PROG_LN_S
 dnl EKU: AC_PROG_RANLIB has been superseded by AC_PROG_LIBTOOL
 AC_LIBTOOL_DLOPEN
 AC_LIBTOOL_WIN32_DLL
+AC_PROG_MAKE_SET
 AC_PROG_LIBTOOL
 AC_PROG_YACC
 
@@ -181,7 +184,8 @@ AC_ARG_ENABLE(raw-devices,
      *)   AC_MSG_ERROR(bad value '${enableval}' for --enable-raw-devices);;
    esac])
 if test "$RAW_DEVICES_FLG" = "Y"; then
-  AC_DEFINE(SUPPORT_RAW_DEVICES)
+  AC_DEFINE(SUPPORT_RAW_DEVICES, 1,
+    [Define this if databases on raw devices should be supported])
 fi
 
 MANAGER_PROCESS_TARGET=
@@ -201,7 +205,8 @@ if test "$FIREBIRD_ARCH_TYPE" = "classic"; then
     dnl      at least SOLARIS-MT, DARWIN and SINIX-Z do not require a lock
     dnl      manager process
     dnl EKU: is this really true???
-    AC_DEFINE(MANAGER_PROCESS)
+    AC_DEFINE(MANAGER_PROCESS, 1,
+      [Define this if the lock manager process is needed])
     MANAGER_PROCESS_TARGET=lock_mgr
   fi
 fi
@@ -228,11 +233,11 @@ AC_ARG_WITH(service-port,
   [  --with-service-port     specify inet service port (default=3050)],
   [FB_SERVICE_PORT=${withval}])
 AC_ARG_WITH(ipc-name,
-  [  --with-ipc-name     specify local IPC name (default=FirebirdIPI)],
+  [  --with-ipc-name         specify local IPC name (default=FirebirdIPI)],
   [FB_IPC_NAME=${withval}])
-AC_DEFINE_UNQUOTED(FB_SERVICE_NAME,"$FB_SERVICE_NAME")
-AC_DEFINE_UNQUOTED(FB_SERVICE_PORT,$FB_SERVICE_PORT)
-AC_DEFINE_UNQUOTED(FB_IPC_NAME,"$FB_IPC_NAME")
+AC_DEFINE_UNQUOTED(FB_SERVICE_NAME,"$FB_SERVICE_NAME", [Inet service name])
+AC_DEFINE_UNQUOTED(FB_SERVICE_PORT,$FB_SERVICE_PORT, [Inet service port])
+AC_DEFINE_UNQUOTED(FB_IPC_NAME,"$FB_IPC_NAME", [Local IPC name])
 AC_SUBST(FB_SERVICE_NAME)
 AC_SUBST(FB_SERVICE_PORT)
 AC_SUBST(FB_IPC_NAME)
@@ -243,7 +248,7 @@ AC_ARG_WITH(gpre-ada,
   [  --with-gpre-ada         support ADA in gpre (default=no)],
   [case "$withval" in
      yes) XE_APPEND(ada.cpp,GPRE_LANGUAGE_MODULES)
-          AC_DEFINE(GPRE_ADA);;
+          AC_DEFINE(GPRE_ADA, 1, [Define this if GPRE should support ADA]);;
      no)  ;;
      *)   AC_MSG_ERROR(bad value '${withval}' for --with-gpre-ada);;
    esac])
@@ -251,7 +256,7 @@ AC_ARG_WITH(gpre-cobol,
   [  --with-gpre-cobol       support COBOL in gpre (default=no)],
   [case "$withval" in
      yes) XE_APPEND(cob.cpp,GPRE_LANGUAGE_MODULES)
-          AC_DEFINE(GPRE_COBOL);;
+          AC_DEFINE(GPRE_COBOL, 1, [Define this if GPRE should support COBOL]);;
      no)  ;;
      *)   AC_MSG_ERROR(bad value '${withval}' for --with-gpre-cobol);;
    esac])
@@ -259,7 +264,7 @@ AC_ARG_WITH(gpre-fortran,
   [  --with-gpre-fortran     support FORTRAN in gpre (default=no)],
   [case "$withval" in
      yes) XE_APPEND(ftn.cpp,GPRE_LANGUAGE_MODULES)
-          AC_DEFINE(GPRE_FORTRAN);;
+          AC_DEFINE(GPRE_FORTRAN, 1, [Define this if GPRE should support FORTRAN]);;
      no)  ;;
      *)   AC_MSG_ERROR(bad value '${withval}' for --with-gpre-fortran);;
    esac])
@@ -267,7 +272,7 @@ AC_ARG_WITH(gpre-pascal,
   [  --with-gpre-pascal      support PASCAL in gpre (default=no)],
   [case "$withval" in
      yes) XE_APPEND(pas.cpp,GPRE_LANGUAGE_MODULES)
-          AC_DEFINE(GPRE_PASCAL);;
+          AC_DEFINE(GPRE_PASCAL, 1, [Define this if GPRE should support PASCAL]);;
      no)  ;;
      *)   AC_MSG_ERROR(bad value '${withval}' for --with-gpre-pascal);;
    esac])
@@ -275,6 +280,9 @@ AC_SUBST(GPRE_LANGUAGE_MODULES)
 
 
 dnl Check for system header files
+AC_HEADER_DIRENT
+AC_HEADER_STDC
+AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS(assert.h)
 AC_CHECK_HEADERS(ctype.h)
 AC_CHECK_HEADERS(errno.h)
@@ -301,7 +309,7 @@ AC_CHECK_HEADERS(signal.h sys/signal.h sys/siginfo.h)
 if test "$EDITLINE_FLG" = "Y"; then
   AC_CHECK_HEADERS(termio.h termios.h)
   AC_HEADER_DIRENT
-  AC_DEFINE(HAVE_EDITLINE_H)
+  AC_DEFINE(HAVE_EDITLINE_H, 1, [Define this if internal editline.h is in use])
 fi
 AC_CHECK_HEADERS(unistd.h)
 AC_CHECK_HEADERS(varargs.h)
@@ -311,11 +319,11 @@ AC_CHECK_HEADERS(rpc/xdr.h,,,[#include <rpc/rpc.h>])
 AC_CHECK_HEADERS(aio.h)
 AC_CHECK_HEADERS(mntent.h mnttab.h sys/mntent.h sys/mnttab.h)
 AC_CHECK_HEADERS(sys/ipc.h sys/file.h)
-AC_CHECK_HEADERS(socket.h  sys/socket.h sys/sockio.h winsock2.h)
+AC_CHECK_HEADERS(socket.h sys/socket.h sys/sockio.h winsock2.h)
 
 dnl Check for libraries
 AC_CHECK_LIB(dl, main)
-AC_CHECK_LIB(c,main)
+AC_CHECK_LIB(c, main)
 AC_CHECK_LIB(m, main)
 if test "$FIREBIRD_ARCH_TYPE" = "super"; then
   AC_CHECK_LIB(pthread, main)
@@ -342,7 +350,9 @@ if test "$ac_cv_func_gettimeofday" = "yes"; then
     AC_MSG_CHECKING(if gettimeofday accepts second (timezone) argument)
     AC_TRY_COMPILE([#include <sys/time.h>],
     [struct timeval tp; gettimeofday(&tp, (struct timezone *)0);],
-    [AC_DEFINE(GETTIMEOFDAY_RETURNS_TIMEZONE) AC_MSG_RESULT(yes)],
+    [AC_DEFINE(GETTIMEOFDAY_RETURNS_TIMEZONE, 1,
+       [Define this if gettimeofday accepts second (timezone) argument])
+     AC_MSG_RESULT(yes)],
     [AC_MSG_RESULT(no)])
     ;;
   esac
@@ -358,15 +368,16 @@ if test "$ac_cv_func_strcasecmp" = "no" -a "$ac_cv_func_stricmp" = "no"; then
      unset ac_cv_func_strcasecmp
      AC_CHECK_FUNCS(strcasecmp)],, $LIBS)
 fi
-AC_SEARCH_LIBS(dirname,gen)
+AC_SEARCH_LIBS(dirname, gen)
 AC_CHECK_FUNCS(dirname)
 AC_CHECK_FUNCS(sigaction setitimer)
 AC_CHECK_FUNCS(snprintf vsnprintf)
 AC_CHECK_FUNCS(swab _swab)
 AC_FUNC_MMAP 
 AC_FUNC_FORK
-AC_CHECK_FUNCS(setgrp setpgid getpgrp)
-AC_FUNC_SETPGRP 
+AC_FUNC_SETPGRP
+AC_CHECK_FUNCS(setpgid)
+AC_FUNC_GETPGRP
 AC_CHECK_FUNCS(flock)
 AC_CHECK_FUNCS(initgroups)
 AC_CHECK_FUNCS(getpagesize)
@@ -379,7 +390,9 @@ if test "$ac_cv_func_getmntent" = "yes"; then
   AC_TRY_COMPILE([#include <stdio.h>
 #include <sys/mnttab.h>],
   [FILE *f; struct mntent *m; getmntent(f, m);],
-  [AC_DEFINE(GETMNTENT_TAKES_TWO_ARGUMENTS) AC_MSG_RESULT(yes)],
+  [AC_DEFINE(GETMNTENT_TAKES_TWO_ARGUMENTS, 1,
+    [Define this if getmntent needs second argument])
+   AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)])
 fi
 AC_CHECK_FUNCS(tcgetattr strdup)
@@ -396,7 +409,9 @@ if test "$ac_cv_sys_file_offset_bits" = "no"; then
   AC_TRY_RUN([#include <unistd.h>
     main () { 
     exit(!(sizeof(off_t) == 8));
-  }], [ac_cv_sys_file_offset_bits=64; AC_DEFINE(_FILE_OFFSET_BITS,64) AC_MSG_RESULT(yes)],AC_MSG_RESULT(no))
+  }],
+  [ac_cv_sys_file_offset_bits=64; AC_DEFINE(_FILE_OFFSET_BITS,64) AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)])
 fi
 
 AC_CHECK_SIZEOF(void*)
@@ -409,7 +424,7 @@ if test "$ac_cv_type_semun" = "no"; then
       #include <sys/ipc.h>
       #include <sys/sem.h>],
   [union semun s;],
-  [ac_cv_type_semun=yes AC_DEFINE(HAVE_SEMUN) AC_MSG_RESULT(yes)],
+  [ac_cv_type_semun=yes; AC_DEFINE(HAVE_SEMUN) AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)])
 fi
 
@@ -430,7 +445,7 @@ AC_TRY_RUN([main () {
   exit((int)&((struct s*)0)->b);
 }], ac_cv_c_alignment=$ac_status, ac_cv_c_alignment=$ac_status)
 AC_MSG_RESULT($ac_cv_c_alignment)
-AC_DEFINE_UNQUOTED(ALIGNMENT,$ac_cv_c_alignment)
+AC_DEFINE_UNQUOTED(ALIGNMENT, $ac_cv_c_alignment, [Alignment of long])
 
 AC_MSG_CHECKING(alignment of double)
 AC_TRY_RUN([main () {
@@ -441,7 +456,7 @@ AC_TRY_RUN([main () {
   exit((int)&((struct s*)0)->b);
 }], ac_cv_c_double_align=$ac_status, ac_cv_c_double_align=$ac_status)
 AC_MSG_RESULT($ac_cv_c_double_align)
-AC_DEFINE_UNQUOTED(DOUBLE_ALIGN,$ac_cv_c_double_align)
+AC_DEFINE_UNQUOTED(DOUBLE_ALIGN, $ac_cv_c_double_align, [Alignment of double])
 
 dnl EKU: don't know how to convert this into an autoconf test:
 dnl      #define FB_ALIGN(n,b) ...
@@ -493,7 +508,7 @@ case "$PLATFORM" in
     AC_ARG_WITH(pipe-name,
       [  --with-pipe-name        specify wnet pipe name (default=interbas)],
       [FB_PIPE_NAME=${withval}])
-    AC_DEFINE_UNQUOTED(FB_PIPE_NAME,"$FB_PIPE_NAME")
+    AC_DEFINE_UNQUOTED(FB_PIPE_NAME,"$FB_PIPE_NAME", [Wnet pipe name])
     AC_SUBST(FB_PIPE_NAME)
     XE_PREPEND(-lmpr -lversion -lws2_32 -lole32,LIBS)
     ;;
@@ -524,7 +539,7 @@ NEW_FIREBIRD_DIR=$GEN_ROOT/firebird
 AC_SUBST(BUILD_ROOT_DIR)
 AC_SUBST(NEW_FIREBIRD_DIR)
 
-AC_DEFINE_UNQUOTED(FB_PREFIX, $(if test "x$prefix" = "xNONE" ; then echo \"$ac_default_prefix\"; else echo \"$prefix\"; fi))
+AC_DEFINE_UNQUOTED(FB_PREFIX, $(if test "x$prefix" = "xNONE" ; then echo \"$ac_default_prefix\"; else echo \"$prefix\"; fi), [Installation path prefix])
 
 AC_CONFIG_COMMANDS(,,[
 dnl ### GEN ### directories for preprocessed cpp, databases and output
@@ -561,9 +576,6 @@ mkdir -p gen/firebird/examples/udf
 mkdir -p gen/firebird/lib
 mkdir -p gen/firebird/misc
 mkdir -p gen/firebird/help
-
-mkdir -p gen/RPM/RPMS/i686
-mkdir -p gen/RPM/BUILD
 
 dnl #### TEMP ######### directories for .o and .d
 dnl # by module name
@@ -682,7 +694,6 @@ mkdir -p temp/codes/misc
 mkdir -p temp/codes/jrd
 
 mkdir -p temp/editline/extern/editline
-
 ])
 
 
@@ -695,7 +706,10 @@ case "$PLATFORM" in
   LINUX)
     AC_CONFIG_COMMANDS(,,[
         mkdir -p gen/install/scripts
-        mkdir -p gen/install/misc])
+        mkdir -p gen/install/misc
+        mkdir -p gen/RPM/RPMS/i686
+        mkdir -p gen/RPM/BUILD])
+
     INSTALL_SRC_DIR=builds/install/arch-specific/linux/${FIREBIRD_ARCH_TYPE}
     AC_CONFIG_FILES([gen/install/makeInstallImage.sh:${INSTALL_SRC_DIR}/makeInstallImage.sh.in
                      gen/install/scripts/preinstall.sh:${INSTALL_SRC_DIR}/preinstall.sh.in
@@ -729,7 +743,7 @@ case "$PLATFORM" in
 esac
 
 
-AC_OUTPUT(
+AC_CONFIG_FILES(
 gen/make.rules:${MAKE_SRC_DIR}/make.rules
 gen/make.defaults:${MAKE_SRC_DIR}/make.defaults
 gen/make.platform:${MAKE_SRC_DIR}/prefix.${MAKEFILE_PREFIX}
@@ -774,7 +788,7 @@ gen/Makefile.install:builds/install/arch-specific/${MAKEFILE_PREFIX}/Makefile.in
 Makefile:Makefile.in
 gen/Makefile.extern.editline:${MAKE_SRC_DIR}/Makefile.in.extern.editline
 )
-
+AC_OUTPUT
 
 dnl Print out the build configuration (the most interesting thing)
 echo
