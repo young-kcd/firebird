@@ -70,7 +70,7 @@ const USHORT SW_I_OPERATION	= 2;
 const USHORT SW_I_TYPE		= 4;
 const USHORT SW_I_WAIT		= 8;
 
-#define SRQ_BASE                    ((UCHAR*) LOCK_header)
+static const UCHAR* SRQ_BASE	= (UCHAR*) LOCK_header;
 
 struct waitque {
 	USHORT waitque_depth;

@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.105 2004-06-08 13:40:57 alexpeshkoff Exp $
+$Id: lock.cpp,v 1.106 2004-06-08 18:24:48 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -297,7 +297,7 @@ const char* LOCK_MANAGER	= "bin/fb_lock_mgr";
 static HANDLE blocking_action_thread_handle;
 #endif
 
-#define SRQ_BASE                    ((UCHAR*) LOCK_header)
+static const UCHAR* SRQ_BASE	= (UCHAR*) LOCK_header;
 
 static const UCHAR compatibility[] = {
 

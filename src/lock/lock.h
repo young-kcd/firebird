@@ -93,35 +93,35 @@ const int LCK_AVG		= 5;
 const int LCK_ANY		= 6;
 
 /* Lock states */
+// in LCK_convert the type of level is USHORT instead of UCHAR
+const UCHAR LCK_none	= 0;
+const UCHAR LCK_null	= 1;
+const UCHAR LCK_SR		= 2;		// Shared Read
+const UCHAR LCK_PR		= 3;		// Protected Read
+const UCHAR LCK_SW		= 4;		// Shared Write
+const UCHAR LCK_PW		= 5;		// Protected Write
+const UCHAR LCK_EX		= 6;		// Exclusive
+const UCHAR LCK_max		= 7;
 
-const int LCK_none		= 0;
-const int LCK_null		= 1;
-const int LCK_SR		= 2;		// Shared Read
-const int LCK_PR		= 3;		// Protected Read
-const int LCK_SW		= 4;		// Shared Write
-const int LCK_PW		= 5;		// Protected Write
-const int LCK_EX		= 6;		// Exclusive
-const int LCK_max		= 7;
+const UCHAR LCK_read	= LCK_PR;
+const UCHAR LCK_write	= LCK_EX;
 
-const int LCK_read			= LCK_PR;
-const int LCK_write			= LCK_EX;
-
-const int LCK_WAIT			= TRUE;
-const int LCK_NO_WAIT		= FALSE;
+const SSHORT LCK_WAIT		= TRUE;
+const SSHORT LCK_NO_WAIT	= FALSE;
 
 /* Lock block types */
 
-const int type_null		= 0;
-const int type_lhb		= 1;
-const int type_prb		= 2;
-const int type_lrq		= 3;
-const int type_lbl		= 4;
-const int type_his		= 5;
-const int type_smbx		= 6;
-const int type_shb		= 7;
-const int type_own		= 8;
+const UCHAR type_null	= 0;
+const UCHAR type_lhb	= 1;
+const UCHAR type_prb	= 2;
+const UCHAR type_lrq	= 3;
+const UCHAR type_lbl	= 4;
+const UCHAR type_his	= 5;
+const UCHAR type_smbx	= 6;
+const UCHAR type_shb	= 7;
+const UCHAR type_own	= 8;
 
-const int type_MAX		= type_own;
+const UCHAR type_MAX		= type_own;
 
 const int CLASSIC_LHB_VERSION	= 15; // Firebird 1.5
 const int SS_LHB_VERSION		= CLASSIC_LHB_VERSION + 100;
@@ -162,7 +162,7 @@ const SLONG LHB_PATTERN			= 123454321;
 
 /* Lock header block -- one per lock file, lives up front */
 
-typedef struct lhb {
+struct lhb {
 	UCHAR lhb_type;				/* memory tag - always type_lbh */
 	UCHAR lhb_version;			/* Version of lock table */
 	SRQ_PTR lhb_secondary;			/* Secondary lock header block */
@@ -207,7 +207,8 @@ typedef struct lhb {
 	ULONG lhb_reserved[2];		/* For future use */
 	srq lhb_data[LCK_MAX_SERIES];
 	srq lhb_hash[1];			/* Hash table */
-} *LHB;
+};
+typedef lhb* LHB;
 
 // lhb_flags
 const USHORT LHB_lock_ordering		= 1;	/* Lock ordering is enabled */
@@ -217,7 +218,7 @@ const USHORT LHB_shut_manager		= 2;	/* Lock manager shutdown flag */
    managers.  It is pointed to by the word in the lhb that used to contain
    a pattern. */
 
-typedef struct shb {
+struct shb {
 	UCHAR shb_type;				/* memory tag - always type_shb */
 	UCHAR shb_flags;
 	SRQ_PTR shb_history;
@@ -225,12 +226,13 @@ typedef struct shb {
 	SRQ_PTR shb_insert_que;			/* Queue inserting into */
 	SRQ_PTR shb_insert_prior;		/* Prior of inserting queue */
 	SLONG shb_misc[10];			/* Unused space */
-} *SHB;
+};
+typedef shb* SHB;
 
 
 /* Lock block */
 
-typedef struct lbl
+struct lbl
 {
 	UCHAR lbl_type;				/* mem tag: type_lbl=in use, type_null=free */
 	UCHAR lbl_state;			/* High state granted */
@@ -246,13 +248,14 @@ typedef struct lbl
 	USHORT lbl_pending_lrq_count;	/* count of lbl_requests with LRQ_pending */
 	USHORT lbl_counts[LCK_max];	/* Counts of granted locks */
 	UCHAR lbl_key[1];			/* Key value */
-} *LBL;
+};
+typedef lbl* LBL;
 
 /* No flags are defined for LBL at this time */
 
 /* Lock requests */
 
-typedef struct lrq {
+struct lrq {
 	UCHAR lrq_type;				/* mem tag: type_lrq=in use, type_null=free */
 	UCHAR lrq_requested;		/* Level requested  */
 	UCHAR lrq_state;			/* State of lock request */
@@ -265,21 +268,23 @@ typedef struct lrq {
 	srq lrq_own_blocks;			/* Owner block que */
 	lock_ast_t lrq_ast_routine;	/* Block ast routine */
 	void* lrq_ast_argument;		/* Ast argument */
-} *LRQ;
+};
+typedef lrq* LRQ;
 
-const int LRQ_blocking		= 1;		/* Request is blocking */
-const int LRQ_pending		= 2;		/* Request is pending */
-const int LRQ_converting	= 4;		/* Request is pending conversion */
-const int LRQ_rejected		= 8;		/* Request is rejected */
-const int LRQ_timed_out		= 16;		/* Wait timed out */
-const int LRQ_deadlock		= 32;		/* Request has been seen by the deadlock-walk */
-const int LRQ_repost		= 64;		/* Request block used for repost */
-const int LRQ_scanned		= 128;		/* Request already scanned for deadlock */
-const int LRQ_blocking_seen = 256;		/* Blocking notification received by owner */
+// lrw_flags
+const USHORT LRQ_blocking		= 1;		/* Request is blocking */
+const USHORT LRQ_pending		= 2;		/* Request is pending */
+const USHORT LRQ_converting		= 4;		/* Request is pending conversion */
+const USHORT LRQ_rejected		= 8;		/* Request is rejected */
+const USHORT LRQ_timed_out		= 16;		/* Wait timed out */
+const USHORT LRQ_deadlock		= 32;		/* Request has been seen by the deadlock-walk */
+const USHORT LRQ_repost			= 64;		/* Request block used for repost */
+const USHORT LRQ_scanned		= 128;		/* Request already scanned for deadlock */
+const USHORT LRQ_blocking_seen	= 256;		/* Blocking notification received by owner */
 
 /* Owner block */
 
-typedef struct own
+struct own
 {
 	UCHAR own_type;				/* memory tag - always type_own */
 	UCHAR own_owner_type;		/* type of owner */
@@ -310,24 +315,25 @@ typedef struct own
 #endif
 	USHORT own_semaphore;		/* Owner semaphore -- see note below */
 	USHORT own_flags;			/* Misc stuff */
-} *OWN;
+};
+typedef own* OWN;
 
 /* Flags in own_flags */
-const int OWN_blocking		= 1;		// Owner is blocking
-const int OWN_scanned		= 2;		// Owner has been deadlock scanned
-const int OWN_manager		= 4;		// Owner is privileged manager
-const int OWN_signal		= 8;		// Owner needs signal delivered
-const int OWN_wakeup		= 32;		// Owner has been awoken
-const int OWN_starved		= 128;		// This thread may be starved
+const USHORT OWN_blocking	= 1;		// Owner is blocking
+const USHORT OWN_scanned	= 2;		// Owner has been deadlock scanned
+const USHORT OWN_manager	= 4;		// Owner is privileged manager
+const USHORT OWN_signal		= 8;		// Owner needs signal delivered
+const USHORT OWN_wakeup		= 32;		// Owner has been awoken
+const USHORT OWN_starved	= 128;		// This thread may be starved
 
 /* Flags in own_ast_flags */
-const int OWN_signaled		= 16;		/* Signal is thought to be delivered */
+const UATOM OWN_signaled	= 16;		/* Signal is thought to be delivered */
 
 /* Flags in own_semaphore */
-const int OWN_semavail		= 0x8000;	/* Process semaphore is available */
+const USHORT OWN_semavail	= 0x8000;	/* Process semaphore is available */
 
 /* Flags in own_ast_hung_flag */
-const int OWN_hung			= 64;		/* Owner may be hung by OS-level bug */
+const UATOM OWN_hung		= 64;		/* Owner may be hung by OS-level bug */
 
 /* NOTE: own_semaphore, when USE_WAKEUP_EVENTS is set, is used to indicate when a 
    owner is waiting inside wait_for_request().  post_wakeup() will only
@@ -345,36 +351,38 @@ struct semaphore_mask {
 
 /* Lock manager history block */
 
-typedef struct his {
+struct his {
 	UCHAR his_type;				/* memory tag - always type_his */
 	UCHAR his_operation;		/* operation that occured */
 	SRQ_PTR his_next;				/* SRQ_PTR to next item in history list */
 	SRQ_PTR his_process;			/* owner to record for this operation */
 	SRQ_PTR his_lock;				/* lock to record for operation */
 	SRQ_PTR his_request;			/* request to record for operation */
-} *HIS;
+};
+typedef his* HIS;
 
 /* his_operation definitions */
-const int his_enq			= 1;
-const int his_deq			= 2;
-const int his_convert		= 3;
-const int his_signal		= 4;
-const int his_post_ast		= 5;
-const int his_wait			= 6;
-const int his_del_process	= 7;
-const int his_del_lock		= 8;
-const int his_del_request	= 9;
-const int his_deny			= 10;
-const int his_grant			= 11;
-const int his_leave_ast		= 12;
-const int his_scan			= 13;
-const int his_dead			= 14;
-const int his_enter			= 15;
-const int his_bug			= 16;
-const int his_active		= 17;
-const int his_cleanup		= 18;
-const int his_del_owner		= 19;
-const int his_MAX			= his_del_owner;
+// should be UCHAR according to his_operation but is USHORT in lock.cpp:post_operation 
+const UCHAR his_enq			= 1;
+const UCHAR his_deq			= 2;
+const UCHAR his_convert		= 3;
+const UCHAR his_signal		= 4;
+const UCHAR his_post_ast	= 5;
+const UCHAR his_wait		= 6;
+const UCHAR his_del_process	= 7;
+const UCHAR his_del_lock	= 8;
+const UCHAR his_del_request	= 9;
+const UCHAR his_deny		= 10;
+const UCHAR his_grant		= 11;
+const UCHAR his_leave_ast	= 12;
+const UCHAR his_scan		= 13;
+const UCHAR his_dead		= 14;
+const UCHAR his_enter		= 15;
+const UCHAR his_bug			= 16;
+const UCHAR his_active		= 17;
+const UCHAR his_cleanup		= 18;
+const UCHAR his_del_owner	= 19;
+const UCHAR his_MAX			= his_del_owner;
 
 #endif // ISC_LOCK_LOCK_H
 
