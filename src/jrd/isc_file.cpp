@@ -59,8 +59,10 @@
 #include "../jrd/jrd_proto.h"
 
 #include <sys/types.h>
+#if !defined(WIN32)
 #include <sys/ipc.h>
 #include <sys/file.h>
+#endif
 #include <errno.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
