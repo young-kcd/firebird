@@ -124,6 +124,7 @@ void* MemoryPool::tree_alloc(size_t size) {
 		return temp;
 	}
 	assert(false);
+	return 0;
 }
 
 void MemoryPool::tree_free(void* block) {

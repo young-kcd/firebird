@@ -175,7 +175,7 @@ public:
 				curr = curr->next;
 				curPos = 0;
 			}
-			return curr;
+			return curr != 0;
 		}
 		return false;
 	}
@@ -201,7 +201,7 @@ public:
 			curr = curr->next;
 			curPos = 0;
 		}
-		return curr;
+		return curr != 0;
 	}
 	bool getPrev() {
 		curPos--;
