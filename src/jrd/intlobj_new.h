@@ -45,7 +45,7 @@ typedef SCHAR ASCII;
 typedef USHORT INTL_BOOL;
 
 /* Forward declarations to be implemented in collation driver */
-struct CollationImpl;
+struct TextTypeImpl;
 struct CharSetImpl;
 struct CsConvertImpl;
 
@@ -121,7 +121,7 @@ typedef void (*pfn_INTL_tt_destroy) (
 typedef struct texttype {
 	// Data which needs to be initialized by collation driver	
 	USHORT texttype_version;	/* version ID of object */
-	CollationImpl* collation;   /* collation object implemented in driver */
+	TextTypeImpl* texttype_impl;   /* collation object implemented in driver */
 	const ASCII* texttype_name;
 	SSHORT texttype_country;	    /* ID of base country values */
 	BYTE texttype_canonical_width;  /* number bytes in canonical character representation */
@@ -146,7 +146,9 @@ typedef struct texttype {
 	/* If not set string is converted to Unicode and then lowercased via default case folding table */
 	pfn_INTL_str2case	texttype_fn_str_to_lower;	/* Convert string to lowercase */
 
-	/* If not set string is assumed to be binary-comparable for equality purposes */
+	/* If not set for fixed width charset string itself is used as canonical 
+       representation. If not set for MBCS charset string converted to UTF-32
+       Normalization Form C is used as canonical representation */
 	pfn_INTL_canonical	texttype_fn_canonical;	/* convert string to canonical representation for equality */
 
 	/* May be omitted if not needed */
@@ -177,7 +179,7 @@ typedef void (*pfn_INTL_cv_destroy) (
 
 struct csconvert {
 	USHORT csconvert_version;
-	CsConvertImpl* csConvert;
+	CsConvertImpl* csconvert_impl;
 
     /* Used only for debugging purposes. Should contain string in form 
       <source_charset>-><destination_charset>. For example "WIN1251->DOS866"
@@ -239,7 +241,7 @@ typedef void (*pfn_INTL_cs_destroy) (
 struct charset
 {
 	USHORT charset_version;
-	CharSetImpl* charset;
+	CharSetImpl* charset_impl;
 	const ASCII* charset_name;
 	BYTE charset_min_bytes_per_char;
 	BYTE charset_max_bytes_per_char;
@@ -248,7 +250,7 @@ struct charset
 
 	/* Conversions to and from UTF-16 intermediate encodings. BOM marker should not be used.
       Endianness of transient encoding is the native endianness for the platform */
-	csconvert		charset_to_unicode;
+	csconvert		charset_to_unicode; /* Result of this conversion should be in Normalization Form C */
 	csconvert		charset_from_unicode;
 
 	/* If omitted any string is considered well-formed */
