@@ -88,8 +88,6 @@
 
 #else /* !VMS */
 
-#include <errno.h>
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #ifndef WIN_NT
@@ -191,12 +189,6 @@ extern "C" {
 #ifndef SOLARIS
 extern int ib_printf();
 #endif
-#endif
-
-#if !(defined VMS || defined WIN_NT || defined LINUX || defined FREEBSD || defined NETBSD || defined DARWIN )
-extern int errno;
-extern SCHAR *sys_errlist[];
-extern int sys_nerr;
 #endif
 
 #ifndef PRINTF
@@ -342,8 +334,7 @@ static struct
 #define ib_printf	(*_libgds_printf)
 #define ib_fopen	(*_libgds_fopen)
 #define ib_fclose	(*_libgds_fclose)
-#define sys_nerr	(*_libgds_sys_nerr)
-#define sys_errlist	(*_libgds_sys_errlist)
+#define strerror	(*_libgds_strerror)
 #define malloc		(*_libgds_malloc)
 #define gettimeofday(*_libgds_gettimeofday)
 #define ctime		(*_libgds_ctime)
@@ -377,7 +368,7 @@ extern int ib_printf();
 extern IB_FILE *ib_fopen();
 extern int ib_fclose();
 extern int sys_nerr;
-extern SCHAR *sys_errlist[];
+extern SCHAR *strerror();
 extern void *malloc();
 extern int gettimeofday();
 extern SCHAR *ctime();
@@ -955,18 +946,12 @@ SLONG API_ROUTINE gds__interprete(char *s, ISC_STATUS ** vector)
 		break;
 
 	case gds_arg_unix:
-		if (code > 0 && code < sys_nerr && (p = (TEXT*)sys_errlist[code]))
-			strcpy(s, p);
-		else if (code == 60)
-			strcpy(s, "connection timed out");
-		else if (code == 61)
-			strcpy(s, "connection refused");
-		else
-			sprintf(s, "unknown unix error %ld", code);	/* TXNN */
+		/* The  strerror()  function  returns  the appropriate description
+		   string, or an unknown error message if the error code is unknown. */
+		p = (TEXT*)strerror(code);
 		break;
 
 	case gds_arg_dos:
-
 		sprintf(s, "unknown dos error %ld", code);	/* TXNN */
 		break;
 

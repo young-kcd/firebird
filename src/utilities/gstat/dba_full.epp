@@ -45,6 +45,7 @@
 #ifdef WIN_NT
 #include <io.h>
 #include <windows.h>
+#include <stdlib.h>
 #include "../jrd/jrd_pwd.h"
 #define TEXT		SCHAR
 #endif
@@ -60,12 +61,6 @@ DATABASE DB = STATIC "yachts.lnk";
 #define ALLOC(size)	alloc ((SLONG) size);
 #define BUCKETS		5
 #define WINDOW_SIZE	(1 << 17)
-
-#if (defined WIN_NT)
-#include <stdlib.h>
-#else
-extern SCHAR *sys_errlist[];
-#endif
 
 typedef struct dba_rel {
 	struct dba_rel *rel_next;
@@ -1121,13 +1116,20 @@ static void db_error( int status)
 
 	tddba = GET_THREAD_DATA;
 
+	/* FIXME: The strerror() function returns the appropriate description
+	   string, or an unknown error message if the error code is unknown.
+	   EKU: p cannot be NULL! */
+#if 1
+	FPRINTF(tddba->sw_outfile, "%s\n", strerror(status));
+#else
 #ifndef VMS
-	FPRINTF(tddba->sw_outfile, "%s\n", sys_errlist[status]);
+	FPRINTF(tddba->sw_outfile, "%s\n", strerror(status));
 #else
 	if ((p = strerror(status)) || (p = strerror(EVMSERR, status)))
 		FPRINTF(tddba->sw_outfile, "%s\n", p);
 	else
 		FPRINTF(tddba->sw_outfile, "uninterpreted code %x\n", status);
+#endif
 #endif
 	EXIT(FINI_ERROR);
 }

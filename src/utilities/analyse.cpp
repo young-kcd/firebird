@@ -47,8 +47,6 @@
 #include "jrd.h"
 #include "ods.h"
 
-extern SCHAR *sys_errlist[];
-
 static void analyse(int, SCHAR *, PAG, int);
 static SLONG get_long(void);
 static void db_error(int);
@@ -290,7 +288,7 @@ static void db_error( int status)
  *
  **************************************/
 
-	ib_printf(sys_errlist[status]);
+	ib_printf(strerror(status));
 	abort();
 }
 

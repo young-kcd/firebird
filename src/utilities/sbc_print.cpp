@@ -69,10 +69,6 @@
 
 #define DEFAULT_SIZE	8192
 
-#if !(defined WIN_NT)
-extern SCHAR *sys_errlist[];
-#endif
-
 static void cache_init(void);
 static void db_get_sbc(SCHAR *, SCHAR *, SLONG *, SSHORT *);
 
@@ -489,13 +485,20 @@ static void db_error( int status)
  **************************************/
 	SCHAR *p;
 
+	/* FIXME: The strerror() function returns the appropriate description
+	   string, or an unknown error message if the error code is unknown.
+	   EKU: p cannot be NULL! */
+#if 1
+	ib_printf(strerror(status));
+#else
 #ifndef VMS
-	ib_printf(sys_errlist[status]);
+	ib_printf(strerror(status));
 #else
 	if ((p = strerror(status)) || (p = strerror(EVMSERR, status)))
 		ib_printf("%s\n", p);
 	else
 		ib_printf("uninterpreted code %x\n", status);
+#endif
 #endif
 	exit(FINI_ERROR);
 }

@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.64 2003-08-19 11:44:10 brodsom Exp $
+$Id: lock.cpp,v 1.65 2003-08-25 07:26:36 eku Exp $
 */
 
 #include "firebird.h"
@@ -193,10 +193,6 @@ SSHORT LOCK_debug_level = 0;
 #define DUMMY_OWNER_DELETE	((PTR) -2)
 #define DUMMY_OWNER_SHUTDOWN	((PTR) -3)
 
-#if !(defined LINUX || defined WIN_NT || defined FREEBSD || defined NETBSD || defined DARWIN )
-extern SCHAR *sys_errlist[];
-#endif
-
 static void acquire(PTR);
 static UCHAR *alloc(SSHORT, ISC_STATUS *);
 static LBL alloc_lock(USHORT, ISC_STATUS *);
@@ -340,14 +336,14 @@ static HANDLE	wakeup_event[1];
 
 
 #ifdef SHLIB_DEFS
-#define sys_errlist	(*_libgds_sys_errlist)
+#define strerror	(*_libgds_strerror)
 #define waitpid		(*_libgds_waitpid)
 #define execl		(*_libgds_execl)
 #define _exit		(*_libgds__exit)
 #define statistics	(*_libgds_stat)
 #define chmod		(*_libgds_chmod)
 
-extern SCHAR *sys_errlist[];
+extern SCHAR *strerror();
 extern int waitpid();
 extern int execl();
 extern void _exit();
@@ -2076,8 +2072,9 @@ static void bug( ISC_STATUS * status_vector, const TEXT * string)
 	ib_fprintf(ib_stderr, "%s\n", s);
 
 #if !(defined WIN_NT)
-	if (errno > 0)
-		ib_fprintf(ib_stderr, "--%s\n", sys_errlist[errno]);
+	/* The  strerror()  function  returns  the appropriate description string,
+	   or an unknown error message if the error code is unknown. */
+	ib_fprintf(ib_stderr, "--%s\n", strerror(errno));
 #endif
 
 #ifdef DEV_BUILD

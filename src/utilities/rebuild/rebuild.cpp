@@ -26,6 +26,7 @@
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <errno.h>
+#include <string.h>
 
 #include "../jrd/gds.h"
 #include "../jrd/jrd.h"
@@ -55,8 +56,6 @@ struct tra dull;
 ULONG *tips;
 
 IB_FILE *dbg_file;
-
-extern SCHAR *sys_errlist[];
 
 static void checksum(RBDB, ULONG, ULONG, UCHAR);
 static USHORT compute_checksum(RBDB, PAG);
@@ -536,7 +535,7 @@ static void db_error( int status)
  *
  **************************************/
 
-	ib_printf(sys_errlist[status]);
+	ib_printf(strerror(status));
 	exit(FINI_ERROR);
 }
 
