@@ -144,56 +144,18 @@ static UCHAR *next_shared_memory;
 #define SHMEM_DELTA	(1 << 22)
 #endif
 
-#ifdef sun
-#ifndef SOLARIS
-#define SEMUN
-#endif
-#endif
-
-#ifdef FREEBSD
-#define SEMUN
-#endif
-
-#ifdef DARWIN
-#define SEMUN
-#endif
-
-#ifdef LINUX
-/*
- * NOTE: this definition is copied from linux/sem.h: if we do ...
- *    #include <linux/sem.h>
- * we get redefinition error messages for other structures,
- * so try it this (ugly) way.
- */
-/* arg for semctl system calls. */
-union semun {
-	int val;					/* value for SETVAL */
-	struct semid_ds *buf;		/* buffer for IPC_STAT & IPC_SET */
-	unsigned short *array;		/* array for GETALL & SETALL */
-	struct seminfo *__buf;		/* buffer for IPC_INFO */
-	void *__pad;
-};
-#define SEMUN
-#endif
-
 #ifndef SIGURG
 #define SIGURG		SIGINT
 #endif
 
-#ifdef SEMUN
-#undef SEMUN
-#else
+#ifndef HAVE_SEMUN
 union semun {
 	int val;
 	struct semid_ds *buf;
 	ushort *array;
 };
 #endif
-
-#if !(defined hpux || defined SOLARIS || defined linux || defined FREEBSD || defined NETBSD || defined SINIXZ)
-extern SLONG ftok();
-#endif
-#endif
+#endif /* UNIX */
 
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
@@ -4203,7 +4165,7 @@ static SLONG find_key(STATUS * status_vector, TEXT * filename)
  *
  **************************************/
 	int fd;
-	SLONG key;
+	key_t key;
 
 /* Produce shared memory key for file */
 
