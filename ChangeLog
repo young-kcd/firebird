@@ -1,3 +1,38 @@
+2003-12-03 09:44  robocop
+
+	* firebird2/src/jrd/: btn.cpp, btn.h:
+	
+	constness fun
+
+2003-12-03 09:19  robocop
+
+	* firebird2/src/: burp/backup.epp, dsql/array.epp, dsql/ddl.cpp,
+	dsql/dsql.h, dsql/user_dsql.cpp, gpre/exp.cpp,
+	ipserver/ipapi_proto.h, ipserver/ipclient.cpp,
+	ipserver/ipserver.cpp, isql/extra_proto.h, isql/extract.epp,
+	isql/isql.epp, isql/isql.h, isql/isql_proto.h, isql/show.epp,
+	isql/show_proto.h, jrd/alt.cpp, jrd/alt_proto.h, jrd/blb.cpp,
+	jrd/cmp.cpp, jrd/dfw.epp, jrd/entry.h, jrd/evl.cpp, jrd/exe.cpp,
+	jrd/gdsold.h, jrd/ibase.h, jrd/idx.cpp, jrd/idx_proto.h,
+	jrd/ini.epp, jrd/ini.h, jrd/ini_proto.h, jrd/jrd.cpp,
+	jrd/jrd_proto.h, jrd/met.epp, jrd/met_proto.h, jrd/nav.cpp,
+	jrd/opt.cpp, jrd/par.cpp, jrd/pcmet_proto.h, jrd/req.h,
+	jrd/rlck_proto.h, jrd/sdl.cpp, jrd/sdl_proto.h, jrd/svc.cpp,
+	jrd/svc_proto.h, jrd/trig.h, jrd/why.cpp, jrd/why_proto.h,
+	remote/inet.cpp, remote/inet_proto.h, remote/inter_proto.h,
+	remote/interface.cpp, remote/server.cpp, remote/xnet.cpp,
+	remote/xnet_proto.h, remote/os/win32/wnet.cpp,
+	remote/os/win32/wnet_proto.h, utilities/create_db.cpp,
+	utilities/run_service.cpp:
+	
+	More cleanup
+
+2003-12-03 02:53  brodsom
+
+	* firebird2/src/iscguard/iscguard.cpp:
+	
+	Correction
+
 2003-12-02 22:57  bellardo
 
 	* firebird2/: configure.in,
