@@ -45,9 +45,10 @@ private:
 	ISC_STATUS	ReMakeSqlda(ISC_STATUS *vector, TDBB tdbb);
 	ULONG	ParseSqlda(void);
 public:
-	void Open(TDBB tdbb, JRD_NOD sql, SSHORT nVars, bool SingleTon);
-	bool Fetch(TDBB tdbb, JRD_NOD * FirstVar);
+	void Open(TDBB tdbb, jrd_nod* sql, SSHORT nVars, bool SingleTon);
+	bool Fetch(TDBB tdbb, jrd_nod** FirstVar);
 	void Close(TDBB tdbb);
 };
 
 #endif // JRD_DynExec_H
+

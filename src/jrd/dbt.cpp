@@ -242,8 +242,8 @@ jrd_tra[] = {
 },
 jrd_nod[] = {
 	"NODE",
-		FLD(JRD_NOD, "Type: %x", nod_type),
-		FLD(JRD_NOD, "Impure: %x", nod_impure),
+		FLD(jrd_nod*, "Type: %x", nod_type),
+		FLD(jrd_nod*, "Impure: %x", nod_impure),
 		0
 },
 lls[] = {
@@ -268,7 +268,7 @@ Rsb[] = {
 },
 opt[] = {
 	"OPTIMIZER",
-		FLD(OPT, "CSB: %x", opt_csb),
+		FLD(OPT, "Csb*: %x", opt_csb),
 		FLD(OPT, "Cnt: %x", opt_count),
 		0
 },
@@ -393,11 +393,11 @@ static TEXT_PTR srl[] = {	"SRL", 0};
 	 */
 static TEXT_PTR Csb[] = {
 	"COMPILE SCRATCH BLOCK",
-		FLD(CSB, "Count: %x", csb_count),
-		FLD(CSB, "Node: %x", csb_node),
-		FLD(CSB, "Streams: %x", csb_n_stream),
-		FLD(CSB, "Running: %x", csb_running),
-		FLD(CSB, "BLR: %x", csb_blr),
+		FLD(Csb*, "Count: %x", csb_count),
+		FLD(Csb*, "Node: %x", csb_node),
+		FLD(Csb*, "Streams: %x", csb_n_stream),
+		FLD(Csb*, "Running: %x", csb_running),
+		FLD(Csb*, "BLR: %x", csb_blr),
 		0
 };
 

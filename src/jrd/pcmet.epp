@@ -70,7 +70,7 @@ int PCMET_expression_index(
 	jrd_rel* relation;
 	IDX idx;
 	PLB default_pool, new_pool = NULL;
-	CSB csb;
+	Csb* csb;
 	jrd_req* current_request;
 
 	SET_TDBB(tdbb);
@@ -209,7 +209,7 @@ void PCMET_lookup_index( jrd_rel* relation, IDX * idx)
  *	the metadata cache if possible.
  *
  **************************************/
-	CSB csb = NULL;
+	Csb* csb = NULL;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;

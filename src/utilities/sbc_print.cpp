@@ -70,7 +70,7 @@
 #define DEFAULT_SIZE	8192
 
 static void cache_init(void);
-static void db_get_sbc(SCHAR *, SCHAR *, SLONG *, SSHORT *);
+static void db_get_sbc(const SCHAR*, SCHAR*, SLONG*, SSHORT*);
 
 #if (defined WIN_NT)
 static void db_error(SLONG);
@@ -78,7 +78,7 @@ static void db_error(SLONG);
 static void db_error(int);
 #endif
 
-static void db_open(UCHAR *, USHORT);
+static void db_open(const UCHAR*, USHORT);
 static PAG db_read(SLONG);
 static void print_error(void);
 static void print_header(TEXT *);
@@ -95,7 +95,8 @@ static bool sw_page;
 static bool sw_user;
 static bool sw_free;
 static bool sw_all;
-static TEXT *dbname, sw_file[257];
+static const TEXT* dbname;
+static TEXT sw_file[257];
 
 static SHB CASH_header;
 static SCCB sccb;
@@ -114,9 +115,9 @@ static int file;
 
 SCHAR global_buffer[MAX_PAGE_SIZE];
 
-static IB_FILE *sw_outfile;
+static IB_FILE* sw_outfile;
 
-SCHAR *page_type[] = {
+const SCHAR* page_type[] = {
 	"pag_undefined    ",
 	"pag_header       ",		/* Database header page */
 	"pag_pages        ",		/* Page inventory page */
@@ -131,7 +132,7 @@ SCHAR *page_type[] = {
 };
 
 
-int CLIB_ROUTINE main( int argc, char *argv[])
+int CLIB_ROUTINE main( int argc, char* argv[])
 {
 /**************************************
  *
@@ -143,15 +144,11 @@ int CLIB_ROUTINE main( int argc, char *argv[])
  *	Initialize shared cache for process.
  *
  **************************************/
-	SLONG length;
-	SCHAR *p, c;
 	ISC_STATUS_ARRAY status_vector;
 	TEXT expanded_filename[256];
 	SH_MEM_T shmem_data;
 	SLONG cache_buffers;
 	SSHORT cache_flags;
-	int nbuf;
-	int nfree_buf;
 
 /* Perform some special handling when run as an Interbase service.  The
    first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
@@ -188,17 +185,18 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 /* Handle switches, etc. */
 
 	dbname = NULL;
-	nbuf = 0;
-	nfree_buf = 0;
+	int nbuf = 0;
+	int nfree_buf = 0;
 	argv++;
 
 	while (--argc) {
-		p = *argv++;
+		const SCHAR* p = *argv++;
 
 		if (p[0] != '-') {
 			dbname = p;
 			break;
 		}
+		SCHAR c;
 		while (c = *p++)
 			switch (UPPER(c)) {
 			case 'M':
@@ -266,7 +264,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 							   cache_init, 0, -mapped_size, &shmem_data);
 
 	if (CASH_header && CASH_header->shb_length > mapped_size) {
-		length = CASH_header->shb_length;
+		const SLONG length = CASH_header->shb_length;
 		ISC_unmap_file(status_vector, &shmem_data, FALSE);
 		CASH_header = ISC_map_file(status_vector,
 								   expanded_filename,
@@ -367,9 +365,9 @@ static void cache_init(void)
 
 
 static void db_get_sbc(
-					   SCHAR * db,
-					   SCHAR * name,
-					   SLONG * cache_buffers, SSHORT * cache_flags)
+					   const SCHAR* db,
+					   SCHAR* name,
+					   SLONG* cache_buffers, SSHORT* cache_flags)
 {
 /**************************************
  *
@@ -381,10 +379,8 @@ static void db_get_sbc(
  *	Get shared cache info.
  *
  **************************************/
-	HDR hdr;
-
 	db_open(db, strlen(db));
-	hdr = (HDR) db_read((SLONG) HEADER_PAGE);
+	HDR hdr = (HDR) db_read((SLONG) HEADER_PAGE);
 
 	*cache_buffers = hdr->hdr_cache_buffers;
 	*cache_flags = hdr->hdr_flags & hdr_disable_cache;
@@ -422,7 +418,7 @@ static void db_error( SLONG status)
 }
 
 
-static void db_open( UCHAR * file_name, USHORT file_length)
+static void db_open(const UCHAR* file_name, USHORT file_length)
 {
 /**************************************
  *
@@ -509,7 +505,7 @@ static void db_error( int status)
 }
 
 
-static void db_open( UCHAR * file_name, USHORT file_length)
+static void db_open(const UCHAR* file_name, USHORT file_length)
 {
 /**************************************
  *
@@ -652,11 +648,9 @@ static void print_page_header( SDB sdb)
  *	header and log pages.
  *
  **************************************/
-	PAG page;
-	SDB journal_sdb;
-
-	if ((page_no >= 0) && (sdb->sdb_page != page_no))
+	if ((page_no >= 0) && (sdb->sdb_page != page_no)) {
 		return;
+	}
 
 /* print sdb information */
 
@@ -665,7 +659,7 @@ static void print_page_header( SDB sdb)
 		 sdb->sdb_page, sdb->sdb_generation, sdb->sdb_length, sdb->sdb_flags,
 		 sdb->sdb_precedence);
 
-	page = (PAG) ABS_PTR(sdb->sdb_buffer);
+	pag* page = (PAG) ABS_PTR(sdb->sdb_buffer);
 
 /* Print page header */
 
@@ -678,10 +672,12 @@ static void print_page_header( SDB sdb)
 /* Print full page information for header and log page */
 
 	if (page_no >= 0) {
-		if (page_no == HEADER_PAGE)
+		if (page_no == HEADER_PAGE) {
 			PPG_print_header(page, HEADER_PAGE, sw_outfile);
-		else if (page_no == LOG_PAGE)
+		}
+		else if (page_no == LOG_PAGE) {
 			PPG_print_log(page, LOG_PAGE, sw_outfile);
+		}
 	}
 
 	if (sdb->sdb_flags) {
@@ -710,7 +706,7 @@ static void print_page_header( SDB sdb)
 	}
 
 	if (sdb->sdb_journal) {
-		journal_sdb = (SDB) ABS_PTR(sdb->sdb_journal);
+		SDB journal_sdb = (SDB) ABS_PTR(sdb->sdb_journal);
 		ib_printf("\tJournal buffer information:\n");
 		ib_printf("\t\tCurrent Length %d\n", journal_sdb->sdb_length);
 	}
@@ -719,7 +715,7 @@ static void print_page_header( SDB sdb)
 }
 
 
-// CVC: This PRB doesn't match jrd/event/h's prb struct.
+// CVC: This PRB doesn't match jrd/event.h's prb struct.
 static void print_process( PRB process)
 {
 /**************************************
@@ -767,18 +763,16 @@ static void prt_que(
  *	param 2	- if specified, the number of entries to print.
  *
  **************************************/
-	SLONG count, offset;
-	SRQ next;
-
-	offset = REL_PTR(que);
+	const SLONG offset = REL_PTR(que);
 
 	if (offset == que->srq_forward && offset == que->srq_backward) {
 		ib_printf("%s: *empty*\n\n", string);
 		return;
 	}
 
-	count = 0;
+	SLONG count = 0;
 
+	SRQ next;
 	QUE_LOOP((*que), next) {
 		++count;
 
@@ -808,18 +802,16 @@ static void prt_que_back(
  *	Same as prt_que, but traverse in reverse order.
  *
  **************************************/
-	SLONG count, offset;
-	SRQ next;
-
-	offset = REL_PTR(que);
+	const SLONG offset = REL_PTR(que);
 
 	if (offset == que->srq_forward && offset == que->srq_backward) {
 		ib_printf("%s: *empty*\n\n", string);
 		return;
 	}
 
-	count = 0;
+	SLONG count = 0;
 
+	SRQ next;
 	QUE_LOOP_BACK((*que), next) {
 		++count;
 

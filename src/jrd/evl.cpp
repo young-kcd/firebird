@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.58 2004-01-03 10:59:40 robocop Exp $ 
+  * $Id: evl.cpp,v 1.59 2004-01-13 09:52:13 robocop Exp $ 
  */
 
 /*
@@ -142,24 +142,24 @@ static dsc* cast(TDBB, const dsc*, const jrd_nod*, VLU);
 static void compute_agg_distinct(TDBB, jrd_nod*);
 static dsc* concatenate(TDBB, jrd_nod*, VLU);
 static dsc* dbkey(TDBB, const jrd_nod*, VLU);
-static dsc* eval_statistical(TDBB, JRD_NOD, VLU);
+static dsc* eval_statistical(TDBB, jrd_nod*, VLU);
 static SINT64 get_day_fraction(const dsc* d);
-static dsc* get_mask(TDBB, JRD_NOD, VLU);
+static dsc* get_mask(TDBB, jrd_nod*, VLU);
 static SINT64 get_timestamp_to_isc_ticks(const dsc* d);
 static void init_agg_distinct(TDBB, const jrd_nod*);
 #ifdef PC_ENGINE
-static dsc* lock_record(TDBB, JRD_NOD, VLU);
-static dsc* lock_relation(TDBB, JRD_NOD, VLU);
+static dsc* lock_record(TDBB, jrd_nod*, VLU);
+static dsc* lock_relation(TDBB, jrd_nod*, VLU);
 #endif
-static dsc* lock_state(TDBB, JRD_NOD, VLU);
+static dsc* lock_state(TDBB, jrd_nod*, VLU);
 static dsc* multiply(const dsc*, VLU, const jrd_nod*);
 static dsc* multiply2(const dsc*, VLU, const jrd_nod*);
 static dsc* divide2(const dsc*, VLU, const jrd_nod*);
 static dsc* negate_dsc(TDBB, const dsc*, VLU);
 static dsc* record_version(TDBB, const jrd_nod*, VLU);
 static bool reject_duplicate(const UCHAR*, const UCHAR*, void*);
-static dsc* scalar(TDBB, JRD_NOD, VLU);
-static SSHORT sleuth(TDBB, JRD_NOD, dsc*, dsc*);
+static dsc* scalar(TDBB, jrd_nod*, VLU);
+static SSHORT sleuth(TDBB, jrd_nod*, dsc*, dsc*);
 static BOOLEAN nc_sleuth_check(TextType, USHORT, const UCHAR*, const UCHAR*,
 	const UCHAR*, const UCHAR*);
 static BOOLEAN nc_sleuth_class(TextType, USHORT, const UCHAR*, const UCHAR*, UCHAR);
@@ -167,8 +167,8 @@ static BOOLEAN wc_sleuth_check(TextType, USHORT, const UCS2_CHAR*, const UCS2_CH
 						const UCS2_CHAR*, const UCS2_CHAR*);
 static BOOLEAN wc_sleuth_class(TextType, USHORT, const UCS2_CHAR*, const UCS2_CHAR*,
 						UCS2_CHAR);
-static SSHORT string_boolean(TDBB, JRD_NOD, dsc*, dsc*, bool);
-static SSHORT string_function(TDBB, JRD_NOD, SSHORT, const UCHAR*, SSHORT, const UCHAR*, USHORT, bool);
+static SSHORT string_boolean(TDBB, jrd_nod*, dsc*, dsc*, bool);
+static SSHORT string_function(TDBB, jrd_nod*, SSHORT, const UCHAR*, SSHORT, const UCHAR*, USHORT, bool);
 static dsc* substring(TDBB, VLU, dsc*, SLONG, SLONG);
 static dsc* upcase(TDBB, const dsc*, VLU);
 static dsc* internal_info(TDBB, const dsc*, VLU);
@@ -209,7 +209,7 @@ static const RSE_GET_MODE g_RSE_get_mode = RSE_get_forward;
 
 
 
-dsc* EVL_assign_to(TDBB tdbb, JRD_NOD node)
+dsc* EVL_assign_to(TDBB tdbb, jrd_nod* node)
 {
 /**************************************
  *
@@ -224,7 +224,7 @@ dsc* EVL_assign_to(TDBB tdbb, JRD_NOD node)
  **************************************/
 	dsc* desc;
 	FMT format;
-	JRD_NOD message;
+	jrd_nod* message;
 	REC record;
 
 	SET_TDBB(tdbb);
@@ -321,7 +321,7 @@ dsc* EVL_assign_to(TDBB tdbb, JRD_NOD node)
 }
 
 
-SBM* EVL_bitmap(TDBB tdbb, JRD_NOD node)
+SBM* EVL_bitmap(TDBB tdbb, jrd_nod* node)
 {
 /**************************************
  *
@@ -379,7 +379,7 @@ SBM* EVL_bitmap(TDBB tdbb, JRD_NOD node)
 }
 
 
-BOOLEAN EVL_boolean(TDBB tdbb, JRD_NOD node)
+BOOLEAN EVL_boolean(TDBB tdbb, jrd_nod* node)
 {
 /**************************************
  *
@@ -772,7 +772,7 @@ BOOLEAN EVL_boolean(TDBB tdbb, JRD_NOD node)
 }
 
 
-dsc* EVL_expr(TDBB tdbb, JRD_NOD node)
+dsc* EVL_expr(TDBB tdbb, jrd_nod* node)
 {
 /**************************************
  *
@@ -1381,7 +1381,7 @@ bool EVL_field(jrd_rel* relation, REC record, USHORT id, dsc* desc)
 }
 
 
-USHORT EVL_group(TDBB tdbb, Rsb* rsb, JRD_NOD node, USHORT state)
+USHORT EVL_group(TDBB tdbb, Rsb* rsb, jrd_nod* node, USHORT state)
 {
 /**************************************
  *
@@ -1420,7 +1420,7 @@ USHORT EVL_group(TDBB tdbb, Rsb* rsb, JRD_NOD node, USHORT state)
 
 	for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++) {
 		const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
-		vlux* impure = (VLUX) ((SCHAR *) request + from->nod_impure);
+		vlux* impure = (vlux*) ((SCHAR *) request + from->nod_impure);
 		impure->vlux_count = 0;
 		switch (from->nod_type) {
 		case nod_agg_average:
@@ -1537,7 +1537,7 @@ USHORT EVL_group(TDBB tdbb, Rsb* rsb, JRD_NOD node, USHORT state)
 			 ptr++) 
 		{
 			jrd_nod* from = *ptr;
-			vlux* impure = (VLUX) ((SCHAR *) request + from->nod_impure);
+			vlux* impure = (vlux*) ((SCHAR *) request + from->nod_impure);
 			desc = EVL_expr(tdbb, from);
 			if (request->req_flags & req_null)
 				impure->vlu_desc.dsc_address = NULL;
@@ -1561,7 +1561,7 @@ USHORT EVL_group(TDBB tdbb, Rsb* rsb, JRD_NOD node, USHORT state)
 				 ptr < end; ptr++)
 			{
 				jrd_nod* from = *ptr;
-				vlux* impure = (VLUX) ((SCHAR *) request + from->nod_impure);
+				vlux* impure = (vlux*) ((SCHAR *) request + from->nod_impure);
 				if (impure->vlu_desc.dsc_address)
 					EVL_make_value(tdbb, &impure->vlu_desc, &vtemp);
 				else
@@ -1589,7 +1589,7 @@ USHORT EVL_group(TDBB tdbb, Rsb* rsb, JRD_NOD node, USHORT state)
 		for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++)
 		{
 			jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
-			vlux* impure = (VLUX) ((SCHAR *) request + from->nod_impure);
+			vlux* impure = (vlux*) ((SCHAR *) request + from->nod_impure);
 			switch (from->nod_type)
 			{
 			case nod_agg_min:
@@ -1671,7 +1671,7 @@ USHORT EVL_group(TDBB tdbb, Rsb* rsb, JRD_NOD node, USHORT state)
 						break;
 					/* "Put" the value to sort. */
 					ASB asb = (ASB) from->nod_arg[1];
-					iasb* asb_impure = (IASB) ((SCHAR *) request + asb->nod_impure);
+					iasb* asb_impure = (iasb*) ((SCHAR *) request + asb->nod_impure);
 					UCHAR* data;
 					SORT_put(tdbb->tdbb_status_vector,
 							 reinterpret_cast<scb*>(asb_impure->iasb_sort_handle),
@@ -1713,7 +1713,7 @@ USHORT EVL_group(TDBB tdbb, Rsb* rsb, JRD_NOD node, USHORT state)
 		id = (USHORT)(ULONG) field->nod_arg[e_fld_id];
 		record =
 			request->req_rpb[(int) (IPTR) field->nod_arg[e_fld_stream]].rpb_record;
-		vlux* impure = (VLUX) ((SCHAR *) request + from->nod_impure);
+		vlux* impure = (vlux*) ((SCHAR *) request + from->nod_impure);
 		switch (from->nod_type)
 		{
 		case nod_agg_min:
@@ -2990,9 +2990,9 @@ static void compute_agg_distinct(TDBB tdbb, jrd_nod* node)
 
 	jrd_req* request = tdbb->tdbb_request;
 	ASB asb = (ASB) node->nod_arg[1];
-	iasb* asb_impure = (IASB) ((SCHAR *) request + asb->nod_impure);
+	iasb* asb_impure = (iasb*) ((SCHAR *) request + asb->nod_impure);
 	dsc* desc = &asb->asb_desc;
-	vlux* impure = (VLUX) ((SCHAR *) request + node->nod_impure);
+	vlux* impure = (vlux*) ((SCHAR *) request + node->nod_impure);
 
 /* Sort the values already "put" to sort */
 
@@ -3188,7 +3188,7 @@ static dsc* dbkey(TDBB tdbb, const jrd_nod* node, VLU impure)
 }
 
 
-static dsc* eval_statistical(TDBB tdbb, JRD_NOD node, VLU impure)
+static dsc* eval_statistical(TDBB tdbb, jrd_nod* node, VLU impure)
 {
 /**************************************
  *
@@ -3441,7 +3441,7 @@ static SINT64 get_day_fraction(const dsc* d)
 
 
 
-static dsc* get_mask(TDBB tdbb, JRD_NOD node, VLU impure)
+static dsc* get_mask(TDBB tdbb, jrd_nod* node, VLU impure)
 {
 /**************************************
  *
@@ -3555,7 +3555,7 @@ static void init_agg_distinct(TDBB tdbb, const jrd_nod* node)
 
 
 #ifdef PC_ENGINE
-static dsc* lock_record(TDBB tdbb, JRD_NOD node, VLU impure)
+static dsc* lock_record(TDBB tdbb, jrd_nod* node, VLU impure)
 {
 /**************************************
  *
@@ -3633,7 +3633,7 @@ static dsc* lock_record(TDBB tdbb, JRD_NOD node, VLU impure)
 
 
 #ifdef PC_ENGINE
-static dsc* lock_relation(TDBB tdbb, JRD_NOD node, VLU impure)
+static dsc* lock_relation(TDBB tdbb, jrd_nod* node, VLU impure)
 {
 /**************************************
  *
@@ -3648,7 +3648,7 @@ static dsc* lock_relation(TDBB tdbb, JRD_NOD node, VLU impure)
  **************************************/
 	dsc* desc;
 	USHORT lock_level;
-	JRD_NOD relation_node;
+	jrd_nod* relation_node;
 	jrd_rel* relation;
 	LCK lock = NULL;
 
@@ -3708,7 +3708,7 @@ static dsc* lock_relation(TDBB tdbb, JRD_NOD node, VLU impure)
 #endif
 
 
-static dsc* lock_state(TDBB tdbb, JRD_NOD node, VLU impure)
+static dsc* lock_state(TDBB tdbb, jrd_nod* node, VLU impure)
 {
 /**************************************
  *
@@ -4252,7 +4252,7 @@ static bool reject_duplicate(const UCHAR* data1, const UCHAR* data2, void* user_
 }
 
 
-static dsc* scalar(TDBB tdbb, JRD_NOD node, VLU impure)
+static dsc* scalar(TDBB tdbb, jrd_nod* node, VLU impure)
 {
 /**************************************
  *
@@ -4299,7 +4299,7 @@ static dsc* scalar(TDBB tdbb, JRD_NOD node, VLU impure)
 }
 
 
-static SSHORT sleuth(TDBB tdbb, JRD_NOD node, dsc* desc1, dsc* desc2)
+static SSHORT sleuth(TDBB tdbb, jrd_nod* node, dsc* desc1, dsc* desc2)
 {
 /**************************************
  *
@@ -4398,7 +4398,7 @@ static SSHORT sleuth(TDBB tdbb, JRD_NOD node, dsc* desc1, dsc* desc2)
 }
 
 
-static SSHORT string_boolean(TDBB tdbb, JRD_NOD node, dsc* desc1, dsc* desc2, bool computed_invariant)
+static SSHORT string_boolean(TDBB tdbb, jrd_nod* node, dsc* desc1, dsc* desc2, bool computed_invariant)
 {
 /**************************************
  *
@@ -4592,7 +4592,7 @@ static SSHORT string_boolean(TDBB tdbb, JRD_NOD node, dsc* desc1, dsc* desc2, bo
 
 static SSHORT string_function(
 							  TDBB tdbb,
-							  JRD_NOD node,
+							  jrd_nod* node,
 							  SSHORT l1,
 							  const UCHAR* p1, SSHORT l2, const UCHAR* p2, 
 							  USHORT ttype, bool computed_invariant)

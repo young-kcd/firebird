@@ -161,7 +161,9 @@ ISC_STATUS API_ROUTINE isc_array_lookup_bounds(ISC_STATUS* status,
 
 	if (lookup_desc(status, db_handle, trans_handle,
 					field_name, relation_name, desc, global))
-		  return status[1];
+	{
+		return status[1];
+	}
 
 	ISC_ARRAY_BOUND* tail = desc->array_desc_bounds;
 

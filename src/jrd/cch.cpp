@@ -1178,112 +1178,113 @@ void CCH_fini(TDBB tdbb)
  **************************************/
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
-	BOOLEAN flush_error = FALSE;
+	bool flush_error = false;
+	
+	// CVC: Patching a conversion error FB1->FB2 with crude logic
+	for (int i = 0; i < 2; ++i)
+	{
 
-	do {
+		try {
 
-	try {
+	/* If we've been initialized, either flush buffers
+	   or release locks, depending on where we've been
+	   bug-checked; as a defensive programming measure,
+	   make sure that the buffers were actually allocated */
 
-/* If we've been initialized, either flush buffers
-   or release locks, depending on where we've been
-   bug-checked; as a defensive programming measure,
-   make sure that the buffers were actually allocated */
-
-	bcb_repeat* tail;
-	BCB bcb = dbb->dbb_bcb;
-	if (bcb && (tail = bcb->bcb_rpt) && (tail->bcb_bdb)) {
-		if (dbb->dbb_flags & DBB_bugcheck || flush_error) {
-			for (const bcb_repeat* const end = bcb->bcb_rpt + bcb->bcb_count;
-                               tail < end; tail++)
-			{
-				BDB bdb = tail->bcb_bdb;
-				if (bdb->bdb_expanded_buffer) {
-					delete bdb->bdb_expanded_buffer;
-					bdb->bdb_expanded_buffer = NULL;
+		bcb_repeat* tail;
+		BCB bcb = dbb->dbb_bcb;
+		if (bcb && (tail = bcb->bcb_rpt) && (tail->bcb_bdb)) {
+			if (dbb->dbb_flags & DBB_bugcheck || flush_error) {
+				for (const bcb_repeat* const end = bcb->bcb_rpt + bcb->bcb_count;
+	                               tail < end; tail++)
+				{
+					BDB bdb = tail->bcb_bdb;
+					if (bdb->bdb_expanded_buffer) {
+						delete bdb->bdb_expanded_buffer;
+						bdb->bdb_expanded_buffer = NULL;
+					}
+					PAGE_LOCK_RELEASE(bdb->bdb_lock);
 				}
-				PAGE_LOCK_RELEASE(bdb->bdb_lock);
+			}
+			else {
+				CCH_flush(tdbb, (USHORT) FLUSH_FINI, (SLONG) 0);
 			}
 		}
-		else {
-			CCH_flush(tdbb, (USHORT) FLUSH_FINI, (SLONG) 0);
-		}
-	}
 
 
 #ifdef CACHE_READER
 
-/* Shutdown the dedicated cache reader for this database. */
+	/* Shutdown the dedicated cache reader for this database. */
 
-	if ((bcb = dbb->dbb_bcb) && (bcb->bcb_flags & BCB_cache_reader)) {
-		EVENT event = dbb->dbb_reader_event;
-		bcb->bcb_flags &= ~BCB_cache_reader;
-		ISC_event_post(event);
-		SLONG count = ISC_event_clear(event);
-		THREAD_EXIT;
-		ISC_event_wait(1, &event, &count, 0, NULL, 0);
-		THREAD_ENTER;
-		/* Now dispose off the cache reader associated semaphore */
-		ISC_event_fini(event);
-	}
+		if ((bcb = dbb->dbb_bcb) && (bcb->bcb_flags & BCB_cache_reader)) {
+			EVENT event = dbb->dbb_reader_event;
+			bcb->bcb_flags &= ~BCB_cache_reader;
+			ISC_event_post(event);
+			SLONG count = ISC_event_clear(event);
+			THREAD_EXIT;
+			ISC_event_wait(1, &event, &count, 0, NULL, 0);
+			THREAD_ENTER;
+			/* Now dispose off the cache reader associated semaphore */
+			ISC_event_fini(event);
+		}
 #endif
 
 #ifdef CACHE_WRITER
 
-/* Shutdown the dedicated cache writer for this database. */
+	/* Shutdown the dedicated cache writer for this database. */
 
-	if ((bcb = dbb->dbb_bcb) && (bcb->bcb_flags & BCB_cache_writer)) {
-		EVENT event = dbb->dbb_writer_event_fini;
-		/* initialize initialization event */
-		ISC_event_init(event, 0, 0);
-		SLONG count = ISC_event_clear(event);
+		if ((bcb = dbb->dbb_bcb) && (bcb->bcb_flags & BCB_cache_writer)) {
+			EVENT event = dbb->dbb_writer_event_fini;
+			/* initialize initialization event */
+			ISC_event_init(event, 0, 0);
+			SLONG count = ISC_event_clear(event);
 
-		bcb->bcb_flags &= ~BCB_cache_writer;
-		ISC_event_post(dbb->dbb_writer_event); /* Wake up running thread */
-		THREAD_EXIT;
-		ISC_event_wait(1, &event, &count, 0, NULL, 0);
-		THREAD_ENTER;
-		/* Cleanup initialization event */
-		ISC_event_fini(event);
-	}
+			bcb->bcb_flags &= ~BCB_cache_writer;
+			ISC_event_post(dbb->dbb_writer_event); /* Wake up running thread */
+			THREAD_EXIT;
+			ISC_event_wait(1, &event, &count, 0, NULL, 0);
+			THREAD_ENTER;
+			/* Cleanup initialization event */
+			ISC_event_fini(event);
+		}
 #endif
 
-/* close the database file and all associated shadow files */
+	/* close the database file and all associated shadow files */
 
-	PIO_close(dbb->dbb_file);
-	SDW_close();
+		PIO_close(dbb->dbb_file);
+		SDW_close();
 
-	if ( (bcb = dbb->dbb_bcb) ) {
-		while (bcb->bcb_memory) {
-			gds__free(LLS_POP(&bcb->bcb_memory));
-		}
+		if ( (bcb = dbb->dbb_bcb) ) {
+			while (bcb->bcb_memory) {
+				gds__free(LLS_POP(&bcb->bcb_memory));
+			}
 #ifdef CACHE_WRITER
-		/* Dispose off any associated latching semaphores */
-		while (QUE_NOT_EMPTY(bcb->bcb_free_lwt)) {
-			QUE que = bcb->bcb_free_lwt.que_forward;
-			QUE_DELETE((*que));
-			lwt* lwt_ = (LWT) BLOCK(que, LWT, lwt_waiters);
-			ISC_event_fini(&lwt_->lwt_event);
-		}
+			/* Dispose off any associated latching semaphores */
+			while (QUE_NOT_EMPTY(bcb->bcb_free_lwt)) {
+				QUE que = bcb->bcb_free_lwt.que_forward;
+				QUE_DELETE((*que));
+				lwt* lwt_ = (LWT) BLOCK(que, LWT, lwt_waiters);
+				ISC_event_fini(&lwt_->lwt_event);
+			}
 #endif
-	}
-
-	return;
-
-	}	// try
-	catch (const std::exception&)
-	{
-		if (!flush_error) {
-			// Even if we were unable to flush our dirty buffers
-			// let's free resources and close files to prevent server collapse
-			flush_error = TRUE;
-			continue;
 		}
-		else {
-			ERR_punt();
-		}
-	}
 
-	} while (true);
+		}	// try
+		catch (const std::exception&)
+		{
+			if (!flush_error) {
+				flush_error = true;
+			}
+			else {
+				ERR_punt();
+			}
+		}
+		
+		if (!flush_error) { // wasn't set in the catch => no failure, just exit
+			break;
+		}
+
+	} // for
 
 }
 
@@ -1387,8 +1388,8 @@ void CCH_flush(TDBB tdbb, USHORT flush_flag, SLONG tra_number)
 	// 
 	// Check if flush needed
 	//
-	int max_unflushed_writes = Config::getMaxUnflushedWrites();
-	time_t max_unflushed_write_time = Config::getMaxUnflushedWriteTime();
+	const int max_unflushed_writes = Config::getMaxUnflushedWrites();
+	const time_t max_unflushed_write_time = Config::getMaxUnflushedWriteTime();
 	bool max_num = (max_unflushed_writes >= 0);
 	bool max_time = (max_unflushed_write_time >= 0);
 

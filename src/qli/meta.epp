@@ -588,8 +588,8 @@ void MET_delete_database( DBB dbb)
 	}
 
 	while (log_stack) {
-		STR lstring = (STR) LLS_POP(&log_stack);
-		unlink(lstring->str_data);	// do not check for error
+		const str* log_string = (str*) LLS_POP(&log_stack);
+		unlink(log_string->str_data);	// do not check for error
 	}
 
 	if (unlink(dbb->dbb_filename))

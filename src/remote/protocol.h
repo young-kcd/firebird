@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: protocol.h,v 1.17 2003-12-22 10:00:56 robocop Exp $
+$Id: protocol.h,v 1.18 2004-01-13 09:52:18 robocop Exp $
 */
 #ifndef REMOTE_PROTOCOL_H
 #define REMOTE_PROTOCOL_H
@@ -516,14 +516,14 @@ typedef struct p_slc {
     struct bid	p_slc_id;		/* Slice id */
     CSTRING	p_slc_sdl;		/* Slice description language */
     CSTRING	p_slc_parameters;	/* Slice parameters */
-    LSTRING	p_slc_slice;		/* Slice proper */
+    lstring	p_slc_slice;		/* Slice proper */
     ULONG	p_slc_length;		/* Number of elements */
 } P_SLC;
 
 /* Response to get_slice */
 
 typedef struct p_slr {
-    LSTRING	p_slr_slice;		/* Slice proper */
+    lstring	p_slr_slice;		/* Slice proper */
     ULONG	p_slr_length;		/* Total length of slice */
     UCHAR	*p_slr_sdl;			/* *** not transfered *** */
     USHORT	p_slr_sdl_length;	/* *** not transfered *** */

@@ -2328,7 +2328,7 @@ BOOLEAN VIO_writelock(TDBB tdbb, RPB * org_rpb, RSB rsb, jrd_tra* transaction)
 			// Make sure refetched record still fulfills search condition
 			RSB r;			
 			for (r = rsb; r && r->rsb_type != rsb_boolean ; r = r->rsb_next);
-			if (r && !EVL_boolean(tdbb, (JRD_NOD) r->rsb_arg[0]))
+			if (r && !EVL_boolean(tdbb, (jrd_nod*) r->rsb_arg[0]))
 				return FALSE;
 		}
 

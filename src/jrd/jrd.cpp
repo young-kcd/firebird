@@ -3761,7 +3761,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 	old_pool = tdbb->tdbb_default;
 	tdbb->tdbb_default = new_pool = JrdMemoryPool::createPool();
 
-	CSB csb = PAR_parse(tdbb, reinterpret_cast<const UCHAR*>(blr), FALSE);
+	Csb* csb = PAR_parse(tdbb, reinterpret_cast<const UCHAR*>(blr), FALSE);
 	request = CMP_make_request(tdbb, csb);
 
 	for (const acc* access = request->req_access; access;

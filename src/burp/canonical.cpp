@@ -28,7 +28,7 @@
  *
  */
 /*
-$Id: canonical.cpp,v 1.31 2003-11-03 23:49:47 brodsom Exp $
+$Id: canonical.cpp,v 1.32 2004-01-13 09:52:09 robocop Exp $
 */
 
 #include "firebird.h"
@@ -58,8 +58,8 @@ static bool_t burp_setpostn(XDR*, u_int);
 static bool_t expand_buffer(XDR*);
 static bool_t xdr_datum(XDR*, DSC*, UCHAR*);
 static bool_t xdr_quad(XDR*, SLONG*);
-static int xdr_init(XDR*, LSTRING*, enum xdr_op);
-static bool_t xdr_slice(XDR*, LSTRING*, USHORT, const UCHAR*);
+static int xdr_init(XDR*, lstring*, enum xdr_op);
+static bool_t xdr_slice(XDR*, lstring*, USHORT, const UCHAR*);
 
 static xdr_t::xdr_ops burp_ops =
 {
@@ -76,9 +76,9 @@ static xdr_t::xdr_ops burp_ops =
 const int increment = 1024;
 
 
-ULONG CAN_encode_decode(BURP_REL relation,
-						LSTRING * buffer,
-						UCHAR * data,
+ULONG CAN_encode_decode(burp_rel* relation,
+						lstring* buffer,
+						UCHAR* data,
 						bool_t direction)
 {
 /**************************************
@@ -91,9 +91,8 @@ ULONG CAN_encode_decode(BURP_REL relation,
  *	encode and decode canonical backup.
  *
  **************************************/
-	BURP_FLD field;
+	const burp_fld* field;
 	SSHORT n;
-	UCHAR *p;
 
 	XDR xdr;
 	XDR* xdrs = &xdr;
@@ -105,8 +104,8 @@ ULONG CAN_encode_decode(BURP_REL relation,
 	{
 		if (field->fld_flags & FLD_computed)
 			continue;
-		p = data + field->fld_offset;
-		bool array_fld = ((field->fld_flags & FLD_array) != 0);
+		UCHAR* p = data + field->fld_offset;
+		const bool array_fld = ((field->fld_flags & FLD_array) != 0);
 		FLD_LENGTH length;
 		if (array_fld)
 			length = 8;
@@ -211,7 +210,7 @@ ULONG CAN_encode_decode(BURP_REL relation,
 		if (field->fld_flags & FLD_computed)
 			continue;
 		offset = FB_ALIGN(offset, sizeof(SSHORT));
-		p = data + offset;
+		UCHAR* p = data + offset;
 		if (!xdr_short(xdrs, (SSHORT *) p))
 			return FALSE;
 		offset += sizeof(SSHORT);
@@ -220,11 +219,11 @@ ULONG CAN_encode_decode(BURP_REL relation,
 }
 
 
-ULONG CAN_slice(LSTRING * buffer,
-				LSTRING * slice,
+ULONG CAN_slice(lstring* buffer,
+				lstring* slice,
 				bool_t direction,
 				USHORT sdl_length,
-				UCHAR * sdl)
+				UCHAR* sdl)
 {
 /**************************************
  *
@@ -297,7 +296,7 @@ static bool_t burp_getbytes(XDR* xdrs, SCHAR* buff, u_int bytecount)
 }
 
 
-static bool_t burp_getlong( XDR * xdrs, SLONG * lp)
+static bool_t burp_getlong(XDR* xdrs, SLONG* lp)
 {
 /**************************************
  *
@@ -321,7 +320,7 @@ static bool_t burp_getlong( XDR * xdrs, SLONG * lp)
 }
 
 
-static u_int burp_getpostn( XDR * xdrs)
+static u_int burp_getpostn(XDR* xdrs)
 {
 /**************************************
  *
@@ -338,7 +337,7 @@ static u_int burp_getpostn( XDR * xdrs)
 }
 
 
-static caddr_t burp_inline( XDR * xdrs, u_int bytecount)
+static caddr_t burp_inline(XDR* xdrs, u_int bytecount)
 {
 /**************************************
  *
@@ -395,7 +394,7 @@ static bool_t burp_putbytes(XDR* xdrs, const SCHAR* buff, u_int bytecount)
 }
 
 
-static bool_t burp_putlong( XDR * xdrs, SLONG * lp)
+static bool_t burp_putlong(XDR* xdrs, SLONG* lp)
 {
 /**************************************
  *
@@ -414,7 +413,7 @@ static bool_t burp_putlong( XDR * xdrs, SLONG * lp)
 }
 
 
-static bool_t burp_setpostn( XDR * xdrs, u_int bytecount)
+static bool_t burp_setpostn(XDR* xdrs, u_int bytecount)
 {
 /**************************************
  *
@@ -436,7 +435,7 @@ static bool_t burp_setpostn( XDR * xdrs, u_int bytecount)
 }
 
 
-static bool_t expand_buffer( XDR * xdrs)
+static bool_t expand_buffer(XDR* xdrs)
 {
 /**************************************
  *
@@ -450,32 +449,30 @@ static bool_t expand_buffer( XDR * xdrs)
  *	old one.
  *
  **************************************/
-
-	caddr_t p, q;
-
-	LSTRING* buffer = (LSTRING*) xdrs->x_public;
-	SSHORT length = (xdrs->x_private - xdrs->x_base) + xdrs->x_handy + increment;
+	lstring* buffer = (lstring*) xdrs->x_public;
+	const SSHORT length = (xdrs->x_private - xdrs->x_base) + xdrs->x_handy + increment;
 	buffer->lstr_allocated = buffer->lstr_length = length;
 
-	caddr_t new_ = (caddr_t) BURP_alloc(length);
+	caddr_t new_buf = (caddr_t) BURP_alloc(length);
 
-	for (p = new_, q = xdrs->x_base; q < xdrs->x_private; *p++ = *q++)
+	caddr_t p = new_buf;
+	for (caddr_t q = xdrs->x_base; q < xdrs->x_private; *p++ = *q++)
 		;
 
 	BURP_free(xdrs->x_base);
 
-	xdrs->x_base = new_;
+	xdrs->x_base = new_buf;
 	xdrs->x_private = p;
 	xdrs->x_handy += increment;
 
-	buffer->lstr_address = (UCHAR *) new_;
+	buffer->lstr_address = (UCHAR *) new_buf;
 
 	return TRUE;
 }
 
 
 
-static bool_t xdr_datum( XDR * xdrs, DSC * desc, UCHAR * buffer)
+static bool_t xdr_datum(XDR* xdrs, DSC* desc, UCHAR* buffer)
 {
 /**************************************
  *
@@ -519,9 +516,10 @@ static bool_t xdr_datum( XDR * xdrs, DSC * desc, UCHAR * buffer)
 		break;
 
 	case dtype_cstring:
-		if (xdrs->x_op == XDR_ENCODE)
+		if (xdrs->x_op == XDR_ENCODE) {
 			n = MIN(strlen(reinterpret_cast<const char*>(p)),
 					(size_t) (desc->dsc_length - 1));
+		}
 		if (!xdr_short(xdrs, &n))
 			return FALSE;
 		if (!xdr_opaque(xdrs, reinterpret_cast<char*>(p), n))
@@ -596,7 +594,9 @@ static bool_t xdr_quad(XDR* xdrs, SLONG* ip)
 	case XDR_ENCODE:
 		if ((*xdrs->x_ops->x_putlong) (xdrs, &ip[0]) &&
 			(*xdrs->x_ops->x_putlong) (xdrs, &ip[1]))
+		{
 			return TRUE;
+		}
 		return FALSE;
 
 	case XDR_DECODE:
@@ -615,7 +615,7 @@ static bool_t xdr_quad(XDR* xdrs, SLONG* ip)
 
 
 
-static int xdr_init( XDR * xdrs, LSTRING * buffer, enum xdr_op x_op)
+static int xdr_init(XDR* xdrs, lstring* buffer, enum xdr_op x_op)
 {
 /**************************************
  *
@@ -640,7 +640,7 @@ static int xdr_init( XDR * xdrs, LSTRING * buffer, enum xdr_op x_op)
 
 
 static bool_t xdr_slice(XDR* xdrs,
-						LSTRING* slice,
+						lstring* slice,
 						USHORT sdl_length,
 						const UCHAR* sdl)
 {

@@ -225,7 +225,7 @@ int DBG_analyze(int pool_id)
 				p->sum_count++;
 				p->sum_length += length;
 				if (type == (SSHORT) type_nod) {
-					p = nodes + (int) ((JRD_NOD) block)->nod_type;
+					p = nodes + (int) ((jrd_nod*) block)->nod_type;
 					p->sum_count++;
 					p->sum_length += length;
 				}
@@ -446,7 +446,7 @@ int DBG_block(BLK block)
 			   block->blk_length);
 	if (block->blk_type == (SCHAR) type_nod)
 		ib_fprintf(dbg_file, " -- %s",
-				   node_names[(int) ((JRD_NOD) block)->nod_type]);
+				   node_names[(int) ((jrd_nod*) block)->nod_type]);
 
 	prt_fields(reinterpret_cast < char *>(block), fields);
 
@@ -701,7 +701,7 @@ int DBG_pool(JrdMemoryPool *pool)
 }
 
 
-int DBG_pretty(JRD_NOD node, int column)
+int DBG_pretty(jrd_nod* node, int column)
 {
 /**************************************
  *
@@ -716,7 +716,8 @@ int DBG_pretty(JRD_NOD node, int column)
 	RSE rse;
 	jrd_rel* relation;
 	jrd_prc* procedure;
-	JRD_NOD *ptr, *end;
+	jrd_nod** ptr;
+	jrd_nod** end;
 	IRB retrieval;
 	int i;
 

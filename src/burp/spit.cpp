@@ -71,7 +71,7 @@ enum gsplit_option
 };
 
 
-static in_sw_tab_t spit_in_sw_table [] =
+static in_sw_tab_t spit_in_sw_table[] =
 {
 	{IN_SW_SPIT_SP,	0,	"SPLIT_BK_FILE", 0, 0, 0, FALSE, 0, 0, NULL},
 	{IN_SW_SPIT_JT,	0,	"JOIN_BK_FILE",	 0, 0, 0, FALSE, 0, 0, NULL},
@@ -168,8 +168,9 @@ int main( int argc, char *argv[])
 *************************
 */
 
-	b_fil* file_ptr, *file_list, *prev_file;
-	file_ptr = file_list = prev_file = NULL;
+	b_fil* file_ptr = NULL;
+	b_fil* file_list = NULL;
+	b_fil* prev_file = NULL;
 	// Strange, never met a program with tenths of bytes... may need updating
 	// from double to int64.
 	double file_size = -1;
@@ -194,7 +195,7 @@ int main( int argc, char *argv[])
 	bool file_nm_sw = false;
 	SCHAR* string = NULL;
 
-	SCHAR** end = argv + argc;
+	const SCHAR* const* const end = argv + argc;
 	++argv;
 	while (argv < end)
 	{
@@ -347,7 +348,7 @@ int main( int argc, char *argv[])
 	ret_cd = free_file_list(file_list);
 	return FB_SUCCESS;
 
-}								/* end of main() */
+}								// end of main()
 
 
 static int get_function_option(const SCHAR* prog_name,

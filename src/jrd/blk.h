@@ -42,7 +42,7 @@ BLKDEF(type_fmt, fmt, sizeof(((FMT) NULL)->fmt_desc[0]))   /* Done */
 BLKDEF(type_vcl, vcl, sizeof(((VCL) NULL)->vcl_long[0]))   /* Done */
 BLKDEF(type_req, jrd_req, sizeof(((jrd_req*) NULL)->req_rpb[0]))    /* Done */
 BLKDEF(type_tra, jrd_tra, 1)
-BLKDEF(type_nod, jrd_nod, sizeof(((JRD_NOD) NULL)->nod_arg[0]))    /* Done */
+BLKDEF(type_nod, jrd_nod, sizeof(((jrd_nod*) NULL)->nod_arg[0]))    /* Done */
 BLKDEF(type_csb, Csb, sizeof(((CSB) NULL)->csb_rpt[0]))    /* Done */
 BLKDEF(type_lls, lls, 0)	/* linked list stack */
 BLKDEF(type_rec, rec, 1)	/* record parameter */

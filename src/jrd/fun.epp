@@ -30,7 +30,7 @@
  * 2003.08.10 Claudio Valderrama: Fix SF Bugs #544132 and #728839.
  */
 /*
-$Id: fun.epp,v 1.31 2004-01-03 10:59:40 robocop Exp $
+$Id: fun.epp,v 1.32 2004-01-13 09:52:14 robocop Exp $
 */
 
 #include "firebird.h"
@@ -105,7 +105,7 @@ static SLONG blob_lseek(BLB, USHORT, SLONG);
 static SLONG get_scalar_array(fun_repeat*, DSC*, SAD, LLS*);
 
 
-void FUN_evaluate(FUN function, JRD_NOD node, VLU value)
+void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 {
 /**************************************
  *
@@ -158,7 +158,7 @@ void FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 	bool null_flag	= (request->req_flags & req_null) == req_null;
 	
 	fun_repeat*	return_ptr	= function->fun_rpt + function->fun_return_arg;
-	JRD_NOD*		ptr		= node->nod_arg;
+	jrd_nod**		ptr		= node->nod_arg;
 
 	value->vlu_desc = return_ptr->fun_desc;
 	value->vlu_desc.dsc_address = (UCHAR *) & value->vlu_misc;
@@ -931,7 +931,7 @@ FUN FUN_lookup_function(TEXT * name, bool ShowAccessError)
 }
 
 
-FUN FUN_resolve(CSB csb, FUN function, JRD_NOD args)
+FUN FUN_resolve(Csb* csb, FUN function, jrd_nod* args)
 {
 /**************************************
  *
@@ -943,22 +943,19 @@ FUN FUN_resolve(CSB csb, FUN function, JRD_NOD args)
  *	Resolve instance of potentially overloaded function.
  *
  **************************************/
-	FUN best;
-	JRD_NOD *ptr, *end;
 	DSC arg;
-	int best_score, score;
-	fun_repeat *tail;
-	TDBB tdbb;
 
-	tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
 
-	best = NULL;
-	best_score = 0;
-	end = args->nod_arg + args->nod_count;
+	fun* best = NULL;
+	int best_score = 0;
+	const jrd_nod* const* const end = args->nod_arg + args->nod_count;
 
 	for (; function; function = function->fun_homonym)
 		if (function->fun_entrypoint && function->fun_args == args->nod_count) {
-			score = 0;
+			int score = 0;
+			jrd_nod** ptr;
+			fun_repeat* tail;
 			for (ptr = args->nod_arg, tail = function->fun_rpt + 1; ptr < end;
 				 ptr++, tail++) {
 				CMP_get_desc(tdbb, csb, *ptr, &arg);

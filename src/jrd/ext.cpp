@@ -341,7 +341,7 @@ void EXT_open(RSB rsb)
 }
 
 
-RSB EXT_optimize(OPT opt, SSHORT stream, JRD_NOD * sort_ptr)
+RSB EXT_optimize(OPT opt, SSHORT stream, jrd_nod** sort_ptr)
 {
 /**************************************
  *
@@ -355,14 +355,14 @@ RSB EXT_optimize(OPT opt, SSHORT stream, JRD_NOD * sort_ptr)
  *
  **************************************/
 /* all these are un refrenced due to the code commented below
-JRD_NOD		node, inversion;
+jrd_nod*		node, inversion;
 opt::opt_repeat	*tail, *opt_end;
 SSHORT		i, size;
 */
 
 	TDBB tdbb = GET_THREAD_DATA;
 
-	CSB csb = opt->opt_csb;
+	Csb* csb = opt->opt_csb;
 	csb_repeat* csb_tail = &csb->csb_rpt[stream];
 	jrd_rel* relation = csb_tail->csb_relation;
 

@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.37 2004-01-12 05:40:01 skidder Exp $
+ *  $Id: fb_types.h,v 1.38 2004-01-13 09:52:12 robocop Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -118,7 +118,6 @@ struct lstring
 	ULONG	lstr_allocated;
 	UCHAR*	lstr_address;
 };
-typedef struct lstring LSTRING;
 
 
 typedef unsigned char BOOLEAN;

@@ -436,7 +436,7 @@ RSB EXT_optimize(OPT opt, SSHORT stream, NOD * sort_ptr)
  *
  **************************************/
 	TDBB tdbb;
-	CSB csb;
+	Csb* csb;
 	REL relation;
 	RSB rsb;
 	NOD dbkey, inversion;

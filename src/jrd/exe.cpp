@@ -144,38 +144,38 @@ SLONG status_xcp::as_sqlcode() const
 
 static void assign_xcp_message(TDBB, STR*, const TEXT*);
 static void cleanup_rpb(TDBB, RPB *);
-static JRD_NOD erase(TDBB, JRD_NOD, SSHORT);
+static jrd_nod* erase(TDBB, jrd_nod*, SSHORT);
 static void execute_looper(TDBB, jrd_req*, jrd_tra*, enum jrd_req::req_s);
 static void exec_sql(TDBB, jrd_req*, DSC *);
-static void execute_procedure(TDBB, JRD_NOD);
+static void execute_procedure(TDBB, jrd_nod*);
 static jrd_req* execute_triggers(TDBB, TRIG_VEC *, REC, REC, enum jrd_req::req_ta);
-static JRD_NOD looper(TDBB, jrd_req*, JRD_NOD);
-static JRD_NOD modify(TDBB, JRD_NOD, SSHORT);
-static JRD_NOD receive_msg(TDBB, JRD_NOD);
+static jrd_nod* looper(TDBB, jrd_req*, jrd_nod*);
+static jrd_nod* modify(TDBB, jrd_nod*, SSHORT);
+static jrd_nod* receive_msg(TDBB, jrd_nod*);
 static void release_blobs(TDBB, jrd_req*);
 static void release_proc_save_points(jrd_req*);
 #ifdef SCROLLABLE_CURSORS
-static JRD_NOD seek_rse(TDBB, jrd_req*, JRD_NOD);
+static jrd_nod* seek_rse(TDBB, jrd_req*, jrd_nod*);
 static void seek_rsb(TDBB, jrd_req*, RSB, USHORT, SLONG);
 #endif
-static JRD_NOD selct(TDBB, JRD_NOD);
-static JRD_NOD send_msg(TDBB, JRD_NOD);
-static void set_error(TDBB, const xcp_repeat*, JRD_NOD);
-static JRD_NOD stall(TDBB, JRD_NOD);
-static JRD_NOD store(TDBB, JRD_NOD, SSHORT);
+static jrd_nod* selct(TDBB, jrd_nod*);
+static jrd_nod* send_msg(TDBB, jrd_nod*);
+static void set_error(TDBB, const xcp_repeat*, jrd_nod*);
+static jrd_nod* stall(TDBB, jrd_nod*);
+static jrd_nod* store(TDBB, jrd_nod*, SSHORT);
 static bool test_and_fixup_error(TDBB, const XCP, jrd_req*);
 static void trigger_failure(TDBB, jrd_req*);
-static void validate(TDBB, JRD_NOD);
+static void validate(TDBB, jrd_nod*);
 inline void PreModifyEraseTriggers(TDBB, trig_vec**, SSHORT, RPB*, REC, jrd_req::req_ta);
 
 #ifdef PC_ENGINE
-static JRD_NOD find(TDBB, JRD_NOD);
-static JRD_NOD find_dbkey(TDBB, JRD_NOD);
+static jrd_nod* find(TDBB, jrd_nod*);
+static jrd_nod* find_dbkey(TDBB, jrd_nod*);
 static LCK implicit_record_lock(jrd_tra*, RPB *);
-static JRD_NOD release_bookmark(TDBB, JRD_NOD);
-static JRD_NOD set_bookmark(TDBB, JRD_NOD);
-static JRD_NOD set_index(TDBB, JRD_NOD);
-static JRD_NOD stream(TDBB, JRD_NOD);
+static jrd_nod* release_bookmark(TDBB, jrd_nod*);
+static jrd_nod* set_bookmark(TDBB, jrd_nod*);
+static jrd_nod* set_index(TDBB, jrd_nod*);
+static jrd_nod* stream(TDBB, jrd_nod*);
 #endif
 
 #if defined(DEBUG_GDS_ALLOC) && defined(PROD_BUILD)
@@ -235,7 +235,7 @@ private:
 #endif
 
 
-void EXE_assignment(TDBB tdbb, JRD_NOD node)
+void EXE_assignment(TDBB tdbb, jrd_nod* node)
 {
 /**************************************
  *
@@ -247,9 +247,6 @@ void EXE_assignment(TDBB tdbb, JRD_NOD node)
  *	Perform an assignment
  *
  **************************************/
-
-	DSC temp;
-
 	DEV_BLKCHK(node, type_nod);
 
 	SET_TDBB(tdbb);
@@ -263,7 +260,7 @@ void EXE_assignment(TDBB tdbb, JRD_NOD node)
 		missing = EVL_expr(tdbb, node->nod_arg[e_asgn_missing]);
 	}
 
-	JRD_NOD to = node->nod_arg[e_asgn_to];
+	jrd_nod* to = node->nod_arg[e_asgn_to];
 	DSC* to_desc = EVL_assign_to(tdbb, to);
 
 	request->req_flags &= ~req_null;
@@ -278,6 +275,7 @@ void EXE_assignment(TDBB tdbb, JRD_NOD node)
 
 /* If the value is non-missing, move/convert it.  Otherwise fill the
    field with appropriate nulls. */
+	dsc temp;
 
 	if (!null)
 	{
@@ -285,7 +283,7 @@ void EXE_assignment(TDBB tdbb, JRD_NOD node)
 
 		if (to->nod_type == nod_argument && to->nod_arg[e_arg_indicator])
 		{
-			DSC* indicator    = EVL_assign_to(tdbb, to->nod_arg[e_arg_indicator]);
+			dsc* indicator    = EVL_assign_to(tdbb, to->nod_arg[e_arg_indicator]);
 			temp.dsc_dtype    = dtype_short;
 			temp.dsc_length   = sizeof(SSHORT);
 			temp.dsc_scale    = 0;
@@ -336,26 +334,32 @@ void EXE_assignment(TDBB tdbb, JRD_NOD node)
 		else if (!DSC_EQUIV(from_desc, to_desc))
 			MOV_move(from_desc, to_desc);
 
-		else if (from_desc->dsc_dtype == dtype_short)
+		else if (from_desc->dsc_dtype == dtype_short) {
 			*((SSHORT *) to_desc->dsc_address) =
 				*((SSHORT *) from_desc->dsc_address);
+		}
 
-		else if (from_desc->dsc_dtype == dtype_long)
+		else if (from_desc->dsc_dtype == dtype_long) {
 			*((SLONG *) to_desc->dsc_address) =
 				*((SLONG *) from_desc->dsc_address);
+		}
 
-		else if (from_desc->dsc_dtype == dtype_int64)
+		else if (from_desc->dsc_dtype == dtype_int64) {
 			*((SINT64 *) to_desc->dsc_address) =
 				*((SINT64 *) from_desc->dsc_address);
+		}
 
 		else if (((U_IPTR) from_desc->dsc_address & (ALIGNMENT - 1)) ||
 				 ((U_IPTR) to_desc->dsc_address & (ALIGNMENT - 1)))
+		{
 			MOVE_FAST(from_desc->dsc_address, to_desc->dsc_address,
 					  from_desc->dsc_length);
+		}
 
-		else
+		else {
 			MOVE_FASTER(from_desc->dsc_address, to_desc->dsc_address,
 						from_desc->dsc_length);
+		}
 		to_desc->dsc_flags &= ~DSC_null;
 	}
 	else if (node->nod_arg[e_asgn_missing2] &&
@@ -388,9 +392,9 @@ void EXE_assignment(TDBB tdbb, JRD_NOD node)
 			break;
 
 		default:
-			do
+			do {
 				*p++ = 0;
-			while (--l);
+			} while (--l);
 			break;
 		}
 		to_desc->dsc_flags |= DSC_null;
@@ -404,7 +408,8 @@ void EXE_assignment(TDBB tdbb, JRD_NOD node)
 		REC record = request->req_rpb[(int) (IPTR) to->nod_arg[e_fld_stream]].rpb_record;
 		if (null) {
 			SET_NULL(record, id);
-		} else {
+		}
+		else {
 			CLEAR_NULL(record, id);
 		}
 	}
@@ -594,7 +599,7 @@ void EXE_receive(TDBB		tdbb,
  *
  * Functional description
  *	Move a message from JRD to the host program.  This corresponds to
- *	a JRD BLR/JRD_NOD send.
+ *	a JRD BLR/jrd_nod* send.
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -750,7 +755,7 @@ void EXE_send(TDBB		tdbb,
 /* look for an asynchronous send message--if such 
    a message was defined, we allow the user to send 
    us a message at any time during request execution */
-	JRD_NOD save_next = NULL, save_message = NULL;
+	jrd_nod* save_next = NULL, save_message = NULL;
 	
 	if ((message = request->req_async_message) &&
 		(node = message->nod_arg[e_send_message]) &&
@@ -956,7 +961,7 @@ void EXE_unwind(TDBB tdbb, jrd_req* request)
 
 	if (request->req_flags & req_active) {
 		if (request->req_fors.getCount()) {
-			JrdMemoryPool *old_pool = tdbb->tdbb_default;
+			JrdMemoryPool* old_pool = tdbb->tdbb_default;
 			tdbb->tdbb_default = request->req_pool;
 			jrd_req* old_request = tdbb->tdbb_request;
 			tdbb->tdbb_request = request;
@@ -1095,7 +1100,7 @@ inline void PreModifyEraseTriggers(TDBB tdbb,
 				FB_NEW(*tdbb->tdbb_transaction->tra_pool) 
 					traRpbList(tdbb->tdbb_transaction->tra_pool);
 		}
-		int rpblevel = tdbb->tdbb_transaction->
+		const int rpblevel = tdbb->tdbb_transaction->
 						tra_rpblist->PushRpb(rpb);
 		jrd_req* trigger = execute_triggers(tdbb, trigs,
 					rpb->rpb_record, rec, op);
@@ -1106,7 +1111,7 @@ inline void PreModifyEraseTriggers(TDBB tdbb,
 	}
 }
 
-static JRD_NOD erase(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
+static jrd_nod* erase(TDBB tdbb, jrd_nod* node, SSHORT which_trig)
 {
 /**************************************
  *
@@ -1415,7 +1420,7 @@ static void exec_sql(TDBB tdbb, jrd_req* request, DSC* dsc)
 }
 
 
-static void execute_procedure(TDBB tdbb, JRD_NOD node)
+static void execute_procedure(TDBB tdbb, jrd_nod* node)
 {
 /**************************************
  *
@@ -1436,8 +1441,8 @@ static void execute_procedure(TDBB tdbb, JRD_NOD node)
 
 	jrd_nod* temp = node->nod_arg[e_esp_inputs];
 	if (temp) {
-		JRD_NOD *ptr, *end;
-
+		jrd_nod** ptr;
+		jrd_nod** end;
 		for (ptr = temp->nod_arg, end = ptr + temp->nod_count; ptr < end;
 			 ptr++)
 		{
@@ -1529,8 +1534,8 @@ static void execute_procedure(TDBB tdbb, JRD_NOD node)
 
 	temp = node->nod_arg[e_esp_outputs];
 	if (temp) {
-		JRD_NOD *ptr, *end;
-
+		jrd_nod** ptr;
+		jrd_nod** end;
 		for (ptr = temp->nod_arg, end = ptr + temp->nod_count; ptr < end;
 			 ptr++)
 		{
@@ -1622,7 +1627,7 @@ static jrd_req* execute_triggers(TDBB tdbb,
 
 
 #ifdef PC_ENGINE
-static JRD_NOD find(TDBB tdbb, JRD_NOD node)
+static jrd_nod* find(TDBB tdbb, jrd_nod* node)
 {
 /**************************************
  *
@@ -1657,7 +1662,7 @@ static JRD_NOD find(TDBB tdbb, JRD_NOD node)
 			ERR_post(isc_invalid_operator, 0);
 		}
 
-		USHORT direction = (USHORT) MOV_get_long(EVL_expr(tdbb,
+		const USHORT direction = (USHORT) MOV_get_long(EVL_expr(tdbb,
 												   node->nod_arg
 												   [e_find_direction]),
 												   0);
@@ -1701,7 +1706,7 @@ static JRD_NOD find(TDBB tdbb, JRD_NOD node)
 
 
 #ifdef PC_ENGINE
-static JRD_NOD find_dbkey(TDBB tdbb, JRD_NOD node)
+static jrd_nod* find_dbkey(TDBB tdbb, jrd_nod* node)
 {
 /**************************************
  *
@@ -1714,7 +1719,6 @@ static JRD_NOD find_dbkey(TDBB tdbb, JRD_NOD node)
  *	resetting the position of the stream to that record.
  *
  **************************************/
-
 	SET_TDBB(tdbb);
 	jrd_req* request = tdbb->tdbb_request;
 	BLKCHK(node, type_nod);
@@ -1786,7 +1790,7 @@ static LCK implicit_record_lock(jrd_tra* transaction, RPB * rpb)
 #endif
 
 
-static JRD_NOD looper(TDBB tdbb, jrd_req* request, JRD_NOD in_node)
+static jrd_nod* looper(TDBB tdbb, jrd_req* request, jrd_nod* in_node)
 {
 /**************************************
  *
@@ -1802,8 +1806,8 @@ static JRD_NOD looper(TDBB tdbb, jrd_req* request, JRD_NOD in_node)
 	SSHORT which_erase_trig = 0;
 	SSHORT which_sto_trig   = 0;
 	SSHORT which_mod_trig   = 0;
-	volatile JRD_NOD top_node = 0;
-	volatile JRD_NOD prev_node;
+	jrd_nod* volatile top_node = 0;
+	jrd_nod* volatile prev_node;
 
 /* If an error happens during the backout of a savepoint, then the transaction
    must be marked 'dead' because that is the only way to clean up after a
@@ -1843,7 +1847,7 @@ static JRD_NOD looper(TDBB tdbb, jrd_req* request, JRD_NOD in_node)
 	const SLONG save_point_number = (transaction->tra_save_point) ?
 		transaction->tra_save_point->sav_number : 0;
 
-	volatile JRD_NOD node = in_node;
+	jrd_nod* volatile node = in_node;
 
 	// Catch errors so we can unwind cleanly
 
@@ -1860,7 +1864,9 @@ static JRD_NOD looper(TDBB tdbb, jrd_req* request, JRD_NOD in_node)
 
 		if (request->req_operation == jrd_req::req_evaluate &&
 			(--tdbb->tdbb_quantum < 0) && !tdbb->tdbb_inhibit)
+		{
 			JRD_reschedule(tdbb, 0, true);
+		}
 
 #endif
 
@@ -1871,11 +1877,12 @@ static JRD_NOD looper(TDBB tdbb, jrd_req* request, JRD_NOD in_node)
 		switch (node->nod_type) {
 		case nod_asn_list:
 			if (request->req_operation == jrd_req::req_evaluate) {
-				volatile JRD_NOD *ptr, *end;
-
-				for (ptr = node->nod_arg, end = ptr + node->nod_count;
+				jrd_nod** volatile ptr = node->nod_arg;
+				for (const jrd_nod* const* const end = ptr + node->nod_count;
 					 ptr < end; ptr++)
+				{
 					EXE_assignment(tdbb, *ptr);
+				}
 				request->req_operation = jrd_req::req_return;
 			}
 			node = node->nod_parent;
@@ -2258,8 +2265,6 @@ static JRD_NOD looper(TDBB tdbb, jrd_req* request, JRD_NOD in_node)
 
 			case jrd_req::req_unwind:
 				{
-					volatile JRD_NOD *ptr, *end;
-
 					if (request->req_flags & req_leave)
 					{
 						// Although the req_operation is set to req_unwind,
@@ -2273,7 +2278,9 @@ static JRD_NOD looper(TDBB tdbb, jrd_req* request, JRD_NOD in_node)
 							for (save_point = transaction->tra_save_point;
 								 save_point && count <= save_point->sav_number;
 								 save_point = transaction->tra_save_point)
+							{
 								VERB_CLEANUP;
+							}
 						}
 						node = node->nod_parent;
 						break;
@@ -2287,21 +2294,20 @@ static JRD_NOD looper(TDBB tdbb, jrd_req* request, JRD_NOD in_node)
 						   savepoint of this block will be dealt with below. */
 						for (save_point = transaction->tra_save_point;
 							 save_point && count < save_point->sav_number;
-							 save_point = transaction->tra_save_point) {
+							 save_point = transaction->tra_save_point)
+						{
 							++transaction->tra_save_point->sav_verb_count;
 							VERB_CLEANUP;
 						}
 					}
 
-					volatile JRD_NOD handlers = node->nod_arg[e_blk_handlers];
+					jrd_nod* volatile handlers = node->nod_arg[e_blk_handlers];
 					if (handlers)
 					{
-						ULONG prev_req_error_handler;
-
 						node = node->nod_parent;
-						for (ptr = handlers->nod_arg,
-							 end = ptr + handlers->nod_count; ptr < end;
-							 ptr++)
+						jrd_nod** volatile ptr = handlers->nod_arg;
+						for (const jrd_nod* const* const end = ptr + handlers->nod_count;
+							ptr < end; ptr++)
 						{
 							const XCP xcp_node =
 								reinterpret_cast<XCP>((*ptr)->nod_arg[e_err_conditions]);
@@ -2324,7 +2330,7 @@ static JRD_NOD looper(TDBB tdbb, jrd_req* request, JRD_NOD in_node)
 								   necessary if the error handler is deeply 
 								   nested. */
 
-								prev_req_error_handler =
+								const ULONG prev_req_error_handler =
 									request->req_flags & req_error_handler;
 								request->req_flags |= req_error_handler;
 								node = looper(tdbb, request, node);
@@ -2387,7 +2393,9 @@ static JRD_NOD looper(TDBB tdbb, jrd_req* request, JRD_NOD in_node)
 					for (save_point = transaction->tra_save_point;
 						 save_point && count <= save_point->sav_number;
 						 save_point = transaction->tra_save_point)
+					{
 						VERB_CLEANUP;
+					}
 				}
 			default:
 				node = node->nod_parent;
@@ -2596,7 +2604,8 @@ static JRD_NOD looper(TDBB tdbb, jrd_req* request, JRD_NOD in_node)
 			{
 			sta* impure = (STA) ((SCHAR *) request + node->nod_impure);
 			if ((request->req_operation == jrd_req::req_return) &&
-				(!impure->sta_state) && (node->nod_arg[e_sto_sub_store])) {
+				(!impure->sta_state) && (node->nod_arg[e_sto_sub_store]))
+			{
 				if (!top_node) {
 					top_node = node;
 					which_sto_trig = PRE_TRIG;
@@ -2685,18 +2694,14 @@ static JRD_NOD looper(TDBB tdbb, jrd_req* request, JRD_NOD in_node)
 				RLCK_release_lock(*(LCK *) desc->dsc_address);
 #else
 				{
-					ATT attachment;
-					LCK lock;
-					ULONG slot;
-					VEC vector;
+					att* attachment = tdbb->tdbb_attachment;
 
-					attachment = tdbb->tdbb_attachment;
-
-					lock = NULL;
-					slot = *(ULONG *) desc->dsc_address;
-					if ((vector = attachment->att_lck_quick_ref) &&
-						slot < vector->vec_count)
-							lock = (LCK) vector->vec_object[slot];
+					lck* lock = NULL;
+					const ULONG slot = *(ULONG *) desc->dsc_address;
+					vec* vector = attachment->att_lck_quick_ref;
+					if (vector && slot < vector->vec_count) {
+						lock = (LCK) vector->vec_object[slot];
+					}
 					RLCK_release_lock(lock);
 					vector->vec_object[slot] = NULL;
 				}
@@ -2737,9 +2742,7 @@ static JRD_NOD looper(TDBB tdbb, jrd_req* request, JRD_NOD in_node)
 
 		case nod_set_generator:
 			if (request->req_operation == jrd_req::req_evaluate) {
-				DSC *desc;
-
-				desc = EVL_expr(tdbb, node->nod_arg[e_gen_value]);
+				dsc* desc = EVL_expr(tdbb, node->nod_arg[e_gen_value]);
 				DPM_gen_id(tdbb, (SLONG) node->nod_arg[e_gen_id], 1,
 								  MOV_get_int64(desc, 0));
 				request->req_operation = jrd_req::req_return;
@@ -2749,9 +2752,7 @@ static JRD_NOD looper(TDBB tdbb, jrd_req* request, JRD_NOD in_node)
 
 		case nod_set_generator2:
 			if (request->req_operation == jrd_req::req_evaluate) {
-				DSC *desc;
-
-				desc = EVL_expr(tdbb, node->nod_arg[e_gen_value]);
+				dsc* desc = EVL_expr(tdbb, node->nod_arg[e_gen_value]);
 				DPM_gen_id(tdbb, (SLONG) node->nod_arg[e_gen_id], 1,
 								  MOV_get_int64(desc, 0));
 				request->req_operation = jrd_req::req_return;
@@ -2853,7 +2854,7 @@ static JRD_NOD looper(TDBB tdbb, jrd_req* request, JRD_NOD in_node)
 }
 
 
-static JRD_NOD modify(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
+static jrd_nod* modify(TDBB tdbb, jrd_nod* node, SSHORT which_trig)
 {
 /**************************************
  *
@@ -2912,7 +2913,7 @@ static JRD_NOD modify(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 									   transaction,
 									   reinterpret_cast<BLK>(tdbb->tdbb_default), FALSE)))
 		{
-				ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
+			ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
 		}
 		VIO_data(tdbb, org_rpb,
 				 reinterpret_cast<BLK>(tdbb->tdbb_request->req_pool));
@@ -3161,7 +3162,7 @@ static JRD_NOD modify(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 	return node->nod_arg[e_mod_statement];
 }
 
-static JRD_NOD receive_msg(TDBB tdbb, JRD_NOD node)
+static jrd_nod* receive_msg(TDBB tdbb, jrd_nod* node)
 {
 /**************************************
  *
@@ -3240,7 +3241,7 @@ static void release_blobs(TDBB tdbb, jrd_req* request)
 
 
 #ifdef PC_ENGINE
-static JRD_NOD release_bookmark(TDBB tdbb, JRD_NOD node)
+static jrd_nod* release_bookmark(TDBB tdbb, jrd_nod* node)
 {
 /**************************************
  *
@@ -3292,7 +3293,7 @@ static void release_proc_save_points(jrd_req* request)
 
 
 #ifdef SCROLLABLE_CURSORS
-static JRD_NOD seek_rse(TDBB tdbb, jrd_req* request, JRD_NOD node)
+static jrd_nod* seek_rse(TDBB tdbb, jrd_req* request, jrd_nod* node)
 {
 /**************************************
  *
@@ -3505,7 +3506,7 @@ static void seek_rsb(
 #endif
 
 
-static JRD_NOD selct(TDBB tdbb, JRD_NOD node)
+static jrd_nod* selct(TDBB tdbb, jrd_nod* node)
 {
 /**************************************
  *
@@ -3542,7 +3543,7 @@ static JRD_NOD selct(TDBB tdbb, JRD_NOD node)
 
 
 
-static JRD_NOD send_msg(TDBB tdbb, JRD_NOD node)
+static jrd_nod* send_msg(TDBB tdbb, jrd_nod* node)
 {
 /**************************************
  *
@@ -3579,7 +3580,7 @@ static JRD_NOD send_msg(TDBB tdbb, JRD_NOD node)
 
 
 #ifdef PC_ENGINE
-static JRD_NOD set_bookmark(TDBB tdbb, JRD_NOD node)
+static jrd_nod* set_bookmark(TDBB tdbb, jrd_nod* node)
 {
 /**************************************
  *
@@ -3631,7 +3632,7 @@ static JRD_NOD set_bookmark(TDBB tdbb, JRD_NOD node)
 #endif
 
 
-static void set_error(TDBB tdbb, const xcp_repeat* exception, JRD_NOD msg_node)
+static void set_error(TDBB tdbb, const xcp_repeat* exception, jrd_nod* msg_node)
 {
 /**************************************
  *
@@ -3730,7 +3731,7 @@ static void set_error(TDBB tdbb, const xcp_repeat* exception, JRD_NOD msg_node)
 
 
 #ifdef PC_ENGINE
-static JRD_NOD set_index(TDBB tdbb, JRD_NOD node)
+static jrd_nod* set_index(TDBB tdbb, jrd_nod* node)
 {
 /**************************************
  *
@@ -3778,7 +3779,7 @@ static JRD_NOD set_index(TDBB tdbb, JRD_NOD node)
 #endif
 
 
-static JRD_NOD stall(TDBB tdbb, JRD_NOD node)
+static jrd_nod* stall(TDBB tdbb, jrd_nod* node)
 {
 /**************************************
  *
@@ -3814,7 +3815,7 @@ static JRD_NOD stall(TDBB tdbb, JRD_NOD node)
 }
 
 
-static JRD_NOD store(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
+static jrd_nod* store(TDBB tdbb, jrd_nod* node, SSHORT which_trig)
 {
 /**************************************
  *
@@ -3978,7 +3979,7 @@ static JRD_NOD store(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 
 
 #ifdef PC_ENGINE
-static JRD_NOD stream(TDBB tdbb, JRD_NOD node)
+static jrd_nod* stream(TDBB tdbb, jrd_nod* node)
 {
 /**************************************
  *
@@ -4135,7 +4136,7 @@ static void trigger_failure(TDBB tdbb, jrd_req* trigger)
 }
 
 
-static void validate(TDBB tdbb, JRD_NOD list)
+static void validate(TDBB tdbb, jrd_nod* list)
 {
 /**************************************
  *
@@ -4151,10 +4152,11 @@ static void validate(TDBB tdbb, JRD_NOD list)
 	SET_TDBB(tdbb);
 	BLKCHK(list, type_nod);
 
-	JRD_NOD *ptr1, *ptr2;
+	jrd_nod** ptr1;
+	jrd_nod** end;
 
-	for (ptr1 = list->nod_arg, ptr2 = ptr1 + list->nod_count;
-		 ptr1 < ptr2; ptr1++)
+	for (ptr1 = list->nod_arg, end = ptr1 + list->nod_count;
+		 ptr1 < end; ptr1++)
 	{
 		if (!EVL_boolean(tdbb, (*ptr1)->nod_arg[e_val_boolean]))
 		{

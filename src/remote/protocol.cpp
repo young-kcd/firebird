@@ -79,9 +79,9 @@ static bool_t xdr_quad(XDR *, struct bid *);
 static bool_t xdr_request(XDR *, USHORT, USHORT, USHORT);
 #ifdef VMS
 static bool_t xdr_semi_opaque(XDR *, REM_MSG, FMT);
-static bool_t xdr_semi_opaque_slice(XDR *, LSTRING *);
+static bool_t xdr_semi_opaque_slice(XDR *, lstring *);
 #endif
-static bool_t xdr_slice(XDR*, LSTRING*, USHORT, const UCHAR*);
+static bool_t xdr_slice(XDR*, lstring*, USHORT, const UCHAR*);
 static bool_t xdr_status_vector(XDR *, ISC_STATUS *, TEXT * strings[]);
 static bool_t xdr_sql_blr(XDR *, SLONG, CSTRING *, int, SQL_STMT_TYPE);
 static bool_t xdr_sql_message(XDR *, SLONG);
@@ -1397,7 +1397,7 @@ static bool_t xdr_semi_opaque( XDR* xdrs, REM_MSG message, FMT format)
 
 
 #ifdef VMS
-static bool_t xdr_semi_opaque_slice( XDR* xdrs, LSTRING* slice)
+static bool_t xdr_semi_opaque_slice( XDR* xdrs, lstring* slice)
 {
 /**************************************
  *
@@ -1458,7 +1458,7 @@ static bool_t xdr_semi_opaque_slice( XDR* xdrs, LSTRING* slice)
 
 static bool_t xdr_slice(
 						XDR* xdrs,
-						LSTRING* slice, USHORT sdl_length, const UCHAR* sdl)
+						lstring* slice, USHORT sdl_length, const UCHAR* sdl)
 {
 /**************************************
  *

@@ -116,8 +116,7 @@ UINT64 MVOL_fini_read()
 	{
 		close_platf(tdgbl->file_desc);
 
-		FIL	file;
-		for (file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
+		for (burp_fil* file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
 		{
 			if (file->fil_fd == tdgbl->file_desc) {
 				file->fil_fd = INVALID_HANDLE_VALUE;
@@ -146,7 +145,7 @@ UINT64 MVOL_fini_write(int* io_cnt, UCHAR** io_ptr)
 	if (strcmp(tdgbl->mvol_old_file, "stdout") != 0)
 	{
 		close_platf(tdgbl->file_desc);
-		for (FIL file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
+		for (burp_fil* file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
 		{
 			if (file->fil_fd == tdgbl->file_desc)
 				file->fil_fd = INVALID_HANDLE_VALUE;
@@ -541,7 +540,7 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 				if (tdgbl->action->act_file->fil_next)
 				{
 					close_platf(tdgbl->file_desc);
-					for (FIL file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
+					for (burp_fil* file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
 					{
 						if (file->fil_fd == tdgbl->file_desc)
 							file->fil_fd = INVALID_HANDLE_VALUE;
@@ -608,7 +607,8 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 					if (tdgbl->action->act_file->fil_next)
 					{
 						close_platf(tdgbl->file_desc);
-						for (FIL file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
+						for (burp_fil* file = tdgbl->gbl_sw_backup_files; file;
+							file = file->fil_next)
 						{
 							if (file->fil_fd == tdgbl->file_desc)
 								file->fil_fd = INVALID_HANDLE_VALUE;
@@ -1004,9 +1004,7 @@ static void prompt_for_name(SCHAR* name, int length)
 			BURP_msg_get(229, msg, 0, 0, 0, 0, 0);
 			// \n\nERROR: Backup incomplete\n
 			ib_fprintf(term_out, msg);
-			tdgbl->exit_code = FINI_ERROR;
-			if (tdgbl->burp_env != NULL)
-				Firebird::status_exception::raise(1);
+			BURP_exit_local(FINI_ERROR, tdgbl);
 		}
 
 		// If the user typed just a carriage return, they
@@ -1137,7 +1135,7 @@ static bool read_header(DESC	handle,
 		case att_backup_compress:
 			temp = get_numeric();
 			if (init_flag)
-				tdgbl->gbl_sw_compress = temp;
+				tdgbl->gbl_sw_compress = temp != 0;
 			break;
 
 		case att_backup_date:
@@ -1202,7 +1200,7 @@ static bool read_header(DESC	handle,
 			temp = get_numeric();
 			if (init_flag)
 			{
-				tdgbl->gbl_sw_transportable = temp;
+				tdgbl->gbl_sw_transportable = temp != 0;
 			}
 			break;
 

@@ -43,6 +43,8 @@
 @cd %ROOT_PATH%\gen\examples
 @del empbuild.fdb 2> nul
 @del intlbuild.fdb 2> nul
+:: CVC: I need this line to ensure isql is the correct one.
+@copy %ROOT_PATH%\output\bin\isql.exe %ROOT_PATH%\gen\examples\ /y > nul
 @%ROOT_PATH%\gen\examples\isql -i empbld.sql
 @%ROOT_PATH%\gen\examples\isql -i intlbld.sql
 @cd %ROOT_PATH%\builds\win32

@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.86 2004-01-06 10:33:12 robocop Exp $
+$Id: met.epp,v 1.87 2004-01-13 09:52:14 robocop Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -137,14 +137,14 @@ static bool get_type(TDBB, SSHORT*, const UCHAR*, const TEXT*);
 static void lookup_view_contexts(TDBB, jrd_rel*);
 static void name_copy(TEXT*, const TEXT*);
 static USHORT name_length(const TEXT *);
-static jrd_nod* parse_procedure_blr(TDBB, jrd_prc*, SLONG[2], CSB);
-static BOOLEAN par_messages(TDBB, const UCHAR*, USHORT, jrd_prc*, CSB);
+static jrd_nod* parse_procedure_blr(TDBB, jrd_prc*, SLONG[2], Csb*);
+static BOOLEAN par_messages(TDBB, const UCHAR*, USHORT, jrd_prc*, Csb*);
 static BOOLEAN resolve_charset_and_collation(TDBB, SSHORT*, const UCHAR*,
 											 const UCHAR*);
 static str* save_name(TDBB, const TEXT*);
 static void save_trigger_data(TDBB, TRIG_VEC*, jrd_rel*, JRD_REQ, STR,
 	const TEXT*, bool, USHORT);
-static void store_dependencies(TDBB, CSB, const TEXT*, USHORT);
+static void store_dependencies(TDBB, Csb*, const TEXT*, USHORT);
 static bool verify_TRG_ignore_perm(TDBB, const TEXT*);
 
 
@@ -935,13 +935,13 @@ BOOLEAN MET_get_char_subtype(TDBB tdbb,
 }
 
 
-JRD_NOD MET_get_dependencies(TDBB			tdbb,
+jrd_nod* MET_get_dependencies(TDBB			tdbb,
 						 jrd_rel*			relation,
 						 TEXT*			blob,
-						 CSB			view_csb,
+						 Csb*			view_csb,
 						 SLONG			blob_id[2],
 						 jrd_req**			request,
-						 CSB*			csb_ptr,
+						 Csb**			csb_ptr,
 						 const TEXT*	object_name,
 						 USHORT			type)
 {
@@ -959,7 +959,7 @@ JRD_NOD MET_get_dependencies(TDBB			tdbb,
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
 
-	CSB csb_ = Csb::newCsb(*tdbb->tdbb_default, 5);
+	Csb* csb_ = Csb::newCsb(*tdbb->tdbb_default, 5);
 	csb_->csb_g_flags |= csb_get_dependencies;
 
 	jrd_nod* node;
@@ -2320,10 +2320,10 @@ jrd_rel* MET_lookup_relation_id(TDBB tdbb, SLONG id, BOOLEAN return_deleted)
 }
 
 
-JRD_NOD MET_parse_blob(TDBB		tdbb,
+jrd_nod* MET_parse_blob(TDBB		tdbb,
 				   jrd_rel*		relation,
 				   SLONG	blob_id[2],
-				   CSB*		csb_ptr,
+				   Csb**		csb_ptr,
 				   jrd_req**		request_ptr,
 				   BOOLEAN	trigger,
 				   BOOLEAN	ignore_perm)
@@ -2544,7 +2544,7 @@ jrd_prc* MET_procedure(TDBB tdbb, int id, BOOLEAN noscan, USHORT flags)
 	vec::iterator ptr, end;
 	PRM parameter;
 	JrdMemoryPool *old_pool;
-	JRD_NOD node;
+	jrd_nod* node;
 	FMT format;
 	fmt::fmt_desc_iterator desc;
 	SSHORT i;
@@ -2753,7 +2753,7 @@ jrd_prc* MET_procedure(TDBB tdbb, int id, BOOLEAN noscan, USHORT flags)
 
 			old_pool = tdbb->tdbb_default;
 			tdbb->tdbb_default = JrdMemoryPool::createPool();
-			CSB csb_ = Csb::newCsb(*tdbb->tdbb_default, 5);
+			Csb* csb_ = Csb::newCsb(*tdbb->tdbb_default, 5);
 			parse_procedure_blr(tdbb, procedure, (SLONG*)&P.RDB$PROCEDURE_BLR, csb_);
 			procedure->prc_request->req_procedure = procedure;
 			for (i = 0; i < csb_->csb_rpt.getCount(); i++)
@@ -3259,7 +3259,7 @@ void MET_scan_relation( TDBB tdbb, jrd_rel* relation)
 /* Since this can be called recursively, find an inactive clone of the request */
 
 	request = (BLK) CMP_find_request(tdbb, irq_r_fields, IRQ_REQUESTS);
-	CSB csb_ = NULL;
+	Csb* csb_ = NULL;
 
 	FOR(REQUEST_HANDLE request)
 		REL IN RDB$RELATIONS WITH REL.RDB$RELATION_ID EQ relation->rel_id
@@ -3924,7 +3924,7 @@ static USHORT name_length(const TEXT* name)
 
 static jrd_nod* parse_procedure_blr(
 							   TDBB tdbb,
-							   jrd_prc* procedure, SLONG blob_id[2], CSB csb)
+							   jrd_prc* procedure, SLONG blob_id[2], Csb* csb)
 {
 /**************************************
  *
@@ -3959,7 +3959,7 @@ static BOOLEAN par_messages(TDBB	tdbb,
 							const UCHAR*	blr,
 							USHORT	blr_length,
 							jrd_prc*	procedure,
-							CSB		csb)
+							Csb*		csb)
 {
 /**************************************
  *
@@ -4255,7 +4255,7 @@ static void save_trigger_data(TDBB tdbb, TRIG_VEC* ptr, jrd_rel* relation,
 
 
 static void store_dependencies(TDBB			tdbb,
-							   CSB			csb,
+							   Csb*			csb,
 							   const TEXT*	object_name,
 							   USHORT		dependency_type)
 {
@@ -4278,7 +4278,7 @@ static void store_dependencies(TDBB			tdbb,
 
 	while (csb->csb_dependencies)
 	{
-		jrd_nod* node = (JRD_NOD) LLS_POP(&csb->csb_dependencies);
+		jrd_nod* node = (jrd_nod*) LLS_POP(&csb->csb_dependencies);
 		if (!node->nod_arg[e_dep_object])
 			continue;
 		const SSHORT dpdo_type = (SSHORT) (SLONG) node->nod_arg[e_dep_object_type];

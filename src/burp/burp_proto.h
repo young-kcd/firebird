@@ -31,7 +31,8 @@ int BURP_main(SVC service);
 void	BURP_abort(void);
 void	BURP_error(USHORT, bool, USHORT, const void*, USHORT, const void*,
 						USHORT, const void*, USHORT, const void*, USHORT, const void*);
-void	BURP_error(USHORT, bool, const void*, const void*, const void*, const void*, const void*);
+void	BURP_error(USHORT, bool, const void*, const void*, const void*,
+						const void*, const void*);
 void	BURP_print_status(const ISC_STATUS*);
 void	BURP_error_redirect(const ISC_STATUS*, USHORT, const void*, const void*);
 void	BURP_msg_partial(USHORT, const void*, const void*, const void*,

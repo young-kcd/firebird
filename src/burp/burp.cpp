@@ -117,12 +117,12 @@ enum gbak_action
 	FDESC	=	3
 };
 
-static void close_out_transaction(volatile gbak_action, isc_tr_handle *);
+static void close_out_transaction(volatile gbak_action, isc_tr_handle*);
 //static void enable_signals(void);
 //static void excp_handler(void);
-static SLONG get_number(const SCHAR *);
-static ULONG get_size(const SCHAR *, FIL);
-static gbak_action open_files(const TEXT *, const TEXT**, USHORT, USHORT, USHORT);
+static SLONG get_number(const SCHAR*);
+static ULONG get_size(const SCHAR*, burp_fil*);
+static gbak_action open_files(const TEXT *, const TEXT**, bool, USHORT);
 static int common_main(int, char**, pfn_svc_output, svc*);
 #ifndef SUPERSERVER
 tgbl *gdgbl;
@@ -148,13 +148,6 @@ static inline void translate_cp(SCHAR* a)
 {
 }
 #endif
-
-static inline void exit_local(int code, TGBL tdgbl)
-{
-	tdgbl->exit_code = ((volatile int)code);
-	if (tdgbl->burp_env != NULL)
-		Firebird::status_exception::raise(1);
-}
 
 static int output_svc(svc* output_data, const UCHAR* output_buf)
 {
@@ -244,9 +237,10 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 		for (; q = in_sw_tab->in_sw_name; in_sw_tab++)
 		{
 			TEXT c;
-			for (const TEXT *p = string + 1; c = *p++;)
+			for (const TEXT *p = string + 1; c = *p++;) {
 				if (UPPER(c) != *q++)
 					break;
+			}
 			if (!c)
 				break;
 		}
@@ -426,7 +420,7 @@ static int api_gbak(int argc,
 			*password = '\0';
 	}
 
-	char *const svc_name = (char *) gds__alloc((SLONG) (strlen(service) + 1));
+	char* const svc_name = (char *) gds__alloc((SLONG) (strlen(service) + 1));
 
 	if (svc_name == NULL) {
 		status[0] = isc_arg_gds;
@@ -631,26 +625,26 @@ int common_main(int		argc,
    If this utility is started as a thread in the engine, then the first switch
    will be "-svc_thd".
 */
-	tdgbl->gbl_sw_service_gbak = FALSE;
-	tdgbl->gbl_sw_service_thd = FALSE;
+	tdgbl->gbl_sw_service_gbak = false;
+	tdgbl->gbl_sw_service_thd = false;
 	tdgbl->service_blk = NULL;
 	tdgbl->status = const_cast<long* volatile>(tdgbl->status_vector);
 
 	if (argc > 1 && !strcmp(argv[1], "-svc")) {
-		tdgbl->gbl_sw_service_gbak = TRUE;
+		tdgbl->gbl_sw_service_gbak = true;
 		argv++;
 		argc--;
 	}
 	else if (argc > 1 && !strcmp(argv[1], "-svc_thd")) {
-		tdgbl->gbl_sw_service_gbak = TRUE;
-		tdgbl->gbl_sw_service_thd = TRUE;
+		tdgbl->gbl_sw_service_gbak = true;
+		tdgbl->gbl_sw_service_thd = true;
 		tdgbl->service_blk = (SVC) output_data;
 		tdgbl->status = tdgbl->service_blk->svc_status;
 		argv++;
 		argc--;
 	}
 	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
-		tdgbl->gbl_sw_service_gbak = TRUE;
+		tdgbl->gbl_sw_service_gbak = true;
 		tdgbl->output_proc = output_svc;
 		long redir_in = atol(argv[2]);
 		long redir_out = atol(argv[3]);
@@ -683,20 +677,21 @@ int common_main(int		argc,
 
 
 	USHORT sw_replace = FALSE;
-	USHORT sw_tape = FALSE;
 
-	tdgbl->gbl_sw_compress = TRUE;
-	tdgbl->gbl_sw_convert_ext_tables = FALSE;
-	tdgbl->gbl_sw_transportable = TRUE;
-	tdgbl->gbl_sw_ignore_limbo = FALSE;
+	tdgbl->gbl_sw_compress = true;
+	tdgbl->gbl_sw_convert_ext_tables = false;
+	tdgbl->gbl_sw_transportable = true;
+	tdgbl->gbl_sw_ignore_limbo = false;
 	tdgbl->gbl_sw_blk_factor = 0;
-	tdgbl->gbl_sw_no_reserve = FALSE;
+	tdgbl->gbl_sw_no_reserve = false;
+	tdgbl->gbl_sw_old_descriptions = false;
 	tdgbl->gbl_sw_mode = false;
 	tdgbl->gbl_sw_skip_count = 0;
 	tdgbl->action = NULL;
 
 	tdgbl->dpb_length = 0;
-	FIL file = NULL, file_list = NULL;
+	burp_fil* file = NULL;
+	burp_fil* file_list = NULL;
 	tdgbl->io_buffer_size = GBAK_IO_BUFFER_SIZE;
 	
 	const TEXT* const* const end = argv + argc;
@@ -713,7 +708,7 @@ int common_main(int		argc,
 				/*  Miserable thing must be a filename
 				   (dummy in a length for the backup file */
 
-				file = (FIL) BURP_alloc_zero(FIL_LEN);
+				file = (burp_fil*) BURP_alloc_zero(FIL_LEN);
 				file->fil_name = string;
 				file->fil_fd = INVALID_HANDLE_VALUE;
 				if (!file_list)
@@ -870,14 +865,14 @@ int common_main(int		argc,
 						BURP_print(66, redirect, 0, 0, 0, 0);
 						// msg 66 can't open status and error output file %s 
 						ib_fclose(tmp_outfile);
-						exit_local(FINI_ERROR, const_cast<tgbl*>(tdgbl));
+						BURP_exit_local(FINI_ERROR, const_cast<tgbl*>(tdgbl));
 					}
 					if (!
 						(tdgbl->output_file =
 						 ib_fopen(redirect, fopen_write_type))) {
 						BURP_print(66, redirect, 0, 0, 0, 0);
 						// msg 66 can't open status and error output file %s 
-						exit_local(FINI_ERROR, const_cast<tgbl*>(tdgbl));
+						BURP_exit_local(FINI_ERROR, const_cast<tgbl*>(tdgbl));
 					}
 				}
 			}					//else if (in_sw_tab->in_sw == IN_SW_BURP_Y) 
@@ -888,7 +883,7 @@ int common_main(int		argc,
 
 	tdgbl->gbl_sw_files = NULL;
 
-    FIL next_file = NULL;
+    burp_fil* next_file = NULL;
 	for (file = file_list; file; file = next_file) {
 		next_file = file->fil_next;
 		file->fil_next = tdgbl->gbl_sw_files;
@@ -941,11 +936,11 @@ int common_main(int		argc,
 				break;
 
 			case (IN_SW_BURP_CO):
-				tdgbl->gbl_sw_convert_ext_tables = TRUE;
+				tdgbl->gbl_sw_convert_ext_tables = true;
 				break;
 
 			case (IN_SW_BURP_E):
-				tdgbl->gbl_sw_compress = FALSE;
+				tdgbl->gbl_sw_compress = false;
 				break;
 
 			case (IN_SW_BURP_G):
@@ -957,7 +952,7 @@ int common_main(int		argc,
 				break;
 
 			case (IN_SW_BURP_I):
-				tdgbl->gbl_sw_deactivate_indexes = TRUE;
+				tdgbl->gbl_sw_deactivate_indexes = true;
 				break;
 
 			case (IN_SW_BURP_IG):
@@ -970,15 +965,15 @@ int common_main(int		argc,
 				break;
 
 			case (IN_SW_BURP_K):
-				tdgbl->gbl_sw_kill = TRUE;
+				tdgbl->gbl_sw_kill = true;
 				break;
 
 			case (IN_SW_BURP_L):
-				tdgbl->gbl_sw_ignore_limbo = TRUE;
+				tdgbl->gbl_sw_ignore_limbo = true;
 				break;
 
 			case (IN_SW_BURP_M):
-				tdgbl->gbl_sw_meta = TRUE;
+				tdgbl->gbl_sw_meta = true;
 				break;
 
 			case (IN_SW_BURP_MODE):
@@ -986,19 +981,19 @@ int common_main(int		argc,
 				break;
 
 			case (IN_SW_BURP_N):
-				tdgbl->gbl_sw_novalidity = TRUE;
+				tdgbl->gbl_sw_novalidity = true;
 				break;
 
 			case (IN_SW_BURP_NT):	// Backup non-transportable format 
-				tdgbl->gbl_sw_transportable = FALSE;
+				tdgbl->gbl_sw_transportable = false;
 				break;
 
 			case (IN_SW_BURP_O):
-				tdgbl->gbl_sw_incremental = TRUE;
+				tdgbl->gbl_sw_incremental = true;
 				break;
 
 			case (IN_SW_BURP_OL):
-				tdgbl->gbl_sw_old_descriptions = TRUE;
+				tdgbl->gbl_sw_old_descriptions = true;
 				break;
 
 			case (IN_SW_BURP_PASS):
@@ -1024,7 +1019,7 @@ int common_main(int		argc,
 				break;
 
 			case (IN_SW_BURP_T):
-				tdgbl->gbl_sw_transportable = TRUE;
+				tdgbl->gbl_sw_transportable = true;
 				break;
 
 			case (IN_SW_BURP_U):
@@ -1033,7 +1028,7 @@ int common_main(int		argc,
 				break;
 
 			case (IN_SW_BURP_US):
-				tdgbl->gbl_sw_no_reserve = TRUE;
+				tdgbl->gbl_sw_no_reserve = true;
 				break;
 
 			case (IN_SW_BURP_ROLE):
@@ -1061,13 +1056,13 @@ int common_main(int		argc,
 				}
 
 			case (IN_SW_BURP_V):
-				tdgbl->gbl_sw_verbose = TRUE;
+				tdgbl->gbl_sw_verbose = true;
 				break;
 
 			case (IN_SW_BURP_Z):
 				BURP_print(91, (void*) GDS_VERSION, 0, 0, 0, 0);
 				// msg 91 gbak version %s 
-				tdgbl->gbl_sw_version = TRUE;
+				tdgbl->gbl_sw_version = true;
 				break;
 
 			default:
@@ -1141,7 +1136,7 @@ int common_main(int		argc,
 	tdgbl->action->act_action = ACT_unknown;
 
 	action =
-		open_files(file1, &file2, tdgbl->gbl_sw_verbose, sw_replace, sw_tape);
+		open_files(file1, &file2, tdgbl->gbl_sw_verbose, sw_replace);
 
 	MVOL_init(tdgbl->io_buffer_size);
 	
@@ -1166,7 +1161,7 @@ int common_main(int		argc,
 	if (result != FINI_OK && result != FINI_DB_NOT_ONLINE)
 		BURP_abort();
 
-	exit_local(result, const_cast<tgbl*>(tdgbl));
+	BURP_exit_local(result, const_cast<tgbl*>(tdgbl));
 	return result;
 	}	// try
 
@@ -1175,10 +1170,10 @@ int common_main(int		argc,
 		// All calls to exit_local(), normal and error exits, wind up here 
 
 		tdgbl->burp_env = NULL;
-		int exit_code = tdgbl->exit_code;
+		const int exit_code = tdgbl->exit_code;
 
 		// Close the gbak file handles if they still open 
-		for (FIL file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
+		for (burp_fil* file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
 		{
 			if (file->fil_fd != INVALID_HANDLE_VALUE)
 				close_platf(file->fil_fd);
@@ -1251,7 +1246,7 @@ void BURP_abort(void)
 
 	SVC_STARTED(tdgbl->service_blk);
 
-	exit_local(FINI_ERROR, tdgbl);
+	BURP_exit_local(FINI_ERROR, tdgbl);
 }
 
 void BURP_error(USHORT errcode, bool abort,
@@ -1334,6 +1329,15 @@ void BURP_error_redirect(const ISC_STATUS* status_vector,
 
 	BURP_print_status(status_vector);
 	BURP_error(errcode, true, arg1, arg2, NULL, NULL, NULL);
+}
+
+
+// Raises an exception when the old SEH system would jump to another place.
+void BURP_exit_local(int code, TGBL tdgbl)
+{
+	tdgbl->exit_code = ((volatile int)code);
+	if (tdgbl->burp_env != NULL)
+		Firebird::status_exception::raise(1);
 }
 
 
@@ -1649,9 +1653,8 @@ static SLONG get_number( const SCHAR* string)
 
 static gbak_action open_files(const TEXT* file1,
 							  const TEXT** file2,
-							  USHORT sw_verbose,
-							  USHORT sw_replace,
-							  USHORT sw_tape)
+							  bool sw_verbose,
+							  USHORT sw_replace)
 {
 /**************************************
  *
@@ -1704,7 +1707,7 @@ static gbak_action open_files(const TEXT* file1,
 			return QUIT;
 		}
 
-	FIL fil = 0;
+	burp_fil* fil = 0;
 	if (sw_replace == IN_SW_BURP_B) {
 
 		// Now it is safe to skip a db file 
@@ -2090,11 +2093,11 @@ static void burp_output( const SCHAR* format, ...)
 	}
 
 	if (exit_code != 0)
-		exit_local(exit_code, tdgbl);
+		BURP_exit_local(exit_code, tdgbl);
 }
 
 
-static ULONG get_size( const SCHAR* string, FIL file)
+static ULONG get_size( const SCHAR* string, burp_fil* file)
 {
 /**********************************************
  *

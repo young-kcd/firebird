@@ -150,7 +150,7 @@ EXP NAV_expand_index(WIN * window, IRSB_NAV impure)
 
 #ifdef PC_ENGINE
 BOOLEAN NAV_find_record(RSB rsb,
-						USHORT operator, USHORT direction, JRD_NOD find_key)
+						USHORT operator, USHORT direction, jrd_nod* find_key)
 {
 /**************************************
  *
@@ -487,7 +487,7 @@ BOOLEAN NAV_get_record(TDBB tdbb,
 	UCHAR* nextPointer = get_position(tdbb, rsb, impure, &window, 
 		direction, &expanded_next);
 	MOVE_FAST(impure->irsb_nav_data, key.key_data, impure->irsb_nav_length);
-	JRD_NOD retrieval_node = (JRD_NOD) rsb->rsb_arg[RSB_NAV_index];
+	jrd_nod* retrieval_node = (jrd_nod*) rsb->rsb_arg[RSB_NAV_index];
 	IRB retrieval = (IRB) retrieval_node->nod_arg[e_idx_retrieval];
 
 	// set the upper (or lower) limit for navigational retrieval
@@ -1147,7 +1147,7 @@ static BOOLEAN find_record(
 	jrd_req* request;
 	IRSB_NAV impure;
 	RPB *rpb;
-	JRD_NOD retrieval_node;
+	jrd_nod* retrieval_node;
 	IRB retrieval;
 	IDX *idx;
 	BTR page;
@@ -1167,7 +1167,7 @@ static BOOLEAN find_record(
 	rpb = request->req_rpb + rsb->rsb_stream;
 	window.win_flags = 0;
 
-	retrieval_node = (JRD_NOD) rsb->rsb_arg[RSB_NAV_index];
+	retrieval_node = (jrd_nod*) rsb->rsb_arg[RSB_NAV_index];
 	retrieval = (IRB) retrieval_node->nod_arg[e_idx_retrieval];
 
 	// save the current equality retrieval key
@@ -1683,7 +1683,7 @@ static UCHAR* nav_open(
 	IRB retrieval;
 	KEY lower, upper, *limit_ptr;
 	//EXP expanded_page;
-	JRD_NOD retrieval_node;
+	jrd_nod* retrieval_node;
 
 	SET_TDBB(tdbb);
 
@@ -1700,7 +1700,7 @@ static UCHAR* nav_open(
 	}
 
 	// Find the starting leaf page
-	retrieval_node = (JRD_NOD) rsb->rsb_arg[RSB_NAV_index];
+	retrieval_node = (jrd_nod*) rsb->rsb_arg[RSB_NAV_index];
 	retrieval = (IRB) retrieval_node->nod_arg[e_idx_retrieval];
 	IDX *idx = (IDX *) ((SCHAR *) impure + (SLONG) rsb->rsb_arg[RSB_NAV_idx_offset]);
 	BTR page = BTR_find_page(tdbb, retrieval, window, idx, &lower, 

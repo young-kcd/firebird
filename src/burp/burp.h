@@ -534,7 +534,7 @@ const int TRIGGER_SEQUENCE_DEFAULT	= 0;
 
 /* field block, used to hold local field definitions */
 
-typedef struct burp_fld {
+struct burp_fld {
 	burp_fld*	fld_next;
 	SSHORT		fld_type;
 	SSHORT		fld_sub_type;
@@ -572,7 +572,7 @@ typedef struct burp_fld {
 	SSHORT		fld_character_length;
 	SSHORT		fld_character_set_id;
 	SSHORT		fld_collation_id;
-} *BURP_FLD;
+};
 
 enum fld_flags_vals {
 	FLD_computed			= 1,
@@ -586,7 +586,7 @@ enum fld_flags_vals {
 
 /* relation definition - holds useful relation type stuff */
 
-typedef struct burp_rel {
+struct burp_rel {
 	burp_rel*	rel_next;
 	burp_fld*	rel_fields;
 	SSHORT		rel_flags;
@@ -600,7 +600,7 @@ typedef struct burp_rel {
 	ISC_QUAD	rel_modify_source;	/* trigger source blob id */
 	ISC_QUAD	rel_erase_blr;		/* trigger blr blob id */
 	ISC_QUAD	rel_erase_source;	/* trigger source blob id */
-} *BURP_REL;
+};
 
 enum burp_rel_flags_vals {
 	REL_view		= 1,
@@ -609,12 +609,12 @@ enum burp_rel_flags_vals {
 
 /* procedure definition - holds useful procedure type stuff */
 
-typedef struct burp_prc {
+struct burp_prc {
 	burp_prc*	prc_next;
 	SSHORT		prc_name_length;
 	GDS_NAME	prc_name;
 	GDS_NAME	prc_owner;		/* relation owner, if not us */
-} *BURP_PRC;
+};
 
 
 typedef struct gfld {
@@ -700,16 +700,16 @@ typedef enum {
 	size_e		/* error */
 } SIZE_CODE;
 
-typedef struct fil {
-	fil*		fil_next;
+struct burp_fil {
+	burp_fil*	fil_next;
 	TEXT*		fil_name;
 	ULONG		fil_length;
 	DESC		fil_fd;
 	USHORT		fil_seq;
 	SIZE_CODE	fil_size_code;
-} *FIL;
+};
 
-const size_t FIL_LEN	= sizeof(fil);
+const size_t FIL_LEN	= sizeof(burp_fil);
 
 /* Split & Join stuff */
 
@@ -722,14 +722,14 @@ typedef enum act_t {
 } ACT_T;
 
 typedef struct act {
-		USHORT	act_total;
-		FIL		act_file;
-		ACT_T	act_action;
+		USHORT		act_total;
+		burp_fil*	act_file;
+		ACT_T		act_action;
 } *ACT;
 
 const size_t ACT_LEN = sizeof(act);
 
-const ULONG MAX_LENGTH = -1UL; // Keep in sync with fil.fil_length
+const ULONG MAX_LENGTH = -1UL; // Keep in sync with burp_fil.fil_length
 
 /* This structure has been cloned from spit.c */
 
@@ -760,23 +760,23 @@ typedef struct tgbl
 	thdd		tgbl_thd_data;
 	const TEXT*	gbl_database_file_name;
 	TEXT		gbl_backup_start_time[30];
-	USHORT		gbl_sw_verbose;
-	USHORT		gbl_sw_ignore_limbo;
-	USHORT		gbl_sw_meta;
-	USHORT		gbl_sw_novalidity; 
+	bool		gbl_sw_verbose;
+	bool		gbl_sw_ignore_limbo;
+	bool		gbl_sw_meta;
+	bool		gbl_sw_novalidity;
 	USHORT		gbl_sw_page_size;
-	USHORT		gbl_sw_compress;
-	USHORT		gbl_sw_version;
-	USHORT		gbl_sw_transportable;
-	USHORT		gbl_sw_incremental;
-	USHORT		gbl_sw_deactivate_indexes;
-	USHORT		gbl_sw_kill;
+	bool		gbl_sw_compress;
+	bool		gbl_sw_version;
+	bool		gbl_sw_transportable;
+	bool		gbl_sw_incremental;
+	bool		gbl_sw_deactivate_indexes;
+	bool		gbl_sw_kill;
 	USHORT		gbl_sw_blk_factor;
-	USHORT		gbl_sw_no_reserve;
-	USHORT		gbl_sw_old_descriptions;
-	USHORT		gbl_sw_service_gbak;
-	USHORT		gbl_sw_service_thd;
-	USHORT		gbl_sw_convert_ext_tables;
+	bool		gbl_sw_no_reserve;
+	bool		gbl_sw_old_descriptions;
+	bool		gbl_sw_service_gbak;
+	bool		gbl_sw_service_thd;
+	bool		gbl_sw_convert_ext_tables;
 	bool		gbl_sw_mode;
 	bool		gbl_sw_mode_val;
 	SCHAR*		gbl_sw_sql_role;
@@ -784,8 +784,8 @@ typedef struct tgbl
 	SCHAR*		gbl_sw_password;
 	SLONG		gbl_sw_skip_count;
 	SLONG		gbl_sw_page_buffers;
-	FIL			gbl_sw_files;
-	FIL			gbl_sw_backup_files;
+	burp_fil*	gbl_sw_files;
+	burp_fil*	gbl_sw_backup_files;
 	GFLD		gbl_global_fields;
 	ACT			action;
 	ULONG		io_buffer_size;
@@ -795,8 +795,8 @@ typedef struct tgbl
 	UCHAR*		burp_env;
 	UCHAR*		io_ptr;
 	int			io_cnt;
-	BURP_REL	relations;
-	BURP_PRC	procedures;
+	burp_rel*	relations;
+	burp_prc*	procedures;
 	SLONG		BCK_capabilities;
 	USHORT		RESTORE_format;
 	ULONG		mvol_io_buffer_size;
@@ -823,12 +823,12 @@ typedef struct tgbl
 	pfn_svc_output	output_proc;
 	svc*		output_data;
 	IB_FILE*	output_file;
-	SVC			service_blk;
+	svc*		service_blk;
 	/*
 	 * Link list of global fields that were converted from V3 sub_type
 	 * to V4 char_set_id/collate_id. Needed for local fields conversion.
 	 */
-//	BURP_FLD		v3_cvt_fld_list;
+//	burp_fld*		v3_cvt_fld_list;
 
 	isc_req_handle	handles_get_character_sets_req_handle1;
 	isc_req_handle	handles_get_chk_constraint_req_handle1;
@@ -882,6 +882,10 @@ typedef struct tgbl
 	USHORT			hdr_forced_writes;
 	TEXT			database_security_class[GDS_NAME_LEN]; /* To save database security class for deferred update */
 } *TGBL;
+
+// CVC: This aux routine declared here to not force inclusion of burp.h with burp_proto.h
+// in other modules.
+void	BURP_exit_local(int code, tgbl* tdgbl);
 
 #ifdef GET_THREAD_DATA
 #undef GET_THREAD_DATA

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.47 2004-01-09 01:51:27 skidder Exp $
+$Id: blb.cpp,v 1.48 2004-01-13 09:52:13 robocop Exp $
 */
 
 #include "firebird.h"
@@ -821,7 +821,7 @@ void BLB_map_blobs(TDBB tdbb, BLB old_blob, BLB new_blob)
 // which in turn calls BLB_create2 that writes in the blob id. Although the
 // compiler allows to modify from_desc->dsc_address' contents when from_desc is
 // constant, this is misleading so I didn't make the source descriptor constant.
-void BLB_move(TDBB tdbb, dsc* from_desc, dsc* to_desc, JRD_NOD field)
+void BLB_move(TDBB tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 {
 /**************************************
  *
@@ -947,7 +947,7 @@ void BLB_move(TDBB tdbb, dsc* from_desc, dsc* to_desc, JRD_NOD field)
 }
 
 
-void BLB_move_from_string(TDBB tdbb, const dsc* from_desc, dsc* to_desc, JRD_NOD field)
+void BLB_move_from_string(TDBB tdbb, const dsc* from_desc, dsc* to_desc, jrd_nod* field)
 {
 /**************************************
  *

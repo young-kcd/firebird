@@ -166,7 +166,7 @@ static USHORT compress_root(TDBB, IRT);
 static void copy_key(const KEY*, KEY*);
 static CONTENTS delete_node(TDBB, WIN *, UCHAR *);
 static void delete_tree(TDBB, USHORT, USHORT, SLONG, SLONG);
-static DSC *eval(TDBB, JRD_NOD, DSC *, bool *);
+static DSC *eval(TDBB, jrd_nod*, DSC *, bool *);
 static SLONG fast_load(TDBB, jrd_rel*, IDX *, USHORT, SCB, SelectivityList&);
 static IRT fetch_root(TDBB, WIN *, jrd_rel*);
 static UCHAR *find_node_start_point(BTR, KEY *, UCHAR *, USHORT *, bool, bool, bool = false, SLONG = NO_VALUE);
@@ -1111,7 +1111,7 @@ USHORT BTR_lookup(TDBB tdbb, jrd_rel* relation, USHORT id, IDX * buffer)
 
 void BTR_make_key(TDBB tdbb,
 				  USHORT count,
-				  JRD_NOD * exprs, IDX * idx, KEY * key, USHORT fuzzy)
+				  jrd_nod** exprs, IDX * idx, KEY * key, USHORT fuzzy)
 {
 /**************************************
  *
@@ -2488,7 +2488,7 @@ static void delete_tree(TDBB tdbb,
 }
 
 
-static DSC *eval(TDBB tdbb, JRD_NOD node, DSC * temp, bool *isNull)
+static DSC *eval(TDBB tdbb, jrd_nod* node, DSC * temp, bool *isNull)
 {
 /**************************************
  *

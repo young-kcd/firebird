@@ -88,7 +88,7 @@ static bool key_equal(const KEY*, const KEY*);
 static void signal_index_deletion(TDBB, jrd_rel*, USHORT);
 
 
-void IDX_check_access(TDBB tdbb, CSB csb, jrd_rel* view, jrd_rel* relation,
+void IDX_check_access(TDBB tdbb, Csb* csb, jrd_rel* view, jrd_rel* relation,
 	jrd_fld* field)
 {
 /**************************************

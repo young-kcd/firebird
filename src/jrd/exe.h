@@ -86,7 +86,6 @@ public:
 	}*/
 	jrd_nod*	nod_arg[1];
 };
-typedef jrd_nod* JRD_NOD;
 
 #define nod_comparison 	1
 #define nod_id		1			/* marks a field node as a blr_fid guy */
@@ -127,7 +126,7 @@ typedef rse* RSE;
 #define rse_singular	2		/* flags rse-type node as from a singleton select */
 #define rse_variant	4			/* flags rse as variant (not invariant?) */
 
-#define rse_delta	(sizeof(struct rse)-sizeof(struct jrd_nod))/sizeof(((JRD_NOD) NULL)->nod_arg[0])
+#define rse_delta	(sizeof(struct rse)-sizeof(struct jrd_nod))/sizeof(((jrd_nod*) NULL)->nod_arg[0])
 
 // Types of nulls placement for each column in sort order
 #define rse_nulls_default 0
@@ -145,7 +144,7 @@ public:
 };
 typedef lit* LIT;
 
-#define lit_delta	((sizeof(struct lit) - sizeof(struct jrd_nod) - sizeof(SINT64)) / sizeof(JRD_NOD*))
+#define lit_delta	((sizeof(struct lit) - sizeof(struct jrd_nod) - sizeof(SINT64)) / sizeof(jrd_nod**))
 
 
 /* Aggregate Sort Block (for DISTINCT aggregates) */
@@ -165,7 +164,7 @@ public:
 };
 typedef asb* ASB;
 
-#define asb_delta	((sizeof(struct asb) - sizeof(struct jrd_nod)) / sizeof (JRD_NOD*))
+#define asb_delta	((sizeof(struct asb) - sizeof(struct jrd_nod)) / sizeof (jrd_nod**))
 
 
 /* Various structures in the impure area */
@@ -177,7 +176,7 @@ typedef struct sta {
 typedef struct vlu {
 	struct dsc vlu_desc;
 	USHORT vlu_flags; // Computed/invariant flags
-	struct str *vlu_string;
+	struct str* vlu_string;
 	union {
 		SSHORT vlu_short;
 		SLONG vlu_long;
@@ -193,9 +192,9 @@ typedef struct vlu {
 	} vlu_misc;
 } *VLU;
 
-typedef struct vlux : public vlu {
+struct vlux : public vlu {
 	SLONG vlux_count;
-} *VLUX;
+};
 
 
 #define VLU_computed	1		/* An invariant sub-query has been computed */
@@ -211,9 +210,9 @@ typedef struct inv {
 
 /* ASB impure area */
 
-typedef struct iasb {
+struct iasb {
 	SLONG *iasb_sort_handle;
-} *IASB;
+};
 
 
 /* Various field positions */
@@ -378,7 +377,7 @@ typedef struct iasb {
 #define e_dcl_id		0
 #define e_dcl_invariants	1
 #define e_dcl_desc		2
-#define e_dcl_length		(2 + sizeof (DSC)/sizeof (JRD_NOD))	/* Room for descriptor */
+#define e_dcl_length		(2 + sizeof (DSC)/sizeof (jrd_nod*))	/* Room for descriptor */
 
 #define e_dep_object		0	/* node for registering dependencies */
 #define e_dep_object_type	1
@@ -609,7 +608,6 @@ public:
 	typedef		csb_repeat* rpt_itr;
 	Firebird::Array<csb_repeat> csb_rpt;
 };
-typedef Csb* CSB;
 
 #define csb_internal	     	0x1	/* "csb_g_flag" switch */
 #define csb_get_dependencies 	0x2

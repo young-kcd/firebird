@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.60 2004-01-12 18:56:47 arnobrinkman Exp $
+$Id: restore.epp,v 1.61 2004-01-13 09:52:09 robocop Exp $
 */
 
 #include "firebird.h"
@@ -96,20 +96,20 @@ USHORT	check_db_version();
 void	create_database (const TEXT*);
 void	decompress(UCHAR*, USHORT);
 void	eat_blob();
-BURP_REL	find_relation (const TEXT *);
+burp_rel*	find_relation (const TEXT *);
 // CVC: when do these functions return false indeed???
 // get_acl and get_index are the only exceptions but ironically their
 // returned value is not checked by the caller!
 bool	get_acl (const TEXT*, ISC_QUAD*, ISC_QUAD*);
-void	get_array (BURP_REL, UCHAR*);
+void	get_array (burp_rel*, UCHAR*);
 void	get_blob (const burp_fld*, UCHAR*);
 void	get_blr_blob (ISC_QUAD*, bool);
 bool	get_character_set();
 bool	get_chk_constraint();
 bool	get_collation();
-rec_type	get_data (BURP_REL);
+rec_type	get_data (burp_rel*);
 bool	get_exception();
-BURP_FLD	get_field (BURP_REL);
+burp_fld*	get_field (burp_rel*);
 bool	get_field_dimensions();
 bool	get_files();
 bool	get_filter();
@@ -133,15 +133,15 @@ void	get_source_blob (ISC_QUAD*, bool);
 USHORT	get_text (TEXT*, ULONG);
 bool	get_trigger();
 bool	get_trigger_message();
-bool	get_trigger_old (BURP_REL);
+bool	get_trigger_old (burp_rel*);
 bool	get_type();
 bool	get_user_privilege();
-bool	get_view (BURP_REL);
-void	ignore_array (BURP_REL);
+bool	get_view (burp_rel*);
+void	ignore_array (burp_rel*);
 void	ignore_blob();
-rec_type	ignore_data (BURP_REL);
+rec_type	ignore_data (burp_rel*);
 void	realign(UCHAR*, const burp_rel*);
-USHORT	recompute_length (BURP_REL);
+USHORT	recompute_length (burp_rel*);
 bool	restore (const TEXT*, const TEXT*);
 void	restore_security_class (const TEXT*, const TEXT*);
 USHORT	get_view_base_relation_count(const TEXT*, USHORT);
@@ -256,7 +256,7 @@ int RESTORE_restore (const TEXT* file_name,
 	tdgbl->RESTORE_format = 0;
 	tdgbl->global_trans = 0;
 
-	tdgbl->gbl_sw_transportable = tdgbl->gbl_sw_compress = FALSE;
+	tdgbl->gbl_sw_transportable = tdgbl->gbl_sw_compress = false;
 
 	if (!restore (file_name, database_name))
 		return FINI_ERROR;
@@ -440,7 +440,7 @@ int RESTORE_restore (const TEXT* file_name,
 	** Change ownership of any procedures necessary
 	*/
 
-	for (BURP_PRC procedure = tdgbl->procedures; procedure;
+	for (burp_prc* procedure = tdgbl->procedures; procedure;
 						procedure = procedure->prc_next)
 	{
 		if (procedure->prc_owner[0])
@@ -470,7 +470,7 @@ int RESTORE_restore (const TEXT* file_name,
 
 	// Change ownership of any relations necessary 
 
-	for (BURP_REL relation = tdgbl->relations; relation; relation = relation->rel_next)
+	for (burp_rel* relation = tdgbl->relations; relation; relation = relation->rel_next)
 	{
 		if (relation->rel_owner[0])
 		{
@@ -671,7 +671,7 @@ void add_files (const UCHAR* file_name)
 	SLONG start = 201; // Magic number, can be taken from some constant?
 	SLONG count = 0;
 
-	for (FIL file = tdgbl->gbl_sw_files; file; file = file->fil_next)
+	for (burp_fil* file = tdgbl->gbl_sw_files; file; file = file->fil_next)
 	{
 		if (strcmp (file->fil_name, (char*) file_name))
 		{
@@ -909,7 +909,7 @@ void create_database (const TEXT* file_name)
 	tdgbl->hdr_forced_writes = forced_writes;
 
 	if (tdgbl->gbl_sw_no_reserve)
-		no_reserve = tdgbl->gbl_sw_no_reserve != FALSE;
+		no_reserve = tdgbl->gbl_sw_no_reserve;
 
 	// Override attribute setting with user requirement 
 	if (tdgbl->gbl_sw_mode)
@@ -1108,7 +1108,7 @@ void eat_blob()
 	get_skip(tdgbl, length);
 }
 
-BURP_REL find_relation (const TEXT* name)
+burp_rel* find_relation (const TEXT* name)
 {
 /**************************************
  *
@@ -1363,7 +1363,7 @@ bool get_acl (const TEXT	*owner_nm,
 	return true;
 }
 
-void get_array (BURP_REL	relation,
+void get_array (burp_rel*	relation,
 				UCHAR	*record_buffer)
 {
 /**************************************
@@ -1377,17 +1377,17 @@ void get_array (BURP_REL	relation,
  *	shiney, new array.
  *
  **************************************/
-	BURP_FLD		field;
+	burp_fld*		field;
 	ISC_STATUS_ARRAY	status_vector;
 	USHORT		count, field_number, field_length;
 	UCHAR		*buffer, *p;
 	UCHAR		blr_buffer[200]; // enough for a sdl with 16 dimensions
-	LSTRING		xdr_slice;
+	lstring		xdr_slice;
 
 	TGBL tdgbl = GET_THREAD_DATA;
 
 	// don't free something you don't allocate 
-	LSTRING xdr_buffer;
+	lstring xdr_buffer;
 	xdr_buffer.lstr_allocated = 0;
 
 	// Pick up attributes 
@@ -2284,7 +2284,7 @@ bool get_collation()
 	return true;
 }
 
-rec_type get_data (BURP_REL	relation)
+rec_type get_data (burp_rel*	relation)
 {
 /**************************************
  *
@@ -2495,7 +2495,7 @@ rec_type get_data (BURP_REL	relation)
 	BURP_verbose (124, relation->rel_name, NULL, NULL, NULL, NULL);
 	// msg 124  restoring data for relation %s 
 	
-	LSTRING data;
+	lstring data;
 	data.lstr_allocated = 0;
 	data.lstr_address = NULL;
 	ULONG old_length = 0;
@@ -2761,7 +2761,7 @@ bool get_exception(void)
 }
 
 
-BURP_FLD get_field (BURP_REL	relation)
+burp_fld* get_field (burp_rel*	relation)
 {
 /**************************************
  *
@@ -2789,7 +2789,7 @@ BURP_FLD get_field (BURP_REL	relation)
 	else
 		local_trans = gds_trans;
 
-	BURP_FLD field = (BURP_FLD) BURP_alloc_zero (sizeof(burp_fld));
+	burp_fld* field = (burp_fld*) BURP_alloc_zero (sizeof(burp_fld));
 
 	STORE (TRANSACTION_HANDLE local_trans
 		   REQUEST_HANDLE tdgbl->handles_get_field_req_handle1)
@@ -2913,7 +2913,7 @@ BURP_FLD get_field (BURP_REL	relation)
 					field->fld_dimensions = (USHORT) get_numeric();
 					field->fld_flags |= FLD_array;
 					USHORT n = field->fld_dimensions;
-					for (SLONG *rp = field->fld_ranges; n; rp += 2, n--)
+					for (SLONG* rp = field->fld_ranges; n; rp += 2, n--)
 					{
 						if (get_attribute(&attribute, tdgbl) != att_field_range_low)
 							bad_attribute (scan_next_attr, attribute, 58);
@@ -2949,8 +2949,13 @@ BURP_FLD get_field (BURP_REL	relation)
 				break;
 
 			case att_field_null_flag:
-				X.RDB$NULL_FLAG.NULL = FALSE;
-				X.RDB$NULL_FLAG = (USHORT) get_numeric();
+				if (tdgbl->gbl_sw_novalidity) {
+					get_numeric(); // skip
+				}
+				else {
+					X.RDB$NULL_FLAG.NULL = FALSE;
+					X.RDB$NULL_FLAG = (USHORT) get_numeric();
+				}
 				break;
 
 			case att_field_character_set:
@@ -3665,8 +3670,13 @@ bool get_global_field()
 					break;
 
 				case att_field_null_flag:
-					X.RDB$NULL_FLAG = (USHORT) get_numeric();
-					X.RDB$NULL_FLAG.NULL = FALSE;
+					if (tdgbl->gbl_sw_novalidity) {
+						get_numeric(); // skip
+					}
+					else {
+						X.RDB$NULL_FLAG = (USHORT) get_numeric();
+						X.RDB$NULL_FLAG.NULL = FALSE;
+					}
 					break;
 
 				case att_field_description:
@@ -3941,8 +3951,13 @@ bool get_global_field()
 					break;
 
 				case att_field_null_flag:
-					X.RDB$NULL_FLAG = (USHORT) get_numeric();
-					X.RDB$NULL_FLAG.NULL = FALSE;
+					if (tdgbl->gbl_sw_novalidity) {
+						get_numeric(); // skip
+					}
+					else {
+						X.RDB$NULL_FLAG = (USHORT) get_numeric();
+						X.RDB$NULL_FLAG.NULL = FALSE;
+					}
 					break;
 
 				case att_field_description:
@@ -4335,7 +4350,7 @@ bool get_procedure()
 	isc_tr_handle local_trans =
 		tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
 
-	BURP_PRC procedure = (BURP_PRC) BURP_alloc_zero (sizeof(burp_prc));
+	burp_prc* procedure = (burp_prc*) BURP_alloc_zero (sizeof(burp_prc));
 	procedure->prc_next = tdgbl->procedures;
 	tdgbl->procedures = procedure;
 
@@ -4615,7 +4630,7 @@ bool get_relation()
 
 	// Pick up relation attributes 
 
-	BURP_REL relation = (BURP_REL) BURP_alloc_zero (sizeof(burp_rel));
+	burp_rel* relation = (burp_rel*) BURP_alloc_zero (sizeof(burp_rel));
 	relation->rel_next = tdgbl->relations;
 	tdgbl->relations = relation;
 
@@ -4750,8 +4765,8 @@ bool get_relation()
 	END_ERROR;
 
 	// Eat up misc. records 
-	BURP_FLD field = NULL;
-	BURP_FLD* ptr = &relation->rel_fields;
+	burp_fld* field = NULL;
+	burp_fld** ptr = &relation->rel_fields;
 
 	while (get_record(&record, tdgbl) != rec_data)
 	{
@@ -5256,7 +5271,7 @@ USHORT get_text (
 }
 
 bool get_trigger_old (
-    BURP_REL		relation)
+    burp_rel*		relation)
 {
 /**************************************
  *
@@ -5764,7 +5779,7 @@ bool get_user_privilege()
 	{
 	case obj_procedure:
 		{
-		for (BURP_PRC proc = tdgbl->procedures; proc; proc = proc->prc_next)
+		for (const burp_prc* proc = tdgbl->procedures; proc; proc = proc->prc_next)
 			if (!strcmp(proc->prc_name, relation_name))
 			{
 				exists = true;
@@ -5776,7 +5791,7 @@ bool get_user_privilege()
 
 	case obj_relation:
 		{
-		for (BURP_REL rel = tdgbl->relations; rel; rel = rel->rel_next)
+		for (const burp_rel* rel = tdgbl->relations; rel; rel = rel->rel_next)
 			if (!strcmp(rel->rel_name, relation_name))
 			{
 				exists = true;
@@ -5874,7 +5889,7 @@ bool get_user_privilege()
 	return true;
 }
 
-bool get_view (BURP_REL		relation)
+bool get_view (burp_rel*		relation)
 {
 /**************************************
  *
@@ -5931,7 +5946,7 @@ bool get_view (BURP_REL		relation)
 	return true;
 }
 
-void ignore_array (BURP_REL		relation)
+void ignore_array (burp_rel*		relation)
 {
 /**************************************
  *
@@ -5944,19 +5959,15 @@ void ignore_array (BURP_REL		relation)
  *	dummy get_array().
  *
  **************************************/
-	BURP_FLD		field;
+	burp_fld*		field;
 	ATT_TYPE	attribute;
 	SLONG		*range, *end_ranges;
 	USHORT		field_number;
-	//LSTRING		xdr_buffer;
 	scan_attr_t		scan_next_attr;
 
 	TGBL tdgbl = GET_THREAD_DATA;
 
-	// don't free something you don't allocate 
-	//xdr_buffer.lstr_allocated = 0;
-
-	// Pick up attributes 
+	// Pick up attributes
 
 	skip_init(&scan_next_attr);
 	while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_blob_data)
@@ -6016,7 +6027,6 @@ void ignore_array (BURP_REL		relation)
 			lcount |= get(tdgbl) << 8;
 			lcount |= get(tdgbl) << 16;
 			lcount |= get(tdgbl) << 24;
-			//xdr_buffer.lstr_length = xdr_buffer.lstr_allocated = lcount;
 		}
 	}
 	else
@@ -6088,7 +6098,7 @@ void ignore_blob()
 	}
 }
 
-rec_type ignore_data (BURP_REL		relation)
+rec_type ignore_data (burp_rel*		relation)
 {
 /**************************************
  *
@@ -6656,7 +6666,7 @@ void restore_security_class (const TEXT	*owner_nm,
 }
 
 
-USHORT get_view_base_relation_count (const TEXT *current_view_name,
+USHORT get_view_base_relation_count (const TEXT* current_view_name,
 									 USHORT depth)
 {
 /**************************************
@@ -6669,7 +6679,7 @@ USHORT get_view_base_relation_count (const TEXT *current_view_name,
  *	Return the number of base relations
  *  (tables) from a view. When a view is
  *  referenced in the view this function
- *  is called recursive.
+ *  is called recursively.
  *
  **************************************/
 
@@ -6694,7 +6704,7 @@ USHORT get_view_base_relation_count (const TEXT *current_view_name,
 		  R.RDB$RELATION_NAME EQ D.RDB$DEPENDED_ON_NAME
 
 		if (R.RDB$VIEW_BLR.NULL) {
-			// This is relation is a table, so increment count
+			// This relation is a table, so increment count
 			result++;
 		}
 		else {
@@ -6706,7 +6716,7 @@ USHORT get_view_base_relation_count (const TEXT *current_view_name,
 
 	ON_ERROR
 		MISC_release_request_silent(req_handle1);
-		general_on_error ();
+		general_on_error();
 	END_ERROR;
 
 	MISC_release_request_silent(req_handle1);
@@ -6958,21 +6968,21 @@ void update_view_dbkey_lengths()
 		  R.RDB$VIEW_BLR NOT MISSING AND
 		  (R.RDB$SYSTEM_FLAG NE 1 OR R.RDB$SYSTEM_FLAG MISSING)
 
-		USHORT result = get_view_base_relation_count(R.RDB$RELATION_NAME, 0);
+		const USHORT result = get_view_base_relation_count(R.RDB$RELATION_NAME, 0);
 
 		MODIFY R;
 			R.RDB$DBKEY_LENGTH = (result * 8); // is a constant for DBKEY coded somewhere?
 		END_MODIFY;
 		ON_ERROR
 			MISC_release_request_silent(req_handle2);
-			general_on_error ();
+			general_on_error();
 		END_ERROR;
 
 	END_FOR;
 
 	ON_ERROR
 		MISC_release_request_silent(req_handle2);
-		general_on_error ();
+		general_on_error();
 	END_ERROR;
 
 	MISC_release_request_silent(req_handle2);

@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.47 2003-12-22 10:00:00 robocop Exp $
+$Id: backup.epp,v 1.48 2004-01-13 09:52:09 robocop Exp $
 */
 
 #include "firebird.h"
@@ -95,18 +95,18 @@ inline const UCHAR* put_block(tgbl* tdgbl, const UCHAR* p, ULONG n)
 
 void compress(const UCHAR*, ULONG);
 int copy(const TEXT *, TEXT *, ULONG);
-BURP_FLD get_fields(BURP_REL);
+burp_fld* get_fields(burp_rel*);
 SINT64 get_gen_id(const TEXT *, SSHORT);
-void get_ranges(BURP_FLD);
-void put_array(BURP_FLD, BURP_REL, ISC_QUAD *);
+void get_ranges(burp_fld*);
+void put_array(burp_fld*, burp_rel*, ISC_QUAD *);
 void put_asciz(const SCHAR, const TEXT*);
-void put_blob(BURP_FLD, ISC_QUAD *, ULONG);
+void put_blob(burp_fld*, ISC_QUAD *, ULONG);
 bool put_blr_blob(SCHAR, ISC_QUAD *);
-void put_data(BURP_REL);
-void put_index(BURP_REL);
+void put_data(burp_rel*);
+void put_index(burp_rel*);
 int put_message(SCHAR, const TEXT *, ULONG);
 void put_numeric(SCHAR, SLONG);
-void put_relation(BURP_REL);
+void put_relation(burp_rel*);
 bool put_source_blob(SCHAR, SCHAR, ISC_QUAD *);
 int put_text(SCHAR, const TEXT *, SSHORT);
 void set_capabilities(void);
@@ -301,7 +301,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 
 	if (tdgbl->action->act_action == ACT_backup_split)
 	{
-		for (FIL fil = tdgbl->gbl_sw_files; fil; fil = fil->fil_next)
+		for (burp_fil* fil = tdgbl->gbl_sw_files; fil; fil = fil->fil_next)
 		{
 			tdgbl->action->act_file = fil;
 			if (MVOL_split_hdr_write() == FALSE)
@@ -392,7 +392,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 
 // Now go back and write all data 
 
-	for (BURP_REL relation = tdgbl->relations; relation; relation = relation->rel_next) {
+	for (burp_rel* relation = tdgbl->relations; relation; relation = relation->rel_next) {
 		put(tdgbl, (UCHAR) (rec_relation_data));
 		PUT_TEXT(att_relation_name, relation->rel_name);
 		put(tdgbl, (UCHAR) (att_end));
@@ -608,7 +608,7 @@ void general_on_error(void)
 }
 
 
-BURP_FLD get_fields( BURP_REL relation)
+burp_fld* get_fields( burp_rel* relation)
 {
 /**************************************
  *
@@ -621,13 +621,13 @@ BURP_FLD get_fields( BURP_REL relation)
  *	capabilities and get system specific
  *
  **************************************/
-	BURP_FLD field;
+	burp_fld* field;
 	ISC_QUAD *blob_id;
 
 	TGBL tdgbl = GET_THREAD_DATA;
 
 	USHORT count = 1;
-	BURP_FLD fields = NULL;
+	burp_fld* fields = NULL;
 
 /* if we have all capabilities, use the first request to get the 
    most performance out of the latest engine; if we don't 
@@ -646,7 +646,7 @@ BURP_FLD get_fields( BURP_REL relation)
 			X.RDB$FIELD_SOURCE = Y.RDB$FIELD_NAME AND
 			X.RDB$RELATION_NAME EQ relation->rel_name
 	
-			field = (BURP_FLD) BURP_alloc_zero(sizeof(burp_fld));
+			field = (burp_fld*) BURP_alloc_zero(sizeof(burp_fld));
 			field->fld_number = count++;
 			field->fld_type = Y.RDB$FIELD_TYPE;
 			field->fld_sub_type = Y.RDB$FIELD_SUB_TYPE;
@@ -751,7 +751,7 @@ BURP_FLD get_fields( BURP_REL relation)
 			WITH X.RDB$FIELD_SOURCE = Y.RDB$FIELD_NAME AND
 			X.RDB$RELATION_NAME EQ relation->rel_name
 
-			field = (BURP_FLD) BURP_alloc_zero (sizeof(burp_fld));
+			field = (burp_fld*) BURP_alloc_zero (sizeof(burp_fld));
 			field->fld_number = count++;
 			field->fld_type = Y.RDB$FIELD_TYPE;
 			field->fld_sub_type = Y.RDB$FIELD_SUB_TYPE;
@@ -1032,7 +1032,7 @@ SINT64 get_gen_id( const TEXT* name, SSHORT name_len)
 }
 
 
-void get_ranges( BURP_FLD field)
+void get_ranges( burp_fld* field)
 {
 /**************************************
  *
@@ -1075,7 +1075,7 @@ void get_ranges( BURP_FLD field)
 }
 
 
-void put_array( BURP_FLD field, BURP_REL relation, ISC_QUAD * blob_id)
+void put_array( burp_fld* field, burp_rel* relation, ISC_QUAD * blob_id)
 {
 /**************************************
  *
@@ -1097,7 +1097,7 @@ void put_array( BURP_FLD field, BURP_REL relation, ISC_QUAD * blob_id)
 	if (!blob_id->gds_quad_low && !blob_id->gds_quad_high)
 		return;
 
-	LSTRING xdr_buffer;
+	lstring xdr_buffer;
 	xdr_buffer.lstr_allocated = 0;
 
 	UCHAR* blr = blr_buffer;
@@ -1263,7 +1263,7 @@ void put_array( BURP_FLD field, BURP_REL relation, ISC_QUAD * blob_id)
 		UCHAR* p;
 		if (tdgbl->gbl_sw_transportable)
 		{
-			LSTRING xdr_slice;
+			lstring xdr_slice;
 			xdr_slice.lstr_allocated = xdr_slice.lstr_length = return_length;
 			xdr_slice.lstr_address = slice;
 			return_length =
@@ -1310,7 +1310,7 @@ void put_asciz( const SCHAR attribute, const TEXT* string)
 }
 
 
-void put_blob( BURP_FLD field, ISC_QUAD * blob_id, ULONG count)
+void put_blob( burp_fld* field, ISC_QUAD * blob_id, ULONG count)
 {
 /**************************************
  *
@@ -1541,7 +1541,7 @@ bool put_blr_blob( SCHAR attribute, ISC_QUAD * blob_id)
 }
 
 
-void put_data(BURP_REL relation)
+void put_data(burp_rel* relation)
 {
 /**************************************
  *
@@ -1553,7 +1553,7 @@ void put_data(BURP_REL relation)
  *	Write relation meta-data and data.
  *
  **************************************/
-	BURP_FLD field;
+	burp_fld* field;
 	ISC_STATUS_ARRAY status_vector;
 
 	TGBL tdgbl = GET_THREAD_DATA;
@@ -1790,7 +1790,7 @@ void put_data(BURP_REL relation)
 	SSHORT* eof = (SSHORT *) (buffer + eof_offset);
 
 // the XDR representation may be even fluffier
-	LSTRING xdr_buffer;
+	lstring xdr_buffer;
 	if (tdgbl->gbl_sw_transportable)
 	{
 		xdr_buffer.lstr_length = xdr_buffer.lstr_allocated =
@@ -1873,7 +1873,7 @@ void put_data(BURP_REL relation)
 }
 
 
-void put_index( BURP_REL relation)
+void put_index( burp_rel* relation)
 {
 /**************************************
  *
@@ -2148,7 +2148,7 @@ void put_int64( SCHAR attribute, SINT64 value)
 }
 
 
-void put_relation( BURP_REL relation)
+void put_relation( burp_rel* relation)
 {
 /**************************************
  *
@@ -2167,13 +2167,15 @@ void put_relation( BURP_REL relation)
 /* Write local field information.  This is made slightly more complicated
    by the requirement that computational fields be aligned. */
 
-	BURP_FLD field, aligned, unaligned, aligned4, aligned8;
-	aligned = unaligned = aligned4 = aligned8 = NULL;
+	burp_fld* aligned = NULL;
+	burp_fld* unaligned = NULL;
+	burp_fld* aligned4 = NULL;
+	burp_fld* aligned8 = NULL;
 
-	BURP_FLD fields = get_fields(relation);
+	burp_fld* fields = get_fields(relation);
 
 // sort the list of fields into three lists, depending on alignment
-
+	burp_fld* field;
 	for (field = fields; field = fields;)
 	{
 		fields = field->fld_next;
@@ -3549,7 +3551,7 @@ void write_relations(void)
 				}
 
 			put(tdgbl, att_end);
-			BURP_REL relation = (BURP_REL) BURP_alloc_zero (sizeof(burp_rel));
+			burp_rel* relation = (burp_rel*) BURP_alloc_zero (sizeof(burp_rel));
 			relation->rel_next = tdgbl->relations;
 			tdgbl->relations = relation;
 			relation->rel_id = X.RDB$RELATION_ID;
@@ -3626,7 +3628,7 @@ void write_relations(void)
 				END_ERROR;
 			}
 			put(tdgbl, att_end);
-			BURP_REL relation = (BURP_REL) BURP_alloc_zero (sizeof(burp_rel));
+			burp_rel* relation = (burp_rel*) BURP_alloc_zero (sizeof(burp_rel));
 			relation->rel_next = tdgbl->relations;
 			tdgbl->relations = relation;
 			relation->rel_id = X.RDB$RELATION_ID;

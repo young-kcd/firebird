@@ -831,7 +831,7 @@ int INF_request_info(const jrd_req* request,
  *	Return information about requests.
  *
  **************************************/
-	JRD_NOD node;
+	jrd_nod* node;
 	FMT format;
 	SCHAR item;
 	SSHORT state;

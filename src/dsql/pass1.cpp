@@ -3678,7 +3678,7 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input, const bool lis
        The explained query directly above doesn't work anymore, thus the day has come ;-)
 	   It's allowed to use the same fieldname between different scope levels (sub-queries)
 	   without being hit by the ambiguity check. The field uses the first match starting
-	   from it's own level (ofcourse ambiguity-check on each level is done).
+	   from it's own level (of course ambiguity-check on each level is done).
 
        4.- Doesn't verify code derived automatically from check constraints. They are
        ill-formed by nature but making that code generation more orthodox is not a

@@ -73,7 +73,7 @@ static struct {
 /* dtype_int64		*/ {SQL_INT64, sizeof(SINT64)},
 };
 
-void ExecuteStatement::Open(TDBB tdbb, JRD_NOD sql, SSHORT nVars, bool SingleTon) {
+void ExecuteStatement::Open(TDBB tdbb, jrd_nod* sql, SSHORT nVars, bool SingleTon) {
 	SET_TDBB(tdbb);
 	Sqlda = 0;
 	Transaction = 0;
@@ -176,7 +176,7 @@ err_handler:
 	}
 }
 
-bool ExecuteStatement::Fetch(TDBB tdbb, JRD_NOD * JrdVar) {
+bool ExecuteStatement::Fetch(TDBB tdbb, jrd_nod** JrdVar) {
 	// If already bugged - we should never get here
 	fb_assert(! (tdbb->tdbb_status_vector[0] == 1 && 
 			  tdbb->tdbb_status_vector[1] != 0));
