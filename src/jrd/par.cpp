@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.35 2003-02-17 08:41:59 eku Exp $
+$Id: par.cpp,v 1.36 2003-02-19 15:25:26 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -2567,21 +2567,11 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected)
 
 	case blr_dcl_variable:
 		{
-			VEC vector;
-
 			n = BLR_WORD;
 			node->nod_arg[e_dcl_id] = (JRD_NOD) (SLONG) n;
 			PAR_desc(csb, (DSC *) (node->nod_arg + e_dcl_desc));
-			vector = (*csb)->csb_variables;
-			if (!vector)
-			{
-				vector = (*csb)->csb_variables = 
-					vec::newVector(*tdbb->tdbb_default, n + 1);
-			}
-			if (n >= vector->count())
-			{
-				vector->resize(n + 1);
-			}
+			VEC vector = (*csb)->csb_variables = 
+				vec::newVector(*tdbb->tdbb_default, (*csb)->csb_variables, n + 1);
 			(*vector)[n] = (BLK) node;
 		}
 		break;

@@ -599,15 +599,14 @@ LCK RLCK_transaction_relation_lock(JRD_TRA transaction, JRD_REL relation)
 		(relation->rel_id < vector->count()) &&
 		(lock = (LCK) (*vector)[relation->rel_id]))
 		return lock;
-	if (!vector)
-		vector = transaction->tra_relation_locks =
-			vec::newVector(*transaction->tra_pool, relation->rel_id + 1);
-			
-	if (vector->count() < (relation->rel_id + 1) )
-		vector->resize(relation->rel_id + 1);
-		
+
+	vector = transaction->tra_relation_locks =
+		vec::newVector(*transaction->tra_pool, transaction->tra_relation_locks,
+					   relation->rel_id + 1);
+	
 	if ( (lock = (LCK) (*vector)[relation->rel_id]) )
 		return lock;
+
 	lock = allocate_relation_lock(transaction->tra_pool, relation);
 	lock->lck_owner = (BLK) transaction;
 /* for relations locked within a transaction, add a second level of
@@ -616,6 +615,7 @@ LCK RLCK_transaction_relation_lock(JRD_TRA transaction, JRD_REL relation)
    transactions, if a transaction is specified */
 	lock->lck_compatible2 = (BLK) transaction;
 	(*vector)[relation->rel_id] = (BLK) lock;
+
 	return lock;
 }
 
@@ -889,25 +889,23 @@ static LCK attachment_relation_lock(JRD_REL relation)
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
 	attachment = tdbb->tdbb_attachment;
+
 	if ((vector = attachment->att_relation_locks) &&
 		(relation->rel_id < vector->count()) &&
 		(lock = (LCK) (*vector)[relation->rel_id]))
 		return lock;
-	vector = attachment->att_relation_locks;
-	if (!vector)
-	{
-		vector = attachment->att_relation_locks =
-			vec::newVector(*dbb->dbb_permanent, relation->rel_id + 1);
-	}
-	if (relation->rel_id >= vector->count())
-	{
-		vector->resize(relation->rel_id + 1);
-	}
+
+	vector = attachment->att_relation_locks =
+		vec::newVector(*dbb->dbb_permanent, attachment->att_relation_locks,
+					   relation->rel_id + 1);
+
 	if ( (lock = (LCK) (*vector)[relation->rel_id]) )
 		return lock;
+
 	lock = allocate_relation_lock(dbb->dbb_permanent, relation);
 	lock->lck_owner = (BLK) attachment;
 	(*vector)[relation->rel_id] = (BLK) lock;
+
 	return lock;
 }
 

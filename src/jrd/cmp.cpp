@@ -237,7 +237,6 @@ JRD_REQ DLL_EXPORT CMP_clone_request(TDBB tdbb,
  *
  **************************************/
 	JRD_REQ clone;
-	VEC vector;
 	RPB *rpb1, *rpb2, *end;
 	USHORT n;
 	ACC access;
@@ -254,9 +253,10 @@ JRD_REQ DLL_EXPORT CMP_clone_request(TDBB tdbb,
 	if (!level)
 		return request;
 
-	if ((vector = request->req_sub_requests) &&
-		level < vector->count() &&
-		(clone = (JRD_REQ) (*vector)[level])) return clone;
+	VEC vector = request->req_sub_requests;
+
+	if (vector && level < vector->count() && (clone = (JRD_REQ) (*vector)[level]))
+		return clone;
 
 /* We need to clone the request -- find someplace to put it */
 
@@ -279,14 +279,8 @@ JRD_REQ DLL_EXPORT CMP_clone_request(TDBB tdbb,
 		}
 	}
 
-	if (!vector)
-	{
-		vector = request->req_sub_requests =
-			vec::newVector(*request->req_pool, level+1);
-	}
-	
-	if (level >= vector->count())
-		vector->resize(level + 1);
+	vector = request->req_sub_requests =
+		vec::newVector(*request->req_pool, request->req_sub_requests, level + 1);
 
 /* Clone the request */
 
@@ -1826,18 +1820,12 @@ JRD_REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
 	}
 
 	if (count) {
-		if (!request->req_fors)
-		{
-			request->req_fors =
-				vec::newVector(*request->req_pool, count+1);
-		}
-		if (count >= request->req_fors->count())
-		{
-			request->req_fors->resize(count+1);
-		}
-		ptr = request->req_fors->begin();
-		while (csb->csb_fors)
+		VEC vector = request->req_fors =
+			vec::newVector(*request->req_pool, request->req_fors, count + 1);
+		ptr = vector->begin();
+		while (csb->csb_fors) {
 			*ptr++ = (BLK) LLS_POP(&csb->csb_fors);
+		}
 	}
 
 /* make a vector of all invariant-type nodes, so that we will
@@ -1848,18 +1836,12 @@ JRD_REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
 	}
 
 	if (count) {
-		if (!request->req_invariants)
-		{
-			request->req_invariants =
-				vec::newVector(*request->req_pool , count+1);
-		}
-		if (count >= request->req_invariants->count())
-		{
-			request->req_invariants->resize(count+1);
-		}
-		ptr = request->req_invariants->begin();
-		while (csb->csb_invariants)
+		VEC vector = request->req_invariants =
+			vec::newVector(*request->req_pool, request->req_invariants, count + 1);
+		ptr = vector->begin();
+		while (csb->csb_invariants) {
 			*ptr++ = (BLK) LLS_POP(&csb->csb_invariants);
+		}
 	}
 
 	DEBUG;

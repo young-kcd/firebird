@@ -2969,9 +2969,7 @@ static void bump_count(TDBB tdbb, USHORT count_id, JRD_REL relation)
 	relation_id = relation->rel_id;
 	ptr = tdbb->tdbb_attachment->att_counts + count_id;
 
-	if (!(vector = *ptr) || relation_id >= vector->count())
-		vector = *ptr = vcl::newVector(*dbb->dbb_permanent, relation_id + 1);
-
+	vector = *ptr = vcl::newVector(*dbb->dbb_permanent, *ptr, relation_id + 1);
 	++((*vector)[relation_id]);
 }
 

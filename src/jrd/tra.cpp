@@ -443,7 +443,6 @@ void TRA_extend_tip(TDBB tdbb, ULONG sequence, WIN * precedence_window)
 	DBB dbb;
 	WIN window, prior_window;
 	TIP tip, prior_tip;
-	VCL vector;
 	JRNI record;
 
 	SET_TDBB(tdbb);
@@ -485,11 +484,8 @@ void TRA_extend_tip(TDBB tdbb, ULONG sequence, WIN * precedence_window)
 
 /* Link into internal data structures */
 
-	if (!(vector = dbb->dbb_t_pages))
-		vector = vcl::newVector(*dbb->dbb_permanent, sequence + 1);
-	else if (sequence >= vector->count())
-		vector->resize(sequence + 1);
-
+	VCL vector = dbb->dbb_t_pages =
+		vcl::newVector(*dbb->dbb_permanent, dbb->dbb_t_pages, sequence + 1);
 	(*vector)[sequence] = window.win_page;
 
 /* Write into pages relation */

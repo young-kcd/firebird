@@ -735,6 +735,14 @@ public:
         { return FB_NEW(p) vec(p, len); }
     static vec* newVector(MemoryPool& p, const vec& base)
         { return FB_NEW(p) vec(p, base); }
+	static vec* newVector(MemoryPool& p, vec* base, int len)
+		{
+			if (!base)
+				base = FB_NEW(p) vec(p, len);
+			else if (len > base->count())
+				base->resize(len);
+			return base;
+		}
 
 private:
     vec(MemoryPool& p, int len) : vec_base<BlkPtr, type_vec>(p, len) {}
@@ -749,6 +757,14 @@ public:
         { return FB_NEW(p) vcl(p, len); }
     static vcl* newVector(MemoryPool& p, const vcl& base)
         { return FB_NEW(p) vcl(p, base); }
+	static vcl* newVector(MemoryPool& p, vcl* base, int len)
+		{
+			if (!base)
+				base = FB_NEW(p) vcl(p, len);
+			else if (len > base->count())
+				base->resize(len);
+			return base;
+		}
 
 private:
     vcl(MemoryPool& p, int len) : vec_base<SLONG, type_vcl>(p, len) {}

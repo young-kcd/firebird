@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.50 2003-02-18 10:00:19 eku Exp $
+$Id: met.epp,v 1.51 2003-02-19 15:25:25 dimitr Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -736,13 +736,8 @@ FMT MET_format(TDBB tdbb, JRD_REL relation, USHORT number)
 
 /* Link the format block into the world */
 
-	formats = relation->rel_formats;
-	if (!formats) {
-		formats = vec::newVector(*dbb->dbb_permanent, number+1);
-		relation->rel_formats = formats;
-	} else {
-		formats->resize(number+1);
-	}
+	formats = relation->rel_formats =
+		vec::newVector(*dbb->dbb_permanent, relation->rel_formats, number + 1);
 	(*formats)[number] = (BLK) format;
 
 	return format;
@@ -1771,35 +1766,23 @@ int MET_lookup_partner(
 
 			if (partner_relation)
 			{
-				if (!references->frgn_reference_ids) {
-					references->frgn_reference_ids =
-						vec::newVector(*dbb->dbb_permanent,
-							(USHORT)index_number + 1);
-				} else {
-					references->frgn_reference_ids->resize((USHORT)index_number + 1);
-				}
+				references->frgn_reference_ids =
+					vec::newVector(*dbb->dbb_permanent, references->frgn_reference_ids,
+								   index_number + 1);
 
 				(*references->frgn_reference_ids)[index_number] =
 					(BLK) (IDX.RDB$INDEX_ID - 1);
 
-				if (!references->frgn_relations) {
-					references->frgn_relations =
-							vec::newVector(*dbb->dbb_permanent,
-								(USHORT)index_number + 1);
-				} else {
-					references->frgn_relations->resize((USHORT)index_number + 1);
-				}
+				references->frgn_relations =
+					vec::newVector(*dbb->dbb_permanent, references->frgn_relations,
+								   index_number + 1);
 
 				(*references->frgn_relations)[index_number] =
 					(BLK) partner_relation->rel_id;
 
-				if (!references->frgn_indexes) {
-					references->frgn_indexes = 
-							vec::newVector(*dbb->dbb_permanent,
-								(USHORT)index_number + 1);
-				} else {
-					references->frgn_indexes->resize((USHORT)index_number + 1);
-				}
+				references->frgn_indexes = 
+					vec::newVector(*dbb->dbb_permanent, references->frgn_indexes,
+								   index_number + 1);
 
 				(*references->frgn_indexes)[index_number] =
 					(BLK) (IND.RDB$INDEX_ID - 1);
@@ -1861,35 +1844,23 @@ int MET_lookup_partner(
 			partner_relation = MET_lookup_relation(tdbb, IND.RDB$RELATION_NAME);
 			if (partner_relation)
 			{
-				if (!dependencies->prim_reference_ids) {
-					dependencies->prim_reference_ids =
-							vec::newVector(*dbb->dbb_permanent,
-							   (USHORT)index_number+1);
-				} else {
-					dependencies->prim_reference_ids->resize((USHORT)index_number+1);
-				}
+				dependencies->prim_reference_ids =
+					vec::newVector(*dbb->dbb_permanent, dependencies->prim_reference_ids,
+								   index_number + 1);
 
 				(*dependencies->prim_reference_ids)[index_number] =
 					(BLK) (IDX.RDB$INDEX_ID - 1);
 
-				if (!dependencies->prim_relations) {
-					dependencies->prim_relations = 
-							vec::newVector(*dbb->dbb_permanent,
-								(USHORT)index_number+1);
-				} else {
-					dependencies->prim_relations->resize((USHORT)index_number+1);
-				}
+				dependencies->prim_relations = 
+					vec::newVector(*dbb->dbb_permanent, dependencies->prim_relations,
+								   index_number+1);
 
 				(*dependencies->prim_relations)[index_number] =
 					(BLK) partner_relation->rel_id;
 
-				if (!dependencies->prim_indexes) {
-					dependencies->prim_indexes =
-							vec::newVector(*dbb->dbb_permanent,
-								(USHORT)index_number+1);
-				} else {
-					dependencies->prim_indexes->resize((USHORT)index_number+1);
-				}
+				dependencies->prim_indexes =
+					vec::newVector(*dbb->dbb_permanent, dependencies->prim_indexes,
+								   index_number+1);
 
 				(*dependencies->prim_indexes)[index_number] =
 					(BLK) (IND.RDB$INDEX_ID - 1);
@@ -2687,23 +2658,15 @@ JRD_PRC MET_procedure(TDBB tdbb, int id, BOOLEAN noscan, USHORT flags)
 		}
 		if ( (procedure->prc_inputs = P.RDB$PROCEDURE_INPUTS) )
 		{
-			if (!procedure->prc_input_fields) {
-				procedure->prc_input_fields =
-					vec::newVector(*dbb->dbb_permanent,
-									 P.RDB$PROCEDURE_INPUTS + 1);
-			} else {
-				procedure->prc_input_fields->resize(P.RDB$PROCEDURE_INPUTS + 1);
-			}
+			procedure->prc_input_fields =
+				vec::newVector(*dbb->dbb_permanent, procedure->prc_input_fields,
+							   P.RDB$PROCEDURE_INPUTS + 1);
 		}
 		if ( (procedure->prc_outputs = P.RDB$PROCEDURE_OUTPUTS) )
 		{
-			if (!procedure->prc_output_fields) {
-				procedure->prc_output_fields =
-					vec::newVector(*dbb->dbb_permanent,
-									P.RDB$PROCEDURE_OUTPUTS + 1);
-			} else {
-				procedure->prc_output_fields->resize(P.RDB$PROCEDURE_OUTPUTS + 1);
-			}
+			procedure->prc_output_fields =
+				vec::newVector(*dbb->dbb_permanent, procedure->prc_output_fields,
+							   P.RDB$PROCEDURE_OUTPUTS + 1);
 		}
 
 		FOR(REQUEST_HANDLE request2) PA IN RDB$PROCEDURE_PARAMETERS CROSS
@@ -3288,13 +3251,9 @@ void MET_scan_relation( TDBB tdbb, JRD_REL relation)
             REQUEST(irq_r_fields) = request;
 		}
 		relation->rel_current_fmt = REL.RDB$FORMAT;
-		vector = relation->rel_fields;
-		if (!vector) {
-			vector = vec::newVector(*dbb->dbb_permanent, REL.RDB$FIELD_ID + 1);
-			relation->rel_fields = vector;
-		} else {
-			vector->resize(REL.RDB$FIELD_ID + 1);
-		}
+		vector = relation->rel_fields =
+			vec::newVector(*dbb->dbb_permanent, relation->rel_fields,
+						   REL.RDB$FIELD_ID + 1);
 		if (!REL.RDB$SECURITY_CLASS.NULL) {
 			relation->rel_security_name =
 				MET_save_name(tdbb, REL.RDB$SECURITY_CLASS);

@@ -3422,13 +3422,9 @@ static FMT make_format(TDBB tdbb, JRD_REL relation, USHORT * version, TFB stack)
 
 /* Link the format block into the world */
 
-	VEC vector = relation->rel_formats;
-	if (!vector) {
-		vector = vec::newVector(*dbb->dbb_permanent, format->fmt_version + 1);
-		relation->rel_formats = vector;
-	} else {
-		vector->resize(format->fmt_version + 1);
-	}
+	VEC vector = relation->rel_formats =
+		vec::newVector(*dbb->dbb_permanent, relation->rel_formats,
+					   format->fmt_version + 1);
 	(*vector)[format->fmt_version] = (BLK) format;
 
 /* Store format in system relation */
