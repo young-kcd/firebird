@@ -1,3 +1,148 @@
+2003-01-18 22:45  skidder
+
+	* firebird2/src/: common/classes/alloc.cpp, common/classes/alloc.h,
+	common/classes/class_test.cpp, common/classes/test.sh,
+	dsql/dsql.tab.h, jrd/all.cpp, jrd/all.h, jrd/inf.cpp, jrd/jrd.cpp,
+	jrd/jrd.h:
+	
+	Memory manager changes - added memory usage stats, empty extents
+	are now deallocated
+
+2003-01-18 20:50  dimitr
+
+	* firebird2/src/: intl/ld.h, remote/property.cpp:
+	
+	Cleanup.
+
+2003-01-18 20:42  dimitr
+
+	* firebird2/src/include/: firebird.h, gen/autoconfig_msvc.h:
+	
+	Cleanup.
+
+2003-01-18 20:39  dimitr
+
+	* firebird2/src/jrd/: jrd.cpp, jrd.h, shrinit.cpp:
+	
+	Cleanup.
+
+2003-01-18 20:34  dimitr
+
+	* firebird2/src/: include/firebird.h, dsql/dsql.h, dsql/keywords.h,
+	dsql/parse.cpp, dsql/parse.y, include/fb_types.h:
+	
+	Cleanup.
+
+2003-01-18 20:25  dimitr
+
+	* firebird2/src/jrd/dllshell.cpp:
+	
+	Removed unused win16 module.
+
+2003-01-18 20:21  dimitr
+
+	* firebird2/builds/win32/msvc6/: engine.dsp, fb_inet_server.dsp,
+	fb_lock_print.dsp, fbclient.dsp, Firebird2.dsw, fbembed.dsp,
+	fbguard.dsp, fbserver.dsp, gbak.dsp, gdef.dsp, gfix.dsp, gpre.dsp,
+	gpre_boot.dsp, gsec.dsp, gstat.dsp, ib_udf.dsp, ib_util.dsp,
+	instreg.dsp, instsvc.dsp, intl.dsp, isql.dsp, qli.dsp:
+	
+	Updated project files:	 1. Cleaned up used import libraries.	 2.
+	Winsock2 is used.    3. Embedded engine now supports true local
+	access.
+
+2003-01-18 19:43  dimitr
+
+	* firebird2/src/common/classes/: alloc.cpp, tree.h:
+	
+	Removed compiler warnings.
+
+2003-01-18 19:18  dimitr
+
+	* firebird2/src/: jrd/why.cpp, remote/allr.cpp:
+	
+	Further development of the embedded engine.
+
+2003-01-18 19:01  dimitr
+
+	* firebird2/src/: jrd/cch.cpp, jrd/dfw.epp, jrd/old.cpp,
+	jrd/pag.cpp, jrd/rse.cpp, jrd/sdw.cpp, jrd/sort.cpp,
+	jrd/sort_mem.cpp, common/classes/alloc.h:
+	
+	Undone.
+
+2003-01-18 17:44  dimitr
+
+	* firebird2/src/jrd/os2.cpp:
+	
+	Removed PIO layer for OS/2.
+
+2003-01-18 17:44  dimitr
+
+	* firebird2/src/jrd/: cch.cpp, vio.cpp:
+	
+	Some changes related to aliases.
+
+2003-01-18 17:29  dimitr
+
+	* firebird2/src/jrd/: cch.cpp, jrd.cpp:
+	
+	Some changes related to aliases.
+
+2003-01-18 16:22  dimitr
+
+	* firebird2/src/jrd/: pag.cpp, rse.cpp, sdw.cpp:
+	
+	Reverted some allocations back to system instead of the default
+	pool.
+
+2003-01-18 16:16  dimitr
+
+	* firebird2/src/jrd/old.cpp:
+	
+	Reverted some allocations back to system instead of the default
+	pool.
+
+2003-01-18 16:13  dimitr
+
+	* firebird2/src/jrd/dfw.epp:
+	
+	Reverted some allocations in the DFW manager back to system instead
+	of the default pool.
+
+2003-01-18 16:10  dimitr
+
+	* firebird2/src/jrd/cch.cpp:
+	
+	Reverted allocations in the cache manager back to system instead of
+	the default pool.
+
+2003-01-18 16:03  dimitr
+
+	* firebird2/src/jrd/sort.cpp:
+	
+	Reverted allocations in the sort module back to system instead of
+	the default pool. Look at Dave's comments in sort_alloc.
+
+2003-01-18 15:57  dimitr
+
+	* firebird2/src/jrd/sort_mem.cpp:
+	
+	Allocate sort space from system, not from the default pool.
+
+2003-01-18 15:56  dimitr
+
+	* firebird2/src/common/classes/alloc.h:
+	
+	Expose routines for allocation from system. Various temp buffers
+	shouldn't go through the pool implementation.
+
+2003-01-18 15:54  dimitr
+
+	* firebird2/src/jrd/rse.cpp:
+	
+	Use in-memory sorting for merges.
+
 2003-01-17 14:46  dimitr
 
 	* firebird2/src/jrd/rse.cpp:
