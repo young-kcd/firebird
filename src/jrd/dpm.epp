@@ -1355,7 +1355,7 @@ ULONG DPM_get_blob(TDBB tdbb,
 	if (!(ppage = get_pointer_page(tdbb, blob->blb_relation, &rpb.rpb_window,
 								   pp_sequence, LCK_read))) {
 		blob->blb_flags |= BLB_damaged;
-		return NULL;
+		return 0UL;
 	}
 
 	if (!(page_number = ppage->ppg_page[slot]))
@@ -1411,7 +1411,7 @@ ULONG DPM_get_blob(TDBB tdbb,
 	if (header->blh_flags & rhd_damaged) {
 		blob->blb_flags |= BLB_damaged;
 		CCH_RELEASE(tdbb, &rpb.rpb_window);
-		return NULL;
+		return 0UL;
 	}
 
 /* Retrieve the data either into page clump (level 0) or page vector (levels
@@ -1440,7 +1440,7 @@ ULONG DPM_get_blob(TDBB tdbb,
 
 	if (!delete_flag) {
 		CCH_RELEASE(tdbb, &rpb.rpb_window);
-		return NULL;
+		return 0UL;
 	}
 
 /* We've been asked (nicely) to delete the blob.  So do so. */
@@ -1455,7 +1455,7 @@ ULONG DPM_get_blob(TDBB tdbb,
 
 	CCH_RELEASE(tdbb, &rpb.rpb_window);
 	blob->blb_flags |= BLB_damaged;
-	return NULL;
+	return 0UL;
 }
 
 

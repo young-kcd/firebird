@@ -760,7 +760,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 	tdbb->tdbb_request = NULL;
 	tdbb->tdbb_transaction = NULL;
 	tdbb->tdbb_inhibit = 0;
-	tdbb->tdbb_flags = NULL;
+	tdbb->tdbb_flags = 0;
 
 	attachment->att_charset = options.dpb_interp;
 
@@ -1883,7 +1883,7 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 	tdbb->tdbb_request = NULL;
 	tdbb->tdbb_transaction = NULL;
 	tdbb->tdbb_inhibit = 0;
-	tdbb->tdbb_flags = NULL;
+	tdbb->tdbb_flags = 0;
 
 	if (options.dpb_working_directory)
 		attachment->att_working_directory =
@@ -4695,7 +4695,7 @@ static STATUS check_database(TDBB tdbb, ATT attachment, STATUS * user_status)
 	tdbb->tdbb_transaction = NULL;
 	tdbb->tdbb_default = NULL;
 	tdbb->tdbb_inhibit = 0;
-	tdbb->tdbb_flags = NULL;
+	tdbb->tdbb_flags = 0;
 
 /* Count active threads in database */
 

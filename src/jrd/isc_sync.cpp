@@ -3350,12 +3350,12 @@ BOOLEAN ISC_unmap_object(STATUS * status_vector,
 #ifdef SOLARIS
 	if ((page_size = sysconf(_SC_PAGESIZE)) == -1) {
 		error(status_vector, "sysconf", errno);
-		return NULL;
+		return FALSE;
 	}
 #else
 	if ((page_size = (int) getpagesize()) == -1) {
 		error(status_vector, "getpagesize", errno);
-		return NULL;
+		return FALSE;
 	}
 #endif
 
@@ -4766,12 +4766,12 @@ static SLONG find_key(STATUS * status_vector, TEXT * filename)
 	if ((key = ftok(filename, FTOK_KEY)) == -1) {
 		if ((fd = open(filename, O_RDWR | O_CREAT | O_TRUNC, PRIV)) == -1) {
 			error(status_vector, "open", errno);
-			return NULL;
+			return 0L;
 		}
 		close(fd);
 		if ((key = ftok(filename, FTOK_KEY)) == -1) {
 			error(status_vector, "ftok", errno);
-			return NULL;
+			return 0L;
 		}
 	}
 

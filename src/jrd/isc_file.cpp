@@ -429,8 +429,8 @@ int ISC_analyze_nfs(TEXT * expanded_filename, TEXT * node_name)
 				strcpy(max_path, mount.mnt_path);
 			}
 			else {
-				*max_node = NULL;
-				*max_path = NULL;
+				*max_node = 0;
+				*max_path = 0;
 			}
 		}
 	}

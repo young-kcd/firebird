@@ -32,7 +32,7 @@
  *                         readonly databases.
  */
 /*
-$Id: blb.cpp,v 1.10 2002-09-25 17:12:09 skidder Exp $
+$Id: blb.cpp,v 1.11 2002-09-26 09:26:39 eku Exp $
 */
 
 #include "firebird.h"
@@ -983,7 +983,7 @@ void BLB_move_from_string(TDBB tdbb, DSC * from_desc, DSC * to_desc, NOD field)
 		DSC_dtype_tostring(from_desc->dsc_dtype), 0);
 	else
 	{
-		USHORT ttype = -1;
+		USHORT ttype = -1U;
 		BLB blob = 0;
 		UCHAR *fromstr = 0;
 		struct bid temp_bid;

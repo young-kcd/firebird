@@ -1898,7 +1898,7 @@ void *SVC_start(SVC service, USHORT spb_length, SCHAR * spb)
  *	a later date.
  */
 
-	isc_resv_handle reserved = NULL;	/* Reserved for future functionality */
+	isc_resv_handle reserved = (isc_resv_handle)0;	/* Reserved for future functionality */
 
 /* The name of the service is the first element of the buffer */
 	svc_id = *spb;

@@ -50,13 +50,13 @@ static MDLS DLS_cfg_tmpdir = { NULL, FALSE };	/* directory list object */
 
 /* external function directory list */
 
-static FDLS first_fdls = { 0, 0 };
+static FDLS first_fdls = { 0, { 0 } };
 static BOOLEAN fdls_mutex_init = FALSE;
 static MUTX_T fdls_mutex[1];
 
 /* external file directory list */
 
-static EDLS     first_edls      = {0, 0};
+static EDLS     first_edls      = { 0, { 0 } };
 static BOOLEAN  edls_mutex_init = FALSE;
 static MUTX_T   edls_mutex[1];
 
