@@ -491,7 +491,7 @@ namespace Firebird
 		inline StringBase<StringComparator> ToString() {
 			return StringBase<StringComparator>(c_str());
 		}
-		inline StringBase<StringComparator> ToPathName() {
+		inline StringBase<PathNameComparator> ToPathName() {
 			return StringBase<PathNameComparator>(c_str());
 		}
 
