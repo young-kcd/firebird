@@ -1,3 +1,122 @@
+2002-11-12 19:59  fsg
+
+	* firebird2/src/intl/anhun.h:
+	
+	Fixed hungarian collation provided by Sandor Szollosi
+
+2002-11-12 17:04  alexpeshkoff
+
+	* firebird2/src/dsql/dsql.cpp:
+	
+	Avoid deadlocks: lock databases_mutex only when THREAD_EXITed
+
+2002-11-12 16:43  dimitr
+
+	* firebird2/src/misc/firebird.conf:
+	
+	Added firebird.conf to the repository.
+
+2002-11-12 16:41  dimitr
+
+	* firebird2/src/jrd/sort_mem.cpp:
+	
+	Limited default value.
+
+2002-11-12 15:06  dimitr
+
+	* firebird2/builds/posix/prefix.mingw:
+	
+	More work regarding win32 builds via mingw.
+
+2002-11-12 15:03  dimitr
+
+	* firebird2/: src/gpre/cob.cpp, builds/win32/msvc6/gpre.dsp,
+	builds/win32/msvc6/gpre_boot.dsp:
+	
+	Make COBOL available in win32 builds of gpre.
+
+2002-11-12 14:46  eku
+
+	* firebird2/: configure.in, src/include/gen/autoconfig_msvc.h,
+	src/jrd/unix.cpp, src/make.new/config/config.h.in:
+	
+	Autoconf: check for aio.h, pread and pwrite
+
+2002-11-12 14:15  eku
+
+	* firebird2/: configure.in, src/include/gen/autoconfig_msvc.h,
+	src/make.new/config/config.h.in, src/remote/inet.cpp:
+	
+	Autoconf: check for getpgrp
+
+2002-11-12 13:44  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86/Makefile.in:
+	
+	[no log message]
+
+2002-11-12 13:30  kkuznetsov
+
+	* firebird2/: configure.in, src/include/gen/autoconfig_msvc.h,
+	src/make.new/config/config.h.in:
+	
+	Add check for native xdr
+
+2002-11-12 13:16  eku
+
+	* firebird2/src/: burp/canonical.cpp, remote/inet.cpp:
+	
+	Cleanup
+
+2002-11-12 13:10  eku
+
+	* firebird2/src/install/arch-specific/sinixz/: Makefile.in,
+	prototype.in:
+	
+	Finally packaging works again.
+
+2002-11-12 10:17  eku
+
+	* firebird2/: configure.in, src/include/gen/autoconfig_msvc.h,
+	src/lock/lockv3.h, src/make.new/config/config.h.in:
+	
+	Autoconf: check for semun
+
+2002-11-12 10:12  eku
+
+	* firebird2/builds/posix/Makefile.in.install:
+	
+	File obsoleted by src/install/arch-specific/<platform>/Makefile.in
+
+2002-11-12 08:59  eku
+
+	* firebird2/src/jrd/: flu.cpp, isc_sync.cpp, why.c, y-valve.cpp:
+	
+	Cleanup.
+
+2002-11-12 08:50  eku
+
+	* firebird2/Makefile.in:
+	
+	Added more targets to the top makefile.
+
+2002-11-12 08:46  eku
+
+	* firebird2/configure.in:
+	
+	Separated installation and packaging rules per platform.
+
+2002-11-12 06:04  skywalker
+
+	* firebird2/src/: dsql/parse.cpp, dudley/exe.epp, gpre/cob.cpp,
+	jrd/fun.epp, jrd/met.epp, remote/xdr_proto.h:
+	
+	Changes to make some NOD entries now XXX_NOD as per module (assume
+	this is part of Ignatio's change).  Change to define xdr_hyper when
+	it's available locally.  (The standard #include file rpc/xdr.h is
+	not included and the definition needs to be in remote/xdr_proto.h
+	for some reason).
+
 2002-11-11 20:45  hippoman
 
 	* firebird2/src/qli/: blk.h, command.cpp, compile.cpp, eval.cpp,
