@@ -76,6 +76,7 @@ if "%VS_VER%"=="msvc6" (
 @copy %ROOT_PATH%\doc\WhatsNew %ROOT_PATH%\output\doc\WhatsNew.txt >nul
 @copy %ROOT_PATH%\src\jrd\ibase.h %ROOT_PATH%\output\include >nul
 @copy %ROOT_PATH%\src\include\gen\iberror.h %ROOT_PATH%\output\include >nul
+@copy %ROOT_PATH%\src\install\misc\firebird.conf %ROOT_PATH%\output >nul
 @copy install_super.bat %ROOT_PATH%\output\bin >nul
 @copy install_classic.bat %ROOT_PATH%\output\bin >nul
 @copy uninstall.bat %ROOT_PATH%\output\bin >nul

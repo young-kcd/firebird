@@ -25,7 +25,7 @@
 :LOOP
 	@shift
 	@if "%1"==""  (goto DONE)
-	@set FIREBIRD= %FIREBIRD% %1
+        @set FIREBIRD=%FIREBIRD% %1
 	@goto loop
 :DONE
 

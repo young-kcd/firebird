@@ -32,4 +32,5 @@ for /f "tokens=*" %%a in ('@echo %ROOT_PATH:\=/%') do (set DB_PATH=%%a)
 @echo    vs_ver=%VS_VER%
 @echo    db_path=%DB_PATH%
 @echo    root_path=%ROOT_PATH%
+@echo    fireird=%FIREBIRD%
 @echo.
