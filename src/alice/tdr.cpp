@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.19 2003-09-10 17:46:44 brodsom Exp $
+//	$Id: tdr.cpp,v 1.20 2003-09-15 08:05:09 dimitr Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -641,7 +641,7 @@ static void print_description(TDR trans)
 			SVC_putc(tdgbl->service_blk, (UCHAR) (nRemoteSiteLen >> 8));
 			for (i = 0; i < (int) nRemoteSiteLen; i++)
 			{
-				SVC_putc(tdgbl->service_blk, (UCHAR) nRemoteSiteLen);
+				SVC_putc(tdgbl->service_blk, (UCHAR) pszRemoteSite[i]);
 			}
 #endif
 		}
