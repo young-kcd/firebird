@@ -28,7 +28,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.1 2002-07-29 15:04:06 skywalker Exp $
+#  $Id: Makefile.in.firebird,v 1.2 2002-08-05 07:14:53 skywalker Exp $
 #
 
 ROOT=..
@@ -46,8 +46,8 @@ ISC_PASSWORD=	masterkey
 TEST_PATH = @FIREBIRD_BUILD_DIR@
 LD_LIBRARY_PATH=$(RealFirebirdPath)/lib
 
-export ISC_USER
-export ISC_PASSWORD
+#export ISC_USER
+#export ISC_PASSWORD
 #export INTERBASE
 export FIREBIRD
 export DYLD_FRAMEWORK_PATH
@@ -203,17 +203,17 @@ boot_phase1_build: libfbcommon gpre_boot libfbstatic gpre_static
 libfbcommon:
 	$(MAKE) -f $(MAKE_ROOT)/Makefile.libfbcommon $@
 
-gpre_boot: libfbcommon
+gpre_boot:
 	$(MAKE) -f $(MAKE_ROOT)/Makefile.boot.gpre $@
 
-libfbstatic: gpre_boot
+libfbstatic:
 	$(MAKE) -f $(MAKE_ROOT)/Makefile.libfbstatic $@
 
-gpre_static: gpre_boot libfbcommon libfbstatic
+gpre_static:
 	$(MAKE) -f $(MAKE_ROOT)/Makefile.static.gpre $@
 
                              # The lock manager for classic (embedded) 
-lock_mgr : libfbcommon libfbstatic  
+lock_mgr :
 	$(MAKE) -f $(MAKE_ROOT)/Makefile.embed.lockmgr $@
 
 
@@ -251,7 +251,10 @@ gbak_static: lock_mgr
 isql_static: 
 	$(MAKE) -f $(MAKE_ROOT)/Makefile.static.isql $@
 
-empty_db ref_databases : gbak_static
+empty_db :
+	$(MAKE) -f $(MAKE_ROOT)/Makefile.refDatabases $@
+
+ref_databases : gbak_static
 	$(MAKE) -f $(MAKE_ROOT)/Makefile.refDatabases $@
 
 

@@ -26,7 +26,7 @@
 #   Contributor(s):
 #
 #
-#   $Id: make.rules,v 1.1 2002-07-29 15:04:06 skywalker Exp $
+#   $Id: make.rules,v 1.2 2002-08-05 07:14:53 skywalker Exp $
 #
 
 #____________________________________________________________________________
@@ -197,6 +197,9 @@ endif
 
 
 GPRE_FLAGS=	-r -m -z -n
+JRD_GPRE_FLAGS = -n -z -gds_cxx -raw -ids
+DSQL_GPRE_FLAGS =  -lang_internal -r -m -z -n
+
 
 .SUFFIXES: .c .e .epp .cpp
 
@@ -207,6 +210,13 @@ GPRE_FLAGS=	-r -m -z -n
 .epp.cpp:
 	$(GPRE_CURRENT) $(GPRE_FLAGS) $< $@
 
+
+$(SRC)/jrd/%.cpp:: $(SRC)/jrd/%.epp 
+	$(GPRE_CURRENT) $(JRD_GPRE_FLAGS) $< $@
+
+
+$(SRC)/dsql/%.cpp:: $(SRC)/dsql/%.epp 
+	$(GPRE_CURRENT) $(DSQL_GPRE_FLAGS) $< $@
 
 
 .SUFFIXES: .lo .o .cpp .c

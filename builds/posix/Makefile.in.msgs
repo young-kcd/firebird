@@ -29,15 +29,15 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.msgs,v 1.1 2002-07-29 15:04:06 skywalker Exp $
+#  $Id: Makefile.in.msgs,v 1.2 2002-08-05 07:14:53 skywalker Exp $
 #
 ROOT=..
 ObjModuleName=msgs
 
-include     $(ROOT)/src/make.rules
-include     $(ROOT)/src/make.defaults
-include     $(ROOT)/src/make.platform
-include     $(ROOT)/src/make.shared.variables
+include     $(ROOT)/gen/make.rules
+include     $(ROOT)/gen/make.defaults
+include     $(ROOT)/gen/make.platform
+include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@
 
@@ -49,24 +49,24 @@ unexport ISC_PASSWORD
 
 
 
-CHECK_Files = check_msgs.cpp
+CHECK_Files = check_msgs.epp
 CHECK_Sources = $(addprefix msgs/, $(CHECK_Files))
 CHECK_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CHECK_Sources))))
 
 
-BUILD_Files = build_file.cpp
+BUILD_Files = build_file.epp
 BUILD_Sources = $(addprefix msgs/, $(BUILD_Files))
 BUILD_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(BUILD_Sources))))
 
-ENTER_Files = enter_msgs.cpp
+ENTER_Files = enter_msgs.epp
 ENTER_Sources = $(addprefix msgs/, $(ENTER_Files))
 ENTER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(ENTER_Sources))))
 
-MODIFY_Files = modify_msgs.cpp
+MODIFY_Files = modify_msgs.epp
 MODIFY_Sources = $(addprefix msgs/, $(MODIFY_Files))
 MODIFY_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(MODIFY_Sources))))
 
-CHANGE_Files = change_msgs.cpp
+CHANGE_Files = change_msgs.epp
 CHANGE_Sources = $(addprefix msgs/, $(CHANGE_Files))
 CHANGE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CHANGE_Sources))))
 
@@ -84,7 +84,7 @@ Programs =		$(BUILD_FILE) $(CHECK_MESSAGES) $(ENTER_MESSAGES) \
 
 all:	build_file check_messages enter_messages modify_messages change_messages 
 
-msgs:  msg.gdb master_msg_db $(Programs) do_check message_file
+msgs:  master_msg_db $(Programs) do_check message_file
 
 
 do_check: $(CHECK_MESSAGES) $(BUILD_FILE)
@@ -148,11 +148,8 @@ indicator.loc:
 	$(CHECK_MESSAGES) -d $(MSGSDIR)master_msg_db -l
 
 
-msg.gdb:
-	ln -fs $(SRC_ROOT)/refDatabases/msg.gdb msg.gdb
-
 master_msg_db:
-	ln -fs $(SRC_ROOT)/refDatabases/msg.gdb master_msg_db
+	ln -fs $(SRC_ROOT)/msg.gdb master_msg_db
 
 
 
