@@ -26,7 +26,7 @@ CLEAN :
 
 CPP_PROJ=/nologo /MD /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../src/include" /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /D "SUPERSERVER" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
 BSC32=bscmake.exe
-BSC32_FLAGS=/nologo /o"$(OUTDIR)\common.bsc" 
+BSC32_FLAGS=/nologo /n /o"$(OUTDIR)\common.bsc" 
 BSC32_SBRS= \
 	
 LIB32=link.exe -lib

@@ -80,7 +80,7 @@ CLEAN :
 
 CPP_PROJ=/nologo /MD /W3 /GX /Ot /Oi /Oy /Ob2 /I "../../src/include" /D "NDEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /D "WIN32_LEAN_AND_MEAN" /FR"$(INTDIR)\\" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
 BSC32=bscmake.exe
-BSC32_FLAGS=/nologo /o"$(OUTDIR)\gpre_boot.bsc" 
+BSC32_FLAGS=/nologo /n /o"$(OUTDIR)\gpre_boot.bsc" 
 BSC32_SBRS= \
 	"$(INTDIR)\ada.sbr" \
 	"$(INTDIR)\c_cxx.sbr" \
