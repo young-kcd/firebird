@@ -56,7 +56,7 @@
 #undef WALW_DEBUG
 #endif
 
-#define BUGCHECK(number)        ERR_bugcheck (number)
+#define BUGCHECK(number)        ERR_bugcheck (number, __FILE__, __LINE__)
 #define CORRUPT(number)         ERR_corrupt (number)
 #define IBERROR(number)         ERR_error (number)
 

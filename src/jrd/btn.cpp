@@ -82,9 +82,15 @@ SLONG findPageInDuplicates(const btree_page* page, UCHAR* pointer,
  **************************************/
 	const bool leafPage = (page->btr_level == 0);
 	const SCHAR flags = page->btr_header.pag_flags;
+	//const UCHAR* endPointer = (UCHAR*)page + page->btr_length;
 
 	IndexNode node, previousNode;
 	pointer = readNode(&node, pointer, flags, leafPage);
+	
+	// Check if pointer is still valid
+	//if (pointer > endPointer) {
+	//	BUGCHECK(204);	// msg 204 index inconsistent
+	//}
 
 	while (true) {
 		// loop through duplicates until 
@@ -94,22 +100,23 @@ SLONG findPageInDuplicates(const btree_page* page, UCHAR* pointer,
 		if (node.isEndBucket) {
 			return previousNumber;
 		}
-		if (findRecordNumber < node.recordNumber) {
+		if (findRecordNumber <= node.recordNumber) {
 			// If first record number on page is higher
 			// then record number must be at the previous
 			// passed page number.
 			return previousNumber;
-		} 
-		else if (findRecordNumber == node.recordNumber) {
-			// If first record number on page is equal
-			// then we are exactly on the right place :)
-			return node.pageNumber;
 		} 
 		// Save current page number and fetch next node 
 		// for comparision.
 		previousNumber = node.pageNumber;
 		previousNode = node;
 		pointer = BTreeNode::readNode(&node, pointer, flags, leafPage);
+
+		// Check if pointer is still valid
+		//if (pointer > endPointer) {
+		//	BUGCHECK(204);	// msg 204 index inconsistent
+		//}
+
 		// We're done if end level marker is reached or this 
 		// isn't a equal node anymore.
 		if ((node.isEndLevel) || 
@@ -195,27 +202,19 @@ USHORT getNodeSize(const IndexNode* indexNode, SCHAR flags, bool leafNode)
 	if (flags & btr_large_keys) {
 
 		// Determine flags 
-		SLONG number = indexNode->recordNumber;
-		if (!leafNode) {
-			number = indexNode->pageNumber;
-		}
 		UCHAR internalFlags = 0;
-		if (number == END_BUCKET) {
-			internalFlags = 2;
+		if (indexNode->isEndLevel) {
+			internalFlags = BTN_END_LEVEL_FLAG;
 		}
-		if (number == END_LEVEL) {
-			internalFlags = 1;
+		else if (indexNode->isEndBucket) {
+			internalFlags = BTN_END_BUCKET_FLAG;
 		}
-		if ((internalFlags == 0) && 
-			(indexNode->length == 0) && (indexNode->prefix == 0))
-		{
-			internalFlags = 3;
+		else if ((indexNode->length == 0) && (indexNode->prefix == 0)) {
+			internalFlags = BTN_ZERO_PREFIX_ZERO_LENGTH_FLAG;
 		}
 
 		// Store internal flags + 6 bits from number
-		if (!leafNode) {
-			number = indexNode->recordNumber;
-		}
+		SLONG number = indexNode->recordNumber;
 		if (number < 0) {
 			number = 0;
 		}
@@ -264,7 +263,7 @@ USHORT getNodeSize(const IndexNode* indexNode, SCHAR flags, bool leafNode)
 			}
 		}
 
-		if (internalFlags != 3) {
+		if (internalFlags != BTN_ZERO_PREFIX_ZERO_LENGTH_FLAG) {
 			// Size needed for prefix  
 			number = indexNode->prefix;
 			if (number & 0xFFFFC000) {
@@ -302,7 +301,10 @@ USHORT getNodeSize(const IndexNode* indexNode, SCHAR flags, bool leafNode)
 
 		result += indexNode->length;
 
-		if (!leafNode && (flags & btr_all_record_number)) {
+		if ((flags & btr_all_record_number) &&
+			(!leafNode ||
+			(leafNode && indexNode->isEndBucket && (indexNode->length == 0)))) 
+		{
 			// Size needed for record number
 			result += sizeof(SLONG);
 		}
@@ -582,10 +584,6 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
  **************************************/
 	indexNode->nodePointer = pagePointer;
 	if (flags & btr_large_keys) {
-		// Initialize
-		indexNode->prefix = 0;
-		indexNode->length = 0;
-		bool duplicate = false;
 
 		// Get first byte that contains internal flags and 6 bits from number
 		UCHAR internalFlags = *pagePointer;
@@ -593,9 +591,8 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 		internalFlags = ((internalFlags & 0xC0) >> 6);
 		pagePointer++;
 
-		if (internalFlags == BTN_DUPLICATE_FLAG) {
-			duplicate = true;
-		}
+		indexNode->isEndLevel = (internalFlags == BTN_END_LEVEL_FLAG);
+		indexNode->isEndBucket = (internalFlags == BTN_END_BUCKET_FLAG);
 
 		// Get remaining bits for number
 		SLONG tmp = *pagePointer;
@@ -639,22 +636,6 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 						}
 					}*/
 				}
-			}
-		}
-		
-		if (leafNode) {
-			if ((internalFlags == BTN_END_LEVEL_FLAG) || 
-				(internalFlags == BTN_END_BUCKET_FLAG)) 
-			{
-				if (number == BTN_DUPLICATE_MARKER) {
-					duplicate = true;
-				}
-			}
-			if (internalFlags == BTN_END_LEVEL_FLAG) {
-				number = END_LEVEL;
-			}
-			if (internalFlags == BTN_END_BUCKET_FLAG) {
-				number = END_BUCKET;
 			}
 		}
 		indexNode->recordNumber = number;
@@ -709,26 +690,14 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 				}
 			}
 			indexNode->pageNumber = number;
-
-			if ((internalFlags == BTN_END_LEVEL_FLAG) || 
-				(internalFlags == BTN_END_BUCKET_FLAG)) 
-			{
-				if (number == BTN_DUPLICATE_MARKER) {
-					duplicate = true;
-				}
-			}
-
-			if (internalFlags == BTN_END_LEVEL_FLAG) {
-				indexNode->pageNumber = END_LEVEL;
-			}
-			if (internalFlags == BTN_END_BUCKET_FLAG) {
-				indexNode->pageNumber = END_BUCKET;
-			}
 		}
 
-		// Get prefix and length if it isn't a duplicate
-		if (!duplicate) {
-			// Get prefix
+		if (internalFlags == BTN_ZERO_PREFIX_ZERO_LENGTH_FLAG) {
+			indexNode->prefix = 0;
+			indexNode->length = 0;
+		}
+		else {
+			// Get prefix and length if it isn't a duplicate
 			tmp = *pagePointer;
 			pagePointer++;
 			indexNode->prefix = (tmp & 0x7F);
@@ -751,9 +720,6 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 		// Get pointer where data starts
 		indexNode->data = pagePointer;
 		pagePointer += indexNode->length;
-
-		indexNode->isEndBucket = (internalFlags == BTN_END_BUCKET_FLAG);
-		indexNode->isEndLevel = (internalFlags == BTN_END_LEVEL_FLAG);
 	}
 	else {
 		indexNode->prefix = *pagePointer;
@@ -762,20 +728,25 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 		pagePointer++;
 		if (leafNode) {
 			indexNode->recordNumber = get_long(pagePointer);
-			indexNode->isEndBucket = (indexNode->recordNumber == END_BUCKET);
 			indexNode->isEndLevel = (indexNode->recordNumber == END_LEVEL);
+			indexNode->isEndBucket = (indexNode->recordNumber == END_BUCKET);
 		} 
 		else {
 			indexNode->pageNumber = get_long(pagePointer);
-			indexNode->isEndBucket = (indexNode->pageNumber == END_BUCKET);
 			indexNode->isEndLevel = (indexNode->pageNumber == END_LEVEL);
+			indexNode->isEndBucket = (indexNode->pageNumber == END_BUCKET);
 		}
 		pagePointer += 4;
 
 		indexNode->data = pagePointer;
 		pagePointer += indexNode->length;
 
-		if (!leafNode && (flags & btr_all_record_number)) {
+		// Get recordnumber for non-leaf-nodes and on leaf-nodes when
+		// last node is END_BUCKET and duplicate (or NULL).
+		if ((flags & btr_all_record_number) &&
+			((!leafNode) ||
+			 (leafNode && indexNode->isEndBucket && (indexNode->length == 0)))) 
+		{
 			indexNode->recordNumber = get_long(pagePointer);
 			pagePointer += 4;
 		}
@@ -893,34 +864,29 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags,
 		// are zero) we don't store the length and prefix
 		// information. This will save at least 2 bytes per node.
 
-		bool duplicate = false;
-		SLONG number = indexNode->recordNumber;
-		if (!leafNode) {
-			number = indexNode->pageNumber;
+		if (!withData) {
+			// First move data so we can't override it.
+			// For older structure node was always the same, but length
+			// from new structure depends on the values.
+			const USHORT offset = getNodeSize(indexNode, flags, leafNode) - indexNode->length;
+			pagePointer += offset; // set pointer to right position
+			memmove(pagePointer, indexNode->data, indexNode->length);
+			pagePointer -= offset; // restore pointer to original position
 		}
+
 		// Internal flags
 		UCHAR internalFlags = 0;
-		if (number == END_LEVEL) {
+		if (indexNode->isEndLevel) {
 			internalFlags = BTN_END_LEVEL_FLAG;
 		}
-		else if (number == END_BUCKET) {
+		else if (indexNode->isEndBucket) {
 			internalFlags = BTN_END_BUCKET_FLAG;
 		}
-		if (!leafNode) {
-			number = indexNode->recordNumber;
+		else if ((indexNode->length == 0) && (indexNode->prefix == 0)) {
+			internalFlags = BTN_ZERO_PREFIX_ZERO_LENGTH_FLAG;
 		}
-		if ((indexNode->length == 0) && (indexNode->prefix == 0)) {
-			duplicate = true;
-			if (internalFlags == 0) {
-				// Duplicate value or ASC NULL state
-				internalFlags = BTN_DUPLICATE_FLAG;
-			}
-			else if (leafNode) {
-				// if we have a END_BUCKET or END_LEVEL marker we
-				// use the number for the duplicate information.
-				number = BTN_DUPLICATE_MARKER;
-			}
-		}
+
+		SLONG number = indexNode->recordNumber;
 		if (number < 0) {
 			number = 0;
 		}
@@ -1009,14 +975,8 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags,
 			// Store page number for non-leaf pages
 			number = indexNode->pageNumber;
 			if (number < 0) {
-				if (duplicate) {
-					number = 1;
-				}
-				else {
-					number = 0;
-				}
+				number = 0;
 			}
-
 			tmp = (number & 0x7F);
 			number >>= 7;
 			if (number > 0) {
@@ -1101,7 +1061,7 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags,
 		}
 
 		// Store prefix and length when it isn't a duplicate
-		if (!duplicate) {
+		if (internalFlags != BTN_ZERO_PREFIX_ZERO_LENGTH_FLAG) {
 			// Write prefix, maximum 14 bits
 			number = indexNode->prefix;
 			tmp = (number & 0x7F);
@@ -1137,9 +1097,6 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags,
 		if (withData) {
 			memcpy(pagePointer, indexNode->data, indexNode->length);
 		} 
-		else {
-			memmove(pagePointer, indexNode->data, indexNode->length);
-		}
 		pagePointer += indexNode->length;
 	}
 	else {
@@ -1149,13 +1106,22 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags,
 		// Write length 
 		*pagePointer = (UCHAR)indexNode->length;
 		pagePointer++;
-		if (leafNode) {
-			// Write record number 
-			quad_put(indexNode->recordNumber, pagePointer);
+		
+		if (indexNode->isEndLevel) {
+			quad_put(END_LEVEL, pagePointer);
+		}
+		else if (indexNode->isEndBucket) {
+			quad_put(END_BUCKET, pagePointer);
 		}
 		else {
-			// Write page number 
-			quad_put(indexNode->pageNumber, pagePointer);
+			if (leafNode) {
+				// Write record number
+				quad_put(indexNode->recordNumber, pagePointer);
+			}
+			else {
+				// Write page number 
+				quad_put(indexNode->pageNumber, pagePointer);
+			}
 		}
 		pagePointer += sizeof(SLONG);	
 
@@ -1171,7 +1137,10 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags,
 			pagePointer += indexNode->length;
 		}
 
-		if (!leafNode && (flags & btr_all_record_number)) {
+		if ((flags & btr_all_record_number) && 
+			(!leafNode ||
+			(leafNode && indexNode->isEndBucket && (indexNode->length == 0)))) 
+		{
 			// Write record number 
 			if (flags & btr_large_keys) {
 				*reinterpret_cast<SLONG*>(pagePointer) = indexNode->recordNumber;
@@ -1200,12 +1169,6 @@ void setEndBucket(IndexNode* indexNode, bool leafNode)
  **************************************/
 	indexNode->isEndBucket = true;
 	indexNode->isEndLevel = false;
-	if (leafNode) {
-		indexNode->recordNumber = END_BUCKET;
-	}
-	else {
-		indexNode->pageNumber = END_BUCKET;
-	}
 }
 
 
@@ -1224,13 +1187,30 @@ void setEndLevel(IndexNode* indexNode, bool leafNode)
 	indexNode->isEndLevel = true;
 	indexNode->prefix = 0;
 	indexNode->length = 0;
-	if (leafNode) {
-		indexNode->recordNumber = END_LEVEL;
-	}
-	else {
-		indexNode->pageNumber = END_LEVEL;
-		indexNode->recordNumber = 0;
-	}
+	indexNode->pageNumber = 0;
+	indexNode->recordNumber = 0;
+}
+
+
+void setNode(IndexNode* indexNode, USHORT prefix, USHORT length, 
+			SLONG recordNumber, SLONG pageNumber,
+			bool isEndBucket, bool isEndLevel)
+{
+/**************************************
+ *
+ *	s e t N o d e
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+	indexNode->isEndBucket = isEndBucket;
+	indexNode->isEndLevel = isEndLevel;
+	indexNode->prefix = prefix;
+	indexNode->length = length;
+	indexNode->recordNumber = recordNumber;
+	indexNode->pageNumber = pageNumber;
 }
 
 

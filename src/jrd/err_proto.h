@@ -48,7 +48,7 @@ class jrd_rel;
 
 bool	ERR_post_warning(ISC_STATUS, ...);
 void	ERR_assert(const TEXT*, int);
-void	ERR_bugcheck(int);
+void	ERR_bugcheck(int, const TEXT* = NULL, int = 0);
 void	ERR_bugcheck_msg(const TEXT*);
 void	ERR_corrupt(int);
 void	ERR_duplicate_error(Jrd::idx_e, const Jrd::jrd_rel*, USHORT);

@@ -45,11 +45,16 @@ struct btree_exp
 
 const int BTX_SIZE				= 2;
 
+// Flags (2-bits) used for index node
+const int BTN_NORMAL_FLAG		= 0;
 const int BTN_END_LEVEL_FLAG	= 1;
 const int BTN_END_BUCKET_FLAG	= 2;
-const int BTN_DUPLICATE_FLAG	= 3;
-
-const int BTN_DUPLICATE_MARKER	= 1;
+const int BTN_ZERO_PREFIX_ZERO_LENGTH_FLAG	= 3;
+//const int BTN_ZERO_LENGTH_FLAG	= 4;
+//const int BTN_ONE_LENGTH_FLAG	= 5;
+//const int BTN_DUPLICATE_PREFIX_FLAG	= 6;
+//const int BTN_DUPLICATE_PREFIX_AND_ZERO_LENGTH_FLAG	= 7;
+//const int BTN_DUPLICATE_PREFIX_AND_ONE_LENGTH_FLAG	= 7;
 
 // format of expanded index buffer
 struct exp_index_buf
@@ -107,6 +112,9 @@ namespace BTreeNode {
 
 	void setEndBucket(Ods::IndexNode* indexNode, bool leafNode = true);
 	void setEndLevel(Ods::IndexNode* indexNode, bool leafNode = true);
+	void setNode(Ods::IndexNode* indexNode, USHORT prefix = 0, USHORT length = 0, 
+		SLONG recordNumber = 0, SLONG pageNumber = 0,
+		bool isEndBucket = false, bool isEndLevel = false);
 
 } // namespace BTreeNode
 

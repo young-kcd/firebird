@@ -59,12 +59,13 @@ using namespace Jrd;
 //#define JRD_FAILURE_UNKNOWN	"<UNKNOWN>"	/* Used when buffer fails */
 
 
-static void internal_error(ISC_STATUS, int);
+static void internal_error(ISC_STATUS status, int number, 
+						   const TEXT* file = NULL, int line = 0);
 static void internal_post(ISC_STATUS status, va_list args);
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
-void ERR_bugcheck(int number)
+void ERR_bugcheck(int number, const TEXT* file, int line)
 {
 /**************************************
  *
@@ -81,7 +82,7 @@ void ERR_bugcheck(int number)
 
 	CCH_shutdown_database(dbb);
 
-	internal_error(isc_bug_check, number);
+	internal_error(isc_bug_check, number, file, line);
 }
 #endif
 
@@ -609,7 +610,8 @@ void ERR_warning(ISC_STATUS status, ...)
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
-static void internal_error(ISC_STATUS status, int number)
+static void internal_error(ISC_STATUS status, int number, 
+						   const TEXT* file, int line)
 {
 /**************************************
  *
@@ -627,7 +629,20 @@ static void internal_error(ISC_STATUS status, int number)
 	if (gds__msg_lookup(0, JRD_BUGCHK, number, sizeof(errmsg), errmsg, NULL) < 1)
 		strcpy(errmsg, "Internal error code");
 
-	sprintf(errmsg + strlen(errmsg), " (%d)", number);
+	if (file) {
+		// Remove path information
+		TEXT* ptr = (TEXT*)file + strlen(file);	
+		for (; ptr > file; ptr--) {
+			if ((*ptr == '/') || (*ptr == '\\')) {
+				ptr++;
+				break;
+			}
+		}
+		sprintf(errmsg + strlen(errmsg), " (%d), file: %s line %d", number, ptr, line);
+	}
+	else {
+		sprintf(errmsg + strlen(errmsg), " (%d)", number);
+	}
 
 	ERR_post(status, isc_arg_string, ERR_cstring(errmsg), 0);
 }
