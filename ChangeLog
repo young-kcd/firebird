@@ -1,3 +1,53 @@
+2004-12-09 15:43  kkuznetsov
+
+	* firebird2/configure.in (1.141.2.33):
+	
+	Added Solaris packagind files to configure.in
+
+2004-12-09 15:41  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/SS/postinstall.in
+	(1.1):
+	
+	file postinstall.in was initially added on branch B1_5_Release.
+
+2004-12-09 15:41  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/SS/pkginfo.in
+	(1.1):
+	
+	file pkginfo.in was initially added on branch B1_5_Release.
+
+2004-12-09 15:41  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/SS/preinstall.in
+	(1.1):
+	
+	file preinstall.in was initially added on branch B1_5_Release.
+
+2004-12-09 15:41  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/SS/prototype.in
+	(1.1):
+	
+	file prototype.in was initially added on branch B1_5_Release.
+
+2004-12-09 15:41  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/SS/postremove.in
+	(1.1):
+	
+	file postremove.in was initially added on branch B1_5_Release.
+
+2004-12-09 15:41  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/: CS/pkginfo.in
+	(1.1.2.2), CS/prototype.in (1.1.2.4), SS/pkginfo.in (1.1.2.1),
+	SS/postinstall.in (1.1.2.1), SS/postremove.in (1.1.2.1),
+	SS/preinstall.in (1.1.2.1), SS/prototype.in (1.1.2.1):
+	
+	Added Solaris SS packaging files
+
 2004-12-06 10:45  kkuznetsov
 
 	* firebird2/: configure.in (1.141.2.32), src/utilities/srvrmgr.cpp
