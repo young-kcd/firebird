@@ -3761,6 +3761,10 @@ static void pass1_erase(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 		UCHAR* map = csb->csb_rpt[stream].csb_map;
 		if (trigger) {
+			node->nod_arg[e_erase_statement] =
+				pass1_expand_view(tdbb, csb, stream, new_stream, false);
+			node->nod_count =
+				MAX(node->nod_count, (USHORT) e_erase_statement + 1);
 			jrd_nod* view_node = copy(tdbb, csb, node, map, 0, NULL, false);
 			node->nod_arg[e_erase_sub_erase] = view_node;
 			node->nod_count =
