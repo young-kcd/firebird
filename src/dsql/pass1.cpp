@@ -728,6 +728,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 	case nod_udf:
 		return pass1_udf(request, input, proc_flag);
 
+	case nod_equiv:
 	case nod_eql:
 	case nod_neq:
 	case nod_gtr:
@@ -796,6 +797,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 			}
 			else {
 				switch (input->nod_type) {
+				case nod_equiv:
 				case nod_eql:
 				case nod_neq:
 				case nod_gtr:
@@ -927,6 +929,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		sub3 = node->nod_arg[2];
 		// FALLINTO 
 	case nod_assign:
+	case nod_equiv:
 	case nod_eql:
 	case nod_gtr:
 	case nod_geq:
@@ -1806,6 +1809,7 @@ static bool aggregate_found2(const dsql_req* request, const dsql_nod* node,
 		case nod_or:
 		case nod_and:
 		case nod_not:
+		case nod_equiv:
 		case nod_eql:
 		case nod_neq:
 		case nod_gtr:
@@ -2550,6 +2554,7 @@ static bool invalid_reference(const dsql_ctx* context, const dsql_nod* node,
 		case nod_subtract2:
 		case nod_upcase:
 		case nod_extract:
+		case nod_equiv:
 		case nod_eql:
 		case nod_neq:
 		case nod_gtr:
@@ -4116,6 +4121,7 @@ static bool pass1_found_aggregate(const dsql_nod* node, USHORT check_scope_level
 		case nod_divide2:
 		case nod_multiply2:
 		case nod_subtract2:
+		case nod_equiv:
 		case nod_eql:
 		case nod_neq:
 		case nod_gtr:
@@ -4344,6 +4350,7 @@ static bool pass1_found_field(const dsql_nod* node, USHORT check_scope_level,
 		case nod_divide2:
 		case nod_multiply2:
 		case nod_subtract2:
+		case nod_equiv:
 		case nod_eql:
 		case nod_neq:
 		case nod_gtr:
@@ -6854,6 +6861,7 @@ static dsql_nod* remap_field(dsql_req* request, dsql_nod* field,
 		case nod_or:
 		case nod_and:
 		case nod_not:
+		case nod_equiv:
 		case nod_eql:
 		case nod_neq:
 		case nod_gtr:

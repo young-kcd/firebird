@@ -507,13 +507,14 @@ static LexerState lex;
 %token IIF
 %token SCALAR_ARRAY
 %token CROSS
+%token EQUIV
 
 /* precedence declarations for expression evaluation */
 
 %left	OR
 %left	AND
 %left	NOT
-%left	'=' '<' '>' LIKE EQL NEQ GTR LSS GEQ LEQ NOT_GTR NOT_LSS
+%left	'=' '<' '>' LIKE EQL NEQ GTR LSS GEQ LEQ NOT_GTR NOT_LSS EQUIV
 %left	'+' '-'
 %left	'*' '/'
 %left	CONCATENATE
@@ -3473,6 +3474,8 @@ comparison_predicate : value '=' value
 			{ $$ = make_node (nod_geq, 2, $1, $3); }
 		| value NEQ value
 			{ $$ = make_node (nod_neq, 2, $1, $3); }
+		| value EQUIV value
+			{ $$ = make_node (nod_equiv, 2, $1, $3); }
 		;
 
 

@@ -333,7 +333,8 @@ enum nod_t
 	nod_exec_block,		// EXECUTE BLOCK support
 	nod_param_val,		// default value for SP parameters support
 	nod_rows,	// ROWS support
-	nod_query_spec
+	nod_query_spec,
+	nod_equiv
 };
 
 typedef nod_t NOD_TYPE;

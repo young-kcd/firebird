@@ -2039,6 +2039,9 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_eql:
 		verb = "eql";
 		break;
+	case nod_equiv:
+		verb = "equiv";
+		break;
 	case nod_erase:
 		verb = "erase";
 		break;

@@ -296,6 +296,9 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 	case nod_eql:
 		blr_operator = blr_eql;
 		break;
+	case nod_equiv:
+		blr_operator = blr_equiv;
+		break;
 	case nod_neq_all:
 	case nod_neq_any:
 	case nod_neq:

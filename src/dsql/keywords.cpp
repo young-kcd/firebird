@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.34 2004-10-13 18:37:32 dimitr Exp $
+ *  $Id: keywords.cpp,v 1.35 2004-10-14 18:54:48 dimitr Exp $
  *
  */
 
@@ -55,6 +55,7 @@ static const TOK tokens[] = {
 	{EQL, "=", 1},
 	{GTR, ">", 1},
 	{GEQ, ">=", 1},
+	{EQUIV, "==", 2},
 	{ACTION, "ACTION", 1},
 	{ACTIVE, "ACTIVE", 1},
 	{ADD, "ADD", 1},
