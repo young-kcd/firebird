@@ -2,6 +2,421 @@
   * v2.0 Alpha 1
   **************
 
+    * Security improvement
+        Another layout of security.fdb
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed unregistered bug
+        Column-level privileges are preserved after this column is dropped
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug
+        Memory leak when selectable stored procedures are called from PSQL or in subqueries
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Index improvements
+        Don't check uniqueness for null keys
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * SQL improvements
+        1) Introduced SEQUENCE as a synonym for GENERATOR (as per SQL-99)
+        2) Added SQL-99 compliant NEXT VALUE FOR <sequence_name> expression
+        3) Implemented REVOKE ADMIN OPTION FROM statement
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug
+        Backup issues with stream BLOBs
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed unregistered bug
+        Diagnostics about missing/unusable UDF module
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Optimizer improvements
+        1) Distribute HAVING clause conjunctions to the WHERE clause when possible
+        2) Distribute UNION conjunctions to the inner streams when possible
+        3) Improved cross join and merge/sort handling
+        4) Better optimization of mixed AND/OR predicates
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * SQL improvement
+        Supported UDFs to be called as procedures (i.e. ignoring their output) in PSQL
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Context variables
+        Added support for context variables via RDB$GET_CONTEXT and RDB$SET_CONTEXT system functions
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed SF #1065511
+        XP SP2 slow to connect to Linux server
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed bugs SF #459059 and #543106
+        1) index breaks = ANY result
+        2) bug with ALL keyword
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * ODS change
+        Enlarged exception messages from 80 to 1023 bytes
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug SF #1057538
+        UDF output parameter not being the last crashes the server
+      Contributor(s):
+        Claudio Varderrama <cvalde at usa.net>
+
+    * Fixed unregistered bug
+        System users "AUTHENTICATOR" and "SWEEPER" were lost, causing "SQL SERVER" to be reported instead
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Configuration change
+        Added new parameter LegacyHash to firebird.conf
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Security improvements
+        1) New (more secure) password hash calculation algorithm
+        2) Ability for users to modify their own passwords
+        3) Rejected any remote (non-embedded) access to security.fdb
+        4) Use Services API in GSEC
+        5) Protect from attempts to brut-force accounts/passwords
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Configuration change
+        Added new parameter GCPolicy to firebird.conf
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Garbage collection improvements
+        New GC thread implementation and combined cooperative + background activity
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed unregistered bug
+        Some cases where ambiguous queries were still possible
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * ODS change
+        Added RDB$DESCRIPTION to RDB$GENERATORS
+      Contributor(s):
+        Claudio Varderrama <cvalde at usa.net>
+
+    * CURRENT_TIMESTAMP and 'NOW' improvements
+        Return milliseconds when a current timestamp is asked for
+      Syntax:
+        A IS [NOT] DISTINCT FROM B
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * SQL improvement
+        Allowed PLAN, ROWS and ORDER BY clauses in UPDATE/DELETE statements
+      Syntax:
+        A IS [NOT] DISTINCT FROM B
+      Contributor(s):
+      	Oleg Loa <loa at mail.ru>
+
+    * 64-bit builds
+        A number of changes (including ODS support) to support Firebird on 64-bit platforms
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Reworked constraint checking logic
+        More precise checks for PK/UK/FK constraints
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * SQL improvement
+        Added an equivalence predicate which behaves exactly as equality/inequality, but treats NULL = NULL as TRUE
+      Syntax:
+        A IS [NOT] DISTINCT FROM B
+      Contributor(s):
+      	Oleg Loa <loa at mail.ru>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * SQL improvements
+        1) Allowed FIRST/SKIP/ROWS/PLAN and ORDER BY clauses in views
+        2) Added CROSS JOIN (A CROSS JOIN B means something like A INNER JOIN B ON 1 = 1 or just FROM A, B)
+        3) Allowed UNION in subqueries and INSERT statement
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * New transaction option
+        Added lock timeouts for WAIT transactions (see new TPB value isc_tpb_lock_timeout)
+      Contributor(s):
+        Aleksey Karyakin <karyakin at cmpmail.com>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * WNET protocol changes
+        WNET (aka NetBEUI) protocol no longer performs client impresonation
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug
+        Introduced 64-bit record numbers to avoid ~30GB table size limit
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Buffer cache improvements
+        1) Much faster algorithms to process the dirty pages tree
+        2) Increased maximum page cache size to 128K pages (2GB for 16K page size)
+      Contributor(s):
+      	Oleg Loa <loa at mail.ru>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Security improvements
+        Fixed a number of known vulnerabilities in API
+      Contributor(s):
+        Claudio Varderrama <cvalde at usa.net>
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed unregistered bug
+        Don't rollback prepared 2PC sub-transaction
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Server log improvement
+        Add filename and line number to BUGCHECK log messages
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * SGEC improvement
+        Now GSEC returns the error code when used as a non-interactive utility
+      Contributor(s):
+        Claudio Varderrama <cvalde at usa.net>
+
+    * Fixed unregistered bug
+        Server crash with DECLARE FILTER
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * SQL extention
+        Allowed UNION DISTINCT as a synonym for simple UNION (as per SQL-99 spec)
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug SF #571026
+        INET/INET_connect: gethostbyname
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug SF #223058
+        Multi-hop server ability broken
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Optimizer improvement
+        Let's choose a reasonable join order for intermixed inner and outer joins
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Configuration change
+        Added new parameter UsePriorityScheduler to firebird.conf
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * ISQL improvement
+        ODS version is now shown as a part of SHOW DATABASE command
+      Contributor(s):
+        Claudio Varderrama <cvalde at usa.net>
+
+    * Minor BLOB improvement
+        Introduced BLOB SUB_TYPE BINARY as a synonym for SUB_TYPE 0
+      Contributor(s):
+        Claudio Varderrama <cvalde at usa.net>
+
+    * ODS change
+        Introduced a concept of ODS type to be able to distinguish between InterBase databases, Firebird databases, databases created by debug builds of Firebird and private forks
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * UDF improvement
+        Ability to signal SQL NULL via a NULL pointer
+      Contributor(s):
+        Claudio Varderrama <cvalde at usa.net>
+
+    * Expression indices
+        Implemented indices based on arbitrary expressions
+      Syntax:
+        CREATE [UNIQUE] [ASC[ENDING] | DESC[ENDING]] INDEX <index_name> ON <table_name> ( <value_expression> )
+      Contributor(s):
+      	Oleg Loa <loa at mail.ru>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * IIF builtin function
+        Added IIF (<search_condition>, <value1>, <value2>) as a shortcut for CASE WHEN <search_condition> THEN <value1> ELSE <value2> END
+      Contributor(s):
+      	Oleg Loa <loa at mail.ru>
+
+    * Fixed unregistered bug
+        A number of possible server crashes, as reported by Valgrind
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * IN/OR improvements
+        Constant IN predicate or multiple OR booleans are now evaluated faster
+      Contributor(s):
+      	Oleg Loa <loa at mail.ru>
+
+    * NULL becomes a syntactical value
+        You may now specify A = NULL, B > NULL, etc (all of them evaluate to FALSE)
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Concatenation overflow
+        A compile-time check has been dropped in favour of the runtime one
+      Contributor(s):
+      	Oleg Loa <loa at mail.ru>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug
+        Issues with dates below Julian date stored in indices
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * PSQL stack trace
+        Added ability to report a PSQL stack trace when exception occurs
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * OLD context changes
+        Reject any assignment to the OLD trigger context (e.g. make it read-only)
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Index scan imporvement
+        NULLs are ignored during the index scan (when it makes sense)
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed bug SF #735720
+        SELECT ... STARTING WITH :v is wrong when :v = ''
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed unregistered bug
+        Crash when changing data type for field and specify wrong type or domain name
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * ODS change
+        Added RDB$DESCRIPTION and RDB$SYSTEM_FLAG to RDB$ROLES
+      Contributor(s):
+        Claudio Varderrama <cvalde at usa.net>
+
+    * Fixed some BLOB issues
+        1) Outrageous memory consumption when blobs are converted from strings during request processing
+        2) Materialization doesn't cause invalidation of BLOB IDs too early
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed unregistered bug
+        Problems with UDF argument mapping to parameters
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed unregistered bug
+        Server crash due to incorrect accounting of attachment pointers used inside the lock structure
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Improved ISQL
+        1) Fixed bug SF #223126 - Misplaced collation when extracting metadadata with ISQL
+        2) Fixed bug SF #223513 - Ambiguity between tables and views
+        3) Fixed bug SF #518349 - ISQL show mangles relationship
+      Contributor(s):
+        Blas Rodriguez Somoza <blas at puertareal.com>
+
+    * Fixed bug SF #910423
+        ALTER TABLE altering to VARCHAR
+      Contributor(s):
+        Claudio Varderrama <cvalde at usa.net>
+
+    * Improved ISQL
+        1) Fixed bug SF #910430 - ISQL and database dialect
+        2) Add SET HEADING ON/OFF option
+        3) Add -M2 command-line option to send output of statistics and plans to the same file than the rest of the output
+      Contributor(s):
+        Claudio Varderrama <cvalde at usa.net>
+
+    * Fixed unregistered bug
+        Rounding problems in date/time arithmetics
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed unregistered bug
+        Wrong counting of line numbers in DSQL parser when multi-line literals and identifiers are used
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed v1.5 bug
+        Random crash on restore
+      Contributor(s):
+        Jim Starkey <jas at netfrastructure.com>
+
+    * Fixed unregistered bug
+        Crash/lock-up with multiple calls of isc_dsql_prepare for a single statement (like IBO does)
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed unregistered bug
+        Server crash when too big/small system year is set up
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * User-defined plans improvements
+        1) Propagare plan fragments to nested levels of joins, thus allowing to manually optimize complex outer joins
+        2) Check the user-supplied plan for correctness in outer joins
+        3) Added short-circuit optimization for user-supplied plans
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug
+        Server crash when the stream number exceeds the limit
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Memory leak in EXECUTE STATEMENT
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed unregistered bug
+        UDF arguments are being prepared/optimized twice
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Index structure improvements
+        More effective compressing
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * New database shutdown modes are introduced
+        Single-user and full shutdown modes are implemented
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed unregistered bug
+        Memory leak during conversion from string to blob
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
     * C/C++ client interface version added
         FB_API_VER defined to 20 for Firebird 2.0 in ibase.h
       Contributor(s):
@@ -104,6 +519,8 @@
 
     * Improved PLAN clause
         Allowed to specify more possible paths for the engine
+      Example:
+        PLAN (A ORDER IDX1 INDEX (IDX2, IDX3))
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
@@ -127,10 +544,16 @@
     * SUBSTRING enhanced
         SUBSTRING built-in function now supports arbitrary expressions in parameters
       Contributor(s):
+      	Oleg Loa <loa at mail.ru>
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * Added LEAVE <label> syntax support
         PSQL loops now may be marked with labels and terminated in Java style
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Improved ROW_COUNT
+        Now it's possible to get number of selected rows as well
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
