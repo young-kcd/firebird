@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin,v 1.8.2.10 2003-11-11 01:01:51 bellardo Exp $
+#$Id: prefix.darwin,v 1.8.2.11 2003-11-11 05:44:45 bellardo Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 CC=@CXX@
@@ -28,7 +28,7 @@ DEV_FLAGS=-g -DDARWIN -DDEBUG_GDS_ALLOC -pipe -MMD -p -fPIC -Wall
 LIB_LINK_OPTIONS:=-bundle -flat_namespace -undefined suppress
 LIB_SHLIB_LINK_OPTIONS:=-dynamiclib -flat_namespace
 LIB_EMBED_LINK_OPTIONS:=-install_name Firebird.framework/Versions/A/Firebird \
-	-current_version 1.0.0 -compatibility_version 1.0.0
+	-current_version 1.0.0 -compatibility_version 1.0.0 -seg1addr 0x30000000
 #LIB_LINK_RPATH:=-Wl,-rpath,
 #LIB_LINK_SONAME:=-Wl,-soname,
 LIB_LINK_RPATH_LINE:=
