@@ -3766,7 +3766,7 @@ static SSHORT init( STATUS * user_status, ICC * picc)
  **************************************/
 	ICC icc;
 	IPM ipm;
-	ULONG number;
+	ULONG number=0;
 	USHORT mapped_area, mapped_position;
 	TEXT name_buffer[128];
 	DWORD current_thread_id;
