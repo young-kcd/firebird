@@ -1,3 +1,17 @@
+2004-10-07 23:34  skidder
+
+	* firebird2/: acx_pthread.m4 (1.1.2.1), configure.in (1.141.2.29),
+	builds/posix/Makefile.in.extlib (1.10.2.7),
+	builds/posix/Makefile.in.fbserver (1.11.2.5),
+	builds/posix/Makefile.in.intl (1.11.2.4),
+	builds/posix/Makefile.in.libfbclient (1.14.2.5),
+	builds/posix/Makefile.in.libfbserver (1.6.2.3),
+	builds/posix/make.defaults (1.25.2.9), builds/posix/prefix.mingw
+	(1.19.2.2), builds/posix/prefix.solx86gcc (1.1.2.7):
+	
+	Backport fixes to build threaded versions of various shared
+	libraries
+
 2004-10-05 17:09  hvlad
 
 	* firebird2/src/dsql/ddl.cpp (1.50.2.3):
@@ -30,6 +44,13 @@
 	
 	Fixed AV in Execute Statement (1.5 specific bug, HEAD need not
 	fixing)
+
+2004-10-04 07:23  skidder
+
+	* firebird2/acx_pthread.m4 (1.1):
+	
+	Use GNU autoconf macros to determine switches required to generate
+	threaded binaries properly
 
 2004-09-30 18:29  skidder
 
