@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.70.2.2 2003-11-15 20:12:11 skidder Exp $
+$Id: inet.cpp,v 1.70.2.3 2003-12-06 15:50:02 dimitr Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -814,7 +814,6 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
     int n;
 	SOCKET s;
 	PORT port;
-	TEXT *protocol;
 	TEXT temp[128];
 	TEXT *p;
 	struct sockaddr_in address;
@@ -845,10 +844,11 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 	status_vector[0] = gds_arg_gds;
 	status_vector[1] = 0;
 	status_vector[2] = gds_arg_end;
-	protocol = const_cast<TEXT*>(Config::getRemoteServiceName());
 #ifdef VMS
 	ISC_tcp_setup(ISC_wait, gds__completion_ast);
 #endif
+
+	const TEXT* protocol = NULL;
 
 	if (name) {
 		strcpy(temp, name);
@@ -870,6 +870,12 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 	}
 	else {
 		name = port->port_host->str_data;
+	}
+
+	if (!protocol) {
+		const int port = Config::getRemoteServicePort();
+		const char* svc = Config::getRemoteServiceName();
+		protocol = port ? itoa(port, temp, 10) : svc;
 	}
 
 /* Set up Inter-Net socket address */
@@ -932,6 +938,7 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 	THREAD_EXIT;
 
 	service = getservbyname(protocol, "tcp");
+
 #ifdef WIN_NT
 /* On Windows NT/9x, getservbyname can only accomodate
  * 1 call at a time.  In this case it returns the error
@@ -948,13 +955,9 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 		}
 	}
 #endif /* WIN_NT */
+
 	THREAD_ENTER;
 
-	int port_num = Config::getRemoteServicePort();
-
-	if (port_num) {
-		address.sin_port = htons(port_num);
-	}
 /* Modification by luz (slightly modified by FSG)
     instead of failing here, try applying hard-wired
     translation of "gds_db" into "3050"
@@ -963,12 +966,11 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
     entry in "services" file, which is important
     for zero-installation clients.
     */
-	else if (!service) {
+	if (!service) {
 		if (strcmp(protocol, FB_SERVICE_NAME) == 0) {
 			/* apply hardwired translation */
 			address.sin_port = htons(FB_SERVICE_PORT);
 		}
-
 		/* modification by FSG 23.MAR.2001 */
 		else {
 			/* modification by FSG 23.MAR.2001 */
@@ -997,14 +999,14 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 						   isc_arg_string,
 						   protocol, isc_arg_string, "tcp", 0);
 			return NULL;
-		}						/* else / not hardwired gds_db translation */
+		}
 	}
 	else {
 		/* if we have got a service-struct, get port number from there
 		   * (in case of hardwired gds_db to 3050 translation, address.sin_port was
 		   * already set above */
 		address.sin_port = service->s_port;
-	}							/* else (service found) */
+	}
 
 /* end of modifications by luz */
 #endif /* VMS */
