@@ -166,13 +166,14 @@ typedef struct serv
 
 /* Bitmask values for the svc_flags variable */
 
-#define SVC_eof			 1
-#define SVC_timeout		 2
-#define SVC_forked		 4
-#define SVC_detached	 8
+#define SVC_eof			1
+#define SVC_timeout		2
+#define SVC_forked		4
+#define SVC_detached	8
 #define SVC_finished	16
 #define SVC_thd_running	32
 #define SVC_evnt_fired	64
+#define SVC_cmd_line	128
 
 
 } /* extern "C" */
