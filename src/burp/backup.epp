@@ -1605,6 +1605,7 @@ void put_data(burp_rel* relation)
 			field_count += 2;
 		}
 	}
+	fb_assert(field_count > 0 && field_count * 9 > 0 && field_count * 9 + 200 > 0);
 
 /* Time to generate blr to fetch data.  Make sure we allocate a BLR buffer
    large enough to handle the per field overhead */

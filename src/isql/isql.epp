@@ -241,7 +241,7 @@ static collist* global_Cols = NULL;
 static SCHAR statistics[256];
 static INDEV Filelist;
 static TEXT Tmpfile[128];
-static int Abort_flag = 0;
+static bool Abort_flag = false;
 static bool Echo = false;
 static bool Time_display = false;
 static bool Sqlda_display = false;
@@ -5314,7 +5314,7 @@ static processing_state parse_arg(int argc,
 	bool istable = false;
 #endif
 
-	SSHORT i = 1;
+	int i = 1;
 	const char* s = argv[i];
 	while (i < argc) {
 		/* Look at flags to find unique match.  If the flag has an arg,
@@ -7003,7 +7003,7 @@ static void CLIB_ROUTINE query_abort(int)
  *
  **************************************/
 
-	Abort_flag = 1;
+	Abort_flag = true;
 }
 
 

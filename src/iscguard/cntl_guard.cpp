@@ -113,7 +113,7 @@ void CNTL_main_thread( SLONG argc, SCHAR* argv[])
  * least until we get the stop event indicating that
  * the service is stoping. */
 
-	int status = 1;
+	bool failure = true;
 	DWORD temp = 0;
 	if (report_status(SERVICE_START_PENDING, NO_ERROR, 1, 3000) &&
 		(stop_event_handle = CreateEvent(NULL, TRUE, FALSE, NULL)) != NULL &&
@@ -121,11 +121,11 @@ void CNTL_main_thread( SLONG argc, SCHAR* argv[])
 		!gds__thread_start(main_handler, (void *) flag, 0, 0, 0)
 		&& report_status(SERVICE_RUNNING, NO_ERROR, 0, 0))
 	{
-		status = 0;
+		failure = false;
 		temp = WaitForSingleObject(stop_event_handle, INFINITE);
 	}
 
-	if (status || temp == WAIT_FAILED)
+	if (failure || temp == WAIT_FAILED)
 		last_error = GetLastError();
 
 	if (stop_event_handle)

@@ -1031,7 +1031,6 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 
 			if (offset)
 			{
-				dsql_par* offset_parameter;
 				DSC desc;
 
 				message = (dsql_msg*) request->req_async;
@@ -1042,7 +1041,7 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 				desc.dsc_flags = 0;
 				desc.dsc_address = (UCHAR*) & direction;
 
-				offset_parameter = message->msg_parameters;
+				dsql_par* offset_parameter = message->msg_parameters;
 				parameter = offset_parameter->par_next;
 				MOVD_move(&desc, &parameter->par_desc);
 

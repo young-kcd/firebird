@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.67 2004-11-24 09:08:54 robocop Exp $
+//  $Id: gpre.cpp,v 1.68 2004-12-09 02:50:39 robocop Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -1977,10 +1977,7 @@ static bool get_switches(int			argc,
 
 static TOK get_token()
 {
-	SSHORT next;
-	USHORT peek;
-
-//  Save the information from the previous token 
+//  Save the information from the previous token
 
 	gpreGlob.prior_token = gpreGlob.token_global;
 	gpreGlob.prior_token.tok_position = last_position;
@@ -2110,7 +2107,7 @@ static TOK get_token()
 	else if ((char_class & CHR_QUOTE) || (char_class & CHR_DBLQUOTE)) {
 		gpreGlob.token_global.tok_type = (char_class & CHR_QUOTE) ? tok_sglquoted : tok_dblquoted;
 		for (;;) {
-			next = nextchar();
+			SSHORT next = nextchar();
 			if (gpreGlob.sw_language == lang_cobol && gpreGlob.sw_ansi && next == '\n') {
 				if (prior_line_position == 73) {
 					// should be a split literal 
@@ -2152,7 +2149,7 @@ static TOK get_token()
 			if (next == '\\' && !gpreGlob.sw_sql &&
 				((gpreGlob.sw_language == lang_c) || (isLangCpp(gpreGlob.sw_language))))
 			{
-				peek = nextchar();
+				const USHORT peek = nextchar();
 				if (peek == '\n') {
 					gpreGlob.token_global.tok_white_space += 2;
 				}
@@ -2169,7 +2166,7 @@ static TOK get_token()
 			if (next == c)
 				/* If 2 quotes in a row, treat 2nd as literal - bug #1530 */
 			{
-				peek = nextchar();
+				const USHORT peek = nextchar();
 				if (peek != c) {
 					return_char(peek);
 					break;
