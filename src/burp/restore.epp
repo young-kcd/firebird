@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: restore.epp,v 1.29 2003-06-03 10:14:11 aafemt Exp $
+$Id: restore.epp,v 1.30 2003-06-03 10:26:59 skidder Exp $
 */
 
 #include "firebird.h"
@@ -2003,14 +2003,14 @@ static void get_blr_blob (
  **************************************/
 ISC_STATUS_ARRAY	status_vector;
 FRBRD	*blob;
-USHORT		length, l;
+ULONG		length;
 UCHAR		*buffer, static_buffer [1024], *p;
 isc_tr_handle	local_trans;
 TGBL		tdgbl;
 
 tdgbl = GET_THREAD_DATA;
 
-length = (USHORT)get_numeric();
+length = (ULONG)get_numeric();
 
 /* Create new blob */
 
@@ -2031,26 +2031,24 @@ if (isc_create_blob (status_vector,
 
 /* Allocate blob buffer is static buffer is too short */
 
-if (!length || length < (USHORT)(sizeof (static_buffer)) )
+/* 03 Jun 2003. Nickolay Samofatov. Workaround bug of GCC 3.2.X #11068. 
+Original code was:
+if (!length || length + 1 <= (USHORT)(sizeof (static_buffer)) )
+*/
+if (length + 1 <= sizeof (static_buffer) )
     buffer = static_buffer;
 else
-    {
-    l = length + 1;
-    buffer = BURP_ALLOC (l);
-    }
+    buffer = BURP_ALLOC (length+1);
 
-if (l = length)
-    {
-    p = buffer;
-    p = GET_BLOCK (p, l);
-    }
-
-/* Make sure it has an eoc */
-if ((*--p) != blr_eoc)
-    {
-    length++;
-    *++p = blr_eoc;
-    }
+if (length)
+{
+    p = GET_BLOCK (buffer, length);
+	/* Make sure it has an eoc */
+	if (p[-1] != blr_eoc) {
+		p[0] = blr_eoc;
+		length++;
+	}
+}
 
 if (isc_put_segment (status_vector, 
 	 GDS_REF (blob), 
