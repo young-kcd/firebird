@@ -123,6 +123,18 @@ Package=<4>
 
 ###############################################################################
 
+Project: "engine_embed"=.\engine_embed.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
 Project: "fb_inet_server"=.\fb_inet_server.dsp - Package Owner=<4>
 
 Package=<5>
@@ -225,7 +237,7 @@ Package=<4>
     Project_Dep_Name dsql_server
     End Project Dependency
     Begin Project Dependency
-    Project_Dep_Name engine
+    Project_Dep_Name engine_embed
     End Project Dependency
 }}}
 

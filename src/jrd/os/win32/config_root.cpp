@@ -67,7 +67,9 @@ ConfigRoot::ConfigRoot()
 	buffer[0] = 0;
 
 	// check the registry first
+#if !defined(EMBEDDED)
 	getRootFromRegistry(buffer, sizeof(buffer));
+#endif
 	if (buffer[0])
 	{
 		root_dir = buffer;
@@ -88,6 +90,10 @@ ConfigRoot::ConfigRoot()
 
 	// how should we decide to use bin_dir instead of root_dir? any ideas?
 	// ???
+#if defined(EMBEDDED)
+	root_dir = bin_dir + PathUtils::dir_sep;
+	return;
+#endif
 
 	// go to the parent directory
 	index = bin_dir.rfind(PathUtils::dir_sep, bin_dir.length());

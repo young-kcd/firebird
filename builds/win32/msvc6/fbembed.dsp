@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib shell32.lib comctl32.lib advapi32.lib ws2_32.lib mpr.lib version.lib /nologo /dll /machine:I386 /out:"release/firebird/bin/fbembed.dll"
+# ADD LINK32 kernel32.lib user32.lib advapi32.lib mpr.lib ws2_32.lib version.lib /nologo /dll /machine:I386 /out:"release/firebird/bin/fbembed.dll"
 
 !ELSEIF  "$(CFG)" == "fbembed - Win32 Debug"
 
@@ -106,14 +106,13 @@ SOURCE=..\..\..\src\jrd\ibinitdll.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\perf.cpp
-# End Source File
-# Begin Source File
 
-SOURCE=..\..\..\src\jrd\pwd.cpp
-# End Source File
-# Begin Source File
+!IF  "$(CFG)" == "fbembed - Win32 Release"
 
-SOURCE=..\..\..\src\jrd\why.cpp
+!ELSEIF  "$(CFG)" == "fbembed - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # End Group
 # Begin Group "REMOTE files"

@@ -33,7 +33,6 @@
 #include "../jrd/sch_proto.h"
 #include "../jrd/thd_proto.h"
 #include "../jrd/jrd_proto.h"
-#include "../jrd/os/thd_priority.h"
 
 #ifdef WIN_NT
 #include <windows.h>

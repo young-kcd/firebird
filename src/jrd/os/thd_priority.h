@@ -25,7 +25,7 @@
 #define _JRD_OS_THD_PRIORITY_H_
 
 #ifdef WIN_NT
-#ifdef SUPERSERVER
+#if defined(SUPERSERVER) && !defined(EMBEDDED)
 // Comment this definition to build without priority scheduler 
 //	OR:
 // Uncomment this definition to build with priority scheduler
