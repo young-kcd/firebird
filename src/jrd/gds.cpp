@@ -397,7 +397,6 @@ static const UCHAR
 
 #include "../jrd/blp.h"
 
-#define FB_ENV			"FIREBIRD"
 #define FB_LOCK_ENV		"FIREBIRD_LOCK"
 #define FB_MSG_ENV		"FIREBIRD_MSG"
 #define FB_TMP_ENV		"FIREBIRD_TMP"
@@ -1623,27 +1622,23 @@ void API_ROUTINE gds__prefix(TEXT* resultString, const TEXT* file)
 	resultString[0] = 0;
 
 	if (ib_prefix == NULL) {
-		if (!(ib_prefix = getenv(FB_ENV)) || ib_prefix[0] == 0) {
-			{
-              // Try and get value from config file
-              const char *regPrefix = Config::getRootDirectory();
+        // Try and get value from config file
+        const char *regPrefix = Config::getRootDirectory();
 
-              size_t len = strlen(regPrefix);
-              if (len > 0) {
-                  if (len > sizeof(ib_prefix_val)) {
-                      ib_perror("ib_prefix path size too large - truncated");                      
-                  }
-                  strncpy(ib_prefix_val, regPrefix, sizeof(ib_prefix_val) -1);
-                  ib_prefix_val[sizeof(ib_prefix_val) -1] = 0;
-                  ib_prefix = ib_prefix_val;
-              }
-              else {
-				  ib_prefix = FB_PREFIX;
-				  strcat(ib_prefix_val, ib_prefix);
-              }
+        size_t len = strlen(regPrefix);
+        if (len > 0) {
+            if (len > sizeof(ib_prefix_val)) {
+                ib_perror("ib_prefix path size too large - truncated");                      
             }
-			ib_prefix = ib_prefix_val;
-		}
+            strncpy(ib_prefix_val, regPrefix, sizeof(ib_prefix_val) -1);
+            ib_prefix_val[sizeof(ib_prefix_val) -1] = 0;
+            ib_prefix = ib_prefix_val;
+        }
+        else {
+			ib_prefix = FB_PREFIX;
+			strcat(ib_prefix_val, ib_prefix);
+        }
+		ib_prefix = ib_prefix_val;
 	}
 	strcat(resultString, ib_prefix);
 	safe_concat_path(resultString, file);
@@ -3309,10 +3304,12 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 		
 		case op_exec_into: {
 			PRINT_VERB;
-			if (PRINT_BYTE)
+			if (! BLR_BYTE) {
 				PRINT_VERB;
-			while (--n >= 0)
+			}
+			while (n-- > 0) {
 				PRINT_VERB;
+			}
 			break;
 		}
 
