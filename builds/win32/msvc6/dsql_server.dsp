@@ -149,6 +149,10 @@ SOURCE=..\..\..\src\dsql\make.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\dsql\misc_func.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\dsql\movd.cpp
 # End Source File
 # Begin Source File
@@ -234,6 +238,10 @@ SOURCE=..\..\..\src\dsql\make_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\dsql\metd_proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\dsql\misc_func.h
 # End Source File
 # Begin Source File
 
