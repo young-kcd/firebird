@@ -24,7 +24,7 @@
  * Solaris x86 changes - Konstantin Kuznetsov, Neil McCalden
  */
 /*
-$Id: isc_win32.cpp,v 1.3 2001-12-24 02:50:51 tamlin Exp $
+$Id: isc_win32.cpp,v 1.4 2002-07-04 09:34:19 skywalker Exp $
 */
 
 #include "firebird.h"
@@ -42,6 +42,7 @@ $Id: isc_win32.cpp,v 1.3 2001-12-24 02:50:51 tamlin Exp $
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/jrd_proto.h"
+#include "../utilities/registry.h"
 
 
 #include <windows.h>

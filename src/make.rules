@@ -26,7 +26,7 @@
 #   Contributor(s):
 #
 #
-#   $Id: make.rules,v 1.4 2002-07-01 16:59:09 skywalker Exp $
+#   $Id: make.rules,v 1.5 2002-07-04 09:34:18 skywalker Exp $
 #
 
 #____________________________________________________________________________
@@ -144,9 +144,11 @@ LINK_OPTIONS=
 #  This is something that we should pick up with autoconf.
 #ReadlineLibs = -lreadline -ltermcap
 #ReadlineLibs = -lreadline -lncurses
-ReadlineLibs = -lreadline
-LINK_LIBS= -lm -lstdc++ $(ReadlineLibs) -lc -ldl -lcrypt
-STATICLINK_LIBS = -lm -lstdc++ $(ReadlineLibs) -lc -ldl -lcrypt
+#ReadlineLibs:= -lreadline
+#LINK_LIBS:= -lm -lstdc++ $(ReadlineLibs) -lstdc++ -lreadline -lcurses -lm -lc -ldl -lcrypt  -lc -ldl -lcrypt
+#STATICLINK_LIBS := -lm -lstdc++ $(ReadlineLibs) -lc -ldl -lcrypt
+LINK_LIBS = -lstdc++ -lreadline -lcurses -lm -lc -ldl -lcrypt 
+STATICLINK_LIBS = -lstdc++ -lreadline -lcurses -lm -lc -ldl -lcrypt 
 
 #LINK_LIBS= -L$(LIB)  -lgds -lm -lc -ldl -lcrypt
 # -lgcc

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pat.cpp,v 1.4 2002-01-04 11:34:15 skywalker Exp $
+//	$Id: pat.cpp,v 1.5 2002-07-04 09:34:19 skywalker Exp $
 //
 
 #include "firebird.h"
@@ -35,6 +35,7 @@
 #include "../gpre/pat.h"
 #include "../gpre/gpre_proto.h"
 #include "../gpre/pat_proto.h"
+#include "../gpre/lang_proto.h"
 
 
 extern "C" {

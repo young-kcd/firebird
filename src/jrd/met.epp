@@ -35,7 +35,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.11 2002-07-01 16:59:09 skywalker Exp $
+$Id: met.epp,v 1.12 2002-07-04 09:34:19 skywalker Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -2709,8 +2709,8 @@ REL MET_relation(TDBB tdbb, USHORT id)
 }
 
 
-BOOLEAN MET_relation_owns_trigger (TDBB tdbb, TEXT *relation_name, 
-                                   TEXT *trigger_name)
+BOOLEAN MET_relation_owns_trigger (TDBB tdbb, const TEXT *relation_name, 
+                                   const TEXT *trigger_name)
 {
 /**************************************
  *
@@ -2767,8 +2767,8 @@ BOOLEAN MET_relation_owns_trigger (TDBB tdbb, TEXT *relation_name,
     return found;
 }
 
-BOOLEAN MET_relation_default_class (TDBB tdbb, TEXT *relation_name,
-                                    TEXT *default_security_class_name)
+BOOLEAN MET_relation_default_class (TDBB tdbb, const TEXT *relation_name,
+                                    const TEXT *default_security_class_name)
 {
 /**************************************
  *

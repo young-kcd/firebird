@@ -53,6 +53,15 @@ AC_TRY_COMPILE([#include <stdlib.h>
 [AC_MSG_RESULT(yes)],
 [AC_DEFINE(socklen_t, int) AC_MSG_RESULT(no)])
 
+AC_CHECK_LIB(crypt, main)
+AC_CHECK_LIB(dl, main)
+AC_CHECK_LIB(c,main)
+AC_CHECK_LIB(m, main)
+AC_CHECK_LIB(curses, main)
+#AC_CHECK_LIB(termcap, main)
+AC_CHECK_LIB(readline, main,,,$LIBS)
+AC_CHECK_LIB(stdc++, main,,, $LIBS)
+
 
 AC_DEFINE(UNIX_64_BIT_IO)
 

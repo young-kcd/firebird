@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.linux:	$(VERSION)	$(PLATFORM)
-#$Id: make.platform,v 1.4 2002-07-01 16:59:09 skywalker Exp $
+#$Id: make.platform,v 1.5 2002-07-04 09:34:18 skywalker Exp $
 #Revision 1.6  2000/12/01 11:20:31  fsg
 #Added SHRLIB_EXT to  prefix.linux
 #Added Platform Manager rules	PR 2002-06-22

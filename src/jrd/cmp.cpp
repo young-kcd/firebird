@@ -30,7 +30,7 @@
  *   This closes the heart of SF Bug #518282.
  */
 /*
-$Id: cmp.cpp,v 1.7 2002-06-29 13:00:56 dimitr Exp $
+$Id: cmp.cpp,v 1.8 2002-07-04 09:34:19 skywalker Exp $
 */
 
 #include "firebird.h"
@@ -75,6 +75,7 @@ $Id: cmp.cpp,v 1.7 2002-06-29 13:00:56 dimitr Exp $
 #include "../jrd/scl_proto.h"
 #include "../jrd/thd_proto.h"
 #include "../jrd/met_proto.h"
+#include "../jrd/mov_proto.h"
 #include "../jrd/dsc_proto.h"
 #include "../jrd/dbg_proto.h"	/* DBG_supervisor */
 
@@ -5355,7 +5356,7 @@ static void post_trigger_access(TDBB tdbb, CSB csb, REL owner_relation, VEC trig
 						if (!strcmp(access->acc_type, object_column)
 							&& MET_relation_owns_trigger(tdbb, access->acc_name, access->acc_trg_name)
 							&& (MET_lookup_field(tdbb, owner_relation, access->acc_name, access->acc_security_name) >= 0
-							|| MET_relation_default_class(tdbb, owner_relation, access->acc_security_name)))
+							|| MET_relation_default_class(tdbb, owner_relation->rel_name, access->acc_security_name)))
 							continue;
 					}
 					/* Inherited access needs from "object" to acc_security_name */
@@ -5382,7 +5383,7 @@ static void post_trigger_access(TDBB tdbb, CSB csb, REL owner_relation, VEC trig
 							continue;
 						if (!strcmp(access->acc_type, object_column)
 							&& (MET_lookup_field(tdbb, owner_relation, access->acc_name, access->acc_security_name) >= 0
-							|| MET_relation_default_class(tdbb, owner_relation, access->acc_security_name)))
+							|| MET_relation_default_class(tdbb, owner_relation->rel_name, access->acc_security_name)))
 							continue;
 					}
 					/* A direct access to an object from this trigger */

@@ -28,7 +28,7 @@
  * 01-Feb-2002 Paul Reeves: Removed hard-coded registry path
  */
 /*
-$Id: isc.cpp,v 1.9 2002-07-02 09:49:19 dimitr Exp $
+$Id: isc.cpp,v 1.10 2002-07-04 09:34:19 skywalker Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -51,7 +51,6 @@ $Id: isc.cpp,v 1.9 2002-07-02 09:49:19 dimitr Exp $
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/jrd_proto.h"
-#include "../utilities/registry.h"
 
 /* Initialize the structure that hold all the config information */
 
