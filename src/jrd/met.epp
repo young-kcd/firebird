@@ -35,7 +35,7 @@
  * 2002-09-16 Nickolay Samofatov - Deferred trigger compilation changes
  */
 /*
-$Id: met.epp,v 1.24 2002-09-30 19:19:30 skidder Exp $
+$Id: met.epp,v 1.25 2002-10-04 22:08:43 skidder Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -74,7 +74,6 @@ $Id: met.epp,v 1.24 2002-09-30 19:19:30 skidder Exp $
 #include "../jrd/lls.h"
 #include "../jrd/intl.h"
 #include "../jrd/align.h"
-#include "../jrd/jrn.h"
 #include "../jrd/flu.h"
 #include "../jrd/blob_filter.h"
 #include "../intl/charsets.h"
@@ -221,16 +220,38 @@ void MET_update_partners(TDBB tdbb)
 	}
 }
 
-void MET_clear_cache(TDBB tdbb)
+void adjust_dependencies(PRC procedure) {
+	if (procedure->prc_int_use_count==-1) 
+	// Already processed
+		return;
+	procedure->prc_int_use_count=-1; // Mark as undeletable
+	for (RSC resource = procedure->prc_request->req_resources; resource;
+		  resource = resource->rsc_next) 
+	{
+		if (resource->rsc_type == rsc_procedure) {
+			procedure = resource->rsc_prc;
+			if (procedure->prc_int_use_count==procedure->prc_use_count) {
+				// Mark it and all dependent procedures as undeletable
+				adjust_dependencies(procedure); 
+			}
+			else
+				procedure->prc_int_use_count=-1;
+		}
+	}
+}
+
+void MET_clear_cache(TDBB tdbb, PRC proc)
 {
 /**************************************
  *
- *      M E T _ c l e a r _ t r i g g e r _ c a c h e
+ *      M E T _ c l e a r _ c a c h e
  *
  **************************************
  *
  * Functional description
  *      Try to release all resources locked by cached triggers
+ *		do not remove proc procedure from cache because it will be
+ *		handled by the caller
  *
  **************************************/
 	DBB				dbb;
@@ -242,7 +263,7 @@ void MET_clear_cache(TDBB tdbb)
 	dbb = tdbb->tdbb_database;
 
 	relations = dbb->dbb_relations;
-
+	
 	for (ptr = relations->begin(), end = relations->end(); ptr < end; ptr++)
 	{
 		relation = REL(*ptr);
@@ -258,27 +279,63 @@ void MET_clear_cache(TDBB tdbb)
 	VEC procedures;
 	PRC procedure;
 
-	if ( (procedures = dbb->dbb_procedures) )
-		do {
-			procedure = NULL;
-			for (ptr = procedures->begin(), end = procedures->end();
-					ptr < end; ptr++) 
+	if ( (procedures = dbb->dbb_procedures) ) {	
+		/* Walk procedures and calculate internal dependencies */
+		for (ptr = procedures->begin(), end = procedures->end();
+			ptr < end; ptr++) 
+		{
+			if ( (procedure = PRC(*ptr)) && !(procedure->prc_flags & PRC_obsolete)) 
 			{
-				if ( (procedure = PRC(*ptr)) && (procedure->prc_use_count == 0) && 
-					!(procedure->prc_flags & PRC_obsolete)) 
+				for (RSC resource = procedure->prc_request->req_resources; resource;
+					 resource = resource->rsc_next)
 				{
-					CMP_release(tdbb, procedure->prc_request);
-					procedure->prc_flags &= ~PRC_being_altered;
-					MET_remove_procedure(tdbb, procedure->prc_id, procedure);
-					// Begin iteration again because vector contents was modified
-					// There are ways to do it more efficiently, but such condition 
-					// currently happens very rarely. Only when procedure is created
-					// and we are trying to drop one of indices it uses w/o server
-					// restart
-					break;
+					if (resource->rsc_type == rsc_procedure)
+						resource->rsc_prc->prc_int_use_count++;				
 				}
 			}
-		} while (procedure);
+		}
+		
+		/* Walk procedures again and adjust dependencies for procedures which will not be removed */
+		for (ptr = procedures->begin(), end = procedures->end();
+			ptr < end; ptr++) 
+		{
+			if ( (procedure = PRC(*ptr)) && !(procedure->prc_flags & PRC_obsolete) && 
+				procedure->prc_use_count != procedure->prc_int_use_count )
+			{
+				adjust_dependencies(procedure);
+			}
+		}
+		
+		/* Deallocate all used requests */		
+		Firebird::vector<PRC> temp(0);
+		for (ptr = procedures->begin(), end = procedures->end();
+				ptr < end; ptr++) 
+		{
+			if ( (procedure = PRC(*ptr)) && 
+				!(procedure->prc_flags & PRC_obsolete))
+			{
+				
+				if ( procedure->prc_use_count == procedure->prc_int_use_count ) 
+				{
+					CMP_release(tdbb, procedure->prc_request);
+					procedure->prc_request = NULL;
+					temp.insert(temp.end(),procedure);
+				} else
+					// Leave it in state 0 to avoid extra pass next time to clear it
+					procedure->prc_int_use_count = 0;
+			}
+		}
+		
+		/* Remove all affected procedures from the cache */
+		Firebird::vector<PRC>::iterator cur, fin;
+		for (cur = temp.begin(), fin = temp.end(); cur < fin; cur++) {
+			procedure = *cur;
+			if (procedure==proc) 
+				continue;
+			procedure->prc_flags &= ~PRC_being_altered; // Just a safety sake
+			MET_remove_procedure(tdbb, procedure->prc_id, procedure);
+		}
+	}
 }
 
 
@@ -2597,6 +2654,7 @@ PRC MET_procedure(TDBB tdbb, int id, USHORT flags)
 		}
 		procedure->prc_id = P.RDB$PROCEDURE_ID;
 		procedure->prc_use_count = 0;
+		procedure->prc_int_use_count = 0;
 		if (!P.RDB$SECURITY_CLASS.NULL)
 		{
 			procedure->prc_security_name =
@@ -2935,8 +2993,9 @@ void MET_release_existence( REL relation)
  *      existence lock and mark deleted.
  *
  **************************************/
+	if (relation->rel_use_count) relation->rel_use_count--;
 
-	if (!relation->rel_use_count || !--relation->rel_use_count)
+	if (!relation->rel_use_count)
 		if (relation->rel_flags & REL_blocking)
 			LCK_re_post(relation->rel_existence_lock);
 }
@@ -2980,11 +3039,7 @@ void MET_remove_procedure( TDBB tdbb, int id, PRC procedure)
 /* Procedure that is being altered may have references
    to it by other procedures via pointer to current meta
    data structure, so don't loose the structure or the pointer. */
-// Nickolay Samofatov, 28 Sep 2002. Enabled this code. Why was it disabled ?
-// Its absence caused coredumps in some cases because its request and other
-// data is freed after this call and procedure block is no longer valid
-
-	if (!(procedure->prc_flags & PRC_being_altered))
+	if ((procedure == (PRC) (*vector)[id]) && !(procedure->prc_flags & PRC_being_altered))
 	    (*vector)[id] = (BLK) NULL_PTR;
 
 /* deallocate all structure which were allocated.  The procedure

@@ -492,7 +492,12 @@ class prc : public pool_alloc_rpt<SCHAR, type_prc>
 	vec*		prc_output_fields;	/* vector of field blocks */
 	struct req *prc_request;	/* compiled procedure request */
 	class str *prc_security_name;	/* pointer to security class name for procedure */
-	USHORT prc_use_count;		/* requests compiled with relation */
+	USHORT prc_use_count;		/* requests compiled with procedure */
+	SSHORT prc_int_use_count;	/* number of procedures compiled with procedure, set and 
+	                               used internally in the MET_clear_cache procedure 
+								   no code should rely on value of this field 
+								   (it will usually be 0)
+								*/
 	struct lck *prc_existence_lock;	/* existence lock, if any */
 	class str *prc_name;		/* pointer to ascic name */
 	USHORT prc_alter_count;		/* No. of times the procedure was altered */
