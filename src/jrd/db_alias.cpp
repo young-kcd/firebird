@@ -35,8 +35,6 @@ typedef Firebird::string string;
 
 const char* ALIAS_FILE = "aliases.conf";
 
-extern "C" {
-
 bool ResolveDatabaseAlias(const char* alias, char* database)
 {
 	TEXT alias_filename[MAXPATHLEN];
@@ -54,11 +52,14 @@ bool ResolveDatabaseAlias(const char* alias, char* database)
 	if (!value.empty())
 	{
 		std::replace(value.begin(), value.end(), incorrect_dir_sep, correct_dir_sep);
+		if (PathUtils::isRelative(value)) {
+			gds__log("Value %s configured for alias %s "
+				"is not a fully qualified path name, ignored", value.c_str(), alias);
+			return false;
+		}
 		strcpy(database, value.c_str());
 		return true;
 	}
 
 	return false;
-}
-
 }

@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-void		SCL_check_access(struct scl*, struct jrd_rel*, const TEXT*,
+void		SCL_check_access(struct scl*, SLONG, const TEXT*,
 							const TEXT*, USHORT,
 							const TEXT*, const TEXT*);
 void		SCL_check_procedure(struct dsc*, USHORT);

@@ -151,7 +151,8 @@ void IDX_check_access(TDBB tdbb, CSB csb, JRD_REL view, JRD_REL relation, JRD_FL
 				referenced_field =
 					MET_get_field(referenced_relation, idx_desc->idx_field);
 				CMP_post_access(tdbb, csb,
-								referenced_relation->rel_security_name, view,
+								referenced_relation->rel_security_name, 
+									(view ? view->rel_id : 0),
 								0, 0, SCL_sql_references, "TABLE",
 								referenced_relation->rel_name);
 				CMP_post_access(tdbb, csb,

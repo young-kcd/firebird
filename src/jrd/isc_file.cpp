@@ -658,6 +658,131 @@ int ISC_expand_filename(
 
 
 #ifdef WIN_NT
+
+// Code of this function is a slightly changed version of this routine
+// from Jim Barry (jim.barry@bigfoot.com) published at 
+// http://www.geocities.com/SiliconValley/2060/articles/longpaths.html
+
+static DWORD ShortToLongPathName(
+    LPCTSTR lpszShortPath,
+    LPTSTR lpszLongPath, 
+    DWORD cchBuffer)
+{
+	// Special characters.
+    const char sep = '\\';
+    const char colon = ':';
+    // Make some short type aliases
+    typedef Firebird::string tstring;
+    typedef tstring::traits_type traits;
+    typedef tstring::size_type size;
+    size const npos = tstring::npos;
+
+    // Copy the short path into the work buffer and convert forward 
+    // slashes to backslashes.
+    tstring path = lpszShortPath;
+
+    // We need a couple of markers for stepping through the path.
+    size left = 0;
+    size right = 0;
+
+    // Parse the first bit of the path.
+    if (path.length() >= 2 && isalpha(path[0]) && colon == path[1]) // Drive letter?
+    {
+        if (2 == path.length()) // 'bare' drive letter
+        {
+            right = npos; // skip main block
+        }
+        else if (sep == path[2]) // drive letter + backslash
+        {
+            // FindFirstFile doesn't like "X:\"
+            if (3 == path.length())
+            {
+                right = npos; // skip main block
+            }
+            else
+            {
+                left = right = 3;
+            }
+        }
+        else return 0; // parsing failure
+    }
+    else if (path.length() >= 1 && sep == path[0])
+    {
+        if (1 == path.length()) // 'bare' backslash
+        {
+            right = npos;  // skip main block
+        }
+        else 
+        {
+            if (sep == path[1]) // is it UNC?
+            {
+                // Find end of machine name
+                right = path.find_first_of(sep, 2);
+                if (npos == right)
+                    return 0;
+
+                // Find end of share name
+                right = path.find_first_of(sep, right + 1);
+                if (npos == right)
+                    return 0;
+            }
+            ++right;
+        }
+    }
+    // else FindFirstFile will handle relative paths
+
+    // The data block for FindFirstFile.
+    WIN32_FIND_DATA fd;
+
+    // Main parse block - step through path.
+    while (npos != right)
+    {
+        left = right; // catch up
+
+        // Find next separator.
+        right = path.find_first_of(sep, right);
+
+        // Temporarily replace the separator with a null character so that
+        // the path so far can be passed to FindFirstFile.
+        if (npos != right)
+            path[right] = 0;
+
+        // See what FindFirstFile makes of the path so far.
+        HANDLE hf = FindFirstFile(path.c_str(), &fd);
+        if (INVALID_HANDLE_VALUE == hf)
+			break;
+        FindClose(hf);
+
+        // Put back the separator.
+        if (npos != right)
+            path[right] = sep;
+
+        // The file was found - replace the short name with the long.
+        size old_len = (npos == right) ? path.length() - left : right - left;
+        size new_len = traits::length(fd.cFileName);
+        path.replace(left, old_len, fd.cFileName, new_len);
+
+        // More to do?
+        if (npos != right)
+        {
+            // Yes - move past separator .
+            right = left + new_len + 1;
+
+            // Did we overshoot the end? (i.e. path ends with a separator).
+            if (right >= path.length())
+                right = npos;
+        }
+    }
+
+    // If buffer is too small then return the required size.
+    if (cchBuffer <= path.length())
+        return path.length() + 1;
+
+    // Copy the buffer and return the number of characters copied.
+    traits::copy(lpszLongPath, path.c_str(), path.length() + 1);
+    return path.length();
+}
+
 int ISC_expand_filename(
 						TEXT * file_name,
 						USHORT file_length, TEXT * expanded_name)
@@ -763,52 +888,42 @@ int ISC_expand_filename(
 	**/
 			/* in this case use the temp but we need to ensure that we expand to
 			 * temp from "d:foo.fdb" to "d:\foo.fdb" */
-			if (_fullpath(expanded_name, temp, MAXPATHLEN) != NULL) {
-				TEXT expanded_name2[MAXPATHLEN];
-
-				/* convert then name to its shorter version ie. convert
-				 * longfilename.fdb to longfi~1.fdb */
-				length =
-					(USHORT) GetShortPathName(expanded_name, expanded_name2,
-											  MAXPATHLEN);
-				if (length && length < MAXPATHLEN)
-					strcpy(expanded_name, expanded_name2);
-			}
-			else
+			if (!_fullpath(expanded_name, temp, MAXPATHLEN))
 				strcpy(expanded_name, temp);
 		}
 		file_length = strlen(expanded_name);
 	}
 #else
 	length = (USHORT) GetFullPathName(temp, MAXPATHLEN, expanded_name, &p);
-	if (length && length < MAXPATHLEN)
+	if (length && length < MAXPATHLEN) {
 		file_length = length;
+	}
 #endif
 	else {
-		if (_fullpath(expanded_name, temp, MAXPATHLEN) != NULL) {
-			TEXT expanded_name2[MAXPATHLEN];
-
-			/* convert then name to its shorter version ie. convert longfilename.fdb
-			 * to longfi~1.fdb */
-			file_length =
-				(USHORT) GetShortPathName(expanded_name, expanded_name2,
-										  MAXPATHLEN);
-			if (file_length && file_length < MAXPATHLEN)
-				strcpy(expanded_name, expanded_name2);
-			else
-	            file_length = (USHORT) strlen(expanded_name);
-		}
-		else
-			file_length = (USHORT) strlen(expanded_name);
-			/* CVC: I know this is incorrect. If _fullpath (that in turn calls GetFullPathName)
-					returns NULL, the path + file given are invalid, but the original and useless code
-					set length=0 that has no effect and setting file_length to zero stops the code below
-					from uppercasing the filename. Following the logic in the prior block of code, the
-					action to take is to get the length of the output buffer. Unfortunately, there's
-					no function that checks the result of ISC_expand_filename. Since _fullpath is
-					GetFullPathName with some checks, the code above looks strange when SUPERSERVER
-					is not defined. I decided to make file_length as the length of the output buffer. */
+		if (!_fullpath(expanded_name, temp, MAXPATHLEN))
+			strcpy(expanded_name, temp);
+		file_length = (USHORT) strlen(expanded_name);
+		/* CVC: I know this is incorrect. If _fullpath (that in turn calls GetFullPathName)
+				returns NULL, the path + file given are invalid, but the original and useless code
+				set length=0 that has no effect and setting file_length to zero stops the code below
+				from uppercasing the filename. Following the logic in the prior block of code, the
+				action to take is to get the length of the output buffer. Unfortunately, there's
+				no function that checks the result of ISC_expand_filename. Since _fullpath is
+				GetFullPathName with some checks, the code above looks strange when SUPERSERVER
+				is not defined. I decided to make file_length as the length of the output buffer. */
 	}
+
+	TEXT expanded_name2[MAXPATHLEN];
+
+	/* convert then name to its longer version ie. convert longfi~1.fdb
+	 * to longfilename.fdb */
+	file_length =
+		(USHORT) ShortToLongPathName(expanded_name, expanded_name2,
+								     MAXPATHLEN);
+	if (file_length && file_length < MAXPATHLEN)
+		strcpy(expanded_name, expanded_name2);
+	else
+        file_length = (USHORT) strlen(expanded_name);
 
 /* Filenames are case insensitive on NT.  If filenames are
  * typed in mixed cases, strcmp () used in various places

@@ -128,6 +128,7 @@
 
 #include "../common/config/config.h"
 #include "../jrd/plugin_manager.h"
+#include "../jrd/db_alias.h"
 
 #ifdef GARBAGE_THREAD
 #include "vio_proto.h"
@@ -622,10 +623,7 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
  **************************************/
 	DBB dbb;
 	TEXT opt_buffer[DPB_EXPAND_BUFFER];
-	TEXT alias_buffer[MAXPATHLEN];
-	TEXT file_name_buffer[MAXPATHLEN];
-	TEXT temp_buffer[MAXPATHLEN];
-	extern bool ResolveDatabaseAlias(const char*, char*);
+ 	TEXT expanded_name[MAXPATHLEN];
 
 	SSHORT first;
 	ISC_STATUS *status;
@@ -650,42 +648,28 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 /* Resolve given alias name */
 
-	if (file_length)
-	{
-		memcpy(file_name_buffer, file_name, file_length);
-		file_name_buffer[file_length] = '\0';
-	}
-	else
-	{
-		strcpy(file_name_buffer, file_name);
-	}
-	strcpy(alias_buffer, file_name_buffer);
-	bool is_alias = ResolveDatabaseAlias(alias_buffer, file_name_buffer);
-	file_name = file_name_buffer;
-	file_length = strlen(file_name);
+	if (!file_length) file_length = strlen(file_name);
+	memcpy(expanded_name, file_name, file_length);
+	expanded_name[file_length] = '\0';
+
+	bool is_alias = ResolveDatabaseAlias(expanded_name, expanded_name);
 	if (is_alias)
-	{
-		ISC_expand_filename(file_name_buffer, 0, temp_buffer);
-		expanded_filename = temp_buffer;
-	}
+		ISC_expand_filename(expanded_name, 0, expanded_name);
+	else
+		strcpy(expanded_name, expanded_filename);
 
-/* Get length of database file name, if not already known */
-
-	SSHORT fl = file_length;
-	SSHORT length_expanded = strlen(expanded_filename);
+	USHORT length_expanded = strlen(expanded_name);
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
 /* If database name is not alias, check it against conf file */
-	if (!is_alias) {
-		if (!verify_database_name(file_name, user_status)) {
-			return user_status[1];
-		}
+	if (!is_alias && !verify_database_name(expanded_filename, user_status)) {
+		return user_status[1];
 	}
 
 /* Unless we're already attached, do some initialization */
 
-	dbb = init(tdbb, user_status, expanded_filename, TRUE);
+	dbb = init(tdbb, user_status, expanded_name, TRUE);
 	if (!dbb) {
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
 		V4_JRD_MUTEX_UNLOCK(databases_mutex);
@@ -747,7 +731,7 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		/* Check to see if the database is truly local or if it just looks
 		   that way */
       
-		if (ISC_check_if_remote(expanded_filename, TRUE)) {
+		if (ISC_check_if_remote(expanded_name, TRUE)) {
 			ERR_post(gds_unavailable, 0);
 		}
 	}
@@ -763,7 +747,7 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 						 gds_arg_string, "encryption",
 						 gds_arg_string, "database",
 						 gds_arg_string, 
-                         ERR_string(file_name, fl), 
+                         ERR_string(file_name, file_length), 
                          0);
 		}
 		else if (options.dpb_key)
@@ -773,9 +757,7 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	tdbb->tdbb_attachment = attachment = FB_NEW(*dbb->dbb_permanent) att();
 	attachment->att_database = dbb;
-	attachment->att_filename = (is_alias) ?
-		copy_string(alias_buffer, strlen(alias_buffer)) :
-		copy_string(file_name_buffer, strlen(file_name_buffer));
+	attachment->att_filename = copy_string(expanded_name, length_expanded);
 
 	attachment->att_next = dbb->dbb_attachments;
 	dbb->dbb_attachments = attachment;
@@ -823,7 +805,7 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	if (!dbb->dbb_filename)
 	{
 		first = TRUE;
-		dbb->dbb_filename = copy_string(expanded_filename, length_expanded);
+		dbb->dbb_filename = copy_string(expanded_name, length_expanded);
 		/* Extra LCK_init() done to keep the lock table until the
 		   database is shutdown() after the last detach. */
 		LCK_init(tdbb, LCK_OWNER_database);
@@ -832,10 +814,10 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		FUN_init();
 		SBM_init();
 		dbb->dbb_file =
-			PIO_open(dbb, expanded_filename, length_expanded,
-					 options.dpb_trace, 0, file_name, fl);
+			PIO_open(dbb, expanded_name, length_expanded,
+					 options.dpb_trace, 0, file_name, file_length);
 		SHUT_init(dbb);
-		PAG_header(file_name, fl);
+		PAG_header(file_name, file_length);
 		INI_init2();
 		PAG_init();
 		if (options.dpb_set_page_buffers) {
@@ -852,7 +834,7 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 		SBM sbm_recovery = NULL;
 
-		AIL_init(expanded_filename,
+		AIL_init(expanded_name,
 				length_expanded,
 				0,
 				options.dpb_activate_shadow,
@@ -864,7 +846,7 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 							options.dpb_wal_grp_cmt_wait);
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-		LOG_init(expanded_filename, length_expanded);
+		LOG_init(expanded_name, length_expanded);
 #endif
 
 		/* initialize shadowing as soon as the database is ready for it
@@ -891,7 +873,7 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
     if (options.dpb_disable_wal) {
 		ERR_post(gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
 				 gds_arg_string, 
-                 ERR_string(file_name, fl), 
+                 ERR_string(file_name, file_length), 
                  0);
 	}
 
@@ -1088,7 +1070,7 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 						 gds_arg_string, "shutdown or online",
 						 gds_arg_string, "database",
 						 gds_arg_string, 
-                         ERR_string(file_name, fl), 
+                         ERR_string(file_name, file_length), 
                          0);
 		}
 		JRD_SS_MUTEX_LOCK;
@@ -1115,7 +1097,7 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 #endif
 		if (attachment->att_flags & ATT_shutdown)
 			ERR_post(gds_shutdown, gds_arg_string, 
-                     ERR_string(file_name, fl),
+                     ERR_string(file_name, file_length),
 					 0);
 	}
 #endif
@@ -1125,7 +1107,7 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	if (dbb->dbb_ast_flags & (DBB_shut_attach | DBB_shut_tran))
 	{
 		ERR_post(gds_shutinprog, gds_arg_string, 
-                 ERR_string(file_name, fl),
+                 ERR_string(file_name, file_length),
 				 0);
 	}
 
@@ -1133,7 +1115,7 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner)))
 	{
 		ERR_post(gds_shutdown, gds_arg_string, 
-                 ERR_string(file_name, fl), 
+                 ERR_string(file_name, file_length), 
                  0);
 	}
 
@@ -1188,7 +1170,7 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 				ISC_expand_filename(options.dpb_wal_backup_dir, 0,
 									archive_name);
 
-			make_jrn_data(data, &d_len, expanded_filename, length_expanded,
+			make_jrn_data(data, &d_len, expanded_name, length_expanded,
 						  archive_name, (USHORT) strlen(archive_name));
 
 			ISC_expand_filename(options.dpb_journal, 0, journal_name);
@@ -1213,7 +1195,7 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD)) {
 			ERR_post(gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
 					 gds_arg_string, 
-                     ERR_string(file_name, fl), 0);
+                     ERR_string(file_name, file_length), 0);
 		}
 
 		/* journal has to be disabled before dropping WAL */
@@ -1243,7 +1225,7 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	if (options.dpb_online_dump) {
 		CCH_release_exclusive(tdbb);
 
-		OLD_dump(expanded_filename, length_expanded,
+		OLD_dump(expanded_name, length_expanded,
 				 options.dpb_old_dump_id,
 				 options.dpb_old_file_size,
 				 options.dpb_old_start_page,
@@ -1258,7 +1240,7 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 			if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD))
 				ERR_post(gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
 						 gds_arg_string, 
-                         ERR_string(file_name, fl),
+                         ERR_string(file_name, file_length),
                          0);
 			LOG_enable(options.dpb_log, strlen(options.dpb_log));
 		}
@@ -1294,7 +1276,7 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD)) {
 			ERR_post(gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
 					 gds_arg_string,
-					 ERR_string(file_name, fl), 
+					 ERR_string(file_name, file_length), 
 					 0); 
 		}
 		PAG_set_db_readonly(dbb, options.dpb_db_readonly);
@@ -1815,7 +1797,7 @@ ISC_STATUS DLL_EXPORT GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	TEXT expanded_name[MAXPATHLEN];
 	TEXT opt_buffer[DPB_EXPAND_BUFFER];
 	TEXT *opt_ptr;
-	USHORT length, page_size;
+	USHORT page_size;
 	ATT attachment;
 	ISC_STATUS *status;
 	ISC_STATUS_ARRAY temp_status;
@@ -1829,11 +1811,15 @@ ISC_STATUS DLL_EXPORT GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 		return handle_error(user_status, gds_bad_db_handle, 0);
 
 /* Get length of database file name, if not already known */
+	if (!file_length) file_length = strlen(file_name);
+	file_name[file_length] = 0;
 
-	length =
-		file_length ? file_length : strlen(file_name);
-	MOVE_FAST(file_name, expanded_name, length);
-	expanded_name[length] = 0;
+	bool is_alias = ResolveDatabaseAlias(file_name, expanded_name);
+	if (is_alias)
+		ISC_expand_filename(expanded_name, 0, expanded_name);
+	else
+		strcpy(expanded_name, expanded_filename);
+	USHORT length_expanded = strlen(expanded_name);
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
@@ -1887,7 +1873,7 @@ ISC_STATUS DLL_EXPORT GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 		/* Check to see if the database is truly local or if it just looks
 		   that way */
 
-		if (ISC_check_if_remote(expanded_filename, TRUE)) {
+		if (ISC_check_if_remote(expanded_name, TRUE)) {
 			ERR_post(gds_unavailable, 0);
 		}
 	}
@@ -1898,7 +1884,7 @@ ISC_STATUS DLL_EXPORT GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 
 	tdbb->tdbb_attachment = attachment = FB_NEW(*dbb->dbb_permanent) att();
 	attachment->att_database = dbb;
-	attachment->att_filename = copy_string(expanded_name, strlen(expanded_name));
+	attachment->att_filename = copy_string(expanded_name, length_expanded);
 	attachment->att_next = dbb->dbb_attachments;
 	dbb->dbb_attachments = attachment;
 	dbb->dbb_flags &= ~DBB_being_opened;
@@ -1929,7 +1915,7 @@ ISC_STATUS DLL_EXPORT GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 		break;
 	default:
 		ERR_post(isc_database_create_failed, isc_arg_string,
-				 expanded_filename, isc_arg_gds, isc_inv_dialect_specified,
+				 expanded_name, isc_arg_gds, isc_inv_dialect_specified,
 				 isc_arg_number, options.dpb_sql_dialect, isc_arg_gds,
 				 isc_valid_db_dialects, isc_arg_string, "1 and 3", 0);
 		break;
@@ -1994,14 +1980,11 @@ ISC_STATUS DLL_EXPORT GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	initing_security = FALSE;
 	V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 #endif
-	length =
-		PIO_expand(file_name, length,
-				   expanded_name);
-	if (!verify_database_name(file_name, user_status)) {
+	if (!is_alias && !verify_database_name(expanded_name, user_status)) {
 		return user_status[1];
 	}
 	dbb->dbb_file =
-		PIO_create(dbb, expanded_name, length, options.dpb_overwrite);
+		PIO_create(dbb, expanded_name, length_expanded, options.dpb_overwrite);
 	first_dbb_file = dbb->dbb_file;
 	if (options.dpb_set_page_buffers)
 		dbb->dbb_page_buffers = options.dpb_page_buffers;
@@ -2037,7 +2020,7 @@ ISC_STATUS DLL_EXPORT GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 					 gds_arg_string, "shutdown or online",
 					 gds_arg_string, "database",
 					 gds_arg_string,
-					 ERR_string(file_name, length), 0);
+					 ERR_string(file_name, file_length), 0);
 		}
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
 		V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
@@ -2070,7 +2053,7 @@ ISC_STATUS DLL_EXPORT GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
         if (!CCH_exclusive (tdbb, LCK_EX, WAIT_PERIOD))
             ERR_post (gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
                       gds_arg_string, 
-                      ERR_string (file_name, length), 
+                      ERR_string (file_name, file_length), 
                       0);
         
         PAG_set_db_readonly (dbb, options.dpb_db_readonly);
@@ -2086,7 +2069,7 @@ ISC_STATUS DLL_EXPORT GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	dbb->dbb_filename = copy_string(first_dbb_file->fil_string,
 									first_dbb_file->fil_length);
 #else
-	dbb->dbb_filename = copy_string(expanded_name, length);
+	dbb->dbb_filename = copy_string(expanded_name, length_expanded);
 #endif
 
 #ifdef GOVERNOR
@@ -3889,7 +3872,7 @@ ISC_STATUS DLL_EXPORT GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 	for (access = request->req_access; access; access = access->acc_next)
 	{
 		class_ = SCL_get_class(access->acc_security_name);
-		SCL_check_access(class_, access->acc_view, access->acc_trg_name,
+		SCL_check_access(class_, access->acc_view_id, access->acc_trg_name,
 						 access->acc_prc_name, access->acc_mask,
 						 access->acc_type, access->acc_name);
 	}
@@ -6426,8 +6409,9 @@ ULONG JRD_shutdown_all()
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	if (initialized)
+	if (initialized) {
 		JRD_SS_MUTEX_LOCK;
+	}
 
 	for (dbb = databases; dbb; dbb = dbb_next)
 	{
