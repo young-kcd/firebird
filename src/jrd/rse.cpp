@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.29 2003-07-11 22:39:13 skidder Exp $
+ * $Id: rse.cpp,v 1.30 2003-08-09 21:15:32 brodsom Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -730,8 +730,8 @@ void RSE_open(TDBB tdbb, RSB rsb)
 				/* Initialize the record number of each stream in the union */
 
 				ptr = &rsb->rsb_arg[rsb->rsb_count];
-				for (end = ptr + (USHORT) * ptr; ++ptr <= end;)
-					request->req_rpb[(USHORT) * ptr].rpb_number = -1;
+				for (end = ptr + (USHORT)(ULONG) * ptr; ++ptr <= end;)
+					request->req_rpb[(USHORT)(ULONG) * ptr].rpb_number = -1;
 
 				rsb = rsb->rsb_arg[0];
 			}
@@ -2907,7 +2907,7 @@ static void join_to_nulls(TDBB tdbb, RSB rsb, USHORT streams)
 	request = tdbb->tdbb_request;
 	stack = (LLS) rsb->rsb_arg[streams];
 	for (; stack; stack = stack->lls_next) {
-		rpb = &request->req_rpb[(USHORT) stack->lls_object];
+		rpb = &request->req_rpb[(USHORT)(ULONG) stack->lls_object];
 
 		/* Make sure a record block has been allocated.  If there isn't
 		   one, first find the format, then allocate the record block */
@@ -2965,7 +2965,7 @@ static void map_sort_data(JRD_REQ request, SMB map, UCHAR * data)
 		   list that contains the data to send back
 		 */
 		if (IS_INTL_DATA(&item->smb_desc) &&
-			(USHORT) item->smb_desc.dsc_address <
+			(USHORT)(ULONG) item->smb_desc.dsc_address <
 			map->smb_key_length * sizeof(ULONG)) continue;
 
 		rpb = &request->req_rpb[item->smb_stream];
@@ -3216,7 +3216,7 @@ static void open_sort(TDBB tdbb, RSB rsb, IRSB_SORT impure, ULONG max_records)
 				   the sort record, then want to sort by language dependent order */
 
 				if (IS_INTL_DATA(&item->smb_desc) &&
-					(USHORT) item->smb_desc.dsc_address <
+					(USHORT)(ULONG) item->smb_desc.dsc_address <
 					map->smb_key_length * sizeof(ULONG)) {
 					INTL_string_to_key(tdbb, INTL_INDEX_TYPE(&item->smb_desc),
 									   from, &to, FALSE);

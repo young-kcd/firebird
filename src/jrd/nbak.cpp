@@ -45,6 +45,10 @@
 #include <unistd.h>
 #endif
 
+#ifdef MINGW
+#include <io.h>
+#endif
+
 void BackupManager::generate_filename() {
 	strncpy(diff_name, (char*)database->dbb_filename->str_data, sizeof(diff_name));
 	strncat(diff_name, ".delta", sizeof(diff_name)-strlen(diff_name)-1);

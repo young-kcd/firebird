@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.45 2003-07-23 22:42:09 arnobrinkman Exp $
+$Id: par.cpp,v 1.46 2003-08-09 21:15:32 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -1857,7 +1857,7 @@ static void par_procedure_parms(
 		message->nod_count = count_table[blr_message];
 		*message_ptr = message;
 		message->nod_count = 0;
-		message->nod_arg[e_msg_number] = (JRD_NOD) (SLONG) n;
+		message->nod_arg[e_msg_number] = (JRD_NOD)(ULONG) n;
 		format =
 			input_flag ? procedure->prc_input_fmt : procedure->prc_output_fmt;
 		/* dimitr: procedure (with its parameter formats) is allocated out of
@@ -1911,13 +1911,13 @@ static void par_procedure_parms(
 			prm->nod_type = nod_argument;
 			prm->nod_count = 1;
 			prm->nod_arg[e_arg_message] = message;
-			prm->nod_arg[e_arg_number] = (JRD_NOD) i++;
+			prm->nod_arg[e_arg_number] = (JRD_NOD)(ULONG) i++;
 			prm_f = prm->nod_arg[e_arg_flag] =
 				PAR_make_node(tdbb, e_arg_length);
 			prm_f->nod_type = nod_argument;
 			prm_f->nod_count = 0;
 			prm_f->nod_arg[e_arg_message] = message;
-			prm_f->nod_arg[e_arg_number] = (JRD_NOD) i++;
+			prm_f->nod_arg[e_arg_number] = (JRD_NOD)(ULONG) i++;
 		}
 	}
 	else if ((input_flag ? procedure->prc_inputs : procedure->prc_outputs) &&
@@ -2412,7 +2412,7 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected)
 		break;
 
 	case blr_user_savepoint:
-		*arg++ = (JRD_NOD) BLR_BYTE;
+		*arg++ = (JRD_NOD) (ULONG) BLR_BYTE;
 		par_name(csb, name);
 		*arg++ = (JRD_NOD) ALL_cstring(name);
 		break;
@@ -2508,11 +2508,11 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected)
 
 	case blr_aggregate:
 		node->nod_arg[e_agg_stream] = (JRD_NOD) (SLONG) par_context(csb, 0);
-		assert((int)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
+		assert((int)(SLONG)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
 		node->nod_arg[e_agg_rse] = parse(tdbb, csb, TYPE_RSE);
 		node->nod_arg[e_agg_group] = parse(tdbb, csb, OTHER);
 		node->nod_arg[e_agg_map] =
-			par_map(tdbb, csb, (USHORT) node->nod_arg[e_agg_stream]);
+			par_map(tdbb, csb, (USHORT)(ULONG) node->nod_arg[e_agg_stream]);
 		break;
 
 	case blr_group_by:

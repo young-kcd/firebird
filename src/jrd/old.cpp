@@ -163,7 +163,7 @@ ULONG start_seqno, USHORT start_file, USHORT num_files, SCHAR ** files)
 /* If file size is not specified, go for the maximum possible */
 
 	if (!file_size)
-		file_size = -1;
+		file_size = (ULONG) -1;
 
 	OLD_handle = NULL;
 
@@ -195,8 +195,7 @@ ULONG start_seqno, USHORT start_file, USHORT num_files, SCHAR ** files)
 		page = (PIP) CCH_FETCH(NULL_TDBB, &window, LCK_read, pag_pages);
 		MOVE_FAST((UCHAR *) page, (UCHAR *) temp_page, dbb->dbb_page_size);
 		CCH_RELEASE(NULL_TDBB, &window);
-
-		if (start_page < ((sequence + 1) * pgc->pgc_ppp)) {
+		if (start_page < (ULONG) ((sequence + 1) * pgc->pgc_ppp)) {
 			last_page = old_dump_all_pages(OLD_handle, temp_page,
 										   sequence, start_page);
 			/* Check for error */
@@ -603,7 +602,7 @@ static int old_put(OLD OLD_handle, SCHAR * logrec, USHORT len)
 
 /* Leave space for trailer page. */
 
-	if (OLD_handle->old_cur_size + 2 * OLD_handle->old_rec_size >
+	if ((ULONG) (OLD_handle->old_cur_size + 2 * OLD_handle->old_rec_size) >
 		OLD_handle->old_file_size) {
 		/* Rollover to next file */
 

@@ -314,7 +314,7 @@ int LLIO_seek(
 			method = FILE_END;
 			break;
 		}
-		if (SetFilePointer((HANDLE) file_desc, offset, NULL, method) == -1) {
+		if (SetFilePointer((HANDLE) file_desc, offset, NULL, method) == (DWORD) -1) {
 			if (status_vector)
 				io_error(status_vector, "SetFilePointer", filename,
 						 isc_io_access_err);

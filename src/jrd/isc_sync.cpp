@@ -1711,7 +1711,7 @@ ULONG ISC_exception_post(ULONG except_code, TEXT * err_msg)
 	case EXCEPTION_STACK_OVERFLOW:
 		ERR_post(isc_exception_stack_overflow, 0);
 		/* This will never be called, but to be safe it's here */
-		result = EXCEPTION_CONTINUE_EXECUTION;
+		result = (ULONG) EXCEPTION_CONTINUE_EXECUTION;
 		is_critical = false;
 		break;
 
@@ -1741,7 +1741,7 @@ ULONG ISC_exception_post(ULONG except_code, TEXT * err_msg)
 		else
 		{
 			sprintf (log_msg, "%s An exception occurred that does\n"
-					"\t\tnot have a description.  Exception number %X.\n"
+					"\t\tnot have a description.  Exception number %"XLONGFORMAT".\n"
 					"\tThis exception will cause the Firebird server\n"
 					"\tto terminate abnormally.", err_msg, except_code);
 		}

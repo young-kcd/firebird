@@ -270,7 +270,7 @@ void IDX_create_index(
 	if ((attachment = tdbb->tdbb_attachment) &&
 		(attachment != dbb->dbb_attachments || attachment->att_next)) {
 		if (attachment->att_flags & ATT_gbak_attachment ||
-			DPM_data_pages(tdbb, relation) > dbb->dbb_bcb->bcb_count) {
+			DPM_data_pages(tdbb, relation) > (SLONG) dbb->dbb_bcb->bcb_count) {
 			primary.rpb_window.win_flags = secondary.rpb_window.win_flags =
 				WIN_large_scan;
 			primary.rpb_org_scans = secondary.rpb_org_scans =
@@ -1047,15 +1047,15 @@ JRD_REL * bad_relation, USHORT * bad_index)
 	}
 	else if (idx->idx_flags & (idx_primary | idx_unique))
 		for (index_number = 0;
-			 index_number < idx->idx_foreign_primaries->count();
+			 index_number < (int) idx->idx_foreign_primaries->count();
 			 index_number++) {
 			if (idx->idx_id !=
-				(UCHAR) (*idx->idx_foreign_primaries)[index_number]) continue;
+				(UCHAR)(ULONG) (*idx->idx_foreign_primaries)[index_number]) continue;
 			partner_relation =
 				MET_relation(tdbb,
 							 (int) (*idx->idx_foreign_relations)[index_number]);
 			index_id =
-				(USHORT) (*idx->idx_foreign_indexes)[index_number];
+				(USHORT)(ULONG) (*idx->idx_foreign_indexes)[index_number];
 			if ( (result =
 				check_partner_index(tdbb, relation, record, transaction, idx,
 									partner_relation, index_id)) )

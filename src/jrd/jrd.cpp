@@ -46,6 +46,9 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#ifdef MINGW
+#include <io.h>
+#endif
 #ifdef HAVE_PWD_H
 #include <pwd.h>
 #endif
@@ -3914,9 +3917,9 @@ ISC_STATUS DLL_EXPORT GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 	{
 		if ( (node = csb->csb_rpt[i].csb_message) )
 		{
-			if ((int) node->nod_arg[e_msg_number] == 0) {
+			if ((int)(SLONG) node->nod_arg[e_msg_number] == 0) {
 				in_message = node;
-			} else if ((int) node->nod_arg[e_msg_number] == 1) {
+			} else if ((int)(SLONG) node->nod_arg[e_msg_number] == 1) {
 				out_message = node;
 			}
 		}

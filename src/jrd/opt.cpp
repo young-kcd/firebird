@@ -383,7 +383,7 @@ RSB OPT_compile(TDBB tdbb,
 
 		if (node->nod_type != nod_rse)
 		{
-			stream = (USHORT) node->nod_arg[STREAM_INDEX(node)];
+			stream = (USHORT)(ULONG) node->nod_arg[STREAM_INDEX(node)];
 			assert(stream <= MAX_UCHAR);
 			assert(beds[0] < MAX_STREAMS && beds[0] < MAX_UCHAR);
 			beds[++beds[0]] = (UCHAR) stream;
@@ -403,21 +403,21 @@ RSB OPT_compile(TDBB tdbb,
 						  (USHORT) (key_streams[0] - i));
 			assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
 			local_streams[++local_streams[0]] =
-				(UCHAR) node->nod_arg[e_uni_stream];
+				(UCHAR)(ULONG) node->nod_arg[e_uni_stream];
 		}
 		else if (node->nod_type == nod_aggregate) {
-			assert((int)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
-			assert((int)node->nod_arg[e_agg_stream] <= MAX_UCHAR);
+			assert((int)(SLONG)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
+			assert((int)(SLONG)node->nod_arg[e_agg_stream] <= MAX_UCHAR);
 			rsb = gen_aggregate(tdbb, opt_, node);
 			assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
 			local_streams[++local_streams[0]] =
-				(UCHAR) node->nod_arg[e_agg_stream];
+				(UCHAR)(ULONG) node->nod_arg[e_agg_stream];
 		}
 		else if (node->nod_type == nod_procedure) {
 			rsb = gen_procedure(tdbb, opt_, node);
 			assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
 			local_streams[++local_streams[0]] =
-				(UCHAR) node->nod_arg[e_prc_stream];
+				(UCHAR)(ULONG) node->nod_arg[e_prc_stream];
 		}
 		else if (node->nod_type == nod_rse) {
 			compute_rse_streams(csb, (RSE) node, beds);
@@ -820,7 +820,7 @@ JRD_NOD OPT_make_dbkey(OPT opt_, JRD_NOD boolean, USHORT stream)
 
 /* Make sure we have the correct stream */
 
-	if ((USHORT) dbkey->nod_arg[0] != stream)
+	if ((USHORT)(ULONG) dbkey->nod_arg[0] != stream)
 		return NULL;
 
 /* If this is a dbkey for the appropriate stream, it's invertable */
@@ -1606,7 +1606,7 @@ static bool computable(CSB     csb,
 
 	switch (node->nod_type) {
 	case nod_field:
-		if ((n = (USHORT) node->nod_arg[e_fld_stream]) == stream) {
+		if ((n = (USHORT)(ULONG) node->nod_arg[e_fld_stream]) == stream) {
 			return false;
 		}
 		// AB: cbs_made_river has been replaced by find_used_streams()
@@ -1622,7 +1622,7 @@ static bool computable(CSB     csb,
 		return true;
 
 	case nod_dbkey:
-		if ((n = (USHORT) node->nod_arg[0]) == stream) {
+		if ((n = (USHORT)(ULONG) node->nod_arg[0]) == stream) {
 			return false;
 		}
 		// AB: cbs_made_river has been replaced by find_used_streams()
@@ -1684,7 +1684,7 @@ static bool computable(CSB     csb,
 
 	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end; ptr++) {
 		if ((*ptr)->nod_type != nod_rse) {
-			n = (USHORT) (*ptr)->nod_arg[STREAM_INDEX((*ptr))];
+			n = (USHORT)(ULONG) (*ptr)->nod_arg[STREAM_INDEX((*ptr))];
 			csb->csb_rpt[n].csb_flags |= csb_active;
 		}
 	}
@@ -1721,7 +1721,7 @@ static bool computable(CSB     csb,
 	{
 		if ((*ptr)->nod_type != nod_rse)
 		{
-			n = (USHORT) (*ptr)->nod_arg[STREAM_INDEX((*ptr))];
+			n = (USHORT)(ULONG) (*ptr)->nod_arg[STREAM_INDEX((*ptr))];
 			csb->csb_rpt[n].csb_flags &= ~csb_active;
 		}
 	}
@@ -1762,12 +1762,12 @@ static void compute_dependencies(JRD_NOD node, ULONG * dependencies)
 
 	switch (node->nod_type) {
 	case nod_field:
-		n = (USHORT) node->nod_arg[e_fld_stream];
+		n = (USHORT)(ULONG) node->nod_arg[e_fld_stream];
 		SET_DEP_BIT(dependencies, n);
 		return;
 
 	case nod_dbkey:
-		n = (USHORT) node->nod_arg[0];
+		n = (USHORT)(ULONG) node->nod_arg[0];
 		SET_DEP_BIT(dependencies, n);
 		return;
 
@@ -1823,7 +1823,7 @@ static void compute_dependencies(JRD_NOD node, ULONG * dependencies)
 
 	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end; ptr++) {
 		if ((*ptr)->nod_type != nod_rse) {
-			n = (USHORT) (*ptr)->nod_arg[STREAM_INDEX((*ptr))];
+			n = (USHORT)(ULONG) (*ptr)->nod_arg[STREAM_INDEX((*ptr))];
 			CLEAR_DEP_BIT(dependencies, n);
 		}
 	}
@@ -1851,7 +1851,7 @@ static void compute_dbkey_streams(CSB csb, JRD_NOD node, UCHAR * streams)
 
 	if (node->nod_type == nod_relation) {
 		assert(streams[0] < MAX_STREAMS && streams[0] < MAX_UCHAR);
-		streams[++streams[0]] = (UCHAR) node->nod_arg[e_rel_stream];
+		streams[++streams[0]] = (UCHAR)(ULONG) node->nod_arg[e_rel_stream];
 	}
 	else if (node->nod_type == nod_union) {
 		clauses = node->nod_arg[e_uni_clauses];
@@ -1891,7 +1891,7 @@ static void compute_rse_streams(CSB csb, RSE rse, UCHAR * streams)
 		node = *ptr;
 		if (node->nod_type != nod_rse) {
 			assert(streams[0] < MAX_STREAMS && streams[0] < MAX_UCHAR);
-			streams[++streams[0]] = (UCHAR) node->nod_arg[STREAM_INDEX(node)];
+			streams[++streams[0]] = (UCHAR)(ULONG) node->nod_arg[STREAM_INDEX(node)];
 		}
 		else {
 			compute_rse_streams(csb, (RSE) node, streams);
@@ -2919,7 +2919,7 @@ static JRD_NOD find_dbkey(JRD_NOD dbkey, USHORT stream, SLONG * position)
 	JRD_NOD dbkey_temp, *ptr, *end;
 	DEV_BLKCHK(dbkey, type_nod);
 	if (dbkey->nod_type == nod_dbkey) {
-		if ((USHORT) dbkey->nod_arg[0] == stream)
+		if ((USHORT)(ULONG) dbkey->nod_arg[0] == stream)
 			return dbkey;
 		else {
 			*position = *position + 1;
@@ -3026,7 +3026,7 @@ static void find_rsbs(RSB rsb, LLS * stream_list, LLS * rsb_list)
 	case rsb_procedure:
 		/* No need to go any farther down with these */
 
-		LLS_PUSH((BLK) rsb->rsb_stream, stream_list);
+		LLS_PUSH((BLK)(ULONG) rsb->rsb_stream, stream_list);
 		return;
 	case rsb_cross:
 		/* Loop through the sub-streams */
@@ -3180,7 +3180,7 @@ static void form_rivers(TDBB tdbb,
 
 		temp[0]++;
 		relation_node = plan_node->nod_arg[e_retrieve_relation];
-		temp[temp[0]] = (UCHAR) relation_node->nod_arg[e_rel_stream];
+		temp[temp[0]] = (UCHAR)(ULONG) relation_node->nod_arg[e_rel_stream];
 	}
 
 /* just because the user specified a join does not mean that 
@@ -3347,9 +3347,9 @@ static RSB gen_aggregate(TDBB tdbb, OPT opt, JRD_NOD node)
 
 	RSB rsb = FB_NEW_RPT(*tdbb->tdbb_default, 1) Rsb();
 	rsb->rsb_type = rsb_aggregate;
-	assert((int)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
-	assert((int)node->nod_arg[e_agg_stream] <= MAX_UCHAR);
-	rsb->rsb_stream = (UCHAR) node->nod_arg[e_agg_stream];
+	assert((int)(SLONG)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
+	assert((int)(SLONG)node->nod_arg[e_agg_stream] <= MAX_UCHAR);
+	rsb->rsb_stream = (UCHAR)(ULONG) node->nod_arg[e_agg_stream];
 	rsb->rsb_format = csb->csb_rpt[rsb->rsb_stream].csb_format;
 	rsb->rsb_next = OPT_compile(tdbb, csb, rse, NULL);
 	rsb->rsb_arg[0] = (RSB) node;
@@ -3713,8 +3713,8 @@ static RSB gen_navigation(TDBB tdbb,
 		 idx->idx_rpt; ptr < end; ptr++, idx_tail++) {
 		node = *ptr;
 		if (node->nod_type != nod_field
-			|| (USHORT) node->nod_arg[e_fld_stream] != stream
-			|| (USHORT) node->nod_arg[e_fld_id] != idx_tail->idx_field
+			|| (USHORT)(ULONG) node->nod_arg[e_fld_stream] != stream
+			|| (USHORT)(ULONG) node->nod_arg[e_fld_id] != idx_tail->idx_field
 			|| ptr[2*sort->nod_count] /* do not use index if NULLS FIRST is used */
 #ifdef SCROLLABLE_CURSORS
 			)
@@ -3874,7 +3874,7 @@ static RSB gen_outer(TDBB tdbb,
 		{
 			stream_ptr[i]->stream_rsb = NULL;
 			stream_ptr[i]->stream_num =
-				(USHORT) node->nod_arg[STREAM_INDEX(node)];
+				(USHORT)(ULONG) node->nod_arg[STREAM_INDEX(node)];
 		}
 	}
 
@@ -3952,10 +3952,10 @@ static RSB gen_procedure(TDBB tdbb, OPT opt, JRD_NOD node)
 	SET_TDBB(tdbb);
 	csb = opt->opt_csb;	
 	procedure = MET_lookup_procedure_id(tdbb,
-	   (SSHORT)node->nod_arg[e_prc_procedure], FALSE, FALSE, 0);
+	   (SSHORT)(SLONG)node->nod_arg[e_prc_procedure], FALSE, FALSE, 0);
 	rsb = FB_NEW_RPT(*tdbb->tdbb_default, RSB_PRC_count) Rsb();
 	rsb->rsb_type = rsb_procedure;
-	rsb->rsb_stream = (UCHAR) node->nod_arg[e_prc_stream];
+	rsb->rsb_stream = (UCHAR)(ULONG) node->nod_arg[e_prc_stream];
 	rsb->rsb_procedure = procedure;
 	rsb->rsb_impure = CMP_impure(csb, sizeof(struct irsb_procedure));
 	rsb->rsb_arg[RSB_PRC_inputs] = (RSB) node->nod_arg[e_prc_inputs];
@@ -4532,12 +4532,12 @@ static RSB gen_sort(TDBB tdbb,
 		while (SBM_next(csb->csb_rpt[*ptr].csb_fields, &id, RSE_get_forward)) {
 			items++;
 			LLS_PUSH((BLK) id, &id_stack);
-			LLS_PUSH((BLK) * ptr, &stream_stack);
+			LLS_PUSH((BLK)(ULONG) * ptr, &stream_stack);
 			for (node_ptr = sort->nod_arg; node_ptr < end_node; node_ptr++) {
 				node = *node_ptr;
 				if (node->nod_type == nod_field
-					&& (USHORT) node->nod_arg[e_fld_stream] == *ptr
-					&& (USHORT) node->nod_arg[e_fld_id] == id) {
+					&& (USHORT)(ULONG) node->nod_arg[e_fld_stream] == *ptr
+					&& (USHORT)(ULONG) node->nod_arg[e_fld_id] == id) {
 					desc = &descriptor;
 					CMP_get_desc(tdbb, csb, node, desc);
 					/* International type text has a computed key */
@@ -4634,8 +4634,8 @@ static RSB gen_sort(TDBB tdbb,
 		map_item->smb_desc.dsc_address = (UCHAR *) map_length;
 		map_length += desc->dsc_length;
 		if (node->nod_type == nod_field) {
-			map_item->smb_stream = (USHORT) node->nod_arg[e_fld_stream];
-			map_item->smb_field_id = (USHORT) node->nod_arg[e_fld_id];
+			map_item->smb_stream = (USHORT)(ULONG) node->nod_arg[e_fld_stream];
+			map_item->smb_field_id = (USHORT)(ULONG) node->nod_arg[e_fld_id];
 		}
 	}
 
@@ -4647,8 +4647,8 @@ static RSB gen_sort(TDBB tdbb,
    field has already been mentioned as a sort key, don't bother to repeat
    it. */
 	while (stream_stack) {
-		id = (USHORT) LLS_POP(&id_stack);
-		stream = (USHORT) LLS_POP(&stream_stack);
+		id = (USHORT)(ULONG) LLS_POP(&id_stack);
+		stream = (USHORT)(ULONG) LLS_POP(&stream_stack);
 		format = CMP_format(tdbb, csb, stream);
 		desc = &format->fmt_desc[id];
 		if (id >= format->fmt_count || desc->dsc_length == 0)
@@ -4972,7 +4972,7 @@ static RSB gen_union(TDBB tdbb,
 	rsb = FB_NEW_RPT(*tdbb->tdbb_default, count + nstreams + 1) Rsb();
 	rsb->rsb_type = rsb_union;
 	rsb->rsb_count = count;
-	rsb->rsb_stream = (UCHAR) union_node->nod_arg[e_uni_stream];
+	rsb->rsb_stream = (UCHAR)(ULONG) union_node->nod_arg[e_uni_stream];
 	rsb->rsb_format = csb->csb_rpt[rsb->rsb_stream].csb_format;
 	rsb->rsb_impure = CMP_impure(csb, sizeof(struct irsb));
 	rsb_ptr = rsb->rsb_arg;
@@ -4983,9 +4983,9 @@ static RSB gen_union(TDBB tdbb,
 
 /* Save the count and numbers of the streams that make up the union */
 
-	*rsb_ptr++ = (RSB) nstreams;
+	*rsb_ptr++ = (RSB)(ULONG) nstreams;
 	while (nstreams--)
-		*rsb_ptr++ = (RSB) * streams++;
+		*rsb_ptr++ = (RSB)(ULONG) * streams++;
 	return rsb;
 }
 
@@ -5514,8 +5514,8 @@ static JRD_NOD make_missing(TDBB tdbb,
 	field = boolean->nod_arg[0];
 	if (field->nod_type != nod_field)
 		return NULL;
-	if ((USHORT) field->nod_arg[e_fld_stream] != stream ||
-		(USHORT) field->nod_arg[e_fld_id] != idx->idx_rpt[0].idx_field)
+	if ((USHORT)(ULONG) field->nod_arg[e_fld_stream] != stream ||
+		(USHORT)(ULONG) field->nod_arg[e_fld_id] != idx->idx_rpt[0].idx_field)
 		return NULL;
 	node = make_index_node(tdbb, relation, opt->opt_csb, idx);
 	retrieval = (IRB) node->nod_arg[e_idx_retrieval];
@@ -5583,8 +5583,8 @@ static JRD_NOD make_starts(TDBB tdbb,
 			return NULL;
 	}
 
-	if ((USHORT) field->nod_arg[e_fld_stream] != stream ||
-		(USHORT) field->nod_arg[e_fld_id] != idx->idx_rpt[0].idx_field
+	if ((USHORT)(ULONG) field->nod_arg[e_fld_stream] != stream ||
+		(USHORT)(ULONG) field->nod_arg[e_fld_id] != idx->idx_rpt[0].idx_field
 		|| !(idx->idx_rpt[0].idx_itype == idx_string
 			 || idx->idx_rpt[0].idx_itype == idx_byte_array
 			 || idx->idx_rpt[0].idx_itype == idx_metadata
@@ -5682,10 +5682,10 @@ static void mark_indices(csb_repeat * csb_tail, SSHORT relation_id)
 		if (access_type) {
 			for (arg = access_type->nod_arg, end = arg + plan_count;
 				 arg < end; arg += 3) {
-				if (relation_id != (SSHORT) * arg)
+				if (relation_id != (SSHORT)(SLONG) * arg)
 					/* index %s cannot be used in the specified plan */
 					ERR_post(gds_index_unused, gds_arg_string, *(arg + 2), 0);
-				if (idx->idx_id == (USHORT) * (arg + 1))
+				if (idx->idx_id == (USHORT)(ULONG) * (arg + 1))
 					if (access_type->nod_type == nod_navigational)
 						idx->idx_runtime_flags |= idx_plan_navigate;
 					else		/* nod_indices */
@@ -5757,13 +5757,13 @@ static SSHORT match_index(TDBB tdbb,
 		   If left side is still not a field, give up */
 
 		if (match->nod_type != nod_field ||
-			(USHORT) match->nod_arg[e_fld_stream] != stream ||
+			(USHORT)(ULONG) match->nod_arg[e_fld_stream] != stream ||
 			!computable(opt->opt_csb, value, stream, true))
 		{
 			match = value;
 			value = boolean->nod_arg[0];
 			if (match->nod_type != nod_field ||
-				(USHORT) match->nod_arg[e_fld_stream] != stream ||
+				(USHORT)(ULONG) match->nod_arg[e_fld_stream] != stream ||
 				!computable(opt->opt_csb, value, stream, true))
 			{
 				return 0;
@@ -5782,7 +5782,7 @@ static SSHORT match_index(TDBB tdbb,
 #ifdef EXPRESSION_INDICES
 			(idx->idx_expression ||
 #endif
-			 ((USHORT) match->nod_arg[e_fld_id] == idx->idx_rpt[i].idx_field)
+			 ((USHORT)(ULONG) match->nod_arg[e_fld_id] == idx->idx_rpt[i].idx_field)
 #ifdef EXPRESSION_INDICES
 			)
 #endif
@@ -6169,7 +6169,7 @@ static BOOLEAN river_reference(RIV river, JRD_NOD node)
 		return FALSE;
 	for (streams = river->riv_streams, end =
 		 streams + river->riv_count; streams < end; streams++)
-		if ((USHORT) node->nod_arg[e_fld_stream] == *streams)
+		if ((USHORT)(ULONG) node->nod_arg[e_fld_stream] == *streams)
 			return TRUE;
 	return FALSE;
 }
@@ -6365,7 +6365,7 @@ static void set_rse_inactive(CSB csb, RSE rse)
 		 ptr < end; ptr++) {
 		node = *ptr;
 		if (node->nod_type != nod_rse) {
-			stream = (USHORT) node->nod_arg[STREAM_INDEX(node)];
+			stream = (USHORT)(ULONG) node->nod_arg[STREAM_INDEX(node)];
 			csb->csb_rpt[stream].csb_flags &= ~csb_active;
 		}
 		else

@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.64 2003-08-03 23:54:39 brodsom Exp $
+$Id: met.epp,v 1.65 2003-08-09 21:15:32 brodsom Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -1890,7 +1890,7 @@ int MET_lookup_partner(
 								   index_number + 1);
 
 				(*references->frgn_relations)[index_number] =
-					(BLK) partner_relation->rel_id;
+					(BLK) (ULONG) partner_relation->rel_id;
 
 				references->frgn_indexes = 
 					vec::newVector(*dbb->dbb_permanent, references->frgn_indexes,
@@ -1968,7 +1968,7 @@ int MET_lookup_partner(
 								   index_number+1);
 
 				(*dependencies->prim_relations)[index_number] =
-					(BLK) partner_relation->rel_id;
+					(BLK) (ULONG) partner_relation->rel_id;
 
 				dependencies->prim_indexes =
 					vec::newVector(*dbb->dbb_permanent, dependencies->prim_indexes,
@@ -2026,16 +2026,16 @@ int MET_lookup_partner(
 		if (references->frgn_reference_ids)
 		{
 			for (index_number = 0;
-				 index_number < references->frgn_reference_ids->count();
+				 index_number < (int) references->frgn_reference_ids->count();
 				 index_number++)
 			{
-				if (idx->idx_id == (UCHAR) (*references->frgn_reference_ids)
+				if (idx->idx_id == (UCHAR)(ULONG) (*references->frgn_reference_ids)
 											[index_number])
 				{
 					idx->idx_primary_relation =
-						(USHORT) (*references->frgn_relations)[index_number];
+						(USHORT)(ULONG) (*references->frgn_relations)[index_number];
 					idx->idx_primary_index =
-						(UCHAR) (*references->frgn_indexes)[index_number];
+						(UCHAR)(ULONG) (*references->frgn_indexes)[index_number];
 					return TRUE;
 				}
 			}
@@ -2048,10 +2048,10 @@ int MET_lookup_partner(
 		if (dependencies->prim_reference_ids)
 		{
 			for (index_number = 0;
-				 index_number < dependencies->prim_reference_ids->count();
+				 index_number < (int) dependencies->prim_reference_ids->count();
 				 index_number++)
 			{
-				if (idx->idx_id == (UCHAR) (*dependencies->prim_reference_ids)
+				if (idx->idx_id == (UCHAR)(ULONG) (*dependencies->prim_reference_ids)
 											[index_number])
 				{
 					idx->idx_foreign_primaries =
@@ -2160,7 +2160,7 @@ JRD_PRC MET_lookup_procedure_id(TDBB tdbb, SSHORT id,
 	dbb = tdbb->tdbb_database;
 
 	if ((procedures = dbb->dbb_procedures)
-		&& id < procedures->count()
+		&& id < (SSHORT) procedures->count()
 	    && (procedure = (JRD_PRC)(*procedures)[id])
 		&& procedure->prc_id == id
 		&& !(procedure->prc_flags & PRC_being_scanned)
@@ -2336,7 +2336,7 @@ JRD_REL MET_lookup_relation_id(TDBB tdbb, SLONG id, BOOLEAN return_deleted)
 	check_relation = NULL;
 
 	if ((vector = dbb->dbb_relations) &&
-		(id < vector->count()) && (relation = (JRD_REL) (*vector)[id]))
+		(id < (SLONG) vector->count()) && (relation = (JRD_REL) (*vector)[id]))
 	{
 		if (relation->rel_flags & REL_deleted)
 		{
@@ -2646,7 +2646,6 @@ JRD_PRC MET_procedure(TDBB tdbb, int id, BOOLEAN noscan, USHORT flags)
 	FMT format;
 	fmt::fmt_desc_iterator desc;
 	SSHORT i;
-	USHORT length;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -2655,7 +2654,7 @@ JRD_PRC MET_procedure(TDBB tdbb, int id, BOOLEAN noscan, USHORT flags)
 	{
 		vector = dbb->dbb_procedures = vec::newVector(*dbb->dbb_permanent, id + 10);
 	}
-	else if (id >= vector->count())
+	else if (id >= (int) vector->count())
 	{
 		vector->resize(id + 10);
 	}
@@ -2824,6 +2823,7 @@ JRD_PRC MET_procedure(TDBB tdbb, int id, BOOLEAN noscan, USHORT flags)
 
 		if ((vector = procedure->prc_output_fields) && (*vector)[0])
 		{
+			ULONG length;
 			format = procedure->prc_format =
 				fmt::newFmt(*dbb->dbb_permanent, procedure->prc_outputs);
 			format->fmt_count = procedure->prc_outputs;
@@ -2845,7 +2845,7 @@ JRD_PRC MET_procedure(TDBB tdbb, int id, BOOLEAN noscan, USHORT flags)
 					length += desc->dsc_length;
 				}
 			}
-			format->fmt_length = length;
+			format->fmt_length = (USHORT) length;
 		}
 
 		old_pool = tdbb->tdbb_default;
@@ -2859,10 +2859,10 @@ JRD_PRC MET_procedure(TDBB tdbb, int id, BOOLEAN noscan, USHORT flags)
 		{
 			if ( (node = csb_->csb_rpt[i].csb_message) )
 			{
-				if ((int) node->nod_arg[e_msg_number] == 0)
+				if ((int) (SLONG) node->nod_arg[e_msg_number] == 0)
 				{
 					procedure->prc_input_msg = node;
-				} else if ((int) node->nod_arg[e_msg_number] == 1)
+				} else if ((int) (SLONG) node->nod_arg[e_msg_number] == 1)
 				{
 					procedure->prc_output_msg = node;
 				}
@@ -4141,7 +4141,7 @@ static BOOLEAN par_messages(TDBB	tdbb,
 			align = PAR_desc(csb, &*desc);
 			if (align)
 				offset = FB_ALIGN(offset, align);
-			desc->dsc_address = (UCHAR *) offset;
+			desc->dsc_address = (UCHAR *) (ULONG) offset;
 			offset += desc->dsc_length;
 		}
 		format->fmt_length = offset;
@@ -4438,7 +4438,7 @@ static void store_dependencies(TDBB			tdbb,
 		node = (JRD_NOD) LLS_POP(&csb->csb_dependencies);
 		if (!node->nod_arg[e_dep_object])
 			continue;
-		dpdo_type = (SSHORT) node->nod_arg[e_dep_object_type];
+		dpdo_type = (SSHORT) (SLONG) node->nod_arg[e_dep_object_type];
         relation = NULL;
         procedure = NULL;
         switch (dpdo_type) {
@@ -4475,7 +4475,7 @@ static void store_dependencies(TDBB			tdbb,
 		{
 			if (field_node->nod_type == nod_field)
 			{
-				fld_id = (SSHORT) field_node->nod_arg[0];
+				fld_id = (SSHORT) (SLONG) field_node->nod_arg[0];
 				if (relation)
 				{
 					if ( (field = MET_get_field(relation, fld_id)) )
