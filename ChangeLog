@@ -1,3 +1,9 @@
+2003-04-24 07:46  dimitr
+
+	* firebird2/src/jrd/exe.cpp:
+	
+	With some luck, this should fix the buggy behaviour of ROW_COUNT.
+
 2003-04-23 18:17  skidder
 
 	* firebird2/builds/win32/common_boot.mak:
