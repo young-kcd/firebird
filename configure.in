@@ -392,7 +392,6 @@ dnl Check for libraries
 AC_CHECK_LIB(dl, main)
 AC_CHECK_LIB(c, main)
 AC_CHECK_LIB(m, main)
-AC_CHECK_LIB(ssl, main)
 AC_CHECK_LIB(curses, main)
 dnl AC_CHECK_LIB(termcap, main)
 if test "$EDITLINE_FLG" = "Y"; then
