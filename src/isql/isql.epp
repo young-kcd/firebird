@@ -3943,10 +3943,6 @@ static processing_state get_statement(TEXT* const statement,
 		*p++ = c;
 		count++;
 
-		/* If in danger of running out of room, reallocate to a bigger
-		   **  Statement buffer, keeping track of where p is pointing
-		 */
-
 		if (count > bufsize && !done)
 		{
 				TEXT* errbuf = (TEXT*) ISQL_ALLOC((SLONG) MSG_LENGTH);
@@ -3960,7 +3956,7 @@ static processing_state get_statement(TEXT* const statement,
 				ret = SKIP;
 
 				// move some content to start of buffer just in case if
-				// the overflow has splitter terminator
+				// the overflow has splitted terminator
 				count = MAX(Termlen, 2);
 				memcpy(statement, p - count, count);
 				p = statement + count;
