@@ -270,21 +270,6 @@
 #define blr_current_timestamp	(unsigned char)161
 #define blr_current_time	(unsigned char)162
 
-
-/* These verbs were added in 6.0, primarily to support 64-bit integers */
-
-#define blr_add2			(unsigned char)163
-#define blr_subtract2		(unsigned char)164
-#define blr_multiply2		(unsigned char)165
-#define blr_divide2			(unsigned char)166
-#define blr_agg_total2		(unsigned char)167
-#define blr_agg_total_distinct2	(unsigned char)168
-#define blr_agg_average2	(unsigned char)169
-#define blr_agg_average_distinct2	(unsigned char)170
-#define blr_average2		(unsigned char)171
-#define blr_gen_id2			(unsigned char)172
-#define blr_set_generator2	(unsigned char)173
-
 /* FB1 specific BLR */
 
 #define blr_current_role	(unsigned char)174
@@ -302,5 +287,3 @@
 #define blr_undo_savepoint	(unsigned char)181
 
 #endif /* _JRD_BLR_H_ */
-
-

@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.29 2002-12-10 11:53:49 eku Exp $
+$Id: par.cpp,v 1.30 2002-12-23 11:23:07 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -2323,10 +2323,6 @@ static JRD_NOD parse(TDBB tdbb, register CSB * csb, USHORT expected)
 	case blr_subtract:
 	case blr_multiply:
 	case blr_divide:
-	case blr_add2:
-	case blr_subtract2:
-	case blr_multiply2:
-	case blr_divide2:
 	case blr_concatenate:
 
 	case blr_assignment:
@@ -2349,10 +2345,6 @@ static JRD_NOD parse(TDBB tdbb, register CSB * csb, USHORT expected)
 	case blr_agg_count_distinct:
 	case blr_agg_total_distinct:
 	case blr_agg_average_distinct:
-	case blr_agg_total2:
-	case blr_agg_average2:
-	case blr_agg_total_distinct2:
-	case blr_agg_average_distinct2:
 	case blr_post:
 	case blr_exec_sql:
 	case blr_internal_info:
@@ -2484,8 +2476,6 @@ static JRD_NOD parse(TDBB tdbb, register CSB * csb, USHORT expected)
 
 	case blr_gen_id:
 	case blr_set_generator:
-	case blr_gen_id2:
-	case blr_set_generator2:
 		{
 			SLONG tmp;
 			TEXT name[32];
@@ -2501,7 +2491,7 @@ static JRD_NOD parse(TDBB tdbb, register CSB * csb, USHORT expected)
             /* CVC: There're thousand ways to go wrong, but I don't see any value
                in posting dependencies with set generator since it's DDL, so I will
                track only gen_id() in both dialects. */
-            if ((operator_ == blr_gen_id || operator_ == blr_gen_id2)
+            if ((operator_ == blr_gen_id)
                 && ((*csb)->csb_g_flags & csb_get_dependencies)) {
                 JRD_NOD dep_node = PAR_make_node (tdbb, e_dep_length);
                 dep_node->nod_type = nod_dependency;
@@ -2703,7 +2693,6 @@ static JRD_NOD parse(TDBB tdbb, register CSB * csb, USHORT expected)
     case blr_count2:
 */
 	case blr_average:
-	case blr_average2:
 	case blr_total:
 	case blr_from:
 	case blr_via:
