@@ -44,6 +44,7 @@
 #include "../ipserver/alli_proto.h"
 #include "../ipserver/ipcli_proto.h"
 #include "../ipserver/ipevt_proto.h"
+#include "../ipserver/ipapi_proto.h"
 #include "../ipserver/ips.h"
 #include "../jrd/thd_proto.h"
 #include "../jrd/isc_proto.h"
@@ -219,8 +220,10 @@ ISC_STATUS GDS_ATTACH_DATABASE(
 						   ISC_STATUS* user_status,
 						   USHORT file_length,
 						   const SCHAR* file_name,
-	IDB* handle,
-	USHORT dpb_length, const SCHAR* dpb, SCHAR* expanded_filename)
+						   IDB* handle,
+						   USHORT dpb_length, 
+						   const SCHAR* dpb, 
+						   const SCHAR* expanded_filename)
 {
 /**************************************
  *
@@ -252,7 +255,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(
 
 	/* remote names should not go through here */
 
-	if (ISC_check_if_remote(expanded_filename, TRUE)) {
+	if (ISC_check_if_remote(expanded_filename, true)) {
 		user_status[0] = isc_arg_gds;
 		user_status[1] = isc_unavailable;
 		user_status[2] = isc_arg_end;
@@ -598,9 +601,9 @@ ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS * user_status, ITR * itr_handle)
 }
 
 
-ISC_STATUS GDS_COMPILE(ISC_STATUS * user_status,
-				   IDB * db_handle,
-				   IRQ * req_handle, USHORT blr_length, UCHAR * blr)
+ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
+				   IDB* db_handle,
+				   IRQ* req_handle, USHORT blr_length, const UCHAR* blr)
 {
 /**************************************
  *
@@ -788,7 +791,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 						   IDB* handle,
 						   USHORT dpb_length,
 						   const SCHAR* dpb,
-						   SSHORT db_type, SCHAR* expanded_filename)
+						   SSHORT db_type,
+						   const SCHAR* expanded_filename)
 {
 /**************************************
  *
@@ -819,7 +823,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 	/* remote names should not go through here */
 
-	if (ISC_check_if_remote(expanded_filename, TRUE)) {
+	if (ISC_check_if_remote(expanded_filename, true)) {
 		user_status[0] = isc_arg_gds;
 		user_status[1] = isc_unavailable;
 		user_status[2] = isc_arg_end;

@@ -1144,7 +1144,7 @@ static void compile( ICC icc)
 
 	handle = NULL;
 	result = GDS_COMPILE(status_vector, &idb->idb_handle, &handle,
-						 blr_length, reinterpret_cast < char *>(blr));
+						 blr_length, reinterpret_cast<const char*>(blr));
 
 	/* create data structure and return handle */
 
