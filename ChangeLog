@@ -1,3 +1,74 @@
+2002-08-07 15:18  eku
+
+	* firebird2/src/misc/writeBuildNum.sh (1.503):
+	
+	increment build number
+
+2002-08-07 07:36  skywalker
+
+	* firebird2/src/misc/writeBuildNum.sh (1.502):
+	
+	increment build number
+
+2002-08-07 07:36  skywalker
+
+	* firebird2/src/misc/isc4.gbak (1.1):
+	
+	Initial security db - used to ease a boot type build process
+
+2002-08-05 18:34  skywalker
+
+	* firebird2/src/misc/writeBuildNum.sh (1.501):
+	
+	increment build number
+
+2002-08-05 18:34  skywalker
+
+	* firebird2/configure.in (1.23):
+	
+	Changed to make build with new structure possible.
+
+2002-08-05 09:14  skywalker
+
+	* firebird2/builds/posix/: Makefile.in.boot.gpre (1.2),
+	Makefile.in.firebird (1.2), Makefile.in.libfbstatic (1.2),
+	Makefile.in.msgs (1.2), Makefile.in.refDatabases (1.2),
+	Makefile.in.static.gpre (1.2), make.rules (1.2):
+	
+	More changes to make fb2 compile on linux work with new build
+	structure
+
+2002-08-05 09:14  skywalker
+
+	* firebird2/src/misc/writeBuildNum.sh (1.500):
+	
+	increment build number
+
+2002-08-03 17:27  dimitr
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.499), writeBuildNum.sh
+	(1.498):
+	
+	increment build number
+
+2002-08-03 17:27  dimitr
+
+	* firebird2/src/: dsql/dsql.cpp (1.19), dsql/dsql.tab.h (1.2),
+	dsql/gen.cpp (1.9), dsql/keywords.cpp (1.4), dsql/keywords.h
+	(1.11), dsql/make.cpp (1.8), dsql/make_proto.h (1.4), dsql/node.h
+	(1.7), dsql/parse.cpp (1.19), dsql/parse.y (1.18), dsql/pass1.cpp
+	(1.13), jrd/dsc.cpp (1.3):
+	
+	1) Implemented CASE, NULLIF, COALESCE 2) Allowed grouping by
+	internal functions (some work in pass1.cpp still required) Thanks
+	to Arno Brinkman.
+
+2002-08-01 13:19  fsg
+
+	* firebird2/src/misc/writeBuildNum.sh (1.497):
+	
+	increment build number
+
 2002-07-30 11:49  dimitr
 
 	* firebird2/src/dsql/keywords.cpp (1.3):
