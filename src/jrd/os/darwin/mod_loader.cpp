@@ -4,7 +4,7 @@
  */
 
 #include "../jrd/os/mod_loader.h"
-#include "common.h"
+#include "../../common.h"
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -46,15 +46,16 @@ void ModuleLoader::doctorModuleExtention(Firebird::string& name)
 ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::string& modPath)
 {
 	NSObjectFileImage image;
+	NSObjectFileImageReturnCode retVal;
+	NSModule mod_handle;
 	NSSymbol initSym;
 	void (*init)(void);
 	
 	/* Create an object file image from the given path */
-	const NSObjectFileImageReturnCode retVal =
-		NSCreateObjectFileImageFromFile(modPath.c_str(), &image);
-	if (retVal != NSObjectFileImageSuccess)
+	retVal = NSCreateObjectFileImageFromFile(modPath.c_str(), &image);
+	if(retVal != NSObjectFileImageSuccess)
 	{
-		switch (retVal)
+		switch(retVal)
 		{
 			case NSObjectFileImageFailure:
 					/*printf("object file setup failure");*/
@@ -78,10 +79,9 @@ ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::string& modPath)
 	}
 	
 	/* link the image */
-	NSModule mod_handle =
-		NSLinkModule(image, modPath.c_str(), NSLINKMODULE_OPTION_PRIVATE);
+	mod_handle = NSLinkModule(image, modPath.c_str(), NSLINKMODULE_OPTION_PRIVATE);
 	NSDestroyObjectFileImage(image) ;
-	if (mod_handle == NULL)
+	if(mod_handle == NULL)
 	{
 		/*printf("NSLinkModule() failed for dlopen()");*/
 		// We should really throw an error here.

@@ -22,16 +22,17 @@
  */
 
 #include "firebird.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
+#include "../jrd/ibsetjmp.h"
 #include <string.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
-#include "gen/iberror.h"
+#include "gen/codes.h"
 #include "../jrd/iberr.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/iberr_proto.h"
 
-static void post_error(ISC_STATUS*, const SCHAR*, UCHAR*, ISC_STATUS, ...);
+static void post_error(ISC_STATUS *, SCHAR *, UCHAR *, ISC_STATUS, ...);
 
 
 void IBERR_append_status(ISC_STATUS * status_vector, ISC_STATUS status, ...)
@@ -105,15 +106,15 @@ void IBERR_bugcheck(
 	len = strlen(errmsg);
 	sprintf(errmsg + len, " (%d)", number);
 
-	post_error(status_vector, dbname, longjmp_addr, isc_bug_check,
-			   isc_arg_string, errmsg, 0);
+	post_error(status_vector, dbname, longjmp_addr, gds_bug_check,
+			   gds_arg_string, errmsg, 0);
 }
 
 
 void IBERR_error(
-				 ISC_STATUS* status_vector,
-				 const SCHAR* dbname,
-				 UCHAR* longjmp_addr, int number, TEXT* errmsg)
+				 ISC_STATUS * status_vector,
+				 SCHAR * dbname,
+				 UCHAR * longjmp_addr, int number, TEXT * errmsg)
 {
 /**************************************
  *
@@ -132,15 +133,15 @@ void IBERR_error(
 						&flags) < 1)
 		sprintf(errmsg, "error code %d", number);
 
-	post_error(status_vector, dbname, longjmp_addr, isc_random,
-			   isc_arg_string, errmsg, 0);
+	post_error(status_vector, dbname, longjmp_addr, gds_random,
+			   gds_arg_string, errmsg, 0);
 }
 
 
 static void post_error(
-					   ISC_STATUS* status_vector,
-					   const SCHAR* dbname,
-					   UCHAR* longjmp_addr, ISC_STATUS status, ...)
+					   ISC_STATUS * status_vector,
+					   SCHAR * dbname,
+					   UCHAR * longjmp_addr, ISC_STATUS status, ...)
 {
 /**************************************
  *
@@ -155,14 +156,13 @@ static void post_error(
 
 	STUFF_STATUS(status_vector, status);
 
-	if (status_vector[1] == isc_db_corrupt ||
-		status_vector[1] == isc_bug_check)
+	if (status_vector[1] == gds_db_corrupt ||
+		status_vector[1] == gds_bug_check)
 	{
 			gds__log_status(dbname, status_vector);
 	}
 
 	if (longjmp_addr) {
-		Firebird::status_exception::raise(status_vector);
+		Firebird::status_exception::raise(status_vector[1]);
 	}
 }
-

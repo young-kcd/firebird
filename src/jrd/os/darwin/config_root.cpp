@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: config_root.cpp,v 1.1 2003-02-13 22:40:42 bellardo Exp $
+ *  $Id: config_root.cpp,v 1.1.2.2 2003-11-11 02:31:42 bellardo Exp $
  */
 
 #include "firebird.h"
@@ -48,6 +48,7 @@
 #include "../jrd/os/path_utils.h"
 #include "../jrd/file_params.h"
 
+#include <CoreServices.framework/Frameworks/CarbonCore.framework/Headers/MacTypes.h>
 #include <CoreFoundation/CFBundle.h>
 #include <CoreFoundation/CFURL.h>
 
@@ -73,15 +74,22 @@ ConfigRoot::ConfigRoot()
 	// Attempt to locate the Firebird.framework bundle
 	if ((fbFramework = CFBundleGetBundleWithIdentifier(
 			CFSTR(DARWIN_FRAMEWORK_ID)) ))
-	if ((msgFileUrl = CFBundleCopyResourceURL( fbFramework,
-			CFSTR(DARWIN_GEN_DIR), NULL, NULL)))
-	if ((msgFilePath = CFURLCopyFileSystemPath(msgFileUrl,
-			kCFURLPOSIXPathStyle)))
-	if ((CFStringGetCString(msgFilePath, file_buff, MAXPATHLEN,
-			kCFStringEncodingMacRoman )) )
 	{
-		root_dir = file_buff;
-		return;
+		if ((msgFileUrl = CFBundleCopyResourceURL( fbFramework,
+			CFSTR(DARWIN_GEN_DIR), NULL, NULL)))
+		{
+			if ((msgFilePath = CFURLCopyFileSystemPath(msgFileUrl,
+				kCFURLPOSIXPathStyle)))
+			{
+				if ((CFStringGetCString(msgFilePath, file_buff, MAXPATHLEN,
+					kCFStringEncodingMacRoman )) )
+				{
+					root_dir = file_buff;
+					root_dir += PathUtils::dir_sep;
+					return;
+				}
+			}
+		}
 	}
 
 	// As a last resort get it from the default install directory

@@ -1,8 +1,8 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		flu_proto.h
- *	DESCRIPTION:	Prototype header file for flu.cpp, functions.cpp,
- *			builtin.cpp and qatest.cpp
+ *	DESCRIPTION:	Prototype header file for flu.c, functions.c, builtin.c,
+ *			and qatest.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -22,21 +22,18 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_FLU_PROTO_H
-#define JRD_FLU_PROTO_H
+#ifndef _JRD_FLU_PROTO_H_
+#define _JRD_FLU_PROTO_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-mod*	FLU_lookup_module(TEXT*);
-void	FLU_unregister_module(mod*);
-// int (*ISC_lookup_entrypoint(TEXT*, TEXT*, const TEXT*, bool)) (void);
-// int (*FUNCTIONS_entrypoint(TEXT*, TEXT*)) (void);
-// int (*BUILTIN_entrypoint(TEXT*, TEXT*)) (void);
-FPTR_INT ISC_lookup_entrypoint(TEXT*, TEXT*, const TEXT*, bool);
-FPTR_INT FUNCTIONS_entrypoint(const char*, const char*);
-FPTR_INT BUILTIN_entrypoint(const TEXT*, const TEXT*);
+extern struct mod *DLL_EXPORT FLU_lookup_module(TEXT *);
+extern void DLL_EXPORT FLU_unregister_module(struct mod *);
+extern int (*ISC_lookup_entrypoint(TEXT *, TEXT *, TEXT *, bool)) (void);
+extern int (*FUNCTIONS_entrypoint(TEXT *, TEXT *)) (void);
+extern int (*BUILTIN_entrypoint(TEXT *, TEXT *)) (void);
 
 /*
    This shouldn't be in a production server,
@@ -47,12 +44,11 @@ FPTR_INT BUILTIN_entrypoint(const TEXT*, const TEXT*);
    
 */
 
-/*int		       QATEST_entrypoint (ULONG *, void *, void *, void *);
+/*extern int		       QATEST_entrypoint (ULONG *, void *, void *, void *);
 */
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-#endif // JRD_FLU_PROTO_H
-
+#endif /* _JRD_FLU_PROTO_H_ */

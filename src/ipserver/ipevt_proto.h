@@ -1,7 +1,7 @@
 /*
  * PROGRAM: JRD Access Method
  * MODULE: ipevt_proto.h
- * DESCRIPTION: Prototype header file for ipcevent.cpp
+ * DESCRIPTION: Prototype header file for ipcevent.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -22,10 +22,9 @@
  */
 
 
-#ifndef IPEVT_PROTO_H
-#define IPEVT_PROTO_H
+#ifndef _IPEVT_PROTO_H_
+#define _IPEVT_PROTO_H_
 
-int IPC_window_init(char*, char*, HWND*, HANDLE);
+extern int IPC_window_init(char *, char *, HWND *, HANDLE);
 
-#endif /* IPEVT_PROTO_H */
-
+#endif /* _IPEVT_PROTO_H_ */

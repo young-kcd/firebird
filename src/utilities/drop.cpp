@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: drop.cpp,v 1.28 2004-05-17 10:15:52 brodsom Exp $
+ * $Id: drop.cpp,v 1.19 2003-04-16 10:18:35 aafemt Exp $
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
@@ -30,7 +30,7 @@
 */
 
 #include "firebird.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 #include <errno.h>
 #include <sys/param.h>
 #include <sys/stat.h>
@@ -55,24 +55,26 @@
 #if HAVE_SYS_WAIT_H
 # include <sys/wait.h>
 #endif
+#ifndef WEXITSTATUS
+# define WEXITSTATUS(stat_val) ((unsigned)(stat_val) >> 8)
+#endif
+#ifndef WIFEXITED
+# define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
+#endif
 
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
 
-const int FTOK_KEY		= 15;
+#define FTOK_KEY		15
 
-#ifndef HAVE_MMAP
 static void dummy_init(void);
-#endif
 static SLONG get_key(TEXT *);
-static void remove_resource(const TEXT*, SLONG, SLONG, const TEXT*);
+static void remove_resource(TEXT *, SLONG, SLONG, TEXT *);
 static int sem_exclusive(SLONG, SLONG);
-#ifndef HAVE_MMAP
 static int shm_exclusive(SLONG, SLONG);
-#endif
 #ifdef MANAGER_PROCESS
-static void shut_manager(const TEXT*);
+static void shut_manager(TEXT *);
 #endif
 
 static int orig_argc;
@@ -92,15 +94,14 @@ int CLIB_ROUTINE main( int argc, char *argv[])
  *
  **************************************/
 	SCHAR **end, *p;
-	bool sw_lockmngr = false;
-	bool sw_events = false;
-	bool sw_version = false;
-	bool sw_nobridge = false;
-	bool sw_shutmngr = false;
+	BOOLEAN sw_lockmngr, sw_events, sw_version, sw_nobridge,
+		sw_shutmngr;
 
 	orig_argc = argc;
 	orig_argv = argv;
 
+	sw_lockmngr = sw_events = sw_version = sw_nobridge =
+		sw_shutmngr = FALSE;
 	end = argv + argc;
 	while (++argv < end)
 		if (**argv == '-')
@@ -108,36 +109,36 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 				switch (UPPER(*p)) {
 
 				case 'E':
-					sw_events = true;
+					sw_events = TRUE;
 					break;
 
 				case 'L':
-					sw_lockmngr = true;
+					sw_lockmngr = TRUE;
 					break;
 
 				case 'A':
-					sw_events = sw_lockmngr = true;
+					sw_events = sw_lockmngr = TRUE;
 					break;
 
 				case 'S':
-					sw_shutmngr = sw_nobridge = true;
+					sw_shutmngr = sw_nobridge = TRUE;
 					break;
 
 				case 'N':
-					sw_nobridge = true;
+					sw_nobridge = TRUE;
 					break;
 
 				case 'Z':
-					sw_version = true;
+					sw_version = TRUE;
 					break;
 
 				default:
-					printf("***Ignoring unknown switch %c.\n", *p);
+					ib_printf("***Ignoring unknown switch %c.\n", *p);
 					break;
 				}
 
 	if (sw_version)
-		printf("gds_drop version %s\n", GDS_VERSION);
+		ib_printf("gds_drop version %s\n", GDS_VERSION);
 
 	if (sw_events)
 		remove_resource(EVENT_FILE, Config::getEventMemSize(), EVENT_SEMAPHORES,
@@ -156,7 +157,6 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 }
 
 
-#ifndef HAVE_MMAP
 static void dummy_init(void)
 {
 /**************************************
@@ -170,7 +170,7 @@ static void dummy_init(void)
  *
  **************************************/
 }
-#endif
+
 
 static SLONG get_key( TEXT * filename)
 {
@@ -201,8 +201,8 @@ static SLONG get_key( TEXT * filename)
 
 #ifndef HAVE_MMAP
 static void remove_resource(
-							const TEXT* filename,
-							SLONG shm_length, SLONG sem_count, const TEXT* label)
+							TEXT * filename,
+							SLONG shm_length, SLONG sem_count, TEXT * label)
 {
 /**************************************
  *
@@ -239,44 +239,43 @@ static void remove_resource(
 	if (!ISC_map_file
 		(status_vector, expanded_filename, dummy_init, 0, shm_length,
 		 &shmem_data)) {
-		printf("\n***Unable to access %s resources:\n", label);
+		ib_printf("\n***Unable to access %s resources:\n", label);
 		gds__print_status(status_vector);
 		return;
 	}
 
 	if ((key = get_key(expanded_filename)) == -1) {
-		printf("\n***Unable to get the key value of the %s file.\n",
+		ib_printf("\n***Unable to get the key value of the %s file.\n",
 				  label);
 		return;
 	}
 
 	if ((shmid = shm_exclusive(key, shmem_data.sh_mem_length_mapped)) == -1 ||
-		(semid = sem_exclusive(key, sem_count)) == -1) 
-	{
-		printf("\n***File or semaphores for %s are currently in use.\n",
+		(semid = sem_exclusive(key, sem_count)) == -1) {
+		ib_printf("\n***File or semaphores for %s are currently in use.\n",
 				  label);
 		return;
 	}
 
 	if (shmctl(shmid, IPC_RMID, 0) == -1)
-		printf("\n***Error trying to drop %s file.  ERRNO = %d.\n", label,
+		ib_printf("\n***Error trying to drop %s file.  ERRNO = %d.\n", label,
 				  errno);
 	else
-		printf("Successfully removed %s file.\n", label);
+		ib_printf("Successfully removed %s file.\n", label);
 
 	if (semctl(semid, sem_count, IPC_RMID, 0) == -1)
-		printf("\n***Error trying to drop %s semaphores.  ERRNO = %d.\n",
+		ib_printf("\n***Error trying to drop %s semaphores.  ERRNO = %d.\n",
 				  label, errno);
 	else
-		printf("Successfully removed %s semaphores.\n", label);
+		ib_printf("Successfully removed %s semaphores.\n", label);
 }
 #endif
 
 
 #ifdef HAVE_MMAP
 static void remove_resource(
-							const TEXT* filename,
-							SLONG shm_length, SLONG sem_count, const TEXT* label)
+							TEXT * filename,
+							SLONG shm_length, SLONG sem_count, TEXT * label)
 {
 /**************************************
  *
@@ -315,13 +314,13 @@ static void remove_resource(
 	gds__prefix_lock(expanded_filename, filename);
 
 	if ((key = get_key(expanded_filename)) == -1) {
-		printf("\n***Unable to get the key value of the %s file.\n",
+		ib_printf("\n***Unable to get the key value of the %s file.\n",
 				  label);
 		return;
 	}
 
 	if ((semid = sem_exclusive(key, sem_count)) == -1) {
-		printf("\n***Semaphores for %s are currently in use.\n", label);
+		ib_printf("\n***Semaphores for %s are currently in use.\n", label);
 		return;
 	}
 
@@ -331,10 +330,10 @@ static void remove_resource(
 	#else
 	if (semctl(semid, sem_count, IPC_RMID, 0) == -1)
 	#endif
-		printf("\n***Error trying to drop %s semaphores.  ERRNO = %d.\n",
+		ib_printf("\n***Error trying to drop %s semaphores.  ERRNO = %d.\n",
 				  label, errno);
 	else
-		printf("Successfully removed %s semaphores.\n", label);
+		ib_printf("Successfully removed %s semaphores.\n", label);
 }
 #endif
 
@@ -355,7 +354,7 @@ static int sem_exclusive( SLONG key, SLONG count)
  **************************************/
 	int semid;
 
-#if !(defined sun || defined LINUX || defined FREEBSD || defined NETBSD || defined SINIXZ)
+#if !(defined SUNOS4 || defined LINUX || defined FREEBSD || defined NETBSD || defined SINIXZ)
 	return semget(key, (int) count, IPC_EXCL);
 #else
 	if ((semid = semget(key, (int) count, IPC_EXCL)) != -1)
@@ -394,7 +393,7 @@ static int shm_exclusive( SLONG key, SLONG length)
 
 
 #ifdef MANAGER_PROCESS
-static void shut_manager(const TEXT* label)
+static void shut_manager( TEXT * label)
 {
 /**************************************
  *
@@ -412,7 +411,7 @@ static void shut_manager(const TEXT* label)
 
 	if (!(strcmp(label, "lock manager"))) {
 		owner_handle = 0;
-		LOCK_init(status_vector, false, getpid(), 0, &owner_handle);
+		LOCK_init(status_vector, FALSE, getpid(), 0, &owner_handle);
 
 		/* In case if lock manager is not running, LOCK_init starts it.
 		   It takes time for the manager to be started, hence immediately

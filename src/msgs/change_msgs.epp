@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Interbase Message file edit program
- *	MODULE:		change_msgs.epp
+ *	MODULE:		change_msgs.e
  *	DESCRIPTION:	Allow limited change of messages in database
  *
  * The contents of this file are subject to the Interbase Public
@@ -22,8 +22,8 @@
  */
 
 #include "firebird.h"
-#include <stdio.h>
-#include "../jrd/ibase.h"
+#include "../jrd/ib_stdio.h"
+#include "../jrd/gds.h"
 #include "../jrd/common.h"
 
 #include <stdlib.h>
@@ -36,22 +36,22 @@
 
 DATABASE DB = "msg.fdb";
 
-//#define FAC_SQL_POSITIVE	14
-//#define FAC_SQL_NEGATIVE	13
+#define FAC_SQL_POSITIVE	14
+#define FAC_SQL_NEGATIVE	13
 
-const char LOWER_A	= 'a';
-const char UPPER_A	= 'A';
-const char LOWER_Z	= 'z';
-const char UPPER_Z	= 'Z';
+#define LOWER_A         'a'
+#define UPPER_A         'A'
+#define LOWER_Z         'z'
+#define UPPER_Z         'Z'
 
 static void ascii_str_upper(UCHAR *);
 static void explicit_print(TEXT *);
-static bool get_sql_class(UCHAR *);
-static bool get_sql_subclass(UCHAR *);
+static int get_sql_class(UCHAR *);
+static int get_sql_subclass(UCHAR *);
 #ifdef NOT_USED_OR_REPLACED
-static bool get_symbol(UCHAR *);
+static int get_symbol(UCHAR *);
 #endif
-static bool mustget(SCHAR *);
+static SSHORT mustget(SCHAR *);
 static int translate(SCHAR *, SCHAR *, SSHORT);
 
 
@@ -76,21 +76,21 @@ int main( int argc, char **argv)
 	SSHORT sql_number;
 	SSHORT msg_number;
 
-	printf("\nHit Ctrl-D (or Ctrl-Z) at prompt to exit level\n");
-	printf
+	ib_printf("\nHit Ctrl-D (or Ctrl-Z) at prompt to exit level\n");
+	ib_printf
 		("You will be prompted for facility, module, routine and message text\n");
-	printf
+	ib_printf
 		("You *must* enter module and routine names for each message; be prepared\n");
-	printf("You may assign an optional symbol for the message\n");
-	printf
+	ib_printf("You may assign an optional symbol for the message\n");
+	ib_printf
 		("Escape sequences may be entered and will be translated to single bytes\n");
 
 	READY;
 	START_TRANSACTION;
 
 	for (;;) {
-		printf("Facility: ");
-		if (!gets(facility))
+		ib_printf("Facility: ");
+		if (!ib_gets(facility))
 			break;
 		count = 0;
 		msg_number = 0;
@@ -98,10 +98,10 @@ int main( int argc, char **argv)
 		FOR X IN FACILITIES WITH X.FACILITY = facility
 			count++;
 			for (;;) {
-				bool sys_error = false;
+				BOOLEAN sys_error = FALSE;
 
-				printf("Message number (%d) ? ", msg_number + 1);
-				if (!gets(input))
+				ib_printf("Message number (%d) ? ", msg_number + 1);
+				if (!ib_gets(input))
 					break;
 				if (!input[0])
 					msg_number++;
@@ -109,47 +109,47 @@ int main( int argc, char **argv)
 					msg_number = atoi(input);
 				if (msg_number <= 0)
 					break;
-				printf("Facility: %s\n", X.FACILITY);
+				ib_printf("Facility: %s\n", X.FACILITY);
 				FOR Y IN MESSAGES WITH
 					Y.FAC_CODE EQ X.FAC_CODE AND Y.NUMBER EQ msg_number;
 
-					printf(" Message: %d\n", Y.NUMBER);
-					printf("  Module: %s\n", Y.MODULE);
-					printf(" Routine: %s\n", Y.ROUTINE);
-					printf("    Text: ");
+					ib_printf(" Message: %d\n", Y.NUMBER);
+					ib_printf("  Module: %s\n", Y.MODULE);
+					ib_printf(" Routine: %s\n", Y.ROUTINE);
+					ib_printf("    Text: ");
 					explicit_print(Y.TEXT);
-					printf("\n");
-					printf("  Symbol: %s\n", Y.SYMBOL);
+					ib_printf("\n");
+					ib_printf("  Symbol: %s\n", Y.SYMBOL);
 				END_FOR
 
 				FOR Z IN SYSTEM_ERRORS WITH X.FAC_CODE EQ Z.FAC_CODE AND
 					Z.NUMBER EQ msg_number;
-					printf("SQLCODE: %d\n", Z.SQL_CODE);
-					printf("   SQL_CLASS:    %s\n", Z.SQL_CLASS);
-					printf("SQL_SUBCLASS: %s\n", Z.SQL_SUBCLASS);
-					sys_error = true;
+					ib_printf("SQLCODE: %d\n", Z.SQL_CODE);
+					ib_printf("   SQL_CLASS:    %s\n", Z.SQL_CLASS);
+					ib_printf("SQL_SUBCLASS: %s\n", Z.SQL_SUBCLASS);
+					sys_error = TRUE;
 				END_FOR
 
-				printf(" Modify? ");
+				ib_printf(" Modify? ");
 				if (mustget(yesno) && (yesno[0] == 'y' || yesno[0] == 'Y')) {
 					module[0] = 0;
-					printf(" Module: ");
-					if (!gets(module))
+					ib_printf(" Module: ");
+					if (!ib_gets(module))
 						break;
 					routine[0] = 0;
-					printf("Routine: ");
-					if (!gets(routine))
+					ib_printf("Routine: ");
+					if (!ib_gets(routine))
 						break;
 					text[0] = 0;
-					printf("   Text: ");
-					if (!gets(text))
+					ib_printf("   Text: ");
+					if (!ib_gets(text))
 						break;
 					symbol[0] = 0;
-					printf(" Symbol: ");
-					if (!gets(symbol))
+					ib_printf(" Symbol: ");
+					if (!ib_gets(symbol))
 						break;
 					if (sys_error || X.FAC_CODE == 0) {
-						printf("SQLCODE: ");
+						ib_printf("SQLCODE: ");
 						if (mustget(nstring))
 							sql_number = atoi(nstring);
 						if (!get_sql_class(sql_class))
@@ -168,10 +168,10 @@ int main( int argc, char **argv)
 							if (text[0])
 								while (!translate
 									   (text, Y.TEXT, sizeof(Y.TEXT))) {
-									printf
+									ib_printf
 										("Message too long: max length: %d\n",
 										 sizeof(Y.TEXT));
-									mustget(text);
+									(void) mustget(text);
 								}
 							if (symbol[0])
 								strcpy(Y.SYMBOL, (char*) symbol);
@@ -195,18 +195,18 @@ int main( int argc, char **argv)
 			}
 		END_FOR;
 		if (!count) {
-			printf("Facilty %s not found\n  Known facilities are:\n",
+			ib_printf("Facilty %s not found\n  Known facilities are:\n",
 					  facility);
 			FOR F IN FACILITIES SORTED BY F.FACILITY
-				printf("    %s\n", F.FACILITY);
+				ib_printf("    %s\n", F.FACILITY);
 			END_FOR;
 		}
 	}
 
-	printf("\n\nCommitting changes...");
+	ib_printf("\n\nCommitting changes...");
 	COMMIT;
 	FINISH;
-	printf("done.\n");
+	ib_printf("done.\n");
 
 	exit(FINI_OK);
 }
@@ -256,49 +256,49 @@ static void explicit_print( TEXT * string)
 	while (*p) {
 		switch (*p) {
 		case '\n':
-			putchar('\\');
-			putchar('n');
+			ib_putchar('\\');
+			ib_putchar('n');
 			break;
 		case '\t':
-			putchar('\\');
-			putchar('t');
+			ib_putchar('\\');
+			ib_putchar('t');
 			break;
 		case '\f':
-			putchar('\\');
-			putchar('f');
+			ib_putchar('\\');
+			ib_putchar('f');
 			break;
 		case '\b':
-			putchar('\\');
-			putchar('b');
+			ib_putchar('\\');
+			ib_putchar('b');
 			break;
 		case '\r':
-			putchar('\\');
-			putchar('r');
+			ib_putchar('\\');
+			ib_putchar('r');
 			break;
 		case '\v':
-			putchar('\\');
+			ib_putchar('\\');
 			break;
 		case '\\':
-			putchar('\\');
-			putchar('\\');
+			ib_putchar('\\');
+			ib_putchar('\\');
 			break;
 		case '\"':
-			putchar('\\');
-			putchar('\"');
+			ib_putchar('\\');
+			ib_putchar('\"');
 			break;
 		case '\'':
-			putchar('\\');
-			putchar('\'');
+			ib_putchar('\\');
+			ib_putchar('\'');
 			break;
 		default:
-			putchar(*p);
+			ib_putchar(*p);
 		}
 		*p++;
 	}
 }
 
 
-static bool get_sql_class( UCHAR * sql_class)
+static int get_sql_class( UCHAR * sql_class)
 {
 /**************************************
  *
@@ -308,29 +308,29 @@ static bool get_sql_class( UCHAR * sql_class)
  *
  * Functional description
  *	get a two character sql_class string
- *	return true if we get one, otherwise false
+ *	return TRUE if we get one, otherwise FALSE
  *
  **************************************/
 	SSHORT length;
 
 	while (1) {
-		printf("   SQLCLASS: ");
-		gets((char*) sql_class);
+		ib_printf("   SQLCLASS: ");
+		ib_gets((char*) sql_class);
 		length = strlen((char*) sql_class);
 		if (!length)
 			break;
 
 		if (length == 2)
-			return true;
+			return TRUE;
 		else
-			fprintf(stderr, "Sqlclass is two characters!\n");
+			ib_fprintf(ib_stderr, "Sqlclass is two characters!\n");
 	}
 
-	return false;
+	return FALSE;
 }
 
 
-static bool get_sql_subclass( UCHAR * sql_sub_class)
+static int get_sql_subclass( UCHAR * sql_sub_class)
 {
 /**************************************
  *
@@ -340,28 +340,28 @@ static bool get_sql_subclass( UCHAR * sql_sub_class)
  *
  * Functional description
  *	get a three character sql_subclass string
- *	return true if we get one, otherwise false
+ *	return TRUE if we get one, otherwise FALSE
  *
  **************************************/
 	SSHORT length;
 
 	while (1) {
-		printf("SQLSUBCLASS: ");
-		gets((char*) sql_sub_class);
+		ib_printf("SQLSUBCLASS: ");
+		ib_gets((char*) sql_sub_class);
 		length = strlen((char*) sql_sub_class);
 		if (!length)
 			break;
 
 		if (length == 3)
-			return true;
+			return TRUE;
 		else
-			fprintf(stderr, "Sqlsubclass is three characters!\n");
+			ib_fprintf(ib_stderr, "Sqlsubclass is three characters!\n");
 	}
-	return false;
+	return FALSE;
 }
 
 #ifdef NOT_USED_OR_REPLACED
-static bool get_symbol( UCHAR * symbol)
+static int get_symbol( UCHAR * symbol)
 {
 /**************************************
  *
@@ -371,20 +371,20 @@ static bool get_symbol( UCHAR * symbol)
  *
  * Functional description
  *	insist on getting the symbol
- *	return true when we get one
+ *	return TRUE when we get one
  *
  **************************************/
-	while (true) {
-		fprintf(stderr, "Symbols are required for system errors!\n");
-		printf(" Symbol: ");
-		gets((char*) symbol);
+	while (TRUE) {
+		ib_fprintf(ib_stderr, "Symbols are required for system errors!\n");
+		ib_printf(" Symbol: ");
+		ib_gets((char*) symbol);
 		if (strlen((char*) symbol))
-			return true;
+			return TRUE;
 	}
 }
 #endif
 
-static bool mustget( SCHAR * s)
+static SSHORT mustget( SCHAR * s)
 {
 /**************************************
  *
@@ -393,13 +393,13 @@ static bool mustget( SCHAR * s)
  **************************************
  *
  * Functional description
- *	gets & returns a string.  Returns false
+ *	gets & returns a string.  Returns FALSE
  *	if string is empty.
  *
  **************************************/
 
-	if (!gets((char*) s))
-		return false;
+	if (!ib_gets((char*) s))
+		return FALSE;
 
 	return (s[0] != 0);
 }
@@ -460,7 +460,7 @@ static int translate( SCHAR * source, SCHAR * target, SSHORT length)
 				*p++ = '\'';
 				break;
 			default:
-				printf
+				ib_printf
 					("\n\n*** Escape sequence not understood; being copied unchanged ***\n\n");
 				*p++ = '\\';
 				*p++ = *q;

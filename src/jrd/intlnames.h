@@ -51,7 +51,7 @@
  *	Note: "name" is official name per InterBase
  */
 
-#ifndef INTL_COMPONENT_FB
+#ifndef _INTL_COMPONENT_
 
 CHARSET("NONE", CS_NONE, 0, 1, 256, cs_none_init, dummy)
 	END_CHARSET CHARSET("OCTETS", CS_BINARY, 0, 1, 256, cs_binary_init, dummy)
@@ -68,7 +68,6 @@ CHARSET("NONE", CS_NONE, 0, 1, 256, cs_none_init, dummy)
     CSALIAS("UTF-8", CS_UNICODE_FSS) /* Prefered MIME name */
 	END_CHARSET
 #endif
-
 /* V3 SUB_TYPE 220 */
 	CHARSET("SJIS_0208", CS_SJIS, 0, 2, 7007, CS_sjis, JIS220_init)
 	CSALIAS("SJIS", CS_SJIS)
@@ -205,6 +204,8 @@ CHARSET("ISO8859_13", CS_ISO8859_13, 0, 1, 256, CS_iso_ISO8859_13, ISO885913_cp_
 	CSALIAS("ISO885913", CS_ISO8859_13)
 	CSALIAS("LATIN7", CS_ISO8859_13)
 	CSALIAS("ISO-8859-13", CS_ISO8859_13)	/* Prefered MIME name */
+	/* Lithuanian national collation */
+	COLLATION("LT_LT", CC_LITHUANIA, CS_ISO8859_13, 1, ISO885913_c1_init)
 	END_CHARSET
 CHARSET("DOS852", CS_DOS_852, 0, 1, 256, CS_dos_852, DOS852_c0_init)
 CSALIAS("DOS_852", CS_DOS_852)

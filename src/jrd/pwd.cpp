@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		pwd.cpp
+ *	MODULE:		pwd.e
  *	DESCRIPTION:	User information database access
  *
  * The contents of this file are subject to the Interbase Public
@@ -26,19 +26,14 @@
 #include "firebird.h"
 #include <string.h>
 #include <stdlib.h>
-#include "../jrd/common.h"
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../jrd/jrd.h"
 #include "../jrd/jrd_pwd.h"
 #include "../jrd/enc_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/sch_proto.h"
-#include "../jrd/thd.h"
-#include "../jrd/thread_proto.h"
-#include "../jrd/jrd_proto.h"
-
-using namespace Jrd;
+#include "../jrd/thd_proto.h"
 
 #ifdef SUPERSERVER
 const bool SecurityDatabase::is_cached = true;
@@ -46,7 +41,7 @@ const bool SecurityDatabase::is_cached = true;
 const bool SecurityDatabase::is_cached = false;
 #endif
 
-// BLR to search database for user name record
+/* BLR to search database for user name record */
 
 const UCHAR SecurityDatabase::PWD_REQUEST[256] = {
 	blr_version5,
@@ -94,7 +89,7 @@ const UCHAR SecurityDatabase::PWD_REQUEST[256] = {
 	blr_eoc
 };
 
-// Transaction parameter buffer
+/* Transaction parameter buffer */
 
 const UCHAR SecurityDatabase::TPB[4] = {
 	isc_tpb_version1,
@@ -103,15 +98,41 @@ const UCHAR SecurityDatabase::TPB[4] = {
 	isc_tpb_wait
 };
 
-// Static instance of the database
+/* Static instance of the database */
 
 SecurityDatabase SecurityDatabase::instance;
 
 
 /******************************************************************************
  *
+ *	Constructor & destructor
+ */
+
+SecurityDatabase::SecurityDatabase()
+	: lookup_db(0), lookup_req(0), counter(0) 
+{
+	THD_MUTEX_INIT(&mutex);
+}
+
+SecurityDatabase::~SecurityDatabase()
+{
+	THD_MUTEX_DESTROY(&mutex);
+}
+
+/******************************************************************************
+ *
  *	Private interface
  */
+
+void SecurityDatabase::lock()
+{
+	THD_MUTEX_LOCK(&mutex);
+}
+
+void SecurityDatabase::unlock()
+{
+	THD_MUTEX_UNLOCK(&mutex);
+}
 
 void SecurityDatabase::fini()
 {
@@ -119,9 +140,9 @@ void SecurityDatabase::fini()
 #ifndef EMBEDDED
 	if (counter == 1 && lookup_db)
 	{
-		THREAD_EXIT();
+		THREAD_EXIT;
 		isc_detach_database(status, &lookup_db);
-		THREAD_ENTER();
+		THREAD_ENTER;
 	}
 #endif
 }
@@ -133,11 +154,11 @@ void SecurityDatabase::init()
 
 bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * pwd)
 {
-	bool found = false;		// user found flag
+	bool notfound = true;	// user found flag
 	TEXT uname[129];		// user name buffer
 	user_record user;		// user record
 
-	// Start by clearing the output data
+	/* Start by clearing the output data */
 
 	if (uid)
 		*uid = 0;
@@ -148,7 +169,7 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 
 	strncpy(uname, user_name, 129);
 
-	// Attach database and compile request
+	/* Attach database and compile request */
 
 	if (!prepare())
 	{
@@ -156,18 +177,18 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 		{
 			isc_detach_database(status, &lookup_db);
 		}
-		THREAD_ENTER();
-		ERR_post(isc_psw_attach, 0);
+		THREAD_ENTER;
+		ERR_post(gds_psw_attach, 0);
 	}
 
-	// Lookup
+	/* Lookup */
 
 	isc_tr_handle lookup_trans = 0;
 
 	if (isc_start_transaction(status, &lookup_trans, 1, &lookup_db, sizeof(TPB), TPB))
 	{
-		THREAD_ENTER();
-		ERR_post(isc_psw_start_trans, 0);
+		THREAD_ENTER;
+		ERR_post(gds_psw_start_trans, 0);
 	}
 
 	if (!isc_start_and_send(status, &lookup_req, &lookup_trans, 0, sizeof(uname), uname, 0))
@@ -177,7 +198,7 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 			isc_receive(status, &lookup_req, 1, sizeof(user), &user, 0);
 			if (!user.flag || status[1])
 				break;
-			found = true;
+			notfound = false;
 			if (uid)
 				*uid = user.uid;
 			if (gid)
@@ -193,52 +214,73 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 	{
 		isc_detach_database(status, &lookup_db);
 	}
-	THREAD_ENTER();
+	THREAD_ENTER;
 
-	return found;
+	return notfound;
 }
 
 bool SecurityDatabase::prepare()
 {
 	TEXT user_info_name[MAXPATHLEN];
+	IHNDL ihandle;
 	SCHAR* dpb;
 	SCHAR dpb_buffer[256];
 	SSHORT dpb_len;
 
+	/* dimitr: access to the class members in this routine should be synchronized
+			   when fine grained locking will be implemented for the SS architecture */
+
 	if (lookup_db)
 	{
-		THREAD_EXIT();
+		THREAD_EXIT;
 		return true;
 	}
 
-	THREAD_EXIT();
+	/* Register as internal database handle */
+
+	for (ihandle = internal_db_handles; ihandle; ihandle = ihandle->ihndl_next)
+	{
+		if (ihandle->ihndl_object == NULL)
+		{
+			ihandle->ihndl_object = &lookup_db;
+			break;
+		}
+	}
+
+	if (!ihandle)
+	{
+		ihandle = (IHNDL) gds__alloc ((SLONG) sizeof(struct ihndl));
+		ihandle->ihndl_object = &lookup_db;
+		ihandle->ihndl_next = internal_db_handles;
+		internal_db_handles = ihandle;
+	}
+
+	THREAD_EXIT;
 
 	lookup_db = lookup_req = 0;
 
-	// Initialize the database name
+	/* initialize the data base's name */
 
 	getPath(user_info_name);
 
-	// Perhaps build up a dpb
+	/* Perhaps build up a dpb */
 
 	dpb = dpb_buffer;
 
-	*dpb++ = isc_dpb_version1;
+	*dpb++ = gds_dpb_version1;
 
-	// Insert username
-
+	// insert username
 	static const char szAuthenticator[] = "authenticator";
 	const size_t nAuthNameLen = strlen(szAuthenticator);
-	*dpb++ = isc_dpb_user_name;
+	*dpb++ = gds_dpb_user_name;
 	*dpb++ = nAuthNameLen;
 	memcpy(dpb, szAuthenticator, nAuthNameLen);
 	dpb += nAuthNameLen;
 
-	// Insert password
-
+	// insert password
 	static const char szPassword[] = "none";
 	const size_t nPswdLen = strlen(szPassword);
-	*dpb++ = isc_dpb_password;
+	*dpb++ = gds_dpb_password;
 	*dpb++ = nPswdLen;
 	memcpy(dpb, szPassword, nPswdLen);
 	dpb += nPswdLen;
@@ -248,24 +290,22 @@ bool SecurityDatabase::prepare()
 	*dpb++ = TRUE;					// Parameter value
 
 	dpb_len = dpb - dpb_buffer;
-	
-	// Temporarily disable security checks for this thread
-	JRD_thread_security_disable(true);
 
 	isc_attach_database(status, 0, user_info_name, &lookup_db, dpb_len, dpb_buffer);
-	
-	JRD_thread_security_disable(false);
 
-	if (status[1] == isc_login)
+	if (status[1] == gds_login)
 	{
-		// We may be going against a V3 database which does not
-		// understand this combination
+		/* we may be going against a V3 database which does not
+		 * understand this combination */
 
 		isc_attach_database(status, 0, user_info_name, &lookup_db, 0, 0);
 	}
 
+	assert(ihandle->ihndl_object == &lookup_db);
+	ihandle->ihndl_object = NULL;
+
 	isc_compile_request(status, &lookup_db, &lookup_req, sizeof(PWD_REQUEST),
-						reinterpret_cast<const char*>(PWD_REQUEST));
+						reinterpret_cast<char*>(const_cast<UCHAR*>(PWD_REQUEST)));
 
 	if (status[1])
 	{
@@ -296,59 +336,59 @@ void SecurityDatabase::shutdown()
 }
 
 void SecurityDatabase::verifyUser(TEXT* name,
-								  const TEXT* user_name,
-								  const TEXT* password,
-								  const TEXT* password_enc,
+								  TEXT* user_name,
+								  TEXT* password,
+								  TEXT* password_enc,
 								  int* uid,
 								  int* gid,
 								  int* node_id)
 {
+	bool notfound;
+	TEXT *p, *q, pw1[33], pw2[33], pwt[33];
+
 	if (user_name)
 	{
-		TEXT* p = name;
-		for (const TEXT* q = user_name; *q; ++q, ++p)
+		for (p = name, q = user_name; *q; q++, p++)
 		{
 			*p = UPPER7(*q);
 		}
 		*p = 0;
 	}
 
-#ifndef EMBEDDED
+	/* Look up the user name in the userinfo database and use the parameters
+	   found there.  This means that another database must be accessed, and
+	   that means the current context must be saved and restored. */
 
-	// Look up the user name in the userinfo database and use the parameters
-	// found there. This means that another database must be accessed, and
-	// that means the current context must be saved and restored.
+#ifdef EMBEDDED
+	return;
+#else
+	THREAD_EXIT;
+	instance.lock();
+	THREAD_ENTER;
+	notfound = instance.lookup_user(name, uid, gid, pw1);
+	instance.unlock();
+#endif
 
-	THREAD_EXIT();
-	instance.mutex.aquire();
-	THREAD_ENTER();
-	TEXT pw1[33];
-	const bool found = instance.lookup_user(name, uid, gid, pw1);
-	instance.mutex.release();
+	/* Punt if the user has specified neither a raw nor an encrypted password,
+	   or if the user has specified both a raw and an encrypted password, 
+	   or if the user name specified was not in the password database
+	   (or if there was no password database - it's still not found) */
 
-	// Punt if the user has specified neither a raw nor an encrypted password,
-	// or if the user has specified both a raw and an encrypted password, 
-	// or if the user name specified was not in the password database
-	// (or if there was no password database - it's still not found)
-
-	if ((!password && !password_enc) || (password && password_enc) || !found)
+	if ((!password && !password_enc) ||
+		(password && password_enc) ||
+		notfound)
 	{
-		ERR_post(isc_login, 0);
+		ERR_post(gds_login, 0);
 	}
 
-	TEXT pwt[33];
 	if (password) {
 		strcpy(pwt, ENC_crypt(password, PASSWORD_SALT));
 		password_enc = pwt + 2;
 	}
-	TEXT pw2[33];
 	strcpy(pw2, ENC_crypt(password_enc, PASSWORD_SALT));
 	if (strncmp(pw1, pw2 + 2, 11)) {
-		ERR_post(isc_login, 0);
+		ERR_post(gds_login, 0);
 	}
-
-#endif
 
 	*node_id = 0;
 }
-

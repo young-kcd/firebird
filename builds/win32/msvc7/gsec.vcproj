@@ -32,7 +32,6 @@
 				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE,SUPERCLIENT"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\gsec/gsec.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gsec/"
 				ObjectFile="..\..\..\temp\release\gsec/"
@@ -51,6 +50,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\..\..\temp\release\gsec/gsec.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
@@ -93,7 +93,6 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gsec/gsec.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gsec/"
 				ObjectFile="..\..\..\temp\debug\gsec/"
@@ -146,10 +145,13 @@
 			Name="UTILITITES files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
-				RelativePath="..\..\..\src\utilities\gsec\gsec.cpp">
+				RelativePath="..\..\..\src\common\fb_exception.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\gen\utilities\gsec\security.cpp">
+				RelativePath="..\..\..\src\utilities\gsec.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\gen\utilities\security.cpp">
 			</File>
 		</Filter>
 		<Filter
@@ -166,10 +168,10 @@
 			Name="Header files"
 			Filter="h;hpp;hxx;hm;inl">
 			<File
-				RelativePath="..\..\..\src\utilities\gsec\gsec.h">
+				RelativePath="..\..\..\src\utilities\gsec.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\gsec\secur_proto.h">
+				RelativePath="..\..\..\src\utilities\secur_proto.h">
 			</File>
 		</Filter>
 		<Filter

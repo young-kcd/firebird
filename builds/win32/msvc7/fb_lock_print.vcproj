@@ -32,7 +32,6 @@
 				PreprocessorDefinitions="NDEBUG,_WINDOWS,CLIENT,SUPERCLIENT,WIN32,_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\fb_lock_print/fb_lock_print.pch"
 				AssemblerListingLocation="..\..\..\temp\release\fb_lock_print/"
 				ObjectFile="..\..\..\temp\release\fb_lock_print/"
@@ -51,6 +50,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\..\..\temp\release\fb_lock_print/fb_lock_print.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
@@ -93,7 +93,6 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\fb_lock_print/fb_lock_print.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\fb_lock_print/"
 				ObjectFile="..\..\..\temp\debug\fb_lock_print/"
@@ -162,7 +161,7 @@
 				RelativePath="..\..\..\src\jrd\isc.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\win32\isc_ipc.cpp">
+				RelativePath="..\..\..\src\jrd\isc_ipc.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc_sync.cpp">

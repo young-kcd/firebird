@@ -27,7 +27,6 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gdef/gdef.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gdef/"
 				ObjectFile="..\..\..\temp\debug\gdef/"
@@ -94,7 +93,6 @@
 				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE,SUPERCLIENT"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\gdef/gdef.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gdef/"
 				ObjectFile="..\..\..\temp\release\gdef/"
@@ -113,6 +111,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\..\..\temp\release\gdef/gdef.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
@@ -192,6 +191,12 @@
 				RelativePath="..\..\..\src\jrd\isc_file.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\llio.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\misc.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\status.cpp">
 			</File>
 		</Filter>
@@ -200,6 +205,13 @@
 			Filter="">
 			<File
 				RelativePath="..\..\..\src\gpre\pretty.cpp">
+			</File>
+		</Filter>
+		<Filter
+			Name="WAL files"
+			Filter="">
+			<File
+				RelativePath="..\..\..\src\wal\walf.cpp">
 			</File>
 		</Filter>
 		<Filter

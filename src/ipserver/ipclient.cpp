@@ -1,6 +1,6 @@
 /*
  *      PROGRAM:        Interprocess Client
- *      MODULE:         ipclient.cpp
+ *      MODULE:         ipclient.c
  *      DESCRIPTION:    Interprocess interface
  *
  * The contents of this file are subject to the Interbase Public
@@ -25,7 +25,7 @@
  */
 
 #include "firebird.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
@@ -35,50 +35,53 @@
 #include <windows.h>
 
 #include "../ipserver/ipc.h"
-#include "gen/iberror.h"
+#include "gen/codes.h"
 #include "../jrd/license.h"
-#include "../jrd/inf_pub.h"
+#include "../jrd/inf.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/db_alias.h"
 #include "../ipserver/alli_proto.h"
 #include "../ipserver/ipcli_proto.h"
 #include "../ipserver/ipevt_proto.h"
-#include "../ipserver/ipapi_proto.h"
 #include "../ipserver/ips.h"
-#include "../jrd/thd.h"
+#include "../jrd/thd_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/sch_proto.h"
-#include "../jrd/thread_proto.h"
-#include "../remote/os/win32/window.h"
+#include "../remote/window.h"
 #include "../common/config/config.h"
+#define NO_PORT
+#include "../remote/xnet_proto.h"
+#undef NO_PORT
 
 #define statistics      stat
+
+extern "C" {
 
 typedef void (*PTR) ();
 
 static ISC_STATUS check_response(ICC, ISC_STATUS *);
 static void clear_statement_cache(IPSERVER_ISR);
 static void clear_transaction_statements(ITR);
-static THREAD_ENTRY_DECLARE event_packer(THREAD_ENTRY_PARAM);
-static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM);
+static void event_packer(ICC);
+static void event_thread(void);
 static void extract_status(ICC, ISC_STATUS *);
 static ISC_STATUS handle_error(ISC_STATUS *, ISC_STATUS);
 static SSHORT init(ISC_STATUS *, ICC *);
-static ITR make_transaction(ISC_STATUS *, IDB, FB_API_HANDLE);
-static SSHORT name_length(const TEXT*);
-static bool pack_strings(ICC);
+static ITR make_transaction(ISC_STATUS *, IDB, FRBRD *);
+static SSHORT name_length(TEXT *);
+static BOOL pack_strings(ICC);
 static void release_blob(IBL);
 static void release_database(IDB);
 static void release_event(IVNT);
 static void release_request(IRQ);
 static void release_sql_request(IPSERVER_ISR);
 static void release_transaction(ITR);
-static bool send_and_wait(ICC);
+static BOOL send_and_wait(ICC);
 static void server_shutdown(void);
-static THREAD_ENTRY_DECLARE server_watcher(THREAD_ENTRY_PARAM);
-static bool unpack_strings(ICC);
+static void server_watcher(void);
+static BOOL unpack_strings(ICC);
 
 
 #define RETURN_ERROR(e)         { THD_mutex_unlock( &mapsect);\
@@ -127,7 +130,7 @@ static bool unpack_strings(ICC);
                         for ( commi = 0; commi < MAX_IPS_STRINGS; commi++)\
                             comm->ips_buffers[commi].ips_flags = 0;
 
-// some macros to set up the strings 
+/* some macros to set up the strings */
 
 #define IPS_CLIENT(c,p,n,a,s,f) { c->ips_buffers[n].ips_cl_size = s;\
 				  c->ips_buffers[n].ips_cl_addr = (UCHAR*)a;\
@@ -146,7 +149,7 @@ static MUTX_T clisect;
 static MUTX_T evtsect;
 static MUTX_T mapsect;
 static LONG interlock = -1;
-static bool initialized = false;
+static BOOLEAN initialized = FALSE;
 static SLONG eventID = 0;
 static HANDLE event_semaphore = 0;
 static HWND event_window = 0;
@@ -218,13 +221,11 @@ static HANDLE server_process_handle = 0;
 
 
 ISC_STATUS GDS_ATTACH_DATABASE(
-						   ISC_STATUS* user_status,
-						   USHORT file_length,
-						   const SCHAR* file_name,
-						   IDB* handle,
-						   USHORT dpb_length, 
-						   const SCHAR* dpb, 
-						   const SCHAR* expanded_filename)
+						   ISC_STATUS * user_status,
+						   USHORT GDS_VAL(file_length),
+						   SCHAR * file_name,
+IDB * handle,
+USHORT GDS_VAL(dpb_length), SCHAR * dpb, SCHAR * expanded_filename)
 {
 /**************************************
  *
@@ -251,24 +252,24 @@ ISC_STATUS GDS_ATTACH_DATABASE(
 	/* make sure handle is valid (should be null coming in) */
 
 	NULL_CHECK(handle, isc_bad_db_handle);
-	if (!(l = file_length))
+	if (!(l = GDS_VAL(file_length)))
 		l = strlen(file_name);
 
-	// remote names should not go through here 
+	/* remote names should not go through here */
 
-	if (ISC_check_if_remote(expanded_filename, true)) {
+	if (ISC_check_if_remote(expanded_filename, TRUE)) {
 		user_status[0] = isc_arg_gds;
 		user_status[1] = isc_unavailable;
 		user_status[2] = isc_arg_end;
 		return user_status[1];
 	}
 
-	// call init to initiate connection 
+	/* call init to initiate connection */
 
 	if (!init(user_status, &icc))
 		return user_status[1];
 
-	// set up communications area 
+	/* set up communications area */
 
 	THD_mutex_lock(&mapsect);
 	comm = (ips_comm_area *) icc->icc_mapped_addr;
@@ -276,11 +277,10 @@ ISC_STATUS GDS_ATTACH_DATABASE(
 		comm->ips_buffers[commi].ips_flags = 0;
 	comm->ips_operation = op_attach;
 	ips = &comm->ips_operations.ips_op_object;
-	Firebird::PathName temp;
+	char temp[MAXPATHLEN];
 	if (ResolveDatabaseAlias(file_name, temp)) {
 		IPS_C_IN(comm, ips_name, IPS_ATTACH_NAME, file_name, l);
-	}
-	else {
+	} else {
 		IPS_C_IN(comm, ips_name, IPS_ATTACH_NAME, 
 				 expanded_filename, strlen(expanded_filename));
 	}
@@ -288,12 +288,12 @@ ISC_STATUS GDS_ATTACH_DATABASE(
 	IPS_C_IN(comm, ips_expanded, IPS_ATTACH_EXPANDED,
 			 expanded_filename, strlen(expanded_filename));
 
-	// send request and wait for response 
+	/* send request and wait for response */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
 
-	// allocate a database structure and link it to thread 
+	/* allocate a database structure and link it to thread */
 
 	idb = (IDB) ALLOC(type_idb);
 	*handle = idb;
@@ -302,16 +302,16 @@ ISC_STATUS GDS_ATTACH_DATABASE(
 	idb->idb_next = icc->icc_databases;
 	idb->idb_thread = icc;
 	icc->icc_databases = idb;
-	idb->idb_handle = (FB_API_HANDLE) (ips->ips_handle);
+	idb->idb_handle = (FRBRD *) (ips->ips_handle);
 	RETURN_SUCCESS;
 }
 
 
-ISC_STATUS GDS_BLOB_INFO(ISC_STATUS* user_status,
-					 IBL* blob,
-					 USHORT item_length,
-					 const UCHAR* items,
-					 USHORT buffer_length, UCHAR* buffer)
+ISC_STATUS GDS_BLOB_INFO(ISC_STATUS * user_status,
+					 IBL * blob,
+					 USHORT GDS_VAL(item_length),
+					 UCHAR * items,
+					 USHORT GDS_VAL(buffer_length), UCHAR * buffer)
 {
 /**************************************
  *
@@ -332,13 +332,13 @@ ISC_STATUS GDS_BLOB_INFO(ISC_STATUS* user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	CHECK_HANDLE((*blob), type_ibl, isc_bad_segstr_handle);
 	idb = (*blob)->ibl_idb;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_info_blob;
@@ -347,7 +347,7 @@ ISC_STATUS GDS_BLOB_INFO(ISC_STATUS* user_status,
 	IPS_C_IN(comm, ips_items, IPS_INFO_ITEMS, items, item_length);
 	IPS_C_OUT(comm, ips_data, IPS_INFO_DATA, buffer, buffer_length);
 
-	// send request and wait for response 
+	/* send request and wait for response */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
@@ -375,14 +375,14 @@ ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS * user_status, IBL * blob_handle)
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	blob = *blob_handle;
 	CHECK_HANDLE(blob, type_ibl, isc_bad_segstr_handle);
 	idb = blob->ibl_idb;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// if blob handle is null, we're done 
+	/* if blob handle is null, we're done */
 
 	blob = *blob_handle;
 	if (!blob) {
@@ -392,14 +392,14 @@ ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS * user_status, IBL * blob_handle)
 		return FB_SUCCESS;
 	}
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_cancel_blob;
 	ips = &comm->ips_operations.ips_op_object;
 	ips->ips_handle = (UCHAR *) (blob->ibl_handle);
 
-	// free object 
+	/* free object */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
@@ -430,12 +430,12 @@ ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS * user_status, IDB * handle, SLONG * id)
 	ICC icc;
 
 
-	// verify handle 
+	/* verify handle */
 
 	idb = *handle;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_cancel_events;
@@ -443,11 +443,11 @@ ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS * user_status, IDB * handle, SLONG * id)
 	ips->ips_handle = (UCHAR *) (idb->idb_handle);
 	ips->ips_parameter = (ULONG) (*id);
 
-	// send request and get response 
+	/* send request and get response */
 
 	result = check_response(icc, user_status);
 
-	// find and neutralize event 
+	/* find and neutralize event */
 
 	for (event = idb->idb_events; event; event = event->ivnt_next)
 		if (event->ivnt_handle == *id)
@@ -455,7 +455,7 @@ ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS * user_status, IDB * handle, SLONG * id)
 	if (event)
 		event->ivnt_id = 0;
 
-	// send response 
+	/* send response */
 
 	if (result)
 		RETURN_ERROR(user_status[1]);
@@ -484,28 +484,28 @@ ISC_STATUS GDS_CLOSE_BLOB(ISC_STATUS * user_status, IBL * blob_handle)
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	blob = *blob_handle;
 	CHECK_HANDLE(blob, type_ibl, isc_bad_segstr_handle);
 	idb = blob->ibl_idb;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_close_blob;
 	ips = &comm->ips_operations.ips_op_object;
 	ips->ips_handle = (UCHAR *) (blob->ibl_handle);
 
-	// send any unsent portion of the blob 
+	/* send any unsent portion of the blob */
 
 	if ((blob->ibl_flags & IBL_create) && blob->ibl_ptr != blob->ibl_buffer) {
 		IPS_C_IN(comm, ips_seg, IPS_CLOSE_BLOB_REM, blob->ibl_buffer,
 				 (blob->ibl_ptr - blob->ibl_buffer));
 	}
 
-	// send request, release blob object and resources 
+	/* send request, release blob object and resources */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
@@ -535,21 +535,21 @@ ISC_STATUS GDS_COMMIT(ISC_STATUS * user_status, ITR * itr_handle)
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	transaction = *itr_handle;
 	CHECK_HANDLE(transaction, type_itr, isc_bad_trans_handle);
 	idb = (*itr_handle)->itr_idb;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_commit;
 	ips = &comm->ips_operations.ips_op_object;
 	ips->ips_handle = (UCHAR *) (transaction->itr_handle);
 
-	// send request, release object and resources 
+	/* send request, release object and resources */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
@@ -581,21 +581,21 @@ ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS * user_status, ITR * itr_handle)
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	transaction = *itr_handle;
 	CHECK_HANDLE(transaction, type_itr, isc_bad_trans_handle);
 	idb = (*itr_handle)->itr_idb;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_commit_retaining;
 	ips = &comm->ips_operations.ips_op_object;
 	ips->ips_handle = (UCHAR *) (transaction->itr_handle);
 
-	// send request 
+	/* send request */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
@@ -603,9 +603,9 @@ ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS * user_status, ITR * itr_handle)
 }
 
 
-ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
-				   IDB* db_handle,
-				   IRQ* req_handle, USHORT blr_length, const UCHAR* blr)
+ISC_STATUS GDS_COMPILE(ISC_STATUS * user_status,
+				   IDB * db_handle,
+				   IRQ * req_handle, USHORT GDS_VAL(blr_length), UCHAR * blr)
 {
 /**************************************
  *
@@ -625,13 +625,13 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	NULL_CHECK(req_handle, isc_bad_req_handle);
 	idb = *db_handle;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_compile;
@@ -639,17 +639,17 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 	ips->ips_db_handle = (UCHAR *) (idb->idb_handle);
 	IPS_C_IN(comm, ips_blr, IPS_COMPILE_REQ, blr, blr_length);
 
-	// send request and wait for response 
+	/* send request and wait for response */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
 
-	// allocate request block 
+	/* allocate request block */
 
 	request = (IRQ) ALLOC(type_irq);
 	*req_handle = request;
 	NOT_NULL(request);
-	request->irq_handle = (FB_API_HANDLE) ips->ips_rq_handle;
+	request->irq_handle = (FRBRD *) ips->ips_rq_handle;
 	request->irq_idb = idb;
 	request->irq_next = idb->idb_requests;
 	idb->idb_requests = request;
@@ -680,7 +680,7 @@ ISC_STATUS GDS_CREATE_BLOB(ISC_STATUS * user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	NULL_CHECK(blob_handle, isc_bad_segstr_handle);
 	idb = *db_handle;
@@ -688,7 +688,7 @@ ISC_STATUS GDS_CREATE_BLOB(ISC_STATUS * user_status,
 	transaction = *itr_handle;
 	CHECK_HANDLE(transaction, type_itr, isc_bad_trans_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_create_blob;
@@ -696,17 +696,17 @@ ISC_STATUS GDS_CREATE_BLOB(ISC_STATUS * user_status,
 	ips->ips_db_handle = (UCHAR *) (idb->idb_handle);
 	ips->ips_tr_handle = (UCHAR *) (transaction->itr_handle);
 
-	// send request and wait for response 
+	/* send request and wait for response */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
 
-	// allocate and fill blob object 
+	/* allocate and fill blob object */
 
 	blob = (IBL) ALLOCV(type_ibl, BLOB_LENGTH);
 	*blob_handle = blob;
 	NOT_NULL(blob);
-	blob->ibl_handle = (FB_API_HANDLE) ips->ips_bl_handle;
+	blob->ibl_handle = (FRBRD *) ips->ips_bl_handle;
 	blob->ibl_buffer_length = BLOB_LENGTH;
 	blob->ibl_idb = idb;
 	blob->ibl_itr = transaction;
@@ -720,11 +720,11 @@ ISC_STATUS GDS_CREATE_BLOB(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
-						IDB* db_handle,
-						ITR* itr_handle,
-						IBL* blob_handle,
-						BID blob_id, USHORT bpb_length, const UCHAR* bpb)
+ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS * user_status,
+						IDB * db_handle,
+						ITR * itr_handle,
+						IBL * blob_handle,
+						BID blob_id, USHORT GDS_VAL(bpb_length), UCHAR * bpb)
 {
 /**************************************
  *
@@ -746,7 +746,7 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	NULL_CHECK(blob_handle, isc_bad_segstr_handle);
 	idb = *db_handle;
@@ -754,7 +754,7 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 	transaction = *itr_handle;
 	CHECK_HANDLE(transaction, type_itr, isc_bad_trans_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_create_blob2;
@@ -763,17 +763,17 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 	ips->ips_tr_handle = (UCHAR *) (transaction->itr_handle);
 	IPS_C_IN(comm, ips_bpb, IPS_BLOB_BPB, bpb, bpb_length);
 
-	// send request and wait for response 
+	/* send request and wait for response */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
 
-	// allocate and fill blob object 
+	/* allocate and fill blob object */
 
 	blob = (IBL) ALLOCV(type_ibl, BLOB_LENGTH);
 	*blob_handle = blob;
 	NOT_NULL(blob);
-	blob->ibl_handle = (FB_API_HANDLE) ips->ips_bl_handle;
+	blob->ibl_handle = (FRBRD *) ips->ips_bl_handle;
 	blob->ibl_buffer_length = BLOB_LENGTH;
 	blob->ibl_idb = idb;
 	blob->ibl_itr = transaction;
@@ -787,14 +787,13 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
-						   USHORT file_length,
-						   const SCHAR* file_name,
-						   IDB* handle,
-						   USHORT dpb_length,
-						   const SCHAR* dpb,
-						   SSHORT db_type,
-						   const SCHAR* expanded_filename)
+ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS * user_status,
+						   USHORT GDS_VAL(file_length),
+						   SCHAR * file_name,
+						   IDB * handle,
+						   USHORT GDS_VAL(dpb_length),
+						   SCHAR * dpb,
+						   SSHORT GDS_VAL(db_type), SCHAR * expanded_filename)
 {
 /**************************************
  *
@@ -817,49 +816,48 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	USHORT commi;
 
 
-	// handle must be null coming in 
+	/* handle must be null coming in */
 
 	NULL_CHECK(handle, isc_bad_db_handle);
-	if (!(l = file_length))
+	if (!(l = GDS_VAL(file_length)))
 		l = strlen(file_name);
 
-	// remote names should not go through here 
+	/* remote names should not go through here */
 
-	if (ISC_check_if_remote(expanded_filename, true)) {
+	if (ISC_check_if_remote(expanded_filename, TRUE)) {
 		user_status[0] = isc_arg_gds;
 		user_status[1] = isc_unavailable;
 		user_status[2] = isc_arg_end;
 		return user_status[1];
 	}
 
-	// initiate a connection 
+	/* initiate a connection */
 
 	if (!init(user_status, &icc))
 		return user_status[1];
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(icc);
 	comm->ips_operation = op_create;
 	ips = &comm->ips_operations.ips_op_object;
-	Firebird::PathName temp;
+	char temp[MAXPATHLEN];
 	if (ResolveDatabaseAlias(file_name, temp)) {
 		IPS_C_IN(comm, ips_name, IPS_CREATE_NAME, file_name, l);
-	}
-	else {
+	} else {
 		IPS_C_IN(comm, ips_name, IPS_CREATE_NAME, 
 				 expanded_filename, strlen(expanded_filename));
 	}
-	IPS_C_IN(comm, ips_dpb, IPS_CREATE_DPB, dpb, dpb_length);
+	IPS_C_IN(comm, ips_dpb, IPS_CREATE_DPB, dpb, GDS_VAL(dpb_length));
 	IPS_C_IN(comm, ips_expanded, IPS_CREATE_EXPANDED,
 			 expanded_filename, strlen(expanded_filename));
 
-	// send request and wait for response 
+	/* send request and wait for response */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
 
-	// allocate a database structure and link it to thread 
+	/* allocate a database structure and link it to thread */
 
 	idb = (IDB) ALLOC(type_idb);
 	*handle = idb;
@@ -868,16 +866,16 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	idb->idb_next = icc->icc_databases;
 	idb->idb_thread = icc;
 	icc->icc_databases = idb;
-	idb->idb_handle = (FB_API_HANDLE) (ips->ips_handle);
+	idb->idb_handle = (FRBRD *) (ips->ips_handle);
 	RETURN_SUCCESS;
 }
 
 
-ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS* user_status,
-						 IDB* handle,
-						 USHORT item_length,
-						 const UCHAR* items,
-						 USHORT buffer_length, UCHAR* buffer)
+ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS * user_status,
+						 IDB * handle,
+						 USHORT GDS_VAL(item_length),
+						 UCHAR * items,
+						 USHORT GDS_VAL(buffer_length), UCHAR * buffer)
 {
 /**************************************
  *
@@ -898,12 +896,12 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS* user_status,
 	ICC icc;
 
 
-	// verify handle 
+	/* verify handle */
 
 	idb = *handle;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_info_database;
@@ -912,7 +910,7 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS* user_status,
 	IPS_C_IN(comm, ips_items, IPS_INFO_ITEMS, items, item_length);
 	IPS_C_OUT(comm, ips_data, IPS_INFO_DATA, buffer, buffer_length);
 
-	// send request and wait for response 
+	/* send request and wait for response */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
@@ -920,9 +918,9 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
-			   IDB* db_handle,
-			   ITR* itr_handle, USHORT length, const UCHAR* msg)
+ISC_STATUS GDS_DDL(ISC_STATUS * user_status,
+			   IDB * db_handle,
+			   ITR * itr_handle, USHORT GDS_VAL(length), UCHAR * msg)
 {
 /**************************************
  *
@@ -943,14 +941,14 @@ ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	idb = *db_handle;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 	transaction = *itr_handle;
 	CHECK_HANDLE(transaction, type_itr, isc_bad_trans_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_ddl;
@@ -959,7 +957,7 @@ ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
 	ips->ips_tr_handle = (UCHAR *) (transaction->itr_handle);
 	IPS_C_IN(comm, ips_ddl_string, IPS_DDL_DDL, msg, length);
 
-	// send request and get response 
+	/* send request and get response */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
@@ -987,18 +985,18 @@ ISC_STATUS GDS_DETACH(ISC_STATUS * user_status, IDB * handle)
 	USHORT commi;
 
 
-	// verify handle 
+	/* verify handle */
 
 	idb = *handle;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	icc = idb->idb_thread;
 	THD_mutex_lock(&mapsect);
 	if (icc->icc_flags & ICCF_SERVER_SHUTDOWN) {
 
-		// if server was shut down, set up vector 
+		/* if server was shut down, set up vector */
 
 		user_status[0] = isc_arg_gds;
 		user_status[1] = FB_SUCCESS;
@@ -1012,7 +1010,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS * user_status, IDB * handle)
 		ips = &comm->ips_operations.ips_op_object;
 		ips->ips_handle = (UCHAR *) (idb->idb_handle);
 
-		// send request and release object 
+		/* send request and release object */
 
 		if (check_response(icc, user_status))
 			if (user_status[1] != isc_lost_db_connection)
@@ -1070,19 +1068,19 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS * user_status, IDB * handle)
 	ICC icc;
 
 
-	// verify handle 
+	/* verify handle */
 
 	idb = *handle;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_drop_database;
 	ips = &comm->ips_operations.ips_op_object;
 	ips->ips_handle = (UCHAR *) (idb->idb_handle);
 
-	// send request and release handle 
+	/* send request and release handle */
 
 	code = check_response(icc, user_status);
 	if (code && (code != isc_drdb_completed_with_errs))
@@ -1134,30 +1132,30 @@ ISC_STATUS GDS_DSQL_ALLOCATE(ISC_STATUS * user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	NULL_CHECK(stmt_handle, isc_bad_req_handle);
 	idb = *db_handle;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_allocate_stmt;
 	ips = &comm->ips_operations.ips_op_dsql;
 	ips->ips_db_handle = (UCHAR *) (idb->idb_handle);
 
-	// send request and wait for response 
+	/* send request and wait for response */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
 
-	// allocate and fill SQL request block 
+	/* allocate and fill SQL request block */
 
 	statement = (IPSERVER_ISR) ALLOC(type_ipserver_isr);
 	*stmt_handle = statement;
 	NOT_NULL(statement);
-	statement->isr_handle = (FB_API_HANDLE) ips->ips_st_handle;
+	statement->isr_handle = (FRBRD *) ips->ips_st_handle;
 	statement->isr_idb = idb;
 	statement->isr_next = idb->idb_sql_requests;
 	statement->isr_batch_flag = 0;
@@ -1190,7 +1188,7 @@ ISC_STATUS GDS_DSQL_EXECUTE(ISC_STATUS * user_status,
 	IDB idb;
 	ITR transaction;
 	IPSERVER_ISR statement;
-	FB_API_HANDLE handle;
+	FRBRD * handle;
 	ips_dsql *ips;
 	ips_string *ips_blr;
 	ips_string *ips_msg;
@@ -1199,7 +1197,7 @@ ISC_STATUS GDS_DSQL_EXECUTE(ISC_STATUS * user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	if (transaction = *itr_handle)
 		CHECK_HANDLE(transaction, type_itr, isc_bad_trans_handle);
@@ -1208,7 +1206,7 @@ ISC_STATUS GDS_DSQL_EXECUTE(ISC_STATUS * user_status,
 	idb = statement->isr_idb;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_execute;
@@ -1222,13 +1220,13 @@ ISC_STATUS GDS_DSQL_EXECUTE(ISC_STATUS * user_status,
 	IPS_C_IN(comm, ips_blr, IPS_DSQL_EXEC_BLR, blr, blr_length);
 	IPS_C_IN(comm, ips_msg, IPS_DSQL_EXEC_MSG, msg, msg_length);
 
-	// send request and wait for response 
+	/* send request and wait for response */
 
-	check_response(icc, user_status);
+	(void) check_response(icc, user_status);
 
-	// take care of transactions 
+	/* take care of transactions */
 
-	handle = (FB_API_HANDLE) ips->ips_tr_handle;
+	handle = (FRBRD *) ips->ips_tr_handle;
 	if (transaction && !handle) {
 		release_transaction(transaction);
 		*itr_handle = NULL;
@@ -1267,7 +1265,7 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS * user_status,
 	IDB idb;
 	ITR transaction;
 	IPSERVER_ISR statement;
-	FB_API_HANDLE handle;
+	FRBRD * handle;
 	ips_dsql *ips;
 	ips_string *ips_blr_in;
 	ips_string *ips_blr_out;
@@ -1278,7 +1276,7 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS * user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	if (transaction = *itr_handle)
 		CHECK_HANDLE(transaction, type_itr, isc_bad_trans_handle);
@@ -1287,7 +1285,7 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS * user_status,
 	idb = statement->isr_idb;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_execute2;
@@ -1306,13 +1304,13 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS * user_status,
 	IPS_C_OUT(comm, ips_msg_out, IPS_DSQL_EXEC2_MSG_OUT, out_msg,
 			  out_msg_length);
 
-	// send request and wait for response 
+	/* send request and wait for response */
 
-	check_response(icc, user_status);
+	(void) check_response(icc, user_status);
 
-	// take care of transactions 
+	/* take care of transactions */
 
-	handle = (FB_API_HANDLE) ips->ips_tr_handle;
+	handle = (FRBRD *) ips->ips_tr_handle;
 	if (transaction && !handle) {
 		release_transaction(transaction);
 		*itr_handle = NULL;
@@ -1326,15 +1324,15 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_DSQL_EXECUTE_IMMED(ISC_STATUS* user_status,
-							  IDB* db_handle,
-							  ITR* itr_handle,
+ISC_STATUS GDS_DSQL_EXECUTE_IMMED(ISC_STATUS * user_status,
+							  IDB * db_handle,
+							  ITR * itr_handle,
 							  USHORT length,
-							  const UCHAR* string,
+							  UCHAR * string,
 							  USHORT dialect,
 							  USHORT blr_length,
-							  const UCHAR* blr,
-							  USHORT msg_type, USHORT msg_length, UCHAR* msg)
+							  UCHAR * blr,
+							  USHORT msg_type, USHORT msg_length, UCHAR * msg)
 {
 /**************************************
  *
@@ -1348,7 +1346,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED(ISC_STATUS* user_status,
  **************************************/
 	IDB idb;
 	ITR transaction;
-	FB_API_HANDLE handle;
+	FRBRD * handle;
 	ips_dsql *ips;
 	ips_string *ips_blr;
 	ips_string *ips_msg;
@@ -1358,16 +1356,16 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED(ISC_STATUS* user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	idb = *db_handle;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 	if (transaction = *itr_handle)
 		CHECK_HANDLE(transaction, type_itr, isc_bad_trans_handle);
 	if (!length)
-		length = strlen(reinterpret_cast<const char*>(string));
+		length = strlen(reinterpret_cast < char *>(string));
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_exec_immediate;
@@ -1383,13 +1381,13 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED(ISC_STATUS* user_status,
 	IPS_C_IN(comm, ips_msg, IPS_DSQL_EXEC_IMMED_MSG, msg, msg_length);
 	IPS_C_IN(comm, ips_sql, IPS_DSQL_EXEC_IMMED_SQL, string, length);
 
-	// send request and get response 
+	/* send request and get response */
 
-	check_response(icc, user_status);
+	(void) check_response(icc, user_status);
 
-	// take care of transacion handles 
+	/* take care of transacion handles */
 
-	handle = (FB_API_HANDLE) ips->ips_tr_handle;
+	handle = (FRBRD *) ips->ips_tr_handle;
 	if (transaction && !handle) {
 		release_transaction(transaction);
 		*itr_handle = NULL;
@@ -1402,21 +1400,21 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
-							   IDB* db_handle,
-							   ITR* itr_handle,
+ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS * user_status,
+							   IDB * db_handle,
+							   ITR * itr_handle,
 							   USHORT length,
-							   const UCHAR* string,
+							   UCHAR * string,
 							   USHORT dialect,
 							   USHORT in_blr_length,
-							   const UCHAR* in_blr,
+							   UCHAR * in_blr,
 							   USHORT in_msg_type,
 							   USHORT in_msg_length,
-							   UCHAR* in_msg,
+							   UCHAR * in_msg,
 							   USHORT out_blr_length,
-							   UCHAR* out_blr,
+							   UCHAR * out_blr,
 							   USHORT out_msg_type,
-							   USHORT out_msg_length, UCHAR* out_msg)
+							   USHORT out_msg_length, UCHAR * out_msg)
 {
 /**************************************
  *
@@ -1430,7 +1428,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
  **************************************/
 	IDB idb;
 	ITR transaction;
-	FB_API_HANDLE handle;
+	FRBRD * handle;
 	ips_dsql *ips;
 	ips_string *ips_blr_in;
 	ips_string *ips_msg_in;
@@ -1442,16 +1440,16 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	idb = *db_handle;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 	if (transaction = *itr_handle)
 		CHECK_HANDLE(transaction, type_itr, isc_bad_trans_handle);
 	if (!length)
-		length = strlen(reinterpret_cast<const char*>(string));
+		length = strlen(reinterpret_cast < char *>(string));
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_exec_immediate2;
@@ -1474,13 +1472,13 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 	IPS_C_OUT(comm, ips_msg_out, IPS_DSQL_EXEC_IMMED2_MSG_OUT, out_msg,
 			  out_msg_length);
 
-	// send request and get answer 
+	/* send request and get answer */
 
-	check_response(icc, user_status);
+	(void) check_response(icc, user_status);
 
-	// handle transactions 
+	/* handle transactions */
 
-	handle = (FB_API_HANDLE) ips->ips_tr_handle;
+	handle = (FRBRD *) ips->ips_tr_handle;
 	if (transaction && !handle) {
 		release_transaction(transaction);
 		*itr_handle = NULL;
@@ -1493,11 +1491,11 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
-					  IPSERVER_ISR* stmt_handle,
+ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS * user_status,
+					  IPSERVER_ISR * stmt_handle,
 					  USHORT blr_length,
-					  const UCHAR* blr,
-					  USHORT msg_type, USHORT msg_length, UCHAR* msg)
+					  UCHAR * blr,
+					  USHORT msg_type, USHORT msg_length, UCHAR * msg)
 {
 /**************************************
  *                  
@@ -1522,7 +1520,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	statement = *stmt_handle;
 	CHECK_HANDLE(statement, type_ipserver_isr, isc_bad_req_handle);
@@ -1530,7 +1528,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 	icc = idb->idb_thread;
 
-	// check for connection lost 
+	/* check for connection lost */
 
 	if (icc->icc_flags & ICCF_SERVER_SHUTDOWN) {
 		user_status[0] = isc_arg_gds;
@@ -1539,7 +1537,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 		return user_status[1];
 	}
 
-	// calculate how many records to pack 
+	/* calculate how many records to pack */
 
 	THD_mutex_lock(&mapsect);
 	if (!statement->isr_max_recs) {
@@ -1556,7 +1554,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 		}
 	}
 
-	// if there are any packed records, return the next one 
+	/* if there are any packed records, return the next one */
 
 	user_status[0] = isc_arg_gds;
 	user_status[1] = FB_SUCCESS;
@@ -1584,9 +1582,9 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 	}
 	THD_mutex_unlock(&mapsect);
 
-	// either there's no packing, or there's no more packed records 
+	/* either there's no packing, or there's no more packed records */
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_fetch;
@@ -1603,16 +1601,16 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 			  packed_length);
 	ips->ips_rec_count = statement->isr_max_recs;
 
-	// send request and get response 
+	/* send request and get response */
 
-	check_response(icc, user_status);
+	(void) check_response(icc, user_status);
 
-	// for packed records, extract the first 
+	/* for packed records, extract the first */
 
 	statement->isr_rec_count = ips->ips_rec_count;
 	if (statement->isr_max_recs > 1 && statement->isr_rec_count) {
 
-		// get first record and save status vector 
+		/* get first record and save status vector */
 
 		statement->isr_cursor = statement->isr_packed;
 		memcpy(msg, statement->isr_cursor, msg_length);
@@ -1625,7 +1623,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 			statement->isr_eof_flag = FALSE;
 		ips->ips_parameter = 0;
 
-		// if there are more records, fake good return 
+		/* if there are more records, fake good return */
 
 		if (statement->isr_rec_count) {
 			user_status[0] = isc_arg_gds;
@@ -1663,14 +1661,14 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS * user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	statement = *stmt_handle;
 	CHECK_HANDLE(statement, type_ipserver_isr, isc_bad_req_handle);
 	idb = statement->isr_idb;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_free_stmt;
@@ -1678,14 +1676,14 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS * user_status,
 	ips->ips_handle = (UCHAR *) (statement->isr_handle);
 	ips->ips_parameter = (ULONG) option;
 
-	// send request and get response 
+	/* send request and get response */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
 
-	// free statement resources 
+	/* free statement resources */
 
-	statement->isr_handle = (FB_API_HANDLE) ips->ips_handle;
+	statement->isr_handle = (FRBRD *) ips->ips_handle;
 	if (!statement->isr_handle) {
 		release_sql_request(statement);
 		*stmt_handle = NULL;
@@ -1724,14 +1722,14 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS * user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	statement = *stmt_handle;
 	CHECK_HANDLE(statement, type_ipserver_isr, isc_bad_req_handle);
 	idb = statement->isr_idb;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_insert;
@@ -1741,7 +1739,7 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS * user_status,
 	IPS_C_IN(comm, ips_blr, IPS_DSQL_INSERT_BLR, blr, blr_length);
 	IPS_C_IN(comm, ips_msg, IPS_DSQL_INSERT_MSG, msg, msg_length);
 
-	// send request and get response 
+	/* send request and get response */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
@@ -1780,7 +1778,7 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	statement = *stmt_handle;
 	CHECK_HANDLE(statement, type_ipserver_isr, isc_bad_req_handle);
@@ -1796,7 +1794,7 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status,
 	statement->isr_eof_flag = FALSE;
 	statement->isr_packed = NULL;
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_prepare_stmt;
@@ -1812,7 +1810,7 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status,
 	IPS_C_OUT(comm, ips_prep_buffer, IPS_DSQL_PREP_BUFFER, buffer,
 			  buffer_length);
 
-	// send request and get response 
+	/* send request and get response */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
@@ -1821,9 +1819,9 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
-						   IPSERVER_ISR* stmt_handle,
-						   const UCHAR* cursor, USHORT type)
+ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS * user_status,
+						   IPSERVER_ISR * stmt_handle,
+						   UCHAR * cursor, USHORT type)
 {
 /*****************************************
  *
@@ -1845,15 +1843,15 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	statement = *stmt_handle;
 	CHECK_HANDLE(statement, type_ipserver_isr, isc_bad_req_handle);
 	idb = statement->isr_idb;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
-	cursor_length = name_length(reinterpret_cast<const char*>(cursor)) + 1;
+	cursor_length = name_length(reinterpret_cast < char *>(cursor)) + 1;
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_set_cursor;
@@ -1862,7 +1860,7 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
 	ips->ips_parameter = type;
 	IPS_C_IN(comm, ips_name, IPS_DSQL_SET_CURSOR, cursor, cursor_length);
 
-	// send request and wait for response 
+	/* send request and wait for response */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
@@ -1870,11 +1868,10 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
-						 IPSERVER_ISR* stmt_handle,
+ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS * user_status,
+						 IPSERVER_ISR * stmt_handle,
 						 USHORT item_length,
-						 const UCHAR* items,
-						 USHORT buffer_length, UCHAR* buffer)
+						 UCHAR * items, USHORT buffer_length, UCHAR * buffer)
 {
 /**************************************
  *
@@ -1896,14 +1893,14 @@ ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	statement = *stmt_handle;
 	CHECK_HANDLE(statement, type_ipserver_isr, isc_bad_req_handle);
 	idb = statement->isr_idb;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_info_sql;
@@ -1912,7 +1909,7 @@ ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
 	IPS_C_IN(comm, ips_items, IPS_INFO_ITEMS, items, item_length);
 	IPS_C_OUT(comm, ips_data, IPS_INFO_DATA, buffer, buffer_length);
 
-	// send request and get response 
+	/* send request and get response */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
@@ -1923,7 +1920,7 @@ ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
 ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 					   IBL * blob_handle,
 					   USHORT * length,
-					   USHORT buffer_length, UCHAR * buffer)
+					   USHORT GDS_VAL(buffer_length), UCHAR * buffer)
 {
 /**************************************
  *
@@ -1944,14 +1941,14 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	blob = *blob_handle;
 	CHECK_HANDLE(blob, type_ibl, isc_bad_segstr_handle);
 	idb = blob->ibl_idb;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_get_segment;
@@ -1959,7 +1956,7 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 	ips->ips_bl_handle = (UCHAR *) (blob->ibl_handle);
 	IPS_C_OUT(comm, ips_seg, IPS_BLOB_SEGMENT, buffer, buffer_length);
 
-	// send request and get response 
+	/* send request and get response */
 
 	*length = 0;
 	if (check_response(icc, user_status))
@@ -1970,16 +1967,16 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
-					 IDB* db_handle,
-					 ITR* tra_handle,
+ISC_STATUS GDS_GET_SLICE(ISC_STATUS * user_status,
+					 IDB * db_handle,
+					 ITR * tra_handle,
 					 BID array_id,
-					 USHORT sdl_length,
-					 const UCHAR* sdl,
-					 USHORT param_length,
-					 const UCHAR* param,
-					 SLONG slice_length,
-					 UCHAR* slice, SLONG* return_length)
+					 USHORT GDS_VAL(sdl_length),
+					 UCHAR * sdl,
+					 USHORT GDS_VAL(param_length),
+					 UCHAR * param,
+					 SLONG GDS_VAL(slice_length),
+					 UCHAR * slice, SLONG * return_length)
 {
 /**************************************
  *
@@ -2003,14 +2000,14 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	idb = *db_handle;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 	transaction = *tra_handle;
 	CHECK_HANDLE(transaction, type_itr, isc_bad_trans_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_get_slice;
@@ -2023,12 +2020,12 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 	IPS_C_IN(comm, ips_parms, IPS_SLICE_PARAM, param, param_length);
 	IPS_C_OUT(comm, ips_data, IPS_SLICE_BUFFER, slice, slice_length);
 
-	// send request and wait for response 
+	/* send request and wait for response */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
 
-	// return data 
+	/* return data */
 
 	length = ips->ips_length;
 	if (return_length)
@@ -2037,9 +2034,9 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_OPEN_BLOB(ISC_STATUS* user_status,
-					 IDB* db_handle,
-					 ITR* itr_handle, IBL* blob_handle, BID blob_id)
+ISC_STATUS GDS_OPEN_BLOB(ISC_STATUS * user_status,
+					 IDB * db_handle,
+					 ITR * itr_handle, IBL * blob_handle, BID blob_id)
 {
 /**************************************
  *
@@ -2060,7 +2057,7 @@ ISC_STATUS GDS_OPEN_BLOB(ISC_STATUS* user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	NULL_CHECK(blob_handle, isc_bad_segstr_handle);
 	idb = *db_handle;
@@ -2068,7 +2065,7 @@ ISC_STATUS GDS_OPEN_BLOB(ISC_STATUS* user_status,
 	transaction = *itr_handle;
 	CHECK_HANDLE(transaction, type_itr, isc_bad_trans_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_open_blob;
@@ -2078,17 +2075,17 @@ ISC_STATUS GDS_OPEN_BLOB(ISC_STATUS* user_status,
 	ips->ips_rel_id = blob_id->bid_relation_id;
 	ips->ips_bid_number = blob_id->bid_number;
 
-	// send request and get response 
+	/* send request and get response */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
 
-	// create and fill a blob structure with results 
+	/* create and fill a blob structure with results */
 
 	blob = (IBL) ALLOCV(type_ibl, BLOB_LENGTH);
 	*blob_handle = blob;
 	NOT_NULL(blob);
-	blob->ibl_handle = (FB_API_HANDLE) ips->ips_bl_handle;
+	blob->ibl_handle = (FRBRD *) ips->ips_bl_handle;
 	blob->ibl_buffer_length = BLOB_LENGTH;
 	blob->ibl_idb = idb;
 	blob->ibl_itr = transaction;
@@ -2099,11 +2096,11 @@ ISC_STATUS GDS_OPEN_BLOB(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
-					  IDB* db_handle,
-					  ITR* itr_handle,
-					  IBL* blob_handle,
-					  BID blob_id, USHORT bpb_length, const UCHAR* bpb)
+ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS * user_status,
+					  IDB * db_handle,
+					  ITR * itr_handle,
+					  IBL * blob_handle,
+					  BID blob_id, USHORT GDS_VAL(bpb_length), UCHAR * bpb)
 {
 /**************************************
  *
@@ -2125,7 +2122,7 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	NULL_CHECK(blob_handle, isc_bad_segstr_handle);
 	idb = *db_handle;
@@ -2133,7 +2130,7 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 	transaction = *itr_handle;
 	CHECK_HANDLE(transaction, type_itr, isc_bad_trans_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_open_blob2;
@@ -2144,17 +2141,17 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 	ips->ips_bid_number = blob_id->bid_number;
 	IPS_C_IN(comm, ips_bpb, IPS_BLOB_BPB, bpb, bpb_length);
 
-	// send request and wait for response 
+	/* send request and wait for response */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
 
-	// create and fill blob structure 
+	/* create and fill blob structure */
 
 	blob = (IBL) ALLOCV(type_ibl, BLOB_LENGTH);
 	*blob_handle = blob;
 	NOT_NULL(blob);
-	blob->ibl_handle = (FB_API_HANDLE) ips->ips_bl_handle;
+	blob->ibl_handle = (FRBRD *) ips->ips_bl_handle;
 	blob->ibl_buffer_length = BLOB_LENGTH;
 	blob->ibl_idb = idb;
 	blob->ibl_itr = transaction;
@@ -2167,7 +2164,7 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 
 ISC_STATUS GDS_PREPARE(ISC_STATUS * user_status,
 				   ITR * itr_handle,
-				   USHORT buffer_length, UCHAR * buffer)
+				   USHORT GDS_VAL(buffer_length), UCHAR * buffer)
 {
 /**************************************
  *
@@ -2189,14 +2186,14 @@ ISC_STATUS GDS_PREPARE(ISC_STATUS * user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	transaction = *itr_handle;
 	CHECK_HANDLE(transaction, type_itr, isc_bad_trans_handle);
 	idb = (*itr_handle)->itr_idb;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_prepare2;
@@ -2204,15 +2201,15 @@ ISC_STATUS GDS_PREPARE(ISC_STATUS * user_status,
 	ips->ips_handle = (UCHAR *) (transaction->itr_handle);
 	IPS_C_IN(comm, ips_prep_str, IPS_PREPARE_TRANS, buffer, buffer_length);
 
-	// send request and wait for and return response 
+	/* send request and wait for and return response */
 
 	RETURN_ERROR(check_response(icc, user_status));
 }
 
 
-ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
-					   IBL* blob_handle,
-					   USHORT buffer_length, const UCHAR* buffer)
+ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS * user_status,
+					   IBL * blob_handle,
+					   USHORT GDS_VAL(buffer_length), UCHAR * buffer)
 {
 /**************************************
  *
@@ -2233,14 +2230,14 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
 	ICC icc;
 
 
-	//  verify handles 
+	/*  verify handles */
 
 	blob = *blob_handle;
 	CHECK_HANDLE(blob, type_ibl, isc_bad_segstr_handle);
 	idb = blob->ibl_idb;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_put_segment;
@@ -2248,7 +2245,7 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
 	ips->ips_bl_handle = (UCHAR *) (blob->ibl_handle);
 	IPS_C_IN(comm, ips_seg, IPS_BLOB_SEGMENT, buffer, buffer_length);
 
-	// send request and get response 
+	/* send request and get response */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
@@ -2256,15 +2253,15 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_PUT_SLICE(ISC_STATUS* user_status,
-					 IDB* db_handle,
-					 ITR* tra_handle,
+ISC_STATUS GDS_PUT_SLICE(ISC_STATUS * user_status,
+					 IDB * db_handle,
+					 ITR * tra_handle,
 					 BID array_id,
-					 USHORT sdl_length,
-					 const UCHAR* sdl,
-					 USHORT param_length,
-					 const UCHAR* param,
-					 SLONG slice_length, UCHAR* slice)
+					 USHORT GDS_VAL(sdl_length),
+					 UCHAR * sdl,
+					 USHORT GDS_VAL(param_length),
+					 UCHAR * param,
+					 SLONG GDS_VAL(slice_length), UCHAR * slice)
 {
 /**************************************
  *
@@ -2287,14 +2284,14 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS* user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	idb = *db_handle;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 	transaction = *tra_handle;
 	CHECK_HANDLE(transaction, type_itr, isc_bad_trans_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_put_slice;
@@ -2307,12 +2304,12 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS* user_status,
 	IPS_C_IN(comm, ips_parms, IPS_SLICE_PARAM, param, param_length);
 	IPS_C_IN(comm, ips_data, IPS_SLICE_BUFFER, slice, slice_length);
 
-	// send request and wait for response 
+	/* send request and wait for response */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
 
-	// return resulting ids 
+	/* return resulting ids */
 
 	array_id->bid_relation_id = ips->ips_rel_id;
 	array_id->bid_number = ips->ips_number;
@@ -2320,12 +2317,11 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
-					  IDB* handle,
-					  SLONG* id,
-					  USHORT length,
-					  const UCHAR* events,
-					  FPTR_EVENT_CALLBACK ast, void* arg)
+ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS * user_status,
+					  IDB * handle,
+					  SLONG * id,
+					  USHORT GDS_VAL(length),
+					  UCHAR * events, void (GDS_VAL(*ast)) (), void *arg)
 {
 /**************************************
  *
@@ -2348,22 +2344,22 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	idb = *handle;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_que_events;
 	ips = &comm->ips_operations.ips_op_que_evnt;
 	ips->ips_db_handle = (UCHAR *) (idb->idb_handle);
-	ips->ips_ast = ast;
+	ips->ips_ast = (UCHAR *) ast;
 	ips->ips_arg = (UCHAR *) arg;
 	IPS_C_IN(comm, ips_event, IPS_QUEUE_EVENT, events, length);
 
-	// allocate an event block 
+	/* allocate an event block */
 
 	THD_mutex_lock(&clisect);
 	if (!event_semaphore) {
@@ -2373,7 +2369,7 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 		   it's done on the event semaphore, and then starting the
 		   event thread itself */
 
-		// create an event semaphore, but make sure it's a new one 
+		/* create an event semaphore, but make sure it's a new one */
 
 		for (evsem = 0; evsem < 1000; evsem++) {
 			sprintf(name_buffer, IPI_EVENT_THREAD, Config::getIpcName(), evsem);
@@ -2385,14 +2381,16 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 			event_semaphore = 0;
 		}
 		if (event_semaphore) {
-			gds__thread_start(event_packer, idb->idb_thread, THREAD_high, 0,
+			gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
+							  (event_packer), idb->idb_thread, THREAD_high, 0,
 							  &event_packer_handle);
 			if (!event_packer_handle)
 				gds__log("unable to start event packer thread %ld",
 						 (long) GetLastError());
 			else {
 				WaitForSingleObject(event_semaphore, INFINITE);
-				gds__thread_start(event_thread, NULL, THREAD_high, 0,
+				gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
+								  (event_thread), NULL, THREAD_high, 0,
 								  &event_thread_handle);
 				if (!event_thread_handle)
 					gds__log("unable to start event processing thread %ld",
@@ -2422,7 +2420,7 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 	event->ivnt_arg = arg;
 	THD_mutex_unlock(&clisect);
 
-	// send request and get response 
+	/* send request and get response */
 
 	ips->ips_event_hwnd = event_window;
 	ips->ips_event_id = eventID;
@@ -2436,9 +2434,9 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 
 ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 				   IRQ * req_handle,
-				   SSHORT msg_type,
-				   USHORT msg_length,
-				   UCHAR * msg, SSHORT level
+				   SSHORT GDS_VAL(msg_type),
+				   USHORT GDS_VAL(msg_length),
+				   UCHAR * msg, SSHORT GDS_VAL(level)
 #ifdef SCROLLABLE_CURSORS
 				   , USHORT direction, ULONG offset
 #endif
@@ -2463,14 +2461,14 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	request = *req_handle;
 	CHECK_HANDLE(request, type_irq, isc_bad_req_handle);
 	idb = request->irq_idb;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_receive;
@@ -2484,7 +2482,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 #endif
 	IPS_C_OUT(comm, ips_message, IPS_RECEIVE_MESSAGE, msg, msg_length);
 
-	// send request and get answer 
+	/* send request and get answer */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
@@ -2492,9 +2490,9 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
-					 IDB* db_handle,
-					 ITR* itr_handle, USHORT length, const UCHAR* id)
+ISC_STATUS GDS_RECONNECT(ISC_STATUS * user_status,
+					 IDB * db_handle,
+					 ITR * itr_handle, USHORT GDS_VAL(length), UCHAR * id)
 {
 /**************************************
  *
@@ -2515,14 +2513,14 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	NULL_CHECK(itr_handle, isc_bad_trans_handle);
 	idb = *db_handle;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
-	l = length;
+	l = GDS_VAL(length);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_reconnect;
@@ -2530,12 +2528,12 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
 	ips->ips_db_handle = (UCHAR *) (idb->idb_handle);
 	IPS_C_IN(comm, ips_id, IPS_RECONNECT_ID, id, l);
 
-	// send message and wait for response 
+	/* send message and wait for response */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
 	*itr_handle =
-		make_transaction(user_status, idb, (FB_API_HANDLE) ips->ips_tr_handle);
+		make_transaction(user_status, idb, (FRBRD *) ips->ips_tr_handle);
 	RETURN_SUCCESS;
 }
 
@@ -2560,26 +2558,26 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, IRQ * req_handle)
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	request = *req_handle;
 	CHECK_HANDLE(request, type_irq, isc_bad_req_handle);
 	idb = request->irq_idb;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_release;
 	ips = &comm->ips_operations.ips_op_object;
 	ips->ips_handle = (UCHAR *) (request->irq_handle);
 
-	// make request and free handle 
+	/* make request and free handle */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
 
-	// release request resources 
+	/* release request resources */
 
 	release_request(request);
 	*req_handle = NULL;
@@ -2587,12 +2585,12 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, IRQ * req_handle)
 }
 
 
-ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
-						IRQ* request,
-						USHORT level,
-						USHORT item_length,
-						const UCHAR* items,
-						USHORT buffer_length, UCHAR* buffer)
+ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS * user_status,
+						IRQ * request,
+						USHORT GDS_VAL(level),
+						USHORT GDS_VAL(item_length),
+						UCHAR * items,
+						USHORT GDS_VAL(buffer_length), UCHAR * buffer)
 {
 /**************************************
  *
@@ -2613,13 +2611,13 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	CHECK_HANDLE((*request), type_irq, isc_bad_req_handle);
 	idb = (*request)->irq_idb;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_info_request;
@@ -2629,7 +2627,7 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 	IPS_C_IN(comm, ips_items, IPS_INFO_ITEMS, items, item_length);
 	IPS_C_OUT(comm, ips_data, IPS_INFO_DATA, buffer, buffer_length);
 
-	// send request and get response 
+	/* send request and get response */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
@@ -2658,21 +2656,21 @@ ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS * user_status, ITR * itr_handle)
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	transaction = *itr_handle;
 	CHECK_HANDLE(transaction, type_itr, isc_bad_trans_handle);
 	idb = (*itr_handle)->itr_idb;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_rollback_retaining;
 	ips = &comm->ips_operations.ips_op_object;
 	ips->ips_handle = (UCHAR *) (transaction->itr_handle);
 
-	// send request 
+	/* send request */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
@@ -2700,26 +2698,26 @@ ISC_STATUS GDS_ROLLBACK(ISC_STATUS * user_status, ITR * itr_handle)
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	transaction = *itr_handle;
 	CHECK_HANDLE(transaction, type_itr, isc_bad_trans_handle);
 	idb = (*itr_handle)->itr_idb;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_rollback;
 	ips = &comm->ips_operations.ips_op_object;
 	ips->ips_handle = (UCHAR *) (transaction->itr_handle);
 
-	// send request and free handle 
+	/* send request and free handle */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
 
-	// release transaction resources 
+	/* release transaction resources */
 
 	clear_transaction_statements(transaction);
 	release_transaction(transaction);
@@ -2730,8 +2728,8 @@ ISC_STATUS GDS_ROLLBACK(ISC_STATUS * user_status, ITR * itr_handle)
 
 ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS * user_status,
 					 IBL * blob_handle,
-					 SSHORT mode,
-					 SLONG offset, SLONG * result)
+					 SSHORT GDS_VAL(mode),
+					 SLONG GDS_VAL(offset), SLONG * result)
 {
 /**************************************
  *
@@ -2751,14 +2749,14 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS * user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	blob = *blob_handle;
 	CHECK_HANDLE(blob, type_ibl, isc_bad_segstr_handle);
 	idb = blob->ibl_idb;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_seek_blob;
@@ -2767,7 +2765,7 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS * user_status,
 	ips->ips_offset = offset;
 	ips->ips_mode = mode;
 
-	// send request and get response 
+	/* send request and get response */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
@@ -2778,9 +2776,9 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS * user_status,
 
 ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
 				IRQ * req_handle,
-				SSHORT msg_type,
-				USHORT msg_length,
-				UCHAR * msg, SSHORT level)
+				SSHORT GDS_VAL(msg_type),
+				USHORT GDS_VAL(msg_length),
+				UCHAR * msg, SSHORT GDS_VAL(level))
 {
 /**************************************
  *
@@ -2801,14 +2799,14 @@ ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	request = *req_handle;
 	CHECK_HANDLE(request, type_irq, isc_bad_req_handle);
 	idb = request->irq_idb;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_send;
@@ -2818,17 +2816,17 @@ ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
 	ips->ips_req_level = level;
 	IPS_C_IN(comm, ips_message, IPS_SEND_MESSAGE, msg, msg_length);
 
-	// send request and get response 
+	/* send request and get response */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
 	RETURN_SUCCESS;
 }
 
-ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
+ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS * user_status,
 						  USHORT service_length,
-						  const TEXT* service_name,
-						  IDB* handle, USHORT spb_length, const SCHAR* spb)
+						  TEXT * service_name,
+						  IDB * handle, USHORT spb_length, SCHAR * spb)
 {
 /**************************************
  *
@@ -2851,18 +2849,18 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 	USHORT commi;
 
 
-	// handle should be null coming in 
+	/* handle should be null coming in */
 
 	NULL_CHECK(handle, isc_bad_svc_handle);
-	if (!(l = service_length))
+	if (!(l = GDS_VAL(service_length)))
 		l = strlen(service_name);
 
-	// initiate connection 
+	/* initiate connection */
 
 	if (!init(user_status, &icc))
 		return user_status[1];
 
-	// set up communications area 
+	/* set up communications area */
 
 	THD_mutex_lock(&mapsect);
 	comm = (ips_comm_area *) icc->icc_mapped_addr;
@@ -2873,12 +2871,12 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 	IPS_C_IN(comm, ips_name, IPS_ATTACH_SVC_NAME, service_name, l);
 	IPS_C_IN(comm, ips_spb, IPS_ATTACH_SVC_SPB, spb, spb_length);
 
-	// send request and wait for response 
+	/* send request and wait for response */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
 
-	// allocate a database structure and link it to thread 
+	/* allocate a database structure and link it to thread */
 
 	idb = (IDB) ALLOC(type_idb);
 	*handle = idb;
@@ -2887,7 +2885,7 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 	idb->idb_next = icc->icc_databases;
 	idb->idb_thread = icc;
 	icc->icc_databases = idb;
-	idb->idb_handle = (FB_API_HANDLE) (ips->ips_handle);
+	idb->idb_handle = (FRBRD *) (ips->ips_handle);
 	RETURN_SUCCESS;
 }
 
@@ -2910,18 +2908,18 @@ ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS * user_status, IDB * handle)
 	USHORT commi;
 
 
-	// verify handle 
+	/* verify handle */
 
 	idb = *handle;
 	CHECK_HANDLE(idb, type_idb, isc_bad_svc_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	icc = idb->idb_thread;
 	THD_mutex_lock(&mapsect);
 	if (icc->icc_flags & ICCF_SERVER_SHUTDOWN) {
 
-		// if server was shut down, set up vector 
+		/* if server was shut down, set up vector */
 
 		user_status[0] = isc_arg_gds;
 		user_status[1] = FB_SUCCESS;
@@ -2935,14 +2933,14 @@ ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS * user_status, IDB * handle)
 		ips = &comm->ips_operations.ips_op_object;
 		ips->ips_handle = (UCHAR *) (idb->idb_handle);
 
-		// send request and release handle 
+		/* send request and release handle */
 
 		if (check_response(icc, user_status))
 			if (user_status[1] != isc_lost_db_connection)
 				return user_status[1];
 	}
 
-	// free up resources 
+	/* free up resources */
 
 	release_database(idb);
 	*handle = NULL;
@@ -2951,14 +2949,14 @@ ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS * user_status, IDB * handle)
 	RETURN_SUCCESS;
 }
 
-ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS* user_status,
-						 IDB* service,
-						 ULONG* reserved,
+ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS * user_status,
+						 IDB * service,
+						 ULONG * reserved,
 						 USHORT send_item_length,
-						 const SCHAR* send_items,
+						 SCHAR * send_items,
 						 USHORT recv_item_length,
-						 const SCHAR* recv_items,
-						 USHORT buffer_length, SCHAR* buffer)
+						 SCHAR * recv_items,
+						 USHORT buffer_length, SCHAR * buffer)
 {
 /**************************************
  *
@@ -2980,12 +2978,12 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS* user_status,
 	ICC icc;
 
 
-	// verify handle 
+	/* verify handle */
 
 	idb = *service;
 	CHECK_HANDLE(idb, type_idb, isc_bad_svc_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_service_info;
@@ -2997,16 +2995,16 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS* user_status,
 			 recv_item_length);
 	IPS_C_OUT(comm, ips_data, IPS_INFO_DATA, buffer, buffer_length);
 
-	// send request and get answer 
+	/* send request and get answer */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
 	RETURN_SUCCESS;
 }
 
-ISC_STATUS GDS_SERVICE_START(ISC_STATUS* user_status,
-						 IDB* service,
-						 ULONG* reserved, USHORT spb_length, const SCHAR* spb)
+ISC_STATUS GDS_SERVICE_START(ISC_STATUS * user_status,
+						 IDB * service,
+						 ULONG * reserved, USHORT spb_length, SCHAR * spb)
 {
  /**************************************
  *
@@ -3026,18 +3024,18 @@ ISC_STATUS GDS_SERVICE_START(ISC_STATUS* user_status,
 	ICC icc;
 
 
-	// verify handle 
+	/* verify handle */
 	idb = *service;
 	CHECK_HANDLE(idb, type_idb, isc_bad_svc_handle);
 
-	// point to communications area 
+	/* point to communications area */
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_service_start;
 	ips = &comm->ips_operations.ips_op_object;
 	ips->ips_handle = (UCHAR *) (idb->idb_handle);
 	IPS_C_IN(comm, ips_spb, IPS_START_SVC_SPB, spb, spb_length);
 
-	// send request and get answer 
+	/* send request and get answer */
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
 	RETURN_SUCCESS;
@@ -3046,7 +3044,7 @@ ISC_STATUS GDS_SERVICE_START(ISC_STATUS* user_status,
 
 ISC_STATUS GDS_START(ISC_STATUS * user_status,
 				 IRQ * req_handle,
-				 ITR * itr_handle, SSHORT level)
+				 ITR * itr_handle, SSHORT GDS_VAL(level))
 {
 /**************************************
  *
@@ -3067,7 +3065,7 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	request = *req_handle;
 	CHECK_HANDLE(request, type_irq, isc_bad_req_handle);
@@ -3076,7 +3074,7 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
 	idb = request->irq_idb;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_start;
@@ -3085,7 +3083,7 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
 	ips->ips_tr_handle = (UCHAR *) (transaction->itr_handle);
 	ips->ips_req_level = level;
 
-	// send request and get response 
+	/* send request and get response */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
@@ -3096,9 +3094,9 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
 ISC_STATUS GDS_START_AND_SEND(ISC_STATUS * user_status,
 						  IRQ * req_handle,
 						  ITR * itr_handle,
-						  SSHORT msg_type,
-						  USHORT msg_length,
-						  UCHAR * msg, SSHORT level)
+						  SSHORT GDS_VAL(msg_type),
+						  USHORT GDS_VAL(msg_length),
+						  UCHAR * msg, SSHORT GDS_VAL(level))
 {
 /**************************************
  *
@@ -3120,7 +3118,7 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS * user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	request = *req_handle;
 	CHECK_HANDLE(request, type_irq, isc_bad_req_handle);
@@ -3129,7 +3127,7 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS * user_status,
 	idb = request->irq_idb;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_start_and_send;
@@ -3140,7 +3138,7 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS * user_status,
 	ips->ips_req_level = level;
 	IPS_C_IN(comm, ips_message, IPS_SEND_MESSAGE, msg, msg_length);
 
-	// send request and get response 
+	/* send request and get response */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
@@ -3150,7 +3148,7 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS * user_status,
 
 ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
 						  ITR * itr_handle,
-						  SSHORT count, int **vector)
+						  SSHORT GDS_VAL(count), int **vector)
 {
 /**************************************
  *
@@ -3174,11 +3172,11 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
 	ICC icc;
 
 
-	// verify handle 
+	/* verify handle */
 
 	NULL_CHECK(itr_handle, isc_bad_trans_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	args = vector;
 	idb = (IDB) * (*args++);
@@ -3193,9 +3191,9 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
 	   ONLY case where normal buffering is not done, so we'd better
 	   never have enough databases to exceed 8k worth of space */
 
-	for (i = 0; i < count; i++) {
+	for (i = 0; i < GDS_VAL(count); i++) {
 
-		// first idb pointer already acquired above 
+		/* first idb pointer already acquired above */
 
 		if (i) {
 			idb = (IDB) * (*args++);
@@ -3210,25 +3208,25 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
 		for (j = 0; j < l; j++)
 			*comm_ptr++ = *p++;
 
-		// align on ULONG 
+		/* align on ULONG */
 
 		l = l % sizeof(ULONG);
 		if (l)
 			comm_ptr += sizeof(ULONG) - l;
 	}
 
-	// send request and get response 
+	/* send request and get response */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
 	*itr_handle =
-		make_transaction(user_status, idb, (FB_API_HANDLE) ips->ips_tr_handle);
+		make_transaction(user_status, idb, (FRBRD *) ips->ips_tr_handle);
 	RETURN_SUCCESS;
 }
 
 
 ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
-							 ITR * itr_handle, SSHORT count, ...)
+							 ITR * itr_handle, SSHORT GDS_VAL(count), ...)
 {
 /**************************************
  *
@@ -3252,13 +3250,13 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
 	ICC icc;
 
 
-	// verify handle 
+	/* verify handle */
 
 	NULL_CHECK(itr_handle, isc_bad_trans_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
-	va_start(args, count);
+	VA_START(args, count);
 	idb = *(va_arg(args, IDB *));
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 	GET_OBJECT(idb->idb_thread);
@@ -3271,9 +3269,9 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
 	   ONLY case where normal buffering is not done, so we'd better
 	   never have enough databases to exceed 8k worth of space */
 
-	for (i = 0; i < count; i++) {
+	for (i = 0; i < GDS_VAL(count); i++) {
 
-		// the first pointer has already been gotten above 
+		/* the first pointer has already been gotten above */
 
 		if (i) {
 			idb = *(va_arg(args, IDB *));
@@ -3288,28 +3286,28 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
 		for (j = 0; j < l; j++)
 			*comm_ptr++ = *p++;
 
-		// align on ULONG 
+		/* align on ULONG */
 
 		l = l % sizeof(ULONG);
 		if (l)
 			comm_ptr += sizeof(ULONG) - l;
 	}
 
-	// send message and get response 
+	/* send message and get response */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
 	*itr_handle =
-		make_transaction(user_status, idb, (FB_API_HANDLE) ips->ips_tr_handle);
+		make_transaction(user_status, idb, (FRBRD *) ips->ips_tr_handle);
 	RETURN_SUCCESS;
 }
 
 
-ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
-							ITR* transaction,
-							USHORT item_length,
-							const UCHAR* items,
-							USHORT buffer_length, UCHAR* buffer)
+ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS * user_status,
+							ITR * transaction,
+							USHORT GDS_VAL(item_length),
+							UCHAR * items,
+							USHORT GDS_VAL(buffer_length), UCHAR * buffer)
 {
 /**************************************
  *
@@ -3330,13 +3328,13 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	CHECK_HANDLE((*transaction), type_itr, isc_bad_trans_handle);
 	idb = (*transaction)->itr_idb;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_info_transaction;
@@ -3345,7 +3343,7 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 	IPS_C_IN(comm, ips_items, IPS_INFO_ITEMS, items, item_length);
 	IPS_C_OUT(comm, ips_data, IPS_INFO_DATA, buffer, buffer_length);
 
-	// send request and get response 
+	/* send request and get response */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
@@ -3353,14 +3351,14 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
-							IDB* db_handle,
-							ITR* tra_handle,
+ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS * user_status,
+							IDB * db_handle,
+							ITR * tra_handle,
 							USHORT blr_length,
-							const UCHAR* blr,
+							UCHAR * blr,
 							USHORT in_msg_length,
-							UCHAR* in_msg,
-							USHORT out_msg_length, UCHAR* out_msg)
+							UCHAR * in_msg,
+							USHORT out_msg_length, UCHAR * out_msg)
 {
 /**************************************
  *
@@ -3382,14 +3380,14 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	idb = *db_handle;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 	transaction = *tra_handle;
 	CHECK_HANDLE(transaction, type_itr, isc_bad_trans_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_transact_request;
@@ -3401,7 +3399,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
 	IPS_C_OUT(comm, ips_out_msg, IPS_TRANS_REQ_OUT_MSG, out_msg,
 			  out_msg_length);
 
-	// send message and get response 
+	/* send message and get response */
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
@@ -3410,7 +3408,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
 
 
 ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status,
-				  IRQ * req_handle, SSHORT level)
+				  IRQ * req_handle, SSHORT GDS_VAL(level))
 {
 /**************************************
  *
@@ -3430,14 +3428,14 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status,
 	ICC icc;
 
 
-	// verify handles 
+	/* verify handles */
 
 	request = *req_handle;
 	CHECK_HANDLE(request, type_irq, isc_bad_req_handle);
 	idb = request->irq_idb;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// point to communications area 
+	/* point to communications area */
 
 	GET_OBJECT(idb->idb_thread);
 	comm->ips_operation = op_unwind;
@@ -3445,7 +3443,7 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status,
 	ips->ips_handle = (UCHAR *) (request->irq_handle);
 	ips->ips_parameter = (ULONG) level;
 
-	// send request and return response 
+	/* send request and return response */
 
 	RETURN_ERROR(check_response(icc, user_status));
 }
@@ -3499,7 +3497,7 @@ static ISC_STATUS check_response( ICC icc, ISC_STATUS * user_status)
 		}
 	}
 
-	// communications failure - database is now unavailable 
+	/* communications failure - database is now unavailable */
 
 	icc->icc_flags |= ICCF_SERVER_SHUTDOWN;
 #ifdef	DEBUG_IP_TRACE
@@ -3557,15 +3555,14 @@ static void clear_transaction_statements( ITR transaction)
 
 	database = transaction->itr_idb;
 	for (statement = database->idb_sql_requests; statement;
-		 statement = statement->isr_next)
-	{
-		if (statement->isr_itr == transaction)
-			clear_statement_cache(statement);
-	}
+		 statement =
+		 statement->isr_next) if (statement->isr_itr ==
+								  transaction)
+				clear_statement_cache(statement);
 }
 
 
-static THREAD_ENTRY_DECLARE event_packer(THREAD_ENTRY_PARAM arg)
+static void event_packer( ICC icc)
 {
 /**************************************
  *
@@ -3579,11 +3576,10 @@ static THREAD_ENTRY_DECLARE event_packer(THREAD_ENTRY_PARAM arg)
  *	the server isn't kept waiting
  *
  **************************************/
-	ICC icc = (ICC)(arg);
 	TEXT name_buffer[128], class_buffer[32];
 
 
-	// init the window, which never really returns 
+	/* init the window, which never really returns */
 
 	sprintf(name_buffer, IPI_EVENT_NAME, Config::getIpcName(), icc->icc_file, icc->icc_slot);
 	sprintf(class_buffer, IPI_EVENT_CLASS, Config::getIpcName());
@@ -3591,11 +3587,10 @@ static THREAD_ENTRY_DECLARE event_packer(THREAD_ENTRY_PARAM arg)
 					&event_window, event_semaphore);
 	CloseHandle(event_packer_handle);
 	event_packer_handle = 0;
-	return 0;
 }
 
 
-static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM)
+static void event_thread(void)
 {
 /**************************************
  *
@@ -3617,33 +3612,33 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM)
 	ISC_STATUS_ARRAY status;
 
 
-	// loop to wait for events 
+	/* loop to wait for events */
 
 	for (;;) {
 		WaitForSingleObject(event_semaphore, INFINITE);
 		if (exit_flag)
 			break;
 
-		// init our icc 
+		/* init our icc */
 
 		if (!event_icc)
 			if (!init(status, &event_icc))
-				return 0;
+				return;
 
-		// find next queued event 
+		/* find next queued event */
 
 		THD_mutex_lock(&evtsect);
 		if (event_head) {
 			queued = event_head;
 			event_head = queued->evq_next;
 
-			// if queue is empty, clear tail 
+			/* if queue is empty, clear tail */
 
 			if (!event_head)
 				event_tail = NULL;
 			THD_mutex_unlock(&evtsect);
 
-			// find event in icc/idb/events chain 
+			/* find event in icc/idb/events chain */
 
 			event = NULL;
 			THD_mutex_lock(&clisect);
@@ -3657,9 +3652,10 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM)
 						}
 			if (event) {
 				if (event->ivnt_ast) {
-					(*event->ivnt_ast) (event->ivnt_arg,
-										queued->evq_length,
-										queued->evq_string);
+					reinterpret_cast < void (*) (...) >
+						(*event->ivnt_ast) (event->ivnt_arg,
+											queued->evq_length,
+											queued->evq_string);
 					event->ivnt_id = 0;
 				}
 			}
@@ -3671,7 +3667,6 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM)
 	}
 	CloseHandle(event_thread_handle);
 	event_thread_handle = 0;
-	return 0;
 }
 
 
@@ -3698,14 +3693,14 @@ static void extract_status( ICC icc, ISC_STATUS * user_status)
 
 	comm = (ips_comm_area *) icc->icc_mapped_addr;
 
-	// extract the status information 
+	/* extract the status information */
 
 	text = error_text;
 	server_status = reinterpret_cast < ISC_STATUS * >(comm->ips_status);
 	comm_ptr = comm->ips_data;
 	v = user_status;
 
-	// if there's no error or warning, skip the rest 
+	/* if there's no error or warning, skip the rest */
 
 	if (!server_status[1] && !server_status[2]) {
 		*v++ = *server_status++;
@@ -3797,33 +3792,39 @@ static SSHORT init( ISC_STATUS * user_status, ICC * picc)
 	DWORD client_pid;
 	ips_comm_area *comm;
 
-	// first, make sure that the critical region is initialized 
+	/* first, make sure that the critical region is initialized */
 
 	while (!initialized)
 	{
 		if (!InterlockedIncrement(&interlock))
 		{
-			// increment "succeeded", initialize 
 
-			initialized = true;
+			/* increment "succeeded", initialize */
+
+			THD_mutex_init(&clisect);
+			THD_mutex_init(&evtsect);
+			THD_mutex_init(&mapsect);
+			initialized = TRUE;
 			gds__register_cleanup(reinterpret_cast<void(*)(void*)>(IPC_release_all),
+									NULL);
+			gds__register_cleanup(reinterpret_cast<void(*)(void*)>(XNET_release_all),
 									NULL);
 		}
 		else
 		{
-			// some other thread is initializing now 
+			/* some other thread is initializing now */
 
 			InterlockedDecrement(&interlock);
 		}
 	}
 
-	// set up for unavailable server 
+	/* set up for unavailable server */
 
 	user_status[0] = isc_arg_gds;
 	user_status[1] = isc_unavailable;
 	user_status[2] = isc_arg_end;
 
-	// see if this thread has been connected yet, and if not, do so 
+	/* see if this thread has been connected yet, and if not, do so */
 
 	THD_mutex_lock(&clisect);
 	current_thread_id = GetCurrentThreadId();
@@ -3862,7 +3863,7 @@ static SSHORT init( ISC_STATUS * user_status, ICC * picc)
 		mapped_area = (USHORT) IPS_UNPACK_MAPNUM(number);
 		mapped_position = (USHORT) IPS_UNPACK_USERNUM(number);
 
-		// see if area is already mapped for this client 
+		/* see if area is already mapped for this client */
 
 		for (ipm = client_maps; ipm; ipm = ipm->ipm_next)
 		{
@@ -3875,7 +3876,7 @@ static SSHORT init( ISC_STATUS * user_status, ICC * picc)
 
 		if (!ipm)
 		{
-			// add new mapping 
+			/* add new mapping */
 
 			sprintf(name_buffer, IPI_MAPPED_FILE_NAME, Config::getIpcName(), mapped_area);
 			file_handle = OpenFileMapping(FILE_MAP_WRITE, FALSE, name_buffer);
@@ -3910,7 +3911,7 @@ static SSHORT init( ISC_STATUS * user_status, ICC * picc)
 			ipm->ipm_flags = 0;
 		}
 
-		// there's no thread structure, so make one  
+		/* there's no thread structure, so make one  */
 
 		icc = (ICC) ALLOC(type_icc);
 		if (!icc)
@@ -3934,7 +3935,7 @@ static SSHORT init( ISC_STATUS * user_status, ICC * picc)
 #endif
 		comm = (ips_comm_area *) icc->icc_mapped_addr;
 
-		// only speak if server has correct protocol 
+		/* only speak if server has correct protocol */
 
 		if (comm->ips_server_protocol != 1L || comm->ips_server_proc == 0)
 		{
@@ -3953,7 +3954,7 @@ static SSHORT init( ISC_STATUS * user_status, ICC * picc)
 		icc->icc_server_proc = comm->ips_server_proc;
 		ipm->ipm_count++;
 
-		// get handles of semaphores 
+		/* get handles of semaphores */
 
 		sprintf(name_buffer, IPI_CLIENT_SEM_NAME, Config::getIpcName(),
 				mapped_area, mapped_position);
@@ -3964,24 +3965,24 @@ static SSHORT init( ISC_STATUS * user_status, ICC * picc)
 		icc->icc_server_sem = OpenSemaphore(SEMAPHORE_ALL_ACCESS, FALSE,
 											name_buffer);
 
-		// initialize wait for multiple objects array 
+		/* initialize wait for multiple objects array */
 
 		icc->icc_waits[0] = icc->icc_client_sem;
 		icc->icc_waits[1] = icc->icc_server_proc;
 
-		// if we're not watching the server yet, do so now 
+		/* if we're not watching the server yet, do so now */
 
 		if (!server_watcher_handle)
 		{
 			server_process_handle = icc->icc_server_proc;
-			gds__thread_start(server_watcher,
+			gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>(server_watcher),
 								NULL,
 								THREAD_high,
 								0,
 								&server_watcher_handle);
 		}
 
-		// link to icc chain 
+		/* link to icc chain */
 
 		icc->icc_next = client_threads;
 		client_threads = icc;
@@ -3994,7 +3995,7 @@ static SSHORT init( ISC_STATUS * user_status, ICC * picc)
 }
 
 
-static ITR make_transaction( ISC_STATUS * user_status, IDB idb, FB_API_HANDLE handle)
+static ITR make_transaction( ISC_STATUS * user_status, IDB idb, FRBRD * handle)
 {
 /**************************************
  *
@@ -4023,8 +4024,7 @@ static ITR make_transaction( ISC_STATUS * user_status, IDB idb, FB_API_HANDLE ha
 }
 
 
-// Another function to count the legnth up to the first space.
-static SSHORT name_length(const TEXT* name)
+static SSHORT name_length( TEXT * name)
 {
 /*****************************************
  *
@@ -4037,14 +4037,14 @@ static SSHORT name_length(const TEXT* name)
  *      NULL-terminated buffer
  *
  *****************************************/
-	const TEXT* p = name;
-	while (*p && *p != ' ')
-		++p;
+	TEXT *p;
+
+	for (p = name; *p && *p != ' '; p++);
 	return (p - name);
 }
 
 
-static bool pack_strings( ICC icc)
+static BOOL pack_strings( ICC icc)
 {
 /**************************************
  *
@@ -4077,18 +4077,18 @@ static bool pack_strings( ICC icc)
 	for (i = 0; i < MAX_IPS_STRINGS; i++) {
 		string = &comm->ips_buffers[i];
 
-		// see if this buffer needs sending 
+		/* see if this buffer needs sending */
 
 		if (string->ips_flags & IPS_INPUT_BUFFER && string->ips_cl_size) {
 
 			string->ips_cl_copied = 0;
 			ccursor = reinterpret_cast < char *>(string->ips_cl_addr);
 
-			// keep packing it in 
+			/* keep packing it in */
 
 			while (string->ips_cl_copied < string->ips_cl_size) {
 
-				// put in the whole thing, or whatever will fit 
+				/* put in the whole thing, or whatever will fit */
 
 				to_copy = string->ips_cl_size - string->ips_cl_copied;
 				if (size_left <= to_copy)
@@ -4101,18 +4101,18 @@ static bool pack_strings( ICC icc)
 				size_left -= to_copy;
 				string->ips_cl_copied += to_copy;
 
-				// if all the space has been used up, send it and wait 
+				/* if all the space has been used up, send it and wait */
 
 				if (!size_left && string->ips_cl_copied < string->ips_cl_size) {
 					if (!send_and_wait(icc))
-						return false;
+						return FALSE;
 					size_left = (ULONG) (IPS_USEFUL_SPACE(pages_per_user));
 					acursor = (TEXT *) comm->ips_data;
 				}
 			}
 		}
 	}
-	return true;
+	return TRUE;
 }
 
 
@@ -4165,7 +4165,7 @@ static void release_database( IDB idb)
 	ips_comm_area *comm;
 
 
-	// find the structure in the thread's chain and remove it 
+	/* find the structure in the thread's chain and remove it */
 
 	THD_mutex_lock(&clisect);
 	icc = idb->idb_thread;
@@ -4180,11 +4180,11 @@ static void release_database( IDB idb)
 	}
 	ALLI_release((BLK) idb);
 
-	// close down if chain is now empty 
+	/* close down if chain is now empty */
 
 	if (!icc->icc_databases) {
 
-		// point to communications area 
+		/* point to communications area */
 
 		ipm = icc->icc_ipm;
 		if (!(icc->icc_flags & ICCF_SERVER_SHUTDOWN)) {
@@ -4193,7 +4193,7 @@ static void release_database( IDB idb)
 			ReleaseSemaphore(icc->icc_server_sem, 1L, NULL);
 		}
 
-		// free up semaphores 
+		/* free up semaphores */
 
 		if (icc->icc_client_sem)
 			CloseHandle(icc->icc_client_sem);
@@ -4202,7 +4202,7 @@ static void release_database( IDB idb)
 		if (icc->icc_server_proc)
 			CloseHandle(icc->icc_server_proc);
 
-		// find icc in chain and release 
+		/* find icc in chain and release */
 
 		if (client_threads == icc)
 			client_threads = icc->icc_next;
@@ -4215,7 +4215,7 @@ static void release_database( IDB idb)
 		}
 		ALLI_release((BLK) icc);
 
-		// if this was the last area for this map, unmap it 
+		/* if this was the last area for this map, unmap it */
 
 		ipm->ipm_count--;
 		if (!ipm->ipm_count) {
@@ -4224,13 +4224,13 @@ static void release_database( IDB idb)
 				CloseHandle(ipm->ipm_handle);
 			}
 
-			// find in chain and release 
+			/* find in chain and release */
 
 			if (client_maps == ipm)
 				client_maps = ipm->ipm_next;
 			else {
-				for (pipm = client_maps; pipm->ipm_next; pipm = pipm->ipm_next)
-					if (pipm->ipm_next == ipm) {
+				for (pipm = client_maps; pipm->ipm_next;
+					 pipm = pipm->ipm_next) if (pipm->ipm_next == ipm) {
 						pipm->ipm_next = ipm->ipm_next;
 						break;
 					}
@@ -4348,7 +4348,7 @@ static void release_sql_request( IPSERVER_ISR stmt)
 }
 
 
-static bool send_and_wait( ICC icc)
+static BOOL send_and_wait( ICC icc)
 {
 /**************************************
  *
@@ -4364,30 +4364,30 @@ static bool send_and_wait( ICC icc)
  **************************************/
 	DWORD result;
 
-// dead server means no point in sending 
+/* dead server means no point in sending */
 
 	if (icc->icc_flags & ICCF_SERVER_SHUTDOWN)
-		return false;
+		return FALSE;
 
 /* first, signal the server that the communications
    area in mapped memory is filed and ready */
 
 	if (!ReleaseSemaphore(icc->icc_server_sem, 1L, NULL))
-		return false;
+		return FALSE;
 
-// next, wait for the server to signal us back or die 
+/* next, wait for the server to signal us back or die */
 
-	THREAD_EXIT();
+	THREAD_EXIT;
 	result =
 		WaitForMultipleObjects((DWORD) 2, icc->icc_waits, FALSE, INFINITE);
-	THREAD_ENTER();
+	THREAD_ENTER;
 
 	if (result != WAIT_OBJECT_0) {
 		icc->icc_flags |= ICCF_UNMAP_CLIENT;
-		return false;
+		return FALSE;
 	}
 
-	return true;
+	return TRUE;
 }
 
 
@@ -4409,12 +4409,12 @@ static void server_shutdown(void)
 	IDB idb;
 
 
-	// for each icc structure, shut it and its database 
+	/* for each icc structure, shut it and its database */
 
 	for (icc = client_threads; icc; icc = icc->icc_next) {
 		icc->icc_flags |= ICCF_SERVER_SHUTDOWN;
 
-		// free up semaphores 
+		/* free up semaphores */
 
 		if (icc->icc_client_sem)
 			CloseHandle(icc->icc_client_sem);
@@ -4426,13 +4426,13 @@ static void server_shutdown(void)
 		icc->icc_server_sem = 0;
 		icc->icc_server_proc = 0;
 
-		// mark databases 
+		/* mark databases */
 
 		for (idb = icc->icc_databases; idb; idb = idb->idb_next)
 			idb->idb_flags |= IDBF_SERVER_SHUTDOWN;
 	}
 
-	// unmap all mapped files 
+	/* unmap all mapped files */
 
 	for (ipm = client_maps; ipm; ipm = ipm->ipm_next) {
 		ipm->ipm_flags |= IPMF_SERVER_SHUTDOWN;
@@ -4443,7 +4443,7 @@ static void server_shutdown(void)
 }
 
 
-static THREAD_ENTRY_DECLARE server_watcher(THREAD_ENTRY_PARAM)
+static void server_watcher(void)
 {
 /**************************************
  *
@@ -4467,7 +4467,7 @@ static THREAD_ENTRY_DECLARE server_watcher(THREAD_ENTRY_PARAM)
 		result = WaitForSingleObject(server_process_handle, INFINITE);
 		if (result == WAIT_OBJECT_0) {
 
-			// unmap and close all maps 
+			/* unmap and close all maps */
 
 			THD_mutex_lock(&mapsect);
 			server_shutdown();
@@ -4478,11 +4478,10 @@ static THREAD_ENTRY_DECLARE server_watcher(THREAD_ENTRY_PARAM)
 			break;
 		}
 	}
-	return 0;
 }
 
 
-static bool unpack_strings( ICC icc)
+static BOOL unpack_strings( ICC icc)
 {
 /**************************************
  *
@@ -4508,17 +4507,17 @@ static bool unpack_strings( ICC icc)
 	for (i = 0; i < MAX_IPS_STRINGS; i++) {
 		string = &comm->ips_buffers[i];
 
-		// see if this buffer needs extraction 
+		/* see if this buffer needs extraction */
 
 		if (string->ips_flags & IPS_OUTPUT_BUFFER && string->ips_cl_size) {
 			string->ips_cl_copied = 0;
 			ccursor = reinterpret_cast < char *>(string->ips_cl_addr);
 
-			// start extraction 
+			/* start extraction */
 
 			while (string->ips_cl_copied < string->ips_cl_size) {
 
-				// extract all or whatever's available 
+				/* extract all or whatever's available */
 
 				to_copy = string->ips_cl_size - string->ips_cl_copied;
 				if (string->ips_com_size <= to_copy)
@@ -4528,15 +4527,15 @@ static bool unpack_strings( ICC icc)
 				ccursor += to_copy;
 				string->ips_cl_copied += to_copy;
 
-				// if there is more to copy, wait for it 
+				/* if there is more to copy, wait for it */
 
 				if (string->ips_cl_copied < string->ips_cl_size)
 					if (!send_and_wait(icc))
-						return false;
+						return FALSE;
 			}
 		}
 	}
-	return true;
+	return TRUE;
 }
 
 
@@ -4558,7 +4557,7 @@ void IPC_process_event(
 	EVENTQ queued;
 
 
-	// allocate a queued event structure, fill it and link it 
+	/* allocate a queued event structure, fill it and link it */
 
 	THD_mutex_lock(&evtsect);
 	queued = (EVENTQ) ALLI_alloc(sizeof(struct eventq) + event_length);
@@ -4581,6 +4580,7 @@ void IPC_process_event(
 }
 
 
+#ifndef XNET
 void IPC_release_all(void)
 {
 /**************************************
@@ -4605,7 +4605,7 @@ void IPC_release_all(void)
 	ips_comm_area *comm;
 
 
-	// get stuff to release and clear list heads 
+	/* get stuff to release and clear list heads */
 
 	exit_flag++;
 	if (exit_flag > 1)
@@ -4616,7 +4616,7 @@ void IPC_release_all(void)
 	ipm = client_maps;
 	client_maps = NULL;
 
-	// cause event threads to shut down 
+	/* cause event threads to shut down */
 
 	if (event_window) {
 		PostMessage(event_window, WM_CLOSE, 0, 0);
@@ -4643,7 +4643,7 @@ void IPC_release_all(void)
 		server_watcher_handle = 0;
 	}
 
-	// release queued event structures 
+	/* release queued event structures */
 
 	event = event_head;
 	event_head = NULL;
@@ -4653,7 +4653,7 @@ void IPC_release_all(void)
 		ALLI_free((UCHAR *) event);
 	}
 
-	// disconnect each thread 
+	/* disconnect each thread */
 
 	for (; icc; icc = icc->icc_next) {
 		if (!(icc->icc_flags & ICCF_SERVER_SHUTDOWN)) {
@@ -4664,12 +4664,12 @@ void IPC_release_all(void)
 	}
 	icc = nicc;
 
-	// for each icc structure, release its database and close it down 
+	/* for each icc structure, release its database and close it down */
 
 	for (; icc; icc = nicc) {
 		nicc = icc->icc_next;
 
-		// free up semaphores 
+		/* free up semaphores */
 
 		if (icc->icc_client_sem)
 			CloseHandle(icc->icc_client_sem);
@@ -4678,7 +4678,7 @@ void IPC_release_all(void)
 		if (icc->icc_server_proc)
 			CloseHandle(icc->icc_server_proc);
 
-		// free up dependant data structures 
+		/* free up dependant data structures */
 
 		for (idb = icc->icc_databases; idb; idb = nidb) {
 			nidb = idb->idb_next;
@@ -4709,7 +4709,7 @@ void IPC_release_all(void)
 		ALLI_release((BLK) icc);
 	}
 
-	// unmap all mapped files 
+	/* unmap all mapped files */
 
 	for (; ipm; ipm = nipm) {
 		nipm = ipm->ipm_next;
@@ -4720,8 +4720,13 @@ void IPC_release_all(void)
 		ALLI_free((UCHAR *) ipm);
 	}
 	if (initialized) {
-		initialized = false;
+		THD_mutex_destroy(&clisect);
+		THD_mutex_destroy(&evtsect);
+		THD_mutex_destroy(&mapsect);
+		initialized = FALSE;
 	}
 }
+#endif
 
 
+} // extern "C"

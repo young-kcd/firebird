@@ -35,12 +35,12 @@
 
 ::===========
 :GPRE_M
-@%GPRE% -n -m -raw %ROOT_PATH%\src\%1\%2.epp %ROOT_PATH%\gen\%1\%2.cpp -b %SERVER_NAME%:%DB_PATH%/gen/dbs/
+@%GPRE% -n -m -raw %ROOT_PATH%\src\%1\%2.epp %ROOT_PATH%\gen\%1\%2.cpp -b localhost:%DB_PATH%/gen/dbs/
 @goto :EOF
 
 ::===========
 :GPRE_GDS
-@%GPRE% -n -gds -raw -ids %ROOT_PATH%\src\%1\%2.epp %ROOT_PATH%\gen\%1\%2.cpp -b %SERVER_NAME%:%DB_PATH%/gen/dbs/
+@%GPRE% -n -gds -raw -ids %ROOT_PATH%\src\%1\%2.epp %ROOT_PATH%\gen\%1\%2.cpp -b localhost:%DB_PATH%/gen/dbs/
 goto :EOF
 
 ::===========
@@ -61,15 +61,12 @@ goto :EOF
 @for %%i in (exe, extract) do @call :PREPROCESS dudley %%i
 @for %%i in (gpre_meta) do @call :PREPROCESS gpre %%i
 @for %%i in (extract, isql, show) do @call :PREPROCESS isql %%i
-@for %%i in (dfw, dpm, dyn, dyn_def, dyn_del, dyn_mod, dyn_util, fun, grant, ini, met, pcmet, scl) do @call :PREPROCESS jrd %%i GDS
-@for %%i in (codes) do @call :PREPROCESS misc %%i
+@for %%i in (dfw, dpm, dyn, dyn_def, dyn_del, dyn_mod, dyn_util, envelope, fun, grant, ini, met, pcmet, scl, stats) do @call :PREPROCESS jrd %%i GDS
+@for %%i in (codes) do @call :PREPROCESS jrd %%i
 @for %%i in (build_file) do @call :PREPROCESS msgs %%i
 @for %%i in (help, meta, proc, show) do @call :PREPROCESS qli %%i
-@for %%i in (dba) do @call :PREPROCESS utilities/gstat %%i
-@for %%i in (security) do @call :PREPROCESS utilities/gsec %%i
-@for %%i in (stats) do @call :PREPROCESS utilities %%i
+@for %%i in (dba, security) do @call :PREPROCESS utilities %%i
 
 @goto :EOF
 
 :END
-

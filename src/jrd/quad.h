@@ -35,16 +35,8 @@
  * copyright (c) 1993 by Borland International
  */
 
-#ifndef JRD_QUAD_H
-#define JRD_QUAD_H
-
-#ifndef WORDS_BIGENDIAN
-const int LOW_WORD		= 0;
-const int HIGH_WORD		= 1;
-#else
-const int LOW_WORD		= 1;
-const int HIGH_WORD		= 0;
-#endif
+#ifndef _JRD_QUAD_H_
+#define _JRD_QUAD_H_
 
 #ifdef NATIVE_QUAD
 #define QUAD_ADD(a,b,e)         ((a) + (b))
@@ -64,4 +56,4 @@ const int HIGH_WORD		= 0;
 #include "../jrd/quad_proto.h"
 #endif
 
-#endif /* JRD_QUAD_H */
+#endif /* _JRD_QUAD_H_ */

@@ -27,7 +27,6 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\ib_udf/ib_udf.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\ib_udf/"
 				ObjectFile="..\..\..\temp\debug\ib_udf/"
@@ -99,7 +98,6 @@
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\ib_udf/ib_udf.pch"
 				AssemblerListingLocation="..\..\..\temp\release\ib_udf/"
 				ObjectFile="..\..\..\temp\release\ib_udf/"
@@ -119,6 +117,7 @@
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\ib_udf.def"
 				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\..\..\temp\release\ib_udf/ib_udf.pdb"
 				ImportLibrary="..\..\..\temp\release\ib_udf/ib_udf.lib"/>
 			<Tool
 				Name="VCMIDLTool"

@@ -24,39 +24,39 @@
  * 2003.02.02 Dmitry Yemanov: Implemented cached security database connection
  */
 
-#ifndef JRD_PWD_H
-#define JRD_PWD_H
+#ifndef _JRD_PWD_H_
+#define _JRD_PWD_H_
 
 #include "../jrd/ibase.h"
-#include "../jrd/smp_impl.h"
 #include "../jrd/thd.h"
 
-const int MAX_PASSWORD_ENC_LENGTH = 12;
-static const char* PASSWORD_SALT  = "9z";
+#define MAX_PASSWORD_ENC_LENGTH 12
+#define PASSWORD_SALT  "9z"
 
 class SecurityDatabase
 {
-	struct user_record {
+	typedef struct {
 		SLONG gid;
 		SLONG uid;
 		SSHORT flag;
 		SCHAR password[34];
-	};
+	} user_record;
 
 public:
 
 	static void getPath(TEXT*);
 	static void initialize();
 	static void shutdown();
-	static void verifyUser(TEXT*, const TEXT*, const TEXT*, const TEXT*,
-		int*, int*, int*);
+	static void verifyUser(TEXT*, TEXT*, TEXT*, TEXT*, int*, int*, int*);
+
+	~SecurityDatabase();
 
 private:
 
 	static const UCHAR PWD_REQUEST[256];
 	static const UCHAR TPB[4];
 
-	V4Mutex mutex;
+	MUTX_T mutex;
 
 	ISC_STATUS_ARRAY status;
 
@@ -67,6 +67,9 @@ private:
 
 	int counter;
 
+	void lock();
+	void unlock();
+
 	void fini();
 	void init();
 	bool lookup_user(TEXT*, int*, int*, TEXT*);
@@ -74,13 +77,13 @@ private:
 
 	static SecurityDatabase instance;
 
-	SecurityDatabase() {}
+	SecurityDatabase();
 };
 
 #ifdef VMS
-static const char* USER_INFO_NAME	= "[sysmgr]security.fdb";
+#define USER_INFO_NAME	"[sysmgr]security.fdb"
 #else
-static const char* USER_INFO_NAME	= "security.fdb";
+#define USER_INFO_NAME	"security.fdb"
 #endif
 
-#endif /* JRD_PWD_H */
+#endif /* _JRD_PWD_H_ */

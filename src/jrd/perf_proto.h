@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		perf_proto.h
- *	DESCRIPTION:	Prototype header file for perf.cpp
+ *	DESCRIPTION:	Prototype header file for perf.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,21 +21,23 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_PERF_PROTO_H
-#define JRD_PERF_PROTO_H
+#ifndef _JRD_PERF_PROTO_H_
+#define _JRD_PERF_PROTO_H_
+
+#include "../jrd/y_ref.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int		API_ROUTINE perf_format(const struct perf*, const struct perf*, 
-								const SCHAR*, SCHAR*, SSHORT*);
-void	API_ROUTINE perf_get_info(FB_API_HANDLE*, struct perf*);
-void	API_ROUTINE perf_report(const struct perf*, const struct perf*, SCHAR*,
-									SSHORT*);
+extern int API_ROUTINE perf_format(struct perf *, struct perf *, SCHAR *,
+								   SCHAR *, SSHORT *);
+extern void API_ROUTINE perf_get_info(FRBRD **, struct perf *);
+extern void API_ROUTINE perf_report(struct perf *, struct perf *, SCHAR *,
+									SSHORT *);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-#endif // JRD_PERF_PROTO_H
+#endif /* _JRD_PERF_PROTO_H_ */

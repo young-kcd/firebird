@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		sqz_proto.h
- *	DESCRIPTION:	Prototype header file for sqz.cpp
+ *	DESCRIPTION:	Prototype header file for sqz.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,25 +21,27 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_SQZ_PROTO_H
-#define JRD_SQZ_PROTO_H
+#ifndef _JRD_SQZ_PROTO_H_
+#define _JRD_SQZ_PROTO_H_
 
 #include "../jrd/req.h"
 #include "../jrd/sqz.h"
 
-namespace Jrd {
-	class DataComprControl;
-	class Record;
-}
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-USHORT	SQZ_apply_differences(Jrd::Record*, const SCHAR*, const SCHAR* const);
-USHORT	SQZ_compress(Jrd::DataComprControl*, const SCHAR*, SCHAR*, int);
-USHORT	SQZ_compress_length(Jrd::DataComprControl*, const SCHAR*, int);
-SCHAR*	SQZ_decompress(const SCHAR*, USHORT, SCHAR*, const SCHAR* const);
-USHORT	SQZ_differences(const SCHAR*, USHORT, SCHAR*, USHORT, SCHAR*, int);
-USHORT	SQZ_no_differences(SCHAR* const, int);
-void	SQZ_fast(Jrd::DataComprControl*, const SCHAR*, SCHAR*);
-USHORT	SQZ_length(Jrd::thread_db*, const SCHAR*, int, Jrd::DataComprControl*);
+extern USHORT	SQZ_apply_differences(struct rec*, SCHAR*, SCHAR*);
+extern USHORT	SQZ_compress(class Dcc*, const SCHAR*, SCHAR*, int);
+extern USHORT	SQZ_compress_length(class Dcc*, SCHAR*, int);
+extern SCHAR*	SQZ_decompress(const SCHAR*, USHORT, SCHAR*, const SCHAR*);
+extern USHORT	SQZ_differences(SCHAR*, USHORT, SCHAR*, USHORT, SCHAR*, int);
+extern USHORT	SQZ_no_differences(SCHAR*, int);
+extern void		SQZ_fast(class Dcc*, SCHAR*, SCHAR*);
+extern USHORT	SQZ_length(TDBB, SCHAR*, int, class Dcc*);
 
-#endif // JRD_SQZ_PROTO_H
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
+#endif /* _JRD_SQZ_PROTO_H_ */

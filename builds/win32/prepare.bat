@@ -2,8 +2,8 @@
 @echo off
 
 @echo.
-@echo    !!  Warning !!
-@echo    This script no longer requires the 
+@echo   !!  Warning !!
+@echo   This script no longer requires the 
 @echo   path to the source. It now works it  
 @echo   out automatically.
 @echo.
@@ -41,15 +41,15 @@
 
 @rmdir /s /q %ROOT_PATH%\gen 2>nul
 @mkdir %ROOT_PATH%\gen\dbs 2>nul
-@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\builds\misc\metadata.gbak %SERVER_NAME%:%DB_PATH%\gen\dbs\metadata.fdb
-@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\builds\misc\security.gbak %SERVER_NAME%:%DB_PATH%\gen\dbs\security.fdb
-@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\builds\misc\msg.gbak %SERVER_NAME%:%DB_PATH%\gen\dbs\msg.fdb
-@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\builds\misc\help.gbak %SERVER_NAME%:%DB_PATH%\gen\dbs\help.fdb
-@copy %ROOT_PATH%\gen\dbs\metadata.fdb %ROOT_PATH%\gen\dbs\yachts.lnk > nul
+@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\src\misc\metadata.gbak localhost:%DB_PATH%\gen\dbs\metadata.fdb
+@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\src\misc\security.gbak localhost:%DB_PATH%\gen\dbs\security.fdb
+@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\src\msgs\msg.gbak localhost:%DB_PATH%\gen\dbs\msg.fdb
+@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\src\misc\help.gbak localhost:%DB_PATH%\gen\dbs\help.fdb
+@copy %ROOT_PATH%\gen\dbs\metadata.fdb %ROOT_PATH%\gen\dbs\yachts.lnk
 
 @echo.
 @echo Completed Preparations for build
-@echo    You may now run make_boot.bat [DEBUG] [CLEAN]
+@echo    You may now run make_boot.bat
 @echo.
 
 @goto :END
@@ -57,8 +57,8 @@
 ::===========
 :HELP
 @echo.
-@echo   Build process need the FIREBIRD environment variable set to work.
-@echo   FIREBIRD value should be the root directory of your Firebird installation.
+@echo   If gbak is not available on your path specify the  
+@echo   root directory of your Firebird installation.
 @echo   Example:
 @echo     c:\program files\firebird
 @echo. 
@@ -67,4 +67,3 @@
 
 
 :END
-

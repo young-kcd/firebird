@@ -1,5 +1,5 @@
-#ifndef INCLUDE_Firebird_H
-#define INCLUDE_Firebird_H
+#ifndef INCLUDE_Firebird
+#define INCLUDE_Firebird
 
 /*
  *  The contents of this file are subject to the Mozilla Public
@@ -30,7 +30,7 @@
  *       John Bellardo  <bellardo@cs.ucsd.edu>
  *
  *
- *  $Id: firebird.h,v 1.27 2004-06-25 01:44:13 skidder Exp $
+ *  $Id: firebird.h,v 1.12.2.2 2003-10-30 22:25:55 skidder Exp $
  *
  */
 
@@ -43,10 +43,8 @@
 #define FB_DLL_EXPORT
 #endif
 #if defined(SOLX86)
-// this pragmas is used only with gcc 2.95!
-//#define __PRAGMA_REDEFINE_EXTNAME 
-//#define __EXTENSIONS__
-//
+#define __PRAGMA_REDEFINE_EXTNAME 
+#define __EXTENSIONS__
 #endif
 
 //
@@ -64,58 +62,17 @@
 
 // 
 #if defined(SUPERSERVER) || defined(WIN_NT)
-#define SERVER_SHUTDOWN
-#endif
-
-// from thd.h
-#ifdef HAVE_POSIX_THREADS
-#ifdef SUPERSERVER
-#define USE_POSIX_THREADS
-#endif
-#ifdef SUPERCLIENT
-#if defined(LINUX) || defined(FREEBSD)
-/* The following ifdef was added to build thread safe gds shared
-   library on linux platform. It seems the gdslib works now (20020220)
-   with thread enabled applications. Anyway, more tests should be 
-   done as I don't have deep knowledge of the interbase/firebird 
-   engine and this change may imply side effect I haven't known 
-   about yet. Tomas Nejedlik (tomas@nejedlik.cz) */
-#define USE_POSIX_THREADS
-#endif
-#endif
+#define SERVER_SHUTDOWN		1
 #endif
 
 // Check if we need thread synchronization
-#if defined(HAVE_MULTI_THREAD)
-# if defined(SUPERSERVER) || defined(SUPERCLIENT) || \
-     defined(WIN_NT) || defined(SOLARIS_MT) || defined (VMS)
-# define MULTI_THREAD
-# endif
+#if defined(SUPERSERVER) || defined(SUPERCLIENT) || \
+	defined(WIN_NT) || defined(SOLARIS_MT) || defined (VMS)
+#define MULTI_THREAD 1
 #endif
 
-// This is needed to build client library on threaded platforms for classic server
-#if defined(HAVE_POSIX_THREADS) && defined(SUPERCLIENT)
-# define MULTI_THREAD
+#if defined __cplusplus && defined __GNUC__
+#include "../common/classes/alloc.h"
 #endif
 
-#ifdef MULTI_THREAD
-#define ANY_THREADING
-#endif
-#ifdef V4_THREADING
-#define ANY_THREADING
-#endif
-
-#ifndef NULL
-#define NULL            0L
-#endif
-
-#if defined(WIN_NT) && defined(SUPERSERVER) && !defined(EMBEDDED)
-#include <windows.h>
-// Comment this definition to build without priority scheduler 
-//	OR:
-// Uncomment this definition to build with priority scheduler
-//#define THREAD_PSCHED
-#endif
-
-#endif /* INCLUDE_Firebird_H */
-
+#endif /* INCLUDE_Firebird */

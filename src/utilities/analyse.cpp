@@ -42,10 +42,12 @@
 #endif
 #endif
 
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 #include <errno.h>
 #include "jrd.h"
 #include "ods.h"
+
+extern SCHAR *sys_errlist[];
 
 static void analyse(int, SCHAR *, PAG, int);
 static SLONG get_long(void);
@@ -53,24 +55,24 @@ static void db_error(int);
 static void db_open(UCHAR *, USHORT);
 static PAG db_read(SLONG);
 
-static FILE *trace;
+static IB_FILE *trace;
 static int file;
 
 /* Physical IO trace events */
 
-const SSHORT trace_create	= 1;
-const SSHORT trace_open		= 2;
-const SSHORT trace_page_size	= 3;
-const SSHORT trace_read		= 4;
-const SSHORT trace_write	= 5;
-const SSHORT trace_close	= 6;
+#define trace_create	1
+#define trace_open	2
+#define trace_page_size	3
+#define trace_read	4
+#define trace_write	5
+#define trace_close	6
 
 static USHORT page_size;
 static int map_length, map_base, map_count;
 static PAG global_buffer;
 static UCHAR *map_region;
 
-const int MAX_PAGES	= 50000;
+#define MAX_PAGES	50000
 
 static USHORT read_counts[MAX_PAGES], write_counts[MAX_PAGES];
 
@@ -87,15 +89,14 @@ void main( int argc, char **argv)
  *	Replay all I/O to compute overhead of I/O system.
  *
  **************************************/
-	SSHORT event;
-	bool detail;
+	SSHORT event, detail;
 	USHORT *r, *w;
 	PAG *page;
 	SLONG reads, writes, n, cpu, elapsed, system, length, sequence;
 	SCHAR string[128], *p, *end;
 	struct tms after, before;
 
-	detail = true;
+	detail = TRUE;
 	sequence = 0;
 
 	for (end = argv + argc, ++argv; argv < end; argv++) {
@@ -103,25 +104,25 @@ void main( int argc, char **argv)
 		if (*p++ == '-')
 			switch (UPPER(*p)) {
 			case 'S':
-				detail = false;
+				detail = FALSE;
 				break;
 			}
 	}
 
 
 	reads = writes = 0;
-	trace = fopen("trace.log", "r");
+	trace = ib_fopen("trace.log", "r");
 	page_size = 1024;
 
 	elapsed = times(&before);
 
-	while ((event = getc(trace)) != trace_close && event != EOF)
+	while ((event = ib_getc(trace)) != trace_close && event != EOF)
 		switch (event) {
 		case trace_open:
-			n = length = getc(trace);
+			n = length = ib_getc(trace);
 			p = string;
 			while (--n >= 0)
-				*p++ = getc(trace);
+				*p++ = ib_getc(trace);
 			*p = 0;
 			db_open(string, length);
 			break;
@@ -149,7 +150,7 @@ void main( int argc, char **argv)
 			break;
 
 		default:
-			printf("don't understand event %d\n", event);
+			ib_printf("don't understand event %d\n", event);
 			abort();
 		}
 
@@ -157,13 +158,13 @@ void main( int argc, char **argv)
 	cpu = after.tms_utime - before.tms_utime;
 	system = after.tms_stime - before.tms_stime;
 
-	printf
+	ib_printf
 		("File: %s:\n elapsed = %d.%.2d, cpu = %d.%.2d, system = %d.%.2d, reads = %d, writes = %d\n",
 		 string, elapsed / 60, (elapsed % 60) * 100 / 60, cpu / 60,
 		 (cpu % 60) * 100 / 60, system / 60, (system % 60) * 100 / 60, reads,
 		 writes);
 
-	printf("High activity pages:\n");
+	ib_printf("High activity pages:\n");
 
 	for (r = read_counts, w = write_counts, n = 0; n < MAX_PAGES;
 		 n++, r++, w++)
@@ -189,46 +190,46 @@ static void analyse( int number, SCHAR * string, PAG page, int sequence)
  **************************************/
 
 	if (sequence)
-		printf("%d.  %s\t%d\t\t", sequence, string, number);
+		ib_printf("%d.  %s\t%d\t\t", sequence, string, number);
 	else
-		printf("%s\t%d\t\t", string, number);
+		ib_printf("%s\t%d\t\t", string, number);
 
 	switch (page->pag_type) {
 	case pag_header:
-		printf("Header page\n");
+		ib_printf("Header page\n");
 		break;
 
 	case pag_pages:
-		printf("Page inventory page\n");
+		ib_printf("Page inventory page\n");
 		break;
 
 	case pag_transactions:
-		printf("Transaction inventory page\n");
+		ib_printf("Transaction inventory page\n");
 		break;
 
 	case pag_pointer:
-		printf("Pointer page, relation %d, sequence %d\n",
+		ib_printf("Pointer page, relation %d, sequence %d\n",
 				  ((PPG) page)->ppg_relation, ((PPG) page)->ppg_sequence);
 		break;
 
 	case pag_data:
-		printf("Data page, relation %d, sequence %d\n",
+		ib_printf("Data page, relation %d, sequence %d\n",
 				  ((DPG) page)->dpg_relation, ((DPG) page)->dpg_sequence);
 		break;
 
 	case pag_root:
-		printf("Index root page, relation %d\n",
-				  ((index_root_page*) page)->irt_relation);
+		ib_printf("Index root page, relation %d\n",
+				  ((IRT) page)->irt_relation);
 		break;
 
 	case pag_index:
-		printf("B-Tree page, relation %d, index %d, level %d\n",
+		ib_printf("B-Tree page, relation %d, index %d, level %d\n",
 				  ((BTR) page)->btr_relation, ((BTR) page)->btr_id,
 				  ((BTR) page)->btr_level);
 		break;
 
 	case pag_blob:
-		printf
+		ib_printf
 			("Blob page\n\tFlags: %x, lead page: %d, sequence: %d, length: %d\n\t",
 			 page->pag_flags, ((BLP) page)->blp_lead_page,
 			 ((BLP) page)->blp_sequence, ((BLP) page)->blp_length);
@@ -236,7 +237,7 @@ static void analyse( int number, SCHAR * string, PAG page, int sequence)
 		break;
 
 	default:
-		printf("Unknown type %d\n", page->pag_type);
+		ib_printf("Unknown type %d\n", page->pag_type);
 		break;
 	}
 }
@@ -262,10 +263,10 @@ static SLONG get_long(void)
 	SCHAR *p;
 
 	p = (SCHAR *) & value.l;
-	x = i = getc(trace);
+	x = i = ib_getc(trace);
 
 	while (--i >= 0)
-		*p++ = getc(trace);
+		*p++ = ib_getc(trace);
 
 	if (x == 1)
 		return value.c;
@@ -289,7 +290,7 @@ static void db_error( int status)
  *
  **************************************/
 
-	printf(strerror(status));
+	ib_printf(sys_errlist[status]);
 	abort();
 }
 

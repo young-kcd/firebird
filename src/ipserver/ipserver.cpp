@@ -1,6 +1,6 @@
 /*
  *      PROGRAM:        Interprocess Interface server
- *      MODULE:         ipserver.cpp
+ *      MODULE:         ipserver.c
  *      DESCRIPTION:    interprocess interface server
  *
  * The contents of this file are subject to the Interbase Public
@@ -22,21 +22,22 @@
  */
 
 #include "firebird.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 #include <signal.h>
 #include <errno.h>
 #include <windows.h>
 
 #include "../ipserver/ipc.h"
 #include "../jrd/license.h"
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../jrd/gds_proto.h"
 #include "../ipserver/alli_proto.h"
-#include "../jrd/thd.h"
+#include "../jrd/thd_proto.h"
 #include "../ipserver/ipsrv_proto.h"
 #include "../ipserver/ips.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/sch_proto.h"
+#include "../jrd/ibsetjmp.h"
 #include "../jrd/why_proto.h"
 #include "../common/config/config.h"
 #include "../jrd/gdsassert.h"
@@ -53,7 +54,7 @@ static void end_database(ICC);
 static void end_request(ICC);
 static void end_statement(ICC);
 static void end_transaction(ICC, P_OP);
-static void event_ast(void*, USHORT, const UCHAR*);
+static void event_ast(IVNT, USHORT, UCHAR *);
 static void execute_immediate(ICC, P_OP);
 static void execute_statement(ICC, P_OP);
 static void fetch(ICC);
@@ -65,7 +66,7 @@ static void insert(ICC);
 static void ipi_end_thread(ICC);
 static void ipi_server(ICC);
 static IPM make_map(USHORT);
-static ITR make_transaction(IDB, FB_API_HANDLE);
+static ITR make_transaction(IDB, FRBRD *);
 static void open_blob(ICC, P_OP);
 static void prepare_statement(ICC);
 static void put_segment(ICC);
@@ -79,7 +80,7 @@ static void release_request(IRQ);
 static void release_sql_request(IPSERVER_ISR);
 static void release_transaction(ITR);
 static void seek_blob(ICC);
-static bool send_and_wait(ICC);
+static BOOL send_and_wait(ICC);
 static void send_msg(ICC);
 static void send_no_wait(ICC);
 static void send_response(ICC, ISC_STATUS *);
@@ -92,12 +93,12 @@ static void start(ICC);
 static void start_and_send(ICC);
 static void start_transaction(ICC);
 static void transact_request(ICC);
-static bool transfer_buffers(ICC, ips_comm_area *);
+static BOOL transfer_buffers(ICC, ips_comm_area *);
 static void unwind(ICC);
-static bool wait_no_send(ICC);
+static BOOL wait_no_send(ICC);
 
 static HWND IPSVR_window = NULL;
-static const UCHAR sql_info[] = { isc_info_sql_batch_fetch };
+static UCHAR sql_info[] = { isc_info_sql_batch_fetch };
 
 /* Macro to check a given handle for validity.  While generally
  * we can depend on the client-side remote library to do this
@@ -333,7 +334,7 @@ USHORT IPS_init(HWND	hwnd,
  *
  **************************************/
 
-	// init the limits 
+	/* init the limits */
 
 	if (usrs_pr_mp &&
 		usrs_pr_mp >= IPS_MIN_NUM_CLI &&
@@ -353,7 +354,7 @@ USHORT IPS_init(HWND	hwnd,
 //		ipserver_private_data.num_maps = mx_mps;
 //	}
 
-	// init mapped chain and critical regions 
+	/* init mapped chain and critical regions */
 
 	ipserver_private_data.ipms = NULL;
 	THD_mutex_init(&ipserver_private_data.ipics);
@@ -404,13 +405,13 @@ ULONG IPS_start_thread(ULONG client_pid)
 	ips_comm_area *comm;
 
 
-	// go through list of maps 
+	/* go through list of maps */
 
 	THD_mutex_lock(&ipserver_private_data.ipics);
 	j = 0;
 	for (ipm = ipserver_private_data.ipms; ipm; ipm = ipm->ipm_next)
 	{
-		// find an available unused comm area 
+		/* find an available unused comm area */
 
 		for (i = 0; i < ipserver_private_data.users_per_map; i++)
 		{
@@ -435,11 +436,11 @@ ULONG IPS_start_thread(ULONG client_pid)
 	if (!ipm)
 	{
 
-		// allocate new map file and first slot 
+		/* allocate new map file and first slot */
 
 		ipm = make_map(j);
 
-		// check for errors in creation of mapped file 
+		/* check for errors in creation of mapped file */
 
 		if (!ipm || ipm == (IPM) - 1)
 		{
@@ -453,7 +454,7 @@ ULONG IPS_start_thread(ULONG client_pid)
 	mapped_area = j;
 	mapped_position = i;
 
-	// allocate a communications control structure and fill it in 
+	/* allocate a communications control structure and fill it in */
 
 	icc = (ICC) ALLOC(type_icc);
 	if (!icc)
@@ -476,12 +477,12 @@ ULONG IPS_start_thread(ULONG client_pid)
 	comm->ips_client_proc = icc->icc_client_proc;
 	comm->ips_server_id = GetCurrentProcessId();
 
-	// make sure client knows what this server speaks 
+	/* make sure client knows what this server speaks */
 
 	comm->ips_server_protocol = 1L;
 	comm->ips_client_protocol = 0L;
 
-	// Duplicate the server process handle for client synchronization 
+	/* Duplicate the server process handle for client synchronization */
 	if (!DuplicateHandle(GetCurrentProcess(),
 						 GetCurrentProcess(),
 						 GetCurrentProcess(),
@@ -510,7 +511,7 @@ ULONG IPS_start_thread(ULONG client_pid)
 
 	CloseHandle(server_proc);
 
-	// create the semaphores and put the handles into the icc 
+	/* create the semaphores and put the handles into the icc */
 
 	sprintf(name_buffer, IPI_CLIENT_SEM_NAME, Config::getIpcName(),
 		mapped_area, mapped_position);
@@ -521,23 +522,24 @@ ULONG IPS_start_thread(ULONG client_pid)
 	icc->icc_server_sem =
 		CreateSemaphore(ISC_get_security_desc(), 0L, 1L, name_buffer);
 
-	// make sure semaphores are "empty" 
+	/* make sure semaphores are "empty" */
 
 	while (WaitForSingleObject(icc->icc_client_sem, (DWORD) 1) ==
 		   WAIT_OBJECT_0);
 	while (WaitForSingleObject(icc->icc_server_sem, (DWORD) 1) ==
 		   WAIT_OBJECT_0);
 
-	// initialize wait for multiple objects array 
+	/* initialize wait for multiple objects array */
 
 	icc->icc_waits[0] = icc->icc_server_sem;
 	icc->icc_waits[1] = icc->icc_client_proc;
 
-	// finally, start the thread for this client 
+	/* finally, start the thread for this client */
 
-	gds__thread_start(ipi_server, icc, THREAD_medium, 0, 0);
+	gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR > (ipi_server),
+					  icc, THREAD_medium, 0, 0);
 
-	// return combined mapped area and number 
+	/* return combined mapped area and number */
 
 #ifdef  DEBUG_IP_TRACE
 	gds__log("ipserver icc %8lX, comm %8lX", icc, comm);
@@ -563,7 +565,7 @@ static void ipi_end_thread( ICC icc)
  *
  **************************************/
 
-	// free up this thread's slot 
+	/* free up this thread's slot */
 
 	IPM ipm = icc->icc_ipm;
 	THD_mutex_lock(&ipserver_private_data.ipics);
@@ -584,10 +586,9 @@ static void ipi_end_thread( ICC icc)
 			ipm->ipm_handle = 0;
 		}
 
-		if (ipserver_private_data.ipms == ipm) {
+		if (ipserver_private_data.ipms == ipm){
 			ipserver_private_data.ipms = ipm->ipm_next;
-		}
-		else {
+		} else {
 			for (IPM pipm = ipserver_private_data.ipms;
 				 pipm->ipm_next;
 				 pipm = pipm->ipm_next)
@@ -602,7 +603,7 @@ static void ipi_end_thread( ICC icc)
 		ALLI_free((UCHAR *) ipm);
 	}
 
-	// close handles for semaphores 
+	/* close handles for semaphores */
 
 	CloseHandle(icc->icc_client_sem);
 	CloseHandle(icc->icc_server_sem);
@@ -631,11 +632,11 @@ static void ipi_server( ICC icc)
 
 	gds__thread_enable(-1);
 
-	// error handler 
+	/* error handler */
 
 	try {
 
-	// request processing loop 
+	/* request processing loop */
 
 	while (!(icc->icc_flags & ICCF_SHUTDOWN))
 	{
@@ -828,7 +829,7 @@ static void ipi_server( ICC icc)
 		}
 	}
 
-	// left loop, so shut down 
+	/* left loop, so shut down */
 
 	shutdown_attachments(icc);
 	ipi_end_thread(icc);
@@ -854,7 +855,7 @@ static void allocate_statement( ICC icc)
  **************************************/
 	IDB idb;
 	IPSERVER_ISR statement;
-	FB_API_HANDLE handle;
+	FRBRD* handle;
 	ISC_STATUS_ARRAY status_vector;
 	ISC_STATUS result;
 	ips_dsql *ips;
@@ -862,7 +863,7 @@ static void allocate_statement( ICC icc)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_dsql;
@@ -870,7 +871,7 @@ static void allocate_statement( ICC icc)
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 	handle = NULL;
 
-	// allocate the statement and create a structure 
+	/* allocate the statement and create a structure */
 
 	result = GDS_DSQL_ALLOCATE(status_vector, &idb->idb_handle, &handle);
 	if (!result)
@@ -905,10 +906,10 @@ static void attach_database( ICC icc, P_OP operation)
  *      Process an attach or create packet.
  *
  **************************************/
-	USHORT dpb_length, expanded_length;
-	UCHAR file_buf[256], *dpb, dpb_buf[256];
+	USHORT file_length, dpb_length, expanded_length;
+	UCHAR *file_name, file_buf[256], *dpb, dpb_buf[256];
 	UCHAR *expanded, expanded_buf[256];
-	FB_API_HANDLE handle;
+	FRBRD* handle;
 	ISC_STATUS_ARRAY status_vector;
 	ISC_STATUS result;
 	IDB idb;
@@ -920,16 +921,15 @@ static void attach_database( ICC icc, P_OP operation)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_object;
 
-	// figure out file name buffer 
+	/* figure out file name buffer */
 
 	ips_name = &comm->ips_buffers[IPS_ATTACH_NAME];
-	const USHORT file_length = (USHORT) ips_name->ips_cl_size;
-	const UCHAR* file_name;
+	file_length = (USHORT) ips_name->ips_cl_size;
 	if (file_length <= sizeof(file_buf))
 		file_name = file_buf;
 	else
@@ -937,7 +937,7 @@ static void attach_database( ICC icc, P_OP operation)
 	NOT_NULL(file_name, TRUE);
 	IPS_SERVER(comm, IPS_ATTACH_NAME, file_name, file_length);
 
-	// figure out dpb buffer 
+	/* figure out dpb buffer */
 
 	ips_dpb = &comm->ips_buffers[IPS_ATTACH_DPB];
 	dpb_length = (USHORT) ips_dpb->ips_cl_size;
@@ -948,7 +948,7 @@ static void attach_database( ICC icc, P_OP operation)
 	NOT_NULL(dpb, dpb_length);
 	IPS_SERVER(comm, IPS_ATTACH_DPB, dpb, dpb_length);
 
-	// figure out expanded file name buffer 
+	/* figure out expanded file name buffer */
 
 	ips_expanded = &comm->ips_buffers[IPS_ATTACH_EXPANDED];
 	expanded_length = (USHORT) ips_expanded->ips_cl_size;
@@ -961,21 +961,25 @@ static void attach_database( ICC icc, P_OP operation)
 	if (!transfer_buffers(icc, comm))
 		return;
 
-	// get handle 
+	/* get handle */
 
 	handle = NULL;
 	if (operation == op_attach)
-		result = GDS_ATTACH_DATABASE(status_vector, file_length,
-									 reinterpret_cast<const char*>(file_name),
-									 &handle, dpb_length,
-									 reinterpret_cast<const char*>(dpb));
+		result = GDS_ATTACH_DATABASE(status_vector,
+									 file_length,
+									 reinterpret_cast < char *>(file_name),
+									 GDS_REF(handle),
+									 dpb_length,
+									 reinterpret_cast < char *>(dpb));
 	else
-		result = GDS_CREATE_DATABASE(status_vector, file_length,
-									 reinterpret_cast<const char*>(file_name),
-									 &handle, dpb_length,
-									 reinterpret_cast<const char*>(dpb), 0);
+		result = GDS_CREATE_DATABASE(status_vector,
+									 file_length,
+									 reinterpret_cast < char *>(file_name),
+									 GDS_REF(handle),
+									 dpb_length,
+									 reinterpret_cast < char *>(dpb), 0);
 
-	// allocate structure and return handle 
+	/* allocate structure and return handle */
 
 	if (!result)
 	{
@@ -1014,7 +1018,7 @@ static void cancel_events( ICC icc)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_object;
@@ -1022,9 +1026,9 @@ static void cancel_events( ICC icc)
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 	id = ips->ips_parameter;
 
-	// perform operation, return response and remove event 
+	/* perform operation, return response and remove event */
 
-	GDS_CANCEL_EVENTS(status_vector, &idb->idb_handle, &id);
+	GDS_CANCEL_EVENTS(status_vector, GDS_REF(idb->idb_handle), GDS_REF(id));
 	for (event = idb->idb_events; event; event = event->ivnt_next)
 	{
 		if (event->ivnt_ast && event->ivnt_id == id)
@@ -1055,22 +1059,22 @@ static USHORT check_statement_type( IPSERVER_ISR statement)
 	ISC_STATUS_ARRAY local_status;
 	ISC_STATUS result;
 	USHORT ret;
-	bool done;
+	BOOLEAN done;
 
 
-	// init to no batch allowed 
+	/* init to no batch allowed */
 
 	ret = 0;
-	done = false;
+	done = FALSE;
 	result = GDS_DSQL_SQL_INFO(local_status,
 							   &statement->isr_handle,
 							   sizeof(sql_info),
-							   reinterpret_cast<const char*>(sql_info),
+							   reinterpret_cast < char *>(sql_info),
 							   sizeof(buffer),
-							   reinterpret_cast<char*>(buffer));
+							   reinterpret_cast < char *>(buffer));
 	if (!result)
 	{
-		// check the buffer for a batch fetch flag 
+		/* check the buffer for a batch fetch flag */
 
 		for (info = buffer; (*info != isc_info_end) && !done;)
 		{
@@ -1082,12 +1086,12 @@ static USHORT check_statement_type( IPSERVER_ISR statement)
 			{
 			case isc_info_sql_batch_fetch:
 				ret = type;
-				done = true;
+				done = TRUE;
 				break;
 
 			case isc_info_error:
 			case isc_info_truncated:
-				done = true;
+				done = TRUE;
 				break;
 			}
 			info += 3 + l;
@@ -1113,7 +1117,7 @@ static void compile( ICC icc)
 	IRQ request;
 	USHORT blr_length;
 	UCHAR *blr;
-	FB_API_HANDLE handle;
+	FRBRD* handle;
 	ISC_STATUS_ARRAY status_vector;
 	ISC_STATUS result;
 	ips_compile_req *ips;
@@ -1122,14 +1126,14 @@ static void compile( ICC icc)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_compile;
 	idb = (IDB) ips->ips_db_handle;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// set up blr buffer 
+	/* set up blr buffer */
 
 	ips_blr = &comm->ips_buffers[IPS_COMPILE_REQ];
 	blr_length = (USHORT) ips_blr->ips_cl_size;
@@ -1139,13 +1143,16 @@ static void compile( ICC icc)
 	if (!transfer_buffers(icc, comm))
 		return;
 
-	// compile and get handle 
+	/* compile and get handle */
 
 	handle = NULL;
-	result = GDS_COMPILE(status_vector, &idb->idb_handle, &handle,
-						 blr_length, reinterpret_cast<const char*>(blr));
+	result = GDS_COMPILE(status_vector,
+						 GDS_REF(idb->idb_handle),
+						 GDS_REF(handle),
+						 blr_length,
+						 reinterpret_cast < char *>(GDS_VAL(blr)));
 
-	// create data structure and return handle 
+	/* create data structure and return handle */
 
 	if (!result)
 	{
@@ -1186,7 +1193,7 @@ static void ddl( ICC icc)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_ddl;
@@ -1195,7 +1202,7 @@ static void ddl( ICC icc)
 	transaction = (ITR) ips->ips_tr_handle;
 	CHECK_HANDLE(transaction, type_itr, isc_bad_trans_handle);
 
-	// set up ddl buffer 
+	/* set up ddl buffer */
 
 	ips_ddl_string = &comm->ips_buffers[IPS_DDL_DDL];
 	length = (USHORT) ips_ddl_string->ips_cl_size;
@@ -1205,10 +1212,12 @@ static void ddl( ICC icc)
 	if (!transfer_buffers(icc, comm))
 		return;
 
-	// perform operation and return response 
+	/* perform operation and return response */
 
-	GDS_DDL(status_vector, &idb->idb_handle, &transaction->itr_handle,
-			length, reinterpret_cast<const char*>(buffer));
+	GDS_DDL(status_vector,
+			GDS_REF(idb->idb_handle),
+			GDS_REF(transaction->itr_handle),
+			length, reinterpret_cast < char *>(GDS_VAL(buffer)));
 	send_response(icc, status_vector);
 }
 
@@ -1233,14 +1242,14 @@ static void drop_database( ICC icc)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_object;
 	idb = (IDB) ips->ips_handle;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// drop database, release resources and send response 
+	/* drop database, release resources and send response */
 
 	code = GDS_DROP_DATABASE(status_vector, &idb->idb_handle);
 	send_response(icc, status_vector);
@@ -1281,6 +1290,7 @@ static void end_blob( ICC icc, P_OP operation)
  **************************************/
 	IBL blob;
 	ISC_STATUS_ARRAY status_vector;
+	ISC_STATUS result;
 	UCHAR *buffer;
 	USHORT length;
 	ips_object *ips;
@@ -1289,14 +1299,14 @@ static void end_blob( ICC icc, P_OP operation)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_object;
 	blob = (IBL) ips->ips_handle;
 	CHECK_HANDLE(blob, type_ibl, isc_bad_segstr_handle);
 
-	// set up buffer for last segment, if any 
+	/* set up buffer for last segment, if any */
 
 	ips_seg = &comm->ips_buffers[IPS_CLOSE_BLOB_REM];
 	length = (USHORT) ips_seg->ips_cl_size;
@@ -1309,12 +1319,12 @@ static void end_blob( ICC icc, P_OP operation)
 			return;
 	}
 
-	// perform operation, send response and free resources 
-	ISC_STATUS result;
+	/* perform operation, send response and free resources */
+
 	if (operation == op_close_blob)
-		result = GDS_CLOSE_BLOB(status_vector, &blob->ibl_handle);
+		result = GDS_CLOSE_BLOB(status_vector, GDS_REF(blob->ibl_handle));
 	else
-		result = GDS_CANCEL_BLOB(status_vector, &blob->ibl_handle);
+		result = GDS_CANCEL_BLOB(status_vector, GDS_REF(blob->ibl_handle));
 	send_response(icc, status_vector);
 	if (!result)
 		release_blob(blob);
@@ -1341,16 +1351,16 @@ static void end_database( ICC icc)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_object;
 	idb = (IDB) ips->ips_handle;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// detach database, send response and free resources 
+	/* detach database, send response and free resources */
 
-	result = GDS_DETACH(status_vector, &idb->idb_handle);
+	result = GDS_DETACH(status_vector, GDS_REF(idb->idb_handle));
 	send_response(icc, status_vector);
 	if (!result)
 	{
@@ -1394,16 +1404,16 @@ static void end_request( ICC icc)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_object;
 	request = (IRQ) ips->ips_handle;
 	CHECK_HANDLE(request, type_irq, isc_bad_req_handle);
 
-	// process call, respond and free resources 
+	/* process call, respond and free resources */
 
-	GDS_RELEASE_REQUEST(status_vector, &request->irq_handle);
+	GDS_RELEASE_REQUEST(status_vector, GDS_REF(request->irq_handle));
 	send_response(icc, status_vector);
 	release_request(request);
 }
@@ -1428,7 +1438,7 @@ static void end_statement( ICC icc)
 	ips_comm_area *comm;
 	TEXT *comm_ptr;
 
-// set up communications area 
+/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_object;
@@ -1436,7 +1446,7 @@ static void end_statement( ICC icc)
 	CHECK_HANDLE(statement, type_ipserver_isr, isc_bad_stmt_handle);
 	option = (USHORT) ips->ips_parameter;
 
-// free statement, return response and free resources 
+/* free statement, return response and free resources */
 
 	GDS_DSQL_FREE(status_vector, &statement->isr_handle, option);
 
@@ -1447,7 +1457,7 @@ static void end_statement( ICC icc)
 	}
 	else
 	{
-		ips->ips_handle = NULL;
+		ips->ips_handle = (UCHAR *) NULL;
 		send_response(icc, status_vector);
 		release_sql_request(statement);
 	}
@@ -1467,6 +1477,7 @@ static void end_transaction( ICC icc, P_OP operation)
  *
  **************************************/
 	ITR transaction;
+	UCHAR *msg;
 	USHORT msg_length;
 	ISC_STATUS_ARRAY status_vector;
 	ISC_STATUS result;
@@ -1476,16 +1487,15 @@ static void end_transaction( ICC icc, P_OP operation)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_object;
 	transaction = (ITR) ips->ips_handle;
 	CHECK_HANDLE(transaction, type_itr, isc_bad_trans_handle);
 
-	// set up buffer for prepare2 
+	/* set up buffer for prepare2 */
 
-	const UCHAR* msg = 0;
 	if (operation == op_prepare2)
 	{
 		ips_prep = &comm->ips_buffers[IPS_PREPARE_TRANS];
@@ -1497,33 +1507,38 @@ static void end_transaction( ICC icc, P_OP operation)
 			return;
 	}
 
-	// perform operation as required 
+	/* perform operation as required */
 
 	switch (operation)
 	{
 	case op_commit:
-		result = GDS_COMMIT(status_vector, &transaction->itr_handle);
+		result = GDS_COMMIT(status_vector, GDS_REF(transaction->itr_handle));
 		if (!result)
 			release_transaction(transaction);
 		break;
 
 	case op_rollback:
-		result = GDS_ROLLBACK(status_vector, &transaction->itr_handle);
+		result = GDS_ROLLBACK(status_vector,
+							  GDS_REF(transaction->itr_handle));
 		if (!result)
 			release_transaction(transaction);
 		break;
 
 	case op_commit_retaining:
-		result = GDS_COMMIT_RETAINING(status_vector, &transaction->itr_handle);
+		result = GDS_COMMIT_RETAINING(status_vector,
+									  GDS_REF(transaction->itr_handle));
 		break;
 
 	case op_rollback_retaining:
-		result = GDS_ROLLBACK_RETAINING(status_vector, &transaction->itr_handle);
+		result = GDS_ROLLBACK_RETAINING(status_vector,
+										GDS_REF(transaction->itr_handle));
 		break;
 
 	case op_prepare2:
-		result = GDS_PREPARE2(status_vector, &transaction->itr_handle,
-							  msg_length, msg);
+		result = GDS_PREPARE2(status_vector,
+							  GDS_REF(transaction->itr_handle),
+							  msg_length,
+							  reinterpret_cast<UCHAR*>(GDS_VAL(msg)));
 		if (!result)
 			transaction->itr_flags |= ITR_limbo;
 		break;
@@ -1532,7 +1547,7 @@ static void end_transaction( ICC icc, P_OP operation)
 }
 
 
-static void event_ast(void* event_void, USHORT length, const UCHAR* data)
+static void event_ast( IVNT event, USHORT length, UCHAR * data)
 {
 /**************************************
  *
@@ -1546,7 +1561,7 @@ static void event_ast(void* event_void, USHORT length, const UCHAR* data)
  **************************************/
 	COPYDATASTRUCT cpdata;
 	ULONG result;
-	ivnt* event = static_cast<IVNT>(event_void);
+
 
 	if (!event->ivnt_ast)
 		return;
@@ -1574,10 +1589,10 @@ static void execute_immediate( ICC icc, P_OP operation)
  **************************************/
 	IDB idb;
 	ITR transaction;
-	FB_API_HANDLE handle;
+	FRBRD* handle;
 	USHORT length, dialect, in_blr_length, in_msg_type, in_msg_length,
 		out_blr_length, out_msg_type, out_msg_length, parser_version;
-	UCHAR *in_msg, *out_blr, *out_msg;
+	UCHAR *string, *in_blr, *in_msg, *out_blr, *out_msg;
 	ISC_STATUS_ARRAY status_vector;
 	ips_dsql *ips;
 	ips_string *ips_blr;
@@ -1589,7 +1604,7 @@ static void execute_immediate( ICC icc, P_OP operation)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_dsql;
@@ -1606,23 +1621,23 @@ static void execute_immediate( ICC icc, P_OP operation)
 	in_msg_type = ips->ips_msg_type;
 	dialect = (USHORT) ips->ips_parameter;
 
-	// set up sql 
+	/* set up sql */
 
 	ips_sql = &comm->ips_buffers[IPS_DSQL_EXEC_IMMED_SQL];
 	length = (USHORT) ips_sql->ips_cl_size;
-	const UCHAR* string = get_buffer(comm, length, IPS_DSQL_EXEC_IMMED_SQL);
+	string = get_buffer(comm, length, IPS_DSQL_EXEC_IMMED_SQL);
 	NOT_NULL(string, length);
 	IPS_SERVER(comm, IPS_DSQL_EXEC_IMMED_SQL, string, length);
 
-	// set up blr 
+	/* set up blr */
 
 	ips_blr = &comm->ips_buffers[IPS_DSQL_EXEC_IMMED_BLR];
 	in_blr_length = (USHORT) ips_blr->ips_cl_size;
-	const UCHAR* in_blr = get_buffer(comm, in_blr_length, IPS_DSQL_EXEC_IMMED_BLR);
+	in_blr = get_buffer(comm, in_blr_length, IPS_DSQL_EXEC_IMMED_BLR);
 	NOT_NULL(in_blr, in_blr_length);
 	IPS_SERVER(comm, IPS_DSQL_EXEC_IMMED_BLR, in_blr, in_blr_length);
 
-	// set up message 
+	/* set up message */
 
 	ips_msg = &comm->ips_buffers[IPS_DSQL_EXEC_IMMED_MSG];
 	in_msg_length = (USHORT) ips_msg->ips_cl_size;
@@ -1630,7 +1645,7 @@ static void execute_immediate( ICC icc, P_OP operation)
 	NOT_NULL(in_msg, in_msg_length);
 	IPS_SERVER(comm, IPS_DSQL_EXEC_IMMED_MSG, in_msg, in_msg_length);
 
-	// set up output message and blr if necessary 
+	/* set up output message and blr if necessary */
 
 	if (operation == op_exec_immediate2)
 	{
@@ -1658,7 +1673,7 @@ static void execute_immediate( ICC icc, P_OP operation)
 	if (!transfer_buffers(icc, comm))
 		return;
 
-	// NT Local access:  Client and server are always the same version 
+	/* NT Local access:  Client and server are always the same version */
 	/* Since the API to GDS_DSQL_EXECUTE_IMMED is public and can not be changed, there needs to
 	 * be a way to send the parser version to DSQL so that the parser can compare the keyword
 	 * version to the parser version.  To accomplish this, the parser version is combined with
@@ -1681,16 +1696,16 @@ static void execute_immediate( ICC icc, P_OP operation)
 
 	parser_version = 2;
 
-	// execute the statement, respond and clean up 
+	/* execute the statement, respond and clean up */
 
 	GDS_DSQL_EXECUTE_IMMED(status_vector,
 						   &idb->idb_handle,
 						   &handle,
 						   length,
-						   reinterpret_cast<const char*>(string),
+						   reinterpret_cast < char *>(string),
 						   (USHORT) ((dialect * 10) + parser_version),
 						   in_blr_length,
-						   reinterpret_cast<const char*>(in_blr),
+						   reinterpret_cast < char *>(in_blr),
 						   in_msg_type,
 						   in_msg_length,
 						   reinterpret_cast < char *>(in_msg),
@@ -1728,7 +1743,7 @@ static void execute_statement( ICC icc, P_OP operation)
  **************************************/
 	ITR transaction;
 	IPSERVER_ISR statement;
-	FB_API_HANDLE handle;
+	FRBRD* handle;
 	USHORT in_blr_length, in_msg_type, in_msg_length,
 		out_blr_length, out_msg_type, out_msg_length;
 	UCHAR *in_blr, *in_msg, *out_blr, *out_msg;
@@ -1742,7 +1757,7 @@ static void execute_statement( ICC icc, P_OP operation)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_dsql;
@@ -1758,7 +1773,7 @@ static void execute_statement( ICC icc, P_OP operation)
 	CHECK_HANDLE(statement, type_ipserver_isr, isc_bad_stmt_handle);
 	in_msg_type = ips->ips_msg_type;
 
-	// set up blr 
+	/* set up blr */
 
 	ips_blr = &comm->ips_buffers[IPS_DSQL_EXEC_BLR];
 	in_blr_length = (USHORT) ips_blr->ips_cl_size;
@@ -1766,7 +1781,7 @@ static void execute_statement( ICC icc, P_OP operation)
 	NOT_NULL(in_blr, in_blr_length);
 	IPS_SERVER(comm, IPS_DSQL_EXEC_BLR, in_blr, in_blr_length);
 
-	// set up message 
+	/* set up message */
 
 	ips_msg = &comm->ips_buffers[IPS_DSQL_EXEC_MSG];
 	in_msg_length = (USHORT) ips_msg->ips_cl_size;
@@ -1774,7 +1789,7 @@ static void execute_statement( ICC icc, P_OP operation)
 	NOT_NULL(in_msg, in_msg_length);
 	IPS_SERVER(comm, IPS_DSQL_EXEC_MSG, in_msg, in_msg_length);
 
-	// set up output message and blr if necessary 
+	/* set up output message and blr if necessary */
 
 	if (operation == op_execute2)
 	{
@@ -1798,7 +1813,7 @@ static void execute_statement( ICC icc, P_OP operation)
 	if (!transfer_buffers(icc, comm))
 		return;
 
-	// execute, get results and clean up 
+	/* execute, get results and clean up */
 
 	GDS_DSQL_EXECUTE(status_vector,
 					 &handle,
@@ -1841,6 +1856,7 @@ static void fetch( ICC icc)
  **************************************/
 	IPSERVER_ISR statement;
 	USHORT records, total_length, blr_length, msg_type, msg_length;
+	UCHAR *blr, *msg;
 	ISC_STATUS s;
 	ISC_STATUS_ARRAY status_vector;
 	ips_dsql *ips;
@@ -1850,7 +1866,7 @@ static void fetch( ICC icc)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_dsql;
@@ -1858,37 +1874,37 @@ static void fetch( ICC icc)
 	CHECK_HANDLE(statement, type_ipserver_isr, isc_bad_stmt_handle);
 	msg_type = ips->ips_msg_type;
 
-	// set up blr 
+	/* set up blr */
 
 	ips_blr = &comm->ips_buffers[IPS_DSQL_FETCH_BLR];
 	blr_length = (USHORT) ips_blr->ips_cl_size;
-	const UCHAR* blr = get_buffer(comm, blr_length, IPS_DSQL_FETCH_BLR);
+	blr = get_buffer(comm, blr_length, IPS_DSQL_FETCH_BLR);
 	NOT_NULL(blr, blr_length);
 	IPS_SERVER(comm, IPS_DSQL_FETCH_BLR, blr, blr_length);
 
-	// set up message 
+	/* set up message */
 
 	ips_msg = &comm->ips_buffers[IPS_DSQL_FETCH_MSG];
 	total_length = (USHORT) ips_msg->ips_cl_size;
 	msg_length = total_length / ips->ips_rec_count;
-	UCHAR* msg = get_buffer(comm, total_length, IPS_DSQL_FETCH_MSG);
+	msg = get_buffer(comm, total_length, IPS_DSQL_FETCH_MSG);
 	NOT_NULL(msg, msg_length);
 	IPS_SERVER(comm, IPS_DSQL_FETCH_MSG, msg, total_length);
 	if (!transfer_buffers(icc, comm))
 		return;
 
-	// pack in records, keeping final result of operation for eof 
+	/* pack in records, keeping final result of operation for eof */
 
 	for (records = 0; records < ips->ips_rec_count; records++)
 	{
 		s = GDS_DSQL_FETCH(status_vector,
 						   &statement->isr_handle,
 						   blr_length,
-						   reinterpret_cast<const char*>(blr),
+						   reinterpret_cast < char *>(blr),
 						   msg_type,
-						   msg_length, reinterpret_cast<char*>(msg));
+						   msg_length, reinterpret_cast < char *>(msg));
 
-		// point to next packed record 
+		/* point to next packed record */
 
 		msg += msg_length;
 		if (s)
@@ -1921,7 +1937,7 @@ static UCHAR *get_buffer( IPS comm, USHORT length, USHORT n)
 		comm->ips_buffers[n].ips_sv_buffer = (UCHAR*)gds__alloc((SLONG) length);
 	}
 
-	// Make sure that the buffer returned is empty 
+	/* Make sure that the buffer returned is empty */
 	if (comm->ips_buffers[n].ips_sv_buffer)
 		memset(comm->ips_buffers[n].ips_sv_buffer, 0,
 			   comm->ips_buffers[n].ips_sv_alloced);
@@ -1952,14 +1968,14 @@ static void get_segment( ICC icc)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_segment;
 	blob = (IBL) ips->ips_bl_handle;
 	CHECK_HANDLE(blob, type_ibl, isc_bad_segstr_handle);
 
-	// set up segment buffer 
+	/* set up segment buffer */
 
 	ips_seg = &comm->ips_buffers[IPS_BLOB_SEGMENT];
 	buffer_length = (USHORT) ips_seg->ips_cl_size;
@@ -1974,8 +1990,11 @@ static void get_segment( ICC icc)
 	 */
 
 	length = 0;
-	GDS_GET_SEGMENT(status_vector, &blob->ibl_handle, &length, buffer_length,
-					reinterpret_cast < char *>(buffer));
+	GDS_GET_SEGMENT(status_vector,
+					GDS_REF(blob->ibl_handle),
+					GDS_REF(length),
+					buffer_length,
+					reinterpret_cast < char *>(GDS_VAL(buffer)));
 	if (!transfer_buffers(icc, comm))
 		return;
 	ips->ips_length = length;
@@ -2010,7 +2029,7 @@ static void get_slice( ICC icc)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_slice;
@@ -2021,7 +2040,7 @@ static void get_slice( ICC icc)
 	array_id.bid_relation_id = ips->ips_rel_id;
 	array_id.bid_number = ips->ips_number;
 
-	// set up sdl 
+	/* set up sdl */
 
 	ips_sdl = &comm->ips_buffers[IPS_SLICE_SDL];
 	sdl_length = (SSHORT) ips_sdl->ips_cl_size;
@@ -2032,7 +2051,7 @@ static void get_slice( ICC icc)
 	NOT_NULL(sdl, sdl_length);
 	IPS_SERVER(comm, IPS_SLICE_SDL, sdl, sdl_length);
 
-	// set up parameters 
+	/* set up parameters */
 
 	ips_parms = &comm->ips_buffers[IPS_SLICE_PARAM];
 	param_length = (SSHORT) ips_parms->ips_cl_size;
@@ -2043,7 +2062,7 @@ static void get_slice( ICC icc)
 	NOT_NULL(params, param_length);
 	IPS_SERVER(comm, IPS_SLICE_PARAM, (UCHAR *) params, param_length);
 
-	// set up slice data buffer 
+	/* set up slice data buffer */
 
 	ips_data = &comm->ips_buffers[IPS_SLICE_BUFFER];
 	slice_length = ips_data->ips_cl_size;
@@ -2065,13 +2084,18 @@ static void get_slice( ICC icc)
 		return;
 	}
 
-	// get and return slice 
+	/* get and return slice */
 
-	GDS_GET_SLICE(status_vector, &idb->idb_handle, &transaction->itr_handle,
-				  (ISC_QUAD*) &array_id, sdl_length,
-				  reinterpret_cast<const char*>(sdl), param_length,
-				  reinterpret_cast<const long*>(params), slice_length,
-				  slice, reinterpret_cast<long*>(&return_length));
+	GDS_GET_SLICE(status_vector,
+				  GDS_REF(idb->idb_handle),
+				  GDS_REF(transaction->itr_handle),
+				  (GDS_QUAD *) & array_id,
+				  sdl_length,
+				  reinterpret_cast < char *>(sdl),
+				  param_length,
+				  reinterpret_cast < long *>(params),
+				  slice_length,
+				  slice, reinterpret_cast < long *>(GDS_REF(return_length)));
 	ips->ips_length = return_length;
 	send_response(icc, status_vector);
 	if (slice)
@@ -2093,9 +2117,10 @@ static void info( ICC icc, P_OP operation)
  *      Issue information.
  *
  **************************************/
-	FB_API_HANDLE handle;
+	FRBRD* handle;
 	ISC_STATUS_ARRAY status_vector;
 	USHORT item_length, recv_item_length, buffer_length, incarnation;
+	UCHAR *buffer, *items, *recv_items;
 	UCHAR items_buf[128], recv_items_buf[128];
 	IDB idb;
 	ITR transaction;
@@ -2110,20 +2135,19 @@ static void info( ICC icc, P_OP operation)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	comm->ips_operation = op_info_blob;
 	ips = &comm->ips_operations.ips_op_object;
-	handle = (FB_API_HANDLE)ips->ips_handle;
+	handle = (FRBRD *)ips->ips_handle;
 	if (operation == op_info_request)
 		incarnation = (USHORT) ips->ips_parameter;
 
-	// set up items buffer 
+	/* set up items buffer */
 
 	ips_items = &comm->ips_buffers[IPS_INFO_ITEMS];
 	item_length = (USHORT) ips_items->ips_cl_size;
-	UCHAR* items;
 	if (item_length <= sizeof(items_buf))
 		items = items_buf;
 	else
@@ -2131,17 +2155,16 @@ static void info( ICC icc, P_OP operation)
 	NOT_NULL(items, item_length);
 	IPS_SERVER(comm, IPS_INFO_ITEMS, items, item_length);
 
-	// set up data buffer 
+	/* set up data buffer */
 
 	ips_data = &comm->ips_buffers[IPS_INFO_DATA];
 	buffer_length = (USHORT) ips_data->ips_cl_size;
-	UCHAR* buffer = get_buffer(comm, buffer_length, IPS_INFO_DATA);
+	buffer = get_buffer(comm, buffer_length, IPS_INFO_DATA);
 	NOT_NULL(buffer, buffer_length);
 	IPS_SERVER(comm, IPS_INFO_DATA, buffer, buffer_length);
 
-	// set up receive items buffer if necessary 
+	/* set up receive items buffer if necessary */
 
-	UCHAR* recv_items = 0;
 	if (operation == op_service_info)
 	{
 		ips_rcv_items = &comm->ips_buffers[IPS_QUERY_RECV_ITEMS];
@@ -2157,50 +2180,63 @@ static void info( ICC icc, P_OP operation)
 	if (!transfer_buffers(icc, comm))
 		return;
 
-	// perform operation 
+	/* perform operation */
 
 	switch (operation)
 	{
 	case op_info_database:
 		idb = (IDB) handle;
 		CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
-		GDS_DATABASE_INFO(status_vector, &idb->idb_handle,
-						  item_length, reinterpret_cast<const char*>(items),
-						  buffer_length, reinterpret_cast < char *>(buffer));
+		GDS_DATABASE_INFO(status_vector,
+						  GDS_REF(idb->idb_handle),
+						  item_length,
+						  reinterpret_cast < char *>(items),
+						  buffer_length,
+						  reinterpret_cast < char *>(GDS_VAL(buffer)));
 		break;
 
 	case op_info_blob:
 		blob = (IBL) handle;
 		CHECK_HANDLE(blob, type_ibl, isc_bad_segstr_handle);
-		GDS_BLOB_INFO(status_vector, &blob->ibl_handle, item_length,
-					  reinterpret_cast<const char*>(items), buffer_length,
-					  reinterpret_cast < char *>(buffer));
+		GDS_BLOB_INFO(status_vector,
+					  GDS_REF(blob->ibl_handle),
+					  item_length,
+					  reinterpret_cast < char *>(items),
+					  buffer_length,
+					  reinterpret_cast < char *>(GDS_VAL(buffer)));
 		break;
 
 	case op_info_request:
 		request = (IRQ) handle;
 		CHECK_HANDLE(request, type_irq, isc_bad_req_handle);
-		GDS_REQUEST_INFO(status_vector, &request->irq_handle, incarnation,
-						 item_length, reinterpret_cast<const char*>(items),
-						 buffer_length, reinterpret_cast < char *>(buffer));
+		GDS_REQUEST_INFO(status_vector,
+						 GDS_REF(request->irq_handle),
+						 incarnation,
+						 item_length,
+						 reinterpret_cast < char *>(items),
+						 buffer_length,
+						 reinterpret_cast < char *>(GDS_VAL(buffer)));
 		break;
 
 	case op_info_transaction:
 		transaction = (ITR) handle;
 		CHECK_HANDLE(transaction, type_itr, isc_bad_trans_handle);
-		GDS_TRANSACTION_INFO(status_vector, &transaction->itr_handle,
-							 item_length, reinterpret_cast<const char*>(items),
-							 buffer_length, reinterpret_cast < char *>(buffer));
+		GDS_TRANSACTION_INFO(status_vector,
+							 GDS_REF(transaction->itr_handle),
+							 item_length,
+							 reinterpret_cast < char *>(items),
+							 buffer_length,
+							 reinterpret_cast < char *>(GDS_VAL(buffer)));
 		break;
 
 	case op_service_info:
 		idb = (IDB) handle;
 		CHECK_HANDLE(idb, type_idb, isc_bad_svc_handle);
-		GDS_SERVICE_QUERY(status_vector, &idb->idb_handle, 0,	// reserved 
+		GDS_SERVICE_QUERY(status_vector, &idb->idb_handle, 0,	/* reserved */
 						  item_length,
-						  reinterpret_cast<const char*>(items),
+						  reinterpret_cast < char *>(items),
 						  recv_item_length,
-						  reinterpret_cast<const char*>(recv_items),
+						  reinterpret_cast < char *>(recv_items),
 						  buffer_length, reinterpret_cast < char *>(buffer));
 		break;
 
@@ -2210,12 +2246,12 @@ static void info( ICC icc, P_OP operation)
 		GDS_DSQL_SQL_INFO(status_vector,
 						  &statement->isr_handle,
 						  item_length,
-						  reinterpret_cast<const char*>(items),
+						  reinterpret_cast < char *>(items),
 						  buffer_length, reinterpret_cast < char *>(buffer));
 		break;
 	}
 
-	// return results 
+	/* return results */
 
 	send_response(icc, status_vector);
 }
@@ -2244,7 +2280,7 @@ static void insert( ICC icc)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_dsql;
@@ -2252,7 +2288,7 @@ static void insert( ICC icc)
 	CHECK_HANDLE(statement, type_ipserver_isr, isc_bad_stmt_handle);
 	msg_type = ips->ips_msg_type;
 
-	// set up blr 
+	/* set up blr */
 
 	ips_blr = &comm->ips_buffers[IPS_DSQL_INSERT_BLR];
 	blr_length = (USHORT) ips_blr->ips_cl_size;
@@ -2260,7 +2296,7 @@ static void insert( ICC icc)
 	NOT_NULL(blr, blr_length);
 	IPS_SERVER(comm, IPS_DSQL_INSERT_BLR, blr, blr_length);
 
-	// set up message 
+	/* set up message */
 
 	ips_msg = &comm->ips_buffers[IPS_DSQL_INSERT_MSG];
 	msg_length = (USHORT) ips_msg->ips_cl_size;
@@ -2270,13 +2306,13 @@ static void insert( ICC icc)
 	if (!transfer_buffers(icc, comm))
 		return;
 
-	// insert the record and return 
+	/* insert the record and return */
 
 	GDS_DSQL_INSERT(status_vector,
 					&statement->isr_handle,
 					blr_length,
-					reinterpret_cast<const char*>(blr),
-					msg_type, msg_length, reinterpret_cast<const char*>(msg));
+					reinterpret_cast < char *>(blr),
+					msg_type, msg_length, reinterpret_cast < char *>(msg));
 	send_response(icc, status_vector);
 }
 
@@ -2303,7 +2339,7 @@ static IPM make_map(USHORT map_number)
 	// Here we better be 100% SURE this won't overflow!
 	TEXT name_buffer[128];
 
-	// create the mapped file name and try to open it 
+	/* create the mapped file name and try to open it */
 
 	sprintf(name_buffer, IPI_MAPPED_FILE_NAME, Config::getIpcName(), map_number);
 	map_handle = CreateFileMapping((HANDLE) 0xFFFFFFFF,
@@ -2327,7 +2363,7 @@ static IPM make_map(USHORT map_number)
 		return (IPM) -1;
 	}
 
-	// allocate a structure and initialize it 
+	/* allocate a structure and initialize it */
 
 	IPM ipm = (IPM) ALLI_alloc(sizeof(struct ipm));
 	if (!ipm) {
@@ -2348,7 +2384,7 @@ static IPM make_map(USHORT map_number)
 }
 
 
-static ITR make_transaction( IDB idb, FB_API_HANDLE handle)
+static ITR make_transaction( IDB idb, FRBRD * handle)
 {
 /**************************************
  *
@@ -2390,7 +2426,7 @@ static void open_blob( ICC icc, P_OP op)
 	IDB idb;
 	IBL blob;
 	ITR transaction;
-	FB_API_HANDLE handle;
+	FRBRD * handle;
 	ISC_STATUS_ARRAY status_vector;
 	ISC_STATUS result;
 	USHORT bpb_length;
@@ -2402,7 +2438,7 @@ static void open_blob( ICC icc, P_OP op)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_blob;
@@ -2413,7 +2449,7 @@ static void open_blob( ICC icc, P_OP op)
 	handle = NULL;
 	bpb_length = 0;
 
-	// set up bpb if needed 
+	/* set up bpb if needed */
 
 	if (op == op_open_blob2 || op == op_create_blob2)
 	{
@@ -2429,22 +2465,24 @@ static void open_blob( ICC icc, P_OP op)
 	if (!transfer_buffers(icc, comm))
 		return;
 
-	// perform operation and return handle 
+	/* perform operation and return handle */
 
 	switch (op)
 	{
 	case op_open_blob:
 		blob_id.bid_relation_id = ips->ips_rel_id;
 		blob_id.bid_number = ips->ips_bid_number;
-		result = GDS_OPEN_BLOB(status_vector, &idb->idb_handle,
-							   &transaction->itr_handle, &handle, 
-							   (ISC_QUAD*) & blob_id);
+		result = GDS_OPEN_BLOB(status_vector,
+							   GDS_REF(idb->idb_handle),
+							   GDS_REF(transaction->itr_handle),
+							   GDS_REF(handle), (GDS_QUAD *) & blob_id);
 		break;
 
 	case op_create_blob:
-		result = GDS_CREATE_BLOB(status_vector, &idb->idb_handle,
-								 &transaction->itr_handle,
-								 &handle, (ISC_QUAD*) & blob_id);
+		result = GDS_CREATE_BLOB(status_vector,
+								 GDS_REF(idb->idb_handle),
+								 GDS_REF(transaction->itr_handle),
+								 GDS_REF(handle), (GDS_QUAD *) & blob_id);
 		ips->ips_rel_id = blob_id.bid_relation_id;
 		ips->ips_bid_number = blob_id.bid_number;
 		break;
@@ -2452,18 +2490,22 @@ static void open_blob( ICC icc, P_OP op)
 	case op_open_blob2:
 		blob_id.bid_relation_id = ips->ips_rel_id;
 		blob_id.bid_number = ips->ips_bid_number;
-		result = GDS_OPEN_BLOB2(status_vector, &idb->idb_handle,
-								&transaction->itr_handle, &handle,
-								(ISC_QUAD*) & blob_id,
-								bpb_length,
-								bpb);
+		result = GDS_OPEN_BLOB2(status_vector,
+								GDS_REF(idb->idb_handle),
+								GDS_REF(transaction->itr_handle),
+								GDS_REF(handle),
+								(GDS_QUAD *) & blob_id,
+								bpb_length, reinterpret_cast<UCHAR*>(bpb));
 		break;
 
 	case op_create_blob2:
-		result = GDS_CREATE_BLOB2(status_vector, &idb->idb_handle,
-								  &transaction->itr_handle, &handle,
-								  (ISC_QUAD*) & blob_id, bpb_length,
-								  reinterpret_cast<const char*>(bpb));
+		result = GDS_CREATE_BLOB2(status_vector,
+								  GDS_REF(idb->idb_handle),
+								  GDS_REF(transaction->itr_handle),
+								  GDS_REF(handle),
+								  (GDS_QUAD *) & blob_id,
+								  bpb_length,
+								  reinterpret_cast < char *>(bpb));
 		ips->ips_rel_id = blob_id.bid_relation_id;
 		ips->ips_bid_number = blob_id.bid_number;
 		break;
@@ -2502,7 +2544,7 @@ static void prepare_statement( ICC icc)
 	USHORT length, item_length, buffer_length, dialect, parser_version;
 	UCHAR *string, *items, items_buf[128], *buffer;
 	ISC_STATUS_ARRAY status_vector;
-	FB_API_HANDLE handle;
+	FRBRD * handle;
 	ips_dsql *ips;
 	ips_string *ips_prep_string;
 	ips_string *ips_prep_items;
@@ -2511,7 +2553,7 @@ static void prepare_statement( ICC icc)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_dsql;
@@ -2527,7 +2569,7 @@ static void prepare_statement( ICC icc)
 	CHECK_HANDLE(statement, type_ipserver_isr, isc_bad_stmt_handle);
 	dialect = (USHORT) ips->ips_parameter;
 
-	// set up string 
+	/* set up string */
 
 	ips_prep_string = &comm->ips_buffers[IPS_DSQL_PREP_STRING];
 	length = (USHORT) ips_prep_string->ips_cl_size;
@@ -2535,7 +2577,7 @@ static void prepare_statement( ICC icc)
 	NOT_NULL(string, length);
 	IPS_SERVER(comm, IPS_DSQL_PREP_STRING, string, length);
 
-	// set up items 
+	/* set up items */
 
 	ips_prep_items = &comm->ips_buffers[IPS_DSQL_PREP_ITEMS];
 	item_length = (USHORT) ips_prep_items->ips_cl_size;
@@ -2546,7 +2588,7 @@ static void prepare_statement( ICC icc)
 	NOT_NULL(items, item_length);
 	IPS_SERVER(comm, IPS_DSQL_PREP_ITEMS, items, item_length);
 
-	// set up buffer 
+	/* set up buffer */
 
 	ips_prep_buffer = &comm->ips_buffers[IPS_DSQL_PREP_BUFFER];
 	buffer_length = (USHORT) ips_prep_buffer->ips_cl_size;
@@ -2556,7 +2598,7 @@ static void prepare_statement( ICC icc)
 	if (!transfer_buffers(icc, comm))
 		return;
 
-	// NT Local access:  Client and server are always the same version 
+	/* NT Local access:  Client and server are always the same version */
 	/* Since the API to GDS_DSQL_PREPARE is public and can not be changed, there needs to
 	 * be a way to send the parser version to DSQL so that the parser can compare the keyword
 	 * version to the parser version.  To accomplish this, the parser version is combined with
@@ -2579,17 +2621,17 @@ static void prepare_statement( ICC icc)
 
 	parser_version = 2;
 
-	// prepare statement and return data 
+	/* prepare statement and return data */
 
 	GDS_DSQL_PREPARE(status_vector,
 					 &handle,
 					 &statement->isr_handle,
 					 length,
-					 reinterpret_cast<const char*>(string),
+					 reinterpret_cast < char *>(string),
 					 (USHORT) ((dialect * 10) + parser_version),
 					 item_length,
-					 reinterpret_cast<const char*>(items),
-					 buffer_length, reinterpret_cast<char*>(buffer));
+					 reinterpret_cast < char *>(items),
+					 buffer_length, reinterpret_cast < char *>(buffer));
 	statement->isr_batch_flag = check_statement_type(statement);
 	ips->ips_parameter = statement->isr_batch_flag;
 	send_response(icc, status_vector);
@@ -2618,14 +2660,14 @@ static void put_segment( ICC icc)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_segment;
 	blob = (IBL) ips->ips_bl_handle;
 	CHECK_HANDLE(blob, type_ibl, isc_bad_segstr_handle);
 
-	// set up segment buffer 
+	/* set up segment buffer */
 
 	ips_seg = &comm->ips_buffers[IPS_BLOB_SEGMENT];
 	buffer_length = (USHORT) ips_seg->ips_cl_size;
@@ -2635,10 +2677,12 @@ static void put_segment( ICC icc)
 	if (!transfer_buffers(icc, comm))
 		return;
 
-	// put the segment into the database 
+	/* put the segment into the database */
 
-	GDS_PUT_SEGMENT(status_vector, &blob->ibl_handle, buffer_length,
-					reinterpret_cast<const char*>(buffer));
+	GDS_PUT_SEGMENT(status_vector,
+					GDS_REF(blob->ibl_handle),
+					buffer_length,
+					reinterpret_cast < char *>(GDS_VAL(buffer)));
 	send_response(icc, status_vector);
 }
 
@@ -2670,7 +2714,7 @@ static void put_slice( ICC icc)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_slice;
@@ -2681,7 +2725,7 @@ static void put_slice( ICC icc)
 	array_id.bid_relation_id = ips->ips_rel_id;
 	array_id.bid_number = ips->ips_number;
 
-	// set up sdl 
+	/* set up sdl */
 
 	ips_sdl = &comm->ips_buffers[IPS_SLICE_SDL];
 	sdl_length = (USHORT) ips_sdl->ips_cl_size;
@@ -2692,7 +2736,7 @@ static void put_slice( ICC icc)
 	NOT_NULL(sdl, sdl_length);
 	IPS_SERVER(comm, IPS_SLICE_SDL, sdl, sdl_length);
 
-	// set up parameters 
+	/* set up parameters */
 
 	ips_parms = &comm->ips_buffers[IPS_SLICE_PARAM];
 	param_length = (USHORT) ips_parms->ips_cl_size;
@@ -2703,7 +2747,7 @@ static void put_slice( ICC icc)
 	NOT_NULL(params, param_length);
 	IPS_SERVER(comm, IPS_SLICE_PARAM, (UCHAR *) params, param_length);
 
-	// set up slice data buffer 
+	/* set up slice data buffer */
 
 	ips_data = &comm->ips_buffers[IPS_SLICE_BUFFER];
 	slice_length = ips_data->ips_cl_size;
@@ -2725,12 +2769,17 @@ static void put_slice( ICC icc)
 		return;
 	}
 
-	// put the slice into the database 
+	/* put the slice into the database */
 
-	GDS_PUT_SLICE(status_vector, &idb->idb_handle, &transaction->itr_handle,
-				  (ISC_QUAD*) & array_id, sdl_length,
-				  reinterpret_cast<const char*>(sdl), param_length,
-				  reinterpret_cast<const long*>(params), slice_length, slice);
+	GDS_PUT_SLICE(status_vector,
+				  GDS_REF(idb->idb_handle),
+				  GDS_REF(transaction->itr_handle),
+				  (GDS_QUAD *) & array_id,
+				  sdl_length,
+				  reinterpret_cast < char *>(sdl),
+				  param_length,
+				  reinterpret_cast < long *>(params),
+				  slice_length, GDS_VAL(slice));
 	ips->ips_rel_id = array_id.bid_relation_id;
 	ips->ips_number = array_id.bid_number;
 	send_response(icc, status_vector);
@@ -2755,6 +2804,7 @@ static void que_events( ICC icc)
  **************************************/
 	IDB idb;
 	USHORT length;
+	UCHAR *events;
 	ISC_STATUS_ARRAY status_vector;
 	ISC_STATUS result;
 	IVNT event;
@@ -2764,22 +2814,22 @@ static void que_events( ICC icc)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_que_evnt;
 	idb = (IDB) ips->ips_db_handle;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// set up event string 
+	/* set up event string */
 
 	ips_event = &comm->ips_buffers[IPS_QUEUE_EVENT];
 	length = (USHORT) ips_event->ips_cl_size;
-	UCHAR* events = get_buffer(comm, length, IPS_QUEUE_EVENT);
+	events = get_buffer(comm, length, IPS_QUEUE_EVENT);
 	NOT_NULL(events, length);
 	IPS_SERVER(comm, IPS_QUEUE_EVENT, events, length);
 
-	// find or allocate event block 
+	/* find or allocate event block */
 
 	for (event = idb->idb_events; event; event = event->ivnt_next)
 		if (!event->ivnt_ast)
@@ -2793,21 +2843,24 @@ static void que_events( ICC icc)
 		idb->idb_events = event;
 	}
 
-	// Get data, etc 
+	/* Get data, etc */
 
 	event->ivnt_window = ips->ips_event_hwnd;
 	event->ivnt_id = ips->ips_event_id;
-	event->ivnt_ast = ips->ips_ast;
+	event->ivnt_ast = (void (*)()) ips->ips_ast;
 	event->ivnt_arg = (void *) ips->ips_arg;
 	if (!transfer_buffers(icc, comm))
 		return;
 
-	// queue the event and return id 
+	/* queue the event and return id */
 
-	result = GDS_QUE_EVENTS(status_vector, &idb->idb_handle, &event->ivnt_handle,
-							length, reinterpret_cast<const char*>(events),
-							event_ast,
-							event);
+	result = GDS_QUE_EVENTS(status_vector,
+							GDS_REF(idb->idb_handle),
+							GDS_REF(event->ivnt_handle),
+							length,
+							reinterpret_cast<char*>(GDS_VAL(events)),
+							reinterpret_cast < void (*)() > (event_ast),
+							GDS_VAL(event));
 	if (!result)
 		ips->ips_event_id = event->ivnt_handle;
 	else
@@ -2842,14 +2895,14 @@ static void receive_msg( ICC icc)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_request;
 	request = (IRQ) ips->ips_rq_handle;
 	CHECK_HANDLE(request, type_irq, isc_bad_req_handle);
 
-	// set up message 
+	/* set up message */
 
 	ips_message = &comm->ips_buffers[IPS_RECEIVE_MESSAGE];
 	length = (USHORT) ips_message->ips_cl_size;
@@ -2863,10 +2916,11 @@ static void receive_msg( ICC icc)
 	offset = ips->ips_offset;
 #endif
 
-	// receive message and send response 
+	/* receive message and send response */
 
-	GDS_RECEIVE(status_vector, &request->irq_handle,
-				number, length, buffer, level
+	GDS_RECEIVE(status_vector,
+				GDS_REF(request->irq_handle),
+				number, length, GDS_VAL(buffer), level
 #ifdef SCROLLABLE_CURSORS
 				, direction, offset
 #endif
@@ -2892,21 +2946,21 @@ static void reconnect( ICC icc)
 	ITR transaction;
 	USHORT length;
 	UCHAR *buffer;
-	FB_API_HANDLE handle;
+	FRBRD * handle;
 	ISC_STATUS_ARRAY status_vector;
 	ips_reconnect *ips;
 	ips_string *ips_recon;
 	ips_comm_area *comm;
 	TEXT *comm_ptr;
 
-// set up communications area 
+/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_recon_trans;
 	idb = (IDB) ips->ips_db_handle;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-// set up string 
+/* set up string */
 
 	ips_recon = &comm->ips_buffers[IPS_RECONNECT_ID];
 	length = (USHORT) ips_recon->ips_cl_size;
@@ -2917,10 +2971,12 @@ static void reconnect( ICC icc)
 	if (!transfer_buffers(icc, comm))
 		return;
 
-// reconnect transaction and return id 
+/* reconnect transaction and return id */
 
-	if (!GDS_RECONNECT(status_vector, &idb->idb_handle, &handle,
-					   length, reinterpret_cast < char *>(buffer)))
+	if (!GDS_RECONNECT(status_vector,
+					   GDS_REF(idb->idb_handle),
+					   GDS_REF(handle),
+					   length, reinterpret_cast < char *>(GDS_VAL(buffer))))
 	{
 		if (transaction = make_transaction(idb, handle))
 		{
@@ -2930,7 +2986,7 @@ static void reconnect( ICC icc)
 		else
 		{
 			gds__handle_cleanup(status_vector,
-								(FB_API_HANDLE*) &handle);
+								(FRBRD **) GDS_REF(handle));
 			NOT_NULL(transaction, TRUE);
 		}
 	}
@@ -3104,7 +3160,7 @@ static void seek_blob( ICC icc)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_sk_blob;
@@ -3113,15 +3169,16 @@ static void seek_blob( ICC icc)
 	offset = ips->ips_offset;
 	mode = ips->ips_mode;
 
-	// seek blob and return result 
+	/* seek blob and return result */
 
-	GDS_SEEK_BLOB(status_vector, &blob->ibl_handle, mode, offset, &result);
+	GDS_SEEK_BLOB(status_vector,
+				  GDS_REF(blob->ibl_handle), mode, offset, GDS_REF(result));
 	ips->ips_result = result;
 	send_response(icc, status_vector);
 }
 
 
-static bool send_and_wait( ICC icc)
+static BOOL send_and_wait( ICC icc)
 {
 /**************************************
  *
@@ -3138,10 +3195,10 @@ static bool send_and_wait( ICC icc)
 	DWORD result;
 
 
-	// already in shutdown mode 
+	/* already in shutdown mode */
 
 	if (icc->icc_flags & ICCF_SHUTDOWN)
-		return false;
+		return FALSE;
 
 	/* first, signal the client that the communications
 	   area in mapped memory is filed and ready */
@@ -3153,10 +3210,10 @@ static bool send_and_wait( ICC icc)
 		gds__log("ipserver send of send and wait failed %lX %ld",
 				 (long) icc, (long) GetLastError());
 #endif
-		return false;
+		return FALSE;
 	}
 
-	// next, wait for the client to signal us back 
+	/* next, wait for the client to signal us back */
 
 	result =
 		WaitForMultipleObjects((DWORD) 2, icc->icc_waits, FALSE, INFINITE);
@@ -3167,10 +3224,10 @@ static bool send_and_wait( ICC icc)
 		gds__log("ipserver wait of send and wait failed %lX %ld",
 				 (long) icc, (long) GetLastError());
 #endif
-		return false;
+		return FALSE;
 	}
 	else
-		return true;
+		return TRUE;
 }
 
 
@@ -3187,6 +3244,7 @@ static void send_msg( ICC icc)
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 	IRQ request;
+	UCHAR *buffer;
 	USHORT length, number, level;
 	ips_request *ips;
 	ips_string *ips_message;
@@ -3194,18 +3252,18 @@ static void send_msg( ICC icc)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_request;
 	request = (IRQ) ips->ips_rq_handle;
 	CHECK_HANDLE(request, type_irq, isc_bad_req_handle);
 
-	// set up message 
+	/* set up message */
 
 	ips_message = &comm->ips_buffers[IPS_SEND_MESSAGE];
 	length = (USHORT) ips_message->ips_cl_size;
-	const UCHAR* buffer = get_buffer(comm, length, IPS_SEND_MESSAGE);
+	buffer = get_buffer(comm, length, IPS_SEND_MESSAGE);
 	NOT_NULL(buffer, length);
 	IPS_SERVER(comm, IPS_SEND_MESSAGE, buffer, length);
 	number = ips->ips_msg_type;
@@ -3213,10 +3271,11 @@ static void send_msg( ICC icc)
 	if (!transfer_buffers(icc, comm))
 		return;
 
-	// send message 
+	/* send message */
 
-	GDS_SEND(status_vector, &request->irq_handle, number, length, buffer, 
-			 level);
+	GDS_SEND(status_vector,
+			 GDS_REF(request->irq_handle),
+			 number, length, GDS_VAL(buffer), level);
 	send_response(icc, status_vector);
 }
 
@@ -3237,7 +3296,7 @@ static void send_no_wait( ICC icc)
  **************************************/
 
 
-	// already in shutdown mode 
+	/* already in shutdown mode */
 
 	if (icc->icc_flags & ICCF_SHUTDOWN)
 		return;
@@ -3256,7 +3315,7 @@ static void send_no_wait( ICC icc)
 }
 
 
-static void send_response( ICC icc, ISC_STATUS* status_vector)
+static void send_response( ICC icc, ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -3271,21 +3330,22 @@ static void send_response( ICC icc, ISC_STATUS* status_vector)
 	ISC_STATUS *comm_status;
 	USHORT i, length;
 	ULONG to_copy, size_left;
-	TEXT* abase;
+	TEXT *p, buffer[1024];
+	TEXT *acursor, *scursor, *abase;
 	ips_comm_area *comm;
 	TEXT *comm_ptr;
 	ips_string *string;
 	ULONG l, *lp;
 
 
-	// first, initialize the status vector in the comm area 
+	/* first, initialize the status vector in the comm area */
 
 	comm = (ips_comm_area *) icc->icc_mapped_addr;
 	comm_ptr = (TEXT *) comm->ips_data;
 	comm_status = reinterpret_cast < ISC_STATUS * >(comm->ips_status);
 	abase = comm_ptr;
 
-	// if there's no error or warning, just put in a clean status vector 
+	/* if there's no error or warning, just put in a clean status vector */
 
 	if (!status_vector[1] && !status_vector[2])
 	{
@@ -3296,11 +3356,9 @@ static void send_response( ICC icc, ISC_STATUS* status_vector)
 	{
 		/* transfer the status vector, putting strings in the comm area's
 		   data area */
-		TEXT buffer[1024];
 
 		while (*status_vector)
 		{
-		    const TEXT* p;
 			switch (*status_vector)
 			{
 			case isc_arg_interpreted:
@@ -3369,28 +3427,28 @@ static void send_response( ICC icc, ISC_STATUS* status_vector)
 	}
 	*comm_status++ = isc_arg_end;
 
-	// point to the current first available byte and figure space available 
+	/* point to the current first available byte and figure space available */
 
-	TEXT* acursor = comm_ptr;
+	acursor = comm_ptr;
 	size_left = (ULONG) (IPS_USEFUL_SPACE(ipserver_private_data.pages_per_user)) -
 		(abase - reinterpret_cast < TEXT * >(comm->ips_data));
 	for (i = 0; i < MAX_IPS_STRINGS; i++)
 	{
 		string = &comm->ips_buffers[i];
 
-		// see if this buffer needs sending 
+		/* see if this buffer needs sending */
 
 		if ((string->ips_flags & IPS_OUTPUT_BUFFER) && string->ips_sv_size)
 		{
 			string->ips_sv_copied = 0;
-			const UCHAR* scursor = string->ips_sv_addr;
+			scursor = reinterpret_cast < char *>(string->ips_sv_addr);
 
-			// keep packing it in 
+			/* keep packing it in */
 
 			while (string->ips_sv_copied < string->ips_sv_size)
 			{
 
-				// put in the whole thing, or whatever will fit 
+				/* put in the whole thing, or whatever will fit */
 
 				to_copy = string->ips_sv_size - string->ips_sv_copied;
 				if (size_left <= to_copy)
@@ -3403,7 +3461,7 @@ static void send_response( ICC icc, ISC_STATUS* status_vector)
 				size_left -= to_copy;
 				string->ips_sv_copied += to_copy;
 
-				// if all the space has been used up, send it and wait 
+				/* if all the space has been used up, send it and wait */
 
 				if (!size_left && string->ips_sv_copied < string->ips_sv_size)
 				{
@@ -3417,7 +3475,7 @@ static void send_response( ICC icc, ISC_STATUS* status_vector)
 		}
 	}
 
-	// sending the last buffer, all done 
+	/* sending the last buffer, all done */
 
 	comm->ips_sequence++;
 	send_no_wait(icc);
@@ -3438,7 +3496,7 @@ static void service_attach( ICC icc)
  **************************************/
 	USHORT service_length, spb_length;
 	UCHAR service_name[256], *spb, spb_buf[256];
-	FB_API_HANDLE handle;
+	FRBRD * handle;
 	ISC_STATUS_ARRAY status_vector;
 	ISC_STATUS result;
 	IDB idb;
@@ -3449,18 +3507,18 @@ static void service_attach( ICC icc)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_object;
 
-	// figure out service name buffer 
+	/* figure out service name buffer */
 
 	ips_name = &comm->ips_buffers[IPS_ATTACH_SVC_NAME];
 	service_length = (USHORT) ips_name->ips_cl_size;
 	IPS_SERVER(comm, IPS_ATTACH_SVC_NAME, service_name, service_length);
 
-	// figure out spb buffer 
+	/* figure out spb buffer */
 
 	ips_spb = &comm->ips_buffers[IPS_ATTACH_SVC_SPB];
 	spb_length = (USHORT) ips_spb->ips_cl_size;
@@ -3473,16 +3531,16 @@ static void service_attach( ICC icc)
 	if (!transfer_buffers(icc, comm))
 		return;
 
-	// get handle 
+	/* get handle */
 
 	handle = NULL;
 	result = GDS_SERVICE_ATTACH(status_vector,
 								service_length,
-								reinterpret_cast<const char*>(service_name),
+								reinterpret_cast < char *>(service_name),
 								&handle,
-								spb_length, reinterpret_cast<const char*>(spb));
+								spb_length, reinterpret_cast < char *>(spb));
 
-	// allocate structure and return handle 
+	/* allocate structure and return handle */
 
 	if (!result)
 	{
@@ -3520,14 +3578,14 @@ static void service_end( ICC icc)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_object;
 	idb = (IDB) ips->ips_handle;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
 
-	// detach request, return response and free resources 
+	/* detach request, return response and free resources */
 
 	result = GDS_SERVICE_DETACH(status_vector, &idb->idb_handle);
 	send_response(icc, status_vector);
@@ -3568,13 +3626,13 @@ static void service_start( ICC icc)
 	HANDLE handle;
 	ULONG *reserved = 0;
 
-// set up communications area 
+/* set up communications area */
 	GET_COMM_OBJECT;
 	comm->ips_operation = op_service_start;
 	ips = &comm->ips_operations.ips_op_object;
 	handle = (HANDLE) ips->ips_handle;
 
-// figure out spb buffer 
+/* figure out spb buffer */
 	ips_spb = &comm->ips_buffers[IPS_START_SVC_SPB];
 	spb_length = (USHORT) ips_spb->ips_cl_size;
 	if (spb_length <= sizeof(spb_buf))
@@ -3592,8 +3650,8 @@ static void service_start( ICC icc)
 	CHECK_HANDLE(idb, type_idb, isc_bad_svc_handle);
 	result = GDS_SERVICE_START(status_vector,
 							   &idb->idb_handle,
-							   reinterpret_cast<long*>(reserved),
-							   spb_length, reinterpret_cast<const char*>(spb));
+							   reinterpret_cast < long *>(reserved),
+							   spb_length, reinterpret_cast < char *>(spb));
 
 	send_response(icc, status_vector);
 }
@@ -3621,7 +3679,7 @@ static void set_cursor( ICC icc)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_dsql;
@@ -3629,7 +3687,7 @@ static void set_cursor( ICC icc)
 	CHECK_HANDLE(statement, type_ipserver_isr, isc_bad_stmt_handle);
 	type = (USHORT) ips->ips_parameter;
 
-	// set up cursor name 
+	/* set up cursor name */
 
 	ips_name = &comm->ips_buffers[IPS_DSQL_SET_CURSOR];
 	length = (USHORT) ips_name->ips_cl_size;
@@ -3639,11 +3697,11 @@ static void set_cursor( ICC icc)
 	if (!transfer_buffers(icc, comm))
 		return;
 
-	// set cursor name 
+	/* set cursor name */
 
 	GDS_DSQL_SET_CURSOR(status_vector,
 						&statement->isr_handle,
-						reinterpret_cast<const char*>(cursor), type);
+						reinterpret_cast < char *>(cursor), type);
 	send_response(icc, status_vector);
 }
 
@@ -3668,7 +3726,7 @@ static void shutdown_attachments( ICC icc)
 
 	for (idb = icc->icc_databases; idb; idb = nextidb)
 	{
-		// save next pointer here because the structure's getting freed 
+		/* save next pointer here because the structure's getting freed */
 
 		nextidb = idb->idb_next;
 		if (idb->idb_flags | IDBF_DATABASE_ATTACHMENT)
@@ -3676,15 +3734,18 @@ static void shutdown_attachments( ICC icc)
 			while (idb->idb_transactions)
 			{
 				if (!(idb->idb_transactions->itr_flags & ITR_limbo))
-					GDS_ROLLBACK(status_vector, &idb->idb_transactions->itr_handle);
+					GDS_ROLLBACK(status_vector,
+								 GDS_REF(idb->idb_transactions->itr_handle));
 				else
 					gds__handle_cleanup(status_vector,
-									(FB_API_HANDLE*) &idb->idb_transactions->itr_handle);
+										(FRBRD **) GDS_REF(idb->
+																 idb_transactions->
+																 itr_handle));
 
 				release_transaction(idb->idb_transactions);
 			}
 
-			GDS_DETACH(status_vector, &idb->idb_handle);
+			GDS_DETACH(status_vector, GDS_REF(idb->idb_handle));
 			while (idb->idb_events)
 				release_event(idb->idb_events);
 
@@ -3702,7 +3763,7 @@ static void shutdown_attachments( ICC icc)
 		ALLI_release((BLK) idb);
 	}
 
-// free any allocated server buffers 
+/* free any allocated server buffers */
 
 	comm = (ips_comm_area *) icc->icc_mapped_addr;
 	for (i = 0; i < MAX_IPS_STRINGS; i++)
@@ -3731,7 +3792,7 @@ static void start( ICC icc)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_request;
@@ -3741,10 +3802,11 @@ static void start( ICC icc)
 	CHECK_HANDLE(transaction, type_itr, isc_bad_trans_handle);
 	level = ips->ips_req_level;
 
-	// start the request 
+	/* start the request */
 
-	GDS_START(status_vector, &request->irq_handle, &transaction->itr_handle,
-			  level);
+	GDS_START(status_vector,
+			  GDS_REF(request->irq_handle),
+			  GDS_REF(transaction->itr_handle), level);
 	send_response(icc, status_vector);
 }
 
@@ -3763,6 +3825,7 @@ static void start_and_send( ICC icc)
 	ISC_STATUS_ARRAY status_vector;
 	IRQ request;
 	ITR transaction;
+	UCHAR *buffer;
 	USHORT length, number, level;
 	ips_request *ips;
 	ips_string *ips_message;
@@ -3770,7 +3833,7 @@ static void start_and_send( ICC icc)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_request;
@@ -3781,11 +3844,11 @@ static void start_and_send( ICC icc)
 	number = ips->ips_msg_type;
 	level = ips->ips_req_level;
 
-	// set up message 
+	/* set up message */
 
 	ips_message = &comm->ips_buffers[IPS_SEND_MESSAGE];
 	length = (USHORT) ips_message->ips_cl_size;
-	const UCHAR* buffer = get_buffer(comm, length, IPS_SEND_MESSAGE);
+	buffer = get_buffer(comm, length, IPS_SEND_MESSAGE);
 	NOT_NULL(buffer, length);
 	IPS_SERVER(comm, IPS_SEND_MESSAGE, buffer, length);
 	number = ips->ips_msg_type;
@@ -3793,10 +3856,12 @@ static void start_and_send( ICC icc)
 	if (!transfer_buffers(icc, comm))
 		return;
 
-	// start the request 
+	/* start the request */
 
-	GDS_START_AND_SEND(status_vector, &request->irq_handle,
-					   &transaction->itr_handle, number, length, buffer, level);
+	GDS_START_AND_SEND(status_vector,
+					   GDS_REF(request->irq_handle),
+					   GDS_REF(transaction->itr_handle),
+					   number, length, GDS_VAL(buffer), level);
 	send_response(icc, status_vector);
 }
 
@@ -3817,7 +3882,7 @@ static void start_transaction( ICC icc)
 	ITR transaction;
 	USHORT count, c;
 	UCHAR *buffer;
-	FB_API_HANDLE handle;
+	FRBRD * handle;
 	ULONG **v, *vector[3 * 16];
 	ISC_STATUS_ARRAY status_vector;
 	ips_start_trans *ips;
@@ -3826,7 +3891,7 @@ static void start_transaction( ICC icc)
 	ULONG length, l, *lp;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	lp = (ULONG *) comm_ptr;
@@ -3836,7 +3901,7 @@ static void start_transaction( ICC icc)
 	buffer = get_buffer(comm, 1024, 0);
 	NOT_NULL(buffer, TRUE);
 
-	// set up all the handles 
+	/* set up all the handles */
 
 	for (c = 0; c < count; c++)
 	{
@@ -3853,9 +3918,10 @@ static void start_transaction( ICC icc)
 	}
 	handle = NULL;
 
-	// start the transaction and return the handle 
+	/* start the transaction and return the handle */
 
-	GDS_START_MULTIPLE(status_vector, &handle, count, (UCHAR *) vector);
+	GDS_START_MULTIPLE(status_vector,
+					   GDS_REF(handle), count, (UCHAR *) vector);
 	transaction = make_transaction(idb, handle);
 	ips->ips_tr_handle = (UCHAR *) transaction;
 	NOT_NULL(transaction, TRUE);
@@ -3887,7 +3953,7 @@ static void transact_request( ICC icc)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_trans_req;
@@ -3896,7 +3962,7 @@ static void transact_request( ICC icc)
 	transaction = (ITR) ips->ips_tr_handle;
 	CHECK_HANDLE(transaction, type_itr, isc_bad_trans_handle);
 
-	// set up blr 
+	/* set up blr */
 
 	ips_blr = &comm->ips_buffers[IPS_TRANS_REQ_BLR];
 	blr_length = (USHORT) ips_blr->ips_cl_size;
@@ -3904,7 +3970,7 @@ static void transact_request( ICC icc)
 	NOT_NULL(blr, blr_length);
 	IPS_SERVER(comm, IPS_TRANS_REQ_BLR, blr, blr_length);
 
-	// set up input message 
+	/* set up input message */
 
 	ips_in_msg = &comm->ips_buffers[IPS_TRANS_REQ_IN_MSG];
 	in_msg_length = (USHORT) ips_in_msg->ips_cl_size;
@@ -3912,7 +3978,7 @@ static void transact_request( ICC icc)
 	NOT_NULL(in_buffer, in_msg_length);
 	IPS_SERVER(comm, IPS_TRANS_REQ_IN_MSG, in_buffer, in_msg_length);
 
-	// set up blr 
+	/* set up blr */
 
 	ips_out_msg = &comm->ips_buffers[IPS_TRANS_REQ_OUT_MSG];
 	out_msg_length = (USHORT) ips_out_msg->ips_cl_size;
@@ -3922,22 +3988,22 @@ static void transact_request( ICC icc)
 	if (!transfer_buffers(icc, comm))
 		return;
 
-	// transact request and return output 
+	/* transact request and return output */
 
 	GDS_TRANSACT_REQUEST(status_vector,
 						 &idb->idb_handle,
 						 &transaction->itr_handle,
 						 blr_length,
-						 reinterpret_cast<const char*>(blr),
+						 reinterpret_cast < char *>(blr),
 						 in_msg_length,
-						 reinterpret_cast<char*>(in_buffer),
+						 reinterpret_cast < char *>(in_buffer),
 						 out_msg_length,
-						 reinterpret_cast<char*>(out_buffer));
+						 reinterpret_cast < char *>(out_buffer));
 	send_response(icc, status_vector);
 }
 
 
-static bool transfer_buffers( ICC icc, ips_comm_area * comm)
+static BOOL transfer_buffers( ICC icc, ips_comm_area * comm)
 {
 /**************************************
  *
@@ -3948,6 +4014,7 @@ static bool transfer_buffers( ICC icc, ips_comm_area * comm)
  * Functional description
  *
  **************************************/
+	TEXT *acursor, *scursor;
 	ULONG to_copy;
 	USHORT i;
 	ips_string *string;
@@ -3960,40 +4027,40 @@ static bool transfer_buffers( ICC icc, ips_comm_area * comm)
 	{
 		string = &comm->ips_buffers[i];
 
-		// see if this buffer needs extraction 
+		/* see if this buffer needs extraction */
 
 		if ((string->ips_flags & IPS_INPUT_BUFFER) && string->ips_sv_size)
 		{
 			string->ips_sv_copied = 0;
-			UCHAR* scursor = const_cast<UCHAR*>(string->ips_sv_addr);
+			scursor = reinterpret_cast < char *>(string->ips_sv_addr);
 
-			// start extraction 
+			/* start extraction */
 
 			while (string->ips_sv_copied < string->ips_sv_size)
 			{
 
-				// extract all or whatever's available 
+				/* extract all or whatever's available */
 
 				to_copy = string->ips_sv_size - string->ips_sv_copied;
 				if (string->ips_com_size <= to_copy)
 					to_copy = string->ips_com_size;
-				const TEXT* acursor = (TEXT*) comm->ips_data + string->ips_com_offset;
+				acursor = (TEXT *) comm->ips_data + string->ips_com_offset;
 				memcpy(scursor, acursor, (USHORT) to_copy);
 				scursor += to_copy;
 				string->ips_sv_copied += to_copy;
 
-				// if there is more to copy, wait for it 
+				/* if there is more to copy, wait for it */
 
 				if (string->ips_sv_copied < string->ips_sv_size)
 				{
 					comm->ips_sequence++;
 					if (!send_and_wait(icc))
-						return false;
+						return FALSE;
 				}
 			}
 		}
 	}
-	return true;
+	return TRUE;
 }
 
 
@@ -4017,7 +4084,7 @@ static void unwind( ICC icc)
 	TEXT *comm_ptr;
 
 
-	// set up communications area 
+	/* set up communications area */
 
 	GET_COMM_OBJECT;
 	ips = &comm->ips_operations.ips_op_object;
@@ -4025,14 +4092,14 @@ static void unwind( ICC icc)
 	CHECK_HANDLE(request, type_irq, isc_bad_req_handle);
 	level = (USHORT) ips->ips_parameter;
 
-	// unwind the request 
+	/* unwind the request */
 
-	GDS_UNWIND(status_vector, &request->irq_handle, level);
+	GDS_UNWIND(status_vector, GDS_REF(request->irq_handle), level);
 	send_response(icc, status_vector);
 }
 
 
-static bool wait_no_send( ICC icc)
+static BOOL wait_no_send( ICC icc)
 {
 /**************************************
  *
@@ -4049,31 +4116,31 @@ static bool wait_no_send( ICC icc)
 	DWORD result2;
 	DWORD error1;
 	DWORD error2;
-	bool ret;
+	USHORT ret;
 
 
-	// already in shutdown mode 
+	/* already in shutdown mode */
 
 	if (icc->icc_flags & ICCF_SHUTDOWN)
-		return false;
+		return FALSE;
 
-	// wait for the server to signal us back 
+	/* wait for the server to signal us back */
 
-	ret = true;
+	ret = TRUE;
 	while (ret)
 	{
 
-		// wait for semaphore for a minute 
+		/* wait for semaphore for a minute */
 
 		result1 = WaitForSingleObject(icc->icc_waits[0], 10000L);
 		error1 = GetLastError();
 
-		// check for success 
+		/* check for success */
 
 		if (result1 == WAIT_OBJECT_0)
 			break;
 
-		// a non-timeout result is an error 
+		/* a non-timeout result is an error */
 
 		if (result1 != WAIT_TIMEOUT)
 		{
@@ -4083,16 +4150,16 @@ static bool wait_no_send( ICC icc)
 			gds__log("ipserver ids %lX %lX",
 					 icc->icc_waits[0], icc->icc_waits[1]);
 #endif
-			ret = false;
+			ret = 0;
 			break;
 		}
 
-		// see if the client is still alive 
+		/* see if the client is still alive */
 
 		result2 = WaitForSingleObject(icc->icc_waits[1], 1L);
 		error2 = GetLastError();
 
-		// if process is gone, or there's some error, bag it 
+		/* if process is gone, or there's some error, bag it */
 
 		if (result2 != WAIT_TIMEOUT)
 		{
@@ -4100,7 +4167,7 @@ static bool wait_no_send( ICC icc)
 			gds__log("ip server wait no send failed again %lX %ld %ld",
 					 (long) icc, result2, error2);
 #endif
-			ret = false;
+			ret = 0;
 			break;
 		}
 	}
@@ -4108,4 +4175,3 @@ static bool wait_no_send( ICC icc)
 		icc->icc_flags |= ICCF_SHUTDOWN;
 	return ret;
 }
-

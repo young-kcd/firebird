@@ -3,34 +3,29 @@
  *	MODULE:		class_perf.cpp
  *	DESCRIPTION:	Class library performance measurements
  *
- *  The contents of this file are subject to the Initial
- *  Developer's Public License Version 1.0 (the "License");
- *  you may not use this file except in compliance with the
- *  License. You may obtain a copy of the License at
- *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
+ * The contents of this file are subject to the Interbase Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy
+ * of the License at http://www.Inprise.com/IPL.html
  *
- *  Software distributed under the License is distributed AS IS,
- *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
- *  See the License for the specific language governing rights
- *  and limitations under the License.
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+ * or implied. See the License for the specific language governing
+ * rights and limitations under the License.
  *
- *  The Original Code was created by Nickolay Samofatov
- *  for the Firebird Open Source RDBMS project.
+ * The Original Code was created by Inprise Corporation
+ * and its predecessors. Portions created by Inprise Corporation are
+ * Copyright (C) Inprise Corporation.
  *
- *  Copyright (c) 2004 Nickolay Samofatov <nickolay@broadviewsoftware.com>
- *  and all contributors signed below.
+ * Created by: Nickolay Samofatov <skidder@bssys.com>
  *
- *  All Rights Reserved.
- *  Contributor(s): ______________________________________.
- * 
- *
- *  $Id: class_perf.cpp,v 1.12 2004-06-30 01:26:06 skidder Exp $
- *
+ * All Rights Reserved.
+ * Contributor(s): ______________________________________.
  */
 
 #include "tree.h"
 #include "alloc.h"
-//#include "../memory/memory_pool.h"
+#include "../memory/memory_pool.h"
 #include <stdio.h>
 #include <time.h>
 #include <set>
@@ -41,7 +36,7 @@ void start() {
 	t = clock();
 }
 
-const int TEST_ITEMS	= 10000000;
+#define TEST_ITEMS 1000000
 
 void report(int scale) {
 	clock_t d = clock();
@@ -158,15 +153,15 @@ void report() {
 	printf("Operation took %d milliseconds.\n", (int)(d-t)*1000/CLOCKS_PER_SEC);
 }
 
-const int ALLOC_ITEMS	= 10000000;
-const int MAX_ITEM_SIZE = 50;
-const int BIG_ITEMS		= ALLOC_ITEMS / 10;
-const int BIG_SIZE		= MAX_ITEM_SIZE * 5;
+#define ALLOC_ITEMS 1000000
+#define MAX_ITEM_SIZE 50
+#define BIG_ITEMS (ALLOC_ITEMS/10)
+#define BIG_SIZE (MAX_ITEM_SIZE*5)
 
 struct AllocItem {
 	int order;
 	void *item;
-	static bool greaterThan(const AllocItem &i1, const AllocItem &i2) {
+	static int compare(const AllocItem &i1, const AllocItem &i2) {
 		return i1.order > i2.order || (i1.order==i2.order && i1.item > i2.item);
 	}
 };
@@ -182,7 +177,7 @@ static void testAllocatorOverhead() {
 	int i;
 	for (i=0;i<ALLOC_ITEMS;i++) {
 		n = n * 47163 - 57412;
-		AllocItem temp = {n, (void*)(long)i};
+		AllocItem temp = {n, (void*)i};
 		items.add(temp);
 	}
 	// Deallocate half of small items
@@ -194,7 +189,7 @@ static void testAllocatorOverhead() {
 	// Allocate big items
 	for (i=0;i<BIG_ITEMS;i++) {
 		n = n * 47163 - 57412;
-		AllocItem temp = {n, (void*)(long)i};
+		AllocItem temp = {n, (void*)i};
 		bigItems.add(temp);
 	}
 	// Deallocate the rest of small items
@@ -282,7 +277,7 @@ static void testAllocatorMalloc() {
 	report();
 }
 
-/*static void testAllocatorOldPool() {
+static void testAllocatorOldPool() {
 	printf("Test run for old MemoryPool...\n");
 	start();
 	::MemoryPool *pool = new ::MemoryPool(0,getDefaultMemoryPool());
@@ -319,12 +314,12 @@ static void testAllocatorMalloc() {
 	} while (bigItems.getNext());
 	delete pool;
 	report();
-}*/
+}
 
 int main() {
 	testTree();
 	testAllocatorOverhead();
 	testAllocatorMemoryPool();
 	testAllocatorMalloc();
-//	testAllocatorOldPool();
+	testAllocatorOldPool();
 }

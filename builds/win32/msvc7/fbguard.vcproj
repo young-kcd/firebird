@@ -29,10 +29,9 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="NDEBUG,WIN32,_WINDOWS,SUPERSERVER"
+				PreprocessorDefinitions="NDEBUG,WIN32,_WINDOWS,SERVER_SHUTDOWN,SUPERSERVER"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\fbguard/fbguard.pch"
 				AssemblerListingLocation="..\..\..\temp\release\fbguard/"
 				ObjectFile="..\..\..\temp\release\fbguard/"
@@ -51,6 +50,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\..\..\temp\release\fbguard/fbguard.pdb"
 				SubSystem="2"
 				OptimizeForWindows98="2"/>
 			<Tool
@@ -94,11 +94,10 @@
 				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="_DEBUG,WIN32,_WINDOWS,SUPERSERVER,DEV_BUILD"
+				PreprocessorDefinitions="_DEBUG,WIN32,_WINDOWS,SERVER_SHUTDOWN,SUPERSERVER,DEV_BUILD"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\fbguard/fbguard.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\fbguard/"
 				ObjectFile="..\..\..\temp\debug\fbguard/"
@@ -166,7 +165,7 @@
 			Name="REMOTE files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\chop.cpp">
+				RelativePath="..\..\..\src\remote\chop.cpp">
 			</File>
 		</Filter>
 		<Filter

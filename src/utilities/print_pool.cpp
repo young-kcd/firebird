@@ -17,12 +17,13 @@
  * Contributor(s): ______________________________________.
  */
 #include "firebird.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
 #include "../jrd/svc_undoc.h"
-#include "../common/stuff.h"
+
+#define STUFF_WORD(p, value)    {*p++ = value; *p++ = value >> 8;}
 
 int CLIB_ROUTINE main( int argc, char **argv)
 {
@@ -49,11 +50,11 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	unsigned short path_length;
 
 	if (argc != 2 && argc != 1) {
-		printf("Usage %s \n      %s filename\n");
+		ib_printf("Usage %s \n      %s filename\n");
 		exit(1);
 	}
 	if (argc == 1) {
-		printf(" Filename : ");
+		ib_printf(" Filename : ");
 		gets(fname);
 	}
 	else
@@ -61,28 +62,26 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	sptr = sendbuf;
 	strcpy(buffer, fname);
-	printf("Filename to dump pool info = %s \n", buffer);
+	ib_printf("Filename to dump pool info = %s \n", buffer);
 	sprintf(svc_name, "localhost:anonymous");
 	if (isc_service_attach(status, 0, svc_name, &svc_handle, 0, NULL)) {
-		printf("Failed to attach service\n");
+		ib_printf("Failed to attach service\n");
 		return 0;
 	}
 
 	path_length = strlen(buffer);
 	*sptr = isc_info_svc_dump_pool_info;
 	++sptr;
-	add_word(sptr, path_length);
+	STUFF_WORD(sptr, path_length);
 	strcpy(sptr, buffer);
 	sptr += path_length;
 	if (isc_service_query
 		(status, &svc_handle, NULL, 0, NULL, sptr - sendbuf, sendbuf, 256,
-		 respbuf))
-	{
-		printf("Failed to query service\n");
+		 respbuf)) {
+		ib_printf("Failed to query service\n");
 		isc_service_detach(status, &svc_handle);
 		return 0;
 	}
 
 	isc_service_detach(status, &svc_handle);
 }
-

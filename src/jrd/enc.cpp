@@ -15,8 +15,6 @@
 
 #ifdef HAVE_UNISTD_H
 #ifdef LINUX
-// prevent compiler warning
-#undef _XOPEN_SOURCE
 #define _XOPEN_SOURCE
 #endif
 #include <unistd.h>
@@ -27,7 +25,8 @@ extern "C" {
 
 
 #ifdef HAVE_CRYPT
-TEXT* ENC_crypt(const TEXT* string, const TEXT* salt)
+/* Changed prototype from DLL_EXPORT to API_ROUTINE - Jeevan */
+TEXT *DLL_EXPORT ENC_crypt(TEXT *string, TEXT *salt)
 {
 /**************************************
  *
@@ -80,8 +79,12 @@ TEXT* ENC_crypt(const TEXT* string, const TEXT* salt)
  * SUCH DAMAGE.
  */
 
-int des_setkey(const char* key);
-int des_cipher(const char* in, char* out, long salt, int num_iter);
+#ifndef NULL
+#define NULL		((char*) 0)
+#endif
+
+int des_setkey(const char *key);
+int des_cipher(const char *in, char *out, long salt, int num_iter);
 
 /*
  * UNIX password, and DES, encryption.
@@ -241,7 +244,7 @@ int des_cipher(const char* in, char* out, long salt, int num_iter);
  * 8% performance penalty.
  */
 
-union C_block{
+typedef union {
 	unsigned char b[8];
 	struct {
 #if defined(LONG_IS_32_BITS)
@@ -253,7 +256,7 @@ union C_block{
 		long i1:32;
 #endif
 	} b32;
-};
+} C_block;
 
 
 /*
@@ -468,7 +471,8 @@ static char cryptresult[1 + 4 + 4 + 11 + 1];	/* encrypted result */
  * Return a pointer to static data consisting of the "setting"
  * followed by an encryption produced by the "key" and "setting".
  */
-TEXT* ENC_crypt(const TEXT* key, const TEXT* setting)
+/* Changed prototype from DLL_EXPORT to API_ROUTINE - Jeevan */
+TEXT* DLL_EXPORT ENC_crypt(TEXT *key, TEXT *setting)
 {
 	unsigned long a, b, d;
 	char *encp;
@@ -494,7 +498,7 @@ TEXT* ENC_crypt(const TEXT* key, const TEXT* setting)
 		 * Involve the rest of the password 8 characters at a time.
 		 */
 		while (*key) {
-			if (des_cipher((const char*) &keyblock, (char*) &keyblock, 0L, 1))
+			if (des_cipher((char *) &keyblock, (char *) &keyblock, 0L, 1))
 				return (NULL);
 			for (i = 0; i < 8; i++) {
 				if ((t = 2 * (unsigned char) (*key)) != 0)
@@ -532,11 +536,8 @@ TEXT* ENC_crypt(const TEXT* key, const TEXT* setting)
 		salt = (salt << 6) | a64toi[t];
 	}
 	encp += salt_size;
-	if (des_cipher((const char*) &constdatablock, (char*) &rsltblock,
-				   salt, num_iter))
-	{
-		return (NULL);
-	}
+	if (des_cipher((char *) &constdatablock, (char *) &rsltblock,
+				   salt, num_iter)) return (NULL);
 
 	/*
 	 * Encode the 64 cipher bits as 11 ascii characters.
@@ -638,7 +639,7 @@ int des_setkey(const char *key)
  * NOTE: the performance of this routine is critically dependent on your
  * compiler and machine architecture.
  */
-int des_cipher(const char* in, char* out, long salt, int num_iter)
+int des_cipher(const char *in, char *out, long salt, int num_iter)
 {
 	/* variables that we want in registers, most important first */
 	long L0, L1, R0, R1, k;
@@ -902,7 +903,7 @@ init_perm(C_block perm[64 / CHUNKBITS][1 << CHUNKBITS],
 /*
  * "setkey" routine (for backwards compatibility)
  */
-int setkey(const char* key)
+int setkey(const char *key)
 {
 	int i, j, k;
 	C_block keyblock;
@@ -921,7 +922,7 @@ int setkey(const char* key)
 /*
  * "encrypt" routine (for backwards compatibility)
  */
-int encrypt(char* block, int flag)
+int encrypt(char *block, int flag)
 {
 	int i, j, k;
 	C_block cblock;
@@ -934,7 +935,7 @@ int encrypt(char* block, int flag)
 		}
 		cblock.b[i] = k;
 	}
-	if (des_cipher((const char*) &cblock, (char*) &cblock, 0L, (flag ? -1 : 1)))
+	if (des_cipher((char *) &cblock, (char *) &cblock, 0L, (flag ? -1 : 1)))
 		return (1);
 	for (i = 7; i >= 0; i--) {
 		k = cblock.b[i];

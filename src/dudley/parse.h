@@ -21,8 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef DUDLEY_PARSE_H
-#define DUDLEY_PARSE_H
+#ifndef _DUDLEY_PARSE_H_
+#define _DUDLEY_PARSE_H_
+
+#define MATCH(kw)		PARSE_match (kw)
+#define SYNTAX_NODE(type,count)	PARSE_make_node (type, count)
+#define KEYWORD(kw)		(DDL_token.tok_keyword == kw)
 
 /* Keywords */
 
@@ -237,12 +241,21 @@ enum tok_t {
 
 typedef struct tok {
 	enum tok_t tok_type;		/* type of token */
-	sym* tok_symbol;			/* hash block if recognized */
+	struct sym *tok_symbol;		/* hash block if recognized */
 	enum kwwords tok_keyword;	/* keyword number, if recognized */
 	SLONG tok_position;			/* byte number in input stream */
 	USHORT tok_length;
 	TEXT tok_string[MAXSYMLEN];
 } *TOK;
 
-#endif // DUDLEY_PARSE_H
+#ifdef PARSER_MAIN
+#define EXTERN
+#else
+#define EXTERN	extern
+#endif
 
+EXTERN struct tok DDL_token;
+
+#undef EXTERN
+
+#endif /* _DUDLEY_PARSE_H_ */

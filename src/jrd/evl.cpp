@@ -1,6 +1,6 @@
 /*
  *      PROGRAM:        JRD Access Method
- *      MODULE:         evl.cpp
+ *      MODULE:         evl.c
  *      DESCRIPTION:    Expression evaluation
  *
  * The contents of this file are subject to the Interbase Public
@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.96 2004-07-07 15:48:57 skidder Exp $ 
+  * $Id: evl.cpp,v 1.34.2.6 2004-03-29 07:40:25 skidder Exp $ 
  */
 
 /*
@@ -57,22 +57,17 @@
  * 2002.09.28 Dmitry Yemanov: Reworked internal_info stuff, enhanced
  *                            exception handling in SPs/triggers,
  *                            implemented ROWS_AFFECTED system variable
- * 2003.08.10 Claudio Valderrama: Fix SF bug# 784121.
  */
 
 #include "firebird.h"
 #include <string.h>
-#include <math.h>
-#include "../jrd/common.h"
-#include "../jrd/ibase.h"
-
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/req.h"
 #include "../jrd/exe.h"
 #include "../jrd/sbm.h"
 #include "../jrd/blb.h"
-#include "gen/iberror.h"
+#include "gen/codes.h"
 #include "../jrd/scl.h"
 #include "../jrd/lck.h"
 #include "../jrd/lls.h"
@@ -83,6 +78,7 @@
 #include "../jrd/sort.h"
 #include "../jrd/blr.h"
 #include "../jrd/tra.h"
+#include "../jrd/constants.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/jrd_time.h"
 #include "../jrd/all_proto.h"
@@ -106,7 +102,7 @@
 #include "../jrd/rse_proto.h"
 #include "../jrd/sbm_proto.h"
 #include "../jrd/scl_proto.h"
-#include "../jrd/thd.h"
+#include "../jrd/thd_proto.h"
 #include "../jrd/sort_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/align.h"
@@ -115,17 +111,17 @@
 #include "../jrd/misc_func_ids.h"
 //#include "../jrd/authenticate.h"
 #include "../common/config/config.h"
-#include "../jrd/evl_string.h"
 
-const int TEMP_LENGTH	= 128;
+#define TEMP_LENGTH     128
 
-const SINT64 MAX_INT64_LIMIT	= MAX_SINT64 / 10;
-const SINT64 MIN_INT64_LIMIT	= MIN_SINT64 / 10;
+#define TEMP_SIZE(x)	sizeof (x)
+
+#define MAX_INT64_LIMIT	(MAX_SINT64 / 10)
+#define MIN_INT64_LIMIT	(MIN_SINT64 / 10)
 
 #ifdef VMS
-double MTH$CVT_D_G(), MTH$CVT_G_D();
+extern double MTH$CVT_D_G(), MTH$CVT_G_D();
 #endif
-
 
 /*  *** DANGER DANGER WILL ROBINSON ***
  *  add(), multiply(), and divide() all take the same three arguments, but
@@ -133,51 +129,47 @@ double MTH$CVT_D_G(), MTH$CVT_G_D();
  *  The order should be made to agree as part of the next code cleanup.
  */
 
-using namespace Jrd;
-
-static dsc* add(const dsc*, const jrd_nod*, impure_value*);
-static dsc* add2(const dsc*, const jrd_nod*, impure_value*);
-static dsc* add_datetime(const dsc*, const jrd_nod*, impure_value*);
-static dsc* add_sql_date(const dsc*, const jrd_nod*, impure_value*);
-static dsc* add_sql_time(const dsc*, const jrd_nod*, impure_value*);
-static dsc* add_timestamp(const dsc*, const jrd_nod*, impure_value*);
-static dsc* binary_value(thread_db*, const jrd_nod*, impure_value*);
-static dsc* cast(thread_db*, const dsc*, const jrd_nod*, impure_value*);
-static void compute_agg_distinct(thread_db*, jrd_nod*);
-static dsc* concatenate(thread_db*, jrd_nod*, impure_value*);
-static dsc* dbkey(thread_db*, const jrd_nod*, impure_value*);
-static dsc* eval_statistical(thread_db*, jrd_nod*, impure_value*);
-static SINT64 get_day_fraction(const dsc* d);
-static dsc* get_mask(thread_db*, jrd_nod*, impure_value*);
-static SINT64 get_timestamp_to_isc_ticks(const dsc* d);
-static void init_agg_distinct(thread_db*, const jrd_nod*);
+static DSC *add(DSC *, JRD_NOD, VLU);
+static DSC *add2(DSC *, JRD_NOD, VLU);
+static DSC *add_datetime(DSC *, JRD_NOD, VLU);
+static DSC *add_sql_date(DSC *, JRD_NOD, VLU);
+static DSC *add_sql_time(DSC *, JRD_NOD, VLU);
+static DSC *add_timestamp(DSC *, JRD_NOD, VLU);
+static DSC *binary_value(TDBB, JRD_NOD, VLU);
+static DSC *cast(TDBB, DSC *, JRD_NOD, VLU);
+static SSHORT compute_agg_distinct(TDBB, JRD_NOD);
+static DSC *concatenate(TDBB, JRD_NOD, VLU);
+static DSC *dbkey(TDBB, JRD_NOD, VLU);
+static DSC *eval_statistical(TDBB, JRD_NOD, VLU);
+static SINT64 get_day_fraction(DSC * d);
+static DSC *get_mask(TDBB, JRD_NOD, VLU);
+static SINT64 get_timestamp_to_isc_ticks(DSC * d);
+static SSHORT init_agg_distinct(TDBB, JRD_NOD);
 #ifdef PC_ENGINE
-static dsc* lock_record(thread_db*, jrd_nod*, impure_value*);
-static dsc* lock_relation(thread_db*, jrd_nod*, impure_value*);
+static DSC *lock_record(TDBB, JRD_NOD, VLU);
+static DSC *lock_relation(TDBB, JRD_NOD, VLU);
 #endif
-static dsc* lock_state(thread_db*, jrd_nod*, impure_value*);
-static dsc* multiply(const dsc*, impure_value*, const jrd_nod*);
-static dsc* multiply2(const dsc*, impure_value*, const jrd_nod*);
-static dsc* divide2(const dsc*, impure_value*, const jrd_nod*);
-static dsc* negate_dsc(thread_db*, const dsc*, impure_value*);
-static dsc* record_version(thread_db*, const jrd_nod*, impure_value*);
-static bool reject_duplicate(const UCHAR*, const UCHAR*, void*);
-static dsc* scalar(thread_db*, jrd_nod*, impure_value*);
-static bool sleuth(thread_db*, jrd_nod*, const dsc*, const dsc*);
-/* BRS 13/05/04 NOT USED 
-static bool nc_sleuth_check(TextType, USHORT, const UCHAR*, const UCHAR*,
-	const UCHAR*, const UCHAR*);
-static bool nc_sleuth_class(TextType, USHORT, const UCHAR*, const UCHAR*, UCHAR);
-static bool wc_sleuth_check(TextType, USHORT, const UCS2_CHAR*, const UCS2_CHAR*,
-						const UCS2_CHAR*, const UCS2_CHAR*);
-static bool wc_sleuth_class(TextType, USHORT, const UCS2_CHAR*, const UCS2_CHAR*,
+static DSC *lock_state(TDBB, JRD_NOD, VLU);
+static DSC *multiply(DSC *, VLU, JRD_NOD);
+static DSC *multiply2(DSC *, VLU, JRD_NOD);
+static DSC *divide2(DSC *, VLU, JRD_NOD);
+static DSC *negate_dsc(TDBB, DSC *, VLU);
+static DSC *record_version(TDBB, JRD_NOD, VLU);
+static BOOLEAN reject_duplicate(UCHAR *, UCHAR *, int);
+static DSC *scalar(TDBB, JRD_NOD, VLU);
+static SSHORT sleuth(TDBB, JRD_NOD, DSC *, DSC *);
+static BOOLEAN nc_sleuth_check(class TextType*, USHORT, UCHAR *, UCHAR *, UCHAR *,
+							   UCHAR *);
+static BOOLEAN nc_sleuth_class(class TextType*, USHORT, UCHAR *, UCHAR *, UCHAR);
+static BOOLEAN wc_sleuth_check(class TextType*, USHORT, UCS2_CHAR *, UCS2_CHAR *,
+						UCS2_CHAR *, UCS2_CHAR *);
+static BOOLEAN wc_sleuth_class(class TextType*, USHORT, UCS2_CHAR *, UCS2_CHAR *,
 						UCS2_CHAR);
-*/
-static bool string_boolean(thread_db*, jrd_nod*, dsc*, dsc*, bool);
-static bool string_function(thread_db*, jrd_nod*, SSHORT, const UCHAR*, SSHORT, const UCHAR*, USHORT, bool);
-static dsc* substring(thread_db*, impure_value*, dsc*, SLONG, SLONG);
-static dsc* upcase(thread_db*, const dsc*, impure_value*);
-static dsc* internal_info(thread_db*, const dsc*, impure_value*);
+static SSHORT string_boolean(TDBB, JRD_NOD, DSC *, DSC *);
+static SSHORT string_function(TDBB, JRD_NOD, SSHORT, UCHAR *, SSHORT, UCHAR *, USHORT);
+static DSC *substring(TDBB, VLU, DSC *, USHORT, USHORT);
+static DSC *upcase(TDBB, DSC *, VLU);
+static DSC *internal_info(TDBB, DSC *, VLU);
 
 
 static const UCHAR special[256] = {
@@ -201,10 +193,10 @@ static const UCHAR special[256] = {
 
 
 
-const SINT64 SECONDS_PER_DAY			= 24*60*60;
-const SINT64 ISC_TICKS_PER_DAY			= SECONDS_PER_DAY * ISC_TIME_SECONDS_PRECISION;
-const SCHAR DIALECT_3_TIMESTAMP_SCALE	= -9;
-const SCHAR DIALECT_1_TIMESTAMP_SCALE	= 0;
+#define SECONDS_PER_DAY				(24*60*60)
+#define ISC_TICKS_PER_DAY			(((SINT64)SECONDS_PER_DAY)*ISC_TIME_SECONDS_PRECISION)
+#define DIALECT_3_TIMESTAMP_SCALE	-9
+#define DIALECT_1_TIMESTAMP_SCALE	0
 
 #ifdef SCROLLABLE_CURSORS
 static const RSE_GET_MODE g_RSE_get_mode = RSE_get_next;
@@ -215,7 +207,7 @@ static const RSE_GET_MODE g_RSE_get_mode = RSE_get_forward;
 
 
 
-dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
+DSC *DLL_EXPORT EVL_assign_to(TDBB tdbb, JRD_NOD node)
 {
 /**************************************
  *
@@ -228,56 +220,78 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
  *      destination node of an assignment.
  *
  **************************************/
-	dsc* desc;
-	Format* format;
-	jrd_nod* message;
-	Record* record;
+	JRD_REQ request;
+	VLU impure;
+	DSC *desc;
+	FMT format;
+	JRD_NOD message;
+	REC record;
 
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(node, type_nod);
 
-	jrd_req* request = tdbb->tdbb_request;
-	impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
+	request = tdbb->tdbb_request;
+	impure = (VLU) ((SCHAR *) request + node->nod_impure);
 
 /* The only nodes that can be assigned to are: argument, field and variable. */
 
+	VarInvariantArray *var_invariants;
+	MsgInvariantArray *msg_invariants;
 	int arg_number;
 
 	switch (node->nod_type) {
 	case nod_argument:
 		message = node->nod_arg[e_arg_message];
-		format = (Format*) message->nod_arg[e_msg_format];
-		arg_number = (int) (IPTR)node->nod_arg[e_arg_number];
+		format = (FMT) message->nod_arg[e_msg_format];
+		arg_number = (int)(IPTR)node->nod_arg[e_arg_number];
 		desc = &format->fmt_desc[arg_number];
 		impure->vlu_desc.dsc_address =
-			(UCHAR *) request + message->nod_impure + (IPTR) desc->dsc_address;
+			(UCHAR *) request + message->nod_impure + (int) desc->dsc_address;
 		impure->vlu_desc.dsc_dtype = desc->dsc_dtype;
 		impure->vlu_desc.dsc_length = desc->dsc_length;
 		impure->vlu_desc.dsc_scale = desc->dsc_scale;
 		impure->vlu_desc.dsc_sub_type = desc->dsc_sub_type;
-		if (DTYPE_IS_TEXT(desc->dsc_dtype) &&
+		if (IS_DTYPE_ANY_TEXT(desc->dsc_dtype) &&
 			((INTL_TTYPE(desc) == ttype_dynamic) ||
-			 (INTL_GET_CHARSET(desc) == CS_dynamic)))
-		{
+			 (INTL_GET_CHARSET(desc) == CS_dynamic))) {
 			/* Value is a text value, we're assigning it back to the user
 			   process, user process has not specified a subtype, user
-			   process specified dynamic translation and the dsc isn't from
+			   process specified dynamic translation and the DSC isn't from
 			   a 3.3 type request (blr_cstring2 instead of blr_cstring) so
 			   convert the charset to the declared charset of the process. */
 
 			INTL_ASSIGN_DSC(&impure->vlu_desc,
 							tdbb->tdbb_attachment->att_charset, COLLATE_NONE);
 		}
+		// Clear out dependent invariants
+		msg_invariants = reinterpret_cast<MsgInvariantArray*>(
+			message->nod_arg[e_msg_invariants]);
+		if (msg_invariants && msg_invariants->getCount() > arg_number) {
+			var_invariants = (*msg_invariants)[arg_number];
+			if (var_invariants) {
+				SLONG *ptr, *end;
+				for (ptr = var_invariants->begin(), end = var_invariants->end();
+					ptr < end; ptr++)
+				{
+					reinterpret_cast<VLU>((SCHAR *) request + *ptr)->vlu_flags = 0;
+				}
+			}
+		}
 		return &impure->vlu_desc;
 
 	case nod_field:
+		// 23-Nov-2003, Nickolay Samofatov. In theory, we should track
+		// dependent invariants for fields too, but current engine
+		// doesn't seem to be able to produce statements where anomalies 
+		// may happen. I checked triggers and insert/update statements.
+		// All seem to work fine.
 		record =
-			request->req_rpb[(int) (IPTR) node->nod_arg[e_fld_stream]].rpb_record;
-		EVL_field(0, record, (USHORT)(IPTR) node->nod_arg[e_fld_id],
+			request->req_rpb[(int) node->nod_arg[e_fld_stream]].rpb_record;
+		EVL_field(0, record, (USHORT) node->nod_arg[e_fld_id],
 				  &impure->vlu_desc);
 		if (!impure->vlu_desc.dsc_address)
-			ERR_post(isc_read_only_field, 0);
+			ERR_post(gds_read_only_field, 0);
 		return &impure->vlu_desc;
 
 	case nod_null:
@@ -286,7 +300,18 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 	case nod_variable:
 		// Calculate descriptor
 		node = node->nod_arg[e_var_variable];
-		impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
+		impure = (VLU) ((SCHAR *) request + node->nod_impure);
+		// Clear out dependent invariants
+		var_invariants = reinterpret_cast<VarInvariantArray*>(
+			node->nod_arg[e_dcl_invariants]);
+		if (var_invariants) {
+			SLONG *ptr, *end;
+			for (ptr = var_invariants->begin(), end = var_invariants->end();
+				ptr < end; ptr++)
+			{
+				reinterpret_cast<VLU>((SCHAR *) request + *ptr)->vlu_flags = 0;
+			}
+		}
 		return &impure->vlu_desc;
 
 	default:
@@ -296,7 +321,7 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 }
 
 
-SparseBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node)
+SBM *DLL_EXPORT EVL_bitmap(TDBB tdbb, JRD_NOD node)
 {
 /**************************************
  *
@@ -324,13 +349,18 @@ SparseBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node)
 
 	case nod_bit_dbkey:
 		{
-			impure_inversion* impure = (impure_inversion*) ((SCHAR *) tdbb->tdbb_request + node->nod_impure);
-			SBM_reset(&impure->inv_bitmap);
-			const dsc* desc = EVL_expr(tdbb, node->nod_arg[0]);
-			const USHORT id = 1 + 2 * (USHORT)(IPTR) node->nod_arg[1];
-			const UCHAR* numbers = desc->dsc_address;
-			numbers += id * sizeof(SLONG);
+			DSC *desc;
+			USHORT id;
+			UCHAR *numbers;
 			SLONG rel_dbkey;
+			INV impure;
+
+			impure = (INV) ((SCHAR *) tdbb->tdbb_request + node->nod_impure);
+			SBM_reset(&impure->inv_bitmap);
+			desc = EVL_expr(tdbb, node->nod_arg[0]);
+			id = 1 + 2 * (USHORT) node->nod_arg[1];
+			numbers = desc->dsc_address;
+			numbers += id * sizeof(SLONG);
 			MOVE_FAST(numbers, &rel_dbkey, sizeof(SLONG));
 			rel_dbkey -= 1;
 			SBM_set(tdbb, &impure->inv_bitmap, rel_dbkey);
@@ -339,9 +369,12 @@ SparseBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node)
 
 	case nod_index:
 		{
-			impure_inversion* impure = (impure_inversion*) ((SCHAR *) tdbb->tdbb_request + node->nod_impure);
+			INV impure;
+
+			impure = (INV) ((SCHAR *) tdbb->tdbb_request + node->nod_impure);
 			BTR_evaluate(tdbb,
-						 reinterpret_cast<IndexRetrieval*>(node->nod_arg[e_idx_retrieval]),
+						 reinterpret_cast <
+						 irb * >(node->nod_arg[e_idx_retrieval]),
 						 &impure->inv_bitmap);
 			return &impure->inv_bitmap;
 		}
@@ -353,7 +386,7 @@ SparseBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node)
 }
 
 
-bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
+BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, JRD_NOD node)
 {
 /**************************************
  *
@@ -365,11 +398,11 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
  *      Evaluate a boolean.
  *
  **************************************/
-	dsc*   desc[2];
-	bool value;
+
+	DSC*   desc[2];
+	USHORT value;
 	SSHORT comparison;
-	impure_value*    impure;
-	bool computed_invariant = false;
+	VLU    impure;
 
 	SET_TDBB(tdbb);
 
@@ -378,8 +411,8 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 /* Handle and pre-processing possible for various nodes.  This includes
    evaluating argument and checking NULL flags */
 
-	jrd_req* request = tdbb->tdbb_request;
-	jrd_nod** ptr = node->nod_arg;
+	JRD_REQ request = tdbb->tdbb_request;
+	JRD_NOD* ptr = node->nod_arg;
 
 	switch (node->nod_type)
 	{
@@ -396,71 +429,33 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 	case nod_between:
 	case nod_sleuth:
 		{
+			JRD_NOD rec_version;
+			ULONG flags;
+			SSHORT force_equal;
+
 			request->req_flags &= ~req_same_tx_upd;
-			SSHORT force_equal = 0;
+			force_equal = 0;
 
 			/* Evaluate arguments.  If either is null, result is null, but in
 			   any case, evaluate both, since some expressions may later depend
 			   on mappings which are developed here */
 
-			const jrd_nod* rec_version = *ptr;
+			rec_version = *ptr;
 			desc[0] = EVL_expr(tdbb, *ptr++);
-			const ULONG flags = request->req_flags;
+			flags = request->req_flags;
 			request->req_flags &= ~req_null;
 			request->req_flags &= ~req_clone_data_from_default_clause;
 			force_equal |= request->req_flags & req_same_tx_upd;
 
-			// Currently only nod_like and nod_contains may be marked invariant
-			if (node->nod_flags & nod_invariant) {
-				impure = reinterpret_cast<impure_value*>((SCHAR *)request + node->nod_impure);
+			desc[1] = EVL_expr(tdbb, *ptr++);
 
-				// Check that data type of operand is still the same.
-				// It may change due to multiple formats present in stream
-				// System tables are the good example of such streams -
-				// data coming from ini.epp has ASCII ttype, user data is UNICODE_FSS
-				if ((impure->vlu_flags & VLU_computed) &&
-					(impure->vlu_desc.dsc_dtype != desc[0]->dsc_dtype ||
-					 impure->vlu_desc.dsc_sub_type != desc[0]->dsc_sub_type ||
-					 impure->vlu_desc.dsc_scale != desc[0]->dsc_scale)
-					)
-				{
-					impure->vlu_flags &= ~VLU_computed;
-				}
-
-				if (impure->vlu_flags & VLU_computed) {
-					if (impure->vlu_flags & VLU_null)
-						request->req_flags |= req_null;
-					else
-						computed_invariant = true;
-				} 
-				else {
-					desc[1] = EVL_expr(tdbb, *ptr++);
-					if (request->req_flags & req_null) {
-						impure->vlu_flags |= VLU_computed;
-						impure->vlu_flags |= VLU_null;
-					}
-					else {
-						impure->vlu_flags &= ~VLU_null;
-
-						// Search object depends on operand data type.
-						// Thus save data type which we use to compute invariant
-					    impure->vlu_desc.dsc_dtype = desc[0]->dsc_dtype;
-					    impure->vlu_desc.dsc_sub_type = desc[0]->dsc_sub_type;
-					    impure->vlu_desc.dsc_scale = desc[0]->dsc_scale;
-					}
-				}
-			}
-			else
-				desc[1] = EVL_expr(tdbb, *ptr++);
-			
-			// If either of expressions above returned NULL set req_null flag 
-			// and return false
+			/* restore preserved NULL state */
 
 			if (flags & req_null)
 				request->req_flags |= req_null;
 
 			if (request->req_flags & req_null)
-				return false;
+				return FALSE;
 
 			force_equal |= request->req_flags & req_same_tx_upd;
 
@@ -542,32 +537,34 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			{
 				// First term is FALSE, why the whole expression is false.
 				// NULL flag is already turned off a few lines above.
-				return false;
+				return FALSE;
 			}
 
-			const bool value2 = EVL_boolean(tdbb, *ptr);
+			const USHORT value2 = EVL_boolean(tdbb, *ptr);
 			const USHORT secondnull = request->req_flags & req_null;
 			request->req_flags &= ~req_null;
 
 			if ((!value && !firstnull) || (!value2 && !secondnull)) {
-				return false;	/* at least one operand was FALSE */
+				return FALSE;	/* at least one operand was FALSE */
 			}
 			else if (value && value2) {
-				return true;	/* both true */
+				return TRUE;	/* both true */
 			}
 			request->req_flags |= req_null;
-			return false;		/* otherwise, return null */
+			return FALSE;		/* otherwise, return null */
 		}
 
 	case nod_any:
 	case nod_ansi_any:
 	case nod_ansi_all:
 		{
-			USHORT* invariant_flags;
+			USHORT *invariant_flags;
+			RSB rsb;
+			RSE rse;
 
 			if (node->nod_flags & nod_invariant)
 			{
-				impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
+				impure = (VLU) ((SCHAR *) request + node->nod_impure);
 				invariant_flags = & impure->vlu_flags;
 				if (*invariant_flags & VLU_computed) {
 					/* An invariant node has already been computed. */
@@ -581,26 +578,32 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 					{
 						request->req_flags &= ~req_null;
 					}
-					return impure->vlu_misc.vlu_short != 0;
+					return impure->vlu_misc.vlu_short;
 				}
 			}
 
 			/* for ansi ANY clauses (and ALL's, which are negated ANY's)
 			   the unoptimized boolean expression must be used, since the
-			   processing of these clauses is order dependant (see rse.cpp) */
+			   processing of these clauses is order dependant (see rse.c) */
 
-			RecordSource* select = (RecordSource*) (node->nod_arg[e_any_rsb]);
+			rse = (RSE) (node->nod_arg[e_any_rse]);
+			rsb = (RSB) (node->nod_arg[e_any_rsb]);
 			if (node->nod_type != nod_any)
 			{
-				select->rsb_any_boolean = ((RecordSelExpr*) (node->nod_arg[e_any_rse]))->rse_boolean;
+				rsb->rsb_any_boolean = (JRD_NOD) rse->rse_boolean;
 				if (node->nod_type == nod_ansi_any)
 					request->req_flags |= req_ansi_any;
 				else
 					request->req_flags |= req_ansi_all;
 			}
-			RSE_open(tdbb, select);
-			value = RSE_get_record(tdbb, select, g_RSE_get_mode);
-			RSE_close(tdbb, select);
+			RSE_open(tdbb,
+					 reinterpret_cast<struct Rsb*>(node->nod_arg[e_any_rsb]));
+			value =
+				RSE_get_record(tdbb,
+							   reinterpret_cast<struct Rsb*>(node->nod_arg[e_any_rsb]),
+							   g_RSE_get_mode);
+			RSE_close(tdbb,
+					  reinterpret_cast<struct Rsb*>(node->nod_arg[e_any_rsb]));
 			if (node->nod_type == nod_any)
 				request->req_flags &= ~req_null;
 
@@ -614,7 +617,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 				{
 					*invariant_flags |= VLU_null;
 				}
-				impure->vlu_misc.vlu_short = value ? TRUE : FALSE;
+				impure->vlu_misc.vlu_short = value;
 			}
 			return value;
 		}
@@ -623,7 +626,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 	case nod_starts:
 	case nod_matches:
 	case nod_like:
-		return string_boolean(tdbb, node, desc[0], desc[1], computed_invariant);
+		return string_boolean(tdbb, node, desc[0], desc[1]);
 
 	case nod_sleuth:
 		return sleuth(tdbb, node, desc[0], desc[1]);
@@ -631,22 +634,22 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 	case nod_missing:
 		EVL_expr(tdbb, *ptr);
 		if (request->req_flags & req_null) {
-			value = true;
+			value = TRUE;
 			request->req_flags &= ~req_null;
 		}
 		else {
 			if (request->req_flags & req_clone_data_from_default_clause) {
-				value = true;
+				value = TRUE;
 				request->req_flags &= ~req_clone_data_from_default_clause;
 			}
 			else
-				value = false;
+				value = FALSE;
 		}
 		return value;
 
 	case nod_not:
 		if (request->req_flags & req_null)
-			return false;
+			return FALSE;
 		return !value;
 
 	case nod_or:
@@ -678,13 +681,13 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			{
 				// First term is TRUE, why the whole expression is true.
 				// NULL flag is already turned off a few lines above.
-				return true;
+				return TRUE;
 			}
 			
-			const bool value2 = EVL_boolean(tdbb, *ptr);
+			const USHORT value2 = EVL_boolean(tdbb, *ptr);
 			if (value || value2) {
 				request->req_flags &= ~req_null;
-				return true;
+				return TRUE;
 			}
 
 			/* restore saved NULL state */
@@ -692,7 +695,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			if (flags & req_null) {
 				request->req_flags |= req_null;
 			}
-			return false;
+			return FALSE;
 		}
 
 	case nod_unique:
@@ -701,7 +704,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 
 			if (node->nod_flags & nod_invariant)
 			{
-				impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
+				impure = (VLU) ((SCHAR *) request + node->nod_impure);
 				invariant_flags = & impure->vlu_flags;
 				if (*invariant_flags & VLU_computed)
 				{
@@ -711,23 +714,23 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 						request->req_flags |= req_null;
 					else
 						request->req_flags &= ~req_null;
-					return impure->vlu_misc.vlu_short != 0;
+					return impure->vlu_misc.vlu_short;
 				}
 			}
 
-			RSE_open(tdbb, reinterpret_cast<RecordSource*>(node->nod_arg[e_any_rsb]));
+			RSE_open(tdbb, reinterpret_cast<Rsb*>(node->nod_arg[e_any_rsb]));
 			value =
 				RSE_get_record(tdbb,
-							   reinterpret_cast<RecordSource*>(node->nod_arg[e_any_rsb]),
+							   reinterpret_cast<Rsb*>(node->nod_arg[e_any_rsb]),
 							   g_RSE_get_mode);
 			if (value)
 			{
 				value =
 				!RSE_get_record(tdbb,
-								reinterpret_cast<RecordSource*>(node->nod_arg[e_any_rsb]),
+								reinterpret_cast<Rsb*>(node->nod_arg[e_any_rsb]),
 								g_RSE_get_mode);
 			}
-			RSE_close(tdbb, reinterpret_cast<RecordSource*>(node->nod_arg[e_any_rsb]));
+			RSE_close(tdbb, reinterpret_cast<Rsb*>(node->nod_arg[e_any_rsb]));
 
 			/* If this is an invariant node, save the return value. */
 
@@ -737,38 +740,39 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 				if (request->req_flags & req_null) {
 					*invariant_flags |= VLU_null;
 				}
-				impure->vlu_misc.vlu_short = value ? TRUE : FALSE;
+				impure->vlu_misc.vlu_short = value;
 			}
 			return value;
 		}
 
 	case nod_eql:
-		return (comparison == 0);
+		return ((comparison == 0) ? TRUE : FALSE);
 	case nod_neq:
-		return (comparison != 0);
+		return ((comparison != 0) ? TRUE : FALSE);
 	case nod_gtr:
-		return (comparison > 0);
+		return ((comparison > 0) ? TRUE : FALSE);
 	case nod_geq:
-		return (comparison >= 0);
+		return ((comparison >= 0) ? TRUE : FALSE);
 	case nod_lss:
-		return (comparison < 0);
+		return ((comparison < 0) ? TRUE : FALSE);
 	case nod_leq:
-		return (comparison <= 0);
+		return ((comparison <= 0) ? TRUE : FALSE);
 
 	case nod_between:
 		desc[1] = EVL_expr(tdbb, node->nod_arg[2]);
 		if (request->req_flags & req_null)
-			return false;
-		return (comparison >= 0 && MOV_compare(desc[0], desc[1]) <= 0);
+			return FALSE;
+		return (comparison >= 0 && MOV_compare(desc[0], desc[1]) <= 0) ?
+			TRUE : FALSE;
 
 	default:
 		BUGCHECK(231);			/* msg 231 EVL_boolean: invalid operation */
 	}
-	return false;
+	return FALSE;
 }
 
 
-dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
+DSC* DLL_EXPORT EVL_expr(TDBB tdbb, JRD_NOD node)
 {
 /**************************************
  *
@@ -780,6 +784,9 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
  *      Evaluate a value expression.
  *
  **************************************/
+	JRD_REQ request;
+	VLU impure;
+
 	DEV_BLKCHK(node, type_nod);
 
 	if (!node)
@@ -787,8 +794,8 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 
 	SET_TDBB(tdbb);
 
-	jrd_req* request = tdbb->tdbb_request;
-	impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
+	request = tdbb->tdbb_request;
+	impure = (VLU) ((SCHAR *) request + node->nod_impure);
 	request->req_flags &= ~req_null;
 	request->req_flags &= ~req_clone_data_from_default_clause;
 
@@ -808,7 +815,9 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 
 	case nod_argument:
 		{
-			const dsc* desc;
+			FMT format;
+			JRD_NOD message;
+			DSC *desc;
 
 			if (node->nod_arg[e_arg_flag]) {
 				desc = EVL_expr(tdbb, node->nod_arg[e_arg_flag]);
@@ -816,12 +825,12 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 					request->req_flags |= req_null;
 				}
 			}
-			const jrd_nod* message = node->nod_arg[e_arg_message];
-			const Format* format = (Format*) message->nod_arg[e_msg_format];
-			desc = &format->fmt_desc[(int)(IPTR) node->nod_arg[e_arg_number]];
+			message = node->nod_arg[e_arg_message];
+			format = (FMT) message->nod_arg[e_msg_format];
+			desc = &format->fmt_desc[(int) node->nod_arg[e_arg_number]];
 
 			impure->vlu_desc.dsc_address = (UCHAR *) request +
-				message->nod_impure + (IPTR) desc->dsc_address;
+				message->nod_impure + (int) desc->dsc_address;
 			impure->vlu_desc.dsc_dtype = desc->dsc_dtype;
 			impure->vlu_desc.dsc_length = desc->dsc_length;
 			impure->vlu_desc.dsc_scale = desc->dsc_scale;
@@ -840,15 +849,15 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 
 	case nod_field:
 		{
-			Record* record =
-				request->req_rpb[(int) (IPTR)node->nod_arg[e_fld_stream]].rpb_record;
+			REC record =
+				request->req_rpb[(int)node->nod_arg[e_fld_stream]].rpb_record;
 			/* In order to "map a null to a default" value (in EVL_field()), 
 			 * the relation block is referenced. 
 			 * Reference: Bug 10116, 10424 
 			 */
-			if (!EVL_field(request->req_rpb[(USHORT)(IPTR) node->nod_arg[e_fld_stream]].rpb_relation,
+			if (!EVL_field(request->req_rpb[(USHORT) node->nod_arg[e_fld_stream]].rpb_relation,
 							record,
-							(USHORT)(IPTR) node->nod_arg[e_fld_id],
+							(USHORT) node->nod_arg[e_fld_id],
 							&impure->vlu_desc))
 			{
 				request->req_flags |= req_null;
@@ -857,14 +866,14 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 		}
 
 	case nod_function:
-		FUN_evaluate(reinterpret_cast<UserFunction*>(node->nod_arg[e_fun_function]),
+		FUN_evaluate(reinterpret_cast<fun*>(node->nod_arg[e_fun_function]),
 				     node->nod_arg[e_fun_args], impure);
 		/*request->req_flags |= req_null; THIS IS A TEST ONLY.
 		return NULL;*/
 		return &impure->vlu_desc;
 
 	case nod_literal:
-		return &((Literal*) node)->lit_desc;
+		return &((LIT) node)->lit_desc;
 
 	case nod_lock_state:
 		return lock_state(tdbb, node, impure);
@@ -889,25 +898,20 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 	case nod_current_date:
 	case nod_current_timestamp:
 		{
-			time_t clock;
-			// Use the request timestamp, if there is one.  Otherwise
-			//   fetch the current clock in order to keep running 
+			ULONG clock;
+			struct tm times;
+			GDS_TIMESTAMP enc_times;
+
+			/* Use the request timestamp, if there is one.  Otherwise
+			   fetch the current clock in order to keep running */
 
 			if (request->req_timestamp)
-			{
 				clock = request->req_timestamp;
+			else {
+				assert(FALSE);
+				clock = time(0);
 			}
-			else
-			{
-				fb_assert(false);
-				clock = time(NULL);
-			}
-			const tm* ptimes = localtime(&clock);
-			if (!ptimes)
-			{
-				ERR_post(isc_date_range_exceeded, 0);
-			}
-			tm times = *ptimes;
+			times = *localtime(reinterpret_cast < time_t * >(&clock));
 
 			memset(&impure->vlu_desc, 0, sizeof(impure->vlu_desc));
 			impure->vlu_desc.dsc_address =
@@ -916,9 +920,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 				times.tm_year = times.tm_mon = times.tm_mday = 0;
 			else if (node->nod_type == nod_current_date)
 				times.tm_hour = times.tm_min = times.tm_sec = 0;
-			GDS_TIMESTAMP enc_times;
 			isc_encode_timestamp(&times, &enc_times);
-
 			switch (node->nod_type) {
 			case nod_current_time:
 				impure->vlu_desc.dsc_dtype = dtype_sql_time;
@@ -938,7 +940,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 				*((GDS_TIMESTAMP *) impure->vlu_desc.dsc_address) = enc_times;
 				break;
 			default:
-				fb_assert(FALSE);
+				assert(FALSE);
 				break;
 			}
 		}
@@ -963,7 +965,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 		}
 		return &impure->vlu_desc;
 
-	// CVC: Current role will get a validated role; IE one that exists.
+	/* CVC: Current role will get a validated role; IE one that exists. */
 	case nod_current_role:
 		impure->vlu_desc.dsc_dtype = dtype_text;
 		impure->vlu_desc.dsc_sub_type = 0;
@@ -987,23 +989,26 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 
 	case nod_extract:
 		{
-			impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
- 			const ULONG extract_part = (IPTR) node->nod_arg[e_extract_part];
-			const dsc* value = EVL_expr(tdbb, node->nod_arg[e_extract_value]);
+			DSC *value;
+			struct tm times;
+			USHORT part;
+			GDS_TIMESTAMP timestamp;
+			ULONG extract_part;
+
+			impure = (VLU) ((SCHAR *) request + node->nod_impure);
+			extract_part = (ULONG) node->nod_arg[e_extract_part];
+			value = EVL_expr(tdbb, node->nod_arg[e_extract_value]);
 
 			impure->vlu_desc.dsc_dtype = dtype_short;
 			impure->vlu_desc.dsc_scale = 0;
 			impure->vlu_desc.dsc_address =
 				reinterpret_cast<UCHAR*>(&impure->vlu_misc.vlu_short);
 			impure->vlu_desc.dsc_length = sizeof(SSHORT);
-			// CVC: Borland used special signaling for nulls in outer joins.
 			if (!value || (request->req_flags & req_null)) {
 				request->req_flags |= req_null;
 				impure->vlu_misc.vlu_short = 0;
 				return &impure->vlu_desc;
 			}
-			tm times;
-			GDS_TIMESTAMP timestamp;
 
 			switch (value->dsc_dtype) {
 			case dtype_sql_time:
@@ -1013,9 +1018,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 				if (extract_part != blr_extract_hour &&
 					extract_part != blr_extract_minute &&
 					extract_part != blr_extract_second)
-				{
-					ERR_post(isc_expression_eval_err, 0);
-				}
+						ERR_post(gds_expression_eval_err, 0);
 				break;
 			case dtype_sql_date:
 				timestamp.timestamp_date = *(GDS_DATE *) value->dsc_address;
@@ -1024,20 +1027,17 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 				if (extract_part == blr_extract_hour ||
 					extract_part == blr_extract_minute ||
 					extract_part == blr_extract_second)
-				{
-					ERR_post(isc_expression_eval_err, 0);
-				}
+						ERR_post(gds_expression_eval_err, 0);
 				break;
 			case dtype_timestamp:
 				timestamp = *((GDS_TIMESTAMP *) value->dsc_address);
 				isc_decode_timestamp(&timestamp, &times);
 				break;
 			default:
-				ERR_post(isc_expression_eval_err, 0);
+				ERR_post(gds_expression_eval_err, 0);
 				break;
 			}
 
-			USHORT part;
 			switch (extract_part) {
 			case blr_extract_year:
 				part = times.tm_year + 1900;
@@ -1058,7 +1058,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 				impure->vlu_desc.dsc_dtype = dtype_long;
 				impure->vlu_desc.dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
 				impure->vlu_desc.dsc_address =
-					reinterpret_cast<UCHAR*>(&impure->vlu_misc.vlu_long);
+					reinterpret_cast < UCHAR * >(&impure->vlu_misc.vlu_long);
 				impure->vlu_desc.dsc_length = sizeof(ULONG);
 				*(ULONG *) impure->vlu_desc.dsc_address =
 					times.tm_sec * ISC_TIME_SECONDS_PRECISION +
@@ -1071,7 +1071,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 				part = times.tm_wday;
 				break;
 			default:
-				fb_assert(FALSE);
+				assert(FALSE);
 				part = 0;
 			}
 			*(USHORT *) impure->vlu_desc.dsc_address = part;
@@ -1093,7 +1093,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 
 	case nod_variable:
 		node = node->nod_arg[e_var_variable];
-		impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
+		impure = (VLU) ((SCHAR *) request + node->nod_impure);
 		if (impure->vlu_desc.dsc_flags & DSC_null)
 			request->req_flags |= req_null;
 		return &impure->vlu_desc;
@@ -1105,10 +1105,13 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 #ifdef PC_ENGINE
 	case nod_crack:
 		{
-			RecordSource* rsb = *(RecordSource**) node->nod_arg[1];
+			RSB rsb;
+			IRSB irsb;
+
+			rsb = *(RSB *) node->nod_arg[1];
 			if (rsb->rsb_type == rsb_boolean)
 				rsb = rsb->rsb_next;
-			IRSB irsb = (IRSB) ((UCHAR *) request + rsb->rsb_impure);
+			irsb = (IRSB) ((UCHAR *) request + rsb->rsb_impure);
 			impure->vlu_desc.dsc_address =
 				(UCHAR *) & impure->vlu_misc.vlu_long;
 			impure->vlu_desc.dsc_dtype = dtype_long;
@@ -1121,20 +1124,24 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 
 	case nod_get_bookmark:
 		{
-			Bookmark* bookmark =
-				RSE_get_bookmark(tdbb, *(RecordSource**) node->nod_arg[e_getmark_rsb]);
+			BKM bookmark;
+
+			bookmark =
+				RSE_get_bookmark(tdbb, *(RSB *) node->nod_arg[e_getmark_rsb]);
 			return &bookmark->bkm_desc;
 		}
 
 	case nod_bookmark:
 		{
-			Bookmark* bookmark = BKM_lookup(node->nod_arg[e_bookmark_id]);
+			BKM bookmark;
+
+			bookmark = BKM_lookup(node->nod_arg[e_bookmark_id]);
 			return &bookmark->bkm_key_desc;
 		}
 
 	case nod_cardinality:
 		impure->vlu_misc.vlu_long =
-			(*(RecordSource**) node->nod_arg[e_card_rsb])->rsb_cardinality;
+			(*(RSB *) node->nod_arg[e_card_rsb])->rsb_cardinality;
 		impure->vlu_desc.dsc_dtype = dtype_long;
 		impure->vlu_desc.dsc_length = sizeof(ULONG);
 		impure->vlu_desc.dsc_scale = 0;
@@ -1149,14 +1156,14 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 	{
 /* Evaluate arguments */
 
-		dsc* values[3];
+		DSC *values[3];
 
 		if (node->nod_count) {
-			dsc** v = values;
-			jrd_nod** ptr = node->nod_arg;
-			for (const jrd_nod* const* const end = ptr + node->nod_count;
-				 ptr < end;) 
-			{
+			JRD_NOD *ptr, *end;
+			DSC **v;
+
+			for (ptr = node->nod_arg, end = ptr + node->nod_count, v = values;
+				 ptr < end;) {
 				*v++ = EVL_expr(tdbb, *ptr++);
 				if (request->req_flags & req_null)
 					return NULL;
@@ -1165,9 +1172,12 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 
 		switch (node->nod_type) {
 		case nod_gen_id:		/* return a 32-bit generator value */
-			impure->vlu_misc.vlu_long =
-				(SLONG) DPM_gen_id(tdbb, (SLONG)(IPTR) node->nod_arg[e_gen_id],
-									false, MOV_get_int64(values[0], 0));
+			impure->vlu_misc.vlu_long = (SLONG) DPM_gen_id(tdbb,
+														   (SLONG)
+														   node->nod_arg
+														   [e_gen_id], 0,
+														   MOV_get_int64
+														   (values[0], 0));
 			impure->vlu_desc.dsc_dtype = dtype_long;
 			impure->vlu_desc.dsc_length = sizeof(SLONG);
 			impure->vlu_desc.dsc_scale = 0;
@@ -1178,7 +1188,11 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 
 		case nod_gen_id2:
 			impure->vlu_misc.vlu_int64 = DPM_gen_id(tdbb,
-				(IPTR) node->nod_arg[e_gen_id], false, MOV_get_int64(values[0], 0));
+													(SLONG)
+													node->nod_arg[e_gen_id],
+													0,
+													MOV_get_int64(values[0],
+																  0));
 			impure->vlu_desc.dsc_dtype = dtype_int64;
 			impure->vlu_desc.dsc_length = sizeof(SINT64);
 			impure->vlu_desc.dsc_scale = 0;
@@ -1191,8 +1205,10 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 			return negate_dsc(tdbb, values[0], impure);
 
 		case nod_substr:
-			return substring(tdbb, impure, values[0],
-				MOV_get_long(values[1], 0), MOV_get_long(values[2], 0));
+			return substring(tdbb, impure,
+							 values[0],
+							 (SSHORT) MOV_get_long(values[1], 0),
+							 (SSHORT) MOV_get_long(values[2], 0));
 
 		case nod_upcase:
 			return upcase(tdbb, values[0], impure);
@@ -1211,7 +1227,9 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 }
 
 
-bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
+BOOLEAN DLL_EXPORT EVL_field(JRD_REL relation,
+							 REC record,
+							 USHORT id, DSC * desc)
 {
 /**************************************
  *
@@ -1227,11 +1245,11 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 	DEV_BLKCHK(record, type_rec);
 
 	if (!record) {
-		ERR_warning(isc_no_cur_rec, 0);
-		return false;
+		ERR_warning(gds_no_cur_rec, 0);
+		return FALSE;
 	}
 
-	const Format* format = record->rec_format;
+	FMT format = record->rec_format;
 
 	if (format) {
 		*desc = format->fmt_desc[id];
@@ -1266,14 +1284,14 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 			 */
 			if (!relation->rel_fields)
 			{
-				thread_db* tdbb = NULL;
+				TDBB tdbb = NULL;
 
 				SET_TDBB(tdbb);
 				MET_scan_relation(tdbb, relation);
 			}
 
-			jrd_fld* temp_field =
-				static_cast<jrd_fld*>((*relation->rel_fields)[id]);
+			JRD_FLD temp_field =
+				reinterpret_cast<jrd_fld*>((jrd_fld*)(*relation->rel_fields)[id]);
 
 			if (temp_field)
 			{
@@ -1293,7 +1311,7 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 							(UCHAR *) relation->rel_owner_name;
 						desc->dsc_length =
 							strlen(reinterpret_cast<const char*>(desc->dsc_address));
-						return true;
+						return TRUE;
 					}
 
 					if (temp_nod_type == nod_current_date ||
@@ -1308,31 +1326,30 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 							reinterpret_cast<UCHAR*>(
 								const_cast<ISC_TIMESTAMP*>(&temp_timestamp));
 						desc->dsc_length = sizeof(temp_timestamp);
-						return true;
+						return TRUE;
 					}
 					else
 					{
-						const Literal* default_literal =
-							reinterpret_cast<Literal*>(temp_field->fld_default_value);
+						LIT default_literal =
+							reinterpret_cast<lit*>(temp_field->fld_default_value);
 
 						if (default_literal->nod_type == nod_null)
 						{
-							ERR_post(isc_not_valid,
-									 isc_arg_string, temp_field->fld_name,
-									 isc_arg_string, "*** null ***", 0);
+							ERR_post(gds_not_valid,
+									 gds_arg_string, temp_field->fld_name,
+									 gds_arg_string, "*** null ***", 0);
 						}
 
-						fb_assert(default_literal->nod_type == nod_literal);
+						assert(default_literal->nod_type == nod_literal);
 
-						const dsc* default_desc = &default_literal->lit_desc;
-						// CVC: This could be a bitwise copy in one line
+						DSC* default_desc = &default_literal->lit_desc;
 						desc->dsc_dtype    = default_desc->dsc_dtype;
 						desc->dsc_scale    = default_desc->dsc_scale;
 						desc->dsc_length   = default_desc->dsc_length;
 						desc->dsc_sub_type = default_desc->dsc_sub_type;
 						desc->dsc_flags    = default_desc->dsc_flags;
 						desc->dsc_address  = default_desc->dsc_address;
-						return true;
+						return TRUE;
 					}
 				}
 				else
@@ -1341,9 +1358,9 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 					desc->dsc_length = 1;
 					desc->dsc_sub_type = 0;
 					desc->dsc_scale = 0;
-					desc->dsc_ttype() = ttype_ascii;
+					desc->dsc_ttype = ttype_ascii;
 					desc->dsc_address = (UCHAR *) " ";
-					return false;
+					return FALSE;
 				}
 			}
 		}
@@ -1353,32 +1370,32 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 			desc->dsc_length = 1;
 			desc->dsc_sub_type = 0;
 			desc->dsc_scale = 0;
-			desc->dsc_ttype() = ttype_ascii;
+			desc->dsc_ttype = ttype_ascii;
 			desc->dsc_address = (UCHAR *) " ";
-			return false;
+			return FALSE;
 		}
 	}
 
 /* If the offset of the field is 0, the field can't possible exist */
 
 	if (!desc->dsc_address) {
-		return false;
+		return FALSE;
 	}
 
-	desc->dsc_address = record->rec_data + (IPTR) desc->dsc_address;
+	desc->dsc_address = record->rec_data + (int) desc->dsc_address;
 
 	if (TEST_NULL(record, id)) {
 		desc->dsc_flags |= DSC_null;
-		return false;
+		return FALSE;
 	}
 	else {
 		desc->dsc_flags &= ~DSC_null;
-		return true;
+		return TRUE;
 	}
 }
 
 
-USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod* node, USHORT state)
+USHORT DLL_EXPORT EVL_group(TDBB tdbb, BLK rsb, JRD_NOD node, USHORT state)
 {
 /**************************************
  *
@@ -1397,6 +1414,20 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod* node, USHORT state
  *              0       We processed everything now process (EOF)
  *
  **************************************/
+	JRD_REQ request;
+	JRD_NOD group, map, *ptr, *end, from, field;
+	DSC temp, *desc;
+	VLUX impure;
+	struct vlu vtemp;
+	REC record;
+	USHORT id;
+	SLONG result;
+	double d;
+	SINT64 i;
+	ASB asb;
+	IASB asb_impure;
+	UCHAR *data;
+
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(node, type_nod);
@@ -1406,23 +1437,18 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod* node, USHORT state
 	if (state == 2)
 		return 0;
 
-	impure_value vtemp;
 	vtemp.vlu_string = NULL;
-
-	jrd_req* request = tdbb->tdbb_request;
-	jrd_nod* map = node->nod_arg[e_agg_map];
-	jrd_nod* group = node->nod_arg[e_agg_group];
-
-	jrd_nod** ptr;
-	const jrd_nod* const* end;
+	request = tdbb->tdbb_request;
+	map = node->nod_arg[e_agg_map];
+	group = node->nod_arg[e_agg_group];
 
 	try {
 
 /* Initialize the aggregate record */
 
 	for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++) {
-		const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
-		impure_value_ex* impure = (impure_value_ex*) ((SCHAR *) request + from->nod_impure);
+		from = (*ptr)->nod_arg[e_asgn_from];
+		impure = (VLUX) ((SCHAR *) request + from->nod_impure);
 		impure->vlux_count = 0;
 		switch (from->nod_type) {
 		case nod_agg_average:
@@ -1522,8 +1548,8 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod* node, USHORT state
 
 	if ((state == 0) || (state == 3))
 	{
-		RSE_open(tdbb, rsb);
-		if (!RSE_get_record(tdbb, rsb, g_RSE_get_mode))
+		RSE_open(tdbb, reinterpret_cast<struct Rsb*>(rsb));
+		if (!RSE_get_record(tdbb, reinterpret_cast<struct Rsb*>(rsb), g_RSE_get_mode))
 		{
 			if (group) {
 				return 0;
@@ -1532,21 +1558,18 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod* node, USHORT state
 		}
 	}
 
-	dsc* desc;
-
-	if (group) {
+	if (group)
 		for (ptr = group->nod_arg, end = ptr + group->nod_count; ptr < end;
-			 ptr++) 
-		{
-			jrd_nod* from = *ptr;
-			impure_value_ex* impure = (impure_value_ex*) ((SCHAR *) request + from->nod_impure);
+			 ptr++) {
+			from = *ptr;
+			impure = (VLUX) ((SCHAR *) request + from->nod_impure);
 			desc = EVL_expr(tdbb, from);
 			if (request->req_flags & req_null)
 				impure->vlu_desc.dsc_address = NULL;
 			else
-				EVL_make_value(tdbb, desc, impure);
+				EVL_make_value(tdbb, desc,
+							   reinterpret_cast < vlu * >(impure));
 		}
-	}
 
 /* Loop thru records until either a value change or EOF */
 
@@ -1561,8 +1584,8 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod* node, USHORT state
 			for (ptr = group->nod_arg, end = ptr + group->nod_count;
 				 ptr < end; ptr++)
 			{
-				jrd_nod* from = *ptr;
-				impure_value_ex* impure = (impure_value_ex*) ((SCHAR *) request + from->nod_impure);
+				from = *ptr;
+				impure = (VLUX) ((SCHAR *) request + from->nod_impure);
 				if (impure->vlu_desc.dsc_address)
 					EVL_make_value(tdbb, &impure->vlu_desc, &vtemp);
 				else
@@ -1574,12 +1597,11 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod* node, USHORT state
 						goto break_out;
 				}
 				else {
-					EVL_make_value(tdbb, desc, impure);
+					EVL_make_value(tdbb, desc,
+								   reinterpret_cast < vlu * >(impure));
 					if (!vtemp.vlu_desc.dsc_address
 						|| MOV_compare(&vtemp.vlu_desc, desc))
-					{
 						goto break_out;
-					}
 				}
 			}
 		}
@@ -1588,54 +1610,43 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod* node, USHORT state
 
 		for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++)
 		{
-			jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
-			impure_value_ex* impure = (impure_value_ex*) ((SCHAR *) request + from->nod_impure);
+			from = (*ptr)->nod_arg[e_asgn_from];
+			impure = (VLUX) ((SCHAR *) request + from->nod_impure);
 			switch (from->nod_type)
 			{
 			case nod_agg_min:
 			case nod_agg_min_indexed:
 			case nod_agg_max:
 			case nod_agg_max_indexed:
-				{
-					desc = EVL_expr(tdbb, from->nod_arg[0]);
-					if (request->req_flags & req_null) {
-						break;
-					}
-					++impure->vlux_count;
-					if (!impure->vlu_desc.dsc_dtype)
-					{
-						EVL_make_value(tdbb, desc, impure);
-						// It was reinterpret_cast<impure_value*>(&impure->vlu_desc));
-						// but vlu_desc is the first member of impure_value and impure_value_ex
-						// derives from impure_value and impure_value doesn't derive from anything
-						// and it doesn't contain virtuals.
-						// Thus, &impure_value_ex->vlu_desc == &impure_value->vlu_desc == &impure_value_ex
-						// Delete this comment or restore the original code
-						// when this reasoning has been validated, please.
-						break;
-					}
-					const SLONG result =
-						MOV_compare(desc, reinterpret_cast<dsc*>(impure));
-
-					if ((result > 0 &&
-					     (from->nod_type == nod_agg_max ||
-					      from->nod_type == nod_agg_max_indexed)) ||
-					    (result < 0 &&
-					     (from->nod_type == nod_agg_min ||
-					      from->nod_type == nod_agg_min_indexed)))
-					{
-						EVL_make_value(tdbb, desc, impure);
-					}
-
-					/* if a max or min has been mapped to an index, then the first record is the eof */
-
-					if (from->nod_type == nod_agg_max_indexed ||
-						from->nod_type == nod_agg_min_indexed)
-					{
-						state = 2;
-					}
+				desc = EVL_expr(tdbb, from->nod_arg[0]);
+				if (request->req_flags & req_null) {
 					break;
 				}
+				++impure->vlux_count;
+				if (!impure->vlu_desc.dsc_dtype)
+				{
+					EVL_make_value(tdbb, desc,
+								   reinterpret_cast<vlu*>(&impure->vlu_desc));
+					break;
+				}
+				result =
+					MOV_compare(desc, reinterpret_cast<dsc*>(impure));
+
+				if ((result > 0 &&
+				     (from->nod_type == nod_agg_max ||
+				      from->nod_type == nod_agg_max_indexed)) ||
+				    (result < 0 &&
+				     (from->nod_type == nod_agg_min ||
+				      from->nod_type == nod_agg_min_indexed)))
+				{
+					EVL_make_value(tdbb, desc, reinterpret_cast<vlu*>(impure));
+				}
+
+				/* if a max or min has been mapped to an index, then the first record is the eof */
+
+				if (from->nod_type == nod_agg_max_indexed ||
+					from->nod_type == nod_agg_min_indexed) state = 2;
+				break;
 
 			case nod_agg_total:
 			case nod_agg_average:
@@ -1643,7 +1654,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod* node, USHORT state
 				if (request->req_flags & req_null)
 					break;
 				++impure->vlux_count;
-				add(desc, from, impure);
+				add(desc, from, reinterpret_cast < vlu * >(impure));
 				break;
 
 			case nod_agg_total2:
@@ -1652,7 +1663,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod* node, USHORT state
 				if (request->req_flags & req_null)
 					break;
 				++impure->vlux_count;
-				add2(desc, from, impure);
+				add2(desc, from, reinterpret_cast < vlu * >(impure));
 				break;
 
 			case nod_agg_count2:
@@ -1671,28 +1682,31 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod* node, USHORT state
 			case nod_agg_average_distinct:
 			case nod_agg_average_distinct2:
 			case nod_agg_total_distinct2:
-				{
-					desc = EVL_expr(tdbb, from->nod_arg[0]);
-					if (request->req_flags & req_null)
-						break;
-					/* "Put" the value to sort. */
-					AggregateSort* asb = (AggregateSort*) from->nod_arg[1];
-					impure_agg_sort* asb_impure = (impure_agg_sort*) ((SCHAR *) request + asb->nod_impure);
-					UCHAR* data;
-					SORT_put(tdbb->tdbb_status_vector, asb_impure->iasb_sort_handle,
-							 reinterpret_cast<ULONG**>(&data));
-					MOVE_CLEAR(data, ROUNDUP_LONG(asb->asb_key_desc->skd_length));
-					asb->asb_desc.dsc_address = data;
-					MOV_move(desc, &asb->asb_desc);
+				desc = EVL_expr(tdbb, from->nod_arg[0]);
+				if (request->req_flags & req_null)
 					break;
+				/* "Put" the value to sort. */
+				asb = (ASB) from->nod_arg[1];
+				asb_impure = (IASB) ((SCHAR *) request + asb->nod_impure);
+				if (SORT_put(tdbb->tdbb_status_vector,
+							 reinterpret_cast<scb*>(asb_impure->iasb_sort_handle),
+							 reinterpret_cast<ULONG**>(&data)))
+				{
+					  ERR_punt();
 				}
+				MOVE_CLEAR(data, ROUNDUP_LONG(asb->asb_key_desc->skd_length));
+				asb->asb_desc.dsc_address = data;
+				MOV_move(desc, &asb->asb_desc);
+				break;
 
 			default:
 				EXE_assignment(tdbb, *ptr);
 			}
 		}
 
-		if (!RSE_get_record(tdbb, rsb, g_RSE_get_mode))
+		if (!RSE_get_record(tdbb,
+		                    reinterpret_cast<struct Rsb*>(rsb),
+		                    g_RSE_get_mode))
 		{
 			  state = 2;
 		}
@@ -1704,20 +1718,15 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod* node, USHORT state
 
 	if (vtemp.vlu_string)
 		delete vtemp.vlu_string;
-		
-	dsc temp;
-	double d;
-	SINT64 i;
 
 	for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++)
 	{
-		jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
-		jrd_nod* field = (*ptr)->nod_arg[e_asgn_to];
-		const USHORT id = (USHORT)(IPTR) field->nod_arg[e_fld_id];
-		Record* record =
-			request->req_rpb[(int) (IPTR) field->nod_arg[e_fld_stream]].rpb_record;
-		impure_value_ex* impure = (impure_value_ex*) ((SCHAR *) request + from->nod_impure);
-		
+		from = (*ptr)->nod_arg[e_asgn_from];
+		field = (*ptr)->nod_arg[e_asgn_to];
+		id = (USHORT) field->nod_arg[e_fld_id];
+		record =
+			request->req_rpb[(int) field->nod_arg[e_fld_stream]].rpb_record;
+		impure = (VLUX) ((SCHAR *) request + from->nod_impure);
 		switch (from->nod_type)
 		{
 		case nod_agg_min:
@@ -1806,8 +1815,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod* node, USHORT state
 	}
 
 	}
-	catch (const std::exception& ex) {
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const std::exception&) {
 		for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++)
 		{
 			const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
@@ -1819,21 +1827,21 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod* node, USHORT state
 			case nod_agg_average_distinct2:
 			case nod_agg_total_distinct2:
 				{
-				const AggregateSort* asb = (AggregateSort*) from->nod_arg[1];
-				impure_agg_sort* asb_impure = (impure_agg_sort*) ((SCHAR *) request + asb->nod_impure);
-				SORT_fini(asb_impure->iasb_sort_handle, tdbb->tdbb_attachment);
+				const ASB asb = (ASB) from->nod_arg[1];
+				iasb* asb_impure = (iasb*) ((SCHAR *) request + asb->nod_impure);
+				SORT_fini(reinterpret_cast<scb*>(asb_impure->iasb_sort_handle),
+						  tdbb->tdbb_attachment);
 				asb_impure->iasb_sort_handle = NULL;
 				}
 			}
 		}
 		ERR_punt();
 	}
-
 	return state;
 }
 
 
-void EVL_make_value(thread_db* tdbb, const dsc* desc, impure_value* value)
+void DLL_EXPORT EVL_make_value(TDBB tdbb, DSC * desc, VLU value)
 {
 /**************************************
  *
@@ -1845,11 +1853,13 @@ void EVL_make_value(thread_db* tdbb, const dsc* desc, impure_value* value)
  *      Make a value block reflect the value of a descriptor. 
  *
  **************************************/
+	DSC from;
+
 	SET_TDBB(tdbb);
 
 /* Handle the fixed length data types first.  They're easy. */
 
-	dsc from = *desc;
+	from = *desc;
 	value->vlu_desc = *desc;
 	value->vlu_desc.dsc_address = (UCHAR *) & value->vlu_misc;
 
@@ -1887,26 +1897,28 @@ void EVL_make_value(thread_db* tdbb, const dsc* desc, impure_value* value)
 	case dtype_cstring:
 		break;
 	default:
-		fb_assert(FALSE);
+		assert(FALSE);
 		break;
 	}
 
-	{ // scope
-		UCHAR temp[128], *address;
+	{
+		STR string;
+		UCHAR temp[128], *address, *p;
+		USHORT length;
 		USHORT ttype;
 
 /* Get string.  If necessary, get_string will convert the string into a
    temporary buffer.  Since this will always be the result of a conversion,
    this isn't a serious problem. */
 
-		const USHORT length =
+		length =
 			MOV_get_string_ptr(&from, &ttype, &address,
-							   reinterpret_cast<vary*>(temp),
+							   reinterpret_cast < vary * >(temp),
 							   sizeof(temp));
 
 /* Allocate a string block of sufficient size. */
-		str* string = value->vlu_string;
-		if (string && string->str_length < length) {
+
+		if ((string = value->vlu_string) && string->str_length < length) {
 			delete string;
 			string = NULL;
 		}
@@ -1918,25 +1930,129 @@ void EVL_make_value(thread_db* tdbb, const dsc* desc, impure_value* value)
 
 		value->vlu_desc.dsc_dtype = dtype_text;
 		value->vlu_desc.dsc_length = length;
-		UCHAR* p = string->str_data;
-		value->vlu_desc.dsc_address = p;
+		value->vlu_desc.dsc_address = p = string->str_data;
 		value->vlu_desc.dsc_sub_type = 0;
 		value->vlu_desc.dsc_scale = 0;
 		INTL_ASSIGN_TTYPE(&value->vlu_desc, ttype);
 
 		if (address && length)
 			MOVE_FAST(address, p, length);
-	} // scope
+	}
 }
 
 
+USHORT DLL_EXPORT EVL_mb_contains(TDBB tdbb,
+								  class TextType* obj,
+								  UCHAR * p1,
+								  USHORT l1, UCHAR * p2, USHORT l2)
+{
+/**************************************
+ *
+ *      E V L _ m b _ c o n t a i n s
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+	UCS2_CHAR buffer1[100], buffer2[100];	/* arbitrary size for optimization */
+	UCS2_CHAR *pp1 = buffer1;
+	UCS2_CHAR *pp2 = buffer2;
+	USHORT len1, len2;			/* byte counts */
+	STR buf1, buf2;
+	USHORT ret_val;
+	SSHORT err_code;
+	USHORT err_pos;
 
-bool EVL_mb_matches(thread_db* tdbb,
-						TextType obj,
-						const UCHAR* p1,
-						SSHORT l1,
-						const UCHAR* p2,
-						SSHORT l2)
+	SET_TDBB(tdbb);
+
+	len1 = obj->to_wc(NULL, 0, p1, l1, &err_code, &err_pos);
+	len2 = obj->to_wc(NULL, 0, p2, l2, &err_code, &err_pos);
+
+	if (len1 > sizeof(buffer1)) {
+		buf1 = FB_NEW_RPT(*tdbb->tdbb_default, len1) str();
+		pp1 = (UCS2_CHAR *) buf1->str_data;
+	}
+	if (len2 > sizeof(buffer2)) {
+		buf2 = FB_NEW_RPT(*tdbb->tdbb_default, len2) str();
+		pp2 = (UCS2_CHAR *) buf2->str_data;
+	}
+
+	len1 = obj->to_wc(pp1, len1, p1, l1, &err_code, &err_pos);
+	len2 = obj->to_wc(pp2, len2, p2, l2, &err_code, &err_pos);
+
+	ret_val = EVL_wc_contains(tdbb, obj, pp1, len1, pp2, len2);
+
+	if (pp1 != buffer1)
+		delete buf1;
+	if (pp2 != buffer2)
+		delete buf2;
+
+	return ret_val;
+}
+
+
+USHORT DLL_EXPORT EVL_mb_like(TDBB tdbb,
+							  class TextType* obj,
+							  UCHAR * p1,
+							  SSHORT l1,
+							  UCHAR * p2, SSHORT l2, UCS2_CHAR escape_char)
+{
+/**************************************
+ *
+ *      E V L _ m b _ l i k e 
+ *
+ **************************************
+ *
+ * Functional description
+ *      Multi-Byte version of Like().
+ *      Front-end of like() in Japanese version.
+ *      
+ *      Prepare buffer of short, then "copy" char-based data
+ *      into the new ucs2-based buffer. Use the new buffer for
+ *      later processing with wc_like().
+ *
+ **************************************/
+	UCS2_CHAR buffer1[100], buffer2[100];	/* arbitrary size for optimization */
+	UCS2_CHAR *pp1 = buffer1;
+	UCS2_CHAR *pp2 = buffer2;
+	USHORT len1, len2;
+	STR buf1, buf2;
+	USHORT ret_val;
+	SSHORT err_code;
+	USHORT err_pos;
+
+	SET_TDBB(tdbb);
+
+	len1 = obj->to_wc(NULL, 0, p1, l1, &err_code, &err_pos);
+	len2 = obj->to_wc(NULL, 0, p2, l2, &err_code, &err_pos);
+	if (len1 > sizeof(buffer1)) {
+		buf1 = FB_NEW_RPT(*tdbb->tdbb_default, len1) str();
+		pp1 = (UCS2_CHAR *) buf1->str_data;
+	}
+	if (len2 > sizeof(buffer2)) {
+		buf2 = FB_NEW_RPT(*tdbb->tdbb_default, len2) str();
+		pp2 = (UCS2_CHAR *) buf2->str_data;
+	}
+
+	len1 = obj->to_wc(pp1, len1, p1, l1, &err_code, &err_pos);
+	len2 = obj->to_wc(pp2, len2, p2, l2, &err_code, &err_pos);
+// CHECK ME: Shouldn't errors to be handled?
+
+	ret_val = EVL_wc_like(tdbb, obj, pp1, len1, pp2, len2, escape_char);
+
+	if (pp1 != buffer1)
+		delete buf1;
+	if (pp2 != buffer2)
+		delete buf2;
+
+	return ret_val;
+}
+
+
+USHORT DLL_EXPORT EVL_mb_matches(TDBB tdbb,
+								 class TextType* obj,
+								 UCHAR * p1, SSHORT l1, UCHAR * p2, SSHORT l2)
 {
 /**************************************
  *
@@ -1954,15 +2070,16 @@ bool EVL_mb_matches(thread_db* tdbb,
 	UCS2_CHAR buffer1[100], buffer2[100];	/* arbitrary size for optimization */
 	UCS2_CHAR *pp1 = buffer1;
 	UCS2_CHAR *pp2 = buffer2;
-	str* buf1;
-	str* buf2;
+	USHORT len1, len2;
+	STR buf1, buf2;
+	USHORT ret_val;
 	SSHORT err_code;
 	USHORT err_pos;
 
 	SET_TDBB(tdbb);
 
-	USHORT len1 = obj.to_wc(NULL, 0, p1, l1, &err_code, &err_pos);
-	USHORT len2 = obj.to_wc(NULL, 0, p2, l2, &err_code, &err_pos);
+	len1 = obj->to_wc(NULL, 0, p1, l1, &err_code, &err_pos);
+	len2 = obj->to_wc(NULL, 0, p2, l2, &err_code, &err_pos);
 	if (len1 > sizeof(buffer1)) {
 		buf1 = FB_NEW_RPT(*tdbb->tdbb_default, len1) str();
 		pp1 = (UCS2_CHAR *) buf1->str_data;
@@ -1972,10 +2089,10 @@ bool EVL_mb_matches(thread_db* tdbb,
 		pp2 = (UCS2_CHAR *) buf2->str_data;
 	}
 
-	len1 = obj.to_wc(pp1, len1, p1, l1, &err_code, &err_pos);
-	len2 = obj.to_wc(pp2, len2, p2, l2, &err_code, &err_pos);
+	len1 = obj->to_wc(pp1, len1, p1, l1, &err_code, &err_pos);
+	len2 = obj->to_wc(pp2, len2, p2, l2, &err_code, &err_pos);
 
-	const bool ret_val = EVL_wc_matches(tdbb, obj, pp1, len1, pp2, len2);
+	ret_val = EVL_wc_matches(tdbb, obj, pp1, len1, pp2, len2);
 
 	if (pp1 != buffer1)
 		delete buf1;
@@ -1986,13 +2103,12 @@ bool EVL_mb_matches(thread_db* tdbb,
 }
 
 
-bool EVL_mb_sleuth_check(thread_db* tdbb,
-							TextType obj,
-							USHORT flags,
-							const UCHAR* search,
-							USHORT search_bytes,
-							const UCHAR* match,
-							USHORT match_bytes)
+USHORT DLL_EXPORT EVL_mb_sleuth_check(TDBB tdbb,
+									  class TextType* obj,
+									  USHORT flags,
+									  UCHAR * search,
+									  USHORT search_bytes,
+									  UCHAR * match, USHORT match_bytes)
 {
 /**************************************
  *
@@ -2009,29 +2125,31 @@ bool EVL_mb_sleuth_check(thread_db* tdbb,
  **************************************/
 	UCS2_CHAR buffer1[100];		/* arbitrary size for optimization */
 	UCS2_CHAR *pp1 = buffer1;
-	str* buf1;
+	USHORT len1;
+	STR buf1;
+	USHORT ret_val;
 	SSHORT err_code;
 	USHORT err_pos;
 
-	fb_assert(search != NULL);
-	fb_assert(match != NULL);
+	assert(search != NULL);
+	assert(match != NULL);
 
 /* Note: search_merge has already converted the match
    string to wide character (see note in sleuth()) */
 
 	SET_TDBB(tdbb);
 
-	USHORT len1 = obj.to_wc(NULL, 0, search, search_bytes, &err_code, &err_pos);
+	len1 = obj->to_wc(NULL, 0, search, search_bytes, &err_code, &err_pos);
 	if (len1 > sizeof(buffer1)) {
 		buf1 = FB_NEW_RPT(*tdbb->tdbb_default, len1) str();
 		pp1 = (UCS2_CHAR *) buf1->str_data;
 	}
 
-	len1 = obj.to_wc(pp1, len1, search, search_bytes, &err_code, &err_pos);
+	len1 = obj->to_wc(pp1, len1, search, search_bytes, &err_code, &err_pos);
 
-	const bool ret_val =
+	ret_val =
 		EVL_wc_sleuth_check(tdbb, obj, 0, pp1, len1,
-							reinterpret_cast<const UCS2_CHAR*>(match),
+							reinterpret_cast < UCS2_CHAR * >(match),
 							match_bytes);
 
 	if (pp1 != buffer1)
@@ -2041,14 +2159,13 @@ bool EVL_mb_sleuth_check(thread_db* tdbb,
 }
 
 
-USHORT EVL_mb_sleuth_merge(thread_db* tdbb,
-							TextType obj,
-							const UCHAR* match,
-							USHORT match_bytes,
-							const UCHAR* control,
-							USHORT control_bytes,
-							UCHAR* combined,
-							USHORT combined_bytes)
+USHORT DLL_EXPORT EVL_mb_sleuth_merge(TDBB tdbb,
+									  class TextType* obj,
+									  UCHAR * match,
+									  USHORT match_bytes,
+									  UCHAR * control,
+									  USHORT control_bytes,
+									  UCHAR * combined, USHORT combined_bytes)
 {
 /**************************************
  *
@@ -2063,19 +2180,20 @@ USHORT EVL_mb_sleuth_merge(thread_db* tdbb,
 	UCS2_CHAR buffer1[100], buffer2[100];	/* arbitrary size for optimization */
 	UCS2_CHAR *pp1 = buffer1;
 	UCS2_CHAR *pp2 = buffer2;
-	str* buf1;
-	str* buf2;
+	USHORT len1, len2;
+	STR buf1, buf2;
+	USHORT ret_val;
 	SSHORT err_code;
 	USHORT err_pos;
 
-	fb_assert(control != NULL);
-	fb_assert(match != NULL);
-	fb_assert(combined != NULL);
+	assert(control != NULL);
+	assert(match != NULL);
+	assert(combined != NULL);
 
 	SET_TDBB(tdbb);
 
-	USHORT len1 = obj.to_wc(NULL, 0, match, match_bytes, &err_code, &err_pos);
-	USHORT len2 = obj.to_wc(NULL, 0, control, control_bytes, &err_code, &err_pos);
+	len1 = obj->to_wc(NULL, 0, match, match_bytes, &err_code, &err_pos);
+	len2 = obj->to_wc(NULL, 0, control, control_bytes, &err_code, &err_pos);
 	if (len1 > sizeof(buffer1)) {
 		buf1 = FB_NEW_RPT(*tdbb->tdbb_default, len1) str();
 		pp1 = (UCS2_CHAR *) buf1->str_data;
@@ -2085,11 +2203,11 @@ USHORT EVL_mb_sleuth_merge(thread_db* tdbb,
 		pp2 = (UCS2_CHAR *) buf2->str_data;
 	}
 
-	len1 = obj.to_wc(pp1, len1, match, match_bytes, &err_code, &err_pos);
-	len2 = obj.to_wc(pp2, len2, control, control_bytes, &err_code, &err_pos);
+	len1 = obj->to_wc(pp1, len1, match, match_bytes, &err_code, &err_pos);
+	len2 = obj->to_wc(pp2, len2, control, control_bytes, &err_code, &err_pos);
 
-	const USHORT ret_val = EVL_wc_sleuth_merge(tdbb, obj, pp1, len1, pp2, len2,
-				      reinterpret_cast<UCS2_CHAR*>(combined),
+	ret_val = EVL_wc_sleuth_merge(tdbb, obj, pp1, len1, pp2, len2,
+				      reinterpret_cast < UCS2_CHAR * >(combined),
 				      combined_bytes);
 
 	if (pp1 != buffer1)
@@ -2100,6 +2218,48 @@ USHORT EVL_mb_sleuth_merge(thread_db* tdbb,
 	return ret_val;
 }
 
+
+USHORT DLL_EXPORT EVL_nc_contains(TDBB tdbb_dummy,
+								  class TextType* obj,
+								  UCHAR * p1,
+								  USHORT l1, UCHAR * p2, USHORT l2)
+{
+/**************************************
+ *
+ *      E V L _ n c _ c o n t a i n s
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+	UCHAR *q1, *q2, c1, c2;
+	SSHORT l;
+
+	while (l1 >= l2)
+	{
+		--l1;
+		q1 = p1++;
+		q2 = p2;
+		l = l2;
+		do {
+			if (--l < 0)
+				return TRUE;
+			c1 = *q1++;
+			c2 = *q2++;
+		} while (obj->to_upper(c1) == obj->to_upper(c2));
+	}
+
+	return FALSE;
+}
+
+
+/**************************************
+ *
+ *      E V L _ n c _ l i k e
+ *
+ **************************************
+ */
 /**************************************
  *
  *      E V L _ n c _ m a t c h e s
@@ -2112,70 +2272,70 @@ USHORT EVL_mb_sleuth_merge(thread_db* tdbb,
  *
  **************************************
  */
+#define LIKENAME                EVL_nc_like
+#define LIKETYPE                UCHAR
+#define MATCHESNAME             EVL_nc_matches
+#define MATCHESTYPE             UCHAR
+#define SLEUTHNAME              EVL_nc_sleuth_check
+#define SLEUTH_MERGE_NAME       EVL_nc_sleuth_merge
+#define SLEUTH_AUX              nc_sleuth_check
+#define SLEUTH_CLASS_NAME       nc_sleuth_class
+#define SLEUTHTYPE              UCHAR
 
-#include "../jrd/evl_like.h"
+#define EVL_LIKE_INCLUDED_BY_EVL_CPP
+#include "../jrd/evl_like.cpp"
+#undef EVL_LIKE_INCLUDED_BY_EVL_CPP
 
-typedef UCHAR MATCHESTYPE1;
-typedef UCHAR SLEUTHTYPE1;
+#undef LIKENAME
+#undef LIKETYPE
+#undef MATCHESNAME
+#undef MATCHESTYPE
+#undef SLEUTHNAME
+#undef SLEUTH_MERGE_NAME
+#undef SLEUTH_AUX
+#undef SLEUTH_CLASS_NAME
+#undef SLEUTHTYPE
 
-bool EVL_nc_matches(
-	thread_db* tdbb,
-	TextType obj,
-	const MATCHESTYPE1* p1,
-	SSHORT l1_bytes,
-	const MATCHESTYPE1* p2,
-	SSHORT l2_bytes)
+
+USHORT DLL_EXPORT EVL_wc_contains(TDBB tdbb_dumm,
+								  class TextType* obj, UCS2_CHAR * p1, USHORT l1,	/* byte count */
+								  UCS2_CHAR * p2, USHORT l2)
 {
-	return MATCHESNAME(tdbb, obj, p1, l1_bytes, p2, l2_bytes);
+/**************************************
+ *
+ *      E V L _ w c _ c o n t a i n s
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+	UCS2_CHAR *q1, *q2, c1, c2;
+	SSHORT l;
+
+	while (l1 >= l2) {
+		l1 -= 2;
+		q1 = p1++;
+		q2 = p2;
+		l = l2;
+		do {
+			l -= 2;
+			if (l < 0)
+				return TRUE;
+			c1 = *q1++;
+			c2 = *q2++;
+		} while (obj->to_upper(c1) == obj->to_upper(c2));
+	}
+
+	return FALSE;
 }
 
-bool EVL_nc_sleuth_check(
-	thread_db* tdbb_dummy,
-	TextType obj,
-	USHORT flags,
-	const SLEUTHTYPE1* search,
-	USHORT search_len,
-	const SLEUTHTYPE1* match,
-	USHORT match_len)
-{
-	return SLEUTHNAME(tdbb_dummy, obj, flags, search, search_len,  match, match_len);
-}
-
-USHORT EVL_nc_sleuth_merge(
-	thread_db* tdbb_dummy,
-	TextType obj,
-	const SLEUTHTYPE1* match,
-	USHORT match_bytes,
-	const SLEUTHTYPE1* control,
-	USHORT control_bytes,
-	SLEUTHTYPE1* combined,
-	USHORT combined_bytes)
-{
-	return SLEUTH_MERGE_NAME(tdbb_dummy, obj, match, match_bytes, control, control_bytes, combined, combined_bytes);
-}
-/* BRS 13/05/04 NOT USED 
-bool nc_sleuth_check(
-	TextType obj,
-	USHORT flags,
-	const SLEUTHTYPE1* search,
-	const SLEUTHTYPE1* end_search,
-	const SLEUTHTYPE1* match,
-	const SLEUTHTYPE1* end_match)
-{
-	return SLEUTH_AUX(obj, flags, search, end_search, match, end_match);
-}
-
-bool nc_sleuth_class(
-	TextType obj,
-	USHORT flags,
-	const SLEUTHTYPE1* char_class,
-	const SLEUTHTYPE1* const end_class, 
-	SLEUTHTYPE1 character)
-{
-	return SLEUTH_CLASS_NAME(obj, flags, char_class, end_class, character);
-}
-*/
-
+/**************************************
+ *
+ *      E V L _ w c _ l i k e
+ *
+ **************************************
+ */
 /**************************************
  *
  *      E V L _ w c _ m a t c h e s
@@ -2188,70 +2348,33 @@ bool nc_sleuth_class(
  *
  **************************************
  */
+#define LIKENAME                EVL_wc_like
+#define LIKETYPE                UCS2_CHAR
+#define MATCHESNAME             EVL_wc_matches
+#define MATCHESTYPE             UCS2_CHAR
+#define SLEUTHNAME              EVL_wc_sleuth_check
+#define SLEUTH_MERGE_NAME       EVL_wc_sleuth_merge
+#define SLEUTH_AUX              wc_sleuth_check
+#define SLEUTH_CLASS_NAME       wc_sleuth_class
+#define SLEUTHTYPE              UCS2_CHAR
 
-typedef UCS2_CHAR MATCHESTYPE2;
-typedef UCS2_CHAR SLEUTHTYPE2;
+#define EVL_LIKE_INCLUDED_BY_EVL_CPP
+#include "../jrd/evl_like.cpp"
+#undef EVL_LIKE_INCLUDED_BY_EVL_CPP
 
-bool EVL_wc_matches(
-	thread_db* tdbb,
-	TextType obj,
-	const MATCHESTYPE2* p1,
-	SSHORT l1_bytes,
-	const MATCHESTYPE2* p2,
-	SSHORT l2_bytes)
-{
-	return MATCHESNAME(tdbb, obj, p1, l1_bytes, p2, l2_bytes);
-}
+#undef LIKENAME
+#undef LIKETYPE
+#undef MATCHESNAME
+#undef MATCHESTYPE
+#undef SLEUTHNAME
+#undef SLEUTH_MERGE_NAME
+#undef SLEUTH_AUX
+#undef SLEUTH_CLASS_NAME
+#undef SLEUTHTYPE
 
-bool EVL_wc_sleuth_check(
-	thread_db* tdbb_dummy,
-	TextType obj,
-	USHORT flags,
-	const SLEUTHTYPE2* search,
-	USHORT search_len,
-	const SLEUTHTYPE2* match,
-	USHORT match_len)
-{
-	return SLEUTHNAME(tdbb_dummy, obj, flags, search, search_len,  match, match_len);
-}
 
-USHORT EVL_wc_sleuth_merge(
-	thread_db* tdbb_dummy,
-	TextType obj,
-	const SLEUTHTYPE2* match,
-	USHORT match_bytes,
-	const SLEUTHTYPE2* control,
-	USHORT control_bytes,
-	SLEUTHTYPE2* combined,
-	USHORT combined_bytes)
-{
-	return SLEUTH_MERGE_NAME(tdbb_dummy, obj, match, match_bytes, control, control_bytes, combined, combined_bytes);
-}
 
-/* BRS 13/05/04 NOT USED 
-bool wc_sleuth_check(
-	TextType obj,
-	USHORT flags,
-	const SLEUTHTYPE2* search,
-	const SLEUTHTYPE2* end_search,
-	const SLEUTHTYPE2* match,
-	const SLEUTHTYPE2* end_match)
-{
-	return SLEUTH_AUX(obj, flags, search, end_search, match, end_match);
-}
-
-bool wc_sleuth_class(
-	TextType obj,
-	USHORT flags,
-	const SLEUTHTYPE2* char_class,
-	const SLEUTHTYPE2* const end_class, 
-	SLEUTHTYPE2 character)
-{
-	return SLEUTH_CLASS_NAME(obj, flags, char_class, end_class, character);
-}
-*/
-
-static dsc* add(const dsc* desc, const jrd_nod* node, impure_value* value)
+static DSC *add(DSC * desc, JRD_NOD node, VLU value)
 {
 /**************************************
  *
@@ -2266,8 +2389,12 @@ static dsc* add(const dsc* desc, const jrd_nod* node, impure_value* value)
  *      the lowest supported dialect.  (Version 7.0?)
  *
  **************************************/
+	DSC *result;
+	double d1, d2;
+	SLONG l1, l2;
+
 	DEV_BLKCHK(node, type_nod);
-	fb_assert(node->nod_type == nod_add ||
+	assert(node->nod_type == nod_add ||
 		   node->nod_type == nod_subtract ||
 		   node->nod_type == nod_total ||
 		   node->nod_type == nod_average ||
@@ -2276,7 +2403,7 @@ static dsc* add(const dsc* desc, const jrd_nod* node, impure_value* value)
 		   node->nod_type == nod_agg_total_distinct ||
 		   node->nod_type == nod_agg_average_distinct);
 
-	dsc* result = &value->vlu_desc;
+	result = &value->vlu_desc;
 
 /* Handle date arithmetic */
 
@@ -2287,8 +2414,8 @@ static dsc* add(const dsc* desc, const jrd_nod* node, impure_value* value)
 /* Handle floating arithmetic */
 
 	if (node->nod_flags & nod_double) {
-		const double d1 = MOV_get_double(desc);
-		const double d2 = MOV_get_double(&value->vlu_desc);
+		d1 = MOV_get_double(desc);
+		d2 = MOV_get_double(&value->vlu_desc);
 		value->vlu_misc.vlu_double = (node->nod_type == nod_subtract) ?
 			d2 - d1 : d1 + d2;
 		result->dsc_dtype = DEFAULT_DOUBLE;
@@ -2302,14 +2429,16 @@ static dsc* add(const dsc* desc, const jrd_nod* node, impure_value* value)
 /* Handle (oh, ugh) quad arithmetic */
 
 	if (node->nod_flags & nod_quad) {
-		const SQUAD q1 = MOV_get_quad(desc, node->nod_scale);
-		const SQUAD q2 = MOV_get_quad(&value->vlu_desc, node->nod_scale);
+		SQUAD q1, q2;
+
+		q1 = MOV_get_quad(desc, node->nod_scale);
+		q2 = MOV_get_quad(&value->vlu_desc, node->nod_scale);
 		result->dsc_dtype = dtype_quad;
 		result->dsc_length = sizeof(SQUAD);
 		result->dsc_scale = node->nod_scale;
 		value->vlu_misc.vlu_quad = (node->nod_type == nod_subtract) ?
-			QUAD_SUBTRACT(q2, q1, ERR_post) :
-			QUAD_ADD(q1, q2, ERR_post);
+			QUAD_SUBTRACT(q2, q1, (FPTR_VOID) ERR_post) :
+			QUAD_ADD(q1, q2, (FPTR_VOID) ERR_post);
 		result->dsc_address = (UCHAR *) & value->vlu_misc.vlu_quad;
 
 		return result;
@@ -2317,8 +2446,8 @@ static dsc* add(const dsc* desc, const jrd_nod* node, impure_value* value)
 
 /* Everything else defaults to longword */
 
-	const SLONG l1 = MOV_get_long(desc, node->nod_scale);
-	const SLONG l2 = MOV_get_long(&value->vlu_desc, node->nod_scale);
+	l1 = MOV_get_long(desc, node->nod_scale);
+	l2 = MOV_get_long(&value->vlu_desc, node->nod_scale);
 	result->dsc_dtype = dtype_long;
 	result->dsc_length = sizeof(SLONG);
 	result->dsc_scale = node->nod_scale;
@@ -2331,7 +2460,7 @@ static dsc* add(const dsc* desc, const jrd_nod* node, impure_value* value)
 }
 
 
-static dsc* add2(const dsc* desc, const jrd_nod* node, impure_value* value)
+static DSC *add2(DSC * desc, JRD_NOD node, VLU value)
 {
 /**************************************
  *
@@ -2346,8 +2475,12 @@ static dsc* add2(const dsc* desc, const jrd_nod* node, impure_value* value)
  *      blr_version5
  *
  **************************************/
+	DSC *result;
+	double d1, d2;
+	SINT64 i1, i2;
+
 	DEV_BLKCHK(node, type_nod);
-	fb_assert(node->nod_type == nod_add2 ||
+	assert(node->nod_type == nod_add2 ||
 		   node->nod_type == nod_subtract2 ||
 		   node->nod_type == nod_average2 ||
 		   node->nod_type == nod_agg_total2 ||
@@ -2355,7 +2488,7 @@ static dsc* add2(const dsc* desc, const jrd_nod* node, impure_value* value)
 		   node->nod_type == nod_agg_total_distinct2 ||
 		   node->nod_type == nod_agg_average_distinct2);
 
-	dsc* result = &value->vlu_desc;
+	result = &value->vlu_desc;
 
 /* Handle date arithmetic */
 
@@ -2366,8 +2499,8 @@ static dsc* add2(const dsc* desc, const jrd_nod* node, impure_value* value)
 /* Handle floating arithmetic */
 
 	if (node->nod_flags & nod_double) {
-		const double d1 = MOV_get_double(desc);
-		const double d2 = MOV_get_double(&value->vlu_desc);
+		d1 = MOV_get_double(desc);
+		d2 = MOV_get_double(&value->vlu_desc);
 		value->vlu_misc.vlu_double = (node->nod_type == nod_subtract2) ?
 			d2 - d1 : d1 + d2;
 		result->dsc_dtype = DEFAULT_DOUBLE;
@@ -2381,14 +2514,16 @@ static dsc* add2(const dsc* desc, const jrd_nod* node, impure_value* value)
 /* Handle (oh, ugh) quad arithmetic */
 
 	if (node->nod_flags & nod_quad) {
-		const SQUAD q1 = MOV_get_quad(desc, node->nod_scale);
-		const SQUAD q2 = MOV_get_quad(&value->vlu_desc, node->nod_scale);
+		SQUAD q1, q2;
+
+		q1 = MOV_get_quad(desc, node->nod_scale);
+		q2 = MOV_get_quad(&value->vlu_desc, node->nod_scale);
 		result->dsc_dtype = dtype_quad;
 		result->dsc_length = sizeof(SQUAD);
 		result->dsc_scale = node->nod_scale;
 		value->vlu_misc.vlu_quad = (node->nod_type == nod_subtract2) ?
-			QUAD_SUBTRACT(q2, q1, ERR_post) :
-			QUAD_ADD(q1, q2, ERR_post);
+			QUAD_SUBTRACT(q2, q1, (FPTR_VOID) ERR_post) :
+			QUAD_ADD(q1, q2, (FPTR_VOID) ERR_post);
 		result->dsc_address = (UCHAR *) & value->vlu_misc.vlu_quad;
 
 		return result;
@@ -2396,8 +2531,8 @@ static dsc* add2(const dsc* desc, const jrd_nod* node, impure_value* value)
 
 /* Everything else defaults to int64 */
 
-	SINT64 i1 = MOV_get_int64(desc, node->nod_scale);
-	const SINT64 i2 = MOV_get_int64(&value->vlu_desc, node->nod_scale);
+	i1 = MOV_get_int64(desc, node->nod_scale);
+	i2 = MOV_get_int64(&value->vlu_desc, node->nod_scale);
 	result->dsc_dtype = dtype_int64;
 	result->dsc_length = sizeof(SINT64);
 	result->dsc_scale = node->nod_scale;
@@ -2435,7 +2570,7 @@ static dsc* add2(const dsc* desc, const jrd_nod* node, impure_value* value)
 }
 
 
-static dsc* add_datetime(const dsc* desc, const jrd_nod* node, impure_value* value)
+static DSC *add_datetime(DSC * desc, JRD_NOD node, VLU value)
 {
 /**************************************
  *
@@ -2449,7 +2584,7 @@ static dsc* add_datetime(const dsc* desc, const jrd_nod* node, impure_value* val
  **************************************/
 	BYTE dtype;					/* Which addition routine to use? */
 
-	fb_assert(node->nod_flags & nod_date);
+	assert(node->nod_flags & nod_date);
 
 /* Value is the LHS of the operand.  desc is the RHS */
 
@@ -2457,7 +2592,7 @@ static dsc* add_datetime(const dsc* desc, const jrd_nod* node, impure_value* val
 		dtype = DSC_add_result[value->vlu_desc.dsc_dtype][desc->dsc_dtype];
 	}
 	else {
-		fb_assert((node->nod_type == nod_subtract)
+		assert((node->nod_type == nod_subtract)
 			   || (node->nod_type == nod_subtract2));
 		dtype = DSC_sub_result[value->vlu_desc.dsc_dtype][desc->dsc_dtype];
 
@@ -2472,11 +2607,8 @@ static dsc* add_datetime(const dsc* desc, const jrd_nod* node, impure_value* val
 
 		/* Handle historical <timestamp> = <string> - <value> case */
 		if (!DTYPE_IS_DATE(dtype) &&
-			(DTYPE_IS_TEXT(value->vlu_desc.dsc_dtype) ||
-			 DTYPE_IS_TEXT(desc->dsc_dtype))) 
-		{
-			dtype = dtype_timestamp;
-		}
+			(IS_DTYPE_ANY_TEXT(value->vlu_desc.dsc_dtype) ||
+			 IS_DTYPE_ANY_TEXT(desc->dsc_dtype))) dtype = dtype_timestamp;
 	}
 
 	switch (dtype) {
@@ -2494,13 +2626,13 @@ static dsc* add_datetime(const dsc* desc, const jrd_nod* node, impure_value* val
 		return add_sql_date(desc, node, value);
 
 	case DTYPE_CANNOT:
-		ERR_post(isc_expression_eval_err, 0);
+		ERR_post(gds_expression_eval_err, 0);
 		return NULL;
 	};
 }
 
 
-static dsc* add_sql_date(const dsc* desc, const jrd_nod* node, impure_value* value)
+static DSC *add_sql_date(DSC * desc, JRD_NOD node, VLU value)
 {
 /**************************************
  *
@@ -2516,39 +2648,41 @@ static dsc* add_sql_date(const dsc* desc, const jrd_nod* node, impure_value* val
  *	NUMERIC +/- TIME   Numeric is interpreted as days DECIMAL(*,0).
  *
  **************************************/
+	DSC *result;
+	SINT64 d1, d2;
+	BOOLEAN op1_is_date = FALSE;
+	BOOLEAN op2_is_date = FALSE;
+	ISC_TIMESTAMP new_date;
+	struct tm times;
+
 	DEV_BLKCHK(node, type_nod);
-	fb_assert(node->nod_type == nod_add ||
+	assert(node->nod_type == nod_add ||
 		   node->nod_type == nod_subtract ||
 		   node->nod_type == nod_add2 || node->nod_type == nod_subtract2);
 
-	dsc* result = &value->vlu_desc;
+	result = &value->vlu_desc;
 
-	fb_assert(value->vlu_desc.dsc_dtype == dtype_sql_date ||
+	assert(value->vlu_desc.dsc_dtype == dtype_sql_date ||
 		   desc->dsc_dtype == dtype_sql_date);
 
-	SINT64 d1;
 /* Coerce operand1 to a count of days */
-	bool op1_is_date = false;
 	if (value->vlu_desc.dsc_dtype == dtype_sql_date) {
 		d1 = *((GDS_DATE *) value->vlu_desc.dsc_address);
-		op1_is_date = true;
+		op1_is_date++;
 	}
 	else
 		d1 = MOV_get_int64(&value->vlu_desc, 0);
 
-	SINT64 d2;
 /* Coerce operand2 to a count of days */
-	bool op2_is_date = false;
 	if (desc->dsc_dtype == dtype_sql_date) {
 		d2 = *((GDS_DATE *) desc->dsc_address);
-		op2_is_date = true;
+		op2_is_date++;
 	}
 	else
 		d2 = MOV_get_int64(desc, 0);
 
 	if (((node->nod_type == nod_subtract)
-		 || (node->nod_type == nod_subtract2)) && op1_is_date && op2_is_date)
-	{
+		 || (node->nod_type == nod_subtract2)) && op1_is_date && op2_is_date) {
 		d2 = d1 - d2;
 		value->vlu_misc.vlu_int64 = d2;
 		result->dsc_dtype = dtype_int64;
@@ -2559,13 +2693,13 @@ static dsc* add_sql_date(const dsc* desc, const jrd_nod* node, impure_value* val
 		return result;
 	}
 
-	fb_assert(op1_is_date || op2_is_date);
-	fb_assert(!(op1_is_date && op2_is_date));
+	assert(op1_is_date || op2_is_date);
+	assert(!(op1_is_date && op2_is_date));
 
 /* Perform the operation */
 
 	if ((node->nod_type == nod_subtract) || (node->nod_type == nod_subtract2)) {
-		fb_assert(op1_is_date);
+		assert(op1_is_date);
 		d2 = d1 - d2;
 	}
 	else
@@ -2579,18 +2713,14 @@ static dsc* add_sql_date(const dsc* desc, const jrd_nod* node, impure_value* val
    calculation extends this range, return an error
 */
 
-	ISC_TIMESTAMP new_date;
 	new_date.timestamp_time = 0;
 	new_date.timestamp_date = d2;
-	tm times;
 	isc_decode_timestamp(&new_date, &times);
 
 	if ((times.tm_year + 1900) < MIN_YEAR
-		|| (times.tm_year) + 1900 > MAX_YEAR)
-	{
-		ERR_post(isc_expression_eval_err, isc_arg_gds,
+		|| (times.tm_year) + 1900 >
+		MAX_YEAR) ERR_post(gds_expression_eval_err, gds_arg_gds,
 						   isc_date_range_exceeded, 0);
-	}
 
 	value->vlu_misc.vlu_sql_date = d2;
 
@@ -2604,7 +2734,7 @@ static dsc* add_sql_date(const dsc* desc, const jrd_nod* node, impure_value* val
 }
 
 
-static dsc* add_sql_time(const dsc* desc, const jrd_nod* node, impure_value* value)
+static DSC *add_sql_time(DSC * desc, JRD_NOD node, VLU value)
 {
 /**************************************
  *
@@ -2620,42 +2750,42 @@ static dsc* add_sql_time(const dsc* desc, const jrd_nod* node, impure_value* val
  *	NUMERIC +/- TIME   Numeric is interpreted as seconds DECIMAL(*,4).
  *
  **************************************/
+	DSC *result;
+	SINT64 d1, d2;
+	BOOLEAN op1_is_time = FALSE;
+	BOOLEAN op2_is_time = FALSE;
+
 	DEV_BLKCHK(node, type_nod);
-	fb_assert(node->nod_type == nod_add ||
+	assert(node->nod_type == nod_add ||
 		   node->nod_type == nod_subtract ||
 		   node->nod_type == nod_add2 || node->nod_type == nod_subtract2);
 
-	dsc* result = &value->vlu_desc;
+	result = &value->vlu_desc;
 
-	fb_assert(value->vlu_desc.dsc_dtype == dtype_sql_time ||
+	assert(value->vlu_desc.dsc_dtype == dtype_sql_time ||
 		   desc->dsc_dtype == dtype_sql_time);
 
-	SINT64 d1;
 /* Coerce operand1 to a count of seconds */
-	bool op1_is_time = false;
 	if (value->vlu_desc.dsc_dtype == dtype_sql_time) {
 		d1 = *(GDS_TIME *) value->vlu_desc.dsc_address;
-		op1_is_time = true;
-		fb_assert(d1 >= 0 && d1 < ISC_TICKS_PER_DAY);
+		op1_is_time++;
+		assert(d1 >= 0 && d1 < ISC_TICKS_PER_DAY);
 	}
 	else
 		d1 =
 			MOV_get_int64(&value->vlu_desc, ISC_TIME_SECONDS_PRECISION_SCALE);
 
-	SINT64 d2;
 /* Coerce operand2 to a count of seconds */
-	bool op2_is_time = false;
 	if (desc->dsc_dtype == dtype_sql_time) {
 		d2 = *(GDS_TIME *) desc->dsc_address;
-		op2_is_time = true;
-		fb_assert(d2 >= 0 && d2 < ISC_TICKS_PER_DAY);
+		op2_is_time++;
+		assert(d2 >= 0 && d2 < ISC_TICKS_PER_DAY);
 	}
 	else
 		d2 = MOV_get_int64(desc, ISC_TIME_SECONDS_PRECISION_SCALE);
 
 	if (((node->nod_type == nod_subtract)
-		 || (node->nod_type == nod_subtract2)) && op1_is_time && op2_is_time)
-	{
+		 || (node->nod_type == nod_subtract2)) && op1_is_time && op2_is_time) {
 		d2 = d1 - d2;
 		/* Overflow cannot occur as the range of supported TIME values
 		   is less than the range of INTEGER */
@@ -2667,13 +2797,13 @@ static dsc* add_sql_time(const dsc* desc, const jrd_nod* node, impure_value* val
 		return result;
 	}
 
-	fb_assert(op1_is_time || op2_is_time);
-	fb_assert(!(op1_is_time && op2_is_time));
+	assert(op1_is_time || op2_is_time);
+	assert(!(op1_is_time && op2_is_time));
 
 /* Perform the operation */
 
 	if ((node->nod_type == nod_subtract) || (node->nod_type == nod_subtract2)) {
-		fb_assert(op1_is_time);
+		assert(op1_is_time);
 		d2 = d1 - d2;
 	}
 	else
@@ -2688,7 +2818,7 @@ static dsc* add_sql_time(const dsc* desc, const jrd_nod* node, impure_value* val
 /* And make it in the range of values for a day */
 	d2 %= (ISC_TICKS_PER_DAY);
 
-	fb_assert(d2 >= 0 && d2 < ISC_TICKS_PER_DAY);
+	assert(d2 >= 0 && d2 < ISC_TICKS_PER_DAY);
 
 	value->vlu_misc.vlu_sql_time = d2;
 
@@ -2701,7 +2831,7 @@ static dsc* add_sql_time(const dsc* desc, const jrd_nod* node, impure_value* val
 }
 
 
-static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* value)
+static DSC *add_timestamp(DSC * desc, JRD_NOD node, VLU value)
 {
 /**************************************
  *
@@ -2719,42 +2849,45 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
  *	TIME	+   DATE
  *
  **************************************/
+	DSC *result;
 	SINT64 d1, d2;
+	BOOLEAN op1_is_timestamp = FALSE;
+	BOOLEAN op2_is_timestamp = FALSE;
+	ISC_TIMESTAMP new_date;
+	struct tm times;
 
 	DEV_BLKCHK(node, type_nod);
-	fb_assert(node->nod_type == nod_add ||
+	assert(node->nod_type == nod_add ||
 		   node->nod_type == nod_subtract ||
 		   node->nod_type == nod_add2 || node->nod_type == nod_subtract2);
 
-	dsc* result = &value->vlu_desc;
+	result = &value->vlu_desc;
 
 /* Operand 1 is Value -- Operand 2 is desc */
 
 	if (value->vlu_desc.dsc_dtype == dtype_sql_date) {
 		/* DATE + TIME */
 		if ((desc->dsc_dtype == dtype_sql_time) &&
-			((node->nod_type == nod_add) || (node->nod_type == nod_add2)))
-		{
+			((node->nod_type == nod_add) || (node->nod_type == nod_add2))) {
 			value->vlu_misc.vlu_timestamp.timestamp_date =
 				value->vlu_misc.vlu_sql_date;
 			value->vlu_misc.vlu_timestamp.timestamp_time =
 				*(GDS_TIME *) desc->dsc_address;
 			goto return_result;
 		}
-		ERR_post(isc_expression_eval_err, 0);
+		ERR_post(gds_expression_eval_err, 0);
 	}
 	else if (desc->dsc_dtype == dtype_sql_date) {
 		/* TIME + DATE */
 		if ((value->vlu_desc.dsc_dtype == dtype_sql_time) &&
-			((node->nod_type == nod_add) || (node->nod_type == nod_add2)))
-		{
+			((node->nod_type == nod_add) || (node->nod_type == nod_add2))) {
 			value->vlu_misc.vlu_timestamp.timestamp_time =
 				value->vlu_misc.vlu_sql_time;
 			value->vlu_misc.vlu_timestamp.timestamp_date =
 				*(GDS_DATE *) desc->dsc_address;
 			goto return_result;
 		}
-		ERR_post(isc_expression_eval_err, 0);
+		ERR_post(gds_expression_eval_err, 0);
 	}
 
 /* For historical reasons (behavior prior to V6), 
@@ -2774,8 +2907,7 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 	if (((node->nod_type == nod_subtract)
 		 || (node->nod_type == nod_subtract2))
 		&& ((desc->dsc_dtype == dtype_timestamp)
-			|| DTYPE_IS_TEXT(desc->dsc_dtype)))
-	{
+			|| DTYPE_IS_TEXT(desc->dsc_dtype))) {
 
 		/* Handle cases of
 		   <string>    - <string>
@@ -2788,9 +2920,7 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 
 		if (!((value->vlu_desc.dsc_dtype == dtype_timestamp) ||
 			  DTYPE_IS_TEXT(value->vlu_desc.dsc_dtype)))
-		{
-			ERR_post(isc_expression_eval_err, 0);
-		}
+				ERR_post(gds_expression_eval_err, 0);
 
 		d1 = get_timestamp_to_isc_ticks(&value->vlu_desc);
 		d2 = get_timestamp_to_isc_ticks(desc);
@@ -2815,10 +2945,8 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 			 * seconds or 3E15 isc_ticks, the product won't exceed approximately
 			 * 3E18, which fits into an INT64.  
 			 */
-			// 09-Apr-2004, Nickolay Samofatov. Adjust number before division to 
-			// make sure we don't lose a tick as a result of remainder truncation
-			d2 = (d2 * 1000 + (SECONDS_PER_DAY / 200)) / (SINT64) (SECONDS_PER_DAY / 100);
-			value->vlu_misc.vlu_int64 = d2;
+			d2 = (d2 * 1000) / (SINT64) (SECONDS_PER_DAY / 100);
+			value->vlu_misc.vlu_int64 = (SINT64) d2;
 			result->dsc_dtype = dtype_int64;
 			result->dsc_length = sizeof(SINT64);
 			result->dsc_scale = DIALECT_3_TIMESTAMP_SCALE;
@@ -2846,25 +2974,16 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
    operands.   Any <string> value is assumed to be convertable to
    a timestamp */
 
-
-	{ // This block solves the goto v/s var initialization error
-
 /* Coerce operand1 to a count of microseconds */
-
-	bool op1_is_timestamp = false;
 	if ((value->vlu_desc.dsc_dtype == dtype_timestamp)
-		|| (DTYPE_IS_TEXT(value->vlu_desc.dsc_dtype)))
-	{
-		op1_is_timestamp = true;
+		|| (DTYPE_IS_TEXT(value->vlu_desc.dsc_dtype))) {
+		op1_is_timestamp = TRUE;
 	};
 
 /* Coerce operand2 to a count of microseconds */
-
-	bool op2_is_timestamp = false;
 	if ((desc->dsc_dtype == dtype_timestamp)
-		|| (DTYPE_IS_TEXT(desc->dsc_dtype)))
-	{
-		op2_is_timestamp = true;
+		|| (DTYPE_IS_TEXT(desc->dsc_dtype))) {
+		op2_is_timestamp = TRUE;
 	};
 
 /* Exactly one of the operands must be a timestamp or
@@ -2875,15 +2994,15 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
    which are errors */
 
 	if (op1_is_timestamp == op2_is_timestamp)
-		ERR_post(isc_expression_eval_err, 0);
+		ERR_post(gds_expression_eval_err, 0);
 
 	if (op1_is_timestamp) {
 		d1 = get_timestamp_to_isc_ticks(&value->vlu_desc);
 		d2 = get_day_fraction(desc);
 	}
 	else {
-		fb_assert((node->nod_type == nod_add) || (node->nod_type == nod_add2));
-		fb_assert(op2_is_timestamp);
+		assert((node->nod_type == nod_add) || (node->nod_type == nod_add2));
+		assert(op2_is_timestamp);
 		d1 = get_day_fraction(&value->vlu_desc);
 		d2 = get_timestamp_to_isc_ticks(desc);
 	};
@@ -2891,7 +3010,7 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 /* Perform the operation */
 
 	if ((node->nod_type == nod_subtract) || (node->nod_type == nod_subtract2)) {
-		fb_assert(op1_is_timestamp);
+		assert(op1_is_timestamp);
 		d2 = d1 - d2;
 	}
 	else
@@ -2910,15 +3029,14 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
    calculation extends this range, return an error
 */
 
-	ISC_TIMESTAMP new_date;
 	new_date.timestamp_time = 0;
 	new_date.timestamp_date = value->vlu_misc.vlu_timestamp.timestamp_date;
-	tm times;
 	isc_decode_timestamp(&new_date, &times);
 
-	if ((times.tm_year + 1900) < MIN_YEAR || (times.tm_year) + 1900 > MAX_YEAR) {
-		ERR_post(isc_expression_eval_err, isc_arg_gds, isc_date_range_exceeded, 0);
-	}
+	if ((times.tm_year + 1900) < MIN_YEAR
+		|| (times.tm_year) + 1900 >
+		MAX_YEAR) ERR_post(gds_expression_eval_err, gds_arg_gds,
+						   isc_date_range_exceeded, 0);
 
 
 /* Make sure the TIME portion is non-negative */
@@ -2930,12 +3048,10 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 		value->vlu_misc.vlu_timestamp.timestamp_date -= 1;
 	}
 
-	} // scope block for goto v/s var initialization error
-
   return_result:
 /* Caution: target of GOTO */
 
-	fb_assert(value->vlu_misc.vlu_timestamp.timestamp_time >= 0 &&
+	assert(value->vlu_misc.vlu_timestamp.timestamp_time >= 0 &&
 		   value->vlu_misc.vlu_timestamp.timestamp_time < ISC_TICKS_PER_DAY);
 
 	result->dsc_dtype = dtype_timestamp;
@@ -2947,7 +3063,7 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 }
 
 
-static dsc* binary_value(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
+static DSC *binary_value(TDBB tdbb, JRD_NOD node, VLU impure)
 {
 /**************************************
  *
@@ -2959,22 +3075,27 @@ static dsc* binary_value(thread_db* tdbb, const jrd_nod* node, impure_value* imp
  *      Evaluate a binary value expression.
  *
  **************************************/
+	JRD_REQ request;
+	DSC *desc1, *desc2;
+	double divisor;
+	ULONG flags;
+
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(node, type_nod);
 
-	jrd_req* request = tdbb->tdbb_request;
-	impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
+	request = tdbb->tdbb_request;
+	impure = (VLU) ((SCHAR *) request + node->nod_impure);
 
 /* Evaluate arguments.  If either is null, result is null, but in
    any case, evaluate both, since some expressions may later depend
    on mappings which are developed here */
 
-	const dsc* desc1 = EVL_expr(tdbb, node->nod_arg[0]);
-	const ULONG flags = request->req_flags;
+	desc1 = EVL_expr(tdbb, node->nod_arg[0]);
+	flags = request->req_flags;
 	request->req_flags &= ~req_null;
 
-	const dsc* desc2 = EVL_expr(tdbb, node->nod_arg[1]);
+	desc2 = EVL_expr(tdbb, node->nod_arg[1]);
 
 /* restore saved NULL state */
 
@@ -2992,17 +3113,15 @@ static dsc* binary_value(thread_db* tdbb, const jrd_nod* node, impure_value* imp
 		return add(desc2, node, impure);
 
 	case nod_divide:			/* dialect-1 semantics */
-		{
-			const double divisor = MOV_get_double(desc2);
-			if (divisor == 0)
-				ERR_post(isc_arith_except, 0);
-			impure->vlu_misc.vlu_double =
-				DOUBLE_DIVIDE(MOV_get_double(desc1), divisor);
-			impure->vlu_desc.dsc_dtype = DEFAULT_DOUBLE;
-			impure->vlu_desc.dsc_length = sizeof(double);
-			impure->vlu_desc.dsc_address = (UCHAR *) & impure->vlu_misc;
-			return &impure->vlu_desc;
-		}
+		divisor = MOV_get_double(desc2);
+		if (divisor == 0)
+			ERR_post(gds_arith_except, 0);
+		impure->vlu_misc.vlu_double =
+			DOUBLE_DIVIDE(MOV_get_double(desc1), divisor);
+		impure->vlu_desc.dsc_dtype = DEFAULT_DOUBLE;
+		impure->vlu_desc.dsc_length = sizeof(double);
+		impure->vlu_desc.dsc_address = (UCHAR *) & impure->vlu_misc;
+		return &impure->vlu_desc;
 
 	case nod_multiply:			/* dialect-1 semantics */
 		return multiply(desc2, impure, node);
@@ -3024,7 +3143,7 @@ static dsc* binary_value(thread_db* tdbb, const jrd_nod* node, impure_value* imp
 }
 
 
-static dsc* cast(thread_db* tdbb, const dsc* value, const jrd_nod* node, impure_value* impure)
+static DSC *cast(TDBB tdbb, DSC * value, JRD_NOD node, VLU impure)
 {
 /**************************************
  *
@@ -3036,17 +3155,21 @@ static dsc* cast(thread_db* tdbb, const dsc* value, const jrd_nod* node, impure_
  *      Cast from one datatype to another.
  *
  **************************************/
+	FMT format;
+	STR string;
+	USHORT length;
+
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(node, type_nod);
 
 /* value is present; make the conversion */
 
-	const Format* format = (Format*) node->nod_arg[e_cast_fmt];
+	format = (FMT) node->nod_arg[e_cast_fmt];
 	impure->vlu_desc = format->fmt_desc[0];
 	impure->vlu_desc.dsc_address = (UCHAR *) & impure->vlu_misc;
 	if (DTYPE_IS_TEXT(impure->vlu_desc.dsc_dtype)) {
-		USHORT length = DSC_string_length(&impure->vlu_desc);
+		length = DSC_string_length(&impure->vlu_desc);
 		if (length <= 0) {
 			/* cast is a subtype cast only */
 
@@ -3061,8 +3184,7 @@ static dsc* cast(thread_db* tdbb, const dsc* value, const jrd_nod* node, impure_
 
 		/* Allocate a string block of sufficient size. */
 
-		str* string = impure->vlu_string;
-		if (string && string->str_length < length) {
+		if ((string = impure->vlu_string) && string->str_length < length) {
 			delete string;
 			string = NULL;
 		}
@@ -3081,7 +3203,7 @@ static dsc* cast(thread_db* tdbb, const dsc* value, const jrd_nod* node, impure_
 }
 
 
-static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
+static SSHORT compute_agg_distinct(TDBB tdbb, JRD_NOD node)
 {
 /**************************************
  *
@@ -3094,29 +3216,38 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
  *      the aggregate.
  *
  **************************************/
+	JRD_REQ request;
+	DSC *desc;
+	VLUX impure;
+	ASB asb;
+	IASB asb_impure;
+	SSHORT ret_val = 0;
+	UCHAR *data;
+
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(node, type_nod);
 
-	jrd_req* request = tdbb->tdbb_request;
-	AggregateSort* asb = (AggregateSort*) node->nod_arg[1];
-	impure_agg_sort* asb_impure = (impure_agg_sort*) ((SCHAR *) request + asb->nod_impure);
-	dsc* desc = &asb->asb_desc;
-	impure_value_ex* impure = (impure_value_ex*) ((SCHAR *) request + node->nod_impure);
+	request = tdbb->tdbb_request;
+	asb = (ASB) node->nod_arg[1];
+	asb_impure = (IASB) ((SCHAR *) request + asb->nod_impure);
+	desc = &asb->asb_desc;
+	impure = (VLUX) ((SCHAR *) request + node->nod_impure);
 
 /* Sort the values already "put" to sort */
 
-	if (!SORT_sort(tdbb->tdbb_status_vector, asb_impure->iasb_sort_handle))
+	if (SORT_sort(	tdbb->tdbb_status_vector,
+					reinterpret_cast<SCB> (asb_impure->iasb_sort_handle)))
 	{
 		ERR_punt();
 	}
 
 /* Now get the sorted/projected values and compute the aggregate */
 
-	while (true) {
-		UCHAR* data;
-		SORT_get(tdbb->tdbb_status_vector, asb_impure->iasb_sort_handle,
-				 reinterpret_cast<ULONG**>(&data)
+	while (TRUE) {
+		SORT_get(tdbb->tdbb_status_vector,
+				 reinterpret_cast < SCB > (asb_impure->iasb_sort_handle),
+				 reinterpret_cast < ULONG ** >(&data)
 #ifdef SCROLLABLE_CURSORS
 				 , RSE_get_forward
 #endif
@@ -3124,7 +3255,8 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 
 		if (data == NULL) {
 			/* we are done, close the sort */
-			SORT_fini(asb_impure->iasb_sort_handle, tdbb->tdbb_attachment);
+			SORT_fini(reinterpret_cast < SCB > (asb_impure->iasb_sort_handle),
+					  tdbb->tdbb_attachment);
 			asb_impure->iasb_sort_handle = NULL;
 			break;
 		}
@@ -3134,13 +3266,13 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 		case nod_agg_total_distinct:
 		case nod_agg_average_distinct:
 			++impure->vlux_count;
-			add(desc, node, impure);
+			add(desc, node, reinterpret_cast < vlu * >(impure));
 			break;
 
 		case nod_agg_total_distinct2:
 		case nod_agg_average_distinct2:
 			++impure->vlux_count;
-			add2(desc, node, impure);
+			add2(desc, node, reinterpret_cast < vlu * >(impure));
 			break;
 
 		case nod_agg_count_distinct:
@@ -3152,10 +3284,13 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
                     break;
 		}
 	}
+
+	return ret_val;
+
 }
 
 
-static dsc* concatenate(thread_db* tdbb, jrd_nod* node, impure_value* impure)
+static DSC *concatenate(TDBB tdbb, JRD_NOD node, VLU impure)
 {
 /**************************************
  *
@@ -3167,23 +3302,27 @@ static dsc* concatenate(thread_db* tdbb, jrd_nod* node, impure_value* impure)
  *      Concatenate two strings.  
  *
  **************************************/
+	JRD_REQ request;
+	DSC *value1, *value2;
+	ULONG flags;
+
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(node, type_nod);
 
 /* Evaluate sub expressions.  If either is missing, return NULL result. */
 
-	jrd_req* request = tdbb->tdbb_request;
+	request = tdbb->tdbb_request;
 
 /* Evaluate arguments.  If either is null, result is null, but in
    any case, evaluate both, since some expressions may later depend
    on mappings which are developed here */
 
-	dsc* value1 = EVL_expr(tdbb, node->nod_arg[0]);
-	const ULONG flags = request->req_flags;
+	value1 = EVL_expr(tdbb, node->nod_arg[0]);
+	flags = request->req_flags;
 	request->req_flags &= ~req_null;
 
-	dsc* value2 = EVL_expr(tdbb, node->nod_arg[1]);
+	value2 = EVL_expr(tdbb, node->nod_arg[1]);
 
 /* restore saved NULL state */
 
@@ -3196,30 +3335,30 @@ static dsc* concatenate(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		return value2;
 
 	{
-/* Both values are present; build the concatenation */
-		UCHAR temp1[32], *address1;
+		DSC desc;
+		UCHAR *p, temp1[32], temp2[256], *address1, *address2;
+		USHORT length1, length2;
 		USHORT ttype1;
-		USHORT length1 =
+		STR temp3 = NULL;
+
+/* Both values are present; build the concatenation */
+
+		length1 =
 			MOV_get_string_ptr(value1, &ttype1, &address1,
-							   reinterpret_cast<vary*>(temp1),
+							   reinterpret_cast < vary * >(temp1),
 							   sizeof(temp1));
 
 /* value2 will be converted to the same text type as value1 */
 
 		if ((value2->dsc_sub_type != CS_NONE) &&
 			((ttype1 == CS_NONE) || (ttype1 == CS_ASCII)))
-		{
 			ttype1 = value2->dsc_sub_type;
-		}
 
-		UCHAR temp2[256], *address2;
-		str* temp3 = NULL;
-		USHORT length2 =
+		length2 =
 			MOV_make_string2(value2, ttype1, &address2,
-							 reinterpret_cast<vary*>(temp2),
+							 reinterpret_cast < vary * >(temp2),
 							 sizeof(temp2), &temp3);
 
-		dsc desc;
 		desc.dsc_dtype = dtype_text;
 		desc.dsc_sub_type = 0;
 		desc.dsc_scale = 0;
@@ -3228,19 +3367,17 @@ static dsc* concatenate(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		INTL_ASSIGN_TTYPE(&desc, ttype1);
 
 		EVL_make_value(tdbb, &desc, impure);
-		UCHAR* p = impure->vlu_desc.dsc_address;
+		p = impure->vlu_desc.dsc_address;
 
-		if (length1) {
-			do {
+		if (length1)
+			do
 				*p++ = *address1++;
-			} while (--length1);
-		}
+			while (--length1);
 
-		if (length2) {
-			do {
+		if (length2)
+			do
 				*p++ = *address2++;
-			} while (--length2);
-		}
+			while (--length2);
 
 		if (temp3)
 			delete temp3;
@@ -3249,7 +3386,7 @@ static dsc* concatenate(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 }
 
 
-static dsc* dbkey(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
+static DSC *dbkey(TDBB tdbb, JRD_NOD node, VLU impure)
 {
 /**************************************
  *
@@ -3262,16 +3399,20 @@ static dsc* dbkey(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
  *      as an 8 byte character string.
  *
  **************************************/
+	RPB *rpb;
+	JRD_REQ request;
+	JRD_REL relation;
+
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(node, type_nod);
 
 /* Get request, record parameter block, and relation for stream */
 
-	jrd_req* request = tdbb->tdbb_request;
-	impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
-	const record_param* rpb = &request->req_rpb[(int) (IPTR) node->nod_arg[0]];
-	const jrd_rel* relation = rpb->rpb_relation;
+	request = tdbb->tdbb_request;
+	impure = (VLU) ((SCHAR *) request + node->nod_impure);
+	rpb = &request->req_rpb[(int) node->nod_arg[0]];
+	relation = rpb->rpb_relation;
 
 /* Format dbkey as vector of relation id, record number */
 
@@ -3289,13 +3430,13 @@ static dsc* dbkey(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 	impure->vlu_desc.dsc_address = (UCHAR *) impure->vlu_misc.vlu_dbkey;
 	impure->vlu_desc.dsc_dtype = dtype_text;
 	impure->vlu_desc.dsc_length = 8;
-	impure->vlu_desc.dsc_ttype() = ttype_binary;
+	impure->vlu_desc.dsc_ttype = ttype_binary;
 
 	return &impure->vlu_desc;
 }
 
 
-static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impure)
+static DSC *eval_statistical(TDBB tdbb, JRD_NOD node, VLU impure)
 {
 /**************************************
  *
@@ -3307,9 +3448,13 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
  *      Evaluate a statistical expression.
  *
  **************************************/
-	dsc* value;
-	USHORT* invariant_flags;
+	JRD_REQ request;
+	DSC *desc, *value;
+	ULONG flag;
+	USHORT *invariant_flags;
+	BLK rsb;
 	SSHORT result;
+	SLONG count;
 	double d;
 
 	SET_TDBB(tdbb);
@@ -3318,8 +3463,8 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 
 /* Get started by opening stream */
 
-	jrd_req* request = tdbb->tdbb_request;
-	dsc* desc = &impure->vlu_desc;
+	request = tdbb->tdbb_request;
+	desc = &impure->vlu_desc;
 
 	if (node->nod_flags & nod_invariant) {
 		invariant_flags = & impure->vlu_flags;
@@ -3334,7 +3479,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 		}
 	}
 
-	ULONG flag = req_null;
+	flag = req_null;
 	if ((nod_average2 == node->nod_type)) {
 		impure->vlu_misc.vlu_int64 = 0;
 		impure->vlu_desc.dsc_dtype = dtype_int64;
@@ -3348,10 +3493,10 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 		impure->vlu_desc.dsc_length = sizeof(SLONG);
 		impure->vlu_desc.dsc_address = (UCHAR *) & impure->vlu_misc.vlu_long;
 	}
-	SLONG count = 0;
+	count = 0;
 
-	RecordSource* rsb = (RecordSource*) (BLK) node->nod_arg[e_stat_rsb];
-	RSE_open(tdbb, rsb);
+	rsb = (BLK) node->nod_arg[e_stat_rsb];
+	RSE_open(tdbb, reinterpret_cast < struct Rsb *>(rsb));
 
 /* Handle each variety separately */
 
@@ -3359,15 +3504,17 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 	{
 	case nod_count:
 		flag = 0;
-		while (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
+		while (RSE_get_record(tdbb, reinterpret_cast<struct Rsb*>(rsb),
+							  g_RSE_get_mode))
 		{
-			++impure->vlu_misc.vlu_long;
+			++ impure->vlu_misc.vlu_long;
 		}
 		break;
 
 	case nod_count2:
 		flag = 0;
-		while (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
+		while (RSE_get_record(tdbb, reinterpret_cast<struct Rsb*>(rsb),
+							  g_RSE_get_mode))
 		{
 			value = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
 			if (!(request->req_flags & req_null)) {
@@ -3378,7 +3525,8 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 
 	case nod_min:
 	case nod_max:
-		while (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
+		while (RSE_get_record(tdbb, reinterpret_cast<struct Rsb*>(rsb),
+							  g_RSE_get_mode))
 		{
 			value = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
 			if (request->req_flags & req_null) {
@@ -3396,7 +3544,8 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 		break;
 
 	case nod_from:
-		if (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
+		if (RSE_get_record(tdbb, reinterpret_cast<struct Rsb*>(rsb),
+						   g_RSE_get_mode))
 		{
 			desc = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
 		}
@@ -3405,14 +3554,15 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 			if (node->nod_arg[e_stat_default])
 				desc = EVL_expr(tdbb, node->nod_arg[e_stat_default]);
 			else
-				ERR_post(isc_from_no_match, 0);
+				ERR_post(gds_from_no_match, 0);
 		}
 		flag = request->req_flags;
 		break;
 
 	case nod_average:			/* total or average with dialect-1 semantics */
 	case nod_total:
-		while (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
+		while (RSE_get_record(tdbb, reinterpret_cast<struct Rsb*>(rsb),
+								g_RSE_get_mode))
 		{
 			desc = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
 			if (request->req_flags & req_null) {
@@ -3441,7 +3591,8 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 		break;
 
 	case nod_average2:			/* average with dialect-3 semantics */
-		while (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
+		while (RSE_get_record(tdbb, reinterpret_cast<struct Rsb*>(rsb),
+							  g_RSE_get_mode))
 		{
 			desc = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
 			if (request->req_flags & req_null)
@@ -3481,14 +3632,12 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 		node->nod_type != nod_from &&
 		node->nod_type != nod_average &&
 		node->nod_type != nod_average2 && node->nod_type != nod_total)
-	{
 		BUGCHECK(233);			/* msg 233 eval_statistical: invalid operation */
-	}
 #endif
 
 /* Close stream and return value */
 
-	RSE_close(tdbb, rsb);
+	RSE_close(tdbb, reinterpret_cast < struct Rsb *>(rsb));
 	request->req_flags &= ~req_null;
 	request->req_flags |= flag;
 
@@ -3509,7 +3658,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 }
 
 
-static SINT64 get_day_fraction(const dsc* d)
+static SINT64 get_day_fraction(DSC * d)
 {
 /**************************************
  *
@@ -3522,7 +3671,7 @@ static SINT64 get_day_fraction(const dsc* d)
  *	count of days.  Convert it to a count of microseconds.
  *
  **************************************/
-	dsc result;
+	DSC result;
 	double result_days;
 
 	result.dsc_dtype = dtype_double;
@@ -3530,33 +3679,19 @@ static SINT64 get_day_fraction(const dsc* d)
 	result.dsc_flags = 0;
 	result.dsc_sub_type = 0;
 	result.dsc_length = sizeof(double);
-	result.dsc_address = reinterpret_cast<UCHAR*>(&result_days);
+	result.dsc_address = reinterpret_cast < UCHAR * >(&result_days);
 
 /* Convert the input number to a double */
-	CVT_move(d, &result, ERR_post);
+	CVT_move(d, &result, reinterpret_cast < void (*)() > (ERR_post));
 
 /* There's likely some loss of precision here due to rounding of number */
 
-// 08-Apr-2004, Nickolay Samofatov. Loss of precision manifested itself as bad 
-// result returned by the following query:
-//
-// select (cast('01.01.2004 10:01:00' as timestamp)
-//   -cast('01.01.2004 10:00:00' as timestamp))
-//   +cast('01.01.2004 10:00:00' as timestamp) from rdb$database
-//
-// Let's use llrint where it is supported and offset number for other platforms 
-// in hope that compiler rounding mode doesn't get in.
-
-#ifdef HAVE_LLRINT
-	return llrint(result_days * ISC_TICKS_PER_DAY);
-#else
-	return (SINT64)(result_days * ISC_TICKS_PER_DAY + 0.49999999999999);
-#endif
+	return (SINT64) (result_days * ISC_TICKS_PER_DAY);
 }
 
 
 
-static dsc* get_mask(thread_db* tdbb, jrd_nod* node, impure_value* impure)
+static DSC *get_mask(TDBB tdbb, JRD_NOD node, VLU impure)
 {
 /**************************************
  *
@@ -3568,16 +3703,18 @@ static dsc* get_mask(thread_db* tdbb, jrd_nod* node, impure_value* impure)
  *      Compute protection mask.
  *
  **************************************/
+	TEXT *p1, *p2, relation_name[32], field_name[32];
+	DSC *value;
+	JRD_REQ request;
+
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(node, type_nod);
 
-	jrd_req* request = tdbb->tdbb_request;
-	TEXT* p1 = NULL;
-	TEXT* p2 = NULL;
-	const dsc* value = EVL_expr(tdbb, node->nod_arg[0]);
+	request = tdbb->tdbb_request;
+	p1 = p2 = NULL;
+	value = EVL_expr(tdbb, node->nod_arg[0]);
 
-	SqlIdentifier relation_name, field_name;
 	if (!(request->req_flags & req_null)) {
 		p1 = relation_name;
 		MOV_get_name(value, p1);
@@ -3590,7 +3727,6 @@ static dsc* get_mask(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 
 	request->req_flags &= ~req_null;
 
-	// SecurityClass::flags_t is USHORT for now, so it fits in vlu_long.
 	impure->vlu_misc.vlu_long = SCL_get_mask(p1, p2);
 	impure->vlu_desc.dsc_dtype = dtype_long;
 	impure->vlu_desc.dsc_length = sizeof(SLONG);
@@ -3601,7 +3737,7 @@ static dsc* get_mask(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 }
 
 
-static SINT64 get_timestamp_to_isc_ticks(const dsc* d)
+static SINT64 get_timestamp_to_isc_ticks(DSC * d)
 {
 /**************************************
  *
@@ -3620,7 +3756,7 @@ static SINT64 get_timestamp_to_isc_ticks(const dsc* d)
  *	ISC_TIME_SECONDS_PRECISION.
  *
  **************************************/
-	dsc result;
+	DSC result;
 	GDS_TIMESTAMP result_timestamp;
 
 	result.dsc_dtype = dtype_timestamp;
@@ -3628,16 +3764,16 @@ static SINT64 get_timestamp_to_isc_ticks(const dsc* d)
 	result.dsc_flags = 0;
 	result.dsc_sub_type = 0;
 	result.dsc_length = sizeof(GDS_TIMESTAMP);
-	result.dsc_address = reinterpret_cast<UCHAR*>(&result_timestamp);
+	result.dsc_address = reinterpret_cast < UCHAR * >(&result_timestamp);
 
-	CVT_move(d, &result, ERR_post);
+	CVT_move(d, &result, reinterpret_cast < void (*)() > (ERR_post));
 
 	return ((SINT64) result_timestamp.timestamp_date) * ISC_TICKS_PER_DAY
 		+ (SINT64) result_timestamp.timestamp_time;
 }
 
 
-static void init_agg_distinct(thread_db* tdbb, const jrd_nod* node)
+static SSHORT init_agg_distinct(TDBB tdbb, JRD_NOD node)
 {
 /**************************************
  *
@@ -3649,29 +3785,38 @@ static void init_agg_distinct(thread_db* tdbb, const jrd_nod* node)
  *      Initialize a sort for distinct aggregate.
  *
  **************************************/
+	JRD_REQ request;
+	ASB asb;
+	SCB handle;
+	SKD *sort_key;
+	IASB asb_impure;
+	SSHORT ret_val = 0;
+
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(node, type_nod);
 
-	jrd_req* request = tdbb->tdbb_request;
+	request = tdbb->tdbb_request;
 
-	const AggregateSort* asb = (AggregateSort*) node->nod_arg[1];
-	impure_agg_sort* asb_impure = (impure_agg_sort*) ((char*) request + asb->nod_impure);
-	const sort_key_def* sort_key = asb->asb_key_desc;
+	asb = (ASB) node->nod_arg[1];
+	asb_impure = (IASB) ((SCHAR *) request + asb->nod_impure);
+	sort_key = asb->asb_key_desc;
 
-	sort_context* handle =
+	handle =
 		SORT_init(tdbb->tdbb_status_vector,
 				  ROUNDUP_LONG(sort_key->skd_length), 1, sort_key,
-				  reject_duplicate, 0,
+				  reinterpret_cast < BOOLEAN(*)() > (reject_duplicate), 0,
 				  tdbb->tdbb_attachment, 0);
 
-	if (!(asb_impure->iasb_sort_handle = handle))
+	if (!(asb_impure->iasb_sort_handle = (SLONG *) handle))
 		ERR_punt();
+
+	return ret_val;
 }
 
 
 #ifdef PC_ENGINE
-static dsc* lock_record(thread_db* tdbb, jrd_nod* node, impure_value* impure)
+static DSC *lock_record(TDBB tdbb, JRD_NOD node, VLU impure)
 {
 /**************************************
  *
@@ -3684,9 +3829,16 @@ static dsc* lock_record(thread_db* tdbb, jrd_nod* node, impure_value* impure)
  *      pointing to the lock handle.
  *
  **************************************/
+	JRD_REQ request;
+	DSC *desc;
+	USHORT lock_level;
+	RSB rsb;
+	RPB *rpb;
+	LCK lock = NULL;
+
 	SET_TDBB(tdbb);
 
-	jrd_req* request = tdbb->tdbb_request;
+	request = tdbb->tdbb_request;
 
 	DEV_BLKCHK(node, type_nod);
 
@@ -3699,20 +3851,19 @@ static dsc* lock_record(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 
 /* get the locking level */
 
-	dsc* desc = EVL_expr(tdbb, node->nod_arg[e_lockrec_level]);
-	const USHORT lock_level = (USHORT) MOV_get_long(desc, 0);
+	desc = EVL_expr(tdbb, node->nod_arg[e_lockrec_level]);
+	lock_level = (USHORT) MOV_get_long(desc, 0);
 	if (lock_level > LCK_EX)
-		ERR_post(isc_bad_lock_level, isc_arg_number, (SLONG) lock_level, 0);
+		ERR_post(gds_bad_lock_level, gds_arg_number, (SLONG) lock_level, 0);
 
 /* perform the actual lock (or unlock) */
 
-	RecordSource* rsb = *(RecordSource**) node->nod_arg[e_lockrec_rsb];
-	record_param* rpb = request->req_rpb + rsb->rsb_stream;
-	Lock* lock = NULL;
+	rsb = *(RSB *) node->nod_arg[e_lockrec_rsb];
+	rpb = request->req_rpb + rsb->rsb_stream;
 	if (!lock_level)
 		RLCK_unlock_record(0, rpb);
 	else if (!(lock = RLCK_lock_record(rpb, lock_level, 0, 0)))
-		ERR_warning(isc_record_lock, 0);
+		ERR_warning(gds_record_lock, 0);
 
 /* return the lock handle (actually the pointer to the lock block) */
 
@@ -3720,14 +3871,17 @@ static dsc* lock_record(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 	impure->vlu_misc.vlu_long = (ULONG) lock;
 #else
 	{
+		ATT att;
+		ULONG slot;
+
 		/* The lock pointer can't be stored in a ULONG.  Therefore we must
 		   generate a ULONG value that can be used to retrieve the pointer.
 		   Basically we will keep a vector of user locks and give the user
 		   an index into this vector.  When the user releases a lock, its
 		   slot in the vector is zeroed and it becomes available for reuse. */
 
-		Attachment* att = tdbb->tdbb_attachment;
-		const ULONG slot = ALL_get_free_object(tdbb->tdbb_database->dbb_permanent,
+		att = tdbb->tdbb_attachment;
+		slot = ALL_get_free_object(tdbb->tdbb_database->dbb_permanent,
 								   &att->att_lck_quick_ref, 50);
 		att->att_lck_quick_ref->vec_object[slot] = lock;
 		impure->vlu_misc.vlu_long = slot;
@@ -3740,7 +3894,7 @@ static dsc* lock_record(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 
 
 #ifdef PC_ENGINE
-static dsc* lock_relation(thread_db* tdbb, jrd_nod* node, impure_value* impure)
+static DSC *lock_relation(TDBB tdbb, JRD_NOD node, VLU impure)
 {
 /**************************************
  *
@@ -3753,6 +3907,12 @@ static dsc* lock_relation(thread_db* tdbb, jrd_nod* node, impure_value* impure)
  *      pointing to the lock handle.
  *
  **************************************/
+	DSC *desc;
+	USHORT lock_level;
+	JRD_NOD relation_node;
+	JRD_REL relation;
+	LCK lock = NULL;
+
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(node, type_nod);
 
@@ -3765,16 +3925,15 @@ static dsc* lock_relation(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 
 /* get the locking level */
 
-	dsc* desc = EVL_expr(tdbb, node->nod_arg[e_lockrel_level]);
-	const USHORT lock_level = (USHORT) MOV_get_long(desc, 0);
+	desc = EVL_expr(tdbb, node->nod_arg[e_lockrel_level]);
+	lock_level = (USHORT) MOV_get_long(desc, 0);
 	if (lock_level > LCK_EX)
-		ERR_post(isc_bad_lock_level, isc_arg_number, (SLONG) lock_level, 0);
+		ERR_post(gds_bad_lock_level, gds_arg_number, (SLONG) lock_level, 0);
 
 /* perform the actual lock (or unlock) */
 
-	jrd_nod* relation_node = node->nod_arg[e_lockrel_relation];
-	jrd_rel* relation = (jrd_rel*) relation_node->nod_arg[e_rel_relation];
-	Lock* lock = NULL;
+	relation_node = node->nod_arg[e_lockrel_relation];
+	relation = (JRD_REL) relation_node->nod_arg[e_rel_relation];
 	if (!lock_level)
 		RLCK_unlock_relation(0, relation);
 	else
@@ -3786,6 +3945,9 @@ static dsc* lock_relation(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 	impure->vlu_misc.vlu_long = (ULONG) lock;
 #else
 	{
+		ATT att;
+		ULONG slot;
+
 		SET_TDBB(tdbb);
 
 		/* The lock pointer can't be stored in a ULONG.  Therefore we must
@@ -3794,9 +3956,8 @@ static dsc* lock_relation(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		   an index into this vector.  When the user releases a lock, its
 		   slot in the vector is zeroed and it becomes available for reuse. */
 
-		Attachment* att = tdbb->tdbb_attachment;
-		const ULONG slot =
-			ALL_get_free_object(tdbb->tdbb_database->dbb_permanent,
+		att = tdbb->tdbb_attachment;
+		slot = ALL_get_free_object(tdbb->tdbb_database->dbb_permanent,
 								   &att->att_lck_quick_ref, 50);
 		att->att_lck_quick_ref->vec_object[slot] = lock;
 		impure->vlu_misc.vlu_long = slot;
@@ -3808,7 +3969,7 @@ static dsc* lock_relation(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 #endif
 
 
-static dsc* lock_state(thread_db* tdbb, jrd_nod* node, impure_value* impure)
+static DSC *lock_state(TDBB tdbb, JRD_NOD node, VLU impure)
 {
 /**************************************
  *
@@ -3826,9 +3987,14 @@ static dsc* lock_state(thread_db* tdbb, jrd_nod* node, impure_value* impure)
  *          3 - attachment is active
  *
  **************************************/
+	DBB dbb;
+	JRD_REQ request;
+	DSC *desc;
+	SLONG id;
+
 	SET_TDBB(tdbb);
 
-	Database* dbb = tdbb->tdbb_database;
+	dbb = tdbb->tdbb_database;
 
 	DEV_BLKCHK(node, type_nod);
 
@@ -3841,17 +4007,17 @@ static dsc* lock_state(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 
 /* Evaluate attachment id */
 
-	jrd_req* request = tdbb->tdbb_request;
-	const dsc* desc = EVL_expr(tdbb, node->nod_arg[0]);
+	request = tdbb->tdbb_request;
+	desc = EVL_expr(tdbb, node->nod_arg[0]);
 
 	if (request->req_flags & req_null)
 		impure->vlu_misc.vlu_long = 0;
 	else {
-		const SLONG id = MOV_get_long(desc, 0);
+		id = MOV_get_long(desc, 0);
 		if (id == PAG_attachment_id())
 			impure->vlu_misc.vlu_long = 2;
 		else {
-			Lock temp_lock;
+			struct lck temp_lock;
 			/* fill out a lock block, zeroing it out first */
 
 			temp_lock.lck_parent = dbb->dbb_lock;
@@ -3874,7 +4040,7 @@ static dsc* lock_state(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 }
 
 
-static dsc* multiply(const dsc* desc, impure_value* value, const jrd_nod* node)
+static DSC *multiply(DSC * desc, VLU value, JRD_NOD node)
 {
 /**************************************
  *
@@ -3888,13 +4054,17 @@ static dsc* multiply(const dsc* desc, impure_value* value, const jrd_nod* node)
  *      the lowest supported dialect.  (Version 7.0?)
  *
  **************************************/
+	double d1, d2;
+//	SLONG l1, l2;
+	SSHORT scale;
+
 	DEV_BLKCHK(node, type_nod);
 
 /* Handle floating arithmetic */
 
 	if (node->nod_flags & nod_double) {
-		const double d1 = MOV_get_double(desc);
-		const double d2 = MOV_get_double(&value->vlu_desc);
+		d1 = MOV_get_double(desc);
+		d2 = MOV_get_double(&value->vlu_desc);
 		value->vlu_misc.vlu_double = DOUBLE_MULTIPLY(d1, d2);
 		value->vlu_desc.dsc_dtype = DEFAULT_DOUBLE;
 		value->vlu_desc.dsc_length = sizeof(double);
@@ -3906,14 +4076,16 @@ static dsc* multiply(const dsc* desc, impure_value* value, const jrd_nod* node)
 /* Handle (oh, ugh) quad arithmetic */
 
 	if (node->nod_flags & nod_quad) {
-		const SSHORT scale = NUMERIC_SCALE(value->vlu_desc);
-		const SQUAD q1 = MOV_get_quad(desc, node->nod_scale - scale);
-		const SQUAD q2 = MOV_get_quad(&value->vlu_desc, scale);
+		SQUAD q1, q2;
+
+		scale = NUMERIC_SCALE(value->vlu_desc);
+		q1 = MOV_get_quad(desc, node->nod_scale - scale);
+		q2 = MOV_get_quad(&value->vlu_desc, scale);
 		value->vlu_desc.dsc_dtype = dtype_quad;
 		value->vlu_desc.dsc_length = sizeof(SQUAD);
 		value->vlu_desc.dsc_scale = node->nod_scale;
 		value->vlu_misc.vlu_quad =
-			QUAD_MULTIPLY(q1, q2, ERR_post);
+			QUAD_MULTIPLY(q1, q2, (FPTR_VOID) ERR_post);
 		value->vlu_desc.dsc_address = (UCHAR *) & value->vlu_misc.vlu_quad;
 
 		return &value->vlu_desc;
@@ -3927,15 +4099,16 @@ static dsc* multiply(const dsc* desc, impure_value* value, const jrd_nod* node)
 			this function didn't bother even to check for overflow! */
 
 #define FIREBIRD_AVOID_DIALECT1_OVERFLOW
-//	SLONG l1, l2;
+
 	{
-	const SSHORT scale = NUMERIC_SCALE(value->vlu_desc);
-	const SINT64 i1 = MOV_get_long(desc, node->nod_scale - scale);
-	const SINT64 i2 = MOV_get_long(&value->vlu_desc, scale);
+	SINT64 i1, i2, rc;
+	scale = NUMERIC_SCALE(value->vlu_desc);
+	i1 = MOV_get_long(desc, node->nod_scale - scale);
+	i2 = MOV_get_long(&value->vlu_desc, scale);
 	value->vlu_desc.dsc_dtype = dtype_long;
 	value->vlu_desc.dsc_length = sizeof(SLONG);
 	value->vlu_desc.dsc_scale = node->nod_scale;
-	const SINT64 rc = i1 * i2;
+	rc = i1 * i2;
 	if (rc < MIN_SLONG || rc > MAX_SLONG)
 	{
 #ifdef FIREBIRD_AVOID_DIALECT1_OVERFLOW
@@ -3967,7 +4140,7 @@ static dsc* multiply(const dsc* desc, impure_value* value, const jrd_nod* node)
 }
 
 
-static dsc* multiply2(const dsc* desc, impure_value* value, const jrd_nod* node)
+static DSC *multiply2(DSC * desc, VLU value, JRD_NOD node)
 {
 /**************************************
  *
@@ -3980,14 +4153,17 @@ static dsc* multiply2(const dsc* desc, impure_value* value, const jrd_nod* node)
  *      implementing blr_version5 ... blr_multiply.
  *
  **************************************/
+
+	SSHORT scale;
+
 	DEV_BLKCHK(node, type_nod);
 
 /* Handle floating arithmetic */
 
 	if (node->nod_flags & nod_double)
 	{
-		const double d1 = MOV_get_double(desc);
-		const double d2 = MOV_get_double(&value->vlu_desc);
+		double d1 = MOV_get_double(desc);
+		double d2 = MOV_get_double(&value->vlu_desc);
 		value->vlu_misc.vlu_double = DOUBLE_MULTIPLY(d1, d2);
 		value->vlu_desc.dsc_dtype = DEFAULT_DOUBLE;
 		value->vlu_desc.dsc_length = sizeof(double);
@@ -4000,14 +4176,14 @@ static dsc* multiply2(const dsc* desc, impure_value* value, const jrd_nod* node)
 
 	if (node->nod_flags & nod_quad)
 	{
-		const SSHORT scale = NUMERIC_SCALE(value->vlu_desc);
-		const SQUAD q1 = MOV_get_quad(desc, node->nod_scale - scale);
-		const SQUAD q2 = MOV_get_quad(&value->vlu_desc, scale);
+		scale = NUMERIC_SCALE(value->vlu_desc);
+		SQUAD q1 = MOV_get_quad(desc, node->nod_scale - scale);
+		SQUAD q2 = MOV_get_quad(&value->vlu_desc, scale);
 		value->vlu_desc.dsc_dtype = dtype_quad;
 		value->vlu_desc.dsc_length = sizeof(SQUAD);
 		value->vlu_desc.dsc_scale = node->nod_scale;
 		value->vlu_misc.vlu_quad =
-			QUAD_MULTIPLY(q1, q2, ERR_post);
+			QUAD_MULTIPLY(q1, q2, (FPTR_VOID) ERR_post);
 		value->vlu_desc.dsc_address = (UCHAR *) & value->vlu_misc.vlu_quad;
 
 		return &value->vlu_desc;
@@ -4015,7 +4191,7 @@ static dsc* multiply2(const dsc* desc, impure_value* value, const jrd_nod* node)
 
 /* Everything else defaults to int64 */
 
-	const SSHORT scale = NUMERIC_SCALE(value->vlu_desc);
+	scale = NUMERIC_SCALE(value->vlu_desc);
 	const SINT64 i1 = MOV_get_int64(desc, node->nod_scale - scale);
 	const SINT64 i2 = MOV_get_int64(&value->vlu_desc, scale);
 
@@ -4043,10 +4219,9 @@ static dsc* multiply2(const dsc* desc, impure_value* value, const jrd_nod* node)
    need a trial-division to be sure the multiply won't overflow.
  */
 
-	const UINT64 u1 = (i1 >= 0) ? i1 : -i1;	// abs(i1)
-	const UINT64 u2 = (i2 >= 0) ? i2 : -i2;	// abs(i2)
-	// largest product
-	const UINT64 u_limit = ((i1 ^ i2) >= 0) ? MAX_SINT64 : (UINT64) MAX_SINT64 + 1;
+	const UINT64 u1 = (i1 >= 0) ? i1 : -i1;	/* abs(i1) */
+	const UINT64 u2 = (i2 >= 0) ? i2 : -i2;	/* abs(i2) */
+	const UINT64 u_limit = ((i1 ^ i2) >= 0) ? MAX_SINT64 : MAX_SINT64 + 1;	/* largest product */
 
 	if ((u1 != 0) && ((u_limit / u1) < u2)) {
 		ERR_post(isc_exception_integer_overflow, 0);
@@ -4062,7 +4237,7 @@ static dsc* multiply2(const dsc* desc, impure_value* value, const jrd_nod* node)
 }
 
 
-static dsc* divide2(const dsc* desc, impure_value* value, const jrd_nod* node)
+static DSC *divide2(DSC * desc, VLU value, JRD_NOD node)
 {
 /**************************************
  *
@@ -4076,15 +4251,19 @@ static dsc* divide2(const dsc* desc, impure_value* value, const jrd_nod* node)
  *                blr_version5 ... blr_average ....
  *
  **************************************/
+	double d1, d2;
+	SINT64 i1, i2;
+	SSHORT addl_scale;
+
 	DEV_BLKCHK(node, type_nod);
 
 /* Handle floating arithmetic */
 
 	if (node->nod_flags & nod_double) {
-		const double d2 = MOV_get_double(desc);
+		d2 = MOV_get_double(desc);
 		if (d2 == 0.0)
-			ERR_post(isc_arith_except, 0);
-		const double d1 = MOV_get_double(&value->vlu_desc);
+			ERR_post(gds_arith_except, 0);
+		d1 = MOV_get_double(&value->vlu_desc);
 		value->vlu_misc.vlu_double = DOUBLE_DIVIDE(d1, d2);
 		value->vlu_desc.dsc_dtype = DEFAULT_DOUBLE;
 		value->vlu_desc.dsc_length = sizeof(double);
@@ -4130,11 +4309,11 @@ static dsc* divide2(const dsc* desc, impure_value* value, const jrd_nod* node)
  * Who'da thunk that 9th-grade algebra would prove so useful.
  *                                      -- Chris Jewell, December 1998
  */
-	SINT64 i2 = MOV_get_int64(desc, desc->dsc_scale);
+	i2 = MOV_get_int64(desc, desc->dsc_scale);
 	if (i2 == 0)
-		ERR_post(isc_arith_except, 0);
+		ERR_post(gds_arith_except, 0);
 
-	SINT64 i1 = MOV_get_int64(&value->vlu_desc, value->vlu_desc.dsc_scale);
+	i1 = MOV_get_int64(&value->vlu_desc, value->vlu_desc.dsc_scale);
 
 /* MIN_SINT64 / -1 = (MAX_SINT64 + 1), which overflows in SINT64. */
 	if ((i1 == MIN_SINT64) && (i2 == -1))
@@ -4142,7 +4321,7 @@ static dsc* divide2(const dsc* desc, impure_value* value, const jrd_nod* node)
 
 /* Scale the dividend by as many of the needed powers of 10 as possible
    without causing an overflow. */
-	int addl_scale = 2 * desc->dsc_scale;
+	addl_scale = 2 * desc->dsc_scale;
 	if (i1 >= 0)
 	{
 		while ((addl_scale < 0) && (i1 <= MAX_INT64_LIMIT))
@@ -4195,13 +4374,13 @@ static dsc* divide2(const dsc* desc, impure_value* value, const jrd_nod* node)
 		}
 	}
 	if (addl_scale < 0)
-		ERR_post(isc_arith_except, 0);
+		ERR_post(gds_arith_except, 0);
 
 	return &value->vlu_desc;
 }
 
 
-static dsc* negate_dsc(thread_db* tdbb, const dsc* desc, impure_value* value)
+static DSC *negate_dsc(TDBB tdbb, DSC * desc, VLU value)
 {
 /**************************************
  *
@@ -4249,7 +4428,7 @@ static dsc* negate_dsc(thread_db* tdbb, const dsc* desc, impure_value* value)
 
 	case dtype_quad:
 		value->vlu_misc.vlu_quad =
-			QUAD_NEGATE(value->vlu_misc.vlu_quad, ERR_post);
+			QUAD_NEGATE(value->vlu_misc.vlu_quad, (FPTR_VOID) ERR_post);
 		break;
 
 	case dtype_int64:
@@ -4270,7 +4449,7 @@ static dsc* negate_dsc(thread_db* tdbb, const dsc* desc, impure_value* value)
 }
 
 
-static dsc* record_version(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
+static DSC* record_version(TDBB tdbb, JRD_NOD node, VLU impure)
 {
 /**************************************
  *
@@ -4284,15 +4463,18 @@ static dsc* record_version(thread_db* tdbb, const jrd_nod* node, impure_value* i
  *      as a 4 byte character string.
  *
  **************************************/
+	RPB *rpb;
+	JRD_REQ request;
+
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(node, type_nod);
 
 /* Get request, record parameter block for stream */
 
-	jrd_req* request = tdbb->tdbb_request;
-	impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
-	const record_param* rpb = &request->req_rpb[(int) (IPTR) node->nod_arg[0]];
+	request = tdbb->tdbb_request;
+	impure = (VLU) ((SCHAR *) request + node->nod_impure);
+	rpb = &request->req_rpb[(int) node->nod_arg[0]];
 
 /* If the current transaction has updated the record, the record version
  * coming in from DSQL will have the original transaction # (or current
@@ -4302,7 +4484,7 @@ static dsc* record_version(thread_db* tdbb, const jrd_nod* node, impure_value* i
  */
 
 	if (tdbb->tdbb_request->req_transaction->tra_number ==
-		rpb->rpb_transaction_nr)
+		rpb->rpb_transaction)
 	{
 		request->req_flags |= req_same_tx_upd;
 	}
@@ -4315,7 +4497,7 @@ static dsc* record_version(thread_db* tdbb, const jrd_nod* node, impure_value* i
 		if (request->req_transaction->tra_commit_sub_trans)
 		{
 			if (SBM_test(request->req_transaction->tra_commit_sub_trans,
-			             rpb->rpb_transaction_nr))
+			             rpb->rpb_transaction))
 			{
 				 request->req_flags |= req_same_tx_upd;
 			}
@@ -4324,17 +4506,17 @@ static dsc* record_version(thread_db* tdbb, const jrd_nod* node, impure_value* i
 
 /* Initialize descriptor */
 
-	impure->vlu_misc.vlu_long    = rpb->rpb_transaction_nr;
+	impure->vlu_misc.vlu_long    = rpb->rpb_transaction;
 	impure->vlu_desc.dsc_address = (UCHAR *) & impure->vlu_misc.vlu_long;
 	impure->vlu_desc.dsc_dtype   = dtype_text;
 	impure->vlu_desc.dsc_length  = 4;
-	impure->vlu_desc.dsc_ttype()   = ttype_binary;
+	impure->vlu_desc.dsc_ttype   = ttype_binary;
 
 	return &impure->vlu_desc;
 }
 
 
-static bool reject_duplicate(const UCHAR* data1, const UCHAR* data2, void* user_arg)
+static BOOLEAN reject_duplicate(UCHAR * data1, UCHAR * data2, int user_arg)
 {
 /**************************************
  *
@@ -4344,15 +4526,15 @@ static bool reject_duplicate(const UCHAR* data1, const UCHAR* data2, void* user_
  *
  * Functional description
  *      Callback routine used by sort/project to reject duplicate values.
- *      Particularly dumb routine -- always returns true;
+ *      Particularly dumb routine -- always returns TRUE;
  *
  **************************************/
 
-	return true;
+	return TRUE;
 }
 
 
-static dsc* scalar(thread_db* tdbb, jrd_nod* node, impure_value* impure)
+static DSC* scalar(TDBB tdbb, JRD_NOD node, VLU impure)
 {
 /**************************************
  *
@@ -4364,12 +4546,17 @@ static dsc* scalar(thread_db* tdbb, jrd_nod* node, impure_value* impure)
  *      Evaluate a scalar item from an array.
  *
  **************************************/
+	SLONG subscripts[16], *p;
+	JRD_NOD list, *ptr, *end;
+	DSC *desc;
+	JRD_REQ request;
+
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(node, type_nod);
 
-	const dsc* desc = EVL_expr(tdbb, node->nod_arg[e_scl_field]);
-	jrd_req* request = tdbb->tdbb_request;
+	desc = EVL_expr(tdbb, node->nod_arg[e_scl_field]);
+	request = tdbb->tdbb_request;
 
 	if (request->req_flags & req_null)
 		return NULL;
@@ -4377,12 +4564,10 @@ static dsc* scalar(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 	if (desc->dsc_dtype != dtype_array)
 		IBERROR(261);			/* msg 261 scalar operator used on field which is not an array */
 
-	jrd_nod* list = node->nod_arg[e_scl_subscripts];
+	list = node->nod_arg[e_scl_subscripts];
 
-	SLONG subscripts[16];
-    SLONG* p = subscripts;
-	jrd_nod** ptr = list->nod_arg;
-	for (const jrd_nod* const* const end = ptr + list->nod_count; ptr < end;)
+	for (ptr = list->nod_arg, end = ptr + list->nod_count, p = subscripts;
+		 ptr < end;)
 	{
 		*p++ = MOV_get_long(EVL_expr(tdbb, *ptr++), 0);
 		if (request->req_flags & req_null)
@@ -4391,18 +4576,15 @@ static dsc* scalar(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 
 	BLB_scalar(tdbb,
 			   request->req_transaction,
-			   reinterpret_cast<bid*>(desc->dsc_address),
+			   reinterpret_cast < bid * >(desc->dsc_address),
 			   list->nod_count,
-			   subscripts, impure);
-			   // It was subscripts, reinterpret_cast<impure_value*>(&impure->vlu_desc));
-			   // but vlu_desc is the first member of impure_value and impure is already
-			   // of type impure_value*, so this cast seems nonsense.
+			   subscripts, reinterpret_cast < vlu * >(&impure->vlu_desc));
 
 	return &impure->vlu_desc;
 }
 
 
-static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* desc2)
+static SSHORT sleuth(TDBB tdbb, JRD_NOD node, DSC * desc1, DSC * desc2)
 {
 /**************************************
  *
@@ -4414,15 +4596,23 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
  *      Execute SLEUTH operator.
  *
  **************************************/
+	BLB blob;
+	DSC *desc3;
+	UCHAR *p1, *p2, temp1[TEMP_LENGTH], temp2[TEMP_LENGTH],
+		buffer[BUFFER_LARGE], control[BUFFER_SMALL];
+	SSHORT l1, l2;
+	USHORT ttype;
+	STR data_str = NULL, match_str = NULL, sleuth_str = NULL;
+	SSHORT ret_val;
+
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(node, type_nod);
 
 /* Choose interpretation for the operation */
 
- 	USHORT ttype;
 	if (desc1->dsc_dtype == dtype_blob) {
-		if (desc1->dsc_sub_type == isc_blob_text)
+		if (desc1->dsc_sub_type == BLOB_text)
 			ttype = desc1->dsc_scale;	/* Load blob character set */
 		else
 			ttype = INTL_TTYPE(desc2);
@@ -4430,64 +4620,53 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
 	else
 		ttype = INTL_TTYPE(desc1);
 
-	TextType obj =
-		INTL_texttype_lookup(tdbb, ttype, ERR_post, NULL);
+	TextType* obj =
+		INTL_texttype_lookup(tdbb, ttype, (FPTR_VOID) ERR_post, NULL);
 
 /* Get operator definition string (control string) */
 
-	dsc* desc3 = EVL_expr(tdbb, node->nod_arg[2]);
-
-	UCHAR* p1;
-	UCHAR temp1[TEMP_LENGTH];
-	str* sleuth_str = NULL;
-	SSHORT l1 =
+	desc3 = EVL_expr(tdbb, node->nod_arg[2]);
+	l1 =
 		MOV_make_string2(desc3, ttype, &p1,
-						 reinterpret_cast<vary*>(temp1), sizeof(temp1),
+						 reinterpret_cast<vary*>(temp1), TEMP_SIZE(temp1),
 						 &sleuth_str);
 /* Get address and length of search string */
-	UCHAR* p2;
-	UCHAR temp2[TEMP_LENGTH];
-	str* match_str = NULL;
-	SSHORT l2 =
+	l2 =
 		MOV_make_string2(desc2, ttype, &p2,
-						 reinterpret_cast<vary*>(temp2), sizeof(temp2),
+						 reinterpret_cast<vary*>(temp2), TEMP_SIZE(temp2),
 						 &match_str);
-
 /* Merge search and control strings */
-	UCHAR control[BUFFER_SMALL];
-	l2 = obj.sleuth_merge(tdbb, p2, l2, p1, l1, control,
+	l2 = obj->sleuth_merge(tdbb, p2, l2, p1, l1, control,
 										 BUFFER_SMALL);
 
 /* l2 is result's byte-count */
 
 /* Note: resulting string from sleuth_merge is either UCS2_CHAR or NCHAR 
    and never Multibyte (see note in EVL_mb_sleuth_check) */
-	bool ret_val;
-	str* data_str = NULL;
+
 	if (desc1->dsc_dtype != dtype_blob) {
 		/* Source is not a blob, do a simple search */
 
 		l1 =
 			MOV_make_string2(desc1, ttype, &p1,
 							 reinterpret_cast<vary*>(temp1),
-							 sizeof(temp1), &data_str);
-		ret_val = obj.sleuth_check(tdbb, 0, p1, l1, control, l2);
+							 TEMP_SIZE(temp1), &data_str);
+		ret_val = obj->sleuth_check(tdbb, 0, p1, l1, control, l2);
 	}
 	else {
 		/* Source string is a blob, things get interesting */
 
-		blb* blob =
+		blob =
 			BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
-					 reinterpret_cast<bid*>(desc1->dsc_address));
+					 reinterpret_cast < bid * >(desc1->dsc_address));
 
-		UCHAR buffer[BUFFER_LARGE];
-		ret_val = false;
+		ret_val = FALSE;
 		while (!(blob->blb_flags & BLB_eof))
 		{
 			l1 = BLB_get_segment(tdbb, blob, buffer, sizeof(buffer));
-			if (obj.sleuth_check(tdbb, 0, buffer, l1, control, l2))
+			if (obj->sleuth_check(tdbb, 0, buffer, l1, control, l2))
 			{
-				ret_val = true;
+				ret_val = TRUE;
 				break;
 			}
 		}
@@ -4506,8 +4685,7 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
 }
 
 
-static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1, 
-							 dsc* desc2, bool computed_invariant)
+static SSHORT string_boolean(TDBB tdbb, JRD_NOD node, DSC * desc1, DSC * desc2)
 {
 /**************************************
  *
@@ -4520,16 +4698,16 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
  *      or STARTS WITH.
  *
  **************************************/
-	UCHAR *p1, *p2 = NULL, temp1[TEMP_LENGTH], temp2[TEMP_LENGTH],
+	BLB blob;
+
+	UCHAR *p1, *p2, temp1[TEMP_LENGTH], temp2[TEMP_LENGTH],
 		buffer[BUFFER_LARGE];
-	SSHORT l2 = 0;
-	USHORT type1;
-	str* match_str = NULL;
-	bool ret_val;
+	SSHORT l1, l2;
+	USHORT type1, xtype1;
+	STR match_str = NULL;
+	SSHORT ret_val;
 
 	SET_TDBB(tdbb);
-
-	jrd_req* request = tdbb->tdbb_request;
 
 	DEV_BLKCHK(node, type_nod);
 
@@ -4542,189 +4720,72 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 
 		/* Get address and length of search string - convert to datatype of data */
 
-		if (!computed_invariant) {
-			l2 =
-				MOV_make_string2(desc2, type1, &p2,
-							 	 reinterpret_cast<vary*>(temp2),
-							 	 sizeof(temp2), &match_str);
-		}
-
-		USHORT xtype1;
-		const SSHORT l1 =
+		l2 =
+			MOV_make_string2(desc2, type1, &p2,
+							 reinterpret_cast < vary * >(temp2),
+							 TEMP_SIZE(temp2), &match_str);
+		l1 =
 			MOV_get_string_ptr(desc1, &xtype1, &p1,
-							   reinterpret_cast<vary*>(temp1),
-							   sizeof(temp1));
+							   reinterpret_cast < vary * >(temp1),
+							   TEMP_SIZE(temp1));
 
-		fb_assert(xtype1 == type1);
-		ret_val = string_function(tdbb, node, l1, p1, l2, p2, type1, computed_invariant);
+		assert(xtype1 == type1);
+		ret_val = string_function(tdbb, node, l1, p1, l2, p2, type1);
 	}
 	else {
 		/* Source string is a blob, things get interesting */
 
-		if (desc1->dsc_sub_type == isc_blob_text) {
-			type1 = desc1->dsc_scale;	/* pick up character set of blob */
-
-			// 21-May-2004, Nickolay Samofatov. 
-			// This is the ugly hack to solve ugly problem. 
-			// Engine support for MBCS BLOBs is almost non-existent now thus
-			// we have to match them using binary approach (instead of crashing).
-			// Proper fix is to (1) add support for streamed charset converters 
-			// to INTL module and to (2) make metadata blobs use true unicode.
-			// Note how we check that character set is MBCS. This is ugly, but 
-			// will do as a temporary solution until INTL troubles are addressed
-			TextType obj = INTL_texttype_lookup(tdbb, type1, ERR_post, NULL);
-			if (obj.getStruct()->texttype_fn_matches == EVL_mb_matches) {
-				type1 = ttype_none;
-			}
-		}
-		else {
-			type1 = ttype_none;	/* Do byte matching */
-		}
-
 		/* Get address and length of search string - make it string if neccessary
 		 * but don't transliterate character set if the source blob is binary
 		 */
-		if (!computed_invariant) {
-			if (type1 == ttype_none) {
-				l2 =
-					MOV_get_string(desc2, &p2, reinterpret_cast<vary*>(temp2),
-								sizeof(temp2));
-			} else {
-				l2 =
-					MOV_make_string2(desc2, type1, &p2,
-								 	reinterpret_cast<vary*>(temp2),
-								 	sizeof(temp2), &match_str);
-			}
+
+		if (desc1->dsc_sub_type == BLOB_text) {
+			type1 = desc1->dsc_scale;	/* pick up character set of blob */
+			l2 =
+				MOV_make_string2(desc2, type1, &p2,
+								 reinterpret_cast < vary * >(temp2),
+								 TEMP_SIZE(temp2), &match_str);
+		}
+		else {
+			type1 = ttype_none;	/* Do byte matching */
+			l2 =
+				MOV_get_string(desc2, &p2, reinterpret_cast < vary * >(temp2),
+							   TEMP_SIZE(temp2));
 		}
 
-		blb* blob =	BLB_open(tdbb, request->req_transaction,
-						reinterpret_cast<bid*>(desc1->dsc_address));
+		blob =
+			BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
+					 reinterpret_cast < bid * >(desc1->dsc_address));
 
 		/* Performs the string_function on each segment of the blob until
 		   a positive result is obtained */
 
-		ret_val = false;
-		switch (node->nod_type) {
-		case nod_starts: 
-			{
-				Firebird::StartsEvaluator<UCHAR> evaluator(p2, l2);
-				while (!(blob->blb_flags & BLB_eof)) {
-					const SSHORT l1 = BLB_get_segment(tdbb, blob, buffer, sizeof(buffer));
-					if (l1 && !evaluator.processNextChunk(buffer, l1))
-						break;
-				}
-				ret_val = evaluator.getResult();
+		ret_val = FALSE;
+		while (!(blob->blb_flags & BLB_eof)) {
+			l1 = BLB_get_segment(tdbb, blob, buffer, sizeof(buffer));
+			if (string_function(tdbb, node, l1, buffer, l2, p2, type1)) {
+				ret_val = TRUE;
+				break;
 			}
-			break;
-		case nod_like:
-			{
-				TextType obj = INTL_texttype_lookup(tdbb, type1, ERR_post, NULL);
-
-				UCS2_CHAR escape = 0;
-				/* ensure 3rd argument (escape char) is in operation text type */
-				if (node->nod_count == 3 && !computed_invariant) {
-					/* Convert ESCAPE to operation character set */
-					DSC* dsc = EVL_expr(tdbb, node->nod_arg[2]);
-					if (request->req_flags & req_null) {
-						if (node->nod_flags & nod_invariant) {
-							impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
-							impure->vlu_flags |= VLU_computed;
-							impure->vlu_flags |= VLU_null;
-						}
-						ret_val = false;
-						break;
-					}
-
-					const char* q1;
-					UCHAR temp3[TEMP_LENGTH];
-					const USHORT l3 = MOV_make_string(dsc,
-										 type1, &q1, (vary*) temp3,
-										 sizeof(temp3));
-					if (!l3)
-						ERR_post(isc_like_escape_invalid, 0);
-					/* Grab the first character from the string */
-					const USHORT consumed =
-						obj.mbtowc(&escape, reinterpret_cast<const unsigned char*>(q1), l3);
-
-					/* If characters left, or null byte character, return error */
-					if (consumed <= 0 || consumed != l3 || (escape == 0))
-						ERR_post(isc_like_escape_invalid, 0);
-				}
-
-				LikeObject* evaluator;
-				if (node->nod_flags & nod_invariant) {
-					impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
-					if (!(impure->vlu_flags & VLU_computed)) {
-						delete reinterpret_cast<LikeObject*>(impure->vlu_misc.vlu_invariant);
-						impure->vlu_misc.vlu_invariant = evaluator = obj.like_create(tdbb, p2, l2, escape);
-						impure->vlu_flags |= VLU_computed;
-					}
-					else {
-						evaluator = reinterpret_cast<LikeObject*>(impure->vlu_misc.vlu_invariant);
-						evaluator->reset();
-					}
-				}
-				else
-					evaluator = obj.like_create(tdbb, p2, l2, escape);
-
-				while (!(blob->blb_flags & BLB_eof)) {
-					const SSHORT l1 = BLB_get_segment(tdbb, blob, buffer, sizeof(buffer));
-					if (!evaluator->process(tdbb, obj, buffer, l1))
-						break;
-				}
-
-				ret_val = evaluator->result();
-				if (!(node->nod_flags & nod_invariant))
-					delete evaluator;
-			}
-			break;
-		case nod_contains:
-			{
-				TextType obj = INTL_texttype_lookup(tdbb, type1, ERR_post, NULL);
-				ContainsObject* evaluator;
-				if (node->nod_flags & nod_invariant) {
-					impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
-					if (!(impure->vlu_flags & VLU_computed)) {
-						delete reinterpret_cast<ContainsObject*>(impure->vlu_misc.vlu_invariant);
-						impure->vlu_misc.vlu_invariant = evaluator = obj.contains_create(tdbb, p2, l2);
-						impure->vlu_flags |= VLU_computed;
-					} 
-					else {
-						evaluator = reinterpret_cast<ContainsObject*>(impure->vlu_misc.vlu_invariant);
-						evaluator->reset();
-					}
-				}
-				else
-					evaluator = obj.contains_create(tdbb, p2, l2);
-
-				while (!(blob->blb_flags & BLB_eof)) {
-					const SSHORT l1 = BLB_get_segment(tdbb, blob, buffer, sizeof(buffer));
-					if (!evaluator->process(tdbb, obj, buffer, l1))
-						break;
-				}
-
-				ret_val = evaluator->result();
-				if (!(node->nod_flags & nod_invariant))
-					delete evaluator;
-			}
-			break;
+			if (node->nod_type == nod_starts)
+				break;
 		}
 
 		BLB_close(tdbb, blob);
 	}
 
-	delete match_str;
+	if (match_str)
+		delete match_str;
 
 	return ret_val;
 }
 
 
-static bool string_function(
-							  thread_db* tdbb,
-							  jrd_nod* node,
+static SSHORT string_function(
+							  TDBB tdbb,
+							  JRD_NOD node,
 							  SSHORT l1,
-							  const UCHAR* p1, SSHORT l2, const UCHAR* p2, 
-							  USHORT ttype, bool computed_invariant)
+							  UCHAR * p1, SSHORT l2, UCHAR * p2, USHORT ttype)
 {
 /**************************************
  *
@@ -4737,102 +4798,71 @@ static bool string_function(
  *      or STARTS WITH.
  *
  **************************************/
+	class TextType* obj;
+
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(node, type_nod);
 
-	jrd_req* request = tdbb->tdbb_request;
-
-/* Handle STARTS WITH */
+/* Handle "STARTS WITH" */
 
 	if (node->nod_type == nod_starts) {
 		if (l1 < l2)
-			return false;
-		return (memcmp(p1, p2, l2) == 0);
+			return FALSE;
+		while (--l2 >= 0)
+			if (*p1++ != *p2++)
+				return FALSE;
+		return TRUE;
 	}
 
-	TextType obj = INTL_texttype_lookup(tdbb, ttype, ERR_post, NULL);
+	obj = INTL_texttype_lookup(tdbb, ttype, (FPTR_VOID) ERR_post, NULL);
 
 /* Handle contains */
 
 	if (node->nod_type == nod_contains) {
-		if (node->nod_flags & nod_invariant) {
-			impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
-			ContainsObject* evaluator;
-			if (!(impure->vlu_flags & VLU_computed)) {
-				delete reinterpret_cast<ContainsObject*>(impure->vlu_misc.vlu_invariant);
-				impure->vlu_misc.vlu_invariant = evaluator = obj.contains_create(tdbb, p2, l2);
-				impure->vlu_flags |= VLU_computed;
-			}
-			else {
-				evaluator = reinterpret_cast<ContainsObject*>(impure->vlu_misc.vlu_invariant);
-				evaluator->reset();
-			}
-			evaluator->process(tdbb, obj, p1, l1);
-			return evaluator->result();
-		}
-		else
-			return obj.contains(tdbb, p1, l1, p2, l2);
+		return obj->contains(tdbb, p1, l1, p2, l2);
 	}
 
-/* Handle LIKE and MATCHES */
+/* Handle LIKE and MATCHES*/
 
 	if (node->nod_type == nod_like) {
-		UCS2_CHAR escape = 0;
+		UCS2_CHAR escape;
+
+		escape = 0;
 		/* ensure 3rd argument (escape char) is in operation text type */
-		if (node->nod_count == 3 && !computed_invariant) {
+		if (node->nod_count == 3) {
+			DSC* dsc = EVL_expr(tdbb, node->nod_arg[2]);
+			if (tdbb->tdbb_request->req_flags & req_null) {
+				return FALSE;
+			}
+
 			const char* q1;
+			USHORT l3, consumed;
 			UCHAR temp3[TEMP_LENGTH];
 
 			/* Convert ESCAPE to operation character set */
-			DSC* dsc = EVL_expr(tdbb, node->nod_arg[2]);
-			if (request->req_flags & req_null) {
-				if (node->nod_flags & nod_invariant) {
-					impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
-					impure->vlu_flags |= VLU_computed;
-					impure->vlu_flags |= VLU_null;
-				}
-				return false;
-			}
-			const USHORT l3 = MOV_make_string(dsc,
-								 ttype, &q1, (vary*) temp3,
-								 sizeof(temp3));
+			l3 = MOV_make_string(dsc,
+								 ttype, &q1, (VARY *) temp3,
+								 TEMP_SIZE(temp3));
 			if (!l3)
-				ERR_post(isc_like_escape_invalid, 0);
+				ERR_post(gds_like_escape_invalid, 0);
 			/* Grab the first character from the string */
-			const USHORT consumed =
-				obj.mbtowc(&escape, reinterpret_cast<const unsigned char*>(q1), l3);
+			consumed = obj->mbtowc(&escape, reinterpret_cast<unsigned char*>(const_cast<char*>(q1)), l3);
 
 			/* If characters left, or null byte character, return error */
 			if (consumed <= 0 || consumed != l3 || (escape == 0))
-				ERR_post(isc_like_escape_invalid, 0);
+				ERR_post(gds_like_escape_invalid, 0);
 
 		}
-		if (node->nod_flags & nod_invariant) {
-			impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
-			LikeObject* evaluator;
-			if (!(impure->vlu_flags & VLU_computed)) {
-				delete reinterpret_cast<LikeObject*>(impure->vlu_misc.vlu_invariant);
-				impure->vlu_misc.vlu_invariant = evaluator = obj.like_create(tdbb, p2, l2, escape);
-				impure->vlu_flags |= VLU_computed;
-			}
-			else {
-				evaluator = reinterpret_cast<LikeObject*>(impure->vlu_misc.vlu_invariant);
-				evaluator->reset();
-			}
-			evaluator->process(tdbb, obj, p1, l1);
-			return evaluator->result();
-		}
-		else
-			return obj.like(tdbb, p1, l1, p2, l2, escape);
+		return obj->like(tdbb, p1, l1, p2, l2, escape);
 	}
 
-	return obj.matches(tdbb, p1, l1, p2, l2);
+	return obj->matches(tdbb, p1, l1, p2, l2);
 }
 
 
-static dsc* substring(
-					  thread_db* tdbb,
-					  impure_value* impure, dsc* value, SLONG offset_arg, SLONG length_arg)
+static DSC *substring(
+					  TDBB tdbb,
+					  VLU impure, DSC * value, USHORT offset, USHORT length)
 {
 /**************************************
  *
@@ -4844,30 +4874,31 @@ static dsc* substring(
  *      Perform substring function.
  *
  **************************************/
+	DSC desc;
+	UCHAR temp[32];
+	USHORT ttype;
+	TextType *obj1 = 0;
+	/* CVC: I didn't bother to define a larger buffer because:
+			- Native types when converted to string don't reach 31 bytes plus terminator.
+			- String types do not need and do not use the buffer ("temp") to be pulled.
+			- The types that can cause an error() issued inside the low level MOV/CVT
+			routines because the "temp" is not enough are blob and array but at this time
+			they aren't accepted, so they will cause error() to be called anyway.
+	*/
+
 	SET_TDBB(tdbb);
-	dsc desc;
 	desc.dsc_dtype = dtype_text;
 	desc.dsc_scale = 0;
 
-	if (offset_arg < 0 || offset_arg > MAX_USHORT ||
-		length_arg < 0 || length_arg > MAX_USHORT)
-	{
-		ERR_post(isc_arith_except, 0);
-	}
-	USHORT offset = (USHORT) offset_arg;
-	USHORT length = (USHORT) length_arg;
-
-	USHORT ttype;
-	TextType obj1 = NULL;
-	if (dtype_blob == value->dsc_dtype && (isc_blob_text != value->dsc_sub_type
+	if (dtype_blob == value->dsc_dtype && (BLOB_text != value->dsc_sub_type
 		|| (ttype = value->dsc_scale) == ttype_ascii || ttype == ttype_none || ttype == ttype_binary
-		|| ((obj1 = INTL_texttype_lookup(tdbb, ttype, ERR_post, NULL)) != NULL
-			&& 1 == obj1.getBytesPerChar())))
+		|| ((obj1 = INTL_texttype_lookup(tdbb, ttype, (FPTR_VOID) ERR_post, NULL)) != 0
+			&& 1 == obj1->getBytesPerChar())))
 	{
 		/* Source string is a blob, things get interesting. */
 
-		blb* blob = BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
-							reinterpret_cast<bid*>(value->dsc_address));
+		BLB blob = BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
+							reinterpret_cast<BID>(value->dsc_address));
 		if (!blob->blb_length || blob->blb_length <= offset)
 		{
 			desc.dsc_length = 0;
@@ -4877,8 +4908,8 @@ static dsc* substring(
 		}
 		else
 		{
-			const USHORT bufflen = MAX(BUFFER_LARGE, length);
-			str* temp_str = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(UCHAR) * bufflen) str();
+			USHORT bufflen = MAX(BUFFER_LARGE, length);
+			STR temp_str = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(UCHAR) * bufflen) str();
 			UCHAR *buffer = temp_str->str_data;
 		
 			USHORT datalen = 0;
@@ -4889,9 +4920,9 @@ static dsc* substring(
 				USHORT l1 = BLB_get_segment(tdbb, blob, buffer, waste);
 				offset -= l1;
 			}
-			fb_assert(!offset && !(blob->blb_flags & BLB_eof));
+			assert(!offset && !(blob->blb_flags & BLB_eof));
 			datalen = BLB_get_data(tdbb, blob, buffer, length);
-			fb_assert(datalen && datalen <= length);
+			assert(datalen && datalen <= length);
 			desc.dsc_length = datalen;
 			desc.dsc_address = buffer;
 			INTL_ASSIGN_TTYPE(&desc, value->dsc_scale);
@@ -4902,17 +4933,9 @@ static dsc* substring(
 		return &impure->vlu_desc;
 	}
 
-	/* CVC: I didn't bother to define a larger buffer because:
-			- Native types when converted to string don't reach 31 bytes plus terminator.
-			- String types do not need and do not use the buffer ("temp") to be pulled.
-			- The types that can cause an error() issued inside the low level MOV/CVT
-			routines because the "temp" is not enough are blob and array but at this time
-			they aren't accepted, so they will cause error() to be called anyway.
-	*/
-	UCHAR temp[32];
 	desc.dsc_length =
 		MOV_get_string_ptr(value, &ttype, &desc.dsc_address,
-						   reinterpret_cast<vary*>(temp), sizeof(temp));
+						   reinterpret_cast < vary * >(temp), sizeof(temp));
 	INTL_ASSIGN_TTYPE(&desc, ttype);
 
 	/* CVC: Why bother? If the offset is greater or equal than the length in bytes,
@@ -4928,9 +4951,9 @@ static dsc* substring(
 			but it's resolved by INTL_obj_lookup() to UNICODE_FSS in the cases I observed. Here I cannot
 			distinguish between user calls and system calls. Unlike the original ASCII substring(),
 			this one will get correctly the amount of UNICODE characters requested. */
-	else if (desc.dsc_ttype() == ttype_ascii || desc.dsc_ttype() == ttype_none
+	else if (desc.dsc_ttype == ttype_ascii || desc.dsc_ttype == ttype_none
 		|| ttype == ttype_binary
-		/*|| desc.dsc_ttype() == ttype_metadata) */)
+		/*|| desc.dsc_ttype == ttype_metadata) */)
 	{
 		/* Redundant.
 		if (offset >= desc.dsc_length)
@@ -4948,15 +4971,15 @@ static dsc* substring(
 				I couldn't find an appropriate message for this failure among current registered
 				messages, so I will return empty.
 				Finally I decided to use arithmetic exception or numeric overflow. */
-		TextType text_obj = 0;
-		const UCHAR* p = desc.dsc_address;
+		TextType *text_obj = 0;
+		UCHAR *p = (UCHAR*) desc.dsc_address;
 		USHORT pcount = desc.dsc_length;
-		bool failure = false;
+		BOOLEAN failure = FALSE;
 		while (offset && pcount)
 		{
 			if (!INTL_getch(tdbb, &text_obj, INTL_TTYPE(&desc), &p, &pcount))
 			{
-				failure = true;
+				failure = TRUE;
 				break;
 			}
 			--offset;
@@ -4968,11 +4991,11 @@ static dsc* substring(
         }
 		else {
 			/* Keep our starting pos safe. */
-			desc.dsc_address = const_cast<UCHAR*>(p);
+			desc.dsc_address = p;
 			while (length && pcount) {
 				if (!INTL_getch(tdbb, &text_obj, INTL_TTYPE(&desc), &p, &pcount))
 				{
-					failure = true;
+					failure = TRUE;
 					break;
 				}
 				--length;
@@ -4984,11 +5007,11 @@ static dsc* substring(
 			else
 			{
 				/* I thought I would need more operations here, but... */
-				desc.dsc_length = p - desc.dsc_address;
+				desc.dsc_length = p - (UCHAR*) desc.dsc_address;
 			}
 		}
 		if (failure)
-			ERR_post(isc_arith_except, 0);
+			ERR_post(gds_arith_except, 0);
 
 		EVL_make_value(tdbb, &desc, impure);
 	}
@@ -4997,7 +5020,7 @@ static dsc* substring(
 }
 
 
-static dsc* upcase(thread_db* tdbb, const dsc* value, impure_value* impure)
+static DSC *upcase(TDBB tdbb, DSC * value, VLU impure)
 {
 /**************************************
  *
@@ -5009,27 +5032,24 @@ static dsc* upcase(thread_db* tdbb, const dsc* value, impure_value* impure)
  *      Upcase a string.
  *
  **************************************/
-	SET_TDBB(tdbb);
-	
 	USHORT temp[16];
+	DSC desc;
+	UCHAR *p, *end;
 	USHORT ttype;
-	dsc desc;
+
+	SET_TDBB(tdbb);
 	desc.dsc_length =
 		MOV_get_string_ptr(value, &ttype, &desc.dsc_address,
-						   reinterpret_cast<vary*>(temp), sizeof(temp));
+						   reinterpret_cast < vary * >(temp), sizeof(temp));
 	desc.dsc_dtype = dtype_text;
 	INTL_ASSIGN_TTYPE(&desc, ttype);
 	EVL_make_value(tdbb, &desc, impure);
 
-	if ((desc.dsc_ttype() == ttype_ascii) ||
-		(desc.dsc_ttype() == ttype_none) || (desc.dsc_ttype() == ttype_metadata))
-	{
-		UCHAR* p = impure->vlu_desc.dsc_address;
-		for (const UCHAR* const end = p + impure->vlu_desc.dsc_length;
-			p < end; p++)
-		{
+	if ((desc.dsc_ttype == ttype_ascii) ||
+		(desc.dsc_ttype == ttype_none) || (desc.dsc_ttype == ttype_metadata)) {
+		for (p = (UCHAR *) impure->vlu_desc.dsc_address, end =
+			 p + impure->vlu_desc.dsc_length; p < end; p++)
 			*p = UPPER7(*p);
-		}
 	}
 	else
 		INTL_str_to_upper(tdbb, &impure->vlu_desc);
@@ -5038,7 +5058,7 @@ static dsc* upcase(thread_db* tdbb, const dsc* value, impure_value* impure)
 }
 
 
-static dsc* internal_info(thread_db* tdbb, const dsc* value, impure_value* impure)
+static DSC *internal_info(TDBB tdbb, DSC * value, VLU impure)
 {
 /**************************************
  *
@@ -5066,11 +5086,13 @@ static dsc* internal_info(thread_db* tdbb, const dsc* value, impure_value* impur
 		break;
 	case internal_gdscode:
 		impure->vlu_misc.vlu_long =
-			tdbb->tdbb_request->req_last_xcp.as_gdscode();
+			(tdbb->tdbb_request->req_last_xcp.xcp_type == xcp_gds_code) ?
+				tdbb->tdbb_request->req_last_xcp.xcp_code : 0;
 		break;
 	case internal_sqlcode:
 		impure->vlu_misc.vlu_long =
-			tdbb->tdbb_request->req_last_xcp.as_sqlcode();
+			(tdbb->tdbb_request->req_last_xcp.xcp_type == xcp_sql_code) ?
+				tdbb->tdbb_request->req_last_xcp.xcp_code : 0;
 		break;
 	case internal_rows_affected:
 		impure->vlu_misc.vlu_long = tdbb->tdbb_request->req_records_affected;
@@ -5085,4 +5107,3 @@ static dsc* internal_info(thread_db* tdbb, const dsc* value, impure_value* impur
 
 	return &impure->vlu_desc;
 }
-

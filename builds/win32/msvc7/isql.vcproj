@@ -26,8 +26,7 @@
 				PreprocessorDefinitions="_DEBUG,_CONSOLE,SUPERCLIENT,DEV_BUILD,WIN32,_X86_"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
+				RuntimeLibrary="5"
 				PrecompiledHeaderFile="..\..\..\temp\debug\isql/isql.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\isql/"
 				ObjectFile="..\..\..\temp\debug\isql/"
@@ -94,8 +93,7 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_"
 				ExceptionHandling="FALSE"
-				RuntimeLibrary="2"
-				RuntimeTypeInfo="TRUE"
+				RuntimeLibrary="4"
 				PrecompiledHeaderFile="..\..\..\temp\release\isql/isql.pch"
 				AssemblerListingLocation="..\..\..\temp\release\isql/"
 				ObjectFile="..\..\..\temp\release\isql/"
@@ -115,6 +113,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\..\..\temp\release\isql/isql.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"

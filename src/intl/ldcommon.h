@@ -21,37 +21,36 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef INTL_LDCOMMON_H
-#define INTL_LDCOMMON_H
+#ifndef _INTL_LDCOMMON_H_
+#define _INTL_LDCOMMON_H_
 
 /* #include "../jrd/gdsassert.h" */
-/* Put the assert in here */
+// Put the assert in here
 
 #include "../jrd/intlobj.h"
-#include "../jrd/constants.h"
+#include "../intl/langdrv.h"
 #include "../intl/charsets.h"
 #include "../intl/country_codes.h"
 #include "../intl/ld.h"
 
 #undef DEBUG
 
-/* texttype version */
-#define IB_LANGDRV_VERSION	1
+#define STATIC	static
 
 typedef USHORT UNICODE;
 
 /* Redirect the assertion code defined by gdsassert.h to a local routine */
-#ifdef fb_assert
-#undef fb_assert
+#ifdef assert
+#undef assert
 #endif
 #ifndef DEV_BUILD
 #define ERR_assert				/* nothing */
-#define fb_assert(ex)				/* nothing */
+#define assert(ex)				/* nothing */
 #else
 #include <stdlib.h> /* prototype for abort() */
 #define ERR_assert	LD_assert
-#define fb_assert(ex)	{if (!(ex)) {LD_assert (__FILE__, __LINE__); abort();}}
-
+#define assert(ex)	{if (!(ex)){(void) LD_assert (__FILE__, __LINE__); abort();}}
+extern void LD_assert(const SCHAR*, int);
 #endif
 
 #ifndef MIN
@@ -63,25 +62,24 @@ typedef USHORT UNICODE;
 
 
 
-#define	TEXTTYPE_ENTRY(name)	USHORT name (TEXTTYPE cache, USHORT parm1, USHORT dummy)
+#define	TEXTTYPE_ENTRY(name)	USHORT name (TEXTTYPE cache, SSHORT parm1, SSHORT dummy)
 
 #define	TEXTTYPE_RETURN	return (0)
 
 
 
 
-#define CONVERT_ENTRY(cs1, cs2, name)	USHORT	name (csconvert* csptr, SSHORT dest_cs, SSHORT source_cs)
+#define CONVERT_ENTRY(cs1, cs2, name)	USHORT	name (CSCONVERT csptr, SSHORT dest_cs, SSHORT source_cs)
 
 #define	CONVERT_RETURN	return (0)
 
 
 
 
-#define CHARSET_ENTRY(name)	USHORT	name (charset* csptr, SSHORT cs_id, SSHORT dummy)
+#define CHARSET_ENTRY(name)	USHORT	name (CHARSET csptr, SSHORT cs_id, SSHORT dummy)
 
 #define CHARSET_RETURN	return (0)
 
-void CV_convert_init(csconvert*, SSHORT, SSHORT, pfn_INTL_convert, const void*, const void*);
+extern void CV_convert_init(CSCONVERT, SSHORT, SSHORT, FPTR_SHORT, const void*, const void*);
 
-#endif /* INTL_LDCOMMON_H */
-
+#endif /* _INTL_LDCOMMON_H_ */

@@ -41,8 +41,8 @@ RSC=rc.exe
 # PROP Intermediate_Dir "..\..\..\temp\debug\gpre_static"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /Gm /GR /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GR /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /I "../../../src/jrd" /D "GPRE_FORTRAN" /D "GPRE_PASCAL" /D "GPRE_COBOL" /D "GPRE_ADA" /D "_DEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /D "DEV_BUILD" /FR /FD /GZ /c
+# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /I "../../../src/jrd" /D "GPRE_FORTRAN" /D "GPRE_PASCAL" /D "GPRE_COBOL" /D "GPRE_ADA" /D "_DEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /D "DEV_BUILD" /FR /FD /GZ /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -66,9 +66,9 @@ LINK32=link.exe
 # PROP Intermediate_Dir "..\..\..\temp\release\gpre_static"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MDd /W3 /Gm /GR /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /I "../../../src/jrd" /D "GPRE_FORTRAN" /D "GPRE_PASCAL" /D "GPRE_COBOL" /D "GPRE_ADA" /D "_DEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
+# ADD BASE CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /I "../../../src/jrd" /D "GPRE_FORTRAN" /D "GPRE_PASCAL" /D "GPRE_COBOL" /D "GPRE_ADA" /D "_DEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
 # SUBTRACT BASE CPP /YX
-# ADD CPP /nologo /MD /W3 /GR /GX /Ot /Og /Oi /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /I "../../../src/jrd" /D "GPRE_FORTRAN" /D "GPRE_PASCAL" /D "GPRE_COBOL" /D "GPRE_ADA" /D "NDEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /EHc- /c
+# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /I "../../../src/jrd" /D "GPRE_FORTRAN" /D "GPRE_PASCAL" /D "GPRE_COBOL" /D "GPRE_ADA" /D "NDEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /EHc- /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -130,11 +130,15 @@ SOURCE=..\..\..\src\gpre\cob.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\gpre\ftn.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\gpre\exp.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\gpre\ftn.cpp
+SOURCE=..\..\..\src\common\fb_exception.cpp
 # End Source File
 # Begin Source File
 
@@ -159,6 +163,10 @@ SOURCE=..\..\..\src\gpre\movg.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\gpre\msc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\gpre\noform.cpp
 # End Source File
 # Begin Source File
 
@@ -194,15 +202,11 @@ SOURCE=..\..\..\src\jrd\dsc.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\dsc.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\dsc_pub.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\isc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\dsc.h
 # End Source File
 # End Group
 # Begin Group "Header files"
@@ -231,6 +235,18 @@ SOURCE=..\..\..\src\gpre\dyntable.h
 # Begin Source File
 
 SOURCE=..\..\..\src\gpre\exp_proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\gpre\form.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\gpre\form__proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\gpre\form_proto.h
 # End Source File
 # Begin Source File
 

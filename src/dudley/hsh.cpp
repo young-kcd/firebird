@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Data Definition Language
- *	MODULE:		hsh.cpp
+ *	MODULE:		hsh.c
  *	DESCRIPTION:	Hash table and symbol manager
  *
  * The contents of this file are subject to the Interbase Public
@@ -29,10 +29,14 @@
 #include "../dudley/hsh_proto.h"
 
 
-const int HASH_SIZE = 101;
+extern "C" {
 
-static USHORT hash(const SCHAR*, USHORT);
-static bool scompare(const SCHAR*, USHORT, const SCHAR*, const USHORT);
+
+#define HASH_SIZE	101
+
+static USHORT hash(SCHAR *, USHORT);
+static BOOLEAN scompare(SCHAR *, USHORT, SCHAR *,
+						USHORT);
 
 static SYM hash_table[HASH_SIZE];
 static SYM key_symbols;
@@ -372,8 +376,8 @@ void HSH_remove( SYM symbol)
 				return;
 			}
 		else
-			for (ptr = &(*next)->sym_homonym; *ptr; ptr = &(*ptr)->sym_homonym)
-				if (symbol == *ptr) {
+			for (ptr = &(*next)->sym_homonym; *ptr;
+				 ptr = &(*ptr)->sym_homonym) if (symbol == *ptr) {
 					*ptr = symbol->sym_homonym;
 					return;
 				}
@@ -382,7 +386,7 @@ void HSH_remove( SYM symbol)
 }
 
 
-SYM HSH_typed_lookup(TEXT* string,
+SYM HSH_typed_lookup(TEXT * string,
 					 USHORT length, enum sym_t type)
 {
 /**************************************
@@ -418,7 +422,7 @@ SYM HSH_typed_lookup(TEXT* string,
 }
 
 
-static USHORT hash(const SCHAR* string, USHORT length)
+static USHORT hash( SCHAR * string, USHORT length)
 {
 /**************************************
  *
@@ -430,10 +434,13 @@ static USHORT hash(const SCHAR* string, USHORT length)
  *	Returns the hash function of a string.
  *
  **************************************/
-	USHORT value = 0;
+	USHORT value;
+	SCHAR c;
+
+	value = 0;
 
 	while (length--) {
-		const SCHAR c = *string++;
+		c = *string++;
 		value = (value << 1) + UPPER(c);
 	}
 
@@ -441,10 +448,10 @@ static USHORT hash(const SCHAR* string, USHORT length)
 }
 
 
-static bool scompare(const SCHAR* string1,
-					 USHORT length1,
-					 const SCHAR* string2,
-					 const USHORT length2)
+static BOOLEAN scompare(
+						SCHAR * string1,
+						USHORT length1,
+						SCHAR * string2, USHORT length2)
 {
 /**************************************
  *
@@ -459,12 +466,14 @@ static bool scompare(const SCHAR* string1,
 	SCHAR c1, c2;
 
 	if (length1 != length2)
-		return false;
+		return FALSE;
 
 	while (length1--)
 		if ((c1 = *string1++) != (c2 = *string2++) && UPPER(c1) != UPPER(c2))
-			return false;
+			return FALSE;
 
-	return true;
+	return TRUE;
 }
 
+
+} // extern "C"

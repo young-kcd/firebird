@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Interprocess Interface Allocator
  *	MODULE:		alli_proto.h
- *	DESCRIPTION:	Prototype Header file for alli.cpp
+ *	DESCRIPTION:	Prototype Header file for alli.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,13 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef ALLI_PROTO_H
-#define ALLI_PROTO_H
+#ifndef _ALLI_PROTO_H_
+#define _ALLI_PROTO_H_
 
 void*	ALLI_alloc(ULONG);
 BLK		ALLI_block(UCHAR, int);
 void	ALLI_free(void*);
 void	ALLI_release(BLK);
 
-#endif /*  ALLI_PROTO_H  */
-
+#endif /*  _ALLI_PROTO_H_  */

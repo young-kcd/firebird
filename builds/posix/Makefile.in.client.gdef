@@ -27,10 +27,11 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.gdef,v 1.9 2004-04-30 23:02:07 brodsom Exp $
+#  $Id: Makefile.in.client.gdef,v 1.5.2.1 2003-11-10 02:09:33 bellardo Exp $
 #
 ROOT=..
-ObjModuleType=std
+ObjModuleName=client.gdef
+CFLAGS := -DSUPERCLIENT
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -43,15 +44,11 @@ unexport ISC_USER
 unexport ISC_PASSWORD
 
 
-GDEF_Other_Sources = common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp \
-gpre/pretty.cpp jrd/isc_file.cpp common/config/config.cpp common/config/dir_list.cpp \
-common/config/config_file.cpp $(OS_SPECIFIC_Sources)
-
 GDEF_Files=	exe.epp extract.epp \
 			ddl.cpp expand.cpp expr.cpp generate.cpp \
 			hsh.cpp lex.cpp parse.cpp trn.cpp
 
-GDEF_Sources = $(addprefix dudley/, $(GDEF_Files)) $(GDEF_Other_Sources)
+GDEF_Sources = $(addprefix dudley/, $(GDEF_Files))
 GDEF_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GDEF_Sources))))
 
 AllObjects = $(GDEF_Objects)
@@ -64,8 +61,8 @@ all:	gdef
 
 gdef:   $(BIN)/gdef
 
-$(BIN)/gdef: $(GDEF_Objects) $(LIBFBCLIENT_SO)
-	$(LD) $(LINK_OPTS) $(GDEF_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+$(BIN)/gdef: $(GDEF_Objects) $(LIBFBCLIENT_SO)  
+	$(LD) $(LINK_OPTS) $(GDEF_Objects) -o $@ $(FBCLIENT_LINK) $(LINK_LIBS)
 
 
 

@@ -27,8 +27,6 @@
 #ifndef JRD_BLB_H
 #define JRD_BLB_H
 
-namespace Jrd {
-
 /* Blob id.  A blob has two states -- temporary and permanent.  In each
    case, the blob id is 8 bytes (2 longwords) long.  In the case of a
    temporary blob, the first word is NULL and the second word points to
@@ -36,33 +34,30 @@ namespace Jrd {
    word contains the relation id of the blob and the second the record
    number of the first segment-clump.  The two types of blobs can be
    reliably distinguished by a zero or non-zero relation id. */
-
-class BlobControl;
-class jrd_req;
-class jrd_tra;
-
-struct bid {
+   
+typedef struct bid {
 	ULONG bid_relation_id;		/* Relation id (or null) */
-	union union_bid_stuff {
+	union {
 		ULONG bid_temp_id;	/* Temporary ID of blob or array. Used for newly created objects (bid_relation_id==0) */
 		ULONG bid_number;	/* Record number */
 	} bid_stuff;
 	bool isEmpty() const { return bid_relation_id == 0 && bid_stuff.bid_number == 0; }
-};
+} *BID;
 
 /* Your basic blob block. */
 
 class blb : public pool_alloc_rpt<UCHAR, type_blb>
 {
     public:
-	Attachment*	blb_attachment;	/* database attachment */
-	jrd_rel*	blb_relation;	/* Relation, if known */
-	jrd_tra*	blb_transaction;	/* Parent transaction block */
-	blb*		blb_next;		/* Next blob in transaction */
-	UCHAR*		blb_segment;	/* Next segment to be addressed */
-	BlobControl*	blb_filter;	/* Blob filter control block, if any */
-	bid			blb_blob_id;	/* Id of materialized blob */
-	vcl*		blb_pages;		/* Vector of pages */
+	att *blb_attachment;	/* database attachment */
+	jrd_rel *blb_relation;	/* Relation, if known */
+	struct jrd_tra *blb_transaction;	/* Parent transaction block */
+	blb *blb_next;		/* Next blob in transaction */
+	UCHAR *blb_segment;			/* Next segment to be addressed */
+	struct ctl *blb_filter;		/* Blob filter control block, if any */
+	struct bid blb_blob_id;		/* Id of materialized blob */
+	struct jrd_req *blb_request;	/* request that assigned temporary blob */
+	vcl *blb_pages;		/* Vector of pages */
 	USHORT blb_pointers;		/* Max pointer on a page */
 	USHORT blb_level;			/* Storage type */
 	USHORT blb_max_segment;		/* Longest segment */
@@ -84,15 +79,16 @@ class blb : public pool_alloc_rpt<UCHAR, type_blb>
 	/* blb_data must be longword aligned */
 	UCHAR blb_data[1];			/* A page's worth of blob */
 };
+typedef blb *BLB;
 
-const int BLB_temporary	= 1;			/* Newly created blob */
-const int BLB_eof		= 2;			/* This blob is exhausted */
-const int BLB_stream	= 4;			/* Stream style blob */
-const int BLB_closed	= 8;			/* Temporary blob has been closed */
-const int BLB_damaged	= 16;			/* Blob is busted */
-const int BLB_seek		= 32;			/* Seek is pending */
-const int BLB_user_def	= 64;			/* Blob is user created */
-const int BLB_large_scan	= 128;		/* Blob is larger than page buffer cache */
+#define BLB_temporary	1		/* Newly created blob */
+#define BLB_eof		2			/* This blob is exhausted */
+#define BLB_stream	4			/* Stream style blob */
+#define BLB_closed	8			/* Temporary blob has been closed */
+#define BLB_damaged	16			/* Blob is busted */
+#define BLB_seek	32			/* Seek is pending */
+#define BLB_user_def	64		/* Blob is user created */
+#define BLB_large_scan	128		/* Blob is larger than page buffer cache */
 
 /* Blob levels are:
 
@@ -101,17 +97,14 @@ const int BLB_large_scan	= 128;		/* Blob is larger than page buffer cache */
 	2	large blob -- blob "record" is pointer to pages of pointers
 */
 
-// mapping blob ids for REPLAY
-// Useful only with REPLAY_OSRI_API_CALLS_SUBSYSTEM defined.
-class blb_map : public pool_alloc<type_map>
+/* mapping blob ids for REPLAY */
+class map : public pool_alloc<type_map>
 {
     public:
-	blb_map*	map_next;
-	blb*		map_old_blob;
-	blb*		map_new_blob;
+	map *map_next;
+	blb *map_old_blob;
+	blb *map_new_blob;
 };
+typedef map *MAP;
 
-} //namespace Jrd
-
-#endif // JRD_BLB_H
-
+#endif /* _JRD_BLB_H_ */

@@ -63,7 +63,6 @@ EXPORTS
 	gds__get_segment	@39
 	gds__get_slice	@40
 	gds__interprete	@41
-	gds_interprete_cpp
 	gds__log	@42
 	gds__log_status	@142
 	gds__map_blobs	@240
@@ -119,12 +118,6 @@ EXPORTS
 	gds__version	@84
 	gds__vtof	@85
 	gds__vtov	@86
-	gds__default_printer @87
-
-    gds__alloc_debug
-
-    gds_alloc_flag_unfreed
-    gds_alloc_report
 
 	perf_format	@100
 	perf_get_info	@101
@@ -237,7 +230,6 @@ EXPORTS
 	; Error-handling functions
 
 	isc_interprete	@141
-	isc_interprete_cpp
 	isc_print_sqlerror	@150
 	isc_print_status	@151
 	isc_sqlcode	@165
@@ -341,5 +333,5 @@ EXPORTS
 
 	CVT_move	@267
 
-	KEYWORD_stringIsAToken	@271
-	KEYWORD_getTokens	@272
+	KEYWORD_stringIsAToken
+	KEYWORD_getTokens

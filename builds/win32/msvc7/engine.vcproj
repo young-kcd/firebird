@@ -23,11 +23,10 @@
 				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_LIB,_X86_,SUPERSERVER,DEV_BUILD"
+				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_LIB,_X86_,SUPERSERVER,SERVER_SHUTDOWN,DEV_BUILD"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\engine_ss/engine.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\engine_ss/"
 				ObjectFile="..\..\..\temp\debug\engine_ss/"
@@ -82,10 +81,9 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_LIB,_X86_,SUPERSERVER"
+				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_LIB,_X86_,SERVER_SHUTDOWN,SUPERSERVER"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile="..\..\..\temp\release\engine_ss/engine.pch"
 				AssemblerListingLocation="..\..\..\temp\release\engine_ss/"
@@ -130,6 +128,9 @@
 			Name="JRD files"
 			Filter="">
 			<File
+				RelativePath="..\..\..\src\jrd\ail.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\all.cpp">
 			</File>
 			<File
@@ -140,9 +141,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\blob_filter.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\btn.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\btr.cpp">
@@ -168,6 +166,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\cvt2.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\db_alias.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\gen\jrd\dfw.cpp">
@@ -215,7 +216,7 @@
 				RelativePath="..\..\..\src\jrd\exe.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\execute_statement.cpp">
+				RelativePath="..\..\..\src\jrd\ExecuteStatement.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\ext.cpp">
@@ -237,9 +238,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\gen\jrd\grant.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\os\win32\guid.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\iberr.cpp">
@@ -276,7 +274,7 @@
 				RelativePath="..\..\..\src\jrd\isc_file.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\win32\isc_ipc.cpp">
+				RelativePath="..\..\..\src\jrd\isc_ipc.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc_sync.cpp">
@@ -285,13 +283,22 @@
 				RelativePath="..\..\..\src\jrd\jrd.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\jrn.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\lck.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\llio.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\log.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\gen\jrd\met.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\misc.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\mov.cpp">
@@ -306,10 +313,10 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\nbak.cpp">
+				RelativePath="..\..\..\src\jrd\nodebug.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\nodebug.cpp">
+				RelativePath="..\..\..\src\jrd\old.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\opt.cpp">
@@ -334,6 +341,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\pwd.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\rec.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\rlck.cpp">
@@ -415,7 +425,7 @@
 				RelativePath="..\..\..\src\jrd\why.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\win32\winnt.cpp">
+				RelativePath="..\..\..\src\jrd\winnt.cpp">
 			</File>
 		</Filter>
 		<Filter
@@ -470,9 +480,6 @@
 				RelativePath="..\..\..\src\jrd\bookmark.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\btn.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\btr.h">
 			</File>
 			<File
@@ -492,6 +499,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\cmp_proto.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\codes.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\codetext.h">
@@ -542,9 +552,6 @@
 				RelativePath="..\..\..\src\jrd\dsc.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\dsc_pub.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\dsc_proto.h">
 			</File>
 			<File
@@ -593,7 +600,7 @@
 				RelativePath="..\..\..\src\jrd\exe_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\execute_statement.h">
+				RelativePath="..\..\..\src\jrd\ExecuteStatement.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\ext.h">
@@ -629,16 +636,25 @@
 				RelativePath="..\..\..\src\jrd\fun_proto.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\gds.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\gds.hxx">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\gds_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\gdsassert.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\gdsold.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\grant_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\guid.h">
+				RelativePath="..\..\..\src\jrd\ib_stdio.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\ibase.h">
@@ -665,7 +681,7 @@
 				RelativePath="..\..\..\src\jrd\idx_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\inf_pub.h">
+				RelativePath="..\..\..\src\jrd\inf.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\inf_proto.h">
@@ -701,7 +717,7 @@
 				RelativePath="..\..\..\src\jrd\isc_f_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\isc_i_proto.h">
+				RelativePath="..\..\..\src\jrd\isc_i_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc_proto.h">
@@ -746,6 +762,12 @@
 				RelativePath="..\..\..\src\jrd\license.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\llio.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\llio_proto.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\lls.h">
 			</File>
 			<File
@@ -779,7 +801,13 @@
 				RelativePath="..\..\..\src\jrd\met_proto.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\misc.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\misc_func_ids.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\misc_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\mov_proto.h">
@@ -804,9 +832,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\nav_proto.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\nbak.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\nlm_thd.h">
@@ -848,10 +873,10 @@
 				RelativePath="..\..\..\src\jrd\perf_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\pio.h">
+				RelativePath="..\..\..\src\jrd\pio.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\pio_proto.h">
+				RelativePath="..\..\..\src\jrd\pio_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\pragma.h">

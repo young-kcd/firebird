@@ -1,0 +1,97 @@
+/*
+ * The contents of this file are subject to the Interbase Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy
+ * of the License at http://www.Inprise.com/IPL.html
+ *
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+ * or implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * The Original Code was created by Inprise Corporation
+ * and its predecessors. Portions created by Inprise Corporation are
+ * Copyright (C) Inprise Corporation.
+ *
+ * All Rights Reserved.
+ * Contributor(s): ______________________________________.
+ */
+
+/****************************************************************************
+
+
+property.rh
+
+produced by Borland Resource Workshop
+
+
+*****************************************************************************/
+
+#define DIALOG_5        5
+#define IDS_    47
+#define IDS_CFGATTACH_FAILED    47
+#define IDS_CFGREAD_FAILED      48
+#define IDS_CFGWRITE_FAILED     62
+#define IDS_CFGNOT_SYSDBA       63
+#define IDS_CFGBAD_PASSWD       64
+#define IDS_STARTUP_NODLL       70
+#define IDS_STARTUP_LAUNCHER    71
+#define IDS_CFGSETIBERR         72
+#define IDS_CFGSETOSERR         73
+#define IDS_MODIFYBTN           74
+#define IDS_RESETBTN            75
+#define IDS_USERS		78
+#define IDS_UNLIMITED_USERS	79
+
+#define ADVANCED_DLG    5
+#define IDC_DBAPASSWORD 101
+#ifndef DS_3DLOOK
+#define DS_3DLOOK       0x0004L
+#endif
+
+#define GENERAL_DLG     1
+#define CONFIG_DLG      2
+#define PASSWORD_DLG    3
+#define IDC_GROUPBOX1   110
+#define IDC_MINSIZE     111
+#define IDC_MAXSIZE     112
+#define IDC_MODRES      113
+#define IDC_PRIORITYNORM        114
+#define IDC_PRIORITYHIGH        115
+#define IDC_GROUPBOX2   116
+#define IDC_MAPSIZE     117
+#define IDC_DBPAGES     118
+#define IDC_MAPTEXT             119
+#define IDC_CACHETEXT           120
+#define IDC_MINSIZETEXT         121
+#define IDC_MAXSIZETEXT 122
+#define IDC_COMBOBOX1   123
+#define IDC_PRODNAME    124  
+#define IDC_CAUTION_ICON 125
+#define IDC_IBSVR_ICON  126
+#define IDC_DEFAULT_TEXT 127
+#define IDC_LOCATION_TEXT 128
+#define IDC_CAPABILITIES_TEXT 129
+#define IDC_VERSION_TEXT 130
+#define IDC_NUM_ATTACH_TEXT 131
+#define IDC_NUM_DB_TEXT 132
+#define IDC_LICENSED_TEXT	133
+
+#define IDC_PATH        101
+#define IDC_STAT1       102
+#define IDC_STAT2       103
+#define IDC_STAT3       104
+#define IDC_REFRESH     105
+#define IDC_PROTOCOLS   106
+#define IDC_LICENSE	107
+
+#define IDI_IBSVR       1007
+#define IDI_CAUTION     1008
+
+#define IDS_TCP         11
+#define IDS_NP          12
+#define IDS_IPC         13
+
+
+#define IDS_SERVERPROD_NAME     76
+#define IDS_LOCALPROD_NAME      77

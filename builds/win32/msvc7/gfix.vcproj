@@ -27,7 +27,6 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gfix/gfix.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gfix/"
 				ObjectFile="..\..\..\temp\debug\gfix/"
@@ -94,7 +93,6 @@
 				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE,SUPERCLIENT"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\gfix/gfix.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gfix/"
 				ObjectFile="..\..\..\temp\release\gfix/"
@@ -113,6 +111,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\..\..\temp\release\gfix/gfix.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"

@@ -14,24 +14,23 @@
  */
 /*  Language Driver/API version 1.1 */
 
-const int NUM_EXPAND_CHARS		= 4;
-const int NUM_COMPRESS_CHARS	= 0;
-const int LOWERCASE_LEN			= 256;
-const int UPPERCASE_LEN			= 256;
-const int NOCASESORT_LEN		= 256;
-const int LDRV_TIEBREAK			= LOCAL_EXPAND;
+#define NUM_EXPAND_CHARS            4
+#define NUM_COMPRESS_CHARS          0
+#define LOWERCASE_LEN               256
+#define UPPERCASE_LEN               256
+#define NOCASESORT_LEN              256
+#define LDRV_TIEBREAK               LOCAL_EXPAND
 
-const int MAX_NCO_PRIMARY		= 152;
-const int MAX_NCO_SECONDARY		= 11;
-const int MAX_NCO_TERTIARY		= 0;
-const int MAX_NCO_IGNORE		= 0;
-const int NULL_SECONDARY		= 0;
-const int NULL_TERTIARY			= 0;
-const int FIRST_IGNORE			= 1;
-const int FIRST_TERTIARY		= 1;
-const int FIRST_SECONDARY		= (FIRST_TERTIARY+MAX_NCO_TERTIARY+1);
-const int FIRST_PRIMARY			= (FIRST_SECONDARY+MAX_NCO_SECONDARY+1);
-
+#define MAX_NCO_PRIMARY  	152
+#define MAX_NCO_SECONDARY	 11
+#define MAX_NCO_TERTIARY 	  0
+#define MAX_NCO_IGNORE   	  0
+#define NULL_SECONDARY   	0
+#define NULL_TERTIARY    	0
+#define FIRST_IGNORE     	1
+#define FIRST_TERTIARY   	1
+#define FIRST_SECONDARY  	(FIRST_TERTIARY+MAX_NCO_TERTIARY+1)
+#define FIRST_PRIMARY    	(FIRST_SECONDARY+MAX_NCO_SECONDARY+1)
 static const BYTE ToUpperConversionTbl [ UPPERCASE_LEN ] = {
 
 	0, /* 0 -> 0 */
@@ -551,7 +550,7 @@ static const BYTE ToLowerConversionTbl [ LOWERCASE_LEN ] = {
 	255  /* 255 -> 255	( ÿ -> ÿ ) */
 };
 
-static const ExpandChar ExpansionTbl [ NUM_EXPAND_CHARS + 1 ] = {
+static const struct ExpandChar ExpansionTbl [ NUM_EXPAND_CHARS + 1 ] = {
 { 223, 115, 115 }, /* ß -> ss */
 { 146,  65,  69 }, /* ’ -> AE */
 { 145,  97, 101 }, /* ‘ -> ae */
@@ -559,12 +558,12 @@ static const ExpandChar ExpansionTbl [ NUM_EXPAND_CHARS + 1 ] = {
 { 0, 0, 0 } /* END OF TABLE */
 };
 
-static const CompressPair CompressTbl [ NUM_COMPRESS_CHARS + 1 ] = {
+static const struct CompressPair CompressTbl [ NUM_COMPRESS_CHARS + 1 ] = {
 { {0, 0}, {   0,   0,   0,   0,   0 }, {   0,   0,   0,   0,   0 } } /*END OF TABLE */
 };
 
 /*1250*/
-static const SortOrderTblEntry NoCaseOrderTbl [ NOCASESORT_LEN ] = {
+static const struct SortOrderTblEntry NoCaseOrderTbl [ NOCASESORT_LEN ] = {
 { FIRST_PRIMARY+  0, NULL_SECONDARY,      NULL_TERTIARY,      0, 0 }, /*   0   */
 { FIRST_PRIMARY+  1, NULL_SECONDARY,      NULL_TERTIARY,      0, 0 }, /*   1   */
 { FIRST_PRIMARY+  2, NULL_SECONDARY,      NULL_TERTIARY,      0, 0 }, /*   2   */

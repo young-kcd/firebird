@@ -21,19 +21,16 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_TPC_H
-#define JRD_TPC_H
+#ifndef _JRD_TPC_H_
+#define _JRD_TPC_H_
 
-namespace Jrd {
-
-class TxPageCache : public pool_alloc_rpt<SCHAR, type_tpc>
+class tpc : public pool_alloc_rpt<SCHAR, type_tpc>
 {
     public:
-	TxPageCache*	tpc_next;
-	SLONG			tpc_base;				/* id of first transaction in this block */
-	UCHAR			tpc_transactions[1];	/* two bits per transaction */
+	struct tpc *tpc_next;
+	SLONG tpc_base;				/* id of first transaction in this block */
+	UCHAR tpc_transactions[1];	/* two bits per transaction */
 };
+typedef tpc *TPC;
 
-} //namespace Jrd
-
-#endif /* JRD_TPC_H */
+#endif /* _JRD_TPC_H_ */

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase Access Method
- *	MODULE:		functions.cpp
+ *	MODULE:		functions.c
  *	DESCRIPTION:	External entrypoint definitions
  *
  * The contents of this file are subject to the Interbase Public
@@ -22,41 +22,49 @@
  */
 
 #include "firebird.h"
-#include "../jrd/common.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../jrd/jrd.h"  /* For MAXPATHLEN Bug #126614 */
 
-/* defined in common.h, which is included by stdio.h: typedef int (*FPTR_INT)(); */
+/* defined in common.h, which is included by ib_stdio.h: typedef int (*FPTR_INT)(); */
 
 
 extern "C" {
 
 
-struct FN {
-	const char* fn_module;
-	const char* fn_entrypoint;
+typedef struct {
+	char *fn_module;
+	char *fn_entrypoint;
 	FPTR_INT fn_function;
-};
+} FN;
 
 
-// FPTR_INT FUNCTIONS_entrypoint(char*, char*);
-static int test(long, char*);
+FPTR_INT FUNCTIONS_entrypoint(char *, char *);
+static int test(long, char *);
+
 static DSC* ni(DSC*, DSC*);
 
 
 #pragma FB_COMPILER_MESSAGE("Fix! function pointer cast!")
 
-static const FN isc_functions[] = {
-	{"test_module", "test_function", (FPTR_INT) test},
-	{"test_module", "ni", (FPTR_INT) ni},
-	{"test_module", "ns", (FPTR_INT) ni},
-	{"test_module", "nn", (FPTR_INT) ni},
+static FN isc_functions[] = {
+	{"test_module", "test_function", (int (*)()) test},
+	{"test_module", "ni", (int (*)()) ni},
+	{"test_module", "ns", (int (*)()) ni},
+	{"test_module", "nn", (int (*)()) ni},
 	{0, 0, 0}
 };
 
+#ifdef SHLIB_DEFS
+#define strcmp		(*_libfun_strcmp)
+#define sprintf		(*_libfun_sprintf)
 
-FPTR_INT FUNCTIONS_entrypoint(const char* module, const char* entrypoint)
+extern int strcmp();
+extern int sprintf();
+#endif
+
+
+FPTR_INT FUNCTIONS_entrypoint(char *module, char *entrypoint)
 {
 /**************************************
  *
@@ -70,28 +78,26 @@ FPTR_INT FUNCTIONS_entrypoint(const char* module, const char* entrypoint)
  *	insignificant trailing blanks.
  *
  **************************************/
-	char temp[MAXPATHLEN + 128];  /* Bug #126614 Fix */
+	FN *function;
+	char *p, temp[MAXPATHLEN + 128], *ep;  /* Bug #126614 Fix */
 
-	char* p = temp;
+	p = temp;
 
 	while (*module && *module != ' ')
 		*p++ = *module++;
 
 	*p++ = 0;
-	const char* const ep = p;
+	ep = p;
 
 	while (*entrypoint && *entrypoint != ' ')
 		*p++ = *entrypoint++;
 
 	*p = 0;
 
-	for (const FN* function = isc_functions; function->fn_module; ++function) {
+	for (function = isc_functions; function->fn_module; ++function)
 		if (!strcmp(temp, function->fn_module)
 			&& !strcmp(ep, function->fn_entrypoint))
-		{
 			return function->fn_function;
-		}
-	}
 
 	return 0;
 }
@@ -108,20 +114,14 @@ static int test(long n, char *result)
  * Functional description
  *	Sample extern function.  Defined in database by:
  *
- *	QLI:
  *	define function test module_name "test_module" entry_point "test_function"
  *	    long by value,
  *	    char [20] by reference return_argument;
- *	ISQL:
- *	declare external function test
- * 	int by value, -> There's no way to do that, DSQL doesn't support input params by value.
- *	char(20) returns parameter 2
- *	entry_point 'test_function' module_name 'test_module';
  *
  **************************************/
 
 	sprintf(result, "%ld is a number", n);
-	const char* const end = result + 20;
+	const char *end = result + 20;
 
 	while (*result)
 		result++;
@@ -133,7 +133,7 @@ static int test(long n, char *result)
 }
 
 
-static dsc* ni(dsc* v, dsc* v2)
+static DSC* ni(DSC* v, DSC* v2)
 {
 	if (v)
 		return v;
@@ -142,4 +142,3 @@ static dsc* ni(dsc* v, dsc* v2)
 }
 
 } // extern "C"
-

@@ -45,19 +45,15 @@
 
 // Sparse bit map
 
-namespace Jrd {
-
-class BitmapSegment;
-
-class SparseBitmap : public pool_alloc<type_sbm>
+class sbm : public pool_alloc<type_sbm>
 {
     public:
-	SparseBitmap(MemoryPool& p, int len)
+	sbm(MemoryPool& p, int len)
 	:	sbm_segments(len, p, type_sbm)
 	{
 	}
 
-	SparseBitmap*	sbm_next;
+	sbm*			sbm_next;
 	JrdMemoryPool*	sbm_pool;
 	UCHAR			sbm_state;			// State of bitmap
 	UCHAR			sbm_type;			// Root or bucket
@@ -65,37 +61,35 @@ class SparseBitmap : public pool_alloc<type_sbm>
 	USHORT			sbm_used;			// Slots used
 	USHORT			sbm_high_water;		// Maximum slot used
 	SLONG			sbm_number;			// Value when singular
-	typedef			Firebird::vector<BitmapSegment*>	vector_type;
+	typedef			Firebird::vector<bms*>	vector_type;
 	typedef			vector_type::iterator	iterator;
-	typedef         vector_type::const_iterator const_iterator;
 
-	vector_type		sbm_segments;
+	vector_type				sbm_segments;
 };
+typedef sbm* SBM;
 
 /* States */
 
-const UCHAR SBM_EMPTY		= 0;
-const UCHAR SBM_SINGULAR	= 1;
-const UCHAR SBM_PLURAL		= 2;
+#define	SBM_EMPTY	0
+#define SBM_SINGULAR	1
+#define SBM_PLURAL	2
 
 /* Types */
 
-const UCHAR SBM_BUCKET		= 0;
-const UCHAR SBM_ROOT		= 1;
+#define SBM_BUCKET	0
+#define SBM_ROOT	1
 
 /* Bit map segment */
 
-class BitmapSegment : public pool_alloc<type_bms>
+class bms : public pool_alloc<type_bms>
 {
 public:
-	BitmapSegment*	bms_next;
+	bms*			bms_next;
 	JrdMemoryPool*	bms_pool;
 	SSHORT			bms_min;			// Minimum bit set in segment
 	SSHORT			bms_max;			// Maximum bit set in segment
 	BUNCH			bms_bits[BUNCH_SEGMENT];
 };
-
-} //namespace Jrd
+typedef bms* BMS;
 
 #endif	// JRD_SBM_H
-

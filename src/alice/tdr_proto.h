@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Alice (All Else) Utility
  *	MODULE:		tdr_proto.h
- *	DESCRIPTION:	Prototype header file for tdr.cpp
+ *	DESCRIPTION:	Prototype header file for tdr.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,12 +24,19 @@
 #ifndef ALICE_TDR_PROTO_H
 #define ALICE_TDR_PROTO_H
 
-void	TDR_list_limbo(FB_API_HANDLE, const TEXT*, const ULONG);
-bool	TDR_reconnect_multiple(FB_API_HANDLE, SLONG, const TEXT*, ULONG);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void	TDR_list_limbo(FRBRD*, TEXT*, ULONG);
+BOOLEAN	TDR_reconnect_multiple(FRBRD*, SLONG, TEXT*, ULONG);
 void	TDR_shutdown_databases(TDR);
-USHORT	TDR_analyze(const tdr*);
-bool	TDR_attach_database(ISC_STATUS*, TDR, const TEXT*);
+USHORT	TDR_analyze(TDR);
+BOOLEAN	TDR_attach_database(ISC_STATUS*, TDR, TEXT*);
 void	TDR_get_states(TDR);
 
-#endif // ALICE_TDR_PROTO_H
+#ifdef __cplusplus
+};
+#endif
 
+#endif /* ALICE_TDR_PROTO_H */

@@ -1,6 +1,6 @@
 /*
  *      PROGRAM:        JRD Access Method
- *      MODULE:         isc.cpp
+ *      MODULE:         isc.c
  *      DESCRIPTION:    General purpose but non-user routines.
  *
  * The contents of this file are subject to the Interbase Public
@@ -36,24 +36,26 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.51 2004-06-05 09:37:01 robocop Exp $
+$Id: isc.cpp,v 1.36 2003-07-04 15:17:47 dimitr Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
 #endif
 
 #include "firebird.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
 #include "../jrd/common.h"
 
-#include "gen/iberror.h"
+#include "gen/codes.h"
 #include "../jrd/isc.h"
+#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
 #include "../jrd/scl.h"
+#include "../jrd/flu_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/jrd_proto.h"
@@ -63,15 +65,14 @@ $Id: isc.cpp,v 1.51 2004-06-05 09:37:01 robocop Exp $
 #include "../jrd/fil.h"
 #include "../jrd/dls_proto.h"
 
-// I can't find where these are used.
-//static BOOLEAN dls_init = FALSE;
-//#if defined(SUPERSERVER) || !defined(SUPERCLIENT)
-//static BOOLEAN dls_flag = FALSE;
-//#endif
-//static BOOLEAN fdls_init = FALSE;
-//#ifdef SUPERSERVER
-//static BOOLEAN fdls_flag = FALSE;
-//#endif
+static BOOLEAN dls_init = FALSE;
+#if defined(SUPERSERVER) || !defined(SUPERCLIENT)
+static BOOLEAN dls_flag = FALSE;
+#endif
+static BOOLEAN fdls_init = FALSE;
+#ifdef SUPERSERVER
+static BOOLEAN fdls_flag = FALSE;
+#endif
 
 /* End of temporary file management specific stuff */
 
@@ -94,7 +95,7 @@ static SECURITY_ATTRIBUTES security_attr;
 
 //static TEXT interbase_directory[MAXPATHLEN];
 
-static bool check_user_privilege();
+static BOOLEAN check_user_privilege();
 
 #endif // WIN_NT
 
@@ -120,7 +121,7 @@ static USHORT ast_count;
 #define WAKE_LOCK               "gds__process_%d"
 
 static POKE pokes;
-static lock_status wake_lock;
+static LKSB wake_lock;
 #endif /* of ifdef VMS */
 
 #ifdef HAVE_SIGNAL_H
@@ -155,8 +156,38 @@ static void poke_ast(POKE);
 static int wait_test(SSHORT *);
 #endif
 
+#ifndef MAXHOSTLEN
+#define MAXHOSTLEN      64
+#endif
+
+#ifndef FOPEN_READ_TYPE
+#define FOPEN_READ_TYPE "r"
+#define FOPEN_WRITE_TYPE "w"
+#endif
+
+
+#ifdef SHLIB_DEFS
+#define strchr          (*_libgds_strchr)
+#define geteuid         (*_libgds_geteuid)
+#define getpwuid        (*_libgds_getpwuid)
+#define _ctype          (*_libgds__ctype)
+#define readlink        (*_libgds_readlink)
+#define gethostname     (*_libgds_gethostname)
+#define endpwent        (*_libgds_endpwent)
+#define getegid         (*_libgds_getegid)
+
+extern SCHAR *strchr();
+extern uid_t geteuid();
+extern struct passwd *getpwuid();
+extern SCHAR _ctype[];
+extern int readlink();
+extern void gethostname();
+extern void endpwent();
+extern gid_t getegid();
+#endif
+
 #ifndef REQUESTER
-void ISC_ast_enter(void)
+void DLL_EXPORT ISC_ast_enter(void)
 {
 /**************************************
  *
@@ -175,7 +206,7 @@ void ISC_ast_enter(void)
 
 
 #ifndef REQUESTER
-void ISC_ast_exit(void)
+void DLL_EXPORT ISC_ast_exit(void)
 {
 /**************************************
  *
@@ -193,9 +224,9 @@ void ISC_ast_exit(void)
 #endif
 
 
-bool ISC_check_process_existence(SLONG	pid,
-								SLONG	xl_pid,
-								bool	super_user)
+int DLL_EXPORT ISC_check_process_existence(SLONG	pid,
+										   SLONG	xl_pid,
+										   USHORT	super_user)
 {
 /**************************************
  *
@@ -210,32 +241,44 @@ bool ISC_check_process_existence(SLONG	pid,
  **************************************/
 
 #if defined(UNIX)
+#define CHECK_EXIST
 	return (kill((int) pid, 0) == -1 &&
 			(errno == ESRCH
-			 || (super_user && errno == EPERM)) ? false : true);
-#elif defined(VMS)
-	ULONG item = JPI$_PID;
+			 || (super_user && errno == EPERM)) ? FALSE : TRUE);
+#endif
+
+#ifdef VMS
+#define CHECK_EXIST
+	ULONG item;
+
+	item = JPI$_PID;
 	return (lib$getjpi(&item, &pid, NULL, NULL, NULL, NULL) == SS$_NONEXPR) ?
-		false : true;
-#elif defined(WIN_NT)
+		FALSE : TRUE;
+#endif
+
+#ifdef WIN_NT
 	HANDLE handle = OpenProcess(PROCESS_DUP_HANDLE, FALSE, (DWORD) pid);
 
 	if (!handle && GetLastError() != ERROR_ACCESS_DENIED)
 	{
-		return false;
+		return FALSE;
 	}
 
 	CloseHandle(handle);
-	return true;
+#endif
+
+#ifndef CHECK_EXIST
+	return TRUE;
 #else
-	return true;
+#undef CHECK_EXIST
 #endif
 }
 
 
 #ifdef VMS
-int ISC_expand_logical_once(const TEXT* file_name,
-							USHORT file_length, TEXT* expanded_name)
+int ISC_expand_logical_once(
+							TEXT * file_name,
+							USHORT file_length, TEXT * expanded_name)
 {
 /**************************************
  *
@@ -247,6 +290,10 @@ int ISC_expand_logical_once(const TEXT* file_name,
  *      Expand a logical name.  If it doesn't exist, return 0.
  *
  **************************************/
+	int attr;
+	USHORT l;
+	TEXT *p;
+	ITM items[2];
 	struct dsc$descriptor_s desc1, desc2;
 
 	if (!file_length)
@@ -255,8 +302,6 @@ int ISC_expand_logical_once(const TEXT* file_name,
 	ISC_make_desc(file_name, &desc1, file_length);
 	ISC_make_desc(LOGICAL_NAME_TABLE, &desc2, sizeof(LOGICAL_NAME_TABLE) - 1);
 
-	USHORT l;
-	ITM items[2];
 	items[0].itm_length = 256;
 	items[0].itm_code = LNM$_STRING;
 	items[0].itm_buffer = expanded_name;
@@ -265,7 +310,7 @@ int ISC_expand_logical_once(const TEXT* file_name,
 	items[1].itm_length = 0;
 	items[1].itm_code = 0;
 
-	int attr = LNM$M_CASE_BLIND;
+	attr = LNM$M_CASE_BLIND;
 
 	if (!(sys$trnlnm(&attr, &desc2, &desc1, NULL, items) & 1)) {
 		while (file_length--)
@@ -282,7 +327,8 @@ int ISC_expand_logical_once(const TEXT* file_name,
 
 
 #if (defined SOLARIS || defined SCO_EV)
-TEXT* ISC_get_host(TEXT* string, USHORT length)
+#define GET_HOST
+TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT * string, USHORT length)
 {
 /**************************************
  *
@@ -303,10 +349,12 @@ TEXT* ISC_get_host(TEXT* string, USHORT length)
 
 	return string;
 }
+#endif
 
-#elif defined (VMS)
 
-TEXT* ISC_get_host(TEXT* string, USHORT length)
+#ifdef VMS
+#define GET_HOST
+TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT * string, USHORT length)
 {
 /**************************************
  *
@@ -318,10 +366,12 @@ TEXT* ISC_get_host(TEXT* string, USHORT length)
  *      Get host name.
  *
  **************************************/
+	TEXT *p;
+
 	if (!ISC_expand_logical_once("SYS$NODE", sizeof("SYS$NODE") - 1, string))
 		strcpy(string, "local");
 	else {
-		TEXT* p = string;
+		p = string;
 		if (*p == '_')
 			++p;
 
@@ -334,10 +384,12 @@ TEXT* ISC_get_host(TEXT* string, USHORT length)
 
 	return string;
 }
+#endif
 
-#elif defined(WIN_NT)
 
-TEXT* ISC_get_host(TEXT* string, USHORT length)
+#ifdef WIN_NT
+#define GET_HOST
+TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT * string, USHORT length)
 {
 /**************************************
  *
@@ -363,10 +415,10 @@ TEXT* ISC_get_host(TEXT* string, USHORT length)
 
 	return string;
 }
+#endif
 
-#else
-
-TEXT* ISC_get_host(TEXT* string, USHORT length)
+#ifndef GET_HOST
+TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT * string, USHORT length)
 {
 /**************************************
  *
@@ -386,13 +438,13 @@ TEXT* ISC_get_host(TEXT* string, USHORT length)
 #endif
 
 #ifdef UNIX
-int ISC_get_user(TEXT*	name,
+int INTERNAL_API_ROUTINE ISC_get_user(TEXT*	name,
 									  int*	id,
 									  int*	group,
 									  TEXT*	project,
 									  TEXT*	organization,
 									  int*	node,
-									  const TEXT*	user_string)
+									  TEXT*	user_string)
 {
 /**************************************
  *
@@ -406,14 +458,12 @@ int ISC_get_user(TEXT*	name,
  **************************************/
 /* egid and euid need to be signed, uid_t is unsigned on SUN! */
 	SLONG egid, euid;
-	TEXT user_name[256];
-	const TEXT* p = 0;
+	TEXT *p, *q, user_name[256];
+	struct passwd *passwd;
 
 	if (user_string && *user_string) {
-		const TEXT* q = user_string;
-		char* un;
-		for (un = user_name; (*un = *q++) && *un != '.'; un++);
-		*un = 0;
+		for (p = user_name, q = user_string; (*p = *q++) && *p != '.'; p++);
+		*p = 0;
 		p = user_name;
 		egid = euid = -1;
 		if (*q) {
@@ -429,9 +479,9 @@ int ISC_get_user(TEXT*	name,
 	else {
 		euid = (SLONG) geteuid();
 		egid = (SLONG) getegid();
-		const struct passwd* password = getpwuid(euid);
-		if (password)
-			p = password->pw_name;
+		passwd = getpwuid(euid);
+		if (passwd)
+			p = passwd->pw_name;
 		else
 			p = "";
 		endpwent();
@@ -457,18 +507,18 @@ int ISC_get_user(TEXT*	name,
 
 	return (euid == 0);
 }
+
+
 #endif
 
 
 #ifdef VMS
-int ISC_get_user(
-									  TEXT* name,
-									  int* id,
-									  int* group,
-									  TEXT* project,
-									TEXT* organization,
-									int* node,
-									const TEXT* user_string)
+int INTERNAL_API_ROUTINE ISC_get_user(
+									  TEXT * name,
+									  int *id,
+									  int *group,
+									  TEXT * project,
+TEXT * organization, int *node, TEXT * user_string)
 {
 /**************************************
  *
@@ -480,15 +530,15 @@ int ISC_get_user(
  *      Find out who the user is.
  *
  **************************************/
-	SLONG privileges[2];
-	USHORT uic[2];
-	TEXT user_name[256];
+	SLONG status, privileges[2];
+	USHORT uic[2], len0, len1, len2;
+	TEXT *p, *q, *end, user_name[256];
+	ITM items[4];
 
 	if (user_string && *user_string) {
-		const TEXT* q = user_string;
-		TEXT* p;
-		for (p = user_name; (*p = *q++) && *p != '.'; p++);
+		for (p = user_name, q = user_string; (*p = *q++) && *p != '.'; p++);
 		*p = 0;
+		p = user_name;
 		uic[0] = uic[1] = -1;
 		if (*q) {
 			uic[1] = atoi(q);
@@ -507,8 +557,6 @@ int ISC_get_user(
 		}
 	}
 	else {
-		USHORT len0, len1, len2;
-	    ITM items[4];
 		items[0].itm_code = JPI$_UIC;
 		items[0].itm_length = sizeof(uic);
 		items[0].itm_buffer = uic;
@@ -527,7 +575,7 @@ int ISC_get_user(
 		items[3].itm_code = 0;
 		items[3].itm_length = 0;
 
-		const SLONG status = sys$getjpiw(NULL, NULL, NULL, items, NULL, NULL, NULL);
+		status = sys$getjpiw(NULL, NULL, NULL, items, NULL, NULL, NULL);
 
 		if (!(status & 1)) {
 			len1 = 0;
@@ -537,7 +585,7 @@ int ISC_get_user(
 		user_name[len1] = 0;
 
 		if (name) {
-			for (const TEXT* p = user_name; *p && *p != ' ';)
+			for (p = user_name; *p && *p != ' ';)
 				*name++ = *p++;
 			*name = 0;
 		}
@@ -563,13 +611,13 @@ int ISC_get_user(
 #endif
 
 #ifdef WIN_NT
-int ISC_get_user(TEXT*	name,
+int INTERNAL_API_ROUTINE ISC_get_user(TEXT*	name,
 									  int*	id,
 									  int*	group,
 									  TEXT*	project,
 									  TEXT*	organization,
 									  int*	node,
-									  const TEXT*	user_string)
+									  TEXT*	user_string)
 {
 /**************************************
  *
@@ -637,7 +685,7 @@ int ISC_get_user(TEXT*	name,
 // This routine was adapted from code in routine RunningAsAdminstrator
 // in \mstools\samples\regmpad\regdb.c.
 //
-static bool check_user_privilege()
+static BOOLEAN check_user_privilege(void)
 {
 	HANDLE tkhandle;
 	SID_IDENTIFIER_AUTHORITY system_sid_authority = {SECURITY_NT_AUTHORITY};
@@ -654,19 +702,19 @@ static bool check_user_privilege()
 			if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &tkhandle))
 			{
 				CloseHandle(tkhandle);
-				return false;
+				return FALSE;
 			}
 		}
 		else
 		{
-			return false;
+			return FALSE;
 		}
 	}
 
 	TOKEN_GROUPS*	ptg       = NULL;
 	DWORD			token_len = 0;
 
-	while (true)
+	while (TRUE)
 	{
 		/* Then we must query the size of the group information associated with
 		   the token.  This is guarenteed to fail the first time through
@@ -695,7 +743,7 @@ static bool check_user_privilege()
 		if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
 		{
 			CloseHandle(tkhandle);
-			return false;
+			return FALSE;
 		}
 
 		// Allocate a buffer for the group information.
@@ -704,7 +752,7 @@ static bool check_user_privilege()
 		if (!ptg)
 		{
 			CloseHandle(tkhandle);
-			return false;		/* NOMEM: */
+			return FALSE;		/* NOMEM: */
 		}
 		// FREE: earlier in this loop, and at procedure return
 	}
@@ -720,19 +768,19 @@ static bool check_user_privilege()
 	{
 		gds__free(ptg);
 		CloseHandle(tkhandle);
-		return false;
+		return FALSE;
 	}
 
 	// Finally we'll iterate through the list of groups for this access
 	// token looking for a match against the SID we created above.
 
-	bool admin_priv = false;
+	BOOLEAN admin_priv = FALSE;
 
 	for (DWORD i = 0; i < ptg->GroupCount; i++)
 	{
 		if (EqualSid(ptg->Groups[i].Sid, admin_sid))
 		{
-			admin_priv = true;
+			admin_priv = TRUE;
 			break;
 		}
 	}
@@ -746,9 +794,8 @@ static bool check_user_privilege()
 }
 #endif
 
-
 #ifdef VMS
-int ISC_make_desc(const TEXT* string, struct dsc$descriptor* desc, USHORT length)
+int ISC_make_desc(TEXT * string, struct dsc$descriptor *desc, USHORT length)
 {
 /**************************************
  *
@@ -764,8 +811,7 @@ int ISC_make_desc(const TEXT* string, struct dsc$descriptor* desc, USHORT length
 
 	desc->dsc$b_dtype = DSC$K_DTYPE_T;
 	desc->dsc$b_class = DSC$K_CLASS_S;
-	// CVC: I assume the non-const condition would be needed, can't check.
-	desc->dsc$a_pointer = const_cast<TEXT*>(string);
+	desc->dsc$a_pointer = string;
 
 	if (length)
 		desc->dsc$w_length = length;
@@ -778,9 +824,7 @@ int ISC_make_desc(const TEXT* string, struct dsc$descriptor* desc, USHORT length
 	return desc->dsc$w_length;
 }
 #endif
-
-
-SLONG ISC_get_prefix(const TEXT* passed_string)
+SLONG API_ROUTINE ISC_get_prefix(TEXT * passed_string)
 {
 /**************************************
  *
@@ -793,7 +837,7 @@ SLONG ISC_get_prefix(const TEXT* passed_string)
  *
  **************************************/
 
-	const char c = *passed_string;
+	char c = *passed_string;
 	int arg_type;
 
 	switch (UPPER(c)) {
@@ -817,9 +861,7 @@ SLONG ISC_get_prefix(const TEXT* passed_string)
 	}
 	return (gds__get_prefix(arg_type, ++passed_string));
 }
-
-
-void ISC_prefix(TEXT* string, const TEXT* root)
+void API_ROUTINE ISC_prefix(TEXT * string, const TEXT * root)
 {
 /**************************************
  *
@@ -835,9 +877,7 @@ void ISC_prefix(TEXT* string, const TEXT* root)
 	gds__prefix(string, root);
 	return;
 }
-
-
-void ISC_prefix_lock(TEXT* string, const TEXT* root)
+void API_ROUTINE ISC_prefix_lock(TEXT * string, const TEXT * root)
 {
 /**************************************
  *
@@ -853,9 +893,7 @@ void ISC_prefix_lock(TEXT* string, const TEXT* root)
 	gds__prefix_lock(string, root);
 	return;
 }
-
-
-void ISC_prefix_msg(TEXT* string, const TEXT* root)
+void API_ROUTINE ISC_prefix_msg(TEXT * string, const TEXT * root)
 {
 /**************************************
  *
@@ -874,7 +912,7 @@ void ISC_prefix_msg(TEXT* string, const TEXT* root)
 
 
 #ifndef REQUESTER
-void ISC_set_user(const TEXT* string)
+void ISC_set_user(TEXT * string)
 {
 /**************************************
  *
@@ -887,10 +925,8 @@ void ISC_set_user(const TEXT* string)
  *      support the concept, or support it badly.
  *
  **************************************/
-// CVC: And including a buffer overflow, too?
-// Using static data, not thread safe. Probably deprecated?
-	strncpy(user_name, string, sizeof(user_name));
-	user_name[sizeof(user_name) - 1] = 0;
+
+	strcpy(user_name, string);
 }
 #endif
 
@@ -939,10 +975,14 @@ void ISC_wake(SLONG process_id)
  *      remote (but on the same CPU).
  *
  **************************************/
+	int status;
+	POKE poke;
+	TEXT string[32];
+	struct dsc$descriptor_s desc;
 
 /* Try to do a simple wake.  If this succeeds, we're done. */
 
-	int status = sys$wake(&process_id, 0);
+	status = sys$wake(&process_id, 0);
 #ifdef __ALPHA
 	THREAD_wakeup();
 #endif
@@ -954,7 +994,6 @@ void ISC_wake(SLONG process_id)
 
 /* Find a free poke block to use */
 
-	POKE poke;
 	for (poke = pokes; poke; poke = poke->poke_next)
 		if (!poke->poke_use_count)
 			break;
@@ -972,8 +1011,6 @@ void ISC_wake(SLONG process_id)
 
 	++poke->poke_use_count;
 
-	TEXT string[32];
-	struct dsc$descriptor_s desc;
 	sprintf(string, WAKE_LOCK, process_id);
 	ISC_make_desc(string, &desc, 0);
 
@@ -1005,7 +1042,9 @@ void ISC_wake_init(void)
  *      Set up to be awakened by another process thru a blocking AST.
  *
  **************************************/
+	int status;
 	TEXT string[32];
+	FPTR_INT master;
 	struct dsc$descriptor_s desc;
 
 /* If we already have lock, we're done */
@@ -1016,7 +1055,7 @@ void ISC_wake_init(void)
 	sprintf(string, WAKE_LOCK, getpid());
 	ISC_make_desc(string, &desc, 0);
 
-	int status = sys$enqw(0,		/* event flag */
+	status = sys$enqw(0,		/* event flag */
 					  LCK$K_PWMODE,	/* lock mode */
 					  &wake_lock,	/* Lock status block */
 					  LCK$M_SYSTEM,	/* flags */
@@ -1044,10 +1083,11 @@ static void blocking_ast(void)
  *      Somebody else is trying to post a lock.
  *
  **************************************/
+	int status;
 
 /* Initially down grade the lock to let the other guy complete */
 
-	int status = sys$enqw(0,		/* event flag */
+	status = sys$enqw(0,		/* event flag */
 					  LCK$K_NLMODE,	/* lock mode */
 					  &wake_lock,	/* Lock status block */
 					  LCK$M_CONVERT,	/* flags */
@@ -1094,8 +1134,11 @@ static void poke_ast(POKE poke)
  *      and deque the lock.
  *
  **************************************/
-	lock_status* lksb = &poke->poke_lksb;
-	int status = sys$deq(lksb->lksb_lock_id, 0, 0, 0);
+	int status;
+	LKSB *lksb;
+
+	lksb = &poke->poke_lksb;
+	status = sys$deq(lksb->lksb_lock_id, 0, 0, 0);
 	--poke->poke_use_count;
 }
 #endif
@@ -1129,7 +1172,7 @@ static int wait_test(SSHORT * iosb)
 #undef _UNIX95
 #endif
 
-SLONG ISC_get_user_group_id(const TEXT* user_group_name)
+SLONG ISC_get_user_group_id(TEXT * user_group_name)
 {
 /**************************************
  *
@@ -1145,16 +1188,20 @@ SLONG ISC_get_user_group_id(const TEXT* user_group_name)
  *                  ---  for UNIX platform  ---
  *
  **************************************/
-	SLONG n = 0;
 
-	const struct group* user_group = getgrnam(user_group_name);
-	if (user_group)
+	struct group *user_group;
+	SLONG n;
+
+	n = 0;
+
+
+	if ( (user_group = getgrnam(user_group_name)) )
 		n = user_group->gr_gid;
 
 	return (n);
 }
 #else
-SLONG ISC_get_user_group_id(const TEXT* user_group_name)
+SLONG ISC_get_user_group_id(TEXT * user_group_name)
 {
 /**************************************
  *
@@ -1172,26 +1219,28 @@ SLONG ISC_get_user_group_id(const TEXT* user_group_name)
  *
  **************************************/
 
-	SLONG n = 0;
+	SLONG n;
+
+	n = 0;
 	return (n);
 }
 #endif /* end of ifdef UNIX */
 
 #ifdef WIN_NT
-// Returns the type of OS: true for NT,
-// false for the 16-bit based ones (9x/ME, ...).
+// Returns the type of OS. TRUE for NT,
+// FALSE for the 16-bit based ones (9x/ME, ...).
 //
-bool ISC_is_WinNT()
+BOOLEAN ISC_is_WinNT()
 {
-	// thread safe??? :-)
+	OSVERSIONINFO OsVersionInfo;
+
 	if (!os_type)
 	{
 		os_type = 1;			/* Default to NT */
 		/* The first time this routine is called we use the Windows API
 		   call GetVersion to determine whether Windows/NT or Chicago
 		   is running. */
-		OSVERSIONINFO OsVersionInfo;
-		
+
 		OsVersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 		if (GetVersionEx((LPOSVERSIONINFO) & OsVersionInfo))
 		{
@@ -1201,7 +1250,7 @@ bool ISC_is_WinNT()
 
 	}
 
-	return (os_type != 2);
+	return (os_type != 2) ? TRUE : FALSE;
 }
 
 //____________________________________________________________
@@ -1228,7 +1277,7 @@ LPSECURITY_ATTRIBUTES ISC_get_security_desc()
 
 	if (!InitializeSecurityDescriptor(	p_security_desc,
 										SECURITY_DESCRIPTOR_REVISION) ||
-		!SetSecurityDescriptorDacl(p_security_desc, TRUE, NULL, FALSE))
+		!SetSecurityDescriptorDacl(p_security_desc, TRUE, (PACL) NULL, FALSE))
 	{
 		gds__free(p_security_desc);
 		return NULL;
@@ -1242,4 +1291,3 @@ LPSECURITY_ATTRIBUTES ISC_get_security_desc()
 }
 
 #endif
-

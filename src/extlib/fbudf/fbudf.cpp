@@ -22,7 +22,6 @@
  *	make null handling more consistent and add dpower(x,y).
  *	Beware the SQL declaration for those functions has changed.
  * 2002.01.20 Claudio Valderrama: addMonth should work with negative values, too.
- * 2003.10.26: Made some values const and other minor changes.
  */
 
 
@@ -73,11 +72,10 @@ BOOL APIENTRY DllMain( HANDLE ,//hModule,
 #endif
 
 
-// To do: go from C++ native types to abstract FB types.
 
 const long seconds_in_day = 86400;
 const long tenthmsec_in_day = seconds_in_day * ISC_TIME_SECONDS_PRECISION;
-const short varchar_indicator_size = sizeof(unsigned short);
+const short varchar_indicator = sizeof(unsigned short);
 
 
 #ifdef DEV_BUILD
@@ -92,39 +90,35 @@ FBUDF_API paramdsc* testreflect(paramdsc* rc)
 
 namespace internal
 {
-	// This definition comes from jrd\val.h and is used in helper
+	// This definition comes from jrd\val.h and is equivalent to helper
 	// functions {get/set}_varchar_len defined below.
-	struct vvary {
+	typedef struct vvary {
 		unsigned short	vary_length;
-		unsigned char*	vary_string;
-	};
+		unsigned char	vary_string [1];
+	} VVARY;
 
 	/*
-	inline short get_varchar_len(const char* vchar) 
+	inline short get_varchar_len(char* vchar) 
 	{
-		//return  static_cast<short>((static_cast<short>(vchar[1]) << 8) + vchar[0]);
-		return reinterpret_cast<const vvary*>(vchar)->vary_length;
+		return  static_cast<short>((static_cast<short>(vchar[1]) << 8) + vchar[0]);
 	}
 	*/
 
-	inline short get_varchar_len(const unsigned char* vchar)
+	inline short get_varchar_len(unsigned char* vchar) 
 	{
-		//return static_cast<short>((static_cast<short>(vchar[1]) << 8) + vchar[0]);
-		return reinterpret_cast<const vvary*>(vchar)->vary_length;
+		return  static_cast<short>((static_cast<short>(vchar[1]) << 8) + vchar[0]);
 	}
 
-	inline void set_varchar_len(char* vchar, const short len)
+	inline void set_varchar_len(char* vchar, short len)
 	{
-		//vchar[1] = static_cast<char>(len >> 8);
-		//vchar[0] = static_cast<char>(len);
-		reinterpret_cast<vvary*>(vchar)->vary_length = len;
+		vchar[1] = static_cast<char>(len >> 8);
+		vchar[0] = static_cast<char>(len);
 	}
 	
-	inline void set_varchar_len(unsigned char* vchar, const short len)
+	inline void set_varchar_len(unsigned char* vchar, short len)
 	{
-		//vchar[1] = static_cast<unsigned char>(len >> 8);
-		//vchar[0] = static_cast<unsigned char>(len);
-		reinterpret_cast<vvary*>(vchar)->vary_length = len;
+		vchar[1] = static_cast<unsigned char>(len >> 8);
+		vchar[0] = static_cast<unsigned char>(len);
 	}
 
 	short get_int_type(const paramdsc* v, ISC_INT64& rc)
@@ -210,18 +204,17 @@ namespace internal
 			text = v->dsc_address;
 			if (len && text)
 			{
-				const unsigned char* p = text; //strlen(v->dsc_address);
-				while (*p)
-					++p; // couldn't use strlen!
+				unsigned char* p = text; //strlen(v->dsc_address);
+				while (*p) ++p; // couldn't use strlen!
 				if (p - text < len)
 					len = static_cast<short>(p - text);
 			}
 			break;
 		case dtype_varying:
-			len -= varchar_indicator_size;
+			len -= varchar_indicator;
 			text = reinterpret_cast<vvary*>(v->dsc_address)->vary_string;
 			{
-				const short x = get_varchar_len(v->dsc_address);
+				short x = get_varchar_len(v->dsc_address);
 				if (x < len)
 					len = x;
 			}
@@ -249,10 +242,10 @@ namespace internal
 			v->dsc_address[len] = 0;
 			break;
 		case dtype_varying:
-			v->dsc_length = static_cast<short>(len + varchar_indicator_size);
+			v->dsc_length = static_cast<short>(len + varchar_indicator);
 			set_varchar_len(v->dsc_address, len);
 			if (text)
-				memcpy(v->dsc_address + varchar_indicator_size, text, len);
+				memcpy(v->dsc_address + varchar_indicator, text, len);
 			break;
 		}
 	}
@@ -300,15 +293,15 @@ FBUDF_API paramdsc* sNvl(paramdsc* v, paramdsc* v2, paramdsc* rc)
 {
 	if (!internal::isnull(v))
 	{
-		unsigned char* sv = 0;
-		const short len = internal::get_string_type(v, sv);
+		unsigned char *sv = 0;
+		short len = internal::get_string_type(v, sv);
 		internal::set_string_type(rc, len, sv);
 		return rc;
 	}
 	if (!internal::isnull(v2))
 	{
-		unsigned char* sv2 = 0;
-		const short len = internal::get_string_type(v2, sv2);
+		unsigned char *sv2 = 0;
+		short len = internal::get_string_type(v2, sv2);
 		internal::set_string_type(rc, len, sv2);
 		return rc;
 	}
@@ -321,8 +314,8 @@ FBUDF_API paramdsc* iNullIf(paramdsc* v, paramdsc* v2)
 	if (internal::isnull(v) || internal::isnull(v2))
 		return 0;
 	ISC_INT64 iv, iv2;
-	const short rc = internal::get_int_type(v, iv);
-	const short rc2 = internal::get_int_type(v2, iv2);
+	short rc = internal::get_int_type(v, iv);
+	short rc2 = internal::get_int_type(v2, iv2);
 	if (rc < 0 || rc2 < 0)
 		return v;
 	if (iv == iv2 && v->dsc_scale == v2->dsc_scale)
@@ -335,8 +328,8 @@ FBUDF_API paramdsc* dNullIf(paramdsc* v, paramdsc* v2)
 	if (internal::isnull(v) || internal::isnull(v2))
 		return 0;
 	double iv, iv2;
-	const short rc = internal::get_double_type(v, iv);
-	const short rc2 = internal::get_double_type(v2, iv2);
+	short rc = internal::get_double_type(v, iv);
+	short rc2 = internal::get_double_type(v2, iv2);
 	if (rc < 0 || rc2 < 0)
 		return v;
 	if (iv == iv2) // && v->dsc_scale == v2->dsc_scale) double w/o scale
@@ -348,18 +341,15 @@ FBUDF_API paramdsc* sNullIf(paramdsc* v, paramdsc* v2, paramdsc* rc)
 {
 	if (internal::isnull(v) || internal::isnull(v2))
 		return internal::setnull(rc);
-	unsigned char* sv;
-	const short len = internal::get_string_type(v, sv);
-	unsigned char* sv2;
-	const short len2 = internal::get_string_type(v2, sv2);
+	unsigned char *sv, *sv2;
+	short len = internal::get_string_type(v, sv);
+	short len2 = internal::get_string_type(v2, sv2);
 	if (len < 0 || len2 < 0) // good luck with the result, we can't do more.
 		return v;
 	if (len == len2 && (!len || !memcmp(sv, sv2, len)) &&
-		(v->dsc_sub_type == v2->dsc_sub_type || // ttype
-		!v->dsc_sub_type || !v2->dsc_sub_type)) // tyype
-	{
+		(v->dsc_ttype == v2->dsc_ttype ||
+		!v->dsc_ttype || !v2->dsc_ttype))
 		return internal::setnull(rc);
-	}
 	internal::set_string_type(rc, len, sv);
 	return rc;
 }
@@ -379,20 +369,18 @@ namespace internal
 		//isc_decode_timestamp(&timestamp, &times);
 		isc_decode_timestamp(v, &times);
 		//isc_decode_sql_date(v, &times);
-		const int dow = times.tm_wday;
+		int dow = times.tm_wday;
 		if (dow >= 0 && dow <= 6)
 		{
 			size_t name_len = day_len[df];
 			const char* name_fmt = day_fmtstr[df];
-			// There should be a better way to do this than to alter the thread's locale.
 			if (!strcmp(setlocale(LC_TIME, NULL), "C"))
 				setlocale(LC_ALL, "");
-			name_len = strftime(rc + varchar_indicator_size, name_len,
-				name_fmt, &times);
+			name_len = strftime(rc + varchar_indicator, name_len, name_fmt, &times);
 			if (name_len)
 			{
 				// There's no clarity in the docs whether '\0' is counted or not; be safe.
-				const char* p = rc + varchar_indicator_size + name_len - 1;
+				char *p = rc + varchar_indicator + name_len - 1;
 				if (!*p)
 					--name_len;
 				set_varchar_len(rc, static_cast<short>(name_len));
@@ -400,7 +388,7 @@ namespace internal
 			}
 		}
 		set_varchar_len(rc, 5);
-		memcpy(rc + varchar_indicator_size, "ERROR", 5);
+		memcpy(rc + varchar_indicator, "ERROR", 5);
 		return rc;
 	}
 } // namespace internal
@@ -420,8 +408,7 @@ FBUDF_API paramdsc* right(paramdsc* v, short* rl, paramdsc* rc)
 	if (internal::isnull(v))
 		return internal::setnull(rc);
 	unsigned char* text = 0;
-	short len = internal::get_string_type(v, text);
-	const short diff = static_cast<short>(len - *rl);
+	short len = internal::get_string_type(v, text), diff = static_cast<short>(len - *rl);
 	if (*rl < len)
 		len = *rl;
 	if (len < 0)
@@ -450,22 +437,22 @@ FBUDF_API ISC_TIMESTAMP* addMonth(ISC_TIMESTAMP* v, int& nmonths)
 {
 	tm times;
 	isc_decode_timestamp(v, &times);
-	const int y = nmonths / 12, m = nmonths % 12;
+	int y = nmonths / 12, m = nmonths % 12;
 	times.tm_year += y;
 	if ((times.tm_mon += m) > 11)
 	{
-		++times.tm_year;
+		times.tm_year++;
 		times.tm_mon -= 12;
 	}
 	else if (times.tm_mon < 1)
 	{
-		--times.tm_year;
+		times.tm_year--;
 		times.tm_mon += 12;
 	}
 	int md[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-	const int ly = times.tm_year + 1900;
+	int ly = times.tm_year + 1900;
 	if (ly % 4 == 0 && ly % 100 != 0 || ly % 400 == 0)
-		++md[1];
+		md[1]++;
 	if (times.tm_mday > md[times.tm_mon])
 		times.tm_mday = md[times.tm_mon];
 	isc_encode_timestamp(&times, v);
@@ -485,24 +472,24 @@ namespace internal
 {
 	ISC_TIMESTAMP* addTenthMSec(ISC_TIMESTAMP* v, int tenthmilliseconds, int multiplier)
 	{
-		const long full = tenthmilliseconds * multiplier;
-		const long days = full / tenthmsec_in_day, secs = full % tenthmsec_in_day;
+		long full = tenthmilliseconds * multiplier;
+		long days = full / tenthmsec_in_day, secs = full % tenthmsec_in_day;
 		v->timestamp_date += days;
 		 // Time portion is unsigned, so we avoid unsigned rolling over negative values
 		// that only produce a new unsigned number with the wrong result.
 		if (secs < 0 && static_cast<unsigned long>(-secs) > v->timestamp_time)
 		{
-			--v->timestamp_date;
+			v->timestamp_date--;
 			v->timestamp_time += tenthmsec_in_day + secs;
 		}
-		else if ((v->timestamp_time += secs) >= static_cast<unsigned long>(tenthmsec_in_day))
+		else if ((v->timestamp_time += secs) >= tenthmsec_in_day)
 		{
-			++v->timestamp_date;
+			v->timestamp_date++;
 			v->timestamp_time -= tenthmsec_in_day;
 		}
 		return v;
 	}
-} // namespace internal
+}
 
 FBUDF_API ISC_TIMESTAMP* addMilliSecond(ISC_TIMESTAMP* v, int& nmseconds)
 {
@@ -544,7 +531,11 @@ FBUDF_API ISC_TIMESTAMP* getExactTimestamp(ISC_TIMESTAMP* rc)
 #endif
 
 	timeval tv;
-	GETTIMEOFDAY(&tv);
+#ifdef GETTIMEOFDAY_RETURNS_TIMEZONE
+	(void)gettimeofday(&tv, (struct timezone *)0);
+#else
+	(void)gettimeofday(&tv);
+#endif
 
 	tm times = *localtime(reinterpret_cast<const time_t*>(&tv.tv_sec));
 
@@ -563,7 +554,7 @@ FBUDF_API paramdsc* fbtruncate(paramdsc* v, paramdsc* rc)
 	if (internal::isnull(v))
 		return internal::setnull(rc);
 	ISC_INT64 iv;
-	const short rct = internal::get_int_type(v, iv);
+	short rct = internal::get_int_type(v, iv);
 	if (rct < 0 || v->dsc_scale > 0)
 		return internal::setnull(rc);
 	if (!v->dsc_scale /*|| !v->dsc_sub_type*/) //second test won't work with ODS9
@@ -604,7 +595,7 @@ FBUDF_API paramdsc* fbround(paramdsc* v, paramdsc* rc)
 	if (internal::isnull(v))
 		return internal::setnull(rc);
 	ISC_INT64 iv;
-	const short rct = internal::get_int_type(v, iv);
+	short rct = internal::get_int_type(v, iv);
 	if (rct < 0 || v->dsc_scale > 0)
 		return internal::setnull(rc);
 	if (!v->dsc_scale /*|| !v->dsc_sub_type*/) //second test won't work with ODS9
@@ -619,11 +610,11 @@ FBUDF_API paramdsc* fbround(paramdsc* v, paramdsc* rc)
 	// round(-0.3) => 0 ### round(-0.5) => -1 ### SYMMETRIC_MATH defined.
 	bool gt = false;
 	signed char scale = v->dsc_scale;
-	while (scale++ < 0)
+	while(scale++ < 0)
 	{
 		if (!scale)
 		{
-			const int dig = static_cast<int>(iv % 10);
+			short dig = static_cast<short>(iv % 10);
 #if defined(SYMMETRIC_MATH)
 			if (dig >= 5 || dig <= -5)
 				gt = true;
@@ -650,8 +641,8 @@ FBUDF_API paramdsc* power(paramdsc* v, paramdsc* v2, paramdsc* rc)
 	if (internal::isnull(v) || internal::isnull(v2))
 		return internal::setnull(rc);
 	double d, d2;
-	const short rct = internal::get_scaled_double(v, d);
-	const short rct2 = internal::get_scaled_double(v2, d2);
+	short rct = internal::get_scaled_double(v, d);
+	short rct2 = internal::get_scaled_double(v2, d2);
 
 	// If we cause a div by zero, SS shutdowns in response.
 	// The doc I read says 0^0 will produce 1, so it's not tested below.
@@ -668,7 +659,7 @@ FBUDF_API blobcallback* string2blob(paramdsc* v, blobcallback* outblob)
 	if (internal::isnull(v))
 		return 0;
 	unsigned char* text = 0;
-	const short len = internal::get_string_type(v, text);
+	short len = internal::get_string_type(v, text);
 	if (len < 0)
 		return 0;
 	if (!outblob || !outblob->blob_handle)

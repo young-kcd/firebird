@@ -24,37 +24,29 @@
  *   in the texttype struct so we remain compatible with any IB WRT intl module.
  */
 
-#ifndef JRD_INTLOBJ_H
-#define JRD_INTLOBJ_H
+#ifndef _JRD_INTLOBJ_H_
+#define _JRD_INTLOBJ_H_
 
 #ifdef __cplusplus
-namespace Jrd {
-  class LikeObject;
-  class ContainsObject;
-}
-using Jrd::LikeObject;
-using Jrd::ContainsObject;
-#else
-struct LikeObject;
-struct ContainsObject;
+extern "C" {
 #endif
 
+#define USHORT unsigned short
+#define SSHORT short
+#define UCHAR unsigned char
+#define CHAR char
+#define SCHAR char
+#define ULONG unsigned int
+#define LONG int
+#define SLONG signed int
+#define VEC	void*
+#define BYTE unsigned char
 
-#ifndef INCLUDE_FB_TYPES_H
-typedef unsigned short USHORT;
-typedef short SSHORT;
-typedef unsigned char UCHAR;
-typedef char CHAR;
-typedef char SCHAR;
-typedef unsigned char BYTE;
+/* duplicate definition from flu.c */
 
-typedef unsigned int ULONG;
-typedef int LONG;
-typedef signed int SLONG;
-
-#endif
-
-typedef USHORT (*FPTR_SHORT) ();
+typedef SSHORT(*FPTR_short) ();
+#ifndef INTL_ENGINE_INTERNAL
+typedef USHORT(*FPTR_SHORT) ();
 
 typedef SSHORT CHARSET_ID;
 typedef SSHORT COLLATE_ID;
@@ -63,17 +55,13 @@ typedef SCHAR ASCII;
 typedef unsigned char NCHAR;	/* Narrow Char */
 typedef unsigned short UCS2_CHAR;	/* Not very Wide Char */
 typedef unsigned char MBCHAR;	/* Multibyte Char */
-//typedef class vec* VEC;
 
 #define type_texttype 54
 #define type_charset 55
 #define type_csconvert 56
 
-namespace Jrd {
-	class vec;
-	class thread_db;
-	class TextType;
-}
+#define MAX_KEY		256
+#endif
 
 typedef struct intl_blk {
     UCHAR blk_type;
@@ -81,28 +69,12 @@ typedef struct intl_blk {
     USHORT blk_length;
 } intl_blk;
 
-struct texttype; // forward decl for the fc signatures before the struct itself.
-struct csconvert;
-
-typedef USHORT (*pfn_INTL_init)(texttype*, USHORT, USHORT);
-typedef USHORT (*pfn_INTL_keylength)(texttype*, USHORT);
-// Last param is bool, but since it's a C interface, I left it as USHORT.
-typedef USHORT (*pfn_INTL_str2key)(texttype*, USHORT, const UCHAR*, USHORT, UCHAR*, USHORT);
-typedef SSHORT (*pfn_INTL_compare)(texttype*, USHORT, const UCHAR*, USHORT, const UCHAR*);
-typedef USHORT (*pfn_INTL_ch_case)(texttype*, UCHAR ch);
-typedef SSHORT (*pfn_INTL_str2upper)(texttype*, USHORT, const UCHAR*, USHORT, UCHAR*);
-typedef USHORT (*pfn_INTL_2wc)(texttype*, UCS2_CHAR*, USHORT, const UCHAR*, USHORT, SSHORT*, USHORT*);
-
-typedef SSHORT (*pfn_INTL_mb2wc)(texttype*, UCS2_CHAR*, const UCHAR*, USHORT);
-
-
 typedef struct texttype {
-	// DATA THAT IS USED BY BOTH ENGINE AND DRIVERS --------------------------------
-	struct intl_blk texttype_blk; // Filled by engine for backward compatibility
+	struct intl_blk texttype_blk;
 	USHORT texttype_version;	/* version ID of object */
 	USHORT texttype_flags;		/* miscellanous flags */
 	TTYPE_ID texttype_type;		/* Interpretation ID */
-	const ASCII* texttype_name;
+	const ASCII *texttype_name;
 	CHARSET_ID texttype_character_set;	/* ID of base character set */
 	SSHORT texttype_country;	/* ID of base country values */
 	BYTE texttype_bytes_per_char;	/* max bytes per character */
@@ -114,61 +86,29 @@ typedef struct texttype {
     texttype_license_mask, but since it's useless in the open source version, I
     followed the new name given in the BSC tree. */
     ULONG texttype_obsolete_field;		/* required bits for license */
-	//\\ END OF INTL PUBLIC DATA ---------------------------------------------------
 
-	// DRIVER API FUNCTIONS. Called by the engine ----------------------------------
-	pfn_INTL_init		texttype_fn_init;
-	pfn_INTL_keylength	texttype_fn_key_length;
-	pfn_INTL_str2key	texttype_fn_string_to_key;
-	pfn_INTL_compare	texttype_fn_compare;
-	pfn_INTL_ch_case	texttype_fn_to_upper;	/* convert one ch to uppercase */
-	pfn_INTL_ch_case	texttype_fn_to_lower;	/* One ch to lowercase */
-	pfn_INTL_str2upper	texttype_fn_str_to_upper;	/* Convert string to uppercase */
-	pfn_INTL_2wc		texttype_fn_to_wc;	/* convert string to wc */
-	//\\ END OF DRIVER API FUNCTIONS -----------------------------------------------
-
-	// ENGINE INTERNAL FUNCTIONS - do not implement in collation drivers -----------
-	typedef bool (*pfn_INTL_contains)(Jrd::thread_db*, Jrd::TextType, const UCHAR*,
-		SSHORT, const UCHAR*, SSHORT);
-	typedef bool (*pfn_INTL_like)(Jrd::thread_db*, Jrd::TextType, const UCHAR*,
-		SSHORT, const UCHAR*, SSHORT, UCS2_CHAR);
-	typedef bool (*pfn_INTL_matches)(Jrd::thread_db*, Jrd::TextType, const UCHAR*, SSHORT, 
-		const UCHAR*, SSHORT);
-	typedef bool (*pfn_INTL_sleuth_check)(Jrd::thread_db*, Jrd::TextType, USHORT, 
-		const UCHAR*, USHORT, const UCHAR*,USHORT);
-	typedef USHORT (*pfn_INTL_sleuth_merge)(Jrd::thread_db*, Jrd::TextType, const UCHAR*,
-		USHORT, const UCHAR*, USHORT, UCHAR*, USHORT);
-
-	pfn_INTL_contains		texttype_fn_contains;	/* s1 contains s2? */
-	pfn_INTL_like			texttype_fn_like;	/* s1 like s2? */
-	pfn_INTL_matches		texttype_fn_matches;	/* s1 matches s2 */
-	pfn_INTL_sleuth_check	texttype_fn_sleuth_check;	/* s1 sleuth s2 */
-	pfn_INTL_sleuth_merge	texttype_fn_sleuth_merge;	/* aux function for sleuth */
-	//\\ END OF INTERNAL FUNCTIONS -------------------------------------------------
-
-	// DRIVER API FUNCTIONS. Called by the engine ----------------------------------	
-	pfn_INTL_mb2wc		texttype_fn_mbtowc;	/* get next character */
-	//\\ END OF DRIVER API FUNCTIONS -----------------------------------------------
-
-    // DATA USED BY COLLATION DRIVERS. Never used by engine directly ---------------
-	const BYTE* texttype_collation_table;
-	const BYTE* texttype_toupper_table;
-	const BYTE* texttype_tolower_table;
-	const BYTE* texttype_expand_table;
-	const BYTE* texttype_compress_table;
-	const BYTE* texttype_misc;		/* Used by some drivers */
-	ULONG* texttype_unused[4];	/* spare space for use by drivers */
-	//\\ END OF COLLATION DRIVER DATA ----------------------------------------------
-
-	// ENGINE INTERNAL FUNCTIONS - do not implement in collation drivers -----------
-	typedef LikeObject* (*pfn_INTL_like_create)(Jrd::thread_db*, Jrd::TextType, 
-		const UCHAR*, SSHORT, UCS2_CHAR);
-	typedef ContainsObject* (*pfn_INTL_contains_create)(Jrd::thread_db*, Jrd::TextType, 
-		const UCHAR*, SSHORT);
-
-	pfn_INTL_like_create		texttype_fn_like_create;
-	pfn_INTL_contains_create	texttype_fn_contains_create;
-	//\\ END OF INTERNAL FUNCTIONS -------------------------------------------------
+	/* MUST BE ALIGNED */
+	FPTR_SHORT texttype_fn_init;
+	FPTR_SHORT texttype_fn_key_length;
+	FPTR_SHORT texttype_fn_string_to_key;
+	FPTR_short texttype_fn_compare;
+	FPTR_SHORT texttype_fn_to_upper;	/* convert one ch to uppercase */
+	FPTR_SHORT texttype_fn_to_lower;	/* One ch to lowercase */
+	FPTR_short texttype_fn_str_to_upper;	/* Convert string to uppercase */
+	FPTR_SHORT texttype_fn_to_wc;	/* convert string to wc */
+	FPTR_SHORT texttype_fn_contains;	/* s1 contains s2? */
+	FPTR_SHORT texttype_fn_like;	/* s1 like s2? */
+	FPTR_SHORT texttype_fn_matches;	/* s1 matches s2 */
+	FPTR_SHORT texttype_fn_sleuth_check;	/* s1 sleuth s2 */
+	FPTR_SHORT texttype_fn_sleuth_merge;	/* aux function for sleuth */
+	FPTR_short texttype_fn_mbtowc;	/* get next character */
+	BYTE *texttype_collation_table;
+	BYTE *texttype_toupper_table;
+	BYTE *texttype_tolower_table;
+	BYTE *texttype_expand_table;
+	BYTE *texttype_compress_table;
+	BYTE *texttype_misc;		/* Used by some drivers */
+	ULONG *texttype_unused[4];	/* spare space */
 } *TEXTTYPE;
 
 #define TEXTTYPE_init               1	/* object has been init'ed */
@@ -178,22 +118,20 @@ typedef struct texttype {
 
 
 
-typedef USHORT (*pfn_INTL_convert)(csconvert*, UCHAR*, USHORT,
-	const UCHAR*, USHORT, SSHORT*, USHORT*);
 
-struct csconvert {
+typedef struct csconvert {
 	struct intl_blk csconvert_blk;
 	USHORT csconvert_version;
 	USHORT csconvert_flags;
 	SSHORT csconvert_id;
-	const ASCII* csconvert_name;
+	ASCII *csconvert_name;
 	CHARSET_ID csconvert_from;
 	CHARSET_ID csconvert_to;
-	pfn_INTL_convert csconvert_convert;
-	const BYTE* csconvert_datatable;
-	const BYTE* csconvert_misc;
-	ULONG* csconvert_unused[2];
-};
+	FPTR_SHORT csconvert_convert;
+	BYTE *csconvert_datatable;
+	BYTE *csconvert_misc;
+	ULONG *csconvert_unused[2];
+} *CSCONVERT;
 
 /* values for csconvert_flags */
 
@@ -210,29 +148,28 @@ struct csconvert {
 
 
 
-typedef USHORT (*pfn_well_formed)(const UCHAR*, USHORT);
 
-struct charset
+typedef struct charset
 {
 	struct intl_blk charset_blk;
 	USHORT charset_version;
 	USHORT charset_flags;
 	CHARSET_ID charset_id;
-	const ASCII* charset_name;
+	const ASCII *charset_name;
 	BYTE charset_min_bytes_per_char;
 	BYTE charset_max_bytes_per_char;
 	BYTE charset_space_length;
-	const BYTE* charset_space_character;
+	BYTE *charset_space_character;
 
 	/* Must be aligned */
-	pfn_well_formed	charset_well_formed;
-	csconvert		charset_to_unicode;
-	csconvert		charset_from_unicode;
+	FPTR_SHORT charset_well_formed;
+	struct csconvert charset_to_unicode;
+	struct csconvert charset_from_unicode;
 
-	Jrd::vec* charset_converters;
-	Jrd::vec* charset_collations;
-	ULONG* charset_unused[2];
-};
+	VEC charset_converters;
+	VEC charset_collations;
+	ULONG *charset_unused[2];
+} *CHARSET;
 
 /* values for charset_flags */
 
@@ -241,5 +178,8 @@ struct charset
 #define CHARSET_multi	4
 #define CHARSET_wide	8
 
-#endif /* JRD_INTLOBJ_H */
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
+#endif /* _JRD_INTLOBJ_H_ */

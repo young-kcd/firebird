@@ -21,20 +21,21 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef IPSERVER_IPC_H
-#define IPSERVER_IPC_H
+#ifndef _IPC_H_
+#define _IPC_H_
 
 #include <stdio.h>
 #include "../jrd/common.h"
 #include "../jrd/thd.h"
+#include "../jrd/y_ref.h"
 
 #define ALLOC(type)		ALLI_block (type, 0)
 #define ALLOCV(type, count)	ALLI_block (type, count)
 
 #ifdef BUFSIZ
-const USHORT BLOB_LENGTH		= BUFSIZ - 20;
+#define BLOB_LENGTH		(BUFSIZ - 20)
 #else
-const USHORT BLOB_LENGTH		= 1024 - 20;
+#define BLOB_LENGTH		(1024 - 20)
 #endif
 
 typedef enum {
@@ -113,17 +114,17 @@ typedef enum {
 #define	IPS_MAPPED_SIZE(p,c)	((ULONG)(c) * IPS_MAPPED_PER_CLI(p))
 #define	IPS_USEFUL_SPACE(p)	(IPS_MAPPED_PER_CLI(p) - sizeof( ips_comm_area))
 
-const USHORT IPS_DEF_NUM_CLI		= 10;	/* default clients per mapped file */
-// const USHORT IPS_DEF_NUM_MAPS	= 10;	/* default maps available */
-const USHORT IPS_DEF_PAGES_PER_CLI	= 8;	/* default 1k pages space per client */
+#define	IPS_DEF_NUM_CLI		10	/* default clients per mapped file */
+#define	IPS_DEF_NUM_MAPS	10	/* default maps available */
+#define	IPS_DEF_PAGES_PER_CLI	8	/* default 1k pages space per client */
 
-const USHORT IPS_MIN_NUM_CLI		= 1;	/* min clients per mapped file */
-// const USHORT IPS_MIN_NUM_MAPS	= 1;	/* min maps available */
-const USHORT IPS_MIN_PAGES_PER_CLI	= 1;	/* min 1k pages space per client */
+#define	IPS_MIN_NUM_CLI		1	/* min clients per mapped file */
+#define	IPS_MIN_NUM_MAPS	1	/* min maps available */
+#define	IPS_MIN_PAGES_PER_CLI	1	/* min 1k pages space per client */
 
-const USHORT IPS_MAX_NUM_CLI		= 64;	/* max clients per mapped file */
-// const USHORT IPS_MAX_NUM_MAPS	= 64;	/* max maps available */
-const USHORT IPS_MAX_PAGES_PER_CLI	= 16;	/* max 1k pages space per client */
+#define	IPS_MAX_NUM_CLI		64	/* max clients per mapped file */
+#define	IPS_MAX_NUM_MAPS	64	/* max maps available */
+#define	IPS_MAX_PAGES_PER_CLI	16	/* max 1k pages space per client */
 
 #define	IPS_PACK_PARAMS(x,p,m,u) (((ULONG)(x) << 24) + ((ULONG)(p) << 16) + ((m) << 8) + (u) + IP_BIAS)
 #define	IPS_UNPACK_MAX_USERS(n)	(((ULONG)(n - IP_BIAS) >> 24) & 0xFF)
@@ -137,8 +138,6 @@ typedef struct bid {
 } *BID;
 
 /* Block types */
-
-struct blk;
 
 #ifndef INCLUDE_FB_BLK
 #include "../include/old_fb_blk.h"
@@ -165,13 +164,14 @@ typedef struct ipm {
 } *IPM;
 
 /* mapped structure flags */
-const USHORT IPMF_SERVER_SHUTDOWN	= 1;	/* server has shut down */
+
+#define IPMF_SERVER_SHUTDOWN    1	/* server has shut down */
 
 /* thread connection control block */
 
 typedef struct icc
 {
-	blk			icc_header;
+	struct blk	icc_header;
 	struct icc*	icc_next;			/* pointer to next thread */
 	struct idb*	icc_databases;		/* linked list of attachments */
 	struct ipm*	icc_ipm;			/* pointer back to ipm */
@@ -191,17 +191,18 @@ typedef struct icc
 } *ICC;
 
 /* icc structure flags */
-const USHORT ICCF_SHUTDOWN			= 1;	/* shutdown in progress */
-const USHORT ICCF_SERVER_SHUTDOWN	= 2;	/* server has shut down */
-const USHORT ICCF_UNMAP_CLIENT		= 4;	/* client maps must be shut down */
+
+#define	ICCF_SHUTDOWN			1	/* shutdown in progress */
+#define ICCF_SERVER_SHUTDOWN    2	/* server has shut down */
+#define ICCF_UNMAP_CLIENT       4	/* client maps must be shut down */
 
 /* database block */
 
 typedef struct idb
 {
-	blk						idb_header;
+	struct blk				idb_header;
 	struct icc*				idb_thread;			/* back pointer to thread */
-	FB_API_HANDLE			idb_handle;			/* database handle */
+	FRBRD*					idb_handle;			/* database handle */
 	struct itr*				idb_transactions;	/* linked list of transactions */
 	struct irq*				idb_requests;		/* compiled requests */
 	struct ipserver_isr*	idb_sql_requests;	/* SQL requests */
@@ -212,33 +213,33 @@ typedef struct idb
 	SCHAR*					idb_setjmp;
 } *IDB;
 
-const USHORT IDBF_DATABASE_ATTACHMENT	= 1;
-const USHORT IDBF_SERVICE_ATTACHMENT	= 2;
-const USHORT IDBF_SERVER_SHUTDOWN		= 4;
+#define IDBF_DATABASE_ATTACHMENT 1
+#define IDBF_SERVICE_ATTACHMENT  2
+#define IDBF_SERVER_SHUTDOWN     4
 
 /* transaction block */
 
 typedef struct itr
 {
-	blk			itr_header;
+	struct blk	itr_header;
 	struct idb*	itr_idb;
 	struct itr*	itr_next;
 	struct ibl*	itr_blobs;
-	FB_API_HANDLE itr_handle;
+	FRBRD*		itr_handle;
 	USHORT		itr_flags;
 } *ITR;
 
-const USHORT ITR_limbo	= 1;
+#define ITR_limbo	1
 
 /* blob control block */
 
 typedef struct ibl
 {
-	blk			ibl_header;
+	struct blk	ibl_header;
 	struct idb*	ibl_idb;
 	struct itr*	ibl_itr;
 	struct ibl*	ibl_next;
-	FB_API_HANDLE ibl_handle;
+	FRBRD*		ibl_handle;
 	SLONG		ibl_offset;			/* Apparent (to user) offset in blob */
 	USHORT		ibl_flags;
 	UCHAR*		ibl_ptr;
@@ -248,30 +249,30 @@ typedef struct ibl
 	UCHAR		ibl_buffer[1];
 } *IBL;
 
-//const USHORT IBL_eof			= 1;
-//const USHORT IBL_segment		= 2;
-//const USHORT IBL_eof_pending	= 4;
-const USHORT IBL_create			= 8;
+#define IBL_eof			1
+#define IBL_segment		2
+#define IBL_eof_pending	4
+#define IBL_create		8
 
 /* request block */
 
 typedef struct irq {
-	blk			irq_header;
+	struct blk irq_header;
 	struct idb *irq_idb;
 	struct tra *irq_itr;
 	struct irq *irq_next;
 	struct irq **irq_user_handle;
-	FB_API_HANDLE irq_handle;
+	FRBRD	   *irq_handle;
 } *IRQ;
 
 /* event structure */
 
 typedef struct ivnt {
-	blk			ivnt_header;
+	struct blk ivnt_header;
 	struct ivnt *ivnt_next;
 	struct idb *ivnt_idb;
-	FPTR_EVENT_CALLBACK ivnt_ast;
-	void* ivnt_arg;
+	void (*ivnt_ast) ();
+	void *ivnt_arg;
 	HWND ivnt_window;
 	SLONG ivnt_id;
 	SLONG ivnt_handle;
@@ -280,11 +281,11 @@ typedef struct ivnt {
 /* remote SQL request */
 
 typedef struct ipserver_isr {
-	blk		isr_header;
+	struct blk isr_header;
 	struct ipserver_isr *isr_next;
 	struct idb *isr_idb;
 	struct itr *isr_itr;
-	FB_API_HANDLE isr_handle;
+	FRBRD *isr_handle;
 	USHORT isr_rec_count;
 	USHORT isr_max_recs;
 	USHORT isr_eof_flag;
@@ -338,12 +339,12 @@ typedef struct {
 	ULONG ips_com_curr;			/* current mapped offset of comm buffer */
 	ULONG ips_flags;			/* flags */
 	UCHAR *ips_cl_addr;			/* address of client buffer */
-	const UCHAR* ips_sv_addr;			/* address of server buffer */
+	UCHAR *ips_sv_addr;			/* address of server buffer */
 	UCHAR *ips_sv_buffer;		/* allocated local buffer */
 } ips_string;
 
-const ULONG IPS_INPUT_BUFFER	= 1;	/* used for input from client */
-const ULONG IPS_OUTPUT_BUFFER	= 2;	/* used for output to client */
+#define	IPS_INPUT_BUFFER	1	/* used for input from client */
+#define	IPS_OUTPUT_BUFFER	2	/* used for output to client */
 
 
 /*
@@ -381,26 +382,26 @@ typedef struct {
 	ULONG ips_parameter;		/* a parameter, used if needed */
 } ips_object;
 
-const USHORT IPS_ATTACH_NAME	= 0;	/* use controller 0 for db name */
-const USHORT IPS_ATTACH_DPB		= 1;	/* use controller 1 for dpb */
-const USHORT IPS_ATTACH_EXPANDED= 2;	/* use controller 2 for exp name */
+#define	IPS_ATTACH_NAME		0	/* use controller 0 for db name */
+#define	IPS_ATTACH_DPB		1	/* use controller 1 for dpb */
+#define	IPS_ATTACH_EXPANDED	2	/* use controller 2 for exp name */
 
-const USHORT IPS_CREATE_NAME	= 0;	/* use controller 0 for db name */
-const USHORT IPS_CREATE_DPB		= 1;	/* use controller 1 for dpb */
-const USHORT IPS_CREATE_EXPANDED= 2;	/* use controller 2 for exp name */
+#define	IPS_CREATE_NAME		0	/* use controller 0 for db name */
+#define	IPS_CREATE_DPB		1	/* use controller 1 for dpb */
+#define	IPS_CREATE_EXPANDED	2	/* use controller 2 for exp name */
 
-const USHORT IPS_ATTACH_SVC_NAME= 0;	/* use controller 0 for service name */
-const USHORT IPS_ATTACH_SVC_SPB	= 1;	/* use controller 1 for spb */
-const USHORT IPS_START_SVC_SPB	= 2;	/* use controller 2 for start spb */
+#define	IPS_ATTACH_SVC_NAME	0	/* use controller 0 for service name */
+#define	IPS_ATTACH_SVC_SPB	1	/* use controller 1 for spb */
+#define IPS_START_SVC_SPB	2	/* use controller 2 for start spb */
 
-const USHORT IPS_CLOSE_BLOB_REM	= 0;	/* use controller 0 for remainders */
+#define	IPS_CLOSE_BLOB_REM	0	/* use controller 0 for remainders */
 
-const USHORT IPS_INFO_ITEMS		= 0;	/* use controller 0 for items */
-const USHORT IPS_INFO_DATA		= 1;	/* use controller 1 for data */
+#define	IPS_INFO_ITEMS		0	/* use controller 0 for items */
+#define	IPS_INFO_DATA		1	/* use controller 1 for data */
 
-const USHORT IPS_QUERY_RECV_ITEMS	= 2;/* use controller 2 for recv items */
+#define	IPS_QUERY_RECV_ITEMS	2	/* use controller 2 for recv items */
 
-const USHORT IPS_PREPARE_TRANS	= 0;	/* use controller 0 for string */
+#define	IPS_PREPARE_TRANS	0	/* use controller 0 for string */
 
 
 /* structure used to compile requests */
@@ -410,7 +411,7 @@ typedef struct {
 	UCHAR *ips_rq_handle;		/* returned request handle */
 } ips_compile_req;
 
-const USHORT IPS_COMPILE_REQ	= 0;	/* use controller 0 for blr */
+#define	IPS_COMPILE_REQ		0	/* use controller 0 for blr */
 
 
 /* structure used by create/open blob (and create/open blob2) */
@@ -423,7 +424,7 @@ typedef struct {
 	ULONG ips_bid_number;		/* returned blob ID number */
 } ips_blob;
 
-const USHORT IPS_BLOB_BPB		= 0;	/* use contorller 0 for bpb */
+#define	IPS_BLOB_BPB		0	/* use contorller 0 for bpb */
 
 
 /* structure used for DDL operations */
@@ -433,7 +434,7 @@ typedef struct {
 	UCHAR *ips_tr_handle;		/* transaction handle */
 } ips_ddl;
 
-const USHORT IPS_DDL_DDL		= 0;	/* use controller 0 for ddl */
+#define	IPS_DDL_DDL		0		/* use controller 0 for ddl */
 
 
 /*
@@ -459,35 +460,35 @@ typedef struct {
 	USHORT ips_rec_count;		/* packed records count */
 } ips_dsql;
 
-const USHORT IPS_DSQL_EXEC_BLR	= 0;	/* use controller 0 for blr */
-const USHORT IPS_DSQL_EXEC_MSG	= 1;	/* use controller 1 for message */
+#define	IPS_DSQL_EXEC_BLR	0	/* use controller 0 for blr */
+#define	IPS_DSQL_EXEC_MSG	1	/* use controller 1 for message */
 
-const USHORT IPS_DSQL_EXEC2_BLR_IN		= IPS_DSQL_EXEC_BLR;
-const USHORT IPS_DSQL_EXEC2_MSG_IN		= IPS_DSQL_EXEC_MSG;
-const USHORT IPS_DSQL_EXEC2_BLR_OUT		= 2;	/* use controller 2 for output blr */
-const USHORT IPS_DSQL_EXEC2_MSG_OUT		= 3;	/* use controller 3 for output msg */
+#define	IPS_DSQL_EXEC2_BLR_IN	IPS_DSQL_EXEC_BLR
+#define	IPS_DSQL_EXEC2_MSG_IN	IPS_DSQL_EXEC_MSG
+#define	IPS_DSQL_EXEC2_BLR_OUT	2	/* use controller 2 for output blr */
+#define	IPS_DSQL_EXEC2_MSG_OUT	3	/* use controller 3 for output msg */
 
-const USHORT IPS_DSQL_EXEC_IMMED_SQL	= 0;	/* use controller 0 for sql */
-const USHORT IPS_DSQL_EXEC_IMMED_BLR	= 1;	/* use controller 1 for blr */
-const USHORT IPS_DSQL_EXEC_IMMED_MSG	= 2;	/* use controller 2 for message */
+#define	IPS_DSQL_EXEC_IMMED_SQL	0	/* use controller 0 for sql */
+#define	IPS_DSQL_EXEC_IMMED_BLR	1	/* use controller 1 for blr */
+#define	IPS_DSQL_EXEC_IMMED_MSG	2	/* use controller 2 for message */
 
-const USHORT IPS_DSQL_EXEC_IMMED2_SQL	= IPS_DSQL_EXEC_IMMED_SQL;
-const USHORT IPS_DSQL_EXEC_IMMED2_BLR_IN	= IPS_DSQL_EXEC_IMMED_BLR;
-const USHORT IPS_DSQL_EXEC_IMMED2_MSG_IN	= IPS_DSQL_EXEC_IMMED_MSG;
-const USHORT IPS_DSQL_EXEC_IMMED2_BLR_OUT	= 3;	/* use controller 3 for output blr */
-const USHORT IPS_DSQL_EXEC_IMMED2_MSG_OUT	= 4;	/* use controller 4 for output msg */
+#define	IPS_DSQL_EXEC_IMMED2_SQL	IPS_DSQL_EXEC_IMMED_SQL
+#define	IPS_DSQL_EXEC_IMMED2_BLR_IN	IPS_DSQL_EXEC_IMMED_BLR
+#define	IPS_DSQL_EXEC_IMMED2_MSG_IN	IPS_DSQL_EXEC_IMMED_MSG
+#define	IPS_DSQL_EXEC_IMMED2_BLR_OUT	3	/* use controller 3 for output blr */
+#define	IPS_DSQL_EXEC_IMMED2_MSG_OUT	4	/* use controller 4 for output msg */
 
-const USHORT IPS_DSQL_FETCH_BLR		= 0;	/* use controller 0 for blr */
-const USHORT IPS_DSQL_FETCH_MSG		= 1;	/* use controller 1 for message */
+#define	IPS_DSQL_FETCH_BLR	0	/* use controller 0 for blr */
+#define	IPS_DSQL_FETCH_MSG	1	/* use controller 1 for message */
 
-const USHORT IPS_DSQL_INSERT_BLR	= 0;	/* use controller 0 for blr */
-const USHORT IPS_DSQL_INSERT_MSG	= 1;	/* use controller 1 for message */
+#define	IPS_DSQL_INSERT_BLR	0	/* use controller 0 for blr */
+#define	IPS_DSQL_INSERT_MSG	1	/* use controller 1 for message */
 
-const USHORT IPS_DSQL_PREP_STRING	= 0;	/* use controller 0 for string */
-const USHORT IPS_DSQL_PREP_ITEMS	= 1;	/* use controller 1 for items */
-const USHORT IPS_DSQL_PREP_BUFFER	= 2;	/* use controller 2 for buffer */
+#define	IPS_DSQL_PREP_STRING	0	/* use controller 0 for string */
+#define	IPS_DSQL_PREP_ITEMS	1	/* use controller 1 for items */
+#define	IPS_DSQL_PREP_BUFFER	2	/* use controller 2 for buffer */
 
-const USHORT IPS_DSQL_SET_CURSOR	= 0;	/* use controller 0 for name */
+#define	IPS_DSQL_SET_CURSOR	0	/* use controller 0 for name */
 
 
 /* structure used to get/put blob segments */
@@ -497,7 +498,7 @@ typedef struct {
 	USHORT ips_length;			/* returned actual length */
 } ips_segment;
 
-const USHORT IPS_BLOB_SEGMENT	= 0;	/* use controller 0 for segment */
+#define	IPS_BLOB_SEGMENT	0	/* use controller 0 for segment */
 
 
 /* structure used to get/put array slices */
@@ -510,9 +511,9 @@ typedef struct {
 	ULONG ips_length;			/* returned actual length */
 } ips_slice;
 
-const USHORT IPS_SLICE_SDL		= 0;	/* use controller 0 for sdl */
-const USHORT IPS_SLICE_PARAM	= 1;	/* use controller 1 for parameters */
-const USHORT IPS_SLICE_BUFFER	= 2;	/* use controller 2 for slice */
+#define	IPS_SLICE_SDL		0	/* use controller 0 for sdl */
+#define	IPS_SLICE_PARAM		1	/* use controller 1 for parameters */
+#define	IPS_SLICE_BUFFER	2	/* use controller 2 for slice */
 
 
 /* structure for queueing events */
@@ -521,11 +522,11 @@ typedef struct {
 	UCHAR *ips_db_handle;		/* database handle */
 	ULONG ips_event_id;			/* returned event id */
 	HWND ips_event_hwnd;		/* window handle to return to */
-	FPTR_EVENT_CALLBACK ips_ast;	/* ast address */
-	UCHAR* ips_arg;				/* ast arg */
+	UCHAR *ips_ast;				/* ast address */
+	UCHAR *ips_arg;				/* ast arg */
 } ips_que_events;
 
-const USHORT IPS_QUEUE_EVENT	= 0;	/* use controller 0 for event */
+#define	IPS_QUEUE_EVENT		0	/* use controller 0 for event */
 
 
 /* structure for send/receive message */
@@ -541,8 +542,8 @@ typedef struct {
 #endif
 } ips_request;
 
-const USHORT IPS_SEND_MESSAGE		= 0;	/* use controller 0 for message */
-const USHORT IPS_RECEIVE_MESSAGE	= 0;	/* use controller 0 for message */
+#define	IPS_SEND_MESSAGE	0	/* use controller 0 for message */
+#define	IPS_RECEIVE_MESSAGE	0	/* use controller 0 for message */
 
 
 /* structure used to reconnect transaction */
@@ -552,7 +553,7 @@ typedef struct {
 	UCHAR *ips_tr_handle;		/* transaction handle */
 } ips_reconnect;
 
-const USHORT IPS_RECONNECT_ID	= 0;	/* use controller 0 for id */
+#define	IPS_RECONNECT_ID	0	/* use controller 0 for id */
 
 
 /* structure used to seek into a blob */
@@ -580,9 +581,9 @@ typedef struct {
 	UCHAR *ips_tr_handle;		/* transaction handle (in/out) */
 } ips_transact_request;
 
-const USHORT IPS_TRANS_REQ_BLR		= 0;	/* use controller 0 for blr */
-const USHORT IPS_TRANS_REQ_IN_MSG	= 1;	/* use controller 1 for input msg */
-const USHORT IPS_TRANS_REQ_OUT_MSG	= 2;	/* use controller 2 for output msg */
+#define	IPS_TRANS_REQ_BLR	0	/* use controller 0 for blr */
+#define	IPS_TRANS_REQ_IN_MSG	1	/* use controller 1 for input msg */
+#define	IPS_TRANS_REQ_OUT_MSG	2	/* use controller 2 for output msg */
 
 
 /*
@@ -590,7 +591,7 @@ const USHORT IPS_TRANS_REQ_OUT_MSG	= 2;	/* use controller 2 for output msg */
     communications area between the client and server.
 */
 
-const USHORT MAX_IPS_STRINGS		= 5;
+#define	MAX_IPS_STRINGS		5
 
 typedef struct {
 	ULONG ips_server_protocol;	/* server's protocol level */
@@ -625,20 +626,20 @@ typedef struct {
 
 /* size of mapped memory for a given client */
 
-//#define	CLIENT_SERVER_AREA_SIZE	8192
+#define	CLIENT_SERVER_AREA_SIZE	8192
 
 /* size available for packing stuff in the mapped area */
 
-//#define	CLIENT_SERVER_AVAIL (CLIENT_SERVER_AREA_SIZE - sizeof(ips_comm_area))
+#define	CLIENT_SERVER_AVAIL (CLIENT_SERVER_AREA_SIZE - sizeof(ips_comm_area))
 
 /* Windows names used to identify various named objects */
 
-static const char* IPI_MAPPED_FILE_NAME	= "%sMappedArea%d";
-static const char* IPI_CLIENT_SEM_NAME		= "%sClientSem%d_%d";
-static const char* IPI_SERVER_SEM_NAME		= "%sServerSem%d_%d";
-static const char* IPI_EVENT_NAME			= "%sEvent%d";
-static const char* IPI_EVENT_CLASS			= "%sEventClass";
-static const char* IPI_EVENT_THREAD		= "%sEventThread%d_%d";
+#define	IPI_MAPPED_FILE_NAME	"%sMappedArea%d"
+#define	IPI_CLIENT_SEM_NAME		"%sClientSem%d_%d"
+#define	IPI_SERVER_SEM_NAME		"%sServerSem%d_%d"
+#define	IPI_EVENT_NAME			"%sEvent%d"
+#define	IPI_EVENT_CLASS			"%sEventClass"
+#define	IPI_EVENT_THREAD		"%sEventThread%d_%d"
 
 /* local event queue structure */
 
@@ -646,24 +647,21 @@ typedef struct eventq {
 	struct eventq *evq_next;	/* next event */
 	SLONG evq_id;				/* event ID */
 	USHORT evq_length;			/* event length */
-	UCHAR evq_string[1];			/* event string */
+	TEXT evq_string[1];			/* event string */
 } *EVENTQ;
 
 /* interprocess database thread structure */
 
-class tidb : public thdd 
-{
-public:
+typedef struct tidb {
+	struct thdd tidb_thd_data;
 	struct rdb *tidb_database;
 	ISC_STATUS *tidb_status_vector;
 	UCHAR *tidb_setjmp;
-};
-
-typedef tidb* TIDB;
+} *TIDB;
 
 
 /* bias for connect messages */
 
-const ULONG IP_BIAS		= 3333;
+#define	IP_BIAS	3333
 
-#endif /* IPSERVER_IPC_H */
+#endif /* _IPC_H_ */

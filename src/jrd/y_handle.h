@@ -34,60 +34,48 @@
  * to avoid multiple definition of struct why_hndl in why.cpp
  * and dsql.cpp
  *
+ * This file (or y_ref.h) must be included BEFORE ibase.h !
  */
-
-namespace Jrd {
-	class Attachment;
-	class jrd_tra;
-	class jrd_req;
-}
 
 union any_handle {
 	struct why_hndl* h_why;
 	class dsql_req* h_dsql;
-	Jrd::Attachment* h_dbb;
-	Jrd::jrd_tra* h_tra;
+	class att* h_dbb;
+	class jrd_tra* h_tra;
 };
 
-struct why_hndl
+typedef struct why_hndl
 {
 	UCHAR				type;
 	UCHAR				flags;
 	USHORT				implementation;
-	FB_API_HANDLE		public_handle;
 	union any_handle	handle;
 	struct why_hndl*	parent;
 	struct why_hndl*	next;
 	union {
-		struct why_hndl*	requests;
-		struct sqlda_sup*	das;
+		struct why_hndl*requests;
+		struct dasup*	das;
 	};
 	struct why_hndl*	statements;
 	struct why_hndl*	blobs;
-	FB_API_HANDLE*		user_handle;
+	struct why_hndl**	user_handle;
 	struct clean*		cleanup;
 	TEXT*				db_path;
-};
+} *WHY_HNDL, *WHY_REQ, *WHY_DBB, *WHY_TRA, 
+  *WHY_BLB, *WHY_ATT, *WHY_STMT, *WHY_SVC;
 
-typedef why_hndl *WHY_HNDL;
-typedef why_hndl *WHY_REQ;
-typedef why_hndl *WHY_DBB;
-typedef why_hndl *WHY_TRA;
-typedef why_hndl *WHY_BLB;
-typedef why_hndl *WHY_ATT;
-typedef why_hndl *WHY_STMT;
-typedef why_hndl *WHY_SVC;
+#define HANDLE_invalid		0
+#define HANDLE_database		1
+#define HANDLE_transaction	2
+#define HANDLE_request		3
+#define HANDLE_blob			4
+#define HANDLE_statement	5
+#define HANDLE_service		6
 
-const int HANDLE_invalid		= 0;
-const int HANDLE_database		= 1;
-const int HANDLE_transaction	= 2;
-const int HANDLE_request		= 3;
-const int HANDLE_blob			= 4;
-const int HANDLE_statement		= 5;
-const int HANDLE_service		= 6;
+#define HANDLE_TRANSACTION_limbo	1
+#define HANDLE_BLOB_filter			2	/* Blob is locally filtered */
+#define	HANDLE_STATEMENT_local		4	/* Process DSQL statement locally */
 
-const int HANDLE_TRANSACTION_limbo	= 1;
-const int HANDLE_BLOB_filter		= 2;	/* Blob is locally filtered */
-const int HANDLE_STATEMENT_local	= 4;	/* Process DSQL statement locally */
+#include "../jrd/y_ref.h"
 
 #endif // JRD_Y_HANDLE_H

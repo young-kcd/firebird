@@ -27,10 +27,10 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.util,v 1.13 2004-04-30 23:02:07 brodsom Exp $
+#  $Id: Makefile.in.embed.util,v 1.8.2.2 2003-11-10 23:28:40 bellardo Exp $
 #
 ROOT=..
-ObjModuleType=std
+ObjModuleName=embed.util
 
 
 include     $(ROOT)/gen/make.defaults
@@ -41,19 +41,9 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
-LOCKPRINT_Other_Sources = common/utils.cpp lock/lock.cpp jrd/isc_sync.cpp jrd/isc.cpp \
-common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp \
-common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
-
 LOCKPRINT_Files= print.cpp
-LOCKPRINT_Sources = $(addprefix lock/, $(LOCKPRINT_Files)) $(LOCKPRINT_Other_Sources)
+LOCKPRINT_Sources = $(addprefix lock/, $(LOCKPRINT_Files))
 LOCKPRINT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(LOCKPRINT_Sources))))
-
-NBACKUP_Other_Sources = jrd/db_alias.cpp common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp \
-common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
-NBACKUP_Files= nbackup.cpp
-NBACKUP_Sources = $(addprefix utilities/, $(NBACKUP_Files)) $(NBACKUP_Other_Sources)
-NBACKUP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(NBACKUP_Sources))))
 
 
 CREATEDB_Files= create_db.cpp
@@ -61,41 +51,31 @@ CREATEDB_Sources = $(addprefix utilities/, $(CREATEDB_Files))
 CREATEDB_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CREATEDB_Sources))))
 
 
-DROP_Other_Sources = common/utils.cpp lock/lock.cpp jrd/isc_sync.cpp jrd/isc.cpp \
-common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp \
-common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
-
 DROP_Files= drop.cpp
-DROP_Sources = $(addprefix utilities/, $(DROP_Files)) $(DROP_Other_Sources)
+DROP_Sources = $(addprefix utilities/, $(DROP_Files))
 DROP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DROP_Sources))))
 
-GSEC_Other_Sources = jrd/enc.cpp
-
-GSEC_Files =  gsec.cpp security.cpp
-GSEC_Sources = $(addprefix utilities/gsec/, $(GSEC_Files)) $(GSEC_Other_Sources)
+GSEC_Files =  gsec.cpp
+GSEC_Sources = $(addprefix utilities/, $(GSEC_Files))
 GSEC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSEC_Sources))))
 
-GSTAT_Other_Sources = jrd/btn.cpp jrd/db_alias.cpp common/utils.cpp \
-common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp \
-common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
-
 GSTAT_Files =  dba.epp ppg.cpp
-GSTAT_Sources = $(addprefix utilities/gstat/, $(GSTAT_Files)) $(GSTAT_Other_Sources)
+GSTAT_Sources = $(addprefix utilities/, $(GSTAT_Files))
 GSTAT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSTAT_Sources))))
 
 
 IBGUARD_Files =  guard.cpp util.cpp
-IBGUARD_Sources = $(addprefix utilities/guard/, $(IBGUARD_Files))
+IBGUARD_Sources = $(addprefix utilities/, $(IBGUARD_Files))
 IBGUARD_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(IBGUARD_Sources))))
 
 
 IBMGR_Files =  	ibmgr.cpp srvrmgr.cpp
-IBMGR_Sources = $(addprefix utilities/ibmgr/, $(IBMGR_Files))
+IBMGR_Sources = $(addprefix utilities/, $(IBMGR_Files))
 IBMGR_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(IBMGR_Sources))))
 
 
 REBUILD_Files =  rebuild.cpp rstore.epp rmet.epp 
-REBUILD_Sources = $(addprefix utilities/rebuild/, $(REBUILD_Files))
+REBUILD_Sources = $(addprefix utilities/, $(REBUILD_Files))
 REBUILD_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(REBUILD_Sources))))
 
 
@@ -115,7 +95,7 @@ AllObjects = $(CREATEDB_Objects) $(DROP_Objects) \
 Dependencies = $(AllObjects:.o=.d) 
 
 
-.PHONY: create_db gstat gds_drop gds_relay gsec ibguard ibmgr_bin nbackup fb_lock_print
+.PHONY: create_db gstat gds_drop gds_relay gsec ibguard ibmgr_bin fb_lock_print
 
 all: $(EMBED_UTIL_TARGETS)
 
@@ -130,50 +110,46 @@ create_db: $(CREATE_DB)
 $(CREATE_DB):	$(CREATEDB_Objects) $(LIBFBSTATIC_A) $(LIBFBCOMMON_A)
 	$(LD) $(LINK_OPTS) $(CREATEDB_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
 
-nbackup: $(LIBFBEMBED_SO) $(NBACKUP)
-
-$(NBACKUP):	$(NBACKUP_Objects) 
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
-
-fb_lock_print: $(LIBFBEMBED_SO) $(LOCKPRINT)
-
-$(LOCKPRINT):	$(LOCKPRINT_Objects) 
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
 
 
 gstat : $(LIBFBEMBED_SO) $(GSTAT)
 
 $(GSTAT):	$(GSTAT_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 
 
 gds_drop: $(GDS_DROP)
 
 $(GDS_DROP):	$(DROP_Objects) $(LIBFBEMBED_SO)  
-	$(LD) $(LINK_OPTS) $(DROP_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(DROP_Objects) -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 
 gds_relay: $(GDS_RELAY)
 
 $(GDS_RELAY):	$(RELAY_Objects) $(LIBFBEMBED_SO)  
-	$(LD) $(LINK_OPTS) $(RELAY_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(RELAY_Objects) -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
+
+fb_lock_print: $(LIBFBEMBED_SO) $(LOCKPRINT)
+
+$(LOCKPRINT):  $(LOCKPRINT_Objects) 
+	$(LD) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 
 gsec: $(LIBFBEMBED_SO) $(GSEC)
 
 $(GSEC):	$(GSEC_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 ibguard: $(IBGUARD)
 
 $(IBGUARD):	$(IBGUARD_Objects) $(LIBFBEMBED_SO)  
-	$(LD) $(LINK_OPTS) $(IBGUARD_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(IBGUARD_Objects) -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 ibmgr_bin: $(IBMGR_BIN)
 
 $(IBMGR_BIN):	$(IBMGR_Objects) $(LIBFBEMBED_SO)  
-	$(LD) $(LINK_OPTS) $(IBMGR_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(IBMGR_Objects) -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 
 # This one needs a bit of work.
@@ -181,7 +157,7 @@ $(IBMGR_BIN):	$(IBMGR_Objects) $(LIBFBEMBED_SO)
 rebuild: $(GDS_REBUILD)
 
 $(GDS_REBUILD):	$(REBUILD_Objects) $(LIBFBEMBED_SO)  
-	$(LD) $(LINK_OPTS) $(REBUILD_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(REBUILD_Objects) -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 include $(ROOT)/gen/make.shared.targets
 

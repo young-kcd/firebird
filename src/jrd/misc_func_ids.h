@@ -1,27 +1,30 @@
 /*
- *  The contents of this file are subject to the Initial
- *  Developer's Public License Version 1.0 (the "License");
- *  you may not use this file except in compliance with the
- *  License. You may obtain a copy of the License at
- *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
+ *	PROGRAM:	Miscellaneous internal functions support (JRD layer)
+ *	MODULE:		misc_func_ids.h
+ *	DESCRIPTION:	Constants.
  *
- *  Software distributed under the License is distributed AS IS,
- *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
- *  See the License for the specific language governing rights
- *  and limitations under the License.
+ * The contents of this file are subject to the Interbase Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy
+ * of the License at http://www.Inprise.com/IPL.html
  *
- *  The Original Code was created by Dmitry Yemanov
- *  for the Firebird Open Source RDBMS project.
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+ * or implied. See the License for the specific language governing
+ * rights and limitations under the License.
  *
- *  Copyright (c) 2002 Dmitry Yemanov <dimitr@users.sf.net>
- *  and all contributors signed below.
+ * The Original Code was created by Inprise Corporation
+ * and its predecessors. Portions created by Inprise Corporation are
+ * Copyright (C) Inprise Corporation.
  *
- *  All Rights Reserved.
- *  Contributor(s): ______________________________________.
+ * All Rights Reserved.
+ * Contributor(s): ______________________________________
+ *
+ * 2002.09.20 Dmitry Yemanov: Created all this stuff
  */
 
-#ifndef JRD_MISC_FUNC_IDS_H
-#define JRD_MISC_FUNC_IDS_H
+#ifndef _JRD_MISC_FUNC_IDS_H_
+#define _JRD_MISC_FUNC_IDS_H_
 
 enum internal_info_id
 {
@@ -35,4 +38,4 @@ enum internal_info_id
 	max_internal_id
 };
 
-#endif // JRD_MISC_FUNC_IDS_H
+#endif // _JRD_MISC_FUNC_IDS_H_
