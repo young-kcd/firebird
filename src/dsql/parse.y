@@ -2907,7 +2907,6 @@ column_singleton	: select_expr_body order_clause rows_clause
 		;
 
 select_expr_body	: query_term
-			{ $$ = make_node (nod_list, 1, $1); }
 		| select_expr_body UNION distinct_noise query_term
 			{ $$ = make_node (nod_list, 2, $1, $4); }
 		| select_expr_body UNION ALL query_term

@@ -5648,20 +5648,14 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 	}
 	else if (input->nod_type == nod_list)
 	{
-		if (input->nod_count == 1)
-		{
-			return pass1_rse(request, input->nod_arg[0], order, rows,
-							 update_lock, flags);
-		}
-		else
-		{
-			if (update_lock)
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, isc_arg_gds, 
-						  isc_token_err, // Token unknown 
-						  isc_arg_gds, isc_random, isc_arg_string, "WITH LOCK", 0);
+		fb_assert(input->nod_count > 1);
 
-			return pass1_union(request, input, order, rows, flags);
-		}
+		if (update_lock)
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, isc_arg_gds, 
+					  isc_token_err, // Token unknown 
+					  isc_arg_gds, isc_random, isc_arg_string, "WITH LOCK", 0);
+
+		return pass1_union(request, input, order, rows, flags);
 	}
 	else 
 	{
