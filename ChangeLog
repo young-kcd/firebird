@@ -1,3 +1,510 @@
+2002-08-22 13:30  eku
+
+	* firebird2/: configure.in (1.35),
+	src/include/gen/autoconfig_msvc.h (1.21), src/jrd/intl.cpp (1.11),
+	src/make.new/config/config.h.in (1.28):
+	
+	Check for the existence of the function snprintf. Added a
+	work-around for systems like SINIX-Z, that do not have snprintf. We
+	really need a plug-in replacement for those systems.
+
+2002-08-22 13:30  eku
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.559), writeBuildNum.sh
+	(1.562), writeBuildNum.sh (1.561), writeBuildNum.sh (1.560):
+	
+	increment build number
+
+2002-08-22 13:22  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.558):
+	
+	increment build number
+
+2002-08-22 13:22  dimitr
+
+	* firebird2/src/remote/: inet.cpp (1.17), remote.cpp (1.5),
+	spxnet.cpp (1.3):
+	
+	Make sure a length of string being allocated is always initialized.
+
+2002-08-22 12:57  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.557):
+	
+	increment build number
+
+2002-08-22 12:57  dimitr
+
+	* firebird2/src/pipe/head.cpp (1.10):
+	
+	Corrected the GATEWAY cleanup.
+
+2002-08-22 12:48  eku
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.554), writeBuildNum.sh
+	(1.553), writeBuildNum.sh (1.552), writeBuildNum.sh (1.556),
+	writeBuildNum.sh (1.555):
+	
+	increment build number
+
+2002-08-22 12:48  eku
+
+	* firebird2/: configure.in (1.34),
+	src/include/gen/autoconfig_msvc.h (1.20), src/jrd/common.h (1.21),
+	src/jrd/isc_ipc.cpp (1.15), src/jrd/isc_sync.cpp (1.14),
+	src/jrd/svc.cpp (1.12), src/make.new/config/config.h.in (1.27),
+	src/remote/inet.cpp (1.16), src/remote/inet_server.cpp (1.7):
+	
+	Another autoconf cleanup:  o check for the existence of the
+	function sigaction  o replaced SIGACTION_SUPPORTED with
+	HAVE_SIGACTION
+
+2002-08-22 12:16  dimitr
+
+	* firebird2/src/jrd/vio.cpp (1.11):
+	
+	Fixed a typing error in my bugfix <g>.
+
+2002-08-22 12:16  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.551):
+	
+	increment build number
+
+2002-08-22 11:07  eku
+
+	* firebird2/src/misc/writeBuildNum.sh (1.550):
+	
+	increment build number
+
+2002-08-22 11:07  eku
+
+	* firebird2/configure.in (1.33):
+	
+	Unset a cached variable before rerunning a test.
+
+2002-08-22 10:34  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.549):
+	
+	increment build number
+
+2002-08-22 10:34  dimitr
+
+	* firebird2/src/jrd/: mov.cpp (1.4), mov_proto.h (1.2), vio.cpp
+	(1.10):
+	
+	More careful (and proper) implementation of my yesterday's bugfix.
+
+2002-08-22 10:20  dimitr
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.546), writeBuildNum.sh
+	(1.548), writeBuildNum.sh (1.547):
+	
+	increment build number
+
+2002-08-22 10:20  dimitr
+
+	* firebird2/src/: csv/csi.cpp (1.3), csv/csi.h (1.3), csv/css.cpp
+	(1.3), csv/css_proto.h (1.2), csv/csv.cpp (1.4), jrd/all.cpp (1.4),
+	jrd/all_old.cpp (1.2), jrd/blb.h (1.4), jrd/cmp.cpp (1.9),
+	jrd/common.h (1.20), jrd/dsc.h (1.5), jrd/err.cpp (1.10),
+	jrd/evl.cpp (1.13), jrd/exe.cpp (1.13), jrd/exe.h (1.4),
+	jrd/fun.epp (1.7), jrd/inf.cpp (1.9), jrd/isc.cpp (1.14),
+	jrd/isc_sync.cpp (1.13), jrd/jrd.h (1.10), jrd/jrd_blks.cpp (1.2),
+	jrd/jrd_blks.h (1.2), jrd/lck.cpp (1.7), jrd/lck.h (1.5), jrd/met.h
+	(1.4), jrd/par.cpp (1.10), jrd/req.h (1.4), jrd/rse.cpp (1.7),
+	jrd/rse.h (1.5), jrd/scl.h (1.4), jrd/thd.h (1.6), jrd/tra.cpp
+	(1.14), jrd/val.h (1.4), pipe/foot.cpp (1.3), pipe/head.cpp (1.9),
+	pipe/pipe.h (1.3):
+	
+	Get rid of the legacy GATEWAY (vms/oracle) implementation.
+
+2002-08-22 09:56  eku
+
+	* firebird2/src/misc/writeBuildNum.sh (1.545):
+	
+	increment build number
+
+2002-08-22 09:56  eku
+
+	* firebird2/configure.in (1.32):
+	
+	Major cleanup of the autoconf stuff:
+	
+	 o changed the order of the tests, because some tests rely on the
+	result
+	   of others
+	 o removed test for CONST as suggested by Dmitry Yemanov
+	 o added test for 64 bit I/O support
+	 o added SINIX-Z specific cases
+
+2002-08-21 15:34  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.544):
+	
+	increment build number
+
+2002-08-21 15:34  dimitr
+
+	* firebird2/src/jrd/: err.cpp (1.9), mov.cpp (1.3), tra.cpp (1.13):
+	
+	1. More changes for the correct database alias management.  2.
+	Fixed bug with a buffer overrun.
+
+2002-08-20 13:49  eku
+
+	* firebird2/src/misc/writeBuildNum.sh (1.543):
+	
+	increment build number
+
+2002-08-20 13:49  eku
+
+	* firebird2/src/remote/inet.cpp (1.15):
+	
+	The call to ftime is obsoleted by gettimeofday.
+
+2002-08-16 15:34  eku
+
+	* firebird2/src/misc/writeBuildNum.sh (1.542):
+	
+	increment build number
+
+2002-08-16 15:34  eku
+
+	* firebird2/configure.in (1.31):
+	
+	Fixed error with last check-in.
+
+2002-08-16 15:21  eku
+
+	* firebird2/src/misc/writeBuildNum.sh (1.541):
+	
+	increment build number
+
+2002-08-16 15:21  eku
+
+	* firebird2/src/jrd/gds.cpp (1.17):
+	
+	Fixed error from last check-in.
+
+2002-08-14 15:43  eku
+
+	* firebird2/src/misc/writeBuildNum.sh (1.540):
+	
+	increment build number
+
+2002-08-14 15:43  eku
+
+	* firebird2/configure.in (1.30):
+	
+	Check for return type of function 'signal'.
+
+2002-08-14 15:10  eku
+
+	* firebird2/src/misc/writeBuildNum.sh (1.539):
+	
+	increment build number
+
+2002-08-14 15:10  eku
+
+	* firebird2/configure.in (1.29):
+	
+	Set default values for configureable options.
+
+2002-08-14 14:27  eku
+
+	* firebird2/: configure.in (1.28),
+	src/include/gen/autoconfig_msvc.h (1.19), src/jrd/flu.cpp (1.10),
+	src/make.new/config/config.h.in (1.26):
+	
+	Minor 'dirname' cleanup:
+	
+	 o check for the availability in configure
+	 o removed the ugly test in flu.cpp
+	 o synchronised config.h.in and MSVC pendant
+	
+	NOTE: If you have problems on your system, don't change the source.
+	       Extend the tests in configure.in!!!
+
+2002-08-14 14:27  eku
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.536), writeBuildNum.sh
+	(1.535), writeBuildNum.sh (1.538), writeBuildNum.sh (1.537):
+	
+	increment build number
+
+2002-08-14 14:15  eku
+
+	* firebird2/configure.in (1.27):
+	
+	Fixed some typos.
+
+2002-08-14 14:13  eku
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.533), writeBuildNum.sh
+	(1.534):
+	
+	increment build number
+
+2002-08-14 14:13  eku
+
+	* firebird2/configure.in (1.26):
+	
+	Architecture and production type are now a command line switch to
+	configure. See 'configure --help' for details.
+
+2002-08-14 13:44  eku
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.530), writeBuildNum.sh
+	(1.529), writeBuildNum.sh (1.532), writeBuildNum.sh (1.531):
+	
+	increment build number
+
+2002-08-14 13:44  eku
+
+	* firebird2/: configure.in (1.25),
+	src/include/gen/autoconfig_msvc.h (1.18), src/jrd/perf.cpp (1.10),
+	src/make.new/config/config.h.in (1.25):
+	
+	Huge 'times' cleanup:
+	
+	 o check for the availability in configure
+	 o removed the define NO_TIMES
+	 o synchronised config.h.in and MSVC pendant
+	
+	NOTE: If you have problems on your system, don't change the source.
+	       Extend the tests in configure.in!!!
+
+2002-08-14 13:13  eku
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.525), writeBuildNum.sh
+	(1.524), writeBuildNum.sh (1.523), writeBuildNum.sh (1.522),
+	writeBuildNum.sh (1.528), writeBuildNum.sh (1.527),
+	writeBuildNum.sh (1.526):
+	
+	increment build number
+
+2002-08-14 13:13  eku
+
+	* firebird2/: autogen.sh (1.3), configure.in (1.24),
+	src/extlib/fbudf/fbudf.cpp (1.3), src/include/gen/autoconfig_msvc.h
+	(1.17), src/journal/misc.cpp (1.6), src/jrd/gds.cpp (1.16),
+	src/jrd/isc.cpp (1.13), src/jrd/perf.cpp (1.9), src/jrd/svc.cpp
+	(1.11), src/make.new/config/config.h.in (1.24), src/wal/driver.cpp
+	(1.4):
+	
+	Huge 'gettimeofday' cleanup:
+	
+	 o check for the availability in configure
+	 o check for the number of arguments in configure
+	 o synchronised config.h.in and MSVC pendant
+	
+	NOTE: If you have problems on your system, don't change the source.
+	       Extend the tests in configure.in!!!
+
+2002-08-14 08:46  eku
+
+	* firebird2/src/make.new/config/config.log (1.2):
+	
+	This is a generated file.
+
+2002-08-14 08:46  eku
+
+	* firebird2/src/misc/writeBuildNum.sh (1.521):
+	
+	increment build number
+
+2002-08-14 07:45  eku
+
+	* firebird2/configure (1.21):
+	
+	Use autogen.sh to generate configure from configure.in on your
+	machine.
+
+2002-08-14 07:44  eku
+
+	* firebird2/autogen.sh (1.2):
+	
+	Small type in the CVS placeholder.
+
+2002-08-14 07:43  eku
+
+	* firebird2/autogen.sh (1.1):
+	
+	autogen.sh replaces configure in CVS. Run autogen.sh create all the
+	initial files (configure etc.).
+
+2002-08-14 07:43  eku
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.518), writeBuildNum.sh
+	(1.519), writeBuildNum.sh (1.520):
+	
+	increment build number
+
+2002-08-13 14:12  eku
+
+	* firebird2/src/misc/writeBuildNum.sh (1.517):
+	
+	increment build number
+
+2002-08-13 14:12  eku
+
+	* firebird2/configure (1.20):
+	
+	Updated configure from configure.in.
+
+2002-08-13 12:02  eku
+
+	* firebird2/builds/posix/make.rules (1.3):
+	
+	Do not define '-m468' in platform-independent rules.
+
+2002-08-13 12:02  eku
+
+	* firebird2/src/misc/writeBuildNum.sh (1.516):
+	
+	increment build number
+
+2002-08-13 09:40  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.515):
+	
+	increment build number
+
+2002-08-13 09:40  dimitr
+
+	* firebird2/src/dsql/metd.epp (1.7):
+	
+	Now UDFs work again.
+
+2002-08-12 13:32  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.514):
+	
+	increment build number
+
+2002-08-12 13:32  dimitr
+
+	* firebird2/src/jrd/pwd.cpp (1.6):
+	
+	Fixed the weird logic with reversed return values.
+
+2002-08-12 07:34  dimitr
+
+	* firebird2/builds/win32/msvc6/fbserver.dsp (1.2):
+	
+	Just a small correction for the generated headers.
+
+2002-08-12 07:34  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.513):
+	
+	increment build number
+
+2002-08-11 10:04  dimitr
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.512), writeBuildNum.sh
+	(1.511), writeBuildNum.sh (1.510):
+	
+	increment build number
+
+2002-08-11 10:04  dimitr
+
+	* firebird2/src/: dsql/ddl.cpp (1.11), dsql/dsql.tab.h (1.3),
+	dsql/keywords.cpp (1.5), dsql/make.cpp (1.9), dsql/node.h (1.8),
+	dsql/parse.cpp (1.20), dsql/parse.y (1.19), dsql/pass1.cpp (1.14),
+	isql/show.epp (1.6), jrd/dyn.epp (1.9), jrd/dyn_def.epp (1.9),
+	jrd/dyn_md_proto.h (1.3), jrd/dyn_mod.epp (1.8):
+	
+	1. BIGINT is now the only keyword for the 64-bit exact numerics and
+	it's available	  in dialect 3 only.  2. BREAK statement has been
+	disabled in triggers (like EXIT) because of the known	 BLR
+	limitations. I hope it can be safely used in stored procedures
+	though, hence	 I'd prefer to have it officially documented.  3.
+	More complete implementation of the GROUP BY clause. You can group
+	by internal    functions and have ability to use more complex
+	grouping conditions than before.     By Arno Brinkman.	4. Allowed
+	declaring and defining local variables at the same time.     By
+	Claudio Valderrama.	Syntax: declare [variable] <var_name>
+	<var_type> [{= | default} <default_value>]  5. Allowed ordinals to
+	be used in the GROUP BY clause (like ORDER BY).     By Arno
+	Brinkman.     Example: select extract(month from order_date),
+	sum(order_sum) from orders group by 1  6. The first approach to the
+	ALTER VIEW statement. Only high-level implementation so far.	 A
+	lot of work in dfw.epp, metd.epp, etc. still required.	   By
+	Dmitry Yemanov.
+
+2002-08-11 07:49  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.509):
+	
+	increment build number
+
+2002-08-11 07:49  dimitr
+
+	* firebird2/src/gpre/gpre_meta_boot.cpp (1.6):
+	
+	Make gpre_boot compilable on win32
+
+2002-08-09 19:05  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.508):
+	
+	increment build number
+
+2002-08-09 19:05  dimitr
+
+	* firebird2/builds/win32/msvc6/: Firebird2.dsw (1.2), alice.dsp
+	(1.2), burp.dsp (1.2), common.dsp (1.2), dsql_server.dsp (1.3),
+	fbguard.dsp (1.2), gbak.dsp (1.2), gds32.dsp (1.3), gfix.dsp (1.2),
+	gpre.dsp (1.2), gpre_boot.dsp (1.1), gsec.dsp (1.1), gstat.dsp
+	(1.2), ib_util.dsp (1.2), intl.dsp (1.3), ipserver.dsp (1.2),
+	isql.dsp (1.2), lock.dsp (1.2), remote.dsp (1.2), utilities.dsp
+	(1.2), wal.dsp (1.2):
+	
+	1. Get rid of debug runtime libraries in our release builds 2.
+	Added gpre_boot and gsec projects
+
+2002-08-09 09:25  skywalker
+
+	* firebird2/doc/sql.extensions/README.nullif (1.2):
+	
+	Update the description, it is now correct.
+
+2002-08-09 09:25  skywalker
+
+	* firebird2/src/misc/writeBuildNum.sh (1.507):
+	
+	increment build number
+
+2002-08-09 01:33  skywalker
+
+	* firebird2/doc/sql.extensions/: README.case (1.1), README.coalesce
+	(1.1), README.nullif (1.1):
+	
+	documentation for new sql clauses case, coalesce and nullif
+	contributed by Arno Brinkman <firebird@abvisie.nl>
+
+2002-08-09 01:33  skywalker
+
+	* firebird2/src/misc/writeBuildNum.sh (1.506):
+	
+	increment build number
+
+2002-08-09 01:21  skywalker
+
+	* firebird2/src/misc/writeBuildNum.sh (1.505):
+	
+	increment build number
+
+2002-08-07 17:02  fsg
+
+	* firebird2/src/misc/writeBuildNum.sh (1.504):
+	
+	increment build number
+
 2002-08-07 15:18  eku
 
 	* firebird2/src/misc/writeBuildNum.sh (1.503):
