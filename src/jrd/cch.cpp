@@ -146,6 +146,7 @@ static BOOLEAN writeable(BDB);
 static int write_buffer(TDBB, BDB, SLONG, USHORT, ISC_STATUS *, BOOLEAN);
 static BOOLEAN write_page(TDBB, BDB, USHORT, ISC_STATUS *, BOOLEAN);
 static void unmark(TDBB, WIN *);
+static void update_write_direction(TDBB, BDB);
 
 #define MIN_BUFFER_SEGMENT	65536L
 
@@ -189,6 +190,8 @@ static void unmark(TDBB, WIN *);
 
 bool set_write_direction(DBB dbb, BDB bdb, SSHORT direction) {
 #ifdef SUPERSERVER
+	NBAK_TRACE(("set_write_direction page=%d old=%d new=%d", bdb->bdb_page,
+		bdb->bdb_write_direction, direction));
 	if (bdb->bdb_write_direction == BDB_write_normal ||
 		bdb->bdb_write_direction == BDB_write_both) 
 	{
@@ -196,7 +199,7 @@ bool set_write_direction(DBB dbb, BDB bdb, SSHORT direction) {
 			dbb->backup_manager->release_sw_database_lock();
 	} else {
 		if (direction == BDB_write_normal || direction == BDB_write_both)		
-			dbb->backup_manager->get_sw_database_lock(true, true);
+			dbb->backup_manager->get_sw_database_lock(true);
 	}
 	bdb->bdb_write_direction = direction;
 #else
@@ -221,7 +224,7 @@ bool set_write_direction(DBB dbb, BDB bdb, SSHORT direction) {
 			dbb->backup_manager->decrement_diff_use_count();
 			bdb->bdb_write_direction = direction;
 			// We ask this function to enable signals
-			if (!dbb->backup_manager->get_sw_database_lock(true, true)) {
+			if (!dbb->backup_manager->get_sw_database_lock(true)) {
 				bdb->bdb_write_direction = BDB_write_undefined;
 				return false;
 			}
@@ -239,7 +242,7 @@ bool set_write_direction(DBB dbb, BDB bdb, SSHORT direction) {
 		case BDB_write_both:
 			bdb->bdb_write_direction = direction;
 			// We ask this function to enable signals
-			if (!dbb->backup_manager->get_sw_database_lock(true, true)) {
+			if (!dbb->backup_manager->get_sw_database_lock(true)) {
 				bdb->bdb_write_direction = BDB_write_undefined;
 				return false;
 			}
@@ -273,38 +276,27 @@ void CCH_flush_database(TDBB tdbb) {
 #ifdef SUPERSERVER
 	// This is called on architectures with shared buffer cache (like SuperServer)
 
-	// Determine a list of pages to flush
-	Firebird::BePlusTree<ULONG, ULONG, Firebird::MemoryPool> pages(tdbb->tdbb_default);
-	BCB_MUTEX_ACQUIRE;
-	try {
-		for (ULONG i = 0; (bcb = dbb->dbb_bcb) && i < bcb->bcb_count; i++) {
-			BDB bdb = bcb->bcb_rpt[i].bcb_bdb;
-			if (bdb->bdb_length)
-				continue;
-			if (!(bdb->bdb_flags & (BDB_dirty | BDB_db_dirty)) || 
-				bdb->bdb_write_direction == BDB_write_diff) continue;
-			// As the result we can add a number of redundant pages to flush
-			// that were marked as dirty, but not released yet. This should
-			// not create problems except that we'll loose some time later
-			// during the flush itself
-			pages.add(bdb->bdb_page);
+	// Redirect pages to the difference file
+
+	// Need to reconsider this protection for possible deadlocks when MT-safety is implemented
+	BCB_MUTEX_ACQUIRE; 
+	for (ULONG i = 0; (bcb = dbb->dbb_bcb) && i < bcb->bcb_count; i++) {
+		BDB bdb = bcb->bcb_rpt[i].bcb_bdb;
+		if (bdb->bdb_length)
+			continue;
+		if (bdb->bdb_write_direction != BDB_write_normal &&
+			bdb->bdb_write_direction != BDB_write_both)
+		{
+			continue;
 		}
-	} catch(std::exception&) {
-		// Handle out-of-memory error
-		BCB_MUTEX_RELEASE;
-		throw;
+		NBAK_TRACE(("Redirect page=%d use=%d flags=%d", bdb->bdb_page, bdb->bdb_use_count, bdb->bdb_flags));
+		// As the result we can add a number of redundant pages to flush
+		// that were marked as dirty, but not released yet. This should
+		// not create problems except that we'll loose some time later
+		// during the flush itself
+		update_write_direction(tdbb, bdb);
 	}
 	BCB_MUTEX_RELEASE;
-		
-	// Now, apply force to flush this pages. Flush pages in order.
-	if (pages.getFirst()) do {
-		WIN window;
-		window.win_page = pages.current();
-		window.win_flags = 0;
-		PAG page = CCH_FETCH(tdbb, &window, LCK_write, pag_undefined);
-		CCH_MARK_MUST_WRITE(tdbb, &window);
-		CCH_RELEASE(tdbb, &window);
-	} while(pages.getNext());
 #else		
 	/* Do some fancy footwork to make sure that pages are
 	   not removed from the btc tree at AST level.  Then
@@ -903,8 +895,9 @@ PAG CCH_fetch(TDBB tdbb,
 	}
 	else {
 		bdb->bdb_scan_count = 0;
-		if (bdb->bdb_flags & BDB_garbage_collect)
+		if (bdb->bdb_flags & BDB_garbage_collect) {			
 			bdb->bdb_flags &= ~BDB_garbage_collect;
+		}
 	}
 
 /* Validate the fetched page matches the expected type */
@@ -1647,8 +1640,9 @@ PAG CCH_handoff(TDBB	tdbb,
 	}
 	else {
 		bdb->bdb_scan_count = 0;
-		if (bdb->bdb_flags & BDB_garbage_collect)
+		if (bdb->bdb_flags & BDB_garbage_collect) {
 			bdb->bdb_flags &= ~BDB_garbage_collect;
+		}
 	}
 
 /* Validate the fetched page matches the expected type */
@@ -1993,6 +1987,7 @@ void CCH_mark(TDBB tdbb, WIN * window, USHORT mark_system)
 #endif
 
 	bdb->bdb_flags |= (BDB_dirty | BDB_marked);
+	update_write_direction(tdbb, bdb);
 }
 
 
@@ -2024,6 +2019,7 @@ void CCH_mark_must_write(TDBB tdbb, WIN * window)
 	bdb->bdb_flags |= (BDB_dirty | BDB_must_write);
 
 	CCH_MARK(tdbb, window);
+	update_write_direction(tdbb, bdb);
 }
 
 
@@ -2048,6 +2044,7 @@ void CCH_must_write(WIN * window)
 		BUGCHECK(208);			/* msg 208 page not accessed for write */
 
 	bdb->bdb_flags |= (BDB_dirty | BDB_must_write);
+	update_write_direction(GET_THREAD_DATA, bdb);
 }
 
 
@@ -2309,6 +2306,92 @@ void invalidate_and_release_buffer(TDBB tdbb, BDB bdb) {
 	release_bdb(tdbb, bdb, FALSE, FALSE, FALSE);
 }
 
+void update_write_direction(TDBB tdbb, BDB bdb) {
+	DBB dbb = tdbb->tdbb_database;
+
+	SSHORT write_direction;
+	// Determine location of the page in difference file and write destination 
+	// so BDB AST handlers and write_page routine can safely use this information
+	if (!dbb->backup_manager->lock_state(true)) {
+		invalidate_and_release_buffer(tdbb, bdb);
+		CCH_unwind(tdbb, TRUE);
+	}
+#ifndef SUPERSERVER
+	bdb->bdb_diff_generation = dbb->backup_manager->get_current_generation();
+#endif
+	if (bdb->bdb_page != HEADER_PAGE) // SCN of header page is adjusted in nbak.cpp
+		bdb->bdb_buffer->pag_scn() = dbb->backup_manager->get_current_scn(); // Set SCN for the page
+	int backup_state = dbb->backup_manager->get_state();
+	switch (backup_state) {
+	case nbak_state_normal:
+		write_direction = BDB_write_normal; 
+		break;
+	case nbak_state_stalled:
+		write_direction = BDB_write_diff;
+		break;
+	case nbak_state_merge:
+		if (tdbb->tdbb_flags & TDBB_backup_merge || 
+			bdb->bdb_page < dbb->backup_manager->get_backup_pages())
+		{
+			write_direction = BDB_write_normal;
+		} else
+			write_direction = BDB_write_both;
+		break;
+	}
+	switch (write_direction) {
+	case BDB_write_diff:
+		if (!dbb->backup_manager->lock_alloc(true)) {
+			dbb->backup_manager->unlock_state();
+			invalidate_and_release_buffer(tdbb, bdb);
+			CCH_unwind(tdbb, TRUE);
+		}
+		bdb->bdb_difference_page = dbb->backup_manager->get_page_index(bdb->bdb_page);
+		dbb->backup_manager->unlock_alloc();
+		if (!bdb->bdb_difference_page) {
+			if (!dbb->backup_manager->lock_alloc_write(true)) {
+				dbb->backup_manager->unlock_state();
+				invalidate_and_release_buffer(tdbb, bdb);
+				CCH_unwind(tdbb, TRUE);
+			}
+			bdb->bdb_difference_page = dbb->backup_manager->allocate_difference_page(bdb->bdb_page);
+			dbb->backup_manager->unlock_alloc_write();
+			if (!bdb->bdb_difference_page) {
+				dbb->backup_manager->unlock_state();
+				invalidate_and_release_buffer(tdbb, bdb);
+				CCH_unwind(tdbb, TRUE);
+			}
+			NBAK_TRACE(("Allocate difference page %d for database page %d", 
+				bdb->bdb_difference_page, bdb->bdb_page));
+		} else {
+			NBAK_TRACE(("Map existing difference page %d to database page %d", 
+				bdb->bdb_difference_page, bdb->bdb_page));
+		}
+		break;
+	case BDB_write_both:
+		if (!dbb->backup_manager->lock_alloc(true)) {
+			dbb->backup_manager->unlock_state();
+			invalidate_and_release_buffer(tdbb, bdb);
+			CCH_unwind(tdbb, TRUE);
+		}
+		bdb->bdb_difference_page = dbb->backup_manager->get_page_index(bdb->bdb_page);
+		dbb->backup_manager->unlock_alloc();
+		if (bdb->bdb_difference_page) {
+			NBAK_TRACE(("Map existing difference page %d to database page %d (write_both)", 
+				bdb->bdb_difference_page, bdb->bdb_page));
+		} else {
+			// This may really happen. Database file can grow while in merge mode
+			write_direction = BDB_write_normal;
+		}
+		break;
+	}
+	if (!set_write_direction(dbb, bdb, write_direction)) {
+		dbb->backup_manager->unlock_state();
+		invalidate_and_release_buffer(tdbb, bdb);
+		CCH_unwind(tdbb, TRUE);
+	}
+	dbb->backup_manager->unlock_state();
+}
+
 void CCH_release(TDBB tdbb, WIN * window, BOOLEAN release_tail)
 {
 /**************************************
@@ -2353,90 +2436,6 @@ void CCH_release(TDBB tdbb, WIN * window, BOOLEAN release_tail)
 
 	if (bdb->bdb_use_count == 1)
 	{
-		if (bdb->bdb_flags & BDB_dirty) {
-			SSHORT write_direction;
-			// We are going to release a page that is dirty. Lets determine 
-			// location of the page in difference file and write destination 
-			// so BDB AST handlers can safely use this information
-			if (!dbb->backup_manager->lock_state(true)) {
-				invalidate_and_release_buffer(tdbb, bdb);
-				CCH_unwind(tdbb, TRUE);
-			}
-#ifndef SUPERSERVER
-			bdb->bdb_diff_generation = dbb->backup_manager->get_current_generation();
-#endif
-			if (bdb->bdb_page != HEADER_PAGE) // SCN of header page is adjusted in nbak.cpp
-				bdb->bdb_buffer->pag_scn() = dbb->backup_manager->get_current_scn(); // Set SCN for the page
-			int backup_state = dbb->backup_manager->get_state();
-			switch (backup_state) {
-			case nbak_state_normal:
-				write_direction = BDB_write_normal; 
-				break;
-			case nbak_state_stalled:
-				write_direction = BDB_write_diff;
-				break;
-			case nbak_state_merge:
-				if (tdbb->tdbb_flags & TDBB_backup_merge || 
-					bdb->bdb_page < dbb->backup_manager->get_backup_pages())
-				{
-					write_direction = BDB_write_normal;
-				} else
-					write_direction = BDB_write_both;
-				break;
-			}
-			switch (write_direction) {
-			case BDB_write_diff:
-				if (!dbb->backup_manager->lock_alloc(true)) {
-					dbb->backup_manager->unlock_state();
-					invalidate_and_release_buffer(tdbb, bdb);
-					CCH_unwind(tdbb, TRUE);
-				}
-				bdb->bdb_difference_page = dbb->backup_manager->get_page_index(bdb->bdb_page);
-				dbb->backup_manager->unlock_alloc();
-				if (!bdb->bdb_difference_page) {
-					if (!dbb->backup_manager->lock_alloc_write(true)) {
-						dbb->backup_manager->unlock_state();
-						invalidate_and_release_buffer(tdbb, bdb);
-						CCH_unwind(tdbb, TRUE);
-					}
-					bdb->bdb_difference_page = dbb->backup_manager->allocate_difference_page(bdb->bdb_page);
-					dbb->backup_manager->unlock_alloc_write();
-					if (!bdb->bdb_difference_page) {
-						dbb->backup_manager->unlock_state();
-						invalidate_and_release_buffer(tdbb, bdb);
-						CCH_unwind(tdbb, TRUE);
-					}
-					NBAK_TRACE(("Allocate difference page %d for database page %d", 
-						bdb->bdb_difference_page, bdb->bdb_page));
-				} else {
-					NBAK_TRACE(("Map existing difference page %d to database page %d", 
-						bdb->bdb_difference_page, bdb->bdb_page));
-				}
-				break;
-			case BDB_write_both:
-				if (!dbb->backup_manager->lock_alloc(true)) {
-					dbb->backup_manager->unlock_state();
-					invalidate_and_release_buffer(tdbb, bdb);
-					CCH_unwind(tdbb, TRUE);
-				}
-				bdb->bdb_difference_page = dbb->backup_manager->get_page_index(bdb->bdb_page);
-				dbb->backup_manager->unlock_alloc();
-				if (bdb->bdb_difference_page) {
-					NBAK_TRACE(("Map existing difference page %d to database page %d (write_both)", 
-						bdb->bdb_difference_page, bdb->bdb_page));
-				} else {
-					// This may really happen. Database file can grow while in merge mode
-					write_direction = BDB_write_normal;
-				}
-				break;
-			}
-			if (!set_write_direction(dbb, bdb, write_direction)) {
-				dbb->backup_manager->unlock_state();
-				invalidate_and_release_buffer(tdbb, bdb);
-				CCH_unwind(tdbb, TRUE);
-			}
-			dbb->backup_manager->unlock_state();
-		}
 		bool marked = bdb->bdb_flags & BDB_marked;
 		bdb->bdb_flags &= ~(BDB_writer | BDB_marked | BDB_faked);		
 		if (marked)

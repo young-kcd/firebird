@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.81 2003-09-08 20:23:35 skidder Exp $
+$Id: common.h,v 1.82 2003-09-13 18:35:38 skidder Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -544,6 +544,9 @@ typedef unsigned int64 UATOM;
 *****************************************************/
 
 #ifdef WIN_NT
+
+#define vsnprintf _vsnprintf
+
 #define NO_NFS
 
 #define MOVE_FAST(from,to,length)       memcpy (to, from, (int) (length))

@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.h,v 1.4 2003-09-08 20:23:35 skidder Exp $
+ *  $Id: nbak.h,v 1.5 2003-09-13 18:35:39 skidder Exp $
  *
  */
  
@@ -132,7 +132,7 @@ public:
 	
 	
 	// Routines to declare and release interest in the main database file
-	bool get_sw_database_lock(bool thread_exit, bool enable_signals) throw();
+	bool get_sw_database_lock(bool enable_signals) throw();
 	void release_sw_database_lock() throw();
 
 #ifndef SUPERSERVER

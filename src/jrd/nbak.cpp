@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.cpp,v 1.10 2003-09-09 16:47:25 skidder Exp $
+ *  $Id: nbak.cpp,v 1.11 2003-09-13 18:35:39 skidder Exp $
  *
  */
 
@@ -85,11 +85,14 @@ void BackupManager::decrement_diff_use_count() throw() {
 }
 #endif
 
-bool BackupManager::get_sw_database_lock(bool thread_exit, bool enable_signals) throw() {
+bool BackupManager::get_sw_database_lock(bool enable_signals) throw() {
 #ifdef SUPERSERVER
-	if (thread_exit) THREAD_EXIT;
+#ifdef WIN_NT
+	NBAK_TRACE(("get_sw_database_lock %d", database_lock->getState()));
+#else
+	NBAK_TRACE(("get_sw_database_lock"));
+#endif
 	database_lock->beginRead();
-	if (thread_exit) THREAD_ENTER;
 	return true;
 #else
 	NBAK_TRACE(("get_sw_database_lock %d", database_use_count));
@@ -107,6 +110,11 @@ bool BackupManager::get_sw_database_lock(bool thread_exit, bool enable_signals) 
 
 void BackupManager::release_sw_database_lock() throw() {
 #ifdef SUPERSERVER
+#ifdef WIN_NT
+	NBAK_TRACE(("release_sw_database_lock %d", database_lock->getState()));
+#else
+	NBAK_TRACE(("release_sw_database_lock"));
+#endif
 	database_lock->endRead();
 #else
 	NBAK_TRACE(("release_sw_database_lock %d", database_use_count));

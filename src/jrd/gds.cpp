@@ -1147,6 +1147,7 @@ void API_ROUTINE gds__trace(const TEXT * text)
 			if (trace_file == INVALID_HANDLE_VALUE) break;
 		}
 		DWORD bytesWritten;
+		SetFilePointer(trace_file, 0, NULL, FILE_END);
 		WriteFile(trace_file, buffer, p-buffer, &bytesWritten, NULL);
 		if (bytesWritten != p-buffer) {
 			// Handle the case when file was deleted by another process on Win9x
@@ -1209,7 +1210,9 @@ void API_ROUTINE gds__log(const TEXT * text, ...)
 	gds__prefix(name, LOGFILE);
 
 	oldmask = umask(0111);
-
+#ifdef WIN_NT
+	trace_mutex.enter();
+#endif
 	if ((file = ib_fopen(name, FOPEN_APPEND_TYPE)) != NULL)
 	{
 		ib_fprintf(file, "\n%s%s\t%.25s\t", 
@@ -1219,6 +1222,9 @@ void API_ROUTINE gds__log(const TEXT * text, ...)
 		ib_fprintf(file, "\n\n");
 		ib_fclose(file);
 	}
+#ifdef WIN_NT
+	trace_mutex.leave();
+#endif
 
 	umask(oldmask);
 
