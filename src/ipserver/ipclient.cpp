@@ -3554,7 +3554,7 @@ static void clear_transaction_statements( ITR transaction)
 	for (statement = database->idb_sql_requests; statement;
 		 statement = statement->isr_next)
 	{
-		if (statement->isr_itr ==transaction)
+		if (statement->isr_itr == transaction)
 			clear_statement_cache(statement);
 	}
 }
