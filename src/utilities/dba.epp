@@ -148,7 +148,9 @@ static void db_error(int);
 
 static DBA_FIL db_open(UCHAR *, USHORT);
 static PAG db_read(SLONG);
+#ifdef SUPERSERVER
 static void db_close(int);
+#endif
 static BOOLEAN key_equality(SSHORT, SCHAR *, BTN);
 static void move(SCHAR *, SCHAR *, SSHORT);
 static void print_distribution(SCHAR *, SLONG *);
@@ -1263,6 +1265,7 @@ static ULONG analyze_versions( DBA_REL relation, RHDF header)
 
 
 #ifdef WIN_NT
+#ifdef SUPERSERVER
 static void db_close( int file_desc)
 {
 /**************************************
@@ -1277,6 +1280,7 @@ static void db_close( int file_desc)
  **************************************/
 	CloseHandle((HANDLE) file_desc);
 }
+#endif
 
 static void db_error( SLONG status)
 {
@@ -1457,7 +1461,7 @@ static PAG db_read( SLONG page_number)
 
 
 #ifndef WIN_NT
-
+#ifdef SUPERSERVER
 static void db_close( int file_desc)
 {
 /**************************************
@@ -1472,6 +1476,7 @@ static void db_close( int file_desc)
  **************************************/
 	close(file_desc);
 }
+#endif
 
 static void db_error( int status)
 {
