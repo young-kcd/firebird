@@ -28,7 +28,7 @@
  *
  */
 /*
-$Id: canonical.cpp,v 1.11 2002-11-16 23:57:18 hippoman Exp $
+$Id: canonical.cpp,v 1.12 2002-11-19 15:37:52 skidder Exp $
 */
 
 #include "firebird.h"
@@ -70,12 +70,6 @@ extern void xdr_debug_memory(XDR*, enum xdr_op, void*, void*, ULONG);
 static bool_t xdr_quad(register XDR*, register SLONG*);
 static int xdr_init(XDR*, LSTRING*, enum xdr_op);
 static bool_t xdr_slice(XDR*, LSTRING*, USHORT, UCHAR*);
-
-#ifdef HAVE_XDR_HYPER
-extern bool_t xdr_hyper(register XDR *, SINT64 *);
-#else
-static bool_t xdr_hyper(register XDR *, SINT64 *);
-#endif
 
 static xdr_t::xdr_ops burp_ops =
 {
@@ -935,75 +929,6 @@ static bool_t xdr_slice(XDR* xdrs,
 
 	return TRUE;
 }
-
-
-#ifndef HAVE_XDR_HYPER
-static bool_t xdr_hyper(register XDR* xdrs, SINT64* pi64)
-{
-/**************************************
- *
- *	x d r _ h y p e r
- *
- **************************************
- *
- * Functional description
- *	Map a 64-bit Integer from external to internal representation 
- *      (or vice versa).
- *      
- *      Enable this for all platforms except those which supply
- *	xdr_hyper as part of the system xdr library (initially only
- *      Solaris, but we expect more over time). This function (normally) 
- *      would have been implemented in REMOTE/xdr.c. Since some system 
- *      XDR libraries (HP-UX) do not implement this function, we have it 
- *      in this module. At a later date, when the function is available 
- *      on all platforms, we can start using the system-provided version.
- *      
- *      Handles "swapping" of the 2 long's to be "Endian" sensitive. 
- *
- **************************************/
-	union
-	{
-		SINT64 temp_int64;
-		SLONG temp_long[2];
-	} temp;
-
-	switch (xdrs->x_op)
-	{
-	case XDR_ENCODE:
-		temp.temp_int64 = *pi64;
-#ifndef WORDS_BIGENDIAN
-		if ((*xdrs->x_ops->x_putlong) (xdrs, &temp.temp_long[1]) &&
-			(*xdrs->x_ops->x_putlong) (xdrs, &temp.temp_long[0]))
-			return TRUE;
-#else
-		if ((*xdrs->x_ops->x_putlong) (xdrs, &temp.temp_long[0]) &&
-			(*xdrs->x_ops->x_putlong) (xdrs, &temp.temp_long[1]))
-			return TRUE;
-#endif
-		return FALSE;
-
-	case XDR_DECODE:
-#ifndef WORDS_BIGENDIAN
-		if (!(*xdrs->x_ops->x_getlong) (xdrs, &temp.temp_long[1]) ||
-			!(*xdrs->x_ops->x_getlong) (xdrs, &temp.temp_long[0]))
-			return FALSE;
-#else
-		if (!(*xdrs->x_ops->x_getlong) (xdrs, &temp.temp_long[0]) ||
-			!(*xdrs->x_ops->x_getlong) (xdrs, &temp.temp_long[1]))
-			return FALSE;
-#endif
-		*pi64 = temp.temp_int64;
-		return TRUE;
-
-	case XDR_FREE:
-		return TRUE;
-	}
-
-/* TMN: Now what? 'assert(0)'? 'abort()'? Anyone having a */
-/* clue, feel free to fix the cludge 'return FALSE' */
-	return FALSE;
-}
-#endif /* HAVE_XDR_HYPER */
 
 
 } // extern "C"

@@ -109,6 +109,67 @@ static const XDR::xdr_ops mem_ops =
 static SCHAR zeros[4] = { 0, 0, 0, 0 };
 
 
+bool_t xdr_hyper( register XDR * xdrs, SINT64 * pi64)
+{
+/**************************************
+ *
+ *	x d r _ h y p e r       ( n o n - S O L A R I S )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Map a 64-bit Integer from external to internal representation
+ *      (or vice versa).
+ *
+ *      Enable this for all platforms except Solaris (since it is
+ *      available in the XDR library on Solaris). This function (normally)
+ *      would have been implemented in REMOTE/xdr.c. Since some system
+ *      XDR libraries (HP-UX) do not implement this function, we have it
+ *      in this module. At a later date, when the function is available
+ *      on all platforms, we can start using the system-provided version.
+ *
+ *      Handles "swapping" of the 2 long's to be "Endian" sensitive.
+ *
+ **************************************/
+	union {
+		SINT64 temp_int64;
+		SLONG temp_long[2];
+	} temp;
+
+	switch (xdrs->x_op) {
+	case XDR_ENCODE:
+		temp.temp_int64 = *pi64;
+#ifndef WORDS_BIGENDIAN
+		if ((*xdrs->x_ops->x_putlong) (xdrs, &temp.temp_long[1]) &&
+			(*xdrs->x_ops->x_putlong) (xdrs, &temp.temp_long[0]))
+			return TRUE;
+#else
+		if ((*xdrs->x_ops->x_putlong) (xdrs, &temp.temp_long[0]) &&
+			(*xdrs->x_ops->x_putlong) (xdrs, &temp.temp_long[1]))
+			return TRUE;
+#endif
+		return FALSE;
+
+	case XDR_DECODE:
+#ifndef WORDS_BIGENDIAN
+		if (!(*xdrs->x_ops->x_getlong) (xdrs, &temp.temp_long[1]) ||
+			!(*xdrs->x_ops->x_getlong) (xdrs, &temp.temp_long[0]))
+			return FALSE;
+#else
+		if (!(*xdrs->x_ops->x_getlong) (xdrs, &temp.temp_long[0]) ||
+			!(*xdrs->x_ops->x_getlong) (xdrs, &temp.temp_long[1]))
+			return FALSE;
+#endif
+		*pi64 = temp.temp_int64;
+		return TRUE;
+
+	case XDR_FREE:
+		return TRUE;
+	}
+// TMN: added compiler silencier return FALSE.
+	return FALSE;
+}
+
 bool_t xdr_bool( register XDR * xdrs, register bool_t * bp)
 {
 /**************************************
