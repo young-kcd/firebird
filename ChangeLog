@@ -1,3 +1,31 @@
+2005-03-30 20:10  arnobrinkman
+
+	* firebird2/doc/ods11-index-structure.html (1.1):
+	
+	ODS11 index structure description
+
+2005-03-30 19:55  dimitr
+
+	* firebird2/src/dsql/gen.cpp (1.79):
+	
+	Solved issues with EXEC PROC and input message (related to my
+	previous changes).
+
+2005-03-30 07:18  robocop
+
+	* firebird2/src/jrd/dyn_del.epp (1.46):
+	
+	Fix problems caused by recent privileges-cleanup commit (mainly
+	assigning wrong request to the requests array), spotted in source
+	code. I guess this causes "message length error" the next time
+	DYN_delete_relation is invoked.
+
+2005-03-30 07:12  robocop
+
+	* firebird2/src/dsql/dsql.cpp (1.143):
+	
+	Variables in context.
+
 2005-03-30 02:45  asfernandes
 
 	* firebird2/doc/sql.extensions/README.trim (1.1):
