@@ -40,7 +40,8 @@ const size_t MAX_DPB_SIZE = 1024;
 namespace Firebird {
 
 // At the moment you can only declare it on stack, permanent objects are not allowed
-class ClumpletWriter : public ClumpletReader {
+class ClumpletWriter : public ClumpletReader
+{
 public:
 	// Create empty clumplet writer.
 	ClumpletWriter(bool isTagged, size_t limit, UCHAR tag = 0);
