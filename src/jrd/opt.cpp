@@ -45,6 +45,7 @@
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
+#include <malloc.h>
 #include "../jrd/gds.h"
 #include "../jrd/jrd.h"
 #include "../jrd/align.h"
@@ -77,7 +78,6 @@
 #include "../jrd/thd_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/dbg_proto.h"
-
 
 #ifdef DEV_BUILD
 #define OPT_DEBUG
@@ -1206,8 +1206,11 @@ static SLONG calculate_priority_level(OPT opt, IDX * idx)
 		}
 
 		/* Calculate our priority level */
-		return ((idx_eql_count * MAX_IDX * MAX_IDX) + 
-			(idx_field_count * MAX_IDX) + (idx->idx_count));
+		// Note: dbb->dbb_max_idx = 1022 for the largest supported page of 16K and
+		//						    62 for the smallest page of 1K
+		SLONG max_idx = GET_THREAD_DATA->tdbb_database->dbb_max_idx;
+		return ((idx_eql_count * max_idx * max_idx) + 
+			(idx_field_count * max_idx) + (idx->idx_count));
 
 	}
 	else {
@@ -6389,7 +6392,7 @@ static void sort_indices_by_selectivity(csb_repeat * csb_tail)
  ***************************************************/
 	IDX *idx, *selected_idx = NULL;
 	USHORT i, j;
-	IDX idx_sort[MAX_IDX];
+	IDX *idx_sort = (IDX*)alloca(csb_tail->csb_indices*sizeof(IDX));
 	float selectivity;
 	BOOLEAN same_selectivity;
 

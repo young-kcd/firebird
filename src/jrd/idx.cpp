@@ -116,7 +116,7 @@ void IDX_check_access(TDBB tdbb, CSB csb, JRD_REL view, JRD_REL relation, JRD_FL
 
 	SET_TDBB(tdbb);
 
-	idx.idx_id = (UCHAR) - 1;
+	idx.idx_id = (USHORT) -1;
 	window.win_flags = 0;
 
 	while (BTR_next_index(tdbb, relation, 0, &idx, &window))
@@ -477,7 +477,7 @@ void IDX_create_index(
 }
 
 
-IDB IDX_create_index_block(TDBB tdbb, JRD_REL relation, UCHAR id)
+IDB IDX_create_index_block(TDBB tdbb, JRD_REL relation, USHORT id)
 {
 /**************************************
  *
@@ -605,7 +605,7 @@ IDX_E IDX_erase(TDBB tdbb,
 	SET_TDBB(tdbb);
 
 	error_code = idx_e_ok;
-	idx.idx_id = (UCHAR) - 1;
+	idx.idx_id = (USHORT) -1;
 	window.win_flags = 0;
 
 	while (BTR_next_index
@@ -732,7 +732,7 @@ IDX_E IDX_modify(TDBB tdbb,
 	insertion.iib_descriptor = &idx;
 	insertion.iib_transaction = transaction;
 	error_code = idx_e_ok;
-	idx.idx_id = (UCHAR) - 1;
+	idx.idx_id = (USHORT) -1;
 	window.win_flags = 0;
 
 	while (BTR_next_index
@@ -783,7 +783,7 @@ IDX_E IDX_modify_check_constraints(TDBB tdbb,
 	SET_TDBB(tdbb);
 
 	error_code = idx_e_ok;
-	idx.idx_id = (UCHAR) - 1;
+	idx.idx_id = (USHORT) -1;
 	window.win_flags = 0;
 
 /* If relation's primary/unique keys have no dependencies by other
@@ -885,7 +885,7 @@ IDX_E IDX_store(TDBB tdbb,
 	insertion.iib_transaction = transaction;
 
 	error_code = idx_e_ok;
-	idx.idx_id = (UCHAR) - 1;
+	idx.idx_id = (USHORT) -1;
 	window.win_flags = 0;
 
 	while (BTR_next_index

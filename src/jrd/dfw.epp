@@ -1558,17 +1558,19 @@ static bool create_index(	TDBB	tdbb,
 				relation = MET_lookup_relation(tdbb, IDXN.RDB$RELATION_NAME);
 
 				/* Fetch the root index page and mark MUST_WRITE, and then
-				   delete the index. It will also clean the index slot. */
+				   delete the index. It will also clean the index slot. Note
+				   that the previous fixed definition of MAX_IDX (64) has been
+				   dropped in favor of a computed value saved in the dbb */
 				if (relation->rel_index_root)
 				{
-					if (work->dfw_id != MAX_IDX)
+					if (work->dfw_id != dbb->dbb_max_idx)
 					{
 						window.win_page = relation->rel_index_root;
 						window.win_flags = 0;
 						CCH_FETCH(tdbb, &window, LCK_write, pag_root);
 						CCH_MARK_MUST_WRITE(tdbb, &window);
 						BTR_delete_index(tdbb, &window, work->dfw_id);
-						work->dfw_id = MAX_IDX;
+						work->dfw_id = dbb->dbb_max_idx;
 					}
 					if (!IDXN.RDB$INDEX_ID.NULL)
 					{
@@ -1811,7 +1813,7 @@ static bool create_index(	TDBB	tdbb,
 			}
 		}
 
-		assert(work->dfw_id == MAX_IDX);
+		assert(work->dfw_id == dbb->dbb_max_idx);
 		IDX_create_index(	tdbb,
 							relation,
 							&idx,
@@ -4566,7 +4568,9 @@ static BLB setup_triggers(TDBB tdbb, JRD_REL relation, BOOLEAN null_view, TRIG_V
 		REQUEST(irq_format5) = request_fmtx;
 
 
-	/* check constraint triggers */
+/* check constraint triggers.  We're looking for triggers that belong
+   to the table and are system triggers (i.e. system flag in (3, 4, 5))
+   or a user looking trigger that's involved in a check constraint */
 
 	request_fmtx = (BLK) CMP_find_request(tdbb, irq_format6, IRQ_REQUESTS);
 
