@@ -335,7 +335,14 @@ void TRA_cleanup(thread_db* tdbb)
 			else if (state == tra_active) {
 				CCH_MARK(tdbb, &window);
 				*byte &= ~(TRA_MASK << shift);
-				*byte |= tra_dead << shift;
+
+				// hvlad: mark system transaction as committed
+				if (sequence == 0 && number == 0) {
+					*byte |= tra_committed << shift;
+				}
+				else {
+					*byte |= tra_dead << shift;
+				}
 			}
 		}
 #ifdef SUPERSERVER_V2
