@@ -258,7 +258,7 @@ void DYN_define_constraint(GBL		gbl,
 	int all_count, unique_count;
 	LLS field_list = NULL, list_ptr;
 	STR str_;
-	USHORT found, foreign_flag = FALSE, not_null;
+	USHORT found, primary_flag = FALSE, foreign_flag = FALSE, not_null;
 	UCHAR ri_action = 0;
 
 	tdbb = GET_THREAD_DATA;
@@ -292,6 +292,7 @@ void DYN_define_constraint(GBL		gbl,
 		switch (verb = *(*ptr)++)
 		{
 		case gds_dyn_def_primary_key:
+			primary_flag = TRUE;
 			strcpy(CRT.RDB$CONSTRAINT_TYPE, PRIMARY_KEY);
 			break;
 
@@ -419,7 +420,7 @@ void DYN_define_constraint(GBL		gbl,
 
 		if ((FLX.RDB$NULL_FLAG.NULL || !FLX.RDB$NULL_FLAG) &&
 			(RFR.RDB$NULL_FLAG.NULL || !RFR.RDB$NULL_FLAG) &&
-			(foreign_flag == FALSE)) {
+			(primary_flag == TRUE)) {
 			not_null = FALSE;
 			DYN_terminate(RFR.RDB$FIELD_NAME, sizeof(RFR.RDB$FIELD_NAME));
 			strcpy(null_field_name, RFR.RDB$FIELD_NAME);
