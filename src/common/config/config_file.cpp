@@ -98,7 +98,7 @@ string ConfigFile::getString(const string& key)
 {
     checkLoadConfig();
 
-    int pos;
+    size_t pos;
     return parameters.find(key, pos) ? parameters[pos].second : string();
 }
 

@@ -2080,7 +2080,7 @@ static void check_unique_fields_names(StrArray& names, const dsql_nod* fields)
 				fb_assert(false);
 		}
 
-		int pos;
+		size_t pos;
 		if (!names.find(name, pos))
 			names.add(name);
 		else {

@@ -64,7 +64,7 @@ bool traRpbList::PopRpb(record_param* value, int Level)
 	if (Level < 0) {
 		return false;
 	}
-	int pos = -1;
+	size_t pos;
 	ExecAssert(find(traRpbListElement(value, Level), pos));
 	const bool rc = (*this)[pos].lr_rpb->rpb_stream_flags & RPB_s_refetch;
 	remove(pos);

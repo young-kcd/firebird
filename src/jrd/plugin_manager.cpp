@@ -261,7 +261,7 @@ PluginManager::Module::~Module()
 
 void *PluginManager::BuiltinModule::lookupSymbol(const Firebird::string& symbol)
 {
-	int n;
+	size_t n;
 	if (! symbols.find(symbol, n))
 		return 0;
 	return symbols[n].second;

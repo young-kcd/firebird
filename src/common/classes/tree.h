@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: tree.h,v 1.35 2004-06-30 01:26:06 skidder Exp $
+ *  $Id: tree.h,v 1.36 2004-07-16 23:06:04 skidder Exp $
  *
  */
 
@@ -314,7 +314,7 @@ public:
 			void *list = tree->root;
 			if (!list) return false; // Uninitalized tree
 			for (int lev = tree->level; lev; lev--) {
-				int pos;
+				size_t pos;
 				if (!((NodeList *)list)->find(key, pos))
 					if ( --pos < 0 ) pos = 0;
 				list = (*(NodeList *)list)[pos];
@@ -391,8 +391,7 @@ public:
 		// Accessor position must be establised via successful call to getFirst(), 
 		// getLast() or locate() before you can call this method
 		bool getPrev() {
-			curPos--;
-			if (curPos < 0) {
+			if (curPos == 0) {
 				if (curr->prev) {
 					curr = curr->prev;
 					curPos = curr->getCount() - 1;
@@ -401,14 +400,15 @@ public:
 					curPos = 0;
 					return false;
 				}
-			}
+			} else
+				curPos--;
 			return true;
 		}
 	    Value& current() const { return (*curr)[curPos]; }
 	private:
 		BePlusTree* tree;
 		ItemList *curr;
-  		int curPos;
+  		size_t curPos;
 	};
 
 private:
@@ -436,7 +436,7 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 	void *vList = this->root;
 	const Key& key = KeyOfValue::generate(NULL, item);
 	for (int lev = this->level; lev > 0 ; lev--) {
-		int pos;
+		size_t pos;
 		if (!((NodeList *)vList)->find(key, pos))
 			if ( --pos < 0 ) pos = 0;
 		vList = (*(NodeList *)vList)[pos];
@@ -444,7 +444,7 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 	
 	ItemList *leaf = (ItemList *)vList;
 			
-	int pos;
+	size_t pos;
 	if (leaf->find(key, pos)) return false;
 		
 	if (leaf->getCount() < LeafCount) {
@@ -682,7 +682,7 @@ void BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::_
 	}
 	else
 	{
-		int pos;
+		size_t pos;
 #ifndef DEV_BUILD
 		list->find(NodeList::generate(list, node), pos);
 #else
@@ -709,7 +709,7 @@ void BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::_
 				// After join upper levels of the tree remain stable because join doesn't change
 				// key of the page. The same applies to lower case too.
 				temp->join(*list);
-				for (int i = 0; i < list->getCount(); i++)
+				for (size_t i = 0; i < list->getCount(); i++)
 					NodeList::setNodeParent((*list)[i], nodeLevel, temp);
 				_removePage(nodeLevel + 1, list);
 			}
@@ -718,7 +718,7 @@ void BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::_
 				 NEED_MERGE(temp->getCount() + list->getCount(), NodeCount) ) 
 			{
 				list->join(*temp);
-				for (int i = 0; i < temp->getCount(); i++)
+				for (size_t i = 0; i < temp->getCount(); i++)
 					NodeList::setNodeParent((*temp)[i], nodeLevel, list);
 				_removePage(nodeLevel + 1, temp);
 			}

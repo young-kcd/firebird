@@ -766,7 +766,7 @@ void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, ResourceList& res
 		if (rsc->rsc_type == Resource::rsc_relation ||
 			rsc->rsc_type == Resource::rsc_procedure)
 		{
-			int i;
+			size_t i;
 			if (!transaction->tra_resources.find(*rsc, i)) 
 			{
 				transaction->tra_resources.insert(i, *rsc);

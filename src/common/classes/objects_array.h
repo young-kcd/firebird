@@ -43,8 +43,8 @@ namespace Firebird
 			friend class ObjectsArray<T, A>;
 		private:
 			ObjectsArray *lst;
-			int pos;
-			iterator(ObjectsArray *l, int p) : lst(l), pos(p) { }
+			size_t pos;
+			iterator(ObjectsArray *l, size_t p) : lst(l), pos(p) { }
 		public:
 			iterator() : lst(0), pos(0) { }
 /*
@@ -82,11 +82,11 @@ namespace Firebird
 			}
 		};
 	public:
-		void insert(int index, const T& item) {
+		void insert(size_t index, const T& item) {
 			T* dataL = FB_NEW(this->getPool()) T(this->getPool(), item);
 			inherited::insert(index, dataL);
 		}
-		int add(const T& item) {
+		size_t add(const T& item) {
 			T* dataL = FB_NEW(this->getPool()) T(this->getPool(), item);
 			return inherited::add(dataL);
 		};
@@ -104,7 +104,7 @@ namespace Firebird
 			delete pntr;
 			return rc;
 		}
-		void remove(int index) {
+		void remove(size_t index) {
 			delete getPointer(index);
 			inherited::remove(index);
 		}
@@ -112,8 +112,8 @@ namespace Firebird
   			fb_assert(itr.lst == this);
 			remove(itr.pos);
 		}
-		void shrink(int newCount) {
-			for (int i = newCount; i < getCount(); i++) {
+		void shrink(size_t newCount) {
+			for (size_t i = newCount; i < getCount(); i++) {
 				delete getPointer(i);
 			}
 			inherited::shrink(newCount);
@@ -128,29 +128,29 @@ namespace Firebird
   			fb_assert(getCount() > 0);
 			return iterator(this, getCount() - 1);
 		}
-		const T& operator[](int index) const {
+		const T& operator[](size_t index) const {
   			return *getPointer(index);
 		}
-		const T* getPointer(int index) const {
+		const T* getPointer(size_t index) const {
   			return inherited::getElement(index);
 		}
-		T& operator[](int index) {
+		T& operator[](size_t index) {
   			return *getPointer(index);
 		}
-		T* getPointer(int index) {
+		T* getPointer(size_t index) {
   			return inherited::getElement(index);
 		}
 		explicit ObjectsArray(MemoryPool& p) : A(p) { }
 		ObjectsArray() : A() { }
 		~ObjectsArray() {
-			for (int i = 0; i < getCount(); i++) {
+			for (size_t i = 0; i < getCount(); i++) {
 				delete getPointer(i);
 			}
 		}
-		int getCount() const {return inherited::getCount();}
-		int getCapacity() const {return inherited::getCapacity();}
+		size_t getCount() const {return inherited::getCount();}
+		size_t getCapacity() const {return inherited::getCapacity();}
 		void clear() { 
-			for (int i = 0; i < getCount(); i++) {
+			for (size_t i = 0; i < getCount(); i++) {
 				delete getPointer(i);
 			}
 			inherited::clear(); 
@@ -189,7 +189,7 @@ namespace Firebird
 		explicit SortedObjectsArray(MemoryPool& p) : 
 			ObjectsArray <Value, SortedArray<Value*, 
 				Storage, Key, KeyOfValue, Cmp> >(p) { }
-		bool find(const Key& item, int& pos) {
+		bool find(const Key& item, size_t& pos) {
 			return inherited::find(item, pos);
 		}
 	};

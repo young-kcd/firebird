@@ -297,7 +297,7 @@ CharSetContainer::CharSetContainer(MemoryPool& p, USHORT cs_id) :
 
 CsConvert CharSetContainer::lookupConverter(thread_db* tdbb, CHARSET_ID to_cs)
 {
-	int pos;
+	size_t pos;
 	if (charset_converters.find(to_cs, pos))
 		return charset_converters[pos];
 	if (impossible_conversions.find(to_cs, pos))

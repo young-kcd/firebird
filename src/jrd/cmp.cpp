@@ -261,7 +261,7 @@ static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd
  **************************************/
 	for (ExternalAccess *item = request->req_external.begin(); item < request->req_external.end(); item++) 
 	{
-		int i;
+		size_t i;
 		if (list.find(*item, i)) continue;
 		list.insert(i, *item);
 
@@ -2092,9 +2092,9 @@ void CMP_post_access(thread_db* tdbb,
 
 	SET_TDBB(tdbb);
 	
-	int i;
-
 	AccessItem temp(security_name, view_id, name, type_name, mask);
+
+	size_t i;
 
 	if (csb->csb_access.find(temp, i))
 	{
@@ -2143,7 +2143,7 @@ void CMP_post_resource(	ResourceList* rsc_ptr,
 	}
 
 	// Add it into list if not present already
-	int pos;
+	size_t pos;
 	if (!rsc_ptr->find(resource, pos))
 		rsc_ptr->insert(pos, resource);
 }
@@ -5469,7 +5469,7 @@ static void post_procedure_access(thread_db* tdbb, CompilerScratch* csb, jrd_prc
 
 	// Add the procedure to list of external objects accessed
 	ExternalAccess temp(procedure->prc_id);
-	int idx;
+	size_t idx;
 	if (!csb->csb_external.find(temp, idx))
 		csb->csb_external.insert(idx, temp);
 }
@@ -5577,7 +5577,7 @@ static void post_trigger_access(CompilerScratch* csb,
 
 	// Post trigger access
 	ExternalAccess temp(operation, owner_relation->rel_id, view ? view->rel_id : 0);
-	int i;
+	size_t i;
 	if (!csb->csb_external.find(temp, i))
 		csb->csb_external.insert(i, temp);
 }
