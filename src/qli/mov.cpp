@@ -947,7 +947,6 @@ void MOVQ_terminate(const SCHAR* from,
 		*to++ = '\0';
 	}
 	else {
-	    // It seems like the correct condition uses --max_length instead
 		while (max_length-- && (*to++ = *from++));
 		*--to = '\0';
 	}
