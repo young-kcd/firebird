@@ -20,6 +20,11 @@
       Contributor(s):
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
+    * Fixed unregistered bug.
+        Server locked when trying to restore database at location, prohibited in firebird.conf.
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Fixed v1.5.0 regression.
         Fix bugs in distribution of conjunctions to components of outer joins by optimizer.
         Wrong outer join results could have been returned. The fix also makes engine use better plans for outer joins in a number of cases.
