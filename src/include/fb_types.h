@@ -1,33 +1,29 @@
 /*
+ *	PROGRAM:		Firebird RDBMS definitions
+ *	MODULE:			fb_types.h
+ *	DESCRIPTION:	Firebird's platform independent data types header
  *
- *  The contents of this file are subject to the Mozilla Public
- *  License Version 1.1 (the "License"); you may not use this file
- *  except in compliance with the License. You may obtain a copy of
- *  the License at http://www.mozilla.org/MPL/
- *  Alternatively, the contents of this file may be used under the
- *  terms of the GNU General Public License Version 2 or later (the
- *  "GPL"), in which case the provisions of the GPL are applicable
- *  instead of those above. You may obtain a copy of the Licence at
- *  http://www.gnu.org/copyleft/gpl.html
+ *  The contents of this file are subject to the Initial
+ *  Developer's Public License Version 1.0 (the "License");
+ *  you may not use this file except in compliance with the
+ *  License. You may obtain a copy of the License at
+ *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
  *
- *  This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    Relevant for more details.
+ *  Software distributed under the License is distributed AS IS,
+ *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing rights
+ *  and limitations under the License.
  *
- *    This file was created by members of the firebird development team.
- *    All individual contributions remain the Copyright (C) of those
- *    individuals.  Contributors to this file are either listed here or
- *    can be obtained from a CVS history command.
+ *  The Original Code was created by Mike Nordell and Mark O'Donohue
+ *  for the Firebird Open Source RDBMS project.
  *
- *   All rights reserved.
- *
- *   Contributor(s):
+ *  Copyright (c) 2001
  *       Mike Nordel <tamlin@algonet.se>
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
+ *  and all contributors signed below.
  *
- *
- *  $Id: fb_types.h,v 1.46 2004-05-20 21:58:04 skidder Exp $
+ *  All Rights Reserved.
+ *  Contributor(s): ______________________________________.
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
