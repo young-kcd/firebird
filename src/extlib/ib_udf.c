@@ -172,13 +172,43 @@ char *EXPORT IB_UDF_lower( char *s)
 	return buf;
 }
 
+char *EXPORT IB_UDF_lpad( char *s, long *a, char *c)
+{
+	char *buf;
+	char *p;
+	long avalue = *a;
+	long length;
+	long padlength;
+	long current;
+
+	if (avalue > 0 && (length = strlen(s)) ) {
+		current = 0;
+		padlength = strlen(c);
+		buf = (char*) ib_util_malloc(avalue + 1);
+
+		while (current + length < avalue) {
+			memcpy(&buf[current], c, padlength);
+			current += padlength;
+		}
+		memcpy(&buf[(avalue - length < 0) ? 0 : avalue - length], s,
+			(avalue - length < 0) ? avalue : length);
+
+		p = buf + avalue;
+		*p = '\0';
+	}
+	else
+		return NULL;
+
+	return buf;
+}
+
 char *EXPORT IB_UDF_ltrim( char *s)
 {
 	char *buf;
 	char *p;
 	long length;
 
-	if (length = strlen(s)) {
+	if ( (length = strlen(s)) ) {
 		while (*s == ' ')		/* skip leading blanks */
 			s++;
 
@@ -218,6 +248,36 @@ double EXPORT IB_UDF_rand()
 	return ((float) rand() / (float) RAND_MAX);
 }
 
+char *EXPORT IB_UDF_rpad( char *s, long *a, char *c)
+{
+	char *buf;
+	char *p;
+	long avalue = *a;
+	long length;
+	long padlength;
+	long current;
+
+	if (avalue > 0 && (length = strlen(s)) ) {
+		current = (avalue - length) < 0 ? avalue : length;
+		padlength = strlen(c);
+		buf = (char*) ib_util_malloc (avalue + 1);
+		memcpy(&buf[0], s, current);
+
+		while (current + padlength < avalue) {
+			memcpy(&buf[current], c, padlength);
+			current += padlength;
+		}
+		memcpy(&buf[current], c, avalue - current);
+
+		p = buf + avalue;
+		*p = '\0';
+	}
+	else
+		return NULL;
+
+	return buf;
+}
+
 char *EXPORT IB_UDF_rtrim( char *s)
 {
 	char *p;
@@ -225,7 +285,7 @@ char *EXPORT IB_UDF_rtrim( char *s)
 	char *buf;
 	long length;
 
-	if (length = strlen(s)) {
+	if ( (length = strlen(s)) ) {
 		p = s + length - 1;
 		while ((s != p) && (*p == ' '))
 			p--;
