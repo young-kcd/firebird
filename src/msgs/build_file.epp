@@ -166,7 +166,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 /* make sure the path name ends in a '/' */
 
 	if (pathname) {
-		size_t len = strlen(pathname);
+		const size_t len = strlen(pathname);
 		//fb_assert(len + 1 < MAXPATHLEN);
 		if (pathname[len - 1] != path_separator) {
 			pathname[len] = path_separator;
@@ -281,7 +281,7 @@ static USHORT do_msgs( const TEXT* filename, const TEXT* locale, bool sw_warning
 
 	// Divy up memory among various buffers
 	// Memory leaking until the program finishes?
-	msgrec* leaf_node = (MSGREC) gds__alloc((SLONG) MSG_BUCKET);
+	msgrec* leaf_node = (msgrec*) gds__alloc((SLONG) MSG_BUCKET);
 	msgrec* const leaf = leaf_node;
 	const TEXT* const end_leaf = (TEXT*) leaf + MSG_BUCKET;
 

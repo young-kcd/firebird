@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: msg.h,v 1.6 2004-05-24 17:28:33 brodsom Exp $
+$Id: msg.h,v 1.7 2004-10-04 04:59:43 robocop Exp $
 */
 
 #ifndef JRD_MSG_H
@@ -52,8 +52,6 @@ struct msgnod {
 	ULONG msgnod_seek;			/* Offset of next bucket or message */
 };
 
-typedef msgnod *MSGNOD;
-
 /* Leaf node */
 
 struct msgrec {
@@ -64,7 +62,6 @@ struct msgrec {
 };
 
 typedef msgrec *MSGREC;
-
 #define NEXT_LEAF(leaf)	(MSGREC) \
 	((SCHAR*) leaf + FB_ALIGN(OFFSETA (MSGREC, msgrec_text) + leaf->msgrec_length, sizeof (SLONG)))
 

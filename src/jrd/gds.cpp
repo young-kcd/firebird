@@ -1481,7 +1481,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 
 	const ULONG code = MSG_NUMBER(facility, number);
 	const msgnod* const end = 
-		(MSGNOD) ((SCHAR *) messageL->msg_bucket + messageL->msg_bucket_size);
+		(msgnod*) ((char*) messageL->msg_bucket + messageL->msg_bucket_size);
 	ULONG position = messageL->msg_top_tree;
 
 	status = 0;
@@ -1494,7 +1494,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 		else if (n == messageL->msg_levels)
 			break;
 		else {
-			for (const msgnod* node = (MSGNOD) messageL->msg_bucket; !status; node++) {
+			for (const msgnod* node = (msgnod*) messageL->msg_bucket; !status; node++) {
 				if (node >= end) {
 					status = -8;
 					break;
@@ -1509,10 +1509,10 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 
 	if (!status) {
 		/* Search the leaf */
-		for (const msgrec* leaf = (MSGREC) messageL->msg_bucket; !status;
+		for (const msgrec* leaf = (msgrec*) messageL->msg_bucket; !status;
 			 leaf = NEXT_LEAF(leaf)) 
 		{
-			if (leaf >= (MSGREC) end || leaf->msgrec_code > code) {
+			if (leaf >= (const msgrec*) end || leaf->msgrec_code > code) {
 				status = -1;
 				break;
 			}
