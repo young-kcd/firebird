@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.128 2004-11-22 20:50:32 skidder Exp $ 
+  * $Id: evl.cpp,v 1.129 2004-11-28 08:25:09 robocop Exp $ 
  */
 
 /*
@@ -980,43 +980,41 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 		return &impure->vlu_desc;
 
 	case nod_user_name:
-		impure->vlu_desc.dsc_dtype = dtype_text;
-		impure->vlu_desc.dsc_sub_type = 0;
-		impure->vlu_desc.dsc_scale = 0;
-		INTL_ASSIGN_TTYPE(&impure->vlu_desc, ttype_metadata);
-		if (tdbb->tdbb_attachment->att_user)
-			impure->vlu_desc.dsc_address =
-				(UCHAR *) tdbb->tdbb_attachment->att_user->usr_user_name;
-		if (impure->vlu_desc.dsc_address != NULL)
 		{
-			impure->vlu_desc.dsc_length =
-				strlen(reinterpret_cast<const char*>(
-					impure->vlu_desc.dsc_address));
-		}
-		else {
-			impure->vlu_desc.dsc_length = 0;
+			impure->vlu_desc.dsc_dtype = dtype_text;
+			impure->vlu_desc.dsc_sub_type = 0;
+			impure->vlu_desc.dsc_scale = 0;
+			INTL_ASSIGN_TTYPE(&impure->vlu_desc, ttype_metadata);
+			char* cur_user = 0;
+			if (tdbb->tdbb_attachment->att_user)
+			{
+				cur_user = tdbb->tdbb_attachment->att_user->usr_user_name;
+				impure->vlu_desc.dsc_address = (UCHAR*) cur_user;
+			}
+			if (cur_user)
+				impure->vlu_desc.dsc_length = strlen(cur_user);
+			else
+				impure->vlu_desc.dsc_length = 0;
 		}
 		return &impure->vlu_desc;
 
 	// CVC: Current role will get a validated role; IE one that exists.
 	case nod_current_role:
-		impure->vlu_desc.dsc_dtype = dtype_text;
-		impure->vlu_desc.dsc_sub_type = 0;
-		impure->vlu_desc.dsc_scale = 0;
-		INTL_ASSIGN_TTYPE(&impure->vlu_desc, ttype_metadata);
-		if (tdbb->tdbb_attachment->att_user)
 		{
-			impure->vlu_desc.dsc_address =
-				(UCHAR*) tdbb->tdbb_attachment->att_user->usr_sql_role_name;
-		}
-		if (impure->vlu_desc.dsc_address != NULL)
-		{
-			impure->vlu_desc.dsc_length =
-				strlen(reinterpret_cast<const char*>(
-					impure->vlu_desc.dsc_address));
-		}
-		else {
-			impure->vlu_desc.dsc_length = 0;
+			impure->vlu_desc.dsc_dtype = dtype_text;
+			impure->vlu_desc.dsc_sub_type = 0;
+			impure->vlu_desc.dsc_scale = 0;
+			INTL_ASSIGN_TTYPE(&impure->vlu_desc, ttype_metadata);
+			char* cur_role = 0;
+			if (tdbb->tdbb_attachment->att_user)
+			{
+				cur_role = tdbb->tdbb_attachment->att_user->usr_sql_role_name;
+				impure->vlu_desc.dsc_address = (UCHAR*) cur_role;
+			}
+			if (cur_role)
+				impure->vlu_desc.dsc_length = strlen(cur_role);
+			else
+				impure->vlu_desc.dsc_length = 0;
 		}
 		return &impure->vlu_desc;
 
@@ -1317,17 +1315,38 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 					const NOD_T temp_nod_type =
 						temp_field->fld_default_value->nod_type;
 
-					if (temp_nod_type == nod_user_name ||
-					    temp_nod_type == nod_current_role)
+					if (temp_nod_type == nod_user_name)
 					{
 						desc->dsc_dtype = dtype_text;
 						desc->dsc_sub_type = 0;
 						desc->dsc_scale = 0;
 						INTL_ASSIGN_TTYPE(desc, ttype_metadata);
-						desc->dsc_address =
-							(UCHAR *) relation->rel_owner_name;
-						desc->dsc_length =
-							strlen(reinterpret_cast<const char*>(desc->dsc_address));
+						char* owner_name = relation->rel_owner_name;
+						desc->dsc_address = (UCHAR*) owner_name;
+						desc->dsc_length = strlen(owner_name);
+					}
+					else if (temp_nod_type == nod_current_role)
+					{
+						// CVC: Revisiting the current_role to fill default values:
+						// If the current user is the same than the table creator,
+						// return the current role for that user, otherwise return NONE.
+						desc->dsc_dtype = dtype_text;
+						desc->dsc_sub_type = 0;
+						desc->dsc_scale = 0;
+						INTL_ASSIGN_TTYPE(desc, ttype_metadata);
+						const char* owner_name = relation->rel_owner_name;
+						thread_db* tdbb = NULL;
+						SET_TDBB(tdbb);
+						char* rc_role = 0;
+						const UserId* att_user = tdbb->tdbb_attachment->att_user;
+						const char* cur_user = att_user ? att_user->usr_user_name : 0;
+						if (cur_user && strcmp(cur_user, owner_name) == 0)
+							rc_role = att_user->usr_sql_role_name;
+						else
+							rc_role = const_cast<char*>(NULL_ROLE);
+							
+						desc->dsc_address = (UCHAR*) rc_role;
+						desc->dsc_length = strlen(rc_role);
 					}
 					else if (temp_nod_type == nod_current_date ||
 					    temp_nod_type == nod_current_time ||
