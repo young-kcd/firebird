@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: license.h,v 1.10 2002-02-16 03:54:54 seanleyne Exp $
+ * $Id: license.h,v 1.11 2002-02-16 03:59:02 seanleyne Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -41,6 +41,7 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "NCR3000" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "M88K" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "HP9000 s300" port
  *
  */
 
@@ -50,14 +51,6 @@
 #include "../jrd/build_no.h"
 
 #ifdef hpux
-#ifdef hp9000s300
-#ifdef HP300
-#define FB_PLATFORM	"H3"
-#endif
-#ifdef HM300
-#define FB_PLATFORM	"HM"
-#endif
-#else
 #ifdef HP700
 #define FB_PLATFORM	"HP"
 #endif

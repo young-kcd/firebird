@@ -27,6 +27,7 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "NCR3000" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "M88K" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "NT Power PC" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "HP9000 s300" port
  *
  */
 
@@ -58,11 +59,7 @@
 #endif
 
 #ifdef hpux
-#ifdef hp9000s300
-#define ARCHITECTURE		arch_hpux_68k
-#else
 #define ARCHITECTURE		arch_hpux
-#endif
 #endif
 
 #ifdef UNIXWARE

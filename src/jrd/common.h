@@ -34,10 +34,11 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "NCR3000" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "M88K" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "NT Power PC" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "HP9000 s300" port
  *
  */
 /*
-$Id: common.h,v 1.13 2002-02-16 03:54:54 seanleyne Exp $
+$Id: common.h,v 1.14 2002-02-16 03:59:02 seanleyne Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -360,18 +361,10 @@ $Id: common.h,v 1.13 2002-02-16 03:54:54 seanleyne Exp $
 #define INTL
 #define NO_FLOCK
 
-#ifdef hp9000s300
-#define FB_ALIGN(n,b)      ((n+1) & ~1)
-#define ALIGNMENT       4
-#define DOUBLE_ALIGN    4
-#define IMPLEMENTATION  40
-#define SHMEM_PICKY
-#else
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
 #define ALIGNMENT       8
 #define DOUBLE_ALIGN    8
 #define IMPLEMENTATION  31
-#endif
 
 #define                 IEEE
 #include "../jrd/pragma.h"

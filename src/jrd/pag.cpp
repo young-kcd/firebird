@@ -25,6 +25,7 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "NCR3000" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "M88K" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "HP9000 s300" port
  *
  */
 
@@ -141,11 +142,7 @@ static BOOLEAN find_type(SLONG, WIN *, PAG *, USHORT, USHORT, UCHAR **,
 #endif
 
 #ifdef hpux
-#ifdef hp9000s300
-#define CLASS		2
-#else
 #define CLASS		7
-#endif
 #endif
 
 #ifdef ultrix
