@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: taruninstall.sh.in,v 1.1 2003-06-06 14:04:39 alexpeshkoff Exp $
+#   $Id: taruninstall.sh.in,v 1.1.2.1 2004-01-29 13:37:20 alexpeshkoff Exp $
 # 
 
 
@@ -60,7 +60,7 @@ removeInstalledFiles() {
         fi
     done
 
-    cd $origDir
+    cd "$origDir"
 }
 
 

@@ -336,13 +336,14 @@ installInitdScript() {
         /sbin/insserv /etc/init.d/firebird
     fi
 
-    # More SuSE rc.config fillup
-    if [ -x /bin/fillup ] 
+    # More SuSE - rc.config fillup
+    if [ -f /etc/rc.config ]
       then
-        /bin/fillup -q -d = etc/rc.config $FBRootDir/misc/rc.config.firebird
-    fi
-    
-    if [ -d /etc/sysconfig ] 
+      if [ -x /bin/fillup ]
+        then
+          /bin/fillup -q -d = /etc/rc.config $FBRootDir/misc/rc.config.firebird
+      fi
+    elif [ -d /etc/sysconfig ]
       then
       cp $FBRootDir/misc/rc.config.firebird /etc/sysconfig/firebird
     fi
@@ -363,21 +364,17 @@ startInetService() {
 
 	if [ -f $initScript ]
       then
-        #don't start at install time if running SuSE
-        if [ ! -r /etc/SuSE-release ]
-		  then
-    	    $initScript start
-			checkString=`ps -efww| grep fbserver |grep -v grep`
+        $initScript start
+		checkString=`ps -efww| grep fbserver |grep -v grep`
 
-			if [ -z "$checkString" ]
-			  then
-				# server didn't start - possible reason bad shell /bin/false
-				echo
-				echo Fixing firebird\'s shell to /bin/sh
-				echo
-				usermod -s /bin/sh firebird
-				$initScript start
-			fi
+		if [ -z "$checkString" ]
+		  then
+			# server didn't start - possible reason bad shell /bin/false
+			echo
+			echo Fixing firebird\'s shell to /bin/sh
+			echo
+			usermod -s /bin/sh firebird
+			$initScript start
 		fi
 	fi
 }
@@ -424,7 +421,7 @@ updateHostsDotFile() {
 
 buildUninstallFile() {
 
-    cd $origDir
+    cd "$origDir"
 
     if [ ! -f manifest.txt ]  # Only do this if we are a .tar.gz install
       then
