@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: exe.cpp,v 1.6 2001-12-29 11:41:22 tamlin Exp $
+$Id: exe.cpp,v 1.7 2002-04-02 23:12:03 bellardo Exp $
 */
 
 #include "firebird.h"
@@ -584,8 +584,6 @@ void EXE_receive(TDBB		tdbb,
 		ERR_post(gds_req_sync, 0);
 	}
 
-	try {
-
 	if (request->req_flags & req_proc_fetch)
 	{
 		/* request->req_proc_sav_point stores all the request savepoints.
@@ -604,6 +602,9 @@ void EXE_receive(TDBB		tdbb,
 			VIO_start_save_point(tdbb, transaction);
 		}
 	}
+	
+	try
+	{
 
 	if (request->req_message->nod_type == nod_stall
 #ifdef SCROLLABLE_CURSORS
@@ -636,6 +637,20 @@ void EXE_receive(TDBB		tdbb,
 
 	execute_looper(tdbb, request, transaction, req::req_proceed);
 
+	}	//try
+	catch (std::exception &e)
+	{
+		if (request->req_flags & req_proc_fetch)
+		{
+			save_sav_point = transaction->tra_save_point;
+			transaction->tra_save_point = request->req_proc_sav_point;
+			request->req_proc_sav_point = save_sav_point;
+			release_proc_save_points(request);
+			Firebird::status_exception::raise(-1);
+		}
+		throw e;
+	}
+
 	if (request->req_flags & req_proc_fetch) {
 		save_sav_point = transaction->tra_save_point;
 		transaction->tra_save_point = request->req_proc_sav_point;
@@ -644,15 +659,6 @@ void EXE_receive(TDBB		tdbb,
 								  &request->req_proc_sav_point);
 	}
 
-	}	//try
-	catch (...)
-	{
-		save_sav_point = transaction->tra_save_point;
-		transaction->tra_save_point = request->req_proc_sav_point;
-		request->req_proc_sav_point = save_sav_point;
-		release_proc_save_points(request);
-		Firebird::status_exception::raise(-1);
-	}
 }
 
 
@@ -1667,12 +1673,12 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 
 	SSHORT error_pending = FALSE;
 
-	try {
-
 	// Execute stuff until we drop
 
 	while (node && !(request->req_flags & req_stall))
 	{
+	try {
+
 #ifdef MULTI_THREAD
 
 		if (request->req_operation == req::req_evaluate &&
@@ -2328,7 +2334,47 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 			ALL_check_memory();
 		}
 #endif
+	}	// try
+	catch (...) {
+		// If we already have a pending error, and took another, simply
+		// pass the buck.
+		if (error_pending == TRUE) {
+			Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);
+		}
+
+		/* If the database is already bug-checked, then get out. */
+		if (dbb->dbb_flags & DBB_bugcheck) {
+			Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);
+		}
+
+#ifdef GATEWAY
+		try {
+
+			/* Unwind request from connected DBMS's point of view.
+			   Set up special error handling in case something
+			   happens there. */
+
+			FRGN_unwind(request);
+
+			/* Continue with normal JRD unwind */
+
+		}	// try
+		catch (...) {
+		}
+
+#endif
+
+		/* Since an error happened, the current savepoint needs to be undone. */
+		if (transaction != dbb->dbb_sys_trans) {
+			++transaction->tra_save_point->sav_verb_count;
+			VERB_CLEANUP;
+		}
+
+		error_pending = TRUE;
+		request->req_operation = req::req_unwind;
+		request->req_label = 0;
 	}
+	} // while()
 
 /* if there is no node, assume we have finished processing the 
    request unless we are in the middle of processing an asynchronous message */
@@ -2372,47 +2418,12 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 		ERR_punt();
 	}
 
-		// if the request was aborted, assume that we have already
-		// longjmp'ed to the top of looper, and therefore that the
-		// last savepoint has already been deleted
+	// if the request was aborted, assume that we have already
+	// longjmp'ed to the top of looper, and therefore that the
+	// last savepoint has already been deleted
 
-		if (request->req_flags & req_abort) {
-			ERR_post(gds_req_sync, 0);
-		}
-
-	}	// try
-	catch (...) {
-		/* If the database is already bug-checked, then get out. */
-		if (dbb->dbb_flags & DBB_bugcheck) {
-			Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);
-		}
-
-#ifdef GATEWAY
-		try {
-
-			/* Unwind request from connected DBMS's point of view.
-			   Set up special error handling in case something
-			   happens there. */
-
-			FRGN_unwind(request);
-
-			/* Continue with normal JRD unwind */
-
-		}	// try
-		catch (...) {
-		}
-
-#endif
-
-		/* Since an error happened, the current savepoint needs to be undone. */
-		if (transaction != dbb->dbb_sys_trans) {
-			++transaction->tra_save_point->sav_verb_count;
-			VERB_CLEANUP;
-		}
-
-		error_pending = TRUE;
-		request->req_operation = req::req_unwind;
-		request->req_label = 0;
+	if (request->req_flags & req_abort) {
+		ERR_post(gds_req_sync, 0);
 	}
 
 	return node;
