@@ -80,27 +80,12 @@
 #define	__STRING(x)	#x			/* stringify without expanding x */
 #define	__XSTRING(x)	__STRING(x)	/* expand x, then stringify */
 
-#define	__const		const		/* define reserved names to standard */
-#define	__signed	signed
-#define	__volatile	volatile
-#if defined(__cplusplus)
-#define	__inline	inline		/* convert to C++ keyword */
-#else
-#ifndef __GNUC__
-#define	__inline				/* delete GCC keyword */
-#endif /* !__GNUC__ */
-#endif /* !__cplusplus */
-
 #else /* !(__STDC__ || __cplusplus) */
 #define	__P(protos)	()			/* traditional C preprocessor */
 #define	__CONCAT(x,y)	x/**/y
 #define	__STRING(x)	"x"
 
 #ifndef __GNUC__
-#define	__const					/* delete pseudo-ANSI C keywords */
-#define	__inline
-#define	__signed
-#define	__volatile
 /*
  * In non-ANSI C environments, new programs will want ANSI-only C keywords
  * deleted from the program and old programs will want them left alone.
@@ -119,29 +104,6 @@
 #endif /* !(__STDC__ || __cplusplus) */
 
 /*
- * Compiler-dependent macros to help declare dead (non-returning) and
- * pure (no side effects) functions, and unused variables.  They are
- * null except for versions of gcc that are known to support the features
- * properly (old versions of gcc-2 supported the dead and pure features
- * in a different (wrong) way).
- */
-#if __GNUC__ < 2 || __GNUC__ == 2 && __GNUC_MINOR__ < 5
-#define __dead2
-#define __pure2
-#define __unused
-#endif
-#if __GNUC__ == 2 && __GNUC_MINOR__ >= 5 && __GNUC_MINOR__ < 7
-#define __dead2		__attribute__((__noreturn__))
-#define __pure2		__attribute__((__const__))
-#define __unused
-#endif
-#if __GNUC__ == 2 && __GNUC_MINOR__ >= 7
-#define __dead2		__attribute__((__noreturn__))
-#define __pure2		__attribute__((__const__))
-#define __unused	__attribute__((__unused__))
-#endif
-
-/*
  * Compiler-dependent macros to declare that functions take printf-like
  * or scanf-like arguments.  They are null except for versions of gcc
  * that are known to support the features properly (old versions of gcc-2
@@ -156,52 +118,6 @@
 #define	__scanflike(fmtarg, firstvararg) \
 	    __attribute__((__format__ (__scanf__, fmtarg, firstvararg)))
 #endif
-
-/* Compiler-dependent macros that rely on FreeBSD-specific extensions. */
-#if __FreeBSD_cc_version >= 300001
-#define	__printf0like(fmtarg, firstvararg) \
-	    __attribute__((__format__ (__printf0__, fmtarg, firstvararg)))
-#else
-#define	__printf0like(fmtarg, firstvararg)
-#endif
-
-#ifdef __GNUC__
-#ifdef __ELF__
-#ifdef __STDC__
-#define	__weak_reference(sym,alias)	\
-	__asm__(".weak " #alias);	\
-	__asm__(".equ "  #alias ", " #sym)
-#define	__warn_references(sym,msg)	\
-	__asm__(".section .gnu.warning." #sym);	\
-	__asm__(".asciz \"" msg "\"");	\
-	__asm__(".previous")
-#else
-#define	__weak_reference(sym,alias)	\
-	__asm__(".weak alias");		\
-	__asm__(".equ alias, sym")
-#define	__warn_references(sym,msg)	\
-	__asm__(".section .gnu.warning.sym"); \
-	__asm__(".asciz \"msg\"");	\
-	__asm__(".previous")
-#endif /* __STDC__ */
-#else /* !__ELF__ */
-#ifdef __STDC__
-#define __weak_reference(sym,alias)	\
-	__asm__(".stabs \"_" #alias "\",11,0,0,0");	\
-	__asm__(".stabs \"_" #sym "\",1,0,0,0")
-#define __warn_references(sym,msg)	\
-	__asm__(".stabs \"" msg "\",30,0,0,0");		\
-	__asm__(".stabs \"_" #sym "\",1,0,0,0")
-#else
-#define __weak_reference(sym,alias)	\
-	__asm__(".stabs \"_/**/alias\",11,0,0,0");	\
-	__asm__(".stabs \"_/**/sym\",1,0,0,0")
-#define __warn_references(sym,msg)	\
-	__asm__(".stabs msg,30,0,0,0");			\
-	__asm__(".stabs \"_/**/sym\",1,0,0,0")
-#endif /* __STDC__ */
-#endif /* __ELF__ */
-#endif /* __GNUC__ */
 
 #define	__IDSTRING(name,string)	static const char name[] __unused = string
 

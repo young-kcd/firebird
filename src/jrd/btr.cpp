@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.19 2003-02-13 10:10:40 dimitr Exp $
+$Id: btr.cpp,v 1.20 2003-02-13 12:16:25 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -79,7 +79,7 @@ extern double	MTH$CVT_G_D();
 
 #define MAX_LEVELS	16
 
-__inline void MOVE_BYTE(UCHAR*& x_from, UCHAR*& x_to)
+inline void MOVE_BYTE(UCHAR*& x_from, UCHAR*& x_to)
 {
 	*x_to++ = *x_from++;
 }
