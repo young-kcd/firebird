@@ -7687,7 +7687,7 @@ int LexerState::yylex (
 		char* buffer = string;
 		size_t buffer_len = sizeof (string);
 		const char* buffer_end = buffer + buffer_len - 1;
-		char* p 
+		char* p;
 		for (p = buffer; ; ++p)
 		{
 			if (ptr >= end)
