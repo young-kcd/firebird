@@ -323,9 +323,9 @@ public:
 	Firebird::string	dpb_journal;
 	Firebird::string	dpb_key;
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-	Firebird::string	dpb_log;
+	Firebird::PathName	dpb_log;
 #endif
-	Firebird::string	dpb_lc_messages;
+	Firebird::PathName	dpb_lc_messages;
 	Firebird::string	dpb_lc_ctype;
 	Firebird::string	dpb_gbak_attach;
 	Firebird::PathName	dpb_working_directory;
@@ -337,6 +337,7 @@ public:
 			reinterpret_cast<char*>(&this->dpb_sys_user_name) - 
 			reinterpret_cast<char*>(this));
 	}
+	void get(const UCHAR*, USHORT);
 };
 
 static blb*		check_blob(thread_db*, ISC_STATUS*, blb**);
@@ -348,7 +349,6 @@ static ISC_STATUS	error(ISC_STATUS*, const std::exception& ex);
 static ISC_STATUS	error(ISC_STATUS*);
 static void		find_intl_charset(thread_db*, Attachment*, const DatabaseOptions*);
 static jrd_tra*		find_transaction(thread_db*, jrd_tra*, ISC_STATUS);
-static void		get_options(const UCHAR*, USHORT, TEXT**, ULONG, DatabaseOptions*);
 static ISC_STATUS	handle_error(ISC_STATUS*, ISC_STATUS, thread_db*);
 static void		verify_request_synchronization(jrd_req*& request, SSHORT level);
 namespace {
@@ -439,7 +439,6 @@ inline static thread_db* JRD_MAIN_set_thread_data(thread_db& thd_context)
 
 
 const int SWEEP_INTERVAL		= 20000;
-const int DPB_EXPAND_BUFFER		= 2048;
 
 const char DBL_QUOTE			= '\042';
 const char SINGLE_QUOTE			= '\'';
@@ -636,13 +635,9 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	try {
 
-/* Allocate buffer space */
-	TEXT	opt_buffer[DPB_EXPAND_BUFFER];
-	TEXT*	opt_ptr = opt_buffer;
-
 /* Process database parameter block */
 	DatabaseOptions options;
-	get_options(dpb, dpb_length, &opt_ptr, DPB_EXPAND_BUFFER, &options);
+	options.get(dpb, dpb_length);
 
 #ifndef NO_NFS
 /* Don't check nfs if single user */
@@ -1768,10 +1763,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	try {
 
 /* Process database parameter block */
-	TEXT opt_buffer[DPB_EXPAND_BUFFER];
-	TEXT* opt_ptr = opt_buffer;
 	DatabaseOptions options;
-	get_options(dpb, dpb_length, &opt_ptr, DPB_EXPAND_BUFFER, &options);
+	options.get(dpb, dpb_length);
 	if (!invalid_client_SQL_dialect && options.dpb_sql_dialect == 99) {
 		options.dpb_sql_dialect = 0;
 	}
@@ -4866,11 +4859,7 @@ static void find_intl_charset(thread_db* tdbb, Attachment* attachment, const Dat
 }
 
 
-static void get_options(const UCHAR*	dpb,
-						USHORT	dpb_length,
-						TEXT**	scratch,
-					    ULONG	buf_size,
-						DatabaseOptions*	options)
+void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length)
 {
 /**************************************
  *
@@ -4886,10 +4875,10 @@ static void get_options(const UCHAR*	dpb,
 
 	Database* dbb = GET_DBB();
 
-	options->dpb_buffers = JRD_cache_default;
-	options->dpb_sweep_interval = -1;
-	options->dpb_overwrite = true;
-	options->dpb_sql_dialect = 99;
+	dpb_buffers = JRD_cache_default;
+	dpb_sweep_interval = -1;
+	dpb_overwrite = true;
+	dpb_sql_dialect = 99;
 	invalid_client_SQL_dialect = false;
 
 	if (dpb_length == 0)
@@ -4914,7 +4903,7 @@ static void get_options(const UCHAR*	dpb,
 		{
 		case isc_dpb_working_directory:
 			{
-				rdr.getPath(options->dpb_working_directory);
+				rdr.getPath(dpb_working_directory);
 
 				// CLASSIC have no thread data. Init to zero.
 				char* t_data = 0;
@@ -4925,17 +4914,17 @@ static void get_options(const UCHAR*	dpb,
 				   the users HOME directory
 				 */
 #ifndef WIN_NT
-				if (options->dpb_working_directory.isEmpty()) {
+				if (dpb_working_directory.isEmpty()) {
 					struct passwd *passwd = NULL;
 
 					if (t_data)
 						passwd = getpwnam(t_data);
 					if (passwd) 
 					{
-						options->dpb_working_directory = passwd->pw_dir;
+						dpb_working_directory = passwd->pw_dir;
 					}
 					else {		/*No home dir for this users here. Default to server dir */
-						fb_getcwd(options->dpb_working_directory);
+						fb_getcwd(dpb_working_directory);
 					}
 				}
 #endif
@@ -4950,48 +4939,48 @@ static void get_options(const UCHAR*	dpb,
 			break;
 
 		case isc_dpb_set_page_buffers:
-			options->dpb_page_buffers = rdr.getInt();
-			if (options->dpb_page_buffers &&
-				(options->dpb_page_buffers < MIN_PAGE_BUFFERS ||
-				 options->dpb_page_buffers > MAX_PAGE_BUFFERS))
+			dpb_page_buffers = rdr.getInt();
+			if (dpb_page_buffers &&
+				(dpb_page_buffers < MIN_PAGE_BUFFERS ||
+				 dpb_page_buffers > MAX_PAGE_BUFFERS))
 			{
 				ERR_post(isc_bad_dpb_content, 0);
 			}
-			options->dpb_set_page_buffers = true;
+			dpb_set_page_buffers = true;
 			break;
 
 		case isc_dpb_num_buffers:
-			options->dpb_buffers = rdr.getInt();
-			if (options->dpb_buffers < 10)
+			dpb_buffers = rdr.getInt();
+			if (dpb_buffers < 10)
 			{
 				ERR_post(isc_bad_dpb_content, 0);
 			}
 			break;
 
 		case isc_dpb_page_size:
-			options->dpb_page_size = (USHORT) rdr.getInt();
+			dpb_page_size = (USHORT) rdr.getInt();
 			break;
 
 		case isc_dpb_debug:
-			options->dpb_debug = (USHORT) rdr.getInt();
+			dpb_debug = (USHORT) rdr.getInt();
 			break;
 
 		case isc_dpb_sweep:
-			options->dpb_sweep = (USHORT) rdr.getInt();
+			dpb_sweep = (USHORT) rdr.getInt();
 			break;
 
 		case isc_dpb_sweep_interval:
-			options->dpb_sweep_interval = rdr.getInt();
+			dpb_sweep_interval = rdr.getInt();
 			break;
 
 		case isc_dpb_verify:
-			options->dpb_verify = (USHORT) rdr.getInt();
-			if (options->dpb_verify & isc_dpb_ignore)
+			dpb_verify = (USHORT) rdr.getInt();
+			if (dpb_verify & isc_dpb_ignore)
 				dbb->dbb_flags |= DBB_damaged;
 			break;
 
 		case isc_dpb_trace:
-			options->dpb_trace = (USHORT) rdr.getInt();
+			dpb_trace = (USHORT) rdr.getInt();
 			break;
 
 		case isc_dpb_damaged:
@@ -5000,102 +4989,68 @@ static void get_options(const UCHAR*	dpb,
 			break;
 
 		case isc_dpb_enable_journal:
-		    rdr.getString(options->dpb_journal);
+		    rdr.getString(dpb_journal);
 			break;
 
 		case isc_dpb_wal_backup_dir:
-			{
-				Firebird::PathName dummy;
-				rdr.getPath(dummy);	// ignore, skip
-			}
+			// ignore, skip
 			break;
 
 		case isc_dpb_drop_walfile:
-			options->dpb_wal_action = (USHORT) rdr.getInt();
+			dpb_wal_action = (USHORT) rdr.getInt();
 			break;
 
 		case isc_dpb_old_dump_id:
-			rdr.getInt(); // skip
-			break;
-
 		case isc_dpb_online_dump:
-			rdr.getInt(); // skip
-			break;
-
 		case isc_dpb_old_file_size:
-			rdr.getInt(); // skip
-			break;
-
 		case isc_dpb_old_num_files:
-			rdr.getInt(); // skip
-			break;
-
 		case isc_dpb_old_start_page:
-			rdr.getInt(); // skip
-			break;
-
 		case isc_dpb_old_start_seqno:
-			rdr.getInt(); // skip
-			break;
-
 		case isc_dpb_old_start_file:
-			rdr.getInt(); // skip
+			// ignore, skip
 			break;
 
 		case isc_dpb_old_file:
 			//if (num_old_files >= MAX_OLD_FILES) complain here, for now.
 				ERR_post(isc_num_old_files, 0);
 			// following code is never executed now !
-			{
-				Firebird::PathName dummy;
-				rdr.getPath(dummy);	// ignore, skip
-			}
 			num_old_files++;
 			break;
 
 		case isc_dpb_wal_chkptlen:
-			rdr.getInt(); // skip
-			break;
-
 		case isc_dpb_wal_numbufs:
-			rdr.getInt(); // skip
-			break;
-
 		case isc_dpb_wal_bufsize:
-			rdr.getInt(); // skip
-			break;
-
 		case isc_dpb_wal_grp_cmt_wait:
-			rdr.getInt(); // skip
+			// ignore, skip
 			break;
 
 		case isc_dpb_dbkey_scope:
-			options->dpb_dbkey_scope = (USHORT) rdr.getInt();
+			dpb_dbkey_scope = (USHORT) rdr.getInt();
 			break;
 
 		case isc_dpb_sys_user_name:
-		    rdr.getString(options->dpb_sys_user_name);
+		    rdr.getString(dpb_sys_user_name);
 			break;
 
 		case isc_dpb_sql_role_name:
-		    rdr.getString(options->dpb_role_name);
+		    rdr.getString(dpb_role_name);
 			break;
 
 		case isc_dpb_user_name:
-		    rdr.getString(options->dpb_user_name);
+		    rdr.getString(dpb_user_name);
 			break;
 
 		case isc_dpb_password:
-		    rdr.getString(options->dpb_password);
+		    rdr.getString(dpb_password);
 			break;
 
 		case isc_dpb_password_enc:
-		    rdr.getString(options->dpb_password_enc);
+		    rdr.getString(dpb_password_enc);
 			break;
 
 		case isc_dpb_encrypt_key:
 #ifdef ISC_DATABASE_ENCRYPTION
-		    rdr.getString(options->dpb_key);
+		    rdr.getString(dpb_key);
 #else
 			/* Just in case there WAS a customer using this unsupported
 			 * feature - post an error when they try to access it in 4.0
@@ -5106,77 +5061,72 @@ static void get_options(const UCHAR*	dpb,
 			break;
 
 		case isc_dpb_no_garbage_collect:
-			options->dpb_no_garbage = TRUE;
+			dpb_no_garbage = TRUE;
 			break;
 
 		case isc_dpb_disable_journal:
-			options->dpb_disable = TRUE;
+			dpb_disable = TRUE;
 			break;
 
 		case isc_dpb_activate_shadow:
-			options->dpb_activate_shadow = true;
+			dpb_activate_shadow = true;
 			break;
 
 		case isc_dpb_delete_shadow:
-			options->dpb_delete_shadow = true;
+			dpb_delete_shadow = true;
 			break;
 
 		case isc_dpb_force_write:
-			options->dpb_set_force_write = TRUE;
-			options->dpb_force_write = (SSHORT) rdr.getInt();
+			dpb_set_force_write = TRUE;
+			dpb_force_write = (SSHORT) rdr.getInt();
 			break;
 
 		case isc_dpb_begin_log:
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-			rdr.getPath(options->dpb_log);
-#else
-			{
-				Firebird::PathName dummy;
-				rdr.getPath(dummy);	// ignore, skip
-			}
+			rdr.getPath(dpb_log);
 #endif
 			break;
 
 		case isc_dpb_quit_log:
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-			options->dpb_quit_log = true;
+			dpb_quit_log = true;
 #endif
 			break;
 
 		case isc_dpb_no_reserve:
-			options->dpb_set_no_reserve = TRUE;
-			options->dpb_no_reserve = (UCHAR) rdr.getInt();
+			dpb_set_no_reserve = TRUE;
+			dpb_no_reserve = (UCHAR) rdr.getInt();
 			break;
 
 		case isc_dpb_interp:
-			options->dpb_interp = (SSHORT) rdr.getInt();
+			dpb_interp = (SSHORT) rdr.getInt();
 			break;
 
 		case isc_dpb_lc_messages:
-		    rdr.getString(options->dpb_lc_messages);
+		    rdr.getPath(dpb_lc_messages);
 			break;
 
 		case isc_dpb_lc_ctype:
-		    rdr.getString(options->dpb_lc_ctype);
+		    rdr.getString(dpb_lc_ctype);
 			break;
 
 		case isc_dpb_shutdown:
-			options->dpb_shutdown = (USHORT) rdr.getInt();
+			dpb_shutdown = (USHORT) rdr.getInt();
 			// Enforce default
-			if ((options->dpb_shutdown & isc_dpb_shut_mode_mask) == isc_dpb_shut_default)
-				options->dpb_shutdown |= isc_dpb_shut_multi;
+			if ((dpb_shutdown & isc_dpb_shut_mode_mask) == isc_dpb_shut_default)
+				dpb_shutdown |= isc_dpb_shut_multi;
 			break;
 
 		case isc_dpb_shutdown_delay:
-			options->dpb_shutdown_delay = (SSHORT) rdr.getInt();
+			dpb_shutdown_delay = (SSHORT) rdr.getInt();
 			break;
 
 		case isc_dpb_online:
-			options->dpb_online = (USHORT) rdr.getInt();
+			dpb_online = (USHORT) rdr.getInt();
 			// Enforce default
-			if ((options->dpb_online & isc_dpb_shut_mode_mask) == isc_dpb_shut_default)
+			if ((dpb_online & isc_dpb_shut_mode_mask) == isc_dpb_shut_default)
 			{
-				options->dpb_online |= isc_dpb_shut_normal;
+				dpb_online |= isc_dpb_shut_normal;
 			}
 			break;
 
@@ -5186,66 +5136,66 @@ static void get_options(const UCHAR*	dpb,
 				rdr.getString(single);
 		    	if (single == "YES")
 				{
-					options->dpb_single_user = TRUE;
+					dpb_single_user = TRUE;
 				}
 			}
 			break;
 
 		case isc_dpb_overwrite:
-			options->dpb_overwrite = rdr.getInt() != 0;
+			dpb_overwrite = rdr.getInt() != 0;
 			break;
 
 		case isc_dpb_sec_attach:
-			options->dpb_sec_attach = rdr.getInt() != 0;
-			options->dpb_buffers = 50;
+			dpb_sec_attach = rdr.getInt() != 0;
+			dpb_buffers = 50;
 			dbb->dbb_flags |= DBB_security_db;
 			break;
 
 		case isc_dpb_gbak_attach:
-		    rdr.getString(options->dpb_gbak_attach);
+		    rdr.getString(dpb_gbak_attach);
 			break;
 
 		case isc_dpb_gstat_attach:
-			options->dpb_gstat_attach = true;
+			dpb_gstat_attach = true;
 			break;
 
 		case isc_dpb_gfix_attach:
-			options->dpb_gfix_attach = true;
+			dpb_gfix_attach = true;
 			break;
 
 		case isc_dpb_gsec_attach:
-			options->dpb_gsec_attach = rdr.getBoolean();
+			dpb_gsec_attach = rdr.getBoolean();
 			break;
 
 		case isc_dpb_disable_wal:
-			options->dpb_disable_wal = true;
+			dpb_disable_wal = true;
 			break;
 
 		case isc_dpb_connect_timeout:
-			options->dpb_connect_timeout = rdr.getInt();
+			dpb_connect_timeout = rdr.getInt();
 			break;
 
 		case isc_dpb_dummy_packet_interval:
-			options->dpb_dummy_packet_interval = rdr.getInt();
+			dpb_dummy_packet_interval = rdr.getInt();
 			break;
 
 		case isc_dpb_sql_dialect:
-			options->dpb_sql_dialect = (USHORT) rdr.getInt();
-			if (options->dpb_sql_dialect > SQL_DIALECT_V6)
+			dpb_sql_dialect = (USHORT) rdr.getInt();
+			if (dpb_sql_dialect > SQL_DIALECT_V6)
 					invalid_client_SQL_dialect = true;
 			break;
 
 		case isc_dpb_set_db_sql_dialect:
-			options->dpb_set_db_sql_dialect = (USHORT) rdr.getInt();
+			dpb_set_db_sql_dialect = (USHORT) rdr.getInt();
 			break;
 
 		case isc_dpb_set_db_readonly:
-			options->dpb_set_db_readonly = true;
-			options->dpb_db_readonly = rdr.getInt() != 0;
+			dpb_set_db_readonly = true;
+			dpb_db_readonly = rdr.getInt() != 0;
 			break;
 
 		case isc_dpb_set_db_charset:
-			rdr.getString(options->dpb_set_db_charset);
+			rdr.getString(dpb_set_db_charset);
 			break;
 
 		default:

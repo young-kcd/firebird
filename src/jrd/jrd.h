@@ -487,7 +487,7 @@ public:
 	vec*		att_lck_quick_ref;	// correspondence table of locks
 	ULONG		att_flags;			// Flags describing the state of the attachment
 	SSHORT		att_charset;		// user's charset specified in dpb
-	Firebird::string	att_lc_messages;	// attachment's preference for message natural language
+	Firebird::PathName	att_lc_messages;	// attachment's preference for message natural language
 	Lock*		att_long_locks;		// outstanding two phased locks
 	vec*		att_compatibility_table;	// hash table of compatible locks
 	vcl*		att_val_errors;
