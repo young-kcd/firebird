@@ -1329,10 +1329,6 @@ default_opt	: DEFAULT default_value
 		;
 
 default_value	: constant
-/*		| USER
-			{ $$ = make_node (nod_user_name, (int) 0, NULL); }
-		| CURRENT_USER
-			{ $$ = make_node (nod_user_name, (int) 0, NULL); }*/
 		| current_user
 		| current_role
 		| current_database
@@ -1579,8 +1575,8 @@ var_init_opt	: '=' default_value
 		;
 
 cursor_declaration_item	: symbol_cursor_name CURSOR FOR '(' select ')'
-			{ $$ = make_node (nod_cursor, (int) e_cur_count,
-				$1, $5, NULL, NULL); }
+			{ $$ = make_flag_node (nod_cursor, NOD_CURSOR_EXPLICIT,
+				(int) e_cur_count, $1, $5, NULL, NULL); }
  		;
 
 proc_block	: proc_statement
@@ -1729,7 +1725,8 @@ breakleave	: KW_BREAK ';'
 		;
 
 cursor_def	: AS CURSOR symbol_cursor_name
-			{ $$ = make_node (nod_cursor, (int) e_cur_count, $3, NULL, NULL, NULL); }
+			{ $$ = make_flag_node (nod_cursor, NOD_CURSOR_FOR,
+				(int) e_cur_count, $3, NULL, NULL, NULL); }
 		|
 			{ $$ = NULL; }
 		;

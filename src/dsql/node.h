@@ -395,7 +395,10 @@ enum nod_flags_vals {
 	NOD_COMP_DIALECT		= 16,
 
 	NOD_SELECT_EXPR_SINGLETON	= 1,
-	NOD_SELECT_EXPR_VALUE		= 2
+	NOD_SELECT_EXPR_VALUE		= 2,
+
+	NOD_CURSOR_EXPLICIT		= 1,
+	NOD_CURSOR_FOR			= 2
 };
 
 // Parameters to MAKE_constant 

@@ -1611,7 +1611,9 @@ static stmt* lookup_stmt(const TEXT* name, dsql_name* list, name_type type)
 	else {
 		error_post(isc_dsql_error,
 				   isc_arg_gds, isc_sqlerr, isc_arg_number, (SLONG) - 504,
-				   isc_arg_gds, isc_dsql_cursor_err, 0);
+				   isc_arg_gds, isc_dsql_cursor_err,
+				   isc_arg_gds, isc_dsql_cursor_not_found,
+				   isc_arg_string, name, 0);
 	}
 	return NULL;
 }

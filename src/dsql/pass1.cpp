@@ -205,7 +205,7 @@ static dsql_nod* pass1_coalesce(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_collate(dsql_req*, dsql_nod*, const dsql_str*);
 static dsql_nod* pass1_constant(dsql_req*, dsql_nod*);
 static dsql_ctx* pass1_cursor_context(dsql_req*, const dsql_nod*, const dsql_nod*);
-static dsql_nod* pass1_cursor_name(dsql_req*, const dsql_str*, bool);
+static dsql_nod* pass1_cursor_name(dsql_req*, const dsql_str*, USHORT, bool);
 static dsql_nod* pass1_cursor_reference(dsql_req*, const dsql_nod*, dsql_nod*);
 static dsql_nod* pass1_dbkey(dsql_req*, dsql_nod*);
 static dsql_nod* pass1_delete(dsql_req*, dsql_nod*);
@@ -1279,15 +1279,20 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		node = MAKE_node(input->nod_type, input->nod_count);
 		node->nod_flags = input->nod_flags;
 		dsql_nod* cursor = node->nod_arg[e_flp_cursor] = input->nod_arg[e_flp_cursor];
+		fb_assert(cursor->nod_flags > 0);
+
+		const dsql_nod* select = input->nod_arg[e_flp_select];
+		node->nod_arg[e_flp_select] =
+			PASS1_rse(request, select->nod_arg[e_select_expr], 
+					  select->nod_arg[e_select_lock]);
+
 		if (cursor) {
-			pass1_cursor_name(request, (dsql_str*) cursor->nod_arg[e_cur_name], false);
-			cursor->nod_arg[e_cur_rse] = node;
+			pass1_cursor_name(request, (dsql_str*) cursor->nod_arg[e_cur_name],
+							  -1U, false);
+			cursor->nod_arg[e_cur_rse] = node->nod_arg[e_flp_select];
 			cursor->nod_arg[e_cur_number] = (dsql_nod*) (IPTR) request->req_cursor_number++;
 			request->req_cursors.push(cursor);
 		}
-
-		node->nod_arg[e_flp_select] =
-			PASS1_statement(request, input->nod_arg[e_flp_select], proc_flag);
 
 		dsql_nod* into_in = input->nod_arg[e_flp_into];
 		dsql_nod* into_out = MAKE_node(into_in->nod_type, into_in->nod_count);
@@ -1512,7 +1517,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 	case nod_sqlcode:
 	case nod_gdscode:
 		return input;
-		
+
 	case nod_user_savepoint:
 		if (request->req_flags & REQ_procedure)
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
@@ -1565,13 +1570,15 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 	case nod_cursor:
 		{
+		fb_assert(input->nod_flags > 0);
 		// make sure the cursor doesn't exist
-		pass1_cursor_name(request, (dsql_str*) input->nod_arg[e_cur_name], false);
+		pass1_cursor_name(request, (dsql_str*) input->nod_arg[e_cur_name],
+						  -1U, false);
 		// temporarily hide unnecessary contexts and process our RSE
 		DsqlContextStack* const base_context = request->req_context;
 		DsqlContextStack temp;
 		request->req_context = &temp;
-		dsql_nod* select = input->nod_arg[e_cur_rse];
+		const dsql_nod* select = input->nod_arg[e_cur_rse];
 		input->nod_arg[e_cur_rse] =
 			PASS1_rse(request, select->nod_arg[e_select_expr],
 					  select->nod_arg[e_select_lock]);
@@ -1588,7 +1595,8 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 	case nod_cursor_fetch:
 		// resolve the cursor
 		input->nod_arg[e_cur_stmt_id] =
-			pass1_cursor_name(request, (dsql_str*) input->nod_arg[e_cur_stmt_id], true);
+			pass1_cursor_name(request, (dsql_str*) input->nod_arg[e_cur_stmt_id],
+							  NOD_CURSOR_EXPLICIT, true);
 		// process a seek node, if exists
 		if (input->nod_arg[e_cur_stmt_seek]) {
 			input->nod_arg[e_cur_stmt_seek] =
@@ -3252,21 +3260,21 @@ static dsql_ctx* pass1_cursor_context( dsql_req* request, const dsql_nod* cursor
 	DEV_BLKCHK(string, dsql_type_str);
 
 	// this function must throw an error if no cursor was found
-	dsql_nod* node = pass1_cursor_name(request, string, true);
+	const dsql_nod* node = pass1_cursor_name(request, string, -1U, true);
 	fb_assert(node);
 
-	const dsql_nod* temp = node->nod_arg[e_cur_rse];
-	if (temp->nod_type == nod_for_select)
-		temp = temp->nod_arg[e_flp_select];
-	else
-		ERRD_post(isc_sqlerr, isc_arg_number,
-				  (SLONG) - 504, isc_arg_gds,
-				  isc_dsql_cursor_err,
-				  isc_arg_string, string->str_data,
-				  isc_arg_string, "is not updatable",
-				  0);
-	temp = temp->nod_arg[e_rse_streams];
-	
+	const dsql_nod* rse = node->nod_arg[e_cur_rse];
+	fb_assert(rse);
+
+	if (rse->nod_arg[e_rse_reduced]) {
+		// cursor with DISTINCT is not updatable
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 510,
+				  isc_arg_gds, isc_dsql_cursor_update_err,
+				  isc_arg_string, string->str_data, 0);
+	}
+
+	const dsql_nod* temp = rse->nod_arg[e_rse_streams];
+
 	dsql_ctx* context = NULL;
 	dsql_nod* const* ptr = temp->nod_arg;
 	for (const dsql_nod* const* const end = ptr + temp->nod_count;
@@ -3279,30 +3287,35 @@ static dsql_ctx* pass1_cursor_context( dsql_req* request, const dsql_nod* cursor
 			DEV_BLKCHK(candidate, dsql_type_ctx);
 			const dsql_rel* relation = candidate->ctx_relation;
 			DEV_BLKCHK(rname, dsql_type_str);
-			if (!strcmp
-				(reinterpret_cast<const char*>(rname->str_data),
-				 relation->rel_name))
+			if (!(relation->rel_flags & REL_view) &&
+				!strcmp(rname->str_data, relation->rel_name))
 			{
 				if (context)
-					ERRD_post(isc_sqlerr, isc_arg_number,
-							  (SLONG) - 504, isc_arg_gds,
-							  isc_dsql_cursor_err,
-							  isc_arg_string, string->str_data,
-							  isc_arg_string, "is ambiguous",
-							  0);
+					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 504,
+							  isc_arg_gds, isc_dsql_cursor_err,
+							  isc_arg_gds, isc_dsql_cursor_rel_ambiguous,
+							  isc_arg_string, rname->str_data,
+							  isc_arg_string, string->str_data, 0);
 				else
 					context = candidate;
 			}
 		}
+		else if (r_node->nod_type == nod_aggregate) {
+			// cursor with aggregation is not updatable
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 510,
+					  isc_arg_gds, isc_dsql_cursor_update_err,
+					  isc_arg_string, string->str_data, 0);
+		}
+		// note that nod_union and nod_join will cause to the error below,
+		// as well as derived tables. Some cases deserve fixing in the future
 	}
 
 	if (!context)
-		ERRD_post(isc_sqlerr, isc_arg_number,
-				  (SLONG) - 504, isc_arg_gds,
-				  isc_dsql_cursor_err,
-				  isc_arg_string, string->str_data,
-				  isc_arg_string, "cannot be matched",
-				  0);
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 504,
+				  isc_arg_gds, isc_dsql_cursor_err,
+				  isc_arg_gds, isc_dsql_cursor_rel_not_found,
+				  isc_arg_string, rname->str_data,
+				  isc_arg_string, string->str_data, 0);
 
 	return context;
 }
@@ -3317,27 +3330,49 @@ static dsql_ctx* pass1_cursor_context( dsql_req* request, const dsql_nod* cursor
 
     @param request
     @param string
+	@param mask
+	@param existence_flag
 
  **/
 static dsql_nod* pass1_cursor_name(dsql_req* request, const dsql_str* string,
-	bool existance_flag)
+	USHORT mask, bool existence_flag)
 {
 	DEV_BLKCHK(string, dsql_type_str);
 	dsql_nod* cursor = NULL;
 
+	if (!strlen(string->str_data)) {
+		if (existence_flag) {
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 504,
+					  isc_arg_gds, isc_dsql_cursor_err,
+					  isc_arg_gds, isc_dsql_cursor_invalid, 0);
+		}
+		else {
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 502,
+					  isc_arg_gds, isc_dsql_decl_err,
+					  isc_arg_gds, isc_dsql_cursor_invalid, 0);
+		}
+	}
+
 	for (DsqlNodStack::iterator itr(request->req_cursors); itr.hasData(); ++itr) {
 		cursor = itr.object();
 		const dsql_str* cname = (dsql_str*) cursor->nod_arg[e_cur_name];
-		if (!strcmp(string->str_data, cname->str_data))
+		if (!strcmp(string->str_data, cname->str_data) && (cursor->nod_flags & mask))
 			break;
 		cursor = NULL;
 	}
 
-	if ((!cursor && existance_flag) || (cursor && !existance_flag)) {
+	if (!cursor && existence_flag) {
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 504,
 				  isc_arg_gds, isc_dsql_cursor_err,
+				  isc_arg_gds, isc_dsql_cursor_not_found,
 				  isc_arg_string, string->str_data,
-				  isc_arg_string, (existance_flag) ? "is not defined" : "already exists",
+				  0);
+	}
+	else if (cursor && !existence_flag) {
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 502,
+				  isc_arg_gds, isc_dsql_decl_err,
+				  isc_arg_gds, isc_dsql_cursor_exists,
+				  isc_arg_string, string->str_data,
 				  0);
 	}
 
@@ -3376,11 +3411,11 @@ static dsql_nod* pass1_cursor_reference( dsql_req* request,
 					0);
 
 	if (!symbol) {
-		// cursor is not defined 
+		// cursor is not found
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 504,
 				  isc_arg_gds, isc_dsql_cursor_err,
+				  isc_arg_gds, isc_dsql_cursor_not_found,
 				  isc_arg_string, string->str_data,
-				  isc_arg_string, "is not defined",
 				  0);
 	}
 
@@ -3397,7 +3432,8 @@ static dsql_nod* pass1_cursor_reference( dsql_req* request,
 	{
 		// cursor is not updatable 
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 510,
-				  isc_arg_gds, isc_dsql_cursor_update_err, 0);
+				  isc_arg_gds, isc_dsql_cursor_update_err,
+				  isc_arg_string, string->str_data, 0);
 	}
 
 	request->req_parent = parent;
@@ -5502,7 +5538,7 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 		remap_streams_to_parent_context(rse->nod_arg[e_rse_streams], parent_context);
 	}
 
-	// Process GROUP BY clause, if any 
+	// Process GROUP BY clause, if any
 
 	if ( (node = input->nod_arg[e_qry_group]) )
 	{
@@ -5527,7 +5563,7 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 		}
     }
 
-	// Parse a user-specified access plan 
+	// Parse a user-specified access plan
 
 	rse->nod_arg[e_rse_plan] =
 		PASS1_node(request, input->nod_arg[e_qry_plan], false);

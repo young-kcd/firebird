@@ -617,6 +617,13 @@ const SLONG isc_dsql_ambiguous_field_name        = 336003085L;
 const SLONG isc_dsql_udf_return_pos_err          = 336003086L;
 const SLONG isc_dsql_invalid_label               = 336003087L;
 const SLONG isc_dsql_datatypes_not_comparable    = 336003088L;
+const SLONG isc_dsql_cursor_invalid              = 336003089L;
+const SLONG isc_dsql_cursor_redefined            = 336003090L;
+const SLONG isc_dsql_cursor_not_found            = 336003091L;
+const SLONG isc_dsql_cursor_exists               = 336003092L;
+const SLONG isc_dsql_cursor_rel_ambiguous        = 336003093L;
+const SLONG isc_dsql_cursor_rel_not_found        = 336003094L;
+const SLONG isc_dsql_cursor_not_open             = 336003095L;
 const SLONG isc_dyn_role_does_not_exist          = 336068796L;
 const SLONG isc_dyn_no_grant_admin_opt           = 336068797L;
 const SLONG isc_dyn_user_not_role_member         = 336068798L;
@@ -777,7 +784,7 @@ const SLONG isc_gstat_unexpected_eof             = 336920580L;
 const SLONG isc_gstat_open_err                   = 336920605L;
 const SLONG isc_gstat_read_err                   = 336920606L;
 const SLONG isc_gstat_sysmemex                   = 336920607L;
-const SLONG isc_err_max                          = 722;
+const SLONG isc_err_max                          = 729;
 
 #else /* c definitions */
 
@@ -1364,6 +1371,13 @@ const SLONG isc_err_max                          = 722;
 #define isc_dsql_udf_return_pos_err          336003086L
 #define isc_dsql_invalid_label               336003087L
 #define isc_dsql_datatypes_not_comparable    336003088L
+#define isc_dsql_cursor_invalid              336003089L
+#define isc_dsql_cursor_redefined            336003090L
+#define isc_dsql_cursor_not_found            336003091L
+#define isc_dsql_cursor_exists               336003092L
+#define isc_dsql_cursor_rel_ambiguous        336003093L
+#define isc_dsql_cursor_rel_not_found        336003094L
+#define isc_dsql_cursor_not_open             336003095L
 #define isc_dyn_role_does_not_exist          336068796L
 #define isc_dyn_no_grant_admin_opt           336068797L
 #define isc_dyn_user_not_role_member         336068798L
@@ -1524,7 +1538,7 @@ const SLONG isc_err_max                          = 722;
 #define isc_gstat_open_err                   336920605L
 #define isc_gstat_read_err                   336920606L
 #define isc_gstat_sysmemex                   336920607L
-#define isc_err_max                          722
+#define isc_err_max                          729
 
 #endif
 

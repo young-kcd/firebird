@@ -972,7 +972,8 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 		{
 			if (!(request->req_flags & REQ_cursor_open))
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 504,
-					  isc_arg_gds, isc_dsql_cursor_err, 0);
+					  isc_arg_gds, isc_dsql_cursor_err,
+					  isc_arg_gds, isc_dsql_cursor_not_open, 0);
 		}
 
 #ifdef SCROLLABLE_CURSORS
@@ -1247,7 +1248,8 @@ ISC_STATUS GDS_DSQL_INSERT_CPP(	ISC_STATUS*	user_status,
 		if (request->req_type == REQ_PUT_SEGMENT)
 			if (!(request->req_flags & REQ_cursor_open))
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 504,
-					  isc_arg_gds, isc_dsql_cursor_err, 0);
+					  isc_arg_gds, isc_dsql_cursor_err,
+					  isc_arg_gds, isc_dsql_cursor_not_open, 0);
 
 		dsql_msg* message = (dsql_msg*) request->req_receive;
 
@@ -1520,7 +1522,8 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 	
 		if (length == 0) {
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 502,
-				  isc_arg_gds, isc_dsql_decl_err, 0);
+					  isc_arg_gds, isc_dsql_decl_err,
+					  isc_arg_gds, isc_dsql_cursor_invalid, 0);
 		}
 
 // If there already is a different cursor by the same name, bitch 
@@ -1533,7 +1536,9 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 			}
 
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 502,
-				  isc_arg_gds, isc_dsql_decl_err, 0);
+					  isc_arg_gds, isc_dsql_decl_err,
+					  isc_arg_gds, isc_dsql_cursor_redefined,
+					  isc_arg_string, symbol->sym_string, 0);
 		}
 
 /* If there already is a cursor and its name isn't the same, ditto.
@@ -1546,7 +1551,9 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 		else {
 			fb_assert(request->req_cursor != symbol);
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 502,
-				  isc_arg_gds, isc_dsql_decl_err, 0);
+					  isc_arg_gds, isc_dsql_decl_err,
+					  isc_arg_gds, isc_dsql_cursor_redefined,
+					  isc_arg_string, request->req_cursor->sym_string, 0);
 		}
 	}
 	catch(const std::exception& ex)
