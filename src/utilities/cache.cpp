@@ -136,11 +136,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	do {
 		db_handle = NULL;
-		status = gds__attach_database(status_vector,
-									  0,
-									  GDS_VAL(sw_database),
-									  GDS_REF(db_handle),
-									  sizeof(cache_dpb), GDS_VAL(cache_dpb));
+		status = gds__attach_database(status_vector, 0, sw_database, &db_handle,
+									  sizeof(cache_dpb), cache_dpb);
 
 		if (status && status != gds__cache_restart) {
 			gds__print_status(status_vector);
@@ -148,7 +145,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		}
 
 		if (db_handle)
-			gds__detach_database(status_vector, GDS_REF(db_handle));
+			gds__detach_database(status_vector, &db_handle);
 
 	} while (status == gds__cache_restart);
 

@@ -49,7 +49,7 @@ ULONG *RMET_tips(TEXT * db_in)
  **************************************/
 	ULONG last, *tip, *tips;
 
-	READY GDS_VAL(db_in) AS DB
+	READY db_in AS DB
 	ON_ERROR
 		gds__print_status(gds__status);
 		ib_printf("can't open the databse so skip the tip list\n");
