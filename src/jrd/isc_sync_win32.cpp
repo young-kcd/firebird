@@ -120,7 +120,7 @@ SLONG DLL_EXPORT ISC_event_clear(EVENT event)
 	if (pEvent->event_shared) {
 		pEvent = pEvent->event_shared;
 	}
-	return event->event_count + 1;
+	return pEvent->event_count + 1;
 }
 
 
