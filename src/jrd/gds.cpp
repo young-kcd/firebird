@@ -899,14 +899,14 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 			USHORT fac = 0, dummy_class = 0;
 			const ISC_STATUS decoded = gds__decode(code, &fac, &dummy_class);
 			if (gds__msg_format(0, fac, (USHORT) decoded,
-								128, s, args[0], args[1], args[2], args[3],
+								bufsize, s, args[0], args[1], args[2], args[3],
 								args[4]) < 0)
 			{
 				if ((decoded < FB_NELEM(messages) - 1) && (decoded >= 0))
-					sprintf(s, messages[decoded], args[0], args[1], args[2],
+					SNPRINTF(s, bufsize, messages[decoded], args[0], args[1], args[2],
 							args[3], args[4]);
 				else
-					sprintf(s, "unknown ISC error %ld", code);	/* TXNN */
+					SNPRINTF(s, bufsize, "unknown ISC error %ld", code);	/* TXNN */
 			}
 		}
 		break;
@@ -928,7 +928,7 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 		break;
 
 	case isc_arg_dos:
-		sprintf(s, "unknown dos error %ld", code);	/* TXNN */
+		SNPRINTF(s, bufsize, "unknown dos error %ld", code);	/* TXNN */
 		break;
 
 #ifdef VMS
@@ -938,7 +938,7 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 			struct dsc$descriptor_s desc;
 			desc.dsc$b_class = DSC$K_CLASS_S;
 			desc.dsc$b_dtype = DSC$K_DTYPE_T;
-			desc.dsc$w_length = 128;
+			desc.dsc$w_length = bufsize;
 			desc.dsc$a_pointer = s;
 			TEXT flags[4];
 			ISC_STATUS status = sys$getmsg(code, &l, &desc, 15, flags);
@@ -957,17 +957,17 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 										 code,
 										 GetUserDefaultLangID(),
 										 s,
-										 128,
+										 bufsize,
 						                 NULL))
 		  && !(l = (SSHORT)FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
 										 NULL,
 										 code,
 										 0, // TMN: Fallback to system known language
 										 s,
-										 128,
+										 bufsize,
 										 NULL)))
 		{
-			sprintf(s, "unknown Win32 error %ld", code);	/* TXNN */
+			SNPRINTF(s, bufsize, "unknown Win32 error %ld", code);	/* TXNN */
 		}
 		break;
 #endif
@@ -1187,6 +1187,7 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
 				   ISC_get_host(name, MAXPATHLEN), gdslogid, ctime(&now));
 		va_start(ptr, text);
 		vfprintf(file, text, ptr);
+		va_end(ptr);
 		fprintf(file, "\n\n");
 		fclose(file);
 	}
@@ -1236,6 +1237,7 @@ void API_ROUTINE gds__print_pool(JrdMemoryPool* pool, const TEXT* text, ...)
 				   ISC_get_host(name, MAXPATHLEN), gdslogid, ctime(&now));
 		va_start(ptr, text);
 		vfprintf(file, text, ptr);
+		va_end(ptr);
 		fprintf(file, "\n");
 		pool->print_contents(file, false);
 		fprintf(file, "\n");
@@ -1289,7 +1291,7 @@ void API_ROUTINE gds__log_status(const TEXT* database,
 
 	p[-2] = 0;
 	gds__log(buffer, 0);
-	gds__free((SLONG *) buffer);
+	gds__free(buffer);
 }
 
 
@@ -1466,7 +1468,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 					gds__msg_open(reinterpret_cast<void**>(&messageL),
 								  msg_file);
 			}
-			gds__free((SLONG *) msg_file);
+			gds__free(msg_file);
 		}
 
 		if (status)
@@ -1698,8 +1700,8 @@ void API_ROUTINE gds__prefix(TEXT* resultString, const TEXT* file)
 			if (len > sizeof(ib_prefix_val)) {
 				perror("ib_prefix path size too large - truncated");                      
 			}
-			strncpy(ib_prefix_val, regPrefix, sizeof(ib_prefix_val) -1);
-			ib_prefix_val[sizeof(ib_prefix_val) -1] = 0;
+			strncpy(ib_prefix_val, regPrefix, sizeof(ib_prefix_val) - 1);
+			ib_prefix_val[sizeof(ib_prefix_val) - 1] = 0;
 			ib_prefix = ib_prefix_val;
 		}
 		else {
@@ -1961,7 +1963,7 @@ ISC_STATUS API_ROUTINE gds__print_status(const ISC_STATUS* vec)
 	const ISC_STATUS* vector = vec;
 
 	if (!safe_interpret(s, BUFFER_LARGE, &vector)) {
-		gds__free((SLONG *) s);
+		gds__free(s);
 		return vec[1];
 	}
 
@@ -1971,7 +1973,7 @@ ISC_STATUS API_ROUTINE gds__print_status(const ISC_STATUS* vec)
 	while (safe_interpret(s + 1, BUFFER_LARGE - 1, &vector))
 		gds__put_error(s);
 
-	gds__free((void*) s);
+	gds__free(s);
 
 	return vec[1];
 }
@@ -2836,6 +2838,7 @@ static void blr_error(gds_ctl* control, const TEXT* string, ...)
 
 	va_start(args, string);
 	blr_format(control, string, args);
+	va_end(args);
 	offset = 0;
 	blr_print_line(control, (SSHORT) offset);
 	Firebird::status_exception::raise();
@@ -2858,6 +2861,7 @@ static void blr_format(gds_ctl* control, const char* string, ...)
 
 	va_start(ptr, string);
 	vsprintf(control->ctl_ptr, string, ptr);
+	va_end(ptr);
 	while (*control->ctl_ptr)
 		control->ctl_ptr++;
 }
