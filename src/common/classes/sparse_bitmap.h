@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: sparse_bitmap.h,v 1.2 2004-09-28 21:50:07 skidder Exp $
+ *  $Id: sparse_bitmap.h,v 1.3 2004-09-29 21:58:58 arnobrinkman Exp $
  *
  */
 
@@ -674,18 +674,18 @@ SparseBitmap<T, InternalTypes>::bit_and(
 	// Make sure target differs from destination
 	fb_assert(dest != source);
 
-	// First bitmap is singular. Clear appropriate bit in second and return it
+	// First bitmap is singular. Test appropriate bit in second and return first
 	if (dest->singular) {
-		source->clear(dest->singular_value);
-		//delete dest;
-		return source;		
+		if (!source->test(dest->singular_value))
+			dest->singular = false;
+		return dest;
 	}
 
-	// Second bitmap is singular. Clear appropriate bit in first and return it
+	// Second bitmap is singular. Test appropriate bit in first and return second
 	if (source->singular) {
-		dest->clear(source->singular_value);
-		//delete source;
-		return dest;
+		if (!dest->test(source->singular_value))
+			source->singular = false;
+		return source;
 	}
 
 	// If second bitmap seems smaller then use it as a target
