@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.178 2003-11-05 16:53:37 brodsom Exp $
+dnl $Id: configure.in,v 1.179 2003-11-06 09:25:44 stryqx Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -776,6 +776,12 @@ case "$PLATFORM" in
                      gen/firebird/bin/SSchangeRunUser.sh:builds/install/misc/SSchangeRunUser.sh.in
                      gen/firebird/bin/SSrestoreRootRunUser.sh:builds/install/misc/SSrestoreRootRunUser.sh.in
       ],[chmod a+x gen/install/scripts/*.sh gen/install/*sh 2>/dev/null])
+    ;;
+
+
+  FREEBSD)
+    AC_CONFIG_FILES([gen/install/install.sh:src/install/arch-specific/freebsd/install.sh.in
+      ],[chmod a+x gen/install/install.sh 2>/dev/null])
     ;;
 
 
