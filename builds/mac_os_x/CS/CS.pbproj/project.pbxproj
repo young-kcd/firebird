@@ -2030,11 +2030,6 @@
 			path = jrd;
 			refType = 4;
 		};
-		F616C4650200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = gds.h;
-			refType = 4;
-		};
 		F616C4660200B0CF01EF0ADE = {
 			isa = PBXFileReference;
 			path = old_fb_blk.h;
@@ -4406,16 +4401,6 @@
 			path = gds.def;
 			refType = 4;
 		};
-		F616C5E70200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = gds.h;
-			refType = 4;
-		};
-		F616C5E80200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = gds.hxx;
-			refType = 4;
-		};
 		F616C5E90200B0CF01EF0ADE = {
 			isa = PBXFileReference;
 			path = gds.pas;
@@ -4479,11 +4464,6 @@
 		F616C5F50200B0CF01EF0ADE = {
 			isa = PBXFileReference;
 			path = gdsentry.mar;
-			refType = 4;
-		};
-		F616C5F60200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = gdsold.h;
 			refType = 4;
 		};
 		F616C5F70200B0CF01EF0ADE = {

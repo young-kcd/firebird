@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.6 2004-01-29 09:47:43 skidder Exp $
+#   $Id: makeInstallImage.sh.in,v 1.7 2004-04-27 12:36:30 brodsom Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -148,7 +148,6 @@ copyFiles() {
 
 
 #    cp $BuiltFBDir/include/gds.f $DestDir/include 
-#    cp $BuiltFBDir/include/gds.hxx $DestDir/include 
     cp $BuiltFBDir/include/*.h $DestDir/include 
 
 
@@ -200,7 +199,7 @@ copyFiles() {
 
 
 # link include files to /usr/include 
-	for i in gds.h iberror.h ibase.h ib_util.h
+	for i in iberror.h ibase.h ib_util.h
 	   do
 		   ln -s ../../$FBRootDir/include/$i $TargetDir/usr/include/$i
 	   done

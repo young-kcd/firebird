@@ -310,9 +310,6 @@
 				RelativePath="..\..\..\src\jrd\flu_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\gds.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\gds_proto.h">
 			</File>
 			<File

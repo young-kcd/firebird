@@ -101,16 +101,6 @@ goto :EOF
 @copy %ROOT_PATH%\doc\WhatsNew %ROOT_PATH%\output\doc\WhatsNew.txt >nul
 :: HEADERS
 :: build headers
-copy %ROOT_PATH%\src\misc\gds_header.txt %ROOT_PATH%\output\include\gds.tmp > nul
-type %ROOT_PATH%\src\include\fb_types.h >> %ROOT_PATH%\output\include\gds.tmp
-type %ROOT_PATH%\src\jrd\ibase.h >> %ROOT_PATH%\output\include\gds.tmp
-type %ROOT_PATH%\src\jrd\blr.h >> %ROOT_PATH%\output\include\gds.tmp
-type %ROOT_PATH%\src\include\gen\iberror.h >> %ROOT_PATH%\output\include\gds.tmp
-type %ROOT_PATH%\src\jrd\gdsold.h >> %ROOT_PATH%\output\include\gds.tmp
-type %ROOT_PATH%\src\include\gen\codes.h >> %ROOT_PATH%\output\include\gds.tmp
-sed -f %ROOT_PATH%\src\misc\headers.sed < %ROOT_PATH%\output\include\gds.tmp > %ROOT_PATH%\output\include\gds.h
-del %ROOT_PATH%\output\include\gds.tmp > nul
-
 copy %ROOT_PATH%\src\misc\ibase_header.txt %ROOT_PATH%\output\include\ibase.tmp > nul
 type %ROOT_PATH%\src\include\fb_types.h >> %ROOT_PATH%\output\include\ibase.tmp
 type %ROOT_PATH%\src\jrd\ibase.h >> %ROOT_PATH%\output\include\ibase.tmp 

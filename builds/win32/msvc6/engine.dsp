@@ -813,23 +813,11 @@ SOURCE=..\..\..\src\jrd\fun_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\gds.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\gds.hxx
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\gds_proto.h
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\gdsassert.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\gdsold.h
 # End Source File
 # Begin Source File
 

@@ -5,7 +5,6 @@
 @libdir@/libfbclient.so
 @libdir@/libib_util.so
 
-/usr/include/gds.h
 /usr/include/ibase.h
 /usr/include/iberror.h
 /usr/include/ib_util.h

@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: install.sh.in,v 1.6 2004-01-12 06:24:36 stryqx Exp $
+#   $Id: install.sh.in,v 1.7 2004-04-27 12:35:52 brodsom Exp $
 # 
 
 #  Install script for FirebirdSQL database engine
@@ -166,7 +166,6 @@ cp $BuiltFBDir/security.fdb $DestDir/security.fdb.sample
 
 
 #cp $BuiltFBDir/include/gds.f $DestDir/include 
-#cp $BuiltFBDir/include/gds.hxx $DestDir/include 
 cp $BuiltFBDir/include/*.h $DestDir/include 
 
 cp -Rf $BuiltFBDir/lib/libfbembed.so* $DestDir/lib

@@ -125,10 +125,6 @@ SOURCE=..\..\..\src\jrd\flu_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\gds.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\gds_proto.h
 # End Source File
 # Begin Source File

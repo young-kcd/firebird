@@ -632,19 +632,10 @@
 				RelativePath="..\..\..\src\jrd\fun_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\gds.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\gds.hxx">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\gds_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\gdsassert.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\gdsold.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\grant_proto.h">

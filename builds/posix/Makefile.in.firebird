@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.51 2004-03-25 23:12:31 skidder Exp $
+#  $Id: Makefile.in.firebird,v 1.52 2004-04-27 12:38:41 brodsom Exp $
 #
 
 ROOT=..
@@ -425,23 +425,12 @@ client_qli:
 INCLUDE_DEST=	$(FIREBIRD)/include
 
 include_generic: $(INCLUDE_DEST)/ib_util.h  \
-				 $(INCLUDE_DEST)/gds.h \
                  $(INCLUDE_DEST)/ibase.h
 
 # ib_util.h actually is a marker for a number of headers
 
-# All these files are #includes in gds.h here we cat them all together
+# All these files are #includes in ibase.h here we cat them all together
 # and remove the embedded #includes to make it simpler for external usage.
-
-GDS_ExtraFiles = misc/gds_header.txt include/fb_types.h \
-             jrd/ibase.h jrd/blr.h include/gen/iberror.h \
-             jrd/gdsold.h include/gen/codes.h
-
-SRC_GDS_ExtraFiles = $(addprefix $(SRC_ROOT)/, $(GDS_ExtraFiles))
-
-$(INCLUDE_DEST)/gds.h: $(SRC_GDS_ExtraFiles)
-	$(CAT) $^ |grep -v '^#include' > $@
-
 
 IBASE_ExtraFiles = include/fb_types.h jrd/ibase.h jrd/blr.h include/gen/iberror.h
 SRC_IBASE_ExtraFiles = $(addprefix $(SRC_ROOT)/, $(IBASE_ExtraFiles))
