@@ -752,6 +752,11 @@ void DYN_delete_local_field(
             DYN_REQUEST(drq_e_lfield) = request;
 
 		ERASE RFR;
+
+		if (!RFR.RDB$SECURITY_CLASS.NULL
+			&& !strncmp(RFR.RDB$SECURITY_CLASS, SQL_SECCLASS_PREFIX, SQL_SECCLASS_PREFIX_LEN))
+			delete_security_class2(gbl, RFR.RDB$SECURITY_CLASS);
+
 		found = true;
 		delete_gfield_for_lfield(gbl, RFR.RDB$FIELD_SOURCE);
 		while (*(*ptr)++ != isc_dyn_end) {
@@ -763,19 +768,41 @@ void DYN_delete_local_field(
 	if (!DYN_REQUEST(drq_e_lfield)) {
 		DYN_REQUEST(drq_e_lfield) = request;
 	}
+
+	request = CMP_find_request(tdbb, drq_e_usr_prvs, DYN_REQUESTS);
+	id = drq_e_usr_prvs;
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+		PRIV IN RDB$USER_PRIVILEGES WITH
+			PRIV.RDB$RELATION_NAME EQ tbl_nm AND
+			PRIV.RDB$FIELD_NAME EQ col_nm AND
+            PRIV.RDB$OBJECT_TYPE = obj_relation 
+
+        if (!DYN_REQUEST(drq_e_usr_prvs))
+			DYN_REQUEST(drq_e_usr_prvs) = request;
+
+		ERASE PRIV;
+	END_FOR;
+
+	if (!DYN_REQUEST(drq_e_usr_prvs)) {
+		DYN_REQUEST(drq_e_usr_prvs) = request;
+	}
+
 	}	// try
 	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		if (id == drq_l_dep_flds)
-		{
+
+		switch (id) {
+		case drq_l_dep_flds:
 			DYN_error_punt(true, 53, NULL, NULL, NULL, NULL, NULL);
-			/* msg 53: "ERASE RDB$RELATION_FIELDS failed" */
-		}
-		else
-		{
+			// msg 53: "ERASE RDB$RELATION_FIELDS failed"
+		case drq_e_usr_prvs:
+			DYN_error_punt(true, 62, NULL, NULL, NULL, NULL, NULL);
+			// msg 62: "ERASE RDB$USER_PRIVILEGES failed"
+		default:
 			DYN_error_punt(true, 54, NULL, NULL, NULL, NULL, NULL);
-			/* msg 54: "ERASE RDB$RELATION_FIELDS failed" */
+			// msg 54: "ERASE RDB$RELATION_FIELDS failed"
 		}
 	}
 
@@ -1219,8 +1246,8 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const TEXT* relation)
 	id = drq_e_usr_prvs;
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		PRIV IN RDB$USER_PRIVILEGES WITH PRIV.
-			RDB$RELATION_NAME EQ relation_name AND 
+		PRIV IN RDB$USER_PRIVILEGES WITH
+			PRIV.RDB$RELATION_NAME EQ relation_name AND
             PRIV.RDB$OBJECT_TYPE = obj_relation 
 
         if (!DYN_REQUEST(drq_e_usr_prvs))
