@@ -3146,10 +3146,7 @@ static ISC_STATUS execute_request(dsql_req*			request,
 								  UCHAR*			out_msg,
 								  bool				singleton)
 {
-	dsql_msg* message;
-	UCHAR buffer[20];
 	ISC_STATUS s;
-	ISC_STATUS_ARRAY local_status;
 
 	tsql* tdsql = DSQL_get_thread_data();
 
@@ -3250,7 +3247,7 @@ static ISC_STATUS execute_request(dsql_req*			request,
 
 // If there is no data required, just start the request 
 
-	message = (dsql_msg*) request->req_send;
+	dsql_msg* message = (dsql_msg*) request->req_send;
 	if (!message)
 	{
 		THREAD_EXIT();
@@ -3286,6 +3283,7 @@ static ISC_STATUS execute_request(dsql_req*			request,
 		}
 	}
 
+	ISC_STATUS_ARRAY local_status;
 	// REQ_EXEC_BLOCK has no outputs so there are no out_msg 
 	// supplied from client side, but REQ_EXEC_BLOCK requires
 	// 2-byte message for EOS synchronization
@@ -3380,6 +3378,7 @@ static ISC_STATUS execute_request(dsql_req*			request,
 
 	if (!(request->req_dbb->dbb_flags & DBB_v3))
 	{
+		UCHAR buffer[20]; // Not used after retrieved.
 		if (request->req_type == REQ_UPDATE_CURSOR)
 		{
 			GDS_DSQL_SQL_INFO_CPP(	local_status,
