@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pretty.cpp,v 1.6 2002-12-02 09:43:46 eku Exp $
+//	$Id: pretty.cpp,v 1.7 2002-12-13 14:50:23 dimitr Exp $
 //
 
 #include "firebird.h"
@@ -651,6 +651,7 @@ static int print_blr_dtype( CTL control, BOOLEAN print_object)
 
 	case blr_short:
 	case blr_long:
+	case blr_int64:
 	case blr_quad:
 		PRINT_BYTE;
 		break;
