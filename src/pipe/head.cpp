@@ -28,7 +28,7 @@
  *
  */
 
- /* $Id: head.cpp,v 1.9 2002-08-22 08:20:27 dimitr Exp $ */
+ /* $Id: head.cpp,v 1.10 2002-08-22 10:57:37 dimitr Exp $ */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -142,7 +142,6 @@ static FILE	*read_pipe = NULL,
 static int	event_fd = -1;
 static TEXT	error_text [1024];
 static RDB	PSI_databases = NULL;
-
 
 #ifdef SOLARIS
 /* NOTE: This code is cloned in foot.c */
@@ -755,8 +754,7 @@ rdb->rdb_requests = request;
 
 RETURN_SUCCESS;
 }
-
-
+
 STATUS GDS_CREATE_BLOB (
     STATUS	*user_status,
     RDB		*db_handle,
@@ -810,8 +808,7 @@ blob_id->bid_number = GET_WORD;
 
 RETURN_SUCCESS;
 }
-
-
+
 STATUS GDS_CREATE_BLOB2 (
     STATUS	*user_status,
     RDB		*db_handle,
@@ -874,8 +871,7 @@ blob_id->bid_number = GET_WORD;
 RETURN_SUCCESS;
 #endif
 }
-
-
+
 STATUS GDS_CREATE_DATABASE (
     STATUS	*user_status,
     SSHORT	GDS_VAL (file_length),
@@ -912,8 +908,7 @@ if (!(rdb = init (user_status, op_create, (UCHAR*)file_name, l,
 
 RETURN_SUCCESS;
 }
-
-
+
 STATUS GDS_DATABASE_INFO (
     STATUS	*user_status,
     RDB		*handle,
@@ -1057,8 +1052,7 @@ ALLP_release ((BLK) rdb);
 
 RETURN_SUCCESS;
 }
-
-
+
 #ifndef BRIDGE
 STATUS GDS_DETACH_SERVICE (
     STATUS	*user_status,
@@ -1093,8 +1087,7 @@ ALLP_release ((BLK) rdb);
 RETURN_SUCCESS;
 }
 #endif
-
-
+
 #ifndef BRIDGE
 STATUS GDS_DROP_DATABASE (
     STATUS	*user_status,
@@ -1148,8 +1141,7 @@ if (code)
 RETURN_SUCCESS;
 }
 #endif
-
-
+
 STATUS GDS_DSQL_ALLOCATE (
     STATUS	*user_status,
     RDB		*db_handle,
@@ -2016,8 +2008,7 @@ if (return_length)
 RETURN_SUCCESS;
 #endif
 }
-
-
+
 STATUS GDS_OPEN_BLOB (
     STATUS	*user_status,
     RDB		*db_handle,
@@ -2069,8 +2060,7 @@ transaction->rtr_blobs = blob;
 
 RETURN_SUCCESS;
 }
-
-
+
 STATUS GDS_OPEN_BLOB2 (
     STATUS	*user_status,
     RDB		*db_handle,
@@ -2316,8 +2306,7 @@ array_id->bid_number = GET_WORD;
 RETURN_SUCCESS;
 #endif
 }
-
-
+
 STATUS GDS_QUE_EVENTS (
     STATUS	*user_status,
     RDB		*handle,
@@ -2387,8 +2376,7 @@ if (check_response (user_status))
 return SUCCESS;
 #endif
 }
-
-
+
 #ifndef BRIDGE
 STATUS GDS_QUERY_SERVICE (
     STATUS	*user_status,
@@ -2433,7 +2421,6 @@ GET_STRING (GET_WORD, (UCHAR*)buffer);
 
 RETURN_SUCCESS;
 }
-#endif
 #endif
 
 STATUS GDS_RECEIVE (
@@ -3046,8 +3033,7 @@ PUT_WORD (level);
 
 return check_response (user_status);
 }
-
-
+
 static STATUS check_response (
     STATUS	*user_status)
 {
@@ -3139,8 +3125,7 @@ else
 
 return user_status [1];
 }
-
-
+
 static void event_handler (void)
 {
 /**************************************
@@ -3174,8 +3159,7 @@ if (l = length)
 
 (*((void (*)(void*, SSHORT, UCHAR*))ast)) (arg, length, events);
 }
-
-
+
 #ifdef KILLER_SIGNALS
 static int get_byte (void)
 {
@@ -3527,8 +3511,7 @@ rdb->rdb_handle = (int*) GET_HANDLE;
 
 return rdb;
 }
-
-
+
 static RTR make_transaction (
     RDB		rdb,
     HANDLE	handle)
