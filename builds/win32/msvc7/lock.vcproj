@@ -30,7 +30,6 @@
 				ObjectFile=".\debug\lock_ss/"
 				ProgramDataBaseFileName=".\debug\lock_ss/"
 				WarningLevel="4"
-				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="4"
 				CompileAs="0"/>
@@ -80,7 +79,6 @@
 				ObjectFile=".\release\lock_ss/"
 				ProgramDataBaseFileName=".\release\lock_ss/"
 				WarningLevel="4"
-				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool

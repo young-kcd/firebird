@@ -30,7 +30,6 @@
 				ObjectFile=".\debug\fbembed/"
 				ProgramDataBaseFileName=".\debug\fbembed/"
 				WarningLevel="4"
-				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="4"
 				CompileAs="0"/>
@@ -93,7 +92,6 @@
 				ObjectFile=".\release\fbembed/"
 				ProgramDataBaseFileName=".\release\fbembed/"
 				WarningLevel="4"
-				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool

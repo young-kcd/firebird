@@ -30,7 +30,6 @@
 				ObjectFile=".\debug\qli/"
 				ProgramDataBaseFileName=".\debug\qli/"
 				WarningLevel="4"
-				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
 				CompileAs="0"/>
@@ -89,7 +88,6 @@
 				ObjectFile=".\release\qli/"
 				ProgramDataBaseFileName=".\release\qli/"
 				WarningLevel="4"
-				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool

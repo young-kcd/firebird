@@ -31,7 +31,6 @@
 				ObjectFile=".\release\fbudf/"
 				ProgramDataBaseFileName=".\release\fbudf/"
 				WarningLevel="4"
-				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool

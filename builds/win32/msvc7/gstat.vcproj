@@ -30,7 +30,6 @@
 				ObjectFile=".\debug\gstat/"
 				ProgramDataBaseFileName=".\debug\gstat/"
 				WarningLevel="4"
-				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
 				CompileAs="0"/>
@@ -89,7 +88,6 @@
 				ObjectFile=".\release\gstat/"
 				ProgramDataBaseFileName=".\release\gstat/"
 				WarningLevel="4"
-				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool

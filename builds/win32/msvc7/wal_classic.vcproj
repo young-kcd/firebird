@@ -35,7 +35,6 @@
 				ObjectFile=".\release\wal_cs/"
 				ProgramDataBaseFileName=".\release\wal_cs/"
 				WarningLevel="4"
-				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool
@@ -79,7 +78,6 @@
 				ObjectFile=".\debug\wal_cs/"
 				ProgramDataBaseFileName=".\debug\wal_cs/"
 				WarningLevel="4"
-				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="4"
 				CompileAs="0"/>

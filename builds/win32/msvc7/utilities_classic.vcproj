@@ -30,7 +30,6 @@
 				ObjectFile=".\debug\utilities_cs/"
 				ProgramDataBaseFileName=".\debug\utilities_cs/"
 				WarningLevel="4"
-				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="4"
 				CompileAs="0"/>
@@ -80,7 +79,6 @@
 				ObjectFile=".\release\utilities_cs/"
 				ProgramDataBaseFileName=".\release\utilities_cs/"
 				WarningLevel="4"
-				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool
