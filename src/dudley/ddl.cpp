@@ -126,8 +126,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
  *
  **************************************/
 	IB_FILE *input_file;
-	TEXT c, c1, *p, *q, *string, file_name_1[256], file_name_2[256],
-		buffer[256], dyn_file_name[256];
+	TEXT *p, *q, *string, file_name_1[256], file_name_2[256],
+		buffer[256];
 	USHORT in_sw;
 	IN_SW_TAB in_sw_tab;
 	ACT temp, stack;
