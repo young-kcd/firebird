@@ -38,7 +38,7 @@ template <typename T>
 class Array {
 public:
 	Array(MemoryPool*p, int InitialSize) : 
-	  pool(p), data(0), count(0), capacity(0) {grow(InitialSize);}
+	  count(0), capacity(0), data(0), pool(p)  {grow(InitialSize);}
 	~Array() {pool->deallocate(data);}
 	void clear() { count = 0; };
 	T& operator[](int index) {
