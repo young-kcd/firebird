@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.39 2004-06-05 09:36:59 robocop Exp $
+ * $Id: extract.epp,v 1.40 2004-07-21 10:34:27 brodsom Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -943,7 +943,7 @@ static processing_state list_all_grants2(bool show_role_list,
 
 			if (strcmp (prev_owner, XX.RDB$OWNER_NAME) != 0)
 			{
-				sprintf (Print_buffer, "%s/* isqlGlob.Role: %s, Owner: %s */%s",
+				sprintf (Print_buffer, "%s/* Role: %s, Owner: %s */%s",
 						 NEWLINE,
 						 XX.RDB$ROLE_NAME,
 						 XX.RDB$OWNER_NAME,

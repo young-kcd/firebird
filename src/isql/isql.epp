@@ -5058,18 +5058,18 @@ static processing_state newdb(TEXT* dbname,
 	if (Interactive) {
 		if (local_usr[0] != '\0') {
 			if (local_sql_role[0] != '\0') {
-				sprintf(Print_buffer, "Database:  %s, isqlGlob.User: %s, isqlGlob.Role: %s%s",
+				sprintf(Print_buffer, "Database:  %s, User: %s, Role: %s%s",
 						dbname, local_usr, local_sql_role, NEWLINE);
 			}
 			else {
-				sprintf(Print_buffer, "Database:  %s, isqlGlob.User: %s%s",
+				sprintf(Print_buffer, "Database:  %s, User: %s%s",
 						dbname, local_usr, NEWLINE);
 			}
 			ISQL_printf(isqlGlob.Out, Print_buffer);
 		}
 		else {
 			if (local_sql_role[0] != '\0') {
-				sprintf(Print_buffer, "Database:  %s, isqlGlob.Role:  %s%s",
+				sprintf(Print_buffer, "Database:  %s, Role:  %s%s",
 						dbname, local_sql_role, NEWLINE);
 			}
 			else {
