@@ -1,3 +1,60 @@
+2004-04-03 05:36  skidder
+
+	* firebird2/doc/README.performance_monitoring (1.1):
+	
+	Write a kind of spec for my performance monitoring work. Peer
+	review is welcome
+
+2004-04-03 04:23  skidder
+
+	* firebird2/builds/misc/msg.gbak (1.7):
+	
+	Add switches for new shutdown modes to the GFIX usage messages
+
+2004-04-03 01:20  arnobrinkman
+
+	* firebird2/src/dsql/: node.h (1.43), pass1.cpp (1.136):
+	
+	Fix wrong mapping for Count(*) in having clause when used with IN,
+	ANY, SOME, ALL
+
+2004-04-02 06:02  skidder
+
+	* firebird2/src/jrd/dfw.epp (1.98):
+	
+	Do not allow to drop or modify procedures that are in use by user
+	requests directly or indirectly. Reference tracking infrastructure
+	needed for this task existed for long time already and seems to be
+	reliable enough, but this is still an experimental change and
+	feedback is much appreciated.
+
+2004-04-02 05:24  skidder
+
+	* firebird2/src/dsql/parse.y (1.128):
+	
+	Fix counting of line numbers in DSQL parser when multi-line
+	literals and identifiers are used
+
+2004-04-01 18:32  alexpeshkoff
+
+	* firebird2/src/jrd/: btr.cpp (1.81), btr_proto.h (1.25), exe.h
+	(1.47), opt.cpp (1.149):
+	
+	changed csb_index_allocation to Array from str
+
+2004-04-01 17:11  alexpeshkoff
+
+	* firebird2/src/jrd/blb.cpp (1.65):
+	
+	changed buffer allocation to Array from str
+
+2004-04-01 16:15  alexpeshkoff
+
+	* firebird2/src/common/classes/array.h (1.19):
+	
+	Added "T* getBuffer(capacity)" - this helps use Array as temp
+	buffer
+
 2004-03-31 20:10  alexpeshkoff
 
 	* firebird2/src/common/: utils.cpp (1.6), utils_proto.h (1.2):
