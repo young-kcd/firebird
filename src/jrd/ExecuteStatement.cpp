@@ -298,9 +298,12 @@ void ExecuteStatement::Close(TDBB tdbb) {
 	}
 	delete Sqlda;
 	Sqlda = 0;
-	WHY_cleanup_transaction(Transaction);
-	delete Transaction;
-	Transaction = 0;
+	if (Transaction)
+	{
+		WHY_cleanup_transaction(Transaction);
+		delete Transaction;
+		Transaction = 0;
+	}
 	delete Buffer;
 	Buffer = 0;
 	delete StartOfSqlOperator;
