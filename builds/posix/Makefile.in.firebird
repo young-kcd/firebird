@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.37 2003-07-08 01:05:22 brodsom Exp $
+#  $Id: Makefile.in.firebird,v 1.37.2.1 2003-09-04 15:52:29 alexpeshkoff Exp $
 #
 
 ROOT=..
@@ -482,15 +482,17 @@ rebuild_codes :
 #___________________________________________________________________________
 # Install generic files.
 
-CLASSIC_MiscFiles = firebird.conf
-SUPER_MiscFiles =  firebird.conf
+#CLASSIC_MiscFiles = firebird.conf
+#SUPER_MiscFiles =  firebird.conf
 
-ifeq ($(ArchType),super)
-INSTALL_MiscFiles = $(addprefix $(FIREBIRD)/misc/, $(SUPER_MiscFiles))
-else
-INSTALL_MiscFiles = $(addprefix $(FIREBIRD)/misc/, $(CLASSIC_MiscFiles))
-endif
+#ifeq ($(ArchType),super)
+#INSTALL_MiscFiles = $(addprefix $(FIREBIRD)/misc/, $(SUPER_MiscFiles))
+#else
+#INSTALL_MiscFiles = $(addprefix $(FIREBIRD)/misc/, $(CLASSIC_MiscFiles))
+#endif
 
+MiscFiles =  firebird.conf
+INSTALL_MiscFiles = $(addprefix $(FIREBIRD)/misc/, $(MiscFiles))
 
 misc_files : $(INSTALL_MiscFiles)
 
@@ -503,15 +505,18 @@ $(FIREBIRD)/misc/% :: $(SRC_ROOT)/install/misc/%
 #___________________________________________________________________________
 #
 
-CLASSIC_ScriptFiles = CSchangeRunUser.sh CSrestoreRootRunUser.sh
-SUPER_ScriptFiles = SSchangeRunUser.sh SSrestoreRootRunUser.sh
+#CLASSIC_ScriptFiles = CSchangeRunUser.sh CSrestoreRootRunUser.sh
+#SUPER_ScriptFiles = SSchangeRunUser.sh SSrestoreRootRunUser.sh
 
 
-ifeq ($(ArchType),super)
-INSTALL_ScriptFiles = $(addprefix $(BIN)/, $(SUPER_ScriptFiles))
-else
-INSTALL_ScriptFiles = $(addprefix $(BIN)/, $(CLASSIC_ScriptFiles))
-endif
+#ifeq ($(ArchType),super)
+#INSTALL_ScriptFiles = $(addprefix $(BIN)/, $(SUPER_ScriptFiles))
+#else
+#INSTALL_ScriptFiles = $(addprefix $(BIN)/, $(CLASSIC_ScriptFiles))
+#endif
+
+ScriptFiles = CSchangeRunUser.sh CSrestoreRootRunUser.sh SSchangeRunUser.sh SSrestoreRootRunUser.sh
+INSTALL_ScriptFiles = $(addprefix $(BIN)/, $(ScriptFiles))
 
 
 script_files : $(INSTALL_ScriptFiles)
