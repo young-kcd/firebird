@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-//#include "../jrd/common.h"
+/* #include "../jrd/common.h" */
 
 #include "ibase.h"
 
