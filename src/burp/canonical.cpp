@@ -28,7 +28,7 @@
  *
  */
 /*
-$Id: canonical.cpp,v 1.23 2003-08-27 10:20:07 aafemt Exp $
+$Id: canonical.cpp,v 1.24 2003-09-08 01:47:09 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -51,8 +51,6 @@ $Id: canonical.cpp,v 1.23 2003-08-27 10:20:07 aafemt Exp $
 
 typedef vary* VARY;
 
-
-extern "C" {
 
 static XDR_INT burp_destroy(XDR*);
 static bool_t burp_getbytes(XDR*, SCHAR *, u_int);
@@ -732,5 +730,3 @@ static bool_t xdr_slice(XDR* xdrs,
 	return TRUE;
 }
 
-
-} // extern "C"

@@ -24,21 +24,12 @@
 #ifndef _UTILITIES_PPG_PROTO_H_
 #define _UTILITIES_PPG_PROTO_H_
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifdef SUPERSERVER
 extern void	PPG_print_header (HDR, SLONG, SVC);
 extern void	PPG_print_log (LIP, SLONG, SVC);
 #else
 extern void	PPG_print_header (HDR, SLONG, IB_FILE*);
 extern void	PPG_print_log (LIP, SLONG, IB_FILE*);
-#endif
-
-#ifdef __cplusplus
-}	/* extern "C" */
 #endif
 
 #endif /* _UTILITIES_PPG_PROTO_H_ */

@@ -421,12 +421,10 @@ static int output_svc( SLONG output_data, UCHAR * output_buf)
 	return 0;
 }
 
-extern "C" {
-
-int DLL_EXPORT BURP_gbak(int		argc,
-						 char*		argv[],
-						 OUTPUTPROC	output_proc,
-						 SLONG		output_data)
+int BURP_gbak(int		argc,
+			  char*		argv[],
+			  int(*output_proc)(SLONG, UCHAR*),
+			  SLONG		output_data)
 {
 /**************************************
  *
@@ -1416,9 +1414,6 @@ void BURP_verbose(USHORT number,
 	else
 		burp_output("%s","");
 }
-
-}	// extern "C"
-
 
 static void close_out_transaction(volatile  SSHORT action,
 								  isc_tr_handle* handle)

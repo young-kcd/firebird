@@ -24,13 +24,8 @@
 #ifndef _BURP_BURP_PROTO_H_
 #define _BURP_BURP_PROTO_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
-typedef int (DLL_EXPORT* OUTPUTPROC) (SLONG, UCHAR *);
-
-extern int  BURP_gbak (int, char **, OUTPUTPROC, SLONG);
+extern int	BURP_gbak (int, char **, int(*output_proc)(SLONG, UCHAR*), SLONG);
 extern void	BURP_abort (void);
 extern void	BURP_svc_error (USHORT, USHORT, void *, USHORT, void *, USHORT, void *, USHORT, void *, USHORT, void *);
 extern void	BURP_error (USHORT, const void*, const void*, const void*, const void*, const void*);
@@ -44,9 +39,6 @@ extern void	BURP_print (USHORT, const void*, const void*, const void*, const voi
 extern void	BURP_print_warning (ISC_STATUS*);
 extern void	BURP_verbose (USHORT, const void*, const void*, const void*, const void*, const void*);
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif	/*  _BURP_BURP_PROTO_H_  */
 

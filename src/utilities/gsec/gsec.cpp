@@ -62,7 +62,7 @@ static bool fAnsiCP = false;
 struct tsec *gdsec;
 #endif
 
-int UTIL_gsec(int, char **, OUTPUTPROC, SLONG);
+int UTIL_gsec(int, char **, int(*output_proc)(SLONG, UCHAR*), SLONG);
 /* Output reporting utilities */
 void UTIL_print_status(ISC_STATUS *);
 void UTIL_error_redirect(ISC_STATUS *, USHORT, TEXT *, TEXT *);
@@ -171,9 +171,10 @@ static int output_main( SLONG output_data, UCHAR * output_buf)
 
 #endif /* SUPERSERVER */
 
-int UTIL_gsec(
-			  int argc,
-			  char *argv[], OUTPUTPROC output_proc, SLONG output_data)
+int UTIL_gsec(int argc,
+			  char *argv[],
+			  int(*output_proc)(SLONG, UCHAR*),
+			  SLONG output_data)
 {
 /**************************************
  *

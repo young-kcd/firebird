@@ -162,7 +162,7 @@ public:
 	typedef			std::vector<AliceMemoryPool*, Firebird::allocator<AliceMemoryPool*> > pool_vec_t;
 	pool_vec_t		pools;
 	int				exit_code;
-	OUTPUTPROC		output_proc;
+	int(*output_proc)(SLONG, UCHAR*);
 	SLONG			output_data;
 	IB_FILE*		output_file;
 	SVC				service_blk;

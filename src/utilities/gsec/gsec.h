@@ -52,8 +52,6 @@
 #define ALT_NAME_LEN  129
 #define NAME_LEN       33
 
-typedef int (DLL_EXPORT* OUTPUTPROC) (SLONG, UCHAR *);
-
 #ifdef GET_THREAD_DATA
 #undef GET_THREAD_DATA
 #endif
@@ -139,7 +137,7 @@ typedef struct tsec {
     BOOLEAN		tsec_sw_version;
     BOOLEAN		tsec_service_gsec;
     BOOLEAN		tsec_service_thd;
-    OUTPUTPROC  	tsec_output_proc;
+    int(*tsec_output_proc)(SLONG, UCHAR*);
     SLONG       	tsec_output_data;
     IB_FILE        	*tsec_output_file;
     SVC			tsec_service_blk;

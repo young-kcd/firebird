@@ -24,15 +24,7 @@
 #ifndef _BURP_CANON_PROTO_H_
 #define _BURP_CANON_PROTO_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern ULONG	CAN_encode_decode (burp_rel*, lstring*, UCHAR*, int);
 extern ULONG	CAN_slice (lstring*, lstring*, int, USHORT, UCHAR*);
-
-#ifdef __cplusplus
-}	/* extern "C" */
-#endif
 
 #endif	/* _BURP_CANON_PROTO_H_ */

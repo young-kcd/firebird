@@ -36,9 +36,6 @@
 #endif
 
 
-extern "C" {
-
-
 UCHAR *MISC_alloc_burp(ULONG size)
 {
 /**************************************
@@ -150,5 +147,3 @@ void MISC_terminate(UCHAR* from, UCHAR* to, ULONG length, ULONG max_length)
 	}
 }
 
-
-} // extern "C"

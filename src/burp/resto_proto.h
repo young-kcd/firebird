@@ -24,14 +24,6 @@
 #ifndef _BURP_RESTO_PROTO_H_
 #define _BURP_RESTO_PROTO_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern int	RESTORE_restore (TEXT *, TEXT *);
-
-#ifdef __cplusplus
-}	/* extern "C" */
-#endif
 
 #endif	/* _BURP_RESTO_PROTO_H_ */

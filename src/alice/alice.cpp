@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.29 2003-08-27 10:15:10 aafemt Exp $
+//	$Id: alice.cpp,v 1.30 2003-09-08 01:46:46 brodsom Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -204,10 +204,10 @@ static int output_svc(SLONG output_data, UCHAR * output_buf)
 //		Parse switches and do work
 //
 
-int DLL_EXPORT ALICE_gfix(	int			argc,
-							char*		argv[],
-							OUTPUTPROC	output_proc,
-							SLONG		output_data)
+int ALICE_gfix(int			argc,
+			   char*		argv[],
+			   int(*output_proc)(SLONG, UCHAR*),
+			   SLONG		output_data)
 {
 	IN_SW_TAB table = alice_in_sw_table;
 

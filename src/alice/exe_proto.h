@@ -24,15 +24,7 @@
 #ifndef _ALICE_EXE_PROTO_H_
 #define _ALICE_EXE_PROTO_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern int EXE_action(TEXT *, ULONG);
 extern int EXE_two_phase(TEXT *, ULONG);
-
-#ifdef __cplusplus
-};
-#endif
 
 #endif /* _ALICE_ALICE_PROTO_H_ */

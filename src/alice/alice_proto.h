@@ -24,20 +24,10 @@
 #ifndef _ALICE_ALICE_PROTO_H_
 #define _ALICE_ALICE_PROTO_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef int (DLL_EXPORT * OUTPUTPROC) (SLONG, UCHAR *);
-
 void	ALICE_down_case(TEXT*, TEXT*);
-int		ALICE_gfix(int, char**, OUTPUTPROC, SLONG);
+int		ALICE_gfix(int, char**, int(*)(SLONG, UCHAR*), SLONG);
 void	ALICE_print(USHORT, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*);
 void	ALICE_error(USHORT, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*);
 void	ALICE_print_status(ISC_STATUS*);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif /* _ALICE_ALICE_PROTO_H_ */

@@ -42,10 +42,6 @@
 #include <unistd.h>
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define BURP_ALLOC(size)	 MISC_alloc_burp((ULONG) size)
 #define BURP_ALLOC_ZERO(size)    MISC_alloc_burp((ULONG) size)
 #define BURP_FREE(block)	 MISC_free_burp(block)
@@ -54,7 +50,7 @@ extern "C" {
 typedef TEXT			GDS_NAME [GDS_NAME_LEN];
 
 #define NOOUTPUT        2   
-
+
 /* Record types in backup file */
 
 typedef enum rec_type {
@@ -144,7 +140,7 @@ and trigger-new is:
 
 
 */
-
+
 /* Attributes within major record */
 
 /* CAREFUL not to pull the lastest version into maint version without
@@ -511,7 +507,7 @@ enum trig_t {
 /* default trigger name templates */
 
 #define TRIGGER_SEQUENCE_DEFAULT	0
-
+
 /* common structure definitions */
 
 /* field block, used to hold local field definitions */
@@ -563,7 +559,7 @@ typedef struct burp_fld {
 #define FLD_null_flag		16
 #define FLD_charset_flag	32	/* column has global charset */
 #define FLD_collate_flag	64	/* local column has specific collation */
-
+
 /* relation definition - holds useful relation type stuff */
 
 typedef struct burp_rel {
@@ -584,7 +580,7 @@ typedef struct burp_rel {
 
 #define REL_view	1
 #define REL_external	2
-
+
 /* procedure definition - holds useful procedure type stuff */
 
 typedef struct burp_prc {
@@ -593,7 +589,7 @@ typedef struct burp_prc {
     GDS_NAME	prc_name;
     GDS_NAME	prc_owner;		/* relation owner, if not us */
 } *BURP_PRC;
-
+
 
 typedef struct gfld {
     TEXT	gfld_name [GDS_NAME_LEN];
@@ -610,10 +606,6 @@ typedef struct gfld {
 
 #define MAX_FILE_NAME_LENGTH	256
 
-#ifdef __cplusplus
-}	/* extern "C" */
-#endif
-
 /* Note that this typedef is also defined in JRD.H and REMOTE.H */
 /* but for some reason we are avoiding including JRD.H          */
 /* and this typedef is needed to include SVC.H                  */
@@ -626,10 +618,6 @@ typedef struct gfld {
 
 #include "../jrd/svc.h"
 #include "../jrd/svc_proto.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* typedef the file descriptor type to make things cleaner */
 
@@ -645,7 +633,7 @@ typedef int DESC;
 #define FLUSH(x) /* nothing */
 #define INVALID_HANDLE_VALUE    -1
 #endif /* WIN_NT */
-
+
 /* File block -- for multi-file databases */
 
 typedef enum {
@@ -776,7 +764,7 @@ typedef struct tgbl
     ISC_STATUS_ARRAY status_vector;
     int     	exit_code;
     UCHAR   	*head_of_mem_list;
-    OUTPUTPROC  output_proc;
+    int(*output_proc)(SLONG, UCHAR*);
     SLONG       output_data;
     IB_FILE        *output_file;
     SVC		service_blk;
@@ -926,7 +914,7 @@ extern tgbl *gdgbl;
 #ifndef MODE_WRITE
 #define MODE_WRITE	O_WRONLY | O_CREAT
 #endif
-
+
 /* Burp Messages */
 
 #define msgVerbose_write_charsets	211
@@ -935,10 +923,5 @@ extern tgbl *gdgbl;
 #define msgVerbose_restore_charset	214
 #define msgErr_restore_collation	215
 #define msgVerbose_restore_collation	216
-
-
-#ifdef __cplusplus
-}	/* extern "C" */
-#endif
 
 #endif /* _BURP_BURP_H_ */

@@ -24,14 +24,6 @@
 #ifndef _BURP_BACKU_PROTO_H_
 #define _BURP_BACKU_PROTO_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern int	BACKUP_backup (TEXT *, TEXT *);
-
-#ifdef __cplusplus
-}	/* extern "C" */
-#endif
 
 #endif	/*  _BURP_BACKU_PROTO_H_  */

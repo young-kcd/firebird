@@ -24,16 +24,8 @@
 #ifndef _BURP_MISC_PROTO_H_
 #define _BURP_MISC_PROTO_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern UCHAR	*MISC_alloc_burp (ULONG);
 extern void	MISC_free_burp (void *);
 extern void	MISC_terminate (UCHAR *, UCHAR *, ULONG, ULONG);
-
-#ifdef __cplusplus
-}	/* extern "C" */
-#endif
 
 #endif	/* _BURP_MISC_PROTO_H_ */

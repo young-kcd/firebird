@@ -59,8 +59,6 @@ static const TEXT months[][4] = {
 #endif
 
 
-extern "C" {
-
 
 void PPG_print_header( HDR header, SLONG page,
 #ifdef SUPERSERVER
@@ -406,4 +404,3 @@ void PPG_print_log( LIP logp, SLONG page,
 }
 
 
-} // extern "C"

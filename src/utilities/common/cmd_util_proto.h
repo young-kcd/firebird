@@ -25,10 +25,6 @@
 #define _UTILITIES_CMD_UTIL_PROTO_H_
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 							 USHORT  facility,
 							 USHORT  errcode,
@@ -38,9 +34,6 @@ void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 							 USHORT arg4_t, const void* arg4,
 							 USHORT arg5_t, const void* arg5);
 
-#ifdef __cplusplus
-}	/* extern "C" */
-#endif
 
 #endif /* _UTILITIES_CMD_UTIL_PROTO_H_ */
 
