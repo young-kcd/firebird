@@ -867,7 +867,7 @@ UDF METD_get_function(REQ request, STR name)
 	USHORT return_arg, arg_count;
 	SYM symbol;
     DLLS stack, stack_temp;
-    NOD	udf_param_node, *ptr;
+    DSQL_NOD	udf_param_node, *ptr;
 
 
     METD_REC_LOCK;
@@ -1061,7 +1061,7 @@ UDF METD_get_function(REQ request, STR name)
     
     ptr = udf_->udf_arguments->nod_arg + arg_count;
     while (stack) {
-        *--ptr = (NOD) LLS_POP (&stack);
+        *--ptr = (DSQL_NOD) LLS_POP (&stack);
     }
     
     
@@ -1106,7 +1106,7 @@ UDF METD_get_function(REQ request, STR name)
 }
 
 
-NOD METD_get_primary_key(REQ request, STR relation_name)
+DSQL_NOD METD_get_primary_key(REQ request, STR relation_name)
 {
 /**************************************
  *
@@ -1122,7 +1122,7 @@ NOD METD_get_primary_key(REQ request, STR relation_name)
  **************************************/
 	SLONG *DB, *gds_trans;
 	DBB dbb;
-	NOD list, field_node;
+	DSQL_NOD list, field_node;
 	STR field_name;
 	USHORT count;
 
@@ -1151,7 +1151,7 @@ NOD METD_get_primary_key(REQ request, STR relation_name)
             list = MAKE_node(nod_list, (int) X.RDB$SEGMENT_COUNT);
         field_name = MAKE_cstring(Y.RDB$FIELD_NAME);
         field_node = MAKE_node(nod_field_name, (int) e_fln_count);
-        field_node->nod_arg[e_fln_name] = (NOD) field_name;
+        field_node->nod_arg[e_fln_name] = (DSQL_NOD) field_name;
         list->nod_arg[count] = field_node;
         count++;
 
@@ -1882,7 +1882,7 @@ static void free_function (UDF udf)
  *
  **************************************/
     USHORT	arg_count;
-    NOD	args, udf_argument;
+    DSQL_NOD	args, udf_argument;
 
     /* release the arguments blocks */
 

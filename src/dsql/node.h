@@ -349,7 +349,7 @@ public:
 	
 	nod() : nod_type(nod_unknown_type), nod_count(0), nod_flags(0) {}
 };
-typedef nod *NOD;
+typedef nod *DSQL_NOD;
 
 /* values of flags */
 
@@ -404,7 +404,7 @@ typedef nod *NOD;
 /* Note Bene:
  *	e_<nodename>_count	== count of arguments in nod_arg
  *	This is often used as the count of sub-nodes, but there
- *	are cases when non-NOD arguments are stuffed into nod_arg
+ *	are cases when non-DSQL_NOD arguments are stuffed into nod_arg
  *	entries.  These include nod_udf, nod_gen_id, nod_cast,
  *	& nod_collate.
  */
@@ -714,11 +714,11 @@ typedef nod *NOD;
 #define e_abrt_number	0		/* nod_abort */
 #define e_abrt_count	1
 
-#define e_cast_target   0	/* Not a NOD */	/* nod_cast */
+#define e_cast_target   0	/* Not a DSQL_NOD */	/* nod_cast */
 #define e_cast_source   1
 #define e_cast_count    2
 
-#define e_coll_target   0       /* Not a NOD */	/* nod_collate */
+#define e_coll_target   0       /* Not a DSQL_NOD */	/* nod_collate */
 #define e_coll_source   1
 #define e_coll_count    2
 
@@ -752,7 +752,7 @@ typedef nod *NOD;
 #define e_filter_module   4
 #define e_filter_count    5
 
-#define e_gen_id_name 0		/* Not a NOD */	/* nod_gen_id */
+#define e_gen_id_name 0		/* Not a DSQL_NOD */	/* nod_gen_id */
 #define e_gen_id_value 1
 #define e_gen_id_count 2
 

@@ -29,7 +29,7 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 /*
-$Id: gen.cpp,v 1.13 2002-10-29 20:20:15 skidder Exp $
+$Id: gen.cpp,v 1.14 2002-11-11 19:08:31 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -52,28 +52,28 @@ $Id: gen.cpp,v 1.13 2002-10-29 20:20:15 skidder Exp $
 #include "../jrd/dsc_proto.h"
 #include "gen/iberror.h"
 
-ASSERT_FILENAME static void gen_aggregate(REQ, NOD);
-static void gen_cast(REQ, NOD);
-static void	gen_coalesce(REQ, NOD);
+ASSERT_FILENAME static void gen_aggregate(REQ, DSQL_NOD);
+static void gen_cast(REQ, DSQL_NOD);
+static void	gen_coalesce(REQ, DSQL_NOD);
 static void gen_constant(REQ, DSC *, BOOLEAN);
 static void gen_descriptor(REQ, DSC *, USHORT);
-static void gen_error_condition(REQ, NOD);
-static void gen_field(REQ, CTX, FLD, NOD);
-static void gen_for_select(REQ, NOD);
-static void gen_gen_id(REQ, NOD);
-static void gen_join_rse(REQ, NOD);
+static void gen_error_condition(REQ, DSQL_NOD);
+static void gen_field(REQ, CTX, FLD, DSQL_NOD);
+static void gen_for_select(REQ, DSQL_NOD);
+static void gen_gen_id(REQ, DSQL_NOD);
+static void gen_join_rse(REQ, DSQL_NOD);
 static void gen_map(REQ, MAP);
 static void gen_parameter(REQ, PAR);
-static void gen_plan(REQ, NOD);
+static void gen_plan(REQ, DSQL_NOD);
 static void gen_relation(REQ, CTX);
-static void gen_rse(REQ, NOD);
-static void	gen_searched_case(REQ, NOD);
-static void gen_select(REQ, NOD);
-static void	gen_simple_case(REQ, NOD);
-static void gen_sort(REQ, NOD);
-static void gen_table_lock(REQ, NOD, USHORT);
-static void gen_udf(REQ, NOD);
-static void gen_union(REQ, NOD);
+static void gen_rse(REQ, DSQL_NOD);
+static void	gen_searched_case(REQ, DSQL_NOD);
+static void gen_select(REQ, DSQL_NOD);
+static void	gen_simple_case(REQ, DSQL_NOD);
+static void gen_sort(REQ, DSQL_NOD);
+static void gen_table_lock(REQ, DSQL_NOD, USHORT);
+static void gen_udf(REQ, DSQL_NOD);
+static void gen_union(REQ, DSQL_NOD);
 static void stuff_cstring(REQ, char *);
 static void stuff_word(REQ, USHORT);
 
@@ -128,7 +128,7 @@ UCHAR GEN_expand_buffer( REQ request, UCHAR byte)
 }
 
 
-void GEN_expr( REQ request, NOD node)
+void GEN_expr( REQ request, DSQL_NOD node)
 {
 /**************************************
  *
@@ -141,7 +141,7 @@ void GEN_expr( REQ request, NOD node)
  *
  **************************************/
 	UCHAR operator_;
-	NOD *ptr, *end, ddl_node;
+	DSQL_NOD *ptr, *end, ddl_node;
 	CTX context;
 	MAP map;
 	VAR variable;
@@ -388,7 +388,7 @@ void GEN_expr( REQ request, NOD node)
 
 	case nod_negate:
 		{
-			NOD child = node->nod_arg[0];
+			DSQL_NOD child = node->nod_arg[0];
 			if (child->nod_type == nod_constant &&
 				DTYPE_IS_NUMERIC(child->nod_desc.dsc_dtype)) {
 				gen_constant(request, &child->nod_desc, NEGATE_VALUE);
@@ -679,7 +679,7 @@ void GEN_port( REQ request, MSG message)
 }
 
 
-void GEN_request( REQ request, NOD node)
+void GEN_request( REQ request, DSQL_NOD node)
 {
 /**************************************
  *
@@ -746,7 +746,7 @@ void GEN_request( REQ request, NOD node)
 }
 
 
-void GEN_start_transaction( REQ request, NOD tran_node)
+void GEN_start_transaction( REQ request, DSQL_NOD tran_node)
 {
 /**************************************
  *
@@ -761,9 +761,9 @@ void GEN_start_transaction( REQ request, NOD tran_node)
  *	Do not allow an option to be specified more than once.
  *
  **************************************/
-	NOD *temp, ptr, *end;
+	DSQL_NOD *temp, ptr, *end;
 	SSHORT count;
-	NOD reserve, node;
+	DSQL_NOD reserve, node;
 	SSHORT sw_access, sw_wait, sw_isolation, sw_reserve;
 	USHORT lock_level;
 
@@ -884,7 +884,7 @@ void GEN_start_transaction( REQ request, NOD tran_node)
 }
 
 
-void GEN_statement( REQ request, NOD node)
+void GEN_statement( REQ request, DSQL_NOD node)
 {
 /**************************************
  *
@@ -896,7 +896,7 @@ void GEN_statement( REQ request, NOD node)
  *	Generate blr for an arbitrary expression.
  *
  **************************************/
-	NOD temp, *ptr, *end;
+	DSQL_NOD temp, *ptr, *end;
 	CTX context;
 	MSG message;
 	STR name, string;
@@ -1165,7 +1165,7 @@ void GEN_statement( REQ request, NOD node)
 }
 
 
-static void gen_aggregate( REQ request, NOD node)
+static void gen_aggregate( REQ request, DSQL_NOD node)
 {
 /**************************************
  *
@@ -1177,7 +1177,7 @@ static void gen_aggregate( REQ request, NOD node)
  *	Generate blr for a relation reference.
  *
  **************************************/
-	NOD list, *ptr, *end;
+	DSQL_NOD list, *ptr, *end;
 	CTX context;
 
 	context = (CTX) node->nod_arg[e_agg_context];
@@ -1204,7 +1204,7 @@ static void gen_aggregate( REQ request, NOD node)
 }
 
 
-static void gen_cast( REQ request, NOD node)
+static void gen_cast( REQ request, DSQL_NOD node)
 {
 /**************************************
  *
@@ -1225,7 +1225,7 @@ static void gen_cast( REQ request, NOD node)
 }
 
 
-static void gen_coalesce( REQ request, NOD node)
+static void gen_coalesce( REQ request, DSQL_NOD node)
 {
 /**************************************
  *
@@ -1237,7 +1237,7 @@ static void gen_coalesce( REQ request, NOD node)
  *      Generate BLR for coalesce function
  *
  **************************************/
-	NOD list, *ptr, *end;
+	DSQL_NOD list, *ptr, *end;
 
 	/* blr_value_if is used for building the coalesce function */
 
@@ -1508,7 +1508,7 @@ static void gen_descriptor( REQ request, DSC * desc, USHORT texttype)
 }
 
 
-static void gen_error_condition( REQ request, NOD node)
+static void gen_error_condition( REQ request, DSQL_NOD node)
 {
 /**************************************
  *
@@ -1551,7 +1551,7 @@ static void gen_error_condition( REQ request, NOD node)
 }
 
 
-static void gen_field( REQ request, CTX context, FLD field, NOD indices)
+static void gen_field( REQ request, CTX context, FLD field, DSQL_NOD indices)
 {
 /**************************************
  *
@@ -1564,7 +1564,7 @@ static void gen_field( REQ request, CTX context, FLD field, NOD indices)
  *	are preferred but not for trigger or view blr.
  *
  **************************************/
-	NOD *ptr, *end;
+	DSQL_NOD *ptr, *end;
 
 /* For older clients - generate an error should they try and
  *    access data types which did not exist in the older dialect */
@@ -1612,7 +1612,7 @@ static void gen_field( REQ request, CTX context, FLD field, NOD indices)
 }
 
 
-static void gen_for_select( REQ request, NOD for_select)
+static void gen_for_select( REQ request, DSQL_NOD for_select)
 {
 /**************************************
  *
@@ -1624,7 +1624,7 @@ static void gen_for_select( REQ request, NOD for_select)
  *	Generate BLR for a SELECT statement.
  *
  **************************************/
-	NOD list, list_to, *ptr, *ptr_to, *end, rse;
+	DSQL_NOD list, list_to, *ptr, *ptr_to, *end, rse;
 
 	rse = for_select->nod_arg[e_flp_select];
 
@@ -1647,11 +1647,11 @@ static void gen_for_select( REQ request, NOD for_select)
 /* Build body of FOR loop */
 
 	/* Handle write locks */
-	NOD streams = rse->nod_arg[e_rse_streams];
+	DSQL_NOD streams = rse->nod_arg[e_rse_streams];
 	CTX context = NULL;
 
 	if (!rse->nod_arg[e_rse_reduced] && streams->nod_count==1) {
-		NOD item = streams->nod_arg[0];
+		DSQL_NOD item = streams->nod_arg[0];
 		if (item && (item->nod_type == nod_relation))
 			context = (CTX) item->nod_arg[e_rel_context];
 	}
@@ -1678,7 +1678,7 @@ static void gen_for_select( REQ request, NOD for_select)
 }
 
 
-static void gen_gen_id( REQ request, NOD node)
+static void gen_gen_id( REQ request, DSQL_NOD node)
 {
 /**************************************
  *
@@ -1699,7 +1699,7 @@ static void gen_gen_id( REQ request, NOD node)
 }
 
 
-static void gen_join_rse( REQ request, NOD rse)
+static void gen_join_rse( REQ request, DSQL_NOD rse)
 {
 /**************************************
  *
@@ -1712,7 +1712,7 @@ static void gen_join_rse( REQ request, NOD rse)
  *	with an explicit join type.
  *
  **************************************/
-	NOD node;
+	DSQL_NOD node;
 
 	STUFF(blr_rs_stream);
 	STUFF(2);
@@ -1799,7 +1799,7 @@ static void gen_parameter( REQ request, PAR parameter)
 
 
 
-static void gen_plan( REQ request, NOD plan_expression)
+static void gen_plan( REQ request, DSQL_NOD plan_expression)
 {
 /**************************************
  *
@@ -1811,7 +1811,7 @@ static void gen_plan( REQ request, NOD plan_expression)
  *	Generate blr for an access plan expression.
  *
  **************************************/
-	NOD list, node, arg, *ptr, *end, *ptr2, *end2;
+	DSQL_NOD list, node, arg, *ptr, *end, *ptr2, *end2;
 	STR index_string;
 
 /* stuff the join type */
@@ -1893,7 +1893,7 @@ static void gen_relation( REQ request, CTX context)
  **************************************/
 	DSQL_REL relation;
 	PRC procedure;
-	NOD inputs, *ptr, *end;
+	DSQL_NOD inputs, *ptr, *end;
 
 	relation = context->ctx_relation;
 	procedure = context->ctx_procedure;
@@ -1938,7 +1938,7 @@ static void gen_relation( REQ request, CTX context)
 }
 
 
-void GEN_return( REQ request, NOD procedure, BOOLEAN eos_flag)
+void GEN_return( REQ request, DSQL_NOD procedure, BOOLEAN eos_flag)
 {
 /**************************************
  *
@@ -1950,7 +1950,7 @@ void GEN_return( REQ request, NOD procedure, BOOLEAN eos_flag)
  *	Generate blr for a procedure return.
  *
  **************************************/
-	NOD parameters, parameter, *ptr, *end;
+	DSQL_NOD parameters, parameter, *ptr, *end;
 	VAR variable;
 	USHORT outputs;
 
@@ -1997,7 +1997,7 @@ void GEN_return( REQ request, NOD procedure, BOOLEAN eos_flag)
 }
 
 
-static void gen_rse( REQ request, NOD rse)
+static void gen_rse( REQ request, DSQL_NOD rse)
 {
 /**************************************
  *
@@ -2009,7 +2009,7 @@ static void gen_rse( REQ request, NOD rse)
  *	Generate a record selection expression.
  *
  **************************************/
-	NOD node, list, *ptr, *end;
+	DSQL_NOD node, list, *ptr, *end;
 
 	if (rse->nod_arg[e_rse_singleton]
 		&& !(request->req_dbb->dbb_flags & DBB_v3)) STUFF(blr_singular);
@@ -2094,7 +2094,7 @@ static void gen_rse( REQ request, NOD rse)
 }
 
 
-static void gen_searched_case( REQ request, NOD node)
+static void gen_searched_case( REQ request, DSQL_NOD node)
 {
 /**************************************
  *
@@ -2106,7 +2106,7 @@ static void gen_searched_case( REQ request, NOD node)
  *      Generate BLR for CASE function (searched)
  *
  **************************************/
-	NOD boolean_list, results_list, *bptr, *rptr, *end;
+	DSQL_NOD boolean_list, results_list, *bptr, *rptr, *end;
 
 	/* blr_value_if is used for building the case expression */
 
@@ -2127,7 +2127,7 @@ static void gen_searched_case( REQ request, NOD node)
 }
 
 
-static void gen_select( REQ request, NOD rse)
+static void gen_select( REQ request, DSQL_NOD rse)
 {
 /**************************************
  *
@@ -2139,7 +2139,7 @@ static void gen_select( REQ request, NOD rse)
  *	Generate BLR for a SELECT statement.
  *
  **************************************/
-	NOD list, *ptr, *end, item, alias, map_node;
+	DSQL_NOD list, *ptr, *end, item, alias, map_node;
 	PAR parameter;
 	MSG message;
 	FLD field;
@@ -2269,7 +2269,7 @@ static void gen_select( REQ request, NOD rse)
 		}
         else if (item->nod_type == nod_substr) {
             /* CVC: SQL starts at 1 but C starts at zero. */
-            /*NOD node = item->nod_arg [e_substr_start];
+            /*DSQL_NOD node = item->nod_arg [e_substr_start];
               --(*(SLONG *) (node->nod_desc.dsc_address));
               FIXED IN PARSE.Y; here it doesn't catch expressions: Bug 450301. */
             parameter->par_name = parameter->par_alias  = "SUBSTRING";
@@ -2425,7 +2425,7 @@ static void gen_select( REQ request, NOD rse)
 }
 
 
-static void gen_simple_case( REQ request, NOD node)
+static void gen_simple_case( REQ request, DSQL_NOD node)
 {
 /**************************************
  *
@@ -2437,7 +2437,7 @@ static void gen_simple_case( REQ request, NOD node)
  *      Generate BLR for CASE function (simple)
  *
  **************************************/
-	NOD when_list, results_list, *wptr, *rptr, *end;
+	DSQL_NOD when_list, results_list, *wptr, *rptr, *end;
 
 	/* blr_value_if is used for building the case expression */
 
@@ -2460,7 +2460,7 @@ static void gen_simple_case( REQ request, NOD node)
 }
 
 
-static void gen_sort( REQ request, NOD list)
+static void gen_sort( REQ request, DSQL_NOD list)
 {
 /**************************************
  *
@@ -2472,7 +2472,7 @@ static void gen_sort( REQ request, NOD list)
  *	Generate a sort clause.
  *
  **************************************/
-	NOD *ptr, *end;
+	DSQL_NOD *ptr, *end;
 
 	STUFF(blr_sort);
 	STUFF(list->nod_count);
@@ -2489,7 +2489,7 @@ static void gen_sort( REQ request, NOD list)
 }
 
 
-static void gen_table_lock( REQ request, NOD tbl_lock, USHORT lock_level)
+static void gen_table_lock( REQ request, DSQL_NOD tbl_lock, USHORT lock_level)
 {
 /**************************************
  *
@@ -2502,7 +2502,7 @@ static void gen_table_lock( REQ request, NOD tbl_lock, USHORT lock_level)
  *	If lock level is specified, it overrrides the transaction lock level.
  *
  **************************************/
-	NOD tbl_names, *ptr, *end;
+	DSQL_NOD tbl_names, *ptr, *end;
 	STR temp;
 	SSHORT flags;
 	USHORT lock_mode;
@@ -2539,7 +2539,7 @@ static void gen_table_lock( REQ request, NOD tbl_lock, USHORT lock_level)
 }
 
 
-static void gen_udf( REQ request, NOD node)
+static void gen_udf( REQ request, DSQL_NOD node)
 {
 /**************************************
  *
@@ -2552,7 +2552,7 @@ static void gen_udf( REQ request, NOD node)
  *
  **************************************/
 	UDF udf;
-	NOD list, *ptr, *end;
+	DSQL_NOD list, *ptr, *end;
 
 	udf = (UDF) node->nod_arg[0];
 	STUFF(blr_function);
@@ -2569,7 +2569,7 @@ static void gen_udf( REQ request, NOD node)
 }
 
 
-static void gen_union( REQ request, NOD union_node)
+static void gen_union( REQ request, DSQL_NOD union_node)
 {
 /**************************************
  *
@@ -2581,8 +2581,8 @@ static void gen_union( REQ request, NOD union_node)
  *	Generate a union of substreams.
  *
  **************************************/
-	NOD sub_rse, *ptr, *end, streams;
-	NOD items, *iptr, *iend;
+	DSQL_NOD sub_rse, *ptr, *end, streams;
+	DSQL_NOD items, *iptr, *iend;
 	USHORT count;
 	CTX union_context;
 

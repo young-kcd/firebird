@@ -35,7 +35,7 @@ STR METD_get_default_charset(class req*);
 USHORT METD_get_domain(class req*, class fld*, UCHAR*);
 void METD_get_domain_default(class req*, TEXT*, BOOLEAN*, TEXT*, USHORT);
 UDF METD_get_function(class req*, class str*);
-NOD METD_get_primary_key(class req*, class str*);
+DSQL_NOD METD_get_primary_key(class req*, class str*);
 PRC METD_get_procedure(class req*, class str*);
 DSQL_REL METD_get_relation(class req*, class str*);
 STR METD_get_trigger_relation(class req*, class str*, USHORT*);

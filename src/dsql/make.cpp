@@ -65,7 +65,7 @@ ASSERT_FILENAME					/* declare things assert() needs */
    (((d2).dsc_dtype==dtype_sql_time)&&((d1).dsc_dtype==dtype_sql_date)))
 
 
-NOD MAKE_constant(STR constant, int numeric_flag)
+DSQL_NOD MAKE_constant(STR constant, int numeric_flag)
 {
 /**************************************
  *
@@ -77,7 +77,7 @@ NOD MAKE_constant(STR constant, int numeric_flag)
  *	Make a constant node.
  *
  **************************************/
-	NOD node;
+	DSQL_NOD node;
 	TSQL tdsql;
 
 	tdsql = GET_THREAD_DATA;
@@ -93,7 +93,7 @@ NOD MAKE_constant(STR constant, int numeric_flag)
 		node->nod_desc.dsc_scale = 0;
 		node->nod_desc.dsc_sub_type = 0;
 		node->nod_desc.dsc_address = (UCHAR *) node->nod_arg;
-		node->nod_arg[0] = (NOD) constant;
+		node->nod_arg[0] = (DSQL_NOD) constant;
 	}
 	else if (numeric_flag == CONSTANT_DOUBLE) {
 		DEV_BLKCHK(constant, dsql_type_str);
@@ -110,7 +110,7 @@ NOD MAKE_constant(STR constant, int numeric_flag)
 		node->nod_desc.dsc_length = sizeof(double);
 		node->nod_desc.dsc_address = constant->str_data;
 		node->nod_desc.dsc_ttype = ttype_ascii;
-		node->nod_arg[0] = (NOD) constant;
+		node->nod_arg[0] = (DSQL_NOD) constant;
 	}
 	else if (numeric_flag == CONSTANT_SINT64) {
 		/* We convert the string to an int64.  We treat the two adjacent
@@ -198,14 +198,14 @@ NOD MAKE_constant(STR constant, int numeric_flag)
 		node->nod_desc.dsc_address = constant->str_data;
 		node->nod_desc.dsc_ttype = ttype_dynamic;
 		/* carry a pointer to the constant to resolve character set in pass1 */
-		node->nod_arg[0] = (NOD) constant;
+		node->nod_arg[0] = (DSQL_NOD) constant;
 	}
 
 	return node;
 }
 
 
-NOD MAKE_str_constant(STR constant, SSHORT character_set)
+DSQL_NOD MAKE_str_constant(STR constant, SSHORT character_set)
 {
 /**************************************
  *
@@ -218,7 +218,7 @@ NOD MAKE_str_constant(STR constant, SSHORT character_set)
  *      character set ID is already known.
  *
  **************************************/
-	NOD node;
+	DSQL_NOD node;
 	TSQL tdsql;
 
 	tdsql = GET_THREAD_DATA;
@@ -235,7 +235,7 @@ NOD MAKE_str_constant(STR constant, SSHORT character_set)
 	node->nod_desc.dsc_address = constant->str_data;
 	node->nod_desc.dsc_ttype = character_set;
 /* carry a pointer to the constant to resolve character set in pass1 */
-	node->nod_arg[0] = (NOD) constant;
+	node->nod_arg[0] = (DSQL_NOD) constant;
 
 	return node;
 }
@@ -259,7 +259,7 @@ STR MAKE_cstring(CONST SCHAR * str)
 }
 
 
-void MAKE_desc( DSC * desc, NOD node)
+void MAKE_desc( DSC * desc, DSQL_NOD node)
 {
 /**************************************
  *
@@ -392,7 +392,7 @@ void MAKE_desc( DSC * desc, NOD node)
            instead	of VARCHAR for historical reasons. */
         if (node->nod_type == nod_substr && desc1.dsc_dtype == dtype_blob) {
             SLONG len = 0;
-            NOD for_node = node->nod_arg [e_substr_length];
+            DSQL_NOD for_node = node->nod_arg [e_substr_length];
             assert (for_node->nod_desc.dsc_dtype == dtype_long);
             /* Migrate the charset from the blob to the string. */
             desc->dsc_ttype = desc1.dsc_scale;
@@ -1064,7 +1064,7 @@ void MAKE_desc_from_field( DSC * desc, FLD field)
 }
 
 
-void MAKE_desc_from_list( DSC * desc, NOD node)
+void MAKE_desc_from_list( DSC * desc, DSQL_NOD node)
 /**************************************
  *
  *	M A K E _ d e s c _ f r o m _ l i s t 
@@ -1077,7 +1077,7 @@ void MAKE_desc_from_list( DSC * desc, NOD node)
  *
  **************************************/
 {
-	NOD	*arg, *end, tnod;
+	DSQL_NOD	*arg, *end, tnod;
 	DSC	desc1, desc2;
 	UCHAR max_exact_dtype = 0;
 	SCHAR maxscale;
@@ -1256,7 +1256,7 @@ void MAKE_desc_from_list( DSC * desc, NOD node)
 }
 
 
-NOD MAKE_field(CTX context, FLD field, NOD indices)
+DSQL_NOD MAKE_field(CTX context, FLD field, DSQL_NOD indices)
 {
 /**************************************
  *
@@ -1268,15 +1268,15 @@ NOD MAKE_field(CTX context, FLD field, NOD indices)
  *	Make up a field node.
  *
  **************************************/
-	NOD node;
+	DSQL_NOD node;
 
 	DEV_BLKCHK(context, dsql_type_ctx);
 	DEV_BLKCHK(field, dsql_type_fld);
 	DEV_BLKCHK(indices, dsql_type_nod);
 
 	node = MAKE_node(nod_field, e_fld_count);
-	node->nod_arg[e_fld_context] = (NOD) context;
-	node->nod_arg[e_fld_field] = (NOD) field;
+	node->nod_arg[e_fld_context] = (DSQL_NOD) context;
+	node->nod_arg[e_fld_field] = (DSQL_NOD) field;
 	if (field->fld_dimensions) {
 		if (indices) {
 			node->nod_arg[e_fld_indices] = indices;
@@ -1310,7 +1310,7 @@ NOD MAKE_field(CTX context, FLD field, NOD indices)
 }
 
 
-NOD MAKE_list(DLLS stack)
+DSQL_NOD MAKE_list(DLLS stack)
 {
 /**************************************
  *
@@ -1324,7 +1324,7 @@ NOD MAKE_list(DLLS stack)
  **************************************/
 	DLLS temp;
 	USHORT count;
-	NOD node, *ptr;
+	DSQL_NOD node, *ptr;
 
 	DEV_BLKCHK(stack, dsql_type_lls);
 
@@ -1335,13 +1335,13 @@ NOD MAKE_list(DLLS stack)
 	ptr = node->nod_arg + count;
 
 	while (stack)
-		*--ptr = (NOD) LLS_POP(&stack);
+		*--ptr = (DSQL_NOD) LLS_POP(&stack);
 
 	return node;
 }
 
 
-NOD MAKE_node(NOD_TYPE type, int count)
+DSQL_NOD MAKE_node(NOD_TYPE type, int count)
 {
 /**************************************
  *
@@ -1353,7 +1353,7 @@ NOD MAKE_node(NOD_TYPE type, int count)
  *	Make a node of given type.
  *
  **************************************/
-	NOD node;
+	DSQL_NOD node;
 	TSQL tdsql;
 
 	tdsql = GET_THREAD_DATA;
@@ -1501,7 +1501,7 @@ STR MAKE_tagged_string(CONST UCHAR * str_, int length, CONST TEXT * charset)
 }
 
 
-NOD MAKE_trigger_type(NOD prefix_node, NOD suffix_node)
+DSQL_NOD MAKE_trigger_type(DSQL_NOD prefix_node, DSQL_NOD suffix_node)
 {
 /**************************************
  *
@@ -1521,7 +1521,7 @@ NOD MAKE_trigger_type(NOD prefix_node, NOD suffix_node)
 }
 
 
-NOD MAKE_variable(FLD field,
+DSQL_NOD MAKE_variable(FLD field,
 				  CONST TEXT * name,
 				  USHORT type,
 				  USHORT msg_number, USHORT item_number, USHORT local_number)
@@ -1536,7 +1536,7 @@ NOD MAKE_variable(FLD field,
  *	Make up a field node.
  *
  **************************************/
-	NOD node;
+	DSQL_NOD node;
 	VAR var_;
 	TSQL tdsql;
 
@@ -1546,7 +1546,7 @@ NOD MAKE_variable(FLD field,
 
 	var_ = FB_NEW_RPT(*tdsql->tsql_default, strlen(name)) var;
 	node = MAKE_node(nod_variable, e_var_count);
-	node->nod_arg[e_var_variable] = (NOD) var_;
+	node->nod_arg[e_var_variable] = (DSQL_NOD) var_;
 	var_->var_msg_number = msg_number;
 	var_->var_msg_item = item_number;
 	var_->var_variable_number = local_number;

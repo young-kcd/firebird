@@ -115,7 +115,7 @@ static void	yyerror (TEXT *);
 #define YYSTACKSIZE		2048
 #define YYMAXDEPTH		2048
 
-#define YYSTYPE		NOD
+#define YYSTYPE		DSQL_NOD
 #if defined(DEBUG) || defined(DEV_BUILD)
 #define YYDEBUG		1
 #endif
@@ -131,15 +131,15 @@ static CONST UCHAR
 extern "C" {
 
 #ifndef SHLIB_DEFS
-NOD		DSQL_parse;
+DSQL_NOD		DSQL_parse;
 #else
-extern NOD	DSQL_parse;
+extern DSQL_NOD	DSQL_parse;
 #endif
 
 }	// extern "C"
 static FLD	g_field;
 static FIL	g_file;
-static NOD	g_field_name;
+static DSQL_NOD	g_field_name;
 static TEXT	*beginning;
 static SSHORT	log_defined, cache_defined;
 static void	yyerror (TEXT *);
@@ -677,7 +677,7 @@ udf_data_type	: simple_type
 		;
 
 arg_desc_list1	: 
-		 	{ $$ = (NOD) NULL; }
+		 	{ $$ = (DSQL_NOD) NULL; }
 		| arg_desc_list	
 		| '(' arg_desc_list ')'	
 		 	{ $$ = $2; }
@@ -719,7 +719,7 @@ return_value	: init_data_type udf_data_type
 				MAKE_constant ((STR) FUN_descriptor, CONSTANT_SLONG));}
 		| PARAMETER pos_short_integer
 			{ $$ = make_node (nod_udf_return_value, (int) 2, 
-		  		(NOD) NULL, MAKE_constant ((STR) $2, CONSTANT_SLONG));}
+		  		(DSQL_NOD) NULL, MAKE_constant ((STR) $2, CONSTANT_SLONG));}
 		;
 
 filter_decl_clause : symbol_filter_name INPUT_TYPE blob_subtype OUTPUT_TYPE blob_subtype 
@@ -833,13 +833,13 @@ conditional	:
 		;	
 
 first_file_length : 
-			{ $$ = (NOD) 0;}
+			{ $$ = (DSQL_NOD) 0;}
 		| LENGTH equals long_integer page_noise
 			{ $$ = $3; }
 		;
 
 sec_shadow_files :
-		 	{ $$ = (NOD) NULL; }
+		 	{ $$ = (DSQL_NOD) NULL; }
 		| db_file_list
 		;
 
@@ -878,11 +878,11 @@ as_opt		: AS
 domain_default_opt	: DEFAULT begin_trigger default_value
 				{ $$ = $3; }
 			|
-				{ $$ = (NOD) NULL; }
+				{ $$ = (DSQL_NOD) NULL; }
 			;
 
 domain_constraint_clause	: 
-                                  { $$ = (NOD) NULL; }
+                                  { $$ = (DSQL_NOD) NULL; }
 				| domain_constraint_list
                                 ; 
 
@@ -940,11 +940,11 @@ equals		:
 db_name		: sql_string
 			{ log_defined = FALSE;
 			  cache_defined = FALSE;
-			  $$ = (NOD) $1; }
+			  $$ = (DSQL_NOD) $1; }
 		;
 
 db_initial_desc1 :  
-			{$$ = (NOD) NULL;}
+			{$$ = (DSQL_NOD) NULL;}
 		| db_initial_desc
 		;
 
@@ -966,7 +966,7 @@ db_initial_option: PAGE_SIZE equals pos_short_integer
 		;
 
 db_rem_desc1	:  
-			{$$ = (NOD) NULL;} 
+			{$$ = (DSQL_NOD) NULL;} 
 		| db_rem_desc
 		;
 
@@ -1022,13 +1022,13 @@ db_default_log_spec : LOGFILE
 			{ g_file = make_file(); 
 			  g_file->fil_flags = LOG_serial | LOG_default;
 			  $$ = make_node (nod_log_file_desc, (int) 1,
-						(NOD) g_file);}
+						(DSQL_NOD) g_file);}
 		;
 
 db_file		: file1 sql_string file_desc1
 			{ g_file->fil_name = (STR) $2; 
-			  $$ = (NOD) make_node (nod_file_desc, (int) 1,
-						(NOD) g_file); }
+			  $$ = (DSQL_NOD) make_node (nod_file_desc, (int) 1,
+						(DSQL_NOD) g_file); }
 		;
 
 /*
@@ -1041,20 +1041,20 @@ db_cache	: CACHE sql_string cache_length
 			  g_file->fil_length = (SLONG) $3;
 			  g_file->fil_name = (STR) $2;
 			  cache_defined = TRUE;
-			  $$ = (NOD) make_node (nod_cache_file_desc, (int) 1,
-					 (NOD) g_file); } 
+			  $$ = (DSQL_NOD) make_node (nod_cache_file_desc, (int) 1,
+					 (DSQL_NOD) g_file); } 
 		;
 */
 
 /*
 cache_length	: 
-			{ $$ = (NOD) (SLONG) DEF_CACHE_BUFFERS; }
+			{ $$ = (DSQL_NOD) (SLONG) DEF_CACHE_BUFFERS; }
 		| LENGTH equals long_integer page_noise
 			{ if ((SLONG) $3 < MIN_CACHE_BUFFERS)
 			      yyabandon (-239, isc_cache_too_small);
 				  */ /* Cache length too small */ /*
 			  else 
-			      $$ = (NOD) $3; }
+			      $$ = (DSQL_NOD) $3; }
 		;
 */
 
@@ -1065,8 +1065,8 @@ logfiles	: logfile_desc
 logfile_desc	: logfile_name logfile_attrs 
 			{ 
 		         check_log_file_attrs(); 
-			 $$ = (NOD) make_node (nod_log_file_desc, (int) 1,
-                                                (NOD) g_file); }
+			 $$ = (DSQL_NOD) make_node (nod_log_file_desc, (int) 1,
+                                                (DSQL_NOD) g_file); }
 		;
 logfile_name	: sql_string 
 			{ g_file = make_file();
@@ -1130,7 +1130,7 @@ external_file	: EXTERNAL KW_FILE sql_string
 		| EXTERNAL sql_string
 			{ $$ = $2; }
 		|
-			{ $$ = (NOD) NULL; }
+			{ $$ = (DSQL_NOD) NULL; }
 		;
 
 table_elements	: table_element
@@ -1183,19 +1183,19 @@ data_type_or_domain	: data_type begin_trigger
 collate_clause	: COLLATE symbol_collation_name
 			{ $$ = $2; }
 		|
-			{ $$ = (NOD) NULL; }
+			{ $$ = (DSQL_NOD) NULL; }
 		;
 
 
 column_def_name	: simple_column_name
 			{ g_field_name = $1;
 			  g_field = make_field ($1);
-			  $$ = (NOD) g_field; }
+			  $$ = (DSQL_NOD) g_field; }
 		;
 
 simple_column_def_name  : simple_column_name
 				{ g_field = make_field ($1);
-				  $$ = (NOD) g_field; }
+				  $$ = (DSQL_NOD) g_field; }
 			;
 
 
@@ -1204,13 +1204,13 @@ data_type_descriptor :	init_data_type data_type
 
 init_data_type :
 			{ g_field = make_field (NULL);
-			  $$ = (NOD) g_field; }
+			  $$ = (DSQL_NOD) g_field; }
 
 
 default_opt	: DEFAULT default_value
 			{ $$ = $2; }
 		|
-			{ $$ = (NOD) NULL; }
+			{ $$ = (DSQL_NOD) NULL; }
 		;
 
 default_value	: constant
@@ -1229,7 +1229,7 @@ default_value	: constant
 		;
                    
 column_constraint_clause : 
-				{ $$ = (NOD) NULL; }
+				{ $$ = (DSQL_NOD) NULL; }
 			| column_constraint_list
 			;
 
@@ -1691,7 +1691,7 @@ begin_string	:
 		;
 
 end_string	:
-			{ $$ = (NOD) MAKE_string ((UCHAR *) beginning, 
+			{ $$ = (DSQL_NOD) MAKE_string ((UCHAR *) beginning, 
 			       (lex_position() == end) ?
 			       lex_position()-beginning : last_token-beginning);}
 		;
@@ -1701,7 +1701,7 @@ begin_trigger	:
 		;
 
 end_trigger	:
-			{ $$ = (NOD) MAKE_string ((UCHAR *) beginning, 
+			{ $$ = (DSQL_NOD) MAKE_string ((UCHAR *) beginning, 
 					lex_position()-beginning); }
 		;
 
@@ -1942,7 +1942,7 @@ alter_data_type_or_domain	: non_array_type begin_trigger
 alter_col_name	: simple_column_name
 			{ g_field_name = $1;
 			  g_field = make_field ($1);
-			  $$ = (NOD) g_field; }
+			  $$ = (DSQL_NOD) g_field; }
 
 drop_behaviour	: RESTRICT
 			{ $$ = make_node (nod_restrict, 0, NULL); }
@@ -1964,7 +1964,7 @@ alter_index_clause	: symbol_index_name ACTIVE
 init_alter_db	: 
 			{ log_defined = FALSE;
 			  cache_defined = FALSE;
-			  $$ = (NOD) NULL; }
+			  $$ = (DSQL_NOD) NULL; }
 		;
 
 alter_db	: db_alter_clause
@@ -2536,12 +2536,12 @@ optional_work	: WORK
 optional_retain	: RETAIN opt_snapshot
 			{ $$ = make_node (nod_commit_retain, 0, NULL); }
 		|
-		 	{ $$ = (NOD) NULL; }
+		 	{ $$ = (DSQL_NOD) NULL; }
 		;
 
 opt_snapshot	: SNAPSHOT
 		|
-		 	{ $$ = (NOD) NULL; }
+		 	{ $$ = (DSQL_NOD) NULL; }
 		;
 
 set_transaction	: SET TRANSACTION tran_opt_list_m
@@ -2550,7 +2550,7 @@ set_transaction	: SET TRANSACTION tran_opt_list_m
 
 tran_opt_list_m	: tran_opt_list	
 		|
-		 	{ $$ = (NOD) NULL; }
+		 	{ $$ = (DSQL_NOD) NULL; }
 		;
 
 tran_opt_list	: tran_opt
@@ -2610,17 +2610,17 @@ tbl_reserve_options: RESERVING restr_list
 		;
 
 lock_type	: SHARED
-			{ $$ = (NOD) NOD_SHARED; }
+			{ $$ = (DSQL_NOD) NOD_SHARED; }
 		| PROTECTED
-			{ $$ = (NOD) NOD_PROTECTED ; }
+			{ $$ = (DSQL_NOD) NOD_PROTECTED ; }
 		|
-			{ $$ = (NOD) 0; }
+			{ $$ = (DSQL_NOD) 0; }
 		;
 
 lock_mode	: READ
-			{ $$ = (NOD) NOD_READ; }
+			{ $$ = (DSQL_NOD) NOD_READ; }
 		| WRITE
-			{ $$ = (NOD) NOD_WRITE; }
+			{ $$ = (DSQL_NOD) NOD_WRITE; }
 		;
 
 restr_list	: restr_option
@@ -2875,7 +2875,7 @@ grp_column_elem : column_name
 		| udf
 		| group_by_function
 		| column_name COLLATE symbol_collation_name
-			{ $$ = make_node (nod_collate, e_coll_count, (NOD) $3, $1); }
+			{ $$ = make_node (nod_collate, e_coll_count, (DSQL_NOD) $3, $1); }
 		;
 
 group_by_function	: numeric_value_function
@@ -3322,7 +3322,7 @@ value		: column_name
 		| value CONCATENATE value
 			{ $$ = make_node (nod_concatenate, 2, $1, $3); }
 		| value COLLATE symbol_collation_name
-			{ $$ = make_node (nod_collate, e_coll_count, (NOD) $3, $1); }
+			{ $$ = make_node (nod_collate, e_coll_count, (DSQL_NOD) $3, $1); }
 		| value '-' value
 			{ 
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
@@ -3514,7 +3514,7 @@ sql_string	: STRING			/* string in current charset */
 
 signed_short_integer	:	nonneg_short_integer
 		| '-' neg_short_integer
-			{ $$ = (NOD) - (SLONG) $2; }
+			{ $$ = (DSQL_NOD) - (SLONG) $2; }
 		;
 
 nonneg_short_integer	: NUMBER
@@ -3547,7 +3547,7 @@ unsigned_short_integer : NUMBER
 
 signed_long_integer	:	long_integer
 		| '-' long_integer
-			{ $$ = (NOD) - (SLONG) $2; }
+			{ $$ = (DSQL_NOD) - (SLONG) $2; }
 		;
 
 long_integer	: NUMBER
@@ -3823,15 +3823,15 @@ symbol_savepoint_name			: SYMBOL
 
 
 static TEXT	*lex_position (void);
-static BOOLEAN	long_int (NOD, SLONG *);
-static FLD	make_field (NOD);
+static BOOLEAN	long_int (DSQL_NOD, SLONG *);
+static FLD	make_field (DSQL_NOD);
 static FIL	make_file (void);
-static NOD	make_list (NOD);
-static NOD	make_node (NOD_TYPE, int, ...);
-static NOD	make_flag_node (NOD_TYPE, SSHORT, int, ...);
+static DSQL_NOD	make_list (DSQL_NOD);
+static DSQL_NOD	make_node (NOD_TYPE, int, ...);
+static DSQL_NOD	make_flag_node (NOD_TYPE, SSHORT, int, ...);
 static void	prepare_console_debug (int, int  *);
-static BOOLEAN	short_int (NOD, SLONG *, SSHORT);
-static void	stack_nodes (NOD, DLLS *);
+static BOOLEAN	short_int (DSQL_NOD, SLONG *, SSHORT);
+static void	stack_nodes (DSQL_NOD, DLLS *);
 static int 	swallow_single_line_comment (void);
 static int	yylex (USHORT, USHORT, USHORT, BOOLEAN *);
 static void	yyabandon (SSHORT, STATUS);
@@ -3962,7 +3962,7 @@ return ptr;
 
 
 static BOOLEAN long_int (
-    NOD		string,
+    DSQL_NOD		string,
     SLONG	*long_value)
 {
 /*************************************
@@ -3989,7 +3989,7 @@ return TRUE;
 
 
 static FLD make_field (
-    NOD		field_name)
+    DSQL_NOD		field_name)
 {
 /**************************************
  *
@@ -4044,8 +4044,8 @@ return temp_file;
 }
 
 
-static NOD make_list (
-    NOD		node)
+static DSQL_NOD make_list (
+    DSQL_NOD		node)
 {
 /**************************************
  *
@@ -4057,10 +4057,10 @@ static NOD make_list (
  *	Collapse nested list nodes into single list.
  *
  **************************************/
-NOD	*ptr;
+DSQL_NOD	*ptr;
 DLLS	stack, temp;
 USHORT	l;
-NOD	old;
+DSQL_NOD	old;
 TSQL    tdsql;
 
 tdsql = GET_THREAD_DATA;
@@ -4081,13 +4081,13 @@ node->nod_flags = old->nod_flags;
 ptr = node->nod_arg + node->nod_count;
 
 while (stack)
-    *--ptr = (NOD) LLS_POP (&stack);
+    *--ptr = (DSQL_NOD) LLS_POP (&stack);
 
 return node;
 }
 
 
-static NOD make_node (
+static DSQL_NOD make_node (
     NOD_TYPE	type,
     int		count,
     ...)
@@ -4103,7 +4103,7 @@ static NOD make_node (
  *	Any change should also be made to function below
  *
  **************************************/
-NOD	node, *p;
+DSQL_NOD	node, *p;
 va_list	ptr;
 TSQL    tdsql;
 
@@ -4118,13 +4118,13 @@ p = node->nod_arg;
 VA_START (ptr, count);
 
 while (--count >= 0)
-    *p++ = va_arg (ptr, NOD);
+    *p++ = va_arg (ptr, DSQL_NOD);
 
 return node;
 }
 
 
-static NOD make_flag_node (
+static DSQL_NOD make_flag_node (
     NOD_TYPE	type,
     SSHORT	flag,
     int		count,
@@ -4140,7 +4140,7 @@ static NOD make_flag_node (
  *	Make a node of given type. Set flag field
  *
  **************************************/
-NOD	node, *p;
+DSQL_NOD	node, *p;
 va_list	ptr;
 TSQL    tdsql;
 
@@ -4156,7 +4156,7 @@ p = node->nod_arg;
 VA_START (ptr, count);
 
 while (--count >= 0)
-    *p++ = va_arg (ptr, NOD);
+    *p++ = va_arg (ptr, DSQL_NOD);
 
 return node;
 }
@@ -4199,7 +4199,7 @@ static void prepare_console_debug (int level, int *yydeb)
 }
 
 static BOOLEAN short_int (
-    NOD		string,
+    DSQL_NOD		string,
     SLONG	*long_value,
     SSHORT	range)
 {
@@ -4254,7 +4254,7 @@ return !return_value;
 
 
 static void stack_nodes (
-    NOD		node,
+    DSQL_NOD		node,
     DLLS		*stack)
 {
 /**************************************
@@ -4267,8 +4267,8 @@ static void stack_nodes (
  *	Assist in turning a tree of misc nodes into a clean list.
  *
  **************************************/
-NOD	*ptr, *end;
-NOD     curr_node, next_node, start_chain, end_chain, save_link;
+DSQL_NOD	*ptr, *end;
+DSQL_NOD     curr_node, next_node, start_chain, end_chain, save_link;
 
 if (node->nod_type != nod_list)
     {
@@ -4285,7 +4285,7 @@ if (node->nod_type != nod_list)
    massive recursion of this function. */
 
 start_chain = node;
-end_chain = (NOD) NULL;
+end_chain = (DSQL_NOD) NULL;
 curr_node = node;
 next_node = node->nod_arg[0];
 while ( curr_node->nod_count == 2 &&
@@ -4486,7 +4486,7 @@ if (tok_class & CHR_INTRODUCER)
     /* make a string value to hold the name, the name 
      * is resolved in pass1_constant */
 
-    yylval = (NOD) (MAKE_string (string, p - string))->str_data;
+    yylval = (DSQL_NOD) (MAKE_string (string, p - string))->str_data;
 
     return INTRODUCER;
     }
@@ -4549,7 +4549,7 @@ if (tok_class & CHR_QUOTE)
 		    gds__free (buffer);
 		yyabandon (-104, isc_token_too_long);
 		}
-	    yylval = (NOD) MAKE_string (buffer, p - buffer);
+	    yylval = (DSQL_NOD) MAKE_string (buffer, p - buffer);
 	    delimited_id_str = (STR) yylval;
 	    delimited_id_str->str_flags |= STR_delimited_id;
 	    if (buffer != string)
@@ -4557,7 +4557,7 @@ if (tok_class & CHR_QUOTE)
 	    return SYMBOL;
 	    }
 	}
-    yylval = (NOD) MAKE_string (buffer, p - buffer);
+    yylval = (DSQL_NOD) MAKE_string (buffer, p - buffer);
     if (buffer != string)
 	gds__free (buffer);
     return STRING;
@@ -4676,7 +4676,7 @@ if ((tok_class & CHR_DIGIT) ||
 
 	if (have_exp_digit)
 	    {
-	    yylval = (NOD) MAKE_string ((UCHAR *) last_token,
+	    yylval = (DSQL_NOD) MAKE_string ((UCHAR *) last_token,
 					ptr - last_token);
 	    last_token_bk = last_token;
 	    line_start_bk = line_start;
@@ -4692,7 +4692,7 @@ if ((tok_class & CHR_DIGIT) ||
 
 	    if (!have_decimal && (number <= MAX_SLONG))
 		{
-		yylval = (NOD) number;
+		yylval = (DSQL_NOD) number;
 		return NUMBER;
 		}
 	    else
@@ -4720,7 +4720,7 @@ if ((tok_class & CHR_DIGIT) ||
 				       gds_arg_end );
 		    }
 
-		yylval = (NOD) MAKE_string ((UCHAR *) last_token,
+		yylval = (DSQL_NOD) MAKE_string ((UCHAR *) last_token,
 					    ptr - last_token);
 
 		last_token_bk = last_token;
@@ -4807,10 +4807,10 @@ if (tok_class & CHR_LETTER)
     sym = HSHD_lookup (NULL_PTR, (TEXT *) string, (SSHORT)(p - string), SYM_keyword, parser_version);
     if (sym)
 	{
-	yylval = (NOD) sym->sym_object;
+	yylval = (DSQL_NOD) sym->sym_object;
 	return sym->sym_keyword;
 	}
-    yylval = (NOD) MAKE_string (string, p - string);
+    yylval = (DSQL_NOD) MAKE_string (string, p - string);
     last_token_bk = last_token;
     line_start_bk = line_start;
     lines_bk = lines;

@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: dsql.cpp,v 1.27 2002-11-09 08:05:26 dimitr Exp $
+$Id: dsql.cpp,v 1.28 2002-11-11 19:08:31 hippoman Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -138,7 +138,7 @@ static void		execute_blob(REQ, USHORT, UCHAR*, USHORT, UCHAR*,
 						 USHORT, UCHAR*, USHORT, UCHAR*);
 static STATUS	execute_request(REQ, isc_tr_handle*, USHORT, UCHAR*, USHORT, UCHAR*,
 							  USHORT, UCHAR*, USHORT, UCHAR*, USHORT);
-static SSHORT	filter_sub_type(REQ, NOD);
+static SSHORT	filter_sub_type(REQ, DSQL_NOD);
 static BOOLEAN	get_indices(SSHORT*, SCHAR**, SSHORT*, SCHAR**);
 static USHORT	get_plan_info(REQ, SSHORT, SCHAR**);
 static USHORT	get_request_info(REQ, SSHORT, SCHAR*);
@@ -155,7 +155,7 @@ static void		release_request(REQ, USHORT);
 static STATUS	return_success(void);
 static SCHAR*	var_info(MSG, SCHAR*, SCHAR*, SCHAR*, SCHAR*, USHORT);
 
-extern NOD DSQL_parse;
+extern DSQL_NOD DSQL_parse;
 
 static USHORT init_flag;
 static DBB databases;
@@ -1745,7 +1745,7 @@ STATUS GDS_DSQL_SQL_INFO_CPP(	STATUS*		user_status,
 
 
 #ifdef DEV_BUILD
-void DSQL_pretty(NOD node, int column)
+void DSQL_pretty(DSQL_NOD node, int column)
 {
 /**************************************
  *
@@ -1816,8 +1816,8 @@ void DSQL_pretty(NOD node, int column)
 		FREE_MEM_RETURN;
 	}
 
-	NOD* ptr = node->nod_arg;
-	NOD* end = ptr + node->nod_count;
+	DSQL_NOD* ptr = node->nod_arg;
+	DSQL_NOD* end = ptr + node->nod_count;
 
 	switch (node->nod_type) {
 	case nod_abort:
@@ -3055,7 +3055,7 @@ static STATUS execute_request(REQ				request,
 }
 
 
-static SSHORT filter_sub_type( REQ request, NOD node)
+static SSHORT filter_sub_type( REQ request, DSQL_NOD node)
 {
 /**************************************
  *
@@ -4101,7 +4101,7 @@ static REQ prepare(
  *
  **************************************/
 	STATUS status;
-	NOD node;
+	DSQL_NOD node;
 	MSG message;
 	TEXT *p;
 	USHORT length;
