@@ -91,7 +91,7 @@ if "%VS_VER%"=="msvc6" (
 :: Here we must use cd because isql does not have an option to set a base directory
 :: and empbuild.exe uses isql
 @cd %ROOT_PATH%\gen\v5_examples
-@del %ROOT_PATH%\gen\v5_examples\employee.fdb
+@del %ROOT_PATH%\gen\v5_examples\employee.fdb 2>nul
 @%ROOT_PATH%\gen\v5_examples\empbuild.exe %DB_PATH%/gen/v5_examples/employee.fdb
 @cd %ROOT_PATH%\builds\win32
 

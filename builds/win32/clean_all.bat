@@ -6,7 +6,6 @@
 @rmdir /S /Q %ROOT_PATH%\temp 2>nul
 
 @rmdir /S /Q %ROOT_PATH%\builds\win32\dbs 2>nul
-@rmdir /S /Q %ROOT_PATH%\builds\win32\temp 2>nul
 
 @echo Cleaning files
 @del *.log 2>nul
