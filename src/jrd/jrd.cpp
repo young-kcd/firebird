@@ -2626,7 +2626,7 @@ ISC_STATUS DLL_EXPORT GDS_GET_SEGMENT(ISC_STATUS * user_status,
 			--dbb->dbb_use_count;
 			return (user_status[1] = gds_segstr_eof);
 		}
-		else if (blob->blb_fragment_size) {
+		else if (!(blob->blb_flags & BLB_stream) && blob->blb_fragment_size) {
 			JRD_restore_context();
 			--dbb->dbb_use_count;
 			return (user_status[1] = gds_segment);
