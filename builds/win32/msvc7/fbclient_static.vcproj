@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding = "Windows-1252"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.00"
+	Version="7.0"
 	Name="fbclient_static"
 	SccProjectName=""
 	SccLocalPath="">
@@ -54,6 +54,12 @@
 				Culture="3082"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
@@ -99,8 +105,16 @@
 				Culture="3082"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 	</Configurations>
+	<References>
+	</References>
 	<Files>
 		<Filter
 			Name="Resource files"
@@ -126,9 +140,6 @@
 			Filter="">
 			<File
 				RelativePath="..\..\..\src\jrd\cvt_proto.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\db_alias.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\dls_proto.h">
@@ -252,9 +263,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\cvt.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\db_alias.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\dls.cpp">

@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding = "Windows-1252"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.00"
+	Version="7.0"
 	Name="common_static"
 	SccProjectName=""
 	SccLocalPath="">
@@ -58,6 +58,12 @@
 				Culture="1053"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
@@ -103,8 +109,16 @@
 				Culture="1053"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 	</Configurations>
+	<References>
+	</References>
 	<Files>
 		<Filter
 			Name="MEMORY files"
@@ -143,6 +157,9 @@
 			Name="OTHER files"
 			Filter="">
 			<File
+				RelativePath="..\..\..\src\jrd\db_alias.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\os\win32\fbsyslog.cpp">
 			</File>
 			<File
@@ -172,6 +189,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\os\config_root.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\db_alias.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\config\dir_list.h">

@@ -170,9 +170,6 @@
 				RelativePath="..\..\..\src\jrd\cvt2.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\db_alias.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\gen\jrd\dfw.cpp">
 			</File>
 			<File
@@ -528,9 +525,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\cvt_proto.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\db_alias.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\dbg.h">
