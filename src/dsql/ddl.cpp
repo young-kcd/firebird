@@ -135,6 +135,7 @@ static void define_view(dsql_req*, NOD_TYPE);
 static void define_view_trigger(dsql_req*, dsql_nod*, dsql_nod*, dsql_nod*);
 static void delete_procedure(dsql_req*, dsql_nod*, bool);
 static void delete_relation_view(dsql_req*, dsql_nod*, bool);
+static void fix_default_source(dsql_str*);
 static void foreign_key(dsql_req*, dsql_nod*, const char* index_name);
 static void generate_dyn(dsql_req*, dsql_nod*);
 static void grant_revoke(dsql_req*);
@@ -1646,9 +1647,6 @@ static void define_domain(dsql_req* request)
  *
  **************************************/
 
-	bool	null_flag = false;
-	bool	check_flag = false;
-
 	dsql_nod* element = request->req_ddl_node;
 	dsql_fld* field = (dsql_fld*) element->nod_arg[e_dom_name];
 
@@ -1668,10 +1666,11 @@ static void define_domain(dsql_req* request)
 		GEN_expr(request, node);
 		request->end_blr();
 
-		const dsql_str* string = (dsql_str*) element->nod_arg[e_dom_default_source];
+		dsql_str* string = (dsql_str*) element->nod_arg[e_dom_default_source];
 		if (string)
 		{
 			fb_assert(string->str_length <= MAX_USHORT);
+			fix_default_source(string);
 			request->append_string(	isc_dyn_fld_default_source,
 									string->str_data,
 									string->str_length);
@@ -1682,6 +1681,9 @@ static void define_domain(dsql_req* request)
 	{
 		define_dimensions(request, field);
 	}
+
+	bool	null_flag = false;
+	bool	check_flag = false;
 
 	// check for constraints
 	node = element->nod_arg[e_dom_constraint];
@@ -1880,10 +1882,11 @@ static void define_field(
 		}
 		GEN_expr(request, node);
 		request->end_blr();
-		const dsql_str* string = (dsql_str*) element->nod_arg[e_dfl_default_source];
+		dsql_str* string = (dsql_str*) element->nod_arg[e_dfl_default_source];
 		if (string)
 		{
 			fb_assert(string->str_length <= MAX_USHORT);
+			fix_default_source(string);
 			request->append_string(	isc_dyn_fld_default_source,
 									string->str_data,
 									string->str_length);
@@ -4090,6 +4093,27 @@ static void delete_relation_view (
         request->append_cstring(isc_dyn_delete_rel, string->str_data);
         request->append_uchar(isc_dyn_end);
     }
+}
+
+
+static void fix_default_source(dsql_str* string)
+{
+	// CVC: I know this is not very brilliant, but some people are annoyed
+	// at this for years.
+	// We assume the first position is used by "default"
+	for (int i = 7; i < string->str_length; ++i)
+	{
+		switch (string->str_data[i])
+		{
+		case ' ':
+		case '\n':
+		case '\r':
+			string->str_data[i] = ' ';
+			break;
+		default:
+			i = string->str_length - 1;
+		}
+	}
 }
 
 
