@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
-#include "../intlcpp/ldcommon.h"
+#include "../intl/ldcommon.h"
 
 /* These macros have a duplicate in lc_big5.c */
 #define	BIG51(uc)	((UCHAR)((uc)&0xff)>=0xa1 && \
