@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pat.cpp,v 1.14 2003-09-16 12:16:42 brodsom Exp $
+//	$Id: pat.cpp,v 1.15 2003-09-24 10:39:20 aafemt Exp $
 //
 
 #include "firebird.h"
@@ -407,7 +407,7 @@ void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 	}
 
 	*p = 0;
-#if defined GPRE_ADA || defined GPRE_COBOL || defined GPRE_FORTRAN
+#if (defined GPRE_ADA || defined GPRE_COBOL || defined GPRE_FORTRAN) && !defined(BOOT_BUILD)
 	switch (sw_language) {
 #ifdef GPRE_ADA
 		/*  Ada lines can be up to 120 characters long.  ADA_print_buffer

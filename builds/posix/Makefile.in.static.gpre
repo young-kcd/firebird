@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.static.gpre,v 1.11 2003-09-11 02:53:27 brodsom Exp $
+#  $Id: Makefile.in.static.gpre,v 1.12 2003-09-24 10:39:14 aafemt Exp $
 #
 ROOT=..
 ObjModuleName=static.gpre
@@ -43,8 +43,7 @@ include     $(ROOT)/gen/make.shared.variables
 
 GPRECOMMON_Files += cmd.cpp cme.cpp cmp.cpp c_cxx.cpp exp.cpp \
 		gpre.cpp hsh.cpp int.cpp int_cxx.cpp jrdmet.cpp movg.cpp \
-		msc.cpp par.cpp pat.cpp sqe.cpp sql.cpp \
-		@GPRE_LANGUAGE_MODULES@
+		msc.cpp par.cpp pat.cpp sqe.cpp sql.cpp
 
 GPRESTATIC_Files = $(GPRECOMMON_Files) gpre_meta.epp
 GPRESTATIC_Sources = $(addprefix gpre/, $(GPRESTATIC_Files))

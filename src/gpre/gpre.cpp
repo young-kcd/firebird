@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.35 2003-09-12 16:35:39 brodsom Exp $
+//  $Id: gpre.cpp,v 1.36 2003-09-24 10:39:19 aafemt Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -525,6 +525,7 @@ int main(int argc, char* argv[])
 			sw_case = true;
 			break;
 
+#ifndef BOOT_BUILD
 #ifdef GPRE_ADA
 		case IN_SW_GPRE_ADA:
 #ifdef VMS
@@ -567,7 +568,7 @@ int main(int argc, char* argv[])
 				db->dbb_name->sym_string = "isc_database";
 			comment_stop = "--";
 			break;
-#endif
+#endif // GPRE_ADA
 
 
 #ifdef GPRE_FORTRAN
@@ -591,7 +592,7 @@ int main(int argc, char* argv[])
 			count_name = "isc_count";
 			slack_name = "isc_slack";
 			break;
-#endif
+#endif // GPRE_FORTRAN
 
 #ifdef GPRE_COBOL
 		case IN_SW_GPRE_ANSI:
@@ -606,7 +607,7 @@ int main(int argc, char* argv[])
 			sw_cstring = false;
 			gen_routine = COB_action;
 			break;
-#endif
+#endif // GPRE_COBOL
 
 #ifdef GPRE_PASCAL
 		case IN_SW_GPRE_P:
@@ -618,7 +619,9 @@ int main(int argc, char* argv[])
 			comment_start	= "(*";
 			comment_stop	= "*)";
 			break;
-#endif
+#endif // GPRE_PASCAL
+#endif // !BOOT_BUILD
+
 		case IN_SW_GPRE_D_FLOAT:
 			sw_d_float = true;
 			break;
@@ -749,7 +752,7 @@ int main(int argc, char* argv[])
 	input_file = temp;
 #endif
 
-#ifdef GPRE_COBOL
+#if defined(GPRE_COBOL) && !defined(BOOT_BUILD)
 //  if cobol is defined we need both sw_cobol and sw_ansi to
 //  determine how the string substitution table is set up
 //  
