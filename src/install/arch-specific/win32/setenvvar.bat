@@ -29,7 +29,7 @@ for /f "tokens=*" %%a in ('@echo %ROOT_PATH:\=/%') do (set DB_PATH=%%a)
 
 :END
 @echo.
-@echo    vs_ver=%VS_VER%
+@echo    msvc_version=%MSVC_VERSION%
 @echo    db_path=%DB_PATH%
 @echo    root_path=%ROOT_PATH%
 @echo.
