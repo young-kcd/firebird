@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.1 2002-07-29 15:37:51 skywalker Exp $
+ *  $Id: keywords.cpp,v 1.2 2002-07-30 07:23:40 dimitr Exp $
  *
  */
 
@@ -42,16 +42,16 @@
 #include "dsql.tab.h"
 #include "keywords.h"
 
-static CONST TOK tokens [] = { 
-    {NOT_LSS, "!<", 1},
+static CONST TOK tokens [] = {
+	{NOT_LSS, "!<", 1},
 	{NEQ, "!=", 1},
 	{NOT_GTR, "!>", 1},
 	{LPAREN, "(", 1},
-	{RPAREN, ")", 1}, 
-    {COMMA, ",", 1}, 
-    {LSS, "<", 1}, 
-    {LEQ, "<=", 1}, 
-    {NEQ, "<>", 1},	/* Alias of != */
+	{RPAREN, "}", 1}, 
+	{COMMA, ",", 1}, 
+	{LSS, "<", 1}, 
+	{LEQ, "<=", 1}, 
+	{NEQ, "<>", 1},	/* Alias of != */
 	{EQL, "=", 1},
 	{GTR, ">", 1},
 	{GEQ, ">=", 1},
@@ -62,10 +62,10 @@ static CONST TOK tokens [] = {
 	{AFTER, "AFTER", 1},
 	{ALL, "ALL", 1},
 	{ALTER, "ALTER", 1}, 
-    {AND, "AND", 1}, 
-    {ANY, "ANY", 1}, 
-    {AS, "AS", 1}, 
-    {ASC, "ASC", 1},	/* Alias of ASCENDING */
+	{AND, "AND", 1}, 
+	{ANY, "ANY", 1}, 
+	{AS, "AS", 1}, 
+	{ASC, "ASC", 1},	/* Alias of ASCENDING */
 	{ASC, "ASCENDING", 1},
 	{AT, "AT", 1},
 	{AUTO, "AUTO", 1},
@@ -75,7 +75,7 @@ static CONST TOK tokens [] = {
 	{BEGIN, "BEGIN", 1},
 	{BETWEEN, "BETWEEN", 1},
 	{BLOB, "BLOB", 1},
-    {KW_BREAK, "BREAK", 2}, 
+	{KW_BREAK, "BREAK", 2}, 
 	{BY, "BY", 1},
 	{CACHE, "CACHE", 1},
 	{CASCADE, "CASCADE", 1},
@@ -98,10 +98,10 @@ static CONST TOK tokens [] = {
 	{CSTRING, "CSTRING", 1},
 	{CURRENT, "CURRENT", 1},
 	{CURRENT_DATE, "CURRENT_DATE", 2},
-    {CURRENT_ROLE, "CURRENT_ROLE", 2},
+	{CURRENT_ROLE, "CURRENT_ROLE", 2},
 	{CURRENT_TIME, "CURRENT_TIME", 2},
 	{CURRENT_TIMESTAMP, "CURRENT_TIMESTAMP", 2},
-    {CURRENT_USER, "CURRENT_USER", 2},
+	{CURRENT_USER, "CURRENT_USER", 2},
 	{CURSOR, "CURSOR", 1},
 	{DATABASE, "DATABASE", 1},
 	{DATE, "DATE", 1},
@@ -111,10 +111,10 @@ static CONST TOK tokens [] = {
 	{DECIMAL, "DECIMAL", 1},
 	{DECLARE, "DECLARE", 1},
 	{DEFAULT, "DEFAULT", 1}, 
-    {DELETE, "DELETE", 1}, 
-    {DESC, "DESC", 1},	/* Alias of DESCENDING */
+	{DELETE, "DELETE", 1}, 
+	{DESC, "DESC", 1},	/* Alias of DESCENDING */
 	{DESC, "DESCENDING", 1},
-    {KW_DESCRIPTOR,	"DESCRIPTOR", 2},
+	{KW_DESCRIPTOR,	"DESCRIPTOR", 2},
 	{DISTINCT, "DISTINCT", 1},
 	{DO, "DO", 1},
 	{DOMAIN, "DOMAIN", 1},
@@ -132,7 +132,7 @@ static CONST TOK tokens [] = {
 	{EXTRACT, "EXTRACT", 2},
 	{KW_FILE, "FILE", 1},
 	{FILTER, "FILTER", 1},
-    {FIRST,    "FIRST", 2},
+	{FIRST, "FIRST", 2},
 	{KW_FLOAT, "FLOAT", 1},
 	{FOR, "FOR", 1},
 	{FOREIGN, "FOREIGN", 1},
@@ -216,9 +216,9 @@ static CONST TOK tokens [] = {
 	{READ, "READ", 1},
 	{REAL, "REAL", 1},
 	{VERSION, "RECORD_VERSION", 1},
-    {RECREATE, "RECREATE", 2},
+	{RECREATE, "RECREATE", 2},
 	{REFERENCES, "REFERENCES", 1}, 
-    {RESERVING, "RESERV", 1},	/* Alias of RESERVING */
+	{RESERVING, "RESERV", 1},	/* Alias of RESERVING */
 	{RESERVING, "RESERVING", 1},
 	{RESTRICT, "RESTRICT", 1},
 	{RETAIN, "RETAIN", 1},
@@ -227,8 +227,8 @@ static CONST TOK tokens [] = {
 	{REVOKE, "REVOKE", 1},
 	{RIGHT, "RIGHT", 1},
 	{ROLE, "ROLE", 1}, 
-    {ROLLBACK, "ROLLBACK", 1}, 
-    {DATABASE, "SCHEMA", 1},	/* Alias of DATABASE */
+	{ROLLBACK, "ROLLBACK", 1}, 
+	{DATABASE, "SCHEMA", 1},	/* Alias of DATABASE */
 	{SECOND, "SECOND", 2},
 	{SEGMENT, "SEGMENT", 1},
 	{SELECT, "SELECT", 1},
@@ -237,17 +237,17 @@ static CONST TOK tokens [] = {
 	{SHARED, "SHARED", 1},
 	{SINGULAR, "SINGULAR", 1},
 	{SIZE, "SIZE", 1},
-    {SKIP,     "SKIP", 2},
+	{SKIP, "SKIP", 2},
 	{SMALLINT, "SMALLINT", 1},
 	{SNAPSHOT, "SNAPSHOT", 1},
 	{SOME, "SOME", 1},
 	{SORT, "SORT", 1},
 	{SQLCODE, "SQLCODE", 1},
 	{STABILITY, "STABILITY", 1}, 
-    {STARTING, "STARTING", 1}, 
-    {STARTING, "STARTS", 1},	/* Alias of STARTING */
+	{STARTING, "STARTING", 1}, 
+	{STARTING, "STARTS", 1},	/* Alias of STARTING */
 	{STATISTICS, "STATISTICS", 1},
-    {SUBSTRING,	"SUBSTRING", 2},
+	{SUBSTRING,	"SUBSTRING", 2},
 	{SUB_TYPE, "SUB_TYPE", 1},
 	{SUM, "SUM", 1},
 	{SUSPEND, "SUSPEND", 1},
@@ -280,18 +280,17 @@ static CONST TOK tokens [] = {
 	{WITH, "WITH", 1},
 	{WORK, "WORK", 1},
 	{WRITE, "WRITE", 1}, 
-    {YEAR, "YEAR", 2}, 
-    {YEARDAY, "YEARDAY", 2}, 
-    {NOT_LSS, "^<", 1},	/* Alias of !< */
+	{YEAR, "YEAR", 2}, 
+	{YEARDAY, "YEARDAY", 2}, 
+	{NOT_LSS, "^<", 1},	/* Alias of !< */
 	{NEQ, "^=", 1},				/* Alias of != */
 	{NOT_GTR, "^>", 1},			/* Alias of !> */
 	{CONCATENATE, "||", 1}, 
-    {NOT_LSS, "~<", 1},	/* Alias of !< */
+	{NOT_LSS, "~<", 1},	/* Alias of !< */
 	{NEQ, "~=", 1},				/* Alias of != */
 	{NOT_GTR, "~>", 1},			/* Alias of !> */
-    {0, 0, 0}
-    };
-
+	{0, 0, 0}
+};
 
 /* This method is currently used in isql/isql.epp to check if a 
    user field is a reserved word, and hence needs to be quoted.
@@ -300,7 +299,7 @@ static CONST TOK tokens [] = {
    MOD 29-June-2002
 */
 
-bool KEYWORD_stringIsAToken(const char*in_str)
+bool KEYWORD_stringIsAToken(const char *in_str)
 {
     CONST TOK *tok_ptr = tokens;
     while (tok_ptr -> tok_string) {
@@ -312,7 +311,7 @@ bool KEYWORD_stringIsAToken(const char*in_str)
     return false;
 }
 
-const TOK* KEYWORD_getTokens()
+CONST TOK* KEYWORD_getTokens()
 {
     return tokens;
 }
