@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.46 2004-05-09 05:47:49 robocop Exp $
+//	$Id: c_cxx.cpp,v 1.47 2004-05-13 22:34:27 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -144,7 +144,7 @@ static const char* const NULL_SQLDA		= "NULL";
 
 #ifdef VMS
 static const char* const GDS_INCLUDE	= "\"interbase:[syslib]ibase.h\"";
-#elif DARWIN
+#elif defined(DARWIN)
 static const char* const GDS_INCLUDE	= "<Firebird/ibase.h>";
 #else
 static const char* const GDS_INCLUDE	= "<ibase.h>";

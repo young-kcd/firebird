@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.58 2004-05-13 06:48:41 eku Exp $
+//  $Id: gpre.cpp,v 1.59 2004-05-13 22:34:27 brodsom Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -192,7 +192,7 @@ static const ext_table_t dml_ext_table[] =
 #ifdef GPRE_ADA
 #ifdef VMS
 	{ lang_ada, IN_SW_GPRE_ADA, ".eada", ".ada" },
-#elif hpux
+#elif defined(hpux)
 	{ lang_ada, IN_SW_GPRE_ADA, ".eada", ".ada" },
 #else
 	{ lang_ada, IN_SW_GPRE_ADA, ".ea", ".a" },
