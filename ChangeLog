@@ -1,3 +1,31 @@
+2003-08-14 23:00  skidder
+
+	* firebird2/doc/README.coding.style:
+	
+	Fix up coding rules a bit to make my code compatible
+
+2003-08-14 22:45  skidder
+
+	* firebird2/src/jrd/: cmp.cpp, cmp_proto.h, idx.cpp, jrd.cpp,
+	req.h, scl.epp, scl_proto.h:
+	
+	Avoid storing and using pointers allocated from one request pool in
+	other requests. Make request access lists use view ID, not pointer
+	to view structure. This changes solve the crash reported by Evgeny
+	Kilin when altering complex recursive procedure->trigger chains.
+
+2003-08-14 12:26  aafemt
+
+	* firebird2/doc/README.coding.style:
+	
+	useful reading for coders
+
+2003-08-14 09:11  fsg
+
+	* firebird2/src/dsql/gen.cpp:
+	
+	make gcc happy again FSG
+
 2003-08-13 13:45  robocop
 
 	* firebird2/src/jrd/fun.epp:
