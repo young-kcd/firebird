@@ -21,72 +21,38 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_EVL_PROTO_H_
-#define _JRD_EVL_PROTO_H_
+#ifndef JRD_EVL_PROTO_H
+#define JRD_EVL_PROTO_H
 
 #include "../jrd/intl_classes.h"
 
-extern struct dsc *DLL_EXPORT EVL_assign_to(TDBB tdbb, struct jrd_nod *);
+struct dsc*		EVL_assign_to(TDBB tdbb, struct jrd_nod *);
+struct sbm**	EVL_bitmap(TDBB tdbb, struct jrd_nod *);
+BOOLEAN		EVL_boolean(TDBB tdbb, struct jrd_nod *);
+struct dsc*	EVL_expr(TDBB tdbb, struct jrd_nod *);
+BOOLEAN		EVL_field(struct jrd_rel *, struct rec *, USHORT, DSC *);
+USHORT		EVL_group(TDBB tdbb, struct blk *, struct jrd_nod *, USHORT);
+USHORT		EVL_mb_contains(TDBB tdbb, TextType*, UCHAR *, USHORT, UCHAR *, USHORT);
+USHORT		EVL_mb_like(TDBB tdbb, TextType*, UCHAR *, SSHORT, UCHAR *, SSHORT, USHORT);
+USHORT		EVL_mb_matches(TDBB tdbb, TextType*, UCHAR *, SSHORT, UCHAR *, SSHORT);
+USHORT		EVL_mb_sleuth_check(TDBB tdbb, TextType*, USHORT, UCHAR *, USHORT,
+								UCHAR *,USHORT);
+USHORT		EVL_mb_sleuth_merge(TDBB tdbb, TextType*, UCHAR *, USHORT, UCHAR *, 
+								USHORT, UCHAR *, USHORT);
+void		EVL_make_value(TDBB tdbb, struct dsc *, struct vlu *);
+USHORT		EVL_nc_contains(TDBB tdbb, TextType*, UCHAR *, USHORT, UCHAR *, USHORT);
+USHORT		EVL_nc_like(TDBB tdbb, TextType*, UCHAR *, SSHORT, UCHAR *, SSHORT, USHORT);
+USHORT		EVL_nc_matches(TDBB tdbb, TextType*, UCHAR *, SSHORT, UCHAR *, SSHORT);
+USHORT		EVL_nc_sleuth_check(TDBB tdbb, TextType*, USHORT, UCHAR *, USHORT, 
+								UCHAR *, USHORT);
+USHORT		EVL_nc_sleuth_merge(TDBB tdbb, TextType*, UCHAR *, USHORT, UCHAR *, 
+								USHORT, UCHAR *, USHORT);
+USHORT		EVL_wc_contains(TDBB tdbb, TextType*, USHORT *, USHORT, USHORT *, USHORT);
+USHORT		EVL_wc_like(TDBB tdbb, TextType*, USHORT *, SSHORT, USHORT *, SSHORT, USHORT);
+USHORT		EVL_wc_matches(TDBB tdbb, TextType*, USHORT *, SSHORT, USHORT *, SSHORT);
+USHORT		EVL_wc_sleuth_check(TDBB tdbb, TextType*, USHORT, USHORT *, USHORT, 
+								USHORT *, USHORT);
+USHORT		EVL_wc_sleuth_merge(TDBB tdbb, TextType*, USHORT *, USHORT, USHORT *, 
+								USHORT, USHORT *, USHORT);
 
-extern struct sbm **DLL_EXPORT EVL_bitmap(TDBB tdbb, struct jrd_nod *);
-
-extern BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, struct jrd_nod *);
-
-extern struct dsc *DLL_EXPORT EVL_expr(TDBB tdbb, struct jrd_nod *);
-
-extern BOOLEAN DLL_EXPORT EVL_field(struct jrd_rel *,
-									struct rec *,
-									USHORT, DSC *);
-
-extern USHORT DLL_EXPORT EVL_group
-	(TDBB tdbb, struct blk *, struct jrd_nod *, USHORT);
-
-extern USHORT DLL_EXPORT EVL_mb_contains
-	(TDBB tdbb, TextType*, UCHAR *, USHORT, UCHAR *, USHORT);
-
-extern USHORT DLL_EXPORT EVL_mb_like
-	(TDBB tdbb, TextType*, UCHAR *, SSHORT, UCHAR *, SSHORT, USHORT);
-
-extern USHORT DLL_EXPORT EVL_mb_matches
-	(TDBB tdbb, TextType*, UCHAR *, SSHORT, UCHAR *, SSHORT);
-
-extern USHORT DLL_EXPORT EVL_mb_sleuth_check
-	(TDBB tdbb, TextType*, USHORT, UCHAR *, USHORT, UCHAR *, USHORT);
-
-extern USHORT DLL_EXPORT EVL_mb_sleuth_merge
-	(TDBB tdbb, TextType*, UCHAR *, USHORT, UCHAR *, USHORT, UCHAR *, USHORT);
-
-extern void DLL_EXPORT EVL_make_value(TDBB tdbb, struct dsc *, struct vlu *);
-
-extern USHORT DLL_EXPORT EVL_nc_contains
-	(TDBB tdbb, TextType*, UCHAR *, USHORT, UCHAR *, USHORT);
-
-extern USHORT EVL_nc_like
-	(TDBB tdbb, TextType*, UCHAR *, SSHORT, UCHAR *, SSHORT, USHORT);
-
-extern USHORT EVL_nc_matches
-	(TDBB tdbb, TextType*, UCHAR *, SSHORT, UCHAR *, SSHORT);
-
-extern USHORT EVL_nc_sleuth_check
-	(TDBB tdbb, TextType*, USHORT, UCHAR *, USHORT, UCHAR *, USHORT);
-
-extern USHORT EVL_nc_sleuth_merge
-	(TDBB tdbb, TextType*, UCHAR *, USHORT, UCHAR *, USHORT, UCHAR *, USHORT);
-
-extern USHORT DLL_EXPORT EVL_wc_contains
-	(TDBB tdbb, TextType*, USHORT *, USHORT, USHORT *, USHORT);
-
-extern USHORT EVL_wc_like
-	(TDBB tdbb, TextType*, USHORT *, SSHORT, USHORT *, SSHORT, USHORT);
-
-extern USHORT EVL_wc_matches
-	(TDBB tdbb, TextType*, USHORT *, SSHORT, USHORT *, SSHORT);
-
-extern USHORT EVL_wc_sleuth_check
-	(TDBB tdbb, TextType*, USHORT, USHORT *, USHORT, USHORT *, USHORT);
-
-extern USHORT EVL_wc_sleuth_merge
-	(TDBB tdbb,
-	 TextType*, USHORT *, USHORT, USHORT *, USHORT, USHORT *, USHORT);
-
-#endif /* _JRD_EVL_PROTO_H_ */
+#endif // JRD_EVL_PROTO_H

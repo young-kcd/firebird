@@ -21,8 +21,9 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _DSQL_MOVG_PROTO_H_
-#define _DSQL_MOVG_PROTO_H_
+#ifndef DSQL_MOVG_PROTO_H
+#define DSQL_MOVG_PROTO_H
 
-extern void MOVG_move(DSC *, DSC *);
-#endif /*  _DSQL_MOVG_PROTO_H_  */
+void MOVG_move(DSC *, DSC *);
+
+#endif //  DSQL_MOVG_PROTO_H

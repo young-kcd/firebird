@@ -25,8 +25,8 @@
  */
 
 
-#ifndef _JRD_TIME_H_
-#define _JRD_TIME_H_
+#ifndef JRD_TIME_H
+#define JRD_TIME_H
 
 
 #if TIME_WITH_SYS_TIME
@@ -57,4 +57,4 @@
 #define MIN_YEAR 0001
 #define MAX_YEAR 9999
 
-#endif /* _JRD_TIME_H_ */
+#endif /* JRD_TIME_H */

@@ -24,25 +24,25 @@
 #ifndef GPRE_EXP_PROTO_H
 #define GPRE_EXP_PROTO_H
 
-extern GPRE_NOD EXP_array(GPRE_REQ, GPRE_FLD, SSHORT, SSHORT);
-extern GPRE_FLD EXP_cast(GPRE_FLD);
-extern GPRE_CTX EXP_context(GPRE_REQ, SYM);
-extern GPRE_FLD EXP_field(GPRE_CTX *);
-extern void EXP_left_paren(TEXT *);
-extern GPRE_NOD EXP_literal(void);
-extern void EXP_post_array(REF);
-extern REF EXP_post_field(GPRE_FLD, GPRE_CTX, USHORT);
-extern bool EXP_match_paren(void);
-extern GPRE_REL EXP_relation(void);
-extern GPRE_RSE EXP_rse(GPRE_REQ, SYM);
-extern void EXP_rse_cleanup(GPRE_RSE);
-extern GPRE_NOD EXP_subscript(GPRE_REQ);
-extern SLONG EXP_SLONG_ordinal(USHORT);
-extern SINT64 EXP_SINT64_ordinal(USHORT);
-extern SSHORT EXP_SSHORT_ordinal(USHORT);
-extern ULONG EXP_ULONG_ordinal(USHORT);
-extern USHORT EXP_USHORT_ordinal(bool);
-extern USHORT EXP_pos_USHORT_ordinal(bool);
+GPRE_NOD	EXP_array(GPRE_REQ, GPRE_FLD, SSHORT, SSHORT);
+GPRE_FLD	EXP_cast(GPRE_FLD);
+GPRE_CTX	EXP_context(GPRE_REQ, SYM);
+GPRE_FLD	EXP_field(GPRE_CTX *);
+void		EXP_left_paren(TEXT *);
+GPRE_NOD	EXP_literal(void);
+void		EXP_post_array(REF);
+REF			EXP_post_field(GPRE_FLD, GPRE_CTX, USHORT);
+bool		EXP_match_paren(void);
+GPRE_REL	EXP_relation(void);
+GPRE_RSE	EXP_rse(GPRE_REQ, SYM);
+void		EXP_rse_cleanup(GPRE_RSE);
+GPRE_NOD	EXP_subscript(GPRE_REQ);
+SLONG		EXP_SLONG_ordinal(USHORT);
+SINT64		EXP_SINT64_ordinal(USHORT);
+SSHORT		EXP_SSHORT_ordinal(USHORT);
+ULONG		EXP_ULONG_ordinal(USHORT);
+USHORT		EXP_USHORT_ordinal(bool);
+USHORT		EXP_pos_USHORT_ordinal(bool);
 
-#endif /* GPRE_EXP_PROTO_H */
+#endif // GPRE_EXP_PROTO_H
 

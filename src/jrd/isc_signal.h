@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_ISC_SIGNAL_H_
-#define _JRD_ISC_SIGNAL_H_
+#ifndef JRD_ISC_SIGNAL_H
+#define JRD_ISC_SIGNAL_H
 
 #ifdef WIN_NT
 /* There is no interprocess signaling on Windows NT.  We simulate it
@@ -35,4 +35,4 @@
 #define WAL_SIGNALS		1400	/* Write ahead log */
 #endif
 
-#endif /* _JRD_ISC_SIGNAL_H_ */
+#endif /* JRD_ISC_SIGNAL_H */

@@ -35,8 +35,8 @@
  * copyright (c) 1993 by Borland International
  */
 
-#ifndef _JRD_QUAD_H_
-#define _JRD_QUAD_H_
+#ifndef JRD_QUAD_H
+#define JRD_QUAD_H
 
 #ifdef NATIVE_QUAD
 #define QUAD_ADD(a,b,e)         ((a) + (b))
@@ -56,4 +56,4 @@
 #include "../jrd/quad_proto.h"
 #endif
 
-#endif /* _JRD_QUAD_H_ */
+#endif /* JRD_QUAD_H */

@@ -21,19 +21,19 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_DYN_PROTO_H_
-#define _JRD_DYN_PROTO_H_
+#ifndef JRD_DYN_PROTO_H
+#define JRD_DYN_PROTO_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern void DYN_ddl(struct att *, struct jrd_tra *, USHORT, UCHAR *);
-extern void	DYN_terminate(TEXT *, int);
+void	DYN_ddl(struct att *, struct jrd_tra *, USHORT, UCHAR *);
+void	DYN_terminate(TEXT *, int);
 
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-#endif /* _JRD_DYN_PROTO_H_ */
+#endif // JRD_DYN_PROTO_H

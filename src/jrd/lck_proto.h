@@ -30,24 +30,24 @@
 extern "C" {
 #endif
 
-extern void LCK_assert(TDBB, struct lck *);
-extern int LCK_convert(TDBB, struct lck *, USHORT, SSHORT);
-extern int LCK_convert_non_blocking(TDBB, struct lck *, USHORT, SSHORT);
-extern int LCK_convert_opt(TDBB, struct lck *, USHORT);
-extern int LCK_downgrade(TDBB, struct lck *);
-extern void LCK_fini(TDBB, enum lck_owner_t);
-extern SLONG LCK_get_owner_handle(TDBB, enum lck_t);
-extern void LCK_init(TDBB, enum lck_owner_t);
-extern int LCK_lock(TDBB, struct lck *, USHORT, SSHORT);
-extern int LCK_lock_non_blocking(TDBB, struct lck *, USHORT, SSHORT);
-extern int LCK_lock_opt(TDBB, struct lck *, USHORT, SSHORT);
-extern SLONG LCK_query_data(struct lck *, enum lck_t, USHORT);
-extern SLONG LCK_read_data(struct lck *);
-extern void LCK_release(TDBB, struct lck *);
-extern void LCK_re_post(struct lck *);
-extern void LCK_write_data(struct lck *, SLONG);
-extern void LCK_ast_inhibit();
-extern void LCK_ast_enable();
+void LCK_assert(TDBB, struct lck *);
+int LCK_convert(TDBB, struct lck *, USHORT, SSHORT);
+int LCK_convert_non_blocking(TDBB, struct lck *, USHORT, SSHORT);
+int LCK_convert_opt(TDBB, struct lck *, USHORT);
+int LCK_downgrade(TDBB, struct lck *);
+void LCK_fini(TDBB, enum lck_owner_t);
+SLONG LCK_get_owner_handle(TDBB, enum lck_t);
+void LCK_init(TDBB, enum lck_owner_t);
+int LCK_lock(TDBB, struct lck *, USHORT, SSHORT);
+int LCK_lock_non_blocking(TDBB, struct lck *, USHORT, SSHORT);
+int LCK_lock_opt(TDBB, struct lck *, USHORT, SSHORT);
+SLONG LCK_query_data(struct lck *, enum lck_t, USHORT);
+SLONG LCK_read_data(struct lck *);
+void LCK_release(TDBB, struct lck *);
+void LCK_re_post(struct lck *);
+void LCK_write_data(struct lck *, SLONG);
+void LCK_ast_inhibit();
+void LCK_ast_enable();
 
 #ifdef __cplusplus
 } /* extern "C" */

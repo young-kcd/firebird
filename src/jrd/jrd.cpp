@@ -589,16 +589,14 @@ static const char* ENCRYPT = "encrypt";
 static const char* DECRYPT = "decrypt";
 
 
-/* every GDS function now has a DLL_EXPORT */
 
-
-ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
-									  SSHORT	file_length,
-									  TEXT*		file_name,
-									  ATT*		handle,
-									  SSHORT	dpb_length,
-									  UCHAR*	dpb,
-									  TEXT*		expanded_filename)
+ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
+								SSHORT	file_length,
+								TEXT*	file_name,
+								ATT*	handle,
+								SSHORT	dpb_length,
+								UCHAR*	dpb,
+								TEXT* expanded_filename)
 {
 /**************************************
  *
@@ -1386,12 +1384,12 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_BLOB_INFO(ISC_STATUS*	user_status,
-								BLB*	blob_handle,
-								SSHORT	item_length,
-								SCHAR*	items,
-								SSHORT	buffer_length,
-								SCHAR*	buffer)
+ISC_STATUS GDS_BLOB_INFO(ISC_STATUS*	user_status,
+						BLB*	blob_handle,
+						SSHORT	item_length,
+						SCHAR*	items,
+						SSHORT	buffer_length,
+						SCHAR*	buffer)
 {
 /**************************************
  *
@@ -1432,7 +1430,7 @@ ISC_STATUS DLL_EXPORT GDS_BLOB_INFO(ISC_STATUS*	user_status,
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_CANCEL_BLOB(ISC_STATUS * user_status, BLB * blob_handle)
+ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS * user_status, BLB * blob_handle)
 {
 /**************************************
  *
@@ -1475,9 +1473,9 @@ ISC_STATUS DLL_EXPORT GDS_CANCEL_BLOB(ISC_STATUS * user_status, BLB * blob_handl
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_CANCEL_EVENTS(ISC_STATUS*	user_status,
-									ATT*	handle,
-									SLONG*	id)
+ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS*	user_status,
+							ATT*	handle,
+							SLONG*	id)
 {
 /**************************************
  *
@@ -1519,8 +1517,9 @@ ISC_STATUS DLL_EXPORT GDS_CANCEL_EVENTS(ISC_STATUS*	user_status,
 
 
 #ifdef CANCEL_OPERATION
-ISC_STATUS DLL_EXPORT GDS_CANCEL_OPERATION(ISC_STATUS * user_status,
-									   ATT * handle, USHORT option)
+ISC_STATUS GDS_CANCEL_OPERATION(ISC_STATUS * user_status,
+								ATT * handle,
+								USHORT option)
 {
 /**************************************
  *
@@ -1579,7 +1578,7 @@ ISC_STATUS DLL_EXPORT GDS_CANCEL_OPERATION(ISC_STATUS * user_status,
 #endif
 
 
-ISC_STATUS DLL_EXPORT GDS_CLOSE_BLOB(ISC_STATUS * user_status, BLB * blob_handle)
+ISC_STATUS GDS_CLOSE_BLOB(ISC_STATUS * user_status, BLB * blob_handle)
 {
 /**************************************
  *
@@ -1622,7 +1621,7 @@ ISC_STATUS DLL_EXPORT GDS_CLOSE_BLOB(ISC_STATUS * user_status, BLB * blob_handle
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_COMMIT(ISC_STATUS * user_status, JRD_TRA * tra_handle)
+ISC_STATUS GDS_COMMIT(ISC_STATUS * user_status, JRD_TRA * tra_handle)
 {
 /**************************************
  *
@@ -1646,7 +1645,7 @@ ISC_STATUS DLL_EXPORT GDS_COMMIT(ISC_STATUS * user_status, JRD_TRA * tra_handle)
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_COMMIT_RETAINING(ISC_STATUS * user_status, JRD_TRA * tra_handle)
+ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS * user_status, JRD_TRA * tra_handle)
 {
 /**************************************
  *
@@ -1665,10 +1664,11 @@ ISC_STATUS DLL_EXPORT GDS_COMMIT_RETAINING(ISC_STATUS * user_status, JRD_TRA * t
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_COMPILE(ISC_STATUS * user_status,
-							  ATT * db_handle,
-							  JRD_REQ * req_handle,
-							  SSHORT blr_length, SCHAR * blr)
+ISC_STATUS GDS_COMPILE(ISC_STATUS * user_status,
+						ATT * db_handle,
+						JRD_REQ * req_handle,
+						SSHORT blr_length,
+						SCHAR * blr)
 {
 /**************************************
  *
@@ -1721,12 +1721,13 @@ ISC_STATUS DLL_EXPORT GDS_COMPILE(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_CREATE_BLOB2(ISC_STATUS * user_status,
-								   ATT * db_handle,
-								   JRD_TRA * tra_handle,
-								   BLB * blob_handle,
-								   BID blob_id,
-								   USHORT bpb_length, UCHAR * bpb)
+ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS * user_status,
+							ATT * db_handle,
+							JRD_TRA * tra_handle,
+							BLB * blob_handle,
+							BID blob_id,
+							USHORT bpb_length,
+							UCHAR * bpb)
 {
 /**************************************
  *
@@ -1779,14 +1780,14 @@ ISC_STATUS DLL_EXPORT GDS_CREATE_BLOB2(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
-									  USHORT	file_length,
-									  TEXT*		file_name,
-									  ATT*		handle,
-									  USHORT	dpb_length,
-									  UCHAR*	dpb,
-									  USHORT	db_type,
-									  TEXT*		expanded_filename)
+ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
+								USHORT	file_length,
+								TEXT*	file_name,
+								ATT*	handle,
+								USHORT	dpb_length,
+								UCHAR*	dpb,
+								USHORT	db_type,
+								TEXT*	expanded_filename)
 {
 /**************************************
  *
@@ -2152,11 +2153,12 @@ ISC_STATUS DLL_EXPORT GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_DATABASE_INFO(ISC_STATUS * user_status,
-									ATT * handle,
-									SSHORT item_length,
-									SCHAR * items,
-									SSHORT buffer_length, SCHAR * buffer)
+ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS * user_status,
+							ATT * handle,
+							SSHORT item_length,
+							SCHAR * items,
+							SSHORT buffer_length,
+							SCHAR * buffer)
 {
 /**************************************
  *
@@ -2196,9 +2198,11 @@ ISC_STATUS DLL_EXPORT GDS_DATABASE_INFO(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_DDL(ISC_STATUS * user_status,
-						  ATT * db_handle,
-						  JRD_TRA * tra_handle, USHORT ddl_length, SCHAR * ddl)
+ISC_STATUS GDS_DDL(ISC_STATUS * user_status,
+					ATT * db_handle,
+					JRD_TRA * tra_handle,
+					USHORT ddl_length,
+					SCHAR * ddl)
 {
 /**************************************
  *
@@ -2275,7 +2279,7 @@ ISC_STATUS DLL_EXPORT GDS_DDL(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_DETACH(ISC_STATUS * user_status, ATT * handle)
+ISC_STATUS GDS_DETACH(ISC_STATUS * user_status, ATT * handle)
 {
 /**************************************
  *
@@ -2403,7 +2407,7 @@ ISC_STATUS DLL_EXPORT GDS_DETACH(ISC_STATUS * user_status, ATT * handle)
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_DROP_DATABASE(ISC_STATUS * user_status, ATT * handle)
+ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS * user_status, ATT * handle)
 {
 /**************************************
  *
@@ -2596,10 +2600,11 @@ ISC_STATUS DLL_EXPORT GDS_DROP_DATABASE(ISC_STATUS * user_status, ATT * handle)
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_GET_SEGMENT(ISC_STATUS * user_status,
-								  BLB * blob_handle,
-								  USHORT * length,
-								  USHORT buffer_length, UCHAR * buffer)
+ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
+							BLB * blob_handle,
+							USHORT * length,
+							USHORT buffer_length,
+							UCHAR * buffer)
 {
 /**************************************
  *
@@ -2655,16 +2660,17 @@ ISC_STATUS DLL_EXPORT GDS_GET_SEGMENT(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_GET_SLICE(ISC_STATUS * user_status,
-								ATT * db_handle,
-								JRD_TRA * tra_handle,
-								SLONG * array_id,
-								USHORT sdl_length,
-								UCHAR * sdl,
-								USHORT param_length,
-								UCHAR * param,
-								SLONG slice_length,
-								UCHAR * slice, SLONG * return_length)
+ISC_STATUS GDS_GET_SLICE(ISC_STATUS * user_status,
+						ATT * db_handle,
+						JRD_TRA * tra_handle,
+						SLONG * array_id,
+						USHORT sdl_length,
+						UCHAR * sdl,
+						USHORT param_length,
+						UCHAR * param,
+						SLONG slice_length,
+						UCHAR * slice,
+						SLONG * return_length)
 {
 /**************************************
  *
@@ -2719,11 +2725,13 @@ ISC_STATUS DLL_EXPORT GDS_GET_SLICE(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_OPEN_BLOB2(ISC_STATUS * user_status,
-								 ATT * db_handle,
-								 JRD_TRA * tra_handle,
-								 BLB * blob_handle,
-								 BID blob_id, USHORT bpb_length, UCHAR * bpb)
+ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS * user_status,
+						ATT * db_handle,
+						JRD_TRA * tra_handle,
+						BLB * blob_handle,
+						BID blob_id,
+						USHORT bpb_length,
+						UCHAR * bpb)
 {
 /**************************************
  *
@@ -2774,8 +2782,10 @@ ISC_STATUS DLL_EXPORT GDS_OPEN_BLOB2(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_PREPARE(ISC_STATUS * user_status,
-							  JRD_TRA * tra_handle, USHORT length, UCHAR * msg)
+ISC_STATUS GDS_PREPARE(ISC_STATUS * user_status,
+						JRD_TRA * tra_handle,
+						USHORT length,
+						UCHAR * msg)
 {
 /**************************************
  *
@@ -2812,9 +2822,10 @@ ISC_STATUS DLL_EXPORT GDS_PREPARE(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_PUT_SEGMENT(ISC_STATUS * user_status,
-								  BLB * blob_handle,
-								  USHORT buffer_length, UCHAR * buffer)
+ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS * user_status,
+							BLB * blob_handle,
+							USHORT buffer_length,
+							UCHAR * buffer)
 {
 /**************************************
  *
@@ -2854,15 +2865,16 @@ ISC_STATUS DLL_EXPORT GDS_PUT_SEGMENT(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_PUT_SLICE(ISC_STATUS * user_status,
-								ATT * db_handle,
-								JRD_TRA * tra_handle,
-								SLONG * array_id,
-								USHORT sdl_length,
-								UCHAR * sdl,
-								USHORT param_length,
-								UCHAR * param,
-								SLONG slice_length, UCHAR * slice)
+ISC_STATUS GDS_PUT_SLICE(ISC_STATUS * user_status,
+						ATT * db_handle,
+						JRD_TRA * tra_handle,
+						SLONG * array_id,
+						USHORT sdl_length,
+						UCHAR * sdl,
+						USHORT param_length,
+						UCHAR * param,
+						SLONG slice_length,
+						UCHAR * slice)
 {
 /**************************************
  *
@@ -2910,11 +2922,13 @@ ISC_STATUS DLL_EXPORT GDS_PUT_SLICE(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_QUE_EVENTS(ISC_STATUS * user_status,
-								 ATT * handle,
-								 SLONG * id,
-								 SSHORT length,
-								 UCHAR * items, FPTR_VOID ast, void *arg)
+ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS * user_status,
+							ATT * handle,
+							SLONG * id,
+							SSHORT length,
+							UCHAR * items,
+							FPTR_VOID ast,
+							void *arg)
 {
 /**************************************
  *
@@ -2971,12 +2985,15 @@ ISC_STATUS DLL_EXPORT GDS_QUE_EVENTS(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_RECEIVE(ISC_STATUS * user_status,
-							  JRD_REQ * req_handle,
-							  USHORT msg_type,
-							  USHORT msg_length, SCHAR * msg, SSHORT level
+ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
+						JRD_REQ * req_handle,
+						USHORT msg_type,
+						USHORT msg_length,
+						SCHAR * msg,
+						SSHORT level
 #ifdef SCROLLABLE_CURSORS
-							  , USHORT direction, ULONG offset
+						, USHORT direction,
+						ULONG offset
 #endif
 	)
 {
@@ -3042,9 +3059,11 @@ ISC_STATUS DLL_EXPORT GDS_RECEIVE(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_RECONNECT(ISC_STATUS * user_status,
-								ATT * db_handle,
-								JRD_TRA * tra_handle, SSHORT length, UCHAR * id)
+ISC_STATUS GDS_RECONNECT(ISC_STATUS * user_status,
+						ATT * db_handle,
+						JRD_TRA * tra_handle,
+						SSHORT length,
+						UCHAR * id)
 {
 /**************************************
  *
@@ -3093,7 +3112,7 @@ ISC_STATUS DLL_EXPORT GDS_RECONNECT(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_RELEASE_REQUEST(ISC_STATUS * user_status, JRD_REQ * req_handle)
+ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, JRD_REQ * req_handle)
 {
 /**************************************
  *
@@ -3139,12 +3158,13 @@ ISC_STATUS DLL_EXPORT GDS_RELEASE_REQUEST(ISC_STATUS * user_status, JRD_REQ * re
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_REQUEST_INFO(ISC_STATUS * user_status,
-								   JRD_REQ * req_handle,
-								   SSHORT level,
-								   SSHORT item_length,
-								   SCHAR * items,
-								   SSHORT buffer_length, SCHAR * buffer)
+ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS * user_status,
+							JRD_REQ * req_handle,
+							SSHORT level,
+							SSHORT item_length,
+							SCHAR * items,
+							SSHORT buffer_length,
+							SCHAR * buffer)
 {
 /**************************************
  *
@@ -3196,8 +3216,8 @@ ISC_STATUS DLL_EXPORT GDS_REQUEST_INFO(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_ROLLBACK_RETAINING(ISC_STATUS * user_status,
-										 JRD_TRA * tra_handle)
+ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS * user_status,
+									JRD_TRA * tra_handle)
 {
 /**************************************
  *
@@ -3233,7 +3253,7 @@ ISC_STATUS DLL_EXPORT GDS_ROLLBACK_RETAINING(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_ROLLBACK(ISC_STATUS * user_status, JRD_TRA * tra_handle)
+ISC_STATUS GDS_ROLLBACK(ISC_STATUS * user_status, JRD_TRA * tra_handle)
 {
 /**************************************
  *
@@ -3270,9 +3290,11 @@ ISC_STATUS DLL_EXPORT GDS_ROLLBACK(ISC_STATUS * user_status, JRD_TRA * tra_handl
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_SEEK_BLOB(ISC_STATUS * user_status,
-								BLB * blob_handle,
-								SSHORT mode, SLONG offset, SLONG * result)
+ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS * user_status,
+						BLB * blob_handle,
+						SSHORT mode,
+						SLONG offset,
+						SLONG * result)
 {
 /**************************************
  *
@@ -3312,10 +3334,12 @@ ISC_STATUS DLL_EXPORT GDS_SEEK_BLOB(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_SEND(ISC_STATUS * user_status,
-						   JRD_REQ * req_handle,
-						   USHORT msg_type,
-						   USHORT msg_length, SCHAR * msg, SSHORT level)
+ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
+					JRD_REQ * req_handle,
+					USHORT msg_type,
+					USHORT msg_length,
+					SCHAR * msg,
+					SSHORT level)
 {
 /**************************************
  *
@@ -3374,11 +3398,12 @@ ISC_STATUS DLL_EXPORT GDS_SEND(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_SERVICE_ATTACH(ISC_STATUS * user_status,
-									 USHORT service_length,
-									 TEXT * service_name,
-									 SVC * svc_handle,
-									 USHORT spb_length, SCHAR * spb)
+ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS * user_status,
+							USHORT service_length,
+							TEXT * service_name,
+							SVC * svc_handle,
+							USHORT spb_length,
+							SCHAR * spb)
 {
 /**************************************
  *
@@ -3415,7 +3440,7 @@ ISC_STATUS DLL_EXPORT GDS_SERVICE_ATTACH(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_SERVICE_DETACH(ISC_STATUS * user_status, SVC * svc_handle)
+ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS * user_status, SVC * svc_handle)
 {
 /**************************************
  *
@@ -3455,15 +3480,15 @@ ISC_STATUS DLL_EXPORT GDS_SERVICE_DETACH(ISC_STATUS * user_status, SVC * svc_han
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
-									SVC*	svc_handle,
-									ULONG*	reserved,
-									USHORT	send_item_length,
-									SCHAR*	send_items,
-									USHORT	recv_item_length,
-									SCHAR*	recv_items,
-									USHORT	buffer_length,
-									SCHAR*	buffer)
+ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
+							SVC*	svc_handle,
+							ULONG*	reserved,
+							USHORT	send_item_length,
+							SCHAR*	send_items,
+							USHORT	recv_item_length,
+							SCHAR*	recv_items,
+							USHORT	buffer_length,
+							SCHAR*	buffer)
 {
 /**************************************
  *
@@ -3532,11 +3557,11 @@ ISC_STATUS DLL_EXPORT GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_SERVICE_START(ISC_STATUS*	user_status,
-									SVC*	svc_handle,
-									ULONG*	reserved,
-									USHORT	spb_length,
-									SCHAR*	spb)
+ISC_STATUS GDS_SERVICE_START(ISC_STATUS*	user_status,
+							SVC*	svc_handle,
+							ULONG*	reserved,
+							USHORT	spb_length,
+							SCHAR*	spb)
 {
 /**************************************
  *
@@ -3593,12 +3618,13 @@ ISC_STATUS DLL_EXPORT GDS_SERVICE_START(ISC_STATUS*	user_status,
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_START_AND_SEND(ISC_STATUS * user_status,
-									 JRD_REQ * req_handle,
-									 JRD_TRA * tra_handle,
-									 USHORT msg_type,
-									 USHORT msg_length,
-									 SCHAR * msg, SSHORT level)
+ISC_STATUS GDS_START_AND_SEND(ISC_STATUS * user_status,
+							JRD_REQ * req_handle,
+							JRD_TRA * tra_handle,
+							USHORT msg_type,
+							USHORT msg_length,
+							SCHAR * msg,
+							SSHORT level)
 {
 /**************************************
  *
@@ -3656,9 +3682,10 @@ ISC_STATUS DLL_EXPORT GDS_START_AND_SEND(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_START(ISC_STATUS * user_status,
-							JRD_REQ * req_handle,
-							JRD_TRA * tra_handle, SSHORT level)
+ISC_STATUS GDS_START(ISC_STATUS * user_status,
+					JRD_REQ * req_handle,
+					JRD_TRA * tra_handle,
+					SSHORT level)
 {
 /**************************************
  *
@@ -3715,9 +3742,10 @@ ISC_STATUS DLL_EXPORT GDS_START(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_START_MULTIPLE(ISC_STATUS * user_status,
-									 JRD_TRA * tra_handle,
-									 USHORT count, TEB * vector)
+ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
+							JRD_TRA * tra_handle,
+							USHORT count,
+							TEB * vector)
 {
 /**************************************
  *
@@ -3795,8 +3823,10 @@ ISC_STATUS DLL_EXPORT GDS_START_MULTIPLE(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_START_TRANSACTION(ISC_STATUS * user_status,
-										JRD_TRA * tra_handle, SSHORT count, ...)
+ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
+								JRD_TRA * tra_handle,
+								SSHORT count,
+								...)
 {
 /**************************************
  *
@@ -3825,15 +3855,15 @@ ISC_STATUS DLL_EXPORT GDS_START_TRANSACTION(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
-									   ATT*		db_handle,
-									   JRD_TRA*		tra_handle,
-									   USHORT	blr_length,
-									   SCHAR*	blr,
-									   USHORT	in_msg_length,
-									   SCHAR*	in_msg,
-									   USHORT	out_msg_length,
-									   SCHAR*	out_msg)
+ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
+								ATT*		db_handle,
+								JRD_TRA*		tra_handle,
+								USHORT	blr_length,
+								SCHAR*	blr,
+								USHORT	in_msg_length,
+								SCHAR*	in_msg,
+								USHORT	out_msg_length,
+								SCHAR*	out_msg)
 {
 /**************************************
  *
@@ -3991,11 +4021,12 @@ ISC_STATUS DLL_EXPORT GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_TRANSACTION_INFO(ISC_STATUS * user_status,
-									   JRD_TRA * tra_handle,
-									   SSHORT item_length,
-									   SCHAR * items,
-									   SSHORT buffer_length, SCHAR * buffer)
+ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS * user_status,
+								JRD_TRA * tra_handle,
+								SSHORT item_length,
+								SCHAR * items,
+								SSHORT buffer_length,
+								SCHAR * buffer)
 {
 /**************************************
  *
@@ -4040,8 +4071,9 @@ ISC_STATUS DLL_EXPORT GDS_TRANSACTION_INFO(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS DLL_EXPORT GDS_UNWIND(ISC_STATUS * user_status,
-							 JRD_REQ * req_handle, SSHORT level)
+ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status,
+						JRD_REQ * req_handle,
+						SSHORT level)
 {
 /**************************************
  *

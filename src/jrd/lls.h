@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_LLS_H_
-#define _JRD_LLS_H_
+#ifndef JRD_LLS_H
+#define JRD_LLS_H
 
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
@@ -38,4 +38,4 @@ class lls : public pool_alloc<type_lls>
 };
 typedef lls *LLS;
 
-#endif /* _JRD_LLS_H_ */
+#endif /* JRD_LLS_H */

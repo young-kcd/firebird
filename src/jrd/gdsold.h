@@ -26,8 +26,8 @@
  */
 
 
-#ifndef _JRD_GDSOLD_H_
-#define _JRD_GDSOLD_H_
+#ifndef JRD_GDSOLD_H
+#define JRD_GDSOLD_H
 
 #include "fb_types.h"
 
@@ -1926,5 +1926,5 @@ const unsigned char gds_interp_jpn_euc = 6;
 
 #endif
 
-#endif /* _JRD_GDSOLD_H_ */
+#endif /* JRD_GDSOLD_H */
 

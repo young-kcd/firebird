@@ -21,12 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _GPRE_CME_PROTO_H_
-#define _GPRE_CME_PROTO_H_
+#ifndef GPRE_CME_PROTO_H
+#define GPRE_CME_PROTO_H
 
-extern void CME_expr(GPRE_NOD, GPRE_REQ);
-extern void CME_get_dtype(GPRE_NOD, GPRE_FLD);
-extern void CME_relation(GPRE_CTX, GPRE_REQ);
-extern void CME_rse(GPRE_RSE, GPRE_REQ);
+void	CME_expr(GPRE_NOD, GPRE_REQ);
+void	CME_get_dtype(GPRE_NOD, GPRE_FLD);
+void	CME_relation(GPRE_CTX, GPRE_REQ);
+void	CME_rse(GPRE_RSE, GPRE_REQ);
 
-#endif /* _GPRE_CME_PROTO_H_ */
+#endif // GPRE_CME_PROTO_H

@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_VMS_H_
-#define _JRD_VMS_H_
+#ifndef JRD_VMS_H
+#define JRD_VMS_H
 
 #include rms
 #include iodef
@@ -79,4 +79,4 @@ typedef struct fab$ {
 	SSHORT fat$w_versions;
 } FAT$;
 
-#endif /* _JRD_VMS_H_ */
+#endif /* JRD_VMS_H */

@@ -29,8 +29,8 @@
  *
  */
 
-#ifndef _JRD_FILE_PARAMS_H_
-#define _JRD_FILE_PARAMS_H_
+#ifndef JRD_FILE_PARAMS_H
+#define JRD_FILE_PARAMS_H
 
 #define EVENT_DEFAULT_SIZE	32768
 #define EVENT_EXTEND_SIZE	32768
@@ -165,4 +165,4 @@ static struct isc_vms_prefix trans_prefix[] =
 #define TEMP_PATTERN	"_XXXXXX"
 #endif
 
-#endif /* _JRD_FILE_PARAMS_H_ */
+#endif /* JRD_FILE_PARAMS_H */

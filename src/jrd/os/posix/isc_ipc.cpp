@@ -36,7 +36,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.1 2003-09-08 20:23:37 skidder Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.2 2003-10-03 01:48:29 brodsom Exp $ */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -140,7 +140,7 @@ extern "C" {
 	ULONG isc_enter_count = 0;
 }
 
-void DLL_EXPORT ISC_enter(void)
+void ISC_enter(void)
 {
 /**************************************
  *
@@ -168,7 +168,7 @@ void DLL_EXPORT ISC_enter(void)
 volatile sig_atomic_t inhibit_counter = 0;
 sigset_t saved_sigmask;
 
-void DLL_EXPORT ISC_inhibit() throw()
+void ISC_inhibit() throw()
 {
 /**************************************
  *
@@ -191,7 +191,7 @@ void DLL_EXPORT ISC_inhibit() throw()
 }
 
 
-void DLL_EXPORT ISC_enable() throw()
+void ISC_enable() throw()
 {
 /**************************************
  *
@@ -213,7 +213,7 @@ void DLL_EXPORT ISC_enable() throw()
 }
 
 
-void DLL_EXPORT ISC_exit(void)
+void ISC_exit(void)
 {
 /**************************************
  *
@@ -418,7 +418,7 @@ void API_ROUTINE ISC_signal_cancel(
 }
 
 
-void DLL_EXPORT ISC_signal_init(void)
+void ISC_signal_init(void)
 {
 /**************************************
  *

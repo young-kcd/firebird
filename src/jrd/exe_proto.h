@@ -28,19 +28,19 @@
 extern "C" {
 #endif
 
-extern void EXE_assignment(TDBB, struct jrd_nod*);
-extern struct jrd_req *EXE_find_request(TDBB, struct jrd_req *, BOOLEAN);
-extern void EXE_receive(TDBB, struct jrd_req*, USHORT, USHORT, UCHAR*);
-extern void EXE_send(TDBB, struct jrd_req *, USHORT, USHORT, UCHAR *);
-extern void EXE_start(TDBB, struct jrd_req *, struct jrd_tra *);
-extern void EXE_unwind(TDBB, struct jrd_req *);
+void		EXE_assignment(TDBB, struct jrd_nod*);
+struct jrd_req*	EXE_find_request(TDBB, struct jrd_req *, BOOLEAN);
+void		EXE_receive(TDBB, struct jrd_req*, USHORT, USHORT, UCHAR*);
+void		EXE_send(TDBB, struct jrd_req *, USHORT, USHORT, UCHAR *);
+void		EXE_start(TDBB, struct jrd_req *, struct jrd_tra *);
+void		EXE_unwind(TDBB, struct jrd_req *);
 #ifdef SCROLLABLE_CURSORS
-extern void EXE_seek(TDBB, struct jrd_req *, USHORT, ULONG);
+void		EXE_seek(TDBB, struct jrd_req *, USHORT, ULONG);
 #endif
 
 #ifdef PC_ENGINE
-extern BOOLEAN EXE_crack(TDBB, struct rsb *, USHORT);
-extern void EXE_mark_crack(TDBB, struct rsb *, USHORT);
+BOOLEAN EXE_crack(TDBB, struct rsb *, USHORT);
+void		EXE_mark_crack(TDBB, struct rsb *, USHORT);
 #endif
 
 #ifdef __cplusplus

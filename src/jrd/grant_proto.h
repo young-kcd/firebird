@@ -21,18 +21,18 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_GRANT_PROTO_H_
-#define _JRD_GRANT_PROTO_H_
+#ifndef JRD_GRANT_PROTO_H
+#define JRD_GRANT_PROTO_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern int GRANT_privileges(TDBB, SSHORT, struct dfw *);
-extern STR GRANT_realloc_acl(STR, UCHAR **, ULONG *);
+int GRANT_privileges(TDBB, SSHORT, struct dfw *);
+STR GRANT_realloc_acl(STR, UCHAR **, ULONG *);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-#endif /* _JRD_GRANT_PROTO_H_  */
+#endif // JRD_GRANT_PROTO_H

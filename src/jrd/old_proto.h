@@ -21,10 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_OLD_PROTO_H_
-#define _JRD_OLD_PROTO_H_
+#ifndef JRD_OLD_PROTO_H
+#define JRD_OLD_PROTO_H
 
-extern int OLD_dump(SCHAR *, USHORT, USHORT, ULONG, ULONG, ULONG, USHORT,
+int OLD_dump(SCHAR *, USHORT, USHORT, ULONG, ULONG, ULONG, USHORT,
 					USHORT, SCHAR **);
 
-#endif /* _JRD_OLD_PROTO_H_ */
+#endif // JRD_OLD_PROTO_H

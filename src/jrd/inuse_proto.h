@@ -21,12 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_INUSE_PROTO_H_
-#define _JRD_INUSE_PROTO_H_
+#ifndef JRD_INUSE_PROTO_H
+#define JRD_INUSE_PROTO_H
 
-extern BOOLEAN INUSE_cleanup(struct iuo *, FPTR_VOID);
-extern void INUSE_clear(struct iuo *);
-extern BOOLEAN INUSE_insert(struct iuo *, void *, BOOLEAN);
-extern BOOLEAN INUSE_remove(struct iuo *, void *, BOOLEAN);
+BOOLEAN INUSE_cleanup(struct iuo *, FPTR_VOID);
+void INUSE_clear(struct iuo *);
+BOOLEAN INUSE_insert(struct iuo *, void *, BOOLEAN);
+BOOLEAN INUSE_remove(struct iuo *, void *, BOOLEAN);
 
-#endif /* _JRD_INUSE_PROTO_H_ */
+#endif // JRD_INUSE_PROTO_H

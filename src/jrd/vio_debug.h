@@ -20,8 +20,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_VIO_DEBUG_H_
-#define _JRD_VIO_DEBUG_H_
+#ifndef JRD_VIO_DEBUG_H
+#define JRD_VIO_DEBUG_H
 
 #define DEBUG_WRITES		1
 #define DEBUG_WRITES_INFO	2
@@ -34,4 +34,4 @@
 
 static int debug_flag;
 
-#endif /* _JRD_VIO_DEBUG_H_ */
+#endif /* JRD_VIO_DEBUG_H */

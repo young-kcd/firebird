@@ -32,12 +32,12 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.h,v 1.5 2003-09-13 18:35:39 skidder Exp $
+ *  $Id: nbak.h,v 1.6 2003-10-03 01:47:25 brodsom Exp $
  *
  */
  
-#ifndef _JRD_NBAK_H_
-#define _JRD_NBAK_H_
+#ifndef JRD_NBAK_H
+#define JRD_NBAK_H
 
 #include "../common/classes/tree.h"
 #include "../common/classes/rwlock.h"
@@ -209,4 +209,4 @@ private:
 #define nbak_state_merge    0x800   // Merging changes from diff file into main files
 #define nbak_state_unknown  -1      // State is unknown. Needs to be read from disk
 
-#endif /* _JRD_NBAK_PROTO_H_ */
+#endif /* JRD_NBAK_PROTO_H */

@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_OS_THD_PRIORITY_H_
-#define _JRD_OS_THD_PRIORITY_H_
+#ifndef JRD_OS_THD_PRIORITY_H
+#define JRD_OS_THD_PRIORITY_H
 
 #ifdef WIN_NT
 #if defined(SUPERSERVER) && !defined(EMBEDDED)
@@ -113,4 +113,4 @@ public:
 
 #endif // THREAD_PSCHED
 
-#endif // _JRD_OS_THD_PRIORITY_H_
+#endif // JRD_OS_THD_PRIORITY_H

@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_JRN_H_
-#define _JRD_JRN_H_
+#ifndef JRD_JRN_H
+#define JRD_JRN_H
 
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
@@ -401,4 +401,4 @@ typedef logfiles LGFILE;
 
 #define LGFILE_SIZE 	OFFSETA (LGFILE*, lg_name)
 
-#endif /* _JRD_JRN_H_ */
+#endif /* JRD_JRN_H */

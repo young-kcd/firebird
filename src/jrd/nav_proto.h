@@ -21,23 +21,23 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_NAV_PROTO_H_
-#define _JRD_NAV_PROTO_H_
+#ifndef JRD_NAV_PROTO_H
+#define JRD_NAV_PROTO_H
 
 #include "../jrd/rse.h"
 
 #ifdef SCROLLABLE_CURSORS
-extern struct exp *NAV_expand_index(struct win *, struct irsb_nav *);
+struct exp *NAV_expand_index(struct win *, struct irsb_nav *);
 #endif
-extern BOOLEAN NAV_get_record(TDBB tdbb, class Rsb *, struct irsb_nav *, struct rpb *,
+BOOLEAN NAV_get_record(TDBB tdbb, class Rsb *, struct irsb_nav *, struct rpb *,
 							  enum rse_get_mode);
 
 #ifdef PC_ENGINE
-extern BOOLEAN NAV_find_record(class Rsb *, USHORT, USHORT, struct jrd_nod *);
-extern void NAV_get_bookmark(class Rsb *, struct irsb_nav *, struct bkm *);
-extern BOOLEAN NAV_reset_position(class Rsb *, struct rpb *);
-extern BOOLEAN NAV_set_bookmark(class Rsb *, struct irsb_nav *, struct rpb *,
+BOOLEAN NAV_find_record(class Rsb *, USHORT, USHORT, struct jrd_nod *);
+void NAV_get_bookmark(class Rsb *, struct irsb_nav *, struct bkm *);
+BOOLEAN NAV_reset_position(class Rsb *, struct rpb *);
+BOOLEAN NAV_set_bookmark(class Rsb *, struct irsb_nav *, struct rpb *,
 								struct bkm *);
 #endif
 
-#endif /* _JRD_NAV_PROTO_H_ */
+#endif // JRD_NAV_PROTO_H

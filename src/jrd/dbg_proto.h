@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_DBG_PROTO_H_
-#define _JRD_DBG_PROTO_H_
+#ifndef JRD_DBG_PROTO_H
+#define JRD_DBG_PROTO_H
 
 /* Don't declare DBG_supervisor in _ANSI_PROTOTYPES_, it screws up val.c */
 
@@ -55,4 +55,4 @@ int DBG_memory(void);
 } /* extern "C" */
 #endif
 
-#endif /* _JRD_DBG_PROTO_H_ */
+#endif /* JRD_DBG_PROTO_H */

@@ -21,20 +21,20 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_DYN_MD_PROTO_H_
-#define _JRD_DYN_MD_PROTO_H_
+#ifndef JRD_DYN_MD_PROTO_H
+#define JRD_DYN_MD_PROTO_H
 
-extern void DYN_modify_database(GBL, UCHAR **);
-extern void DYN_modify_exception(GBL, UCHAR **);
-extern void DYN_modify_global_field(GBL, UCHAR **, TEXT *, TEXT *);
-extern void DYN_modify_index(GBL, UCHAR **);
-extern void DYN_modify_local_field(GBL, UCHAR **, TEXT *, TEXT *);
-extern void DYN_modify_procedure(GBL, UCHAR **);
-extern void DYN_modify_relation(GBL, UCHAR **);
-extern void DYN_modify_trigger(GBL, UCHAR **);
-extern void DYN_modify_trigger_msg(GBL, UCHAR **, TEXT *);
-extern void DYN_modify_sql_field(GBL, UCHAR**, TEXT*, TEXT*);
-extern void DYN_modify_view(GBL, UCHAR **);
+void DYN_modify_database(GBL, UCHAR **);
+void DYN_modify_exception(GBL, UCHAR **);
+void DYN_modify_global_field(GBL, UCHAR **, TEXT *, TEXT *);
+void DYN_modify_index(GBL, UCHAR **);
+void DYN_modify_local_field(GBL, UCHAR **, TEXT *, TEXT *);
+void DYN_modify_procedure(GBL, UCHAR **);
+void DYN_modify_relation(GBL, UCHAR **);
+void DYN_modify_trigger(GBL, UCHAR **);
+void DYN_modify_trigger_msg(GBL, UCHAR **, TEXT *);
+void DYN_modify_sql_field(GBL, UCHAR**, TEXT*, TEXT*);
+void DYN_modify_view(GBL, UCHAR **);
 
 
-#endif /* _JRD_DYN_MD_PROTO_H_ */
+#endif // JRD_DYN_MD_PROTO_H

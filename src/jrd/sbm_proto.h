@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_SBM_PROTO_H_
-#define _JRD_SBM_PROTO_H_
+#ifndef JRD_SBM_PROTO_H
+#define JRD_SBM_PROTO_H
 
 #include "../jrd/sbm.h"
 #include "../jrd/rse.h"
@@ -32,7 +32,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-extern void SBM_dump(IB_FILE *, SBM);
+void SBM_dump(IB_FILE *, SBM);
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
@@ -43,20 +43,20 @@ extern void SBM_dump(IB_FILE *, SBM);
 extern "C" {
 #endif
 
-extern struct sbm **SBM_and(struct sbm **, struct sbm **);
-extern int SBM_clear(struct sbm *, SLONG);
-extern BOOLEAN SBM_equal(SBM, SBM);
-extern void SBM_init(void);
-extern int SBM_next(struct sbm *, SLONG *, enum rse_get_mode);
-extern struct sbm **SBM_or(struct sbm **, struct sbm **);
-extern void SBM_release(struct sbm *);
-extern void SBM_reset(struct sbm **);
-extern void SBM_set(TDBB, struct sbm **, SLONG);
-extern int SBM_test(struct sbm *, SLONG);
-extern SLONG SBM_size(struct sbm **);
+struct sbm**	SBM_and(struct sbm **, struct sbm **);
+int			SBM_clear(struct sbm *, SLONG);
+BOOLEAN		SBM_equal(SBM, SBM);
+void		SBM_init(void);
+int			SBM_next(struct sbm *, SLONG *, enum rse_get_mode);
+struct sbm**	SBM_or(struct sbm **, struct sbm **);
+void		SBM_release(struct sbm *);
+void		SBM_reset(struct sbm **);
+void		SBM_set(TDBB, struct sbm **, SLONG);
+int			SBM_test(struct sbm *, SLONG);
+SLONG		SBM_size(struct sbm **);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-#endif /* _JRD_SBM_PROTO_H_ */
+#endif /* JRD_SBM_PROTO_H */

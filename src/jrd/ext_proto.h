@@ -21,34 +21,34 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_EXT_PROTO_H_
-#define _JRD_EXT_PROTO_H_
+#ifndef JRD_EXT_PROTO_H
+#define JRD_EXT_PROTO_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern void EXT_close(class Rsb *);
-extern void EXT_erase(struct rpb *, int *);
-extern struct ext *EXT_file(struct jrd_rel *, const TEXT *, SLONG *);
-extern void EXT_fini(struct jrd_rel *);
-extern int EXT_get(class Rsb *);
-extern void EXT_modify(struct rpb *, struct rpb *, int *);
+void EXT_close(class Rsb *);
+void EXT_erase(struct rpb *, int *);
+struct ext *EXT_file(struct jrd_rel *, const TEXT *, SLONG *);
+void EXT_fini(struct jrd_rel *);
+int EXT_get(class Rsb *);
+void EXT_modify(struct rpb *, struct rpb *, int *);
 #ifdef VMS
-extern int EXT_open(class Rsb *);
+int EXT_open(class Rsb *);
 #else
-extern void EXT_open(class Rsb *);
+void EXT_open(class Rsb *);
 #endif
-extern class Rsb *EXT_optimize(class Opt *, SSHORT, struct jrd_nod **);
-extern void EXT_ready(struct jrd_rel *);
-extern void EXT_store(struct rpb *, int *);
-extern void EXT_trans_commit(struct jrd_tra *);
-extern void EXT_trans_prepare(struct jrd_tra *);
-extern void EXT_trans_rollback(struct jrd_tra *);
-extern void EXT_trans_start(struct jrd_tra *);
+class Rsb *EXT_optimize(class Opt *, SSHORT, struct jrd_nod **);
+void EXT_ready(struct jrd_rel *);
+void EXT_store(struct rpb *, int *);
+void EXT_trans_commit(struct jrd_tra *);
+void EXT_trans_prepare(struct jrd_tra *);
+void EXT_trans_rollback(struct jrd_tra *);
+void EXT_trans_start(struct jrd_tra *);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-#endif /* _JRD_EXT_PROTO_H_ */
+#endif // JRD_EXT_PROTO_H

@@ -21,19 +21,19 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_SYM_PROTO_H_
-#define _JRD_SYM_PROTO_H_
+#ifndef JRD_SYM_PROTO_H
+#define JRD_SYM_PROTO_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern void SYM_insert(struct sym *);
-extern struct sym *SYM_lookup(TEXT *);
-extern void SYM_remove(struct sym *);
+void	SYM_insert(struct sym *);
+struct sym*	SYM_lookup(TEXT *);
+void	SYM_remove(struct sym *);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-#endif /* _JRD_SYM_PROTO_H_ */
+#endif /* JRD_SYM_PROTO_H */

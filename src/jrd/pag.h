@@ -31,8 +31,8 @@
  */
 
 
-#ifndef _JRD_PAG_H_
-#define _JRD_PAG_H_
+#ifndef JRD_PAG_H
+#define JRD_PAG_H
 
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
@@ -52,4 +52,4 @@ class pgc : public pool_alloc<type_pgc>
 };
 typedef pgc *PGC;
 
-#endif /* _JRD_PAG_H_ */
+#endif /* JRD_PAG_H */

@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_INTL_CLASSES_H_
-#define _JRD_INTL_CLASSES_H_
+#ifndef JRD_INTL_CLASSES_H
+#define JRD_INTL_CLASSES_H
 
 #include "../common/classes/alloc.h"
 
@@ -348,4 +348,4 @@ typedef CharSet *(*CharSetAllocFunc)(MemoryPool&, CHARSET_ID, CHARSET_ID);
 typedef TextType *(*TextTypeAllocFunc)(MemoryPool&, CHARSET_ID, CHARSET_ID);
 typedef CsConvert *(*CsConvertAllocFunc)(MemoryPool&, CHARSET_ID, CHARSET_ID);
 
-#endif /* _JRD_INTL_CLASSES_H_ */
+#endif /* JRD_INTL_CLASSES_H */

@@ -24,8 +24,8 @@
  * 2002.09.16 Nickolay Samofatov: one more system index
  */
 
-#ifndef _JRD_IDX_H_
-#define _JRD_IDX_H_
+#ifndef JRD_IDX_H
+#define JRD_IDX_H
 
 /* Indices to be created */
 
@@ -284,4 +284,4 @@ static const struct ini_idx_t indices[] = {
 
 #define SYSTEM_INDEX_COUNT FB_NELEM(indices)
 
-#endif /* _JRD_IDX_H_ */
+#endif /* JRD_IDX_H */

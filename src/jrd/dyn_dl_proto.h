@@ -21,25 +21,25 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_DYN_DL_PROTO_H_
-#define _JRD_DYN_DL_PROTO_H_
+#ifndef JRD_DYN_DL_PROTO_H
+#define JRD_DYN_DL_PROTO_H
 
-extern void DYN_delete_constraint(GBL, UCHAR **, TEXT *);
-extern void DYN_delete_dimensions(GBL, UCHAR **, TEXT *, TEXT *);
-extern void DYN_delete_exception(GBL, UCHAR **);
-extern void DYN_delete_filter(GBL, UCHAR **);
-extern void DYN_delete_function(GBL, UCHAR **);
-extern void	DYN_delete_generator(GBL, UCHAR **);
-extern void DYN_delete_global_field(GBL, UCHAR **);
-extern void DYN_delete_index(GBL, UCHAR **);
-extern void DYN_delete_local_field(GBL, UCHAR **, TEXT *, TEXT *);
-extern void DYN_delete_parameter(GBL, UCHAR **, TEXT *);
-extern void DYN_delete_procedure(GBL, UCHAR **);
-extern void DYN_delete_relation(GBL, UCHAR **, TEXT *);
-extern void DYN_delete_role(GBL, UCHAR **);
-extern void DYN_delete_security_class(GBL, UCHAR **);
-extern void DYN_delete_shadow(GBL, UCHAR **);
-extern void DYN_delete_trigger(GBL, UCHAR **);
-extern void DYN_delete_trigger_msg(GBL, UCHAR **, TEXT *);
+void	DYN_delete_constraint(GBL, UCHAR **, TEXT *);
+void	DYN_delete_dimensions(GBL, UCHAR **, TEXT *, TEXT *);
+void	DYN_delete_exception(GBL, UCHAR **);
+void	DYN_delete_filter(GBL, UCHAR **);
+void	DYN_delete_function(GBL, UCHAR **);
+void	DYN_delete_generator(GBL, UCHAR **);
+void	DYN_delete_global_field(GBL, UCHAR **);
+void	DYN_delete_index(GBL, UCHAR **);
+void	DYN_delete_local_field(GBL, UCHAR **, TEXT *, TEXT *);
+void	DYN_delete_parameter(GBL, UCHAR **, TEXT *);
+void	DYN_delete_procedure(GBL, UCHAR **);
+void	DYN_delete_relation(GBL, UCHAR **, TEXT *);
+void	DYN_delete_role(GBL, UCHAR **);
+void	DYN_delete_security_class(GBL, UCHAR **);
+void	DYN_delete_shadow(GBL, UCHAR **);
+void	DYN_delete_trigger(GBL, UCHAR **);
+void	DYN_delete_trigger_msg(GBL, UCHAR **, TEXT *);
 
-#endif /* _JRD_DYN_DL_PROTO_H_ */
+#endif // JRD_DYN_DL_PROTO_H

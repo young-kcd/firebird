@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_DMP_PROTO_H_
-#define _JRD_DMP_PROTO_H_
+#ifndef JRD_DMP_PROTO_H
+#define JRD_DMP_PROTO_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,4 +40,4 @@ void DMP_fetched_page(struct pag *, ULONG, ULONG, USHORT);
 } /* extern "C" */
 #endif
 
-#endif /* _JRD_DMP_PROTO_H_ */
+#endif /* JRD_DMP_PROTO_H */

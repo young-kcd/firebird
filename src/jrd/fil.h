@@ -28,8 +28,8 @@
  *
  */
 
-#ifndef _JRD_FIL_H_
-#define _JRD_FIL_H_
+#ifndef JRD_FIL_H
+#define JRD_FIL_H
 
 #include "../jrd/thd.h"
 
@@ -80,4 +80,4 @@ typedef struct edls {
     TEXT edls_directory[1];
 } EDLS;
 
-#endif /* _JRD_FIL_H_ */
+#endif /* JRD_FIL_H */

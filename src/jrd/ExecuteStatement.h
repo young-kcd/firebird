@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef _JRD_DynExec_H_
-#define _JRD_DynExec_H_
+#ifndef JRD_DynExec_H
+#define JRD_DynExec_H
 
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
@@ -50,4 +50,4 @@ public:
 	void Close(TDBB tdbb);
 };
 
-#endif // _JRD_DynExec_H_
+#endif // JRD_DynExec_H

@@ -21,15 +21,15 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_MISC_PROTO_H_
-#define _JRD_MISC_PROTO_H_
+#ifndef JRD_MISC_PROTO_H
+#define JRD_MISC_PROTO_H
 
-extern SSHORT MISC_build_parameters_block(UCHAR *, ...);
-extern UCHAR *MISC_pop(struct stk **);
-extern struct stk *MISC_push(UCHAR *, struct stk **);
+SSHORT MISC_build_parameters_block(UCHAR *, ...);
+UCHAR *MISC_pop(struct stk **);
+struct stk *MISC_push(UCHAR *, struct stk **);
 
 #ifdef DEV_BUILD
-extern ULONG MISC_checksum_log_rec(UCHAR *, SSHORT, UCHAR *, SSHORT);
+ULONG MISC_checksum_log_rec(UCHAR *, SSHORT, UCHAR *, SSHORT);
 #endif
 
-#endif /* _JRD_MISC_PROTO_H_ */
+#endif // JRD_MISC_PROTO_H

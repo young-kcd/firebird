@@ -28,17 +28,14 @@
 extern "C" {
 #endif
 
-extern SLONG DLL_EXPORT SDL_compute_subscript(ISC_STATUS *, struct ads *, USHORT,
-											  SLONG *);
-extern ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS *, UCHAR *, struct sdl_info *,
-								   SLONG *);
-extern UCHAR *DLL_EXPORT SDL_prepare_slice(UCHAR *, USHORT);
-extern int DLL_EXPORT SDL_walk(ISC_STATUS *, UCHAR *, USHORT, UCHAR *,
-							   struct ads *, SLONG *, SDL_walk_callback,
-							   struct slice *);
+SLONG	SDL_compute_subscript(ISC_STATUS *, struct ads *, USHORT, SLONG *);
+ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS *, UCHAR *, struct sdl_info *, SLONG *);
+UCHAR*	SDL_prepare_slice(UCHAR *, USHORT);
+int		SDL_walk(ISC_STATUS *, UCHAR *, USHORT, UCHAR *, struct ads *, SLONG *,
+				SDL_walk_callback, struct slice *);
 
 #ifdef __cplusplus
 }	// extern "C"
 #endif
 
-#endif /* JRD_SDL_PROTO_H */
+#endif // JRD_SDL_PROTO_H

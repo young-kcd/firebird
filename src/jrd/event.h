@@ -27,8 +27,8 @@
  *
  */
 
-#ifndef _JRD_EVENT_H_
-#define _JRD_EVENT_H_
+#ifndef JRD_EVENT_H
+#define JRD_EVENT_H
 
 #include "../jrd/isc.h"
 #include "../jrd/file_params.h"
@@ -173,4 +173,4 @@ typedef struct rint {
 
 #define EPB_version1 1
 
-#endif /* _JRD_EVENT_H_ */
+#endif /* JRD_EVENT_H */

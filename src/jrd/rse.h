@@ -23,8 +23,8 @@
  * 2001.07.28: Added rsb_t.rsb_skip and IRSB_SKIP to support LIMIT functionality.
  */
 
-#ifndef _JRD_RSE_H_
-#define _JRD_RSE_H_
+#ifndef JRD_RSE_H
+#define JRD_RSE_H
 
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
@@ -412,4 +412,4 @@ typedef enum rse_get_mode {
 	RSE_get_next
 } RSE_GET_MODE;
 
-#endif /* _JRD_RSE_H_ */
+#endif /* JRD_RSE_H */

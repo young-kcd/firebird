@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_TPC_H_
-#define _JRD_TPC_H_
+#ifndef JRD_TPC_H
+#define JRD_TPC_H
 
 class tpc : public pool_alloc_rpt<SCHAR, type_tpc>
 {
@@ -33,4 +33,4 @@ class tpc : public pool_alloc_rpt<SCHAR, type_tpc>
 };
 typedef tpc *TPC;
 
-#endif /* _JRD_TPC_H_ */
+#endif /* JRD_TPC_H */

@@ -29,8 +29,8 @@
  *
  */
 
-#ifndef _JRD_ISC_H_
-#define _JRD_ISC_H_
+#ifndef JRD_ISC_H
+#define JRD_ISC_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -271,4 +271,4 @@ enum ast_t
 } /* extern "C" */
 #endif
 
-#endif /* _JRD_ISC_H_ */
+#endif /* JRD_ISC_H */

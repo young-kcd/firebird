@@ -22,18 +22,18 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_FLU_PROTO_H_
-#define _JRD_FLU_PROTO_H_
+#ifndef JRD_FLU_PROTO_H
+#define JRD_FLU_PROTO_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern struct mod *DLL_EXPORT FLU_lookup_module(TEXT *);
-extern void DLL_EXPORT FLU_unregister_module(struct mod *);
-extern int (*ISC_lookup_entrypoint(TEXT *, TEXT *, TEXT *, bool)) (void);
-extern int (*FUNCTIONS_entrypoint(TEXT *, TEXT *)) (void);
-extern int (*BUILTIN_entrypoint(TEXT *, TEXT *)) (void);
+struct mod*	FLU_lookup_module(TEXT *);
+void		FLU_unregister_module(struct mod *);
+int (*ISC_lookup_entrypoint(TEXT *, TEXT *, TEXT *, bool)) (void);
+int (*FUNCTIONS_entrypoint(TEXT *, TEXT *)) (void);
+int (*BUILTIN_entrypoint(TEXT *, TEXT *)) (void);
 
 /*
    This shouldn't be in a production server,
@@ -44,11 +44,11 @@ extern int (*BUILTIN_entrypoint(TEXT *, TEXT *)) (void);
    
 */
 
-/*extern int		       QATEST_entrypoint (ULONG *, void *, void *, void *);
+/*int		       QATEST_entrypoint (ULONG *, void *, void *, void *);
 */
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-#endif /* _JRD_FLU_PROTO_H_ */
+#endif // JRD_FLU_PROTO_H

@@ -21,22 +21,21 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_FUN_PROTO_H_
-#define _JRD_FUN_PROTO_H_
+#ifndef JRD_FUN_PROTO_H
+#define JRD_FUN_PROTO_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern void DLL_EXPORT FUN_evaluate(struct fun *, struct jrd_nod *, struct vlu *);
-extern void DLL_EXPORT FUN_fini(struct tdbb *);
-extern void DLL_EXPORT FUN_init(void);
-extern struct fun *DLL_EXPORT FUN_lookup_function(TEXT *, bool ShowAccessError);
-extern struct fun *DLL_EXPORT FUN_resolve(class Csb *, struct fun *,
-										  struct jrd_nod *);
+void		FUN_evaluate(struct fun *, struct jrd_nod *, struct vlu *);
+void		FUN_fini(struct tdbb *);
+void		FUN_init(void);
+struct fun*	FUN_lookup_function(TEXT *, bool ShowAccessError);
+struct fun*	FUN_resolve(class Csb *, struct fun *, struct jrd_nod *);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-#endif /* _JRD_FUN_PROTO_H_ */
+#endif // JRD_FUN_PROTO_H

@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_RNG_H_
-#define _JRD_RNG_H_
+#ifndef JRD_RNG_H
+#define JRD_RNG_H
 
 /* refresh range block used to store info about a particular
    set of records in a refresh range */
@@ -53,4 +53,4 @@ typedef rng *RNG;
 
 #define RANGE_NAME_LENGTH	31	/* max. length of range name for the event */
 
-#endif /* _JRD_RNG_H_ */
+#endif /* JRD_RNG_H */

@@ -24,22 +24,22 @@
 #ifndef GPRE_PAR_PROTO_H
 #define GPRE_PAR_PROTO_H
 
-extern ACT PAR_action(TEXT*);
-extern SSHORT PAR_blob_subtype(DBB);
-extern ACT PAR_database(bool, const TEXT*);
-extern bool PAR_end(void);
-extern void PAR_error(const TEXT *);
-extern ACT PAR_event_init(bool);
-extern ACT PAR_event_wait(bool);
-extern void PAR_fini(void);
-extern TOK PAR_get_token(void);
-extern void PAR_init(void);
-extern TEXT *PAR_native_value(bool, bool);
-extern GPRE_FLD PAR_null_field(void);
-extern void PAR_reserving(USHORT, bool);
-extern GPRE_REQ PAR_set_up_dpb_info(RDY, ACT, USHORT);
-extern SYM PAR_symbol(enum sym_t);
-extern void PAR_unwind(void);
-extern void PAR_using_db(void);
+ACT		PAR_action(TEXT*);
+SSHORT	PAR_blob_subtype(DBB);
+ACT		PAR_database(bool, const TEXT*);
+bool	PAR_end(void);
+void	PAR_error(const TEXT *);
+ACT		PAR_event_init(bool);
+ACT		PAR_event_wait(bool);
+void	PAR_fini(void);
+TOK		PAR_get_token(void);
+void	PAR_init(void);
+TEXT*	PAR_native_value(bool, bool);
+GPRE_FLD PAR_null_field(void);
+void	PAR_reserving(USHORT, bool);
+GPRE_REQ PAR_set_up_dpb_info(RDY, ACT, USHORT);
+SYM		PAR_symbol(enum sym_t);
+void	PAR_unwind(void);
+void	PAR_using_db(void);
 
-#endif /* GPRE_PAR_PROTO_H */
+#endif // GPRE_PAR_PROTO_H

@@ -21,17 +21,17 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_LLIO_PROTO_H_
-#define _JRD_LLIO_PROTO_H_
+#ifndef JRD_LLIO_PROTO_H
+#define JRD_LLIO_PROTO_H
 
-extern int LLIO_allocate_file_space(ISC_STATUS *, TEXT *, SLONG, UCHAR, USHORT);
-extern int LLIO_close(ISC_STATUS *, SLONG);
-extern int LLIO_open(ISC_STATUS *, TEXT *, USHORT, USHORT, SLONG *);
-extern int LLIO_read(ISC_STATUS *, SLONG, TEXT *, SLONG, USHORT, UCHAR *, SLONG,
+int LLIO_allocate_file_space(ISC_STATUS *, TEXT *, SLONG, UCHAR, USHORT);
+int LLIO_close(ISC_STATUS *, SLONG);
+int LLIO_open(ISC_STATUS *, TEXT *, USHORT, USHORT, SLONG *);
+int LLIO_read(ISC_STATUS *, SLONG, TEXT *, SLONG, USHORT, UCHAR *, SLONG,
 					 SLONG *);
-extern int LLIO_seek(ISC_STATUS *, SLONG, TEXT *, SLONG, USHORT);
-extern int LLIO_sync(ISC_STATUS *, SLONG);
-extern int LLIO_write(ISC_STATUS *, SLONG, TEXT *, SLONG, USHORT, UCHAR *, SLONG,
+int LLIO_seek(ISC_STATUS *, SLONG, TEXT *, SLONG, USHORT);
+int LLIO_sync(ISC_STATUS *, SLONG);
+int LLIO_write(ISC_STATUS *, SLONG, TEXT *, SLONG, USHORT, UCHAR *, SLONG,
 					  SLONG *);
 
-#endif /* _JRD_LLIO_PROTO_H_ */
+#endif // JRD_LLIO_PROTO_H

@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_INTL_H_
-#define _JRD_INTL_H_
+#ifndef JRD_INTL_H
+#define JRD_INTL_H
 
 #include "../intl/charsets.h"
 
@@ -144,4 +144,4 @@
 /* Maps a Character_set_id & collation_id to a text_type (driver ID) */
 #define INTL_CS_COLL_TO_TTYPE(cs,coll)	((SSHORT)((coll) << 8 | ((cs) & 0x00FF)))
 
-#endif /* _JRD_INTL_H_ */
+#endif /* JRD_INTL_H */

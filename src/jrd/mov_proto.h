@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_MOV_PROTO_H_
-#define _JRD_MOV_PROTO_H_
+#ifndef JRD_MOV_PROTO_H
+#define JRD_MOV_PROTO_H
 
 #include "../jrd/dsc.h"
 #include "../jrd/jrd.h"
@@ -32,33 +32,33 @@
 extern "C" {
 #endif
 
-extern int MOV_compare(struct dsc *, struct dsc *);
-extern double MOV_date_to_double(struct dsc *);
-extern void MOV_double_to_date(double, SLONG[2]);
-extern void MOV_fast(SCHAR *, SCHAR *, ULONG);
-extern void MOV_faster(SLONG *, SLONG *, ULONG);
-extern void MOV_fill(SLONG *, ULONG);
-extern double MOV_get_double(struct dsc *);
-extern SLONG MOV_get_long(struct dsc *, SSHORT);
-extern void MOV_get_metadata_str(struct dsc *, TEXT *, USHORT);
-extern void MOV_get_name(struct dsc *, TEXT *);
-extern SQUAD MOV_get_quad(struct dsc *, SSHORT);
-extern SINT64 MOV_get_int64(struct dsc *, SSHORT);
-extern int MOV_get_string_ptr(struct dsc *, USHORT *, UCHAR **, struct vary *,
+int		MOV_compare(struct dsc *, struct dsc *);
+double	MOV_date_to_double(struct dsc *);
+void	MOV_double_to_date(double, SLONG[2]);
+void	MOV_fast(SCHAR *, SCHAR *, ULONG);
+void	MOV_faster(SLONG *, SLONG *, ULONG);
+void	MOV_fill(SLONG *, ULONG);
+double	MOV_get_double(struct dsc *);
+SLONG	MOV_get_long(struct dsc *, SSHORT);
+void	MOV_get_metadata_str(struct dsc *, TEXT *, USHORT);
+void	MOV_get_name(struct dsc *, TEXT *);
+SQUAD	MOV_get_quad(struct dsc *, SSHORT);
+SINT64	MOV_get_int64(struct dsc *, SSHORT);
+int		MOV_get_string_ptr(struct dsc *, USHORT *, UCHAR **, struct vary *,
 							  USHORT);
-extern int MOV_get_string(struct dsc *, UCHAR **, struct vary *, USHORT);
-extern GDS_DATE MOV_get_sql_date(struct dsc *);
-extern GDS_TIME MOV_get_sql_time(struct dsc *);
-extern GDS_TIMESTAMP MOV_get_timestamp(struct dsc *);
-extern int MOV_make_string(struct dsc *, USHORT, const char**, struct vary *,
+int		MOV_get_string(struct dsc *, UCHAR **, struct vary *, USHORT);
+GDS_DATE	MOV_get_sql_date(struct dsc *);
+GDS_TIME	MOV_get_sql_time(struct dsc *);
+GDS_TIMESTAMP	MOV_get_timestamp(struct dsc *);
+int		MOV_make_string(struct dsc *, USHORT, const char**, struct vary *,
 						   USHORT);
-extern int MOV_make_string2(struct dsc *, USHORT, UCHAR **, struct vary *,
+int		MOV_make_string2(struct dsc *, USHORT, UCHAR **, struct vary *,
 							USHORT, struct str **);
-extern void MOV_move(struct dsc *, struct dsc *);
-extern void MOV_time_stamp(GDS_TIMESTAMP *);
+void	MOV_move(struct dsc *, struct dsc *);
+void	MOV_time_stamp(GDS_TIMESTAMP *);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-#endif /* _JRD_MOV_PROTO_H_ */
+#endif /* JRD_MOV_PROTO_H */

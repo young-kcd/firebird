@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_MBLR_H_
-#define _JRD_MBLR_H_
+#ifndef JRD_MBLR_H
+#define JRD_MBLR_H
 
 #define mblr_null			0
 
@@ -95,4 +95,4 @@
 #define dsc$k_dtype_vt			blr_varying
 #define dsc$k_dtype_adt			blr_timestamp
 
-#endif /* _JRD_MBLR_H_ */
+#endif /* JRD_MBLR_H */

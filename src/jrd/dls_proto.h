@@ -23,14 +23,14 @@
  * 26-Sept-2001 Paul Beach - External File Directory Config. Parameter
  */
 
-#ifndef _JRD_DLS_PROTO_H_
-#define _JRD_DLS_PROTO_H_
+#ifndef JRD_DLS_PROTO_H
+#define JRD_DLS_PROTO_H
 
 #include "../jrd/sort.h"
 
-extern BOOLEAN DLS_get_temp_space(ULONG, SFB);
-extern void DLS_put_temp_space(SFB);
-extern BOOLEAN API_ROUTINE DLS_add_dir(ULONG, const TEXT *);
-extern MDLS *DLS_get_access(void);
+BOOLEAN		DLS_get_temp_space(ULONG, SFB);
+void		DLS_put_temp_space(SFB);
+BOOLEAN		API_ROUTINE DLS_add_dir(ULONG, const TEXT *);
+MDLS*		DLS_get_access(void);
 
-#endif /* _JRD_DLS_PROTO_H_ */
+#endif // JRD_DLS_PROTO_H

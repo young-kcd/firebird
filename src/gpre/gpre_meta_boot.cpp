@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.22 2003-09-28 21:35:59 skidder Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.23 2003-10-03 01:53:33 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -904,17 +904,17 @@ ISC_STATUS API_ROUTINE isc_print_blr(SCHAR * blr,
 
 extern "C" {
 
-void DLL_EXPORT CVT_move (dsc * a, dsc * b, FPTR_VOID c)
+void CVT_move (dsc * a, dsc * b, FPTR_VOID c)
 {  
     assert(0);
     /* Not available in boot_gpre */
 }
 
-void DLL_EXPORT ERR_bugcheck(int number)
+void ERR_bugcheck(int number)
 {
 }
 
-void DLL_EXPORT ERR_post(ISC_STATUS status, ...)
+void ERR_post(ISC_STATUS status, ...)
 {
 }
 

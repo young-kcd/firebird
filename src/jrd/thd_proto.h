@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_THD_PROTO_H_
-#define _JRD_THD_PROTO_H_
+#ifndef JRD_THD_PROTO_H
+#define JRD_THD_PROTO_H
 
 #include "../jrd/isc.h"
 
@@ -33,15 +33,15 @@ extern "C" {
 int		API_ROUTINE gds__thread_start(FPTR_INT_VOID_PTR, void*, int, int,
 										 void*);
 
-struct thdd* DLL_EXPORT THD_get_specific(void);
-void	DLL_EXPORT THD_init(void);
-void	DLL_EXPORT THD_cleanup(void);
-int		DLL_EXPORT THD_mutex_destroy(struct mutx_t*);
-void	DLL_EXPORT THD_put_specific(struct thdd*);
-int		DLL_EXPORT THD_wlck_destroy(struct wlck_t*);
-int		DLL_EXPORT THD_wlck_init(struct wlck_t*);
-int		DLL_EXPORT THD_wlck_lock(struct wlck_t*, USHORT);
-int		DLL_EXPORT THD_wlck_unlock(struct wlck_t*);
+struct thdd* THD_get_specific(void);
+void	THD_init(void);
+void	THD_cleanup(void);
+int		THD_mutex_destroy(struct mutx_t*);
+void	THD_put_specific(struct thdd*);
+int		THD_wlck_destroy(struct wlck_t*);
+int		THD_wlck_init(struct wlck_t*);
+int		THD_wlck_lock(struct wlck_t*, USHORT);
+int		THD_wlck_unlock(struct wlck_t*);
 
 long	THD_get_thread_id(void);
 void	THD_getspecific_data(void** t_data);
@@ -62,7 +62,7 @@ int		THD_rec_mutex_lock(struct rec_mutx_t*);
 int		THD_rec_mutex_unlock(struct rec_mutx_t*);
 #endif
 
-struct thdd* DLL_EXPORT THD_restore_specific(void);
+struct thdd* THD_restore_specific(void);
 int		THD_resume(THD_T);
 void	THD_sleep(ULONG);
 int		THD_suspend(THD_T);
@@ -74,4 +74,4 @@ void	THD_yield(void);
 } /* extern "C" */
 #endif
 
-#endif /* _JRD_THD_PROTO_H_ */
+#endif /* JRD_THD_PROTO_H */

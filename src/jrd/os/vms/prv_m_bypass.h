@@ -16,8 +16,8 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-#ifndef _JRD_PRV_M_BYPASS_H_
-#define _JRD_PRV_M_BYPASS_H_
+#ifndef JRD_PRV_M_BYPASS_H
+#define JRD_PRV_M_BYPASS_H
 
 /*  PRV$V_BYPASS incompatibly defined between VMS V4 and V5,
  *  so use PRV$M_BYPASS.
@@ -30,4 +30,4 @@
 #define PRV$M_BYPASS (1 << PRV$V_BYPASS)
 #endif
 
-#endif /* _JRD_PRV_M_BYPASS_H_ */
+#endif /* JRD_PRV_M_BYPASS_H */

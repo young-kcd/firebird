@@ -21,10 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_PCMET_PROTO_H_
-#define _JRD_PCMET_PROTO_H_
+#ifndef JRD_PCMET_PROTO_H
+#define JRD_PCMET_PROTO_H
 
-extern int PCMET_expression_index(TDBB, SSHORT, struct dfw *, struct jrd_tra *);
-extern void PCMET_lookup_index(struct jrd_rel *, struct idx *);
+int PCMET_expression_index(TDBB, SSHORT, struct dfw *, struct jrd_tra *);
+void PCMET_lookup_index(struct jrd_rel *, struct idx *);
 
-#endif /* _JRD_PCMET_PROTO_H_ */
+#endif // JRD_PCMET_PROTO_H

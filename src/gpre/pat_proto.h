@@ -24,6 +24,6 @@
 #ifndef GPRE_PAT_PROTO_H
 #define GPRE_PAT_PROTO_H
 
-extern void PATTERN_expand(USHORT, TEXT *, PAT *);
+void	PATTERN_expand(USHORT, TEXT *, PAT *);
 
-#endif /* GPRE_PAT_PROTO_H */
+#endif // GPRE_PAT_PROTO_H

@@ -47,7 +47,7 @@
 extern "C" {
 
 
-extern int (*dbg_block) ();
+int (*dbg_block) ();
 
 void (*dmp_active) (void) = DMP_active,
 	(*dmp_dirty) (void) = DMP_dirty, (*dmp_page) (SLONG, USHORT) = DMP_page;

@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_QUE_H_
-#define _JRD_QUE_H_
+#ifndef JRD_QUE_H
+#define JRD_QUE_H
 
 #define QUE_INIT(que) {\
 	(que).que_backward = &(que);\
@@ -66,4 +66,5 @@
 #define QUE_LEAST_RECENTLY_USED(in_use_que) {\
 	QUE_DELETE (in_use_que);\
 	QUE_APPEND (bcb->bcb_in_use, in_use_que);}
-#endif /* _JRD_QUE_H_ */
+
+#endif /* JRD_QUE_H */

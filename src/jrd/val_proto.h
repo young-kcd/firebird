@@ -21,9 +21,9 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_VAL_PROTO_H_
-#define _JRD_VAL_PROTO_H_
+#ifndef JRD_VAL_PROTO_H
+#define JRD_VAL_PROTO_H
 
-extern BOOLEAN VAL_validate(TDBB, USHORT);
+BOOLEAN VAL_validate(TDBB, USHORT);
 
-#endif /* _JRD_VAL_PROTO_H_ */
+#endif // JRD_VAL_PROTO_H

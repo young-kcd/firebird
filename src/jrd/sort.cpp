@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.45 2003-09-29 11:00:38 dimitr Exp $
+ * $Id: sort.cpp,v 1.46 2003-10-03 01:47:54 brodsom Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -82,7 +82,7 @@
 #define	MAX_MERGE_LEVEL		2
 
 #ifdef VMS
-extern double MTH$CVT_D_G(), MTH$CVT_G_D();
+double MTH$CVT_D_G(), MTH$CVT_G_D();
 #endif
 
 // The sort buffer size should be just under a multiple of the

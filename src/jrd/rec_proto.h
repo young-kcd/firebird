@@ -21,13 +21,11 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_REC_PROTO_H_
-#define _JRD_REC_PROTO_H_
+#ifndef JRD_REC_PROTO_H
+#define JRD_REC_PROTO_H
 
-extern void REC_recover(TEXT *, TEXT *, struct ctrl_pt *, struct sbm **,
-						USHORT);
-extern void REC_recover_page(TEXT *, TEXT *, struct ctrl_pt *, SLONG,
-							 struct pag *);
-extern void REC_update_next_transid(void);
+void	REC_recover(TEXT *, TEXT *, struct ctrl_pt *, struct sbm **, USHORT);
+void	REC_recover_page(TEXT *, TEXT *, struct ctrl_pt *, SLONG, struct pag *);
+void	REC_update_next_transid(void);
 
-#endif /* _JRD_REC_PROTO_H_ */
+#endif // JRD_REC_PROTO_H

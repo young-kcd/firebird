@@ -24,8 +24,8 @@
  *
  */
 
-#ifndef _JRD_EVENT_PROTO_H_
-#define _JRD_EVENT_PROTO_H_
+#ifndef JRD_EVENT_PROTO_H
+#define JRD_EVENT_PROTO_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,4 +44,4 @@ SLONG EVENT_que(ISC_STATUS *, SLONG, USHORT, TEXT *, USHORT, UCHAR *, FPTR_VOID,
 } /* extern "C" */
 #endif
 
-#endif /* _JRD_EVENT_PROTO_H_ */
+#endif /* JRD_EVENT_PROTO_H */

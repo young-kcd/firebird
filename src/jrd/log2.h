@@ -24,8 +24,8 @@
  *
  */
 
-#ifndef _JRD_ARG_H_
-#define _JRD_ARG_H_
+#ifndef JRD_ARG_H
+#define JRD_ARG_H
 
 /* This table will be used to pull off the argument types
    for recording in the log. The status vector is assumed
@@ -131,4 +131,4 @@ static const SCHAR arg_types1[log_max][10] = {
 #define MODE_APPEND	"a"
 #endif
 
-#endif /* _JRD_ARG_H_ */
+#endif /* JRD_ARG_H */

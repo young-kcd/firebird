@@ -21,38 +21,38 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_PIO_PROTO_H_
-#define _JRD_PIO_PROTO_H_
+#ifndef JRD_PIO_PROTO_H
+#define JRD_PIO_PROTO_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern int PIO_add_file(struct dbb *, struct fil *, TEXT *, SLONG);
-extern void PIO_close(struct fil *);
-extern struct fil *PIO_create(struct dbb *, TEXT *, SSHORT, BOOLEAN);
-extern int PIO_connection(TEXT *, USHORT *);
-extern int PIO_expand(TEXT *, USHORT, TEXT *);
-extern void PIO_flush(struct fil *);
-extern void PIO_force_write(struct fil *, USHORT);
-extern void PIO_header(struct dbb *, SCHAR *, int);
-extern SLONG PIO_max_alloc(struct dbb *);
-extern SLONG PIO_act_alloc(struct dbb *);
-extern struct fil *PIO_open(struct dbb *, TEXT *, SSHORT, SSHORT,
+int		PIO_add_file(struct dbb *, struct fil *, TEXT *, SLONG);
+void	PIO_close(struct fil *);
+struct fil*	PIO_create(struct dbb *, TEXT *, SSHORT, BOOLEAN);
+int		PIO_connection(TEXT *, USHORT *);
+int		PIO_expand(TEXT *, USHORT, TEXT *);
+void	PIO_flush(struct fil *);
+void	PIO_force_write(struct fil *, USHORT);
+void	PIO_header(struct dbb *, SCHAR *, int);
+SLONG	PIO_max_alloc(struct dbb *);
+SLONG	PIO_act_alloc(struct dbb *);
+struct fil*	PIO_open(struct dbb *, TEXT *, SSHORT, SSHORT,
 							struct blk *, TEXT *, USHORT);
-extern int PIO_read(struct fil *, struct bdb *, struct pag *, ISC_STATUS *);
+int		PIO_read(struct fil *, struct bdb *, struct pag *, ISC_STATUS *);
 
 #ifdef SUPERSERVER_V2
-extern int PIO_read_ahead(struct dbb *, SLONG, SCHAR *, SLONG, struct piob *,
+int		PIO_read_ahead(struct dbb *, SLONG, SCHAR *, SLONG, struct piob *,
 						  ISC_STATUS *);
-extern int PIO_status(struct piob *, ISC_STATUS *);
+int		PIO_status(struct piob *, ISC_STATUS *);
 #endif
 
-extern int PIO_unlink(TEXT *);
-extern int PIO_write(struct fil *, struct bdb *, struct pag *, ISC_STATUS *);
+int		PIO_unlink(TEXT *);
+int		PIO_write(struct fil *, struct bdb *, struct pag *, ISC_STATUS *);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-#endif /* _JRD_PIO_PROTO_H_ */
+#endif // JRD_PIO_PROTO_H

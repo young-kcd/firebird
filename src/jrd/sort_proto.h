@@ -21,28 +21,28 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_SORT_PROTO_H_
-#define _JRD_SORT_PROTO_H_
+#ifndef JRD_SORT_PROTO_H
+#define JRD_SORT_PROTO_H
 
 
 #ifdef SCROLLABLE_CURSORS
-extern void SORT_diddle_key(UCHAR *, struct scb *, bool);
-extern void SORT_get(ISC_STATUS *, struct scb *, ULONG **, RSE_GET_MODE);
-extern void SORT_read_block(ISC_STATUS *, struct sfb *, ULONG, BLOB_PTR *, ULONG);
+void	SORT_diddle_key(UCHAR *, struct scb *, bool);
+void	SORT_get(ISC_STATUS *, struct scb *, ULONG **, RSE_GET_MODE);
+void	SORT_read_block(ISC_STATUS *, struct sfb *, ULONG, BLOB_PTR *, ULONG);
 #else
-extern void SORT_get(ISC_STATUS *, struct scb *, ULONG **);
-extern ULONG SORT_read_block(ISC_STATUS *, struct sfb *, ULONG, BLOB_PTR *,
+void	SORT_get(ISC_STATUS *, struct scb *, ULONG **);
+ULONG	SORT_read_block(ISC_STATUS *, struct sfb *, ULONG, BLOB_PTR *,
 							 ULONG);
 #endif
 
-extern void SORT_error(ISC_STATUS *, struct sfb *, TEXT *, ISC_STATUS, int);
-extern void SORT_fini(struct scb *, struct att *);
-extern struct scb *SORT_init(ISC_STATUS *, USHORT, USHORT, struct skd *,
+void	SORT_error(ISC_STATUS *, struct sfb *, TEXT *, ISC_STATUS, int);
+void	SORT_fini(struct scb *, struct att *);
+struct scb*	SORT_init(ISC_STATUS *, USHORT, USHORT, struct skd *,
 							 BOOLEAN(*)(), void *, struct att *, UINT64);
-extern void SORT_put(ISC_STATUS *, struct scb *, ULONG **);
-extern void SORT_shutdown(struct att *);
-extern bool SORT_sort(ISC_STATUS *, struct scb *);
-extern ULONG SORT_write_block(ISC_STATUS *, struct sfb *, ULONG, BLOB_PTR *,
+void	SORT_put(ISC_STATUS *, struct scb *, ULONG **);
+void	SORT_shutdown(struct att *);
+bool	SORT_sort(ISC_STATUS *, struct scb *);
+ULONG	SORT_write_block(ISC_STATUS *, struct sfb *, ULONG, BLOB_PTR *,
 							  ULONG);
 
-#endif /* _JRD_SORT_PROTO_H_ */
+#endif // JRD_SORT_PROTO_H

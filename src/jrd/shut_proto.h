@@ -21,11 +21,11 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_SHUT_PROTO_H_
-#define _JRD_SHUT_PROTO_H_
+#ifndef JRD_SHUT_PROTO_H
+#define JRD_SHUT_PROTO_H
 
-extern BOOLEAN SHUT_blocking_ast(struct dbb *);
-extern BOOLEAN SHUT_database(struct dbb *, SSHORT, SSHORT);
-extern BOOLEAN SHUT_init(struct dbb *);
+BOOLEAN		SHUT_blocking_ast(struct dbb *);
+BOOLEAN		SHUT_database(struct dbb *, SSHORT, SSHORT);
+BOOLEAN		SHUT_init(struct dbb *);
 
-#endif /* _JRD_SHUT_PROTO_H_ */
+#endif // JRD_SHUT_PROTO_H

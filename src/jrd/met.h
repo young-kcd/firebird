@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_MET_H_
-#define _JRD_MET_H_
+#ifndef JRD_MET_H
+#define JRD_MET_H
 
 /* Record types for record summary blob records */
 
@@ -126,4 +126,4 @@ example #3:
 
 #include "../jrd/obj.h"
 
-#endif /* _JRD_MET_H_ */
+#endif /* JRD_MET_H */

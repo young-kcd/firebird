@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_DFLT_H_
-#define _JRD_DFLT_H_
+#ifndef JRD_DFLT_H
+#define JRD_DFLT_H
 
 /* This file contains the blr for the default values for fields  
    in system relations.  The GDEF source for these fields is in
@@ -62,4 +62,4 @@ static const UCHAR dflt_restrict[] = {
 	blr_eoc
 };
 
-#endif
+#endif // JRD_DFLT_H

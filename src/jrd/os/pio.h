@@ -26,8 +26,8 @@
  *
  */
 
-#ifndef _JRD_PIO_H_
-#define _JRD_PIO_H_
+#ifndef JRD_PIO_H
+#define JRD_PIO_H
 
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
@@ -137,4 +137,4 @@ typedef struct piob {
 #define PIOB_success	2		/* I/O successfully completed */
 #define PIOB_pending	4		/* Asynchronous I/O not yet completed */
 
-#endif /* _JRD_PIO_H_ */
+#endif /* JRD_PIO_H */

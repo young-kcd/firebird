@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_OPT_PROTO_H_
-#define _JRD_OPT_PROTO_H_
+#ifndef JRD_OPT_PROTO_H
+#define JRD_OPT_PROTO_H
 
 #include "../jrd/jrd.h"
 #include "../jrd/btr.h"
@@ -30,15 +30,15 @@
 #include "../jrd/lls.h"
 
 
-extern BOOLEAN OPT_access_path(struct jrd_req *, SCHAR *, SSHORT, USHORT *);
-extern class Rsb *OPT_compile(TDBB, class Csb *,
+BOOLEAN OPT_access_path(struct jrd_req *, SCHAR *, SSHORT, USHORT *);
+class Rsb *OPT_compile(TDBB, class Csb *,
 							   struct rse *, struct lls *);
-extern struct jrd_nod *OPT_make_dbkey(struct opt *, struct jrd_nod *,
+struct jrd_nod *OPT_make_dbkey(struct opt *, struct jrd_nod *,
 								  USHORT);
-extern struct jrd_nod *OPT_make_index(TDBB, struct opt *, struct jrd_rel *,
+struct jrd_nod *OPT_make_index(TDBB, struct opt *, struct jrd_rel *,
 								  struct idx *);
-extern int OPT_match_index(struct opt *, USHORT, struct idx *);
-extern void OPT_set_index(TDBB, struct jrd_req *, class Rsb **, struct jrd_rel *,
+int OPT_match_index(struct opt *, USHORT, struct idx *);
+void OPT_set_index(TDBB, struct jrd_req *, class Rsb **, struct jrd_rel *,
 						  struct idx *);
 
-#endif /* _JRD_OPT_PROTO_H_ */
+#endif // JRD_OPT_PROTO_H

@@ -24,8 +24,8 @@
  *	new MET_lookup_generator_id().
  */
 
-#ifndef _JRD_IRQ_H_
-#define _JRD_IRQ_H_
+#ifndef JRD_IRQ_H
+#define JRD_IRQ_H
 
 #define REQUEST(irt) (*dbb->dbb_internal)[irt]
 
@@ -111,4 +111,4 @@
 
 #define irq_MAX		75
 
-#endif /* _JRD_IRQ_H_ */
+#endif /* JRD_IRQ_H */

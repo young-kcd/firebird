@@ -60,7 +60,7 @@ void	API_ROUTINE gds_alloc_report(ULONG, char*, int);
 
 #else /* DEBUG_GDS_ALLOC */
 
-extern void*	API_ROUTINE gds__alloc(SLONG);
+void*	API_ROUTINE gds__alloc(SLONG);
 
 #endif /* DEBUG_GDS_ALLOC */
 

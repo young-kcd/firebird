@@ -21,17 +21,18 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_ENC_PROTO_H_
-#define _JRD_ENC_PROTO_H_
+#ifndef JRD_ENC_PROTO_H
+#define JRD_ENC_PROTO_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern TEXT *DLL_EXPORT ENC_crypt(TEXT *, TEXT *);
+TEXT* ENC_crypt(TEXT *, TEXT *);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-#endif /* _JRD_ENC_PROTO_H_ */
+#endif // JRD_ENC_PROTO_H
+

@@ -21,11 +21,11 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: msg.h,v 1.2 2001-12-24 02:50:51 tamlin Exp $
+$Id: msg.h,v 1.3 2003-10-03 01:47:25 brodsom Exp $
 */
 
-#ifndef _JRD_MSG_H_
-#define _JRD_MSG_H_
+#ifndef JRD_MSG_H
+#define JRD_MSG_H
 
 #define MSG_NUMBER(facility, code)	((SLONG) facility * 10000 + code)
 #define MSG_BUCKET			1024
@@ -62,4 +62,4 @@ typedef struct msgrec {
 #define NEXT_LEAF(leaf)	(MSGREC) \
 	((SCHAR*) leaf + FB_ALIGN(OFFSETA (MSGREC, msgrec_text) + leaf->msgrec_length, sizeof (SLONG)))
 
-#endif /* _JRD_MSG_H_ */
+#endif /* JRD_MSG_H */

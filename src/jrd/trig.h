@@ -20,8 +20,8 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-#ifndef _JRD_TRIG_H_
-#define _JRD_TRIG_H_
+#ifndef JRD_TRIG_H
+#define JRD_TRIG_H
 
 /* This file contains the trigger blr for the system-defined triggers
    on system relations.  The GDEF source for these triggers is in
@@ -2281,4 +2281,4 @@ static const UCHAR trigger35[] = {
 	blr_eoc
 };
 
-#endif /* _JRD_TRIG_H_ */
+#endif /* JRD_TRIG_H */

@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_SQZ_H_
-#define _JRD_SQZ_H_
+#ifndef JRD_SQZ_H
+#define JRD_SQZ_H
 
 #include "../jrd/all.h"
 #include "../include/fb_blk.h"
@@ -37,4 +37,4 @@ class Dcc : public pool_alloc<type_dcc>
 };
 typedef Dcc *DCC;
 
-#endif /* _JRD_SQZ_H_ */
+#endif /* JRD_SQZ_H */

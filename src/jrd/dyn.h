@@ -69,25 +69,25 @@ typedef struct dyn_fld {
 
 } *DYN_FLD;
 
-extern void DYN_error(USHORT, USHORT, const TEXT*, const TEXT*, const TEXT*,
-	const TEXT*, const TEXT*);
-extern void DYN_error_punt(USHORT, USHORT, const TEXT*, const TEXT*,
-	const TEXT*, const TEXT*, const TEXT*);
-extern void DYN_execute(GBL, UCHAR **, TEXT *, TEXT *, TEXT *, TEXT *,
+void	DYN_error(USHORT, USHORT, const TEXT*, const TEXT*, const TEXT*,
+				const TEXT*, const TEXT*);
+void	DYN_error_punt(USHORT, USHORT, const TEXT*, const TEXT*,
+				const TEXT*, const TEXT*, const TEXT*);
+void	DYN_execute(GBL, UCHAR **, TEXT *, TEXT *, TEXT *, TEXT *,
 						TEXT *);
-extern SLONG DYN_get_number(UCHAR **);
-extern USHORT DYN_get_string(TEXT **, TEXT *, USHORT, USHORT);
-extern void DYN_get_string2(TEXT **, TEXT *, USHORT);
+SLONG	DYN_get_number(UCHAR **);
+USHORT	DYN_get_string(TEXT **, TEXT *, USHORT, USHORT);
+void	DYN_get_string2(TEXT **, TEXT *, USHORT);
 // This function doesn't need to be exported currently.
-extern bool DYN_is_it_sql_role(GBL, const TEXT*, TEXT*, TDBB);
-extern USHORT DYN_put_blr_blob(GBL, UCHAR **, GDS__QUAD *);
-extern USHORT DYN_put_blr_blob2(GBL, UCHAR **, GDS__QUAD *);
-extern USHORT DYN_put_text_blob(GBL, UCHAR **, GDS__QUAD *);
-extern USHORT DYN_put_text_blob2(GBL, UCHAR **, GDS__QUAD *);
-extern void DYN_rundown_request(BLK, SSHORT);
-extern USHORT DYN_skip_attribute(UCHAR **);
-extern USHORT DYN_skip_attribute2(UCHAR **);
-extern void DYN_unsupported_verb(void);
+bool	DYN_is_it_sql_role(GBL, const TEXT*, TEXT*, TDBB);
+USHORT	DYN_put_blr_blob(GBL, UCHAR **, GDS__QUAD *);
+USHORT	DYN_put_blr_blob2(GBL, UCHAR **, GDS__QUAD *);
+USHORT	DYN_put_text_blob(GBL, UCHAR **, GDS__QUAD *);
+USHORT	DYN_put_text_blob2(GBL, UCHAR **, GDS__QUAD *);
+void	DYN_rundown_request(BLK, SSHORT);
+USHORT	DYN_skip_attribute(UCHAR **);
+USHORT	DYN_skip_attribute2(UCHAR **);
+void	DYN_unsupported_verb(void);
 
-#endif /* JRD_DYN_H */
+#endif // JRD_DYN_H
 

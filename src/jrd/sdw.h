@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_SDW_H_
-#define _JRD_SDW_H_
+#ifndef JRD_SDW_H
+#define JRD_SDW_H
 
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
@@ -55,4 +55,4 @@ typedef sdw *SDW;
 #define SDW_INVALID	(SDW_shutdown | SDW_delete | SDW_rollover | SDW_conditional)
 #define SDW_IGNORE	(SDW_shutdown | SDW_delete)
 
-#endif /* _JRD_SDW_H_ */
+#endif /* JRD_SDW_H */

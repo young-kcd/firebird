@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_OLD_H_
-#define _JRD_OLD_H_
+#ifndef JRD_OLD_H
+#define JRD_OLD_H
 
 #include "../jrd/common.h"
 
@@ -101,4 +101,4 @@ typedef struct hdr_page {
 	SCHAR hp_db[1];				/* database name */
 } *OLD_HDR_PAGE;
 
-#endif /* _JRD_OLD_H_ */
+#endif /* JRD_OLD_H */

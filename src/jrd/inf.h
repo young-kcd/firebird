@@ -23,8 +23,8 @@
  * 2001.07.28: John Bellardo: Added gds__info_rsb_skip to support LIMIT.
  */
 
-#ifndef _JRD_INF_H_
-#define _JRD_INF_H_
+#ifndef JRD_INF_H
+#define JRD_INF_H
 
 /* Common, structural codes */
 
@@ -190,4 +190,4 @@
 #define gds__info_sql_sqlda_start	20
 #define gds__info_sql_stmt_type		21
 
-#endif /* _JRD_INF_H_ */
+#endif /* JRD_INF_H */

@@ -24,8 +24,8 @@
  * 2003.02.02 Dmitry Yemanov: Implemented cached security database connection
  */
 
-#ifndef _JRD_PWD_H_
-#define _JRD_PWD_H_
+#ifndef JRD_PWD_H
+#define JRD_PWD_H
 
 #include "../jrd/ibase.h"
 #include "../jrd/thd.h"
@@ -86,4 +86,4 @@ private:
 #define USER_INFO_NAME	"security.fdb"
 #endif
 
-#endif /* _JRD_PWD_H_ */
+#endif /* JRD_PWD_H */

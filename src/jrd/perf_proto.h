@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_PERF_PROTO_H_
-#define _JRD_PERF_PROTO_H_
+#ifndef JRD_PERF_PROTO_H
+#define JRD_PERF_PROTO_H
 
 #include "../jrd/y_ref.h"
 
@@ -30,14 +30,14 @@
 extern "C" {
 #endif
 
-extern int API_ROUTINE perf_format(struct perf *, struct perf *, SCHAR *,
+int		API_ROUTINE perf_format(struct perf *, struct perf *, SCHAR *,
 								   SCHAR *, SSHORT *);
-extern void API_ROUTINE perf_get_info(FRBRD **, struct perf *);
-extern void API_ROUTINE perf_report(struct perf *, struct perf *, SCHAR *,
+void	API_ROUTINE perf_get_info(FRBRD **, struct perf *);
+void	API_ROUTINE perf_report(struct perf *, struct perf *, SCHAR *,
 									SSHORT *);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-#endif /* _JRD_PERF_PROTO_H_ */
+#endif // JRD_PERF_PROTO_H

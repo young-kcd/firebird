@@ -41,8 +41,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_DRQ_H_
-#define _JRD_DRQ_H_
+#ifndef JRD_DRQ_H
+#define JRD_DRQ_H
 
 #define DYN_REQUEST(drt) (*dbb->dbb_dyn_req)[drt]
 
@@ -182,4 +182,4 @@
 #define drq_d_difference    132 /* Delete backup difference file */
 #define drq_MAX             133
 
-#endif /* _JRD_DRQ_H_ */
+#endif /* JRD_DRQ_H */

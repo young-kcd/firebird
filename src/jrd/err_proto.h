@@ -29,29 +29,29 @@
 /* Index error types */
 
 typedef enum idx_e {
-    idx_e_ok = 0,
-    idx_e_duplicate,
-    idx_e_keytoobig,
-    idx_e_conversion,
-    idx_e_foreign
+	idx_e_ok = 0,
+	idx_e_duplicate,
+	idx_e_keytoobig,
+	idx_e_conversion,
+	idx_e_foreign
 } IDX_E;
 
-BOOLEAN DLL_EXPORT ERR_post_warning(ISC_STATUS, ...);
-void ERR_assert(const TEXT*, int);
-void DLL_EXPORT ERR_bugcheck(int);
-void DLL_EXPORT ERR_bugcheck_msg(const TEXT*);
-void DLL_EXPORT ERR_corrupt(int);
-void DLL_EXPORT ERR_duplicate_error(enum idx_e, struct jrd_rel*, USHORT);
-void DLL_EXPORT ERR_error(int);
-void DLL_EXPORT ERR_error_msg(const TEXT *);
-void DLL_EXPORT ERR_post(ISC_STATUS, ...);
-void DLL_EXPORT ERR_punt(void);
-void DLL_EXPORT ERR_warning(ISC_STATUS, ...);
-void DLL_EXPORT ERR_log(int, int, const TEXT *);
+BOOLEAN	ERR_post_warning(ISC_STATUS, ...);
+void	ERR_assert(const TEXT*, int);
+void	ERR_bugcheck(int);
+void	ERR_bugcheck_msg(const TEXT*);
+void	ERR_corrupt(int);
+void	ERR_duplicate_error(enum idx_e, struct jrd_rel*, USHORT);
+void	ERR_error(int);
+void	ERR_error_msg(const TEXT *);
+void	ERR_post(ISC_STATUS, ...);
+void	ERR_punt(void);
+void	ERR_warning(ISC_STATUS, ...);
+void	ERR_log(int, int, const TEXT *);
 
 #endif /* REQUESTER */
 
-const TEXT* DLL_EXPORT ERR_cstring(const TEXT*);
-const TEXT* DLL_EXPORT ERR_string(const TEXT*, int);
+const TEXT*		ERR_cstring(const TEXT*);
+const TEXT*		ERR_string(const TEXT*, int);
 
 #endif /* JRD_ERR_PROTO_H */

@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_IBSETJMP_H_
-#define _JRD_IBSETJMP_H_
+#ifndef JRD_IBSETJMP_H
+#define JRD_IBSETJMP_H
 
 
 #ifdef HAVE_SETJMP_H
@@ -73,4 +73,4 @@
 #endif
 
 
-#endif /* _JRD_IBSETJMP_H_ */
+#endif /* JRD_IBSETJMP_H */

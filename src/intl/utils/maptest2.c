@@ -163,7 +163,7 @@ typedef unsigned char	UCHAR;
 */
 #define UCHAR	unsigned char
 #define USHORT	unsigned short
-#define _JRD_COMMON_H_
+#define JRD_COMMON_H
 
 codepage_map *get_w1250(void)
 {

@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.39 2003-09-25 11:49:06 robocop Exp $
+$Id: isc.cpp,v 1.40 2003-10-03 01:46:53 brodsom Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -167,7 +167,7 @@ static int wait_test(SSHORT *);
 
 
 #ifndef REQUESTER
-void DLL_EXPORT ISC_ast_enter(void)
+void ISC_ast_enter(void)
 {
 /**************************************
  *
@@ -186,7 +186,7 @@ void DLL_EXPORT ISC_ast_enter(void)
 
 
 #ifndef REQUESTER
-void DLL_EXPORT ISC_ast_exit(void)
+void ISC_ast_exit(void)
 {
 /**************************************
  *
@@ -204,9 +204,9 @@ void DLL_EXPORT ISC_ast_exit(void)
 #endif
 
 
-int DLL_EXPORT ISC_check_process_existence(SLONG	pid,
-										   SLONG	xl_pid,
-										   USHORT	super_user)
+int ISC_check_process_existence(SLONG	pid,
+								SLONG	xl_pid,
+								USHORT	super_user)
 {
 /**************************************
  *

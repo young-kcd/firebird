@@ -26,11 +26,11 @@
  *
  */
 /*
-$Id: thd.h,v 1.14 2003-09-08 20:23:35 skidder Exp $
+$Id: thd.h,v 1.15 2003-10-03 01:47:54 brodsom Exp $
 */
 
-#ifndef _JRD_THD_H_
-#define _JRD_THD_H_
+#ifndef JRD_THD_H
+#define JRD_THD_H
 
 #ifdef SOLARIS
 #ifdef SOLARIS_MT
@@ -303,4 +303,4 @@ typedef struct wlck_t {
 #define THD_MUTEX_DESTROY(mutx)
 #endif
 
-#endif /* _JRD_THD_H_ */
+#endif /* JRD_THD_H */

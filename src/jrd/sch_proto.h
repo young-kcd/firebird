@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_SCH_PROTO_H_
-#define _JRD_SCH_PROTO_H_
+#ifndef JRD_SCH_PROTO_H
+#define JRD_SCH_PROTO_H
 
 #include "../jrd/isc.h"
 
@@ -30,28 +30,28 @@
 extern "C" {
 #endif
 
-extern int API_ROUTINE gds__thread_enable(int);
-extern void API_ROUTINE gds__thread_enter(void);
-extern void API_ROUTINE gds__thread_exit(void);
-extern void SCH_abort(void);
-extern void SCH_ast(enum ast_t);
-extern struct thread *SCH_current_thread(void);
-extern void SCH_enter(void);
-extern void SCH_exit(void);
-extern void SCH_hiber(void);
-extern void SCH_init(void);
-extern int SCH_schedule(void);
-extern BOOLEAN SCH_thread_enter_check(void);
-extern BOOLEAN SCH_validate(void);
-extern void SCH_wake(struct thread *);
+int		API_ROUTINE gds__thread_enable(int);
+void	API_ROUTINE gds__thread_enter(void);
+void	API_ROUTINE gds__thread_exit(void);
+void	SCH_abort(void);
+void	SCH_ast(enum ast_t);
+struct thread*	SCH_current_thread(void);
+void	SCH_enter(void);
+void	SCH_exit(void);
+void	SCH_hiber(void);
+void	SCH_init(void);
+int		SCH_schedule(void);
+BOOLEAN	SCH_thread_enter_check(void);
+BOOLEAN	SCH_validate(void);
+void	SCH_wake(struct thread *);
 #ifdef VMS
-extern int API_ROUTINE gds__ast_active(void);
-extern void API_ROUTINE gds__completion_ast(void);
-extern int API_ROUTINE gds__thread_wait(int (*)(), SLONG);
+int		API_ROUTINE gds__ast_active(void);
+void	API_ROUTINE gds__completion_ast(void);
+int		API_ROUTINE gds__thread_wait(int (*)(), SLONG);
 #endif /* VMS  */
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-#endif /* _JRD_SCH_PROTO_H_ */
+#endif // JRD_SCH_PROTO_H

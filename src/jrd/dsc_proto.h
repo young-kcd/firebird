@@ -30,12 +30,12 @@
 extern "C" {
 #endif
 
-extern int DLL_EXPORT DSC_string_length(const struct dsc*);
-extern const TEXT *DSC_dtype_tostring(UCHAR);
-extern void DLL_EXPORT DSC_get_dtype_name(const struct dsc*, TEXT *, USHORT);
-extern void DLL_EXPORT DSC_make_descriptor(struct dsc *, USHORT, SSHORT,
+int			DSC_string_length(const struct dsc*);
+const TEXT*	DSC_dtype_tostring(UCHAR);
+void		DSC_get_dtype_name(const struct dsc*, TEXT *, USHORT);
+void		DSC_make_descriptor(struct dsc *, USHORT, SSHORT,
 										   USHORT, SSHORT, SSHORT, SSHORT);
-extern USHORT DLL_EXPORT DSC_convert_to_text_length(USHORT dsc_type);
+USHORT		DSC_convert_to_text_length(USHORT dsc_type);
 
 extern const BYTE DSC_add_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX];
 extern const BYTE DSC_sub_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX];
@@ -46,5 +46,5 @@ extern const BYTE DSC_multiply_blr4_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX];
 } /* extern "C" */
 #endif
 
-#endif /* JRD_DSC_PROTO_H */
+#endif // JRD_DSC_PROTO_H
 

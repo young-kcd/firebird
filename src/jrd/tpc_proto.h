@@ -21,13 +21,13 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_TPC_PROTO_H_
-#define _JRD_TPC_PROTO_H_
+#ifndef JRD_TPC_PROTO_H
+#define JRD_TPC_PROTO_H
 
-extern int TPC_cache_state(TDBB, SLONG);
-extern void TPC_initialize_tpc(TDBB, SLONG);
-extern void TPC_set_state(TDBB, SLONG, SSHORT);
-extern int TPC_snapshot_state(TDBB, SLONG);
-extern void TPC_update_cache(TDBB, struct tip *, SLONG);
+int		TPC_cache_state(TDBB, SLONG);
+void	TPC_initialize_tpc(TDBB, SLONG);
+void	TPC_set_state(TDBB, SLONG, SSHORT);
+int		TPC_snapshot_state(TDBB, SLONG);
+void	TPC_update_cache(TDBB, struct tip *, SLONG);
 
-#endif /* _JRD_TPC_PROTO_H_ */
+#endif // JRD_TPC_PROTO_H

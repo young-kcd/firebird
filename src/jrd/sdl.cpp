@@ -117,10 +117,10 @@ static IPTR *stuff(IPTR, SDL_ARG);
 */
 
 
-SLONG DLL_EXPORT SDL_compute_subscript(
-									   ISC_STATUS * status_vector,
-									   ADS desc,
-									   USHORT dimensions, SLONG * subscripts)
+SLONG SDL_compute_subscript(ISC_STATUS * status_vector,
+							ADS desc,
+							USHORT dimensions,
+							SLONG * subscripts)
 {
 /**************************************
  *
@@ -238,7 +238,7 @@ ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS * status_vector,
 }
 
 
-UCHAR *DLL_EXPORT SDL_prepare_slice(UCHAR * sdl, USHORT sdl_length)
+UCHAR* SDL_prepare_slice(UCHAR * sdl, USHORT sdl_length)
 {
 /**************************************
  *
@@ -309,12 +309,14 @@ UCHAR *DLL_EXPORT SDL_prepare_slice(UCHAR * sdl, USHORT sdl_length)
 }
 
 
-int DLL_EXPORT SDL_walk(
-						ISC_STATUS * status_vector,
-						UCHAR * sdl,
-						USHORT mode,
-						UCHAR * array,
-ADS array_desc, SLONG * variables, SDL_walk_callback callback, SLICE argument)
+int	SDL_walk(ISC_STATUS * status_vector,
+		UCHAR * sdl,
+		USHORT mode,
+		UCHAR * array,
+		ADS array_desc,
+		SLONG * variables,
+		SDL_walk_callback callback,
+		SLICE argument)
 {
 /**************************************
  *

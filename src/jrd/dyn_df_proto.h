@@ -21,33 +21,33 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_DYN_DF_PROTO_H_
-#define _JRD_DYN_DF_PROTO_H_
+#ifndef JRD_DYN_DF_PROTO_H
+#define JRD_DYN_DF_PROTO_H
 
-extern void DYN_define_cache(GBL, UCHAR **);
-extern void DYN_define_constraint(GBL, UCHAR **, TEXT *, TEXT *);
-extern void DYN_define_dimension(GBL, UCHAR **, TEXT *, TEXT *);
-extern void DYN_define_exception(GBL, UCHAR **);
-extern void DYN_define_file(GBL, UCHAR **, SLONG, SLONG *, USHORT);
-extern void DYN_define_filter(GBL, UCHAR **);
-extern void DYN_define_function(GBL, UCHAR **);
-extern void DYN_define_function_arg(GBL, UCHAR **, TEXT *);
-extern void DYN_define_generator(GBL, UCHAR **);
-extern void DYN_define_global_field(GBL, UCHAR **, TEXT *, TEXT *);
-extern void DYN_define_index(GBL, UCHAR **, TEXT *, UCHAR, TEXT *, TEXT *,
+void DYN_define_cache(GBL, UCHAR **);
+void DYN_define_constraint(GBL, UCHAR **, TEXT *, TEXT *);
+void DYN_define_dimension(GBL, UCHAR **, TEXT *, TEXT *);
+void DYN_define_exception(GBL, UCHAR **);
+void DYN_define_file(GBL, UCHAR **, SLONG, SLONG *, USHORT);
+void DYN_define_filter(GBL, UCHAR **);
+void DYN_define_function(GBL, UCHAR **);
+void DYN_define_function_arg(GBL, UCHAR **, TEXT *);
+void DYN_define_generator(GBL, UCHAR **);
+void DYN_define_global_field(GBL, UCHAR **, TEXT *, TEXT *);
+void DYN_define_index(GBL, UCHAR **, TEXT *, UCHAR, TEXT *, TEXT *,
 							 TEXT *, UCHAR *);
-extern void DYN_define_local_field(GBL, UCHAR **, TEXT *, TEXT *);
-extern void DYN_define_log_file(GBL, UCHAR **, USHORT, USHORT);
-extern void DYN_define_parameter(GBL, UCHAR **, TEXT *);
-extern void DYN_define_procedure(GBL, UCHAR **);
-extern void DYN_define_relation(GBL, UCHAR **);
-extern void DYN_define_role(GBL, UCHAR **);
-extern void DYN_define_security_class(GBL, UCHAR **);
-extern void DYN_define_shadow(GBL, UCHAR **);
-extern void DYN_define_sql_field(GBL, UCHAR **, TEXT *, TEXT *);
-extern void DYN_define_trigger(GBL, UCHAR **, TEXT *, TEXT *, BOOLEAN);
-extern void DYN_define_trigger_msg(GBL, UCHAR **, TEXT *);
-extern void DYN_define_view_relation(GBL, UCHAR **, TEXT *);
-extern void DYN_define_difference(GBL, UCHAR **);
+void DYN_define_local_field(GBL, UCHAR **, TEXT *, TEXT *);
+void DYN_define_log_file(GBL, UCHAR **, USHORT, USHORT);
+void DYN_define_parameter(GBL, UCHAR **, TEXT *);
+void DYN_define_procedure(GBL, UCHAR **);
+void DYN_define_relation(GBL, UCHAR **);
+void DYN_define_role(GBL, UCHAR **);
+void DYN_define_security_class(GBL, UCHAR **);
+void DYN_define_shadow(GBL, UCHAR **);
+void DYN_define_sql_field(GBL, UCHAR **, TEXT *, TEXT *);
+void DYN_define_trigger(GBL, UCHAR **, TEXT *, TEXT *, BOOLEAN);
+void DYN_define_trigger_msg(GBL, UCHAR **, TEXT *);
+void DYN_define_view_relation(GBL, UCHAR **, TEXT *);
+void DYN_define_difference(GBL, UCHAR **);
 
-#endif /* _JRD_DYN_DF_PROTO_H_ */
+#endif // JRD_DYN_DF_PROTO_H

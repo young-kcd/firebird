@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_SORT_H_
-#define _JRD_SORT_H_
+#ifndef JRD_SORT_H
+#define JRD_SORT_H
 
 #include "../jrd/common.h"
 #include "../jrd/fil.h"
@@ -288,4 +288,4 @@ typedef struct scb
 } /* extern "C" */
 #endif
 
-#endif /* _JRD_SORT_H_ */
+#endif /* JRD_SORT_H */

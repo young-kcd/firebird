@@ -20,8 +20,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_SCROLL_CURSORS_H_
-#define _JRD_SCROLL_CURSORS_H_
+#ifndef JRD_SCROLL_CURSORS_H
+#define JRD_SCROLL_CURSORS_H
 
 /* ALL THE FOLLOWING DEFINITIONS HAVE BEEN TAKEN OUT OF JRD/IBASE.H 
    WHEN SCROLLABLE_CURSORS ARE TOTALLY IMPLEMENTED, THE FOLLOWING 
@@ -84,4 +84,4 @@ ISC_STATUS  ISC_EXPORT isc_receive2();
 #define isc_fetch_absolute		   4
 #define isc_fetch_relative		   5
 
-#endif /* _JRD_SCROLL_CURSORS_H_ */
+#endif /* JRD_SCROLL_CURSORS_H */

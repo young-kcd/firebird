@@ -27,8 +27,7 @@ extern "C" {
 
 
 #ifdef HAVE_CRYPT
-/* Changed prototype from DLL_EXPORT to API_ROUTINE - Jeevan */
-TEXT *DLL_EXPORT ENC_crypt(TEXT *string, TEXT *salt)
+TEXT* ENC_crypt(TEXT *string, TEXT *salt)
 {
 /**************************************
  *
@@ -469,8 +468,7 @@ static char cryptresult[1 + 4 + 4 + 11 + 1];	/* encrypted result */
  * Return a pointer to static data consisting of the "setting"
  * followed by an encryption produced by the "key" and "setting".
  */
-/* Changed prototype from DLL_EXPORT to API_ROUTINE - Jeevan */
-TEXT* DLL_EXPORT ENC_crypt(TEXT *key, TEXT *setting)
+TEXT* ENC_crypt(TEXT *key, TEXT *setting)
 {
 	unsigned long a, b, d;
 	char *encp;

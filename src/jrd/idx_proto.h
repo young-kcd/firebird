@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_IDX_PROTO_H_
-#define _JRD_IDX_PROTO_H_
+#ifndef JRD_IDX_PROTO_H
+#define JRD_IDX_PROTO_H
 
 #include "../jrd/btr.h"
 #include "../jrd/exe.h"
@@ -32,28 +32,28 @@
 extern "C" {
 #endif
 
-extern void IDX_check_access(TDBB, class Csb *, struct jrd_rel *, struct jrd_rel *,
+void IDX_check_access(TDBB, class Csb *, struct jrd_rel *, struct jrd_rel *,
 							 struct jrd_fld *);
-extern void IDX_create_index(TDBB, struct jrd_rel *, struct idx *, UCHAR *,
+void IDX_create_index(TDBB, struct jrd_rel *, struct idx *, UCHAR *,
 							 USHORT *, struct jrd_tra *, float *);
-extern struct idb *IDX_create_index_block(TDBB, struct jrd_rel *, USHORT);
-extern void IDX_delete_index(TDBB, struct jrd_rel *, USHORT);
-extern void IDX_delete_indices(TDBB, struct jrd_rel *);
-extern enum idx_e IDX_erase(TDBB, struct rpb *, struct jrd_tra *, struct jrd_rel **,
+struct idb *IDX_create_index_block(TDBB, struct jrd_rel *, USHORT);
+void IDX_delete_index(TDBB, struct jrd_rel *, USHORT);
+void IDX_delete_indices(TDBB, struct jrd_rel *);
+enum idx_e IDX_erase(TDBB, struct rpb *, struct jrd_tra *, struct jrd_rel **,
 							USHORT *);
-extern void IDX_garbage_collect(TDBB, struct rpb *, struct lls *,
+void IDX_garbage_collect(TDBB, struct rpb *, struct lls *,
 								struct lls *);
-extern enum idx_e IDX_modify(struct tdbb *, struct rpb *, struct rpb *,
+enum idx_e IDX_modify(struct tdbb *, struct rpb *, struct rpb *,
 							 struct jrd_tra *, struct jrd_rel **, USHORT *);
-extern enum idx_e IDX_modify_check_constraints(TDBB, struct rpb *, struct rpb *,
+enum idx_e IDX_modify_check_constraints(TDBB, struct rpb *, struct rpb *,
 											  struct jrd_tra *, struct jrd_rel **,
 											  USHORT *);
-extern float IDX_statistics(TDBB, struct jrd_rel *, USHORT);
-extern enum idx_e IDX_store(struct tdbb *, struct rpb *, struct jrd_tra *,
+float IDX_statistics(TDBB, struct jrd_rel *, USHORT);
+enum idx_e IDX_store(struct tdbb *, struct rpb *, struct jrd_tra *,
 							struct jrd_rel **, USHORT *);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-#endif /* _JRD_IDX_PROTO_H_ */
+#endif // JRD_IDX_PROTO_H

@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_ISC_PROTO_H_
-#define _JRD_ISC_PROTO_H_
+#ifndef JRD_ISC_PROTO_H
+#define JRD_ISC_PROTO_H
 
 #include "../jrd/isc.h"
 
@@ -30,37 +30,37 @@
 extern "C" {
 #endif
 
-extern void DLL_EXPORT ISC_ast_enter(void);
-extern void DLL_EXPORT ISC_ast_exit(void);
-extern int DLL_EXPORT ISC_check_process_existence(SLONG, SLONG, USHORT);
-extern void DLL_EXPORT ISC_get_config(TEXT *, struct ipccfg *);
-extern int DLL_EXPORT ISC_set_config(TEXT *, struct ipccfg *);
-extern TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT *, USHORT);
-extern int INTERNAL_API_ROUTINE ISC_get_user(TEXT *, int *, int *, TEXT *,
+void	ISC_ast_enter(void);
+void	ISC_ast_exit(void);
+int		ISC_check_process_existence(SLONG, SLONG, USHORT);
+void	ISC_get_config(TEXT *, struct ipccfg *);
+int		ISC_set_config(TEXT *, struct ipccfg *);
+TEXT*	INTERNAL_API_ROUTINE ISC_get_host(TEXT *, USHORT);
+int		INTERNAL_API_ROUTINE ISC_get_user(TEXT *, int *, int *, TEXT *,
 											 TEXT *, int *, TEXT *);
-extern SLONG ISC_get_user_group_id(TEXT *);
-extern void ISC_set_user(TEXT *);
-extern SLONG API_ROUTINE ISC_get_prefix(TEXT *);
-extern void API_ROUTINE ISC_prefix(TEXT *, const TEXT *);
-extern void API_ROUTINE ISC_prefix_lock(TEXT *, const TEXT *);
-extern void API_ROUTINE ISC_prefix_msg(TEXT *, const TEXT *);
+SLONG	ISC_get_user_group_id(TEXT *);
+void	ISC_set_user(TEXT *);
+SLONG	API_ROUTINE ISC_get_prefix(TEXT *);
+void	API_ROUTINE ISC_prefix(TEXT *, const TEXT *);
+void	API_ROUTINE ISC_prefix_lock(TEXT *, const TEXT *);
+void	API_ROUTINE ISC_prefix_msg(TEXT *, const TEXT *);
 
 #ifdef VMS
-extern int ISC_expand_logical_once(TEXT *, USHORT, TEXT *);
-extern int ISC_make_desc(TEXT *, struct dsc$descriptor *, USHORT);
-extern void ISC_wait(SSHORT *, SLONG);
-extern void ISC_wake(SLONG);
-extern void ISC_wake_init(void);
+int		ISC_expand_logical_once(TEXT *, USHORT, TEXT *);
+int		ISC_make_desc(TEXT *, struct dsc$descriptor *, USHORT);
+void	ISC_wait(SSHORT *, SLONG);
+void	ISC_wake(SLONG);
+void	ISC_wake_init(void);
 #endif
 
 #ifdef WIN_NT
-extern BOOLEAN ISC_is_WinNT(void);
-extern struct _SECURITY_ATTRIBUTES *ISC_get_security_desc(void);
-extern TEXT *ISC_prefix_interbase(TEXT *, TEXT *);
+BOOLEAN ISC_is_WinNT(void);
+struct _SECURITY_ATTRIBUTES *ISC_get_security_desc(void);
+TEXT*	ISC_prefix_interbase(TEXT *, TEXT *);
 #endif
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-#endif /* _JRD_ISC_PROTO_H_ */
+#endif // JRD_ISC_PROTO_H

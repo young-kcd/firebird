@@ -749,7 +749,7 @@ static BOOLEAN validate_dsc_tables(void);
 
 
 
-USHORT DLL_EXPORT DSC_convert_to_text_length(USHORT dsc_type)
+USHORT DSC_convert_to_text_length(USHORT dsc_type)
 {
 	if (dsc_type < (sizeof(_DSC_convert_to_text_length) /
 					sizeof(_DSC_convert_to_text_length[0])))
@@ -759,12 +759,13 @@ USHORT DLL_EXPORT DSC_convert_to_text_length(USHORT dsc_type)
 }
 
 
-void DLL_EXPORT DSC_make_descriptor(
-									DSC * desc,
-									USHORT blr_type,
-									SSHORT scale,
-									USHORT length,
-	SSHORT sub_type, SSHORT charset, SSHORT collation)
+void DSC_make_descriptor(DSC * desc,
+						USHORT blr_type,
+						SSHORT scale,
+						USHORT length,
+						SSHORT sub_type,
+						SSHORT charset,
+						SSHORT collation)
 {
 /**************************************
  *
@@ -883,7 +884,7 @@ void DLL_EXPORT DSC_make_descriptor(
 }
 
 
-int DLL_EXPORT DSC_string_length(const dsc* desc)
+int DSC_string_length(const dsc* desc)
 {
 /**************************************
  *
@@ -942,7 +943,7 @@ const TEXT *DSC_dtype_tostring(UCHAR dtype)
 }
 
 
-void DLL_EXPORT DSC_get_dtype_name(const dsc* desc, TEXT * buffer, USHORT len)
+void DSC_get_dtype_name(const dsc* desc, TEXT * buffer, USHORT len)
 {
 /**************************************
  *

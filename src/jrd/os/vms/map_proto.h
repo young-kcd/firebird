@@ -21,17 +21,17 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_MAP_PROTO_H_
-#define _JRD_MAP_PROTO_H_
+#ifndef JRD_MAP_PROTO_H
+#define JRD_MAP_PROTO_H
 
-extern void MAP_date_to_gds(SLONG *, SLONG *);
-extern void MAP_date_to_rdb(SLONG *, SLONG *);
-extern int MAP_gds_to_rdb(USHORT, struct map_msg *, UCHAR *, UCHAR *);
-extern struct map *MAP_parse_blr(UCHAR *, USHORT, UCHAR *, USHORT *, SLONG *);
-extern int MAP_rdb_length(USHORT, struct map_msg *);
-extern int MAP_rdb_to_gds(USHORT, struct map_msg *, UCHAR *, UCHAR *);
-extern void MAP_release(struct map_msg *);
-extern int MAP_status_to_gds(ISC_STATUS *, ISC_STATUS *);
-extern int MAP_status_to_rdb(ISC_STATUS *, ISC_STATUS *);
+void	MAP_date_to_gds(SLONG *, SLONG *);
+void	MAP_date_to_rdb(SLONG *, SLONG *);
+int		MAP_gds_to_rdb(USHORT, struct map_msg *, UCHAR *, UCHAR *);
+struct map*	MAP_parse_blr(UCHAR *, USHORT, UCHAR *, USHORT *, SLONG *);
+int		MAP_rdb_length(USHORT, struct map_msg *);
+int		MAP_rdb_to_gds(USHORT, struct map_msg *, UCHAR *, UCHAR *);
+void	MAP_release(struct map_msg *);
+int		MAP_status_to_gds(ISC_STATUS *, ISC_STATUS *);
+int		MAP_status_to_rdb(ISC_STATUS *, ISC_STATUS *);
 
-#endif /* _JRD_MAP_PROTO_H_ */
+#endif // JRD_MAP_PROTO_H

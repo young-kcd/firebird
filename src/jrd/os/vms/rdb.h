@@ -16,8 +16,8 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-#ifndef _JRD_RDB_H_
-#define _JRD_RDB_H_
+#ifndef JRD_RDB_H
+#define JRD_RDB_H
 
 #define rdb$_arith_except       0x138800a
 #define rdb$_bad_dbkey          0x1388012
@@ -119,4 +119,4 @@
 #define rdbb$_dbfile             0x16a81e2
 #define rdbb$_orphan             0x16a81eb
 
-#endif /* _JRD_RDB_H_ */
+#endif /* JRD_RDB_H */

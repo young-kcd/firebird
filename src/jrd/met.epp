@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.71 2003-09-28 21:36:02 skidder Exp $
+$Id: met.epp,v 1.72 2003-10-03 01:47:25 brodsom Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -1215,9 +1215,9 @@ void MET_load_trigger(
 
 
 
-void DLL_EXPORT MET_lookup_cnstrt_for_index(TDBB tdbb,
-											TEXT* constraint_name,
-											const TEXT* index_name)
+void MET_lookup_cnstrt_for_index(TDBB tdbb,
+								TEXT* constraint_name,
+								const TEXT* index_name)
 {
 /**************************************
  *
@@ -1691,9 +1691,10 @@ void MET_lookup_generator_id (TDBB tdbb, SLONG gen_id, TEXT *name)
         REQUEST (irq_r_gen_id_num) = request;
 }
 
-void DLL_EXPORT MET_lookup_index(TDBB tdbb,
-								 TEXT * index_name,
-								 TEXT * relation_name, USHORT number)
+void MET_lookup_index(TDBB tdbb,
+						TEXT * index_name,
+						TEXT * relation_name,
+						USHORT number)
 {
 /**************************************
  *

@@ -26,20 +26,20 @@
 
 #include "../gpre/parse.h"
 
-extern void CPR_abort(void);
+void	CPR_abort(void);
 #ifdef DEV_BUILD
-extern void CPR_assert(TEXT *, int);
+void	CPR_assert(TEXT *, int);
 #endif
-extern void CPR_bugcheck(TEXT *);
-extern void CPR_end_text(TXT);
-extern int CPR_error(const TEXT*);
-extern void CPR_exit(int);
-extern void CPR_warn(const TEXT*);
-extern TOK CPR_eol_token(void);
-extern void CPR_get_text(TEXT *, TXT);
-extern void CPR_raw_read(void);
-extern void CPR_s_error(TEXT *);
-extern TXT CPR_start_text(void);
-extern TOK CPR_token(void);
+void	CPR_bugcheck(TEXT *);
+void	CPR_end_text(TXT);
+int		CPR_error(const TEXT*);
+void	CPR_exit(int);
+void	CPR_warn(const TEXT*);
+TOK		CPR_eol_token(void);
+void	CPR_get_text(TEXT *, TXT);
+void	CPR_raw_read(void);
+void	CPR_s_error(TEXT *);
+TXT		CPR_start_text(void);
+TOK		CPR_token(void);
 
-#endif /* GPRE_GPRE_PROTO_H */
+#endif // GPRE_GPRE_PROTO_H

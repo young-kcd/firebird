@@ -21,12 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_IBERR_PROTO_H_
-#define _JRD_IBERR_PROTO_H_
+#ifndef JRD_IBERR_PROTO_H
+#define JRD_IBERR_PROTO_H
 
-extern void IBERR_append_status(ISC_STATUS *, ISC_STATUS, ...);
-extern void IBERR_build_status(ISC_STATUS *, ISC_STATUS, ...);
-extern void IBERR_bugcheck(ISC_STATUS *, SCHAR *, UCHAR *, int, TEXT *);
-extern void IBERR_error(ISC_STATUS *, SCHAR *, UCHAR *, int, TEXT *);
+void IBERR_append_status(ISC_STATUS *, ISC_STATUS, ...);
+void IBERR_build_status(ISC_STATUS *, ISC_STATUS, ...);
+void IBERR_bugcheck(ISC_STATUS *, SCHAR *, UCHAR *, int, TEXT *);
+void IBERR_error(ISC_STATUS *, SCHAR *, UCHAR *, int, TEXT *);
 
-#endif /* _JRD_IBERR_PROTO_H_ */
+#endif // JRD_IBERR_PROTO_H

@@ -21,9 +21,9 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_MBLR_PROTO_H_
-#define _JRD_MBLR_PROTO_H_
+#ifndef JRD_MBLR_PROTO_H
+#define JRD_MBLR_PROTO_H
 
-extern int MBLR_translate_to_dyn(USHORT, USHORT, UCHAR *, USHORT *, UCHAR *);
+int MBLR_translate_to_dyn(USHORT, USHORT, UCHAR *, USHORT *, UCHAR *);
 
-#endif /* _JRD_MBLR_PROTO_H_ */
+#endif // JRD_MBLR_PROTO_H

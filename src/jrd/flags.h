@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_FLAGS_H_
-#define _JRD_FLAGS_H_
+#ifndef JRD_FLAGS_H
+#define JRD_FLAGS_H
 
 /* flags for RDB$FILE_FLAGS */
 
@@ -53,4 +53,4 @@
 #define TRG_sql		0x1
 #define TRG_ignore_perm	0x2		/* trigger ignores permissions checks */
 
-#endif /* _JRD_FLAGS_H_ */
+#endif /* JRD_FLAGS_H */

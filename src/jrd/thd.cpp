@@ -235,7 +235,7 @@ THDD THD_get_specific(void)
 
 
 #ifndef GET_SPECIFIC_DEFINED
-THDD DLL_EXPORT THD_get_specific(void)
+THDD THD_get_specific(void)
 {
 /**************************************
  *
@@ -292,7 +292,7 @@ void THD_getspecific_data(void **t_data)
 }
 
 
-void DLL_EXPORT THD_cleanup(void)
+void THD_cleanup(void)
 {
 /**************************************
  *
@@ -329,7 +329,7 @@ void DLL_EXPORT THD_cleanup(void)
 }
 
 
-void DLL_EXPORT THD_init(void)
+void THD_init(void)
 {
 /**************************************
  *
@@ -362,7 +362,7 @@ void DLL_EXPORT THD_init(void)
 }
 
 
-void DLL_EXPORT THD_init_data(void)
+void THD_init_data(void)
 {
 /**************************************
  *
@@ -754,7 +754,7 @@ int THD_mutex_unlock(MUTX_T * mutex)
 
 
 #ifndef THREAD_MUTEXES_DEFINED
-int DLL_EXPORT THD_mutex_destroy(MUTX_T * mutex)
+int THD_mutex_destroy(MUTX_T * mutex)
 {
 /**************************************
  *
@@ -1138,7 +1138,7 @@ int THD_wlck_unlock(WLCK_T * wlock)
 
 
 #ifndef RW_LOCK_DEFINED
-int DLL_EXPORT THD_wlck_destroy(WLCK_T * wlock)
+int THD_wlck_destroy(WLCK_T * wlock)
 {
 /**************************************
  *
@@ -1154,7 +1154,7 @@ int DLL_EXPORT THD_wlck_destroy(WLCK_T * wlock)
 }
 
 
-int DLL_EXPORT THD_wlck_init(WLCK_T * wlock)
+int THD_wlck_init(WLCK_T * wlock)
 {
 /**************************************
  *
@@ -1170,7 +1170,7 @@ int DLL_EXPORT THD_wlck_init(WLCK_T * wlock)
 }
 
 
-int DLL_EXPORT THD_wlck_lock(WLCK_T * wlock, USHORT type)
+int THD_wlck_lock(WLCK_T * wlock, USHORT type)
 {
 /**************************************
  *
@@ -1186,7 +1186,7 @@ int DLL_EXPORT THD_wlck_lock(WLCK_T * wlock, USHORT type)
 }
 
 
-int DLL_EXPORT THD_wlck_unlock(WLCK_T * wlock)
+int THD_wlck_unlock(WLCK_T * wlock)
 {
 /**************************************
  *
@@ -1237,7 +1237,7 @@ void THD_wlck_init_n(WLCK_T * wlocks, USHORT n)
 }
 
 
-void DLL_EXPORT THD_put_specific(THDD new_context)
+void THD_put_specific(THDD new_context)
 {
 /**************************************
  *
@@ -1260,7 +1260,7 @@ void DLL_EXPORT THD_put_specific(THDD new_context)
 }
 
 
-void DLL_EXPORT THD_putspecific_data(void *t_data)
+void THD_putspecific_data(void *t_data)
 {
 /**************************************
  *
@@ -1293,7 +1293,7 @@ void DLL_EXPORT THD_putspecific_data(void *t_data)
 }
 
 
-THDD DLL_EXPORT THD_restore_specific(void)
+THDD THD_restore_specific(void)
 {
 /**************************************
  *

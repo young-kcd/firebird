@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_EXT_H_
-#define _JRD_EXT_H_
+#ifndef JRD_EXT_H
+#define JRD_EXT_H
 
 /* External file access block */
 
@@ -63,4 +63,4 @@ typedef struct irsb_ext {
 #define rpb_ext_isi	rpb_f_page
 #define rpb_ext_dbkey	rpb_b_page
 
-#endif /* _JRD_EXT_H_ */
+#endif /* JRD_EXT_H */

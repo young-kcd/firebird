@@ -142,7 +142,7 @@ int INF_blob_info(
 }
 
 
-USHORT DLL_EXPORT INF_convert(SLONG number, SCHAR * buffer)
+USHORT INF_convert(SLONG number, SCHAR * buffer)
 {
 /**************************************
  *

@@ -411,7 +411,7 @@ int ISC_analyze_pclan(TEXT * expanded_name, TEXT * node_name)
 #endif	// WIN_NT
 
 
-int DLL_EXPORT ISC_analyze_tcp(TEXT * file_name, TEXT * node_name)
+int ISC_analyze_tcp(TEXT * file_name, TEXT * node_name)
 {
 /**************************************
  *
@@ -454,8 +454,8 @@ int DLL_EXPORT ISC_analyze_tcp(TEXT * file_name, TEXT * node_name)
 }
 
 
-BOOLEAN DLL_EXPORT ISC_check_if_remote(TEXT * file_name,
-									   BOOLEAN implicit_flag)
+BOOLEAN ISC_check_if_remote(TEXT * file_name,
+							BOOLEAN implicit_flag)
 {
 /**************************************
  *

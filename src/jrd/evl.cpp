@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.40 2003-09-28 18:49:21 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.41 2003-10-03 01:43:56 brodsom Exp $ 
  */
 
 /*
@@ -208,7 +208,7 @@ static const RSE_GET_MODE g_RSE_get_mode = RSE_get_forward;
 
 
 
-DSC *DLL_EXPORT EVL_assign_to(TDBB tdbb, JRD_NOD node)
+DSC* EVL_assign_to(TDBB tdbb, JRD_NOD node)
 {
 /**************************************
  *
@@ -286,7 +286,7 @@ DSC *DLL_EXPORT EVL_assign_to(TDBB tdbb, JRD_NOD node)
 }
 
 
-SBM *DLL_EXPORT EVL_bitmap(TDBB tdbb, JRD_NOD node)
+SBM* EVL_bitmap(TDBB tdbb, JRD_NOD node)
 {
 /**************************************
  *
@@ -351,7 +351,7 @@ SBM *DLL_EXPORT EVL_bitmap(TDBB tdbb, JRD_NOD node)
 }
 
 
-BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, JRD_NOD node)
+BOOLEAN EVL_boolean(TDBB tdbb, JRD_NOD node)
 {
 /**************************************
  *
@@ -735,7 +735,7 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, JRD_NOD node)
 }
 
 
-DSC* DLL_EXPORT EVL_expr(TDBB tdbb, JRD_NOD node)
+DSC* EVL_expr(TDBB tdbb, JRD_NOD node)
 {
 /**************************************
  *
@@ -1193,9 +1193,7 @@ DSC* DLL_EXPORT EVL_expr(TDBB tdbb, JRD_NOD node)
 }
 
 
-BOOLEAN DLL_EXPORT EVL_field(JRD_REL relation,
-							 REC record,
-							 USHORT id, DSC * desc)
+BOOLEAN EVL_field(JRD_REL relation, REC record, USHORT id, DSC * desc)
 {
 /**************************************
  *
@@ -1361,7 +1359,7 @@ BOOLEAN DLL_EXPORT EVL_field(JRD_REL relation,
 }
 
 
-USHORT DLL_EXPORT EVL_group(TDBB tdbb, BLK rsb, JRD_NOD node, USHORT state)
+USHORT EVL_group(TDBB tdbb, BLK rsb, JRD_NOD node, USHORT state)
 {
 /**************************************
  *
@@ -1779,7 +1777,7 @@ USHORT DLL_EXPORT EVL_group(TDBB tdbb, BLK rsb, JRD_NOD node, USHORT state)
 }
 
 
-void DLL_EXPORT EVL_make_value(TDBB tdbb, DSC * desc, VLU value)
+void EVL_make_value(TDBB tdbb, DSC * desc, VLU value)
 {
 /**************************************
  *
@@ -1879,10 +1877,12 @@ void DLL_EXPORT EVL_make_value(TDBB tdbb, DSC * desc, VLU value)
 }
 
 
-USHORT DLL_EXPORT EVL_mb_contains(TDBB tdbb,
-								  class TextType* obj,
-								  UCHAR * p1,
-								  USHORT l1, UCHAR * p2, USHORT l2)
+USHORT EVL_mb_contains(TDBB tdbb,
+						class TextType* obj,
+						UCHAR * p1,
+						USHORT l1,
+						UCHAR * p2,
+						USHORT l2)
 {
 /**************************************
  *
@@ -1930,11 +1930,13 @@ USHORT DLL_EXPORT EVL_mb_contains(TDBB tdbb,
 }
 
 
-USHORT DLL_EXPORT EVL_mb_like(TDBB tdbb,
-							  class TextType* obj,
-							  UCHAR * p1,
-							  SSHORT l1,
-							  UCHAR * p2, SSHORT l2, UCS2_CHAR escape_char)
+USHORT EVL_mb_like(TDBB tdbb,
+					class TextType* obj,
+					UCHAR * p1,
+					SSHORT l1,
+					UCHAR * p2,
+					SSHORT l2,
+					UCS2_CHAR escape_char)
 {
 /**************************************
  *
@@ -1988,9 +1990,12 @@ USHORT DLL_EXPORT EVL_mb_like(TDBB tdbb,
 }
 
 
-USHORT DLL_EXPORT EVL_mb_matches(TDBB tdbb,
-								 class TextType* obj,
-								 UCHAR * p1, SSHORT l1, UCHAR * p2, SSHORT l2)
+USHORT EVL_mb_matches(TDBB tdbb,
+						class TextType* obj,
+						UCHAR * p1,
+						SSHORT l1,
+						UCHAR * p2,
+						SSHORT l2)
 {
 /**************************************
  *
@@ -2041,12 +2046,13 @@ USHORT DLL_EXPORT EVL_mb_matches(TDBB tdbb,
 }
 
 
-USHORT DLL_EXPORT EVL_mb_sleuth_check(TDBB tdbb,
-									  class TextType* obj,
-									  USHORT flags,
-									  UCHAR * search,
-									  USHORT search_bytes,
-									  UCHAR * match, USHORT match_bytes)
+USHORT EVL_mb_sleuth_check(TDBB tdbb,
+							class TextType* obj,
+							USHORT flags,
+							UCHAR * search,
+							USHORT search_bytes,
+							UCHAR * match,
+							USHORT match_bytes)
 {
 /**************************************
  *
@@ -2097,13 +2103,14 @@ USHORT DLL_EXPORT EVL_mb_sleuth_check(TDBB tdbb,
 }
 
 
-USHORT DLL_EXPORT EVL_mb_sleuth_merge(TDBB tdbb,
-									  class TextType* obj,
-									  UCHAR * match,
-									  USHORT match_bytes,
-									  UCHAR * control,
-									  USHORT control_bytes,
-									  UCHAR * combined, USHORT combined_bytes)
+USHORT EVL_mb_sleuth_merge(TDBB tdbb,
+							class TextType* obj,
+							UCHAR * match,
+							USHORT match_bytes,
+							UCHAR * control,
+							USHORT control_bytes,
+							UCHAR * combined,
+							USHORT combined_bytes)
 {
 /**************************************
  *
@@ -2157,10 +2164,12 @@ USHORT DLL_EXPORT EVL_mb_sleuth_merge(TDBB tdbb,
 }
 
 
-USHORT DLL_EXPORT EVL_nc_contains(TDBB tdbb_dummy,
-								  class TextType* obj,
-								  UCHAR * p1,
-								  USHORT l1, UCHAR * p2, USHORT l2)
+USHORT EVL_nc_contains(TDBB tdbb_dummy,
+						class TextType* obj,
+						UCHAR * p1,
+						USHORT l1,
+						UCHAR * p2,
+						USHORT l2)
 {
 /**************************************
  *
@@ -2235,9 +2244,12 @@ USHORT DLL_EXPORT EVL_nc_contains(TDBB tdbb_dummy,
 #undef SLEUTHTYPE
 
 
-USHORT DLL_EXPORT EVL_wc_contains(TDBB tdbb_dumm,
-								  class TextType* obj, UCS2_CHAR * p1, USHORT l1,	/* byte count */
-								  UCS2_CHAR * p2, USHORT l2)
+USHORT EVL_wc_contains(TDBB tdbb_dumm,
+						class TextType* obj,
+						UCS2_CHAR* p1,
+						USHORT l1,	/* byte count */
+						UCS2_CHAR* p2,
+						USHORT l2)
 {
 /**************************************
  *

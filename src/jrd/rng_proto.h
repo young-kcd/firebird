@@ -21,21 +21,21 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_RNG_PROTO_H_
-#define _JRD_RNG_PROTO_H_
+#ifndef JRD_RNG_PROTO_H
+#define JRD_RNG_PROTO_H
 
 #ifdef PC_ENGINE
-extern void RNG_add_page(ULONG);
-extern void RNG_add_record(struct rpb *);
-extern struct jrd_nod *RNG_add_relation(struct jrd_nod *);
-extern void RNG_add_uncommitted_record(struct rpb *);
-extern struct dsc *RNG_begin(struct jrd_nod *, struct vlu *);
-extern struct jrd_nod *RNG_delete(struct jrd_nod *);
-extern void RNG_delete_ranges(struct jrd_req *);
-extern struct jrd_nod *RNG_end(struct jrd_nod *);
-extern void RNG_release_locks(struct rng *);
-extern void RNG_release_ranges(struct jrd_req *);
-extern void RNG_shutdown_attachment(struct att *);
+void RNG_add_page(ULONG);
+void RNG_add_record(struct rpb *);
+struct jrd_nod *RNG_add_relation(struct jrd_nod *);
+void RNG_add_uncommitted_record(struct rpb *);
+struct dsc *RNG_begin(struct jrd_nod *, struct vlu *);
+struct jrd_nod *RNG_delete(struct jrd_nod *);
+void RNG_delete_ranges(struct jrd_req *);
+struct jrd_nod *RNG_end(struct jrd_nod *);
+void RNG_release_locks(struct rng *);
+void RNG_release_ranges(struct jrd_req *);
+void RNG_shutdown_attachment(struct att *);
 #endif
 
-#endif /* _JRD_RNG_PROTO_H_ */
+#endif // JRD_RNG_PROTO_H

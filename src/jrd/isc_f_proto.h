@@ -24,28 +24,28 @@
  *
  */
 
-#ifndef _JRD_ISC_FILE_PROTO_H_
-#define _JRD_ISC_FILE_PROTO_H_
+#ifndef JRD_ISC_FILE_PROTO_H
+#define JRD_ISC_FILE_PROTO_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern int ISC_analyze_nfs(TEXT *, TEXT *);
-extern int ISC_analyze_pclan(TEXT *, TEXT *);
-extern int DLL_EXPORT ISC_analyze_tcp(TEXT *, TEXT *);
-extern int ISC_analyze_xnet(TEXT *, TEXT *);
-extern BOOLEAN DLL_EXPORT ISC_check_if_remote(TEXT *, BOOLEAN);
-extern int ISC_expand_filename(TEXT *, USHORT, TEXT *);
-extern int ISC_expand_logical(TEXT *, USHORT, TEXT *);
-extern int ISC_expand_share(TEXT *, TEXT *);
-extern int ISC_file_lock(SSHORT);
-extern int ISC_file_unlock(SSHORT);
-extern int ISC_strip_filename(TEXT *);
-extern bool ISC_verify_database_access(TEXT *);
+int			ISC_analyze_nfs(TEXT *, TEXT *);
+int			ISC_analyze_pclan(TEXT *, TEXT *);
+int			ISC_analyze_tcp(TEXT *, TEXT *);
+int			ISC_analyze_xnet(TEXT *, TEXT *);
+BOOLEAN		ISC_check_if_remote(TEXT *, BOOLEAN);
+int			ISC_expand_filename(TEXT *, USHORT, TEXT *);
+int			ISC_expand_logical(TEXT *, USHORT, TEXT *);
+int			ISC_expand_share(TEXT *, TEXT *);
+int			ISC_file_lock(SSHORT);
+int			ISC_file_unlock(SSHORT);
+int			ISC_strip_filename(TEXT *);
+bool		ISC_verify_database_access(TEXT *);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-#endif /* _JRD_ISC_FILE_PROTO_H_ */
+#endif // JRD_ISC_FILE_PROTO_H

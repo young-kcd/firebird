@@ -26,27 +26,27 @@
 
 #include "../gpre/parse.h"
 
-extern ACT MSC_action(GPRE_REQ, enum act_t);
-extern UCHAR *MSC_alloc(int);
-extern UCHAR *MSC_alloc_permanent(int);
-extern GPRE_NOD MSC_binary(NOD_T, GPRE_NOD, GPRE_NOD);
-extern GPRE_CTX MSC_context(GPRE_REQ);
-extern void MSC_copy(const char*, int, char*);
-extern void MSC_copy_cat(const char*, int, const char*, int, char*);
-extern SYM MSC_find_symbol(SYM, enum sym_t);
-extern void MSC_free(UCHAR *);
-extern void MSC_free_request(GPRE_REQ);
-extern void MSC_init(void);
-extern bool MSC_match(KWWORDS);
-extern GPRE_NOD MSC_node(enum nod_t, SSHORT);
-extern GPRE_NOD MSC_pop(LLS *);
-extern PRV MSC_privilege_block(void);
-extern void MSC_push(GPRE_NOD, LLS *);
-extern REF MSC_reference(REF *);
-extern GPRE_REQ MSC_request(enum req_t);
-extern SCHAR *MSC_string(TEXT *);
-extern SYM MSC_symbol(enum sym_t, TEXT *, USHORT, GPRE_CTX);
-extern GPRE_NOD MSC_unary(NOD_T, GPRE_NOD);
-extern USN MSC_username(SCHAR *, USHORT);
+ACT			MSC_action(GPRE_REQ, enum act_t);
+UCHAR*		MSC_alloc(int);
+UCHAR*		MSC_alloc_permanent(int);
+GPRE_NOD	MSC_binary(NOD_T, GPRE_NOD, GPRE_NOD);
+GPRE_CTX	MSC_context(GPRE_REQ);
+void		MSC_copy(const char*, int, char*);
+void		MSC_copy_cat(const char*, int, const char*, int, char*);
+SYM			MSC_find_symbol(SYM, enum sym_t);
+void		MSC_free(UCHAR *);
+void		MSC_free_request(GPRE_REQ);
+void		MSC_init(void);
+bool		MSC_match(KWWORDS);
+GPRE_NOD	MSC_node(enum nod_t, SSHORT);
+GPRE_NOD	MSC_pop(LLS *);
+PRV			MSC_privilege_block(void);
+void		MSC_push(GPRE_NOD, LLS *);
+REF			MSC_reference(REF *);
+GPRE_REQ	MSC_request(enum req_t);
+SCHAR*		MSC_string(TEXT *);
+SYM			MSC_symbol(enum sym_t, TEXT *, USHORT, GPRE_CTX);
+GPRE_NOD	MSC_unary(NOD_T, GPRE_NOD);
+USN			MSC_username(SCHAR *, USHORT);
 
-#endif /* GPRE_MSC_PROTO_H */
+#endif // GPRE_MSC_PROTO_H

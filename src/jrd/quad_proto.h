@@ -35,22 +35,22 @@
  * copyright (c) 1993 by Borland International
  */
 
-#ifndef _JRD_QUAD_PROTO_H_
-#define _JRD_QUAD_PROTO_H_
+#ifndef JRD_QUAD_PROTO_H
+#define JRD_QUAD_PROTO_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern SQUAD QUAD_add(SQUAD *, SQUAD *, FPTR_VOID);
-extern SSHORT QUAD_compare(SQUAD *, SQUAD *);
-extern SQUAD QUAD_from_double(double *, FPTR_VOID);
-extern SQUAD QUAD_multiply(SQUAD *, SQUAD *, FPTR_VOID);
-extern SQUAD QUAD_negate(SQUAD *, FPTR_VOID);
-extern SQUAD QUAD_subtract(SQUAD *, SQUAD *, FPTR_VOID);
+SQUAD	QUAD_add(SQUAD *, SQUAD *, FPTR_VOID);
+SSHORT	QUAD_compare(SQUAD *, SQUAD *);
+SQUAD	QUAD_from_double(double *, FPTR_VOID);
+SQUAD	QUAD_multiply(SQUAD *, SQUAD *, FPTR_VOID);
+SQUAD	QUAD_negate(SQUAD *, FPTR_VOID);
+SQUAD	QUAD_subtract(SQUAD *, SQUAD *, FPTR_VOID);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-#endif /* _JRD_QUAD_PROTO_H_ */
+#endif // JRD_QUAD_PROTO_H

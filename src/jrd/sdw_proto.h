@@ -28,20 +28,20 @@
 extern "C" {
 #endif
 
-extern void SDW_add(TEXT *, USHORT, USHORT);
-extern int SDW_add_file(TEXT *, SLONG, USHORT);
-extern void SDW_check(void);
-extern BOOLEAN SDW_check_conditional(void);
-extern void SDW_close(void);
-extern void SDW_dump_pages(void);
-extern void SDW_get_shadows(void);
-extern void SDW_init(USHORT, USHORT, struct sbm *);
-extern BOOLEAN SDW_lck_update(SLONG);
-extern void SDW_notify(void);
-extern BOOLEAN SDW_rollover_to_shadow(struct fil *, BOOLEAN);
-extern void SDW_shutdown_shadow(struct sdw *);
-extern void SDW_start(TEXT *, USHORT, USHORT, USHORT);
-extern int SDW_start_shadowing(void *ast_object);
+void	SDW_add(TEXT *, USHORT, USHORT);
+int		SDW_add_file(TEXT *, SLONG, USHORT);
+void	SDW_check(void);
+BOOLEAN	SDW_check_conditional(void);
+void	SDW_close(void);
+void	SDW_dump_pages(void);
+void	SDW_get_shadows(void);
+void	SDW_init(USHORT, USHORT, struct sbm *);
+BOOLEAN	SDW_lck_update(SLONG);
+void	SDW_notify(void);
+BOOLEAN	SDW_rollover_to_shadow(struct fil *, BOOLEAN);
+void	SDW_shutdown_shadow(struct sdw *);
+void	SDW_start(TEXT *, USHORT, USHORT, USHORT);
+int		SDW_start_shadowing(void *ast_object);
 
 #ifdef __cplusplus
 } /* extern "C" */

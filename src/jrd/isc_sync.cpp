@@ -1148,7 +1148,7 @@ int ISC_event_blocked(USHORT count, EVENT * events, SLONG * values)
 }
 
 
-SLONG DLL_EXPORT ISC_event_clear(EVENT event)
+SLONG ISC_event_clear(EVENT event)
 {
 /**************************************
  *
@@ -1193,7 +1193,7 @@ void ISC_event_fini(EVENT event)
 }
 
 
-int DLL_EXPORT ISC_event_init(EVENT event, int type, int semnum)
+int ISC_event_init(EVENT event, int type, int semnum)
 {
 /**************************************
  *
@@ -1260,7 +1260,7 @@ int ISC_event_init_shared(
 }
 
 
-int DLL_EXPORT ISC_event_post(EVENT event)
+int ISC_event_post(EVENT event)
 {
 /**************************************
  *
@@ -1287,13 +1287,12 @@ int DLL_EXPORT ISC_event_post(EVENT event)
 }
 
 
-int DLL_EXPORT ISC_event_wait(
-		      SSHORT count,
-		      EVENT * events,
-		      SLONG * values,
-		      SLONG micro_seconds,
-		      FPTR_VOID_PTR timeout_handler,
-		      void *handler_arg)
+int ISC_event_wait(SSHORT count,
+					EVENT* events,
+					SLONG* values,
+					SLONG micro_seconds,
+					FPTR_VOID_PTR timeout_handler,
+					void* handler_arg)
 {
 /**************************************
  *
@@ -1358,7 +1357,7 @@ int ISC_event_blocked(USHORT count, EVENT * events, SLONG * values)
 }
 
 
-SLONG DLL_EXPORT ISC_event_clear(EVENT event)
+SLONG ISC_event_clear(EVENT event)
 {
 /**************************************
  *
@@ -1380,7 +1379,7 @@ SLONG DLL_EXPORT ISC_event_clear(EVENT event)
 }
 
 
-int DLL_EXPORT ISC_event_init(EVENT event, int semid, int semnum)
+int ISC_event_init(EVENT event, int semid, int semnum)
 {
 /**************************************
  *
@@ -1398,7 +1397,7 @@ int DLL_EXPORT ISC_event_init(EVENT event, int semid, int semnum)
 }
 
 
-int DLL_EXPORT ISC_event_post(EVENT event)
+int ISC_event_post(EVENT event)
 {
 /**************************************
  *
@@ -1415,13 +1414,12 @@ int DLL_EXPORT ISC_event_post(EVENT event)
 }
 
 
-int DLL_EXPORT ISC_event_wait(
-							  SSHORT count,
-							  EVENT * events,
-							  SLONG * values,
-							  SLONG micro_seconds,
-							  FPTR_VOID_PTR timeout_handler, 
-							  void *handler_arg)
+int ISC_event_wait(SSHORT count,
+					EVENT * events,
+					SLONG * values,
+					SLONG micro_seconds,
+					FPTR_VOID_PTR timeout_handler, 
+					void *handler_arg)
 {
 /**************************************
  *
@@ -2544,7 +2542,7 @@ UCHAR *ISC_map_file(ISC_STATUS * status_vector,
 
 #ifdef WIN_NT
 #define ISC_MAP_FILE_DEFINED
-UCHAR *DLL_EXPORT ISC_map_file(
+UCHAR* ISC_map_file(
 	   ISC_STATUS * status_vector,
 	   TEXT * filename,
 #ifdef NOT_USED_OR_REPLACED
@@ -3440,7 +3438,7 @@ int ISC_mutex_unlock(MTX mutex)
 
 #ifdef WIN_NT
 #define MUTEX
-int DLL_EXPORT ISC_mutex_init(MTX mutex, TEXT * mutex_name)
+int ISC_mutex_init(MTX mutex, TEXT * mutex_name)
 {
 /**************************************
  *
@@ -3462,7 +3460,7 @@ int DLL_EXPORT ISC_mutex_init(MTX mutex, TEXT * mutex_name)
 }
 
 
-int DLL_EXPORT ISC_mutex_lock(MTX mutex)
+int ISC_mutex_lock(MTX mutex)
 {
 /**************************************
  *
@@ -3480,7 +3478,7 @@ int DLL_EXPORT ISC_mutex_lock(MTX mutex)
 }
 
 
-int DLL_EXPORT ISC_mutex_lock_cond(MTX mutex)
+int ISC_mutex_lock_cond(MTX mutex)
 {
 /**************************************
  *
@@ -3498,7 +3496,7 @@ int DLL_EXPORT ISC_mutex_lock_cond(MTX mutex)
 }
 
 
-int DLL_EXPORT ISC_mutex_unlock(MTX mutex)
+int ISC_mutex_unlock(MTX mutex)
 {
 /**************************************
  *
@@ -3610,10 +3608,10 @@ UCHAR *ISC_remap_file(ISC_STATUS * status_vector,
 
 #ifdef WIN_NT
 #define ISC_REMAP_FILE_DEFINED
-UCHAR *DLL_EXPORT ISC_remap_file(ISC_STATUS * status_vector,
-				 SH_MEM shmem_data,
-				 SLONG new_length,
-				 USHORT flag)
+UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
+					SH_MEM shmem_data,
+					SLONG new_length,
+					USHORT flag)
 {
 /**************************************
  *
@@ -3699,9 +3697,10 @@ UCHAR *DLL_EXPORT ISC_remap_file(ISC_STATUS * status_vector,
 
 
 #ifndef ISC_REMAP_FILE_DEFINED
-UCHAR *DLL_EXPORT ISC_remap_file(ISC_STATUS * status_vector,
-								 SH_MEM shmem_data,
-								 SLONG new_length, USHORT flag)
+UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
+						SH_MEM shmem_data,
+						SLONG new_length,
+						USHORT flag)
 {
 /**************************************
  *
@@ -3918,10 +3917,9 @@ void ISC_unmap_file(ISC_STATUS * status_vector, SH_MEM shmem_data, USHORT flag)
 
 #ifdef WIN_NT
 #define UNMAP_FILE
-void DLL_EXPORT ISC_unmap_file(
-				ISC_STATUS * status_vector,
-				SH_MEM shmem_data,
-				USHORT flag)
+void ISC_unmap_file(ISC_STATUS * status_vector,
+					SH_MEM shmem_data,
+					USHORT flag)
 {
 /**************************************
  *
@@ -3950,9 +3948,9 @@ void DLL_EXPORT ISC_unmap_file(
 
 
 #ifndef UNMAP_FILE
-void DLL_EXPORT ISC_unmap_file(
-							   ISC_STATUS * status_vector,
-							   SH_MEM shmem_data, USHORT flag)
+void ISC_unmap_file(ISC_STATUS * status_vector,
+					SH_MEM shmem_data,
+					USHORT flag)
 {
 /**************************************
  *

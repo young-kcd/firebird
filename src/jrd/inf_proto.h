@@ -21,23 +21,22 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_INF_PROTO_H_
-#define _JRD_INF_PROTO_H_
+#ifndef JRD_INF_PROTO_H
+#define JRD_INF_PROTO_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern int INF_blob_info(struct blb *, SCHAR *, SSHORT, SCHAR *, SSHORT);
-extern USHORT DLL_EXPORT INF_convert(SLONG, SCHAR *);
-extern int INF_database_info(SCHAR *, SSHORT, SCHAR *, SSHORT);
-extern SCHAR *INF_put_item(SCHAR, USHORT, SCHAR *, SCHAR *, SCHAR *);
-extern int INF_request_info(struct jrd_req *, SCHAR *, SSHORT, SCHAR *, SSHORT);
-extern int INF_transaction_info(struct jrd_tra *, SCHAR *, SSHORT, SCHAR *,
-								SSHORT);
+int		INF_blob_info(struct blb *, SCHAR *, SSHORT, SCHAR *, SSHORT);
+USHORT	INF_convert(SLONG, SCHAR *);
+int		INF_database_info(SCHAR *, SSHORT, SCHAR *, SSHORT);
+SCHAR*	INF_put_item(SCHAR, USHORT, SCHAR *, SCHAR *, SCHAR *);
+int		INF_request_info(struct jrd_req *, SCHAR *, SSHORT, SCHAR *, SSHORT);
+int		INF_transaction_info(struct jrd_tra *, SCHAR *, SSHORT, SCHAR *, SSHORT);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-#endif /* _JRD_INF_PROTO_H_ */
+#endif // JRD_INF_PROTO_H

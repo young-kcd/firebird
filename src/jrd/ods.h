@@ -30,8 +30,8 @@
  *
  */
 
-#ifndef _JRD_ODS_H_
-#define _JRD_ODS_H_
+#ifndef JRD_ODS_H
+#define JRD_ODS_H
 
 /**********************************************************************
 **
@@ -519,4 +519,4 @@ typedef struct log_info_page {
 #define LOG_grp_cmt_wait	8	/* Group commit wait time */
 #define LOG_max			8		/* Maximum LOG_clump value */
 
-#endif /* _JRD_ODS_H_ */
+#endif /* JRD_ODS_H */

@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_PAR_PROTO_H_
-#define _JRD_PAR_PROTO_H_
+#ifndef JRD_PAR_PROTO_H
+#define JRD_PAR_PROTO_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,4 +42,4 @@ SLONG PAR_symbol_to_gdscode(const char*);
 } /* extern "C" */
 #endif
 
-#endif /* _JRD_PAR_PROTO_H_ */
+#endif /* JRD_PAR_PROTO_H */

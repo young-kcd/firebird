@@ -21,47 +21,38 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_INTL_PROTO_H_
-#define _JRD_INTL_PROTO_H_
+#ifndef JRD_INTL_PROTO_H
+#define JRD_INTL_PROTO_H
 
 #include "../jrd/intl_classes.h"
 
-extern CHARSET_ID DLL_EXPORT INTL_charset(TDBB, USHORT, FPTR_VOID);
-extern int DLL_EXPORT INTL_compare(TDBB, struct dsc *, struct dsc *,
-								   FPTR_VOID);
-extern USHORT DLL_EXPORT INTL_convert_bytes(TDBB, CHARSET_ID, UCHAR *, USHORT,
-											CHARSET_ID, BYTE *, USHORT,
-											FPTR_VOID);
-extern CsConvert *DLL_EXPORT INTL_convert_lookup(TDBB, CHARSET_ID, CHARSET_ID);
-extern int DLL_EXPORT INTL_convert_string(struct dsc *, struct dsc *,
-										  FPTR_VOID);
-extern int DLL_EXPORT INTL_data(struct dsc *);
-extern int DLL_EXPORT INTL_data_or_binary(struct dsc *);
-extern int DLL_EXPORT INTL_defined_type(TDBB, ISC_STATUS *, SSHORT);
-//extern SSHORT DLL_EXPORT INTL_fss_mbtowc(struct texttype **, unsigned short *,
+CHARSET_ID	INTL_charset(TDBB, USHORT, FPTR_VOID);
+int			INTL_compare(TDBB, struct dsc *, struct dsc *, FPTR_VOID);
+USHORT		INTL_convert_bytes(TDBB, CHARSET_ID, UCHAR *, USHORT, CHARSET_ID, 
+								BYTE *, USHORT, FPTR_VOID);
+CsConvert*	INTL_convert_lookup(TDBB, CHARSET_ID, CHARSET_ID);
+int			INTL_convert_string(struct dsc *, struct dsc *, FPTR_VOID);
+int			INTL_data(struct dsc *);
+int			INTL_data_or_binary(struct dsc *);
+int			INTL_defined_type(TDBB, ISC_STATUS *, SSHORT);
+//SSHORT	INTL_fss_mbtowc(struct texttype **, unsigned short *,
 //										 unsigned char *, USHORT);
-//extern USHORT DLL_EXPORT INTL_fss_to_unicode(CsConvert *, USHORT *,
+//USHORT	INTL_fss_to_unicode(CsConvert *, USHORT *,
 //											 USHORT, unsigned char *, USHORT,
 //											 SSHORT *, USHORT *);
-extern unsigned short DLL_EXPORT INTL_getch(TDBB, TextType**, SSHORT,
+unsigned short	INTL_getch(TDBB, TextType**, SSHORT,
 											UCHAR **, USHORT *);
-extern void DLL_EXPORT INTL_init(TDBB);
-extern USHORT DLL_EXPORT INTL_key_length(TDBB, USHORT, USHORT);
-extern CharSet *DLL_EXPORT INTL_charset_lookup(TDBB tdbb, SSHORT parm1,
-												ISC_STATUS * status);
-extern TextType *DLL_EXPORT INTL_texttype_lookup(
-								 TDBB tdbb,
-								 SSHORT parm1, FPTR_VOID err, ISC_STATUS * status);
-//extern void *DLL_EXPORT INTL_obj_lookup(TDBB, USHORT, SSHORT, FPTR_VOID,
-//										ISC_STATUS *);
-extern void DLL_EXPORT INTL_pad_spaces(TDBB, struct dsc *, UCHAR *, USHORT);
-extern USHORT DLL_EXPORT INTL_string_to_key(TDBB, USHORT, struct dsc *,
-											struct dsc *, USHORT);
-extern int DLL_EXPORT INTL_str_to_upper(TDBB, struct dsc *);
-//extern USHORT DLL_EXPORT INTL_unicode_to_fss(CsConvert *,
-//											 unsigned char *, USHORT,
-//											 USHORT *, USHORT, SSHORT *,
-//											 USHORT *);
-extern UCHAR DLL_EXPORT INTL_upper(TDBB, USHORT, UCHAR);
+void		INTL_init(TDBB);
+USHORT		INTL_key_length(TDBB, USHORT, USHORT);
+CharSet*	INTL_charset_lookup(TDBB tdbb, SSHORT parm1, ISC_STATUS * status);
+TextType*	INTL_texttype_lookup(TDBB tdbb, SSHORT parm1, FPTR_VOID err, 
+								ISC_STATUS * status);
+//void*		INTL_obj_lookup(TDBB, USHORT, SSHORT, FPTR_VOID, ISC_STATUS *);
+void		INTL_pad_spaces(TDBB, struct dsc *, UCHAR *, USHORT);
+USHORT		INTL_string_to_key(TDBB, USHORT, struct dsc *, struct dsc *, USHORT);
+int			INTL_str_to_upper(TDBB, struct dsc *);
+//USHORT	INTL_unicode_to_fss(CsConvert *, unsigned char *, USHORT,
+//								USHORT *, USHORT, SSHORT *, USHORT *);
+UCHAR		INTL_upper(TDBB, USHORT, UCHAR);
 
-#endif /* _JRD_INTL_PROTO_H_ */
+#endif // JRD_INTL_PROTO_H

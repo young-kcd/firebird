@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_LCK_H_
-#define _JRD_LCK_H_
+#ifndef JRD_LCK_H
+#define JRD_LCK_H
 
 /* Lock types */
 
@@ -58,7 +58,7 @@ enum lck_owner_t {
 	LCK_OWNER_transaction		/* A transaction is the owner of the lock */
 };
 
-extern void MP_GDB_print(MemoryPool*);
+void MP_GDB_print(MemoryPool*);
 
 class lck : public pool_alloc_rpt<SCHAR, type_lck>
 {
@@ -122,4 +122,4 @@ public:
 };
 typedef lck *LCK;
 
-#endif /* _JRD_LCK_H_ */
+#endif /* JRD_LCK_H */

@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_OBJ_H_
-#define _JRD_OBJ_H_
+#ifndef JRD_OBJ_H
+#define JRD_OBJ_H
 
 /* Object types used in RDB$DEPENDENCIES and RDB$USER_PRIVILEGES */
 /* Note: some values are hard coded in grant.gdl */
@@ -45,4 +45,4 @@
 #define obj_udf       	        15
 #define obj_blob_filter		    16
 
-#endif /* _JRD_OBJ_H_ */
+#endif /* JRD_OBJ_H */

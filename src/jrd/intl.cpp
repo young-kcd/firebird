@@ -148,9 +148,9 @@
 typedef unsigned char FILECHAR;
 
 // extern declarations for the allocator functions for builtin charsets
-extern CharSetAllocFunc INTL_charset_alloc_func(short);
-extern TextTypeAllocFunc INTL_texttype_alloc_func(short);
-extern CsConvertAllocFunc INTL_csconvert_alloc_func(short, short);
+CharSetAllocFunc INTL_charset_alloc_func(short);
+TextTypeAllocFunc INTL_texttype_alloc_func(short);
+CsConvertAllocFunc INTL_csconvert_alloc_func(short, short);
 
 static BOOLEAN all_spaces(TDBB, CHARSET_ID, BYTE *, USHORT, USHORT);
 #ifdef NOT_USED_OR_REPLACED
@@ -273,7 +273,7 @@ private:
 	CharSet *cs;
 };
 
-CHARSET_ID DLL_EXPORT INTL_charset(TDBB tdbb, USHORT ttype, FPTR_VOID err)
+CHARSET_ID INTL_charset(TDBB tdbb, USHORT ttype, FPTR_VOID err)
 {
 /**************************************
  *
@@ -305,9 +305,10 @@ CHARSET_ID DLL_EXPORT INTL_charset(TDBB tdbb, USHORT ttype, FPTR_VOID err)
 }
 
 
-int DLL_EXPORT INTL_compare(
-							TDBB tdbb,
-							DSC * pText1, DSC * pText2, FPTR_VOID err)
+int INTL_compare(TDBB tdbb,
+				DSC * pText1,
+				DSC * pText2,
+				FPTR_VOID err)
 {
 /**************************************
  *
@@ -383,12 +384,14 @@ int DLL_EXPORT INTL_compare(
 }
 
 
-USHORT DLL_EXPORT INTL_convert_bytes(
-									 TDBB tdbb,
-									 CHARSET_ID dest_type,
-									 BYTE * dest_ptr,
-									 USHORT dest_len,
-CHARSET_ID src_type, BYTE * src_ptr, USHORT src_len, FPTR_VOID err)
+USHORT INTL_convert_bytes(TDBB tdbb,
+						CHARSET_ID dest_type,
+						BYTE * dest_ptr,
+						USHORT dest_len,
+						CHARSET_ID src_type,
+						BYTE * src_ptr,
+						USHORT src_len,
+						FPTR_VOID err)
 {
 /**************************************
  *
@@ -546,8 +549,9 @@ CHARSET_ID src_type, BYTE * src_ptr, USHORT src_len, FPTR_VOID err)
 }
 
 
-CsConvert* DLL_EXPORT INTL_convert_lookup(TDBB tdbb,
-										 CHARSET_ID to_cs, CHARSET_ID from_cs)
+CsConvert* INTL_convert_lookup(TDBB tdbb,
+								CHARSET_ID to_cs,
+								CHARSET_ID from_cs)
 {
 /**************************************
  *
@@ -629,7 +633,7 @@ CsConvert* DLL_EXPORT INTL_convert_lookup(TDBB tdbb,
 }
 
 
-int DLL_EXPORT INTL_convert_string(DSC * to, DSC * from, FPTR_VOID err)
+int INTL_convert_string(DSC * to, DSC * from, FPTR_VOID err)
 {
 /**************************************
  *
@@ -755,7 +759,7 @@ int DLL_EXPORT INTL_convert_string(DSC * to, DSC * from, FPTR_VOID err)
 
 
 #ifdef DEV_BUILD
-int DLL_EXPORT INTL_data(DSC * pText)
+int INTL_data(DSC * pText)
 {
 /**************************************
  *
@@ -784,7 +788,7 @@ int DLL_EXPORT INTL_data(DSC * pText)
 #endif
 
 #ifdef DEV_BUILD
-int DLL_EXPORT INTL_data_or_binary(DSC * pText)
+int INTL_data_or_binary(DSC * pText)
 {
 /**************************************
  *
@@ -801,14 +805,14 @@ int DLL_EXPORT INTL_data_or_binary(DSC * pText)
 #else
 // 11 Sent 2002, Nickolay Samofatov
 // Used only in asserts, but let optimizer wipe it out
-int DLL_EXPORT INTL_data_or_binary(DSC * pText)
+int INTL_data_or_binary(DSC * pText)
 {
   return TRUE;
 }
 #endif
 
 
-int DLL_EXPORT INTL_defined_type(TDBB tdbb, ISC_STATUS * status, SSHORT t_type)
+int INTL_defined_type(TDBB tdbb, ISC_STATUS * status, SSHORT t_type)
 {
 /**************************************
  *
@@ -841,7 +845,7 @@ int DLL_EXPORT INTL_defined_type(TDBB tdbb, ISC_STATUS * status, SSHORT t_type)
 }
 
 
-UCS2_CHAR DLL_EXPORT INTL_getch(TDBB tdbb,
+UCS2_CHAR INTL_getch(TDBB tdbb,
 							TextType* * obj,
 							SSHORT t_type, UCHAR ** ptr, USHORT * count)
 {
@@ -876,7 +880,7 @@ UCS2_CHAR DLL_EXPORT INTL_getch(TDBB tdbb,
 }
 
 
-void DLL_EXPORT INTL_init(TDBB tdbb)
+void INTL_init(TDBB tdbb)
 {
 /**************************************
  *
@@ -903,7 +907,7 @@ void DLL_EXPORT INTL_init(TDBB tdbb)
 }
 
 
-USHORT DLL_EXPORT INTL_key_length(TDBB tdbb, USHORT idxType, USHORT iLength)
+USHORT INTL_key_length(TDBB tdbb, USHORT idxType, USHORT iLength)
 {
 /**************************************
  *
@@ -1018,7 +1022,7 @@ static CharSetContainer *internal_charset_container_lookup(TDBB tdbb, SSHORT par
 	return cs;
 }
 
-CharSet *DLL_EXPORT INTL_charset_lookup(TDBB tdbb, SSHORT parm1, ISC_STATUS * status)
+CharSet* INTL_charset_lookup(TDBB tdbb, SSHORT parm1, ISC_STATUS * status)
 {
 /**************************************
  *
@@ -1050,9 +1054,10 @@ CharSet *DLL_EXPORT INTL_charset_lookup(TDBB tdbb, SSHORT parm1, ISC_STATUS * st
 }
 
 
-TextType *DLL_EXPORT INTL_texttype_lookup(
-								 TDBB tdbb,
-								 SSHORT parm1, FPTR_VOID err, ISC_STATUS * status)
+TextType* INTL_texttype_lookup(TDBB tdbb,
+								SSHORT parm1,
+								FPTR_VOID err,
+								ISC_STATUS * status)
 {
 /**************************************
  *
@@ -1118,7 +1123,7 @@ TextType *DLL_EXPORT INTL_texttype_lookup(
 	return (cs_object);
 }
 
-void DLL_EXPORT INTL_pad_spaces(TDBB tdbb, DSC * type, UCHAR * string, USHORT length)
+void INTL_pad_spaces(TDBB tdbb, DSC * type, UCHAR * string, USHORT length)
 {
 /**************************************
  *
@@ -1144,11 +1149,11 @@ void DLL_EXPORT INTL_pad_spaces(TDBB tdbb, DSC * type, UCHAR * string, USHORT le
 }
 
 
-USHORT DLL_EXPORT INTL_string_to_key(
-									 TDBB tdbb,
-									 USHORT idxType,
-									 DSC * pString,
-									 DSC * pByte, USHORT partial)
+USHORT INTL_string_to_key(TDBB tdbb,
+						USHORT idxType,
+						DSC * pString,
+						DSC * pByte,
+						USHORT partial)
 {
 /**************************************
  *
@@ -1237,7 +1242,7 @@ USHORT DLL_EXPORT INTL_string_to_key(
 }
 
 
-int DLL_EXPORT INTL_str_to_upper(TDBB tdbb, DSC * pString)
+int INTL_str_to_upper(TDBB tdbb, DSC * pString)
 {
 /**************************************
  *
@@ -1292,7 +1297,7 @@ int DLL_EXPORT INTL_str_to_upper(TDBB tdbb, DSC * pString)
 }
 
 
-UCHAR DLL_EXPORT INTL_upper(TDBB tdbb, USHORT ttype, UCHAR ch)
+UCHAR INTL_upper(TDBB tdbb, USHORT ttype, UCHAR ch)
 {
 /**************************************
  *

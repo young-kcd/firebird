@@ -1,5 +1,5 @@
-#ifndef _JRD_SMP_H_
-#define _JRD_SMP_H_
+#ifndef JRD_SMP_H
+#define JRD_SMP_H
 
 class SmpLock
 {

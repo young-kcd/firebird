@@ -64,7 +64,7 @@ static void internal_error(ISC_STATUS, int);
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
-void DLL_EXPORT ERR_bugcheck(int number)
+void ERR_bugcheck(int number)
 {
 /**************************************
  *
@@ -89,7 +89,7 @@ void DLL_EXPORT ERR_bugcheck(int number)
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
-void DLL_EXPORT ERR_bugcheck_msg(const TEXT* msg)
+void ERR_bugcheck_msg(const TEXT* msg)
 {
 /**************************************
  *
@@ -116,7 +116,7 @@ void DLL_EXPORT ERR_bugcheck_msg(const TEXT* msg)
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
-void DLL_EXPORT ERR_corrupt(int number)
+void ERR_corrupt(int number)
 {
 /**************************************
  *
@@ -134,7 +134,7 @@ void DLL_EXPORT ERR_corrupt(int number)
 #endif
 
 
-const TEXT* DLL_EXPORT ERR_cstring(const TEXT* in_string)
+const TEXT* ERR_cstring(const TEXT* in_string)
 {
 /**************************************
  *
@@ -157,9 +157,9 @@ const TEXT* DLL_EXPORT ERR_cstring(const TEXT* in_string)
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
-void DLL_EXPORT ERR_duplicate_error(IDX_E	code,
-									JRD_REL		relation,
-									USHORT index_number)
+void ERR_duplicate_error(IDX_E	code,
+						JRD_REL		relation,
+						USHORT index_number)
 {
 /**************************************
  *
@@ -219,7 +219,7 @@ void DLL_EXPORT ERR_duplicate_error(IDX_E	code,
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
-void DLL_EXPORT ERR_error(int number)
+void ERR_error(int number)
 {
 /**************************************
  *
@@ -244,7 +244,7 @@ void DLL_EXPORT ERR_error(int number)
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
-void DLL_EXPORT ERR_error_msg(const TEXT* msg)
+void ERR_error_msg(const TEXT* msg)
 {
 /**************************************
  *
@@ -265,7 +265,7 @@ void DLL_EXPORT ERR_error_msg(const TEXT* msg)
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
-void DLL_EXPORT ERR_log(int facility, int number, const TEXT* message)
+void ERR_log(int facility, int number, const TEXT* message)
 {
 /**************************************
  *
@@ -303,7 +303,7 @@ void DLL_EXPORT ERR_log(int facility, int number, const TEXT* message)
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
-BOOLEAN DLL_EXPORT ERR_post_warning(ISC_STATUS status, ...)
+BOOLEAN ERR_post_warning(ISC_STATUS status, ...)
 {
 /**************************************
  *
@@ -392,7 +392,7 @@ BOOLEAN DLL_EXPORT ERR_post_warning(ISC_STATUS status, ...)
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
-void DLL_EXPORT ERR_post(ISC_STATUS status, ...)
+void ERR_post(ISC_STATUS status, ...)
 {
 /**************************************
  *
@@ -483,7 +483,7 @@ void DLL_EXPORT ERR_post(ISC_STATUS status, ...)
 
 
 #if ( !defined( REQUESTER) && !defined(SUPERCLIENT))
-void DLL_EXPORT ERR_punt(void)
+void ERR_punt(void)
 {
 /**************************************
  *
@@ -515,7 +515,7 @@ void DLL_EXPORT ERR_punt(void)
 #endif
 
 
-const TEXT* DLL_EXPORT ERR_string(const TEXT* in_string, int length)
+const TEXT* ERR_string(const TEXT* in_string, int length)
 {
 /**************************************
  *
@@ -571,7 +571,7 @@ const TEXT* DLL_EXPORT ERR_string(const TEXT* in_string, int length)
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
-void DLL_EXPORT ERR_warning(ISC_STATUS status, ...)
+void ERR_warning(ISC_STATUS status, ...)
 {
 /**************************************
  *

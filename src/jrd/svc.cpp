@@ -234,14 +234,14 @@ static BOOLEAN svc_initialized = FALSE, thd_initialized = FALSE;
 
 /* Service Functions */
 #ifdef SUPERSERVER
-//extern int main_gbak(SVC service);
+//int main_gbak(SVC service);
 #include "../burp/burp_proto.h"
-//extern int main_gfix(SVC service);
+//int main_gfix(SVC service);
 #include "../alice/alice_proto.h"
-extern int main_wal_print();
-extern int main_lock_print();
-extern int main_gstat(SVC service);
-//extern int main_gsec(SVC service);
+int main_wal_print();
+int main_lock_print();
+int main_gstat(SVC service);
+//int main_gsec(SVC service);
 #include "../utilities/gsec/gsec_proto.h"
 
 #define MAIN_GBAK		BURP_main

@@ -1,5 +1,5 @@
-#ifndef _JRD_SMP_IMPL_H_
-#define _JRD_SMP_IMPL_H_
+#ifndef JRD_SMP_IMPL_H
+#define JRD_SMP_IMPL_H
 
 #include "../jrd/smp.h"
 #include "../jrd/thd.h"

@@ -24,11 +24,11 @@
 #ifndef GPRE_HSH_PROTO_H
 #define GPRE_HSH_PROTO_H
 
-extern void HSH_fini(void);
-extern void HSH_init(void);
-extern void HSH_insert(SYM);
-extern SYM HSH_lookup(SCHAR *);
-extern SYM HSH_lookup2(SCHAR *);
-extern void HSH_remove(SYM);
+void	HSH_fini(void);
+void	HSH_init(void);
+void	HSH_insert(SYM);
+SYM		HSH_lookup(SCHAR *);
+SYM		HSH_lookup2(SCHAR *);
+void	HSH_remove(SYM);
 
-#endif /* GPRE_HSH_PROTO_H */
+#endif // GPRE_HSH_PROTO_H

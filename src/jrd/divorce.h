@@ -21,9 +21,9 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_DIVOR_PROTO_H_
-#define _JRD_DIVOR_PROTO_H_
+#ifndef JRD_DIVOR_PROTO_H
+#define JRD_DIVOR_PROTO_H
 
 extern void divorce_terminal(int);
 
-#endif /* _JRD_DIVOR_PROTO_H_ */
+#endif /* JRD_DIVOR_PROTO_H */

@@ -24,8 +24,8 @@
  *
  */
 
-#ifndef _JRD_MISC_H_
-#define _JRD_MISC_H_
+#ifndef JRD_MISC_H
+#define JRD_MISC_H
 
 #include "../jrd/dsc.h"
 
@@ -43,4 +43,4 @@ typedef struct stk {
 #define PARAM_NBYTES(PARAM1,PARAM2) (SCHAR) dtype_varying, (USHORT) PARAM1, (UCHAR*) PARAM2
 #define PARAM_POINTER(PARAM)	(SCHAR) dtype_long, (UCHAR*) PARAM
 
-#endif /* _JRD_MISC_H_ */
+#endif /* JRD_MISC_H */

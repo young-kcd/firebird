@@ -24,8 +24,8 @@
  *
  */
 
-#ifndef _JRD_FLU_H_
-#define _JRD_FLU_H_
+#ifndef JRD_FLU_H
+#define JRD_FLU_H
 
 /* RITTER - changed HP10 to HPUX in the line below */
 #ifdef HPUX
@@ -62,4 +62,4 @@ typedef struct mod {
 	TEXT mod_name[1];			/* Module name */
 } *MOD;
 
-#endif /* _JRD_FLU_H_ */
+#endif /* JRD_FLU_H */

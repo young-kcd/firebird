@@ -28,8 +28,8 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 
-#ifndef _JRD_EXE_H_
-#define _JRD_EXE_H_
+#ifndef JRD_EXE_H
+#define JRD_EXE_H
 
 #include "../jrd/jrd_blks.h"
 #include "../common/classes/array.h"
@@ -658,4 +658,4 @@ typedef xcp *XCP;
 #define XCP_MESSAGE_LENGTH	78	// must correspond to the size of
 								// RDB$EXCEPTIONS.RDB$MESSAGE
 
-#endif /* _JRD_EXE_H_ */
+#endif /* JRD_EXE_H */

@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.36 2003-09-24 10:39:19 aafemt Exp $
+//  $Id: gpre.cpp,v 1.37 2003-10-03 01:53:33 brodsom Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -1264,7 +1264,7 @@ TOK CPR_token()
 		}
 		token = get_token();
 		switch (sw_sql_dialect) {
-		case 1:
+		case SQL_DIALECT_V5:
 			if (!(QUOTED(token->tok_type)))
 				CPR_error("Can only tag quoted strings with character set");
 			else
@@ -1284,7 +1284,7 @@ TOK CPR_token()
 	// only after a database declaration is loaded and MET_load_hash_table run.
 	else if (default_lc_ctype && text_subtypes) {
 		switch (sw_sql_dialect) {
-		case 1:
+		case SQL_DIALECT_V5:
 			if (QUOTED(token->tok_type)){
 				token->tok_charset = MSC_find_symbol(HSH_lookup(default_lc_ctype), 
 												   SYM_charset);
@@ -2222,7 +2222,7 @@ static TOK get_token()
 	a string. Don not lookup in the hash table to prevent 
 	parsing confusion. 
     **/
-		if (sw_sql_dialect != 1)
+		if (sw_sql_dialect != SQL_DIALECT_V5)
 			token.tok_symbol = symbol = HSH_lookup(token.tok_string);
 		else
 			token.tok_symbol = symbol = NULL;

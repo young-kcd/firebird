@@ -25,8 +25,8 @@
  *                            implemented ROWS_AFFECTED system variable
  */
 
-#ifndef _JRD_REQ_H_
-#define _JRD_REQ_H_
+#ifndef JRD_REQ_H
+#define JRD_REQ_H
 
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
@@ -298,4 +298,4 @@ class acc : public pool_alloc<type_acc>
 };
 typedef acc *ACC;
 
-#endif /* _JRD_REQ_H_ */
+#endif /* JRD_REQ_H */

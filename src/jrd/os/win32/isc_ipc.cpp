@@ -36,7 +36,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.4 2003-09-12 10:20:32 aafemt Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.5 2003-10-03 01:48:58 brodsom Exp $ */
 
 #include <windows.h>
 #include <process.h>
@@ -99,7 +99,7 @@ extern "C" {
 	ULONG isc_enter_count = 0;
 }
 
-void DLL_EXPORT ISC_enter(void)
+void ISC_enter(void)
 {
 /**************************************
  *
@@ -125,7 +125,7 @@ void DLL_EXPORT ISC_enter(void)
 }
 
 
-void DLL_EXPORT ISC_exit(void)
+void ISC_exit(void)
 {
 /**************************************
  *
@@ -202,7 +202,7 @@ int API_ROUTINE ISC_kill(SLONG pid, SLONG signal_number, void *object_hndl)
 	return (SetEvent(opn_event->opn_event_lhandle)) ? 0 : -1;
 }
 
-void DLL_EXPORT ISC_signal_init(void)
+void ISC_signal_init(void)
 {
 /**************************************
  *

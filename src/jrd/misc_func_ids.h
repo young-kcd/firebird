@@ -20,8 +20,8 @@
  *  Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_MISC_FUNC_IDS_H_
-#define _JRD_MISC_FUNC_IDS_H_
+#ifndef JRD_MISC_FUNC_IDS_H
+#define JRD_MISC_FUNC_IDS_H
 
 enum internal_info_id
 {
@@ -35,4 +35,4 @@ enum internal_info_id
 	max_internal_id
 };
 
-#endif // _JRD_MISC_FUNC_IDS_H_
+#endif // JRD_MISC_FUNC_IDS_H
