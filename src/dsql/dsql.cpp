@@ -1617,6 +1617,9 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 		init(0);
 		memset(buffer, 0, sizeof(buffer));
 
+		// Pre-initialize buffer. This is necessary because we don't want to transfer rubbish over the wire
+		memset(info, 0, info_length); 
+
 		dsql_req* request = *req_handle;
 	
 		const UCHAR* const end_items = items + item_length;
