@@ -523,7 +523,6 @@ int DLL_EXPORT BURP_gbak(int		argc,
    If this utility is started as a thread in the engine, then the first switch
    will be "-svc_thd".
 */
-
 	tdgbl->gbl_sw_service_gbak = FALSE;
 	tdgbl->gbl_sw_service_thd = FALSE;
 	tdgbl->service_blk = NULL;
