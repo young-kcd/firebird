@@ -553,6 +553,29 @@ for idx in RDB$INDICES cross
      else
         erase cnst;
 end_for;
+
+for cnst in RDB$RELATION_CONSTRAINTS cross
+	chk in RDB$CHECK_CONSTRAINTS over RDB$CONSTRAINT_NAME cross
+	dep in RDB$DEPENDENCIES with
+	cnst.RDB$RELATION_NAME = old.RDB$RELATION_NAME and 
+	cnst.RDB$CONSTRAINT_TYPE = 'CHECK' and
+	chk.RDB$TRIGGER_NAME = dep.RDB$DEPENDENT_NAME and 
+	dep.RDB$DEPENDENT_TYPE = 2 and
+	dep.RDB$DEPENDED_ON_TYPE = 0 and
+	dep.RDB$DEPENDED_ON_NAME = old.RDB$RELATION_NAME and
+	dep.RDB$FIELD_NAME = old.RDB$FIELD_NAME
+	
+	if any dep1 in RDB$DEPENDENCIES with
+		dep1.RDB$DEPENDENT_NAME = chk.RDB$TRIGGER_NAME and
+		dep1.RDB$DEPENDENT_TYPE = 2 and
+		dep1.RDB$DEPENDED_ON_TYPE = 0 and
+		dep1.RDB$DEPENDED_ON_NAME = old.RDB$RELATION_NAME and
+		dep1.RDB$FIELD_NAME NE old.RDB$FIELD_NAME
+			abort 1
+	else
+		erase cnst;
+end_for;
+
 end;
 end_trigger
 message 1: "Cannot delete field being used in an integrity constraint.";
