@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.162 2003-10-19 06:59:55 stryqx Exp $
+dnl $Id: configure.in,v 1.163 2003-10-20 01:44:00 brodsom Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -613,6 +613,13 @@ mkdir -p temp/client.gbak/burp
 mkdir -p temp/client.gfix/alice
 mkdir -p temp/client.gpre/gpre
 mkdir -p temp/client.gdef/dudley
+mkdir -p temp/client.gdef/wal
+mkdir -p temp/client.gdef/gpre
+mkdir -p temp/client.gdef/jrd
+mkdir -p temp/client.qli/qli
+mkdir -p temp/client.qli/wal
+mkdir -p temp/client.qli/jrd
+mkdir -p temp/client.qli/gpre
 mkdir -p temp/client.isql/isql
 mkdir -p temp/client.util/utilities/rebuild
 mkdir -p temp/client.util/utilities/ibmgr
@@ -755,6 +762,7 @@ gen/Makefile.client.fbudf:${MAKE_SRC_DIR}/Makefile.in.client.fbudf
 gen/Makefile.client.gbak:${MAKE_SRC_DIR}/Makefile.in.client.gbak
 gen/Makefile.client.gfix:${MAKE_SRC_DIR}/Makefile.in.client.gfix
 gen/Makefile.client.gdef:${MAKE_SRC_DIR}/Makefile.in.client.gdef
+gen/Makefile.client.qli:${MAKE_SRC_DIR}/Makefile.in.client.qli
 gen/Makefile.client.isql:${MAKE_SRC_DIR}/Makefile.in.client.isql
 gen/Makefile.client.gpre:${MAKE_SRC_DIR}/Makefile.in.client.gpre
 gen/Makefile.client.util:${MAKE_SRC_DIR}/Makefile.in.client.util

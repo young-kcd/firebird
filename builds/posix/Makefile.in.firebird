@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.46 2003-09-27 23:29:07 brodsom Exp $
+#  $Id: Makefile.in.firebird,v 1.47 2003-10-20 01:45:01 brodsom Exp $
 #
 
 ROOT=..
@@ -374,7 +374,7 @@ embed_fbudf:
 .PHONY: libfbclient client_gfix client_gbak client_isql client_gpre client_util client_fbudf
 
 super_targets: libfbserver fbserver libfbclient client_gfix client_gbak \
-			client_isql client_gpre client_util client_fbudf # client_gdef
+			client_isql client_gpre client_util client_fbudf client_gdef client_qli
 
 libfbserver:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.libfbserver $@
@@ -408,6 +408,9 @@ client_fbudf:
 
 client_gdef:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.client.gdef
+
+client_qli:
+	$(MAKE) -f $(GEN_ROOT)/Makefile.client.qli
 
 
 #sysdba_user gstat:			# add sysdba user and build gstat program

@@ -27,11 +27,10 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.gdef,v 1.6 2003-10-20 01:45:06 brodsom Exp $
+#  $Id: Makefile.in.client.qli,v 1.1 2003-10-20 01:44:59 brodsom Exp $
 #
 ROOT=..
-ObjModuleName=client.gdef
-CFLAGS := -DSUPERCLIENT
+ObjModuleName=client.qli
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -40,16 +39,13 @@ include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@
 
-unexport ISC_USER
-unexport ISC_PASSWORD
 
-
-GDEF_Files=	exe.epp extract.epp \
-			ddl.cpp expand.cpp expr.cpp generate.cpp \
-			hsh.cpp lex.cpp parse.cpp trn.cpp
-
-GDEF_Sources = $(addprefix dudley/, $(GDEF_Files))
-GDEF_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GDEF_Sources))))
+QLI_Files=	all.cpp command.cpp compile.cpp dtr.cpp err.cpp eval.cpp \
+		expand.cpp exe.cpp format.cpp gener.cpp help.cpp \
+		hsh.cpp lex.cpp meta.cpp mov.cpp parse.cpp picstr.cpp proc.cpp \
+		report.cpp show.cpp
+QLI_Sources = $(addprefix qli/, $(QLI_Files))
+QLI_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(QLI_Sources))))
 
 WALF_Files= walf.cpp
 WALF_Sources = $(addprefix wal/, $(WALF_Files))
@@ -63,22 +59,37 @@ GPRE_Files= pretty.cpp
 GPRE_Sources = $(addprefix gpre/, $(GPRE_Files))
 GPRE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GPRE_Sources))))
 
-AllObjects = $(GDEF_Objects) $(WALF_Objects) $(JRD_Objects) $(GPRE_Objects)
+AllObjects = $(QLI_Objects) $(WALF_Objects) $(JRD_Objects) $(GPRE_Objects)
 Dependencies = $(AllObjects:.o=.d)
 
 
-.PHONY: all gdef
 
-all:	gdef 
+.PHONY: all qli
 
-gdef:   $(BIN)/gdef
+all:	qli   
 
-$(BIN)/gdef: $(GDEF_Objects) $(WALF_Objects) $(JRD_Objects) $(GPRE_Objects) $(LIBFBCLIENT_SO)  
-	$(LD) $(LINK_OPTS) $(GDEF_Objects) $(WALF_Objects) $(JRD_Objects) $(GPRE_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+
+qli : create_yachts $(LIBFBCLIENT_SO) $(QLI)
+
+$(QLI): $(QLI_Objects) $(WALF_Objects) $(JRD_Objects) $(GPRE_Objects)
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(CHMOD_S7) $@
+
+# EKU: At this point yachts.lnk is a link to empty.fdb, but gpre will fail
+#      with it. metadata.fdb is what is needed here.
+create_yachts:
+	-$(RM) yachts.lnk
+	-$(LN) -f metadata.fdb yachts.lnk
+
+
+# qli_help
+#
+# qli_help is now directly build in the refDatabase directory, and doesn't 
+# need to be rebuilt here.
 
 
 
 include $(ROOT)/gen/make.shared.targets
 
-
 -include $(Dependencies)
+
