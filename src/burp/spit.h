@@ -29,8 +29,8 @@
 
 const char BLANK				= ' ';
 const int FILE_IS_FULL			= -9;
-const int FILE_NM_ARR_LEN		= 20;
-const char* GSPLIT_HDR_REC_NM	= "InterBase/Gsplit";
+//const int FILE_NM_ARR_LEN		= 20;
+//const char* GSPLIT_HDR_REC_NM	= "InterBase/Gsplit";
 
 const int K_BYTES				= 1024;
 const int IO_BUFFER_SIZE		= (16 * K_BYTES);
