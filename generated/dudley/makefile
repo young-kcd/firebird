@@ -15,16 +15,16 @@ DELETE_COMMAND=del /q
 REL_SRC_DIR=../../src/dudley
 
 
-C_FILES=exe.c extract.c
+CPP_FILES=exe.cpp extract.cpp
 
-all: $(C_FILES)
+all: $(CPP_FILES)
 
 clean :
-	-$(DELETE_COMMAND) *.c
+	-$(DELETE_COMMAND) *.cpp
 
-exe.c : $(REL_SRC_DIR)/exe.e
+exe.cpp : $(REL_SRC_DIR)/exe.epp
 	$(GPRE_PGM) -r -m -n $? -o >$@
 
-extract.c : $(REL_SRC_DIR)/extract.e
+extract.cpp : $(REL_SRC_DIR)/extract.epp
 	$(GPRE_PGM) -r -m -n $? -o >$@
 

@@ -15,25 +15,25 @@ DELETE_COMMAND=del /q
 REL_SRC_DIR=../../src/utilities
 
 #
-# rstore.c - disabled
+# rstore.cpp - disabled
 #
-C_FILES=dba.c security.c rmet.c
+CPP_FILES=dba.cpp security.cpp rmet.cpp
 
-all: $(C_FILES)
+all: $(CPP_FILES)
 
 clean :
-	-$(DELETE_COMMAND) *.c
+	-$(DELETE_COMMAND) *.cpp
 
-dba.c : $(REL_SRC_DIR)/dba.e
+dba.cpp : $(REL_SRC_DIR)/dba.epp
 	$(GPRE_PGM) -r -m -n $? -o >$@
 
-security.c : $(REL_SRC_DIR)/security.e
+security.cpp : $(REL_SRC_DIR)/security.epp
 	$(GPRE_PGM) -r -m -n $? -o >$@
 
-rmet.c : $(REL_SRC_DIR)/rmet.e
+rmet.cpp : $(REL_SRC_DIR)/rmet.epp
 	$(GPRE_PGM) -r -m -n $? -o >$@
 
 # Disabled - unused
-#rstore.c : $(REL_SRC_DIR)/rstore.e
+#rstore.cpp : $(REL_SRC_DIR)/rstore.epp
 #	$(GPRE_PGM) -r -m -n $? -o >$@
 

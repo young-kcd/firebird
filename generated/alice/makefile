@@ -15,13 +15,13 @@ DELETE_COMMAND=del /q
 REL_SRC_DIR=../../src/alice
 
 
-C_FILES=alice_meta.c
+CPP_FILES=alice_meta.cpp
 
-all: $(C_FILES)
+all: $(CPP_FILES)
 
 clean :
-	-$(DELETE_COMMAND) *.c
+	-$(DELETE_COMMAND) *.cpp
 
-alice_meta.c : $(REL_SRC_DIR)/alice_meta.e
+alice_meta.cpp : $(REL_SRC_DIR)/alice_meta.epp
 	$(GPRE_PGM) -r -m -n $? -o >$@
 

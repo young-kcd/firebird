@@ -15,13 +15,13 @@ DELETE_COMMAND=del /q
 REL_SRC_DIR=../../src/gpre
 
 
-C_FILES=gpre_meta.c
+CPP_FILES=gpre_meta.cpp
 
-all: $(C_FILES)
+all: $(CPP_FILES)
 
 clean :
-	-$(DELETE_COMMAND) *.c
+	-$(DELETE_COMMAND) *.cpp
 
-gpre_meta.c : $(REL_SRC_DIR)/gpre_meta.e
+gpre_meta.cpp : $(REL_SRC_DIR)/gpre_meta.epp
 	$(GPRE_PGM) -r -m -n $? -o >$@
 

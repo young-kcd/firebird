@@ -15,19 +15,19 @@ DELETE_COMMAND=del /q
 REL_SRC_DIR=../../src/dsql
 
 
-C_FILES=array.c blob.c metd.c
+CPP_FILES=array.cpp blob.cpp metd.cpp
 
-all: $(C_FILES)
+all: $(CPP_FILES)
 
 clean :
-	-$(DELETE_COMMAND) *.c
+	-$(DELETE_COMMAND) *.cpp
 
-array.c : $(REL_SRC_DIR)/array.e
+array.cpp : $(REL_SRC_DIR)/array.epp
 	$(GPRE_PGM) -r -m -n $? -o >$@
 
-blob.c : $(REL_SRC_DIR)/blob.e
+blob.cpp : $(REL_SRC_DIR)/blob.epp
 	$(GPRE_PGM) -r -m -n $? -o >$@
 
-metd.c : $(REL_SRC_DIR)/metd.e
+metd.cpp : $(REL_SRC_DIR)/metd.epp
 	$(GPRE_PGM) -r -m -n $? -o >$@
 

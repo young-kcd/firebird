@@ -1,5 +1,5 @@
 REL_SRC_DIR=../../src/jrd
-.SUFFIXES : .e
+.SUFFIXES : .e .epp
 
 !IF "$(OS)" == "Windows_NT"
 
@@ -19,6 +19,9 @@ DELETE_COMMAND=del /q
 {$(REL_SRC_DIR)}.e{}.c:
 	$(GPRE_PGM) -n -gds -raw -ids $? -o >$@
 
+{$(REL_SRC_DIR)}.epp{}.cpp:
+	$(GPRE_PGM) -n -gds -raw -ids $? -o >$@
+
 !ELSE
 
 !ERROR Running on unknown operating system.
@@ -28,21 +31,22 @@ DELETE_COMMAND=del /q
 #
 # NOTE: "stats" is temporarily removed since it isn't even used.
 #
-# stats.c
+# stats.cpp
 #
 
-C_FILES=blob_filter.c dfw.c dpm.c dyn.c dyn_def.c dyn_del.c dyn_mod.c \
-        dyn_util.c fun.c grant.c ini.c met.c pcmet.c scl.c stats.c
+CPP_FILES=blob_filter.cpp dfw.cpp dpm.cpp dyn.cpp dyn_def.cpp \
+        dyn_del.cpp dyn_mod.cpp dyn_util.cpp fun.cpp grant.cpp \
+        ini.cpp met.cpp pcmet.cpp scl.cpp stats.cpp
 
-all: $(C_FILES)
+all: $(CPP_FILES)
 
 clean :
-	-$(DELETE_COMMAND) *.c
+	-$(DELETE_COMMAND) *.cpp
 
-blob_filter.c :
+blob_filter.cpp :
 	$(GPRE_PGM) -n -manual -raw $? -o >$@
 
-dyn_def.c :
-	$(GPRE_PGM) -n -gds -raw -ids $? -o > dyn_def.c.tmp
-	$(SED_PGM) -f $(REL_SRC_DIR)/dyn_def.sed dyn_def.c.tmp > dyn_def.c
+dyn_def.cpp :
+	$(GPRE_PGM) -n -gds -raw -ids $? -o > dyn_def.cpp.tmp
+	$(SED_PGM) -f $(REL_SRC_DIR)/dyn_def.sed dyn_def.cpp.tmp > dyn_def.cpp
 

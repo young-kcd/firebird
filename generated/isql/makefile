@@ -15,19 +15,19 @@ DELETE_COMMAND=del /q
 REL_SRC_DIR=../../src/isql
 
 
-C_FILES=extract.c isql.c show.c
+CPP_FILES=extract.cpp isql.cpp show.cpp
 
-all: $(C_FILES)
+all: $(CPP_FILES)
 
 clean :
-	-$(DELETE_COMMAND) *.c
+	-$(DELETE_COMMAND) *.cpp
 
-extract.c : $(REL_SRC_DIR)/extract.e
+extract.cpp : $(REL_SRC_DIR)/extract.epp
 	$(GPRE_PGM) -r -m -n $? -o >$@
 
-isql.c : $(REL_SRC_DIR)/isql.e
+isql.cpp : $(REL_SRC_DIR)/isql.epp
 	$(GPRE_PGM) -r -m -n $? -o >$@
 
-show.c : $(REL_SRC_DIR)/show.e
+show.cpp : $(REL_SRC_DIR)/show.epp
 	$(GPRE_PGM) -r -m -n $? -o >$@
 

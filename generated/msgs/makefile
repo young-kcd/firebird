@@ -1,5 +1,5 @@
 REL_SRC_DIR=../../src/msgs
-.SUFFIXES : .e
+.SUFFIXES : .e .epp
 
 !IF "$(OS)" == "Windows_NT"
 
@@ -19,6 +19,9 @@ DELETE_COMMAND=del /q
 {$(REL_SRC_DIR)}.e{}.c:
 	$(GPRE_PGM) -r -m -n $? -o >$@
 
+{$(REL_SRC_DIR)}.epp{}.cpp:
+	$(GPRE_PGM) -r -m -n $? -o >$@
+
 !ELSE
 
 !ERROR Running on unknown operating system.
@@ -29,11 +32,11 @@ DELETE_COMMAND=del /q
 # load.c - disabled
 #
 
-C_FILES=build_file.c check_msgs.c enter_msgs.c modify_msgs.c \
-        change_msgs.c
+CPP_FILES=build_file.cpp check_msgs.cpp enter_msgs.cpp modify_msgs.cpp \
+        change_msgs.cpp
 
-all: $(C_FILES)
+all: $(CPP_FILES)
 
 clean :
-	-$(DELETE_COMMAND) *.c
+	-$(DELETE_COMMAND) *.cpp
 

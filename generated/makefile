@@ -1,7 +1,7 @@
 REL_SRC_DIR=../src/jrd
 REL_DST_DIR=./jrd
 
-.SUFFIXES : .e
+.SUFFIXES : .e .epp
 
 !IF "$(OS)" == "Windows_NT"
 
@@ -22,6 +22,9 @@ DELETE_COMMAND=del /q
 {$(REL_SRC_DIR)}.e{$(REL_DST_DIR)}.c:
 	$(GPRE_PGM) -n -gds -raw -ids $? -o >$@
 
+{$(REL_SRC_DIR)}.epp{$(REL_DST_DIR)}.cpp:
+	$(GPRE_PGM) -n -gds -raw -ids $? -o >$@
+
 !ELSE
 
 !ERROR Running on unknown operating system.
@@ -31,36 +34,36 @@ DELETE_COMMAND=del /q
 #
 # NOTE: "stats" is temporarily removed since it isn't even used.
 #
-# stats.c
+# stats.cpp
 #
 
-C_FILES=$(REL_DST_DIR)/blob_filter.c \
-        $(REL_DST_DIR)/dfw.c         \
-		$(REL_DST_DIR)/dpm.c         \
-		$(REL_DST_DIR)/dyn.c         \
-		$(REL_DST_DIR)/dyn_def.c     \
-		$(REL_DST_DIR)/dyn_del.c     \
-		$(REL_DST_DIR)/dyn_mod.c     \
-        $(REL_DST_DIR)/dyn_util.c    \
-		$(REL_DST_DIR)/fun.c         \
-		$(REL_DST_DIR)/grant.c       \
-		$(REL_DST_DIR)/ini.c         \
-		$(REL_DST_DIR)/met.c         \
-		$(REL_DST_DIR)/pcmet.c       \
-		$(REL_DST_DIR)/scl.c         \
-		$(REL_DST_DIR)/stats.c
+CPP_FILES=$(REL_DST_DIR)/blob_filter.cpp \
+        $(REL_DST_DIR)/dfw.cpp           \
+		$(REL_DST_DIR)/dpm.cpp         \
+		$(REL_DST_DIR)/dyn.cpp         \
+		$(REL_DST_DIR)/dyn_def.cpp     \
+		$(REL_DST_DIR)/dyn_del.cpp     \
+		$(REL_DST_DIR)/dyn_mod.cpp     \
+        $(REL_DST_DIR)/dyn_util.cpp    \
+		$(REL_DST_DIR)/fun.cpp         \
+		$(REL_DST_DIR)/grant.cpp       \
+		$(REL_DST_DIR)/ini.cpp         \
+		$(REL_DST_DIR)/met.cpp         \
+		$(REL_DST_DIR)/pcmet.cpp       \
+		$(REL_DST_DIR)/scl.cpp         \
+		$(REL_DST_DIR)/stats.cpp
 
 
-all: $(C_FILES)
+all: $(CPP_FILES)
 
 clean :
-	-$(DELETE_COMMAND) $(CLEAN_DIR_PATH)*.c
+	-$(DELETE_COMMAND) $(CLEAN_DIR_PATH)*.cpp
 
-$(REL_DST_DIR)/blob_filter.c :
+$(REL_DST_DIR)/blob_filter.cpp :
 	$(GPRE_PGM) -n -manual -raw $? -o >$@
 
-$(REL_DST_DIR)/dyn_def.c :
-	$(GPRE_PGM) -n -gds -raw -ids $? -o > dyn_def.c.tmp
-	-$(SED_PGM) -f $(REL_SRC_DIR)/dyn_def.sed dyn_def.c.tmp > $(REL_DST_DIR)/dyn_def.c
-	$(DELETE_COMMAND) dyn_def.c.tmp
+$(REL_DST_DIR)/dyn_def.cpp :
+	$(GPRE_PGM) -n -gds -raw -ids $? -o > dyn_def.cpp.tmp
+	-$(SED_PGM) -f $(REL_SRC_DIR)/dyn_def.sed dyn_def.cpp.tmp > $(REL_DST_DIR)/dyn_def.cpp
+	$(DELETE_COMMAND) dyn_def.cpp.tmp
 

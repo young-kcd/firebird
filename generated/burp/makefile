@@ -20,25 +20,26 @@ COMMON_CFLAGS=-I../../src -I../../src/include
 CFLAGS=$(COMMON_CFLAGS) $(COMPILER_CFLAGS)
 
 #
-# C_FILES could be useful as build target in case we are only
-# generate the C files into this dir
+# CPP_FILES could be useful as build target in case we are only
+# generate the C++ files into this dir
 #
 
-C_FILES=backup.c restore.c
+CPP_FILES=backup.cpp restore.cpp
 
 OBJ_FILES=backup.$(OBJEXT) restore.$(OBJEXT)
 
-all: $(OBJ_FILES)
+# all: $(OBJ_FILES)
+all: $(CPP_FILES)
 
-c_files : $(C_FILES)
+cpp_files : $(CPP_FILES)
 
 clean :
 	-$(DELETE_COMMAND) *.$(OBJEXT)
-	-$(DELETE_COMMAND) *.c
+	-$(DELETE_COMMAND) *.cpp
 
-backup.c : $(REL_SRC_DIR)/backup.e
+backup.cpp : $(REL_SRC_DIR)/backup.epp
 	$(GPRE_PGM) -r -m -n $? -o >$@
 
-restore.c : $(REL_SRC_DIR)/restore.e
+restore.cpp : $(REL_SRC_DIR)/restore.epp
 	$(GPRE_PGM) -r -m -n $? -o >$@
 
