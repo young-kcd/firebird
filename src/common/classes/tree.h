@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: tree.h,v 1.39 2004-07-29 17:44:03 skidder Exp $
+ *  $Id: tree.h,v 1.40 2004-08-22 21:09:13 skidder Exp $
  *
  */
 
@@ -50,12 +50,15 @@ static inline bool NEED_MERGE(int current_count, int page_count) {
 	return current_count * 4 / 3 <= page_count;
 }
 
-// Note: small values will cause wasting of memory because overhead for
-// each page is 28-32 bytes (on 32-bit platforms)
-// 100 is an optimal value for range 10^5 - 10^7 items and it generates 
-// total tree overhead of ~10%
-const int LEAF_PAGE_SIZE = 100;
-const int NODE_PAGE_SIZE = 100;
+// Default tree leaf and node page sizes in bytes.
+//
+// Avoid using very small values because overhead for each page is 28-32 bytes on
+// 32-bit platforms. Node pages are optimal to be significantly larger because
+// they are modified less often, but are searched much more often.
+//
+// Values below are fine-tuned for AMD Athlon 64 3000+ with DDR400 memory.
+const int LEAF_PAGE_SIZE = 400;
+const int NODE_PAGE_SIZE = 3000;
 
 // This is maximum level of tree nesting. 10^9 elements for binary tree case
 // should be more than enough. No checks are performed in code against overflow of this value
@@ -101,8 +104,8 @@ enum LocType { locEqual, locLess, locGreat, locGreatEqual, locLessEqual };
 template <typename Value, typename Key = Value, typename Allocator = MallocAllocator, 
 	typename KeyOfValue = DefaultKeyValue<Value>, 
 	typename Cmp = DefaultComparator<Key>, 
-	int LeafCount = LEAF_PAGE_SIZE, 
-	int NodeCount = NODE_PAGE_SIZE >
+	int LeafCount = LEAF_PAGE_SIZE / sizeof(Value), 
+	int NodeCount = NODE_PAGE_SIZE / sizeof(void*)>
 class BePlusTree {
 public:
 	BePlusTree(Allocator *_pool) : pool(_pool), level(0), root(NULL), defaultAccessor(this)	{ };
