@@ -1,3 +1,17 @@
+2004-12-20 18:44  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp (1.200):
+	
+	verify DatabaseAccess in the same style&place for both attach and
+	create
+
+2004-12-20 18:36  alexpeshkoff
+
+	* firebird2/src/jrd/thd.cpp (1.42):
+	
+	removed unneeded {} block - destructors order not important for
+	ContextPoolHolder
+
 2004-12-19 17:29  alexpeshkoff
 
 	* firebird2/src/remote/os/win32/srvr_w32.cpp (1.26):
