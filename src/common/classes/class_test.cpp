@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: class_test.cpp,v 1.13 2004-03-25 23:12:39 skidder Exp $
+ *  $Id: class_test.cpp,v 1.14 2004-05-17 15:06:47 brodsom Exp $
  *
  */
 
@@ -73,7 +73,7 @@ void testSortedVector() {
 	printf(passed ? "PASSED\n" : "FAILED\n");
 }
 
-#define TEST_ITEMS 1000000
+const int TEST_ITEMS = 1000000;
 
 struct Test {
 	int value;
@@ -265,13 +265,13 @@ void testBePlusTree() {
 	printf(passed ? "PASSED\n" : "FAILED\n");
 }
 
-#define ALLOC_ITEMS 1000000
-#define MAX_ITEM_SIZE 50
-#define BIG_ITEMS (ALLOC_ITEMS/10)
-#define BIG_SIZE (MAX_ITEM_SIZE*5)
+const int ALLOC_ITEMS	= 1000000;
+const int MAX_ITEM_SIZE	= 50;
+const int BIG_ITEMS		= ALLOC_ITEMS/10;
+const int BIG_SIZE		= MAX_ITEM_SIZE*5;
 
-#define LARGE_ITEMS 10
-#define LARGE_ITEM_SIZE 300000
+const int LARGE_ITEMS	= 10;
+const size_t LARGE_ITEM_SIZE	= 300000;
 
 struct AllocItem {
 	int order;

@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: class_perf.cpp,v 1.9 2004-03-25 23:12:39 skidder Exp $
+ *  $Id: class_perf.cpp,v 1.10 2004-05-17 15:06:46 brodsom Exp $
  *
  */
 
@@ -49,7 +49,7 @@ void start() {
 	t = clock();
 }
 
-#define TEST_ITEMS 10000000
+const int TEST_ITEMS	= 10000000;
 
 void report(int scale) {
 	clock_t d = clock();
@@ -166,10 +166,10 @@ void report() {
 	printf("Operation took %d milliseconds.\n", (int)(d-t)*1000/CLOCKS_PER_SEC);
 }
 
-#define ALLOC_ITEMS 10000000
-#define MAX_ITEM_SIZE 50
-#define BIG_ITEMS (ALLOC_ITEMS/10)
-#define BIG_SIZE (MAX_ITEM_SIZE*5)
+const int ALLOC_ITEMS	= 10000000;
+const int MAX_ITEM_SIZE = 50;
+const int BIG_ITEMS		= ALLOC_ITEMS/10;
+const int BIG_SIZE		= MAX_ITEM_SIZE*5;
 
 struct AllocItem {
 	int order;

@@ -99,19 +99,25 @@ const USHORT ODS_CURRENT11		= 0;
 /* useful ODS macros. These are currently used to flag the version of the
    system triggers and system indices in ini.e */
 
-#define ENCODE_ODS(major,minor) (((major) << 4) | (minor))
-#define ODS_8_0         ENCODE_ODS (ODS_VERSION8, 0)
-#define ODS_8_1         ENCODE_ODS (ODS_VERSION8, 1)
-#define ODS_9_0         ENCODE_ODS (ODS_VERSION9, 0)
-#define ODS_9_1         ENCODE_ODS (ODS_VERSION9, 1)
-#define ODS_10_0        ENCODE_ODS (ODS_VERSION10, 0)
-#define ODS_10_1        ENCODE_ODS (ODS_VERSION10, 1)
-#define ODS_11_0        ENCODE_ODS (ODS_VERSION11, 0)
+inline USHORT ENCODE_ODS(USHORT major,USHORT minor){
+	return (((major) << 4) | (minor));
+}
+const USHORT ODS_8_0		= ENCODE_ODS(ODS_VERSION8, 0);
+const USHORT ODS_8_1		= ENCODE_ODS(ODS_VERSION8, 1);
+const USHORT ODS_9_0		= ENCODE_ODS(ODS_VERSION9, 0);
+const USHORT ODS_9_1		= ENCODE_ODS(ODS_VERSION9, 1);
+const USHORT ODS_10_0		= ENCODE_ODS(ODS_VERSION10, 0);
+const USHORT ODS_10_1		= ENCODE_ODS(ODS_VERSION10, 1);
+const USHORT ODS_11_0		= ENCODE_ODS(ODS_VERSION11, 0);
 
 /* Decode ODS version to Major and Minor parts. The 4 LSB's are minor and 
    the next 4 bits are major version number */
-#define DECODE_ODS_MAJOR(ods_version) ((ods_version & 0xFFF0) >> 4)
-#define DECODE_ODS_MINOR(ods_version) (ods_version & 0x000F)
+inline USHORT DECODE_ODS_MAJOR(USHORT ods_version){
+	return ((ods_version & 0xFFF0) >> 4);
+}
+inline USHORT DECODE_ODS_MINOR(USHORT ods_version){
+	return (ods_version & 0x000F);
+}
 
 /* Set current ODS major and minor version */
 
