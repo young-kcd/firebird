@@ -343,9 +343,9 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 ) {
 	// Lookup a block greater or equal than size in freeBlocks tree
 	size = MEM_ALIGN(size);
-	BlockInfo temp = {NULL, size};
+	BlockInfo blTemp = {NULL, size};
 	MemoryBlock* blk;
-	if (freeBlocks.locate(locGreatEqual,temp)) {
+	if (freeBlocks.locate(locGreatEqual,blTemp)) {
 		// Found large enough block
 		BlockInfo* current = &freeBlocks.current();
 		if (current->length-size < MEM_ALIGN(sizeof(MemoryBlock))+ALLOC_ALIGNMENT) {

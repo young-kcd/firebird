@@ -443,16 +443,16 @@ template <typename Value, typename Key, typename Allocator, typename KeyOfValue,
 bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::add(const Value& item) 
 {
 	// Find leaf page for our item
-	void *list = root;
+	void *vList = root;
 	const Key& key = KeyOfValue::generate(NULL, item);
 	for (int lev=level; lev > 0 ; lev--) {
 		int pos;
-		if (!((NodeList *)list)->find(key, pos))
+		if (!((NodeList *)vList)->find(key, pos))
 			if ( --pos < 0 ) pos = 0;
-		list = (*(NodeList *)list)[pos];
+		vList = (*(NodeList *)vList)[pos];
 	}
 
-	ItemList *leaf = (ItemList *)list;
+	ItemList *leaf = (ItemList *)vList;
 	
 	int pos;
 	if (leaf->find(key, pos)) return false;
