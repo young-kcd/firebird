@@ -562,11 +562,6 @@ RecordSource* OPT_compile(thread_db* tdbb,
 		// then no indices where retrieved. Added also OR check on 
 		// parent_stack below. SF BUG # [ 508594 ]
 
-		if (csb->csb_rpt[stream].csb_idx_allocation)
-			csb->csb_rpt[stream].csb_idx_allocation->clear();
-		else
-			csb->csb_rpt[stream].csb_idx_allocation = 
-			FB_NEW(csb->csb_pool) CompilerScratch::IndexDescAlloc(csb->csb_pool);
 		if (conjunct_count || sort || project || aggregate || parent_stack)
 		{
 			jrd_rel* relation = (jrd_rel*) node->nod_arg[e_rel_relation];
@@ -575,7 +570,7 @@ RecordSource* OPT_compile(thread_db* tdbb,
 				csb->csb_rpt[stream].csb_indices =
 					BTR_all(tdbb, relation, &idx,
 							&csb->csb_rpt[stream].csb_idx,
-							csb->csb_rpt[stream].csb_idx_allocation);
+							&csb->csb_rpt[stream].csb_idx_allocation);
 				sort_indices_by_selectivity(&csb->csb_rpt[stream]);
 				mark_indices(&csb->csb_rpt[stream], relation->rel_id);
 			}
