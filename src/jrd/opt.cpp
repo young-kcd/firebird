@@ -4303,14 +4303,17 @@ static RSB gen_retrieval(TDBB     tdbb,
 						}
 					}
 				}
-
-				compose(&inversion, OPT_make_index(tdbb, opt, relation, idx),
-						nod_bit_and);
+				
+				JRD_NOD idx_node = OPT_make_index(tdbb, opt, relation, idx);
+				IRB	retrieval = (IRB) idx_node->nod_arg[e_idx_retrieval];
+				compose(&inversion, idx_node, nod_bit_and);
 				idx->idx_runtime_flags |= idx_used_with_and;
 
 				// When we composed a UNIQUE index stop composing, because
-				// this is the best we can get.
-				if ((idx->idx_flags & idx_unique) && !(csb_tail->csb_plan)) {
+				// this is the best we can get, but only when full used.
+				if ((idx->idx_flags & idx_unique) && !(csb_tail->csb_plan) && 
+					!(retrieval->irb_generic & irb_partial)) 
+				{
 					break; // Go out of idx_walk loop
 				}
 			}
