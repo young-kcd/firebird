@@ -1,3 +1,18 @@
+2004-11-03 18:00  skidder
+
+	* firebird2/builds/win32/msvc7/Firebird2.sln (1.9.2.5):
+	
+	Fix compilation problem in MSVC7 debug build
+
+2004-11-03 17:52  skidder
+
+	* firebird2/src/isql/isql.epp (1.32.2.6):
+	
+	Backport fixes for the following problems: 1) single-line comment
+	marks and statement terminator sequences should be tolerated inside
+	multi-line string literals 2) do not convert tabs to spaces in
+	literals
+
 2004-11-01 13:49  paul_reeves
 
 	*
