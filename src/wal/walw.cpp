@@ -393,8 +393,8 @@ SSHORT WALW_writer(ISC_STATUS * status_vector, WAL WAL_handle)
 		ib_fprintf(DEBUG_FD,
 				   "====================================================\n");
 		PRINT_TIME(DEBUG_FD, LOCAL_TIME);
-		ib_fprintf(DEBUG_FD, "WAL writer for database %s starting, pid=%ld.\n",
-				   DBNAME, getpid());
+		ib_fprintf(DEBUG_FD, "WAL writer for database %s starting, pid=%lu.\n",
+				   DBNAME, (ULONG) getpid());
 	}
 
 	WAL_segment->wals_writer_pid = getpid();
@@ -2288,8 +2288,8 @@ static void write_wal_statistics( WAL WAL_handle)
 				   "-----------------------------------------------\n");
 		PRINT_TIME(stat_file, LOCAL_TIME);
 		ib_fprintf(stat_file,
-				   "WAL writer (pid=%ld) for database %s, shutdown statistics:\n",
-				   getpid(), DBNAME);
+				   "WAL writer (pid=%lu) for database %s, shutdown statistics:\n",
+				   (ULONG) getpid(), DBNAME);
 		ib_fprintf(stat_file,
 				   "WAL buffer size=%d, total buffers=%d, original buffers=%d\n",
 				   WAL_segment->wals_bufsize, WAL_segment->wals_maxbufs,
