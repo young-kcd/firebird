@@ -1,3 +1,28 @@
+2003-10-25 14:44  dimitr
+
+	* firebird2/src/include/gen/: codes.h, codetext.h, iberror.h,
+	msgs.h, rdb_codes.h, sql_code.h:
+	
+	Added new error message.
+
+2003-10-25 14:35  dimitr
+
+	* firebird2/builds/misc/msg.gbak:
+	
+	Added new error message.
+
+2003-10-25 13:01  robocop
+
+	* firebird2/src/jrd/: bookmark.h, nodebug.cpp:
+	
+	Trivial change... or maybe we get rid of this MODULE: line?
+
+2003-10-25 12:55  robocop
+
+	* firebird2/src/jrd/: dpm.epp, dyn_mod.epp, dyn_util.epp:
+	
+	Trivial change... or maybe we get rid of this MODULE: line?
+
 2003-10-24 12:15  aafemt
 
 	* firebird2/src/jrd/: err_proto.h, event.cpp, event_proto.h:
