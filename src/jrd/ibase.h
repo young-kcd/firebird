@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.50 2003-10-16 08:51:01 robocop Exp $
+$Id: ibase.h,v 1.51 2003-10-19 01:41:13 brodsom Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -377,23 +377,23 @@ ISC_STATUS ISC_EXPORT isc_array_get_slice(ISC_STATUS *,
 ISC_STATUS ISC_EXPORT isc_array_lookup_bounds(ISC_STATUS *,
 											  isc_db_handle *,
 											  isc_tr_handle *,
-											  char *,
-											  char *,
+											  const char *,
+											  const char *,
 											  ISC_ARRAY_DESC *);
 
 ISC_STATUS ISC_EXPORT isc_array_lookup_desc(ISC_STATUS *,
 											isc_db_handle *,
 											isc_tr_handle *,
-											char *,
-											char *,
+											const char *,
+											const char *,
 											ISC_ARRAY_DESC *);
 
 ISC_STATUS ISC_EXPORT isc_array_set_desc(ISC_STATUS *,
-										 char *,
-										 char *,
-										 short *,
-										 short *,
-										 short *,
+										 const char *,
+										 const char *,
+										 const short *,
+										 const short *,
+										 const short *,
 										 ISC_ARRAY_DESC *);
 
 ISC_STATUS ISC_EXPORT isc_array_put_slice(ISC_STATUS *,
