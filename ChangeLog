@@ -1,3 +1,14 @@
+2003-05-16 22:34  skidder
+
+	* firebird2/src/: include/fb_types.h, jrd/cch.cpp, jrd/cch_proto.h,
+	jrd/idx.cpp, jrd/lck.cpp, jrd/lck.h, jrd/met.epp, jrd/sdw.cpp,
+	jrd/sdw_proto.h, jrd/unix.cpp, jrd/winnt.cpp, lock/lock.cpp,
+	lock/lock.h:
+	
+	Fix up lock manager. Clean AST invocation. Fix type of lrq_flags to
+	match its value. Backout my logic for fast deadlock detection as it
+	breaks engine in several places
+
 2003-05-15 13:16  skidder
 
 	* firebird2/src/jrd/utl.cpp:
