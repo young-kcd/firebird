@@ -40,11 +40,11 @@
 #include "../jrd/isc.h"
 
 #ifdef WIN_NT
-#define SYS_ERR			gds_arg_win32
+#define SYS_ERR			isc_arg_win32
 #endif
 
 #ifndef SYS_ERR
-#define SYS_ERR			gds_arg_unix
+#define SYS_ERR			isc_arg_unix
 #endif
 
 #define MAX_JRN_INIT_DATA	2 * (MAXPATHLEN + 2)
@@ -464,23 +464,23 @@ typedef struct walrs {
 #define WAL_BUILD_DBGFNAME(dbgfname, dbname) sprintf(dbgfname, WAL_DBGNAME_TEMPLATE, dbname, WAL_DBGNAME_SUBSCRIPT)
 
 #define WAL_ERROR(status_vector, code, string) IBERR_build_status \
-        (status_vector, code, gds_arg_string, string, 0)
+        (status_vector, code, isc_arg_string, string, 0)
 
 #define WAL_ERROR_APPEND(status_vector, code, string) IBERR_append_status \
-        (status_vector, code, gds_arg_string, string, 0)
+        (status_vector, code, isc_arg_string, string, 0)
 
 #define WAL_IO_ERROR(status_vector, string, logname, operation, error) IBERR_build_status \
-        (status_vector, isc_io_error, gds_arg_string, string, \
-         gds_arg_string, logname, isc_arg_gds, operation, SYS_ERR, error, 0)
+        (status_vector, isc_io_error, isc_arg_string, string, \
+         isc_arg_string, logname, isc_arg_gds, operation, SYS_ERR, error, 0)
 
 #define WAL_FORMAT_ERROR(status_vector, code, logname, offset) IBERR_build_status \
-        (status_vector, code, gds_arg_string, logname, \
-         gds_arg_number, (SLONG) offset, 0)
+        (status_vector, code, isc_arg_string, logname, \
+         isc_arg_number, (SLONG) offset, 0)
 
 #define WAL_CHECK_BUG(WAL_handle, WAL_segment) if (WAL_segment->wals_flags & WALS_BUG_HAPPENED) \
     {                                                                       \
-    IBERR_build_status (status_vector, gds_wal_subsys_corrupt,             \
-                        gds_arg_gds, WAL_segment->wals_last_bug, 0);        \
+    IBERR_build_status (status_vector, isc_wal_subsys_corrupt,             \
+                        isc_arg_gds, WAL_segment->wals_last_bug, 0);        \
     WALC_release(WAL_handle);                                               \
     return FB_FAILURE;                                                         \
     }
@@ -488,11 +488,11 @@ typedef struct walrs {
 #define WAL_CHECK_BUG_ERROR(WAL_handle, WAL_segment) if (WAL_segment->wals_flags & WALS_BUG_OR_ERROR_HAPPENED) \
     {                                                                       \
     if (WAL_segment->wals_flags & WALS_BUG_HAPPENED)                        \
-        IBERR_build_status (status_vector, gds_wal_subsys_corrupt,         \
-                            gds_arg_gds, WAL_segment->wals_last_bug, 0);    \
+        IBERR_build_status (status_vector, isc_wal_subsys_corrupt,         \
+                            isc_arg_gds, WAL_segment->wals_last_bug, 0);    \
     else                                                                    \
-        IBERR_build_status (status_vector, gds_wal_subsys_error,           \
-                            gds_arg_gds, WAL_segment->wals_last_err, 0);    \
+        IBERR_build_status (status_vector, isc_wal_subsys_error,           \
+                            isc_arg_gds, WAL_segment->wals_last_err, 0);    \
     WALC_release(WAL_handle);                                               \
     return FB_FAILURE;                                                         \
     }

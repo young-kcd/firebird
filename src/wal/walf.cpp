@@ -23,7 +23,8 @@
 
 #include "firebird.h"
 #include <string.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../wal/wal.h"
 #include "../jrd/dsc.h"
 #include "../jrd/llio.h"
@@ -660,14 +661,14 @@ SSHORT WALF_open_partitioned_log_file(ISC_STATUS * status_vector,
 				  P_LOGFH_LENGTH, &read_len)) IO_ERROR_RETURN;
 
 	if (read_len < (SLONG) sizeof(struct p_logfh))
-		ERROR_RETURN(gds_logh_small);
+		ERROR_RETURN(isc_logh_small);
 	if (p_log_header->p_logfh_version1 != P_LOGFH_VERSION)
-		ERROR_RETURN(gds_logh_inv_version);
+		ERROR_RETURN(isc_logh_inv_version);
 
 /* Make sure that the database name matches with the passed database name. */
 
 	if (strcmp(dbname, p_log_header->p_logfh_dbname) != 0)
-		ERROR_RETURN(gds_logh_diff_dbname);
+		ERROR_RETURN(isc_logh_diff_dbname);
 
 	return FB_SUCCESS;
 }
@@ -711,9 +712,9 @@ SSHORT WALF_open_log_file(ISC_STATUS * status_vector,
 		IO_ERROR_RETURN;
 
 	if (read_len < (SLONG) sizeof(struct walfh))
-		ERROR_RETURN(gds_logh_small);
+		ERROR_RETURN(isc_logh_small);
 	if (log_header->walfh_version != WALFH_VERSION)
-		ERROR_RETURN(gds_logh_inv_version);
+		ERROR_RETURN(isc_logh_inv_version);
 
 /* Extract the database name from the log_header and make sure that 
    it matches with the passed database name. */
@@ -729,7 +730,7 @@ SSHORT WALF_open_log_file(ISC_STATUS * status_vector,
 			gds__free((SLONG *) log_header->walfh_prev_logname);
 		if (log_header->walfh_next_logname)
 			gds__free((SLONG *) log_header->walfh_next_logname);
-		ERROR_RETURN(gds_logh_diff_dbname);
+		ERROR_RETURN(isc_logh_diff_dbname);
 	}
 
 	return FB_SUCCESS;

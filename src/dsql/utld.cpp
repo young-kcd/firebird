@@ -30,7 +30,7 @@
  */
 
 /*
-$Id: utld.cpp,v 1.20 2003-11-07 23:22:14 brodsom Exp $
+$Id: utld.cpp,v 1.21 2003-11-08 16:19:37 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -40,7 +40,6 @@ $Id: utld.cpp,v 1.20 2003-11-07 23:22:14 brodsom Exp $
 #include "../dsql/sqlda.h"
 #include "../jrd/blr.h"
 #include "../jrd/ibase.h"
-#include "../jrd/inf.h"
 #include "../jrd/align.h"
 #include "../dsql/utld_proto.h"
 #include "../jrd/gds_proto.h"
@@ -116,8 +115,8 @@ ISC_STATUS	UTLD_parse_sql_info(
 		return 0;
 
 /* The first byte of the returned buffer is assumed to be either a
-   gds__info_sql_select or gds__info_sql_bind item.  The second byte
-   is assumed to be gds__info_sql_describe_vars. */
+   isc_info_sql_select or isc_info_sql_bind item.  The second byte
+   is assumed to be isc_info_sql_describe_vars. */
 
 	info += 2;
 

@@ -46,7 +46,6 @@
 #include "../jrd/blr.h"
 #include "gen/codes.h"
 #include "gen/iberror.h"
-#include "../jrd/inf.h"
 #include "../jrd/align.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/why_proto.h"
