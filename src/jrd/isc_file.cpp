@@ -795,12 +795,12 @@ int ISC_expand_filename(
 	Discard expanded_name and use temp as it is.
 	**/
 			/* in this case use the temp but we need to ensure that we expand to
-			 * temp from "d:foo.fdb" to "d:\foo.gdb" */
+			 * temp from "d:foo.fdb" to "d:\foo.fdb" */
 			if (_fullpath(expanded_name, temp, MAXPATHLEN) != NULL) {
 				TEXT expanded_name2[MAXPATHLEN];
 
 				/* convert then name to its shorter version ie. convert
-				 * longfilename.fdb to longfi~1.gdb */
+				 * longfilename.fdb to longfi~1.fdb */
 				length =
 					(USHORT) GetShortPathName(expanded_name, expanded_name2,
 											  MAXPATHLEN);
