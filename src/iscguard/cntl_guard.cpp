@@ -39,7 +39,7 @@
 #endif
 
 typedef struct thread {
-	struct thread *thread_next;
+	thread* thread_next;
 	HANDLE thread_handle;
 } *THREAD;
 

@@ -89,7 +89,7 @@ static DWORD ServerPid = 0;
 static int nRestarts = 0;		/* the number of times the server was restarted */
 bool service_flag = true;
 /* unsigned short shutdown_flag = FALSE; */
-struct log_info *log_entry;
+log_info* log_entry;
 
 /* contains the guardian service */
 static SERVICE_TABLE_ENTRY service_table[] = {
@@ -132,7 +132,7 @@ int WINAPI WinMain(
 
 /* allocate space for the event list */
 	log_entry =
-		reinterpret_cast < log_info * >(malloc(sizeof(struct log_info)));
+		reinterpret_cast<log_info*>(malloc(sizeof(log_info)));
 	log_entry->next = NULL;
 
 /* since the flag is set we run as a service */
@@ -208,7 +208,7 @@ static int WINDOW_main(int option)
  **************************************/
 
 	HWND hWnd = NULL;
-	MSG msg;
+	MSG message;
 	WNDCLASS wcl;
 	unsigned long thread_id;
 
@@ -274,10 +274,10 @@ static int WINDOW_main(int option)
 		UpdateWindow(hWnd);
 	}
 
-	while (GetMessage(&msg, NULL, 0, 0)) {
+	while (GetMessage(&message, NULL, 0, 0)) {
 		if (hPSDlg) {			/* If property sheet dialog is open */
 			/* Check if the message is property sheet dialog specific */
-			BOOL bPSMsg = PropSheet_IsDialogMessage(hPSDlg, &msg);
+			BOOL bPSMsg = PropSheet_IsDialogMessage(hPSDlg, &message);
 
 			/* Check if the property sheet dialog is still valid, if not destroy it */
 			if (!PropSheet_GetCurrentPageHwnd(hPSDlg)) {
@@ -287,10 +287,10 @@ static int WINDOW_main(int option)
 			if (bPSMsg)
 				continue;
 		}
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
+		TranslateMessage(&message);
+		DispatchMessage(&message);
 	}
-	return msg.wParam;
+	return message.wParam;
 }
 
 
@@ -321,7 +321,7 @@ static LRESULT CALLBACK WindowFunc(
 	case WM_CLOSE:
 		{
 			/* Clean up memory for log_entry */
-			struct log_info *tmp;
+			log_info* tmp;
 			while (log_entry->next) {
 				tmp = log_entry->next;
 				free(log_entry);
@@ -825,7 +825,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 			LV_ITEM lvI;
 			HWND hWndLog;
 			int index = 0;
-			struct log_info *liTemp;
+			log_info* liTemp;
 			const int NCOLS = 3;
 
 			/* Display the number of times the server has been started by
@@ -1014,8 +1014,8 @@ void write_log(int log_action, char *buff)
  *****************************************************************************/
 	char *act_buff[1];
 	char tmp_buff[128];
-	struct log_info *log_temp;
-	struct tm *today;
+	log_info* log_temp;
+	tm* today;
 	time_t ltime;
 
 	time(&ltime);
@@ -1027,8 +1027,8 @@ void write_log(int log_action, char *buff)
 		log_temp = log_temp->next;
 
 	log_info *tmp =
-		reinterpret_cast < log_info * >(malloc(sizeof(struct log_info)));
-	memset(tmp, 0, sizeof(struct log_info));
+		reinterpret_cast<log_info*>(malloc(sizeof(log_info)));
+	memset(tmp, 0, sizeof(log_info));
 
 #ifdef NOT_USED_OR_REPLACED
 	sprintf(tmp->log_time, "%02d:%02d", today->tm_hour, today->tm_min);
@@ -1069,9 +1069,9 @@ void write_log(int log_action, char *buff)
 						  FORMAT_MESSAGE_ARGUMENT_ARRAY |
 						  FORMAT_MESSAGE_FROM_STRING,
 						  tmp_buff, 0, 0, (LPTSTR) & lpMsgBuf, 0,
-						  reinterpret_cast < va_list * >(act_buff));
+						  reinterpret_cast<va_list*>(act_buff));
 			strncpy(act_buff[0], (LPTSTR) lpMsgBuf,
-					strlen(reinterpret_cast < const char *>(lpMsgBuf)) - 1);
+					strlen(reinterpret_cast<const char*>(lpMsgBuf)) - 1);
 			LocalFree(lpMsgBuf);
 			switch (log_action) {
 			case IDS_LOG_START:
@@ -1083,7 +1083,7 @@ void write_log(int log_action, char *buff)
 			}
 			if (!ReportEvent
 				(hLog, wLogType, 0, log_action + 1, NULL, 1, 0,
-				 const_cast < const char **>(act_buff), NULL)) {
+				 const_cast<const char**>(act_buff), NULL)) {
 				FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
 							  FORMAT_MESSAGE_FROM_SYSTEM |
 							  FORMAT_MESSAGE_IGNORE_INSERTS, NULL,

@@ -45,9 +45,10 @@
 #define args             args
 
 typedef void (*FPTR_VOID) ();
-typedef struct log_info {
+
+struct log_info {
 	char log_action[25];
 	char log_date[25];
 	char log_time[25];
-	struct log_info *next;
-} LOG_INFO;
+	log_info* next;
+};
