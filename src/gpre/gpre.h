@@ -1490,7 +1490,7 @@ struct GpreGlobals{
 	TEXT ada_package[256];
 	const TEXT* ada_null_address;
 	DBB isc_databases;
-	TEXT* default_user;
+	const TEXT* default_user;
 	TEXT* default_password;
 	const TEXT* default_lc_ctype;
 	gpre_req* requests;

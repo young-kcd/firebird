@@ -844,6 +844,7 @@ int main(int argc, char* argv[])
 		}
 
 		if (renamed) {
+			// Warning: modifying program's args.
 			TEXT* p;
 			for (p = out_file_name; *p; p++);
 #ifdef VMS
