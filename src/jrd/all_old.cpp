@@ -143,7 +143,7 @@ BLK ALL_alloc(PLB pool, UCHAR type, ULONG count_argument, ERR_T err_ret)
 		best = NULL;
 		best_tail = MAX_BLOCK;
 		for (ptr = &pool->plb_free; (free = *ptr); ptr = &free->frb_next) {
-			if ((SCHAR HUGE_PTR *) free >= (SCHAR HUGE_PTR *) free->frb_next
+			if ((SCHAR *) free >= (SCHAR *) free->frb_next
 				&& free->frb_next) {
 				V4_MUTEX_UNLOCK(pool->plb_mutex);
 				BUGCHECK(152);	/* msg 152 memory pool free list is invalid */
@@ -1163,10 +1163,10 @@ static PLB find_pool(BLK block)
 		if (pool = (PLB) pools->vec_object[pool_id]) {
 			hunk = (huge_flag) ? pool->plb_huge_hunks : pool->plb_hunks;
 			for (; hunk; hunk = hunk->hnk_next)
-				if ((SCHAR HUGE_PTR *) block >=
-					(SCHAR HUGE_PTR *) hunk->hnk_address
-					&& (SCHAR HUGE_PTR *) block <
-					(SCHAR HUGE_PTR *) hunk->hnk_address + hunk->hnk_length) {
+				if ((SCHAR *) block >=
+					(SCHAR *) hunk->hnk_address
+					&& (SCHAR *) block <
+					(SCHAR *) hunk->hnk_address + hunk->hnk_length) {
 #ifdef V4_THREADING
 					if (!dbb_pool_flag)
 						V4_RW_LOCK_UNLOCK(dbb->dbb_rw_locks + DBB_WLCK_pools);
@@ -1255,10 +1255,10 @@ static void release(FRB block, PLB pool)
 
 	for (ptr = &pool->plb_free; free = *ptr;
 		 prior = free, ptr =
-		 &free->frb_next) if ((SCHAR HUGE_PTR *) block <=
-							  (SCHAR HUGE_PTR *) free) break;
+		 &free->frb_next) if ((SCHAR *) block <=
+							  (SCHAR *) free) break;
 
-	if ((SCHAR HUGE_PTR *) block == (SCHAR HUGE_PTR *) free) {
+	if ((SCHAR *) block == (SCHAR *) free) {
 		V4_MUTEX_UNLOCK(pool->plb_mutex);
 		BUGCHECK(154);			/* msg 154 attempt to release free block */
 	}
@@ -1273,7 +1273,7 @@ static void release(FRB block, PLB pool)
 	length = block->frb_header.blk_length << SHIFT;
 
 	if (free) {
-		if ((SCHAR HUGE_PTR *) block + length == (SCHAR HUGE_PTR *) free) {
+		if ((SCHAR *) block + length == (SCHAR *) free) {
 			block->frb_header.blk_length += free->frb_header.blk_length;
 			block->frb_next = free->frb_next;
 #ifdef DEBUG_GDS_ALLOC
@@ -1284,7 +1284,7 @@ static void release(FRB block, PLB pool)
 				   sizeof(*free));
 #endif
 		}
-		else if ((SCHAR HUGE_PTR *) block + length > (SCHAR HUGE_PTR *) free) {
+		else if ((SCHAR *) block + length > (SCHAR *) free) {
 			V4_MUTEX_UNLOCK(pool->plb_mutex);
 			BUGCHECK(155);		/* msg 155 attempt to release block overlapping following free block */
 		}
@@ -1293,7 +1293,7 @@ static void release(FRB block, PLB pool)
 /* Try and merge the block with the prior free block */
 
 	if (prior && (length = prior->frb_header.blk_length << SHIFT)) {
-		if ((SCHAR HUGE_PTR *) prior + length == (SCHAR HUGE_PTR *) block) {
+		if ((SCHAR *) prior + length == (SCHAR *) block) {
 			prior->frb_header.blk_length += block->frb_header.blk_length;
 			prior->frb_next = block->frb_next;
 #ifdef DEBUG_GDS_ALLOC
@@ -1304,7 +1304,7 @@ static void release(FRB block, PLB pool)
 				   sizeof(*block));
 #endif
 		}
-		else if ((SCHAR HUGE_PTR *) prior + length > (SCHAR HUGE_PTR *) block) {
+		else if ((SCHAR *) prior + length > (SCHAR *) block) {
 			V4_MUTEX_UNLOCK(pool->plb_mutex);
 			BUGCHECK(156);		/* msg 156 attempt to release block overlapping prior free block */
 		}

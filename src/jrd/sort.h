@@ -119,7 +119,7 @@ typedef struct sort_record
    which points to the SORT_RECORD structure. */
 typedef struct sr
 {
-	struct sort_record HUGE_PTR **sr_bckptr;	/* Pointer back to sort list entry */
+	struct sort_record **sr_bckptr;	/* Pointer back to sort list entry */
 	struct sort_record sr_sort_record;
 } SR;
 

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: all.cpp,v 1.11 2003-02-14 14:56:09 brodsom Exp $
+$Id: all.cpp,v 1.12 2003-02-28 13:36:53 brodsom Exp $
 */
 
 /***************************************************
@@ -114,8 +114,8 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
 		best_tail = 32767;
 		for (ptr = &pool->plb_free; (free = *ptr); ptr = &free->frb_next)
 			if (free->frb_next
-				&& (SCHAR HUGE_PTR *) free >=
-				(SCHAR HUGE_PTR *) free->frb_next) BUGCHECK(434);	/* memory pool free list is incorrect */
+				&& (SCHAR *) free >=
+				(SCHAR *) free->frb_next) BUGCHECK(434);	/* memory pool free list is incorrect */
 			else if ((tail = free->frb_header.blk_length - size) >= 0
 					 && tail < best_tail) {
 				best = ptr;
@@ -413,10 +413,10 @@ void ALLQ_release( FRB block)
 	prior = NULL;
 	for (ptr = &pool->plb_free; free = *ptr;
 		 prior = free, ptr =
-		 &free->frb_next) if ((SCHAR HUGE_PTR *) block <=
-							  (SCHAR HUGE_PTR *) free) break;
+		 &free->frb_next) if ((SCHAR *) block <=
+							  (SCHAR *) free) break;
 
-	if ((SCHAR HUGE_PTR *) block == (SCHAR HUGE_PTR *) free)
+	if ((SCHAR *) block == (SCHAR *) free)
 		BUGCHECK(435);			/* block released twice */
 
 /* Merge block into list first, then try to combine blocks */
@@ -427,26 +427,26 @@ void ALLQ_release( FRB block)
 /* Try to merge the free block with the next one down. */
 
 	if (free) {
-		if ((SCHAR HUGE_PTR *) block + block->frb_header.blk_length ==
-			(SCHAR HUGE_PTR *) free) {
+		if ((SCHAR *) block + block->frb_header.blk_length ==
+			(SCHAR *) free) {
 			block->frb_header.blk_length += free->frb_header.blk_length;
 			block->frb_next = free->frb_next;
 		}
-		else if ((SCHAR HUGE_PTR *) block + block->frb_header.blk_length >
-				 (SCHAR HUGE_PTR *) free)
+		else if ((SCHAR *) block + block->frb_header.blk_length >
+				 (SCHAR *) free)
 			BUGCHECK(436);		/* released block overlaps following free block */
 	}
 
 /* Try and merge the block with the prior free block */
 
 	if (prior) {
-		if ((SCHAR HUGE_PTR *) prior + prior->frb_header.blk_length ==
-			(SCHAR HUGE_PTR *) block) {
+		if ((SCHAR *) prior + prior->frb_header.blk_length ==
+			(SCHAR *) block) {
 			prior->frb_header.blk_length += block->frb_header.blk_length;
 			prior->frb_next = block->frb_next;
 		}
-		else if ((SCHAR HUGE_PTR *) prior + prior->frb_header.blk_length >
-				 (SCHAR HUGE_PTR *) block)
+		else if ((SCHAR *) prior + prior->frb_header.blk_length >
+				 (SCHAR *) block)
 			BUGCHECK(437);		/* released block overlaps prior free block */
 	}
 }

@@ -751,8 +751,8 @@ void* API_ROUTINE gds__alloc(SLONG size_request)
 	{
 		if (free_blk->free_length <= 0 ||
 			(free_blk->free_next
-			 && (UCHAR HUGE_PTR *) free_blk + free_blk->free_length >
-			 (UCHAR HUGE_PTR *) free_blk->free_next))
+			 && (UCHAR *) free_blk + free_blk->free_length >
+			 (UCHAR *) free_blk->free_next))
 		{
 			DEV_REPORT("gds__alloc: memory pool corrupted\n");	/* TXNN */
 			BREAKPOINT(__LINE__);
@@ -4192,7 +4192,7 @@ static ULONG free_memory(void *blk)
  *	of bytes released.
  *
  **************************************/
-	FREE HUGE_PTR *ptr, prior, free_blk, block;
+	FREE *ptr, prior, free_blk, block;
 	SLONG length;
 
 #ifdef DEV_BUILD
@@ -4236,14 +4236,14 @@ static ULONG free_memory(void *blk)
 	for (ptr = &pool; (free_blk = *ptr) != NULL;
 		 prior = free_blk, ptr = &free_blk->free_next) {
 		if (free_blk->free_next
-			&& (UCHAR HUGE_PTR *) free_blk >=
-			(UCHAR HUGE_PTR *) free_blk->free_next) {
+			&& (UCHAR *) free_blk >=
+			(UCHAR *) free_blk->free_next) {
 			DEV_REPORT("gds__free: pool corrupted");	/* TXNN */
 			BREAKPOINT(__LINE__);
 			free_blk = *ptr = NULL;
 			break;
 		}
-		if ((UCHAR HUGE_PTR *) block < (UCHAR HUGE_PTR *) free_blk)
+		if ((UCHAR *) block < (UCHAR *) free_blk)
 			break;
 	}
 
@@ -4251,14 +4251,12 @@ static ULONG free_memory(void *blk)
 
 	if (block->free_length <= 0 ||
 		(prior
-		 && (UCHAR HUGE_PTR *) block <
-		 (UCHAR HUGE_PTR *) prior + prior->free_length) || (free_blk
-															&& (UCHAR HUGE_PTR
-																*) block +
+		 && (UCHAR *) block <
+		 (UCHAR *) prior + prior->free_length) || (free_blk
+															&& (UCHAR  *) block +
 															block->free_length
 															>
-															(UCHAR HUGE_PTR *)
-															free_blk)) {
+															(UCHAR *) free_blk)) {
 		DEV_REPORT("gds__free: attempt to release bad block\n");	/* TXNN */
 		BREAKPOINT(__LINE__);
 		return 0;
@@ -4272,8 +4270,8 @@ static ULONG free_memory(void *blk)
 /* Try to merge the free block with the next block */
 
 	if (free_blk
-		&& (UCHAR HUGE_PTR *) block + block->free_length ==
-		(UCHAR HUGE_PTR *) free_blk) {
+		&& (UCHAR *) block + block->free_length ==
+		(UCHAR *) free_blk) {
 		block->free_length += free_blk->free_length;
 		block->free_next = free_blk->free_next;
 #ifdef DEBUG_GDS_ALLOC
@@ -4287,8 +4285,8 @@ static ULONG free_memory(void *blk)
 /* Next, try to merge the free block with the prior block */
 
 	if (prior
-		&& (UCHAR HUGE_PTR *) prior + prior->free_length ==
-		(UCHAR HUGE_PTR *) block) {
+		&& (UCHAR *) prior + prior->free_length ==
+		(UCHAR *) block) {
 		prior->free_length += block->free_length;
 		prior->free_next = block->free_next;
 #ifdef DEBUG_GDS_ALLOC
@@ -4749,9 +4747,9 @@ static void freemap(int cod)
 	for (next = &pool; (free_blk = *next) != NULL; next = &(*next)->free_next) {
 		++free_list_count;
 		total_free += free_blk->free_length;
-		ib_printf("%x\t\t\t%d\t\t\t%x\n", (UCHAR HUGE_PTR *) free_blk,
+		ib_printf("%x\t\t\t%d\t\t\t%x\n", (UCHAR *) free_blk,
 				  free_blk->free_length,
-				  (UCHAR HUGE_PTR *) (free_blk + free_blk->free_length));
+				  (UCHAR *) (free_blk + free_blk->free_length));
 	}
 	ib_printf("Stats after %s\n", (cod) ? "Merging" : "Allocating");
 	ib_printf("Free list count    = %d\n", free_list_count);

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.30 2003-02-17 08:42:00 eku Exp $
+ * $Id: sort.cpp,v 1.31 2003-02-28 13:38:29 brodsom Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -313,7 +313,7 @@ void SORT_diddle_key(UCHAR * record, SCB scb, USHORT direction)
 	BLOB_PTR *p;
 	UCHAR c1, c2, fill_char, *fill_pos;
 	USHORT complement, n, w, l, fill;
-	USHORT HUGE_PTR *wp;
+	USHORT *wp;
 	SSHORT longs, flag;
 	SORTP *lwp;
 	ULONG lw;
@@ -325,7 +325,7 @@ void SORT_diddle_key(UCHAR * record, SCB scb, USHORT direction)
 	for (key = scb->scb_description, end = key + scb->scb_keys; key < end;
 		 key++) {
 		p = (BLOB_PTR *) record + key->skd_offset;
-		wp = (USHORT HUGE_PTR *) p;
+		wp = (USHORT *) p;
 		lwp = (SORTP *) p;
 		complement = key->skd_flags & SKD_descending;
 		n = ROUNDUP(key->skd_length, sizeof(SLONG));
@@ -1478,7 +1478,7 @@ static void diddle_key(UCHAR * record, SCB scb, USHORT direction)
 	BLOB_PTR *p;
 	UCHAR c1, fill_char, *fill_pos;
 	USHORT complement, n, l, fill;
-	USHORT HUGE_PTR *wp;
+	USHORT *wp;
 	SSHORT longs, flag;
 	SORTP *lwp;
 	ULONG lw;
@@ -1493,7 +1493,7 @@ static void diddle_key(UCHAR * record, SCB scb, USHORT direction)
 	for (key = scb->scb_description, end = key + scb->scb_keys; key < end;
 		 key++) {
 		p = (BLOB_PTR *) record + key->skd_offset;
-		wp = (USHORT HUGE_PTR *) p;
+		wp = (USHORT *) p;
 		lwp = (SORTP *) p;
 		complement = key->skd_flags & SKD_descending;
 		n = ROUNDUP(key->skd_length, sizeof(SLONG));

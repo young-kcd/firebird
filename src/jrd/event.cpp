@@ -1409,13 +1409,13 @@ static void free_global(FRB block)
 
 	for (ptr = &EVENT_header->evh_free; (free = (FRB) ABS_PTR(*ptr)) && *ptr;
 		 prior = free, ptr = &free->frb_next)
-		if ((SCHAR * HUGE_PTR) block < (SCHAR * HUGE_PTR) free)
+		if ((SCHAR *) block < (SCHAR *) free)
 			break;
 
 	if (offset <= 0 || offset > EVENT_header->evh_length ||
 		(prior
-		 && (UCHAR HUGE_PTR *) block <
-		 (UCHAR HUGE_PTR *) prior + prior->frb_header.hdr_length)) {
+		 && (UCHAR *) block <
+		 (UCHAR *) prior + prior->frb_header.hdr_length)) {
 		punt("free_global: bad block");
 		return;
 	}
@@ -1428,8 +1428,8 @@ static void free_global(FRB block)
 /* Try to merge free block with next block */
 
 	if (free
-		&& (SCHAR HUGE_PTR *) block + block->frb_header.hdr_length ==
-		(SCHAR HUGE_PTR *) free) {
+		&& (SCHAR *) block + block->frb_header.hdr_length ==
+		(SCHAR *) free) {
 		block->frb_header.hdr_length += free->frb_header.hdr_length;
 		block->frb_next = free->frb_next;
 	}
@@ -1437,8 +1437,8 @@ static void free_global(FRB block)
 /* Next, try to merge the free block with the prior block */
 
 	if (prior
-		&& (SCHAR HUGE_PTR *) prior + prior->frb_header.hdr_length ==
-		(SCHAR HUGE_PTR *) block) {
+		&& (SCHAR *) prior + prior->frb_header.hdr_length ==
+		(SCHAR *) block) {
 		prior->frb_header.hdr_length += block->frb_header.hdr_length;
 		prior->frb_next = block->frb_next;
 	}
