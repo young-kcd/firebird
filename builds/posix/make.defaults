@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.15 2003-02-19 05:14:36 aafemt Exp $
+#   $Id: make.defaults,v 1.16 2003-02-28 05:22:09 aafemt Exp $
 # 
 
 
@@ -102,6 +102,7 @@ EXEC_EXT=		@EXEEXT@
 # From jrd
 
 JRD_BOOT=		$(LIB)/jrd_boot.a
+BLRTABLE	= $(BIN)/blrtable$(EXEC_EXT)
 
 
 

@@ -29,7 +29,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.codes,v 1.2 2002-10-29 20:20:09 skidder Exp $
+#  $Id: Makefile.in.codes,v 1.3 2003-02-28 05:22:09 aafemt Exp $
 #
 ROOT=..
 ObjModuleName=codes
@@ -58,13 +58,10 @@ include     $(ROOT)/gen/make.shared.variables
 CODES_Sources = jrd/codes.epp
 CODES_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CODES_Sources))))
 
-BLRTABLE_Sources = jrd/blrtable.cpp
-BLRTABLE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(BLRTABLE_Sources))))
-
-AllObjects = $(CODES_Objects) $(BLRTABLE_Objects)
+AllObjects = $(CODES_Objects)
 Dependencies = $(AllObjects:.o=.d)
 
-generated_headers: build_codes include/gen/blrtable.h include/gen/ids.h
+generated_headers: build_codes include/gen/ids.h
 
 # Rebuild error codes
 
@@ -77,15 +74,6 @@ $(SRC)/jrd/codes.cpp: $(SRC)/jrd/codes.epp
 $(BIN)/codes: $(CODES_Objects) $(LIBFBCOMMON_A) $(LIBFBSTATIC_A)
 	$(CXX) $(LINK_OPTS) $(CODES_Objects) -o $@ -L $(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
 
-
-
-# Rebuild blrtable.h
-
-./include/gen/blrtable.h: $(BIN)/blrtable
-	$(BIN)/blrtable > include/gen/blrtable.h
-
-$(BIN)/blrtable: $(BLRTABLE_Objects)
-	$(CXX) $(LINK_OPTS) $(BLRTABLE_Objects) -o $@ -L $(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
 
 # Rebuild ids.h
 ./include/gen/ids.h:	jrd/ids.m jrd/relations.h
