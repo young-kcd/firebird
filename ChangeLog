@@ -1,3 +1,67 @@
+2003-11-05 17:54  brodsom
+
+	* firebird2/builds/install/arch-specific/mingw/prepare_mingw.sh:
+	
+	Gsplit.exe is build now
+
+2003-11-05 17:53  brodsom
+
+	* firebird2/: builds/posix/Makefile.in.client.archive,
+	builds/posix/Makefile.in.client.journal,
+	builds/posix/Makefile.in.embed.archive,
+	builds/posix/Makefile.in.embed.journal,
+	builds/posix/Makefile.in.firebird,
+	builds/posix/Makefile.in.refDatabases, builds/posix/make.defaults,
+	configure.in:
+	
+	Add journal and archive to posix build
+
+2003-11-05 16:20  paul_reeves
+
+	* firebird2/src/:
+	install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc,
+	install/arch-specific/win32/FirebirdInstall_15.iss,
+	jrd/isc_version.h:
+	
+	Minor tweaks to Win32 installer.
+
+2003-11-05 14:32  brodsom
+
+	* firebird2/src/journal/rebuild.epp:
+	
+	Make msvc build work again after last Dmitry S changes (journal
+	which is not build in MinGW is broken).
+
+2003-11-05 10:02  robocop
+
+	* firebird2/src/: dsql/movd.cpp, dsql/pass1.cpp, gpre/movg.cpp,
+	include/fb_types.h, intl/lc_ascii.cpp, intl/lc_ascii.h,
+	intl/lc_ksc.cpp, intl/lc_narrow.cpp, intl/lc_narrow.h,
+	ipserver/ipapi_proto.h, ipserver/ipclient.cpp,
+	ipserver/ipserver.cpp, isql/isql.epp, jrd/alt.cpp, jrd/constants.h,
+	jrd/cvt.cpp, jrd/cvt2.cpp, jrd/cvt2_proto.h, jrd/cvt_proto.h,
+	jrd/dyn.epp, jrd/dyn.h, jrd/dyn_def.epp, jrd/dyn_del.epp,
+	jrd/dyn_df_proto.h, jrd/dyn_dl_proto.h, jrd/dyn_md_proto.h,
+	jrd/dyn_mod.epp, jrd/dyn_proto.h, jrd/dyn_ut_proto.h,
+	jrd/dyn_util.epp, jrd/entry.h, jrd/err.cpp, jrd/err_proto.h,
+	jrd/exe.cpp, jrd/exe.h, jrd/flu.cpp, jrd/flu_proto.h, jrd/gdsold.h,
+	jrd/ibase.h, jrd/intl.cpp, jrd/intl_builtin.cpp,
+	jrd/intl_classes.h, jrd/intl_proto.h, jrd/intlobj.h, jrd/jrd.cpp,
+	jrd/jrd_proto.h, jrd/msg.h, jrd/quad.cpp, jrd/quad_proto.h,
+	jrd/why.cpp, msgs/build_file.epp, qli/meta.epp, qli/proc.epp,
+	remote/inter_proto.h, remote/interface.cpp, remote/protocol.cpp,
+	remote/protocol.h, remote/server.cpp, utilities/guard/util.cpp:
+	
+	const correctness function signatures variables in local scope
+	BOOLEAN -> bool TEXT[32] as SqlIdentifier for DYN Stop random
+	garbage in firebird.msg's bytes 8 to 11 some cleanup
+
+2003-11-05 08:48  dimitr
+
+	* firebird2/src/jrd/tra.cpp:
+	
+	Backported recent bugfix.
+
 2003-11-04 13:18  paul_reeves
 
 	*
