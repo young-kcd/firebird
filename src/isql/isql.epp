@@ -91,11 +91,8 @@ enum literal_string_type
 	INCOMPLETE_STRING		= 4
 };
 
-#define	KW_ROLE			"ROLE"
-
 #include "../jrd/jrd_time.h"
 
-#define	ISQL_MAIN
 #include "../jrd/common.h"
 #if defined(WIN_NT)
 #include <windows.h>
@@ -116,6 +113,8 @@ enum literal_string_type
 #include "../jrd/gdsassert.h"
 
 DATABASE DB = COMPILETIME "yachts.lnk";
+
+IsqlGlobals isqlGlob;
 
 //#define STUFF(x)	  *dpb++ = (x)
 //#define STUFF_INT(x)  {STUFF (x); STUFF ((x) >> 8); STUFF ((x) >> 16); STUFF ((x) >> 24);}
@@ -211,14 +210,24 @@ XSQLDA** global_sqldap;
 USHORT dialect_spoken = 0;
 USHORT requested_SQL_dialect = SQL_DIALECT_V6;
 bool connecting_to_pre_v6_server = false;
-USHORT major_ods = 0;
-USHORT minor_ods = 0;
 SCHAR server_version[256];
 bool Quiet;
 bool Version_info = false;
 #if defined (WIN95)
 bool fAnsiCP;
 #endif
+
+// Utility transaction handle 
+static isc_tr_handle D__trans;
+static isc_tr_handle M__trans;
+static SCHAR global_Numbufs[16];	/* # of cache buffers on connect */
+static isc_stmt_handle global_Stmt;
+static FILE* Ofp;
+static FILE* Ifp;
+static SCHAR Password[128];
+static SCHAR Charset[128];
+static bool Merge_stderr;
+static USHORT minor_ods;
 
 static collist* global_Cols = NULL;
 static SCHAR statistics[256];
@@ -391,13 +400,16 @@ int CLIB_ROUTINE main(int argc,
 		else {
 			fAnsiCP = false;
 			if (ulConsoleCP != GetOEMCP() && Warnings) {
-				ISQL_printf(Out,
+				ISQL_printf(isqlGlob.Out,
 							"WARNING: The current codepage is not supported.  Any use of any\n"
 							"		 extended characters may result in incorrect file names.\n");
 			}
 		}
 	}
 #endif
+	// Initialize globals
+	isqlGlob.major_ods = 0;
+	minor_ods = 0;
 
 	Exit_value = ISQL_main(argc, argv);
 
@@ -452,11 +464,11 @@ int ISQL_main(int argc,
 
 	TEXT tabname[WORDLENGTH];
 	tabname[0] = '\0';
-	db_SQL_dialect = 0;
+	isqlGlob.db_SQL_dialect = 0;
 
 // Output goes to stdout by default
-	Out = stdout;
-	Errfp = stderr;
+	isqlGlob.Out = stdout;
+	isqlGlob.Errfp = stderr;
 
 	processing_state ret = parse_arg(argc, argv, tabname, NULL);
 
@@ -472,23 +484,23 @@ int ISQL_main(int argc,
 
 // Init the diagnostics and help files
 	if (Merge_diagnostic)
-	    Diag = Out;
+	    Diag = isqlGlob.Out;
 	else
 		Diag = stdout;
 		
 	Help = stdout;
 
 	if (Merge_stderr)
-		Errfp = Out;
+		isqlGlob.Errfp = isqlGlob.Out;
 
 	ISQL_make_upper(tabname);
 	switch (ret) {
 	case EXTRACT:
 		// This is a call to do extractions 
-		if (*global_Db_name) {
+		if (*isqlGlob.global_Db_name) {
 			/* Let's use user and password if provided.
 			   This should solve bug #112263 FSG 28.Jan.2001 */
-			newdb(global_Db_name, User, Password, global_Numbufs, Role, false);
+			newdb(isqlGlob.global_Db_name, isqlGlob.User, Password, global_Numbufs, isqlGlob.Role, false);
 
 			Exit_value = EXTRACT_ddl(SQL_objects, tabname);
 
@@ -499,11 +511,11 @@ int ISQL_main(int argc,
 
 	case EXTRACTALL:
 
-		if (*global_Db_name) {
+		if (*isqlGlob.global_Db_name) {
 			Interactive = false;
 			/* Let's use user and password if provided.
 			   This should solve bug #112263 FSG 28.Jan.2001 */
-			newdb(global_Db_name, User, Password, global_Numbufs, Role, false);
+			newdb(isqlGlob.global_Db_name, isqlGlob.User, Password, global_Numbufs, isqlGlob.Role, false);
 
 			Exit_value = EXTRACT_ddl(ALL_objects, tabname);
 
@@ -570,7 +582,7 @@ void ISQL_array_dimensions(const TEXT* fieldname)
  *
  **************************************/
 
-	ISQL_printf(Out, "[");
+	ISQL_printf(isqlGlob.Out, "[");
 
 // Transaction for all frontend commands 
 	if (DB && !gds_trans)
@@ -586,10 +598,10 @@ void ISQL_array_dimensions(const TEXT* fieldname)
 		/*  Format is [lower:upper, lower:upper,..]  */
 
 		if (FDIM.RDB$DIMENSION > 0) {
-			ISQL_printf (Out, ", ");
+			ISQL_printf (isqlGlob.Out, ", ");
 		}
 		sprintf (Print_buffer, "%ld:%ld", FDIM.RDB$LOWER_BOUND, FDIM.RDB$UPPER_BOUND);
-		ISQL_printf (Out, Print_buffer);
+		ISQL_printf (isqlGlob.Out, Print_buffer);
 
 	END_FOR
 	ON_ERROR
@@ -597,7 +609,7 @@ void ISQL_array_dimensions(const TEXT* fieldname)
 		return;
 	END_ERROR;
 
-	ISQL_printf(Out, "] ");
+	ISQL_printf(isqlGlob.Out, "] ");
 }
 
 
@@ -629,7 +641,7 @@ bool ISQL_dbcheck()
  **************************************/
 	TEXT errbuf[MSG_LENGTH];
 
-	if (!global_Db_name[0]) {
+	if (!isqlGlob.global_Db_name[0]) {
 		if (!Quiet) {
 			gds__msg_format(NULL, ISQL_MSG_FAC, NO_DB, sizeof(errbuf),
 							errbuf, NULL, NULL, NULL, NULL, NULL);
@@ -769,8 +781,8 @@ static void readNextInputLine()
 {
 	readNextInputLine(userPrompt.c_str());
 	if (Echo && (lastInputLine != NULL)) {
-		ISQL_printf(Out, lastInputLine);
-		ISQL_printf(Out, NEWLINE);
+		ISQL_printf(isqlGlob.Out, lastInputLine);
+		ISQL_printf(isqlGlob.Out, NEWLINE);
 	}
 }
 
@@ -1241,7 +1253,7 @@ SLONG ISQL_get_index_segments(TEXT* segs,
 		// Place a comma and a blank between each segment column name 
 
 		fb_utils::fb_exact_name(SEG.RDB$FIELD_NAME);
-		if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION && delimited_yes) {
+		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION && delimited_yes) {
 			ISQL_copy_SQL_id (SEG.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
 		}
 		else {
@@ -1458,14 +1470,14 @@ void ISQL_disconnect_database(bool nQuietMode)
 // Zero database handle and transaction handles 
 	global_Stmt = 0;
 	DB = 0;
-	global_Db_name[0] = '\0';
+	isqlGlob.global_Db_name[0] = '\0';
 	D__trans = 0;
 	M__trans = 0;
 	gds_trans = 0;
 	
 	// CVC: If we aren't connected to a db anymore, then the db's dialect is reset.
 	// This should fix SF Bug #910430.
-	db_SQL_dialect = 0;
+	isqlGlob.db_SQL_dialect = 0;
 	// BRS this is also needed to fix #910430.
 	dialect_spoken = 0;
 	return;
@@ -1724,7 +1736,7 @@ static processing_state add_row(const TEXT* tabname)
 	sqlda->version = SQLDA_VERSION1;
 	sqlda->sqln = 20;
 	if (isc_dsql_prepare(isc_status, &D__trans, &global_Stmt, 0, string,
-						 SQL_dialect, sqlda))
+						 isqlGlob.SQL_dialect, sqlda))
 	{
 		ISQL_errmsg(isc_status);
 		return (SKIP);
@@ -1741,7 +1753,7 @@ static processing_state add_row(const TEXT* tabname)
 
 		//  We must re-describe the sqlda, no need to re-prepare 
 
-		if (isc_dsql_describe(isc_status, &global_Stmt, SQL_dialect, sqlda)) {
+		if (isc_dsql_describe(isc_status, &global_Stmt, isqlGlob.SQL_dialect, sqlda)) {
 			ISQL_errmsg(isc_status);
 			if (sqlda)
 				ISQL_FREE(sqlda);
@@ -2048,7 +2060,7 @@ static processing_state add_row(const TEXT* tabname)
 			// having completed all columns, try the insert statement with the sqlda 
 
 			if (isc_dsql_exec_immed2(isc_status, &DB, &M__trans, 0,
-									 insertstring, SQL_dialect, isqlda, NULL))
+									 insertstring, isqlGlob.SQL_dialect, isqlda, NULL))
 			{
 				ISQL_errmsg(isc_status);
 				break;
@@ -2145,7 +2157,7 @@ static void col_check(const TEXT* tablename,
 	//ISQL_make_upper(tabname); // CVC: This won't catch mixed case file names!
 	TEXT tabname[WORDLENGTH * 2];
 	const bool delimited_yes = tablename[0] == DBL_QUOTE;
-	if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION && delimited_yes) {
+	if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION && delimited_yes) {
 		ISQL_copy_SQL_id(tablename, tabname, DBL_QUOTE);
 	}
 	else {
@@ -2310,7 +2322,7 @@ static processing_state copy_table(const TEXT* source_tbl,
 /* Call list_table with a temporary file, then hand that file to a
    new version of isql */
 
-	FILE* const holdout = Out;
+	FILE* const holdout = isqlGlob.Out;
 
 // If there is an alternate database, extract the domains 
 	bool domain_flag = false;
@@ -2318,8 +2330,8 @@ static processing_state copy_table(const TEXT* source_tbl,
 		domain_flag = true;
 
 	TEXT ftmp[128];
-	Out = (FILE*) gds__temp_file(TRUE, SCRATCH, ftmp);
-	if (Out == (FILE*) - 1) {
+	isqlGlob.Out = (FILE*) gds__temp_file(TRUE, SCRATCH, ftmp);
+	if (isqlGlob.Out == (FILE*) - 1) {
 		// If we can't open a temp file then bail 
 
 		gds__msg_format(NULL, ISQL_MSG_FAC, FILE_OPEN_ERR, sizeof(errbuf),
@@ -2332,7 +2344,7 @@ static processing_state copy_table(const TEXT* source_tbl,
 	//ISQL_make_upper(source); // CVC: This won't catch mixed case table names!
 	TEXT source[WORDLENGTH * 2];
 	const bool delimited_yes = source_tbl[0] == DBL_QUOTE;
-	if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION && delimited_yes) {
+	if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION && delimited_yes) {
 		ISQL_copy_SQL_id(source_tbl, source, DBL_QUOTE);
 	}
 	else {
@@ -2343,13 +2355,13 @@ static processing_state copy_table(const TEXT* source_tbl,
 		gds__msg_format(NULL, ISQL_MSG_FAC, NOT_FOUND, sizeof(errbuf),
 						errbuf, source, NULL, NULL, NULL, NULL);
 		STDERROUT(errbuf, 1);
-		fclose(Out);
+		fclose(isqlGlob.Out);
 	}
 	else {
-		fclose(Out);
+		fclose(isqlGlob.Out);
 
 		// easy to make a copy in another database 
-		const TEXT* altdb = global_Db_name;
+		const TEXT* altdb = isqlGlob.global_Db_name;
 		if (*otherdb)
 			altdb = otherdb;
 		TEXT cmd[512];
@@ -2362,7 +2374,7 @@ static processing_state copy_table(const TEXT* source_tbl,
 	}
 
 	unlink(ftmp);
-	Out = holdout;
+	isqlGlob.Out = holdout;
 
 	return (SKIP);
 }
@@ -2391,7 +2403,7 @@ static processing_state create_db(const TEXT* statement,
 // Disconnect from the database and cleanup 
 	ISQL_disconnect_database(false);
 
-	SLONG arglength = strlen(statement) + strlen(User) + strlen(Password) + 24;
+	SLONG arglength = strlen(statement) + strlen(isqlGlob.User) + strlen(Password) + 24;
 	if (*ISQL_charset && strcmp(ISQL_charset, DEFCHARSET))
 		arglength += strlen(ISQL_charset) + strlen(" SET NAMES \'\' ");
 	TEXT* local_statement = (TEXT*) ISQL_ALLOC(arglength + 1);
@@ -2422,7 +2434,7 @@ static processing_state create_db(const TEXT* statement,
 #endif
 		(*ISQL_charset && strcmp(ISQL_charset, DEFCHARSET)))
 	{
-		strip_quotes(User, usr);
+		strip_quotes(isqlGlob.User, usr);
 		strip_quotes(Password, psw);
 		// Look for the quotes on the database name and find the close quotes.
 		// Use '"' first, if not successful try '''.
@@ -2452,7 +2464,7 @@ static processing_state create_db(const TEXT* statement,
 				p++;
 				const ptrdiff_t slen = p - statement;
 				local_statement[slen] = '\0';
-				if (SQL_dialect == 1) {
+				if (isqlGlob.SQL_dialect == 1) {
 					if (global_usr)
 						sprintf(local_statement + strlen(local_statement),
 								" USER \'%s\' ", usr);
@@ -2470,7 +2482,7 @@ static processing_state create_db(const TEXT* statement,
 	}
 
 	SLONG cnt = 0;
-	if ((SQL_dialect == 0) || (SQL_dialect > 1)) {
+	if ((isqlGlob.SQL_dialect == 0) || (isqlGlob.SQL_dialect > 1)) {
 		const TEXT* q = strchr(statement, SINGLE_QUOTE);
 		while (q) {
 			cnt++;
@@ -2481,7 +2493,7 @@ static processing_state create_db(const TEXT* statement,
 		TEXT* new_local_statement = NULL;
 		if (cnt > 0) {
 			arglength = strlen(statement) +
-				strlen(User) + strlen(Password) + 24 + 2 * cnt;
+				strlen(isqlGlob.User) + strlen(Password) + 24 + 2 * cnt;
 
 			if (*ISQL_charset && strcmp(ISQL_charset, DEFCHARSET))
 				arglength +=
@@ -2567,10 +2579,10 @@ static processing_state create_db(const TEXT* statement,
 	}
 
 	/* execute the create statement
-	 * If the SQL_dialect is not set or set to 2, create the database
+	 * If the isqlGlob.SQL_dialect is not set or set to 2, create the database
 	 * as a dialect 3 database.
 	 */
-	if (SQL_dialect == 0 || SQL_dialect == SQL_DIALECT_V6_TRANSITION) {
+	if (isqlGlob.SQL_dialect == 0 || isqlGlob.SQL_dialect == SQL_DIALECT_V6_TRANSITION) {
 		if (isc_dsql_execute_immediate(isc_status, &DB, &M__trans, 0,
 									   local_statement, requested_SQL_dialect,
 									   NULL))
@@ -2582,7 +2594,7 @@ static processing_state create_db(const TEXT* statement,
 	}
 	else {
 		if (isc_dsql_execute_immediate(isc_status, &DB, &M__trans, 0,
-									   local_statement, SQL_dialect, NULL))
+									   local_statement, isqlGlob.SQL_dialect, NULL))
 		{
 			ISQL_errmsg(isc_status);
 			if (!DB)
@@ -2591,9 +2603,9 @@ static processing_state create_db(const TEXT* statement,
 	}
 
 	if (DB) {
-		// Load global_Db_name with some value to show a successful attach
+		// Load isqlGlob.global_Db_name with some value to show a successful attach
 
-		strip_quotes(d_name, global_Db_name);
+		strip_quotes(d_name, isqlGlob.global_Db_name);
 
 		ISQL_get_version(true);
 
@@ -2670,7 +2682,7 @@ static void do_isql()
 	// the file containing the script.
 	//
 
-	newdb(global_Db_name, User, Password, global_Numbufs, Role, true);
+	newdb(isqlGlob.global_Db_name, isqlGlob.User, Password, global_Numbufs, isqlGlob.Role, true);
 
 	// If that failed or no Dbname was specified
 
@@ -2724,7 +2736,7 @@ static void do_isql()
 
 		// But don't execute the statement 
 
-		if (!global_Db_name[0] && (ret == CONT)) {
+		if (!isqlGlob.global_Db_name[0] && (ret == CONT)) {
 			if (!Quiet) {
 				gds__msg_format(NULL, ISQL_MSG_FAC, NO_DB, MSG_LENGTH,
 								errbuf, NULL, NULL, NULL, NULL, NULL);
@@ -2810,7 +2822,7 @@ static void do_isql()
 
 	global_Stmt = 0;
 	DB = 0;
-	global_Db_name[0] = '\0';
+	isqlGlob.global_Db_name[0] = '\0';
 	D__trans = 0;
 	M__trans = 0;
 	gds_trans = 0;
@@ -2850,7 +2862,7 @@ static processing_state drop_db()
  *	Drop the current database
  *
  **************************************/
-	if (global_Db_name[0]) {
+	if (isqlGlob.global_Db_name[0]) {
 		if (isc_drop_database(isc_status, &DB)) {
 			ISQL_errmsg(isc_status);
 			return (FAIL);
@@ -2872,13 +2884,13 @@ static processing_state drop_db()
 	
 	// CVC: If we aren't connected to a db anymore, then the db's dialect is reset.
 	// This should fix SF Bug #910430.
-	db_SQL_dialect = 0;
+	isqlGlob.db_SQL_dialect = 0;
 	// BRS this is also needed to fix #910430.
 	dialect_spoken = 0;
 
 // Zero database name 
 
-	global_Db_name[0] = '\0';
+	isqlGlob.global_Db_name[0] = '\0';
 	DB = 0;
 
 	return (SKIP);
@@ -3180,7 +3192,7 @@ static processing_state frontend(const TEXT* statement)
 			TEXT* a = buffer;
 			int j = 0;
 			if (*p == DBL_QUOTE || *p == SINGLE_QUOTE) {
-				if (i > 0 && (!strcmp(parms[i - 1], KW_ROLE)))
+				if (i > 0 && (!strcmp(parms[i - 1], "ROLE")))
 					role_found = true;
 				bool delimited_done = false;
 				const TEXT end_quote = *p;
@@ -3367,12 +3379,12 @@ static processing_state frontend(const TEXT* statement)
 			Termlen = strlen(a);
 			if (Termlen <= MAXTERM_LENGTH)
 			{
-				strcpy(global_Term, a);
+				strcpy(isqlGlob.global_Term, a);
 			}
 			else
 			{
 				Termlen = MAXTERM_LENGTH;
-				strncpy(global_Term, a, MAXTERM_LENGTH);
+				strncpy(isqlGlob.global_Term, a, MAXTERM_LENGTH);
 			}
 		}
 		else if (!strcmp(parms[1], "NAMES"))
@@ -3408,26 +3420,26 @@ static processing_state frontend(const TEXT* statement)
 		{
 			if (!strcmp(parms[2], "DIALECT"))
 			{
-				const USHORT old_SQL_dialect = SQL_dialect; // save the old SQL dialect
+				const USHORT old_SQL_dialect = isqlGlob.SQL_dialect; // save the old SQL dialect
 				const SCHAR* dialect_str = parms[3];
-				if (dialect_str && (SQL_dialect = atoi(dialect_str)))
+				if (dialect_str && (isqlGlob.SQL_dialect = atoi(dialect_str)))
 				{
-					if (SQL_dialect < SQL_DIALECT_V5 ||
-						SQL_dialect > SQL_DIALECT_V6)
+					if (isqlGlob.SQL_dialect < SQL_DIALECT_V5 ||
+						isqlGlob.SQL_dialect > SQL_DIALECT_V6)
 					{
 						bad_dialect = true;
 						sprintf(bad_dialect_buf, "%s%s",
 								"invalid SQL dialect ", dialect_str);
-						SQL_dialect = old_SQL_dialect;	// restore SQL dialect 
+						isqlGlob.SQL_dialect = old_SQL_dialect;	// restore SQL dialect 
 						ret = ERR;
 					}
 					else
 					{
-						if (major_ods)
+						if (isqlGlob.major_ods)
 						{
-							if (major_ods < ODS_VERSION10)
+							if (isqlGlob.major_ods < ODS_VERSION10)
 							{
-								if (SQL_dialect > SQL_DIALECT_V5)
+								if (isqlGlob.SQL_dialect > SQL_DIALECT_V5)
 								{
 									if (dialect_spoken) {
 										sprintf(bad_dialect_buf,
@@ -3449,8 +3461,8 @@ static processing_state frontend(const TEXT* statement)
 												" setting. Client SQL dialect still remains 1.",
 												NEWLINE);
 									}
-									SQL_dialect = old_SQL_dialect;	// restore SQL dialect 
-									ISQL_printf(Out, bad_dialect_buf);
+									isqlGlob.SQL_dialect = old_SQL_dialect;	// restore SQL dialect 
+									ISQL_printf(isqlGlob.Out, bad_dialect_buf);
 								}
 							}
 							else
@@ -3458,7 +3470,7 @@ static processing_state frontend(const TEXT* statement)
 								switch (dialect_spoken)
 								{
 								case SQL_DIALECT_V5:
-									if (SQL_dialect > SQL_DIALECT_V5)
+									if (isqlGlob.SQL_dialect > SQL_DIALECT_V5)
 									{
 										if (SQL_DIALECT_V6_TRANSITION)
 											Merge_stderr = true;
@@ -3466,8 +3478,8 @@ static processing_state frontend(const TEXT* statement)
 									}
 									break;
 								case SQL_DIALECT_V6:
-									if (SQL_dialect == SQL_DIALECT_V5 ||
-										SQL_dialect ==
+									if (isqlGlob.SQL_dialect == SQL_DIALECT_V5 ||
+										isqlGlob.SQL_dialect ==
 										SQL_DIALECT_V6_TRANSITION)
 									{
 										if (SQL_DIALECT_V6_TRANSITION)
@@ -3483,11 +3495,11 @@ static processing_state frontend(const TEXT* statement)
 									print_warning = false;
 									sprintf(bad_dialect_buf, "%s%d%s%d%s%s",
 											"WARNING: Client SQL dialect has been set to ",
-											SQL_dialect,
+											isqlGlob.SQL_dialect,
 											" when connecting to Database SQL dialect ",
 											dialect_spoken,
 											" database. ", NEWLINE);
-									ISQL_printf(Out, bad_dialect_buf);
+									ISQL_printf(isqlGlob.Out, bad_dialect_buf);
 								}
 							}
 						}
@@ -3495,7 +3507,7 @@ static processing_state frontend(const TEXT* statement)
 				}
 				else
 				{			// handle non numeric invalid "set sql dialect" case 
-					SQL_dialect = old_SQL_dialect;	// restore SQL dialect 
+					isqlGlob.SQL_dialect = old_SQL_dialect;	// restore SQL dialect 
 					bad_dialect = true;
 					sprintf(bad_dialect_buf, "%s%s", "invalid SQL dialect ",
 							dialect_str);
@@ -3885,7 +3897,7 @@ static processing_state get_statement(TEXT** statement_ref,
 			if (!incomment &&
 				// Making sure that q does'nt go out of bounds 
 				((q - statement) >= Termlen) &&
-				!strncmp(q - Termlen, global_Term, Termlen))
+				!strncmp(q - Termlen, isqlGlob.global_Term, Termlen))
 			{
 				// Lop off terminal comment 
 				*(q - Termlen) = '\0';
@@ -4056,7 +4068,7 @@ static processing_state get_statement(TEXT** statement_ref,
 
 		if (Ifp == stdin) {
 			fputs(statement, Ofp);
-			fputs(global_Term, Ofp);
+			fputs(isqlGlob.global_Term, Ofp);
 			fputc('\n', Ofp);
 		}
 	}
@@ -4213,35 +4225,35 @@ void ISQL_get_version(bool call_by_create_db)
 		p += sizeof(USHORT);
 		switch (item) {
 		case isc_info_ods_version:
-			major_ods = gds__vax_integer(p, length);
+			isqlGlob.major_ods = gds__vax_integer(p, length);
 			break;
 		case isc_info_ods_minor_version:
 			minor_ods = gds__vax_integer(p, length);
 			break;
 		case isc_info_db_sql_dialect:
 			dialect_spoken = gds__vax_integer(p, length);
-			if (major_ods < ODS_VERSION10) {
-				if (SQL_dialect > SQL_DIALECT_V5 && Warnings) {
-					ISQL_printf(Out, NEWLINE);
+			if (isqlGlob.major_ods < ODS_VERSION10) {
+				if (isqlGlob.SQL_dialect > SQL_DIALECT_V5 && Warnings) {
+					ISQL_printf(isqlGlob.Out, NEWLINE);
 					sprintf(bad_dialect_buf, "%s%s%s%d%s%s",
 							"WARNING: Pre IB V6 database only speaks",
 							" SQL dialect 1 and ",
 							"does not accept Client SQL dialect ",
-							SQL_dialect,
+							isqlGlob.SQL_dialect,
 							" . Client SQL dialect is reset to 1.", NEWLINE);
-					ISQL_printf(Out, bad_dialect_buf);
+					ISQL_printf(isqlGlob.Out, bad_dialect_buf);
 				}
 			}
 			else {				// ODS 10 databases 
 
 				switch (dialect_spoken) {
 				case SQL_DIALECT_V5:
-					if (SQL_dialect > SQL_DIALECT_V5)
+					if (isqlGlob.SQL_dialect > SQL_DIALECT_V5)
 						print_warning = true;
 					break;
 
 				case SQL_DIALECT_V6:
-					if (SQL_dialect != 0 && SQL_dialect < SQL_DIALECT_V6)
+					if (isqlGlob.SQL_dialect != 0 && isqlGlob.SQL_dialect < SQL_DIALECT_V6)
 						print_warning = true;
 					break;
 				default:
@@ -4249,13 +4261,13 @@ void ISQL_get_version(bool call_by_create_db)
 				}
 				if (print_warning && Warnings) {
 					print_warning = false;
-					ISQL_printf(Out, NEWLINE);
+					ISQL_printf(isqlGlob.Out, NEWLINE);
 					sprintf(bad_dialect_buf, "%s%d%s%d%s%s",
 							"WARNING: This database speaks SQL dialect ",
 							dialect_spoken,
 							" but Client SQL dialect was set to ",
-							SQL_dialect, " .", NEWLINE);
-					ISQL_printf(Out, bad_dialect_buf);
+							isqlGlob.SQL_dialect, " .", NEWLINE);
+					ISQL_printf(isqlGlob.Out, bad_dialect_buf);
 				}
 			}
 			break;
@@ -4268,33 +4280,33 @@ void ISQL_get_version(bool call_by_create_db)
 				// must be an old or non Firebird server 
 				break;
 			}
-			if (SQL_dialect && SQL_dialect != SQL_DIALECT_V5 && Warnings) {
-				ISQL_printf(Out, NEWLINE);
+			if (isqlGlob.SQL_dialect && isqlGlob.SQL_dialect != SQL_DIALECT_V5 && Warnings) {
+				ISQL_printf(isqlGlob.Out, NEWLINE);
 				if (call_by_create_db)
 					sprintf(bad_dialect_buf, "%s%s%d%s%s",
 							"WARNING: Pre IB V6 server only speaks SQL dialect 1",
 							" and does not accept Client SQL dialect ",
-							SQL_dialect,
+							isqlGlob.SQL_dialect,
 							" . Client SQL dialect is reset to 1.", NEWLINE);
 				else {
 					connecting_to_pre_v6_server = true;
 					sprintf(bad_dialect_buf, "%s%s%d%s%s",
 							"ERROR: Pre IB V6 server only speaks SQL dialect 1",
 							" and does not accept Client SQL dialect ",
-							SQL_dialect,
+							isqlGlob.SQL_dialect,
 							" . Client SQL dialect is reset to 1.", NEWLINE);
 				}
-				ISQL_printf(Out, bad_dialect_buf);
+				ISQL_printf(isqlGlob.Out, bad_dialect_buf);
 			}
 			else {
-				if (SQL_dialect == 0) {
+				if (isqlGlob.SQL_dialect == 0) {
 					connecting_to_pre_v6_server = true;
 					sprintf(bad_dialect_buf, "%s%s%d%s%s",
 							"ERROR: Pre IB V6 server only speaks SQL dialect 1",
 							" and does not accept Client SQL dialect ",
-							SQL_dialect,
+							isqlGlob.SQL_dialect,
 							" . Client SQL dialect is reset to 1.", NEWLINE);
-					ISQL_printf(Out, bad_dialect_buf);
+					ISQL_printf(isqlGlob.Out, bad_dialect_buf);
 				}
 			}
 			break;
@@ -4303,7 +4315,7 @@ void ISQL_get_version(bool call_by_create_db)
 			strncat(server_version, (char*) &(p[2]), (length - 2));
 			if (Version_info)  {
 				strcat(server_version, NEWLINE);
-				ISQL_printf (Out, server_version);
+				ISQL_printf (isqlGlob.Out, server_version);
 			}
 			break;
 
@@ -4313,14 +4325,14 @@ void ISQL_get_version(bool call_by_create_db)
 				sprintf(message,
 						"Internal error: Unexpected isc_info_value %d\n",
 						item);
-				ISQL_printf(Out, message);
+				ISQL_printf(isqlGlob.Out, message);
 			}
 			break;
 		}
 		p += length;
 	}
 
-	if (major_ods < ODS_VERSION8) {
+	if (isqlGlob.major_ods < ODS_VERSION8) {
 		TEXT* errbuf = (TEXT*) ISQL_ALLOC((SLONG) MSG_LENGTH);
 		if (errbuf) {
 			gds__msg_format(NULL, ISQL_MSG_FAC, SERVER_TOO_OLD, MSG_LENGTH,
@@ -4338,16 +4350,16 @@ void ISQL_get_version(bool call_by_create_db)
    current dialect is set to whatever the user requested. */
 
 	if (dialect_spoken == 0)
-		SQL_dialect = SQL_DIALECT_V5;
-	else if (major_ods < ODS_VERSION10)
-		SQL_dialect = dialect_spoken;
-	else if (SQL_dialect == 0)	// client SQL dialect has not been set 
-		SQL_dialect = dialect_spoken;
+		isqlGlob.SQL_dialect = SQL_DIALECT_V5;
+	else if (isqlGlob.major_ods < ODS_VERSION10)
+		isqlGlob.SQL_dialect = dialect_spoken;
+	else if (isqlGlob.SQL_dialect == 0)	// client SQL dialect has not been set 
+		isqlGlob.SQL_dialect = dialect_spoken;
 
 	if (dialect_spoken > 0)
-		db_SQL_dialect = dialect_spoken;
+		isqlGlob.db_SQL_dialect = dialect_spoken;
 	else
-		db_SQL_dialect = SQL_DIALECT_V5;
+		isqlGlob.db_SQL_dialect = SQL_DIALECT_V5;
 }
 
 
@@ -4440,7 +4452,7 @@ void ISQL_ri_action_print(const TEXT* ri_action_str,
 				else if (*ref_int->ri_action_print_mixed)
 					sprintf(Print_buffer, "%s %s", ri_action_prefix_str,
 							ref_int->ri_action_print_mixed);
-				ISQL_printf(Out, Print_buffer);
+				ISQL_printf(isqlGlob.Out, Print_buffer);
 			}
 			return;
 		}
@@ -4535,70 +4547,70 @@ static processing_state print_sets()
  *
  **************************************/
 
-	ISQL_printf(Out, "Print statistics:		");
-	ISQL_printf(Out, (Stats ? "ON" : "OFF"));
-	ISQL_printf(Out, NEWLINE);
-	ISQL_printf(Out, "Echo commands:		   ");
-	ISQL_printf(Out, (Echo ? "ON" : "OFF"));
-	ISQL_printf(Out, NEWLINE);
-	ISQL_printf(Out, "List format:			 ");
-	ISQL_printf(Out, (List ? "ON" : "OFF"));
-	ISQL_printf(Out, NEWLINE);
-	ISQL_printf(Out, "Row Count:			   ");
-	ISQL_printf(Out, (Docount ? "ON" : "OFF"));
-	ISQL_printf(Out, NEWLINE);
-	ISQL_printf(Out, "Autocommit DDL:		  ");
-	ISQL_printf(Out, (Autocommit ? "ON" : "OFF"));
-	ISQL_printf(Out, NEWLINE);
+	ISQL_printf(isqlGlob.Out, "Print statistics:		");
+	ISQL_printf(isqlGlob.Out, (Stats ? "ON" : "OFF"));
+	ISQL_printf(isqlGlob.Out, NEWLINE);
+	ISQL_printf(isqlGlob.Out, "Echo commands:		   ");
+	ISQL_printf(isqlGlob.Out, (Echo ? "ON" : "OFF"));
+	ISQL_printf(isqlGlob.Out, NEWLINE);
+	ISQL_printf(isqlGlob.Out, "List format:			 ");
+	ISQL_printf(isqlGlob.Out, (List ? "ON" : "OFF"));
+	ISQL_printf(isqlGlob.Out, NEWLINE);
+	ISQL_printf(isqlGlob.Out, "Row Count:			   ");
+	ISQL_printf(isqlGlob.Out, (Docount ? "ON" : "OFF"));
+	ISQL_printf(isqlGlob.Out, NEWLINE);
+	ISQL_printf(isqlGlob.Out, "Autocommit DDL:		  ");
+	ISQL_printf(isqlGlob.Out, (Autocommit ? "ON" : "OFF"));
+	ISQL_printf(isqlGlob.Out, NEWLINE);
 #ifdef SCROLLABLE_CURSORS
-	ISQL_printf(Out, "Autofetch records:	   ");
-	ISQL_printf(Out, (Autofetch ? "ON" : "OFF"));
-	ISQL_printf(Out, NEWLINE);
+	ISQL_printf(isqlGlob.Out, "Autofetch records:	   ");
+	ISQL_printf(isqlGlob.Out, (Autofetch ? "ON" : "OFF"));
+	ISQL_printf(isqlGlob.Out, NEWLINE);
 #endif
-	ISQL_printf(Out, "Access Plan:			 ");
-	ISQL_printf(Out, (Plan ? "ON" : "OFF"));
-	ISQL_printf(Out, NEWLINE);
-	ISQL_printf(Out, "Access Plan only:		");
-	ISQL_printf(Out, (Planonly ? "ON" : "OFF"));
-	ISQL_printf(Out, NEWLINE);
-	ISQL_printf(Out, "Display BLOB type:	   ");
+	ISQL_printf(isqlGlob.Out, "Access Plan:			 ");
+	ISQL_printf(isqlGlob.Out, (Plan ? "ON" : "OFF"));
+	ISQL_printf(isqlGlob.Out, NEWLINE);
+	ISQL_printf(isqlGlob.Out, "Access Plan only:		");
+	ISQL_printf(isqlGlob.Out, (Planonly ? "ON" : "OFF"));
+	ISQL_printf(isqlGlob.Out, NEWLINE);
+	ISQL_printf(isqlGlob.Out, "Display BLOB type:	   ");
 	if (Doblob == ALL_BLOBS)
-		ISQL_printf(Out, "ALL");
+		ISQL_printf(isqlGlob.Out, "ALL");
 	else if (Doblob == NO_BLOBS)
-		ISQL_printf(Out, "NONE");
+		ISQL_printf(isqlGlob.Out, "NONE");
 	else {
 		sprintf(Print_buffer, "%d", Doblob);
-		ISQL_printf(Out, Print_buffer);
+		ISQL_printf(isqlGlob.Out, Print_buffer);
 	}
-	ISQL_printf(Out, NEWLINE);
+	ISQL_printf(isqlGlob.Out, NEWLINE);
 	if (*ISQL_charset && strcmp(ISQL_charset, DEFCHARSET)) {
 		sprintf(Print_buffer, "Set names:			   %s%s",
 				ISQL_charset, NEWLINE);
-		ISQL_printf(Out, Print_buffer);
+		ISQL_printf(isqlGlob.Out, Print_buffer);
 	}
-	ISQL_printf(Out, "Column headings:          ");
-	ISQL_printf(Out, Heading ? "ON" : "OFF");
-	ISQL_printf(Out, NEWLINE);
+	ISQL_printf(isqlGlob.Out, "Column headings:          ");
+	ISQL_printf(isqlGlob.Out, Heading ? "ON" : "OFF");
+	ISQL_printf(isqlGlob.Out, NEWLINE);
 	if (global_Cols) {
 		collist* p = global_Cols;
 		sprintf(Print_buffer, "Column print widths:%s", NEWLINE);
-		ISQL_printf(Out, Print_buffer);
+		ISQL_printf(isqlGlob.Out, Print_buffer);
 		while (p) {
 			sprintf(Print_buffer, "%s%s width: %d%s",
 					TAB_AS_SPACES, p->col_name, p->col_len, NEWLINE);
-			ISQL_printf(Out, Print_buffer);
+			ISQL_printf(isqlGlob.Out, Print_buffer);
 			p = p->collist_next;
 		}
 	}
-	ISQL_printf(Out, "Terminator:			  ");
-	ISQL_printf(Out, global_Term);
-	ISQL_printf(Out, NEWLINE);
+	ISQL_printf(isqlGlob.Out, "Terminator:			  ");
+	ISQL_printf(isqlGlob.Out, isqlGlob.global_Term);
+	ISQL_printf(isqlGlob.Out, NEWLINE);
 	sprintf(Print_buffer, "Time:					%s%s",
 			(Time_display) ? "ON" : "OFF", NEWLINE);
-	ISQL_printf(Out, Print_buffer);
+	ISQL_printf(isqlGlob.Out, Print_buffer);
 	sprintf(Print_buffer, "Warnings:				%s%s",
 			(Warnings) ? "ON" : "OFF", NEWLINE);
-	ISQL_printf(Out, Print_buffer);
+	ISQL_printf(isqlGlob.Out, Print_buffer);
 	return (SKIP);
 }
 
@@ -4891,7 +4903,7 @@ static processing_state newdb(TEXT* dbname,
 
 // Strip quotes if well-intentioned 
 
-	strip_quotes(dbname, global_Db_name);
+	strip_quotes(dbname, isqlGlob.global_Db_name);
 	strip_quotes(usr, local_usr);
 	strip_quotes(psw, local_psw);
 	strip_quotes(numbufs, local_numbufs);
@@ -4906,21 +4918,21 @@ static processing_state newdb(TEXT* dbname,
  */
 
 	if (sql_role_nm) {
-		if (SQL_dialect == SQL_DIALECT_V5)
+		if (isqlGlob.SQL_dialect == SQL_DIALECT_V5)
 			strip_quotes(sql_role_nm, local_sql_role);
 		else
 			strcpy(local_sql_role, sql_role_nm);
 	}
 
 	if (!(strlen(local_sql_role)) && global_role) {
-		if (SQL_dialect == SQL_DIALECT_V5)
-			strip_quotes(Role, local_sql_role);
+		if (isqlGlob.SQL_dialect == SQL_DIALECT_V5)
+			strip_quotes(isqlGlob.Role, local_sql_role);
 		else
-			strcpy(local_sql_role, Role);
+			strcpy(local_sql_role, isqlGlob.Role);
 	}
 
 	if (!(strlen(local_usr)) && global_usr)
-		strcpy(local_usr, User);
+		strcpy(local_usr, isqlGlob.User);
 
 	if (!(strlen(local_psw)) && global_psw)
 		strcpy(local_psw, Password);
@@ -4962,7 +4974,7 @@ static processing_state newdb(TEXT* dbname,
 	if (l = strlen(local_sql_role)) {
 		add_byte(dpb, isc_dpb_sql_dialect);
 		add_byte(dpb, 4);
-		add_long(dpb, SQL_dialect);
+		add_long(dpb, isqlGlob.SQL_dialect);
 		*dpb++ = isc_dpb_sql_role_name;
 		*dpb++ = l;
 		p = (UCHAR*) local_sql_role;
@@ -4984,19 +4996,19 @@ static processing_state newdb(TEXT* dbname,
 		dpb_len = 0;
 	}
 
-	TEXT* local_name = global_Db_name;
+	TEXT* local_name = isqlGlob.global_Db_name;
 
 #if defined (WIN95)
 	if (!fAnsiCP) {
 		local_name = save_database;
-		OemToAnsi(global_Db_name, local_name);
+		OemToAnsi(isqlGlob.global_Db_name, local_name);
 	}
 #endif
 	if (isc_attach_database
 		(isc_status, 0, local_name, &DB, dpb_len, (SCHAR*) dpb))
 	{
 		ISQL_errmsg(isc_status);
-		global_Db_name[0] = '\0';
+		isqlGlob.global_Db_name[0] = '\0';
 		if (save_database)
 			ISQL_FREE(save_database);
 		if (local_psw)
@@ -5015,9 +5027,9 @@ static processing_state newdb(TEXT* dbname,
 	ISQL_get_version(false);
 
 	if (*local_sql_role) {
-		switch (SQL_dialect) {
+		switch (isqlGlob.SQL_dialect) {
 		case SQL_DIALECT_V5:
-			// Uppercase the Sql Role name 
+			// Uppercase the Sql isqlGlob.Role name 
 			ISQL_make_upper(local_sql_role);
 			break;
 		case SQL_DIALECT_V6_TRANSITION:
@@ -5044,24 +5056,24 @@ static processing_state newdb(TEXT* dbname,
 	if (Interactive) {
 		if (local_usr[0] != '\0') {
 			if (local_sql_role[0] != '\0') {
-				sprintf(Print_buffer, "Database:  %s, User: %s, Role: %s%s",
+				sprintf(Print_buffer, "Database:  %s, isqlGlob.User: %s, isqlGlob.Role: %s%s",
 						dbname, local_usr, local_sql_role, NEWLINE);
 			}
 			else {
-				sprintf(Print_buffer, "Database:  %s, User: %s%s",
+				sprintf(Print_buffer, "Database:  %s, isqlGlob.User: %s%s",
 						dbname, local_usr, NEWLINE);
 			}
-			ISQL_printf(Out, Print_buffer);
+			ISQL_printf(isqlGlob.Out, Print_buffer);
 		}
 		else {
 			if (local_sql_role[0] != '\0') {
-				sprintf(Print_buffer, "Database:  %s, Role:  %s%s",
+				sprintf(Print_buffer, "Database:  %s, isqlGlob.Role:  %s%s",
 						dbname, local_sql_role, NEWLINE);
 			}
 			else {
 				sprintf(Print_buffer, "Database:  %s%s", dbname, NEWLINE);
 			}
-			ISQL_printf(Out, Print_buffer);
+			ISQL_printf(isqlGlob.Out, Print_buffer);
 		}
 	}
 
@@ -5093,7 +5105,7 @@ static processing_state newdb(TEXT* dbname,
 				commit_trans(&D__trans);
 			isc_detach_database(isc_status, &DB);
 			DB = 0;
-			global_Db_name[0] = '\0';
+			isqlGlob.global_Db_name[0] = '\0';
 			M__trans = 0;
 			D__trans = 0;
 			if (save_database)
@@ -5153,13 +5165,13 @@ static processing_state newoutput(const TEXT* outfile)
 		FILE* fp = fopen(outfile, "a");
 		if (fp)
 		{
-			if (Out && Out != stdout)
-				fclose(Out);
-			Out = fp;
+			if (isqlGlob.Out && isqlGlob.Out != stdout)
+				fclose(isqlGlob.Out);
+			isqlGlob.Out = fp;
 			if (Merge_stderr)
-				Errfp = Out;
+				isqlGlob.Errfp = isqlGlob.Out;
 			if (Merge_diagnostic)
-			    Diag = Out;
+			    Diag = isqlGlob.Out;
 		}
 		else {
 			TEXT* errbuf = (TEXT*) ISQL_ALLOC(MSG_LENGTH);
@@ -5174,13 +5186,13 @@ static processing_state newoutput(const TEXT* outfile)
 	}
 	else {
 		// Revert to stdout 
-		if (Out != stdout) {
-			fclose(Out);
-			Out = stdout;
+		if (isqlGlob.Out != stdout) {
+			fclose(isqlGlob.Out);
+			isqlGlob.Out = stdout;
 			if (Merge_stderr)
-				Errfp = Out;
+				isqlGlob.Errfp = isqlGlob.Out;
 			if (Merge_diagnostic)
-			    Diag = Out;
+			    Diag = isqlGlob.Out;
 		}
 	}
 	return (ret);
@@ -5280,7 +5292,7 @@ static processing_state newtrans(const TEXT* statement)
 // M__trans = 0 after the commit or rollback. ready for a new transaction 
 
 	if (isc_dsql_execute_immediate(isc_status, &DB, &M__trans, 0, statement,
-								   SQL_dialect, NULL))
+								   isqlGlob.SQL_dialect, NULL))
 	{
 		ISQL_errmsg(isc_status);
 		return FAIL;
@@ -5316,11 +5328,11 @@ static processing_state parse_arg(int argc,
 
 // Initialize database name
 
-	*global_Db_name = '\0';
-	*global_Target_db = '\0';
+	*isqlGlob.global_Db_name = '\0';
+	*isqlGlob.global_Target_db = '\0';
 	Password[0] = '\0';
-	User[0] = '\0';
-	Role[0] = '\0';
+	isqlGlob.User[0] = '\0';
+	isqlGlob.Role[0] = '\0';
 	global_Numbufs[0] = 0;
 	Quiet = false;
 	Exit_value = FINI_OK;
@@ -5358,10 +5370,10 @@ static processing_state parse_arg(int argc,
 
 	Termlen = strlen(DEFTERM);
 	if (Termlen <= MAXTERM_LENGTH)
-		strcpy(global_Term, DEFTERM);
+		strcpy(isqlGlob.global_Term, DEFTERM);
 	else {
 		Termlen = MAXTERM_LENGTH;
-		strncpy(global_Term, DEFTERM, MAXTERM_LENGTH);
+		strncpy(isqlGlob.global_Term, DEFTERM, MAXTERM_LENGTH);
 	}
 
 // Initialize list of input file pointers 
@@ -5432,10 +5444,10 @@ static processing_state parse_arg(int argc,
 				if ((s = argv[++i]) && *s) {
 					Termlen = strlen(s);
 					if (Termlen <= MAXTERM_LENGTH)
-						STRARGCPY(global_Term, s);
+						STRARGCPY(isqlGlob.global_Term, s);
 					else {
 						Termlen = MAXTERM_LENGTH;
-						STRARGNCPY(global_Term, s, MAXTERM_LENGTH);
+						STRARGNCPY(isqlGlob.global_Term, s, MAXTERM_LENGTH);
 					}
 				}
 				else
@@ -5445,7 +5457,7 @@ static processing_state parse_arg(int argc,
 				// advance to the next word for target db name 
 
 				if ((s = argv[++i]) && *s)
-					STRARGCPY(global_Target_db, s);
+					STRARGCPY(isqlGlob.global_Target_db, s);
 				else
 					ret = ERR;
 			}
@@ -5467,7 +5479,7 @@ static processing_state parse_arg(int argc,
 			}
 			else if (c == 'U') {
 				if ((s = argv[++i]) && *s) {
-					STRARGCPY(User, s);
+					STRARGCPY(isqlGlob.User, s);
 					global_usr = true;
 				}
 				else
@@ -5475,7 +5487,7 @@ static processing_state parse_arg(int argc,
 			}
 			else if (c == 'R') {
 				if ((s = argv[++i]) && *s) {
-					STRARGCPY(Role, s);
+					STRARGCPY(isqlGlob.Role, s);
 					global_role = true;
 				}
 				else
@@ -5514,10 +5526,10 @@ static processing_state parse_arg(int argc,
 								errbuf, FB_VERSION, NULL, NULL, NULL, NULL);
 
 				sprintf(Print_buffer, "%s%s", errbuf, NEWLINE);
-				ISQL_printf(Out, Print_buffer);
+				ISQL_printf(isqlGlob.Out, Print_buffer);
 			}
 			else if (c == 'S') {
-				// SQL_dialect value 
+				// isqlGlob.SQL_dialect value 
 				if ((s = argv[++i]) && (requested_SQL_dialect = atoi(s))) {
 					if (requested_SQL_dialect < SQL_DIALECT_V5 ||
 						requested_SQL_dialect > SQL_DIALECT_CURRENT)
@@ -5530,7 +5542,7 @@ static processing_state parse_arg(int argc,
 						 * have a client dialect of 2, force the database dialect to 3, but
 						 * leave the client dialect as 2
 						 */
-						SQL_dialect = requested_SQL_dialect;
+						isqlGlob.SQL_dialect = requested_SQL_dialect;
 						if (requested_SQL_dialect == SQL_DIALECT_V6_TRANSITION)
 						{
 							Merge_stderr = true;
@@ -5552,7 +5564,7 @@ static processing_state parse_arg(int argc,
 		else
 			// This is not a switch, it is a db_name 
 		{
-			STRARGCPY(global_Db_name, s);
+			STRARGCPY(isqlGlob.global_Db_name, s);
 #ifdef DEV_BUILD
 			// If there is a table name, it follows 
 			if (istable && (s = argv[++i]) && *s)
@@ -5620,7 +5632,7 @@ static SSHORT print_item(TEXT** s,
 
 	if (List) {
 		sprintf(Print_buffer, "%-31s ", fb_utils::fb_exact_name(var->aliasname));
-		ISQL_printf(Out, Print_buffer);
+		ISQL_printf(isqlGlob.Out, Print_buffer);
 	}
 
 	if ((var->sqltype & 1) && (*var->sqlind < 0)) {
@@ -5628,7 +5640,7 @@ static SSHORT print_item(TEXT** s,
 
 		if (List) {
 			sprintf(Print_buffer, "<null>%s", NEWLINE);
-			ISQL_printf(Out, Print_buffer);
+			ISQL_printf(isqlGlob.Out, Print_buffer);
 		}
 
 		if ((dtype == SQL_TEXT) || (dtype == SQL_VARYING))
@@ -5644,7 +5656,7 @@ static SSHORT print_item(TEXT** s,
 		for (t = var->sqldata; t < var->sqldata + var->sqllen; t += 4) {
 			if (List) {
 				sprintf(Print_buffer, "%.8"XLONGFORMAT, *(SLONG*) t);
-				ISQL_printf(Out, Print_buffer);
+				ISQL_printf(isqlGlob.Out, Print_buffer);
 			}
 			else {
 				sprintf(d, "%.8"XLONGFORMAT, *(SLONG*) t);
@@ -5652,7 +5664,7 @@ static SSHORT print_item(TEXT** s,
 			}
 		}
 		if (List)
-			ISQL_printf(Out, NEWLINE);
+			ISQL_printf(isqlGlob.Out, NEWLINE);
 		else
 			strcat(p, " ");
 	}
@@ -5676,10 +5688,10 @@ static SSHORT print_item(TEXT** s,
 					blobid.gds_quad_low);
 			sprintf(p, "%17s ", blobbuf);
 			if (List) {
-				ISQL_printf(Out, blobbuf);
-				ISQL_printf(Out, NEWLINE);
-				dtype = print_item_blob(Out, var, M__trans);
-				ISQL_printf(Out, NEWLINE);
+				ISQL_printf(isqlGlob.Out, blobbuf);
+				ISQL_printf(isqlGlob.Out, NEWLINE);
+				dtype = print_item_blob(isqlGlob.Out, var, M__trans);
+				ISQL_printf(isqlGlob.Out, NEWLINE);
 			}
 			break;
 
@@ -5713,7 +5725,7 @@ static SSHORT print_item(TEXT** s,
 							while (0 != (*dest++ = *src++));	// empty 
 					}
 					sprintf(Print_buffer, "%s%s", str_buf, NEWLINE);
-					ISQL_printf(Out, Print_buffer);
+					ISQL_printf(isqlGlob.Out, Print_buffer);
 				}
 				break;
 			}
@@ -5730,7 +5742,7 @@ static SSHORT print_item(TEXT** s,
 				if (List) {
 					sprintf(Print_buffer, "%.*f%s",
 							(int) -dscale, numeric, NEWLINE);
-					ISQL_printf(Out, Print_buffer);
+					ISQL_printf(isqlGlob.Out, Print_buffer);
 				}
 			}
 			else {
@@ -5738,7 +5750,7 @@ static SSHORT print_item(TEXT** s,
 				if (List) {
 					sprintf(Print_buffer, "%ld%s",
 							*(SQUAD*) var->sqldata, NEWLINE);
-					ISQL_printf(Out, Print_buffer);
+					ISQL_printf(isqlGlob.Out, Print_buffer);
 				}
 			}
 			break;
@@ -5759,7 +5771,7 @@ static SSHORT print_item(TEXT** s,
 				if (List) {
 					sprintf(Print_buffer, "%.*g%s", FLOAT_LEN - 6 -1,
 							*(float*) (var->sqldata), NEWLINE);
-					ISQL_printf(Out, Print_buffer);
+					ISQL_printf(isqlGlob.Out, Print_buffer);
 				}
 			}
 			else {
@@ -5769,7 +5781,7 @@ static SSHORT print_item(TEXT** s,
 				if (List) {
 					sprintf(Print_buffer, "%.*g%s", FLOAT_LEN - 6,
 							*(float*) (var->sqldata), NEWLINE);
-					ISQL_printf(Out, Print_buffer);
+					ISQL_printf(isqlGlob.Out, Print_buffer);
 				}
 			}
 #else
@@ -5778,7 +5790,7 @@ static SSHORT print_item(TEXT** s,
 			if (List) {
 				sprintf(Print_buffer, "%.*g%s", FLOAT_LEN - 6,
 						*(float*) (var->sqldata), NEWLINE);
-				ISQL_printf(Out, Print_buffer);
+				ISQL_printf(isqlGlob.Out, Print_buffer);
 			}
 #endif
 			break;
@@ -5796,7 +5808,7 @@ static SSHORT print_item(TEXT** s,
 					sprintf(Print_buffer, "%.*f%s",
 							(int) -dscale,
 							*(double*) (var->sqldata), NEWLINE);
-					ISQL_printf(Out, Print_buffer);
+					ISQL_printf(isqlGlob.Out, Print_buffer);
 				}
 			}
 			else {
@@ -5809,7 +5821,7 @@ static SSHORT print_item(TEXT** s,
 						sprintf(Print_buffer, "%#.*g%s",
 								DOUBLE_LEN - 7 - 1,
 								*(double*) (var->sqldata), NEWLINE);
-						ISQL_printf(Out, Print_buffer);
+						ISQL_printf(isqlGlob.Out, Print_buffer);
 					}
 				}
 				else {
@@ -5820,7 +5832,7 @@ static SSHORT print_item(TEXT** s,
 						sprintf(Print_buffer, "%#.*g%s",
 								DOUBLE_LEN - 7,
 								*(double*) (var->sqldata), NEWLINE);
-						ISQL_printf(Out, Print_buffer);
+						ISQL_printf(isqlGlob.Out, Print_buffer);
 					}
 				}
 #else
@@ -5831,7 +5843,7 @@ static SSHORT print_item(TEXT** s,
 					sprintf(Print_buffer, "%#.*g%s",
 							DOUBLE_LEN - 7,
 							*(double*) (var->sqldata), NEWLINE);
-					ISQL_printf(Out, Print_buffer);
+					ISQL_printf(isqlGlob.Out, Print_buffer);
 				}
 #endif
 			}
@@ -5849,16 +5861,16 @@ static SSHORT print_item(TEXT** s,
 				}
 				buff2[(2 * var->sqllen + 1) - 1] = 0;
 				if (List) {
-					ISQL_printf(Out, buff2);
-					ISQL_printf(Out, NEWLINE);
+					ISQL_printf(isqlGlob.Out, buff2);
+					ISQL_printf(isqlGlob.Out, NEWLINE);
 				}
 				else
 					sprintf(p, "%s ", buff2);
 				ISQL_FREE(buff2);
 			}
 			else if (List) {
-				ISQL_printf(Out, string);
-				ISQL_printf(Out, NEWLINE);
+				ISQL_printf(isqlGlob.Out, string);
+				ISQL_printf(isqlGlob.Out, NEWLINE);
 			}
 			else {
 				// Truncate if necessary 
@@ -5871,7 +5883,7 @@ static SSHORT print_item(TEXT** s,
 		case SQL_TIMESTAMP:
 			isc_decode_date((ISC_QUAD*)var->sqldata, &times);
 
-			if (SQL_dialect > SQL_DIALECT_V5) {
+			if (isqlGlob.SQL_dialect > SQL_DIALECT_V5) {
 				sprintf(d, "%4.4d-%2.2d-%2.2d %2.2d:%2.2d:%2.2d.%4.4"ULONGFORMAT,
 						times.tm_year + 1900, (times.tm_mon + 1),
 						times.tm_mday, times.tm_hour, times.tm_min,
@@ -5893,7 +5905,7 @@ static SSHORT print_item(TEXT** s,
 			sprintf(p, "%-*s ", (int) length, d);
 			if (List) {
 				sprintf(Print_buffer, "%s%s", d, NEWLINE);
-				ISQL_printf(Out, Print_buffer);
+				ISQL_printf(isqlGlob.Out, Print_buffer);
 			}
 			break;
 
@@ -5912,7 +5924,7 @@ static SSHORT print_item(TEXT** s,
 				sprintf(p, "%-*s ", (int) length, d);
 				if (List) {
 					sprintf(Print_buffer, "%s%s", d, NEWLINE);
-					ISQL_printf(Out, Print_buffer);
+					ISQL_printf(isqlGlob.Out, Print_buffer);
 				}
 				break;
 			}
@@ -5933,7 +5945,7 @@ static SSHORT print_item(TEXT** s,
 				sprintf(p, "%-*s ", (int) length, d);
 				if (List) {
 					sprintf(Print_buffer, "%s%s", d, NEWLINE);
-					ISQL_printf(Out, Print_buffer);
+					ISQL_printf(isqlGlob.Out, Print_buffer);
 				}
 			}
 			break;
@@ -5961,8 +5973,8 @@ static SSHORT print_item(TEXT** s,
 
 				if (List)
 				{
-					ISQL_printf(Out, buff2);
-					ISQL_printf(Out, NEWLINE);
+					ISQL_printf(isqlGlob.Out, buff2);
+					ISQL_printf(isqlGlob.Out, NEWLINE);
 				}
 				else
 				{
@@ -5973,8 +5985,8 @@ static SSHORT print_item(TEXT** s,
 				ISQL_FREE(buff2);
 			}
 			else if (List) {
-				ISQL_printf(Out, avary->vary_string);
-				ISQL_printf(Out, NEWLINE);
+				ISQL_printf(isqlGlob.Out, avary->vary_string);
+				ISQL_printf(isqlGlob.Out, NEWLINE);
 			}
 			else {
 				// Truncate if necessary 
@@ -5991,7 +6003,7 @@ static SSHORT print_item(TEXT** s,
 			sprintf(p, "%-*s ", (int) length, d);
 			if (List) {
 				sprintf(Print_buffer, "%s%s", d, NEWLINE);
-				ISQL_printf(Out, Print_buffer);
+				ISQL_printf(isqlGlob.Out, Print_buffer);
 			}
 			break;
 		}
@@ -6017,7 +6029,7 @@ static processing_state print_item_blob(FILE* fp,
  **************************************
  *
  * Functional description
- *	Print a User Selected BLOB field (as oppposed to
+ *	Print a isqlGlob.User Selected BLOB field (as oppposed to
  *	any BLOB selected in a show or extract command)
  *
  **************************************/
@@ -6240,12 +6252,12 @@ static processing_state print_line(XSQLDA* sqlda,
 	} // scope
 
 	if (List) {
-		ISQL_printf(Out, NEWLINE);
+		ISQL_printf(isqlGlob.Out, NEWLINE);
 		return (CONT);
 	}
 
-	ISQL_printf(Out, line);
-	ISQL_printf(Out, NEWLINE);
+	ISQL_printf(isqlGlob.Out, line);
+	ISQL_printf(isqlGlob.Out, NEWLINE);
 
 // If blobdisplay is not wanted, set varnum back to -1 
 
@@ -6262,15 +6274,15 @@ static processing_state print_line(XSQLDA* sqlda,
 			sprintf(Print_buffer,
 					"==============================================================================%s",
 					NEWLINE);
-			ISQL_printf(Out, Print_buffer);
+			ISQL_printf(isqlGlob.Out, Print_buffer);
 			sprintf(Print_buffer, "%s:  %s", var->aliasname, NEWLINE);
-			ISQL_printf(Out, Print_buffer);
-			if (print_item_blob(Out, var, M__trans))
+			ISQL_printf(isqlGlob.Out, Print_buffer);
+			if (print_item_blob(isqlGlob.Out, var, M__trans))
 				return (ERR);
 			sprintf(Print_buffer,
 					"%s==============================================================================%s",
 					NEWLINE, NEWLINE);
-			ISQL_printf(Out, Print_buffer);
+			ISQL_printf(isqlGlob.Out, Print_buffer);
 		}
 	}
 	return (CONT);
@@ -6332,15 +6344,15 @@ static int process_statement(const TEXT* string,
 		prepare_trans = M__trans;
 
 	if (isc_dsql_prepare(isc_status, &prepare_trans, &global_Stmt, 0, string,
-						 SQL_dialect, sqlda))
+						 isqlGlob.SQL_dialect, sqlda))
 	{
-		if (SQL_dialect == SQL_DIALECT_V6_TRANSITION && Input_file) {
-			ISQL_printf(Out, NEWLINE);
-			ISQL_printf(Out, "**** Error preparing statement:");
-			ISQL_printf(Out, NEWLINE);
-			ISQL_printf(Out, NEWLINE);
-			ISQL_printf(Out, string);
-			ISQL_printf(Out, NEWLINE);
+		if (isqlGlob.SQL_dialect == SQL_DIALECT_V6_TRANSITION && Input_file) {
+			ISQL_printf(isqlGlob.Out, NEWLINE);
+			ISQL_printf(isqlGlob.Out, "**** Error preparing statement:");
+			ISQL_printf(isqlGlob.Out, NEWLINE);
+			ISQL_printf(isqlGlob.Out, NEWLINE);
+			ISQL_printf(isqlGlob.Out, string);
+			ISQL_printf(isqlGlob.Out, NEWLINE);
 		}
 		ISQL_errmsg(isc_status);
 		return ERR;
@@ -6376,7 +6388,7 @@ static int process_statement(const TEXT* string,
 		input_sqlda->version = SQLDA_VERSION1;
 		input_sqlda->sqld = input_sqlda->sqln = 10;
 
-		if (isc_dsql_describe_bind(isc_status, &global_Stmt, SQL_dialect, input_sqlda)) {
+		if (isc_dsql_describe_bind(isc_status, &global_Stmt, isqlGlob.SQL_dialect, input_sqlda)) {
 			ISQL_errmsg(isc_status);
 			return ERR;
 		}
@@ -6391,7 +6403,7 @@ static int process_statement(const TEXT* string,
 				(XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(n_columns)));
 			input_sqlda->version = SQLDA_VERSION1;
 			input_sqlda->sqld = input_sqlda->sqln = n_columns;
-			if (isc_dsql_describe_bind(isc_status, &global_Stmt, SQL_dialect,
+			if (isc_dsql_describe_bind(isc_status, &global_Stmt, isqlGlob.SQL_dialect,
 									   input_sqlda))
 			{
 				ISQL_errmsg(isc_status);
@@ -6411,7 +6423,7 @@ static int process_statement(const TEXT* string,
 					input_sqlda->version, input_sqlda->sqldaid,
 					input_sqlda->sqldabc, input_sqlda->sqln,
 					input_sqlda->sqld);
-			ISQL_printf(Out, buffer);
+			ISQL_printf(isqlGlob.Out, buffer);
 			int i = 0;
 			const XSQLVAR* var = input_sqlda->sqlvar;
 			for (const XSQLVAR* const end = var + input_sqlda->sqld; var < end;
@@ -6422,17 +6434,17 @@ static int process_statement(const TEXT* string,
 						i + 1, var->sqltype, sqltype_to_string(var->sqltype),
 						(var->sqltype & 1) ? "Nullable" : "		",
 						var->sqlscale, var->sqlsubtype, var->sqllen);
-				ISQL_printf(Out, buffer);
+				ISQL_printf(isqlGlob.Out, buffer);
 				sprintf(buffer, "  :  name: (%d)%*s  alias: (%d)%*s\n",
 						var->sqlname_length, var->sqlname_length,
 						var->sqlname, var->aliasname_length,
 						var->aliasname_length, var->aliasname);
-				ISQL_printf(Out, buffer);
+				ISQL_printf(isqlGlob.Out, buffer);
 				sprintf(buffer, "  : table: (%d)%*s  owner: (%d)%*s\n",
 						var->relname_length, var->relname_length,
 						var->relname, var->ownname_length,
 						var->ownname_length, var->ownname);
-				ISQL_printf(Out, buffer);
+				ISQL_printf(isqlGlob.Out, buffer);
 			}
 		}
 
@@ -6483,7 +6495,7 @@ static int process_statement(const TEXT* string,
 
 		if (Autocommit && (statement_type == isc_info_sql_stmt_ddl)) {
 			if (isc_dsql_execute_immediate(isc_status, &DB, &D__trans, 0,
-										   string, SQL_dialect, NULL))
+										   string, isqlGlob.SQL_dialect, NULL))
 			{
 				ISQL_errmsg(isc_status);
 				ret = ERR;
@@ -6506,7 +6518,7 @@ static int process_statement(const TEXT* string,
 
 		//  This is a non-select DML statement. or trans 
 
-		if (isc_dsql_execute(isc_status, &M__trans, &global_Stmt, SQL_dialect, NULL))
+		if (isc_dsql_execute(isc_status, &M__trans, &global_Stmt, isqlGlob.SQL_dialect, NULL))
 			ISQL_errmsg(isc_status);
 
 		// check for warnings 
@@ -6558,7 +6570,7 @@ static int process_statement(const TEXT* string,
 							 NULL, NULL);
 				// Records affected: %ld 
 				sprintf(Print_buffer, "%s%s", rec_count_msg, NEWLINE);
-				ISQL_printf(Out, Print_buffer);
+				ISQL_printf(isqlGlob.Out, Print_buffer);
 			}
 		}
 
@@ -6595,7 +6607,7 @@ static int process_statement(const TEXT* string,
 
 		//  We must re-describe the sqlda, no need to re-prepare 
 
-		isc_dsql_describe(isc_status, &global_Stmt, SQL_dialect, sqlda);
+		isc_dsql_describe(isc_status, &global_Stmt, isqlGlob.SQL_dialect, sqlda);
 	}
 
 	if (statement_type != isc_info_sql_stmt_exec_procedure) {
@@ -6612,7 +6624,7 @@ static int process_statement(const TEXT* string,
 		if (isc_status[2] == isc_arg_warning)
 			ISQL_warning(isc_status);
 
-		if (isc_dsql_execute(isc_status, &M__trans, &global_Stmt, SQL_dialect, NULL)) {
+		if (isc_dsql_execute(isc_status, &M__trans, &global_Stmt, isqlGlob.SQL_dialect, NULL)) {
 			ISQL_errmsg(isc_status);
 			return (ERR);
 		}
@@ -6635,7 +6647,7 @@ static int process_statement(const TEXT* string,
 				"\nOUTPUT SQLDA version: %d sqldaid: %s sqldabc: %ld sqln: %d sqld: %d\n",
 				sqlda->version, sqlda->sqldaid, sqlda->sqldabc, sqlda->sqln,
 				sqlda->sqld);
-		ISQL_printf(Out, buffer);
+		ISQL_printf(isqlGlob.Out, buffer);
 		int i = 0;
 		const XSQLVAR* var = sqlda->sqlvar;
 		for (const XSQLVAR* const end = var + sqlda->sqld; var < end;
@@ -6646,16 +6658,16 @@ static int process_statement(const TEXT* string,
 					i + 1, var->sqltype, sqltype_to_string(var->sqltype),
 					(var->sqltype & 1) ? "Nullable" : "		",
 					var->sqlscale, var->sqlsubtype, var->sqllen);
-			ISQL_printf(Out, buffer);
+			ISQL_printf(isqlGlob.Out, buffer);
 			sprintf(buffer, "  :  name: (%d)%*s  alias: (%d)%*s\n",
 					var->sqlname_length, var->sqlname_length, var->sqlname,
 					var->aliasname_length, var->aliasname_length,
 					var->aliasname);
-			ISQL_printf(Out, buffer);
+			ISQL_printf(isqlGlob.Out, buffer);
 			sprintf(buffer, "  : table: (%d)%*s  owner: (%d)%*s\n",
 					var->relname_length, var->relname_length, var->relname,
 					var->ownname_length, var->ownname_length, var->ownname);
-			ISQL_printf(Out, buffer);
+			ISQL_printf(isqlGlob.Out, buffer);
 		}
 	}
 #endif
@@ -6754,7 +6766,7 @@ static int process_statement(const TEXT* string,
 				disp_length = 17;
 				break;
 			case SQL_TIMESTAMP:
-				if (Time_display || SQL_dialect > SQL_DIALECT_V5)
+				if (Time_display || isqlGlob.SQL_dialect > SQL_DIALECT_V5)
 					disp_length = DATETIME_LEN;
 				else
 					disp_length = DATE_ONLY_LEN;
@@ -6885,22 +6897,22 @@ static int process_statement(const TEXT* string,
 
 	if (statement_type == isc_info_sql_stmt_exec_procedure) {
 		if (isc_dsql_execute2(isc_status, &M__trans, &global_Stmt,
-							  SQL_dialect, NULL, sqlda))
+							  isqlGlob.SQL_dialect, NULL, sqlda))
 		{
 			ISQL_errmsg(isc_status);
 			ret = ERR;
 		}
 		else {
 			if (sqlda->sqld) { // do not output unnecessary white text
-				ISQL_printf(Out, NEWLINE);
+				ISQL_printf(isqlGlob.Out, NEWLINE);
 				if (!List && Heading) {
-					ISQL_printf(Out, header);
-					ISQL_printf(Out, NEWLINE);
-					ISQL_printf(Out, header2);
-					ISQL_printf(Out, NEWLINE);
+					ISQL_printf(isqlGlob.Out, header);
+					ISQL_printf(isqlGlob.Out, NEWLINE);
+					ISQL_printf(isqlGlob.Out, header2);
+					ISQL_printf(isqlGlob.Out, NEWLINE);
 				}
 				print_line(sqlda, pad, line);
-				ISQL_printf(Out, NEWLINE);
+				ISQL_printf(isqlGlob.Out, NEWLINE);
 			}
 		}
 	}
@@ -6915,7 +6927,7 @@ static int process_statement(const TEXT* string,
 #ifdef SCROLLABLE_CURSORS
 			if (Autofetch) {
 #endif
-				if (isc_dsql_fetch(isc_status, &global_Stmt, SQL_dialect, sqlda) ==	100)
+				if (isc_dsql_fetch(isc_status, &global_Stmt, isqlGlob.SQL_dialect, sqlda) ==	100)
 					break;
 #ifdef SCROLLABLE_CURSORS
 			}
@@ -6930,7 +6942,7 @@ static int process_statement(const TEXT* string,
 					get_statement(&fetch_statement, &fetch_bufsize,
 								  fetch_prompt);
 				if (fetch_ret == FETCH) {
-					if (isc_dsql_fetch2(isc_status, &global_Stmt, SQL_dialect, sqlda,
+					if (isc_dsql_fetch2(isc_status, &global_Stmt, isqlGlob.SQL_dialect, sqlda,
 										fetch_direction, fetch_offset) == 100)
 					{
 						if (fetch_statement)
@@ -6961,11 +6973,11 @@ static int process_statement(const TEXT* string,
 			   headings only once. */
 
 			if (!List && Heading && (lines % Pagelength == 0)) {
-				ISQL_printf(Out, NEWLINE);
-				ISQL_printf(Out, header);
-				ISQL_printf(Out, NEWLINE);
-				ISQL_printf(Out, header2);
-				ISQL_printf(Out, NEWLINE);
+				ISQL_printf(isqlGlob.Out, NEWLINE);
+				ISQL_printf(isqlGlob.Out, header);
+				ISQL_printf(isqlGlob.Out, NEWLINE);
+				ISQL_printf(isqlGlob.Out, header2);
+				ISQL_printf(isqlGlob.Out, NEWLINE);
 			}
 
 			if (isc_status[1]) {
@@ -6987,13 +6999,13 @@ static int process_statement(const TEXT* string,
 			}
 
 			if (!lines)
-				ISQL_printf(Out, NEWLINE);
+				ISQL_printf(isqlGlob.Out, NEWLINE);
 
 			ret = print_line(sqlda, pad, line);
 		}
 
 		if (lines)
-			ISQL_printf(Out, NEWLINE);
+			ISQL_printf(isqlGlob.Out, NEWLINE);
 
 		// Record count printed here upon request 
 
@@ -7003,7 +7015,7 @@ static int process_statement(const TEXT* string,
 			// Total returned: %ld 
 			sprintf(Print_buffer, "%s%s", rec_count_msg, NEWLINE);
 
-			ISQL_printf(Out, Print_buffer);
+			ISQL_printf(isqlGlob.Out, Print_buffer);
 		}
 	}
 
@@ -7028,7 +7040,7 @@ static int process_statement(const TEXT* string,
 		}
 		perf_format(&perf_before, &perf_after, report_1, statistics, NULL);
 		sprintf(Print_buffer, "%s%s", statistics, NEWLINE);
-		ISQL_printf(Out, Print_buffer);
+		ISQL_printf(isqlGlob.Out, Print_buffer);
 	}
 
 	if (pad)

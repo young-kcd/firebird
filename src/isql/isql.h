@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.32 2004-05-21 06:15:36 robocop Exp $
+ * $Id: isql.h,v 1.33 2004-05-24 17:16:02 brodsom Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -218,28 +218,7 @@ const int HLP_SETSQLDIALECT			= 106;		//\tSET SQL DIALECT <n>    -- set sql dial
 const int NO_GRANT_ON_ANY			= 107;		// There is no privilege granted in this database. 
 const int HLP_SETPLANONLY			= 108;		// Toggle display of query plan without executing 
 
-#ifdef ISQL_MAIN
-#define EXTERN
-#else
-#define EXTERN	extern
-#endif
-
-// Utility transaction handle 
-
-EXTERN isc_tr_handle M__trans;
-EXTERN isc_tr_handle D__trans;
-EXTERN isc_stmt_handle global_Stmt;
-EXTERN FILE *Ofp, *Out, *Ifp, *Errfp;
-EXTERN SCHAR global_Term[MAXTERM_LENGTH];
-EXTERN SCHAR global_Db_name[128];
-EXTERN SCHAR global_Target_db[128];
-EXTERN SCHAR User[128], Password[128], Role[128], Charset[128];
-EXTERN SCHAR global_Numbufs[16];		/* # of cache buffers on connect */
-EXTERN bool Merge_stderr;
-EXTERN USHORT SQL_dialect;
-EXTERN USHORT db_SQL_dialect;
-#undef EXTERN
-
+// Initialize types
 
 struct sqltypes {
 	SSHORT type;
@@ -261,6 +240,83 @@ const int CSTRING		= 40;
 const int BLOB_ID		= 45;
 const int BLOB			= 261;
 
+static const sqltypes Column_types[] = {
+	{SMALLINT, "SMALLINT"},		// NTX: keyword
+	{INTEGER, "INTEGER"},		// NTX: keyword
+	{QUAD, "QUAD"},				// NTX: keyword
+	{T_FLOAT, "FLOAT"},			// NTX: keyword
+	{T_CHAR, "CHAR"},			// NTX: keyword
+	{DOUBLE_PRECISION, "DOUBLE PRECISION"},	// NTX: keyword
+	{VARCHAR, "VARCHAR"},		// NTX: keyword
+	{CSTRING, "CSTRING"},		// NTX: keyword
+	{BLOB_ID, "BLOB_ID"},		// NTX: keyword
+	{BLOB, "BLOB"},				// NTX: keyword
+	{blr_sql_time, "TIME"},		// NTX: keyword
+	{blr_sql_date, "DATE"},		// NTX: keyword
+	{blr_timestamp, "TIMESTAMP"},	// NTX: keyword
+	{blr_int64, "BIGINT"},		// NTX: keyword
+	{0, ""}
+};
+
+// Integral subtypes
+
+const int MAX_INTSUBTYPES	= 2;
+
+static const SCHAR* Integral_subtypes[] = {
+	"UNKNOWN",					// Defined type, NTX: keyword
+	"NUMERIC",					// NUMERIC, NTX: keyword
+	"DECIMAL"					// DECIMAL, NTX: keyword
+};
+
+// Blob subtypes
+
+const int MAX_BLOBSUBTYPES	= 8;
+
+static const SCHAR* Sub_types[] = {
+	"UNKNOWN",					// NTX: keyword
+	"TEXT",						// NTX: keyword
+	"BLR",						// NTX: keyword
+	"ACL",						// NTX: keyword
+	"RANGES",					// NTX: keyword
+	"SUMMARY",					// NTX: keyword
+	"FORMAT",					// NTX: keyword
+	"TRANSACTION_DESCRIPTION",	// NTX: keyword
+	"EXTERNAL_FILE_DESCRIPTION"	// NTX: keyword
+};
+
+/* CVC: Notice that
+BY REFERENCE is the default for scalars and can't be specified explicitly;
+BY ISC_DESCRIPTOR is the default for BLOBs and can't be used explicitly;
+BY SCALAR_ARRAY_DESCRIPTOR should be supported in DSQL in the future, since
+the server has already the capability to deliver arrays to UDFs. */
+
+const int MAX_UDFPARAM_TYPES = 4;
+
+static const SCHAR* UDF_param_types[] = {
+	" BY VALUE",			// NTX: keyword
+	"",						// BY REFERENCE
+	" BY DESCRIPTOR",		// NTX: keyword in FB
+	"",						/* BY ISC_DESCRIPTOR => BLOB */
+	" BY SCALAR ARRAY DESCRIPTOR"	// Should be NTX: keyword
+	" ERROR-type-unknown"
+};
+
+struct IsqlGlobals {
+	FILE* Out;
+	FILE* Errfp;
+	SCHAR global_Db_name[128];
+	SCHAR global_Target_db[128];
+	SCHAR global_Term[MAXTERM_LENGTH];
+	SCHAR User[128];
+	SCHAR Role[128];
+	USHORT SQL_dialect;
+	USHORT db_SQL_dialect;
+	// from isql.epp
+	USHORT major_ods;
+};
+
+extern IsqlGlobals isqlGlob;
+
 #ifdef VMS
 #include <descrip.h>
 #endif
@@ -272,10 +328,10 @@ static const char* SCRATCH		= "fb_query_";
 #endif
 
 inline void STDERROUT(char* st, bool cr) {
-	fprintf (Errfp, "%s", st);
+	fprintf (isqlGlob.Errfp, "%s", st);
 	if (cr)
-		fprintf (Errfp, "\n");
-	fflush (Errfp);
+		fprintf (isqlGlob.Errfp, "\n");
+	fflush (isqlGlob.Errfp);
 }
 
 #define ISQL_ALLOC(x)     gds__alloc (x)
