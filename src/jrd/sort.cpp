@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.20 2002-12-03 03:47:49 seanleyne Exp $
+ * $Id: sort.cpp,v 1.21 2002-12-03 10:14:53 dimitr Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -32,15 +32,6 @@
 #include "firebird.h"
 #include <errno.h>
 #include <string.h>
-
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
 #include "../jrd/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/sort.h"
