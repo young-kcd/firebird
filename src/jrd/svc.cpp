@@ -2493,13 +2493,13 @@ static void service_fork(TEXT * service_path, SVC service)
 		tmp =
 			_open(fname, _O_RDWR | _O_CREAT | _O_TEMPORARY,
 				  _S_IREAD | _S_IWRITE);
-		my_input = _get_osfhandle(tmp);
+		my_input = (HANDLE) _get_osfhandle(tmp);
 
 		fname = _tempnam(tmpPath, "ibsvc");
 		tmp =
 			_open(fname, _O_RDWR | _O_CREAT | _O_TEMPORARY,
 				  _S_IREAD | _S_IWRITE);
-		my_output = _get_osfhandle(tmp);
+		my_output = (HANDLE) _get_osfhandle(tmp);
 
 		if (my_input == INVALID_HANDLE_VALUE ||
 			my_output == INVALID_HANDLE_VALUE) {
@@ -2519,7 +2519,7 @@ static void service_fork(TEXT * service_path, SVC service)
 		if (*p++ == ' ')
 			len += 2;
 	if (len > sizeof(argv_data_buf))
-		argv_data = gds__alloc((SLONG) len);
+		argv_data = (TEXT*) gds__alloc((SLONG) len);
 	else
 		argv_data = argv_data_buf;
 /* FREE: at procedure return */
@@ -2671,7 +2671,7 @@ static void service_get(
 			   length from &temp_len until it works */
 			if (windows_nt
 				&& !PeekNamedPipe((HANDLE) service->svc_input, temp_buf, 600,
-								  &temp_len, &n, NULL)) {
+								  (ULONG*) &temp_len, (ULONG*) &n, NULL)) {
 				if (GetLastError() == ERROR_BROKEN_PIPE) {
 					service->svc_flags |= SVC_finished;
 					break;
@@ -2751,7 +2751,7 @@ static void service_put(SVC service, SCHAR * buffer, USHORT length)
 
 		while (length) {
 		if (!WriteFile((HANDLE) service->svc_output, buffer, (SLONG) length,
-					   &n, NULL))
+					   (ULONG*) &n, NULL))
 			io_error("WriteFile", GetLastError(), "service pipe",
 					 isc_io_write_err, TRUE);
 		length -= (USHORT) n;
@@ -2789,7 +2789,7 @@ static USHORT service_read(
 	while (length) {
 		n = 0;
 		len = (flags & GET_BINARY) ? length : 1;
-		if (ReadFile((HANDLE) service->svc_input, buf, len, &n, NULL) ||
+		if (ReadFile((HANDLE) service->svc_input, buf, len, (ULONG*) &n, NULL) ||
 			GetLastError() == ERROR_BROKEN_PIPE) {
 			if (!n) {
 				service->svc_flags |= SVC_finished;
