@@ -34,6 +34,22 @@
 namespace Firebird
 {
 
+// Right pair - right object in such pair has MemoryPool'ed constructor,
+//	left one - doesn't (typically POD or builtin type)
+
+template<typename parLeft, typename parRight> 
+	struct Right {
+		typedef parLeft first_type;
+		typedef parRight second_type;
+		explicit Right(MemoryPool& p) : first(), second(p) { }
+		explicit Right(MemoryPool& p, const parLeft& v1, const parRight& v2) 
+			: first(v1), second(p, v2) { }
+		explicit Right(MemoryPool& p, const Right& lp) 
+			: first(lp.first), second(p, lp.second) { }
+		parLeft first;
+		parRight second;
+	};
+
 // Left pair - left object in such pair has MemoryPool'ed constructor,
 //	right one - doesn't (typically POD or builtin type)
 
