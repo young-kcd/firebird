@@ -1,3 +1,39 @@
+2004-09-28 00:42  arnobrinkman
+
+	* firebird2/src/jrd/btr.cpp (1.119):
+	
+	bugfix in delete_node litlle optimization in compress() function
+
+2004-09-27 13:50  robocop
+
+	* firebird2/src/jrd/jrd.h (1.114):
+	
+	Bye WAL macro
+
+2004-09-27 10:31  hvlad
+
+	* firebird2/src/jrd/cch.cpp (1.107):
+	
+	Fix 100% CPU use by cache_writer in some rare cases
+
+2004-09-27 08:53  dimitr
+
+	* firebird2/src/jrd/cch.cpp (1.106):
+	
+	Fixed my yesterday's commit once more.
+
+2004-09-27 05:44  robocop
+
+	* firebird2/src/jrd/dyn_def.epp (1.77):
+	
+	Fixed wrong function explanation (Borland's advanced copy/paste)
+
+2004-09-27 05:42  robocop
+
+	* firebird2/src/dsql/parse.cpp (1.124):
+	
+	parse.cpp needed to be rebuilt after Alex' changes
+
 2004-09-27 00:37  skidder
 
 	* firebird2/builds/posix/: Makefile.in.client.gpre (1.15),
