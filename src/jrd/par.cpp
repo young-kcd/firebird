@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.46 2003-08-09 21:15:32 brodsom Exp $
+$Id: par.cpp,v 1.47 2003-08-15 00:32:07 arnobrinkman Exp $
 */
 
 #include "firebird.h"
@@ -113,7 +113,7 @@ static JRD_NOD par_sort(TDBB, CSB *, BOOLEAN);
 static JRD_NOD par_stream(TDBB, CSB *);
 static JRD_NOD par_union(TDBB, CSB *);
 static USHORT par_word(CSB *);
-static JRD_NOD parse(TDBB, CSB *, USHORT);
+static JRD_NOD parse(TDBB, CSB *, USHORT, USHORT expected_optional = 0);
 static void syntax_error(CSB, const TEXT *);
 static void warning(CSB, ...);
 
@@ -2051,8 +2051,11 @@ static JRD_NOD par_rse(TDBB tdbb, CSB * csb, SSHORT rse_op)
 	rse->rse_count = count;
 	ptr = rse->rse_relation;
 
-	while (--count >= 0)
-		*ptr++ = parse(tdbb, csb, RELATION);
+	while (--count >= 0) {
+		// AB: Added TYPE_RSE for derived table support
+		*ptr++ = parse(tdbb, csb, RELATION, TYPE_RSE);
+		//*ptr++ = parse(tdbb, csb, RELATION);
+	}
 
 	while (TRUE)
 		switch (op = BLR_BYTE) {
@@ -2273,7 +2276,7 @@ static USHORT par_word(CSB * csb)
 }
 
 
-static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected)
+static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected, USHORT expected_optional)
 {
 /**************************************
  *
@@ -2300,8 +2303,16 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected)
 
 	sub_type = sub_type_table[operator_];
 
-	if (expected && expected != type_table[operator_])
-		syntax_error(*csb, elements[expected]);
+	if (expected && (expected != type_table[operator_])) {
+		if (expected_optional) {
+			if (expected_optional != type_table[operator_]) {
+				syntax_error(*csb, elements[expected]);
+			}
+		}
+		else {
+			syntax_error(*csb, elements[expected]);
+		}
+	}
 
 /* If there is a length given in the length table, pre-allocate
    the node and set its count.  This saves an enormous amount of
