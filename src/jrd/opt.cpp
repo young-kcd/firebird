@@ -3830,9 +3830,8 @@ static RSB gen_navigation(TDBB tdbb,
 			  (reinterpret_cast<IPTR>(ptr[2*sort->nod_count]) == rse_nulls_first && ptr[sort->nod_count])
 			  || (reinterpret_cast<IPTR>(ptr[2*sort->nod_count]) == rse_nulls_last && !ptr[sort->nod_count])))
 			// for ODS10 and earlier indices always placed nulls at the end of dataset
-			|| (dbb->dbb_ods_version < ODS_VERSION11 && (
-			  (reinterpret_cast<IPTR>(ptr[2*sort->nod_count]) == rse_nulls_first)
-			  || (reinterpret_cast<IPTR>(ptr[2*sort->nod_count]) == rse_nulls_default && !ptr[sort->nod_count])))
+			|| (dbb->dbb_ods_version < ODS_VERSION11 && 
+			  reinterpret_cast<IPTR>(ptr[2*sort->nod_count]) == rse_nulls_first)
 #ifdef SCROLLABLE_CURSORS
 			)
 #else
@@ -4754,10 +4753,17 @@ static RSB gen_sort(TDBB tdbb,
 		sort_key->skd_length = 1;
 		// Handle nulls placement
 		sort_key->skd_flags = SKD_ascending;
-		if (((IPTR)*(node_ptr + sort->nod_count*2) == rse_nulls_default && !*(node_ptr + sort->nod_count)) ||
-			(IPTR)*(node_ptr + sort->nod_count*2) == rse_nulls_first)
-		{
-			sort_key->skd_flags |= SKD_descending;
+		if (tdbb->tdbb_database->dbb_ods_version < ODS_VERSION11) {
+			// Put nulls at the tail for ODS10 and earlier
+			if ((IPTR)*(node_ptr + sort->nod_count*2) == rse_nulls_first)
+				sort_key->skd_flags |= SKD_descending;
+		} else {
+			// Have SQL-compliant nulls ordering for ODS11+
+			if (((IPTR)*(node_ptr + sort->nod_count*2) == rse_nulls_default && !*(node_ptr + sort->nod_count)) ||
+				(IPTR)*(node_ptr + sort->nod_count*2) == rse_nulls_first)
+			{
+				sort_key->skd_flags |= SKD_descending;
+			}
 		}
 		++sort_key;
 		/* Make key for sort key proper */
