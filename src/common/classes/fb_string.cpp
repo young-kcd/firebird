@@ -335,16 +335,34 @@ namespace Firebird {
 		return rc;
 	}
 
-	void AbstractString::upper() {
+#ifdef WIN_NT
+// The following is used instead of including huge windows.h
+extern "C" {
+	__declspec(dllimport) unsigned long __stdcall CharUpperBuffA
+		(char* lpsz, unsigned long cchLength);
+	__declspec(dllimport) unsigned long __stdcall CharLowerBuffA
+		(char* lpsz, unsigned long cchLength);
+}
+#endif // WIN_NT
+
+		void AbstractString::upper() {
+#ifdef WIN_NT
+			CharUpperBuffA(Modify(), length());
+#else  // WIN_NT
 		for(pointer p = Modify(); *p; p++) {
 			*p = toupper(*p);
 		}
+#endif // WIN_NT
 	}
 
 	void AbstractString::lower() {
+#ifdef WIN_NT
+			CharLowerBuffA(Modify(), length());
+#else  // WIN_NT
 		for(pointer p = Modify(); *p; p++) {
 			*p = tolower(*p);
 		}
+#endif // WIN_NT
 	}
 
 	void AbstractString::baseTrim(TrimType WhereTrim, const_pointer ToTrim) {
