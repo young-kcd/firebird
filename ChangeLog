@@ -1,3 +1,33 @@
+2005-04-01 12:19  dimitr
+
+	* firebird2/src/jrd/pwd.cpp (1.16.2.2):
+	
+	Fixed lockups spotted by Claudio.
+
+2005-04-01 09:48  robocop
+
+	* firebird2/src/isql/: extra_proto.h (1.2.4.1), extract.epp
+	(1.10.2.2), isql.epp (1.32.2.13), isql.h (1.9.2.1), isql_proto.h
+	(1.4.2.1):
+	
+	Backport HEAD changes: 1.- Fix garbage printed when
+	EXTRACT_list_table can't find the requested table.  2.- Detect more
+	cases of failure for BailOnError option.  3.- Free some resources
+	properly.  4.- Change some variables that must be of size
+	MAXPATHLEN.  5.- An input file should be acknowledged only when
+	input() succeeds.  6.- No more input files: we are in interactive
+	mode again.  7.- COMMIT and SET TRANSACTION should report failure. 
+	8.- Performance goes to diagnostic file always, not one time to
+	output and another time to diagnostic file.
+
+2005-04-01 09:26  robocop
+
+	* firebird2/src/utilities/: install_client.cpp (1.1.2.4),
+	install_reg.cpp (1.9.2.6), install_svc.cpp (1.18.2.6), registry.cpp
+	(1.10.2.6):
+	
+	Little tweaks to be able to build those install* utilities.
+
 2005-03-28 11:22  robocop
 
 	* firebird2/src/remote/inet_server.cpp (1.26.2.4):
