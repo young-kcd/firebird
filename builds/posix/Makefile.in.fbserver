@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.fbserver,v 1.6 2003-03-06 13:16:15 brodsom Exp $
+#  $Id: Makefile.in.fbserver,v 1.7 2003-03-25 11:07:58 aafemt Exp $
 #
 ROOT=..
 ObjModuleName=fbserver
@@ -57,9 +57,9 @@ Dependencies = $(AllObjects:.o=.d)
 .PHONY: fbserver
 
 
-fbserver : $(BIN)/fbserver
+fbserver : $(BIN)/fbserver$(EXEC_EXT)
 
-$(BIN)/fbserver:	$(SERVER_Objects) $(IPSERVER_Objects) $(LIB)/libfbserver.a  
+$(BIN)/fbserver$(EXEC_EXT):	$(SERVER_Objects) $(IPSERVER_Objects) $(LIB)/libfbserver.a  
 	$(LD) $(LINK_OPTS) $(SERVER_Objects) $(IPSERVER_Objects) -o $@ -L $(LIB) -lfbserver $(LIB_GUI) $(LINK_LIBS) 
 #	$(CHMOD_S7) $@
 

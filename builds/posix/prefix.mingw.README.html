@@ -58,16 +58,6 @@ some in mingw libraries some in the FB sources and some in the building process.
 in 'make.shared.targets'</li>
 <li>The example target in Make.in.firebird is not valid remove it.</li>
 <li>The fb_util target in Make.in.extlib is not valid remove it.</li>
-<li>In the Makefile.in.libfbembed three lines should be changed because it don't work as expected in msys<br>
-Change <br>
-&nbsp;&nbsp;&nbsp; $(LIB_LINK) [......................] -o $@ $^<br>
-&nbsp;&nbsp;&nbsp;-$(LN) <font color="red">$(@F)</font> $(LIBFBEMBED_SOBASENAME)<br>
-&nbsp;&nbsp;&nbsp;-$(LN) <font color="red">$(notdir $(LIBFBEMBED_SOBASENAME))</font> $(LIBFBEMBED_SONAME)<br>
-to<br>
-&nbsp;&nbsp;&nbsp; $(LIB_LINK) [......................] -o $@ $^ <font color="red">$(LINK_LIBS)</font><br>
-&nbsp;&nbsp;&nbsp;-$(LN) <font color="red">$(LIBFBEMBED_SO)</font> $(LIBFBEMBED_SOBASENAME)<br>
-&nbsp;&nbsp;&nbsp;-$(LN) <font color="red">$(LIBFBEMBED_SOBASENAME)</font> $(LIBFBEMBED_SONAME)<br>
-</li>
 </ul>
 
 <h3>BUILD PROCESS</h3>

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbembed,v 1.8 2003-03-06 23:25:32 brodsom Exp $
+#  $Id: Makefile.in.libfbembed,v 1.9 2003-03-25 11:07:59 aafemt Exp $
 #
 ROOT=..
 ObjModuleName=libfbembed
@@ -55,13 +55,17 @@ Dependencies = $(AllObjects:.o=.d)
 
 .PHONY: libfbembed
 
-libfbembed : $(LIBFBEMBED_SO)
+libfbembed : $(LIBFBEMBED_SONAME)
 
 $(LIBFBEMBED_SO):	$(LIBFBEMBED_Objects)
 #	$(LIB_LINK) -Wl,-soname,libfbembed.$(SHRLIB_EXT).1 -Wl,-rpath,/usr/lib -o $@ $^
-	$(LIB_LINK)  $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)libfbembed.$(SHRLIB_EXT).1 $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^
-	-$(LN) $(@F) $(LIBFBEMBED_SOBASENAME) 
-	-$(LN) $(notdir $(LIBFBEMBED_SOBASENAME)) $(LIBFBEMBED_SONAME)
+	$(LIB_LINK)  $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)$(SharedLibrarySoName) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ $(LINK_LIBS)
+
+$(LIBFBEMBED_SOBASENAME):	$(LIBFBEMBED_SO)
+	(cd $(LIB) && $(LN) -f $(SharedLibraryName) $(SharedLibrarySoName) )
+
+$(LIBFBEMBED_SONAME):	$(LIBFBEMBED_SOBASENAME)
+	(cd $(LIB) && $(LN) -f $(SharedLibrarySoName) $(SharedLibraryBaseName) )
 
 include $(ROOT)/gen/make.shared.targets
 

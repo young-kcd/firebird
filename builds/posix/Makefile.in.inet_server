@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.inet_server,v 1.8 2003-03-06 13:16:15 brodsom Exp $
+#  $Id: Makefile.in.inet_server,v 1.9 2003-03-25 11:07:58 aafemt Exp $
 #
 ROOT=..
 ObjModuleName=inet_server
@@ -53,9 +53,9 @@ Dependencies = $(AllObjects:.o=.d)
 
 .PHONY: fb_inet_server
 
-fb_inet_server : $(BIN)/fb_inet_server
+fb_inet_server : $(BIN)/fb_inet_server$(EXEC_EXT)
 
-$(BIN)/fb_inet_server:	$(SERVER_Objects) $(IPSERVER_Objects) $(LIBFBEMBED_SO)  
+$(BIN)/fb_inet_server$(EXEC_EXT):	$(SERVER_Objects) $(IPSERVER_Objects) $(LIBFBEMBED_SO)  
 	$(LD) $(LINK_OPTS) $(SERVER_Objects) $(IPSERVER_Objects) -o $@ -L $(LIB) -lfbembed $(LIB_GUI) $(LINK_LIBS) 
 #	$(CHMOD_S7) $@
 
