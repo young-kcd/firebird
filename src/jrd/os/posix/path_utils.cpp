@@ -13,7 +13,7 @@ class PosixDirItr : public PathUtils::dir_iterator
 {
 public:
 	PosixDirItr(MemoryPool& p, const Firebird::PathName& path)
-		: dir_iterator(p, path), file(p), dir(0), done(0)
+		: dir_iterator(p, path), dir(0), file(p), done(0)
 	{
 		init();
 	}
