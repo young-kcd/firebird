@@ -115,12 +115,15 @@ SecurityDatabase& SecurityDatabase::instance()
 
 void SecurityDatabase::fini()
 {
-	if (counter == 1)
+	if (is_cached && counter > 0)
 	{
-		counter = 0;
-		THREAD_EXIT;
-		isc_detach_database(status, &lookup_db);
-		THREAD_ENTER;
+		if (--counter == 1)
+		{
+			counter = 0;
+			THREAD_EXIT;
+			isc_detach_database(status, &lookup_db);
+			THREAD_ENTER;
+		}
 	}
 }
 
@@ -155,7 +158,6 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 			isc_detach_database(status, &lookup_db);
 		}
 		THREAD_ENTER;
-		counter += (is_cached) ? 1 : 0;
 		ERR_post(gds_psw_attach, 0);
 	}
 
@@ -214,8 +216,6 @@ bool SecurityDatabase::prepare()
 		return true;
 	}
 
-	counter -= (is_cached) ? 1 : 0;
-
 	/* Register as internal database handle */
 
 	for (ihandle = internal_db_handles; ihandle; ihandle = ihandle->ihndl_next)
@@ -237,7 +237,7 @@ bool SecurityDatabase::prepare()
 
 	THREAD_EXIT;
 
-	lookup_db = 0;
+	lookup_db = lookup_req = 0;
 
 	/* initialize the data base's name */
 
@@ -281,7 +281,7 @@ bool SecurityDatabase::prepare()
 		isc_attach_database(status, 0, user_info_name, &lookup_db, 0, 0);
 	}
 
-	assert(ihandle->ihndl_object == &uinfo);
+	assert(ihandle->ihndl_object == &lookup_db);
 	ihandle->ihndl_object = NULL;
 
 	isc_compile_request(status, &lookup_db, &lookup_req, sizeof(PWD_REQUEST),
