@@ -23,6 +23,7 @@
 
 #include "firebird.h"
 #include <string.h>
+#include "memory_routines.h"
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/val.h"
@@ -564,8 +565,7 @@ BOOLEAN NAV_get_record(
 		node = next;
 		expanded_node = expanded_next;
 		if (node)
-			number =
-				BTR_get_quad(reinterpret_cast < char *>(BTN_NUMBER(node)));
+			number = get_long(BTN_NUMBER(node));
 		page = (BTR) window.win_buffer;
 
 #ifdef SCROLLABLE_CURSORS
@@ -1117,7 +1117,7 @@ static BOOLEAN find_dbkey(RSB rsb, ULONG record_number)
    record which matches the passed dbkey */
 
 	for (;;) {
-		rpb->rpb_number = BTR_get_quad(BTN_NUMBER(node));
+		rpb->rpb_number = get_long(BTN_NUMBER(node));
 
 		/* if we find an index entry with the proper dbkey, try to fetch the record */
 
@@ -1255,7 +1255,7 @@ static BOOLEAN find_record(
 
 	for (;;)
 	{
-		rpb->rpb_number = BTR_get_quad(BTN_NUMBER(node));
+		rpb->rpb_number = get_long(BTN_NUMBER(node));
 
 		/* if we have gone past the search key value, stop looking */
 
@@ -1414,8 +1414,7 @@ static BOOLEAN find_saved_node(
 	while (TRUE)
 		for (node = page->btr_nodes, end = LAST_NODE(page); node < end;
 			 node = NEXT_NODE(node)) {
-			number =
-				BTR_get_quad(reinterpret_cast < char *>(BTN_NUMBER(node)));
+			number = get_long(BTN_NUMBER(node));
 			if (number == END_LEVEL) {
 				*return_node = node;
 				return FALSE;
@@ -1830,8 +1829,7 @@ static BTN nav_open(
 		while (!(node = BTR_find_leaf(page, limit_ptr, impure->irsb_nav_data,
 									  0, idx->idx_flags & idx_descending,
 									  TRUE))
-			   || (BTR_get_quad(reinterpret_cast < char *>(BTN_NUMBER(node)))
-				   == END_BUCKET))
+			   || (static_cast<long>(get_long(BTN_NUMBER(node))) == END_BUCKET))
 			  page =
 				(BTR) CCH_HANDOFF(tdbb, window, page->btr_sibling, LCK_read,
 								  pag_index);

@@ -24,12 +24,13 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.33 2003-06-28 12:48:04 dimitr Exp $
+$Id: btr.cpp,v 1.34 2003-08-13 10:45:10 aafemt Exp $
 */
 
 #include "firebird.h"
 #include <string.h>
 #include <stdlib.h>
+#include "memory_routines.h"
 #include "../jrd/ib_stdio.h"
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
@@ -189,26 +190,6 @@ static BOOLEAN scan(TDBB, BTN, SBM *, UCHAR, KEY *, USHORT);
 // TMN: Ease C -> C++ conversion. These functions must be outside the
 // extern "C" block since it uses function overloading.
 //
-inline SLONG BTR_get_quad(const UCHAR* p)
-{
-#if defined(i386) || defined(I386) || defined(_M_IX86)
-	// For IA32 (little-endian) this optimization is a _very_ large speed-up!
-	return *reinterpret_cast<const SLONG*>(p);
-#else
-	// Non-IA32
-
-	// Copied from BTR_get_quad(const SCHAR*);
-	LONGCHAR value;
-
-	value.c[0] = p[0];
-	value.c[1] = p[1];
-	value.c[2] = p[2];
-	value.c[3] = p[3];
-
-	return value.n;
-
-#endif	// endianness
-}
 
 inline void quad_put(SLONG value, UCHAR * data)
 {
@@ -504,7 +485,7 @@ void BTR_evaluate(TDBB tdbb, IRB retrieval, SBM * bitmap)
 	else {
 		/* if there isn't an upper bound, just walk the index to the end of the level */
 		while (TRUE) {
-			number = BTR_get_quad(BTN_NUMBER(node));
+			number = get_long(BTN_NUMBER(node));
 
 			if (number == END_LEVEL)
 				break;
@@ -587,7 +568,7 @@ BTN BTR_find_leaf(BTR bucket,
 		   and, by definition, is the insertion point.  Otherwise, if the
 		   prefix of the current node is less than the running prefix, the 
 		   node must have a value greater than the key, so it is the insertion
-		   point. */ number = BTR_get_quad(BTN_NUMBER(node));
+		   point. */ number = get_long(BTN_NUMBER(node));
 
 #ifdef IGNORE_NULL_IDX_KEY
 		if (number == END_BUCKET)
@@ -729,7 +710,7 @@ BTR BTR_find_page(TDBB tdbb,
 				node =
 					find_node(page, backwards ? upper : lower,
 							  (USHORT) (idx->idx_flags & idx_descending));
-				number = BTR_get_quad(BTN_NUMBER(node));
+				number = get_long(BTN_NUMBER(node));
 				if (number != END_BUCKET) {
 					page =
 						(BTR) CCH_HANDOFF(tdbb, window, number, LCK_read,
@@ -751,7 +732,7 @@ BTR BTR_find_page(TDBB tdbb,
 #endif
 				node = page->btr_nodes;
 
-			number = BTR_get_quad(BTN_NUMBER(node));
+			number = get_long(BTN_NUMBER(node));
 			page =
 				(BTR) CCH_HANDOFF(tdbb, window, number, LCK_read, pag_index);
 
@@ -767,29 +748,6 @@ BTR BTR_find_page(TDBB tdbb,
 	}
 
 	return page;
-}
-
-
-SLONG BTR_get_quad(const SCHAR* data)
-{
-/**************************************
- *
- *	B T R _ g e t _ q u a d
- *
- **************************************
- *
- * Functional description
- *	Get a four byte binary number.
- *
- **************************************/
-	LONGCHAR value;
-
-	value.c[0] = data[0];
-	value.c[1] = data[1];
-	value.c[2] = data[2];
-	value.c[3] = data[3];
-
-	return value.n;
 }
 
 
@@ -1196,7 +1154,7 @@ BTN BTR_last_node(BTR page, EXP expanded_page, BTX * expanded_node)
 	while (TRUE) {
 		node = BTR_previous_node(node, &enode);
 
-		number = BTR_get_quad(BTN_NUMBER(node));
+		number = get_long(BTN_NUMBER(node));
 #ifdef IGNORE_NULL_IDX_KEY
 		if (number != END_NON_NULL && number != END_BUCKET
 			&& number != END_LEVEL)
@@ -1572,9 +1530,9 @@ void BTR_remove(TDBB tdbb, WIN * root_window, IIB * insertion)
 		   the page still has only one node on it */
 
 		node = page->btr_nodes;
-		number = BTR_get_quad(BTN_NUMBER(node));
+		number = get_long(BTN_NUMBER(node));
 		node = NEXT_NODE(node);
-		if (BTR_get_quad(BTN_NUMBER(node)) >= 0) {
+		if (get_long(BTN_NUMBER(node)) >= 0) {
 			CCH_RELEASE(tdbb, &window);
 			CCH_RELEASE(tdbb, root_window);
 			return;
@@ -1751,7 +1709,7 @@ float BTR_selectivity(TDBB tdbb, JRD_REL relation, USHORT id)
 
 	while (bucket->btr_level) {
 		node = bucket->btr_nodes;
-		page = BTR_get_quad(BTN_NUMBER(node));
+		page = get_long(BTN_NUMBER(node));
 		bucket = (BTR) CCH_HANDOFF(tdbb, &window, page, LCK_read, pag_index);
 	}
 
@@ -1763,7 +1721,7 @@ float BTR_selectivity(TDBB tdbb, JRD_REL relation, USHORT id)
 
 	while (page) {
 		for (node = bucket->btr_nodes;; node = NEXT_NODE(node)) {
-			page = BTR_get_quad(BTN_NUMBER(node));
+			page = get_long(BTN_NUMBER(node));
 #ifdef IGNORE_NULL_IDX_KEY
 			if (page == END_BUCKET || page == END_LEVEL)
 				break;
@@ -1882,7 +1840,7 @@ static SLONG add_node(TDBB tdbb,
 			find_node(bucket, insertion->iib_key,
 					  (USHORT) (insertion->iib_descriptor->idx_flags &
 								idx_descending));
-		page = BTR_get_quad(BTN_NUMBER(node));
+		page = get_long(BTN_NUMBER(node));
 #ifdef IGNORE_NULL_IDX_KEY
 		assert(page != END_NON_NULL);
 #endif /* IGNORE_NULL_IDX_KEY */
@@ -2470,11 +2428,11 @@ static CONTENTS delete_node(TDBB tdbb, WIN * window, BTN node)
 #ifdef IGNORE_NULL_IDX_KEY
 /* do not use 'node' here. It is being passed back to the caller */
 	next = page->btr_nodes;
-	number = BTR_get_quad(BTN_NUMBER(next));
+	number = get_long(BTN_NUMBER(next));
 	if (number == END_LEVEL || number == END_BUCKET)
 #else
 	node = page->btr_nodes;
-	number = BTR_get_quad(BTN_NUMBER(node));
+	number = get_long(BTN_NUMBER(node));
 	if (number < 0)
 #endif /* IGNORE_NULL_IDX_KEY */
 		return contents_empty;
@@ -2483,11 +2441,11 @@ static CONTENTS delete_node(TDBB tdbb, WIN * window, BTN node)
 
 #ifdef IGNORE_NULL_IDX_KEY
 	next = NEXT_NODE(next);
-	number = BTR_get_quad(BTN_NUMBER(next));
+	number = get_long(BTN_NUMBER(next));
 	if (number == END_LEVEL || number == END_BUCKET)
 #else
 	node = NEXT_NODE(node);
-	number = BTR_get_quad(BTN_NUMBER(node));
+	number = get_long(BTN_NUMBER(node));
 	if (number < 0)
 #endif /* IGNORE_NULL_IDX_KEY */
 		return contents_single;
@@ -2545,7 +2503,7 @@ static void delete_tree(TDBB tdbb,
 		if (next == down)
 			if (page->btr_level) {
 				node = page->btr_nodes;
-				down = BTR_get_quad(BTN_NUMBER(node));
+				down = get_long(BTN_NUMBER(node));
 			}
 			else
 				down = 0;
@@ -3096,7 +3054,7 @@ static BTN find_node(BTR bucket, KEY * key, USHORT descending)
 	prefix = (UCHAR) compute_prefix(key, BTN_DATA(node), BTN_LENGTH(node));
 	p = key->key_data + prefix;
 	key_end = key->key_data + key->key_length;
-	number = BTR_get_quad(BTN_NUMBER(node));
+	number = get_long(BTN_NUMBER(node));
 
 	if (number == END_LEVEL)
 		BUGCHECK(206);			/* msg 206 exceeded index level */
@@ -3113,7 +3071,7 @@ static BTN find_node(BTR bucket, KEY * key, USHORT descending)
 
 		prior = node;
 		node = NEXT_NODE(node);
-		number = BTR_get_quad(BTN_NUMBER(node));
+		number = get_long(BTN_NUMBER(node));
 
 		/* If the page/record number is -1, the node is the last in the level
 		   and, by definition, is the target node.  Otherwise, if the
@@ -3319,7 +3277,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 	previous_number = 0;
 #endif
 	for (parent_node = parent_page->btr_nodes;;) {
-		number = BTR_get_quad(BTN_NUMBER(parent_node));
+		number = get_long(BTN_NUMBER(parent_node));
 
 		if (number == END_BUCKET) {
 			parent_page =
@@ -3383,10 +3341,10 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 #ifdef IGNORE_NULL_IDX_KEY
 	for (last_node =
 		 left_page->btr_nodes, number =
-		 BTR_get_quad(BTN_NUMBER(last_node)); (number != END_LEVEL)
+		 get_long(BTN_NUMBER(last_node)); (number != END_LEVEL)
 		 && (number != END_BUCKET);
 		 last_node =
-		 NEXT_NODE(last_node), number = BTR_get_quad(BTN_NUMBER(last_node))) {
+		 NEXT_NODE(last_node), number = get_long(BTN_NUMBER(last_node))) {
 		if (number == END_NON_NULL) {
 			/* this will help in negotiating for enough space later 
 			   This will make key_length calculation = 0; */
@@ -3404,7 +3362,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 	assert(number != END_NON_NULL);
 #else
 	for (last_node = left_page->btr_nodes;
-		 (number = BTR_get_quad(BTN_NUMBER(last_node))
+		 (number = get_long(BTN_NUMBER(last_node))
 		 >= 0); last_node = NEXT_NODE(last_node))
 		if ( (l = BTN_LENGTH(last_node)) ) {
 			p = last_key.key_data + BTN_PREFIX(last_node);
@@ -3448,7 +3406,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
    order when two different processes split pages at the same time */
 
 		next_parent_node = NEXT_NODE(parent_node);
-		next_number = BTR_get_quad(BTN_NUMBER(next_parent_node));
+		next_number = get_long(BTN_NUMBER(next_parent_node));
 
 		if (
 			(left_page && previous_number
@@ -3592,7 +3550,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 		/* check whether it is empty */
 
 		parent_node = parent_page->btr_nodes;
-		number = BTR_get_quad(BTN_NUMBER(parent_node));
+		number = get_long(BTN_NUMBER(parent_node));
 #ifdef IGNORE_NULL_IDX_KEY
 		if (number == END_LEVEL || number == END_BUCKET)
 #else
@@ -3603,7 +3561,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 		/* check whether there is just one node */
 
 		parent_node = NEXT_NODE(parent_node);
-		number = BTR_get_quad(BTN_NUMBER(parent_node));
+		number = get_long(BTN_NUMBER(parent_node));
 #ifdef IGNORE_NULL_IDX_KEY
 		if (number == END_LEVEL || number == END_BUCKET)
 #else
@@ -3685,7 +3643,7 @@ static SLONG insert_node(TDBB tdbb,
 	for (;;) {
 		node_offset = (UCHAR *) node - (UCHAR *) bucket;
 
-		old_number = BTR_get_quad(BTN_NUMBER(node));
+		old_number = get_long(BTN_NUMBER(node));
 		old_prefix = BTN_PREFIX(node);
 		old_length = BTN_LENGTH(node);
 
@@ -3738,7 +3696,7 @@ static SLONG insert_node(TDBB tdbb,
 
 		while (old_number != insertion->iib_sibling) {
 			node = NEXT_NODE(node);
-			old_number = BTR_get_quad(BTN_NUMBER(node));
+			old_number = get_long(BTN_NUMBER(node));
 
 			if (BTN_LENGTH(node))
 				break;
@@ -3826,7 +3784,7 @@ static SLONG insert_node(TDBB tdbb,
 
 	if (insertion->iib_descriptor->idx_flags & idx_unique)
 		while (BTN_LENGTH(node) == 0 && BTN_PREFIX(node) == key->key_length) {
-			old_number = BTR_get_quad(BTN_NUMBER(node));
+			old_number = get_long(BTN_NUMBER(node));
 			if (old_number < 0)
 				break;
 			SBM_set(tdbb, &insertion->iib_duplicates, old_number);
@@ -3900,7 +3858,7 @@ midpoint = (UCHAR *) new_node;
 #ifdef IGNORE_NULL_IDX_KEY
 		/* We do not want END_NON_NULL marker as the first node in the split page.
 		 * Move one extra node down in the original bucket */
-		if (END_NON_NULL == BTR_get_quad(BTN_NUMBER(node))) {
+		if (END_NON_NULL == get_long(BTN_NUMBER(node))) {
 			/* assert: cannot have multiple END_NON_NULL markers */
 			assert(midpoint_is_end_non_null == FALSE);
 			midpoint_is_end_non_null = TRUE;
@@ -4239,7 +4197,7 @@ static CONTENTS remove_node(TDBB tdbb, IIB * insertion, WIN * window)
 	while (TRUE) {
 		node = find_node(page, insertion->iib_key, (USHORT)
 						 (idx->idx_flags & idx_descending));
-		number = BTR_get_quad(BTN_NUMBER(node));
+		number = get_long(BTN_NUMBER(node));
 
 		/* we should always find the node, but let's make sure */
 
@@ -4363,7 +4321,7 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 	while (TRUE) {
 		/* if we find the right one, quit */
 
-		number = BTR_get_quad(BTN_NUMBER(node));
+		number = get_long(BTN_NUMBER(node));
 		if (insertion->iib_number == number)
 			break;
 
@@ -4507,7 +4465,7 @@ static BOOLEAN scan(TDBB tdbb,
 	flag &= ~irb_equality;
 
 	while (true) {
-		number = BTR_get_quad(BTN_NUMBER(node));
+		number = get_long(BTN_NUMBER(node));
 
 		if (number == END_LEVEL) {
 			return FALSE;

@@ -540,6 +540,7 @@ VI. ADDITIONAL NOTES
 */
 
 #include "firebird.h"
+#include "memory_routines.h"
 #include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
 #include <stdarg.h>
@@ -1466,23 +1467,15 @@ static RTN walk_index(TDBB tdbb,
 
 			/* Record the existance of a primary version of a record */
 			if (!page->btr_level && control
-				&& (control->vdr_flags & vdr_records)) SBM_set(tdbb,
-															   &control->
-															   vdr_idx_records,
-															   BTR_get_quad
-															   (reinterpret_cast
-																<
-																char
-																*>(BTN_NUMBER
-																   (node))));
+				&& (control->vdr_flags & vdr_records)) {
+			  SBM_set(tdbb, &control->vdr_idx_records, get_long(BTN_NUMBER(node)));
+		    }
 
 			/* fetch the next page down (if full validation was specified) */
 
 			if (page->btr_level && control
 				&& (control->vdr_flags & vdr_records)) {
-				down_number =
-					BTR_get_quad(reinterpret_cast <
-								 char *>(BTN_NUMBER(node)));
+				down_number = get_long(BTN_NUMBER(node));
 
 				/* Note: control == 0 for the fetch_page() call here 
 				   as we don't want to mark the page as visited yet - we'll 
@@ -1515,9 +1508,7 @@ static RTN walk_index(TDBB tdbb,
 				if (previous_number != down_page->btr_left_sibling)
 					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
 							id + 1, next);
-				next_number =
-					BTR_get_quad(reinterpret_cast <
-								 char *>(BTN_NUMBER((NEXT_NODE(node)))));
+				next_number = get_long(BTN_NUMBER((NEXT_NODE(node))));
 				if (next_number >= 0 && next_number != down_page->btr_sibling)
 					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
 							id + 1, next);
@@ -1536,9 +1527,7 @@ static RTN walk_index(TDBB tdbb,
 
 		if (next == down)
 			down =
-				(page->btr_level) ? BTR_get_quad(reinterpret_cast <
-												 char *>(page->btr_nodes[0].
-														 btn_number)) : 0;
+				(page->btr_level) ? get_long(page->btr_nodes[0].btn_number) : 0;
 
 		if (!(next = page->btr_sibling)) {
 			next = down;
