@@ -1,3 +1,18 @@
+2005-01-28 15:07  dimitr
+
+	* firebird2/doc/sql.extensions/: README.expression_indices (1.2),
+	README.rows (1.2):
+	
+	More docs.
+
+2005-01-28 07:52  robocop
+
+	* firebird2/doc/: ambiguity.txt (1.2),
+	sql.extensions/README.PSQL_stack_trace.txt (1.2),
+	sql.extensions/README.derived_tables.txt (1.2):
+	
+	Little corrections.
+
 2005-01-27 16:02  arnobrinkman
 
 	* firebird2/src/jrd/: evl.cpp (1.132), idx.cpp (1.86):
