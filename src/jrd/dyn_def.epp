@@ -41,7 +41,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "../jrd/ibsetjmp.h"
 #include "../jrd/common.h"
 #include <stdarg.h>
 #include "../jrd/constants.h"

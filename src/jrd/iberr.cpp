@@ -23,7 +23,6 @@
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
-#include "../jrd/ibsetjmp.h"
 #include <string.h>
 #include "../jrd/common.h"
 #include <stdarg.h>

@@ -25,7 +25,6 @@
  */
 
 #include "firebird.h"
-#include <setjmp.h>
 #include <stdlib.h>
 #include <string.h>
 #define PARSER_MAIN

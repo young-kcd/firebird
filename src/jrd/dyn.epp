@@ -39,7 +39,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../jrd/ibsetjmp.h"
 #include "../jrd/common.h"
 #include <stdarg.h>
 #include "../jrd/jrd.h"

@@ -38,7 +38,6 @@
 #include "../ipserver/ips.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/sch_proto.h"
-#include "../jrd/ibsetjmp.h"
 #include "../jrd/why_proto.h"
 #include "../common/config/config.h"
 #include "../jrd/gdsassert.h"

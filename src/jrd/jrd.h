@@ -37,10 +37,6 @@
 
 #include "../include/fb_vector.h"
 
-#ifdef HAVE_SETJMP_H
-#include <setjmp.h>
-#endif
-
 #ifdef DEV_BUILD
 #define DEBUG                   if (debug) DBG_supervisor(debug);
 #define VIO_DEBUG				/* remove this for production build */

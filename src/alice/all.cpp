@@ -24,14 +24,13 @@
 //
 //____________________________________________________________
 //
-//	$Id: all.cpp,v 1.14 2003-11-03 23:49:24 brodsom Exp $
+//	$Id: all.cpp,v 1.15 2003-11-18 12:33:42 brodsom Exp $
 //
 
 #include "../alice/all.h"
 #include "firebird.h"
 //#include "../jrd/ib_stdio.h"
 //#include "../jrd/common.h"
-//#include "../jrd/ibsetjmp.h"
 #include "../alice/alice.h"
 //#include "../alice/all.h"
 //#include "../alice/lls.h"

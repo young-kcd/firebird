@@ -27,13 +27,12 @@
  *
  *____________________________________________________________
  *
- *	$Id: alice_meta.epp,v 1.27 2003-11-18 07:58:23 robocop Exp $
+ *	$Id: alice_meta.epp,v 1.28 2003-11-18 12:33:43 brodsom Exp $
  */
 
 #include "firebird.h"
 #include <stdio.h>
 #include "../jrd/common.h"
-#include "../jrd/ibsetjmp.h"
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/license.h"

@@ -39,7 +39,6 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ibsetjmp.h"
 #include <string.h>
 #include <stdlib.h>				// abort
 #include "../jrd/common.h"

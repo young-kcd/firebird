@@ -49,10 +49,6 @@
 #include "../jrd/gdsassert.h"
 #endif
 
-#ifdef HAVE_SETJMP_H
-#include <setjmp.h>
-#endif
-
 #ifdef HP10
 #include <sys/pstat.h>
 #endif

@@ -28,7 +28,6 @@
 
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
-#include "../jrd/ibsetjmp.h"
 #include "../jrd/thd.h"
 #include "../alice/all.h"
 #include "../include/fb_blk.h"

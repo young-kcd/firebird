@@ -31,7 +31,6 @@
 #include <string.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
-#include "../jrd/ibsetjmp.h"
 #include "gen/iberror.h"
 #include "../jrd/iberr.h"
 

@@ -25,7 +25,6 @@
 #include <string.h>
 #include "../jrd/ib_stdio.h"
 
-#include "../jrd/ibsetjmp.h"
 #include "../jrd/jrd.h"
 #include "../jrd/lck.h"
 #include "../jrd/ods.h"

@@ -17,11 +17,10 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: align.cpp,v 1.3 2003-09-18 10:28:34 aafemt Exp $
+$Id: align.cpp,v 1.4 2003-11-18 12:39:12 brodsom Exp $
 */
 
 #include "firebird.h"
-#include "../jrd/ibsetjmp.h"
 #include <signal.h>
 #include "../jrd/ib_stdio.h"
 

@@ -34,7 +34,6 @@
 #include "../jrd/y_ref.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
-#include "../jrd/ibsetjmp.h"
 #include "../jrd/jrd_time.h"
 #include "../jrd/common.h"
 #include "../jrd/file_params.h"

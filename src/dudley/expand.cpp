@@ -22,7 +22,6 @@
  */
 
 #include "firebird.h"
-#include <setjmp.h>
 #include <string.h>
 #include "../dudley/ddl.h"
 #include "../jrd/y_ref.h"
