@@ -40,7 +40,7 @@
  *
  */
 /*
-$Id: cmp.cpp,v 1.26 2002-11-23 23:36:21 arnobrinkman Exp $
+$Id: cmp.cpp,v 1.27 2002-11-25 10:23:56 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -125,8 +125,6 @@ rel_MAX} RIDS;
 #ifndef MAX_RECURSION
 #define MAX_RECURSION		128
 #endif
-
-#define MAX_REQUEST_SIZE	1048576
 
 #ifdef SHLIB_DEFS
 #undef access
@@ -1729,9 +1727,6 @@ JRD_REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
 	csb->csb_node = node;
 	csb->csb_impure = REQ_SIZE + REQ_TAIL * csb->csb_n_stream;
 	csb->csb_node = pass2(tdbb, csb, csb->csb_node, 0);
-
-	if (csb->csb_impure > MAX_REQUEST_SIZE)
-		IBERROR(226);			/* msg 226 request size limit exceeded */
 
 /* Build the final request block.  First, compute the "effective" repeat
    count of hold the impure areas. */
