@@ -334,6 +334,9 @@
 				RelativePath="..\..\..\src\jrd\rng.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\rpb_chain.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\rse.cpp">
 			</File>
 			<File
