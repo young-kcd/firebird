@@ -92,12 +92,12 @@ typedef str *STR;
 
 typedef struct tdr : public pool_alloc<alice_type_tdr>
 {
-	struct tdr *tdr_next;		/* next subtransaction */
+	tdr *tdr_next;				/* next subtransaction */
 	SLONG tdr_id;				/* database-specific transaction id */
-	struct str *tdr_fullpath;	/* full (possibly) remote pathname */
+	str *tdr_fullpath;			/* full (possibly) remote pathname */
 	TEXT *tdr_filename;			/* filename within full pathname */
-	struct str *tdr_host_site;	/* host for transaction */
-	struct str *tdr_remote_site;	/* site for remote transaction */
+	str *tdr_host_site;			/* host for transaction */
+	str *tdr_remote_site;		/* site for remote transaction */
 	FRBRD *tdr_handle;			/* reconnected transaction handle */
 	FRBRD *tdr_db_handle;		/* reattached database handle */
 	USHORT tdr_db_caps;			/* capabilities of database */
@@ -133,7 +133,7 @@ class vec : public pool_alloc_rpt<class blk*, alice_type_vec>
 {
 public:
 	ULONG vec_count;
-	struct blk *vec_object[1];
+	blk *vec_object[1];
 };
 typedef vec *VEC;
 
@@ -154,8 +154,8 @@ public:
 	tgbl(AliceMemoryPool *p) : pools(0, (AliceMemoryPool*)0,
 				pool_vec_t::allocator_type(*p)) {}
 	
-	struct thdd			tgbl_thd_data;
-	struct user_action ALICE_data;
+	thdd			tgbl_thd_data;
+	user_action		ALICE_data;
 	AliceMemoryPool	*ALICE_permanent_pool;
 	AliceMemoryPool *ALICE_default_pool;
 	ISC_STATUS_ARRAY	status_vector;
@@ -193,7 +193,7 @@ typedef tgbl *TGBL;
 
 #define RESTORE_THREAD_DATA	THD_restore_specific();
 #else
-extern struct tgbl *gdgbl;
+extern tgbl *gdgbl;
 
 #define GET_THREAD_DATA		(gdgbl)
 #define SET_THREAD_DATA		gdgbl = const_cast<tgbl*>(tdgbl); \

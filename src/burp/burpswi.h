@@ -86,7 +86,7 @@
 #define BURP_SW_MODE_RW	"read_write"
 
 
-static struct in_sw_tab_t burp_in_sw_table [] =
+static in_sw_tab_t burp_in_sw_table [] =
 {
     {IN_SW_BURP_B,    0,                 	"BACKUP_DATABASE",  0, 0, 0, FALSE, 60,	0, NULL},
                 /* msg 60: %sBACKUP_DATABASE backup database to file */

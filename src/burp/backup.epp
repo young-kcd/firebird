@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.32 2003-08-21 11:02:33 robocop Exp $
+$Id: backup.epp,v 1.33 2003-08-27 10:20:07 aafemt Exp $
 */
 
 #include "firebird.h"
@@ -168,7 +168,7 @@ typedef struct rfr_tab_t {
 	int bit_mask;
 } *RFR_TAB;
 
-static const struct rfr_tab_t rfr_table[] = {
+static const rfr_tab_t rfr_table[] = {
 	{"RDB$INDICES", "RDB$INDEX_INACTIVE", BCK_idx_inactive},
 /* Backup of V2 triggers no longer supported 1996-Aug-05 David Schnepper  
 	{"RDB$RELATIONS",	"RDB$STORE_TRIGGER",	BCK_triggers}, 
@@ -649,7 +649,7 @@ static BURP_FLD get_fields( BURP_REL relation)
 	            X.RDB$FIELD_SOURCE = Y.RDB$FIELD_NAME AND 
 	       X.RDB$RELATION_NAME EQ relation->rel_name
 	
-	        field = (BURP_FLD) BURP_ALLOC_ZERO (sizeof (struct burp_fld));
+	        field = (BURP_FLD) BURP_ALLOC_ZERO(sizeof(burp_fld));
 	        field->fld_number = count++;
 	        field->fld_type = Y.RDB$FIELD_TYPE;
 	        field->fld_sub_type = Y.RDB$FIELD_SUB_TYPE;
@@ -754,7 +754,7 @@ static BURP_FLD get_fields( BURP_REL relation)
 	        WITH X.RDB$FIELD_SOURCE = Y.RDB$FIELD_NAME AND 
 	        X.RDB$RELATION_NAME EQ relation->rel_name
 
-            field = (BURP_FLD) BURP_ALLOC_ZERO (sizeof (struct burp_fld));
+            field = (BURP_FLD) BURP_ALLOC_ZERO(sizeof(burp_fld));
 	        field->fld_number = count++;
             field->fld_type = Y.RDB$FIELD_TYPE;
             field->fld_sub_type = Y.RDB$FIELD_SUB_TYPE;
@@ -3688,7 +3688,7 @@ static void write_relations(void)
                 }
 	
             PUT (att_end); 
-            relation = (BURP_REL) BURP_ALLOC_ZERO (sizeof (struct burp_rel));
+            relation = (BURP_REL) BURP_ALLOC_ZERO(sizeof(burp_rel));
             relation->rel_next = tdgbl->relations;
             tdgbl->relations = relation;
             relation->rel_id = X.RDB$RELATION_ID;
@@ -3765,7 +3765,7 @@ static void write_relations(void)
                 END_ERROR;
             }
             PUT (att_end); 
-            relation = (BURP_REL) BURP_ALLOC_ZERO (sizeof (struct burp_rel));
+            relation = (BURP_REL) BURP_ALLOC_ZERO (sizeof(burp_rel));
             relation->rel_next = tdgbl->relations;
             tdgbl->relations = relation;
             relation->rel_id = X.RDB$RELATION_ID;

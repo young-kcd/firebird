@@ -28,7 +28,7 @@
  *
  */
 /*
-$Id: canonical.cpp,v 1.22 2003-08-15 10:23:42 aafemt Exp $
+$Id: canonical.cpp,v 1.23 2003-08-27 10:20:07 aafemt Exp $
 */
 
 #include "firebird.h"
@@ -671,7 +671,7 @@ static bool_t xdr_slice(XDR* xdrs,
 	ULONG n;
 	UCHAR *p, *end;
 	DSC *desc;
-	struct sdl_info info;
+	sdl_info info;
 
 	if (!xdr_long(xdrs, reinterpret_cast<long*>(&slice->lstr_length)))
 		  return FALSE;

@@ -28,8 +28,8 @@
 extern "C" {
 #endif
 
-extern ULONG	CAN_encode_decode (struct burp_rel *, struct lstring *, UCHAR *, int);
-extern ULONG	CAN_slice (struct lstring *, struct lstring *, int, USHORT, UCHAR *);
+extern ULONG	CAN_encode_decode (burp_rel*, lstring*, UCHAR*, int);
+extern ULONG	CAN_slice (lstring*, lstring*, int, USHORT, UCHAR*);
 
 #ifdef __cplusplus
 }	/* extern "C" */

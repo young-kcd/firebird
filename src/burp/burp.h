@@ -517,7 +517,7 @@ enum trig_t {
 /* field block, used to hold local field definitions */
 
 typedef struct burp_fld {
-    struct burp_fld	*fld_next;
+    burp_fld	*fld_next;
     SSHORT	fld_type;
     SSHORT	fld_sub_type;
     FLD_LENGTH	fld_length;
@@ -567,8 +567,8 @@ typedef struct burp_fld {
 /* relation definition - holds useful relation type stuff */
 
 typedef struct burp_rel {
-    struct burp_rel		*rel_next;
-    struct burp_fld		*rel_fields;
+    burp_rel		*rel_next;
+    burp_fld		*rel_fields;
     SSHORT		rel_flags;
     SSHORT		rel_id;
     SSHORT		rel_name_length;
@@ -588,7 +588,7 @@ typedef struct burp_rel {
 /* procedure definition - holds useful procedure type stuff */
 
 typedef struct burp_prc {
-    struct burp_prc	*prc_next;
+    burp_prc	*prc_next;
     SSHORT	prc_name_length;
     GDS_NAME	prc_name;
     GDS_NAME	prc_owner;		/* relation owner, if not us */
@@ -600,7 +600,7 @@ typedef struct gfld {
     ISC_QUAD	gfld_vb;
     ISC_QUAD	gfld_vs;
     ISC_QUAD	gfld_vs2;
-    struct gfld	*gfld_next;
+    gfld	*gfld_next;
     USHORT	gfld_flags;
 } *GFLD;
 
@@ -657,7 +657,7 @@ typedef enum {
 } SIZE_CODE;
 
 typedef struct fil {
-    struct fil	*fil_next;
+    fil		*fil_next;
     TEXT	*fil_name;
     ULONG	fil_length;
     DESC	fil_fd;
@@ -665,7 +665,7 @@ typedef struct fil {
     SIZE_CODE	fil_size_code;
 } *FIL;
 
-#define FIL_LEN		sizeof (struct fil)
+#define FIL_LEN		sizeof(fil)
 
 /* Split & Join stuff */
 
@@ -683,7 +683,7 @@ typedef struct act {
         ACT_T   act_action;
 } *ACT;
 
-#define ACT_LEN         sizeof (struct act)
+#define ACT_LEN         sizeof(act)
 
 #define MAX_LENGTH	-1UL
 
@@ -703,7 +703,7 @@ typedef struct hdr_split {
 /* NOTE: size of the hdr_split_tag and HDR_SPLIT_TAG must be the same and equal
    to 18. Otherwise we will not be able to join the gbk files v5.x */
 
-#define HDR_SPLIT_SIZE          sizeof (struct hdr_split)
+#define HDR_SPLIT_SIZE          sizeof(hdr_split)
 #define HDR_SPLIT_TAG5          "InterBase/gsplit, "
 #define HDR_SPLIT_TAG6          "InterBase/gbak,   "
 #define HDR_SPLIT_TAG           HDR_SPLIT_TAG6
@@ -713,7 +713,7 @@ typedef struct hdr_split {
 
 typedef struct tgbl
 {
-    struct thdd tgbl_thd_data;
+    thdd	tgbl_thd_data;
     TEXT	*gbl_database_file_name;
     TEXT	gbl_backup_start_time [30];
     USHORT	gbl_sw_verbose;
@@ -849,7 +849,7 @@ typedef struct tgbl
 				tdgbl->tgbl_thd_data.thdd_type = THDD_TYPE_TGBL
 #define RESTORE_THREAD_DATA     THD_restore_specific();
 #else
-extern struct tgbl *gdgbl;
+extern tgbl *gdgbl;
 
 #define GET_THREAD_DATA	        (gdgbl)
 
@@ -859,7 +859,7 @@ extern struct tgbl *gdgbl;
 				tdgbl->tgbl_thd_data.thdd_type = THDD_TYPE_TGBL
 #else	/* __cplusplus */
 
-#define SET_THREAD_DATA         gdgbl = (struct tgbl *)tdgbl; \
+#define SET_THREAD_DATA         gdgbl = (tgbl*)tdgbl; \
 				tdgbl->tgbl_thd_data.thdd_type = (volatile)THDD_TYPE_TGBL
 
 #endif	/* __cplusplus */

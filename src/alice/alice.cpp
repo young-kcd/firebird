@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.28 2003-07-15 02:40:52 brodsom Exp $
+//	$Id: alice.cpp,v 1.29 2003-08-27 10:15:10 aafemt Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -223,7 +223,7 @@ int DLL_EXPORT ALICE_gfix(	int			argc,
 	fAnsiCP = (GetConsoleCP() == GetACP());
 #endif
 
-	volatile tgbl* tdgbl = (struct tgbl*) gds__alloc(sizeof(*tdgbl));
+	volatile tgbl* tdgbl = (tgbl*) gds__alloc(sizeof(*tdgbl));
 	if (!tdgbl) {
 		//  NOMEM: return error, FREE: during function exit in the SETJMP
 		return FINI_ERROR;

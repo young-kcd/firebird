@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.35 2003-08-21 11:02:33 robocop Exp $
+$Id: restore.epp,v 1.36 2003-08-27 10:20:07 aafemt Exp $
 */
 
 #include "firebird.h"
@@ -2921,7 +2921,7 @@ if ((relation->rel_flags & REL_view) && (tdgbl->global_trans))
 else
     local_trans = gds_trans;
 
-field = (BURP_FLD) BURP_ALLOC_ZERO (sizeof (struct burp_fld));
+field = (BURP_FLD)BURP_ALLOC_ZERO(sizeof(burp_fld));
 
 STORE (TRANSACTION_HANDLE local_trans
        REQUEST_HANDLE tdgbl->handles_get_field_req_handle1)
@@ -3734,7 +3734,7 @@ if (tdgbl->RESTORE_format >= 6)
 			if (tdgbl->global_trans)
 			    {
 			    if (!gfld)
-				gfld = (GFLD) BURP_ALLOC_ZERO (sizeof (struct gfld));
+				gfld = (GFLD)BURP_ALLOC_ZERO(sizeof(gfld));
 
 			    get_blr_blob (&gfld->gfld_vb, 1);
 			    gfld->gfld_flags |= GFLD_validation_blr;
@@ -3759,7 +3759,7 @@ if (tdgbl->RESTORE_format >= 6)
 			if (tdgbl->global_trans)
 			    {
 			    if (!gfld)
-				gfld = (GFLD) BURP_ALLOC_ZERO (sizeof (struct gfld));
+				gfld = (GFLD)BURP_ALLOC_ZERO(sizeof(gfld));
 
 			    get_misc_blob (&gfld->gfld_vs, 0, 1);
 			    gfld->gfld_flags |= GFLD_validation_source;
@@ -3784,7 +3784,7 @@ if (tdgbl->RESTORE_format >= 6)
 			if (tdgbl->global_trans)
 			    {
 			    if (!gfld)
-				gfld = (GFLD) BURP_ALLOC_ZERO (sizeof (struct gfld));
+				gfld = (GFLD)BURP_ALLOC_ZERO(sizeof(gfld));
 
 			    get_source_blob (&gfld->gfld_vs2, 1);
 			    gfld->gfld_flags |= GFLD_validation_source2;
@@ -3917,7 +3917,7 @@ if (tdgbl->RESTORE_format >= 6)
 		     * global field
 		     */
 
-		    f = (BURP_FLD) BURP_ALLOC_ZERO (sizeof(struct burp_fld));
+		    f = (BURP_FLD)BURP_ALLOC_ZERO(sizeof(burp_fld));
 		    strcpy (f->fld_name, X.RDB$FIELD_NAME);
 		    f->fld_sub_type = X.RDB$FIELD_SUB_TYPE;
 		    f->fld_scale = X.RDB$FIELD_SCALE;
@@ -4045,7 +4045,7 @@ else /* RESTORE_format < 6 */
 			if (tdgbl->global_trans)
 			    {
 			    if (!gfld)
-				gfld = (GFLD) BURP_ALLOC_ZERO (sizeof (struct gfld));
+				gfld = (GFLD)BURP_ALLOC_ZERO(sizeof(gfld));
 
 			    get_blr_blob (&gfld->gfld_vb, 1);
 			    gfld->gfld_flags |= GFLD_validation_blr;
@@ -4070,7 +4070,7 @@ else /* RESTORE_format < 6 */
 			if (tdgbl->global_trans)
 			    {
 			    if (!gfld)
-				gfld = (GFLD) BURP_ALLOC_ZERO (sizeof (struct gfld));
+				gfld = (GFLD)BURP_ALLOC_ZERO(sizeof(gfld));
 
 			    get_misc_blob (&gfld->gfld_vs, 0, 1);
 			    gfld->gfld_flags |= GFLD_validation_source;
@@ -4095,7 +4095,7 @@ else /* RESTORE_format < 6 */
 			if (tdgbl->global_trans)
 			    {
 			    if (!gfld)
-				gfld = (GFLD) BURP_ALLOC_ZERO (sizeof (struct gfld));
+				gfld = (GFLD)BURP_ALLOC_ZERO(sizeof(gfld));
 
 			    get_source_blob (&gfld->gfld_vs2, 1);
 			    gfld->gfld_flags |= GFLD_validation_source2;
@@ -4223,7 +4223,7 @@ else /* RESTORE_format < 6 */
 		     * global field
 		     */
 
-		    f = (BURP_FLD) BURP_ALLOC_ZERO (sizeof(struct burp_fld));
+		    f = (BURP_FLD)BURP_ALLOC_ZERO(sizeof(burp_fld));
 		    strcpy (f->fld_name, X.RDB$FIELD_NAME);
 		    f->fld_sub_type = X.RDB$FIELD_SUB_TYPE;
 		    f->fld_scale = X.RDB$FIELD_SCALE;
@@ -4562,7 +4562,7 @@ tdgbl = GET_THREAD_DATA;
 
 local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
 
-procedure = (BURP_PRC) BURP_ALLOC_ZERO (sizeof (struct burp_prc));
+procedure = (BURP_PRC)BURP_ALLOC_ZERO(sizeof(burp_prc));
 procedure->prc_next = tdgbl->procedures;
 tdgbl->procedures = procedure;
 
@@ -4839,7 +4839,7 @@ tdgbl = GET_THREAD_DATA;
 
 /* Pick up relation attributes */
 
-relation = (BURP_REL) BURP_ALLOC_ZERO (sizeof (struct burp_rel));
+relation = (BURP_REL)BURP_ALLOC_ZERO(sizeof(burp_rel));
 relation->rel_next = tdgbl->relations;
 tdgbl->relations = relation;
 

@@ -71,7 +71,7 @@
 #define	IN_SW_SPIT_JT	31  /* joins back up files */
 
 
-static struct in_sw_tab_t spit_in_sw_table [] =
+static in_sw_tab_t spit_in_sw_table [] =
 {
 	{IN_SW_SPIT_SP,	0,	"SPLIT_BK_FILE", 0, 0, 0, FALSE, 0, 0, NULL},
 	{IN_SW_SPIT_JT,	0,	"JOIN_BK_FILE",	 0, 0, 0, FALSE, 0, 0, NULL},
@@ -94,7 +94,7 @@ typedef struct header_rec {
 	TEXT fl_name[27];
 } HEADER_REC;
 
-#define	HEADER_REC_LEN			sizeof (struct header_rec)
+#define	HEADER_REC_LEN			sizeof(header_rec)
 #define	HEADER_REC_NAME			"InterBase/gsplit, "
 
 /*************************************
@@ -103,13 +103,13 @@ typedef struct header_rec {
 */
 
 typedef struct b_fil {
-	struct b_fil *b_fil_next;
+	b_fil *b_fil_next;
 	TEXT *b_fil_name;
 	SLONG b_fil_number;
 	double b_fil_size;
 } *B_FIL;
 
-#define	B_FIL_LEN	sizeof (struct b_fil)
+#define	B_FIL_LEN	sizeof(b_fil)
 
 
 	/*****************************************************

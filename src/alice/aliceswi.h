@@ -115,7 +115,7 @@
 #define ALICE_SW_MODE_RW	"read_write"
 
 /* Switch table */
-static struct in_sw_tab_t alice_in_sw_table[] =
+static in_sw_tab_t alice_in_sw_table[] =
 {
 	{IN_SW_ALICE_ACTIVATE, isc_spb_prp_activate, "activate", sw_activate,
 	0, ~(sw_activate | sw_user | sw_password), FALSE, 25, 0, NULL},

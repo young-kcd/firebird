@@ -105,7 +105,7 @@
 // MOD 23-July-2002
 
 #ifndef SUPERSERVER
-struct tgbl *gdgbl;
+tgbl *gdgbl;
 #endif
 
 #ifndef FOPEN_WRITE_TYPE
@@ -459,15 +459,15 @@ int DLL_EXPORT BURP_gbak(int		argc,
 	volatile SSHORT action = QUIT;
 	USHORT					sw_replace;
 	USHORT					sw_tape;
-	volatile struct tgbl*	tdgbl;
+	volatile tgbl*			tdgbl;
 	JMP_BUF					env;
 	IB_FILE*				tmp_outfile;
 
 /* TMN: This variable should probably be removed, but I left it in */
 /* in case some platform should redefine the BURP SET_THREAD_DATA. */
-/*struct tgbl	thd_context;*/
+/*tgbl	thd_context;*/
 
-	tdgbl = (struct tgbl *) gds__alloc(sizeof(*tdgbl));
+	tdgbl = (tgbl *) gds__alloc(sizeof(*tdgbl));
 /* NOMEM: return error, FREE: during function exit in the SETJMP */
 	if (tdgbl == NULL)
 	{
@@ -2029,7 +2029,8 @@ static int api_gbak(int argc,
 	char respbuf[1024];
 	FRBRD *svc_handle = NULL;
 	char *spb_ptr, *spb, *svc_name, *thd_ptr, *thd;
-	struct tgbl *tdgbl, ldgbl;
+	tgbl* tdgbl;
+	tgbl ldgbl;
 
 	tdgbl = &ldgbl;
 	SET_THREAD_DATA;
