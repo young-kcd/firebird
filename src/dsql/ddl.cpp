@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.29 2002-12-13 02:02:38 arnobrinkman Exp $
+ * $Id: ddl.cpp,v 1.30 2002-12-16 00:48:53 arnobrinkman Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -5503,9 +5503,6 @@ static SSHORT put_local_variables(DSQL_REQ request, DSQL_NOD parameters, SSHORT 
 							  gds_arg_string, field->fld_name, 0);
 				}
 			}
-			/* struct DSC copies the length from fld_length, 
-			   so assign fld_character_length to fld_length */
-			field->fld_length = field->fld_character_length;
 
 			DSQL_NOD var_node =
 				MAKE_variable(field, field->fld_name, VAR_output, 0, 0,
@@ -5513,6 +5510,10 @@ static SSHORT put_local_variables(DSQL_REQ request, DSQL_NOD parameters, SSHORT 
 			*ptr = var_node;
 			VAR variable = (VAR) var_node->nod_arg[e_var_variable];
 			put_local_variable(request, variable, parameter);
+
+			/* fld_length is calculated inside put_local_variable
+			   so we copy here the length */
+			var_node->nod_desc.dsc_length = field->fld_length;
 			locals++;
 		}
 	}
