@@ -41,8 +41,12 @@
 
 @rmdir /s /q %ROOT_PATH%\gen 2>nul
 @mkdir %ROOT_PATH%\gen\dbs 2>nul
+
+@echo create database '%SERVER_NAME%:%DB_PATH%\gen\dbs\security.fdb'; | "%FIREBIRD%\bin\isql" -q
+@set SEC_ISQL=@"%FIREBIRD%\bin\isql" -q %SERVER_NAME%:%DB_PATH%\gen\dbs\security.fdb -i %ROOT_PATH%\src\dbs\
+@%SEC_ISQL%security.sql
+
 @"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\builds\misc\metadata.gbak %SERVER_NAME%:%DB_PATH%\gen\dbs\metadata.fdb
-@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\builds\misc\security.gbak %SERVER_NAME%:%DB_PATH%\gen\dbs\security.fdb
 
 @echo create database '%SERVER_NAME%:%DB_PATH%\gen\dbs\msg.fdb'; | "%FIREBIRD%\bin\isql" -q
 @set MSG_ISQL=@"%FIREBIRD%\bin\isql" -q %SERVER_NAME%:%DB_PATH%\gen\dbs\msg.fdb -i %ROOT_PATH%\src\msgs\
