@@ -475,7 +475,7 @@ BOOL WriteIBSettings(HWND hDlg)
 	char *pchPtr;
 	short *psLen;
 	char szSpb[SPB_BUFLEN];		// Server parameter block
-	char szResBuf[2];			// Response buffer
+	char szResBuf[16];			// Response buffer
 	BOOL bRetFlag = TRUE;
 
 	HCURSOR hOldCursor = NULL;
