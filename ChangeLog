@@ -1,3 +1,35 @@
+2004-11-20 13:15  dimitr
+
+	* firebird2/src/jrd/rse.cpp (1.83):
+	
+	no message
+
+2004-11-19 04:52  robocop
+
+	* firebird2/src/msgs/msg.sql (1.5):
+	
+	The obvious missing constraints, at least for me.
+
+2004-11-19 04:51  robocop
+
+	* firebird2/src/msgs/messages.sql (1.15):
+	
+	Get rid of journal-related messages.
+
+2004-11-19 04:51  robocop
+
+	* firebird2/src/msgs/history.sql (1.6):
+	
+	Keep history up to date by hand.
+
+2004-11-19 04:50  robocop
+
+	* firebird2/src/msgs/facilities.sql (1.8):
+	
+	The facilities's MAX_NUMBER is one more than the last used number
+	in messages.sql for each facility. It worked nicely for years until
+	the utilities became obsolete.
+
 2004-11-19 00:00  arnobrinkman
 
 	* firebird2/src/jrd/: btn.cpp (1.17), btn.h (1.14):
