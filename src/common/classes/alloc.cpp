@@ -23,7 +23,7 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *
- *  $Id: alloc.cpp,v 1.70 2004-10-04 08:14:43 robocop Exp $
+ *  $Id: alloc.cpp,v 1.71 2004-10-11 10:00:37 robocop Exp $
  *
  */
 
@@ -452,7 +452,7 @@ void MemoryPool::external_free(void *blk, size_t &size, bool pool_destroying) {
 		system_call_failed::raise("VirtualFree");
 # elif defined HAVE_MMAP
 	size = FB_ALIGN(size, map_page_size);
-#  if (defined SOLARIS) and (defined HAVE_CADDR_T)
+#  if (defined SOLARIS) && (defined HAVE_CADDR_T)
 	if (munmap((caddr_t) blk, size))
 		system_call_failed::raise("munmap");
 
