@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbclient,v 1.13 2003-03-27 11:21:45 aafemt Exp $
+#  $Id: Makefile.in.libfbclient,v 1.14 2003-03-31 10:29:15 aafemt Exp $
 #
 ROOT=..
 ObjModuleName=libfbclient
@@ -105,15 +105,19 @@ FBCLIENT_Objects =  $(JRD_ClientObjects) \
 
 libfbclient : $(LIBFBCLIENT_SONAME)
 
+ifneq ($(ClientLibraryNameFull),$(ClientLibraryNameMajor))
+$(LIBFBCLIENT_SOBASENAME):	$(LIBFBCLIENT_SO)
+	(cd $(LIB) && $(LN) -f $(ClientLibraryNameFull) $(ClientLibraryNameMajor) )
+endif
+
+ifneq ($(ClientLibraryName),$(ClientLibraryNameMajor))
+$(LIBFBCLIENT_SONAME):	$(LIBFBCLIENT_SOBASENAME)
+	(cd $(LIB) && $(LN) -f $(ClientLibraryNameMajor) $(ClientLibraryName) )
+endif
+
 $(LIBFBCLIENT_SO):	$(FBCLIENT_Objects)
 #	$(LIB_LINK) -Wl,-soname,libfbclient.$(SHRLIB_EXT).1 -Wl,-rpath,/usr/lib -o $@ $^
 	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)$(ClientLibraryNameMajor) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ $(SO_LINK_LIBS)
-
-$(LIBFBCLIENT_SOBASENAME):	$(LIBFBCLIENT_SO)
-	(cd $(LIB) && $(LN) -f $(ClientLibraryNameFull) $(ClientLibraryNameMajor) )
-
-$(LIBFBCLIENT_SONAME):	$(LIBFBCLIENT_SOBASENAME)
-	(cd $(LIB) && $(LN) -f $(ClientLibraryNameMajor) $(ClientLibraryName) )
 
 
 AllObjects = $(FBCLIENT_Objects)

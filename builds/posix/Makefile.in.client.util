@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.util,v 1.8 2003-03-27 11:21:43 aafemt Exp $
+#  $Id: Makefile.in.client.util,v 1.9 2003-03-31 10:29:14 aafemt Exp $
 #
 ROOT=..
 ObjModuleName=client.util
@@ -111,9 +111,9 @@ $(CREATE_DB):	$(CREATEDB_Objects)
 
 
 
-gstat : $(GSTAT)
+gstat : $(LIBFBCLIENT_SO) $(GSTAT)
 
-$(GSTAT):	$(GSTAT_Objects) $(LIBFBCLIENT_SO)  
+$(GSTAT):	$(GSTAT_Objects)
 	$(LD) $(LINK_OPTS) $(GSTAT_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
 
 
@@ -130,19 +130,19 @@ $(GDS_RELAY):	$(RELAY_Objects) $(LIBFBCLIENT_SO)
 	$(LD) $(LINK_OPTS) $(RELAY_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
 
 
-gsec: $(GSEC)
+gsec: $(LIBFBCLIENT_SO) $(GSEC)
 
-$(GSEC):	$(GSEC_Objects) $(LIBFBCLIENT_SO)  
+$(GSEC):	$(GSEC_Objects)
 	$(LD) $(LINK_OPTS) $(GSEC_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
 
-fbguard: $(FBGUARD)
+fbguard: $(LIBFBCLIENT_SO) $(FBGUARD)
 
-$(FBGUARD):	$(FBGUARD_Objects) $(LIBFBCLIENT_SO)  
+$(FBGUARD):	$(FBGUARD_Objects)
 	$(LD) $(LINK_OPTS) $(FBGUARD_Objects) -o $@ -L$(LIB) -lfbclient $(LIB_GUI) $(LINK_LIBS)
 
-ibguard: $(IBGUARD)
+ibguard: $(LIBFBCLIENT_SO) $(IBGUARD)
 
-$(IBGUARD):	$(IBGUARD_A_Objects) $(IBGUARD_B_Objects) $(LIBFBCLIENT_SO)  
+$(IBGUARD):	$(IBGUARD_A_Objects) $(IBGUARD_B_Objects)
 	$(LD) $(LINK_OPTS) $(IBGUARD_A_Objects) $(IBGUARD_B_Objects) -o $@ -L$(LIB) -lfbclient $(LIB_GUI) $(LINK_LIBS) 
 
 fbmgr_bin: $(FBMGR_BIN)
