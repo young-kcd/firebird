@@ -85,10 +85,10 @@ public:
 };
 
 // thps_flags values
-#define THPS_PSCHED		1		// thread controlled by priority scheduler
-#define THPS_UP			2		// candidate for priority boost
-#define THPS_LOW		4		// candidate for priority decrement
-#define THPS_BOOSTED	8		// thread controlled by priority scheduler
+const UCHAR THPS_PSCHED		= 1;	// thread controlled by priority scheduler
+const UCHAR THPS_UP			= 2;	// candidate for priority boost
+const UCHAR THPS_LOW		= 4;	// candidate for priority decrement
+const UCHAR THPS_BOOSTED	= 8;	// thread controlled by priority scheduler
 
 #define THPS_ENTER() ThreadPriorityScheduler::Enter()
 #define THPS_EXIT() ThreadPriorityScheduler::Exit()

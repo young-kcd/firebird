@@ -63,10 +63,8 @@ using namespace Jrd;
 #endif
 #define TEXT		SCHAR
 
-#define DEFAULTBUFFERSIZE	1024
-
-#define OS_WINDOWS_NT		1
-#define OS_CHICAGO		2
+const USHORT OS_WINDOWS_NT	= 1;
+const USHORT OS_CHICAGO		= 2;
 
 #ifdef SUPERSERVER_V2
 static void release_io_event(jrd_file*, OVERLAPPED*);

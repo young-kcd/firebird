@@ -36,7 +36,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.10 2004-04-28 22:34:56 brodsom Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.11 2004-05-13 23:20:26 brodsom Exp $ */
 
 #include <windows.h>
 #include <process.h>
@@ -76,7 +76,7 @@ static int process_id = 0;
 #endif /* of ifndef REQUESTER */
 
 
-#define MAX_OPN_EVENTS	40
+const USHORT MAX_OPN_EVENTS	= 40;
 
 typedef struct opn_event {
 	SLONG opn_event_pid;

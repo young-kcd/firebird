@@ -36,7 +36,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.12 2004-05-02 22:48:16 brodsom Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.13 2004-05-13 23:19:50 brodsom Exp $ */
 
 #include "firebird.h"
 #include <stdio.h>
@@ -99,12 +99,13 @@ typedef struct sig {
 	USHORT sig_flags;
 } *SIG;
 
-#define SIG_user    0           /* Our routine */
-#define SIG_client	1			/* Not our routine */
-#define SIG_informs	2			/* routine tells us whether to chain */
+// flags
+const USHORT SIG_user		= 0;		/* Our routine */
+const USHORT SIG_client		= 1;		/* Not our routine */
+const USHORT SIG_informs	= 2;		/* routine tells us whether to chain */
 
-#define SIG_informs_continue	0	/* continue on signal processing */
-#define SIG_informs_stop	1	/* stop signal processing */
+const SLONG SIG_informs_continue	= 0;	/* continue on signal processing */
+const SLONG SIG_informs_stop		= 1;	/* stop signal processing */
 
 
 static bool initialized_signals = false;
@@ -118,9 +119,7 @@ static MUTX_T sig_mutex;
 static int process_id = 0;
 
 
-#ifndef GDS_RELAY
-#define GDS_RELAY	"/bin/gds_relay"
-#endif
+const char* GDS_RELAY	= "/bin/gds_relay";
 
 static int volatile relay_pipe = 0;
 

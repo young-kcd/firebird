@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbackup.cpp,v 1.25 2004-05-03 04:25:06 skidder Exp $
+ *  $Id: nbackup.cpp,v 1.26 2004-05-13 23:20:46 brodsom Exp $
  *
  */
  
@@ -378,9 +378,9 @@ void nbackup::fixup_database()
 	if (read_file(dbase, &header, sizeof(header)) != sizeof(header))
 		b_error::raise("Unexpected end of database file", errno);
 	const int backup_state = header.hdr_flags & Ods::hdr_backup_mask;
-	if (backup_state != nbak_state_stalled)	
+	if (backup_state != Jrd::nbak_state_stalled)	
 		b_error::raise("Database is not in state (%d) to be safely fixed up", backup_state);
-	header.hdr_flags = (header.hdr_flags & ~Ods::hdr_backup_mask) | nbak_state_normal;
+	header.hdr_flags = (header.hdr_flags & ~Ods::hdr_backup_mask) | Jrd::nbak_state_normal;
 	seek_file(dbase, 0);
 	write_file(dbase, &header, sizeof(header));	
 	close_database();
@@ -572,7 +572,7 @@ void nbackup::backup_database(int level, const char* fname)
 		Ods::header_page header;	
 		if (read_file(dbase, &header, sizeof(header)) != sizeof(header))
 			b_error::raise("Unexpected end of file when reading header of database file");
-		if ((header.hdr_flags & Ods::hdr_backup_mask) != nbak_state_stalled)
+		if ((header.hdr_flags & Ods::hdr_backup_mask) != Jrd::nbak_state_stalled)
 		{
 			b_error::raise("Internal error. Database file is not locked. Flags are %d",
 				header.hdr_flags);

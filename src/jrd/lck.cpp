@@ -139,7 +139,7 @@ static const UCHAR compatibility[] = {
 };
 
 #define COMPATIBLE(st1, st2)	compatibility [st1 * LCK_max + st2]
-#define LOCK_HASH_SIZE		19
+const int LOCK_HASH_SIZE	= 19;
 
 inline void ENQUEUE(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 {

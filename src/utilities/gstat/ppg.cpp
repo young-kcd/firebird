@@ -192,10 +192,10 @@ void PPG_print_header(const header_page* header, SLONG page,
 		if (flags & hdr_backup_mask) {
 			if (flag_count++)
 				FPRINTF(outfile, ", ");
-			if ((flags & hdr_backup_mask) == nbak_state_stalled)
+			if ((flags & hdr_backup_mask) == Jrd::nbak_state_stalled)
 				FPRINTF(outfile, "backup lock");
 			else
-				if ((flags & hdr_backup_mask) == nbak_state_merge)
+				if ((flags & hdr_backup_mask) == Jrd::nbak_state_merge)
 					FPRINTF(outfile, "backup merge");
 				else
 					FPRINTF(outfile, "wrong backup state %d", flags & hdr_backup_mask);

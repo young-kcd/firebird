@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.h,v 1.14 2004-05-12 19:37:23 brodsom Exp $
+ *  $Id: nbak.h,v 1.15 2004-05-13 23:19:06 brodsom Exp $
  *
  */
  
@@ -204,20 +204,20 @@ private:
 };
 
 // Flags manipulated normally
-#define NBAK_state_in_use 1
-#define NBAK_alloc_in_use 2
+const UATOM NBAK_state_in_use = 1;
+const UATOM NBAK_alloc_in_use = 2;
 
 // Flags manipulated at AST level
-#define NBAK_state_blocking 1
-#define NBAK_alloc_blocking 2
-#define NBAK_database_blocking 4
-#define NBAK_alloc_dirty  8
+const UATOM NBAK_state_blocking		= 1;
+const UATOM NBAK_alloc_blocking		= 2;
+const UATOM NBAK_database_blocking	= 4;
+const UATOM NBAK_alloc_dirty		= 8;
 
 // Note this flags MUST correspond with backup mask in ods.h
-#define nbak_state_normal   0x0     // Normal mode. Changes are simply written to main files
-#define nbak_state_stalled  0x400   // Main files are locked. Changes are written to diff file
-#define nbak_state_merge    0x800   // Merging changes from diff file into main files
-#define nbak_state_unknown  -1      // State is unknown. Needs to be read from disk
+const SATOM nbak_state_normal	= 0x0;     // Normal mode. Changes are simply written to main files
+const SATOM nbak_state_stalled	= 0x400;   // Main files are locked. Changes are written to diff file
+const SATOM nbak_state_merge	= 0x800;   // Merging changes from diff file into main files
+const SATOM nbak_state_unknown	= -1;      // State is unknown. Needs to be read from disk
 
 } //namespace Jrd
 

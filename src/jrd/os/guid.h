@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: guid.h,v 1.5 2003-12-05 10:35:38 robocop Exp $
+ *  $Id: guid.h,v 1.6 2004-05-13 23:19:31 brodsom Exp $
  *
  */
 
@@ -41,7 +41,7 @@
 
 #include "fb_types.h"
 
-#define GUID_BUFF_SIZE 39
+const int GUID_BUFF_SIZE = 39;
 
 struct FB_GUID {
 	USHORT data[8];

@@ -64,21 +64,96 @@ bool		CCH_write_all_shadows(Jrd::thread_db*, Jrd::Shadow*, Jrd::BufferDesc*,
 
 /* macros for dealing with cache pages */
 
-#define CCH_FETCH(tdbb, window, lock, type)		  CCH_fetch (tdbb, window, lock, type, 1, 1, true)
-#define CCH_FETCH_NO_SHADOW(tdbb, window, lock, type)		  CCH_fetch (tdbb, window, lock, type, 1, 1, false)
-#define CCH_FETCH_NO_CHECKSUM(tdbb, window, lock, type)   CCH_fetch (tdbb, window, lock, type, 0, 1, true)
-#define CCH_FETCH_TIMEOUT(tdbb, window, lock, type, latch_wait)   CCH_fetch (tdbb, window, lock, type, 0, latch_wait, true)
-#define CCH_FETCH_LOCK(tdbb, window, lock, wait, latch_wait, type) CCH_fetch_lock (tdbb, window, lock, wait, latch_wait, type)
-#define CCH_FETCH_PAGE(tdbb, window, checksum, read_shadow)       CCH_fetch_page (tdbb, window, checksum, read_shadow)
-#define CCH_RELEASE(tdbb, window)                         CCH_release (tdbb, window, false)
-#define CCH_RELEASE_TAIL(tdbb, window)                    CCH_release (tdbb, window, true)
-#define CCH_MARK(tdbb, window)                            CCH_mark (tdbb, window, 0)
-#define CCH_MARK_SYSTEM(tdbb, window)                     CCH_mark (tdbb, window, 1)
-#define CCH_HANDOFF(tdbb, window, page, lock, type)       CCH_handoff (tdbb, window, page, lock, type, 1, 0)
-#define CCH_HANDOFF_TIMEOUT(tdbb, window, page, lock, type, latch_wait)   CCH_handoff (tdbb, window, page, lock, type, latch_wait, 0)
-#define CCH_HANDOFF_TAIL(tdbb, window, page, lock, type)  CCH_handoff (tdbb, window, page, lock, type, 1, 1)
-#define CCH_MARK_MUST_WRITE(tdbb, window)                 CCH_mark_must_write (tdbb, window)
-#define CCH_PREFETCH(tdbb, pages, count)            CCH_prefetch (tdbb, pages, count)
+inline Ods::pag* CCH_FETCH(Jrd::thread_db* tdbb, Jrd::win* window, USHORT lock_type, SSHORT page_type)
+{
+	return CCH_fetch (tdbb, window, lock_type, page_type, 1, 1, true);
+}
+
+inline Ods::pag* CCH_FETCH_NO_SHADOW(Jrd::thread_db* tdbb, Jrd::win* window, USHORT lock_type, SSHORT page_type)
+{
+	return CCH_fetch (tdbb, window, lock_type, page_type, 1, 1, false);
+}
+
+inline Ods::pag* CCH_FETCH_NO_CHECKSUM(Jrd::thread_db* tdbb, Jrd::win* window, USHORT lock_type, SSHORT page_type)
+{
+	return CCH_fetch (tdbb, window, lock_type, page_type, 0, 1, true);
+}
+
+inline Ods::pag* CCH_FETCH_TIMEOUT(Jrd::thread_db* tdbb, Jrd::win* window, USHORT lock_type, SSHORT page_type, SSHORT latch_wait)
+{
+	return CCH_fetch (tdbb, window, lock_type, page_type, 0, latch_wait, true);
+}
+
+inline SSHORT CCH_FETCH_LOCK(Jrd::thread_db* tdbb, Jrd::win * window, USHORT lock_type, SSHORT wait,  SSHORT latch_wait, SSHORT page_type)
+{
+	return CCH_fetch_lock(tdbb, window, lock_type, wait, latch_wait, page_type);
+}
+
+inline void CCH_FETCH_PAGE(Jrd::thread_db* tdbb, Jrd::win * window, SSHORT compute_checksum, bool read_shadow)
+{
+	CCH_fetch_page(tdbb, window, compute_checksum, read_shadow);
+}
+
+inline void CCH_RELEASE(Jrd::thread_db* tdbb, Jrd::win * window)
+{
+	CCH_release(tdbb, window, false);
+}
+
+inline void CCH_RELEASE_TAIL(Jrd::thread_db* tdbb, Jrd::win * window)
+{
+	CCH_release(tdbb, window, true);
+}
+
+inline void CCH_MARK(Jrd::thread_db* tdbb, Jrd::win * window)
+{
+	CCH_mark (tdbb, window, 0);
+}
+
+inline void CCH_MARK_SYSTEM(Jrd::thread_db* tdbb, Jrd::win * window)
+{
+	CCH_mark (tdbb, window, 1);
+}
+
+inline Ods::pag* CCH_HANDOFF(Jrd::thread_db* tdbb, Jrd::win* window, SLONG page, SSHORT lock, SSHORT page_type)
+{
+	return CCH_handoff (tdbb, window, page, lock, page_type, 1, 0);
+}
+
+inline Ods::pag* CCH_HANDOFF_TIMEOUT(Jrd::thread_db*	tdbb, Jrd::win* window, SLONG page, SSHORT lock, SSHORT page_type, SSHORT latch_wait)
+{
+	return CCH_handoff (tdbb, window, page, lock, page_type, latch_wait, 0);
+}
+
+inline Ods::pag* CCH_HANDOFF_TAIL(Jrd::thread_db*	tdbb, Jrd::win* window, SLONG page, SSHORT lock, SSHORT page_type)
+{
+	return CCH_handoff (tdbb, window, page, lock, page_type, 1, 1);
+}
+
+inline void CCH_MARK_MUST_WRITE(Jrd::thread_db* tdbb, Jrd::win * window)
+{
+	CCH_mark_must_write(tdbb, window);
+}
+
+inline void CCH_PREFETCH(Jrd::thread_db* tdbb, SLONG * pages, SSHORT count)
+{
+	CCH_prefetch (tdbb, pages, count);
+}
+
+//#define CCH_FETCH(tdbb, window, lock, type)		  CCH_fetch (tdbb, window, lock, type, 1, 1, true)
+//#define CCH_FETCH_NO_SHADOW(tdbb, window, lock, type)		  CCH_fetch (tdbb, window, lock, type, 1, 1, false)
+//#define CCH_FETCH_NO_CHECKSUM(tdbb, window, lock, type)   CCH_fetch (tdbb, window, lock, type, 0, 1, true)
+//#define CCH_FETCH_TIMEOUT(tdbb, window, lock, type, latch_wait)   CCH_fetch (tdbb, window, lock, type, 0, latch_wait, true)
+//#define CCH_FETCH_LOCK(tdbb, window, lock, wait, latch_wait, type) CCH_fetch_lock (tdbb, window, lock, wait, latch_wait, type)
+//#define CCH_FETCH_PAGE(tdbb, window, checksum, read_shadow)       CCH_fetch_page (tdbb, window, checksum, read_shadow)
+//#define CCH_RELEASE(tdbb, window)                         CCH_release (tdbb, window, false)
+//#define CCH_RELEASE_TAIL(tdbb, window)                    CCH_release (tdbb, window, true)
+//#define CCH_MARK(tdbb, window)                            CCH_mark (tdbb, window, 0)
+//#define CCH_MARK_SYSTEM(tdbb, window)                     CCH_mark (tdbb, window, 1)
+//#define CCH_HANDOFF(tdbb, window, page, lock, type)       CCH_handoff (tdbb, window, page, lock, type, 1, 0)
+//#define CCH_HANDOFF_TIMEOUT(tdbb, window, page, lock, type, latch_wait)   CCH_handoff (tdbb, window, page, lock, type, latch_wait, 0)
+//#define CCH_HANDOFF_TAIL(tdbb, window, page, lock, type)  CCH_handoff (tdbb, window, page, lock, type, 1, 1)
+//#define CCH_MARK_MUST_WRITE(tdbb, window)                 CCH_mark_must_write (tdbb, window)
+//#define CCH_PREFETCH(tdbb, pages, count)            CCH_prefetch (tdbb, pages, count)
 
 /* Flush flags */
 
