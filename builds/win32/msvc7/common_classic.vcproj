@@ -178,6 +178,9 @@
 				RelativePath="..\..\..\src\jrd\os\win32\path_utils.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\common\classes\timestamp.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\common\utils.cpp">
 			</File>
 		</Filter>
@@ -207,6 +210,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\config\dir_list.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\timestamp.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\utils_proto.h">

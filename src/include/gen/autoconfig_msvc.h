@@ -159,6 +159,7 @@
 #define HAVE_STRDUP
 #undef HAVE_MKSTEMP
 #undef HAVE_LLRINT
+#undef HAVE_LOCALTIME_R
 
 
 /* Types */

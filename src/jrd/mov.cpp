@@ -585,8 +585,5 @@ void MOV_time_stamp(GDS_TIMESTAMP* date)
  *	Get the current timestamp in gds format.
  *
  **************************************/
-	if (!Firebird::TimeStamp().encode(date, false))
-	{
-		ERR_post(isc_date_range_exceeded, 0);
-	}
+	*date = Firebird::TimeStamp().value();
 }

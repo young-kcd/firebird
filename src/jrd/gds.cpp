@@ -50,6 +50,7 @@
 #include "../jrd/constants.h"
 
 #include "../common/classes/locks.h"
+#include "../common/classes/timestamp.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -193,6 +194,7 @@ static char ib_prefix_msg_val[MAXPATHLEN];
 #include "../jrd/jrd.h"
 #include "../common/utils_proto.h"
 
+using Firebird::TimeStamp;
 
 // This structure is used to parse the firebird.msg file.
 struct gds_msg
@@ -241,10 +243,6 @@ static void		blr_print_verb(gds_ctl*, SSHORT);
 static int		blr_print_word(gds_ctl*);
 
 static void		init(void);
-static int		yday(const tm*);
-
-static void		ndate(SLONG, tm*);
-static GDS_DATE	nday(const tm*);
 static void		sanitize(TEXT*);
 
 static void		safe_concat_path(TEXT* destbuf, const TEXT* srcbuf);
@@ -495,12 +493,7 @@ void API_ROUTINE isc_decode_sql_date(const GDS_DATE* date, void* times_arg)
  *
  **************************************/
 	tm* times = (struct tm*) times_arg;
-	memset(times, 0, sizeof(*times));
-
-	ndate(*date, times);
-	times->tm_yday = yday(times);
-	if ((times->tm_wday = (*date + 3) % 7) < 0)
-		times->tm_wday += 7;
+	TimeStamp::decode_date(*date, times);
 }
 
 
@@ -537,23 +530,12 @@ void API_ROUTINE isc_decode_timestamp(const GDS_TIMESTAMP* date, void* times_arg
  * Functional description
  *	Convert from internal timestamp format to UNIX time structure.
  *
- *	Note: the date arguement is really an ISC_TIMESTAMP -- however the
- *	definition of ISC_TIMESTAMP is not available from all the source
- *	modules that need to use isc_encode_timestamp
+ *	Note: This routine is intended only for public API use. Engine itself and 
+ *  utilities should be using TimeStamp class directly in type-safe manner.
  *
  **************************************/
-	tm* times = (struct tm*) times_arg;
-	memset(times, 0, sizeof(*times));
 
-	ndate(date->timestamp_date, times);
-	times->tm_yday = yday(times);
-	if ((times->tm_wday = (date->timestamp_date + 3) % 7) < 0)
-		times->tm_wday += 7;
-
-	const ULONG minutes = date->timestamp_time / (ISC_TIME_SECONDS_PRECISION * 60);
-	times->tm_hour = minutes / 60;
-	times->tm_min = minutes % 60;
-	times->tm_sec = (date->timestamp_time / ISC_TIME_SECONDS_PRECISION) % 60;
+	Firebird::TimeStamp(*date).decode(reinterpret_cast<tm*>(times_arg));
 }
 
 
@@ -593,7 +575,9 @@ void API_ROUTINE isc_encode_date(const void* times_arg, ISC_QUAD* date)
  *	isc_encode_timestamp
  *
  **************************************/
-	isc_encode_timestamp(times_arg, (GDS_TIMESTAMP*) date);
+	Firebird::TimeStamp temp;
+	temp.encode(reinterpret_cast<const tm*>(times_arg));
+	*date = (ISC_QUAD&)temp.value();
 }
 
 
@@ -610,7 +594,7 @@ void API_ROUTINE isc_encode_sql_date(const void* times_arg, GDS_DATE* date)
  *
  **************************************/
 
-	*date = nday((const struct tm*) times_arg);
+	*date = TimeStamp::encode_date((const struct tm*) times_arg);
 }
 
 
@@ -636,24 +620,20 @@ void API_ROUTINE isc_encode_timestamp(const void* times_arg, GDS_TIMESTAMP* date
 {
 /**************************************
  *
- *	i s c _ e n c o d e _ t i m e s t a m p
+ *	i s c _ e n c o d e _ d a t e
  *
  **************************************
  *
  * Functional description
  *	Convert from UNIX time structure to internal timestamp format.
  *
- *	Note: the date arguement is really an ISC_TIMESTAMP -- however the
- *	definition of ISC_TIMESTAMP is not available from all the source
- *	modules that need to use isc_encode_timestamp
+ *	Note: This routine is intended only for public API use. Engine itself and 
+ *  utilities should be using TimeStamp class directly in type-safe manner.
  *
  **************************************/
-	const tm* times = (const struct tm*) times_arg;
-
-	date->timestamp_date = nday(times);
-	date->timestamp_time =
-		((times->tm_hour * 60 + times->tm_min) * 60 +
-		 times->tm_sec) * ISC_TIME_SECONDS_PRECISION;
+	Firebird::TimeStamp temp;
+	temp.encode(reinterpret_cast<const tm*>(times_arg));
+	*date = temp.value();
 }
 
 
@@ -1125,14 +1105,13 @@ void API_ROUTINE gds__trace(const TEXT * text)
 
 	const int days = now / SECS_PER_DAY;
 	int rem = now % SECS_PER_DAY;
+
 	tm today;
+	TimeStamp::decode_date(days + TimeStamp::GDS_EPOCH_START, &today);
     today.tm_hour = rem / SECS_PER_HOUR;
     rem %= SECS_PER_HOUR;
     today.tm_min = rem / 60;
     today.tm_sec = rem % 60;
-
-	ndate(days + 40617 /* Number of first day of the Epoch in GDS counting */,
-		  &today);
 
 	char buffer[1024]; // 1K should be enough for the trace message
 	char* p = buffer;
@@ -3543,135 +3522,6 @@ static void init(void)
 
 	/* V4_GLOBAL_MUTEX_UNLOCK; */
 }
-
-
-static int yday(const struct tm* times)
-{
-/**************************************
- *
- *	y d a y
- *
- **************************************
- *
- * Functional description
- *	Convert a calendar date to the day-of-year.
- *
- *	The unix time structure considers
- *	january 1 to be Year day 0, although it
- *	is day 1 of the month.   (Note that QLI,
- *	when printing Year days takes the other
- *	view.)   
- *
- **************************************/
-	SSHORT day = times->tm_mday;
-	const SSHORT month = times->tm_mon;
-	const SSHORT year = times->tm_year + 1900;
-
-	--day;
-
-	day += (214 * month + 3) / 7;
-
-	if (month < 2)
-		return day;
-
-	if (year % 4 == 0 && year % 100 != 0 || year % 400 == 0)
-		--day;
-	else
-		day -= 2;
-
-	return day;
-}
-
-
-static void ndate(SLONG nday, tm* times)
-{
-/**************************************
- *
- *	n d a t e
- *
- **************************************
- *
- * Functional description
- *	Convert a numeric day to [day, month, year].
- *
- * Calenders are divided into 4 year cycles.
- * 3 Non-Leap years, and 1 leap year.
- * Each cycle takes 365*4 + 1 == 1461 days.
- * There is a further cycle of 100 4 year cycles.
- * Every 100 years, the normally expected leap year
- * is not present.  Every 400 years it is.
- * This cycle takes 100 * 1461 - 3 == 146097 days
- * The origin of the constant 2400001 is unknown.
- * The origin of the constant 1721119 is unknown.
- * The difference between 2400001 and 1721119 is the
- * number of days From 0/0/0000 to our base date of
- * 11/xx/1858. (678882)
- * The origin of the constant 153 is unknown.
- *
- * This whole routine has problems with ndates
- * less than -678882 (Approx 2/1/0000).
- *
- **************************************/
-	nday -= 1721119 - 2400001;
-	const SLONG century = (4 * nday - 1) / 146097;
-	nday = 4 * nday - 1 - 146097 * century;
-	SLONG day = nday / 4;
-
-	nday = (4 * day + 3) / 1461;
-	day = 4 * day + 3 - 1461 * nday;
-	day = (day + 4) / 4;
-
-	SLONG month = (5 * day - 3) / 153;
-	day = 5 * day - 3 - 153 * month;
-	day = (day + 5) / 5;
-
-	SLONG year = 100 * century + nday;
-
-	if (month < 10)
-		month += 3;
-	else {
-		month -= 9;
-		year += 1;
-	}
-
-	times->tm_mday = (int) day;
-	times->tm_mon = (int) month - 1;
-	times->tm_year = (int) year - 1900;
-}
-
-
-static GDS_DATE nday(const tm* times)
-{
-/**************************************
- *
- *	n d a y
- *
- **************************************
- *
- * Functional description
- *	Convert a calendar date to a numeric day
- *	(the number of days since the base date).
- *
- **************************************/
-	const SSHORT day = times->tm_mday;
-	SSHORT month = times->tm_mon + 1;
-	SSHORT year = times->tm_year + 1900;
-
-	if (month > 2)
-		month -= 3;
-	else {
-		month += 9;
-		year -= 1;
-	}
-
-	const SLONG c = year / 100;
-	const SLONG ya = year - 100 * c;
-
-	return (GDS_DATE) (((SINT64) 146097 * c) / 4 +
-					   (1461 * ya) / 4 +
-					   (153 * month + 2) / 5 + day + 1721119 - 2400001);
-}
-
 
 static void sanitize(TEXT* locale)
 {

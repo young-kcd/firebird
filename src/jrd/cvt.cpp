@@ -1377,24 +1377,17 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 				   Otherwise, take the CURRENT date to populate the 
 				   date portion of the timestamp */
 
-				ISC_TIMESTAMP enc_times;
+				SLONG cur_date;
 				if (tdbb && (tdbb->getType() == ThreadData::tddDBB) &&
 					tdbb->tdbb_request)
 				{
-					if (!tdbb->tdbb_request->req_timestamp.encode(&enc_times, false))
-					{
-						(*err)(isc_date_range_exceeded, 0);
-					}
+					cur_date = tdbb->tdbb_request->req_timestamp.value().timestamp_date;
 				}
 				else
 				{
-					if (!Firebird::TimeStamp().encode(&enc_times, false))
-					{
-						(*err)(isc_date_range_exceeded, 0);
-					}
+					cur_date = Firebird::TimeStamp().value().timestamp_date;
 				}
-				((GDS_TIMESTAMP*) (to->dsc_address))->timestamp_date =
-					enc_times.timestamp_date;
+				((GDS_TIMESTAMP*) (to->dsc_address))->timestamp_date = cur_date;
 			}
 			return;
 
@@ -2498,15 +2491,10 @@ static void string_to_datetime(
 							conversion_error(desc, err);
 
 					/* fetch the current time */
+					*date = Firebird::TimeStamp().value();
 
-					if (!Firebird::TimeStamp().encode(date, true))
-					{
-						(err)(isc_date_range_exceeded, 0);
-					}
-
-					if (strcmp(temp, NOW) == 0) {
+					if (strcmp(temp, NOW) == 0)
 						return;
-					}
 					if (expect_type == expect_sql_time) {
 						conversion_error(desc, err);
 						return;
@@ -2631,10 +2619,8 @@ static void string_to_datetime(
 		times.tm_mon = components[position_month];
 		times.tm_mday = components[position_day];
 
-		if (!Firebird::TimeStamp().encode(&times2))
-		{
-			(err)(isc_date_range_exceeded, 0);
-		}
+		// Fetch current date/time
+		Firebird::TimeStamp().decode(&times2);
 
 		/* Handle defaulting of year */
 
