@@ -1,3 +1,166 @@
+2003-07-09 15:07  alexpeshkoff
+
+	* firebird2/src/jrd/cmp.cpp:
+	
+	Fixed server AV for any combination of sub-select & between.  Not
+	ideal, but such diagnostic is better than server crash.
+
+2003-07-09 11:21  fsg
+
+	* firebird2/:
+	builds/install/arch-specific/linux/classic/makeInstallImage.sh.in,
+	builds/install/arch-specific/linux/super/makeInstallImage.sh.in,
+	builds/install/arch-specific/sinixz/prototype.in,
+	builds/posix/Makefile.in.extlib, doc/README.build.mingw.html:
+	
+	renamed fb_udf to fbudf for posix-builds to stay compatible with
+	the windows world
+	
+	fsg
+
+2003-07-09 03:24  brodsom
+
+	* firebird2/builds/install/arch-specific/linux/super/:
+	tarInstall.sh.in, tarinstall.sh.in:
+	
+	-Rename to use the name in configure.in and classic
+	install.(previously configure fails for superserver)
+
+2003-07-09 03:20  brodsom
+
+	* firebird2/configure.in:
+	
+	-Correction due to 'install' move
+
+2003-07-09 02:46  brodsom
+
+	* firebird2/builds/posix/: Makefile.in.firebird, make.defaults:
+	
+	Corrections
+
+2003-07-09 01:38  brodsom
+
+	* firebird2/src/: qli/depends.mak, remote/depends.mak:
+	
+	Remove depends (unused and unmaintained)
+
+2003-07-09 01:32  brodsom
+
+	* firebird2/src/: burp/depends.mak, dsql/depends.mak,
+	dudley/depends.mak, intl/depends.mak, intlcpp/depends.mak,
+	isql/depends.mak, journal/depends.mak, lock/depends.mak,
+	msgs/depends.mak:
+	
+	Remove depends (unused and unmaintained)
+
+2003-07-09 01:10  brodsom
+
+	* firebird2/src/install/arch-specific/: darwin/FrameworkInfo.plist,
+	darwin/Makefile.in, freebsd/Makefile.in, solx86/Makefile.in,
+	solaris/Makefile.in, sinixz/Makefile.in, sinixz/pkginfo.in,
+	sinixz/postinstall.in, sinixz/postremove.in, sinixz/preinstall.in,
+	sinixz/prototype.in, mingw/Makefile.in,
+	linux/super/makeInstallImage.sh.in, linux/super/postinstall.sh.in,
+	linux/super/postuninstall.sh.in, linux/super/preinstall.sh.in,
+	linux/super/preuninstall.sh.in, linux/super/rpmfiles.txt.in,
+	linux/super/rpmheader.txt.in, linux/super/tarInstall.sh.in,
+	linux/super/tarMainInstall.sh.in,
+	linux/super/tarMainUninstall.sh.in, linux/super/taruninstall.sh.in,
+	linux/misc/changeDBAPassword.sh.in, linux/misc/firebird.xinetd.in,
+	linux/classic/README, linux/classic/makeInstallImage.sh.in,
+	linux/classic/postinstall.sh.in, linux/classic/postuninstall.sh.in,
+	linux/classic/preinstall.sh.in, linux/classic/preuninstall.sh.in,
+	linux/classic/rpmfiles.txt.in, linux/classic/rpmheader.txt.in,
+	linux/classic/tarMainInstall.sh.in,
+	linux/classic/tarMainUninstall.sh.in,
+	linux/classic/tarinstall.sh.in, linux/classic/taruninstall.sh.in,
+	linux/Makefile.in:
+	
+	Moving install from 'src' to 'builds'
+
+2003-07-09 01:05  brodsom
+
+	* firebird2/builds/win32/clean_all.bat:
+	
+	Moving install from 'src' to 'builds'
+
+2003-07-09 00:59  brodsom
+
+	* firebird2/builds/install/arch-specific/linux/classic/: README,
+	makeInstallImage.sh.in, postinstall.sh.in, postuninstall.sh.in,
+	preinstall.sh.in, preuninstall.sh.in, rpmfiles.txt.in,
+	rpmheader.txt.in, tarMainInstall.sh.in, tarMainUninstall.sh.in,
+	tarinstall.sh.in, taruninstall.sh.in:
+	
+	Moving install from 'src' to 'builds'
+
+2003-07-09 00:56  brodsom
+
+	* firebird2/builds/install/:
+	arch-specific/darwin/FrameworkInfo.plist,
+	arch-specific/darwin/Makefile.in,
+	arch-specific/freebsd/Makefile.in, arch-specific/linux/Makefile.in,
+	misc/CSchangeRunUser.sh, misc/CSrestoreRootRunUser.sh,
+	misc/IDPLicense.txt, misc/IPLicense.txt, misc/SSchangeRunUser.sh,
+	misc/SSrestoreRootRunUser.sh, misc/changeDBAPassword.sh,
+	misc/firebird.conf, misc/firebird.init.d.generic,
+	misc/firebird.init.d.mandrake,
+	arch-specific/win32/BuildExecutableInstall.bat,
+	arch-specific/win32/FirebirdInstall_15.iss,
+	arch-specific/win32/Readme.txt,
+	arch-specific/win32/firebird_install_logo1.bmp,
+	arch-specific/win32/installation_readme.txt,
+	arch-specific/win32/setenvvar.bat,
+	arch-specific/solx86/Makefile.in,
+	arch-specific/solaris/Makefile.in,
+	arch-specific/sinixz/Makefile.in, arch-specific/sinixz/pkginfo.in,
+	arch-specific/sinixz/postinstall.in,
+	arch-specific/sinixz/postremove.in,
+	arch-specific/sinixz/preinstall.in,
+	arch-specific/sinixz/prototype.in, arch-specific/mingw/Makefile.in,
+	arch-specific/linux/super/SSchangePasswd.sh,
+	arch-specific/linux/super/install.sh.in,
+	arch-specific/linux/super/makeInstallImage.sh.in,
+	arch-specific/linux/super/postinstall.sh.in,
+	arch-specific/linux/super/postuninstall.sh.in,
+	arch-specific/linux/super/preinstall.sh.in,
+	arch-specific/linux/super/preuninstall.sh.in,
+	arch-specific/linux/super/rpmfiles.txt.in,
+	arch-specific/linux/super/rpmheader.txt.in,
+	arch-specific/linux/super/tarInstall.sh.in,
+	arch-specific/linux/super/tarMainInstall.sh.in,
+	arch-specific/linux/super/tarMainUninstall.sh.in,
+	arch-specific/linux/super/taruninstall.sh.in,
+	arch-specific/linux/misc/changeDBAPassword.sh.in,
+	arch-specific/linux/misc/firebird.xinetd.in:
+	
+	Moving install from 'src' to 'builds'
+
+2003-07-09 00:53  brodsom
+
+	* firebird2/src/install/: misc/CSchangeRunUser.sh,
+	misc/CSrestoreRootRunUser.sh, misc/IDPLicense.txt,
+	misc/IPLicense.txt, misc/SSchangeRunUser.sh,
+	misc/SSrestoreRootRunUser.sh, misc/changeDBAPassword.sh,
+	misc/firebird.conf, misc/firebird.init.d.generic,
+	misc/firebird.init.d.mandrake,
+	arch-specific/win32/BuildExecutableInstall.bat,
+	arch-specific/win32/FirebirdInstall_15.iss,
+	arch-specific/win32/Readme.txt,
+	arch-specific/win32/firebird_install_logo1.bmp,
+	arch-specific/win32/installation_readme.txt,
+	arch-specific/linux/super/SSchangePasswd.sh,
+	arch-specific/linux/super/install.sh.in,
+	arch-specific/win32/setenvvar.bat:
+	
+	Moving install from 'src' to 'builds'
+
+2003-07-09 00:29  brodsom
+
+	* firebird2/doc/: cross_ref.html, emacros-cross_ref.html:
+	
+	Change document name
+
 2003-07-08 21:16  brodsom
 
 	* firebird2/doc/: cleaning-todo.txt, cleaning-todo.txt:
