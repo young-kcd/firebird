@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: nbak.cpp,v 1.42 2004-09-15 05:29:04 skidder Exp $
+ *  $Id: nbak.cpp,v 1.43 2004-10-08 08:13:22 robocop Exp $
  *
  */
 
@@ -527,7 +527,7 @@ int BackupManager::backup_database_ast(void *ast_object) throw()
 void BackupManager::generate_filename() throw()
 {
 	strncpy(diff_name, (char*)database->dbb_filename.c_str(), sizeof(diff_name));
-	strncat(diff_name, ".delta", sizeof(diff_name)-strlen(diff_name)-1);
+	strncat(diff_name, ".delta", sizeof(diff_name) - strlen(diff_name) - 1);
 }
 
 // Initialize and open difference file for writing
@@ -813,7 +813,7 @@ bool BackupManager::actualize_alloc() throw()
 			// to difference file pages.
 		
 			// Get offset of pointer page. We can do so because page sizes are powers of 2
-			temp_bdb.bdb_page = last_allocated_page & ~(database->dbb_page_size/sizeof(ULONG)-1);
+			temp_bdb.bdb_page = last_allocated_page & ~(database->dbb_page_size / sizeof(ULONG) - 1);
 			temp_bdb.bdb_dbb = database;
 			temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(alloc_buffer);
 		
@@ -876,7 +876,7 @@ ULONG BackupManager::allocate_difference_page(ULONG db_page) throw() {
 	// file consistent in case of write error. We should always be able 
 	// to read next alloc page when previous one is full.
 	BufferDesc temp_bdb;
-	temp_bdb.bdb_page = last_allocated_page+1;
+	temp_bdb.bdb_page = last_allocated_page + 1;
 	temp_bdb.bdb_dbb = database;
 	temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(empty_buffer);
 	if (!PIO_write(diff_file, &temp_bdb, (Ods::pag*)empty_buffer, status_vector))
@@ -915,7 +915,7 @@ ULONG BackupManager::allocate_difference_page(ULONG db_page) throw() {
 	if (alloc_page_full) {
 		last_allocated_page++;
 		memset(alloc_buffer, 0, database->dbb_page_size);
-		return last_allocated_page-1;
+		return last_allocated_page - 1;
 	}
 	
 	return last_allocated_page;
