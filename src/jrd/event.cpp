@@ -77,8 +77,6 @@
 #define MUTEX		EVENT_header->evh_mutex
 #endif
 
-#define SRQ_BASE                  ((UCHAR *) EVENT_header)
-
 // Not used
 // #define EVENT_FLAG		64
 const int SEMAPHORES		= 1;
@@ -121,6 +119,8 @@ static SLONG EVENT_process_offset, EVENT_default_size;
 static PRB EVENT_process;
 #endif
 static SH_MEM_T EVENT_data;
+
+static const UCHAR* SRQ_BASE	= (UCHAR *) EVENT_header;
 
 #if defined(WIN_NT)
 static MTX_T event_mutex[1];
