@@ -36,7 +36,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.43 2003-04-01 11:43:47 brodsom Exp $
+$Id: lock.cpp,v 1.44 2003-04-02 11:03:31 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -4315,7 +4315,8 @@ static void validate_history( PTR history_header)
 		 history = (HIS) ABS_PTR(history->his_next)) {
 		count++;
 		CHECK(history->his_type == type_his);
-		CHECK(history->his_operation >= 0);
+// The following condition is always true because UCHAR >= 0
+//		CHECK(history->his_operation >= 0);
 		CHECK(history->his_operation <= his_MAX);
 		if (history->his_next == history_header)
 			break;
@@ -4450,7 +4451,8 @@ static void validate_lock( PTR lock_ptr, USHORT freed, PTR lrq_ptr)
 			else
 		CHECK(lock->lbl_type == type_lbl);
 
-	CHECK(lock->lbl_state >= LCK_none);
+// The following condition is always true because UCHAR >= 0
+//	CHECK(lock->lbl_state >= LCK_none);
 	CHECK(lock->lbl_state < LCK_max);
 
 	CHECK(lock->lbl_length <= lock->lbl_size);
