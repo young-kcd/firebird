@@ -189,6 +189,66 @@ void DPM_backout( thread_db* tdbb, record_param* rpb)
 }
 
 
+double DPM_cardinality(thread_db* tdbb, jrd_rel* relation, const Format* format)
+{
+/**************************************
+ *
+ *	D P M _ c a r d i n a l i t y
+ *
+ **************************************
+ *
+ * Functional description
+ *	Estimate cardinality for the given relation.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->tdbb_database;
+
+	// Estimated number of total records for this relation, 
+	// we assume that the records are compressed to 50%
+	// Every record has also a header and a jump section (13 + 4)
+
+	USHORT minRecordSize = sizeof(Ods::data_page::dpg_repeat) + RHD_SIZE;
+	if (!(dbb->dbb_flags & DBB_no_reserve)) {
+		minRecordSize += RHDF_SIZE;
+	}
+
+	// Get the number of data-pages for this relation
+
+	SLONG dataPages = DPM_data_pages(tdbb, relation);
+
+	// AB: If we have only 1 data-page then the cardinality calculation 
+	// is to worse to be usefull, therefore rely on the record count 
+	// from the data-page.
+
+	if (dataPages == 1) {
+		vcl* vector = relation->rel_pages;
+		if (vector) {
+			WIN window(-1);
+			window.win_page = (*vector)[0];
+			Ods::pointer_page* ppage = 
+				(Ods::pointer_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_pointer);
+			USHORT recordCount = 0;
+			const SLONG* page = ppage->ppg_page;
+			if (*page) {
+				Ods::data_page* dpage =
+					(Ods::data_page*) CCH_HANDOFF(tdbb, &window, *page, LCK_read, pag_data);
+				recordCount = dpage->dpg_count;
+			}
+			CCH_RELEASE(tdbb, &window);
+			return (double) recordCount;
+		}
+	}
+
+	if (!format) {
+		format = relation->rel_current_format;
+	}
+
+	return (double) dataPages * (dbb->dbb_page_size - DPG_SIZE) / 
+		(minRecordSize + (format->fmt_length * 0.5));
+}
+
+
 bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 {
 /**************************************
