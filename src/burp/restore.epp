@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.84 2004-11-02 02:41:25 asfernandes Exp $
+$Id: restore.epp,v 1.85 2004-11-08 03:12:14 robocop Exp $
 */
 
 #include "firebird.h"
@@ -560,7 +560,7 @@ int RESTORE_restore (const TEXT* file_name,
 	{
 		*d++ = (UCHAR) isc_dpb_user_name;
 		*d++ = (UCHAR) strlen (tdgbl->gbl_sw_user);
-		for (UCHAR* q = (UCHAR*) tdgbl->gbl_sw_user; *q;)
+		for (const UCHAR* q = (UCHAR*) tdgbl->gbl_sw_user; *q;)
 			*d++ = *q++;
 	}
 
@@ -571,7 +571,7 @@ int RESTORE_restore (const TEXT* file_name,
 		else
 			*d++ = (UCHAR) isc_dpb_password_enc;
 		*d++ = (UCHAR) strlen (tdgbl->gbl_sw_password);
-		for (UCHAR* q = (UCHAR*) tdgbl->gbl_sw_password; *q;)
+		for (const UCHAR* q = (UCHAR*) tdgbl->gbl_sw_password; *q;)
 			*d++ = *q++;
 	}
 
@@ -612,7 +612,7 @@ int RESTORE_restore (const TEXT* file_name,
 		{
 			*d++ = (UCHAR) isc_dpb_user_name;
 			*d++ = (UCHAR) strlen (tdgbl->gbl_sw_user);
-			for (UCHAR* q = (UCHAR*) tdgbl->gbl_sw_user; *q;)
+			for (const UCHAR* q = (UCHAR*) tdgbl->gbl_sw_user; *q;)
 				*d++ = *q++;
 		}
 
@@ -623,7 +623,7 @@ int RESTORE_restore (const TEXT* file_name,
 			else
 				*d++ = (UCHAR) isc_dpb_password_enc;
 			*d++ = (UCHAR) strlen (tdgbl->gbl_sw_password);
-			for (UCHAR* q = (UCHAR*) tdgbl->gbl_sw_password; *q;)
+			for (const UCHAR* q = (UCHAR*) tdgbl->gbl_sw_password; *q;)
 				*d++ = *q++;
 		}
 

@@ -27,7 +27,7 @@
 #ifndef DSQL_UTLD_PROTO_H
 #define DSQL_UTLD_PROTO_H
 
-ISC_STATUS	UTLD_parse_sql_info(ISC_STATUS*, USHORT, SCHAR*, XSQLDA*, USHORT*);
+ISC_STATUS	UTLD_parse_sql_info(ISC_STATUS*, USHORT, const SCHAR*, XSQLDA*, USHORT*);
 ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS*, sqlda_sup* const, USHORT*, USHORT*,
 	USHORT*, USHORT, XSQLDA*, const USHORT);
 void		UTLD_save_status_strings(ISC_STATUS*);

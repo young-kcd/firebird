@@ -211,7 +211,7 @@ bool PREPARSE_execute(
 				!strcmp(token, pp_symbols[i].symbol)) 
 			{
 				bool get_out = false;
-				SCHAR* ch;
+				const SCHAR* ch;
 				SSHORT l;
 				// CVC: What's strange, this routine doesn't check token_length
 				// but it proceeds blindly, trying to exhaust the token itself.

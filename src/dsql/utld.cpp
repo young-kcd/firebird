@@ -30,7 +30,7 @@
  */
 
 /*
-$Id: utld.cpp,v 1.30 2004-09-24 06:48:24 robocop Exp $
+$Id: utld.cpp,v 1.31 2004-11-08 03:14:17 robocop Exp $
 */
 
 #include "firebird.h"
@@ -46,8 +46,8 @@ $Id: utld.cpp,v 1.30 2004-09-24 06:48:24 robocop Exp $
 
 static void cleanup(void *);
 static ISC_STATUS error_dsql_804(ISC_STATUS *, ISC_STATUS);
-static SLONG get_numeric_info(SCHAR **);
-static SLONG get_string_info(SCHAR **, SCHAR *, int);
+static SLONG get_numeric_info(const SCHAR**);
+static SLONG get_string_info(const SCHAR**, SCHAR*, int);
 #ifdef NOT_USED_OR_REPLACED
 #ifdef DEV_BUILD
 static void print_xsqlda(XSQLDA *);
@@ -98,7 +98,7 @@ const int  DSQL_FAILURE_SPACE = 2048;
 ISC_STATUS	UTLD_parse_sql_info(
 				ISC_STATUS* status,
 				USHORT dialect,
-				SCHAR* info,
+				const SCHAR* info,
 				XSQLDA* xsqlda,
 				USHORT* return_index)
 {
@@ -119,7 +119,7 @@ ISC_STATUS	UTLD_parse_sql_info(
 
 	info += 2;
 
-	SSHORT n = static_cast<SSHORT> (get_numeric_info(&info));
+	const SSHORT n = static_cast<SSHORT>(get_numeric_info(&info));
 	if (dialect >= DIALECT_xsqlda)
 	{
 		if (xsqlda->version != SQLDA_VERSION1)
@@ -789,11 +789,12 @@ static ISC_STATUS error_dsql_804( ISC_STATUS * status, ISC_STATUS err)
     @param ptr
 
  **/
-static SLONG get_numeric_info( SCHAR ** ptr)
+static SLONG get_numeric_info( const SCHAR** ptr)
 {
-	SSHORT l = static_cast<SSHORT>(gds__vax_integer(reinterpret_cast<UCHAR*>(*ptr), 2));
+	const SSHORT l =
+		static_cast<SSHORT>(gds__vax_integer(reinterpret_cast<const UCHAR*>(*ptr), 2));
 	*ptr += 2;
-	int item = gds__vax_integer(reinterpret_cast<UCHAR*>(*ptr), l);
+	int item = gds__vax_integer(reinterpret_cast<const UCHAR*>(*ptr), l);
 	*ptr += l;
 
 	return item;
@@ -814,10 +815,11 @@ static SLONG get_numeric_info( SCHAR ** ptr)
     @param buffer_len
 
  **/
-static SLONG get_string_info( SCHAR ** ptr, SCHAR * buffer, int buffer_len)
+static SLONG get_string_info( const SCHAR** ptr, SCHAR * buffer, int buffer_len)
 {
-	SCHAR *p = *ptr;
-	SSHORT l = static_cast<SSHORT>(gds__vax_integer(reinterpret_cast<UCHAR*>(p), 2));
+	const SCHAR* p = *ptr;
+	SSHORT l =
+		static_cast<SSHORT>(gds__vax_integer(reinterpret_cast<const UCHAR*>(p), 2));
 	*ptr += l + 2;
 	p += 2;
 

@@ -803,9 +803,9 @@ public:
 	bool		gbl_sw_convert_ext_tables;
 	bool		gbl_sw_mode;
 	bool		gbl_sw_mode_val;
-	SCHAR*		gbl_sw_sql_role;
-	SCHAR*		gbl_sw_user;
-	SCHAR*		gbl_sw_password;
+	const SCHAR*	gbl_sw_sql_role;
+	const SCHAR*	gbl_sw_user;
+	const SCHAR*	gbl_sw_password;
 	SLONG		gbl_sw_skip_count;
 	SLONG		gbl_sw_page_buffers;
 	burp_fil*	gbl_sw_files;

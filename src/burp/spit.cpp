@@ -193,7 +193,7 @@ int main( int argc, char *argv[])
 	*/
 	
 	bool file_nm_sw = false;
-	SCHAR* string = NULL;
+	const SCHAR* string = NULL;
 
 	const SCHAR* const* const end = argv + argc;
 	++argv;
