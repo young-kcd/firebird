@@ -59,13 +59,18 @@
 #include <unistd.h>
 #endif
 
-#if defined(VMS)
+#ifdef WIN_NT
+#include <process.h>
+#include <io.h> // lseek
+#define ERRNO	GetLastError()
+#elif defined(VMS)
 #include <types.h>
 #include <file.h>
-#elif defined(WIN_NT)
+#include <sys/types.h>
+#include <sys/file.h>
+#else
 #include <errno.h>
 #include <signal.h>
-#else
 #include <sys/types.h>
 #include <sys/file.h>
 #endif
@@ -73,13 +78,6 @@
 #ifdef UNIX
 #include <sys/stat.h>
 #endif
-
-#ifdef WIN_NT
-#include <process.h>
-#include <io.h> // lseek
-#define ERRNO	GetLastError()
-#endif
-
 
 #ifdef SUPERSERVER
 #define exit(code)	return (code)
