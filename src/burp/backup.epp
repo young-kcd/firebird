@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.68 2004-10-30 07:05:41 robocop Exp $
+$Id: backup.epp,v 1.69 2004-11-10 04:33:37 robocop Exp $
 */
 
 #include "firebird.h"
@@ -1299,13 +1299,21 @@ void put_asciz( const SCHAR attribute, const TEXT* string)
  *
  * Functional description
  *	Write an attribute starting with a null terminated string.
+ *	Currently it's only called by write_database with the db's name as param.
  *
  **************************************/
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	const ULONG l = strlen(string);
-#pragma FB_COMPILER_MESSAGE("CVC: Check that file doesn't exceed 255 in length!")
-	// We'll have to ensure that length < MAX_FILE_NAME_SIZE
+	// CVC: We'll have to ensure that length < MAX_FILE_NAME_SIZE.
+	// For now, we'll truncate silently until we define a message.
+	// We can't honor operating systems that allow longer file names.
+	if (l >= MAX_FILE_NAME_SIZE)
+	{
+		//BURP_print(CREATE A MESSAGE, string, MAX_FILE_NAME_SIZE - 1, 0, 0, 0);
+		// msg ZZZ: name %s too large, truncating to %d bytes.
+		l = MAX_FILE_NAME_SIZE - 1;
+	}
 
 	put(tdgbl, (UCHAR) (attribute));
 	put(tdgbl, (UCHAR) (l));
