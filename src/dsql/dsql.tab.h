@@ -243,3 +243,4 @@
 #define CASE 499
 #define NULLIF 500
 #define COALESCE 501
+#define USING 502

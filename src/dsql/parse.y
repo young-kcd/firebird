@@ -405,6 +405,7 @@ static void	yyerror (TEXT *);
 %token CASE
 %token NULLIF
 %token COALESCE
+%token USING
 
 /* precedence declarations for expression evaluation */
 
@@ -1261,25 +1262,31 @@ table_constraint : unique_constraint
 		 | check_constraint
 		 ;
 
-unique_constraint : UNIQUE column_parens constraint_index_name_opt
+unique_constraint : UNIQUE column_parens constraint_index_opt
                     { $$ = make_node (nod_unique, 2, $2, $3); }
                   ;
 
-primary_constraint : PRIMARY KEY column_parens constraint_index_name_opt
+primary_constraint : PRIMARY KEY column_parens constraint_index_opt
 			{ $$ = make_node (nod_primary, e_pri_count, $3, $4); }
 		;
 
 referential_constraint 	: FOREIGN KEY column_parens REFERENCES 
 			  simple_table_name column_parens_opt 
-			  referential_trigger_action constraint_index_name_opt
+			  referential_trigger_action constraint_index_opt
 			{ $$ = make_node (nod_foreign, e_for_count, $3, $5, 
 			         $6, $7, $8); }
 		;
 
-constraint_index_name_opt	: INDEX symbol_index_name
-			{ $$ = $2; }
-		|
+constraint_index_opt	: USING order_direction INDEX symbol_index_name
+			{ $$ = make_node (nod_def_index, (int) e_idx_count, 
+					NULL, $2, $4, NULL, NULL); }
+/*
+		| NO INDEX
 			{ $$ = NULL; }
+*/
+		|
+			{ $$ = make_node (nod_def_index, (int) e_idx_count, 
+					NULL, NULL, NULL, NULL, NULL); }
 		;
 
 check_constraint : begin_trigger CHECK '(' search_condition ')' end_trigger

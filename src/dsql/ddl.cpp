@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.13 2002-09-01 15:44:45 dimitr Exp $
+ * $Id: ddl.cpp,v 1.14 2002-09-04 12:09:25 dimitr Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -4286,24 +4286,36 @@ static void make_index(	REQ		request,
  *
  **************************************/
 
-	// stuff a zero-length name, indicating that an index
-	// name should be generated
+	/* stuff either user-defined name or
+	   zero-length name, indicating that an index name
+	   should be generated */
 
 	assert(element->nod_type != nod_foreign);
 
-	STR string = (STR) element->nod_arg[e_pri_idx_name];
+	NOD index = element->nod_arg[e_pri_index];
+	assert(index);
+
+	STR string = (STR) index->nod_arg[e_idx_name];
 	if (string)
 	{
 		index_name = reinterpret_cast<char*>(string->str_data);
 	}
 
-	if (element->nod_type == nod_primary) {
+	if (element->nod_type == nod_primary)
+	{
 		request->append_cstring(gds_dyn_def_primary_key, index_name);
-	} else if (element->nod_type == nod_unique) {
+	}
+	else if (element->nod_type == nod_unique)
+	{
 		request->append_cstring(gds_dyn_def_unique, index_name);
 	}
 
 	request->append_number(gds_dyn_idx_unique, 1);
+
+	if (index->nod_arg[e_idx_asc_dsc])
+	{
+		request->append_number(gds_dyn_idx_type, 1);
+	}
 
 	const NOD* end = columns->nod_arg + columns->nod_count;
 	for (NOD* ptr = columns->nod_arg; ptr < end; ++ptr)
@@ -4349,17 +4361,22 @@ static void make_index_trg_ref_int(	REQ		request,
 
 	assert(element->nod_type == nod_foreign)
 
-/* for_rel_name_str is the name of the relation on which the ddl operation
-   is being done, in this case the foreign key table  */
+	/* for_rel_name_str is the name of the relation
+	   on which the ddl operation is being done,
+	   in this case the foreign key table  */
+
 	ddl_node = request->req_ddl_node;
 	for_rel_node = ddl_node->nod_arg[e_drl_name];
 	for_rel_name_str = (STR) for_rel_node->nod_arg[e_rln_name];
 
+	/* stuff either user-defined name or
+	   zero-length name, indicating that an index name
+	   should be generated */
 
-/* stuff a zero-length name, indicating that an index
-   name should be generated */
+	NOD index = element->nod_arg[e_for_index];
+	assert(index);
 
-	STR string = (STR) element->nod_arg[e_for_idx_name];
+	STR string = (STR) index->nod_arg[e_idx_name];
 	if (string)
 	{
 		index_name = reinterpret_cast<char*>(string->str_data);
@@ -4367,6 +4384,10 @@ static void make_index_trg_ref_int(	REQ		request,
 
 	request->append_cstring(gds_dyn_def_foreign_key, index_name);
 
+	if (index->nod_arg[e_idx_asc_dsc])
+	{
+		request->append_number(gds_dyn_idx_type, 1);
+	}
 
 	if (element->nod_arg[e_for_action])
 	{

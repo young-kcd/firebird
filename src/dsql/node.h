@@ -651,14 +651,14 @@ typedef nod *NOD;
 #define e_rct_type	1
 
 #define e_pri_columns	0		/* nod_primary */
-#define e_pri_idx_name	1
+#define e_pri_index	1
 #define e_pri_count	2
 
 #define e_for_columns	0		/* nod_foreign */
 #define e_for_reftable	1
 #define e_for_refcolumns 2
 #define e_for_action    3
-#define e_for_idx_name	4
+#define e_for_index	4
 #define e_for_count	5
 
 #define e_ref_upd 0				/* nod_ref_upd_del_action */

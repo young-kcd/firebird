@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.5 2002-08-11 08:04:53 dimitr Exp $
+ *  $Id: keywords.cpp,v 1.6 2002-09-04 12:09:25 dimitr Exp $
  *
  */
 
@@ -268,6 +268,7 @@ static CONST TOK tokens [] = {
 	{UPDATE, "UPDATE", 1},
 	{KW_UPPER, "UPPER", 1},
 	{USER, "USER", 1},
+	{USING, "USING", 2},
 	{KW_VALUE, "VALUE", 1},
 	{VALUES, "VALUES", 1},
 	{VARCHAR, "VARCHAR", 1},
