@@ -3292,7 +3292,7 @@ static qli_syntax* parse_relation(void)
 			if (!QLI_databases)
 				IBERROR(207);	// Msg207 a database has not been readied
 			ERRQ_print_error(208, context->sym_string, NULL, NULL, NULL, NULL);
-			// Msg208 expected \"relation_name\", encountered \"%s\ 
+			// Msg208 expected \"relation_name\", encountered \"%s\" 
 		}
 		if (!
 			(node->syn_arg[s_rel_relation] = (qli_syntax*) parse_qualified_relation()))
