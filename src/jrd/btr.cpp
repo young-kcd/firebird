@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.30 2003-05-05 14:25:40 dimitr Exp $
+$Id: btr.cpp,v 1.31 2003-05-26 15:46:20 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -65,7 +65,6 @@ $Id: btr.cpp,v 1.30 2003-05-05 14:25:40 dimitr Exp $
 #include "../jrd/sort_proto.h"
 #include "../jrd/thd_proto.h"
 #include "../jrd/tra_proto.h"
-
 
 extern "C" {
 
@@ -4388,13 +4387,10 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 			 * Just check whether the next node has any BTN_LENGTH. If it does,
 			 * then it is not a duplicate */
 			node = NEXT_NODE(node);
-			if (BTN_LENGTH(node)
-				!= 0)
+			if (BTN_LENGTH(node) != 0)
 #else
 			node = (BTN) (BTN_DATA(node) + BTN_LENGTH(node));
-			if (BTN_LENGTH(node)
-				!= 0 || BTN_PREFIX(node)
-				!= key->key_length)
+			if (BTN_LENGTH(node) != 0 || BTN_PREFIX(node) != key->key_length)
 #endif /* IGNORE_NULL_IDX_KEY */
 			{
 #ifdef DEBUG_BTR
@@ -4411,8 +4407,7 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 
 		++pages;
 		page = (BTR)
-			CCH_HANDOFF(tdbb,
-						window, page->btr_sibling, LCK_write, pag_index);
+			CCH_HANDOFF(tdbb, window, page->btr_sibling, LCK_write, pag_index);
 		node = page->btr_nodes;
 		if ((l = BTN_LENGTH(node))
 			!= key->key_length) {
