@@ -1,3 +1,132 @@
+2004-11-11 02:34  skidder
+
+	* firebird2/src/utilities/gsec/call_service.cpp (1.3):
+	
+	Fix 64-bit build
+
+2004-11-11 00:02  skidder
+
+	* firebird2/src/jrd/jrd.cpp (1.189):
+	
+	Use case-sensitive comparisons for GC policy configuration entires.
+	stricmp does not exist on Linux.
+
+2004-11-10 14:32  hvlad
+
+	* firebird2/src/jrd/jrd.h (1.121):
+	
+	Removed unneeded method as Nickolay suggested
+
+2004-11-10 12:29  makowski
+
+	*
+	
+	file documents-en-français.txt was initially added on branch
+	B1_5_Release.
+	firebird2/src/install/arch-specific/win32/fr/documents-en-français.
+	txt (1.1):
+
+2004-11-10 09:28  robocop
+
+	* firebird2/src/jrd/isc_file.cpp (1.85):
+	
+	Misc.
+
+2004-11-10 09:16  robocop
+
+	* firebird2/src/burp/backup.epp (1.70):
+	
+	fb-checkins shows that I didn't commit the correct version of the
+	file.
+
+2004-11-10 06:19  robocop
+
+	* firebird2/src/jrd/: jrd.cpp (1.188), vio.cpp (1.122):
+	
+	Misc.
+
+2004-11-10 05:41  robocop
+
+	* firebird2/src/jrd/fun.epp (1.67):
+	
+	Fix SF Bug #1057538.
+
+2004-11-10 05:35  robocop
+
+	* firebird2/src/jrd/: isc_sync.cpp (1.97), svc.cpp (1.130):
+	
+	Misc.
+
+2004-11-10 05:33  robocop
+
+	* firebird2/src/burp/backup.epp (1.69):
+	
+	Avoid backup corruption with too long file names.
+
+2004-11-10 05:32  robocop
+
+	* firebird2/src/gpre/cob.cpp (1.53):
+	
+	Fix with double quotes handling in case someone still uses gpre and
+	COBOL.
+
+2004-11-10 05:29  robocop
+
+	* firebird2/src/utilities/sbc_print.cpp (1.30):
+	
+	This file cannot be compiled in its current state and references a
+	project (shared cache) abandoned years ago.
+
+2004-11-10 05:26  robocop
+
+	* firebird2/src/utilities/: analyse.cpp (1.11), drop.cpp (1.29),
+	gsec/call_service.cpp (1.2), gsec/gsec.cpp (1.41):
+	
+	Treat string literals and string constants with more respect.
+
+2004-11-10 05:25  robocop
+
+	* firebird2/src/utilities/nbackup.cpp (1.38):
+	
+	Protect from whatever possible (future) programming error that
+	could cause a B.O. Probably the best fix is to make the constructor
+	private and force all usage through the static raise() member
+	function.
+
+2004-11-10 05:22  robocop
+
+	* firebird2/src/: msgs/change_msgs.epp (1.18), msgs/enter_msgs.epp
+	(1.14), msgs/include.epp (1.11), msgs/modify_msgs.epp (1.13),
+	qli/dtr.cpp (1.37), qli/eval.cpp (1.45), qli/exe.cpp (1.46),
+	qli/help.epp (1.23), qli/lex.cpp (1.32), qli/lex_proto.h (1.9),
+	qli/parse.cpp (1.37), qli/picstr.cpp (1.26):
+	
+	Treat string literals and string constants with more respect.
+
+2004-11-10 05:18  robocop
+
+	* firebird2/src/: gpre/c_cxx.cpp (1.58), gpre/cob.cpp (1.52),
+	gpre/gpre.cpp (1.66), gpre/gpre.h (1.74), gpre/gpre_meta.epp
+	(1.48), gpre/gpre_meta_boot.cpp (1.46), gpre/par.cpp (1.55),
+	gpre/pas.cpp (1.45), gpre/pat.cpp (1.25), gpre/sql.cpp (1.50),
+	isql/extract.epp (1.45), isql/isql.epp (1.109), isql/isql_win.cpp
+	(1.18), jrd/cch.cpp (1.114), jrd/dbg.cpp (1.30), jrd/exe.cpp
+	(1.133), jrd/exe_proto.h (1.13), jrd/jlx.c (1.9), jrd/log.cpp
+	(1.21), jrd/mem.cpp (1.3), jrd/opt.cpp (1.199), jrd/pwd.cpp (1.33),
+	jrd/sqz.cpp (1.19), jrd/utl.cpp (1.75):
+	
+	Treat string literals and string constants with more respect.
+
+2004-11-10 05:14  robocop
+
+	* firebird2/src/: alice/alice.cpp (1.74), alice/alice_meta.epp
+	(1.44), dsql/pass1.cpp (1.169), dudley/ddl.h (1.33), dudley/exe.epp
+	(1.56), dudley/expr.cpp (1.25), dudley/extract.epp (1.40),
+	dudley/lex.cpp (1.28), dudley/parse.cpp (1.47), dudley/trn.cpp
+	(1.35):
+	
+	Treat string literals and string constants with more respect.
+
 2004-11-09 15:35  paul_reeves
 
 	*
