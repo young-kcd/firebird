@@ -29,7 +29,7 @@
  *
  */
 /*
-$Id: lock.cpp,v 1.31 2003-02-13 09:38:47 dimitr Exp $
+$Id: lock.cpp,v 1.32 2003-02-14 14:23:43 eku Exp $
 */
 
 #include "firebird.h"
@@ -734,7 +734,7 @@ void LOCK_fini( STATUS * status_vector, PTR * owner_offset)
                   (void *) offset);
 #endif
 
-	*owner_offset = NULL;
+	*owner_offset = (PTR)0;
 }
 
 
