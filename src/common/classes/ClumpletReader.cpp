@@ -5,8 +5,15 @@
 
 namespace Firebird {
 
-void ClumpletReader::read_past_eof() {
-	fatal_exception::raise("Reading past the end of clumplet buffer");
+ClumpletReader::ClumpletReader(bool isTagged, const UCHAR* buffer, size_t buffLen) :
+	cur_offset(isTagged ? 1 : 0), mIsTagged(isTagged), static_buffer(buffer), 
+	  static_buffer_end(buffer + buffLen) 
+{
+}
+
+void ClumpletReader::usage_mistake(const char* what) {
+	fatal_exception::raiseFmt(
+		"Internal error when using clumplet API: %s", what);
 }
 
 void ClumpletReader::invalid_structure() {
@@ -14,6 +21,11 @@ void ClumpletReader::invalid_structure() {
 }
 
 UCHAR ClumpletReader::getBufferTag() {
+	if (!mIsTagged) {
+		usage_mistake("buffer is not tagged");
+		return 0;
+	}
+
 	UCHAR* buffer_end = getBufferEnd();
 	UCHAR* buffer_start = getBuffer();
 	if (buffer_end - buffer_start == 0) {
@@ -29,7 +41,7 @@ void ClumpletReader::moveNext() {
 
 	// Check for EOF
 	if (clumplet >= buffer_end) {
-		read_past_eof();
+		usage_mistake("read past EOF");
 		return;
 	}
 
@@ -40,7 +52,7 @@ void ClumpletReader::moveNext() {
 	}
 
 	size_t length = clumplet[1];
-	cur_offset += length + 1;
+	cur_offset += length + 2;
 }
 
 // Methods which work with currently selected clumplet
@@ -50,7 +62,7 @@ UCHAR ClumpletReader::getClumpTag() {
 
 	// Check for EOF
 	if (clumplet >= buffer_end) {
-		read_past_eof();
+		usage_mistake("read past EOF");
 		return 0;
 	}
 
@@ -63,7 +75,7 @@ size_t ClumpletReader::getClumpLength() {
 
 	// Check for EOF
 	if (clumplet >= buffer_end) {
-		read_past_eof();
+		usage_mistake("read past EOF");
 		return 0;
 	}
 

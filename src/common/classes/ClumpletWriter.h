@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: ClumpletWriter.h,v 1.2 2004-10-23 01:21:11 skidder Exp $
+ *  $Id: ClumpletWriter.h,v 1.3 2004-11-03 08:38:09 skidder Exp $
  *
  */
 
@@ -38,14 +38,11 @@ namespace Firebird {
 // At the moment you can only declare it on stack, permanent objects are not allowed
 class ClumpletWriter : public ClumpletReader {
 public:
-	// Create empty clumplet writer (unusable before you call one of reset methods)
-	ClumpletWriter(size_t limit);
+	// Create empty clumplet writer.
+	ClumpletWriter(bool isTagged, size_t limit, UCHAR tag = 0);
 
-	// Create empty, initialized writer
-	ClumpletWriter(UCHAR tag, size_t limit);
- 
 	// Create writer from a given buffer
-	ClumpletWriter(const UCHAR* buffer, size_t buffLen, size_t limit);
+	ClumpletWriter(bool isTagged, size_t limit, const UCHAR* buffer, size_t buffLen);
 
 	void reset(UCHAR tag);
 	void reset(const UCHAR* buffer, size_t buffLen);
@@ -53,8 +50,9 @@ public:
 	// Methods to create new clumplet at current position
 	void insertInt(UCHAR tag, SLONG value);
 	void insertBigInt(UCHAR tag, SINT64 value);
-	void insertBytes(UCHAR tag, const UCHAR* bytes, UCHAR len);
+	void insertBytes(UCHAR tag, const UCHAR* bytes, size_t length);
 	void insertString(UCHAR tag, const string& str);
+	void insertString(UCHAR tag, const char* str, size_t length);
 	void insertEndMarker(UCHAR tag);
 
     // Delete currently selected clumplet from buffer
@@ -68,6 +66,7 @@ protected:
 		return reinterpret_cast<UCHAR*>(dynamic_buffer.end()); 
 	}
 	virtual void size_overflow();
+	void insertBytesNoLengthCheck(UCHAR tag, const UCHAR* bytes, UCHAR length);
 private:
 	size_t sizeLimit;
 

@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: ClumpletReader.h,v 1.2 2004-10-23 01:21:11 skidder Exp $
+ *  $Id: ClumpletReader.h,v 1.3 2004-11-03 08:38:09 skidder Exp $
  *
  */
 
@@ -37,13 +37,11 @@
 
 namespace Firebird {
 
-// This class provides read access to dynamic clumplet structures
+// This class provides read access for clumplet structure
 // Note: it doesn't make a copy of buffer it reads
 class ClumpletReader : protected AutoStorage {
 public:
-	ClumpletReader(const UCHAR* buffer, size_t buffLen) :
-	  cur_offset(1), static_buffer(buffer), 
-		  static_buffer_end(buffer + buffLen) { };
+	ClumpletReader(bool isTagged, const UCHAR* buffer, size_t buffLen);
 
 	// Navigation in clumplet buffer
 	bool isEof() { return cur_offset >= getBufferLength(); }
@@ -62,9 +60,10 @@ public:
 	UCHAR getBufferTag();
 	size_t getBufferLength() { return getBufferEnd() - getBuffer(); }
 	size_t getCurOffset() { return cur_offset; }
-	size_t setCurOffset(size_t newOffset) { cur_offset = newOffset; }
+	void setCurOffset(size_t newOffset) { cur_offset = newOffset; }
 protected:
 	size_t cur_offset;
+	bool mIsTagged;
 
 	// Methods are virtual so writer can override 'em
 	virtual UCHAR* getBuffer() { return const_cast<UCHAR*>(static_buffer); }
@@ -73,7 +72,11 @@ protected:
 	// These functions are called when error condition is detected by this class. 
 	// They may throw exceptions. If they don't reader tries to do something
 	// sensible, certainly not overwrite memory or read past the end of buffer
-	virtual void read_past_eof();
+
+	// This appears to be a programming error in buffer access pattern
+	virtual void usage_mistake(const char* what);
+
+	// This is called when passed buffer appears invalid
 	virtual void invalid_structure();
 private:
 	// Assignment and copy constructor not implemented.
