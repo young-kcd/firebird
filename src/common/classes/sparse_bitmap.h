@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: sparse_bitmap.h,v 1.8 2004-10-28 23:23:46 skidder Exp $
+ *  $Id: sparse_bitmap.h,v 1.9 2004-10-29 17:51:27 skidder Exp $
  *
  */
 
@@ -69,11 +69,11 @@ public:
 	{ }
 
 	// Default accessor methods
-	bool locate(const T& key) {
+	bool locate(T key) {
 		return defaultAccessor.locate(locEqual, key);
 	}
 	
-	bool locate(LocType lt, const T key) {
+	bool locate(LocType lt, T key) {
 		return defaultAccessor.locate(lt, key);
 	}
 
@@ -237,13 +237,13 @@ public:
 		Accessor(SparseBitmap* _bitmap) : 
 			bitmap(_bitmap), treeAccessor(_bitmap ? &_bitmap->tree : NULL), bit_mask(BUNCH_ONE), current_value(0) {}
 	
-		bool locate(const T& key) {
+		bool locate(T key) {
 			return locate(locEqual, key);
 		}
 	
 		// Position accessor on item having LocType relationship with given key
 		// If method returns false position of accessor is not defined.
-		bool locate(LocType lt, const T key) {
+		bool locate(LocType lt, T key) {
 			// Small convenience related to fact engine likes to use NULL SparseBitmap pointers
 			if (!bitmap)
 				return false;
