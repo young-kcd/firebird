@@ -5064,7 +5064,7 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 				node->nod_arg[0]->nod_flags |= nod_date;
 				node->nod_arg[1]->nod_flags |= nod_date;
 			}
-		};
+		}
 		// FALLINTO
 
 		// boolean nodes taking two values as inputs
