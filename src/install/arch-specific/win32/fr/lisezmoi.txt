@@ -1,0 +1,148 @@
+
+==================================
+Firebird 1.5.2       (Win32 Build)
+==================================
+
+
+o Introduction
+o Stabilité
+o Installation avec l'assistant
+o Installation depuis le fichier zip
+o Installation du serveur "embedded"
+o Problèmes connus
+o Documentation language SQL
+o Rapporter des bugs
+o Demander des nouvelles fonctionnalités
+
+
+Introduction
+============
+
+Bienvenue dans le monde de Firebird 1.5.2. C'est la seconde version
+de correction de Firebird 1.5. L'ensemble des corrections et améliorations
+de cette version sont dans les "release notes". Ce document est
+dans le répertoire doc/.
+
+
+Stabilité
+=========
+
+Firebird 1.5 est la première version de Firebird compilée avec C++.
+Cette version a été longuement testée via un cycle de versions béta
+et de "release candidate" et est considérée aussi stable que la version
+précédente, Firebird 1.0.3.
+Aucun problème majeur n'a été découvert et donc Firebird 1.5.0 
+est au moins aussi stable voir meilleure que la dernière version de
+Firebird 1 (v1.0.3).
+
+Il n'y a pas de raison de s'inquiéter d'utiliser cette version dans
+un environnement de production. Toutefois, avant d'installer
+un nouveau logiciel, QUELQU'IL SOIT dans un environnement de production
+il est toujours préférable de le tester proprement dans un système de
+developement. C'est une pratique courante.
+
+
+Installation avec l'assistant
+=============================
+
+Lancer l'executable et lisez les instructions incluses dans
+l'assistant d'installation. Après l'installation, vous trouverez
+ces instructions dans
+  doc/installation_lisezmoi.txt.
+Vous avez encore plus d'informations dans les "release notes".
+
+De nombreux changement on été introduit dans cette version. si vous avez
+une installation existante de Firebird (y compris une v.1.5 beta ou "release
+candidate") vous devez lire les dernières "release notes" et comprendre les
+nouveaux noms et emplacements des fichiers binaires et associés. Ceci
+est vrai tant pour les installations serveur et client.
+
+N'installez pas cette version "au dessus" d'une installation existante
+de Firebird ou InterBase.
+
+
+Installation depuis le fichier zip
+==================================
+
+Suivez les instructions du fichier doc/README_installation.txt pour
+installer depuis le fichier zip. (Ce document est contenu seulement
+dans le fichier zip.)
+
+
+Installation du serveur "embedded"
+==================================
+
+Le serveur "embedded" est conçu pour être installé avec une application
+existante. Voir doc/README_embedded.txt pour plus d'information concernant
+son deploiement. (Ce document est disponible seulement avec le paquet
+"embedded".)
+
+
+Problèmes connus
+================
+
+Bibliothèque client
+-------------------
+Certains outils Windows ne reconnaissent pas la blibliothèque
+fbclient.dll et/ou ne vont pas trouver son emplacement, maintenant le
+répertoire ..\bin de la racine de Firebird.
+Par exemple, le programme Borland IBConsole ne fonctionne pas avec
+fbclient.dll, même si elle est copiée dans le répertoire system directory
+et renommée en gds32.dll.
+
+Le kit d'installation Windows contient un programme nommé instclient.exe
+qui peut construire une gds32.dll compatible et peut être optionnellement
+installée dans le répertoire system. Il est essentiel de lire les "release
+notes" et le document README_library_install.txt (dans le sous-répertoire
+..\doc) avant de faire ce changement.
+
+UDFs et filtres Blob
+--------------------
+Des changements de sécurité dans cette version peuvent rendre invisible
+vos UDF pour le serveur car leur emplacement est déterminé par firebird.conf.
+Pour plus d'information, lisez les annotations dans firebird.conf et la
+documentation dans les "release notes".
+
+
+Documentation language SQL
+==========================
+De nouvelles fonctionnalités, mots clés, extensions et restrictions ont été
+ajoutés à cette version et sont documentés en détail dans les "release notes".
+
+
+Rapporter des bugs
+==================
+
+o Etes vous certain de comprendre comment Firebird fonctionne?
+
+  Peut être avez vous vu le comportement normal mais que vous avez une
+  question à posez au support. Dans ce cas contactez la liste firebird-support.
+
+  Vous pouvez vous inscrire ici:
+
+    mailto:firebird-support-subscribe@yahoogroups.com
+
+  Il existe aussi des news en français à :
+    
+    news://news.vienneinfo.org/nzn.fr.interbase
+
+o Vous pensez toujours que c'est un bug?
+
+  Regardez la liste des bugs ouverts. Vous trouverez cette liste à:
+
+    http://sourceforge.net/tracker/?group_id=9028&atid=109028
+
+Toutefois, si vous pensez raisonablement que c'est un bug, alors
+s'il vous plait, essayez de créer un test reproductible. Vous pourrez alors
+le soumetttre au traceur de bug.
+
+
+Demander des nouvelles fonctionnalités
+======================================
+
+Avant de demander des nouvelles fonctionnalités, regardez s'il vous plait
+d'abord la liste existante. Il y des chances que quelqu'un y ai déjà
+pensé. Utilisez ce lien pour voir les demandes exsitantes et éventuellement en
+formuler une nouvelle:
+
+  http://sourceforge.net/tracker/?group_id=9028&atid=359028

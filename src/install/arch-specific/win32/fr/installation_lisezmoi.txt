@@ -1,0 +1,268 @@
+Firebird Serveur de bases de données 1.5.2
+==================================================
+
+Ce document est un guide pour l'installation de
+Firebird 1.5 sur la plateforme Win32. Ces notes sont
+relatives à l'installation elle même, pas à
+Firebird 1.5 en géneral.
+
+** NOTE IMPORTANTE **
+
+Ce document est une traduction et malgré nos efforts, il
+peut ne pas correspondre exactement à la dernière version,
+seul le texte original en anglais (installation_readme.txt)
+est toujours à jour.
+
+**       FIN      **
+
+Contenu
+--------
+
+o Avant l'installation
+o Installation sur des systèmes avec Firebird 2.0
+o Nouvelles fonctionnalités du programme d'installation
+o Fonctionnalités obsolètes du programme d'installation
+o Desinstallation
+o Autres Notes
+o Installation depuis un fichier batch
+
+
+Avant l'installation
+--------------------
+
+Il est recommandé de désinstaller toutes les précédentes
+versions de Firebird 1.0, Firebird 1.5 ou InterBase
+avant de commencer l'installation.
+
+
+Installation sur des systèmes avec Firebird 2.0 Instable
+--------------------------------------------------------
+
+Le programme d'installation de Firebird 1.5.2 ne peut détecter
+une version existante en cours d'éxécution de Firebird 2.0 Instable.
+Si vous avez une version de Firebird 2.0 en cours d'éxécution,
+il est indispensable d'arréter ce serveur avant de commencer 
+l'installation.
+
+
+Nouvelles fonctionnalités du programme d'installation Firebird 1.5.2
+--------------------------------------------------------------------
+
+Le programme d'installation est maintenant traduit dans plusieures
+langues. La traduction concerne SEULEMENT le processus 
+d'installation.
+
+
+Nouvelles fonctionnalités du programme d'installation
+-----------------------------------------------------
+
+o L'assistant d'installation permet maintenant
+  d'installer soit la version classique soit la version
+  super-serveur. Vous pouvez installer l'une ou l'autre,
+  mais pas les deux. Pour changer de type de version
+  vous devez désinstaller et réinstaller.
+  
+o Les règles d'installation de la bibliothèque ont
+  considérablement changées. Elles sont expliquées
+  en détail dans :
+    .\docs\README.Win32LibraryInstallation.txt
+  qui est disponible après l'installation.
+
+  En conséquence de ces changements l'assistant
+  d'installation vérifie s'il existe déjà une
+  version de Firebird ou d'InterBase.
+
+  - Si Firebird 1.5 est déjà installé,
+    il essaiera d'écraser cette version. Si le
+    serveur est actif, l'installation s'arretera.
+
+  - Si une autre version de Firebird ou d'InterBase est
+    déjà installée il avertira l'utilisateur. Si
+    l'utilisateur continue l'assistant installera
+    Firebird et mettra à jour la base de registre
+    mais ne configurera pas Firebird pour démarrer, que
+    ce soit comme service ou comme application. Cela
+    devra être fait manuellement.
+
+  - L'assistant a une nouvelle option en ligne de commande
+      /force
+    ce qui permet à ceux qui veulent tenter le diable
+    de désactiver le fonctionnement décrit ci-dessus.
+
+
+o Si un fichier firebird.conf modifié existe dans
+  le répertoire d'installation directory il sera sauvegardé
+  en :  firebird.conf.saved.n
+  où n est un nombre. L'assistant installera toujours
+  le fichier firebird.conf standard. Cela garanti
+  une installation correcte. Autrement, il faudrait
+  vérifier le fichier existant (qui est peut être
+  non valide).
+
+
+Fonctionnalités obsolètes de l'installation
+-------------------------------------------
+
+o Firebird 1.0 réservait une clé de registre pour
+  son usage. C'était:
+
+    HKLM\SOFTWARE\FirebirdSQL
+  C'est maintenant obsolète et sera effacé par
+  l'installation. Si vous avez une applications qui
+  utilise cette clé, vous devrez la rajouter manuellement.
+  Toutefois, il est préferable de modifier votre
+  application pour lire la nouvelle clé.
+
+o Les premières versions de Firebird 1.5 RC installaient
+  fbclient.dll dans le répertoire <system>. Cette
+  pratique est obsolète. Une option pour l'installer
+  dans le répertoire <system> est disponible en cours
+  d'installation. Toutefois, il est préferable de
+  modifier vos applications pour être conformes à
+  l'installation actuelle de fbclient.
+
+
+Désinstallation
+--------------
+
+o Il est préférable d'utiliser le programme de
+  désinstalation fourni.
+  Il peut être appelé depuis le panneau de configuration.
+  Vous pouvez aussi utiliser directement
+  unins000.exe depuis le répertoire d'installation.
+
+o Si Firebird est exécuté comme application (et non
+  comme service) il est recommendé d'arreter d'abord
+  le serveur avant de commencer la désinstalation. Ce
+  parce que le programme de desinstallation ne peut
+  arreter une application en cours. Si le serveur 
+  fonctionne pendant la désinstallation, des erreurs
+  seront générées.
+  Vous devrez alors supprimer les fichiers restant
+  manuellement.
+
+
+Autres Notes
+-----------
+
+  Firebird necessite WinSock2. Toutes les plateformes Win32
+  doivent l'avoir, sauf Win95. Un test de l'existence
+  de Winsock2 est fait durant l'installation. S'il
+  n'est pas concluant l'installation echouera. Vous pouvez
+  visiter cet lien:
+
+    http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
+
+  pour savoir comment faire la mise à jour.
+
+
+Installation depuis un fichier batch
+------------------------------------
+
+Le programme d'installation peut être utilisé depuis un fichier
+batch avec les paramêtres suivants:
+
+
+/SP-
+  Désactive l'invite 'Ceci va installer... Voulez vous
+  continuer?' au début de l'installation.
+
+/SILENT, /VERYSILENT 
+  Installation silencieuse ou très silencieuse. Quand
+  on choisit "silent" l'assistant et la fenêtre de fond
+  ne sont pas visibles mais la fenêtre de progression
+  si. Quand on choisit "very silent" cette fenêtre
+  de progression n'est pas visible.
+  Tout le reste du comportement est inchangé donc par
+  exemple les messages d'erreur sont visibles et
+  l'invite de début aussi (si vous ne l'avez pas
+  désactivée avec l'optione '/SP-' expliquée ci dessus)
+
+  Si un redémarrage est nécessaire et que l'option '/NORESTART'
+  n'est pas utilisée (voir ci dessous) et que vous avez
+  choisi "silent" alors le message "Redémarrer maintenant?" 
+  sera visible. si vous avez choisi "very silent" alors
+  le redémarrage sera automatique sans message de confirmation.
+
+/NORESTART
+  Ne pas redémarrer même si cela est nécessaire.
+
+/DIR="x:\dirname"
+  Indique un répertoire de destination dans la page
+  de selection de destination. Un nom complet et
+  valide doit être indiqué.
+
+/GROUP="folder name"
+  Indique un dossier de destination pour le menu
+  démarrer.
+
+/NOICONS
+  Décoche la case de création d'icônes.
+
+/COMPONENTS="liste de noms de composant séparés par des
+points virgule"
+
+  Choisir dans - SuperServerComponent,
+                 ClassicServerComponent,
+                 ServerComponent,
+                 DevAdminComponent et
+                 ClientComponent
+
+  On fait ainsi une installation personalisée. Une
+  installation complète necessite un ensemble de 
+  composants. Pat exemple:
+
+  /COMPONENTS="SuperServerComponent, ServerComponent,
+               DevAdminComponent, ClientComponent"
+
+  fera une installation complète.
+
+
+/FORCE
+
+  Indique à l'assistant d'installation d'ignorer
+  l'analyse de l'environnement. L'assitant tentera
+  d'installer et configurer Firebird 1.5 comme si
+  aucune version précédente de Firebird ou InterBase
+  n'avait été installée.
+
+  Cela peut être utile si vous avez une installation
+  défectueuse que vous ne pouvez retirer. Ou bien
+  cela peut être aussi un moyen de rendre défectueuse
+  une installation fonctionnelle d'InterBase.
+  C'est votre choix.
+
+
+/NOCPL
+
+  N'installe pas l'application du panneau de configuration.
+  Cela peut être utile pour deux raisons:
+
+  o Installer/Desinstaller une application du panneau de
+    configuration necessite souvent un redémarrage.
+
+  o Vous voulez utiliser une autre application du panneau de
+    configurationt.
+
+
+/NOGDS32
+
+  N'installe pas de copie de la bibliothèque client dans
+  le répertoire système, même si l'analyse d'installation
+  conclue que c'est une bonne chose.
+
+
+/COPYFBCLIENT
+
+  Copie fbclient.dll dans le répertoire système. Ceci
+  est recommandé pour une installation client si vous
+  êtes certain vous allez acceder toujours à une seule
+  version de serveur. Si vos applications clientes doivent
+  accéder à des versions de serveurs différentes, cela
+  n'est pas recommandé. Voir
+
+    doc/README.Win32LibraryInstallation.txt
+
+  pour plus d'information.
+
+

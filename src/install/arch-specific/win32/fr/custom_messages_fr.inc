@@ -44,20 +44,20 @@ fr.InstalledProducts=Selon l'analyse de pré-installation il existe %s installati
 fr.InstalledProdCountSingular=
 fr.InstalledProdCountPlural=
 
-fr.PreviousInstallBroken=   (Installation semble cassé à cause de disparité de la chaîne de version.)
-fr.PreviousInstallGood=   (Installation semble être bonne.)
+fr.PreviousInstallBroken=   (L'installation semble être cassée à cause d'une disparité de la chaîne de version.)
+fr.PreviousInstallGood=   (L'installation semble être bonne.)
 
-fr.IconReadme=Firebird 1.5 Read Me
-fr.IconUninstall=Uninstall Firebird
-fr.ReleaseNotes= release notes. (Requires Acrobat Reader.)
-fr.Uninstall=Uninstall Firebird
-fr.Winsock2Web1=Winsock 2 is not installed.
-fr.Winsock2Web2=Would you like to Visit the Winsock 2 Update Home Page?
-fr.NoWinsock2 = Please Install Winsock 2 Update before continuing
+fr.IconReadme=Firebird 1.5 Lisez Moi
+fr.IconUninstall=Désinstaller Firebird
+fr.ReleaseNotes= notes de version. (Nécessite Acrobat Reader.)
+fr.Uninstall=Désinstaller Firebird
+fr.Winsock2Web1=Winsock 2 n'est pas installé.
+fr.Winsock2Web2=Voulez-vous visiter la page web de mise à jour de Winsock 2 ?
+fr.NoWinsock2 = S'il vous plait installez la mise à jour de Winsock 2 pour continuer
 fr.MSWinsock2Update = http://www.microsoft.com/windows95/downloads/contents/WUAdminTools/S_WUNetworkingTools/W95Sockets2/Default.asp
 
-fr.RunCSNoGuardian=Run Firebird classic server (without guardian)
-fr.RunSSNoGuardian=Run Firebird Superserver (without guardian)
-fr.RunSSWithGuardian=Run Firebird Super Server (with guardian)
-fr.RunCSWithGuardian=Run Firebird Classic Server (with guardian)
-fr.RunISQL=Run command-line based Interactive SQL tool
+fr.RunCSNoGuardian=Démarrer Firebird classic server (sans guardian)
+fr.RunSSNoGuardian=Démarrer Firebird Superserver (sans guardian)
+fr.RunSSWithGuardian=Démarrer Firebird Super Server (avec guardian)
+fr.RunCSWithGuardian=Démarrer Firebird Classic Server (avec guardian)
+fr.RunISQL=Démarrer l'outil en ligne de commande Interactive SQL (ISQL)
