@@ -1,3 +1,9 @@
+2004-07-26 23:32  skidder
+
+	* firebird2/src/jrd/evl.cpp (1.98):
+	
+	Small addition to my previous LIKE fix
+
 2004-07-22 09:17  robocop
 
 	* firebird2/src/common/classes/: array.h (1.29), tree.h (1.38),
