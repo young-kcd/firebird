@@ -2384,6 +2384,9 @@ PROD_BUILD_FLG=
 
 
 
+
+
+
 trap '' 1 2 15
 cat > confcache <<\EOF
 # This file is a shell script that caches the results of configure
@@ -2510,6 +2513,7 @@ src/qli/Makefile:src/make.new/Makefile.in.qli \
 src/remote/Makefile:src/make.new/Makefile.in.remote \
 src/utilities/Makefile:src/make.new/Makefile.in.utilities \
 src/wal/Makefile:src/make.new/Makefile.in.wal \
+src/common/memory/Makefile:src/make.new/Makefile.in.common.memory \
 src/install/Makefile:src/make.new/Makefile.in.install \
 src/Makefile:src/make.new/Makefile.in.firebird \
 Makefile:Makefile.in \
@@ -2653,6 +2657,7 @@ src/qli/Makefile:src/make.new/Makefile.in.qli \
 src/remote/Makefile:src/make.new/Makefile.in.remote \
 src/utilities/Makefile:src/make.new/Makefile.in.utilities \
 src/wal/Makefile:src/make.new/Makefile.in.wal \
+src/common/memory/Makefile:src/make.new/Makefile.in.common.memory \
 src/install/Makefile:src/make.new/Makefile.in.install \
 src/Makefile:src/make.new/Makefile.in.firebird \
 Makefile:Makefile.in \
@@ -2861,6 +2866,8 @@ cat >> $CONFIG_STATUS <<EOF
 
 
 
+
+
 EOF
 cat >> $CONFIG_STATUS <<\EOF
 mkdir -p gen/csv
@@ -2887,6 +2894,8 @@ mkdir -p gen/utilities
 mkdir -p gen/fbutil
 mkdir -p gen/install
 mkdir -p gen/install/scripts
+mkdir -p gen/common
+mkdir -p gen/common/memory
 mkdir -p gen/firebird/include
 mkdir -p gen/firebird/intl
 mkdir -p gen/firebird/UDF

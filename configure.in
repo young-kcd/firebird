@@ -135,6 +135,9 @@ AC_OUTPUT_COMMANDS([mkdir -p gen/fbutil])
 AC_OUTPUT_COMMANDS([mkdir -p gen/install])
 AC_OUTPUT_COMMANDS([mkdir -p gen/install/scripts])
 
+AC_OUTPUT_COMMANDS([mkdir -p gen/common])
+AC_OUTPUT_COMMANDS([mkdir -p gen/common/memory])
+
 AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/include])
 AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/intl])
 AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/UDF])
@@ -174,6 +177,7 @@ src/qli/Makefile:src/make.new/Makefile.in.qli \
 src/remote/Makefile:src/make.new/Makefile.in.remote \
 src/utilities/Makefile:src/make.new/Makefile.in.utilities \
 src/wal/Makefile:src/make.new/Makefile.in.wal \
+src/common/memory/Makefile:src/make.new/Makefile.in.common.memory \
 src/install/Makefile:src/make.new/Makefile.in.install \
 src/Makefile:src/make.new/Makefile.in.firebird \
 Makefile:Makefile.in \
