@@ -29,7 +29,7 @@
  *
  */
 /*
-$Id: lock.cpp,v 1.28 2002-12-09 01:28:01 nmcc Exp $
+$Id: lock.cpp,v 1.29 2003-02-07 15:23:18 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -709,7 +709,7 @@ void LOCK_fini( STATUS * status_vector, PTR * owner_offset)
 		return;
 
 #ifndef SUPERSERVER
-#if (defined WIN_NT || defined NEXT || defined SOLARIS_MT)
+#if (defined WIN_NT || defined SOLARIS_MT)
 	shutdown_blocking_thread(status_vector);
 #else
 #ifdef HAVE_MMAP
@@ -2666,7 +2666,7 @@ static void exit_handler( void *arg)
 /* Get rid of all the owners belonging to the current process */
 
 	if (owner_offset = LOCK_owner_offset) {
-#if (defined WIN_NT || defined NEXT || defined SOLARIS_MT)
+#if (defined WIN_NT || defined SOLARIS_MT)
 		shutdown_blocking_thread(local_status);
 #else
 #ifdef HAVE_MMAP
