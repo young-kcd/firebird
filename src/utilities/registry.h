@@ -25,13 +25,7 @@
 #ifndef _REGISTRY_DEFINES_
 #define _REGISTRY_DEFINES_
 
-#define REG_KEY_BOR_ROOT			"SOFTWARE\\Borland\\InterBase"
-#define REG_KEY_BOR_ROOT_CUR_VER	"SOFTWARE\\Borland\\InterBase\\CurrentVersion"
-
-#define REG_KEY_FIR_ROOT			"SOFTWARE\\FirebirdSQL\\Firebird"
-#define REG_KEY_FIR_ROOT_CUR_VER	"SOFTWARE\\FirebirdSQL\\Firebird\\CurrentVersion"
-
-#define REG_KEY_ROOT				REG_KEY_FIR_ROOT
-#define REG_KEY_ROOT_CUR_VER		REG_KEY_FIR_ROOT_CUR_VER
+#define REG_KEY_ROOT				"SOFTWARE\\FirebirdSQL\\Firebird"
+#define REG_KEY_ROOT_CUR_VER		"SOFTWARE\\FirebirdSQL\\Firebird\\CurrentVersion"
 
 #endif /* _REGISTRY_DEFINES_ */

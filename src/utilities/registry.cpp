@@ -86,6 +86,7 @@ USHORT REGISTRY_install(HKEY hkey_node,
 	}
 
 	/* We might as well add ServerDirectory here */
+/*
 	strcat(path_name, "\\bin");
 	len = GetFullPathName(path_name, sizeof(path_name), path_name, &p);
 	if (len && path_name[len - 1] != '/' && path_name[len - 1] != '\\') {
@@ -110,7 +111,7 @@ USHORT REGISTRY_install(HKEY hkey_node,
 			REGISTRY_remove(hkey_node, TRUE, err_handler);
     	return FAILURE;
     }
-
+*/
 	RegCloseKey(hkey_kit);
 
 	return SUCCESS;

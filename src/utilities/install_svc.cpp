@@ -30,12 +30,10 @@
 #include "../utilities/install_nt.h"
 #include "../utilities/servi_proto.h"
 #include "../utilities/registry.h"
-#include "../iscguard/iscguard_utils.cpp"
+#include "../common/config/config.h"
 
 extern USHORT svc_error(SLONG, TEXT *, SC_HANDLE);
 static void usage(void);
-static USHORT using_guardian (USHORT (*err_handler)(SLONG, TEXT *, SC_HANDLE));
-static USHORT guardian_setup (USHORT (*err_handler)(SLONG, TEXT *, SC_HANDLE));
 
 static struct {
 	TEXT *name;
@@ -175,10 +173,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 			/* Set sw_startup to manual in preparation for install the ib_server service*/
 			sw_startup = STARTUP_DEMAND;
-
-			/*	Finally, update the GuardianOptions to 1 so that Guardian 
-				knows it is configured correctly. */	
-			guardian_setup(svc_error);
 		}
 #endif
 
@@ -249,7 +243,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	case COMMAND_START:
 		/* Test for use of Guardian. If so, start the guardian else start ib-server */
-		if (using_guardian(svc_error) == 1) {
+		if (Config::getGuardianOption() == 1) {
 #if (defined SUPERCLIENT || defined SUPERSERVER)
 			status = SERVICES_start(manager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME,
 									sw_mode, svc_error);
@@ -273,7 +267,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	case COMMAND_STOP:
 		/* Test for use of Guardian. If so, stop the guardian else stop ib-server */
-		if (using_guardian(svc_error) == 1) {
+		if (Config::getGuardianOption() == 1) {
 #if (defined SUPERCLIENT || defined SUPERSERVER)
 			status = SERVICES_stop(manager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME,
 								   svc_error);
@@ -365,88 +359,3 @@ static void usage(void)
 
 	exit(FINI_OK);
 }
-
-
-static USHORT using_guardian(USHORT	(*err_handler)(SLONG, TEXT *, SC_HANDLE))
-{
-/**************************************
- *
-
-  *	u s i n g _ g u a r d i a n
- *
- **************************************
- *
- * Functional description
- *	Are we using the guardian?
- *
- **************************************/
-	HKEY hkey;
-	SLONG status;
-	TEXT *mode;
-	DWORD buffSize;
-
-	mode = "0";
-	buffSize = 2;
-
-	if ((status = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-							   REG_KEY_ROOT_CUR_VER,
-							   0,
-							   KEY_READ,
-							   &hkey)) != ERROR_SUCCESS) {
-	    return (*err_handler)(status, "RegOpenKeyEx", NULL);
-    }
-
-	if ((status = RegQueryValueEx(hkey,
-								  "GuardianOptions",
-								  NULL,
-								  NULL,
-								  reinterpret_cast<UCHAR*>(mode),
-								  &buffSize)) != ERROR_SUCCESS) {
-    	RegCloseKey(hkey);
-    	return (*err_handler)(status, "RegQueryValueEx", NULL);
-    }
-
-	RegCloseKey(hkey);
-
-	return atoi(mode);
-};
-
-
-USHORT guardian_setup(USHORT (*err_handler)(SLONG, TEXT *, SC_HANDLE))
-{
-/*************************************************
- *
- *	g u a r d i a n _ s e t u p 
- *
- *************************************************
- *
- * Functional description
- *	Set up the Guardian's registry details
- *
- *************************************************/
-	HKEY hkey;
-	SLONG status;
-
-	if ((status = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-							   REG_KEY_ROOT_CUR_VER,
-							   0,
-							   KEY_WRITE,
-							   &hkey)) != ERROR_SUCCESS) {
-	    return (*err_handler)(status, "RegOpenKeyEx", NULL);
-    }
-
-	if (status = RegSetValueEx(hkey,
-							   "GuardianOptions",
-							   0,
-							   REG_SZ,
-							   reinterpret_cast<UCHAR*>("1"),
-							   2) != ERROR_SUCCESS) {
-	    return (*err_handler)(status, "RegSetValueEx",
-							  reinterpret_cast<SC_HANDLE>(hkey));
-    }
-
-	RegCloseKey (hkey);
-
-	return SUCCESS;
-}
-
