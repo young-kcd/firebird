@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.32.2.9 2005-02-07 07:29:38 robocop Exp $
+  $Id: isql.epp,v 1.32.2.10 2005-02-07 07:39:30 robocop Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -2690,8 +2690,8 @@ static void do_isql(void)
 				Exit_value = FINI_ERROR;
 				if (!Interactive && BailOnError)
 					Abort_flag = true;
-				Continuation = FALSE;
 			}
+			Continuation = FALSE;
 			break;
 
 		case END:
