@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: rwlock.h,v 1.11 2004-03-01 03:35:01 skidder Exp $
+ *  $Id: rwlock.h,v 1.12 2004-03-11 05:30:07 skidder Exp $
  *
  */
 
@@ -106,9 +106,9 @@ public:
 	}
 	~RWLock()
 	{
-		if (!readers_semaphore && !CloseHandle(readers_semaphore))
+		if (readers_semaphore && !CloseHandle(readers_semaphore))
 			system_call_failed::raise("CloseHandle");		
-		if (!writers_event && !CloseHandle(writers_event))
+		if (writers_event && !CloseHandle(writers_event))
 			system_call_failed::raise("CloseHandle");
 	}
 	// Returns negative value if writer is active.

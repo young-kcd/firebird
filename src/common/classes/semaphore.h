@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: semaphore.h,v 1.7 2004-03-01 03:35:01 skidder Exp $
+ *  $Id: semaphore.h,v 1.8 2004-03-11 05:30:07 skidder Exp $
  *
  */
 
@@ -53,8 +53,13 @@ public:
 	Semaphore() { 
 		hSemaphore = CreateSemaphore(NULL, 0 /*initial count*/, 
 			INT_MAX, NULL); 
+		if (hSemaphore == NULL)
+			system_call_failed::raise("CreateSemaphore");
 	}
-	~Semaphore() { CloseHandle(hSemaphore); }	
+	~Semaphore() {
+		if (hSemaphore && !CloseHandle(hSemaphore))
+			system_call_failed::raise("CloseHandle");
+	}	
 
 	bool tryEnter(int seconds = 0) {
 		DWORD result = WaitForSingleObject(
