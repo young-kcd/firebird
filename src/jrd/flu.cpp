@@ -43,7 +43,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.46 2004-03-14 13:39:45 alexpeshkoff Exp $
+$Id: flu.cpp,v 1.47 2004-08-24 05:16:40 robocop Exp $
 */
 
 #include "firebird.h"
@@ -138,7 +138,7 @@ extern "C" {
 static MOD FLU_modules = 0;		/* External function/filter modules */
 
 /* prototypes for private functions */
-static MOD search_for_module(TEXT *, TEXT *, bool);
+static MOD search_for_module(const TEXT*, const TEXT*, bool);
 
 
 MOD FLU_lookup_module(TEXT* module)
@@ -185,7 +185,6 @@ void FLU_unregister_module(MOD module)
  *	Unload module if it's uninteresting.
  *
  **************************************/
-	MOD *mod;
 
 /* Module is in-use by other databases.*/
 
@@ -194,7 +193,7 @@ void FLU_unregister_module(MOD module)
 
 /* Unlink from list of active modules, unload it, and release memory. */
 
-	for (mod = &FLU_modules; *mod; mod = &(*mod)->mod_next)
+	for (MOD* mod = &FLU_modules; *mod; mod = &(*mod)->mod_next)
 	{
 		if (*mod == module)
 		{
@@ -247,20 +246,21 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
  *	Lookup entrypoint of function.
  *
  **************************************/
-	FPTR_INT function;
-	TEXT *p;
 	struct dsc$descriptor mod_desc, nam_desc;
 	TEXT absolute_module[MAXPATHLEN];
 
-	if (function = FUNCTIONS_entrypoint(module, name))
+	FPTR_INT function = FUNCTIONS_entrypoint(module, name);
+	if (function)
 		return function;
 
 	if (ib_path_env_var == NULL)
 		strcpy(absolute_module, module);
 	else
 		if (!gds__validate_lib_path
-			(module, ib_path_env_var, absolute_module,
-			 sizeof(absolute_module))) return NULL;
+			(module, ib_path_env_var, absolute_module, sizeof(absolute_module)))
+		{
+			return NULL;
+		}
 
 	REPLACE THIS COMPILER ERROR WITH CODE TO VERIFY THAT THE MODULE IS FOUND
 		EITHER IN $INTERBASE:UDF, or $INTERBASE:intl,
@@ -269,7 +269,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 
 	ISC_make_desc(absolute_module, &mod_desc, p - absolute_module);
 
-	p = name;
+	const TEXT* p = name;
 	while (*p && *p != ' ')
 	{
 		++p;
@@ -311,11 +311,9 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
  *	Lookup entrypoint of function.
  *
  **************************************/
-	FPTR_INT function;
-	TEXT *p;
 	TEXT absolute_module[MAXPATHLEN];
 
-	function = FUNCTIONS_entrypoint(module, name);
+	FPTR_INT function = FUNCTIONS_entrypoint(module, name);
 	if (function)
 	{
 		return function;
@@ -365,10 +363,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
  *	Lookup entrypoint of function.
  *
  **************************************/
-	FPTR_INT function;
-	TEXT *p;
-
-	function = FUNCTIONS_entrypoint(module, name);
+	FPTR_INT function = FUNCTIONS_entrypoint(module, name);
 	if (function)
 	{
 		return function;
@@ -444,9 +439,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
  *	Lookup entrypoint of function.
  *
  **************************************/
-	FPTR_INT function;
-
-	function = FUNCTIONS_entrypoint(module, name);
+	FPTR_INT function = FUNCTIONS_entrypoint(module, name);
 	if (function)
 	{
 		return function;
@@ -533,9 +526,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
  *	by that environment variable.
  *
  **************************************/
-	FPTR_INT function;
-
-	function = FUNCTIONS_entrypoint(module, name);
+	FPTR_INT function = FUNCTIONS_entrypoint(module, name);
 	if (function)
 	{
 		return function;
@@ -643,12 +634,10 @@ FPTR_INT ISC_lookup_entrypoint (
  *      Lookup entrypoint of function.
  *
  **************************************/
-FPTR_INT        function;
-int             lastSpace, i, len;
-MOD             mod;
+int             lastSpace, i;
 TEXT            absolute_module[MAXPATHLEN];
-NSSymbol        symbol;
-if (function = FUNCTIONS_entrypoint (module, name))
+FPTR_INT function = FUNCTIONS_entrypoint (module, name);
+if (function)
     return function;
 
 /* Remove TRAILING spaces from path names; spaces within the path are valid */
@@ -673,11 +662,11 @@ if (!*module || !*name)
 
 /*printf("names truncated: %s, function %s.\n", module, name);*/
 /* Check if external function module has already been loaded */
-if (!(mod = FLU_lookup_module (module)))
+MOD mod = FLU_lookup_module (module);
+if (!mod)
     {
-    USHORT length ;
     strcpy (absolute_module, module);
-    length = strlen (absolute_module);
+    const USHORT length = strlen (absolute_module);
     /* call search_for_module with the supplied name,
        and if unsuccessful, then with <name>.so . */
     mod = search_for_module (absolute_module, name, false);
@@ -702,7 +691,7 @@ if (!(mod = FLU_lookup_module (module)))
 
 /* Look for the symbol and return a pointer to the function if found */
 mod->mod_use_count++;
-symbol = NSLookupSymbolInModule(mod->mod_handle, name);
+NSSymbol symbol = NSLookupSymbolInModule(mod->mod_handle, name);
 if (symbol == NULL)
 {
     /*printf("Failed to find function: %s in module %s, trying _%s\n", name, module, name);*/
@@ -738,8 +727,6 @@ NSModule ISC_link_with_module (
  *
  **************************************/
  NSObjectFileImage image;
- NSSymbol initSym;
- void (*init)(void);
 
  /* Create an object file image from the given path */
  const NSObjectFileImageReturnCode retVal =
@@ -778,9 +765,10 @@ NSModule ISC_link_with_module (
      return NULL;
  }
 
- initSym = NSLookupSymbolInModule(mod_handle, "__init");
+ NSSymbol initSym = NSLookupSymbolInModule(mod_handle, "__init");
  if (initSym != NULL)
  {
+     void (*init)(void);
      init = ( void (*)(void)) NSAddressOfSymbol(initSym);
      init();
  }
@@ -848,7 +836,9 @@ namespace {
 	Firebird::InitInstance<UdfDirectoryList> iUdfDirectoryList;
 }
 
-static MOD search_for_module(TEXT* module_name, TEXT* name, bool ShowAccessError)
+
+// The var "name" is not used here.
+static MOD search_for_module(const TEXT* module_name, const TEXT* name, bool ShowAccessError)
 {
 /**************************************
  *
