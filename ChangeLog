@@ -1,3 +1,11 @@
+2003-06-26 12:43  dimitr
+
+	* firebird2/src/: jrd/blr.h, jrd/exe.cpp, dsql/gen.cpp,
+	dsql/parse.cpp, dsql/parse.y:
+	
+	Some savepoint-related changes: 1. release single savepoint 2.
+	fixed exception handling
+
 2003-06-25 09:43  dimitr
 
 	* firebird2/src/: jrd/gds.cpp, jrd/isc.cpp,
