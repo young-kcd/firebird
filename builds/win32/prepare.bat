@@ -57,8 +57,8 @@
 ::===========
 :HELP
 @echo.
-@echo   If gbak is not available on your path specify the  
-@echo   root directory of your Firebird installation.
+@echo   Build process need the FIREBIRD environment variable set to work.
+@echo   FIREBIRD value should be the root directory of your Firebird installation.
 @echo   Example:
 @echo     c:\program files\firebird
 @echo. 
