@@ -18,6 +18,11 @@
       Contributor(s):
         Nickolay Samofatov <skidder@bssys.com>
 
+    * Fixed unregistered bug.
+        Check constraint which uses only one table field is now dropped automatically when this field is dropped
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
     * Fixed Alpha 1 bug.
         GROUP BY ordinal doesn't work with column aliases.
       Contributor(s):
