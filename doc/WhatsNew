@@ -52,6 +52,11 @@
       Contributor(s):
         Nickolay Samofatov <skidder@bssys.com>
 
+    * Fixed bug SF #721792
+        Long runnning connection causes mem leak in OS kernel device
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
   **************
   * v1.5 RC 5
   **************
