@@ -1689,7 +1689,7 @@ static gbak_action open_files(const TEXT* file1,
 			if (tdgbl->gbl_sw_version) {
 				// msg 139 Version(s) for database "%s" 
 				BURP_print(139, file1, 0, 0, 0, 0);
-				isc_version(&tdgbl->db_handle, BURP_output_version, "\t%s\n");
+				isc_version(&tdgbl->db_handle, BURP_output_version, (void*) "\t%s\n");
 			}
 			if (sw_verbose)
 				BURP_print(166, file1, 0, 0, 0, 0);

@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.57 2003-12-22 10:00:00 robocop Exp $
+$Id: restore.epp,v 1.58 2003-12-27 17:59:51 fsg Exp $
 */
 
 #include "firebird.h"
@@ -1015,7 +1015,7 @@ void create_database (const TEXT* file_name)
 	{
 		BURP_print(139, file_name, NULL, NULL, NULL, NULL);
 		/* msg 139 Version(s) for database "%s" */
-		isc_version(&DB, BURP_output_version, "\t%s\n");
+		isc_version(&DB, BURP_output_version, (void*)"\t%s\n");
 	}
 
 	BURP_verbose (74, file_name, (void*) page_size, NULL, NULL, NULL);

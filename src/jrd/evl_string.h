@@ -32,15 +32,15 @@
  *  Contributor(s):
  * 
  *
- *  $Id: evl_string.h,v 1.4 2003-12-27 04:37:23 skidder Exp $
+ *  $Id: evl_string.h,v 1.5 2003-12-27 17:59:59 fsg Exp $
  *
  */
 
 #ifndef EVL_STRING_H
 #define EVL_STRING_H
 
-#include "..\common\classes\alloc.h"
-#include "..\common\classes\array.h"
+#include "../common/classes/alloc.h"
+#include "../common/classes/array.h"
 
 // Number of pattern items statically allocated
 #define STATIC_PATTERN_ITEMS 16

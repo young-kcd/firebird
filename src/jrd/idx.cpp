@@ -922,8 +922,8 @@ static IDX_E check_duplicates(
 			   record index are the same, but for foreign keys they are different */
 			
 			bool all_nulls = true;
-
-			for (USHORT i = 0; i < insertion_idx->idx_count; i++) {
+      USHORT i;
+			for (i = 0; i < insertion_idx->idx_count; i++) {
 				USHORT field_id = insertion_idx->idx_rpt[i].idx_field;
 				/* In order to "map a null to a default" value (in EVL_field()), 
 				 * the relation block is referenced. 
