@@ -42,7 +42,7 @@ JRD_ServerFiles=  blob_filter.cpp dpm.epp dyn.epp dyn_def.epp \
 		rng.cpp rpb_chain.cpp rse.cpp \
 		sdw.cpp shut.cpp sort.cpp sort_mem.cpp sqz.cpp \
 		svc.cpp sym.cpp tpc.cpp tra.cpp val.cpp vio.cpp \
-		nodebug.cpp nbak.cpp $(Physical_IO_Module)
+		nodebug.cpp nbak.cpp sha.cpp $(Physical_IO_Module)
 
 
 JRD_Files = $(JRD_ClientFiles) $(JRD_ServerFiles)
@@ -234,7 +234,7 @@ FBCOMMON_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCOMMON_So
 # Platform Manager
 
 # just in case if make.platform defined some files
-OS_SPECIFIC_Files += config_root.cpp path_utils.cpp mod_loader.cpp fbsyslog.cpp guid.cpp isc_ipc.cpp sha.cpp
+OS_SPECIFIC_Files += config_root.cpp path_utils.cpp mod_loader.cpp fbsyslog.cpp guid.cpp isc_ipc.cpp
 
 OS_SPECIFIC_Sources = $(addprefix $(PLATFORM_PATH)/, $(OS_SPECIFIC_Files))
 OS_SPECIFIC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(OS_SPECIFIC_Sources))))

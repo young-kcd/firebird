@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.util,v 1.15 2004-11-07 13:47:05 alexpeshkoff Exp $
+#  $Id: Makefile.in.embed.util,v 1.16 2004-11-15 04:15:20 skidder Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -69,7 +69,7 @@ DROP_Files= drop.cpp
 DROP_Sources = $(addprefix utilities/, $(DROP_Files)) $(DROP_Other_Sources)
 DROP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DROP_Sources))))
 
-GSEC_Other_Sources = jrd/enc.cpp jrd/os/posix/sha.cpp
+GSEC_Other_Sources = jrd/enc.cpp jrd/sha.cpp jrd/os/posix/guid.cpp
 
 GSEC_Files =  gsec.cpp security.cpp call_service.cpp
 GSEC_Sources = $(addprefix utilities/gsec/, $(GSEC_Files)) $(GSEC_Other_Sources)
