@@ -51,8 +51,11 @@ for %%v in ( %* )  do (
 
 @if %FB2_ISS_DEBUG% equ 0 (@set ISS_BUILD_TYPE=iss_release) else (@set ISS_BUILD_TYPE=iss_debug)
 @if %FB2_ISS_DEBUG% equ 0 (@set ISS_COMPRESS=compression) else (@set ISS_COMPRESS=nocompression)
-:: And check whether we have built examples
-@if %FB2_EXAMPLES% equ 0 (@set ISS_EXAMPLES=noexamples) else (@set ISS_EXAMPLES=examples)
+
+(@set ISS_EXAMPLES=examples)
+@if %FB2_ISS_DEBUG% equ 1 (
+  @if %FB2_EXAMPLES% equ 0 (@set ISS_EXAMPLES=noexamples)
+  )
 
 :: Set up our final destination
 set FBBUILD_INSTALL_IMAGES=%ROOT_PATH%\builds\install_images
@@ -132,7 +135,7 @@ find "#define PRODUCT_VER_STRING" %ROOT_PATH%\src\jrd\build_no.h > %temp%.\b$1.t
 sed -n -e s/\"//g -e s/"#define PRODUCT_VER_STRING "//w%temp%.\b$2.txt %temp%.\b$1.txt
 for /f "tokens=*" %%a in ('type %temp%.\b$2.txt') do set PRODUCT_VER_STRING=%%a
 
-@echo s/2.0.0/%PRODUCT_VER_STRING%/ > %temp%.\b$3.txt
+@echo s/-2.0.0-/-%PRODUCT_VER_STRING%-/ > %temp%.\b$3.txt
 @echo s/define release/define %FBBUILD_BUILDTYPE%/ >> %temp%.\b$3.txt
 @echo s/define msvc_version 6/define msvc_version %MSVC_VERSION%/ >> %temp%.\b$3.txt
 @echo s/define no_pdb/define %FBBUILD_SHIP_PDB%/ >> %temp%.\b$3.txt
