@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.9 2002-07-05 15:00:19 skywalker Exp $
+  $Id: isql.epp,v 1.10 2002-07-11 14:25:19 dimitr Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -696,7 +696,7 @@ static void readNextInputLine(const char* prompt) {
 
     std::string inputLine;
 
-    getline(std::cin, inputLine);
+    std::getline(std::cin, inputLine);
     if (!std::cin.eof()) {
         
         int lineSize = inputLine.length();
