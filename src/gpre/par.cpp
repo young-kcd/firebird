@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.9 2002-11-30 17:40:24 hippoman Exp $
+//  $Id: par.cpp,v 1.10 2002-12-06 13:43:10 eku Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: par.cpp,v 1.9 2002-11-30 17:40:24 hippoman Exp $
+//	$Id: par.cpp,v 1.10 2002-12-06 13:43:10 eku Exp $
 //
 
 #include "firebird.h"
@@ -315,15 +315,11 @@ ACT PAR_action()
 			return par_procedure();
 
 		case KW_PROC:
-			if (sw_language == lang_pli)
-				return par_procedure();
 			break;
 
 		case KW_SUBROUTINE:
 			return par_subroutine();
 		case KW_SUB:
-			if (sw_language == lang_basic)
-				return par_subroutine();
 			break;
 
 		case KW_OPEN_BLOB:
@@ -1377,9 +1373,6 @@ static ACT par_based()
 	int notSegment = 0;			/* a COBOL specific patch */
 	char tmpChar[2];			/* a COBOL specific patch */
 
-	if ((sw_language == lang_pli) &&
-		((KEYWORD(KW_LEFT_PAREN)) || (KEYWORD(KW_SEMI_COLON)))) return (NULL);
-
 	MATCH(KW_ON);
 	action = MAKE_ACTION(0, ACT_basedon);
 	based_on = (BAS) ALLOC(BAS_LEN);
@@ -1467,9 +1460,7 @@ static ACT par_based()
 	switch (sw_language) {
 	case lang_internal:
 	case lang_fortran:
-	case lang_pli:
 	case lang_epascal:
-	case lang_basic:
 	case lang_c:
 	case lang_cxx:
 		do {
@@ -2600,7 +2591,7 @@ static ACT par_form_for()
 static ACT par_function()
 {
 
-	if ((sw_language == lang_fortran) || (sw_language == lang_basic))
+	if (sw_language == lang_fortran)
 		return par_subroutine();
 
 	if (sw_language == lang_pascal)
@@ -3279,14 +3270,7 @@ static ACT par_procedure()
 {
 	ACT action;
 
-	if (sw_language == lang_pli) {
-		cur_routine = action = MAKE_ACTION(0, ACT_routine);
-		action->act_flags |= ACT_mark;
-		while (!MATCH(KW_SEMI_COLON))
-			ADVANCE_TOKEN;
-		return action;
-	}
-	else if (sw_language == lang_pascal) {
+	if (sw_language == lang_pascal) {
 		routine_decl = TRUE;
 		action = scan_routine_header();
 		if (!(action->act_flags & ACT_decl)) {
@@ -3847,16 +3831,8 @@ static ACT par_subroutine()
 {
 	register ACT action;
 
-	if ((sw_language != lang_fortran) &&
-		((sw_language != lang_basic) || KEYWORD(KW_SEMI_COLON))) return NULL;
-
-//   If this statement is an external declaration in a Basic
-//   program, eat this entire statement.  V3.0 bug 329  
-	if (sw_language == lang_basic && bas_extern_flag) {
-		CPR_raw_read();
-		bas_extern_flag = FALSE;
+	if (sw_language != lang_fortran)
 		return NULL;
-	}
 
 	action = MAKE_ACTION(0, ACT_routine);
 	action->act_flags |= ACT_mark | ACT_break;
@@ -4263,10 +4239,6 @@ static ACT scan_routine_header()
 
 static void set_external_flag()
 {
-
-	if (sw_language == lang_basic && token.tok_first)
-		bas_extern_flag = TRUE;
-
 	CPR_token();
 }
 

@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.11 2002-11-30 17:40:24 hippoman Exp $
+ *	$Id: gpre_meta.epp,v 1.12 2002-12-06 13:43:10 eku Exp $
  */
 
 #include "firebird.h"
@@ -980,7 +980,6 @@ void MET_fini( DBB end)
 SCHAR *MET_generator(TEXT * string, DBB dbb)
 {
 	SYM symbol;
-	SCHAR *gen_name = NULL;
 	SCHAR name[NAME_SIZE];
 
 	strcpy(name, string);
@@ -2009,7 +2008,6 @@ static int get_intl_char_subtype(
 	UCHAR *p;
 	UCHAR *period = NULL;
 	UCHAR *end_name;
-	int found_it = 0;
 
 	assert(id != NULL);
 	assert(name != NULL);

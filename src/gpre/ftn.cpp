@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.13 2002-11-30 17:40:24 hippoman Exp $
+//	$Id: ftn.cpp,v 1.14 2002-12-06 13:43:10 eku Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -1593,8 +1593,11 @@ static void gen_database_decls( ACT action)
 	TEXT *name;
 	BOOLEAN all_static, dcl_ndx_var;
 	REF reference;
-	SSHORT count, max_count, length, i, index;
+	SSHORT count, max_count;
 	LLS stack_ptr;
+#ifdef hpux
+	SSHORT length, i, index;
+#endif
 
 	ib_fprintf(out_file,
 			   "%sINTEGER*4  ISC_BLOB_NULL(2)  %s{ null blob handle }\n",
@@ -1895,7 +1898,10 @@ static void gen_dyn_describe( ACT action, BOOLEAN bind_flag)
 static void gen_dyn_execute( ACT action)
 {
 	DYN statement;
-	TEXT *transaction, s1[64], s2[64], s3[64], *sqlda, *sqlda2;
+	TEXT *transaction, s1[64], *sqlda, *sqlda2;
+#ifdef hpux
+	TEXT s2[64], s3[64];
+#endif
 	struct gpre_req *request, req_const;
 
 	statement = (DYN) action->act_object;
@@ -1952,7 +1958,10 @@ static void gen_dyn_execute( ACT action)
 static void gen_dyn_fetch( ACT action)
 {
 	DYN statement;
-	TEXT s1[64], s2[64], *sqlda;
+	TEXT s1[64], *sqlda;
+#ifdef hpux
+	TEXT s2[64];
+#endif
 
 	statement = (DYN) action->act_object;
 
@@ -1985,7 +1994,10 @@ static void gen_dyn_immediate( ACT action)
 {
 	DYN statement;
 	DBB database;
-	TEXT *transaction, s2[64], s3[64], *sqlda, *sqlda2;
+	TEXT *transaction, *sqlda, *sqlda2;
+#ifdef hpux
+	TEXT s2[64], s3[64];
+#endif
 	struct gpre_req *request, req_const;
 
 	statement = (DYN) action->act_object;
@@ -2046,7 +2058,10 @@ static void gen_dyn_immediate( ACT action)
 static void gen_dyn_insert( ACT action)
 {
 	DYN statement;
-	TEXT s1[64], s2[64], *sqlda;
+	TEXT s1[64], *sqlda;
+#ifdef hpux
+	TEXT  s2[64];
+#endif
 
 	statement = (DYN) action->act_object;
 
@@ -2077,7 +2092,10 @@ static void gen_dyn_insert( ACT action)
 static void gen_dyn_open( ACT action)
 {
 	DYN statement;
-	TEXT *transaction, s1[64], s2[64], s3[64], *sqlda, *sqlda2;
+	TEXT *transaction, s1[64], *sqlda, *sqlda2;
+#ifdef hpux
+	TEXT s2[64], s3[64];
+#endif
 	struct gpre_req *request, req_const;
 
 	statement = (DYN) action->act_object;
@@ -2819,7 +2837,6 @@ static void gen_item_end( ACT action)
 	REF reference, master;
 	POR port;
 	DBB dbb;
-	USHORT value;
 	TEXT s[32], index[16];
 
 	request = action->act_request;
@@ -4153,7 +4170,9 @@ static void gen_t_start( ACT action)
 	DBB db;
 	GPRE_TRA trans;
 	TPB tpb;
+#ifdef hpux
 	int count;
+#endif
 	TEXT *filename;
 
 //  if this is a purely default transaction, just let it through 

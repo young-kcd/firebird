@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpreswi.h,v 1.6 2002-12-03 13:58:40 eku Exp $
+ * $Id: gpreswi.h,v 1.7 2002-12-06 13:43:10 eku Exp $
  * Revision 1.2  2000/11/16 15:54:29  fsg
  * Added new switch -verbose to gpre that will dump
  * parsed lines to stderr
@@ -63,8 +63,6 @@ enum gpre_cmd_switch
 	IN_SW_GPRE_X,		/* database is EXTERNAL (used with /DATABASE only) */
 	IN_SW_GPRE_COB,		/* source is (shudder) cobol */
 	IN_SW_GPRE_ANSI, 	/* source is (worse and worse!) ansi cobol format */
-	IN_SW_GPRE_BAS, 	/* source is basic */
-	IN_SW_GPRE_PLI, 	/* source is pli */
 	IN_SW_GPRE_ADA,		/* source is ada */
 	IN_SW_GPRE_HANDLES,	/* ada handles package */
 	IN_SW_GPRE_Z, 		/* print software version */
@@ -157,12 +155,6 @@ static struct in_sw_tab_t gpre_in_sw_table[] =
 	{IN_SW_GPRE_X		, 0, "EXTERNAL"		, 0, 0, 0, FALSE, 0, 0, "\t\tEXTERNAL database (used with /DATABASE)"},
 #else
 	{IN_SW_GPRE_X		, 0, "X"			, 0, 0, 0, FALSE, 0, 0, "\t\tEXTERNAL database (used with -DATABASE)"},
-#endif
-#ifdef GPRE_BASIC
-	{IN_SW_GPRE_BAS		, 0, "BASIC"		, 0, 0, 0, FALSE, 0, 0, "\t\textended BASIC program"},
-#endif
-#ifdef GPRE_PLI
-	{IN_SW_GPRE_PLI		, 0, "PLI"			, 0, 0, 0, FALSE, 0, 0, "\t\textended PLI program"},
 #endif
 #ifdef GPRE_COBOL
 	{IN_SW_GPRE_COB		, 0, "COB"			, 0, 0, 0, FALSE, 0, 0, "\t\textended COBOL program"},

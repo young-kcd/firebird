@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.23 2002-12-03 13:58:40 eku Exp $
+ * $Id: gpre.h,v 1.24 2002-12-06 13:43:10 eku Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -87,11 +87,9 @@ extern "C" {
 /* EKU: we don't need additional languages in gpre_boot. */
 #ifdef BOOT_BUILD
 #undef GPRE_ADA
-#undef GPRE_BASIC
 #undef GPRE_COBOL
 #undef GPRE_FORTRAN
 #undef GPRE_PASCAL
-#undef GPRE_PLI
 #undef FTN_BLK_DATA
 #endif
 
@@ -156,10 +154,8 @@ typedef enum lang_t
 	lang_internal,
 	lang_pascal,
 	lang_fortran,
-	lang_pli,
 	lang_epascal,
 	lang_cobol,
-	lang_basic,
 	lang_c,
 	lang_ada,
 	lang_cxx,

@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.15 2002-11-30 17:40:24 hippoman Exp $
+//	$Id: cob.cpp,v 1.16 2002-12-06 13:43:09 eku Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -1180,7 +1180,6 @@ static void gen_based( ACT action)
 	USHORT datatype;
 	SLONG length;
 	SSHORT digits;
-	DIM dimension;
 
 	based_on = (BAS) action->act_object;
 	field = based_on->bas_field;
@@ -2772,11 +2771,14 @@ static void gen_fetch( ACT action)
 {
 	GPRE_REQ request;
 	GPRE_NOD var_list;
+	int i;
+	SCHAR s[20];
+#ifdef SCROLLABLE_CURSORS
 	POR port;
 	REF reference;
+	SCHAR *direction, *offset;
 	VAL value;
-	int i;
-	SCHAR s[20], *direction, *offset;
+#endif
 
 	request = action->act_request;
 

@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.16 2002-12-03 13:58:40 eku Exp $
+//  $Id: gpre.cpp,v 1.17 2002-12-06 13:43:10 eku Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -42,7 +42,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.16 2002-12-03 13:58:40 eku Exp $
+//	$Id: gpre.cpp,v 1.17 2002-12-06 13:43:10 eku Exp $
 //
 
 #define GPRE_MAIN
@@ -192,14 +192,6 @@ static struct ext_table_t dml_ext_table[] =
 #define COBOL_EXTENSIONS
 	{ lang_cobol, IN_SW_GPRE_COB, ".ecbl", ".cbl" },
 #endif
-#endif
-
-#ifdef GPRE_BASIC
-	{ lang_basic, IN_SW_GPRE_BAS, ".ebas", ".bas" },
-#endif
-
-#ifdef GPRE_PLI
-	{ lang_pli, IN_SW_GPRE_PLI, ".epli", ".pli" },
 #endif
 
 #ifdef VMS
@@ -606,30 +598,6 @@ int main(int argc, char* argv[])
 			sw_lines = FALSE;
 			sw_cstring = FALSE;
 			gen_routine = COB_action;
-			break;
-#endif
-
-#ifdef GPRE_BASIC
-		case IN_SW_GPRE_BAS:
-			sw_case = TRUE;
-			sw_language = lang_basic;
-			sw_lines = FALSE;
-			sw_cstring = FALSE;
-			gen_routine = BAS_action;
-			comment_start = "\t! ";
-			comment_stop = " ";
-			break;
-#endif
-
-#ifdef GPRE_PLI
-		case IN_SW_GPRE_PLI:
-			sw_case = TRUE;
-			sw_language = lang_pli;
-			sw_lines = FALSE;
-			sw_cstring = FALSE;
-			gen_routine = PLI_action;
-			comment_start = "/*";
-			comment_stop = "*/";
 			break;
 #endif
 
@@ -1067,7 +1035,7 @@ TOK CPR_eol_token()
 	SSHORT num_chars;
 	TEXT *p;
 
-	if (sw_language != lang_fortran && sw_language != lang_basic)
+	if (sw_language != lang_fortran)
 		return CPR_token();
 
 //  Save the information from the previous token 
@@ -1827,16 +1795,6 @@ static BOOLEAN get_switches(int			argc,
 			sw_tab--;
 			break;
 
-		case IN_SW_GPRE_BAS:
-			sw_language = lang_basic;
-			sw_tab--;
-			break;
-
-		case IN_SW_GPRE_PLI:
-			sw_language = lang_pli;
-			sw_tab--;
-			break;
-
 		case IN_SW_GPRE_COB:
 			sw_language = lang_cobol;
 			sw_tab--;
@@ -2002,27 +1960,7 @@ static TOK get_token()
 	start_position = position;
 	token.tok_charset = NULL;
 
-	if (sw_sql && sw_language == lang_basic)
-		classes['\n'] = 0;
-
 	c = skip_white();
-
-	if (sw_sql && sw_language == lang_basic)
-		classes['\n'] = CHR_WHITE;
-
-#ifdef GPRE_BASIC
-//  if BASIC language using SQL, '\n' = ';' unless preceeded by & 
-	if ((c == '\n') && (sw_language == lang_basic)) {
-		token.tok_string[0] = ';';
-		token.tok_string[1] = 0;
-		token.tok_type = tok_punct;
-		token.tok_position = start_position + 1;
-		token.tok_length = 0;
-		token.tok_symbol = HSH_lookup(token.tok_string);
-		token.tok_keyword = token.tok_symbol->sym_keyword;
-		return &token;
-	}
-#endif
 
 #ifdef GPRE_COBOL
 //  Skip over cobol line continuation characters 
@@ -2320,26 +2258,6 @@ static TOK get_token()
 			token.tok_keyword = KW_none;
 	}
 
-#ifdef GPRE_BASIC
-	if (sw_language == lang_basic) {
-		if ((int) token.tok_keyword == (int) KW_REM)
-			for (CPR_token;
-				 (token.tok_type != tok_number) || !token.tok_first;
-				 CPR_token());
-		if ((int) token.tok_keyword == (int) KW_BACK_SLASH) {
-			/* if BASIC, treat a '\' as a ';' */
-
-			token.tok_string[0] = ';';
-			token.tok_string[1] = 0;
-			token.tok_type = tok_punct;
-			token.tok_length = 0;
-			token.tok_position = start_position + 1;
-			token.tok_symbol = HSH_lookup(token.tok_string);
-			token.tok_keyword = token.tok_symbol->sym_keyword;
-		}
-	}
-#endif
-
 //  for FORTRAN, make note of the first token in a statement 
 
 	assert(first_position <= MAX_USHORT);
@@ -2348,13 +2266,6 @@ static TOK get_token()
 
 	if (sw_trace)
 		ib_puts(token.tok_string);
-
-	if (sw_language == lang_basic
-		&& (int) token.tok_keyword == (int) KW_AMPERSAND) {
-		c = skip_white();
-		return_char(c);
-		return (CPR_token());
-	}
 
 	return &token;
 }
@@ -2535,26 +2446,21 @@ static void pass2( SLONG start_position)
 	const bool sw_block_comments =
 		sw_language == lang_c		||
 		isLangCpp(sw_language)      ||
-		sw_language == lang_pascal	||
-		sw_language == lang_pli;
+		sw_language == lang_pascal;
 
 //  Put out a distintive module header 
 
-	if (sw_language != lang_basic)
+	if (!sw_first++)
 	{
-		if (!sw_first++)
+		for (i = 0; i < 5; ++i)
 		{
-			for (i = 0; i < 5; ++i)
-			{
-				ib_fprintf(out_file,
-						   "%s********** Preprocessed module -- do not edit **************%s\n",
-						   comment_start, comment_stop);
-			}
 			ib_fprintf(out_file,
-					   "%s**************** gpre version %s *********************%s\n",
-					   comment_start, GDS_VERSION, comment_stop);
-
+					   "%s********** Preprocessed module -- do not edit **************%s\n",
+					   comment_start, comment_stop);
 		}
+		ib_fprintf(out_file,
+				   "%s**************** gpre version %s *********************%s\n",
+				   comment_start, GDS_VERSION, comment_stop);
 	}
 
 	if ((sw_language == lang_ada) && (ada_flags & ADA_create_database))
@@ -2646,13 +2552,6 @@ static void pass2( SLONG start_position)
 					to_skip = (column < 7) ? comment_start_len - column : 0;
 					column = 0;
 				}
-			else if (sw_language == lang_basic) {
-				if (!continue_flag)
-					ib_fputc('\n', out_file);
-				else if (!(action->act_flags & ACT_first))
-					ib_fputs(" &\n", out_file);
-				ib_fputs(comment_start, out_file);
-			}
 			else
 				ib_fputs(comment_start, out_file);
 		}
@@ -2680,7 +2579,6 @@ static void pass2( SLONG start_position)
 				if (c == '\n') {
 					line++;
 					if ((sw_language == lang_fortran) ||
-						(sw_language == lang_basic) ||
 						(sw_language == lang_ada) ||
 						(sw_language == lang_cobol)) {
 						ib_fputs(comment_start, out_file);
@@ -2704,12 +2602,6 @@ static void pass2( SLONG start_position)
 			ib_fputs(comment_stop, out_file);
 			if ((sw_language == lang_fortran) || (sw_language == lang_cobol))
 				ib_fputc('\n', out_file);
-			if (sw_language == lang_basic)
-				if (!continue_flag)
-					ib_fputc('\n', out_file);
-				else
-					ib_fputs(" &\n", out_file);
-
 		}
 
 		suppress_output = FALSE;
@@ -2888,8 +2780,7 @@ static SSHORT skip_white()
 
 		if (c == '/' &&
 			(sw_language == lang_c ||
-			 isLangCpp(sw_language) ||
-			 sw_language == lang_pli))
+			 isLangCpp(sw_language)))
 		{
 			if ((next = nextchar()) != '*') {
 				if (isLangCpp(sw_language) && next == '/') {
@@ -2909,7 +2800,7 @@ static SSHORT skip_white()
 		/* skip fortran embedded comments on VMS or hpux or sgi */
 
 		if (c == '!'
-			&& ((sw_language == lang_fortran) || (sw_language == lang_basic))) {
+			&& (sw_language == lang_fortran)) {
 			/* If this character is a '!' followed by a '=', this is an
 			   Interbase 'not equal' operator, not a Fortran comment.
 			   Bug #307.  mao 6/14/89  */

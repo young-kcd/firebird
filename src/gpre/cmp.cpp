@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmp.cpp,v 1.9 2002-11-30 17:40:24 hippoman Exp $
+//	$Id: cmp.cpp,v 1.10 2002-12-06 13:43:09 eku Exp $
 //
 
 #include "firebird.h"
@@ -1552,7 +1552,6 @@ static void cmp_sdl_fudge( GPRE_REQ request, SLONG lower_bound)
 	switch (sw_language) {
 	case lang_c:
 	case lang_cxx:
-	case lang_basic:
     case lang_internal:
 		if (!lower_bound)
 			break;

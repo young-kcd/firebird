@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exp.cpp,v 1.8 2002-11-30 17:40:24 hippoman Exp $
+//	$Id: exp.cpp,v 1.9 2002-12-06 13:43:09 eku Exp $
 //
 
 #include "firebird.h"
@@ -1280,7 +1280,6 @@ static GPRE_NOD par_array(GPRE_REQ request,
 			switch (sw_language) {
 			case lang_c:
 			case lang_cxx:
-			case lang_basic:
             case lang_internal:
 				index_node->nod_arg[0] =
 					normalize_index(dimension, index_node->nod_arg[0],

@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.102 2002-12-03 13:58:39 eku Exp $
+dnl $Id: configure.in,v 1.103 2002-12-06 13:44:52 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -210,8 +210,6 @@ AC_SUBST(FB_SERVICE_NAME)
 AC_SUBST(FB_SERVICE_PORT)
 
 dnl gpre built-in language support (C/C++ are mandatory)
-dnl
-dnl EKU: BASIC and PL/1 disabled temporary, 'cause implementation is missing
 GPRE_LANGUAGE_MODULES=""
 AC_ARG_WITH(gpre-ada,
   [  --with-gpre-ada         support ADA in gpre (default=no)],
@@ -221,13 +219,6 @@ AC_ARG_WITH(gpre-ada,
      no)  ;;
      *)   AC_MSG_ERROR(bad value '${withval}' for --with-gpre-ada);;
    esac])
-dnl AC_ARG_WITH(gpre-basic,
-dnl   [  --with-gpre-basic       support BASIC in gpre (default=no)],
-dnl   [case "$withval" in
-dnl      yes) AC_DEFINE(GRPE_BASIC);;
-dnl      no)  ;;
-dnl      *)   AC_MSG_ERROR(bad value '${withval}' for --with-gpre-basic);;
-dnl    esac])
 AC_ARG_WITH(gpre-cobol,
   [  --with-gpre-cobol       support COBOL in gpre (default=no)],
   [case "$withval" in
@@ -252,13 +243,6 @@ AC_ARG_WITH(gpre-pascal,
      no)  ;;
      *)   AC_MSG_ERROR(bad value '${withval}' for --with-gpre-pascal);;
    esac])
-dnl AC_ARG_WITH(gpre-pli,
-dnl   [  --with-gpre-pli         support PL/1 in gpre (default=no)],
-dnl   [case "$withval" in
-dnl      yes) AC_DEFINE(GRPE_PLI);;
-dnl      no)  ;;
-dnl      *)   AC_MSG_ERROR(bad value '${withval}' for --with-gpre-pli);;
-dnl    esac])
 AC_SUBST(GPRE_LANGUAGE_MODULES)
 
 

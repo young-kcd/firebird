@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pat.cpp,v 1.6 2002-12-02 11:17:03 eku Exp $
+//	$Id: pat.cpp,v 1.7 2002-12-06 13:43:10 eku Exp $
 //
 
 #include "firebird.h"
@@ -138,10 +138,6 @@ void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 	if ((sw_language == lang_c) || (isLangCpp(sw_language))) {
 		ref = "&";
 		refend = "";
-	}
-	else if (sw_language == lang_pli) {
-		ref = "ADDR(";
-		refend = ")";
 	}
 	else if (sw_language == lang_pascal) {
 		ref = "%%REF ";
@@ -386,10 +382,6 @@ void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 				sprintf(temp1, ident_pattern, reference->ref_port->por_ident);
 				sprintf(temp2, ident_pattern, reference->ref_ident);
 				switch (sw_language) {
-				case lang_basic:
-					sprintf(p, "%s::%s", temp1, temp2);
-					break;
-
 				case lang_fortran:
 				case lang_cobol:
 					strcpy(p, temp2);
@@ -401,16 +393,10 @@ void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 			}
 		}
 		else if (long_flag) {
-			if (sw_language == lang_basic)
-				sprintf(p, "%d%%", long_value);
-			else
-				sprintf(p, "%d", long_value);
+			sprintf(p, "%d", long_value);
 		}
 		else {
-			if (sw_language == lang_basic)
-				sprintf(p, "%d%%", value);
-			else
-				sprintf(p, "%d", value);
+			sprintf(p, "%d", value);
 		}
 
 		while (*p)
@@ -425,15 +411,6 @@ void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 		 */
 	case lang_ada:
 		ADA_print_buffer(buffer, 0);
-		break;
-#endif
-
-#ifdef GPRE_BASIC
-	case lang_basic:
-		/*  Basic lines can be up to 72 characters long.  BAS_print_buffer
-		   handles this problem and ensures that GPRE output is <= 72 characters.
-		 */
-		BAS_print_buffer(buffer);
 		break;
 #endif
 

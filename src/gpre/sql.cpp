@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.6 2002-11-30 17:40:24 hippoman Exp $
+//	$Id: sql.cpp,v 1.7 2002-12-06 13:43:10 eku Exp $
 //
 
 #include "firebird.h"
@@ -2207,7 +2207,6 @@ static ACT act_declare(void)
 	SYM symbol;
 	DYN statement;
 	TEXT t_str[132];
-	TEXT *saved_name = NULL;
 	BOOLEAN delimited = FALSE;
 #ifdef SCROLLABLE_CURSORS
 	BOOLEAN scroll = FALSE;
@@ -3042,8 +3041,8 @@ static ACT act_fetch(void)
 	REF reference;
 	VAL value;
 	TEXT *direction_string, *offset_string, *string;
-#endif
 	GPRE_NOD offset_node = NULL;
+#endif
 
 //  Handle dynamic SQL statement, if appropriate 
 

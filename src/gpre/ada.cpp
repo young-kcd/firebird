@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.10 2002-11-30 17:40:23 hippoman Exp $
+//	$Id: ada.cpp,v 1.11 2002-12-06 13:43:09 eku Exp $
 //
 
 #include "firebird.h"
@@ -957,10 +957,7 @@ static gen_blob_open( ACT action, USHORT column)
 
 static void gen_blob_open( ACT action, USHORT column)
 {
-	TEXT *command;
 	BLB blob;
-	GPRE_REQ request;
-	TEXT s[20];
 	PAT args;
 	TEXT *pattern1 =
 		"interbase.%IFCREATE%ELOPEN%EN_BLOB2 (%V1 %RF%DH, %RF%RT, %RF%BH, %RF%FR, %N1, %I1);";
@@ -1064,7 +1061,6 @@ static void gen_compile( ACT action, int column)
 	GPRE_REQ request;
 	DBB db;
 	SYM symbol;
-	TEXT *filename;
 	BLB blob;
 
 	request = action->act_request;
@@ -1622,7 +1618,7 @@ static void gen_dyn_immediate( ACT action, int column)
 {
 	DYN statement;
 	DBB database;
-	TEXT *transaction, s[64];
+	TEXT *transaction;
 	struct gpre_req *request, req_const;
 
 	statement = (DYN) action->act_object;
@@ -1694,7 +1690,6 @@ static void gen_dyn_open( ACT action, int column)
 	DYN statement;
 	TEXT *transaction, s[64];
 	struct gpre_req *request, req_const;
-	int i;
 
 	statement = (DYN) action->act_object;
 	if (statement->dyn_trans) {
@@ -1889,7 +1884,6 @@ static SSHORT gen_event_block( ACT action)
 {
 	GPRE_NOD init, list;
 	SYM event_name;
-	PAT args;
 	int ident;
 
 	init = (GPRE_NOD) action->act_object;
@@ -2054,11 +2048,14 @@ static void gen_fetch( ACT action, int column)
 {
 	GPRE_REQ request;
 	GPRE_NOD var_list;
+	int i;
+	SCHAR s[20];
+#ifdef SCROLLABLE_CURSORS
 	POR port;
 	REF reference;
 	VAL value;
-	int i;
-	SCHAR s[20], *direction, *offset;
+	SCHAR *direction, *offset;
+#endif
 
 	request = action->act_request;
 
@@ -2267,7 +2264,6 @@ static void gen_form_display( ACT action, int column)
 	REF reference, master;
 	POR port;
 	DBB dbb;
-	USHORT value;
 	TEXT s[32], out[16];
 	int code;
 
@@ -2304,12 +2300,6 @@ static void gen_form_display( ACT action, int column)
 
 static void gen_form_end( ACT action, int column)
 {
-	GPRE_REQ request;
-	FORM form;
-	TEXT *status;
-	DBB dbb;
-
-	request = action->act_request;
 	printa(column, "interbase.pop_window (%sisc_window)", ADA_WINDOW_PACKAGE);
 }
 
@@ -2475,7 +2465,7 @@ static void gen_get_or_put_slice(
 							REF reference, BOOLEAN get, int column)
 {
 	PAT args;
-	TEXT s1[25], s2[25], s3[25], s4[25], s5[25];
+	TEXT s1[25], s2[25], s3[25], s4[25];
 	TEXT *pattern1 =
 		"interbase.GET_SLICE (%V1 %RF%DH%RE, %RF%S1%RE, %S2, %N1, %S3, %N2, %S4, %L1, %S5, %S6);";
 	TEXT *pattern2 =
@@ -2571,15 +2561,11 @@ static void gen_get_segment( ACT action, int column)
 
 static void gen_item_end( ACT action, int column)
 {
-	ACT org_action;
-	FINT display;
 	GPRE_REQ request;
 	REF reference, master;
 	POR port;
 	DBB dbb;
-	USHORT value;
-	TEXT s[32], *status, index[16];
-	int code;
+	TEXT s[32], index[16];
 
 	request = action->act_request;
 	if (request->req_type == REQ_menu) {
@@ -3016,9 +3002,7 @@ static void gen_procedure( ACT action, int column)
 	PAT args;
 	TEXT *pattern;
 	GPRE_REQ request;
-	REF reference;
 	POR in_port, out_port;
-	TEXT *status;
 	DBB dbb;
 
 	request = action->act_request;
@@ -3221,8 +3205,6 @@ static void gen_release( ACT action, int column)
 
 static void gen_request( GPRE_REQ request, int column)
 {
-	ACT action;
-	UPD modify;
 	REF reference;
 	BLB blob;
 	POR port;
@@ -3823,7 +3805,6 @@ static void gen_t_start( ACT action, int column)
 	DBB db;
 	GPRE_TRA trans;
 	TPB tpb;
-	SYM symbol;
 	int count;
 	TEXT *filename;
 
@@ -4066,7 +4047,6 @@ static void make_array_declaration( REF reference, int column)
 {
 	GPRE_FLD field;
 	SCHAR *name;
-	TEXT s[64];
 	DIM dimension;
 	int i;
 
