@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.netbsd:	$(VERSION)	$(PLATFORM)
-#$Id: prefix.netbsd,v 1.2 2001-12-24 02:50:52 tamlin Exp $
+#$Id: prefix.netbsd,v 1.1 2003-07-05 15:22:32 brodsom Exp $
 
 .SUFFIXES: .c .e
 .e.c:
