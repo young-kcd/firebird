@@ -1,3 +1,107 @@
+2003-11-26 21:00  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/: install-script,
+	Firebird.startupitem/Firebird:
+	
+	Fix fbmgr.bin usage
+
+2003-11-26 20:43  bellardo
+
+	* firebird2/builds/posix/postfix.darwin:
+	
+	Install the qli and gdef utilities as part of SS, and other SS
+	packaging support changes
+
+2003-11-26 20:42  bellardo
+
+	* firebird2/: builds/posix/Makefile.in.client.qli,
+	builds/posix/Makefile.in.firebird, src/dudley/exe.epp,
+	src/qli/meta.epp:
+	
+	Build qli and gdef for SS.  Small changes to the posix build
+	system, plus removal of the WAL references.
+
+2003-11-26 20:33  bellardo
+
+	*
+	
+	file Localizable.strings was initially added on branch
+	B1_5_Release.
+	firebird2/src/install/arch-specific/darwin/Firebird.startupitem/Res
+	ources/English.lproj/Localizable.strings:
+
+2003-11-26 20:33  bellardo
+
+	*
+	
+	file Firebird was initially added on branch B1_5_Release.
+	firebird2/src/install/arch-specific/darwin/Firebird.startupitem/Fir
+	ebird:
+
+2003-11-26 20:33  bellardo
+
+	*
+	
+	file StartupParameters.plist was initially added on branch
+	B1_5_Release.
+	firebird2/src/install/arch-specific/darwin/Firebird.startupitem/Sta
+	rtupParameters.plist:
+
+2003-11-26 20:33  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/: Makefile.in,
+	install-script, Firebird.startupitem/Firebird,
+	Firebird.startupitem/StartupParameters.plist,
+	Firebird.startupitem/Resources/English.lproj/Localizable.strings:
+	
+	Changes to the mac os x install process to support SS.
+
+2003-11-26 12:15  aafemt
+
+	* firebird2/src/jrd/: blob_filter.cpp, builtin.cpp, flu.cpp, flu.h,
+	flu_proto.h, intl.cpp, isc.cpp, isc_file.cpp, jrd.cpp, why.cpp:
+	
+	'struct' cleanup
+
+2003-11-26 01:32  bellardo
+
+	* firebird2/builds/posix/postfix.darwin:
+	
+	Need the guard and manager for SS
+
+2003-11-26 00:41  bellardo
+
+	* firebird2/builds/posix/postfix.darwin:
+	
+	Fix the escaping problems
+
+2003-11-26 00:39  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/Makefile.in:
+	
+	Make the package generation process a little less error prone.
+
+2003-11-26 00:28  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/Makefile.in:
+	
+	Add support for SS installer
+
+2003-11-26 00:18  bellardo
+
+	* firebird2/builds/posix/: Makefile.in.firebird, postfix.darwin,
+	prefix.darwin:
+	
+	Automatically build the darwin installer package as part of the
+	compilation process.
+
+2003-11-26 00:09  bellardo
+
+	* firebird2/builds/posix/: Makefile.in.libfbclient, postfix.darwin,
+	prefix.darwin:
+	
+	More packaging work for darwin
+
 2003-11-25 23:13  bellardo
 
 	* firebird2/builds/posix/Makefile.in.firebird:
