@@ -40,7 +40,7 @@
 **   ODS 5 was shipped with version 3.3 but no longer supported
 **   ODS 6 and ODS 7 never went out the door
 **   ODS 8 was shipped with version 4.0
-**   ODS 9 is  going to be shipped with version 4.5
+**   ODS 9 is going to be shipped with version 4.5
 **
 ***********************************************************************/
 
@@ -51,8 +51,7 @@
 #define ODS_VERSION8	8		/* new btree structure to support pc semantics */
 #define ODS_VERSION9	9		/* btree leaf pages are always propogated up */
 #define ODS_VERSION10	10		/* V6.0 features. SQL delimited idetifier,
-								   SQLDATE, and 64-bit exact numeric
-								   type */
+								   SQLDATE, and 64-bit exact numeric type */
 #define ODS_VERSION11   11      /* Firebird 2.0 features */
 
 /* ODS minor version -- minor versions ARE compatible, but may be
