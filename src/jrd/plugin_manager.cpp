@@ -37,6 +37,7 @@ PluginManager::Plugin PluginManager::findPlugin(const Firebird::string &name)
 	}
 	
 	// Link the new module into the module list
+	result->aquire();
 	if (moduleList)
 	{
 		moduleList->prev = &(result->next);
