@@ -549,7 +549,7 @@ FBUDF_API ISC_TIMESTAMP* getExactTimestamp(ISC_TIMESTAMP* rc)
 	return rc;
 }
 
-FBUDF_API paramdsc* truncate(paramdsc* v, paramdsc* rc)
+FBUDF_API paramdsc* fbtruncate(paramdsc* v, paramdsc* rc)
 {
 	if (internal::isnull(v))
 		return internal::setnull(rc);

@@ -76,7 +76,7 @@ FBUDF_API ISC_TIMESTAMP* addHour(ISC_TIMESTAMP* v, int& nhours);
 FBUDF_API ISC_TIMESTAMP* getExactTimestamp(ISC_TIMESTAMP* rc);
 #endif
 
-FBUDF_API paramdsc* truncate(paramdsc* v, paramdsc* rc);
+FBUDF_API paramdsc* fbtruncate(paramdsc* v, paramdsc* rc);
 FBUDF_API paramdsc* fbround(paramdsc* v, paramdsc* rc);
 FBUDF_API paramdsc* power(paramdsc* v, paramdsc* v2, paramdsc* rc);
 

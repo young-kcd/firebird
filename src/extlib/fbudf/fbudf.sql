@@ -144,17 +144,17 @@ declare external function getExactTimestamp
 timestamp returns parameter 1
 entry_point 'getExactTimestamp' module_name 'fbudf';
 
---FBUDF_API paramdsc* truncate(paramdsc* v, paramdsc* rc)
+--FBUDF_API paramdsc* fbtruncate(paramdsc* v, paramdsc* rc)
 declare external function Truncate
 int by descriptor, int by descriptor
 returns parameter 2
-entry_point 'truncate' module_name 'fbudf';
+entry_point 'fbtruncate' module_name 'fbudf';
 
---FBUDF_API paramdsc* truncate(paramdsc* v, paramdsc* rc)
+--FBUDF_API paramdsc* fbtruncate(paramdsc* v, paramdsc* rc)
 declare external function i64Truncate
 numeric(18) by descriptor, numeric(18) by descriptor
 returns parameter 2
-entry_point 'truncate' module_name 'fbudf';
+entry_point 'fbtruncate' module_name 'fbudf';
 
 --FBUDF_API paramdsc* fbround(paramdsc* v, paramdsc* rc)
 declare external function Round
