@@ -1,3 +1,17 @@
+2003-05-27 17:44  dimitr
+
+	* firebird2/src/jrd/: exe.cpp, ExecuteStatement.cpp:
+	
+	We should never treat numeric NULL as zero. Always check for
+	req_null flag.
+
+2003-05-27 16:59  dimitr
+
+	* firebird2/src/jrd/idx.cpp:
+	
+	Another fix for index corruption. Shouldn't affect anything else
+	this time.
+
 2003-05-26 17:46  dimitr
 
 	* firebird2/src/jrd/btr.cpp:
