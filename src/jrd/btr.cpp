@@ -428,6 +428,10 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, SparseBitmap** bit
 	index_desc idx;
 	WIN window(-1);
 	temporary_key lower, upper;
+	lower.key_flags = 0;
+	lower.key_length = 0;
+	upper.key_flags = 0;
+	upper.key_length = 0;
 	btree_page* page = BTR_find_page(tdbb, retrieval, &window, &idx, &lower, &upper, false);
 
 	// If there is a starting descriptor, search down index to starting position.
@@ -679,6 +683,8 @@ void BTR_insert(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
 	CCH_RELEASE(tdbb, root_window);
 
 	temporary_key key;
+	key.key_flags = 0;
+	key.key_length = 0;
 	SLONG recordNumber = 0;
 	SLONG split_page = add_node(tdbb, &window, insertion, &key, 
 		&recordNumber, NULL, NULL);
@@ -803,6 +809,8 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
  *
  **************************************/
 	temporary_key temp;
+	temp.key_flags = 0;
+	temp.key_length = 0;
 	DSC desc;
 	DSC* desc_ptr;
 	//SSHORT stuff_count;
@@ -1191,6 +1199,8 @@ void BTR_make_key(thread_db* tdbb,
  **************************************/
 	DSC temp_desc;
 	temporary_key temp;
+	temp.key_flags = 0;
+	temp.key_length = 0;
 
 	SET_TDBB(tdbb);
 	//const Database* dbb = tdbb->tdbb_database;
@@ -1626,6 +1636,7 @@ void BTR_selectivity(thread_db* tdbb, const jrd_rel* relation, USHORT id,
 	SLONG nodes = 0;
 	SLONG duplicates = 0;
 	temporary_key key;
+	key.key_flags = 0;
 	key.key_length = 0;
 	SSHORT l; 
 	bool firstNode = true;
@@ -2673,6 +2684,13 @@ static SLONG fast_load(thread_db* tdbb,
 	const Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
+	// Variable initialization
+	for (int i = 0; i < MAX_LEVELS; i++)
+	{
+		keys[i].key_flags = 0;
+		keys[i].key_length = 0;
+	}
+
 	// leaf-page and pointer-page size limits, we always need to 
 	// leave room for the END_LEVEL node.
 	const USHORT lp_fill_limit = dbb->dbb_page_size - BTN_LEAF_SIZE;
@@ -2775,7 +2793,6 @@ static SLONG fast_load(thread_db* tdbb,
 
 	buckets[0] = bucket;
 	buckets[1] = NULL;
-	keys[0].key_length = 0;
 
 	WIN* window = 0;
 	bool error = false;
@@ -2799,16 +2816,16 @@ static SLONG fast_load(thread_db* tdbb,
 
 		win_for_array split_window;
 		temporary_key split_key, temp_key;
-//		temporary_key* key;
+		split_key.key_flags = 0;
+		split_key.key_length = 0;
+		temp_key.key_flags = 0;
+		temp_key.key_length = 0;
 		dynKey* jumpKey = (*jumpKeys)[0];
 		jumpNodeList* leafJumpNodes = (*jumpNodes)[0];
 		bool duplicate = false;
-//		USHORT prefix;
-//		UCHAR* record;
 		totalJumpSize[0] = 0;
 		const USHORT headerSize = (pointer - (UCHAR*)bucket);
 
-//		UCHAR* levelPointer;
 		IndexNode tempNode;
 		jumpKey->keyLength = 0;
 
@@ -3747,6 +3764,7 @@ static UCHAR* find_area_start_point(btree_page* bucket, const temporary_key* key
 		prevJumpNode.prefix = 0;
 		prevJumpNode.length = 0;
 		jumpKey.key_length = 0;
+		jumpKey.key_flags = 0;
 		USHORT testPrefix = 0;
 		while (n) {
 			pointer = BTreeNode::readJumpNode(&jumpNode, pointer, flags);
@@ -4398,6 +4416,7 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 
 	UCHAR* leftPointer = BTreeNode::getPointerFirstNode(left_page);
 	temporary_key lastKey;
+	lastKey.key_flags = 0;
 	lastKey.key_length = 0;
 
 	IndexNode leftNode;
@@ -4782,6 +4801,10 @@ static void generate_jump_nodes(thread_db* tdbb, btree_page* page,
 	UCHAR* pointer = (UCHAR*)page + jumpInfo.firstNodeOffset;
 
 	temporary_key jumpKey, currentKey;
+	jumpKey.key_flags = 0;
+	jumpKey.key_length = 0;
+	currentKey.key_flags = 0;
+	currentKey.key_length = 0;
 	UCHAR* jumpData = jumpKey.key_data;
 	USHORT jumpLength = 0;
 	UCHAR* currentData = currentKey.key_data;
