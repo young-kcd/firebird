@@ -34,6 +34,7 @@ extern "C" {
 extern int ISC_analyze_nfs(TEXT *, TEXT *);
 extern int ISC_analyze_pclan(TEXT *, TEXT *);
 extern int DLL_EXPORT ISC_analyze_tcp(TEXT *, TEXT *);
+extern int ISC_analyze_xnet(TEXT *, TEXT *);
 extern BOOLEAN DLL_EXPORT ISC_check_if_remote(TEXT *, BOOLEAN);
 extern int ISC_expand_filename(TEXT *, USHORT, TEXT *);
 extern int ISC_expand_logical(TEXT *, USHORT, TEXT *);
