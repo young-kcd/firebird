@@ -1,3 +1,181 @@
+2002-12-16 22:19  skidder
+
+	* firebird2/: builds/posix/Makefile.in.boot.gpre,
+	builds/posix/Makefile.in.firebird, builds/posix/Makefile.in.jrd,
+	builds/posix/make.shared.targets,
+	builds/posix/make.shared.variables, builds/posix/prefix.linux,
+	src/burp/restore.epp, src/dsql/dsql.tab.h, src/dsql/parse.cpp,
+	src/include/fb_blk.h, src/jrd/flu.cpp, src/jrd/gds.cpp,
+	src/jrd/ibase.h, src/jrd/why.c, src/jrd/why.cpp,
+	src/utilities/rmet.epp, src/utilities/rstore.epp,
+	src/utilities/security.epp:
+	
+	Several little changes to make engine compilable again on Linux
+
+2002-12-16 19:33  skidder
+
+	* firebird2/src/common/classes/: alloc.cpp, alloc.h,
+	class_test.cpp, test.sh, tree.h:
+	
+	Further class library development
+
+2002-12-16 18:00  alexpeshkoff
+
+	* firebird2/: src/utilities/dba_full.epp, src/utilities/gsec.cpp,
+	src/utilities/rmet.epp, src/utilities/rstore.epp,
+	src/utilities/secur_proto.h, src/utilities/security.epp,
+	builds/win32/msvc6/engine.dsp,
+	builds/win32/msvc6/engine_classic.dsp,
+	builds/win32/msvc6/fbclient.dsp:
+	
+	Rename all links to why.cpp handle to struct why_hndl * (or FRBRD
+	*)
+
+2002-12-16 17:50  alexpeshkoff
+
+	* firebird2/src/: qli/lex.cpp, remote/chop.cpp,
+	remote/ibconfig.cpp, remote/interface.cpp, remote/property.cpp,
+	remote/remote.h, remote/server.cpp:
+	
+	Rename all links to why.cpp handle to struct why_hndl * (or FRBRD
+	*)
+
+2002-12-16 17:44  alexpeshkoff
+
+	* firebird2/src/pipe/head.cpp:
+	
+	Rename all links to why.cpp handle to struct why_hndl * (or FRBRD
+	*)
+
+2002-12-16 17:34  alexpeshkoff
+
+	* firebird2/src/jrd/: why.cpp, y_handle.h:
+	
+	Rename all links to why.cpp handle to struct why_hndl * (or FRBRD
+	*) Why.c => Why.cpp
+
+2002-12-16 17:23  alexpeshkoff
+
+	* firebird2/src/jrd/: isc.cpp, met.epp, perf.cpp, perf_proto.h,
+	pwd.cpp, req.h, svc.cpp, svc.h, tra.cpp, tra_proto.h, unix.cpp,
+	utl.cpp, utl_proto.h, vio.cpp, why_proto.h:
+	
+	Rename all links to why.cpp handle to struct why_hndl * (or FRBRD
+	*)
+	
+	Fixed bug #625899 - bugcheck 291
+
+2002-12-16 17:23  alexpeshkoff
+
+	* firebird2/src/: dudley/exe.epp, dudley/extract.epp,
+	gpre/gpre_meta.epp:
+	
+	Sorry for wrong DATABASE directive :-(
+
+2002-12-16 17:20  alexpeshkoff
+
+	* firebird2/src/jrd/: alt.cpp, blb_proto.h, cmp_proto.h, dbt.cpp,
+	dyn.epp, dyn_def.epp, dyn_del.epp, dyn_mod.epp, dyn_util.epp,
+	flu.cpp, flu_proto.h, gds.cpp, gds.h, gds_proto.h, gdsold.h,
+	ibase.h:
+	
+	Rename all links to why.cpp handle to struct why_hndl * (or FRBRD
+	*)
+	
+	Fixed bug #625899 - bugcheck 291
+
+2002-12-16 17:20  alexpeshkoff
+
+	* firebird2/src/dsql/: array.epp, blob.epp, metd.epp:
+	
+	Sorry for wrong DATABASE directive :-(
+
+2002-12-16 17:15  alexpeshkoff
+
+	* firebird2/src/: alice/alice_meta.epp, burp/backup.epp,
+	burp/restore.epp:
+	
+	Sorry for wrong DATABASE directive :-(
+
+2002-12-16 17:05  alexpeshkoff
+
+	* firebird2/src/isql/: extract.epp, isql.epp, isql_proto.h,
+	show.epp, show_proto.h:
+	
+	Rename all links to why.cpp handle to struct why_hndl * (or FRBRD
+	*)
+
+2002-12-16 16:56  alexpeshkoff
+
+	* firebird2/src/: include/jrd/gds.h, ipserver/ipc.h,
+	ipserver/ipclient.cpp, ipserver/ipserver.cpp:
+	
+	Rename all links to why.cpp handle to struct why_hndl * (or FRBRD
+	*)
+
+2002-12-16 16:51  alexpeshkoff
+
+	* firebird2/src/gpre/: c_cxx.cpp, gpre.h, gpre_meta.epp:
+	
+	Rename all links to why.cpp handle to struct why_hndl * (or FRBRD
+	*)
+
+2002-12-16 16:43  alexpeshkoff
+
+	* firebird2/src/dudley/: exe.epp, extract.epp, lex.cpp,
+	lex_proto.h:
+	
+	Rename all links to why.cpp handle to struct why_hndl *
+
+2002-12-16 16:37  alexpeshkoff
+
+	* firebird2/src/dsql/: array.epp, blob.epp, ddl.cpp, ddl_proto.h,
+	dsql.cpp, dsql.h, dsql_proto.h, keywords.cpp, metd.epp,
+	metd_proto.h, parse.y, pass1_proto.h, prepa_proto.h, preparse.cpp,
+	user__proto.h, user_dsql.cpp:
+	
+	Rename all links to why.cpp handle to struct why_hndl *
+	
+	Warning! Don't commit parse.cpp and dsql.tab.h, because: 1. I use
+	another YACC version.  2. They must be removed from CVS at all.
+	
+	Execute STATEMENT also here
+
+2002-12-16 16:24  alexpeshkoff
+
+	* firebird2/src/burp/: backup.epp, burp.cpp, burpswi.h,
+	restore.epp:
+	
+	Rename all links to why.cpp handle to struct why_hndl *
+
+2002-12-16 16:15  alexpeshkoff
+
+	* firebird2/src/alice/: alice.h, alice_meta.epp, aliceswi.h,
+	all.cpp, exe.cpp, tdr.cpp, tdr_proto.h:
+	
+	Rename all links to why.cpp handle to struct why_hndl *
+
+2002-12-16 01:48  arnobrinkman
+
+	* firebird2/src/dsql/ddl.cpp:
+	
+	bugfix previous added code. correct way of retrieving length for an
+	variable inside SP/Trigger. This was needed for CASE expressions.
+
+2002-12-16 01:45  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	another bugfix Alpha5 "no current record for fetch operation"
+	
+	Added code so that more index-retrieval can be used.  Cases where
+	an LEFT OUTER JOIN messed-up the optimizer should be much lower. 
+	Example : SELECT * FROM   SomeTable t1	 LEFT JOIN AnotherTable t2
+	ON (t1.PK_Key = t2.FK_Key)   JOIN AnotherTable t3 ON (t1.PK_Key =
+	t3.FK_Key)
+	
+	This change fixed also BUG SF #219525.
+
 2002-12-15 14:03  dimitr
 
 	* firebird2/src/jrd/btr.cpp:
