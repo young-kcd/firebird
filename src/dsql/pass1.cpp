@@ -1202,54 +1202,68 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 	case nod_exec_procedure:
 		{
-		const dsql_str* name = NULL;
+		const dsql_str* name = (dsql_str*) input->nod_arg[e_exe_procedure];
+		DEV_BLKCHK(name, dsql_type_str);
+		dsql_prc* procedure = METD_get_procedure(request, name);
+		if (!procedure) {
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 204,
+						isc_arg_gds, isc_dsql_procedure_err,
+						isc_arg_gds, isc_random,
+						isc_arg_string, name->str_data, 0);
+		}
+
 		if (!proc_flag) {
-			name = (dsql_str*) input->nod_arg[e_exe_procedure];
-			DEV_BLKCHK(name, dsql_type_str);
-			if (!(request->req_procedure = METD_get_procedure(request, name))) {
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 204,
-						  isc_arg_gds, isc_dsql_procedure_err,
-						  isc_arg_gds, isc_random,
-						  isc_arg_string, name->str_data, 0);
-			}
+			request->req_procedure = procedure;
 			request->req_type = REQ_EXEC_PROCEDURE;
 		}
+
 		node = MAKE_node(input->nod_type, input->nod_count);
 		node->nod_arg[e_exe_procedure] = input->nod_arg[e_exe_procedure];
+
 		// handle input parameters
+
+		USHORT count = input->nod_arg[e_exe_inputs] ?
+			input->nod_arg[e_exe_inputs]->nod_count : 0;
+		if (count > procedure->prc_in_count || 
+			count < procedure->prc_in_count - procedure->prc_def_count)
+		{
+			ERRD_post(isc_prcmismat, isc_arg_string, name->str_data, 0);
+		}
+
 		node->nod_arg[e_exe_inputs] = 
 			PASS1_node(request, input->nod_arg[e_exe_inputs], proc_flag);
-		if (!proc_flag) {
-			USHORT count = 0;
-			if (node->nod_arg[e_exe_inputs])
-				count = node->nod_arg[e_exe_inputs]->nod_count;
-			else
-				count = 0;
 
-			if (count > request->req_procedure->prc_in_count || 
-				count < request->req_procedure->prc_in_count - request->req_procedure->prc_def_count)
-				ERRD_post(isc_prcmismat, isc_arg_string, name->str_data, 0);
+		if (count) {
+			// Initialize this stack variable, and make it look like a node
+            std::auto_ptr<dsql_nod> desc_node(FB_NEW_RPT(*getDefaultMemoryPool(), 0) dsql_nod);
 
-			if (count) {
-				// Initialize this stack variable, and make it look like a node
-                std::auto_ptr<dsql_nod> desc_node(FB_NEW_RPT(*getDefaultMemoryPool(), 0) dsql_nod);
-
-				dsql_nod* const* ptr = node->nod_arg[e_exe_inputs]->nod_arg;
-				for (const dsql_fld* field = request->req_procedure->prc_inputs;
-					 *ptr; ptr++, field = field->fld_next)
-				{
-					DEV_BLKCHK(field, dsql_type_fld);
-					DEV_BLKCHK(*ptr, dsql_type_nod);
-					// MAKE_desc_from_field(&desc_node.nod_desc, field);
-					// set_parameter_type(*ptr, &desc_node, false);
-					MAKE_desc_from_field(&(desc_node->nod_desc), field);
-					set_parameter_type(*ptr, desc_node.get(), false);
-				}
+			dsql_nod* const* ptr = node->nod_arg[e_exe_inputs]->nod_arg;
+			for (const dsql_fld* field = procedure->prc_inputs;
+					*ptr; ptr++, field = field->fld_next)
+			{
+				DEV_BLKCHK(field, dsql_type_fld);
+				DEV_BLKCHK(*ptr, dsql_type_nod);
+				// MAKE_desc_from_field(&desc_node.nod_desc, field);
+				// set_parameter_type(*ptr, &desc_node, false);
+				MAKE_desc_from_field(&desc_node->nod_desc, field);
+				set_parameter_type(*ptr, desc_node.get(), false);
 			}
 		}
+
 		// handle output parameters
+
 		dsql_nod* temp = input->nod_arg[e_exe_outputs];
-		if (!proc_flag) {
+		if (proc_flag) {
+			count = temp ? temp->nod_count : 0;
+			if (count != procedure->prc_out_count)
+			{
+				ERRD_post(isc_prcmismat, isc_arg_string, name->str_data, 0);
+			}
+
+			node->nod_arg[e_exe_outputs] =
+				PASS1_node(request, temp, proc_flag);
+		}
+		else {
 			if (temp) {
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, isc_arg_gds, 
 						  isc_token_err, // Token unknown 
@@ -1258,10 +1272,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 			node->nod_arg[e_exe_outputs] =
 				explode_outputs(request, request->req_procedure);
 		}
-		else {
-			node->nod_arg[e_exe_outputs] =
-				PASS1_node(request, temp, proc_flag);
-		}
+
 		break;
 		}
 
