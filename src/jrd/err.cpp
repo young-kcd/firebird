@@ -394,6 +394,16 @@ bool ERR_post_warning(ISC_STATUS status, ...)
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
 void ERR_post_nothrow(ISC_STATUS status, ...)
+/**************************************
+ *
+ *	E R R _ p o s t _ n o t h r o w
+ *
+ **************************************
+ *
+ * Functional description
+ *	Create a status vector.
+ *
+ **************************************/
 {
 	va_list args;
 	va_start(args, status);
@@ -402,6 +412,17 @@ void ERR_post_nothrow(ISC_STATUS status, ...)
 };
 
 void ERR_post(ISC_STATUS status, ...)
+/**************************************
+ *
+ *	E R R _ p o s t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Create a status vector and return to 
+ * the user.
+ *
+ **************************************/
 {
 	va_list args;
 	va_start(args, status);
@@ -416,12 +437,13 @@ static void internal_post(ISC_STATUS status, va_list args)
 {
 /**************************************
  *
- *	E R R _ p o s t
+ *	i n t e r n a l _ p o s t
  *
  **************************************
  *
  * Functional description
- *	Create a status vector and return to the user.
+ *	Append status vector with new values.
+ *  Used in ERR_post and ERR_post_nothrow
  *
  **************************************/
 	ISC_STATUS_ARRAY tmp_status, warning_status;
