@@ -190,14 +190,16 @@ unsigned int __stdcall ThreadPriorityScheduler::schedulerMain(LPVOID)
 	{
 		if (opMode == Stopping)
 		{
+/*			* It's no use cleaning something when server
+			* prepares to shutdown. Moreover, in some rare cases
+			* mutex may be already deleted, therefore AV happens.
 			mutex.enter();
 			doDetach();
 			opMode = ShutdownComplete;
-			mutex.leave();
+			mutex.leave(); */
 			break;
 		}
 		Sleep(Config::getPrioritySwitchDelay());
-		//UCHAR StateCloseHandles = 0;
 		// We needn't lock mutex, because we don't modify
 		// next here, and new thps object may be added
 		// only in the beginning of the chain - even if it 
