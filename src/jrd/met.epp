@@ -21,13 +21,14 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: met.epp,v 1.1 2001-07-12 06:32:03 bellardo Exp $
+$Id: met.epp,v 1.2 2001-07-29 17:42:22 skywalker Exp $
 */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
 #endif
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../jrd/ibsetjmp.h"
@@ -35,7 +36,7 @@ $Id: met.epp,v 1.1 2001-07-12 06:32:03 bellardo Exp $
 #include <stdarg.h>
 
 #include "../jrd/constants.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/irq.h"
@@ -2075,9 +2076,9 @@ void MET_parse_sys_trigger(TDBB tdbb, REL relation)
  **************************************/
 	DBB		dbb;
 	BLK*	trigger;	/* should really be "TRG**" */
-	UCHAR*	blr;
+	const UCHAR*	blr;
 	UCHAR	type;
-	TEXT*	name;
+	const TEXT*	name;
 	VEC*	ptr;
 	REQ		request;
 	PLB		old_pool;
@@ -2158,7 +2159,7 @@ void MET_parse_sys_trigger(TDBB tdbb, REL relation)
 			tdbb->tdbb_default = ALL_pool();
 			PAR_blr(tdbb,
 					relation,
-					blr,
+					const_cast<UCHAR*>(blr),
 					(CSB) NULL_PTR,
 					(CSB*) NULL_PTR,
 					&request,
@@ -2167,7 +2168,7 @@ void MET_parse_sys_trigger(TDBB tdbb, REL relation)
 
 			tdbb->tdbb_default = old_pool;
 
-			request->req_trg_name = name;
+			request->req_trg_name = const_cast<TEXT*>(name);
 
 			request->req_flags |= req_sys_trigger;
 			if (trig_flags & TRG_ignore_perm)
@@ -2377,7 +2378,7 @@ PRC MET_procedure(TDBB tdbb, int id, USHORT flags)
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 	lock->lck_object = (BLK) procedure;
 	/* TMN: Beware - this is a hairy AND UGLY cast */
-	lock->lck_ast = (int (*)(void*)) blocking_ast_procedure;
+	lock->lck_ast = reinterpret_cast<lck_ast_t>(blocking_ast_procedure);
 
 	LCK_lock(tdbb, procedure->prc_existence_lock, LCK_SR, TRUE);
 
@@ -2586,7 +2587,7 @@ REL MET_relation(TDBB tdbb, USHORT id)
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 	lock->lck_object = (BLK) relation;
 	/* TMN: Beware - this is a hairy AND UGLY cast */
-	lock->lck_ast = (int (*)(void*)) blocking_ast_relation;
+	lock->lck_ast = reinterpret_cast<lck_ast_t>(blocking_ast_relation);
 
 	relation->rel_flags |= (REL_check_existence | REL_check_partners);
 	return relation;

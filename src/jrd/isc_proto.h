@@ -57,6 +57,9 @@ extern void ISC_wake_init(void);
 
 #if defined(WIN_NT)
 
+#define WIN32_REG_KEY_PATH "SOFTWARE\\Firebird\\DBServer"
+#define WIN32_REG_KEY_PATH_CURRENT_VERSION "SOFTWARE\\Firebird\\DBServer\\CurrentVersion"
+
 extern BOOLEAN ISC_is_WinNT(void);
 extern SSHORT ISC_get_registry_var(TEXT *, TEXT *, SSHORT, void **);
 extern struct _SECURITY_ATTRIBUTES *ISC_get_security_desc(void);

@@ -31,7 +31,7 @@
 #include "../jrd/val.h"
 
 #ifdef __cplusplus
-extern "C" {
+//extern "C" {
 #endif
 
 extern void BLB_cancel(TDBB, struct blb *);
@@ -61,7 +61,7 @@ extern void BLB_scalar(TDBB, struct tra *, struct bid *, USHORT, SLONG *,
 					   struct vlu *);
 
 #ifdef __cplusplus
-} /* extern "C" */
+//} /* extern "C" */
 #endif
 
 #endif /* _JRD_BLB_PROTO_H_ */

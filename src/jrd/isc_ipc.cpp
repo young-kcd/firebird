@@ -22,16 +22,17 @@
  * Solaris x86 changes - Konstantin Kuznetsov, Neil McCalden
  */
 
- /* $Id: isc_ipc.cpp,v 1.2 2001-07-12 05:46:05 bellardo Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.3 2001-07-29 17:42:22 skywalker Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
 #endif
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include "../jrd/common.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/isc.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
@@ -47,7 +48,7 @@
 #endif
 #endif
 
-#ifdef DARWIN
+#ifdef HAVE_STRING_H
 #include <string.h>
 #endif
 
@@ -791,11 +792,13 @@ static void isc_signal2(
 			vec.sv_handler = SIG_DFL;
 		else
 #endif
-			vec.sa_handler = (SIG_FPTR) signal_handler;
+#pragma FB_COMPILER_MESSAGE("Fix! Ugly function pointer casts!")
+			vec.sa_handler = (void(*)(int)) signal_handler;
+//			vec.sa_handler = (SIG_FPTR) signal_handler;
 		memset(&vec.sa_mask, 0, sizeof(vec.sa_mask));
 		vec.sa_flags = SA_RESTART;
 		sigaction(signal_number, &vec, &old_vec);
-		ptr = old_vec.sa_handler;
+		ptr = (FPTR_VOID) old_vec.sa_handler;
 #endif
 #endif
 #pragma FB_COMPILER_MESSAGE("Fix! Ugly function pointer casts!")
@@ -983,7 +986,7 @@ static void error(STATUS * status_vector, TEXT * string, STATUS status)
  **************************************/
 
 	*status_vector++ = gds_arg_gds;
-	*status_vector++ = gds__sys_request;
+	*status_vector++ = gds_sys_request;
 	*status_vector++ = gds_arg_string;
 	*status_vector++ = (STATUS) string;
 	*status_vector++ = SYS_ARG;

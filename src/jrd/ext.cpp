@@ -24,6 +24,7 @@
  *                         readonly databases.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <errno.h>
 #include <string.h>
@@ -34,7 +35,7 @@
 #include "../jrd/rse.h"
 #include "../jrd/ext.h"
 #include "../jrd/tra.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/ext_proto.h"
@@ -455,7 +456,7 @@ void EXT_store(RPB * rpb, int *transaction)
 					 gds_arg_string, "insert",
 					 gds_arg_string, file->ext_filename,
 					 isc_arg_gds, isc_io_write_err,
-					 gds_arg_gds, gds__ext_readonly_err, 0);
+					 gds_arg_gds, gds_ext_readonly_err, 0);
 	}
 
 	field_ptr = (FLD *) relation->rel_fields->vec_object;

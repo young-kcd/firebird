@@ -82,9 +82,10 @@
  * copyright (c) 1990, 1995 by Borland International
  */
 
+#include "firebird.h"
 #include "../jrd/common.h"
 #include <stdarg.h>
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/perf.h"
 #undef GDS_VAL
 #define GDS_VAL(val)	(*val)

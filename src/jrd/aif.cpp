@@ -21,6 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
+
 #pragma intrinsic	GETPRIVMODE, GETUSERMODE
 #pragma intrinsic_file	"aifintr.pub.sys"
 #pragma intrinsic	AIFPORTCLOSE, AIFPORTOPEN, AIFPORTRECEIVE, AIFPORTSEND, AIFPORTINT

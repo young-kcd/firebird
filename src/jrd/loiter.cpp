@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <windows.h>
 #include "../jrd/common.h"
 #include "../jrd/thd.h"

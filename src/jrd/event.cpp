@@ -21,11 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <string.h>
 #include "../jrd/common.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/thd.h"
 #include "../jrd/event.h"
 #include "../jrd/gdsassert.h"
@@ -292,7 +293,7 @@ EVH EVENT_init(STATUS * status_vector, USHORT server_flag)
 
 	if (!(EVENT_header = (EVH) ISC_map_file(status_vector,
 											event_file,
-											reinterpret_cast < void (*)() >
+											reinterpret_cast < void (*)(void *, struct sh_mem*, int) >
 											(init), 0, EVENT_default_size,
 											&EVENT_data))) {
 #ifdef SERVER

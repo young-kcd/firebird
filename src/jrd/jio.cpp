@@ -25,10 +25,11 @@
    VMS style journaling.   At the moment this is limited to
    VMS and MPE XL. */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include "../jrd/jrd.h"
 #include "../jrd/jrn.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 
 #ifdef VMS
 #include <file.h>

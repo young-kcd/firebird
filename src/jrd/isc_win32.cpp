@@ -24,9 +24,10 @@
  * Solaris x86 changes - Konstantin Kuznetsov, Neil McCalden
  */
 /*
-$Id: isc_win32.cpp,v 1.1.1.1 2001-05-23 13:26:20 tamlin Exp $
+$Id: isc_win32.cpp,v 1.2 2001-07-29 17:42:22 skywalker Exp $
 */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
 #include <string.h>
@@ -34,7 +35,7 @@ $Id: isc_win32.cpp,v 1.1.1.1 2001-05-23 13:26:20 tamlin Exp $
 #include <errno.h>
 #include <windows.h>
 
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/isc.h"
 #include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
@@ -152,7 +153,7 @@ SSHORT ISC_get_registry_var(TEXT*	variable,
 
 	if (!user_hkey)
 	{
-		LPCTSTR szKey = "SOFTWARE\\Borland\\InterBase\\CurrentVersion";
+		LPCTSTR szKey = WIN32_REG_KEY_PATH_CURRENT_VERSION;
 		const LONG ret =
 			RegOpenKeyEx(HKEY_LOCAL_MACHINE, szKey, 0, KEY_QUERY_VALUE, &hkey);
 		if (ret != ERROR_SUCCESS)

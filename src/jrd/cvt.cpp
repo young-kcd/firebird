@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include <stdlib.h>
@@ -34,7 +35,7 @@
 #include "../jrd/req.h"
 #include "../jrd/val.h"
 #include "../jrd/quad.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/intl.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/cvt_proto.h"
@@ -425,7 +426,7 @@ double PASCAL_ROUTINE CVT_get_double(DSC * desc, FPTR_VOID err)
 
 						if (exp >= SHORT_LIMIT)
 							reinterpret_cast < pfn_cvt_private_cludge >
-								(err) (gds__arith_except, 0);
+								(err) (gds_arith_except, 0);
 					}
 					else if (*p == '-' && !digit_seen && !sign)
 						sign = -1;
@@ -448,7 +449,7 @@ double PASCAL_ROUTINE CVT_get_double(DSC * desc, FPTR_VOID err)
 			   the user know...  */
 
 			if (ABSOLUT(scale) > DBL_MAX_10_EXP)
-				reinterpret_cast<pfn_cvt_private_cludge>(err)(gds__arith_except, 0);
+				reinterpret_cast<pfn_cvt_private_cludge>(err)(gds_arith_except, 0);
 
 /*
   Repeated division is a good way to mung the least significant bits
@@ -475,7 +476,7 @@ double PASCAL_ROUTINE CVT_get_double(DSC * desc, FPTR_VOID err)
 		break;
 
 	default:
-		reinterpret_cast < pfn_cvt_private_cludge > (err) (gds__badblk, 0);	/* internal error */
+		reinterpret_cast < pfn_cvt_private_cludge > (err) (gds_badblk, 0);	/* internal error */
 		break;
 	}
 
@@ -489,7 +490,7 @@ double PASCAL_ROUTINE CVT_get_double(DSC * desc, FPTR_VOID err)
    the user know... */
 
 	if (ABSOLUT(scale) > DBL_MAX_10_EXP)
-		reinterpret_cast < pfn_cvt_private_cludge > (err) (gds__arith_except,
+		reinterpret_cast < pfn_cvt_private_cludge > (err) (gds_arith_except,
 														   0);
 
 	if (scale > 0)
@@ -564,13 +565,13 @@ SLONG CVT_get_long(DSC * desc, SSHORT scale, FPTR_VOID err)
 			do {
 				if ((val64 > INT64_LIMIT) || (val64 < -INT64_LIMIT))
 					reinterpret_cast < pfn_cvt_private_cludge >
-						(err) (gds__arith_except, 0);
+						(err) (gds_arith_except, 0);
 				val64 *= 10;
 			} while (++scale);
 
 		if ((val64 > LONG_MAX_int64) || (val64 < LONG_MIN_int64))
 			reinterpret_cast < pfn_cvt_private_cludge >
-				(err) (gds__arith_except, 0);
+				(err) (gds_arith_except, 0);
 		return (SLONG) val64;
 
 	case dtype_quad:
@@ -578,7 +579,7 @@ SLONG CVT_get_long(DSC * desc, SSHORT scale, FPTR_VOID err)
 		high = ((SLONG *) p)[HIGH_WORD];
 		if ((value >= 0 && !high) || (value < 0 && high == -1))
 			break;
-		reinterpret_cast < pfn_cvt_private_cludge > (err) (gds__arith_except,
+		reinterpret_cast < pfn_cvt_private_cludge > (err) (gds_arith_except,
 														   0);
 		break;
 
@@ -617,13 +618,13 @@ SLONG CVT_get_long(DSC * desc, SSHORT scale, FPTR_VOID err)
 			if (d > (double) LONG_MIN_real - 1.)
 				return LONG_MIN;
 			reinterpret_cast < pfn_cvt_private_cludge >
-				(err) (gds__arith_except, 0);
+				(err) (gds_arith_except, 0);
 		}
 		if (d > (double) LONG_MAX_real) {
 			if (d < (double) LONG_MAX_real + 1.)
 				return LONG_MAX_int;
 			reinterpret_cast < pfn_cvt_private_cludge >
-				(err) (gds__arith_except, 0);
+				(err) (gds_arith_except, 0);
 		}
 		return (SLONG) d;
 
@@ -645,7 +646,7 @@ SLONG CVT_get_long(DSC * desc, SSHORT scale, FPTR_VOID err)
 		break;
 
 	default:
-		reinterpret_cast < pfn_cvt_private_cludge > (err) (gds__badblk, 0);	/* internal error */
+		reinterpret_cast < pfn_cvt_private_cludge > (err) (gds_badblk, 0);	/* internal error */
 		break;
 	}
 
@@ -679,7 +680,7 @@ SLONG CVT_get_long(DSC * desc, SSHORT scale, FPTR_VOID err)
 		do {
 			if (value > LONG_LIMIT || value < -LONG_LIMIT)
 				reinterpret_cast < pfn_cvt_private_cludge >
-					(err) (gds__arith_except, 0);
+					(err) (gds_arith_except, 0);
 			value *= 10;
 		} while (++scale);
 
@@ -888,7 +889,7 @@ SQUAD CVT_get_quad(DSC * desc, SSHORT scale, FPTR_VOID err)
 			else if (d < (double) QUAD_MAX_real + 1.)
 				return QUAD_MAX_int;
 			reinterpret_cast < pfn_cvt_private_cludge >
-				(err) (gds__arith_except, 0);
+				(err) (gds_arith_except, 0);
 		}
 		return QUAD_FROM_DOUBLE(d, err);
 
@@ -910,7 +911,7 @@ SQUAD CVT_get_quad(DSC * desc, SSHORT scale, FPTR_VOID err)
 		break;
 
 	default:
-		reinterpret_cast < pfn_cvt_private_cludge > (err) (gds__badblk, 0);	/* internal error */
+		reinterpret_cast < pfn_cvt_private_cludge > (err) (gds_badblk, 0);	/* internal error */
 		break;
 	}
 
@@ -920,7 +921,7 @@ SQUAD CVT_get_quad(DSC * desc, SSHORT scale, FPTR_VOID err)
 		return value;
 
 #ifndef NATIVE_QUAD
-	reinterpret_cast < pfn_cvt_private_cludge > (err) (gds__badblk, 0);	/* internal error */
+	reinterpret_cast < pfn_cvt_private_cludge > (err) (gds_badblk, 0);	/* internal error */
 #else
 	if (scale > 0) {
 		if (desc->dsc_dtype == dtype_short ||
@@ -950,7 +951,7 @@ SQUAD CVT_get_quad(DSC * desc, SSHORT scale, FPTR_VOID err)
 	else
 		do {
 			if (value > QUAD_LIMIT || value < -QUAD_LIMIT)
-				(*err) (gds__arith_except, 0);
+				(*err) (gds_arith_except, 0);
 			value *= 10;
 		} while (++scale);
 #endif
@@ -1043,7 +1044,7 @@ SINT64 CVT_get_int64(DSC * desc, SSHORT scale, FPTR_VOID err)
 
 		if (d < (double) QUAD_MIN_real || (double) QUAD_MAX_real < d)
 			reinterpret_cast < pfn_cvt_private_cludge >
-				(err) (gds__arith_except, 0);
+				(err) (gds_arith_except, 0);
 
 		return (SINT64) d;
 
@@ -1065,7 +1066,7 @@ SINT64 CVT_get_int64(DSC * desc, SSHORT scale, FPTR_VOID err)
 		break;
 
 	default:
-		reinterpret_cast < pfn_cvt_private_cludge > (err) (gds__badblk, 0);	/* internal error */
+		reinterpret_cast < pfn_cvt_private_cludge > (err) (gds_badblk, 0);	/* internal error */
 		break;
 	}
 
@@ -1100,7 +1101,7 @@ SINT64 CVT_get_int64(DSC * desc, SSHORT scale, FPTR_VOID err)
 		do {
 			if (value > INT64_LIMIT || value < -INT64_LIMIT)
 				reinterpret_cast < pfn_cvt_private_cludge >
-					(err) (gds__arith_except, 0);
+					(err) (gds_arith_except, 0);
 			value *= 10;
 		} while (++scale);
 
@@ -1597,7 +1598,7 @@ void DLL_EXPORT CVT_move(DSC * from, DSC * to, FPTR_VOID err)
 #endif
 #endif
 					reinterpret_cast < pfn_cvt_private_cludge >
-						(err) (gds__arith_except, 0);
+						(err) (gds_arith_except, 0);
 #ifndef REQUESTER
 #ifndef SUPERCLIENT
 			}
@@ -1666,7 +1667,7 @@ void DLL_EXPORT CVT_move(DSC * from, DSC * to, FPTR_VOID err)
 				do
 					if (*q++ != ASCII_SPACE)
 						reinterpret_cast < pfn_cvt_private_cludge >
-							(err) (gds__arith_except, 0);
+							(err) (gds_arith_except, 0);
 				while (--l);
 			}
 			return;
@@ -1711,7 +1712,7 @@ void DLL_EXPORT CVT_move(DSC * from, DSC * to, FPTR_VOID err)
 		if (to->dsc_dtype != from->dsc_dtype)
 			reinterpret_cast < pfn_cvt_private_cludge2 > (err) (gds_wish_list,
 																gds_arg_gds,
-																gds__blobnotsup,
+																gds_blobnotsup,
 																gds_arg_string,
 																"move", 0);
 
@@ -1731,7 +1732,7 @@ void DLL_EXPORT CVT_move(DSC * from, DSC * to, FPTR_VOID err)
 		*(SSHORT *) p = (SSHORT) l;
 		if (*(SSHORT *) p != l)
 			reinterpret_cast < pfn_cvt_private_cludge >
-				(err) (gds__arith_except, 0);
+				(err) (gds_arith_except, 0);
 		return;
 
 	case dtype_long:
@@ -1757,7 +1758,7 @@ void DLL_EXPORT CVT_move(DSC * from, DSC * to, FPTR_VOID err)
 			d_value = CVT_get_double(from, err);
 			if (ABSOLUT(d_value) > FLOAT_MAX)
 				reinterpret_cast < pfn_cvt_private_cludge >
-					(err) (gds__arith_except, 0);
+					(err) (gds_arith_except, 0);
 			*(float *) p = (float) d_value;
 		}
 		return;
@@ -1777,11 +1778,11 @@ void DLL_EXPORT CVT_move(DSC * from, DSC * to, FPTR_VOID err)
 	if (from->dsc_dtype == dtype_array || from->dsc_dtype == dtype_blob)
 		reinterpret_cast < pfn_cvt_private_cludge2 > (err) (gds_wish_list,
 															gds_arg_gds,
-															gds__blobnotsup,
+															gds_blobnotsup,
 															gds_arg_string,
 															"move", 0);
 
-	reinterpret_cast < pfn_cvt_private_cludge > (err) (gds__badblk, 0);	/* internal error */
+	reinterpret_cast < pfn_cvt_private_cludge > (err) (gds_badblk, 0);	/* internal error */
 }
 
 
@@ -1815,7 +1816,7 @@ static void conversion_error(DSC * desc, FPTR_VOID err)
 #endif
 	}
 
-	reinterpret_cast < pfn_cvt_private_cludge2 > (err) (gds__convert_error,
+	reinterpret_cast < pfn_cvt_private_cludge2 > (err) (gds_convert_error,
 														gds_arg_string, p, 0);
 }
 
@@ -1867,7 +1868,7 @@ version4 = (tdbb->tdbb_request->req_flags & req_blr_version4) ? TRUE : FALSE;
 		break;
 	default:
 		assert(FALSE);
-		reinterpret_cast < pfn_cvt_private_cludge > (err) (gds__badblk, 0);	/* internal error */
+		reinterpret_cast < pfn_cvt_private_cludge > (err) (gds_badblk, 0);	/* internal error */
 		break;
 	}
 
@@ -1967,7 +1968,7 @@ static SSHORT decompose(
    supported by the platform as a native datatype. */
 
 	if (dtype == dtype_quad)
-		reinterpret_cast < pfn_cvt_private_cludge > (err) (gds__badblk, 0);	/* internal error */
+		reinterpret_cast < pfn_cvt_private_cludge > (err) (gds_badblk, 0);	/* internal error */
 #endif
 
 	MOVE_CLEAR(&errd, sizeof(errd));
@@ -1998,11 +1999,11 @@ static SSHORT decompose(
 				/* possibility of an overflow */
 				if (value > limit_by_10)
 					reinterpret_cast < pfn_cvt_private_cludge >
-						(err) (gds__arith_except, 0);
+						(err) (gds_arith_except, 0);
 				else if (((*p > '8') && (sign == -1))
 						 || ((*p > '7') && (sign != -1)))
 					reinterpret_cast < pfn_cvt_private_cludge >
-						(err) (gds__arith_except, 0);
+						(err) (gds_arith_except, 0);
 			}
 
 			value = value * 10 + *p - '0';
@@ -2048,7 +2049,7 @@ static SSHORT decompose(
 
 				if (exp >= SHORT_LIMIT)
 					reinterpret_cast < pfn_cvt_private_cludge >
-						(err) (gds__arith_except, 0);
+						(err) (gds_arith_except, 0);
 			}
 			else if (*p == '-' && !digit_seen && !sign)
 				sign = -1;
@@ -2178,7 +2179,7 @@ static void float_to_text(DSC * from, DSC * to, FPTR_VOID err)
 			   ".", report an overflow exception. */
 			if (precision < 2)
 				reinterpret_cast < pfn_cvt_private_cludge >
-					(err) (gds__arith_except, 0);
+					(err) (gds_arith_except, 0);
 
 			chars_printed = sprintf(temp, "%- #*.*g", width, precision, d);
 
@@ -2191,7 +2192,7 @@ static void float_to_text(DSC * from, DSC * to, FPTR_VOID err)
 				precision -= (chars_printed - width);
 				if (precision < 2)
 					reinterpret_cast < pfn_cvt_private_cludge >
-						(err) (gds__arith_except, 0);
+						(err) (gds_arith_except, 0);
 				chars_printed =
 					sprintf(temp, "%- #*.*g", width, precision, d);
 			}
@@ -2236,7 +2237,7 @@ static void integer_to_text(DSC * from, DSC * to, FPTR_VOID err)
    supported by the platform as a native datatype. */
 
 	if (from->dsc_dtype == dtype_quad)
-		reinterpret_cast < pfn_cvt_private_cludge > (err) (gds__badblk, 0);	/* internal error */
+		reinterpret_cast < pfn_cvt_private_cludge > (err) (gds_badblk, 0);	/* internal error */
 #endif
 
 	pad = decimal = neg = 0;

@@ -22,8 +22,9 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/common.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/mblr.h"
 #include "../jrd/mblr_proto.h"
 

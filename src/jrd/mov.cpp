@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/time.h"
 #include "../jrd/jrd.h"

@@ -21,13 +21,14 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include descrip
 #include psldef
 #include ssdef
 #include lckdef
 
 #include "../jrd/common.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/vmslo_proto.h"

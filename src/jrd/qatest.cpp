@@ -89,6 +89,7 @@ defined APIs for this function.
 
 
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <string.h>
@@ -96,7 +97,7 @@ defined APIs for this function.
 #include "../jrd/jrd.h"
 #include "../jrd/sdw.h"
 #include "../jrd/pio.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/flu_proto.h"
 #include "../jrd/sch_proto.h"

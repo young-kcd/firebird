@@ -34,13 +34,14 @@
 #endif
 #endif /* _MSC_VER */
 
+#include "firebird.h"
 #include <string.h>
 #include "../jrd/jrd.h"
 #include "../jrd/pio.h"
 #include "../jrd/ods.h"
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/err_proto.h"

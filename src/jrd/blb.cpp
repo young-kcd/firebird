@@ -24,9 +24,10 @@
  *                         readonly databases.
  */
 /*
-$Id: blb.cpp,v 1.3 2001-07-12 05:46:04 bellardo Exp $
+$Id: blb.cpp,v 1.4 2001-07-29 17:42:21 skywalker Exp $
 */
 
+#include "firebird.h"
 #include <string.h>
 #include "../jrd/ibsetjmp.h"
 #include "../jrd/jrd.h"
@@ -37,7 +38,7 @@ $Id: blb.cpp,v 1.3 2001-07-12 05:46:04 bellardo Exp $
 #include "../jrd/blb.h"
 #include "../jrd/ods.h"
 #include "../jrd/lls.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/blob_filter.h"
 #include "../jrd/sdl.h"
 #include "../jrd/intl.h"
@@ -63,7 +64,7 @@ $Id: blb.cpp,v 1.3 2001-07-12 05:46:04 bellardo Exp $
 #include "../jrd/thd_proto.h"
 
 
-extern "C" {
+//extern "C" {
 
 
 #define STREAM          (blob->blb_flags & BLB_stream)
@@ -463,9 +464,9 @@ USHORT BLB_get_segment(TDBB tdbb,
 		if (status =
 			BLF_get_segment(tdbb, &blob->blb_filter, &length, buffer_length,
 							segment)) {
-			if (status == gds__segstr_eof)
+			if (status == gds_segstr_eof)
 				blob->blb_flags |= BLB_eof;
-			else if (status == gds__segment)
+			else if (status == gds_segment)
 				blob->blb_fragment_size = 1;
 			else
 				ERR_punt();
@@ -751,7 +752,7 @@ SLONG BLB_lseek(BLB blob, USHORT mode, SLONG offset)
  **************************************/
 
 	if (!(blob->blb_flags & BLB_stream))
-		ERR_post(gds__bad_segstr_type, 0);
+		ERR_post(gds_bad_segstr_type, 0);
 
 	if (mode == 1)
 		offset += blob->blb_seek;
@@ -838,7 +839,7 @@ void BLB_move(TDBB tdbb, DSC * from_desc, DSC * to_desc, NOD field)
 		BUGCHECK(199);			/* msg 199 expected field node */
 
 	if (from_desc->dsc_dtype != dtype_quad
-		&& from_desc->dsc_dtype != dtype_blob) ERR_post(gds__convert_error,
+		&& from_desc->dsc_dtype != dtype_blob) ERR_post(gds_convert_error,
 														gds_arg_string,
 														"BLOB", 0);
 
@@ -921,7 +922,7 @@ void BLB_move(TDBB tdbb, DSC * from_desc, DSC * to_desc, NOD field)
 			blob->blb_attachment != tdbb->tdbb_attachment ||
 			!(blob->blb_flags & BLB_closed) ||
 			(blob->blb_request && blob->blb_request != request))
-			ERR_post(gds__bad_segstr_id, 0);
+			ERR_post(gds_bad_segstr_id, 0);
 
 		if (materialized_blob && !(blob->blb_flags & BLB_temporary)) {
 			refetch_flag = TRUE;
@@ -1109,7 +1110,7 @@ BLB BLB_open2(TDBB tdbb,
 	if (blob_id->bid_relation_id >= vector->vec_count ||
 		!(blob->blb_relation =
 		  (REL) vector->vec_object[blob_id->bid_relation_id]))
-			ERR_post(gds__bad_segstr_id, 0);
+			ERR_post(gds_bad_segstr_id, 0);
 
 	DPM_get_blob(tdbb, blob, blob_id->bid_stuff.bid_number, FALSE, (SLONG) 0);
 
@@ -1335,7 +1336,7 @@ SLONG * param, SLONG slice_length, UCHAR * slice)
 		IBERROR(197);			/* msg 197 field for array not known */
 
 	if (!(array_desc = field->fld_array))
-		ERR_post(gds__invalid_dimension, gds_arg_number, (SLONG) 0,
+		ERR_post(gds_invalid_dimension, gds_arg_number, (SLONG) 0,
 				 gds_arg_number, (SLONG) 1, 0);
 
 /* Find and/or allocate array block.  There are three distinct cases:
@@ -1645,9 +1646,9 @@ static STATUS blob_filter(
 			BLB_get_segment(tdbb, blob, control->ctl_buffer,
 							control->ctl_buffer_length);
 		if (blob->blb_flags & BLB_eof)
-			return gds__segstr_eof;
+			return gds_segstr_eof;
 		if (blob->blb_fragment_size)
-			return gds__segment;
+			return gds_segment;
 		return SUCCESS;
 
 	case ACTION_create:
@@ -1682,7 +1683,7 @@ static STATUS blob_filter(
 		return BLB_lseek((BLB) control->ctl_source_handle, mode, offset);
 
 	default:
-		ERR_post(gds__uns_ext, 0);
+		ERR_post(gds_uns_ext, 0);
 		return SUCCESS;
 	}
 }
@@ -1724,7 +1725,7 @@ static void check_BID_validity(BLB blob, TDBB tdbb)
 		blob->blb_attachment != tdbb->tdbb_attachment ||
 		blob->blb_level > 2 || !(blob->blb_flags & BLB_temporary))
 
-		ERR_post(gds__bad_segstr_id, 0);
+		ERR_post(gds_bad_segstr_id, 0);
 }
 
 
@@ -2278,7 +2279,7 @@ static void slice_callback(SLICE arg, ULONG count, DSC * descriptors)
 	next = (BLOB_PTR *) slice_desc->dsc_address + arg->slice_element_length;
 
 	if ((BLOB_PTR *) next > (BLOB_PTR *) arg->slice_end)
-		ERR_post(gds__out_of_bounds, 0);
+		ERR_post(gds_out_of_bounds, 0);
 
 	if ((BLOB_PTR *) array_desc->dsc_address < (BLOB_PTR *) arg->slice_base)
 		ERR_error(198);			/* msg 198 array subscript computation error */
@@ -2421,4 +2422,4 @@ static BLB store_array(TDBB tdbb, TRA transaction, BID blob_id)
 }
 
 
-} // extern "C"
+//} // extern "C"

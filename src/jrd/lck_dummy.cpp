@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/common.h"
 #ifdef UNIX
 #include <signal.h>

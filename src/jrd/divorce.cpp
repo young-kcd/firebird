@@ -49,6 +49,7 @@
  * copyright (c) 1986 by Groton Database Systems, Inc.
  */
 
+#include "firebird.h"
 #include "../jrd/common.h"
 #include "../jrd/divorce.h"
 

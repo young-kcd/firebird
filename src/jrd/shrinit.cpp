@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <rpc/types.h>
 #include <sys/times.h>

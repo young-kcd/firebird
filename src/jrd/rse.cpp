@@ -21,9 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: rse.cpp,v 1.2 2001-07-12 05:46:05 bellardo Exp $
+$Id: rse.cpp,v 1.3 2001-07-29 17:42:22 skywalker Exp $
 */
 
+#include "firebird.h"
 #include <errno.h>
 #include "../jrd/ib_stdio.h"
 #include <string.h>
@@ -40,7 +41,7 @@ $Id: rse.cpp,v 1.2 2001-07-12 05:46:05 bellardo Exp $
 #include "../jrd/btr.h"
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/gdsassert.h"
 #ifdef GATEWAY
 #include ".._gway/gway/sql.h"
@@ -2733,7 +2734,7 @@ static BOOLEAN get_record(TDBB			tdbb,
 		impure->irsb_flags |= irsb_checking_singular;
 		if (get_record(tdbb, rsb, parent_rsb, mode)) {
 			impure->irsb_flags &= ~irsb_checking_singular;
-			ERR_post(gds__sing_select_err, 0);
+			ERR_post(gds_sing_select_err, 0);
 		}
 		pop_rpbs(request, rsb);
 		impure->irsb_flags &= ~irsb_checking_singular;

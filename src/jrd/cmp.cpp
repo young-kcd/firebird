@@ -21,14 +21,15 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: cmp.cpp,v 1.2 2001-07-12 05:46:04 bellardo Exp $
+$Id: cmp.cpp,v 1.3 2001-07-29 17:42:21 skywalker Exp $
 */
 
+#include "firebird.h"
 #include "../jrd/ibsetjmp.h"
 #include <string.h>
 #include <stdlib.h>				/* abort */
 #include "../jrd/common.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/jrd.h"
 #include "../jrd/req.h"
 #include "../jrd/val.h"

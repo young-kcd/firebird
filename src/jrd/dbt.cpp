@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include "../jrd/ibase.h"
 #include "../jrd/everything.h"
@@ -31,7 +32,6 @@
 #else
 #define FLD(struct, string, field) string, (SCHAR*) OFFSET (struct, field), (SCHAR*) sizeof (((struct) 0)->field)
 #endif
-
 
 extern "C" {
 
@@ -312,24 +312,24 @@ static int (*dbg_all) (), (*dbg_block) (), (*dbg_examine) (), (*dbg_eval) (),
 #define SYM(struct, name)	"name", OFFSET (struct, name), 0, symb_offset, sizeof (((struct) 0)->name),
 
 struct symb dbt_symbols[] = {
-	"blk", &dbg_block, symb_printer, sizeof(int),
-	"ev", &dbg_eval, symb_printer, sizeof(int),
-	"ex", &dbg_examine, symb_printer, sizeof(int),
-	"dump", &dmp_page, symb_printer, sizeof(SLONG),
-	"pool", &dbg_pool, symb_printer, 0,
-	"pretty", &dbg_pretty, symb_printer, 0,
-	"analyze", &dbg_analyze, symb_printer, 0,
-	"window", &dbg_window, symb_printer, 0,
-	"rpb", &dbg_rpb, symb_printer, 0,
-	"check", &dbg_check, symb_printer, 0,
+	{"blk", &dbg_block, symb_printer, sizeof(int)},
+	{"ev", &dbg_eval, symb_printer, sizeof(int)},
+	{"ex", &dbg_examine, symb_printer, sizeof(int)},
+	{"dump", &dmp_page, symb_printer, sizeof(SLONG)},
+	{"pool", &dbg_pool, symb_printer, 0},
+	{"pretty", &dbg_pretty, symb_printer, 0},
+	{"analyze", &dbg_analyze, symb_printer, 0},
+	{"window", &dbg_window, symb_printer, 0},
+	{"rpb", &dbg_rpb, symb_printer, 0},
+	{"check", &dbg_check, symb_printer, 0},
 
-	"dirty", &dmp_dirty, symb_routine, 0,
-	"active", &dmp_active, symb_routine, 0,
-	"all", &dbg_all, symb_routine, 0,
-	"open", &dbg_open, symb_routine, 0,
-	"close", &dbg_close, symb_routine, 0,
-	"bdbs", &dbg_bdbs, symb_routine, 0,
-	"verify", &dbg_verify, symb_routine, 0,
+	{"dirty", &dmp_dirty, symb_routine, 0},
+	{"active", &dmp_active, symb_routine, 0},
+	{"all", &dbg_all, symb_routine, 0},
+	{"open", &dbg_open, symb_routine, 0},
+	{"close", &dbg_close, symb_routine, 0},
+	{"bdbs", &dbg_bdbs, symb_routine, 0},
+	{"verify", &dbg_verify, symb_routine, 0},
 
 /*
     "dbb", &dbb, symb_absolute, sizeof (dbb),

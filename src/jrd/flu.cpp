@@ -21,8 +21,14 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: flu.cpp,v 1.3 2001-07-12 05:46:05 bellardo Exp $
+$Id: flu.cpp,v 1.4 2001-07-29 17:42:22 skywalker Exp $
 */
+
+#include "firebird.h"
+
+#include <string>
+
+using namespace std;
 
 #include "../jrd/common.h"
 #include "../jrd/flu.h"
@@ -741,13 +747,19 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 		/* call search_for_module with the supplied name, 
 		   and if unsuccessful, then with <name>.so . */
 		mod = search_for_module(absolute_module, name);
-		if (!mod)
-		{
+
+		if (!mod) {
 			strcat(absolute_module, ".so");
 			mod = search_for_module(absolute_module, name);
 		}
-		if (!mod)
-		{
+
+        if (!mod) {  // Start looking for "libxxxx.so" module names 
+            string moduleName = "lib";
+            moduleName += (const char*) absolute_module;
+			mod = search_for_module((TEXT*) moduleName.c_str(), name);
+        }
+
+		if (!mod) {
 			return NULL;
 		}
 
@@ -761,7 +773,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 
 	++mod->mod_use_count;
 
-	return dlsym(mod->mod_handle, name);
+	return (FPTR_INT) dlsym(mod->mod_handle, name);
 #endif /* NON_DL_COMPATIBLE */
 }
 

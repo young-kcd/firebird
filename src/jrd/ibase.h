@@ -22,15 +22,14 @@
  * FSG 16.03.2001 
  */
 /*
-$Id: ibase.h,v 1.2 2001-07-12 05:46:05 bellardo Exp $
+$Id: ibase.h,v 1.3 2001-07-29 17:42:22 skywalker Exp $
  */
 
 #ifndef JRD_IBASE_H
 #define JRD_IBASE_H
 
-#ifndef INCLUDE_FB_TYPES_H
-#include "../include/fb_types.h"
-#endif
+
+#include "fb_types.h"
 
 #define isc_version4
 
@@ -63,30 +62,18 @@ $Id: ibase.h,v 1.2 2001-07-12 05:46:05 bellardo Exp $
 /* Define type, export and other stuff based on c/c++ and Windows */
 /******************************************************************/
 
+#define ISC_EXPORT GDS_EXPORT
+#define ISC_FAR 
+
 #if (defined(_MSC_VER) && defined(_WIN32)) || \
     (defined(__BORLANDC__) && (defined(__WIN32__) || defined(__OS2__)))
 #  define  ISC_FAR
-#  define  ISC_EXPORT	__stdcall
 #  define  ISC_EXPORT_VARARG	__cdecl
 	typedef __int64 ISC_INT64;
 	typedef unsigned __int64 ISC_UINT64;
 #  define  ISC_INT64_DEFINED
-#else /* Not Windows/NT */
-#  if (defined(__IBMC__) && defined(__OS2__))
-#    define  ISC_FAR
-#    define  ISC_EXPORT	_System
-#    define  ISC_EXPORT_VARARG	ISC_EXPORT
-#  else /* not IBM C Set++ for OS/2 */
-#    if ( defined( _Windows) || defined( _WINDOWS))
-#      define  ISC_FAR	__far
-#      define  ISC_EXPORT     ISC_FAR __cdecl __loadds __export
-#      define  ISC_EXPORT_VARARG	ISC_EXPORT
-#    else /* Not Windows/NT, OS/2 or Windows */
-#      define  ISC_FAR
-#      define  ISC_EXPORT
-#      define  ISC_EXPORT_VARARG
-#    endif /* Windows and Not Windows/NT or OS/2 */
-#  endif /* IBM C Set++ for OS/2 */
+#else /* Not Windows*/
+#   define  ISC_EXPORT_VARARG
 #endif /* Windows/NT */
 
 /*******************************************************************/
@@ -122,47 +109,12 @@ typedef struct
 /* Blob id structure                                               */
 /*******************************************************************/
 
-
 #if !(defined __cplusplus)
 typedef GDS_QUAD GDS__QUAD;
 #endif /* !(defined __cplusplus) */
 
-#if 1
+typedef struct GDS_QUAD_t ISC_QUAD;
 
-/* TMN: What *is* really the right definition of these structs?! */
-/* Is e.g a GDS_QUAD to be signed or unsigned?! */
-
-#if !defined(ISC_QUAD) && !defined(DEFINED_GDS_QUAD)
-#define DEFINED_GDS_QUAD
-
-typedef struct {
-    unsigned long uquad_high;
-    unsigned long uquad_low;
-} ISC_UQUAD;
-
-typedef struct {
-    signed long    squad_high;
-    unsigned long  squad_low;
-} ISC_SQUAD; 
-
-#define GDS_QUAD  ISC_UQUAD
-#define GDS__QUAD ISC_UQUAD
-
-#define gds_quad_high uquad_high
-#define gds_quad_low  uquad_low
-
-#define ISC_QUAD    ISC_UQUAD
-#define isc_quad_high uquad_high
-#define isc_quad_low uquad_low
-
-#endif	/* ISC_QUAD */
-
-#else	/* 1 */
-
-#define	isc_quad_high	gds_quad_high
-#define	isc_quad_low	gds_quad_low
-
-#endif	/* 1 */
 
 typedef struct
 {
@@ -1941,31 +1893,6 @@ ISC_STATUS ISC_EXPORT isc_suspend_window(ISC_STATUS ISC_FAR*,
 #endif
 
 
-/***************/
-/* Error codes */
-/***************/
-
-#define isc_facility                       20
-#define isc_err_base                       335544320L
-#define isc_err_factor                     1
-#define isc_arg_end                        0
-#define isc_arg_gds                        1
-#define isc_arg_string                     2
-#define isc_arg_cstring                    3
-#define isc_arg_number                     4
-#define isc_arg_interpreted                5
-#define isc_arg_vms                        6
-#define isc_arg_unix                       7
-#define isc_arg_domain                     8
-#define isc_arg_dos                        9
-#define isc_arg_mpexl                      10
-#define isc_arg_mpexl_ipc                  11
-#define isc_arg_next_mach		   15
-#define isc_arg_netware		           16
-#define isc_arg_win32                      17
-#define isc_arg_warning                    18
-
-#include <iberror.h>
 
 /**********************************************/
 /* Dynamic Data Definition Language operators */
@@ -2381,5 +2308,8 @@ ISC_STATUS ISC_EXPORT isc_suspend_window(ISC_STATUS ISC_FAR*,
 #define isc_info_db_SQL_dialect           62
 #define isc_dpb_SQL_dialect               63
 #define isc_dpb_set_db_SQL_dialect        65
+
+
+#include "gen/iberror.h"
 
 #endif /* JRD_IBASE_H */

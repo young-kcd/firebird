@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/common.h"
 #include "../jrd/event.h"
 #include "../jrd/event_proto.h"

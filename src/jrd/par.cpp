@@ -21,15 +21,16 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: par.cpp,v 1.2 2001-07-12 05:46:05 bellardo Exp $
+$Id: par.cpp,v 1.3 2001-07-29 17:42:22 skywalker Exp $
 */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
 #include "../jrd/jrd.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/val.h"
 #include "../jrd/align.h"
 #include "../jrd/exe.h"
@@ -61,7 +62,7 @@ $Id: par.cpp,v 1.2 2001-07-12 05:46:05 bellardo Exp $
 #define RELATION	5
 #define ACCESS_TYPE	6
 
-#include "../jrd/blrtable.h"
+#include "gen/blrtable.h"
 
 
 extern "C" {
@@ -73,7 +74,7 @@ static CONST struct {
 	CONST SCHAR *code_string;
 	SLONG code_number;
 } FAR_VARIABLE codes[] = {
-#include "../jrd/codetext.h"
+#include "gen/codetext.h"
 	NULL, 0
 };
 

@@ -27,17 +27,28 @@
  *                         readonly databases.
  */
 /*
-$Id: common.h,v 1.4 2001-07-12 06:32:03 bellardo Exp $
+$Id: common.h,v 1.5 2001-07-29 17:42:21 skywalker Exp $
 */
 
 #ifndef JRD_COMMON_H
 #define JRD_COMMON_H
 
-#include "objs/jrd/autoconfig.h"
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
+
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif
 
 #ifndef INCLUDE_FB_MACROS_H
 #include "../include/fb_macros.h"
 #endif
+
+#ifndef INCLUDE_FB_TYPES_H
+#include "../include/fb_types.h"
+#endif
+
 
 /*
   do not use links in source code to maintain platform neutraility
@@ -57,9 +68,6 @@ $Id: common.h,v 1.4 2001-07-12 06:32:03 bellardo Exp $
 #define CANCEL_OPERATION
 #endif
 
-#ifndef GDS_FAR
-#define GDS_FAR
-#endif
 
 
 /* Linux for Intel platforms*/
@@ -93,7 +101,6 @@ $Id: common.h,v 1.4 2001-07-12 06:32:03 bellardo Exp $
 #define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
 #define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
 
-#define VOLATILE        volatile
 #endif /* LINUX */
 
 /* Darwin Platforms */
@@ -122,10 +129,15 @@ $Id: common.h,v 1.4 2001-07-12 06:32:03 bellardo Exp $
 #define MOVE_FASTER(from,to,length)	memcpy (to, from, (int) (length))
 #define MOVE_CLEAR(to,length)		memset (to, 0, (int) (length))
 
+#if 0  /* sys/param included up top, wait till John says if need #define. MOD 16-07-2001 */
+#ifdef DARWIN
 #define _PPC_PARAM_H_
+#endif
 #ifndef MAXPATHLEN
 #include <sys/param.h>
 #endif
+#endif
+
 #endif /* Darwin Platforms */
 
 
@@ -237,8 +249,6 @@ $Id: common.h,v 1.4 2001-07-12 06:32:03 bellardo Exp $
 #define SETPGRP         setpgrp ()
 #define SIGACTION_SUPPORTED
 #define NO_FLOCK
-#define CONST           const
-#define VOLATILE        volatile
 #define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)
 /*********   Reason for introducing MEMMOVE macro.
 
@@ -426,7 +436,6 @@ $Id: common.h,v 1.4 2001-07-12 06:32:03 bellardo Exp $
 #define NO_NFS
 #undef LINKS_EXIST
 #define IEEE					/* IEEE floating point arith.  */
-#define CONST           const
 
 #define IMPLEMENTATION  47
 #define MEMMOVE(from,to,length)       memmove (to, from, (int) (length))
@@ -574,8 +583,6 @@ typedef unsigned int64 UATOM;
 #define MEMMOVE(from,to,length)         memmove ((void *)to, (void *)from, (size_t) length)
 #define STRICMP(s1, s2)			stricmp(s1, s2)
 
-#define CONST		const
-#define VOLATILE	volatile
 #define SYS_ARG		isc_arg_win32
 
 typedef __int64 SINT64;
@@ -731,8 +738,6 @@ typedef unsigned char BOOLEAN;
 #define DOUBLE_ALIGN    8
 #else
 #define IMPLEMENTATION        58
-#define CONST         const
-#define VOLATILE      volatile
 #define I386          1
 #define VAX           1
 #endif /* DG_X86 */
@@ -776,14 +781,8 @@ typedef unsigned char BOOLEAN;
 #define MOVE_FAST(from,to,length)       memcpy (to, from, (int) (length))
 #define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
 #define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
-#define LONG_DEFINED
 
-typedef int SLONG;
-typedef unsigned int ULONG;
-#define SQUAD_DEFINED
-typedef long SQUAD;
-typedef unsigned long UQUAD;
-#define NATIVE_QUAD
+
 #define ATOM_DEFINED
 typedef long SATOM;				/* 64 bit */
 typedef unsigned long UATOM;
@@ -1082,17 +1081,6 @@ typedef unsigned long DWORD;
 #define THREAD_ROUTINE
 #endif
 
-#ifndef CONST
-/* To handle platforms which don't support ANSI keyword "const" */
-#define CONST					/* nothing */
-#endif
-
-#ifndef VOLATILE
-/* To handle platforms which don't support ANSI keyword "volatile" */
-#define VOLATILE				/* nothing */
-#endif
-
-
 
 
 /* alignment macros */
@@ -1150,27 +1138,6 @@ typedef unsigned long DWORD;
 
 /* data type definitions */
 
-/* Basic data types */
-
-#if 1
-/* TMN: TODO It seems SCHAR is used just about *everywhere* where a plain
- * "char" is really intended. This currently forces us to this bad definition.
- */
-typedef char SCHAR;
-#else
-typedef signed char SCHAR;
-#endif
-typedef unsigned char UCHAR;
-typedef short SSHORT;
-typedef unsigned short USHORT;
-
-
-#ifndef LONG_DEFINED			/* 32 bit */
-typedef long SLONG;
-typedef unsigned long ULONG;
-#else
-#undef LONG_DEFINED
-#endif
 
 #ifndef INT64_DEFINED			/* 64 bit */
 typedef long long int SINT64;
@@ -1179,12 +1146,6 @@ typedef unsigned long long int UINT64;
 #undef INT64_DEFINED
 #endif
 
-#ifndef SQUAD_DEFINED			/* 64 bit */
-typedef struct {
-	SLONG high;
-	ULONG low;
-} SQUAD;
-#endif
 
 #ifndef ATOM_DEFINED			/* 32 or 64 bit */
 typedef long SATOM;
@@ -1214,20 +1175,6 @@ typedef struct
 #define GDS_TIME	ISC_TIME
 #define GDS_TIMESTAMP	ISC_TIMESTAMP
 
-typedef char TEXT;				/* To be expunged over time */
-typedef unsigned char STEXT;	/* Signed text - very rare */
-typedef unsigned char UTEXT;	/* Unsigned text - common */
-typedef unsigned char BYTE;		/* Unsigned byte - common */
-typedef char SBYTE;				/* Signed byte - rare usage */
-typedef long STATUS;
-typedef long IPTR;
-typedef unsigned long U_IPTR;
-typedef void (GDS_FAR *FPTR_VOID) ();
-typedef void (GDS_FAR *FPTR_VOID_PTR) (void *);
-typedef int (GDS_FAR *FPTR_INT) ();
-typedef int (GDS_FAR *FPTR_INT_VOID_PTR) (void *);
-typedef ULONG RCRD_OFFSET;
-typedef USHORT FLD_LENGTH;
 
 #ifndef ENUM
 #define ENUM            enum

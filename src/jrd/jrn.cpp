@@ -25,6 +25,7 @@
 #define LOCAL_SHLIB_DEFS
 #endif
 
+#include "firebird.h"
 #include "../jrd/time.h"
 #include "../jrd/common.h"
 #include <string.h>
@@ -73,7 +74,7 @@
 #include <errno.h>
 #endif
 
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/jrn.h"

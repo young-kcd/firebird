@@ -24,6 +24,7 @@
  *                         readonly databases.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../jrd/ibsetjmp.h"
@@ -31,7 +32,7 @@
 #include "../jrd/val.h"
 #include "../jrd/req.h"
 #include "../jrd/tra.h"
-#include "../jrd/ids.h"
+#include "gen/ids.h"
 #include "../jrd/lck.h"
 #include "../jrd/lls.h"
 #include "../jrd/scl.h"

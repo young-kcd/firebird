@@ -25,6 +25,7 @@
 #define LOCAL_SHLIB_DEFS
 #endif
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <string.h>
@@ -34,7 +35,7 @@
 
 #include "../jrd/time.h"
 #include "../jrd/common.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/isc.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"

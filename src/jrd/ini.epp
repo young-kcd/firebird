@@ -21,15 +21,16 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <stdio.h>
 #include <string.h>
 #include "../jrd/flags.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/ods.h"
 #include "../jrd/btr.h"
-#include "../jrd/ids.h"
+#include "gen/ids.h"
 #include "../jrd/tra.h"
 #include "../jrd/trig.h"
 #include "../jrd/intl.h"
@@ -688,7 +689,9 @@ TRG* INI_lookup_sys_trigger(REL				relation,
  *
  **************************************/
 
-	trigger = (trigger) ? trigger + 1 : triggers;
+/* function should actually return (const TRIG*) */
+    const TRG* constTrigger =  (trigger) ? trigger + 1 : triggers;
+	trigger = const_cast<TRG*>(constTrigger);
 
 	for (; trigger->trg_relation; trigger++)
 	{

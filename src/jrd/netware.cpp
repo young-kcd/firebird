@@ -19,6 +19,7 @@
  *                         conditionals, as the engine now fully supports
  *                         readonly databases.
  */
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <fcntl.h>
 #include <errno.h>
@@ -33,7 +34,7 @@
 #include "../jrd/ods.h"
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 
 
 extern "C" {

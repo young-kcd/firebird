@@ -21,7 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#include "../include/jrd/gds.h"
+#include "firebird.h"
+#include "../jrd/gds.h"
 
 DATABASE DB = "yachts.lnk";
 

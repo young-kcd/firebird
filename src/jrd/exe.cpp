@@ -21,9 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: exe.cpp,v 1.2 2001-07-12 05:46:05 bellardo Exp $
+$Id: exe.cpp,v 1.3 2001-07-29 17:42:22 skywalker Exp $
 */
 
+#include "firebird.h"
 #include <time.h>
 
 #include "../jrd/common.h"
@@ -34,7 +35,7 @@ $Id: exe.cpp,v 1.2 2001-07-12 05:46:05 bellardo Exp $
 #include "../jrd/val.h"
 #include "../jrd/exe.h"
 #include "../jrd/tra.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/ods.h"
 #include "../jrd/btr.h"
 #include "../jrd/rse.h"
@@ -461,7 +462,7 @@ REQ EXE_find_request(TDBB tdbb, REQ request, BOOLEAN validate)
 
 		if (count > MAX_CLONES) {
 			THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_clone);
-			ERR_post(gds__req_max_clones_exceeded, 0);
+			ERR_post(gds_req_max_clones_exceeded, 0);
 		}
 		if (!clone)
 			clone = CMP_clone_request(tdbb, request, n, validate);
@@ -500,11 +501,11 @@ void EXE_mark_crack(TDBB tdbb, RSB rsb, USHORT flag)
 	RSE_MARK_CRACK(tdbb, rsb, flag);
 
 	if (flag == irsb_eof)
-		ERR_warning(gds__stream_eof, 0);
+		ERR_warning(gds_stream_eof, 0);
 	else if (flag == irsb_bof)
-		ERR_warning(gds__stream_bof, 0);
+		ERR_warning(gds_stream_bof, 0);
 	else if (flag & irsb_crack)
-		ERR_warning(gds__stream_crack, 0);
+		ERR_warning(gds_stream_crack, 0);
 }
 #endif
 
@@ -594,7 +595,7 @@ void EXE_receive(TDBB		tdbb,
 		ERR_post(gds_req_sync, 0);
 
 	if (length != format->fmt_length)
-		ERR_post(gds__port_len,
+		ERR_post(gds_port_len,
 				 gds_arg_number, (SLONG) length,
 				 gds_arg_number, (SLONG) format->fmt_length, 0);
 
@@ -742,7 +743,7 @@ void EXE_send(TDBB		tdbb,
 		ERR_post(gds_req_sync, 0);
 
 	if (length != format->fmt_length)
-		ERR_post(gds__port_len,
+		ERR_post(gds_port_len,
 				 gds_arg_number, (SLONG) length,
 				 gds_arg_number, (SLONG) format->fmt_length, 0);
 
@@ -818,10 +819,10 @@ void EXE_start(TDBB tdbb, REQ request, TRA transaction)
 	BLKCHK(transaction, type_tra);
 
 	if (request->req_flags & req_active)
-		ERR_post(gds_req_sync, gds_arg_gds, gds__reqinuse, 0);
+		ERR_post(gds_req_sync, gds_arg_gds, gds_reqinuse, 0);
 
 	if (transaction->tra_flags & TRA_prepared)
-		ERR_post(gds__req_no_trans, 0);
+		ERR_post(gds_req_no_trans, 0);
 
 /* Post resources to transaction block.  In particular, the interest locks
    on relations/indices are copied to the transaction, which is very
@@ -1037,7 +1038,7 @@ static NOD erase(TDBB tdbb, NOD node, SSHORT which_trig)
 									   reinterpret_cast <
 									   blk *
 									   >(tdbb->tdbb_default))))
-				ERR_post(gds__deadlock, gds_arg_gds, gds__update_conflict, 0);
+				ERR_post(gds_deadlock, gds_arg_gds, gds_update_conflict, 0);
 		VIO_data(tdbb, rpb,
 				 reinterpret_cast < blk * >(tdbb->tdbb_request->req_pool));
 
@@ -1048,7 +1049,7 @@ static NOD erase(TDBB tdbb, NOD node, SSHORT which_trig)
 
 		if ((transaction->tra_flags & TRA_read_committed) &&
 			(tid_fetch != rpb->rpb_transaction))
-				ERR_post(gds__deadlock, gds_arg_gds, gds__update_conflict, 0);
+				ERR_post(gds_deadlock, gds_arg_gds, gds_update_conflict, 0);
 
 		rpb->rpb_stream_flags &= ~RPB_s_refetch;
 	}
@@ -1425,7 +1426,7 @@ static NOD find(TDBB tdbb, register NOD node)
 												  [e_find_operator]), 0);
 		if (operator != blr_eql && operator != blr_leq && operator != blr_lss
 			&& operator != blr_geq && operator != blr_gtr)
-			ERR_post(gds__invalid_operator, 0);
+			ERR_post(gds_invalid_operator, 0);
 
 		direction = (USHORT) MOV_get_long(EVL_expr(tdbb,
 												   node->nod_arg
@@ -1433,7 +1434,7 @@ static NOD find(TDBB tdbb, register NOD node)
 		if (direction != blr_backward && direction != blr_forward
 			&& direction != blr_backward_starting
 			&& direction !=
-			blr_forward_starting) ERR_post(gds__invalid_direction, 0);
+			blr_forward_starting) ERR_post(gds_invalid_direction, 0);
 
 		/* try to find the record; the position is defined to be on a crack 
 		   regardless of whether we are at BOF or EOF; also be sure to perpetuate
@@ -1542,7 +1543,7 @@ static LCK implicit_record_lock(TRA transaction, RPB * rpb)
 		return NULL;
 
 	if (!(lock = RLCK_lock_record_implicit(transaction, rpb, LCK_SW, 0, 0)))
-		ERR_post(gds__record_lock, 0);
+		ERR_post(gds_record_lock, 0);
 
 	return lock;
 }
@@ -1605,7 +1606,7 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 	}
 
 	if (!(transaction = request->req_transaction))
-		ERR_post(gds__req_no_trans, 0);
+		ERR_post(gds_req_no_trans, 0);
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -2429,7 +2430,7 @@ static NOD modify(TDBB tdbb, register NOD node, SSHORT which_trig)
 									   transaction,
 									   reinterpret_cast < BLK >
 									   (tdbb->tdbb_default))))
-				ERR_post(gds__deadlock, gds_arg_gds, gds__update_conflict, 0);
+				ERR_post(gds_deadlock, gds_arg_gds, gds_update_conflict, 0);
 		VIO_data(tdbb, org_rpb,
 				 reinterpret_cast < BLK > (tdbb->tdbb_request->req_pool));
 
@@ -2440,7 +2441,7 @@ static NOD modify(TDBB tdbb, register NOD node, SSHORT which_trig)
 
 		if ((transaction->tra_flags & TRA_read_committed) &&
 			(tid_fetch != org_rpb->rpb_transaction))
-				ERR_post(gds__deadlock, gds_arg_gds, gds__update_conflict, 0);
+				ERR_post(gds_deadlock, gds_arg_gds, gds_update_conflict, 0);
 
 		org_rpb->rpb_stream_flags &= ~RPB_s_refetch;
 	}
@@ -3201,11 +3202,11 @@ static void set_error(TDBB tdbb, XCP condition)
 
 	switch (condition->xcp_rpt[0].xcp_type) {
 	case xcp_sql_code:
-		ERR_post(gds__sqlerr,
+		ERR_post(gds_sqlerr,
 				 gds_arg_number, (SLONG) condition->xcp_rpt[0].xcp_code, 0);
 
 	case xcp_gds_code:
-		if (condition->xcp_rpt[0].xcp_code == gds__check_constraint) {
+		if (condition->xcp_rpt[0].xcp_code == gds_check_constraint) {
 			MET_lookup_cnstrt_for_trigger(tdbb, name, relation_name,
 										  request->req_trg_name);
 			// CONST CAST
@@ -3228,12 +3229,12 @@ static void set_error(TDBB tdbb, XCP condition)
 		else
 			s = NULL;
 		if (s)
-			ERR_post(gds__except,
+			ERR_post(gds_except,
 					 gds_arg_number, (SLONG) condition->xcp_rpt[0].xcp_code,
-					 gds_arg_gds, gds__random, gds_arg_string, ERR_cstring(s),
+					 gds_arg_gds, gds_random, gds_arg_string, ERR_cstring(s),
 					 0);
 		else
-			ERR_post(gds__except, gds_arg_number,
+			ERR_post(gds_except, gds_arg_number,
 					 (SLONG) condition->xcp_rpt[0].xcp_code, 0);
 	}
 }
@@ -3273,7 +3274,7 @@ static NOD set_index(TDBB tdbb, register NOD node)
 
 		id = MOV_get_long(EVL_expr(tdbb, node->nod_arg[e_index_index]), 0);
 		if (id && BTR_lookup(tdbb, relation, id - 1, &idx))
-			ERR_post(gds__indexnotdefined, gds_arg_string, relation->rel_name,
+			ERR_post(gds_indexnotdefined, gds_arg_string, relation->rel_name,
 					 gds_arg_number, (SLONG) id, 0);
 
 		/* generate a new rsb in place of the old */
@@ -3572,7 +3573,7 @@ static BOOLEAN test_error(TDBB tdbb, XCP conditions)
 			break;
 
 		case xcp_xcp_code:
-			if ((status_vector[1] == gds__except) &&
+			if ((status_vector[1] == gds_except) &&
 				(status_vector[3] == conditions->xcp_rpt[i].xcp_code)) {
 				status_vector[0] = 0;
 				status_vector[1] = 0;
@@ -3621,16 +3622,16 @@ static void trigger_failure(TDBB tdbb, REQ trigger)
 			if (trigger->req_flags & req_sys_trigger) {
 				code = PAR_symbol_to_gdscode(msg);
 				if (code)
-					ERR_post(gds__integ_fail,
+					ERR_post(gds_integ_fail,
 							 gds_arg_number, (SLONG) trigger->req_label,
 							 gds_arg_gds, code, 0);
 			}
-			ERR_post(gds__integ_fail,
+			ERR_post(gds_integ_fail,
 					 gds_arg_number, (SLONG) trigger->req_label,
-					 gds_arg_gds, gds__random, gds_arg_string, msg, 0);
+					 gds_arg_gds, gds_random, gds_arg_string, msg, 0);
 		}
 		else
-			ERR_post(gds__integ_fail, gds_arg_number,
+			ERR_post(gds_integ_fail, gds_arg_number,
 					 (SLONG) trigger->req_label, 0);
 	}
 	else
@@ -3714,7 +3715,7 @@ static void validate(TDBB tdbb, NOD list)
 				name = "*** unknown ***";
 			}
 
-			ERR_post(gds__not_valid, gds_arg_string, name,
+			ERR_post(gds_not_valid, gds_arg_string, name,
 					 gds_arg_string, value, 0);
 		}
 	}

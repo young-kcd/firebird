@@ -21,12 +21,13 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <errno.h>
 #include <string.h>
 #include "../jrd/common.h"
 #include "../jrd/llio.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/iberr_proto.h"
 #include "../jrd/llio_proto.h"
 

@@ -29,6 +29,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/math.h"
 
 double _export MATH_multiply(double f1, double f2)

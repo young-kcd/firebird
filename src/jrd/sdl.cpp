@@ -21,13 +21,14 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <string.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
 #ifndef REQUESTER
 #include "../jrd/jrd.h"
 #endif
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/val.h"
 #include "../jrd/sdl.h"
 #include "../jrd/intl.h"

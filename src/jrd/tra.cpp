@@ -24,6 +24,7 @@
  *                         readonly databases.
  */
 
+#include "firebird.h"
 #include "../jrd/ibsetjmp.h"
 #include <string.h>
 #include "../jrd/jrd.h"
@@ -31,7 +32,7 @@
 #include "../jrd/ods.h"
 #include "../jrd/pag.h"
 #include "../jrd/lck.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/jrn.h"
 #include "../jrd/lls.h"
 #include "../jrd/all.h"

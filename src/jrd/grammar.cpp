@@ -17,6 +17,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <stdlib.h>
 
 
@@ -58,7 +59,7 @@ YYSTYPE yylval, yyval;
 # line 159 "grammar.y"
 
 
-#include "../jrd/jlx.cpp"
+#include "../jrd/jlx.c"
 int yyexca[] = {
 	-1, 1,
 	0, -1,

@@ -22,10 +22,11 @@
  */
 
 
+#include "firebird.h"
 #include ssdef
 #include descrip
 
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/common.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/gds_proto.h"

@@ -21,11 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include "../jrd/ibsetjmp.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/scl.h"

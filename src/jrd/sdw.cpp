@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <string.h>
 #include "../jrd/ib_stdio.h"
 
@@ -29,7 +30,7 @@
 #include "../jrd/lck.h"
 #include "../jrd/ods.h"
 #include "../jrd/cch.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/jrn.h"
 #include "../jrd/lls.h"
 #include "../jrd/req.h"
@@ -849,7 +850,7 @@ BOOLEAN SDW_rollover_to_shadow(FIL file, BOOLEAN inAst)
 	if (start_conditional && !inAst) {
 		CCH_unwind(tdbb, FALSE);
 		SDW_dump_pages();
-		ERR_post(gds__deadlock, 0);
+		ERR_post(gds_deadlock, 0);
 	}
 
 	return TRUE;
@@ -951,7 +952,7 @@ void SDW_start(
 		if (shadow && (shadow->sdw_flags & SDW_rollover))
 			return;
 		else
-			ERR_post(gds__shadow_accessed, 0);
+			ERR_post(gds_shadow_accessed, 0);
 	}
 
 /* catch errors: delete the shadow file if missing,
@@ -980,7 +981,7 @@ void SDW_start(
 		if (spare_buffer)
 			ALL_free(reinterpret_cast < char *>(spare_buffer));
 		if (file_flags & FILE_manual && !delete_)
-			ERR_post(gds__shadow_missing, gds_arg_number,
+			ERR_post(gds_shadow_missing, gds_arg_number,
 					 (SLONG) shadow_number, 0);
 		else {
 			MET_delete_shadow(tdbb, shadow_number);

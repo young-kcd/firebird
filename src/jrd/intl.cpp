@@ -80,12 +80,13 @@
  * copyright (c) 1992, 1993 by Borland International
  */
 
+#include "firebird.h"
 #include <string.h>
 #include "../jrd/ib_stdio.h"
 #include "../jrd/jrd.h"
 #include "../jrd/req.h"
 #include "../jrd/val.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/intl.h"
 #include "../jrd/intlobj.h"
 #include "../jrd/ods.h"
@@ -410,14 +411,14 @@ CHARSET_ID src_type, BYTE * src_ptr, USHORT src_len, FPTR_VOID err)
 		if (!len || all_spaces(tdbb, src_type, src_ptr, len, 0))
 			return (dest_ptr - start_dest_ptr);
 		else
-			reinterpret_cast < void (*) (...) > (*err) (gds__arith_except, 0);
+			reinterpret_cast < void (*) (...) > (*err) (gds_arith_except, 0);
 	}
 	else if (src_len == 0)
 		return (0);
 	else if (src_type == CS_BINARY)
-		reinterpret_cast < void (*) (...) > (*err) (gds__arith_except,
+		reinterpret_cast < void (*) (...) > (*err) (gds_arith_except,
 													gds_arg_gds,
-													gds__transliteration_failed,
+													gds_transliteration_failed,
 													0);
 	else
 		/* character sets are known to be different */
@@ -435,12 +436,12 @@ CHARSET_ID src_type, BYTE * src_ptr, USHORT src_len, FPTR_VOID err)
 							  && all_spaces(tdbb, src_type, src_ptr, src_len,
 											err_position))) return (len);
 			else if (err_code == CS_TRUNCATION_ERROR)
-				reinterpret_cast < void (*) (...) > (*err) (gds__arith_except,
+				reinterpret_cast < void (*) (...) > (*err) (gds_arith_except,
 															0);
 			else
-				reinterpret_cast < void (*) (...) > (*err) (gds__arith_except,
+				reinterpret_cast < void (*) (...) > (*err) (gds_arith_except,
 															gds_arg_gds,
-															gds__transliteration_failed,
+															gds_transliteration_failed,
 															0);
 
 		}
@@ -449,9 +450,9 @@ CHARSET_ID src_type, BYTE * src_ptr, USHORT src_len, FPTR_VOID err)
 
 		from_cs = INTL_CHARSETTYPE(src_type, (FPTR_VOID) NULL);
 		if (from_cs == NULL)
-			reinterpret_cast < void (*) (...) > (*err) (gds__arith_except,
+			reinterpret_cast < void (*) (...) > (*err) (gds_arith_except,
 														gds_arg_gds,
-														gds__text_subtype,
+														gds_text_subtype,
 														gds_arg_number,
 														(SLONG) src_type, 0);
 
@@ -472,12 +473,12 @@ CHARSET_ID src_type, BYTE * src_ptr, USHORT src_len, FPTR_VOID err)
 										err_position))) {
 			gds__free((SLONG *) tmp_buffer);
 			if (err_code == CS_TRUNCATION_ERROR)
-				reinterpret_cast < void (*) (...) > (*err) (gds__arith_except,
+				reinterpret_cast < void (*) (...) > (*err) (gds_arith_except,
 															0);
 			else
-				reinterpret_cast < void (*) (...) > (*err) (gds__arith_except,
+				reinterpret_cast < void (*) (...) > (*err) (gds_arith_except,
 															gds_arg_gds,
-															gds__transliteration_failed,
+															gds_transliteration_failed,
 															0);
 		}
 
@@ -486,9 +487,9 @@ CHARSET_ID src_type, BYTE * src_ptr, USHORT src_len, FPTR_VOID err)
 		to_cs = INTL_CHARSETTYPE(dest_type, (FPTR_VOID) NULL);
 		if (to_cs == NULL) {
 			gds__free((SLONG *) tmp_buffer);
-			reinterpret_cast < void (*) (...) > (*err) (gds__arith_except,
+			reinterpret_cast < void (*) (...) > (*err) (gds_arith_except,
 														gds_arg_gds,
-														gds__text_subtype,
+														gds_text_subtype,
 														gds_arg_number,
 														(SLONG) dest_type, 0);
 		}
@@ -505,12 +506,12 @@ CHARSET_ID src_type, BYTE * src_ptr, USHORT src_len, FPTR_VOID err)
 			  all_spaces(tdbb, CS_UNICODE101, tmp_buffer, len, err_position))) {
 			gds__free((SLONG *) tmp_buffer);
 			if (err_code == CS_TRUNCATION_ERROR)
-				reinterpret_cast < void (*) (...) > (*err) (gds__arith_except,
+				reinterpret_cast < void (*) (...) > (*err) (gds_arith_except,
 															0);
 			else
-				reinterpret_cast < void (*) (...) > (*err) (gds__arith_except,
+				reinterpret_cast < void (*) (...) > (*err) (gds_arith_except,
 															gds_arg_gds,
-															gds__transliteration_failed,
+															gds_transliteration_failed,
 															0);
 		}
 
@@ -740,7 +741,7 @@ int DLL_EXPORT INTL_convert_string(DSC * to, DSC * from, FPTR_VOID err)
 	if (from_fill)
 		/* Make sure remaining characters on From string are spaces */
 		if (!all_spaces(tdbb, from_cs, q, from_fill, 0))
-			reinterpret_cast < void (*) (...) > (*err) (gds__arith_except, 0);
+			reinterpret_cast < void (*) (...) > (*err) (gds_arith_except, 0);
 
 	return 0;
 }
@@ -2337,13 +2338,9 @@ static BOOLEAN obj_init(
 		/* The flu.c uses searchpath which expects a file name not a path */
 		strcpy(reinterpret_cast < char *>(path), INTL_MODULE1);
 		INTL_TRACE(("INTL: trying %s %s\n", path, INTL_LOOKUP_ENTRY1));
-		if (lookup_fn =
-			reinterpret_cast < USHORT(*)(USHORT, USHORT(**)(), short,
-										 short)
-			>(ISC_lookup_entrypoint
-			  (reinterpret_cast < char *>(path), INTL_LOOKUP_ENTRY1, NULL))) {
-			INTL_TRACE(
-					   ("INTL: calling lookup %s %s\n", path,
+		if (lookup_fn = reinterpret_cast <USHORT(*)(USHORT, USHORT(**)(), short, short)>
+            (ISC_lookup_entrypoint(reinterpret_cast < char *>(path), INTL_LOOKUP_ENTRY1, NULL))) {
+			INTL_TRACE(("INTL: calling lookup %s %s\n", path,
 						INTL_LOOKUP_ENTRY1));
 			if ((*lookup_fn) (objtype, &function, parm1, parm2) != 0) {
 				function = NULL;
@@ -2434,11 +2431,11 @@ static BOOLEAN obj_init(
 		}
 	}
 	if (err != NULL)
-		reinterpret_cast < void (*) (...) > (*err) (gds__text_subtype,
+		reinterpret_cast < void (*) (...) > (*err) (gds_text_subtype,
 													gds_arg_number,
 													(SLONG) parm1, 0);
 	else if (status)
-		IBERR_build_status(status, gds__text_subtype, gds_arg_number,
+		IBERR_build_status(status, gds_text_subtype, gds_arg_number,
 						   (SLONG) parm1, 0);
 
 	return TRUE;

@@ -16,7 +16,8 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-#include "../jrd/codes.h"
+#include "firebird.h"
+#include "gen/codes.h"
 
 #define entry(r)	r(status) int	*status; {return error (status); };
 

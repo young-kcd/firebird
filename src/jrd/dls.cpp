@@ -23,6 +23,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <string.h>
 #include <stdlib.h>
 #include "../jrd/sort.h"

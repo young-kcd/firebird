@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <string.h>
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
@@ -30,7 +31,7 @@
 #include "../jrd/exe.h"
 #include "../jrd/sbm.h"
 #include "../jrd/rse.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/rng.h"
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"

@@ -24,9 +24,10 @@
  *                         readonly databases.
  */
 
+#include "firebird.h"
 #include <string.h>
 #include "../jrd/jrd.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/tra.h"
 #include "../jrd/blb.h"
 #include "../jrd/req.h"

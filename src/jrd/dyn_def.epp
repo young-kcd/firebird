@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -36,7 +37,7 @@
 #include "../jrd/drq.h"
 #include "../jrd/req.h"
 #include "../jrd/flags.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/lls.h"
 #include "../jrd/all.h"
 #include "../jrd/met.h"
@@ -80,6 +81,7 @@
 #define FOR_KEY_DEL_NONE     0x80
 
 DATABASE DB = STATIC "yachts.gdb";
+
 
 static CONST UCHAR who_blr[] =
 {
@@ -4128,7 +4130,7 @@ static BOOLEAN get_who( TDBB tdbb, GBL gbl, SCHAR * name)
 
 	if (!request)
 	{
-		request = (BLK) CMP_compile2(tdbb, who_blr, TRUE);
+		request = (BLK) CMP_compile2(tdbb, const_cast<UCHAR*>(who_blr), TRUE);
 	}
 	EXE_start(tdbb, (REQ) request, gbl->gbl_transaction);
 	EXE_receive(tdbb, (REQ) request, 0, 32, (UCHAR*)name);

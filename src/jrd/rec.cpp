@@ -21,8 +21,9 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <string.h>
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/btr.h"

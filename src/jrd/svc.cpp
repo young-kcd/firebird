@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../jrd/ibsetjmp.h"
@@ -34,6 +35,7 @@
 #include "../alice/aliceswi.h"
 #include "../burp/burpswi.h"
 #include "../jrd/ibase.h"
+#include "gen/codes.h"
 #include "../jrd/license.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
@@ -661,7 +663,7 @@ SVC SVC_attach(
 #endif
 	{
 #ifndef SUPERSERVER
-		gds__prefix(service_path, serv->serv_executable);
+		gds__prefix(service_path, const_cast<TEXT*>(serv->serv_executable));
 		service_fork(service_path, service);
 #else
 		/* if service is single threaded, only call if not currently running */
@@ -2008,7 +2010,7 @@ void *SVC_start(SVC service, USHORT spb_length, SCHAR * spb)
 
 #ifndef SUPERSERVER
 	if (serv->serv_executable) {
-		gds__prefix(service_path, serv->serv_executable);
+		gds__prefix(service_path, const_cast<TEXT*>(serv->serv_executable));
 		service->svc_flags = SVC_forked;
 		service_fork(service_path, service);
 	}

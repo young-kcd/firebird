@@ -21,13 +21,14 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: opt.cpp,v 1.1.1.1 2001-05-23 13:26:20 tamlin Exp $
+$Id: opt.cpp,v 1.2 2001-07-29 17:42:22 skywalker Exp $
 */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../jrd/ibsetjmp.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/jrd.h"
 #include "../jrd/align.h"
 #include "../jrd/val.h"

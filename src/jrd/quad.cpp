@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 
 #ifdef VAX
 #define LOW_WORD        0
@@ -50,7 +51,7 @@ SQUAD QUAD_add(SQUAD * arg1, SQUAD * arg2, FPTR_VOID err)
  *
  **************************************/
 
-	reinterpret_cast < pfn_quad_private_cludge > (err) (gds__badblk, 0);	/* not really badblk, but internal error */
+	reinterpret_cast < pfn_quad_private_cludge > (err) (gds_badblk, 0);	/* not really badblk, but internal error */
 /* IBERROR (224); *//* msg 224 quad word arithmetic not supported */
 
 	SQUAD temp = { 0 };
@@ -96,7 +97,7 @@ SQUAD QUAD_from_double(double *d, FPTR_VOID err)
  *
  **************************************/
 
-	reinterpret_cast < pfn_quad_private_cludge > (err) (gds__badblk, 0);	/* not really badblk, but internal error */
+	reinterpret_cast < pfn_quad_private_cludge > (err) (gds_badblk, 0);	/* not really badblk, but internal error */
 /* BUGCHECK (190); *//* msg 190 conversion not supported for */
 	/* specified data types */
 
@@ -119,7 +120,7 @@ SQUAD QUAD_multiply(SQUAD * arg1, SQUAD * arg2, FPTR_VOID err)
  *
  **************************************/
 
-	reinterpret_cast < pfn_quad_private_cludge > (err) (gds__badblk, 0);	/* not really badblk, but internal error */
+	reinterpret_cast < pfn_quad_private_cludge > (err) (gds_badblk, 0);	/* not really badblk, but internal error */
 /* IBERROR (224); *//* msg 224 quad word arithmetic not supported */
 
 	SQUAD temp = { 0 };
@@ -140,7 +141,7 @@ SQUAD QUAD_negate(SQUAD * arg1, FPTR_VOID err)
  *
  **************************************/
 
-	reinterpret_cast < pfn_quad_private_cludge > (err) (gds__badblk, 0);	/* not really badblk, but internal error */
+	reinterpret_cast < pfn_quad_private_cludge > (err) (gds_badblk, 0);	/* not really badblk, but internal error */
 /* IBERROR (224); *//* msg 224 quad word arithmetic not supported */
 
 	SQUAD temp = { 0 };
@@ -161,7 +162,7 @@ SQUAD QUAD_subtract(SQUAD * arg1, SQUAD * arg2, FPTR_VOID err)
  *
  **************************************/
 
-	reinterpret_cast < pfn_quad_private_cludge > (err) (gds__badblk, 0);	/* not really badblk, but internal error */
+	reinterpret_cast < pfn_quad_private_cludge > (err) (gds_badblk, 0);	/* not really badblk, but internal error */
 /* IBERROR (224); *//* msg 224 quad word arithmetic not supported */
 
 	SQUAD temp = { 0 };

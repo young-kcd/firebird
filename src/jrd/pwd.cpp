@@ -21,13 +21,14 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: pwd.cpp,v 1.2 2001-07-12 05:46:05 bellardo Exp $
+$Id: pwd.cpp,v 1.3 2001-07-29 17:42:22 skywalker Exp $
 */
 
+#include "firebird.h"
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/jrd.h"
 #include "../jrd/pwd.h"
 #include "../jrd/enc_proto.h"

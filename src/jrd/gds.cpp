@@ -30,6 +30,7 @@
 #define ISC_TIME_SECONDS_PRECISION		10000L
 #define ISC_TIME_SECONDS_PRECISION_SCALE	-4
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <string.h>
@@ -123,9 +124,10 @@ static CONST TEXT gdslogid[] = "";
 #endif
 #endif
 
-#include "../jrd/sql_code.h"
+#include "gen/sql_code.h"
 #include "../jrd/thd.h"
-#include "../jrd/codes.h"
+#include "../jrd/gdsold.h"
+//#include "../jrd/gen/codes.h" // is already included in gdsold.h
 #include "../jrd/blr.h"
 #include "../jrd/msg.h"
 #include "../jrd/fil.h"
@@ -186,7 +188,7 @@ static char *ib_prefix_msg = 0;
 
 
 static CONST SCHAR *FAR_VARIABLE CONST messages[] = {
-#include "../jrd/msgs.h"
+#include "gen/msgs.h"
 	0							/* Null entry to terminate list */
 };
 
@@ -639,7 +641,7 @@ static const struct
 #pragma FB_COMPILER_MESSAGE("Fix this!")
 
 #include "../jrd/blp.h"
-	0, 0
+	{0, 0}
 };
 
 
@@ -656,23 +658,6 @@ static const struct
 #endif
 
 
-/* This is duplicated from gds.h */
-
-#define blr_gds_code			0
-#define blr_sql_code			1
-#define blr_exception			2
-#define blr_trigger_code		3
-#define blr_default_code		4
-
-#define gds__bpb_version1		1
-#define gds__bpb_source_type	1
-#define gds__bpb_target_type	2
-#define gds__bpb_type			3
-#define gds__bpb_source_interp  4
-#define gds__bpb_target_interp  5
-
-#define gds__bpb_type_segmented	0
-#define gds__bpb_type_stream	1
 
 #ifdef SUPERSERVER
 extern SLONG allr_delta_alloc;
@@ -2425,11 +2410,11 @@ void API_ROUTINE gds__prefix(TEXT * string, TEXT * root)
 				/* TMN: 2 Aug 2000 - No registry entry found.       */
 				/* Try to get "Program Files" from env var.         */
 				/* If that fails, fallback to the hardcoded path.   */
-
+                
 				ib_prefix = getenv("ProgramFiles");
 				if (ib_prefix) {
 					strcpy(ib_prefix_val, ib_prefix);
-					strcat(ib_prefix_val, "\\Borland\\Interbase\\");
+					strcat(ib_prefix_val, ISC_PREFIX_SUBPATH);
 				}
 				else {
 					/* ISC_PREFIX currently defaults to      */
@@ -2797,31 +2782,31 @@ USHORT API_ROUTINE gds__parse_bpb2(USHORT bpb_length,
 	p = bpb;
 	end = p + bpb_length;
 
-	if (*p++ != gds__bpb_version1)
+	if (*p++ != gds_bpb_version1)
 		return type;
 
 	while (p < end) {
 		op = *p++;
 		length = *p++;
 		switch (op) {
-		case gds__bpb_source_type:
+		case gds_bpb_source_type:
 			*source = (USHORT) gds__vax_integer(p, length);
 			break;
 
-		case gds__bpb_target_type:
+		case gds_bpb_target_type:
 			*target = (USHORT) gds__vax_integer(p, length);
 			break;
 
-		case gds__bpb_type:
+		case gds_bpb_type:
 			type = (USHORT) gds__vax_integer(p, length);
 			break;
 
-		case gds__bpb_source_interp:
+		case gds_bpb_source_interp:
 			if (source_interp)
 				*source_interp = (USHORT) gds__vax_integer(p, length);
 			break;
 
-		case gds__bpb_target_interp:
+		case gds_bpb_target_interp:
 			if (target_interp)
 				*target_interp = (USHORT) gds__vax_integer(p, length);
 			break;
@@ -3070,7 +3055,7 @@ SLONG API_ROUTINE gds__sqlcode(STATUS * status_vector)
 		if (*s == gds_arg_gds)
 		{
 			s++;
-			if (*s == gds__sqlerr)
+			if (*s == gds_sqlerr)
 			{
 				return *(s + 2);
 			}

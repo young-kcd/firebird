@@ -28,6 +28,7 @@
 #define LOCAL_SHLIB_DEFS
 #endif
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include "../jrd/ibsetjmp.h"
 #include <string.h>
@@ -41,7 +42,7 @@
 #include <errno.h>
 
 #define JRD_MAIN
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/jrd.h"
 #include "../jrd/irq.h"
 #include "../jrd/isc.h"
@@ -711,7 +712,9 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 				ERR_post(gds_no_priv,
 						 gds_arg_string, "encryption",
 						 gds_arg_string, "database",
-						 gds_arg_string, ERR_string(file_name, fl), 0);
+						 gds_arg_string, 
+                         ERR_string(reinterpret_cast< char *>(file_name), fl), 
+                         0);
 		}
 		else if (options.dpb_key)
 			dbb->dbb_encrypt_key =
@@ -781,14 +784,12 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 		PAG_header(file_name, fl);
 		INI_init2();
 		PAG_init();
-		if (options.dpb_set_page_buffers)
-		{
+		if (options.dpb_set_page_buffers) {
 			dbb->dbb_page_buffers = options.dpb_page_buffers;
 		}
 		CCH_init(tdbb, (ULONG) options.dpb_buffers);
 		PAG_init2(0);
-		if (options.dpb_disable_wal)
-		{
+		if (options.dpb_disable_wal) {
 			/* Forcibly disable WAL before the next step.
 			   We have an exclusive access to the database. */
 			AIL_drop_log_force();
@@ -825,14 +826,14 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
     if (dbb->dbb_flags & DBB_read_only)
             attachment->att_flags |= ATT_no_cleanup;
 
-    if (options.dpb_disable_wal)
-	{
+    if (options.dpb_disable_wal) {
 		ERR_post(gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
-				 gds_arg_string, ERR_string(file_name, fl), 0);
+				 gds_arg_string, 
+                 ERR_string(reinterpret_cast < char *>(file_name), fl), 
+                 0);
 	}
 
-	if (options.dpb_buffers && !dbb->dbb_page_buffers)
-	{
+	if (options.dpb_buffers && !dbb->dbb_page_buffers) {
 		CCH_expand(tdbb, (ULONG) options.dpb_buffers);
 	}
 
@@ -920,7 +921,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 					cnt = 1;
 					BOOLEAN	delimited_done = FALSE;
 					TEXT	end_quote = *p1;
-					*p1++;
+					p1++;
 					/*
 					   ** remove the delimited quotes and escape quote
 					   ** from ROLE name
@@ -935,7 +936,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 							if (*p1 && *p1 == end_quote
 								&& cnt < BUFFER_LENGTH128 - 1)
 							{
-								*p1++;	/* skip the escape quote here */
+								p1++;	/* skip the escape quote here */
 							}
 							else
 							{
@@ -1019,7 +1020,9 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 				ERR_post(gds_no_priv,
 						 gds_arg_string, "shutdown or online",
 						 gds_arg_string, "database",
-						 gds_arg_string, ERR_string(file_name, fl), 0);
+						 gds_arg_string, 
+                         ERR_string(reinterpret_cast < char *>(file_name), fl), 
+                         0);
 		}
 		JRD_SS_MUTEX_LOCK;
 		V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
@@ -1038,7 +1041,8 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 		JRD_SS_MUTEX_LOCK;
 		V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 		if (attachment->att_flags & ATT_shutdown)
-			ERR_post(gds_shutdown, gds_arg_string, ERR_string(file_name, fl),
+			ERR_post(gds_shutdown, gds_arg_string, 
+                     ERR_string(reinterpret_cast < char *>(file_name), fl),
 					 0);
 	}
 #endif
@@ -1046,12 +1050,15 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 /* If database is shutdown then kick 'em out. */
 
 	if (dbb->dbb_ast_flags & (DBB_shut_attach | DBB_shut_tran))
-		ERR_post(gds_shutinprog, gds_arg_string, ERR_string(file_name, fl),
+		ERR_post(gds_shutinprog, gds_arg_string, 
+                 ERR_string(reinterpret_cast < char *>(file_name), fl),
 				 0);
 
 	if (dbb->dbb_ast_flags & DBB_shutdown &&
 		!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner)))
-		ERR_post(gds_shutdown, gds_arg_string, ERR_string(file_name, fl), 0);
+		ERR_post(gds_shutdown, gds_arg_string, 
+                 ERR_string(reinterpret_cast < char *>(file_name), fl), 
+                 0);
 
 	if (options.dpb_disable)
 		AIL_disable();
@@ -1101,25 +1108,22 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 			AIL_enable(journal_name, (USHORT) strlen(journal_name),
 					   data, d_len, (SSHORT) strlen(archive_name));
 		}
-		else
-		{
+		else {
 			ERR_post(gds_bad_dpb_content,
 					 gds_arg_gds, gds_cant_start_journal,
 					 0);
 		}
 
-	if (options.dpb_wal_action)
-	{
+	if (options.dpb_wal_action) {
 		/* Make sure WAL enabled before taking any WAL action. */
 
-		if (!dbb->dbb_wal)
-		{
+		if (!dbb->dbb_wal) {
 			ERR_post(gds_no_wal, 0);
 		}
-		if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD))
-		{
+		if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD)) {
 			ERR_post(gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
-					 gds_arg_string, ERR_string(file_name, fl), 0);
+					 gds_arg_string, 
+                     ERR_string(reinterpret_cast < char *>(file_name), fl), 0);
 		}
 
 		/* journal has to be disabled before dropping WAL */
@@ -1127,8 +1131,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 		if (PAG_get_clump(	HEADER_PAGE,
 							HDR_journal_server,
 							&jd_len,
-							reinterpret_cast<UCHAR*>(journal_dir)))
-		{
+							reinterpret_cast<UCHAR*>(journal_dir))) {
 			AIL_disable();
 		}
 	}
@@ -1143,13 +1146,11 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 	if (((attachment->att_flags & ATT_gbak_attachment) ||
 		 (attachment->att_flags & ATT_gfix_attachment) ||
 		 (attachment->att_flags & ATT_gstat_attachment)) &&
-		!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner)))
-	{
+		!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner))) {
 		ERR_post(isc_adm_task_denied, 0);
 	}
 
-	if (options.dpb_online_dump)
-	{
+	if (options.dpb_online_dump) {
 		CCH_release_exclusive(tdbb);
 
 		OLD_dump(expanded_filename, length_expanded,
@@ -1162,55 +1163,49 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 	}
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-	if (options.dpb_log)
-	{
-		if (first)
-		{
+	if (options.dpb_log) {
+		if (first) {
 			if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD))
 				ERR_post(gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
-						 gds_arg_string, ERR_string(file_name, fl), 0);
+						 gds_arg_string, 
+                         ERR_string(reinterpret_cast < char *>(file_name), fl),
+                         0);
 			LOG_enable(options.dpb_log, strlen(options.dpb_log));
 		}
-		else
-		{
+		else {
 			ERR_post(gds_bad_dpb_content, gds_arg_gds,
 					 gds__cant_start_logging, 0);
 		}
 	}
 #endif
 
-	if (options.dpb_set_db_sql_dialect)
-	{
+	if (options.dpb_set_db_sql_dialect) {
 		PAG_set_db_SQL_dialect(dbb, options.dpb_set_db_sql_dialect);
 	}
 
-	if (options.dpb_sweep_interval != -1)
-	{
+	if (options.dpb_sweep_interval != -1) {
 		PAG_sweep_interval(options.dpb_sweep_interval);
 		dbb->dbb_sweep_interval = options.dpb_sweep_interval;
 	}
 
-	if (options.dpb_set_force_write)
-	{
+	if (options.dpb_set_force_write) {
 		PAG_set_force_write(dbb, options.dpb_force_write);
 	}
 
-	if (options.dpb_set_no_reserve)
-	{
+	if (options.dpb_set_no_reserve) {
 		PAG_set_no_reserve(dbb, options.dpb_no_reserve);
 	}
 
-	if (options.dpb_set_page_buffers)
-	{
+	if (options.dpb_set_page_buffers) {
 		PAG_set_page_buffers(options.dpb_page_buffers);
 	}
 
-        if (options.dpb_set_db_readonly)
-        {
-                if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD))
-                {
+        if (options.dpb_set_db_readonly) {
+                if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD)) {
                         ERR_post(gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
-                               gds_arg_string, ERR_string(file_name, fl), 0); 
+                                 gds_arg_string, 
+                                 ERR_string(reinterpret_cast < char *>(file_name), fl), 
+                                 0); 
                 }
 
                 PAG_set_db_readonly(dbb, options.dpb_db_readonly);
@@ -1230,22 +1225,17 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 	CCH_release_exclusive(tdbb);
 
 #ifdef GOVERNOR
-	if (!options.dpb_sec_attach)
-	{
-		if (JRD_max_users)
-		{
-			if (num_attached < (JRD_max_users * ATTACHMENTS_PER_USER))
-			{
+	if (!options.dpb_sec_attach) {
+		if (JRD_max_users) {
+			if (num_attached < (JRD_max_users * ATTACHMENTS_PER_USER)) {
 				num_attached++;
 			}
-			else
-			{
+			else {
 				ERR_post(isc_max_att_exceeded, 0);
 			}
 		}
 	}
-	else
-	{
+	else {
 		attachment->att_flags |= ATT_security_db;
 	}
 #endif /* GOVERNOR */
@@ -1254,19 +1244,16 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 
 /* if there was an error, the status vector is all set */
 
-	if (options.dpb_sweep & gds_dpb_records)
-	{
+	if (options.dpb_sweep & gds_dpb_records) {
 		JRD_SS_MUTEX_UNLOCK;
-		if (!(TRA_sweep(tdbb, 0)))
-		{
+		if (!(TRA_sweep(tdbb, 0))) {
 			JRD_SS_MUTEX_LOCK;
 			ERR_punt();
 		}
 		JRD_SS_MUTEX_LOCK;
 	}
 
-	if (options.dpb_dbkey_scope)
-	{
+	if (options.dpb_dbkey_scope) {
 		attachment->att_dbkey_trans = TRA_start(tdbb, 0, 0);
 	}
 
@@ -1958,14 +1945,15 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 	VIO_init(tdbb);
 #endif
 
-    if (options.dpb_set_db_readonly)
-        {
+    if (options.dpb_set_db_readonly) {
         if (!CCH_exclusive (tdbb, LCK_EX, WAIT_PERIOD))
-            ERR_post (gds__lock_timeout, gds_arg_gds, gds__obj_in_use,
-                gds_arg_string, ERR_string (file_name, fl), 0);
-
+            ERR_post (gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
+                      gds_arg_string, 
+                      ERR_string (reinterpret_cast < char *>(file_name), length), 
+                      0);
+        
         PAG_set_db_readonly (dbb, options.dpb_db_readonly);
-        }
+    }
 
     CCH_release_exclusive(tdbb);
 

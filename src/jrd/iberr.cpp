@@ -21,12 +21,13 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include "../jrd/ibsetjmp.h"
 #include <string.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/iberr.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/iberr_proto.h"
@@ -104,7 +105,7 @@ void IBERR_bugcheck(
 	len = strlen(errmsg);
 	sprintf(errmsg + len, " (%d)", number);
 
-	post_error(status_vector, dbname, longjmp_addr, gds__bug_check,
+	post_error(status_vector, dbname, longjmp_addr, gds_bug_check,
 			   gds_arg_string, errmsg, 0);
 }
 
@@ -131,7 +132,7 @@ void IBERR_error(
 						&flags) < 1)
 		sprintf(errmsg, "error code %d", number);
 
-	post_error(status_vector, dbname, longjmp_addr, gds__random,
+	post_error(status_vector, dbname, longjmp_addr, gds_random,
 			   gds_arg_string, errmsg, 0);
 }
 
@@ -154,8 +155,8 @@ static void post_error(
 
 	STUFF_STATUS(status_vector, status);
 
-	if (status_vector[1] == gds__db_corrupt ||
-		status_vector[1] == gds__bug_check)
+	if (status_vector[1] == gds_db_corrupt ||
+		status_vector[1] == gds_bug_check)
 			gds__log_status(dbname, status_vector);
 
 	if (longjmp_addr)

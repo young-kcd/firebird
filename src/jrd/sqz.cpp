@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <string.h>
 #include "../jrd/jrd.h"
 #include "../jrd/sqz.h"

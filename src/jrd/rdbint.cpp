@@ -21,11 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include descrip
 #include ssdef
 
 #include "../jrd/lnmdef.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/common.h"
 
 #define RDB_IMAGE	"RDBVMSSHR"

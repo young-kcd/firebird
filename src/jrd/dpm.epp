@@ -29,13 +29,14 @@
  * Change:    Corrected routine to use new variables from PAG_init.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include "../jrd/ibsetjmp.h"
 #include <string.h>
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/req.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/sqz.h"
 #include "../jrd/irq.h"
 #include "../jrd/blb.h"

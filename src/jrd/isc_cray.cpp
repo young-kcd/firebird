@@ -23,8 +23,9 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/common.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 
 #include "../jrd/ib_stdio.h"
 #include <pwd.h>

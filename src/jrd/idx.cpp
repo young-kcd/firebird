@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <string.h>
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
@@ -31,7 +32,7 @@
 #include "../jrd/sort.h"
 #include "../jrd/lls.h"
 #include "../jrd/tra.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/sbm.h"
 #include "../jrd/exe.h"
 #include "../jrd/scl.h"
@@ -194,7 +195,7 @@ void IDX_create_index(
 	dbb = tdbb->tdbb_database;
 
 	if (relation->rel_file)
-		ERR_post(gds__no_meta_update, gds_arg_gds, gds__extfile_uns_op,
+		ERR_post(gds_no_meta_update, gds_arg_gds, gds_extfile_uns_op,
 				 gds_arg_string, ERR_cstring(relation->rel_name), 0);
 
 	BTR_reserve_slot(tdbb, relation, transaction, idx);
@@ -208,9 +209,9 @@ void IDX_create_index(
 
 	key_length = ROUNDUP(BTR_key_length(relation, idx), sizeof(SLONG));
 	if (key_length >= MAX_KEY)
-		ERR_post(gds__no_meta_update,
+		ERR_post(gds_no_meta_update,
 				 gds_arg_gds,
-				 gds__keytoobig,
+				 gds_keytoobig,
 				 gds_arg_string,
 				 ERR_cstring(reinterpret_cast < char *>(index_name)), 0);
 #ifdef IGNORE_NULL_IDX_KEY
@@ -334,10 +335,10 @@ void IDX_create_index(
 					ERR_duplicate_error(result, partner_relation,
 										partner_index_id);
 				else
-					ERR_post(gds__no_dup, gds_arg_string,
+					ERR_post(gds_no_dup, gds_arg_string,
 							 ERR_cstring(reinterpret_cast <
 										 char *>(index_name)), gds_arg_gds,
-							 gds__nullsegkey, 0);
+							 gds_nullsegkey, 0);
 			}
 
 #ifdef IGNORE_NULL_IDX_KEY
@@ -382,7 +383,7 @@ void IDX_create_index(
 				gc_record->rec_flags &= ~REC_gc_active;
 				if (primary.rpb_window.win_flags & WIN_large_scan)
 					--relation->rel_scan_count;
-				ERR_post(gds__no_dup, gds_arg_string,
+				ERR_post(gds_no_dup, gds_arg_string,
 						 ERR_cstring(reinterpret_cast < char *>(index_name)),
 						 0);
 			}
@@ -440,7 +441,7 @@ void IDX_create_index(
 
 	if ((idx->idx_flags & idx_unique) && ifl_data.ifl_duplicates) {
 		SORT_fini(sort_handle, tdbb->tdbb_attachment);
-		ERR_post(gds__no_dup, gds_arg_string,
+		ERR_post(gds_no_dup, gds_arg_string,
 				 ERR_cstring(reinterpret_cast < char *>(index_name)), 0);
 	}
 
@@ -448,7 +449,7 @@ void IDX_create_index(
 
 	if ((idx->idx_flags & idx_unique) && ifl_data.ifl_duplicates) {
 		SORT_fini(sort_handle, tdbb->tdbb_attachment);
-		ERR_post(gds__no_dup, gds_arg_string,
+		ERR_post(gds_no_dup, gds_arg_string,
 				 ERR_cstring(reinterpret_cast < char *>(index_name)), 0);
 	}
 }
@@ -494,7 +495,7 @@ IDB IDX_create_index_block(TDBB tdbb, REL relation, UCHAR id)
 	lock->lck_length = sizeof(lock->lck_key.lck_long);
 	lock->lck_type = LCK_expression;
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-	lock->lck_ast = reinterpret_cast < int (*) () > (index_block_flush);
+	lock->lck_ast = reinterpret_cast < lck_ast_t > (index_block_flush);
 	lock->lck_object = (BLK) index_block;
 
 	return index_block;

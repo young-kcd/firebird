@@ -22,10 +22,11 @@
  */
 
 
+#include "firebird.h"
 #include "../jrd/jrd.h"
 #include "../jrd/exe.h"
 #include "../jrd/rse.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/bookmark.h"
 #include "../jrd/err_proto.h"

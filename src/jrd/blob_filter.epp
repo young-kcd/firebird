@@ -30,11 +30,12 @@
  *
  * Marco Romanini (27-January-1999) */
 
+#include "firebird.h"
 #include <string.h>
 #include <stdio.h>
 
 #include "../jrd/jrd.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/blob_filter.h"
 #include "../jrd/tra.h"
 #include "../jrd/constants.h"
@@ -51,7 +52,7 @@
 #include "../jrd/thd_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/all_proto.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 
 /* System provided internal filters for filtering internal
  * subtypes to text.
@@ -195,7 +196,7 @@ STATUS DLL_EXPORT BLF_get_segment(TDBB tdbb,
 
 	status = (*control->ctl_source) (ACTION_get_segment, control);
 
-	if (!status || status == gds__segment)
+	if (!status || status == gds_segment)
 		*length = control->ctl_segment_length;
 	else
 		*length = 0;
@@ -350,13 +351,13 @@ USHORT bpb_length, UCHAR * bpb, PTR callback, USHORT action, BLF filter)
 
 	if ((!filter) || (!filter->blf_filter)) {
 		*user_status++ = gds_arg_gds;
-		*user_status++ = gds__nofilter;
+		*user_status++ = gds_nofilter;
 		*user_status++ = gds_arg_number;
 		*user_status++ = (STATUS) from;
 		*user_status++ = gds_arg_number;
 		*user_status++ = (STATUS) to;
 		*user_status = gds_arg_end;
-		return gds__nofilter;
+		return gds_nofilter;
 	}
 
 /* Allocate a filter control block and open blob */

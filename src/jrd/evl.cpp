@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.3 2001-07-12 05:46:05 bellardo Exp $ 
+  * $Id: evl.cpp,v 1.4 2001-07-29 17:42:22 skywalker Exp $ 
  */
 
 /*
@@ -43,6 +43,7 @@
  * Change:    Test the null flag before trying to expand the value.
  */
 
+#include "firebird.h"
 #include <string.h>
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
@@ -50,7 +51,7 @@
 #include "../jrd/exe.h"
 #include "../jrd/sbm.h"
 #include "../jrd/blb.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/scl.h"
 #include "../jrd/lck.h"
 #include "../jrd/lls.h"
@@ -248,7 +249,7 @@ DSC *DLL_EXPORT EVL_assign_to(TDBB tdbb, register NOD node)
 		EVL_field(0, record, (USHORT) node->nod_arg[e_fld_id],
 				  &impure->vlu_desc);
 		if (!impure->vlu_desc.dsc_address)
-			ERR_post(gds__read_only_field, 0);
+			ERR_post(gds_read_only_field, 0);
 		return &impure->vlu_desc;
 
 	case nod_null:
@@ -900,7 +901,7 @@ DSC *DLL_EXPORT EVL_expr(TDBB tdbb, register NOD node)
 				if (extract_part != blr_extract_hour &&
 					extract_part != blr_extract_minute &&
 					extract_part != blr_extract_second)
-						ERR_post(gds__expression_eval_err, 0);
+						ERR_post(gds_expression_eval_err, 0);
 				break;
 			case dtype_sql_date:
 				timestamp.timestamp_date = *(GDS_DATE *) value->dsc_address;
@@ -909,14 +910,14 @@ DSC *DLL_EXPORT EVL_expr(TDBB tdbb, register NOD node)
 				if (extract_part == blr_extract_hour ||
 					extract_part == blr_extract_minute ||
 					extract_part == blr_extract_second)
-						ERR_post(gds__expression_eval_err, 0);
+						ERR_post(gds_expression_eval_err, 0);
 				break;
 			case dtype_timestamp:
 				timestamp = *((GDS_TIMESTAMP *) value->dsc_address);
 				isc_decode_timestamp(&timestamp, &times);
 				break;
 			default:
-				ERR_post(gds__expression_eval_err, 0);
+				ERR_post(gds_expression_eval_err, 0);
 				break;
 			}
 			impure->vlu_desc.dsc_dtype = dtype_short;
@@ -1127,7 +1128,7 @@ BOOLEAN DLL_EXPORT EVL_field(register REL relation,
 	DEV_BLKCHK(record, type_rec);
 
 	if (!record) {
-		ERR_warning(gds__no_cur_rec, 0);
+		ERR_warning(gds_no_cur_rec, 0);
 		return FALSE;
 	}
 
@@ -1202,7 +1203,7 @@ BOOLEAN DLL_EXPORT EVL_field(register REL relation,
 							lit * >(temp_field->fld_default_value);
 
 						if (default_literal->nod_type == nod_null)
-							ERR_post(gds__not_valid,
+							ERR_post(gds_not_valid,
 									 gds_arg_string, temp_field->fld_name,
 									 gds_arg_string, "*** null ***", 0);
 
@@ -2563,7 +2564,7 @@ static DSC *add_datetime(DSC * desc, NOD node, VLU value)
 		return add_sql_date(desc, node, value);
 
 	case DTYPE_CANNOT:
-		ERR_post(gds__expression_eval_err, 0);
+		ERR_post(gds_expression_eval_err, 0);
 		return NULL;
 	};
 }
@@ -2656,7 +2657,7 @@ static DSC *add_sql_date(DSC * desc, NOD node, VLU value)
 
 	if ((times.tm_year + 1900) < MIN_YEAR
 		|| (times.tm_year) + 1900 >
-		MAX_YEAR) ERR_post(gds__expression_eval_err, gds_arg_gds,
+		MAX_YEAR) ERR_post(gds_expression_eval_err, gds_arg_gds,
 						   isc_date_range_exceeded, 0);
 
 	value->vlu_misc.vlu_sql_date = d2;
@@ -2812,7 +2813,7 @@ static DSC *add_timestamp(DSC * desc, NOD node, VLU value)
 				*(GDS_TIME *) desc->dsc_address;
 			goto return_result;
 		}
-		ERR_post(gds__expression_eval_err, 0);
+		ERR_post(gds_expression_eval_err, 0);
 	}
 	else if (desc->dsc_dtype == dtype_sql_date) {
 		/* TIME + DATE */
@@ -2824,7 +2825,7 @@ static DSC *add_timestamp(DSC * desc, NOD node, VLU value)
 				*(GDS_DATE *) desc->dsc_address;
 			goto return_result;
 		}
-		ERR_post(gds__expression_eval_err, 0);
+		ERR_post(gds_expression_eval_err, 0);
 	}
 
 /* For historical reasons (behavior prior to V6), 
@@ -2857,7 +2858,7 @@ static DSC *add_timestamp(DSC * desc, NOD node, VLU value)
 
 		if (!((value->vlu_desc.dsc_dtype == dtype_timestamp) ||
 			  DTYPE_IS_TEXT(value->vlu_desc.dsc_dtype)))
-				ERR_post(gds__expression_eval_err, 0);
+				ERR_post(gds_expression_eval_err, 0);
 
 		d1 = get_timestamp_to_isc_ticks(&value->vlu_desc);
 		d2 = get_timestamp_to_isc_ticks(desc);
@@ -2931,7 +2932,7 @@ static DSC *add_timestamp(DSC * desc, NOD node, VLU value)
    which are errors */
 
 	if (op1_is_timestamp == op2_is_timestamp)
-		ERR_post(gds__expression_eval_err, 0);
+		ERR_post(gds_expression_eval_err, 0);
 
 	if (op1_is_timestamp) {
 		d1 = get_timestamp_to_isc_ticks(&value->vlu_desc);
@@ -2972,7 +2973,7 @@ static DSC *add_timestamp(DSC * desc, NOD node, VLU value)
 
 	if ((times.tm_year + 1900) < MIN_YEAR
 		|| (times.tm_year) + 1900 >
-		MAX_YEAR) ERR_post(gds__expression_eval_err, gds_arg_gds,
+		MAX_YEAR) ERR_post(gds_expression_eval_err, gds_arg_gds,
 						   isc_date_range_exceeded, 0);
 
 
@@ -3052,7 +3053,7 @@ static DSC *binary_value(TDBB tdbb, NOD node, VLU impure)
 	case nod_divide:			/* dialect-1 semantics */
 		divisor = MOV_get_double(desc2);
 		if (divisor == 0)
-			ERR_post(gds__arith_except, 0);
+			ERR_post(gds_arith_except, 0);
 		impure->vlu_misc.vlu_double =
 			DOUBLE_DIVIDE(MOV_get_double(desc1), divisor);
 		impure->vlu_desc.dsc_dtype = DEFAULT_DOUBLE;
@@ -3547,7 +3548,7 @@ static DSC *eval_statistical(TDBB tdbb, NOD node, VLU impure)
 			if (node->nod_arg[e_stat_default])
 				desc = EVL_expr(tdbb, node->nod_arg[e_stat_default]);
 			else
-				ERR_post(gds__from_no_match, 0);
+				ERR_post(gds_from_no_match, 0);
 		}
 		flag = request->req_flags;
 		break;
@@ -3854,7 +3855,7 @@ static DSC *lock_record(TDBB tdbb, NOD node, VLU impure)
 	desc = EVL_expr(tdbb, node->nod_arg[e_lockrec_level]);
 	lock_level = (USHORT) MOV_get_long(desc, 0);
 	if (lock_level > LCK_EX)
-		ERR_post(gds__bad_lock_level, gds_arg_number, (SLONG) lock_level, 0);
+		ERR_post(gds_bad_lock_level, gds_arg_number, (SLONG) lock_level, 0);
 
 /* perform the actual lock (or unlock) */
 
@@ -3863,7 +3864,7 @@ static DSC *lock_record(TDBB tdbb, NOD node, VLU impure)
 	if (!lock_level)
 		RLCK_unlock_record(0, rpb);
 	else if (!(lock = RLCK_lock_record(rpb, lock_level, 0, 0)))
-		ERR_warning(gds__record_lock, 0);
+		ERR_warning(gds_record_lock, 0);
 
 /* return the lock handle (actually the pointer to the lock block) */
 
@@ -3928,7 +3929,7 @@ static DSC *lock_relation(TDBB tdbb, NOD node, VLU impure)
 	desc = EVL_expr(tdbb, node->nod_arg[e_lockrel_level]);
 	lock_level = (USHORT) MOV_get_long(desc, 0);
 	if (lock_level > LCK_EX)
-		ERR_post(gds__bad_lock_level, gds_arg_number, (SLONG) lock_level, 0);
+		ERR_post(gds_bad_lock_level, gds_arg_number, (SLONG) lock_level, 0);
 
 /* perform the actual lock (or unlock) */
 
@@ -4231,7 +4232,7 @@ static DSC *divide2(DSC * desc, VLU value, NOD node)
 	if (node->nod_flags & nod_double) {
 		d2 = MOV_get_double(desc);
 		if (d2 == 0.0)
-			ERR_post(gds__arith_except, 0);
+			ERR_post(gds_arith_except, 0);
 		d1 = MOV_get_double(&value->vlu_desc);
 		value->vlu_misc.vlu_double = DOUBLE_DIVIDE(d1, d2);
 		value->vlu_desc.dsc_dtype = DEFAULT_DOUBLE;
@@ -4280,7 +4281,7 @@ static DSC *divide2(DSC * desc, VLU value, NOD node)
  */
 	i2 = MOV_get_int64(desc, desc->dsc_scale);
 	if (i2 == 0)
-		ERR_post(gds__arith_except, 0);
+		ERR_post(gds_arith_except, 0);
 
 	i1 = MOV_get_int64(&value->vlu_desc, value->vlu_desc.dsc_scale);
 
@@ -4319,7 +4320,7 @@ static DSC *divide2(DSC * desc, VLU value, NOD node)
 		addl_scale++;
 	}
 	if (addl_scale < 0)
-		ERR_post(gds__arith_except, 0);
+		ERR_post(gds_arith_except, 0);
 
 	return &value->vlu_desc;
 }
@@ -4844,7 +4845,7 @@ static SSHORT string_function(
 								 ttype, &q1, (VARY *) temp3,
 								 TEMP_SIZE(temp3));
 			if (!l3)
-				ERR_post(gds__like_escape_invalid, 0);
+				ERR_post(gds_like_escape_invalid, 0);
 			/* Grab the first character from the string */
 			consumed =
 				reinterpret_cast < USHORT(*)(...) >
@@ -4852,7 +4853,7 @@ static SSHORT string_function(
 
 			/* If characters left, or null byte character, return error */
 			if (consumed <= 0 || consumed != l3 || (escape == 0))
-				ERR_post(gds__like_escape_invalid, 0);
+				ERR_post(gds_like_escape_invalid, 0);
 
 #ifdef STACK_REDUCTION
 			ALL_release(temp_str);

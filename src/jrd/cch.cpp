@@ -23,6 +23,7 @@
  *                         conditionals, as the engine now fully supports
  *                         readonly databases.
  */
+#include "firebird.h"
 #include "../jrd/ibsetjmp.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
@@ -33,7 +34,7 @@
 #include "../jrd/ods.h"
 #include "../jrd/pio.h"
 #include "../jrd/cch.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/jrn.h"
 #include "../jrd/lls.h"
 #include "../jrd/req.h"
@@ -455,7 +456,7 @@ BOOLEAN CCH_exclusive(TDBB tdbb, USHORT level, SSHORT wait_flag)
    but can't get the lock, generate an error */
 
 	if (wait_flag == LCK_WAIT)
-		ERR_post(gds__deadlock, 0);
+		ERR_post(gds_deadlock, 0);
 
 	dbb->dbb_flags &= ~DBB_exclusive;
 
@@ -537,7 +538,7 @@ BOOLEAN CCH_exclusive_attachment(TDBB tdbb, USHORT level, SSHORT wait_flag)
 					tdbb->tdbb_attachment->att_flags &=
 						~ATT_exclusive_pending;
 					if (wait_flag == LCK_WAIT)
-						ERR_post(gds__deadlock, 0);
+						ERR_post(gds_deadlock, 0);
 					else
 						return FALSE;
 				}
@@ -948,10 +949,10 @@ void CCH_fetch_page(
 		THREAD_ENTER;
 #endif
 		IBERR_build_status(tdbb->tdbb_status_vector,
-						   gds__db_corrupt,
+						   gds_db_corrupt,
 						   gds_arg_string, "",
-						   gds_arg_gds, gds__bad_checksum,
-						   gds_arg_gds, gds__badpage,
+						   gds_arg_gds, gds_bad_checksum,
+						   gds_arg_gds, gds_badpage,
 						   gds_arg_number, (SLONG) bdb->bdb_page, 0);
 		/* We should invalidate this bad buffer. */
 
@@ -1443,7 +1444,7 @@ void CCH_init(TDBB tdbb, ULONG number)
 	event = dbb->dbb_reader_event;
 	ISC_event_init(event, 0, 0);
 	count = ISC_event_clear(event);
-	if (gds__thread_start((FPTR_INT) cache_reader, dbb, THREAD_high, 0, 0))
+	if (gds_thread_start((FPTR_INT) cache_reader, dbb, THREAD_high, 0, 0))
 		ERR_bugcheck_msg("cannot start thread");
 
 	THREAD_EXIT;
@@ -2527,7 +2528,7 @@ BOOLEAN CCH_write_all_shadows(TDBB tdbb,
 						SDW_notify();
 						CCH_unwind(tdbb, FALSE);
 						SDW_dump_pages();
-						ERR_post(gds__deadlock, 0);
+						ERR_post(gds_deadlock, 0);
 					}
 				}
 			}
@@ -2578,7 +2579,7 @@ static BDB alloc_bdb(TDBB tdbb, BCB bcb, UCHAR ** memory)
 		ALL_release((FRB)bdb);
 		return 0;
 	}
-	lock->lck_ast = blocking_ast_bdb;
+	lock->lck_ast = reinterpret_cast<lck_ast_t>(blocking_ast_bdb);
 	lock->lck_object = (BLK) bdb;
 #endif
 
@@ -4339,7 +4340,7 @@ static SSHORT latch_bdb(
 	if ((lwt->lwt_flags & LWT_pending) && timeout_occurred) {
 		LATCH_MUTEX_RELEASE;
 		if (latch_wait == 1) {
-			IBERR_build_status(tdbb->tdbb_status_vector, gds__deadlock, 0);
+			IBERR_build_status(tdbb->tdbb_status_vector, gds_deadlock, 0);
 			CCH_unwind(tdbb, TRUE);
 		}
 		else
@@ -4481,7 +4482,7 @@ static SSHORT lock_buffer(
 		   to do so. */
 
 		if (page_type == pag_header || page_type == pag_transactions) {
-			assert(lock->lck_ast == blocking_ast_bdb);
+			assert(lock->lck_ast == reinterpret_cast<lck_ast_t>(blocking_ast_bdb));
 			assert(lock->lck_object == (BLK) bdb);
 			lock->lck_ast = 0;
 			lock->lck_object = NULL;
@@ -4498,7 +4499,7 @@ static SSHORT lock_buffer(
 
 				assert(page_type == pag_header
 					   || page_type == pag_transactions);
-				lock->lck_ast = blocking_ast_bdb;
+				lock->lck_ast = reinterpret_cast<lck_ast_t>(blocking_ast_bdb);
 				lock->lck_object = (BLK) bdb;
 				bdb->bdb_flags |= BDB_no_blocking_ast;
 			}
@@ -4507,7 +4508,7 @@ static SSHORT lock_buffer(
 
 		if (!lock->lck_ast) {
 			assert(page_type == pag_header || page_type == pag_transactions);
-			lock->lck_ast = blocking_ast_bdb;
+			lock->lck_ast = reinterpret_cast<lck_ast_t>(blocking_ast_bdb);
 			lock->lck_object = (BLK) bdb;
 		}
 
@@ -4515,7 +4516,7 @@ static SSHORT lock_buffer(
 		   return the error. */
 
 		if ((wait == LCK_NO_WAIT)
-			|| ((wait < 0) && (status[1] == gds__lock_timeout))) {
+			|| ((wait < 0) && (status[1] == gds_lock_timeout))) {
 			release_bdb(tdbb, bdb, FALSE, FALSE, FALSE);
 			return -1;
 		}
@@ -4526,7 +4527,7 @@ static SSHORT lock_buffer(
 
 		gds__msg_format(0, JRD_BUGCHK, 215, sizeof(errmsg), errmsg,
 						(TEXT *) bdb->bdb_page, (TEXT *) page_type, 0, 0, 0);
-		IBERR_append_status(status, gds__random, gds_arg_string,
+		IBERR_append_status(status, gds_random, gds_arg_string,
 							ERR_cstring(errmsg), 0);
 		ERR_log(JRD_BUGCHK, 215, errmsg);	/* msg 215 page %ld, page type %ld lock conversion denied */
 
@@ -4559,7 +4560,7 @@ static SSHORT lock_buffer(
 /* Case: a timeout was specified, or the caller didn't want to wait,
    return the error. */
 
-	if ((wait < 0) && (status[1] == gds__lock_timeout)) {
+	if ((wait < 0) && (status[1] == gds_lock_timeout)) {
 		release_bdb(tdbb, bdb, FALSE, FALSE, FALSE);
 		return -1;
 	}
@@ -4570,7 +4571,7 @@ static SSHORT lock_buffer(
 
 	gds__msg_format(0, JRD_BUGCHK, 216, sizeof(errmsg), errmsg,
 					(TEXT *) bdb->bdb_page, (TEXT *) page_type, 0, 0, 0);
-	IBERR_append_status(status, gds__random, gds_arg_string,
+	IBERR_append_status(status, gds_random, gds_arg_string,
 						ERR_cstring(errmsg), 0);
 	ERR_log(JRD_BUGCHK, 216, errmsg);	/* msg 216 page %ld, page type %ld lock denied */
 
@@ -4695,10 +4696,10 @@ static void page_validation_error(TDBB tdbb, WIN * window, SSHORT type)
 	page = bdb->bdb_buffer;
 
 	IBERR_build_status(tdbb->tdbb_status_vector,
-					   gds__db_corrupt,
+					   gds_db_corrupt,
 					   gds_arg_string, "",
-					   gds_arg_gds, gds__page_type_err,
-					   gds_arg_gds, gds__badpagtyp,
+					   gds_arg_gds, gds_page_type_err,
+					   gds_arg_gds, gds_badpagtyp,
 					   gds_arg_number, (SLONG) bdb->bdb_page,
 					   gds_arg_number, (SLONG) type,
 					   gds_arg_number, (SLONG) page->pag_type, 0);
@@ -5391,7 +5392,7 @@ static BOOLEAN write_page(
 
 	if (bdb->bdb_flags & BDB_not_valid) {
 		*status++ = gds_arg_gds;
-		*status++ = gds__buf_invalid;
+		*status++ = gds_buf_invalid;
 		*status++ = gds_arg_number;
 		*status++ = bdb->bdb_page;
 		*status++ = gds_arg_end;

@@ -28,6 +28,7 @@
 #define LOCAL_SHLIB_DEFS
 #endif
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <fcntl.h>
 #include <errno.h>
@@ -42,7 +43,7 @@
 #include <unistd.h>
 #endif
 
-#ifdef HAVE_UNISTD_
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
@@ -51,7 +52,8 @@
 #include "../jrd/ods.h"
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
-#include "../jrd/codes.h"
+#include "../jrd/ibase.h"
+#include "gen/codes.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/err_proto.h"
@@ -104,7 +106,9 @@ extern "C" {
 #define SYNC		O_SYNC
 #endif
 
-#ifdef O_FSYNC
+    /* CHanged to not redfine SYNC if O_SYNC already exists
+       they seem to be the same values anyway. MOD 13-07-2001 */
+#if (!(defined SYNC) && (defined O_FSYNC))
 #define SYNC		O_FSYNC
 #endif
 
@@ -1010,7 +1014,7 @@ static FIL setup_file(
 	lock->lck_object = (BLK) dbb;
 	lock->lck_length = l;
 	lock->lck_dbb = dbb;
-	lock->lck_ast = (int (*)(void*)) CCH_down_grade_dbb;
+	lock->lck_ast = reinterpret_cast<lck_ast_t>(CCH_down_grade_dbb);
 	MOVE_FAST(lock_string, lock->lck_key.lck_string, l);
 
 /* Try to get an exclusive lock on database.  If this fails, insist

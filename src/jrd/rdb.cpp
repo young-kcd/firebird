@@ -21,9 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include descrip
 #include ssdef
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/rdb.h"
 #include "../jrd/common.h"
 #include "../jrd/mblr.h"

@@ -21,16 +21,17 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: fun.epp,v 1.1 2001-07-12 06:32:03 bellardo Exp $
+$Id: fun.epp,v 1.2 2001-07-29 17:42:22 skywalker Exp $
 */
 
+#include "firebird.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/exe.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/req.h"
 #include "../jrd/lls.h"
 #include "../jrd/blb.h"

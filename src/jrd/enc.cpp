@@ -1,3 +1,14 @@
+
+
+#include "firebird.h"
+
+
+#if defined(HAVE_UNISTD_H) && defined(LINUX)
+#define _XOPEN_SOURCE
+#include <unistd.h>
+#endif
+
+
 #include "../jrd/common.h"
 #include "../jrd/enc_proto.h"
 

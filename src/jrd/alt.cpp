@@ -21,9 +21,11 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <string.h>
 #include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
+#include "../jrd/alt_use_sec.h"
 
 #define IS_VALID_SERVER(server) if (!server || !*server) \
 				    { \
@@ -36,7 +38,7 @@
 #include <stdarg.h>
 
 #include "../jrd/pwd.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"
 #include "../jrd/why_proto.h"
@@ -893,7 +895,7 @@ int API_ROUTINE isc_add_user(STATUS * status, USER_SEC_DATA * user_data)
  *	    Return > 0 if any error occurs.
  *
  **************************************/
-#ifdef PHASE_1
+#ifdef PHASE_1_BUILD_NO_SECURITY_DB
 return 1;
 #else
 	USHORT retval = 0, l;
@@ -1078,7 +1080,7 @@ int API_ROUTINE isc_delete_user(STATUS * status, USER_SEC_DATA * user_data)
  *	    Return > 0 if any error occurs.
  *
  **************************************/
-#ifdef PHASE_1
+#ifdef PHASE_1_BUILD_NO_SECURITY_DB
 return 1;
 #else
 	USHORT retval = 0, l;
@@ -1143,7 +1145,7 @@ int API_ROUTINE isc_modify_user(STATUS * status, USER_SEC_DATA * user_data)
  *	    Return > 0 if any error occurs.
  *
  **************************************/
-#ifdef PHASE_1
+#ifdef PHASE_1_BUILD_NO_SECURITY_DB
 return 1;
 #else
 	USHORT retval = 0, l;
@@ -1300,7 +1302,7 @@ void *open_security_db(
  * Returns NULL otherwise
  *
  **************************************/
-#ifdef PHASE_1
+#ifdef PHASE_1_BUILD_NO_SECURITY_DB
 return 0;
 #else
 	short dpb_length, l = 0;

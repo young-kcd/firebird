@@ -17,9 +17,10 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: align.cpp,v 1.1.1.1 2001-05-23 13:26:05 tamlin Exp $
+$Id: align.cpp,v 1.2 2001-07-29 17:42:21 skywalker Exp $
 */
 
+#include "firebird.h"
 #include "../jrd/ibsetjmp.h"
 #include <signal.h>
 #include "../jrd/ib_stdio.h"

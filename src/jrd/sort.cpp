@@ -19,9 +19,10 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.2 2001-07-12 05:46:05 bellardo Exp $
+ * $Id: sort.cpp,v 1.3 2001-07-29 17:42:22 skywalker Exp $
  */
 
+#include "firebird.h"
 #include <errno.h>
 #include <string.h>
 #if ( defined FREEBSD || defined NETBSD || defined LINUX )
@@ -30,7 +31,7 @@
 #include "../jrd/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/sort.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/intl.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/rse.h"
@@ -544,7 +545,7 @@ void SORT_error(
 		*status_vector++ = errcode;
 	}
 	*status_vector++ = gds_arg_gds;
-	*status_vector++ = gds__sort_err;	/* Msg355: sort error */
+	*status_vector++ = gds_sort_err;	/* Msg355: sort error */
 	*status_vector = gds_arg_end;
 
 	ERR_punt();
@@ -750,7 +751,7 @@ SCB SORT_init(STATUS * status_vector,
 /* FREE: or later in this module in error cases */
 	if (!scb) {
 		*status_vector++ = gds_arg_gds;
-		*status_vector++ = gds__sort_mem_err;
+		*status_vector++ = gds_sort_mem_err;
 		*status_vector = gds_arg_end;
 		return NULL;
 	}
@@ -800,7 +801,7 @@ SCB SORT_init(STATUS * status_vector,
 
 	if (!scb->scb_memory) {
 		*status_vector++ = gds_arg_gds;
-		*status_vector++ = gds__sort_mem_err;
+		*status_vector++ = gds_sort_mem_err;
 		/* Msg356: sort error: not enough memory */
 		*status_vector = gds_arg_end;
 		ALL_free(reinterpret_cast < char *>(scb));
@@ -1080,9 +1081,9 @@ int SORT_sort(STATUS * status_vector, SCB scb)
 
 	if (!streams) {
 		*status_vector++ = gds_arg_gds;
-		*status_vector++ = gds__sort_mem_err;
+		*status_vector++ = gds_sort_mem_err;
 		*status_vector = gds_arg_end;
-		return gds__sort_mem_err;
+		return gds_sort_mem_err;
 	}
 
 	m1 = streams;
@@ -1104,9 +1105,9 @@ int SORT_sort(STATUS * status_vector, SCB scb)
 		if (!merge_pool) {
 			ALL_free(reinterpret_cast < char *>(streams));
 			*status_vector++ = gds_arg_gds;
-			*status_vector++ = gds__sort_mem_err;
+			*status_vector++ = gds_sort_mem_err;
 			*status_vector = gds_arg_end;
-			return gds__sort_mem_err;
+			return gds_sort_mem_err;
 		}
 		memset(merge_pool, 0, (count - 1) * sizeof(struct mrg));
 	}
@@ -1196,9 +1197,9 @@ int SORT_sort(STATUS * status_vector, SCB scb)
 		/* FREE: smb_merge_space freed in local_fini() when the scb is released */
 		if (!run->run_buffer) {
 			*status_vector++ = gds_arg_gds;
-			*status_vector++ = gds__sort_mem_err;
+			*status_vector++ = gds_sort_mem_err;
 			*status_vector = gds_arg_end;
-			return gds__sort_mem_err;
+			return gds_sort_mem_err;
 		}
 		/* Link the new buffer into the chain of buffers */
 		run->run_buff_alloc = 1;
@@ -1696,7 +1697,7 @@ static void error_memory(SCB scb)
 	assert(status_vector != NULL);
 
 	*status_vector++ = gds_arg_gds;
-	*status_vector++ = gds__sort_mem_err;
+	*status_vector++ = gds_sort_mem_err;
 	*status_vector = gds_arg_end;
 	ERR_punt();
 }
@@ -2981,7 +2982,7 @@ static void validate(SCB scb)
 		if (record[-1] != (SORTP) ptr) {
 			status_vector = scb->scb_status_vector;
 			*status_vector++ = gds_arg_gds;
-			*status_vector++ = gds__crrp_data_err;
+			*status_vector++ = gds_crrp_data_err;
 			/* Msg360: sort error: corruption in data structure */
 			*status_vector = gds_arg_end;
 			ERR_punt();

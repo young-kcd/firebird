@@ -23,11 +23,12 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <string.h>
 #include <stdlib.h>
 #include "../jrd/common.h"
 #include "../jrd/dsc.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/constants.h"
 #include "../jrd/intl.h"
 #include "../jrd/gds_proto.h"

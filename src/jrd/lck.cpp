@@ -21,10 +21,11 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include "../jrd/jrd.h"
 #include "../jrd/lck.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/iberr.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/err_proto.h"
@@ -244,10 +245,10 @@ int LCK_convert(TDBB tdbb, LCK lock, USHORT level, SSHORT wait)
 	result = CONVERT(lock, level, wait);
 
 	if (!result) {
-		if (status[1] == gds__deadlock ||
-			status[1] == gds__lock_conflict || status[1] == gds__lock_timeout)
+		if (status[1] == gds_deadlock ||
+			status[1] == gds_lock_conflict || status[1] == gds_lock_timeout)
 			return FALSE;
-		if (status[1] == gds__lockmanerr)
+		if (status[1] == gds_lockmanerr)
 			dbb->dbb_flags |= DBB_bugcheck;
 		ERR_punt();
 	}
@@ -314,10 +315,10 @@ int LCK_convert_non_blocking(TDBB tdbb, LCK lock, USHORT level, SSHORT wait)
 	AST_ENABLE;
 
 	if (!result) {
-		if (status[1] == gds__deadlock ||
-			status[1] == gds__lock_conflict || status[1] == gds__lock_timeout)
+		if (status[1] == gds_deadlock ||
+			status[1] == gds_lock_conflict || status[1] == gds_lock_timeout)
 			return FALSE;
-		if (status[1] == gds__lockmanerr)
+		if (status[1] == gds_lockmanerr)
 			dbb->dbb_flags |= DBB_bugcheck;
 		ERR_punt();
 	}
@@ -556,7 +557,7 @@ void LCK_init(TDBB tdbb, enum lck_owner_t owner_type)
 
 	if (LOCK_init(tdbb->tdbb_status_vector, TRUE,
 				  owner_id, owner_type, owner_handle_ptr)) {
-		if (tdbb->tdbb_status_vector[1] == gds__lockmanerr)
+		if (tdbb->tdbb_status_vector[1] == gds_lockmanerr)
 			dbb->dbb_flags |= DBB_bugcheck;
 		ERR_punt();
 	}
@@ -591,12 +592,12 @@ int LCK_lock(TDBB tdbb, LCK lock, USHORT level, SSHORT wait)
 	assert(LCK_CHECK_LOCK(lock));
 	if (!lock->lck_id)
 		if (!wait ||
-			status[1] == gds__deadlock ||
-			status[1] == gds__lock_conflict || status[1] == gds__lock_timeout) {
+			status[1] == gds_deadlock ||
+			status[1] == gds_lock_conflict || status[1] == gds_lock_timeout) {
 			return FALSE;
 		}
 		else {
-			if (status[1] == gds__lockmanerr)
+			if (status[1] == gds_lockmanerr)
 				dbb->dbb_flags |= DBB_bugcheck;
 			ERR_punt();
 		}
@@ -680,13 +681,13 @@ int LCK_lock_non_blocking(TDBB tdbb, LCK lock, USHORT level, SSHORT wait)
 		/* If lock was rejected, there's trouble */
 
 		if (!lock->lck_id)
-			if (status[1] == gds__deadlock ||
-				status[1] == gds__lock_conflict ||
-				status[1] == gds__lock_timeout) {
+			if (status[1] == gds_deadlock ||
+				status[1] == gds_lock_conflict ||
+				status[1] == gds_lock_timeout) {
 				return FALSE;
 			}
 			else {
-				if (status[1] == gds__lockmanerr)
+				if (status[1] == gds_lockmanerr)
 					dbb->dbb_flags |= DBB_bugcheck;
 				ERR_punt();
 			}
@@ -938,7 +939,7 @@ static void bug_lck(TEXT * string)
 
 	sprintf(s, "Fatal lock interface error: %s", string);
 	gds__log(s);
-	ERR_post(gds__db_corrupt, gds_arg_string, string, 0);
+	ERR_post(gds_db_corrupt, gds_arg_string, string, 0);
 }
 
 
@@ -1549,7 +1550,7 @@ static BOOLEAN internal_enqueue(
 			   do a wait on the other lock by setting some flag bit or some such */
 
 			status[0] = gds_arg_gds;
-			status[1] = gds__lock_conflict;
+			status[1] = gds_lock_conflict;
 			status[2] = gds_arg_end;
 			return FALSE;
 		}

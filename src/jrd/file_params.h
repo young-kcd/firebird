@@ -124,7 +124,7 @@
 #ifdef UNIX
 #define WORKFILE	"/tmp/"
 #ifdef LINUX
-#define ISC_PREFIX	"/opt/interbase/"
+#define ISC_PREFIX	"/usr/local/interbase/"
 #else
 #ifdef DARWIN
 #define ISC_PREFIX		"/all/files/are/in/framework/resources"
@@ -157,7 +157,8 @@
 
 #ifdef WIN_NT
 #define WORKFILE	"c:\\temp\\"
-#define ISC_PREFIX	"c:\\Program Files\\Borland\\InterBase/"
+#define ISC_PREFIX	"c:\\Program Files\\Firebird\\FBServer/"
+#define ISC_PREFIX_SUBPATH "\\Firebird\\FBServer/"
 #define MSG_FILE	"interbase.msg"
 #define MSG_FILE_LANG	"intl/%.8s.msg"
 #define LOCALE_MAX	6

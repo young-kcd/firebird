@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../jrd/common.h"
@@ -31,7 +32,7 @@
 #include "../jrd/jrn.h"
 #include "../jrd/old.h"
 #include "../jrd/llio.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../wal/wal.h"
 #include "../jrd/ail.h"
 #include "../jrd/all_proto.h"
@@ -120,7 +121,7 @@ ULONG start_seqno, USHORT start_file, USHORT num_files, SCHAR ** files)
 	journal_dir[jd_len] = 0;
 
 	if (!jd_len)
-		ERR_post(gds__jrn_enable, 0);
+		ERR_post(gds_jrn_enable, 0);
 
 	if ((ret_val = JRN_init(tdbb->tdbb_status_vector,
 							&dbb->dbb_journal,
@@ -172,7 +173,7 @@ ULONG start_seqno, USHORT start_file, USHORT num_files, SCHAR ** files)
 				 start_seqno, start_file,
 				 JRND_SIZE + dbb->dbb_page_size, seqno, offset, p_offset)) {
 		old_fini(&OLD_handle, 0);
-		ERR_post(gds__old_failure, gds_arg_string,
+		ERR_post(gds_old_failure, gds_arg_string,
 				 "Online Dump Initialize failed", 0);
 	}
 
@@ -225,7 +226,7 @@ ULONG start_seqno, USHORT start_file, USHORT num_files, SCHAR ** files)
 		file_seqno = OLD_handle->old_file_seqno;
 		block_seqno = OLD_handle->old_block->ob_cur_seqno;
 		old_fini(&OLD_handle, OLD_EOF);
-		ERR_post(gds__old_no_space,
+		ERR_post(gds_old_no_space,
 				 gds_arg_number, (SLONG) dump_id,
 				 gds_arg_number, (SLONG) last_page,
 				 gds_arg_number, (SLONG) block_seqno,

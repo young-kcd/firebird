@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include rms
 #include iodef
 #include descrip
@@ -31,7 +32,7 @@
 #include "../jrd/lck.h"
 #include "../jrd/ods.h"
 #include "../jrd/cch.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/err_proto.h"

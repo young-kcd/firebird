@@ -24,9 +24,10 @@
  * Solaris x86 changes - Konstantin Kuznetsov, Neil McCalden
  */
 /*
-$Id: isc.cpp,v 1.2 2001-07-12 05:46:05 bellardo Exp $
+$Id: isc.cpp,v 1.3 2001-07-29 17:42:22 skywalker Exp $
 */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include <stdlib.h>
@@ -34,7 +35,7 @@ $Id: isc.cpp,v 1.2 2001-07-12 05:46:05 bellardo Exp $
 #include <ctype.h>
 #include "../jrd/common.h"
 
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/isc.h"
 #include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
@@ -137,7 +138,10 @@ static USHORT ast_count;
 #include <lckdef.h>
 #include "../jrd/lnmdef.h"
 #include "../jrd/prv_m_bypass.h"
+
+#ifdef HAVE_SIGNAL_H
 #include <signal.h>
+#endif
 
 #define LOGICAL_NAME_TABLE      "LNM$FILE_DEV"
 #define WAKE_LOCK               "gds__process_%d"
@@ -155,6 +159,7 @@ static LKSB wake_lock;
 #include <sys/file.h>
 #include <pwd.h>
 #include <unistd.h>
+#include <signal.h>
 
 #ifndef O_RDWR
 #include <fcntl.h>
@@ -1468,9 +1473,7 @@ SLONG ISC_get_user_group_id(TEXT * user_group_name)
  *                  ---  for UNIX platform  ---
  *
  **************************************/
-#ifndef DARWIN
-	extern struct group *getgrnam();
-#endif
+
 	struct group *user_group;
 	SLONG n;
 

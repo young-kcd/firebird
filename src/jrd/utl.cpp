@@ -25,6 +25,7 @@
 #define LOCAL_SHLIB_DEFS
 #endif
 
+#include "firebird.h"
 #include <limits.h>
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
@@ -35,7 +36,7 @@
 #include "../jrd/misc.h"
 #include "../jrd/gdsassert.h"
 
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/msg.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"

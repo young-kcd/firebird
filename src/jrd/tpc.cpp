@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <string.h>
 #include "../jrd/jrd.h"
 #include "../jrd/tpc.h"
@@ -28,7 +29,7 @@
 #include "../jrd/tra.h"
 #include "../jrd/lck.h"
 #include "../jrd/pag.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/iberr.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/cch_proto.h"

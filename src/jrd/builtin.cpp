@@ -20,9 +20,10 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: builtin.cpp,v 1.1.1.1 2001-05-23 13:26:07 tamlin Exp $
+ * $Id: builtin.cpp,v 1.2 2001-07-29 17:42:21 skywalker Exp $
  */
 
+#include "firebird.h"
 #include <string.h>
 #include "../jrd/common.h"
 #include "../jrd/flu_proto.h"

@@ -21,8 +21,9 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/common.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/thd.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/event_proto.h"

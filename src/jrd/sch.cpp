@@ -21,12 +21,13 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include "../jrd/common.h"
 #include "../jrd/thd.h"
 #include "../jrd/isc.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/sch_proto.h"

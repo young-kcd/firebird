@@ -21,13 +21,14 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/jrd.h"
 #include "../jrd/req.h"
 #include "../jrd/val.h"
 #include "../jrd/exe.h"
 #include "../jrd/rse.h"
 #include "../jrd/ext.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/tra.h"
 #include "../jrd/ods.h"
 #include "../jrd/btr.h"

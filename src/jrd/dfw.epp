@@ -25,12 +25,13 @@
 #define LOCAL_SHLIB_DEFS
 #endif
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../jrd/ibsetjmp.h"
 #include "../jrd/common.h"
 #include <stdarg.h>
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/irq.h"
@@ -91,7 +92,7 @@
 #include <unistd.h>
 #endif
 
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 
 /* Pick up system relation ids */
 
@@ -279,8 +280,8 @@ USHORT DFW_assign_index_type(DFW work, SSHORT field_type, SSHORT ttype)
 		if (INTL_defined_type(tdbb, status, ttype))
 			return INTL_TEXT_TO_INDEX(ttype);
 
-		ERR_post(gds__no_meta_update,
-				 gds_arg_gds, gds__random, gds_arg_string,
+		ERR_post(gds_no_meta_update,
+				 gds_arg_gds, gds_random, gds_arg_string,
 				 ERR_cstring(work->dfw_name), status[0], status[1], status[2],
 				 status[3],
 				 0);
@@ -784,9 +785,9 @@ static BOOLEAN add_file( TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 		}
 		else
 		{
-			ERR_post(gds__no_meta_update,
-					 gds_arg_gds, gds__lock_timeout,
-					 gds_arg_gds, gds__obj_in_use,
+			ERR_post(gds_no_meta_update,
+					 gds_arg_gds, gds_lock_timeout,
+					 gds_arg_gds, gds_obj_in_use,
 					 gds_arg_string, ERR_cstring(dbb->dbb_file->fil_string),
 					 0);
 			return FALSE;
@@ -914,8 +915,8 @@ static BOOLEAN add_shadow( TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 
 	case 4:
 		if (wal_defined(tdbb))
-			ERR_post(gds__no_meta_update,
-					 gds_arg_gds, gds__wal_shadow_err, 0);
+			ERR_post(gds_no_meta_update,
+					 gds_arg_gds, gds_wal_shadow_err, 0);
 		/* Msg309: Write-Ahead Log with Shadowing configuration not allowed */
 
 		check_filename(work->dfw_name, work->dfw_name_length);
@@ -955,9 +956,9 @@ static BOOLEAN add_shadow( TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 						 * may be GDML
 						 */
 						if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD))
-							ERR_post(gds__no_meta_update,
-									 gds_arg_gds, gds__lock_timeout,
-									 gds_arg_gds, gds__obj_in_use,
+							ERR_post(gds_no_meta_update,
+									 gds_arg_gds, gds_lock_timeout,
+									 gds_arg_gds, gds_obj_in_use,
 									 gds_arg_string,
 									 ERR_cstring(dbb->dbb_file->fil_string),
 									 0);
@@ -969,8 +970,8 @@ static BOOLEAN add_shadow( TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 						/* We cannot add a file to a shadow that is still
 						 * in the process of being created.
 						 */
-						ERR_post(gds__no_meta_update,
-								 gds_arg_gds, gds__obj_in_use,
+						ERR_post(gds_no_meta_update,
+								 gds_arg_gds, gds_obj_in_use,
 								 gds_arg_string,
 								 ERR_cstring(dbb->dbb_file->fil_string),
 								 0);
@@ -1146,32 +1147,32 @@ static void check_dependencies(TDBB tdbb,
 			switch (dpdo_type)
 			{
 			case obj_relation:
-				obj_type = gds__table_name;
+				obj_type = gds_table_name;
 				break;
 			case obj_procedure:
-				obj_type = gds__proc_name;
+				obj_type = gds_proc_name;
 				break;
 			case obj_exception:
-				obj_type = gds__exception_name;
+				obj_type = gds_exception_name;
 				break;
 			default:
 				assert(FALSE);
 				break;
 			}
 			if (field_name)
-				ERR_post(	gds__no_meta_update,
-							gds_arg_gds, gds__no_delete,	/* Msg353: can not delete */
-							gds_arg_gds, gds__field_name,
+				ERR_post(	gds_no_meta_update,
+							gds_arg_gds, gds_no_delete,	/* Msg353: can not delete */
+							gds_arg_gds, gds_field_name,
 							gds_arg_string, ERR_cstring(field_name),
-							gds_arg_gds, gds__dependency,
+							gds_arg_gds, gds_dependency,
 							gds_arg_number, (SLONG) dep_counts[i],
 							0);	/* Msg310: there are %ld dependencies */
 			else
-				ERR_post(	gds__no_meta_update,
-							gds_arg_gds, gds__no_delete,	/* can not delete */
+				ERR_post(	gds_no_meta_update,
+							gds_arg_gds, gds_no_delete,	/* can not delete */
 							gds_arg_gds, obj_type,
 							gds_arg_string, ERR_cstring(dpdo_name),
-							gds_arg_gds, gds__dependency,
+							gds_arg_gds, gds_dependency,
 							gds_arg_number, (SLONG) dep_counts[i],
 							0);	/* there are %ld dependencies */
 		}
@@ -1203,7 +1204,7 @@ static void check_filename( TEXT * name, USHORT l)
 			valid = FALSE;
 
 	if (!valid || ISC_check_if_remote(file_name, FALSE))
-		ERR_post(gds__no_meta_update, gds_arg_gds, gds__node_name_err, 0);
+		ERR_post(gds_no_meta_update, gds_arg_gds, gds_node_name_err, 0);
 	/* Msg305: A node name is not permitted in a secondary, shadow, or log file name */
 }
 
@@ -1388,8 +1389,8 @@ static BOOLEAN create_index(TDBB tdbb,
 				if (!relation)
 				{
 					EXE_unwind(tdbb, (REQ)request);
-					ERR_post(gds__no_meta_update,
-							 gds_arg_gds, gds__idx_create_err,
+					ERR_post(gds_no_meta_update,
+							 gds_arg_gds, gds_idx_create_err,
 							 gds_arg_string, ERR_cstring(work->dfw_name),
 							 0);
 					/* Msg308: can't create index %s */
@@ -1424,14 +1425,14 @@ static BOOLEAN create_index(TDBB tdbb,
 				{
 					EXE_unwind(tdbb, (REQ)request);
 					if (!idx.idx_count)
-						ERR_post(gds__no_meta_update,
-								 gds_arg_gds, gds__idx_seg_err,
+						ERR_post(gds_no_meta_update,
+								 gds_arg_gds, gds_idx_seg_err,
 								 gds_arg_string, ERR_cstring(work->dfw_name),
 								 0);
 					/* Msg304: segment count of 0 defined for index %s */
 					else
-						ERR_post(gds__no_meta_update,
-								 gds_arg_gds, gds__idx_key_err,
+						ERR_post(gds_no_meta_update,
+								 gds_arg_gds, gds_idx_key_err,
 								 gds_arg_string, ERR_cstring(work->dfw_name),
 								 0);
 					/* Msg311: too many keys defined for index %s */
@@ -1457,29 +1458,29 @@ static BOOLEAN create_index(TDBB tdbb,
 			{
 				EXE_unwind(tdbb, (REQ)request);
 				if (key_count > idx.idx_count)
-					ERR_post(gds__no_meta_update,
-							 gds_arg_gds, gds__idx_key_err,
+					ERR_post(gds_no_meta_update,
+							 gds_arg_gds, gds_idx_key_err,
 							 gds_arg_string, ERR_cstring(work->dfw_name),
 							 0);
 				/* Msg311: too many keys defined for index %s */
 				else if (SEG.RDB$FIELD_POSITION > idx.idx_count)
-					ERR_post(gds__no_meta_update,
-							 gds_arg_gds, gds__inval_key_posn,
+					ERR_post(gds_no_meta_update,
+							 gds_arg_gds, gds_inval_key_posn,
 							 /* Msg358: invalid key position */
-							 gds_arg_gds, gds__field_name,
+							 gds_arg_gds, gds_field_name,
 							 gds_arg_string, ERR_cstring(RFR.RDB$FIELD_NAME),
-							 gds_arg_gds, gds__index_name,
+							 gds_arg_gds, gds_index_name,
 							 gds_arg_string, ERR_cstring(work->dfw_name),
 							 0);
 				else if (FLD.RDB$FIELD_TYPE == blr_blob)
-					ERR_post(gds__no_meta_update,
-							 gds_arg_gds, gds__blob_idx_err,
+					ERR_post(gds_no_meta_update,
+							 gds_arg_gds, gds_blob_idx_err,
 							 gds_arg_string, ERR_cstring(work->dfw_name),
 							 0);
 				/* Msg350: attempt to index blob column in index %s */
 				else
-					ERR_post(gds__no_meta_update,
-							 gds_arg_gds, gds__array_idx_err,
+					ERR_post(gds_no_meta_update,
+							 gds_arg_gds, gds_array_idx_err,
 							 gds_arg_string, ERR_cstring(work->dfw_name),
 							 0);
 				/* Msg351: attempt to index array column in index %s */
@@ -1509,14 +1510,14 @@ static BOOLEAN create_index(TDBB tdbb,
 			REQUEST(irq_c_index) = (BLK)request;
 
 		if (key_count != idx.idx_count)
-			ERR_post(gds__no_meta_update,
-					 gds_arg_gds, gds__key_field_err,
+			ERR_post(gds_no_meta_update,
+					 gds_arg_gds, gds_key_field_err,
 					 gds_arg_string, ERR_cstring(work->dfw_name),
 					 0);
 		/* Msg352: too few key columns found for index %s (incorrect column name?) */
 		if (!relation)
-			ERR_post(gds__no_meta_update,
-					 gds_arg_gds, gds__idx_create_err,
+			ERR_post(gds_no_meta_update,
+					 gds_arg_gds, gds_idx_create_err,
 					 gds_arg_string, ERR_cstring(work->dfw_name),
 					 0);
 		/* Msg308: can't create index %s */
@@ -1526,8 +1527,8 @@ static BOOLEAN create_index(TDBB tdbb,
 		MET_scan_relation(tdbb, relation);
 
 		if (relation->rel_view_rse)
-			ERR_post(gds__no_meta_update,
-					 gds_arg_gds, gds__idx_create_err,
+			ERR_post(gds_no_meta_update,
+					 gds_arg_gds, gds_idx_create_err,
 					 gds_arg_string, ERR_cstring(work->dfw_name),
 					 0);
 		/* Msg308: can't create index %s */
@@ -1548,8 +1549,8 @@ static BOOLEAN create_index(TDBB tdbb,
 											TRUE)) &&
 				 !CCH_exclusive(tdbb, LCK_EX, LCK_NO_WAIT))
 			{
-				ERR_post(gds__no_meta_update,
-						gds_arg_gds, gds__obj_in_use,
+				ERR_post(gds_no_meta_update,
+						gds_arg_gds, gds_obj_in_use,
 						gds_arg_string, partner_relation->rel_name,
 						0);
 			}
@@ -1614,9 +1615,9 @@ static BOOLEAN create_log( TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 			return TRUE;
 		else
 		{
-			ERR_post(gds__no_meta_update,
-					 gds_arg_gds, gds__lock_timeout,
-					 gds_arg_gds, gds__obj_in_use,
+			ERR_post(gds_no_meta_update,
+					 gds_arg_gds, gds_lock_timeout,
+					 gds_arg_gds, gds_obj_in_use,
 					 gds_arg_string, ERR_cstring(dbb->dbb_file->fil_string),
 					 0);
 			return FALSE;
@@ -1625,8 +1626,8 @@ static BOOLEAN create_log( TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 
 		handle = NULL;
 		if (shadow_defined(tdbb))
-			ERR_post(gds__no_meta_update,
-					 gds_arg_gds, gds__wal_shadow_err,
+			ERR_post(gds_no_meta_update,
+					 gds_arg_gds, gds_wal_shadow_err,
 					 0);
 		/* Msg309: Write-Ahead Log with Shadowing configuration not allowed */
 		check_filename(work->dfw_name, work->dfw_name_length);
@@ -1797,10 +1798,10 @@ static BOOLEAN create_relation(TDBB tdbb,
 					if (rel_id == X.RDB$RELATION_ID)
 					{
 						EXE_unwind(tdbb, (REQ)request);
-						ERR_post(gds__no_meta_update,
-								 gds_arg_gds, gds__table_name,
+						ERR_post(gds_no_meta_update,
+								 gds_arg_gds, gds_table_name,
 								 gds_arg_string, ERR_cstring(work->dfw_name),
-								 gds_arg_gds, gds__imp_exc,
+								 gds_arg_gds, gds_imp_exc,
 								 0);
 					}
 				}
@@ -1991,11 +1992,11 @@ static BOOLEAN delete_field(TDBB tdbb,
 		CMP_release(tdbb, (REQ)handle);
 
 		if (field_count)
-			ERR_post(gds__no_meta_update,
-					gds_arg_gds, gds__no_delete,	/* Msg353: can not delete */
-					gds_arg_gds, gds__field_name,
+			ERR_post(gds_no_meta_update,
+					gds_arg_gds, gds_no_delete,	/* Msg353: can not delete */
+					gds_arg_gds, gds_field_name,
 					gds_arg_string, ERR_cstring(work->dfw_name),
-					gds_arg_gds, gds__dependency,
+					gds_arg_gds, gds_dependency,
 					gds_arg_number, (SLONG) field_count,
 					0);	/* Msg310: there are %ld dependencies */
 
@@ -2113,8 +2114,8 @@ static BOOLEAN delete_index(TDBB tdbb,
 			if (index->idl_count ||
 				!LCK_lock_non_blocking(tdbb, index->idl_lock, LCK_EX, wait))
 			{
-				ERR_post(gds__no_meta_update,
-						  gds_arg_gds, gds__obj_in_use,
+				ERR_post(gds_no_meta_update,
+						  gds_arg_gds, gds_obj_in_use,
 						  gds_arg_string, "INDEX",
 						  0);
 			}
@@ -2220,9 +2221,9 @@ static BOOLEAN delete_log(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 			return TRUE;
 		else
 		{
-			ERR_post(gds__no_meta_update,
-					 gds_arg_gds, gds__lock_timeout,
-					 gds_arg_gds, gds__obj_in_use,
+			ERR_post(gds_no_meta_update,
+					 gds_arg_gds, gds_lock_timeout,
+					 gds_arg_gds, gds_obj_in_use,
 					 gds_arg_string, ERR_cstring(dbb->dbb_file->fil_string),
 					 0);
 			return FALSE;
@@ -2329,8 +2330,8 @@ static BOOLEAN delete_procedure(TDBB tdbb,
 										LCK_EX,
 										wait))
 		{
-			ERR_post(gds__no_meta_update,
-					 gds_arg_gds, gds__obj_in_use,
+			ERR_post(gds_no_meta_update,
+					 gds_arg_gds, gds_obj_in_use,
 					 gds_arg_string, ERR_cstring(work->dfw_name),
 					 0);
 		}
@@ -2365,8 +2366,8 @@ static BOOLEAN delete_procedure(TDBB tdbb,
 			if (CMP_clone_active(procedure->prc_request))
 			{
 				procedure->prc_flags = old_flags;
-				ERR_post(gds__no_meta_update,
-						 gds_arg_gds, gds__obj_in_use,
+				ERR_post(gds_no_meta_update,
+						 gds_arg_gds, gds_obj_in_use,
 						 gds_arg_string, ERR_cstring(work->dfw_name),
 						 0);
 			}
@@ -2447,11 +2448,11 @@ static BOOLEAN delete_relation(TDBB tdbb,
 		CMP_release(tdbb, (REQ)request);
 
 		if (view_count)
-			ERR_post(gds__no_meta_update,
-					gds_arg_gds, gds__no_delete, /* Msg353: can not delete */
-					gds_arg_gds, gds__table_name,
+			ERR_post(gds_no_meta_update,
+					gds_arg_gds, gds_no_delete, /* Msg353: can not delete */
+					gds_arg_gds, gds_table_name,
 					gds_arg_string, ERR_cstring(work->dfw_name),
-					gds_arg_gds, gds__dependency,
+					gds_arg_gds, gds_dependency,
 					gds_arg_number, (SLONG) view_count,
 					0);	/* Msg310: there are %ld dependencies */
 		check_dependencies(tdbb, work->dfw_name, (TEXT*)NULL_PTR,
@@ -2486,8 +2487,8 @@ static BOOLEAN delete_relation(TDBB tdbb,
 		{
 			if (adjusted)
 				++relation->rel_use_count;
-			ERR_post(gds__no_meta_update,
-					 gds_arg_gds, gds__obj_in_use,
+			ERR_post(gds_no_meta_update,
+					 gds_arg_gds, gds_obj_in_use,
 					 gds_arg_string, ERR_cstring(work->dfw_name),
 					 0);
 		}
@@ -2522,8 +2523,8 @@ static BOOLEAN delete_relation(TDBB tdbb,
 			}
 
 		if (relation->rel_sweep_count)
-			ERR_post(gds__no_meta_update,
-					 gds_arg_gds, gds__obj_in_use,
+			ERR_post(gds_no_meta_update,
+					 gds_arg_gds, gds_obj_in_use,
 					 gds_arg_string, ERR_cstring(work->dfw_name),
 					 0);
 
@@ -2631,11 +2632,11 @@ static BOOLEAN delete_rfr( TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 		CMP_release(tdbb, (REQ)handle);
 
 		if (field_count)
-			ERR_post(gds__no_meta_update,
-					gds_arg_gds, gds__no_delete,	/* Msg353: can not delete */
-					 gds_arg_gds, gds__field_name,
+			ERR_post(gds_no_meta_update,
+					gds_arg_gds, gds_no_delete,	/* Msg353: can not delete */
+					 gds_arg_gds, gds_field_name,
 					 gds_arg_string, ERR_cstring(f),
-					 gds_arg_gds, gds__dependency,
+					 gds_arg_gds, gds_dependency,
 					 gds_arg_number, (SLONG) field_count,
 					 0);	/* Msg310: there are %ld dependencies */
 
@@ -2677,8 +2678,8 @@ static BOOLEAN delete_rfr( TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 
 			if (!field_count)
 			{
-				ERR_post(gds__no_meta_update,
-						 gds_arg_gds, gds__del_last_field,
+				ERR_post(gds_no_meta_update,
+						 gds_arg_gds, gds_del_last_field,
 						 0);
 				/* Msg354: last column in a relation cannot be deleted */
 			}
@@ -3163,10 +3164,10 @@ static FMT make_format( TDBB tdbb, REL relation, USHORT version, TFB stack)
 	if (offset > MAX_FORMAT_SIZE)
 	{
 		ALL_release((FRB)format);
-		ERR_post(gds__no_meta_update,
-				 gds_arg_gds, gds__rec_size_err,
+		ERR_post(gds_no_meta_update,
+				 gds_arg_gds, gds_rec_size_err,
 				 gds_arg_number, (SLONG) offset,
-				 gds_arg_gds, gds__table_name,
+				 gds_arg_gds, gds_table_name,
 				 gds_arg_string, ERR_cstring(relation->rel_name),
 				 0);
 		/* Msg361: new record size of %ld bytes is too big */
@@ -3272,10 +3273,10 @@ static BOOLEAN make_version(TDBB	tdbb,
 			if (REL.RDB$FORMAT == 255)
 			{
 				EXE_unwind(tdbb, (REQ)request_fmt1);
-				ERR_post(gds__no_meta_update,
-						 gds_arg_gds, gds__table_name,
+				ERR_post(gds_no_meta_update,
+						 gds_arg_gds, gds_table_name,
 						 gds_arg_string, ERR_cstring(work->dfw_name),
-						 gds_arg_gds, gds__version_err,
+						 gds_arg_gds, gds_version_err,
 						 0);
 				/* Msg357: too many versions */
 			}
@@ -3427,8 +3428,8 @@ static BOOLEAN make_version(TDBB	tdbb,
 					{
 						EXE_unwind(tdbb, (REQ)request_fmt1);
 						EXE_unwind(tdbb, (REQ)request_fmtx);
-						ERR_post(gds__no_meta_update,
-								 gds_arg_gds, gds__random,
+						ERR_post(gds_no_meta_update,
+								 gds_arg_gds, gds_random,
 								 gds_arg_string, ERR_cstring(work->dfw_name),
 								 status[0], status[1], status[2], status[3],
 								 0);
@@ -3729,8 +3730,8 @@ static BOOLEAN modify_procedure(TDBB	tdbb,
 
 		if (!LCK_convert_non_blocking(tdbb, procedure->prc_existence_lock,
 									  LCK_EX, wait))
-			ERR_post(gds__no_meta_update,
-					 gds_arg_gds, gds__obj_in_use,
+			ERR_post(gds_no_meta_update,
+					 gds_arg_gds, gds_obj_in_use,
 					 gds_arg_string, ERR_cstring(work->dfw_name),
 					 0);
 
@@ -3775,10 +3776,10 @@ static BOOLEAN modify_procedure(TDBB	tdbb,
 			USHORT prc_alter_count = procedure->prc_alter_count;
 			if (prc_alter_count > MAX_PROC_ALTER)
 			{
-				ERR_post(gds__no_meta_update,
-						 gds_arg_gds, gds__proc_name,
+				ERR_post(gds_no_meta_update,
+						 gds_arg_gds, gds_proc_name,
 						 gds_arg_string, ERR_cstring(work->dfw_name),
-						 gds_arg_gds, gds__version_err,
+						 gds_arg_gds, gds_version_err,
 						 0);
 				/* Msg357: too many versions */
 			}
@@ -3804,8 +3805,8 @@ static BOOLEAN modify_procedure(TDBB	tdbb,
 		if (procedure->prc_request)
 		{
 			if (CMP_clone_active(procedure->prc_request))
-				ERR_post(gds__no_meta_update,
-						 gds_arg_gds, gds__obj_in_use,
+				ERR_post(gds_no_meta_update,
+						 gds_arg_gds, gds_obj_in_use,
 						 gds_arg_string, ERR_cstring(work->dfw_name),
 						 0);
 

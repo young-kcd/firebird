@@ -25,6 +25,7 @@
 #error This file is not to be used for Win32 builds. Please use isc_sync_win32.cpp
 #endif
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <errno.h>
 #include "../jrd/common.h"

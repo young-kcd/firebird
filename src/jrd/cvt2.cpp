@@ -22,11 +22,12 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <string.h>
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/quad.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/intl.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/all_proto.h"
@@ -465,7 +466,7 @@ SSHORT CVT2_compare(DSC * arg1, DSC * arg2, FPTR_VOID err)
 	case dtype_array:
 		reinterpret_cast < void (*) (...) > (*err) (gds_wish_list,
 													gds_arg_gds,
-													gds__blobnotsup,
+													gds_blobnotsup,
 													gds_arg_string, "compare",
 													0);
 		break;

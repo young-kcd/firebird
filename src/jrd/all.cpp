@@ -25,10 +25,11 @@
 #define LOCAL_SHLIB_DEFS
 #endif
 
+#include "firebird.h"
 #include <string.h>
 #include "../jrd/ib_stdio.h"
 
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 
 #ifndef GATEWAY
 #include "../jrd/everything.h"
@@ -41,7 +42,7 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/thd_proto.h"
 
-#define BLKDEF(type, root, tail) sizeof (struct root), tail,
+#define BLKDEF(type, root, tail) { sizeof (struct root), tail },
 
 extern "C" {
 
@@ -50,13 +51,14 @@ static const struct {
 	SSHORT typ_root_length;
 	SSHORT typ_tail_length;
 } block_sizes[] = {
-	0, 0,
+	{0, 0},
 #ifndef GATEWAY
 #include "../jrd/blk.h"
 #else
 #include ".._gway/gway/blk.h"
 #endif
-0};
+    {0, 0}
+};
 
 #undef BLKDEF
 
@@ -559,8 +561,8 @@ SCHAR *ALL_malloc(ULONG size, ERR_T err_ret)
 
 /* NOMEM: post user level error */
 	if (err_ret == ERR_jmp)
-		ERR_post(gds__sys_request, gds_arg_string, "gds__alloc", gds_arg_gds,
-				 gds__virmemexh, 0);
+		ERR_post(gds_sys_request, gds_arg_string, "gds__alloc", gds_arg_gds,
+				 gds_virmemexh, 0);
 
 	return NULL;
 }
@@ -892,8 +894,8 @@ SCHAR *ALL_sys_alloc(ULONG size, ERR_T err_ret)
 
 /* NOMEM: post user level error */
 	if (err_ret == ERR_jmp)
-		ERR_post(gds__sys_request, gds_arg_string, "gds__sys_alloc",
-				 gds_arg_gds, gds__virmemexh, 0);
+		ERR_post(gds_sys_request, gds_arg_string, "gds__sys_alloc",
+				 gds_arg_gds, gds_virmemexh, 0);
 
 	return NULL;
 }

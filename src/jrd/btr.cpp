@@ -21,9 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: btr.cpp,v 1.1.1.1 2001-05-23 13:26:08 tamlin Exp $
+$Id: btr.cpp,v 1.2 2001-07-29 17:42:21 skywalker Exp $
 */
 
+#include "firebird.h"
 #include "../jrd/ibsetjmp.h"
 #include <string.h>
 #include <stdlib.h>
@@ -35,7 +36,7 @@ $Id: btr.cpp,v 1.1.1.1 2001-05-23 13:26:08 tamlin Exp $
 #include "../jrd/req.h"
 #include "../jrd/tra.h"
 #include "../jrd/intl.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/common.h"
 #include "../jrd/jrn.h"
 #include "../jrd/lck.h"
@@ -1616,7 +1617,7 @@ void BTR_reserve_slot(TDBB tdbb, REL relation, TRA transaction, IDX * idx)
 
 	if (root->irt_count > MAX_IDX) {
 		CCH_RELEASE(tdbb, &window);
-		ERR_post(gds__no_meta_update, gds_arg_gds, gds__max_idx,
+		ERR_post(gds_no_meta_update, gds_arg_gds, gds_max_idx,
 				 gds_arg_number, (SLONG) MAX_IDX, 0);
 	}
 /* Scan the index page looking for the high water mark of the descriptions and,
@@ -1643,8 +1644,8 @@ void BTR_reserve_slot(TDBB tdbb, REL relation, TRA transaction, IDX * idx)
 		   If this is the second try already, then there really is no more room. */
 		if (maybe_no_room) {
 			CCH_RELEASE(tdbb, &window);
-			ERR_post(gds__no_meta_update, gds_arg_gds,
-					 gds__index_root_page_full, 0);
+			ERR_post(gds_no_meta_update, gds_arg_gds,
+					 gds_index_root_page_full, 0);
 		}
 		compress_root(tdbb, root);
 		maybe_no_room = TRUE;

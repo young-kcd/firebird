@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <string.h>
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
@@ -30,7 +31,7 @@
 #include "../jrd/pio.h"
 #include "../jrd/dsc.h"
 #include "../wal/wal.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/flags.h"
 #include "../jrd/sbm.h"
 #include "../jrd/sdw.h"
@@ -260,10 +261,10 @@ void AIL_disable(void)
 	journal_dir[jd_len] = 0;
 
 	if (!jd_len)
-		ERR_post(gds__no_jrn, 0);
+		ERR_post(gds_no_jrn, 0);
 
 	if (!dbb->dbb_wal)
-		ERR_post(gds__no_wal, 0);
+		ERR_post(gds_no_wal, 0);
 
 	if ((ret_val = JRN_init(tdbb->tdbb_status_vector, &dbb->dbb_journal,
 							dbb->dbb_page_size,
@@ -476,14 +477,14 @@ void AIL_enable(
 /* Can enable journal only if wal sub system is in use */
 
 	if (!dbb->dbb_wal)
-		ERR_post(gds__no_wal_no_jrn, 0);
+		ERR_post(gds_no_wal_no_jrn, 0);
 
 /* check if journal is already enabled */
 
 	if (PAG_get_clump
 		(HEADER_PAGE, HDR_journal_server, &jd_len,
 		 reinterpret_cast <
-		 UCHAR * >(journal_dir))) ERR_post(gds__jrn_present, 0);
+		 UCHAR * >(journal_dir))) ERR_post(gds_jrn_present, 0);
 
 /*
  * check if we are trying to enable long term journaling without
@@ -497,7 +498,7 @@ void AIL_enable(
 			if (!(log_files[i]->lg_flags & LOG_serial)) {
 				for (i = 0; i < number; i++)
 					ALL_release(reinterpret_cast < frb * >(log_files[i]));
-				ERR_post(gds__no_archive, 0);
+				ERR_post(gds_no_archive, 0);
 			}
 	}
 

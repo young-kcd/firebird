@@ -38,6 +38,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <assert.h>
 #include "../jrd/mov.c"

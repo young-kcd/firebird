@@ -29,6 +29,7 @@
 #define LOCAL_SHLIB_DEFS
 #endif
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <string.h>
@@ -46,7 +47,7 @@
 
 #include "../jrd/time.h"
 #include "../jrd/common.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/isc.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
@@ -2473,7 +2474,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 			close(fd);
 			close(fd_init);
 			*status_vector++ = gds_arg_gds;
-			*status_vector++ = gds__unavailable;
+			*status_vector++ = gds_unavailable;
 			*status_vector++ = gds_arg_end;
 			return NULL;
 		}
@@ -2868,7 +2869,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 			next_shared_memory -= length;
 			ib_fclose(fp);
 			*status_vector++ = gds_arg_gds;
-			*status_vector++ = gds__unavailable;
+			*status_vector++ = gds_unavailable;
 			*status_vector++ = gds_arg_end;
 			return NULL;
 		}
@@ -3212,7 +3213,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 		if (length == 0) {
 			ISC_mutex_unlock(SYNC_MUTEX);
 			status_vector[0] = gds_arg_gds;
-			status_vector[1] = gds__virmemexh;
+			status_vector[1] = gds_virmemexh;
 			status_vector[2] = gds_arg_end;
 			return (NULL);
 		}
@@ -3223,7 +3224,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 		/* FREE: ?by ISC_remap_file? */
 		if (!address) {			/* NOMEM: */
 			status_vector[0] = gds_arg_gds;
-			status_vector[1] = gds__virmemexh;
+			status_vector[1] = gds_virmemexh;
 			status_vector[2] = gds_arg_end;
 			ISC_mutex_unlock(SYNC_MUTEX);
 			return (NULL);
@@ -3236,7 +3237,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 			if (!semaphores) {	/* NOMEM: */
 				gds__free(address);
 				status_vector[0] = gds_arg_gds;
-				status_vector[1] = gds__virmemexh;
+				status_vector[1] = gds_virmemexh;
 				status_vector[2] = gds_arg_end;
 				ISC_mutex_unlock(SYNC_MUTEX);
 				return (NULL);
@@ -3254,7 +3255,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 			if (semaphores)
 				gds__free(semaphores);
 			status_vector[0] = gds_arg_gds;
-			status_vector[1] = gds__virmemexh;
+			status_vector[1] = gds_virmemexh;
 			status_vector[2] = gds_arg_end;
 			ISC_mutex_unlock(SYNC_MUTEX);
 			return (NULL);
@@ -3304,7 +3305,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
  **************************************/
 
 	*status_vector++ = gds_arg_gds;
-	*status_vector++ = gds__unavailable;
+	*status_vector++ = gds_unavailable;
 	*status_vector++ = gds_arg_end;
 
 	return NULL;
@@ -4134,7 +4135,7 @@ UCHAR *ISC_remap_file(STATUS * status_vector,
 	address = gds__alloc(new_length);
 	if (!address) {				/* NOMEM: */
 		status_vector[0] = gds_arg_gds;
-		status_vector[1] = gds__virmemexh;
+		status_vector[1] = gds_virmemexh;
 		status_vector[2] = gds_arg_end;
 		ISC_mutex_unlock(SYNC_MUTEX);
 		return (NULL);
@@ -4297,7 +4298,7 @@ UCHAR *DLL_EXPORT ISC_remap_file(STATUS * status_vector,
  **************************************/
 
 	*status_vector++ = gds_arg_gds;
-	*status_vector++ = gds__unavailable;
+	*status_vector++ = gds_unavailable;
 	*status_vector++ = gds_arg_end;
 
 	return NULL;
@@ -4403,7 +4404,8 @@ void ISC_set_timer(
 	internal_handler.sv_flags = SV_INTERRUPT;
 	sigvector(SIGALRM, &internal_handler, (struct sigvec *) client_handler);
 #else
-	internal_handler.sa_handler = (SIG_FPTR) SIG_DFL;
+//	internal_handler.sa_handler = (SIG_FPTR) SIG_DFL;
+	internal_handler.sa_handler = (void(*)(int)) SIG_DFL;
 	memset(&internal_handler.sa_mask, 0, sizeof(internal_handler.sa_mask));
 	internal_handler.sa_flags = SA_RESTART;
 	sigaction(SIGALRM, &internal_handler,
@@ -4702,7 +4704,7 @@ void DLL_EXPORT ISC_unmap_file(
  **************************************/
 
 	*status_vector++ = gds_arg_gds;
-	*status_vector++ = gds__unavailable;
+	*status_vector++ = gds_unavailable;
 	*status_vector++ = gds_arg_end;
 }
 #endif
@@ -4759,7 +4761,7 @@ static void error(STATUS * status_vector, TEXT * string, STATUS status)
  **************************************/
 
 	*status_vector++ = gds_arg_gds;
-	*status_vector++ = gds__sys_request;
+	*status_vector++ = gds_sys_request;
 	*status_vector++ = gds_arg_string;
 	*status_vector++ = (STATUS) string;
 	*status_vector++ = SYS_ARG;

@@ -541,6 +541,7 @@ VI. ADDITIONAL NOTES
 */
 #endif /* INTERNAL_DOCUMENTATION */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include "../jrd/ibsetjmp.h"
 #include "../jrd/common.h"
@@ -548,7 +549,7 @@ VI. ADDITIONAL NOTES
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/pag.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/val.h"
 #include "../jrd/btr.h"
 #include "../jrd/all.h"

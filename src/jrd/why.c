@@ -21,8 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: why.c,v 1.2 2001-07-12 05:46:05 bellardo Exp $
+$Id: why.c,v 1.3 2001-07-29 17:42:23 skywalker Exp $
 */
+
+#include "firebird.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -38,9 +40,9 @@ $Id: why.c,v 1.2 2001-07-12 05:46:05 bellardo Exp $
 #define assert(x)
 #endif
 
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/msg_encode.h"
-#include "../jrd/msg_facs.h"
+#include "gen/msg_facs.h"
 #include "../jrd/acl.h"
 #include "../jrd/inf.h"
 #include "../jrd/thd.h"
@@ -557,47 +559,47 @@ static SSHORT paths_initialized = 0;
 static CONST_IMAGE IMAGE images[] =
 {
 #ifdef WINDOWS_ONLY
-	"REMOTE", "REMOTE.DLL",
-	"STACK", "STACK.DLL"
+	{"REMOTE", "REMOTE.DLL"},
+	{"STACK", "STACK.DLL"}
 #else
 
-	"REMINT", "REMINT",			/* Remote */
+	{"REMINT", "REMINT"},			/* Remote */
 
 #ifdef CSI
-	"CSI", "CSI",				/* Central server interface */
+	{"CSI", "CSI"},				/* Central server interface */
 #endif
 
 #ifdef ALTPIPE
-	"GDSPIPE", "ALTPIPE",		/* Alternate pipe interface */
+	{"GDSPIPE", "ALTPIPE"},		/* Alternate pipe interface */
 #endif
 
 #ifndef REQUESTER
 #ifndef SUPERCLIENT
-	"GDSSHR", "GDSSHR",			/* Primary access method */
+	{"GDSSHR", "GDSSHR"},			/* Primary access method */
 #endif
 #endif
 
 #ifdef V3
-	"GDSSHR5", V3_PATH,			/* Previous access method */
+	{"GDSSHR5", V3_PATH},			/* Previous access method */
 #endif
 
 #ifdef PIPE_BRIDGE_TO_V3
-	"PIPE5", "PIPE5",			/* Pipe interface bridge to V3 */
+	{"PIPE5", "PIPE5"},			/* Pipe interface bridge to V3 */
 #endif
 
 #ifdef RDB
-	"GDSRDB", "GDSRDB",			/* Rdb Interface */
+	{"GDSRDB", "GDSRDB"},			/* Rdb Interface */
 #endif
 
 #ifndef	PC_PLATFORM
-	"GDS_A", GDS_A_PATH,
-	"GDS_B", GDS_B_PATH,
-	"GDS_C", GDS_C_PATH,
-	"GDS_D", GDS_D_PATH
+	{"GDS_A", GDS_A_PATH},
+	{"GDS_B", GDS_B_PATH},
+	{"GDS_C", GDS_C_PATH},
+    {"GDS_D", GDS_D_PATH}
 #endif
 #ifdef IPSERV
 #ifndef XNET
-		"WINIPI", "WINIPI",
+		{"WINIPI", "WINIPI"},
 #endif
 #endif
 
@@ -612,57 +614,57 @@ static CONST ENTRY entrypoints[PROC_count * SUBSYSTEMS] =
 {
 #ifdef PIPE_CLIENT
 
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	NULL, pipe,
+#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, pipe},
 #include "../jrd/entry.h"
 
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	NULL, bridge_pipe,
+#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, bridge_pipe},
 #include "../jrd/entry.h"
 
 #else
 
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	NULL, rem,
+#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, rem},
 #include "../jrd/entry.h"
 
 #ifdef CSI
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	NULL, csi,
+#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, csi},
 #include "../jrd/entry.h"
 #endif
 
 #ifdef ALTPIPE
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	NULL, pipe,
+#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, pipe},
 #include "../jrd/entry.h"
 #endif
 
 #ifdef WINDOWS_ONLY
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	win, NULL,
+#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{win, NULL},
 #include "../jrd/entry.h"
 #else
 #ifndef REQUESTER
 #ifndef SUPERCLIENT
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	NULL, cur,
+#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, cur},
 #include "../jrd/entry.h"
 #endif
 #endif
 #endif							/* WINDOWS_ONLY */
 
 #ifdef V3
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	bridge, NULL,
+#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{bridge, NULL},
 #include "../jrd/entry.h"
 #endif
 
 #ifdef PIPE_BRIDGE_TO_V3
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	NULL, bridge_pipe,
+#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, bridge_pipe},
 #include "../jrd/entry.h"
 #endif
 
 #ifdef RDB
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	NULL, rdb,
+#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, rdb},
 #include "../jrd/entry.h"
 #endif
 
 #ifdef IPSERV
 #ifndef XNET
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	NULL, winipi,
+#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, winipi},
 #include "../jrd/entry.h"
 #endif
 #endif

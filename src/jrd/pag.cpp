@@ -35,6 +35,7 @@
  *                         readonly databases.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 
@@ -43,7 +44,7 @@
 #include "../jrd/pag.h"
 #include "../jrd/ods.h"
 #include "../jrd/pio.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/license.h"
 #include "../jrd/jrn.h"

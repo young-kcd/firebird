@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <windows.h>
 
 HINSTANCE hIBDLLInstance;

@@ -21,12 +21,13 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
 #include "../jrd/ibsetjmp.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/iberr.h"
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
@@ -79,7 +80,7 @@ void DLL_EXPORT ERR_bugcheck(int number)
 
 	CCH_shutdown_database(dbb);
 
-	internal_error(gds__bug_check, number);
+	internal_error(gds_bug_check, number);
 }
 #endif
 
@@ -106,7 +107,7 @@ void DLL_EXPORT ERR_bugcheck_msg(CONST TEXT* msg)
 
 	CCH_shutdown_database(dbb);
 
-	ERR_post(gds__bug_check, gds_arg_string, ERR_cstring(msg), 0);
+	ERR_post(gds_bug_check, gds_arg_string, ERR_cstring(msg), 0);
 }
 #endif
 
@@ -125,7 +126,7 @@ void DLL_EXPORT ERR_corrupt(int number)
  *
  **************************************/
 
-	internal_error(gds__db_corrupt, number);
+	internal_error(gds_db_corrupt, number);
 }
 #endif
 
@@ -187,13 +188,13 @@ void DLL_EXPORT ERR_duplicate_error(IDX_E	code,
 
 	switch (code) {
 	case idx_e_keytoobig:
-		ERR_post(gds__imp_exc, gds_arg_gds, gds__keytoobig,
+		ERR_post(gds_imp_exc, gds_arg_gds, gds_keytoobig,
 				 gds_arg_string, ERR_cstring(index_name), 0);
 		break;
 
 	case idx_e_nullunique:
-		ERR_post(gds__no_dup, gds_arg_string, ERR_cstring(index_name),
-				 gds_arg_gds, gds__nullsegkey, 0);
+		ERR_post(gds_no_dup, gds_arg_string, ERR_cstring(index_name),
+				 gds_arg_gds, gds_nullsegkey, 0);
 		break;
 
 	case idx_e_conversion:
@@ -201,18 +202,18 @@ void DLL_EXPORT ERR_duplicate_error(IDX_E	code,
 		break;
 
 	case idx_e_foreign:
-		ERR_post(gds__foreign_key,
+		ERR_post(gds_foreign_key,
 				 gds_arg_string, ERR_cstring(constraint_name),
 				 gds_arg_string, relation->rel_name, 0);
 		break;
 
 	default:
 		if (constraint[0])
-			ERR_post(gds__unique_key_violation,
+			ERR_post(gds_unique_key_violation,
 					 gds_arg_string, ERR_cstring(constraint_name),
 					 gds_arg_string, relation->rel_name, 0);
 		else
-			ERR_post(gds__no_dup, gds_arg_string, ERR_cstring(index_name), 0);
+			ERR_post(gds_no_dup, gds_arg_string, ERR_cstring(index_name), 0);
 	}
 }
 #endif
@@ -239,7 +240,7 @@ void DLL_EXPORT ERR_error(int number)
 	if (gds__msg_lookup(0, JRD_BUGCHK, number, sizeof(errmsg), errmsg, NULL) <
 		1) sprintf(errmsg, "error code %d", number);
 
-	ERR_post(gds__random, gds_arg_string, ERR_cstring(errmsg), 0);
+	ERR_post(gds_random, gds_arg_string, ERR_cstring(errmsg), 0);
 }
 #endif
 
@@ -260,7 +261,7 @@ void DLL_EXPORT ERR_error_msg(CONST TEXT* msg)
  **************************************/
 
 	DEBUG;
-	ERR_post(gds__random, gds_arg_string, ERR_cstring(msg), 0);
+	ERR_post(gds_random, gds_arg_string, ERR_cstring(msg), 0);
 }
 #endif
 
