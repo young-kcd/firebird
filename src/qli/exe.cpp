@@ -225,7 +225,7 @@ void *EXEC_open_blob( QLI_NOD node)
  *	Given a blob field node, open and return the blob.
  *
  **************************************/
-	FLD field;
+	QLI_FLD field;
 	QLI_CTX context;
 	QLI_REQ request;
 	DBB dbb;
@@ -875,7 +875,7 @@ static void execute_assignment( QLI_NOD node)
  *
  **************************************/
 	QLI_NOD to, from, reference, initial;
-	FLD field;
+	QLI_FLD field;
 	PAR parameter;
 
 	if (node->nod_flags & NOD_remote)
@@ -908,7 +908,7 @@ static void execute_assignment( QLI_NOD node)
 /* propagate the missing flag in variable assignments */
 
 	if (to->nod_type == nod_variable) {
-		field = (FLD) to->nod_arg[e_fld_field];
+		field = (QLI_FLD) to->nod_arg[e_fld_field];
 		if (to->nod_desc.dsc_missing & DSC_missing)
 			field->fld_flags |= FLD_missing;
 		else

@@ -33,7 +33,7 @@ extern "C" {
 extern void CMP_check(register GPRE_REQ, SSHORT);
 extern void CMP_compile_request(register GPRE_REQ);
 extern int CMP_display_code(FINT, REF);
-extern void CMP_external_field(GPRE_REQ, FLD);
+extern void CMP_external_field(GPRE_REQ, GPRE_FLD);
 extern void CMP_init(void);
 extern USHORT CMP_next_ident(void);
 extern void CMP_stuff_symbol(GPRE_REQ, SYM);

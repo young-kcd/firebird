@@ -82,7 +82,7 @@ static BOOLEAN key_equal(KEY *, KEY *);
 static void signal_index_deletion(TDBB, JRD_REL, USHORT);
 
 
-void IDX_check_access(TDBB tdbb, CSB csb, JRD_REL view, JRD_REL relation, FLD field)
+void IDX_check_access(TDBB tdbb, CSB csb, JRD_REL view, JRD_REL relation, JRD_FLD field)
 {
 /**************************************
  *
@@ -101,7 +101,7 @@ void IDX_check_access(TDBB tdbb, CSB csb, JRD_REL view, JRD_REL relation, FLD fi
 	WIN window, referenced_window;
 	IDX idx, referenced_idx;
 	JRD_REL referenced_relation;
-	FLD referenced_field;
+	JRD_FLD referenced_field;
 	IRT referenced_root;
 	USHORT index_id, i;
 	idx::idx_repeat * idx_desc;

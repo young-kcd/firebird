@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.25 2002-11-20 23:16:38 hippoman Exp $
+$Id: par.cpp,v 1.26 2002-11-30 17:43:19 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -399,7 +399,7 @@ JRD_NOD PAR_make_field(TDBB tdbb, CSB csb, USHORT context, TEXT * base_field)
 	SSHORT id;
 	USHORT stream;
 	TEXT name[32];
-	FLD field;
+	JRD_FLD field;
 	JRD_REL temp_rel;
 	JRD_NOD temp_node;
 
@@ -448,7 +448,7 @@ JRD_NOD PAR_make_field(TDBB tdbb, CSB csb, USHORT context, TEXT * base_field)
 
 	temp_node = PAR_gen_field(tdbb, stream, id);
 
-	if ( (field = (FLD) (*temp_rel->rel_fields)[id]) ) {
+	if ( (field = (JRD_FLD) (*temp_rel->rel_fields)[id]) ) {
 		if (field->fld_default_value && field->fld_not_null)
 			temp_node->nod_arg[e_fld_default_value] =
 				field->fld_default_value;
@@ -1137,7 +1137,7 @@ static JRD_NOD par_field(TDBB tdbb, CSB * csb, SSHORT operator_)
 	SSHORT stream, id, context, flags;
 	csb_repeat *tail;
 	JRD_PRC scan_proc;
-	FLD field;
+	JRD_FLD field;
 	JRD_REL temp_rel;
 	BOOLEAN is_column = FALSE;
 
@@ -1227,7 +1227,7 @@ static JRD_NOD par_field(TDBB tdbb, CSB * csb, SSHORT operator_)
 
 	if (is_column == TRUE) {
 		if ( (temp_rel = (*csb)->csb_rpt[stream].csb_relation) ) {
-			if ( (field = (FLD) (*temp_rel->rel_fields)[id]) ) {
+			if ( (field = (JRD_FLD) (*temp_rel->rel_fields)[id]) ) {
 				if (field->fld_default_value && field->fld_not_null)
 					node->nod_arg[e_fld_default_value] =
 						field->fld_default_value;

@@ -24,8 +24,8 @@
 #ifndef _QLI_META_PROTO_H_
 #define _QLI_META_PROTO_H_
 
-extern int	MET_declare (struct dbb *, struct fld *, struct nam *);
-extern void	MET_define_field (struct dbb *, struct fld *);
+extern int	MET_declare (struct dbb *, struct qli_fld *, struct nam *);
+extern void	MET_define_field (struct dbb *, struct qli_fld *);
 extern void	MET_define_index (struct syn *);
 extern void	MET_define_relation (struct qli_rel *, struct qli_rel *);
 extern void	MET_define_sql_relation (struct qli_rel *);
@@ -41,12 +41,12 @@ extern void	MET_index_info (TEXT *, TEXT *, SCHAR *);
 extern void	MET_meta_commit (struct dbb *);
 extern void	MET_meta_rollback (struct dbb *);
 extern SLONG	*MET_meta_transaction (struct dbb *, int);
-extern void	MET_modify_field (struct dbb *, struct fld *);
+extern void	MET_modify_field (struct dbb *, struct qli_fld *);
 extern void	MET_modify_index (struct syn *);
-extern void	MET_modify_relation (struct qli_rel *, struct fld *);
+extern void	MET_modify_relation (struct qli_rel *, struct qli_fld *);
 extern void	MET_ready (struct syn *, USHORT);
 extern void	MET_shutdown (void);
-extern void	MET_sql_alter_table (struct qli_rel *, struct fld *);
+extern void	MET_sql_alter_table (struct qli_rel *, struct qli_fld *);
 extern void	MET_sql_cr_view (struct syn *);
 extern void	MET_sql_grant (struct syn *);
 extern void	MET_sql_revoke (struct syn *);

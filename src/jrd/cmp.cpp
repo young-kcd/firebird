@@ -40,7 +40,7 @@
  *
  */
 /*
-$Id: cmp.cpp,v 1.27 2002-11-25 10:23:56 dimitr Exp $
+$Id: cmp.cpp,v 1.28 2002-11-30 17:43:18 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -787,7 +787,7 @@ void DLL_EXPORT CMP_get_desc(
 			JRD_NOD sub;
 			JRD_REL relation;
 			USHORT id;
-			FLD field;
+			JRD_FLD field;
 			ARR array;
 
 			sub = node->nod_arg[e_scl_field];
@@ -2431,7 +2431,7 @@ static JRD_NOD copy(
 			stream = (USHORT) input->nod_arg[e_fld_stream];
 			if (remap_fld) {
 				JRD_REL relation;
-				FLD field;
+				JRD_FLD field;
 
 				relation = (*csb)->csb_rpt[stream].csb_relation;
 				field = MET_get_field(relation, field_id);
@@ -2864,7 +2864,7 @@ static JRD_NOD make_defaults(TDBB tdbb, CSB * csb, USHORT stream, JRD_NOD statem
 
 	for (ptr1 = vector->begin(), end = vector->end(), field_id = 0;
 		     ptr1 < end; ptr1++, field_id++)
-		if (*ptr1 && (value = ((FLD)(*ptr1))->fld_default_value)) {
+		if (*ptr1 && (value = ((JRD_FLD)(*ptr1))->fld_default_value)) {
 			node = PAR_make_node(tdbb, e_asgn_length);
 			node->nod_type = nod_assignment;
 			node->nod_arg[e_asgn_from] =
@@ -2926,7 +2926,7 @@ static JRD_NOD make_validation(TDBB tdbb, CSB * csb, USHORT stream)
 
 	for (ptr1 = vector->begin(), end = vector->end(), field_id = 0;
 		     ptr1 < end; ptr1++, field_id++) {
-		if (*ptr1 && (validation = ((FLD)(*ptr1))->fld_validation)) {
+		if (*ptr1 && (validation = ((JRD_FLD)(*ptr1))->fld_validation)) {
 			node = PAR_make_node(tdbb, e_val_length);
 			node->nod_type = nod_validate;
 			node->nod_arg[e_val_boolean] =
@@ -2937,7 +2937,7 @@ static JRD_NOD make_validation(TDBB tdbb, CSB * csb, USHORT stream)
 			LLS_PUSH(node, &stack);
 		}
 
-		if (*ptr1 && (validation = ((FLD)(*ptr1))->fld_not_null)) {
+		if (*ptr1 && (validation = ((JRD_FLD)(*ptr1))->fld_not_null)) {
 			node = PAR_make_node(tdbb, e_val_length);
 			node->nod_type = nod_validate;
 			node->nod_arg[e_val_boolean] =
@@ -3005,7 +3005,7 @@ static JRD_NOD pass1(
 		{
 			LLS stack;
 			JRD_REL relation;
-			FLD field;
+			JRD_FLD field;
 			UCHAR *map, local_map[MAP_LENGTH];
 
 			stream = (USHORT) node->nod_arg[e_fld_stream];
@@ -3128,7 +3128,7 @@ static JRD_NOD pass1(
 
 	case nod_assignment:
 		{
-			FLD field;
+			JRD_FLD field;
 
 			sub = node->nod_arg[e_asgn_from];
 			if (sub->nod_type == nod_field) {
@@ -3437,7 +3437,7 @@ static JRD_NOD pass1_expand_view(
 	JRD_REL relation;
 	VEC fields;
 	vec::iterator ptr, end;
-	FLD field;
+	JRD_FLD field;
 	LLS stack;
 	USHORT id = 0, new_id = 0;
 	DSC desc;
@@ -3453,7 +3453,7 @@ static JRD_NOD pass1_expand_view(
 
 	for (ptr = fields->begin(), end = fields->end(), id = 0;
 			ptr < end; ptr++, id++)
-		if (*ptr && !((FLD)(*ptr))->fld_computation) {
+		if (*ptr && !((JRD_FLD)(*ptr))->fld_computation) {
 			if (remap) {
 				field = MET_get_field(relation, id);
 				if (field->fld_source)

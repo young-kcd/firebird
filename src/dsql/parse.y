@@ -137,7 +137,7 @@ extern DSQL_NOD	DSQL_parse;
 #endif
 
 }	// extern "C"
-static FLD	g_field;
+static DSQL_FLD	g_field;
 static FIL	g_file;
 static DSQL_NOD	g_field_name;
 static TEXT	*beginning;
@@ -3824,7 +3824,7 @@ symbol_savepoint_name			: SYMBOL
 
 static TEXT	*lex_position (void);
 static BOOLEAN	long_int (DSQL_NOD, SLONG *);
-static FLD	make_field (DSQL_NOD);
+static DSQL_FLD	make_field (DSQL_NOD);
 static FIL	make_file (void);
 static DSQL_NOD	make_list (DSQL_NOD);
 static DSQL_NOD	make_node (NOD_TYPE, int, ...);
@@ -3991,7 +3991,7 @@ return TRUE;
 }
 
 
-static FLD make_field (
+static DSQL_FLD make_field (
     DSQL_NOD		field_name)
 {
 /**************************************
@@ -4004,7 +4004,7 @@ static FLD make_field (
  *	Make a field block of given name.
  *
  **************************************/
-FLD	field;
+DSQL_FLD	field;
 STR	string;
 TSQL    tdsql;
 
@@ -4012,12 +4012,12 @@ tdsql = GET_THREAD_DATA;
        
 if (field_name == NULL)
    {
-    field = FB_NEW_RPT(*tdsql->tsql_default, sizeof (INTERNAL_FIELD_NAME)) fld;
+    field = FB_NEW_RPT(*tdsql->tsql_default, sizeof (INTERNAL_FIELD_NAME)) dsql_fld;
     strcpy (field->fld_name, (TEXT*) INTERNAL_FIELD_NAME);
     return field;
    }
 string = (STR) field_name->nod_arg [1];
-field = FB_NEW_RPT(*tdsql->tsql_default, strlen ((SCHAR*) string->str_data)) fld;
+field = FB_NEW_RPT(*tdsql->tsql_default, strlen ((SCHAR*) string->str_data)) dsql_fld;
 strcpy (field->fld_name, (TEXT*) string->str_data);
 
 return field;

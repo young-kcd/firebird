@@ -143,8 +143,8 @@
 ASSERT_FILENAME					/* Define things assert() needs */
 static BOOLEAN aggregate_found(DSQL_REQ, DSQL_NOD, DSQL_NOD *);
 static BOOLEAN aggregate_found2(DSQL_REQ, DSQL_NOD, DSQL_NOD *, BOOLEAN *);
-static DSQL_NOD ambiguity_check (DSQL_NOD, DSQL_REQ, FLD, DLLS, DLLS);
-static void assign_fld_dtype_from_dsc(FLD, DSC *);
+static DSQL_NOD ambiguity_check (DSQL_NOD, DSQL_REQ, DSQL_FLD, DLLS, DLLS);
+static void assign_fld_dtype_from_dsc(DSQL_FLD, DSC *);
 static DSQL_NOD compose(DSQL_NOD, DSQL_NOD, NOD_TYPE);
 static DSQL_NOD copy_field(DSQL_NOD, DSQL_CTX);
 static DSQL_NOD copy_fields(DSQL_NOD, DSQL_CTX);
@@ -186,7 +186,7 @@ static DSQL_NOD pass1_update(DSQL_REQ, DSQL_NOD);
 static DSQL_NOD pass1_variable(DSQL_REQ, DSQL_NOD);
 static DSQL_NOD post_map(DSQL_NOD, DSQL_CTX);
 static void remap_streams_to_parent_context(DSQL_NOD, DSQL_CTX);
-static FLD resolve_context(DSQL_REQ, STR, STR, DSQL_CTX);
+static DSQL_FLD resolve_context(DSQL_REQ, STR, STR, DSQL_CTX);
 static BOOLEAN set_parameter_type(DSQL_NOD, DSQL_NOD, BOOLEAN);
 static void set_parameters_name(DSQL_NOD, DSQL_NOD);
 static void set_parameter_name(DSQL_NOD, DSQL_NOD, DSQL_REL);
@@ -228,7 +228,7 @@ DSQL_CTX PASS1_make_context( DSQL_REQ request, DSQL_NOD relation_node)
 	STR relation_name, string;
 	DSQL_REL relation;
 	DSQL_PRC procedure;
-	FLD field;
+	DSQL_FLD field;
 	DSQL_NOD *input;
 	DLLS stack;
 	TEXT *conflict_name;
@@ -442,7 +442,7 @@ DSQL_NOD PASS1_node(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
  **************************************/
 	DSQL_NOD node, temp, *ptr, *end, *ptr2, rse, sub1, sub2, sub3;
 	DLLS base;
-	FLD field;
+	DSQL_FLD field;
 	DSQL_CTX agg_context;
 
 	DEV_BLKCHK(request, dsql_type_req);
@@ -467,7 +467,7 @@ DSQL_NOD PASS1_node(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 		node->nod_arg[e_cast_source] = sub1 =
 			PASS1_node(request, input->nod_arg[e_cast_source], proc_flag);
 		node->nod_arg[e_cast_target] = input->nod_arg[e_cast_target];
-		field = (FLD) node->nod_arg[e_cast_target];
+		field = (DSQL_FLD) node->nod_arg[e_cast_target];
 		DEV_BLKCHK(field, dsql_type_fld);
 		DDL_resolve_intl_type(request, field, NULL);
 		MAKE_desc_from_field(&node->nod_desc, field);
@@ -946,7 +946,7 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 	DSQL_NOD node, *ptr, *end, *ptr2, *end2, into_in, into_out, procedure,
 		cursor, temp, parameters, variables;
 	DLLS base;
-	FLD field, field2;
+	DSQL_FLD field, field2;
 	STR name;
 	USHORT count;
 
@@ -1027,12 +1027,12 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 		if (variables = input->nod_arg[e_prc_dcls]) {
 			for (ptr = variables->nod_arg, end = ptr + variables->nod_count;
 				 ptr < end; ptr++) {
-				field = (FLD) (*ptr)->nod_arg[e_dfl_field];
+				field = (DSQL_FLD) (*ptr)->nod_arg[e_dfl_field];
 				DEV_BLKCHK(field, dsql_type_fld);
 				if (parameters = input->nod_arg[e_prc_inputs])
 					for (ptr2 = parameters->nod_arg, end2 =
 						 ptr2 + parameters->nod_count; ptr2 < end2; ptr2++) {
-						field2 = (FLD) (*ptr2)->nod_arg[e_dfl_field];
+						field2 = (DSQL_FLD) (*ptr2)->nod_arg[e_dfl_field];
 						DEV_BLKCHK(field2, dsql_type_fld);
 						if (!strcmp(field->fld_name, field2->fld_name))
 							ERRD_post(gds_sqlerr, gds_arg_number,
@@ -1043,7 +1043,7 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 				if (parameters = input->nod_arg[e_prc_outputs])
 					for (ptr2 = parameters->nod_arg, end2 =
 						 ptr2 + parameters->nod_count; ptr2 < end2; ptr2++) {
-						field2 = (FLD) (*ptr2)->nod_arg[e_dfl_field];
+						field2 = (DSQL_FLD) (*ptr2)->nod_arg[e_dfl_field];
 						DEV_BLKCHK(field2, dsql_type_fld);
 						if (!strcmp(field->fld_name, field2->fld_name))
 							ERRD_post(gds_sqlerr, gds_arg_number,
@@ -1597,7 +1597,7 @@ static BOOLEAN aggregate_found2(
 }
 
 
-static DSQL_NOD ambiguity_check (DSQL_NOD node, DSQL_REQ request, FLD field, 
+static DSQL_NOD ambiguity_check (DSQL_NOD node, DSQL_REQ request, DSQL_FLD field, 
                             DLLS relations,DLLS procedures)
 {
 /**************************************
@@ -1693,7 +1693,7 @@ static DSQL_NOD ambiguity_check (DSQL_NOD node, DSQL_REQ request, FLD field,
 }
 
 
-static void assign_fld_dtype_from_dsc( FLD field, DSC * nod_desc)
+static void assign_fld_dtype_from_dsc( DSQL_FLD field, DSC * nod_desc)
 {
 /**************************************
  *
@@ -1703,7 +1703,7 @@ static void assign_fld_dtype_from_dsc( FLD field, DSC * nod_desc)
  *
  * Functional description
  *	Set a field's descriptor from a DSC
- *	(If FLD is ever redefined this can be removed)
+ *	(If DSQL_FLD is ever redefined this can be removed)
  *
  **************************************/
 
@@ -1945,7 +1945,7 @@ static void explode_asterisk( DSQL_NOD node, DSQL_NOD aggregate, DLLS * stack)
 	DSQL_CTX context;
 	DSQL_REL relation;
 	DSQL_PRC procedure;
-	FLD field;
+	DSQL_FLD field;
 
 	DEV_BLKCHK(node, dsql_type_nod);
 	DEV_BLKCHK(aggregate, dsql_type_nod);
@@ -2010,7 +2010,7 @@ static DSQL_NOD explode_outputs( DSQL_REQ request, DSQL_PRC procedure)
  *
  **************************************/
 	DSQL_NOD node, *ptr, p_node;
-	FLD field;
+	DSQL_FLD field;
 	PAR parameter;
 	SSHORT count;
 
@@ -2710,7 +2710,7 @@ static void pass1_blob( DSQL_REQ request, DSQL_NOD input)
 	parameter->par_desc.dsc_dtype = dtype_text;
 	parameter->par_desc.dsc_ttype = ttype_binary;
 	parameter->par_desc.dsc_length =
-		((FLD) field->nod_arg[e_fld_field])->fld_seg_length;
+		((DSQL_FLD) field->nod_arg[e_fld_field])->fld_seg_length;
 	DEV_BLKCHK(field->nod_arg[e_fld_field], dsql_type_fld);
 
 /* The Null indicator is used to pass back the segment length,
@@ -2809,7 +2809,7 @@ static DSQL_NOD pass1_collate( DSQL_REQ request, DSQL_NOD sub1, STR collation)
  *
  **************************************/
 	DSQL_NOD node;
-	FLD field;
+	DSQL_FLD field;
 	TSQL tdsql;
 
 	DEV_BLKCHK(request, dsql_type_req);
@@ -2820,7 +2820,7 @@ static DSQL_NOD pass1_collate( DSQL_REQ request, DSQL_NOD sub1, STR collation)
 
 
 	node = MAKE_node(nod_cast, e_cast_count);
-	field = FB_NEW_RPT(*tdsql->tsql_default, 1) fld;
+	field = FB_NEW_RPT(*tdsql->tsql_default, 1) dsql_fld;
 	field->fld_name[0] = 0;
 	node->nod_arg[e_cast_target] = (DSQL_NOD) field;
 	node->nod_arg[e_cast_source] = sub1;
@@ -3201,7 +3201,7 @@ static DSQL_NOD pass1_field( DSQL_REQ request, DSQL_NOD input, USHORT list)
  **************************************/
 	DSQL_NOD node = 0, indices; /* Changes made need this var initialized. */
 	STR name, qualifier;
-	FLD field;
+	DSQL_FLD field;
 	DLLS stack;
 	DSQL_CTX context;
     DLLS	relations, procedures;
@@ -3790,7 +3790,7 @@ static DSQL_NOD pass1_insert( DSQL_REQ request, DSQL_NOD input)
  *
  **************************************/
 	DSQL_NOD rse, node, *ptr, *ptr2, *end, fields, values, temp;
-	FLD field;
+	DSQL_FLD field;
 	DSQL_REL relation;
 	DSQL_CTX context;
 	DLLS stack;
@@ -3833,7 +3833,7 @@ static DSQL_NOD pass1_insert( DSQL_REQ request, DSQL_NOD input)
                 strcmp (tmp_ctx->ctx_relation->rel_name, relation->rel_name)) {
 
                 DSQL_REL bad_rel = tmp_ctx->ctx_relation;
-                FLD bad_fld = (FLD) temp->nod_arg [e_fld_field];
+                DSQL_FLD bad_fld = (DSQL_FLD) temp->nod_arg [e_fld_field];
                 // At this time, "fields" has been replaced by the processed list in
                 // the same variable, so we refer again to input->nod_arg [e_ins_fields].
 
@@ -5194,7 +5194,7 @@ static void remap_streams_to_parent_context( DSQL_NOD input, DSQL_CTX parent_con
 }
 
 
-static FLD resolve_context( DSQL_REQ request, STR name, STR qualifier, DSQL_CTX context)
+static DSQL_FLD resolve_context( DSQL_REQ request, STR name, STR qualifier, DSQL_CTX context)
 {
 /**************************************
  *
@@ -5210,7 +5210,7 @@ static FLD resolve_context( DSQL_REQ request, STR name, STR qualifier, DSQL_CTX 
  **************************************/
 	DSQL_REL relation;
 	DSQL_PRC procedure;
-	FLD field;
+	DSQL_FLD field;
 	TEXT *table_name;
 
 	DEV_BLKCHK(request, dsql_type_req);
@@ -5404,7 +5404,7 @@ static void set_parameter_name( DSQL_NOD par_node, DSQL_NOD fld_node, DSQL_REL r
  **************************************/
 	DSQL_NOD *ptr, *end;
 	PAR parameter;
-	FLD field;
+	DSQL_FLD field;
 
 	DEV_BLKCHK(par_node, dsql_type_nod);
 	DEV_BLKCHK(fld_node, dsql_type_nod);
@@ -5420,7 +5420,7 @@ static void set_parameter_name( DSQL_NOD par_node, DSQL_NOD fld_node, DSQL_REL r
 	case nod_parameter:
 		parameter = (PAR) par_node->nod_arg[e_par_parameter];
 		DEV_BLKCHK(parameter, dsql_type_par);
-		field = (FLD) fld_node->nod_arg[e_fld_field];
+		field = (DSQL_FLD) fld_node->nod_arg[e_fld_field];
 		DEV_BLKCHK(field, dsql_type_fld);
 		parameter->par_name = field->fld_name;
 		parameter->par_rel_name = relation->rel_name;

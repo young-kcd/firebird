@@ -27,7 +27,7 @@ BLKDEF (type_plb, plb, 0)
 BLKDEF (type_vec, vec, sizeof (((VEC) 0)->vec_object[0]))
 BLKDEF (type_dbb, dbb, 1)
 BLKDEF (type_rel, qli_rel, 0)
-BLKDEF (type_fld, fld, 1)
+BLKDEF (type_fld, qli_fld, 1)
 BLKDEF (type_vcl, vcl, sizeof (((VCL) 0)->vcl_long[0]))
 BLKDEF (type_req, qli_req, 0)				/* Request block */
 BLKDEF (type_nod, qli_nod, sizeof (((QLI_NOD) 0)->nod_arg[0]))

@@ -488,7 +488,7 @@ void INI_init(void)
 	DBB				dbb;
 	JRD_REL				relation;
 	FMT				format;
-	FLD				field;
+	JRD_FLD				field;
 	VEC				formats;
 	VEC				fields;
 	int				n;
@@ -529,7 +529,7 @@ void INI_init(void)
 		}
 
 		relation->rel_fields = fields = vec::newVector(*dbb->dbb_permanent, n);
-		//field = (FLD *) fields->vec_object;
+		//field = (JRD_FLD *) fields->vec_object;
 		itr = fields->begin();
 		relation->rel_current_format = format = fmt::newFmt(*dbb->dbb_permanent, n);
 		relation->rel_formats = formats = vec::newVector(*dbb->dbb_permanent, 1);
@@ -543,7 +543,7 @@ void INI_init(void)
 			gfield = &gfields[fld_[RFLD_F_ID]];
 			desc->dsc_length = gfield->gfld_length;
 			desc->dsc_dtype = gfield->gfld_dtype;
-			*itr = field = FB_NEW_RPT(*dbb->dbb_permanent,0) fld();
+			*itr = field = FB_NEW_RPT(*dbb->dbb_permanent,0) jrd_fld();
 			field->fld_name = names[fld_[RFLD_F_NAME]];
 			field->fld_length = strlen(field->fld_name);
 		}
@@ -912,7 +912,7 @@ static void add_index_set(DBB		dbb,
 	IDX		idx;
 	idx::idx_repeat* tail;
 	USHORT	position;
-	FLD		field;
+	JRD_FLD		field;
 	float	selectivity;
 	BLK		handle1;
 	BLK		handle2;
@@ -956,7 +956,7 @@ static void add_index_set(DBB		dbb,
 				segment = &index->ini_idx_segment[position];
 				STORE(REQUEST_HANDLE handle2) Y IN RDB$INDEX_SEGMENTS
 					field =
-						(FLD) (*relation->rel_fields)[segment->ini_idx_rfld_id];
+						(JRD_FLD) (*relation->rel_fields)[segment->ini_idx_rfld_id];
 
 					Y.RDB$FIELD_POSITION = position;
 					PAD(X.RDB$INDEX_NAME, Y.RDB$INDEX_NAME);

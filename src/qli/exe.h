@@ -86,7 +86,7 @@ typedef struct qli_ctx {
     struct qli_rel	*ctx_relation;		/* Relation of context */
     struct qli_nod	*ctx_stream;		/* Stream of context */
     struct frm	*ctx_form;		/* Form block, if any */
-    struct fld	*ctx_variable;		/* Variable reference */
+    struct qli_fld	*ctx_variable;		/* Variable reference */
     struct qli_req	*ctx_request;		/* Request block */
     struct qli_msg	*ctx_message;		/* Message for data */
     struct qli_nod	*ctx_rse;		/* RSE node for root context */

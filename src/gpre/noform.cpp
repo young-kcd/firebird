@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: noform.cpp,v 1.3 2001-12-24 02:50:49 tamlin Exp $
+//	$Id: noform.cpp,v 1.4 2002-11-30 17:40:24 hippoman Exp $
 //
 
 #include "firebird.h"
@@ -40,7 +40,7 @@ typedef int *HANDLE;
 //		Lookup field in form.
 //  
 
-FLD FORM_lookup_field( FORM form, HANDLE object, char *string)
+GPRE_FLD FORM_lookup_field( FORM form, HANDLE object, char *string)
 {
 
 	return 0;
@@ -65,7 +65,7 @@ FORM FORM_lookup_form(DBB dbb, UCHAR * string)
 //		Lookup sub-form of a given form.
 //  
 
-FORM FORM_lookup_subform(FORM parent, FLD field)
+FORM FORM_lookup_subform(FORM parent, GPRE_FLD field)
 {
 
 	return NULL;

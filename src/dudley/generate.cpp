@@ -121,7 +121,7 @@ static void generate( STR blr, DUDLEY_NOD node)
  *	Generate blr.
  *
  **************************************/
-	FLD field;
+	DUDLEY_FLD field;
 	DUDLEY_REL relation;
 	SYM symbol;
 	CON constant;
@@ -147,7 +147,7 @@ static void generate( STR blr, DUDLEY_NOD node)
 		if (sub = node->nod_arg[s_fld_subs])
 			STUFF(blr_index);
 		STUFF(blr_field);
-		field = (FLD) node->nod_arg[s_fld_field];
+		field = (DUDLEY_FLD) node->nod_arg[s_fld_field];
 		context = (DUDLEY_CTX) node->nod_arg[s_fld_context];
 		STUFF(context->ctx_context_id);
 		symbol = field->fld_name;

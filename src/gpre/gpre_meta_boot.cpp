@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.9 2002-11-17 00:04:18 hippoman Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.10 2002-11-30 17:40:24 hippoman Exp $
  */
 
 #include "firebird.h"
@@ -61,8 +61,8 @@ static CONST UCHAR blr_bpb[] = { isc_bpb_version1,
 static SCHAR db_version_info[] = { gds__info_base_level };
 #endif
 
-static SLONG array_size(FLD);
-static void get_array(DBB, TEXT *, FLD);
+static SLONG array_size(GPRE_FLD);
+static void get_array(DBB, TEXT *, GPRE_FLD);
 static int get_intl_char_subtype(SSHORT *, UCHAR *, USHORT, DBB);
 static int resolve_charset_and_collation(SSHORT *, UCHAR *, UCHAR *);
 static int symbol_length(TEXT *);
@@ -75,11 +75,11 @@ static int upcase(TEXT *, TEXT *);
  *		If found, return field block.  If not, return NULL.
  */  
 
-FLD MET_context_field( GPRE_CTX context, char *string)
+GPRE_FLD MET_context_field( GPRE_CTX context, char *string)
 {
 	SYM symbol;
 	GPRE_PRC procedure;
-	FLD field;
+	GPRE_FLD field;
 	SCHAR name[NAME_SIZE];
 	SSHORT length;
 
@@ -101,7 +101,7 @@ FLD MET_context_field( GPRE_CTX context, char *string)
 	field = NULL;
 	for (symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym) {
 		if (symbol->sym_type == SYM_field &&
-			(field = (FLD) symbol->sym_object) &&
+			(field = (GPRE_FLD) symbol->sym_object) &&
 			field->fld_procedure == procedure)
 		{
 			return field;
@@ -159,12 +159,12 @@ BOOLEAN MET_database(DBB dbb, BOOLEAN print_version)
  *		Initialize the size of the field.
  */  
 
-USHORT MET_domain_lookup(GPRE_REQ request, FLD field, char *string)
+USHORT MET_domain_lookup(GPRE_REQ request, GPRE_FLD field, char *string)
 {
 	SYM symbol;
 	DBB dbb;
 	SCHAR name[NAME_SIZE];
-	FLD d_field;
+	GPRE_FLD d_field;
 	SSHORT length;
 	SSHORT found = FALSE;
 
@@ -177,7 +177,7 @@ USHORT MET_domain_lookup(GPRE_REQ request, FLD field, char *string)
 
 	for (symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 		if ((symbol->sym_type == SYM_field) &&
-			((d_field = (FLD) symbol->sym_object) && (d_field != field))) {
+			((d_field = (GPRE_FLD) symbol->sym_object) && (d_field != field))) {
 			field->fld_length = d_field->fld_length;
 			field->fld_scale = d_field->fld_scale;
 			field->fld_sub_type = d_field->fld_sub_type;
@@ -295,10 +295,10 @@ LLS MET_get_primary_key(DBB dbb, TEXT * relation_name)
  *		If found, return field block.  If not, return NULL.
  */  
 
-FLD MET_field(GPRE_REL relation, char *string)
+GPRE_FLD MET_field(GPRE_REL relation, char *string)
 {
 	SYM symbol;
-	FLD field;
+	GPRE_FLD field;
 	DBB dbb;
 	SCHAR name[NAME_SIZE];
 	SSHORT length;
@@ -314,7 +314,7 @@ FLD MET_field(GPRE_REL relation, char *string)
 		if (symbol->sym_type == SYM_keyword &&
 			symbol->sym_keyword == (int) KW_DBKEY) return relation->rel_dbkey;
 		else if (symbol->sym_type == SYM_field &&
-				 (field = (FLD) symbol->sym_object) &&
+				 (field = (GPRE_FLD) symbol->sym_object) &&
 				 field->fld_relation == relation) return field;
 
 	if (sw_language == lang_internal)
@@ -332,7 +332,7 @@ FLD MET_field(GPRE_REL relation, char *string)
 GPRE_NOD MET_fields(GPRE_CTX context)
 {
 	DBB dbb;
-	FLD field;
+	GPRE_FLD field;
 	LLS stack;
 	GPRE_NOD node, field_node;
 	REF reference;
@@ -514,7 +514,7 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT * length)
 GPRE_PRC MET_get_procedure(DBB dbb, TEXT * string, TEXT * owner_name)
 {
 	SYM symbol;
-	FLD *fld_list, field;
+	GPRE_FLD *fld_list, field;
 	GPRE_PRC procedure;
 	USHORT length, type, count;
 	SCHAR name[NAME_SIZE], owner[NAME_SIZE];
@@ -597,7 +597,7 @@ INTLSYM MET_get_text_subtype(SSHORT ttype)
 UDF MET_get_udf(DBB dbb, TEXT * string)
 {
 	SYM symbol;
-	FLD field;
+	GPRE_FLD field;
 	UDF udf;
 	USHORT length, count;
 	SCHAR name[NAME_SIZE];
@@ -677,7 +677,7 @@ void MET_load_hash_table( DBB dbb)
 	GPRE_REL relation;
 	GPRE_PRC procedure;
 	SYM symbol;
-	FLD dbkey;
+	GPRE_FLD dbkey;
 	UDF udf;
 	TEXT *p;
 	int *handle, *handle2;
@@ -701,13 +701,13 @@ void MET_load_hash_table( DBB dbb)
  *		Make a field symbol.
  */  
 
-FLD MET_make_field(SCHAR * name,
+GPRE_FLD MET_make_field(SCHAR * name,
 				   SSHORT dtype, SSHORT length, BOOLEAN insert_flag)
 {
-	FLD field;
+	GPRE_FLD field;
 	SYM symbol;
 
-	field = (FLD) ALLOC(FLD_LEN);
+	field = (GPRE_FLD) ALLOC(FLD_LEN);
 	field->fld_length = length;
 	field->fld_dtype = dtype;
 	field->fld_symbol = symbol =
@@ -757,7 +757,7 @@ GPRE_REL MET_make_relation(SCHAR * name)
  *		Lookup a type name for a field.
  */  
 
-BOOLEAN MET_type(FLD field, TEXT * string, SSHORT * ptr)
+BOOLEAN MET_type(GPRE_FLD field, TEXT * string, SSHORT * ptr)
 {
 	GPRE_REL relation;
 	DBB dbb;
@@ -804,7 +804,7 @@ BOOLEAN MET_trigger_exists(DBB dbb, TEXT * trigger_name)
  *		Compute and return the size of the array.
  */  
 
-static SLONG array_size( FLD field)
+static SLONG array_size( GPRE_FLD field)
 {
 	ARY array_block;
 	DIM dimension;
@@ -825,9 +825,9 @@ static SLONG array_size( FLD field)
  *		See if field is array.
  */  
 
-static void get_array( DBB dbb, TEXT * field_name, FLD field)
+static void get_array( DBB dbb, TEXT * field_name, GPRE_FLD field)
 {
-	FLD sub_field;
+	GPRE_FLD sub_field;
 	ARY array_block;
 	DIM dimension_block, last_dimension_block;
 

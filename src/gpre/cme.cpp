@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cme.cpp,v 1.5 2002-11-17 00:04:18 hippoman Exp $
+//	$Id: cme.cpp,v 1.6 2002-11-30 17:40:24 hippoman Exp $
 //
 
 #include "firebird.h"
@@ -51,14 +51,14 @@ static GPRE_NOD cmp_field(GPRE_NOD, GPRE_REQ);
 static GPRE_NOD cmp_literal(GPRE_NOD, GPRE_REQ);
 static void cmp_map(MAP, GPRE_REQ);
 static void cmp_plan(GPRE_NOD, GPRE_REQ);
-static void cmp_sdl_dtype(FLD, REF);
+static void cmp_sdl_dtype(GPRE_FLD, REF);
 static GPRE_NOD cmp_udf(GPRE_NOD, GPRE_REQ);
 static GPRE_NOD cmp_value(GPRE_NOD, GPRE_REQ);
-static USHORT get_string_len(FLD);
+static USHORT get_string_len(GPRE_FLD);
 static void stuff_cstring(GPRE_REQ, const char *);
 static void stuff_sdl_dimension(DIM, REF, SSHORT);
-static void stuff_sdl_element(REF, FLD);
-static void stuff_sdl_loops(REF, FLD);
+static void stuff_sdl_element(REF, GPRE_FLD);
+static void stuff_sdl_loops(REF, GPRE_FLD);
 static void stuff_sdl_number(SLONG, REF);
 
 #define USER_LENGTH	32
@@ -380,14 +380,14 @@ void CME_expr(GPRE_NOD node, GPRE_REQ request)
 //		Compute datatype, length, and scale of an expression.
 //  
 
-void CME_get_dtype( GPRE_NOD node, FLD f)
+void CME_get_dtype( GPRE_NOD node, GPRE_FLD f)
 {
-	struct fld field1, field2;
+	struct gpre_fld field1, field2;
 	SSHORT dtype_max;
 	TEXT *string;
 	MEL element;
 	REF reference;
-	FLD tmp_field;
+	GPRE_FLD tmp_field;
 	UDF udf;
 
 	f->fld_dtype = 0;
@@ -955,7 +955,7 @@ void CME_get_dtype( GPRE_NOD node, FLD f)
 
 	case nod_cast:
 		CME_get_dtype(node->nod_arg[0], &field1);
-		tmp_field = (FLD) node->nod_arg[1];
+		tmp_field = (GPRE_FLD) node->nod_arg[1];
 		ASSIGN_DTYPE(f, tmp_field);
 		if (f->fld_length == 0)
 			f->fld_length = field1.fld_length;
@@ -1206,7 +1206,7 @@ void CME_rse(RSE rse, GPRE_REQ request)
 
 static GPRE_NOD cmp_array( GPRE_NOD node, GPRE_REQ request)
 {
-	FLD field;
+	GPRE_FLD field;
 	REF reference;
 	TEXT *p;
 
@@ -1313,7 +1313,7 @@ static void cmp_cast( GPRE_NOD node, GPRE_REQ request)
 {
 
 	STUFF(blr_cast);
-	CMP_external_field(request, (FLD) node->nod_arg[1]);
+	CMP_external_field(request, (GPRE_FLD) node->nod_arg[1]);
 	CME_expr(node->nod_arg[0], request);
 }
 
@@ -1325,7 +1325,7 @@ static void cmp_cast( GPRE_NOD node, GPRE_REQ request)
 
 static GPRE_NOD cmp_field( GPRE_NOD node, GPRE_REQ request)
 {
-	FLD field;
+	GPRE_FLD field;
 	REF reference;
 	GPRE_CTX context;
 
@@ -1669,7 +1669,7 @@ static void cmp_plan( GPRE_NOD plan_expression, GPRE_REQ request)
 //       this datatype.
 //  
 
-static void cmp_sdl_dtype( FLD field, REF reference)
+static void cmp_sdl_dtype( GPRE_FLD field, REF reference)
 {
 	TEXT s[50];
 
@@ -1848,7 +1848,7 @@ static GPRE_NOD cmp_value( GPRE_NOD node, GPRE_REQ request)
 //		Figure out a text length from a datatype and a length
 //  
 
-static USHORT get_string_len( FLD field)
+static USHORT get_string_len( GPRE_FLD field)
 {
 	DSC tmp_dsc;
 
@@ -1920,7 +1920,7 @@ static void stuff_sdl_dimension(
 //       the SDL string for the array.
 //  
 
-static void stuff_sdl_element( REF reference, FLD field)
+static void stuff_sdl_element( REF reference, GPRE_FLD field)
 {
 	SSHORT i;
 
@@ -1958,7 +1958,7 @@ static void stuff_sdl_element( REF reference, FLD field)
 //       string for the array dimensions.
 //  
 
-static void stuff_sdl_loops( REF reference, FLD field)
+static void stuff_sdl_loops( REF reference, GPRE_FLD field)
 {
 	SSHORT i;
 	DIM dimension;

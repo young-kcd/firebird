@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.20 2002-11-25 10:24:48 dimitr Exp $
+$Id: blb.cpp,v 1.21 2002-11-30 17:43:18 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -1379,7 +1379,7 @@ void BLB_put_slice(	TDBB	tdbb,
 /* Make sure relation is scanned */
 	MET_scan_relation(tdbb, relation);
 
-	FLD field;
+	JRD_FLD field;
 	if (n < 0 || !(field = MET_get_field(relation, n))) {
 		IBERROR(197);			/* msg 197 field for array not known */
 	}

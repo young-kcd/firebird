@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: sqe.cpp,v 1.6 2002-11-20 23:13:21 hippoman Exp $
+//  $Id: sqe.cpp,v 1.7 2002-11-30 17:40:24 hippoman Exp $
 //  Revision 1.3  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -38,7 +38,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sqe.cpp,v 1.6 2002-11-20 23:13:21 hippoman Exp $
+//	$Id: sqe.cpp,v 1.7 2002-11-30 17:40:24 hippoman Exp $
 //
 #include "firebird.h"
 #include <stdio.h>
@@ -80,7 +80,7 @@ static BOOLEAN compare_expr(GPRE_NOD, GPRE_NOD);
 static GPRE_NOD copy_fields(GPRE_NOD, MAP);
 static GPRE_NOD explode_asterisk(GPRE_NOD, int, RSE);
 static GPRE_NOD explode_asterisk_all(GPRE_NOD, int, RSE, BOOLEAN);
-static FLD get_ref(GPRE_NOD);
+static GPRE_FLD get_ref(GPRE_NOD);
 static GPRE_NOD implicit_any(GPRE_REQ, GPRE_NOD, enum nod_t, enum nod_t);
 static GPRE_NOD merge(GPRE_NOD, GPRE_NOD);
 static GPRE_NOD merge_fields(GPRE_NOD, GPRE_NOD, int, BOOLEAN);
@@ -115,9 +115,9 @@ static GPRE_NOD post_map(GPRE_NOD, MAP);
 static GPRE_NOD post_select_list(GPRE_NOD, MAP);
 static void pop_scope(GPRE_REQ, struct scope *);
 static void push_scope(GPRE_REQ, struct scope *);
-static FLD resolve(GPRE_NOD, GPRE_CTX, GPRE_CTX *, ACT *);
+static GPRE_FLD resolve(GPRE_NOD, GPRE_CTX, GPRE_CTX *, ACT *);
 static GPRE_CTX resolve_asterisk(TOK, RSE);
-static void set_ref(GPRE_NOD, FLD);
+static void set_ref(GPRE_NOD, GPRE_FLD);
 static char *upcase_string(char *);
 static BOOLEAN validate_references(GPRE_NOD, GPRE_NOD);
 static void dialect1_bad_type(USHORT);
@@ -217,7 +217,7 @@ GPRE_CTX SQE_context(GPRE_REQ request)
 	SCHAR r_name[NAME_SIZE + 1], db_name[NAME_SIZE + 1],
 		owner_name[NAME_SIZE + 1];
 	SCHAR s[ERROR_LENGTH];
-	FLD field;
+	GPRE_FLD field;
 	GPRE_NOD *input;
 
 	assert_IS_REQ(request);
@@ -756,7 +756,7 @@ REF SQE_parameter(GPRE_REQ request, BOOLEAN aster_ok)
 
 	for (symbol = token.tok_symbol; symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_variable) {
-			reference->ref_field = (FLD) symbol->sym_object;
+			reference->ref_field = (GPRE_FLD) symbol->sym_object;
 			break;
 		}
 
@@ -778,7 +778,7 @@ REF SQE_parameter(GPRE_REQ request, BOOLEAN aster_ok)
 //		Procedure called from EXP_array to post the "subscript field".
 //  
 
-void SQE_post_field( GPRE_NOD input, FLD field)
+void SQE_post_field( GPRE_NOD input, GPRE_FLD field)
 {
 	GPRE_NOD *ptr, *end;
 	REF reference;
@@ -832,7 +832,7 @@ void SQE_post_field( GPRE_NOD input, FLD field)
 //		isn't a context, well, there isn't a context.
 //  
 
-REF SQE_post_reference(GPRE_REQ request, FLD field, GPRE_CTX context, GPRE_NOD node)
+REF SQE_post_reference(GPRE_REQ request, GPRE_FLD field, GPRE_CTX context, GPRE_NOD node)
 {
 	REF reference;
 
@@ -861,7 +861,7 @@ REF SQE_post_reference(GPRE_REQ request, FLD field, GPRE_CTX context, GPRE_NOD n
 //  If there isn't a field given, make one up 
 
 	if (!field) {
-		field = (FLD) ALLOC(FLD_LEN);
+		field = (GPRE_FLD) ALLOC(FLD_LEN);
 		CME_get_dtype(node, field);
 		if (field->fld_dtype && (field->fld_dtype <= dtype_any_text))
 			field->fld_flags |= FLD_text;
@@ -897,7 +897,7 @@ BOOLEAN SQE_resolve(GPRE_NOD node, GPRE_REQ request, RSE rse)
 {
 	REF reference;
 	GPRE_CTX context;
-	FLD field;
+	GPRE_FLD field;
 	GPRE_NOD *ptr, *end, node_arg;
 	TOK f_token, q_token;
 	SSHORT i;
@@ -1201,7 +1201,7 @@ REF SQE_variable(GPRE_REQ request, BOOLEAN aster_ok)
 
 	for (symbol = token.tok_symbol; symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_variable) {
-			reference->ref_field = (FLD) symbol->sym_object;
+			reference->ref_field = (GPRE_FLD) symbol->sym_object;
 			break;
 		}
 
@@ -1351,17 +1351,17 @@ static GPRE_NOD explode_asterisk_all( GPRE_NOD fields, int n, RSE rse, BOOLEAN r
 //		field for determining the data type of a host variable.
 //  
 
-static FLD get_ref( GPRE_NOD expr)
+static GPRE_FLD get_ref( GPRE_NOD expr)
 {
 	REF ref;
 	GPRE_NOD *ptr, *end, node;
-	FLD field;
+	GPRE_FLD field;
 	MEL element;
 
 	assert_IS_NOD(expr);
 
 	if (expr->nod_type == nod_via || expr->nod_type == nod_cast) {
-		field = (FLD) ALLOC(FLD_LEN);
+		field = (GPRE_FLD) ALLOC(FLD_LEN);
 		CME_get_dtype(expr, field);
 		if (field->fld_dtype && (field->fld_dtype <= dtype_any_text))
 			field->fld_flags |= FLD_text;
@@ -1593,7 +1593,7 @@ static GPRE_NOD negate( GPRE_NOD expr)
 
 static void pair( GPRE_NOD expr1, GPRE_NOD expr2)
 {
-	FLD field, temp;
+	GPRE_FLD field, temp;
 
 	assert_IS_NOD(expr1);
 	assert_IS_NOD(expr2);
@@ -1827,7 +1827,7 @@ static GPRE_NOD par_and( GPRE_REQ request, USHORT * paren_count)
 
 static GPRE_NOD par_collate( GPRE_REQ request, GPRE_NOD arg)
 {
-	FLD field;
+	GPRE_FLD field;
 	GPRE_NOD node;
 
 	assert_IS_REQ(request);
@@ -1836,7 +1836,7 @@ static GPRE_NOD par_collate( GPRE_REQ request, GPRE_NOD arg)
 	node = MAKE_NODE(nod_cast, 2);
 	node->nod_count = 1;
 	node->nod_arg[0] = arg;
-	field = (FLD) ALLOC(FLD_LEN);
+	field = (GPRE_FLD) ALLOC(FLD_LEN);
 	node->nod_arg[1] = (GPRE_NOD) field;
 	CME_get_dtype(arg, field);
 	if (field->fld_dtype > dtype_any_text) {
@@ -2947,7 +2947,7 @@ static GPRE_NOD par_udf( GPRE_REQ request)
 	GPRE_NOD *input;
 	UDF udf, tmp_udf;
 	USHORT local_count;
-	FLD field;
+	GPRE_FLD field;
 	SCHAR s[ERROR_LENGTH];
 	DBB db;
 	TEXT *gen_name;
@@ -3088,7 +3088,7 @@ static GPRE_NOD par_udf( GPRE_REQ request)
 		node->nod_arg[0] = SQE_value_or_null(request, FALSE, 0, 0);
 		if (!MATCH(KW_AS))
 			SYNTAX_ERROR("AS");
-		field = (FLD) ALLOC(FLD_LEN);
+		field = (GPRE_FLD) ALLOC(FLD_LEN);
 		node->nod_arg[1] = (GPRE_NOD) field;
 		SQL_par_field_dtype(request, field, FALSE);
 		SQL_par_field_collate(request, field);
@@ -3320,12 +3320,12 @@ static void push_scope( GPRE_REQ request, struct scope *save_scope)
 //		errors.
 //  
 
-static FLD resolve(
+static GPRE_FLD resolve(
 				   GPRE_NOD node,
 				   GPRE_CTX context, GPRE_CTX * found_context, ACT * slice_action)
 {
 	SYM symbol, temp_symbol;
-	FLD field;
+	GPRE_FLD field;
 	TOK f_token, q_token;
 	RSE rs_stream;
 	SSHORT i;
@@ -3486,7 +3486,7 @@ static GPRE_CTX resolve_asterisk( TOK q_token, RSE rse)
 //		Set field reference for any host variables in expr to field_ref.
 //  
 
-static void set_ref( GPRE_NOD expr, FLD field_ref)
+static void set_ref( GPRE_NOD expr, GPRE_FLD field_ref)
 {
 	GPRE_NOD *ptr, *end;
 	REF ref;

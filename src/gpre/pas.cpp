@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.5 2002-11-20 23:13:21 hippoman Exp $
+//	$Id: pas.cpp,v 1.6 2002-11-30 17:40:24 hippoman Exp $
 //
 
 #include "firebird.h"
@@ -604,7 +604,7 @@ static void align( int column)
 
 static void asgn_from( ACT action, REF reference, int column)
 {
-	FLD field;
+	GPRE_FLD field;
 	TEXT *value, name[64], variable[20], temp[20];
 
 	for (; reference; reference = reference->ref_next) {
@@ -680,7 +680,7 @@ static void asgn_sqlda_from( REF reference, int number, TEXT * string, int colum
 
 static void asgn_to(ACT action, REF reference, int column)
 {
-	FLD field;
+	GPRE_FLD field;
 	REF source;
 	TEXT s[128];
 
@@ -719,7 +719,7 @@ static void asgn_to(ACT action, REF reference, int column)
 
 static void asgn_to_proc(REF reference, int column)
 {
-	FLD field;
+	GPRE_FLD field;
 	TEXT s[64];
 
 	for (; reference; reference = reference->ref_next) {
@@ -766,7 +766,7 @@ static void gen_at_end( ACT action, int column)
 static void gen_based( ACT action, int column)
 {
 	BAS based_on;
-	FLD field;
+	GPRE_FLD field;
 	TEXT s[64];
 	SSHORT datatype;
 	SLONG length;
@@ -1882,7 +1882,7 @@ static void gen_emodify( ACT action, int column)
 {
 	UPD modify;
 	REF reference, source;
-	FLD field;
+	GPRE_FLD field;
 	TEXT s1[20], s2[20];
 
 	modify = (UPD) action->act_object;
@@ -3718,7 +3718,7 @@ static gen_store( ACT action, int column)
 {
 	GPRE_REQ request;
 	REF reference;
-	FLD field;
+	GPRE_FLD field;
 	POR port;
 	TEXT name[64];
 
@@ -4006,7 +4006,7 @@ static void gen_window_suspend( ACT action, int column)
 
 static void make_array_declaration( REF reference)
 {
-	FLD field;
+	GPRE_FLD field;
 	TEXT *name;
 	TEXT s[64];
 	DIM dimension;
@@ -4121,7 +4121,7 @@ static make_ok_test( ACT action, GPRE_REQ request, int column)
 
 static void make_port( POR port, int column)
 {
-	FLD field;
+	GPRE_FLD field;
 	REF reference;
 	SYM symbol;
 	SSHORT flag;

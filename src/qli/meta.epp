@@ -55,15 +55,15 @@ DATABASE DB1 = FILENAME "yachts.lnk";
 
 extern USHORT sw_buffers;
 
-static void add_field(QLI_REL, FLD, USHORT);
-static void add_sql_field(QLI_REL, FLD, USHORT, RLB);
+static void add_field(QLI_REL, QLI_FLD, USHORT);
+static void add_sql_field(QLI_REL, QLI_FLD, USHORT, RLB);
 static int blob_copy(RLB, QLI_REL, SLONG *);
-static void change_field(QLI_REL, FLD);
-static int check_global_field(DBB, FLD, TEXT *);
+static void change_field(QLI_REL, QLI_FLD);
+static int check_global_field(DBB, QLI_FLD, TEXT *);
 static int check_relation(QLI_REL);
 static int clone_fields(QLI_REL, QLI_REL);
 static int clone_global_fields(QLI_REL, QLI_REL);
-static void define_global_field(DBB, FLD, SYM);
+static void define_global_field(DBB, QLI_FLD, SYM);
 static void delete_fields(QLI_REL);
 static STATUS detach(STATUS *, DBB);
 static int execute_dynamic_ddl(DBB, RLB);
@@ -161,7 +161,7 @@ static CONST struct rfr_tab_t rfr_table[] = {
 };
 
 
-int MET_declare( DBB database, FLD variable, NAM field_name)
+int MET_declare( DBB database, QLI_FLD variable, NAM field_name)
 {
 /**************************************
  *
@@ -187,7 +187,7 @@ int MET_declare( DBB database, FLD variable, NAM field_name)
 }
 
 
-void MET_define_field( DBB database, FLD field)
+void MET_define_field( DBB database, QLI_FLD field)
 {
 /**************************************
  *
@@ -203,7 +203,7 @@ void MET_define_field( DBB database, FLD field)
 
 	database = setup_update(database);
 
-	if (check_global_field(database, (FLD) NULL_PTR, field->fld_name->sym_string)) {
+	if (check_global_field(database, (QLI_FLD) NULL_PTR, field->fld_name->sym_string)) {
 		rollback_update(database);
 		ERRQ_print_error(233, field->fld_name->sym_string, NULL, NULL, NULL, NULL);	/* Msg233 global field %s already exists */
 	}
@@ -229,7 +229,7 @@ void MET_define_index( SYN node)
 	DBB database;
 	QLI_REL relation;
 	SYN fields;
-	FLD field;
+	QLI_FLD field;
 	NAM *ptr;
 	SYM symbol;
 	int position, present;
@@ -343,7 +343,7 @@ void MET_define_relation( QLI_REL relation, QLI_REL source)
  **************************************/
 	DBB database;
 	SYM symbol;
-	FLD field;
+	QLI_FLD field;
 	USHORT position;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 
@@ -422,7 +422,7 @@ void MET_define_sql_relation( QLI_REL relation)
  **************************************/
 	DBB database;
 	SYM symbol;
-	FLD field;
+	QLI_FLD field;
 	USHORT position;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	RLB rlb;
@@ -823,7 +823,7 @@ void MET_fields( QLI_REL relation)
  *
  **************************************/
 	DBB database;
-	FLD field, *ptr;
+	QLI_FLD field, *ptr;
 	SYM symbol;
 	SLONG *blob;
 
@@ -847,7 +847,7 @@ void MET_fields( QLI_REL relation)
 
 		if (RFR.RDB$FIELD_POSITION > relation->rel_max_field_pos)
 			relation->rel_max_field_pos = RFR.RDB$FIELD_POSITION;
-		*ptr = field = (FLD) ALLOCPV(type_fld, 0);
+		*ptr = field = (QLI_FLD) ALLOCPV(type_fld, 0);
 		ptr = &field->fld_next;
 		field->fld_relation = relation;
 		if (symbol = make_symbol(RFR.RDB$FIELD_NAME, sizeof(RFR.RDB$FIELD_NAME))) {
@@ -1210,7 +1210,7 @@ SLONG *MET_meta_transaction(DBB database, int update_flag)
 }
 
 
-void MET_modify_field( DBB database, FLD field)
+void MET_modify_field( DBB database, QLI_FLD field)
 {
 /**************************************
  *
@@ -1375,7 +1375,7 @@ void MET_modify_index( SYN node)
 }
 
 
-void MET_modify_relation( QLI_REL relation, FLD fields)
+void MET_modify_relation( QLI_REL relation, QLI_FLD fields)
 {
 /**************************************
  *
@@ -1389,7 +1389,7 @@ void MET_modify_relation( QLI_REL relation, FLD fields)
  **************************************/
 	DBB database;
 	SYM relation_name, field_name;
-	FLD field;
+	QLI_FLD field;
 	USHORT count;
 
 	relation->rel_database = database = setup_update(relation->rel_database);
@@ -1603,7 +1603,7 @@ void MET_shutdown(void)
 }
 
 
-void MET_sql_alter_table( QLI_REL relation, FLD fields)
+void MET_sql_alter_table( QLI_REL relation, QLI_FLD fields)
 {
 /**************************************
  *
@@ -1617,7 +1617,7 @@ void MET_sql_alter_table( QLI_REL relation, FLD fields)
  **************************************/
 	DBB database;
 	SYM symbol;
-	FLD field;
+	QLI_FLD field;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	RLB rlb;
 	USHORT count;
@@ -1794,7 +1794,7 @@ SLONG *MET_transaction( NOD_T node_type, DBB database)
 }
 
 
-static void add_field( QLI_REL relation, FLD field, USHORT position)
+static void add_field( QLI_REL relation, QLI_FLD field, USHORT position)
 {
 /**************************************
  *
@@ -1875,7 +1875,7 @@ static void add_field( QLI_REL relation, FLD field, USHORT position)
 }
 
 
-static void add_sql_field( QLI_REL relation, FLD field, USHORT position, RLB rlb)
+static void add_sql_field( QLI_REL relation, QLI_FLD field, USHORT position, RLB rlb)
 {
 /**************************************
  *
@@ -2036,7 +2036,7 @@ static int blob_copy( RLB rlb, QLI_REL source, SLONG * source_blob_id)
 }
 
 
-static void change_field( QLI_REL relation, FLD field)
+static void change_field( QLI_REL relation, QLI_FLD field)
 {
 /**************************************
  *
@@ -2064,7 +2064,7 @@ static void change_field( QLI_REL relation, FLD field)
 
 	if (global_field
 		&&
-		!(check_global_field(database, (FLD) NULL_PTR, global_field->sym_string))) {
+		!(check_global_field(database, (QLI_FLD) NULL_PTR, global_field->sym_string))) {
 		rollback_update(database);
 		ERRQ_print_error(253, global_field->sym_string, NULL, NULL, NULL, NULL);	/* Msg253 global field %s does not exist */
 	}
@@ -2103,7 +2103,7 @@ static void change_field( QLI_REL relation, FLD field)
 }
 
 
-static int check_global_field( DBB database, FLD field, TEXT * name)
+static int check_global_field( DBB database, QLI_FLD field, TEXT * name)
 {
 /**************************************
  *
@@ -2113,7 +2113,7 @@ static int check_global_field( DBB database, FLD field, TEXT * name)
  *
  * Functional description
  *	Given a name, check for the existence of a global field
- *	by that name.  If a FLD block is supplied,
+ *	by that name.  If a QLI_FLD block is supplied,
  *		check its characteristics against the global.
  *	If it is not fully defined, flesh it out from the global.
  *
@@ -2712,7 +2712,7 @@ static int clone_global_fields( QLI_REL target, QLI_REL source)
 }
 
 
-static void define_global_field( DBB database, FLD field, SYM name)
+static void define_global_field( DBB database, QLI_FLD field, SYM name)
 {
 /**************************************
  *
@@ -2778,7 +2778,7 @@ static void delete_fields( QLI_REL relation)
  *	Delete field definitions.
  *
  **************************************/
-	FLD field;
+	QLI_FLD field;
 
 	while (field = relation->rel_fields) {
 		relation->rel_fields = field->fld_next;
@@ -3829,7 +3829,7 @@ static void purge_relation(QLI_REL relation)
  **************************************/
 	SYM symbol;
 	QLI_REL *ptr;
-	FLD field;
+	QLI_FLD field;
 	DBB database;
 
 	symbol = relation->rel_symbol;

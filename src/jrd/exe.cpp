@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.34 2002-11-24 13:47:17 skidder Exp $
+$Id: exe.cpp,v 1.35 2002-11-30 17:43:18 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -4070,7 +4070,7 @@ static void validate(TDBB tdbb, JRD_NOD list)
 			VEC			vector;
 			JRD_REL			relation;
 			JRD_REQ			request;
-			FLD			field;
+			JRD_FLD			field;
 			const char*	value;
 			TEXT		temp[128];
 			CONST TEXT*	name;
@@ -4106,7 +4106,7 @@ static void validate(TDBB tdbb, JRD_NOD list)
 
 				if ((vector = relation->rel_fields) &&
 					id < vector->count() &&
-					(field = (FLD) (*vector)[id]))
+					(field = (JRD_FLD) (*vector)[id]))
 				{
 					name = field->fld_name;
 				}

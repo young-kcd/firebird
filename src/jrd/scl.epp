@@ -523,7 +523,7 @@ int SCL_get_mask(CONST TEXT* relation_name, CONST TEXT* field_name)
  **************************************/
 	TDBB tdbb;
 	JRD_REL relation;
-	FLD field;
+	JRD_FLD field;
 	SSHORT id;
 	USHORT access;
 	SCL s_class;

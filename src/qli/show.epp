@@ -56,7 +56,7 @@ static void show_dbb(DBB);
 static void show_dbb_parameters(DBB);
 static int show_field_detail(DBB, TEXT *, TEXT *, SYN);
 static int show_field_instances(DBB, TEXT *);
-static void show_fields(QLI_REL, FLD);
+static void show_fields(QLI_REL, QLI_FLD);
 static void show_filt(QFL);
 static int show_filter_detail(DBB, TEXT *);
 static void show_filts(DBB);
@@ -174,7 +174,7 @@ void SHOW_stuff( SYN node)
 					 relation = relation->rel_next) {
 					if (!(relation->rel_flags & REL_system)) {
 						show_rel(relation);
-						show_fields(relation, (FLD) NULL_PTR);
+						show_fields(relation, (QLI_FLD) NULL_PTR);
 					}
 					if (QLI_abort)
 						return;
@@ -201,7 +201,7 @@ void SHOW_stuff( SYN node)
 				 relation = relation->rel_next)
 					if (!(relation->rel_flags & REL_system)) {
 					show_rel(relation);
-					show_fields(relation,(FLD)  NULL_PTR);
+					show_fields(relation,(QLI_FLD)  NULL_PTR);
 				}
 			ib_printf("\n");
 			break;
@@ -222,7 +222,7 @@ void SHOW_stuff( SYN node)
 				 relation = relation->rel_next) {
 				if (!(relation->rel_flags & REL_system)) {
 					show_rel(relation);
-					show_fields(relation, (FLD) NULL_PTR);
+					show_fields(relation, (QLI_FLD) NULL_PTR);
 				}
 				if (QLI_abort)
 					return;
@@ -262,7 +262,7 @@ void SHOW_stuff( SYN node)
 
 		case show_relation:
 			show_rel((QLI_REL) value);
-			show_fields((QLI_REL) value, (FLD) NULL_PTR);
+			show_fields((QLI_REL) value, (QLI_FLD) NULL_PTR);
 			show_view((QLI_REL) value);
 			show_rel_detail((QLI_REL) value);
 			break;
@@ -1030,7 +1030,7 @@ static int show_field_instances( DBB database, TEXT * field_name)
 }
 
 
-static void show_fields( QLI_REL relation, FLD fields)
+static void show_fields( QLI_REL relation, QLI_FLD fields)
 {
 /**************************************
  *
@@ -1043,7 +1043,7 @@ static void show_fields( QLI_REL relation, FLD fields)
  *
  **************************************/
 	DBB database;
-	FLD field;
+	QLI_FLD field;
 	SYM symbol;
 	USHORT max_name, l;
 
@@ -2679,7 +2679,7 @@ static void show_var( NAM var_name)
  *	Display a global variables.
  *
  **************************************/
-	FLD variable;
+	QLI_FLD variable;
 
 	for (variable = QLI_variables; variable; variable = variable->fld_next)
 		if (!strcmp(var_name->nam_string, variable->fld_name->sym_string))

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.23 2002-11-24 13:47:16 skidder Exp $ 
+  * $Id: evl.cpp,v 1.24 2002-11-30 17:43:18 hippoman Exp $ 
  */
 
 /*
@@ -1201,7 +1201,7 @@ BOOLEAN DLL_EXPORT EVL_field(register JRD_REL relation,
 		 * Handle Outer Joins and such specially!
 		 * Reference: Bug 10424, 10116
 		 */
-		FLD temp_field;
+		JRD_FLD temp_field;
 
 		/* rec_format == NULL indicates we're performing a 
 		   join-to-null operation for outer joins */
@@ -1219,7 +1219,7 @@ BOOLEAN DLL_EXPORT EVL_field(register JRD_REL relation,
 			}
 
 			if ( (temp_field =
-				reinterpret_cast <fld *>((fld*)(*relation->rel_fields)[id])) )
+				reinterpret_cast <jrd_fld *>((jrd_fld*)(*relation->rel_fields)[id])) )
 					if (temp_field->fld_default_value
 									   && temp_field->fld_not_null) {
 					if (temp_field->fld_default_value->nod_type == nod_user_name

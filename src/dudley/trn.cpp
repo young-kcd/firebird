@@ -34,24 +34,24 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/gdsassert.h"
 
-static void add_dimensions(STR, FLD);
-static void add_field(STR, FLD, DUDLEY_REL);
+static void add_dimensions(STR, DUDLEY_FLD);
+static void add_field(STR, DUDLEY_FLD, DUDLEY_REL);
 static void add_files(STR, FIL, DBB);
 static void add_filter(STR, FILTER);
 static void add_function(STR, FUNC);
 static void add_function_arg(STR, FUNCARG);
 static void add_generator(STR, SYM);
-static void add_global_field(STR, FLD);
+static void add_global_field(STR, DUDLEY_FLD);
 static void add_index(STR, DUDLEY_IDX);
 static void add_relation(STR, DUDLEY_REL);
 static void add_security_class(STR, SCL);
 static void add_trigger(STR, DUDLEY_TRG);
 static void add_trigger_msg(STR, TRGMSG);
 static void add_view(STR, DUDLEY_REL);
-static void drop_field(STR, FLD);
+static void drop_field(STR, DUDLEY_FLD);
 static void drop_filter(STR, FILTER);
 static void drop_function(STR, FUNC);
-static void drop_global_field(STR, FLD);
+static void drop_global_field(STR, DUDLEY_FLD);
 static void drop_index(STR, DUDLEY_IDX);
 static void drop_relation(STR, DUDLEY_REL);
 static void drop_security_class(STR, SCL);
@@ -62,8 +62,8 @@ static int gen_dyn_c(int *, int, SCHAR *);
 static int gen_dyn_cxx(int *, int, SCHAR *);
 static int gen_dyn_pas(int *, int, SCHAR *);
 static void modify_database(STR, DBB);
-static void modify_field(STR, FLD, DUDLEY_REL);
-static void modify_global_field(STR, FLD);
+static void modify_field(STR, DUDLEY_FLD, DUDLEY_REL);
+static void modify_global_field(STR, DUDLEY_FLD);
 static void modify_index(STR, DUDLEY_IDX);
 static void modify_relation(STR, DUDLEY_REL);
 static void modify_trigger(STR, DUDLEY_TRG);
@@ -153,15 +153,15 @@ void TRN_translate(void)
 				break;
 
 			case act_a_field:
-				add_field(dyn, (FLD) action->act_object, NULL);
+				add_field(dyn, (DUDLEY_FLD) action->act_object, NULL);
 				break;
 
 			case act_m_field:
-				modify_field(dyn, (FLD) action->act_object, NULL);
+				modify_field(dyn, (DUDLEY_FLD) action->act_object, NULL);
 				break;
 
 			case act_d_field:
-				drop_field(dyn, (FLD) action->act_object);
+				drop_field(dyn, (DUDLEY_FLD) action->act_object);
 				break;
 
 			case act_a_filter:
@@ -189,15 +189,15 @@ void TRN_translate(void)
 				break;
 
 			case act_a_gfield:
-				add_global_field(dyn, (FLD) action->act_object);
+				add_global_field(dyn, (DUDLEY_FLD) action->act_object);
 				break;
 
 			case act_m_gfield:
-				modify_global_field(dyn, (FLD) action->act_object);
+				modify_global_field(dyn, (DUDLEY_FLD) action->act_object);
 				break;
 
 			case act_d_gfield:
-				drop_global_field(dyn, (FLD) action->act_object);
+				drop_global_field(dyn, (DUDLEY_FLD) action->act_object);
 				break;
 
 			case act_a_index:
@@ -351,7 +351,7 @@ void TRN_translate(void)
 }
 
 
-static void add_dimensions( STR dyn, FLD field)
+static void add_dimensions( STR dyn, DUDLEY_FLD field)
 {
 /**************************************
  *
@@ -383,7 +383,7 @@ static void add_dimensions( STR dyn, FLD field)
 }
 
 
-static void add_field( STR dyn, FLD field, DUDLEY_REL view)
+static void add_field( STR dyn, DUDLEY_FLD field, DUDLEY_REL view)
 {
 /**************************************
  *
@@ -398,7 +398,7 @@ static void add_field( STR dyn, FLD field, DUDLEY_REL view)
  **************************************/
 	SYM name, symbol;
 	DUDLEY_REL relation;
-	FLD source_field;
+	DUDLEY_FLD source_field;
 	int n;
 
 	name = field->fld_name;
@@ -594,7 +594,7 @@ static void add_generator( STR dyn, SYM symbol)
 }
 
 
-static void add_global_field( STR dyn, FLD field)
+static void add_global_field( STR dyn, DUDLEY_FLD field)
 {
 /**************************************
  *
@@ -802,7 +802,7 @@ static void add_view( STR dyn, DUDLEY_REL relation)
  *	Generate dynamic DDL to create a view.
  *
  **************************************/
-	FLD field;
+	DUDLEY_FLD field;
 	DUDLEY_CTX context;
 	DUDLEY_NOD *arg, contexts;
 	SSHORT i;
@@ -881,7 +881,7 @@ BOOLEAN TRN_get_buffer(STR dyn, USHORT length)
 }
 
 
-static void drop_field( STR dyn, FLD field)
+static void drop_field( STR dyn, DUDLEY_FLD field)
 {
 /**************************************
  *
@@ -950,7 +950,7 @@ static void drop_function( STR dyn, FUNC function)
 }
 
 
-static void drop_global_field( STR dyn, FLD field)
+static void drop_global_field( STR dyn, DUDLEY_FLD field)
 {
 /**************************************
  *
@@ -1212,7 +1212,7 @@ static void modify_database( STR dyn, DBB database)
 }
 
 
-static void modify_field( STR dyn, FLD field, DUDLEY_REL view)
+static void modify_field( STR dyn, DUDLEY_FLD field, DUDLEY_REL view)
 {
 /**************************************
  *
@@ -1227,7 +1227,7 @@ static void modify_field( STR dyn, FLD field, DUDLEY_REL view)
  **************************************/
 	SYM name, symbol;
 	DUDLEY_REL relation;
-	FLD source_field;
+	DUDLEY_FLD source_field;
 	int n;
 
 	name = field->fld_name;
@@ -1292,7 +1292,7 @@ static void modify_field( STR dyn, FLD field, DUDLEY_REL view)
 }
 
 
-static void modify_global_field( STR dyn, FLD field)
+static void modify_global_field( STR dyn, DUDLEY_FLD field)
 {
 /**************************************
  *

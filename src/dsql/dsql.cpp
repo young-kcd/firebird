@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: dsql.cpp,v 1.34 2002-11-20 23:11:22 hippoman Exp $
+$Id: dsql.cpp,v 1.35 2002-11-30 17:36:40 hippoman Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -1764,7 +1764,7 @@ void DSQL_pretty(DSQL_NOD node, int column)
 	DSQL_REL relation;
 	DSQL_PRC procedure;
 	DSQL_CTX context;
-	FLD field;
+	DSQL_FLD field;
 	STR string;
 	VAR variable;
 
@@ -1804,7 +1804,7 @@ void DSQL_pretty(DSQL_NOD node, int column)
 		FREE_MEM_RETURN;
 
 	case (TEXT) dsql_type_fld:
-		PRINTF("%sFIELD: %s\n", buffer, ((FLD) node)->fld_name);
+		PRINTF("%sFIELD: %s\n", buffer, ((DSQL_FLD) node)->fld_name);
 		FREE_MEM_RETURN;
 
 	case (TEXT) dsql_type_sym:
@@ -2281,7 +2281,7 @@ void DSQL_pretty(DSQL_NOD node, int column)
 		context = (DSQL_CTX) node->nod_arg[e_fld_context];
 		relation = context->ctx_relation;
  		procedure = context->ctx_procedure;
-		field = (FLD) node->nod_arg[e_fld_field];
+		field = (DSQL_FLD) node->nod_arg[e_fld_field];
 		PRINTF("%sfield %s.%s, context %d\n", buffer,
  			(relation != NULL ? 
  				relation->rel_name : 

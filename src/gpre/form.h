@@ -30,9 +30,9 @@ typedef struct form {
 	struct dbb *form_dbb;		/* Parent database */
 	struct form *form_next;		/* Next form in database */
 	struct sym *form_name;		/* Form name */
-	struct fld *form_fields;	/* Form fields */
+	struct gpre_fld *form_fields;	/* Form fields */
 	struct gpre_req *form_parent;	/* Parent form request */
-	struct fld *form_field;		/* Field in parent */
+	struct gpre_fld *form_field;		/* Field in parent */
 	int *form_object;			/* Form data structure */
 	TEXT *form_handle;			/* Runtime form handle */
 } *FORM;

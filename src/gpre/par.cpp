@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.8 2002-11-17 00:04:18 hippoman Exp $
+//  $Id: par.cpp,v 1.9 2002-11-30 17:40:24 hippoman Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: par.cpp,v 1.8 2002-11-17 00:04:18 hippoman Exp $
+//	$Id: par.cpp,v 1.9 2002-11-30 17:40:24 hippoman Exp $
 //
 
 #include "firebird.h"
@@ -151,7 +151,7 @@ static LLS		cur_form;
 static LLS		cur_error;
 static LLS		cur_menu;
 static LLS		routine_stack;
-static FLD		flag_field;
+static GPRE_FLD		flag_field;
 
 
 //____________________________________________________________
@@ -465,7 +465,7 @@ ACT PAR_action()
 SSHORT PAR_blob_subtype(DBB dbb)
 {
 	GPRE_REL relation;
-	FLD field;
+	GPRE_FLD field;
 	SSHORT const_subtype;
 
 //  Check for symbol type name 
@@ -706,7 +706,7 @@ ACT PAR_event_init( USHORT sql)
 	ACT action;
 	LLS stack = NULL;
 	SYM symbol;
-	FLD field;
+	GPRE_FLD field;
 	GPRE_CTX context;
 	REF reference;
 	int count = 0;
@@ -1019,7 +1019,7 @@ TEXT *PAR_native_value(USHORT array_ref, USHORT handle_ref)
 //		make one.
 //  
 
-FLD PAR_null_field()
+GPRE_FLD PAR_null_field()
 {
 
 	if (flag_field)
@@ -1308,7 +1308,7 @@ static ACT par_any()
 
 static ACT par_array_element()
 {
-	register FLD field, element;
+	register GPRE_FLD field, element;
 	register ACT action;
 	register REF reference;
 	GPRE_REQ request;
@@ -1366,7 +1366,7 @@ static ACT par_at()
 
 static ACT par_based()
 {
-	FLD field;
+	GPRE_FLD field;
 	BAS based_on;
 	GPRE_REL relation;
 	ACT action;
@@ -1671,7 +1671,7 @@ static ACT par_clear_handles()
 
 static ACT par_derived_from()
 {
-	FLD field;
+	GPRE_FLD field;
 	BAS based_on;
 	GPRE_REL relation;
 	ACT action;
@@ -2414,7 +2414,7 @@ static ACT par_form_field()
 	PAR_error("FORMs not supported");
 	return NULL;				/* silence compiler */
 #else
-	FLD field;
+	GPRE_FLD field;
 	ACT action;
 	GPRE_CTX context;
 	USHORT first;
@@ -2448,7 +2448,7 @@ static void par_form_fields( GPRE_REQ request, LLS * stack)
 #ifdef NO_PYXIS
 	PAR_error("FORMs not supported");
 #else
-	FLD field, subfield;
+	GPRE_FLD field, subfield;
 	FORM form;
 	REF reference, parent;
 
@@ -2649,7 +2649,7 @@ static ACT par_item_for( ACT_T type)
 	SYM symbol;
 	GPRE_REQ request, parent;
 	GPRE_CTX context;
-	FLD field;
+	GPRE_FLD field;
 	REF reference;
 	TEXT *form_handle;
 
@@ -3117,7 +3117,7 @@ static ACT par_on_error()
 static ACT par_open_blob( ACT_T act_op, SYM symbol)
 {
 	GPRE_CTX context;
-	FLD field;
+	GPRE_FLD field;
 	REF reference;
 	ACT action;
 	BLB blob;
@@ -3617,7 +3617,7 @@ static ACT par_slice( ACT_T type)
 {
 
 	ACT action;
-	FLD field;
+	GPRE_FLD field;
 	GPRE_CTX context;
 	ARY info;
 	SLC slice;
@@ -3911,7 +3911,7 @@ static ACT par_trans( ACT_T act_op)
 static ACT par_type()
 {
 	GPRE_REL relation;
-	FLD field;
+	GPRE_FLD field;
 	ACT action;
 	SSHORT type;
 	TEXT s[64];
@@ -3967,7 +3967,7 @@ static ACT par_type()
 static void par_var_c( enum kwwords keyword)
 {
 	SYM symbol;
-	FLD field;
+	GPRE_FLD field;
 	USHORT dtype, length;
 
 	if (sw_language != lang_c)
@@ -4010,7 +4010,7 @@ static void par_var_c( enum kwwords keyword)
 	for (;;) {
 		if (token.tok_type != tok_ident)
 			break;
-		field = (FLD) ALLOC(FLD_LEN);
+		field = (GPRE_FLD) ALLOC(FLD_LEN);
 		field->fld_symbol = symbol =
 			MSC_symbol(SYM_variable, token.tok_string, token.tok_length,
 					   field);
@@ -4042,7 +4042,7 @@ static void par_var_c( enum kwwords keyword)
 
 static ACT par_variable()
 {
-	register FLD field, cast;
+	register GPRE_FLD field, cast;
 	register ACT action;
 	register REF reference, flag;
 	GPRE_REQ request;

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.18 2002-11-20 23:13:21 hippoman Exp $
+ * $Id: gpre.h,v 1.19 2002-11-30 17:40:24 hippoman Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -400,7 +400,7 @@ typedef struct ary {
 /* Based on block.  Used for based on clause */
 
 typedef struct bas {
-	struct fld *bas_field;		/* database field referenced */
+	struct gpre_fld *bas_field;		/* database field referenced */
 	struct lls *bas_variables;	/* list of variables based on above */
 	struct str *bas_db_name;	/* database name if present and required */
 	struct str *bas_rel_name;	/* relation name if no db statement */
@@ -685,7 +685,7 @@ typedef struct dyn {
 
 /* Field block.  Fields are what farms and databases are all about */
 
-typedef struct fld {
+typedef struct gpre_fld {
 	USHORT fld_dtype;			/* data type of field */
 	FLD_LENGTH fld_length;		/* field length in bytes */
 	SSHORT fld_scale;			/* scale factor */
@@ -695,8 +695,8 @@ typedef struct fld {
 	USHORT fld_position;		/* Field position in relation */
 	USHORT fld_precision;		/* Field precision */
 	SSHORT fld_sub_type;		/* Field sub-type */
-	struct fld *fld_next;		/* next field in relation */
-	struct fld *fld_array;		/* array element if field is array */
+	struct gpre_fld *fld_next;		/* next field in relation */
+	struct gpre_fld *fld_array;		/* array element if field is array */
 	struct gpre_rel *fld_relation;	/* relation */
 	struct gpre_prc *fld_procedure;	/* procedure */
 	struct sym *fld_symbol;		/* symbol for field */
@@ -719,9 +719,9 @@ typedef struct fld {
 	SSHORT fld_charset_id;		/* Field character set id for text */
 	SSHORT fld_collate_id;		/* Field collation id for text */
 	SSHORT fld_ttype;			/* ID of text type's implementation */
-} *FLD;
+} *GPRE_FLD;
 
-#define FLD_LEN		sizeof (struct fld)
+#define FLD_LEN		sizeof (struct gpre_fld)
 
 #define FLD_blob	 1
 #define FLD_text	 2
@@ -756,8 +756,8 @@ typedef struct decl_udf {
 	TEXT *decl_udf_name;
 	TEXT *decl_udf_entry_point;
 	TEXT *decl_udf_module_name;
-	struct fld *decl_udf_arg_list;
-	struct fld *decl_udf_return_type;
+	struct gpre_fld *decl_udf_arg_list;
+	struct gpre_fld *decl_udf_return_type;
 	USHORT decl_udf_return_mode;	/* BY VALUE or BY REFERENCE */
 	SSHORT decl_udf_return_parameter;
 } *DECL_UDF;
@@ -776,7 +776,7 @@ typedef ENUM {
 typedef struct ind {
 	struct sym *ind_symbol;		/* index name */
 	struct gpre_rel *ind_relation;	/* relation name */
-	struct fld *ind_fields;		/* list of fields */
+	struct gpre_fld *ind_fields;		/* list of fields */
 	USHORT ind_flags;			/* Miscellaneous flags */
 } *IND;
 
@@ -931,8 +931,8 @@ typedef struct gpre_prc {
 	struct sym *prc_owner;		/* owner of procedure, if any */
 	struct dbb *prc_database;	/* parent database */
 	struct gpre_prc *prc_next;		/* next procedure in database */
-	struct fld *prc_inputs;		/* linked list of input parameters */
-	struct fld *prc_outputs;	/* linked list of output parameters */
+	struct gpre_fld *prc_inputs;		/* linked list of input parameters */
+	struct gpre_fld *prc_outputs;	/* linked list of output parameters */
 	SSHORT prc_in_count;		/* count of input parameters */
 	SSHORT prc_out_count;		/* count of output parameters */
 	SSHORT prc_flags;			/* procedure flags */
@@ -989,7 +989,7 @@ typedef struct ref {
 	USHORT ref_level;			/* highest level of access */
 	USHORT ref_parameter;		/* parameter in port */
 	USHORT ref_id;				/* id of reference in union */
-	struct fld *ref_field;		/* field in question */
+	struct gpre_fld *ref_field;		/* field in question */
 	struct gpre_ctx *ref_context;	/* context for reference */
 	struct ref *ref_next;		/* next reference in context */
 	struct por *ref_port;		/* associated port */
@@ -1039,8 +1039,8 @@ typedef struct val {
 
 typedef struct gpre_rel {
 	USHORT rel_id;				/* relation id */
-	struct fld *rel_fields;		/* linked list of known fields */
-	struct fld *rel_dbkey;		/* linked list of known fields */
+	struct gpre_fld *rel_fields;		/* linked list of known fields */
+	struct gpre_fld *rel_dbkey;		/* linked list of known fields */
 	struct sym *rel_symbol;		/* symbol for relation */
 	struct dbb *rel_database;	/* parent database */
 	struct gpre_rel *rel_next;		/* next relation in database */
@@ -1241,7 +1241,7 @@ typedef struct sgen {
 
 typedef struct slc {
 	GPRE_REQ slc_parent_request;		/* request for blob id */
-	FLD slc_field;				/* database array field */
+	GPRE_FLD slc_field;				/* database array field */
 	GPRE_NOD slc_array;				/* user defined array */
 	REF slc_field_ref;			/* array field reference */
 	USHORT slc_dimensions;		/* dimensions */
@@ -1382,7 +1382,7 @@ typedef struct tpb {
 
 typedef struct typ {
 	SYM typ_symbol;				/* Actual symbol */
-	FLD typ_field;				/* Owner */
+	GPRE_FLD typ_field;				/* Owner */
 	SSHORT typ_value;			/* Value of type */
 } *TYP;
 
@@ -1438,7 +1438,7 @@ typedef struct udf {
 	USHORT udf_charset_id;		/* Return character set */
 	USHORT udf_ttype;			/* Return text type */
 	USHORT udf_type;			/* Function type */
-	struct fld *udf_inputs;		/* List of udf input arguments */
+	struct gpre_fld *udf_inputs;		/* List of udf input arguments */
 	TEXT udf_function[1];		/* Function name */
 } *UDF;
 

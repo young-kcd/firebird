@@ -296,7 +296,7 @@ int EXT_get(RSB rsb)
 	REC record;
 	FMT format;
 	LIT literal;
-	FLD field;
+	JRD_FLD field;
 	DSC desc;
 	SSHORT c, l, offset, i;
 	UCHAR *p;
@@ -342,7 +342,7 @@ int EXT_get(RSB rsb)
 
 	for (i = 0, itr = relation->rel_fields->begin();
 			i < format->fmt_count; ++i, ++itr, ++desc_ptr) {
-	    field = (FLD) (*itr);
+	    field = (JRD_FLD) (*itr);
 		SET_NULL(record, i);
 		if (!desc_ptr->dsc_length || !field)
 			continue;
@@ -518,7 +518,7 @@ void EXT_store(RPB * rpb, int *transaction)
 	REC record;
 	FMT format;
 	EXT file;
-	FLD field;
+	JRD_FLD field;
 	LIT literal;
 	DSC desc;
 	UCHAR *p;
@@ -555,7 +555,7 @@ void EXT_store(RPB * rpb, int *transaction)
 
 	for (i = 0; i < format->fmt_count; i++, field_ptr++, desc_ptr++)
 	{
-		field = (FLD)*field_ptr;
+		field = (JRD_FLD)*field_ptr;
 		if (field &&
 			!field->fld_computation &&
 			desc_ptr->dsc_length &&

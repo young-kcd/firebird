@@ -88,8 +88,8 @@ static CONST UCHAR blr_bpb[] = { isc_bpb_version1,
 	isc_bpb_target_type, 1, BLOB_blr
 };
 
-static void check_array(DSQL_REQ, SCHAR *, FLD);
-static void convert_dtype(FLD, SSHORT);
+static void check_array(DSQL_REQ, SCHAR *, DSQL_FLD);
+static void convert_dtype(DSQL_FLD, SSHORT);
 static void	free_function (UDF);
 static void free_procedure(DSQL_PRC);
 static void free_relation(DSQL_REL);
@@ -678,7 +678,7 @@ THREAD_EXIT;
 }
 
 
-USHORT METD_get_domain(DSQL_REQ request, FLD field, UCHAR * name)
+USHORT METD_get_domain(DSQL_REQ request, DSQL_FLD field, UCHAR * name)
 {
 /**************************************
  *
@@ -1183,7 +1183,7 @@ DSQL_PRC METD_get_procedure(DSQL_REQ request, STR name)
  **************************************/
 	SLONG *DB, *gds_trans;
 	DBB dbb;
-	FLD parameter, *ptr;
+	DSQL_FLD parameter, *ptr;
 	DSQL_PRC procedure, temp;
 	SYM symbol;
 	SSHORT type, count;
@@ -1276,7 +1276,7 @@ DSQL_PRC METD_get_procedure(DSQL_REQ request, STR name)
 
             metd_exact_name(PR.RDB$PARAMETER_NAME);
             parameter = FB_NEW_RPT(*dbb->dbb_pool,
-                                     strlen(PR.RDB$PARAMETER_NAME)) fld;
+                                     strlen(PR.RDB$PARAMETER_NAME)) dsql_fld;
             parameter->fld_next = *ptr;
             *ptr = parameter;
             
@@ -1375,7 +1375,7 @@ DSQL_REL METD_get_relation(DSQL_REQ request, STR name)
  **************************************/
 	SLONG *DB, *gds_trans;
 	DBB dbb;
-	FLD field, *ptr;
+	DSQL_FLD field, *ptr;
 	DSQL_REL relation, temp;
 	SYM symbol;
 	TSQL tdsql;
@@ -1488,10 +1488,10 @@ DSQL_REL METD_get_relation(DSQL_REQ request, STR name)
             
             if (relation->rel_flags & REL_new_relation)
                 *ptr = field = FB_NEW_RPT(*tdsql->tsql_default,
-                                             strlen(RFR.RDB$FIELD_NAME)) fld;
+                                             strlen(RFR.RDB$FIELD_NAME)) dsql_fld;
             else
                 *ptr = field = FB_NEW_RPT(*dbb->dbb_pool,
-                                            strlen(RFR.RDB$FIELD_NAME)) fld;
+                                            strlen(RFR.RDB$FIELD_NAME)) dsql_fld;
             ptr = &field->fld_next;
             
             /* get field information */
@@ -1540,10 +1540,10 @@ DSQL_REL METD_get_relation(DSQL_REQ request, STR name)
             
             if (relation->rel_flags & REL_new_relation)
                 *ptr = field = FB_NEW_RPT(*tdsql->tsql_default,
-                                             strlen(RFR.RDB$FIELD_NAME)) fld;
+                                             strlen(RFR.RDB$FIELD_NAME)) dsql_fld;
             else
                 *ptr = field = FB_NEW_RPT(*dbb->dbb_pool,
-                                            strlen(RFR.RDB$FIELD_NAME)) fld;
+                                            strlen(RFR.RDB$FIELD_NAME)) dsql_fld;
             
             ptr = &field->fld_next;
             
@@ -1582,7 +1582,7 @@ DSQL_REL METD_get_relation(DSQL_REQ request, STR name)
                 field->fld_collation_id = FLX.RDB$COLLATION_ID;
 
             if (!(RFR.RDB$NULL_FLAG || FLX.RDB$NULL_FLAG)
-                || (relation->rel_flags & REL_view)) {
+             /*XXX:IOL    || (relation->rel_flags & REL_view)*/) {
                 field->fld_flags |= FLD_nullable;
             }
             
@@ -1785,7 +1785,7 @@ DSQL_REL METD_get_view_relation(DSQL_REQ request,
 }
 
 
-static void check_array( DSQL_REQ request, TEXT * field_name, FLD field)
+static void check_array( DSQL_REQ request, TEXT * field_name, DSQL_FLD field)
 {
 /**************************************
  *
@@ -1832,7 +1832,7 @@ static void check_array( DSQL_REQ request, TEXT * field_name, FLD field)
 }
 
 
-static void convert_dtype( FLD field, SSHORT field_type)
+static void convert_dtype( DSQL_FLD field, SSHORT field_type)
 {
 /**************************************
  *
@@ -1911,7 +1911,7 @@ static void free_procedure( DSQL_PRC procedure)
  *	Free memory allocated for a procedure block and params
  *
  **************************************/
-	FLD param, temp;
+	DSQL_FLD param, temp;
 
 /* release the input & output parameter blocks */
 
@@ -1945,7 +1945,7 @@ static void free_relation( DSQL_REL relation)
  *	Free memory allocated for a relation block and fields
  *
  **************************************/
-	FLD field, temp;
+	DSQL_FLD field, temp;
 
 /* release the field blocks */
 

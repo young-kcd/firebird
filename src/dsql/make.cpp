@@ -277,7 +277,7 @@ void MAKE_desc( DSC * desc, DSQL_NOD node)
 	DSQL_CTX context;
 	DSQL_REL relation;
 	UDF udf;
-	FLD field;
+	DSQL_FLD field;
 
 	DEV_BLKCHK(node, dsql_type_nod);
 
@@ -419,7 +419,7 @@ void MAKE_desc( DSC * desc, DSQL_NOD node)
         return;
 
 	case nod_cast:
-		field = (FLD) node->nod_arg[e_cast_target];
+		field = (DSQL_FLD) node->nod_arg[e_cast_target];
 		MAKE_desc_from_field(desc, field);
 		MAKE_desc(&desc1, node->nod_arg[e_cast_source]);
 		desc->dsc_flags = desc1.dsc_flags & DSC_nullable;
@@ -1040,7 +1040,7 @@ void MAKE_desc( DSC * desc, DSQL_NOD node)
 }
 
 
-void MAKE_desc_from_field( DSC * desc, FLD field)
+void MAKE_desc_from_field( DSC * desc, DSQL_FLD field)
 {
 /**************************************
  *
@@ -1261,7 +1261,7 @@ void MAKE_desc_from_list( DSC * desc, DSQL_NOD node)
 }
 
 
-DSQL_NOD MAKE_field(DSQL_CTX context, FLD field, DSQL_NOD indices)
+DSQL_NOD MAKE_field(DSQL_CTX context, DSQL_FLD field, DSQL_NOD indices)
 {
 /**************************************
  *
@@ -1308,7 +1308,7 @@ DSQL_NOD MAKE_field(DSQL_CTX context, FLD field, DSQL_NOD indices)
 	}
 
 	if ((field->fld_flags & FLD_nullable) ||
-		(context->ctx_flags & CTX_outer_join))
+	(context->ctx_flags & CTX_outer_join))
 			node->nod_desc.dsc_flags = DSC_nullable;
 
 	return node;
@@ -1539,7 +1539,7 @@ DSQL_NOD MAKE_trigger_type(DSQL_NOD prefix_node, DSQL_NOD suffix_node)
 }
 
 
-DSQL_NOD MAKE_variable(FLD field,
+DSQL_NOD MAKE_variable(DSQL_FLD field,
 				  CONST TEXT * name,
 				  USHORT type,
 				  USHORT msg_number, USHORT item_number, USHORT local_number)

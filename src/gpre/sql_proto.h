@@ -29,10 +29,10 @@ extern "C" {
 #endif
 
 extern ACT SQL_action(void);
-extern void SQL_adjust_field_dtype(FLD);
+extern void SQL_adjust_field_dtype(GPRE_FLD);
 extern void SQL_init(void);
-extern void SQL_par_field_collate(GPRE_REQ, FLD);
-extern void SQL_par_field_dtype(GPRE_REQ, FLD, BOOLEAN);
+extern void SQL_par_field_collate(GPRE_REQ, GPRE_FLD);
+extern void SQL_par_field_dtype(GPRE_REQ, GPRE_FLD, BOOLEAN);
 extern GPRE_PRC SQL_procedure(GPRE_REQ, TEXT *, TEXT *, TEXT *, BOOLEAN);
 extern GPRE_REL SQL_relation(GPRE_REQ, TEXT *, TEXT *, TEXT *, BOOLEAN);
 extern void SQL_resolve_identifier(TEXT *, TEXT *);

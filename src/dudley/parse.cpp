@@ -80,7 +80,7 @@ extern TEXT *DDL_prompt;
 
 static BOOLEAN check_filename(SYM, USHORT);
 static SYM copy_symbol(SYM);
-static FLD create_global_field(FLD);
+static DUDLEY_FLD create_global_field(DUDLEY_FLD);
 static FIL define_cache(void);
 static void define_database(enum act_t);
 static void define_field(void);
@@ -112,11 +112,11 @@ static int get_system_flag(void);
 static void get_trigger_attributes(int *, int *, int *);
 static void grant_user_privilege(void);
 static DUDLEY_CTX lookup_context(SYM, LLS);
-static FLD lookup_global_field(FLD);
+static DUDLEY_FLD lookup_global_field(DUDLEY_FLD);
 static ACT make_action(enum act_t, DBB);
-static ACT make_computed_field(FLD);
+static ACT make_computed_field(DUDLEY_FLD);
 static DUDLEY_CTX make_context(TEXT *, DUDLEY_REL);
-static ACT make_global_field(FLD);
+static ACT make_global_field(DUDLEY_FLD);
 static void mod_old_trigger(void);
 static void modify_field(void);
 static void modify_index(void);
@@ -127,13 +127,13 @@ static void modify_trigger_action(DUDLEY_TRG, DUDLEY_REL);
 static void modify_type(void);
 static void modify_view(void);
 static BOOLEAN parse_action(void);
-static void parse_array(FLD);
+static void parse_array(DUDLEY_FLD);
 static TXT parse_description(void);
 static void parse_end(void);
-static FLD parse_field(FLD);
-static void parse_field_clauses(FLD);
-static void parse_field_dtype(FLD);
-static void parse_field_subtype(FLD);
+static DUDLEY_FLD parse_field(DUDLEY_FLD);
+static void parse_field_clauses(DUDLEY_FLD);
+static void parse_field_dtype(DUDLEY_FLD);
+static void parse_field_subtype(DUDLEY_FLD);
 static FUNCARG parse_function_arg(FUNC, USHORT *);
 static SCE parse_identifier(void);
 static OBJ_T parse_object(void);
@@ -144,7 +144,7 @@ static SLONG score_entry(SCE);
 static DUDLEY_NOD set_generator(void);
 static void sort_out_attributes(DUDLEY_TRG, SLONG, SLONG, SLONG);
 static TXT start_text(void);
-static void validate_field(FLD);
+static void validate_field(DUDLEY_FLD);
 
 static LLS local_context;
 
@@ -567,7 +567,7 @@ static SYM copy_symbol( SYM old_name)
 }
 
 
-static FLD create_global_field( FLD local_field)
+static DUDLEY_FLD create_global_field( DUDLEY_FLD local_field)
 {
 /**************************************
  *
@@ -585,10 +585,10 @@ static FLD create_global_field( FLD local_field)
  *	block.
  *
  **************************************/
-	FLD global_field;
+	DUDLEY_FLD global_field;
 	SYM old_name, new_name;
 
-	global_field = (FLD) DDL_alloc(FLD_LEN);
+	global_field = (DUDLEY_FLD) DDL_alloc(FLD_LEN);
 	global_field->fld_dtype = local_field->fld_dtype;
 	global_field->fld_length = local_field->fld_length;
 	global_field->fld_scale = local_field->fld_scale;
@@ -829,9 +829,9 @@ static void define_field(void)
  *	Parse a DEFINE FIELD statement.
  *
  **************************************/
-	FLD field;
+	DUDLEY_FLD field;
 
-	field = (FLD) DDL_alloc(FLD_LEN);
+	field = (DUDLEY_FLD) DDL_alloc(FLD_LEN);
 	parse_field(field);
 	field->fld_database = database;
 
@@ -1212,7 +1212,7 @@ static void define_relation(void)
  *
  **************************************/
 	DUDLEY_REL relation;
-	FLD field, global;
+	DUDLEY_FLD field, global;
 	SYM symbol;
 	DSC desc;
 	SSHORT position;
@@ -1251,7 +1251,7 @@ static void define_relation(void)
 	while (TRUE) {
 		MATCH(KW_ADD);
 		MATCH(KW_FIELD);
-		field = (FLD) DDL_alloc(FLD_LEN);
+		field = (DUDLEY_FLD) DDL_alloc(FLD_LEN);
 		parse_field(field);
 		field->fld_relation = relation;
 		field->fld_database = database;
@@ -1541,7 +1541,7 @@ static void define_view(void)
  *
  **************************************/
 	DUDLEY_REL relation;
-	FLD field, *ptr;
+	DUDLEY_FLD field, *ptr;
 	SYM symbol;
 	SSHORT position;
 	DUDLEY_CTX context, my_context;
@@ -1598,7 +1598,7 @@ static void define_view(void)
 	while (TRUE) {
 		MATCH(KW_ADD);
 		MATCH(KW_FIELD);
-		field = (FLD) DDL_alloc(FLD_LEN);
+		field = (DUDLEY_FLD) DDL_alloc(FLD_LEN);
 		field->fld_flags |= fld_local;
 		field->fld_relation = relation;
 		*ptr = field;
@@ -1732,9 +1732,9 @@ static void drop_gfield(void)
  *	Parse the DROP (DELETE) field statement.
  *
  **************************************/
-	FLD field;
+	DUDLEY_FLD field;
 
-	field = (FLD) DDL_alloc(FLD_LEN);
+	field = (DUDLEY_FLD) DDL_alloc(FLD_LEN);
 	field->fld_name = PARSE_symbol(tok_ident);
 	parse_end();
 
@@ -1755,7 +1755,7 @@ static void drop_index(void)
  *
  **************************************/
 	DUDLEY_IDX index;
-	FLD field;
+	DUDLEY_FLD field;
 
 	index = (DUDLEY_IDX) DDL_alloc(IDX_LEN(0));
 	index->idx_name = PARSE_symbol(tok_ident);
@@ -1778,7 +1778,7 @@ static void drop_relation(void)
  *
  **************************************/
 	DUDLEY_REL relation;
-	FLD field;
+	DUDLEY_FLD field;
 
 	relation = PARSE_relation();
 	parse_end();
@@ -2251,7 +2251,7 @@ static DUDLEY_CTX lookup_context( SYM symbol, LLS contexts)
 }
 
 
-static FLD lookup_global_field( FLD field)
+static DUDLEY_FLD lookup_global_field( DUDLEY_FLD field)
 {
 /**************************************
  *
@@ -2270,7 +2270,7 @@ static FLD lookup_global_field( FLD field)
 
 	if (symbol = HSH_typed_lookup(name->sym_string, name->sym_length,
 								  SYM_global))
-			return (FLD) symbol->sym_object;
+			return (DUDLEY_FLD) symbol->sym_object;
 
 	PARSE_error(230, name->sym_string, 0);	/* msg 230: global field %s isn't defined */
 
@@ -2303,7 +2303,7 @@ static ACT make_action( enum act_t type, DBB object)
 }
 
 
-static ACT make_computed_field( FLD field)
+static ACT make_computed_field( DUDLEY_FLD field)
 {
 /**************************************
  *
@@ -2314,7 +2314,7 @@ static ACT make_computed_field( FLD field)
  * Functional description
  *
  **************************************/
-	FLD computed;
+	DUDLEY_FLD computed;
 	SYM symbol;
 	TEXT s[64];
 	USHORT i, l;
@@ -2372,7 +2372,7 @@ static DUDLEY_CTX make_context( TEXT * string, DUDLEY_REL relation)
 }
 
 
-static ACT make_global_field( FLD field)
+static ACT make_global_field( DUDLEY_FLD field)
 {
 /**************************************
  *
@@ -2459,7 +2459,7 @@ static void modify_field(void)
  *
  **************************************/
 	SYM symbol;
-	FLD field;
+	DUDLEY_FLD field;
 
 	if (!local_context)
 		LLS_PUSH(DDL_alloc(CTX_LEN), &local_context);
@@ -2472,7 +2472,7 @@ static void modify_field(void)
 
 	if (!symbol)
 		PARSE_error(167, DDL_token.tok_string, 0);	/*msg 167: expected global field name, encountered \"%s\" */
-	field = (FLD) symbol->sym_object;
+	field = (DUDLEY_FLD) symbol->sym_object;
 	LEX_token();
 	field->fld_flags |= fld_modify;
 
@@ -2571,7 +2571,7 @@ static void modify_relation(void)
  *
  **************************************/
 	DUDLEY_REL relation;
-	FLD field, global;
+	DUDLEY_FLD field, global;
 	TEXT modify_relation;
 
 	relation = PARSE_relation();
@@ -2611,7 +2611,7 @@ static void modify_relation(void)
 			if (MATCH(KW_ADD)) {
 				MATCH(KW_FIELD);
 				{
-					field = (FLD) DDL_alloc(FLD_LEN);
+					field = (DUDLEY_FLD) DDL_alloc(FLD_LEN);
 					parse_field(field);
 					field->fld_relation = relation;
 					field->fld_database = database;
@@ -2637,7 +2637,7 @@ static void modify_relation(void)
 			}
 			else if (MATCH(KW_MODIFY)) {
 				MATCH(KW_FIELD);
-				field = (FLD) DDL_alloc(FLD_LEN);
+				field = (DUDLEY_FLD) DDL_alloc(FLD_LEN);
 				field->fld_flags |= (fld_modify | fld_local);
 				parse_field(field);
 				field->fld_relation = relation;
@@ -2667,7 +2667,7 @@ static void modify_relation(void)
 				}
 				else {
 					MATCH(KW_FIELD);
-					field = (FLD) DDL_alloc(FLD_LEN);
+					field = (DUDLEY_FLD) DDL_alloc(FLD_LEN);
 					field->fld_flags |= fld_local;
 					field->fld_relation = relation;
 					field->fld_database = database;
@@ -2893,7 +2893,7 @@ static void modify_view(void)
  *
  **************************************/
 	DUDLEY_REL relation;
-	FLD field, global;
+	DUDLEY_FLD field, global;
 	USHORT view_modify;
 
 	relation = PARSE_relation();
@@ -2924,7 +2924,7 @@ static void modify_view(void)
 		while (TRUE) {
 			if (MATCH(KW_MODIFY)) {
 				MATCH(KW_FIELD);
-				field = (FLD) DDL_alloc(FLD_LEN);
+				field = (DUDLEY_FLD) DDL_alloc(FLD_LEN);
 				field->fld_flags |= (fld_modify | fld_local);
 				parse_field(field);
 				field->fld_relation = relation;
@@ -2954,7 +2954,7 @@ static void modify_view(void)
 				}
 				else {
 					MATCH(KW_FIELD);
-					field = (FLD) DDL_alloc(FLD_LEN);
+					field = (DUDLEY_FLD) DDL_alloc(FLD_LEN);
 					field->fld_flags |= fld_local;
 					field->fld_relation = relation;
 					field->fld_database = database;
@@ -3163,7 +3163,7 @@ static BOOLEAN parse_action(void)
 }
 
 
-static void parse_array( FLD field)
+static void parse_array( DUDLEY_FLD field)
 {
 /************************************** 
  *
@@ -3267,7 +3267,7 @@ static void parse_end(void)
 }
 
 
-static FLD parse_field( FLD field)
+static DUDLEY_FLD parse_field( DUDLEY_FLD field)
 {
 /**************************************
  *
@@ -3309,7 +3309,7 @@ static FLD parse_field( FLD field)
 
 
 
-static void parse_field_clauses( FLD field)
+static void parse_field_clauses( DUDLEY_FLD field)
 {
 /**************************************
  *
@@ -3453,7 +3453,7 @@ static void parse_field_clauses( FLD field)
 }
 
 
-static void parse_field_dtype( FLD field)
+static void parse_field_dtype( DUDLEY_FLD field)
 {
 /**************************************
  *
@@ -3548,7 +3548,7 @@ static void parse_field_dtype( FLD field)
 }
 
 
-static void parse_field_subtype( FLD field)
+static void parse_field_subtype( DUDLEY_FLD field)
 {
 /**************************************
  *
@@ -3593,10 +3593,10 @@ static FUNCARG parse_function_arg( FUNC function, USHORT * position)
  *
  **************************************/
 	FUNCARG func_arg;
-	FLD field;
+	DUDLEY_FLD field;
 
 	func_arg = (FUNCARG) DDL_alloc(FUNCARG_LEN);
-	field = (FLD) DDL_alloc(FLD_LEN);
+	field = (DUDLEY_FLD) DDL_alloc(FLD_LEN);
 	parse_field_dtype(field);
 	func_arg->funcarg_dtype = field->fld_dtype;
 	func_arg->funcarg_scale = field->fld_scale;
@@ -4185,7 +4185,7 @@ static TXT start_text(void)
 }
 
 
-static void validate_field( FLD field)
+static void validate_field( DUDLEY_FLD field)
 {
 /**************************************
  *
@@ -4198,7 +4198,7 @@ static void validate_field( FLD field)
  *	together.
  *
  **************************************/
-	FLD global;
+	DUDLEY_FLD global;
 	TEXT option[128];
 
 	*option = 0;

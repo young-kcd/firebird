@@ -133,7 +133,7 @@ typedef struct qli_rel {
     struct qli_rel	*rel_next;		/* Next relation in database */
     struct dbb	*rel_database;		/* Parent database */
     struct sym	*rel_symbol;		/* Hash symbol for relation */
-    struct fld	*rel_fields;		/* Field block */
+    struct qli_fld	*rel_fields;		/* Field block */
     struct frm	*rel_form;		/* Default for for relation */
     USHORT	rel_id;			/* Relation id */
     USHORT	rel_flags;		/* Misc flags */
@@ -147,9 +147,9 @@ typedef struct qli_rel {
 
 /* Field block */
 
-typedef struct fld {
+typedef struct qli_fld {
     struct blk	fld_header;
-    struct fld	*fld_next;		/* Next field in relation */
+    struct qli_fld	*fld_next;		/* Next field in relation */
     struct qli_rel	*fld_relation;		/* Parent relation */
     struct sym	*fld_name;		/* Field name */
     struct sym	*fld_query_name;	/* Field query name */
@@ -171,7 +171,7 @@ typedef struct fld {
     USHORT	fld_system_flag;	/* System flag */
     double	fld_dummy;		/* Force fld_data to a nice boundary word boundary */
     UCHAR	fld_data [1];
-} *FLD;
+} *QLI_FLD;
 
 #define FLD_computed	1
 #define FLD_drop	2
@@ -477,7 +477,7 @@ typedef struct fun {
 
 EXTERN DBB	QLI_databases;
 EXTERN PLB	QLI_permanent_pool, QLI_default_pool;
-EXTERN FLD	QLI_variables;
+EXTERN QLI_FLD	QLI_variables;
 EXTERN TEXT	QLI_prompt_string [32], QLI_cont_string [32];
 EXTERN TEXT	QLI_default_user [32], QLI_default_password [32];
 EXTERN TEXT	QLI_charset [32];

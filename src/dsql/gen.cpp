@@ -29,7 +29,7 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 /*
-$Id: gen.cpp,v 1.18 2002-11-24 15:22:00 skidder Exp $
+$Id: gen.cpp,v 1.19 2002-11-30 17:36:40 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -58,7 +58,7 @@ static void	gen_coalesce(DSQL_REQ, DSQL_NOD);
 static void gen_constant(DSQL_REQ, DSC *, BOOLEAN);
 static void gen_descriptor(DSQL_REQ, DSC *, USHORT);
 static void gen_error_condition(DSQL_REQ, DSQL_NOD);
-static void gen_field(DSQL_REQ, DSQL_CTX, FLD, DSQL_NOD);
+static void gen_field(DSQL_REQ, DSQL_CTX, DSQL_FLD, DSQL_NOD);
 static void gen_for_select(DSQL_REQ, DSQL_NOD);
 static void gen_gen_id(DSQL_REQ, DSQL_NOD);
 static void gen_join_rse(DSQL_REQ, DSQL_NOD);
@@ -194,7 +194,7 @@ void GEN_expr( DSQL_REQ request, DSQL_NOD node)
 	case nod_field:
 		gen_field(request,
 				  (DSQL_CTX) node->nod_arg[e_fld_context],
-				  (FLD) node->nod_arg[e_fld_field],
+				  (DSQL_FLD) node->nod_arg[e_fld_field],
 				  node->nod_arg[e_fld_indices]);
 		return;
 
@@ -1216,10 +1216,10 @@ static void gen_cast( DSQL_REQ request, DSQL_NOD node)
  *      Generate BLR for a data-type cast operation
  *
  **************************************/
-	FLD field;
+	DSQL_FLD field;
 
 	STUFF(blr_cast);
-	field = (FLD) node->nod_arg[e_cast_target];
+	field = (DSQL_FLD) node->nod_arg[e_cast_target];
 	DDL_put_field_dtype(request, field, TRUE);
 	GEN_expr(request, node->nod_arg[e_cast_source]);
 }
@@ -1551,7 +1551,7 @@ static void gen_error_condition( DSQL_REQ request, DSQL_NOD node)
 }
 
 
-static void gen_field( DSQL_REQ request, DSQL_CTX context, FLD field, DSQL_NOD indices)
+static void gen_field( DSQL_REQ request, DSQL_CTX context, DSQL_FLD field, DSQL_NOD indices)
 {
 /**************************************
  *
@@ -2140,7 +2140,7 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 	DSQL_NOD list, *ptr, *end, item, alias, map_node;
 	PAR parameter;
 	DSQL_MSG message;
-	FLD field;
+	DSQL_FLD field;
 	DSC constant_desc;
 	DSQL_REL relation;
 	UDF udf;
@@ -2165,7 +2165,7 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 		parameter->par_node = item;
 		MAKE_desc(&parameter->par_desc, item);
 		if (item->nod_type == nod_field) {
-			field = (FLD) item->nod_arg[e_fld_field];
+			field = (DSQL_FLD) item->nod_arg[e_fld_field];
 			parameter->par_name = parameter->par_alias = field->fld_name;
 			context = (DSQL_CTX) item->nod_arg[e_fld_context];
 			if (context->ctx_relation) {
@@ -2189,7 +2189,7 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 			parameter->par_alias = (TEXT *) string->str_data;
 			alias = item->nod_arg[e_alias_value];
 			if (alias->nod_type == nod_field) {
-				field = (FLD) alias->nod_arg[e_fld_field];
+				field = (DSQL_FLD) alias->nod_arg[e_fld_field];
 				parameter->par_name = field->fld_name;
 				context = (DSQL_CTX) alias->nod_arg[e_fld_context];
 				if (context->ctx_relation) {
@@ -2220,7 +2220,7 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 				map_node = map->map_node;
 			}
 			if (map_node->nod_type == nod_field) {
-				field = (FLD) map_node->nod_arg[e_fld_field];
+				field = (DSQL_FLD) map_node->nod_arg[e_fld_field];
 				parameter->par_name = parameter->par_alias = field->fld_name;
 			}
 			else if (map_node->nod_type == nod_alias) {
@@ -2228,7 +2228,7 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 				parameter->par_alias = (TEXT *) string->str_data;
 				alias = map_node->nod_arg[e_alias_value];
 				if (alias->nod_type == nod_field) {
-					field = (FLD) alias->nod_arg[e_fld_field];
+					field = (DSQL_FLD) alias->nod_arg[e_fld_field];
 					parameter->par_name = field->fld_name;
 				}
 			}

@@ -32,7 +32,7 @@ USHORT METD_get_charset_bpc (struct dsql_req *, SSHORT);
 INTLSYM METD_get_collation(class dsql_req*, class str*);
 void METD_get_col_default(DSQL_REQ, TEXT*, TEXT*, BOOLEAN*, TEXT*, USHORT);
 STR METD_get_default_charset(class dsql_req*);
-USHORT METD_get_domain(class dsql_req*, class fld*, UCHAR*);
+USHORT METD_get_domain(class dsql_req*, class dsql_fld*, UCHAR*);
 void METD_get_domain_default(class dsql_req*, TEXT*, BOOLEAN*, TEXT*, USHORT);
 UDF METD_get_function(class dsql_req*, class str*);
 DSQL_NOD METD_get_primary_key(class dsql_req*, class str*);

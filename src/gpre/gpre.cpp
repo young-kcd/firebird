@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.13 2002-11-17 00:04:18 hippoman Exp $
+//  $Id: gpre.cpp,v 1.14 2002-11-30 17:40:24 hippoman Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -42,7 +42,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.13 2002-11-17 00:04:18 hippoman Exp $
+//	$Id: gpre.cpp,v 1.14 2002-11-30 17:40:24 hippoman Exp $
 //
 
 #define GPRE_MAIN
@@ -1545,7 +1545,7 @@ static void finish_based( ACT action)
 {
 	DBB db;
 	GPRE_REL relation;
-	FLD field;
+	GPRE_FLD field;
 	BAS based_on;
 	SYM symbol;
 	TEXT s[128];

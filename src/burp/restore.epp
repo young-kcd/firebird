@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: restore.epp,v 1.12 2002-11-20 23:09:20 hippoman Exp $
+$Id: restore.epp,v 1.13 2002-11-30 17:34:44 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -133,14 +133,14 @@ static void	eat_blob (void);
 static BURP_REL	find_relation (TEXT *);
 static int	get_acl (TEXT *, ISC_QUAD *, ISC_QUAD *);
 static void	get_array (BURP_REL, UCHAR *);
-static void	get_blob (FLD, UCHAR *);
+static void	get_blob (BURP_FLD, UCHAR *);
 static void	get_blr_blob (ISC_QUAD *, USHORT);
 static BOOLEAN	get_character_set (void);
 static BOOLEAN	get_chk_constraint (void);
 static BOOLEAN	get_collation (void);
 static REC_TYPE	get_data (BURP_REL);
 static BOOLEAN	get_exception (void);
-static FLD	get_field (BURP_REL);
+static BURP_FLD	get_field (BURP_REL);
 static BOOLEAN	get_field_dimensions (void);
 static BOOLEAN	get_files (void);
 static BOOLEAN	get_filter (void);
@@ -1388,7 +1388,7 @@ static void get_array (
  *	shiney, new array.
  *
  **************************************/
-FLD		field;
+BURP_FLD		field;
 ATT_TYPE	attribute;
 STATUS		status_vector[ISC_STATUS_LENGTH];
 SLONG		last_element_dim[MAX_DIMENSION];
@@ -1868,7 +1868,7 @@ if (tdgbl->gbl_sw_transportable && xdr_buffer.lstr_allocated)
 }
 
 static void get_blob (
-    FLD		fields,
+    BURP_FLD		fields,
     UCHAR	*record_buffer)
 {
 /**************************************
@@ -1882,7 +1882,7 @@ static void get_blob (
  *	shiny, new blob.
  *
  **************************************/
-FLD		field;
+BURP_FLD		field;
 ATT_TYPE	attribute;
 STATUS		status_vector[ISC_STATUS_LENGTH];
 ULONG		segments;
@@ -2306,7 +2306,7 @@ static REC_TYPE get_data (
  *	Write data records for a relation.
  *
  **************************************/
-FLD		field;
+BURP_FLD		field;
 int		*request, records;
 TEXT		*p;
 SCHAR		*blr, *blr_buffer;
@@ -2872,7 +2872,7 @@ switch (dtype)
 
 }
 
-static FLD get_field (
+static BURP_FLD get_field (
     BURP_REL		relation)
 {
 /**************************************
@@ -2885,14 +2885,14 @@ static FLD get_field (
  *	Reconstruct a local field.
  *
  **************************************/
-FLD		field;
+BURP_FLD		field;
 ATT_TYPE	attribute;
 USHORT		n,
 		global_tr = FALSE;
 SLONG		*rp;
 UCHAR	    scan_next_attr;
 TGBL	    tdgbl;
-FLD		f;
+BURP_FLD		f;
 isc_tr_handle	local_trans;
 
 tdgbl = GET_THREAD_DATA;
@@ -2907,7 +2907,7 @@ if ((relation->rel_flags & REL_view) && (tdgbl->global_trans))
 else
     local_trans = gds_trans;
 
-field = (FLD) BURP_ALLOC_ZERO (sizeof (struct fld));
+field = (BURP_FLD) BURP_ALLOC_ZERO (sizeof (struct burp_fld));
 
 STORE (TRANSACTION_HANDLE local_trans
        REQUEST_HANDLE tdgbl->handles_get_field_req_handle1)
@@ -3891,7 +3891,7 @@ if (tdgbl->RESTORE_format >= 6)
 		      &X.RDB$FIELD_SUB_TYPE, &X.RDB$CHARACTER_SET_ID, 
 		      &X.RDB$COLLATION_ID))
 		    {
-		    FLD	f;
+		    BURP_FLD	f;
 
 		    /* If some value was reset, set the NULL flag */
 		    if (save_subtype && !X.RDB$FIELD_SUB_TYPE)
@@ -3904,7 +3904,7 @@ if (tdgbl->RESTORE_format >= 6)
 		     * global field
 		     */
 
-		    f = (FLD) BURP_ALLOC_ZERO (sizeof(struct fld));
+		    f = (BURP_FLD) BURP_ALLOC_ZERO (sizeof(struct burp_fld));
 		    strcpy (f->fld_name, X.RDB$FIELD_NAME);
 		    f->fld_sub_type = X.RDB$FIELD_SUB_TYPE;
 		    f->fld_scale = X.RDB$FIELD_SCALE;
@@ -4197,7 +4197,7 @@ else /* RESTORE_format < 6 */
 		      &X.RDB$FIELD_SUB_TYPE, &X.RDB$CHARACTER_SET_ID, 
 		      &X.RDB$COLLATION_ID))
 		    {
-		    FLD	f;
+		    BURP_FLD	f;
 
 		    /* If some value was reset, set the NULL flag */
 		    if (save_subtype && !X.RDB$FIELD_SUB_TYPE)
@@ -4210,7 +4210,7 @@ else /* RESTORE_format < 6 */
 		     * global field
 		     */
 
-		    f = (FLD) BURP_ALLOC_ZERO (sizeof(struct fld));
+		    f = (BURP_FLD) BURP_ALLOC_ZERO (sizeof(struct burp_fld));
 		    strcpy (f->fld_name, X.RDB$FIELD_NAME);
 		    f->fld_sub_type = X.RDB$FIELD_SUB_TYPE;
 		    f->fld_scale = X.RDB$FIELD_SCALE;
@@ -4814,7 +4814,7 @@ static BOOLEAN get_relation (void)
  *
  **************************************/
 BURP_REL		relation;
-FLD		field, *ptr;
+BURP_FLD		field, *ptr;
 TEXT		temp [GDS_NAME_LEN];
 SSHORT		l;
 ATT_TYPE	attribute;
@@ -6191,7 +6191,7 @@ static void ignore_array (
  *	shiney, new array.
  *
  **************************************/
-FLD		field;
+BURP_FLD		field;
 ATT_TYPE	attribute;
 SLONG		length, lcount, *range, *end_ranges;
 USHORT		field_number;
@@ -6416,7 +6416,7 @@ static void realign (
  *	than the new.
  *
  **************************************/
-FLD		field;
+BURP_FLD		field;
 UCHAR		*p, *q;
 USHORT		l;
 TGBL		tdgbl;
@@ -6474,7 +6474,7 @@ static USHORT recompute_length (
  **************************************/
 
 #ifdef sparc 
-FLD	field;
+BURP_FLD	field;
 ULONG	offset, length, dtype, alignment;
 SSHORT	*alignments;
 TGBL	    tdgbl;

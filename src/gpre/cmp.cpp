@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmp.cpp,v 1.8 2002-11-17 00:04:18 hippoman Exp $
+//	$Id: cmp.cpp,v 1.9 2002-11-30 17:40:24 hippoman Exp $
 //
 
 #include "firebird.h"
@@ -56,7 +56,7 @@ static void cmp_blob(BLB, BOOLEAN);
 static void cmp_blr(GPRE_REQ);
 static void cmp_erase(ACT, GPRE_REQ);
 static void cmp_fetch(ACT);
-static void cmp_field(GPRE_REQ, FLD, REF);
+static void cmp_field(GPRE_REQ, GPRE_FLD, REF);
 static void cmp_for(register GPRE_REQ);
 static void cmp_form(GPRE_REQ);
 static void cmp_loop(register GPRE_REQ);
@@ -80,7 +80,7 @@ static void make_send(register POR, register GPRE_REQ);
 static void update_references(register REF);
 
 static GPRE_NOD lit0, lit1;
-static FLD eof_field, count_field, slack_byte_field;
+static GPRE_FLD eof_field, count_field, slack_byte_field;
 static USHORT next_ident;
 
 #define STUFF(blr)	*request->req_blr++ = (UCHAR)(blr)
@@ -139,7 +139,7 @@ void CMP_compile_request( register GPRE_REQ request)
 	BLB blob;
 	UPD update;
 #ifdef SCROLLABLE_CURSORS
-	FLD direction_field, offset_field;
+	GPRE_FLD direction_field, offset_field;
 #endif
 
 //  if there isn't a request handle specified, make one! 
@@ -377,7 +377,7 @@ CMP_display_code(FINT display, REF reference)
 //		indicate cast datatypes.
 //  
 
-void CMP_external_field( GPRE_REQ request, FLD field)
+void CMP_external_field( GPRE_REQ request, GPRE_FLD field)
 {
 
 	switch (field->fld_dtype) {
@@ -802,7 +802,7 @@ static void cmp_fetch( ACT action)
 //		Stuff field datatype info into request.
 //  
 
-static void cmp_field( GPRE_REQ request, FLD field, REF reference)
+static void cmp_field( GPRE_REQ request, GPRE_FLD field, REF reference)
 {
 	TEXT s[50];
 
@@ -1045,7 +1045,7 @@ static void cmp_form( GPRE_REQ request)
 {
 	REF reference, option, parent;
 	POR port;
-	FLD field;
+	GPRE_FLD field;
 	FORM form;
 
 	form = request->req_form;
@@ -1719,7 +1719,7 @@ static void cmp_set_generator( GPRE_REQ request)
 static void cmp_slice( GPRE_REQ request)
 {
 	SLC slice;
-	FLD field, element;
+	GPRE_FLD field, element;
 	ARY array;
 	REF reference;
 	USHORT n;
@@ -1860,7 +1860,7 @@ static void expand_references( register REF reference)
 static POR make_port( register GPRE_REQ request, register REF reference)
 {
 	register POR port;
-	FLD field;
+	GPRE_FLD field;
 	REF misc, temp, alignments[3];
 	SSHORT i;
 

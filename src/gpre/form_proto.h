@@ -24,8 +24,8 @@
 #ifndef _GPRE_FORM_PROTO_H_
 #define _GPRE_FORM_PROTO_H_
 
-extern FLD FORM_lookup_field(FORM, int *, char *);
+extern GPRE_FLD FORM_lookup_field(FORM, int *, char *);
 extern FORM FORM_lookup_form(DBB, UCHAR *);
-extern FORM FORM_lookup_subform(FORM, FLD);
+extern FORM FORM_lookup_subform(FORM, GPRE_FLD);
 
 #endif /* _GPRE_FORM_PROTO_H_ */

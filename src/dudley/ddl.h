@@ -95,7 +95,7 @@ enum act_t {
 typedef struct act {
 	enum act_t act_type;		/* what to do */
 	struct act *act_next;		/* next action in system */
-	struct dbb *act_object;		/* object in question (dudley_rel, fld, idx, etc.) */
+	struct dbb *act_object;		/* object in question (dudley_rel, dudley_fld, idx, etc.) */
 	USHORT act_line;			/* line the action started on */
 	USHORT act_flags;
 } *ACT;
@@ -110,7 +110,7 @@ typedef struct act {
 typedef struct dudley_ctx {
 	struct sym *ctx_name;
 	struct dudley_rel *ctx_relation;
-	struct fld *ctx_field;
+	struct dudley_fld *ctx_field;
 	USHORT ctx_view_rse;
 	USHORT ctx_context_id;
 } *DUDLEY_CTX;
@@ -162,7 +162,7 @@ typedef struct dbb {
 
 /* Field block.  Fields are what farms and databases are all about */
 
-typedef struct fld {
+typedef struct dudley_fld {
 	SSHORT fld_dtype;			/* data type of field */
 	SSHORT fld_length;			/* field length in bytes */
 	SSHORT fld_scale;			/* scale factor */
@@ -173,14 +173,14 @@ typedef struct fld {
 	SSHORT fld_dimension;		/* size of multi-dim. array */
 	SSHORT fld_system;			/* 0 if field is user defined */
 	USHORT fld_flags;			/* misc trash */
-	struct fld *fld_next;		/* next field in relation */
+	struct dudley_fld *fld_next;		/* next field in relation */
 	struct dudley_rel *fld_relation;	/* relation */
 	struct sym *fld_security_class;
 	struct dudley_ctx *fld_context;	/* context for view */
 	struct dbb *fld_database;	/* database for global fields */
 	struct sym *fld_name;		/* field name */
 	struct sym *fld_source;		/* name of global field */
-	struct fld *fld_source_field;	/* global field for computed field */
+	struct dudley_fld *fld_source_field;	/* global field for computed field */
 	struct sym *fld_base;		/* base field for views */
 	struct sym *fld_query_name;	/* query name */
 	struct dudley_nod *fld_query_header;	/* query header */
@@ -193,7 +193,7 @@ typedef struct fld {
 	struct txt *fld_compute_src;	/* computed_by source */
 	struct txt *fld_valid_src;	/* validation source */
 	SLONG *fld_ranges;			/* ranges for multi-dim. array */
-} *FLD;
+} *DUDLEY_FLD;
 
 #define fld_explicit_position	1
 #define fld_modify		2
@@ -207,7 +207,7 @@ typedef struct fld {
 #define fld_null_query_name	512
 #define fld_null_query_header	1024
 
-#define FLD_LEN sizeof (struct fld)
+#define FLD_LEN sizeof (struct dudley_fld)
 
 
 /* File description block */
@@ -361,7 +361,7 @@ typedef struct dudley_nod {
 typedef struct dudley_rel {
 	struct dbb *rel_database;	/* parent database */
 	struct sym *rel_filename;	/* external filename */
-	struct fld *rel_fields;		/* linked list of known fields */
+	struct dudley_fld *rel_fields;		/* linked list of known fields */
 	struct sym *rel_name;		/* symbol for relation */
 	struct sym *rel_security_class;	/* name of security class */
 	struct dudley_rel *rel_next;		/* next relation in database */

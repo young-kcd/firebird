@@ -516,8 +516,8 @@ enum trig_t {
 
 /* field block, used to hold local field definitions */
 
-typedef struct fld {
-    struct fld	*fld_next;
+typedef struct burp_fld {
+    struct burp_fld	*fld_next;
     SSHORT	fld_type;
     SSHORT	fld_sub_type;
     FLD_LENGTH	fld_length;
@@ -554,7 +554,7 @@ typedef struct fld {
     SSHORT	fld_character_length;
     SSHORT	fld_character_set_id;
     SSHORT	fld_collation_id;
-} *FLD;
+} *BURP_FLD;
 
 #define FLD_computed		1
 #define FLD_position_missing	2
@@ -568,7 +568,7 @@ typedef struct fld {
 
 typedef struct burp_rel {
     struct burp_rel		*rel_next;
-    struct fld		*rel_fields;
+    struct burp_fld		*rel_fields;
     SSHORT		rel_flags;
     SSHORT		rel_id;
     SSHORT		rel_name_length;
@@ -785,7 +785,7 @@ typedef struct tgbl
      * Link list of global fields that were converted from V3 sub_type
      * to V4 char_set_id/collate_id. Needed for local fields conversion.
      */
-    FLD		v3_cvt_fld_list;
+    BURP_FLD		v3_cvt_fld_list;
 
     isc_req_handle	handles_get_character_sets_req_handle1;
     isc_req_handle	handles_get_chk_constraint_req_handle1;

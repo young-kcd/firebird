@@ -104,7 +104,7 @@ int FMT_expression( QLI_NOD node)
  **************************************/
 	PIC picture;
 	QLI_NOD sub;
-	FLD field;
+	QLI_FLD field;
 
 	sub = node->nod_arg[e_fmt_value];
 	picture = PIC_analyze((TEXT*) node->nod_arg[e_fmt_edit], &sub->nod_desc);
@@ -114,7 +114,7 @@ int FMT_expression( QLI_NOD node)
 		node = node->nod_arg[0];
 
 	if (!(picture->pic_missing) && (node->nod_type == nod_field) &&
-		(field = (FLD) node->nod_arg[e_fld_field]) && field->fld_missing)
+		(field = (QLI_FLD) node->nod_arg[e_fld_field]) && field->fld_missing)
 		PIC_missing(field->fld_missing, picture);
 
 	return picture->pic_length;
@@ -137,7 +137,7 @@ TEXT *FMT_format(LLS stack)
 	ITM item, item2;
 	STR header;
 	QLI_NOD value;
-	FLD field;
+	QLI_FLD field;
 	PIC picture;
 	SSHORT segment;
 	USHORT i, j, l, offset, max_offset, number_segments, n, lengths[10], *ptr,
@@ -388,7 +388,7 @@ QLI_NOD FMT_list(QLI_NOD list)
  **************************************/
 	ITM new_item, *item, *end, *new_ptr;
 	SYM name;
-	FLD field;
+	QLI_FLD field;
 	CON constant;
 	QLI_NOD value, new_nod;
 	USHORT column, expression;
@@ -414,7 +414,7 @@ QLI_NOD FMT_list(QLI_NOD list)
 			value->nod_type == nod_function) {
 			expression = FALSE;
 			if (value->nod_type != nod_function) {
-				field = (FLD) value->nod_arg[e_fld_field];
+				field = (QLI_FLD) value->nod_arg[e_fld_field];
 				name = field->fld_name;
 				format_index(*item, value, FALSE);
 			}
@@ -860,8 +860,8 @@ static void format_index( ITM item, QLI_NOD field, USHORT print_flag)
 		l = strlen(item->itm_query_header);
 	}
 	else {
-		q = ((FLD) field->nod_arg[e_fld_field])->fld_name->sym_string;
-		l = ((FLD) field->nod_arg[e_fld_field])->fld_name->sym_length;
+		q = ((QLI_FLD) field->nod_arg[e_fld_field])->fld_name->sym_string;
+		l = ((QLI_FLD) field->nod_arg[e_fld_field])->fld_name->sym_length;
 	}
 
 	length = l + 2;
@@ -889,8 +889,8 @@ static void format_index( ITM item, QLI_NOD field, USHORT print_flag)
 
 		case nod_variable:
 		case nod_field:
-			q = ((FLD) subscript->nod_arg[e_fld_field])->fld_name->sym_string;
-			l = ((FLD) subscript->nod_arg[e_fld_field])->fld_name->sym_length;
+			q = ((QLI_FLD) subscript->nod_arg[e_fld_field])->fld_name->sym_string;
+			l = ((QLI_FLD) subscript->nod_arg[e_fld_field])->fld_name->sym_length;
 			break;
 
 		default:
@@ -932,7 +932,7 @@ static TEXT *format_report( VEC columns_vec, USHORT width, USHORT * max_width)
 	ITM item, item2;
 	STR header;
 	QLI_NOD node;
-	FLD field;
+	QLI_FLD field;
 	PIC picture;
 	SSHORT segment;
 	USHORT i, j, l, offset, max_offset, number_segments, n, lengths[10],
@@ -1140,7 +1140,7 @@ static void format_value( ITM item, int flags)
 	QLI_NOD node;
 	DSC *desc;
 	PIC picture;
-	FLD field;
+	QLI_FLD field;
 
 	node = item->itm_value;
 	desc = &node->nod_desc;
@@ -1152,7 +1152,7 @@ static void format_value( ITM item, int flags)
 		if (node->nod_type == nod_reference)
 			node = node->nod_arg[0];
 		if (node->nod_type == nod_field) {
-			field = (FLD) node->nod_arg[e_fld_field];
+			field = (QLI_FLD) node->nod_arg[e_fld_field];
 			if (field->fld_segment_length)
 				item->itm_print_length = field->fld_segment_length;
 		}
@@ -1165,7 +1165,7 @@ static void format_value( ITM item, int flags)
 			node = node->nod_arg[0];
 
 		if (node->nod_type == nod_field) {
-			field = (FLD) node->nod_arg[e_fld_field];
+			field = (QLI_FLD) node->nod_arg[e_fld_field];
 			if ((field->fld_flags & FLD_array) && !node->nod_arg[e_fld_subs])
 				ERRQ_print_error(480, field->fld_name->sym_string, NULL, NULL,
 								 NULL, NULL);	/* msg 480 can not format unsubscripted array %s */
@@ -1173,7 +1173,7 @@ static void format_value( ITM item, int flags)
 
 		if (!(item->itm_picture->pic_missing) &&
 			(node->nod_type == nod_field) &&
-			(field = (FLD) node->nod_arg[e_fld_field]) && field->fld_missing)
+			(field = (QLI_FLD) node->nod_arg[e_fld_field]) && field->fld_missing)
 			PIC_missing(field->fld_missing, picture);
 		item->itm_print_length = picture->pic_length;
 		picture->pic_flags |= flags;

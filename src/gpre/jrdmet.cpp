@@ -26,7 +26,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: jrdmet.cpp,v 1.5 2002-11-17 00:04:18 hippoman Exp $
+//	$Id: jrdmet.cpp,v 1.6 2002-11-30 17:40:24 hippoman Exp $
 //
 
 #include "firebird.h"
@@ -63,7 +63,7 @@ void JRDMET_init( DBB db)
 {
 	GPRE_REL relation;
 	SYM symbol;
-	FLD field;
+	GPRE_FLD field;
 	TYP type;
 	CONST RTYP *rtype;
 	CONST UCHAR *relfld;
@@ -93,7 +93,7 @@ void JRDMET_init( DBB db)
 			gfield = const_cast < gfld * >((fld[RFLD_F_UPD_MINOR]) ?
 										   &gfields[fld[RFLD_F_UPD_ID]] :
 										   &gfields[fld[RFLD_F_ID]]);
-			field = (FLD) ALLOC(FLD_LEN);
+			field = (GPRE_FLD) ALLOC(FLD_LEN);
 			relation->rel_fields = field;
 			field->fld_relation = relation;
 			field->fld_next = relation->rel_fields;

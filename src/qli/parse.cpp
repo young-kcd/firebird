@@ -75,7 +75,7 @@ static SYN parse_edit(void);
 static TEXT *parse_edit_string(void);
 static SYN parse_erase(void);
 static SYN parse_extract(void);
-static FLD parse_field(int);
+static QLI_FLD parse_field(int);
 static SYN parse_field_name(SYN *);
 static SYN parse_for(void);
 static SYN parse_form(void);
@@ -123,7 +123,7 @@ static SYN parse_sort(void);
 static SYN parse_sql_alter(void);
 static SYN parse_sql_create(void);
 static int parse_sql_dtype(USHORT *, USHORT *);
-static FLD parse_sql_field(void);
+static QLI_FLD parse_sql_field(void);
 static SYN parse_sql_grant_revoke(USHORT);
 static SYN parse_sql_index_create(USHORT, USHORT);
 static SYN parse_sql_joined_relation(SYN);
@@ -995,7 +995,7 @@ static SYN parse_declare(void)
  **************************************/
 	SYN node, field_node;
 	SYM name, query_name;
-	FLD global_variable;
+	QLI_FLD global_variable;
 	USHORT dtype, length, scale;
 	SSHORT sub_type, sub_type_missing;
 	TEXT *edit_string, *query_header;
@@ -1096,7 +1096,7 @@ static SYN parse_declare(void)
 		IBERROR(168);			/* Msg168 no datatype may be specified for a variable based on a field */
 
 	node = SYNTAX_NODE(nod_declare, 2);
-	global_variable = (FLD) ALLOCDV(type_fld, length);
+	global_variable = (QLI_FLD) ALLOCDV(type_fld, length);
 	node->syn_arg[0] = (SYN) global_variable;
 	global_variable->fld_name = name;
 	global_variable->fld_dtype = dtype;
@@ -1236,7 +1236,7 @@ static SYN parse_def_relation(void)
  *
  **************************************/
 	QLI_REL relation;
-	FLD field, *ptr;
+	QLI_FLD field, *ptr;
 	SYN node;
 
 	PAR_real();
@@ -1685,7 +1685,7 @@ static SYN parse_extract(void)
 }
 
 
-static FLD parse_field( int global_flag)
+static QLI_FLD parse_field( int global_flag)
 {
 /**************************************
  *
@@ -1697,7 +1697,7 @@ static FLD parse_field( int global_flag)
  *	Parse a field description.
  *
  **************************************/
-	FLD field;
+	QLI_FLD field;
 	SYM name, query_name, based_on;
 	USHORT dtype, length, scale;
 	SSHORT sub_type, sub_type_missing;
@@ -1766,7 +1766,7 @@ static FLD parse_field( int global_flag)
 		}
 	}
 
-	field = (FLD) ALLOCDV(type_fld, length);
+	field = (QLI_FLD) ALLOCDV(type_fld, length);
 	field->fld_name = name;
 	field->fld_dtype = dtype;
 	field->fld_scale = scale;
@@ -2608,7 +2608,7 @@ static SYN parse_modify_relation(void)
  **************************************/
 	SYN node;
 	QLI_REL relation;
-	FLD field;
+	QLI_FLD field;
 
 	node = SYNTAX_NODE(nod_mod_relation, 2);
 	relation = parse_qualified_relation();
@@ -2638,7 +2638,7 @@ static SYN parse_modify_relation(void)
 		}
 		else
 			SYNTAX_ERROR(197);	/* Msg197 ADD, MODIFY, or DROP */
-		field->fld_next = (FLD) node->syn_arg[1];
+		field->fld_next = (QLI_FLD) node->syn_arg[1];
 		node->syn_arg[1] = (SYN) field;
 		if (KEYWORD(KW_SEMI))
 			break;
@@ -3636,7 +3636,7 @@ static SYN parse_report(void)
  *	Parse a report specification.
  *
  **************************************/
-	SYN node, rse, flds, fld, rse_fld;
+	SYN node, rse, flds, qli_fld, rse_fld;
 	RPT report;
 	BRK control, *ptr, tmpptr, tmpptr1;
 	USHORT top, i, srt_syn, ctl_syn, syn_count;
@@ -3722,32 +3722,32 @@ static SYN parse_report(void)
 					}
 					*ptr = tmpptr;
 				}
-				fld = parse_field_name(0);
+				qli_fld = parse_field_name(0);
 				for (control = *ptr; control; control = control->brk_next) {
 					rse_fld = (SYN) control->brk_field;
-					if (rse_fld->syn_type != fld->syn_type)
+					if (rse_fld->syn_type != qli_fld->syn_type)
 						continue;
 					/* if number of field qualifiers on sort field and control field
 					   are not equal test match of rightmost set */
-					syn_count = MIN(rse_fld->syn_count, fld->syn_count);
+					syn_count = MIN(rse_fld->syn_count, qli_fld->syn_count);
 					srt_syn = ctl_syn = 0;
 					if (syn_count != rse_fld->syn_count)
 						srt_syn = rse_fld->syn_count - syn_count;
-					if (syn_count != fld->syn_count)
-						ctl_syn = fld->syn_count - syn_count;
+					if (syn_count != qli_fld->syn_count)
+						ctl_syn = qli_fld->syn_count - syn_count;
 					for (i = 0; i < syn_count; i++) {
 						name1 = (NAM) rse_fld->syn_arg[i + srt_syn];
-						name2 = (NAM) fld->syn_arg[i + ctl_syn];
+						name2 = (NAM) qli_fld->syn_arg[i + ctl_syn];
 						if (strcmp(name1->nam_string, name2->nam_string))
 							break;
 					}
-					if (i == fld->syn_count)
+					if (i == qli_fld->syn_count)
 						break;
 				}
 				if (!control)
 					SYNTAX_ERROR(383);	/* Msg383 sort field */
 				MATCH(KW_PRINT);
-				control->brk_field = fld;
+				control->brk_field = qli_fld;
 				control->brk_line = parse_print_list();
 			}
 			break;
@@ -4476,7 +4476,7 @@ static SYN parse_sql_alter(void)
  **************************************/
 	SYN node;
 	QLI_REL relation;
-	FLD field;
+	QLI_FLD field;
 
 	PAR_real_token();
 
@@ -4499,7 +4499,7 @@ static SYN parse_sql_alter(void)
 		else
 			SYNTAX_ERROR(405);	/* Msg405 ADD or DROP */
 
-		field->fld_next = (FLD) node->syn_arg[1];
+		field->fld_next = (QLI_FLD) node->syn_arg[1];
 		node->syn_arg[1] = (SYN) field;
 
 		if (!MATCH(KW_COMMA))
@@ -4646,7 +4646,7 @@ static int parse_sql_dtype( USHORT * length, USHORT * scale)
 }
 
 
-static FLD parse_sql_field(void)
+static QLI_FLD parse_sql_field(void)
 {
 /**************************************
  *
@@ -4658,7 +4658,7 @@ static FLD parse_sql_field(void)
  *	Parse a field description.
  *
  **************************************/
-	FLD field;
+	QLI_FLD field;
 	SYM name;
 	USHORT dtype, length, scale;
 
@@ -4689,7 +4689,7 @@ static FLD parse_sql_field(void)
 		break;
 	}
 
-	field = (FLD) ALLOCDV(type_fld, length);
+	field = (QLI_FLD) ALLOCDV(type_fld, length);
 	field->fld_name = name;
 	field->fld_dtype = dtype;
 	field->fld_scale = scale;
@@ -4952,7 +4952,7 @@ static SYN parse_sql_table_create(void)
  *
  **************************************/
 	QLI_REL relation;
-	FLD field, *ptr;
+	QLI_FLD field, *ptr;
 	SYN node;
 
 	PAR_real();

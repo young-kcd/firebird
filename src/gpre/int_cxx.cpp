@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int_cxx.cpp,v 1.5 2002-11-17 00:04:18 hippoman Exp $
+//	$Id: int_cxx.cpp,v 1.6 2002-11-30 17:40:24 hippoman Exp $
 //
 
 #include "firebird.h"
@@ -192,7 +192,7 @@ static void asgn_from( REF reference, int column)
 
 	for (; reference; reference = reference->ref_next)
 	{
-		const FLD field = reference->ref_field;
+		const GPRE_FLD field = reference->ref_field;
 		align(column);
 		gen_name(variable, reference);
 		if (reference->ref_source) {
@@ -228,7 +228,7 @@ static void asgn_from( REF reference, int column)
 
 static void asgn_to( REF reference)
 {
-	FLD field;
+	GPRE_FLD field;
 	REF source;
 	TEXT s[20];
 
@@ -349,7 +349,7 @@ static void gen_emodify( ACT action, int column)
 {
 	UPD modify;
 	REF reference;
-	FLD field;
+	GPRE_FLD field;
 	TEXT s1[20], s2[20];
 
 	modify = (UPD) action->act_object;
@@ -703,7 +703,7 @@ static void gen_variable( ACT action, int column)
 
 static void make_port( POR port, int column)
 {
-	FLD field;
+	GPRE_FLD field;
 	REF reference;
 	SYM symbol;
 	TEXT *name, s[50];

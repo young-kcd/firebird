@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.14 2002-11-20 23:13:21 hippoman Exp $
+//	$Id: cob.cpp,v 1.15 2002-11-30 17:40:24 hippoman Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -991,7 +991,7 @@ static void align( int column)
 
 static void asgn_from( ACT action, REF reference)
 {
-	FLD field;
+	GPRE_FLD field;
 	TEXT *value, name[64], variable[20], temp[20];
 
 	for (; reference; reference = reference->ref_next) {
@@ -1071,7 +1071,7 @@ static int asgn_sqlda_from(
 
 static void asgn_to( ACT action, REF reference)
 {
-	FLD field;
+	GPRE_FLD field;
 	REF source;
 	TEXT s[64];
 
@@ -1109,7 +1109,7 @@ static void asgn_to( ACT action, REF reference)
 
 static void asgn_to_proc( REF reference)
 {
-	FLD field;
+	GPRE_FLD field;
 	TEXT s[64];
 
 	for (; reference; reference = reference->ref_next) {
@@ -1175,7 +1175,7 @@ static void gen_at_end( ACT action)
 static void gen_based( ACT action)
 {
 	BAS based_on;
-	FLD field;
+	GPRE_FLD field;
 	TEXT s[64];
 	USHORT datatype;
 	SLONG length;
@@ -2505,7 +2505,7 @@ static void gen_emodify( ACT action)
 {
 	UPD modify;
 	REF reference, source;
-	FLD field;
+	GPRE_FLD field;
 	TEXT s1[20], s2[20];
 
 	modify = (UPD) action->act_object;
@@ -3000,7 +3000,7 @@ static void gen_function( ACT function)
 	GPRE_REQ request;
 	POR port;
 	REF reference;
-	FLD field;
+	GPRE_FLD field;
 	ACT action;
 	TEXT *dtype, s[64];
 
@@ -4525,7 +4525,7 @@ static void gen_store( ACT action)
 {
 	GPRE_REQ request;
 	REF reference;
-	FLD field;
+	GPRE_FLD field;
 	POR port;
 	TEXT name[64];
 
@@ -4814,7 +4814,7 @@ static void gen_window_suspend( ACT action)
 
 static void make_array_declaration( REF reference)
 {
-	FLD field;
+	GPRE_FLD field;
 	TEXT *name, space[128], string1[256], *p;
 	DIM dimension;
 	int i, dimension_size;
@@ -4975,7 +4975,7 @@ static TEXT *make_name_formatted( TEXT * string, TEXT * format, SYM symbol)
 
 static void make_port( POR port)
 {
-	FLD field;
+	GPRE_FLD field;
 	REF reference;
 	SYM symbol;
 	TEXT *name, s[80];

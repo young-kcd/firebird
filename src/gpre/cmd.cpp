@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmd.cpp,v 1.6 2002-11-17 00:04:18 hippoman Exp $
+//	$Id: cmd.cpp,v 1.7 2002-11-30 17:40:23 hippoman Exp $
 //
 
 #include "firebird.h"
@@ -76,21 +76,21 @@ static void declare_filter(GPRE_REQ, ACT);
 static void declare_udf(GPRE_REQ, ACT);
 static void get_referred_fields(ACT, CNSTRT);
 static void grant_revoke_privileges(GPRE_REQ, ACT);
-static void init_field_struct(FLD);
-static void put_array_info(GPRE_REQ, FLD);
+static void init_field_struct(GPRE_FLD);
+static void put_array_info(GPRE_REQ, GPRE_FLD);
 static void put_blr(GPRE_REQ, USHORT, GPRE_NOD, pfn_local_trigger_cb);
-static void put_computed_blr(GPRE_REQ, FLD);
-static void put_computed_source(GPRE_REQ, FLD);
+static void put_computed_blr(GPRE_REQ, GPRE_FLD);
+static void put_computed_source(GPRE_REQ, GPRE_FLD);
 static void put_cstring(GPRE_REQ, USHORT, TEXT *);
-static void put_dtype(GPRE_REQ, FLD);
-static void put_field_attributes(GPRE_REQ, FLD);
+static void put_dtype(GPRE_REQ, GPRE_FLD);
+static void put_field_attributes(GPRE_REQ, GPRE_FLD);
 static void put_numeric(GPRE_REQ, USHORT, SSHORT);
 static void put_short_cstring(GPRE_REQ, USHORT, TEXT *);
 static void put_string(GPRE_REQ, USHORT, TEXT *, USHORT);
 static void put_symbol(GPRE_REQ, int, SYM);
 static void put_trigger_blr(GPRE_REQ, USHORT, GPRE_NOD, pfn_local_trigger_cb);
 static void put_view_trigger_blr(GPRE_REQ, GPRE_REL, USHORT, GPRE_TRG, GPRE_NOD, GPRE_CTX *, GPRE_NOD);
-static void replace_field_names(GPRE_NOD, GPRE_NOD, FLD, SSHORT, GPRE_CTX *);
+static void replace_field_names(GPRE_NOD, GPRE_NOD, GPRE_FLD, SSHORT, GPRE_CTX *);
 static void set_statistics(GPRE_REQ, ACT);
 
 #define STUFF(blr)	*request->req_blr++ = (UCHAR)(blr)
@@ -432,12 +432,12 @@ static void alter_database( GPRE_REQ request, ACT action)
 
 static void alter_domain( GPRE_REQ request, ACT action)
 {
-	FLD field;
+	GPRE_FLD field;
 	TEXT *default_source;
 	GPRE_NOD default_node;
 	CNSTRT cnstrt;
 
-	field = (FLD) action->act_object;
+	field = (GPRE_FLD) action->act_object;
 
 //  modify field info 
 
@@ -499,7 +499,7 @@ static void alter_index( GPRE_REQ request, ACT action)
 
 static void alter_table( GPRE_REQ request, ACT action)
 {
-	FLD field;
+	GPRE_FLD field;
 	GPRE_REL relation;
 	CNSTRT cnstrt;
 	TEXT *default_source;
@@ -914,7 +914,7 @@ static void create_set_default_trg(
 
 	BOOLEAN search_for_default, search_for_column;
 	TEXT *search_for_domain;
-	FLD field, domain, fld;
+	GPRE_FLD field, domain, fld;
 	LLS for_key_fld;
 	STR for_key_fld_name;
 	USHORT offset, length;
@@ -1057,7 +1057,7 @@ static void create_set_default_trg(
 					(strcmp(rel->rel_symbol->sym_string,
 							relation->rel_symbol->sym_string) == 0)) {
 					/* ... then try to check for the default in memory */
-					for (fld = (FLD) rel->rel_fields;
+					for (fld = (GPRE_FLD) rel->rel_fields;
 						 fld; fld = fld->fld_next) {
 						if (strcmp(fld->fld_symbol->sym_string,
 								   (const char *) for_key_fld_name) != 0)
@@ -1097,7 +1097,7 @@ static void create_set_default_trg(
 					(act = req->req_actions) &&
 					((act->act_type == ACT_create_domain) ||
 					 (act->act_type == ACT_alter_domain)) &&
-					(domain = (FLD) act->act_object) &&
+					(domain = (GPRE_FLD) act->act_object) &&
 					(strcmp(search_for_domain,
 							domain->fld_symbol->sym_string) == 0) &&
 					(domain->fld_default_value->nod_type != nod_erase)) {
@@ -1633,10 +1633,10 @@ static void create_database_modify_dyn( GPRE_REQ request, ACT action)
 
 static void create_domain( GPRE_REQ request, ACT action)
 {
-	FLD field;
+	GPRE_FLD field;
 	TEXT *default_source;
 
-	field = (FLD) action->act_object;
+	field = (GPRE_FLD) action->act_object;
 
 //  add field info 
 
@@ -1711,7 +1711,7 @@ static void create_generator( GPRE_REQ request, ACT action)
 
 static void create_index( GPRE_REQ request, IND index)
 {
-	FLD field;
+	GPRE_FLD field;
 
 	if (index->ind_symbol)
 		put_symbol(request, gds_dyn_def_idx, index->ind_symbol);
@@ -1787,7 +1787,7 @@ static void create_shadow( GPRE_REQ request, ACT action)
 
 static void create_table( GPRE_REQ request, ACT action)
 {
-	FLD field;
+	GPRE_FLD field;
 	GPRE_REL relation;
 	USHORT position;
 	TEXT *default_source;
@@ -1897,7 +1897,7 @@ static void create_trigger(
 
 static BOOLEAN create_view( GPRE_REQ request, ACT action)
 {
-	FLD field, fld;
+	GPRE_FLD field, fld;
 	GPRE_NOD *ptr, *end, fields, value, view_field, and_nod, eq_nod;
 	GPRE_NOD view_boolean, new_view_field, set_item, set_list;
 	GPRE_NOD iand_node, or_node, anull_node, bnull_node;
@@ -1914,7 +1914,7 @@ static BOOLEAN create_view( GPRE_REQ request, ACT action)
 	LLS stack;
 	SLC slice;
 	GPRE_REQ slice_req;
-	struct fld tmp_field;
+	struct gpre_fld tmp_field;
 
 //  add relation name 
 
@@ -2200,7 +2200,7 @@ static void declare_filter( GPRE_REQ request, ACT action)
 static void declare_udf( GPRE_REQ request, ACT action)
 {
 	DECL_UDF udf;
-	FLD field, next;
+	GPRE_FLD field, next;
 	TEXT *udf_name;
 	SSHORT position, blob_position;
 
@@ -2416,7 +2416,7 @@ static void grant_revoke_privileges( GPRE_REQ request, ACT action)
 //  
 //  
 
-static void init_field_struct( FLD field)
+static void init_field_struct( GPRE_FLD field)
 {
 
 	field->fld_dtype = 0;
@@ -2454,7 +2454,7 @@ static void init_field_struct( FLD field)
 //		Put dimensions for the array field.
 //  
 
-static void put_array_info( GPRE_REQ request, FLD field)
+static void put_array_info( GPRE_REQ request, GPRE_FLD field)
 {
 	ARY array_info;
 	SSHORT dims;
@@ -2510,7 +2510,7 @@ static void put_blr(
 //		Generate dynamic DDL for a computed field.
 //  
 
-static void put_computed_blr( GPRE_REQ request, FLD field)
+static void put_computed_blr( GPRE_REQ request, GPRE_FLD field)
 {
 	GPRE_REL relation;
 	ACT action;
@@ -2550,7 +2550,7 @@ static void put_computed_blr( GPRE_REQ request, FLD field)
 //		Generate dynamic DDL for a computed field.
 //  
 
-static void put_computed_source( GPRE_REQ request, FLD field)
+static void put_computed_source( GPRE_REQ request, GPRE_FLD field)
 {
 	GPRE_REL relation;
 	ACT action;
@@ -2591,7 +2591,7 @@ static void put_cstring( GPRE_REQ request, USHORT operator_, TEXT * string)
 //		or ALTER TABLE action.
 //  
 
-static void put_dtype( GPRE_REQ request, FLD field)
+static void put_dtype( GPRE_REQ request, GPRE_FLD field)
 {
 	USHORT dtype;
 	USHORT length;
@@ -2751,7 +2751,7 @@ static void put_dtype( GPRE_REQ request, FLD field)
 //		global field (DOMAIN in SQL).
 //  
 
-static void put_field_attributes( GPRE_REQ request, FLD field)
+static void put_field_attributes( GPRE_REQ request, GPRE_FLD field)
 {
 
 	if (field->fld_flags & FLD_computed)
@@ -2996,13 +2996,13 @@ GPRE_NOD view_boolean, GPRE_CTX * contexts, GPRE_NOD set_list)
 static void replace_field_names(
 								GPRE_NOD input,
 								GPRE_NOD search_list,
-								FLD replace_with,
+								GPRE_FLD replace_with,
 								SSHORT null_them, GPRE_CTX * contexts)
 {
 	GPRE_NOD *ptr, *end;
 	GPRE_NOD *ptrs, *ends;
 	REF reference, references;
-	FLD rse_field, select_field, view_field;
+	GPRE_FLD rse_field, select_field, view_field;
 
 	if (!input)
 		return;

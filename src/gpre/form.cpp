@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: form.cpp,v 1.6 2002-11-17 00:04:18 hippoman Exp $
+//  $Id: form.cpp,v 1.7 2002-11-30 17:40:24 hippoman Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -35,7 +35,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: form.cpp,v 1.6 2002-11-17 00:04:18 hippoman Exp $
+//	$Id: form.cpp,v 1.7 2002-11-30 17:40:24 hippoman Exp $
 //
 
 #include "firebird.h"
@@ -64,10 +64,10 @@ extern USHORT sw_cstring;
 //		Lookup field in form.
 //  
 
-FLD FORM_lookup_field( FORM form, HANDLE object, char *string)
+GPRE_FLD FORM_lookup_field( FORM form, HANDLE object, char *string)
 {
 	SYM symbol;
-	FLD field;
+	GPRE_FLD field;
 	UCHAR name[32], *p;
 	HANDLE handle;
 	USHORT l;
@@ -88,7 +88,7 @@ FLD FORM_lookup_field( FORM form, HANDLE object, char *string)
 		return NULL;
 //  Make field block and decrypt data type 
 
-	field = (FLD) ALLOC(sizeof(struct fld));
+	field = (GPRE_FLD) ALLOC(sizeof(struct gpre_fld));
 	field->fld_next = form->form_fields;
 	form->form_fields = field;
 	field->fld_handle = handle;
@@ -175,7 +175,7 @@ FORM FORM_lookup_form(DBB dbb, UCHAR * string)
 //		Lookup sub-form of a given form.
 //  
 
-FORM FORM_lookup_subform(FORM parent, FLD field)
+FORM FORM_lookup_subform(FORM parent, GPRE_FLD field)
 {
 	FORM form;
 

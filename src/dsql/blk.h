@@ -27,7 +27,7 @@ BLKDEF(dsql_type_map, map, 0)	/* Unique */
 BLKDEF(dsql_type_req, dsql_req, 0)
 BLKDEF(dsql_type_dbb, dbb, 0)
 BLKDEF(dsql_type_dsql_rel, dsql_rel, 1)
-BLKDEF(dsql_type_fld, fld, 1)
+BLKDEF(dsql_type_fld, dsql_fld, 1)
 BLKDEF(dsql_type_fil, fil, 0)
 BLKDEF(dsql_type_nod, dsql_nod, sizeof(((DSQL_NOD) 0)->nod_arg[0]))
 BLKDEF(dsql_type_msg, msg, 0)

@@ -192,7 +192,7 @@ class dsql_rel : public pool_alloc_rpt<SCHAR, dsql_type_dsql_rel>
 public:
 	dsql_rel*	rel_next;			// Next relation in database
 	struct sym*	rel_symbol;			// Hash symbol for relation
-	class fld*	rel_fields;			// Field block
+	class dsql_fld*	rel_fields;			// Field block
 	dsql_rel*	rel_base_relation;	// base relation for an updatable view
 	TEXT*		rel_name;			// Name of relation
 	TEXT*		rel_owner;			// Owner of relation
@@ -210,10 +210,10 @@ typedef dsql_rel* DSQL_REL;
 #define REL_view            4   // relation is a view 
 
 
-class fld : public pool_alloc_rpt<SCHAR, dsql_type_fld>
+class dsql_fld : public pool_alloc_rpt<SCHAR, dsql_type_fld>
 {
 public:
-	fld*		fld_next;				// Next field in relation
+	dsql_fld*		fld_next;				// Next field in relation
 	dsql_rel*	fld_relation;			// Parent relation
 	class dsql_prc*	fld_procedure;			// Parent procedure
 	struct dsql_nod*	fld_ranges;				// ranges for multi dimension array
@@ -236,7 +236,7 @@ public:
 	SSHORT		fld_ttype;				// ID of field's language_driver
 	TEXT		fld_name[2];
 };
-typedef fld* FLD;
+typedef dsql_fld* DSQL_FLD;
 
 // values used in fld_flags
 
@@ -272,8 +272,8 @@ class dsql_prc : public pool_alloc_rpt<SCHAR, dsql_type_prc>
 public:
 	dsql_prc*		prc_next;		// Next relation in database
 	struct sym*	prc_symbol;		// Hash symbol for procedure
-	fld*		prc_inputs;		// Input parameters
-	fld*		prc_outputs;	// Output parameters
+	dsql_fld*		prc_inputs;		// Input parameters
+	dsql_fld*		prc_outputs;	// Output parameters
 	TEXT*		prc_name;		// Name of procedure
 	TEXT*		prc_owner;		// Owner of procedure
 	SSHORT		prc_in_count;
@@ -331,7 +331,7 @@ enum FUN_T
 class var : public pool_alloc_rpt<SCHAR, dsql_type_var>
 {
 public:
-	fld*	var_field;		// Field on which variable is based
+	dsql_fld*	var_field;		// Field on which variable is based
 	USHORT	var_flags;
 	USHORT	var_msg_number;		// Message number containing variable
 	USHORT	var_msg_item;		// Item number in message

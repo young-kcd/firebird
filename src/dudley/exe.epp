@@ -56,13 +56,13 @@
 DATABASE DB = FILENAME "yachts.lnk";
 
 static void add_cache(DBB);
-static void add_field(FLD);
+static void add_field(DUDLEY_FLD);
 static void add_files(DBB, FIL);
 static void add_filter(FILTER);
 static void add_function(FUNC);
 static void add_function_arg(FUNCARG);
 static void add_generator(SYM);
-static void add_global_field(FLD);
+static void add_global_field(DUDLEY_FLD);
 static void add_index(DUDLEY_IDX);
 static void add_log_files(DBB);
 static void add_relation(DUDLEY_REL);
@@ -73,17 +73,17 @@ static void add_type(TYP);
 static void add_user_privilege(USERPRIV);
 static void add_view(DUDLEY_REL);
 static void alloc_file_name(FIL *, UCHAR *);
-static FLD check_field(SYM, SYM);
+static DUDLEY_FLD check_field(SYM, SYM);
 static BOOLEAN check_function(SYM);
-static BOOLEAN check_range(FLD);
+static BOOLEAN check_range(DUDLEY_FLD);
 static BOOLEAN check_relation(SYM);
 static void close_blob(void *);
 static void *create_blob(SLONG *, USHORT, UCHAR *);
 static void drop_cache(DBB);
-static void drop_field(FLD);
+static void drop_field(DUDLEY_FLD);
 static void drop_filter(FILTER);
 static void drop_function(FUNC);
-static void drop_global_field(FLD);
+static void drop_global_field(DUDLEY_FLD);
 static void drop_index(DUDLEY_IDX);
 static void drop_relation(DUDLEY_REL);
 static void drop_security_class(SCL);
@@ -93,7 +93,7 @@ static void drop_trigger_msg(TRGMSG);
 static void drop_type(TYP);
 static void drop_user_privilege(USERPRIV);
 static void erase_userpriv(USERPRIV, TEXT *, USRE, UPFE);
-static void get_field_desc(FLD);
+static void get_field_desc(DUDLEY_FLD);
 static void get_global_fields(void);
 static void get_log_names(SCHAR *, FIL *, SCHAR *, SLONG, SSHORT, SSHORT);
 static void get_log_names_serial(FIL *);
@@ -104,8 +104,8 @@ static void get_triggers(DBB);
 static void get_udfs(DBB);
 static void make_desc(DUDLEY_NOD, DSC *);
 static int make_dtype(USHORT);
-static void modify_field(FLD);
-static void modify_global_field(FLD);
+static void modify_field(DUDLEY_FLD);
+static void modify_global_field(DUDLEY_FLD);
 static void modify_index(DUDLEY_IDX);
 static void modify_relation(DUDLEY_REL);
 static void modify_trigger(DUDLEY_TRG);
@@ -116,7 +116,7 @@ static void set_generator(DUDLEY_NOD);
 static void store_acl(SCL, SLONG *);
 static void store_blr(DUDLEY_NOD, SLONG *, DUDLEY_REL);
 static void store_query_header(DUDLEY_NOD, SLONG *);
-static void store_range(FLD);
+static void store_range(DUDLEY_FLD);
 static void store_text(TXT, SLONG *);
 static void store_userpriv(USERPRIV, TEXT *, TEXT *, USRE, UPFE);
 static int string_length(SCHAR);
@@ -500,15 +500,15 @@ void EXE_execute(void)
 				break;
 
 			case act_a_field:
-				add_field((FLD) action->act_object);
+				add_field((DUDLEY_FLD) action->act_object);
 				break;
 
 			case act_m_field:
-				modify_field((FLD) action->act_object);
+				modify_field((DUDLEY_FLD) action->act_object);
 				break;
 
 			case act_d_field:
-				drop_field((FLD) action->act_object);
+				drop_field((DUDLEY_FLD) action->act_object);
 				break;
 
 			case act_a_filter:
@@ -532,15 +532,15 @@ void EXE_execute(void)
 				break;
 
 			case act_a_gfield:
-				add_global_field((FLD) action->act_object);
+				add_global_field((DUDLEY_FLD) action->act_object);
 				break;
 
 			case act_m_gfield:
-				modify_global_field((FLD) action->act_object);
+				modify_global_field((DUDLEY_FLD) action->act_object);
 				break;
 
 			case act_d_gfield:
-				drop_global_field((FLD) action->act_object);
+				drop_global_field((DUDLEY_FLD) action->act_object);
 				break;
 
 			case act_a_index:
@@ -969,7 +969,7 @@ static void add_cache( DBB dbb)
 }
 
 
-static void add_field( FLD field)
+static void add_field( DUDLEY_FLD field)
 {
 /**************************************
  *
@@ -1243,7 +1243,7 @@ static void add_generator( SYM symbol)
 }
 
 
-static void add_global_field( FLD field)
+static void add_global_field( DUDLEY_FLD field)
 {
 /**************************************
  *
@@ -1361,7 +1361,7 @@ static void add_index( DUDLEY_IDX index)
  **************************************/
 	SYM *symbol;
 	USHORT i, size, error, if_any;
-	FLD field;
+	DUDLEY_FLD field;
 
 	error = if_any = FALSE;
 
@@ -1817,7 +1817,7 @@ static void add_view( DUDLEY_REL relation)
  *	Add a new view relation.
  *
  **************************************/
-	FLD field;
+	DUDLEY_FLD field;
 	DUDLEY_REL target;
 	DUDLEY_NOD rse, *arg, contexts;
 	DUDLEY_CTX context;
@@ -1973,7 +1973,7 @@ static void alloc_file_name( FIL * start_file, UCHAR * file_name)
 }
 
 
-static FLD check_field( SYM relation, SYM field)
+static DUDLEY_FLD check_field( SYM relation, SYM field)
 {
 /**************************************
  *
@@ -1992,7 +1992,7 @@ static FLD check_field( SYM relation, SYM field)
 		X.RDB$FIELD_NAME EQ field->sym_string
         {
             if (symbol = HSH_typed_lookup(X.RDB$FIELD_SOURCE, (USHORT) 0, SYM_global)) 
-                return (FLD) symbol->sym_object;
+                return (DUDLEY_FLD) symbol->sym_object;
         } 
     END_FOR;
 
@@ -2024,7 +2024,7 @@ static BOOLEAN check_function( SYM name)
 }
 
 
-static BOOLEAN check_range( FLD field)
+static BOOLEAN check_range( DUDLEY_FLD field)
 {
 /**************************************
  *
@@ -2192,7 +2192,7 @@ static void drop_cache( DBB dbb)
 }
 
 
-static void drop_field( FLD field)
+static void drop_field( DUDLEY_FLD field)
 {
 /**************************************
  *
@@ -2323,7 +2323,7 @@ static void drop_function( FUNC function)
 }
 
 
-static void drop_global_field( FLD field)
+static void drop_global_field( DUDLEY_FLD field)
 {
 /**************************************
  *
@@ -2813,7 +2813,7 @@ static void erase_userpriv( USERPRIV upriv, TEXT * priv, USRE usr, UPFE upf)
 }
 
 
-static void get_field_desc( FLD field)
+static void get_field_desc( DUDLEY_FLD field)
 {
 /**************************************
  *
@@ -2829,10 +2829,10 @@ static void get_field_desc( FLD field)
 
 	if_any = FALSE;
 
-	FOR FLD IN RDB$RELATION_FIELDS CROSS SRC IN RDB$FIELDS
-		WITH FLD.RDB$FIELD_NAME = field->fld_name->sym_string
-		AND FLD.RDB$RELATION_NAME = field->fld_relation->rel_name->sym_string
-		AND FLD.RDB$FIELD_SOURCE = SRC.RDB$FIELD_NAME
+	FOR DUDLEY_FLD IN RDB$RELATION_FIELDS CROSS SRC IN RDB$FIELDS
+		WITH DUDLEY_FLD.RDB$FIELD_NAME = field->fld_name->sym_string
+		AND DUDLEY_FLD.RDB$RELATION_NAME = field->fld_relation->rel_name->sym_string
+		AND DUDLEY_FLD.RDB$FIELD_SOURCE = SRC.RDB$FIELD_NAME
 
 		field->fld_dtype = SRC.RDB$FIELD_TYPE;
 	    field->fld_length = SRC.RDB$FIELD_LENGTH;
@@ -2862,11 +2862,11 @@ static void get_global_fields(void)
  *	Get global fields for database.
  *
  **************************************/
-	FLD field;
+	DUDLEY_FLD field;
 	SYM symbol;
 
 	FOR X IN RDB$FIELDS 
-        field = (FLD) DDL_alloc(FLD_LEN);
+        field = (DUDLEY_FLD) DDL_alloc(FLD_LEN);
 	    field->fld_name = symbol =
             get_symbol(SYM_global, X.RDB$FIELD_NAME, (DUDLEY_CTX) field);
         HSH_insert(symbol);
@@ -3015,7 +3015,7 @@ static void get_relations( DBB database)
  *
  **************************************/
 	DUDLEY_REL relation;
-	FLD field;
+	DUDLEY_FLD field;
 	SYM symbol;
 
 	FOR R IN RDB$RELATIONS 
@@ -3030,7 +3030,7 @@ static void get_relations( DBB database)
         FOR RFR IN RDB$RELATION_FIELDS WITH 
             RFR.RDB$RELATION_NAME = R.RDB$RELATION_NAME 
 
-            field = (FLD) DDL_alloc(FLD_LEN);
+            field = (DUDLEY_FLD) DDL_alloc(FLD_LEN);
             field->fld_name = get_symbol(SYM_field, RFR.RDB$FIELD_NAME, (DUDLEY_CTX) field);
             HSH_insert(field->fld_name);
             field->fld_relation = relation;
@@ -3226,7 +3226,7 @@ static void make_desc( DUDLEY_NOD node, DSC * desc)
  *	Invent a descriptor based on expression tree.
  *
  **************************************/
-	FLD field;
+	DUDLEY_FLD field;
 	DSC desc1, desc2;
 	CON constant;
 	FUNC function;
@@ -3369,7 +3369,7 @@ static void make_desc( DUDLEY_NOD node, DSC * desc)
 		return;
 
 	case nod_field:
-		field = (FLD) node->nod_arg[s_fld_field];
+		field = (DUDLEY_FLD) node->nod_arg[s_fld_field];
 		if (!field->fld_dtype)
 			get_field_desc(field);
 		desc->dsc_dtype = field->fld_dtype;
@@ -3509,7 +3509,7 @@ static int make_dtype( USHORT blr_type)
 }
 
 
-static void modify_field( FLD field)
+static void modify_field( DUDLEY_FLD field)
 {
 /**************************************
  *
@@ -3588,7 +3588,7 @@ static void modify_field( FLD field)
 }
 
 
-static void modify_global_field( FLD field)
+static void modify_global_field( DUDLEY_FLD field)
 {
 /**************************************
  *
@@ -4174,7 +4174,7 @@ static void store_query_header( DUDLEY_NOD node, SLONG * blob_id)
 }
 
 
-static void store_range( FLD field)
+static void store_range( DUDLEY_FLD field)
 {
 /**************************************
  *

@@ -45,7 +45,7 @@ BOOLEAN MET_get_char_subtype(TDBB, SSHORT *, UCHAR *, USHORT);
 struct jrd_nod *MET_get_dependencies(TDBB, struct jrd_rel*, TEXT*,
 								class Csb*, SLONG[2], struct jrd_req**,
 								class Csb **, CONST TEXT*, USHORT);
-struct fld *MET_get_field(struct jrd_rel *, USHORT);
+struct jrd_fld *MET_get_field(struct jrd_rel *, USHORT);
 void MET_get_shadow_files(TDBB, USHORT);
 int MET_get_walinfo(TDBB, struct logfiles **, ULONG *,
 						   struct logfiles **);

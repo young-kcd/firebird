@@ -28,10 +28,10 @@
 //extern "C" {
 #endif
 
-extern FLD MET_context_field(GPRE_CTX, char *);
+extern GPRE_FLD MET_context_field(GPRE_CTX, char *);
 extern BOOLEAN MET_database(DBB, BOOLEAN);
-extern USHORT MET_domain_lookup(GPRE_REQ, FLD, char *);
-extern FLD MET_field(GPRE_REL, char *);
+extern USHORT MET_domain_lookup(GPRE_REQ, GPRE_FLD, char *);
+extern GPRE_FLD MET_field(GPRE_REL, char *);
 extern GPRE_NOD MET_fields(GPRE_CTX);
 extern void MET_fini(DBB);
 extern SCHAR *MET_generator(TEXT *, DBB);
@@ -46,10 +46,10 @@ extern UDF MET_get_udf(DBB, TEXT *);
 extern GPRE_REL MET_get_view_relation(GPRE_REQ, char *, char *, USHORT);
 extern IND MET_index(DBB, TEXT *);
 extern void MET_load_hash_table(DBB);
-extern FLD MET_make_field(SCHAR *, SSHORT, SSHORT, BOOLEAN);
+extern GPRE_FLD MET_make_field(SCHAR *, SSHORT, SSHORT, BOOLEAN);
 extern IND MET_make_index(SCHAR *);
 extern GPRE_REL MET_make_relation(SCHAR *);
-extern BOOLEAN MET_type(FLD, TEXT *, SSHORT *);
+extern BOOLEAN MET_type(GPRE_FLD, TEXT *, SSHORT *);
 extern BOOLEAN MET_trigger_exists(DBB, TEXT *);
 
 #ifdef __cplusplus

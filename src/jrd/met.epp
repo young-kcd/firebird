@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.39 2002-11-20 23:16:37 hippoman Exp $
+$Id: met.epp,v 1.40 2002-11-30 17:43:19 hippoman Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -901,7 +901,7 @@ JRD_NOD MET_get_dependencies(TDBB			tdbb,
 }
 
 
-FLD MET_get_field(JRD_REL relation, USHORT id)
+JRD_FLD MET_get_field(JRD_REL relation, USHORT id)
 {
 /**************************************
  *
@@ -920,7 +920,7 @@ FLD MET_get_field(JRD_REL relation, USHORT id)
 		!(vector = relation->rel_fields) ||
 		id >= vector->count()) return NULL;
 
-	return (FLD) (*vector)[id];
+	return (JRD_FLD) (*vector)[id];
 }
 
 
@@ -1369,7 +1369,7 @@ int MET_lookup_field(TDBB tdbb, JRD_REL relation, CONST TEXT* name, CONST TEXT* 
 		for (fieldIter = vector->begin(), id = 0, end = vector->end(); 
              fieldIter < end; fieldIter++, id++) {
             if (*fieldIter) {
-                FLD field = (FLD) *fieldIter;
+                JRD_FLD field = (JRD_FLD) *fieldIter;
 
                 if (field->fld_length == length && (p = field->fld_name)) {
                     q = name;
@@ -3224,7 +3224,7 @@ void MET_scan_relation( TDBB tdbb, JRD_REL relation)
 	ARR array;
 	TRIG_VEC triggers[TRIGGER_MAX], tmp_vector;
 	VEC vector;
-	FLD field;
+	JRD_FLD field;
 	BLK request;
 	CSB csb_;
 	BLB blob;
@@ -3386,7 +3386,7 @@ void MET_scan_relation( TDBB tdbb, JRD_REL relation)
 					&& !REL.RDB$DEFAULT_CLASS.NULL) field->fld_security_name =
 						MET_save_name(tdbb, REL.RDB$DEFAULT_CLASS);
 				field_id = n;
-				field = (FLD) (*vector)[field_id];
+				field = (JRD_FLD) (*vector)[field_id];
 				array = NULL;
 				break;
 
@@ -4333,7 +4333,7 @@ static void store_dependencies(TDBB			tdbb,
 	BLK		request;
 	JRD_REL		relation;
 	JRD_PRC		procedure;
-	FLD		field;
+	JRD_FLD		field;
 	JRD_NOD		node;
 	JRD_NOD		field_node;
 	SSHORT	fld_id;
@@ -4399,7 +4399,7 @@ static void store_dependencies(TDBB			tdbb,
 					else if (procedure)
 					{
 						field =
-							(FLD) (*procedure->prc_output_fields)[fld_id];
+							(JRD_FLD) (*procedure->prc_output_fields)[fld_id];
 					}
 				}
 			}

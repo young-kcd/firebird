@@ -415,7 +415,7 @@ static QLI_NOD compile_edit( QLI_NOD node, QLI_REQ request)
  *
  **************************************/
 	QLI_NOD value;
-	FLD field;
+	QLI_FLD field;
 	PAR parm;
 
 /* Make sure there is a message.  If there isn't a message, we
@@ -427,7 +427,7 @@ static QLI_NOD compile_edit( QLI_NOD node, QLI_REQ request)
 /* If there is an input blob, get it now. */
 
 	if (value = node->nod_arg[e_edt_input]) {
-		field = (FLD) value->nod_arg[e_fld_field];
+		field = (QLI_FLD) value->nod_arg[e_fld_field];
 		if (value->nod_type != nod_field || field->fld_dtype != dtype_blob)
 			IBERROR(356);		/* Msg356 EDIT argument must be a blob field */
 		node->nod_arg[e_edt_input] =
@@ -494,7 +494,7 @@ static QLI_NOD compile_expression( QLI_NOD node, QLI_REQ request, int internal_f
 	QLI_NOD *ptr, *end, value;
 	MAP map;
 	PAR parm;
-	FLD field;
+	QLI_FLD field;
 
 	switch (node->nod_type) {
 	case nod_any:
@@ -648,7 +648,7 @@ static QLI_NOD compile_expression( QLI_NOD node, QLI_REQ request, int internal_f
 		if (internal_flag) {
 			node->nod_export = parm = make_parameter(request->req_send, node);
 			parm->par_value = node;
-			if (field = (FLD) node->nod_arg[e_prm_field]) {
+			if (field = (QLI_FLD) node->nod_arg[e_prm_field]) {
 				parm->par_desc.dsc_dtype = field->fld_dtype;
 				parm->par_desc.dsc_length = field->fld_length;
 				parm->par_desc.dsc_scale = field->fld_scale;
@@ -669,7 +669,7 @@ static QLI_NOD compile_expression( QLI_NOD node, QLI_REQ request, int internal_f
 		return compile_field(node, request, internal_flag);
 
 	case nod_variable:
-		field = (FLD) node->nod_arg[e_fld_field];
+		field = (QLI_FLD) node->nod_arg[e_fld_field];
 		node->nod_desc.dsc_address = field->fld_data;
 
 	case nod_form_field:
@@ -708,12 +708,12 @@ static QLI_NOD compile_field( QLI_NOD node, QLI_REQ request, int internal_flag)
 	QLI_CTX context;
 	PAR parm;
 	QLI_MSG message;
-	FLD field;
+	QLI_FLD field;
 
 /* Pick up field characteristics */
 
 	node->nod_count = 0;
-	field = (FLD) node->nod_arg[e_fld_field];
+	field = (QLI_FLD) node->nod_arg[e_fld_field];
 	context = (QLI_CTX) node->nod_arg[e_fld_context];
 	if ((field->fld_flags & FLD_array) && !node->nod_arg[e_fld_subs]) {
 		node->nod_desc.dsc_dtype = dtype_quad;
@@ -1091,13 +1091,13 @@ static QLI_NOD compile_prompt( QLI_NOD node)
  *
  **************************************/
 	STR string;
-	FLD field;
+	QLI_FLD field;
 	USHORT l, prompt_length;
 	UCHAR *p, *prompt;
 
 /* Make up a plausible prompt length */
 
-	if (!(field = (FLD) node->nod_arg[e_prm_field]))
+	if (!(field = (QLI_FLD) node->nod_arg[e_prm_field]))
 		prompt_length = PROMPT_LENGTH;
 	else
 		switch (field->fld_dtype) {
@@ -1719,7 +1719,7 @@ static void make_descriptor( QLI_NOD node, DSC * desc)
  *
  **************************************/
 	DSC desc1, desc2;
-	FLD field;
+	QLI_FLD field;
 	PAR parameter;
 	MAP map;
 	FFL ffield;
@@ -1737,7 +1737,7 @@ static void make_descriptor( QLI_NOD node, DSC * desc)
 	switch (node->nod_type) {
 	case nod_field:
 	case nod_variable:
-		field = (FLD) node->nod_arg[e_fld_field];
+		field = (QLI_FLD) node->nod_arg[e_fld_field];
 		desc->dsc_dtype = field->fld_dtype;
 		desc->dsc_length = field->fld_length;
 		desc->dsc_scale = field->fld_scale;

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.9 2002-11-20 23:13:21 hippoman Exp $
+//	$Id: ada.cpp,v 1.10 2002-11-30 17:40:23 hippoman Exp $
 //
 
 #include "firebird.h"
@@ -560,7 +560,7 @@ static void align( int column)
 
 static void asgn_from( ACT action, REF reference, int column)
 {
-	FLD field;
+	GPRE_FLD field;
 	TEXT *value, name[64], variable[20], temp[20];
 
 	for (; reference; reference = reference->ref_next) {
@@ -629,7 +629,7 @@ static void asgn_sqlda_from(
 
 static void asgn_to( ACT action, REF reference, int column)
 {
-	FLD field;
+	GPRE_FLD field;
 	REF source;
 	TEXT s[20];
 
@@ -729,7 +729,7 @@ static void gen_at_end( ACT action, int column)
 static void gen_based( ACT action, int column)
 {
 	BAS based_on;
-	FLD field;
+	GPRE_FLD field;
 	SSHORT datatype, i, length;
 	DIM dimension;
 	SCHAR s[512], s2[128], *p, *q;
@@ -1274,7 +1274,7 @@ static void gen_database( ACT action, int column)
 	LLS stack_ptr;
 	TPB tpb;
 	REF reference;
-	FLD field;
+	GPRE_FLD field;
 	BOOLEAN array_flag;
 
 	if (first_flag++ != 0)
@@ -1797,7 +1797,7 @@ static void gen_emodify( ACT action, int column)
 {
 	UPD modify;
 	REF reference, source;
-	FLD field;
+	GPRE_FLD field;
 	TEXT s1[20], s2[20];
 
 	modify = (UPD) action->act_object;
@@ -2375,7 +2375,7 @@ static void gen_function( ACT function, int column)
 	GPRE_REQ request;
 	POR port;
 	REF reference;
-	FLD field;
+	GPRE_FLD field;
 	ACT action;
 	TEXT *dtype, s[64];
 
@@ -3464,7 +3464,7 @@ static void gen_routine( ACT action, int column)
 	POR port;
 	SSHORT blob_subtype;
 	REF reference;
-	FLD field;
+	GPRE_FLD field;
 
 	column += INDENT;
 
@@ -3791,7 +3791,7 @@ static void gen_store( ACT action, int column)
 {
 	GPRE_REQ request;
 	REF reference;
-	FLD field;
+	GPRE_FLD field;
 	POR port;
 	TEXT name[64];
 
@@ -4064,7 +4064,7 @@ static void gen_window_suspend( ACT action, int column)
 
 static void make_array_declaration( REF reference, int column)
 {
-	FLD field;
+	GPRE_FLD field;
 	SCHAR *name;
 	TEXT s[64];
 	DIM dimension;
@@ -4225,7 +4225,7 @@ static void make_ok_test( ACT action, GPRE_REQ request, int column)
 
 static void make_port( POR port, int column)
 {
-	FLD field;
+	GPRE_FLD field;
 	REF reference;
 	SYM symbol;
 	TEXT *name, s[80];

@@ -368,7 +368,7 @@ DSC *EVAL_value(QLI_NOD node)
  *
  **************************************/
 	QLI_NOD *ptr, *end_ptr;
-	FLD field;
+	QLI_FLD field;
 	DSC *values[4], **value, *desc, *desc2;
 	UCHAR *p;
 	double d1;
@@ -401,7 +401,7 @@ DSC *EVAL_value(QLI_NOD node)
 		return desc;
 
 	case nod_variable:
-		field = (FLD) node->nod_arg[e_fld_field];
+		field = (QLI_FLD) node->nod_arg[e_fld_field];
 		desc->dsc_missing =
 			(field->fld_flags & FLD_missing) ? DSC_missing : 0;
 		return desc;

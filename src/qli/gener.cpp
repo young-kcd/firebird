@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gener.cpp,v 1.8 2002-11-19 12:38:35 dimitr Exp $
+$Id: gener.cpp,v 1.9 2002-11-30 17:45:02 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -467,7 +467,7 @@ static void gen_any( QLI_NOD node, QLI_REQ request)
  **************************************/
 	QLI_REQ new_request;
 	RLB rlb;
-	FLD field;
+	QLI_FLD field;
 	QLI_CTX context;
 	QLI_MSG send, receive;
 	DSC desc;
@@ -778,7 +778,7 @@ static void gen_expression( QLI_NOD node, QLI_REQ request)
  *
  **************************************/
 	QLI_NOD *ptr, *end;
-	FLD field;
+	QLI_FLD field;
 	QLI_CTX context;
 	MAP map;
 	USHORT operatr;
@@ -1012,7 +1012,7 @@ static void gen_field( QLI_NOD node, QLI_REQ request)
  *	requests or not.
  *
  **************************************/
-	FLD field;
+	QLI_FLD field;
 	QLI_CTX context;
 	RLB rlb;
 	QLI_NOD args, *ptr, *end;
@@ -1024,7 +1024,7 @@ static void gen_field( QLI_NOD node, QLI_REQ request)
 
 	rlb = CHECK_RLB(request->req_blr);
 
-	field = (FLD) node->nod_arg[e_fld_field];
+	field = (QLI_FLD) node->nod_arg[e_fld_field];
 	context = (QLI_CTX) node->nod_arg[e_fld_context];
 
 /* If the field referenced is in this request, just generate a field
@@ -1820,7 +1820,7 @@ static void gen_statistical( QLI_NOD node, QLI_REQ request)
  *
  **************************************/
 	QLI_REQ new_request;
-	FLD field;
+	QLI_FLD field;
 	QLI_CTX context;
 	QLI_MSG send, receive;
 	USHORT operatr, i;

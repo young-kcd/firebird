@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exp.cpp,v 1.7 2002-11-17 00:04:18 hippoman Exp $
+//	$Id: exp.cpp,v 1.8 2002-11-30 17:40:24 hippoman Exp $
 //
 
 #include "firebird.h"
@@ -71,19 +71,19 @@ static GPRE_NOD make_and(GPRE_NOD, GPRE_NOD);
 static GPRE_NOD make_list(LLS);
 static GPRE_NOD normalize_index(DIM, GPRE_NOD, USHORT);
 static GPRE_NOD par_and(GPRE_REQ);
-static GPRE_NOD par_array(GPRE_REQ, FLD, SSHORT, SSHORT);
+static GPRE_NOD par_array(GPRE_REQ, GPRE_FLD, SSHORT, SSHORT);
 static GPRE_NOD par_boolean(GPRE_REQ);
 static GPRE_NOD par_field(GPRE_REQ);
-static GPRE_NOD par_multiply(GPRE_REQ, FLD);
-static GPRE_NOD par_native_value(GPRE_REQ, FLD);
+static GPRE_NOD par_multiply(GPRE_REQ, GPRE_FLD);
+static GPRE_NOD par_native_value(GPRE_REQ, GPRE_FLD);
 static GPRE_NOD par_not(GPRE_REQ);
 static GPRE_NOD par_over(GPRE_CTX);
-static GPRE_NOD par_primitive_value(GPRE_REQ, FLD);
+static GPRE_NOD par_primitive_value(GPRE_REQ, GPRE_FLD);
 static GPRE_NOD par_relational(GPRE_REQ);
-static GPRE_NOD par_udf(GPRE_REQ, USHORT, FLD);
-static GPRE_NOD par_value(GPRE_REQ, FLD);
+static GPRE_NOD par_udf(GPRE_REQ, USHORT, GPRE_FLD);
+static GPRE_NOD par_value(GPRE_REQ, GPRE_FLD);
 
-static FLD count_field, subscript_field;
+static GPRE_FLD count_field, subscript_field;
 
 static struct rel_ops {
 	enum nod_t rel_op;
@@ -125,7 +125,7 @@ static struct dtypes {
 //		Parse array subscript.
 //  
 
-GPRE_NOD EXP_array(GPRE_REQ request, FLD field, SSHORT subscript_flag, SSHORT sql_flag)
+GPRE_NOD EXP_array(GPRE_REQ request, GPRE_FLD field, SSHORT subscript_flag, SSHORT sql_flag)
 {
 
 	return par_array(request, field, subscript_flag, sql_flag);
@@ -137,10 +137,10 @@ GPRE_NOD EXP_array(GPRE_REQ request, FLD field, SSHORT subscript_flag, SSHORT sq
 //		Parse a datatype cast (sans leading period).
 //  
 
-FLD EXP_cast(FLD field)
+GPRE_FLD EXP_cast(GPRE_FLD field)
 {
 	struct dtypes *dtype;
-	FLD cast;
+	GPRE_FLD cast;
 
 	for (dtype = data_types;; dtype++)
 		if ((int) dtype->dtype_keyword == (int) KW_none)
@@ -148,7 +148,7 @@ FLD EXP_cast(FLD field)
 		else if (MATCH(dtype->dtype_keyword))
 			break;
 
-	cast = (FLD) ALLOC(FLD_LEN);
+	cast = (GPRE_FLD) ALLOC(FLD_LEN);
 	cast->fld_symbol = field->fld_symbol;
 
 	switch (cast->fld_dtype = dtype->dtype_dtype) {
@@ -265,11 +265,11 @@ GPRE_CTX EXP_context(GPRE_REQ request, SYM initial_symbol)
 //		context block (by reference).
 //  
 
-FLD EXP_field(GPRE_CTX * rcontext)
+GPRE_FLD EXP_field(GPRE_CTX * rcontext)
 {
 	SYM symbol;
 	GPRE_CTX context;
-	FLD field;
+	GPRE_FLD field;
 	GPRE_REL relation;
 	TEXT s[128];
 
@@ -308,11 +308,11 @@ FLD EXP_field(GPRE_CTX * rcontext)
 //		context block (by reference).
 //  
 
-FLD EXP_form_field(GPRE_CTX * rcontext)
+GPRE_FLD EXP_form_field(GPRE_CTX * rcontext)
 {
 	SYM symbol;
 	GPRE_CTX context;
-	FLD field, child;
+	GPRE_FLD field, child;
 	REF reference, parent;
 	GPRE_REQ request;
 	FORM form;
@@ -658,7 +658,7 @@ void EXP_post_array( REF reference)
 {
 	GPRE_REQ request;
 	REF array_reference;
-	FLD field;
+	GPRE_FLD field;
 	BLB blob;
 	GPRE_CTX context;
 
@@ -696,11 +696,11 @@ void EXP_post_array( REF reference)
 //		(cross request field reference).
 //  
 
-REF EXP_post_field(FLD field, GPRE_CTX context, USHORT null_flag)
+REF EXP_post_field(GPRE_FLD field, GPRE_CTX context, USHORT null_flag)
 {
 	GPRE_REQ request;
 	REF reference, control;
-	FLD ref_field;
+	GPRE_FLD ref_field;
 	TEXT s[128];
 
 	request = context->ctx_request;
@@ -1097,7 +1097,7 @@ static BOOLEAN check_relation(void)
 static GPRE_NOD lookup_field( GPRE_CTX context)
 {
 	REF reference;
-	FLD field;
+	GPRE_FLD field;
 	char s[132];
 
 	SQL_resolve_identifier("<Field Name>", s);
@@ -1231,7 +1231,7 @@ static GPRE_NOD par_and( GPRE_REQ request)
 //  
 
 static GPRE_NOD par_array(GPRE_REQ request,
-					 FLD field, SSHORT subscript_flag, SSHORT sql_flag)
+					 GPRE_FLD field, SSHORT subscript_flag, SSHORT sql_flag)
 {
 	BOOLEAN paren = FALSE, bracket = FALSE;
 	DIM dimension;
@@ -1347,7 +1347,7 @@ static GPRE_NOD par_boolean( GPRE_REQ request)
 static GPRE_NOD par_field( GPRE_REQ request)
 {
 	SYM symbol;
-	FLD field, cast;
+	GPRE_FLD field, cast;
 	GPRE_CTX context;
 	REF reference, value_reference;
 	GPRE_NOD node, prefix_node;
@@ -1433,7 +1433,7 @@ static GPRE_NOD par_field( GPRE_REQ request)
 //		precedence operator plus/minus.
 //  
 
-static GPRE_NOD par_multiply( GPRE_REQ request, FLD field)
+static GPRE_NOD par_multiply( GPRE_REQ request, GPRE_FLD field)
 {
 	GPRE_NOD node, arg;
 	enum nod_t operator_;
@@ -1459,7 +1459,7 @@ static GPRE_NOD par_multiply( GPRE_REQ request, FLD field)
 //		Parse a native C value.
 //  
 
-static GPRE_NOD par_native_value( GPRE_REQ request, FLD field)
+static GPRE_NOD par_native_value( GPRE_REQ request, GPRE_FLD field)
 {
 	GPRE_NOD node;
 	REF reference;
@@ -1561,7 +1561,7 @@ static GPRE_NOD par_over( GPRE_CTX context)
 //		precedence operator plus/minus.
 //  
 
-static GPRE_NOD par_primitive_value( GPRE_REQ request, FLD field)
+static GPRE_NOD par_primitive_value( GPRE_REQ request, GPRE_FLD field)
 {
 	GPRE_NOD node, sub;
 	SYM symbol;
@@ -1607,7 +1607,7 @@ static GPRE_NOD par_relational( GPRE_REQ request)
 {
 	GPRE_NOD expr, expr1, expr2;
 	REF reference;
-	FLD field;
+	GPRE_FLD field;
 	USHORT negation;
 	struct rel_ops *relop;
 
@@ -1711,7 +1711,7 @@ static GPRE_NOD par_relational( GPRE_REQ request)
 //		complain bitterly.
 //  
 
-static GPRE_NOD par_udf( GPRE_REQ request, USHORT type, FLD field)
+static GPRE_NOD par_udf( GPRE_REQ request, USHORT type, GPRE_FLD field)
 {
 	GPRE_NOD node;
 	SYM symbol;
@@ -1754,7 +1754,7 @@ static GPRE_NOD par_udf( GPRE_REQ request, USHORT type, FLD field)
 //		precedence operator plus/minus.
 //  
 
-static GPRE_NOD par_value( GPRE_REQ request, FLD field)
+static GPRE_NOD par_value( GPRE_REQ request, GPRE_FLD field)
 {
 	GPRE_NOD node, arg;
 	enum nod_t operator_;

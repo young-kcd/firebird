@@ -28,7 +28,7 @@
  *
  */
 /*
-$Id: canonical.cpp,v 1.12 2002-11-19 15:37:52 skidder Exp $
+$Id: canonical.cpp,v 1.13 2002-11-30 17:34:44 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -102,7 +102,7 @@ ULONG CAN_encode_decode(BURP_REL relation,
  *
  **************************************/
 	XDR xdr, *xdrs;
-	FLD field;
+	BURP_FLD field;
 	FLD_LENGTH length;
 	SSHORT dtype, n;
 	UCHAR *p;

@@ -634,7 +634,7 @@ typedef jrd_rel* JRD_REL;
 
 /* Field block, one for each field in a scanned relation */
 
-class fld : public pool_alloc_rpt<SCHAR, type_fld>
+class jrd_fld : public pool_alloc_rpt<SCHAR, type_fld>
 {
     public:
 	struct jrd_nod*	fld_validation;		/* validation clause, if any */
@@ -649,7 +649,7 @@ class fld : public pool_alloc_rpt<SCHAR, type_fld>
 	UCHAR		fld_length;			/* Field name length */
 	UCHAR		fld_string[2];		/* one byte for ALLOC and one for the terminating null */
 };
-typedef fld *FLD;
+typedef jrd_fld *JRD_FLD;
 
 
 

@@ -35,16 +35,16 @@
 
 static void expand_action(ACT);
 static void expand_error(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
-static void expand_field(FLD);
-static void expand_global_field(FLD);
+static void expand_field(DUDLEY_FLD);
+static void expand_global_field(DUDLEY_FLD);
 static void expand_index(ACT);
 static void expand_relation(DUDLEY_REL);
 static void expand_trigger(DUDLEY_TRG);
-static FLD field_context(DUDLEY_NOD, LLS, DUDLEY_CTX *);
-static FLD field_search(DUDLEY_NOD, LLS, DUDLEY_CTX *);
+static DUDLEY_FLD field_context(DUDLEY_NOD, LLS, DUDLEY_CTX *);
+static DUDLEY_FLD field_search(DUDLEY_NOD, LLS, DUDLEY_CTX *);
 static DUDLEY_CTX lookup_context(SYM, LLS);
-static FLD lookup_field(FLD);
-static FLD lookup_global_field(FLD);
+static DUDLEY_FLD lookup_field(DUDLEY_FLD);
+static DUDLEY_FLD lookup_global_field(DUDLEY_FLD);
 static DUDLEY_REL lookup_relation(DUDLEY_REL);
 static DUDLEY_TRG lookup_trigger(DUDLEY_TRG);
 static DUDLEY_CTX make_context(TEXT *, DUDLEY_REL, USHORT);
@@ -109,12 +109,12 @@ static void expand_action( ACT action)
 
 	switch (action->act_type) {
 	case act_a_field:
-		expand_field((FLD) action->act_object);
+		expand_field((DUDLEY_FLD) action->act_object);
 		break;
 
 	case act_m_field:
 	case act_d_field:
-		lookup_field((FLD) action->act_object);
+		lookup_field((DUDLEY_FLD) action->act_object);
 		break;
 
 	case act_d_filter:
@@ -130,16 +130,16 @@ static void expand_action( ACT action)
 */ break;
 
 	case act_a_gfield:
-		expand_global_field((FLD) action->act_object);
+		expand_global_field((DUDLEY_FLD) action->act_object);
 		break;
 
 	case act_m_gfield:
-		lookup_global_field((FLD) action->act_object);
-		expand_global_field((FLD) action->act_object);
+		lookup_global_field((DUDLEY_FLD) action->act_object);
+		expand_global_field((DUDLEY_FLD) action->act_object);
 		break;
 
 	case act_d_gfield:
-		lookup_global_field((FLD) action->act_object);
+		lookup_global_field((DUDLEY_FLD) action->act_object);
 		break;
 
 	case act_a_index:
@@ -221,7 +221,7 @@ static void expand_error(
 }
 
 
-static void expand_field( FLD field)
+static void expand_field( DUDLEY_FLD field)
 {
 /**************************************
  *
@@ -245,11 +245,11 @@ static void expand_field( FLD field)
 	}
 
 	if (!field->fld_source_field)
-		field->fld_source_field = (FLD) field->fld_source->sym_object;
+		field->fld_source_field = (DUDLEY_FLD) field->fld_source->sym_object;
 }
 
 
-static void expand_global_field( FLD field)
+static void expand_global_field( DUDLEY_FLD field)
 {
 /**************************************
  *
@@ -394,7 +394,7 @@ static void expand_trigger( DUDLEY_TRG trigger)
 }
 
 
-static FLD field_context( DUDLEY_NOD node, LLS contexts, DUDLEY_CTX * output_context)
+static DUDLEY_FLD field_context( DUDLEY_NOD node, LLS contexts, DUDLEY_CTX * output_context)
 {
 /**************************************
  *
@@ -412,7 +412,7 @@ static FLD field_context( DUDLEY_NOD node, LLS contexts, DUDLEY_CTX * output_con
  *
  *
  **************************************/
-	FLD field;
+	DUDLEY_FLD field;
 	DUDLEY_CTX context;
 	SYM name, symbol;
 
@@ -439,13 +439,13 @@ static FLD field_context( DUDLEY_NOD node, LLS contexts, DUDLEY_CTX * output_con
 	for (; symbol; symbol = symbol->sym_homonym) {
 		if (context->ctx_relation) {
 			if (symbol->sym_type == SYM_field) {
-				field = (FLD) symbol->sym_object;
+				field = (DUDLEY_FLD) symbol->sym_object;
 				if (field->fld_relation == context->ctx_relation)
 					return field;
 			}
 		}
 		else if (symbol->sym_type == SYM_global)
-			return (FLD) symbol->sym_object;
+			return (DUDLEY_FLD) symbol->sym_object;
 	}
 
 	if (context->ctx_relation)
@@ -460,7 +460,7 @@ static FLD field_context( DUDLEY_NOD node, LLS contexts, DUDLEY_CTX * output_con
 }
 
 
-static FLD field_search( DUDLEY_NOD node, LLS contexts, DUDLEY_CTX * output_context)
+static DUDLEY_FLD field_search( DUDLEY_NOD node, LLS contexts, DUDLEY_CTX * output_context)
 {
 /**************************************
  *
@@ -476,7 +476,7 @@ static FLD field_search( DUDLEY_NOD node, LLS contexts, DUDLEY_CTX * output_cont
  *	work backward.
  * 
  **************************************/
-	FLD field;
+	DUDLEY_FLD field;
 	DUDLEY_CTX context, old_context;
 	SYM name, symbol, ctx_name;
 
@@ -501,7 +501,7 @@ static FLD field_search( DUDLEY_NOD node, LLS contexts, DUDLEY_CTX * output_cont
 				*output_context = context;
 				for (symbol = name; symbol; symbol = symbol->sym_homonym) {
 					if (symbol->sym_type == SYM_field) {
-						field = (FLD) symbol->sym_object;
+						field = (DUDLEY_FLD) symbol->sym_object;
 						if (field->fld_relation == context->ctx_relation)
 							return field;
 					}
@@ -555,7 +555,7 @@ static DUDLEY_CTX lookup_context( SYM symbol, LLS contexts)
 }
 
 
-static FLD lookup_field( FLD old_field)
+static DUDLEY_FLD lookup_field( DUDLEY_FLD old_field)
 {
 /**************************************
  *
@@ -574,7 +574,7 @@ static FLD lookup_field( FLD old_field)
  **************************************/
 	DUDLEY_REL relation;
 	SYM symbol, name;
-	FLD field;
+	DUDLEY_FLD field;
 
 	if (old_field->fld_source)
 		lookup_global_field(old_field);
@@ -586,7 +586,7 @@ static FLD lookup_field( FLD old_field)
 
 	for (; symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_field) {
-			field = (FLD) symbol->sym_object;
+			field = (DUDLEY_FLD) symbol->sym_object;
 			if (field->fld_relation == relation)
 				return field;
 		}
@@ -599,7 +599,7 @@ static FLD lookup_field( FLD old_field)
 }
 
 
-static FLD lookup_global_field( FLD field)
+static DUDLEY_FLD lookup_global_field( DUDLEY_FLD field)
 {
 /**************************************
  *
@@ -617,7 +617,7 @@ static FLD lookup_global_field( FLD field)
 	name = (field->fld_source) ? field->fld_source : field->fld_name;
 	if (symbol =
 		HSH_typed_lookup(name->sym_string, name->sym_length,
-						 SYM_global)) return (FLD) symbol->sym_object;
+						 SYM_global)) return (DUDLEY_FLD) symbol->sym_object;
 
 	expand_error(103, name->sym_string, 0, 0, 0, 0);	/* msg 103: global field %s isn't defined */
 
@@ -727,7 +727,7 @@ static DUDLEY_NOD resolve( DUDLEY_NOD node, LLS right, LLS left)
  **************************************/
 	DUDLEY_NOD *arg, *end, field, sub;
 	SYM symbol, name;
-	FLD fld;
+	DUDLEY_FLD fld;
 	DUDLEY_CTX context, old_context;
 	TEXT name_string[65], *p, *q;
 

@@ -49,8 +49,8 @@ extern USHORT QLI_columns, QLI_lines;
 static int compare_names(NAM, SYM);
 static int compare_symbols(SYM, SYM);
 static SYM copy_symbol(SYM);
-static void declare_global(FLD, SYN);
-static SYN decompile_field(FLD, QLI_CTX);
+static void declare_global(QLI_FLD, SYN);
+static SYN decompile_field(QLI_FLD, QLI_CTX);
 static NAM decompile_symbol(SYM);
 static QLI_NOD expand_assignment(SYN, LLS, LLS);
 static QLI_NOD expand_any(SYN, LLS);
@@ -91,15 +91,15 @@ static QLI_NOD make_and(QLI_NOD, QLI_NOD);
 static QLI_NOD make_assignment(QLI_NOD, QLI_NOD, LLS);
 static QLI_NOD make_form_body(LLS, LLS, SYN);
 static QLI_NOD make_form_field(FRM, FFL);
-static QLI_NOD make_field(FLD, QLI_CTX);
+static QLI_NOD make_field(QLI_FLD, QLI_CTX);
 static QLI_NOD make_list(LLS);
 static QLI_NOD make_node(NOD_T, USHORT);
 static QLI_NOD negate(QLI_NOD);
 static QLI_NOD possible_literal(SYN, LLS, USHORT);
 static QLI_NOD post_map(QLI_NOD, QLI_CTX);
-static FLD resolve(SYN, LLS, QLI_CTX *);
-static FLD resolve_name(SYM, LLS, QLI_CTX *);
-static void resolve_really(FLD, SYN);
+static QLI_FLD resolve(SYN, LLS, QLI_CTX *);
+static QLI_FLD resolve_name(SYM, LLS, QLI_CTX *);
+static void resolve_really(QLI_FLD, SYN);
 
 static LLS output_stack;
 
@@ -133,7 +133,7 @@ QLI_NOD EXP_expand( SYN node)
 		return NULL;
 
 	case nod_declare:
-		declare_global((FLD) node->syn_arg[0], node->syn_arg[1]);
+		declare_global((QLI_FLD) node->syn_arg[0], node->syn_arg[1]);
 		return NULL;
 
 	case nod_define:
@@ -150,7 +150,7 @@ QLI_NOD EXP_expand( SYN node)
 		return NULL;
 
 	case nod_def_field:
-		MET_define_field((DBB) node->syn_arg[0], (FLD) node->syn_arg[1]);
+		MET_define_field((DBB) node->syn_arg[0], (QLI_FLD) node->syn_arg[1]);
 		return NULL;
 
 	case nod_def_index:
@@ -200,11 +200,11 @@ QLI_NOD EXP_expand( SYN node)
 		return NULL;
 
 	case nod_mod_field:
-		MET_modify_field((DBB)node->syn_arg[0], (FLD) node->syn_arg[1]);
+		MET_modify_field((DBB)node->syn_arg[0], (QLI_FLD) node->syn_arg[1]);
 		return NULL;
 
 	case nod_mod_relation:
-		MET_modify_relation((QLI_REL) node->syn_arg[0], (FLD) node->syn_arg[1]);
+		MET_modify_relation((QLI_REL) node->syn_arg[0], (QLI_FLD) node->syn_arg[1]);
 		return NULL;
 
 	case nod_mod_index:
@@ -251,7 +251,7 @@ QLI_NOD EXP_expand( SYN node)
 ****/
 
 	case nod_sql_al_table:
-		MET_sql_alter_table((QLI_REL) node->syn_arg[0], (FLD) node->syn_arg[1]);
+		MET_sql_alter_table((QLI_REL) node->syn_arg[0], (QLI_FLD) node->syn_arg[1]);
 		return NULL;
 	}
 
@@ -369,7 +369,7 @@ static SYM copy_symbol( SYM old)
 }
 
 
-static void declare_global( FLD variable, SYN field_node)
+static void declare_global( QLI_FLD variable, SYN field_node)
 {
 /**************************************
  *
@@ -385,7 +385,7 @@ static void declare_global( FLD variable, SYN field_node)
  **************************************/
 	TEXT *p, *q;
 	USHORT l;
-	FLD new_fld, field, *ptr;
+	QLI_FLD new_fld, field, *ptr;
 
 /* If it's based_on, flesh it out & check datatype.  */
 
@@ -419,7 +419,7 @@ static void declare_global( FLD variable, SYN field_node)
 	if (q = variable->fld_query_header)
 		l += strlen(q);
 
-	new_fld = (FLD) ALLOCPV(type_fld, l);
+	new_fld = (QLI_FLD) ALLOCPV(type_fld, l);
 	new_fld->fld_name = copy_symbol(variable->fld_name);
 	new_fld->fld_dtype = variable->fld_dtype;
 	new_fld->fld_length = variable->fld_length;
@@ -449,7 +449,7 @@ static void declare_global( FLD variable, SYN field_node)
 }
 
 
-static SYN decompile_field( FLD field, QLI_CTX context)
+static SYN decompile_field( QLI_FLD field, QLI_CTX context)
 {
 /**************************************
  *
@@ -551,7 +551,7 @@ static QLI_NOD expand_assignment( SYN input, LLS right, LLS left)
  *
  **************************************/
 	QLI_NOD node, from, to;
-	FLD field;
+	QLI_FLD field;
 	TEXT s[80];
 
 	node = MAKE_NODE(input->syn_type, e_asn_count);
@@ -561,7 +561,7 @@ static QLI_NOD expand_assignment( SYN input, LLS right, LLS left)
 		expand_expression(input->syn_arg[s_asn_from], right);
 
 	if (to->nod_type == nod_field || to->nod_type == nod_variable) {
-		field = (FLD) to->nod_arg[e_fld_field];
+		field = (QLI_FLD) to->nod_arg[e_fld_field];
 		if (field->fld_flags & FLD_computed) {
 			ERRQ_print_error(138, field->fld_name->sym_string, NULL, NULL,
 							 NULL, NULL);	/* Msg138 can't do assignment to computed field */
@@ -627,7 +627,7 @@ static QLI_NOD expand_boolean( SYN input, LLS stack)
  *
  **************************************/
 	QLI_NOD node, *ptr, value;
-	FLD field;
+	QLI_FLD field;
 	SSHORT i;
 
 /* Make node and process arguments */
@@ -645,7 +645,7 @@ static QLI_NOD expand_boolean( SYN input, LLS stack)
 	if (value->nod_type != nod_field)
 		return node;
 
-	field = (FLD) value->nod_arg[e_fld_field];
+	field = (QLI_FLD) value->nod_arg[e_fld_field];
 	ptr = &node->nod_arg[1];
 
 	for (i = 1; i < node->nod_count; i++, ptr++)
@@ -728,7 +728,7 @@ static void expand_edit_string( QLI_NOD node, ITM item)
  *	Default edit_string and query_header.
  *
  **************************************/
-	FLD field;
+	QLI_FLD field;
 	FUN function;
 	MAP map;
 
@@ -791,7 +791,7 @@ static void expand_edit_string( QLI_NOD node, ITM item)
 
 /* Handle fields */
 
-	field = (FLD) node->nod_arg[e_fld_field];
+	field = (QLI_FLD) node->nod_arg[e_fld_field];
 
 	if (!item->itm_edit_string)
 		item->itm_edit_string = field->fld_edit_string;
@@ -1057,7 +1057,7 @@ static QLI_NOD expand_field( SYN input, LLS stack, SYN subs)
  *
  **************************************/
 	QLI_NOD node;
-	FLD field;
+	QLI_FLD field;
 	QLI_CTX context, parent, stream_context, *ptr, *end;
 	NAM name;
 	USHORT i, l;
@@ -1454,7 +1454,7 @@ static QLI_NOD expand_modify( SYN input, LLS right, LLS left)
  **************************************/
 	QLI_NOD node, loop, assignment, prompt, list, *ptr;
 	SYN value, syn_list, *syn_ptr;
-	FLD field;
+	QLI_FLD field;
 	LLS contexts;
 	QLI_CTX new_context, context;
 	USHORT count, i;
@@ -1592,7 +1592,7 @@ static QLI_NOD expand_print( SYN input, LLS right, LLS left)
 	LLS items, new_right;
 	QLI_CTX context;
 	QLI_REL relation;
-	FLD field;
+	QLI_FLD field;
 	PRT print;
 	USHORT i, count;
 	UCHAR valid;
@@ -1788,7 +1788,7 @@ static ITM expand_print_item( SYN syn_item, LLS right)
 	ITM item;
 	SYN syn_expr;
 	QLI_NOD node;
-	FLD field;
+	QLI_FLD field;
 
 	item = (ITM) ALLOCD(type_itm);
 
@@ -1929,7 +1929,7 @@ static QLI_NOD expand_restructure( SYN input, LLS right, LLS left)
 	QLI_NOD node, assignment, loop;
 	SYN rel_node;
 	QLI_REL relation;
-	FLD field, fld;
+	QLI_FLD field, fld;
 	QLI_CTX context, ctx;
 	LLS stack, search;
 
@@ -2346,9 +2346,9 @@ static QLI_NOD expand_statement( SYN input, LLS right, LLS left)
 				if (field_node = syn_node->syn_arg[1]) {
 					if (field_node->syn_type == nod_index)
 						field_node = field_node->syn_arg[s_idx_field];
-					resolve_really((FLD) syn_node->syn_arg[0], field_node);
+					resolve_really((QLI_FLD) syn_node->syn_arg[0], field_node);
 				}
-				context->ctx_variable = (FLD) syn_node->syn_arg[0];
+				context->ctx_variable = (QLI_FLD) syn_node->syn_arg[0];
 				LLS_PUSH(context, &right);
 				LLS_PUSH(context, &left);
 			}
@@ -2384,7 +2384,7 @@ static QLI_NOD expand_store( SYN input, LLS right, LLS left)
 	QLI_NOD node, assignment, prompt, loop;
 	SYN sub, rel_node;
 	QLI_REL relation;
-	FLD field;
+	QLI_FLD field;
 	SYM symbol;
 	QLI_CTX context, secondary;
 	LLS stack;
@@ -2604,7 +2604,7 @@ static int generate_fields( QLI_CTX context, LLS values, SYN rse)
  **************************************/
 	int count;
 	QLI_REL relation;
-	FLD field;
+	QLI_FLD field;
 	QLI_NOD temp;
 	SYN value, group_list;
 
@@ -2653,7 +2653,7 @@ static int generate_items( SYN symbol, LLS right, LLS items, QLI_NOD rse)
 	QLI_CTX context;
 	NAM name;
 	ITM item;
-	FLD field;
+	QLI_FLD field;
 	QLI_NOD node, group_list;
 
 	count = 0;
@@ -2775,7 +2775,7 @@ static int invalid_nod_field( QLI_NOD node, QLI_NOD list)
  *	thus a valid field reference.
  *
  **************************************/
-	FLD field;
+	QLI_FLD field;
 	QLI_CTX context;
 	SCHAR invalid;
 	QLI_NOD *ptr, *end;
@@ -2786,11 +2786,11 @@ static int invalid_nod_field( QLI_NOD node, QLI_NOD list)
 	invalid = FALSE;
 
 	if (node->nod_type == nod_field) {
-		field = (FLD) node->nod_arg[e_fld_field];
+		field = (QLI_FLD) node->nod_arg[e_fld_field];
 		context = (QLI_CTX) node->nod_arg[e_fld_context];
 		for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end;
 			 ptr++)
-			if (field == (FLD) (*ptr)->nod_arg[e_fld_field]
+			if (field == (QLI_FLD) (*ptr)->nod_arg[e_fld_field]
 				&& context == (QLI_CTX) (*ptr)->nod_arg[e_fld_context])
 				return FALSE;
 		return TRUE;
@@ -2941,10 +2941,10 @@ static QLI_NOD make_assignment( QLI_NOD target, QLI_NOD initial, LLS right)
  *
  **************************************/
 	QLI_NOD assignment, prompt;
-	FLD field;
+	QLI_FLD field;
 	LLS stack;
 
-	field = (FLD) target->nod_arg[e_fld_field];
+	field = (QLI_FLD) target->nod_arg[e_fld_field];
 	stack = NULL;
 	LLS_PUSH(target->nod_arg[e_fld_context], &stack);
 
@@ -2993,7 +2993,7 @@ static QLI_NOD make_form_body( LLS right, LLS left, SYN form_node)
  **************************************/
 	QLI_CTX tmp_context;
 	FFL ffl;
-	FLD field, initial;
+	QLI_FLD field, initial;
 	FRM form;
 	LLS stack, fields;
 	QLI_NOD node, assignment;
@@ -3085,7 +3085,7 @@ static QLI_NOD make_form_field( FRM form, FFL field)
 }
 
 
-static QLI_NOD make_field( FLD field, QLI_CTX context)
+static QLI_NOD make_field( QLI_FLD field, QLI_CTX context)
 {
 /**************************************
  *
@@ -3310,7 +3310,7 @@ static QLI_NOD post_map( QLI_NOD node, QLI_CTX context)
 }
 
 
-static FLD resolve( SYN node, LLS stack, QLI_CTX * out_context)
+static QLI_FLD resolve( SYN node, LLS stack, QLI_CTX * out_context)
 {
 /**************************************
  *
@@ -3327,7 +3327,7 @@ static FLD resolve( SYN node, LLS stack, QLI_CTX * out_context)
 	NAM name, *base, *ptr;
 	QLI_CTX context;
 	QLI_REL relation;
-	FLD field;
+	QLI_FLD field;
 	FRM form;
 	FFL ffield;
 
@@ -3351,16 +3351,16 @@ static FLD resolve( SYN node, LLS stack, QLI_CTX * out_context)
 			for (ffield = form->frm_fields; ffield; ffield = ffield->ffl_next)
 				if (compare_names(name, ffield->ffl_symbol)) {
 					if (ptr == base)
-						return (FLD) ffield;
+						return (QLI_FLD) ffield;
 					name = *--ptr;
 
 					if (compare_names(name, form->frm_symbol))
 						if (ptr == base)
-							return (FLD) ffield;
+							return (QLI_FLD) ffield;
 
 					if (compare_names(name, context->ctx_symbol))
 						if (ptr == base)
-							return (FLD) ffield;
+							return (QLI_FLD) ffield;
 					break;
 				}
 			break;
@@ -3412,7 +3412,7 @@ static FLD resolve( SYN node, LLS stack, QLI_CTX * out_context)
 }
 
 
-static FLD resolve_name( SYM name, LLS stack, QLI_CTX * out_context)
+static QLI_FLD resolve_name( SYM name, LLS stack, QLI_CTX * out_context)
 {
 /**************************************
  *
@@ -3428,7 +3428,7 @@ static FLD resolve_name( SYM name, LLS stack, QLI_CTX * out_context)
  **************************************/
 	QLI_CTX context;
 	QLI_REL relation;
-	FLD field;
+	QLI_FLD field;
 	FRM form;
 	FFL ffield;
 
@@ -3447,7 +3447,7 @@ static FLD resolve_name( SYM name, LLS stack, QLI_CTX * out_context)
 			form = context->ctx_form;
 			for (ffield = form->frm_fields; ffield; ffield = ffield->ffl_next)
 				if (compare_symbols(name, ffield->ffl_symbol))
-					return (FLD) ffield;
+					return (QLI_FLD) ffield;
 			break;
 
 		case CTX_VARIABLE:
@@ -3478,7 +3478,7 @@ static FLD resolve_name( SYM name, LLS stack, QLI_CTX * out_context)
 }
 
 
-static void resolve_really( FLD variable, SYN field_node)
+static void resolve_really( QLI_FLD variable, SYN field_node)
 {
 /**************************************
  *
@@ -3494,7 +3494,7 @@ static void resolve_really( FLD variable, SYN field_node)
 	BOOLEAN resolved, local;
 	NAM fld_name, rel_name, db_name;
 	SYM symbol;
-	FLD field;
+	QLI_FLD field;
 	QLI_REL relation;
 	DBB dbb;
 

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.5 2002-11-17 00:04:18 hippoman Exp $
+//	$Id: sql.cpp,v 1.6 2002-11-30 17:40:24 hippoman Exp $
 //
 
 #include "firebird.h"
@@ -118,17 +118,17 @@ static void error(TEXT *, TEXT *);
 static TEXT *extract_string(BOOLEAN);
 static SWE gen_whenever(void);
 static void into(GPRE_REQ, GPRE_NOD, GPRE_NOD);
-static FLD make_field(GPRE_REL);
+static GPRE_FLD make_field(GPRE_REL);
 static IND make_index(GPRE_REQ, TEXT *);
 static GPRE_REL make_relation(GPRE_REQ, TEXT *);
 static void pair(GPRE_NOD, GPRE_NOD);
-static void par_array(FLD);
+static void par_array(GPRE_FLD);
 static SSHORT par_char_set(void);
-static void par_computed(GPRE_REQ, FLD);
+static void par_computed(GPRE_REQ, GPRE_FLD);
 static GPRE_REQ par_cursor(SYM *);
 static DYN par_dynamic_cursor(void);
-static FLD par_field(GPRE_REQ, GPRE_REL);
-static CNSTRT par_field_constraint(GPRE_REQ, FLD, GPRE_REL);
+static GPRE_FLD par_field(GPRE_REQ, GPRE_REL);
+static CNSTRT par_field_constraint(GPRE_REQ, GPRE_FLD, GPRE_REL);
 static void par_fkey_extension(CNSTRT);
 static BOOLEAN par_into(DYN);
 static void par_options(TEXT **);
@@ -333,7 +333,7 @@ ACT SQL_action(void)
 //		a user datatype, and set the length field.
 //  
 
-void SQL_adjust_field_dtype( FLD field)
+void SQL_adjust_field_dtype( GPRE_FLD field)
 {
 	ULONG field_length;
 
@@ -469,7 +469,7 @@ void SQL_init(void)
 //  
 //  
 
-void SQL_par_field_collate( GPRE_REQ request, FLD field)
+void SQL_par_field_collate( GPRE_REQ request, GPRE_FLD field)
 {
 	SYM symbol;
 
@@ -511,7 +511,7 @@ void SQL_par_field_collate( GPRE_REQ request, FLD field)
 //		Also for CAST statement
 //  
 
-void SQL_par_field_dtype( GPRE_REQ request, FLD field, BOOLEAN udf)
+void SQL_par_field_dtype( GPRE_REQ request, GPRE_FLD field, BOOLEAN udf)
 {
 	int l, p, q;
 	enum kwwords keyword;
@@ -1176,7 +1176,7 @@ static ACT act_alter_domain(void)
 {
 	ACT action;
 	GPRE_REQ request;
-	FLD field;
+	GPRE_FLD field;
 	CNSTRT *cnstrt_ptr, cnstrt;
 	GPRE_NOD literal_node;
 
@@ -1308,7 +1308,7 @@ static ACT act_alter_index(void)
 static ACT act_alter_table(void)
 {
 	ACT action;
-	FLD field, *ptr;
+	GPRE_FLD field, *ptr;
 	GPRE_REQ request;
 	GPRE_REL relation;
 	CNSTRT cnstrt, *cnstrt_ptr;
@@ -1736,7 +1736,7 @@ static ACT act_create_domain(void)
 {
 	ACT action;
 	GPRE_REQ request;
-	FLD field;
+	GPRE_FLD field;
 	CNSTRT *cnstrt;
 	int in_constraints;
 	GPRE_NOD literal_node;
@@ -1857,7 +1857,7 @@ static ACT act_create_generator(void)
 static ACT act_create_index( SSHORT dups, BOOLEAN descending)
 {
 	ACT action;
-	FLD *ptr;
+	GPRE_FLD *ptr;
 	IND index;
 	GPRE_REQ request;
 	GPRE_REL relation;
@@ -1979,7 +1979,7 @@ static ACT act_create_shadow(void)
 static ACT act_create_table(void)
 {
 	ACT action;
-	FLD *ptr;
+	GPRE_FLD *ptr;
 	GPRE_REQ request;
 	GPRE_REL relation;
 	CNSTRT *cnstrt;
@@ -2059,7 +2059,7 @@ static ACT act_create_table(void)
 static ACT act_create_view(void)
 {
 	ACT action;
-	FLD *ptr;
+	GPRE_FLD *ptr;
 	GPRE_REQ request;
 	GPRE_REL relation;
 	RSE select;
@@ -2415,7 +2415,7 @@ static ACT act_declare_filter(void)
 static ACT act_declare_table( SYM symbol, DBB db)
 {
 	ACT action;
-	FLD field, dbkey, *ptr;
+	GPRE_FLD field, dbkey, *ptr;
 	GPRE_REL relation, tmp_relation;
 	SYM old_symbol, tmp_symbol;
 	USHORT count;
@@ -2506,7 +2506,7 @@ static ACT act_declare_udf(void)
 	ACT action;
 	GPRE_REQ request;
 	DECL_UDF udf;
-	FLD *ptr, field;
+	GPRE_FLD *ptr, field;
 	SLONG return_parameter;
 
 	request = MAKE_REQUEST(REQ_ddl);
@@ -2540,7 +2540,7 @@ static ACT act_declare_udf(void)
 				udf->decl_udf_return_parameter = (SSHORT) return_parameter;
 			}
 			else {
-				field = (FLD) ALLOC(FLD_LEN);
+				field = (GPRE_FLD) ALLOC(FLD_LEN);
 				field->fld_flags |= (FLD_meta | FLD_meta_cstring);
 				SQL_par_field_dtype(request, field, TRUE);
 				SQL_adjust_field_dtype(field);
@@ -2554,7 +2554,7 @@ static ACT act_declare_udf(void)
 			break;
 		}
 		else {
-			field = (FLD) ALLOC(FLD_LEN);
+			field = (GPRE_FLD) ALLOC(FLD_LEN);
 			field->fld_flags |= (FLD_meta | FLD_meta_cstring);
 			SQL_par_field_dtype(request, field, TRUE);
 			SQL_adjust_field_dtype(field);
@@ -3760,7 +3760,7 @@ static ACT act_open_blob( ACT_T act_op, SYM symbol)
 		owner_name[NAME_SIZE + 1];
 	GPRE_REQ request;
 	GPRE_REL relation;
-	FLD field;
+	GPRE_FLD field;
 	REF reference;
 	BLB blob;
 	GPRE_CTX context;
@@ -3980,7 +3980,7 @@ static ACT act_procedure(void)
 	GPRE_REQ request;
 	ACT action;
 	REF reference, *ref_ptr;
-	FLD field;
+	GPRE_FLD field;
 	SSHORT inputs, outputs;
 	LLS values;
 	GPRE_NOD list, *ptr;
@@ -5113,7 +5113,7 @@ static void into( GPRE_REQ request, GPRE_NOD field_list, GPRE_NOD var_list)
 {
 	REF var_ref, field_ref, reference;
 	GPRE_NOD *var_ptr, *fld_ptr, *end;
-	FLD field;
+	GPRE_FLD field;
 	GPRE_REQ slice_req;
 	SSHORT found = FALSE;
 
@@ -5170,9 +5170,9 @@ static void into( GPRE_REQ request, GPRE_NOD field_list, GPRE_NOD var_list)
 //		Create field in a relation for a metadata request.
 //  
 
-static FLD make_field( GPRE_REL relation)
+static GPRE_FLD make_field( GPRE_REL relation)
 {
-	FLD field;
+	GPRE_FLD field;
 	char s[ERROR_LENGTH];
 
 	SQL_resolve_identifier("<column name>", s);
@@ -5298,7 +5298,7 @@ static void pair( GPRE_NOD expr, GPRE_NOD field_expr)
 //		Parse the multi-dimensional array specification.
 //  
 
-static void par_array( FLD field)
+static void par_array( GPRE_FLD field)
 {
 	SLONG rangeh, rangel;
 	SSHORT i = 0;
@@ -5375,10 +5375,10 @@ static SSHORT par_char_set(void)
 //		Create a computed field
 //  
 
-static void par_computed( GPRE_REQ request, FLD field)
+static void par_computed( GPRE_REQ request, GPRE_FLD field)
 {
 	CMPF cmp;
-	struct fld save_fld;
+	struct gpre_fld save_fld;
 
 	MATCH(KW_BY);
 
@@ -5501,9 +5501,9 @@ static DYN par_dynamic_cursor(void)
 //		ALTER TABLE statement.
 //  
 
-static FLD par_field( GPRE_REQ request, GPRE_REL relation)
+static GPRE_FLD par_field( GPRE_REQ request, GPRE_REL relation)
 {
-	FLD field;
+	GPRE_FLD field;
 // *IND		index; 
 	CNSTRT *cnstrt;
 	int in_constraints;
@@ -5608,7 +5608,7 @@ static FLD par_field( GPRE_REQ request, GPRE_REL relation)
 //		ALTER TABLE statement. Constraint maybe table or column level.
 //  
 
-static CNSTRT par_field_constraint( GPRE_REQ request, FLD for_field, GPRE_REL relation)
+static CNSTRT par_field_constraint( GPRE_REQ request, GPRE_FLD for_field, GPRE_REL relation)
 {
 	enum kwwords keyword;
 	CNSTRT cnstrt;

@@ -36,7 +36,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.12 2002-11-25 15:28:45 kkuznetsov Exp $
+$Id: backup.epp,v 1.13 2002-11-30 17:34:44 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -89,12 +89,12 @@ DATABASE DB = STATIC FILENAME "yachts.lnk" RUNTIME * dbb_file;
 
 static void compress(UCHAR *, ULONG);
 static int copy(TEXT *, TEXT *, ULONG);
-static FLD get_fields(BURP_REL);
+static BURP_FLD get_fields(BURP_REL);
 static SINT64 get_gen_id(TEXT *, SSHORT);
-static void get_ranges(FLD);
-static void put_array(FLD, BURP_REL, ISC_QUAD *);
+static void get_ranges(BURP_FLD);
+static void put_array(BURP_FLD, BURP_REL, ISC_QUAD *);
 static void put_asciz(SCHAR, TEXT *);
-static void put_blob(FLD, ISC_QUAD *, ULONG);
+static void put_blob(BURP_FLD, ISC_QUAD *, ULONG);
 static int put_blr_blob(SCHAR, ISC_QUAD *);
 static void put_data(BURP_REL);
 static void put_index(BURP_REL);
@@ -637,7 +637,7 @@ static void general_on_error(void)
 }
 
 
-static FLD get_fields( BURP_REL relation)
+static BURP_FLD get_fields( BURP_REL relation)
 {
 /**************************************
  *
@@ -650,7 +650,7 @@ static FLD get_fields( BURP_REL relation)
  *	capabilities and get system specific
  *
  **************************************/
-	FLD field, fields;
+	BURP_FLD field, fields;
 	ISC_QUAD *blob_id;
 	USHORT count;
 	TGBL tdgbl;
@@ -677,7 +677,7 @@ static FLD get_fields( BURP_REL relation)
 	            X.RDB$FIELD_SOURCE = Y.RDB$FIELD_NAME AND 
 	       X.RDB$RELATION_NAME EQ relation->rel_name
 	
-	        field = (FLD) BURP_ALLOC_ZERO (sizeof (struct fld));
+	        field = (BURP_FLD) BURP_ALLOC_ZERO (sizeof (struct burp_fld));
 	        field->fld_number = count++;
 	        field->fld_type = Y.RDB$FIELD_TYPE;
 	        field->fld_sub_type = Y.RDB$FIELD_SUB_TYPE;
@@ -782,7 +782,7 @@ static FLD get_fields( BURP_REL relation)
 	        WITH X.RDB$FIELD_SOURCE = Y.RDB$FIELD_NAME AND 
 	        X.RDB$RELATION_NAME EQ relation->rel_name
 
-            field = (FLD) BURP_ALLOC_ZERO (sizeof (struct fld));
+            field = (BURP_FLD) BURP_ALLOC_ZERO (sizeof (struct burp_fld));
 	        field->fld_number = count++;
             field->fld_type = Y.RDB$FIELD_TYPE;
             field->fld_sub_type = Y.RDB$FIELD_SUB_TYPE;
@@ -1055,7 +1055,7 @@ static SINT64 get_gen_id( TEXT * name, SSHORT name_len)
 }
 
 
-static void get_ranges( FLD field)
+static void get_ranges( BURP_FLD field)
 {
 /**************************************
  *
@@ -1102,7 +1102,7 @@ static void get_ranges( FLD field)
 }
 
 
-static void put_array( FLD field, BURP_REL relation, ISC_QUAD * blob_id)
+static void put_array( BURP_FLD field, BURP_REL relation, ISC_QUAD * blob_id)
 {
 /**************************************
  *
@@ -1330,7 +1330,7 @@ static void put_asciz( SCHAR attribute, TEXT * string)
 }
 
 
-static void put_blob( FLD field, ISC_QUAD * blob_id, ULONG count)
+static void put_blob( BURP_FLD field, ISC_QUAD * blob_id, ULONG count)
 {
 /**************************************
  *
@@ -1593,7 +1593,7 @@ static void put_data(BURP_REL relation)
  *	Write relation meta-data and data.
  *
  **************************************/
-	FLD field;
+	BURP_FLD field;
 	int *request, records;
 	UCHAR *p, *blr, *blr_buffer, *buffer;
 	LSTRING xdr_buffer;
@@ -2209,7 +2209,7 @@ static void put_relation( BURP_REL relation)
  *	Write relation meta-data and data.
  *
  **************************************/
-	FLD fields, field, aligned, unaligned, aligned4, aligned8;
+	BURP_FLD fields, field, aligned, unaligned, aligned4, aligned8;
 	TEXT temp[GDS_NAME_LEN];
 	USHORT l, n;
 	SLONG *rp;
