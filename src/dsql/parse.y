@@ -2634,10 +2634,16 @@ set_savepoint : SAVEPOINT symbol_savepoint_name
 			{ $$ = make_node (nod_user_savepoint, 1, $2); }
 		;
 
-release_savepoint	: RELEASE SAVEPOINT symbol_savepoint_name
-			{ $$ = make_node (nod_release_savepoint, 1, $3); }
+release_savepoint	: RELEASE SAVEPOINT symbol_savepoint_name release_only_opt
+			{ $$ = make_node (nod_release_savepoint, 2, $3, $4); }
 		;
-		
+
+release_only_opt	: ONLY
+			{ $$ = make_node (nod_flag, 0, NULL); }
+		|
+			{ $$ = 0; }
+		;
+
 undo_savepoint : ROLLBACK optional_work TO optional_savepoint symbol_savepoint_name
 			{ $$ = make_node (nod_undo_savepoint, 1, $5); }
 		;
@@ -2645,7 +2651,7 @@ undo_savepoint : ROLLBACK optional_work TO optional_savepoint symbol_savepoint_n
 optional_savepoint	: SAVEPOINT
 		|
 		;
-		
+
 commit		: COMMIT optional_work optional_retain
 			{ $$ = make_node (nod_commit, 1, $3); }
 		;

@@ -293,5 +293,6 @@
 #define blr_savepoint_set	(unsigned char)0
 #define blr_savepoint_release	(unsigned char)1
 #define blr_savepoint_undo	(unsigned char)2
+#define blr_savepoint_release_single	(unsigned char)3
 
 #endif /* _JRD_BLR_H_ */

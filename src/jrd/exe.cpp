@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.66 2003-06-16 15:42:58 alexpeshkoff Exp $
+$Id: exe.cpp,v 1.67 2003-06-26 10:43:44 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -2038,81 +2038,97 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 			break;
 
 		case nod_user_savepoint:
-			if (transaction != dbb->dbb_sys_trans) {
+			switch (request->req_operation) {
+			case jrd_req::req_evaluate:
+				if (transaction != dbb->dbb_sys_trans) {
 
-				UCHAR operation = (UCHAR) node->nod_arg[e_sav_operation];
-				TEXT * node_savepoint_name = (TEXT*) node->nod_arg[e_sav_name]; 
+					UCHAR operation = (UCHAR) node->nod_arg[e_sav_operation];
+					TEXT * node_savepoint_name = (TEXT*) node->nod_arg[e_sav_name]; 
 
-				// Skip the savepoint created by EXE_start
-				SAV savepoint = transaction->tra_save_point->sav_next;
-				SAV previous = transaction->tra_save_point;
+					// Skip the savepoint created by EXE_start
+					SAV savepoint = transaction->tra_save_point->sav_next;
+					SAV previous = transaction->tra_save_point;
 
-				// Find savepoint
-				bool found = false;
-				while (true) {
-					if (!savepoint || !(savepoint->sav_flags & SAV_user))
-						break;
+					// Find savepoint
+					bool found = false;
+					while (true) {
+						if (!savepoint || !(savepoint->sav_flags & SAV_user))
+							break;
 
-					if (!strcmp(node_savepoint_name, savepoint->sav_name)) {
-						found = true;
-						break;
+						if (!strcmp(node_savepoint_name, savepoint->sav_name)) {
+							found = true;
+							break;
+						}
+
+						previous = savepoint;
+						savepoint = savepoint->sav_next;
+					}
+					if (!found && operation != blr_savepoint_set) {
+						ERR_post(gds_invalid_savepoint,
+							gds_arg_string, node_savepoint_name, 0);
 					}
 
-					previous = savepoint;
-					savepoint = savepoint->sav_next;
-				}
-				if (!found && operation != blr_savepoint_set) {
-					ERR_post(gds_invalid_savepoint,
-						gds_arg_string, node_savepoint_name, 0);
-				}
+					SLONG sav_number = savepoint->sav_number;
 
-				SLONG sav_number = savepoint->sav_number;
+					if (operation == blr_savepoint_set) {
 
-				if (operation == blr_savepoint_set) {
+						// Release the savepoint
+						if (found) {
+							previous->sav_next = savepoint->sav_next;
+							SAV current = transaction->tra_save_point;
+							transaction->tra_save_point = savepoint;
+							VERB_CLEANUP;
+							transaction->tra_save_point = current;
+						}
 
-					// Release the savepoint
-					if (found) {
+						// Use the savepoint created by EXE_start
+						transaction->tra_save_point->sav_flags |= SAV_user;
+						strcpy(transaction->tra_save_point->sav_name, node_savepoint_name);
+					}
+					else if (operation == blr_savepoint_release_single) {
+
+						// Release the savepoint
 						previous->sav_next = savepoint->sav_next;
 						SAV current = transaction->tra_save_point;
 						transaction->tra_save_point = savepoint;
 						VERB_CLEANUP;
 						transaction->tra_save_point = current;
 					}
+					else if (operation == blr_savepoint_release) {
 
-					// Use the savepoint created by EXE_start
-					transaction->tra_save_point->sav_flags |= SAV_user;
-					strcpy(transaction->tra_save_point->sav_name, node_savepoint_name);
-				}
-				else if (operation == blr_savepoint_release) {
+						// Release the savepoint and all subsequent ones
+						while (transaction->tra_save_point &&
+							transaction->tra_save_point->sav_number >= sav_number) 
+						{
+							VERB_CLEANUP;
+						}
 
-					// Release the savepoint and all subsequent ones
-					while (transaction->tra_save_point &&
-						transaction->tra_save_point->sav_number >= sav_number) 
-					{
-						VERB_CLEANUP;
+						// Restore the savepoint initially created by EXE_start
+						VIO_start_save_point(tdbb, transaction);
+					}
+					else if (operation == blr_savepoint_undo) {
+
+						// Undo the savepoint
+						while (transaction->tra_save_point &&
+							transaction->tra_save_point->sav_number >= sav_number) 
+						{
+							transaction->tra_save_point->sav_verb_count++;
+							VERB_CLEANUP;
+						}
+
+						// Now set the savepoint again to allow to return to it later
+						VIO_start_save_point(tdbb, transaction);
+						transaction->tra_save_point->sav_flags |= SAV_user;
+						strcpy(transaction->tra_save_point->sav_name, node_savepoint_name);
+					}
+					else {
+						BUGCHECK(232);
 					}
 				}
-				else if (operation == blr_savepoint_undo) {
-
-					// Undo the savepoint
-					while (transaction->tra_save_point &&
-						transaction->tra_save_point->sav_number >= sav_number) 
-					{
-						transaction->tra_save_point->sav_verb_count++;
-						VERB_CLEANUP;
-					}
-
-					// Now set the savepoint again to allow to return to it later
-					VIO_start_save_point(tdbb, transaction);
-					transaction->tra_save_point->sav_flags |= SAV_user;
-					strcpy(transaction->tra_save_point->sav_name, node_savepoint_name);
-				}
-				else {
-					BUGCHECK(232);
-				}
+			default:
+				node = node->nod_parent;
+				request->req_operation = jrd_req::req_return;
 			}
-			node = node->nod_parent;
-			request->req_operation = jrd_req::req_return;
 			break;
 
 		case nod_start_savepoint:
