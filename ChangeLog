@@ -1,3 +1,116 @@
+2002-09-18 14:50  eku
+
+	* firebird2/src/: jrd/build_no.h (1.19), misc/writeBuildNum.sh
+	(1.720), jrd/build_no.h (1.22), jrd/build_no.h (1.21),
+	jrd/build_no.h (1.20), misc/writeBuildNum.sh (1.723),
+	misc/writeBuildNum.sh (1.722), misc/writeBuildNum.sh (1.721),
+	jrd/build_no.h (1.26), jrd/build_no.h (1.25), jrd/build_no.h
+	(1.24), jrd/build_no.h (1.23), misc/writeBuildNum.sh (1.727),
+	misc/writeBuildNum.sh (1.726), misc/writeBuildNum.sh (1.725),
+	misc/writeBuildNum.sh (1.724), jrd/build_no.h (1.27),
+	misc/writeBuildNum.sh (1.728), jrd/build_no.h (1.30),
+	jrd/build_no.h (1.29), jrd/build_no.h (1.28), misc/writeBuildNum.sh
+	(1.732), misc/writeBuildNum.sh (1.731), misc/writeBuildNum.sh
+	(1.730), misc/writeBuildNum.sh (1.729), jrd/build_no.h (1.31):
+	
+	increment build number
+
+2002-09-18 14:50  eku
+
+	* firebird2/: configure.in (1.45), src/burp/mvol.cpp (1.7),
+	src/burp/spit.cpp (1.5), src/extlib/ib_udf.c (1.3),
+	src/extlib/fbudf/stdafx.h (1.4), src/include/gen/autoconfig_msvc.h
+	(1.29), src/iscguard/iscguard.cpp (1.6), src/isql/isql_win.cpp
+	(1.3), src/journal/misc.cpp (1.7), src/jrd/common.h (1.29),
+	src/jrd/cvt.cpp (1.11), src/jrd/exe.cpp (1.16), src/jrd/gds.cpp
+	(1.20), src/jrd/memtest.cpp (1.3), src/jrd/pcsleep.cpp (1.3),
+	src/jrd/perf.cpp (1.11), src/jrd/perf.h (1.5), src/jrd/pwd.cpp
+	(1.7), src/jrd/svc.cpp (1.17), src/jrd/time.h (1.5),
+	src/jrd/unix.cpp (1.10), src/lock/lock.cpp (1.12),
+	src/make.new/config/config.h.in (1.34), src/msgs/check_msgs.epp
+	(1.3), src/remote/inet.cpp (1.19), src/remote/inet_server.cpp
+	(1.10), src/remote/netwcon.cpp (1.3), src/utilities/analyse.cpp
+	(1.4), src/utilities/drop.cpp (1.9), src/utilities/srvrmgr.cpp
+	(1.5), src/utilities/util.cpp (1.7), src/v5_examples/apifull.c
+	(1.2), src/v5_examples/udflib.c (1.2), src/wal/driver.cpp (1.5),
+	src/wal/wal.cpp (1.6):
+	
+	Autoconf cleanup:  o use predefined macros to test for sys/wait.h,
+	time.h and sys/time.h  o search strcasecmp in libresolv only if
+	strcasecmp and stricmp are not in libc	o use predefined macro
+	AC_SYS_LARGEFILE to determine 64Bit I/O  o determine the alignment
+	of long and double (ALIGNMENT,DOUBLE_ALIGN),	still need to write
+	a test for FB_ALIGN!
+
+2002-09-17 07:58  eku
+
+	* firebird2/: configure.in (1.44), src/burp/canonical.cpp (1.4),
+	src/dsql/dsql.cpp (1.22), src/include/gen/autoconfig_msvc.h (1.28),
+	src/install/arch-specific/sinixz/prototype.in (1.2),
+	src/jrd/align.cpp (1.5), src/jrd/atom.h (1.2), src/jrd/bookmark.cpp
+	(1.4), src/jrd/btr.cpp (1.5), src/jrd/common.h (1.28),
+	src/jrd/cvt.cpp (1.10), src/jrd/cvt2.cpp (1.6), src/jrd/evl.cpp
+	(1.14), src/jrd/exe.cpp (1.15), src/jrd/ib_stdio.cpp (1.6),
+	src/jrd/inf.cpp (1.10), src/jrd/opt.cpp (1.12), src/jrd/quad.cpp
+	(1.3), src/jrd/sort.cpp (1.11), src/jrd/vmsthread.cpp (1.3),
+	src/make.new/config/config.h.in (1.33), src/remote/merge.cpp (1.3),
+	src/remote/protocol.cpp (1.7), src/utilities/rebuild.cpp (1.5):
+	
+	Autoconf cleanup:  o since the define 'VAX' was only used to tell
+	that the byte order is	  LITTLE_ENDIAN (it have nothing else to do
+	with the VAX computer family)	 it can safely replaced with
+	'!WORDS_BIGENDIAN'.   o check if pointers are 64 bit   o replaced
+	HAS_64BIT_POINTERS with 'SIZEOF_VOID_P == 8'
+
+2002-09-17 07:58  eku
+
+	* firebird2/src/: jrd/build_no.h (1.10), misc/writeBuildNum.sh
+	(1.711), jrd/build_no.h (1.12), jrd/build_no.h (1.11),
+	misc/writeBuildNum.sh (1.713), misc/writeBuildNum.sh (1.712),
+	jrd/build_no.h (1.14), jrd/build_no.h (1.13), misc/writeBuildNum.sh
+	(1.715), misc/writeBuildNum.sh (1.714), jrd/build_no.h (1.16),
+	jrd/build_no.h (1.15), misc/writeBuildNum.sh (1.717),
+	misc/writeBuildNum.sh (1.716), jrd/build_no.h (1.18),
+	jrd/build_no.h (1.17), misc/writeBuildNum.sh (1.719),
+	misc/writeBuildNum.sh (1.718):
+	
+	increment build number
+
+2002-09-16 18:30  skidder
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.709), writeBuildNum.sh
+	(1.710):
+	
+	increment build number
+
+2002-09-16 18:30  skidder
+
+	* firebird2/: builds/posix/prefix.linux (1.3), src/jrd/dyn.epp
+	(1.13), src/jrd/dyn_def.epp (1.15), src/jrd/dyn_del.epp (1.10),
+	src/jrd/dyn_df_proto.h (1.4), src/jrd/idx.h (1.3),
+	src/jrd/ods101.gdl (1.2):
+	
+	Roll back my previos DDL optimization changes. Add index RDB(RDB)
+	instead. Testing revealed that it works faster
+
+2002-09-13 13:13  skidder
+
+	* firebird2/src/misc/writeBuildNum.sh (1.708):
+	
+	increment build number
+
+2002-09-13 13:13  skidder
+
+	* firebird2/src/jrd/dyn_def.epp (1.14):
+	
+	Fixed wrong comment placement
+
+2002-09-13 12:50  fsg
+
+	* firebird2/src/misc/writeBuildNum.sh (1.707):
+	
+	increment build number
+
 2002-09-13 12:32  fsg
 
 	* firebird2/src/misc/writeBuildNum.sh (1.706):
