@@ -68,7 +68,7 @@ public:
 		
 	private:
 		friend class iterator;
-		Plugin(PluginManager::Module *mod) : module(mod)
+		Plugin(Module *mod) : module(mod)
 			{ if (module) module->aquire(); }
 		
 		Module *module;
@@ -80,8 +80,8 @@ public:
 		friend class PluginManager;
 		const iterator &operator++()
 			{ if (curr) curr = curr->next; return *this; }
-		PluginManager::Plugin operator*()
-			{ return PluginManager::Plugin(curr); }
+		Plugin operator*()
+			{ return Plugin(curr); }
 		bool operator==(const iterator& cmp) const
 			{ return curr == cmp.curr; }
 		bool operator!=(const iterator& cmp) const
@@ -94,7 +94,7 @@ public:
 	private:
 		Module *curr;
 		
-		iterator(PluginManager::Module *start = 0) : curr(start) {}
+		iterator(Module *start = 0) : curr(start) {}
 	};
 	
 	Plugin findPlugin(const Firebird::string&);
