@@ -26,7 +26,7 @@
 #include "lc_ascii.h"
 #include "cv_unicode_fss.h"
 
-STATIC SSHORT wc_mbtowc(TEXTTYPE *obj, UCS2_CHAR *wc, NCHAR *p, USHORT n);
+static SSHORT wc_mbtowc(TEXTTYPE *obj, UCS2_CHAR *wc, NCHAR *p, USHORT n);
 
 #define FAMILY_UNICODE_WIDE_BIN(id_number, name, charset, country) \
 	cache->texttype_version =		IB_LANGDRV_VERSION; \
@@ -97,7 +97,7 @@ TEXTTYPE_ENTRY(UNI201_init)
 #include "../intl/collations/undef.h"
 
 
-STATIC SSHORT wc_mbtowc(TEXTTYPE *obj, UCS2_CHAR *wc, NCHAR *p, USHORT n)
+static SSHORT wc_mbtowc(TEXTTYPE *obj, UCS2_CHAR *wc, NCHAR *p, USHORT n)
 {
 	assert(obj);
 	assert(wc);

@@ -28,9 +28,9 @@
 #include "lc_ascii.h"
 #include "cv_jis.h"
 
-STATIC USHORT sjis_to_upper(TEXTTYPE obj, UCS2_CHAR ch);
-STATIC USHORT sjis_to_lower(TEXTTYPE obj, UCS2_CHAR ch);
-STATIC SSHORT sjis_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr);
+static USHORT sjis_to_upper(TEXTTYPE obj, UCS2_CHAR ch);
+static USHORT sjis_to_lower(TEXTTYPE obj, UCS2_CHAR ch);
+static SSHORT sjis_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr);
 
 #define FAMILY_MULTIBYTE(id_number, name, charset, country) \
 	cache->texttype_version =		IB_LANGDRV_VERSION; \
@@ -102,7 +102,7 @@ TEXTTYPE_ENTRY(JIS230_init)
  *	Note: This function expects Wide-Char input, not
  *	Multibyte input
  */
-STATIC USHORT sjis_to_upper(TEXTTYPE obj, UCS2_CHAR ch)
+static USHORT sjis_to_upper(TEXTTYPE obj, UCS2_CHAR ch)
 {
 	if (ch >= (UCS2_CHAR) ASCII_LOWER_A && ch <= (UCS2_CHAR) ASCII_LOWER_Z)
 		return (ch - (UCS2_CHAR) ASCII_LOWER_A + (UCS2_CHAR) ASCII_UPPER_A);
@@ -116,7 +116,7 @@ STATIC USHORT sjis_to_upper(TEXTTYPE obj, UCS2_CHAR ch)
 /*
  *	Note: This function expects Multibyte input
  */
-STATIC SSHORT sjis_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr)
+static SSHORT sjis_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr)
 {
 	BYTE *p;
 	USHORT waiting_for_sjis2 = FALSE;
@@ -153,7 +153,7 @@ STATIC SSHORT sjis_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iO
  *	Note: This function expects Wide-Char input, not
  *	Multibyte input
  */
-STATIC USHORT sjis_to_lower(TEXTTYPE obj, UCS2_CHAR ch)
+static USHORT sjis_to_lower(TEXTTYPE obj, UCS2_CHAR ch)
 {
 	if (ch >= (UCS2_CHAR) ASCII_UPPER_A && ch <= (UCS2_CHAR) ASCII_UPPER_Z)
 		return (ch - (UCS2_CHAR) ASCII_UPPER_A + (UCS2_CHAR) ASCII_LOWER_A);

@@ -28,9 +28,9 @@
 
 #define		ASCII_SPACE	32
 
-STATIC USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHORT iOutLen, BYTE *pOutChar);
-STATIC USHORT LCKSC_key_length(TEXTTYPE obj, USHORT inLen);
-STATIC SSHORT LCKSC_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2);
+static USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHORT iOutLen, BYTE *pOutChar);
+static USHORT LCKSC_key_length(TEXTTYPE obj, USHORT inLen);
+static SSHORT LCKSC_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2);
 
 static int GetGenHanNdx(unsigned char b1, unsigned char b2);
 static int GetSpeHanNdx(unsigned char b1, unsigned char b2);
@@ -132,7 +132,7 @@ unsigned char gen_han[18][2] = {
 
 
 
-STATIC USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHORT iOutLen, BYTE *pOutChar)
+static USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHORT iOutLen, BYTE *pOutChar)
 {
 	USHORT i;
 	int idx;
@@ -240,7 +240,7 @@ static int GetSpeHanNdx(unsigned char b1, unsigned char b2)
 }
 
 
-STATIC USHORT LCKSC_key_length(TEXTTYPE obj, USHORT inLen)
+static USHORT LCKSC_key_length(TEXTTYPE obj, USHORT inLen)
 {
 	USHORT len;
 
@@ -254,7 +254,7 @@ STATIC USHORT LCKSC_key_length(TEXTTYPE obj, USHORT inLen)
 *	function name	:	LCKSC_compare
 *	description	:	compare two string
 */
-STATIC SSHORT LCKSC_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2)
+static SSHORT LCKSC_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2)
 {
 	BYTE key1[LANGKSC_MAX_KEY];
 	BYTE key2[LANGKSC_MAX_KEY];

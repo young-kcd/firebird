@@ -25,9 +25,9 @@
 #include "firebird.h"
 #include "../intl/ldcommon.h"
 
-STATIC USHORT fam2_to_upper(TEXTTYPE obj, BYTE ch);
-STATIC SSHORT fam2_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr);
-STATIC USHORT fam2_to_lower(TEXTTYPE obj, BYTE ch);
+static USHORT fam2_to_upper(TEXTTYPE obj, BYTE ch);
+static SSHORT fam2_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr);
+static USHORT fam2_to_lower(TEXTTYPE obj, BYTE ch);
 
 #include "lc_narrow.h"
 #include "lc_dos.h"
@@ -522,7 +522,7 @@ TEXTTYPE_ENTRY(NEXT_c4_init)
 
 
 
-STATIC USHORT fam2_to_upper(TEXTTYPE obj, BYTE ch)
+static USHORT fam2_to_upper(TEXTTYPE obj, BYTE ch)
 {
 	return (LOCALE_UPPER(ch));
 }
@@ -531,7 +531,7 @@ STATIC USHORT fam2_to_upper(TEXTTYPE obj, BYTE ch)
 /*
  *	Returns -1 if output buffer was too small
  */
-STATIC SSHORT fam2_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr)
+static SSHORT fam2_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr)
 {
 	BYTE *p;
 	assert(pStr != NULL);
@@ -554,7 +554,7 @@ STATIC SSHORT fam2_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iO
 
 
 
-STATIC USHORT fam2_to_lower(TEXTTYPE obj, BYTE ch)
+static USHORT fam2_to_lower(TEXTTYPE obj, BYTE ch)
 {
 	return (LOCALE_LOWER(ch));
 }

@@ -22,6 +22,6 @@
  */
 
 /* These macros have a duplicate in cv_big5.c */
-STATIC USHORT big5_to_upper(TEXTTYPE obj, UCS2_CHAR ch);
-STATIC SSHORT big5_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr);
-STATIC USHORT big5_to_lower(TEXTTYPE obj, UCS2_CHAR ch);
+static USHORT big5_to_upper(TEXTTYPE obj, UCS2_CHAR ch);
+static SSHORT big5_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr);
+static USHORT big5_to_lower(TEXTTYPE obj, UCS2_CHAR ch);

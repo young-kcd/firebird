@@ -528,7 +528,7 @@ SSHORT LC_NARROW_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2)
  * Routine used for comparing results from comparision algorithm
  * to results from key creation algorithm
  */
-STATIC SSHORT old_fam2_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2)
+static SSHORT old_fam2_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2)
 {
 	BYTE key1[LANGFAM2_MAX_KEY];
 	BYTE key2[LANGFAM2_MAX_KEY];
@@ -570,7 +570,7 @@ STATIC SSHORT old_fam2_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYT
  * Routine used for comparing results from comparision algorithm
  * to results from key creation algorithm
  */
-STATIC SSHORT fam2_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2)
+static SSHORT fam2_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2)
 {
 	SSHORT res1, res2;
 

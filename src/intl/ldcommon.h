@@ -35,8 +35,6 @@
 
 #undef DEBUG
 
-#define STATIC	static
-
 typedef USHORT UNICODE;
 
 /* Redirect the assertion code defined by gdsassert.h to a local routine */
