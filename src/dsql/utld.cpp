@@ -30,7 +30,7 @@
  */
 
 /*
-$Id: utld.cpp,v 1.24 2003-11-28 06:48:09 robocop Exp $
+$Id: utld.cpp,v 1.25 2004-01-04 14:12:40 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -67,7 +67,7 @@ static inline void ch_stuff(BLOB_PTR*& p, const SCHAR value, bool& same_flag)
 	}
 }
 
-static inline void ch_stuff_word(BLOB_PTR*& p, const SCHAR value, bool& same_flag)
+static inline void ch_stuff_word(BLOB_PTR*& p, const SSHORT value, bool& same_flag)
 {
 	ch_stuff(p, value & 255, same_flag);
 	ch_stuff(p, value >> 8, same_flag);
