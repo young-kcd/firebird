@@ -3215,7 +3215,7 @@ static void send_msg( ICC icc)
 
 	/* send message */
 
-	GDS_SEND(status_vector, &request->irq_handle, number, length, &buffer, 
+	GDS_SEND(status_vector, &request->irq_handle, number, length, buffer, 
 			 level);
 	send_response(icc, status_vector);
 }
