@@ -1,3 +1,45 @@
+2003-04-17 22:58  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	bugfix: stored procedure with input parameters and aggregate
+	tracking/validating methods failed
+
+2003-04-17 20:42  bellardo
+
+	* firebird2/configure.in:
+	
+	Don't forget to create the darwin specific OS directories in gen/*
+
+2003-04-17 20:41  bellardo
+
+	* firebird2/autogen.sh:
+	
+	Fix the permissions on the configure script, just in case it is
+	needed (like on Darwin)
+
+2003-04-17 12:15  aafemt
+
+	* firebird2/src/lock/lock.cpp:
+	
+	Fix for previous commit
+
+2003-04-17 10:30  dimitr
+
+	* firebird2/src/jrd/jrd_pwd.h:
+	
+	Fixed crash in the embedded server.
+
+2003-04-17 00:49  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	bugfix: Parameters from stored procedures in a sub-select where not
+	remaped to the good context in a aggregate query.
+	
+	example: SELECT   (SELECT sp.x FROM SP_TEST(T1.ID) sp) FROM  
+	Table1 T1 GROUP BY   T1.ID
+
 2003-04-16 12:16  aafemt
 
 	* firebird2/src/: alice/alice.h, alice/tdr.cpp, burp/backup.epp,
