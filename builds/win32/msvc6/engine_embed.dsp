@@ -416,7 +416,7 @@ SOURCE=..\..\..\src\jrd\sdw.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\os\win32\sha.cpp
+SOURCE=..\..\..\src\jrd\sha.cpp
 # End Source File
 # Begin Source File
 
@@ -1159,6 +1159,10 @@ SOURCE=..\..\..\src\jrd\sdw_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\seg_proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\sha.h
 # End Source File
 # Begin Source File
 
