@@ -131,8 +131,6 @@ unsigned char gen_han[18][2] = {
 	{ 0xc7, 0xce }
 };
 
-/* These macros have a duplicate in cv_ksc.c */
-
 
 
 STATIC USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHORT iOutLen, BYTE *pOutChar)
