@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.32.2.1 2003-08-28 08:21:59 dimitr Exp $
+  $Id: isql.epp,v 1.32.2.2 2003-11-13 07:31:24 bellardo Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -1575,6 +1575,7 @@ void ISQL_printf( IB_FILE * fp, TEXT * buffer)
  **************************************/
 
 	ib_fprintf(fp, "%s", buffer);
+	ib_fflush(fp);
 }
 
 static SSHORT add_row(TEXT * tabname)
