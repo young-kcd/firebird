@@ -152,7 +152,12 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	SSHORT cache_flags;
 	int nbuf;
 	int nfree_buf;
-	SLONG redir_in, redir_out, redir_err;
+
+#ifdef SERVICE_REDIRECT
+	SLONG redir_in;
+	SLONG redir_out;
+	SLONG redir_err;
+#endif
 
 /* Perform some special handling when run as an Interbase service.  The
    first switch can be "-svc" (lower case!) or it can be "-svc_re" followed

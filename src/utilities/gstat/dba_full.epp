@@ -203,7 +203,11 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	bool sw_header;
 	bool sw_log;
 	SLONG page;
-	SLONG redir_in, redir_out, redir_err;
+#ifdef SERVICE_REDIRECT
+	SLONG redir_in;
+	SLONG redir_out;
+	SLONG redir_err;
+#endif
 	UCHAR *vp, *vend;
 	isc_db_handle db_handle = NULL;
 	IB_FILE *sw_outfile;

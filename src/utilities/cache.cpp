@@ -55,7 +55,12 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	SLONG db_handle;
 	ISC_STATUS status;
 	ISC_STATUS_ARRAY status_vector;
-	SLONG redir_in, redir_out, redir_err;
+
+#ifdef SERVICE_REDIRECT
+	SLONG redir_in;
+	SLONG redir_out;
+	SLONG redir_err;
+#endif
 
 #ifdef VMS
 	argc = VMS_parse(&argv, argc);
