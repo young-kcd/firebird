@@ -1,3 +1,12 @@
+2004-08-30 17:56  skidder
+
+	* firebird2/src/extlib/ib_udf.sql (1.4.2.1):
+	
+	Increase default length for UDF arguments.  Value 255 is chosen
+	because some of the access layers (BDE, MS Text Engine, Access,
+	etc) threat longer strings as CLOBs and this may affect backward
+	compatibility.
+
 2004-08-11 06:53  paul_reeves
 
 	* firebird2/doc/README.user.embedded (1.1.2.3):
