@@ -1,3 +1,103 @@
+2004-11-23 23:43  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp (1.203):
+	
+	fix bug with partially matched lower bounds on descending multi
+	segment index.
+
+2004-11-23 13:48  asfernandes
+
+	* firebird2/builds/win32/make_icu.bat (1.1):
+	
+	file make_icu.bat was initially added on branch B2_0_intl.
+
+2004-11-23 12:03  robocop
+
+	* firebird2/src/isql/: extra_proto.h (1.8), extract.epp (1.46),
+	show.epp (1.60), show_proto.h (1.16):
+	
+	Misc.
+
+2004-11-23 11:29  robocop
+
+	* firebird2/src/msgs/: facilities.sql (1.10), messages.sql (1.17):
+	
+	Preparing to commit Damyan Ivanov's isql patch, first step.
+
+2004-11-23 11:11  robocop
+
+	* firebird2/src/jrd/constants.h (1.19):
+	
+	Debris of rdb$current_database. :-)
+
+2004-11-23 10:55  robocop
+
+	* firebird2/builds/win32/msvc6/: common.dsp (1.28),
+	common_classic.dsp (1.22):
+	
+	Fix MSVC6 build after Nickolay's changes.
+
+2004-11-23 07:48  robocop
+
+	* firebird2/src/jrd/cmp.cpp (1.162):
+	
+	Totally misc.
+
+2004-11-23 07:03  robocop
+
+	* firebird2/src/jrd/isc_file.cpp (1.88):
+	
+	Misc.
+
+2004-11-23 06:36  skidder
+
+	* firebird2/src/utilities/nbackup.cpp (1.40):
+	
+	Fix the nbackup problem on big-endian machines noted by Claudio
+
+2004-11-23 06:34  robocop
+
+	* firebird2/src/jrd/ini.epp (1.63):
+	
+	Bad comment caused by copy/paste.
+
+2004-11-23 06:26  skidder
+
+	* firebird2/doc/sql.extensions/README.context_variables2 (1.1):
+	
+	Preliminary explanation for new context variables logic
+
+2004-11-23 06:06  skidder
+
+	* firebird2/src/jrd/functions.h (1.4):
+	
+	Correct mistake in comment which Claudio noted
+
+2004-11-23 05:14  skidder
+
+	* firebird2/src/jrd/: functions.cpp (1.18), functions.h (1.3):
+	
+	Correction
+
+2004-11-23 05:05  robocop
+
+	* firebird2/src/: dsql/pass1.cpp (1.175),
+	common/classes/StringMap.h (1.3):
+	
+	Misc.
+
+2004-11-23 05:03  robocop
+
+	* firebird2/src/jrd/blp.h (1.17):
+	
+	BLR values in blp.h must not shift!
+
+2004-11-23 03:45  skidder
+
+	* firebird2/src/jrd/functions.h (1.2):
+	
+	Little correction in context vars support
+
 2004-11-23 02:12  skidder
 
 	* firebird2/src/jrd/inf.cpp (1.50):
