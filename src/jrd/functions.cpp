@@ -238,7 +238,7 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 
 		if (name_str == ISOLATION_LEVEL_NAME) 
 		{
-			Firebird::string isolation;
+			const char* isolation;
 
 			if (transaction->tra_flags & TRA_read_committed)
 				isolation = READ_COMMITTED_VALUE;
@@ -247,7 +247,7 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 			else
 				isolation = SNAPSHOT_VALUE;
 
-			return make_result_str(isolation);
+			return make_result_str(isolation, strlen(isolation));
 		}
 
 		// "Context variable %s is not found in namespace %s"
