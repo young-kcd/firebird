@@ -1,3 +1,97 @@
+2003-08-18 23:44  skidder
+
+	* firebird2/src/jrd/: btr.cpp, btr.h, dfw.epp, idx.cpp,
+	idx_proto.h, jrd.h, opt.cpp, pag.cpp, val.cpp, vio.cpp:
+	
+	Finally, port 1.03 changes to 1.5 tree. Let's pray that I didn't
+	miss anything during this bytemoving process
+
+2003-08-18 23:37  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	Code clean-up and re-apply comments as suggested by Claudio V.
+
+2003-08-18 23:13  skidder
+
+	* firebird2/src/jrd/: btr.cpp, btr.h, dfw.epp, idx.cpp,
+	idx_proto.h, jrd.h, opt.cpp, pag.cpp, val.cpp, vio.cpp:
+	
+	Forward port removal of artificial index number limitation from
+	1.0.3.	Fix bug in dbb_max_idx calculation. Do not port GC and
+	metadata versioning changes as they seem very dangerous to me.
+
+2003-08-18 18:56  skidder
+
+	* firebird2/builds/win32/msvc7/: alice.vcproj,
+	alice_classic.vcproj, burp.vcproj, burp_classic.vcproj,
+	common.vcproj, common_classic.vcproj, dsql_server.vcproj,
+	dsql_server_classic.vcproj, engine.vcproj, engine_classic.vcproj,
+	engine_embed.vcproj, fb_inet_server.vcproj, fb_lock_print.vcproj,
+	fbclient.vcproj, fbembed.vcproj, fbguard.vcproj, fbserver.vcproj,
+	fbudf.vcproj, gbak.vcproj, gdef.vcproj, gds32.vcproj, gfix.vcproj,
+	gpre.vcproj, gpre_boot.vcproj, gsec.vcproj, gsplit.vcproj,
+	gstat.vcproj, ib_udf.vcproj, ib_util.vcproj, instreg.vcproj,
+	instsvc.vcproj, intl.vcproj, intlcpp.vcproj, ipserver.vcproj,
+	isql.vcproj, lock.vcproj, lock_classic.vcproj, nbackup.vcproj,
+	qli.vcproj, remote.vcproj, remote_classic.vcproj, utilities.vcproj,
+	utilities_classic.vcproj, wal.vcproj, wal_classic.vcproj:
+	
+	Adjust MSVC7 makefiles to reduce command line compiler warnings
+
+2003-08-18 18:53  skidder
+
+	* firebird2/src/lock/lock.cpp:
+	
+	Fix problems with Windows SS mutexes/events noted by Claudio
+
+2003-08-18 16:08  arnobrinkman
+
+	* firebird2/builds/win32/msvc6/: fbclient.dsp, fbclient_static.dsp,
+	Firebird2.dsw:
+	
+	make build work again
+
+2003-08-18 15:24  skidder
+
+	* firebird2/src/jrd/isc_file.cpp:
+	
+	Fix const-correctness of ISC_expand_filename. Thanks to Andrew
+	Gough
+
+2003-08-18 13:32  skidder
+
+	* firebird2/src/jrd/isc_file.cpp:
+	
+	Fix const-correctness of ISC_expand_filename of UNIX. Thanks to
+	Andrew Gough
+
+2003-08-18 12:31  aafemt
+
+	* firebird2/src/: include/memory_routines.h, jrd/nav.cpp:
+	
+	Rough (and temporary?) fix for incompatibility between my
+	get_long(UCHAR*) and old good BTR_get_quad(UCHAR*) reported by
+	Nikolay Samofatov
+
+2003-08-18 00:36  skidder
+
+	* firebird2/doc/: WhatsNew, WhatsNew:
+	
+	Add RC6 changes
+
+2003-08-18 00:32  skidder
+
+	* firebird2/src/burp/backup.epp:
+	
+	Backport backup.epp portability fix
+
+2003-08-18 00:25  skidder
+
+	* firebird2/src/jrd/sch.cpp:
+	
+	Backport fix of SS crash on IO error
+
 2003-08-17 23:38  skidder
 
 	* firebird2/builds/win32/msvc7/: Firebird2.sln, fbclient.vcproj:
