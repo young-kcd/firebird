@@ -3845,7 +3845,7 @@ static act* act_prepare(void)
 {
 	if (gpreGlob.isc_databases && gpreGlob.isc_databases->dbb_next) {
 		TEXT s[ERROR_LENGTH];
-		fb_utils::sprintf(s, sizeof(s),
+		fb_utils::snprintf(s, sizeof(s),
 				"Executing dynamic SQL statement in context of database %s",
 				gpreGlob.isc_databases->dbb_name->sym_string);
 		CPR_warn(s);
@@ -3986,7 +3986,7 @@ static act* act_select(void)
 
 	if (!MSC_match(KW_SEMI_COLON)) {
 		TEXT s[ERROR_LENGTH];
-		fb_utils::sprintf(s, sizeof(s),
+		fb_utils::snprintf(s, sizeof(s),
 			"Expected ';', got %s.", gpreGlob.token_global.tok_string);
 		CPR_warn(s);
 	}
