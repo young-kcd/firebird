@@ -2,6 +2,10 @@
 @echo off
 
 @echo.
+
+@call setenvvar.bat
+@if errorlevel 1 (goto :END)
+
 @set PARSER=
 @set SED=
 @call :CHECKTOOLS
