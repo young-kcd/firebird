@@ -84,7 +84,7 @@ int TPC_cache_state(TDBB tdbb, SLONG number)
 /* locate the specific TIP cache block for the transaction */
 
 	for (; tip_cache; tip_cache = tip_cache->tpc_next)
-		if (number < tip_cache->tpc_base + dbb->dbb_pcontrol->pgc_tpt) {
+		if (number < (SLONG) (tip_cache->tpc_base + dbb->dbb_pcontrol->pgc_tpt)) {
 			return TRA_state(tip_cache->tpc_transactions,
 							 tip_cache->tpc_base, number);
 		}
@@ -133,7 +133,7 @@ void TPC_initialize_tpc(TDBB tdbb, SLONG number)
 		 tip_cache_ptr = &(*tip_cache_ptr)->tpc_next)
 		tip_cache = *tip_cache_ptr;
 
-	if (number < (tip_cache->tpc_base + trans_per_tip))
+	if (number < (SLONG)(tip_cache->tpc_base + trans_per_tip))
 		return;
 
 	cache_transactions(tdbb, tip_cache_ptr,
@@ -169,9 +169,8 @@ void TPC_set_state(TDBB tdbb, SLONG number, SSHORT state)
 	shift = TRANS_SHIFT(number);
 
 	for (tip_cache = dbb->dbb_tip_cache; tip_cache;
-		 tip_cache =
-		 tip_cache->tpc_next) if (number <
-								  tip_cache->tpc_base + trans_per_tip) {
+		 tip_cache = tip_cache->tpc_next) 
+		if (number < (SLONG)(tip_cache->tpc_base + trans_per_tip)) {
 			address = tip_cache->tpc_transactions + byte;
 			*address &= ~(TRA_MASK << shift);
 			*address |= state << shift;
@@ -226,7 +225,7 @@ int TPC_snapshot_state(TDBB tdbb, SLONG number)
 
 	for (; tip_cache; tip_cache = tip_cache->tpc_next)
 	{
-		if (number < tip_cache->tpc_base + dbb->dbb_pcontrol->pgc_tpt)
+		if (number < (SLONG) (tip_cache->tpc_base + dbb->dbb_pcontrol->pgc_tpt))
 		{
 			const USHORT state =
 				TRA_state(	tip_cache->tpc_transactions,
@@ -405,7 +404,7 @@ static void cache_transactions(TDBB tdbb, TPC * tip_cache_ptr, ULONG oldest)
 	window.win_flags = 0;
 	header = (HDR) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 	top = header->hdr_next_transaction;
-	oldest = MAX(oldest, header->hdr_oldest_transaction);
+	oldest = MAX(oldest, (ULONG) header->hdr_oldest_transaction);
 	CCH_RELEASE(tdbb, &window);
 #endif
 
@@ -465,11 +464,10 @@ static int extend_cache(TDBB tdbb, SLONG number)
 
 	for (tip_cache = dbb->dbb_tip_cache; tip_cache;
 		 tip_cache =
-		 tip_cache->tpc_next) if (number <
-								  (tip_cache->tpc_base +
-								   trans_per_tip)) return
-				TRA_state(tip_cache->tpc_transactions, tip_cache->tpc_base,
-						  number);
+		 tip_cache->tpc_next) 
+		if (number < (SLONG) (tip_cache->tpc_base + trans_per_tip)) 
+			 return TRA_state(tip_cache->tpc_transactions, tip_cache->tpc_base,
+				number);
 
 /* we should never get to this point, but if we do the
    safest thing to do is return active */

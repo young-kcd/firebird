@@ -2041,7 +2041,7 @@ static void get_slice( ICC icc)
 
 	ips_sdl = &comm->ips_buffers[IPS_SLICE_SDL];
 	sdl_length = (SSHORT) ips_sdl->ips_cl_size;
-	if (sdl_length <= sizeof(sdl_buf))
+	if (sdl_length <= (SLONG) sizeof(sdl_buf))
 		sdl = sdl_buf;
 	else
 		sdl = get_buffer(comm, sdl_length, IPS_SLICE_SDL);
@@ -2052,7 +2052,7 @@ static void get_slice( ICC icc)
 
 	ips_parms = &comm->ips_buffers[IPS_SLICE_PARAM];
 	param_length = (SSHORT) ips_parms->ips_cl_size;
-	if (param_length <= sizeof(parameters))
+	if (param_length <= (SLONG) sizeof(parameters))
 		params = parameters;
 	else
 		params = (ULONG *) get_buffer(comm, param_length, IPS_SLICE_PARAM);

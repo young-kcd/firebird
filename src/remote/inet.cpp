@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.65 2003-04-01 11:35:44 brodsom Exp $
+$Id: inet.cpp,v 1.66 2003-04-03 17:16:01 brodsom Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -3012,7 +3012,7 @@ static bool_t inet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
 
 /* Use memcpy to optimize bulk transfers. */
 
-	while (bytecount > sizeof(GDS_QUAD)) {
+	while (bytecount > (SLONG) sizeof(GDS_QUAD)) {
 		if (xdrs->x_handy >= bytecount) {
 			memcpy(buff, xdrs->x_private, bytecount);
 			xdrs->x_private += bytecount;
@@ -3211,7 +3211,7 @@ static bool_t inet_putbytes( XDR * xdrs, SCHAR * buff, u_int count)
 
 /* Use memcpy to optimize bulk transfers. */
 
-	while (bytecount > sizeof(GDS_QUAD)) {
+	while (bytecount > (SLONG) sizeof(GDS_QUAD)) {
 		if (xdrs->x_handy >= bytecount) {
 			memcpy(xdrs->x_private, buff, bytecount);
 			xdrs->x_private += bytecount;

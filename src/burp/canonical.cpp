@@ -28,7 +28,7 @@
  *
  */
 /*
-$Id: canonical.cpp,v 1.17 2003-03-18 01:35:11 brodsom Exp $
+$Id: canonical.cpp,v 1.18 2003-04-03 17:14:22 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -283,7 +283,7 @@ static bool_t burp_getbytes(XDR* xdrs, SCHAR* buff, u_int bytecount)
  *
  **************************************/
 
-	if (bytecount && xdrs->x_handy >= bytecount)
+	if (bytecount && xdrs->x_handy >= (int) bytecount)
 	{
 		xdrs->x_handy -= bytecount;
 		do {
@@ -379,7 +379,7 @@ static bool_t burp_putbytes(XDR* xdrs, SCHAR* buff, u_int bytecount)
  *
  **************************************/
 
-	if (bytecount && xdrs->x_handy >= bytecount)
+	if (bytecount && xdrs->x_handy >= (int) bytecount)
 	{
 		xdrs->x_handy -= bytecount;
 		do {

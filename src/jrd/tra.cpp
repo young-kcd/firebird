@@ -1647,7 +1647,7 @@ JRD_TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
 			   computed value then there is no need to continue. There can't be
 			   an older lock data in the remaining active transactions. */
 
-			if (trans->tra_oldest_active == oldest_snapshot)
+			if (trans->tra_oldest_active == (SLONG) oldest_snapshot)
 				break;
 #ifndef VMS
 			/* Query the minimum lock data for all active transaction locks.
@@ -1665,7 +1665,7 @@ JRD_TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
 /* Put the TID of the oldest active transaction (just calculated)
    in the new transaction's lock. */
 
-	if (lock->lck_data != oldest_active)
+	if (lock->lck_data != (SLONG) oldest_active)
 		LCK_write_data(lock, oldest_active);
 
 /* Scan commit retaining transactions which have started after us but which
@@ -1699,10 +1699,10 @@ JRD_TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
 	}
 
 #ifdef MULTI_THREAD
-	if (--oldest > dbb->dbb_oldest_transaction)
+	if (--oldest > (ULONG) dbb->dbb_oldest_transaction)
 		dbb->dbb_oldest_transaction = oldest;
 
-	if (oldest_active > dbb->dbb_oldest_active)
+	if (oldest_active > (ULONG) dbb->dbb_oldest_active)
 		dbb->dbb_oldest_active = oldest_active;
 #else
 	dbb->dbb_oldest_transaction = oldest - 1;
@@ -1899,7 +1899,7 @@ int TRA_sweep(TDBB tdbb, JRD_TRA trans)
 			active = transaction->tra_oldest_active;
 		else {
 			for (active = transaction->tra_oldest;
-				 active < transaction->tra_top; active++) {
+				 active < (ULONG) transaction->tra_top; active++) {
 				if (transaction->tra_flags & TRA_read_committed) {
 					if (TPC_cache_state(tdbb, active) == tra_limbo)
 						break;
@@ -1931,7 +1931,7 @@ int TRA_sweep(TDBB tdbb, JRD_TRA trans)
 		if (header->hdr_oldest_transaction < --transaction_oldest_active) {
 			CCH_MARK_MUST_WRITE(tdbb, &window);
 			header->hdr_oldest_transaction =
-				MIN(active, transaction_oldest_active);
+				MIN(active, (ULONG) transaction_oldest_active);
 			if (dbb->dbb_wal) {
 				journal.jrndh_type = JRNP_DB_HEADER;
 				journal.jrndh_nti = header->hdr_next_transaction;
@@ -2226,7 +2226,7 @@ static HDR bump_transaction_id(TDBB tdbb, WIN * window)
 		if ((number % MOD_START_TRAN == 0) || (new_tip)) {
 			fake_tid = number + MOD_START_TRAN;
 			sequence = number / dbb->dbb_pcontrol->pgc_tpt;
-			if (sequence != ((fake_tid + 1) / dbb->dbb_pcontrol->pgc_tpt))
+			if (sequence != (SLONG) ((fake_tid + 1) / dbb->dbb_pcontrol->pgc_tpt))
 				fake_tid = ((sequence + 1) * dbb->dbb_pcontrol->pgc_tpt) - 1;
 			header->hdr_bumped_transaction = fake_tid;
 
@@ -2507,9 +2507,9 @@ static SLONG inventory_page(TDBB tdbb, SLONG sequence)
 	CHECK_DBB(dbb);
 
 	window.win_flags = 0;
-	while (!(vector = dbb->dbb_t_pages) || sequence >= vector->count()) {
+	while (!(vector = dbb->dbb_t_pages) || sequence >= (SLONG) vector->count()) {
 		DPM_scan_pages(tdbb);
-		if ((vector = dbb->dbb_t_pages) && sequence < vector->count())
+		if ((vector = dbb->dbb_t_pages) && sequence < (SLONG) vector->count())
 			break;
 		if (!vector)
 			BUGCHECK(165);		/* msg 165 cannot find tip page */
@@ -2940,7 +2940,6 @@ static void transaction_options(
 	TEXT name[32], text[128];
 	USHORT flags;
 	USHORT l, level, op, wait;
-	int id;
 	SCHAR lock_type;
 
 	SET_TDBB(tdbb);
@@ -3075,7 +3074,7 @@ static void transaction_options(
 /* Try to seize all relation locks.
    If any can't be seized, release all and try again. */
 
-	id = 0;
+	USHORT id = 0;
 
 	for (; id < vector->count(); id++) {
 		if (!(lock = (LCK) (*vector)[id]))
