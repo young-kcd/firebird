@@ -1,3 +1,43 @@
+2003-04-29 20:42  skidder
+
+	* firebird2/src/lock/lock.cpp:
+	
+	Fix broken lock table resizing code in CS builds.  This bug
+	affected all versions of Firebird (and probably Interbase too). 
+	The only reason why CS builds worked was a fact that UNIX usually
+	maps grown memory mapping to the same address as it were before.
+
+2003-04-29 19:14  skidder
+
+	* firebird2/src/intl/: lc_ascii.c, lc_ascii.h:
+	
+	Make UPPER() work correctly for WIN1251 charset
+
+2003-04-29 17:08  alexpeshkoff
+
+	* firebird2/src/remote/srvr_w32.cpp:
+	
+	Make SS create memory log in debug mode on shutdown
+
+2003-04-29 16:23  alexpeshkoff
+
+	* firebird2/builds/posix/make.shared.variables:
+	
+	added rpb_chain to posix build
+
+2003-04-28 21:48  skidder
+
+	* firebird2/src/install/arch-specific/linux/classic/:
+	makeInstallImage.sh.in, postinstall.sh.in, preinstall.sh.in:
+	
+	Install firebird.conf to installation root on Linux
+
+2003-04-28 20:57  fsg
+
+	* firebird2/builds/posix/make.shared.variables:
+	
+	Update linux makefiles to reflect rpb_chain changes
+
 2003-04-28 20:24  skidder
 
 	* firebird2/builds/win32/msvc7/: engine.vcproj,
