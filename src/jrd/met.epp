@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.84 2004-01-03 10:59:40 robocop Exp $
+$Id: met.epp,v 1.85 2004-01-04 04:41:56 robocop Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -2722,136 +2722,136 @@ jrd_prc* MET_procedure(TDBB tdbb, int id, BOOLEAN noscan, USHORT flags)
 	}
 
 	if (!noscan) {
-	request = (BLK) CMP_find_request(tdbb, irq_r_procedure, IRQ_REQUESTS);
-	request2 = (BLK) CMP_find_request(tdbb, irq_r_params, IRQ_REQUESTS);
+		request = (BLK) CMP_find_request(tdbb, irq_r_procedure, IRQ_REQUESTS);
+		request2 = (BLK) CMP_find_request(tdbb, irq_r_params, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE request)
-		P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_ID EQ procedure->prc_id
+		FOR(REQUEST_HANDLE request)
+			P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_ID EQ procedure->prc_id
 
-        if (!REQUEST(irq_r_procedure))
-		{
-            REQUEST(irq_r_procedure) = request;
-		}
-
-		if (!procedure->prc_name)
-		{
-			procedure->prc_name = save_name(tdbb, P.RDB$PROCEDURE_NAME);
-		}
-		procedure->prc_id = P.RDB$PROCEDURE_ID;
-		if (!P.RDB$SECURITY_CLASS.NULL)
-		{
-			procedure->prc_security_name =
-				save_name(tdbb, P.RDB$SECURITY_CLASS);
-		}
-		if (P.RDB$SYSTEM_FLAG.NULL || !P.RDB$SYSTEM_FLAG)
-		{
-			procedure->prc_flags &= ~PRC_system;
-		}
-		else
-		{
-			procedure->prc_flags |= PRC_system;
-		}
-		if ( (procedure->prc_inputs = P.RDB$PROCEDURE_INPUTS) )
-		{
-			procedure->prc_input_fields =
-				vec::newVector(*dbb->dbb_permanent, procedure->prc_input_fields,
-							   P.RDB$PROCEDURE_INPUTS + 1);
-		}
-		if ( (procedure->prc_outputs = P.RDB$PROCEDURE_OUTPUTS) )
-		{
-			procedure->prc_output_fields =
-				vec::newVector(*dbb->dbb_permanent, procedure->prc_output_fields,
-							   P.RDB$PROCEDURE_OUTPUTS + 1);
-		}
-
-		FOR(REQUEST_HANDLE request2) PA IN RDB$PROCEDURE_PARAMETERS CROSS
-			F IN RDB$FIELDS WITH F.RDB$FIELD_NAME = PA.RDB$FIELD_SOURCE
-				AND PA.RDB$PROCEDURE_NAME = P.RDB$PROCEDURE_NAME
-
-            if (!REQUEST(irq_r_params))
+	        if (!REQUEST(irq_r_procedure))
 			{
+	            REQUEST(irq_r_procedure) = request;
+			}
+
+			if (!procedure->prc_name)
+			{
+				procedure->prc_name = save_name(tdbb, P.RDB$PROCEDURE_NAME);
+			}
+			procedure->prc_id = P.RDB$PROCEDURE_ID;
+			if (!P.RDB$SECURITY_CLASS.NULL)
+			{
+				procedure->prc_security_name =
+					save_name(tdbb, P.RDB$SECURITY_CLASS);
+			}
+			if (P.RDB$SYSTEM_FLAG.NULL || !P.RDB$SYSTEM_FLAG)
+			{
+				procedure->prc_flags &= ~PRC_system;
+			}
+			else
+			{
+				procedure->prc_flags |= PRC_system;
+			}
+			if ( (procedure->prc_inputs = P.RDB$PROCEDURE_INPUTS) )
+			{
+				procedure->prc_input_fields =
+					vec::newVector(*dbb->dbb_permanent, procedure->prc_input_fields,
+								   P.RDB$PROCEDURE_INPUTS + 1);
+			}
+			if ( (procedure->prc_outputs = P.RDB$PROCEDURE_OUTPUTS) )
+			{
+				procedure->prc_output_fields =
+					vec::newVector(*dbb->dbb_permanent, procedure->prc_output_fields,
+								   P.RDB$PROCEDURE_OUTPUTS + 1);
+			}
+
+			FOR(REQUEST_HANDLE request2) PA IN RDB$PROCEDURE_PARAMETERS CROSS
+				F IN RDB$FIELDS WITH F.RDB$FIELD_NAME = PA.RDB$FIELD_SOURCE
+					AND PA.RDB$PROCEDURE_NAME = P.RDB$PROCEDURE_NAME
+
+	            if (!REQUEST(irq_r_params))
+				{
+					REQUEST(irq_r_params) = request2;
+				}
+
+				if (PA.RDB$PARAMETER_TYPE) {
+					vector = procedure->prc_output_fields;
+				} else {
+					vector = procedure->prc_input_fields;
+				}
+
+				/* should be error if field already exists */
+				parameter =
+					FB_NEW_RPT(*dbb->dbb_permanent, name_length(PA.RDB$PARAMETER_NAME)) prm();
+				parameter->prm_number = PA.RDB$PARAMETER_NUMBER;
+				(*vector)[parameter->prm_number] = (BLK) parameter;
+				name_copy(parameter->prm_string, PA.RDB$PARAMETER_NAME);
+				parameter->prm_name = parameter->prm_string;
+				DSC_make_descriptor(&parameter->prm_desc, F.RDB$FIELD_TYPE,
+									F.RDB$FIELD_SCALE, F.RDB$FIELD_LENGTH,
+									F.RDB$FIELD_SUB_TYPE, F.RDB$CHARACTER_SET_ID,
+									F.RDB$COLLATION_ID);
+			END_FOR;
+
+			if (!REQUEST(irq_r_params)) {
 				REQUEST(irq_r_params) = request2;
 			}
 
-			if (PA.RDB$PARAMETER_TYPE) {
-				vector = procedure->prc_output_fields;
-			} else {
-				vector = procedure->prc_input_fields;
+			if ((vector = procedure->prc_output_fields) && (*vector)[0])
+			{
+				ULONG length;
+				format = procedure->prc_format =
+					fmt::newFmt(*dbb->dbb_permanent, procedure->prc_outputs);
+				format->fmt_count = procedure->prc_outputs;
+				length = FLAG_BYTES(format->fmt_count);
+				desc = format->fmt_desc.begin();
+				for (ptr = vector->begin(), end = vector->end();
+					 ptr < end; ptr++, desc++)
+				{
+					parameter = (PRM) * ptr;
+					/* check for parameter to be null, this can only happen if the
+					 * parameter numbers get out of sync. This was added to fix bug
+					 * 10534. -Shaunak Mistry 12-May-99
+					 */
+					if (parameter)
+					{
+						*desc = parameter->prm_desc;
+						length = MET_align(&*desc, length);
+						desc->dsc_address = (UCHAR *) length;
+						length += desc->dsc_length;
+					}
+				}
+				format->fmt_length = (USHORT) length;
 			}
 
-			/* should be error if field already exists */
-			parameter =
-				FB_NEW_RPT(*dbb->dbb_permanent, name_length(PA.RDB$PARAMETER_NAME)) prm();
-			parameter->prm_number = PA.RDB$PARAMETER_NUMBER;
-			(*vector)[parameter->prm_number] = (BLK) parameter;
-			name_copy(parameter->prm_string, PA.RDB$PARAMETER_NAME);
-			parameter->prm_name = parameter->prm_string;
-			DSC_make_descriptor(&parameter->prm_desc, F.RDB$FIELD_TYPE,
-								F.RDB$FIELD_SCALE, F.RDB$FIELD_LENGTH,
-								F.RDB$FIELD_SUB_TYPE, F.RDB$CHARACTER_SET_ID,
-								F.RDB$COLLATION_ID);
+			old_pool = tdbb->tdbb_default;
+			tdbb->tdbb_default = JrdMemoryPool::createPool();
+			CSB csb_ = Csb::newCsb(*tdbb->tdbb_default, 5);
+			parse_procedure_blr(tdbb, procedure, (SLONG*)&P.RDB$PROCEDURE_BLR, csb_);
+			procedure->prc_request->req_procedure = procedure;
+			for (i = 0; i < csb_->csb_rpt.getCount(); i++)
+			{
+				if ( (node = csb_->csb_rpt[i].csb_message) )
+				{
+					if ((int) (IPTR) node->nod_arg[e_msg_number] == 0)
+					{
+						procedure->prc_input_msg = node;
+					} else if ((int) (IPTR) node->nod_arg[e_msg_number] == 1)
+					{
+						procedure->prc_output_msg = node;
+					}
+				}
+			}
+			delete csb_;
+			tdbb->tdbb_default = old_pool;
+
 		END_FOR;
 
-		if (!REQUEST(irq_r_params)) {
-			REQUEST(irq_r_params) = request2;
+		if (!REQUEST(irq_r_procedure)) {
+			REQUEST(irq_r_procedure) = request;
 		}
 
-		if ((vector = procedure->prc_output_fields) && (*vector)[0])
-		{
-			ULONG length;
-			format = procedure->prc_format =
-				fmt::newFmt(*dbb->dbb_permanent, procedure->prc_outputs);
-			format->fmt_count = procedure->prc_outputs;
-			length = FLAG_BYTES(format->fmt_count);
-			desc = format->fmt_desc.begin();
-			for (ptr = vector->begin(), end = vector->end();
-				 ptr < end; ptr++, desc++)
-			{
-				parameter = (PRM) * ptr;
-				/* check for parameter to be null, this can only happen if the
-				 * parameter numbers get out of sync. This was added to fix bug
-				 * 10534. -Shaunak Mistry 12-May-99
-				 */
-				if (parameter)
-				{
-					*desc = parameter->prm_desc;
-					length = MET_align(&*desc, length);
-					desc->dsc_address = (UCHAR *) length;
-					length += desc->dsc_length;
-				}
-			}
-			format->fmt_length = (USHORT) length;
-		}
+		procedure->prc_flags |= PRC_scanned;
 
-		old_pool = tdbb->tdbb_default;
-		tdbb->tdbb_default = JrdMemoryPool::createPool();
-		CSB csb_ = Csb::newCsb(*tdbb->tdbb_default, 5);
-		parse_procedure_blr(tdbb, procedure, (SLONG*)&P.RDB$PROCEDURE_BLR, csb_);
-		procedure->prc_request->req_procedure = procedure;
-		for (i = 0; i < csb_->csb_rpt.getCount(); i++)
-		{
-			if ( (node = csb_->csb_rpt[i].csb_message) )
-			{
-				if ((int) (IPTR) node->nod_arg[e_msg_number] == 0)
-				{
-					procedure->prc_input_msg = node;
-				} else if ((int) (IPTR) node->nod_arg[e_msg_number] == 1)
-				{
-					procedure->prc_output_msg = node;
-				}
-			}
-		}
-		delete csb_;
-		tdbb->tdbb_default = old_pool;
-		
-	END_FOR;
-
-	if (!REQUEST(irq_r_procedure)) {
-		REQUEST(irq_r_procedure) = request;
-	}
-
-	procedure->prc_flags |= PRC_scanned;
-	
 	} /* if !noscan */
 	
 /* Make sure that it is really being Scanned ! */
