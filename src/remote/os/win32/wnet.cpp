@@ -299,7 +299,7 @@ rem_port* WNET_analyze(	TEXT*	file_name,
 /* once we've decided on a protocol, concatenate the version 
    string to reflect it...  */
 
-	TEXT buffer[64];
+	TEXT buffer[BUFFER_TINY];
 	sprintf(buffer, "%s/P%d", port->port_version->str_data,
 			port->port_protocol);
 	ALLR_free(port->port_version);
@@ -569,8 +569,7 @@ static int accept_connection( rem_port* port, P_CNCT * cnct)
  *	response for protocol selection.
  *
  **************************************/
-	TEXT name[64], password[64];
-	TEXT uname[128];
+	TEXT name[BUFFER_TINY], password[BUFFER_TINY];
 
 /* Default account to "guest" (in theory all packets contain a name) */
 
@@ -582,9 +581,6 @@ static int accept_connection( rem_port* port, P_CNCT * cnct)
 	const TEXT* id = (TEXT *) cnct->p_cnct_user_id.cstr_address;
 	const TEXT* const end = id + cnct->p_cnct_user_id.cstr_length;
 
-#ifndef REQUESTER
-	bool user_verification = false;
-#endif
 	while (id < end)
 		switch (*id++) {
 		case CNCT_user:
@@ -619,9 +615,6 @@ static int accept_connection( rem_port* port, P_CNCT * cnct)
 			}
 
 		case CNCT_user_verification:
-#ifndef REQUESTER
-			user_verification = true;
-#endif
 			id++;
 			break;
 
@@ -629,28 +622,6 @@ static int accept_connection( rem_port* port, P_CNCT * cnct)
 			id += *id + 1;
 		}
 
-#ifndef REQUESTER
-/* See if user exists.  If not, reject connection */
-
-	const BOOL revert_flag = ImpersonateNamedPipeClient(port->port_handle);
-	if (revert_flag) {
-		port->port_flags |= PORT_impersonate;
-		DWORD name_len = 128;
-		if (GetUserName(uname, &name_len)) {
-			for (DWORD i = 0; i < name_len; i++) {
-				uname[i] = LOWWER7(uname[i]);
-			}
-			uname[name_len] = 0;
-
-			if ((!user_verification) && strcmp(name, uname)) {
-				port->port_flags &= ~PORT_impersonate;
-				RevertToSelf();
-				return FALSE;
-			}
-		}
-	}
-
-#endif /* REQUESTER */
 	return TRUE;
 }
 
@@ -672,7 +643,7 @@ static rem_port* alloc_port( rem_port* parent)
 	port->port_type = port_pipe;
 	port->port_state = state_pending;
 
-	TEXT buffer[64];
+	TEXT buffer[BUFFER_TINY];
 	ISC_get_host(buffer, sizeof(buffer));
 	port->port_host = REMOTE_make_string(buffer);
 	port->port_connection = REMOTE_make_string(buffer);
@@ -996,7 +967,7 @@ static rem_str* make_pipe_name(
  *	If a server pid != 0, append it to pipe name  as <>/<pid>
  *
  **************************************/
-	TEXT buffer[128];
+	TEXT buffer[BUFFER_TINY];
 
 	const TEXT* p = connect_name;
 	TEXT* q = buffer;
@@ -1192,7 +1163,7 @@ static int wnet_error(
 					   SYS_ERR, status,
 					   0);
 		if (status != ERROR_CALL_NOT_IMPLEMENTED) {
-            TEXT msg[64];
+            TEXT msg[BUFFER_TINY];
 			sprintf(msg, "WNET/wnet_error: %s errno = %d", function, status);
 			gds__log(msg, 0, 0, 0, 0);
 		}
