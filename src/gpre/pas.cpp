@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.6 2002-11-30 17:40:24 hippoman Exp $
+//	$Id: pas.cpp,v 1.7 2002-12-03 10:52:41 eku Exp $
 //
 
 #include "firebird.h"
@@ -44,7 +44,7 @@
 #include "../jrd/gds_proto.h"
 
 #pragma FB_COMPILER_MESSAGE("This file is not fit for public consumption")
-#error compiler halted, 'rogue' not found...
+// #error compiler halted, 'rogue' not found...
 // TMN: Upon converting this file to C++, it has been noted
 // that this code would never have worked because of (SEGV) bug(s),
 // why I rather than trying to use it currently remove it from compilation.
@@ -109,25 +109,25 @@ static TEXT *gen_name(TEXT *, REF, BOOLEAN);
 static void gen_on_error(ACT, USHORT);
 static void gen_procedure(ACT, int);
 static void gen_put_segment(ACT, int);
-static int gen_raw(UCHAR *, int, int);
-static int gen_ready(ACT, int);
-static int gen_receive(ACT, int, POR);
-static int gen_release(ACT, int);
-static int gen_request(GPRE_REQ, int);
-static int gen_return_value(ACT, int);
-static int gen_routine(ACT, int);
-static int gen_s_end(ACT, int);
-static int gen_s_fetch(ACT, int);
-static int gen_s_start(ACT, int);
-static int gen_segment(ACT, int);
-static int gen_select(ACT, int);
-static int gen_send(ACT, POR, int);
-static int gen_slice(ACT, int);
-static int gen_start(ACT, POR, int);
-static int gen_store(ACT, int);
+static void gen_raw(UCHAR *, int, int);
+static void gen_ready(ACT, int);
+static void gen_receive(ACT, int, POR);
+static void gen_release(ACT, int);
+static void gen_request(GPRE_REQ, int);
+static void gen_return_value(ACT, int);
+static void gen_routine(ACT, int);
+static void gen_s_end(ACT, int);
+static void gen_s_fetch(ACT, int);
+static void gen_s_start(ACT, int);
+static void gen_segment(ACT, int);
+static void gen_select(ACT, int);
+static void gen_send(ACT, POR, int);
+static void gen_slice(ACT, int);
+static void gen_start(ACT, POR, int);
+static void gen_store(ACT, int);
 static void gen_t_start(ACT, int);
-static int gen_tpb(TPB, int);
-static int gen_trans(ACT, int);
+static void gen_tpb(TPB, int);
+static void gen_trans(ACT, int);
 static void gen_update(ACT, int);
 static void gen_variable(ACT, int);
 static void gen_whenever(SWE, int);
@@ -136,13 +136,13 @@ static void gen_window_delete(ACT, int);
 static void gen_window_suspend(ACT, int);
 static void make_array_declaration(REF);
 static TEXT *make_name(TEXT *, SYM);
-static int make_ok_test(ACT, GPRE_REQ, int);
+static void make_ok_test(ACT, GPRE_REQ, int);
 static void make_port(POR, int);
-static int make_ready(DBB, TEXT *, TEXT *, USHORT, GPRE_REQ);
-static int printa(int, TEXT *, ...);
+static void make_ready(DBB, TEXT *, TEXT *, USHORT, GPRE_REQ);
+static void printa(int, TEXT *, ...);
 static TEXT *request_trans(ACT, GPRE_REQ);
 static TEXT *status_vector(ACT);
-static int t_start_auto(ACT, GPRE_REQ, TEXT *, int);
+static void t_start_auto(ACT, GPRE_REQ, TEXT *, int);
 
 static int first_flag;
 
@@ -1157,7 +1157,7 @@ static void gen_create_database( ACT action, int column)
 //		Generate substitution text for END_STREAM.
 //  
 
-static gen_cursor_close( ACT action, GPRE_REQ request, int column)
+static int gen_cursor_close( ACT action, GPRE_REQ request, int column)
 {
 	PAT args;
 	TEXT *pattern1 = "if %RIs <> nil then";
@@ -1205,7 +1205,7 @@ static void gen_cursor_init( ACT action, int column)
 //		Generate text to open an embedded SQL cursor.
 //  
 
-static gen_cursor_open( ACT action, GPRE_REQ request, int column)
+static int gen_cursor_open( ACT action, GPRE_REQ request, int column)
 {
 	PAT args;
 	TEXT s[64];
@@ -1641,7 +1641,7 @@ static void gen_dyn_execute( ACT action, int column)
 	DYN statement;
 	TEXT *transaction, s[64];
 	struct gpre_req *request, req_const;
-	NOD var_list;
+	GPRE_NOD var_list;
 	int i;
 
 	statement = (DYN) action->act_object;
@@ -1784,7 +1784,7 @@ static void gen_dyn_open( ACT action, int column)
 	DYN statement;
 	TEXT *transaction, s[64];
 	struct gpre_req *request, req_const;
-	NOD var_list;
+	GPRE_NOD var_list;
 	int i;
 
 	statement = (DYN) action->act_object;
@@ -1979,13 +1979,13 @@ static void gen_erase( ACT action, int column)
 
 static SSHORT gen_event_block( ACT action)
 {
-	NOD init, list;
+	GPRE_NOD init, list;
 	int ident;
 
-	init = (NOD) action->act_object;
+	init = (GPRE_NOD) action->act_object;
 
 	ident = CMP_next_ident();
-	init->nod_arg[2] = (NOD) ident;
+	init->nod_arg[2] = (GPRE_NOD) ident;
 
 	printa(INDENT, "gds__%da\t\t: ^char;\t\t(* event parameter block *)",
 		   ident);
@@ -2007,7 +2007,7 @@ static SSHORT gen_event_block( ACT action)
 
 static void gen_event_init( ACT action, int column)
 {
-	NOD init, event_list, *ptr, *end, node;
+	GPRE_NOD init, event_list, *ptr, *end, node;
 	REF reference;
 	PAT args;
 	SSHORT count;
@@ -2021,7 +2021,7 @@ static void gen_event_init( ACT action, int column)
 		BEGIN;
 	BEGIN;
 
-	init = (NOD) action->act_object;
+	init = (GPRE_NOD) action->act_object;
 	event_list = init->nod_arg[1];
 
 	args.pat_database = (DBB) init->nod_arg[3];
@@ -2074,7 +2074,7 @@ static void gen_event_init( ACT action, int column)
 static void gen_event_wait( ACT action, int column)
 {
 	PAT args;
-	NOD event_init;
+	GPRE_NOD event_init;
 	SYM event_name, stack_name;
 	DBB database;
 	LLS stack_ptr;
@@ -2096,7 +2096,7 @@ static void gen_event_wait( ACT action, int column)
 	ident = -1;
 	for (stack_ptr = events; stack_ptr; stack_ptr = stack_ptr->lls_next) {
 		event_action = (ACT) stack_ptr->lls_object;
-		event_init = (NOD) event_action->act_object;
+		event_init = (GPRE_NOD) event_action->act_object;
 		stack_name = (SYM) event_init->nod_arg[0];
 		if (!strcmp(event_name->sym_string, stack_name->sym_string)) {
 			ident = (int) event_init->nod_arg[2];
@@ -2137,7 +2137,7 @@ static void gen_event_wait( ACT action, int column)
 static void gen_fetch( ACT action, int column)
 {
 	GPRE_REQ		request;
-	NOD		var_list;
+	GPRE_NOD		var_list;
 	int		i;
 	TEXT	s[20];
 
@@ -2209,7 +2209,7 @@ static void gen_fetch( ACT action, int column)
 	column += INDENT;
 	BEGIN;
 
-	if (var_list = (NOD) action->act_object)
+	if (var_list = (GPRE_NOD) action->act_object)
 		for (i = 0; i < var_list->nod_count; i++) {
 			align(column);
 			asgn_to(action, reinterpret_cast<ref*>(var_list->nod_arg[i]), column);
@@ -3065,7 +3065,7 @@ static void gen_put_segment( ACT action, int column)
 //		Generate BLR in raw, numeric form.  Ughly but dense.
 //  
 
-static gen_raw( UCHAR * blr, int request_length, int column)
+static void gen_raw( UCHAR * blr, int request_length, int column)
 {
 	UCHAR *end, c;
 	TEXT *p, *limit, buffer[80];
@@ -3100,7 +3100,7 @@ static gen_raw( UCHAR * blr, int request_length, int column)
 //		Generate substitution text for READY
 //  
 
-static gen_ready( ACT action, int column)
+static void gen_ready( ACT action, int column)
 {
 	RDY ready;
 	DBB db;
@@ -3129,7 +3129,7 @@ static gen_ready( ACT action, int column)
 //		Generate receive call for a port.
 //  
 
-static gen_receive( ACT action, int column, POR port)
+static void gen_receive( ACT action, int column, POR port)
 {
 	GPRE_REQ request;
 
@@ -3158,7 +3158,7 @@ static gen_receive( ACT action, int column, POR port)
 //		a serious error, it will be caught on the next statement.
 //  
 
-static gen_release( ACT action, int column)
+static void gen_release( ACT action, int column)
 {
 	DBB db, exp_db;
 	GPRE_REQ request;
@@ -3184,7 +3184,7 @@ static gen_release( ACT action, int column)
 //		Generate definitions associated with a single request.
 //  
 
-static gen_request( GPRE_REQ request, int column)
+static void gen_request( GPRE_REQ request, int column)
 {
 	BLB blob;
 	POR port;
@@ -3357,7 +3357,7 @@ static gen_request( GPRE_REQ request, int column)
 //		in a store2 statement.
 //  
 
-static gen_return_value( ACT action, int column)
+static void gen_return_value( ACT action, int column)
 {
 	UPD update;
 	REF reference;
@@ -3379,7 +3379,7 @@ static gen_return_value( ACT action, int column)
 //		routine, insert local definitions.
 //  
 
-static gen_routine( ACT action, int column)
+static void gen_routine( ACT action, int column)
 {
 	BLB blob;
 	GPRE_REQ request;
@@ -3424,7 +3424,7 @@ static gen_routine( ACT action, int column)
 //		Generate substitution text for END_STREAM.
 //  
 
-static gen_s_end( ACT action, int column)
+static void gen_s_end( ACT action, int column)
 {
 	GPRE_REQ request;
 
@@ -3455,7 +3455,7 @@ static gen_s_end( ACT action, int column)
 //		Generate substitution text for FETCH.
 //  
 
-static gen_s_fetch( ACT action, int column)
+static void gen_s_fetch( ACT action, int column)
 {
 	GPRE_REQ request;
 
@@ -3475,7 +3475,7 @@ static gen_s_fetch( ACT action, int column)
 //		used both by START_STREAM and FOR
 //  
 
-static gen_s_start( ACT action, int column)
+static void gen_s_start( ACT action, int column)
 {
 	GPRE_REQ request;
 	POR port;
@@ -3518,7 +3518,7 @@ static gen_s_start( ACT action, int column)
 //		Substitute for a segment, segment length, or blob handle.
 //  
 
-static gen_segment( ACT action, int column)
+static void gen_segment( ACT action, int column)
 {
 	BLB blob;
 
@@ -3535,11 +3535,11 @@ static gen_segment( ACT action, int column)
 //  
 //  
 
-static gen_select( ACT action, int column)
+static void gen_select( ACT action, int column)
 {
 	GPRE_REQ request;
 	POR port;
-	NOD var_list;
+	GPRE_NOD var_list;
 	int i;
 	TEXT name[20];
 
@@ -3556,7 +3556,7 @@ static gen_select( ACT action, int column)
 	column += INDENT;
 
 	BEGIN;
-	if (var_list = (NOD) action->act_object)
+	if (var_list = (GPRE_NOD) action->act_object)
 		for (i = 0; i < var_list->nod_count; i++) {
 			align(column);
 			asgn_to(action, reinterpret_cast<REF>(var_list->nod_arg[i]), column);
@@ -3581,7 +3581,7 @@ static gen_select( ACT action, int column)
 //		Generate a send or receive call for a port.
 //  
 
-static gen_send( ACT action, POR port, int column)
+static void gen_send( ACT action, POR port, int column)
 {
 	GPRE_REQ request;
 
@@ -3603,7 +3603,7 @@ static gen_send( ACT action, POR port, int column)
 //		Generate support for get/put slice statement.
 //  
 
-static gen_slice( ACT action, int column)
+static void gen_slice( ACT action, int column)
 {
 	GPRE_REQ request, parent_request;
 	REF reference, upper, lower;
@@ -3673,7 +3673,7 @@ static gen_slice( ACT action, int column)
 //		on whether or a not a port is present.
 //  
 
-static gen_start( ACT action, POR port, int column)
+static void gen_start( ACT action, POR port, int column)
 {
 	GPRE_REQ request;
 	TEXT *vector;
@@ -3714,7 +3714,7 @@ static gen_start( ACT action, POR port, int column)
 //		call and any variable initialization required.
 //  
 
-static gen_store( ACT action, int column)
+static void gen_store( ACT action, int column)
 {
 	GPRE_REQ request;
 	REF reference;
@@ -3826,7 +3826,7 @@ static void gen_t_start( ACT action, int column)
 //		Generate a TPB in the output file
 //  
 
-static gen_tpb( TPB tpb, int column)
+static void gen_tpb( TPB tpb, int column)
 {
 	TEXT *text, buffer[80], c, *p;
 	int length;
@@ -3874,7 +3874,7 @@ static gen_tpb( TPB tpb, int column)
 //		Generate substitution text for COMMIT, ROLLBACK, PREPARE, and SAVE
 //  
 
-static gen_trans( ACT action, int column)
+static void gen_trans( ACT action, int column)
 {
 
 	align(column);
@@ -4103,7 +4103,7 @@ static TEXT *make_name( TEXT * string, SYM symbol)
 //		active transaction
 //  
 
-static make_ok_test( ACT action, GPRE_REQ request, int column)
+static void make_ok_test( ACT action, GPRE_REQ request, int column)
 {
 
 	if (sw_auto)
@@ -4195,7 +4195,7 @@ static void make_port( POR port, int column)
 //		ready;
 //  
 
-static make_ready(
+static void make_ready(
 				  DBB db,
 				  TEXT * filename, TEXT * vector, USHORT column, GPRE_REQ request)
 {
@@ -4234,7 +4234,7 @@ static make_ready(
 //		Print a fixed string at a particular column.
 //  
 
-static printa( int column, TEXT * string, ...)
+static void printa( int column, TEXT * string, ...)
 {
 	va_list ptr;
 
@@ -4287,7 +4287,7 @@ static TEXT *status_vector( ACT action)
 //		any thing fails so we don't trash the status vector.
 //  
 
-static t_start_auto( ACT action, GPRE_REQ request, TEXT * vector, int column)
+static void t_start_auto( ACT action, GPRE_REQ request, TEXT * vector, int column)
 {
 	DBB db;
 	int count, stat, and_count;
