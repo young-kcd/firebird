@@ -98,6 +98,12 @@ timestamp, int
 returns timestamp
 entry_point 'addDay' module_name 'fbudf';
 
+--FBUDF_API void addDay2(const ISC_TIMESTAMP* v0, const int& ndays, ISC_TIMESTAMP* v)
+declare external function addDay2
+timestamp, int, timestamp
+returns parameter 3
+entry_point 'addDay2' module_name 'fbudf';
+
 --FBUDF_API ISC_TIMESTAMP* addWeek(ISC_TIMESTAMP* v, int nweeks)
 declare external function addWeek
 timestamp, int
