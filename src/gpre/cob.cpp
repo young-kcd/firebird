@@ -279,7 +279,7 @@ static void	gen_function (const act*);
 static void	gen_get_or_put_slice(const act*, const ref*, bool);
 static void	gen_get_segment (const act*);
 static void	gen_loop (const act*);
-static TEXT* gen_name(TEXT*, const ref*, bool);
+static TEXT* gen_name(TEXT* const, const ref*, bool);
 static void	gen_on_error (const act*);
 static void	gen_procedure (const act*);
 static void	gen_put_segment (const act*);
@@ -305,8 +305,8 @@ static void	gen_update (const act*);
 static void	gen_variable (const act*);
 static void	gen_whenever (const swe*);
 static void	make_array_declaration (REF);
-static TEXT* make_name (TEXT*, const gpre_sym*);
-static TEXT* make_name_formatted (TEXT*, const TEXT*, const gpre_sym*);
+static void make_name (TEXT* const, const gpre_sym*);
+static void make_name_formatted (TEXT* const, const TEXT*, const gpre_sym*);
 static void	make_port (const gpre_port*);
 static void	make_ready (const dbb*, const TEXT*, const TEXT*, const gpre_req*,
 	USHORT);
@@ -2907,7 +2907,7 @@ static void gen_loop( const act* action)
 //		port and parameter idents.
 //  
 
-static TEXT* gen_name(TEXT* string,
+static TEXT* gen_name(TEXT* const string,
 					  const ref* reference,
 					  bool as_blob)
 {
@@ -4023,21 +4023,14 @@ static void make_array_declaration( REF reference)
 //		Turn a symbol into a varying string.
 //  
 
-static TEXT* make_name(TEXT* string, const gpre_sym* symbol)
+static void make_name(TEXT* const string, const gpre_sym* symbol)
 {
 
 #ifndef VMS
-	fb_utils::snprintf(string, MAX_CURSOR_SIZE, "%s", symbol->sym_string);
-	while (*string) {
-		if (*string == '_')
-			*string = '-';
-		string++;
-	}
+	make_name_formatted(string, "%s", symbol);
 #else
 	fb_utils::snprintf(string, MAX_CURSOR_SIZE, "'%s '", symbol->sym_string);
 #endif
-
-	return string;
 }
 
 
@@ -4046,15 +4039,13 @@ static TEXT* make_name(TEXT* string, const gpre_sym* symbol)
 //		Turn a symbol into a varying string.
 //  
 
-static TEXT* make_name_formatted(TEXT* string, const TEXT* format,
+static void make_name_formatted(TEXT* const string, const TEXT* format,
 	const gpre_sym* symbol)
 {
 	fb_utils::snprintf(string, MAX_CURSOR_SIZE, format, symbol->sym_string);
 	for (TEXT* s = string; *s; s++)
 		if (*s == '_')
 			*s = '-';
-
-	return string;
 }
 
 

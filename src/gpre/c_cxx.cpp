@@ -92,7 +92,7 @@ static void gen_function(const act*, int);
 static void gen_get_or_put_slice(const act*, const ref*, bool, int);
 static void gen_get_segment(const act*, int);
 static void gen_loop(const act*, int);
-static TEXT* gen_name(char*, const ref*, bool);
+static TEXT* gen_name(char* const, const ref*, bool);
 static void gen_on_error(const act*, USHORT);
 static void gen_procedure(const act*, int);
 static void gen_put_segment(const act*, int);
@@ -2553,7 +2553,7 @@ static void gen_loop( const act* action, int column)
 //		port and parameter idents.
 //  
 
-static TEXT* gen_name(char* string,
+static TEXT* gen_name(char* const string,
 					  const ref* reference,
 					  bool as_blob)
 {

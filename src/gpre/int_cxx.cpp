@@ -52,7 +52,7 @@ static void gen_estore(const act*, int, bool);
 static void gen_endfor(const act*, int);
 static void gen_erase(const act*, int);
 static void gen_for(const act*, int);
-static char* gen_name(char*, const ref*);
+static char* gen_name(char* const, const ref*);
 static void gen_raw(const gpre_req*);
 static void gen_receive(const gpre_req*, const gpre_port*);
 static void gen_request(const gpre_req*);
@@ -429,7 +429,7 @@ static void gen_for( const act* action, int column)
 //		port and parameter idents.
 //  
 
-static char* gen_name(char* string, const ref* reference)
+static char* gen_name(char* const string, const ref* reference)
 {
 
 	fb_utils::snprintf(string, MAX_REF_SIZE, "jrd_%d.jrd_%d",

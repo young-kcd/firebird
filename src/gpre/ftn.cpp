@@ -103,7 +103,7 @@ static void	gen_function(const act*);
 static void	gen_get_or_put_slice(const act*, const ref*, bool);
 static void	gen_get_segment (const act*);
 static void	gen_loop (const act*);
-static TEXT*	gen_name (SCHAR*, const ref*, bool);
+static TEXT*	gen_name (SCHAR* const, const ref*, bool);
 static void	gen_on_error (const act*);
 static void	gen_procedure (const act*);
 static void	gen_put_segment (const act*);
@@ -140,7 +140,7 @@ static void	gen_update (const act*);
 static void	gen_variable (const act*);
 static void	gen_whenever (const swe*);
 static void	make_array_declaration (const ref*);
-static TEXT* make_name (TEXT*, const gpre_sym*);
+static TEXT* make_name (TEXT* const, const gpre_sym*);
 static void	make_ok_test (const act*, const gpre_req*);
 static void	make_port (const gpre_port*);
 static void	make_ready (DBB, const TEXT*, const TEXT*, const gpre_req*);
@@ -2561,7 +2561,7 @@ static void gen_loop(const act* action)
 //		port and parameter idents.
 //  
 
-static TEXT* gen_name(SCHAR* string,
+static TEXT* gen_name(SCHAR* const string,
 					  const ref* reference,
 					  bool as_blob)
 {
@@ -3732,7 +3732,7 @@ static void make_array_declaration( const ref* reference)
 //		Turn a symbol into a varying string.
 //  
 
-static TEXT* make_name( TEXT* string, const gpre_sym* symbol)
+static TEXT* make_name( TEXT* const string, const gpre_sym* symbol)
 {
 	fb_utils::snprintf(string, MAX_CURSOR_SIZE,
 		"%s'%s '%s", REF_1, symbol->sym_string, REF_2);
