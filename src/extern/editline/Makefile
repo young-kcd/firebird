@@ -1,4 +1,4 @@
-##  $Revision: 1.1 $
+##  $Revision: 1.2 $
 ##
 ##  Unix makefile for editline library.
 ##
@@ -41,7 +41,7 @@ RANLIB	= ranlib
 SOURCES	= editline.c complete.c sysunix.c
 OBJECTS	= editline.o complete.o sysunix.o
 
-FIREBIRD_LIB=../../gen/firebird/lib
+FIREBIRD_LIB=../../../gen/firebird/lib
 all:		$(FIREBIRD_LIB)/libedit.a
 #all:		libedit.a
 
