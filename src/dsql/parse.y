@@ -2652,7 +2652,7 @@ set_statistics	: SET STATISTICS INDEX symbol_index_name
 /* SELECT statement */
 
 select		: union_expr order_clause for_update_clause
-			{ $$ = make_node (nod_select, 4, $1, $2, $3); }
+			{ $$ = make_node (nod_select, 3, $1, $2, $3); }
 		;
 
 union_expr	: select_expr
