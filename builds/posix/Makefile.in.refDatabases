@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.refDatabases,v 1.21 2004-04-30 23:02:06 brodsom Exp $
+#  $Id: Makefile.in.refDatabases,v 1.22 2004-08-23 09:53:54 aafemt Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -48,7 +48,9 @@ export DYLD_FRAMEWORK_PATH
 DYLD_FRAMEWORK_PATH=	$(OBJS)/firebird
 export INTERBASE
 
-
+MSG_SCRIPTS = msg.sql facilities.sql locales.sql history.sql messages.sql \
+              symbols.sql system_errors.sql transmsgs.fr_FR.sql transmsgs.de_DE.sql
+MSG_FILES = $(addprefix $(SRC_ROOT)/msgs/, $(MSG_SCRIPTS))
 
 .PHONY: empty_db refDatabases
 
@@ -83,12 +85,15 @@ yachts.lnk: empty.fdb
 
 .PHONY: ref_databases
 
-ref_databases : msg.fdb help.fdb metadata.fdb security.fdb 
+# Use msg.timestamp as a target to help dependency tracking work.
 
-msg.fdb:	$(BLD_ROOT)/misc/msg.gbak
-	$(BIN)/gbak_static -MODE read_only -R $< $@
+ref_databases : msg.timestamp help.fdb metadata.fdb security.fdb 
+
+msg.timestamp:	$(MSG_FILES)
+	$(RM) msg.fdb
+	for sn in $(MSG_FILES); do $(ISQL_STATIC) -i $$sn || exit; done
+#	$(CHMOD) 444 msg.fdb
 	$(TOUCH) $@
-	$(CHMOD) 444 $@
 
 help.fdb:	$(FIREBIRD)/help/help.fdb
 	$(RM) -f $@

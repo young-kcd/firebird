@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.msgs,v 1.14 2004-04-30 23:02:06 brodsom Exp $
+#  $Id: Makefile.in.msgs,v 1.15 2004-08-23 09:53:54 aafemt Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -77,12 +77,12 @@ Dependencies = $(AllObjects:.o=.d)
 .PHONY: all msgs build_file check_messages enter_messages modify_messages change_messages
 
 
-Programs =		$(BUILD_FILE) $(CHECK_MESSAGES) $(ENTER_MESSAGES) \
-			$(CHECK_MESSAGES) $(MODIFY_MESSAGES) $(CHANGE_MESSAGES)
+Programs =		$(BUILD_FILE) #$(CHECK_MESSAGES) $(ENTER_MESSAGES) \
+#			$(CHECK_MESSAGES) $(MODIFY_MESSAGES) $(CHANGE_MESSAGES)
 
 all:	build_file check_messages enter_messages modify_messages change_messages 
 
-msgs:  master_msg_db.lnk $(Programs) do_check message_file
+msgs:  $(Programs) message_file
 
 
 do_check: $(CHECK_MESSAGES) $(BUILD_FILE)
@@ -132,10 +132,10 @@ $(CHANGE_MESSAGES):	$(CHANGE_Objects) $(LIBFBSTATIC_A) $(LIBFBCOMMON_A)
 
 
 
-message_file : $(FIREBIRD)/firebird.msg
+message_file : $(FIREBIRD_MSG)
 
-$(FIREBIRD_MSG) : $(BUILD_FILE) indicator.msg
-	$(BIN)/build_file -d $(MSGSDIR)master_msg_db.lnk -f $@
+$(FIREBIRD_MSG) : $(BUILD_FILE) msg.timestamp
+	$(BUILD_FILE) -d $(MSGSDIR)msg.fdb -f $@
 	$(CHMOD_6) $@
 
 
@@ -158,23 +158,23 @@ master_msg_db.lnk:
 
 # potential locals are $(fr_FR_MSG) $(de_DE_MSG) $(ja_JP_MSG)
 
-LOCALES= $(fr_FR_MSG) $(de_DE_MSG) $(ja_JP_MSG)
+LOCALES= $(fr_FR_MSG) $(de_DE_MSG)
 #LOCALES= 
 
 msgs_intl locales.msg:	$(LOCALES)
 
 
-$(fr_FR_MSG) : $(BUILD_FILE) indicator.msg
-	$(BIN)/build_file -d $(MSGSDIR)master_msg_db.lnk -l fr_FR -f $@
+$(fr_FR_MSG) : $(BUILD_FILE) msg.timestamp
+	$(BUILD_FILE) -d $(MSGSDIR)msg.fdb -l fr_FR -f $@
 	$(CHMOD_6) $@
 
-$(de_DE_MSG) : $(BUILD_FILE) indicator.msg
-	$(BIN)/build_file -d $(MSGSDIR)master_msg_db.lnk -l de_DE -f $@
+$(de_DE_MSG) : $(BUILD_FILE) msg.timestamp
+	$(BUILD_FILE) -d $(MSGSDIR)msg.fdb -l de_DE -f $@
 	$(CHMOD_6) $@
 
 
-$(ja_JP_MSG) : $(BUILD_FILE) indicator.msg
-	$(BIN)/build_file -d $(MSGSDIR)master_msg_db.lnk -l ja_JP.EUC -f $@
+$(ja_JP_MSG) : $(BUILD_FILE) msg.timestamp
+	$(BUILD_FILE) -d $(MSGSDIR)msg.fdb -l ja_JP.EUC -f $@
 	$(CHMOD_6) $@
 
 include $(ROOT)/gen/make.shared.targets
