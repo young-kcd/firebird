@@ -20,6 +20,7 @@
 @del %ROOT_PATH%\src\include\gen\autoconfig.h 2> nul
 @copy %ROOT_PATH%\src\include\gen\autoconfig_msvc.h %ROOT_PATH%\src\include\gen\autoconfig.h > nul
 @echo Creating directories
+:: Don't rmdir gen, it contains the dbs
 @rmdir /s /q %ROOT_PATH%\gen\alice 2>nul
 @mkdir %ROOT_PATH%\gen\alice 2>nul
 @rmdir /s /q %ROOT_PATH%\gen\burp 2>nul
@@ -42,10 +43,10 @@
 @mkdir %ROOT_PATH%\gen\qli 2>nul
 @rmdir /s /q %ROOT_PATH%\gen\utilities 2>nul
 @mkdir %ROOT_PATH%\gen\utilities 2>nul
-@rmdir /s /q %ROOT_PATH%\gen\utilities\gstat 2>nul
 @mkdir %ROOT_PATH%\gen\utilities\gstat 2>nul
-@rmdir /s /q %ROOT_PATH%\gen\utilities\gsec 2>nul
 @mkdir %ROOT_PATH%\gen\utilities\gsec 2>nul
+@rmdir /s /q %ROOT_PATH%\gen\examples 2>nul
+@mkdir %ROOT_PATH%\gen\examples 2>nul
 
 ::=======
 @call :gpre_boot
