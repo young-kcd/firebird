@@ -2237,17 +2237,6 @@ void DLL_EXPORT CMP_shutdown_database(TDBB tdbb)
 			}
 		}
 
-
-
-/*	if ((which == IRQ_REQUESTS && !(request = (JRD_REQ) REQUEST(id))) ||
-		(which == DYN_REQUESTS && !(request = (JRD_REQ) DYN_REQUEST(id))) ||
-		!(request->req_flags & (req_active | req_reserved))) {
-		if (request)
-			request->req_flags |= req_reserved;
-		THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_cmp_clone);
-		return request;
-	}*/
-
 }
 
 
