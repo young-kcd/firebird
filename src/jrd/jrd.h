@@ -739,7 +739,7 @@ public:
 		{
 			if (!base)
 				base = FB_NEW(p) vec(p, len);
-			else if (len > base->count())
+			else if (len > (int) base->count())
 				base->resize(len);
 			return base;
 		}
@@ -761,7 +761,7 @@ public:
 		{
 			if (!base)
 				base = FB_NEW(p) vcl(p, len);
-			else if (len > base->count())
+			else if (len > (int) base->count())
 				base->resize(len);
 			return base;
 		}
