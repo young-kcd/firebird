@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:		JRD Access Method
  *	MODULE:			evl_string.h
- *	DESCRIPTION:	Streamed string functions
+ *	DESCRIPTION:	Algorithms for streamed string functions
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: evl_string.h,v 1.3 2003-11-20 17:32:20 skidder Exp $
+ *  $Id: evl_string.h,v 1.4 2003-12-27 04:37:23 skidder Exp $
  *
  */
 
@@ -62,6 +62,7 @@ template <typename CharType>
 class StartsEvaluator {
 public:
 	StartsEvaluator(const CharType* _pattern_str, SSHORT _pattern_len) : 
+		// No need to copy string because this class is used briefly
 		pattern_str(_pattern_str), pattern_len(_pattern_len)
 	{
 		reset();
@@ -74,7 +75,7 @@ public:
 		return offset >= pattern_len && result;
 	}
 	bool processNextChunk(const CharType* data, SSHORT data_len) {
-		assert(data_len);
+		fb_assert(data_len);
 		if (!result || offset >= pattern_len) return false;
 		SSHORT comp_length = data_len < pattern_len - offset ? data_len : pattern_len-offset;
 		if (memcmp(data, pattern_str + offset, sizeof(CharType)*comp_length)!=0) {
@@ -109,14 +110,45 @@ static void preKmp(const CharType *x, int m, SSHORT kmpNext[]) {
    }
 }
 
+class StaticAllocator {
+public:
+	StaticAllocator(MemoryPool* _pool) : chunksToFree(_pool), pool(_pool), allocated(0) {};
+
+	~StaticAllocator() {
+		for (int i=0; i < chunksToFree.getCount(); i++)
+			pool->deallocate(chunksToFree[i]);
+	}
+
+	void* alloc(SSHORT count) {
+		void* result;
+		if (allocated + count <= STATIC_PATTERN_BUFFER) {
+			result = allocBuffer + allocated;
+			allocated += count;		
+			return result;
+		} else {
+			result = pool->allocate(count);
+			chunksToFree.add(result);
+			return result;
+		}
+	}
+private:
+	Array<void*> chunksToFree;
+	MemoryPool* pool;
+	char allocBuffer[STATIC_PATTERN_BUFFER];
+	int allocated;
+};
+
 template <typename CharType>
-class ContainsEvaluator {
+class ContainsEvaluator : private StaticAllocator {
 public:
 	ContainsEvaluator(MemoryPool* _pool, const CharType* _pattern_str, SSHORT _pattern_len) : 
-		pool(_pool), pattern_str(_pattern_str), pattern_len(_pattern_len), kmpNext(_pool)
+		StaticAllocator(_pool),	pattern_len(_pattern_len)
 	{
-		kmpNext.grow(_pattern_len+1);
-		preKmp<CharType>(_pattern_str, _pattern_len, kmpNext.begin());
+		CharType* temp = reinterpret_cast<CharType*>(alloc(_pattern_len*sizeof(CharType)));
+		memcpy(temp, _pattern_str, _pattern_len);
+		pattern_str = temp;
+		kmpNext = reinterpret_cast<SSHORT*>(alloc((_pattern_len+1)*sizeof(SSHORT)));
+		preKmp<CharType>(_pattern_str, _pattern_len, kmpNext);
 		reset();
 	}
 
@@ -130,7 +162,7 @@ public:
 	}
 
 	bool processNextChunk(const CharType* data, SSHORT data_len) {		
-		assert(data_len);
+		fb_assert(data_len);
 		if (result) return false;
 		SSHORT data_pos = 0;
 		while (data_pos < data_len) {
@@ -147,12 +179,11 @@ public:
 	}
 
 private:
-	MemoryPool *pool;
 	const CharType* pattern_str;
 	SSHORT pattern_len;
 	SSHORT offset;
 	bool result;
-	HalfStaticArray<SSHORT,STATIC_PATTERN_BUFFER/2> kmpNext;
+	SSHORT *kmpNext;
 };
 
 enum PatternItemType {
@@ -173,19 +204,14 @@ enum MatchType {
 };
 
 template <typename CharType>
-class LikeEvaluator {
+class LikeEvaluator : private StaticAllocator {
 public:
-	LikeEvaluator(MemoryPool* _pool, const CharType* pattern_str, 
+	LikeEvaluator(MemoryPool* _pool, const CharType* _pattern_str, 
 		SSHORT pattern_len, CharType escape_char, CharType sql_match_any, 
 		CharType sql_match_one);
 
-	~LikeEvaluator() {
-		for (int i=0; i < chunksToFree.getCount(); i++)
-			pool->deallocate(chunksToFree[i]);
-	}
-
 	void reset() {
-		assert(patternItems.getCount());
+		fb_assert(patternItems.getCount());
 		branches.shrink(0);
 		if (patternItems[0].type == piNone) {
 			match_type = (patternItems[0].match_any ? MATCH_ANY : MATCH_FIXED);
@@ -222,36 +248,22 @@ private:
 		SSHORT offset; // Match offset inside this pattern
 	};
 
-	MemoryPool* pool;
 	HalfStaticArray<PatternItem, STATIC_PATTERN_ITEMS> patternItems;
 	HalfStaticArray<BranchItem, STATIC_STATUS_ITEMS> branches;
-	Array<CharType*> chunksToFree;
 
-	char allocBuffer[STATIC_PATTERN_BUFFER];
-	int allocated;
 	MatchType match_type;
-
-	void* alloc(SSHORT count) {
-		CharType* result;
-		if (allocated + count <= STATIC_PATTERN_BUFFER) {
-			result = allocBuffer + allocated;
-			allocated += count;		
-			return result;
-		} else {
-			result = reinterpret_cast<CharType*>(pool->allocate(count));
-			chunksToFree.add(result);
-			return result;
-		}
-	}
 };
 
 template <typename CharType>
 LikeEvaluator<CharType>::LikeEvaluator(
-	MemoryPool* _pool, const CharType* pattern_str, SSHORT pattern_len, 
+	MemoryPool* _pool, const CharType* _pattern_str, SSHORT pattern_len, 
 	CharType escape_char, CharType sql_match_any, CharType sql_match_one)
-: pool(_pool), patternItems(_pool), branches(_pool), chunksToFree(_pool), 
-	allocated(0), match_type(MATCH_NONE)
+: StaticAllocator(_pool), patternItems(_pool), branches(_pool), match_type(MATCH_NONE)
 {
+	// Create local copy of the string.
+	CharType* pattern_str = reinterpret_cast<CharType*>(alloc(pattern_len*sizeof(CharType)));
+	memcpy(pattern_str, _pattern_str, pattern_len);
+
 	patternItems.grow(1);
 	// PASS1. Parse pattern.
 	SSHORT pattern_pos = 0;
@@ -286,7 +298,7 @@ LikeEvaluator<CharType>::LikeEvaluator(
 					continue;
 				}
 			}
-			ERR_post(gds_like_escape_invalid, 0);
+			ERR_post(isc_like_escape_invalid, 0);
 		}
 		// percent sign
 		if (c == sql_match_any) {
@@ -404,8 +416,8 @@ LikeEvaluator<CharType>::LikeEvaluator(
 
 template <typename CharType>
 bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SSHORT data_len) {
-	assert(data_len);
-	assert(patternItems.getCount());
+	fb_assert(data_len);
+	fb_assert(patternItems.getCount());
 
 	if (match_type == MATCH_FIXED)
 		match_type = MATCH_NONE;
@@ -475,20 +487,28 @@ bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SSHORT data
 				}
 				current_branch->offset++;
 				if (current_branch->offset >= current_pattern->str.length) {
-					current_branch->offset = current_pattern->str.kmpNext[current_branch->offset];
-					if (current_pattern + 1 >= patternItems.end()) {
+					PatternItem *next_pattern = current_pattern + 1;
+					if (next_pattern >= patternItems.end()) {
 						if (current_pattern->match_any) {
 							branches.shrink(0);
 							match_type = MATCH_ANY;
 							return false;
 						}
 						// We are looking for the pattern at the end of string
+						current_branch->offset = current_pattern->str.kmpNext[current_branch->offset];
 						finishCandidate = data_pos;
 					} else {
-						// Try to apply further patterns, but continue searching
-						BranchItem temp = {current_pattern + 1, 0};
-						branches.insert(branch_number+1, temp); // +1 is to reduce movement effort :)
-						branch_number++; // Skip newly inserted branch in this cycle
+						if (next_pattern->type == piSearch) {
+							// Search for the next pattern
+							current_branch->pattern = next_pattern;
+							current_branch->offset = 0;
+						} else {
+							// Try to apply further non-search patterns and continue searching
+							current_branch->offset = current_pattern->str.kmpNext[current_branch->offset];
+							BranchItem temp = {next_pattern, 0};
+							branches.insert(branch_number+1, temp); // +1 is to reduce movement effort :)
+							branch_number++; // Skip newly inserted branch in this cycle
+						}
 					}
 				}
 				break;
@@ -501,7 +521,6 @@ bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SSHORT data
 		match_type = MATCH_FIXED;
 	return true;
 }
-
 
 }
 

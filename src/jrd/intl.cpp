@@ -118,6 +118,7 @@
 #include "../jrd/intl_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/thd_proto.h"
+#include "../jrd/evl_string.h"
 
 #include "../jrd/plugin_manager.h"
 
@@ -358,6 +359,137 @@ TextType CharSetContainer::lookupCollation(TDBB tdbb, USHORT tt_id)
 	return tt;
 }
 
+/* Below are templates for functions used in TextType implementation */
+
+class MBStrConverter {
+public:
+	MBStrConverter(TDBB tdbb, TextType obj, const UCHAR* &str, SSHORT &len) {
+		SSHORT err_code;
+		USHORT err_pos;
+		SSHORT out_len = obj.to_wc(NULL, 0, str, len, &err_code, &err_pos);
+		if (out_len > sizeof(tempBuffer))
+			out_str = FB_NEW(*tdbb->tdbb_default) UCS2_CHAR[out_len/2];
+		else
+			out_str = tempBuffer;
+		len = obj.to_wc(NULL, out_len, str, len, &err_code, &err_pos);
+	}
+	~MBStrConverter() {
+		if (out_str != tempBuffer)
+			delete[] out_str;
+	}
+private:
+	UCS2_CHAR tempBuffer[100], *out_str;
+};
+
+class NullStrConverter {
+public:
+	NullStrConverter(TDBB tdbb, TextType obj, const UCHAR *str, SSHORT len) { }
+};
+
+template <typename PrevConverter>
+class UpcaseConverter : public PrevConverter {
+public:
+	UpcaseConverter(TDBB tdbb, TextType obj, const UCHAR* &str, SSHORT &len) : 
+		PrevConverter(tdbb, obj, str, len) 
+	{
+		if (len > sizeof(tempBuffer))
+			out_str = FB_NEW(*tdbb->tdbb_default) UCHAR[len];
+		else
+			out_str = tempBuffer;
+		obj.str_to_upper(len, str, len, out_str);
+		str = out_str;
+	}
+	~UpcaseConverter() {
+		if (out_str != tempBuffer)
+			delete[] out_str;
+	}
+private:
+	UCHAR tempBuffer[100], *out_str;
+};
+
+template <typename Algorithm, typename StrConverter, typename CharType>
+class StringFunctions {
+public:
+	static bool process(TDBB tdbb, TextType ttype, void* object, const UCHAR* str, SSHORT length) 
+	{
+		fb_assert(length % sizeof(CharType) == 0);
+		StrConverter cvt(tdbb, ttype, str, length);
+		return reinterpret_cast<Algorithm*>(object)->processNextChunk(
+			reinterpret_cast<const CharType*>(str), length / sizeof(CharType));
+	}
+	static void destroy(void* object) {
+		delete reinterpret_cast<Algorithm*>(object);
+	}
+	static void reset(void* object) {
+		reinterpret_cast<Algorithm*>(object)->reset();
+	}
+	static bool result(void* object) {
+		return reinterpret_cast<Algorithm*>(object)->getResult();
+	}
+};
+
+template <typename StrConverter, typename CharType>
+class ContainsFunctions : public StringFunctions<Firebird::ContainsEvaluator<CharType>, StrConverter, CharType> {
+public:
+	static void* create(TDBB tdbb, TextType ttype, const UCHAR* str, SSHORT length) {
+		fb_assert(length % sizeof(CharType) == 0);
+		StrConverter cvt(tdbb, ttype, str, length);
+		return FB_NEW(*tdbb->tdbb_default) Firebird::ContainsEvaluator<CharType>(tdbb->tdbb_default, 
+			reinterpret_cast<const CharType*>(str), length / sizeof(CharType));
+	}
+	static bool evaluate(TDBB tdbb, TextType ttype, void* object, const UCHAR* s, SSHORT sl, 
+			const UCHAR* p, SSHORT pl) 
+	{
+		fb_assert(pl % sizeof(CharType) == 0);
+		fb_assert(sl % sizeof(CharType) == 0);
+		StrConverter cvt1(tdbb, ttype, p, pl), cvt2(tdbb, ttype, s, sl);
+		Firebird::ContainsEvaluator<CharType> evaluator(tdbb->tdbb_default, 
+			reinterpret_cast<const CharType*>(p), pl / sizeof(CharType));
+		evaluator.processNextChunk(reinterpret_cast<const CharType*>(s), sl / sizeof(CharType));
+		return evaluator.getResult();
+	}
+	static void ttype_init(TEXTTYPE txtobj) {
+	    txtobj->texttype_fn_contains_destroy = (FPTR_SHORT) destroy;
+	    txtobj->texttype_fn_contains_reset = (FPTR_SHORT) reset;
+	    txtobj->texttype_fn_contains_process = (FPTR_SHORT) process;
+	    txtobj->texttype_fn_contains_result = (FPTR_SHORT) result;
+	    txtobj->texttype_fn_contains = (FPTR_SHORT) evaluate;
+	    txtobj->texttype_fn_contains_create = (FPTR_SHORT) create;
+	}
+};
+
+template <typename StrConverter, typename CharType>
+class LikeFunctions : public StringFunctions<Firebird::LikeEvaluator<CharType>, StrConverter, CharType> {
+public:
+	static void* create(TDBB tdbb, TextType ttype, const UCHAR* str, SSHORT length, UCS2_CHAR escape) {
+		fb_assert(length % sizeof(CharType) == 0);
+		StrConverter cvt(tdbb, ttype, str, length);
+		return FB_NEW(*tdbb->tdbb_default) Firebird::LikeEvaluator<CharType>(tdbb->tdbb_default, 
+			reinterpret_cast<const CharType*>(str), length / sizeof(CharType), 
+			escape, SQL_MATCH_ANY_CHARS, SQL_MATCH_1_CHAR);
+	}
+	static bool evaluate(TDBB tdbb, TextType ttype, void* object, const UCHAR* s, SSHORT sl, 
+		const UCHAR* p, SSHORT pl, UCS2_CHAR escape) 
+	{
+		fb_assert(pl % sizeof(CharType) == 0);
+		fb_assert(sl % sizeof(CharType) == 0);
+		StrConverter cvt1(tdbb, ttype, p, pl), cvt2(tdbb, ttype, s, sl);
+		Firebird::LikeEvaluator<CharType> evaluator(tdbb->tdbb_default, 
+			reinterpret_cast<const CharType*>(p), pl / sizeof(CharType), 
+			escape, SQL_MATCH_ANY_CHARS, SQL_MATCH_1_CHAR);
+		evaluator.processNextChunk(reinterpret_cast<const CharType*>(s), sl / sizeof(CharType));
+		return evaluator.getResult();
+	}
+	static void ttype_init(TEXTTYPE txtobj) {
+	    txtobj->texttype_fn_like_destroy = (FPTR_SHORT) destroy;
+	    txtobj->texttype_fn_like_reset = (FPTR_SHORT) reset;
+	    txtobj->texttype_fn_like_process = (FPTR_SHORT) process;
+	    txtobj->texttype_fn_like_result = (FPTR_SHORT) result;
+	    txtobj->texttype_fn_like = (FPTR_SHORT) evaluate;
+	    txtobj->texttype_fn_like_create = (FPTR_SHORT) create;
+	}
+};
+
 static void finish_texttype_init(TEXTTYPE txtobj)
 {
 /**************************************
@@ -379,43 +511,54 @@ static void finish_texttype_init(TEXTTYPE txtobj)
  *
  **************************************/
 
+	typedef LikeFunctions<NullStrConverter, UCHAR> nc_like;
+	typedef ContainsFunctions<UpcaseConverter<NullStrConverter>, UCHAR> nc_contains;
+
+	typedef LikeFunctions<NullStrConverter, UCS2_CHAR> wc_like;
+	typedef ContainsFunctions<UpcaseConverter<NullStrConverter>, UCS2_CHAR> wc_contains;
+
+	typedef LikeFunctions<MBStrConverter, UCS2_CHAR> mb_like;
+	typedef ContainsFunctions<UpcaseConverter<MBStrConverter>, UCS2_CHAR> mb_contains;
+		
 	if ((txtobj->texttype_fn_to_wc == NULL) &&
 		(txtobj->texttype_bytes_per_char == 1)) {
 		/* Finish initialization of a narrow character object */
 
 		txtobj->texttype_fn_to_wc = (FPTR_SHORT) nc_to_wc;
-		txtobj->texttype_fn_contains = (FPTR_SHORT) EVL_nc_contains;
 		txtobj->texttype_fn_matches = (FPTR_SHORT) EVL_nc_matches;
-		txtobj->texttype_fn_like = (FPTR_SHORT) EVL_nc_like;
 		txtobj->texttype_fn_sleuth_merge = (FPTR_SHORT) EVL_nc_sleuth_merge;
 		txtobj->texttype_fn_sleuth_check = (FPTR_SHORT) EVL_nc_sleuth_check;
-
 		if (!txtobj->texttype_fn_mbtowc)
 			txtobj->texttype_fn_mbtowc = (FPTR_short) INTL_builtin_nc_mbtowc;
+
+		nc_like::ttype_init(txtobj);
+		nc_contains::ttype_init(txtobj);
 	}
 	else if ((txtobj->texttype_fn_to_wc == NULL) &&
 			 (txtobj->texttype_bytes_per_char == 2)) {
 		/* Finish initialization of a wide character object */
 
 		txtobj->texttype_fn_to_wc = (FPTR_SHORT) wc_to_wc;
-		txtobj->texttype_fn_contains = (FPTR_SHORT) EVL_wc_contains;
 		txtobj->texttype_fn_matches = (FPTR_SHORT) EVL_wc_matches;
-		txtobj->texttype_fn_like = (FPTR_SHORT) EVL_wc_like;
 		txtobj->texttype_fn_sleuth_merge = (FPTR_SHORT) EVL_wc_sleuth_merge;
 		txtobj->texttype_fn_sleuth_check = (FPTR_SHORT) EVL_wc_sleuth_check;
 		if (!txtobj->texttype_fn_mbtowc)
 			txtobj->texttype_fn_mbtowc = (FPTR_short) INTL_builtin_wc_mbtowc;
+
+		wc_like::ttype_init(txtobj);
+		wc_contains::ttype_init(txtobj);
 	}
 	else if (txtobj->texttype_fn_to_wc != NULL) {
 		/* Finish initialization of a multibyte character object */
 
-		txtobj->texttype_fn_contains = (FPTR_SHORT) EVL_mb_contains;
 		txtobj->texttype_fn_matches = (FPTR_SHORT) EVL_mb_matches;
-		txtobj->texttype_fn_like = (FPTR_SHORT) EVL_mb_like;
 		txtobj->texttype_fn_sleuth_merge = (FPTR_SHORT) EVL_mb_sleuth_merge;
 		txtobj->texttype_fn_sleuth_check = (FPTR_SHORT) EVL_mb_sleuth_check;
 		if (!txtobj->texttype_fn_mbtowc)
 			txtobj->texttype_fn_mbtowc = (FPTR_short) INTL_builtin_mb_mbtowc;
+
+		mb_like::ttype_init(txtobj);
+		mb_contains::ttype_init(txtobj);
 	}
 	else
 		fb_assert(0);

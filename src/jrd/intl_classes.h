@@ -3,22 +3,34 @@
  *	MODULE:		intl_classes.h
  *	DESCRIPTION:	International text handling definitions
  *
- * The contents of this file are subject to the Interbase Public
- * License Version 1.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy
- * of the License at http://www.Inprise.com/IPL.html
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ * You may obtain a copy of the Licence at
+ * http://www.gnu.org/licences/lgpl.html
+ * 
+ * As a special exception this file can also be included in modules
+ * with other source code as long as that source code has been 
+ * released under an Open Source Initiative certificed licence.  
+ * More information about OSI certification can be found at: 
+ * http://www.opensource.org 
+ * 
+ * This module is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public Licence for more details.
+ * 
+ * This module was created by members of the firebird development 
+ * team.  All individual contributions remain the Copyright (C) of 
+ * those individuals and all rights are reserved.  Contributors to 
+ * this file are either listed below or can be obtained from a CVS 
+ * history command.
  *
- * Software distributed under the License is distributed on an
- * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
- * or implied. See the License for the specific language governing
- * rights and limitations under the License.
+ *  Created by: Nickolay Samofatov <skidder@bssys.com>
  *
- * The Original Code was created by Inprise Corporation
- * and its predecessors. Portions created by Inprise Corporation are
- * Copyright (C) Inprise Corporation.
+ *  Contributor(s):
  *
- * All Rights Reserved.
- * Contributor(s): ______________________________________.
  */
 
 #ifndef JRD_INTL_CLASSES_H
@@ -32,6 +44,20 @@
 class TextType
 {
 public:
+	typedef bool   (*FPTR_CONTAINS)(TDBB tdbb, TextType ttype, const UCHAR* s, SSHORT ls, const UCHAR* p, SSHORT lp);
+	typedef void*  (*FPTR_CONTAINS_CREATE)(TDBB tdbb, TextType ttype, const UCHAR* p, SSHORT lp);
+	typedef void   (*FPTR_CONTAINS_DESTROY)(void* object);
+	typedef void   (*FPTR_CONTAINS_RESET)(void* object);
+	typedef bool   (*FPTR_CONTAINS_PROCESS)(TDBB tdbb, TextType ttype, void* object, const UCHAR* s, SSHORT ls);
+	typedef bool   (*FPTR_CONTAINS_RESULT)(void* object);
+
+	typedef bool   (*FPTR_LIKE)(TDBB tdbb, TextType ttype, const UCHAR* s, SSHORT ls, const UCHAR* p, SSHORT lp, UCS2_CHAR escape);
+	typedef void*  (*FPTR_LIKE_CREATE)(TDBB tdbb, TextType ttype, const UCHAR* p, SSHORT lp, UCS2_CHAR escape);
+	typedef void   (*FPTR_LIKE_DESTROY)(void* object);
+	typedef void   (*FPTR_LIKE_RESET)(void* object);
+	typedef bool   (*FPTR_LIKE_PROCESS)(TDBB tdbb, TextType ttype, void* object, const UCHAR* s, SSHORT ls);
+	typedef bool   (*FPTR_LIKE_RESULT)(void* object);
+
 	TextType(struct texttype *_tt) : tt(_tt) {}
 
 	// copy constructor
@@ -89,14 +115,14 @@ public:
 	}
 	
 	SSHORT str_to_upper(USHORT a,
-						UCHAR *b,
+						const UCHAR *b,
 						USHORT c,
 						UCHAR *d)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_str_to_upper);
 		return (*(reinterpret_cast
-					<short (*)(TEXTTYPE,USHORT,UCHAR*,USHORT,UCHAR*)>
+					<short (*)(TEXTTYPE,USHORT,const UCHAR*,USHORT,UCHAR*)>
 						(tt->texttype_fn_str_to_upper)))
 							(tt,a,b,c,d);
 	}
@@ -125,30 +151,88 @@ public:
 						(tt->texttype_fn_mbtowc)))(tt,a,b,c);
 	}
 
-	USHORT contains(class tdbb* a, const UCHAR *b,
-					USHORT c,
-					const UCHAR* d,
-					USHORT e)
-	{
-		fb_assert(tt);
-		fb_assert(tt->texttype_fn_contains);
-		return (*(reinterpret_cast<
-					USHORT (*)(class tdbb*, TextType, const UCHAR*, USHORT, const UCHAR*, USHORT)>
-						(tt->texttype_fn_contains)))
-							(a,tt,b,c,d,e);
-	}
-	
-	USHORT like(class tdbb* tdbb, const UCHAR* a,
-							  SSHORT b,
-							  const UCHAR* c,
-							  SSHORT d,
-							  SSHORT e)
+	bool like(class tdbb* tdbb, const UCHAR* s, SSHORT sl, const UCHAR* p, SSHORT pl, SSHORT escape)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_like);
-		return (*(reinterpret_cast<
-					USHORT(*)(class tdbb*, TextType, const UCHAR*, short, const UCHAR*, short, short)>
-						(tt->texttype_fn_like)))(tdbb,tt,a,b,c,d,e);
+		return reinterpret_cast<FPTR_LIKE>(tt->texttype_fn_like)(tdbb,tt,s,sl,p,pl,escape);
+	}
+	
+	void *like_create(class tdbb* tdbb, const UCHAR* p, SSHORT pl, SSHORT escape)
+	{
+		fb_assert(tt);
+		fb_assert(tt->texttype_fn_like_create);
+		return reinterpret_cast<FPTR_LIKE_CREATE>(tt->texttype_fn_like_create)(tdbb,tt,p,pl,escape);
+	}
+	
+	void like_reset(void* object)
+	{
+		fb_assert(tt);
+		fb_assert(tt->texttype_fn_like_reset);
+		reinterpret_cast<FPTR_LIKE_RESET>(tt->texttype_fn_like_reset)(object);
+	}
+	
+	bool like_result(void* object)
+	{
+		fb_assert(tt);
+		fb_assert(tt->texttype_fn_like_result);
+		return reinterpret_cast<FPTR_LIKE_RESULT>(tt->texttype_fn_like_result)(object);
+	}
+	
+	void like_destroy(void* object)
+	{
+		fb_assert(tt);
+		fb_assert(tt->texttype_fn_like_destroy);
+		reinterpret_cast<FPTR_LIKE_DESTROY>(tt->texttype_fn_like_destroy)(object);
+	}
+	
+	bool like_process(class tdbb* tdbb, void* object, const UCHAR* s, SSHORT sl)
+	{
+		fb_assert(tt);
+		fb_assert(tt->texttype_fn_like_process);
+		return reinterpret_cast<FPTR_LIKE_PROCESS>(tt->texttype_fn_like_process)(tdbb,tt,object,s,sl);
+	}
+	
+	bool contains(class tdbb* tdbb, const UCHAR* s, SSHORT sl, const UCHAR* p, SSHORT pl)
+	{
+		fb_assert(tt);
+		fb_assert(tt->texttype_fn_contains);
+		return reinterpret_cast<FPTR_CONTAINS>(tt->texttype_fn_contains)(tdbb,tt,s,sl,p,pl);
+	}
+	
+	void *contains_create(class tdbb* tdbb, const UCHAR* p, SSHORT pl)
+	{
+		fb_assert(tt);
+		fb_assert(tt->texttype_fn_contains_create);
+		return reinterpret_cast<FPTR_CONTAINS_CREATE>(tt->texttype_fn_contains_create)(tdbb,tt,p,pl);
+	}
+	
+	void contains_reset(void* object)
+	{
+		fb_assert(tt);
+		fb_assert(tt->texttype_fn_contains_reset);
+		reinterpret_cast<FPTR_CONTAINS_RESET>(tt->texttype_fn_contains_reset)(object);
+	}
+	
+	bool contains_result(void* object)
+	{
+		fb_assert(tt);
+		fb_assert(tt->texttype_fn_contains_result);
+		return reinterpret_cast<FPTR_CONTAINS_RESULT>(tt->texttype_fn_contains_result)(object);
+	}
+	
+	void contains_destroy(void* object)
+	{
+		fb_assert(tt);
+		fb_assert(tt->texttype_fn_contains_destroy);
+		reinterpret_cast<FPTR_CONTAINS_DESTROY>(tt->texttype_fn_contains_destroy)(object);
+	}
+	
+	bool contains_process(class tdbb* tdbb, void* object, const UCHAR* s, SSHORT sl)
+	{
+		fb_assert(tt);
+		fb_assert(tt->texttype_fn_contains_process);
+		return reinterpret_cast<FPTR_CONTAINS_PROCESS>(tt->texttype_fn_contains_process)(tdbb,tt,object,s,sl);
 	}
 	
 	USHORT matches(class tdbb* tdbb, const UCHAR* a, SSHORT b, const UCHAR* c, SSHORT d)

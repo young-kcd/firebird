@@ -1734,7 +1734,7 @@ JRD_REQ CMP_make_request(TDBB tdbb, CSB csb)
 	for (link_ptr = csb->csb_invariants.begin(), link_end = csb->csb_invariants.end();
 		 link_ptr < link_end; link_ptr++)
 	{
-		RSE rse;
+		jrd_node_base *i_node;
 		switch ((*link_ptr)->nod_type) {
 		case nod_max:
 		case nod_min:
@@ -1743,21 +1743,25 @@ JRD_REQ CMP_make_request(TDBB tdbb, CSB csb)
 		case nod_average:
 		case nod_total:
 		case nod_from:
-			rse = reinterpret_cast<RSE>((*link_ptr)->nod_arg[e_stat_rse]);
+			i_node = (*link_ptr)->nod_arg[e_stat_rse];
 			break;
 		case nod_ansi_all:
 		case nod_ansi_any:
 		case nod_any:
 		case nod_exists:
 		case nod_unique:
-			rse = reinterpret_cast<RSE>((*link_ptr)->nod_arg[e_any_rse]);
+			i_node = (*link_ptr)->nod_arg[e_any_rse];
+			break;
+		case nod_like:
+		case nod_contains:
+			i_node = *link_ptr;
 			break;
 		}
-		if (!rse->rse_variables)
+		if (!i_node->nod_variables)
 			continue;
 		// Put dependent invariants to variables blocks
 		jrd_nod **ptr, **end;
-		for (ptr = rse->rse_variables->begin(), end = rse->rse_variables->end();
+		for (ptr = i_node->nod_variables->begin(), end = i_node->nod_variables->end();
 			 ptr < end; ptr++)
 		{
 			VarInvariantArray **var_invariants;
@@ -3063,19 +3067,43 @@ static JRD_NOD pass1(TDBB tdbb,
 	// if there is processing to be done before sub expressions, do it here
 
 	switch (node->nod_type) {
+	case nod_like:
+		ptr = node->nod_arg;
+		ptr[0] = pass1(tdbb, csb, ptr[0], view, view_stream, validate_expr);
+		// We need to take care of invariantness of like pattern expression to be
+		// able to pre-compile its pattern
+		node->nod_flags |= nod_invariant;
+		csb->csb_current_nodes.push(node);
+		ptr[1] = pass1(tdbb, csb, ptr[1], view, view_stream, validate_expr);
+		if (node->nod_count == 3) {
+			// escape symbol also needs to be taken care of
+			ptr[2] = pass1(tdbb, csb, ptr[2], view, view_stream, validate_expr);
+		}
+		csb->csb_current_nodes.pop();
+		return node;
+	case nod_contains:
+		ptr = node->nod_arg;
+		ptr[0] = pass1(tdbb, csb, ptr[0], view, view_stream, validate_expr);
+		// We need to take care of invariantness of contains expression to be
+		// able to pre-compile it for searching
+		node->nod_flags |= nod_invariant;
+		csb->csb_current_nodes.push(node);
+		ptr[1] = pass1(tdbb, csb, ptr[1], view, view_stream, validate_expr);
+		csb->csb_current_nodes.pop();
+		return node;
 	case nod_variable:
 	case nod_argument:
 		{
-			for (RSE *rse = csb->csb_current_rses.begin(); 
-				 rse < csb->csb_current_rses.end(); rse++) 
+			for (jrd_node_base **i_node = csb->csb_current_nodes.begin(); 
+				 i_node < csb->csb_current_nodes.end(); i_node++) 
 			{
-				if (!(*rse)->rse_variables) 
+				if (!(*i_node)->nod_variables) 
 				{
-					(*rse)->rse_variables = 
+					(*i_node)->nod_variables = 
 						FB_NEW(*tdbb->tdbb_default) 
 							Firebird::Array<jrd_nod*>(tdbb->tdbb_default);
 				}
-				(*rse)->rse_variables->add(node);
+				(*i_node)->nod_variables->add(node);
 			}
 		}
 		break;
@@ -3093,15 +3121,18 @@ static JRD_NOD pass1(TDBB tdbb,
 			// can't be invariant. This won't optimize all cases, but it is the simplest 
 			// operating assumption for now.
 
-			if (csb->csb_current_rses.getCount()) {
-				for (RSE *rse = csb->csb_current_rses.end() - 1; 
-					 rse >= csb->csb_current_rses.begin(); rse--) 
+			if (csb->csb_current_nodes.getCount()) {
+				for (jrd_node_base **i_node = csb->csb_current_nodes.end() - 1; 
+					 i_node >= csb->csb_current_nodes.begin(); i_node--) 
 				{
-
-					if (stream_in_rse(stream, *rse)) {
-						break;
+					if ((*i_node)->nod_type == nod_rse) {
+						if (stream_in_rse(stream, reinterpret_cast<RSE>(*i_node))) {
+							break;
+						}
+						reinterpret_cast<RSE>(*i_node)->nod_flags |= rse_variant;
+					} else {
+						(*i_node)->nod_flags &= ~nod_invariant;
 					}
-					(*rse)->nod_flags |= rse_variant;
 				}
 			}
 			tail = &csb->csb_rpt[stream];
@@ -3734,9 +3765,20 @@ static RSE pass1_rse(TDBB tdbb,
 	// yet, mark the rse as variant to make sure that statement-
 	// level aggregates are not treated as invariants -- bug #6535
 
-	if (csb->csb_current_rses.getCount()==0)
+	bool top_level_rse = true;
+	for (jrd_node_base **i_node = csb->csb_current_nodes.begin(); 
+		 i_node < csb->csb_current_nodes.end(); i_node++) 
+	{
+		if ((*i_node)->nod_type == nod_rse) 
+		{
+			top_level_rse = false;
+			break;
+		}
+	}
+	if (top_level_rse)
 		rse->nod_flags |= rse_variant;
-	csb->csb_current_rses.push(rse);
+
+	csb->csb_current_nodes.push(rse);
 
 	stack = NULL;
 	boolean = NULL;
@@ -3776,8 +3818,8 @@ static RSE pass1_rse(TDBB tdbb,
 		// of current_rses else could rse's not be flagged an rse_variant.
 		// See SF BUG # [ 523589 ] for an example.
 
-		csb->csb_current_rses.pop();
-		csb->csb_current_rses.push(new_rse);
+		csb->csb_current_nodes.pop();
+		csb->csb_current_nodes.push(new_rse);
 	}
 
 
@@ -3833,7 +3875,7 @@ static RSE pass1_rse(TDBB tdbb,
 
 	// we are no longer in the scope of this rse
 
-	csb->csb_current_rses.pop();
+	csb->csb_current_nodes.pop();
 
 	return rse;
 }
@@ -4372,6 +4414,12 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 		rsb_ptr = (RSB *) & node->nod_arg[e_any_rsb];
 		break;
 
+	case nod_like:
+	case nod_contains:
+		if (node->nod_flags & nod_invariant)
+			csb->csb_invariants.push(node);
+		break;
+
 	case nod_sort:
 		ptr = node->nod_arg;
 		for (end = ptr + node->nod_count; ptr < end; ptr++)
@@ -4796,6 +4844,8 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 			else if (DTYPE_IS_DATE(descriptor_b.dsc_dtype))
 				node->nod_arg[0]->nod_flags |= nod_date;
 		}
+		if (node->nod_flags & nod_invariant) // This may currently happen for nod_like and nod_contains
+			csb->csb_impure += sizeof(vlu);
 		break;
 
 		// boolean nodes taking one value as input

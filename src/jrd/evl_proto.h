@@ -26,30 +26,26 @@
 
 #include "../jrd/intl_classes.h"
 
+// Implemented in evl.cpp
 dsc*		EVL_assign_to(TDBB tdbb, jrd_nod*);
 sbm**		EVL_bitmap(TDBB tdbb, jrd_nod*);
 BOOLEAN		EVL_boolean(TDBB tdbb, jrd_nod*);
 dsc*		EVL_expr(TDBB tdbb, jrd_nod*);
 bool		EVL_field(jrd_rel*, rec*, USHORT, DSC*);
 USHORT		EVL_group(TDBB tdbb, Rsb*, jrd_nod*, USHORT);
-USHORT		EVL_mb_contains(TDBB tdbb, TextType, const UCHAR*, USHORT, const UCHAR*, USHORT);
-USHORT		EVL_mb_like(TDBB tdbb, TextType, const UCHAR*, SSHORT, const UCHAR*, SSHORT, USHORT);
+void		EVL_make_value(TDBB tdbb, const dsc*, vlu*);
+
+// Obsolete functions to support MATCHES and SLEUTH
 USHORT		EVL_mb_matches(TDBB tdbb, TextType, const UCHAR*, SSHORT, const UCHAR*, SSHORT);
 USHORT		EVL_mb_sleuth_check(TDBB tdbb, TextType, USHORT, const UCHAR*, USHORT,
 								const UCHAR*,USHORT);
 USHORT		EVL_mb_sleuth_merge(TDBB tdbb, TextType, const UCHAR*, USHORT, const UCHAR*,
 								USHORT, UCHAR*, USHORT);
-void		EVL_make_value(TDBB tdbb, const dsc*, vlu*);
-USHORT		EVL_nc_contains(TDBB tdbb, TextType, const UCHAR*, USHORT, const UCHAR*, USHORT);
-USHORT		EVL_nc_like(TDBB tdbb, TextType, const UCHAR*, SSHORT, const UCHAR*, SSHORT, USHORT);
 USHORT		EVL_nc_matches(TDBB tdbb, TextType, const UCHAR*, SSHORT, const UCHAR*, SSHORT);
 USHORT		EVL_nc_sleuth_check(TDBB tdbb, TextType, USHORT, const UCHAR*, USHORT,
 								const UCHAR*, USHORT);
 USHORT		EVL_nc_sleuth_merge(TDBB tdbb, TextType, const UCHAR*, USHORT, const UCHAR*,
 								USHORT, UCHAR*, USHORT);
-// CVC: evl.cpp declares abstract type UCS2_CHAR* instead of USHORT*
-USHORT		EVL_wc_contains(TDBB tdbb, TextType, const USHORT*, USHORT, const USHORT*, USHORT);
-USHORT		EVL_wc_like(TDBB tdbb, TextType, const USHORT*, SSHORT, const USHORT*, SSHORT, USHORT);
 USHORT		EVL_wc_matches(TDBB tdbb, TextType, const USHORT*, SSHORT, const USHORT*, SSHORT);
 USHORT		EVL_wc_sleuth_check(TDBB tdbb, TextType, USHORT, const USHORT*, USHORT,
 								const USHORT*, USHORT);

@@ -70,7 +70,8 @@ typedef struct intl_blk {
 typedef unsigned short(*pfn_INTL_init)(struct texttype*, short, short);
 
 typedef struct texttype {
-	struct intl_blk texttype_blk;
+	// DATA THAT IS USED BY BOTH ENGINE AND DRIVERS --------------------------------
+	struct intl_blk texttype_blk; // Filled by engine for backward compatibility
 	USHORT texttype_version;	/* version ID of object */
 	USHORT texttype_flags;		/* miscellanous flags */
 	TTYPE_ID texttype_type;		/* Interpretation ID */
@@ -86,8 +87,9 @@ typedef struct texttype {
     texttype_license_mask, but since it's useless in the open source version, I
     followed the new name given in the BSC tree. */
     ULONG texttype_obsolete_field;		/* required bits for license */
+	//\\ END OF INTL PUBLIC DATA ---------------------------------------------------
 
-	/* MUST BE ALIGNED */
+	// DRIVER API FUNCTIONS. Called by the engine ----------------------------------
 	FPTR_SHORT texttype_fn_init;
 	FPTR_SHORT texttype_fn_key_length;
 	// CVC: Consider giving it the correct signature and not one that demands
@@ -99,24 +101,43 @@ typedef struct texttype {
 	FPTR_SHORT texttype_fn_to_lower;	/* One ch to lowercase */
 	FPTR_short texttype_fn_str_to_upper;	/* Convert string to uppercase */
 	FPTR_SHORT texttype_fn_to_wc;	/* convert string to wc */
+	//\\ END OF DRIVER API FUNCTIONS -----------------------------------------------
 
-	// INTERNAL FUNCTIONS - do not implement in collation drivers !
+	// ENGINE INTERNAL FUNCTIONS - do not implement in collation drivers -----------
 	FPTR_SHORT texttype_fn_contains;	/* s1 contains s2? */
 	FPTR_SHORT texttype_fn_like;	/* s1 like s2? */
 	FPTR_SHORT texttype_fn_matches;	/* s1 matches s2 */
 	FPTR_SHORT texttype_fn_sleuth_check;	/* s1 sleuth s2 */
 	FPTR_SHORT texttype_fn_sleuth_merge;	/* aux function for sleuth */
-	//\\ END OF INTERNAL FUNCTIONS
+	//\\ END OF INTERNAL FUNCTIONS -------------------------------------------------
 
+	// DRIVER API FUNCTIONS. Called by the engine ----------------------------------	
 	FPTR_short texttype_fn_mbtowc;	/* get next character */
+	//\\ END OF DRIVER API FUNCTIONS -----------------------------------------------
 
+    // DATA USED BY COLLATION DRIVERS. Never used by engine directly ---------------
 	BYTE *texttype_collation_table;
 	BYTE *texttype_toupper_table;
 	BYTE *texttype_tolower_table;
 	BYTE *texttype_expand_table;
 	BYTE *texttype_compress_table;
 	BYTE *texttype_misc;		/* Used by some drivers */
-	ULONG *texttype_unused[4];	/* spare space */
+	ULONG *texttype_unused[4];	/* spare space for use by drivers */
+	//\\ END OF COLLATION DRIVER DATA ----------------------------------------------
+
+	// ENGINE INTERNAL FUNCTIONS - do not implement in collation drivers -----------
+	FPTR_SHORT texttype_fn_like_create;
+	FPTR_SHORT texttype_fn_like_destroy;
+	FPTR_SHORT texttype_fn_like_reset;
+	FPTR_SHORT texttype_fn_like_process;
+	FPTR_SHORT texttype_fn_like_result;
+
+	FPTR_SHORT texttype_fn_contains_create;
+	FPTR_SHORT texttype_fn_contains_destroy;
+	FPTR_SHORT texttype_fn_contains_reset;
+	FPTR_SHORT texttype_fn_contains_process;
+	FPTR_SHORT texttype_fn_contains_result;
+	//\\ END OF INTERNAL FUNCTIONS -------------------------------------------------
 } *TEXTTYPE;
 
 #define TEXTTYPE_init               1	/* object has been init'ed */

@@ -204,10 +204,6 @@ static int opt_debug_flag = DEBUG_NONE;
 #define OR_SELECTIVITY_THRESHOLD_FACTOR	2000
 #define LOWEST_PRIORITY_LEVEL 0
 
-#define SQL_MATCH_1_CHAR	'_'	/* Not translatable */
-#define SQL_MATCH_ANY_CHARS	'%'	/* Not translatable */
-
-
 /* enumeration of sort datatypes */
 
 static const UCHAR sort_dtypes[] = {

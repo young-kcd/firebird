@@ -32,14 +32,14 @@
  *  Contributor(s):
  * 
  *
- *  $Id: evl_string_test.cpp,v 1.3 2003-11-20 17:32:20 skidder Exp $
+ *  $Id: evl_string_test.cpp,v 1.4 2003-12-27 04:37:23 skidder Exp $
  *
  */
 
 #include "../common/classes/alloc.h"
 #include <assert.h>
 
-const gds_like_escape_invalid = 1;
+const isc_like_escape_invalid = 1;
 
 void ERR_post(...) {
 	throw std::exception();
@@ -192,5 +192,15 @@ int main() {
 	t15.reset();
 	t15.process("1234tetes", true, false);
     t15.process("t", false, true);
+
+	// Test pattern that caused endless loop during initial tests
+	StringLikeEvaluator t16(p, "%a%a%a%a%a%Toronto%a", 0);
+	t16.process("Each day hosts Anthony Regan and Natalie Hunter bring you a lively hour of information and fun specifically for Toronto viewers.\n"
+		"1.Author Pierre Burton on his new book \"Cats I Have Known and Loved.\"\n"
+		"2.  Culinary expert Rose Reisman makes something scrumptious from her new book \"The Art of Living Well.\"\n"
+		"3.  All about the Universal Influenza Vaccination.\n"
+		"4. Painting with flare and style...tips, dos, and don'ts from an expert at PARA Paints.\n"
+		"5.  The facts on zoo animal diets.", true, false);
+
 	return 0;
 }

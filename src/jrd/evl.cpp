@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.54 2003-12-22 17:51:43 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.55 2003-12-27 04:37:23 skidder Exp $ 
  */
 
 /*
@@ -112,6 +112,7 @@
 #include "../jrd/misc_func_ids.h"
 //#include "../jrd/authenticate.h"
 #include "../common/config/config.h"
+#include "../jrd/evl_string.h"
 
 #define TEMP_LENGTH     128
 
@@ -166,8 +167,8 @@ static BOOLEAN wc_sleuth_check(TextType, USHORT, const UCS2_CHAR*, const UCS2_CH
 						const UCS2_CHAR*, const UCS2_CHAR*);
 static BOOLEAN wc_sleuth_class(TextType, USHORT, const UCS2_CHAR*, const UCS2_CHAR*,
 						UCS2_CHAR);
-static SSHORT string_boolean(TDBB, JRD_NOD, dsc*, dsc*);
-static SSHORT string_function(TDBB, JRD_NOD, SSHORT, const UCHAR*, SSHORT, const UCHAR*, USHORT);
+static SSHORT string_boolean(TDBB, JRD_NOD, dsc*, dsc*, bool);
+static SSHORT string_function(TDBB, JRD_NOD, SSHORT, const UCHAR*, SSHORT, const UCHAR*, USHORT, bool);
 static dsc* substring(TDBB, VLU, dsc*, SLONG, SLONG);
 static dsc* upcase(TDBB, const dsc*, VLU);
 static dsc* internal_info(TDBB, const dsc*, VLU);
@@ -395,6 +396,7 @@ BOOLEAN EVL_boolean(TDBB tdbb, JRD_NOD node)
 	USHORT value;
 	SSHORT comparison;
 	VLU    impure;
+	bool computed_invariant = false;
 
 	SET_TDBB(tdbb);
 
@@ -435,9 +437,26 @@ BOOLEAN EVL_boolean(TDBB tdbb, JRD_NOD node)
 			request->req_flags &= ~req_clone_data_from_default_clause;
 			force_equal |= request->req_flags & req_same_tx_upd;
 
-			desc[1] = EVL_expr(tdbb, *ptr++);
-
-			/* restore preserved NULL state */
+			// Currently only nod_like and nod_contains may be marked invariant
+			if (node->nod_flags & nod_invariant) {
+				impure = reinterpret_cast<VLU>((SCHAR *)request + node->nod_impure);
+				if (impure->vlu_flags & VLU_computed) {
+					if (impure->vlu_flags & VLU_null)
+						request->req_flags |= req_null;
+					else
+						computed_invariant = true;
+				} else {
+					desc[1] = EVL_expr(tdbb, *ptr++);
+					if (request->req_flags & req_null) {
+						impure->vlu_flags |= VLU_computed;
+						impure->vlu_flags |= VLU_null;
+					} else
+						impure->vlu_flags &= ~VLU_null;
+				}
+			} else
+				desc[1] = EVL_expr(tdbb, *ptr++);
+			
+			/* If either of expressions above returned NULL set req_null flag and return FALSE */
 
 			if (flags & req_null)
 				request->req_flags |= req_null;
@@ -606,7 +625,7 @@ BOOLEAN EVL_boolean(TDBB tdbb, JRD_NOD node)
 	case nod_starts:
 	case nod_matches:
 	case nod_like:
-		return string_boolean(tdbb, node, desc[0], desc[1]);
+		return string_boolean(tdbb, node, desc[0], desc[1], computed_invariant);
 
 	case nod_sleuth:
 		return sleuth(tdbb, node, desc[0], desc[1]);
@@ -1882,114 +1901,6 @@ void EVL_make_value(TDBB tdbb, const dsc* desc, VLU value)
 }
 
 
-USHORT EVL_mb_contains(TDBB tdbb,
-						TextType obj,
-						const UCHAR* p1,
-						USHORT l1,
-						const UCHAR* p2,
-						USHORT l2)
-{
-/**************************************
- *
- *      E V L _ m b _ c o n t a i n s
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	UCS2_CHAR buffer1[100], buffer2[100];	/* arbitrary size for optimization */
-	UCS2_CHAR* pp1 = buffer1;
-	UCS2_CHAR* pp2 = buffer2;
-	STR buf1, buf2;
-	SSHORT err_code;
-	USHORT err_pos;
-
-	SET_TDBB(tdbb);
-
-	USHORT len1 = obj.to_wc(NULL, 0, p1, l1, &err_code, &err_pos);
-	USHORT len2 = obj.to_wc(NULL, 0, p2, l2, &err_code, &err_pos);
-
-	if (len1 > sizeof(buffer1)) {
-		buf1 = FB_NEW_RPT(*tdbb->tdbb_default, len1) str();
-		pp1 = (UCS2_CHAR *) buf1->str_data;
-	}
-	if (len2 > sizeof(buffer2)) {
-		buf2 = FB_NEW_RPT(*tdbb->tdbb_default, len2) str();
-		pp2 = (UCS2_CHAR *) buf2->str_data;
-	}
-
-	len1 = obj.to_wc(pp1, len1, p1, l1, &err_code, &err_pos);
-	len2 = obj.to_wc(pp2, len2, p2, l2, &err_code, &err_pos);
-
-	const USHORT ret_val = EVL_wc_contains(tdbb, obj, pp1, len1, pp2, len2);
-
-	if (pp1 != buffer1)
-		delete buf1;
-	if (pp2 != buffer2)
-		delete buf2;
-
-	return ret_val;
-}
-
-
-USHORT EVL_mb_like(TDBB tdbb,
-					TextType obj,
-					const UCHAR* p1,
-					SSHORT l1,
-					const UCHAR* p2,
-					SSHORT l2,
-					UCS2_CHAR escape_char)
-{
-/**************************************
- *
- *      E V L _ m b _ l i k e 
- *
- **************************************
- *
- * Functional description
- *      Multi-Byte version of Like().
- *      Front-end of like() in Japanese version.
- *      
- *      Prepare buffer of short, then "copy" char-based data
- *      into the new ucs2-based buffer. Use the new buffer for
- *      later processing with wc_like().
- *
- **************************************/
-	UCS2_CHAR buffer1[100], buffer2[100];	/* arbitrary size for optimization */
-	UCS2_CHAR* pp1 = buffer1;
-	UCS2_CHAR* pp2 = buffer2;
-	STR buf1, buf2;
-	SSHORT err_code;
-	USHORT err_pos;
-
-	SET_TDBB(tdbb);
-
-	USHORT len1 = obj.to_wc(NULL, 0, p1, l1, &err_code, &err_pos);
-	USHORT len2 = obj.to_wc(NULL, 0, p2, l2, &err_code, &err_pos);
-	if (len1 > sizeof(buffer1)) {
-		buf1 = FB_NEW_RPT(*tdbb->tdbb_default, len1) str();
-		pp1 = (UCS2_CHAR *) buf1->str_data;
-	}
-	if (len2 > sizeof(buffer2)) {
-		buf2 = FB_NEW_RPT(*tdbb->tdbb_default, len2) str();
-		pp2 = (UCS2_CHAR *) buf2->str_data;
-	}
-
-	len1 = obj.to_wc(pp1, len1, p1, l1, &err_code, &err_pos);
-	len2 = obj.to_wc(pp2, len2, p2, l2, &err_code, &err_pos);
-// CHECK ME: Shouldn't errors to be handled?
-
-	const USHORT ret_val = EVL_wc_like(tdbb, obj, pp1, len1, pp2, len2, escape_char);
-
-	if (pp1 != buffer1)
-		delete buf1;
-	if (pp2 != buffer2)
-		delete buf2;
-
-	return ret_val;
-}
-
 
 USHORT EVL_mb_matches(TDBB tdbb,
 						TextType obj,
@@ -2158,48 +2069,6 @@ USHORT EVL_mb_sleuth_merge(TDBB tdbb,
 	return ret_val;
 }
 
-
-USHORT EVL_nc_contains(TDBB tdbb_dummy,
-						TextType obj,
-						const UCHAR* p1,
-						USHORT l1,
-						const UCHAR* p2,
-						USHORT l2)
-{
-/**************************************
- *
- *      E V L _ n c _ c o n t a i n s
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	UCHAR c1, c2;
-	while (l1 >= l2)
-	{
-		--l1;
-		const UCHAR* q1 = p1++;
-		const UCHAR* q2 = p2;
-		SSHORT l = l2; // This logic assumes fields < 32K, false with concatenation
-		do {
-			if (--l < 0)
-				return TRUE;
-			c1 = *q1++;
-			c2 = *q2++;
-		} while (obj.to_upper(c1) == obj.to_upper(c2));
-	}
-
-	return FALSE;
-}
-
-
-/**************************************
- *
- *      E V L _ n c _ l i k e
- *
- **************************************
- */
 /**************************************
  *
  *      E V L _ n c _ m a t c h e s
@@ -2237,46 +2106,6 @@ USHORT EVL_nc_contains(TDBB tdbb_dummy,
 #undef SLEUTHTYPE
 
 
-USHORT EVL_wc_contains(TDBB tdbb_dumm,
-						TextType obj,
-						const UCS2_CHAR* p1,
-						USHORT l1,	/* byte count */
-						const UCS2_CHAR* p2,
-						USHORT l2)
-{
-/**************************************
- *
- *      E V L _ w c _ c o n t a i n s
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	UCS2_CHAR c1, c2;
-	while (l1 >= l2) {
-		l1 -= 2;
-		const UCS2_CHAR* q1 = p1++;
-		const UCS2_CHAR* q2 = p2;
-		SSHORT l = l2; // This logic assumes fields < 32K, false with concatenation
-		do {
-			l -= 2;
-			if (l < 0)
-				return TRUE;
-			c1 = *q1++;
-			c2 = *q2++;
-		} while (obj.to_upper(c1) == obj.to_upper(c2));
-	}
-
-	return FALSE;
-}
-
-/**************************************
- *
- *      E V L _ w c _ l i k e
- *
- **************************************
- */
 /**************************************
  *
  *      E V L _ w c _ m a t c h e s
@@ -2312,8 +2141,6 @@ USHORT EVL_wc_contains(TDBB tdbb_dumm,
 #undef SLEUTH_AUX
 #undef SLEUTH_CLASS_NAME
 #undef SLEUTHTYPE
-
-
 
 static dsc* add(const dsc* desc, const jrd_nod* node, VLU value)
 {
@@ -4570,7 +4397,7 @@ static SSHORT sleuth(TDBB tdbb, JRD_NOD node, dsc* desc1, dsc* desc2)
 }
 
 
-static SSHORT string_boolean(TDBB tdbb, JRD_NOD node, dsc* desc1, dsc* desc2)
+static SSHORT string_boolean(TDBB tdbb, JRD_NOD node, dsc* desc1, dsc* desc2, bool computed_invariant)
 {
 /**************************************
  *
@@ -4583,14 +4410,16 @@ static SSHORT string_boolean(TDBB tdbb, JRD_NOD node, dsc* desc1, dsc* desc2)
  *      or STARTS WITH.
  *
  **************************************/
-	UCHAR *p1, *p2, temp1[TEMP_LENGTH], temp2[TEMP_LENGTH],
+	UCHAR *p1, *p2 = NULL, temp1[TEMP_LENGTH], temp2[TEMP_LENGTH],
 		buffer[BUFFER_LARGE];
-	SSHORT l1, l2;
+	SSHORT l1, l2 = 0;
 	USHORT type1, xtype1;
 	STR match_str = NULL;
 	SSHORT ret_val;
 
 	SET_TDBB(tdbb);
+
+	jrd_req* request = tdbb->tdbb_request;
 
 	DEV_BLKCHK(node, type_nod);
 
@@ -4603,17 +4432,20 @@ static SSHORT string_boolean(TDBB tdbb, JRD_NOD node, dsc* desc1, dsc* desc2)
 
 		/* Get address and length of search string - convert to datatype of data */
 
-		l2 =
-			MOV_make_string2(desc2, type1, &p2,
-							 reinterpret_cast < vary * >(temp2),
-							 TEMP_SIZE(temp2), &match_str);
+		if (!computed_invariant) {
+			l2 =
+				MOV_make_string2(desc2, type1, &p2,
+							 	 reinterpret_cast < vary * >(temp2),
+							 	 TEMP_SIZE(temp2), &match_str);
+		}
+
 		l1 =
 			MOV_get_string_ptr(desc1, &xtype1, &p1,
 							   reinterpret_cast < vary * >(temp1),
 							   TEMP_SIZE(temp1));
 
 		fb_assert(xtype1 == type1);
-		ret_val = string_function(tdbb, node, l1, p1, l2, p2, type1);
+		ret_val = string_function(tdbb, node, l1, p1, l2, p2, type1, computed_invariant);
 	}
 	else {
 		/* Source string is a blob, things get interesting */
@@ -4624,41 +4456,132 @@ static SSHORT string_boolean(TDBB tdbb, JRD_NOD node, dsc* desc1, dsc* desc2)
 
 		if (desc1->dsc_sub_type == BLOB_text) {
 			type1 = desc1->dsc_scale;	/* pick up character set of blob */
-			l2 =
-				MOV_make_string2(desc2, type1, &p2,
-								 reinterpret_cast < vary * >(temp2),
-								 TEMP_SIZE(temp2), &match_str);
+			if (!computed_invariant) {
+				l2 =
+					MOV_make_string2(desc2, type1, &p2,
+								 	reinterpret_cast < vary * >(temp2),
+								 	TEMP_SIZE(temp2), &match_str);
+			}
 		}
 		else {
 			type1 = ttype_none;	/* Do byte matching */
-			l2 =
-				MOV_get_string(desc2, &p2, reinterpret_cast < vary * >(temp2),
-							   TEMP_SIZE(temp2));
+			if (!computed_invariant) {
+				l2 =
+					MOV_get_string(desc2, &p2, reinterpret_cast < vary * >(temp2),
+								TEMP_SIZE(temp2));
+			}
 		}
 
 		blb* blob =
-			BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
-					 reinterpret_cast < bid * >(desc1->dsc_address));
+			BLB_open(tdbb, request->req_transaction, reinterpret_cast<bid*>(desc1->dsc_address));
 
 		/* Performs the string_function on each segment of the blob until
 		   a positive result is obtained */
 
 		ret_val = FALSE;
-		while (!(blob->blb_flags & BLB_eof)) {
-			l1 = BLB_get_segment(tdbb, blob, buffer, sizeof(buffer));
-			if (string_function(tdbb, node, l1, buffer, l2, p2, type1)) {
-				ret_val = TRUE;
-				break;
+		switch(node->nod_type) {
+		case nod_starts: 
+			{
+				Firebird::StartsEvaluator<UCHAR> evaluator(p2, l2);
+				while (!(blob->blb_flags & BLB_eof)) {
+					l1 = BLB_get_segment(tdbb, blob, buffer, sizeof(buffer));
+					if (l1 && !evaluator.processNextChunk(buffer, l1)) break;
+				}
+				ret_val = evaluator.getResult();
 			}
-			if (node->nod_type == nod_starts)
-				break;
+			break;
+		case nod_like:
+			{
+				TextType obj = INTL_texttype_lookup(tdbb, type1, ERR_post, NULL);
+
+				UCS2_CHAR escape = 0;
+				/* ensure 3rd argument (escape char) is in operation text type */
+				if (node->nod_count == 3 && !computed_invariant) {
+					const char* q1;
+					UCHAR temp3[TEMP_LENGTH];
+
+					/* Convert ESCAPE to operation character set */
+					DSC* dsc = EVL_expr(tdbb, node->nod_arg[2]);
+					if (request->req_flags & req_null) {
+						if (node->nod_flags & nod_invariant) {
+							VLU impure = (VLU) ((SCHAR *) request + node->nod_impure);
+							impure->vlu_flags |= VLU_computed;
+							impure->vlu_flags |= VLU_null;
+						}
+						ret_val = FALSE;
+						break;
+					}
+					const USHORT l3 = MOV_make_string(dsc,
+										 type1, &q1, (VARY *) temp3,
+										 TEMP_SIZE(temp3));
+					if (!l3)
+						ERR_post(isc_like_escape_invalid, 0);
+					/* Grab the first character from the string */
+					const USHORT consumed =
+						obj.mbtowc(&escape, reinterpret_cast<const unsigned char*>(q1), l3);
+
+					/* If characters left, or null byte character, return error */
+					if (consumed <= 0 || consumed != l3 || (escape == 0))
+						ERR_post(isc_like_escape_invalid, 0);
+				}
+
+				void* evaluator;
+				if (node->nod_flags & nod_invariant) {
+					VLU impure = (VLU) ((SCHAR *) request + node->nod_impure);
+					if (!impure->vlu_flags & VLU_computed) {
+						obj.like_destroy(impure->vlu_misc.vlu_invariant);
+						impure->vlu_misc.vlu_invariant = evaluator = obj.like_create(tdbb, p2, l2, escape);
+						impure->vlu_flags |= VLU_computed;
+					} else {
+						evaluator = impure->vlu_misc.vlu_invariant;
+						obj.like_reset(evaluator);
+					}
+				} else
+					evaluator = obj.like_create(tdbb, p2, l2, escape);
+
+				while (!(blob->blb_flags & BLB_eof)) {
+					l1 = BLB_get_segment(tdbb, blob, buffer, sizeof(buffer));
+					if (l1 && !obj.like_process(tdbb, evaluator, buffer, l1)) break;
+				}
+
+				ret_val = obj.like_result(evaluator);
+				if (!(node->nod_flags & nod_invariant))
+					obj.like_destroy(evaluator);
+			}
+			break;
+		case nod_contains:
+			{
+				TextType obj = INTL_texttype_lookup(tdbb, type1, ERR_post, NULL);
+				void* evaluator;
+				if (node->nod_flags & nod_invariant) {
+					VLU impure = (VLU) ((SCHAR *) request + node->nod_impure);
+					if (!impure->vlu_flags & VLU_computed) {
+						obj.contains_destroy(impure->vlu_misc.vlu_invariant);
+						impure->vlu_misc.vlu_invariant = evaluator = obj.contains_create(tdbb, p2, l2);
+						impure->vlu_flags |= VLU_computed;
+					} else {
+						evaluator = impure->vlu_misc.vlu_invariant;
+						obj.contains_reset(evaluator);
+					}
+				} else
+					evaluator = obj.contains_create(tdbb, p2, l2);
+
+				while (!(blob->blb_flags & BLB_eof)) {
+					l1 = BLB_get_segment(tdbb, blob, buffer, sizeof(buffer));
+					if (l1 && !obj.contains_process(tdbb, evaluator, buffer, l1)) break;
+				}
+
+				ret_val = obj.contains_result(evaluator);
+				if (!(node->nod_flags & nod_invariant))
+					obj.contains_destroy(evaluator);
+			}
+			break;
 		}
 
 		BLB_close(tdbb, blob);
 	}
 
-	if (match_str)
-		delete match_str;
+	delete match_str;
 
 	return ret_val;
 }
@@ -4668,7 +4591,8 @@ static SSHORT string_function(
 							  TDBB tdbb,
 							  JRD_NOD node,
 							  SSHORT l1,
-							  const UCHAR* p1, SSHORT l2, const UCHAR* p2, USHORT ttype)
+							  const UCHAR* p1, SSHORT l2, const UCHAR* p2, 
+							  USHORT ttype, bool computed_invariant)
 {
 /**************************************
  *
@@ -4684,15 +4608,14 @@ static SSHORT string_function(
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(node, type_nod);
 
+	jrd_req* request = tdbb->tdbb_request;
+
 /* Handle STARTS WITH */
 
 	if (node->nod_type == nod_starts) {
 		if (l1 < l2)
 			return FALSE;
-		while (--l2 >= 0)
-			if (*p1++ != *p2++)
-				return FALSE;
-		return TRUE;
+		return (memcmp(p1, p2, l2) == 0);
 	}
 
 	TextType obj = INTL_texttype_lookup(tdbb, ttype, ERR_post, NULL);
@@ -4700,7 +4623,18 @@ static SSHORT string_function(
 /* Handle contains */
 
 	if (node->nod_type == nod_contains) {
-		return obj.contains(tdbb, p1, l1, p2, l2);
+		if (node->nod_flags & nod_invariant) {
+			VLU impure = (VLU) ((SCHAR *) request + node->nod_impure);
+			if (!impure->vlu_flags & VLU_computed) {
+				obj.contains_destroy(impure->vlu_misc.vlu_invariant);
+				impure->vlu_misc.vlu_invariant = obj.contains_create(tdbb, p2, l2);
+				impure->vlu_flags |= VLU_computed;
+			} else
+				obj.contains_reset(impure->vlu_misc.vlu_invariant);
+			obj.contains_process(tdbb, impure->vlu_misc.vlu_invariant, p1, l1);
+			return obj.contains_result(impure->vlu_misc.vlu_invariant);
+		} else
+			return obj.contains(tdbb, p1, l1, p2, l2);
 	}
 
 /* Handle LIKE and MATCHES */
@@ -4708,12 +4642,21 @@ static SSHORT string_function(
 	if (node->nod_type == nod_like) {
 		UCS2_CHAR escape = 0;
 		/* ensure 3rd argument (escape char) is in operation text type */
-		if (node->nod_count == 3) {
+		if (node->nod_count == 3 && !computed_invariant) {
 			const char* q1;
 			UCHAR temp3[TEMP_LENGTH];
 
 			/* Convert ESCAPE to operation character set */
-			const USHORT l3 = MOV_make_string(EVL_expr(tdbb, node->nod_arg[2]),
+			DSC* dsc = EVL_expr(tdbb, node->nod_arg[2]);
+			if (request->req_flags & req_null) {
+				if (node->nod_flags & nod_invariant) {
+					VLU impure = (VLU) ((SCHAR *) request + node->nod_impure);
+					impure->vlu_flags |= VLU_computed;
+					impure->vlu_flags |= VLU_null;
+				}
+				return FALSE;
+			}
+			const USHORT l3 = MOV_make_string(dsc,
 								 ttype, &q1, (VARY *) temp3,
 								 TEMP_SIZE(temp3));
 			if (!l3)
@@ -4727,7 +4670,18 @@ static SSHORT string_function(
 				ERR_post(isc_like_escape_invalid, 0);
 
 		}
-		return obj.like(tdbb, p1, l1, p2, l2, escape);
+		if (node->nod_flags & nod_invariant) {
+			VLU impure = (VLU) ((SCHAR *) request + node->nod_impure);
+			if (!impure->vlu_flags & VLU_computed) {
+				obj.like_destroy(impure->vlu_misc.vlu_invariant);
+				impure->vlu_misc.vlu_invariant = obj.like_create(tdbb, p2, l2, escape);
+				impure->vlu_flags |= VLU_computed;
+			} else
+				obj.like_reset(impure->vlu_misc.vlu_invariant);
+			obj.like_process(tdbb, impure->vlu_misc.vlu_invariant, p1, l1);
+			return obj.like_result(impure->vlu_misc.vlu_invariant);
+		} else
+			return obj.like(tdbb, p1, l1, p2, l2, escape);
 	}
 
 	return obj.matches(tdbb, p1, l1, p2, l2);

@@ -55,11 +55,20 @@ DEFINE_TRACE_ROUTINE(cmp_trace);
 #define CMP_TRACE(args) /* nothing */
 #endif
 
-// NOTE: The definition of structures rse and lit must be defined in
-//       exactly the same way as structure jrd_nod through item nod_count.
-//       If you change one, be sure to change all of them.
+class jrd_node_base : public pool_alloc_rpt<class jrd_nod*, type_nod>
+{
+public:
+	jrd_nod*	nod_parent;
+	SLONG	nod_impure;			/* Inpure offset from request block */
+	NOD_T	nod_type;				/* Type of node */
+	UCHAR	nod_flags;
+	SCHAR	nod_scale;			/* Target scale factor */
+	USHORT	nod_count;			/* Number of arguments */
+	Firebird::Array<jrd_nod*> *nod_variables; /* Variables and arguments this node depends on */
+};
 
-class jrd_nod : public pool_alloc_rpt<class jrd_nod*, type_nod>
+
+class jrd_nod : public jrd_node_base
 {
 public:
 /*	jrd_nod()
@@ -72,13 +81,6 @@ public:
 	{
 		nod_arg[0] = 0;
 	}*/
-
-	jrd_nod*	nod_parent;
-	SLONG	nod_impure;			/* Inpure offset from request block */
-	NOD_T	nod_type;				/* Type of node */
-	UCHAR	nod_flags;
-	SCHAR	nod_scale;			/* Target scale factor */
-	USHORT	nod_count;			/* Number of arguments */
 	jrd_nod*	nod_arg[1];
 };
 typedef jrd_nod* JRD_NOD;
@@ -97,15 +99,9 @@ typedef jrd_nod* JRD_NOD;
 
 /* Special RSE node */
 
-class rse : public pool_alloc_rpt<jrd_nod*, type_rse>
+class rse : public jrd_node_base
 {
 public:
-	jrd_nod*	nod_parent;
-	SLONG	nod_impure;			/* Inpure offset from request block */
-	NOD_T	nod_type;				/* Type of node */
-	UCHAR	nod_flags;
-	SCHAR	nod_scale;			/* Target scale factor */
-	USHORT	nod_count;			/* Number of arguments */
 	USHORT	rse_count;
 	USHORT	rse_jointype;		/* inner, left, full */
 	BOOLEAN rse_writelock;
@@ -120,7 +116,6 @@ public:
 #ifdef SCROLLABLE_CURSORS
 	jrd_nod*	rse_async_message;	/* asynchronous message to send for scrolling */
 #endif
-	Firebird::Array<jrd_nod*> *rse_variables; /* Variables and arguments this RSE depends on */
 	jrd_nod*	rse_relation[1];
 };
 typedef rse* RSE;
@@ -139,15 +134,9 @@ typedef rse* RSE;
 
 /* Literal value */
 
-class lit : public pool_alloc<type_lit>
+class lit : public jrd_node_base
 {
 public:
-	jrd_nod*	nod_parent;
-	SLONG	nod_impure;			/* Inpure offset from request block */
-	NOD_T	nod_type;				/* Type of node */
-	UCHAR	nod_flags;
-	SCHAR	nod_scale;			/* Target scale factor */
-	USHORT	nod_count;			/* Number of arguments */
 	dsc		lit_desc;
 	SINT64	lit_data[1]; // Defined this way to prevent SIGBUS error in 64-bit ports
 };
@@ -197,25 +186,11 @@ typedef struct vlu {
 		GDS_TIMESTAMP vlu_timestamp;
 		GDS_TIME vlu_sql_time;
 		GDS_DATE vlu_sql_date;
+		void* vlu_invariant; // Pre-compiled invariant object for nod_like and other string functions
 	} vlu_misc;
 } *VLU;
 
-typedef struct vlux {
-	struct dsc vlu_desc;
-	USHORT vlu_flags; // Computed/invariant flags
-	struct str *vlu_string;
-	union {
-		SSHORT vlu_short;
-		SLONG vlu_long;
-		SINT64 vlu_int64;
-		SQUAD vlu_quad;
-		SLONG vlu_dbkey[2];
-		float vlu_float;
-		double vlu_double;
-		GDS_TIMESTAMP vlu_timestamp;
-		GDS_TIME vlu_sql_time;
-		GDS_DATE vlu_sql_date;
-	} vlu_misc;
+typedef struct vlux : public vlu {
 	SLONG vlux_count;
 } *VLUX;
 
@@ -601,7 +576,7 @@ public:
 		csb_impure(0),
 		csb_g_flags(0),*/
 		csb_invariants(&p),
-		csb_current_rses(&p),
+		csb_current_nodes(&p),
 		csb_rpt(&p, len)
 	{}
 
@@ -617,7 +592,7 @@ public:
 	struct lls*	csb_dependencies;	/* objects this request depends upon */
 	struct lls*	csb_fors;		/* stack of fors */
 	Firebird::Array<struct jrd_nod*> csb_invariants;	/* stack of invariant nodes */
-	Firebird::Array<RSE> csb_current_rses;	/* rse's within whose scope we are */
+	Firebird::Array<struct jrd_node_base*> csb_current_nodes;	/* rse's and other invariant candidates within whose scope we are */
 #ifdef SCROLLABLE_CURSORS
 	struct rse*	csb_current_rse;	/* this holds the rse currently being processed; 
 									   unlike the current_rses stack, it references any expanded view rse */

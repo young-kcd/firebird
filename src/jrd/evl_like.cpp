@@ -7,7 +7,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		evl_like.cpp
- *	DESCRIPTION:	Expression evaluation (international)
+ *	DESCRIPTION:	Expression evaluation (international). Obsolete.
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -30,9 +30,6 @@
 #define SLEUTH_insensitive	1
 #define COND_UPPER(obj,c)	((flags & SLEUTH_insensitive) ?	(obj).to_upper(c) : (c))
 
-#define SQL_MATCH_ONE		'_'
-#define SQL_MATCH_ANY		'%'
-
 #define GDML_MATCH_ONE		'?'
 #define GDML_MATCH_ANY		'*'
 
@@ -47,86 +44,6 @@
 #define GDML_COMMA		','
 #define GDML_LPAREN		'('
 #define GDML_RPAREN		')'
-
-
-USHORT LIKENAME(TDBB tdbb, TextType obj, const LIKETYPE* p1, SSHORT l1_bytes,	/* byte count */
-				const LIKETYPE* p2, SSHORT l2_bytes,	/* byte count */
-				UCS2_CHAR escape_char)
-{
-/**************************************
- *
- *	E V L _ ? ? _ l i k e
- *	E V L _ w c _ l i k e
- *	E V L _ n c _ l i k e
- *
- **************************************
- *
- * Functional description
- *	Return true if a string (p1, l1) matches a given pattern (p2, l2).
- *	The character '_' in the pattern may match any single character
- *	in the the string, and the character '%' may match any sequence
- *	of characters.
- *
- *	Wide char version operates on USHORT-based buffer,
- *	instead of UCHAR-based.
- *
- *	Note Bene: LIKETYPE is defined by including file (evl.c) to either
- *	    UCS2_CHAR or NCHAR, depending on the varient being compiled here.
- *
- *	(escape_char == 0) means no escape character is specified.
- *
- **************************************/
-	LIKETYPE c;
-	USHORT escape;
-	SSHORT l1, l2;
-
-	fb_assert(p1 != NULL);
-	fb_assert(p2 != NULL);
-	fb_assert((l1_bytes % sizeof(LIKETYPE)) == 0);
-	fb_assert((l2_bytes % sizeof(LIKETYPE)) == 0);
-
-	l1 = l1_bytes / sizeof(LIKETYPE);
-	l2 = l2_bytes / sizeof(LIKETYPE);
-
-	escape = FALSE;
-
-	while (l2-- > 0) {
-		c = *p2++;
-		if (escape_char && ((UCS2_CHAR) c == escape_char)) {
-			if (l2-- > 0) {
-				c = *p2++;
-				/* Note: SQL II says <escape_char><escape_char> is error condition */
-				if (((UCS2_CHAR) c == escape_char) ||
-					((UCS2_CHAR) c == (UCS2_CHAR) SQL_MATCH_ANY) ||
-					((UCS2_CHAR) c == (UCS2_CHAR) SQL_MATCH_ONE))
-					escape = TRUE;
-			}
-			if (!escape)
-				ERR_post(isc_like_escape_invalid, 0);
-		}
-		if (!escape && (c == (LIKETYPE) SQL_MATCH_ANY)) {
-			while ((l2 > 0) && (*p2 == (LIKETYPE) SQL_MATCH_ANY)) {
-				l2--;
-				p2++;
-			}
-			if (l2 == 0)
-				return TRUE;
-			while (l1)
-				if (LIKENAME(tdbb, obj, p1++, l1-- * sizeof(LIKETYPE),
-							 p2, l2 * sizeof(LIKETYPE), escape_char))
-					return TRUE;
-			return FALSE;
-		}
-		if (l1-- == 0)
-			return FALSE;
-		if ((escape || c != (LIKETYPE) SQL_MATCH_ONE) && c != *p1)
-			return FALSE;
-		escape = FALSE;
-		p1++;
-	}
-
-	return (l1) ? FALSE : TRUE;
-}
 
 
 USHORT MATCHESNAME(TDBB tdbb,
