@@ -348,7 +348,9 @@ bool ISC_analyze_pclan(tstring& expanded_name, tstring& node_name)
  **************************************/
 	if ((expanded_name[0] != '\\' && expanded_name[0] != '/') ||
 		(expanded_name[1] != '\\' && expanded_name[1] != '/'))
+	{
 		return false;
+	}
 
 	size p = expanded_name.find_first_of("\\/", 2);
 	if (p == npos)
@@ -397,7 +399,7 @@ bool ISC_analyze_tcp(tstring& file_name, tstring& node_name)
 
 /* Scan file name looking for separator character */
 
-	size p = file_name.find(INET_FLAG);
+	const size p = file_name.find(INET_FLAG);
 	if (p == npos)
 		return false;
 
@@ -742,9 +744,9 @@ void ISC_expand_filename(tstring& file_name, bool expand_share)
 		return;
 	}
 
-	size colon_pos;
 	tstring device;
-	if ((colon_pos = temp.find(INET_FLAG)) != npos)
+	const size colon_pos = temp.find(INET_FLAG);
+	if (colon_pos != npos)
 	{
 		file_name = temp;
 		if (colon_pos != 1)
@@ -927,7 +929,7 @@ void ISC_expand_share(tstring& file_name)
 	DWORD nument = 0xffffffff, bufSize = 16384;
 
 // Look for a drive letter and make sure that it corresponds to a remote disk
-	size p = file_name.find(':');
+	const size p = file_name.find(':');
 	if (p != 1)
 	{
 		return;
@@ -1073,7 +1075,7 @@ static void expand_filename2(tstring& buff)
 		return;
 	}
 
-	tstring src = buff;	
+	const tstring src = buff;
 	const char* from = src.c_str();
 	buff = "";
 
@@ -1161,7 +1163,7 @@ static void expand_filename2(tstring& buff)
 
 		// We've got a link.  If it contains a node name or it starts
 		// with a slash, it replaces the initial segment so far.
-		tstring link(temp, n);
+		const tstring link(temp, n);
 		if (link.find(INET_FLAG) != npos) 
 		{
 			buff = link;
@@ -1407,7 +1409,7 @@ static bool get_mounts(MNT * mount, TEXT * buffer, FILE * file)
 		if (*q)
 			q++;
 		mount->mnt_path = p;
-	    while ((*p++ = *q++) != 0);
+	    while ((*p++ = *q++) != 0); // empty loop's body.
 		mount->mnt_mount = mptr->mnt_mountp;
 		return true;
 	}
@@ -1452,7 +1454,7 @@ static bool get_mounts(MNT * mount, TEXT * buffer, FILE * file)
 		if (*q)
 			q++;
 		mount->mnt_path = p;
-		while (*p++ = *q++);
+		while (*p++ = *q++); // empty loop's body.
 		mount->mnt_mount = mptr->mnt_dir;
 		return true;
 	}
@@ -1513,10 +1515,10 @@ static bool get_mounts(MNT * mount, TEXT * buffer, FILE * file)
 		if (*q)
 			q++;
 		mount->mnt_path = p;
-		while (*p++ = *q++);
+		while (*p++ = *q++); // empty loop's body
 		mount->mnt_mount = p;
 		q = mount_point;
-		while (*p++ = *q++);
+		while (*p++ = *q++); // empty loop's body
 		return true;
 	}
 
@@ -1581,10 +1583,10 @@ static bool get_mounts(MNT * mount, TEXT * buffer, FILE * file)
 		if (*q)
 			q++;
 		mount->mnt_path = p;
-		while (*p++ = *q++);
+		while (*p++ = *q++); // empty loop's body
 		mount->mnt_mount = p;
 		q = mount_point;
-		while (*p++ = *q++);
+		while (*p++ = *q++); // empty loop's body
 		return true;
 	}
 
