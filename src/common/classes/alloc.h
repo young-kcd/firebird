@@ -34,7 +34,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.h,v 1.27 2003-10-27 22:27:26 skidder Exp $
+ *  $Id: alloc.h,v 1.28 2003-11-03 02:05:14 brodsom Exp $
  *
  */
 
@@ -42,6 +42,7 @@
 #define ALLOC_H
 
 #include <cstddef>
+
 #include "../../include/fb_types.h"
 #include "../../include/firebird.h"
 #include "../jrd/common.h"
@@ -244,7 +245,7 @@ using Firebird::MemoryPool;
 
 MemoryPool* getDefaultMemoryPool();
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(MINGW)
 // All this crappy code below under __GNUC__ conditional is to avoid replacing 
 // STL operator new as this replacement causes crashes if client library is 
 // loaded by host application using STL

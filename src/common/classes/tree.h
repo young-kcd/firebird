@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: tree.h,v 1.20 2003-10-27 22:27:26 skidder Exp $
+ *  $Id: tree.h,v 1.21 2003-11-03 02:05:13 brodsom Exp $
  *
  */
 
@@ -46,7 +46,7 @@
 					   stdlib.h (EKU) */
 #endif
 #include "vector.h"
-#ifndef __GNUC__
+#if !defined(__GNUC__) || defined(MINGW)
 #include <new>
 #endif
 
