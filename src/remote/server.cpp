@@ -165,7 +165,7 @@ static REM_MSG	scroll_cache(rrq::rrq_repeat*, USHORT *, ULONG *);
 static void	server_ast(void*, USHORT, const UCHAR*);
 static void		success(ISC_STATUS *);
 #ifdef MULTI_THREAD
-static int THREAD_ROUTINE thread(void *);
+static int THREAD_ROUTINE loopThread(void *);
 #endif
 static void		zap_packet(PACKET*, bool);
 
@@ -448,7 +448,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 			 */
 			extra_threads = threads_waiting - pending_requests;
 			if (extra_threads < 0) {
-				gds__thread_start(	reinterpret_cast<FPTR_INT_VOID_PTR>(thread),
+				gds__thread_start(	reinterpret_cast<FPTR_INT_VOID_PTR>(loopThread),
 									(void*)(ULONG) flags,
 									THREAD_medium,
 									THREAD_ast,
@@ -4629,7 +4629,7 @@ static void success( ISC_STATUS * status_vector)
 }
 
 #ifdef MULTI_THREAD
-static int THREAD_ROUTINE thread(void* flags)
+static int THREAD_ROUTINE loopThread(void* flags)
 {
 /**************************************
  *
