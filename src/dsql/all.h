@@ -34,7 +34,7 @@ protected:
 	DsqlMemoryPool() : MemoryPool(NULL, NULL), lls_cache(*this) {}
 	~DsqlMemoryPool() {}	
 public:
-	static DsqlMemoryPool *createPool();
+	static DsqlMemoryPool* createPool();
 	
 	static void deletePool(DsqlMemoryPool* pool);
 
@@ -45,7 +45,7 @@ private:
 	BlockCache<class dsql_lls> lls_cache;  // Was plb_lls
 };
 
-extern DsqlMemoryPool *DSQL_permanent_pool;
+extern DsqlMemoryPool* DSQL_permanent_pool;
 
 #endif	// DSQL_ALL_H
 

@@ -566,7 +566,7 @@ int INF_database_info(const SCHAR* items,
 						 INF_put_item(item, length, buffer, info, end)))
 					{
 						if (transaction)
-							TRA_commit(tdbb, transaction, FALSE);
+							TRA_commit(tdbb, transaction, false);
 						return FALSE;
 					}
 				}
@@ -584,7 +584,7 @@ int INF_database_info(const SCHAR* items,
 						 INF_put_item(item, length, buffer, info, end)))
 					{
 						if (transaction)
-							TRA_commit(tdbb, transaction, FALSE);
+							TRA_commit(tdbb, transaction, false);
 						return FALSE;
 					}
 				}
@@ -607,7 +607,7 @@ int INF_database_info(const SCHAR* items,
                     info = INF_put_item(item, length, buffer, info, end);
 					if (!info) {
 						if (transaction)
-							TRA_commit(tdbb, transaction, FALSE);
+							TRA_commit(tdbb, transaction, false);
 						return FALSE;
 					}
 				}
@@ -828,13 +828,13 @@ int INF_database_info(const SCHAR* items,
 		}
 		if (!(info = INF_put_item(item, length, buffer, info, end))) {
 			if (transaction)
-				TRA_commit(tdbb, transaction, FALSE);
+				TRA_commit(tdbb, transaction, false);
 			return FALSE;
 		}
 	}
 
 	if (transaction)
-		TRA_commit(tdbb, transaction, FALSE);
+		TRA_commit(tdbb, transaction, false);
 
 	*info++ = gds_info_end;
 

@@ -32,7 +32,7 @@ extern "C" {
 
 BOOLEAN	TRA_active_transactions(TDBB, struct dbb *);
 void	TRA_cleanup(TDBB);
-void	TRA_commit(TDBB, struct jrd_tra *, USHORT);
+void	TRA_commit(TDBB, struct jrd_tra*, const bool);
 void	TRA_extend_tip(TDBB, ULONG, struct win *);
 int		TRA_fetch_state(TDBB, SLONG);
 void	TRA_get_inventory(TDBB, UCHAR *, ULONG, ULONG);
@@ -46,13 +46,13 @@ void	TRA_link_transaction(TDBB, struct jrd_tra *);
 void	TRA_post_resources(TDBB, struct jrd_tra *, class Rsc *);
 BOOLEAN TRA_precommited(TDBB, SLONG, SLONG);
 void	TRA_prepare(TDBB, struct jrd_tra*, USHORT, const UCHAR*);
-struct jrd_tra*	TRA_reconnect(TDBB, UCHAR *, USHORT);
+struct jrd_tra*	TRA_reconnect(TDBB, const UCHAR*, USHORT);
 void	TRA_release_transaction(TDBB, struct jrd_tra *);
-void	TRA_rollback(TDBB, struct jrd_tra *, USHORT);
+void	TRA_rollback(TDBB, struct jrd_tra*, const bool);
 void	TRA_set_state(TDBB, struct jrd_tra *, SLONG, SSHORT);
 void	TRA_shutdown_attachment(TDBB, struct att *);
 int		TRA_snapshot_state(TDBB, struct jrd_tra *, SLONG);
-struct jrd_tra*	TRA_start(TDBB, int, SCHAR *);
+struct jrd_tra*	TRA_start(TDBB, int, const SCHAR*);
 int		TRA_state(UCHAR *, ULONG, ULONG);
 int		TRA_sweep(TDBB, struct jrd_tra *);
 struct lck*	TRA_transaction_lock(TDBB, struct blk *);

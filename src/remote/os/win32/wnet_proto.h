@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Remote Interface/Server
  *	MODULE:		wnet_proto.h
- *	DESCRIPTION:	Prototpe header file for wnet.c
+ *	DESCRIPTION:	Prototpe header file for wnet.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -29,10 +29,10 @@ extern "C" {
 #endif
 
 
-PORT	WNET_analyze (TEXT *, USHORT *, ISC_STATUS *, TEXT *, TEXT *, USHORT);
-PORT	WNET_connect (TEXT *, struct packet *, ISC_STATUS *, USHORT);
-PORT	WNET_reconnect (HANDLE, TEXT *, ISC_STATUS *);
-PORT	WNET_server (void *);
+PORT	WNET_analyze (TEXT*, USHORT*, ISC_STATUS*, const TEXT*, TEXT*, USHORT);
+PORT	WNET_connect (const TEXT*, struct packet*, ISC_STATUS*, USHORT);
+PORT	WNET_reconnect (HANDLE, ISC_STATUS*);
+PORT	WNET_server (void*);
 
 
 #ifdef __cplusplus
@@ -41,3 +41,4 @@ PORT	WNET_server (void *);
 
 
 #endif // REMOTE_WNET_PROTO_H
+

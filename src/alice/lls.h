@@ -25,8 +25,9 @@
 #define ALICE_LLS_H
 
 typedef struct lls {
-	struct blk *lls_object;
-	struct lls *lls_next;
+	struct blk* lls_object;
+	struct lls* lls_next;
 } *LLS;
 
 #endif // ALICE_LLS_H
+

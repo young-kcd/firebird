@@ -2488,9 +2488,9 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_RECONNECT(ISC_STATUS * user_status,
-					 IDB * db_handle,
-					 ITR * itr_handle, USHORT length, UCHAR * id)
+ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
+					 IDB* db_handle,
+					 ITR* itr_handle, USHORT length, const UCHAR* id)
 {
 /**************************************
  *

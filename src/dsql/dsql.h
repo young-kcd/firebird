@@ -551,10 +551,10 @@ public:
 	dsql_nod*	par_node;			//!< Associated value node, if any
 	dsql_ctx*	par_dbkey_ctx;		//!< Context of internally requested dbkey
 	dsql_ctx*	par_rec_version_ctx;	//!< Context of internally requested record version
-	TEXT*	par_name;			//!< Parameter name, if any
-	TEXT*	par_rel_name;		//!< Relation name, if any
-	TEXT*	par_owner_name;		//!< Owner name, if any
-	TEXT*	par_alias;			//!< Alias, if any
+	const TEXT*	par_name;			//!< Parameter name, if any
+	const TEXT*	par_rel_name;		//!< Relation name, if any
+	const TEXT*	par_owner_name;		//!< Owner name, if any
+	const TEXT*	par_alias;			//!< Alias, if any
 	DSC		par_desc;			//!< Field data type
 	DSC		par_user_desc;		//!< SQLDA data type
 	USHORT	par_parameter;		//!< BLR parameter number
@@ -624,7 +624,7 @@ typedef tsql* TSQL;
 	}
 
 
-#define _assert(ex)	{if (!(ex)){ERRD_assert_msg (NULL, (char*)__FILE__, __LINE__);}}
+#define _assert(ex)	{if (!(ex)) {ERRD_assert_msg (NULL, (char*)__FILE__, __LINE__);}}
 #undef assert
 #define assert(ex)	_assert(ex)
 #define ASSERT_FAIL ERRD_assert_msg (NULL, (char*)__FILE__, __LINE__)

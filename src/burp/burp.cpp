@@ -135,9 +135,9 @@ static void close_out_transaction(volatile gbak_action, isc_tr_handle *);
 static SLONG get_number(const SCHAR *);
 static ULONG get_size(const SCHAR *, FIL);
 static gbak_action open_files(const TEXT *, const TEXT**, USHORT, USHORT, USHORT);
-static int common_main(int, char **, pfn_svc_output, SLONG);
+static int common_main(int, char**, pfn_svc_output, svc*);
 #ifndef SUPERSERVER
-static int output_main(SLONG, const UCHAR*);
+static int output_main(svc*, const UCHAR*);
 #endif
 static void burp_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
 
@@ -171,7 +171,7 @@ static inline void exit_local(int code, TGBL tdgbl)
 }
 
 #ifdef SUPERSERVER
-int BURP_main(SVC service)
+int BURP_main(svc* service)
 {
 /**************************************
  *
@@ -184,7 +184,7 @@ int BURP_main(SVC service)
  *
  **************************************/
 	int exit_code = common_main(service->svc_argc, service->svc_argv,
-						  SVC_output, (SLONG) service);
+						  SVC_output, service);
 
 	service->svc_handle = 0;
 	if (service->svc_service->in_use != NULL)
@@ -354,13 +354,13 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 							 d_user, d_service, flag_restore, flag_verbose);
 	}
 	else
-		exit_code = common_main(argc, argv, output_main, (SLONG) NULL);
+		exit_code = common_main(argc, argv, output_main, NULL);
 
 	return exit_code;
 }
 
 
-static int output_main( SLONG output_data, const UCHAR* output_buf)
+static int output_main(svc* output_data, const UCHAR* output_buf)
 {
 /**************************************
  *
@@ -382,7 +382,7 @@ static int output_main( SLONG output_data, const UCHAR* output_buf)
 int common_main(int		argc,
 				char*		argv[],
 				pfn_svc_output output_proc,
-				SLONG		output_data)
+				svc*		output_data)
 {
 /**************************************
  *

@@ -828,7 +828,7 @@ void SVC_fprintf(SVC service, const SCHAR* format, ...)
 }
 
 
-void SVC_putc(SVC service, UCHAR ch)
+void SVC_putc(svc* service, const UCHAR ch)
 {
 /**************************************
  *
@@ -846,9 +846,9 @@ void SVC_putc(SVC service, UCHAR ch)
 //
 // CVC: Now we are using a SLONG to hold a pointer to the Service!
 
-int SVC_output(SLONG output_data, const UCHAR* output_buf)
+int SVC_output(svc* output_data, const UCHAR* output_buf)
 {
-	SVC_fprintf((SVC) output_data, "%s", output_buf);
+	SVC_fprintf(output_data, "%s", output_buf);
 
 	return 0;
 }
@@ -1185,8 +1185,8 @@ int SVC_output(SLONG output_data, const UCHAR* output_buf)
 			service_get(service, &item, 1, GET_BINARY, 0, &length);
 			service_get(service, buffer, 2, GET_BINARY, 0, &length);
 			l =
-				(USHORT) gds__vax_integer(reinterpret_cast <
-										  UCHAR * >(buffer), 2);
+				(USHORT) gds__vax_integer(reinterpret_cast<
+										  UCHAR*>(buffer), 2);
 			length = MIN(end - (info + 5), l);
 			service_get(service, info + 3, length, GET_BINARY, 0, &length);
 			info = INF_put_item(item, length, info + 3, info, end);
@@ -1328,7 +1328,7 @@ void SVC_query(SVC		service,
  *
  **************************************/
 	SCHAR item, *p;
-	UCHAR buffer[256];
+	char buffer[256];
 	TEXT PathBuffer[MAXPATHLEN];
 	USHORT l, length, version, get_flags;
 	USHORT timeout;
@@ -1398,20 +1398,20 @@ void SVC_query(SVC		service,
 				USHORT num_att = 0;
 				USHORT num_dbs = 0;
 				JRD_num_attachments(NULL, 0, 0, &num_att, &num_dbs);
-				length = INF_convert(num_att, reinterpret_cast < char *>(buffer));
+				length = INF_convert(num_att, buffer);
 				info = INF_put_item(item,
 									length,
-									reinterpret_cast<char*>(buffer),
+									buffer,
 									info,
 									end);
 				if (!info) {
 					THREAD_ENTER;
 					return;
 				}
-				length = INF_convert(num_dbs, reinterpret_cast < char *>(buffer));
+				length = INF_convert(num_dbs, buffer);
 				info = INF_put_item(item,
 									length,
-									reinterpret_cast<char*>(buffer),
+									buffer,
 									info,
 									end);
 				if (!info) {
@@ -1521,13 +1521,11 @@ void SVC_query(SVC		service,
 			/* The version of the service manager */
 
 			length =
-				INF_convert(SERVICE_VERSION,
-							reinterpret_cast < char *>(buffer));
+				INF_convert(SERVICE_VERSION, buffer);
 			if (!
 				(info =
-				 INF_put_item(item, length,
-							  reinterpret_cast < char *>(buffer), info,
-							  end))) {
+				 INF_put_item(item, length, buffer, info, end)))
+			{
 				THREAD_ENTER;
 				return;
 			}
@@ -1537,13 +1535,11 @@ void SVC_query(SVC		service,
 			/* bitmask defining any specific architectural differences */
 
 			length =
-				INF_convert(SERVER_CAPABILITIES_FLAG,
-							reinterpret_cast < char *>(buffer));
+				INF_convert(SERVER_CAPABILITIES_FLAG, buffer);
 			if (!
 				(info =
-				 INF_put_item(item, length,
-							  reinterpret_cast < char *>(buffer), info,
-							  end))) {
+				 INF_put_item(item, length, buffer, info, end)))
+			{
 				THREAD_ENTER;
 				return;
 			}
@@ -1553,16 +1549,12 @@ void SVC_query(SVC		service,
 			{
 				/* The version of the server engine */
 
-				p = reinterpret_cast < char *>(buffer);
+				p = buffer;
 				*p++ = 1;			/* Count */
 				*p++ = sizeof(GDS_VERSION) - 1;
 				for (const TEXT* gvp = GDS_VERSION; *gvp; p++, gvp++)
 					*p = *gvp;
-				if (!(info = INF_put_item(item,
-										p - (SCHAR *) buffer,
-										reinterpret_cast<char*>(buffer),
-										info,
-										end)))
+				if (!(info = INF_put_item(item, p - buffer, buffer, info, end)))
 				{
 					THREAD_ENTER;
 					return;
@@ -1573,14 +1565,10 @@ void SVC_query(SVC		service,
 		case isc_info_svc_implementation:
 			/* The server implementation - e.g. Interbase/sun4 */
 
-			p = reinterpret_cast < char *>(buffer);
+			p = buffer;
 			*p++ = 1;			/* Count */
 			*p++ = IMPLEMENTATION;
-			if (!(info = INF_put_item(item,
-									p - (SCHAR *) buffer,
-									reinterpret_cast<char*>(buffer),
-									info,
-									end)))
+			if (!(info = INF_put_item(item, p - buffer, buffer, info, end)))
 			{
 				THREAD_ENTER;
 				return;
@@ -1590,13 +1578,9 @@ void SVC_query(SVC		service,
 
 		case isc_info_svc_user_dbpath:
 			/* The path to the user security database (security.fdb) */
-			SecurityDatabase::getPath(reinterpret_cast<char*>(buffer));
+			SecurityDatabase::getPath(buffer);
 
-			if (!(info = INF_put_item(item,
-									  strlen(reinterpret_cast<char*>(buffer)),
-									  reinterpret_cast<char*>(buffer),
-									  info,
-									  end)))
+			if (!(info = INF_put_item(item, strlen(buffer), buffer, info, end)))
 			{
 				THREAD_ENTER;
 				return;
@@ -1612,9 +1596,8 @@ void SVC_query(SVC		service,
 			}
 			service_put(service, &item, 1);
 			service_get(service, &item, 1, GET_BINARY, 0, &length);
-			service_get(service, reinterpret_cast < char *>(buffer), 2,
-						GET_BINARY, 0, &length);
-			l = (USHORT) gds__vax_integer(buffer, 2);
+			service_get(service, buffer, 2, GET_BINARY, 0, &length);
+			l = (USHORT) gds__vax_integer(reinterpret_cast<UCHAR*>(buffer), 2);
 			length = MIN(end - (info + 4), l);
 			service_get(service, info + 3, length, GET_BINARY, 0, &length);
 			info = INF_put_item(item, length, info + 3, info, end);
@@ -1670,16 +1653,10 @@ void SVC_query(SVC		service,
 		case isc_info_svc_total_length:
 			service_put(service, &item, 1);
 			service_get(service, &item, 1, GET_BINARY, 0, &length);
-			service_get(service, reinterpret_cast < char *>(buffer), 2,
-						GET_BINARY, 0, &length);
-			l = (USHORT) gds__vax_integer(buffer, 2);
-			service_get(service, reinterpret_cast < char *>(buffer), l,
-						GET_BINARY, 0, &length);
-			if (!(info = INF_put_item(item,
-										length,
-										reinterpret_cast<char*>(buffer),
-										info,
-										end)))
+			service_get(service, buffer, 2, GET_BINARY, 0, &length);
+			l = (USHORT) gds__vax_integer(reinterpret_cast<UCHAR*>(buffer), 2);
+			service_get(service, buffer, l, GET_BINARY, 0, &length);
+			if (!(info = INF_put_item(item, length, buffer, info, end)))
 			{
 				THREAD_ENTER;
 				return;

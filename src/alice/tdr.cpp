@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.26 2003-10-29 10:52:59 robocop Exp $
+//	$Id: tdr.cpp,v 1.27 2003-11-01 10:26:32 robocop Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -50,7 +50,7 @@
 #include "../jrd/thd_proto.h"
 
 static ULONG ask(void);
-static void print_description(TDR);
+static void print_description(const tdr*);
 static void reattach_database(TDR);
 static void reattach_databases(TDR);
 static bool reconnect(FRBRD*, SLONG, const TEXT*, ULONG);
@@ -78,7 +78,7 @@ static const UCHAR limbo_info[] = { gds_info_limbo, gds_info_end };
 //		transactions.
 //
 
-USHORT TDR_analyze(TDR trans)
+USHORT TDR_analyze(const tdr* trans)
 {
 	USHORT advice = TRA_none;
 
@@ -287,12 +287,10 @@ void TDR_shutdown_databases(TDR trans)
 //		prompt for commit, rollback, or leave well enough alone.
 //
 
-void TDR_list_limbo(FRBRD* handle, const TEXT* name, ULONG switches)
+void TDR_list_limbo(FRBRD* handle, const TEXT* name, const ULONG switches)
 {
 	UCHAR buffer[1024];
 	ISC_STATUS_ARRAY status_vector;
-	SLONG id;
-	TDR trans;
 	TGBL tdgbl = GET_THREAD_DATA;
 
 	if (gds__database_info(status_vector, &handle, sizeof(limbo_info),
@@ -303,6 +301,8 @@ void TDR_list_limbo(FRBRD* handle, const TEXT* name, ULONG switches)
 		return;
 	}
 
+    SLONG id;
+   	TDR trans;
 	UCHAR* ptr = buffer;
 	bool flag = true;
 
@@ -385,7 +385,6 @@ bool TDR_reconnect_multiple(FRBRD* handle,
 							ULONG switches)
 {
 	ISC_STATUS_ARRAY status_vector;
-	bool error = false;
 
 //  get the state of all the associated transactions
 
@@ -478,6 +477,7 @@ bool TDR_reconnect_multiple(FRBRD* handle,
 		}
 	}
 
+    bool error = false;
 	if (switches != (ULONG) -1)
 	{
 		// now do the required operation with all the subtransactions
@@ -488,7 +488,7 @@ bool TDR_reconnect_multiple(FRBRD* handle,
 			{
 				if (ptr->tdr_state == TRA_limbo)
 				{
-					reconnect((ptr->tdr_db_handle),
+					reconnect(ptr->tdr_db_handle,
 							  ptr->tdr_id, ptr->tdr_filename, switches);
 				}
 			}
@@ -516,7 +516,7 @@ bool TDR_reconnect_multiple(FRBRD* handle,
 //		in other databases.
 //
 
-static void print_description(TDR trans)
+static void print_description(const tdr* trans)
 {
 	TGBL tdgbl = GET_THREAD_DATA;
 
@@ -531,12 +531,12 @@ static void print_description(TDR trans)
 	}
 
 	bool prepared_seen = false;
-	for (TDR ptr = trans; ptr; ptr = ptr->tdr_next)
+	for (const tdr* ptr = trans; ptr; ptr = ptr->tdr_next)
 	{
 		if (ptr->tdr_host_site)
 		{
-			char* pszHostSize =
-				reinterpret_cast<char*>(ptr->tdr_host_site->str_data);
+			const char* pszHostSize =
+				reinterpret_cast<const char*>(ptr->tdr_host_site->str_data);
 
 #ifndef SUPERSERVER
 			// msg 93: Host Site: %s
@@ -625,8 +625,8 @@ static void print_description(TDR trans)
 
 		if (ptr->tdr_remote_site)
 		{
-			char* pszRemoteSite =
-				reinterpret_cast<char*>(ptr->tdr_remote_site->str_data);
+			const char* pszRemoteSite =
+				reinterpret_cast<const char*>(ptr->tdr_remote_site->str_data);
 
 #ifndef SUPERSERVER
 			//msg 101: Remote Site: %s
@@ -646,8 +646,8 @@ static void print_description(TDR trans)
 
 		if (ptr->tdr_fullpath)
 		{
-			char* pszFullpath =
-				reinterpret_cast<char*>(ptr->tdr_fullpath->str_data);
+			const char* pszFullpath =
+				reinterpret_cast<const char*>(ptr->tdr_fullpath->str_data);
 
 #ifndef SUPERSERVER
 			// msg 102: Database Path: %s
@@ -878,10 +878,12 @@ static bool reconnect(FRBRD* handle,
 {
 	ISC_STATUS_ARRAY status_vector;
 
-	SLONG id = gds__vax_integer((UCHAR *) &number, 4);
+	const SLONG id = gds__vax_integer((UCHAR *) &number, 4);
 	FRBRD* transaction = NULL;
 	if (gds__reconnect_transaction(status_vector, &handle, &transaction,
-								   sizeof(id), reinterpret_cast<char*>(&id))) {
+								   sizeof(id),
+								   reinterpret_cast<const char*>(&id)))
+	{
 		ALICE_print(90, name, 0, 0, 0, 0);
 		// msg 90: failed to reconnect to a transaction in database %s
 		ALICE_print_status(status_vector);

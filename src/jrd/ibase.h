@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.52 2003-10-29 10:53:14 robocop Exp $
+$Id: ibase.h,v 1.53 2003-11-01 10:26:39 robocop Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -812,11 +812,11 @@ ISC_STATUS ISC_EXPORT isc_receive(ISC_STATUS *,
 								  void *,
 								  short);
 
-ISC_STATUS ISC_EXPORT isc_reconnect_transaction(ISC_STATUS *,
-												isc_db_handle *,
-												isc_tr_handle *,
+ISC_STATUS ISC_EXPORT isc_reconnect_transaction(ISC_STATUS*,
+												isc_db_handle*,
+												isc_tr_handle*,
 												short,
-												char *);
+												const char*);
 
 ISC_STATUS ISC_EXPORT isc_release_request(ISC_STATUS *,
 										  isc_req_handle *);
@@ -1124,11 +1124,13 @@ BSTREAM* ISC_EXPORT Bopen(ISC_QUAD*,
 								  isc_tr_handle,
 								  const char*);
 
+/* Disabled, not found anywhere.
 BSTREAM* ISC_EXPORT Bopen2(ISC_QUAD*,
 								   isc_db_handle,
 								   isc_tr_handle,
 								   const char*,
 								   unsigned short);
+*/
 
 
 /******************************/

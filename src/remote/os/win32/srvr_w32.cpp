@@ -244,11 +244,11 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	if (connection_handle != INVALID_HANDLE_VALUE) {
 		THREAD_ENTER;
 		if (server_flag & SRVR_inet)
-			port = INET_reconnect(connection_handle, 0, status_vector);
+			port = INET_reconnect(connection_handle, status_vector);
 		else if (server_flag & SRVR_wnet)
-			port = WNET_reconnect(connection_handle, 0, status_vector);
+			port = WNET_reconnect(connection_handle, status_vector);
 		else if (server_flag & SRVR_xnet)
-			port = XNET_reconnect((ULONG) connection_handle, 0, status_vector);
+			port = XNET_reconnect((ULONG) connection_handle, status_vector);
 		THREAD_EXIT;
 		if (port) {
 			service_connection(port);

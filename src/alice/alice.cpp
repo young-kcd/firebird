@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.40 2003-10-29 10:52:58 robocop Exp $
+//	$Id: alice.cpp,v 1.41 2003-11-01 10:26:32 robocop Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -108,9 +108,9 @@ static void ALICE_error(USHORT number);	// overloaded to keep down param count
 static inline void translate_cp(TEXT* sz);
 static void expand_filename(const TEXT*, TEXT*);
 #ifndef SUPERSERVER
-static int output_main(SLONG, const UCHAR*);
+static int output_main(svc*, const UCHAR*);
 #endif
-static int common_main(int, char**, pfn_svc_output, SLONG);
+static int common_main(int, char**, pfn_svc_output, svc*);
 static void alice_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
 
 
@@ -122,10 +122,10 @@ static void alice_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
 //	Entry point for GFIX in case of service manager.
 //
 
-int ALICE_main(SVC service)
+int ALICE_main(svc* service)
 {
 	const int exit_code = common_main(service->svc_argc, service->svc_argv,
-					SVC_output, (SLONG) service);
+					SVC_output, service);
 
 	service->svc_handle = 0;
 	if (service->svc_service->in_use != NULL) {
@@ -153,7 +153,7 @@ int ALICE_main(SVC service)
 
 int CLIB_ROUTINE main(int argc, char* argv[])
 {
-	const int exit_code = common_main(argc, argv, output_main, (SLONG) NULL);
+	const int exit_code = common_main(argc, argv, output_main, NULL);
 
 	return exit_code;
 }
@@ -164,7 +164,7 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 //		Routine which is passed to GFIX for calling back when there is output.
 //
 
-static int output_main(SLONG output_data, const UCHAR* output_buf)
+static int output_main(svc* output_data, const UCHAR* output_buf)
 {
 	ib_fprintf(ib_stderr, "%s", output_buf);
 	return 0;
@@ -181,7 +181,7 @@ static int output_main(SLONG output_data, const UCHAR* output_buf)
 int common_main(int			argc,
 				char*		argv[],
 				pfn_svc_output	output_proc,
-				SLONG		output_data)
+				svc*		output_data)
 {
 #ifdef SERVICE_REDIRECT
 	SLONG	redir_in;

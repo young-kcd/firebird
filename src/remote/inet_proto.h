@@ -32,7 +32,7 @@ PORT	INET_analyze(TEXT*, USHORT*, ISC_STATUS*, TEXT*, TEXT*, USHORT,
 	const SCHAR*, SSHORT);
 PORT	INET_connect(TEXT*, struct packet*, ISC_STATUS*, USHORT,
 	const SCHAR*, SSHORT);
-PORT	INET_reconnect(HANDLE, TEXT *, ISC_STATUS *);
+PORT	INET_reconnect(HANDLE, ISC_STATUS*);
 PORT	INET_server(int);
 void	INET_set_clients(int);
 

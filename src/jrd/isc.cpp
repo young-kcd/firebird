@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.41 2003-10-29 10:53:14 robocop Exp $
+$Id: isc.cpp,v 1.42 2003-11-01 10:26:39 robocop Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -417,7 +417,7 @@ int INTERNAL_API_ROUTINE ISC_get_user(TEXT*	name,
 									  TEXT*	project,
 									  TEXT*	organization,
 									  int*	node,
-									  TEXT*	user_string)
+									  const TEXT*	user_string)
 {
 /**************************************
  *
@@ -431,11 +431,12 @@ int INTERNAL_API_ROUTINE ISC_get_user(TEXT*	name,
  **************************************/
 /* egid and euid need to be signed, uid_t is unsigned on SUN! */
 	SLONG egid, euid;
-	TEXT *p, *q, user_name[256];
-	struct passwd *passwd;
+	TEXT user_name[256];
+	TEXT* p = 0;
 
 	if (user_string && *user_string) {
-		for (p = user_name, q = user_string; (*p = *q++) && *p != '.'; p++);
+		const TEXT* q = user_string;
+		for (p = user_name; (*p = *q++) && *p != '.'; p++);
 		*p = 0;
 		p = user_name;
 		egid = euid = -1;
@@ -452,9 +453,9 @@ int INTERNAL_API_ROUTINE ISC_get_user(TEXT*	name,
 	else {
 		euid = (SLONG) geteuid();
 		egid = (SLONG) getegid();
-		passwd = getpwuid(euid);
-		if (passwd)
-			p = passwd->pw_name;
+		const struct passwd* password = getpwuid(euid);
+		if (password)
+			p = password->pw_name;
 		else
 			p = "";
 		endpwent();
@@ -491,7 +492,7 @@ int INTERNAL_API_ROUTINE ISC_get_user(
 									  TEXT* project,
 									TEXT* organization,
 									int* node,
-									TEXT* user_string)
+									const TEXT* user_string)
 {
 /**************************************
  *
@@ -505,10 +506,12 @@ int INTERNAL_API_ROUTINE ISC_get_user(
  **************************************/
 	SLONG privileges[2];
 	USHORT uic[2], len0, len1, len2;
-	TEXT *p, *q, *end, user_name[256];
+	TEXT user_name[256];
+	TEXT* p = 0;
 
 	if (user_string && *user_string) {
-		for (p = user_name, q = user_string; (*p = *q++) && *p != '.'; p++);
+		const TEXT* q = user_string;
+		for (p = user_name; (*p = *q++) && *p != '.'; p++);
 		*p = 0;
 		p = user_name;
 		uic[0] = uic[1] = -1;
@@ -590,7 +593,7 @@ int INTERNAL_API_ROUTINE ISC_get_user(TEXT*	name,
 									  TEXT*	project,
 									  TEXT*	organization,
 									  int*	node,
-									  TEXT*	user_string)
+									  const TEXT*	user_string)
 {
 /**************************************
  *
@@ -895,7 +898,7 @@ void API_ROUTINE ISC_prefix_msg(TEXT* string, const TEXT* root)
 
 
 #ifndef REQUESTER
-void ISC_set_user(TEXT * string)
+void ISC_set_user(const TEXT* string)
 {
 /**************************************
  *
@@ -908,8 +911,10 @@ void ISC_set_user(TEXT * string)
  *      support the concept, or support it badly.
  *
  **************************************/
-
-	strcpy(user_name, string);
+// CVC: And including a buffer overflow, too?
+// Using static data, not thread safe. Probably deprecated?
+	strncpy(user_name, string, sizeof(user_name));
+	user_name[sizeof(user_name) - 1] = 0;
 }
 #endif
 
@@ -1148,7 +1153,7 @@ static int wait_test(SSHORT * iosb)
 #undef _UNIX95
 #endif
 
-SLONG ISC_get_user_group_id(TEXT * user_group_name)
+SLONG ISC_get_user_group_id(const TEXT* user_group_name)
 {
 /**************************************
  *
@@ -1164,18 +1169,16 @@ SLONG ISC_get_user_group_id(TEXT * user_group_name)
  *                  ---  for UNIX platform  ---
  *
  **************************************/
-
-	struct group *user_group;
 	SLONG n = 0;
 
-
-	if ( (user_group = getgrnam(user_group_name)) )
+	const struct group* user_group = getgrnam(user_group_name);
+	if (user_group)
 		n = user_group->gr_gid;
 
 	return (n);
 }
 #else
-SLONG ISC_get_user_group_id(TEXT * user_group_name)
+SLONG ISC_get_user_group_id(const TEXT* user_group_name)
 {
 /**************************************
  *

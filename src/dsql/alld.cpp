@@ -63,7 +63,7 @@ nested FOR loops are added.
 
 #include "../include/fb_vector.h"
 
-DsqlMemoryPool *DSQL_permanent_pool = 0;
+DsqlMemoryPool* DSQL_permanent_pool = 0;
 typedef Firebird::vector<DsqlMemoryPool*> pool_vec_t;
 static bool init_flag = false;
 static Firebird::vector<DsqlMemoryPool*> *pools = 0;
@@ -135,7 +135,7 @@ BLK DsqlMemoryPool::ALLD_pop(DLLS *stack)
 
 DsqlMemoryPool* DsqlMemoryPool::createPool()
 {
-	DsqlMemoryPool *result = (DsqlMemoryPool *)internal_create(sizeof(DsqlMemoryPool));
+	DsqlMemoryPool* result = (DsqlMemoryPool*)internal_create(sizeof(DsqlMemoryPool));
 	new (&result->lls_cache) BlockCache<class dsql_lls> (*result);
 	
 	if (!DSQL_permanent_pool)
@@ -164,7 +164,7 @@ DsqlMemoryPool* DsqlMemoryPool::createPool()
 	return NULL; //silencer
 }
 
-void DsqlMemoryPool::deletePool(DsqlMemoryPool *pool)
+void DsqlMemoryPool::deletePool(DsqlMemoryPool* pool)
 {
 	pool->lls_cache.~BlockCache<class dsql_lls>();
 	MemoryPool::deletePool(pool);
@@ -181,3 +181,4 @@ void DsqlMemoryPool::deletePool(DsqlMemoryPool *pool)
 		}
 	}
 }
+

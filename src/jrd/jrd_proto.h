@@ -93,9 +93,9 @@ ISC_STATUS jrd8_que_events(ISC_STATUS *, struct att **, SLONG *,
 										 SSHORT, UCHAR *, FPTR_VOID, void *);
 ISC_STATUS jrd8_receive(ISC_STATUS *, struct jrd_req **, USHORT, USHORT,
 									  SCHAR *, SSHORT);
-ISC_STATUS jrd8_reconnect_transaction(ISC_STATUS *, struct att **,
-													struct jrd_tra **, SSHORT,
-													UCHAR *);
+ISC_STATUS jrd8_reconnect_transaction(ISC_STATUS*, struct att**,
+													struct jrd_tra**, SSHORT,
+													const UCHAR*);
 ISC_STATUS jrd8_release_request(ISC_STATUS *, struct jrd_req **);
 ISC_STATUS jrd8_request_info(ISC_STATUS*, struct jrd_req**, SSHORT,
 										   SSHORT, const SCHAR*, SSHORT, SCHAR*);
@@ -159,7 +159,7 @@ USHORT	JRD_getdir(TEXT*, USHORT);
 #endif
 
 #ifdef DEBUG_PROCS
-void	JRD_print_procedure_info(TDBB, char *);
+void	JRD_print_procedure_info(TDBB, const char*);
 #endif
 
 #ifdef __cplusplus

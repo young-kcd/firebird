@@ -79,8 +79,8 @@ static bool check_hex(const TEXT*, USHORT);
 static bool check_number(const TEXT*, USHORT);
 static bool check_user_group(const TEXT*, USHORT, STR*, ULONG*);
 static bool check_string(const TEXT*, const TEXT*);
-static SLONG compute_access(TDBB, SCL, JRD_REL, const TEXT*, const TEXT*);
-static TEXT *save_string(TEXT*, TEXT**);
+static SLONG compute_access(TDBB, const scl*, JRD_REL, const TEXT*, const TEXT*);
+static TEXT* save_string(const TEXT*, TEXT**);
 static SLONG walk_acl(TDBB, const TEXT*, JRD_REL, const TEXT*, const TEXT*, STR*, ULONG*);
 
 static inline void check_and_move(UCHAR*& to, UCHAR from, STR& start, ULONG* length_ptr)
@@ -95,7 +95,7 @@ static inline void check_and_move(UCHAR*& to, UCHAR from, STR& start, ULONG* len
 typedef struct {
 	USHORT p_names_priv;
 	USHORT p_names_acl;
-	const TEXT *p_names_string;
+	const TEXT* p_names_string;
 } P_NAMES;
 
 static const P_NAMES p_names[] =
@@ -115,7 +115,7 @@ static const P_NAMES p_names[] =
 };
 
 
-void SCL_check_access(SCL s_class,
+void SCL_check_access(const scl* s_class,
 					  SLONG view_id,
 					  const TEXT* trg_name,
 					  const TEXT* prc_name,
@@ -545,7 +545,7 @@ int SCL_get_mask(const TEXT* relation_name, const TEXT* field_name)
 
 
 void SCL_init(bool create,
-			  TEXT* sys_user_name,
+			  const TEXT* sys_user_name,
 			  TEXT* user_name,
 			  TEXT* password,
 			  TEXT* password_enc,
@@ -789,8 +789,6 @@ void SCL_move_priv(UCHAR** acl_ptr, USHORT mask, STR* start_ptr, ULONG* length_p
  *	Given a mask of privileges, move privileges types to acl.
  *
  **************************************/
-	const P_NAMES *priv;
-
 	UCHAR* p = *acl_ptr;
 
 	// Terminate identification criteria, and move privileges
@@ -798,7 +796,7 @@ void SCL_move_priv(UCHAR** acl_ptr, USHORT mask, STR* start_ptr, ULONG* length_p
 	check_and_move(p, ACL_end, *start_ptr, length_ptr);
 	check_and_move(p, ACL_priv_list, *start_ptr, length_ptr);
 
-	for (priv = p_names; priv->p_names_priv; priv++)
+	for (const P_NAMES* priv = p_names; priv->p_names_priv; priv++)
 	{
 		if (mask & priv->p_names_priv)
 		{
@@ -1060,7 +1058,7 @@ static bool check_string(const TEXT* acl, const TEXT* string)
 
 
 static SLONG compute_access(TDBB tdbb,
-							SCL s_class,
+							const scl* s_class,
 							JRD_REL view,
 							const TEXT* trg_name,
 							const TEXT* prc_name)
@@ -1158,7 +1156,7 @@ static SLONG compute_access(TDBB tdbb,
 }
 
 
-static TEXT *save_string(TEXT* string, TEXT** ptr)
+static TEXT* save_string(const TEXT* string, TEXT** ptr)
 {
 /**************************************
  *

@@ -43,3 +43,4 @@ USHORT InternalInfo::getMask(internal_info_id info_id)
 {
 	return attr_array[info_id].req_mask;
 }
+

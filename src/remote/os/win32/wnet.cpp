@@ -83,14 +83,14 @@ static PORT		aux_request(PORT, PACKET *);
 static void		cleanup_port(PORT);
 static void		disconnect(PORT);
 static void		exit_handler(PORT);
-static STR		make_pipe_name(TEXT *, TEXT *, TEXT *);
+static STR		make_pipe_name(const TEXT*, const TEXT*, const TEXT*);
 static PORT		receive(PORT, PACKET *);
 static int		send_full(PORT, PACKET *);
 static int		send_partial(PORT, PACKET *);
 static int		xdrwnet_create(XDR *, PORT, UCHAR *, USHORT, enum xdr_op);
 static bool_t	xdrwnet_endofrecord(XDR *, int);
 static int		wnet_destroy(XDR *);
-static int		wnet_error(PORT, TEXT *, ISC_STATUS, int);
+static int		wnet_error(PORT, const TEXT*, ISC_STATUS, int);
 static void		wnet_gen_error(PORT, ISC_STATUS, ...);
 static bool_t	wnet_getbytes(XDR *, SCHAR *, u_int);
 static bool_t	wnet_getlong(XDR *, SLONG *);
@@ -102,10 +102,10 @@ static bool_t	wnet_read(XDR *);
 static bool_t	wnet_setpostn(XDR *, u_int);
 static bool_t	wnet_write(XDR *, int);
 #ifdef DEBUG
-static void		packet_print(TEXT *, UCHAR *, int);
+static void		packet_print(const TEXT*, const UCHAR*, const int);
 #endif
 static int		packet_receive(PORT, UCHAR *, SSHORT, SSHORT *);
-static int		packet_send(PORT, SCHAR *, SSHORT);
+static int		packet_send(PORT, const SCHAR*, SSHORT);
 static void		wnet_copy(const SCHAR*, SCHAR*, int);
 static void		wnet_make_file_name(TEXT *, DWORD);
 
@@ -129,7 +129,7 @@ static xdr_t::xdr_ops wnet_ops =
 PORT WNET_analyze(	TEXT*	file_name,
 					USHORT*	file_length,
 					ISC_STATUS*	status_vector,
-					TEXT*	node_name,
+					const TEXT*	node_name,
 					TEXT*	user_string,
 					USHORT	uv_flag)
 {
@@ -344,7 +344,7 @@ PORT WNET_analyze(	TEXT*	file_name,
 }
 
 
-PORT WNET_connect(TEXT*		name,
+PORT WNET_connect(const TEXT*		name,
 				  PACKET*	packet,
 				  ISC_STATUS*	status_vector,
 				  USHORT	flag)
@@ -531,7 +531,7 @@ PORT WNET_connect(TEXT*		name,
 }
 
 
-PORT WNET_reconnect(HANDLE handle, TEXT * name, ISC_STATUS * status_vector)
+PORT WNET_reconnect(HANDLE handle, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -545,9 +545,7 @@ PORT WNET_reconnect(HANDLE handle, TEXT * name, ISC_STATUS * status_vector)
  *	a port block.
  *
  **************************************/
-	PORT port;
-
-	port = alloc_port(0);
+	PORT port = alloc_port(0);
 	port->port_status_vector = status_vector;
 	status_vector[0] = gds_arg_gds;
 	status_vector[1] = 0;
@@ -555,7 +553,7 @@ PORT WNET_reconnect(HANDLE handle, TEXT * name, ISC_STATUS * status_vector)
 
 	if (port->port_connection)
 		ALLR_free(port->port_connection);
-	port->port_connection = make_pipe_name(name, SERVER_PIPE_SUFFIX, 0);
+	port->port_connection = make_pipe_name(NULL, SERVER_PIPE_SUFFIX, 0);
 
 	port->port_handle = handle;
 	port->port_server_flags |= SRVR_server;
@@ -577,9 +575,7 @@ PORT WNET_server(void *handle)
  *	established.  Set up port block with the appropriate socket.
  *
  **************************************/
-	PORT port;
-
-	port = alloc_port(0);
+	PORT port = alloc_port(0);
 	port->port_server_flags |= SRVR_server;
 	port->port_handle = (HANDLE) handle;
 
@@ -601,7 +597,7 @@ static int accept_connection( PORT port, P_CNCT * cnct)
  *	response for protocol selection.
  *
  **************************************/
-	TEXT name[64], password[64], *id, *end, *p;
+	TEXT name[64], password[64], *p;
 	STR string;
 	int i, length, l;
 	BOOL revert_flag;
@@ -618,8 +614,8 @@ static int accept_connection( PORT port, P_CNCT * cnct)
 
 /* Pick up account and password, if given */
 
-	id = (TEXT *) cnct->p_cnct_user_id.cstr_address;
-	end = id + cnct->p_cnct_user_id.cstr_length;
+	const TEXT* id = (TEXT *) cnct->p_cnct_user_id.cstr_address;
+	const TEXT* const end = id + cnct->p_cnct_user_id.cstr_length;
 
 #ifndef REQUESTER
 	user_verification = 0;
@@ -633,9 +629,9 @@ static int accept_connection( PORT port, P_CNCT * cnct)
 			string->str_length = length;
 			if (length) {
 				p = (TEXT *) string->str_data;
-				do
+				do {
 					*p++ = *id++;
-				while (--l);
+				} while (--l);
 			}
 			strncpy(name, string->str_data, length);
 			name[length] = (TEXT) 0;
@@ -644,9 +640,9 @@ static int accept_connection( PORT port, P_CNCT * cnct)
 		case CNCT_passwd:
 			p = password;
 			if ((length = *id++) != 0)
-				do
+				do {
 					*p++ = *id++;
-				while (--length);
+				} while (--length);
 			*p = 0;
 			break;
 
@@ -700,10 +696,9 @@ static PORT alloc_port( PORT parent)
  *	and initialize input and output XDR streams.
  *
  **************************************/
-	PORT port;
 	TEXT buffer[64];
 
-	port = (PORT) ALLOCV(type_port, BUFFER_SIZE * 2);
+	PORT port = (PORT) ALLOCV(type_port, BUFFER_SIZE * 2);
 	port->port_type = port_pipe;
 	port->port_state = state_pending;
 
@@ -762,7 +757,6 @@ static PORT aux_connect( PORT port, PACKET * packet, XDR_INT(*ast) (void))
 	PORT new_port;
 	ISC_STATUS status;
 	TEXT *p, str_pid[32];
-	P_RESP *response;
 
 #ifndef REQUESTER
 /* If this is a server, we're got an auxiliary connection.  Accept it */
@@ -785,7 +779,7 @@ static PORT aux_connect( PORT port, PACKET * packet, XDR_INT(*ast) (void))
  * create a unique pipe name.
  */
 
-	response = &packet->p_resp;
+	P_RESP* response = &packet->p_resp;
 
 	if (response->p_resp_data.cstr_length) {
 		wnet_copy(reinterpret_cast<const char*>(response->p_resp_data.cstr_address),
@@ -826,7 +820,7 @@ static PORT aux_connect( PORT port, PACKET * packet, XDR_INT(*ast) (void))
 }
 
 
-static PORT aux_request( PORT port, PACKET * packet)
+static port* aux_request( PORT vport, PACKET * packet)
 {
 /**************************************
  *
@@ -842,25 +836,20 @@ static PORT aux_request( PORT port, PACKET * packet)
  *	generate a unique id based on connection.
  *
  **************************************/
-	PORT new_port;
-	P_RESP *response;
-	DWORD server_pid;
+	port* new_port = NULL;  // If this is the client, we will return NULL
+
+#ifndef REQUESTER
+	const DWORD server_pid = GetCurrentProcessId();
+	vport->port_async = new_port = alloc_port(vport->port_parent);
+	new_port->port_server_flags = vport->port_server_flags;
+	new_port->port_flags = vport->port_flags & PORT_no_oob;
+
 	TEXT str_pid[32];
-#ifndef REQUESTER
-	LPSECURITY_ATTRIBUTES security_attr;
-#endif /* REQUESTER */
-
-#ifndef REQUESTER
-	server_pid = GetCurrentProcessId();
-	port->port_async = new_port = alloc_port(port->port_parent);
-	new_port->port_server_flags = port->port_server_flags;
-	new_port->port_flags = port->port_flags & PORT_no_oob;
-
 	wnet_make_file_name(str_pid, server_pid);
 	new_port->port_connection =
-		make_pipe_name(port->port_connection->str_data, EVENT_PIPE_SUFFIX, str_pid);
+		make_pipe_name(vport->port_connection->str_data, EVENT_PIPE_SUFFIX, str_pid);
 
-	security_attr = ISC_get_security_desc();
+	LPSECURITY_ATTRIBUTES security_attr = ISC_get_security_desc();
 	THREAD_EXIT;
 	new_port->port_handle =
 		CreateNamedPipe(new_port->port_connection->str_data,
@@ -879,7 +868,7 @@ static PORT aux_request( PORT port, PACKET * packet)
 		return NULL;
 	}
 
-	response = &packet->p_resp;
+	P_RESP* response = &packet->p_resp;
 	response->p_resp_data.cstr_length = strlen(str_pid);
 	wnet_copy(str_pid,
 			  reinterpret_cast<char*>(response->p_resp_data.cstr_address),
@@ -1015,17 +1004,15 @@ static void exit_handler( PORT main_port)
  *	to allow restart.
  *
  **************************************/
-	PORT port;
-
-	for (port = main_port; port; port = port->port_next)
-		CloseHandle(port->port_handle);
+	for (port* vport = main_port; vport; vport = vport->port_next)
+		CloseHandle(vport->port_handle);
 }
 
 
 static STR make_pipe_name(
-						  TEXT * connect_name,
-						  TEXT * suffix_name,
-						  TEXT * str_pid)
+						  const TEXT* connect_name,
+						  const TEXT* suffix_name,
+						  const TEXT* str_pid)
 {
 /**************************************
  *
@@ -1040,11 +1027,10 @@ static STR make_pipe_name(
  *	If a server pid != 0, append it to pipe name  as <>/<pid>
  *
  **************************************/
-	TEXT buffer[128], *p, *q, *protocol;
-	TEXT pid[32];
+	TEXT buffer[128];
 
-	p = connect_name;
-	q = buffer;
+	const TEXT* p = connect_name;
+	TEXT* q = buffer;
 
 	if (!p || *p++ != '\\' || *p++ != '\\')
 		p = ".";
@@ -1054,8 +1040,9 @@ static STR make_pipe_name(
 	while (*p && *p != '\\' && *p != '@')
 		*q++ = *p++;
 
+	const TEXT* protocol = 0;
 	if (!*p)
-		protocol = const_cast<TEXT*>(Config::getRemoteServiceName());
+		protocol = Config::getRemoteServiceName();
 	else if (*p == '@')
 		protocol = p + 1;
 	else {
@@ -1078,6 +1065,7 @@ static STR make_pipe_name(
 	strcpy(q, protocol);
 
 	if (str_pid) {
+		TEXT pid[32];
 		sprintf(pid, "\\%s", str_pid);
 		strcat(buffer, pid);
 	}
@@ -1207,7 +1195,7 @@ static int wnet_destroy( XDR * xdrs)
 
 static int wnet_error(
 					  PORT port,
-					  TEXT * function, ISC_STATUS operation, int status)
+					  const TEXT* function, ISC_STATUS operation, int status)
 {
 /**************************************
  *
@@ -1223,10 +1211,9 @@ static int wnet_error(
  **************************************/
 	TEXT msg[64];
 	TEXT node_name[MAXPATHLEN];
-	TEXT *p;
 
 	strcpy(node_name, ((SCHAR *) port->port_connection->str_data) + 2);
-	p = strchr(node_name, '\\');
+	TEXT* p = strchr(node_name, '\\');
 	if (p != NULL)
 		*p = '\0';
 
@@ -1265,12 +1252,10 @@ static void wnet_gen_error( PORT port, ISC_STATUS status, ...)
  *	save the status vector strings in a permanent place.
  *
  **************************************/
-	ISC_STATUS *status_vector;
-
 	port->port_flags |= PORT_broken;
 	port->port_state = state_broken;
 
-	status_vector = NULL;
+	ISC_STATUS* status_vector = NULL;
 	if (port->port_context != NULL)
 		status_vector = port->port_context->rdb_status_vector;
 	if (status_vector == NULL)
@@ -1476,11 +1461,9 @@ static bool_t wnet_putlong( XDR * xdrs, SLONG * lp)
  *	Fetch a longword into a memory stream if it fits.
  *
  **************************************/
-	SLONG l;
-
-	l = htonl(*lp);
+	const SLONG l = htonl(*lp);
 	return (*xdrs->x_ops->x_putbytes) (xdrs,
-									   reinterpret_cast < char *>(AOF32L(l)),
+									   reinterpret_cast<const char*>(AOF32L(l)),
 									   4);
 }
 
@@ -1585,26 +1568,20 @@ static bool_t wnet_write( XDR * xdrs, bool_t end_flag)
  *	load.
  *
  **************************************/
-	SCHAR *p;
-	PORT port;
-	SSHORT l, length;
-
 /* Encode the data portion of the packet */
 
-	port = (PORT) xdrs->x_public;
-	p = xdrs->x_base;
-	length = xdrs->x_private - p;
+	port* vport = (PORT) xdrs->x_public;
+	const SCHAR* p = xdrs->x_base;
+	SSHORT length = xdrs->x_private - p;
 
 /* Send data in manageable hunks.  If a packet is partial, indicate
    that with a negative length.  A positive length marks the end. */
 
-	p = xdrs->x_base;
-
 	while (length) {
-		port->port_misc1 = (port->port_misc1 + 1) % MAX_SEQUENCE;
-		l = MIN(length, MAX_DATA);
+		vport->port_misc1 = (vport->port_misc1 + 1) % MAX_SEQUENCE;
+		const SSHORT l = MIN(length, MAX_DATA);
 		length -= l;
-		if (!packet_send(port, p, (SSHORT) (length ? -l : l)))
+		if (!packet_send(vport, p, (SSHORT) (length ? -l : l)))
 			return FALSE;
 		p += l;
 	}
@@ -1617,7 +1594,8 @@ static bool_t wnet_write( XDR * xdrs, bool_t end_flag)
 
 
 #ifdef DEBUG
-static void packet_print( TEXT * string, UCHAR * packet, int length)
+static void packet_print(const TEXT* string, const UCHAR* packet,
+	const int length)
 {
 /**************************************
  *
@@ -1684,7 +1662,7 @@ static int packet_receive(
 }
 
 
-static int packet_send( PORT port, SCHAR * buffer, SSHORT buffer_length)
+static int packet_send( PORT port, const SCHAR* buffer, SSHORT buffer_length)
 {
 /**************************************
  *
@@ -1696,15 +1674,13 @@ static int packet_send( PORT port, SCHAR * buffer, SSHORT buffer_length)
  *	Send some data on it's way.  
  *
  **************************************/
-	SCHAR *data;
-	DWORD n, length;
-	USHORT status;
+	DWORD n;
 
-	data = buffer;
-	length = buffer_length;
+	const SCHAR* data = buffer;
+	const DWORD length = buffer_length;
 
 	THREAD_EXIT;
-	status = WriteFile(port->port_handle, data, length, &n, NULL);
+	const USHORT status = WriteFile(port->port_handle, data, length, &n, NULL);
 	THREAD_ENTER;
 	if (!status)
 		return wnet_error(port, "WriteFile", isc_net_write_err, ERRNO);

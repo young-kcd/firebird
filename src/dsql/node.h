@@ -381,7 +381,7 @@ enum nod_flags_vals {
 };
 
 /* Parameters to MAKE_constant */
-enum constant_type {
+enum dsql_constant_type {
 	CONSTANT_STRING		= 0, // stored as a string
 	CONSTANT_SLONG		= 1, // stored as a SLONG
 	CONSTANT_DOUBLE		= 2, // stored as a string

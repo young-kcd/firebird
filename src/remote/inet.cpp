@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.81 2003-10-31 11:33:44 eku Exp $
+$Id: inet.cpp,v 1.82 2003-11-01 10:26:41 robocop Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -1088,7 +1088,7 @@ PORT INET_connect(TEXT* name,
 	}
 }
 
-PORT INET_reconnect(HANDLE handle, TEXT* name, ISC_STATUS* status_vector)
+PORT INET_reconnect(HANDLE handle, ISC_STATUS* status_vector)
 {
 /**************************************
  *

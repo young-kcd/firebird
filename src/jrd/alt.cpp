@@ -518,10 +518,11 @@ ISC_STATUS API_ROUTINE gds__receive(ISC_STATUS * status_vector,
 					   msg_length, (SCHAR *) msg, req_level);
 }
 
-ISC_STATUS API_ROUTINE gds__reconnect_transaction(ISC_STATUS * status_vector,
-											  FRBRD **db_handle,
-											  FRBRD **tra_handle,
-											  SSHORT msg_length, SCHAR * msg)
+ISC_STATUS API_ROUTINE gds__reconnect_transaction(ISC_STATUS* status_vector,
+											  FRBRD** db_handle,
+											  FRBRD** tra_handle,
+											  SSHORT msg_length,
+											  const SCHAR* msg)
 {
 	return isc_reconnect_transaction(status_vector, db_handle, tra_handle,
 									 msg_length, msg);

@@ -3700,7 +3700,7 @@ gc_exit:
 			delete rpb.rpb_record;	/* Possibly allocated from permanent pool. */
 		}
 		if (transaction) {
-			TRA_commit(tdbb, transaction, FALSE);
+			TRA_commit(tdbb, transaction, false);
 		}
 		if (tdbb->tdbb_attachment) {
 			LCK_fini(tdbb, LCK_OWNER_attachment);

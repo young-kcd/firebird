@@ -249,7 +249,7 @@ ENTRYPOINT( "gds_reconnect_transaction",
 			PSI5_reconnect_transaction,
 		  "_jrd8_reconnect_transaction",
 		     IPI_reconnect_transaction,
-			 (ISC_STATUS*, struct att**, struct jrd_tra**, SSHORT, UCHAR*))
+			 (ISC_STATUS*, struct att**, struct jrd_tra**, SSHORT, const UCHAR*))
 
 ENTRYPOINT( "gds_receive",
 		    jrd8_receive,

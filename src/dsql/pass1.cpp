@@ -154,7 +154,7 @@
 #include "../jrd/thd_proto.h"
 
 #ifdef DEV_BUILD
-extern void DSQL_pretty(dsql_nod*, int);
+extern void DSQL_pretty(const dsql_nod*, int);
 #endif
 
 static bool aggregate_found(DSQL_REQ, DSQL_NOD);
@@ -3459,7 +3459,7 @@ static DSQL_NOD pass1_derived_table(DSQL_REQ request, DSQL_NOD input, bool proc_
    if an unqualified field appears in more than one context
    and hence it returns the number of occurrences. This was
    added to allow the caller to detect ambiguous commands like
-   select  from t1 join t2 on t1.f=t2.f order by common_field.
+   select  from t1 join t2 on t1.f = t2.f order by common_field.
    While inoffensive on inner joins, it changes the result on outer joins.
  
 

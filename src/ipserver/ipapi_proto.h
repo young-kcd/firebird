@@ -80,9 +80,9 @@ ISC_STATUS IPI_receive(ISC_STATUS *, struct irq **, SSHORT, SSHORT,
 									 , USHORT, ULONG
 #endif
 	);
-ISC_STATUS IPI_reconnect_transaction(ISC_STATUS *, struct idb **,
-												   struct itr **, SSHORT,
-												   UCHAR *);
+ISC_STATUS IPI_reconnect_transaction(ISC_STATUS*, struct idb**,
+												   struct itr**, SSHORT,
+												   const UCHAR*);
 ISC_STATUS IPI_release_request(ISC_STATUS *, struct irq **);
 ISC_STATUS IPI_request_info(ISC_STATUS*, struct irq**, USHORT,
 										  SSHORT, const UCHAR*, SSHORT, UCHAR*);

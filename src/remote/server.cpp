@@ -4600,7 +4600,7 @@ ISC_STATUS port::start_transaction(P_OP operation, P_STTR * stuff, PACKET* send)
 	if (operation == op_reconnect)
 		isc_reconnect_transaction(status_vector, &rdb->rdb_handle, &handle,
 								  stuff->p_sttr_tpb.cstr_length,
-								  reinterpret_cast<char*>(stuff->p_sttr_tpb.cstr_address));
+								  reinterpret_cast<const char*>(stuff->p_sttr_tpb.cstr_address));
 	else
 		isc_start_transaction(status_vector, &handle, (SSHORT) 1, &rdb->rdb_handle,
 							  stuff->p_sttr_tpb.cstr_length,

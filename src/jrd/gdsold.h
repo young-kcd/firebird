@@ -180,11 +180,11 @@ ISC_STATUS GDS_EXPORT gds__receive(ISC_STATUS  *,
 								   void  *,
 								   short);
 
-ISC_STATUS GDS_EXPORT gds__reconnect_transaction(ISC_STATUS  *,
-												 FRBRD  **,
-												 FRBRD  **,
+ISC_STATUS GDS_EXPORT gds__reconnect_transaction(ISC_STATUS*,
+												 FRBRD**,
+												 FRBRD**,
 												 short,
-												 char  *);
+												 const char*);
 
 ISC_STATUS GDS_EXPORT gds__request_info(ISC_STATUS*,
 										FRBRD**,

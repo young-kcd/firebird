@@ -532,7 +532,7 @@ const int TRIGGER_SEQUENCE_DEFAULT	= 0;
 /* field block, used to hold local field definitions */
 
 typedef struct burp_fld {
-	burp_fld	*fld_next;
+	burp_fld*	fld_next;
 	SSHORT		fld_type;
 	SSHORT		fld_sub_type;
 	FLD_LENGTH	fld_length;
@@ -584,8 +584,8 @@ enum fld_flags_vals {
 /* relation definition - holds useful relation type stuff */
 
 typedef struct burp_rel {
-	burp_rel	*rel_next;
-	burp_fld	*rel_fields;
+	burp_rel*	rel_next;
+	burp_fld*	rel_fields;
 	SSHORT		rel_flags;
 	SSHORT		rel_id;
 	SSHORT		rel_name_length;
@@ -607,7 +607,7 @@ enum burp_rel_flags_vals {
 /* procedure definition - holds useful procedure type stuff */
 
 typedef struct burp_prc {
-	burp_prc	*prc_next;
+	burp_prc*	prc_next;
 	SSHORT		prc_name_length;
 	GDS_NAME	prc_name;
 	GDS_NAME	prc_owner;		/* relation owner, if not us */
@@ -619,7 +619,7 @@ typedef struct gfld {
 	ISC_QUAD	gfld_vb;
 	ISC_QUAD	gfld_vs;
 	ISC_QUAD	gfld_vs2;
-	gfld		*gfld_next;
+	gfld*		gfld_next;
 	USHORT		gfld_flags;
 } *GFLD;
 
@@ -649,32 +649,41 @@ const int MAX_FILE_NAME_LENGTH		= 256;
 /* typedef the file descriptor type to make things cleaner */
 
 #ifdef WIN_NT
-typedef void *DESC;
+typedef void* DESC;
+
 inline static void close_platf(DESC file)
 {
 	CloseHandle(file);
 }
-inline static void unlink_platf(TEXT * file_name)
+
+inline static void unlink_platf(const TEXT* file_name)
 {
 	DeleteFile(file_name);
 }
+
 inline static void flush_platf(DESC file)
 {
 	FlushFileBuffers(file);
 }
+
 #else
+
 typedef int DESC;
+
 inline static void close_platf(DESC file)
 {
 	close(file);
 }
-inline static void unlink_platf(TEXT * file_name)
+
+inline static void unlink_platf(const TEXT* file_name)
 {
 	unlink(file_name);
 }
+
 inline static void flush_platf(DESC file)
 {
 }
+
 const int INVALID_HANDLE_VALUE	= -1;
 #endif /* WIN_NT */
 
@@ -689,8 +698,8 @@ typedef enum {
 } SIZE_CODE;
 
 typedef struct fil {
-	fil			*fil_next;
-	TEXT		*fil_name;
+	fil*		fil_next;
+	TEXT*		fil_name;
 	ULONG		fil_length;
 	DESC		fil_fd;
 	USHORT		fil_seq;
@@ -736,9 +745,9 @@ typedef struct hdr_split {
    to 18. Otherwise we will not be able to join the gbk files v5.x */
 
 const size_t HDR_SPLIT_SIZE	= sizeof(hdr_split);
-static const char *HDR_SPLIT_TAG5	= "InterBase/gsplit, ";
-static const char *HDR_SPLIT_TAG6	= "InterBase/gbak,   ";
-static const char *HDR_SPLIT_TAG	= HDR_SPLIT_TAG6;
+static const char* HDR_SPLIT_TAG5	= "InterBase/gsplit, ";
+static const char* HDR_SPLIT_TAG6	= "InterBase/gbak,   ";
+static const char* HDR_SPLIT_TAG	= HDR_SPLIT_TAG6;
 const unsigned int MIN_SPLIT_SIZE	= 2048;	/* bytes */
 
 /* Global switches and data */
@@ -767,9 +776,9 @@ typedef struct tgbl
 	USHORT		gbl_sw_convert_ext_tables;
 	bool		gbl_sw_mode;
 	bool		gbl_sw_mode_val;
-	SCHAR		*gbl_sw_sql_role;
-	SCHAR		*gbl_sw_user;
-	SCHAR		*gbl_sw_password;
+	SCHAR*		gbl_sw_sql_role;
+	SCHAR*		gbl_sw_user;
+	SCHAR*		gbl_sw_password;
 	SLONG		gbl_sw_skip_count;
 	SLONG		gbl_sw_page_buffers;
 	FIL			gbl_sw_files;
@@ -780,8 +789,8 @@ typedef struct tgbl
 	redirect_vals	sw_redirect;
 	UCHAR		dpb_string[100];
 	SSHORT		dpb_length;
-	UCHAR		*burp_env;
-	UCHAR		*io_ptr;
+	UCHAR*		burp_env;
+	UCHAR*		io_ptr;
 	int			io_cnt;
 	BURP_REL	relations;
 	BURP_PRC	procedures;
@@ -790,12 +799,12 @@ typedef struct tgbl
 	ULONG		mvol_io_buffer_size;
 	ULONG		mvol_actual_buffer_size;
 	UINT64		mvol_cumul_count;
-	UCHAR		*mvol_io_ptr;
+	UCHAR*		mvol_io_ptr;
 	int			mvol_io_cnt;
-	UCHAR		*mvol_io_buffer;
-	UCHAR		*mvol_io_volume;
-	UCHAR		*mvol_io_header;
-	UCHAR		*mvol_io_data;
+	UCHAR*		mvol_io_buffer;
+	UCHAR*		mvol_io_volume;
+	UCHAR*		mvol_io_header;
+	UCHAR*		mvol_io_data;
 	TEXT		mvol_db_name_buffer [MAX_FILE_NAME_LENGTH];
 	SCHAR		mvol_old_file [MAX_FILE_NAME_LENGTH];
 	int			mvol_volume_count;
@@ -804,13 +813,13 @@ typedef struct tgbl
 	isc_tr_handle	tr_handle;
 	isc_tr_handle	global_trans;
 	DESC		file_desc;
-	ISC_STATUS	*status;		/* points to either the tdgbl status or service status */
+	ISC_STATUS*	status;		/* points to either the tdgbl status or service status */
 	ISC_STATUS_ARRAY status_vector;
 	int			exit_code;
-	UCHAR		*head_of_mem_list;
+	UCHAR*		head_of_mem_list;
 	pfn_svc_output	output_proc;
-	SLONG		output_data;
-	IB_FILE		*output_file;
+	svc*		output_data;
+	IB_FILE*	output_file;
 	SVC			service_blk;
 	/*
 	 * Link list of global fields that were converted from V3 sub_type
@@ -881,7 +890,7 @@ typedef struct tgbl
 				tdgbl->tgbl_thd_data.thdd_type = THDD_TYPE_TGBL
 #define RESTORE_THREAD_DATA	 THD_restore_specific();
 #else
-extern tgbl *gdgbl;
+extern tgbl* gdgbl;
 
 #define GET_THREAD_DATA			(gdgbl)
 #define SET_THREAD_DATA		 gdgbl = const_cast<tgbl*>(tdgbl); \
@@ -916,7 +925,7 @@ const int GBAK_IO_BUFFER_SIZE = (16 * (IO_BUFFER_SIZE));
  */
 
 const int BURP_BLOCK		= 512;
-inline static ULONG BURP_UP_TO_BLOCK(ULONG size)
+inline static ULONG BURP_UP_TO_BLOCK(const ULONG size)
 {
 	return (((size) + BURP_BLOCK - 1) & ~(BURP_BLOCK - 1));
 }
@@ -947,24 +956,26 @@ enum burp_messages_vals {
 	msgVerbose_restore_collation	= 216
 };
 
-inline static void stuff(UCHAR **blr, int byte)
+inline static void stuff(UCHAR** blr, const int byte)
 {
-	UCHAR *ptr = *blr;
+	UCHAR* ptr = *blr;
 	*ptr++ = (SCHAR) (byte);
 	*blr = ptr;
 }
-inline static void stuff_word(UCHAR **blr, int word)
+
+inline static void stuff_word(UCHAR** blr, const int word)
 {
 	stuff(blr, word);
 	stuff(blr, (word) >> 8);
 }
-inline static void stuff_long(UCHAR **blr, long lg)
+
+inline static void stuff_long(UCHAR** blr, const long lg)
 {
 	stuff_word(blr, lg);
 	stuff_word(blr, (lg) >> 16);
 }
 
-inline static void stuff_int64(UCHAR **blr, SINT64 i64)
+inline static void stuff_int64(UCHAR** blr, const SINT64 i64)
 {
 	stuff_long(blr, i64);
 	stuff_long(blr, (i64) >> 32);

@@ -3496,7 +3496,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 
 ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
 					 RDB* db_handle,
-					 RTR* rtr_handle, USHORT length, UCHAR* id)
+					 RTR* rtr_handle, USHORT length, const UCHAR* id)
 {
 /**************************************
  *
@@ -3507,15 +3507,12 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
  * Functional description
  *
  **************************************/
-	PACKET *packet;
-	P_STTR *trans;
-	RDB rdb;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
 
 	NULL_CHECK(rtr_handle, gds_bad_trans_handle);
-	rdb = *db_handle;
+	RDB rdb = *db_handle;
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
@@ -3523,12 +3520,12 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
 
 	try
 	{
-		packet = &rdb->rdb_packet;
+		PACKET* packet = &rdb->rdb_packet;
 		packet->p_operation = op_reconnect;
-		trans = &packet->p_sttr;
+		P_STTR* trans = &packet->p_sttr;
 		trans->p_sttr_database = rdb->rdb_id;
 		trans->p_sttr_tpb.cstr_length = length;
-		trans->p_sttr_tpb.cstr_address = id;
+		trans->p_sttr_tpb.cstr_address = const_cast<UCHAR*>(id);
 
 		if (send_and_receive(rdb, packet, user_status)) {
 			return error(user_status);

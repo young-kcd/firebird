@@ -80,7 +80,6 @@ static void xnet_on_server_shutdown(PORT port);
 #else
 static TEXT XNET_command_line[MAXPATHLEN + 32], *XNET_p;
 static XPM xnet_make_xpm(ULONG, time_t);
-PORT XNET_reconnect(ULONG, TEXT*, ISC_STATUS*);
 #endif // SUPERCLIENT
 
 static int xdrxnet_create(XDR *, PORT, UCHAR *, USHORT, enum xdr_op);
@@ -2636,7 +2635,7 @@ void XNET_srv(USHORT flag)
 }
 
 
-PORT XNET_reconnect(ULONG client_pid, TEXT* name, ISC_STATUS* status_vector)
+PORT XNET_reconnect(ULONG client_pid, ISC_STATUS* status_vector)
 {
 /**************************************
  *

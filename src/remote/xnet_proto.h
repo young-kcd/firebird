@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Remote Interface/Server
  *      MODULE:         xnet_proto.h
- *      DESCRIPTION:    Prototpe header file for xnet.c
+ *      DESCRIPTION:    Prototpe header file for xnet.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -34,12 +34,12 @@ extern "C" {
 #define PORT void*
 #endif
 
-PORT	XNET_analyze(TEXT *, USHORT *, ISC_STATUS *, TEXT *, TEXT *, USHORT);
-PORT	XNET_connect(TEXT *, struct packet *, ISC_STATUS *, USHORT);
+PORT	XNET_analyze(TEXT*, USHORT*, ISC_STATUS*, TEXT*, TEXT*, USHORT);
+PORT	XNET_connect(TEXT*, struct packet*, ISC_STATUS*, USHORT);
 
 #ifndef SUPERCLIENT
 void	XNET_srv(USHORT flag);
-PORT	XNET_reconnect(ULONG, TEXT *, ISC_STATUS *);
+PORT	XNET_reconnect(ULONG, ISC_STATUS*);
 #endif
 
 #ifdef __cplusplus
@@ -47,3 +47,4 @@ PORT	XNET_reconnect(ULONG, TEXT *, ISC_STATUS *);
 #endif
 
 #endif // REMOTE_XNET_PROTO_H
+

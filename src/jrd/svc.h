@@ -141,7 +141,7 @@ public:
 };
 typedef svc *SVC;
 
-typedef int(*pfn_svc_main) (SVC);
+typedef int (*pfn_svc_main) (SVC);
 
 typedef struct serv
 {
@@ -166,6 +166,7 @@ typedef struct serv
 
 } /* extern "C" */
 
-typedef int (*pfn_svc_output)(SLONG, const UCHAR*);
+typedef int (*pfn_svc_output)(svc*, const UCHAR*);
 
 #endif /* JRD_SVC_H */
+

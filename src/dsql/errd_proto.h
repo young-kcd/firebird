@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Dynamic  SQL RUNTIME SUPPORT
  *	MODULE:		errd_proto.h
- *	DESCRIPTION:	Prototype Header file for errd_proto.h
+ *	DESCRIPTION:	Prototype Header file for errd.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -35,3 +35,4 @@ bool ERRD_post_warning(ISC_STATUS, ...);
 void ERRD_punt(void);
 
 #endif /* DSQL_ERRD_PROTO_H */
+

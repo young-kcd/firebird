@@ -34,3 +34,4 @@ enum alice_blk_t
 	alice_type_lls,
 	alice_type_MAX
 };
+

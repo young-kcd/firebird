@@ -79,7 +79,7 @@ public:
 	USHORT str_length;
 	UCHAR str_data[2];
 };
-typedef str *STR;
+typedef str* STR;
 
 /*  Transaction block: used to store info about a multidatabase transaction. */
 
@@ -168,7 +168,7 @@ public:
 	pool_vec_t		pools;
 	int				exit_code;
 	pfn_svc_output  output_proc;
-	SLONG			output_data;
+	svc*			output_data;
 	IB_FILE*		output_file;
 	SVC				service_blk;
 	isc_db_handle	db_handle;

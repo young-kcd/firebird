@@ -32,7 +32,7 @@ class svc* SVC_attach(USHORT, TEXT *, USHORT, SCHAR *);
 void   SVC_cleanup(class svc *);
 void   SVC_detach(class svc *);
 void   SVC_fprintf(class svc*, const SCHAR*, ...);
-void   SVC_putc(class svc*, UCHAR);
+void   SVC_putc(class svc*, const UCHAR);
 void   SVC_query(class svc*, USHORT, const SCHAR*, USHORT, const SCHAR*,
 	USHORT, SCHAR*);
 ISC_STATUS SVC_query2(class svc*, struct tdbb*, USHORT, const SCHAR*,
@@ -41,7 +41,7 @@ void*  SVC_start(class svc*, USHORT, SCHAR*);
 void   SVC_finish(class svc*, USHORT);
 int   SVC_read_ib_log(class svc*);
 const TEXT* SVC_err_string(const TEXT*, USHORT);
-int SVC_output(SLONG, const UCHAR*);
+int SVC_output(class svc*, const UCHAR*);
 
 #ifdef SERVER_SHUTDOWN
 typedef void (*shutdown_fct_t) (ULONG);

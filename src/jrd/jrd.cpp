@@ -368,21 +368,21 @@ typedef struct dpb
 static BLB		check_blob(TDBB, ISC_STATUS*, BLB*);
 static ISC_STATUS	check_database(TDBB, ATT, ISC_STATUS*);
 static void		cleanup(void*);
-static ISC_STATUS	commit(ISC_STATUS*, JRD_TRA*, USHORT);
-static STR		copy_string(TEXT*, USHORT);
-static BOOLEAN	drop_files(FIL);
+static ISC_STATUS	commit(ISC_STATUS*, JRD_TRA*, const bool);
+static STR		copy_string(const TEXT*, const USHORT);
+static bool		drop_files(const fil*);
 static ISC_STATUS	error(ISC_STATUS*);
 static void		find_intl_charset(TDBB, ATT, DPB*);
 static JRD_TRA		find_transaction(TDBB, JRD_TRA, ISC_STATUS);
 static void		get_options(const UCHAR*, USHORT, TEXT**, ULONG, DPB*);
 static SLONG	get_parameter(const UCHAR**);
-static TEXT*	get_string_parameter(const UCHAR**, TEXT**, ULONG *);
+static TEXT*	get_string_parameter(const UCHAR**, TEXT**, ULONG*);
 static ISC_STATUS	handle_error(ISC_STATUS*, ISC_STATUS, TDBB);
 static bool		verify_database_name(const TEXT*, ISC_STATUS*);
 
 #if defined (WIN_NT)
 #ifdef SERVER_SHUTDOWN
-static void		ExtractDriveLetter(TEXT*, ULONG*);
+static void		ExtractDriveLetter(const TEXT*, ULONG*);
 #else // SERVER_SHUTDOWN
 static void		setup_NT_handlers(void);
 static BOOLEAN	handler_NT(SSHORT);
@@ -390,15 +390,16 @@ static BOOLEAN	handler_NT(SSHORT);
 #endif	// WIN_NT
 
 static DBB		init(TDBB, ISC_STATUS*, TEXT*, USHORT);
-static void		make_jrn_data(UCHAR*, USHORT*, TEXT*, USHORT, TEXT*, USHORT);
+static void		make_jrn_data(UCHAR*, USHORT*, const TEXT*, USHORT,
+	const TEXT*, USHORT);
 static ISC_STATUS	prepare(TDBB, JRD_TRA, ISC_STATUS*, USHORT, const UCHAR*);
 static void		release_attachment(ATT);
 static ISC_STATUS	return_success(TDBB);
-static BOOLEAN	rollback(TDBB, JRD_TRA, ISC_STATUS*, USHORT);
+static BOOLEAN	rollback(TDBB, JRD_TRA, ISC_STATUS*, const bool);
 
-static void		shutdown_database(DBB, BOOLEAN);
-static void		strip_quotes(TEXT*, TEXT*);
-static void		purge_attachment(TDBB, ISC_STATUS *, ATT, BOOLEAN);
+static void		shutdown_database(DBB, const bool);
+static void		strip_quotes(const TEXT*, TEXT*);
+static void		purge_attachment(TDBB, ISC_STATUS*, ATT, const bool);
 
 static int		initialized = 0;
 static DBB		databases = NULL;
@@ -438,7 +439,7 @@ static void check_autocommit(JRD_REQ request, struct tdbb* tdbb)
 	if (request->req_transaction->tra_flags & TRA_perform_autocommit)
 	{
 		request->req_transaction->tra_flags &= ~TRA_perform_autocommit;
-		TRA_commit(tdbb, request->req_transaction, TRUE);
+		TRA_commit(tdbb, request->req_transaction, true);
 	}
 }
 
@@ -606,15 +607,10 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
  *	sullied by user data.
  *
  **************************************/
-	DBB dbb;
 	TEXT opt_buffer[DPB_EXPAND_BUFFER];
 	TEXT expanded_name[MAXPATHLEN];
 
-	SSHORT first;
-	ISC_STATUS *status;
-	ISC_STATUS_ARRAY temp_status;
 	DPB options;
-	ATT attachment;
 	USHORT d_len, jd_len;
 
 	struct tdbb thd_context;
@@ -656,7 +652,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 /* Unless we're already attached, do some initialization */
 
-	dbb = init(tdbb, user_status, expanded_name, TRUE);
+	DBB dbb = init(tdbb, user_status, expanded_name, TRUE);
 	if (!dbb) {
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
 		V4_JRD_MUTEX_UNLOCK(databases_mutex);
@@ -675,7 +671,9 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 /* Initialize special error handling */
 
+	ISC_STATUS* status;
 	tdbb->tdbb_status_vector = status = user_status;
+	att* attachment;
 	tdbb->tdbb_attachment = attachment = NULL;
 	tdbb->tdbb_request = NULL;
 	tdbb->tdbb_transaction = NULL;
@@ -791,13 +789,13 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 /* If we're a not a secondary attachment, initialize some stuff */
 
-	first = FALSE;
+	bool first = false;
 
 	LCK_init(tdbb, LCK_OWNER_attachment);	/* For the attachment */
 	attachment->att_flags |= ATT_lck_init_done;
 	if (!dbb->dbb_filename)
 	{
-		first = TRUE;
+		first = true;
 		dbb->dbb_filename = copy_string(expanded_name, length_expanded);
 		/* Extra LCK_init() done to keep the lock table until the
 		   database is shutdown() after the last detach. */
@@ -1345,6 +1343,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	}	// try
 	catch (const std::exception&)
 	{
+		ISC_STATUS_ARRAY temp_status;
 		try
 		{
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
@@ -1363,7 +1362,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 			{
 				if (!dbb->dbb_attachments)
 				{
-					shutdown_database(dbb, TRUE);
+					shutdown_database(dbb, true);
 				}
 				else if (attachment)
 				{
@@ -1440,7 +1439,6 @@ ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS * user_status, BLB * blob_handle)
  *	Abort a partially completed blob.
  *
  **************************************/
-	BLB blob;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -1448,7 +1446,8 @@ ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS * user_status, BLB * blob_handle)
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
 	if (*blob_handle) {
-		if (!(blob = check_blob(tdbb, user_status, blob_handle)))
+		blb* blob = check_blob(tdbb, user_status, blob_handle);
+		if (!blob)
 			return user_status[1];
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
@@ -1529,24 +1528,25 @@ ISC_STATUS GDS_CANCEL_OPERATION(ISC_STATUS * user_status,
  *	Try to cancel an operation.
  *
  **************************************/
-	DBB dbb;
-	ATT attachment, attach;
-
 	api_entry_point_init(user_status);
 
-	attachment = *handle;
+	att* attachment = *handle;
 
 /* Check out the database handle.  This is mostly code from
    the routine "check_database" */
 
+	DBB dbb;
 	if (!attachment ||
 		(MemoryPool::blk_type(attachment) != type_att) ||
 		!(dbb = attachment->att_database) ||
 		MemoryPool::blk_type(dbb) != type_dbb)
+	{
 		return handle_error(user_status, gds_bad_db_handle, 0);
+	}
 
 /* Make sure this is a valid attachment */
 
+	const att* attach;
 	for (attach = dbb->dbb_attachments; attach; attach = attach->att_next)
 		if (attach == attachment)
 			break;
@@ -1588,14 +1588,14 @@ ISC_STATUS GDS_CLOSE_BLOB(ISC_STATUS * user_status, BLB * blob_handle)
  *	Abort a partially completed blob.
  *
  **************************************/
-	BLB blob;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	if (!(blob = check_blob(tdbb, user_status, blob_handle)))
+	blb* blob = check_blob(tdbb, user_status, blob_handle);
+	if (!blob)
 		return user_status[1];
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
@@ -1634,7 +1634,7 @@ ISC_STATUS GDS_COMMIT(ISC_STATUS * user_status, JRD_TRA * tra_handle)
 
 	api_entry_point_init(user_status);
 
-	if (commit(user_status, tra_handle, FALSE))
+	if (commit(user_status, tra_handle, false))
 		return user_status[1];
 
 	*tra_handle = NULL;
@@ -1658,7 +1658,7 @@ ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS * user_status, JRD_TRA * tra_handle)
 
 	api_entry_point_init(user_status);
 
-	return commit(user_status, tra_handle, TRUE);
+	return commit(user_status, tra_handle, true);
 }
 
 
@@ -1804,7 +1804,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	USHORT page_size;
 	ATT attachment;
 	ISC_STATUS *status;
-	ISC_STATUS_ARRAY temp_status;
 	DPB options;
 	struct tdbb thd_context;
 	FIL first_dbb_file;
@@ -2116,6 +2115,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	}	// try
 	catch (const std::exception&)
 	{
+		ISC_STATUS_ARRAY temp_status;
 		try
 		{
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
@@ -2134,7 +2134,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 			{
 				if (!dbb->dbb_attachments)
 				{
-					shutdown_database(dbb, TRUE);
+					shutdown_database(dbb, true);
 				}
 				else if (attachment)
 				{
@@ -2213,8 +2213,6 @@ ISC_STATUS GDS_DDL(ISC_STATUS * user_status,
  * Functional description
  *
  **************************************/
-	ATT attachment;
-	JRD_TRA transaction;
 	struct tdbb thd_context;
 	ISC_STATUS_ARRAY temp_status;
 
@@ -2222,7 +2220,7 @@ ISC_STATUS GDS_DDL(ISC_STATUS * user_status,
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	attachment = *db_handle;
+	att* attachment = *db_handle;
 	if (check_database(tdbb, attachment, user_status))
 		return user_status[1];
 
@@ -2231,6 +2229,7 @@ ISC_STATUS GDS_DDL(ISC_STATUS * user_status,
 #endif
 
 	tdbb->tdbb_status_vector = user_status;
+	jrd_tra* transaction = 0;
 
 	try {
 
@@ -2264,11 +2263,11 @@ ISC_STATUS GDS_DDL(ISC_STATUS * user_status,
 		transaction->tra_flags &= ~TRA_perform_autocommit;
 
 		try {
-			TRA_commit(tdbb, transaction, TRUE);
+			TRA_commit(tdbb, transaction, true);
 		}
 		catch (const std::exception&)  {
 			tdbb->tdbb_status_vector = temp_status;
-			TRA_rollback(tdbb, transaction, TRUE);
+			TRA_rollback(tdbb, transaction, true);
 			tdbb->tdbb_status_vector = user_status;
 
 			return error(user_status);
@@ -2291,8 +2290,6 @@ ISC_STATUS GDS_DETACH(ISC_STATUS * user_status, ATT * handle)
  *	Close down a database.
  *
  **************************************/
-	DBB dbb;
-	ATT attachment, attach;
 	struct tdbb thd_context;
 #ifdef GOVERNOR
 	USHORT attachment_flags;
@@ -2302,19 +2299,23 @@ ISC_STATUS GDS_DETACH(ISC_STATUS * user_status, ATT * handle)
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	attachment = *handle;
+	att* attachment = *handle;
 
 /* Check out the database handle.  This is mostly code from
    the routine "check_database" */
 
+	DBB dbb;
 	if (!attachment ||
 		(MemoryPool::blk_type(attachment) != type_att) ||
 		!(dbb = attachment->att_database) ||
 		MemoryPool::blk_type(dbb) != type_dbb)
+	{
 		return handle_error(user_status, gds_bad_db_handle, tdbb);
+	}
 
 /* Make sure this is a valid attachment */
 
+	att* attach;
 	for (attach = dbb->dbb_attachments; attach; attach = attach->att_next)
 		if (attach == attachment)
 			break;
@@ -2371,7 +2372,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS * user_status, ATT * handle)
 	attachment_flags = (USHORT) attachment->att_flags;
 #endif
 
-	purge_attachment(tdbb, user_status, attachment, FALSE);
+	purge_attachment(tdbb, user_status, attachment, false);
 
 #ifdef GOVERNOR
 	if (JRD_max_users) {
@@ -2419,32 +2420,29 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS * user_status, ATT * handle)
  *	Close down and purge a database.
  *
  **************************************/
-	DBB dbb;
-	ATT attachment, attach;
-	FIL file;
-	WIN window;
-	HDR header;
-	SDW shadow;
-	BOOLEAN err;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	attachment = *handle;
+	att* attachment = *handle;
 
 /* Check out the database handle.  This is mostly code from
    the routine "check_database" */
 
+	DBB dbb;
 	if (!attachment ||
 		(MemoryPool::blk_type(attachment) != type_att) ||
 		!(dbb = attachment->att_database) ||
 		MemoryPool::blk_type(dbb) != type_dbb)
+	{
 		return handle_error(user_status, gds_bad_db_handle, tdbb);
+	}
 
 /* Make sure this is a valid attachment */
 
+	att* attach;
 	for (attach = dbb->dbb_attachments; attach; attach = attach->att_next)
 		if (attach == attachment)
 			break;
@@ -2516,9 +2514,10 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS * user_status, ATT * handle)
    process can attach to this database once we release our exclusive
    lock and start dropping files. */
 
+   	WIN window;
 	window.win_page = HEADER_PAGE;
 	window.win_flags = 0;
-	header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	hdr* header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	header->hdr_ods_version = 0;
 	CCH_RELEASE(tdbb, &window);
@@ -2533,6 +2532,9 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS * user_status, ATT * handle)
 		return error(user_status);
 	}
 
+    bool err = false; // so much for uninitialized vars... if something
+    // failed before the first call to drop_files, which was the value?
+    
 /* A default catch all */
 	try {
 
@@ -2546,8 +2548,8 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS * user_status, ATT * handle)
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	V4_JRD_MUTEX_UNLOCK(databases_mutex);
 #endif
-	file = dbb->dbb_file;
-	shadow = dbb->dbb_shadow;
+	const fil* file = dbb->dbb_file;
+	const sdw* shadow = dbb->dbb_shadow;
 
 	AIL_drop_log();
 
@@ -2567,13 +2569,13 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS * user_status, ATT * handle)
 /* At this point, mutex dbb->dbb_mutexes [DBB_MUTX_init_fini] has been
    unlocked and mutex databases_mutex has been locked. */
 
-	shutdown_database(dbb, FALSE);
+	shutdown_database(dbb, false);
 
 /* drop the files here. */
 
 	err = drop_files(file);
 	for (; shadow; shadow = shadow->sdw_next) {
-		err |= drop_files(shadow->sdw_file);
+		err = err || drop_files(shadow->sdw_file);
 	}
 
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
@@ -2616,15 +2618,14 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
  *	Abort a partially completed blob.
  *
  **************************************/
-	BLB blob;
-	DBB dbb;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	if (!(blob = check_blob(tdbb, user_status, blob_handle)))
+	blb* blob = check_blob(tdbb, user_status, blob_handle);
+	if (!blob)
 		return user_status[1];
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
@@ -2638,7 +2639,7 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 		*length = BLB_get_segment(tdbb, blob, buffer, buffer_length);
 		tdbb->tdbb_status_vector[0] = gds_arg_gds;
 		tdbb->tdbb_status_vector[2] = gds_arg_end;
-		dbb = tdbb->tdbb_database;
+		DBB dbb = tdbb->tdbb_database;
 	
 		if (blob->blb_flags & BLB_eof) {
 			JRD_restore_context();
@@ -2682,7 +2683,6 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS * user_status,
  *	Snatch a slice of an array.
  *
  **************************************/
-	JRD_TRA transaction;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -2701,7 +2701,8 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS * user_status,
 	{
 		tdbb->tdbb_status_vector = user_status;
 
-		transaction = find_transaction(tdbb, *tra_handle, gds_segstr_wrong_db);
+		jrd_tra* transaction =
+			find_transaction(tdbb, *tra_handle, gds_segstr_wrong_db);
 	
 		if (!array_id[0] && !array_id[1]) {
 			MOVE_CLEAR(slice, slice_length);
@@ -2743,8 +2744,6 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
  *	Open an existing blob.
  *
  **************************************/
-	BLB blob;
-	JRD_TRA transaction;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -2765,8 +2764,9 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 	{
 		tdbb->tdbb_status_vector = user_status;
 
-		transaction = find_transaction(tdbb, *tra_handle, gds_segstr_wrong_db);
-		blob = BLB_open2(tdbb, transaction, blob_id, bpb_length, bpb);
+		jrd_tra* transaction =
+			find_transaction(tdbb, *tra_handle, gds_segstr_wrong_db);
+		blb* blob = BLB_open2(tdbb, transaction, blob_id, bpb_length, bpb);
 		*blob_handle = blob;
 	
 	#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
@@ -2798,7 +2798,6 @@ ISC_STATUS GDS_PREPARE(ISC_STATUS * user_status,
  *	phase commit.
  *
  **************************************/
-	JRD_TRA transaction;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -2806,7 +2805,7 @@ ISC_STATUS GDS_PREPARE(ISC_STATUS * user_status,
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
 	CHECK_HANDLE((*tra_handle), type_tra, gds_bad_trans_handle);
-	transaction = *tra_handle;
+	jrd_tra* transaction = *tra_handle;
 
 	if (check_database(tdbb, transaction->tra_attachment, user_status))
 		return user_status[1];
@@ -2837,14 +2836,14 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
  *	Abort a partially completed blob.
  *
  **************************************/
-	BLB blob;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	if (!(blob = check_blob(tdbb, user_status, blob_handle)))
+	blb* blob = check_blob(tdbb, user_status, blob_handle);
+	if (!blob)
 		return user_status[1];
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
@@ -2886,8 +2885,6 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS * user_status,
  *	Snatch a slice of an array.
  *
  **************************************/
-
-	JRD_TRA transaction;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -2905,7 +2902,8 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS * user_status,
 	tdbb->tdbb_status_vector = user_status;
 	try
 	{
-		transaction = find_transaction(tdbb, *tra_handle, gds_segstr_wrong_db);
+		jrd_tra* transaction =
+			find_transaction(tdbb, *tra_handle, gds_segstr_wrong_db);
 		BLB_put_slice(tdbb,
 				  transaction,
 				  reinterpret_cast<BID>(array_id),
@@ -2940,9 +2938,6 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS * user_status,
  *	Que a request for event notification.
  *
  **************************************/
-	DBB dbb;
-	ATT attachment;
-	LCK lock;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -2959,13 +2954,15 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS * user_status,
 	tdbb->tdbb_status_vector = user_status;
 	try
 	{
-		dbb = tdbb->tdbb_database;
-		lock = dbb->dbb_lock;
-		attachment = tdbb->tdbb_attachment;
+		DBB dbb = tdbb->tdbb_database;
+		LCK lock = dbb->dbb_lock;
+		att* attachment = tdbb->tdbb_attachment;
 	
 		if (!attachment->att_event_session &&
 			!(attachment->att_event_session = EVENT_create_session(user_status)))
+		{
 			return error(user_status);
+		}
 	
 		*id = EVENT_que(user_status,
 						attachment->att_event_session,
@@ -3007,9 +3004,6 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
  *	Get a record from the host program.
  *
  **************************************/
-	JRD_REQ request;
-	VEC vector;
-	USHORT lev;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -3017,7 +3011,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
 	CHECK_HANDLE((*req_handle), type_req, gds_bad_req_handle);
-	request = *req_handle;
+	jrd_req* request = *req_handle;
 
 	if (check_database(tdbb, request->req_attachment, user_status))
 		return user_status[1];
@@ -3029,11 +3023,15 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 	tdbb->tdbb_status_vector = user_status;
 	try
 	{
-		if ( (lev = level) )
-			if (!(vector = request->req_sub_requests) ||
-				lev >= vector->count() ||
-				!(request = (JRD_REQ) (*vector)[lev]))
+	    const USHORT lev = level;
+		if (lev) {
+		    const vec* vector = request->req_sub_requests;
+			if (!vector || lev >= vector->count() ||
+				!(request = reinterpret_cast<jrd_req*>((*vector)[lev])))
+			{
 					ERR_post(gds_req_sync, 0);
+			}
+		}
 	
 	#ifdef SCROLLABLE_CURSORS
 		if (direction)
@@ -3059,11 +3057,11 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_RECONNECT(ISC_STATUS * user_status,
-						ATT * db_handle,
-						JRD_TRA * tra_handle,
+ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
+						ATT* db_handle,
+						JRD_TRA* tra_handle,
 						SSHORT length,
-						UCHAR * id)
+						const UCHAR* id)
 {
 /**************************************
  *
@@ -3075,8 +3073,6 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS * user_status,
  *	Connect to a transaction in limbo.
  *
  **************************************/
-	JRD_TRA transaction;
-	ATT attachment;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -3084,7 +3080,7 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS * user_status,
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
 	NULL_CHECK(tra_handle, gds_bad_trans_handle);
-	attachment = *db_handle;
+	att* attachment = *db_handle;
 
 	if (check_database(tdbb, attachment, user_status))
 		return user_status[1];
@@ -3096,7 +3092,7 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS * user_status,
 	tdbb->tdbb_status_vector = user_status;
 	try
 	{
-		transaction = TRA_reconnect(tdbb, id, length);
+		jrd_tra* transaction = TRA_reconnect(tdbb, id, length);
 		*tra_handle = transaction;
 	
 	#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
@@ -3124,8 +3120,6 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, JRD_REQ * req_handle)
  *	Release a request.
  *
  **************************************/
-	JRD_REQ request;
-	ATT attachment;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -3133,8 +3127,8 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, JRD_REQ * req_handle)
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
 	CHECK_HANDLE((*req_handle), type_req, gds_bad_req_handle);
-	request = *req_handle;
-	attachment = request->req_attachment;
+	jrd_req* request = *req_handle;
+	att* attachment = request->req_attachment;
 
 	if (check_database(tdbb, attachment, user_status))
 		return user_status[1];
@@ -3176,16 +3170,13 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
  *	Provide information on blob object.
  *
  **************************************/
-	USHORT lev;
-	JRD_REQ request;
-	VEC vector;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	request = *req_handle;
+	jrd_req* request = *req_handle;
 	CHECK_HANDLE(request, type_req, gds_bad_req_handle);
 
 	if (check_database(tdbb, request->req_attachment, user_status))
@@ -3199,11 +3190,15 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 	tdbb->tdbb_status_vector = user_status;
 	try
 	{
-		if ( (lev = level) )
-			if (!(vector = request->req_sub_requests) ||
-				lev >= vector->count() ||
-				!(request = (JRD_REQ) (*vector)[lev]))
+	    const USHORT lev = level;
+		if (lev) {
+			const vec* vector = request->req_sub_requests;
+			if (!vector || lev >= vector->count() ||
+				!(request = reinterpret_cast<jrd_req*>((*vector)[lev])))
+			{
 					ERR_post(gds_req_sync, 0);
+			}
+		}
 
 		INF_request_info(request, items, item_length, buffer, buffer_length);
 	}
@@ -3229,14 +3224,13 @@ ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS * user_status,
  *	Abort a transaction but keep the environment valid
  *
  **************************************/
-	JRD_TRA transaction;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	transaction = *tra_handle;
+	jrd_tra* transaction = *tra_handle;
 	CHECK_HANDLE(transaction, type_tra, gds_bad_trans_handle);
 
 	if (check_database(tdbb, transaction->tra_attachment, user_status))
@@ -3246,7 +3240,7 @@ ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS * user_status,
 	LOG_call(log_rollback, *tra_handle);
 #endif
 
-	if (rollback(tdbb, transaction, user_status, TRUE))
+	if (rollback(tdbb, transaction, user_status, true))
 		return error(user_status);
 
 	return return_success(tdbb);
@@ -3265,14 +3259,13 @@ ISC_STATUS GDS_ROLLBACK(ISC_STATUS * user_status, JRD_TRA * tra_handle)
  *	Abort a transaction.
  *
  **************************************/
-	JRD_TRA transaction;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	transaction = *tra_handle;
+	jrd_tra* transaction = *tra_handle;
 	CHECK_HANDLE(transaction, type_tra, gds_bad_trans_handle);
 
 	if (check_database(tdbb, transaction->tra_attachment, user_status))
@@ -3282,7 +3275,7 @@ ISC_STATUS GDS_ROLLBACK(ISC_STATUS * user_status, JRD_TRA * tra_handle)
 	LOG_call(log_rollback, *tra_handle);
 #endif
 
-	if (rollback(tdbb, transaction, user_status, FALSE))
+	if (rollback(tdbb, transaction, user_status, false))
 		return error(user_status);
 
 	*tra_handle = NULL;
@@ -3306,14 +3299,14 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS * user_status,
  *	Seek a stream blob.
  *
  **************************************/
-	BLB blob;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	if (!(blob = check_blob(tdbb, user_status, blob_handle)))
+	blb* blob = check_blob(tdbb, user_status, blob_handle);
+	if (!blob)
 		return user_status[1];
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
@@ -3351,9 +3344,6 @@ ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
  *	Get a record from the host program.
  *
  **************************************/
-	JRD_REQ request;
-	VEC vector;
-	USHORT lev;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -3361,7 +3351,7 @@ ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
 	CHECK_HANDLE((*req_handle), type_req, gds_bad_req_handle);
-	request = *req_handle;
+	jrd_req* request = *req_handle;
 
 	if (check_database(tdbb, request->req_attachment, user_status))
 		return user_status[1];
@@ -3373,11 +3363,15 @@ ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
 	tdbb->tdbb_status_vector = user_status;
 	try
 	{
-		if ( (lev = level) )
-			if (!(vector = request->req_sub_requests) ||
-				lev >= vector->count() ||
-				!(request = (JRD_REQ) (*vector)[lev]))
+	    const USHORT lev = level;
+		if (lev) {
+		    const vec* vector = request->req_sub_requests;
+			if (!vector || lev >= vector->count() ||
+				!(request = reinterpret_cast<jrd_req*>((*vector)[lev])))
+			{
 					ERR_post(gds_req_sync, 0);
+			}
+		}
 	
 		EXE_send(tdbb, request, msg_type, msg_length,
 				reinterpret_cast<UCHAR*>(msg));
@@ -3452,14 +3446,13 @@ ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS * user_status, SVC * svc_handle)
  *	Close down a service.
  *
  **************************************/
-	SVC service;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	service = *svc_handle;
+	svc* service = *svc_handle;
 	CHECK_HANDLE(service, type_svc, gds_bad_svc_handle);
 
 	tdbb->tdbb_status_vector = user_status;
@@ -3506,15 +3499,13 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
  *	a later date.
  *
  **************************************/
-	SVC service;
 	struct tdbb thd_context;
-	int len, warning;
 
 	api_entry_point_init(user_status);
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	service = *svc_handle;
+	svc* service = *svc_handle;
 	CHECK_HANDLE(service, type_svc, gds_bad_svc_handle);
 
 	tdbb->tdbb_status_vector = user_status;
@@ -3535,6 +3526,7 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
 					recv_item_length, recv_items, buffer_length, buffer);
 	
 			/* if there is a status vector from a service thread, copy it into the thread status */
+			int len, warning;
 			PARSE_STATUS(service->svc_status, len, warning);
 			if (len) {
 				MOVE_FASTER(service->svc_status, tdbb->tdbb_status_vector,
@@ -3578,14 +3570,13 @@ ISC_STATUS GDS_SERVICE_START(ISC_STATUS*	user_status,
  *   	network).  This parameter will be implemented at
  * 	a later date.
  **************************************/
-	SVC service;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	service = *svc_handle;
+	svc* service = *svc_handle;
 	CHECK_HANDLE(service, type_svc, isc_bad_svc_handle);
 
 	tdbb->tdbb_status_vector = user_status;
@@ -3642,7 +3633,7 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS * user_status,
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	JRD_REQ request = *req_handle;
+	jrd_req* request = *req_handle;
 	CHECK_HANDLE(request, type_req, gds_bad_req_handle);
 
 	if (check_database(tdbb, request->req_attachment, user_status))
@@ -3697,15 +3688,13 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
  *	Get a record from the host program.
  *
  **************************************/
-	JRD_TRA transaction;
-	JRD_REQ request;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	request = *req_handle;
+	jrd_req* request = *req_handle;
 	CHECK_HANDLE(request, type_req, gds_bad_req_handle);
 
 	if (check_database(tdbb, request->req_attachment, user_status))
@@ -3718,7 +3707,8 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
 	tdbb->tdbb_status_vector = user_status;
 	try
 	{
-		transaction = find_transaction(tdbb, *tra_handle, gds_req_wrong_db);
+		jrd_tra* transaction =
+			find_transaction(tdbb, *tra_handle, gds_req_wrong_db);
 	
 		if (level)
 			request = CMP_clone_request(tdbb, request, level, FALSE);
@@ -3757,10 +3747,7 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
  *	Start a transaction.
  *
  **************************************/
-	volatile JRD_TRA transaction, prior;
-	ISC_STATUS_ARRAY temp_status;
-	TEB *v, *end;
-	ATT attachment;
+	TEB* v;
 	struct tdbb thd_context;
 	DBB dbb;
 
@@ -3769,7 +3756,7 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
 	NULL_CHECK(tra_handle, gds_bad_trans_handle);
-	end = vector + count;
+	const TEB* const end = vector + count;
 
 	for (v = vector; v < end; v++) {
 		if (check_database(tdbb, *v->teb_database, user_status))
@@ -3781,13 +3768,14 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
 	if (check_database(tdbb, *vector->teb_database, user_status))
 		return user_status[1];
 
-	prior = NULL;
+	jrd_tra* volatile prior = NULL;
+	jrd_tra* volatile transaction = NULL;
 
 	try {
 
 	for (v = vector; v < end; v++)
 	{
-		attachment = *v->teb_database;
+		att* attachment = *v->teb_database;
 		if (check_database(tdbb, attachment, user_status)) {
 			return user_status[1];
 		}
@@ -3797,7 +3785,7 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
 		tdbb->tdbb_status_vector = user_status;
 		transaction =
 			TRA_start(tdbb, v->teb_tpb_length,
-					  reinterpret_cast<char*>(v->teb_tpb));
+					  reinterpret_cast<const char*>(v->teb_tpb));
 		transaction->tra_sibling = prior;
 		prior = transaction;
 		dbb = tdbb->tdbb_database;
@@ -3809,7 +3797,8 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
 		dbb = tdbb->tdbb_database;
 		--dbb->dbb_use_count;
 		if (prior) {
-			rollback(tdbb, prior, temp_status, FALSE);
+			ISC_STATUS_ARRAY temp_status;
+			rollback(tdbb, prior, temp_status, false);
 		}
 		return error(user_status);
 	}
@@ -3875,23 +3864,13 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
  *	Execute a procedure.
  *
  **************************************/
-	ATT attachment;
-	JRD_TRA transaction;
-	CSB csb;
-	JRD_REQ request;
-	JRD_NOD in_message, out_message, node;
-	ACC access;
-	SCL class_;
-	FMT format;
-	JrdMemoryPool *old_pool, *new_pool;
-	USHORT i, len;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	attachment = *db_handle;
+	att* attachment = *db_handle;
 	if (check_database(tdbb, attachment, user_status))
 		return user_status[1];
 
@@ -3900,31 +3879,35 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 			 blr_length, blr, in_msg_length, in_msg, out_msg_length);
 #endif
 
+	JrdMemoryPool *old_pool, *new_pool;
 	new_pool = old_pool = NULL;
-	request = NULL;
+	jrd_req* request = NULL;
 
 	tdbb->tdbb_status_vector = user_status;
 
 	try {
 
-	transaction = find_transaction(tdbb, *tra_handle, gds_req_wrong_db);
+	jrd_tra* transaction = find_transaction(tdbb, *tra_handle, gds_req_wrong_db);
 
 	old_pool = tdbb->tdbb_default;
 	tdbb->tdbb_default = new_pool = JrdMemoryPool::createPool();
 
-	csb = PAR_parse(tdbb, reinterpret_cast<UCHAR*>(blr), FALSE);
+	CSB csb = PAR_parse(tdbb, reinterpret_cast<UCHAR*>(blr), FALSE);
 	request = CMP_make_request(tdbb, csb);
 
-	for (access = request->req_access; access; access = access->acc_next)
+	for (const acc* access = request->req_access; access;
+		access = access->acc_next)
 	{
-		class_ = SCL_get_class(access->acc_security_name);
-		SCL_check_access(class_, access->acc_view_id, access->acc_trg_name,
+		const scl* sec_class = SCL_get_class(access->acc_security_name);
+		SCL_check_access(sec_class, access->acc_view_id, access->acc_trg_name,
 						 access->acc_prc_name, access->acc_mask,
 						 access->acc_type, access->acc_name);
 	}
 
-	in_message = out_message = NULL;
-	for (i = 0; i < csb->csb_rpt.getCount(); i++)
+    jrd_nod* in_message = NULL;
+	jrd_nod* out_message = NULL;
+	jrd_nod* node;
+	for (size_t i = 0; i < csb->csb_rpt.getCount(); i++)
 	{
 		if ( (node = csb->csb_rpt[i].csb_message) )
 		{
@@ -3941,10 +3924,11 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 
 	request->req_attachment = attachment;
 
+	USHORT len;
 	if (in_msg_length)
 	{
 		if (in_message) {
-			format = (FMT) in_message->nod_arg[e_msg_format];
+			const fmt* format = (FMT) in_message->nod_arg[e_msg_format];
 			len = format->fmt_length;
 		}
 		else {
@@ -3969,7 +3953,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 	EXE_start(tdbb, request, transaction);
 
 	if (out_message) {
-		format = (FMT) out_message->nod_arg[e_msg_format];
+		const fmt* format = (FMT) out_message->nod_arg[e_msg_format];
 		len = format->fmt_length;
 	}
 	else {
@@ -4038,14 +4022,13 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
  *	Provide information on blob object.
  *
  **************************************/
-	JRD_TRA transaction;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	transaction = *tra_handle;
+	jrd_tra* transaction = *tra_handle;
 	CHECK_HANDLE(transaction, type_tra, gds_bad_trans_handle);
 
 	if (check_database(tdbb, transaction->tra_attachment, user_status))
@@ -4086,11 +4069,6 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status,
  *	be called asynchronously.
  *
  **************************************/
-	DBB dbb;
-	ATT attachment, attach;
-	JRD_REQ request;
-	VEC vector;
-	USHORT lev;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -4098,11 +4076,13 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status,
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
 	CHECK_HANDLE((*req_handle), type_req, gds_bad_req_handle);
-	request = *req_handle;
+	jrd_req* request = *req_handle;
 
 /* Make sure blocks look and feel kosher */
 
-	if (!(attachment = request->req_attachment) ||
+	DBB dbb;
+	att* attachment = request->req_attachment;
+	if (!attachment ||
 		(MemoryPool::blk_type(attachment) != type_att) ||
 		!(dbb = attachment->att_database) ||
 		MemoryPool::blk_type(dbb) != type_dbb)
@@ -4112,6 +4092,7 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status,
 
 /* Make sure this is a valid attachment */
 
+	att* attach;
 	for (attach = dbb->dbb_attachments; attach; attach = attach->att_next)
 	{
 		if (attach == attachment) {
@@ -4137,11 +4118,11 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status,
 	try {
 
 /* Pick up and validate request level */
-
-		if ( (lev = level) ) {
-			if (!(vector = request->req_sub_requests) ||
-				lev >= vector->count() ||
-				!(request = (JRD_REQ) (*vector)[lev]))
+		const USHORT lev = level;
+		if (lev) {
+		    const vec* vector = request->req_sub_requests;
+			if (!vector || lev >= vector->count() ||
+				!(request = reinterpret_cast<jrd_req*>((*vector)[lev])))
 			{
 				ERR_post(gds_req_sync, 0);
 			}
@@ -4186,13 +4167,12 @@ void JRD_blocked(ATT blocking, BTB * que)
  *	wake us up.
  *
  **************************************/
-	ATT attachment;
-
 	TDBB tdbb = get_thread_data();
 	DBB  dbb  = tdbb->tdbb_database;
 
 /* Check for deadlock.  If there is one, complain */
 
+	att* attachment;
 	for (attachment = blocking;
 		 attachment;
 		 attachment = attachment->att_blocking)
@@ -4239,18 +4219,18 @@ USHORT JRD_getdir(TEXT * buf, USHORT len)
  *	to get the users home directory.
  *
  **************************************/
-	char *t_data = NULL;
+	char* t_data = NULL;
 
 	assert(buf != NULL);
 	assert(len > 0);
 
-	THD_getspecific_data((void **) &t_data);
+	THD_getspecific_data((void**) &t_data);
 
 	if (t_data) {
 #ifdef WIN_NT
 		GetCurrentDirectory(len, buf);
 #else
-		struct passwd *pwd;
+		const struct passwd* pwd;
 		strcpy(buf, t_data);
 		pwd = getpwnam(buf);
 		if (pwd)
@@ -4266,7 +4246,7 @@ USHORT JRD_getdir(TEXT * buf, USHORT len)
 	else
 	{
 		TDBB tdbb = get_thread_data();
-		ATT attachment;
+		att* attachment;
 
    /** If the server has not done a SET_THREAD_DATA prior to this call
        (which will be the case when connecting via IPC), tdbb will
@@ -4291,7 +4271,10 @@ USHORT JRD_getdir(TEXT * buf, USHORT len)
     return 0 so that ISC_expand_filename will create the file in fbserver's dir
    **/
 		if (!attachment->att_working_directory ||
-			len - 1 < attachment->att_working_directory->str_length) return 0;
+			len - 1 < attachment->att_working_directory->str_length)
+		{
+			return 0;
+		}
 		memcpy(buf, attachment->att_working_directory->str_data,
 			   attachment->att_working_directory->str_length);
 		buf[attachment->att_working_directory->str_length] = 0;
@@ -4362,7 +4345,7 @@ void JRD_print_all_counters(const char* fname)
 #endif
 
 #ifdef DEBUG_PROCS
-void JRD_print_procedure_info(TDBB tdbb, char *mesg)
+void JRD_print_procedure_info(TDBB tdbb, const char* mesg)
 {
 /*****************************************************
  *
@@ -4375,14 +4358,11 @@ void JRD_print_procedure_info(TDBB tdbb, char *mesg)
  *      cache
  *
  ******************************************************/
-	IB_FILE *fptr;
 	TEXT fname[MAXPATHLEN];
-	JRD_PRC procedure;
-	vec::iterator ptr, end;
-	VEC procedures;
 
 	gds__prefix(fname, "proc_info.log");
-	if (!(fptr = ib_fopen(fname, "a+"))) {
+	IB_FILE* fptr = ib_fopen(fname, "a+");
+	if (!fptr) {
 		char buff[256];
 		sprintf(buff, "Failed to open %s\n", fname);
 		gds__log(buff, 0);
@@ -4398,16 +4378,21 @@ void JRD_print_procedure_info(TDBB tdbb, char *mesg)
 	V4_JRD_MUTEX_LOCK(databases_mutex);
 #endif
 
-	if (procedures = tdbb->tdbb_database->dbb_procedures) {
+	vec* procedures = tdbb->tdbb_database->dbb_procedures;
+	if (procedures) {
+		vec::iterator ptr, end;
 		for (ptr = procedures->begin(), end = procedures->end();
 					ptr < end; ptr++)
-			if ( (procedure = (jrd_prc*)*ptr) )
+		{
+			const jrd_prc* procedure = (jrd_prc*) *ptr;
+			if (procedure)
 				ib_fprintf(fptr, "%s  ,  %d,  %X,  %d, %d\n",
-						   (procedure->
-							prc_name) ? (char *) procedure->prc_name->
-						   str_data : "NULL", procedure->prc_id,
-						   procedure->prc_flags, procedure->prc_use_count,
-						   procedure->prc_alter_count);
+							(procedure->prc_name) ?
+								(char*) procedure->prc_name->str_data : "NULL",
+							procedure->prc_id,
+							procedure->prc_flags, procedure->prc_use_count,
+							procedure->prc_alter_count);
+		}
 	}
 	else
 		ib_fprintf(fptr, "No Cached Procedures\n");
@@ -4436,10 +4421,6 @@ BOOLEAN JRD_reschedule(TDBB tdbb, SLONG quantum, BOOLEAN punt)
  *	control so that somebody else may run.
  *
  **************************************/
-	DBB dbb;
-	ATT attachment;
-	ISC_STATUS *status;
-
 	if (tdbb->tdbb_inhibit)
 		return FALSE;
 
@@ -4457,16 +4438,18 @@ BOOLEAN JRD_reschedule(TDBB tdbb, SLONG quantum, BOOLEAN punt)
 
 /* If database has been shutdown then get out */
 
-	dbb = tdbb->tdbb_database;
-	if (attachment = tdbb->tdbb_attachment) {
+	DBB dbb = tdbb->tdbb_database;
+	att* attachment = tdbb->tdbb_attachment;
+	if (attachment) {
 		if (dbb->dbb_ast_flags & DBB_shutdown &&
-			attachment->att_flags & ATT_shutdown) {
+			attachment->att_flags & ATT_shutdown)
+		{
 			if (punt) {
 				CCH_unwind(tdbb, FALSE);
 				ERR_post(isc_shutdown, 0);
 			}
 			else {
-				status = tdbb->tdbb_status_vector;
+				ISC_STATUS* status = tdbb->tdbb_status_vector;
 				*status++ = isc_arg_gds;
 				*status++ = isc_shutdown;
 				*status++ = isc_arg_end;
@@ -4480,21 +4463,22 @@ BOOLEAN JRD_reschedule(TDBB tdbb, SLONG quantum, BOOLEAN punt)
 		   the system transaction. */
 
 		if ((attachment->att_flags & ATT_cancel_raise) &&
-			!(attachment->att_flags & ATT_cancel_disable)) {
-			JRD_REQ request;
-			JRD_TRA transaction;
-
-			if ((!(request = tdbb->tdbb_request) ||
+			!(attachment->att_flags & ATT_cancel_disable))
+		{
+			const jrd_tra* transaction;
+			jrd_req* request = tdbb->tdbb_request;
+			if ((!request ||
 				 !(request->req_flags & (req_internal | req_sys_trigger))) &&
 				(!(transaction = tdbb->tdbb_transaction) ||
-				 !(transaction->tra_flags & TRA_system))) {
+				 !(transaction->tra_flags & TRA_system)))
+			{
 				attachment->att_flags &= ~ATT_cancel_raise;
 				if (punt) {
 					CCH_unwind(tdbb, FALSE);
 					ERR_post(isc_cancelled, 0);
 				}
 				else {
-					status = tdbb->tdbb_status_vector;
+					ISC_STATUS* status = tdbb->tdbb_status_vector;
 					*status++ = isc_arg_gds;
 					*status++ = isc_cancelled;
 					*status++ = isc_arg_end;
@@ -4688,14 +4672,10 @@ static ISC_STATUS check_database(TDBB tdbb, ATT attachment, ISC_STATUS * user_st
  *	up environment.
  *
  **************************************/
-	DBB dbb;
-	ISC_STATUS *ptr;
-	TEXT *string;
-
 	SET_TDBB(tdbb);
 
 /* Make sure blocks look and feel kosher */
-
+	DBB dbb;
 	if (!attachment ||
 		(MemoryPool::blk_type(attachment) != type_att) ||
 		!(dbb = attachment->att_database) ||
@@ -4729,6 +4709,9 @@ static ISC_STATUS check_database(TDBB tdbb, ATT attachment, ISC_STATUS * user_st
 
 	++dbb->dbb_use_count;
 
+    TEXT* string;
+    ISC_STATUS* ptr;
+    
 	if (dbb->dbb_flags & DBB_bugcheck) {
 		tdbb->tdbb_status_vector = ptr = user_status;
 		*ptr++ = gds_arg_gds;
@@ -4772,7 +4755,7 @@ static ISC_STATUS check_database(TDBB tdbb, ATT attachment, ISC_STATUS * user_st
 }
 
 
-static void cleanup(void *arg)
+static void cleanup(void* arg)
 {
 /**************************************
  *
@@ -4794,8 +4777,8 @@ static void cleanup(void *arg)
 
 
 static ISC_STATUS commit(
-					 ISC_STATUS * user_status,
-					 JRD_TRA * tra_handle, USHORT retaining_flag)
+					 ISC_STATUS* user_status,
+					 JRD_TRA* tra_handle, const bool retaining_flag)
 {
 /**************************************
  *
@@ -4807,15 +4790,13 @@ static ISC_STATUS commit(
  *	Commit a transaction.
  *
  **************************************/
-	JRD_TRA transaction, next;
-	ISC_STATUS *ptr;
-	DBB dbb;
 	struct tdbb thd_context;
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
 	CHECK_HANDLE((*tra_handle), type_tra, gds_bad_trans_handle);
-	next = transaction = *tra_handle;
+	jrd_tra* transaction = *tra_handle;
+	jrd_tra* next = transaction;
 
 	if (check_database(tdbb, transaction->tra_attachment, user_status))
 		return user_status[1];
@@ -4825,7 +4806,7 @@ static ISC_STATUS commit(
 			 *tra_handle);
 #endif
 
-	ptr = user_status;
+	ISC_STATUS* ptr = user_status;
 
 	if (transaction->tra_sibling &&
 		!(transaction->tra_flags & TRA_prepared) &&
@@ -4833,7 +4814,9 @@ static ISC_STATUS commit(
 	{
 		return error(user_status);
 	}
-
+	
+	DBB dbb;
+	
 	try {
 
 	while ( (transaction = next) ) {
@@ -4856,7 +4839,7 @@ static ISC_STATUS commit(
 }
 
 
-static STR copy_string(TEXT * ptr, USHORT length)
+static STR copy_string(const TEXT* ptr, const USHORT length)
 {
 /**************************************
  *
@@ -4878,7 +4861,7 @@ static STR copy_string(TEXT * ptr, USHORT length)
 }
 
 
-static BOOLEAN drop_files(FIL file)
+static bool drop_files(const fil* file)
 {
 /**************************************
  *
@@ -4890,7 +4873,6 @@ static BOOLEAN drop_files(FIL file)
  *	drop a linked list of files
  *
  **************************************/
-	DBB dbb;
 	ISC_STATUS_ARRAY status;
 
 	status[1] = FB_SUCCESS;
@@ -4906,12 +4888,12 @@ static BOOLEAN drop_files(FIL file)
 							   isc_arg_gds, isc_io_delete_err,
 							   SYS_ERR, errno,
 							   0);
-			dbb = get_dbb();
+			DBB dbb = get_dbb();
 			gds__log_status(dbb->dbb_file->fil_string, status);
 		}
 	}
 
-	return status[1] ? TRUE : FALSE;
+	return status[1] ? true : false;
 }
 
 
@@ -4945,7 +4927,7 @@ static JRD_TRA find_transaction(TDBB tdbb, JRD_TRA transaction, ISC_STATUS error
 }
 
 
-static ISC_STATUS error(ISC_STATUS * user_status)
+static ISC_STATUS error(ISC_STATUS* user_status)
 {
 /**************************************
  *
@@ -4958,11 +4940,10 @@ static ISC_STATUS error(ISC_STATUS * user_status)
  *
  **************************************/
 	TDBB tdbb = get_thread_data();
-	DBB dbb;
 
 /* Decrement count of active threads in database */
-
-	if ( (dbb = tdbb->tdbb_database) ) {
+	DBB dbb = tdbb->tdbb_database;
+	if (dbb) {
 		--dbb->dbb_use_count;
 	}
 
@@ -5500,7 +5481,7 @@ static TEXT* get_string_parameter(const UCHAR** dpb_ptr, TEXT** opt_ptr,
 }
 
 
-static ISC_STATUS handle_error(ISC_STATUS * user_status, ISC_STATUS code, TDBB tdbb)
+static ISC_STATUS handle_error(ISC_STATUS* user_status, ISC_STATUS code, TDBB tdbb)
 {
 /**************************************
  *
@@ -5514,12 +5495,10 @@ static ISC_STATUS handle_error(ISC_STATUS * user_status, ISC_STATUS code, TDBB t
  *	"error" and abort.
  *
  **************************************/
-	ISC_STATUS *vector;
-
 	if (tdbb)
 		JRD_restore_context();
 
-	vector = user_status;
+	ISC_STATUS* vector = user_status;
 	*vector++ = gds_arg_gds;
 	*vector++ = code;
 	*vector = gds_arg_end;
@@ -5721,9 +5700,9 @@ static DBB init(TDBB	tdbb,
 
 static void make_jrn_data(UCHAR*	data,
 						  USHORT*	ret_len,
-						  TEXT*		db_name,
+						  const TEXT*		db_name,
 						  USHORT	db_len,
-						  TEXT*		backup_dir,
+						  const TEXT*		backup_dir,
 						  USHORT	b_length)
 {
 /**************************************
@@ -5743,16 +5722,17 @@ static void make_jrn_data(UCHAR*	data,
 	if (len) {
 		*t++ = gds_dpb_wal_backup_dir;
 		*t++ = (UCHAR) b_length;
-		const UCHAR* q = reinterpret_cast<UCHAR*>(backup_dir);
+		const UCHAR* q = reinterpret_cast<const UCHAR*>(backup_dir);
 		do {
 			*t++ = *q++;
 		} while (--len);
 	}
 
-	if ( (len = db_len) ) {
+	len = db_len;
+	if (len) {
 		*t++ = JRNW_DB_NAME;
 		*t++ = (UCHAR) db_len;
-		const UCHAR* q = reinterpret_cast<UCHAR*>(db_name);
+		const UCHAR* q = reinterpret_cast<const UCHAR*>(db_name);
 		do {
 			*t++ = *q++;
 		} while (--len);
@@ -5823,13 +5803,6 @@ static void release_attachment(ATT attachment)
  *	responsibility of the caller to unlock it.
  *
  **************************************/
-	ATT *ptr;
-	VCL *vector;
-	VEC lock_vector;
-	LCK record_lock;
-	vec::iterator lock;
-	USHORT i;
-
 	TDBB tdbb = get_thread_data();
 	DBB  dbb  = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
@@ -5848,10 +5821,12 @@ static void release_attachment(ATT attachment)
 	if (attachment->att_id_lock)
 		LCK_release(tdbb, attachment->att_id_lock);
 
-	for (vector = attachment->att_counts;
+	for (vcl** vector = attachment->att_counts;
 		 vector < attachment->att_counts + DBB_max_count; ++vector)
+	{
 		if (*vector)
 			delete *vector;
+	}
 
 	if (attachment->att_filename)
 		delete attachment->att_filename;
@@ -5870,10 +5845,11 @@ static void release_attachment(ATT attachment)
 	}
 
 /* Release the persistent locks taken out during the attachment */
-
-	if ( (lock_vector = attachment->att_relation_locks) )
+	vec* lock_vector = attachment->att_relation_locks;
+	if (lock_vector)
 	{
-		for (i = 0, lock = lock_vector->begin();
+		size_t i = 0;
+		for (vec::iterator lock = lock_vector->begin();
 			 i < lock_vector->count(); i++, lock++)
 		{
 			if (*lock)
@@ -5885,6 +5861,7 @@ static void release_attachment(ATT attachment)
 		delete lock_vector;
 	}
 
+    LCK record_lock;
 	for (record_lock = attachment->att_record_locks; record_lock;
 		 record_lock = record_lock->lck_att_next)
 	{
@@ -5917,7 +5894,7 @@ static void release_attachment(ATT attachment)
 
 /* remove the attachment block from the dbb linked list */
 
-	for (ptr = &dbb->dbb_attachments; *ptr; ptr = &(*ptr)->att_next) {
+	for (att** ptr = &dbb->dbb_attachments; *ptr; ptr = &(*ptr)->att_next) {
 		if (*ptr == attachment) {
 			*ptr = attachment->att_next;
 			break;
@@ -5938,17 +5915,16 @@ static ISC_STATUS return_success(TDBB tdbb)
  *	Set up status vector to reflect successful execution.
  *
  **************************************/
-	DBB dbb;
-	ISC_STATUS *p, *user_status;
-
 	SET_TDBB(tdbb);
 
 /* Decrement count of active threads in database */
 
-	if ( (dbb = tdbb->tdbb_database) )
+	DBB dbb = tdbb->tdbb_database;
+	if (dbb)
 		--dbb->dbb_use_count;
 
-	p = user_status = tdbb->tdbb_status_vector;
+	ISC_STATUS* const user_status = tdbb->tdbb_status_vector;
+	ISC_STATUS* p = user_status;
 
 /* If the status vector has not been initialized, then
    initilalize the status vector to indicate success.
@@ -5989,7 +5965,7 @@ static ISC_STATUS return_success(TDBB tdbb)
 static BOOLEAN rollback(TDBB	tdbb,
 						JRD_TRA		next,
 						ISC_STATUS*	status_vector,
-						USHORT	retaining_flag)
+						const bool	retaining_flag)
 {
 /**************************************
  *
@@ -6053,7 +6029,7 @@ static void setup_NT_handlers()
 #endif
 
 
-static void shutdown_database(DBB dbb, BOOLEAN release_pools)
+static void shutdown_database(DBB dbb, const bool release_pools)
 {
 /**************************************
  *
@@ -6160,7 +6136,7 @@ static void shutdown_database(DBB dbb, BOOLEAN release_pools)
 }
 
 
-static void strip_quotes(TEXT * in, TEXT * out)
+static void strip_quotes(const TEXT* in, TEXT* out)
 {
 /**************************************
  *
@@ -6172,19 +6148,16 @@ static void strip_quotes(TEXT * in, TEXT * out)
  *	Get rid of quotes around strings
  *
  **************************************/
-	TEXT *p;
-	TEXT quote;
-
 	if (!in || !*in) {
 		*out = 0;
 		return;
 	}
 
-	quote = 0;
+	TEXT quote = 0;
 /* Skip any initial quote */
 	if ((*in == DBL_QUOTE) || (*in == SINGLE_QUOTE))
 		quote = *in++;
-	p = in;
+	const TEXT* p = in;
 
 /* Now copy characters until we see the same quote or EOS */
 	while (*p && (*p != quote)) {
@@ -6194,7 +6167,7 @@ static void strip_quotes(TEXT * in, TEXT * out)
 }
 
 
-void JRD_set_cache_default(ULONG * num_ptr)
+void JRD_set_cache_default(ULONG* num_ptr)
 {
 /**************************************
  *
@@ -6242,14 +6215,11 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 	USHORT num_att = 0;
 	USHORT total = 0;
 	ULONG drive_mask = 0L;
-	DBB dbb;
 	DBF dbf = NULL, dbfp = NULL;
-	ATT att;
-	TEXT *lbuf, *lbufp;
 
 /* protect against NULL value for buf */
 
-	lbuf = buf;
+	TEXT* lbuf = buf;
 	if (!lbuf)
 		buf_len = 0;
 
@@ -6273,12 +6243,12 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
  * connections.  If buf is not NULL then copy all the database names
  * that will fit into it. */
 
-	for (dbb = databases; dbb; dbb = dbb->dbb_next) {
+	for (DBB dbb = databases; dbb; dbb = dbb->dbb_next) {
 #ifdef WIN_NT
-		struct fil *files;
-		struct dls *dirs;
-		struct scb *scb;
-		struct sfb *sfb;
+		struct fil* files;
+		struct dls* dirs;
+		struct scb* scb;
+		struct sfb* sfb;
 
 		/* Get drive letters for db files */
 
@@ -6318,7 +6288,9 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 					flag = 0;
 			}
 
-			for (att = dbb->dbb_attachments; att; att = att->att_next) {
+			for (const att* attach = dbb->dbb_attachments; attach;
+				attach = attach->att_next)
+			{
 				num_att++;
 
 #ifdef WIN_NT
@@ -6335,7 +6307,7 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 
 				if (flag == JRD_info_drivemask)
 				{
-					for (scb = att->att_active_sorts; scb; scb = scb->scb_next)
+					for (scb = attach->att_active_sorts; scb; scb = scb->scb_next)
 					{
 						for (sfb = scb->scb_sfb; sfb; sfb = sfb->sfb_next)
 						{
@@ -6361,7 +6333,8 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 			{
 				lbuf = (TEXT *) gds__alloc((SLONG) (sizeof(USHORT) + total));
 			}
-			if (lbufp = lbuf)
+			TEXT* lbufp = lbuf;
+			if (lbufp)
 			{
 				/*  Put db info into buffer. Format is as follows:
 
@@ -6420,7 +6393,7 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 
 
 #ifdef WIN_NT
-static void ExtractDriveLetter(TEXT* file_name, ULONG* drive_mask)
+static void ExtractDriveLetter(const TEXT* file_name, ULONG* drive_mask)
 {
 /**************************************
  *
@@ -6439,9 +6412,8 @@ static void ExtractDriveLetter(TEXT* file_name, ULONG* drive_mask)
  *
  **************************************/
 	ULONG mask = 1;
-	SHORT shift;
 
-	shift = (*file_name - 'A');
+	const SHORT shift = (*file_name - 'A');
 	mask <<= shift;
 	*drive_mask |= mask;
 }
@@ -6463,8 +6435,6 @@ ULONG JRD_shutdown_all()
  *
  **************************************/
 	ISC_STATUS_ARRAY user_status;
-	ATT att, att_next;
-	DBB dbb, dbb_next;
 	struct tdbb thd_context;
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
@@ -6473,18 +6443,20 @@ ULONG JRD_shutdown_all()
 		JRD_SS_MUTEX_LOCK;
 	}
 
-	for (dbb = databases; dbb; dbb = dbb_next)
+	DBB dbb_next;
+	for (DBB dbb = databases; dbb; dbb = dbb_next)
 	{
 		dbb_next = dbb->dbb_next;
 		if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use | DBB_security_db)) &&
 			!(dbb->dbb_ast_flags & DBB_shutdown &&
 			  dbb->dbb_ast_flags & DBB_shutdown_locks))
 		{
-			for (att = dbb->dbb_attachments; att; att = att_next)
+			att* att_next;
+			for (att* attach = dbb->dbb_attachments; attach; attach = att_next)
 			{
-				att_next = att->att_next;
+				att_next = attach->att_next;
 				tdbb->tdbb_database = dbb;
-				tdbb->tdbb_attachment = att;
+				tdbb->tdbb_attachment = attach;
 				tdbb->tdbb_request = NULL;
 				tdbb->tdbb_transaction = NULL;
 				tdbb->tdbb_default = NULL;
@@ -6501,7 +6473,7 @@ ULONG JRD_shutdown_all()
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
 					V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 #endif
-					purge_attachment(tdbb, user_status, att, TRUE);
+					purge_attachment(tdbb, user_status, attach, true);
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
 					V4_JRD_MUTEX_UNLOCK(databases_mutex);
 #endif
@@ -6530,7 +6502,7 @@ ULONG JRD_shutdown_all()
 static void purge_attachment(TDBB		tdbb,
 							 ISC_STATUS*	user_status,
 							 ATT		attachment,
-							 BOOLEAN	force_flag)
+							 const bool	force_flag)
 {
 /**************************************
  *
@@ -6545,23 +6517,15 @@ static void purge_attachment(TDBB		tdbb,
  *	mutex databases_mutex will be locked.
  *
  **************************************/
-	BKM bookmark;
-	DBB dbb;
-	JRD_REQ request;
-	SCL class_;
-	JRD_TRA transaction, next;
-	USR user;
-	USHORT count;
-
 	SET_TDBB(tdbb);
-	dbb = attachment->att_database;
+	DBB dbb = attachment->att_database;
 
 	if (!(dbb->dbb_flags & DBB_bugcheck)) {
 		/* Check for any pending transactions */
 
-		count = 0;
-
-		for (transaction = attachment->att_transactions;
+		int count = 0;
+		jrd_tra* next;
+		for (jrd_tra* transaction = attachment->att_transactions;
 			 transaction;
 			 transaction = next)
 		{
@@ -6575,7 +6539,7 @@ static void purge_attachment(TDBB		tdbb,
 					TRA_release_transaction(tdbb, transaction);
 				}
 				else if (force_flag)
-					TRA_rollback(tdbb, transaction, FALSE);
+					TRA_rollback(tdbb, transaction, false);
 				else
 					++count;
 			}
@@ -6586,17 +6550,18 @@ static void purge_attachment(TDBB		tdbb,
 
 		/* If there's a side transaction for db-key scope, get rid of it */
 
-		if ( (transaction = attachment->att_dbkey_trans) )
+		jrd_tra* trans_dbk = attachment->att_dbkey_trans;
+		if (trans_dbk)
 		{
 			attachment->att_dbkey_trans = NULL;
 			if (dbb->dbb_ast_flags & DBB_shutdown ||
 				attachment->att_flags & ATT_shutdown)
 			{
-				TRA_release_transaction(tdbb, transaction);
+				TRA_release_transaction(tdbb, trans_dbk);
 			}
 			else
 			{
-				TRA_commit(tdbb, transaction, FALSE);
+				TRA_commit(tdbb, trans_dbk, false);
 			}
 		}
 
@@ -6618,19 +6583,27 @@ static void purge_attachment(TDBB		tdbb,
 		{
 			/* There are still attachments so do a partial shutdown */
 
+			jrd_req* request;
 			while ( (request = attachment->att_requests) ) {
 				CMP_release(tdbb, request);
 			}
-			while ( (class_ = attachment->att_security_classes) ) {
-				SCL_release(class_);
+			
+			scl* sec_class;
+			while ( (sec_class = attachment->att_security_classes) ) {
+				SCL_release(sec_class);
 			}
-			if ( (user = attachment->att_user) ) {
+			
+			usr* user = attachment->att_user;
+			if (user) {
 				delete user;
 			}
+			
+			bkm* bookmark;
 			while ( (bookmark = attachment->att_bookmarks) ) {
 				attachment->att_bookmarks = bookmark->bkm_next;
 				delete bookmark;
 			}
+			
 			if (attachment->att_bkm_quick_ref) {
 				delete attachment->att_bkm_quick_ref;
 			}
@@ -6642,7 +6615,7 @@ static void purge_attachment(TDBB		tdbb,
 		}
 		else
 		{
-			shutdown_database(dbb, TRUE);
+			shutdown_database(dbb, true);
 		}
 	}
 }

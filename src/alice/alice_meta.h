@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Alice (All Else) Utility
  *	MODULE:		alice_meta.h
- *	DESCRIPTION:	Prototype header file for alice_meta.e
+ *	DESCRIPTION:	Prototype header file for alice_meta.epp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -30,3 +30,4 @@ TDR		MET_get_transaction(ISC_STATUS*, isc_db_handle, SLONG);
 void	MET_set_capabilities(ISC_STATUS*, TDR);
 
 #endif	// ALICE_ALICE_META_H
+

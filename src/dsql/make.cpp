@@ -65,7 +65,7 @@ static inline bool could_be_date(const dsc& d)
 }
 
 
-/* One of d1,d2 is time, the other is date */
+/* One of d1, d2 is time, the other is date */
 static inline bool is_date_and_time(const dsc& d1, const dsc& d2)
 {
 	return ((d1.dsc_dtype == dtype_sql_time) && (d2.dsc_dtype == dtype_sql_date)) ||
@@ -84,24 +84,27 @@ static inline bool is_date_and_time(const dsc& d1, const dsc& d2)
     @param numeric_flag
 
  **/
-DSQL_NOD MAKE_constant(STR constant, int numeric_flag)
+dsql_nod* MAKE_constant(str* constant, dsql_constant_type numeric_flag)
 {
 	TSQL tdsql = GET_THREAD_DATA;
 
-	DSQL_NOD node = FB_NEW_RPT(*tdsql->tsql_default,
+	dsql_nod* node = FB_NEW_RPT(*tdsql->tsql_default,
 						(numeric_flag == CONSTANT_TIMESTAMP ||
 						  numeric_flag == CONSTANT_SINT64) ? 2 : 1) dsql_nod;
 	node->nod_type = nod_constant;
 
-	if (numeric_flag == CONSTANT_SLONG) {
+	switch (numeric_flag)
+	{
+	case CONSTANT_SLONG:
 		node->nod_desc.dsc_dtype = dtype_long;
 		node->nod_desc.dsc_length = sizeof(SLONG);
 		node->nod_desc.dsc_scale = 0;
 		node->nod_desc.dsc_sub_type = 0;
 		node->nod_desc.dsc_address = (UCHAR *) node->nod_arg;
-		node->nod_arg[0] = (DSQL_NOD) constant;
-	}
-	else if (numeric_flag == CONSTANT_DOUBLE) {
+		node->nod_arg[0] = (dsql_nod*) constant;
+		break;
+
+	case CONSTANT_DOUBLE:
 		DEV_BLKCHK(constant, dsql_type_str);
 
 		/* This is a numeric value which is transported to the engine as
@@ -111,87 +114,93 @@ DSQL_NOD MAKE_constant(STR constant, int numeric_flag)
 		 constants of less than 256 bytes.  
 		 */
 		node->nod_desc.dsc_dtype = dtype_double;
-		node->nod_desc.dsc_scale = static_cast < char >(constant->str_length);	/* Scale has no use for double */
+		// Scale has no use for double
+		node->nod_desc.dsc_scale = static_cast < char >(constant->str_length);
 		node->nod_desc.dsc_sub_type = 0;
 		node->nod_desc.dsc_length = sizeof(double);
 		node->nod_desc.dsc_address = reinterpret_cast<UCHAR*>(constant->str_data);
 		node->nod_desc.dsc_ttype = ttype_ascii;
-		node->nod_arg[0] = (DSQL_NOD) constant;
-	}
-	else if (numeric_flag == CONSTANT_SINT64) {
-		/* We convert the string to an int64.  We treat the two adjacent
-		   32-bit words node->nod_arg[0] and node->nod_arg[1] as a
-		   64-bit integer: if we ever port to a platform which requires
-		   8-byte alignment of int64 data, we will have to force 8-byte
-		   alignment of node->nod_arg, which is now only guaranteed
-		   4-byte alignment.    -- ChrisJ 1999-02-20 */
+		node->nod_arg[0] = (dsql_nod*) constant;
+		break;
 
-		UINT64 value = 0;
-		const char* p = constant->str_data;
+	case CONSTANT_SINT64:
+		{
+			/* We convert the string to an int64.  We treat the two adjacent
+			   32-bit words node->nod_arg[0] and node->nod_arg[1] as a
+			   64-bit integer: if we ever port to a platform which requires
+			   8-byte alignment of int64 data, we will have to force 8-byte
+			   alignment of node->nod_arg, which is now only guaranteed
+			   4-byte alignment.    -- ChrisJ 1999-02-20 */
 
-		node->nod_desc.dsc_dtype = dtype_int64;
-		node->nod_desc.dsc_length = sizeof(SINT64);
-		node->nod_desc.dsc_scale = 0;
-		node->nod_desc.dsc_sub_type = 0;
-		node->nod_desc.dsc_address = (UCHAR *) node->nod_arg;
+			UINT64 value = 0;
+			const char* p = constant->str_data;
 
-		/* Now convert the string to an int64.  We can omit testing for
-		   overflow, because we would never have gotten here if yylex
-		   hadn't recognized the string as a valid 64-bit integer value.
-		   We *might* have "9223372936854775808", which works an an int64
-		   only if preceded by a '-', but that issue is handled in GEN_expr,
-		   and need not be addressed here. */
+			node->nod_desc.dsc_dtype = dtype_int64;
+			node->nod_desc.dsc_length = sizeof(SINT64);
+			node->nod_desc.dsc_scale = 0;
+			node->nod_desc.dsc_sub_type = 0;
+			node->nod_desc.dsc_address = (UCHAR *) node->nod_arg;
 
-		while (isdigit(*p))
-			value = 10 * value + (*(p++) - '0');
-		if (*p++ == '.') {
-			while (isdigit(*p)) {
-				value = 10 * value + (*p++ - '0');
-				node->nod_desc.dsc_scale--;
+			/* Now convert the string to an int64.  We can omit testing for
+			   overflow, because we would never have gotten here if yylex
+			   hadn't recognized the string as a valid 64-bit integer value.
+			   We *might* have "9223372936854775808", which works an an int64
+			   only if preceded by a '-', but that issue is handled in GEN_expr,
+			   and need not be addressed here. */
+
+			while (isdigit(*p))
+				value = 10 * value + (*(p++) - '0');
+			if (*p++ == '.') {
+				while (isdigit(*p)) {
+					value = 10 * value + (*p++ - '0');
+					node->nod_desc.dsc_scale--;
+				}
 			}
+
+			*(UINT64 *) (node->nod_desc.dsc_address) = value;
+			break;
 		}
 
-		*(UINT64 *) (node->nod_desc.dsc_address) = value;
+	case CONSTANT_DATE:
+	case CONSTANT_TIME:
+	case CONSTANT_TIMESTAMP:
+		{
+			/* Setup the constant's descriptor */
 
-	}
-	else if (numeric_flag == CONSTANT_DATE ||
-			 numeric_flag == CONSTANT_TIME ||
-			 numeric_flag == CONSTANT_TIMESTAMP)
-	{
-		/* Setup the constant's descriptor */
+			switch (numeric_flag) {
+			case CONSTANT_DATE:
+				node->nod_desc.dsc_dtype = dtype_sql_date;
+				break;
+			case CONSTANT_TIME:
+				node->nod_desc.dsc_dtype = dtype_sql_time;
+				break;
+			case CONSTANT_TIMESTAMP:
+				node->nod_desc.dsc_dtype = dtype_timestamp;
+				break;
+			}
+			node->nod_desc.dsc_sub_type = 0;
+			node->nod_desc.dsc_scale = 0;
+			node->nod_desc.dsc_length = type_lengths[node->nod_desc.dsc_dtype];
+			node->nod_desc.dsc_address = (UCHAR *) node->nod_arg;
 
-		switch (numeric_flag) {
-		case CONSTANT_DATE:
-			node->nod_desc.dsc_dtype = dtype_sql_date;
+			/* Set up a descriptor to point to the string */
+
+			dsc tmp;
+			tmp.dsc_dtype = dtype_text;
+			tmp.dsc_scale = 0;
+			tmp.dsc_flags = 0;
+			tmp.dsc_ttype = ttype_ascii;
+			tmp.dsc_length = static_cast<USHORT>(constant->str_length);
+			tmp.dsc_address = reinterpret_cast<UCHAR*>(constant->str_data);
+
+			/* Now invoke the string_to_date/time/timestamp routines */
+
+			CVT_move(&tmp, &node->nod_desc,
+					 reinterpret_cast<void (*)()> (ERRD_post));
 			break;
-		case CONSTANT_TIME:
-			node->nod_desc.dsc_dtype = dtype_sql_time;
-			break;
-		case CONSTANT_TIMESTAMP:
-			node->nod_desc.dsc_dtype = dtype_timestamp;
-			break;
-		};
-		node->nod_desc.dsc_sub_type = 0;
-		node->nod_desc.dsc_scale = 0;
-		node->nod_desc.dsc_length = type_lengths[node->nod_desc.dsc_dtype];
-		node->nod_desc.dsc_address = (UCHAR *) node->nod_arg;
+		}
 
-		/* Set up a descriptor to point to the string */
-
-		dsc tmp;
-		tmp.dsc_dtype = dtype_text;
-		tmp.dsc_scale = 0;
-		tmp.dsc_flags = 0;
-		tmp.dsc_ttype = ttype_ascii;
-		tmp.dsc_length = static_cast<USHORT>(constant->str_length);
-		tmp.dsc_address = reinterpret_cast<UCHAR*>(constant->str_data);
-
-		/* Now invoke the string_to_date/time/timestamp routines */
-
-		CVT_move(&tmp, &node->nod_desc,
-				 reinterpret_cast<void (*)()> (ERRD_post));
-	}
-	else {
+	default:
 		assert(numeric_flag == CONSTANT_STRING);
 		DEV_BLKCHK(constant, dsql_type_str);
 
@@ -203,7 +212,8 @@ DSQL_NOD MAKE_constant(STR constant, int numeric_flag)
 		node->nod_desc.dsc_address = reinterpret_cast<UCHAR*>(constant->str_data);
 		node->nod_desc.dsc_ttype = ttype_dynamic;
 		/* carry a pointer to the constant to resolve character set in pass1 */
-		node->nod_arg[0] = (DSQL_NOD) constant;
+		node->nod_arg[0] = (dsql_nod*) constant;
+		break;
 	}
 
 	return node;
@@ -222,11 +232,11 @@ DSQL_NOD MAKE_constant(STR constant, int numeric_flag)
     @param character_set
 
  **/
-DSQL_NOD MAKE_str_constant(STR constant, SSHORT character_set)
+dsql_nod* MAKE_str_constant(str* constant, SSHORT character_set)
 {
 	TSQL tdsql = GET_THREAD_DATA;
 
-	DSQL_NOD node = FB_NEW_RPT(*tdsql->tsql_default, 1) dsql_nod;
+	dsql_nod* node = FB_NEW_RPT(*tdsql->tsql_default, 1) dsql_nod;
 	node->nod_type = nod_constant;
 
 	DEV_BLKCHK(constant, dsql_type_str);
@@ -238,7 +248,7 @@ DSQL_NOD MAKE_str_constant(STR constant, SSHORT character_set)
 	node->nod_desc.dsc_address = reinterpret_cast<UCHAR*>(constant->str_data);
 	node->nod_desc.dsc_ttype = character_set;
 /* carry a pointer to the constant to resolve character set in pass1 */
-	node->nod_arg[0] = (DSQL_NOD) constant;
+	node->nod_arg[0] = (dsql_nod*) constant;
 
 	return node;
 }
@@ -255,7 +265,7 @@ DSQL_NOD MAKE_str_constant(STR constant, SSHORT character_set)
     @param str
 
  **/
-STR MAKE_cstring(const char* str)
+str* MAKE_cstring(const char* str)
 {
 
 	return MAKE_string(str, strlen(str));
@@ -277,11 +287,10 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 {
 	dsc desc1, desc2;
 	USHORT dtype, dtype1, dtype2;
-	DSQL_MAP map;
+	dsql_map* map;
 	DSQL_CTX context;
 	DSQL_REL relation;
-	UDF udf;
-	DSQL_FLD field;
+	dsql_fld* field;
 
 	DEV_BLKCHK(node, dsql_type_nod);
 
@@ -305,7 +314,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		return;
 
 	case nod_map:
-		map = (DSQL_MAP) node->nod_arg[e_map_map];
+		map = (dsql_map*) node->nod_arg[e_map_map];
 		MAKE_desc(desc, map->map_node);
 		return;
 
@@ -370,27 +379,27 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 
 	case nod_concatenate:
 		{
-		MAKE_desc(&desc1, node->nod_arg[0]);
-		MAKE_desc(&desc2, node->nod_arg[1]);
-		desc->dsc_scale = 0;
-		desc->dsc_dtype = dtype_varying;
-		if (desc1.dsc_dtype <= dtype_any_text)
-			desc->dsc_ttype = desc1.dsc_ttype;
-		else
-			desc->dsc_ttype = ttype_ascii;
-		ULONG length = sizeof(USHORT) +
-			DSC_string_length(&desc1) + DSC_string_length(&desc2);
-		if (length > MAX_SSHORT) {
-			length = MAX_SSHORT;
-			/* dimitr: should we post a warning about truncated descriptor length?
-			ERRD_post_warning (gds_sqlwarn,
-							   gds_arg_gds, gds_imp_exc, 
-							   gds_arg_gds, gds_blktoobig,
-							   0);
-			*/
-		}
-		desc->dsc_length = length;
-		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
+			MAKE_desc(&desc1, node->nod_arg[0]);
+			MAKE_desc(&desc2, node->nod_arg[1]);
+			desc->dsc_scale = 0;
+			desc->dsc_dtype = dtype_varying;
+			if (desc1.dsc_dtype <= dtype_any_text)
+				desc->dsc_ttype = desc1.dsc_ttype;
+			else
+				desc->dsc_ttype = ttype_ascii;
+			ULONG length = sizeof(USHORT) +
+				DSC_string_length(&desc1) + DSC_string_length(&desc2);
+			if (length > MAX_SSHORT) {
+				length = MAX_SSHORT;
+				/* dimitr: should we post a warning about truncated descriptor length?
+				ERRD_post_warning (gds_sqlwarn,
+								   gds_arg_gds, gds_imp_exc, 
+								   gds_arg_gds, gds_blktoobig,
+								   0);
+				*/
+			}
+			desc->dsc_length = length;
+			desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
 		}
 		return;
 
@@ -411,7 +420,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		/* Beware that JRD treats substring() always as returning CHAR
 		instead	of VARCHAR for historical reasons. */
 		if (node->nod_type == nod_substr && desc1.dsc_dtype == dtype_blob) {
-			DSQL_NOD for_node = node->nod_arg [e_substr_length];
+			dsql_nod* for_node = node->nod_arg [e_substr_length];
 			assert (for_node->nod_desc.dsc_dtype == dtype_long);
 			/* Migrate the charset from the blob to the string. */
 			desc->dsc_ttype = desc1.dsc_scale;
@@ -426,7 +435,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 						gds_arg_gds, gds_dsql_datatype_err,
 						gds_arg_gds, gds_imp_exc,
 						gds_arg_gds, gds_field_name,
-						gds_arg_string, "substring()", /* field->fld_name,*/
+						gds_arg_string, "substring()", // field->fld_name
 						0);
 			}
 		}
@@ -438,7 +447,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		return;
 
 	case nod_cast:
-		field = (DSQL_FLD) node->nod_arg[e_cast_target];
+		field = (dsql_fld*) node->nod_arg[e_cast_target];
 		MAKE_desc_from_field(desc, field);
 		MAKE_desc(&desc1, node->nod_arg[e_cast_source]);
 		desc->dsc_flags = desc1.dsc_flags & DSC_nullable;
@@ -894,22 +903,24 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		return;
 
 	case nod_udf:
-		udf = (UDF) node->nod_arg[0];
-		desc->dsc_dtype = static_cast<UCHAR>(udf->udf_dtype);
-		desc->dsc_length = udf->udf_length;
-		desc->dsc_scale = static_cast<SCHAR>(udf->udf_scale);
-		/* CVC: Setting flags to zero obviously impeded DSQL to acknowledge
-		the fact that any UDF can return NULL simply returning a NULL
-		pointer. */
-		desc->dsc_flags = DSC_nullable;
-		
-		if (desc->dsc_dtype <= dtype_any_text) {		
-			desc->dsc_ttype = udf->udf_character_set_id;
+		{
+			const udf* userFunc = (UDF) node->nod_arg[0];
+			desc->dsc_dtype = static_cast<UCHAR>(userFunc->udf_dtype);
+			desc->dsc_length = userFunc->udf_length;
+			desc->dsc_scale = static_cast<SCHAR>(userFunc->udf_scale);
+			/* CVC: Setting flags to zero obviously impeded DSQL to acknowledge
+			the fact that any UDF can return NULL simply returning a NULL
+			pointer. */
+			desc->dsc_flags = DSC_nullable;
+			
+			if (desc->dsc_dtype <= dtype_any_text) {		
+				desc->dsc_ttype = userFunc->udf_character_set_id;
+			}
+			else {
+				desc->dsc_ttype = userFunc->udf_sub_type;
+			}
+			return;
 		}
-		else {
-			desc->dsc_ttype = udf->udf_sub_type;
-		}
-		return;
 
 	case nod_gen_id:
 		desc->dsc_dtype = dtype_long;
@@ -1105,7 +1116,7 @@ void MAKE_desc_from_field(dsc* desc, const dsql_fld* field)
 	@param expression_name
 
  **/
-void MAKE_desc_from_list(dsc* desc, DSQL_NOD node, const TEXT* expression_name)
+void MAKE_desc_from_list(dsc* desc, dsql_nod* node, const TEXT* expression_name)
 {
 	//-------------------------------------------------------------------------- 
 	//  [Arno Brinkman] 2003-08-23
@@ -1156,10 +1167,10 @@ void MAKE_desc_from_list(dsc* desc, DSQL_NOD node, const TEXT* expression_name)
 
 	// Walk through arguments list.
 	const dsql_nod* err_node = NULL;
-	DSQL_NOD* arg = node->nod_arg;
-	for (DSQL_NOD* end = arg + node->nod_count; arg < end; arg++) {
+	dsql_nod** arg = node->nod_arg;
+	for (dsql_nod** end = arg + node->nod_count; arg < end; arg++) {
 		// ignore NULL and parameter value from walking
-		DSQL_NOD tnod = *arg;
+		dsql_nod* tnod = *arg;
 		if (tnod->nod_type == nod_null || tnod->nod_type == nod_parameter) {
 			continue;
 		}
@@ -1407,15 +1418,15 @@ void MAKE_desc_from_list(dsc* desc, DSQL_NOD node, const TEXT* expression_name)
     @param indices
 
  **/
-DSQL_NOD MAKE_field(DSQL_CTX context, DSQL_FLD field, DSQL_NOD indices)
+dsql_nod* MAKE_field(DSQL_CTX context, dsql_fld* field, dsql_nod* indices)
 {
 	DEV_BLKCHK(context, dsql_type_ctx);
 	DEV_BLKCHK(field, dsql_type_fld);
 	DEV_BLKCHK(indices, dsql_type_nod);
 
-	DSQL_NOD node = MAKE_node(nod_field, e_fld_count);
-	node->nod_arg[e_fld_context] = (DSQL_NOD) context;
-	node->nod_arg[e_fld_field] = (DSQL_NOD) field;
+	dsql_nod* node = MAKE_node(nod_field, e_fld_count);
+	node->nod_arg[e_fld_context] = (dsql_nod*) context;
+	node->nod_arg[e_fld_field] = (dsql_nod*) field;
 	if (field->fld_dimensions) {
 		if (indices) {
 			node->nod_arg[e_fld_indices] = indices;
@@ -1460,7 +1471,7 @@ DSQL_NOD MAKE_field(DSQL_CTX context, DSQL_FLD field, DSQL_NOD indices)
     @param stack
 
  **/
-DSQL_NOD MAKE_list(DLLS stack)
+dsql_nod* MAKE_list(DLLS stack)
 {
 	DEV_BLKCHK(stack, dsql_type_lls);
 
@@ -1468,11 +1479,11 @@ DSQL_NOD MAKE_list(DLLS stack)
 	for (DLLS temp = stack; temp; temp = temp->lls_next)
 		++count;
 
-	DSQL_NOD node = MAKE_node(nod_list, count);
-	DSQL_NOD* ptr = node->nod_arg + count;
+	dsql_nod* node = MAKE_node(nod_list, count);
+	dsql_nod** ptr = node->nod_arg + count;
 
 	while (stack)
-		*--ptr = (DSQL_NOD) LLS_POP(&stack);
+		*--ptr = (dsql_nod*) LLS_POP(&stack);
 
 	return node;
 }
@@ -1489,11 +1500,11 @@ DSQL_NOD MAKE_list(DLLS stack)
     @param count
 
  **/
-DSQL_NOD MAKE_node(NOD_TYPE type, int count)
+dsql_nod* MAKE_node(NOD_TYPE type, int count)
 {
 	TSQL tdsql = GET_THREAD_DATA;
 
-	DSQL_NOD node = FB_NEW_RPT(*tdsql->tsql_default, count) dsql_nod;
+	dsql_nod* node = FB_NEW_RPT(*tdsql->tsql_default, count) dsql_nod;
 	node->nod_type = type;
 	node->nod_count = count;
 
@@ -1515,7 +1526,7 @@ DSQL_NOD MAKE_node(NOD_TYPE type, int count)
     @param sqlda_index
 
  **/
-PAR MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
+par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 	USHORT sqlda_index)
 {
 	DEV_BLKCHK(message, dsql_type_msg);
@@ -1524,7 +1535,7 @@ PAR MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 		!Config::getOldParameterOrdering()) 
 	{
 		// This parameter possibly already here. Look for it
-		for (PAR temp = message->msg_parameters; temp; temp = temp->par_next) {
+		for (par* temp = message->msg_parameters; temp; temp = temp->par_next) {
 			if (temp->par_index == sqlda_index)
 				return temp;
 		}
@@ -1532,7 +1543,7 @@ PAR MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 
 	TSQL tdsql = GET_THREAD_DATA;
 
-	PAR parameter = FB_NEW(*tdsql->tsql_default) par;
+	par* parameter = FB_NEW(*tdsql->tsql_default) par;
 	parameter->par_message = message;
 	parameter->par_next = message->msg_parameters;
 	if (parameter->par_next != 0)
@@ -1557,7 +1568,7 @@ PAR MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 /* If a null handing has been requested, set up a null flag */
 
 	if (null_flag) {
-		PAR null = MAKE_parameter(message, false, false, 0);
+		par* null = MAKE_parameter(message, false, false, 0);
 		parameter->par_null = null;
 		null->par_desc.dsc_dtype = dtype_short;
 		null->par_desc.dsc_scale = 0;
@@ -1578,7 +1589,7 @@ PAR MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
     @param length
 
  **/
-STR MAKE_string(const char* str, int length)
+str* MAKE_string(const char* str, int length)
 {
 	return MAKE_tagged_string(str, length, NULL);
 }
@@ -1598,8 +1609,8 @@ STR MAKE_string(const char* str, int length)
     @param object
 
  **/
-DSQL_SYM MAKE_symbol(DBB database,
-				const TEXT* name, USHORT length, SYM_TYPE type, DSQL_REQ object)
+dsql_sym* MAKE_symbol(DBB database,
+				const TEXT* name, USHORT length, SYM_TYPE type, dsql_req* object)
 {
 	DEV_BLKCHK(database, dsql_type_dbb);
 	DEV_BLKCHK(object, dsql_type_req);
@@ -1608,7 +1619,7 @@ DSQL_SYM MAKE_symbol(DBB database,
 
 	TSQL tdsql = GET_THREAD_DATA;
 
-	DSQL_SYM symbol = FB_NEW_RPT(*tdsql->tsql_default, length) dsql_sym;
+	dsql_sym* symbol = FB_NEW_RPT(*tdsql->tsql_default, length) dsql_sym;
 	symbol->sym_type = type;
 	symbol->sym_object = (BLK) object;
 	symbol->sym_dbb = database;
@@ -1638,11 +1649,11 @@ DSQL_SYM MAKE_symbol(DBB database,
     @param charset
 
  **/
-STR MAKE_tagged_string(const char* str_, size_t length, const char* charset)
+str* MAKE_tagged_string(const char* str_, size_t length, const char* charset)
 {
 	TSQL tdsql = GET_THREAD_DATA;
 
-	STR string = FB_NEW_RPT(*tdsql->tsql_default, length) str;
+	str* string = FB_NEW_RPT(*tdsql->tsql_default, length) str;
 	string->str_charset = charset;
 	string->str_length  = length;
 	memcpy(string->str_data, str_, length);
@@ -1662,13 +1673,13 @@ STR MAKE_tagged_string(const char* str_, size_t length, const char* charset)
     @param suffix_node
 
  **/
-DSQL_NOD MAKE_trigger_type(DSQL_NOD prefix_node, DSQL_NOD suffix_node)
+dsql_nod* MAKE_trigger_type(dsql_nod* prefix_node, dsql_nod* suffix_node)
 {
 	const long prefix = (long) prefix_node->nod_arg[0];
 	const long suffix = (long) suffix_node->nod_arg[0];
 	delete prefix_node;
 	delete suffix_node;
-	return MAKE_constant((STR) (prefix + suffix - 1), CONSTANT_SLONG);
+	return MAKE_constant((str*) (prefix + suffix - 1), CONSTANT_SLONG);
 }
 
 
@@ -1687,7 +1698,7 @@ DSQL_NOD MAKE_trigger_type(DSQL_NOD prefix_node, DSQL_NOD suffix_node)
     @param local_number
 
  **/
-DSQL_NOD MAKE_variable(DSQL_FLD field,
+dsql_nod* MAKE_variable(dsql_fld* field,
 				  const TEXT* name,
 				  USHORT type,
 				  USHORT msg_number, USHORT item_number, USHORT local_number)
@@ -1696,9 +1707,9 @@ DSQL_NOD MAKE_variable(DSQL_FLD field,
 
 	TSQL tdsql = GET_THREAD_DATA;
 
-	VAR variable = FB_NEW_RPT(*tdsql->tsql_default, strlen(name)) var;
-	DSQL_NOD node = MAKE_node(nod_variable, e_var_count);
-	node->nod_arg[e_var_variable] = (DSQL_NOD) variable;
+	var* variable = FB_NEW_RPT(*tdsql->tsql_default, strlen(name)) var;
+	dsql_nod* node = MAKE_node(nod_variable, e_var_count);
+	node->nod_arg[e_var_variable] = (dsql_nod*) variable;
 	variable->var_msg_number = msg_number;
 	variable->var_msg_item = item_number;
 	variable->var_variable_number = local_number;

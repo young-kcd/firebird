@@ -36,10 +36,10 @@ int		ISC_check_process_existence(SLONG, SLONG, USHORT);
 void	ISC_get_config(TEXT *, struct ipccfg *);
 int		ISC_set_config(TEXT *, struct ipccfg *);
 TEXT*	INTERNAL_API_ROUTINE ISC_get_host(TEXT *, USHORT);
-int		INTERNAL_API_ROUTINE ISC_get_user(TEXT *, int *, int *, TEXT *,
-											 TEXT *, int *, TEXT *);
-SLONG	ISC_get_user_group_id(TEXT *);
-void	ISC_set_user(TEXT *);
+int		INTERNAL_API_ROUTINE ISC_get_user(TEXT*, int*, int*, TEXT*,
+											 TEXT*, int*, const TEXT*);
+SLONG	ISC_get_user_group_id(const TEXT*);
+void	ISC_set_user(const TEXT*);
 SLONG	API_ROUTINE ISC_get_prefix(const TEXT*);
 void	API_ROUTINE ISC_prefix(TEXT*, const TEXT*);
 void	API_ROUTINE ISC_prefix_lock(TEXT*, const TEXT*);
@@ -55,8 +55,10 @@ void	ISC_wake_init(void);
 
 #ifdef WIN_NT
 BOOLEAN ISC_is_WinNT(void);
-struct _SECURITY_ATTRIBUTES *ISC_get_security_desc(void);
-TEXT*	ISC_prefix_interbase(TEXT *, TEXT *);
+struct _SECURITY_ATTRIBUTES* ISC_get_security_desc(void);
+/* Disabled. Not found anywhere.
+TEXT*	ISC_prefix_interbase(TEXT*, TEXT*);
+*/
 #endif
 
 #ifdef __cplusplus

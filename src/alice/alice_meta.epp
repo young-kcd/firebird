@@ -27,7 +27,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: alice_meta.epp,v 1.22 2003-10-16 08:50:54 robocop Exp $
+ *	$Id: alice_meta.epp,v 1.23 2003-11-01 10:26:32 robocop Exp $
  */
 
 #include "firebird.h"
@@ -70,8 +70,8 @@ static USHORT snarf_blob(SLONG[2], USHORT, TEXT*);
 */
 
 struct rfr_tab_t {
-	TEXT *relation;
-	TEXT *field;
+	TEXT* relation;
+	TEXT* field;
 	int bit_mask;
 };
 
@@ -310,7 +310,8 @@ static USHORT get_capabilities(ISC_STATUS* user_status)
 
 static TDR get_description(SLONG blob_id[2])
 {
-	TEXT buffer[1024], *bigger_buffer;
+	TEXT buffer[1024];
+	TEXT* bigger_buffer = 0;
 	TGBL tdgbl = GET_THREAD_DATA;
 
 	TEXT* p = buffer;
@@ -457,10 +458,8 @@ static void parse_fullpath(TDR trans)
  */  
 
 static USHORT snarf_blob(SLONG blob_id[2],
-						 USHORT buffer_length, TEXT * buffer)
+						 USHORT buffer_length, TEXT* buffer)
 {
-	USHORT returned_length;
-	ISC_STATUS status;
 	TGBL tdgbl = GET_THREAD_DATA;
 
 	if (buffer_length)
@@ -469,12 +468,16 @@ static USHORT snarf_blob(SLONG blob_id[2],
 		buffer[1] = 0;
 
 	FRBRD* blob = NULL;
-	if (gds__open_blob(gds_status, &DB, &gds_trans, &blob, (GDS_QUAD*) blob_id)) {
+	if (gds__open_blob(gds_status, &DB, &gds_trans, &blob, (GDS_QUAD*) blob_id))
+	{
 		ALICE_print_status(gds_status);
 		return 0;
 	}
 
 //  get the blob into the buffer, if it fits 
+
+	USHORT returned_length;
+	ISC_STATUS status;
 
 	TEXT* ptr = buffer;
 	TEXT* const end = buffer + buffer_length;

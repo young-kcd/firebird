@@ -71,7 +71,8 @@ ISC_STATUS	REM_put_slice(ISC_STATUS *, struct rdb **, struct rtr **, BID, USHORT
 ISC_STATUS	REM_que_events(ISC_STATUS *, struct rdb **, SLONG *, SSHORT, UCHAR *, void (*)(void*, USHORT, UCHAR*), void *);
 ISC_STATUS	REM_query_service(ISC_STATUS *, struct rdb **, USHORT, SCHAR *, USHORT, SCHAR *, USHORT, SCHAR *);
 ISC_STATUS	REM_receive(ISC_STATUS *, struct rrq **, USHORT, USHORT, UCHAR *, SSHORT);
-ISC_STATUS	REM_reconnect_transaction(ISC_STATUS *, struct rdb **, struct rtr **, USHORT, UCHAR *);
+ISC_STATUS	REM_reconnect_transaction(ISC_STATUS*, struct rdb**, struct rtr**,
+	USHORT, const UCHAR*);
 ISC_STATUS	REM_release_request(ISC_STATUS *, struct rrq **);
 ISC_STATUS	REM_request_info(ISC_STATUS*, struct rrq**, SSHORT, SSHORT,
 	const UCHAR*, SSHORT, UCHAR*);

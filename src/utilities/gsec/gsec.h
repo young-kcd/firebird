@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _UTILITIES_GSEC_H_
-#define _UTILITIES_GSEC_H_
+#ifndef UTILITIES_GSEC_H
+#define UTILITIES_GSEC_H
 
 #include "../jrd/ibsetjmp.h"
 #include "../jrd/thd.h"
@@ -127,20 +127,20 @@ typedef struct user_data {
 } *USER_DATA;
 
 typedef struct tsec {
-    struct thdd		tsec_thd_data;
-    struct user_data	*tsec_user_data;
-    int			tsec_exit_code;
-    jmp_buf*	tsec_env;
-    ISC_STATUS		*tsec_status;
+    struct thdd			tsec_thd_data;
+    struct user_data*	tsec_user_data;
+    int					tsec_exit_code;
+    jmp_buf*			tsec_env;
+    ISC_STATUS*			tsec_status;
     ISC_STATUS_ARRAY	tsec_status_vector;
-    bool		tsec_interactive;
-    bool		tsec_sw_version;
-    bool		tsec_service_gsec;
-    bool		tsec_service_thd;
-    pfn_svc_output	tsec_output_proc;
-    SLONG       	tsec_output_data;
-    IB_FILE        	*tsec_output_file;
-    SVC			tsec_service_blk;
+    bool				tsec_interactive;
+    bool				tsec_sw_version;
+    bool				tsec_service_gsec;
+    bool				tsec_service_thd;
+    pfn_svc_output		tsec_output_proc;
+    svc*				tsec_output_data;
+    IB_FILE*			tsec_output_file;
+    SVC					tsec_service_blk;
 } *TSEC;
 
 #define GsecMsg0	0	/* empty message */
@@ -235,4 +235,5 @@ typedef struct tsec {
 #define GsecMsg89	89	/* displaying version number: */
 #define GsecMsg90	90	/* z (interactive only) */
 
-#endif /* _UTILITIES_GSEC_H_ */
+#endif /* UTILITIES_GSEC_H */
+

@@ -789,9 +789,9 @@ int rdb$receive(
 
 
 int rdb$reconnect_transaction(
-							  int *user_status,
-							  DBB * db_handle,
-							  TRA * tra_handle, SSHORT length, UCHAR * id)
+							  int* user_status,
+							  DBB* db_handle,
+							  TRA* tra_handle, SSHORT length, const UCHAR* id)
 {
 /**************************************
  *

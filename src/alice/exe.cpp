@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.21 2003-10-29 10:52:59 robocop Exp $
+//	$Id: exe.cpp,v 1.22 2003-11-01 10:26:32 robocop Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -51,8 +51,8 @@
 #include "../jrd/thd_proto.h"
 
 
-static USHORT build_dpb(UCHAR *, ULONG);
-static void extract_db_info(UCHAR *);
+static USHORT build_dpb(UCHAR*, const ULONG);
+static void extract_db_info(const UCHAR*);
 
 static const TEXT val_errors[] =
 {
@@ -82,7 +82,7 @@ static inline void stuff_dpb_long(UCHAR** d, int blr)
 //
 //
 
-int EXE_action(const TEXT* database, ULONG switches)
+int EXE_action(const TEXT* database, const ULONG switches)
 {
 	UCHAR dpb[128];
 	TGBL tdgbl = GET_THREAD_DATA;
@@ -136,7 +136,7 @@ int EXE_action(const TEXT* database, ULONG switches)
 //
 //
 
-int EXE_two_phase(const TEXT* database, ULONG switches)
+int EXE_two_phase(const TEXT* database, const ULONG switches)
 {
 	UCHAR dpb[128];
 	TGBL tdgbl = GET_THREAD_DATA;
@@ -182,7 +182,7 @@ int EXE_two_phase(const TEXT* database, ULONG switches)
 //  based on the various switches
 //
 
-static USHORT build_dpb(UCHAR* dpb, ULONG switches)
+static USHORT build_dpb(UCHAR* dpb, const ULONG switches)
 {
 	TGBL tdgbl = GET_THREAD_DATA;
 
@@ -333,13 +333,13 @@ static USHORT build_dpb(UCHAR* dpb, ULONG switches)
 //		Extract database info from string
 //
 
-static void extract_db_info(UCHAR* db_info_buffer)
+static void extract_db_info(const UCHAR* db_info_buffer)
 {
-	UCHAR item;
 	TGBL tdgbl = GET_THREAD_DATA;
 
-	UCHAR* p = db_info_buffer;
+	const UCHAR* p = db_info_buffer;
 
+	UCHAR item;
 	while ((item = *p++) != gds_info_end) {
 		const SLONG length = gds__vax_integer(p, 2);
 		p += 2;

@@ -96,9 +96,9 @@ static SLONG bump_transaction_id(TDBB, WIN *);
 #else
 static HDR bump_transaction_id(TDBB, WIN *);
 #endif
-static void retain_context(TDBB, JRD_TRA, USHORT);
+static void retain_context(TDBB, JRD_TRA, const bool);
 #ifdef VMS
-static void compute_oldest_retaining(TDBB, JRD_TRA, BOOLEAN);
+static void compute_oldest_retaining(TDBB, JRD_TRA, const bool);
 #endif
 #ifdef PC_ENGINE
 static void downgrade_lock(JRD_TRA);
@@ -110,9 +110,9 @@ static SSHORT limbo_transaction(TDBB, SLONG);
 static void restart_requests(TDBB, JRD_TRA);
 #ifdef SWEEP_THREAD
 static BOOLEAN start_sweeper(TDBB, DBB);
-static void THREAD_ROUTINE sweep_database(UCHAR *);
+static void THREAD_ROUTINE sweep_database(char*);
 #endif
-static void transaction_options(TDBB, JRD_TRA, UCHAR *, USHORT);
+static void transaction_options(TDBB, JRD_TRA, const UCHAR*, USHORT);
 #ifdef VMS
 static BOOLEAN vms_convert(LCK, SLONG *, SCHAR, BOOLEAN);
 #endif
@@ -340,7 +340,7 @@ void TRA_cleanup(TDBB tdbb)
 }
 
 
-void TRA_commit(TDBB tdbb, JRD_TRA transaction, USHORT retaining_flag)
+void TRA_commit(TDBB tdbb, JRD_TRA transaction, const bool retaining_flag)
 {
 /**************************************
  *
@@ -362,7 +362,8 @@ void TRA_commit(TDBB tdbb, JRD_TRA transaction, USHORT retaining_flag)
 
 	if (retaining_flag
 		&& !(transaction->tra_flags & TRA_write
-			 || transaction->tra_deferred_work)) {
+			 || transaction->tra_deferred_work))
+	{
 		transaction->tra_flags &= ~TRA_prepared;
 		return;
 	}
@@ -413,7 +414,7 @@ void TRA_commit(TDBB tdbb, JRD_TRA transaction, USHORT retaining_flag)
 #endif
 
 	if (retaining_flag) {
-		retain_context(tdbb, transaction, TRUE);
+		retain_context(tdbb, transaction, true);
 		return;
 	}
 
@@ -982,7 +983,7 @@ void TRA_prepare(TDBB tdbb, JRD_TRA transaction, USHORT length,
 }
 
 
-JRD_TRA TRA_reconnect(TDBB tdbb, UCHAR * id, USHORT length)
+jrd_tra* TRA_reconnect(TDBB tdbb, const UCHAR* id, USHORT length)
 {
 /**************************************
  *
@@ -994,15 +995,8 @@ JRD_TRA TRA_reconnect(TDBB tdbb, UCHAR * id, USHORT length)
  *	Reconnect to a transaction in limbo.
  *
  **************************************/
-	DBB dbb;
-	JRD_TRA trans;
-	UCHAR state;
-	TEXT text[128];
-	USHORT flags, message;
-	SLONG number;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 /* Cannot work on limbo transactions for ReadOnly database */
@@ -1011,12 +1005,15 @@ JRD_TRA TRA_reconnect(TDBB tdbb, UCHAR * id, USHORT length)
 
 
 	tdbb->tdbb_default = JrdMemoryPool::createPool();
-	trans = FB_NEW_RPT(*tdbb->tdbb_default, 0) jrd_tra();
+	jrd_tra* trans = FB_NEW_RPT(*tdbb->tdbb_default, 0) jrd_tra();
 	trans->tra_pool = tdbb->tdbb_default;
 	trans->tra_number = gds__vax_integer(id, length);
 	trans->tra_flags |= TRA_prepared | TRA_reconnected | TRA_write;
 
-	if ((state = limbo_transaction(tdbb, trans->tra_number)) != tra_limbo) {
+	const UCHAR state = limbo_transaction(tdbb, trans->tra_number);
+	if (state != tra_limbo) {
+		USHORT message;
+		
 		switch (state) {
 		case tra_active:
 			message = 262;		/* ACTIVE */
@@ -1032,9 +1029,11 @@ JRD_TRA TRA_reconnect(TDBB tdbb, UCHAR * id, USHORT length)
 			break;
 		}
 
-		number = trans->tra_number;
+		const SLONG number = trans->tra_number;
 		JrdMemoryPool::deletePool(trans->tra_pool);
 
+		TEXT text[128];
+		USHORT flags;
 		gds__msg_lookup(0, JRD_BUGCHK, message, sizeof(text), text, &flags);
 
 		ERR_post(gds_no_recon,
@@ -1134,7 +1133,7 @@ void TRA_release_transaction(TDBB tdbb, JRD_TRA transaction)
 }
 
 
-void TRA_rollback(TDBB tdbb, JRD_TRA transaction, USHORT retaining_flag)
+void TRA_rollback(TDBB tdbb, JRD_TRA transaction, const bool retaining_flag)
 {
 /**************************************
  *
@@ -1256,7 +1255,7 @@ void TRA_rollback(TDBB tdbb, JRD_TRA transaction, USHORT retaining_flag)
  */
 
 	if (retaining_flag) {
-		retain_context(tdbb, transaction, FALSE);
+		retain_context(tdbb, transaction, false);
 		return;
 	}
 
@@ -1460,7 +1459,7 @@ int TRA_snapshot_state(TDBB tdbb, JRD_TRA trans, SLONG number)
 }
 
 
-JRD_TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
+jrd_tra* TRA_start(TDBB tdbb, int tpb_length, const SCHAR* tpb)
 {
 /**************************************
  *
@@ -1501,7 +1500,7 @@ JRD_TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
 	tdbb->tdbb_default = JrdMemoryPool::createPool();
 	temp = FB_NEW_RPT(*tdbb->tdbb_default, 0) jrd_tra;
 	temp->tra_pool = tdbb->tdbb_default;
-	transaction_options(tdbb, temp, reinterpret_cast < UCHAR * >(tpb),
+	transaction_options(tdbb, temp, reinterpret_cast<const UCHAR*>(tpb),
 						tpb_length);
 
 	lock = TRA_transaction_lock(tdbb, reinterpret_cast < blk * >(temp));
@@ -1689,7 +1688,7 @@ JRD_TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
 
 #ifdef VMS
 	if (trans->tra_oldest_active != oldest_snapshot)
-		compute_oldest_retaining(tdbb, trans, FALSE);
+		compute_oldest_retaining(tdbb, trans, false);
 #endif
 
 /* Finally, scan transactions looking for the oldest interesting transaction -- the oldest
@@ -1889,9 +1888,7 @@ int TRA_sweep(TDBB tdbb, JRD_TRA trans)
 	if (!(transaction = trans))
 		transaction = TRA_start(tdbb,
 								sizeof(sweep_tpb),
-								reinterpret_cast < char *>(const_cast <
-														   UCHAR *
-														   >(sweep_tpb)));
+								reinterpret_cast<const char*>(sweep_tpb));
 
 	transaction_oldest_active = transaction->tra_oldest_active;
 
@@ -1961,7 +1958,7 @@ int TRA_sweep(TDBB tdbb, JRD_TRA trans)
 	}
 
 	if (!trans)
-		TRA_commit(tdbb, transaction, FALSE);
+		TRA_commit(tdbb, transaction, false);
 
 	LCK_release(tdbb, &temp_lock);
 	dbb->dbb_flags &= ~DBB_sweep_in_progress;
@@ -1972,7 +1969,7 @@ int TRA_sweep(TDBB tdbb, JRD_TRA trans)
 		try {
 			if (!trans)
 			{
-				TRA_commit(tdbb, transaction, FALSE);
+				TRA_commit(tdbb, transaction, false);
 			}
 		}
 		catch (const std::exception&) {
@@ -2262,7 +2259,7 @@ static HDR bump_transaction_id(TDBB tdbb, WIN * window)
 #ifdef VMS
 static void compute_oldest_retaining(
 									 TDBB tdbb,
-									 JRD_TRA transaction, BOOLEAN write_flag)
+									 JRD_TRA transaction, const bool write_flag)
 {
 /**************************************
  *
@@ -2628,7 +2625,7 @@ static void restart_requests(TDBB tdbb, JRD_TRA trans)
 }
 
 
-static void retain_context(TDBB tdbb, JRD_TRA transaction, USHORT commit)
+static void retain_context(TDBB tdbb, JRD_TRA transaction, const bool commit)
 {
 /**************************************
  *
@@ -2715,7 +2712,7 @@ static void retain_context(TDBB tdbb, JRD_TRA transaction, USHORT commit)
 	old_number = transaction->tra_number;
 #ifdef VMS
 	transaction->tra_number = new_number;
-	compute_oldest_retaining(tdbb, transaction, TRUE);
+	compute_oldest_retaining(tdbb, transaction, true);
 	transaction->tra_number = old_number;
 #endif
 
@@ -2846,7 +2843,7 @@ static BOOLEAN start_sweeper(TDBB tdbb, DBB dbb)
 }
 
 
-static void THREAD_ROUTINE sweep_database(UCHAR* database)
+static void THREAD_ROUTINE sweep_database(char* database)
 {
 /**************************************
  *
@@ -2859,7 +2856,6 @@ static void THREAD_ROUTINE sweep_database(UCHAR* database)
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	char*	q;
 	UCHAR	sweep_dpb[100];
 
 	isc_db_handle db_handle = NULL;
@@ -2868,7 +2864,7 @@ static void THREAD_ROUTINE sweep_database(UCHAR* database)
 
 	*dpb++ = gds_dpb_version1;
 	*dpb++ = gds_dpb_user_name;
-	q = "sweeper";
+	const char* q = "sweeper";
 	*dpb++ = strlen (q);
 	while (*q)
 	{
@@ -2911,7 +2907,7 @@ static void THREAD_ROUTINE sweep_database(UCHAR* database)
 	}
 	THREAD_EXIT;
 
-	gds__attach_database(status_vector, 0, reinterpret_cast<char*>(database),
+	gds__attach_database(status_vector, 0, database,
 						 &db_handle, dpb_length,
 						 reinterpret_cast<char*>(sweep_dpb));
 
@@ -2931,7 +2927,7 @@ static void THREAD_ROUTINE sweep_database(UCHAR* database)
 static void transaction_options(
 								TDBB tdbb,
 								JRD_TRA transaction,
-								UCHAR * tpb, USHORT tpb_length)
+								const UCHAR* tpb, USHORT tpb_length)
 {
 /**************************************
  *
@@ -2944,11 +2940,9 @@ static void transaction_options(
  *
  **************************************/
 	JRD_REL relation;
-	VEC vector;
 	LCK lock;
-	UCHAR *p, *end;
+	UCHAR *p;
 	TEXT name[32], text[128];
-	USHORT flags;
 	USHORT l, level, op, wait;
 	SCHAR lock_type;
 
@@ -2958,7 +2952,7 @@ static void transaction_options(
 		return;
 
 	wait = 1;
-	end = tpb + tpb_length;
+	const UCHAR* const end = tpb + tpb_length;
 
 	if (*tpb != gds_tpb_version3 && *tpb != gds_tpb_version1)
 		ERR_post(gds_bad_tpb_form, gds_arg_gds, gds_wrotpbver, 0);
@@ -3024,15 +3018,16 @@ static void transaction_options(
 			p = reinterpret_cast < UCHAR * >(name);
 			if ( (l = *tpb++) ) {
 				if (l >= sizeof(name)) {
+					USHORT flags;
 					gds__msg_lookup(0, DYN_MSG_FAC, 159, sizeof(text),
 									text, &flags);
 					/* msg 159: Name longer than database column size */
 					ERR_post(gds_bad_tpb_content, gds_arg_gds, gds_random,
 							 gds_arg_string, ERR_cstring(text), 0);
 				}
-				do
+				do {
 					*p++ = *tpb++;
-				while (--l);
+				} while (--l);
 			}
 			*p = 0;
 			if (!(relation = MET_lookup_relation(tdbb, name)))
@@ -3078,7 +3073,8 @@ static void transaction_options(
 
 /* If there aren't any relation locks to seize, we're done. */
 
-	if (!(vector = transaction->tra_relation_locks))
+	vec* vector = transaction->tra_relation_locks;
+	if (!vector)
 		return;
 
 /* Try to seize all relation locks.
@@ -3089,7 +3085,10 @@ static void transaction_options(
 			continue;
 		level = lock->lck_logical;
 		if (level == LCK_none
-			|| LCK_lock_non_blocking(tdbb, lock, level, wait)) continue;
+			|| LCK_lock_non_blocking(tdbb, lock, level, wait))
+		{
+			continue;
+		}
 		for (l = 0; l < id; l++)
 			if ( (lock = (LCK) (*vector)[l]) ) {
 				level = lock->lck_logical;

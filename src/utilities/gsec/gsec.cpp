@@ -62,7 +62,7 @@ static bool fAnsiCP = false;
 struct tsec *gdsec;
 #endif
 
-static int common_main(int, char**, pfn_svc_output, SLONG);
+static int common_main(int, char**, pfn_svc_output, svc*);
 static void util_output(const SCHAR*, ...);
 
 static void data_print(void *, USER_DATA, bool);
@@ -71,7 +71,7 @@ static bool get_switches(int, TEXT **, IN_SW_TAB, TSEC, bool *);
 static SSHORT parse_cmd_line(int, TEXT **, TSEC);
 static void printhelp(void);
 #ifndef SUPERSERVER
-static int output_main(SLONG, const UCHAR*);
+static int output_main(svc*, const UCHAR*);
 #endif
 
 void inline gsec_exit(int code, TSEC tdsec)
@@ -82,7 +82,7 @@ void inline gsec_exit(int code, TSEC tdsec)
 }
 
 #ifdef SUPERSERVER
-int GSEC_main(SVC service)
+int GSEC_main(svc* service)
 {
 /**********************************************
  *
@@ -95,7 +95,7 @@ int GSEC_main(SVC service)
 	int exit_code;
 
 	exit_code = common_main(service->svc_argc, service->svc_argv,
-						  SVC_output, (SLONG) service);
+						  SVC_output, service);
 
 	service->svc_handle = 0;
 	if (service->svc_service->in_use != NULL)
@@ -124,11 +124,11 @@ int CLIB_ROUTINE main( int argc, char* argv[])
  *	the specified argc/argv to SECURITY_exec_line (see below).
  *
  **************************************/
-	common_main(argc, argv, output_main, (SLONG) NULL);
+	common_main(argc, argv, output_main, NULL);
 	return 0;
 }
 
-static int output_main( SLONG output_data, const UCHAR* output_buf)
+static int output_main(svc* output_data, const UCHAR* output_buf)
 {
 /**************************************
  *
@@ -149,7 +149,7 @@ static int output_main( SLONG output_data, const UCHAR* output_buf)
 int common_main(int argc,
 				char* argv[],
 				pfn_svc_output output_proc,
-				SLONG output_data)
+				svc* output_data)
 {
 /**************************************
  *

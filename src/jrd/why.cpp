@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.30 2003-10-29 10:53:16 robocop Exp $
+$Id: why.cpp,v 1.31 2003-11-01 10:26:39 robocop Exp $
 */
 
 #include "firebird.h"
@@ -3958,11 +3958,11 @@ ISC_STATUS API_ROUTINE GDS_RECEIVE2(ISC_STATUS * user_status,
 #endif
 
 
-ISC_STATUS API_ROUTINE GDS_RECONNECT(ISC_STATUS * user_status,
-									 WHY_ATT * db_handle,
-									 WHY_TRA * tra_handle,
+ISC_STATUS API_ROUTINE GDS_RECONNECT(ISC_STATUS* user_status,
+									 WHY_ATT* db_handle,
+									 WHY_TRA* tra_handle,
 									 SSHORT length,
-									 UCHAR * id)
+									 const UCHAR* id)
 {
 /**************************************
  *
@@ -3974,13 +3974,12 @@ ISC_STATUS API_ROUTINE GDS_RECONNECT(ISC_STATUS * user_status,
  *	Connect to a transaction in limbo.
  *
  **************************************/
-	ISC_STATUS *status;
+	ISC_STATUS* status;
 	ISC_STATUS_ARRAY local;
-	WHY_ATT database;
 
 	GET_STATUS;
 	NULL_CHECK(tra_handle, isc_bad_trans_handle, HANDLE_transaction);
-	database = *db_handle;
+	WHY_ATT database = *db_handle;
 	CHECK_HANDLE(database, HANDLE_database, isc_bad_db_handle);
 	subsystem_enter();
 

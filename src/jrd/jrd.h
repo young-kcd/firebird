@@ -704,8 +704,9 @@ public:
 	static vec_base* newVector(MemoryPool& p, const vec_base& base)
 		{ return FB_NEW(p) vec_base<T,TYPE>(p, base); }
 		
-	ULONG count() { return vector.size(); }
+	ULONG count() const { return vector.size(); }
 	T& operator[](size_t index) { return vector[index]; }
+	const T& operator[](size_t index) const { return vector[index]; }
 
 	iterator begin() { return vector.begin(); }
 	iterator end() { return vector.end(); }
