@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cme.cpp,v 1.32 2004-08-26 21:44:11 brodsom Exp $
+//	$Id: cme.cpp,v 1.33 2004-08-27 04:50:00 robocop Exp $
 //
 
 #include "firebird.h"
@@ -669,9 +669,9 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 				CPR_error("Invalid use of timestamp/date/time value");
 				return; // silence non initialized warning
 			}
-			else{
+			else {
 				dtype_max = MAX(field1.fld_dtype, field2.fld_dtype);
-				if (DTYPE_IS_BLOB(dtype_max)){
+				if (DTYPE_IS_BLOB(dtype_max)) {
 					CPR_error("Invalid use of blob/array value");
 					return; // silence non initialized warning
 				}
@@ -685,11 +685,11 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 				dtype_max = DSC_add_result[field1.fld_dtype][field2.fld_dtype];
 			else
 				dtype_max = DSC_sub_result[field1.fld_dtype][field2.fld_dtype];
-			if (dtype_max == dtype_unknown){
+			if (dtype_max == dtype_unknown) {
 				CPR_error("Illegal operands used in addition");
 				return; // silence non initialized warning
 			}
-			else if (dtype_max == DTYPE_CANNOT){
+			else if (dtype_max == DTYPE_CANNOT) {
 				CPR_error("expression evaluation not supported");
 				return; // silence non initialized warning
 			}
