@@ -1,3 +1,25 @@
+2004-04-20 12:10  paul_reeves
+
+	* firebird2/src/install/arch-specific/win32/:
+	BuildExecutableInstall.bat (1.10.2.9), FirebirdInstall_15.iss
+	(1.5.2.15):
+	
+	Update Win32 packaging scripts.
+
+2004-04-20 08:23  skidder
+
+	* firebird2/src/: include/fb_types.h (1.25.2.1.2.1), jrd/jrd.cpp
+	(1.76.2.7.2.1), jrd/jrd.h (1.42.2.4.2.1), jrd/sch.cpp
+	(1.6.2.4.2.1), jrd/thd.h (1.12.2.3.2.1):
+	
+	Fix problem with 64-bit SS NPTL builds (B1_5_1_AMD64 branch)
+
+2004-04-19 12:19  paulbeach
+
+	* firebird2/src/install/misc/firebird.conf (1.28.2.6):
+	
+	Improve NFS Warning in conf file
+
 2004-04-18 12:09  paul_reeves
 
 	*
