@@ -240,7 +240,8 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 		exit(FINI_ERROR);
 	}
 
-	ISC_expand_filename(sw_file, strlen(sw_file), expanded_filename);
+	ISC_expand_filename(sw_file, strlen(sw_file), expanded_filename,
+		sizeof(expanded_filename));
 
 #ifdef UNIX
 	shmem_data.sh_mem_semaphores = 0;

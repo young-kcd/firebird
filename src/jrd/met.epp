@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.143 2004-10-07 09:15:30 dimitr Exp $
+$Id: met.epp,v 1.144 2004-10-08 04:47:45 robocop Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -574,7 +574,7 @@ void MET_activate_shadow( thread_db* tdbb)
 			AND X.RDB$SHADOW_NUMBER NE 0
 
         PIO_expand(X.RDB$FILE_NAME, (USHORT)strlen(X.RDB$FILE_NAME),
-                   expanded_name);
+                   expanded_name, sizeof(expanded_name));
 
 		if (!strcmp(expanded_name, dbb_file_name)) {
 			FOR(REQUEST_HANDLE handle2) Y IN RDB$FILES

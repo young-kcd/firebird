@@ -257,7 +257,8 @@ jrd_file* PIO_create(Database* dbb, const TEXT* string, SSHORT length, bool over
 }
 
 
-int PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name)
+int PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name,
+	USHORT bufsize)
 {
 /**************************************
  *
@@ -272,7 +273,7 @@ int PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name)
  **************************************/
 	TEXT temp[NAM$C_MAXRSS], temp2[NAM$C_MAXRSS];
 
-	int length = ISC_expand_logical(file_name, file_length, expanded_name);
+	int length = ISC_expand_logical(file_name, file_length, expanded_name, bufsize);
 
 	struct FAB fab = cc$rms_fab;
 	struct NAM nam = cc$rms_nam;
@@ -282,12 +283,15 @@ int PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name)
 	nam.nam$l_rsa = temp2;
 	nam.nam$b_rss = sizeof(temp2);
 	fab.fab$l_fna = expanded_name;
-	fab.fab$b_fns = length;
+	fab.fab$b_fns = bufsize; // length;
 	fab.fab$l_dna = DEFAULT_FILE_NAME;
 	fab.fab$b_dns = sizeof(DEFAULT_FILE_NAME) - 1;
 
 	if ((sys$parse(&fab) & 1) && (sys$search(&fab) & 1)) {
 		length = nam.nam$b_rsl;
+		if (length >= bufsize)
+		    length = bufsize - 1;
+		    
 		MOVE_FAST(temp2, expanded_name, length);
 		expanded_name[length] = 0;
 	}

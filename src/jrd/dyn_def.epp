@@ -3109,7 +3109,8 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 				if (Path.length() > 0)	{	// path component present in filename
 					ISC_expand_filename(REL.RDB$EXTERNAL_FILE,
 									strlen(REL.RDB$EXTERNAL_FILE),
-									REL.RDB$EXTERNAL_FILE);
+									REL.RDB$EXTERNAL_FILE,
+									sizeof(REL.RDB$EXTERNAL_FILE));
 				}
 				REL.RDB$EXTERNAL_FILE.NULL = FALSE;
 				break;

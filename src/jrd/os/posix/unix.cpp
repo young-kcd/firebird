@@ -289,7 +289,7 @@ jrd_file* PIO_create(Database* dbb, const TEXT* string, SSHORT length, bool over
 /* File open succeeded.  Now expand the file name. */
 
 	TEXT expanded_name[256]; // Shouldn't it be MAXPATHLEN?
-	length = PIO_expand(string, length, expanded_name);
+	length = PIO_expand(string, length, expanded_name, sizeof(expanded_name));
 	jrd_file *file;
 	try {
 		file = setup_file(dbb, expanded_name, length, desc);
@@ -301,7 +301,8 @@ jrd_file* PIO_create(Database* dbb, const TEXT* string, SSHORT length, bool over
 }
 
 
-int PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name)
+int PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name,
+	USHORT bufsize)
 {
 /**************************************
  *
@@ -315,7 +316,7 @@ int PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name)
  *
  **************************************/
 
-	return ISC_expand_filename(file_name, file_length, expanded_name);
+	return ISC_expand_filename(file_name, file_length, expanded_name, bufsize);
 }
 
 

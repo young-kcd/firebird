@@ -181,8 +181,8 @@ static int expand_filename2(const Firebird::PathName&, Firebird::PathName&);
 #if defined(WIN_NT)
 static void translate_slashes(Firebird::PathName&);
 static void expand_share_name(Firebird::PathName&);
-static void share_name_from_resource(TEXT*, const TEXT*, LPNETRESOURCE);
-static void share_name_from_unc(TEXT*, const TEXT*, LPREMOTE_NAME_INFO);
+static void share_name_from_resource(TEXT*, USHORT, const TEXT*, LPNETRESOURCE);
+static void share_name_from_unc(TEXT*, USHORT, const TEXT*, LPREMOTE_NAME_INFO);
 static bool get_full_path(const Firebird::PathName&, Firebird::PathName&);
 #endif
 
@@ -248,7 +248,7 @@ bool ISC_analyze_nfs(TEXT* expanded_filename, TEXT* node_name)
 	{
 		/* first, expand any symbolic links in the mount point */
 
-		ISC_expand_filename(mount.mnt_mount, 0, expand_mount);
+		ISC_expand_filename(mount.mnt_mount, 0, expand_mount, sizeof(expand_mount));
 		mount.mnt_mount = expand_mount;
 
 		/* see how much of the mount point matches the expanded_filename */
@@ -486,7 +486,7 @@ bool ISC_check_if_remote(const Firebird::PathName& file_name,
 		   the path.  Then check the expanded path for a TCP or
 		   named pipe. */
 
-		ISC_expand_share(temp_name, temp_name2);
+		ISC_expand_share(temp_name, temp_name2, sizeof(temp_name2));
 		if (ISC_analyze_tcp(temp_name2, host_name) ||
 			ISC_analyze_pclan(temp_name2, host_name))
 		{
@@ -522,7 +522,7 @@ int ISC_expand_filename(const Firebird::PathName& from_buff, Firebird::PathName&
 
 #ifdef VMS
 int ISC_expand_filename(const TEXT* file_name,
-						USHORT file_length, TEXT* expanded_name)
+						USHORT file_length, TEXT* expanded_name, USHORT bufsize)
 {
 /**************************************
  *
@@ -537,7 +537,7 @@ int ISC_expand_filename(const TEXT* file_name,
  **************************************/
 	TEXT temp[NAM$C_MAXRSS], temp2[NAM$C_MAXRSS];
 
-	int length = ISC_expand_logical(file_name, file_length, expanded_name);
+	int length = ISC_expand_logical(file_name, file_length, expanded_name, bufsize);
 
 	TEXT* p;
 	for (p = expanded_name; *p; p++)
@@ -561,6 +561,8 @@ int ISC_expand_filename(const TEXT* file_name,
 		int l = length = nam.nam$b_rsl
 		if (l)
 			do {
+				if (bufsize-- == 1)
+					break;
 				*expanded_name++ = *p++;
 			} while (--l);
 		*expanded_name = 0;
@@ -691,8 +693,8 @@ static bool ShortToLongPathName(
             LongPath[right] = sep;
 
         // The file was found - replace the short name with the long.
-        size old_len = (npos == right) ? LongPath.length() - left : right - left;
-        size new_len = strlen(fd.cFileName);
+        const size old_len = (npos == right) ? LongPath.length() - left : right - left;
+        const size new_len = strlen(fd.cFileName);
         LongPath.replace(left, old_len, fd.cFileName, new_len);
 
         // More to do?
@@ -848,7 +850,7 @@ int ISC_expand_filename(const Firebird::PathName& file_name,
 
 #ifdef VMS
 int ISC_expand_logical(const TEXT* file_name,
-					   USHORT file_length, TEXT* expanded_name)
+					   USHORT file_length, TEXT* expanded_name, USHORT bufsize)
 {
 /**************************************
  *
@@ -871,7 +873,7 @@ int ISC_expand_logical(const TEXT* file_name,
 	ISC_make_desc(LOGICAL_NAME_TABLE, &desc2, sizeof(LOGICAL_NAME_TABLE) - 1);
 
 	USHORT l;
-	items[0].itm_length = 256;
+	items[0].itm_length = bufsize; //256;
 	items[0].itm_code = LNM$_STRING;
 	items[0].itm_buffer = expanded_name;
 	items[0].itm_return_length = &l;
@@ -882,6 +884,8 @@ int ISC_expand_logical(const TEXT* file_name,
 	int attr = LNM$M_CASE_BLIND;
 
 	if (l = file_length) {
+		if (l > bufsize)
+		    l = bufsize;
 		TEXT* p = expanded_name;
 		do {
 			*p++ = *file_name++;
@@ -896,6 +900,9 @@ int ISC_expand_logical(const TEXT* file_name,
 		desc1.dsc$w_length = file_length = l;
 	}
 
+	if (file_length >= bufsize)
+		file_length = bufsize - 1;
+
 	expanded_name[file_length] = 0;
 
 	return file_length;
@@ -904,7 +911,7 @@ int ISC_expand_logical(const TEXT* file_name,
 
 
 #if defined(WIN_NT)
-int ISC_expand_share(const TEXT* file_name, TEXT* expanded_name)
+int ISC_expand_share(const TEXT* file_name, TEXT* expanded_name, USHORT bufsize)
 {
 /**************************************
  *
@@ -920,14 +927,16 @@ int ISC_expand_share(const TEXT* file_name, TEXT* expanded_name)
 /* see NT reference for WNetEnumResource for the following constants */
 	DWORD nument = 0xffffffff, size = 16384;
 
-	strcpy(expanded_name, file_name);
+	strncpy(expanded_name, file_name, bufsize);
+	expanded_name[bufsize - 1] = 0;
 
 /* Look for a drive letter and make sure that it corresponds
    to a remote disk. */
+   const int exp_name_len = strlen(expanded_name);
 
 	const TEXT* p = strchr(file_name, ':');
 	if (!p || p - file_name != 1)
-		return strlen(expanded_name);
+		return exp_name_len;
 
 	TEXT device[4];
 	device[0] = toupper(*file_name);
@@ -935,18 +944,18 @@ int ISC_expand_share(const TEXT* file_name, TEXT* expanded_name)
 
 	const USHORT dtype = GetDriveType(device);
 	if (dtype != DRIVE_REMOTE)
-		return strlen(expanded_name);
+		return exp_name_len;
 		
 	HANDLE handle;
 	if (WNetOpenEnum(RESOURCE_CONNECTED, RESOURCETYPE_DISK, 0, NULL, &handle)
 		!= NO_ERROR)
 	{
-		return strlen(expanded_name);
+		return exp_name_len;
 	}
 	LPNETRESOURCE resources = (LPNETRESOURCE) gds__alloc((SLONG) size);
 /* FREE: in this routine */
 	if (!resources)				/* NOMEM: don't expand the filename */
-		return strlen(expanded_name);
+		return exp_name_len;
 		
 	DWORD ret = WNetEnumResource(handle, &nument, resources, &size);
 	if (ret == ERROR_MORE_DATA) {
@@ -954,7 +963,8 @@ int ISC_expand_share(const TEXT* file_name, TEXT* expanded_name)
 		resources = (LPNETRESOURCE) gds__alloc((SLONG) size);
 		/* FREE: in this routine */
 		if (!resources)			/* NOMEM: don't expand the filename */
-			return strlen(expanded_name);
+			return exp_name_len;
+			
 		ret = WNetEnumResource(handle, &nument, resources, &size);
 	}
 
@@ -965,7 +975,7 @@ int ISC_expand_share(const TEXT* file_name, TEXT* expanded_name)
 		res++;
 	}
 	if (i != nument)			/* i.e. we found the drive in the resources list */
-		share_name_from_resource(expanded_name, file_name, res);
+		share_name_from_resource(expanded_name, bufsize, file_name, res);
 
 	WNetCloseEnum(handle);
 
@@ -980,20 +990,25 @@ int ISC_expand_share(const TEXT* file_name, TEXT* expanded_name)
 		if (ret == ERROR_MORE_DATA) {
 			gds__free(resources);
 			resources = (LPNETRESOURCE) gds__alloc((SLONG) size);
+			// share_name_from_resource wasn't invoked, so exp_name_len still applies.
 			if (!resources)		/* NOMEM: don't expand the filename */
-				return strlen(expanded_name);
+				return exp_name_len;
+				
 			res2 = (LPREMOTE_NAME_INFO) resources;
 			ret =
 				WNetGetUniversalName(device, REMOTE_NAME_INFO_LEVEL, res2,
 									 &size);
 		}
 		if (ret == NO_ERROR)
-			share_name_from_unc(expanded_name, file_name, res2);
+			share_name_from_unc(expanded_name, bufsize, file_name, res2);
 	}
 
 
 	if (resources)
 		gds__free(resources);
+		
+	// cannot use exp_name_len here because share_name_from_(resource|unc)
+	// may have altered it.
 	return strlen(expanded_name);
 }
 #endif	// WIN_NT
@@ -1182,9 +1197,11 @@ static void expand_share_name(Firebird::PathName& share_name)
 		return;
 	}
 
-	strcpy(workspace, p);
+	strncpy(workspace, p, sizeof(workspace));
+	workspace[sizeof(workspace) - 1] = 0;
+	// We test for *q, too, to avoid buffer overrun.
 	TEXT* q;
-	for (q = workspace; *p && *p != '!'; p++, q++);
+	for (q = workspace; *q && *p && *p != '!'; p++, q++);
 	// empty body loop
 	*q = '\0';
 	if (*p++ != '!' || *p++ != '\\') {
@@ -1597,6 +1614,7 @@ static bool get_server(TEXT* file_name, TEXT* node_name)
 
 #ifdef WIN_NT
 static void share_name_from_resource(TEXT* expanded_name,
+									 USHORT bufsize,
 									 const TEXT* filename,
 									 LPNETRESOURCE resource)
 {
@@ -1610,11 +1628,12 @@ static void share_name_from_resource(TEXT* expanded_name,
  *	if the shared drive is Windows or Novell prosess the
  *	name appropriately, otherwise just return the remote name
  *	expects filename to be of the form DRIVE_LETTER:\PATH
- *	returns new filename in expanded_name sholdn't touch filename
+ *	returns new filename in expanded_name; shouldn't touch filename
  *
  **************************************/
-	const TEXT* p = resource->lpRemoteName;
-	TEXT* q = expanded_name;
+	const TEXT* const p = resource->lpRemoteName;
+	//TEXT* q = expanded_name;
+	Firebird::PathName s;
 
 /* If the shared drive is via Windows
    package it up so that resolution of the share name can
@@ -1623,30 +1642,33 @@ static void share_name_from_resource(TEXT* expanded_name,
    have the form \\REMOTE_NODE\!SHARE_POINT!\FILENAME */
 
 	if (!strnicmp(resource->lpProvider, "Microsoft Windows Network", 26)) {
-		*q++ = *p++;
-		*q++ = *p++;
-		while ((*q++ = *p++) != '\\');
-		*q++ = '!';
-		while (*q++ = *p++);
-		q--;					/* after the above q points to the char AFTER the null */
-		*q++ = '!';
-		*q = '\0';
-		strcat(expanded_name, filename + 2);
+		const char* p2 = p + 2;
+		while (*p2++ != '\\'); // empty loop's body
+		s.append(p, p2 - p);
+		s += '!';
+		s.append(p2);
+		s += '!';
+		// add rest of file name
+		s.append(filename + 2);
+		s.copy_to(expanded_name, bufsize);
 	}
 	else {						/* we're guessing that it might be an NFS shared drive */
-
-		while (*q++ = *p++);
-		q -= 2;					/* after the above q points to the char AFTER the null */
+		s.append(p);
+		char* q = s.end();
+		q -= 1;					/* after the above q points to the the null char */
 		if (*q == '\\' || *q == '/')	/* chop off any trailing \ or / */
 			*q = '\0';
-		strcat(expanded_name, filename + 2);
+		s.recalculate_length();
+		s.append(filename + 2);
+		s.copy_to(expanded_name, bufsize);
 
 		/* If the expanded filename doesn't begin with a node name of the form
 		   \\NODE and it contains a ':', then it's probably an NSF mounted drive.
 		   Therefore we must convert any back slashes to forward slashes. */
 
-		if ((*expanded_name != '\\' || *(expanded_name + 1) != '\\')
-			&& (q = strchr(expanded_name, INET_FLAG))) {
+		if ((expanded_name[0] != '\\' || expanded_name[1] != '\\')
+			&& (q = strchr(expanded_name, INET_FLAG)))
+		{
 			while (*q) {
 				if (*q == '\\')
 					*q = '/';
@@ -1658,6 +1680,7 @@ static void share_name_from_resource(TEXT* expanded_name,
 
 
 static void share_name_from_unc(TEXT* expanded_name,
+								USHORT bufsize,
 								const TEXT* file_name,
 								LPREMOTE_NAME_INFO unc_remote)
 {
@@ -1675,28 +1698,27 @@ static void share_name_from_unc(TEXT* expanded_name,
  *      the rest of file_name after the drive into expanded_name.
  *
  **************************************/
-	const TEXT* p = unc_remote->lpConnectionName;
+	const TEXT* const p = unc_remote->lpConnectionName;
 	TEXT* q = expanded_name;
 
+	Firebird::PathName s;
 	/* copy the \\ and the node name */
 
-	*q++ = *p++;
-	*q++ = *p++;
-	while ((*q++ = *p++) != '\\');
+	const char* p2 = p + 2;
+	while (*p2++ != '\\'); // empty loop's body
+	s.append(p, p2 - p);
 
 	/* bracket the share name with "!" characters */
 
-	*q++ = '!';
-	while (*q++ = *p++);
-	q--;						/* after the above, q points to the char AFTER the null */
-	*q++ = '!';
-	*q = '\0';
-
-	/* add rest of file name */
-
-	strcat(expanded_name, file_name + 2);
+	s += '!';
+	s.append(p2);
+	s += '!';
+	// add rest of file name
+	s.append(file_name + 2);
+	s.copy_to(expanded_name, bufsize);
 }
 #endif /* WIN_NT */
+
 
 #ifndef SUPERCLIENT
 namespace {

@@ -4678,8 +4678,8 @@ static rem_port* analyze(TEXT*	file_name,
 #endif
 
 #if defined(WIN_NT)
-	*file_length = ISC_expand_share(file_name, expanded_name);
-	strcpy((char *) file_name, (char *) expanded_name);
+	*file_length = ISC_expand_share(file_name, expanded_name, sizeof(expanded_name));
+	strcpy(file_name, expanded_name); // B.O.
 #endif
 
 	file_name[*file_length] = 0;

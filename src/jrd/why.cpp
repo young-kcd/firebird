@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.81 2004-10-04 08:14:57 robocop Exp $
+$Id: why.cpp,v 1.82 2004-10-08 04:47:45 robocop Exp $
 */
 
 #include "firebird.h"
@@ -818,7 +818,8 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	}
 	else
 	{
-		ISC_expand_filename(temp_filename, org_length, expanded_filename);
+		ISC_expand_filename(temp_filename, org_length, expanded_filename,
+			sizeof(expanded_filename));
 	}
 
 	const UCHAR* current_dpb_ptr = reinterpret_cast<const UCHAR*>(dpb);
@@ -1432,6 +1433,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		temp_length = org_length;
 	else
 		temp_length = strlen(file_name);
+		
 	memcpy(temp_filename, file_name, temp_length);
 	temp_filename[temp_length] = '\0';
 
@@ -1441,7 +1443,8 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		org_length = strlen(temp_filename);
 	}
 	else
-		ISC_expand_filename(temp_filename, org_length, expanded_filename);
+		ISC_expand_filename(temp_filename, org_length, expanded_filename,
+			sizeof(expanded_filename));
 
 	const UCHAR* current_dpb_ptr = dpb;
 
@@ -1479,7 +1482,8 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
               length = strlen ((*handle)->att_database->dbb_filename->str_data);
             */
             /* Now we can expand, the file exists. */
-            ISC_expand_filename (temp_filename, org_length, expanded_filename);
+            ISC_expand_filename (temp_filename, org_length, expanded_filename,
+				sizeof(temp_filename));
             length = strlen (expanded_filename);
 #else
 			length = org_length;
