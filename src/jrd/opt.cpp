@@ -2748,7 +2748,7 @@ static void find_best(TDBB tdbb,
  **************************************/
 	CSB csb;
 	UCHAR *ptr, *stream_end;
-	double position_cost, position_cardinality, new_cost, new_cardinality;
+	double position_cost, position_cardinality, new_cost = 0, new_cardinality = 0;
 	USHORT flag_vector[MAX_STREAMS+1], *fv;
 	BOOLEAN done;
 	IRL relationship;
@@ -2792,8 +2792,6 @@ static void find_best(TDBB tdbb,
 		new_cost = cost + cardinality * position_cost;
 		new_cardinality = position_cardinality * cardinality;
 	}
-	// dimitr:	any clue why the above variables are not initialized
-	//			in the case of an explicit plan?
 
 	++opt->opt_combinations;
 /* If the partial order is either longer than any previous partial order,
