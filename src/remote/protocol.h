@@ -32,14 +32,14 @@
  *
  */
 /*
-$Id: protocol.h,v 1.10 2003-04-10 10:31:28 aafemt Exp $
+$Id: protocol.h,v 1.11 2003-05-02 17:17:09 dimitr Exp $
 */
 #ifndef _REMOTE_PROTOCOL_H_
 #define _REMOTE_PROTOCOL_H_
 
 // dimitr: ask for asymmetric protocols only.
 // Comment it out to return back to FB 1.0 behaviour.
-#define ASYMMETRIC_PROTOCOLS_ONLY
+//#define ASYMMETRIC_PROTOCOLS_ONLY
 
 /* The protocol is defined blocks, rather than messages, to
    separate the protocol from the transport layer.  */
