@@ -146,9 +146,9 @@ BLK ALLR_block(UCHAR type, ULONG count)
 				REMOTE_save_status_strings(tdrdb->trdb_status_vector);
 #endif
 			}
+			Firebird::status_exception::raise();
 		}
-		Firebird::status_exception::raise();
-
+		throw std::bad_alloc();
 	}
 
 #pragma FB_COMPILER_MESSAGE("Warning: outdated assumption for 16-bit platforms")

@@ -803,6 +803,22 @@ static ISC_STATUS attach_database(
 
 	dpb_buffer.insertBytes(isc_dpb_address_path,
 		address_stack_buffer.getBuffer(), address_stack_buffer.getBufferLength());
+
+	// Remove all remaining isc_dpb_address_path clumplets. 	
+	// This is the security feature to prevent user from faking remote address
+	// by passing multiple isc_dpb_address_path clumplets. Engine assumes that
+	// dpb contains no more than one isc_dpb_address_path clumplet and for 
+	// clients coming via remote interface it can trust the first address from 
+	// address stack. Clients acessing database directly can do whatever they 
+	// want with the engine including faking the source address, not much we 
+	// can do about it.
+
+	while (!dpb_buffer.isEof()) {
+		if (dpb_buffer.getClumpTag() == isc_dpb_address_path)
+			dpb_buffer.deleteClumplet();
+		else
+			dpb_buffer.moveNext();
+	}
 	
 /* Disable remote gsec attachments */
 	for (dpb_buffer.setCurOffset(1); !dpb_buffer.isEof(); ) {
@@ -3242,13 +3258,27 @@ bool process_packet(rem_port* port,
 		ThreadData::restoreSpecific();
 	
 	}	// try
-	catch (const std::exception& ex) {		
-		Firebird::stuff_exception(tdrdb->trdb_status_vector, ex);
+	catch (const std::exception& ex) {
+		// NS: trdb_status_vector is usually NULL at this point.
+		// This needs to be fixed, probably via eliminating trdb_status_vector
+		// completely, but this work is not for now.
+		ISC_STATUS* status_ptr;
 
-		gds__log_status("unknown, SERVER/process_packet", tdrdb->trdb_status_vector);
+		ISC_STATUS_ARRAY local_status;
+		memset(local_status, 0, sizeof(local_status));
+
+		if (tdrdb->trdb_status_vector) {
+			status_ptr = tdrdb->trdb_status_vector;
+		} else {
+			status_ptr = local_status;
+		}
+
+		Firebird::stuff_exception(status_ptr, ex);
+
+		gds__log_status("unknown, SERVER/process_packet", status_ptr);
 
 		/*  It would be nice to log an error to the user, instead of just terminating them!  */
-		port->send_response(sendL, 0, 0, tdrdb->trdb_status_vector);
+		port->send_response(sendL, 0, 0, status_ptr);
 		port->disconnect(sendL, receive);	/*  Well, how about this...  */
 
 		ThreadData::restoreSpecific();
