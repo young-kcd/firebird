@@ -91,7 +91,7 @@ static const char* GUARD_FILE	= "isc_guard1.%s";
 #define DARWIN_FRAMEWORK_ID	"com.firebirdsql.Firebird"
 #endif
 
-/* keep MSG_FILE_LANG in sync with build_file.e */
+/* keep MSG_FILE_LANG in sync with build_file.epp */
 #ifdef UNIX
 static const char* WORKFILE		= "/tmp/";
 static const char* MSG_FILE		= "firebird.msg";
