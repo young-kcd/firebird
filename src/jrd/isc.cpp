@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.21 2002-11-04 11:19:03 eku Exp $
+$Id: isc.cpp,v 1.22 2002-11-25 16:25:30 dimitr Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -47,7 +47,6 @@ $Id: isc.cpp,v 1.21 2002-11-04 11:19:03 eku Exp $
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <ctype.h>
 #include "../jrd/common.h"
 
 #include "gen/codes.h"
@@ -118,6 +117,21 @@ static BOOLEAN edls_flag = FALSE;
 #include <sys/utsname.h>
 #endif
 
+/* Win32 specific stuff */
+
+#ifdef WIN_NT
+
+#include <windows.h>
+
+static USHORT os_type;
+static SECURITY_ATTRIBUTES security_attr;
+
+static TEXT interbase_directory[MAXPATHLEN];
+
+static BOOLEAN check_user_privilege();
+
+#endif // WIN_NT
+
 static TEXT user_name[256];
 static USHORT ast_count;
 
@@ -136,10 +150,6 @@ static USHORT ast_count;
 #include "../jrd/lnmdef.h"
 #include "../jrd/prv_m_bypass.h"
 
-#ifdef HAVE_SIGNAL_H
-#include <signal.h>
-#endif
-
 #define LOGICAL_NAME_TABLE      "LNM$FILE_DEV"
 #define WAKE_LOCK               "gds__process_%d"
 
@@ -147,6 +157,13 @@ static POKE pokes;
 static LKSB wake_lock;
 #endif /* of ifdef VMS */
 
+#ifdef HAVE_SIGNAL_H
+#include <signal.h>
+#endif
+
+#ifdef HAVE_CTYPE_H
+#include <ctype.h>
+#endif
 
 /* Unix specific stuff */
 
@@ -158,8 +175,6 @@ static LKSB wake_lock;
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#include <signal.h>
-#include <ctype.h>
 
 #ifndef O_RDWR
 #include <fcntl.h>
@@ -248,8 +263,6 @@ void DLL_EXPORT ISC_ast_exit(void)
 #endif
 
 
-#if !defined(WIN_NT)	// implemented in isc_win32.cpp
-
 int DLL_EXPORT ISC_check_process_existence(SLONG	pid,
 										   SLONG	xl_pid,
 										   USHORT	super_user)
@@ -282,14 +295,23 @@ int DLL_EXPORT ISC_check_process_existence(SLONG	pid,
 		FALSE : TRUE;
 #endif
 
+#ifdef WIN_NT
+	HANDLE handle = OpenProcess(PROCESS_DUP_HANDLE, FALSE, (DWORD) pid);
+
+	if (!handle && GetLastError() != ERROR_ACCESS_DENIED)
+	{
+		return FALSE;
+	}
+
+	CloseHandle(handle);
+#endif
+
 #ifndef CHECK_EXIST
 	return TRUE;
 #else
 #undef CHECK_EXIST
 #endif
 }
-
-#endif	// !WIN_NT
 
 
 #ifdef VMS
@@ -746,7 +768,36 @@ TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT * string, USHORT length)
 #endif
 
 
-#if !defined(WIN_NT)	// implemented in isc_win32.cpp
+#ifdef WIN_NT
+#define GET_HOST
+TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT * string, USHORT length)
+{
+/**************************************
+ *
+ *      I S C _ g e t _ h o s t                 ( W I N _ N T )
+ *
+ **************************************
+ *
+ * Functional description
+ *      Get host name.
+ * Note that this is not the DNS (TCP/IP) hostname,
+ * it's the Win32 computer name.
+ *
+ **************************************/
+	DWORD host_len = length;
+	if (GetComputerName(string, &host_len))
+	{
+		string[host_len] = 0;
+	}
+	else
+	{
+		strcpy(string, "local");
+	}
+
+	return string;
+}
+#endif
+
 #ifndef GET_HOST
 TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT * string, USHORT length)
 {
@@ -766,8 +817,6 @@ TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT * string, USHORT length)
 	return string;
 }
 #endif
-#endif	// !WIN_NT
-
 
 #ifdef UNIX
 int INTERNAL_API_ROUTINE ISC_get_user(TEXT*	name,
@@ -942,6 +991,189 @@ TEXT * organization, int *node, TEXT * user_string)
 }
 #endif
 
+#ifdef WIN_NT
+int INTERNAL_API_ROUTINE ISC_get_user(TEXT*	name,
+									  int*	id,
+									  int*	group,
+									  TEXT*	project,
+									  TEXT*	organization,
+									  int*	node,
+									  TEXT*	user_string)
+{
+/**************************************
+ *
+ *      I S C _ g e t _ u s e r   ( W I N _ N T )
+ *
+ **************************************
+ *
+ * Functional description
+ *      Find out who the user is.
+ *
+ **************************************/
+	if (id)
+		*id = -1;
+
+	if (group)
+		*group = -1;
+
+	if (project)
+		*project = 0;
+
+	if (organization)
+		*organization = 0;
+
+	if (node)
+		*node = 0;
+
+	if (name)
+	{
+		name[0] = 0;
+		DWORD  name_len = 128;
+		if (GetUserName(name, &name_len))
+		{
+			name[name_len] = 0;
+
+			/* NT user name is case insensitive */
+
+			for (DWORD i = 0; i < name_len; i++)
+			{
+				name[i] = UPPER7(name[i]);
+			}
+
+/* This check is not internationalized, the security model needs to be
+ * reengineered, especially on SUPERSERVER where none of these local
+ * user (in process) assumptions are valid.
+ */
+			if (!strcmp(name, "ADMINISTRATOR"))
+			{
+				if (id)
+					*id = 0;
+
+				if (group)
+					*group = 0;
+			}
+		}
+	}
+
+	return check_user_privilege();
+}
+
+
+//____________________________________________________________
+//
+// Check to see if the user belongs to the administrator group.
+//
+// This routine was adapted from code in routine RunningAsAdminstrator
+// in \mstools\samples\regmpad\regdb.c.
+//
+static BOOLEAN check_user_privilege(void)
+{
+	HANDLE tkhandle;
+	SID_IDENTIFIER_AUTHORITY system_sid_authority = SECURITY_NT_AUTHORITY;
+
+	// First we must open a handle to the access token for this thread.
+
+	if (!OpenThreadToken(GetCurrentThread(), TOKEN_QUERY, FALSE, &tkhandle))
+	{
+		if (GetLastError() == ERROR_NO_TOKEN)
+		{
+			// If the thread does not have an access token, we'll examine the
+			// access token associated with the process.
+
+			if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &tkhandle))
+			{
+				CloseHandle(tkhandle);
+				return FALSE;
+			}
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+
+	TOKEN_GROUPS*	ptg       = NULL;
+	DWORD			token_len = 0;
+
+	while (TRUE)
+	{
+		/* Then we must query the size of the group information associated with
+		   the token.  This is guarenteed to fail the first time through
+		   because there is no buffer. */
+
+		if (GetTokenInformation(tkhandle,
+								TokenGroups,
+								ptg,
+								token_len,
+								&token_len))
+		{
+			break;
+		}
+
+		/* If there had been a buffer, it's either too small or something
+		   else is wrong.  Either way, we can dispose of it. */
+
+		if (ptg)
+		{
+			gds__free(ptg);
+		}
+
+		/* Here we verify that GetTokenInformation failed for lack of a large
+		   enough buffer. */
+
+		if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+		{
+			CloseHandle(tkhandle);
+			return FALSE;
+		}
+
+		// Allocate a buffer for the group information.
+		ptg = (TOKEN_GROUPS *) gds__alloc((SLONG) token_len);
+
+		if (!ptg)
+		{
+			CloseHandle(tkhandle);
+			return FALSE;		/* NOMEM: */
+		}
+		// FREE: earlier in this loop, and at procedure return
+	}
+
+	// Create a System Identifier for the Admin group.
+
+	PSID admin_sid;
+
+	if (!AllocateAndInitializeSid(&system_sid_authority, 2,
+								  SECURITY_BUILTIN_DOMAIN_RID,
+								  DOMAIN_ALIAS_RID_ADMINS,
+								  0, 0, 0, 0, 0, 0, &admin_sid))
+	{
+		gds__free(ptg);
+		CloseHandle(tkhandle);
+		return FALSE;
+	}
+
+	// Finally we'll iterate through the list of groups for this access
+	// token looking for a match against the SID we created above.
+
+	BOOLEAN admin_priv = FALSE;
+
+	for (DWORD i = 0; i < ptg->GroupCount; i++)
+	{
+		if (EqualSid(ptg->Groups[i].Sid, admin_sid))
+		{
+			admin_priv = TRUE;
+			break;
+		}
+	}
+
+	// Deallocate the SID we created.
+
+	FreeSid(admin_sid);
+	gds__free(ptg);
+	CloseHandle(tkhandle);
+	return admin_priv;
+}
+#endif
 
 #ifdef VMS
 int ISC_make_desc(TEXT * string, struct dsc$descriptor *desc, USHORT length)
@@ -1312,11 +1544,7 @@ static int wait_test(SSHORT * iosb)
 #endif
 
 
-
-#if defined(SUPERSERVER) && !defined(WIN_NT)
-// Win32 SUPERSERVER version of isc_internal_set_config_value()
-// is implemented in isc_win32.cpp
-
+#if defined(SUPERSERVER)
 void isc_internal_set_config_value(UCHAR key, ULONG * value1, ULONG * value2)
 {
 	switch (key) {
@@ -1328,6 +1556,18 @@ void isc_internal_set_config_value(UCHAR key, ULONG * value1, ULONG * value2)
 		 * This is where you should call your OS specific function to set the 
 		 * Process priority (if available). 
 		 */
+#ifdef WIN_NT
+		ULONG priority;
+		if (*value1 == 2)
+			priority = HIGH_PRIORITY_CLASS;
+		else
+			priority = NORMAL_PRIORITY_CLASS;
+
+		if (!SetPriorityClass(GetCurrentProcess(), priority))
+		{
+			gds__log("Unable to set process priority.");
+		}
+#endif
 		break;
 	case ISCCFG_MEMMAX_KEY:
 	case ISCCFG_MEMMIN_KEY:
@@ -1335,10 +1575,46 @@ void isc_internal_set_config_value(UCHAR key, ULONG * value1, ULONG * value2)
 		 * This is where you should call your OS specific function to set the 
 		 * Process priority (if available). 
 		 */
+#ifdef WIN_NT
+		if (*value1 && *value2 && ISC_is_WinNT())
+		{
+			HANDLE hndl =
+				OpenProcess(PROCESS_SET_QUOTA, FALSE, GetCurrentProcessId());
+
+			if (hndl) {
+				ULONG a_value1 = *value1 * 1024;
+				ULONG a_value2 = *value2 * 1024;
+
+				if (!SetProcessWorkingSetSize(hndl, a_value1, a_value2))
+				{
+					switch (GetLastError())
+					{
+					case ERROR_ACCESS_DENIED:
+					case ERROR_PRIVILEGE_NOT_HELD:
+						gds__log("Error setting process working set size, access denied.");
+						break;
+					case ERROR_INVALID_PARAMETER:
+						gds__log("Error setting process working set size, improper range.");
+						break;
+					case ERROR_NO_SYSTEM_RESOURCES:
+						gds__log("Error setting process working set size, insufficient memory.");
+						break;
+					default:
+						gds__log("Error setting process working set size, unknown problem.");
+
+
+					}
+					*value1 = 0;
+					*value2 = 0;
+				}
+				CloseHandle(hndl);
+			}
+
+		}
+#endif
 		break;
 	}
 }
-
 #endif	// SUPERSERVER
 
 
@@ -1404,3 +1680,69 @@ SLONG ISC_get_user_group_id(TEXT * user_group_name)
 	return (n);
 }
 #endif /* end of ifdef UNIX */
+
+#ifdef WIN_NT
+// Returns the type of OS. TRUE for NT,
+// FALSE for the 16-bit based ones (9x/ME, ...).
+//
+BOOLEAN ISC_is_WinNT()
+{
+	OSVERSIONINFO OsVersionInfo;
+
+	if (!os_type)
+	{
+		os_type = 1;			/* Default to NT */
+		/* The first time this routine is called we use the Windows API
+		   call GetVersion to determine whether Windows/NT or Chicago
+		   is running. */
+
+		OsVersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+		if (GetVersionEx((LPOSVERSIONINFO) & OsVersionInfo))
+		{
+		 if (OsVersionInfo.dwPlatformId != VER_PLATFORM_WIN32_NT)
+			os_type = 2;
+		}
+
+	}
+
+	return (os_type != 2) ? TRUE : FALSE;
+}
+
+//____________________________________________________________
+//
+//
+LPSECURITY_ATTRIBUTES ISC_get_security_desc()
+{
+	if (security_attr.lpSecurityDescriptor)
+	{
+		return &security_attr;
+	}
+
+	PSECURITY_DESCRIPTOR p_security_desc =
+		(PSECURITY_DESCRIPTOR) gds__alloc((SLONG)
+											SECURITY_DESCRIPTOR_MIN_LENGTH);
+/* FREE: apparently never freed */
+	if (!p_security_desc)		/* NOMEM: */
+	{
+		return NULL;
+	}
+#ifdef DEBUG_GDS_ALLOC
+	gds_alloc_flag_unfreed((void *) p_security_desc);
+#endif
+
+	if (!InitializeSecurityDescriptor(	p_security_desc,
+										SECURITY_DESCRIPTOR_REVISION) ||
+		!SetSecurityDescriptorDacl(p_security_desc, TRUE, (PACL) NULL, FALSE))
+	{
+		gds__free(p_security_desc);
+		return NULL;
+	}
+
+	security_attr.nLength = sizeof(security_attr);
+	security_attr.lpSecurityDescriptor = p_security_desc;
+	security_attr.bInheritHandle = TRUE;
+
+	return &security_attr;
+}
+
+#endif

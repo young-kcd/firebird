@@ -55,7 +55,6 @@ extern void ISC_wake_init(void);
 
 #ifdef WIN_NT
 extern BOOLEAN ISC_is_WinNT(void);
-extern SSHORT ISC_get_registry_var(TEXT *, TEXT *, SSHORT, void **);
 extern struct _SECURITY_ATTRIBUTES *ISC_get_security_desc(void);
 extern TEXT *ISC_prefix_interbase(TEXT *, TEXT *);
 #endif
