@@ -59,7 +59,7 @@ inline void stuffSpbShort(char*& spb, short data)
 	ADD_SPB_LENGTH(spb, data);
 }
 
-inline void stuffSpbLong(char*& spb, long data)
+inline void stuffSpbLong(char*& spb, SLONG data)
 {
 	ADD_SPB_NUMERIC(spb, data);
 }
