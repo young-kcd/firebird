@@ -366,11 +366,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/thd_proto.h"
 #include "../wal/wal.h"
-
-/* Can't include ../jrd/err_proto.h here because it pulls jrd.h. */
-#if !defined(JRD_ERR_PROTO_H)
-const TEXT *DLL_EXPORT ERR_string(const TEXT*, int);
-#endif
+#include "../jrd/err_proto.h"
 
 ASSERT_FILENAME
 

@@ -161,7 +161,7 @@ void ERRD_error( int code, const char* text)
     @param 
 
  **/
-BOOLEAN ERRD_post_warning(ISC_STATUS status, ...)
+bool ERRD_post_warning(ISC_STATUS status, ...)
 {
 	va_list args;
 
@@ -198,7 +198,7 @@ BOOLEAN ERRD_post_warning(ISC_STATUS status, ...)
 	if (indx + 3 >= ISC_STATUS_LENGTH)
 	{
 		/* not enough free space */
-		return FALSE;
+		return false;
 	}
 
 	status_vector[indx++] = gds_arg_warning;
@@ -249,7 +249,7 @@ BOOLEAN ERRD_post_warning(ISC_STATUS status, ...)
 		}
     }
 	status_vector[indx] = gds_arg_end;
-	return TRUE;
+	return true;
 }
 
 

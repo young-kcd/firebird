@@ -343,7 +343,7 @@ INTLSYM METD_get_collation(DSQL_REQ request, STR name)
 void METD_get_col_default(DSQL_REQ    request,
 						  const char* for_rel_name,
 						  const char* for_col_name,
-						  BOOLEAN*    has_default,
+						  bool*    has_default,
 						  TEXT*       buffer,
 						  USHORT      buff_length)
 {
@@ -375,7 +375,7 @@ void METD_get_col_default(DSQL_REQ    request,
 	USHORT length;
 	isc_blob_handle blob_handle = NULL;
 
-	*has_default = FALSE;
+	*has_default = false;
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
@@ -395,14 +395,14 @@ void METD_get_col_default(DSQL_REQ    request,
 
 	if (!RFL.RDB$DEFAULT_VALUE.NULL) {
 		blob_id = &RFL.RDB$DEFAULT_VALUE;
-		*has_default = TRUE;
+		*has_default = true;
 	}
 	else if (!FLD.RDB$DEFAULT_VALUE.NULL) {
 		blob_id = &FLD.RDB$DEFAULT_VALUE;
-		*has_default = TRUE;
+		*has_default = true;
 	}
 	else
-		*has_default = FALSE;
+		*has_default = false;
 
 	if (*has_default) {
 		/* open the blob */
@@ -744,7 +744,7 @@ USHORT METD_get_domain(DSQL_REQ request, DSQL_FLD field, const char* name /* UTF
 
 void METD_get_domain_default(DSQL_REQ request,
 							 TEXT * domain_name,
-							 BOOLEAN * has_default,
+							 bool * has_default,
 							 TEXT * buffer, USHORT buff_length)
 {
 /*************************************************************
@@ -768,7 +768,7 @@ void METD_get_domain_default(DSQL_REQ request,
 	USHORT length;
 	isc_blob_handle blob_handle = NULL;
 
-	*has_default = FALSE;
+	*has_default = false;
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
@@ -782,10 +782,10 @@ void METD_get_domain_default(DSQL_REQ request,
 
 	    if (!FLD.RDB$DEFAULT_VALUE.NULL) {
             blob_id = &FLD.RDB$DEFAULT_VALUE;
-            *has_default = TRUE;
+            *has_default = true;
         }
         else
-            *has_default = FALSE;
+            *has_default = false;
 
         if (*has_default) {
             /* open the blob */

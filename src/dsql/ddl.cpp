@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.57 2003-09-03 23:52:47 arnobrinkman Exp $
+ * $Id: ddl.cpp,v 1.58 2003-09-12 01:41:03 brodsom Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -102,7 +102,7 @@ extern "C" {
 static void assign_field_length(DSQL_FLD, USHORT);
 static bool check_array_or_blob(DSQL_NOD);
 static void check_constraint(DSQL_REQ, DSQL_NOD, bool);
-static void check_one_call(BOOLEAN *, SSHORT, TEXT *);
+static void check_one_call(USHORT *, SSHORT, TEXT *);
 static void create_view_triggers(DSQL_REQ, DSQL_NOD, DSQL_NOD);
 static void define_computed(DSQL_REQ, DSQL_NOD, DSQL_FLD, DSQL_NOD);
 static void define_constraint_trigger(DSQL_REQ, DSQL_NOD);
@@ -887,9 +887,9 @@ static void check_constraint(	DSQL_REQ		request,
 }
 
 
-static void check_one_call (BOOLEAN *repetition_count,
-                            SSHORT pos,
-                            TEXT *error_msg)
+static void check_one_call (USHORT *repetition_count,
+							SSHORT pos,
+							TEXT *error_msg)
 {
 /**************************************
  *
@@ -902,12 +902,11 @@ static void check_one_call (BOOLEAN *repetition_count,
  *  This restriction cannot be enforced by the DSQL parser.
  *
  **************************************/
-    if (++repetition_count [pos] > 1) {
-        ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -637,
-                   gds_arg_gds, gds_dsql_duplicate_spec,
-                   gds_arg_string, error_msg,
-                   0);
-    }
+	if (++repetition_count [pos] > 1) {
+		ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -637,
+				   gds_arg_gds, gds_dsql_duplicate_spec,
+				   gds_arg_string, error_msg,0);
+	}
 }
 
 
@@ -1496,7 +1495,7 @@ static void define_set_default_trg(	DSQL_REQ    request,
 		   default value from the system tables by calling:
 		   METD_get_col_default().  */
 
-		BOOLEAN found_default = FALSE;
+		bool found_default = false;
 		bool search_for_default = true;
 
 		/* search the parse tree to find the column */
@@ -3005,7 +3004,7 @@ static void define_udf( DSQL_REQ request)
 		if (field->fld_dtype == dtype_blob)
 		{
         /* CVC: I need to test returning blobs by descriptor before allowing the        change there. For now, I ignore the return type specification. */
-			BOOLEAN free_it = ((SSHORT)(SLONG) ret_val_ptr[1]->nod_arg[0] < 0);
+			bool free_it = ((SSHORT)(SLONG) ret_val_ptr[1]->nod_arg[0] < 0);
 			request->append_number(gds_dyn_def_function_arg, blob_position);
 			request->append_number(gds_dyn_func_mechanism,
 					   (SSHORT)(SLONG) ((free_it ? -1 : 1) * FUN_blob_struct));
@@ -4654,12 +4653,10 @@ static void modify_domain( DSQL_REQ request)
 	STR string, domain_name;
 	DSQL_FLD field;
 	dsql_fld local_field;
-    /* CVC: This array used with check_one_call to ensure each modification 
-       option is called only once. Enlarge it if the switch() below gets more 
-       cases. */
-    BOOLEAN repetition_count [6];
-
-
+	/* CVC: This array used with check_one_call to ensure each modification 
+	   option is called only once. Enlarge it if the switch() below gets more 
+	   cases. */
+	USHORT repetition_count[6];
 
 	ddl_node = request->req_ddl_node;
 
@@ -4671,13 +4668,13 @@ static void modify_domain( DSQL_REQ request)
 
 
 
-    /* Is MOVE_CLEAR enough for all platforms?
-    MOVE_CLEAR (repetition_count, sizeof (repetition_count)); */
-    USHORT rtop = FB_NELEM(repetition_count);
-    BOOLEAN *p = repetition_count;
-    while (p < repetition_count + rtop) {
-        *p++ = 0;
-    }
+	/* Is MOVE_CLEAR enough for all platforms?
+	MOVE_CLEAR (repetition_count, sizeof (repetition_count)); */
+	USHORT rtop = FB_NELEM(repetition_count);
+	USHORT *p = repetition_count;
+	while (p < repetition_count + rtop) {
+		*p++ = 0;
+	}
 
 
 	ops = ddl_node->nod_arg[e_alt_dom_ops];
@@ -4687,10 +4684,10 @@ static void modify_domain( DSQL_REQ request)
 		switch (element->nod_type)
 		{
 		case nod_def_default:
-            check_one_call (repetition_count, 0, "DOMAIN DEFAULT");
+			check_one_call (repetition_count, 0, "DOMAIN DEFAULT");
 			/* CVC: So do you want to crash me with ALTER DOMAIN dom SET; ??? */
 			if (!element->nod_arg[e_dft_default]) 
-            {
+			{
 				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -104,
 							gds_arg_gds, gds_command_end_err,    /* Unexpected end of command */
 							0);
@@ -4714,7 +4711,7 @@ static void modify_domain( DSQL_REQ request)
 			break;
 
 		case nod_def_constraint:
-            check_one_call (repetition_count, 1, "DOMAIN CONSTRAINT");
+			check_one_call (repetition_count, 1, "DOMAIN CONSTRAINT");
 			request->append_uchar(gds_dyn_single_validation);
 			request->begin_blr(gds_dyn_fld_validation_blr);
 
@@ -4768,7 +4765,7 @@ static void modify_domain( DSQL_REQ request)
 
 		case nod_field_name:
 			{
-                check_one_call(repetition_count, 3, "DOMAIN NAME");
+				check_one_call(repetition_count, 3, "DOMAIN NAME");
 
 				STR new_dom_name;
 
@@ -4779,12 +4776,12 @@ static void modify_domain( DSQL_REQ request)
 			}
 
 		case nod_delete_rel_constraint:
-            check_one_call (repetition_count, 4, "DOMAIN DROP CONSTRAINT");
+			check_one_call (repetition_count, 4, "DOMAIN DROP CONSTRAINT");
 			request->append_uchar(gds_dyn_del_validation);
 			break;
 
 		case nod_del_default:
-            check_one_call (repetition_count, 5, "DOMAIN DROP DEFAULT");         			request->append_uchar(gds_dyn_del_default);
+			check_one_call (repetition_count, 5, "DOMAIN DROP DEFAULT");         			request->append_uchar(gds_dyn_del_default);
 			break;
 
 		default:

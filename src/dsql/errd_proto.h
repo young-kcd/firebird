@@ -35,7 +35,7 @@ void ERRD_assert_msg(const char*, const char*, ULONG);
 void ERRD_bugcheck(const char*);
 void ERRD_error(int, const char*);
 void ERRD_post(ISC_STATUS, ...);
-BOOLEAN ERRD_post_warning(ISC_STATUS, ...);
+bool ERRD_post_warning(ISC_STATUS, ...);
 void ERRD_punt(void);
 
 #ifdef __cplusplus
