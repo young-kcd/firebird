@@ -1,3 +1,11 @@
+2004-06-07 11:21  paul_reeves
+
+	* firebird2/src/:
+	install/arch-specific/win32/BuildExecutableInstall.bat (1.10.2.11),
+	jrd/isc_version.h (1.1.2.16):
+	
+	Minor tweak to Win32 packaging builder. Update Build Numbers.
+
 2004-06-03 15:12  paulbeach
 
 	* firebird2/src/jrd/: svc.cpp (1.67.2.7), svc.h (1.15.2.1):
