@@ -1,3 +1,36 @@
+2003-05-11 21:38  skidder
+
+	* firebird2/src/jrd/rse.cpp:
+	
+	Fix server crashes when explicit pessimistic locks are used from
+	PSQL
+
+2003-05-11 21:32  skidder
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	Use explicit pessimistic locks only if WITH LOCK clause is
+	specified
+
+2003-05-11 19:12  skidder
+
+	* firebird2/src/jrd/gds.cpp:
+	
+	Fix little issue in temp stuff noted by Claudio Valderrama
+
+2003-05-11 15:23  dimitr
+
+	* firebird2/builds/win32/defs/: fbclient.def, fbclient_debug.def:
+	
+	Restored compatibility ordinals. Unfortunately, too many software
+	depend on them.
+
+2003-05-11 13:48  dimitr
+
+	* firebird2/src/jrd/gds.cpp:
+	
+	Fixed temp file management in utilities.
+
 2003-05-10 17:37  hippoman
 
 	*
