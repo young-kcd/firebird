@@ -2381,13 +2381,12 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		index = CMP_get_index_lock(tdbb, relation, id);
 		if (index)
 		{
-			const USHORT wait =
-				(transaction->tra_flags & TRA_nowait) ? FALSE : TRUE;
 			// Try to clear trigger cache to release lock
 			if (index->idl_count)
 				MET_clear_cache(tdbb);
 			if (index->idl_count ||
-				!LCK_lock_non_blocking(tdbb, index->idl_lock, LCK_EX, wait))
+				!LCK_lock_non_blocking(tdbb, index->idl_lock, LCK_EX,
+									   transaction->getLockWait()))
 			{
 				ERR_post(isc_no_meta_update,
 						  isc_arg_gds, isc_obj_in_use,
@@ -2530,7 +2529,6 @@ static bool delete_procedure(	thread_db*	tdbb,
  *
  **************************************/
 	jrd_prc* procedure;
-	USHORT wait;
 	USHORT old_flags;
 
 	SET_TDBB(tdbb);
@@ -2545,9 +2543,8 @@ static bool delete_procedure(	thread_db*	tdbb,
 
 		if (procedure->prc_existence_lock)
 		{
-			wait = (transaction->tra_flags & TRA_nowait) ? FALSE : TRUE;
 			LCK_convert_non_blocking(tdbb, procedure->prc_existence_lock,
-									 LCK_SR, wait);
+									 LCK_SR, transaction->getLockWait());
 		}
 		return false;
 
@@ -2564,9 +2561,8 @@ static bool delete_procedure(	thread_db*	tdbb,
 
 		if (procedure->prc_existence_lock)
 		{
-			wait = (transaction->tra_flags & TRA_nowait) ? FALSE : TRUE;
 			if (!LCK_convert_non_blocking(tdbb, procedure->prc_existence_lock,
-										  LCK_EX, wait))
+										  LCK_EX, transaction->getLockWait()))
 			{
 				ERR_post(isc_no_meta_update,
 						 isc_arg_gds, isc_obj_in_use,
@@ -2645,7 +2641,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	jrd_req* request;
 	jrd_rel* relation;
 	Resource* rsc;
-	USHORT wait, view_count;
+	USHORT view_count;
 	bool adjusted;
 
 	SET_TDBB(tdbb);
@@ -2661,9 +2657,8 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 		if (relation->rel_existence_lock)
 		{
-			wait = (transaction->tra_flags & TRA_nowait) ? FALSE : TRUE;
 			LCK_convert_non_blocking(tdbb, relation->rel_existence_lock,
-									 LCK_SR, wait);
+									 LCK_SR, transaction->getLockWait());
 		}
 
 		relation->rel_flags &= ~REL_deleting;
@@ -2723,13 +2718,12 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			}
 		}
 
-		wait = (transaction->tra_flags & TRA_nowait) ? FALSE : TRUE;
 		if (relation->rel_use_count)
 			MET_clear_cache(tdbb);
 		if (relation->rel_use_count ||
 			(relation->rel_existence_lock &&
 			 !LCK_convert_non_blocking(tdbb, relation->rel_existence_lock,
-									   LCK_EX, wait)))
+									   LCK_EX, transaction->getLockWait())))
 		{
 			if (adjusted) {
 				++relation->rel_use_count;
@@ -2761,7 +2755,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		   don't wait forever if something has gone awry and the sweep
 		   count doesn't run down. */
 
-		for (wait = 0; wait < 60; wait++)
+		for (int wait = 0; wait < 60; wait++)
 		{
 			if (!relation->rel_sweep_count) {
 				break;
@@ -3830,7 +3824,6 @@ static bool modify_procedure(	thread_db*	tdbb,
  *
  **************************************/
 	jrd_prc* procedure;
-	USHORT wait;
 
 	SET_TDBB(tdbb);
 
@@ -3849,9 +3842,8 @@ static bool modify_procedure(	thread_db*	tdbb,
 
 		if (procedure->prc_existence_lock)
 		{
-			wait = (transaction->tra_flags & TRA_nowait) ? FALSE : TRUE;
 			LCK_convert_non_blocking(tdbb, procedure->prc_existence_lock,
-									 LCK_SR, wait);
+									 LCK_SR, transaction->getLockWait());
 		}
 		return false;
 	}
@@ -3869,12 +3861,10 @@ static bool modify_procedure(	thread_db*	tdbb,
 
 		if (procedure->prc_existence_lock)
 		{
-			wait = (transaction->tra_flags & TRA_nowait) ? FALSE : TRUE;
-
 			/* Let relation be deleted if only this transaction is using it */
 
 			if (!LCK_convert_non_blocking(tdbb, procedure->prc_existence_lock,
-										  LCK_EX, wait))
+										  LCK_EX, transaction->getLockWait()))
 			{
 				ERR_post(isc_no_meta_update,
 						 isc_arg_gds, isc_obj_in_use,

@@ -257,11 +257,10 @@ Lock* RLCK_range_relation(jrd_tra* transaction,
 
 	const USHORT level = LCK_PR;
 
-	const USHORT wait = (transaction->tra_flags & TRA_nowait) ? FALSE : TRUE;
-
 /* get lock */
 
-	const USHORT result = LCK_lock_non_blocking(tdbb, lock, level, wait);
+	const USHORT result =
+		LCK_lock_non_blocking(tdbb, lock, level, transaction->getLockWait());
 
 	if (result)
 		return lock;
@@ -440,18 +439,19 @@ Lock* RLCK_reserve_relation(thread_db* tdbb,
 		return lock;
 	if (transaction->tra_flags & TRA_reserving)
 		ERR_post(isc_unres_rel, isc_arg_string, relation->rel_name, 0);
-	const USHORT wait = (transaction->tra_flags & TRA_nowait) ? FALSE : TRUE;
 /* get lock */
 	USHORT result;
 	if (lock->lck_logical)
-		result = LCK_convert_non_blocking(NULL, lock, level, wait);
+		result = LCK_convert_non_blocking(NULL, lock, level,
+										  transaction->getLockWait());
 	else
-		result = LCK_lock_non_blocking(NULL, lock, level, wait);
+		result = LCK_lock_non_blocking(NULL, lock, level,
+									   transaction->getLockWait());
 	if (result)
 		return lock;
 	else {
 		if (error_flag)
-			ERR_post((wait) ? isc_deadlock : isc_lock_conflict, 0);
+			ERR_post(transaction->getLockWait() ? isc_deadlock : isc_lock_conflict, 0);
 		return NULL;
 	}
 }
@@ -964,7 +964,7 @@ static bool obtain_lock(jrd_tra* transaction, Lock* lock, USHORT lock_level)
  **************************************/
 	USHORT wait_flag;
 	if (transaction)
-		wait_flag = (transaction->tra_flags & TRA_nowait) ? FALSE : TRUE;
+		wait_flag = transaction->getLockWait();
 	else
 		wait_flag = FALSE;
 /* return if lock level OK and if the lock has not been released

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.87 2004-09-22 01:59:20 robocop Exp $
+$Id: ibase.h,v 1.88 2004-09-28 20:25:52 dimitr Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -1292,12 +1292,13 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 #define isc_tpb_verb_time                 12
 #define isc_tpb_commit_time               13
 #define isc_tpb_ignore_limbo              14
-#define isc_tpb_read_committed		  15
-#define isc_tpb_autocommit		  16
-#define isc_tpb_rec_version		  17
-#define isc_tpb_no_rec_version		  18
-#define isc_tpb_restart_requests	  19
+#define isc_tpb_read_committed	          15
+#define isc_tpb_autocommit                16
+#define isc_tpb_rec_version               17
+#define isc_tpb_no_rec_version            18
+#define isc_tpb_restart_requests          19
 #define isc_tpb_no_auto_undo              20
+#define isc_tpb_lock_timeout              21
 
 
 /************************/

@@ -105,8 +105,11 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 	traRpbList* tra_rpblist;	/* active record_param's of given transaction */
 	UCHAR tra_use_count;		/* use count for safe AST delivery */
 	UCHAR tra_callback_count;	/* callback count for 'execute statement' */
+	SSHORT tra_lock_timeout;	/* in seconds, -1 infinite */
 	ULONG tra_next_blob_id;     // ID of the previous blob or array created in this transaction
 	UCHAR tra_transactions[1];
+
+	SSHORT getLockWait() const;
 };
 
 const ULONG TRA_system			= 1L;		/* system transaction */

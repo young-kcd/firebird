@@ -90,9 +90,15 @@ static const SCHAR lock_types[] =
 };
 #endif /* VMS */
 
+const int DEFAULT_LOCK_TIMEOUT = -1;
+
 using namespace Jrd;
 using namespace Ods;
 
+SSHORT jrd_tra::getLockWait() const
+{
+	return (tra_flags & TRA_nowait) ? 0 : -tra_lock_timeout;
+}
 
 #ifdef SUPERSERVER_V2
 static SLONG bump_transaction_id(thread_db*, WIN *);
@@ -686,6 +692,7 @@ void TRA_init(thread_db* tdbb)
 
 	jrd_tra* trans = FB_NEW_RPT(*dbb->dbb_permanent, 0) jrd_tra(*dbb->dbb_permanent);
 	dbb->dbb_sys_trans = trans;
+	trans->tra_lock_timeout = DEFAULT_LOCK_TIMEOUT;
 	trans->tra_flags |= TRA_system | TRA_ignore_limbo;
 	trans->tra_pool = dbb->dbb_permanent;
 }
@@ -939,6 +946,7 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 	jrd_tra* trans = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) jrd_tra(*tdbb->getDefaultPool());
 	trans->tra_pool = tdbb->getDefaultPool();
 	trans->tra_number = gds__vax_integer(id, length);
+	trans->tra_lock_timeout = DEFAULT_LOCK_TIMEOUT;
 	trans->tra_flags |= TRA_prepared | TRA_reconnected | TRA_write;
 
 	const UCHAR state = limbo_transaction(tdbb, trans->tra_number);
@@ -1478,6 +1486,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
 
 	trans->tra_pool = temp->tra_pool;
 	trans->tra_relation_locks = temp->tra_relation_locks;
+	trans->tra_lock_timeout = temp->tra_lock_timeout;
 	trans->tra_flags = temp->tra_flags;
 	trans->tra_number = number;
 	trans->tra_top = number;
@@ -1971,8 +1980,8 @@ int TRA_wait(thread_db* tdbb, jrd_tra* trans, SLONG number, bool wait)
 		temp_lock.lck_key.lck_long = number;
 		temp_lock.lck_owner = trans;
 
-		const USHORT wait_flag = (trans->tra_flags & TRA_nowait) ? FALSE : TRUE;
-		if (!LCK_lock_non_blocking(tdbb, &temp_lock, LCK_read, wait_flag))
+		if (!LCK_lock_non_blocking(tdbb, &temp_lock, LCK_read,
+								   trans->getLockWait()))
 			return tra_active;
 
 		LCK_release(tdbb, &temp_lock);
@@ -2767,11 +2776,12 @@ static void transaction_options(
 	if (!tpb_length)
 		return;
 
-	USHORT wait = 1;
 	const UCHAR* const end = tpb + tpb_length;
 
 	if (*tpb != isc_tpb_version3 && *tpb != isc_tpb_version1)
 		ERR_post(isc_bad_tpb_form, isc_arg_gds, isc_wrotpbver, 0);
+
+	transaction->tra_lock_timeout = DEFAULT_LOCK_TIMEOUT;
 
 	++tpb;
 
@@ -2810,7 +2820,6 @@ static void transaction_options(
 			break;
 
 		case isc_tpb_nowait:
-			wait = 0;
 			transaction->tra_flags |= TRA_nowait;
 			break;
 
@@ -2838,7 +2847,7 @@ static void transaction_options(
 			USHORT l = *tpb++;
 			if (l) {
 				if (l >= sizeof(name)) {
-					TEXT text[128];
+					TEXT text[BUFFER_TINY];
 					USHORT flags = 0;
 					gds__msg_lookup(0, DYN_MSG_FAC, 159, sizeof(text),
 									text, &flags);
@@ -2893,6 +2902,14 @@ static void transaction_options(
 			transaction->tra_flags |= TRA_restart_requests;
 			break;
 
+		case isc_tpb_lock_timeout:
+			{
+			const USHORT l = *tpb++;
+			transaction->tra_lock_timeout = gds__vax_integer(tpb, l);
+			tpb += l;
+			break;
+			}
+
 		default:
 			ERR_post(isc_bad_tpb_form, 0);
 		}
@@ -2912,6 +2929,7 @@ static void transaction_options(
 		if (!lock)
 			continue;
 		USHORT level = lock->lck_logical;
+		const SSHORT wait = transaction->getLockWait();
 		if (level == LCK_none
 			|| LCK_lock_non_blocking(tdbb, lock, level, wait))
 		{
