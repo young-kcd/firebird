@@ -154,6 +154,9 @@
 				RelativePath="..\..\..\src\jrd\cvt.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\db_alias.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\dls.cpp">
 			</File>
 			<File
@@ -283,6 +286,9 @@
 			Filter="h;hpp;hxx;hm;inl">
 			<File
 				RelativePath="..\..\..\src\jrd\cvt_proto.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\db_alias.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\dls_proto.h">

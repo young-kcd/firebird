@@ -40,6 +40,7 @@
 #include "../jrd/inf.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
+#include "../jrd/db_alias.h"
 #include "../ipserver/alli_proto.h"
 #include "../ipserver/ipcli_proto.h"
 #include "../ipserver/ipevt_proto.h"
@@ -276,7 +277,13 @@ USHORT GDS_VAL(dpb_length), SCHAR * dpb, SCHAR * expanded_filename)
 		comm->ips_buffers[commi].ips_flags = 0;
 	comm->ips_operation = op_attach;
 	ips = &comm->ips_operations.ips_op_object;
-	IPS_C_IN(comm, ips_name, IPS_ATTACH_NAME, file_name, l);
+	char temp[MAXPATHLEN];
+	if (ResolveDatabaseAlias(file_name, temp)) {
+		IPS_C_IN(comm, ips_name, IPS_ATTACH_NAME, file_name, l);
+	} else {
+		IPS_C_IN(comm, ips_name, IPS_ATTACH_NAME, 
+				 expanded_filename, strlen(expanded_filename));
+	}
 	IPS_C_IN(comm, ips_dpb, IPS_ATTACH_DPB, dpb, dpb_length);
 	IPS_C_IN(comm, ips_expanded, IPS_ATTACH_EXPANDED,
 			 expanded_filename, strlen(expanded_filename));
@@ -834,8 +841,13 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS * user_status,
 	GET_OBJECT(icc);
 	comm->ips_operation = op_create;
 	ips = &comm->ips_operations.ips_op_object;
-	IPS_C_IN(comm, ips_name, IPS_CREATE_NAME,
-			 expanded_filename, strlen(expanded_filename));
+	char temp[MAXPATHLEN];
+	if (ResolveDatabaseAlias(file_name, temp)) {
+		IPS_C_IN(comm, ips_name, IPS_CREATE_NAME, file_name, l);
+	} else {
+		IPS_C_IN(comm, ips_name, IPS_CREATE_NAME, 
+				 expanded_filename, strlen(expanded_filename));
+	}
 	IPS_C_IN(comm, ips_dpb, IPS_CREATE_DPB, dpb, GDS_VAL(dpb_length));
 	IPS_C_IN(comm, ips_expanded, IPS_CREATE_EXPANDED,
 			 expanded_filename, strlen(expanded_filename));

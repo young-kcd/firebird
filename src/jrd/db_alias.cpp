@@ -52,6 +52,11 @@ bool ResolveDatabaseAlias(const char* alias, char* database)
 	if (!value.empty())
 	{
 		std::replace(value.begin(), value.end(), incorrect_dir_sep, correct_dir_sep);
+		if (PathUtils::isRelative(value)) {
+			gds__log("Value %s configured for alias %s "
+				"is not a fully qualified path name, ignored", value.c_str(), alias);
+			return false;
+		}
 		strcpy(database, value.c_str());
 		return true;
 	}
