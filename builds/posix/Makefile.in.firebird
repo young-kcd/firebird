@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.17 2002-11-16 02:17:14 skywalker Exp $
+#  $Id: Makefile.in.firebird,v 1.18 2002-11-16 03:14:26 skywalker Exp $
 #
 
 ROOT=..
@@ -445,7 +445,7 @@ $(INCLUDE_DEST)/gds.h: $(SRC_GDS_ExtraFiles)
            | grep -v '^#include "gen/codes.h"' > $@
 
 
-IBASE_ExtraFiles = jrd/blr.h include/gen/iberror.h
+IBASE_ExtraFiles = jrd/ibase.h jrd/blr.h include/gen/iberror.h
 SRC_IBASE_ExtraFiles = $(addprefix $(SRC_ROOT)/, $(IBASE_ExtraFiles))
 
 $(INCLUDE_DEST)/ibase.h: $(SRC_IBASE_ExtraFiles)
