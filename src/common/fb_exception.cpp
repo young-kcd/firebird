@@ -263,7 +263,8 @@ ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const std::exception& ex, 
 	
 	// Other random C++ exceptions
 	char temp[256];
-	SNPRINTF(temp, sizeof(temp)-1, "Unexpected C++ exception (class=\"%s\", what()=\"%s\")", 
+	SNPRINTF(temp, sizeof(temp) - 1,
+		"Unexpected C++ exception (class=\"%s\", what()=\"%s\")",
 		ex_type.name(), ex.what());
 	temp[sizeof(temp) - 1] = 0;
 	*status_vector++ = isc_arg_gds;

@@ -49,7 +49,7 @@
  * majority of the macro into a function.
  */
 
-#define STUFF_STATUS(status_vector,status)              \
+#define STUFF_STATUS(status_vector, status)             \
 {                                                       \
     va_list args;                                       \
     va_start (args, status);                            \
