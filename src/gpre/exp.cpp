@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exp.cpp,v 1.26 2003-11-28 06:48:11 robocop Exp $
+//	$Id: exp.cpp,v 1.27 2003-12-02 02:44:41 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -131,7 +131,8 @@ GPRE_NOD EXP_array(GPRE_REQ request, GPRE_FLD field, bool subscript_flag, bool s
 
 GPRE_FLD EXP_cast(GPRE_FLD field)
 {
-	for (const dtypes* dtype = data_types;; dtype++)
+	const dtypes* dtype = data_types;
+	for (;; dtype++)
 		if ((int) dtype->dtype_keyword == (int) KW_none)
 			return NULL;
 		else if (MSC_match(dtype->dtype_keyword))

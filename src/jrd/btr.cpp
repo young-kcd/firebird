@@ -5220,7 +5220,8 @@ static SLONG insert_node(TDBB tdbb,
 			USHORT index = 1;
 			IndexJumpNode* jn;
 			IndexJumpNode* walkJumpNode = jumpNodes->begin();
-			for (int i = 0; i < jumpNodes->getCount(); i++, index++) {
+			int i;
+			for (i = 0; i < jumpNodes->getCount(); i++, index++) {
 				q = new_key->key_data + walkJumpNode[i].prefix;
 				MOVE_FAST(walkJumpNode[i].data, q, walkJumpNode[i].length);
 				if (index == splitJumpNodeIndex) {
