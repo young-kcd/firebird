@@ -244,8 +244,11 @@ void TRA_cleanup(TDBB tdbb)
 /* First, make damn sure there are no outstanding transactions */
 
 	for (attachment = dbb->dbb_attachments; attachment;
-		 attachment = attachment->att_next) if (attachment->att_transactions)
+		 attachment = attachment->att_next)
+	{
+		if (attachment->att_transactions)
 			return;
+	}
 
 	trans_per_tip = dbb->dbb_pcontrol->pgc_tpt;
 
@@ -815,8 +818,11 @@ void TRA_post_resources(TDBB tdbb, JRD_TRA transaction, RSC resources)
 	for (rsc = resources; rsc; rsc = rsc->rsc_next)
 		if (rsc->rsc_type == rsc_relation || rsc->rsc_type == rsc_procedure) {
 			for (tra_rsc = transaction->tra_resources; tra_rsc;
-				 tra_rsc =
-				 tra_rsc->rsc_next) if (rsc->rsc_id == tra_rsc->rsc_id) break;
+				 tra_rsc = tra_rsc->rsc_next)
+			{
+				if (rsc->rsc_id == tra_rsc->rsc_id)
+					break;
+			}
 			if (!tra_rsc) {
 				new_rsc = FB_NEW(*tdbb->tdbb_default) Rsc();
 				new_rsc->rsc_next = transaction->tra_resources;

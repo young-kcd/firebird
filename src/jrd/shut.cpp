@@ -314,10 +314,11 @@ static BOOLEAN shutdown_locks(DBB dbb)
 	dbb->dbb_ast_flags |= DBB_shutdown;
 
 	for (attachment = dbb->dbb_attachments; attachment;
-		 attachment =
-		 attachment->
-		 att_next) if (!(attachment->att_flags & ATT_shutdown_manager))
-	attachment->att_flags |= ATT_shutdown;
+		 attachment = attachment->att_next)
+	{
+		if (!(attachment->att_flags & ATT_shutdown_manager))
+			attachment->att_flags |= ATT_shutdown;
+	}
 
 	if (dbb->dbb_use_count) {
 		/* Let active database threads rundown */

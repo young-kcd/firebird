@@ -717,12 +717,15 @@ void RNG_shutdown_attachment(ATT attachment)
 	tdbb = GET_THREAD_DATA;
 
 	for (request = attachment->att_requests; request;
-		 request = request->req_request) if (refresh_ranges =
-											 request->req_refresh_ranges)
-				for (range_number = 0;
-					 range_number < refresh_ranges->vec_count; range_number++)
+		 request = request->req_request)
+	{
+		if (refresh_ranges = request->req_refresh_ranges)
+			for (range_number = 0; range_number < refresh_ranges->vec_count;
+				range_number++)
+			{
 				if (refresh_range =
-					(RNG) refresh_ranges->vec_object[range_number]) {
+					(RNG) refresh_ranges->vec_object[range_number])
+				{
 					/* Shutdown range page locks */
 
 					if (refresh_range->rng_page_locks) {
@@ -745,6 +748,8 @@ void RNG_shutdown_attachment(ATT attachment)
 						}
 					}
 				}
+			}
+	}
 }
 #endif
 

@@ -1545,20 +1545,21 @@ static RTN walk_index(TDBB tdbb,
 	if (control && (control->vdr_flags & vdr_records)) {
 		THREAD_EXIT;
 		next_number = -1;
-		while (SBM_next
-			   (control->vdr_rel_records, &next_number,
-				RSE_get_forward)) if (!SBM_test(control->vdr_idx_records,
-												next_number)) {
+		while (SBM_next(control->vdr_rel_records, &next_number,
+						RSE_get_forward))
+		{
+			if (!SBM_test(control->vdr_idx_records, next_number)) {
 				THREAD_ENTER;
 				return corrupt(tdbb, control, VAL_INDEX_MISSING_ROWS,
 							   relation, id + 1);
 			}
+		}
 		THREAD_ENTER;
 	}
 
 	return rtn_ok;
 }
-
+
 static void walk_log(TDBB tdbb, VDR control)
 {
 /**************************************

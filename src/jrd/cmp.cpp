@@ -2129,11 +2129,12 @@ void DLL_EXPORT CMP_release(TDBB tdbb, JRD_REQ request)
 			case rsc_index:
 				{
 					relation = resource->rsc_rel;
-					if ( (index =
-						CMP_get_index_lock(tdbb, relation,
-										   resource->
-										   rsc_id)) ) if (!--index->idl_count)
-								LCK_release(tdbb, index->idl_lock);
+					if ( (index = CMP_get_index_lock(tdbb, relation,
+													 resource->rsc_id)) )
+					{
+						if (!--index->idl_count)
+							LCK_release(tdbb, index->idl_lock);
+					}
 					break;
 				}
 			case rsc_procedure:
@@ -2220,10 +2221,13 @@ void DLL_EXPORT CMP_shutdown_database(TDBB tdbb)
 				relation->rel_use_count = 0;
 			}
 			for (index = relation->rel_index_locks; index;
-				 index = index->idl_next) if (index->idl_lock) {
+				 index = index->idl_next)
+			{
+				if (index->idl_lock) {
 					LCK_release(tdbb, index->idl_lock);
 					index->idl_count = 0;
 				}
+			}
 		}
 
 	if (!(vector = dbb->dbb_procedures))
@@ -4907,8 +4911,8 @@ static void plan_check(CSB csb, RSE rse)
 
 /* if any streams are not marked with a plan, give an error */
 
-	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end;
-		 ptr++) if ((*ptr)->nod_type == nod_relation) {
+	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end; ptr++)
+		if ((*ptr)->nod_type == nod_relation) {
 			stream = (USHORT)(ULONG) (*ptr)->nod_arg[e_rel_stream];
 			if (!(csb->csb_rpt[stream].csb_plan))
 				ERR_post(gds_no_stream_plan, gds_arg_string,
@@ -5285,10 +5289,13 @@ static void post_trigger_access(TDBB tdbb, CSB csb, JRD_REL owner_relation, TRIG
 			standard, we can revisit those lines.
 			read_only = TRUE;
 			for (access = ((JRD_REQ)(*ptr))->req_access; access;
-				 access = access->acc_next) if (access->acc_mask & ~SCL_read) {
+				 access = access->acc_next)
+			{
+				if (access->acc_mask & ~SCL_read) {
 					read_only = FALSE;
 					break;
 				}
+			}
 			*/
 
 			/* for read-only triggers, translate a READ access into a REFERENCES;

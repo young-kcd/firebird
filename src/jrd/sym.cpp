@@ -114,7 +114,9 @@ void SYM_remove(SYM symbol)
 	h = hash_func(symbol->sym_string);
 
 	for (next = &dbb->dbb_hash_table[h]; *next;
-		 next = &(*next)->sym_collision) if (symbol == *next)
+		 next = &(*next)->sym_collision)
+	{
+		if (symbol == *next)
 			if ( (homonym = symbol->sym_homonym) ) {
 				homonym->sym_collision = symbol->sym_collision;
 				*next = homonym;
@@ -126,10 +128,14 @@ void SYM_remove(SYM symbol)
 			}
 		else
 			for (ptr = &(*next)->sym_homonym; *ptr;
-				 ptr = &(*ptr)->sym_homonym) if (symbol == *ptr) {
+				 ptr = &(*ptr)->sym_homonym)
+			{
+				if (symbol == *ptr) {
 					*ptr = symbol->sym_homonym;
 					return;
 				}
+			}
+	}
 
 	BUGCHECK(164);				/* msg 164 failed to remove symbol from hash table */
 }

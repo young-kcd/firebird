@@ -608,12 +608,11 @@ IDX_E IDX_erase(TDBB tdbb,
 	idx.idx_id = (USHORT) -1;
 	window.win_flags = 0;
 
-	while (BTR_next_index
-		   (tdbb, rpb->rpb_relation, transaction, &idx,
-			&window)) if (idx.idx_flags & (idx_primary | idx_unique)) {
-			error_code =
-				check_foreign_key(tdbb, rpb->rpb_record, rpb->rpb_relation,
-								  transaction, &idx, bad_relation, bad_index);
+	while (BTR_next_index(tdbb, rpb->rpb_relation, transaction, &idx, &window))
+		if (idx.idx_flags & (idx_primary | idx_unique)) {
+			error_code = check_foreign_key(tdbb, rpb->rpb_record,
+										   rpb->rpb_relation, transaction,
+										   &idx, bad_relation, bad_index);
 			if (idx_e_ok != error_code) {
 				CCH_RELEASE(tdbb, &window);
 				break;
@@ -1402,10 +1401,13 @@ static void signal_index_deletion(TDBB tdbb, JRD_REL relation, USHORT id)
    this index */
 
 	for (index_block = relation->rel_index_blocks; index_block;
-		 index_block = index_block->idb_next) if (index_block->idb_id == id) {
+		 index_block = index_block->idb_next)
+	{
+		if (index_block->idb_id == id) {
 			lock = index_block->idb_lock;
 			break;
 		}
+	}
 
 /* if one didn't exist, create it */
 

@@ -679,8 +679,11 @@ void DPM_delete( TDBB tdbb, RPB * rpb, SLONG prior_page)
 /* Compute the highest line number level on page */
 
 	for (index = &page->dpg_rpt[page->dpg_count];
-		 index > page->dpg_rpt; --index) if (index[-1].dpg_offset)
+		 index > page->dpg_rpt; --index)
+	{
+		if (index[-1].dpg_offset)
 			break;
+	}
 
 	page->dpg_count = count = index - page->dpg_rpt;
 
@@ -769,8 +772,8 @@ void DPM_delete( TDBB tdbb, RPB * rpb, SLONG prior_page)
 	CCH_MARK(tdbb, &pwindow);
 	ppage->ppg_page[slot] = 0;
 
-	for (ptr = &ppage->ppg_page[ppage->ppg_count]; ptr > ppage->ppg_page;
-		 --ptr) if (ptr[-1])
+	for (ptr = &ppage->ppg_page[ppage->ppg_count]; ptr > ppage->ppg_page; --ptr)
+		if (ptr[-1])
 			break;
 
 	ppage->ppg_count = count = ptr - ppage->ppg_page;
@@ -2933,17 +2936,19 @@ static RHD locate_space(
 	if (type == DPM_secondary) {
 		DECOMPOSE_QUOTIENT(rpb->rpb_number, dbb->dbb_max_records, sequence);
 		DECOMPOSE(sequence, dbb->dbb_dp_per_pp, pp_sequence, slot);
-		if ( (ppage =
-			get_pointer_page(tdbb, relation, window, pp_sequence,
-							 LCK_read)) ) if (slot < ppage->ppg_count
-											&& ( (dp_number =
-												ppage->ppg_page[slot])) ) {
+		if ( (ppage = get_pointer_page(tdbb, relation, window, pp_sequence,
+									   LCK_read)))
+		{
+			if (slot < ppage->ppg_count && ( (dp_number =
+												ppage->ppg_page[slot])) )
+			{
 				CCH_HANDOFF(tdbb, window, dp_number, LCK_write, pag_data);
 				if ( (space = find_space(tdbb, rpb, size, stack, record, type)) )
 					return (RHD) space;
 			}
 			else
 				CCH_RELEASE(tdbb, window);
+		}
 	}
 
 /* Look for space anywhere */

@@ -484,11 +484,14 @@ SLONG EVENT_que(ISC_STATUS * status_vector,
 		if (interest = historical_interest(session, event_offset)) {
 			for (ptr2 = &session->ses_interests;
 				 *ptr2 && (prior = (RINT) ABS_PTR(*ptr2));
-				 ptr2 = &prior->rint_next) if (prior == interest) {
+				 ptr2 = &prior->rint_next)
+			{
+				if (prior == interest) {
 					*ptr2 = interest->rint_next;
 					interest->rint_next = 0;
 					break;
 				}
+			}
 		}
 		else {
 			interest =

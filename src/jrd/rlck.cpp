@@ -936,10 +936,13 @@ static void drop_record_lock(LCK record_lock)
    looking for one with the same record number and relation id */
 	attachment = tdbb->tdbb_attachment;
 	for (lock = &attachment->att_record_locks; *lock;
-		 lock = &(*lock)->lck_att_next) if (*lock == record_lock) {
+		 lock = &(*lock)->lck_att_next)
+	{
+		if (*lock == record_lock) {
 			*lock = (*lock)->lck_att_next;
 			break;
 		}
+	}
 }
 #endif
 

@@ -1951,8 +1951,8 @@ ISC_STATUS DLL_EXPORT GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	if (!options.dpb_page_size)
 		options.dpb_page_size = DEFAULT_PAGE_SIZE;
 
-	for (page_size = MIN_PAGE_SIZE; page_size < MAX_PAGE_SIZE;
-		 page_size <<= 1) if (options.dpb_page_size < page_size << 1)
+	for (page_size = MIN_PAGE_SIZE; page_size < MAX_PAGE_SIZE; page_size <<= 1)
+		if (options.dpb_page_size < page_size << 1)
 			break;
 
 	dbb->dbb_page_size =

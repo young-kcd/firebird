@@ -220,8 +220,11 @@ void PCMET_lookup_index( JRD_REL relation, IDX * idx)
    have a cached block */
 
 	for (index_block = relation->rel_index_blocks; index_block;
-		 index_block =
-		 index_block->idb_next) if (index_block->idb_id == idx->idx_id) break;
+		 index_block = index_block->idb_next)
+	{
+		if (index_block->idb_id == idx->idx_id)
+			break;
+	}
 
 	if (index_block && index_block->idb_expression) {
 		idx->idx_expression = index_block->idb_expression;

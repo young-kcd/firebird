@@ -1218,9 +1218,11 @@ static SDW allocate_shadow(
  */
 
 	for (pShadow = &dbb->dbb_shadow; *pShadow;
-		 pShadow =
-		 &((*pShadow)->sdw_next)) if ((*pShadow)->sdw_number >=
-									  shadow_number) break;
+		 pShadow = &((*pShadow)->sdw_next))
+	{
+		if ((*pShadow)->sdw_number >=shadow_number)
+			break;
+	}
 
 	shadow->sdw_next = *pShadow;
 	*pShadow = shadow;
