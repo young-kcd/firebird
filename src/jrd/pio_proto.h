@@ -33,7 +33,7 @@ extern void PIO_close(struct fil *);
 extern struct fil *PIO_create(struct dbb *, TEXT *, SSHORT, BOOLEAN);
 extern int PIO_connection(TEXT *, USHORT *);
 extern int PIO_expand(TEXT *, USHORT, TEXT *);
-extern void PIO_flush(struct fil *);
+extern void PIO_flush(struct fil *, BOOLEAN);
 extern void PIO_force_write(struct fil *, USHORT);
 extern void PIO_header(struct dbb *, SCHAR *, int);
 extern SLONG PIO_max_alloc(struct dbb *);

@@ -1191,8 +1191,9 @@ void CCH_flush(TDBB tdbb, USHORT flush_flag, SLONG tra_number)
 		}
 	}
 
-/* PIO_flush (dbb->dbb_file); */
-/* PIO_flush (dbb->dbb_shadow->sdw_file); */
+	PIO_flush (dbb->dbb_file, FALSE);
+	if (dbb->dbb_shadow)
+		PIO_flush (dbb->dbb_shadow->sdw_file, FALSE);
 
 /* take the opportunity when we know there are no pages
    in cache to check that the shadow(s) have not been
