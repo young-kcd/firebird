@@ -120,15 +120,11 @@
 
     * CURRENT_TIMESTAMP and 'NOW' improvements
         Return milliseconds when a current timestamp is asked for
-      Syntax:
-        A IS [NOT] DISTINCT FROM B
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * SQL improvement
         Allowed PLAN, ROWS and ORDER BY clauses in UPDATE/DELETE statements
-      Syntax:
-        A IS [NOT] DISTINCT FROM B
       Contributor(s):
       	Oleg Loa <loa at mail.ru>
 
