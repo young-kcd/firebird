@@ -54,6 +54,7 @@
 #include "../jrd/jrd_proto.h"
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
+#include "../common/classes/init.h"
 
 #include <sys/types.h>
 #ifdef HAVE_SYS_IPC_H
@@ -101,9 +102,9 @@ typedef struct itm {
 
 
 #ifdef SUPERSERVER
-#define GETWD(buf)		JRD_getdir(buf, MAXPATHLEN)
+#define GETWD(buf)		JRD_getdir(buf)
 #else
-#define GETWD(buf)		fb_getcwd(buf, MAXPATHLEN)
+#define GETWD(buf)		fb_getcwd(buf)
 #endif /* SUPERSERVER */
 
 
@@ -187,9 +188,11 @@ static int expand_filename2(const TEXT*, USHORT, TEXT*);
 #endif
 
 #if defined(WIN_NT)
-static void expand_share_name(TEXT*);
+static void translate_slashes(Firebird::PathName&);
+static void expand_share_name(Firebird::PathName&);
 static void share_name_from_resource(TEXT*, const TEXT*, LPNETRESOURCE);
 static void share_name_from_unc(TEXT*, const TEXT*, LPREMOTE_NAME_INFO);
+static bool get_full_path(const Firebird::PathName&, Firebird::PathName&);
 #endif
 
 #ifndef NO_NFS
@@ -440,7 +443,7 @@ int ISC_analyze_tcp(TEXT* file_name, TEXT* node_name)
 }
 
 
-bool ISC_check_if_remote(const TEXT* file_name,
+bool ISC_check_if_remote(const Firebird::PathName& file_name,
 							bool implicit_flag)
 {
 /**************************************
@@ -460,7 +463,7 @@ bool ISC_check_if_remote(const TEXT* file_name,
 	TEXT temp_name[MAXPATHLEN];
 	TEXT host_name[64];
 
-	strncpy(temp_name, file_name, MAXPATHLEN);
+	strncpy(temp_name, file_name.c_str(), MAXPATHLEN);
 	temp_name[MAXPATHLEN - 1] = 0;
 
 /* Always check for an explicit TCP node name */
@@ -582,14 +585,25 @@ int ISC_expand_filename(const TEXT* file_name,
 
 #ifdef WIN_NT
 
+static void translate_slashes(Firebird::PathName& Path)
+{
+    const char sep = '\\';
+    const char bad_sep = '/';
+	for (char *p = Path.begin(), *q = Path.end(); p < q; p++)
+	{
+		if (*p == bad_sep) {
+			*p = sep;
+		}
+	}
+}
+
 // Code of this function is a slightly changed version of this routine
 // from Jim Barry (jim.barry@bigfoot.com) published at 
 // http://www.geocities.com/SiliconValley/2060/articles/longpaths.html
 
-static DWORD ShortToLongPathName(
-    LPCTSTR lpszShortPath,
-    LPTSTR lpszLongPath, 
-    DWORD cchBuffer)
+static bool ShortToLongPathName(
+	const Firebird::PathName& ShortPath,
+    Firebird::PathName& LongPath)
 {
 	// Special characters.
     const char sep = '\\';
@@ -597,27 +611,28 @@ static DWORD ShortToLongPathName(
     // Make some short type aliases
     typedef Firebird::PathName tstring;
     typedef tstring::size_type size;
-    size const npos = tstring::npos;
+    const size npos = tstring::npos;
 
     // Copy the short path into the work buffer and convert forward 
     // slashes to backslashes.
-    tstring path = lpszShortPath;
+	LongPath = ShortPath;
+	translate_slashes(LongPath);
 
     // We need a couple of markers for stepping through the path.
     size left = 0;
     size right = 0;
 
     // Parse the first bit of the path.
-    if (path.length() >= 2 && isalpha(path[0]) && colon == path[1]) // Drive letter?
+    if (LongPath.length() >= 2 && isalpha(LongPath[0]) && colon == LongPath[1]) // Drive letter?
     {
-        if (2 == path.length()) // 'bare' drive letter
+        if (2 == LongPath.length()) // 'bare' drive letter
         {
             right = npos; // skip main block
         }
-        else if (sep == path[2]) // drive letter + backslash
+        else if (sep == LongPath[2]) // drive letter + backslash
         {
             // FindFirstFile doesn't like "X:\"
-            if (3 == path.length())
+            if (3 == LongPath.length())
             {
                 right = npos; // skip main block
             }
@@ -626,27 +641,34 @@ static DWORD ShortToLongPathName(
                 left = right = 3;
             }
         }
-        else return 0; // parsing failure
+        else
+		{
+			return false; // parsing failure
+		}
     }
-    else if (path.length() >= 1 && sep == path[0])
+    else if (LongPath.length() >= 1 && sep == LongPath[0])
     {
-        if (1 == path.length()) // 'bare' backslash
+        if (1 == LongPath.length()) // 'bare' backslash
         {
             right = npos;  // skip main block
         }
         else 
         {
-            if (sep == path[1]) // is it UNC?
+            if (sep == LongPath[1]) // is it UNC?
             {
                 // Find end of machine name
-                right = path.find_first_of(sep, 2);
-                if (npos == right)
-                    return 0;
+                right = LongPath.find_first_of(sep, 2);
+                if (npos == right) 
+				{
+                    return false;
+				}
 
                 // Find end of share name
-                right = path.find_first_of(sep, right + 1);
+                right = LongPath.find_first_of(sep, right + 1);
                 if (npos == right)
-                    return 0;
+				{
+                    return false;
+				}
             }
             ++right;
         }
@@ -663,27 +685,27 @@ static DWORD ShortToLongPathName(
         left = right; // catch up
 
         // Find next separator.
-        right = path.find_first_of(sep, right);
+        right = LongPath.find_first_of(sep, right);
 
         // Temporarily replace the separator with a null character so that
         // the path so far can be passed to FindFirstFile.
         if (npos != right)
-            path[right] = 0;
+            LongPath[right] = 0;
 
         // See what FindFirstFile makes of the path so far.
-        hf = FindFirstFile(path.c_str(), &fd);
+        hf = FindFirstFile(LongPath.c_str(), &fd);
         if (INVALID_HANDLE_VALUE == hf)
 			break;
         FindClose(hf);
 
         // Put back the separator.
         if (npos != right)
-            path[right] = sep;
+            LongPath[right] = sep;
 
         // The file was found - replace the short name with the long.
-        size old_len = (npos == right) ? path.length() - left : right - left;
+        size old_len = (npos == right) ? LongPath.length() - left : right - left;
         size new_len = strlen(fd.cFileName);
-        path.replace(left, old_len, fd.cFileName, new_len);
+        LongPath.replace(left, old_len, fd.cFileName, new_len);
 
         // More to do?
         if (npos != right)
@@ -692,26 +714,20 @@ static DWORD ShortToLongPathName(
             right = left + new_len + 1;
 
             // Did we overshoot the end? (i.e. path ends with a separator).
-            if (right >= path.length())
+            if (right >= LongPath.length())
                 right = npos;
         }
     }
 
 	// We failed to find this file.
     if (INVALID_HANDLE_VALUE == hf)
-        return 0;
+        return false;
 
-    // If buffer is too small then return the required size.
-    if (cchBuffer <= path.length())
-        return path.length() + 1;
-
-    // Copy the buffer and return the number of characters copied.
-    memcpy(lpszLongPath, path.c_str(), path.length() + 1);
-    return path.length();
+    return true;
 }
 
-int ISC_expand_filename(const TEXT* file_name,
-						USHORT file_length, TEXT* expanded_name)
+int ISC_expand_filename(const Firebird::PathName& file_name,
+						Firebird::PathName& expanded_name)
 {
 /**************************************
  *
@@ -724,16 +740,18 @@ int ISC_expand_filename(const TEXT* file_name,
  *	intelligent.
  *
  **************************************/
-	TEXT *p, *q, *end, temp[MAXPATHLEN], device[4];
-	USHORT length = 0;
-	USHORT dtype;
-	bool fully_qualified_path = false;
-	bool drive_letter_present = false;
-	if (!file_length)
-		file_length = strlen(file_name);
+    typedef Firebird::PathName tstring;
+    typedef tstring::size_type size;
+    const size npos = tstring::npos;
 
-	strncpy(temp, file_name, file_length);
-	temp[file_length] = 0;
+	// check for empty filename to avoid multiple checks later
+	if (!file_name.length()) {
+		expanded_name = file_name;
+		return 0;
+	}
+
+	bool fully_qualified_path = false;
+	tstring temp = file_name;
 
 	expand_share_name(temp);
 
@@ -741,70 +759,68 @@ int ISC_expand_filename(const TEXT* file_name,
    assume named pipes.  Translate forward slashes to back slashes
    and return with no further processing. */
 
-	if ((file_name[0] == '\\' && file_name[1] == '\\') ||
-		(file_name[0] == '/' && file_name[1] == '/')) {
-		strcpy(expanded_name, temp);
+	if ((file_name.length() >= 2) && 
+		((file_name[0] == '\\' && file_name[1] == '\\') ||
+		 (file_name[0] == '/' && file_name[1] == '/'))) {
+		expanded_name = temp;
 
 		/* Translate forward slashes to back slashes */
-		for (p = temp, end = p + file_length; p < end; p++)
-			if (*p == '/')
-				*p = '\\';
-		return file_length;
+		translate_slashes(expanded_name);
+		return expanded_name.length();
 	}
 
-	if (q = strchr(temp, INET_FLAG))
+	size colon_pos;
+	tstring device;
+	if ((colon_pos = temp.find(INET_FLAG)) != npos)
 	{
-		strcpy(expanded_name, temp);
-		if (q - temp != 1)
-			return file_length;
-		device[0] = temp[0];
-		drive_letter_present = true;
-		strcpy(device + 1, ":\\");
-		dtype = GetDriveType(device);
+		expanded_name = temp;
+		if (colon_pos != 1)
+			return expanded_name.length();
+		device = temp[0];
+		device += ":\\";
+		USHORT dtype = GetDriveType(device.c_str());
 		if (dtype <= 1)
-			return file_length;
-		if (*(q + 1) == '/' || *(q + 1) == '\\')
+			return expanded_name.length();
+		
+		if ((temp.length() >= 3) && (temp[2] == '/' || temp[2] == '\\')) {
 			fully_qualified_path = true;
+		}
 	}
 
 /* Translate forward slashes to back slashes */
 
-	for (p = temp, end = p + file_length; p < end; p++)
-		if (*p == '/')
-			*p = '\\';
+	translate_slashes(temp);
 
 /* If there is an explicit node name of the form \\DOPEY don't do any
    additional translations -- everything will need to be applied at
    the other end */
 
-	if (temp[0] == '\\' && temp[1] == '\\') {
-		strcpy(expanded_name, temp);
-		return file_length;
+	if ((temp.length() >= 2) && (temp[0] == '\\' && temp[1] == '\\')) {
+		expanded_name = temp;
+		return expanded_name.length();
 	}
-	else if (temp[0] == '\\' || temp[0] == '/')
+	if (temp[0] == '\\' || temp[0] == '/') {
 		fully_qualified_path = true;
-
+	}
 /* Expand the file name */
 
 #ifdef SUPERSERVER
-	if (!fully_qualified_path)
-		length = JRD_getdir(expanded_name, MAXPATHLEN);
-	if (length && length < MAXPATHLEN) {
+	if ((!fully_qualified_path) && JRD_getdir(expanded_name)) {
 		/**
 	case where temp is of the form "c:foo.fdb" and
 	expanded_name is "c:\x\y".
         **/
-		if (drive_letter_present && device[0] == expanded_name[0]) {
-			strcat(expanded_name, "\\");
-			strcat(expanded_name, temp + 2);
+		if (device && device[0] == expanded_name[0]) {
+			expanded_name += '\\';
+			expanded_name.append (temp, 2, npos);
 		}
 		/**
 	case where temp is of the form "foo.fdb" and
 	expanded_name is "c:\x\y".
         **/
-		else if (!drive_letter_present) {
-			strcat(expanded_name, "\\");
-			strcat(expanded_name, temp);
+		else if (! device) {
+			expanded_name += '\\';
+			expanded_name += temp;
 		}
 		else {
 		/**
@@ -814,52 +830,29 @@ int ISC_expand_filename(const TEXT* file_name,
 	**/
 			/* in this case use the temp but we need to ensure that we expand to
 			 * temp from "d:foo.fdb" to "d:\foo.fdb" */
-			if (!_fullpath(expanded_name, temp, MAXPATHLEN))
-				strcpy(expanded_name, temp);
+			if (!get_full_path(temp, expanded_name))
+				expanded_name = temp;
 		}
-		file_length = strlen(expanded_name);
 	}
-#else
-	length = (USHORT) GetFullPathName(temp, MAXPATHLEN, expanded_name, &p);
-	if (length && length < MAXPATHLEN) {
-		file_length = length;
-	}
+	else
 #endif
-	else {
-		if (!_fullpath(expanded_name, temp, MAXPATHLEN))
-			strcpy(expanded_name, temp);
-		file_length = (USHORT) strlen(expanded_name);
-		/* CVC: I know this is incorrect. If _fullpath (that in turn calls GetFullPathName)
-				returns NULL, the path + file given are invalid, but the original and useless code
-				set length=0 that has no effect and setting file_length to zero stops the code below
-				from uppercasing the filename. Following the logic in the prior block of code, the
-				action to take is to get the length of the output buffer. Unfortunately, there's
-				no function that checks the result of ISC_expand_filename. Since _fullpath is
-				GetFullPathName with some checks, the code above looks strange when SUPERSERVER
-				is not defined. I decided to make file_length as the length of the output buffer. */
+	{
+		if (!get_full_path(temp, expanded_name))
+			expanded_name = temp;
 	}
-
-	TEXT expanded_name2[MAXPATHLEN];
 
 	/* convert then name to its longer version ie. convert longfi~1.fdb
 	 * to longfilename.fdb */
-	file_length =
-		(USHORT) ShortToLongPathName(expanded_name, expanded_name2,
-								     MAXPATHLEN);
-	if (file_length && file_length < MAXPATHLEN)
-		strcpy(expanded_name, expanded_name2);
-	else
-        file_length = (USHORT) strlen(expanded_name);
+	if (ShortToLongPathName(expanded_name, temp)) {
+		expanded_name = temp;
+	}
 
-/* Filenames are case insensitive on NT.  If filenames are
- * typed in mixed cases, strcmp () used in various places
- * results in incorrect behavior.
- */
+	// Filenames are case insensitive on NT.  If filenames are
+	// typed in mixed cases, strcmp () used in various places
+	// results in incorrect behavior.
+	expanded_name.upper();
 
-	for (length = 0; length < file_length; length++)
-		expanded_name[length] = UPPER7(expanded_name[length]);
-
-	return file_length;
+	return expanded_name.length();
 }
 #endif
 
@@ -1211,7 +1204,7 @@ static int expand_filename2(const TEXT* from_buff, USHORT length, TEXT* to_buff)
 
 
 #ifdef WIN_NT
-static void expand_share_name(TEXT* share_name)
+static void expand_share_name(Firebird::PathName& share_name)
 {
 /**************************************
  *
@@ -1233,7 +1226,7 @@ static void expand_share_name(TEXT* share_name)
 
 	TEXT workspace[MAXPATHLEN];
 
-	const TEXT* p = share_name;
+	const TEXT* p = share_name.c_str();
 	if (*p++ != '\\' || *p++ != '!') {
 		return;
 	}
@@ -1290,7 +1283,7 @@ static void expand_share_name(TEXT* share_name)
 				if (workspace[idx - 1] != '\\')
 					workspace[idx++] = '\\';
 				strcpy(workspace + idx, p);
-				strcpy(share_name, workspace);
+				share_name = workspace;
 				break;
 			}
 		}
@@ -1301,6 +1294,18 @@ static void expand_share_name(TEXT* share_name)
 	}
 
 	RegCloseKey(hkey);
+}
+
+static bool get_full_path(const Firebird::PathName& part, 
+						  Firebird::PathName& full) {
+	TEXT buf[MAXPATHLEN];
+	TEXT *p;
+	int l = GetFullPathName(part.c_str(), MAXPATHLEN, buf, &p);
+	if (l && l < MAXPATHLEN) {
+		full = buf;
+		return true;
+	}
+	return false;
 }
 #endif
 
@@ -1746,7 +1751,25 @@ static void share_name_from_unc(TEXT* expanded_name,
 }
 #endif /* WIN_NT */
 
-bool ISC_verify_database_access(const TEXT* name)
+#ifndef SUPERCLIENT
+namespace {
+	class DatabaseDirectoryList : public Firebird::DirectoryList
+	{
+	private:
+		const Firebird::PathName getConfigString(void) const {
+			return Firebird::PathName(Config::getUdfAccess());
+		}
+	public:
+		DatabaseDirectoryList(MemoryPool& p) : DirectoryList(p) 
+		{ 
+			initialize();
+		}
+	};
+	Firebird::InitInstance<DatabaseDirectoryList> iDatabaseDirectoryList;
+}
+#endif
+
+bool ISC_verify_database_access(const Firebird::PathName& name)
 {
 /**************************************
  *
@@ -1759,13 +1782,7 @@ bool ISC_verify_database_access(const TEXT* name)
  *
  **************************************/
 #ifndef SUPERCLIENT
-	static class DatabaseDirectoryList : public DirectoryList {
-		const Firebird::PathName GetConfigString(void) const {
-			return Firebird::PathName(Config::getDatabaseAccess());
-		}
-	} iDatabaseDirectoryList;
-
-	if (!iDatabaseDirectoryList.IsPathInList(name)) {
+	if (!iDatabaseDirectoryList().isPathInList(name)) {
 		return false;
 	}
 #endif

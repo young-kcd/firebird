@@ -27,20 +27,29 @@
 #ifndef JRD_ISC_FILE_PROTO_H
 #define JRD_ISC_FILE_PROTO_H
 
+#include "fb_string.h"
+
 #ifndef NO_NFS
 int			ISC_analyze_nfs(TEXT*, TEXT*);
 #endif
 int			ISC_analyze_pclan(TEXT*, TEXT*);
 int			ISC_analyze_tcp(TEXT*, TEXT*);
 int			ISC_analyze_xnet(TEXT*, TEXT*);
-bool		ISC_check_if_remote(const TEXT*, bool);
-int			ISC_expand_filename(const TEXT*, USHORT, TEXT*);
+bool		ISC_check_if_remote(const Firebird::PathName&, bool);
+int			ISC_expand_filename(const Firebird::PathName&, Firebird::PathName&);
+// Temporary hack to make old files happy
+inline int	ISC_expand_filename(const TEXT* unexp, USHORT len, TEXT* exp) {
+	Firebird::PathName pn(unexp, len ? len : strlen(unexp));
+	int rc = ISC_expand_filename(pn, pn);
+	strcpy(exp, pn.c_str());
+	return rc;
+}
 int			ISC_expand_logical(const TEXT*, USHORT, TEXT*);
 int			ISC_expand_share(const TEXT*, TEXT*);
 int			ISC_file_lock(SSHORT);
 int			ISC_file_unlock(SSHORT);
 int			ISC_strip_filename(TEXT*);
-bool		ISC_verify_database_access(const TEXT*);
+bool		ISC_verify_database_access(const Firebird::PathName&);
 
 #endif // JRD_ISC_FILE_PROTO_H
 
