@@ -2288,6 +2288,7 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 				parameter->par_rel_name = context->ctx_procedure->prc_name;
 				parameter->par_owner_name = context->ctx_procedure->prc_owner;
 			}
+			parameter->par_rel_alias = context->ctx_alias;
 			break;
 			}
 		case nod_dbkey: {
@@ -2295,6 +2296,7 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 			context = (dsql_ctx*) item->nod_arg[0]->nod_arg[0];
 			parameter->par_rel_name = context->ctx_relation->rel_name;
 			parameter->par_owner_name = context->ctx_relation->rel_owner;
+			parameter->par_rel_alias = context->ctx_alias;
 			break;
 			}
 		case nod_alias: {
@@ -2316,12 +2318,14 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 					parameter->par_owner_name =
 						context->ctx_procedure->prc_owner;
 				}
+				parameter->par_rel_alias = context->ctx_alias;
 			}
 			else if (alias->nod_type == nod_dbkey) {
 				parameter->par_name = db_key_name;
 				context = (dsql_ctx*) alias->nod_arg[0]->nod_arg[0];
 				parameter->par_rel_name = context->ctx_relation->rel_name;
 				parameter->par_owner_name = context->ctx_relation->rel_owner;
+				parameter->par_rel_alias = context->ctx_alias;
 			}
 			break;
 			}
@@ -2344,12 +2348,14 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 					parameter->par_owner_name =
 						context->ctx_procedure->prc_owner;
 				}
+				parameter->par_rel_alias = context->ctx_alias;
 			}
 			else if (alias->nod_type == nod_dbkey) {
 				parameter->par_name = db_key_name;
 				context = (dsql_ctx*) alias->nod_arg[0]->nod_arg[0];
 				parameter->par_rel_name = context->ctx_relation->rel_name;
 				parameter->par_owner_name = context->ctx_relation->rel_owner;
+				parameter->par_rel_alias = context->ctx_alias;
 			}
 			break;
 			}

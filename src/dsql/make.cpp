@@ -1776,6 +1776,7 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 	parameter->par_parameter = message->msg_parameter++;
 	parameter->par_rel_name = NULL;
 	parameter->par_owner_name = NULL;
+	parameter->par_rel_alias = NULL;
 
 // If the parameter is used declared, set SQLDA index 
 	if (sqlda_flag) {

@@ -595,6 +595,7 @@ public:
 	const TEXT*	par_name;			//!< Parameter name, if any
 	const TEXT*	par_rel_name;		//!< Relation name, if any
 	const TEXT*	par_owner_name;		//!< Owner name, if any
+	const TEXT*	par_rel_alias;		//!< Relation alias, if any
 	const TEXT*	par_alias;			//!< Alias, if any
 	DSC			par_desc;			//!< Field data type
 	DSC			par_user_desc;		//!< SQLDA data type

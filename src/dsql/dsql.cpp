@@ -5093,6 +5093,15 @@ static UCHAR* var_info(
 						length = 0;
 					break;
 
+				case isc_info_sql_relation_alias:
+					if (name = param->par_rel_alias) {
+						length = strlen(name);
+						buffer = reinterpret_cast<const UCHAR*>(name);
+					}
+					else
+						length = 0;
+					break;
+
 				case isc_info_sql_alias:
 					if (name = param->par_alias) {
 						length = strlen(name);
