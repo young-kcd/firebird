@@ -64,6 +64,7 @@
  * 2003.02.10 Mike Nordell  : Undefined Microsoft introduced macros to get a clean compile.
  * 2003.05.24 Nickolay Samofatov: Make SKIP and FIRST non-reserved keywords
  * 2003.06.13 Nickolay Samofatov: Make INSERTING/UPDATING/DELETING non-reserved keywords
+ * 2003.07.01 Blas Rodriguez Somoza: Change DEBUG and IN to avoid conflicts in win32 build/bison
  */
 
 #if defined(DEV_BUILD) && defined(WIN_NT) && defined(SUPERSERVER)
@@ -118,17 +119,6 @@ static void	yyerror (TEXT *);
 
 #define MIN_CACHE_BUFFERS       250
 #define DEF_CACHE_BUFFERS       1000
-
-// TMN: Remove Microsoft introduced defines
-#ifdef DELETE
-#undef DELETE
-#endif
-#ifdef IN
-#undef IN
-#endif
-#ifdef SHARED /* sys/mman.h */
-#undef SHARED
-#endif
 
 /* Fix 69th procedure problem - solution from Oleg Loa */
 #define YYSTACKSIZE		2048
@@ -276,7 +266,7 @@ static struct LexerState lex;
 %token DECIMAL
 %token DECLARE
 %token DEFAULT
-%token DELETE
+%token KW_DELETE
 %token DESC
 %token DISTINCT
 %token DO
@@ -308,7 +298,7 @@ static struct LexerState lex;
 %token GTR
 %token HAVING
 %token IF
-%token IN
+%token KW_IN
 %token INACTIVE
 %token INNER
 %token INPUT_TYPE
@@ -395,7 +385,7 @@ static struct LexerState lex;
 %token SELECT
 %token SET
 %token SHADOW
-%token SHARED
+%token KW_SHARED
 %token SINGULAR
 %token KW_SIZE
 %token SMALLINT
@@ -611,7 +601,7 @@ privilege	: SELECT
 			{ $$ = make_node (nod_select, (int) 0, NULL); }
 		| INSERT
 			{ $$ = make_node (nod_insert, (int) 0, NULL); }
-		| DELETE
+		| KW_DELETE
 			{ $$ = make_node (nod_delete, (int) 0, NULL); }
 		| UPDATE column_parens_opt
 			{ $$ = make_node (nod_update, (int) 1, $2); }
@@ -1414,7 +1404,7 @@ referential_trigger_action:
 update_rule	: ON UPDATE referential_action
 		  { $$ = $3;}
 		;
-delete_rule	: ON DELETE referential_action
+delete_rule	: ON KW_DELETE referential_action
 		  { $$ = $3;}
 		;
 
@@ -1874,31 +1864,31 @@ trigger_type_suffix	: INSERT
 			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (1, 0, 0), CONSTANT_SLONG); }
 		| UPDATE
 			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (2, 0, 0), CONSTANT_SLONG); }
-		| DELETE
+		| KW_DELETE
 			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (3, 0, 0), CONSTANT_SLONG); }
 		| INSERT OR UPDATE
 			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (1, 2, 0), CONSTANT_SLONG); }
-		| INSERT OR DELETE
+		| INSERT OR KW_DELETE
 			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (1, 3, 0), CONSTANT_SLONG); }
 		| UPDATE OR INSERT
 			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (2, 1, 0), CONSTANT_SLONG); }
-		| UPDATE OR DELETE
+		| UPDATE OR KW_DELETE
 			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (2, 3, 0), CONSTANT_SLONG); }
-		| DELETE OR INSERT
+		| KW_DELETE OR INSERT
 			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (3, 1, 0), CONSTANT_SLONG); }
-		| DELETE OR UPDATE
+		| KW_DELETE OR UPDATE
 			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (3, 2, 0), CONSTANT_SLONG); }
-		| INSERT OR UPDATE OR DELETE
+		| INSERT OR UPDATE OR KW_DELETE
 			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (1, 2, 3), CONSTANT_SLONG); }
-		| INSERT OR DELETE OR UPDATE
+		| INSERT OR KW_DELETE OR UPDATE
 			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (1, 3, 2), CONSTANT_SLONG); }
-		| UPDATE OR INSERT OR DELETE
+		| UPDATE OR INSERT OR KW_DELETE
 			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (2, 1, 3), CONSTANT_SLONG); }
-		| UPDATE OR DELETE OR INSERT
+		| UPDATE OR KW_DELETE OR INSERT
 			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (2, 3, 1), CONSTANT_SLONG); }
-		| DELETE OR INSERT OR UPDATE
+		| KW_DELETE OR INSERT OR UPDATE
 			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (3, 1, 2), CONSTANT_SLONG); }
-		| DELETE OR UPDATE OR INSERT
+		| KW_DELETE OR UPDATE OR INSERT
 			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (3, 2, 1), CONSTANT_SLONG); }
 		;
 
@@ -2740,7 +2730,7 @@ tbl_reserve_options: RESERVING restr_list
 			{ $$ = make_node (nod_reserve, 1, make_list ($2)); }
 		;
 
-lock_type	: SHARED
+lock_type	: KW_SHARED
 			{ $$ = (DSQL_NOD) NOD_SHARED; }
 		| PROTECTED
 			{ $$ = (DSQL_NOD) NOD_PROTECTED ; }
@@ -3137,11 +3127,11 @@ delete		: delete_searched
 		| delete_positioned
 		;
 
-delete_searched	: DELETE FROM table_name where_clause
+delete_searched	: KW_DELETE FROM table_name where_clause
 			{ $$ = make_node (nod_delete, e_del_count, $3, $4, NULL); }
 		;
 
-delete_positioned : DELETE FROM table_name cursor_clause
+delete_positioned : KW_DELETE FROM table_name cursor_clause
 			{ $$ = make_node (nod_delete, e_del_count, $3, NULL, $4); }
 		;
 
@@ -3396,9 +3386,9 @@ like_predicate	: value LIKE value
 						3, $1, $4, $6)); }
 		;
 
-in_predicate	: value IN in_predicate_value
+in_predicate	: value KW_IN in_predicate_value
 		{ $$ = make_node (nod_eql_any, 2, $1, $3); }
-	| value NOT IN in_predicate_value
+	| value NOT KW_IN in_predicate_value
 		{ $$ = make_node (nod_not, 1, make_node (nod_eql_any, 2, $1, $4)); }
 		;
 

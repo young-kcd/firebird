@@ -73,6 +73,7 @@ static char yysccsid[] = "@(#)yaccpar	1.9 (Berkeley) 02/21/93";
  * 2003.02.10 Mike Nordell  : Undefined Microsoft introduced macros to get a clean compile.
  * 2003.05.24 Nickolay Samofatov: Make SKIP and FIRST non-reserved keywords
  * 2003.06.13 Nickolay Samofatov: Make INSERTING/UPDATING/DELETING non-reserved keywords
+ * 2003.07.01 Blas Rodriguez Somoza: Change DEBUG and IN to avoid conflicts in win32 build/bison
  */
 
 #if defined(DEV_BUILD) && defined(WIN_NT) && defined(SUPERSERVER)
@@ -127,17 +128,6 @@ static void	yyerror (TEXT *);
 
 #define MIN_CACHE_BUFFERS       250
 #define DEF_CACHE_BUFFERS       1000
-
-/* TMN: Remove Microsoft introduced defines*/
-#ifdef DELETE
-#undef DELETE
-#endif
-#ifdef IN
-#undef IN
-#endif
-#ifdef SHARED /* sys/mman.h */
-#undef SHARED
-#endif
 
 /* Fix 69th procedure problem - solution from Oleg Loa */
 #define YYSTACKSIZE		2048
@@ -275,7 +265,7 @@ static struct LexerState lex;
 #define DECIMAL 298
 #define DECLARE 299
 #define DEFAULT 300
-#define DELETE 301
+#define KW_DELETE 301
 #define DESC 302
 #define DISTINCT 303
 #define DO 304
@@ -307,7 +297,7 @@ static struct LexerState lex;
 #define GTR 330
 #define HAVING 331
 #define IF 332
-#define IN 333
+#define KW_IN 333
 #define INACTIVE 334
 #define INNER 335
 #define INPUT_TYPE 336
@@ -394,7 +384,7 @@ static struct LexerState lex;
 #define SELECT 417
 #define SET 418
 #define SHADOW 419
-#define SHARED 420
+#define KW_SHARED 420
 #define SINGULAR 421
 #define KW_SIZE 422
 #define SMALLINT 423
@@ -3910,26 +3900,26 @@ char *yyname[] = {
 "CACHE","CAST","CHARACTER","CHECK","CHECK_POINT_LEN","COLLATE","COMMA","COMMIT",
 "COMMITTED","COMPUTED","CONCATENATE","CONDITIONAL","CONSTRAINT","CONTAINING",
 "COUNT","CREATE","CSTRING","CURRENT","CURSOR","DATABASE","DATE","DB_KEY",
-"KW_DEBUG","DECIMAL","DECLARE","DEFAULT","DELETE","DESC","DISTINCT","DO",
+"KW_DEBUG","DECIMAL","DECLARE","DEFAULT","KW_DELETE","DESC","DISTINCT","DO",
 "DOMAIN","DROP","ELSE","END","ENTRY_POINT","EQL","ESCAPE","EXCEPTION","EXECUTE",
 "EXISTS","EXIT","EXTERNAL","FILTER","FOR","FOREIGN","FROM","FULL","FUNCTION",
 "GDSCODE","GEQ","GENERATOR","GEN_ID","GRANT","GROUP","GROUP_COMMIT_WAIT","GTR",
-"HAVING","IF","IN","INACTIVE","INNER","INPUT_TYPE","INDEX","INSERT","INTEGER",
-"INTO","IS","ISOLATION","JOIN","KEY","KW_CHAR","KW_DEC","KW_DOUBLE","KW_FILE",
-"KW_FLOAT","KW_INT","KW_LONG","KW_NULL","KW_NUMERIC","KW_UPPER","KW_VALUE",
-"LENGTH","LOGFILE","LPAREN","LEFT","LEQ","LEVEL","LIKE","LOG_BUF_SIZE","LSS",
-"MANUAL","MAXIMUM","MAX_SEGMENT","MERGE","MESSAGE","MINIMUM","MODULE_NAME",
-"NAMES","NATIONAL","NATURAL","NCHAR","NEQ","NO","NOT","NOT_GTR","NOT_LSS",
-"NUM_LOG_BUFS","OF","ON","ONLY","OPTION","OR","ORDER","OUTER","OUTPUT_TYPE",
-"OVERFLOW","PAGE","PAGES","PAGE_SIZE","PARAMETER","PASSWORD","PLAN","POSITION",
-"POST_EVENT","PRECISION","PRIMARY","PRIVILEGES","PROCEDURE","PROTECTED",
-"RAW_PARTITIONS","READ","REAL","REFERENCES","RESERVING","RETAIN",
-"RETURNING_VALUES","RETURNS","REVOKE","RIGHT","RPAREN","ROLLBACK","SEGMENT",
-"SELECT","SET","SHADOW","SHARED","SINGULAR","KW_SIZE","SMALLINT","SNAPSHOT",
-"SOME","SORT","SQLCODE","STABILITY","STARTING","STATISTICS","SUB_TYPE",
-"SUSPEND","SUM","TABLE","THEN","TO","TRANSACTION","TRIGGER","UNCOMMITTED",
-"UNION","UNIQUE","UPDATE","USER","VALUES","VARCHAR","VARIABLE","VARYING",
-"VERSION","VIEW","WAIT","WHEN","WHERE","WHILE","WITH","WORK","WRITE",
+"HAVING","IF","KW_IN","INACTIVE","INNER","INPUT_TYPE","INDEX","INSERT",
+"INTEGER","INTO","IS","ISOLATION","JOIN","KEY","KW_CHAR","KW_DEC","KW_DOUBLE",
+"KW_FILE","KW_FLOAT","KW_INT","KW_LONG","KW_NULL","KW_NUMERIC","KW_UPPER",
+"KW_VALUE","LENGTH","LOGFILE","LPAREN","LEFT","LEQ","LEVEL","LIKE",
+"LOG_BUF_SIZE","LSS","MANUAL","MAXIMUM","MAX_SEGMENT","MERGE","MESSAGE",
+"MINIMUM","MODULE_NAME","NAMES","NATIONAL","NATURAL","NCHAR","NEQ","NO","NOT",
+"NOT_GTR","NOT_LSS","NUM_LOG_BUFS","OF","ON","ONLY","OPTION","OR","ORDER",
+"OUTER","OUTPUT_TYPE","OVERFLOW","PAGE","PAGES","PAGE_SIZE","PARAMETER",
+"PASSWORD","PLAN","POSITION","POST_EVENT","PRECISION","PRIMARY","PRIVILEGES",
+"PROCEDURE","PROTECTED","RAW_PARTITIONS","READ","REAL","REFERENCES","RESERVING",
+"RETAIN","RETURNING_VALUES","RETURNS","REVOKE","RIGHT","RPAREN","ROLLBACK",
+"SEGMENT","SELECT","SET","SHADOW","KW_SHARED","SINGULAR","KW_SIZE","SMALLINT",
+"SNAPSHOT","SOME","SORT","SQLCODE","STABILITY","STARTING","STATISTICS",
+"SUB_TYPE","SUSPEND","SUM","TABLE","THEN","TO","TRANSACTION","TRIGGER",
+"UNCOMMITTED","UNION","UNIQUE","UPDATE","USER","VALUES","VARCHAR","VARIABLE",
+"VARYING","VERSION","VIEW","WAIT","WHEN","WHERE","WHILE","WITH","WORK","WRITE",
 "FLOAT_NUMBER","NUMBER","NUMERIC","SYMBOL","STRING","INTRODUCER","ACTION",
 "ADMIN","CASCADE","FREE_IT","RESTRICT","ROLE","COLUMN","TYPE","EXTRACT","YEAR",
 "MONTH","DAY","HOUR","MINUTE","SECOND","WEEKDAY","YEARDAY","TIME","TIMESTAMP",
@@ -3978,7 +3968,7 @@ char *yyrule[] = {
 "proc_privileges : EXECUTE",
 "privilege : SELECT",
 "privilege : INSERT",
-"privilege : DELETE",
+"privilege : KW_DELETE",
 "privilege : UPDATE column_parens_opt",
 "privilege : REFERENCES column_parens_opt",
 "grant_option : WITH GRANT OPTION",
@@ -4199,7 +4189,7 @@ char *yyrule[] = {
 "referential_trigger_action : update_rule delete_rule",
 "referential_trigger_action :",
 "update_rule : ON UPDATE referential_action",
-"delete_rule : ON DELETE referential_action",
+"delete_rule : ON KW_DELETE referential_action",
 "referential_action : CASCADE",
 "referential_action : SET DEFAULT",
 "referential_action : SET KW_NULL",
@@ -4322,19 +4312,19 @@ char *yyrule[] = {
 "trigger_type_prefix : AFTER",
 "trigger_type_suffix : INSERT",
 "trigger_type_suffix : UPDATE",
-"trigger_type_suffix : DELETE",
+"trigger_type_suffix : KW_DELETE",
 "trigger_type_suffix : INSERT OR UPDATE",
-"trigger_type_suffix : INSERT OR DELETE",
+"trigger_type_suffix : INSERT OR KW_DELETE",
 "trigger_type_suffix : UPDATE OR INSERT",
-"trigger_type_suffix : UPDATE OR DELETE",
-"trigger_type_suffix : DELETE OR INSERT",
-"trigger_type_suffix : DELETE OR UPDATE",
-"trigger_type_suffix : INSERT OR UPDATE OR DELETE",
-"trigger_type_suffix : INSERT OR DELETE OR UPDATE",
-"trigger_type_suffix : UPDATE OR INSERT OR DELETE",
-"trigger_type_suffix : UPDATE OR DELETE OR INSERT",
-"trigger_type_suffix : DELETE OR INSERT OR UPDATE",
-"trigger_type_suffix : DELETE OR UPDATE OR INSERT",
+"trigger_type_suffix : UPDATE OR KW_DELETE",
+"trigger_type_suffix : KW_DELETE OR INSERT",
+"trigger_type_suffix : KW_DELETE OR UPDATE",
+"trigger_type_suffix : INSERT OR UPDATE OR KW_DELETE",
+"trigger_type_suffix : INSERT OR KW_DELETE OR UPDATE",
+"trigger_type_suffix : UPDATE OR INSERT OR KW_DELETE",
+"trigger_type_suffix : UPDATE OR KW_DELETE OR INSERT",
+"trigger_type_suffix : KW_DELETE OR INSERT OR UPDATE",
+"trigger_type_suffix : KW_DELETE OR UPDATE OR INSERT",
 "trigger_position : POSITION nonneg_short_integer",
 "trigger_position :",
 "trigger_action : AS begin_trigger var_declaration_list full_proc_block",
@@ -4538,7 +4528,7 @@ char *yyrule[] = {
 "version_mode : NO VERSION",
 "version_mode :",
 "tbl_reserve_options : RESERVING restr_list",
-"lock_type : SHARED",
+"lock_type : KW_SHARED",
 "lock_type : PROTECTED",
 "lock_type :",
 "lock_mode : READ",
@@ -4665,8 +4655,8 @@ char *yyrule[] = {
 "insert_value_list : insert_value_list ',' rhs",
 "delete : delete_searched",
 "delete : delete_positioned",
-"delete_searched : DELETE FROM table_name where_clause",
-"delete_positioned : DELETE FROM table_name cursor_clause",
+"delete_searched : KW_DELETE FROM table_name where_clause",
+"delete_positioned : KW_DELETE FROM table_name cursor_clause",
 "cursor_clause : WHERE CURRENT OF symbol_cursor_name",
 "update : update_searched",
 "update : update_positioned",
@@ -4761,8 +4751,8 @@ char *yyrule[] = {
 "like_predicate : value NOT LIKE value",
 "like_predicate : value LIKE value ESCAPE value",
 "like_predicate : value NOT LIKE value ESCAPE value",
-"in_predicate : value IN in_predicate_value",
-"in_predicate : value NOT IN in_predicate_value",
+"in_predicate : value KW_IN in_predicate_value",
+"in_predicate : value NOT KW_IN in_predicate_value",
 "containing_predicate : value CONTAINING value",
 "containing_predicate : value NOT CONTAINING value",
 "starting_predicate : value STARTING value",
@@ -4955,12 +4945,16 @@ typedef int YYSTYPE;
 #endif
 #endif
 static int yynerrs;
+
 #ifndef SHLIB_DEFS
 int DSQL_yyerrflag;
 #endif
+
+
 #ifndef SHLIB_DEFS
 int DSQL_yychar;
 #endif
+
 short *DSQL_DSQL_yyssp;
 static YYSTYPE *yyvsp;
 static YYSTYPE yyval;

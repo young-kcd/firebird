@@ -42,7 +42,7 @@
 #define DECIMAL 298
 #define DECLARE 299
 #define DEFAULT 300
-#define DELETE 301
+#define KW_DELETE 301
 #define DESC 302
 #define DISTINCT 303
 #define DO 304
@@ -74,7 +74,7 @@
 #define GTR 330
 #define HAVING 331
 #define IF 332
-#define IN 333
+#define KW_IN 333
 #define INACTIVE 334
 #define INNER 335
 #define INPUT_TYPE 336
@@ -161,7 +161,7 @@
 #define SELECT 417
 #define SET 418
 #define SHADOW 419
-#define SHARED 420
+#define KW_SHARED 420
 #define SINGULAR 421
 #define KW_SIZE 422
 #define SMALLINT 423
@@ -254,3 +254,6 @@
 #define INSERTING 510
 #define UPDATING 511
 #define DELETING 512
+#define KW_INSERTING 513
+#define KW_UPDATING 514
+#define KW_DELETING 515

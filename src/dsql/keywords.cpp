@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.17 2003-06-10 13:39:05 dimitr Exp $
+ *  $Id: keywords.cpp,v 1.18 2003-07-02 00:16:56 brodsom Exp $
  *
  */
 
@@ -115,7 +115,7 @@ static const TOK tokens [] = {
 	{DECIMAL, "DECIMAL", 1},
 	{DECLARE, "DECLARE", 1},
 	{DEFAULT, "DEFAULT", 1},
-	{DELETE, "DELETE", 1},
+	{KW_DELETE, "DELETE", 1},
 	{DELETING, "DELETING", 2},
 	{DESC, "DESC", 1},	/* Alias of DESCENDING */
 	{DESC, "DESCENDING", 1},
@@ -154,7 +154,7 @@ static const TOK tokens [] = {
 	{HAVING, "HAVING", 1},
 	{HOUR, "HOUR", 2},
 	{IF, "IF", 1},
-	{IN, "IN", 1},
+	{KW_IN, "IN", 1},
 	{INACTIVE, "INACTIVE", 1},
 	{INDEX, "INDEX", 1},
 	{INNER, "INNER", 1},
@@ -246,7 +246,7 @@ static const TOK tokens [] = {
 	{SELECT, "SELECT", 1},
 	{SET, "SET", 1},
 	{SHADOW, "SHADOW", 1},
-	{SHARED, "SHARED", 1},
+	{KW_SHARED, "SHARED", 1},
 	{SINGULAR, "SINGULAR", 1},
 	{KW_SIZE, "SIZE", 1},
 	{SKIP, "SKIP", 2},
