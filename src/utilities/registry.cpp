@@ -102,6 +102,15 @@ USHORT REGISTRY_install(HKEY hkey_node,
     	return FAILURE;
     }
 
+	if ((status = RegSetValueEx(hkey_kit, "GuardianOptions", 0,
+								REG_SZ, reinterpret_cast<UCHAR*>("1"),
+								1)) != ERROR_SUCCESS) {
+	    (*err_handler) (status, "RegSetValueEx", hkey_kit);
+    	if (disp == REG_CREATED_NEW_KEY)
+			REGISTRY_remove(hkey_node, TRUE, err_handler);
+    	return FAILURE;
+    }
+
 	RegCloseKey(hkey_kit);
 
 	return SUCCESS;
