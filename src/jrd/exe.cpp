@@ -2060,8 +2060,6 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 							gds_arg_string, node_savepoint_name, 0);
 					}
 
-					SLONG sav_number = savepoint->sav_number;
-
 					if (operation == blr_savepoint_set) {
 
 						// Release the savepoint
@@ -2087,6 +2085,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 						transaction->tra_save_point = current;
 					}
 					else if (operation == blr_savepoint_release) {
+						SLONG sav_number = savepoint->sav_number;
 
 						// Release the savepoint and all subsequent ones
 						while (transaction->tra_save_point &&
@@ -2099,6 +2098,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 						VIO_start_save_point(tdbb, transaction);
 					}
 					else if (operation == blr_savepoint_undo) {
+						SLONG sav_number = savepoint->sav_number;
 
 						// Undo the savepoint
 						while (transaction->tra_save_point &&
