@@ -45,7 +45,9 @@ produced by Borland Resource Workshop
 
 #define ADVANCED_DLG    5
 #define IDC_DBAPASSWORD 101
+#ifndef DS_3DLOOK
 #define DS_3DLOOK       0x0004L
+#endif
 
 #define GENERAL_DLG     1
 #define CONFIG_DLG      2
