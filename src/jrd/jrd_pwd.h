@@ -70,7 +70,7 @@ private:
 	void lock();
 	void unlock();
 
-	void fini(bool);
+	void fini();
 	void init();
 	bool lookup_user(TEXT*, int*, int*, TEXT*);
 	bool prepare();

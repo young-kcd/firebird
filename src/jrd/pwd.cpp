@@ -122,7 +122,6 @@ SecurityDatabase::SecurityDatabase()
 
 SecurityDatabase::~SecurityDatabase()
 {
-	fini(true);
 	THD_MUTEX_DESTROY(&mutex);
 }
 
@@ -141,12 +140,12 @@ void SecurityDatabase::unlock()
 	THD_MUTEX_UNLOCK(&mutex);
 }
 
-void SecurityDatabase::fini(bool force)
+void SecurityDatabase::fini()
 {
 #ifndef EMBEDDED
-	if (is_cached && (force || counter > 0))
+	if (is_cached && counter > 0)
 	{
-		if (force || --counter == 1)
+		if (--counter == 1)
 		{
 			counter = 0;
 			THREAD_EXIT;
@@ -342,7 +341,7 @@ void SecurityDatabase::initialize()
 
 void SecurityDatabase::shutdown()
 {
-	instance().fini(false);
+	instance().fini();
 }
 
 void SecurityDatabase::verifyUser(TEXT* name,
