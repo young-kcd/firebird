@@ -1,3 +1,75 @@
+2004-06-09 21:03  brodsom
+
+	* firebird2/src/jrd/os/thd_priority.h (1.16):
+	
+	Correction
+
+2004-06-09 21:02  brodsom
+
+	* firebird2/src/jrd/os/thd_priority.h (1.15):
+	
+	Fix gcc complaints after Alex changes.
+
+2004-06-09 20:56  brodsom
+
+	* firebird2/src/: utilities/print_event.cpp (1.4),
+	utilities/sbc_print.cpp (1.27), lock/lock.cpp (1.107),
+	lock/print.cpp (1.41):
+	
+	-Rollback
+
+2004-06-09 20:23  brodsom
+
+	* firebird2/src/utilities/rebuild/rebuild.h (1.4):
+	
+	-Rollback
+
+2004-06-09 20:20  brodsom
+
+	* firebird2/src/: remote/inet.cpp (1.115), remote/protocol.h
+	(1.23), remote/remote.h (1.40), remote/server.cpp (1.88),
+	remote/xdr.h (1.10), remote/xnet.h (1.10), remote/os/vms/chuser.cpp
+	(1.7), utilities/stats.epp (1.12):
+	
+	-Rollback
+
+2004-06-09 20:16  brodsom
+
+	* firebird2/src/lock/lock.h (1.30):
+	
+	-Rollback
+
+2004-06-09 20:11  brodsom
+
+	* firebird2/src/jrd/: dsc.h (1.19), sort.h (1.24):
+	
+	-Rollback
+
+2004-06-09 20:07  brodsom
+
+	* firebird2/src/: dudley/ddl.h (1.29), dudley/parse.h (1.7),
+	ipserver/ipc.h (1.23):
+	
+	-Rollback
+
+2004-06-09 09:46  alexpeshkoff
+
+	* firebird2/src/ipserver/ipclient.cpp (1.48):
+	
+	Fixed MSVC6 boot build
+
+2004-06-09 09:44  alexpeshkoff
+
+	* firebird2/src/remote/xnet.cpp (1.50):
+	
+	Removed THD_mutex_init from comment
+
+2004-06-09 03:50  brodsom
+
+	* firebird2/src/lock/print.cpp (1.40):
+	
+	-Correction
+
 2004-06-09 03:07  brodsom
 
 	* firebird2/src/ipserver/ipc.h (1.22):
