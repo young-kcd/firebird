@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.util,v 1.20 2004-04-30 23:02:07 brodsom Exp $
+#  $Id: Makefile.in.client.util,v 1.21 2004-11-07 13:47:05 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -65,11 +65,6 @@ common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
 DROP_Files= drop.cpp
 DROP_Sources = $(addprefix utilities/, $(DROP_Files)) $(DROP_Other_Sources)
 DROP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DROP_Sources))))
-
-GSEC_Other_Sources = jrd/enc.cpp
-GSEC_Files =  gsec.cpp security.cpp
-GSEC_Sources = $(addprefix utilities/gsec/, $(GSEC_Files)) $(GSEC_Other_Sources)
-GSEC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSEC_Sources))))
 
 GSTAT_Other_Sources = jrd/btn.cpp jrd/db_alias.cpp common/utils.cpp \
 common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp \
@@ -113,15 +108,14 @@ RELAY_Sources = $(addprefix utilities/, $(RELAY_Files))
 RELAY_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(RELAY_Sources))))
 
 
-AllObjects = $(CREATEDB_Object) $(DROP_Object) \
-			 $(GSEC_Objects) $(GSTAT_Object) $(FBGUARD_Objects) \
+AllObjects = $(CREATEDB_Object) $(DROP_Object) $(GSTAT_Object) $(FBGUARD_Objects) \
 			 $(FBMGR_Objects) $(REBUILD_Objects) $(RELAY_Objects)
 
 
 Dependencies = $(AllObjects:.o=.d) 
 
 
-.PHONY: all create_db gstat gds_drop gds_relay gsec fbguard fbmgr_bin nbackup fb_lock_print
+.PHONY: all gstat gsec fbguard fbmgr_bin nbackup gds_drop gds_relay create_db fb_lock_print
 
 all: $(CLIENT_UTIL_TARGETS)
 
@@ -161,10 +155,7 @@ $(GDS_RELAY):	$(RELAY_Objects) $(LIBFBCLIENT_SO)
 	$(LD) $(LINK_OPTS) $(RELAY_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
 
 
-gsec: $(LIBFBCLIENT_SO) $(GSEC)
-
-$(GSEC):	$(GSEC_Objects)
-	$(LD) $(LINK_OPTS) $(GSEC_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+gsec: $(LIBFBCLIENT_SO)
 
 fbguard: $(LIBFBCLIENT_SO) $(FBGUARD)
 

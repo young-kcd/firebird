@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.util,v 1.14 2004-09-09 11:32:54 kkuznetsov Exp $
+#  $Id: Makefile.in.embed.util,v 1.15 2004-11-07 13:47:05 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -69,9 +69,9 @@ DROP_Files= drop.cpp
 DROP_Sources = $(addprefix utilities/, $(DROP_Files)) $(DROP_Other_Sources)
 DROP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DROP_Sources))))
 
-GSEC_Other_Sources = jrd/enc.cpp
+GSEC_Other_Sources = jrd/enc.cpp jrd/os/posix/sha.cpp
 
-GSEC_Files =  gsec.cpp security.cpp
+GSEC_Files =  gsec.cpp security.cpp call_service.cpp
 GSEC_Sources = $(addprefix utilities/gsec/, $(GSEC_Files)) $(GSEC_Other_Sources)
 GSEC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSEC_Sources))))
 
@@ -163,7 +163,7 @@ $(GDS_RELAY):	$(RELAY_Objects) $(LIBFBEMBED_SO)
 gsec: $(LIBFBEMBED_SO) $(GSEC)
 
 $(GSEC):	$(GSEC_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS) $(LIBFBCOMMON_A)
 
 ibguard: $(IBGUARD)
 

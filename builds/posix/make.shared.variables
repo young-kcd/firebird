@@ -157,9 +157,9 @@ BURP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(BURP_Sources)))
 #
 # utilities
 
-SECURITY_ClientFiles_gsec = security.cpp
+SECURITY_ClientFiles_gsec = call_service.cpp
 
-SECURITY_ServerFiles_gsec:=
+SECURITY_ServerFiles_gsec:= security.cpp
 SECURITY_ServerFiles_gstat:=
 SECURITY_ServerFiles_common:=
 
@@ -234,7 +234,7 @@ FBCOMMON_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCOMMON_So
 # Platform Manager
 
 # just in case if make.platform defined some files
-OS_SPECIFIC_Files += config_root.cpp path_utils.cpp mod_loader.cpp fbsyslog.cpp guid.cpp isc_ipc.cpp
+OS_SPECIFIC_Files += config_root.cpp path_utils.cpp mod_loader.cpp fbsyslog.cpp guid.cpp isc_ipc.cpp sha.cpp
 
 OS_SPECIFIC_Sources = $(addprefix $(PLATFORM_PATH)/, $(OS_SPECIFIC_Files))
 OS_SPECIFIC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(OS_SPECIFIC_Sources))))

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.refDatabases,v 1.23 2004-09-01 11:53:28 alexpeshkoff Exp $
+#  $Id: Makefile.in.refDatabases,v 1.24 2004-11-07 13:47:05 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -87,10 +87,10 @@ yachts.lnk: empty.fdb
 
 # Use msg.timestamp as a target to help dependency tracking work.
 
-ref_databases : msg.timestamp help.fdb metadata.fdb security.fdb 
+ref_databases : msg.timestamp help.fdb metadata.fdb $(FIREBIRD)/security.fdb 
 
 msg.timestamp:	$(MSG_FILES)
-	$(RM) msg.fdb
+	$(RM) -f msg.fdb
 	echo create database \'msg.fdb\'\; | $(ISQL_STATIC)
 	for sn in $(MSG_FILES); do (echo $$sn; $(ISQL_STATIC) -i $$sn msg.fdb) || exit; done
 #	$(CHMOD) 444 msg.fdb
@@ -105,14 +105,15 @@ $(FIREBIRD)/help/help.fdb:	$(BLD_ROOT)/misc/help.gbak
 	$(TOUCH) $@
 	$(CHMOD) 444 $@
 
-security.fdb:	$(FIREBIRD)/security.fdb
+$(FIREBIRD)/security.fdb:	security.fdb
 	$(RM) -f $@
-	$(LN) -f $^ $@
+	$(CP) -f $^ $@
 
-$(FIREBIRD)/security.fdb:	$(BLD_ROOT)/misc/security.gbak
-	$(BIN)/gbak_static  -R $< $@
-	$(TOUCH) $@
-	$(CHMOD) 666 $@
+security.fdb:	$(SRC_ROOT)/dbs/security.sql
+	$(RM) -f $@
+	echo create database \'$@\'\; | $(ISQL_STATIC)
+	$(ISQL_STATIC) -i $^ $@
+	$(CHMOD) a=rw $@
 
 metadata.fdb:	$(BLD_ROOT)/misc/metadata.gbak
 	$(BIN)/gbak_static -MODE read_only -R $< $@
