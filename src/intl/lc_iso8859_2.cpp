@@ -80,6 +80,19 @@ FAMILY2(cache, parm1, ISO88592_c1_init, CS_ISO8859_2, CC_CZECH, LDRV_TIEBREAK,
 TEXTTYPE_RETURN;
 }
 
+TEXTTYPE_ENTRY (ISO88592_c2_init)
+{
+static const ASCII  POSIX[] = "ISO_HUN.ISO8859_2";
+
+#include "../intl/collations/xx88592hun.h"
+
+FAMILY2(cache, parm1, ISO88592_c2_init, CS_ISO8859_2, CC_HUNGARY, LDRV_TIEBREAK,
+		NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
+		CompressTbl, ExpansionTbl, POSIX);
+
+TEXTTYPE_RETURN;
+}
+
 /*
  * Generic base for InterBase 4.0 Language Driver
  */
