@@ -24,7 +24,6 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.53 2004-12-16 03:02:33 robocop Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port

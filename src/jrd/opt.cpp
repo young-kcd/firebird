@@ -4755,9 +4755,8 @@ static RecordSource* gen_navigation(thread_db* tdbb,
 		// on two different fields at the same time!
 		mode = ((ptr[sort->nod_count] && !(idx->idx_flags & idx_descending))
 				|| (!ptr[sort->nod_count]
-					&& (idx->
-						idx_flags & idx_descending))) ? RSE_get_backward :
-			RSE_get_forward;
+					&& (idx->idx_flags & idx_descending))) ?
+						RSE_get_backward : RSE_get_forward;
 		if (last_mode == RSE_get_next) {
 			last_mode = mode;
 		}
