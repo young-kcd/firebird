@@ -1,0 +1,55 @@
+;  The contents of this file are subject to the Interbase Public
+;  License Version 1.0 (the "License"); you may not use this file
+;  except in compliance with the License. You may obtain a copy
+;  of the License at http://www.Inprise.com/IPL.html
+;
+;  Software distributed under the License is distributed on an
+;  "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+;  or implied. See the License for the specific language governing
+;  rights and limitations under the License.
+;
+;  The Original Code was created by Inprise Corporation
+;  and its predecessors. Portions created by Inprise Corporation are
+;  Copyright (C) Inprise Corporation.
+;
+;  All Rights Reserved.
+;  Contributor(s): ______________________________________.
+
+	.title	rdbgentry	"GDS Shareable Library Entry Vector"
+
+	.macro	entry	foo
+	.transfer	foo
+	.mask		foo
+	jmp		l^foo+2
+	.endm
+
+entry	rdb$compile_request		; 0
+entry	rdb$release_request		; 8
+entry	rdb$unwind_request		; 16
+entry	rdb$attach_database		; 24
+entry	rdb$create_database		; 32
+entry	rdb$detach_database		; 40
+entry	rdb$commit_transaction		; 48
+entry	rdb$prepare_transaction	; 56
+entry	rdb$rollback_transaction	; 64
+entry	rdb$start_transaction		; 72
+entry	rdb$start_and_send		; 80
+entry	rdb$start_request		; 88
+entry	rdb$receive			; 96
+entry	rdb$send			; 104
+entry	rdb$database_info		; 112
+entry	rdb$request_info		; 120
+entry	rdb$transaction_info		; 128
+entry	rdb$create_segmented_string	; 136
+entry	rdb$open_segmented_string	; 144
+entry	rdb$close_segmented_string	; 152
+entry	rdb$get_segment			; 160
+entry	rdb$put_segment			; 168
+entry	rdb$ddl				; 176
+entry	rdb$extension			; 184
+entry	rdb$dummy1			; 192
+entry	rdb$cancel_segmented_string	; 200
+entry	rdb$reconnect_transaction	; 208
+entry	rdb$segmented_string_info	; 216
+
+	.end

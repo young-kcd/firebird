@@ -1,0 +1,1209 @@
+/*
+ *	PROGRAM:	JRD Access Method
+ *	MODULE:		isc_ipc.c
+ *	DESCRIPTION:	General purpose but non-user routines.
+ *
+ * The contents of this file are subject to the Interbase Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy
+ * of the License at http://www.Inprise.com/IPL.html
+ *
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+ * or implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * The Original Code was created by Inprise Corporation
+ * and its predecessors. Portions created by Inprise Corporation are
+ * Copyright (C) Inprise Corporation.
+ *
+ * All Rights Reserved.
+ * Contributor(s): ______________________________________.
+ * Solaris x86 changes - Konstantin Kuznetsov, Neil McCalden
+ */
+
+ /* $Id: isc_ipc.cpp,v 1.1.1.1 2001-05-23 13:26:10 tamlin Exp $ */
+
+#ifdef SHLIB_DEFS
+#define LOCAL_SHLIB_DEFS
+#endif
+
+#include "../jrd/ib_stdio.h"
+#include <stdlib.h>
+#include "../jrd/common.h"
+#include "../jrd/codes.h"
+#include "../jrd/isc.h"
+#include "../jrd/gds_proto.h"
+#include "../jrd/isc_proto.h"
+#include "../jrd/isc_i_proto.h"
+#include "../jrd/isc_s_proto.h"
+#include "../jrd/thd_proto.h"
+
+#ifdef sparc
+#ifdef SOLARIS
+#define HANDLER_ADDR_ARG
+#else
+#include <vfork.h>
+#endif
+#endif
+
+#ifdef SOLX86
+#define HANDLER_ADDR_ARG
+#endif
+
+typedef struct sig {
+	struct sig *sig_next;
+	int sig_signal;
+	void (*sig_routine) ();
+	void *sig_arg;
+	SLONG sig_count;
+	IPTR sig_thread_id;
+	USHORT sig_flags;
+} *SIG;
+
+#define SIG_client	1			/* Not our routine */
+#define SIG_informs	2			/* routine tells us whether to chain */
+
+#define SIG_informs_continue	0	/* continue on signal processing */
+#define SIG_informs_stop	1	/* stop signal processing */
+
+
+// Keep the following SIG_FPTR definitions in sync
+// with the same code in isc_sync.cpp
+
+#ifdef SUN3_3
+typedef int (*CLIB_ROUTINE SIG_FPTR) ();
+#else
+#if ((defined(WIN32) || defined(_WIN32)) && defined(_MSC_VER))
+typedef void (CLIB_ROUTINE * SIG_FPTR) ();
+#else
+typedef void (*CLIB_ROUTINE SIG_FPTR) ();
+#endif
+#endif
+
+#ifdef DGUX
+#define GT_32_SIGNALS
+#endif
+#if (defined AIX || defined AIX_PPC)
+#define GT_32_SIGNALS
+#endif
+#ifdef M88K
+#define GT_32_SIGNALS
+#define HANDLER_ADDR_ARG
+#endif
+#ifdef EPSON
+#define HANDLER_ADDR_ARG
+#endif
+#ifdef UNIXWARE
+#define HANDLER_ADDR_ARG
+#endif
+#ifdef NCR3000
+#define HANDLER_ADDR_ARG
+#endif
+#ifdef SCO_EV
+#define HANDLER_ADDR_ARG
+#endif
+
+#ifndef REQUESTER
+static USHORT initialized_signals = FALSE;
+static SIG VOLATILE signals = NULL;
+static USHORT VOLATILE inhibit_count = 0;
+static SLONG VOLATILE overflow_count = 0;
+
+#ifdef MULTI_THREAD
+static MUTX_T sig_mutex;
+#endif
+
+#ifdef GT_32_SIGNALS
+static SLONG VOLATILE pending_signals[2];
+#else
+static SLONG VOLATILE pending_signals = 0;
+#endif
+static int process_id = 0;
+
+#endif /* of ifndef REQUESTER */
+
+
+/* VMS Specific Stuff */
+
+#ifdef VMS
+
+#include <signal.h>
+#endif
+
+
+/* Unix specific stuff */
+
+#ifdef UNIX
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/file.h>
+#ifdef NETBSD
+#include <signal.h>
+#else
+#include <sys/signal.h>
+#endif
+#include <errno.h>
+#include <unistd.h>
+
+#ifndef O_RDWR
+#include <fcntl.h>
+#endif
+
+#ifdef DGUX
+#include <fcntl.h>
+#endif
+
+#define LOCAL_SEMAPHORES 4
+
+#ifdef DELTA
+#include <sys/sysmacros.h>
+#include <sys/param.h>
+#endif
+
+#ifdef IMP
+typedef int pid_t;
+
+#define SHMEM_DELTA	(1 << 25)
+#endif
+
+#ifdef SYSV_SIGNALS
+#define SIGVEC		FPTR_INT
+#endif
+
+#ifdef SIGACTION_SUPPORTED
+#define SIGVEC		struct sigaction
+#endif
+
+#ifndef GDS_RELAY
+#define GDS_RELAY	"/bin/gds_relay"
+#endif
+
+#ifndef SHMEM_DELTA
+#define SHMEM_DELTA	(1 << 22)
+#endif
+
+static int VOLATILE relay_pipe = 0;
+#endif
+
+
+/* Windows NT */
+
+#ifdef WIN_NT
+
+#include <process.h>
+#include <signal.h>
+#include <windows.h>
+
+#ifdef TEXT
+#undef TEXT
+#endif
+
+#define TEXT		SCHAR
+
+#ifndef NSIG
+#define NSIG		100
+#endif
+
+#define SIGVEC		SIG_FPTR
+
+#define MAX_OPN_EVENTS	40
+
+typedef struct opn_event {
+	SLONG opn_event_pid;
+	SLONG opn_event_signal;		/* pseudo-signal number */
+	HANDLE opn_event_lhandle;	/* local handle to foreign event */
+	ULONG opn_event_age;
+} *OPN_EVENT;
+
+static struct opn_event opn_events[MAX_OPN_EVENTS];
+static USHORT opn_event_count;
+static ULONG opn_event_clock;
+#endif
+
+
+/* NLM stuff */
+
+#ifdef NETWARE_386
+#define SIGVEC		SIG_FPTR
+#endif
+
+
+/* PC_PLATFORM stuff */
+
+#if (defined PC_PLATFORM && !defined NETWARE_386)
+#include <signal.h>
+
+#define SIGVEC		SIG_FPTR
+#endif
+
+
+static void cleanup(void *);
+static void error(STATUS *, TEXT *, STATUS);
+static void isc_signal2(int, FPTR_VOID, void *, ULONG);
+static SLONG overflow_handler(void *);
+static SIG que_signal(int, FPTR_VOID, void *, int);
+
+#if !(defined HANDLER_ADDR_ARG)
+static void CLIB_ROUTINE signal_handler(int, int, struct sigcontext *);
+#endif
+
+#ifdef HANDLER_ADDR_ARG
+static void CLIB_ROUTINE signal_handler(int, int, void *, void *);
+#endif
+
+#ifdef OLD_POSIX_THREADS
+static void sigwait_thread(int);
+#endif
+
+#ifndef sigvector
+#ifndef hpux
+#define sigvector	sigvec
+#endif
+#endif
+
+#ifndef SIGVEC
+#define SIGVEC		struct sigvec
+#endif
+
+#ifndef SIG_HOLD
+#define SIG_HOLD	SIG_DFL
+#endif
+
+/* Not thread-safe */
+ULONG isc_enter_count = 0;
+
+#if defined(NETWARE_386)
+static SIG_FPTR client_sigfpe = NULL;
+#else
+static SIGVEC client_sigfpe;
+#endif
+
+
+#ifdef SHLIB_DEFS
+#define sprintf		(*_libgds_sprintf)
+#define strlen		(*_libgds_strlen)
+#define strcpy		(*_libgds_strcpy)
+#define exit		(*_libgds_exit)
+#define _iob		(*_libgds__iob)
+#define getpid		(*_libgds_getpid)
+#define errno		(*_libgds_errno)
+#define kill		(*_libgds_kill)
+#define _exit           (*_libgds__exit)
+#define pipe		(*_libgds_pipe)
+#define fork		(*_libgds_fork)
+#define write		(*_libgds_write)
+#define _ctype		(*_libgds__ctype)
+#define sigvector	(*_libgds_sigvec)
+#define execl		(*_libgds_execl)
+#define sigset		(*_libgds_sigset)
+#define ib_fprintf		(*_libgds_fprintf)
+#define close		(*_libgds_close)
+
+extern int sprintf();
+extern int strlen();
+extern SCHAR *strcpy();
+extern void exit();
+extern IB_FILE _iob[];
+extern pid_t getpid();
+extern int errno;
+extern int kill();
+extern void _exit();
+extern int pipe();
+extern pid_t fork();
+extern int write();
+extern SCHAR _ctype[];
+extern int sigvector();
+extern int execl();
+extern void (*sigset()) ();
+extern int ib_fprintf();
+extern int close();
+#endif
+
+
+void DLL_EXPORT ISC_enter(void)
+{
+/**************************************
+ *
+ *	I S C _ e n t e r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Enter ISC world from caller.
+ *
+ **************************************/
+#ifdef NETWARE_386
+#define ISC_ENTER
+#endif
+
+#ifndef ISC_ENTER
+/* Cancel our handler for SIGFPE - in case it was already there */
+#pragma FB_COMPILER_MESSAGE("Fix! Ugly function pointer cast!")
+	ISC_signal_cancel(SIGFPE, (void (*)()) overflow_handler, NULL);
+
+/* Setup overflow handler - with chaining to any user handler */
+#pragma FB_COMPILER_MESSAGE("Fix! Ugly function pointer cast!")
+	isc_signal2(SIGFPE, (void (*)()) overflow_handler, NULL, SIG_informs);
+#endif
+
+#ifdef DEBUG_FPE_HANDLING
+/* Debug code to simulate an FPE occuring during DB Operation */
+	if (overflow_count < 100)
+		(void) kill(getpid(), SIGFPE);
+#endif
+}
+
+
+#ifndef REQUESTER
+void DLL_EXPORT ISC_enable(void)
+{
+/**************************************
+ *
+ *	I S C _ e n a b l e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Enable signal processing.  Re-post any pending signals.
+ *
+ **************************************/
+
+#if defined(UNIX)
+	USHORT n;
+#endif
+
+#ifdef GT_32_SIGNALS
+	SLONG p;
+	USHORT i;
+#endif
+
+	if (inhibit_count)
+		--inhibit_count;
+
+	if (inhibit_count)
+		return;
+
+#ifdef UNIX
+#ifdef GT_32_SIGNALS
+	while (pending_signals[0] || pending_signals[1])
+		for (i = 0; i < 2; i++) {
+			for (n = 0, p = pending_signals[i]; p && n < 32; n++)
+				if (p & (1 << n)) {
+					p &= ~(1 << n);
+					ISC_kill(process_id, n + 1 + i * 32);
+				}
+			/* This looks like a danger point - if one of the bits
+			 * was reset after we sent the signal then we will lose it.
+			 */
+			pending_signals[i] = 0;
+		}
+#else
+	while (pending_signals)
+		for (n = 0; pending_signals && n < 32; n++)
+			if (pending_signals & (1 << n)) {
+				pending_signals &= ~(1 << n);
+				ISC_kill(process_id, n + 1);
+			}
+#endif
+#endif
+
+}
+#endif
+
+
+void DLL_EXPORT ISC_exit(void)
+{
+/**************************************
+ *
+ *	I S C _ e x i t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Exit ISC world, return to caller.
+ *
+ **************************************/
+
+#ifdef NETWARE_386
+#define ISC_EXIT
+#endif
+
+#ifndef ISC_EXIT
+/* No longer attempt to handle overflow internally */
+#pragma FB_COMPILER_MESSAGE("Fix! Ugly function pointer cast!")
+	ISC_signal_cancel(SIGFPE, (void (*)()) overflow_handler, 0);
+#endif
+}
+
+
+#ifndef REQUESTER
+void DLL_EXPORT ISC_inhibit(void)
+{
+/**************************************
+ *
+ *	I S C _ i n h i b i t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Inhibit process of signals.  Signals will be
+ *	retained until signals are eventually re-enabled,
+ *	then re-posted.
+ *
+ **************************************/
+
+	++inhibit_count;
+}
+#endif
+
+
+#if (defined VMS && defined __ALPHA)
+int ISC_kill(SLONG pid, SLONG signal_number)
+{
+/**************************************
+ *
+ *	I S C _ k i l l		( A p o l l o  &  A l p h a / O p e n V M S )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Notify somebody else.
+ *
+ **************************************/
+
+	return kill(pid, signal_number);
+}
+#endif
+
+
+#ifdef NETWARE_386
+int ISC_kill(SLONG pid, SLONG signal_number)
+{
+/**************************************
+ *
+ *	I S C _ k i l l		( N E T W A R E _ 3 8 6 )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Notify somebody else.
+ *
+ **************************************/
+
+	return 0;
+}
+#endif
+
+
+#ifdef UNIX
+int ISC_kill(SLONG pid, SLONG signal_number)
+{
+/**************************************
+ *
+ *	I S C _ k i l l		( U N I X )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Notify somebody else.
+ *
+ **************************************/
+	SLONG msg[3];
+	int status, pipes[2];
+	TEXT process[64], arg[10];
+
+	for (;;) {
+		status = kill(pid, signal_number);
+
+		if (!status)
+			return status;
+		if (SYSCALL_INTERRUPTED(errno))
+			continue;
+		if (errno == EPERM)
+			break;
+
+		return status;
+	}
+
+/* Process is there, but we don't have the privilege to
+   send to him.  */
+
+	if (!relay_pipe) {
+		gds__prefix(process, GDS_RELAY);
+		if (pipe(pipes)) {
+			gds__log("ISC_kill: error %d creating gds_relay", errno);
+			return -1;
+		}
+		sprintf(arg, "%d", pipes[0]);
+		if (!vfork()) {
+			execl(process, process, arg, 0);
+			gds__log("ISC_kill: error %d starting gds_relay %s", errno,
+					 process);
+			_exit(0);
+		}
+		relay_pipe = pipes[1];
+
+		/* Don't need the READ pipe */
+		close(pipes[0]);
+	}
+
+	msg[0] = pid;
+	msg[1] = signal_number;
+	msg[2] = msg[0] ^ msg[1];	/* XOR for a consistancy check */
+	if (write(relay_pipe, msg, sizeof(msg)) != sizeof(msg)) {
+		gds__log("ISC_kill: write to relay_pipe failed %d", errno);
+		relay_pipe = 0;			/* try to restart next time */
+		return -1;
+	}
+
+	return 0;
+}
+#endif
+
+
+#ifdef WIN_NT
+int API_ROUTINE ISC_kill(SLONG pid, SLONG signal_number, void *object_hndl)
+{
+/**************************************
+ *
+ *	I S C _ k i l l		( W I N _ N T )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Notify somebody else.
+ *
+ **************************************/
+	ULONG oldest_age;
+	OPN_EVENT opn_event, end_opn_event, oldest_opn_event;
+
+/* If we're simply trying to poke ourselves, do so directly. */
+
+	if (pid == process_id) {
+		SetEvent(object_hndl);
+		return 0;
+	}
+
+	oldest_age = ~0;
+
+	opn_event = opn_events;
+	end_opn_event = opn_event + opn_event_count;
+	for (; opn_event < end_opn_event; opn_event++) {
+		if (opn_event->opn_event_pid == pid &&
+			opn_event->opn_event_signal == signal_number) break;
+		if (opn_event->opn_event_age < oldest_age) {
+			oldest_opn_event = opn_event;
+			oldest_age = opn_event->opn_event_age;
+		}
+	}
+
+	if (opn_event >= end_opn_event) {
+		HANDLE lhandle;
+
+		if (!(lhandle = ISC_make_signal(FALSE, FALSE, pid, signal_number)))
+			return -1;
+
+		if (opn_event_count < MAX_OPN_EVENTS)
+			opn_event_count++;
+		else {
+			opn_event = oldest_opn_event;
+			CloseHandle(opn_event->opn_event_lhandle);
+		}
+
+		opn_event->opn_event_pid = pid;
+		opn_event->opn_event_signal = signal_number;
+		opn_event->opn_event_lhandle = lhandle;
+	}
+
+	opn_event->opn_event_age = ++opn_event_clock;
+
+	return (SetEvent(opn_event->opn_event_lhandle)) ? 0 : -1;
+}
+#endif
+
+
+#ifndef BRIDGE
+void API_ROUTINE ISC_signal(int signal_number, void (*handler) (), void *arg)
+{
+/**************************************
+ *
+ *	I S C _ s i g n a l
+ *
+ **************************************
+ *
+ * Functional description
+ *	Multiplex multiple handers into single signal.
+ *
+ **************************************/
+	isc_signal2(signal_number, handler, arg, 0);
+}
+#endif /* BRIDGE */
+
+
+#ifndef BRIDGE
+#ifdef SYSV_SIGNALS
+static void isc_signal2(
+						int signal_number,
+						void (*handler) (), void *arg, ULONG flags)
+{
+/**************************************
+ *
+ *	i s c _ s i g n a l 2		( S Y S V _ S I G N A L S )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Multiplex multiple handers into single signal.
+ *
+ **************************************/
+	SIG sig;
+	int n;
+	FPTR_INT ptr;
+
+/* The signal handler needs the process id */
+
+	if (!process_id)
+		process_id = getpid();
+
+	THD_MUTEX_LOCK(&sig_mutex);
+
+/* See if this signal has ever been cared about before */
+
+	for (sig = signals; sig; sig = sig->sig_next)
+		if (sig->sig_signal == signal_number)
+			break;
+
+/* If it hasn't been attach our chain handler to the signal,
+   and queue up whatever used to handle it as a non-ISC
+   routine (they are invoked differently).  Note that if
+   the old action was SIG_DFL, SIG_HOLD, SIG_IGN or our
+   multiplexor, there is no need to save it. */
+
+	if (!sig) {
+		ptr = sigset(signal_number, signal_handler);
+		if (ptr != SIG_DFL &&
+			ptr != SIG_IGN &&
+			ptr != SIG_HOLD &&
+			ptr != signal_handler)
+		que_signal(signal_number, ptr, arg, SIG_client);
+	}
+
+/* Que up the new ISC signal handler routine */
+
+	que_signal(signal_number, handler, arg, flags);
+
+	THD_MUTEX_UNLOCK(&sig_mutex);
+}
+#endif /* SYSV */
+#endif /* BRIDGE */
+
+
+#ifndef BRIDGE
+#if (defined UNIX || defined WIN_NT || \
+	(defined PC_PLATFORM && !defined NETWARE_386))
+#ifndef SYSV_SIGNALS
+static void isc_signal2(
+						int signal_number,
+						void (*handler) (), void *arg, ULONG flags)
+{
+/**************************************
+ *
+ *	i s c _ s i g n a l 2		( u n i x ,   W I N _ N T ,   O S 2 )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Multiplex multiple handers into single signal.
+ *
+ **************************************/
+
+	SIG sig;
+	SIG_FPTR ptr;
+
+/* The signal handler needs the process id */
+
+#ifndef PC_PLATFORM
+	if (!process_id)
+		process_id = getpid();
+#endif
+
+#if defined(WIN_NT)
+/* If not a UNIX signal, just queue for port watcher. */
+
+	if (signal_number > NSIG) {
+		que_signal(signal_number, handler, arg, flags);
+		return;
+	}
+#endif
+
+	THD_MUTEX_LOCK(&sig_mutex);
+
+/* See if this signal has ever been cared about before */
+
+	for (sig = signals; sig; sig = sig->sig_next)
+		if (sig->sig_signal == signal_number)
+			break;
+
+/* If it hasn't been attach our chain handler to the signal,
+   and queue up whatever used to handle it as a non-ISC
+   routine (they are invoked differently).  Note that if
+   the old action was SIG_DFL, SIG_HOLD, SIG_IGN or our
+   multiplexor, there is no need to save it. */
+
+	if (!sig) {
+#if (defined WIN_NT || defined PC_PLATFORM)
+#pragma FB_COMPILER_MESSAGE("Fix! Ugly function pointer casts!")
+		ptr =
+			(void (*)()) signal(signal_number,
+								(void (*)(int)) signal_handler);
+#else
+
+		SIGVEC vec, old_vec;
+
+#ifndef SIGACTION_SUPPORTED
+#ifdef OLD_POSIX_THREADS
+		if (signal_number != SIGALRM)
+			vec.sv_handler = SIG_DFL;
+		else
+#endif
+			vec.sv_handler = (SIG_FPTR) signal_handler;
+		vec.sv_mask = 0;
+		vec.sv_onstack = 0;
+		sigvector(signal_number, &vec, &old_vec);
+		ptr = old_vec.sv_handler;
+#else
+#ifdef OLD_POSIX_THREADS
+		if (signal_number != SIGALRM)
+			vec.sv_handler = SIG_DFL;
+		else
+#endif
+			vec.sa_handler = (SIG_FPTR) signal_handler;
+		memset(&vec.sa_mask, 0, sizeof(vec.sa_mask));
+		vec.sa_flags = SA_RESTART;
+		sigaction(signal_number, &vec, &old_vec);
+		ptr = old_vec.sa_handler;
+#endif
+#endif
+#pragma FB_COMPILER_MESSAGE("Fix! Ugly function pointer casts!")
+		if (ptr != (SIG_FPTR) SIG_DFL &&
+			ptr != (SIG_FPTR) SIG_HOLD &&
+			ptr != (SIG_FPTR) SIG_IGN && ptr != (SIG_FPTR) signal_handler) {
+			que_signal(signal_number, (FPTR_VOID) ptr, arg, SIG_client);
+		}
+	}
+
+	/* Que up the new ISC signal handler routine */
+
+	que_signal(signal_number, handler, arg, flags);
+
+	THD_MUTEX_UNLOCK(&sig_mutex);
+}
+#endif
+#endif
+#endif
+
+
+#ifndef BRIDGE
+#ifndef REQUESTER
+void API_ROUTINE ISC_signal_cancel(
+								   int signal_number,
+								   void (*handler) (), void *arg)
+{
+/**************************************
+ *
+ *	I S C _ s i g n a l _ c a n c e l
+ *
+ **************************************
+ *
+ * Functional description
+ *	Cancel a signal handler.
+ *	If handler == NULL, cancel all handlers for a given signal.
+ *
+ **************************************/
+	SIG sig;
+	volatile SIG *ptr;
+
+	THD_MUTEX_LOCK(&sig_mutex);
+
+	for (ptr = &signals; sig = *ptr;) {
+		if (sig->sig_signal == signal_number &&
+			(handler == NULL ||
+			 (sig->sig_routine == handler && sig->sig_arg == arg))) {
+			*ptr = sig->sig_next;
+			gds__free(sig);
+		}
+		else
+			ptr = &(*ptr)->sig_next;
+	}
+
+	THD_MUTEX_UNLOCK(&sig_mutex);
+
+#ifdef OLD_POSIX_THREADS
+	{
+		IPTR thread_id;
+
+		/* UNSAFE CODE HERE - sig has been freed - rewrite should
+		 * this section ever be activated.
+		 */
+		deliberate_error_here_to_force_compile_error++;
+		if (!sig || signal_number == SIGALRM)
+			return;
+
+		thread_id = sig->sig_thread_id;
+		for (sig = signals; sig; sig = sig->sig_next)
+			if (sig->sig_signal == signal_number)
+				return;
+
+		/* No more handlers exist for the signal.  Kill the thread that's
+		   been listening for the signal. */
+
+		pthread_cancel((pthread_t *) thread_id);
+	}
+#endif // OLD_POSIX_THREADS
+}
+#endif // ifndef REQUESTER
+#endif
+
+
+void DLL_EXPORT ISC_signal_init(void)
+{
+/**************************************
+ *
+ *	I S C _ s i g n a l _ i n i t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Initialize any system signal handlers.
+ *
+ **************************************/
+
+#ifndef REQUESTER
+#ifndef PIPE_CLIENT
+	if (initialized_signals)
+		return;
+
+	initialized_signals = TRUE;
+
+	overflow_count = 0;
+	gds__register_cleanup(cleanup, 0);
+
+#ifndef VMS
+#ifndef NETWARE_386
+#ifndef PC_PLATFORM
+	process_id = getpid();
+
+	THD_MUTEX_INIT(&sig_mutex);
+
+#pragma FB_COMPILER_MESSAGE("Fix! Ugly function pointer cast!")
+	isc_signal2(SIGFPE, (void (*)()) overflow_handler, 0, SIG_informs);
+
+#endif // !defined(PC_PLATFORM)
+#endif
+#endif
+
+#endif /* PIPE_CLIENT */
+#endif /* REQUESTER */
+
+#ifdef WIN_NT
+	ISC_get_security_desc();
+#endif
+}
+
+
+#ifndef REQUESTER
+static void cleanup(void *arg)
+{
+/**************************************
+ *
+ *	c l e a n u p
+ *
+ **************************************
+ *
+ * Functional description
+ *	Module level cleanup handler.
+ *
+ **************************************/
+	signals = NULL;
+
+	THD_MUTEX_DESTROY(&sig_mutex);
+
+	inhibit_count = 0;
+
+#ifdef GT_32_SIGNALS
+	pending_signals[0] = pending_signals[1] = 0;
+#else
+	pending_signals = 0;
+#endif
+
+	process_id = 0;
+
+#ifdef WIN_NT
+	{
+		OPN_EVENT opn_event;
+
+		opn_event = opn_events + opn_event_count;
+		opn_event_count = 0;
+		while (opn_event-- > opn_events)
+			CloseHandle(opn_event->opn_event_lhandle);
+	}
+#endif
+
+	initialized_signals = FALSE;
+}
+#endif
+
+
+#ifndef REQUESTER
+static void error(STATUS * status_vector, TEXT * string, STATUS status)
+{
+/**************************************
+ *
+ *	e r r o r
+ *
+ **************************************
+ *
+ * Functional description
+ *	We've encountered an error, report it.
+ *
+ **************************************/
+
+	*status_vector++ = gds_arg_gds;
+	*status_vector++ = gds__sys_request;
+	*status_vector++ = gds_arg_string;
+	*status_vector++ = (STATUS) string;
+	*status_vector++ = SYS_ARG;
+	*status_vector++ = status;
+	*status_vector++ = gds_arg_end;
+}
+#endif
+
+
+#ifndef REQUESTER
+static SLONG overflow_handler(void *arg)
+{
+/**************************************
+ *
+ *	o v e r f l o w _ h a n d l e r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Somebody overflowed.  Ho hum.
+ *
+ **************************************/
+
+#ifdef DEBUG_FPE_HANDLING
+	ib_fprintf(ib_stderr, "overflow_handler (%x)\n", arg);
+#endif
+
+/* If we're within ISC world (inside why-value) when the FPE occurs
+ * we handle it (basically by ignoring it).  If it occurs outside of
+ * ISC world, return back a code that tells signal_handler to call any
+ * customer provided handler.
+ */
+	if (isc_enter_count) {
+		++overflow_count;
+#ifdef DEBUG_FPE_HANDLING
+		ib_fprintf(ib_stderr, "SIGFPE in isc code ignored %d\n",
+				   overflow_count);
+#endif
+		/* We've "handled" the FPE - let signal_handler know not to chain
+		   the signal to other handlers */
+		return SIG_informs_stop;
+	}
+	else {
+		/* We've NOT "handled" the FPE - let signal_handler know to chain
+		   the signal to other handlers */
+		return SIG_informs_continue;
+	}
+}
+#endif
+
+
+#ifndef REQUESTER
+static SIG que_signal(
+					  int signal_number,
+					  void (*handler) (), void *arg, int flags)
+{
+/**************************************
+ *
+ *	q u e _ s i g n a l
+ *
+ **************************************
+ *
+ * Functional description
+ *	Que signal for later action.
+ *
+ **************************************/
+	SIG sig;
+	IPTR thread_id = 0;
+
+#ifdef OLD_POSIX_THREADS
+	if (signal_number != SIGALRM) {
+		for (sig = signals; sig; sig = sig->sig_next)
+			if (sig->sig_signal == signal_number)
+				break;
+
+		if (!sig)
+			pthread_create((pthread_t *) & thread_id, pthread_attr_default,
+						   sigwait_thread, (void *) signal_number);
+		else
+			thread_id = sig->sig_thread_id;
+	}
+#endif
+
+	sig = (SIG) gds__alloc((SLONG) sizeof(struct sig));
+/* FREE: unknown */
+	if (!sig) {					/* NOMEM: */
+		DEV_REPORT("que_signal: out of memory");
+		return NULL;			/* NOMEM: not handled, too difficult */
+	}
+
+#ifdef DEBUG_GDS_ALLOC
+/* This will only be freed when a signal handler is de-registered
+ * and we don't do that at process exit - so this not always
+ * a freed structure.
+ */
+	gds_alloc_flag_unfreed((void *) sig);
+#endif
+
+	sig->sig_signal = signal_number;
+	sig->sig_routine = handler;
+	sig->sig_arg = arg;
+	sig->sig_flags = flags;
+	sig->sig_thread_id = thread_id;
+	sig->sig_count = 0;
+
+	sig->sig_next = signals;
+	signals = sig;
+
+	return sig;
+}
+#endif
+
+
+#ifndef REQUESTER
+static void CLIB_ROUTINE signal_handler(int number, int code,
+#ifdef HANDLER_ADDR_ARG
+										void *scp, void *addr)
+#else
+										struct sigcontext *scp)
+#endif
+{
+/**************************************
+ *
+ *	s i g n a l _ h a n d l e r	( G E N E R I C )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Checkin with various signal handlers.
+ *
+ **************************************/
+	SIG sig;
+
+/* if there are no signals, who cares? */
+
+	if (signals == (SIG) NULL)
+		return;
+
+/* This should never happen, but if it does might as well not crash */
+
+	if (number == 0)
+		return;
+
+/* If signals are inhibited, save the signal for later reposting.
+   Otherwise, invoke everybody who may have expressed an interest. */
+
+#ifdef SIGALRM
+	if (inhibit_count && number != SIGALRM)
+#else
+	if (inhibit_count)
+#endif
+#ifdef GT_32_SIGNALS
+		pending_signals[(number - 1) / 32] |= 1L << ((number - 1) % 32);
+#else
+		pending_signals |= 1L << (number - 1);
+#endif
+	else
+		for (sig = signals; sig; sig = sig->sig_next)
+			if (sig->sig_signal == number)
+				if (sig->sig_flags & SIG_client)
+#pragma FB_COMPILER_MESSAGE("Fix! Ugly function pointer cast!")
+#ifdef HANDLER_ADDR_ARG
+					((void (*)(...)) (*sig->sig_routine)) (number, code, scp, addr);
+#else
+					((void (*)(...)) (*sig->sig_routine)) (number, code, scp);
+#endif
+				else if (sig->sig_flags & SIG_informs) {
+					ULONG res;
+					/* Routine will tell us whether to chain the signal to other handlers */
+#pragma FB_COMPILER_MESSAGE("Fix! Ugly function pointer cast!")
+					res = ((*((SLONG(*)(void *)) sig->sig_routine))
+						   (sig->sig_arg));
+					if (res == SIG_informs_stop)
+						break;
+				}
+				else
+					((FPTR_VOID_PTR) (*sig->sig_routine)) (sig->sig_arg);
+
+#ifdef SIG_RESTART
+	scp->sc_syscall_action = (!ISC_check_restart()
+							  || number ==
+							  SIGALRM) ? SIG_RETURN : SIG_RESTART;
+#endif
+}
+#endif
+
+
+#ifdef OLD_POSIX_THREADS
+static void sigwait_thread(int signal_number)
+{
+/**************************************
+ *
+ *	s i g w a i t _ t h r e a d
+ *
+ **************************************
+ *
+ * Functional description
+ *	This thread waits for a given signal
+ *	and calls the all purpose signal
+ *	handler whenever it arrives.
+ *
+ **************************************/
+	sigset_t sigmask;
+	SIG sig;
+
+	sigemptyset(&sigmask);
+	sigaddset(&sigmask, signal_number);
+
+	while (TRUE) {
+		sigwait(&sigmask);
+
+		/* If signals are inhibited, save the signal for later reposting.
+		   Otherwise, invoke everybody who may have expressed an interest. */
+
+		if (inhibit_count && signal_number != SIGALRM)
+#ifdef GT_32_SIGNALS
+			pending_signals[(signal_number - 1) / 32] |=
+				1 << ((signal_number - 1) % 32);
+#else
+			pending_signals |= 1 << (signal_number - 1);
+#endif
+		else
+			for (sig = signals; sig; sig = sig->sig_next)
+				if (sig->sig_signal == signal_number)
+					if (sig->sig_flags & SIG_client)
+#ifdef HANDLER_ADDR_ARG
+						(*sig->sig_routine) (number, 0, NULL, NULL);
+#else
+						(*sig->sig_routine) (number, 0, NULL);
+#endif
+					else
+						(*sig->sig_routine) (sig->sig_arg);
+	}
+}
+#endif
+

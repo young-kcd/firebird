@@ -1,0 +1,76 @@
+/*
+ * The contents of this file are subject to the Interbase Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy
+ * of the License at http://www.Inprise.com/IPL.html
+ *
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+ * or implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * The Original Code was created by Inprise Corporation
+ * and its predecessors. Portions created by Inprise Corporation are
+ * Copyright (C) Inprise Corporation.
+ *
+ * All Rights Reserved.
+ * Contributor(s): ______________________________________.
+ */
+#include <windows.h>
+#include "iscguard.rh"
+#include "windows.h"
+#include "../jrd/version_95.rc"
+
+STRINGTABLE 
+{
+ IDS_QUIT, "connections active; Are you sure you want to exit?"
+ IDS_REGERROR, "Error registering main window class"
+ IDS_ALREADYSTARTED, "The InterBase Guardian failed to startup\r\nbecause another instance of the guardian\r\nis already running."
+ IDS_INTRSVRPROPERTIES, "InterServer Properties..."
+ IDS_SVRPROPERTIES, "InterBase Properties..."
+ IDS_PROPERTIES, "P&roperties"
+ IDS_SHUTDOWN, "&Shutdown"
+ IDS_CANT_START_THREAD, "The guardian was unable to launch the server thread."
+ IDS_REGISTRY_INFO_MISSING, "The registry information is missing.\r\nPlease run the InterBase Configuration Utility"
+ IDS_STARTING_GUARD, "Guardian starting"
+ IDS_STARTUP_ERROR, "terminated because of startup errors"
+ IDS_ABNORMAL_TERM, "terminated abnormally"
+ IDS_NORMAL_TERM, "normal shutdown"
+ IDS_PROP_TITLE, "General"
+ IDS_ACTION, "Action"
+ IDS_DATE, "Date"
+ IDS_TIME, "Time"
+ IDS_LOG_START, "Server Started"
+ IDS_EVTLOG_START, "Server Started: %1"
+ IDS_LOG_STOP, "Server Shutdown"
+ IDS_EVTLOG_STOP, "Server Shutdown: %1"
+ IDS_LOG_RESTART,"Server Restarted"
+ IDS_EVTLOG_RESTART,"Server Restarted: %1"
+ IDS_LOG_TERM, "Abnormal Termination"
+ IDS_EVTLOG_TERM, "Abnormal Termination: %1"
+}
+
+IDD_PROPSHEET DIALOG 0, 0, 202, 191
+STYLE WS_CHILD | WS_VISIBLE
+CAPTION ""
+FONT 8, "MS Sans Serif"
+{
+ CONTROL "Number of server restarts:", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 12, 80, 84, 8, 0
+ CONTROL "", -1, "static", SS_GRAYRECT | SS_SUNKEN | WS_CHILD | WS_VISIBLE, 12, 75, 180, 1, 0
+ CONTROL "Version:", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 12, 61, 30, 12, 0
+ CONTROL "Location:", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 12, 49, 40, 12, 0
+ CONTROL "", -1, "static", SS_GRAYRECT | SS_SUNKEN | WS_CHILD | WS_VISIBLE, 12, 40, 180, 1, 0
+ CONTROL IDI_IBGUARD, IDI_IBGUARD, "static", SS_ICON | SS_REALSIZEIMAGE | WS_CHILD | WS_VISIBLE, 12, 9, 21, 20, 0
+ CONTROL "", IDC_RESTARTS, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 96, 80, 60, 8, 0
+ CONTROL "", IDC_LOCATION, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 44, 49, 144, 8, 0
+ CONTROL "InterBase Guardian for Windows", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 44, 12, 144, 8, 0
+ CONTROL "Text7", IDC_VERSION, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 44, 61, 144, 8, 0
+ CONTROL "ListView1", IDC_LOG, "SysListView32", LVS_REPORT | LVS_SINGLESEL | LVS_NOLABELWRAP | LVS_NOSORTHEADER | WS_CHILD | WS_VISIBLE | WS_BORDER, 12, 99, 184, 81
+}
+
+IDI_IBGUARD ICON "Sgard23i.ico"
+
+IDI_IBGUARDALRT	ICON "Salrt23i.ico"
+
+
+

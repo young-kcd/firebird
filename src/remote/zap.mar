@@ -1,0 +1,53 @@
+;  The contents of this file are subject to the Interbase Public
+;  License Version 1.0 (the "License"); you may not use this file
+;  except in compliance with the License. You may obtain a copy
+;  of the License at http://www.Inprise.com/IPL.html
+;
+;  Software distributed under the License is distributed on an
+;  "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+;  or implied. See the License for the specific language governing
+;  rights and limitations under the License.
+;
+;  The Original Code was created by Inprise Corporation
+;  and its predecessors. Portions created by Inprise Corporation are
+;  Copyright (C) Inprise Corporation.
+;
+;  All Rights Reserved.
+;  Contributor(s): ______________________________________.
+;
+;	PROGRAM:	JRD Remote Server
+;	MODULE:		zap.mar
+;	DESCRIPTION:	Zap process header.
+;
+
+	.title	zap	Zap process header
+	$JIBDEF
+
+;
+; The PCB changed incompatibly between VMS V4.7 and V5.0, so
+; different definitions are used.
+;
+
+	$PCBDEFV4
+
+	.entry	zap_process_v4, ^m<R2,R3,R4,R5>
+	movl	PCB$L_JIB(R4), r0
+	movl	@4(ap), PCB$L_UIC (R4)
+	movw	@12(ap), JIB$W_ENQLM (r0)
+	movw	@12(ap), JIB$W_ENQCNT (r0)
+	movq	@16(ap), PCB$Q_PRIV (R4)
+	movc3	#JIB$S_USERNAME, @8(ap), JIB$T_USERNAME (r0);
+	ret
+
+	$PCBDEFV5
+
+	.entry	zap_process_v5, ^m<R2,R3,R4,R5>
+	movl	PCB$L_JIB(R4), r0
+	movl	@4(ap), PCB$L_UIC (R4)
+	movw	@12(ap), JIB$W_ENQLM (r0)
+	movw	@12(ap), JIB$W_ENQCNT (r0)
+	movq	@16(ap), PCB$Q_PRIV (R4)
+	movc3	#JIB$S_USERNAME, @8(ap), JIB$T_USERNAME (r0);
+	ret
+
+	.end

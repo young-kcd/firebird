@@ -1,0 +1,385 @@
+;  The contents of this file are subject to the Interbase Public
+;  License Version 1.0 (the "License"); you may not use this file
+;  except in compliance with the License. You may obtain a copy
+;  of the License at http://www.Inprise.com/IPL.html
+;
+;  Software distributed under the License is distributed on an
+;  "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+;  or implied. See the License for the specific language governing
+;  rights and limitations under the License.
+;
+;  The Original Code was created by Inprise Corporation
+;  and its predecessors. Portions created by Inprise Corporation are
+;  Copyright (C) Inprise Corporation.
+;
+;  All Rights Reserved.
+;  Contributor(s): ______________________________________.
+;
+;	PROGRAM:	JRD Access Method
+;	MODULE:		thread.mar
+;	DESCRIPTION:	VMS Thread Manager
+;
+
+	.title	thread	VMS Thread Manager
+
+; Stack frame definition
+
+	.psect		stf,abs
+stf_handler:	.long		; address of condition handler
+stf_mask:	.long		; misc flags and masks
+stf_ap:		.long		; saved ap (argument list pointer)
+stf_fp:		.long		; saved fp (frame pointer)
+stf_pc:		.long		; saved pc (program counter)
+
+stack_size	=	65536
+
+; Thread control block
+
+THREAD_ast	=	1
+
+	.psect		tcb,abs
+tcb_fp:		.long		; saved frame pointer
+tcb_callback:	.long		; callback routine to determine runnability
+tcb_arg:	.long		; arg to callback routine
+tcb_next:	.long		; next thread in system (linked in ring)
+tcb_base:	.long		; base frame for thread
+tcb_stack:	.long		; allocated stack
+tcb_flags:	.long		; task flags
+tcb_length:	.blkb	0
+
+; Local thread data
+
+	.psect	thread_data,noexe,long
+
+threads: .address	0	; currently scheduled thread
+primary: .address	0	; primary (i.e. main) thread
+base_fp: .address	0	; last frame pointer of "real" stack
+ast_fp:	 .address	0	; frame pointer for THREAD_completion_ast
+ast_thread: .address	0	; active ast thread
+free:	 .address	0	; any free threads
+
+eol	= 10
+
+	.if defined debug
+debug_msg: .asciz	/%x	fp: %x, base: %x, stack: %x, next: %x/-
+			<eol> -
+			/	callback: %x, arg: %x, flags: %x/ <eol><eol>
+	.endc
+
+	.psect	thread,exe,pic,nowrt,quad
+	.page
+
+ ;THREAD_ast_active ()
+ ;**************************************
+ ;
+ ;	T H R E A D _ a s t _ a c t i v e
+ ;
+ ;*************************************
+ ;
+ ; Functional description
+ ;	Return 0 if AST thread is NOT active, otherwise TRUE.
+ ;
+ ;*************************************/
+
+.entry	THREAD_ast_active, ^m<>
+
+	movl	ast_fp, r0
+	ret
+
+ ;THREAD_completion_ast ()
+ ;**************************************
+ ;
+ ;	T H R E A D _ c o m p l e t i o n _ a s t
+ ;
+ ;*************************************
+ ;
+ ; Functional description
+ ;	Called as completion ast for any asynchronous system
+ ;	service.  
+ ;
+ ;*************************************/
+
+.entry	THREAD_completion_ast, ^m<r2,r3,r4,r5,r6,r7,r8,r9,r10,r11>
+
+	movl	threads, r0
+	tstl	threads
+	 beql	10$			; thread not initialized -- don't bother
+	calls	#0, completion
+
+10$:	ret
+
+.entry	completion, ^m<>
+
+	movl	fp, ast_fp
+	clrl	ast_thread
+	calls	#0, THREAD_wait
+	ret
+
+ ;	THREAD_init ()
+ ;**************************************
+ ;
+ ;	T H R E A D _ i n i t
+ ;
+ ;*************************************
+ ;
+ ; Functional description
+ ;	Initialize thread package unless already initialized.
+ ;
+ ;*************************************/
+
+.entry	THREAD_init, ^m<>
+
+; If this is the first time in, make up a thread block for the primary thread
+
+	tstl	primary
+	 bneq	10$			; primary thread exists!
+	pushl	#tcb_length		; size of thread control block
+	calls	#1, G^gds__alloc	; allocate thread block
+	movl	r0, primary		; we are the primary thread
+	movl	r0, threads		; and also the only thread
+	movl	r0, tcb_next(r0)	; so, link thread to itself
+	clrl	tcb_stack(r0)		; no allocated stack
+
+10$:	ret
+
+	.if defined debug
+ ;  THREAD_print ()
+ ;**************************************
+ ;
+ ;	T H R E A D _ p r i n t
+ ;
+ ;*************************************
+ ;
+ ; Functional description
+ ;	Print out all thread blocks.
+ ;
+ ;*************************************/
+
+.entry	THREAD_print, ^m<r2>
+
+	movl	threads, r2
+	 beql	100$
+
+10$:	pushl	tcb_flags(r2)
+	pushl	tcb_arg(r2)
+	pushl	tcb_callback(r2)
+	pushl	tcb_next(r2)
+	pushl	tcb_stack(r2)
+	pushl	tcb_base(r2)
+	pushl	tcb_fp(r2)
+	pushl	r2
+	pushal	debug_msg
+	calls	#9, g^printf
+	movl	tcb_next(r2), r2
+	cmpl	r2, threads
+	 bneq	10$
+
+100$:	ret
+	.endc
+
+ ;	THREAD_start (thread, arg, priority, flags)
+ ;	int	(*thread)();
+ ;	long	arg;
+ ;	int	priority;
+ ;	int	flags;
+ ;**************************************
+ ;
+ ;	T H R E A D _ s t a r t
+ ;
+ ;*************************************
+ ;
+ ; Functional description
+ ;	Start a new thread.  Initialize thread package if this
+ ; 	is first call.
+ ;
+ ;*************************************/
+
+.entry	THREAD_start, ^m<r2,r3,r4,r5,r6,r7,r8,r9,r10,r11>
+
+; If this is the first time in, make up a thread block for the primary thread
+
+	movl	primary, r1		; is there already a primary thread
+	 bneq	10$			; primary thread exists!
+	calls	#1, THREAD_init		; initialize package
+	movl	primary, r1
+
+; If this is the real stack, save the base frame
+
+10$:	cmpl	r1, threads
+	 bneq	20$			; not primary thread
+	movl	fp, base_fp		; save "real" frame pointer
+
+; Find or allocate new thread block
+
+20$:	movl	threads, r1
+	movl	fp, tcb_fp (r1)		; save somewhere to return to
+	movl	free, r2		; check for free thread block
+	 beql	30$			;  no free thread block, allocate one
+	movl	tcb_next (r2), free	; unlink thread block from free list
+	brb	40$
+
+30$:   	pushl	#tcb_length		; size of thread control block
+	calls	#1, G^gds__alloc	; allocate thread block
+	movl	r0,r2			; address of new thread control block
+	pushl	#stack_size		; size of new stack
+	calls	#1, G^gds__alloc	; allocate thread stack
+	movl	r0, tcb_stack(r2)	; save address of new stack
+
+40$:	clrl	tcb_callback(r2)	; thread is runnable
+	movl	threads,r3		; previous thread block
+	clrl	tcb_callback(r3)	; current thread is still runnable
+	movl	tcb_next(r3), tcb_next(r2)	; link into ring of threads
+	movl	r2, tcb_next(r3)
+	movl	4(ap),r3		; address of thread routine
+	movl	8(ap),r4		; argument for thread
+	movl	16(ap), tcb_flags(r2)	; options
+	movl	r2, threads		; currently executing thread
+	addl3	#stack_size, tcb_stack(r2), sp	; address of new stack
+	calls	#0, thread_caller	; we will never come back
+	halt
+
+	.entry	thread_caller, ^m<r2,r3,r4>
+
+	movl	fp, tcb_base (r2)	; save base frame for stack
+	pushl	r4			; pass thru argument
+	calls	#1, (r3)		; call thread, come back on thread exit
+
+; Thread has existed.  Unlink thread block from runnable threads,
+;  link it to free threads, and go reschedule
+
+	movl	r2, r3
+
+50$:	movl	tcb_next(r3), r3	; get next thread in system
+	cmpl	tcb_next (r3), r2
+	 bneq	50$			;  not prior thread, continue search
+
+	movl	tcb_next(r2), tcb_next (r3);	; unlink from active threads
+	movl	free, tcb_next(r2)	; link into free threads
+	movl 	r2, free
+	movl	r3, r2			; start schedule with prior thread
+	brb	schedule		; schedule next thread
+
+ ;	THREAD_wait (callback, arg)
+ ;	int	(*callback)();
+ ;	long	arg;
+ ;**************************************
+ ;
+ ;	T H R E A D _ w a i t
+ ;
+ ;*************************************
+ ;
+ ; Functional description
+ ;	Re-schedule thread.  Don't resume this thread until iob
+ ;	has been posted.  If no callback is given, just reschedule another
+ ;	thread.
+ ;
+ ;*************************************/
+
+.entry	THREAD_wait, ^m<r2,r3,r4,r5,r6,r7,r8,r9,r10,r11>
+
+	tstl	ast_fp			; check to see if this is in AST mode
+	 bneq	ast_wait
+
+	movl	threads, r2		; pick up current thread block
+	 bneq	10$			; already initialized
+	calls	#0, THREAD_init		; initialize thread package
+	movl	threads, r2
+
+10$:
+	movl	4(ap), tcb_callback (r2)
+	movl	8(ap), tcb_arg (r2)
+	movl	fp, tcb_fp(r2)		; save current frame pointer
+	cmpl	r2, primary
+	 bneq	schedule		; not primary thread
+	movl	fp, base_fp		; primary thread -- save top frame
+
+; Find next runnable thread.  A thread is runnable if it either has
+; no callback routine, or the callback return TRUE (non-zero)
+
+schedule:
+	movl	tcb_next (r2), r2	; get next thread
+
+; thread is a candidate to run -- see if it's runnable
+
+10$:	tstl	tcb_callback (r2)
+	 beql	25$			; no callback -- thread is runnable
+	pushl	tcb_arg (r2)
+	calls	#1, @tcb_callback (r2)	; callback to determine runnability
+	tstl	r0
+	 bneq	25$			; callback says runnable
+
+; thread is not runnable -- see if we're done with scan
+
+15$:	cmpl	r2, threads
+	 bneq	schedule		; haven't tried all threads yet
+
+; nothing is runnable -- exit if we're in AST state, otherwise 
+; wait for something to happen
+
+	calls	#0, G^sys$hiber		; wait for something to happen
+	brb	schedule		; try, try again
+
+; We've got a runnable thread -- set up frame point and off we go
+
+25$:	cmpl	r2, primary
+	 beql	30$			; primary thread -- no stack adjustment
+	movl	tcb_base(r2),r4		; get base frame of thread
+	movl	base_fp, stf_fp (r4)	; link thread to real stack
+
+30$:	movl	r2, threads		; indicate current thread
+	movl	tcb_fp(r2), fp		; restore saved frame
+	ret				; return to thread
+
+ast_wait:
+	movl	threads, r2		; pick up current thread block
+
+    	movl	ast_thread, r3
+	 beql	ast_schedule		; we just entered AST mode
+
+20$:	movl	4(ap), tcb_callback (r3)
+	movl	8(ap), tcb_arg (r3)
+	movl	fp, tcb_fp(r3)		; save current frame pointer
+
+; Find next runnable thread.  A thread is runnable if it either has
+; no callback routine, or the callback return TRUE (non-zero)
+
+ast_schedule:
+	movl	tcb_next (r2), r2	; get next thread
+
+	cmpl	r2, threads
+	 beql	15$			; thread is already active
+	bitb	#THREAD_ast, tcb_flags(r2)
+	 beql	15$			; thread doesn't run at AST level
+
+; thread is a candidate to run -- see if it's runnable
+
+10$:	tstl	tcb_callback (r2)
+	 beql	25$			; no callback -- thread is runnable
+	pushl	tcb_arg (r2)
+	calls	#1, @tcb_callback (r2)	; callback to determine runnability
+	tstl	r0
+	 bneq	25$			; callback says runnable
+
+; thread is not runnable -- see if we're done with scan
+
+15$:	cmpl	r2, threads
+	 bneq	ast_schedule		; haven't tried all threads yet
+
+; nothing is runnable -- exit
+
+	clrl	ast_thread
+	movl	ast_fp, fp		; get ready to return
+	clrl	ast_fp
+	ret
+
+; We've got a runnable thread -- if it's the one we came in on,
+; just return (simple?)
+
+25$:	movl	tcb_base(r2),r4		; get base frame of thread
+	movl	ast_fp, stf_fp(r4)
+	movl	tcb_fp(r2), fp
+	movl	r2, ast_thread
+	ret
+
+
+	.end
