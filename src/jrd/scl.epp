@@ -771,8 +771,8 @@ void SCL_init(bool create,
 		CMP_release(tdbb, (jrd_req*) handle);
 
 		FOR(REQUEST_HANDLE handle1)
-			FIRST 1 REL IN RDB$RELATIONS WITH REL.
-				RDB$RELATION_NAME EQ "RDB$DATABASE" 
+			FIRST 1 REL IN RDB$RELATIONS
+			WITH REL.RDB$RELATION_NAME EQ "RDB$DATABASE"
 
             if (!REL.RDB$OWNER_NAME.NULL && 
 				(p = user->usr_user_name) && *p)
