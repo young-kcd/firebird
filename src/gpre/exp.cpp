@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exp.cpp,v 1.9 2002-12-06 13:43:09 eku Exp $
+//	$Id: exp.cpp,v 1.10 2003-02-18 07:43:29 eku Exp $
 //
 
 #include "firebird.h"
@@ -91,33 +91,36 @@ static struct rel_ops {
 	SSHORT rel_args;
 } relops[] = {
 	{ nod_eq, KW_EQ, 2 },
-		{ nod_eq, KW_EQUALS, 2 },
-		{ nod_ne, KW_NE, 2 },
-		{ nod_gt, KW_GT, 2 },
-		{ nod_ge, KW_GE, 2 },
-		{ nod_le, KW_LE, 2 },
-		{ nod_lt, KW_LT, 2 },
-		{ nod_containing, KW_CONTAINING, 2 },
-		{ nod_matches, KW_MATCHES, 2 },
-		{ nod_like, KW_LIKE, 2 },
-		{ nod_starting, KW_STARTING, 2 },
-		{ nod_missing, KW_MISSING, 1 },
-		{ nod_between, KW_BETWEEN, 3}, { nod_any, KW_none, 0} };
+	{ nod_eq, KW_EQUALS, 2 },
+	{ nod_ne, KW_NE, 2 },
+	{ nod_gt, KW_GT, 2 },
+	{ nod_ge, KW_GE, 2 },
+	{ nod_le, KW_LE, 2 },
+	{ nod_lt, KW_LT, 2 },
+	{ nod_containing, KW_CONTAINING, 2 },
+	{ nod_matches, KW_MATCHES, 2 },
+	{ nod_like, KW_LIKE, 2 },
+	{ nod_starting, KW_STARTING, 2 },
+	{ nod_missing, KW_MISSING, 1 },
+	{ nod_between, KW_BETWEEN, 3},
+	{ nod_any, KW_none, 0}
+};
 
 static struct dtypes {
 	enum kwwords dtype_keyword;
 	USHORT dtype_dtype;
 } data_types[] = {
 	{ KW_CHAR, dtype_text },
-		{ KW_VARYING, dtype_varying },
-		{ KW_STRING, dtype_cstring },
-		{ KW_SHORT, dtype_short },
-		{ KW_LONG, dtype_long },
-		{ KW_QUAD, dtype_quad },
-		{ KW_FLOAT, dtype_real },
-		{ KW_DOUBLE, dtype_double },
-		{ KW_DATE, dtype_date },
-		{ KW_none, 0} };
+	{ KW_VARYING, dtype_varying },
+	{ KW_STRING, dtype_cstring },
+	{ KW_SHORT, dtype_short },
+	{ KW_LONG, dtype_long },
+	{ KW_QUAD, dtype_quad },
+	{ KW_FLOAT, dtype_real },
+	{ KW_DOUBLE, dtype_double },
+	{ KW_DATE, dtype_date },
+	{ KW_none, 0}
+};
 
 
 //____________________________________________________________
