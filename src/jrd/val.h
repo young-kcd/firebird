@@ -46,9 +46,9 @@ const UCHAR SPECIAL_DOUBLE	= dtype_d_float;
 
 #endif
 
-#ifndef REQUESTER
-
 namespace Jrd {
+
+#ifndef REQUESTER
 
 class ArrayField;
 class blb;
@@ -86,16 +86,19 @@ const ULONG MAX_FORMAT_SIZE	= 65535;
 
 #define VARY_STR(x)	struct { USHORT vary_length; UCHAR vary_string [x]; }
 
-#ifndef REQUESTER
-/* Function definition block */
-
+// Parameter passing mechanism. Also used for returning values, except for scalar_array.
 enum FUN_T {
 		FUN_value,
 		FUN_reference,
 		FUN_descriptor,
 		FUN_blob_struct,
-		FUN_scalar_array
+		FUN_scalar_array,
+		FUN_ref_with_null
 };
+
+
+#ifndef REQUESTER
+/* Function definition block */
 
 struct fun_repeat {
 	DSC fun_desc;			/* Datatype info */
@@ -198,7 +201,6 @@ class ArrayField : public pool_alloc_rpt<internal_array_desc::iad_repeat, type_a
 	internal_array_desc	arr_desc;			/* Array descriptor */
 	ULONG				arr_temp_id;		// Temporary ID for open array inside the transaction
 };
-
 
 #endif /* REQUESTER */
 
