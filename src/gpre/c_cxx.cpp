@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.19 2003-03-27 17:15:46 brodsom Exp $
+//	$Id: c_cxx.cpp,v 1.20 2003-04-01 11:49:33 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -974,7 +974,7 @@ static void gen_based( ACT action, int column)
 
 			if (field->fld_array_info->ary_dtype <= dtype_varying &&
 				field->fld_length > 1)
-				ib_fprintf(out_file, " [%ld]", field->fld_array->fld_length);
+				ib_fprintf(out_file, " [%d]", field->fld_array->fld_length);
 		}
 		else
 			if (*variable != '*' &&
@@ -4367,7 +4367,7 @@ static void make_array_declaration( REF reference)
 
 	for (dimension = field->fld_array_info->ary_dimension; dimension;
 		 dimension = dimension->dim_next)
-		ib_fprintf(out_file, " [%d]",
+		ib_fprintf(out_file, " [%ld]",
 				   dimension->dim_upper - dimension->dim_lower + 1);
 
 	if (field->fld_array_info->ary_dtype <= dtype_varying)

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exp.cpp,v 1.11 2003-02-27 16:05:05 brodsom Exp $
+//	$Id: exp.cpp,v 1.12 2003-04-01 11:49:32 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -545,7 +545,7 @@ SLONG EXP_SLONG_ordinal(USHORT advance_flag)
 		SYNTAX_ERROR("<number>");
 
 	n = atoi(token.tok_string);
-	sprintf(buffer, "%d", n);
+	sprintf(buffer, "%"SLONGFORMAT, n);
 	if (strcmp(buffer, token.tok_string) != 0)
 		PAR_error("Numeric value out of range");
 
@@ -600,7 +600,7 @@ ULONG EXP_ULONG_ordinal(USHORT advance_flag)
 		SYNTAX_ERROR("<unsigned number>");
 
 	n = atoi(token.tok_string);
-	sprintf(buffer, "%d", n);
+	sprintf(buffer, "%"ULONGFORMAT, n);
 	if (strcmp(buffer, token.tok_string) != 0)
 		PAR_error("Numeric value out of range");
 

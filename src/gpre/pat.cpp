@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pat.cpp,v 1.7 2002-12-06 13:43:10 eku Exp $
+//	$Id: pat.cpp,v 1.8 2003-04-01 11:49:30 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -393,7 +393,7 @@ void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 			}
 		}
 		else if (long_flag) {
-			sprintf(p, "%d", long_value);
+			sprintf(p, "%"SLONGFORMAT, long_value);
 		}
 		else {
 			sprintf(p, "%d", value);
