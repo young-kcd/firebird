@@ -124,3 +124,11 @@ Lines are counted according to what the underlying IO layer considers separate l
 For ports using EDITLINE, a line is what readline() provides in a single call.
 Line length is limited to 32767 bytes, but this has been always the limit.
 
+5) SHOW SYSTEM command shows predefined UDFs.
+
+The SHOW <object_type> command is meant to show user objects of that type.
+The SHOW SYSTEM commmand is meant to show system objects, but until now it
+only showed system tables. Now it lists the predefined, system UDFs incorporated
+into FB 2. It may be enhanced to list system views if we create some of them
+in the future.
+
