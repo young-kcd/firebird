@@ -1,3 +1,15 @@
+2004-08-25 13:43  aafemt
+
+	* firebird2/src/isql/isql.epp (1.93):
+	
+	Use automatic buffers instead of dynamic
+
+2004-08-25 05:09  skidder
+
+	* firebird2/src/common/classes/alloc.cpp (1.64):
+	
+	Clarify comment and update assertion check
+
 2004-08-25 01:11  brodsom
 
 	* firebird2/src/common/classes/alloc.cpp (1.63):
