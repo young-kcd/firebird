@@ -20,7 +20,9 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHc- "
 				Optimization="4"
+				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="TRUE"
 				ImproveFloatingPointConsistency="TRUE"
@@ -28,13 +30,12 @@
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include"
 				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,WIN32_LEAN_AND_MEAN,WIN32,_X86_"
-				BasicRuntimeChecks="3"
 				RuntimeLibrary="2"
 				PrecompiledHeaderFile=".\release\burp_ss/burp.pch"
 				AssemblerListingLocation=".\release\burp_ss/"
 				ObjectFile=".\release\burp_ss/"
 				ProgramDataBaseFileName=".\release\burp_ss/"
-				WarningLevel="4"
+				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool
@@ -77,7 +78,7 @@
 				AssemblerListingLocation=".\debug\burp_ss/"
 				ObjectFile=".\debug\burp_ss/"
 				ProgramDataBaseFileName=".\debug\burp_ss/"
-				WarningLevel="4"
+				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="4"
 				CompileAs="0"/>
@@ -118,9 +119,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\burp\mvol.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\burp\spit.cpp">
 			</File>
 			<Filter
 				Name="epp files"
@@ -169,9 +167,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\burp\resto_proto.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\burp\spit.h">
 			</File>
 		</Filter>
 	</Files>

@@ -30,7 +30,7 @@
 				ObjectFile=".\debug\isql/"
 				ProgramDataBaseFileName=".\debug\isql/"
 				BrowseInformation="1"
-				WarningLevel="4"
+				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
 				CompileAs="0"/>
@@ -74,7 +74,9 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHc- "
 				Optimization="4"
+				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="TRUE"
 				ImproveFloatingPointConsistency="TRUE"
@@ -82,14 +84,13 @@
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include"
 				PreprocessorDefinitions="NDEBUG,_CONSOLE,SUPERCLIENT,WIN32_LEAN_AND_MEAN,WIN32,_X86_"
-				BasicRuntimeChecks="3"
 				RuntimeLibrary="4"
 				PrecompiledHeaderFile=".\release\isql/isql.pch"
 				AssemblerListingLocation=".\release\isql/"
 				ObjectFile=".\release\isql/"
 				ProgramDataBaseFileName=".\release\isql/"
 				BrowseInformation="1"
-				WarningLevel="4"
+				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool
@@ -134,21 +135,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\generated\isql\isql.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\isql\isql_win.cpp">
-				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\..\generated\isql\show.cpp">

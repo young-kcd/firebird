@@ -20,7 +20,9 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHc- "
 				Optimization="4"
+				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="TRUE"
 				ImproveFloatingPointConsistency="TRUE"
@@ -28,13 +30,13 @@
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include"
 				PreprocessorDefinitions="NDEBUG,_WINDOWS,SUPERSERVER,WIN32_LEAN_AND_MEAN,WIN32,_X86_"
-				BasicRuntimeChecks="3"
 				RuntimeLibrary="2"
 				PrecompiledHeaderFile=".\release\fbserver/fbserver.pch"
 				AssemblerListingLocation=".\release\fbserver/"
 				ObjectFile=".\release\fbserver/"
 				ProgramDataBaseFileName=".\release\fbserver/"
 				BrowseInformation="1"
+				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool
@@ -91,6 +93,7 @@
 				ObjectFile=".\debug\fbserver/"
 				ProgramDataBaseFileName=".\debug\fbserver/"
 				BrowseInformation="1"
+				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
 				CompileAs="0"/>
@@ -142,7 +145,7 @@
 			</File>
 		</Filter>
 		<Filter
-			Name="UTILITIES files"
+			Name="JRD files"
 			Filter="">
 			<File
 				RelativePath="..\..\..\src\jrd\svc.cpp">

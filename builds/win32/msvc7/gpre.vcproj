@@ -20,21 +20,22 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHc- "
 				Optimization="4"
+				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="TRUE"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/jrd"
 				PreprocessorDefinitions="NDEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_"
-				BasicRuntimeChecks="3"
 				RuntimeLibrary="2"
 				PrecompiledHeaderFile=".\release\gpre/gpre.pch"
 				AssemblerListingLocation=".\release\gpre/"
 				ObjectFile=".\release\gpre/"
 				ProgramDataBaseFileName=".\release\gpre/"
 				BrowseInformation="1"
-				WarningLevel="4"
+				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool
@@ -86,7 +87,7 @@
 				ObjectFile=".\debug\gpre/"
 				ProgramDataBaseFileName=".\debug\gpre/"
 				BrowseInformation="1"
-				WarningLevel="4"
+				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
 				CompileAs="0"/>

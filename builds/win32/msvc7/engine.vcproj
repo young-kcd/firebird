@@ -29,7 +29,7 @@
 				AssemblerListingLocation=".\debug\engine_ss/"
 				ObjectFile=".\debug\engine_ss/"
 				ProgramDataBaseFileName=".\debug\engine_ss/"
-				WarningLevel="4"
+				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="4"
 				CompileAs="0"/>
@@ -64,7 +64,10 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
+				AdditionalOptions="/EHc- "
+				Optimization="4"
+				GlobalOptimizations="TRUE"
+				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="TRUE"
 				ImproveFloatingPointConsistency="TRUE"
 				FavorSizeOrSpeed="1"
@@ -77,7 +80,7 @@
 				AssemblerListingLocation=".\release\engine_ss/"
 				ObjectFile=".\release\engine_ss/"
 				ProgramDataBaseFileName=".\release\engine_ss/"
-				WarningLevel="4"
+				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool
@@ -123,6 +126,13 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\btr.cpp">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						GlobalOptimizations="FALSE"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\builtin.cpp">
@@ -213,6 +223,13 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\idx.cpp">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						GlobalOptimizations="FALSE"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\inf.cpp">
@@ -267,6 +284,12 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\nav.cpp">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						GlobalOptimizations="FALSE"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\nodebug.cpp">
@@ -276,6 +299,12 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\opt.cpp">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						GlobalOptimizations="FALSE"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\pag.cpp">
@@ -324,6 +353,13 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\sort.cpp">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						GlobalOptimizations="FALSE"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\sort_mem.cpp">
@@ -391,9 +427,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\ansi.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\log2.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\blb.h">
@@ -675,6 +708,12 @@
 				RelativePath="..\..\..\src\jrd\jrd_proto.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\jrd_pwd.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\jrd_time.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\jrn.h">
 			</File>
 			<File
@@ -709,6 +748,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\log.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\log2.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\log_proto.h">
@@ -817,9 +859,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\prv_m_bypass.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\pwd.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\pwd_proto.h">
@@ -946,9 +985,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\thd_proto.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\time.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\tpc.h">

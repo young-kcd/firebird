@@ -29,7 +29,7 @@
 				AssemblerListingLocation=".\debug\remote_ss/"
 				ObjectFile=".\debug\remote_ss/"
 				ProgramDataBaseFileName=".\debug\remote_ss/"
-				WarningLevel="4"
+				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="4"
 				CompileAs="0"/>
@@ -64,7 +64,9 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHc- "
 				Optimization="4"
+				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="TRUE"
 				ImproveFloatingPointConsistency="TRUE"
@@ -72,13 +74,12 @@
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include"
 				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,SERVER_SHUTDOWN,WIN32,WIN32_LEAN_AND_MEAN,_X86_"
-				BasicRuntimeChecks="3"
 				RuntimeLibrary="2"
 				PrecompiledHeaderFile=".\release\remote_ss/remote.pch"
 				AssemblerListingLocation=".\release\remote_ss/"
 				ObjectFile=".\release\remote_ss/"
 				ProgramDataBaseFileName=".\release\remote_ss/"
-				WarningLevel="4"
+				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool

@@ -3,7 +3,6 @@
 	ProjectType="Visual C++"
 	Version="7.00"
 	Name="gpre_boot"
-	ProjectGUID="{D352771D-BBF8-49AB-828A-6C0381A47008}"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>
@@ -21,7 +20,9 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHc- "
 				Optimization="4"
+				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="TRUE"
 				FavorSizeOrSpeed="1"
@@ -34,7 +35,7 @@
 				ObjectFile=".\release\gpre_boot/"
 				ProgramDataBaseFileName=".\release\gpre_boot/"
 				BrowseInformation="1"
-				WarningLevel="4"
+				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool
@@ -86,7 +87,7 @@
 				ObjectFile=".\debug\gpre_boot/"
 				ProgramDataBaseFileName=".\debug\gpre_boot/"
 				BrowseInformation="1"
-				WarningLevel="4"
+				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
 				CompileAs="0"/>

@@ -20,17 +20,21 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				InlineFunctionExpansion="1"
+				AdditionalOptions="/EHc- "
+				Optimization="4"
+				GlobalOptimizations="TRUE"
+				EnableIntrinsicFunctions="TRUE"
+				ImproveFloatingPointConsistency="TRUE"
+				FavorSizeOrSpeed="1"
+				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FBUDF_EXPORTS"
-				StringPooling="TRUE"
 				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="TRUE"
 				PrecompiledHeaderFile=".\release\fbudf/fbudf.pch"
 				AssemblerListingLocation=".\release\fbudf/"
 				ObjectFile=".\release\fbudf/"
 				ProgramDataBaseFileName=".\release\fbudf/"
-				WarningLevel="4"
+				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool
@@ -84,7 +88,7 @@
 				AssemblerListingLocation=".\debug\fbudf/"
 				ObjectFile=".\debug\fbudf/"
 				ProgramDataBaseFileName=".\debug\fbudf/"
-				WarningLevel="4"
+				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="4"
 				CompileAs="0"/>

@@ -29,7 +29,7 @@
 				AssemblerListingLocation=".\debug\instreg/"
 				ObjectFile=".\debug\instreg/"
 				ProgramDataBaseFileName=".\debug\instreg/"
-				WarningLevel="4"
+				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
 				CompileAs="0"/>
@@ -73,7 +73,9 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHc- "
 				Optimization="4"
+				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="TRUE"
 				ImproveFloatingPointConsistency="TRUE"
@@ -81,13 +83,12 @@
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include"
 				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE"
-				BasicRuntimeChecks="3"
 				RuntimeLibrary="2"
 				PrecompiledHeaderFile=".\release\instreg/instreg.pch"
 				AssemblerListingLocation=".\release\instreg/"
 				ObjectFile=".\release\instreg/"
 				ProgramDataBaseFileName=".\release\instreg/"
-				WarningLevel="4"
+				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool

@@ -29,7 +29,7 @@
 				AssemblerListingLocation=".\debug\fbembed/"
 				ObjectFile=".\debug\fbembed/"
 				ProgramDataBaseFileName=".\debug\fbembed/"
-				WarningLevel="4"
+				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="4"
 				CompileAs="0"/>
@@ -78,7 +78,9 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHc- "
 				Optimization="4"
+				GlobalOptimizations="TRUE"
 				EnableIntrinsicFunctions="TRUE"
 				ImproveFloatingPointConsistency="TRUE"
 				FavorSizeOrSpeed="1"
@@ -91,7 +93,7 @@
 				AssemblerListingLocation=".\release\fbembed/"
 				ObjectFile=".\release\fbembed/"
 				ProgramDataBaseFileName=".\release\fbembed/"
-				WarningLevel="4"
+				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool
@@ -131,8 +133,18 @@
 	</Configurations>
 	<Files>
 		<Filter
+			Name="COMMON"
+			Filter="">
+			<File
+				RelativePath="..\..\..\src\jrd\os\win32\config_root.cpp">
+			</File>
+		</Filter>
+		<Filter
 			Name="JRD files"
 			Filter="">
+			<File
+				RelativePath="..\..\..\src\jrd\ibinitdll.cpp">
+			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\perf.cpp">
 			</File>

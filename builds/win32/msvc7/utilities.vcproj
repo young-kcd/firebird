@@ -29,7 +29,7 @@
 				AssemblerListingLocation=".\debug\utilities_ss/"
 				ObjectFile=".\debug\utilities_ss/"
 				ProgramDataBaseFileName=".\debug\utilities_ss/"
-				WarningLevel="4"
+				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="4"
 				CompileAs="0"/>
@@ -64,7 +64,9 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHc- "
 				Optimization="4"
+				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="TRUE"
 				ImproveFloatingPointConsistency="TRUE"
@@ -72,13 +74,12 @@
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include"
 				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,WIN32,_X86_"
-				BasicRuntimeChecks="3"
 				RuntimeLibrary="2"
 				PrecompiledHeaderFile=".\release\utilities_ss/utilities.pch"
 				AssemblerListingLocation=".\release\utilities_ss/"
 				ObjectFile=".\release\utilities_ss/"
 				ProgramDataBaseFileName=".\release\utilities_ss/"
-				WarningLevel="4"
+				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool

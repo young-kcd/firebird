@@ -20,7 +20,9 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHc- "
 				Optimization="4"
+				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="TRUE"
 				ImproveFloatingPointConsistency="TRUE"
@@ -28,13 +30,12 @@
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include"
 				PreprocessorDefinitions="NDEBUG,_LIB,WIN32,_X86_"
-				BasicRuntimeChecks="3"
 				RuntimeLibrary="2"
 				PrecompiledHeaderFile=".\release\lock_cs/lock_classic.pch"
 				AssemblerListingLocation=".\release\lock_cs/"
 				ObjectFile=".\release\lock_cs/"
 				ProgramDataBaseFileName=".\release\lock_cs/"
-				WarningLevel="4"
+				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool
@@ -70,14 +71,14 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;DEV_BUILD"
+				PreprocessorDefinitions="WIN32,_DEBUG,_LIB,DEV_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile=".\debug\lock_cs/lock_classic.pch"
 				AssemblerListingLocation=".\debug\lock_cs/"
 				ObjectFile=".\debug\lock_cs/"
 				ProgramDataBaseFileName=".\debug\lock_cs/"
-				WarningLevel="4"
+				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="4"
 				CompileAs="0"/>
