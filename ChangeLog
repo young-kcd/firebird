@@ -1,3 +1,9 @@
+2004-04-07 22:52  skidder
+
+	* firebird2/src/jrd/intl.cpp (1.58):
+	
+	Allow using NONE as a fully transparent charset everywhere
+
 2004-04-06 17:46  dimitr
 
 	* firebird2/src/intl/collations/xx885913lt.h (1.1):
