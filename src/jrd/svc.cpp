@@ -2923,7 +2923,7 @@ static void service_enqueue_byte(UCHAR ch, SVC service)
  **************************************/
 /* Wait for space in buffer while service is not detached. */
 	while (service_full(service) && !(service->svc_flags & SVC_detached))
-		THREAD_YIELD;
+		THREAD_SLEEP(1);
 
 /* Ensure that service is not detached. */
 	if (!(service->svc_flags & SVC_detached)) {
@@ -3038,7 +3038,7 @@ static void service_get(SVC		service,
 
 	while (length) {
 		if (service_empty(service))
-			THREAD_YIELD;
+			THREAD_SLEEP(1);
 #ifdef HAVE_GETTIMEOFDAY
 #ifdef GETTIMEOFDAY_RETURNS_TIMEZONE
 		(void)gettimeofday(&end_time, (struct timezone *)0);
