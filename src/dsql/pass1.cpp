@@ -2467,7 +2467,7 @@ static BOOLEAN node_match( DSQL_NOD node1, DSQL_NOD node2, BOOLEAN ignore_cast)
 		}
 	}
 
-	/* We don't care about the alias self only about his field */
+	/* We don't care about the alias itself but only about its field. */
 	if ((node1->nod_type == nod_alias) || (node2->nod_type == nod_alias)) {
 		if ((node1->nod_type == nod_alias) && (node2->nod_type == nod_alias)) {
 			return node_match(node1->nod_arg[e_alias_value],
@@ -4448,7 +4448,7 @@ static DSQL_NOD pass1_searched_case( DSQL_REQ request, DSQL_NOD input, USHORT pr
 
 	/* build boolean-expression list */
 	stack = NULL;
-	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++,ptr++) {
+	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr += 2) {
 		pass1_put_args_on_stack(request, *ptr, &stack, proc_flag);
 	}
 	node->nod_arg[e_searched_case_search_conditions] = MAKE_list(stack);
@@ -4456,7 +4456,7 @@ static DSQL_NOD pass1_searched_case( DSQL_REQ request, DSQL_NOD input, USHORT pr
 	/* build when_result list including else_result at the end */
 	/* else_result is included for easy handling in MAKE_desc() */
 	stack = NULL;
-	for (ptr = list->nod_arg, end = ptr + list->nod_count, ptr++; ptr < end; ptr++,ptr++) {
+	for (ptr = list->nod_arg, end = ptr + list->nod_count, ptr++; ptr < end; ptr += 2) {
 		pass1_put_args_on_stack(request, *ptr, &stack, proc_flag);
 	}
 	pass1_put_args_on_stack(request, input->nod_arg[1], &stack, proc_flag);
