@@ -1,3 +1,9 @@
+2004-06-21 07:24  paul_reeves
+
+	* firebird2/src/jrd/isc_version.h (1.1.2.18):
+	
+	Increment Fb 1.5.1 build number in preparation for RC3.
+
 2004-06-19 10:11  dimitr
 
 	* firebird2/src/jrd/par.cpp (1.43.2.5):
