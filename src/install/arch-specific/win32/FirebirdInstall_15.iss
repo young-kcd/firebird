@@ -168,8 +168,9 @@ Name: {group}\Firebird Server; Filename: {app}\bin\fb_inet_server.exe; Parameter
 Name: {group}\Firebird Server; Filename: {app}\bin\fbserver.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: SuperServerComponent; Comment: Run Firebird Superserver (without guardian)
 Name: {group}\Firebird Guardian; Filename: {app}\bin\fbguard.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: SuperServerComponent; Comment: Run Firebird Super Server (with guardian)
 Name: {group}\Firebird Guardian; Filename: {app}\bin\fbguard.exe; Parameters: -c; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: ClassicServerComponent; Comment: Run Firebird Classic Server (with guardian)
-Name: {group}\Firebird 1.5 Release Notes; Filename: {app}\doc\Firebird_v15.ReleaseNotes.pdf; MinVersion: 4.0,4.0;  Comment: #AppName release notes. (Requires Acrobat Reader.)
-Name: {group}\Firebird 1.5 Readme; Filename: {app}\readme.txt; MinVersion: 4.0,4.0; 
+#define App_Name = SetupSetting("AppName")
+Name: {group}\Firebird 1.5 Release Notes; Filename: {app}\doc\Firebird_v1.5.ReleaseNotes.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name} release notes. (Requires Acrobat Reader.)
+Name: {group}\Firebird 1.5 Readme; Filename: {app}\readme.txt; MinVersion: 4.0,4.0;
 Name: {group}\Uninstall Firebird; Filename: {uninstallexe}; Comment: Uninstall Firebird
 
 [Files]
@@ -177,7 +178,7 @@ Source: src\install\misc\IPLicense.txt; DestDir: {app}; Components: ClientCompon
 Source: src\install\misc\IDPLicense.txt; DestDir: {app}; Components: ClientComponent; Flags: sharedfile ignoreversion
 Source: src\install\arch-specific\win32\readme.txt; DestDir: {app}; Components: DevAdminComponent; Flags: ignoreversion
 Source: output\firebird.conf; DestDir: {app}; DestName: firebird.conf; Components: ServerComponent; Flags: uninsneveruninstall; check: SaveFirebirdConf
-Source: output\aliases.conf; DestDir: {app}; Components: ServerComponent; Flags: uninsneveruninstall onlyifdoesntexist
+Source: output\aliases.conf; DestDir: {app}; Components: ClientComponent; Flags: uninsneveruninstall onlyifdoesntexist
 Source: output\security.fdb; DestDir: {app}; Components: ServerComponent; Flags: uninsneveruninstall onlyifdoesntexist
 Source: output\security.fbk; DestDir: {app}; Components: ServerComponent; Flags: ignoreversion
 Source: output\firebird.msg; DestDir: {app}; Components: ClientComponent; Flags: sharedfile ignoreversion

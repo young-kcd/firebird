@@ -1,4 +1,4 @@
-Firebird Database Server 1.5 Final Release (Draft)
+Firebird Database Server 1.5 Final Release
 ==================================================
 
 This document is a guide to installing this package of 
@@ -79,7 +79,7 @@ o The rules for library installation have changed
     attitude to override the above.
 
 
-o If an ameneded firebird.conf exists in the 
+o If an amended firebird.conf exists in the 
   installation directory it is saved as:
     firebird.conf.saved.n
   where n is a number. The installer always installs 

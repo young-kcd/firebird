@@ -10,6 +10,11 @@
 :: verify that boot was run before
 @if not exist %ROOT_PATH%\gen\gpre_boot.exe (goto :HELP_BOOT & goto :END)
 
+:: verify that the dinkum patches exist if msvc6 is the build environment
+if "%VS_VER%"=="msvc6" (
+	(findstr /c:"strcpy(s, pt->ww_timefmt);" "%MSDevDir%"\..\..\VC98\CRT\SRC\STRFTIME.C) || (goto :HELP_DINKUM & exit /B 1)
+)
+
 ::===========
 :: Read input values
 @set DBG=
@@ -110,5 +115,21 @@ if "%VS_VER%"=="msvc6" (
 @echo    You must run make_boot.bat before running this script
 @echo.
 @goto :EOF
+
+::==============
+:HELP_DINKUM
+@echo.
+@echo    You must apply the Dinkum patches before building 
+@echo    Firebird with Microsoft Visual Studio 6.
+@echo.
+@echo    They are available here:
+@echo        http://www.dinkumware.com/vc_fixes.html
+@echo.
+@echo    You should also review the readme here:
+@echo        firebird2\builds\win32\msvc6\README_MSVC6.txt
+@echo.
+@goto :EOF
+
+
 
 :END

@@ -661,12 +661,15 @@ end;
 
 function CopyGds32: boolean;
 begin
-  //Note that we invert the value of NOLEGACYCLIENT so we provide the 
-  //correct answer to the question 'Do we copy GDS32 to <sys>' which is 
+  //Note that we invert the value of NOLEGACYCLIENT so we provide the
+  //correct answer to the question 'Do we copy GDS32 to <sys>' which is
   //the default behaviour.
   result := False;
-  if ConfigureFirebird then
-    result := ( (not NoLegacyClient) OR (ShouldProcessEntry('ClientComponent', 'CopyFbClientAsGds32Task')= srYes) ); 
+  if ConfigureFirebird then begin
+    //If one of these is false then either the commandline switch was passed
+    //or the user unchecked the Copy client as GDS32 box
+    result := ( (not NoLegacyClient) AND (ShouldProcessEntry('ClientComponent', 'CopyFbClientAsGds32Task')= srYes) );
+  end;
 end;
 
 

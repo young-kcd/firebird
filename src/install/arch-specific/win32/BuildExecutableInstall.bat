@@ -116,15 +116,15 @@ for %%v in (fbclient ib_util) do @(
 ::Commented out as it is now hopelessly out of date. It has been unmaintained since we branched.
 ::@copy %ROOT_PATH%\ChangeLog %ROOT_PATH%\output\doc\ChangeLog.txt  > nul
 
-@copy %ROOT_PATH%\output\doc\install_win32.txt %ROOT_PATH%\output\doc\InstallNotes.txt > nul
-@del %ROOT_PATH%\output\doc\install_win32.txt
-@if %ERRORLEVEL% GEQ 1 ( (call :ERROR Rename install_win32.txt failed with errorlevel %ERRORLEVEL% ) & (goto :EOF))
+::@copy %ROOT_PATH%\output\doc\install_win32.txt %ROOT_PATH%\output\doc\InstallNotes.txt > nul
+::@del %ROOT_PATH%\output\doc\install_win32.txt
+::@if %ERRORLEVEL% GEQ 1 ( (call :ERROR Rename install_win32.txt failed with errorlevel %ERRORLEVEL% ) & (goto :EOF))
 
 @copy %ROOT_PATH%\src\install\arch-specific\win32\installation_readme.txt %ROOT_PATH%\output\doc\installation_readme.txt > nul
 
 :: This stuff doesn't make much sense to Windows users, although the troubleshooting doc 
 :: could be made more platform agnostic.
-@for %%v in (  README.makefiles README.user README.user.embedded README.user.troubleshooting README.build.*.html fb2-todo.txt *.*~) do (
+@for %%v in (  README.makefiles README.user README.user.embedded README.user.troubleshooting README.build.mingw.html README.build.msvc.html fb2-todo.txt install_win32.txt *.*~) do (
   (@del %ROOT_PATH%\output\doc\%%v 2>nul)
 )
 
