@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#define 
-#include "firebird.h" STRICT
+#define STRICT
+#include "firebird.h" 
 #include <windows.h>
 #pragma hdrstop
 #include "../jrd/ib_stdio.h"

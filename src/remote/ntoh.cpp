@@ -24,8 +24,8 @@
 /* only include this code if we are not compiling for windows 32 bit
    in which case winsock.dll provides the functionality */
 
-#ifndef 
-#include "firebird.h"__WIN32__
+#ifndef __WIN32__
+#include "firebird.h"
 #include "../jrd/common.h"
 
 typedef union
