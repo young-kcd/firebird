@@ -1,3 +1,137 @@
+2004-05-29 15:33  brodsom
+
+	* firebird2/src/jrd/: dls.cpp (1.23), dls_proto.h (1.12), isc.cpp
+	(1.50), isc_proto.h (1.11), sdl.cpp (1.38), sdl_proto.h (1.15),
+	os/isc_i_proto.h (1.4), os/posix/isc_ipc.cpp (1.15),
+	os/win32/isc_ipc.cpp (1.13):
+	
+	Finishing the api cleanup
+
+2004-05-29 07:07  robocop
+
+	* firebird2/src/qli/show.epp (1.36):
+	
+	1.- Const correctness 2.- Style 3.- Ancient coding error: two
+	places with if (symbol->sym_type = SYM_database) where indeed if
+	(symbol->sym_type == SYM_database) but I don't know if somebody has
+	experienced the bug.
+
+2004-05-29 07:01  robocop
+
+	* firebird2/src/qli/: meta.epp (1.47), parse.cpp (1.34):
+	
+	const correctness
+
+2004-05-29 06:58  robocop
+
+	* firebird2/src/jrd/cmp.cpp (1.129):
+	
+	Const correctness: we no longer need this disguised const_cast
+	because the function accepts a const string.
+
+2004-05-29 06:57  robocop
+
+	* firebird2/src/jrd/vio.cpp (1.104):
+	
+	Style: separate functions by at least one line
+
+2004-05-29 06:57  robocop
+
+	* firebird2/src/jrd/file_params.h (1.21):
+	
+	Totally misc fix (comment)
+
+2004-05-29 06:55  robocop
+
+	* firebird2/src/isql/show.epp (1.51):
+	
+	Style
+
+2004-05-29 06:54  robocop
+
+	* firebird2/src/gpre/: par.cpp (1.50), sqe.cpp (1.32):
+	
+	Cleanup
+
+2004-05-29 06:50  robocop
+
+	* firebird2/src/gpre/: cme.cpp (1.29), cob.cpp (1.45), ftn.cpp
+	(1.47), gpre.cpp (1.61):
+	
+	Style
+
+2004-05-29 06:48  robocop
+
+	* firebird2/src/gpre/gpre.h (1.68):
+	
+	Fix class/struct mismatch after Blas' cleanup
+
+2004-05-29 06:47  robocop
+
+	* firebird2/src/dudley/: ddl.h (1.26), generate.cpp (1.15):
+	
+	Style
+
+2004-05-29 06:36  robocop
+
+	* firebird2/src/dsql/pass1.cpp (1.149):
+	
+	Misc: keep comment in sync with code
+
+2004-05-29 06:34  robocop
+
+	* firebird2/src/common/stuff.h (1.2):
+	
+	We use DIRECTORY_FILENAME_H for protecting headers
+
+2004-05-28 03:43  brodsom
+
+	* firebird2/src/remote/os/win32/srvr_w32.cpp (1.20):
+	
+	Replace with more specific (and clear) cast
+
+2004-05-28 03:32  brodsom
+
+	* firebird2/src/iscguard/iscguard.cpp (1.36):
+	
+	Replace with more specific (and clear) cast
+
+2004-05-28 03:29  brodsom
+
+	* firebird2/: builds/win32/msvc6/Firebird2.dsw (1.33),
+	builds/win32/preprocess.bat (1.29),
+	builds/mac_os_x/CS/CS.pbproj/project.pbxproj (1.9),
+	builds/win32/msvc6/gstat_full.dsp (1.3),
+	src/utilities/gstat/dba_full.epp (1.29):
+	
+	Removing unused dba_full (After Ann advice)
+
+2004-05-27 18:25  alexpeshkoff
+
+	* firebird2/src/: jrd/blb.cpp (1.80), jrd/cch.cpp (1.96),
+	jrd/cmp.cpp (1.128), jrd/dpm.epp (1.49), jrd/err.cpp (1.48),
+	jrd/fun.epp (1.60), jrd/idx.cpp (1.61), jrd/isc_file.cpp (1.80),
+	jrd/jrd.cpp (1.171), jrd/met.epp (1.128), jrd/opt.cpp (1.172),
+	jrd/par.cpp (1.98), jrd/rse.cpp (1.71), jrd/scl.epp (1.57),
+	jrd/vio.cpp (1.103), dsql/ddl.cpp (1.104), dsql/make.cpp (1.65),
+	dsql/metd.epp (1.65), dsql/parse.cpp (1.118), dsql/parse.y (1.138),
+	dsql/pass1.cpp (1.148), include/fb_string.h (1.21),
+	common/classes/stack.h (1.9), jrd/os/win32/winnt.cpp (1.22):
+	
+	make bool (isEmpty/hasData) checks for string and stack safe
+
+2004-05-27 14:01  alexpeshkoff
+
+	* firebird2/src/common/classes/fb_string.cpp (1.15):
+	
+	text indent fix
+
+2004-05-27 11:24  alexpeshkoff
+
+	* firebird2/src/common/classes/fb_string.cpp (1.14):
+	
+	use windows upper/lower-case conversion functions for win32 build
+
 2004-05-26 18:13  alexpeshkoff
 
 	* firebird2/src/include/firebird.h (1.25):
