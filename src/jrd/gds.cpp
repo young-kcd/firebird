@@ -250,7 +250,8 @@ static void		sanitize(TEXT*);
 static void		safe_concat_path(TEXT* destbuf, const TEXT* srcbuf);
 
 // New functions that try to be safe.
-static SLONG safe_interpret(char* const s, int bufsize, const ISC_STATUS** const vector);
+static SLONG safe_interpret(char* const s, const int bufsize,
+	const ISC_STATUS** const vector);
 
 
 /* Generic cleanup handlers */
@@ -817,9 +818,13 @@ safe_interpret
 	    positions the pointer on the next element of the vector.
 
 **/
-static SLONG safe_interpret(char* const s, int bufsize, const ISC_STATUS** const vector)
+static SLONG safe_interpret(char* const s, const int bufsize,
+	const ISC_STATUS** const vector)
 {
-	if (!**vector || bufsize < 1)
+	// CVC: It doesn't make sense to provide a buffer smaller than 50 bytes.
+	// Return error otherwise.
+	// Also, if the first element of the vector doesn't signal an error, return.
+	if (!**vector || bufsize < 50)
 		return 0;
 
 	const ISC_STATUS* v;
@@ -907,16 +912,19 @@ static SLONG safe_interpret(char* const s, int bufsize, const ISC_STATUS** const
 		break;
 
 	case isc_arg_interpreted:
-		p = s;
+		//p = s;
 		q = (const TEXT*) (*vector)[1];
-		while ((*p++ = *q++) /*!= NULL*/);
+		//while ((*p++ = *q++) /*!= NULL*/);
+		strncpy(s, q, bufsize);
+		s[bufsize - 1] = 0;
 		break;
 
 	case isc_arg_unix:
 		/* The  strerror()  function  returns  the appropriate description
 		   string, or an unknown error message if the error code is unknown. */
-		p = (TEXT*) strerror(code);
-		strcpy(s, p);
+		q = (const TEXT*) strerror(code);
+		strncpy(s, q, bufsize);
+		s[bufsize - 1] = 0;
 		break;
 
 	case isc_arg_dos:
@@ -1394,7 +1402,7 @@ SSHORT API_ROUTINE gds__msg_format(void*       handle,
 	}
 	*buffer = 0;
 
-	gds__free((SLONG *) formatted);
+	gds__free(formatted);
 	return ((n > 0) ? l : -l);
 }
 
