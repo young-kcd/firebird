@@ -27,6 +27,21 @@ Package=<4>
 
 ###############################################################################
 
+Project: "build_msg"=.\build_msg.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name fbclient_static
+    End Project Dependency
+}}}
+
+###############################################################################
+
 Project: "burp"=.\burp.dsp - Package Owner=<4>
 
 Package=<5>
@@ -47,6 +62,21 @@ Package=<5>
 
 Package=<4>
 {{{
+}}}
+
+###############################################################################
+
+Project: "codes"=.\codes.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name fbclient_static
+    End Project Dependency
 }}}
 
 ###############################################################################
