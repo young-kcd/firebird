@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.148 2003-07-14 23:20:24 brodsom Exp $
+dnl $Id: configure.in,v 1.149 2003-07-15 10:52:51 brodsom Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -579,7 +579,9 @@ mkdir -p temp/libfbserver/pipe
 mkdir -p temp/libfbserver/gpre
 mkdir -p temp/libfbserver/alice
 mkdir -p temp/libfbserver/burp
-mkdir -p temp/libfbserver/utilities
+mkdir -p temp/libfbserver/utilities/common
+mkdir -p temp/libfbserver/utilities/gstat
+mkdir -p temp/libfbserver/utilities/gsec
 mkdir -p temp/libfbserver/fbutil
 mkdir -p temp/libfbserver/wal
 mkdir -p temp/libfbserver/common/classes
@@ -592,7 +594,7 @@ mkdir -p temp/libfbclient/jrd
 mkdir -p temp/libfbclient/dsql
 mkdir -p temp/libfbclient/gpre
 mkdir -p temp/libfbclient/remote/os/win32
-mkdir -p temp/libfbclient/utilities
+mkdir -p temp/libfbclient/utilities/gsec
 mkdir -p temp/libfbclient/common/classes
 mkdir -p temp/libfbclient/common/config
 mkdir -p temp/libfbclient/jrd/os/posix
@@ -602,7 +604,12 @@ mkdir -p temp/client.gfix/alice
 mkdir -p temp/client.gpre/gpre
 mkdir -p temp/client.gdef/dudley
 mkdir -p temp/client.isql/isql
-mkdir -p temp/client.util/utilities
+mkdir -p temp/client.util/utilities/rebuild
+mkdir -p temp/client.util/utilities/ibmgr
+mkdir -p temp/client.util/utilities/guard
+mkdir -p temp/client.util/utilities/gsec
+mkdir -p temp/client.util/utilities/gstat
+mkdir -p temp/client.util/utilities/install
 mkdir -p temp/client.util/iscguard
 mkdir -p temp/client.util/remote/os/win32
 mkdir -p temp/client.util/jrd/os/win32
@@ -631,7 +638,8 @@ mkdir -p temp/libfbstatic/wal
 mkdir -p temp/libfbstatic/common/config
 
 mkdir -p temp/embed.lockmgr/lock
-mkdir -p temp/embed.util/utilities
+mkdir -p temp/embed.util/utilities/gstat
+mkdir -p temp/embed.util/utilities/gsec
 mkdir -p temp/embed.gbak/burp
 mkdir -p temp/embed.gfix/alice
 mkdir -p temp/embed.isql/isql
@@ -653,7 +661,7 @@ mkdir -p temp/libfbembed/remote/os/win32
 mkdir -p temp/libfbembed/pipe
 mkdir -p temp/libfbembed/gpre
 mkdir -p temp/libfbembed/alice
-mkdir -p temp/libfbembed/utilities
+mkdir -p temp/libfbembed/utilities/gsec
 mkdir -p temp/libfbembed/fbutil
 mkdir -p temp/libfbembed/jrd/os/posix
 mkdir -p temp/libfbembed/jrd/os/win32
