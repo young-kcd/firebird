@@ -1,3 +1,25 @@
+2004-01-22 08:47  epocman
+
+	* firebird2/builds/win32/msvc6/: Firebird2.dsw,
+	common_utilities.dsp, instclient.dsp:
+	
+	Static link instclient.exe so it can be used from an installer when
+	MS compiler support DLLs are possibly not yet updated.
+
+2004-01-22 08:47  epocman
+
+	* firebird2/builds/win32/msvc6/common_utilities.dsp:
+	
+	file common_utilities.dsp was initially added on branch
+	B1_5_Release.
+
+2004-01-22 07:50  skidder
+
+	* firebird2/src/: jrd/blb.cpp, jrd/tra.h, qli/eval.cpp,
+	qli/mov.cpp:
+	
+	Engine fully builds on Linux AMD64 now
+
 2004-01-21 16:50  paul_reeves
 
 	* firebird2/: builds/win32/clean_all.bat,
