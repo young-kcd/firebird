@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: install.sh.in,v 1.1.2.5 2004-01-14 09:57:00 stryqx Exp $
+#   $Id: install.sh.in,v 1.1.2.6 2004-01-16 11:13:00 stryqx Exp $
 # 
 
 #  Install script for FirebirdSQL database engine
@@ -281,8 +281,8 @@ chmod ug=rw,o= examples/*.fdb
 chmod ug=rw,o= help/*.fdb
 
 # install the samples if they don't exist
-[ -f aliases.conf ] || install -o $fbUID -g $fbGID -m 440 aliases.conf.sample aliases.conf
-[ -f firebird.conf ] || install -o $fbUID -g $fbGID -m 440 firebird.conf.sample firebird.conf
+[ -f aliases.conf ] || install -o $fbUID -g $fbGID -m 444 aliases.conf.sample aliases.conf
+[ -f firebird.conf ] || install -o $fbUID -g $fbGID -m 444 firebird.conf.sample firebird.conf
 [ -f security.fdb ] || install -o $fbUID -g $fbGID -m 660 security.fdb.sample security.fdb
 
 # remove any existing gds service
