@@ -1692,7 +1692,7 @@ static void share_name_from_resource(
  *	returns new filename in expanded_name sholdn't touch filename
  *
  **************************************/
-	TEXT *p = resource->lpRemoteName, *q = expanded_name, *r = filename;
+	TEXT *p = resource->lpRemoteName, *q = expanded_name;
 
 /* If the shared drive is via Windows
    package it up so that resolution of the share name can

@@ -356,7 +356,7 @@ BOOL ReadIBSettings(HWND hDlg)
 		PrintCfgStatus(pdwStatus, IDS_CFGREAD_FAILED, hDlg);
 	else {
 		char *pchTmp = pchResBuf;
-		short len = 0, chTmp = 0, key;
+		short key;
 		ULONG ulConfigInfo;
 
 		if (*pchTmp++ == isc_info_svc_get_config) {

@@ -823,7 +823,6 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 			char *pszPtr;
 			char szText[256];
 			char szWindowText[256];
-			int bufLen = 128;
 			char szFullPath[256];
 			DWORD dwVerHnd;
 			DWORD dwVerInfoSize;

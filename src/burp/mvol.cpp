@@ -1399,7 +1399,7 @@ bool MVOL_split_hdr_write(void)
 			tdgbl->action->act_file->fil_name);
 
 #ifdef WIN_NT
-	DWORD err = WriteFile(tdgbl->action->act_file->fil_fd,
+	WriteFile(tdgbl->action->act_file->fil_fd,
 							buffer,
 							HDR_SPLIT_SIZE,
 							&bytes_written,

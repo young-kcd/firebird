@@ -1008,7 +1008,6 @@ SLONG cnt, SLONG * total_int)
 */
 
 	FILE_DESC input_fl_desc;
-	BOOLEAN end_of_input = FALSE;
 	SLONG indx, num_int, ret_cd, read_cnt, write_cnt;
 	SLONG skip_to_num, skip_to_total;
 	TEXT *char_ptr1, *char_ptr2, num_arr[5], total_arr[5];

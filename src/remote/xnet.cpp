@@ -475,8 +475,8 @@ PORT XNET_connect(TEXT * name,
  *	connect is for a server process.
  *
  **************************************/
-	XCC xcc = (XCC) 0;
 #ifdef SUPERCLIENT
+	XCC xcc = (XCC) 0;
 	XPM xpm;
 	ULONG number;
 	USHORT mapped_area, mapped_position;

@@ -1314,7 +1314,7 @@ FRBRD *open_security_db(
 #ifdef BOOT_BUILD
 return 0;
 #else
-	short dpb_length, l = 0;
+	short dpb_length;
 	char dpb_buffer[256], *dpb, *p;
 	TEXT default_security_db[MAXPATHLEN], connect_string[1024], *database;
 	FRBRD *db_handle;
