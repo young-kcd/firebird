@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.30 2003-09-12 02:21:53 brodsom Exp $
+//  $Id: par.cpp,v 1.31 2003-09-12 16:35:39 brodsom Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -836,9 +836,9 @@ TEXT *PAR_native_value(bool array_ref,
 			}
 		}
 		else if (sw_sql_dialect == 2) {
-			if (DOUBLE_QUOTED(token.tok_type))
+			if (token.tok_type == tok_dblquoted)
 				PAR_error("Ambiguous use of double quotes in dialect 2");
-			else if (SINGLE_QUOTED(token.tok_type)) {
+			else if (token.tok_type == tok_sglquoted) {
 				token.tok_length += 2;
 				*string++ = '\"';
 				GOBBLE;
@@ -847,7 +847,7 @@ TEXT *PAR_native_value(bool array_ref,
 			}
 		}
 		else if (sw_sql_dialect == 3) {
-			if (SINGLE_QUOTED(token.tok_type)) {
+			if (token.tok_type == tok_sglquoted) {
 				token.tok_length += 2;
 				*string++ = '\"';
 				GOBBLE;
@@ -874,10 +874,10 @@ TEXT *PAR_native_value(bool array_ref,
 				enum tok_t typ;
 				typ = token.tok_type;
 				if (QUOTED(typ))
-					*string++ = (SINGLE_QUOTED(typ)) ? '\'' : '\"';
+					*string++ = (typ == tok_sglquoted) ? '\'' : '\"';
 				GOBBLE;
 				if (QUOTED(typ))
-					*string++ = (SINGLE_QUOTED(typ)) ? '\'' : '\"';
+					*string++ = (typ == tok_sglquoted) ? '\'' : '\"';
 				keyword = token.tok_keyword;
 				if (keyword == KW_RIGHT_PAREN)
 					parens--;

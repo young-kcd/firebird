@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sqe.cpp,v 1.20 2003-09-12 02:21:53 brodsom Exp $
+//	$Id: sqe.cpp,v 1.21 2003-09-12 16:35:39 brodsom Exp $
 //
 #include "firebird.h"
 #include <stdio.h>
@@ -718,7 +718,8 @@ REF SQE_parameter(GPRE_REQ request,
 		return reference;
 	}
 	if ((QUOTED(token.tok_type) && sw_sql_dialect == 1) ||
-		SINGLE_QUOTED(token.tok_type)) {
+		token.tok_type == tok_sglquoted)
+	{
 	/** 
     Since we have stripped the quotes, it is time now to put it back
     so that the host language will interpret it correctly as a string 
@@ -2498,7 +2499,8 @@ static GPRE_NOD par_primitive_value(GPRE_REQ request,
 
 	if (token.tok_type == tok_number ||
 		(QUOTED(token.tok_type) && sw_sql_dialect == 1) ||
-		SINGLE_QUOTED(token.tok_type)) {
+		token.tok_type == tok_sglquoted)
+	{
 		node = EXP_literal();
 		return node;
 	}

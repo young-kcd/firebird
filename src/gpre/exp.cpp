@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exp.cpp,v 1.19 2003-09-12 02:21:53 brodsom Exp $
+//	$Id: exp.cpp,v 1.20 2003-09-12 16:35:39 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -333,7 +333,7 @@ GPRE_NOD EXP_literal(void)
 			return NULL;
 		break;
 	default:
-		if (!(token.tok_type == tok_number || SINGLE_QUOTED(token.tok_type)))
+		if (!(token.tok_type == tok_number || token.tok_type == tok_sglquoted))
 			return NULL;
 	}
 
@@ -367,7 +367,7 @@ GPRE_NOD EXP_literal(void)
 	/** Do not put a default here **/
 	}
 // ** End date/time/timestamp *
-	if (((SINGLE_QUOTED(token.tok_type)) && (token.tok_charset)) ||
+	if ((token.tok_type == tok_sglquoted && (token.tok_charset)) ||
 		((QUOTED(token.tok_type) && (sw_sql_dialect == 1))
 		 && (token.tok_charset)))
 	{
@@ -1346,8 +1346,9 @@ static GPRE_NOD par_native_value( GPRE_REQ request, GPRE_FLD field)
 
 //  Special case literals 
 
-	if (token.tok_type == tok_number || SINGLE_QUOTED(token.tok_type)
-		|| (DOUBLE_QUOTED(token.tok_type) && (sw_sql_dialect == 1))) {
+	if (token.tok_type == tok_number || token.tok_type == tok_sglquoted
+		|| (token.tok_type == tok_dblquoted && sw_sql_dialect == 1))
+	{
 		node = EXP_literal();
 		return node;
 	}

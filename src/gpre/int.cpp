@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int.cpp,v 1.13 2003-07-02 18:58:41 brodsom Exp $
+//	$Id: int.cpp,v 1.14 2003-09-12 16:35:39 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -70,8 +70,6 @@ static void printa(int, TEXT *, ...) ATTRIBUTE_FORMAT(2,3);
 static int first_flag = 0;
 
 #define INDENT 3
-#define BEGIN		printa (column, "{")
-#define END		printa (column, "}")
 
 #define GDS_VTOV	"gds__vtov"
 #define JRD_VTOF	"jrd_vtof"
@@ -94,7 +92,7 @@ void INT_action( ACT action, int column)
 	case ACT_store:
 	case ACT_s_fetch:
 	case ACT_s_start:
-		BEGIN;
+		printa(column, "{");
 		align(column);
 	}
 
@@ -151,7 +149,7 @@ void INT_action( ACT action, int column)
 
 //  Put in a trailing brace for those actions still with us 
 
-	END;
+	printa(column, "}");
 }
 
 
@@ -387,7 +385,7 @@ static void gen_endfor( ACT action, int column)
 	if (request->req_sync)
 		gen_send(request, request->req_sync, column, false);
 
-	END;
+	printa(column, "}");
 }
 
 
@@ -421,7 +419,7 @@ static void gen_for( ACT action, int column)
 	request = action->act_request;
 	ib_fprintf(out_file, "while (1)");
 	column += INDENT;
-	BEGIN;
+	printa(column, "{");
 	align(column);
 	gen_receive(action->act_request, request->req_primary);
 	align(column);

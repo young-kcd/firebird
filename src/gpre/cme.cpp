@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cme.cpp,v 1.9 2003-09-12 02:21:53 brodsom Exp $
+//	$Id: cme.cpp,v 1.10 2003-09-12 16:35:40 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -62,7 +62,6 @@ static void stuff_sdl_loops(REF, GPRE_FLD);
 static void stuff_sdl_number(SLONG, REF);
 
 #define USER_LENGTH	32
-#define LONG_POS_MAX    2147483647
 
 #define STUFF(blr)		*request->req_blr++ = (SCHAR) (blr)
 #define STUFF_WORD(blr)		STUFF (blr); STUFF (blr >> 8)
@@ -71,23 +70,6 @@ static void stuff_sdl_number(SLONG, REF);
 #define STUFF_SDL(sdl)		*reference->ref_sdl++ = (SCHAR) (sdl)
 #define STUFF_SDL_WORD(sdl)	STUFF_SDL (sdl); STUFF_SDL (sdl >> 8);
 #define STUFF_SDL_LONG(sdl)	STUFF_SDL (sdl); STUFF_SDL (sdl >> 8); STUFF_SDL (sdl >>16); STUFF_SDL (sdl >> 24);
-
-#define ASSIGN_DTYPE(f,field)	\
-	{ \
-	(f)->fld_dtype = (field)->fld_dtype; \
-	(f)->fld_length = (field)->fld_length; \
-	(f)->fld_scale = (field)->fld_scale; \
-	(f)->fld_precision = (field)->fld_precision; \
-	(f)->fld_sub_type = (field)->fld_sub_type; \
-	(f)->fld_charset_id = (field)->fld_charset_id; \
-	(f)->fld_collate_id = (field)->fld_collate_id; \
-	(f)->fld_ttype = (field)->fld_ttype; \
-	}
-
-/* One of d1,d2 is time, the other is date */
-#define IS_DATE_AND_TIME(d1,d2)	\
-  ((((d1)==dtype_sql_time)&&((d2)==dtype_sql_date)) || \
-   (((d2)==dtype_sql_time)&&((d1)==dtype_sql_date)))
 
 static bool debug_on;
 
@@ -151,6 +133,25 @@ const op_table operators[] =
 	{ nod_any, 0 }
 };
 
+
+static inline void assign_dtype(gpre_fld *f, gpre_fld *field)
+{
+	f->fld_dtype = field->fld_dtype;
+	f->fld_length = field->fld_length;
+	f->fld_scale = field->fld_scale;
+	f->fld_precision = field->fld_precision;
+	f->fld_sub_type = field->fld_sub_type;
+	f->fld_charset_id = field->fld_charset_id;
+	f->fld_collate_id = field->fld_collate_id;
+	f->fld_ttype = field->fld_ttype;
+}
+
+/* One of d1,d2 is time, the other is date */
+static inline bool is_date_and_time(USHORT d1, USHORT d2)
+{
+	return ((((d1)==dtype_sql_time)&&((d2)==dtype_sql_date)) ||
+		   (((d2)==dtype_sql_time)&&((d1)==dtype_sql_date)));
+}
 
 //____________________________________________________________
 //  
@@ -433,7 +434,7 @@ void CME_get_dtype( GPRE_NOD node, GPRE_FLD f)
 		if (!(tmp_field->fld_dtype) || !(tmp_field->fld_length))
 			PAR_error("Inappropriate self-reference of field");
 
-		ASSIGN_DTYPE(f, tmp_field);
+		assign_dtype(f, tmp_field);
 		return;
 
 	case nod_agg_count:
@@ -619,7 +620,7 @@ void CME_get_dtype( GPRE_NOD node, GPRE_FLD f)
 			f->fld_ttype		= ttype_ascii;
 			return;
 		}
-		ASSIGN_DTYPE(f, &field1);
+		assign_dtype(f, &field1);
 		f->fld_length = get_string_len(&field1) + get_string_len(&field2);
 		if (f->fld_dtype == dtype_cstring)
 			f->fld_length += 1;
@@ -649,8 +650,10 @@ void CME_get_dtype( GPRE_NOD node, GPRE_FLD f)
 			if (DTYPE_IS_DATE(field1.fld_dtype) &&
 				DTYPE_IS_DATE(field2.fld_dtype) &&
 				!((node->nod_type == nod_minus) ||
-				  IS_DATE_AND_TIME(field1.fld_dtype, field2.fld_dtype)))
+				  is_date_and_time(field1.fld_dtype, field2.fld_dtype)))
+			{
 				CPR_error("Invalid use of timestamp/date/time value");
+			}
 			else
 				dtype_max = MAX(field1.fld_dtype, field2.fld_dtype);
 			if (DTYPE_IS_BLOB(dtype_max))
@@ -725,11 +728,11 @@ void CME_get_dtype( GPRE_NOD node, GPRE_FLD f)
 		CME_get_dtype(node->nod_arg[2], &field2);
 		if (field1.fld_dtype >= field2.fld_dtype)
 		{
-			ASSIGN_DTYPE(f, &field1);
+			assign_dtype(f, &field1);
 		}
 		else
 		{
-			ASSIGN_DTYPE(f, &field2);
+			assign_dtype(f, &field2);
 		}
 		return;
 
@@ -956,7 +959,7 @@ void CME_get_dtype( GPRE_NOD node, GPRE_FLD f)
 	case nod_cast:
 		CME_get_dtype(node->nod_arg[0], &field1);
 		tmp_field = (GPRE_FLD) node->nod_arg[1];
-		ASSIGN_DTYPE(f, tmp_field);
+		assign_dtype(f, tmp_field);
 		if (f->fld_length == 0)
 			f->fld_length = field1.fld_length;
 		return;

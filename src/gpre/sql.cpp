@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.22 2003-09-12 02:21:52 brodsom Exp $
+//	$Id: sql.cpp,v 1.23 2003-09-12 16:35:38 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -147,11 +147,13 @@ static void		dialect1_bad_type(USHORT);
 
 static SWE whenever[SWE_max], whenever_list;
 
-#define END_OF_COMMAND											\
-	(((sw_language != lang_cobol) &&							\
-		((int) token.tok_keyword == (int) KW_SEMI_COLON)) ||	\
-		 ((sw_language == lang_cobol) &&						\
-		 ((int) token.tok_keyword == (int) KW_END_EXEC)))
+static inline bool end_of_command(void)
+{
+	return (((sw_language != lang_cobol) &&
+		((int) token.tok_keyword == (int) KW_SEMI_COLON)) ||
+		 ((sw_language == lang_cobol) &&
+		 ((int) token.tok_keyword == (int) KW_END_EXEC)));
+}
 
 
 //____________________________________________________________
@@ -1007,7 +1009,7 @@ void SQL_relation_name(TEXT * r_name,
 TEXT *SQL_var_or_string(bool string_only)
 {
 
-	if ((!SINGLE_QUOTED(token.tok_type) && sw_sql_dialect == 3) ||
+	if ((token.tok_type != tok_sglquoted && sw_sql_dialect == 3) ||
 		(!QUOTED(token.tok_type) && sw_sql_dialect == 1))
 	{
 		if (string_only)
@@ -1198,7 +1200,7 @@ static ACT act_alter_domain(void)
 
 //  Check if default value was specified 
 
-	while (!END_OF_COMMAND) {
+	while (!end_of_command()) {
 		if (MATCH(KW_SET)) {
 			if (token.tok_keyword == KW_DEFAULT) {
 				field->fld_default_source = CPR_start_text();
@@ -1339,7 +1341,7 @@ static ACT act_alter_table(void)
 	cnstrt** cnstrt_ptr = &relation->rel_constraints;
 	cnstrt* cnstrt_str;
 
-	while (!END_OF_COMMAND) {
+	while (!end_of_command()) {
 		if (MATCH(KW_ADD)) {
 			switch (token.tok_keyword) {
 			case KW_CONSTRAINT:
@@ -2923,7 +2925,7 @@ static ACT act_execute(void)
 			break;
 
 		default:
-			if ((!SINGLE_QUOTED(token.tok_type)) && (!MATCH(KW_COLON)))
+			if (token.tok_type != tok_sglquoted && (!MATCH(KW_COLON)))
 				SYNTAX_ERROR(": <string expression>");
 			break;
 		}
@@ -3856,7 +3858,7 @@ static ACT act_prepare(void)
 		break;
 
 	default:
-		if ((!SINGLE_QUOTED(token.tok_type)) && (!MATCH(KW_COLON)))
+		if (token.tok_type != tok_sglquoted && (!MATCH(KW_COLON)))
 			SYNTAX_ERROR(": <string expression>");
 		break;
 	}
@@ -4923,7 +4925,7 @@ static TEXT *extract_string(bool advance_token)
 		break;
 
 	default:
-		if (!SINGLE_QUOTED(token.tok_type))
+		if (token.tok_type != tok_sglquoted)
 			SYNTAX_ERROR("<string>");
 		break;
 	}
@@ -6262,7 +6264,7 @@ void SQL_resolve_identifier( TEXT * err_mesg, TEXT * str)
 
 	switch (sw_sql_dialect) {
 	case 2:
-		if (DOUBLE_QUOTED(token.tok_type))
+		if (token.tok_type == tok_dblquoted)
 			PAR_error("Ambiguous use of double quotes in dialect 2");
 	case 1:
 		if (token.tok_type != tok_ident)
@@ -6271,10 +6273,10 @@ void SQL_resolve_identifier( TEXT * err_mesg, TEXT * str)
 			to_upcase(token.tok_string, str);
 		break;
 	case 3:
-		if (DOUBLE_QUOTED(token.tok_type)) {
-			if (DOUBLE_QUOTES_ON(token.tok_string))
+		if (token.tok_type == tok_dblquoted) {
+			if (token.tok_string[0] == '\"')
 				STRIP_QUOTES(token)
-					strcpy(str, token.tok_string);
+			strcpy(str, token.tok_string);
 		}
 		else if (token.tok_type == tok_ident)
 			to_upcase(token.tok_string, str);

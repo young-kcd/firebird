@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.42 2003-09-12 02:21:53 brodsom Exp $
+ * $Id: gpre.h,v 1.43 2003-09-12 16:35:39 brodsom Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -116,15 +116,8 @@
 #define RANGE_SHORT_INTEGER(X)	((X) < 32768  &&  (X) >= -32768)
 #define RANGE_POSITIVE_SHORT_INTEGER(X) ((X) < 32768 &&  (X) >= 0)
 
-#define SINGLE_QUOTED(typ)	(typ == tok_quoted)
-#define DOUBLE_QUOTED(typ)	(typ == tok_dblquoted)
-#define QUOTED(typ)		(SINGLE_QUOTED(typ) || DOUBLE_QUOTED(typ))
-#define DOUBLE_QUOTES_ON(str)	(str[0] == '\"')
-#define REMOVE_DOUBLE_QUOTES(str)	{int ij,ii; \
-				for (ii=0, ij=1; str[ij] != '\"'; ij++) \
-				    str[ii++] = str[ij];\
-				str[ii] = 0;                \
-				}
+#define QUOTED(typ)		(typ == tok_sglquoted || typ == tok_dblquoted)
+
 
 #define STRIP_QUOTES(tkn)	{int ij; \
 				for (ij=1; ij<tkn.tok_length-1; ij++) \
@@ -914,18 +907,10 @@ typedef struct gpre_rse {
 } *GPRE_RSE;
 
 
-#ifdef __cplusplus
-
 inline size_t RSE_LEN(size_t nItems)
 {
 	return offsetof(gpre_rse, rse_context) + nItems * sizeof(int*);
 }
-
-#else /* __cplusplus */
-
-#define RSE_LEN(nItems) (offsetof(gpre_rse, rse_context) + (nItems) * sizeof(int*))
-
-#endif /* __cplusplus */
 
 //#define RSE_LEN(cnt) (sizeof(gpre_rse) + (cnt - 1) * sizeof (int *))
 

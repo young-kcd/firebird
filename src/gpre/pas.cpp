@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.17 2003-09-11 10:36:45 aafemt Exp $
+//	$Id: pas.cpp,v 1.18 2003-09-12 16:35:39 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -130,9 +130,6 @@ static void t_start_auto(ACT, GPRE_REQ, TEXT *, int);
 static int first_flag;
 
 #define INDENT 3
-#define BEGIN		printa (column, "begin")
-#define END		printa (column, "end")
-#define ENDS		printa (column, "end;")
 
 #ifdef VMS
 #define SHORT_DCL	"gds__short"
@@ -162,7 +159,11 @@ static int first_flag;
 #define GDS_EVENT_COUNTS	"GDS__EVENT_COUNTS"
 #define GDS_EVENT_WAIT		"GDS__EVENT_WAIT"
 
-#define SET_SQLCODE	if (action->act_flags & ACT_sql) printa (column, "SQLCODE := gds__sqlcode (gds__status);")
+static inline set_sqlcode(ACT action, int column)
+{
+	if (action->act_flags & ACT_sql)
+		printa (column, "SQLCODE := gds__sqlcode (gds__status);");
+}
 
 
 //____________________________________________________________
@@ -241,7 +242,7 @@ void PAS_action( ACT action, int column)
 	case ACT_store:
 	case ACT_update:
 	case ACT_statistics:
-		BEGIN;
+		printa(column, "begin");
 	};
 
 	switch (action->act_type) {
@@ -371,7 +372,7 @@ void PAS_action( ACT action, int column)
 		return;
 	case ACT_enderror:{
 			column += INDENT;
-			END;
+			printa(column, "end");
 			column -= INDENT;
 		}
 		break;
@@ -409,7 +410,7 @@ void PAS_action( ACT action, int column)
 		gen_slice(action, column);
 		break;
 	case ACT_hctef:
-		ENDS;
+		printa(column, "end;");
 		break;
 	case ACT_insert:
 		gen_s_start(action, column);
@@ -498,7 +499,7 @@ void PAS_action( ACT action, int column)
 	if (action->act_error)
 		ib_fprintf(out_file, ";");
 	else
-		END;
+		printa(column, "end");
 }
 
 
@@ -782,7 +783,7 @@ static void gen_blob_close( ACT action, USHORT column)
 	BLB blob;
 
 	if (action->act_error || (action->act_flags & ACT_sql))
-		BEGIN;
+		printa(column, "begin");
 
 	if (action->act_flags & ACT_sql) {
 		column = gen_cursor_close(action, action->act_request, column);
@@ -797,12 +798,12 @@ static void gen_blob_close( ACT action, USHORT column)
 		   command, status_vector(action), blob->blb_ident);
 
 	if (action->act_flags & ACT_sql) {
-		END;
+		printa(column, "end");
 		column -= INDENT;
-		ENDS;
+		printa(column, "end;");
 		column -= INDENT;
-		SET_SQLCODE;
-		END;
+		set_sqlcode(action, column);
+		printa(column, "end");
 	}
 }
 
@@ -828,9 +829,9 @@ static void gen_blob_end(ACT action, USHORT column)
 		printa(column, "GDS__CLOSE_BLOB (%s, gds__%d);",
 			   status_vector(0), blob->blb_ident);
 	if (action->act_error)
-		ENDS;
+		printa(column, "end;");
 	else
-		END;
+		printa(column, "end");
 }
 
 
@@ -886,7 +887,7 @@ static void gen_blob_open( ACT action, USHORT column)
 
 	if ((action->act_error && (action->act_type != ACT_blob_for)) ||
 		action->act_flags & ACT_sql)
-		BEGIN;
+		printa(column, "begin");
 
 	if (action->act_flags & ACT_sql) {
 		column = gen_cursor_open(action, action->act_request, column);
@@ -916,17 +917,17 @@ static void gen_blob_open( ACT action, USHORT column)
 		PATTERN_expand(column, pattern2, &args);
 
 	if (action->act_flags & ACT_sql) {
-		END;
+		printa(column, "end");
 		column -= INDENT;
-		END;
+		printa(column, "end");
 		column -= INDENT;
-		ENDS;
+		printa(column, "end;");
 		column -= INDENT;
 		if (sw_auto) {
-			END;
+			printa(column, "end");
 			column -= INDENT;
 		}
-		SET_SQLCODE;
+		set_sqlcode(action, column);
 		if (action->act_type == ACT_blob_create) {
 			printa(column, "if SQLCODE = 0 then");
 			align(column + INDENT);
@@ -1068,12 +1069,12 @@ static void gen_create_database( ACT action, int column)
 	bool save_sw_auto = sw_auto;
 	sw_auto = true;
 	printa(column, "if (gds__status [2] = 0) then");
-	BEGIN;
+	printa(column, "begin");
 	gen_ddl(action, column);
-	ENDS;
+	printa(column, "end;");
 	sw_auto = save_sw_auto;
 	column -= INDENT;
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -1094,11 +1095,11 @@ static int gen_cursor_close( ACT action, GPRE_REQ request, int column)
 
 	PATTERN_expand(column, pattern1, &args);
 	column += INDENT;
-	BEGIN;
+	printa(column, "begin");
 	PATTERN_expand(column, pattern2, &args);
 	printa(column, "if (gds__status[2] = 0) then");
 	column += INDENT;
-	BEGIN;
+	printa(column, "begin");
 
 	return column;
 }
@@ -1156,15 +1157,15 @@ static int gen_cursor_open( ACT action, GPRE_REQ request, int column)
 	PATTERN_expand(column + INDENT, pattern3, &args);
 	PATTERN_expand(column, pattern4, &args);
 	column += INDENT;
-	BEGIN;
+	printa(column, "begin");
 	PATTERN_expand(column, pattern5, &args);
 	printa(column, "if (gds__status[2] = 0) then");
 	column += INDENT;
-	BEGIN;
+	printa(column, "begin");
 	PATTERN_expand(column, pattern6, &args);
 	printa(column, "if (gds__status[2] = 0) then");
 	column += INDENT;
-	BEGIN;
+	printa(column, "begin");
 
 	return column;
 }
@@ -1456,7 +1457,7 @@ static void gen_ddl( ACT action, int column)
 			   "GDS__ROLLBACK_TRANSACTION (gds__null^ , gds__trans);");
 	}
 
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -1476,7 +1477,7 @@ static void gen_drop_database( ACT action, int column)
 			   "GDS__DROP_DATABASE (%s, %d, '%s', RDB$K_DB_TYPE_GDS);",
 			   status_vector(action),
 			   strlen(db->dbb_filename), db->dbb_filename);
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -1494,7 +1495,7 @@ static void gen_dyn_close( ACT action, int column)
 	printa(column,
 		   "isc_embed_dsql_close (gds__status, %s);",
 		   make_name(s, statement->dyn_cursor_name));
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -1513,7 +1514,7 @@ static void gen_dyn_declare( ACT action, int column)
 		   "isc_embed_dsql_declare (gds__status, %s, %s);",
 		   make_name(s1, statement->dyn_statement_name),
 		   make_name(s2, statement->dyn_cursor_name));
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -1535,7 +1536,7 @@ static void gen_dyn_describe(ACT action,
 		   bind_flag ? "_bind" : "",
 		   make_name(s, statement->dyn_statement_name),
 		   sw_sql_dialect, REF_PAR, statement->dyn_sqlda);
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -1589,7 +1590,7 @@ static void gen_dyn_execute( ACT action, int column)
 		   (statement->dyn_sqlda) ? statement->dyn_sqlda : "gds__null^",
 		   REF_PAR,
 		   (statement->dyn_sqlda2) ? statement->dyn_sqlda2 : "gds__null^");
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -1658,7 +1659,7 @@ static void gen_dyn_immediate( ACT action, int column)
 		   (statement->dyn_sqlda) ? statement->dyn_sqlda : "gds__null^",
 		   REF_PAR,
 		   (statement->dyn_sqlda2) ? statement->dyn_sqlda2 : "gds__null^");
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -1680,7 +1681,7 @@ static void gen_dyn_insert( ACT action, int column)
 		   REF_PAR,
 		   (statement->dyn_sqlda) ? statement->dyn_sqlda : "gds__null^");
 
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -1736,7 +1737,7 @@ static void gen_dyn_open( ACT action, int column)
 		   (statement->dyn_sqlda) ? statement->dyn_sqlda : "gds__null^",
 		   REF_PAR,
 		   (statement->dyn_sqlda2) ? statement->dyn_sqlda2 : "gds__null^");
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -1779,7 +1780,7 @@ static void gen_dyn_prepare( ACT action, int column)
 		   SIZEOF, statement->dyn_string, statement->dyn_string,
 		   sw_sql_dialect, REF_PAR,
 		   (statement->dyn_sqlda) ? statement->dyn_sqlda : "gds__null^");
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -1827,14 +1828,14 @@ static void gen_estore( ACT action, int column)
 //  just wrap up pending error 
 	if (request->req_type == REQ_store2) {
 		if (action->act_error || (action->act_flags & ACT_sql))
-			END;
+			printa(column, "end");
 		return;
 	}
 	if (action->act_error)
 		column += INDENT;
 	gen_start(action, request->req_primary, column);
 	if (action->act_error || (action->act_flags & ACT_sql))
-		END;
+		printa(column, "end");
 }
 
 
@@ -1855,9 +1856,9 @@ static void gen_endfor( ACT action, int column)
 
 	gen_receive(action, column, request->req_primary);
 
-	END;
+	printa(column, "end");
 	if (action->act_error || (action->act_flags & ACT_sql))
-		END;
+		printa(column, "end");
 }
 
 
@@ -1871,13 +1872,13 @@ static void gen_erase( ACT action, int column)
 	UPD erase;
 
 	if (action->act_error || (action->act_flags & ACT_sql))
-		BEGIN;
+		printa(column, "begin");
 
 	erase = (UPD) action->act_object;
 	gen_send(action, erase->upd_port, column);
 
 	if (action->act_flags & ACT_sql)
-		END;
+		printa(column, "end");
 }
 
 
@@ -1928,8 +1929,8 @@ static void gen_event_init( ACT action, int column)
 	TEXT *pattern3 = "%S2 (gds__events, gds__%N1l, gds__%N1a, gds__%N1b);";
 
 	if (action->act_error)
-		BEGIN;
-	BEGIN;
+		printa(column, "begin");
+	printa(column, "begin");
 
 	init = (GPRE_NOD) action->act_object;
 	event_list = init->nod_arg[1];
@@ -1971,8 +1972,8 @@ static void gen_event_init( ACT action, int column)
 	PATTERN_expand(column, pattern3, &args);
 
 	if (action->act_error)
-		END;
-	SET_SQLCODE;
+		printa(column, "end");
+	set_sqlcode(action, column);
 }
 
 
@@ -1995,8 +1996,8 @@ static void gen_event_wait( ACT action, int column)
 	TEXT *pattern2 = "%S2 (gds__events, gds__%N1l, gds__%N1a, gds__%N1b);";
 
 	if (action->act_error)
-		BEGIN;
-	BEGIN;
+		printa(column, "begin");
+	printa(column, "begin");
 
 	event_name = (SYM) action->act_object;
 
@@ -2032,8 +2033,8 @@ static void gen_event_wait( ACT action, int column)
 	PATTERN_expand(column, pattern2, &args);
 
 	if (action->act_error)
-		END;
-	SET_SQLCODE;
+		printa(column, "end");
+	set_sqlcode(action, column);
 }
 
 
@@ -2087,7 +2088,7 @@ static void gen_fetch( ACT action, int column)
 		printa(column, "if (isc_%ddirection MOD 2 <> %s) or (%s <> 1) then",
 			   request->req_ident, direction, offset);
 		column += INDENT;
-		BEGIN;
+		printa(column, "begin");
 
 		/* assign the direction and offset parameters to the appropriate message, 
 		   then send the message to the engine */
@@ -2097,11 +2098,11 @@ static void gen_fetch( ACT action, int column)
 		printa(column, "isc_%ddirection := %s;", request->req_ident,
 			   direction);
 		column -= INDENT;
-		END;
+		printa(column, "end");
 
 		printa(column, "if SQLCODE = 0 then");
 		column += INDENT;
-		BEGIN;
+		printa(column, "begin");
 	}
 #endif
 
@@ -2109,7 +2110,7 @@ static void gen_fetch( ACT action, int column)
 		gen_send(action, request->req_sync, column);
 		printa(column, "if SQLCODE = 0 then");
 		column += INDENT;
-		BEGIN;
+		printa(column, "begin");
 	}
 
 	gen_receive(action, column, request->req_primary);
@@ -2117,7 +2118,7 @@ static void gen_fetch( ACT action, int column)
 	column += INDENT;
 	printa(column, "if %s <> 0 then", gen_name(s, request->req_eof, true));
 	column += INDENT;
-	BEGIN;
+	printa(column, "begin");
 
 	if (var_list = (GPRE_NOD) action->act_object)
 		for (i = 0; i < var_list->nod_count; i++) {
@@ -2125,18 +2126,18 @@ static void gen_fetch( ACT action, int column)
 			asgn_to(action, reinterpret_cast<ref*>(var_list->nod_arg[i]), column);
 		}
 
-	END;
+	printa(column, "end");
 	printa(column - INDENT, "else");
 	printa(column, "SQLCODE := 100;");
 	if (request->req_sync) {
 		column -= INDENT;
-		END;
+		printa(column, "end");
 	}
 
 #ifdef SCROLLABLE_CURSORS
 	if (port) {
 		column -= INDENT;
-		END;
+		printa(column, "end");
 	}
 #endif
 }
@@ -2182,7 +2183,7 @@ static void gen_finish( ACT action, int column)
 				   status_vector(action), db->dbb_name->sym_string);
 		}
 
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -2212,7 +2213,7 @@ static void gen_for( ACT action, int column)
 		printa(column, "while %s <> 0 do",
 			   gen_name(s, request->req_eof, true));
 	column += INDENT;
-	BEGIN;
+	printa(column, "begin");
 
 	if (port = action->act_request->req_primary)
 		for (reference = port->por_references; reference;
@@ -2296,7 +2297,7 @@ static void gen_get_segment( ACT action, int column)
 		"%IFgds__status[2] := %ENGDS__GET_SEGMENT (%V1, %BH, %I1, %S1 (%I2), %RF%I2);";
 
 	if (action->act_error && (action->act_type != ACT_blob_for))
-		BEGIN;
+		printa(column, "begin");
 
 	if (action->act_flags & ACT_sql)
 		blob = (BLB) action->act_request->req_blobs;
@@ -2313,10 +2314,10 @@ static void gen_get_segment( ACT action, int column)
 
 	if (action->act_flags & ACT_sql) {
 		into = action->act_object;
-		SET_SQLCODE;
+		set_sqlcode(action, column);
 		printa(column, "if (SQLCODE = 0) or (SQLCODE = 101) then");
 		column += INDENT;
-		BEGIN;
+		printa(column, "begin");
 		align(column);
 		ib_fprintf(out_file, "gds__ftof (gds__%d, gds__%d, %s, gds__%d);",
 				   blob->blb_buff_ident, blob->blb_len_ident,
@@ -2326,7 +2327,7 @@ static void gen_get_segment( ACT action, int column)
 			ib_fprintf(out_file, "%s := gds__%d;",
 					   into->ref_null_value, blob->blb_len_ident);
 		}
-		END;
+		printa(column, "end");
 		column -= INDENT;
 	}
 }
@@ -2349,12 +2350,12 @@ static void gen_loop( ACT action, int column)
 	port = request->req_primary;
 	printa(column, "if SQLCODE = 0 then");
 	column += INDENT;
-	BEGIN;
+	printa(column, "begin");
 	gen_receive(action, column, port);
 	gen_name(name, port->por_references, true);
 	printa(column, "if (SQLCODE = 0) and (%s = 0)", name);
 	printa(column + INDENT, "then SQLCODE := 100;");
-	END;
+	printa(column, "end");
 	column -= INDENT;
 }
 
@@ -2399,7 +2400,7 @@ static void gen_on_error( ACT action, USHORT column)
 	else
 		printa(column, "if (gds__status [2] <> 0) then");
 	column += INDENT;
-	BEGIN;
+	printa(column, "begin");
 }
 
 
@@ -2447,16 +2448,16 @@ static void gen_procedure( ACT action, int column)
 
 	PATTERN_expand(column, pattern, &args);
 
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 
 	printa(column, "if SQLCODE = 0 then");
 	column += INDENT;
-	BEGIN;
+	printa(column, "begin");
 
 //  Move out output values 
 
 	asgn_to_proc(request->req_references, column);
-	END;
+	printa(column, "end");
 }
 
 
@@ -2474,9 +2475,9 @@ static void gen_put_segment( ACT action, int column)
 		"%IFgds__status[2] := %ENGDS__PUT_SEGMENT (%V1, %BH, %I1, %I2);";
 
 	if (!action->act_error)
-		BEGIN;
+		printa(column, "begin");
 	if (action->act_error || (action->act_flags & ACT_sql))
-		BEGIN;
+		printa(column, "begin");
 
 	if (action->act_flags & ACT_sql) {
 		blob = (BLB) action->act_request->req_blobs;
@@ -2499,10 +2500,10 @@ static void gen_put_segment( ACT action, int column)
 	args.pat_ident2 = blob->blb_buff_ident;
 	PATTERN_expand(column, pattern1, &args);
 
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 
 	if (action->act_flags & ACT_sql)
-		END;
+		printa(column, "end");
 }
 
 
@@ -2564,9 +2565,9 @@ static void gen_ready( ACT action, int column)
 		make_ready(db, filename, vector, column, ready->rdy_request);
 		if ((action->act_error || (action->act_flags & ACT_sql)) &&
 			ready != (RDY) action->act_object)
-			END;
+			printa(column, "end");
 	}
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -2589,7 +2590,7 @@ static void gen_receive( ACT action, int column, POR port)
 			   port->por_length,
 			   REF_PAR, port->por_ident, request->req_request_level);
 
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -2847,7 +2848,7 @@ static void gen_s_end( ACT action, int column)
 	GPRE_REQ request;
 
 	if (action->act_error)
-		BEGIN;
+		printa(column, "begin");
 	request = action->act_request;
 
 	if (action->act_type == ACT_close)
@@ -2858,13 +2859,13 @@ static void gen_s_end( ACT action, int column)
 		   request->req_handle, request->req_request_level);
 
 	if (action->act_type == ACT_close) {
-		END;
+		printa(column, "end");
 		column -= INDENT;
-		ENDS;
+		printa(column, "end;");
 		column -= INDENT;
 	}
 
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -2883,7 +2884,7 @@ static void gen_s_fetch( ACT action, int column)
 
 	gen_receive(action, column, request->req_primary);
 	if (!action->act_pair && !action->act_error)
-		END;
+		printa(column, "end");
 }
 
 
@@ -2919,15 +2920,15 @@ static void gen_s_start( ACT action, int column)
 		column -= INDENT;
 
 	if (action->act_type == ACT_open) {
-		END;
+		printa(column, "end");
 		column -= INDENT;
-		END;
+		printa(column, "end");
 		column -= INDENT;
-		ENDS;
+		printa(column, "end;");
 		column -= INDENT;
 	}
 
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -2966,14 +2967,14 @@ static void gen_select( ACT action, int column)
 	gen_name(name, request->req_eof, true);
 
 	gen_s_start(action, column);
-	BEGIN;
+	printa(column, "begin");
 	gen_receive(action, column, port);
 	printa(column, "if SQLCODE = 0 then", name);
 	column += INDENT;
 	printa(column, "if %s <> 0 then", name);
 	column += INDENT;
 
-	BEGIN;
+	printa(column, "begin");
 	if (var_list = (GPRE_NOD) action->act_object)
 		for (i = 0; i < var_list->nod_count; i++) {
 			align(column);
@@ -2984,13 +2985,13 @@ static void gen_select( ACT action, int column)
 		gen_receive(action, column, port);
 		printa(column, "if (SQLCODE = 0) AND (%s <> 0) then", name);
 		printa(column + INDENT, "SQLCODE := -1");
-		END;
+		printa(column, "end");
 	}
 
 	printa(column - INDENT, "else");
 	printa(column, "SQLCODE := 100;");
 	column -= INDENT;
-	ENDS;
+	printa(column, "end;");
 }
 
 
@@ -3012,7 +3013,7 @@ static void gen_send( ACT action, POR port, int column)
 			   port->por_msg_number,
 			   port->por_length, port->por_ident, request->req_request_level);
 
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -3146,7 +3147,7 @@ static void gen_store( ACT action, int column)
 		make_ok_test(action, request, column);
 		column += INDENT;
 		if (action->act_error)
-			BEGIN;
+			printa(column, "begin");
 	}
 
 //  Initialize any blob fields 
@@ -3235,7 +3236,7 @@ static void gen_t_start( ACT action, int column)
 		   trans->tra_db_count);
 #endif
 
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -3311,7 +3312,7 @@ static void gen_trans( ACT action, int column)
 				   (action->act_object) ? (TEXT *) action->
 				   act_object : "gds__trans");
 
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -3681,7 +3682,7 @@ static void t_start_auto( ACT action, GPRE_REQ request, TEXT * vector, int colum
 
 //  this is a default transaction, make sure all databases are ready 
 
-	BEGIN;
+	printa(column, "begin");
 
 	for (db = isc_databases, count = and_count = 0; db; db = db->dbb_next) {
 		if (sw_auto)
@@ -3736,6 +3737,6 @@ static void t_start_auto( ACT action, GPRE_REQ request, TEXT * vector, int colum
 	if (sw_auto && request)
 		column -= INDENT;
 
-	SET_SQLCODE;
-	ENDS;
+	set_sqlcode(action, column);
+	printa(column, "end;");
 }

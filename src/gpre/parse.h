@@ -42,7 +42,7 @@ typedef enum kwwords {
 enum tok_t {
 	tok_ident,
 	tok_number,
-	tok_quoted,
+	tok_sglquoted,
 	tok_punct,
 	tok_introducer,
 	tok_dblquoted

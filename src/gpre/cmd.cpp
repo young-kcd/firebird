@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmd.cpp,v 1.14 2003-09-12 02:21:53 brodsom Exp $
+//	$Id: cmd.cpp,v 1.15 2003-09-12 16:35:40 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -99,8 +99,7 @@ static void set_statistics(GPRE_REQ, ACT);
 #define STUFF_INT(blr)	STUFF (blr); STUFF ((blr) >> 8); STUFF ((blr) >> 16); STUFF ((blr) >> 24)
 #define STUFF_CHECK(n)	if (request->req_base - request->req_blr + request->req_length <= (n) + 50)\
 			CMP_check (request,(n))
-#define MAX_TPB		4000
-#define STANDARD_TPB	4
+
 #define BLOB_BUFFER_SIZE   4096	/* to read in blr blob for default values */
 
 

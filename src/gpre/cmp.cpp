@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmp.cpp,v 1.18 2003-09-12 02:21:53 brodsom Exp $
+//	$Id: cmp.cpp,v 1.19 2003-09-12 16:35:39 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -84,8 +84,6 @@ static USHORT next_ident;
 #define STUFF_INT(blr)	STUFF (blr); STUFF ((blr) >> 8); STUFF ((blr) >> 16); STUFF ((blr) >> 24)
 
 #define MAX_TPB		4000
-#define BLR_LENGTH	request->req_length = request->req_blr - request->req_base; request->req_blr = request->req_base
-
 
 //____________________________________________________________
 //  

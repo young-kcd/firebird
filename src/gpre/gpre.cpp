@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.34 2003-09-12 02:21:53 brodsom Exp $
+//  $Id: gpre.cpp,v 1.35 2003-09-12 16:35:39 brodsom Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -1269,7 +1269,7 @@ TOK CPR_token()
 			break;
 
 		default:
-			if (!(SINGLE_QUOTED(token->tok_type)))
+			if (token->tok_type != tok_sglquoted)
 				CPR_error("Can only tag quoted strings with character set");
 			else
 				token->tok_charset = symbol;
@@ -1288,7 +1288,7 @@ TOK CPR_token()
 			}
 			break;
 		default:
-			if (SINGLE_QUOTED(token->tok_type)){
+			if (token->tok_type == tok_sglquoted){
 				token->tok_charset = MSC_find_symbol(HSH_lookup(default_lc_ctype),
 												   SYM_charset);
 			}
@@ -2107,7 +2107,7 @@ static TOK get_token()
 		token.tok_type = tok_number;
 	}
 	else if ((class_ & CHR_QUOTE) || (class_ & CHR_DBLQUOTE)) {
-		token.tok_type = (class_ & CHR_QUOTE) ? tok_quoted : tok_dblquoted;
+		token.tok_type = (class_ & CHR_QUOTE) ? tok_sglquoted : tok_dblquoted;
 		for (;;) {
 			next = nextchar();
 			if (sw_language == lang_cobol && sw_ansi && next == '\n') {
@@ -2219,7 +2219,7 @@ static TOK get_token()
 	a string. Don not lookup in the hash table to prevent 
 	parsing confusion. 
     **/
-			if (sw_sql_dialect != 1)
+		if (sw_sql_dialect != 1)
 			token.tok_symbol = symbol = HSH_lookup(token.tok_string);
 		else
 			token.tok_symbol = symbol = NULL;

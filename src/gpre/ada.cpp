@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.21 2003-09-12 08:55:47 robocop Exp $
+//	$Id: ada.cpp,v 1.22 2003-09-12 16:35:40 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -133,9 +133,6 @@ static int first_flag;
 
 #define COMMENT		"--- "
 #define INDENT		3
-#define ENDIF		printa (column, "end if;")
-#define BEGIN		printa (column, "begin")
-#define END		printa (column, "end;")
 
 #define BYTE_DCL	"interbase.isc_byte"
 #define BYTE_VECTOR_DCL	"interbase.isc_vector_byte"
@@ -147,10 +144,11 @@ static int first_flag;
 #define FLOAT_DCL	"interbase.isc_float"
 #define DOUBLE_DCL	"interbase.isc_double"
 
-#define ADA_WINDOW_PACKAGE	(sw_window_scope == DBB_EXTERN) ? ada_package : ""
-
-#define SET_SQLCODE     if (action->act_flags & ACT_sql) printa (column, "SQLCODE := interbase.sqlcode (isc_status);")
-
+static inline set_sqlcode(ACT action, int column)
+{
+	if (action->act_flags & ACT_sql)
+		printa (column, "SQLCODE := interbase.sqlcode (isc_status);");
+}
 
 //____________________________________________________________
 //  
@@ -285,7 +283,7 @@ void ADA_action( ACT action, int column)
 		gen_blob_end(action, column);
 		return;
 	case ACT_enderror:
-		ENDIF;
+		printa(column, "end if;");
 		break;
 	case ACT_endfor:
 		gen_endfor(action, column);
@@ -324,7 +322,7 @@ void ADA_action( ACT action, int column)
 		gen_slice(action, column);
 		return;
 	case ACT_hctef:
-		ENDIF;
+		printa(column, "end if;");
 		break;
 	case ACT_insert:
 		gen_s_start(action, column);
@@ -516,7 +514,7 @@ static void asgn_from( ACT action, REF reference, int column)
 			printa(column + INDENT, "%s := -1;", variable);
 			printa(column, "else");
 			printa(column + INDENT, "%s := 0;", variable);
-			ENDIF;
+			printa(column, "end if;");
 		}
 	}
 }
@@ -737,11 +735,11 @@ static void gen_blob_close( ACT action, USHORT column)
 		   command, status_vector(action), blob->blb_ident);
 
 	if (action->act_flags & ACT_sql) {
-		ENDIF;
+		printa(column, "end if;");
 		column -= INDENT;
 	}
 
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -833,17 +831,17 @@ static gen_blob_open( ACT action, USHORT column)
 		PATTERN_expand(column, pattern2, &args);
 
 	if (action->act_flags & ACT_sql) {
-		ENDIF;
+		printa(column, "end if;");
 		column -= INDENT;
-		ENDIF;
+		printa(column, "end if;");
 		column -= INDENT;
-		SET_SQLCODE;
+		set_sqlcode(action, column);
 		if (action->act_type == ACT_blob_create) {
 			printa(column, "if SQLCODE = 0 then");
 			printa(column + INDENT, "%s := %s;", reference->ref_value, s);
-			ENDIF;
+			printa(column, "end if;");
 		}
-		ENDIF;
+		printa(column, "end if;");
 	}
 }
 #else
@@ -994,9 +992,9 @@ static void gen_compile( ACT action, int column)
 		   (request->req_flags & REQ_exp_hand) ? "" : "'address",
 		   request->req_length, request->req_ident);
 
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 	column -= INDENT;
-	ENDIF;
+	printa(column, "end if;");
 
 
 	if (blob = request->req_blobs)
@@ -1098,7 +1096,7 @@ static void gen_create_database( ACT action, int column)
 	column -= INDENT;
 	printa(column, "else");
 	column += INDENT;
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 	column -= INDENT;
 	printa(column, "end if;");
 }
@@ -1316,12 +1314,12 @@ static void gen_ddl( ACT action, int column)
 		printa(column, "else", ada_package);
 		printa(column + INDENT,
 			   "interbase.rollback_TRANSACTION (%sgds_trans);", ada_package);
-		ENDIF;
+		printa(column, "end if;");
 		column -= INDENT;
-		ENDIF;
+		printa(column, "end if;");
 	}
 
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -1342,7 +1340,7 @@ static void gen_drop_database( ACT action, int column)
 		   "interbase.DROP_DATABASE (%s %d, \"%s\", RDBK_DB_TYPE_GDS);",
 		   status_vector(action), strlen(db->dbb_filename), db->dbb_filename);
 
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -1360,7 +1358,7 @@ static void gen_dyn_close( ACT action, int column)
 	printa(column,
 		   "interbase.embed_dsql_close (%s %s);",
 		   status_vector(action), make_name(s, statement->dyn_cursor_name));
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -1380,7 +1378,7 @@ static void gen_dyn_declare( ACT action, int column)
 		   status_vector(action),
 		   make_name(s1, statement->dyn_statement_name),
 		   make_name(s2, statement->dyn_cursor_name));
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -1403,7 +1401,7 @@ static void gen_dyn_describe(ACT action,
 		   status_vector(action),
 		   make_name(s, statement->dyn_statement_name),
 		   sw_sql_dialect, statement->dyn_sqlda);
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -1461,10 +1459,10 @@ static void gen_dyn_execute( ACT action, int column)
 
 	if (sw_auto) {
 		column -= INDENT;
-		ENDIF;
+		printa(column, "end if;");
 	}
 
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -1491,7 +1489,7 @@ static void gen_dyn_fetch( ACT action, int column)
 
 	printa(column, "if SQLCODE /= 100 then");
 	printa(column + INDENT, "SQLCODE := interbase.sqlcode (isc_status);");
-	ENDIF;
+	printa(column, "end if;");
 }
 
 
@@ -1535,10 +1533,10 @@ static void gen_dyn_immediate( ACT action, int column)
 
 	if (sw_auto) {
 		column -= INDENT;
-		ENDIF;
+		printa(column, "end if;");
 	}
 
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -1563,7 +1561,7 @@ static void gen_dyn_insert( ACT action, int column)
 			   "interbase.embed_dsql_insert (isc_status, %s, %d);",
 			   make_name(s, statement->dyn_cursor_name), sw_sql_dialect);
 
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -1610,10 +1608,10 @@ static void gen_dyn_open( ACT action, int column)
 
 	if (sw_auto) {
 		column -= INDENT;
-		ENDIF;
+		printa(column, "end if;");
 	}
 
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -1665,10 +1663,10 @@ static void gen_dyn_prepare( ACT action, int column)
 
 	if (sw_auto) {
 		column -= INDENT;
-		ENDIF;
+		printa(column, "end if;");
 	}
 
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -1716,13 +1714,13 @@ static void gen_estore( ACT action, int column)
 //  just wrap up any dangling error handling 
 	if (request->req_type == REQ_store2) {
 		if (action->act_error)
-			ENDIF;
+			printa(column, "end if;");
 		return;
 	}
 
 	gen_start(action, request->req_primary, column);
 	if (action->act_error)
-		ENDIF;
+		printa(column, "end if;");
 }
 
 
@@ -1743,7 +1741,7 @@ static void gen_endfor( ACT action, int column)
 	printa(column, "end loop;");
 
 	if (action->act_error || (action->act_flags & ACT_sql))
-		ENDIF;
+		printa(column, "end if;");
 }
 
 
@@ -1820,8 +1818,8 @@ static void gen_event_init( ACT action, int column)
 		"interbase.event_counts (isc_events, isc_%N1l, isc_%N1a, isc_%N1b);";
 
 	if (action->act_error)
-		BEGIN;
-	BEGIN;
+		printa(column, "begin");
+	printa(column, "begin");
 
 	init = (GPRE_NOD) action->act_object;
 	event_list = init->nod_arg[1];
@@ -1859,8 +1857,8 @@ static void gen_event_init( ACT action, int column)
 
 	PATTERN_expand(column, pattern3, &args);
 
-	END;
-	SET_SQLCODE;
+	printa(column, "end;");
+	set_sqlcode(action, column);
 }
 
 
@@ -1886,8 +1884,8 @@ static void gen_event_wait( ACT action, int column)
 		"interbase.event_counts (isc_events, isc_%N1l, isc_%N1a, isc_%N1b);";
 
 	if (action->act_error)
-		BEGIN;
-	BEGIN;
+		printa(column, "begin");
+	printa(column, "begin");
 
 	event_name = (SYM) action->act_object;
 
@@ -1920,8 +1918,8 @@ static void gen_event_wait( ACT action, int column)
 	PATTERN_expand(column, pattern1, &args);
 	PATTERN_expand(column, pattern2, &args);
 
-	END;
-	SET_SQLCODE;
+	printa(column, "end;");
+	set_sqlcode(action, column);
 }
 
 
@@ -1985,7 +1983,7 @@ static void gen_fetch( ACT action, int column)
 		printa(column, "isc_%ddirection := %s;", request->req_ident,
 			   direction);
 		column -= INDENT;
-		ENDIF;
+		printa(column, "end if;");
 
 		printa(column, "if SQLCODE = 0 then");
 		column += INDENT;
@@ -2016,18 +2014,18 @@ static void gen_fetch( ACT action, int column)
 	column -= INDENT;
 	printa(column, "else");
 	printa(column + INDENT, "SQLCODE := 100;");
-	ENDIF;
+	printa(column, "end if;");
 	column -= INDENT;
-	ENDIF;
+	printa(column, "end if;");
 	column -= INDENT;
 
 	if (request->req_sync)
-		ENDIF;
+		printa(column, "end if;");
 
 #ifdef SCROLLABLE_CURSORS
 	if (port) {
 		column -= INDENT;
-		ENDIF;
+		printa(column, "end if;");
 	}
 #endif
 }
@@ -2052,7 +2050,7 @@ static void gen_finish( ACT action, int column)
 		printa(column + INDENT, "interbase.%s_TRANSACTION (%s %sgds_trans);",
 			   (action->act_type != ACT_rfinish) ? "COMMIT" : "ROLLBACK",
 			   status_vector(action), ada_package);
-		ENDIF;
+		printa(column, "end if;");
 	}
 
 //  the user supplied one or more db_handles 
@@ -2065,7 +2063,7 @@ static void gen_finish( ACT action, int column)
 		printa(column, "interbase.DETACH_DATABASE (%s %s%s);",
 			   status_vector(action), ada_package, db->dbb_name->sym_string);
 		if (action->act_error || (action->act_flags & ACT_sql))
-			ENDIF;
+			printa(column, "end if;");
 	}
 
 //  no hanbdles, so we finish all known databases 
@@ -2093,13 +2091,13 @@ static void gen_finish( ACT action, int column)
 					request->req_database == db)
 					printa(column, "%s := 0;", request->req_handle);
 			column -= INDENT;
-			ENDIF;
+			printa(column, "end if;");
 		}
 		if (action->act_error || (action->act_flags & ACT_sql))
-			ENDIF;
+			printa(column, "end if;");
 	}
 
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -2327,14 +2325,14 @@ static void gen_get_segment( ACT action, int column)
 
 	if (action->act_flags & ACT_sql) {
 		into = action->act_object;
-		SET_SQLCODE;
+		set_sqlcode(action, column);
 		printa(column, "if (SQLCODE = 0) or (SQLCODE = 101) then");
 		printa(column + INDENT, "%s := isc_%d;",
 			   into->ref_value, blob->blb_buff_ident);
 		if (into->ref_null_value)
 			printa(column + INDENT, "%s := isc_%d;",
 				   into->ref_null_value, blob->blb_len_ident);
-		ENDIF;
+		printa(column, "end if;");
 	}
 }
 
@@ -2360,9 +2358,9 @@ static void gen_loop( ACT action, int column)
 	gen_name(name, port->por_references, true);
 	printa(column, "if (SQLCODE = 0) and (%s = 0) then", name);
 	printa(column + INDENT, "SQLCODE := 100;");
-	ENDIF;
+	printa(column, "end if;");
 	column -= INDENT;
-	ENDIF;
+	printa(column, "end if;");
 }
 
 
@@ -2454,14 +2452,14 @@ static void gen_procedure( ACT action, int column)
 
 	PATTERN_expand(column, pattern, &args);
 
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 
 	printa(column, "if SQLCODE = 0 then");
 
 //  Move out output values 
 
 	asgn_to_proc(request->req_references, column);
-	ENDIF;
+	printa(column, "end if;");
 }
 
 
@@ -2491,7 +2489,7 @@ static void gen_put_segment( ACT action, int column)
 		   status_vector(action),
 		   blob->blb_ident, blob->blb_len_ident, blob->blb_buff_ident);
 
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -2553,9 +2551,9 @@ static void gen_ready( ACT action, int column)
 		make_ready(db, filename, vector, column, ready->rdy_request);
 		if ((action->act_error || (action->act_flags & ACT_sql)) &&
 			ready != (RDY) action->act_object)
-			ENDIF;
+			printa(column, "end if;");
 	}
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -2575,7 +2573,7 @@ static void gen_receive( ACT action, int column, POR port)
 		   port->por_msg_number,
 		   port->por_length, port->por_ident, request->req_request_level);
 
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -2881,14 +2879,14 @@ static void gen_s_end( ACT action, int column)
 		   status_vector(action),
 		   request->req_handle, request->req_request_level);
 
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 
 	if (action->act_type == ACT_close) {
 		printa(column, "if (SQLCODE = 0) then");
 		printa(column + INDENT, "isc_%do := 0;", request->req_ident);
-		ENDIF;
+		printa(column, "end if;");
 		column -= INDENT;
-		ENDIF;
+		printa(column, "end if;");
 	}
 }
 
@@ -2936,7 +2934,7 @@ static void gen_s_start( ACT action, int column)
 	if (action->act_error || (action->act_flags & ACT_sql)) {
 		make_ok_test(action, request, column);
 		gen_start(action, port, column + INDENT);
-		ENDIF;
+		printa(column, "end if;");
 	}
 	else
 		gen_start(action, port, column);
@@ -2944,9 +2942,9 @@ static void gen_s_start( ACT action, int column)
 	if (action->act_type == ACT_open) {
 		printa(column, "if (SQLCODE = 0) then");
 		printa(column + INDENT, "isc_%do := 1;", request->req_ident);
-		ENDIF;
+		printa(column, "end if;");
 		column -= INDENT;
-		ENDIF;
+		printa(column, "end if;");
 	}
 }
 
@@ -3000,15 +2998,15 @@ static void gen_select( ACT action, int column)
 		gen_receive(action, column, port);
 		printa(column, "if (SQLCODE = 0) AND (%s /= 0) then", name);
 		printa(column + INDENT, "SQLCODE := -1;");
-		ENDIF;
+		printa(column, "end if;");
 	}
 
 	printa(column - INDENT, "else");
 	printa(column, "SQLCODE := 100;");
 	column -= INDENT;
-	ENDIF;
+	printa(column, "end if;");
 	column -= INDENT;
-	ENDIF;
+	printa(column, "end if;");
 }
 
 
@@ -3028,7 +3026,7 @@ static void gen_send( ACT action, POR port, int column)
 		   port->por_msg_number,
 		   port->por_length, port->por_ident, request->req_request_level);
 
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -3138,7 +3136,7 @@ static void gen_start( ACT action, POR port, int column)
 			   ada_package, request_trans(action, request),
 			   request->req_request_level);
 
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -3230,7 +3228,7 @@ static void gen_t_start( ACT action, int column)
 		   (trans->tra_handle) ? (SCHAR *) trans->tra_handle : "gds_trans",
 		   trans->tra_db_count);
 
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -3295,7 +3293,7 @@ static void gen_trans( ACT action, int column)
 			   (action->act_object) ? (TEXT *) action->
 			   act_object : "gds_trans");
 
-	SET_SQLCODE;
+	set_sqlcode(action, column);
 }
 
 
@@ -3809,7 +3807,7 @@ static void t_start_auto(ACT action,
 
 	stat = !strcmp(vector, "isc_status");
 
-	BEGIN;
+	printa(column, "begin");
 
 	if (sw_auto) {
 		buffer[0] = 0;
@@ -3852,9 +3850,9 @@ static void t_start_auto(ACT action,
 		   vector, ada_package, trname, count);
 
 	if (sw_auto) {
-		ENDIF;
+		printa(column, "end if;");
 		column -= INDENT;
 	}
 
-	END;
+	printa(column, "end;");
 }
