@@ -3789,6 +3789,25 @@ static CONST TOK tokens [] = {
     };
 
 
+/* This method is currently used in isql/isql.epp to check if a 
+   user field is a reserved word, and hence needs to be quoted.
+   Obviously a hash table would make this a little quicker 
+   MOD 29-June-2002
+*/
+
+bool LEX_StringIsAToken(const char*in_str)
+{
+    CONST TOK *tok_ptr = tokens;
+    while (tok_ptr -> tok_string) {
+        if (!strcmp(tok_ptr -> tok_string, in_str)) {
+            return true;
+        }
+        ++tok_ptr;
+    }
+    return false;
+}
+
+
 void LEX_dsql_init (void)
 {
 /**************************************

@@ -20,6 +20,13 @@
  *       2001.08.03   John Bellardo changed LIMIT token to SKIP
  *       2001.07.28   John Bellardo added tokens for FIRST and LIMIT
    See dsql/parse.y for a chronological list. */
+
+/*
+ * This file is included in parse.y and isql/isql.epp - at some point a
+ * smarter way of doing it so one one instance is needed would be best.
+ * MOD 29-Jun-2002
+ */
+ 
     {NOT_LSS, "!<", 1},
 	{NEQ, "!=", 1},
 	{NOT_GTR, "!>", 1},

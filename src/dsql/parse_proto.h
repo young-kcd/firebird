@@ -29,6 +29,8 @@ extern "C" {
 #endif
 
 extern int dsql_yyparse(USHORT, USHORT, USHORT, BOOLEAN *);
+extern bool LEX_StringIsAToken(const char*);
+
 extern void LEX_dsql_init(void);
 extern void LEX_string(TEXT *, USHORT, SSHORT);
 
