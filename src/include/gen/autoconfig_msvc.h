@@ -166,6 +166,9 @@
 /* Wnet pipe name */
 #define FB_PIPE_NAME "interbas"
 
+/* IPC map name */
+#define FB_IPC_NAME "FirebirdIPI"
+
 /* gpre built-in language support (C/C++ are mandatory) */
 #define GPRE_ADA
 #define GPRE_COBOL
