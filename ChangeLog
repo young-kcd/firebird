@@ -1,3 +1,103 @@
+2003-08-12 21:54  skidder
+
+	* firebird2/: builds/misc/msg.gbak, lang_helpers/gds_codes.ftn,
+	lang_helpers/gds_codes.pas, src/include/gen/codes.h,
+	src/include/gen/codetext.h, src/include/gen/iberror.h,
+	src/include/gen/msgs.h, src/include/gen/rdb_codes.h,
+	src/include/gen/sql_code.h, src/jrd/dfw.epp, src/jrd/dyn_def.epp,
+	src/jrd/dyn_mod.epp:
+	
+	Add nbak messages
+
+2003-08-12 19:32  skidder
+
+	* firebird2/src/burp/backup.epp:
+	
+	Close can of worms opened by Mike Nordell when he attempted to use
+	STL to write portable code
+
+2003-08-12 12:44  aafemt
+
+	* firebird2/src/jrd/: common.h, dmp.cpp, sdl.cpp:
+	
+	Use new routines to get integers from char array
+
+2003-08-12 12:42  aafemt
+
+	* firebird2/src/include/memory_routines.h:
+	
+	Misc inline memory routine
+
+2003-08-12 12:06  eku
+
+	* firebird2/: configure.in, builds/make.new/config/config.h.in,
+	src/include/gen/autoconfig_msvc.h, src/utilities/nbackup.cpp:
+	
+	Use autoconf to do it right :-)
+
+2003-08-12 12:05  robocop
+
+	* firebird2/src/gpre/: c_cxx.cpp, pas.cpp:
+	
+	Minor corrections to the PAS (anyone using it with its now fixed
+	flaw?) and CPP generation files.
+
+2003-08-12 12:02  robocop
+
+	* firebird2/src/dudley/: ddl.cpp, parse.cpp:
+	
+	Minor corrections to the obsolete gdef
+
+2003-08-12 12:01  robocop
+
+	* firebird2/src/utilities/install/install_reg.cpp:
+	
+	kill warning
+
+2003-08-12 12:00  robocop
+
+	* firebird2/src/qli/dtr.cpp:
+	
+	Minor changes
+
+2003-08-12 11:56  robocop
+
+	* firebird2/src/jrd/evl.cpp:
+	
+	Fix SF bug# 784121.
+
+2003-08-12 11:55  robocop
+
+	* firebird2/src/jrd/jrd.cpp:
+	
+	Fix warning
+
+2003-08-12 09:07  eku
+
+	* firebird2/src/jrd/rpb_chain.h:
+	
+	`inline' is not at beginning of declaration
+
+2003-08-12 00:31  skidder
+
+	* firebird2/builds/win32/msvc7/: alice.vcproj,
+	alice_classic.vcproj, build_msg.vcproj, burp.vcproj,
+	burp_classic.vcproj, codes.vcproj, common.vcproj,
+	common_classic.vcproj, dsql_server.vcproj,
+	dsql_server_classic.vcproj, engine.vcproj, engine_classic.vcproj,
+	engine_embed.vcproj, fb_inet_server.vcproj, fb_lock_print.vcproj,
+	fbclient.vcproj, fbclient_static.vcproj, fbembed.vcproj,
+	fbguard.vcproj, fbserver.vcproj, fbudf.vcproj, gbak.vcproj,
+	gdef.vcproj, gds32.vcproj, gfix.vcproj, gpre.vcproj,
+	gpre_boot.vcproj, gsec.vcproj, gsplit.vcproj, gstat.vcproj,
+	ib_udf.vcproj, ib_util.vcproj, instreg.vcproj, instsvc.vcproj,
+	intl.vcproj, intlcpp.vcproj, ipserver.vcproj, isql.vcproj,
+	lock.vcproj, lock_classic.vcproj, qli.vcproj, remote.vcproj,
+	remote_classic.vcproj, utilities.vcproj, utilities_classic.vcproj,
+	wal.vcproj, wal_classic.vcproj:
+	
+	Adjust MSVC7 makefiles
+
 2003-08-11 23:46  skidder
 
 	* firebird2/src/qli/mov.cpp:
