@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.122 2004-11-11 05:37:44 skidder Exp $ 
+  * $Id: evl.cpp,v 1.123 2004-11-12 05:32:13 dimitr Exp $ 
  */
 
 /*
@@ -944,6 +944,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 			// Use the request timestamp
 
 			ISC_TIMESTAMP enc_times = request->req_timestamp.value();
+			fb_assert(!request->req_timestamp.isEmpty());
 
 			memset(&impure->vlu_desc, 0, sizeof(impure->vlu_desc));
 			impure->vlu_desc.dsc_address =
