@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.firebird,v 1.1 2001-07-29 23:43:23 skywalker Exp $
+#   $Id: Makefile.in.firebird,v 1.2 2001-07-31 18:34:05 skywalker Exp $
 # 
 
 ROOT=..
@@ -130,7 +130,7 @@ phase2 : $(ISC_GDB)
 $(ISC_GDB): utilities/isc4.sql utilities/isc4.gdl
 	$(MAKE) phase2_build 
 
-phase2_build: create_db gds_lock_manager empty_db gbak_static \
+phase2_build: build_alt_use_boot create_db gds_lock_manager empty_db gbak_static \
         ref_databases jrdlib_main gfix gbak gdef msgs isql \
         isc4.gdb
 
@@ -162,6 +162,7 @@ jrdlib_dependencies :
 	$(MAKE) -C wal $@
 	$(MAKE) -C gpre $@
 	$(MAKE) -C utilities $@
+	$(MAKE) -C fbutil $@
 
 jrdlib_main: jrdlib_dependencies
 	$(MAKE) -C jrd $@

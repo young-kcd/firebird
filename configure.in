@@ -71,6 +71,7 @@ AC_OUTPUT_COMMANDS([mkdir -p gen/intl])
 AC_OUTPUT_COMMANDS([mkdir -p gen/jrd])
 AC_OUTPUT_COMMANDS([mkdir -p gen/qli])
 AC_OUTPUT_COMMANDS([mkdir -p gen/utilities])
+AC_OUTPUT_COMMANDS([mkdir -p gen/fbutil])
 
 AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/include])
 AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/intl])
@@ -86,7 +87,7 @@ src/make.rules:src/make.new/make.rules \
 src/make.defaults:src/make.new/make.defaults \
 src/make.platform:src/make.new/${MAKEFILE_PREFIX} \
 src/make.shared.variables:src/make.new/make.shared.variables \
-src/fbutil/Makefile:src/fbutil/Makefile.in \
+src/fbutil/Makefile:src/make.new/Makefile.in.fbutil \
 src/alice/Makefile:src/make.new/Makefile.in.alice \
 src/burp/Makefile:src/make.new/Makefile.in.burp \
 src/csv/Makefile:src/make.new/Makefile.in.csv \

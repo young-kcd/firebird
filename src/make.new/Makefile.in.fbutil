@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.alice,v 1.2 2001-07-31 18:34:05 skywalker Exp $
+#   $Id: Makefile.in.fbutil,v 1.1 2001-07-31 18:34:05 skywalker Exp $
 # 
 
 ROOT=../..
@@ -38,35 +38,35 @@ include     $(ROOT)/src/make.shared.variables
 
 @SET_MAKE@
 
+AllObjects= $(FBUTIL_Objects)
 
-unexport ISC_USER
-unexport ISC_PASSWORD
-
-
-ALICE_Sources=	alice.cpp all.cpp exe.cpp alice_meta.cpp tdr.cpp 
-ALICE_Objects = $(ALICE_Sources:%.cpp=$(OBJ)/%.o)
-
-AllObjects = $(Alice_Objects) 
-Dependencies = $(All_Objects:.o=.d) 
+Dependancies=$(AllObjects:.o=.d)
 
 
-.PHONY: gfix
+.PHONY:	all libs progs
 
 
-# Ok so alice, all-else became the program gfix.
-gfix: $(BIN)/gfix
+jrd_static : $(LIB)/jrd_static.a($(FBUTIL_Objects))
 
-$(BIN)/gfix: $(ALICE_Objects) $(LIBGDS_LA)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(LINK_LIBS)
-#	$(CXX) $(LINK_OPTS) $^ -o $@ $(LINK_LIBS)
-	$(CHMOD_7) $@
+$(LIB)/jrd_static.a(%.o) : %.o
+	ar crv $@  $%
 
 
-$(SRC)/alice_meta.cpp:	yachts.lnk alice_meta.epp
 
-yachts.lnk:
-	ln -fs ../refDatabases/empty.gdb yachts.lnk
+# In phase2 we add the same objects as before, we just rebuild them as
+# portable and load them into a shared libgds.so library.
+
+.PHONY: jrdlib_dependencies
 
 
-include $(Dependencies)
+jrdlib_dependencies: $(FBUTIL_Objects)
+
+
+
+clean:
+	-rm $(AllObjects)
+	-rm $(Dependancies)
+
+
+include $(Dependancies)
 

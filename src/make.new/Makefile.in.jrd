@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.jrd,v 1.1 2001-07-29 23:43:23 skywalker Exp $
+#   $Id: Makefile.in.jrd,v 1.2 2001-07-31 18:34:05 skywalker Exp $
 # 
 
 ROOT=../..
@@ -37,6 +37,21 @@ include     $(ROOT)/src/make.platform
 include     $(ROOT)/src/make.shared.variables
 
 @SET_MAKE@
+
+
+# jrd has it's own rule for using gpre to use gpre boot.
+# I would eventually like to set these based on a determination 
+# if the file GPRE_STATIC exists or not.
+
+GPRE_FLAGS = -n -z -gds_cxx -raw -ids
+
+.e.c:
+	$(GPRE_BOOT) $(GPRE_FLAGS) $< $@
+
+.epp.cpp:
+	$(GPRE_BOOT) $(GPRE_FLAGS) $< $@
+
+
 
 .PHONY: jrd_boot jrd_static
 
@@ -686,9 +701,24 @@ build_alt_use_main: alt_use_sec.h.pre
 # The GPRE options passed in ar edifferent to the default ones so we have a
 # special rule.
 
-codes.cpp:	codes.epp
+# Some of these you have to wonderabout, since here are a number of files
+# that use DATABASE FILENAME = 'ODS.RDB' but ODS.RDB does not exsit
+# For that reason all the .epp files in this directory are compiled 
+# with the following options.
+# fun.epp they allow you to compile without having a database present.
+# The db file ODS.RDB (as used in fun.epp doesn't exist, and was not part 
+# of the original 6.0 build).
+
+
+
+#blob_filter.cpp: blob_filter.epp
+#	$(GPRE_BOOT) -lang_internal -n -manual -raw -O $< $@
+
+$(SRC)/codes.cpp:	$(SRC)/codes.epp
 	$(GPRE) -n -manual -raw -string $< $@
 
+#$(SRC)/fun.cpp: $(SRC)/fun.epp
+#	$(GPRE) -n -gds -raw -ids $< $@
 
 
 #____________________________________________________________________________

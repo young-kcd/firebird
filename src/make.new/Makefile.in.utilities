@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.utilities,v 1.1 2001-07-29 23:43:23 skywalker Exp $
+#   $Id: Makefile.in.utilities,v 1.2 2001-07-31 18:34:05 skywalker Exp $
 # 
 
 ROOT=../..
@@ -144,10 +144,16 @@ $(ISC_GDB) : isc4.sql isc4.gdl
 # security.epp file for building in the main process.  It is done like
 # this to simpliy the build targets in the makefile.
 # 
+# Unfortunatly, we also need to touch the security.d to make it exist, 
+# otherwise as soon as we look at this makefile again it finds security.d
+# missing and then touches the security.epp file, which of course means
+# the .cpp file will be rebuilt from the .epp file, to circumvent this we
+# touch the dependancy file.
 
 build_alt_use_boot:
 	-$(RM) security.cpp
 	touch security.cpp
+	touch $(DEP)/security.d
 
 build_alt_use_main:
 	-$(RM) security.cpp
@@ -231,6 +237,15 @@ dba.cpp:	yachts.lnk dba.epp
 yachts.lnk: 
 	ln -fs $(SRC)/refDatabases/empty.gdb yachts.lnk
 
+
+# I was hoping one of these was going to allow me to compile security.epp
+# without reference to an actual database, I heard it was possible with an
+# options but haven't found it yet.  I'll leave these here it case others
+# want to experiment MOD 1-Aug-2001
+#
+#security.cpp: security.epp
+#	$(GPRE) -n -manual -raw -strings $< $@
+#	$(GPRE) -n -gds_cxx -raw -ids $< $@
 
 
 

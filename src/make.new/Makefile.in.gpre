@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.gpre,v 1.1 2001-07-29 23:43:23 skywalker Exp $
+#   $Id: Makefile.in.gpre,v 1.2 2001-07-31 18:34:05 skywalker Exp $
 # 
 
 ROOT=../..
@@ -86,6 +86,11 @@ $(GPRE):$(GPRECommon_Objects) $(GPRE_Objects) $(LIBGDS_LA)
 	$(EXE_LINK) $(LINK_OPTS) $^ $(COREFOUNDATION_LINK) -o $@ $(LINK_LIBS) 
 	$(CHMOD_7) $@
 
+
+
+# gpre_meta needs a special boot build since there is no database.
+$(SRC)/gpre_meta.cpp:  $(SRC)/gpre_meta.epp
+	$(GPRE_BOOT) -lang_internal $(GPRE_FLAGS) $< $@
 
 
 # In phase2 we add the same objects as before, we just rebuild them as

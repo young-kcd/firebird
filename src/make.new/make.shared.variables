@@ -129,6 +129,17 @@ SECURITY_Objects = $(SECURITY_Sources:%.cpp=$(GEN_ROOT)/utilities/%.o)
 SECURITY_SharedObjects = $(SECURITY_Objects:.o=.lo)
 
 
+#________________________________________________________________________
+#
+# fbutil
+
+FBUTIL_Sources=FirebirdConfig.cpp
+
+FBUTIL_Objects = $(FBUTIL_Sources:%.cpp=$(GEN_ROOT)/fbutil/%.o)
+FBUTIL_SharedObjects = $(FBUTIL_Objects:.o=.lo)
+
+
+
 
 #________________________________________________________________________
 #
@@ -143,7 +154,8 @@ GDSLIB_Objects = $(JRD_Objects) \
                 $(PIPE_Objects) \
                 $(WAL_Objects) \
                 $(GPRELIB_Objects) \
-                $(SECURITY_Objects)
+                $(SECURITY_Objects) \
+                $(FBUTIL_Objects)
 
 GDSLIB_SharedObjects = $(GDSLIB_Objects:.o=.lo)
 

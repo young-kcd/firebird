@@ -1,0 +1,6 @@
+@SET_MAKE@
+
+all: firebird
+
+firebird firebird_super:
+	$(MAKE) -C src $@

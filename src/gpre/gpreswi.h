@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpreswi.h,v 1.2 2001-07-12 05:46:04 bellardo Exp $
+ * $Id: gpreswi.h,v 1.3 2001-07-31 18:34:05 skywalker Exp $
  * Revision 1.2  2000/11/16 15:54:29  fsg
  * Added new switch -verbose to gpre that will dump
  * parsed lines to stderr
@@ -115,59 +115,59 @@ typedef struct sw_tab_t
 static struct in_sw_tab_t gpre_in_sw_table[] =
 {
 #ifdef ADA
-	IN_SW_GPRE_ADA		, 0, "ADA"			, 0, 0, 0, FALSE, 0, 0, "\t\textended ADA program",
+	{IN_SW_GPRE_ADA		, 0, "ADA"			, 0, 0, 0, FALSE, 0, 0, "\t\textended ADA program"},
 #ifdef ALSYS_ADA
-	IN_SW_GPRE_ALSYS	, 0, "ALSYS"		, 0, 0, 0, FALSE, 0, 0, "\t\textended ADA program",
+	{IN_SW_GPRE_ALSYS	, 0, "ALSYS"		, 0, 0, 0, FALSE, 0, 0, "\t\textended ADA program"},
 #endif
-	IN_SW_GPRE_HANDLES	, 0, "HANDLES"		, 0, 0, 0, FALSE, 0, 0, "\t\tADA handle package requires handle package name",
+	{IN_SW_GPRE_HANDLES	, 0, "HANDLES"		, 0, 0, 0, FALSE, 0, 0, "\t\tADA handle package requires handle package name"},
 #endif
-	IN_SW_GPRE_C		, 0, "C"			, 0, 0, 0, FALSE, 0, 0, "\t\textended C program",
-	IN_SW_GPRE_CXX		, 0, "CXX"			, 0, 0, 0, FALSE, 0, 0, "\t\textended C++ program",
-	IN_SW_GPRE_CPLUSPLUS, 0, "CPLUSPLUS"	, 0, 0, 0, FALSE, 0, 0, "\textended C++ program",
-	IN_SW_GPRE_D		, 0, "DATABASE"		, 0, 0, 0, FALSE, 0, 0, "\tdatabase declaration requires database name",
-
-	IN_SW_GPRE_D_FLOAT	, 0, "D_FLOAT"		, 0, 0, 0, FALSE, 0, 0, "\t\tgenerate blr_d_float for doubles",
-	IN_SW_GPRE_E		, 0, "EITHER_CASE"	, 0, 0, 0, FALSE, 0, 0, "\taccept upper or lower case DML in C",
+	{IN_SW_GPRE_C		, 0, "C"			, 0, 0, 0, FALSE, 0, 0, "\t\textended C program"},
+	{IN_SW_GPRE_CXX		, 0, "CXX"			, 0, 0, 0, FALSE, 0, 0, "\t\textended C++ program"},
+	{IN_SW_GPRE_CPLUSPLUS, 0, "CPLUSPLUS"	, 0, 0, 0, FALSE, 0, 0, "\textended C++ program"},
+	{IN_SW_GPRE_D		, 0, "DATABASE"		, 0, 0, 0, FALSE, 0, 0, "\tdatabase declaration requires database name"},
+     
+	{IN_SW_GPRE_D_FLOAT	, 0, "D_FLOAT"		, 0, 0, 0, FALSE, 0, 0, "\t\tgenerate blr_d_float for doubles"},
+	{IN_SW_GPRE_E		, 0, "EITHER_CASE"	, 0, 0, 0, FALSE, 0, 0, "\taccept upper or lower case DML in C"},
 #ifdef FORTRAN
-	IN_SW_GPRE_F		, 0, "FORTRAN"		, 0, 0, 0, FALSE, 0, 0, "\t\textended FORTRAN program",
+	{IN_SW_GPRE_F		, 0, "FORTRAN"		, 0, 0, 0, FALSE, 0, 0, "\t\textended FORTRAN program"},
 #endif
-	IN_SW_GPRE_G		, 0, "GDS"			, 0, 0, 0, FALSE, 0, 0, NULL,
-	IN_SW_GPRE_GXX		, 0, "GDS_CXX"			, 0, 0, 0, FALSE, 0, 0, NULL,
-	IN_SW_GPRE_I		, 0, "IDENTIFIERS"	, 0, 0, 0, FALSE, 0, 0, NULL,
-	IN_SW_GPRE_I		, 0, "IDS"			, 0, 0, 0, FALSE, 0, 0, NULL,
-	IN_SW_GPRE_INTERP	, 0, "CHARSET"		, 0, 0, 0, FALSE, 0, 0, "\t\tDefault character set & format",
-	IN_SW_GPRE_INTERP	, 0, "INTERPRETATION",0, 0, 0, FALSE, 0, 0, NULL,
-	IN_SW_GPRE_LANG_INTERNAL , 0, "LANG_INTERNAL"	, 0, 0, 0, FALSE, 0, 0, "\tinternal language only",
-	IN_SW_GPRE_M		, 0, "MANUAL"		, 0, 0, 0, FALSE, 0, 0, "\t\tdo not automatically ATTACH to a database",
-	IN_SW_GPRE_N		, 0, "NO_LINES"		, 0, 0, 0, FALSE, 0, 0, "\tdo not generate C debug lines",
-	IN_SW_GPRE_O		, 0, "OUTPUT"		, 0, 0, 0, FALSE, 0, 0, "\t\tsend output to standard out",
+	{IN_SW_GPRE_G		, 0, "GDS"			, 0, 0, 0, FALSE, 0, 0, NULL},
+	{IN_SW_GPRE_GXX		, 0, "GDS_CXX"			, 0, 0, 0, FALSE, 0, 0, NULL},
+	{IN_SW_GPRE_I		, 0, "IDENTIFIERS"	, 0, 0, 0, FALSE, 0, 0, NULL},
+	{IN_SW_GPRE_I		, 0, "IDS"			, 0, 0, 0, FALSE, 0, 0, NULL},
+	{IN_SW_GPRE_INTERP	, 0, "CHARSET"		, 0, 0, 0, FALSE, 0, 0, "\t\tDefault character set & format"},
+	{IN_SW_GPRE_INTERP	, 0, "INTERPRETATION",0, 0, 0, FALSE, 0, 0, NULL},
+	{IN_SW_GPRE_LANG_INTERNAL , 0, "LANG_INTERNAL"	, 0, 0, 0, FALSE, 0, 0, "\tinternal language only"},
+	{IN_SW_GPRE_M		, 0, "MANUAL"		, 0, 0, 0, FALSE, 0, 0, "\t\tdo not automatically ATTACH to a database"},
+	{IN_SW_GPRE_N		, 0, "NO_LINES"		, 0, 0, 0, FALSE, 0, 0, "\tdo not generate C debug lines"},
+	{IN_SW_GPRE_O		, 0, "OUTPUT"		, 0, 0, 0, FALSE, 0, 0, "\t\tsend output to standard out"},
 #ifdef PASCAL
-	IN_SW_GPRE_P		, 0, "PASCAL"		, 0, 0, 0, FALSE, 0, 0, "\t\textended PASCAL program",
+	{IN_SW_GPRE_P		, 0, "PASCAL"		, 0, 0, 0, FALSE, 0, 0, "\t\textended PASCAL program"},
 #endif
-	IN_SW_GPRE_PASSWORD	, 0, "PASSWORD"		, 0, 0, 0, FALSE, 0, 0, "\tdefault password",
-	IN_SW_GPRE_R		, 0, "RAW"			, 0, 0, 0, FALSE, 0, 0, "\t\tgenerate unformatted binary BLR",
-	IN_SW_GPRE_SQLDIALECT,0, "SQL_DIALECT"	, 0, 0, 0, FALSE, 0, 0, "\tSQL dialect to use",
-	IN_SW_GPRE_S		, 0, "STRINGS"		, 0, 0, 0, FALSE, 0, 0, NULL,
-	IN_SW_GPRE_SQLDA	, 0, "SQLDA"		, 0, 0, 0, FALSE, 0, 0, "\t\t***** Deprecated feature. ********",
-	IN_SW_GPRE_T		, 0, "TRACE"		, 0, 0, 0, FALSE, 0, 0, NULL,
-	IN_SW_GPRE_USER		, 0, "USER"			, 0, 0, 0, FALSE, 0, 0, "\t\tdefault user name",
+	{IN_SW_GPRE_PASSWORD	, 0, "PASSWORD"		, 0, 0, 0, FALSE, 0, 0, "\tdefault password"},
+	{IN_SW_GPRE_R		, 0, "RAW"			, 0, 0, 0, FALSE, 0, 0, "\t\tgenerate unformatted binary BLR"},
+	{IN_SW_GPRE_SQLDIALECT,0, "SQL_DIALECT"	, 0, 0, 0, FALSE, 0, 0, "\tSQL dialect to use"},
+	{IN_SW_GPRE_S		, 0, "STRINGS"		, 0, 0, 0, FALSE, 0, 0, NULL},
+	{IN_SW_GPRE_SQLDA	, 0, "SQLDA"		, 0, 0, 0, FALSE, 0, 0, "\t\t***** Deprecated feature. ********"},
+	{IN_SW_GPRE_T		, 0, "TRACE"		, 0, 0, 0, FALSE, 0, 0, NULL},
+	{IN_SW_GPRE_USER		, 0, "USER"			, 0, 0, 0, FALSE, 0, 0, "\t\tdefault user name"},
 /* FSG 14.Nov.2000 */
-	IN_SW_GPRE_VERBOSE	, 0, "VERBOSE"		, 0, 0, 0, FALSE, 0, 0, "\t\tVerbose Output to stderr",
+	{IN_SW_GPRE_VERBOSE	, 0, "VERBOSE"		, 0, 0, 0, FALSE, 0, 0, "\t\tVerbose Output to stderr"},
 #ifdef VMS
-	IN_SW_GPRE_X		, 0, "EXTERNAL"		, 0, 0, 0, FALSE, 0, 0, "\t\tEXTERNAL database (used with /DATABASE)",
+	{IN_SW_GPRE_X		, 0, "EXTERNAL"		, 0, 0, 0, FALSE, 0, 0, "\t\tEXTERNAL database (used with /DATABASE)"},
 #else
-	IN_SW_GPRE_X		, 0, "X"			, 0, 0, 0, FALSE, 0, 0, "\t\tEXTERNAL database (used with -DATABASE)",
+	{IN_SW_GPRE_X		, 0, "X"			, 0, 0, 0, FALSE, 0, 0, "\t\tEXTERNAL database (used with -DATABASE)"},
 #endif
 #ifdef BASIC
-	IN_SW_GPRE_BAS		, 0, "BASIC"		, 0, 0, 0, FALSE, 0, 0, "\t\textended BASIC program",
+	{IN_SW_GPRE_BAS		, 0, "BASIC"		, 0, 0, 0, FALSE, 0, 0, "\t\textended BASIC program"},
 #endif
 #ifdef PLI
-	IN_SW_GPRE_PLI		, 0, "PLI"			, 0, 0, 0, FALSE, 0, 0, "\t\textended PLI program",
+	{IN_SW_GPRE_PLI		, 0, "PLI"			, 0, 0, 0, FALSE, 0, 0, "\t\textended PLI program"},
 #endif
 #ifdef COBOL
-	IN_SW_GPRE_COB		, 0, "COB"			, 0, 0, 0, FALSE, 0, 0, "\t\textended COBOL program",
-	IN_SW_GPRE_ANSI		, 0, "ANSI"			, 0, 0, 0, FALSE, 0, 0, "\t\tgenerate ANSI85 compatible COBOL",
+	{IN_SW_GPRE_COB		, 0, "COB"			, 0, 0, 0, FALSE, 0, 0, "\t\textended COBOL program"},
+	{IN_SW_GPRE_ANSI		, 0, "ANSI"			, 0, 0, 0, FALSE, 0, 0, "\t\tgenerate ANSI85 compatible COBOL"},
 #endif
-	IN_SW_GPRE_Z		, 0, "Z"			, 0, 0, 0, FALSE, 0, 0, "\t\tprint software version",
-	IN_SW_GPRE_0		, 0, NULL			, 0, 0, 0, FALSE, 0, 0, NULL
+	{IN_SW_GPRE_Z		, 0, "Z"			, 0, 0, 0, FALSE, 0, 0, "\t\tprint software version"},
+	{IN_SW_GPRE_0		, 0, NULL			, 0, 0, 0, FALSE, 0, 0, NULL}
 };

@@ -2259,6 +2259,7 @@ esac
 
 
 
+
 trap '' 1 2 15
 cat > confcache <<\EOF
 # This file is a shell script that caches the results of configure
@@ -2364,7 +2365,7 @@ src/make.rules:src/make.new/make.rules \
 src/make.defaults:src/make.new/make.defaults \
 src/make.platform:src/make.new/${MAKEFILE_PREFIX} \
 src/make.shared.variables:src/make.new/make.shared.variables \
-src/fbutil/Makefile:src/fbutil/Makefile.in \
+src/fbutil/Makefile:src/make.new/Makefile.in.fbutil \
 src/alice/Makefile:src/make.new/Makefile.in.alice \
 src/burp/Makefile:src/make.new/Makefile.in.burp \
 src/csv/Makefile:src/make.new/Makefile.in.csv \
@@ -2491,7 +2492,7 @@ src/make.rules:src/make.new/make.rules \
 src/make.defaults:src/make.new/make.defaults \
 src/make.platform:src/make.new/${MAKEFILE_PREFIX} \
 src/make.shared.variables:src/make.new/make.shared.variables \
-src/fbutil/Makefile:src/fbutil/Makefile.in \
+src/fbutil/Makefile:src/make.new/Makefile.in.fbutil \
 src/alice/Makefile:src/make.new/Makefile.in.alice \
 src/burp/Makefile:src/make.new/Makefile.in.burp \
 src/csv/Makefile:src/make.new/Makefile.in.csv \
@@ -2707,6 +2708,7 @@ cat >> $CONFIG_STATUS <<EOF
 
 
 
+
 EOF
 cat >> $CONFIG_STATUS <<\EOF
 mkdir -p gen/csv
@@ -2730,6 +2732,7 @@ mkdir -p gen/intl
 mkdir -p gen/jrd
 mkdir -p gen/qli
 mkdir -p gen/utilities
+mkdir -p gen/fbutil
 mkdir -p gen/firebird/include
 mkdir -p gen/firebird/intl
 mkdir -p gen/firebird/UDF

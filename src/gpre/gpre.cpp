@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.4 2001-07-29 23:43:22 skywalker Exp $
+//  $Id: gpre.cpp,v 1.5 2001-07-31 18:34:05 skywalker Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -38,7 +38,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.4 2001-07-29 23:43:22 skywalker Exp $
+//	$Id: gpre.cpp,v 1.5 2001-07-31 18:34:05 skywalker Exp $
 //
 
 #define GPRE_MAIN
@@ -2745,10 +2745,20 @@ static void print_switches()
 	IN_SW_TAB in_sw_tab;
 
 	ib_fprintf(ib_stderr, "\tlegal switches are:\n");
-	for (in_sw_tab = gpre_in_sw_table; in_sw_tab->in_sw; in_sw_tab++)
-		if (in_sw_tab->in_sw_text)
+	for (in_sw_tab = gpre_in_sw_table; in_sw_tab->in_sw; in_sw_tab++) {
+		if (in_sw_tab->in_sw_text) {
 			ib_fprintf(ib_stderr, "%s%s\n", in_sw_tab->in_sw_name,
 					   in_sw_tab->in_sw_text);
+        }
+    }
+
+	ib_fprintf(ib_stderr, "\n\tand the internal 'illegal' switches are:\n");
+	for (in_sw_tab = gpre_in_sw_table; in_sw_tab->in_sw; in_sw_tab++) {
+		if (!in_sw_tab->in_sw_text) {
+			ib_fprintf(ib_stderr, "%s\n", in_sw_tab->in_sw_name);
+        }
+    }
+
 }
 
 
