@@ -1,3 +1,15 @@
+2005-02-13 01:37  asfernandes
+
+	* firebird2/src/dsql/make.cpp (1.83):
+	
+	NULL literals should have DSC_nullable in dsc_flags
+
+2005-02-12 18:06  arnobrinkman
+
+	* firebird2/src/jrd/: Optimizer.cpp (1.2), Optimizer.h (1.2):
+	
+	Remove some temp-code that was still left
+
 2005-02-11 10:09  robocop
 
 	* firebird2/builds/win32/msvc6/: engine_classic.dsp (1.52),
