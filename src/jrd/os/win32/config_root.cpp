@@ -23,6 +23,8 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
+
 #include <windows.h>
 
 #include "fb_types.h"

@@ -51,7 +51,7 @@ Win32Module::~Win32Module()
 
 void *Win32Module::findSymbol(const Firebird::string& symName)
 {
-	void *result;  
+	FARPROC result;
 
 	result = GetProcAddress(module, symName.c_str());
 	if (!result)
@@ -60,5 +60,5 @@ void *Win32Module::findSymbol(const Firebird::string& symName)
 
 		result = GetProcAddress(module, newSym.c_str());
 	}
-	return result;
+	return static_cast<void*>(result);
 }

@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.49 2002-11-14 08:23:53 dimitr Exp $
+$Id: common.h,v 1.50 2002-11-14 13:35:35 dimitr Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -526,9 +526,7 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 
 /* Windows NT */
 
-#if (defined(_MSC_VER) && (defined(WIN32) || defined(_WIN32))) || \
-	(defined(__BORLANDC__) && defined(__WIN32__))
-#define WIN_NT
+#ifdef WIN_NT
 #define NO_PYXIS
 #define NO_NFS
 #undef LINKS_EXIST
@@ -556,7 +554,6 @@ typedef unsigned __int64 UINT64;
 #define QUADCONST(n) (n)
 
 #ifdef _X86_
-#define i386
 #ifndef I386
 #define I386
 #endif
@@ -579,6 +576,14 @@ typedef unsigned __int64 UINT64;
 
 //#define BOOLEAN_DEFINED
 //typedef unsigned char BOOLEAN;
+
+#ifndef MAXPATHLEN
+#ifdef MAX_PATH
+#define MAXPATHLEN MAX_PATH
+#else
+#define MAXPATHLEN 260
+#endif
+#endif
 
 typedef RETSIGTYPE (CLIB_ROUTINE * SIG_FPTR) (int);
 #endif /* WIN_NT */

@@ -20,4 +20,4 @@ PROD_FLAGS=-O2 -mno-cygwin -fcheck-new -DWIN32_LEAN_AND_MEAN
 DEV_FLAGS=-ggdb -mno-cygwin -fcheck-new -DDEBUG -DDEBUG_GDS_ALLOC -DWIN32_LEAN_AND_MEAN
 
 PLATFORM_PATH=jrd/os/win32
-OS_Specific_Files+=isc_win32.cpp thd_win32.cpp
+OS_SPECIFIC_Files+=isc_win32.cpp thd_win32.cpp

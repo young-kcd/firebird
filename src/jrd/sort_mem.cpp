@@ -26,6 +26,8 @@
  *							   as the server configured for).
  */
 
+#include "firebird.h"
+
 #include "../common/config/config.h"
 #include "../common/memory/allocators.h"
 #include "../jrd/sort_proto.h"
