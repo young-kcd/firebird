@@ -527,10 +527,13 @@ RSB OPT_compile(TDBB tdbb,
 
 		/* if we have seen any booleans or sort fields, we may be able to
 		   use an index to optimize them; retrieve the current format of 
-		   all indices at this time so we can determine if it's possible */
+		   all indices at this time so we can determine if it's possible 
+		   AB: if a parent_stack was available and conjunct_count was 0
+		   then no indices where retrieved. Added also OR check on 
+		   parent_stack below. SF BUG # [ 508594 ] */
 
 		csb->csb_rpt[stream].csb_idx_allocation = 0;
-		if (conjunct_count || sort || project || aggregate) {
+		if (conjunct_count || sort || project || aggregate || parent_stack) {
 			if ((relation = (JRD_REL) node->nod_arg[e_rel_relation])
 				&& !relation->rel_file) {
 				csb->csb_rpt[stream].csb_indices =
