@@ -28,8 +28,11 @@ set ERRLEV=0
 ) else (
 	call :DEBUG
 )
-if "%ERRLEV%"=="1" (call :ERROR Build failure. & goto :EOF)
-@call :MOVE
+@if "%ERRLEV%"=="1" (
+  @goto :EOF
+) else (
+  @call :MOVE
+)
 @goto :EOF
 
 ::===========
@@ -40,15 +43,9 @@ if "%VS_VER%"=="msvc6" (
 ) else (
 	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.sln %CLEAN% release /OUT all.log
 )
-if errorlevel 1 goto :RELEASE2
+if errorlevel 1 call :ERROR Release build failed
 @goto :EOF
 
-:RELEASE2
-echo.
-echo Error building release
-echo.
-set ERRLEV=1
-goto :EOF
 
 ::===========
 :DEBUG
@@ -58,15 +55,9 @@ if "%VS_VER%"=="msvc6" (
 ) else (
 	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.sln %CLEAN% debug /OUT all.log
 )
-if errorlevel 1 goto :DEBUG2
+if errorlevel 1 call :ERROR Debug build failed
 @goto :EOF
 
-:DEBUG2
-echo.
-echo Error building debug
-echo.
-set ERRLEV=1
-goto :EOF
 
 ::===========
 :MOVE
@@ -151,8 +142,10 @@ copy %ROOT_PATH%\src\extlib\fbudf\fbudf.sql %ROOT_PATH%\output\udf > nul
 :ERROR
 ::====
 @echo.
-@echo   Error  - %*
+@echo   An error occurred while running make_all.bat -
+@echo     %*
 @echo.
+set ERRLEV=1
 cancel_script > nul 2>&1
 ::End of ERROR
 ::------------
