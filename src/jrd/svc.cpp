@@ -43,7 +43,7 @@
 #include "../jrd/pwd.h"
 #include "../alice/aliceswi.h"
 #include "../burp/burpswi.h"
-#include "../jrd/y_handle.h"
+#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "gen/codes.h"
 #include "../jrd/license.h"

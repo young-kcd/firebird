@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		why.c
+ *	MODULE:		why.cpp
  *	DESCRIPTION:	Universal Y-valve
  *
  * The contents of this file are subject to the Interbase Public
@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.5 2002-12-29 13:28:41 nmcc Exp $
+$Id: why.cpp,v 1.6 2003-01-03 12:49:59 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -202,18 +202,18 @@ typedef struct teb
 } TEB;
 
 static WHY_HNDL allocate_handle(int, int);
-inline WHY_HNDL allocate_handle(int p1, why_hndl *h, int p2) {
-	WHY_HNDL handle = allocate_handle(p1, p2);
+inline WHY_HNDL allocate_handle(int implementation, why_hndl *h, int handle_type) {
+	WHY_HNDL handle = allocate_handle(implementation, handle_type);
 	handle->handle.h_why = h;
 	return handle;
 }
-inline WHY_HNDL allocate_handle(int p1, dsql_req *h, int p2) {
-	WHY_HNDL handle = allocate_handle(p1, p2);
+inline WHY_HNDL allocate_handle(int implementation, dsql_req *h, int handle_type) {
+	WHY_HNDL handle = allocate_handle(implementation, handle_type);
 	handle->handle.h_dsql = h;
 	return handle;
 }
-inline WHY_HNDL allocate_handle(int p1, class jrd_tra *h, int p2) {
-	WHY_HNDL handle = allocate_handle(p1, p2);
+inline WHY_HNDL allocate_handle(int implementation, class jrd_tra *h, int handle_type) {
+	WHY_HNDL handle = allocate_handle(implementation, handle_type);
 	handle->handle.h_tra = h;
 	return handle;
 }
@@ -237,7 +237,7 @@ static void exit_handler(EVENT);
 static WHY_TRA find_transaction(WHY_DBB, WHY_TRA);
 static void free_block(void*);
 static int get_database_info(STATUS *, WHY_TRA, TEXT **);
-static PTR get_entrypoint(int, int);
+static CONST PTR get_entrypoint(int, int);
 static SCHAR *get_sqlda_buffer(SCHAR *, USHORT, XSQLDA *, USHORT, USHORT *);
 static STATUS get_transaction_info(STATUS *, WHY_TRA, TEXT **);
 
@@ -642,7 +642,6 @@ static CONST ENTRY entrypoints[PROC_count * SUBSYSTEMS] =
 
 #else
 
-//1
 #define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, rem},
 #include "../jrd/entry.h"
 
@@ -658,7 +657,6 @@ static CONST ENTRY entrypoints[PROC_count * SUBSYSTEMS] =
 
 #ifndef REQUESTER
 #ifndef SUPERCLIENT
-//2
 #define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, cur},
 #include "../jrd/entry.h"
 #endif
@@ -1781,8 +1779,9 @@ STATUS API_ROUTINE GDS_DDL(STATUS * user_status,
 
 #ifndef PIPE_CLIENT
 #ifndef SUPERCLIENT
+	char DYN_ddl[] = "DYN_ddl";
 	if ((image = images[database->implementation].path) != NULL &&
-		((entrypoint = (PTR) ISC_lookup_entrypoint(image, "DYN_ddl", NULL)) !=
+		((entrypoint = (PTR) ISC_lookup_entrypoint(image, DYN_ddl, NULL)) !=
 		 NULL ||
 		 FALSE) &&
 		!((*entrypoint) (status, db_handle, tra_handle, length, ddl))) {
@@ -5511,7 +5510,7 @@ static int get_database_info(STATUS * status, WHY_TRA transaction, TEXT ** ptr)
 }
 
 
-static PTR get_entrypoint(int proc, int implementation)
+static CONST PTR get_entrypoint(int proc, int implementation)
 {
 /**************************************
  *
@@ -5529,8 +5528,8 @@ static PTR get_entrypoint(int proc, int implementation)
 	TEXT *image;
 #endif
 
-	ENTRY *ent = const_cast<ENTRY *>(entrypoints + implementation * PROC_count + proc);
-	PTR entrypoint = ent->address;
+	CONST ENTRY *ent = entrypoints + implementation * PROC_count + proc;
+	CONST PTR entrypoint = ent->address;
 
 	if (entrypoint)
 	{
@@ -5556,11 +5555,23 @@ static PTR get_entrypoint(int proc, int implementation)
 
 	if (image && name)
 	{
-		entrypoint = (PTR) ISC_lookup_entrypoint(image, name, NULL);
-		if (entrypoint)
+		CONST BufSize = 128;
+		TEXT Buffer[BufSize];
+		SLONG NameLength = strlen(name) + 1;
+		TEXT *NamePointer = NameLength > BufSize ? 
+			reinterpret_cast<TEXT *>(gds__alloc(NameLength)) : Buffer;
+		memcpy(NamePointer, name, NameLength);
+		PTR entry = (PTR) ISC_lookup_entrypoint(image, NamePointer, NULL);
+		if (NameLength > BufSize)
+			gds__free(NamePointer);
+		if (entry)
 		{
-			ent->address = entrypoint;
-			return entrypoint;
+			// This const_cast appears to be safe, because:
+			// 1. entrypoints table is modified ONLY once for each entry
+			// 2. even when some threads try to modify it concurrently,
+			//	  they will write SAME results in that table
+			const_cast<PTR>(ent->address) = entry;
+			return entry;
 		}
 	}
 #endif

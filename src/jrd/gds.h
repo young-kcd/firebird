@@ -18,7 +18,7 @@
  */
 
 
-#include "../jrd/y_handle.h"
+#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/gdsold.h"
 

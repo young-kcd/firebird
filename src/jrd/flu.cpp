@@ -35,7 +35,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.23 2002-12-16 21:19:43 skidder Exp $
+$Id: flu.cpp,v 1.24 2003-01-03 12:49:59 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -151,14 +151,14 @@ dirname(const char* fname)
 #endif /* HAVE_DIRNAME */
 
 
-static void terminate_at_space(CONST char* psz)
+static void terminate_at_space(char* psz)
 {
 	while (*psz && *psz != ' ')
 	{
 		++psz;
 	}
 	if (*psz) {
-		*const_cast<char *>(psz) = '\0';
+		*psz = '\0';
 	}
 }
 
@@ -198,7 +198,7 @@ extern "C" {
 static MOD FLU_modules = 0;		/* External function/filter modules */
 
 /* prototypes for private functions */
-static MOD search_for_module(TEXT *, CONST TEXT *);
+static MOD search_for_module(TEXT *, TEXT *);
 #ifdef WIN_NT
 static void adjust_loadlib_name(TEXT *, TEXT *);
 #endif
@@ -301,7 +301,7 @@ void FLU_unregister_module(MOD module)
 #ifdef VMS
 #define LOOKUP
 FPTR_INT ISC_lookup_entrypoint(TEXT * module,
-							   CONST TEXT * name, TEXT * ib_path_env_var)
+							   TEXT * name, TEXT * ib_path_env_var)
 {
 /**************************************
  *
@@ -363,7 +363,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT * module,
 #if (defined OLD_AIX || defined OLD_AIX_PPC)
 #define LOOKUP
 FPTR_INT ISC_lookup_entrypoint(TEXT* module,
-							   CONST TEXT* name,
+							   TEXT* name,
 							   TEXT* ib_path_env_var)
 {
 /**************************************
@@ -416,7 +416,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 #ifdef HP10
 #define LOOKUP
 FPTR_INT ISC_lookup_entrypoint(TEXT * module,
-							   CONST TEXT * name, TEXT * ib_path_env_var)
+							   TEXT * name, TEXT * ib_path_env_var)
 {
 /**************************************
  *
@@ -503,7 +503,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT * module,
 }
 
 
-static MOD search_for_module(TEXT * module, CONST TEXT * name)
+static MOD search_for_module(TEXT * module, TEXT * name)
 {
 /**************************************
  *
@@ -641,7 +641,7 @@ static MOD search_for_module(TEXT * module, CONST TEXT * name)
 #ifdef DYNAMIC_SHARED_LIBRARIES
 #define LOOKUP
 FPTR_INT ISC_lookup_entrypoint(TEXT* module,
-							   CONST TEXT* name,
+							   TEXT* name,
 							   TEXT* ib_path_env_var)
 {
 /**************************************
@@ -736,7 +736,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 }
 
 
-static MOD search_for_module(TEXT * module, CONST TEXT * name)
+static MOD search_for_module(TEXT * module, TEXT * name)
 {
 /**************************************
  *
@@ -910,7 +910,7 @@ static MOD search_for_module(TEXT * module, CONST TEXT * name)
 #ifdef WIN_NT
 #define LOOKUP
 FPTR_INT ISC_lookup_entrypoint(TEXT* module,
-							   CONST TEXT* name,
+							   TEXT* name,
 							   TEXT* ib_path_env_var)
 {
 /**************************************
@@ -1008,7 +1008,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 }
 
 
-static MOD search_for_module(TEXT* module, CONST TEXT* name)
+static MOD search_for_module(TEXT* module, TEXT* name)
 {
 /**************************************
  *
@@ -1207,7 +1207,7 @@ NSModule ISC_link_with_module (TEXT*);
 
 FPTR_INT ISC_lookup_entrypoint (
     TEXT        *module,
-    CONST TEXT        *name,
+    TEXT        *name,
     TEXT        *ib_path_env_var)
 {
 /**************************************
@@ -1306,7 +1306,7 @@ return (FPTR_INT) NSAddressOfSymbol(symbol);
 }
 
 static MOD search_for_module ( TEXT *module,
-                               CONST TEXT *name )
+                               TEXT *name )
 {
 /**************************************
  *
@@ -1509,7 +1509,7 @@ NSModule ISC_link_with_module (
 
 #ifndef LOOKUP
 FPTR_INT ISC_lookup_entrypoint(TEXT* module,
-							   CONST TEXT* name,
+							   TEXT* name,
 							   TEXT* ib_path_env_var)
 {
 /**************************************

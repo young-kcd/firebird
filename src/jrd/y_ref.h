@@ -1,5 +1,5 @@
-#ifndef __y_handle_h__
-#define __y_handle_h__
+#ifndef __y_ref_h__
+#define __y_ref_h__
 
 /*
  *  The contents of this file are subject to the Mozilla Public
@@ -30,50 +30,12 @@
  */
 
 /*
- * This definitions placed into separate file 
- * to avoid multiple definition of struct why_hndl in why.c
- * and dsql.cpp
+ * This file is used for one and only one purpose:
+ * distinguish places, where internals of struct why_hndl 
+ * is known, and where only the fact, that such structure
+ * exists, is required. In latter case we include y_ref
+ * instead of y_handle.
  */
 
-union any_handle {
-	struct why_hndl* h_why;
-	class dsql_req* h_dsql;
-	class att* h_dbb;
-	class jrd_tra* h_tra;
-};
-
-typedef struct why_hndl
-{
-	UCHAR				type;
-	UCHAR				flags;
-	USHORT				implementation;
-	union any_handle	handle;
-	struct why_hndl*	parent;
-	struct why_hndl*	next;
-	union {
-		struct why_hndl*requests;
-		struct dasup*	das;
-	};
-	struct why_hndl*	statements;
-	struct why_hndl*	blobs;
-	struct why_hndl**	user_handle;
-	struct clean*		cleanup;
-	TEXT*				db_path;
-} *WHY_HNDL, *WHY_REQ, *WHY_DBB, *WHY_TRA, 
-  *WHY_BLB, *WHY_ATT, *WHY_STMT, *WHY_SVC;
-
-#define HANDLE_invalid		0
-#define HANDLE_database		1
-#define HANDLE_transaction	2
-#define HANDLE_request		3
-#define HANDLE_blob			4
-#define HANDLE_statement	5
-#define HANDLE_service		6
-
-#define HANDLE_TRANSACTION_limbo	1
-#define HANDLE_BLOB_filter			2	/* Blob is locally filtered */
-#define	HANDLE_STATEMENT_local		4	/* Process DSQL statement locally */
-
-#include "../jrd/y_ref.h"
-
-#endif /* __y_handle_h__ */
+#define FRBRD struct why_hndl
+#endif
