@@ -342,12 +342,11 @@ NOD PASS1_node(REQ request, NOD input, USHORT proc_flag)
 		DEV_BLKCHK(field, dsql_type_fld);
 		DDL_resolve_intl_type(request, field, NULL);
 		MAKE_desc_from_field(&node->nod_desc, field);
-		/* If the source is nullable, so is the target       */
+		/* If the source is nullable, so is the target */
 		MAKE_desc(&sub1->nod_desc, sub1);
 		if (sub1->nod_desc.dsc_flags & DSC_nullable)
 			node->nod_desc.dsc_flags |= DSC_nullable;
 		return node;
-
 
 	case nod_gen_id:
 	case nod_gen_id2:
@@ -1450,6 +1449,7 @@ static NOD copy_field( NOD field, CTX context)
 	case nod_subtract:
 	case nod_subtract2:
 	case nod_upcase:
+	case nod_internal_info:
 	case nod_extract:
 	case nod_list:
 		temp = MAKE_node(field->nod_type, field->nod_count);
@@ -1943,6 +1943,7 @@ static BOOLEAN invalid_reference( NOD node, NOD list)
 			case nod_current_time:
 			case nod_current_timestamp:
 			case nod_user_name:
+			case nod_internal_info:
 				return FALSE;
 			}
 	}

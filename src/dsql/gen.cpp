@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gen.cpp,v 1.4 2002-04-04 13:50:07 dimitr Exp $
+$Id: gen.cpp,v 1.5 2002-06-14 12:07:18 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -416,6 +416,9 @@ void GEN_expr( REQ request, NOD node)
 		operator_ = blr_via;
 		break;
 
+	case nod_internal_info:
+		operator_ = blr_internal_info;
+		break;
 	case nod_upcase:
 		operator_ = blr_upcase;
 		break;

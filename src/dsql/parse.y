@@ -79,11 +79,18 @@ static CONST UCHAR
 static CONST UCHAR
 	NULL_STRING [] = "";	
 
+#define TRIGGER_TYPE_SUFFIX(slot1, slot2, slot3) \
+	((slot1 << 1) | (slot2 << 3) | (slot3 << 5))
+
+extern "C" {
+
 #ifndef SHLIB_DEFS
 NOD		DSQL_parse;
 #else
 extern NOD	DSQL_parse;
 #endif
+
+}	// extern "C"
 
 static FLD	field;
 static FIL	file;
@@ -338,12 +345,15 @@ static SSHORT	log_defined, cache_defined;
 
 %token NUMBER64BIT SCALEDINT
 
-
 /* tokens added for Firebird 1 */
 %token LIMIT
 %token INT64
 %token SUBSTRING
 
+/* tokens added for Firebird 1.5 */
+
+%token CONNECTION_ID
+%token TRANSACTION_ID
 
 /* precedence declarations for expression evaluation */
 
@@ -1082,6 +1092,8 @@ default_value	: constant
 			{ $$ = $1; }
 		| USER
 			{ $$ = make_node (nod_user_name, (int) 0, NULL); }
+		| internal_info
+			{ $$ = $1; }
 		| null_value
 			{ $$ = $1; }
 		| datetime_value_expression
@@ -1534,18 +1546,46 @@ trigger_active	: ACTIVE
 			{ $$ = NULL; }
 		;
 
-trigger_type	: BEFORE INSERT
+trigger_type	: trigger_type_prefix trigger_type_suffix
+			{ $$ = MAKE_trigger_type ($1, $2); }
+		;
+
+trigger_type_prefix	: BEFORE
+			{ $$ = MAKE_constant ((STR) 0, CONSTANT_SLONG); }
+		| AFTER
 			{ $$ = MAKE_constant ((STR) 1, CONSTANT_SLONG); }
-		| AFTER INSERT
-			{ $$ = MAKE_constant ((STR) 2, CONSTANT_SLONG); }
-		| BEFORE UPDATE
-			{ $$ = MAKE_constant ((STR) 3, CONSTANT_SLONG); }
-		| AFTER UPDATE
-			{ $$ = MAKE_constant ((STR) 4, CONSTANT_SLONG); }
-		| BEFORE DELETE
-			{ $$ = MAKE_constant ((STR) 5, CONSTANT_SLONG); }
-		| AFTER DELETE
-			{ $$ = MAKE_constant ((STR) 6, CONSTANT_SLONG); }
+		;
+
+trigger_type_suffix	: INSERT
+			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (1, 0, 0), CONSTANT_SLONG); }
+		| UPDATE
+			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (2, 0, 0), CONSTANT_SLONG); }
+		| DELETE
+			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (3, 0, 0), CONSTANT_SLONG); }
+		| INSERT OR UPDATE
+			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (1, 2, 0), CONSTANT_SLONG); }
+		| INSERT OR DELETE
+			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (1, 3, 0), CONSTANT_SLONG); }
+		| UPDATE OR INSERT
+			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (2, 1, 0), CONSTANT_SLONG); }
+		| UPDATE OR DELETE
+			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (2, 3, 0), CONSTANT_SLONG); }
+		| DELETE OR INSERT
+			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (3, 1, 0), CONSTANT_SLONG); }
+		| DELETE OR UPDATE
+			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (3, 2, 0), CONSTANT_SLONG); }
+		| INSERT OR UPDATE OR DELETE
+			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (1, 2, 3), CONSTANT_SLONG); }
+		| INSERT OR DELETE OR UPDATE
+			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (1, 3, 2), CONSTANT_SLONG); }
+		| UPDATE OR INSERT OR DELETE
+			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (2, 1, 3), CONSTANT_SLONG); }
+		| UPDATE OR DELETE OR INSERT
+			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (2, 3, 1), CONSTANT_SLONG); }
+		| DELETE OR INSERT OR UPDATE
+			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (3, 1, 2), CONSTANT_SLONG); }
+		| DELETE OR UPDATE OR INSERT
+			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (3, 2, 1), CONSTANT_SLONG); }
 		;
 
 trigger_position : POSITION nonneg_short_integer
@@ -1651,6 +1691,8 @@ keyword_or_column	: COLUMN
 			| CURRENT_TIME
 			| CURRENT_TIMESTAMP
 			| SYMBOL
+			| CONNECTION_ID
+			| TRANSACTION_ID
 			;
 
 col_opt		: ALTER
@@ -2975,6 +3017,8 @@ value		: column_name
 			{ $$ = $2; }
 		| USER
 			{ $$ = make_node (nod_user_name, 0, NULL); }
+		| internal_info
+			{ $$ = $1; }
 		| DB_KEY
 			{ $$ = make_node (nod_dbkey, 1, NULL); }
 		| symbol_table_alias_name '.' DB_KEY
@@ -3092,11 +3136,14 @@ u_constant	: u_numeric_constant
 constant_list	: constant
 		| parameter
 		| current_user
+		| internal_info
 		| constant_list ',' constant
 			{ $$ = make_node (nod_list, 2, $1, $3); }
 		| constant_list ',' parameter
 			{ $$ = make_node (nod_list, 2, $1, $3); }
 		| constant_list ',' current_user
+			{ $$ = make_node (nod_list, 2, $1, $3); }
+		| constant_list ',' internal_info
 			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
 
@@ -3106,6 +3153,14 @@ parameter	: '?'
 
 current_user	: USER
 			{ $$ = make_node (nod_user_name, 0, NULL); }
+		;
+
+internal_info	: CONNECTION_ID
+			{ $$ = make_node (nod_internal_info, e_internal_info_count,
+						MAKE_constant ((STR) 1, CONSTANT_SLONG)); }
+		| TRANSACTION_ID
+			{ $$ = make_node (nod_internal_info, e_internal_info_count,
+						MAKE_constant ((STR) 2, CONSTANT_SLONG)); }
 		;
 
 sql_string	: STRING			/* string in current charset */
@@ -3358,6 +3413,12 @@ static void	check_log_file_attrs (void);
 
 static TEXT	*ptr, *end, *last_token, *line_start;
 static SSHORT	lines, att_charset;
+
+// TMN: Temp hack
+#if (defined(_MSC_VER) || defined(__BORLANDC__)) && defined(CONST)
+#undef CONST
+#define CONST
+#endif
 
 typedef struct tok {
     USHORT	tok_ident;

@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.7 2002-04-04 05:35:21 bellardo Exp $
+ * $Id: ddl.cpp,v 1.8 2002-06-14 12:07:18 dimitr Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -135,14 +135,22 @@ static inline void BLKCHK(const void* p, USHORT type)
 #define BLKCHK(blk, typ)
 #endif
 
-
-
 #define PRE_STORE_TRIGGER	1
 #define POST_STORE_TRIGGER	2
 #define PRE_MODIFY_TRIGGER	3
 #define POST_MODIFY_TRIGGER	4
 #define PRE_ERASE_TRIGGER	5
 #define POST_ERASE_TRIGGER	6
+
+#define HAS_OLD_CONTEXT(value) \
+	(((((value + 1) >> 1) & 3) != 1) && \
+	((((value + 1) >> 3) & 3) != 1) && \
+	((((value + 1) >> 5) & 3) != 1))
+
+#define HAS_NEW_CONTEXT(value) \
+	(((((value + 1) >> 1) & 3) != 3) && \
+	((((value + 1) >> 3) & 3) != 3) && \
+	((((value + 1) >> 5) & 3) != 3))
 
 #define OLD_CONTEXT		"OLD"
 #define NEW_CONTEXT		"NEW"
@@ -609,6 +617,7 @@ static USHORT check_array_or_blob(NOD node)
 	case nod_current_timestamp:
 	case nod_constant:
 	case nod_via:
+	case nod_internal_info:
 		return FALSE;
 
 	case nod_map:
@@ -2623,16 +2632,18 @@ static void define_trigger( REQ request, NOD node)
 		}
 
 		temp = relation_node->nod_arg[e_rln_alias];
-		if ((trig_type != PRE_STORE_TRIGGER)
-			&& (trig_type != POST_STORE_TRIGGER)) {
+		if (HAS_OLD_CONTEXT(trig_type))
+		{
 			relation_node->nod_arg[e_rln_alias] =
 				(NOD) MAKE_cstring(OLD_CONTEXT);
 			PASS1_make_context(request, relation_node);
 		}
 		else
+		{
 			request->req_context_number++;
+		}
 
-		if (trig_type != PRE_ERASE_TRIGGER && trig_type != POST_ERASE_TRIGGER)
+		if (HAS_NEW_CONTEXT(trig_type))
 		{
 			relation_node->nod_arg[e_rln_alias] =
 				(NOD) MAKE_cstring(NEW_CONTEXT);

@@ -25,7 +25,7 @@
  * December 2001 Mike Nordell: Major overhaul to (try to) make it C++
  */
 /*
-$Id: dsql.cpp,v 1.10 2002-04-04 13:50:07 dimitr Exp $
+$Id: dsql.cpp,v 1.11 2002-06-14 12:07:18 dimitr Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -1992,6 +1992,9 @@ void DSQL_pretty(NOD node, int column)
 		break;
 	case nod_insert:
 		verb = "insert";
+		break;
+	case nod_internal_info:
+		verb = "internal info";
 		break;
 	case nod_join:
 		verb = "join";

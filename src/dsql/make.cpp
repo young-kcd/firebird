@@ -858,6 +858,13 @@ void MAKE_desc( DSC * desc, NOD node)
 		desc->dsc_length = USERNAME_LENGTH + sizeof(USHORT);
 		return;
 
+	case nod_internal_info:
+		desc->dsc_dtype = dtype_long;
+		desc->dsc_scale = 0;
+		desc->dsc_flags = 0;
+		desc->dsc_length = sizeof(SLONG);
+		return;
+
 	case nod_current_time:
 		desc->dsc_dtype = dtype_sql_time;
 		desc->dsc_sub_type = 0;
@@ -1227,6 +1234,26 @@ STR MAKE_tagged_string(CONST UCHAR * str_, int length, CONST TEXT * charset)
 		*p++ = *str_++;
 
 	return string;
+}
+
+
+NOD MAKE_trigger_type(NOD prefix_node, NOD suffix_node)
+{
+/**************************************
+ *
+ *	M A K E _ t r i g g e r _ t y p e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Make a trigger type
+ *
+ **************************************/
+
+	long prefix = (long) prefix_node->nod_arg[0], suffix = (long) suffix_node->nod_arg[0];
+	delete prefix_node;
+	delete suffix_node;
+	return MAKE_constant((STR) (prefix + suffix - 1), CONSTANT_SLONG);
 }
 
 

@@ -296,7 +296,9 @@ typedef ENUM nod_t
 	nod_mod_field_type,
 	nod_mod_field_pos,
 	/* EXECUTE VARCHAR */
-	nod_exec_sql
+	nod_exec_sql,
+	/* Internal engine info */
+	nod_internal_info
 } NOD_TYPE;
 
 
@@ -404,6 +406,9 @@ typedef nod *NOD;
 
 #define e_exec_vc	0			/* nod_exec_sql */
 #define e_exec_vc_count	1
+
+#define e_internal_info	0		/* nod_internal_info */
+#define e_internal_info_count	1
 
 #define e_rtn_procedure 0		/* nod_procedure */
 #define e_rtn_count	1

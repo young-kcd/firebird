@@ -39,6 +39,7 @@ class str* MAKE_string(CONST UCHAR* , int);
 struct sym* MAKE_symbol(class dbb* , CONST TEXT* , USHORT,
 						   ENUM sym_type, class req*);
 class str* MAKE_tagged_string(CONST UCHAR* , int, CONST TEXT*);
+struct nod* MAKE_trigger_type(struct nod*, struct nod*);
 struct nod* MAKE_variable(class fld* , CONST TEXT* , USHORT, USHORT,
 								 USHORT, USHORT);
 
