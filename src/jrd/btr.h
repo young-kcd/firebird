@@ -197,7 +197,7 @@ const int irb_descending= 16;				/* ?Base index uses descending order */
 #define NEXT_NODE(node)	(btree_nod*)(node->btn_data + node->btn_length)
 #define NEXT_NODE_RECNR(node)	(btree_nod*)(node->btn_data + node->btn_length + sizeof(SLONG))
 
-#define LAST_NODE(page)	(btree_nod*) ((UCHAR*) page + page->btr_length)
+//#define LAST_NODE(page)	(btree_nod*) ((UCHAR*) page + page->btr_length)
 
 //#define NEXT_EXPANDED(xxx,yyy)	(btree_exp*) ((UCHAR*) xxx->btx_data + (yyy)->btn_prefix + (yyy)->btn_length)
 
