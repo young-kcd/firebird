@@ -625,7 +625,9 @@ static SLONG open_connection(SCHAR * filename,
 	if (find_address(name, &address, test_only) < 0)
 		return -1;
 
-	if (connect(channel, &address, sizeof(address)) < 0) {
+	const sockaddr* address2 = (sockaddr*) &address; 
+
+	if (connect(channel, address2, sizeof(address2)) < 0) {
 		if (test_only)
 			return (-1);
 

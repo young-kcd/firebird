@@ -67,6 +67,7 @@
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/llio_proto.h"
+#include "../jrd/os/isc_i_proto.h"
 #include "../wal/walf_proto.h"
 
 #undef MOVE_FAST
@@ -269,7 +270,7 @@ static void send_reply(CNCT, JRNH *, USHORT);
 static void set_use_count(DJB);
 static void sign_off(CNCT, LTJC *);
 static void sign_on(CNCT, LTJC *);
-static void signal_child(void);
+static void signal_child(void*);
 static void CLIB_ROUTINE signal_quit(void);
 static DJB start_database(CNCT, SCHAR *, SCHAR *, SSHORT, SLONG, ULONG);
 static bool start_server(UCHAR *, bool, bool, bool);
@@ -1063,8 +1064,10 @@ static void divorce_terminal(fd_set * mask)
 	}
 
 // Finally, get out of the process group
+// BRS dirty patch to be able to build, this call should be replaced 
+//	s = setpgrp(0,0);
+//
 
-	s = setpgrp(0, 0);
 }
 #endif
 #endif
@@ -1557,7 +1560,8 @@ static void open_mailbox(SCHAR * filename,
 	HANDLE handle;
 	hostent* host;
 	TEXT name[MAXHOSTNAMELEN];
-	int length, namelen;
+	socklen_t length;
+	int namelen;
 
 // Set up Inter-Net socket address
 
@@ -3149,7 +3153,7 @@ static void sign_on(CNCT connection,
 
 
 #if (defined UNIX_JOURNALLING)
-static void signal_child(void)
+static void signal_child(void*)
 {
 /**************************************
  *
@@ -3162,9 +3166,9 @@ static void signal_child(void)
  *	  with an ignore.
  *
  **************************************/
-	int location;
+//	int location;
 
-	wait(&location);
+//	wait(&location);
 }
 #endif
 
