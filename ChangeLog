@@ -1,3 +1,16 @@
+2004-10-11 19:18  hvlad
+
+	* firebird2/src/jrd/: evl.cpp (1.113), evl_proto.h (1.18):
+	
+	Correct declaration as Claudio suggested
+
+2004-10-11 12:00  robocop
+
+	* firebird2/src/common/classes/alloc.cpp (1.71):
+	
+	Change Pascal AND to C++ && Thanks to Marlena Miller that couldn't
+	compile.
+
 2004-10-10 22:02  dimitr
 
 	* firebird2/src/jrd/cmp.cpp (1.153):
