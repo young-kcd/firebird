@@ -4521,7 +4521,7 @@ static DSQL_NOD pass1_label(DSQL_REQ request, DSQL_NOD input)
 
 	assert(number > 0 && number <= request->req_loop_level);
 
-	return (DSQL_NOD) number;
+	return (DSQL_NOD)(SLONG) number;
 }
 
 
