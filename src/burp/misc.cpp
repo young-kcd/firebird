@@ -50,7 +50,7 @@ UCHAR *MISC_alloc_burp(ULONG size)
  *
  **************************************/
 
-	TGBL tdgbl = BURP_get_thread_data;
+	TGBL tdgbl = BURP_get_thread_data();
 
 // Add some header space to store a list of blocks allocated for this gbak 
 	size += ROUNDUP(sizeof(UCHAR *), ALIGNMENT);
@@ -90,7 +90,7 @@ void MISC_free_burp( void *free)
  *	Release an unwanted block.
  *
  **************************************/
-	TGBL tdgbl = BURP_get_thread_data;
+	TGBL tdgbl = BURP_get_thread_data();
 
 	if (free != NULL) {
 		// Point at the head of the allocated block 

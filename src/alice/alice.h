@@ -28,6 +28,7 @@
 
 #include "../jrd/ibase.h"
 #include "../jrd/thd.h"
+#include "../jrd/thd_proto.h"
 #include "../alice/all.h"
 #include "../include/fb_blk.h"
 #include "../common/classes/alloc.h"
@@ -186,20 +187,29 @@ public:
 };
 
 
-
 #ifdef SUPERSERVER
-#define ALICE_get_thread_data		((Tgbl*) THD_get_specific())
-#define ALICE_set_thread_data		THD_put_specific ((THDD) tdgbl);	\
-									tdgbl->tgbl_thd_data.thdd_type =				\
-									THDD_TYPE_TALICE
-#define ALICE_restore_thread_data	THD_restore_specific();
+inline Tgbl* ALICE_get_thread_data(){
+	return (Tgbl*) THD_get_specific();
+}
+inline void ALICE_set_thread_data(Tgbl* tdgbl){
+	THD_put_specific ((THDD) tdgbl);
+	tdgbl->tgbl_thd_data.thdd_type = THDD_TYPE_TALICE;
+}
+inline void ALICE_restore_thread_data(){
+	THD_restore_specific();
+}
 #else
 extern Tgbl* gdgbl;
 
-#define ALICE_get_thread_data		(gdgbl)
-#define ALICE_set_thread_data		gdgbl = tdgbl; \
-				tdgbl->tgbl_thd_data.thdd_type = THDD_TYPE_TGBL
-#define ALICE_restore_thread_data
+inline Tgbl* ALICE_get_thread_data(){
+	return gdgbl;
+}
+inline void ALICE_set_thread_data(Tgbl* tdgbl){
+	gdgbl = tdgbl;
+	tdgbl->tgbl_thd_data.thdd_type = THDD_TYPE_TALICE;
+}
+inline void ALICE_restore_thread_data(){
+}
 #endif
 
 #endif	// ALICE_ALICE_H

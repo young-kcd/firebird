@@ -36,6 +36,7 @@
 #include "../burp/misc_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/thd.h"
+#include "../jrd/thd_proto.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -886,20 +887,29 @@ typedef struct tgbl
 // in other modules.
 void	BURP_exit_local(int code, tgbl* tdgbl);
 
-
 #ifdef SUPERSERVER
-#define BURP_get_thread_data			((TGBL) THD_get_specific())
-#define BURP_set_thread_data		 THD_put_specific ((THDD) tdgbl); \
-				tdgbl->tgbl_thd_data.thdd_type = THDD_TYPE_TGBL
-#define BURP_restore_thread_data	 THD_restore_specific();
+inline tgbl* BURP_get_thread_data(){
+	return (tgbl*) THD_get_specific();
+}
+inline void BURP_set_thread_data(tgbl* tdgbl){
+	THD_put_specific ((THDD) tdgbl);
+	tdgbl->tgbl_thd_data.thdd_type = THDD_TYPE_TGBL;
+}
+inline void BURP_restore_thread_data(){
+	THD_restore_specific();
+}
 #else
 extern tgbl* gdgbl;
 
-#define BURP_get_thread_data			(gdgbl)
-#define BURP_set_thread_data		 gdgbl = const_cast<tgbl*>(tdgbl); \
-				tdgbl->tgbl_thd_data.thdd_type = THDD_TYPE_TGBL
-#define BURP_restore_thread_data	 
-
+inline tgbl* BURP_get_thread_data(){
+	return gdgbl;
+}
+inline void BURP_set_thread_data(tgbl* tdgbl){
+	gdgbl = tdgbl;
+	tdgbl->tgbl_thd_data.thdd_type = THDD_TYPE_TGBL;
+}
+inline void BURP_restore_thread_data(){
+}
 #endif
 
 const int FINI_DB_NOT_ONLINE		= 2;	/* database is not on-line due to
