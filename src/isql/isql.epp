@@ -53,6 +53,7 @@
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include "../dsql/keywords.h"
+#include "../jrd/gds_proto.h"
 #include <iostream>
 #include <stdlib.h>
 #include <string.h>
