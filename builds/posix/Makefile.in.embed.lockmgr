@@ -27,11 +27,11 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.lockmgr,v 1.7 2004-04-30 23:02:07 brodsom Exp $
+#  $Id: Makefile.in.embed.lockmgr,v 1.8 2004-12-28 21:12:47 skidder Exp $
 #
 ROOT=..
 ObjModuleType=boot
-CFLAGS := -DBOOT_BUILD
+CFLAGS += -DBOOT_BUILD
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform

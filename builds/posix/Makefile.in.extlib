@@ -27,11 +27,11 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.extlib,v 1.18 2004-11-02 07:15:55 skidder Exp $
+#  $Id: Makefile.in.extlib,v 1.19 2004-12-28 21:12:47 skidder Exp $
 #
 ROOT=..
 ObjModuleType=std
-CFLAGS:=@PTHREAD_CFLAGS@
+CFLAGS+=@PTHREAD_CFLAGS@
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform

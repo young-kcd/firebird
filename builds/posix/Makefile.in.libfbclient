@@ -27,11 +27,11 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbclient,v 1.25 2004-10-04 05:23:56 skidder Exp $
+#  $Id: Makefile.in.libfbclient,v 1.26 2004-12-28 21:12:47 skidder Exp $
 #
 ROOT=..
 ObjModuleType=superclient
-CFLAGS:=-DSUPERCLIENT @PTHREAD_CFLAGS@
+CFLAGS+=-DSUPERCLIENT @PTHREAD_CFLAGS@
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform

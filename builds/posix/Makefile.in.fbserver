@@ -27,11 +27,11 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.fbserver,v 1.16 2004-10-04 05:23:56 skidder Exp $
+#  $Id: Makefile.in.fbserver,v 1.17 2004-12-28 21:12:47 skidder Exp $
 #
 ROOT=..
 ObjModuleType=superserver
-CFLAGS:=-DSUPERSERVER @PTHREAD_CFLAGS@
+CFLAGS+=-DSUPERSERVER @PTHREAD_CFLAGS@
 ArchType=super
 
 include     $(ROOT)/gen/make.defaults
