@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.8 2003-10-15 11:09:07 alexpeshkoff Exp $
+dnl $Id: configure.in,v 1.141.2.9 2003-10-19 06:58:11 stryqx Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -403,7 +403,7 @@ if test "$ac_cv_sys_file_offset_bits" = "no"; then
   AC_TRY_RUN([#include <unistd.h>
     main () { 
     exit(!(sizeof(off_t) == 8));
-  }], [ac_cv_sys_file_offset_bits=64 AC_DEFINE(_FILE_OFFSET_BITS,64) AC_MSG_RESULT(yes)],AC_MSG_RESULT(no))
+  }], [ac_cv_sys_file_offset_bits=64; AC_DEFINE(_FILE_OFFSET_BITS,64) AC_MSG_RESULT(yes)],AC_MSG_RESULT(no))
 fi
 
 AC_CHECK_SIZEOF(void*)
