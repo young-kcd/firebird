@@ -193,7 +193,7 @@ struct LexerState {
 	TEXT	*last_token_bk, *line_start_bk;
 	SSHORT	lines, att_charset;
 	SSHORT	lines_bk;
-	int  prev_keyword;
+	int  prev_keyword, prev_prev_keyword;
 	USHORT	param_number;
 	/* Fields to handle FIRST/SKIP as non-reserved keywords */
 	bool limit_clause; /* We are inside of limit clause. Need to detect SKIP after FIRST */
@@ -4085,6 +4085,7 @@ void LEX_string (
     lex.lines_bk = lex.lines;
 	lex.param_number = 1;
 	lex.prev_keyword = -1;
+	lex.prev_prev_keyword = -1;
 	lex.limit_clause = false;	
 	lex.first_detection = false;
 	lex.brace_analysis = false;
@@ -4563,6 +4564,7 @@ inline static int yylex (
     BOOLEAN	*stmt_ambiguous)
 {
 	int temp = lex.yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
+	lex.prev_prev_keyword = lex.prev_keyword;
 	lex.prev_keyword = temp;
 	return temp;
 }
@@ -4965,7 +4967,12 @@ if (tok_class & CHR_LETTER)
 			(sym->sym_keyword == INSERTING ||
 			 sym->sym_keyword == UPDATING ||
 			 sym->sym_keyword == DELETING
-			)) 
+			) &&
+			/* Produce special_trigger_action_predicate only where we can handle it -
+			  in search conditions */
+			(prev_prev_keyword=='(' || prev_prev_keyword==NOT || prev_prev_keyword==AND || 
+			 prev_prev_keyword==OR || prev_prev_keyword==ON || prev_prev_keyword==HAVING || 
+			 prev_prev_keyword==WHERE || prev_prev_keyword==WHEN) ) 
 		{			
 			LexerState savedState = lex;
 			int nextToken = yylex(client_dialect,db_dialect,parser_version,stmt_ambiguous);
@@ -5035,7 +5042,15 @@ if (last_token + 1 < end)
 /* We need to swallow braces around INSERTING/UPDATING/DELETING keywords */
 /* This algorithm is not perfect, but it is ok for now. 
   It should be dropped when BOOLEAN datatype is introduced in Firebird */
-if ( c == '(' && !brace_analysis ) {
+if ( c == '(' && !brace_analysis && 
+	/* 1) We need to swallow braces in all boolean expressions
+	   2) We may swallow braces in ordinary expressions 
+	   3) We should not swallow braces after special tokens 
+	     like IF, FIRST, SKIP, VALUES and 30 more other	   
+	*/
+	(prev_keyword=='(' || prev_keyword==NOT || prev_keyword==AND || prev_keyword==OR ||
+	 prev_keyword==ON || prev_keyword==HAVING || prev_keyword==WHERE || prev_keyword==WHEN) ) 
+{
 	LexerState savedState = lex;	
 	brace_analysis = true;
 	int openCount = 0;
@@ -5063,7 +5078,13 @@ if ( c == '(' && !brace_analysis ) {
 			brace_analysis = false;
 			yylval = temp_val;
 			/* Check if we need to handle LR(2) grammar case */
-			if (prev_keyword == '(') {			
+			if (prev_keyword == '(' &&
+				/* Produce special_trigger_action_predicate only where we can handle it -
+				  in search conditions */
+				(prev_prev_keyword=='(' || prev_prev_keyword==NOT || prev_prev_keyword==AND || 
+				 prev_prev_keyword==OR || prev_prev_keyword==ON || prev_prev_keyword==HAVING || 
+				 prev_prev_keyword==WHERE || prev_prev_keyword==WHEN) ) 
+			{			
 				savedState = lex;
 				int token = yylex(client_dialect,db_dialect,parser_version,stmt_ambiguous);
 				lex = savedState;
