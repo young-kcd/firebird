@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmp.cpp,v 1.17 2003-09-11 02:13:46 brodsom Exp $
+//	$Id: cmp.cpp,v 1.18 2003-09-12 02:21:53 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -164,11 +164,11 @@ void CMP_compile_request( GPRE_REQ request)
 //  constructed.  If not, do so now. 
 
 	if (!eof_field) {
-		eof_field =
-			MET_make_field(utility_name, dtype_short, sizeof(SSHORT), FALSE);
-		count_field =
-			MET_make_field(count_name, dtype_long, sizeof(SLONG), FALSE);
-		slack_byte_field = MET_make_field(slack_name, dtype_text, 1, FALSE);
+		eof_field = MET_make_field(utility_name, dtype_short, sizeof(SSHORT),
+								   false);
+		count_field = MET_make_field(count_name, dtype_long, sizeof(SLONG),
+									 false);
+		slack_byte_field = MET_make_field(slack_name, dtype_text, 1, false);
 		reference = (REF) ALLOC(REF_LEN);
 		reference->ref_value = "0";
 		lit0 = MSC_unary(nod_literal, (GPRE_NOD) reference);
@@ -221,10 +221,10 @@ void CMP_compile_request( GPRE_REQ request)
 
 	if (request->req_flags & REQ_sql_cursor &&
 		request->req_database->dbb_base_level >= 5) {
-		direction_field =
-			MET_make_field("direction", dtype_short, sizeof(SSHORT), FALSE);
-		offset_field =
-			MET_make_field("offset", dtype_long, sizeof(SLONG), FALSE);
+		direction_field = MET_make_field("direction", dtype_short,
+										 sizeof(SSHORT), false);
+		offset_field = MET_make_field("offset", dtype_long, sizeof(SLONG),
+										 false);
 
 		reference = request->req_avalues;
 		reference->ref_field = direction_field;
@@ -977,7 +977,7 @@ static void cmp_loop( GPRE_REQ request)
 	GPRE_NOD node, list, *ptr, *end, counter;
 	POR primary;
 	GPRE_CTX for_context, update_context;
-	rse* selection;
+	gpre_rse* selection;
 	REF reference;
 
 	node = request->req_node;

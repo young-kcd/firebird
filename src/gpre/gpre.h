@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.41 2003-09-11 10:36:45 aafemt Exp $
+ * $Id: gpre.h,v 1.42 2003-09-12 02:21:53 brodsom Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -894,7 +894,7 @@ typedef struct map {
 
 /* Record selection expresion syntax node */
 
-typedef struct rse {
+typedef struct gpre_rse {
 	USHORT rse_type;			/* node type */
 	gpre_nod* rse_boolean;		/* boolean expression, if present */
 	gpre_nod* rse_first;		/* "first n" clause, if present */
@@ -906,28 +906,28 @@ typedef struct rse {
 	gpre_nod* rse_group_by;		/* list of grouping fields */
 	gpre_nod* rse_plan;			/* user-specified access plan */
 	map* rse_map;				/* map for aggregates */
-	rse* rse_aggregate;			/* Aggregate rse */
+	gpre_rse* rse_aggregate;			/* Aggregate rse */
 	enum nod_t rse_join_type;	/* Join type */
 	USHORT rse_flags;			/* flags */
 	USHORT rse_count;			/* number of relations */
 	gpre_ctx* rse_context[1];	/* context block */
-} *RSE;
+} *GPRE_RSE;
 
 
 #ifdef __cplusplus
 
 inline size_t RSE_LEN(size_t nItems)
 {
-	return offsetof(rse, rse_context) + nItems * sizeof(int*);
+	return offsetof(gpre_rse, rse_context) + nItems * sizeof(int*);
 }
 
 #else /* __cplusplus */
 
-#define RSE_LEN(nItems) (offsetof(rse, rse_context) + (nItems) * sizeof(int*))
+#define RSE_LEN(nItems) (offsetof(gpre_rse, rse_context) + (nItems) * sizeof(int*))
 
 #endif /* __cplusplus */
 
-//#define RSE_LEN(cnt) (sizeof(rse) + (cnt - 1) * sizeof (int *))
+//#define RSE_LEN(cnt) (sizeof(gpre_rse) + (cnt - 1) * sizeof (int *))
 
 #define RSE_singleton 1
 
@@ -942,7 +942,7 @@ typedef struct gpre_rel {
 	dbb* rel_database;			/* parent database */
 	gpre_rel* rel_next;			/* next relation in database */
 	bool rel_meta;				/* if true, created for a metadata operation */
-	rse* rel_view_rse;
+	gpre_rse* rel_view_rse;
 	txt* rel_view_text;			/* source for VIEW definition */
 	sym* rel_owner;				/* owner of relation, if any */
 	cnstrt* rel_constraints;	/* linked list of constraints defined
@@ -1144,7 +1144,7 @@ typedef struct gpre_req {
 	ref* req_index;				/* index variable */
 	ref* req_references;		/* fields referenced in context */
 	map* req_map;				/* map for aggregates, etc */
-	rse* req_rse;				/* record selection expression */
+	gpre_rse* req_rse;				/* record selection expression */
 	por* req_ports;				/* linked list of ports */
 	por* req_primary;			/* primary input or output port */
 	por* req_sync;				/* synchronization port */
@@ -1195,7 +1195,7 @@ typedef struct gpre_ctx {
 	TEXT *ctx_alias;			/* holds SQL alias for passing to engine */
 	gpre_prc* ctx_procedure;	/* procedure for context */
 	gpre_nod* ctx_prc_inputs;	/* procedure input parameters */
-	rse* ctx_stream;			/* stream for context */
+	gpre_rse* ctx_stream;			/* stream for context */
 } *GPRE_CTX;
 
 #define CTX_LEN sizeof(gpre_ctx)

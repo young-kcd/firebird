@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.29 2003-09-11 02:13:45 brodsom Exp $
+//  $Id: par.cpp,v 1.30 2003-09-12 02:21:53 brodsom Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -550,7 +550,7 @@ ACT PAR_database(bool sql, const TEXT* base_directory)
 	if (sw_language != lang_fortran)
 		MATCH(KW_SEMI_COLON);
 
-	if (!MET_database(db, TRUE)) {
+	if (!MET_database(db, true)) {
 		sprintf(s, "Couldn't access database %s = '%s'",
 				db->dbb_name->sym_string, db->dbb_filename);
 		CPR_error(s);
@@ -943,7 +943,7 @@ GPRE_FLD PAR_null_field()
 		return flag_field;
 
 	flag_field = MET_make_field("gds__null_flag", dtype_short, sizeof(SSHORT),
-								FALSE);
+								false);
 
 	return flag_field;
 }
@@ -1182,7 +1182,7 @@ static ACT par_any()
 	SYM symbol;
 	ACT action, function;
 	GPRE_REQ request;
-	RSE rec_expr;
+	GPRE_RSE rec_expr;
 	GPRE_CTX context;
 	GPRE_REL relation;
 
@@ -2073,7 +2073,7 @@ static ACT par_for()
 	SYM symbol, temp;
 	ACT action;
 	GPRE_REQ request;
-	RSE rec_expr;
+	GPRE_RSE rec_expr;
 	GPRE_CTX context, *ptr, *end;
 	GPRE_REL relation;
 	TEXT s[128];
@@ -2838,7 +2838,7 @@ static ACT par_start_stream()
 {
 	ACT action;
 	GPRE_REQ request;
-	RSE rec_expr;
+	GPRE_RSE rec_expr;
 	GPRE_CTX context, *ptr, *end;
 	GPRE_REL relation;
 	SYM cursor;

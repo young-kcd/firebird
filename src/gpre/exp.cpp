@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exp.cpp,v 1.18 2003-09-11 02:13:45 brodsom Exp $
+//	$Id: exp.cpp,v 1.19 2003-09-12 02:21:53 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -732,7 +732,7 @@ GPRE_REL EXP_relation(void)
 //		parsed the <contect> IN part of the expression.
 //  
 
-RSE EXP_rse(GPRE_REQ request, SYM initial_symbol)
+GPRE_RSE EXP_rse(GPRE_REQ request, SYM initial_symbol)
 {
 	GPRE_NOD first = NULL;
 	GPRE_NOD item;
@@ -740,7 +740,7 @@ RSE EXP_rse(GPRE_REQ request, SYM initial_symbol)
 	GPRE_NOD sort;
 	GPRE_NOD *ptr;
 	GPRE_NOD upcase;
-	RSE rec_expr;
+	GPRE_RSE rec_expr;
 	GPRE_CTX context;
 	LLS items;
 	LLS directions;
@@ -750,7 +750,7 @@ RSE EXP_rse(GPRE_REQ request, SYM initial_symbol)
 
 	if (MATCH(KW_FIRST)) {
 		if (!count_field)
-			count_field = MET_make_field("jrd_count", dtype_long, 4, FALSE);
+			count_field = MET_make_field("jrd_count", dtype_long, 4, false);
 		first = par_value(request, count_field);
 	}
 
@@ -778,7 +778,7 @@ RSE EXP_rse(GPRE_REQ request, SYM initial_symbol)
 
 //  build rse node 
 
-	rec_expr = (RSE) ALLOC(RSE_LEN(count));
+	rec_expr = (GPRE_RSE) ALLOC(RSE_LEN(count));
 	rec_expr->rse_count = count;
 	rec_expr->rse_first = first;
 	rec_expr->rse_boolean = boolean;
@@ -882,7 +882,7 @@ RSE EXP_rse(GPRE_REQ request, SYM initial_symbol)
 //		selection expression.
 //  
 
-void EXP_rse_cleanup( RSE rs)
+void EXP_rse_cleanup( GPRE_RSE rs)
 {
 	GPRE_NOD node;
 	GPRE_CTX *context, *end;
@@ -906,7 +906,7 @@ void EXP_rse_cleanup( RSE rs)
 
 	if (node = rs->rse_union)
 		for (i = 0; i < node->nod_count; i++)
-			EXP_rse_cleanup((RSE) node->nod_arg[i]);
+			EXP_rse_cleanup((GPRE_RSE) node->nod_arg[i]);
 }
 
 
@@ -1110,7 +1110,7 @@ static GPRE_NOD par_and( GPRE_REQ request)
 //  
 //		Parse a array element reference
 //		(array name and subscript list)
-//		in an RSE.
+//		in an GPRE_RSE.
 //  
 
 static GPRE_NOD par_array(GPRE_REQ request,
@@ -1142,7 +1142,7 @@ static GPRE_NOD par_array(GPRE_REQ request,
 	if (paren || bracket) {
 		if (!subscript_field)
 			subscript_field = MET_make_field("gds_array_subscript", dtype_long,
-											 4, FALSE);
+											 4, false);
 
 		/*  Parse a commalist of subscripts and build a tree of index nodes  */
 
@@ -1493,7 +1493,7 @@ static GPRE_NOD par_relational( GPRE_REQ request)
 		expr = MAKE_NODE(nod_any, 1);
 		expr->nod_count = 0;
 		expr->nod_arg[0] = (GPRE_NOD) EXP_rse(request, 0);
-		EXP_rse_cleanup((RSE) expr->nod_arg[0]);
+		EXP_rse_cleanup((GPRE_RSE) expr->nod_arg[0]);
 		return expr;
 	}
 
@@ -1501,7 +1501,7 @@ static GPRE_NOD par_relational( GPRE_REQ request)
 		expr = MAKE_NODE(nod_unique, 1);
 		expr->nod_count = 0;
 		expr->nod_arg[0] = (GPRE_NOD) EXP_rse(request, 0);
-		EXP_rse_cleanup((RSE) expr->nod_arg[0]);
+		EXP_rse_cleanup((GPRE_RSE) expr->nod_arg[0]);
 		return expr;
 	}
 

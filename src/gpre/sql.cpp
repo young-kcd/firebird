@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.21 2003-09-11 10:36:45 aafemt Exp $
+//	$Id: sql.cpp,v 1.22 2003-09-12 02:21:52 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -2055,7 +2055,7 @@ static ACT act_create_view(void)
 
 //  parse the view SELECT 
 
-	RSE select = SQE_select(request, true);
+	GPRE_RSE select = SQE_select(request, true);
 	relation->rel_view_rse = select;
 	EXP_rse_cleanup(select);
 
@@ -2377,7 +2377,7 @@ static ACT act_declare_table( SYM symbol, DBB db)
 
 	relation->rel_next = db->dbb_relations;
 	db->dbb_relations = relation;
-	GPRE_FLD dbkey = MET_make_field("rdb$db_key", dtype_text, 8, FALSE);
+	GPRE_FLD dbkey = MET_make_field("rdb$db_key", dtype_text, 8, false);
 	relation->rel_dbkey = dbkey;
 	dbkey->fld_flags |= FLD_dbkey | FLD_text | FLD_charset;
 	dbkey->fld_ttype = ttype_binary;
@@ -2578,7 +2578,7 @@ static ACT act_delete(void)
 		}
 		request->req_trans = transaction;
 		GPRE_REL relation = SQL_relation(request, r_name, db_name, owner_name, true);
-		rse* selection = request->req_rse;
+		gpre_rse* selection = request->req_rse;
 		GPRE_CTX context = NULL;
 		SSHORT i;
 		for (i = 0; i < selection->rse_count; i++) {
@@ -2605,7 +2605,7 @@ static ACT act_delete(void)
 
 	GPRE_REL relation = SQL_relation(request, r_name, db_name, owner_name, true);
 
-	rse* selection = (rse*) ALLOC(RSE_LEN(1));
+	gpre_rse* selection = (gpre_rse*) ALLOC(RSE_LEN(1));
 	request->req_rse = selection;
 	selection->rse_count = 1;
 	GPRE_CTX context = MAKE_CONTEXT(request);
@@ -3108,7 +3108,7 @@ static ACT act_fetch(void)
 	}
 	else if (MATCH(KW_INTO)) {
 		action->act_object = (REF) SQE_list(SQE_variable, request, false);
-		RSE select = request->req_rse;
+		GPRE_RSE select = request->req_rse;
 		into(request, select->rse_fields, (GPRE_NOD) action->act_object);
 	}
 
@@ -3483,7 +3483,7 @@ static ACT act_insert(void)
 	request->req_type = REQ_mass_update;
 	request->req_contexts = NULL;
 	request->req_update = context;
-	RSE select = SQE_select(request, false);
+	GPRE_RSE select = SQE_select(request, false);
 	request->req_rse = select;
 	context->ctx_next = request->req_contexts;
 	request->req_contexts = context;
@@ -3962,7 +3962,7 @@ static ACT act_select(void)
 {
 	GPRE_REQ request = MAKE_REQUEST(REQ_for);
 	par_options(&request->req_trans);
-	RSE select = SQE_select(request, false);
+	GPRE_RSE select = SQE_select(request, false);
 	request->req_rse = select;
 
 	if (!MATCH(KW_SEMI_COLON)) {
@@ -4421,7 +4421,7 @@ static ACT act_update(void)
 
 		/* Given the target relation, find the input context for the modify */
 
-		RSE select = request->req_rse;
+		GPRE_RSE select = request->req_rse;
 		SSHORT i;
 		for (i = 0; i < select->rse_count; i++) {
 			input_context = select->rse_context[i];
@@ -4519,7 +4519,7 @@ static ACT act_update(void)
 
 //  Generate record select expression, then resolve input values 
 
-	RSE select = (RSE) ALLOC(RSE_LEN(1));
+	GPRE_RSE select = (GPRE_RSE) ALLOC(RSE_LEN(1));
 	request->req_rse = select;
 	select->rse_count = 1;
 	select->rse_context[0] = input_context;
@@ -4565,8 +4565,7 @@ static ACT act_update(void)
 		if (SQL_DIALECT_V5 == sw_sql_dialect) {
 			for (int arg_num = 0; arg_num <= 1; arg_num++)
 				if (nod_field == set_item->nod_arg[arg_num]->nod_type) {
-					USHORT field_dtype =
-						((REF)
+					USHORT field_dtype =((REF)
 						 (set_item->nod_arg[arg_num]->
 						  nod_arg[0]))->ref_field->fld_dtype;
 					if ((dtype_sql_date == field_dtype)
@@ -5047,7 +5046,7 @@ static GPRE_FLD make_field( GPRE_REL relation)
 	char s[ERROR_LENGTH];
 
 	SQL_resolve_identifier("<column name>", s);
-	GPRE_FLD field = MET_make_field(s, 0, 0, TRUE);
+	GPRE_FLD field = MET_make_field(s, 0, 0, true);
 	field->fld_relation = relation;
 	field->fld_flags |= FLD_meta;
 	ADVANCE_TOKEN;

@@ -25,14 +25,14 @@
 #define GPRE_GPRE_META_H
 
 extern GPRE_FLD MET_context_field(GPRE_CTX, char *);
-extern BOOLEAN MET_database(DBB, BOOLEAN);
-extern USHORT MET_domain_lookup(GPRE_REQ, GPRE_FLD, char *);
+extern bool MET_database(DBB, bool);
+extern bool MET_domain_lookup(GPRE_REQ, GPRE_FLD, char *);
 extern GPRE_FLD MET_field(GPRE_REL, char *);
 extern GPRE_NOD MET_fields(GPRE_CTX);
 extern void MET_fini(DBB);
 extern SCHAR *MET_generator(TEXT *, DBB);
-extern BOOLEAN MET_get_column_default(GPRE_REL, TEXT *, TEXT *, USHORT);
-extern BOOLEAN MET_get_domain_default(DBB, TEXT *, TEXT *, USHORT);
+extern bool MET_get_column_default(GPRE_REL, TEXT *, TEXT *, USHORT);
+extern bool MET_get_domain_default(DBB, TEXT *, TEXT *, USHORT);
 extern USHORT MET_get_dtype(USHORT, USHORT, USHORT *);
 extern LLS MET_get_primary_key(DBB, TEXT *);
 extern GPRE_PRC MET_get_procedure(DBB, TEXT *, TEXT *);
@@ -42,10 +42,10 @@ extern UDF MET_get_udf(DBB, TEXT *);
 extern GPRE_REL MET_get_view_relation(GPRE_REQ, char *, char *, USHORT);
 extern IND MET_index(DBB, TEXT *);
 extern void MET_load_hash_table(DBB);
-extern GPRE_FLD MET_make_field(SCHAR *, SSHORT, SSHORT, BOOLEAN);
+extern GPRE_FLD MET_make_field(SCHAR *, SSHORT, SSHORT, bool);
 extern IND MET_make_index(SCHAR *);
 extern GPRE_REL MET_make_relation(SCHAR *);
-extern BOOLEAN MET_type(GPRE_FLD, TEXT *, SSHORT *);
-extern BOOLEAN MET_trigger_exists(DBB, TEXT *);
+extern bool MET_type(GPRE_FLD, TEXT *, SSHORT *);
+extern bool MET_trigger_exists(DBB, TEXT *);
 
 #endif /* GPRE_GPRE_META_H */

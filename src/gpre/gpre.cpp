@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.33 2003-09-11 02:13:45 brodsom Exp $
+//  $Id: gpre.cpp,v 1.34 2003-09-12 02:21:53 brodsom Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -509,7 +509,7 @@ int main(int argc, char* argv[])
 			/* give it the file name and try to open it */
 
 			db->dbb_filename = db_filename;
-			if (!MET_database(db, TRUE))
+			if (!MET_database(db, true))
 				CPR_exit(FINI_ERROR);
 			if (sw_external)
 				db->dbb_scope = DBB_EXTERN;

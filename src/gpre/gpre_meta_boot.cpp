@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.20 2003-09-11 10:36:45 aafemt Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.21 2003-09-12 02:21:53 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -117,7 +117,8 @@ GPRE_FLD MET_context_field( GPRE_CTX context, char *string)
  *		database can't be opened, return FALSE.
  */  
 
-BOOLEAN MET_database(DBB db, BOOLEAN print_version)
+bool MET_database(DBB db,
+				  bool print_version)
 {
 	/* 
 	   ** Each info item requested will return 
@@ -133,11 +134,11 @@ BOOLEAN MET_database(DBB db, BOOLEAN print_version)
 #ifndef REQUESTER
 	if (sw_language == lang_internal) {
 		JRDMET_init(db);
-		return TRUE;
+		return true;
 	}
 #endif
 	assert(0);
-	return FALSE;
+	return false;
 }
 
 
@@ -147,7 +148,9 @@ BOOLEAN MET_database(DBB db, BOOLEAN print_version)
  *		Initialize the size of the field.
  */  
 
-USHORT MET_domain_lookup(GPRE_REQ request, GPRE_FLD field, char *string)
+bool MET_domain_lookup(GPRE_REQ request,
+					   GPRE_FLD field, 
+					   char *string)
 {
 	SYM symbol;
 	SCHAR name[NAME_SIZE];
@@ -171,14 +174,14 @@ USHORT MET_domain_lookup(GPRE_REQ request, GPRE_FLD field, char *string)
 			field->fld_charset_id = d_field->fld_charset_id;
 			field->fld_collate_id = d_field->fld_collate_id;
 			field->fld_char_length = d_field->fld_char_length;
-			return TRUE;
+			return true;
 		}
 
 	if (!request)
-		return FALSE;
+		return false;
 
 	assert(0);
-	return FALSE;
+	return false;
 }
 
 
@@ -187,14 +190,14 @@ USHORT MET_domain_lookup(GPRE_REQ request, GPRE_FLD field, char *string)
  *		Gets the default value for a domain of an existing table
  */  
 
-BOOLEAN MET_get_domain_default(DBB db,
-							   TEXT * domain_name,
-							   TEXT * buffer,
-							   USHORT buff_length)
+bool MET_get_domain_default(DBB db,
+							TEXT * domain_name,
+							TEXT * buffer,
+							USHORT buff_length)
 {
 
 	assert(0);
-	return FALSE;
+	return false;
 }
 
 
@@ -210,12 +213,13 @@ BOOLEAN MET_get_domain_default(DBB db,
  *		Reads the system tables RDB$FIELDS and RDB$RELATION_FIELDS.
  */  
 
-BOOLEAN MET_get_column_default(GPRE_REL relation,
-							   TEXT * column_name,
-							   TEXT * buffer, USHORT buff_length)
+bool MET_get_column_default(GPRE_REL relation,
+							TEXT * column_name,
+							TEXT * buffer,
+							USHORT buff_length)
 {
 	assert(0);
-	return FALSE;
+	return false;
 }
 
 
@@ -573,7 +577,7 @@ UDF MET_get_udf(DBB db, TEXT * string)
 
 /*____________________________________________________________
  *  
- *		Return TRUE if the passed view_name represents a 
+ *		Return relation if the passed view_name represents a 
  *		view with the passed relation as a base table 
  *		(the relation could be an alias).
  */  
@@ -644,7 +648,9 @@ void MET_load_hash_table( DBB db)
  */  
 
 GPRE_FLD MET_make_field(SCHAR * name,
-				   SSHORT dtype, SSHORT length, BOOLEAN insert_flag)
+						SSHORT dtype,
+						SSHORT length,
+						bool insert_flag)
 {
 	GPRE_FLD field;
 	SYM symbol;
@@ -699,7 +705,9 @@ GPRE_REL MET_make_relation(SCHAR * name)
  *		Lookup a type name for a field.
  */  
 
-BOOLEAN MET_type(GPRE_FLD field, TEXT * string, SSHORT * ptr)
+bool MET_type(GPRE_FLD field,
+			  TEXT * string,
+			  SSHORT * ptr)
 {
 	SYM symbol;
 	TYP type;
@@ -707,13 +715,14 @@ BOOLEAN MET_type(GPRE_FLD field, TEXT * string, SSHORT * ptr)
 	for (symbol = HSH_lookup(string); symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_type &&
 			(type = (TYP) symbol->sym_object) &&
-			(!type->typ_field || type->typ_field == field)) {
+			(!type->typ_field || type->typ_field == field))
+		{
 			*ptr = type->typ_value;
-			return TRUE;
+			return true;
 		}
 
 	assert(0);
-	return FALSE;
+	return false;
 }
 
 
@@ -721,18 +730,19 @@ BOOLEAN MET_type(GPRE_FLD field, TEXT * string, SSHORT * ptr)
  *  
  *		Lookup an index for a database.
  *  
- *  Return: TRUE if the trigger exists
- *		   FALSE otherwise
+ *  Return: true if the trigger exists
+ *		   false otherwise
  */  
 
-BOOLEAN MET_trigger_exists(DBB db, TEXT * trigger_name)
+bool MET_trigger_exists(DBB db,
+						TEXT * trigger_name)
 {
 	SCHAR name[NAME_SIZE];
 
 	strcpy(name, trigger_name);
 
 	assert(0);
-	return FALSE;
+	return false;
 }
 
 #ifdef NOT_USED_OR_REPLACED
@@ -903,9 +913,8 @@ void DLL_EXPORT ERR_bugcheck(int number)
 {
 }
 
-BOOLEAN DLL_EXPORT ERR_post(ISC_STATUS status, ...)
+void DLL_EXPORT ERR_post(ISC_STATUS status, ...)
 {
-	return TRUE;
 }
 
 } // extern "C"

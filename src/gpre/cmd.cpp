@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmd.cpp,v 1.13 2003-09-11 02:13:46 brodsom Exp $
+//	$Id: cmd.cpp,v 1.14 2003-09-12 02:21:53 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -1123,7 +1123,8 @@ static void create_set_default_trg(GPRE_REQ request,
 				/* search for domain in db system tables */
 				if (MET_get_domain_default(relation->rel_database,
 										   search_for_domain,
-										   default_val, sizeof(default_val))) {
+										   default_val, sizeof(default_val)))
+				{
 					create_default_blr(request, default_val,
 									   sizeof(default_val));
 				}
@@ -1914,7 +1915,7 @@ static bool create_view(GPRE_REQ request,
 	SYM symbol;
 	SSHORT position, non_updateable = 0;
 	TEXT *view_source;
-	RSE select;
+	GPRE_RSE select;
 	GPRE_TRG trigger;
 	GPRE_CTX contexts[3];
 	SSHORT count;
@@ -2904,7 +2905,7 @@ static void put_trigger_blr(
 //____________________________________________________________
 //  
 //		Generate BLR for a trigger for a VIEW WITH CHECK OPTION.
-//		This is messy, the RSE passed in is mutilated by the end.
+//		This is messy, the GPRE_RSE passed in is mutilated by the end.
 //		Fields in the where clause and in the VIEW definition, are replaced
 //		by the VIEW fields.
 //		For fields in the where clause but not in the VIEW definition,
@@ -2920,9 +2921,9 @@ static void put_view_trigger_blr(
 GPRE_NOD view_boolean, GPRE_CTX * contexts, GPRE_NOD set_list)
 {
 	USHORT length, offset;
-	RSE node;
+	GPRE_RSE node;
 
-	node = (RSE) trigger->trg_boolean;
+	node = (GPRE_RSE) trigger->trg_boolean;
 	STUFF(operator_);
 	offset = request->req_blr - request->req_base;
 	STUFF_WORD(0);
@@ -2987,7 +2988,7 @@ GPRE_NOD view_boolean, GPRE_CTX * contexts, GPRE_NOD set_list)
 //____________________________________________________________
 //  
 //		Replace fields in given rse by fields referenced in VIEW.
-//		if fields in RSE are not part of VIEW definition, then they 
+//		if fields in GPRE_RSE are not part of VIEW definition, then they 
 //		are not changed.
 //		If search list is not specified, then only the context of the fields
 //		in the rse is chaged to contexts[2].

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cme.cpp,v 1.8 2003-09-10 19:48:53 brodsom Exp $
+//	$Id: cme.cpp,v 1.9 2003-09-12 02:21:53 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -352,7 +352,7 @@ void CME_expr(GPRE_NOD node, GPRE_REQ request)
 	case nod_unique:
 //  count2 next line would be deleted 
 	case nod_count:
-		CME_rse((RSE) node->nod_arg[0], request);
+		CME_rse((GPRE_RSE) node->nod_arg[0], request);
 		break;
 
 	case nod_max:
@@ -363,12 +363,12 @@ void CME_expr(GPRE_NOD node, GPRE_REQ request)
 //  
 //   case nod_count:
 //  
-		CME_rse((RSE) node->nod_arg[0], request);
+		CME_rse((GPRE_RSE) node->nod_arg[0], request);
 		CME_expr(node->nod_arg[1], request);
 		break;
 
 	case nod_via:
-		CME_rse((RSE) node->nod_arg[0], request);
+		CME_rse((GPRE_RSE) node->nod_arg[0], request);
 		CME_expr(node->nod_arg[1], request);
 		CME_expr(node->nod_arg[2], request);
 	}
@@ -988,7 +988,7 @@ void CME_get_dtype( GPRE_NOD node, GPRE_FLD f)
 
 void CME_relation(GPRE_CTX context, GPRE_REQ request)
 {
-	RSE rs_stream;
+	GPRE_RSE rs_stream;
 	GPRE_REL relation;
 	GPRE_PRC procedure;
 	GPRE_NOD inputs, *ptr, *end;
@@ -1058,10 +1058,10 @@ void CME_relation(GPRE_CTX context, GPRE_REQ request)
 //		Generate blr for an rse node.
 //  
 
-void CME_rse(rse* selection, GPRE_REQ request)
+void CME_rse(gpre_rse* selection, GPRE_REQ request)
 {
 	GPRE_NOD temp, union_node, *ptr, *end, list;
-	RSE sub_rse;
+	GPRE_RSE sub_rse;
 	SSHORT i;
 
 	if (selection->rse_join_type == (NOD_T) 0)
@@ -1087,7 +1087,7 @@ void CME_rse(rse* selection, GPRE_REQ request)
 		ptr = union_node->nod_arg;
 		for (end = ptr + union_node->nod_count; ptr < end; ptr++)
 		{
-			sub_rse = (RSE) * ptr;
+			sub_rse = (GPRE_RSE) * ptr;
 			CME_rse(sub_rse, request);
 			cmp_map(sub_rse->rse_map, request);
 		}
@@ -1285,7 +1285,7 @@ static GPRE_NOD cmp_array( GPRE_NOD node, GPRE_REQ request)
 //____________________________________________________________
 //  
 //		Compile up a subscripted array reference
-//       from an RSE and output blr for this reference
+//       from an GPRE_RSE and output blr for this reference
 //  
 
 static GPRE_NOD cmp_array_element( GPRE_NOD node, GPRE_REQ request)
