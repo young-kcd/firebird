@@ -39,7 +39,6 @@ bool		ISC_check_if_remote(const Firebird::PathName&, bool);
 void		ISC_expand_filename(Firebird::PathName&, bool);
 
 // This form of ISC_expand_filename makes epp files happy
-// It's explicit that expanded amy be equal to unexpanded
 inline int	ISC_expand_filename(const TEXT* unexpanded, 
 								USHORT len_unexpanded, 
 								TEXT* expanded, 
@@ -49,7 +48,7 @@ inline int	ISC_expand_filename(const TEXT* unexpanded,
 	Firebird::PathName pn(unexpanded, 
 			len_unexpanded ? len_unexpanded : strlen(unexpanded));
 	ISC_expand_filename(pn, expand_share);
-	return pn.saveTo(expanded, len_expanded);
+	return pn.copyTo(expanded, len_expanded);
 }
 
 #ifdef VMS

@@ -907,7 +907,7 @@ static bool add_shadow( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			expanded_fname = F.RDB$FILE_NAME;
 			ISC_expand_filename(expanded_fname, false);
 			MODIFY F USING
-				expanded_fname.saveTo(F.RDB$FILE_NAME, sizeof(F.RDB$FILE_NAME));
+				expanded_fname.copyTo(F.RDB$FILE_NAME, sizeof(F.RDB$FILE_NAME));
 			END_MODIFY;
 
 			for (shadow = dbb->dbb_shadow; shadow; shadow = shadow->sdw_next)

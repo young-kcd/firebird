@@ -209,15 +209,15 @@ namespace Firebird
 		void reserve(size_type n = 0);
 		void resize(size_type n, char_type c = ' ');
 
+/*	deprecated STL-compliant method - unsafe!
 		inline size_type copy_from(pointer s, size_type n, size_type pos = 0) const
 		{
 			AdjustRange(length(), pos, n);
 			memcpy(s, c_str() + pos, n);
 			return n;
 		}
+ */
 
-		size_type copy_to(pointer destination, size_type bufsize) const;
-		
 /*		inline void swap(AbstractString& str) {
 			Storage *tmp = StringData;
 			StringData = str.StringData;
@@ -346,11 +346,15 @@ namespace Firebird
 		inline void alltrim(const_pointer ToTrim = " ") {
 			baseTrim(TrimBoth, ToTrim);
 		}
+
 		bool LoadFromFile(FILE *file);
 		void vprintf(const char* Format, va_list params);
 		void printf(const char* Format, ...);
-		inline int saveTo(char* to, size_type toSize) const
+
+		inline int copyTo(pointer to, size_type toSize) const
 		{
+			fb_assert(to);
+			fb_assert(toSize);
 			if (--toSize > length())
 			{
 				toSize = length();

@@ -1385,7 +1385,7 @@ SSHORT API_ROUTINE gds__msg_format(void*       handle,
 			fb_utils::snprintf(formatted, size, "message system code %d", n);
 			s += formatted;
 		}
-		s.copy_to(formatted, size);
+		s.copyTo(formatted, size);
 	}
 
 	const USHORT l = strlen(formatted);

@@ -818,7 +818,7 @@ void DYN_define_file(Global*		gbl,
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$FILES 
-        temp_f.saveTo(X.RDB$FILE_NAME, sizeof(X.RDB$FILE_NAME));
+        temp_f.copyTo(X.RDB$FILE_NAME, sizeof(X.RDB$FILE_NAME));
 		X.RDB$SHADOW_NUMBER = (SSHORT)shadow_number;
 		X.RDB$FILE_FLAGS = 0;
 		X.RDB$FILE_FLAGS.NULL = FALSE;

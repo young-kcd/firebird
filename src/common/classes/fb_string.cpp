@@ -107,18 +107,6 @@ namespace Firebird {
 		memset(stringBuffer, c, sizeL);
 	}
 	
-	AbstractString::size_type AbstractString::copy_to(pointer destination,
-		size_type bufsize) const
-	{
-		if (!destination || !bufsize)
-			return 0;
-
-		const size_type copy_len = length() < bufsize ? length() : bufsize - 1;
-		memcpy(destination, stringBuffer, copy_len);
-		destination[copy_len] = 0;
-		return copy_len;
-	}
-
 	void AbstractString::AdjustRange(size_type length, size_type& pos, size_type& n) {
 		if (pos == npos) {
 			pos = length > n ? length - n : 0;
