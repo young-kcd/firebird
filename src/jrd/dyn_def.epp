@@ -914,7 +914,6 @@ void DYN_define_difference(GBL		gbl,
  **************************************/
 	TDBB tdbb;
 	DBB dbb;
-	UCHAR verb;
 	volatile BLK request;
 	USHORT found = FALSE;
 	volatile SSHORT id;

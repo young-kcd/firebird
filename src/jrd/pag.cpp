@@ -544,7 +544,6 @@ int PAG_replace_entry_first(HDR header, USHORT type, SSHORT len, UCHAR * entry)
  **************************************/
 	DBB dbb;
 	UCHAR *q, *p;
-	int free_space;
 	TDBB tdbb;
 
 	tdbb = GET_THREAD_DATA;
