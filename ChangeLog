@@ -1,3 +1,71 @@
+2003-09-18 23:58  brodsom
+
+	* firebird2/src/jrd/svc.cpp:
+	
+	Macro cleaning Variable type change (Thanks to Claudio)
+
+2003-09-18 23:57  brodsom
+
+	* firebird2/src/jrd/sort.cpp:
+	
+	Correction (Thanks to Claudio)
+
+2003-09-18 23:56  brodsom
+
+	* firebird2/src/burp/: backup.epp, burp.cpp, burp.h, burpswi.h,
+	canonical.cpp, mvol.cpp, restore.epp, spit.cpp, spit.h:
+	
+	Cleaning macros
+
+2003-09-18 19:38  brodsom
+
+	* firebird2/src/alice/aliceswi.h:
+	
+	Cleaning macros
+
+2003-09-18 12:56  brodsom
+
+	* firebird2/src/alice/: alice.cpp, alice.h, alice_meta.epp,
+	aliceswi.h, blk.h, exe.cpp, lls.h, tdr.cpp:
+	
+	-Macro cleaning.  -remove FB_FROM_ALICE_CPP, it is unused
+	(set_thread_data is only used in alice.cpp) and contains
+	uncompilable code inside.
+
+2003-09-18 12:28  aafemt
+
+	* firebird2/src/misc/: align.cpp, blrtable.cpp, print.cpp:
+	
+	'struct' removal
+
+2003-09-18 12:24  aafemt
+
+	* firebird2/src/lock/: driver.cpp, lock.cpp, lock.h, print.cpp,
+	ulimit.cpp:
+	
+	'struct' cleanup
+
+2003-09-18 12:20  aafemt
+
+	* firebird2/src/journal/: console.cpp, gjrn.cpp, journal.h,
+	miscj.cpp, miscj_proto.h, oldr.cpp, rebuild.epp, server.epp:
+	
+	'struct' cleanup
+
+2003-09-18 01:42  arnobrinkman
+
+	* firebird2/src/isql/isql.epp:
+	
+	Change wrong used constant (Suggested by Claudio V.)
+
+2003-09-18 01:24  arnobrinkman
+
+	* firebird2/src/jrd/: btr.cpp, btr_proto.h, nav.cpp, nav_proto.h,
+	rse.cpp:
+	
+	Before starting with the new index-structure i do some code
+	clean-up.
+
 2003-09-17 12:49  aafemt
 
 	* firebird2/src/isql/: extract.epp, isql.epp, isql.h, isql_win.cpp,
