@@ -1,3 +1,54 @@
+2002-12-04 21:05  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	bugfix: no index was used for STARTING WITH and IS NULL comparison
+	inside OR structures.
+
+2002-12-04 19:56  arnobrinkman
+
+	* firebird2/src/jrd/cmp.cpp:
+	
+	no message
+
+2002-12-04 19:50  arnobrinkman
+
+	* firebird2/src/jrd/cmp.cpp:
+	
+	no message
+
+2002-12-04 19:39  arnobrinkman
+
+	* firebird2/src/jrd/: cmp.cpp, opt.cpp:
+	
+	Cosmetic changes with thanks to Claudio V.  A better/logical change
+	so that the optimizer can use indices in sub-selects and
+	aggregate-statements.
+
+2002-12-04 17:23  skidder
+
+	* firebird2/doc/WhatsNew:
+	
+	Little changes in Alpha 5 changes description
+
+2002-12-04 16:15  dimitr
+
+	* firebird2/doc/WhatsNew:
+	
+	Added alpha 5 changes.
+
+2002-12-04 08:07  eku
+
+	* firebird2/src/jrd/par.cpp:
+	
+	Fixed bug introduced with FB_NELEM. Thanks to Claudio Valderr.
+
+2002-12-04 08:06  eku
+
+	* firebird2/src/intl/dtest.c:
+	
+	Removed unused variable.
+
 2002-12-03 19:02  dimitr
 
 	* firebird2/src/: dsql/node.h, dsql/parse.cpp, dsql/parse.y,
