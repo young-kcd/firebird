@@ -209,12 +209,6 @@
 /* IPC map name */
 #define FB_IPC_NAME "FirebirdIPI"
 
-/* gpre built-in language support (C/C++ are mandatory) */
-#define GPRE_ADA
-#define GPRE_COBOL
-#undef GPRE_FORTRAN
-#define GPRE_PASCAL
-
 /* Maximum allowed pathname length */
 #define MAXPATHLEN 260 // should correspond to MAX_PATH define in windef.h
 

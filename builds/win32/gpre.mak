@@ -22,8 +22,12 @@ CLEAN :
 	-@erase "$(INTDIR)\cmp.sbr"
 	-@erase "$(INTDIR)\cob.obj"
 	-@erase "$(INTDIR)\cob.sbr"
+	-@erase "$(INTDIR)\ftn.obj"
+	-@erase "$(INTDIR)\ftn.sbr"
 	-@erase "$(INTDIR)\dsc.obj"
 	-@erase "$(INTDIR)\dsc.sbr"
+	-@erase "$(INTDIR)\isc.obj"
+	-@erase "$(INTDIR)\isc.sbr"
 	-@erase "$(INTDIR)\exp.obj"
 	-@erase "$(INTDIR)\exp.sbr"
 	-@erase "$(INTDIR)\fb_exception.obj"
@@ -66,7 +70,7 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP_PROJ=/nologo /MD /W3 /GX /Ot /Oi /Oy /Ob2 /I "../../src/include" /D "NDEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR"$(INTDIR)\\" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+CPP_PROJ=/nologo /MD /W3 /GX /Ot /Oi /Oy /Ob2 /I "../../src/include" /D "GPRE_FORTRAN" /D "GPRE_PASCAL" /D "GPRE_COBOL" /D "GPRE_ADA" /D "NDEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR"$(INTDIR)\\" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /n /o"$(OUTDIR)\gpre.bsc" 
 BSC32_SBRS= \
@@ -77,6 +81,7 @@ BSC32_SBRS= \
 	"$(INTDIR)\cme.sbr" \
 	"$(INTDIR)\cmp.sbr" \
 	"$(INTDIR)\cob.sbr" \
+	"$(INTDIR)\ftn.sbr" \
 	"$(INTDIR)\exp.sbr" \
 	"$(INTDIR)\fb_exception.sbr" \
 	"$(INTDIR)\gpre.sbr" \
@@ -93,7 +98,8 @@ BSC32_SBRS= \
 	"$(INTDIR)\pretty.sbr" \
 	"$(INTDIR)\sqe.sbr" \
 	"$(INTDIR)\sql.sbr" \
-	"$(INTDIR)\dsc.sbr"
+	"$(INTDIR)\dsc.sbr" \
+	"$(INTDIR)\isc.sbr"
 
 "$(OUTDIR)\gpre.bsc" : "$(OUTDIR)" $(BSC32_SBRS)
     $(BSC32) @<<
@@ -110,6 +116,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\cme.obj" \
 	"$(INTDIR)\cmp.obj" \
 	"$(INTDIR)\cob.obj" \
+	"$(INTDIR)\ftn.obj" \
 	"$(INTDIR)\exp.obj" \
 	"$(INTDIR)\fb_exception.obj" \
 	"$(INTDIR)\gpre.obj" \
@@ -127,6 +134,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\sqe.obj" \
 	"$(INTDIR)\sql.obj" \
 	"$(INTDIR)\dsc.obj" \
+	"$(INTDIR)\isc.obj" \
 	"$(INTDIR)\version.res" \
 	".\temp\fbclient.lib"
 
@@ -208,6 +216,10 @@ SOURCE=..\..\src\gpre\cob.cpp
 "$(INTDIR)\cob.obj"	"$(INTDIR)\cob.sbr" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
+SOURCE=..\..\src\gpre\ftn.cpp
+
+"$(INTDIR)\ftn.obj"	"$(INTDIR)\ftn.sbr" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 SOURCE=..\..\src\gpre\exp.cpp
 
@@ -310,6 +322,10 @@ SOURCE=..\..\src\jrd\dsc.cpp
 "$(INTDIR)\dsc.obj"	"$(INTDIR)\dsc.sbr" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
+SOURCE=..\..\src\jrd\isc.cpp
+
+"$(INTDIR)\isc.obj"	"$(INTDIR)\dsc.sbr" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 SOURCE=..\..\src\jrd\version.rc
 

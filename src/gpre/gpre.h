@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.30 2003-02-27 16:04:52 brodsom Exp $
+ * $Id: gpre.h,v 1.31 2003-02-27 16:55:56 brodsom Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -84,16 +84,6 @@ extern "C" {
 #ifdef VMS
 #define EITHER_CASE	1
 #endif
-
-/* EKU: we don't need additional languages in gpre_boot. */
-#ifdef BOOT_BUILD
-#undef GPRE_ADA
-#undef GPRE_COBOL
-#undef GPRE_FORTRAN
-#undef GPRE_PASCAL
-#undef FTN_BLK_DATA
-#endif
-
 
 /* If the C compiler supports the ANSI const directive, we emit it before
    BLR string definitions */
