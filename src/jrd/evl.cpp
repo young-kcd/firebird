@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.34.2.6 2004-03-29 07:40:25 skidder Exp $ 
+  * $Id: evl.cpp,v 1.34.2.7 2004-09-18 05:32:06 skidder Exp $ 
  */
 
 /*
@@ -898,7 +898,7 @@ DSC* DLL_EXPORT EVL_expr(TDBB tdbb, JRD_NOD node)
 	case nod_current_date:
 	case nod_current_timestamp:
 		{
-			ULONG clock;
+			time_t clock;
 			struct tm times;
 			GDS_TIMESTAMP enc_times;
 
@@ -911,7 +911,7 @@ DSC* DLL_EXPORT EVL_expr(TDBB tdbb, JRD_NOD node)
 				assert(FALSE);
 				clock = time(0);
 			}
-			times = *localtime(reinterpret_cast < time_t * >(&clock));
+			times = *localtime(&clock);
 
 			memset(&impure->vlu_desc, 0, sizeof(impure->vlu_desc));
 			impure->vlu_desc.dsc_address =

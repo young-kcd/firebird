@@ -577,12 +577,13 @@ static void prt_lock_activity(
  *
  **************************************/
 	struct tm d;
-	ULONG clock, i;
+	time_t clock;
+	ULONG i;
 	struct lhb base, prior;
 	ULONG factor;
 
 	clock = time(NULL);
-	d = *localtime((time_t*)&clock);
+	d = *localtime(&clock);
 
 	FPRINTF(outfile, "%02d:%02d:%02d ", d.tm_hour, d.tm_min, d.tm_sec);
 
@@ -618,7 +619,7 @@ static void prt_lock_activity(
 		sleep(seconds);
 #endif
 		clock = time(NULL);
-		d = *localtime((time_t*)&clock);
+		d = *localtime(&clock);
 
 		FPRINTF(outfile, "%02d:%02d:%02d ", d.tm_hour, d.tm_min, d.tm_sec);
 

@@ -1333,11 +1333,11 @@ static void get_time_stamp( SLONG * date)
  *	(Copied from mov.c)
  *
  **************************************/
-	SLONG clock;
+	time_t clock;
 	struct tm times;
 
-	clock = (SLONG) time((time_t *) NULL);
-	times = *localtime((time_t *) & clock);
+	clock = time(NULL);
+	times = *localtime(&clock);
 	isc_encode_date(&times, (GDS_QUAD *) date);
 }
 
