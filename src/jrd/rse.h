@@ -37,6 +37,7 @@
 #include "../jrd/dsc.h"
 
 class str;
+struct dsc;
 
 namespace Jrd {
 
@@ -47,6 +48,7 @@ struct sort_key_def;
 class SparseBitmap;
 struct sort_work_file;
 struct sort_context;
+class CompilerScratch;
 class jrd_prc;
 class fmt;
 
@@ -76,7 +78,7 @@ typedef rsb_t RSB_T;
 
 // Record source block
 
-class Rsb : public pool_alloc_rpt<class Rsb*, type_rsb>
+class RecordSource : public pool_alloc_rpt<RecordSource*, type_rsb>
 {
 public:
 	RSB_T rsb_type;						// type of rsb
@@ -86,13 +88,13 @@ public:
 	ULONG rsb_impure;					// offset to impure area
 	ULONG rsb_cardinality;				// estimated cardinality of stream
 	ULONG rsb_record_count;				// count of records returned from rsb (not candidate records processed)
-	Rsb* rsb_next;						// next rsb, if appropriate
+	RecordSource* rsb_next;				// next rsb, if appropriate
 	jrd_rel*	rsb_relation;			// relation, if appropriate
 	str*		rsb_alias;				// SQL alias for relation
-	jrd_prc* rsb_procedure;		// procedure, if appropriate
-	fmt* rsb_format;				// format, if appropriate
-	jrd_nod* rsb_any_boolean;	// any/all boolean
-	Rsb* rsb_arg[1];
+	jrd_prc*	rsb_procedure;			// procedure, if appropriate
+	fmt*		rsb_format;				// format, if appropriate
+	jrd_nod*	rsb_any_boolean;		// any/all boolean
+	RecordSource* rsb_arg[1];
 };
 
 // bits for the rsb_flags field
@@ -103,7 +105,7 @@ const USHORT rsb_descending = 4;		// an ascending index is being used for a desc
 const USHORT rsb_project = 8;			// projection on this stream is requested
 const USHORT rsb_writelock = 16;		// records should be locked for writing
 
-// special argument positions within the RSB
+// special argument positions within the RecordSource
 
 #define RSB_PRC_inputs			0
 #define RSB_PRC_in_msg			1
@@ -140,7 +142,7 @@ struct merge_file {
 #define MERGE_BLOCK_SIZE	65536
 
 
-// Impure area formats for the various RSB types
+// Impure area formats for the various RecordSource types
 
 typedef struct irsb {
 	ULONG irsb_flags;
@@ -313,17 +315,17 @@ public:
 
 // General optimizer block
 
-class Opt : public pool_alloc<type_opt>
+class OptimizerBlk : public pool_alloc<type_opt>
 {
 public:
-	class Csb*	opt_csb;					// compiler scratch block
+	CompilerScratch*	opt_csb;					// compiler scratch block
 	SLONG opt_combinations;					// number of partial orders considered
 	double opt_best_cost;					// cost of best join order
 	SSHORT opt_base_conjuncts;				// number of conjuncts in our rse, next conjuncts are from parent
 	USHORT opt_best_count;					// longest length of indexable streams
 	USHORT opt_g_flags;						// global flags
 	// 01 Oct 2003. Nickolay Samofatov: this static array takes as much as 256 bytes.
-	// This is nothing compared to original Firebird 1.5 Opt structure size of ~180k
+	// This is nothing compared to original Firebird 1.5 OptimizerBlk structure size of ~180k
 	// All other arrays had been converted to dynamic to preserve memory 
 	// and improve performance
 	struct opt_segment {
@@ -349,9 +351,8 @@ public:
 	};
 	Firebird::HalfStaticArray<opt_conjunct, OPT_STATIC_ITEMS> opt_conjuncts;
 	Firebird::HalfStaticArray<opt_stream, OPT_STATIC_ITEMS> opt_streams;
-	Opt(JrdMemoryPool* pool) : opt_conjuncts(*pool), opt_streams(*pool) {}
+	OptimizerBlk(JrdMemoryPool* pool) : opt_conjuncts(*pool), opt_streams(*pool) {}
 };
-typedef Opt* OPT;
 
 // values for opt_stream_flags
 
@@ -373,7 +374,7 @@ const USHORT opt_g_stream = 1;				// indicate that this is a blr_stream
 class River : public pool_alloc_rpt<SCHAR, type_riv>
 {
 public:
-	Rsb* riv_rsb;				// record source block for river
+	RecordSource* riv_rsb;				// record source block for river
 	USHORT riv_number;			// temporary number for river
 	UCHAR riv_count;			// count of streams
 	UCHAR riv_streams[1];		// actual streams
@@ -388,7 +389,7 @@ class Bookmark : public pool_alloc_rpt<SCHAR, type_bkm>
 {
 public:
 	Bookmark* bkm_next;
-	struct dsc bkm_desc;		// bookmark descriptor describing the bookmark handle
+	dsc bkm_desc;				// bookmark descriptor describing the bookmark handle
 	ULONG bkm_handle;			// bookmark handle containing pointer to this block
 	SLONG bkm_number;			// current record number
 	SLONG bkm_page;				// current btree page
@@ -396,7 +397,7 @@ public:
 	SLONG bkm_expanded_offset;	// offset into expanded index page (if it exists)
 	USHORT bkm_offset;			// offset into current btree page
 	USHORT bkm_flags;			// flag values indicated below
-	struct dsc bkm_key_desc;	// descriptor containing current key value
+	dsc bkm_key_desc;			// descriptor containing current key value
 	UCHAR bkm_key_data[1];		// current key value
 };
 

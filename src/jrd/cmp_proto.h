@@ -25,26 +25,25 @@
 #define JRD_CMP_PROTO_H
 
 #include "../jrd/req.h"
-// req.h includes exe.h => Jrd::Csb and Jrd::Csb::csb_repeat.
+// req.h includes exe.h => Jrd::CompilerScratch and Jrd::CompilerScratch::csb_repeat.
 
 bool CMP_clone_is_active(const Jrd::jrd_req*);
-Jrd::jrd_nod* CMP_clone_node(Jrd::thread_db*, Jrd::Csb*, Jrd::jrd_nod*);
+Jrd::jrd_nod* CMP_clone_node(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_nod*);
 Jrd::jrd_req* CMP_clone_request(Jrd::thread_db*, Jrd::jrd_req*, USHORT, bool);
 Jrd::jrd_req* CMP_compile(USHORT, const UCHAR*, USHORT);
 Jrd::jrd_req* CMP_compile2(Jrd::thread_db*, const UCHAR*, USHORT);
-Jrd::Csb::csb_repeat* CMP_csb_element(Jrd::Csb*, USHORT);
+Jrd::CompilerScratch::csb_repeat* CMP_csb_element(Jrd::CompilerScratch*, USHORT);
 void CMP_expunge_transaction(Jrd::jrd_tra*);
 void CMP_decrement_prc_use_count(Jrd::thread_db*, Jrd::jrd_prc*);
 Jrd::jrd_req* CMP_find_request(Jrd::thread_db*, USHORT, USHORT);
 void CMP_fini(Jrd::thread_db*);
-Jrd::fmt* CMP_format(Jrd::thread_db*, Jrd::Csb*, USHORT);
-void CMP_get_desc(Jrd::thread_db*, Jrd::Csb*, Jrd::jrd_nod*, dsc*);
+Jrd::fmt* CMP_format(Jrd::thread_db*, Jrd::CompilerScratch*, USHORT);
+void CMP_get_desc(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_nod*, dsc*);
 Jrd::IndexLock* CMP_get_index_lock(Jrd::thread_db*, Jrd::jrd_rel*, USHORT);
-SLONG CMP_impure(Jrd::Csb*, USHORT);
-Jrd::jrd_req* CMP_make_request(Jrd::thread_db*, Jrd::Csb*);
-void CMP_post_access(Jrd::thread_db*, Jrd::Csb*, const TEXT*, SLONG,
-					 const TEXT*, const TEXT*, USHORT, const TEXT*,
-					 const TEXT*);
+SLONG CMP_impure(Jrd::CompilerScratch*, USHORT);
+Jrd::jrd_req* CMP_make_request(Jrd::thread_db*, Jrd::CompilerScratch*);
+void CMP_post_access(Jrd::thread_db*, Jrd::CompilerScratch*, const TEXT*, SLONG,
+					 const TEXT*, const TEXT*, USHORT, const TEXT*, const TEXT*);
 void CMP_post_resource(Jrd::thread_db*, Jrd::Resource**, blk*, Jrd::Resource::rsc_s, USHORT);
 void CMP_release_resource(Jrd::Resource**, Jrd::Resource::rsc_s, USHORT);
 void CMP_release(Jrd::thread_db*, Jrd::jrd_req*);

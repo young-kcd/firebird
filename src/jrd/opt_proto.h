@@ -33,24 +33,29 @@ namespace Jrd {
 	class jrd_req;
 	class jrd_rel;
 	class jrd_nod;
-	class rse;
-	class Rsb;
+	class RecordSelExpr;
+	class RecordSource;
+	struct index_desc;
+	class CompilerScratch;
+	class OptimizerBlk;
 }
 
+class lls;
+
 bool OPT_access_path(const Jrd::jrd_req*, SCHAR*, SSHORT, USHORT*);
-Jrd::Rsb* OPT_compile(Jrd::thread_db*, class Jrd::Csb *,
-					   Jrd::rse*, class lls*);
+Jrd::RecordSource* OPT_compile(Jrd::thread_db*, Jrd::CompilerScratch*,
+					   Jrd::RecordSelExpr*, lls*);
 							   
 // Begin only exported for VMS
-Jrd::jrd_nod* OPT_make_dbkey(struct opt *, Jrd::jrd_nod*,
+Jrd::jrd_nod* OPT_make_dbkey(Jrd::OptimizerBlk*, Jrd::jrd_nod*,
 								  USHORT);
-Jrd::jrd_nod* OPT_make_index(Jrd::thread_db*, struct opt *, Jrd::jrd_rel*,
-								  struct Jrd::idx *);
-int OPT_match_index(struct opt*, USHORT, struct Jrd::idx*);
+Jrd::jrd_nod* OPT_make_index(Jrd::thread_db*, Jrd::OptimizerBlk*, Jrd::jrd_rel*,
+								  Jrd::index_desc*);
+int OPT_match_index(Jrd::OptimizerBlk*, USHORT, Jrd::index_desc*);
 // End only exported for VMS
 
-void OPT_set_index(Jrd::thread_db*, Jrd::jrd_req*, Jrd::Rsb **, Jrd::jrd_rel*,
-						  struct Jrd::idx*);
+void OPT_set_index(Jrd::thread_db*, Jrd::jrd_req*, Jrd::RecordSource**, Jrd::jrd_rel*,
+						  Jrd::index_desc*);
 
 #endif // JRD_OPT_PROTO_H
 

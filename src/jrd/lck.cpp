@@ -565,7 +565,7 @@ void LCK_init(thread_db* tdbb, enum lck_owner_t owner_type)
 		break;
 	}
 
-	if (LOCK_init(tdbb->tdbb_status_vector, TRUE,
+	if (LOCK_init(tdbb->tdbb_status_vector, true,
 				  owner_id, owner_type, owner_handle_ptr))
 	{
 		if (tdbb->tdbb_status_vector[1] == isc_lockmanerr)

@@ -27,20 +27,23 @@
 #include "../jrd/exe.h"
 #include "../jrd/blob_filter.h"
 
+struct dsc;
+
 namespace Jrd {
 	class jrd_tra;
 	class jrd_req;
 	class jrd_prc;
 	class fmt;
 	class jrd_rel;
-	class Csb;
+	class CompilerScratch;
 	class jrd_nod;
+	struct index_desc;
 	class bid;
 }
 
 void		MET_activate_shadow(Jrd::thread_db*);
-ULONG		MET_align(const struct dsc*, USHORT);
-void		MET_change_fields(Jrd::thread_db*, Jrd::jrd_tra *, struct dsc *);
+ULONG		MET_align(const dsc*, USHORT);
+void		MET_change_fields(Jrd::thread_db*, Jrd::jrd_tra*, dsc*);
 Jrd::fmt*	MET_current(Jrd::thread_db*, Jrd::jrd_rel*);
 void		MET_delete_dependencies(Jrd::thread_db*, const TEXT*, USHORT);
 void		MET_delete_shadow(Jrd::thread_db*, USHORT);
@@ -48,8 +51,8 @@ void		MET_error(const TEXT*, ...);
 Jrd::fmt*	MET_format(Jrd::thread_db*, Jrd::jrd_rel*, USHORT);
 bool		MET_get_char_subtype(Jrd::thread_db*, SSHORT*, const UCHAR*, USHORT);
 Jrd::jrd_nod*	MET_get_dependencies(Jrd::thread_db*, Jrd::jrd_rel*, const TEXT*,
-								Jrd::Csb*, Jrd::bid*, Jrd::jrd_req**,
-								Jrd::Csb**, const TEXT*, USHORT);
+								Jrd::CompilerScratch*, Jrd::bid*, Jrd::jrd_req**,
+								Jrd::CompilerScratch**, const TEXT*, USHORT);
 class Jrd::jrd_fld*	MET_get_field(Jrd::jrd_rel*, USHORT);
 void		MET_get_shadow_files(Jrd::thread_db*, bool);
 void		MET_load_trigger(Jrd::thread_db*, Jrd::jrd_rel*, const TEXT*, Jrd::trig_vec**);
@@ -63,12 +66,12 @@ SLONG		MET_lookup_generator(Jrd::thread_db*, const TEXT*);
 void		MET_lookup_generator_id(Jrd::thread_db*, SLONG, TEXT *);
 void		MET_lookup_index(Jrd::thread_db*, TEXT*, const TEXT*, USHORT);
 SLONG		MET_lookup_index_name(Jrd::thread_db*, const TEXT*, SLONG*, SSHORT*);
-bool		MET_lookup_partner(Jrd::thread_db*, Jrd::jrd_rel*, struct Jrd::idx*, const TEXT*);
+bool		MET_lookup_partner(Jrd::thread_db*, Jrd::jrd_rel*, struct Jrd::index_desc*, const TEXT*);
 Jrd::jrd_prc*	MET_lookup_procedure(Jrd::thread_db*, SCHAR *, bool);
 Jrd::jrd_prc*	MET_lookup_procedure_id(Jrd::thread_db*, SSHORT, bool, bool, USHORT);
 Jrd::jrd_rel*	MET_lookup_relation(Jrd::thread_db*, const char*);
 Jrd::jrd_rel*	MET_lookup_relation_id(Jrd::thread_db*, SLONG, bool);
-Jrd::jrd_nod*	MET_parse_blob(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::bid*, Jrd::Csb**,
+Jrd::jrd_nod*	MET_parse_blob(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::bid*, Jrd::CompilerScratch**,
 								  Jrd::jrd_req**, const bool, const bool);
 void		MET_parse_sys_trigger(Jrd::thread_db*, Jrd::jrd_rel*);
 int			MET_post_existence(Jrd::thread_db*, Jrd::jrd_rel*);

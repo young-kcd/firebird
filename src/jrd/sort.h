@@ -35,6 +35,9 @@ namespace Jrd {
 // Forward declaration
 struct sort_work_file;
 class SortMem;
+class Attachment;
+struct irsb_sort;
+struct merge_control;
 
 /* SORTP is used throughout sort.c as a pointer into arrays of
    longwords(32 bits).   For 16 bit Windows, this must be a huge pointer. 
@@ -46,10 +49,10 @@ typedef ULONG SORTP;
 
 /* since the first part of the record contains a back_pointer, whose
    size depends on the platform (ie 16, 32 or 64 bits.).
-   This pointer data_type is defined by platform specific SORT_PTR.
+   This pointer data_type is defined by platform specific sort_ptr_t.
 */
 
-typedef IPTR SORT_PTR;
+typedef IPTR sort_ptr_t;
 
 /* # of 32 bit longs in a pointer (ie 1 on 32 bit machines 2 on 64 bit)*/
 #define LONGS_PER_POINTER       (sizeof (SLONG*) / sizeof (SLONG))
@@ -178,17 +181,17 @@ struct sort_key_def
 
 /* Run/merge common block header */
 
-typedef struct rmh
+struct run_merge_hdr
 {
 	SSHORT		rmh_type;			/* TYPE_RUN or TYPE_MRG */
-	struct mrg*	rmh_parent;
-} *RMH;
+	merge_control*	rmh_parent;
+};
 
 /* Run control block */
 
 struct run_control
 {
-	struct rmh	run_header;
+	run_merge_hdr	run_header;
 	run_control*	run_next;			/* Next (actually last) run */
 	ULONG		run_records;		/* Records (remaining) in run */
 #ifdef SCROLLABLE_CURSORS
@@ -209,23 +212,23 @@ struct run_control
 
 /* Merge control block */
 
-typedef struct mrg
+struct merge_control
 {
-	struct rmh		mrg_header;
+	run_merge_hdr	mrg_header;
 	sort_record*	mrg_record_a;
-	struct rmh*		mrg_stream_a;
+	run_merge_hdr*	mrg_stream_a;
 	sort_record*	mrg_record_b;
-	struct rmh*		mrg_stream_b;
-} *MRG;
+	run_merge_hdr*	mrg_stream_b;
+};
 
 /* Work file space control block */
 
-typedef struct wfs
+struct work_file_space
 {
-	struct wfs*	wfs_next;
-	ULONG		wfs_position;			/* Starting position of free space */
-	ULONG		wfs_size;				/* Length of free space */
-} *WFS;
+	work_file_space*	wfs_next;
+	ULONG			wfs_position;	/* Starting position of free space */
+	ULONG			wfs_size;		/* Length of free space */
+};
 
 /* Sort work file control block */
 
@@ -233,11 +236,11 @@ struct sort_work_file
 {
 	sort_work_file*	sfb_next;
 	int sfb_file;				/* File descriptor */
-	TEXT *sfb_file_name;		/* ALLOC: File name for deletion */
+	TEXT* sfb_file_name;		/* ALLOC: File name for deletion */
 	ULONG sfb_file_size;		/* Real size of the work file */
-	struct wfs *sfb_file_space;	/* ALLOC: Available space in work file */
-	struct wfs *sfb_free_wfs;	/* ALLOC: Free space in work file */
-	DLS sfb_dls;				/* Place where file is created */
+	work_file_space* sfb_file_space;	/* ALLOC: Available space in work file */
+	work_file_space* sfb_free_wfs;		/* ALLOC: Free space in work file */
+	dir_list* sfb_dls;			/* Place where file is created */
 	SortMem* sfb_mem;
 };
 
@@ -267,17 +270,17 @@ struct sort_context
 	UINT64 scb_max_records;		/* Maximum number of records to store */
 	sort_work_file*	scb_sfb;		/* ALLOC: List of scratch files, if open */
 	run_control*	scb_runs;		/* ALLOC: Run on scratch file, if any */
-	struct mrg *scb_merge;		/* Top level merge block */
+	merge_control*	scb_merge;		/* Top level merge block */
 	run_control*	scb_free_runs;	/* ALLOC: Currently unused run blocks */
 	SORTP* scb_merge_space;		/* ALLOC: memory space to do merging */
 	ULONG scb_flags;			/* see flag bits below */
 	ISC_STATUS *scb_status_vector;	/* Status vector for errors */
 	FPTR_REJECT_DUP_CALLBACK scb_dup_callback;	/* Duplicate handling callback */
-	void *scb_dup_callback_arg;	/* Duplicate handling callback arg */
-	struct dls *scb_dls;
-	struct mrg *scb_merge_pool;	/* ALLOC: pool of mrg blocks */
-	class Attachment*	scb_attachment;	/* back pointer to attachment */
-	struct irsb_sort *scb_impure;	/* back pointer to request's impure area */
+	void* scb_dup_callback_arg;	/* Duplicate handling callback arg */
+	dir_list*	scb_dls;
+	merge_control*	scb_merge_pool;	/* ALLOC: pool of merge_control blocks */
+	Attachment*	scb_attachment;	/* back pointer to attachment */
+	irsb_sort* scb_impure;	/* back pointer to request's impure area */
 	sort_key_def scb_description[1];
 };
 

@@ -185,13 +185,13 @@ struct blob_page : public pag
 
 /* B-tree node */
 
-typedef struct btn
+struct btree_nod
 {
 	UCHAR btn_prefix;			/* size of compressed prefix */
 	UCHAR btn_length;			/* length of data in node */
 	UCHAR btn_number[4];		/* page or record number */
 	UCHAR btn_data[1];
-} *BTN;
+};
 
 #define BTN_SIZE	6
 
@@ -206,7 +206,7 @@ struct btree_page : public pag
 	USHORT btr_length;			// length of data in bucket
 	UCHAR btr_id;				// index id for consistency
 	UCHAR btr_level;			// index level (0 = leaf)
-	btn btr_nodes[1];
+	btree_nod btr_nodes[1];
 };
 
 // Firebird B-tree nodes

@@ -42,6 +42,7 @@
 #include "../jrd/cch_proto.h"
 #include "../jrd/dbg_proto.h"
 #include "../jrd/err_proto.h"
+#include "../jrd/constants.h"
 
 #ifdef SUPERSERVER
 #include "../jrd/thd_proto.h"
@@ -94,13 +95,13 @@ static void go_column(int);
 static void prt_dsc(DSC *, int);
 static int prt_fields(SCHAR *, int *);
 static int prt_que(SCHAR *, QUE);
-static int rsb_pretty(const Rsb*, int);
+static int rsb_pretty(const RecordSource*, int);
 
 /* Pick up node names */
 
 #define NODE(type, name, keyword) "name",
 
-static TEXT *node_names[] = {
+static const TEXT* node_names[] = {
 #include "../jrd/nod.h"
 	0
 };
@@ -182,8 +183,7 @@ int DBG_analyze(int pool_id)
 	SLONG length;
 	SLONG total_length = 0;
 	TEXT **fields;
-	TEXT *node_name;
-	TEXT name_padded[32];
+	SqlIdentifier name_padded;
 	int pool_type;
 	int i;
 	struct {
@@ -272,7 +272,7 @@ int DBG_analyze(int pool_id)
 	for (p = blocks, end = p + (int) type_MAX, type = 0; p < end; p++, type++)
 		if (p->sum_count) {
 			fields = reinterpret_cast<char**>(dbt_blocks[type]);
-			for (i = 0; i < 31; name_padded[i++] = ' ');
+			for (i = 0; i < MAX_SQL_IDENTIFIER_LEN; name_padded[i++] = ' ');
 			name_padded[i] = '\0';
 			for (i = 0; (*fields)[i]; i++)
 				name_padded[i] = (*fields)[i];
@@ -284,7 +284,7 @@ int DBG_analyze(int pool_id)
 
 	for (p = nodes, end = p + (int) nod_MAX, type = 0; p < end; p++, type++)
 		if (p->sum_count) {
-			node_name = node_names[type];
+			const TEXT* node_name = node_names[type];
 			for (i = 0; i < 31; name_padded[i++] = ' ');
 			name_padded[i] = '\0';
 			for (i = 0; node_name[i]; i++)
@@ -709,7 +709,7 @@ int DBG_pretty(const jrd_nod* node, int column)
 #define NODE(struct)	((struct) node)
 
 	if (node && node->blk_type == (SCHAR) type_rsb)
-		return rsb_pretty(reinterpret_cast<const Rsb*>(node), column);
+		return rsb_pretty(reinterpret_cast<const RecordSource*>(node), column);
 
 	ib_fprintf(dbg_file, "%8X\t", node);
 	for (i = 0; i < column; i++)
@@ -734,7 +734,7 @@ int DBG_pretty(const jrd_nod* node, int column)
 	switch (node->nod_type) {
 	case nod_rse:
 		{
-			const rse* recse = (RSE) node;
+			const RecordSelExpr* recse = (RecordSelExpr*) node;
 			ib_fprintf(dbg_file, "\n");
 			if (recse->rse_rsb)
 				DBG_pretty(reinterpret_cast<const jrd_nod*>(recse->rse_rsb), column);
@@ -851,7 +851,7 @@ int DBG_pretty(const jrd_nod* node, int column)
 	}
 
 	if (node->nod_type == nod_for && node->nod_arg[e_for_rsb]) {
-		rsb_pretty(reinterpret_cast<const Rsb*>(node->nod_arg[e_for_rsb]),
+		rsb_pretty(reinterpret_cast<const RecordSource*>(node->nod_arg[e_for_rsb]),
 				   column);
 		return TRUE;
 	}
@@ -937,7 +937,7 @@ int DBG_smb(SortMap* smb, int column)
 				   smb->smb_key_desc[i].skd_vary_offset);
 	}
 	for (i = 0; i < smb->smb_count; i++) {
-		smb::smb_repeat* ptr = &smb->smb_rpt[i];
+		smb_repeat* ptr = &smb->smb_rpt[i];
 		go_column(column + 2);
 		ib_fprintf(dbg_file, "fld [%d] flag = %d stream = %d field = %d\n",
 				   i, ptr->smb_flag_offset, ptr->smb_stream,
@@ -1175,7 +1175,7 @@ static int prt_que(SCHAR * string, QUE que)
 }
 
 
-static int rsb_pretty(const Rsb* rsb, int column)
+static int rsb_pretty(const RecordSource* rsb, int column)
 {
 /**************************************
  *
@@ -1210,22 +1210,22 @@ static int rsb_pretty(const Rsb* rsb, int column)
 
 	ib_fprintf(dbg_file, "\n");
 
-	const Rsb* const* ptr = rsb->rsb_arg;
+	const RecordSource* const* ptr = rsb->rsb_arg;
 	if (rsb->rsb_type == rsb_merge) {
-		for (const Rsb* const* const end = ptr + rsb->rsb_count * 2; ptr < end;
+		for (const RecordSource* const* const end = ptr + rsb->rsb_count * 2; ptr < end;
 			 ptr += 2)
 		{
 			DBG_pretty(reinterpret_cast<jrd_nod*>(*ptr), column);
 		}
 	}
 	else if (rsb->rsb_type != rsb_left_cross) {
-		for (const Rsb* const* const end = ptr + rsb->rsb_count; ptr < end; ptr++)
+		for (const RecordSource* const* const end = ptr + rsb->rsb_count; ptr < end; ptr++)
 		{
 			DBG_pretty(reinterpret_cast<jrd_nod*>(*ptr), column);
 		}
 	}
 	else {
-		for (const Rsb* const* const end = ptr + rsb->rsb_count + 1; ptr < end;
+		for (const RecordSource* const* const end = ptr + rsb->rsb_count + 1; ptr < end;
 			 ptr++)
 		{
 			DBG_pretty(reinterpret_cast<jrd_nod*>(*ptr), column);

@@ -1209,7 +1209,7 @@ static bool check_for_file(const SCHAR* name, USHORT length)
  *
  * Functional description
  *	Check for the existence of a file.
- *	Return TRUE if it is there.
+ *	Return true if it is there.
  *
  **************************************/
 

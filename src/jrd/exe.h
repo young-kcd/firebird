@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * 2001.07.28: Added rse_skip to class rse to support LIMIT.
+ * 2001.07.28: Added rse_skip to class RecordSelExpr to support LIMIT.
  * 2002.09.28 Dmitry Yemanov: Reworked internal_info stuff, enhanced
  *                            exception handling in SPs/triggers,
  *                            implemented ROWS_AFFECTED system variable
@@ -60,6 +60,8 @@ DEFINE_TRACE_ROUTINE(cmp_trace);
 #endif
 
 class str;
+struct dsc;
+class lls;
 
 namespace Jrd {
 
@@ -69,11 +71,12 @@ struct sort_key_def;
 class SparseBitmap;
 class vec;
 class Resource;
+class jrd_prc;
 class AccessItem;
-struct idx;
+struct index_desc;
 class fmt;
 
-// NOTE: The definition of structures rse and lit must be defined in
+// NOTE: The definition of structures RecordSelExpr and lit must be defined in
 //       exactly the same way as structure jrd_nod through item nod_count.
 //       Now, inheritance takes care of those common data members.
 class jrd_node_base : public pool_alloc_rpt<jrd_nod*, type_nod>
@@ -117,15 +120,15 @@ public:
 #define nod_invariant	128		/* node is recognized as being invariant */
 
 
-/* Special RSE node */
+/* Special RecordSelExpr node */
 
-class rse : public jrd_node_base
+class RecordSelExpr : public jrd_node_base
 {
 public:
 	USHORT		rse_count;
 	USHORT		rse_jointype;		/* inner, left, full */
 	bool		rse_writelock;
-	Rsb*		rse_rsb;
+	RecordSource*	rse_rsb;
 	jrd_nod*	rse_first;
     jrd_nod*	rse_skip;
 	jrd_nod*	rse_boolean;
@@ -138,14 +141,14 @@ public:
 #endif
 	jrd_nod*	rse_relation[1];
 };
-typedef rse* RSE;
 
-#define rse_stream	1			/* flags rse-type node as a blr_stream type */
-#define rse_singular	2		/* flags rse-type node as from a singleton select */
-#define rse_variant	4			/* flags rse as variant (not invariant?) */
+
+#define rse_stream	1			/* flags RecordSelExpr-type node as a blr_stream type */
+#define rse_singular	2		/* flags RecordSelExpr-type node as from a singleton select */
+#define rse_variant	4			/* flags RecordSelExpr as variant (not invariant?) */
 
 // Number of nodes may fit into nod_arg of normal node to get to rse_relation
-const size_t rse_delta = (sizeof(rse) - sizeof(jrd_nod)) / sizeof(jrd_nod::blk_repeat_type);
+const size_t rse_delta = (sizeof(RecordSelExpr) - sizeof(jrd_nod)) / sizeof(jrd_nod::blk_repeat_type);
 
 // Types of nulls placement for each column in sort order
 #define rse_nulls_default 0
@@ -167,7 +170,7 @@ public:
 
 /* Aggregate Sort Block (for DISTINCT aggregates) */
 
-class asb : public pool_alloc<type_asb>
+class AggregateSort : public pool_alloc<type_asb>
 {
 public:
 	jrd_nod*	nod_parent;
@@ -180,19 +183,18 @@ public:
 	sort_key_def* asb_key_desc;	/* for the aggregate   */
 	UCHAR	asb_key_data[1];
 };
-typedef asb* ASB;
 
-#define asb_delta	((sizeof(class asb) - sizeof(jrd_nod)) / sizeof (jrd_nod**))
+#define asb_delta	((sizeof(AggregateSort) - sizeof(jrd_nod)) / sizeof (jrd_nod**))
 
 
 /* Various structures in the impure area */
 
-typedef struct sta {
+struct impure_state {
 	SSHORT sta_state;
-} *STA;
+};
 
-typedef struct vlu {
-	struct dsc vlu_desc;
+struct impure_value {
+	dsc vlu_desc;
 	USHORT vlu_flags; // Computed/invariant flags
 	str* vlu_string;
 	union {
@@ -208,9 +210,9 @@ typedef struct vlu {
 		GDS_DATE vlu_sql_date;
 		void* vlu_invariant; // Pre-compiled invariant object for nod_like and other string functions
 	} vlu_misc;
-} *VLU;
+};
 
-struct vlux : public vlu {
+struct impure_value_ex : public impure_value {
 	SLONG vlux_count;
 };
 
@@ -221,14 +223,14 @@ struct vlux : public vlu {
 
 /* Inversion (i.e. nod_index) impure area */
 
-typedef struct inv {
+struct impure_inversion {
 	SparseBitmap* inv_bitmap;
-} *INV;
+};
 
 
-/* ASB impure area */
+/* AggregateSort impure area */
 
-struct iasb {
+struct impure_agg_sort {
 	sort_context* iasb_sort_handle;
 };
 
@@ -327,7 +329,7 @@ struct iasb {
 #define e_val_length		2
 
 #define e_uni_stream		0	/* Stream for union */
-#define e_uni_clauses		1	/* rse's for union */
+#define e_uni_clauses		1	/* RecordSelExpr's for union */
 #define e_uni_length		2
 
 #define e_agg_stream		0
@@ -527,16 +529,16 @@ struct iasb {
  */
 // CVC: Mike comment seems to apply only when the conversion to C++
 // was being done. It's almost impossible that a repeating structure of
-// the compile scratch block be available to outsiders.
+// the compiler scratch block be available to outsiders.
 
 typedef Firebird::SortedArray<SLONG> VarInvariantArray;
 typedef Firebird::Array<VarInvariantArray*> MsgInvariantArray;
 
 
-class Csb : public pool_alloc<type_csb>
+class CompilerScratch : public pool_alloc<type_csb>
 {
 public:
-	Csb(MemoryPool& p, size_t len)
+	CompilerScratch(MemoryPool& p, size_t len)
 	:	/*csb_blr(0),
 		csb_running(0),
 		csb_node(0),
@@ -559,8 +561,8 @@ public:
 		csb_rpt(p, len)
 	{}
 
-	static Csb* newCsb(MemoryPool& p, size_t len)
-		{ return FB_NEW(p) Csb(p, len); }
+	static CompilerScratch* newCsb(MemoryPool& p, size_t len)
+		{ return FB_NEW(p) CompilerScratch(p, len); }
 
 	int nextStream(bool check = true)
 	{
@@ -577,13 +579,13 @@ public:
 	AccessItem*		csb_access;			/* Access items to be checked */
 	vec*			csb_variables;		/* Vector of variables, if any */
 	Resource*		csb_resources;		/* Resources (relations and indexes) */
-	class lls*		csb_dependencies;	/* objects this request depends upon */
-	Firebird::Array<Rsb*> csb_fors;		/* stack of fors */
+	lls*			csb_dependencies;	/* objects this request depends upon */
+	Firebird::Array<RecordSource*> csb_fors;		/* stack of fors */
 	Firebird::Array<jrd_nod*> csb_invariants;	/* stack of invariant nodes */
-	Firebird::Array<jrd_node_base*> csb_current_nodes;	/* rse's and other invariant candidates within whose scope we are */
+	Firebird::Array<jrd_node_base*> csb_current_nodes;	/* RecordSelExpr's and other invariant candidates within whose scope we are */
 #ifdef SCROLLABLE_CURSORS
-	rse*			csb_current_rse;	/* this holds the rse currently being processed;
-									   unlike the current_rses stack, it references any expanded view rse */
+	RecordSelExpr*	csb_current_rse;	/* this holds the RecordSelExpr currently being processed;
+									   unlike the current_rses stack, it references any expanded view RecordSelExpr */
 #endif
 	jrd_nod*		csb_async_message;	/* asynchronous message to send to request */
 	USHORT			csb_n_stream;		/* Next available stream */
@@ -624,7 +626,7 @@ public:
 		jrd_prc* csb_procedure;
 		jrd_rel* csb_view;		/* parent view */
 
-		idx* csb_idx;		/* Packed description of indices */
+		index_desc* csb_idx;		/* Packed description of indices */
 		str* csb_idx_allocation;	/* Memory allocated to hold index descriptions */
 		jrd_nod* csb_message;			/* Msg for send/receive */
 		fmt* csb_format;		/* Default fmt for stream */
@@ -632,7 +634,7 @@ public:
 		float csb_cardinality;		/* Cardinality of relation */
 		jrd_nod* csb_plan;				/* user-specified plan for this relation */
 		UCHAR* csb_map;				/* Stream map for views */
-		Rsb** csb_rsb_ptr;	/* point to rsb for nod_stream */
+		RecordSource** csb_rsb_ptr;	/* point to rsb for nod_stream */
 	};
 
 
@@ -669,24 +671,23 @@ struct xcp_repeat {
 	SLONG xcp_code;
 };
 
-class xcp : public pool_alloc_rpt<xcp_repeat, type_xcp>
+class PsqlException : public pool_alloc_rpt<xcp_repeat, type_xcp>
 {
     public:
 	SLONG xcp_count;
     xcp_repeat xcp_rpt[1];
 };
-typedef xcp *XCP;
 
 #define xcp_sql_code	1
 #define xcp_gds_code	2
 #define xcp_xcp_code	3
 #define xcp_default	4
 
-class status_xcp {
+class StatusXcp {
 	ISC_STATUS_ARRAY status;
 
 public:
-	status_xcp();
+	StatusXcp();
 
 	void clear();
 	void init(const ISC_STATUS*);

@@ -72,9 +72,9 @@ int PCMET_expression_index(
  *
  **************************************/
 	jrd_rel* relation;
-	IDX idx;
+	index_desc idx;
 	PLB default_pool, new_pool = NULL;
-	Csb* csb;
+	CompilerScratch* csb;
 	jrd_req* current_request;
 
 	SET_TDBB(tdbb);
@@ -87,7 +87,7 @@ int PCMET_expression_index(
 
 	case 3:
 		relation = NULL;
-		MOVE_CLEAR(&idx, sizeof(struct idx));
+		MOVE_CLEAR(&idx, sizeof(index_desc));
 
 		if (REQUEST(irq_c_exp_index))
 			EXE_unwind(tdbb, REQUEST(irq_c_exp_index));
@@ -200,7 +200,7 @@ int PCMET_expression_index(
 
 
 #ifdef EXPRESSION_INDICES
-void PCMET_lookup_index( jrd_rel* relation, IDX * idx)
+void PCMET_lookup_index( jrd_rel* relation, index_desc* idx)
 {
 /**************************************
  *
@@ -213,7 +213,7 @@ void PCMET_lookup_index( jrd_rel* relation, IDX * idx)
  *	the metadata cache if possible.
  *
  **************************************/
-	Csb* csb = NULL;
+	CompilerScratch* csb = NULL;
 
 	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;

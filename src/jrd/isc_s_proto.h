@@ -62,7 +62,7 @@ int		ISC_mutex_unlock(struct mtx *);
 
 #ifdef HAVE_MMAP
 UCHAR*	ISC_map_object(ISC_STATUS *, SH_MEM, SLONG, SLONG);
-BOOLEAN	ISC_unmap_object(ISC_STATUS *, SH_MEM, UCHAR **, SLONG);
+void	ISC_unmap_object(ISC_STATUS *, SH_MEM, UCHAR **, SLONG);
 #endif
 
 #ifdef SUPERSERVER

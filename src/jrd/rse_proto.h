@@ -28,26 +28,26 @@
 #include "../jrd/rse.h"
 
 namespace Jrd {
-	class Rsb;
+	class RecordSource;
 	struct record_param;
-	class Jrd::jrd_nod;
+	class jrd_nod;
 	class Bookmark;
 }
 
-void RSE_close(Jrd::thread_db*, Jrd::Rsb*);
+void RSE_close(Jrd::thread_db*, Jrd::RecordSource*);
 #ifdef PC_ENGINE
-bool RSE_find_dbkey(Jrd::thread_db*, Jrd::Rsb*, Jrd::jrd_nod*, Jrd::jrd_nod*);
-bool RSE_find_record(Jrd::thread_db*, Jrd::Rsb*, USHORT, USHORT, Jrd::jrd_nod*);
+bool RSE_find_dbkey(Jrd::thread_db*, Jrd::RecordSource*, Jrd::jrd_nod*, Jrd::jrd_nod*);
+bool RSE_find_record(Jrd::thread_db*, Jrd::RecordSource*, USHORT, USHORT, Jrd::jrd_nod*);
 #endif
-bool RSE_get_record(Jrd::thread_db*, Jrd::Rsb*, Jrd::rse_get_mode);
+bool RSE_get_record(Jrd::thread_db*, Jrd::RecordSource*, Jrd::rse_get_mode);
 #ifdef PC_ENGINE
-Bookmark* RSE_get_bookmark(Jrd::thread_db*, Jrd::Rsb*);
-void RSE_mark_crack(Jrd::thread_db*, Jrd::Rsb*, USHORT);
+Bookmark* RSE_get_bookmark(Jrd::thread_db*, Jrd::RecordSource*);
+void RSE_mark_crack(Jrd::thread_db*, Jrd::RecordSource*, USHORT);
 #endif
-void RSE_open(Jrd::thread_db*, Jrd::Rsb*);
+void RSE_open(Jrd::thread_db*, Jrd::RecordSource*);
 #ifdef PC_ENGINE
-bool RSE_reset_position(Jrd::thread_db*, Jrd::Rsb*, Jrd::record_param*);
-bool RSE_set_bookmark(Jrd::thread_db*, Jrd::Rsb*, Jrd::record_param*, Jrd::Bookmark*);
+bool RSE_reset_position(Jrd::thread_db*, Jrd::RecordSource*, Jrd::record_param*);
+bool RSE_set_bookmark(Jrd::thread_db*, Jrd::RecordSource*, Jrd::record_param*, Jrd::Bookmark*);
 #endif
 
 #ifdef PC_ENGINE

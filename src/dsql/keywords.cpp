@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.29 2004-03-25 23:12:43 skidder Exp $
+ *  $Id: keywords.cpp,v 1.30 2004-03-28 09:10:10 robocop Exp $
  *
  */
 
@@ -322,7 +322,7 @@ static const TOK tokens[] = {
 
 extern "C" {
 
-bool KEYWORD_stringIsAToken(const char* in_str)
+int KEYWORD_stringIsAToken(const char* in_str)
 {
     const TOK* tok_ptr = tokens;
     while (tok_ptr->tok_string) {

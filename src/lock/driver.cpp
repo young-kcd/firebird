@@ -85,7 +85,7 @@ void main( int argc, char **argv)
 	ib_printf("pid = %d\n\n", getpid());
 	ib_printf("\n");
 
-	if (LOCK_init(status_vector, TRUE,
+	if (LOCK_init(status_vector, true,
 				  (SLONG) getpid(), 1, &lck_owner_handle)) {
 		ib_printf("LOCK_init failed\n");
 		isc_print_status(status_vector);

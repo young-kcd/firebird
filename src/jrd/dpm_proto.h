@@ -38,11 +38,12 @@ namespace Ods {
 	struct pag;
 	struct data_page;
 }
+
 class lls;
 
 Ods::pag* DPM_allocate(Jrd::thread_db*, Jrd::win*);
 void	DPM_backout(Jrd::thread_db*, Jrd::record_param*);
-int		DPM_chain(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*);
+bool		DPM_chain(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*);
 int		DPM_compress(Jrd::thread_db*, Ods::data_page*);
 void	DPM_create_relation(Jrd::thread_db*, Jrd::jrd_rel*);
 SLONG	DPM_data_pages(Jrd::thread_db*, Jrd::jrd_rel*);
@@ -52,8 +53,8 @@ bool	DPM_fetch(Jrd::thread_db*, Jrd::record_param*, USHORT);
 SSHORT	DPM_fetch_back(Jrd::thread_db*, Jrd::record_param*, USHORT, SSHORT);
 void	DPM_fetch_fragment(Jrd::thread_db*, Jrd::record_param*, USHORT);
 SINT64	DPM_gen_id(Jrd::thread_db*, SLONG, USHORT, SINT64);
-int		DPM_get(Jrd::thread_db*, Jrd::record_param*, SSHORT);
-ULONG	DPM_get_blob(Jrd::thread_db*, Jrd::blb*, ULONG, USHORT, SLONG);
+bool	DPM_get(Jrd::thread_db*, Jrd::record_param*, SSHORT);
+ULONG	DPM_get_blob(Jrd::thread_db*, Jrd::blb*, ULONG, bool, SLONG);
 bool	DPM_next(Jrd::thread_db*, Jrd::record_param*, USHORT, bool, bool);
 void	DPM_pages(Jrd::thread_db*, SSHORT, int, ULONG, SLONG);
 SLONG	DPM_prefetch_bitmap(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::SparseBitmap*, SLONG);

@@ -246,7 +246,7 @@ void DYN_define_constraint(gbl*		gbl,
 	SqlIdentifier null_field_name, trigger_name;
 	int all_count, unique_count;
 	LLS field_list = NULL, list_ptr;
-	USHORT primary_flag = FALSE, foreign_flag = FALSE, not_null;
+	bool primary_flag = false, foreign_flag = false;
 	UCHAR ri_action = 0;
 
 	thread_db* tdbb = GET_THREAD_DATA;
@@ -280,12 +280,12 @@ void DYN_define_constraint(gbl*		gbl,
 		switch (verb = *(*ptr)++)
 		{
 		case isc_dyn_def_primary_key:
-			primary_flag = TRUE;
+			primary_flag = true;
 			strcpy(CRT.RDB$CONSTRAINT_TYPE, PRIMARY_KEY);
 			break;
 
 		case isc_dyn_def_foreign_key:
-			foreign_flag = TRUE;
+			foreign_flag = true;
 			strcpy(CRT.RDB$CONSTRAINT_TYPE, FOREIGN_KEY);
 			fb_utils::fb_exact_name_limit(CRT.RDB$CONSTRAINT_NAME,
 						  sizeof(CRT.RDB$CONSTRAINT_NAME));
@@ -391,7 +391,7 @@ void DYN_define_constraint(gbl*		gbl,
 	request = CMP_find_request(tdbb, drq_c_unq_nam, DYN_REQUESTS);
 	id = drq_c_unq_nam;
 
-	not_null = TRUE;
+	bool not_null = true;
 	all_count = unique_count = 0;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		IDS IN RDB$INDEX_SEGMENTS
@@ -409,8 +409,9 @@ void DYN_define_constraint(gbl*		gbl,
 
 		if ((FLX.RDB$NULL_FLAG.NULL || !FLX.RDB$NULL_FLAG) &&
 			(RFR.RDB$NULL_FLAG.NULL || !RFR.RDB$NULL_FLAG) &&
-			(primary_flag == TRUE)) {
-			not_null = FALSE;
+			primary_flag) 
+		{
+			not_null = false;
 			fb_utils::fb_exact_name_limit(RFR.RDB$FIELD_NAME, sizeof(RFR.RDB$FIELD_NAME));
 			strcpy(null_field_name, RFR.RDB$FIELD_NAME);
 			EXE_unwind(tdbb, (jrd_req*)request);
@@ -426,7 +427,7 @@ void DYN_define_constraint(gbl*		gbl,
 		DYN_REQUEST(drq_c_unq_nam) = request;
 	}
 
-	if (not_null == FALSE) {
+	if (!not_null) {
 		DYN_error_punt(false, 123, null_field_name, NULL, NULL, NULL, NULL);
 		/* msg 123: "Field: %s not defined as NOT NULL - can't be used in PRIMARY KEY/UNIQUE constraint definition" */
 	}
@@ -453,7 +454,7 @@ void DYN_define_constraint(gbl*		gbl,
 /* For PRIMARY KEY/UNIQUE constraints, make sure same set of columns 
    is not used in another constraint of either type */
 
-	if (foreign_flag == FALSE)
+	if (!foreign_flag)
 	{
 		request = CMP_find_request(tdbb, drq_c_dup_con, DYN_REQUESTS);
 		id = drq_c_dup_con;
@@ -2200,11 +2201,9 @@ void DYN_define_local_field(gbl*		gbl,
 	SSHORT id;
 	UCHAR verb;
 	SqlIdentifier local_field_name;
-	USHORT dtype, length,
-		lflag, sflag, slflag, scflag, clflag, clength, prflag, precision;
+	USHORT dtype, length, clength, precision;
 	SSHORT stype, scale;
 	SSHORT charset_id;
-	USHORT charset_id_flag;
 	SLONG fld_pos;
 
 	thread_db* tdbb = GET_THREAD_DATA;
@@ -2226,8 +2225,9 @@ void DYN_define_local_field(gbl*		gbl,
 	request = CMP_find_request(tdbb, drq_s_lfields, DYN_REQUESTS);
 	id = drq_s_lfields;
 
-	scflag = lflag = sflag = slflag = clflag = prflag = FALSE;
-	charset_id_flag = FALSE;
+	bool lflag, sflag, slflag, scflag, clflag, prflag;
+	scflag = lflag = sflag = slflag = clflag = prflag = false;
+	bool charset_id_flag = false;
 	const UCHAR* blr = NULL;
 	const UCHAR* source = NULL;
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -2354,37 +2354,37 @@ void DYN_define_local_field(gbl*		gbl,
 
 			case isc_dyn_fld_length:
 				length = (USHORT)DYN_get_number(ptr);
-				lflag = TRUE;
+				lflag = true;
 				break;
 
 			case isc_dyn_fld_sub_type:
 				stype = (SSHORT)DYN_get_number(ptr);
-				sflag = TRUE;
+				sflag = true;
 				break;
 
 			case isc_dyn_fld_char_length:
 				clength = (USHORT)DYN_get_number(ptr);
-				clflag = TRUE;
+				clflag = true;
 				break;
 
 			case isc_dyn_fld_segment_length:
 				stype = (SSHORT)DYN_get_number(ptr);
-				slflag = TRUE;
+				slflag = true;
 				break;
 
 			case isc_dyn_fld_scale:
 				scale = (SSHORT)DYN_get_number(ptr);
-				scflag = TRUE;
+				scflag = true;
 				break;
 
 			case isc_dyn_fld_precision:
 				precision = (USHORT)DYN_get_number(ptr);
-				prflag = TRUE;
+				prflag = true;
 				break;
 
 			case isc_dyn_fld_character_set:
 				charset_id = (SSHORT)DYN_get_number(ptr);
-				charset_id_flag = TRUE;
+				charset_id_flag = true;
 				break;
 
 			case isc_dyn_fld_collation:
@@ -2647,6 +2647,7 @@ void DYN_define_parameter( gbl* gbl, const UCHAR** ptr, TEXT* procedure_name)
 	SqlIdentifier parameter_name;
 	jrd_req* request;
 	jrd_req* request2;
+	// Leave these as USHORT. Don't convert the *_null ones to bool.
 	USHORT f_length, f_type, f_charlength, f_seg_length,
 		f_scale_null, f_subtype_null, f_seg_length_null,
 		f_charlength_null, f_precision_null, f_charset_null, f_collation_null;
@@ -2894,9 +2895,7 @@ void DYN_define_procedure( gbl* gbl, const UCHAR** ptr)
  *	Execute a dynamic ddl statement.
  *
  **************************************/
-	jrd_req* request;
 	UCHAR verb;
-	USHORT sql_prot;
 	SSHORT id;
 	SqlIdentifier procedure_name;
 	SqlIdentifier owner_name;
@@ -2912,14 +2911,14 @@ void DYN_define_procedure( gbl* gbl, const UCHAR** ptr)
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
-	sql_prot = FALSE;
-	request = NULL;
+	jrd_req* request = NULL;
 	id = -1;
 
 	try {
 
 	id = drq_l_prc_name;
 	check_unique_name(tdbb, gbl, procedure_name, true);
+	bool sql_prot = false;
 
 	request = CMP_find_request(tdbb, drq_s_prcs, DYN_REQUESTS);
 	id = drq_s_prcs;
@@ -2975,7 +2974,7 @@ void DYN_define_procedure( gbl* gbl, const UCHAR** ptr)
 				break;
 
 			case isc_dyn_rel_sql_protection:
-				sql_prot = (USHORT)DYN_get_number(ptr);
+				sql_prot = (bool) DYN_get_number(ptr);
 				break;
 
 			default:
@@ -3054,15 +3053,12 @@ void DYN_define_relation( gbl* gbl, const UCHAR** ptr)
  **************************************/
 	jrd_req* request;
 	UCHAR verb;
-	USHORT sql_prot, is_a_view, priv;
+	USHORT priv;
 	SSHORT id;
-	ISC_STATUS *s;
 	SqlIdentifier relation_name, owner_name, field_name;
 
 	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
-
-	sql_prot = is_a_view = FALSE;
 
 	relation_name[0] = 0;
 	GET_STRING(ptr, relation_name);
@@ -3081,6 +3077,8 @@ void DYN_define_relation( gbl* gbl, const UCHAR** ptr)
 
 	id = drq_l_rel_name;
 	check_unique_name(tdbb, gbl, relation_name, false);
+	bool sql_prot = false, is_a_view = false;
+
 	request = CMP_find_request(tdbb, drq_s_rels, DYN_REQUESTS);
 	id = drq_s_rels;
 
@@ -3110,7 +3108,7 @@ void DYN_define_relation( gbl* gbl, const UCHAR** ptr)
 
 			case isc_dyn_view_blr:
 				REL.RDB$VIEW_BLR.NULL = FALSE;
-				is_a_view = TRUE;
+				is_a_view = true;
 				DYN_put_blr_blob(gbl, ptr, &REL.RDB$VIEW_BLR);
 				break;
 
@@ -3148,7 +3146,7 @@ void DYN_define_relation( gbl* gbl, const UCHAR** ptr)
 
 			case isc_dyn_rel_sql_protection:
 				REL.RDB$FLAGS |= REL_sql;
-				sql_prot = DYN_get_number(ptr);
+				sql_prot = (bool) DYN_get_number(ptr);
 				break;
 
 			default:
@@ -3186,7 +3184,7 @@ void DYN_define_relation( gbl* gbl, const UCHAR** ptr)
 						/* msg 115: "CREATE VIEW failed" */
 
 						if (!(priv & SCL_read)) {
-							s = tdbb->tdbb_status_vector;
+							ISC_STATUS* s = tdbb->tdbb_status_vector;
 							*s++ = isc_arg_gds;
 							*s++ = isc_no_priv;
 							*s++ = isc_arg_string;
@@ -4285,7 +4283,7 @@ static bool find_field_source(thread_db*	tdbb,
 /* CVC: It seems the logic of this function was changed over time. It's unlikely
 it will cause a failure that leads to call DYN_error_punt(), unless the request finds
 problems due to database corruption or unexpected ODS changes. Under normal
-circumstances, it will return either TRUE or FALSE. When TRUE, we found a field source
+circumstances, it will return either true or false. When true, we found a field source
 for the view's name/context/field and are loading this value in the last parameter,
 that can be used against rdb$fields' rdb$field_name. */
 
@@ -4371,7 +4369,7 @@ bool is_it_user_name(gbl* gbl, const TEXT* role_name, thread_db* tdbb)
  *
  * Functional description
  *
- *     if role_name is user name returns TRUE. Otherwise returns FALSE
+ *     if role_name is user name returns true. Otherwise returns false.
  *
  **************************************/
 

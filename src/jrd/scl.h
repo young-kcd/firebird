@@ -28,14 +28,13 @@ namespace Jrd {
 
 /* Security class definition */
 
-class scl : public pool_alloc_rpt<SCHAR, type_scl>
+class SecurityClass : public pool_alloc_rpt<SCHAR, type_scl>
 {
     public:
-	scl *scl_next;		/* Next security class in system */
+	SecurityClass* scl_next;	/* Next security class in system */
 	USHORT scl_flags;			/* Access permissions */
 	TEXT scl_name[2];
 };
-typedef scl *SCL;
 
 #define SCL_read		1		/* Read access */
 #define SCL_write		2		/* Write access */

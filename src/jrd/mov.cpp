@@ -143,9 +143,8 @@ void MOV_fast(
  *	Move a byte string as fast as possible.
  *
  **************************************/
-	ULONG l;
-
-	if (l = (length >> 4))
+	ULONG l = length >> 4;
+	if (l)
 		do {
 			*to++ = *from++;
 			*to++ = *from++;

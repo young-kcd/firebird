@@ -63,6 +63,14 @@ const size_t MAX_SQL_IDENTIFIER_SIZE = 32;
 const size_t MAX_SQL_IDENTIFIER_LEN = 31;
 typedef TEXT SqlIdentifier[MAX_SQL_IDENTIFIER_SIZE];
 
+
+const char* const PRIMARY_KEY		= "PRIMARY KEY";
+const char* const FOREIGN_KEY		= "FOREIGN KEY";
+const char* const UNIQUE_CNSTRT		= "UNIQUE";
+const char* const CHECK_CNSTRT		= "CHECK";
+const char* const NOT_NULL_CNSTRT	= "NOT NULL";
+
+
 /* literal strings in rdb$ref_constraints to be used to identify
    the cascade actions for referential constraints. Used
    by isql/show and isql/extract for now. */
@@ -75,6 +83,9 @@ const char* const RI_RESTRICT       = "RESTRICT";
 
 const char* const IMPLICIT_DOMAIN_PREFIX = "RDB$";
 const int IMPLICIT_DOMAIN_PREFIX_LEN = 4;
+
+const char* const SQL_SECCLASS_PREFIX = "SQL$";
+const int SQL_SECCLASS_PREFIX_LEN = 4;
 
 
 /******************************************/

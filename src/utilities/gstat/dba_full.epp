@@ -118,7 +118,7 @@ static void db_error(int);
 
 static dba_fil* db_open(const char*, USHORT);
 static const pag* db_read(SLONG);
-static bool key_equality(SSHORT, const SCHAR*, const btn*);
+static bool key_equality(SSHORT, const SCHAR*, const btree_nod*);
 static void move(const SCHAR*, SCHAR*, SSHORT);
 static void print_distribution(const SCHAR*, const SLONG*);
 static void print_header(const header_page*);
@@ -765,8 +765,8 @@ static void analyze_index( dba_rel* relation, idx* index)
 
 			SLONG node_page_count = 0;
 			FPRINTF(tddba->sw_outfile, "\nnodes:");
-			for (const btn* node = bucket->btr_nodes; true;
-				 node = (btn*) (node->btn_data + node->btn_length))
+			for (const btree_nod* node = bucket->btr_nodes; true;
+				 node = (btree_nod*) (node->btn_data + node->btn_length))
 			{
 				move((SCHAR*) node->btn_number, (SCHAR*) &number, sizeof(number));
 
@@ -852,7 +852,7 @@ static void analyze_index( dba_rel* relation, idx* index)
 		++index->idx_leaf_buckets;
 		SLONG node_page_count = 0;
 		for (node = bucket->btr_nodes;;
-			 node = (BTN) (node->btn_data + node->btn_length))
+			 node = (btree_nod*) (node->btn_data + node->btn_length))
 		{
 			move((SCHAR*) node->btn_number, (SCHAR*) &number, sizeof(number));
 
@@ -1218,7 +1218,7 @@ static const pag* db_read( SLONG page_number)
 #endif
 
 
-static bool key_equality( SSHORT length, const SCHAR* key, const btn* node)
+static bool key_equality( SSHORT length, const SCHAR* key, const btree_nod* node)
 {
 /**************************************
  *

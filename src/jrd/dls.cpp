@@ -37,9 +37,9 @@
 
 using namespace Jrd;
 
-static MDLS DLS_cfg_tmpdir = { NULL, FALSE };	/* directory list object */
+static mutexed_dir_list DLS_cfg_tmpdir = { NULL, false };	/* directory list object */
 
-/*  Note that the only kind of writing permitted on the fdls list is
+/*  Note that the only kind of writing permitted on the function_dir_list is
  *  appending a new entry to the existing (possibly empty) list.
  *  Therefore, we only need a write-lock to protect against
  *  simultaneous updates: readers don't need a lock because they'll
@@ -71,7 +71,7 @@ bool DLS_get_temp_space(ULONG size, sort_work_file* sfb)
 	fb_assert(size > (ULONG) 0);
 	fb_assert(sfb);
 
-	MDLS* ptr = DLS_get_access();
+	mutexed_dir_list* ptr = DLS_get_access();
 
 #ifdef V4_THREADING
 	if (!ptr->mdls_mutex_init) {
@@ -82,7 +82,7 @@ bool DLS_get_temp_space(ULONG size, sort_work_file* sfb)
 	V4_MUTEX_LOCK(ptr->mdls_mutex);
 #endif
 	if (!sfb->sfb_dls) {
-		/* allocate temp. space starting search from the begining of the dls list */
+		/* allocate temp. space starting search from the begining of the dir_list */
 		for (sfb->sfb_dls = ptr->mdls_dls;
 			 sfb->sfb_dls;
 			 sfb->sfb_dls = sfb->sfb_dls->dls_next)
@@ -95,7 +95,7 @@ bool DLS_get_temp_space(ULONG size, sort_work_file* sfb)
 		}
 	}
 	else {
-		/* allocate temp. space from the current dls entry */
+		/* allocate temp. space from the current dir_list entry */
 		if (size <= (sfb->sfb_dls->dls_size - sfb->sfb_dls->dls_inuse)) {
 			sfb->sfb_dls->dls_inuse += size;
 			result = true;
@@ -122,7 +122,7 @@ void DLS_put_temp_space(sort_work_file* sfb)
  *
  **************************************/
 	if (sfb && sfb->sfb_dls) {
-		MDLS* ptr = DLS_get_access();
+		mutexed_dir_list* ptr = DLS_get_access();
 #ifdef V4_THREADING
 		fb_assert(ptr->mdls_mutex_init);
 		V4_MUTEX_LOCK(ptr->mdls_mutex);
@@ -152,9 +152,9 @@ bool API_ROUTINE DLS_add_dir(ULONG size, const TEXT* dir_name)
  *
  **************************************/
 
-/* allocate dls structure */
+/* allocate dir_list structure */
 
-	dls* new_dls = (DLS) gds__alloc((SLONG) (sizeof(dls) +
+	dir_list* new_dls = (dir_list*) gds__alloc((SLONG) (sizeof(dir_list) +
 										sizeof(TEXT) * strlen(dir_name)));
 	if (!new_dls)
 		return false;
@@ -166,7 +166,7 @@ bool API_ROUTINE DLS_add_dir(ULONG size, const TEXT* dir_name)
 
 /* get access to directory list object */
 
-	MDLS* mdls = DLS_get_access();
+	mutexed_dir_list* mdls = DLS_get_access();
 
 #ifdef V4_THREADING
 /* lock mutex, initialize it in case of the first access */
@@ -185,7 +185,7 @@ bool API_ROUTINE DLS_add_dir(ULONG size, const TEXT* dir_name)
 		mdls->mdls_dls = new_dls;
 	}
 	else {
-		dls* dls_iterator = mdls->mdls_dls;
+		dir_list* dls_iterator = mdls->mdls_dls;
 		while (dls_iterator->dls_next)
 			dls_iterator = dls_iterator->dls_next;
 		dls_iterator->dls_next = new_dls;
@@ -201,7 +201,7 @@ bool API_ROUTINE DLS_add_dir(ULONG size, const TEXT* dir_name)
 }
 
 
-MDLS* DLS_get_access(void)
+mutexed_dir_list* DLS_get_access(void)
 {
 /**************************************
  *

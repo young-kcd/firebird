@@ -68,7 +68,7 @@ static const struct
 	{NULL, NULL},
 	{"stream", begin},
 	{"set_index", byte_verb},
-	{"rse", rse}, {"first", one}, {"project", byte_args}, {"sort", byte_args},	/* 70 */
+	{"RecordSelExpr", rse}, {"first", one}, {"project", byte_args}, {"sort", byte_args},	/* 70 */
 	{"boolean", one},
 	{"ascending", one},
 	{"descending", one},

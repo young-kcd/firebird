@@ -29,30 +29,31 @@
 #include "../jrd/val.h"
 
 class str;
+struct dsc;
 
-int		MOV_compare(const struct dsc*, const struct dsc*);
-double	MOV_date_to_double(const struct dsc*);
+int		MOV_compare(const dsc*, const dsc*);
+double	MOV_date_to_double(const dsc*);
 void	MOV_double_to_date(double, SLONG[2]);
 void	MOV_fast(const SCHAR*, SCHAR*, ULONG);
 void	MOV_faster(const SLONG*, SLONG*, ULONG);
 void	MOV_fill(SLONG*, ULONG);
-double	MOV_get_double(const struct dsc*);
-SLONG	MOV_get_long(const struct dsc*, SSHORT);
-void	MOV_get_metadata_str(const struct dsc*, TEXT*, USHORT);
-void	MOV_get_name(const struct dsc*, TEXT*);
-SQUAD	MOV_get_quad(const struct dsc*, SSHORT);
-SINT64	MOV_get_int64(const struct dsc*, SSHORT);
-int		MOV_get_string_ptr(const struct dsc*, USHORT*, UCHAR**, struct vary*,
+double	MOV_get_double(const dsc*);
+SLONG	MOV_get_long(const dsc*, SSHORT);
+void	MOV_get_metadata_str(const dsc*, TEXT*, USHORT);
+void	MOV_get_name(const dsc*, TEXT*);
+SQUAD	MOV_get_quad(const dsc*, SSHORT);
+SINT64	MOV_get_int64(const dsc*, SSHORT);
+int		MOV_get_string_ptr(const dsc*, USHORT*, UCHAR**, struct vary*,
 							  USHORT);
-int		MOV_get_string(const struct dsc*, UCHAR**, struct vary*, USHORT);
-GDS_DATE	MOV_get_sql_date(const struct dsc*);
-GDS_TIME	MOV_get_sql_time(const struct dsc*);
-GDS_TIMESTAMP	MOV_get_timestamp(const struct dsc*);
-int		MOV_make_string(const struct dsc*, USHORT, const char**, struct vary*,
+int		MOV_get_string(const dsc*, UCHAR**, struct vary*, USHORT);
+GDS_DATE	MOV_get_sql_date(const dsc*);
+GDS_TIME	MOV_get_sql_time(const dsc*);
+GDS_TIMESTAMP	MOV_get_timestamp(const dsc*);
+int		MOV_make_string(const dsc*, USHORT, const char**, struct vary*,
 						   USHORT);
-int		MOV_make_string2(const struct dsc*, USHORT, UCHAR**, struct vary*,
+int		MOV_make_string2(const dsc*, USHORT, UCHAR**, struct vary*,
 							USHORT, str**);
-void	MOV_move(const struct dsc*, struct dsc*);
+void	MOV_move(const dsc*, dsc*);
 void	MOV_time_stamp(GDS_TIMESTAMP*);
 
 

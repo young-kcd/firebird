@@ -48,26 +48,26 @@
 static struct FAB fab;
 static struct RAB rab;
 
-static bool check_sort(NOD, IDX *, USHORT);
+static bool check_sort(NOD, index_desc*, USHORT);
 static bool compare(const UCHAR*, const UCHAR*, USHORT);
 static int compare_segment(NOD, UCHAR *, DSC *);
 static int connect(ExternalFile*, USHORT);
 static void disconnect(ExternalFile*);
 static void expand_format(fmt*, const fmt*);
 static SLONG find_field(const fmt*, USHORT, USHORT, USHORT);
-static bool get_dbkey(Rsb*);
-static bool get_indexed(Rsb*);
+static bool get_dbkey(RecordSource*);
+static bool get_indexed(RecordSource*);
 static USHORT get_key_segment(NOD, UCHAR *, DSC *);
-static bool get_sequential(Rsb*);
-static bool match_index(const fmt*, struct XABKEY *, IDX *);
-static int open_indexed(Rsb*);
-static int open_sequential(Rsb*);
+static bool get_sequential(RecordSource*);
+static bool match_index(const fmt*, struct XABKEY *, index_desc*);
+static int open_indexed(RecordSource*);
+static int open_sequential(RecordSource*);
 static void position_by_rfa(ExternalFile*, USHORT *);
 static void set_flags(jrd_rel*, Record*);
 static void set_missing(jrd_rel*, Record*);
 
 
-void EXT_close(Rsb* rsb)
+void EXT_close(RecordSource* rsb)
 {
 /**************************************
  *
@@ -139,7 +139,7 @@ ExternalFile* EXT_file(jrd_rel* relation, TEXT* file_name, bid* description)
  *	Create a file block for external file access.
  *
  **************************************/
-	UCHAR index_buffer[MAX_KEYS * sizeof(IDX)];
+	UCHAR index_buffer[MAX_KEYS * sizeof(index_desc)];
 
 	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
@@ -222,11 +222,11 @@ ExternalFile* EXT_file(jrd_rel* relation, TEXT* file_name, bid* description)
 					 isc_arg_string, "sys$display",
 					 isc_arg_string, file->ext_filename,
 					 isc_arg_gds, isc_io_access_err, isc_arg_vms, status, 0);
-		IDX* index = (IDX *) index_buffer;
+		index_desc* index = (index_desc*) index_buffer;
 		for (key = keys; key < end; key++)
 			if (match_index(format, key, index)) {
 				++file->ext_index_count;
-				index = (IDX *) (index->idx_rpt + index->idx_count);
+				index = (index_desc*) (index->idx_rpt + index->idx_count);
 			}
 		if (l = (UCHAR *) index - index_buffer) {
 			str* string = FB_NEW_RPT(tdbb->tdbb_default, l) str();
@@ -276,7 +276,7 @@ void EXT_fini(jrd_rel* relation)
 }
 
 
-int EXT_get(Rsb* rsb)
+bool EXT_get(RecordSource* rsb)
 {
 /**************************************
  *
@@ -291,17 +291,17 @@ int EXT_get(Rsb* rsb)
 	thread_db* tdbb = GET_THREAD_DATA;
 
 	if (tdbb->tdbb_request->req_flags & req_abort)
-		return FALSE;
+		return false;
 
 	switch (rsb->rsb_type) {
 		case rsb_ext_sequential:
-			return (get_sequential(rsb)) ? TRUE : FALSE;
+			return get_sequential(rsb);
 	
 		case rsb_ext_indexed:
-			return (get_indexed(rsb)) ? TRUE : FALSE;
+			return get_indexed(rsb);
 	
 		case rsb_ext_dbkey:
-			return (get_dbkey(rsb)) ? TRUE : FALSE;
+			return get_dbkey(rsb);
 	
 		default:
 			IBERROR(181);			/* msg 181 external access type not implemented */
@@ -347,7 +347,7 @@ void EXT_modify(record_param* old_rpb, record_param* new_rpb, int *transaction)
 }
 
 
-EXT_open(Rsb* rsb)
+EXT_open(RecordSource* rsb)
 {
 /**************************************
  *
@@ -392,7 +392,7 @@ EXT_open(Rsb* rsb)
 }
 
 
-Rsb* EXT_optimize(OPT opt, SSHORT stream, NOD * sort_ptr)
+RecordSource* EXT_optimize(OptimizerBlk* opt, SSHORT stream, NOD * sort_ptr)
 {
 /**************************************
  *
@@ -410,8 +410,8 @@ Rsb* EXT_optimize(OPT opt, SSHORT stream, NOD * sort_ptr)
 /* Start by chasing around finding pointers to the various
    data structures */
 
-	Csb* csb = opt->opt_csb;
-	Csb::csb_repeat* csb_tail = &csb->csb_rpt[stream];
+	CompilerScratch* csb = opt->opt_csb;
+	CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[stream];
 	jrd_rel* relation = csb_tail->csb_relation;
 	ExternalFile* file = relation->rel_file;
 	NOD dbkey, inversion;
@@ -420,8 +420,8 @@ Rsb* EXT_optimize(OPT opt, SSHORT stream, NOD * sort_ptr)
 /* Check for a dbkey retrieval.  If we find it, ignore everything
    else */
 
-	opt::opt_repeat* tail = opt->opt_rpt;
-	for (const opt::opt_repeat* const opt_end = tail + opt->opt_count;
+	OptimizerBlk::opt_repeat* tail = opt->opt_rpt;
+	for (const OptimizerBlk::opt_repeat* const opt_end = tail + opt->opt_count;
 		 tail < opt_end; tail++)
 	{
 		if (!(tail->opt_flags & opt_used) &&
@@ -432,12 +432,13 @@ Rsb* EXT_optimize(OPT opt, SSHORT stream, NOD * sort_ptr)
 /* If there are booleans availables and indices to optimize
    against, go at it */
 
-	IDX* idx;
+	index_desc* idx;
 	if (!dbkey && opt->opt_count && (idx = file->ext_indices))
 	{
 		for (SSHORT i = 0; i < file->ext_index_count; i++) {
 			if (OPT_match_index(opt, stream, idx) &&
-				opt->opt_rpt[0].opt_lower) {
+				opt->opt_rpt[0].opt_lower) 
+			{
 				inversion = OPT_make_index(tdbb, opt, relation, idx);
 				if (check_sort(*sort_ptr, idx, stream))
 					*sort_ptr = NULL;
@@ -451,24 +452,24 @@ Rsb* EXT_optimize(OPT opt, SSHORT stream, NOD * sort_ptr)
    and external indexed or an external sequential record stream
    block */
 
-	Rsb* rsb;
+	RecordSource* rsb;
 	SSHORT size; // better size_t
 	if (dbkey) {
-		rsb = FB_NEW_RPT(tdbb->tdbb_default, 1) Rsb();
+		rsb = FB_NEW_RPT(tdbb->tdbb_default, 1) RecordSource();
 		rsb->rsb_type = rsb_ext_dbkey;
 		rsb->rsb_count = 1;
 		size = sizeof(struct irsb_index);
-		rsb->rsb_arg[0] = (Rsb*) dbkey;
+		rsb->rsb_arg[0] = (RecordSource*) dbkey;
 	}
 	else if (inversion) {
-		rsb = FB_NEW_RPT(tdbb->tdbb_default, 1) Rsb();
+		rsb = FB_NEW_RPT(tdbb->tdbb_default, 1) RecordSource();
 		rsb->rsb_type = rsb_ext_indexed;
 		rsb->rsb_count = 1;
 		size = sizeof(struct irsb_index);
-		rsb->rsb_arg[0] = (Rsb*) inversion;
+		rsb->rsb_arg[0] = (RecordSource*) inversion;
 	}
 	else {
-		rsb = FB_NEW(tdbb->tdbb_default) Rsb();
+		rsb = FB_NEW(tdbb->tdbb_default) RecordSource();
 		rsb->rsb_type = rsb_ext_sequential;
 		size = sizeof(struct irsb);
 	}
@@ -602,7 +603,7 @@ void EXT_trans_start(tra* transaction)
 }
 
 
-static bool check_sort(NOD sort, IDX * index, USHORT stream)
+static bool check_sort(NOD sort, index_desc* index, USHORT stream)
 {
 /**************************************
  *
@@ -625,7 +626,7 @@ static bool check_sort(NOD sort, IDX * index, USHORT stream)
 /* For each sort key, make sure the key matches the index segment,
    and that the sort is ascending */
 
-	idx::idx_repeat* tail = index->idx_rpt;
+	index_desc::idx_repeat* tail = index->idx_rpt;
 	NOD* ptr = sort->nod_arg;
 	for (NOD* const end = ptr + sort->nod_count; ptr < end; ptr++, tail++)
 	{
@@ -823,7 +824,7 @@ static SLONG find_field(
 }
 
 
-static bool get_dbkey(Rsb* rsb)
+static bool get_dbkey(RecordSource* rsb)
 {
 /**************************************
  *
@@ -882,7 +883,7 @@ static bool get_dbkey(Rsb* rsb)
 }
 
 
-static bool get_indexed(Rsb* rsb)
+static bool get_indexed(RecordSource* rsb)
 {
 /**************************************
  *
@@ -911,7 +912,7 @@ static bool get_indexed(Rsb* rsb)
 
 	NOD node = rsb->rsb_arg[0];
 	IndexRetrieval* retrieval = (IndexRetrieval*) node->nod_arg[e_idx_retrieval];
-	IDX* index = &retrieval->irb_desc;
+	index_desc* index = &retrieval->irb_desc;
 
 /* If this is the first time through on this stream, and a lower
    value is present, position the RMS stream with a keyed access.
@@ -921,7 +922,7 @@ static bool get_indexed(Rsb* rsb)
 	if (impure->irsb_flags & irsb_first)
 		if (retrieval->irb_lower_count) {
 			UCHAR* p = key_buffer;
-			idx::idx_repeat* segment = index->idx_rpt;
+			index_desc::idx_repeat* segment = index->idx_rpt;
 			NOD* ptr = retrieval->irb_value;
 			for (NOD* const end = ptr + retrieval->irb_lower_count; ptr < end;
 				 ptr++, segment++)
@@ -958,7 +959,7 @@ static bool get_indexed(Rsb* rsb)
    bound.  Since the full boolean will be applied anyway, the only
    danger is processing a few extraneous records. */
 
-	idx::idx_repeat* segment = index->idx_rpt;
+	index_desc::idx_repeat* segment = index->idx_rpt;
 
 	NOD* ptr = retrieval->irb_value + index->idx_count;
 	for (NOD* const end = ptr + retrieval->irb_upper_count; ptr < end;
@@ -1001,7 +1002,7 @@ static USHORT get_key_segment(NOD node, UCHAR * buffer, DSC * target)
 }
 
 
-static bool get_sequential(Rsb* rsb)
+static bool get_sequential(RecordSource* rsb)
 {
 /**************************************
  *
@@ -1067,7 +1068,7 @@ static bool get_sequential(Rsb* rsb)
 }
 
 
-static bool match_index(const fmt* format, struct XABKEY *xab, IDX * idx)
+static bool match_index(const fmt* format, struct XABKEY *xab, index_desc* idx)
 {
 /**************************************
  *
@@ -1084,7 +1085,7 @@ static bool match_index(const fmt* format, struct XABKEY *xab, IDX * idx)
 	const UCHAR* size = &xab->xab$b_siz;
 	const UCHAR* const end = size + xab->xab$b_nsg;
 	const USHORT* position = &xab->xab$w_pos;
-	idx::idx_repeat* tail = idx->idx_rpt;
+	index_desc::idx_repeat* tail = idx->idx_rpt;
 
 	for (; size < end; size++, position++, tail++) {
 		const int n = find_field(format, xab->xab$b_dtp, *position, *size);
@@ -1103,7 +1104,7 @@ static bool match_index(const fmt* format, struct XABKEY *xab, IDX * idx)
 }
 
 
-static open_indexed(Rsb* rsb)
+static open_indexed(RecordSource* rsb)
 {
 /**************************************
  *
@@ -1123,7 +1124,7 @@ static open_indexed(Rsb* rsb)
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 	NOD node = (NOD) rsb->rsb_arg[0];
 	IndexRetrieval* retrieval = (IndexRetrieval*) node->nod_arg[e_idx_retrieval];
-	IDX* index = &retrieval->irb_desc;
+	index_desc* index = &retrieval->irb_desc;
 
 /* Create internal RMS rab (irab) for stream.  Connect
    temporary shared rab, then save internal rab number */
@@ -1133,7 +1134,7 @@ static open_indexed(Rsb* rsb)
 }
 
 
-static open_sequential(Rsb* rsb)
+static open_sequential(RecordSource* rsb)
 {
 /**************************************
  *

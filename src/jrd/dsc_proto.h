@@ -28,8 +28,8 @@
 
 int			DSC_string_length(const struct dsc*);
 const TEXT*	DSC_dtype_tostring(UCHAR);
-void		DSC_get_dtype_name(const struct dsc*, TEXT *, USHORT);
-void		DSC_make_descriptor(struct dsc *, USHORT, SSHORT,
+void		DSC_get_dtype_name(const dsc*, TEXT *, USHORT);
+void		DSC_make_descriptor(dsc*, USHORT, SSHORT,
 										   USHORT, SSHORT, SSHORT, SSHORT);
 USHORT		DSC_convert_to_text_length(USHORT dsc_type);
 

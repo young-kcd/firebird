@@ -81,42 +81,42 @@
 
 
 
-static const TEXT elements[][10] =
-	{ "", "statement", "boolean", "value", "RSE", "TABLE" };
+static const TEXT elements[][14] =
+	{ "", "statement", "boolean", "value", "RecordSelExpr", "TABLE" };
 
 #include "gen/codetext.h"
 
 using namespace Jrd;
 
-static void error(Csb*, ...);
+static void error(CompilerScratch*, ...);
 static SSHORT find_proc_field(const jrd_prc*, const TEXT*);
-static jrd_nod* par_args(thread_db*, Csb*, USHORT);
-static jrd_nod* par_cast(thread_db*, Csb*);
-static XCP par_condition(thread_db*, Csb*);
-static XCP par_conditions(thread_db*, Csb*);
-static SSHORT par_context(Csb*, SSHORT *);
-static void par_dependency(thread_db*, Csb*, SSHORT, SSHORT, TEXT *);
-static jrd_nod* par_exec_proc(thread_db*, Csb*, SSHORT);
-static jrd_nod* par_fetch(thread_db*, Csb*, jrd_nod*);
-static jrd_nod* par_field(thread_db*, Csb*, SSHORT);
-static jrd_nod* par_function(thread_db*, Csb*);
-static jrd_nod* par_literal(thread_db*, Csb*);
-static jrd_nod* par_map(thread_db*, Csb*, USHORT);
-static jrd_nod* par_message(thread_db*, Csb*);
-static jrd_nod* par_modify(thread_db*, Csb*);
-static USHORT par_name(Csb*, TEXT*);
-static jrd_nod* par_plan(thread_db*, Csb*);
-static jrd_nod* par_procedure(thread_db*, Csb*, SSHORT);
-static void par_procedure_parms(thread_db*, Csb*, jrd_prc*, jrd_nod**, jrd_nod**, USHORT);
-static jrd_nod* par_relation(thread_db*, Csb*, SSHORT, BOOLEAN);
-static jrd_nod* par_rse(thread_db*, Csb*, SSHORT);
-static jrd_nod* par_sort(thread_db*, Csb*, BOOLEAN);
-static jrd_nod* par_stream(thread_db*, Csb*);
-static jrd_nod* par_union(thread_db*, Csb*);
-static USHORT par_word(Csb*);
-static jrd_nod* parse(thread_db*, Csb*, USHORT, USHORT expected_optional = 0);
-static void syntax_error(Csb*, const TEXT *);
-static void warning(Csb*, ...);
+static jrd_nod* par_args(thread_db*, CompilerScratch*, USHORT);
+static jrd_nod* par_cast(thread_db*, CompilerScratch*);
+static PsqlException* par_condition(thread_db*, CompilerScratch*);
+static PsqlException* par_conditions(thread_db*, CompilerScratch*);
+static SSHORT par_context(CompilerScratch*, SSHORT *);
+static void par_dependency(thread_db*, CompilerScratch*, SSHORT, SSHORT, const TEXT*);
+static jrd_nod* par_exec_proc(thread_db*, CompilerScratch*, SSHORT);
+static jrd_nod* par_fetch(thread_db*, CompilerScratch*, jrd_nod*);
+static jrd_nod* par_field(thread_db*, CompilerScratch*, SSHORT);
+static jrd_nod* par_function(thread_db*, CompilerScratch*);
+static jrd_nod* par_literal(thread_db*, CompilerScratch*);
+static jrd_nod* par_map(thread_db*, CompilerScratch*, USHORT);
+static jrd_nod* par_message(thread_db*, CompilerScratch*);
+static jrd_nod* par_modify(thread_db*, CompilerScratch*);
+static USHORT par_name(CompilerScratch*, TEXT*);
+static jrd_nod* par_plan(thread_db*, CompilerScratch*);
+static jrd_nod* par_procedure(thread_db*, CompilerScratch*, SSHORT);
+static void par_procedure_parms(thread_db*, CompilerScratch*, jrd_prc*, jrd_nod**, jrd_nod**, USHORT);
+static jrd_nod* par_relation(thread_db*, CompilerScratch*, SSHORT, bool);
+static jrd_nod* par_rse(thread_db*, CompilerScratch*, SSHORT);
+static jrd_nod* par_sort(thread_db*, CompilerScratch*, bool);
+static jrd_nod* par_stream(thread_db*, CompilerScratch*);
+static jrd_nod* par_union(thread_db*, CompilerScratch*);
+static USHORT par_word(CompilerScratch*);
+static jrd_nod* parse(thread_db*, CompilerScratch*, USHORT, USHORT expected_optional = 0);
+static void syntax_error(CompilerScratch*, const TEXT*);
+static void warning(CompilerScratch*, ...);
 
 #define BLR_PEEK	*(csb->csb_running)
 #define BLR_BYTE	*(csb->csb_running)++
@@ -127,8 +127,8 @@ static void warning(Csb*, ...);
 jrd_nod* PAR_blr(thread_db*	tdbb,
 			jrd_rel*		relation,
 			const UCHAR*	blr,
-			Csb*		view_csb,
-			Csb**	csb_ptr,
+			CompilerScratch*	view_csb,
+			CompilerScratch**	csb_ptr,
 			jrd_req**	request_ptr,
 			const bool trigger,
 			USHORT	flags)
@@ -152,12 +152,12 @@ jrd_nod* PAR_blr(thread_db*	tdbb,
 	gds__print_blr(blr, gds__trace_printer, 0, 0);
 #endif
 
-	Csb* csb;
+	CompilerScratch* csb;
 	if (!(csb_ptr && (csb = *csb_ptr))) {
 		size_t count = 5;
 		if (view_csb)
 			count += view_csb->csb_rpt.getCapacity();
-		csb = Csb::newCsb(*tdbb->tdbb_default, count);
+		csb = CompilerScratch::newCsb(*tdbb->tdbb_default, count);
 		csb->csb_g_flags |= flags;
 	}
 
@@ -166,7 +166,7 @@ jrd_nod* PAR_blr(thread_db*	tdbb,
 
 	if (trigger) {
 		SSHORT stream = csb->nextStream();
-		Csb::csb_repeat* t1 = CMP_csb_element(csb, 0);
+		CompilerScratch::csb_repeat* t1 = CMP_csb_element(csb, 0);
 		t1->csb_flags |= csb_used | csb_active | csb_trigger;
 		t1->csb_relation = relation;
 		t1->csb_stream = (UCHAR) stream;
@@ -178,7 +178,7 @@ jrd_nod* PAR_blr(thread_db*	tdbb,
 		t1->csb_stream = (UCHAR) stream;
 	}
 	else if (relation) {
-		Csb::csb_repeat* t1 = CMP_csb_element(csb, 0);
+		CompilerScratch::csb_repeat* t1 = CMP_csb_element(csb, 0);
 		t1->csb_stream = csb->nextStream();
 		t1->csb_relation = relation;
 		t1->csb_flags = csb_used | csb_active;
@@ -187,13 +187,13 @@ jrd_nod* PAR_blr(thread_db*	tdbb,
 	csb->csb_running = csb->csb_blr = blr;
 
 	if (view_csb) {
-		Csb::rpt_itr ptr = view_csb->csb_rpt.begin();
+		CompilerScratch::rpt_itr ptr = view_csb->csb_rpt.begin();
 		// AB: csb_n_stream replaced by view_csb->csb_rpt.getCount(), because there could
 		// be more then just csb_n_stream-numbers that hold data. 
 		// Certainly csb_stream (see par_context where the context is retrieved)
-		const Csb::rpt_const_itr end = view_csb->csb_rpt.end();
+		const CompilerScratch::rpt_const_itr end = view_csb->csb_rpt.end();
 		for (SSHORT stream = 0; ptr != end; ++ptr, ++stream) {
-			Csb::csb_repeat* t2 = CMP_csb_element(csb, stream);
+			CompilerScratch::csb_repeat* t2 = CMP_csb_element(csb, stream);
 			t2->csb_relation = ptr->csb_relation;
 			t2->csb_stream = ptr->csb_stream;
 			t2->csb_flags = ptr->csb_flags & csb_used;
@@ -231,7 +231,7 @@ jrd_nod* PAR_blr(thread_db*	tdbb,
 }
 
 
-USHORT PAR_desc(Csb* csb, DSC* desc)
+USHORT PAR_desc(CompilerScratch* csb, DSC* desc)
 {
 /**************************************
  *
@@ -385,7 +385,7 @@ jrd_nod* PAR_gen_field(thread_db* tdbb, USHORT stream, USHORT id)
 }
 
 
-jrd_nod* PAR_make_field(thread_db* tdbb, Csb* csb, USHORT context,
+jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb, USHORT context,
 	const TEXT* base_field)
 {
 /**************************************
@@ -411,7 +411,7 @@ jrd_nod* PAR_make_field(thread_db* tdbb, Csb* csb, USHORT context,
        This means a field without entry in rdb$fields. This is the origin of the
        mysterious message "cannot access column z x in view VF" when selecting from
        such view that has field "z x". This closes Firebird Bug #227758. */
-	TEXT name[32];
+	SqlIdentifier name;
     strcpy (name, base_field);
     fb_utils::fb_exact_name(name);
 
@@ -507,7 +507,7 @@ jrd_nod* PAR_make_node(thread_db* tdbb, int size)
 }
 
 
-Csb* PAR_parse(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag)
+CompilerScratch* PAR_parse(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag)
 {
 /**************************************
  *
@@ -521,7 +521,7 @@ Csb* PAR_parse(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag)
  **************************************/
 	SET_TDBB(tdbb);
 
-	Csb* csb = Csb::newCsb(*tdbb->tdbb_default, 5);
+	CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->tdbb_default, 5);
 	csb->csb_running = csb->csb_blr = blr;
 	const SSHORT version = *csb->csb_running++;
 	if (internal_flag)
@@ -587,7 +587,7 @@ SLONG PAR_symbol_to_gdscode(const char* name)
 }
 
 
-static void error(Csb* csb, ...)
+static void error(CompilerScratch* csb, ...)
 {
 /**************************************
  *
@@ -688,7 +688,7 @@ static SSHORT find_proc_field(const jrd_prc* procedure, const TEXT* name)
 }
 
 
-static jrd_nod* par_args(thread_db* tdbb, Csb* csb, USHORT expected)
+static jrd_nod* par_args(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 {
 /**************************************
  *
@@ -717,7 +717,7 @@ static jrd_nod* par_args(thread_db* tdbb, Csb* csb, USHORT expected)
 }
 
 
-static jrd_nod* par_cast(thread_db* tdbb, Csb* csb)
+static jrd_nod* par_cast(thread_db* tdbb, CompilerScratch* csb)
 {
 /**************************************
  *
@@ -748,7 +748,7 @@ static jrd_nod* par_cast(thread_db* tdbb, Csb* csb)
 }
 
 
-static XCP par_condition(thread_db* tdbb, Csb* csb)
+static PsqlException* par_condition(thread_db* tdbb, CompilerScratch* csb)
 {
 /**************************************
  *
@@ -761,7 +761,8 @@ static XCP par_condition(thread_db* tdbb, Csb* csb)
  *
  **************************************/
 	jrd_nod* dep_node;
-	TEXT name[32], *p;
+	SqlIdentifier name;
+	TEXT* p;
 	SLONG code_number;
 
 	SET_TDBB(tdbb);
@@ -770,14 +771,14 @@ static XCP par_condition(thread_db* tdbb, Csb* csb)
 
 	const USHORT code_type = BLR_BYTE;
 
-	/* don't create XCP if blr_raise is used,
+	/* don't create PsqlException if blr_raise is used,
 	   just return NULL */
 	if (code_type == blr_raise)
 	{
 		return NULL;
 	}
 
-	XCP exception_list = FB_NEW_RPT(*tdbb->tdbb_default, 1) xcp();
+	PsqlException* exception_list = FB_NEW_RPT(*tdbb->tdbb_default, 1) PsqlException();
 	exception_list->xcp_count = 1;
 	
 	switch (code_type) {
@@ -822,7 +823,7 @@ static XCP par_condition(thread_db* tdbb, Csb* csb)
 }
 
 
-static XCP par_conditions(thread_db* tdbb, Csb* csb)
+static PsqlException* par_conditions(thread_db* tdbb, CompilerScratch* csb)
 {
 /**************************************
  *
@@ -835,7 +836,8 @@ static XCP par_conditions(thread_db* tdbb, Csb* csb)
  *
  **************************************/
 	jrd_nod* dep_node;
-	TEXT name[32], *p;
+	SqlIdentifier name;
+	TEXT* p;
 	SLONG code_number;
 
 	SET_TDBB(tdbb);
@@ -843,7 +845,7 @@ static XCP par_conditions(thread_db* tdbb, Csb* csb)
 /* allocate a node to represent the conditions list */
 
 	const USHORT n = BLR_WORD;
-	XCP exception_list = FB_NEW_RPT(*tdbb->tdbb_default, n) xcp();
+	PsqlException* exception_list = FB_NEW_RPT(*tdbb->tdbb_default, n) PsqlException();
 	exception_list->xcp_count = n;
 	for (int i = 0; i < n; i++) {
 		const USHORT code_type = BLR_BYTE;
@@ -896,7 +898,7 @@ static XCP par_conditions(thread_db* tdbb, Csb* csb)
 }
 
 
-static SSHORT par_context(Csb* csb, SSHORT* context_ptr)
+static SSHORT par_context(CompilerScratch* csb, SSHORT* context_ptr)
 {
 /**************************************
  *
@@ -918,7 +920,7 @@ static SSHORT par_context(Csb* csb, SSHORT* context_ptr)
 	}
 	const SSHORT context = (unsigned int) BLR_BYTE;
 	CMP_csb_element(csb, stream);
-	Csb::csb_repeat* tail = CMP_csb_element(csb, context);
+	CompilerScratch::csb_repeat* tail = CMP_csb_element(csb, context);
 
 	if (tail->csb_flags & csb_used)
 		error(csb, isc_ctxinuse, 0);
@@ -934,10 +936,10 @@ static SSHORT par_context(Csb* csb, SSHORT* context_ptr)
 
 
 static void par_dependency(thread_db*   tdbb,
-						   Csb*    csb,
+						   CompilerScratch*    csb,
 						   SSHORT stream,
 						   SSHORT id,
-						   TEXT*  field_name)
+						   const TEXT*  field_name)
 {
 /**************************************
  *
@@ -986,7 +988,7 @@ static void par_dependency(thread_db*   tdbb,
 }
 
 
-static jrd_nod* par_exec_proc(thread_db* tdbb, Csb* csb, SSHORT blr_operator)
+static jrd_nod* par_exec_proc(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_operator)
 {
 /**************************************
  *
@@ -1002,7 +1004,7 @@ static jrd_nod* par_exec_proc(thread_db* tdbb, Csb* csb, SSHORT blr_operator)
 
 	jrd_prc* procedure = NULL;
 	{
-		TEXT name[32];
+		SqlIdentifier name;
 
 		if (blr_operator == blr_exec_pid) {
 			const USHORT pid = BLR_WORD;
@@ -1038,7 +1040,7 @@ static jrd_nod* par_exec_proc(thread_db* tdbb, Csb* csb, SSHORT blr_operator)
 }
 
 
-static jrd_nod* par_fetch(thread_db* tdbb, Csb* csb, jrd_nod* for_node)
+static jrd_nod* par_fetch(thread_db* tdbb, CompilerScratch* csb, jrd_nod* for_node)
 {
 /**************************************
  *
@@ -1054,10 +1056,10 @@ static jrd_nod* par_fetch(thread_db* tdbb, Csb* csb, jrd_nod* for_node)
  **************************************/
 	SET_TDBB(tdbb);
 
-/* Fake RSE */
+/* Fake RecordSelExpr */
 
 	for_node->nod_arg[e_for_re] = PAR_make_node(tdbb, 1 + rse_delta + 2);
-	RSE rse = (RSE) for_node->nod_arg[e_for_re];
+	RecordSelExpr* rse = (RecordSelExpr*) for_node->nod_arg[e_for_re];
 	rse->nod_type = nod_rse;
 	rse->nod_count = 0;
 	rse->rse_count = 1;
@@ -1084,7 +1086,7 @@ static jrd_nod* par_fetch(thread_db* tdbb, Csb* csb, jrd_nod* for_node)
 }
 
 
-static jrd_nod* par_field(thread_db* tdbb, Csb* csb, SSHORT blr_operator)
+static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_operator)
 {
 /**************************************
  *
@@ -1118,7 +1120,7 @@ static jrd_nod* par_field(thread_db* tdbb, Csb* csb, SSHORT blr_operator)
 		is_column = true;
 	}
 	else if (blr_operator == blr_field) {
-		Csb::csb_repeat* tail = &csb->csb_rpt[stream];
+		CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
 		const jrd_prc* procedure = tail->csb_procedure;
 
 		/* make sure procedure has been scanned before using it */
@@ -1207,7 +1209,7 @@ static jrd_nod* par_field(thread_db* tdbb, Csb* csb, SSHORT blr_operator)
 }
 
 
-static jrd_nod* par_function(thread_db* tdbb, Csb* csb)
+static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb)
 {
 /**************************************
  *
@@ -1278,7 +1280,7 @@ static jrd_nod* par_function(thread_db* tdbb, Csb* csb)
 }
 
 
-static jrd_nod* par_literal(thread_db* tdbb, Csb* csb)
+static jrd_nod* par_literal(thread_db* tdbb, CompilerScratch* csb)
 {
 /**************************************
  *
@@ -1378,7 +1380,7 @@ static jrd_nod* par_literal(thread_db* tdbb, Csb* csb)
 }
 
 
-static jrd_nod* par_map(thread_db* tdbb, Csb* csb, USHORT stream)
+static jrd_nod* par_map(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 {
 /**************************************
  *
@@ -1415,7 +1417,7 @@ static jrd_nod* par_map(thread_db* tdbb, Csb* csb, USHORT stream)
 }
 
 
-static jrd_nod* par_message(thread_db* tdbb, Csb* csb)
+static jrd_nod* par_message(thread_db* tdbb, CompilerScratch* csb)
 {
 /**************************************
  *
@@ -1429,11 +1431,11 @@ static jrd_nod* par_message(thread_db* tdbb, Csb* csb)
  **************************************/
 	SET_TDBB(tdbb);
 
-/* Get message number, register it in the compile scratch block, and
+/* Get message number, register it in the compiler scratch block, and
    allocate a node to represent the message */
 
 	USHORT n = (unsigned int) BLR_BYTE;
-	Csb::csb_repeat* tail = CMP_csb_element(csb, n);
+	CompilerScratch::csb_repeat* tail = CMP_csb_element(csb, n);
 	jrd_nod* node = PAR_make_node(tdbb, e_msg_length);
 	tail->csb_message = node;
 	node->nod_count = 0;
@@ -1468,7 +1470,7 @@ static jrd_nod* par_message(thread_db* tdbb, Csb* csb)
 }
 
 
-static jrd_nod* par_modify(thread_db* tdbb, Csb* csb)
+static jrd_nod* par_modify(thread_db* tdbb, CompilerScratch* csb)
 {
 /**************************************
  *
@@ -1501,7 +1503,7 @@ static jrd_nod* par_modify(thread_db* tdbb, Csb* csb)
 /* Make sure the compiler scratch block is big enough to hold
    everything */
 
-	Csb::csb_repeat* tail = CMP_csb_element(csb, context);
+	CompilerScratch::csb_repeat* tail = CMP_csb_element(csb, context);
 	tail->csb_stream = (UCHAR) new_stream;
 	tail->csb_flags |= csb_used;
 
@@ -1520,7 +1522,7 @@ static jrd_nod* par_modify(thread_db* tdbb, Csb* csb)
 }
 
 
-static USHORT par_name(Csb* csb, TEXT* string)
+static USHORT par_name(CompilerScratch* csb, TEXT* string)
 {
 /**************************************
  *
@@ -1547,7 +1549,7 @@ static USHORT par_name(Csb* csb, TEXT* string)
 }
 
 
-static jrd_nod* par_plan(thread_db* tdbb, Csb* csb)
+static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 {
 /**************************************
  *
@@ -1581,7 +1583,7 @@ static jrd_nod* par_plan(thread_db* tdbb, Csb* csb)
 /* we have hit a stream; parse the context number and access type */
 
 	if (node_type == blr_retrieve) {
-		TEXT name[32];
+		SqlIdentifier name;
 
 		jrd_nod* plan = PAR_make_node(tdbb, e_retrieve_length);
 		plan->nod_type = (NOD_T) (USHORT) blr_table[node_type];
@@ -1601,7 +1603,7 @@ static jrd_nod* par_plan(thread_db* tdbb, Csb* csb)
 		   this would add a new context; while this is a reference to 
 		   an existing context */
 
-		jrd_nod* relation_node = par_relation(tdbb, csb, n, FALSE);
+		jrd_nod* relation_node = par_relation(tdbb, csb, n, false);
 		plan->nod_arg[e_retrieve_relation] = relation_node;
 		jrd_rel* relation = (jrd_rel*) relation_node->nod_arg[e_rel_relation];
 
@@ -1730,7 +1732,7 @@ static jrd_nod* par_plan(thread_db* tdbb, Csb* csb)
 }
 
 
-static jrd_nod* par_procedure(thread_db* tdbb, Csb* csb, SSHORT blr_operator)
+static jrd_nod* par_procedure(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_operator)
 {
 /**************************************
  *
@@ -1747,7 +1749,7 @@ static jrd_nod* par_procedure(thread_db* tdbb, Csb* csb, SSHORT blr_operator)
 	SET_TDBB(tdbb);
 
 	{
-		TEXT name[32];
+		SqlIdentifier name;
 
 		if (blr_operator == blr_procedure) {
 			par_name(csb, name);
@@ -1783,7 +1785,7 @@ static jrd_nod* par_procedure(thread_db* tdbb, Csb* csb, SSHORT blr_operator)
 
 static void par_procedure_parms(
 								thread_db* tdbb,
-								Csb* csb,
+								CompilerScratch* csb,
 								jrd_prc* procedure,
 								jrd_nod** message_ptr,
 								jrd_nod** parameter_ptr, USHORT input_flag)
@@ -1825,7 +1827,7 @@ static void par_procedure_parms(
 		USHORT n = ++csb->csb_msg_number;
 		if (n < 2)
 			csb->csb_msg_number = n = 2;
-		Csb::csb_repeat* tail = CMP_csb_element(csb, n);
+		CompilerScratch::csb_repeat* tail = CMP_csb_element(csb, n);
 		jrd_nod* message = PAR_make_node(tdbb, e_msg_length);
 		tail->csb_message = message;
 		message->nod_type = nod_message;
@@ -1921,7 +1923,7 @@ static void par_procedure_parms(
 
 static jrd_nod* par_relation(
 						thread_db* tdbb,
-						Csb* csb, SSHORT blr_operator, BOOLEAN parse_context)
+						CompilerScratch* csb, SSHORT blr_operator, bool parse_context)
 {
 /**************************************
  *
@@ -1933,7 +1935,7 @@ static jrd_nod* par_relation(
  *	Parse a relation reference.
  *
  **************************************/
-	TEXT name[32];
+	SqlIdentifier name;
 
 	SET_TDBB(tdbb);
 
@@ -2013,7 +2015,7 @@ static jrd_nod* par_relation(
 }
 
 
-static jrd_nod* par_rse(thread_db* tdbb, Csb* csb, SSHORT rse_op)
+static jrd_nod* par_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 {
 /**************************************
  *
@@ -2028,7 +2030,7 @@ static jrd_nod* par_rse(thread_db* tdbb, Csb* csb, SSHORT rse_op)
 	SET_TDBB(tdbb);
 
 	SSHORT count = (unsigned int) BLR_BYTE;
-	RSE rse = (RSE) PAR_make_node(tdbb, count + rse_delta + 2);
+	RecordSelExpr* rse = (RecordSelExpr*) PAR_make_node(tdbb, count + rse_delta + 2);
 	rse->nod_count = 0;
 	rse->rse_count = count;
 	jrd_nod** ptr = rse->rse_relation;
@@ -2048,26 +2050,26 @@ static jrd_nod* par_rse(thread_db* tdbb, Csb* csb, SSHORT rse_op)
 
 		case blr_first:
 			if (rse_op == blr_rs_stream)
-				syntax_error(csb, "rse stream clause");
+				syntax_error(csb, "RecordSelExpr stream clause");
 			rse->rse_first = parse(tdbb, csb, VALUE);
 			break;
 
         case blr_skip:
             if (rse_op == blr_rs_stream)
-                syntax_error (csb, "rse stream clause");
+                syntax_error (csb, "RecordSelExpr stream clause");
             rse->rse_skip = parse (tdbb, csb, VALUE);
             break;
 
 		case blr_sort:
 			if (rse_op == blr_rs_stream)
-				syntax_error(csb, "rse stream clause");
-			rse->rse_sorted = par_sort(tdbb, csb, TRUE);
+				syntax_error(csb, "RecordSelExpr stream clause");
+			rse->rse_sorted = par_sort(tdbb, csb, true);
 			break;
 
 		case blr_project:
 			if (rse_op == blr_rs_stream)
-				syntax_error(csb, "rse stream clause");
-			rse->rse_projection = par_sort(tdbb, csb, FALSE);
+				syntax_error(csb, "RecordSelExpr stream clause");
+			rse->rse_projection = par_sort(tdbb, csb, false);
 			break;
 
 		case blr_join_type:
@@ -2093,7 +2095,7 @@ static jrd_nod* par_rse(thread_db* tdbb, Csb* csb, SSHORT rse_op)
 
 #ifdef SCROLLABLE_CURSORS
 			/* if a receive is seen here, then it is intended to be an asynchronous 
-			   receive which can happen at any time during the scope of the rse-- 
+			   receive which can happen at any time during the scope of the RecordSelExpr-- 
 			   this is intended to be a more efficient mechanism for scrolling through 
 			   a record stream, to prevent having to send a message to the engine 
 			   for each record */
@@ -2126,14 +2128,14 @@ static jrd_nod* par_rse(thread_db* tdbb, Csb* csb, SSHORT rse_op)
 				}
 			}
 			syntax_error(csb, (TEXT*)((rse_op == blr_rs_stream) ?
-						 "rse stream clause" :
+						 "RecordSelExpr stream clause" :
 						 "record selection expression clause"));
 		}
 	}
 }
 
 
-static jrd_nod* par_sort(thread_db* tdbb, Csb* csb, BOOLEAN flag)
+static jrd_nod* par_sort(thread_db* tdbb, CompilerScratch* csb, bool flag)
 {
 /**************************************
  *
@@ -2182,7 +2184,7 @@ static jrd_nod* par_sort(thread_db* tdbb, Csb* csb, BOOLEAN flag)
 }
 
 
-static jrd_nod* par_stream(thread_db* tdbb, Csb* csb)
+static jrd_nod* par_stream(thread_db* tdbb, CompilerScratch* csb)
 {
 /**************************************
  *
@@ -2196,7 +2198,7 @@ static jrd_nod* par_stream(thread_db* tdbb, Csb* csb)
  **************************************/
 	SET_TDBB(tdbb);
 
-	RSE rse = (RSE) PAR_make_node(tdbb, 1 + rse_delta + 2);
+	RecordSelExpr* rse = (RecordSelExpr*) PAR_make_node(tdbb, 1 + rse_delta + 2);
 	rse->nod_count = 0;
 	rse->rse_count = 1;
 	rse->rse_relation[0] = parse(tdbb, csb, RELATION);
@@ -2217,7 +2219,7 @@ static jrd_nod* par_stream(thread_db* tdbb, Csb* csb)
 }
 
 
-static jrd_nod* par_union(thread_db* tdbb, Csb* csb)
+static jrd_nod* par_union(thread_db* tdbb, CompilerScratch* csb)
 {
 /**************************************
  *
@@ -2232,7 +2234,7 @@ static jrd_nod* par_union(thread_db* tdbb, Csb* csb)
 	SET_TDBB(tdbb);
 
 /* Make the node, parse the context number, get a stream assigned,
-   and get the number of sub-rse's. */
+   and get the number of sub-RecordSelExpr's. */
 
 	jrd_nod* node = PAR_make_node(tdbb, e_uni_length);
 	node->nod_count = 2;
@@ -2240,7 +2242,7 @@ static jrd_nod* par_union(thread_db* tdbb, Csb* csb)
 	node->nod_arg[e_uni_stream] = (jrd_nod*) (IPTR) stream;
 	SSHORT count = (unsigned int) BLR_BYTE;
 
-/* Pick up the sub-rse's and maps */
+/* Pick up the sub-RecordSelExpr's and maps */
 
 	lls* clauses = NULL;
 
@@ -2255,7 +2257,7 @@ static jrd_nod* par_union(thread_db* tdbb, Csb* csb)
 }
 
 
-static USHORT par_word(Csb* csb)
+static USHORT par_word(CompilerScratch* csb)
 {
 /**************************************
  *
@@ -2274,7 +2276,8 @@ static USHORT par_word(Csb* csb)
 }
 
 
-static jrd_nod* parse(thread_db* tdbb, Csb* csb, USHORT expected, USHORT expected_optional)
+static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
+	USHORT expected_optional)
 {
 /**************************************
  *
@@ -2286,8 +2289,6 @@ static jrd_nod* parse(thread_db* tdbb, Csb* csb, USHORT expected, USHORT expecte
  *	Parse a BLR expression.
  *
  **************************************/
-	TEXT name[32];
-
 	SET_TDBB(tdbb);
 
 	const SSHORT blr_operator = BLR_BYTE;
@@ -2421,10 +2422,13 @@ static jrd_nod* parse(thread_db* tdbb, Csb* csb, USHORT expected, USHORT expecte
 		break;
 
 	case blr_user_savepoint:
-		*arg++ = (jrd_nod*) (IPTR) BLR_BYTE;
-		par_name(csb, name);
-		*arg++ = (jrd_nod*) ALL_cstring(name);
-		break;
+		{
+			*arg++ = (jrd_nod*) (IPTR) BLR_BYTE;
+			SqlIdentifier name;
+			par_name(csb, name);
+			*arg++ = (jrd_nod*) ALL_cstring(name);
+			break;
+		}
 
 	case blr_store:
 	case blr_store2:
@@ -2526,14 +2530,14 @@ static jrd_nod* parse(thread_db* tdbb, Csb* csb, USHORT expected, USHORT expecte
 
 	case blr_singular:
 		node = parse(tdbb, csb, TYPE_RSE);
-		((RSE) node)->nod_flags |= rse_singular;
+		((RecordSelExpr*) node)->nod_flags |= rse_singular;
 		break;
 
 	case blr_relation:
 	case blr_rid:
 	case blr_relation2:
 	case blr_rid2:
-		node = par_relation(tdbb, csb, blr_operator, TRUE);
+		node = par_relation(tdbb, csb, blr_operator, true);
 		break;
 
 	case blr_union:
@@ -2550,7 +2554,7 @@ static jrd_nod* parse(thread_db* tdbb, Csb* csb, USHORT expected, USHORT expecte
 		break;
 
 	case blr_group_by:
-		node = par_sort(tdbb, csb, FALSE);
+		node = par_sort(tdbb, csb, false);
 		return (node->nod_count) ? node : NULL;
 
 	case blr_field:
@@ -2561,7 +2565,7 @@ static jrd_nod* parse(thread_db* tdbb, Csb* csb, USHORT expected, USHORT expecte
 	case blr_gen_id:
 	case blr_set_generator:
 		{
-			TEXT name[32];
+			SqlIdentifier name;
 
 			par_name(csb, name);
 			const SLONG tmp = MET_lookup_generator(tdbb, name);
@@ -2880,7 +2884,7 @@ static jrd_nod* parse(thread_db* tdbb, Csb* csb, USHORT expected, USHORT expecte
 		if (n != blr_relation && n != blr_relation2 &&
 			n != blr_rid && n != blr_rid2)
 				syntax_error(csb, elements[RELATION]);
-		node->nod_arg[e_lockrel_relation] = par_relation(tdbb, csb, n, FALSE);
+		node->nod_arg[e_lockrel_relation] = par_relation(tdbb, csb, n, false);
 		node->nod_arg[e_lockrel_level] = parse(tdbb, csb, VALUE);
 		break;
 
@@ -2914,7 +2918,7 @@ static jrd_nod* parse(thread_db* tdbb, Csb* csb, USHORT expected, USHORT expecte
 			syntax_error(csb, elements[RELATION]);
 		}
 		node->nod_arg[e_range_relation_relation] =
-			par_relation(tdbb, csb, n, FALSE);
+			par_relation(tdbb, csb, n, false);
 		break;
 
 	case blr_release_locks:
@@ -2953,7 +2957,7 @@ static jrd_nod* parse(thread_db* tdbb, Csb* csb, USHORT expected, USHORT expecte
 }
 
 
-static void syntax_error(Csb* csb, const TEXT* string)
+static void syntax_error(CompilerScratch* csb, const TEXT* string)
 {
 /**************************************
  *
@@ -2973,7 +2977,7 @@ static void syntax_error(Csb* csb, const TEXT* string)
 }
 
 
-static void warning(Csb* csb, ...)
+static void warning(CompilerScratch* csb, ...)
 {
 /**************************************
  *

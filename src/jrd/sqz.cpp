@@ -88,7 +88,7 @@ USHORT SQZ_apply_differences(Record* record, const SCHAR* differences,
 }
 
 
-USHORT SQZ_compress(Dcc* dcc, const SCHAR* input, SCHAR* output, int space)
+USHORT SQZ_compress(DataComprControl* dcc, const SCHAR* input, SCHAR* output, int space)
 {
 /**************************************
  *
@@ -152,7 +152,7 @@ USHORT SQZ_compress(Dcc* dcc, const SCHAR* input, SCHAR* output, int space)
 }
 
 
-USHORT SQZ_compress_length(Dcc* dcc, const SCHAR* input, int space)
+USHORT SQZ_compress_length(DataComprControl* dcc, const SCHAR* input, int space)
 {
 /**************************************
  *
@@ -376,7 +376,7 @@ USHORT SQZ_differences(const SCHAR*	rec1,
 }
 
 
-void SQZ_fast(Dcc* dcc, const SCHAR* input, SCHAR* output)
+void SQZ_fast(DataComprControl* dcc, const SCHAR* input, SCHAR* output)
 {
 /**************************************
  *
@@ -417,7 +417,7 @@ void SQZ_fast(Dcc* dcc, const SCHAR* input, SCHAR* output)
 }
 
 
-USHORT SQZ_length(thread_db* tdbb, const SCHAR* data, int length, Dcc* dcc)
+USHORT SQZ_length(thread_db* tdbb, const SCHAR* data, int length, DataComprControl* dcc)
 {
 /**************************************
  *
@@ -483,7 +483,7 @@ USHORT SQZ_length(thread_db* tdbb, const SCHAR* data, int length, Dcc* dcc)
 				}
 				else
 				{
-					dcc->dcc_next = FB_NEW(*tdbb->tdbb_default) Dcc();
+					dcc->dcc_next = FB_NEW(*tdbb->tdbb_default) DataComprControl();
 					dcc = dcc->dcc_next;
 					dcc->dcc_pool = tdbb->tdbb_default;
 				}
@@ -521,7 +521,7 @@ USHORT SQZ_length(thread_db* tdbb, const SCHAR* data, int length, Dcc* dcc)
 				}
 				else
 				{
-					dcc->dcc_next = FB_NEW(*tdbb->tdbb_default) Dcc();
+					dcc->dcc_next = FB_NEW(*tdbb->tdbb_default) DataComprControl();
 					dcc = dcc->dcc_next;
 					dcc->dcc_pool = tdbb->tdbb_default;
 				}

@@ -206,13 +206,13 @@ static bool get_mounts(MNT *, TEXT *, IB_FILE *);
 #ifdef hpux
 /* RITTER - added HP11 to the pre-processor condition below */
 #if !(defined HP10 || defined HP11)
-static BOOLEAN get_server(TEXT *, TEXT *);
+static bool get_server(TEXT*, TEXT*);
 #endif
 #endif
 
 
 #ifndef NO_NFS
-int ISC_analyze_nfs(TEXT* expanded_filename, TEXT* node_name)
+bool ISC_analyze_nfs(TEXT* expanded_filename, TEXT* node_name)
 {
 /**************************************
  *
@@ -226,36 +226,30 @@ int ISC_analyze_nfs(TEXT* expanded_filename, TEXT* node_name)
  *
  **************************************/
 
-	TEXT mnt_buffer[BUFFER_LARGE], remote_filename[MAXPATHLEN],
+	TEXT mnt_buffer[BUFFER_LARGE],
 		max_node[MAXHOSTLEN], max_path[MAXPATHLEN], expand_mount[MAXPATHLEN];
-
-	MNT mount;
-	TEXT *p, *q, *temp;
-	USHORT flag;
-
-	IB_FILE *mtab;
-	int context, len;
-
 
     // If we are ignoring NFS remote mounts then do not bother checking here
     // and pretend it's only local. MOD 16-Nov-2002
     if (! Config::getRemoteFileOpenAbility()) {
-        return FALSE;
+        return false;
     }
 
-	len = 0;
+	int len = 0;
 	*max_path = 0;
-	flag = FALSE;
+	bool flag = false;
 
 /* Search mount points */
 
-	temp = NULL;
-	context = 0;
+	TEXT* temp = NULL;
+	int context = 0;
 
+	MNT mount;
 #if (defined AIX || defined AIX_PPC)
 	while (get_mounts(&mount, mnt_buffer, &temp, &context))
 #else
-	if (!(mtab = MTAB_OPEN(MTAB, "r"))) {
+	IB_FILE* mtab = MTAB_OPEN(MTAB, "r");
+	if (!mtab) {
 		return flag;
 	}
 	while (get_mounts(&mount, mnt_buffer, mtab))
@@ -268,8 +262,10 @@ int ISC_analyze_nfs(TEXT* expanded_filename, TEXT* node_name)
 
 		/* see how much of the mount point matches the expanded_filename */
 
-		p = expanded_filename;
-		for (q = mount.mnt_mount; *q && *q == *p++; q++);
+		const TEXT* p = expanded_filename;
+		const TEXT* q = mount.mnt_mount;
+		while (*q && *q == *p++)
+			++q;
 
 		/* if the whole mount point is not contained in the expanded_filename
 		   OR the mount point is not a valid pathname in the expanded_filename,
@@ -307,10 +303,12 @@ int ISC_analyze_nfs(TEXT* expanded_filename, TEXT* node_name)
    remote node.  Return TRUE, loading node_name with the remote
    node name and expanded_filename with the remote file name. */
 
-	if (*max_path) {
-		p = remote_filename;
+	TEXT remote_filename[MAXPATHLEN];
 
-		q = max_path;
+	if (*max_path) {
+		TEXT* p = remote_filename;
+
+		const TEXT* q = max_path;
 		while (*q)
 			*p++ = *q++;
 
@@ -323,7 +321,7 @@ int ISC_analyze_nfs(TEXT* expanded_filename, TEXT* node_name)
 		p = remote_filename;
 		while (*expanded_filename++ = *p++);
 
-		flag = TRUE;
+		flag = true;
 	}
 
 #if (!defined AIX && !defined AIX_PPC)
@@ -461,13 +459,13 @@ bool ISC_check_if_remote(const Firebird::PathName& file_name,
  *
  **************************************/
 	TEXT temp_name[MAXPATHLEN];
-	TEXT host_name[64];
 
 	strncpy(temp_name, file_name.c_str(), MAXPATHLEN);
 	temp_name[MAXPATHLEN - 1] = 0;
 
 /* Always check for an explicit TCP node name */
 
+	TEXT host_name[64];
 	if (ISC_analyze_tcp(temp_name, host_name)) {
 
 		return true;
@@ -546,19 +544,17 @@ int ISC_expand_filename(const TEXT* file_name,
  *	intelligent.
  *
  **************************************/
-	int l, length, status;
-	TEXT *address, temp[NAM$C_MAXRSS], temp2[NAM$C_MAXRSS], *p;
-	struct FAB fab;
-	struct NAM nam;
+	TEXT temp[NAM$C_MAXRSS], temp2[NAM$C_MAXRSS];
 
-	length = ISC_expand_logical(file_name, file_length, expanded_name);
+	int length = ISC_expand_logical(file_name, file_length, expanded_name);
 
+	TEXT* p;
 	for (p = expanded_name; *p; p++)
 		if (p[0] == ':' && p[1] == ':')
 			return length;
 
-	fab = cc$rms_fab;
-	nam = cc$rms_nam;
+	struct FAB fab = cc$rms_fab;
+	struct NAM nam = cc$rms_nam;
 	fab.fab$l_nam = &nam;
 	nam.nam$l_esa = temp;
 	nam.nam$b_ess = sizeof(temp);
@@ -571,7 +567,8 @@ int ISC_expand_filename(const TEXT* file_name,
 
 	if ((sys$parse(&fab) & 1) && (sys$search(&fab) & 1)) {
 		p = temp2;
-		if (length = l = nam.nam$b_rsl)
+		int l = length = nam.nam$b_rsl
+		if (l)
 			do {
 				*expanded_name++ = *p++;
 			} while (--l);
@@ -873,9 +870,6 @@ int ISC_expand_logical(const TEXT* file_name,
  *	intelligent.
  *
  **************************************/
-	int status, attr;
-	USHORT n, l;
-	TEXT *p;
 	ITM items[2];
 	struct dsc$descriptor_s desc1, desc2;
 
@@ -885,6 +879,7 @@ int ISC_expand_logical(const TEXT* file_name,
 	ISC_make_desc(file_name, &desc1, file_length);
 	ISC_make_desc(LOGICAL_NAME_TABLE, &desc2, sizeof(LOGICAL_NAME_TABLE) - 1);
 
+	USHORT l;
 	items[0].itm_length = 256;
 	items[0].itm_code = LNM$_STRING;
 	items[0].itm_buffer = expanded_name;
@@ -893,17 +888,17 @@ int ISC_expand_logical(const TEXT* file_name,
 	items[1].itm_length = 0;
 	items[1].itm_code = 0;
 
-	attr = LNM$M_CASE_BLIND;
+	int attr = LNM$M_CASE_BLIND;
 
 	if (l = file_length) {
-		p = expanded_name;
+		TEXT* p = expanded_name;
 		do {
 			*p++ = *file_name++;
 		} while (--l);
 	}
 
-	for (n = 0; n < 10; n++) {
-		status = sys$trnlnm(&attr, &desc2, &desc1, NULL, items);
+	for (int n = 0; n < 10; n++) {
+		const int status = sys$trnlnm(&attr, &desc2, &desc1, NULL, items);
 		if (!(status & 1))
 			break;
 		desc1.dsc$a_pointer = expanded_name;
@@ -1026,13 +1021,12 @@ int ISC_strip_extension(TEXT* file_name)
  *	(after the dot '.')
  *
  **************************************/
-	TEXT *p, *q;
 
 /* Set p to point to the starting part of the actual file name
    (sans directory name) */
 
-	p = strrchr(file_name, '/');
-	q = strrchr(file_name, '\\');
+	TEXT* p = strrchr(file_name, '/');
+	TEXT* q = strrchr(file_name, '\\');
 
 	if (p || q) {
 		/* Get the maximum of the two */
@@ -1198,9 +1192,9 @@ static void expand_share_name(Firebird::PathName& share_name)
 	}
 
 	strcpy(workspace, p);
-	TEXT *q;
+	TEXT* q;
 	for (q = workspace; *p && *p != '!'; p++, q++);
-
+	// empty body loop
 	*q = '\0';
 	if (*p++ != '!' || *p++ != '\\') {
 		return;
@@ -1234,17 +1228,18 @@ static void expand_share_name(Firebird::PathName& share_name)
 	}
 
 	if (ret == ERROR_SUCCESS) {
-		for (q = reinterpret_cast<TEXT*>(data); q && *q;
-			 q = (type_code == REG_MULTI_SZ) ? q + strlen(q) + 1 : NULL) {
-			if (!strnicmp(q, "path", 4)) {
+		for (const TEXT* s = reinterpret_cast<const TEXT*>(data); s && *s;
+			 s = (type_code == REG_MULTI_SZ) ? s + strlen(s) + 1 : NULL)
+		{
+			if (!strnicmp(s, "path", 4)) {
 		    /* CVC: Paranoid protection against buffer overrun.
 				    MAXPATHLEN minus NULL terminator, the possible backslash and p==db_name.
 					Otherwise, it's possible to create long share plus long db_name => crash. */
-				size_t idx = strlen(q + 5);
-				if (idx + 1 + (q[4 + idx] == '\\' ? 1 : 0) + strlen(p) >= MAXPATHLEN)
+				size_t idx = strlen(s + 5);
+				if (idx + 1 + (s[4 + idx] == '\\' ? 1 : 0) + strlen(p) >= MAXPATHLEN)
 					break;
 
-				strcpy(workspace, q + 5);	/* step past the "Path=" part */
+				strcpy(workspace, s + 5);	/* step past the "Path=" part */
 			    /* idx = strlen (workspace); Done previously. */
 				if (workspace[idx - 1] != '\\')
 					workspace[idx++] = '\\';
@@ -1294,10 +1289,6 @@ static bool get_mounts(
  *	Get ALL mount points.
  *
  **************************************/
-	int l, i;
-	TEXT *p;
-	struct vmount *vmt;
-
 	if (!*buffer) {
 		/* The first time through, get the mount info from the system.
 		   First find out how much information there is, then allocate
@@ -1306,23 +1297,26 @@ static bool get_mounts(
 		if (mntctl(MCTL_QUERY, sizeof(SLONG), mnt_buffer) != 0)
 			return false;
 
-		l = *(SLONG *) mnt_buffer;
+		const int l = *(SLONG *) mnt_buffer;
 		/* FREE: in get_mounts() */
 		if (!(*buffer = gds__alloc((SLONG) l)) ||
 			(*count = mntctl(MCTL_QUERY, l, *buffer)) <= 0)
+		{
 			return false;		/* NOMEM: */
+		}
 	}
 	else if (!*count)
 		return false;
 
-	for (i = --(*count), p = *buffer; i--;)
+	TEXT* p;
+	for (int i = --(*count), p = *buffer; i--;)
 		p += ((struct vmount *) p)->vmt_length;
 
-	vmt = (struct vmount *) p;
+	struct vmount* vmt = (struct vmount *) p;
 
 	mount->mnt_node = mnt_buffer;
 	p = vmt2dataptr(vmt, VMT_HOSTNAME);
-	l = vmt2datasize(vmt, VMT_HOSTNAME);
+	int l = vmt2datasize(vmt, VMT_HOSTNAME);
 	if (l && (p[0] != '-' || p[1]))
 		while (l-- && *p)
 			*mnt_buffer++ = *p++;
@@ -1370,12 +1364,11 @@ static bool get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
  *	Get ALL mount points.
  *
  **************************************/
-	TEXT *p, *q;
 	struct mnttab *mptr, mnttab;
 
 /* Start by finding a mount point. */
 
-	p = buffer;
+	TEXT* p = buffer;
 
 	mptr = &mnttab;
 	if (getmntent(file, mptr) == 0) {
@@ -1383,7 +1376,7 @@ static bool get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 		   NFS mount points */
 
 		mount->mnt_node = p;
-		q = mptr->mnt_special;
+		const TEXT* q = mptr->mnt_special;
 		while (*q && *q != ':')
 			*p++ = *q++;
 		*p++ = 0;
@@ -1412,12 +1405,11 @@ static bool get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
  *	Get ALL mount points.
  *
  **************************************/
-	TEXT *p, *q;
 	struct mntent *mptr;
 
 /* Start by finding a mount point. */
 
-	p = buffer;
+	TEXT* p = buffer;
 
 	while ((mptr = getmntent(file)) != (struct mntent *)0) {
 		/* Include non-NFS (local) mounts - some may be longer than
@@ -1429,7 +1421,7 @@ static bool get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 ****/
 
 		mount->mnt_node = p;
-		q = mptr->mnt_fsname;
+		const TEXT* q = mptr->mnt_fsname;
 		while (*q && *q != ':')
 			*p++ = *q++;
 		*p++ = 0;
@@ -1462,18 +1454,17 @@ static bool get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
  *	Get ALL mount points.
  *
  **************************************/
-	TEXT device[128], mount_point[128], type[16], rw[128], foo1[16], *p, *q;
-	SSHORT n;
+	TEXT device[128], mount_point[128], type[16], rw[128], foo1[16];
 
 /* Start by finding a mount point. */
 
-	p = buffer;
+	TEXT* p = buffer;
 
 /* note that the mount point and device are inverted from normal systems */
 	for (;;) {
 		/* Sake of argument, inverted the mount_point, device */
 
-		n =
+		int n =
 			ib_fscanf(file, "%s %s %s %s %s %s %s %s %s %s", mount_point,
 					  foo1, device, rw, foo1, foo1, foo1, foo1, foo1, foo1);
 		if (!strcmp(rw, "read"))
@@ -1491,7 +1482,7 @@ static bool get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 ****/
 
 		mount->mnt_node = p;
-		q = device;
+		const TEXT* q = device;
 		while (*q && *q != ':')
 			*p++ = *q++;
 		*p++ = 0;
@@ -1534,15 +1525,15 @@ static bool get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 	This will still apply with SFIO on FB2.  nmcc Dec2002
 */
 	
-	TEXT device[128], mount_point[128], type[16], rw[128], foo1[16], *p, *q;
-	SSHORT n;
+	TEXT device[128], mount_point[128], type[16], rw[128], foo1[16];
 
 /* Start by finding a mount point. */
 
-	p = buffer;
+	TEXT* p = buffer;
 
 	for (;;) {
-		n = ib_fscanf(file, "%s %s %s %s %s %s", device, mount_point, type, rw, foo1, foo1);
+		const int n =
+			ib_fscanf(file, "%s %s %s %s %s %s", device, mount_point, type, rw, foo1, foo1);
 #ifdef SOLARIS
 		if (n != 5)
 #else
@@ -1559,7 +1550,7 @@ static bool get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 ****/
 
 		mount->mnt_node = p;
-		q = device;
+		const TEXT* q = device;
 		while (*q && *q != ':')
 			*p++ = *q++;
 		*p++ = 0;
@@ -1582,7 +1573,7 @@ static bool get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 #ifdef hpux
 /* RITTER - added HP11 to the pre-processor condition below */
 #if !(defined HP10 || defined HP11)
-static BOOLEAN get_server(TEXT * file_name, TEXT * node_name)
+static bool get_server(TEXT* file_name, TEXT* node_name)
 {
 /**************************************
  *
@@ -1596,19 +1587,17 @@ static BOOLEAN get_server(TEXT * file_name, TEXT * node_name)
  *	name and return TRUE.
  *
  **************************************/
-	TEXT *p, hostname[64];
-	struct cct_entry *cnode;
-
-	cnode = getccnam(ISC_get_host(hostname, sizeof(hostname)));
+	TEXT hostname[64];
+	const struct cct_entry* cnode = getccnam(ISC_get_host(hostname, sizeof(hostname)));
 	if (!cnode || cnode->cnode_type == 'r')
-		return FALSE;
+		return false;
 
 	setccent();
 	while (cnode->cnode_type != 'r')
 		cnode = getccent();
 	strncpy(node_name, cnode->cnode_name, sizeof(cnode->cnode_name));
 
-	return TRUE;
+	return true;
 }
 #endif
 #endif // hpux

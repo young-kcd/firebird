@@ -2891,7 +2891,7 @@ UCHAR *ISC_map_object(ISC_STATUS * status_vector,
 
 #ifdef HAVE_MMAP
 #define ISC_UNMAP_OBJECT_DEFINED
-BOOLEAN ISC_unmap_object(ISC_STATUS * status_vector,
+void ISC_unmap_object(ISC_STATUS * status_vector,
 						 SH_MEM shmem_data,
 						 UCHAR ** object_pointer, SLONG object_length)
 {
@@ -2912,13 +2912,13 @@ BOOLEAN ISC_unmap_object(ISC_STATUS * status_vector,
 	const SLONG page_size = sysconf(_SC_PAGESIZE);
 	if (page_size == -1) {
 		error(status_vector, "sysconf", errno);
-		return FALSE;
+		return; // false;
 	}
 #else
 	const SLONG page_size = (int) getpagesize();
 	if (page_size == -1) {
 		error(status_vector, "getpagesize", errno);
-		return FALSE;
+		return; // false;
 	}
 #endif
 
@@ -2934,11 +2934,11 @@ BOOLEAN ISC_unmap_object(ISC_STATUS * status_vector,
 
 	if (munmap((char *) start, length) == -1) {
 		error(status_vector, "munmap", errno);
-		return FALSE;
+		return; // false;
 	}
 
 	*object_pointer = 0;
-	return TRUE;
+	return; // true;
 }
 #endif
 

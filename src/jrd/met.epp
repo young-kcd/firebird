@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.101 2004-03-25 19:27:18 skidder Exp $
+$Id: met.epp,v 1.102 2004-03-28 09:10:15 robocop Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -137,15 +137,15 @@ static bool get_type(thread_db*, SSHORT*, const UCHAR*, const TEXT*);
 static void lookup_view_contexts(thread_db*, jrd_rel*);
 static void name_copy(TEXT*, const TEXT*);
 static USHORT name_length(const TEXT *);
-static jrd_nod* parse_param_blr(thread_db*, jrd_prc*, bid*, Csb*);
-static jrd_nod* parse_procedure_blr(thread_db*, jrd_prc*, bid*, Csb*);
-static bool par_messages(thread_db*, const UCHAR*, USHORT, jrd_prc*, Csb*);
+static jrd_nod* parse_param_blr(thread_db*, jrd_prc*, bid*, CompilerScratch*);
+static jrd_nod* parse_procedure_blr(thread_db*, jrd_prc*, bid*, CompilerScratch*);
+static bool par_messages(thread_db*, const UCHAR*, USHORT, jrd_prc*, CompilerScratch*);
 static bool resolve_charset_and_collation(thread_db*, SSHORT*, const UCHAR*,
 											 const UCHAR*);
 static str* save_name(thread_db*, const TEXT*);
-static void save_trigger_data(thread_db*, trig_vec**, jrd_rel*, JRD_REQ, STR,
+static void save_trigger_data(thread_db*, trig_vec**, jrd_rel*, jrd_req*, STR,
 	const TEXT*, bool, USHORT);
-static void store_dependencies(thread_db*, Csb*, const TEXT*, USHORT);
+static void store_dependencies(thread_db*, CompilerScratch*, const TEXT*, USHORT);
 static bool verify_TRG_ignore_perm(thread_db*, const TEXT*);
 
 
@@ -942,10 +942,10 @@ bool MET_get_char_subtype(thread_db* tdbb,
 jrd_nod* MET_get_dependencies(thread_db*	tdbb,
 						 jrd_rel*			relation,
 						 const TEXT*		blob,
-						 Csb*				view_csb,
+						 CompilerScratch*	view_csb,
 						 bid*				blob_id,
 						 jrd_req**			request,
-						 Csb**				csb_ptr,
+						 CompilerScratch**	csb_ptr,
 						 const TEXT*		object_name,
 						 USHORT				type)
 {
@@ -963,7 +963,7 @@ jrd_nod* MET_get_dependencies(thread_db*	tdbb,
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	Csb* csb = Csb::newCsb(*tdbb->tdbb_default, 5);
+	CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->tdbb_default, 5);
 	csb->csb_g_flags |= csb_get_dependencies;
 
 	jrd_nod* node;
@@ -1412,11 +1412,11 @@ int MET_lookup_field(thread_db* tdbb, jrd_rel* relation, const TEXT* name,
 
 		if (vector)
 		{
-			UCHAR length = strlen(name);
-			USHORT id;
-			vec::iterator	fieldIter, end;
+			const UCHAR length = strlen(name);
+			USHORT id = 0;
+			vec::iterator fieldIter = vector->begin();
 
-			for (fieldIter = vector->begin(), id = 0, end = vector->end();  fieldIter < end; fieldIter++, id++)
+			for (const vec::const_iterator end = vector->end();  fieldIter < end; fieldIter++, id++)
 				if (*fieldIter) 
 				{
 					jrd_fld* field = reinterpret_cast<jrd_fld*>(*fieldIter);
@@ -1728,7 +1728,8 @@ SLONG MET_lookup_index_name(thread_db* tdbb,
 
 
 bool MET_lookup_partner(
-					   thread_db* tdbb, jrd_rel* relation, IDX* idx, const TEXT* index_name)
+					   thread_db* tdbb, jrd_rel* relation, index_desc* idx,
+					   const TEXT* index_name)
 {
 /**************************************
  *
@@ -1772,7 +1773,7 @@ bool MET_lookup_partner(
 				RC IN RDB$RELATION_CONSTRAINTS
 				OVER RDB$INDEX_NAME CROSS
 				IND IN RDB$INDICES WITH
-				RC.RDB$CONSTRAINT_TYPE EQ "FOREIGN KEY" AND
+				RC.RDB$CONSTRAINT_TYPE EQ FOREIGN_KEY AND
 				IDX.RDB$RELATION_NAME EQ relation->rel_name AND
 				IND.RDB$INDEX_NAME EQ IDX.RDB$FOREIGN_KEY AND
 				IND.RDB$UNIQUE_FLAG NOT MISSING 
@@ -2321,7 +2322,7 @@ jrd_rel* MET_lookup_relation_id(thread_db* tdbb, SLONG id, bool return_deleted)
 jrd_nod* MET_parse_blob(thread_db*	tdbb,
 				   jrd_rel*		relation,
 				   bid*			blob_id,
-				   Csb**		csb_ptr,
+				   CompilerScratch**		csb_ptr,
 				   jrd_req**	request_ptr,
 				   const bool	trigger,
 				   const bool	ignore_perm)
@@ -2725,7 +2726,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 					old_pool = tdbb->tdbb_default;
 					tdbb->tdbb_default = JrdMemoryPool::createPool();
 
-					Csb* csb = Csb::newCsb(*tdbb->tdbb_default, 5);
+					CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->tdbb_default, 5);
 					parameter->prm_default_val = 
 						parse_param_blr(tdbb, procedure, &F.RDB$DEFAULT_VALUE, csb);
 					
@@ -2768,7 +2769,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 
 			old_pool = tdbb->tdbb_default;
 			tdbb->tdbb_default = JrdMemoryPool::createPool();
-			Csb* csb = Csb::newCsb(*tdbb->tdbb_default, 5);
+			CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->tdbb_default, 5);
 			// Now, check the result of this function here! Null pointer means failure.
 			// Or should parse_procedure_blr and its callee throw exceptions instead?
 			if (!parse_procedure_blr(tdbb, procedure, &P.RDB$PROCEDURE_BLR, csb))
@@ -3216,7 +3217,7 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
  **************************************
  *
  * Functional description
- *      Scan a relation for view rse, computed by expressions, missing
+ *      Scan a relation for view RecordSelExpr, computed by expressions, missing
  *      expressions, and validation expressions.
  *
  **************************************/
@@ -3274,7 +3275,7 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 /* Since this can be called recursively, find an inactive clone of the request */
 
 	request = CMP_find_request(tdbb, irq_r_fields, IRQ_REQUESTS);
-	Csb* csb = NULL;
+	CompilerScratch* csb = NULL;
 
 	FOR(REQUEST_HANDLE request)
 		REL IN RDB$RELATIONS WITH REL.RDB$RELATION_ID EQ relation->rel_id
@@ -3308,7 +3309,7 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 			if (dependencies)
 			{
 				relation->rel_view_rse =
-				(RSE) MET_get_dependencies(tdbb, relation, NULL, NULL,
+				(RecordSelExpr*) MET_get_dependencies(tdbb, relation, NULL, NULL,
 											&REL.RDB$VIEW_BLR, NULL, 
 											&csb, REL.RDB$RELATION_NAME,
 											obj_view);
@@ -3316,7 +3317,7 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 			else
 			{
 				relation->rel_view_rse =
-					(RSE) MET_parse_blob(tdbb, relation,
+					(RecordSelExpr*) MET_parse_blob(tdbb, relation,
 										&REL.RDB$VIEW_BLR, &csb,
 										NULL, false, false);
 			}
@@ -3940,7 +3941,7 @@ static USHORT name_length(const TEXT* name)
 }
 
 static jrd_nod* parse_param_blr(thread_db* tdbb,
-		jrd_prc* procedure, bid* blob_id, Csb* csb)
+		jrd_prc* procedure, bid* blob_id, CompilerScratch* csb)
 {
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -3961,7 +3962,7 @@ static jrd_nod* parse_param_blr(thread_db* tdbb,
 
 static jrd_nod* parse_procedure_blr(
 							   thread_db* tdbb,
-							   jrd_prc* procedure, bid* blob_id, Csb* csb)
+							   jrd_prc* procedure, bid* blob_id, CompilerScratch* csb)
 {
 /**************************************
  *
@@ -4003,7 +4004,7 @@ static bool par_messages(thread_db*	tdbb,
 							const UCHAR*	blr,
 							USHORT	blr_length,
 							jrd_prc*	procedure,
-							Csb*		csb)
+							CompilerScratch*	csb)
 {
 /**************************************
  *
@@ -4299,7 +4300,7 @@ static void save_trigger_data(thread_db* tdbb, trig_vec** ptr, jrd_rel* relation
 
 
 static void store_dependencies(thread_db*	tdbb,
-							   Csb*			csb,
+							   CompilerScratch*	csb,
 							   const TEXT*	object_name,
 							   USHORT		dependency_type)
 {
@@ -4315,7 +4316,7 @@ static void store_dependencies(thread_db*	tdbb,
  *      compilation of blr for a trigger, view, etc.
  *
  **************************************/
-	TEXT	name[32];
+	SqlIdentifier name;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;

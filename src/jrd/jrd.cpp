@@ -133,11 +133,11 @@
 using namespace Jrd;
 
 #ifdef SERVER_SHUTDOWN
-typedef struct dbf {
-	struct dbf* dbf_next;
+struct db_file {
+	db_file* dbf_next;
 	USHORT dbf_length;
 	TEXT dbf_data[2];
-} *DBF;
+};
 
 //#include "../jrd/sort.h"
 #endif /* SERVER_SHUTDOWN */
@@ -267,7 +267,8 @@ void Jrd::trig::compile(thread_db* tdbb)
 void Jrd::trig::release(thread_db* tdbb)
 {
 	if (!blr //sys_trigger
-				|| !request || CMP_clone_is_active(request)) {
+				|| !request || CMP_clone_is_active(request))
+	{
 		return; // FALSE;
 	}
 	
@@ -3766,13 +3767,13 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 	old_pool = tdbb->tdbb_default;
 	tdbb->tdbb_default = new_pool = JrdMemoryPool::createPool();
 
-	Csb* csb = PAR_parse(tdbb, reinterpret_cast<const UCHAR*>(blr), FALSE);
+	CompilerScratch* csb = PAR_parse(tdbb, reinterpret_cast<const UCHAR*>(blr), FALSE);
 	request = CMP_make_request(tdbb, csb);
 
 	for (const AccessItem* access = request->req_access; access;
 		access = access->acc_next)
 	{
-		const scl* sec_class = SCL_get_class(access->acc_security_name);
+		const SecurityClass* sec_class = SCL_get_class(access->acc_security_name);
 		SCL_check_access(sec_class, access->acc_view_id, access->acc_trg_name,
 						 access->acc_prc_name, access->acc_mask,
 						 access->acc_type, access->acc_name);
@@ -6030,7 +6031,8 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 	USHORT num_att = 0;
 	USHORT total = 0;
 	ULONG drive_mask = 0L;
-	DBF dbf = NULL, dbfp = NULL;
+	db_file* dbf = NULL;
+	db_file* dbfp = NULL;
 
 /* protect against NULL value for buf */
 
@@ -6076,7 +6078,7 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 			num_dbs++;
 			if (flag == JRD_info_dbnames) {
 				if (dbfp == NULL) {
-					dbfp = (DBF) gds__alloc((SLONG) (sizeof(struct dbf) +
+					dbfp = (db_file*) gds__alloc((SLONG) (sizeof(db_file) +
 													 sizeof(TEXT) *
 													 dbb->dbb_filename.length()));
 					if (!dbfp)
@@ -6084,9 +6086,9 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 					dbf = dbfp;
 				}
 				else {
-					dbfp->dbf_next = (DBF)
+					dbfp->dbf_next = (db_file*)
 						gds__alloc((SLONG)
-								   (sizeof(struct dbf) +
+								   (sizeof(db_file) +
 									sizeof(TEXT) *
 									dbb->dbb_filename.length()));
 					if (!dbfp)
@@ -6113,8 +6115,8 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 				/* Get drive letters for temp directories */
 
 				if (flag == JRD_info_drivemask) {
-					MDLS* ptr = DLS_get_access();
-					for (dls* dirs = ptr->mdls_dls; dirs; dirs = dirs->dls_next) {
+					mutexed_dir_list* ptr = DLS_get_access();
+					for (dir_list* dirs = ptr->mdls_dls; dirs; dirs = dirs->dls_next) {
 						ExtractDriveLetter(dirs->dls_directory, &drive_mask);
 					}
 				}
@@ -6183,7 +6185,7 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 		}
 
 		for (dbfp = dbf; dbfp;) {
-			DBF x = dbfp->dbf_next;
+			db_file* x = dbfp->dbf_next;
 			gds__free(dbfp);
 			dbfp = x;
 		}
@@ -6407,7 +6409,7 @@ static void purge_attachment(thread_db*		tdbb,
 				CMP_release(tdbb, request);
 			}
 			
-			scl* sec_class;
+			SecurityClass* sec_class;
 			while ( (sec_class = attachment->att_security_classes) ) {
 				SCL_release(sec_class);
 			}

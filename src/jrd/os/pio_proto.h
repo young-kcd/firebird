@@ -28,7 +28,7 @@ namespace Jrd {
 	class jrd_file;
 	class Database;
 }
-
+struct Ods::pag;
 struct blk;
 
 int		PIO_add_file(Jrd::Database*, Jrd::jrd_file*, const TEXT*, SLONG);
@@ -43,7 +43,7 @@ SLONG	PIO_max_alloc(Jrd::Database*);
 SLONG	PIO_act_alloc(Jrd::Database*);
 Jrd::jrd_file*	PIO_open(Jrd::Database*, const TEXT*, SSHORT, bool,
 							blk*, const TEXT*, USHORT);
-bool	PIO_read(Jrd::jrd_file*, class Jrd::BufferDesc*, struct Ods::pag*, ISC_STATUS*);
+bool	PIO_read(Jrd::jrd_file*, class Jrd::BufferDesc*, Ods::pag*, ISC_STATUS*);
 
 #ifdef SUPERSERVER_V2
 bool	PIO_read_ahead(Jrd::Database*, SLONG, SCHAR*, SLONG, 
@@ -53,7 +53,7 @@ bool	PIO_status(struct Jrd::phys_io_blk*, ISC_STATUS*);
 
 int		PIO_unlink(const TEXT*);
 bool	PIO_write(Jrd::jrd_file*, class Jrd::BufferDesc*, 
-				  struct Ods::pag*, ISC_STATUS*);
+				  Ods::pag*, ISC_STATUS*);
 
 #endif // JRD_PIO_PROTO_H
 

@@ -30,7 +30,7 @@
 #include "fb_string.h"
 
 #ifndef NO_NFS
-int			ISC_analyze_nfs(TEXT*, TEXT*);
+bool		ISC_analyze_nfs(TEXT*, TEXT*);
 #endif
 int			ISC_analyze_pclan(TEXT*, TEXT*);
 int			ISC_analyze_tcp(TEXT*, TEXT*);

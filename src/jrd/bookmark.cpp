@@ -37,7 +37,7 @@
 using namespace Jrd;
 
 #ifdef PC_ENGINE
-Bookmark* BKM_allocate(Rsb* rsb, USHORT length)
+Bookmark* BKM_allocate(RecordSource* rsb, USHORT length)
 {
 /**************************************
  *

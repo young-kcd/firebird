@@ -181,7 +181,7 @@ struct LexerState {
 	dsql_fld* g_field;
 	dsql_fil* g_file;
 	dsql_nod* g_field_name;
-	SSHORT log_defined, cache_defined;
+	bool log_defined, cache_defined;
 	int dsql_debug;
 	
 	/* Actual lexer state begins from here */
@@ -1027,8 +1027,8 @@ equals		:
 		;
 
 db_name		: sql_string
-			{ lex.log_defined = FALSE;
-			  lex.cache_defined = FALSE;
+			{ lex.log_defined = false;
+			  lex.cache_defined = false;
 			  $$ = (dsql_nod*) $1; }
 		;
 
@@ -1065,15 +1065,17 @@ db_rem_desc	: db_rem_option
 		;
 
 db_rem_option   : db_file  
-/*   		| db_cache */
+/*   		| db_cache 
 		| db_log
-		| db_log_option
+		| db_log_option 
+*/
 		| DEFAULT CHARACTER SET symbol_character_set_name
 			{ $$ = make_node (nod_dfl_charset, 1, $4);} 
 		| KW_DIFFERENCE KW_FILE sql_string
 			{ $$ = make_node (nod_difference_file, 1, $3); }
 		;
 
+/*
 db_log_option   : GROUP_COMMIT_WAIT equals long_integer
 			{ $$ = make_node (nod_group_commit_wait, 1, $3);}
 		| CHECK_POINT_LEN equals long_integer
@@ -1086,13 +1088,14 @@ db_log_option   : GROUP_COMMIT_WAIT equals long_integer
 
 db_log		: db_default_log_spec
 			{ if (lex.log_defined)
-				yyabandon (-260, isc_log_redef);  /* Log redefined */
-			  lex.log_defined = TRUE;
+				yyabandon (-260, isc_log_redef); 
+				*/ /* Log redefined */ /*
+			  lex.log_defined = true;
 			  $$ = $1; }
 		| db_rem_log_spec
 			{ if (lex.log_defined)
 				yyabandon (-260, isc_log_redef);
-			  lex.log_defined = TRUE;
+			  lex.log_defined = true;
 			  $$ = $1; }
 		;	
 
@@ -1100,7 +1103,7 @@ db_rem_log_spec	: LOGFILE '(' logfiles ')' OVERFLOW logfile_desc
 			{ lex.g_file->fil_flags |= LOG_serial | LOG_overflow; 
 			  if (lex.g_file->fil_partitions)
 				  yyabandon (-261, isc_partition_not_supp);
-			/* Partitions not supported in series of log file specification */
+			*/ /* Partitions not supported in series of log file specification */ /*
 			 $$ = make_node (nod_list, 2, $3, $6); }  
 		| LOGFILE BASENAME logfile_desc
 			{ lex.g_file->fil_flags |= LOG_serial;
@@ -1115,6 +1118,7 @@ db_default_log_spec : LOGFILE
 			  $$ = make_node (nod_log_file_desc, (int) 1,
 						(dsql_nod*) lex.g_file);}
 		;
+*/
 
 db_file		: file1 sql_string file_desc1
 			{ lex.g_file->fil_name = (dsql_str*) $2;
@@ -1131,7 +1135,7 @@ db_cache	: CACHE sql_string cache_length
 			  lex.g_file = make_file();
 			  lex.g_file->fil_length = (IPTR) $3;
 			  lex.g_file->fil_name = (dsql_str*) $2;
-			  lex.cache_defined = TRUE;
+			  lex.cache_defined = true;
 			  $$ = (dsql_nod*) make_node (nod_cache_file_desc, (int) 1,
 					 (dsql_nod*) lex.g_file); }
 		;
@@ -1147,7 +1151,6 @@ cache_length	:
 			  else 
 				  $$ = (dsql_nod*) $3; }
 		;
-*/
 
 logfiles	: logfile_desc 
 		| logfiles ',' logfile_desc
@@ -1168,14 +1171,14 @@ logfile_attrs	:
 
 logfile_attr	: KW_SIZE equals long_integer
 			{ lex.g_file->fil_length = (IPTR) $3; }
-/*
 		| RAW_PARTITIONS equals pos_short_integer
 			{ lex.g_file->fil_partitions = (SSHORT) $3; 
-			  lex.g_file->fil_flags |= LOG_raw; } */
+			  lex.g_file->fil_flags |= LOG_raw; }
 		;
+*/
 
 file1		: KW_FILE
-			{ lex.g_file  = make_file ();}
+			{ lex.g_file  = make_file();}
 		;
 
 file_desc1	:
@@ -2191,8 +2194,8 @@ alter_index_clause	: symbol_index_name ACTIVE
 /* ALTER DATABASE */
 
 init_alter_db	: 
-			{ lex.log_defined = FALSE;
-			  lex.cache_defined = FALSE;
+			{ lex.log_defined = false;
+			  lex.cache_defined = false;
 			  $$ = NULL; }
 		;
 
@@ -2208,13 +2211,13 @@ db_alter_clause : ADD db_file_list
 			{ $$ = $2; }
 				| DROP CACHE
 			{ $$ = make_node (nod_drop_cache, (int) 0, NULL); }
-*/
 		| DROP LOGFILE
 			{ $$ = make_node (nod_drop_log, (int) 0, NULL); }
 		| SET  db_log_option_list
 			{ $$ = $2; }
 		| ADD db_log
 			{ $$ = $2; }
+*/
 		| ADD KW_DIFFERENCE KW_FILE sql_string
 			{ $$ = make_node (nod_difference_file, (int) 1, $4); }
 		| DROP KW_DIFFERENCE KW_FILE
@@ -2225,10 +2228,12 @@ db_alter_clause : ADD db_file_list
 			{ $$ = make_node (nod_end_backup, (int) 0, NULL); }
 		;
 
+/*
 db_log_option_list : db_log_option
 		   | db_log_option_list ',' db_log_option
 				{ $$ = make_node (nod_list, (int) 2, $1, $3); }
 		   ;
+*/
 
 
 /* ALTER TRIGGER */
@@ -4212,10 +4217,10 @@ void LEX_dsql_init (void)
 		symbol->sym_type = SYM_keyword;
 		symbol->sym_keyword = token->tok_ident;
 		symbol->sym_version = token->tok_version;
-		dsql_str* str_ = FB_NEW_RPT(*DSQL_permanent_pool, symbol->sym_length) dsql_str;
-		str_->str_length = symbol->sym_length;
-		strncpy((char*)str_->str_data, (char*)symbol->sym_string, symbol->sym_length);
-		symbol->sym_object = (void *) str_;
+		dsql_str* str = FB_NEW_RPT(*DSQL_permanent_pool, symbol->sym_length) dsql_str;
+		str->str_length = symbol->sym_length;
+		strncpy((char*)str->str_data, (char*)symbol->sym_string, symbol->sym_length);
+		symbol->sym_object = (void *) str;
 		HSHD_insert(symbol);
 	}
 }

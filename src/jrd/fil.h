@@ -51,33 +51,36 @@
 
 /* Temporary workfile directory list. */
 
-typedef struct dls {
+struct dir_list {
 	SLONG dls_header;
-	dls* dls_next;
+	dir_list* dls_next;
 	ULONG dls_size;				/* Maximum size in the directory */
 	ULONG dls_inuse;			/* Occupied space in the directory */
 	TEXT dls_directory[2];		/* Directory name */
-} *DLS;
+};
 
-typedef struct mdls {
-	DLS mdls_dls;				/* Pointer to the directory list */
+struct mutexed_dir_list {
+	dir_list* mdls_dls;				/* Pointer to the directory list */
 	bool mdls_mutex_init;
 	MUTX_T mdls_mutex[1];		/* Mutex for directory list. Must
 								   be locked before list operations */
-} MDLS;
+};
 
 /* external function directory list */
-
-typedef struct fdls {
-	fdls* fdls_next;
+/* OBSOLETE.
+struct function_dir_list {
+	function_dir_list* fdls_next;
 	TEXT fdls_directory[1];
-} FDLS;
+};
+*/
 
 /* external file directory list */
-
-typedef struct edls {
-    edls* edls_next;
+/* OBSOLETE
+struct extfile_dir_list {
+    extfile_dir_list* edls_next;
     TEXT edls_directory[1];
-} EDLS;
+};
+*/
 
 #endif /* JRD_FIL_H */
+

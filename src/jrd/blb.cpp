@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.61 2004-03-22 11:37:54 alexpeshkoff Exp $
+$Id: blb.cpp,v 1.62 2004-03-28 09:10:14 robocop Exp $
 */
 
 #include "firebird.h"
@@ -86,7 +86,7 @@ static ISC_STATUS blob_filter(USHORT, BlobControl*, SSHORT, SLONG);
 static void check_BID_validity(const blb*, thread_db*);
 static blb* copy_blob(thread_db*, const bid*, bid*);
 static void delete_blob(thread_db*, blb*, ULONG);
-static void delete_blob_id(thread_db*, const bid*, ULONG, jrd_rel*);
+static void delete_blob_id(thread_db*, const bid*, SLONG, jrd_rel*);
 static ArrayField* find_array(jrd_tra*, const bid*);
 static BlobFilter* find_filter(thread_db*, SSHORT, SSHORT);
 static blob_page* get_next_page(thread_db*, blb*, WIN *);
@@ -95,7 +95,7 @@ static void get_replay_blob(thread_db*, const bid*);
 #endif
 static void insert_page(thread_db*, blb*);
 static void release_blob(blb*, const bool);
-static void slice_callback(SLICE, ULONG, DSC *);
+static void slice_callback(SLICE, ULONG, dsc*);
 static blb* store_array(thread_db*, jrd_tra*, bid*);
 
 
@@ -1164,7 +1164,7 @@ blb* BLB_open2(thread_db* tdbb,
 			ERR_post(isc_bad_segstr_id, 0);
 	}
 
-	DPM_get_blob(tdbb, blob, blob_id->bid_stuff.bid_number, FALSE, (SLONG) 0);
+	DPM_get_blob(tdbb, blob, blob_id->bid_stuff.bid_number, false, (SLONG) 0);
 
 /* If the blob is known to be damaged, ignore it. */
 
@@ -1519,12 +1519,12 @@ void BLB_release_array(ArrayField* array)
 }
 
 
-void BLB_scalar(thread_db*	tdbb,
+void BLB_scalar(thread_db*		tdbb,
 				jrd_tra*		transaction,
 				const bid*		blob_id,
-				USHORT	count,
-				SLONG*	subscripts,
-				VLU		value)
+				USHORT			count,
+				SLONG*			subscripts,
+				impure_value*	value)
 {
 /**************************************
  *
@@ -1930,7 +1930,7 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
 
 static void delete_blob_id(
 						   thread_db* tdbb,
-						   const bid* blob_id, ULONG prior_page, jrd_rel* relation)
+						   const bid* blob_id, SLONG prior_page, jrd_rel* relation)
 {
 /**************************************
  *
@@ -1959,7 +1959,7 @@ static void delete_blob_id(
 	blb* blob = allocate_blob(tdbb, dbb->dbb_sys_trans);
 	blob->blb_relation = relation;
 	prior_page =
-		DPM_get_blob(tdbb, blob, blob_id->bid_stuff.bid_number, TRUE,
+		DPM_get_blob(tdbb, blob, blob_id->bid_stuff.bid_number, true,
 					 prior_page);
 
 	if (!(blob->blb_flags & BLB_damaged))
@@ -2039,7 +2039,7 @@ static blob_page* get_next_page(thread_db* tdbb, blb* blob, WIN * window)
  *
  * Functional description
  *      Read a blob page and copy it into the blob data area.  Return
- *      TRUE is there is a next page.
+ *      the next page. if there's no next page, return NULL.
  *
  **************************************/
 	if (blob->blb_level == 0 || blob->blb_sequence > blob->blb_max_sequence) {
@@ -2289,7 +2289,7 @@ static void release_blob(blb* blob, const bool purge_flag)
 }
 
 
-static void slice_callback(SLICE arg, ULONG count, DSC * descriptors)
+static void slice_callback(SLICE arg, ULONG count, DSC* descriptors)
 {
 /**************************************
  *

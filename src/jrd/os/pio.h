@@ -44,7 +44,6 @@ class jrd_file : public pool_alloc_rpt<SCHAR, type_fil>
 	ULONG fil_max_page;			/* Maximum page number in file */
 	USHORT fil_sequence;		/* Sequence number of file */
 	USHORT fil_fudge;			/* Fudge factor for page relocation */
-	struct plc *fil_connect;	/* Connection to page server */
 	int fil_desc;
 	int *fil_trace;				/* Trace file, if any */
 	MUTX_T fil_mutex[1];
@@ -66,7 +65,6 @@ class jrd_file : public pool_alloc_rpt<SCHAR, type_fil>
 	ULONG fil_max_page;			/* Maximum page number in file */
 	USHORT fil_sequence;		/* Sequence number of file */
 	USHORT fil_fudge;			/* Fudge factor for page relocation */
-	struct plc *fil_connect;	/* Connection to page server */
 	int fil_desc;
 	int fil_trace;				/* Trace file, if any */
 	MUTX_T fil_mutex[1];
@@ -92,7 +90,6 @@ class jrd_file : public pool_alloc_rpt<SCHAR, type_fil>
 	ULONG fil_max_page;			/* Maximum page number in file */
 	USHORT fil_sequence;		/* Sequence number of file */
 	USHORT fil_fudge;			/* Fudge factor for page relocation */
-	struct plc *fil_connect;	/* Connection to page server */
 	SLONG fil_desc;
 	SLONG fil_force_write_desc;	/* Handle of force write open */
 	int *fil_trace;				/* Trace file, if any */

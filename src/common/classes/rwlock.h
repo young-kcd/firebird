@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: rwlock.h,v 1.16 2004-03-28 00:38:13 skidder Exp $
+ *  $Id: rwlock.h,v 1.17 2004-03-28 09:10:08 robocop Exp $
  *
  */
 
@@ -102,8 +102,10 @@ public:
 	}
 	bool tryBeginRead()
 	{
-		if (lock.value() < 0) return false;
-		if (++lock > 0) return true;
+		if (lock.value() < 0)
+			return false;
+		if (++lock > 0)
+			return true;
 		// We stepped on writer's toes. Fix our mistake 
 		if (--lock == 0)
 			unblockWaiting();
@@ -111,8 +113,10 @@ public:
 	}
 	bool tryBeginWrite()
 	{
-		if (lock.value()) return false;
-		if (lock.exchangeAdd(-LOCK_WRITER_OFFSET) == 0) return true;
+		if (lock.value())
+			return false;
+		if (lock.exchangeAdd(-LOCK_WRITER_OFFSET) == 0)
+			return true;
 		// We stepped on somebody's toes. Fix our mistake
 		if (lock.exchangeAdd(LOCK_WRITER_OFFSET) == -LOCK_WRITER_OFFSET)
 			unblockWaiting();

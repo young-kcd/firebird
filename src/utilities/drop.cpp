@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: drop.cpp,v 1.22 2003-08-26 06:56:42 brodsom Exp $
+ * $Id: drop.cpp,v 1.23 2004-03-28 09:10:27 robocop Exp $
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
@@ -78,7 +78,7 @@ static int sem_exclusive(SLONG, SLONG);
 static int shm_exclusive(SLONG, SLONG);
 #endif
 #ifdef MANAGER_PROCESS
-static void shut_manager(TEXT *);
+static void shut_manager(const TEXT*);
 #endif
 
 static int orig_argc;
@@ -208,7 +208,7 @@ static SLONG get_key( TEXT * filename)
 #ifndef HAVE_MMAP
 static void remove_resource(
 							TEXT * filename,
-							SLONG shm_length, SLONG sem_count, TEXT * label)
+							SLONG shm_length, SLONG sem_count, TEXT* label)
 {
 /**************************************
  *
@@ -257,7 +257,8 @@ static void remove_resource(
 	}
 
 	if ((shmid = shm_exclusive(key, shmem_data.sh_mem_length_mapped)) == -1 ||
-		(semid = sem_exclusive(key, sem_count)) == -1) {
+		(semid = sem_exclusive(key, sem_count)) == -1) 
+	{
 		ib_printf("\n***File or semaphores for %s are currently in use.\n",
 				  label);
 		return;
@@ -399,7 +400,7 @@ static int shm_exclusive( SLONG key, SLONG length)
 
 
 #ifdef MANAGER_PROCESS
-static void shut_manager( TEXT * label)
+static void shut_manager(const TEXT* label)
 {
 /**************************************
  *
@@ -417,7 +418,7 @@ static void shut_manager( TEXT * label)
 
 	if (!(strcmp(label, "lock manager"))) {
 		owner_handle = 0;
-		LOCK_init(status_vector, FALSE, getpid(), 0, &owner_handle);
+		LOCK_init(status_vector, false, getpid(), 0, &owner_handle);
 
 		/* In case if lock manager is not running, LOCK_init starts it.
 		   It takes time for the manager to be started, hence immediately

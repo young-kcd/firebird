@@ -84,6 +84,7 @@ using namespace Jrd;
 static USHORT get_counts(USHORT, SCHAR*, USHORT);
 
 
+#pragma FB_COMPILER_MESSAGE("Our caller doesn't check our boolean result, only traps an exception!")
 int INF_blob_info(const blb* blob,
 				  const SCHAR* items,
 				  const SSHORT item_length,

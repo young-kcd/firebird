@@ -486,7 +486,6 @@ static qli_nod* compile_expression( qli_nod* node, qli_req* request, bool intern
 	const qli_nod* const* end;
 	qli_nod* value;
 	qli_map* map;
-	qli_par* parm;
 	qli_fld* field;
 
 	switch (node->nod_type) {
@@ -521,7 +520,8 @@ static qli_nod* compile_expression( qli_nod* node, qli_req* request, bool intern
 		}
 		make_descriptor(node, &node->nod_desc);
 		if (internal_flag) {
-			node->nod_export = parm = make_parameter(request->req_send, 0);
+			qli_par* parm = make_parameter(request->req_send, 0);
+			node->nod_export = parm;
 			parm->par_desc = node->nod_desc;
 			parm->par_value = node;
 		}
@@ -641,7 +641,8 @@ static qli_nod* compile_expression( qli_nod* node, qli_req* request, bool intern
 		node->nod_count = 0;
 		compile_prompt(node);
 		if (internal_flag) {
-			node->nod_export = parm = make_parameter(request->req_send, node);
+			qli_par* parm = make_parameter(request->req_send, node);
+			node->nod_export = parm;
 			parm->par_value = node;
 			if (field = (qli_fld*) node->nod_arg[e_prm_field]) {
 				parm->par_desc.dsc_dtype = field->fld_dtype;
@@ -669,7 +670,8 @@ static qli_nod* compile_expression( qli_nod* node, qli_req* request, bool intern
 		make_descriptor(node, &node->nod_desc);
 		if (internal_flag)
 		{
-			node->nod_export = parm = make_parameter(request->req_send, node);
+			qli_par* parm = make_parameter(request->req_send, node);
+			node->nod_export = parm;
 			parm->par_value = node;
 			parm->par_desc = node->nod_desc;
 		}

@@ -68,7 +68,7 @@ DATABASE DB = FILENAME "ODS.RDB";
 #define DEFAULT_CLASS   "SQL$DEFAULT"
 
 #ifdef NOT_USED_OR_REPLACED
-static void add_generator(TEXT*, BLK*);
+static void add_generator(TEXT*, jrd_req**);
 #endif
 static void add_global_fields(USHORT);
 static void add_index_set(Database*, bool, USHORT, USHORT);
@@ -77,7 +77,7 @@ static void add_relation_fields(USHORT);
 static void add_security_to_sys_rel(thread_db*, const TEXT*, const TEXT*, const UCHAR*,
 	const SSHORT);
 #ifdef NOT_USED_OR_REPLACED
-static void add_trigger(TEXT*, BLK*, BLK*);
+static void add_trigger(TEXT*, jrd_req**, jrd_req**);
 #endif
 //static void add_user_priv(thread_db*, TEXT*, TEXT*, TEXT*, TEXT);
 static void modify_relation_field(thread_db*, const UCHAR*, const UCHAR*, jrd_req**);
@@ -264,7 +264,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	Database* dbb = tdbb->tdbb_database;
 
 /* Uppercase owner name */
-	TEXT			string[32];
+	SqlIdentifier string;
 	*string = 0;
 	if (owner && *owner)
 	{
@@ -276,7 +276,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	}
 
 /* Uppercase charset name */
-	TEXT			string2[32];
+	SqlIdentifier string2;
 	*string2 = 0;
 	if (charset && *charset)
 	{
@@ -817,7 +817,7 @@ void INI_update_database()
 }
 
 #ifdef NOT_USED_OR_REPLACED
-static void add_generator(TEXT* generator_name, jrd_req* handle)
+static void add_generator(TEXT* generator_name, jrd_req** handle)
 {
 /**************************************
  *
@@ -901,8 +901,8 @@ static void add_index_set(Database*	dbb,
  *	ODS (major_version,minor_version).
  *
  **************************************/
-	TEXT	string[32];
-	IDX		idx;
+	SqlIdentifier string;
+	index_desc idx;
 
 	thread_db* tdbb = GET_THREAD_DATA;
 	jrd_req* handle1 = NULL;
@@ -943,7 +943,7 @@ static void add_index_set(Database*	dbb,
 			X.RDB$INDEX_INACTIVE = 0;
 
 			/* Store each segment for the index */
-			idx::idx_repeat* tail = idx.idx_rpt;
+			index_desc::idx_repeat* tail = idx.idx_rpt;
 			for (USHORT position = 0;
 				 position < index->ini_idx_segment_count; position++, tail++)
 			{
@@ -1113,12 +1113,12 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
  *
  **************************************/
 	TEXT sec_class_name[100];
-	TEXT default_class[32];
+	SqlIdentifier default_class;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	strcpy(sec_class_name, "SQL$");
+	strcpy(sec_class_name, SQL_SECCLASS_PREFIX);
 	strcat(sec_class_name, rel_name);
 
     bid blob_id_1;
@@ -1225,7 +1225,7 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 }
 
 #ifdef NOT_USED_OR_REPLACED
-static void add_trigger(TEXT* trigger_name, BLK* handle1, BLK* handle2)
+static void add_trigger(TEXT* trigger_name, jrd_req** handle1, jrd_req** handle2)
 {
 /**************************************
  *
@@ -1531,7 +1531,7 @@ static void store_relation_field(thread_db*		tdbb,
 								 const UCHAR*	fld,
 								 const UCHAR*	relfld,
 								 int			field_id,
-								 jrd_req**			handle,
+								 jrd_req**		handle,
 								 bool			fmt0_flag)
 {
 /**************************************

@@ -32,11 +32,6 @@ const char* const ALL_PROC_PRIVILEGES = "X";
 #define STUFF_COUNT		4
 #define TEXT_BLOB_LENGTH	512
 
-const char* const PRIMARY_KEY		= "PRIMARY KEY";
-const char* const FOREIGN_KEY		= "FOREIGN KEY";
-const char* const UNIQUE_CNSTRT		= "UNIQUE";
-const char* const CHECK_CNSTRT		= "CHECK";
-const char* const NOT_NULL_CNSTRT	= "NOT NULL";
 
 #define GET_STRING(from,to)	DYN_get_string ((const TEXT**)from, (TEXT*)to, sizeof (to), true)
 
@@ -52,7 +47,7 @@ struct gbl
 	jrd_tra* gbl_transaction;
 };
 
-typedef struct dyn_fld {
+struct dyn_fld {
 	dsc dyn_dsc;
 	bool dyn_null_flag;
 	USHORT dyn_dtype;
@@ -64,8 +59,7 @@ typedef struct dyn_fld {
 	SqlIdentifier dyn_rel_name;
 	SqlIdentifier dyn_fld_name;
     USHORT dyn_charbytelen; /* Used to check modify operations on string types. */
-
-} *DYN_FLD;
+};
 
 } //namespace Jrd
 

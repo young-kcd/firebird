@@ -132,8 +132,8 @@ static SLONG pread(int, SCHAR *, SLONG, SLONG);
 static SLONG pwrite(int, SCHAR *, SLONG, SLONG);
 #endif
 #ifdef SUPPORT_RAW_DEVICES
-static BOOLEAN  raw_devices_check_file (const TEXT*);
-static BOOLEAN  raw_devices_validate_database (int, const TEXT*, USHORT);
+static bool raw_devices_check_file (const TEXT*);
+static bool raw_devices_validate_database (int, const TEXT*, USHORT);
 static int  raw_devices_unlink_database (const TEXT*);
 #endif
 
@@ -1215,10 +1215,10 @@ int PIO_unlink (const TEXT* file_name)
 #endif
 		return unlink(file_name);
 }
-
+
+
 #ifdef SUPPORT_RAW_DEVICES
-static BOOLEAN
-raw_devices_check_file (
+static bool raw_devices_check_file (
 	const TEXT* file_name)
 {
 /**************************************
@@ -1237,8 +1237,8 @@ raw_devices_check_file (
 			&& (S_ISCHR(s.st_mode) || S_ISBLK(s.st_mode)));
 }
 
-static BOOLEAN
-raw_devices_validate_database (
+
+static bool raw_devices_validate_database (
 	int desc,
 	const TEXT* file_name,
 	USHORT file_length)
@@ -1254,9 +1254,8 @@ raw_devices_validate_database (
  *
  **************************************/
 	char header[MIN_PAGE_SIZE];
-	Ods::header_page* hp = (Ods::header_page*)header;
-	BOOLEAN retval = FALSE;
-	int i;
+	const Ods::header_page* hp = (Ods::header_page*)header;
+	bool retval = false;
 
 	/* Read in database header. Code lifted from PIO_header. */
 	if (desc == -1)
@@ -1266,7 +1265,7 @@ raw_devices_validate_database (
 					isc_arg_gds, isc_io_read_err,
 					isc_arg_unix, errno, 0);
 
-	for (i = 0; i < IO_RETRY; i++)
+	for (int i = 0; i < IO_RETRY; i++)
 	{
 		if (lseek (desc, LSEEK_OFFSET_CAST 0, 0) == (off_t) -1)
 			ERR_post (isc_io_error,
@@ -1321,7 +1320,7 @@ raw_devices_validate_database (
 	/* At this point we think we have identified a database on the device.
  	 * PAG_header will validate the entire structure later.
  	 */
-	retval = TRUE;
+	retval = true;
 
   quit:
 #ifdef DEV_BUILD
@@ -1333,8 +1332,8 @@ raw_devices_validate_database (
 	return retval;
 }
 
-static int
-raw_devices_unlink_database (
+
+static int raw_devices_unlink_database (
 	const TEXT* file_name)
 {
 	char header[MIN_PAGE_SIZE];

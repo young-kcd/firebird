@@ -60,15 +60,16 @@ static void print(const SCHAR **, int, const SCHAR *);
 
 struct VERB {
 	UCHAR blr;
-	SCHAR const *internal;
-	SCHAR const *internal2;
-	SCHAR const *length;
-	SCHAR const *count;
-	SCHAR const *type;
-	SCHAR const *sub_type;
+	const SCHAR const* internal;
+	const SCHAR const* internal2;
+	const SCHAR const* length;
+	const SCHAR const* count;
+	const SCHAR const* type;
+	const SCHAR const* sub_type;
 };
 
-static const VERB verbs[] = {
+static const VERB verbs[] = 
+{
 	PAIR(nod_assignment, blr_assignment, e_asgn_length, 2, STATEMENT, VALUE),
 	PAIR(nod_erase, blr_erase, e_erase_length, 0, STATEMENT, OTHER),
 	PAIR(nod_dcl_variable, blr_dcl_variable, e_dcl_length, 0, STATEMENT, OTHER),
@@ -244,10 +245,8 @@ int main(int argc, char *argv[])
  *	Spit out a conversion table.
  *
  **************************************/
-	const VERB* verb;
-	int max, blr;
-
-	for (blr = 0; blr < FB_NELEM(table); blr++) {
+	{ // scope
+	for (int blr = 0; blr < FB_NELEM(table); blr++) {
 		table[blr] = NULL;
 		table2[blr] = NULL;
 		lengths[blr] = NULL;
@@ -256,9 +255,11 @@ int main(int argc, char *argv[])
 		types[blr] = NULL;
 		sub_types[blr] = NULL;
 	}
+	} // scope
 
-	for (max = 0, verb = verbs; verb->internal; ++verb) {
-		blr = verb->blr;
+	int max = 0;
+	for (const VERB* verb = verbs; verb->internal; ++verb) {
+		const int blr = verb->blr;
 		if (table[blr]) {
 			ib_fprintf(ib_stderr, "BLRTABLE: duplicate blr %d\n", blr);
 			exit(1);
@@ -308,12 +309,10 @@ static void print(const SCHAR ** table, int max, const SCHAR * fudge)
  *	Spit out a conversion table.
  *
  **************************************/
-	int blr;
-	SCHAR buffer[100], *s;
+	SCHAR buffer[100];
+	char* s = buffer;
 
-	s = buffer;
-
-	for (blr = 0; blr <= max; blr++, table++) {
+	for (int blr = 0; blr <= max; blr++, table++) {
 		if (*table)
 			sprintf(s, "%s%s, ", fudge, *table);
 		else

@@ -29,8 +29,8 @@
 #ifndef JRD_JRD_H
 #define JRD_JRD_H
 
-#include "../jrd/common.h"
 #include "../jrd/gdsassert.h"
+#include "../jrd/common.h"
 #include "../jrd/dsc.h"
 #include "../jrd/all.h"
 #include "../jrd/nbak.h"
@@ -90,19 +90,12 @@
 
 class str;
 class CharSetContainer;
+struct dsc;
+class lls;
 
 namespace Jrd {
 
-// Shutdown lock data
-union SDATA {
-	struct {
-		SSHORT flag;
-		SSHORT delay;
-	} data_items;
-	SLONG data_long;
-};
-
-// the database block, the topmost block in the metadata 
+// The database block, the topmost block in the metadata
 // cache for a database
 
 #define HASH_SIZE 101
@@ -134,7 +127,10 @@ class Symbol;
 class UserId;
 struct sort_context;
 class TxPageCache;
-class rse;
+class RecordSelExpr;
+class SecurityClass;
+class vcl;
+class Shadow;
 class TextType;
 
 class Database : private pool_alloc<type_dbb>
@@ -168,17 +164,16 @@ public:
 	vec*		dbb_procedures;	/* scanned procedures */
 	Lock* 		dbb_lock;		/* granddaddy lock */
 	jrd_tra*	dbb_sys_trans;	/* system transaction */
-	jrd_file* dbb_file;		/* files for I/O operations */
-	class Shadow*	dbb_shadow;		/* shadow control block */
+	jrd_file*	dbb_file;		/* files for I/O operations */
+	Shadow*		dbb_shadow;		/* shadow control block */
 	Lock*		dbb_shadow_lock;	/* lock for synchronizing addition of shadows */
 	SLONG dbb_shadow_sync_count;	/* to synchronize changes to shadows */
 	Lock*		dbb_retaining_lock;	/* lock for preserving commit retaining snapshot */
-	struct plc *dbb_connection;	/* connection block */
 	PageControl*	dbb_pcontrol;	/* page control */
-	class vcl *dbb_t_pages;	/* pages number for transactions */
-	class vcl *dbb_gen_id_pages;	/* known pages for gen_id */
+	vcl*		dbb_t_pages;	/* pages number for transactions */
+	vcl*		dbb_gen_id_pages;	/* known pages for gen_id */
 	BlobFilter*	dbb_blob_filters;	/* known blob filters */
-	class lls *dbb_modules;	/* external function/filter modules */
+	lls*		dbb_modules;	/* external function/filter modules */
 	MUTX_T *dbb_mutexes;		/* Database block mutexes */
 	WLCK_T *dbb_rw_locks;		/* Database block read/write locks */
 	REC_MUTX_T dbb_sp_rec_mutex;	/* Recursive mutex for accessing/updating stored procedure metadata */
@@ -257,7 +252,7 @@ public:
 	Firebird::vector<CharSetContainer*>		dbb_charsets;	/* intl character set descriptions */
 //	struct wal *dbb_wal;		/* WAL handle for WAL API */
 	TxPageCache*	dbb_tip_cache;	/* cache of latest known state of all transactions in system */
-	class vcl *dbb_pc_transactions;	/* active precommitted transactions */
+	vcl*		dbb_pc_transactions;	/* active precommitted transactions */
 	class BackupManager *backup_manager; /* physical backup manager */
 	Symbol*	dbb_hash_table[HASH_SIZE];	/* keep this at the end */
 
@@ -464,9 +459,9 @@ public:
 	SLONG		att_attachment_id;	// Attachment ID
 	SLONG		att_lock_owner_handle;	// Handle for the lock manager
 	SLONG		att_event_session;	// Event session id, if any
-	class scl*	att_security_class;	// security class for database
-	class scl*	att_security_classes;	// security classes
-	class vcl*	att_counts[DBB_max_count];
+	SecurityClass*	att_security_class;	// security class for database
+	SecurityClass*	att_security_classes;	// security classes
+	vcl*		att_counts[DBB_max_count];
 	vec*		att_relation_locks;	// explicit persistent locks for relations
 	Bookmark*	att_bookmarks;		// list of bookmarks taken out using this attachment
 	Lock*		att_record_locks;	// explicit or implicit record locks taken out during attachment
@@ -477,7 +472,7 @@ public:
 	Firebird::string	att_lc_messages;	// attachment's preference for message natural language
 	Lock*		att_long_locks;		// outstanding two phased locks
 	vec*		att_compatibility_table;	// hash table of compatible locks
-	class vcl*	att_val_errors;
+	vcl*		att_val_errors;
 	Firebird::PathName	att_working_directory;	// Current working directory is cached
 	Firebird::PathName	att_filename;			// alias used to attach the database
 	time_t		att_timestamp;		// connection date and time
@@ -532,7 +527,7 @@ class jrd_prc : public pool_alloc_rpt<SCHAR, type_prc>
 	fmt*		prc_format;
 	vec*		prc_input_fields;	/* vector of field blocks */
 	vec*		prc_output_fields;	/* vector of field blocks */
-	jrd_req *prc_request;	/* compiled procedure request */
+	jrd_req*	prc_request;	/* compiled procedure request */
 	Firebird::string prc_security_name;	/* security class name for procedure */
 	USHORT prc_use_count;		/* requests compiled with procedure */
 	SSHORT prc_int_use_count;	/* number of procedures compiled with procedure, set and 
@@ -567,7 +562,7 @@ class Parameter : public pool_alloc_rpt<SCHAR, type_prm>
 {
     public:
 	USHORT 		prm_number;
-	struct dsc 	prm_desc;
+	dsc			prm_desc;
 	jrd_nod*	prm_default_val;
 	Firebird::string prm_name;		/* asciiz name */
 	TEXT 		prm_string[2];		/* one byte for ALLOC and one for the terminating null */
@@ -618,16 +613,16 @@ class jrd_rel : public pool_alloc<type_rel>
 public:
 	USHORT	rel_id;
 	USHORT	rel_flags;
-	USHORT	rel_current_fmt;		/* Current format number */
+	USHORT	rel_current_fmt;	/* Current format number */
 	UCHAR	rel_length;			/* length of ascii relation name */
 	fmt*	rel_current_format;	/* Current record format */
-	TEXT*	rel_name;				/* pointer to ascii relation name */
-	vec*	rel_formats;	/* Known record formats */
+	TEXT*	rel_name;			/* pointer to ascii relation name */
+	vec*	rel_formats;		/* Known record formats */
 	TEXT*	rel_owner_name;		/* pointer to ascii owner */
-	class vcl*	rel_pages;		/* vector of pointer page numbers */
-	vec*	rel_fields;		/* vector of field blocks */
+	vcl*	rel_pages;			/* vector of pointer page numbers */
+	vec*	rel_fields;			/* vector of field blocks */
 
-	rse*	rel_view_rse;	/* view record select expression */
+	RecordSelExpr* rel_view_rse;	/* view record select expression */
 	ViewContext*	rel_view_contexts;	/* linked list of view contexts */
 
 	TEXT *rel_security_name;	/* pointer to security class name for relation */
@@ -710,7 +705,7 @@ class IndexBlock : public pool_alloc<type_idb>
 	IndexBlock*	idb_next;
 	jrd_nod*	idb_expression;			/* node tree for index expression */
 	jrd_req*	idb_expression_request;	/* request in which index expression is evaluated */
-	struct dsc	idb_expression_desc;	/* descriptor for expression result */
+	dsc			idb_expression_desc;	/* descriptor for expression result */
 	Lock*		idb_lock;				/* lock to synchronize changes to index */
 	UCHAR idb_id;
 };
@@ -746,7 +741,7 @@ public:
 		return FB_NEW(p) vec_base<T, TYPE>(p, base);
 	}
 		
-	// CVC: THis should be size_t instead of ULONG for maximum portability.
+	// CVC: This should be size_t instead of ULONG for maximum portability.
 	ULONG count() const { return vector.size(); }
 	T& operator[](size_t index) { return vector[index]; }
 	const T& operator[](size_t index) const { return vector[index]; }
@@ -914,7 +909,7 @@ class BlockingThread : public pool_alloc<type_btb>
 typedef struct win {
 	SLONG win_page;
 	Ods::pag* win_buffer;
-	jrd_exp* win_expanded_buffer;
+	exp_index_buf* win_expanded_buffer;
 	class BufferDesc* win_bdb;
 	SSHORT win_scans;
 	USHORT win_flags;

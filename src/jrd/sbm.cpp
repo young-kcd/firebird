@@ -287,7 +287,7 @@ bool SBM_equal(SparseBitmap* bitmap1, SparseBitmap* bitmap2)
  **************************************
  *
  * Functional description
- *	Return TRUE if two sparse bitmaps are equal (eg: have the
+ *	Return true if two sparse bitmaps are equal (eg: have the
  *	exact same set of bits set).
  *	The test is non-destructive of both bitmaps.
  *

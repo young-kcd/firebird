@@ -119,9 +119,9 @@ typedef struct texttype {
 
 	// ENGINE INTERNAL FUNCTIONS - do not implement in collation drivers -----------
 	typedef bool (*pfn_INTL_contains)(Jrd::thread_db*, Jrd::TextType, const UCHAR*,
-		SSHORT sl, const UCHAR*, SSHORT);
+		SSHORT, const UCHAR*, SSHORT);
 	typedef bool (*pfn_INTL_like)(Jrd::thread_db*, Jrd::TextType, const UCHAR*,
-		SSHORT sl, const UCHAR*, SSHORT, UCS2_CHAR);
+		SSHORT, const UCHAR*, SSHORT, UCS2_CHAR);
 	typedef bool (*pfn_INTL_matches)(Jrd::thread_db*, Jrd::TextType, const UCHAR*, SSHORT, 
 		const UCHAR*, SSHORT);
 	typedef bool (*pfn_INTL_sleuth_check)(Jrd::thread_db*, Jrd::TextType, USHORT, 

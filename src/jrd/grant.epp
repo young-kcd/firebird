@@ -171,7 +171,7 @@ bool GRANT_privileges( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 #ifdef V4_THREADING
 			V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_grant_priv);
 #endif
-			TEXT s_class[32], owner[32], default_class[32];
+			SqlIdentifier s_class, owner, default_class;
 			bool view; // unused after being retrieved.
 			get_object_info(tdbb, work->dfw_name, work->dfw_id, owner,
 							s_class, default_class, &view);
@@ -556,7 +556,7 @@ static void get_user_privs(thread_db*		tdbb,
 	Database* dbb = tdbb->tdbb_database;
 
 	UCHAR* acl = *acl_ptr;
-	TEXT user[32];
+	SqlIdentifier user;
 	user[0] = 0;
 	SSHORT user_type = -2;
 	USHORT priv = 0;
@@ -763,7 +763,7 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
  *	security class to be effective.
  *
  **************************************/
-	TEXT field_name[32], user[32], s_class[32];
+	SqlIdentifier field_name, user, s_class;
 	USHORT priv, field_public, aggregate_public;
 	DSC desc;
 	SSHORT user_type;

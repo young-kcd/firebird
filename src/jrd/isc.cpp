@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.45 2004-02-20 06:43:00 robocop Exp $
+$Id: isc.cpp,v 1.46 2004-03-28 09:10:15 robocop Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -95,7 +95,7 @@ static SECURITY_ATTRIBUTES security_attr;
 
 //static TEXT interbase_directory[MAXPATHLEN];
 
-static BOOLEAN check_user_privilege();
+static bool check_user_privilege();
 
 #endif // WIN_NT
 
@@ -121,7 +121,7 @@ static USHORT ast_count;
 #define WAKE_LOCK               "gds__process_%d"
 
 static POKE pokes;
-static LKSB wake_lock;
+static lock_status wake_lock;
 #endif /* of ifdef VMS */
 
 #ifdef HAVE_SIGNAL_H
@@ -661,7 +661,7 @@ int INTERNAL_API_ROUTINE ISC_get_user(TEXT*	name,
 // This routine was adapted from code in routine RunningAsAdminstrator
 // in \mstools\samples\regmpad\regdb.c.
 //
-static BOOLEAN check_user_privilege(void)
+static bool check_user_privilege()
 {
 	HANDLE tkhandle;
 	SID_IDENTIFIER_AUTHORITY system_sid_authority = {SECURITY_NT_AUTHORITY};
@@ -678,12 +678,12 @@ static BOOLEAN check_user_privilege(void)
 			if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &tkhandle))
 			{
 				CloseHandle(tkhandle);
-				return FALSE;
+				return false;
 			}
 		}
 		else
 		{
-			return FALSE;
+			return false;
 		}
 	}
 
@@ -719,7 +719,7 @@ static BOOLEAN check_user_privilege(void)
 		if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
 		{
 			CloseHandle(tkhandle);
-			return FALSE;
+			return false;
 		}
 
 		// Allocate a buffer for the group information.
@@ -728,7 +728,7 @@ static BOOLEAN check_user_privilege(void)
 		if (!ptg)
 		{
 			CloseHandle(tkhandle);
-			return FALSE;		/* NOMEM: */
+			return false;		/* NOMEM: */
 		}
 		// FREE: earlier in this loop, and at procedure return
 	}
@@ -744,19 +744,19 @@ static BOOLEAN check_user_privilege(void)
 	{
 		gds__free(ptg);
 		CloseHandle(tkhandle);
-		return FALSE;
+		return false;
 	}
 
 	// Finally we'll iterate through the list of groups for this access
 	// token looking for a match against the SID we created above.
 
-	BOOLEAN admin_priv = FALSE;
+	bool admin_priv = false;
 
 	for (DWORD i = 0; i < ptg->GroupCount; i++)
 	{
 		if (EqualSid(ptg->Groups[i].Sid, admin_sid))
 		{
-			admin_priv = TRUE;
+			admin_priv = true;
 			break;
 		}
 	}
@@ -1118,7 +1118,7 @@ static void poke_ast(POKE poke)
  *      and deque the lock.
  *
  **************************************/
-	LKSB* lksb = &poke->poke_lksb;
+	lock_status* lksb = &poke->poke_lksb;
 	int status = sys$deq(lksb->lksb_lock_id, 0, 0, 0);
 	--poke->poke_use_count;
 }

@@ -32,12 +32,12 @@
  *  Contributor(s):
  * 
  *
- *  $Id: fb_atomic.h,v 1.1 2004-03-25 23:12:39 skidder Exp $
+ *  $Id: fb_atomic.h,v 1.2 2004-03-28 09:10:08 robocop Exp $
  *
  */
  
-#ifndef FB_ATOMIC_H
-#define FB_ATOMIC_H
+#ifndef CLASSES_FB_ATOMIC_H
+#define CLASSES_FB_ATOMIC_H
 
 #if defined(WIN_NT)
 
@@ -191,4 +191,4 @@ private:
 
 #endif
 
-#endif
+#endif // CLASSES_FB_ATOMIC_H

@@ -29,12 +29,12 @@
 
 namespace Jrd {
 
-class Dcc : public pool_alloc<type_dcc>
+class DataComprControl : public pool_alloc<type_dcc>
 {
     public:
-	JrdMemoryPool *dcc_pool;
-	Dcc *dcc_next;			// Next block if overflow
-	SCHAR *dcc_end;			// End of control string
+	JrdMemoryPool* dcc_pool;
+	DataComprControl* dcc_next;	// Next block if overflow
+	const SCHAR* dcc_end;		// End of control string
 	SCHAR dcc_string[128];
 };
 

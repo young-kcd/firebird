@@ -222,7 +222,7 @@ void EVENT_delete_session(SLONG session_id)
 }
 
 
-EVH EVENT_init(ISC_STATUS * status_vector, USHORT server_flag)
+EVH EVENT_init(ISC_STATUS* status_vector, bool server_flag)
 {
 /**************************************
  *
@@ -258,7 +258,7 @@ int EVENT_post(
  *	Post an event.
  *
  **************************************/
-	LKSB lksb;
+	lock_status lksb;
 	POKE poke;
 	int status;
 	struct dsc$descriptor desc;
@@ -485,7 +485,7 @@ static void blocking_ast(EVNT event)
  *	Somebody else is trying to post a lock.
  *
  **************************************/
-	LKSB *lksb;
+	lock_status* lksb;
 	int status;
 
 	lksb = &event->evnt_lksb;
@@ -859,7 +859,7 @@ static EVNT make_event(USHORT length,
  *
  **************************************/
 	EVNT event, *ptr;
-	LKSB * lksb;
+	lock_status* lksb;
 	SLONG parent_id;
 	int status;
 	struct dsc$descriptor desc;
@@ -935,7 +935,7 @@ static void poke_ast(POKE poke)
  *
  **************************************/
 	int status;
-	LKSB * lksb;
+	lock_status* lksb;
 	lksb = &poke->poke_lksb;
 	lksb->lksb_value[0] += poke->poke_value;
 	status = sys$deq(lksb->lksb_lock_id, lksb->lksb_value, 0, 0);

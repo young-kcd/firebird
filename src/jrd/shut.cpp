@@ -44,6 +44,16 @@ using namespace Jrd;
 
 #define SHUT_WAIT_TIME	5
 
+// Shutdown lock data
+union shutdown_data {
+	struct {
+		SSHORT flag;
+		SSHORT delay;
+	} data_items;
+	SLONG data_long;
+};
+
+
 // Define this to true if you need to allow no-op behavior when requested shutdown mode 
 // matches current. Logic of jrd8_create_database may need attention in this case too
 #define IGNORE_SAME_MODE false
@@ -66,7 +76,7 @@ bool SHUT_blocking_ast(Database* dbb)
  *	shutdown instructions.
  *
  **************************************/
-	SDATA data;
+	shutdown_data data;
 	data.data_long = LCK_read_data(dbb->dbb_lock);
 	const SSHORT flag = data.data_items.flag;
 	const SSHORT delay = data.data_items.delay;
@@ -417,7 +427,7 @@ static bool notify_shutdown(Database* dbb, SSHORT flag, SSHORT delay)
  **************************************/
 
 	thread_db* tdbb = GET_THREAD_DATA;
-	SDATA data;
+	shutdown_data data;
 
 	data.data_items.flag = flag;
 	data.data_items.delay = delay;
@@ -494,7 +504,7 @@ static bool shutdown_locks(Database* dbb, SSHORT flag)
 /* Since no attachment is actively running, release all
    attachment-specfic locks while they're not looking. */
 
-	Attachment* shut_attachment = NULL;
+	const Attachment* shut_attachment = NULL;
 
 	for (attachment = dbb->dbb_attachments; attachment;
 		 attachment = attachment->att_next)

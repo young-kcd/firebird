@@ -815,13 +815,11 @@ pag* CCH_fetch(thread_db* tdbb,
  *	NULL pointer if timeout occurred (only possible if latch_wait <> 1).
  *
  **************************************/
-	SSHORT fetch_lock_return;
-
 	SET_TDBB(tdbb);
 
 /* FETCH_LOCK will return 0, 1, -1 or -2 */
 
-	fetch_lock_return =
+	const SSHORT fetch_lock_return =
 		CCH_FETCH_LOCK(tdbb, window, lock_type, LCK_WAIT, latch_wait,
 					   page_type);
 
@@ -2040,6 +2038,7 @@ void update_write_direction(thread_db* tdbb, BufferDesc* bdb)
 		// SCN of header page is adjusted in nbak.cpp
 		bdb->bdb_buffer->pag_scn = dbb->backup_manager->get_current_scn(); // Set SCN for the page
 	}
+
 	SSHORT write_direction;
 	const int backup_state = dbb->backup_manager->get_state();
 	switch (backup_state) {
@@ -3592,8 +3591,8 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
  * Functional description
  *	A lock on a page is blocking another process.  If possible, downgrade
  *	the lock on the buffer.  This may be called from either AST or
- *	regular level.  Return TRUE if the down grade was successful.  If the
- *	down grade was deferred for any reason, return FALSE.
+ *	regular level.  Return true if the down grade was successful.  If the
+ *	down grade was deferred for any reason, return false.
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -3610,14 +3609,14 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 			bdb->bdb_flags &= ~BDB_dirty;
 			set_write_direction(dbb, bdb, BDB_write_undefined);
 		}
-		return; // TRUE;
+		return; // true;
 	}
 
 /* If the BufferDesc is in use and, being written or already
    downgraded to read, mark it as blocking and exit. */
 
 	if (bdb->bdb_use_count) {
-		return; // FALSE;
+		return; // false;
 	}
 
 	latch_bdb(tdbb, LATCH_io, bdb, bdb->bdb_page, 1);
@@ -3637,7 +3636,7 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 		LCK_downgrade(tdbb, lock);
 #endif
 		release_bdb(tdbb, bdb, false, false, false);
-		return; // TRUE;
+		return; // true;
 	}
 
 	bool in_use = false, invalid = false;
@@ -3677,7 +3676,7 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 
 	if (in_use) {
 		release_bdb(tdbb, bdb, false, false, false);
-		return; // FALSE;
+		return; // false;
 	}
 
 /* Everything is clear to write this buffer.  Do so and reduce the lock */
@@ -3726,7 +3725,7 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 	bdb->bdb_flags &= ~BDB_not_valid;
 	release_bdb(tdbb, bdb, false, false, false);
 
-	return; // TRUE;
+	return; // true;
 }
 #endif
 

@@ -176,7 +176,7 @@ SLONG EVENT_create_session(ISC_STATUS * status_vector)
  **************************************/
 // If we're not initialized, do so now.
 
-	if (!EVENT_header && !EVENT_init(status_vector, TRUE))
+	if (!EVENT_header && !EVENT_init(status_vector, true))
 		return 0;
 
 	if (!EVENT_process_offset)
@@ -269,7 +269,9 @@ void EVENT_deliver()
 }
 
 
-EVH EVENT_init(ISC_STATUS * status_vector, USHORT server_flag)
+// CVC: Contrary to the explanation, server_flag is not used!
+#pragma FB_COMPILER_MESSAGE("server_flag var is not honored: bug or deprecated?")
+EVH EVENT_init(ISC_STATUS* status_vector, bool server_flag)
 {
 /**************************************
  *
@@ -310,7 +312,7 @@ EVH EVENT_init(ISC_STATUS * status_vector, USHORT server_flag)
 
 	EVENT_data.sh_mem_length_mapped = EVENT_default_size;
 	EVENT_data.sh_mem_mutex_arg = 0;
-	init((SLONG) 0, &EVENT_data, TRUE);
+	init((SLONG) 0, &EVENT_data, true);
 #else
 
 #if (defined UNIX)
@@ -366,7 +368,7 @@ int EVENT_post(ISC_STATUS * status_vector,
 
 /* If we're not initialized, do so now */
 
-	if (!EVENT_header && !EVENT_init(status_vector, FALSE))
+	if (!EVENT_header && !EVENT_init(status_vector, false))
 		return status_vector[1];
 
 	ACQUIRE;

@@ -27,6 +27,13 @@
 #include "../include/fb_blk.h"
 #include "../jrd/os/pio.h"
 
+class lls;
+struct exp_index_buf;
+
+namespace Ods {
+	struct pag;
+}
+
 namespace Jrd {
 
 class Lock;
@@ -53,10 +60,10 @@ struct bcb_repeat
 class BufferControl : public pool_alloc_rpt<bcb_repeat, type_bcb>
 {
     public:
-	class lls*	bcb_memory;			/* Large block partitioned into buffers */
+	lls*		bcb_memory;			/* Large block partitioned into buffers */
 	que			bcb_in_use;			/* Que of buffers in use */
 	que			bcb_empty;			/* Que of empty buffers */
-	BufferDesc*	bcb_btree;		/* root of dirty page btree */
+	BufferDesc*	bcb_btree;			/* root of dirty page btree */
 	Precedence*	bcb_free;			/* Free precedence blocks */
 	que			bcb_free_lwt;		/* Free latch wait blocks */
 	SSHORT		bcb_flags;			/* see below */
@@ -87,8 +94,8 @@ class BufferDesc : public pool_alloc<type_bdb>
 	Lock*		bdb_lock;				/* Lock block for buffer */
 	que			bdb_que;				/* Buffer que */
 	que			bdb_in_use;				/* queue of buffers in use */
-	struct Ods::pag*	bdb_buffer;				/* Actual buffer */
-	struct jrd_exp*	bdb_expanded_buffer;	/* expanded index buffer */
+	Ods::pag*	bdb_buffer;			/* Actual buffer */
+	exp_index_buf*	bdb_expanded_buffer;	/* expanded index buffer */
 	BlockingThread*	bdb_blocked;			/* Blocked attachments block */
 	SLONG		bdb_page;				/* Database page number in buffer */
 	ULONG		bdb_sequence;

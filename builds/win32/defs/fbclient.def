@@ -341,5 +341,5 @@ EXPORTS
 
 	CVT_move	@267
 
-	KEYWORD_stringIsAToken
-	KEYWORD_getTokens
+	KEYWORD_stringIsAToken	@271
+	KEYWORD_getTokens	@272

@@ -48,7 +48,7 @@ struct sdl_arg {
 	SLONG* sdl_arg_variables;
 	SDL_walk_callback sdl_arg_callback;
 	SLICE sdl_arg_argument;
-	ISC_STATUS *sdl_arg_status_vector;
+	ISC_STATUS* sdl_arg_status_vector;
 	IPTR sdl_arg_compiled[COMPILE_SIZE];
 	IPTR* sdl_arg_next;
 	IPTR* sdl_arg_end;
@@ -62,7 +62,7 @@ struct sdl_arg {
 struct array_range {
 	SLONG rng_minima[64];
 	SLONG rng_maxima[64];
-	SDL_INFO rng_info;
+	sdl_info* rng_info;
 };
 
 static const UCHAR* compile(const UCHAR*, sdl_arg*);
@@ -162,7 +162,7 @@ SLONG SDL_compute_subscript(ISC_STATUS* status_vector,
 
 
 ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS* status_vector,
-							const UCHAR* sdl, SDL_INFO info, SLONG* vector)
+							const UCHAR* sdl, sdl_info* info, SLONG* vector)
 {
 /**************************************
  *
@@ -177,7 +177,6 @@ ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS* status_vector,
  **************************************/
 	TEXT* q;
 	USHORT n, offset;
-	SLONG min, max;
 	array_range range;
 
 	const UCHAR* p = sdl;
@@ -211,13 +210,17 @@ ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS* status_vector,
 			break;
 
 		case isc_sdl_field:
-			for (n = *p++, q = info->sdl_info_field; n; --n)
+			n = *p++;
+			fb_assert(n < sizeof(info->sdl_info_field));
+			for (q = info->sdl_info_field; n; --n)
 				*q++ = (TEXT) *p++;
 			*q = 0;
 			break;
 
 		case isc_sdl_relation:
-			for (n = *p++, q = info->sdl_info_relation; n; --n)
+			n = *p++;
+			fb_assert(sizeof(info->sdl_info_relation));
+			for (q = info->sdl_info_relation; n; --n)
 				*q++ = (TEXT) *p++;
 			*q = 0;
 			break;
@@ -228,7 +231,7 @@ ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS* status_vector,
 				memcpy(range.rng_minima, vector, sizeof(range.rng_minima));
 				memcpy(range.rng_maxima, vector, sizeof(range.rng_maxima));
 				range.rng_info = info;
-				min = max = -1;
+				SLONG min = -1, max = -1;
 				if (!(p = get_range(p - 1, &range, &min, &max))
 					|| (*p != isc_sdl_eoc))
 				{
@@ -774,7 +777,7 @@ static const UCHAR* get_range(const UCHAR* sdl, array_range* arg,
  *
  **************************************/
 	SLONG n, variable, value, min1, max1, min2, max2, junk1, junk2;
-	SDL_INFO info;
+	sdl_info* info;
 
 	const UCHAR* p = sdl;
 

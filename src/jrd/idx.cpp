@@ -75,23 +75,23 @@ static const SCHAR NULL_STR = '\0';
 
 /* Data to be passed to index fast load duplicates routine */
 
-typedef struct ifl {
+struct index_fast_load {
 	SLONG ifl_duplicates;
 	USHORT ifl_key_length;
-} *IFL;
+};
 
-static IDX_E check_duplicates(thread_db*, Record*, IDX *, IIB *, jrd_rel*);
-static IDX_E check_foreign_key(thread_db*, Record*, jrd_rel*, jrd_tra*, IDX *, jrd_rel**, USHORT *);
-static IDX_E check_partner_index(thread_db*, jrd_rel*, Record*, jrd_tra*, IDX *, jrd_rel*, SSHORT);
+static IDX_E check_duplicates(thread_db*, Record*, index_desc*, index_insertion*, jrd_rel*);
+static IDX_E check_foreign_key(thread_db*, Record*, jrd_rel*, jrd_tra*, index_desc*, jrd_rel**, USHORT *);
+static IDX_E check_partner_index(thread_db*, jrd_rel*, Record*, jrd_tra*, index_desc*, jrd_rel*, SSHORT);
 static bool duplicate_key(const UCHAR*, const UCHAR*, void*);
-static SLONG get_root_page(thread_db*, jrd_rel*);
+static SLONG get_root_page(thread_db*, const jrd_rel*);
 static int index_block_flush(void*);
-static IDX_E insert_key(thread_db*, jrd_rel*, Record*, jrd_tra*, WIN *, IIB *, jrd_rel**, USHORT *);
-static bool key_equal(const KEY*, const KEY*);
+static IDX_E insert_key(thread_db*, jrd_rel*, Record*, jrd_tra*, WIN *, index_insertion*, jrd_rel**, USHORT *);
+static bool key_equal(const temporary_key*, const temporary_key*);
 static void signal_index_deletion(thread_db*, jrd_rel*, USHORT);
 
 
-void IDX_check_access(thread_db* tdbb, Csb* csb, jrd_rel* view, jrd_rel* relation,
+void IDX_check_access(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view, jrd_rel* relation,
 	jrd_fld* field)
 {
 /**************************************
@@ -110,7 +110,7 @@ void IDX_check_access(thread_db* tdbb, Csb* csb, jrd_rel* view, jrd_rel* relatio
  **************************************/
 	SET_TDBB(tdbb);
 
-	IDX idx;
+	index_desc idx;
 	idx.idx_id = (USHORT) -1;
 	WIN window(-1);
 	WIN referenced_window(-1);
@@ -134,7 +134,7 @@ void IDX_check_access(thread_db* tdbb, Csb* csb, jrd_rel* view, jrd_rel* relatio
 			referenced_window.win_flags = 0;
 			index_root_page* referenced_root =
 				(index_root_page*) CCH_FETCH(tdbb, &referenced_window, LCK_read, pag_root);
-			IDX referenced_idx;
+			index_desc referenced_idx;
 			if (!BTR_description
 				(referenced_relation, referenced_root, &referenced_idx,
 				 index_id)) 
@@ -144,7 +144,7 @@ void IDX_check_access(thread_db* tdbb, Csb* csb, jrd_rel* view, jrd_rel* relatio
 
 			/* post references access to each field in the index */
 
-			const idx::idx_repeat* idx_desc = referenced_idx.idx_rpt;
+			const index_desc::idx_repeat* idx_desc = referenced_idx.idx_rpt;
 			for (USHORT i = 0; i < referenced_idx.idx_count; i++, idx_desc++) {
 				const jrd_fld* referenced_field =
 					MET_get_field(referenced_relation, idx_desc->idx_field);
@@ -167,7 +167,7 @@ void IDX_check_access(thread_db* tdbb, Csb* csb, jrd_rel* view, jrd_rel* relatio
 void IDX_create_index(
 					  thread_db* tdbb,
 					  jrd_rel* relation,
-					  IDX* idx,
+					  index_desc* idx,
 					  const TEXT* index_name,
 					  USHORT* index_id,
 					  jrd_tra* transaction,
@@ -184,7 +184,7 @@ void IDX_create_index(
  *
  **************************************/
 	IDX_E result = idx_e_ok;
-	struct ifl ifl_data;
+	index_fast_load ifl_data;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -241,7 +241,7 @@ void IDX_create_index(
 		(idx->idx_flags & idx_unique) ? &ifl_data : NULL;
 
 	sort_context* sort_handle = SORT_init(tdbb->tdbb_status_vector,
-							key_length + sizeof(struct isr),
+							key_length + sizeof(index_sort_record),
 							1, &key_desc, callback, callback_arg,
 							tdbb->tdbb_attachment, 0);
 
@@ -281,7 +281,7 @@ void IDX_create_index(
 /* Loop thru the relation computing index keys.  If there are old versions,
    find them, too. */
 	bool cancel = false;
-	KEY key;
+	temporary_key key;
 	while (!cancel && DPM_next(tdbb, &primary, LCK_read, false, false)) {
 		if (transaction && !VIO_garbage_collect(tdbb, &primary, transaction))
 			continue;
@@ -402,7 +402,7 @@ void IDX_create_index(
 					*p++ = pad;
 				} while (--l);
 			}
-			ISR isr = (ISR) p;
+			index_sort_record* isr = (index_sort_record*) p;
 			isr->isr_key_length = key.key_length;
 			isr->isr_record_number = primary.rpb_number;
 			isr->isr_flags = (stack ? ISR_secondary : 0) | (key_is_null ? ISR_null : 0);
@@ -553,7 +553,7 @@ IDX_E IDX_erase(thread_db* tdbb,
  *	a duplicate record.
  *
  **************************************/
-	IDX idx;
+	index_desc idx;
 
 	SET_TDBB(tdbb);
 
@@ -590,12 +590,12 @@ void IDX_garbage_collect(thread_db* tdbb, record_param* rpb, LLS going, LLS stay
  *	each.
  *
  **************************************/
-	IIB insertion;
-	IDX idx;
-	KEY key1, key2;
+	index_desc idx;
+	temporary_key key1, key2;
 
 	SET_TDBB(tdbb);
 
+	index_insertion insertion;
 	insertion.iib_descriptor = &idx;
 	insertion.iib_number = rpb->rpb_number;
 	insertion.iib_relation = rpb->rpb_relation;
@@ -667,12 +667,12 @@ IDX_E IDX_modify(thread_db* tdbb,
  *	-1.
  *
  **************************************/
-	IDX idx;
-	IIB insertion;
-	KEY key1, key2;
-
 	SET_TDBB(tdbb);
 
+	temporary_key key1;
+	index_desc idx;
+
+	index_insertion insertion;
 	insertion.iib_relation = org_rpb->rpb_relation;
 	insertion.iib_number = org_rpb->rpb_number;
 	insertion.iib_key = &key1;
@@ -681,6 +681,8 @@ IDX_E IDX_modify(thread_db* tdbb,
 	IDX_E error_code = idx_e_ok;
 	idx.idx_id = (USHORT) -1;
 	WIN window(-1);
+
+	temporary_key key2;
 
 	while (BTR_next_index
 		   (tdbb, org_rpb->rpb_relation, transaction, &idx, &window))
@@ -727,12 +729,12 @@ IDX_E IDX_modify_check_constraints(thread_db* tdbb,
  *	Check for foreign key constraint after a modify statement
  *
  **************************************/
-	IDX idx;
-	KEY key1, key2;
+	temporary_key key1, key2;
 
 	SET_TDBB(tdbb);
 
 	IDX_E error_code = idx_e_ok;
+	index_desc idx;
 	idx.idx_id = (USHORT) -1;
 	WIN window(-1);
 
@@ -787,7 +789,8 @@ IDX_E IDX_modify_check_constraints(thread_db* tdbb,
 }
 
 
-void IDX_statistics(thread_db* tdbb, jrd_rel* relation, USHORT id, SelectivityList& selectivity)
+void IDX_statistics(thread_db* tdbb, jrd_rel* relation, USHORT id,
+					SelectivityList& selectivity)
 {
 /**************************************
  *
@@ -823,12 +826,12 @@ IDX_E IDX_store(thread_db* tdbb,
  *	-1.
  *
  **************************************/
-	IDX idx;
-	IIB insertion;
-	KEY key;
-
 	SET_TDBB(tdbb);
 
+	temporary_key key;
+	index_desc idx;
+
+	index_insertion insertion;
 	insertion.iib_relation = rpb->rpb_relation;
 	insertion.iib_number = rpb->rpb_number;
 	insertion.iib_key = &key;
@@ -865,8 +868,8 @@ IDX_E IDX_store(thread_db* tdbb,
 static IDX_E check_duplicates(
 							  thread_db* tdbb,
 							  Record* record,
-							  IDX * record_idx,
-							  IIB * insertion, jrd_rel* relation_2)
+							  index_desc* record_idx,
+							  index_insertion* insertion, jrd_rel* relation_2)
 {
 /**************************************
  *
@@ -884,7 +887,7 @@ static IDX_E check_duplicates(
 	SET_TDBB(tdbb);
 
 	IDX_E result = idx_e_ok;
-	IDX* insertion_idx = insertion->iib_descriptor;
+	index_desc* insertion_idx = insertion->iib_descriptor;
 
 	record_param rpb;
 	rpb.rpb_number = -1;
@@ -970,8 +973,8 @@ static IDX_E check_foreign_key(
 							   Record* record,
 							   jrd_rel* relation,
 							   jrd_tra* transaction,
-							   IDX * idx,
-	jrd_rel** bad_relation, USHORT * bad_index)
+							   index_desc* idx,
+	jrd_rel** bad_relation, USHORT* bad_index)
 {
 /**************************************
  *
@@ -985,9 +988,6 @@ static IDX_E check_foreign_key(
  *	record appears in the partner index.
  *
  **************************************/
-	int index_number;
-	jrd_rel* partner_relation;
-
 	SET_TDBB(tdbb);
 
 	IDX_E result = idx_e_ok;
@@ -996,6 +996,7 @@ static IDX_E check_foreign_key(
 		return result;
 	}
 
+	jrd_rel* partner_relation;
 	USHORT index_id = 0;
 	if (idx->idx_flags & idx_foreign) {
 		partner_relation = MET_relation(tdbb, idx->idx_primary_relation);
@@ -1005,7 +1006,7 @@ static IDX_E check_foreign_key(
 								partner_relation, index_id);
 	}
 	else if (idx->idx_flags & (idx_primary | idx_unique)) {
-		for (index_number = 0;
+		for (int index_number = 0;
 			 index_number < (int) idx->idx_foreign_primaries->count();
 			 index_number++)
 		{
@@ -1048,7 +1049,7 @@ static IDX_E check_partner_index(
 								 jrd_rel* relation,
 								 Record* record,
 								 jrd_tra* transaction,
-								 IDX * idx,
+								 index_desc* idx,
 	jrd_rel* partner_relation, SSHORT index_id)
 {
 /**************************************
@@ -1063,9 +1064,9 @@ static IDX_E check_partner_index(
  *	record appears in the partner index.
  *
  **************************************/
-	IDX partner_idx;
-	IIB insertion;
-	KEY key;
+	index_desc partner_idx;
+	index_insertion insertion;
+	temporary_key key;
 	IndexRetrieval retrieval;
 
 	SET_TDBB(tdbb);
@@ -1093,7 +1094,6 @@ static IDX_E check_partner_index(
 		/* fill out a retrieval block for the purpose of 
 		   generating a bitmap of duplicate records  */
 
-		SparseBitmap* bitmap = NULL;
 		MOVE_CLEAR(&retrieval, sizeof(IndexRetrieval));
 		//retrieval.blk_type = type_irb;
 		retrieval.irb_index = partner_idx.idx_id;
@@ -1110,6 +1110,8 @@ static IDX_E check_partner_index(
 			retrieval.irb_upper_count = 
 				retrieval.irb_lower_count = idx->idx_count;
 		}
+
+		SparseBitmap* bitmap = NULL;
 		BTR_evaluate(tdbb, &retrieval, &bitmap);
 
 		/* if there is a bitmap, it means duplicates were found */
@@ -1151,9 +1153,11 @@ static bool duplicate_key(const UCHAR* record1, const UCHAR* record2, void* ifl_
  *	bump a counter.
  *
  **************************************/
-	ifl* ifl_data = static_cast<ifl*>(ifl_void);
-	const isr* rec1 = (ISR) (record1 + ifl_data->ifl_key_length);
-	const isr* rec2 = (ISR) (record2 + ifl_data->ifl_key_length);
+	index_fast_load* ifl_data = static_cast<index_fast_load*>(ifl_void);
+	const index_sort_record* rec1 =
+		(index_sort_record*) (record1 + ifl_data->ifl_key_length);
+	const index_sort_record* rec2 =
+		(index_sort_record*) (record2 + ifl_data->ifl_key_length);
 
 	if (!(rec1->isr_flags & (ISR_secondary | ISR_null)) &&
 		!(rec2->isr_flags & (ISR_secondary | ISR_null)))
@@ -1165,7 +1169,7 @@ static bool duplicate_key(const UCHAR* record1, const UCHAR* record2, void* ifl_
 }
 
 
-static SLONG get_root_page(thread_db* tdbb, jrd_rel* relation)
+static SLONG get_root_page(thread_db* tdbb, const jrd_rel* relation)
 {
 /**************************************
  *
@@ -1249,7 +1253,7 @@ static IDX_E insert_key(
 						Record* record,
 						jrd_tra* transaction,
 						WIN * window_ptr,
-						IIB * insertion,
+						index_insertion* insertion,
 						jrd_rel** bad_relation,
 						USHORT * bad_index)
 {
@@ -1269,7 +1273,7 @@ static IDX_E insert_key(
 	SET_TDBB(tdbb);
 
 	IDX_E result = idx_e_ok;
-	IDX* idx = insertion->iib_descriptor;
+	index_desc* idx = insertion->iib_descriptor;
 
 /* Insert the key into the index.  If the index is unique, btr
    will keep track of duplicates. */
@@ -1295,7 +1299,7 @@ static IDX_E insert_key(
 
 		idx->idx_flags |= idx_unique;
 		CCH_FETCH(tdbb, window_ptr, LCK_read, pag_root);
-		KEY key;
+		temporary_key key;
 		idx_null_state null_state;
 		result = BTR_key(tdbb, relation, record, idx, &key, &null_state);
 		CCH_RELEASE(tdbb, window_ptr);
@@ -1311,7 +1315,7 @@ static IDX_E insert_key(
 }
 
 
-static bool key_equal(const KEY* key1, const KEY* key2)
+static bool key_equal(const temporary_key* key1, const temporary_key* key2)
 {
 /**************************************
  *

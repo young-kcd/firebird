@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.69 2004-02-25 01:50:34 skidder Exp $
+$Id: ibase.h,v 1.70 2004-03-28 09:10:15 robocop Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -1660,7 +1660,7 @@ enum info_db_provider
 #define isc_info_rsb_plan			4
 
 /*************/
-/* Rsb types */
+/* RecordSource (RSB) types */
 /*************/
 
 #define isc_info_rsb_unknown		1

@@ -128,36 +128,36 @@ const size_t REQ_TAIL = sizeof (Jrd::jrd_req::blk_repeat_type);
 
 using namespace Jrd;
 
-static UCHAR* alloc_map(thread_db*, Csb*, USHORT);
+static UCHAR* alloc_map(thread_db*, CompilerScratch*, USHORT);
 static jrd_nod* catenate_nodes(thread_db*, LLS);
-static jrd_nod* copy(thread_db*, Csb*, jrd_nod*, UCHAR *, USHORT, jrd_nod*, bool);
-static void expand_view_nodes(thread_db*, Csb*, USHORT, LLS *, NOD_T);
-static void ignore_dbkey(thread_db*, Csb*, RSE, const jrd_rel*);
-static jrd_nod* make_defaults(thread_db*, Csb*, USHORT, jrd_nod*);
-static jrd_nod* make_validation(thread_db*, Csb*, USHORT);
-static jrd_nod* pass1(thread_db*, Csb*, jrd_nod*, jrd_rel*, USHORT, bool);
-static void pass1_erase(thread_db*, Csb*, jrd_nod*);
-static jrd_nod* pass1_expand_view(thread_db*, Csb*, USHORT, USHORT, bool);
-static void pass1_modify(thread_db*, Csb*, jrd_nod*);
-static RSE pass1_rse(thread_db*, Csb*, RSE, jrd_rel*, USHORT);
-static void pass1_source(thread_db*, Csb*, RSE, jrd_nod*, jrd_nod**, LLS *, jrd_rel*, USHORT);
-static jrd_nod* pass1_store(thread_db*, Csb*, jrd_nod*);
-static jrd_nod* pass1_update(thread_db*, Csb*, jrd_rel*, trig_vec*, USHORT, USHORT, USHORT, jrd_rel*,
+static jrd_nod* copy(thread_db*, CompilerScratch*, jrd_nod*, UCHAR *, USHORT, jrd_nod*, bool);
+static void expand_view_nodes(thread_db*, CompilerScratch*, USHORT, LLS *, NOD_T);
+static void ignore_dbkey(thread_db*, CompilerScratch*, RecordSelExpr*, const jrd_rel*);
+static jrd_nod* make_defaults(thread_db*, CompilerScratch*, USHORT, jrd_nod*);
+static jrd_nod* make_validation(thread_db*, CompilerScratch*, USHORT);
+static jrd_nod* pass1(thread_db*, CompilerScratch*, jrd_nod*, jrd_rel*, USHORT, bool);
+static void pass1_erase(thread_db*, CompilerScratch*, jrd_nod*);
+static jrd_nod* pass1_expand_view(thread_db*, CompilerScratch*, USHORT, USHORT, bool);
+static void pass1_modify(thread_db*, CompilerScratch*, jrd_nod*);
+static RecordSelExpr* pass1_rse(thread_db*, CompilerScratch*, RecordSelExpr*, jrd_rel*, USHORT);
+static void pass1_source(thread_db*, CompilerScratch*, RecordSelExpr*, jrd_nod*, jrd_nod**, LLS *, jrd_rel*, USHORT);
+static jrd_nod* pass1_store(thread_db*, CompilerScratch*, jrd_nod*);
+static jrd_nod* pass1_update(thread_db*, CompilerScratch*, jrd_rel*, trig_vec*, USHORT, USHORT, USHORT, jrd_rel*,
 						USHORT);
-static jrd_nod* pass2(thread_db*, Csb*, jrd_nod* const, jrd_nod*);
-static void pass2_rse(thread_db*, Csb*, RSE);
-static jrd_nod* pass2_union(thread_db*, Csb*, jrd_nod*);
-static void plan_check(const Csb*, const rse*);
-static void plan_set(Csb*, RSE, jrd_nod*);
-static void post_procedure_access(thread_db*, Csb*, jrd_prc*);
-static Rsb* post_rse(thread_db*, Csb*, RSE);
-static void	post_trigger_access(thread_db*, Csb*, jrd_rel*, trig_vec*, jrd_rel*);
-static void process_map(thread_db*, Csb*, jrd_nod*, fmt**);
-static bool stream_in_rse(USHORT, RSE);
+static jrd_nod* pass2(thread_db*, CompilerScratch*, jrd_nod* const, jrd_nod*);
+static void pass2_rse(thread_db*, CompilerScratch*, RecordSelExpr*);
+static jrd_nod* pass2_union(thread_db*, CompilerScratch*, jrd_nod*);
+static void plan_check(const CompilerScratch*, const RecordSelExpr*);
+static void plan_set(CompilerScratch*, RecordSelExpr*, jrd_nod*);
+static void post_procedure_access(thread_db*, CompilerScratch*, jrd_prc*);
+static RecordSource* post_rse(thread_db*, CompilerScratch*, RecordSelExpr*);
+static void	post_trigger_access(thread_db*, CompilerScratch*, jrd_rel*, trig_vec*, jrd_rel*);
+static void process_map(thread_db*, CompilerScratch*, jrd_nod*, fmt**);
+static bool stream_in_rse(USHORT, RecordSelExpr*);
 static SSHORT strcmp_space(const TEXT*, const TEXT*);
 
 #ifdef PC_ENGINE
-static USHORT base_stream(Csb*, jrd_nod**, bool);
+static USHORT base_stream(CompilerScratch*, jrd_nod**, bool);
 #endif
 
 #ifdef CMP_DEBUG
@@ -209,7 +209,7 @@ bool CMP_clone_is_active(const jrd_req* request)
 }
 
 
-jrd_nod* CMP_clone_node(thread_db* tdbb, Csb* csb, jrd_nod* node)
+jrd_nod* CMP_clone_node(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 {
 /**************************************
  *
@@ -277,7 +277,7 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 			TEXT* prc_sec_name = (procedure->prc_security_name ?
 							(TEXT *) procedure->
 							prc_security_name.c_str() : NULL);
-			const scl* sec_class = SCL_get_class(prc_sec_name);
+			const SecurityClass* sec_class = SCL_get_class(prc_sec_name);
 			SCL_check_access(sec_class, 0, 0,
 							 0, SCL_execute, object_procedure,
 							 procedure->prc_name.c_str());
@@ -285,7 +285,7 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 		for (const AccessItem* access = request->req_access; access;
 			access = access->acc_next) 
 		{
-			const scl* sec_class = SCL_get_class(access->acc_security_name);
+			const SecurityClass* sec_class = SCL_get_class(access->acc_security_name);
 			SCL_check_access(sec_class, access->acc_view_id, access->acc_trg_name,
 							 access->acc_prc_name, access->acc_mask,
 							 access->acc_type, access->acc_name);
@@ -376,7 +376,7 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag)
 
 	try {
 
-		Csb* csb = PAR_parse(tdbb, blr, internal_flag);
+		CompilerScratch* csb = PAR_parse(tdbb, blr, internal_flag);
 		request = CMP_make_request(tdbb, csb);
 
 		if (internal_flag) {
@@ -386,7 +386,7 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag)
 		for (const AccessItem* access = request->req_access; access;
 			access = access->acc_next)
 		{
-			const scl* sec_class = SCL_get_class(access->acc_security_name);
+			const SecurityClass* sec_class = SCL_get_class(access->acc_security_name);
 			SCL_check_access(sec_class, access->acc_view_id, access->acc_trg_name,
 							 access->acc_prc_name, access->acc_mask,
 							 access->acc_type, access->acc_name);
@@ -412,7 +412,7 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag)
 }
 
 
-Csb::csb_repeat* CMP_csb_element(Csb* csb, USHORT element)
+CompilerScratch::csb_repeat* CMP_csb_element(CompilerScratch* csb, USHORT element)
 {
 /**************************************
  *
@@ -421,12 +421,12 @@ Csb::csb_repeat* CMP_csb_element(Csb* csb, USHORT element)
  **************************************
  *
  * Functional description
- *	Find tail element of compile scratch block.  If the csb isn't big
+ *	Find tail element of compiler scratch block.  If the csb isn't big
  *	enough, extend it.
  *
  **************************************/
 	DEV_BLKCHK(csb, type_csb);
-	Csb::csb_repeat empty_item;
+	CompilerScratch::csb_repeat empty_item;
 	while (element >= csb->csb_rpt.getCount()) {
 		csb->csb_rpt.add(empty_item);
 	}
@@ -541,7 +541,7 @@ void CMP_fini(thread_db* tdbb)
 }
 
 
-fmt* CMP_format(thread_db* tdbb, Csb* csb, USHORT stream)
+fmt* CMP_format(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 {
 /**************************************
  *
@@ -557,7 +557,7 @@ fmt* CMP_format(thread_db* tdbb, Csb* csb, USHORT stream)
 
 	DEV_BLKCHK(csb, type_csb);
 
-	Csb::csb_repeat* tail = &csb->csb_rpt[stream];
+	CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
 
 	if (tail->csb_format) {
 		return tail->csb_format;
@@ -575,7 +575,7 @@ fmt* CMP_format(thread_db* tdbb, Csb* csb, USHORT stream)
 }
 
 
-void CMP_get_desc(thread_db* tdbb, Csb* csb, jrd_nod* node, DSC * desc)
+void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * desc)
 {
 /**************************************
  *
@@ -1721,7 +1721,7 @@ IndexLock* CMP_get_index_lock(thread_db* tdbb, jrd_rel* relation, USHORT id)
 }
 
 
-SLONG CMP_impure(Csb* csb, USHORT size)
+SLONG CMP_impure(CompilerScratch* csb, USHORT size)
 {
 /**************************************
  *
@@ -1746,7 +1746,7 @@ SLONG CMP_impure(Csb* csb, USHORT size)
 }
 
 
-jrd_req* CMP_make_request(thread_db* tdbb, Csb* csb)
+jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 {
 /**************************************
  *
@@ -1934,8 +1934,8 @@ jrd_req* CMP_make_request(thread_db* tdbb, Csb* csb)
 		}
 	}
 
-    Csb::csb_repeat* tail = csb->csb_rpt.begin();
-	const Csb::csb_repeat* const streams_end  = tail + csb->csb_n_stream;
+    CompilerScratch::csb_repeat* tail = csb->csb_rpt.begin();
+	const CompilerScratch::csb_repeat* const streams_end  = tail + csb->csb_n_stream;
 	DEBUG;
 
 	for (record_param* rpb = request->req_rpb; tail < streams_end; rpb++, tail++)
@@ -1973,7 +1973,7 @@ jrd_req* CMP_make_request(thread_db* tdbb, Csb* csb)
 
 
 void CMP_post_access(thread_db* tdbb,
-					 Csb* csb,
+					 CompilerScratch* csb,
 					 const TEXT* security_name,
 					 SLONG view_id,
 					 const TEXT* trig,
@@ -2342,7 +2342,7 @@ void CMP_shutdown_database(thread_db* tdbb)
 }
 
 
-static UCHAR* alloc_map(thread_db* tdbb, Csb* csb, USHORT stream)
+static UCHAR* alloc_map(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 {
 /**************************************
  *
@@ -2369,7 +2369,7 @@ static UCHAR* alloc_map(thread_db* tdbb, Csb* csb, USHORT stream)
 
 
 #ifdef PC_ENGINE
-static USHORT base_stream(Csb* csb, jrd_nod** stream_number, bool nav_stream)
+static USHORT base_stream(CompilerScratch* csb, jrd_nod** stream_number, bool nav_stream)
 {
 /**************************************
  *
@@ -2448,7 +2448,7 @@ static jrd_nod* catenate_nodes(thread_db* tdbb, LLS stack)
 
 
 static jrd_nod* copy(thread_db* tdbb,
-					Csb* csb,
+					CompilerScratch* csb,
 					jrd_nod* input,
 					UCHAR * remap,
 					USHORT field_id,
@@ -2623,9 +2623,9 @@ static jrd_nod* copy(thread_db* tdbb,
 	case nod_rse:
 	case nod_stream:
 		{
-			RSE old_rse = (RSE) input;
-			RSE new_rse =
-				(RSE) PAR_make_node(tdbb, old_rse->rse_count + rse_delta + 2);
+			RecordSelExpr* old_rse = (RecordSelExpr*) input;
+			RecordSelExpr* new_rse =
+				(RecordSelExpr*) PAR_make_node(tdbb, old_rse->rse_count + rse_delta + 2);
 			new_rse->nod_type = input->nod_type;
 			new_rse->nod_count = 0;
 			new_rse->rse_count = old_rse->rse_count;
@@ -2679,7 +2679,7 @@ static jrd_nod* copy(thread_db* tdbb,
 			node->nod_arg[e_rel_relation] = input->nod_arg[e_rel_relation];
 			node->nod_arg[e_rel_view] = input->nod_arg[e_rel_view];
 
-			Csb::csb_repeat* element = CMP_csb_element(csb, new_stream);
+			CompilerScratch::csb_repeat* element = CMP_csb_element(csb, new_stream);
 			element->csb_relation = (jrd_rel*) node->nod_arg[e_rel_relation];
 			element->csb_view = (jrd_rel*) node->nod_arg[e_rel_view];
 			element->csb_view_stream = remap[0];
@@ -2700,7 +2700,7 @@ static jrd_nod* copy(thread_db* tdbb,
 				 stream 1  -------- X
 				 stream 2  -------- V1
 			 while expanding V1 the engine calls copy() with nod_relation.
-			 A new stream 3 is created. Now the Csb looks like
+			 A new stream 3 is created. Now the CompilerScratch looks like
 				 stream 1  -------- X
 				 stream 2  -------- V1  map [2,3]
 				 stream 3  -------- T1
@@ -2747,7 +2747,7 @@ static jrd_nod* copy(thread_db* tdbb,
 			node->nod_arg[e_prc_stream] = (jrd_nod*) (IPTR) new_stream;
 			remap[stream] = (UCHAR) new_stream;
 			node->nod_arg[e_prc_procedure] = input->nod_arg[e_prc_procedure];
-			Csb::csb_repeat* element = CMP_csb_element(csb, new_stream);
+			CompilerScratch::csb_repeat* element = CMP_csb_element(csb, new_stream);
 			// SKIDDER: Maybe we need to check if we really found a procedure?
 			element->csb_procedure = MET_lookup_procedure_id(tdbb,
 			  (SSHORT)(IPTR) node->nod_arg[e_prc_procedure], false, false, 0);
@@ -2860,7 +2860,7 @@ static jrd_nod* copy(thread_db* tdbb,
 
 
 static void expand_view_nodes(thread_db* tdbb,
-							  Csb* csb,
+							  CompilerScratch* csb,
 							  USHORT stream,
 							  LLS * stack,
 							  NOD_T type)
@@ -2907,7 +2907,7 @@ static void expand_view_nodes(thread_db* tdbb,
 }
 
 
-static void ignore_dbkey(thread_db* tdbb, Csb* csb, RSE rse, const jrd_rel* view)
+static void ignore_dbkey(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* rse, const jrd_rel* view)
 {
 /**************************************
  *
@@ -2917,7 +2917,7 @@ static void ignore_dbkey(thread_db* tdbb, Csb* csb, RSE rse, const jrd_rel* view
  *
  * Functional description
  *	For each relation or aggregate in the
- *	rse, mark it as not having a dbkey.
+ *	RecordSelExpr, mark it as not having a dbkey.
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -2936,7 +2936,7 @@ static void ignore_dbkey(thread_db* tdbb, Csb* csb, RSE rse, const jrd_rel* view
 		{
 			const USHORT stream = (USHORT)(IPTR) node->nod_arg[e_rel_stream];
 			csb->csb_rpt[stream].csb_flags |= csb_no_dbkey;
-			const Csb::csb_repeat* tail = &csb->csb_rpt[stream];
+			const CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
 			const jrd_rel* relation = tail->csb_relation;
 			if (relation) {
 				CMP_post_access(tdbb, csb, relation->rel_security_name,
@@ -2948,10 +2948,10 @@ static void ignore_dbkey(thread_db* tdbb, Csb* csb, RSE rse, const jrd_rel* view
 			break;
 		}
 		case nod_rse:
-			ignore_dbkey(tdbb, csb, (RSE) node, view);
+			ignore_dbkey(tdbb, csb, (RecordSelExpr*) node, view);
 			break;
 		case nod_aggregate:
-			ignore_dbkey(tdbb, csb, (RSE) node->nod_arg[e_agg_rse], view);
+			ignore_dbkey(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_agg_rse], view);
 			break;
 		case nod_union:
 			const jrd_nod* clauses = node->nod_arg[e_uni_clauses];
@@ -2959,7 +2959,7 @@ static void ignore_dbkey(thread_db* tdbb, Csb* csb, RSE rse, const jrd_rel* view
 			for (const jrd_nod* const* const end_uni = ptr_uni + clauses->nod_count;
 				ptr_uni < end_uni; ptr_uni++)
 			{
-				ignore_dbkey(tdbb, csb, (RSE) *ptr_uni++, view);
+				ignore_dbkey(tdbb, csb, (RecordSelExpr*) *ptr_uni++, view);
 			}
 			break;
 		}
@@ -2967,7 +2967,7 @@ static void ignore_dbkey(thread_db* tdbb, Csb* csb, RSE rse, const jrd_rel* view
 }
 
 
-static jrd_nod* make_defaults(thread_db* tdbb, Csb* csb, USHORT stream, jrd_nod* statement)
+static jrd_nod* make_defaults(thread_db* tdbb, CompilerScratch* csb, USHORT stream, jrd_nod* statement)
 {
 /**************************************
  *
@@ -3030,7 +3030,7 @@ static jrd_nod* make_defaults(thread_db* tdbb, Csb* csb, USHORT stream, jrd_nod*
 }
 
 
-static jrd_nod* make_validation(thread_db* tdbb, Csb* csb, USHORT stream)
+static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 {
 /**************************************
  *
@@ -3099,7 +3099,7 @@ static jrd_nod* make_validation(thread_db* tdbb, Csb* csb, USHORT stream)
 
 
 static jrd_nod* pass1(thread_db* tdbb,
-					 Csb* csb,
+					 CompilerScratch* csb,
 					 jrd_nod* node,
 					 jrd_rel* view,
 					 USHORT view_stream,
@@ -3127,7 +3127,7 @@ static jrd_nod* pass1(thread_db* tdbb,
  **************************************/
 	jrd_nod* sub, **ptr, **end;
 	USHORT stream;
-	Csb::csb_repeat* tail;
+	CompilerScratch::csb_repeat* tail;
 	jrd_prc* procedure;
 
 	SET_TDBB(tdbb);
@@ -3191,9 +3191,9 @@ static jrd_nod* pass1(thread_db* tdbb,
 		{
 			stream = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
 
-			// Look at all rse's which are lower in scope than the rse which this field 
+			// Look at all RecordSelExpr's which are lower in scope than the RecordSelExpr which this field 
 			// is referencing, and mark them as varying - the rule is that if a field 
-			// from one rse is referenced within the scope of another rse, the first rse 
+			// from one RecordSelExpr is referenced within the scope of another RecordSelExpr, the first RecordSelExpr 
 			// can't be invariant. This won't optimize all cases, but it is the simplest 
 			// operating assumption for now.
 
@@ -3202,10 +3202,10 @@ static jrd_nod* pass1(thread_db* tdbb,
 					 i_node >= csb->csb_current_nodes.begin(); i_node--) 
 				{
 					if ((*i_node)->nod_type == nod_rse) {
-						if (stream_in_rse(stream, reinterpret_cast<RSE>(*i_node))) {
+						if (stream_in_rse(stream, reinterpret_cast<RecordSelExpr*>(*i_node))) {
 							break;
 						}
-						reinterpret_cast<RSE>(*i_node)->nod_flags |= rse_variant;
+						reinterpret_cast<RecordSelExpr*>(*i_node)->nod_flags |= rse_variant;
 					}
 					else {
 						(*i_node)->nod_flags &= ~nod_invariant;
@@ -3406,7 +3406,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 
 	case nod_rse:
 	case nod_stream:
-		return (jrd_nod*) pass1_rse(tdbb, csb, (RSE) node, view, view_stream);
+		return (jrd_nod*) pass1_rse(tdbb, csb, (RecordSelExpr*) node, view, view_stream);
 
 	case nod_max:
 	case nod_min:
@@ -3415,14 +3415,14 @@ static jrd_nod* pass1(thread_db* tdbb,
 	case nod_count:
 	case nod_count2:
 	case nod_total:
-		ignore_dbkey(tdbb, csb, (RSE) node->nod_arg[e_stat_rse], view);
+		ignore_dbkey(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_stat_rse], view);
 		break;
 
 	case nod_aggregate:
 		fb_assert((int) (IPTR) node->nod_arg[e_agg_stream] <= MAX_STREAMS);
 		csb->csb_rpt[(USHORT)(IPTR) node->nod_arg[e_agg_stream]].csb_flags |=
 			csb_no_dbkey;
-		ignore_dbkey(tdbb, csb, (RSE) node->nod_arg[e_agg_rse], view);
+		ignore_dbkey(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_agg_rse], view);
 		node->nod_arg[e_agg_rse] =
 			pass1(tdbb, csb, node->nod_arg[e_agg_rse], view, view_stream,
 				  validate_expr);
@@ -3475,7 +3475,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 	case nod_any:
 	case nod_exists:
 	case nod_unique:
-		ignore_dbkey(tdbb, csb, (RSE) node->nod_arg[e_any_rse], view);
+		ignore_dbkey(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_any_rse], view);
 		break;
 
 	case nod_cardinality:
@@ -3511,7 +3511,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 }
 
 
-static void pass1_erase(thread_db* tdbb, Csb* csb, jrd_nod* node)
+static void pass1_erase(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 {
 /**************************************
  *
@@ -3544,7 +3544,7 @@ static void pass1_erase(thread_db* tdbb, Csb* csb, jrd_nod* node)
 	for (;;) {
 		USHORT new_stream = (USHORT)(IPTR) node->nod_arg[e_erase_stream];
 		USHORT stream = new_stream;
-		Csb::csb_repeat* tail = &csb->csb_rpt[stream];
+		CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
 		tail->csb_flags |= csb_erase;
 		jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
 		view = (relation->rel_view_rse) ? relation : view;
@@ -3615,7 +3615,7 @@ static void pass1_erase(thread_db* tdbb, Csb* csb, jrd_nod* node)
 
 
 static jrd_nod* pass1_expand_view(thread_db* tdbb,
-								 Csb* csb,
+								 CompilerScratch* csb,
 								 USHORT org_stream,
 								 USHORT new_stream,
 								 bool remap)
@@ -3679,7 +3679,7 @@ static jrd_nod* pass1_expand_view(thread_db* tdbb,
 }
 
 
-static void pass1_modify(thread_db* tdbb, Csb* csb, jrd_nod* node)
+static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 {
 /**************************************
  *
@@ -3712,7 +3712,7 @@ static void pass1_modify(thread_db* tdbb, Csb* csb, jrd_nod* node)
 	for (;;) {
 		USHORT stream = (USHORT)(IPTR) node->nod_arg[e_mod_org_stream];
 		USHORT new_stream = (USHORT)(IPTR) node->nod_arg[e_mod_new_stream];
-		Csb::csb_repeat* tail = &csb->csb_rpt[new_stream];
+		CompilerScratch::csb_repeat* tail = &csb->csb_rpt[new_stream];
 		tail->csb_flags |= csb_modify;
 		jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
 		view = (relation->rel_view_rse) ? relation : view;
@@ -3797,9 +3797,9 @@ static void pass1_modify(thread_db* tdbb, Csb* csb, jrd_nod* node)
 }
 
 
-static RSE pass1_rse(thread_db* tdbb,
-					 Csb* csb,
-					 RSE rse,
+static RecordSelExpr* pass1_rse(thread_db* tdbb,
+					 CompilerScratch* csb,
+					 RecordSelExpr* rse,
 					 jrd_rel* view,
 					 USHORT view_stream)
 {
@@ -3820,9 +3820,9 @@ static RSE pass1_rse(thread_db* tdbb,
 	DEV_BLKCHK(rse, type_nod);
 	DEV_BLKCHK(view, type_rel);
 
-	// for scoping purposes, maintain a stack of rse's which are 
+	// for scoping purposes, maintain a stack of RecordSelExpr's which are 
 	// currently being parsed; if there are none on the stack as
-	// yet, mark the rse as variant to make sure that statement-
+	// yet, mark the RecordSelExpr as variant to make sure that statement-
 	// level aggregates are not treated as invariants -- bug #6535
 
 	bool top_level_rse = true;
@@ -3852,7 +3852,7 @@ static RSE pass1_rse(thread_db* tdbb,
 	jrd_nod* async_message = rse->rse_async_message;
 #endif
 
-	// zip thru rse expanding views and inner joins
+	// zip thru RecordSelExpr expanding views and inner joins
 	jrd_nod** arg = rse->rse_relation;
 	for (const jrd_nod* const* const end = arg + rse->rse_count;
 		arg < end; arg++)
@@ -3861,7 +3861,7 @@ static RSE pass1_rse(thread_db* tdbb,
 		             view_stream);
 	}
 
-	// Now, rebuild the rse block. If possible, re-use the old block,
+	// Now, rebuild the RecordSelExpr block. If possible, re-use the old block,
 	// otherwise allocate a new one.
 
 	USHORT count = 0;
@@ -3870,13 +3870,13 @@ static RSE pass1_rse(thread_db* tdbb,
 	}
 
 	if (count != rse->rse_count) {
-		RSE new_rse = (RSE) PAR_make_node(tdbb, count + rse_delta + 2);
+		RecordSelExpr* new_rse = (RecordSelExpr*) PAR_make_node(tdbb, count + rse_delta + 2);
 		*new_rse = *rse;
 		new_rse->rse_count = count;
 		rse = new_rse;
 
-		// AB: Because we've build an new rse, we must put this one in the stack 
-		// of current_rses else could rse's not be flagged an rse_variant.
+		// AB: Because we've build an new RecordSelExpr, we must put this one in the stack 
+		// of current_rses else could RecordSelExpr's not be flagged an rse_variant.
 		// See SF BUG # [ 523589 ] for an example.
 
 		csb->csb_current_nodes.pop();
@@ -3940,7 +3940,7 @@ static RSE pass1_rse(thread_db* tdbb,
 	}
 #endif
 
-	// we are no longer in the scope of this rse
+	// we are no longer in the scope of this RecordSelExpr
 
 	csb->csb_current_nodes.pop();
 
@@ -3949,8 +3949,8 @@ static RSE pass1_rse(thread_db* tdbb,
 
 
 static void pass1_source(thread_db*     tdbb,
-						 Csb*      csb,
-						 RSE      rse,
+						 CompilerScratch*      csb,
+						 RecordSelExpr*      rse,
 						 jrd_nod*  source,
 						 jrd_nod** boolean,
 						 LLS*     stack,
@@ -3964,7 +3964,7 @@ static void pass1_source(thread_db*     tdbb,
  **************************************
  *
  * Functional description
- *	Process a single record source stream from an rse.  Obviously,
+ *	Process a single record source stream from an RecordSelExpr.  Obviously,
  *	if the source is a view, there is more work to do.
  *
  **************************************/
@@ -3980,17 +3980,17 @@ static void pass1_source(thread_db*     tdbb,
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	// in the case of an rse, it is possible that a new rse will be generated, 
+	// in the case of an RecordSelExpr, it is possible that a new RecordSelExpr will be generated, 
 	// so wait to process the source before we push it on the stack (bug 8039)
 
 	if (source->nod_type == nod_rse)
 	{
 		// The addition of the JOIN syntax for specifying inner joins causes an 
-		// rse tree to be generated, which is undesirable in the simplest case 
+		// RecordSelExpr tree to be generated, which is undesirable in the simplest case 
 		// where we are just trying to inner join more than 2 streams. If possible, 
 		// try to flatten the tree out before we go any further.
 
-		RSE sub_rse = (RSE) source;
+		RecordSelExpr* sub_rse = (RecordSelExpr*) source;
 		if (!rse->rse_jointype && !sub_rse->rse_jointype
 			&& !sub_rse->rse_sorted && !sub_rse->rse_projection
 			&& !sub_rse->rse_first && !sub_rse->rse_plan)
@@ -4070,7 +4070,7 @@ static void pass1_source(thread_db*     tdbb,
 	source->nod_arg[e_rel_view] = (jrd_nod*) parent_view;
 
 	const USHORT stream = (USHORT)(IPTR) source->nod_arg[e_rel_stream];
-	Csb::csb_repeat* element = CMP_csb_element(csb, stream);
+	CompilerScratch::csb_repeat* element = CMP_csb_element(csb, stream);
 	element->csb_view = parent_view;
 	fb_assert(view_stream <= MAX_STREAMS);
 	element->csb_view_stream = (UCHAR) view_stream;
@@ -4092,7 +4092,7 @@ static void pass1_source(thread_db*     tdbb,
 
 	// check for a view - if not, nothing more to do
 
-	RSE view_rse = view->rel_view_rse;
+	RecordSelExpr* view_rse = view->rel_view_rse;
 	if (!view_rse) {
 		return;
 	}
@@ -4104,7 +4104,7 @@ static void pass1_source(thread_db*     tdbb,
 	UCHAR* map = alloc_map(tdbb, csb, stream);
 
 	// We don't expand the view in two cases: 
-	// 1) If the view has a projection, and the query rse already has a projection 
+	// 1) If the view has a projection, and the query RecordSelExpr already has a projection 
 	//    defined; there is probably some way to merge these projections and do them 
 	//    both at once, but for now we'll punt on that.
 	// 2) If it's part of an outer join. 
@@ -4149,7 +4149,7 @@ static void pass1_source(thread_db*     tdbb,
 		pass1_source(tdbb, csb, rse, node, boolean, stack, view, stream);
 	}
 
-	// When there is a projection in the view, copy the projection up to the query rse.
+	// When there is a projection in the view, copy the projection up to the query RecordSelExpr.
 	// In order to make this work properly, we must remap the stream numbers of the fields
 	// in the view to the stream number of the base table. Note that the map at this point 
 	// contains the stream numbers of the referenced relations, since it was added during the call 
@@ -4192,7 +4192,7 @@ static void pass1_source(thread_db*     tdbb,
 }
 
 
-static jrd_nod* pass1_store(thread_db* tdbb, Csb* csb, jrd_nod* node)
+static jrd_nod* pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 {
 /**************************************
  *
@@ -4229,7 +4229,7 @@ static jrd_nod* pass1_store(thread_db* tdbb, Csb* csb, jrd_nod* node)
 	for (;;) {
 		jrd_nod* original = node->nod_arg[e_sto_relation];
 		USHORT stream = (USHORT)(IPTR) original->nod_arg[e_rel_stream];
-		Csb::csb_repeat* tail = &csb->csb_rpt[stream];
+		CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
 		tail->csb_flags |= csb_store;
 		jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
 		view = (relation->rel_view_rse) ? relation : view;
@@ -4302,7 +4302,7 @@ static jrd_nod* pass1_store(thread_db* tdbb, Csb* csb, jrd_nod* node)
 
 
 static jrd_nod* pass1_update(thread_db* tdbb,
-							Csb* csb,
+							CompilerScratch* csb,
 							jrd_rel* relation,
 							trig_vec* trigger,
 							USHORT stream,
@@ -4346,7 +4346,7 @@ static jrd_nod* pass1_update(thread_db* tdbb,
 	CMP_csb_element(csb, update_stream)->csb_view_stream = (UCHAR) view_stream;
 
 	// if we're not a view, everything's cool
-	RSE rse = relation->rel_view_rse;
+	RecordSelExpr* rse = relation->rel_view_rse;
 	if (!rse) {
 		return NULL;
 	}
@@ -4375,7 +4375,7 @@ static jrd_nod* pass1_update(thread_db* tdbb,
 }
 
 
-static jrd_nod* pass2(thread_db* tdbb, Csb* csb, jrd_nod* const node, jrd_nod* parent)
+static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, jrd_nod* parent)
 {
 /**************************************
  *
@@ -4405,7 +4405,7 @@ static jrd_nod* pass2(thread_db* tdbb, Csb* csb, jrd_nod* const node, jrd_nod* p
 	USHORT stream;
 
 	DEBUG;
-	Rsb** rsb_ptr = 0;
+	RecordSource** rsb_ptr = 0;
 	jrd_nod* rse_node = NULL;
 
 	switch (node->nod_type) {
@@ -4417,7 +4417,7 @@ static jrd_nod* pass2(thread_db* tdbb, Csb* csb, jrd_nod* const node, jrd_nod* p
 
 	case nod_for:
 		rse_node = node->nod_arg[e_for_re];
-		rsb_ptr = (Rsb**) & node->nod_arg[e_for_rsb];
+		rsb_ptr = (RecordSource**) & node->nod_arg[e_for_rsb];
 #ifdef SCROLLABLE_CURSORS
 		csb->csb_current_rse = rse_node;
 #endif
@@ -4425,7 +4425,7 @@ static jrd_nod* pass2(thread_db* tdbb, Csb* csb, jrd_nod* const node, jrd_nod* p
 
 	case nod_dcl_cursor:
 		rse_node = node->nod_arg[e_dcl_cursor_rse];
-		rsb_ptr = (Rsb**) & node->nod_arg[e_dcl_cursor_rsb];
+		rsb_ptr = (RecordSource**) & node->nod_arg[e_dcl_cursor_rsb];
 #ifdef SCROLLABLE_CURSORS
 		csb->csb_current_rse = rse_node;
 #endif
@@ -4441,7 +4441,7 @@ static jrd_nod* pass2(thread_db* tdbb, Csb* csb, jrd_nod* const node, jrd_nod* p
 #ifdef SCROLLABLE_CURSORS
 	case nod_seek:
 	case nod_seek_no_warn:
-		// store the rse in whose scope we are defined
+		// store the RecordSelExpr in whose scope we are defined
 		node->nod_arg[e_seek_rse] = (jrd_nod*) csb->csb_current_rse;
 		break;
 #endif
@@ -4461,7 +4461,7 @@ static jrd_nod* pass2(thread_db* tdbb, Csb* csb, jrd_nod* const node, jrd_nod* p
 			node->nod_flags |= nod_invariant;
 			csb->csb_invariants.push(node);
 		}
-		rsb_ptr = (Rsb**) & node->nod_arg[e_stat_rsb];
+		rsb_ptr = (RecordSource**) & node->nod_arg[e_stat_rsb];
 		break;
 
 	case nod_ansi_all:
@@ -4474,7 +4474,7 @@ static jrd_nod* pass2(thread_db* tdbb, Csb* csb, jrd_nod* const node, jrd_nod* p
 			node->nod_flags |= nod_invariant;
 			csb->csb_invariants.push(node);
 		}
-		rsb_ptr = (Rsb**) & node->nod_arg[e_any_rsb];
+		rsb_ptr = (RecordSource**) & node->nod_arg[e_any_rsb];
 		break;
 
 	case nod_like:
@@ -4523,7 +4523,7 @@ static jrd_nod* pass2(thread_db* tdbb, Csb* csb, jrd_nod* const node, jrd_nod* p
 
 	case nod_stream:
 		{
-			RSE rse = (RSE) node;
+			RecordSelExpr* rse = (RecordSelExpr*) node;
 			rse_node = node;
 			// setting the stream flag will allow the optimizer to  
 			// detect that a SET INDEX may be done on this stream
@@ -4635,7 +4635,7 @@ static jrd_nod* pass2(thread_db* tdbb, Csb* csb, jrd_nod* const node, jrd_nod* p
 	}
 
 	if (rse_node) {
-		pass2_rse(tdbb, csb, (RSE) rse_node);
+		pass2_rse(tdbb, csb, (RecordSelExpr*) rse_node);
 	}
 
 	// handle sub-expressions here
@@ -4696,7 +4696,7 @@ static jrd_nod* pass2(thread_db* tdbb, Csb* csb, jrd_nod* const node, jrd_nod* p
 	case nod_agg_max:
 	case nod_agg_count:
 		node->nod_count = 0;
-		csb->csb_impure += sizeof(vlux);
+		csb->csb_impure += sizeof(impure_value_ex);
 		break;
 
 	case nod_ansi_all:
@@ -4705,7 +4705,7 @@ static jrd_nod* pass2(thread_db* tdbb, Csb* csb, jrd_nod* const node, jrd_nod* p
 	case nod_exists:
 	case nod_unique:
 		if (node->nod_flags & nod_invariant) {
-			csb->csb_impure += sizeof(vlu);
+			csb->csb_impure += sizeof(impure_value);
 		}
 		break;
 
@@ -4716,7 +4716,7 @@ static jrd_nod* pass2(thread_db* tdbb, Csb* csb, jrd_nod* const node, jrd_nod* p
 	case nod_dcl_variable:
 		{
 			const dsc* desc = (DSC*) (node->nod_arg + e_dcl_desc);
-			csb->csb_impure += sizeof(vlu) + desc->dsc_length;
+			csb->csb_impure += sizeof(impure_value) + desc->dsc_length;
 		}
 		break;
 
@@ -4727,7 +4727,7 @@ static jrd_nod* pass2(thread_db* tdbb, Csb* csb, jrd_nod* const node, jrd_nod* p
 	case nod_agg_total_distinct2:
 		{
 			node->nod_count = 0;
-			csb->csb_impure += sizeof(vlu);
+			csb->csb_impure += sizeof(impure_value);
 			dsc descriptor_a;
 			CMP_get_desc(tdbb, csb, node, &descriptor_a);
 		}
@@ -4737,7 +4737,7 @@ static jrd_nod* pass2(thread_db* tdbb, Csb* csb, jrd_nod* const node, jrd_nod* p
 	case nod_agg_average_distinct2:
 		{
 			node->nod_count = 0;
-			csb->csb_impure += sizeof(vlux);
+			csb->csb_impure += sizeof(impure_value_ex);
 			dsc descriptor_a;
 			CMP_get_desc(tdbb, csb, node, &descriptor_a);
 		}
@@ -4763,7 +4763,7 @@ static jrd_nod* pass2(thread_db* tdbb, Csb* csb, jrd_nod* const node, jrd_nod* p
 					SBM_set(tdbb, &csb->csb_rpt[stream].csb_fields, id);
 				}
 			}
-			csb->csb_impure += sizeof(sta);
+			csb->csb_impure += sizeof(impure_state);
 		}
 		break;
 
@@ -4780,7 +4780,7 @@ static jrd_nod* pass2(thread_db* tdbb, Csb* csb, jrd_nod* const node, jrd_nod* p
 		// FALL INTO
 
 	case nod_store:
-		csb->csb_impure += sizeof(sta);
+		csb->csb_impure += sizeof(impure_state);
 		break;
 
 	case nod_erase:
@@ -4795,7 +4795,7 @@ static jrd_nod* pass2(thread_db* tdbb, Csb* csb, jrd_nod* const node, jrd_nod* p
 			SLONG id = (SLONG)(IPTR) node->nod_arg[e_fld_id];
 			SBM_set(tdbb, &csb->csb_rpt[stream].csb_fields, id);
 			if (node->nod_flags & nod_value) {
-				csb->csb_impure += sizeof(vlux);
+				csb->csb_impure += sizeof(impure_value_ex);
 				break;
 			}
 		}
@@ -4841,7 +4841,7 @@ static jrd_nod* pass2(thread_db* tdbb, Csb* csb, jrd_nod* const node, jrd_nod* p
 		{
 			dsc descriptor_a;
 			CMP_get_desc(tdbb, csb, node, &descriptor_a);
-			csb->csb_impure += sizeof(vlu);
+			csb->csb_impure += sizeof(impure_value);
 		}
 		break;
 
@@ -4858,12 +4858,12 @@ static jrd_nod* pass2(thread_db* tdbb, Csb* csb, jrd_nod* const node, jrd_nod* p
 		{
 			dsc descriptor_a;
 			CMP_get_desc(tdbb, csb, node, &descriptor_a);
-			csb->csb_impure += sizeof(vlu);
+			csb->csb_impure += sizeof(impure_value);
 		}
 		break;
 
 	case nod_aggregate:
-		pass2_rse(tdbb, csb, (RSE) node->nod_arg[e_agg_rse]);
+		pass2_rse(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_agg_rse]);
 		pass2(tdbb, csb, node->nod_arg[e_agg_map], node);
 		pass2(tdbb, csb, node->nod_arg[e_agg_group], node);
 		stream = (USHORT)(IPTR) node->nod_arg[e_agg_stream];
@@ -4915,7 +4915,7 @@ static jrd_nod* pass2(thread_db* tdbb, Csb* csb, jrd_nod* const node, jrd_nod* p
 		}
 		if (node->nod_flags & nod_invariant) {
 			// This may currently happen for nod_like and nod_contains
-			csb->csb_impure += sizeof(vlu);
+			csb->csb_impure += sizeof(impure_value);
 		}
 		break;
 
@@ -4933,7 +4933,7 @@ static jrd_nod* pass2(thread_db* tdbb, Csb* csb, jrd_nod* const node, jrd_nod* p
 		break;
 
 	case nod_exec_into:
-		csb->csb_impure += sizeof(class ExecuteStatement);
+		csb->csb_impure += sizeof(ExecuteStatement);
 		break;
 
 	default:
@@ -4944,14 +4944,14 @@ static jrd_nod* pass2(thread_db* tdbb, Csb* csb, jrd_nod* const node, jrd_nod* p
 	// finish up processing of record selection expressions
 
 	if (rse_node) {
-		*rsb_ptr = post_rse(tdbb, csb, (RSE) rse_node);
+		*rsb_ptr = post_rse(tdbb, csb, (RecordSelExpr*) rse_node);
 	}
 
 	return node;
 }
 
 
-static void pass2_rse(thread_db* tdbb, Csb* csb, RSE rse)
+static void pass2_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* rse)
 {
 /**************************************
  *
@@ -4990,7 +4990,7 @@ static void pass2_rse(thread_db* tdbb, Csb* csb, RSE rse)
 			break;
 		}
 		case nod_rse:
-			pass2_rse(tdbb, csb, (RSE) node);
+			pass2_rse(tdbb, csb, (RecordSelExpr*) node);
 			break;
 		case nod_procedure:
 		{
@@ -5025,7 +5025,7 @@ static void pass2_rse(thread_db* tdbb, Csb* csb, RSE rse)
 		pass2(tdbb, csb, rse->rse_projection, 0);
 	}
 
-	// if the user has submitted a plan for this rse, check it for correctness
+	// if the user has submitted a plan for this RecordSelExpr, check it for correctness
 
 	if (rse->rse_plan) {
 		plan_set(csb, rse, rse->rse_plan);
@@ -5040,7 +5040,7 @@ static void pass2_rse(thread_db* tdbb, Csb* csb, RSE rse)
 }
 
 
-static jrd_nod* pass2_union(thread_db* tdbb, Csb* csb, jrd_nod* node)
+static jrd_nod* pass2_union(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 {
 /**************************************
  *
@@ -5049,7 +5049,7 @@ static jrd_nod* pass2_union(thread_db* tdbb, Csb* csb, jrd_nod* node)
  **************************************
  *
  * Functional description
- *	Process a union clause of an rse.
+ *	Process a union clause of an RecordSelExpr.
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -5062,12 +5062,12 @@ static jrd_nod* pass2_union(thread_db* tdbb, Csb* csb, jrd_nod* node)
 	const USHORT id = (USHORT)(IPTR) node->nod_arg[e_uni_stream];
 	fmt** format = &csb->csb_rpt[id].csb_format;
 
-	// process alternating rse and map blocks
+	// process alternating RecordSelExpr and map blocks
 
 	jrd_nod** ptr = clauses->nod_arg;
 	for (const jrd_nod* const* const end = ptr + clauses->nod_count; ptr < end;)
 	{
-		pass2_rse(tdbb, csb, (RSE) * ptr++);
+		pass2_rse(tdbb, csb, (RecordSelExpr*) * ptr++);
 		jrd_nod* map = *ptr++;
 		pass2(tdbb, csb, map, node);
 		process_map(tdbb, csb, map, format);
@@ -5077,7 +5077,7 @@ static jrd_nod* pass2_union(thread_db* tdbb, Csb* csb, jrd_nod* node)
 }
 
 
-static void plan_check(const Csb* csb, const class rse* rse)
+static void plan_check(const CompilerScratch* csb, const RecordSelExpr* rse)
 {
 /**************************************
  *
@@ -5086,10 +5086,10 @@ static void plan_check(const Csb* csb, const class rse* rse)
  **************************************
  *
  * Functional description
- *	Check that all streams in the rse have 
+ *	Check that all streams in the RecordSelExpr have 
  *	a plan specified for them.
  *	If they are not, there are streams
- *	in the rse which were not mentioned
+ *	in the RecordSelExpr which were not mentioned
  *	in the plan. 
  *
  **************************************/
@@ -5110,13 +5110,13 @@ static void plan_check(const Csb* csb, const class rse* rse)
 			}
 		}
 		else if ((*ptr)->nod_type == nod_rse) {
-			plan_check(csb, (const class rse*) *ptr);
+			plan_check(csb, (const RecordSelExpr*) *ptr);
 		}
 	}
 }
 
 
-static void plan_set(Csb* csb, RSE rse, jrd_nod* plan)
+static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 {
 /**************************************
  *
@@ -5126,7 +5126,7 @@ static void plan_set(Csb* csb, RSE rse, jrd_nod* plan)
  *
  * Functional description
  *	Go through the streams in the plan, find the 
- *	corresponding streams in the rse and store the 
+ *	corresponding streams in the RecordSelExpr and store the 
  *	plan for that stream.   Do it once and only once 
  *	to make sure there is a one-to-one correspondence 
  *	between streams in the query and streams in
@@ -5146,7 +5146,7 @@ static void plan_set(Csb* csb, RSE rse, jrd_nod* plan)
 			if (rse->rse_count == 1)
 			{
 				// dummy inner join over an outer one, go deeper
-				plan_set(csb, (RSE) rse->rse_relation[0], plan);
+				plan_set(csb, (RecordSelExpr*) rse->rse_relation[0], plan);
 				return;
 			}
 			else if (rse->rse_count == plan->nod_count)
@@ -5162,7 +5162,7 @@ static void plan_set(Csb* csb, RSE rse, jrd_nod* plan)
 			 ptr++)
 		{
 			plan_set(csb, rse->rse_plan ?
-				(RSE) rse->rse_relation[ptr - plan->nod_arg] : rse, *ptr);
+				(RecordSelExpr*) rse->rse_relation[ptr - plan->nod_arg] : rse, *ptr);
 		}
 		return;
 	}
@@ -5176,10 +5176,10 @@ static void plan_set(Csb* csb, RSE rse, jrd_nod* plan)
 	const jrd_rel* plan_relation = (jrd_rel*) plan_relation_node->nod_arg[e_rel_relation];
 	const str* plan_alias = (str*) plan_relation_node->nod_arg[e_rel_alias];
 
-	// find the tail for the relation specified in the rse
+	// find the tail for the relation specified in the RecordSelExpr
 
 	const USHORT stream = (USHORT)(IPTR) plan_relation_node->nod_arg[e_rel_stream];
-	Csb::csb_repeat* tail = &csb->csb_rpt[stream];
+	CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
 
 	// if the plan references a view, find the real base relation 
 	// we are interested in by searching the view map */
@@ -5249,7 +5249,7 @@ static void plan_set(Csb* csb, RSE rse, jrd_nod* plan)
 				UCHAR* duplicate_map = map_base;
 				map = NULL;
 				for (duplicate_map++; *duplicate_map; duplicate_map++) {
-					Csb::csb_repeat* duplicate_tail = &csb->csb_rpt[*duplicate_map];
+					CompilerScratch::csb_repeat* duplicate_tail = &csb->csb_rpt[*duplicate_map];
 					const jrd_rel* relation = duplicate_tail->csb_relation;
 					if (relation && relation->rel_id == plan_relation->rel_id) {
 						if (duplicate_relation) {
@@ -5284,7 +5284,7 @@ static void plan_set(Csb* csb, RSE rse, jrd_nod* plan)
 				// CVC: I found that "relation" can be NULL, too. This may be an
 				// indication of a logic flaw while parsing the user supplied SQL plan
 				// and not an oversight here. It's hard to imagine a csb->csb_rpt with
-				// a NULL relation. See exe.h for Csb struct and its inner csb_repeat struct.
+				// a NULL relation. See exe.h for CompilerScratch struct and its inner csb_repeat struct.
 
 				if (
 					(alias
@@ -5351,7 +5351,7 @@ static void plan_set(Csb* csb, RSE rse, jrd_nod* plan)
 }
 
 
-static void post_procedure_access(thread_db* tdbb, Csb* csb, jrd_prc* procedure)
+static void post_procedure_access(thread_db* tdbb, CompilerScratch* csb, jrd_prc* procedure)
 {
 /**************************************
  *
@@ -5408,7 +5408,7 @@ static void post_procedure_access(thread_db* tdbb, Csb* csb, jrd_prc* procedure)
 }
 
 
-static Rsb* post_rse(thread_db* tdbb, Csb* csb, RSE rse)
+static RecordSource* post_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* rse)
 {
 /**************************************
  *
@@ -5417,7 +5417,7 @@ static Rsb* post_rse(thread_db* tdbb, Csb* csb, RSE rse)
  **************************************
  *
  * Functional description
- *	Perform actual optimization of an rse and clear activity.
+ *	Perform actual optimization of an RecordSelExpr and clear activity.
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -5425,7 +5425,7 @@ static Rsb* post_rse(thread_db* tdbb, Csb* csb, RSE rse)
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(rse, type_nod);
 
-	Rsb* rsb = OPT_compile(tdbb, csb, rse, NULL);
+	RecordSource* rsb = OPT_compile(tdbb, csb, rse, NULL);
 
 	if (rse->nod_flags & rse_singular) {
 		rsb->rsb_flags |= rsb_singular;
@@ -5469,7 +5469,7 @@ static Rsb* post_rse(thread_db* tdbb, Csb* csb, RSE rse)
 }
 
 
-static void post_trigger_access(thread_db* tdbb, Csb* csb, jrd_rel* owner_relation,
+static void post_trigger_access(thread_db* tdbb, CompilerScratch* csb, jrd_rel* owner_relation,
 	trig_vec* triggers, jrd_rel* view)
 {
 /**************************************
@@ -5500,8 +5500,6 @@ static void post_trigger_access(thread_db* tdbb, Csb* csb, jrd_rel* owner_relati
  *   messages about false REFERENCES right failures.
  *
  **************************************/
-//	USHORT read_only;
-
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(csb, type_csb);
@@ -5519,12 +5517,12 @@ static void post_trigger_access(thread_db* tdbb, Csb* csb, jrd_rel* owner_relati
 			/* CVC: Definitely, I'm going to disable this check because REFERENCES should
 			be checked only at DDL time. If we discover another thing in the fluffy SQL
 			standard, we can revisit those lines.
-			read_only = TRUE;
+			bool read_only = true;
 			for (access = ((jrd_req*)(*ptr))->req_access; access;
 				 access = access->acc_next)
 			{
 				if (access->acc_mask & ~SCL_read) {
-					read_only = FALSE;
+					read_only = false;
 					break;
 				}
 			}
@@ -5621,7 +5619,7 @@ static void post_trigger_access(thread_db* tdbb, Csb* csb, jrd_rel* owner_relati
 }
 
 
-static void process_map(thread_db* tdbb, Csb* csb, jrd_nod* map, fmt** input_format)
+static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map, fmt** input_format)
 {
 /**************************************
  *
@@ -5767,7 +5765,7 @@ static SSHORT strcmp_space(const TEXT* p, const TEXT* q)
 }
 
 
-static bool stream_in_rse(USHORT stream, RSE rse)
+static bool stream_in_rse(USHORT stream, RecordSelExpr* rse)
 {
 /**************************************
  *
@@ -5777,12 +5775,12 @@ static bool stream_in_rse(USHORT stream, RSE rse)
  *
  * Functional description
  *	Return true if stream is contained in 
- *	the specified RSE.
+ *	the specified RecordSelExpr.
  *
  **************************************/
 	DEV_BLKCHK(rse, type_nod);
 
-	// look through all relation nodes in this rse to see 
+	// look through all relation nodes in this RecordSelExpr to see 
 	// if the field references this instance of the relation
 	jrd_nod** ptr = rse->rse_relation;
 	for (const jrd_nod* const* const end = ptr + rse->rse_count; ptr < end;
@@ -5790,11 +5788,11 @@ static bool stream_in_rse(USHORT stream, RSE rse)
 	{
 		jrd_nod* sub = *ptr;
 
-		// for aggregates, check current rse, if not found then check 
+		// for aggregates, check current RecordSelExpr, if not found then check 
 		// the sub-rse
 		if (sub->nod_type == nod_aggregate) {
 			if ((stream == (USHORT)(IPTR) sub->nod_arg[e_rel_stream]) ||
-				(stream_in_rse(stream, (RSE) sub->nod_arg[e_agg_rse])))
+				(stream_in_rse(stream, (RecordSelExpr*) sub->nod_arg[e_agg_rse])))
 			{
 				return true;	// do not mark as variant
 			}
@@ -5807,6 +5805,6 @@ static bool stream_in_rse(USHORT stream, RSE rse)
 		}
 	}
 
-	return false;				// mark this rse as variant
+	return false;				// mark this RecordSelExpr as variant
 }
 

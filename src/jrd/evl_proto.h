@@ -32,8 +32,8 @@ Jrd::SparseBitmap**	EVL_bitmap(Jrd::thread_db* tdbb, Jrd::jrd_nod*);
 bool		EVL_boolean(Jrd::thread_db* tdbb, Jrd::jrd_nod*);
 dsc*		EVL_expr(Jrd::thread_db* tdbb, Jrd::jrd_nod*);
 bool		EVL_field(Jrd::jrd_rel*, Jrd::Record*, USHORT, dsc*);
-USHORT		EVL_group(Jrd::thread_db* tdbb, Jrd::Rsb*, Jrd::jrd_nod*, USHORT);
-void		EVL_make_value(Jrd::thread_db* tdbb, const dsc*, Jrd::vlu*);
+USHORT		EVL_group(Jrd::thread_db* tdbb, Jrd::RecordSource*, Jrd::jrd_nod*, USHORT);
+void		EVL_make_value(Jrd::thread_db* tdbb, const dsc*, Jrd::impure_value*);
 
 // Obsolete functions to support MATCHES and SLEUTH
 bool		EVL_mb_matches(Jrd::thread_db* tdbb, Jrd::TextType, const UCHAR*, SSHORT, const UCHAR*, SSHORT);

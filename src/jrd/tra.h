@@ -141,7 +141,7 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 class Savepoint : public pool_alloc<type_sav>
 {
     public:
-	VerbAction*	sav_verb_actions;	/* verb action list */
+	VerbAction*		sav_verb_actions;	/* verb action list */
 	USHORT			sav_verb_count;		/* Active verb count */
 	SLONG			sav_number;			/* save point number */
 	Savepoint*		sav_next;

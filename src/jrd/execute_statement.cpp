@@ -341,7 +341,8 @@ ULONG ExecuteStatement::ParseSqlda(void)
     return offset;
 }
 
-void ExecuteStatement::getString(Firebird::string& s, const dsc* d, const jrd_req* r) {
+void ExecuteStatement::getString(Firebird::string& s, const dsc* d, const jrd_req* r)
+{
 	char buffer[BUFFER_LARGE + sizeof(vary)];
 	vary* v = reinterpret_cast<vary*>(buffer);
 	v->vary_length = BUFFER_LARGE;
@@ -353,5 +354,5 @@ void ExecuteStatement::getString(Firebird::string& s, const dsc* d, const jrd_re
 		ERR_post(isc_exec_sql_invalid_arg, 0);
 	}
 
-	s.assign((char*)p, l);
+	s.assign((const char*)p, l);
 }

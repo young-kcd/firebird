@@ -24,8 +24,15 @@
 #ifndef JRD_PCMET_PROTO_H
 #define JRD_PCMET_PROTO_H
 
-int PCMET_expression_index(Jrd::thread_db*, SSHORT, class Jrd::DeferredWork*, class Jrd::jrd_tra*);
-void PCMET_lookup_index(class Jrd::jrd_rel*, struct Jrd::idx*);
+namespace Jrd {
+	class DeferredWork;
+	class jrd_tra;
+	class jrd_rel;
+	struct index_desc;
+}
+
+int PCMET_expression_index(Jrd::thread_db*, SSHORT, Jrd::DeferredWork*, Jrd::jrd_tra*);
+void PCMET_lookup_index(Jrd::jrd_rel*, Jrd::index_desc*);
 
 #endif // JRD_PCMET_PROTO_H
 

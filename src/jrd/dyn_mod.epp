@@ -105,7 +105,7 @@ static void modify_lfield_index(thread_db*, Database*, gbl*, const TEXT*, const 
 	const TEXT*);
 static bool field_exists(thread_db*, Database*, gbl*, const TEXT*, const TEXT*);
 static bool domain_exists(thread_db*, Database*, gbl*, const TEXT*);
-static void get_domain_type(thread_db*, Database*, gbl*, DYN_FLD);
+static void get_domain_type(thread_db*, Database*, gbl*, dyn_fld*);
 static ULONG check_update_fld_type(const dyn_fld*, const dyn_fld*);
 static void modify_err_punt(thread_db*, ULONG, const dyn_fld*, const dyn_fld*);
 
@@ -358,14 +358,14 @@ void DYN_modify_global_field(
 	try {
 
 /* Allocate the field structures */
-	orig_dom = (DYN_FLD) gds__alloc(sizeof(struct dyn_fld));
+	orig_dom = (dyn_fld*) gds__alloc(sizeof(struct dyn_fld));
 	if (!orig_dom) {
 		DYN_error_punt(true, 211, NULL, NULL, NULL, NULL, NULL);
 	}
 
 	MOVE_CLEAR(orig_dom, sizeof(struct dyn_fld));
 
-	new_dom = (DYN_FLD) gds__alloc(sizeof(struct dyn_fld));
+	new_dom = (dyn_fld*) gds__alloc(sizeof(struct dyn_fld));
 	if (!new_dom) {
 		DYN_error_punt(true, 211, NULL, NULL, NULL, NULL, NULL);
 	}
@@ -2228,18 +2228,18 @@ void DYN_modify_sql_field(gbl*		gbl,
 	try {
 
 /* Allocate the field structures */
-	orig_fld = (DYN_FLD) gds__alloc(sizeof(struct dyn_fld));
+	orig_fld = (dyn_fld*) gds__alloc(sizeof(struct dyn_fld));
 	if (!orig_fld)
 		DYN_error_punt(false, 211, NULL, NULL, NULL, NULL, NULL);
 
 	MOVE_CLEAR(orig_fld, sizeof(struct dyn_fld));
 
-	new_fld = (DYN_FLD) gds__alloc(sizeof(struct dyn_fld));
+	new_fld = (dyn_fld*) gds__alloc(sizeof(struct dyn_fld));
 	if (!new_fld)
 		DYN_error_punt(false, 211, NULL, NULL, NULL, NULL, NULL);
 	MOVE_CLEAR(new_fld, sizeof(struct dyn_fld));
 
-	dom_fld = (DYN_FLD) gds__alloc(sizeof(struct dyn_fld));
+	dom_fld = (dyn_fld*) gds__alloc(sizeof(struct dyn_fld));
 	if (!dom_fld)
 		DYN_error_punt(false, 211, NULL, NULL, NULL, NULL, NULL);
 	MOVE_CLEAR(dom_fld, sizeof(struct dyn_fld));
@@ -2649,7 +2649,7 @@ void DYN_modify_sql_field(gbl*		gbl,
 	}
 }
 
-void get_domain_type(thread_db* tdbb, Database* dbb, gbl* gbl, DYN_FLD dom_fld)
+void get_domain_type(thread_db* tdbb, Database* dbb, gbl* gbl, dyn_fld* dom_fld)
 {
 /**************************************
  *

@@ -29,10 +29,10 @@ namespace Jrd {
 }
 
 SCHAR*		RBDB_alloc (SLONG);
-void		RBDB_close (struct rbdb *);
-void		RBDB_open (struct rbdb *);
-Ods::pag*	RBDB_read (struct rbdb *, SLONG);
-void		RBDB_write (struct rbdb *, Ods::pag *, SLONG);
+void		RBDB_close (struct rbdb*);
+void		RBDB_open (struct rbdb*);
+Ods::pag*	RBDB_read (struct rbdb*, SLONG);
+void		RBDB_write (struct rbdb*, Ods::pag*, SLONG);
 
 #endif // UTILITIES_REBUI_PROTO_H
 

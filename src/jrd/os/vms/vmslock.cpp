@@ -47,12 +47,13 @@ static SCHAR lock_types[] = {
 	LCK$K_EXMODE
 };
 
-typedef struct lksb {
+// Conflict with isc.h or redefinition???
+struct lock_status {
 	SSHORT lksb_status;
 	SSHORT lksb_reserved;
 	SLONG lksb_lock_id;
 	SLONG lksb_value[4];
-} LKSB;
+};
 
 static bool lock_error(ISC_STATUS *, UCHAR *, int);
 static SLONG write_data(SLONG, SLONG);
@@ -79,7 +80,7 @@ bool LOCK_convert(
  *	FALSE is returned even if wait was requested.
  *
  **************************************/
-	LKSB lksb;
+	lock_status lksb;
 	struct dsc$descriptor_s desc;
 
 	lksb.lksb_lock_id = lock_id;
@@ -150,7 +151,7 @@ SLONG LOCK_enq(PTR prior_request,
  **************************************/
 	int status, lock_id, lock_type, flags;
 	UCHAR buffer[256], *p;
-	LKSB lksb;
+	lock_status lksb;
 	struct dsc$descriptor_s desc;
 	if (prior_reqeust)
 	LOCK_deq(prior_request); p = buffer; *p++ = series; if (length)
@@ -187,7 +188,7 @@ SLONG LOCK_enq(PTR prior_request,
 }
 
 
-void LOCK_fini(ISC_STATUS * status_vector, PTR * owner_offset)
+void LOCK_fini(ISC_STATUS* status_vector, PTR * owner_offset)
 {
 /**************************************
  *
@@ -206,8 +207,8 @@ void LOCK_fini(ISC_STATUS * status_vector, PTR * owner_offset)
 }
 
 
-int LOCK_init(ISC_STATUS * status_vector,
-							 SSHORT owner_flag,
+int LOCK_init(ISC_STATUS* status_vector,
+							 bool owner_flag,
 							 SLONG owner_id,
 							 UCHAR owner_type, SLONG * owner_handle)
 {
@@ -238,7 +239,7 @@ SLONG LOCK_read_data(PTR lock_id)
  *	Read data associated with a lock.
  *
  **************************************/
-	LKSB lksb;
+	lock_status lksb;
 	struct dsc$descriptor_s desc;
 	lksb.lksb_lock_id = lock_id;
 	lksb.lksb_value[0] = 0;
@@ -286,7 +287,7 @@ SLONG LOCK_write_data(PTR lock_id, SLONG data)
  *
  **************************************/
 	int status;
-	LKSB lksb;
+	lock_status lksb;
 	struct dsc$descriptor_s desc;
 	lksb.lksb_lock_id = lock_id;
 	status =
@@ -341,7 +342,7 @@ static SLONG write_data(SLONG lock_id, SLONG data) {
  *	Write a longword into the lock block.
  *
  **************************************/
-	LKSB lksb;
+	lock_status lksb;
 	struct dsc$descriptor_s desc;
 	lksb.lksb_lock_id = lock_id;
 	lksb.lksb_value[0] = data;

@@ -255,19 +255,19 @@ VerbAction[] = {
 		FLD(Record*, "Format: %x", rec_format),
 		0
 },
-Rsb[] = {
+RecordSource[] = {
 	"RECORD SOURCE BLOCK",
-		FLD(Rsb*, "Type: %x", rsb_type),
-		FLD(Rsb*, "Stream: %x", rsb_stream),
-		FLD(Rsb*, "Relation: %x", rsb_relation),
-		FLD(Rsb*, "Next: %x", rsb_next),
-		FLD(Rsb*, "Count: %x", rsb_count),
+		FLD(RecordSource*, "Type: %x", rsb_type),
+		FLD(RecordSource*, "Stream: %x", rsb_stream),
+		FLD(RecordSource*, "Relation: %x", rsb_relation),
+		FLD(RecordSource*, "Next: %x", rsb_next),
+		FLD(RecordSource*, "Count: %x", rsb_count),
 		0
 },
-opt[] = {
+OptimizerBlk[] = {
 	"OPTIMIZER",
-		FLD(OPT, "Csb*: %x", opt_csb),
-		FLD(OPT, "Cnt: %x", opt_count),
+		FLD(OptimizerBlk*, "CompilerScratch*: %x", opt_csb),
+		FLD(OptimizerBlk*, "Cnt: %x", opt_count),
 		0
 },
 BitmapSegment[] = {
@@ -296,10 +296,10 @@ str[] = {
 		FLD(STR, "length: %d", str_length),
 		0
 },
-Dcc[] = {
+DataComprControl[] = {
 	"DATA COMPRESSION CONTROL",
-		FLD(Dcc*, "next: %x", dcc_next),
-		FLD(Dcc*, "end: %x", dcc_end),
+		FLD(DataComprControl*, "next: %x", dcc_next),
+		FLD(DataComprControl*, "end: %x", dcc_end),
 		0
 },
 SparseBitmap[] = {
@@ -343,12 +343,11 @@ BlobControl[] = {
 	"BLOB CONTROL", 0
 };
 
-static TEXT_PTR scl[] = {	"SECURITY CLASS", 0};
-static TEXT_PTR fld[] = {	"FIELD", 0};
+static TEXT_PTR SecurityClass[] = {	"SECURITY CLASS", 0};
+static TEXT_PTR jrd_fld[] = {	"FIELD", 0};
 static TEXT_PTR ExternalFile[] = {	"EXTERNAL FILE", 0};
 static TEXT_PTR merge_file[] = {	"MERGE EQUIVALENCE FILE BLOCK", 0};
 static TEXT_PTR River[] = {	"SORT MERGE RIVER", 0};
-static TEXT_PTR plc[] = {	"PAGE/LOCK SERVER CONNECTION", 0};
 static TEXT_PTR UserId[] = {	"USER IDENTIFICATION BLOCK ", 0};
 static TEXT_PTR Attachment[] = {	"ATTACHMENT BLOCK", 0};
 static TEXT_PTR Symbol[] = {	"SYMBOL", 0};
@@ -365,7 +364,7 @@ static TEXT_PTR BlobFilter[] = {	"BLOB FILTER", 0};
 static TEXT_PTR ArrayField[] = {	"ARRAY DESCRIPTION", 0};
 static TEXT_PTR blb_map[] = {	"MAP BLOCK", 0};
 static TEXT_PTR fblog[] = {	"LOG BLOCK", 0};
-static TEXT_PTR dls[] = {	"DIR LIST BLOCK", 0};
+static TEXT_PTR dir_list[] = {	"DIR LIST BLOCK", 0};
 static TEXT_PTR jrd_prc[] =
 {
 	"PROCEDURE",
@@ -377,13 +376,13 @@ static TEXT_PTR IndexBlock[] = {	"INDEX BLOCK", 0};
 static TEXT_PTR Bookmark[] = {	"BOOKMARK BLOCK", 0};
 static TEXT_PTR RefreshRange[] = {	"REFRESH RANGE BLOCK", 0};
 static TEXT_PTR TxPageCache[] = {	"TIP CACHE BLOCK", 0};
-static TEXT_PTR xcp[] = {	"EXCEPTION LIST BLOCK", 0};
-static TEXT_PTR Opt[] = {	"OPTIMIZATION BLOCK", 0};
+static TEXT_PTR PsqlException[] = {	"EXCEPTION LIST BLOCK", 0};
+static TEXT_PTR OptimizerBlk[] = {	"OPTIMIZATION BLOCK", 0};
 static TEXT_PTR Prefetch[] = {	"PRF", 0};
-static TEXT_PTR rse[] = {	"RECORD SELECTION EXPRESSION", 0};
+static TEXT_PTR RecordSelExpr[] = {	"RECORD SELECTION EXPRESSION", 0};
 static TEXT_PTR Literal[] = {	"LITERAL", 0};
-static TEXT_PTR asb[] = {	"ASB", 0};
-static TEXT_PTR srl[] = {	"SRL", 0};
+static TEXT_PTR AggregateSort[] = {	"AggregateSort", 0};
+//static TEXT_PTR srl[] = {	"SRL", 0}; // Obsolete.
 
 	/* xxx
 	   x [] = {
@@ -391,13 +390,13 @@ static TEXT_PTR srl[] = {	"SRL", 0};
 	   FLD (x, "x: %x", x),
 	   0},
 	 */
-static TEXT_PTR Csb[] = {
+static TEXT_PTR CompilerScratch[] = {
 	"COMPILE SCRATCH BLOCK",
-		FLD(Csb*, "Count: %x", csb_count),
-		FLD(Csb*, "Node: %x", csb_node),
-		FLD(Csb*, "Streams: %x", csb_n_stream),
-		FLD(Csb*, "Running: %x", csb_running),
-		FLD(Csb*, "BLR: %x", csb_blr),
+		FLD(CompilerScratch*, "Count: %x", csb_count),
+		FLD(CompilerScratch*, "Node: %x", csb_node),
+		FLD(CompilerScratch*, "Streams: %x", csb_n_stream),
+		FLD(CompilerScratch*, "Running: %x", csb_running),
+		FLD(CompilerScratch*, "BLR: %x", csb_blr),
 		0
 };
 

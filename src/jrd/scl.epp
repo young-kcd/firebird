@@ -85,8 +85,8 @@ static bool check_hex(const TEXT*, USHORT);
 static bool check_number(const TEXT*, USHORT);
 static bool check_user_group(const TEXT*, USHORT, STR*, ULONG*);
 static bool check_string(const TEXT*, const TEXT*);
-static SLONG compute_access(thread_db*, const scl*, const jrd_rel*, const TEXT*,
-	const TEXT*);
+static SLONG compute_access(thread_db*, const SecurityClass*, const jrd_rel*,
+	const TEXT*, const TEXT*);
 static TEXT* save_string(const TEXT*, TEXT**);
 static SLONG walk_acl(thread_db*, const TEXT*, const jrd_rel*, const TEXT*,
 	const TEXT*, STR*, ULONG*);
@@ -123,7 +123,7 @@ static const P_NAMES p_names[] =
 };
 
 
-void SCL_check_access(const scl* s_class,
+void SCL_check_access(const SecurityClass* s_class,
 					  SLONG view_id,
 					  const TEXT* trg_name,
 					  const TEXT* prc_name,
@@ -155,7 +155,7 @@ void SCL_check_access(const scl* s_class,
 
 	Attachment* attachment = tdbb->tdbb_attachment;
 
-	const scl* att_class = attachment->att_security_class;
+	const SecurityClass* att_class = attachment->att_security_class;
 	if (att_class && !(att_class->scl_flags & mask))
 	{
 		type = "DATABASE";
@@ -223,8 +223,8 @@ void SCL_check_index(thread_db* tdbb, const TEXT* index_name, UCHAR index_id, US
  *******************************************************/
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
-	const scl* s_class = NULL;
-	const scl* default_s_class = NULL;
+	const SecurityClass* s_class = NULL;
+	const SecurityClass* default_s_class = NULL;
 
 	// No security to check for if the index is not yet created 
 
@@ -232,7 +232,7 @@ void SCL_check_index(thread_db* tdbb, const TEXT* index_name, UCHAR index_id, US
         return;
     }
 
-    TEXT reln_name[32], aux_idx_name[32];
+    SqlIdentifier reln_name, aux_idx_name;
     reln_name[0] = aux_idx_name[0] = 0;
     const TEXT* idx_name_ptr = index_name;
 	const TEXT* relation_name_ptr = index_name;
@@ -343,7 +343,7 @@ void SCL_check_procedure(const dsc* dsc_name, USHORT mask)
  *	scanned.  This is used exclusively for meta-data operations.
  *
  **************************************/
-	TEXT name[32];
+	SqlIdentifier name;
 
 	thread_db* tdbb = GET_THREAD_DATA;
 
@@ -365,7 +365,7 @@ void SCL_check_procedure(const dsc* dsc_name, USHORT mask)
 
 	Database* dbb = tdbb->tdbb_database;
 
-	const scl* s_class = NULL;
+	const SecurityClass* s_class = NULL;
 
 	jrd_req* request = CMP_find_request(tdbb, irq_p_security, IRQ_REQUESTS);
 
@@ -400,7 +400,7 @@ void SCL_check_relation(const dsc* dsc_name, USHORT mask)
  *	scanned.  This is used exclusively for meta-data operations.
  *
  **************************************/
-	TEXT name[32];
+	SqlIdentifier name;
 
 	thread_db* tdbb = GET_THREAD_DATA;
 
@@ -422,7 +422,7 @@ void SCL_check_relation(const dsc* dsc_name, USHORT mask)
 
 	Database* dbb = tdbb->tdbb_database;
 
-	const scl* s_class = NULL;
+	const SecurityClass* s_class = NULL;
 
 	jrd_req* request = CMP_find_request(tdbb, irq_v_security, IRQ_REQUESTS);
 
@@ -443,7 +443,7 @@ void SCL_check_relation(const dsc* dsc_name, USHORT mask)
 }
 
 
-SCL SCL_get_class(/* INOUT */ TEXT* string)
+SecurityClass* SCL_get_class(/* INOUT */ TEXT* string)
 {
 /**************************************
  *
@@ -476,7 +476,7 @@ SCL SCL_get_class(/* INOUT */ TEXT* string)
 
 	// Look for the class already known
 
-	SCL s_class;
+	SecurityClass* s_class;
 	for (s_class = attachment->att_security_classes;
 		 s_class;
 		 s_class = s_class->scl_next)
@@ -488,7 +488,7 @@ SCL SCL_get_class(/* INOUT */ TEXT* string)
 
 	// Class isn't known. So make up a new security class block.
 
-	s_class = FB_NEW_RPT(*dbb->dbb_permanent, strlen(string)) scl();
+	s_class = FB_NEW_RPT(*dbb->dbb_permanent, strlen(string)) SecurityClass();
 	strcpy(s_class->scl_name, string);
 	s_class->scl_flags = (USHORT) compute_access(tdbb, s_class, NULL, NULL, NULL);
 
@@ -525,7 +525,7 @@ int SCL_get_mask(const TEXT* relation_name, const TEXT* field_name)
 
 	// Start with database security class
 
-	const scl* s_class = attachment->att_security_class;
+	const SecurityClass* s_class = attachment->att_security_class;
 	USHORT access = (s_class) ? s_class->scl_flags : -1;
 
 	// If there's a relation, track it down
@@ -825,7 +825,7 @@ void SCL_move_priv(UCHAR** acl_ptr, USHORT mask, STR* start_ptr, ULONG* length_p
 }
 
 
-SCL SCL_recompute_class(thread_db* tdbb, TEXT* string)
+SecurityClass* SCL_recompute_class(thread_db* tdbb, TEXT* string)
 {
 /**************************************
  *
@@ -840,7 +840,7 @@ SCL SCL_recompute_class(thread_db* tdbb, TEXT* string)
  **************************************/
 	SET_TDBB(tdbb);
 
-	scl* s_class = SCL_get_class(string);
+	SecurityClass* s_class = SCL_get_class(string);
 	if (!s_class) {
 		return NULL;
 	}
@@ -860,7 +860,7 @@ SCL SCL_recompute_class(thread_db* tdbb, TEXT* string)
 }
 
 
-void SCL_release(SCL s_class)
+void SCL_release(SecurityClass* s_class)
 {
 /**************************************
  *
@@ -875,7 +875,7 @@ void SCL_release(SCL s_class)
 	thread_db* tdbb = GET_THREAD_DATA;
 	Attachment* attachment = tdbb->tdbb_attachment;
 
-	for (scl** next = &attachment->att_security_classes; *next;
+	for (SecurityClass** next = &attachment->att_security_classes; *next;
 		 next = &(*next)->scl_next)
 	{
 		if (*next == s_class)
@@ -1071,7 +1071,7 @@ static bool check_string(const TEXT* acl, const TEXT* string)
 
 
 static SLONG compute_access(thread_db* tdbb,
-							const scl* s_class,
+							const SecurityClass* s_class,
 							const jrd_rel* view,
 							const TEXT* trg_name,
 							const TEXT* prc_name)

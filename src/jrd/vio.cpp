@@ -459,7 +459,7 @@ void VIO_bump_count(thread_db* tdbb, USHORT count_id, jrd_rel* relation, bool er
 }
 
 
-bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, Rsb* rsb, 
+bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* rsb, 
 							  jrd_tra* transaction,
 							 BLK pool, bool writelock)
 {
@@ -1179,7 +1179,8 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	jrd_prc* procedure;
 	DSC desc, desc2;
 	USHORT id, rel_flags;
-	TEXT relation_name[32], revokee[32], privilege[32], procedure_name[32];
+	// Revokee is only 32 bytes. UserId would be truncated.
+	SqlIdentifier relation_name, revokee, privilege, procedure_name;
 
 	SET_TDBB(tdbb);
 	jrd_req* request = tdbb->tdbb_request;
@@ -1682,7 +1683,7 @@ Record* VIO_gc_record(thread_db* tdbb, jrd_rel* relation)
 }
 
 
-bool VIO_get(thread_db* tdbb, record_param* rpb, Rsb* rsb, jrd_tra* transaction, BLK pool)
+bool VIO_get(thread_db* tdbb, record_param* rpb, RecordSource* rsb, jrd_tra* transaction, BLK pool)
 {
 /**************************************
  *
@@ -2266,7 +2267,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 }
 
 
-bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, Rsb* rsb,
+bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, RecordSource* rsb,
 	jrd_tra* transaction)
 {
 /**************************************
@@ -2333,7 +2334,7 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, Rsb* rsb,
 			org_rpb->rpb_stream_flags &= ~RPB_s_refetch;
 			
 			// Make sure refetched record still fulfills search condition
-			Rsb* r;
+			RecordSource* r;
 			for (r = rsb; r && r->rsb_type != rsb_boolean ; r = r->rsb_next); // empty loop body
 			if (r && !EVL_boolean(tdbb, (jrd_nod*) r->rsb_arg[0]))
 				return false;
@@ -2392,7 +2393,7 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, Rsb* rsb,
 
 bool VIO_next_record(thread_db* tdbb,
 						record_param* rpb,
-						Rsb* rsb,
+						RecordSource* rsb,
 						jrd_tra* transaction,
 						BLK pool, bool backwards, bool onepage)
 {

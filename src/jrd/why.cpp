@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.60 2004-03-20 14:57:31 alexpeshkoff Exp $
+$Id: why.cpp,v 1.61 2004-03-28 09:10:16 robocop Exp $
 */
 
 #include "firebird.h"
@@ -6136,8 +6136,7 @@ BOOLEAN WHY_set_shutdown(BOOLEAN flag)
  *
  **************************************/
 
-	BOOLEAN old_flag;
-	old_flag = shutdown_flag;
+	const BOOLEAN old_flag = shutdown_flag;
 	shutdown_flag = flag;
 	return old_flag;
 }
@@ -6172,9 +6171,9 @@ static WHY_HNDL allocate_handle(int		implementation,
  *	Allocate an indirect handle.
  *
  **************************************/
-	WHY_HNDL handle;
+	WHY_HNDL handle = (WHY_HNDL) alloc((SLONG) sizeof(why_hndl));
 
-	if (handle = (WHY_HNDL) alloc((SLONG) sizeof(why_hndl)))
+	if (handle)
 	{
 		handle->implementation = implementation;
 		handle->type = handle_type;

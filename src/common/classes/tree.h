@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: tree.h,v 1.24 2004-03-25 23:12:39 skidder Exp $
+ *  $Id: tree.h,v 1.25 2004-03-28 09:10:08 robocop Exp $
  *
  */
 
@@ -55,7 +55,7 @@ namespace Firebird {
 // Now it merges pages only when resulting page will be 3/4 filled or less
 // Be careful while changing this expression. N=2 must always cause merge
 static inline bool NEED_MERGE(int current_count, int page_count) {
-	return current_count*4/3 <= page_count;
+	return current_count * 4 / 3 <= page_count;
 }
 
 // Note: small values will cause wasting of memory because overhead for

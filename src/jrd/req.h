@@ -35,6 +35,8 @@
 
 #include <vector>
 
+class lls;
+
 namespace Jrd {
 
 class Lock;
@@ -50,6 +52,7 @@ class Savepoint;
 class Resource;
 class AccessItem;
 class RefreshRange;
+class RecordSource;
 
 /* record parameter block */
 
@@ -116,7 +119,7 @@ class Record : public pool_alloc_rpt<SCHAR, type_rec>
 {
     public:
 	const fmt* rec_format;		/* what the data looks like */
-	class lls *rec_precedence;	/* stack of higher precedence pages */
+	lls* rec_precedence;		/* stack of higher precedence pages */
 	USHORT rec_length;			/* how much there is */
 	const fmt* rec_fmt_bk;   	// backup format to cope with Borland's ill null signaling
 	UCHAR rec_flags;			/* misc record flags */
@@ -183,7 +186,7 @@ public:
 
 	jrd_nod*	req_top_node;		/* top of execution tree */
 	jrd_nod*	req_next;			/* next node for execution */
-	Firebird::Array<class Rsb*> req_fors;	/* Vector of for loops, if any */
+	Firebird::Array<RecordSource*> req_fors;	/* Vector of for loops, if any */
 	vec* 		req_cursors;		/* Vector of named cursors, if any */
 	Firebird::Array<jrd_nod*> req_invariants;	/* Vector of invariant nodes, if any */
 	USHORT		req_label;			/* label for leave */
@@ -207,7 +210,7 @@ public:
 		req_unwind
 	} req_operation;				/* operation for next node */
 
-    status_xcp req_last_xcp;		/* last known exception */
+    StatusXcp req_last_xcp;			/* last known exception */
 
 	record_param req_rpb[1];		/* record parameter blocks */
 };

@@ -27,6 +27,7 @@
 namespace Jrd {
 	class jrd_req;
 	class jrd_nod;
+	class jrd_tra;
 }
 
 void EXE_assignment(Jrd::thread_db*, Jrd::jrd_nod*);
@@ -40,8 +41,8 @@ void EXE_seek(Jrd::thread_db*, Jrd::jrd_req*, USHORT, ULONG);
 #endif
 
 #ifdef PC_ENGINE
-bool EXE_crack(Jrd::thread_db*, Jrd::Rsb*, USHORT);
-void EXE_mark_crack(Jrd::thread_db*, Jrd::Rsb*, USHORT);
+bool EXE_crack(Jrd::thread_db*, Jrd::RecordSource*, USHORT);
+void EXE_mark_crack(Jrd::thread_db*, Jrd::RecordSource*, USHORT);
 #endif
 
 

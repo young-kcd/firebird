@@ -31,13 +31,17 @@ namespace Jrd {
 	struct record_param;
 	class jrd_nod;
 	class RefreshRange;
+	struct impure_value;
+	class Attachment;
 }
+
+struct dsc;
 
 void RNG_add_page(ULONG);
 void RNG_add_record(Jrd::record_param*);
 jrd_nod* RNG_add_relation(Jrd::jrd_nod*);
 void RNG_add_uncommitted_record(Jrd::record_param*);
-struct dsc *RNG_begin(Jrd::jrd_nod*, Jrd::vlu*);
+dsc *RNG_begin(Jrd::jrd_nod*, Jrd::impure_value*);
 jrd_nod *RNG_delete(Jrd::jrd_nod*);
 void RNG_delete_ranges(Jrd::jrd_req *);
 jrd_nod* RNG_end(Jrd::jrd_nod*);

@@ -39,12 +39,17 @@
 
 #define MAX_KEY_LIMIT		(dbb->dbb_page_size / 4)
 
+struct dsc;
+
 namespace Jrd {
 
 class jrd_rel;
 class jrd_tra;
 class SparseBitmap;
 class vec;
+class jrd_req;
+struct temporary_key;
+class jrd_tra;
 
 enum idx_null_state {
   idx_nulls_none,
@@ -54,28 +59,28 @@ enum idx_null_state {
 
 /* Index descriptor block -- used to hold info from index root page */
 
-typedef struct idx {
-	SLONG idx_root;				/* Index root */
-	float idx_selectivity;		/* selectivity of index */
-	USHORT idx_id;
-	UCHAR idx_flags;
-	UCHAR idx_runtime_flags;	/* flags used at runtime, not stored on disk */
-	USHORT idx_primary_index;	/* id for primary key partner index */
-	USHORT idx_primary_relation;	/* id for primary key partner relation */
-	USHORT idx_count;			/* number of keys */
+struct index_desc {
+	SLONG	idx_root;				/* Index root */
+	float	idx_selectivity;		/* selectivity of index */
+	USHORT	idx_id;
+	UCHAR	idx_flags;
+	UCHAR	idx_runtime_flags;	/* flags used at runtime, not stored on disk */
+	USHORT	idx_primary_index;	/* id for primary key partner index */
+	USHORT	idx_primary_relation;	/* id for primary key partner relation */
+	USHORT	idx_count;			/* number of keys */
 	vec*	idx_foreign_primaries;	/* ids for primary/unique indexes with partners */
 	vec*	idx_foreign_relations;	/* ids for foreign key partner relations */
 	vec*	idx_foreign_indexes;	/* ids for foreign key partner indexes */
 	jrd_nod* idx_expression;	/* node tree for indexed expresssion */
-	struct dsc idx_expression_desc;	/* descriptor for expression result */
-	class jrd_req* idx_expression_request;	/* stored request for expression evaluation */
+	dsc		idx_expression_desc;	/* descriptor for expression result */
+	jrd_req* idx_expression_request;	/* stored request for expression evaluation */
 	// This structure should exactly match IRTD structure for current ODS
 	struct idx_repeat {
 		USHORT idx_field;		/* field id */
 		USHORT idx_itype;		/* data of field in index */
 		float idx_selectivity;	/* segment selectivity */
 	} idx_rpt[MAX_INDEX_SEGMENTS];
-} IDX;
+};
 
 /* index types and flags */
 
@@ -120,26 +125,26 @@ typedef struct idx {
 #define	idx_used_with_and	64	/* marker used in procedure sort_indices */
 #define	idx_marker			128	/* marker used in procedure sort_indices */
 
-/* Macro to locate the next IDX block */
+/* Macro to locate the next index_desc block */
 
-#define NEXT_IDX(buffer,count)	(IDX*) (buffer + count)
+#define NEXT_IDX(buffer, count)	(index_desc*) (buffer + count)
 
 /* Index insertion block -- parameter block for index insertions */
 
-typedef struct iib {
+struct index_insertion {
 	SLONG iib_number;			/* record number (or lower level page) */
 	SLONG iib_sibling;			/* right sibling page */
-	idx* iib_descriptor;		/* index descriptor */
+	index_desc*	iib_descriptor;		/* index descriptor */
 	jrd_rel*	iib_relation;	/* relation block */
-	struct key *iib_key;		/* varying string for insertion */
+	temporary_key*	iib_key;		/* varying string for insertion */
 	SparseBitmap* iib_duplicates;	/* spare bit map of duplicates */
-	jrd_tra *iib_transaction;	/* insertion transaction */
-} IIB;
+	jrd_tra*	iib_transaction;	/* insertion transaction */
+};
 
 
 /* Temporary key block */
 
-typedef struct key {
+struct temporary_key {
 	USHORT key_length;
 	UCHAR key_data[MAX_KEY];
  /* AB: I don't see the use of multiplying with 2 anymore. */
@@ -147,17 +152,17 @@ typedef struct key {
 		// This needs to be on a SHORT boundary. 
 		// This is because key_data is complemented as 
 		// (SSHORT *) if value is negative.
-		//  See compress() (JRD/btr.c) for more details
-} KEY;
+		//  See compress() (JRD/btr.cpp) for more details
+};
 
 
 /* Index Sort Record -- fix part of sort record for index fast load */
 
-typedef struct isr {
+struct index_sort_record {
 	USHORT isr_key_length;
 	USHORT isr_flags;
 	ULONG isr_record_number;
-} *ISR;
+};
 
 #define ISR_secondary	1	// Record is secondary version
 #define ISR_null		2	// Record consists of NULL values only
@@ -169,13 +174,13 @@ typedef struct isr {
 class IndexRetrieval : public pool_alloc_rpt<jrd_nod*, type_irb>
 {
     public:
-	IDX irb_desc;				/* Index descriptor */
+	index_desc irb_desc;				/* Index descriptor */
 	USHORT irb_index;			/* Index id */
 	USHORT irb_generic;			/* Flags for generic search */
 	jrd_rel*	irb_relation;	/* Relation for retrieval */
 	USHORT irb_lower_count;		/* Number of segments for retrieval */
 	USHORT irb_upper_count;		/* Number of segments for retrieval */
-	KEY *irb_key;				/* key for equality retrieval */
+	temporary_key*	irb_key;				/* key for equality retrieval */
 	jrd_nod* irb_value[1];
 };
 
@@ -189,12 +194,12 @@ class IndexRetrieval : public pool_alloc_rpt<jrd_nod*, type_irb>
 // macros used to manipulate btree nodes
 #define BTR_SIZE	OFFSETA(Ods::btree_page*, btr_nodes);
 
-#define NEXT_NODE(node)	(btn*)(node->btn_data + node->btn_length)
-#define NEXT_NODE_RECNR(node)	(btn*)(node->btn_data + node->btn_length + sizeof(SLONG))
+#define NEXT_NODE(node)	(btree_nod*)(node->btn_data + node->btn_length)
+#define NEXT_NODE_RECNR(node)	(btree_nod*)(node->btn_data + node->btn_length + sizeof(SLONG))
 
-#define LAST_NODE(page)	(BTN) ((UCHAR*) page + page->btr_length)
+#define LAST_NODE(page)	(btree_nod*) ((UCHAR*) page + page->btr_length)
 
-//#define NEXT_EXPANDED(xxx,yyy)	(BTX) ((UCHAR*) xxx->btx_data + (yyy)->btn_prefix + (yyy)->btn_length)
+//#define NEXT_EXPANDED(xxx,yyy)	(btree_exp*) ((UCHAR*) xxx->btx_data + (yyy)->btn_prefix + (yyy)->btn_length)
 
 typedef Firebird::HalfStaticArray<float, 4> SelectivityList;
 

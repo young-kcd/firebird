@@ -164,8 +164,8 @@ void ERR_duplicate_error(IDX_E	code,
  *	Duplicate error during index update.
  *
  **************************************/
-	TEXT  index[32];
-	TEXT  constraint[32];
+	SqlIdentifier index;
+	SqlIdentifier constraint;
 	const TEXT* index_name;
 	const TEXT* constraint_name;
 

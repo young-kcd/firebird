@@ -348,7 +348,7 @@ void RNG_add_uncommitted_record(record_param* rpb)
 
 
 #ifdef PC_ENGINE
-DSC *RNG_begin(jrd_nod* node, VLU impure)
+DSC *RNG_begin(jrd_nod* node, impure_value* impure)
 {
 /**************************************
  *

@@ -36,12 +36,12 @@
 #include "../common/classes/array.h"
 
 // format of expanded index node, used for backwards navigation
-typedef struct btx
+struct btree_exp
 {
 	UCHAR btx_previous_length;		// AB: total size for previous node --length of data for previous node
 	UCHAR btx_btr_previous_length;	// length of data for previous node on btree page
 	UCHAR btx_data[1];				// expanded data element
-} *BTX;
+};
 
 #define BTX_SIZE	2
 
@@ -52,14 +52,14 @@ typedef struct btx
 #define BTN_DUPLICATE_MARKER	1
 
 // format of expanded index buffer
-struct jrd_exp
+struct exp_index_buf
 {
 	USHORT exp_length;
 	ULONG exp_incarnation;
-	btx exp_nodes[1];
+	btree_exp exp_nodes[1];
 };
 
-#define EXP_SIZE	OFFSETA (jrd_exp*, exp_nodes)
+#define EXP_SIZE	OFFSETA (exp_index_buf*, exp_nodes)
 
 struct dynKey
 {
@@ -85,13 +85,13 @@ namespace BTreeNode {
 	bool keyEquality(USHORT length, const UCHAR* data, const Ods::IndexNode* indexNode);
 
 #ifdef SCROLLABLE_CURSORS
-	UCHAR* lastNode(btree_page* page, jrd_exp* expanded_page, BTX* expanded_node);
+	UCHAR* lastNode(btree_page* page, exp_index_buf* expanded_page, btree_exp** expanded_node);
 #endif
 
 	UCHAR* nextNode(Ods::IndexNode* node, UCHAR* pointer, 
-				SCHAR flags,  BTX* expanded_node);
+				SCHAR flags,  btree_exp** expanded_node);
 	UCHAR* previousNode(Ods::IndexNode* node, UCHAR* pointer,
-				SCHAR flags,  BTX* expanded_node);
+				SCHAR flags,  btree_exp** expanded_node);
 
 	void quad_put(SLONG value, UCHAR *data);
 

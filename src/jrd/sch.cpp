@@ -590,8 +590,8 @@ bool SCH_thread_enter_check(void)
  **************************************
  *
  * Functional description
- *	Check if thread is active thread, if so return TRUE
- * else return FALSE.
+ *	Check if thread is active thread, if so return true
+ * else return false.
  *
  **************************************/
 

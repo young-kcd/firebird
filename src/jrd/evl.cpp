@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.72 2004-03-22 11:37:54 alexpeshkoff Exp $ 
+  * $Id: evl.cpp,v 1.73 2004-03-28 09:10:15 robocop Exp $ 
  */
 
 /*
@@ -134,34 +134,34 @@ double MTH$CVT_D_G(), MTH$CVT_G_D();
 
 using namespace Jrd;
 
-static dsc* add(const dsc*, const jrd_nod*, VLU);
-static dsc* add2(const dsc*, const jrd_nod*, VLU);
-static dsc* add_datetime(const dsc*, const jrd_nod*, VLU);
-static dsc* add_sql_date(const dsc*, const jrd_nod*, VLU);
-static dsc* add_sql_time(const dsc*, const jrd_nod*, VLU);
-static dsc* add_timestamp(const dsc*, const jrd_nod*, VLU);
-static dsc* binary_value(thread_db*, const jrd_nod*, VLU);
-static dsc* cast(thread_db*, const dsc*, const jrd_nod*, VLU);
+static dsc* add(const dsc*, const jrd_nod*, impure_value*);
+static dsc* add2(const dsc*, const jrd_nod*, impure_value*);
+static dsc* add_datetime(const dsc*, const jrd_nod*, impure_value*);
+static dsc* add_sql_date(const dsc*, const jrd_nod*, impure_value*);
+static dsc* add_sql_time(const dsc*, const jrd_nod*, impure_value*);
+static dsc* add_timestamp(const dsc*, const jrd_nod*, impure_value*);
+static dsc* binary_value(thread_db*, const jrd_nod*, impure_value*);
+static dsc* cast(thread_db*, const dsc*, const jrd_nod*, impure_value*);
 static void compute_agg_distinct(thread_db*, jrd_nod*);
-static dsc* concatenate(thread_db*, jrd_nod*, VLU);
-static dsc* dbkey(thread_db*, const jrd_nod*, VLU);
-static dsc* eval_statistical(thread_db*, jrd_nod*, VLU);
+static dsc* concatenate(thread_db*, jrd_nod*, impure_value*);
+static dsc* dbkey(thread_db*, const jrd_nod*, impure_value*);
+static dsc* eval_statistical(thread_db*, jrd_nod*, impure_value*);
 static SINT64 get_day_fraction(const dsc* d);
-static dsc* get_mask(thread_db*, jrd_nod*, VLU);
+static dsc* get_mask(thread_db*, jrd_nod*, impure_value*);
 static SINT64 get_timestamp_to_isc_ticks(const dsc* d);
 static void init_agg_distinct(thread_db*, const jrd_nod*);
 #ifdef PC_ENGINE
-static dsc* lock_record(thread_db*, jrd_nod*, VLU);
-static dsc* lock_relation(thread_db*, jrd_nod*, VLU);
+static dsc* lock_record(thread_db*, jrd_nod*, impure_value*);
+static dsc* lock_relation(thread_db*, jrd_nod*, impure_value*);
 #endif
-static dsc* lock_state(thread_db*, jrd_nod*, VLU);
-static dsc* multiply(const dsc*, VLU, const jrd_nod*);
-static dsc* multiply2(const dsc*, VLU, const jrd_nod*);
-static dsc* divide2(const dsc*, VLU, const jrd_nod*);
-static dsc* negate_dsc(thread_db*, const dsc*, VLU);
-static dsc* record_version(thread_db*, const jrd_nod*, VLU);
+static dsc* lock_state(thread_db*, jrd_nod*, impure_value*);
+static dsc* multiply(const dsc*, impure_value*, const jrd_nod*);
+static dsc* multiply2(const dsc*, impure_value*, const jrd_nod*);
+static dsc* divide2(const dsc*, impure_value*, const jrd_nod*);
+static dsc* negate_dsc(thread_db*, const dsc*, impure_value*);
+static dsc* record_version(thread_db*, const jrd_nod*, impure_value*);
 static bool reject_duplicate(const UCHAR*, const UCHAR*, void*);
-static dsc* scalar(thread_db*, jrd_nod*, VLU);
+static dsc* scalar(thread_db*, jrd_nod*, impure_value*);
 static bool sleuth(thread_db*, jrd_nod*, const dsc*, const dsc*);
 static bool nc_sleuth_check(TextType, USHORT, const UCHAR*, const UCHAR*,
 	const UCHAR*, const UCHAR*);
@@ -172,9 +172,9 @@ static bool wc_sleuth_class(TextType, USHORT, const UCS2_CHAR*, const UCS2_CHAR*
 						UCS2_CHAR);
 static bool string_boolean(thread_db*, jrd_nod*, dsc*, dsc*, bool);
 static bool string_function(thread_db*, jrd_nod*, SSHORT, const UCHAR*, SSHORT, const UCHAR*, USHORT, bool);
-static dsc* substring(thread_db*, VLU, dsc*, SLONG, SLONG);
-static dsc* upcase(thread_db*, const dsc*, VLU);
-static dsc* internal_info(thread_db*, const dsc*, VLU);
+static dsc* substring(thread_db*, impure_value*, dsc*, SLONG, SLONG);
+static dsc* upcase(thread_db*, const dsc*, impure_value*);
+static dsc* internal_info(thread_db*, const dsc*, impure_value*);
 
 
 static const UCHAR special[256] = {
@@ -235,7 +235,7 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 	DEV_BLKCHK(node, type_nod);
 
 	jrd_req* request = tdbb->tdbb_request;
-	vlu* impure = (VLU) ((SCHAR *) request + node->nod_impure);
+	impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 
 /* The only nodes that can be assigned to are: argument, field and variable. */
 
@@ -278,7 +278,7 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 				for (const SLONG* const end = var_invariants->end();
 					ptr < end; ptr++)
 				{
-					reinterpret_cast<VLU>((SCHAR *) request + *ptr)->vlu_flags = 0;
+					reinterpret_cast<impure_value*>((SCHAR *) request + *ptr)->vlu_flags = 0;
 				}
 			}
 		}
@@ -304,7 +304,7 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 	case nod_variable:
 		// Calculate descriptor
 		node = node->nod_arg[e_var_variable];
-		impure = (VLU) ((SCHAR *) request + node->nod_impure);
+		impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 		// Clear out dependent invariants
 		var_invariants = reinterpret_cast<VarInvariantArray*>(
 			node->nod_arg[e_dcl_invariants]);
@@ -313,7 +313,7 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 			for (const SLONG* const end = var_invariants->end();
 				ptr < end; ptr++)
 			{
-				reinterpret_cast<VLU>((SCHAR *) request + *ptr)->vlu_flags = 0;
+				reinterpret_cast<impure_value*>((SCHAR *) request + *ptr)->vlu_flags = 0;
 			}
 		}
 		return &impure->vlu_desc;
@@ -353,7 +353,7 @@ SparseBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node)
 
 	case nod_bit_dbkey:
 		{
-			inv* impure = (INV) ((SCHAR *) tdbb->tdbb_request + node->nod_impure);
+			impure_inversion* impure = (impure_inversion*) ((SCHAR *) tdbb->tdbb_request + node->nod_impure);
 			SBM_reset(&impure->inv_bitmap);
 			const dsc* desc = EVL_expr(tdbb, node->nod_arg[0]);
 			const USHORT id = 1 + 2 * (USHORT)(IPTR) node->nod_arg[1];
@@ -368,7 +368,7 @@ SparseBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node)
 
 	case nod_index:
 		{
-			inv* impure = (INV) ((SCHAR *) tdbb->tdbb_request + node->nod_impure);
+			impure_inversion* impure = (impure_inversion*) ((SCHAR *) tdbb->tdbb_request + node->nod_impure);
 			BTR_evaluate(tdbb,
 						 reinterpret_cast<IndexRetrieval*>(node->nod_arg[e_idx_retrieval]),
 						 &impure->inv_bitmap);
@@ -397,7 +397,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 	dsc*   desc[2];
 	bool value;
 	SSHORT comparison;
-	VLU    impure;
+	impure_value*    impure;
 	bool computed_invariant = false;
 
 	SET_TDBB(tdbb);
@@ -441,7 +441,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 
 			// Currently only nod_like and nod_contains may be marked invariant
 			if (node->nod_flags & nod_invariant) {
-				impure = reinterpret_cast<VLU>((SCHAR *)request + node->nod_impure);
+				impure = reinterpret_cast<impure_value*>((SCHAR *)request + node->nod_impure);
 				if (impure->vlu_flags & VLU_computed) {
 					if (impure->vlu_flags & VLU_null)
 						request->req_flags |= req_null;
@@ -575,7 +575,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 
 			if (node->nod_flags & nod_invariant)
 			{
-				impure = (VLU) ((SCHAR *) request + node->nod_impure);
+				impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 				invariant_flags = & impure->vlu_flags;
 				if (*invariant_flags & VLU_computed) {
 					/* An invariant node has already been computed. */
@@ -597,10 +597,10 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			   the unoptimized boolean expression must be used, since the
 			   processing of these clauses is order dependant (see rse.cpp) */
 
-			Rsb* select = (Rsb*) (node->nod_arg[e_any_rsb]);
+			RecordSource* select = (RecordSource*) (node->nod_arg[e_any_rsb]);
 			if (node->nod_type != nod_any)
 			{
-				select->rsb_any_boolean = ((RSE) (node->nod_arg[e_any_rse]))->rse_boolean;
+				select->rsb_any_boolean = ((RecordSelExpr*) (node->nod_arg[e_any_rse]))->rse_boolean;
 				if (node->nod_type == nod_ansi_any)
 					request->req_flags |= req_ansi_any;
 				else
@@ -709,7 +709,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 
 			if (node->nod_flags & nod_invariant)
 			{
-				impure = (VLU) ((SCHAR *) request + node->nod_impure);
+				impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 				invariant_flags = & impure->vlu_flags;
 				if (*invariant_flags & VLU_computed)
 				{
@@ -723,19 +723,19 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 				}
 			}
 
-			RSE_open(tdbb, reinterpret_cast<Rsb*>(node->nod_arg[e_any_rsb]));
+			RSE_open(tdbb, reinterpret_cast<RecordSource*>(node->nod_arg[e_any_rsb]));
 			value =
 				RSE_get_record(tdbb,
-							   reinterpret_cast<Rsb*>(node->nod_arg[e_any_rsb]),
+							   reinterpret_cast<RecordSource*>(node->nod_arg[e_any_rsb]),
 							   g_RSE_get_mode);
 			if (value)
 			{
 				value =
 				!RSE_get_record(tdbb,
-								reinterpret_cast<Rsb*>(node->nod_arg[e_any_rsb]),
+								reinterpret_cast<RecordSource*>(node->nod_arg[e_any_rsb]),
 								g_RSE_get_mode);
 			}
-			RSE_close(tdbb, reinterpret_cast<Rsb*>(node->nod_arg[e_any_rsb]));
+			RSE_close(tdbb, reinterpret_cast<RecordSource*>(node->nod_arg[e_any_rsb]));
 
 			/* If this is an invariant node, save the return value. */
 
@@ -796,7 +796,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 	SET_TDBB(tdbb);
 
 	jrd_req* request = tdbb->tdbb_request;
-	vlu* impure = (VLU) ((SCHAR *) request + node->nod_impure);
+	impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 	request->req_flags &= ~req_null;
 	request->req_flags &= ~req_clone_data_from_default_clause;
 
@@ -995,7 +995,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 
 	case nod_extract:
 		{
-			impure = (VLU) ((SCHAR *) request + node->nod_impure);
+			impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
  			const ULONG extract_part = (IPTR) node->nod_arg[e_extract_part];
 			const dsc* value = EVL_expr(tdbb, node->nod_arg[e_extract_value]);
 
@@ -1101,7 +1101,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 
 	case nod_variable:
 		node = node->nod_arg[e_var_variable];
-		impure = (VLU) ((SCHAR *) request + node->nod_impure);
+		impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 		if (impure->vlu_desc.dsc_flags & DSC_null)
 			request->req_flags |= req_null;
 		return &impure->vlu_desc;
@@ -1113,7 +1113,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 #ifdef PC_ENGINE
 	case nod_crack:
 		{
-			Rsb* rsb = *(Rsb**) node->nod_arg[1];
+			RecordSource* rsb = *(RecordSource**) node->nod_arg[1];
 			if (rsb->rsb_type == rsb_boolean)
 				rsb = rsb->rsb_next;
 			IRSB irsb = (IRSB) ((UCHAR *) request + rsb->rsb_impure);
@@ -1130,7 +1130,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 	case nod_get_bookmark:
 		{
 			Bookmark* bookmark =
-				RSE_get_bookmark(tdbb, *(Rsb**) node->nod_arg[e_getmark_rsb]);
+				RSE_get_bookmark(tdbb, *(RecordSource**) node->nod_arg[e_getmark_rsb]);
 			return &bookmark->bkm_desc;
 		}
 
@@ -1142,7 +1142,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 
 	case nod_cardinality:
 		impure->vlu_misc.vlu_long =
-			(*(Rsb**) node->nod_arg[e_card_rsb])->rsb_cardinality;
+			(*(RecordSource**) node->nod_arg[e_card_rsb])->rsb_cardinality;
 		impure->vlu_desc.dsc_dtype = dtype_long;
 		impure->vlu_desc.dsc_length = sizeof(ULONG);
 		impure->vlu_desc.dsc_scale = 0;
@@ -1386,7 +1386,7 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 }
 
 
-USHORT EVL_group(thread_db* tdbb, Rsb* rsb, jrd_nod* node, USHORT state)
+USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod* node, USHORT state)
 {
 /**************************************
  *
@@ -1414,7 +1414,7 @@ USHORT EVL_group(thread_db* tdbb, Rsb* rsb, jrd_nod* node, USHORT state)
 	if (state == 2)
 		return 0;
 
-	vlu vtemp;
+	impure_value vtemp;
 	vtemp.vlu_string = NULL;
 
 	jrd_req* request = tdbb->tdbb_request;
@@ -1430,7 +1430,7 @@ USHORT EVL_group(thread_db* tdbb, Rsb* rsb, jrd_nod* node, USHORT state)
 
 	for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++) {
 		const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
-		vlux* impure = (vlux*) ((SCHAR *) request + from->nod_impure);
+		impure_value_ex* impure = (impure_value_ex*) ((SCHAR *) request + from->nod_impure);
 		impure->vlux_count = 0;
 		switch (from->nod_type) {
 		case nod_agg_average:
@@ -1547,7 +1547,7 @@ USHORT EVL_group(thread_db* tdbb, Rsb* rsb, jrd_nod* node, USHORT state)
 			 ptr++) 
 		{
 			jrd_nod* from = *ptr;
-			vlux* impure = (vlux*) ((SCHAR *) request + from->nod_impure);
+			impure_value_ex* impure = (impure_value_ex*) ((SCHAR *) request + from->nod_impure);
 			desc = EVL_expr(tdbb, from);
 			if (request->req_flags & req_null)
 				impure->vlu_desc.dsc_address = NULL;
@@ -1570,7 +1570,7 @@ USHORT EVL_group(thread_db* tdbb, Rsb* rsb, jrd_nod* node, USHORT state)
 				 ptr < end; ptr++)
 			{
 				jrd_nod* from = *ptr;
-				vlux* impure = (vlux*) ((SCHAR *) request + from->nod_impure);
+				impure_value_ex* impure = (impure_value_ex*) ((SCHAR *) request + from->nod_impure);
 				if (impure->vlu_desc.dsc_address)
 					EVL_make_value(tdbb, &impure->vlu_desc, &vtemp);
 				else
@@ -1597,7 +1597,7 @@ USHORT EVL_group(thread_db* tdbb, Rsb* rsb, jrd_nod* node, USHORT state)
 		for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++)
 		{
 			jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
-			vlux* impure = (vlux*) ((SCHAR *) request + from->nod_impure);
+			impure_value_ex* impure = (impure_value_ex*) ((SCHAR *) request + from->nod_impure);
 			switch (from->nod_type)
 			{
 			case nod_agg_min:
@@ -1613,11 +1613,11 @@ USHORT EVL_group(thread_db* tdbb, Rsb* rsb, jrd_nod* node, USHORT state)
 					if (!impure->vlu_desc.dsc_dtype)
 					{
 						EVL_make_value(tdbb, desc, impure);
-						// It was reinterpret_cast<vlu*>(&impure->vlu_desc));
-						// but vlu_desc is the first member of vlu and vlux
-						// derives from vlu and vlu doesn't derive from anything
+						// It was reinterpret_cast<impure_value*>(&impure->vlu_desc));
+						// but vlu_desc is the first member of impure_value and impure_value_ex
+						// derives from impure_value and impure_value doesn't derive from anything
 						// and it doesn't contain virtuals.
-						// Thus, &vlux->vlu_desc == &vlu->vlu_desc == &vlux
+						// Thus, &impure_value_ex->vlu_desc == &impure_value->vlu_desc == &impure_value_ex
 						// Delete this comment or restore the original code
 						// when this reasoning has been validated, please.
 						break;
@@ -1684,8 +1684,8 @@ USHORT EVL_group(thread_db* tdbb, Rsb* rsb, jrd_nod* node, USHORT state)
 					if (request->req_flags & req_null)
 						break;
 					/* "Put" the value to sort. */
-					ASB asb = (ASB) from->nod_arg[1];
-					iasb* asb_impure = (iasb*) ((SCHAR *) request + asb->nod_impure);
+					AggregateSort* asb = (AggregateSort*) from->nod_arg[1];
+					impure_agg_sort* asb_impure = (impure_agg_sort*) ((SCHAR *) request + asb->nod_impure);
 					UCHAR* data;
 					SORT_put(tdbb->tdbb_status_vector, asb_impure->iasb_sort_handle,
 							 reinterpret_cast<ULONG**>(&data));
@@ -1724,7 +1724,7 @@ USHORT EVL_group(thread_db* tdbb, Rsb* rsb, jrd_nod* node, USHORT state)
 		const USHORT id = (USHORT)(IPTR) field->nod_arg[e_fld_id];
 		Record* record =
 			request->req_rpb[(int) (IPTR) field->nod_arg[e_fld_stream]].rpb_record;
-		vlux* impure = (vlux*) ((SCHAR *) request + from->nod_impure);
+		impure_value_ex* impure = (impure_value_ex*) ((SCHAR *) request + from->nod_impure);
 		
 		switch (from->nod_type)
 		{
@@ -1827,8 +1827,8 @@ USHORT EVL_group(thread_db* tdbb, Rsb* rsb, jrd_nod* node, USHORT state)
 			case nod_agg_average_distinct2:
 			case nod_agg_total_distinct2:
 				{
-				const ASB asb = (ASB) from->nod_arg[1];
-				iasb* asb_impure = (iasb*) ((SCHAR *) request + asb->nod_impure);
+				const AggregateSort* asb = (AggregateSort*) from->nod_arg[1];
+				impure_agg_sort* asb_impure = (impure_agg_sort*) ((SCHAR *) request + asb->nod_impure);
 				SORT_fini(asb_impure->iasb_sort_handle, tdbb->tdbb_attachment);
 				asb_impure->iasb_sort_handle = NULL;
 				}
@@ -1841,7 +1841,7 @@ USHORT EVL_group(thread_db* tdbb, Rsb* rsb, jrd_nod* node, USHORT state)
 }
 
 
-void EVL_make_value(thread_db* tdbb, const dsc* desc, VLU value)
+void EVL_make_value(thread_db* tdbb, const dsc* desc, impure_value* value)
 {
 /**************************************
  *
@@ -2179,7 +2179,7 @@ USHORT EVL_mb_sleuth_merge(thread_db* tdbb,
 #undef SLEUTH_CLASS_NAME
 #undef SLEUTHTYPE
 
-static dsc* add(const dsc* desc, const jrd_nod* node, VLU value)
+static dsc* add(const dsc* desc, const jrd_nod* node, impure_value* value)
 {
 /**************************************
  *
@@ -2259,7 +2259,7 @@ static dsc* add(const dsc* desc, const jrd_nod* node, VLU value)
 }
 
 
-static dsc* add2(const dsc* desc, const jrd_nod* node, VLU value)
+static dsc* add2(const dsc* desc, const jrd_nod* node, impure_value* value)
 {
 /**************************************
  *
@@ -2363,7 +2363,7 @@ static dsc* add2(const dsc* desc, const jrd_nod* node, VLU value)
 }
 
 
-static dsc* add_datetime(const dsc* desc, const jrd_nod* node, VLU value)
+static dsc* add_datetime(const dsc* desc, const jrd_nod* node, impure_value* value)
 {
 /**************************************
  *
@@ -2428,7 +2428,7 @@ static dsc* add_datetime(const dsc* desc, const jrd_nod* node, VLU value)
 }
 
 
-static dsc* add_sql_date(const dsc* desc, const jrd_nod* node, VLU value)
+static dsc* add_sql_date(const dsc* desc, const jrd_nod* node, impure_value* value)
 {
 /**************************************
  *
@@ -2532,7 +2532,7 @@ static dsc* add_sql_date(const dsc* desc, const jrd_nod* node, VLU value)
 }
 
 
-static dsc* add_sql_time(const dsc* desc, const jrd_nod* node, VLU value)
+static dsc* add_sql_time(const dsc* desc, const jrd_nod* node, impure_value* value)
 {
 /**************************************
  *
@@ -2629,7 +2629,7 @@ static dsc* add_sql_time(const dsc* desc, const jrd_nod* node, VLU value)
 }
 
 
-static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, VLU value)
+static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* value)
 {
 /**************************************
  *
@@ -2873,7 +2873,7 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, VLU value)
 }
 
 
-static dsc* binary_value(thread_db* tdbb, const jrd_nod* node, VLU impure)
+static dsc* binary_value(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 {
 /**************************************
  *
@@ -2890,7 +2890,7 @@ static dsc* binary_value(thread_db* tdbb, const jrd_nod* node, VLU impure)
 	DEV_BLKCHK(node, type_nod);
 
 	jrd_req* request = tdbb->tdbb_request;
-	impure = (VLU) ((SCHAR *) request + node->nod_impure);
+	impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 
 /* Evaluate arguments.  If either is null, result is null, but in
    any case, evaluate both, since some expressions may later depend
@@ -2950,7 +2950,7 @@ static dsc* binary_value(thread_db* tdbb, const jrd_nod* node, VLU impure)
 }
 
 
-static dsc* cast(thread_db* tdbb, const dsc* value, const jrd_nod* node, VLU impure)
+static dsc* cast(thread_db* tdbb, const dsc* value, const jrd_nod* node, impure_value* impure)
 {
 /**************************************
  *
@@ -3025,10 +3025,10 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 	DEV_BLKCHK(node, type_nod);
 
 	jrd_req* request = tdbb->tdbb_request;
-	ASB asb = (ASB) node->nod_arg[1];
-	iasb* asb_impure = (iasb*) ((SCHAR *) request + asb->nod_impure);
+	AggregateSort* asb = (AggregateSort*) node->nod_arg[1];
+	impure_agg_sort* asb_impure = (impure_agg_sort*) ((SCHAR *) request + asb->nod_impure);
 	dsc* desc = &asb->asb_desc;
-	vlux* impure = (vlux*) ((SCHAR *) request + node->nod_impure);
+	impure_value_ex* impure = (impure_value_ex*) ((SCHAR *) request + node->nod_impure);
 
 /* Sort the values already "put" to sort */
 
@@ -3081,7 +3081,7 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 }
 
 
-static dsc* concatenate(thread_db* tdbb, jrd_nod* node, VLU impure)
+static dsc* concatenate(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 {
 /**************************************
  *
@@ -3175,7 +3175,7 @@ static dsc* concatenate(thread_db* tdbb, jrd_nod* node, VLU impure)
 }
 
 
-static dsc* dbkey(thread_db* tdbb, const jrd_nod* node, VLU impure)
+static dsc* dbkey(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 {
 /**************************************
  *
@@ -3195,7 +3195,7 @@ static dsc* dbkey(thread_db* tdbb, const jrd_nod* node, VLU impure)
 /* Get request, record parameter block, and relation for stream */
 
 	jrd_req* request = tdbb->tdbb_request;
-	impure = (VLU) ((SCHAR *) request + node->nod_impure);
+	impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 	const record_param* rpb = &request->req_rpb[(int) (IPTR) node->nod_arg[0]];
 	const jrd_rel* relation = rpb->rpb_relation;
 
@@ -3221,7 +3221,7 @@ static dsc* dbkey(thread_db* tdbb, const jrd_nod* node, VLU impure)
 }
 
 
-static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, VLU impure)
+static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 {
 /**************************************
  *
@@ -3276,7 +3276,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, VLU impure)
 	}
 	SLONG count = 0;
 
-	Rsb* rsb = (Rsb*) (BLK) node->nod_arg[e_stat_rsb];
+	RecordSource* rsb = (RecordSource*) (BLK) node->nod_arg[e_stat_rsb];
 	RSE_open(tdbb, rsb);
 
 /* Handle each variety separately */
@@ -3468,7 +3468,7 @@ static SINT64 get_day_fraction(const dsc* d)
 
 
 
-static dsc* get_mask(thread_db* tdbb, jrd_nod* node, VLU impure)
+static dsc* get_mask(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 {
 /**************************************
  *
@@ -3489,7 +3489,7 @@ static dsc* get_mask(thread_db* tdbb, jrd_nod* node, VLU impure)
 	TEXT* p2 = NULL;
 	const dsc* value = EVL_expr(tdbb, node->nod_arg[0]);
 
-	TEXT relation_name[32], field_name[32];
+	SqlIdentifier relation_name, field_name;
 	if (!(request->req_flags & req_null)) {
 		p1 = relation_name;
 		MOV_get_name(value, p1);
@@ -3566,9 +3566,9 @@ static void init_agg_distinct(thread_db* tdbb, const jrd_nod* node)
 
 	jrd_req* request = tdbb->tdbb_request;
 
-	const asb* agSortBlk = (asb*) node->nod_arg[1];
-	iasb* asb_impure = (iasb*) ((char*) request + agSortBlk->nod_impure);
-	const sort_key_def* sort_key = agSortBlk->asb_key_desc;
+	const AggregateSort* asb = (AggregateSort*) node->nod_arg[1];
+	impure_agg_sort* asb_impure = (impure_agg_sort*) ((char*) request + asb->nod_impure);
+	const sort_key_def* sort_key = asb->asb_key_desc;
 
 	sort_context* handle =
 		SORT_init(tdbb->tdbb_status_vector,
@@ -3582,7 +3582,7 @@ static void init_agg_distinct(thread_db* tdbb, const jrd_nod* node)
 
 
 #ifdef PC_ENGINE
-static dsc* lock_record(thread_db* tdbb, jrd_nod* node, VLU impure)
+static dsc* lock_record(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 {
 /**************************************
  *
@@ -3617,7 +3617,7 @@ static dsc* lock_record(thread_db* tdbb, jrd_nod* node, VLU impure)
 
 /* perform the actual lock (or unlock) */
 
-	Rsb* rsb = *(Rsb**) node->nod_arg[e_lockrec_rsb];
+	RecordSource* rsb = *(RecordSource**) node->nod_arg[e_lockrec_rsb];
 	record_param* rpb = request->req_rpb + rsb->rsb_stream;
 	Lock* lock = NULL;
 	if (!lock_level)
@@ -3651,7 +3651,7 @@ static dsc* lock_record(thread_db* tdbb, jrd_nod* node, VLU impure)
 
 
 #ifdef PC_ENGINE
-static dsc* lock_relation(thread_db* tdbb, jrd_nod* node, VLU impure)
+static dsc* lock_relation(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 {
 /**************************************
  *
@@ -3719,7 +3719,7 @@ static dsc* lock_relation(thread_db* tdbb, jrd_nod* node, VLU impure)
 #endif
 
 
-static dsc* lock_state(thread_db* tdbb, jrd_nod* node, VLU impure)
+static dsc* lock_state(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 {
 /**************************************
  *
@@ -3785,7 +3785,7 @@ static dsc* lock_state(thread_db* tdbb, jrd_nod* node, VLU impure)
 }
 
 
-static dsc* multiply(const dsc* desc, VLU value, const jrd_nod* node)
+static dsc* multiply(const dsc* desc, impure_value* value, const jrd_nod* node)
 {
 /**************************************
  *
@@ -3878,7 +3878,7 @@ static dsc* multiply(const dsc* desc, VLU value, const jrd_nod* node)
 }
 
 
-static dsc* multiply2(const dsc* desc, VLU value, const jrd_nod* node)
+static dsc* multiply2(const dsc* desc, impure_value* value, const jrd_nod* node)
 {
 /**************************************
  *
@@ -3973,7 +3973,7 @@ static dsc* multiply2(const dsc* desc, VLU value, const jrd_nod* node)
 }
 
 
-static dsc* divide2(const dsc* desc, VLU value, const jrd_nod* node)
+static dsc* divide2(const dsc* desc, impure_value* value, const jrd_nod* node)
 {
 /**************************************
  *
@@ -4112,7 +4112,7 @@ static dsc* divide2(const dsc* desc, VLU value, const jrd_nod* node)
 }
 
 
-static dsc* negate_dsc(thread_db* tdbb, const dsc* desc, VLU value)
+static dsc* negate_dsc(thread_db* tdbb, const dsc* desc, impure_value* value)
 {
 /**************************************
  *
@@ -4181,7 +4181,7 @@ static dsc* negate_dsc(thread_db* tdbb, const dsc* desc, VLU value)
 }
 
 
-static dsc* record_version(thread_db* tdbb, const jrd_nod* node, VLU impure)
+static dsc* record_version(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 {
 /**************************************
  *
@@ -4202,7 +4202,7 @@ static dsc* record_version(thread_db* tdbb, const jrd_nod* node, VLU impure)
 /* Get request, record parameter block for stream */
 
 	jrd_req* request = tdbb->tdbb_request;
-	impure = (VLU) ((SCHAR *) request + node->nod_impure);
+	impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 	const record_param* rpb = &request->req_rpb[(int) (IPTR) node->nod_arg[0]];
 
 /* If the current transaction has updated the record, the record version
@@ -4263,7 +4263,7 @@ static bool reject_duplicate(const UCHAR* data1, const UCHAR* data2, void* user_
 }
 
 
-static dsc* scalar(thread_db* tdbb, jrd_nod* node, VLU impure)
+static dsc* scalar(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 {
 /**************************************
  *
@@ -4305,9 +4305,9 @@ static dsc* scalar(thread_db* tdbb, jrd_nod* node, VLU impure)
 			   reinterpret_cast<bid*>(desc->dsc_address),
 			   list->nod_count,
 			   subscripts, impure);
-			   // It was subscripts, reinterpret_cast<vlu*>(&impure->vlu_desc));
-			   // but vlu_desc is the first member of vlu and impure is already
-			   // of type vlu*, so this cast seems nonsense.
+			   // It was subscripts, reinterpret_cast<impure_value*>(&impure->vlu_desc));
+			   // but vlu_desc is the first member of impure_value and impure is already
+			   // of type impure_value*, so this cast seems nonsense.
 
 	return &impure->vlu_desc;
 }
@@ -4524,7 +4524,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 					DSC* dsc = EVL_expr(tdbb, node->nod_arg[2]);
 					if (request->req_flags & req_null) {
 						if (node->nod_flags & nod_invariant) {
-							VLU impure = (VLU) ((SCHAR *) request + node->nod_impure);
+							impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 							impure->vlu_flags |= VLU_computed;
 							impure->vlu_flags |= VLU_null;
 						}
@@ -4550,7 +4550,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 
 				void* evaluator;
 				if (node->nod_flags & nod_invariant) {
-					VLU impure = (VLU) ((SCHAR *) request + node->nod_impure);
+					impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 					if (!(impure->vlu_flags & VLU_computed)) {
 						obj.like_destroy(impure->vlu_misc.vlu_invariant);
 						impure->vlu_misc.vlu_invariant = evaluator = obj.like_create(tdbb, p2, l2, escape);
@@ -4580,7 +4580,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 				TextType obj = INTL_texttype_lookup(tdbb, type1, ERR_post, NULL);
 				void* evaluator;
 				if (node->nod_flags & nod_invariant) {
-					VLU impure = (VLU) ((SCHAR *) request + node->nod_impure);
+					impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 					if (!(impure->vlu_flags & VLU_computed)) {
 						obj.contains_destroy(impure->vlu_misc.vlu_invariant);
 						impure->vlu_misc.vlu_invariant = evaluator = obj.contains_create(tdbb, p2, l2);
@@ -4653,7 +4653,7 @@ static bool string_function(
 
 	if (node->nod_type == nod_contains) {
 		if (node->nod_flags & nod_invariant) {
-			VLU impure = (VLU) ((SCHAR *) request + node->nod_impure);
+			impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 			if (!(impure->vlu_flags & VLU_computed)) {
 				obj.contains_destroy(impure->vlu_misc.vlu_invariant);
 				impure->vlu_misc.vlu_invariant = obj.contains_create(tdbb, p2, l2);
@@ -4681,7 +4681,7 @@ static bool string_function(
 			DSC* dsc = EVL_expr(tdbb, node->nod_arg[2]);
 			if (request->req_flags & req_null) {
 				if (node->nod_flags & nod_invariant) {
-					VLU impure = (VLU) ((SCHAR *) request + node->nod_impure);
+					impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 					impure->vlu_flags |= VLU_computed;
 					impure->vlu_flags |= VLU_null;
 				}
@@ -4702,7 +4702,7 @@ static bool string_function(
 
 		}
 		if (node->nod_flags & nod_invariant) {
-			VLU impure = (VLU) ((SCHAR *) request + node->nod_impure);
+			impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 			if (!(impure->vlu_flags & VLU_computed)) {
 				obj.like_destroy(impure->vlu_misc.vlu_invariant);
 				impure->vlu_misc.vlu_invariant = obj.like_create(tdbb, p2, l2, escape);
@@ -4723,7 +4723,7 @@ static bool string_function(
 
 static dsc* substring(
 					  thread_db* tdbb,
-					  VLU impure, dsc* value, SLONG offset_arg, SLONG length_arg)
+					  impure_value* impure, dsc* value, SLONG offset_arg, SLONG length_arg)
 {
 /**************************************
  *
@@ -4888,7 +4888,7 @@ static dsc* substring(
 }
 
 
-static dsc* upcase(thread_db* tdbb, const dsc* value, VLU impure)
+static dsc* upcase(thread_db* tdbb, const dsc* value, impure_value* impure)
 {
 /**************************************
  *
@@ -4929,7 +4929,7 @@ static dsc* upcase(thread_db* tdbb, const dsc* value, VLU impure)
 }
 
 
-static dsc* internal_info(thread_db* tdbb, const dsc* value, VLU impure)
+static dsc* internal_info(thread_db* tdbb, const dsc* value, impure_value* impure)
 {
 /**************************************
  *

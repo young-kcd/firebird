@@ -31,7 +31,7 @@
 bool		DLS_get_temp_space(ULONG, Jrd::sort_work_file*);
 void		DLS_put_temp_space(Jrd::sort_work_file*);
 bool		API_ROUTINE DLS_add_dir(ULONG, const TEXT*);
-MDLS*		DLS_get_access(void);
+mutexed_dir_list*	DLS_get_access(void);
 
 #endif // JRD_DLS_PROTO_H
 

@@ -36,11 +36,12 @@ void ALL_init(void);
 //BLK ALL_pop(LLS *);
 
 struct blk;
+
 namespace Jrd {
 	class SparseBitmap;
 	class BitmapSegment;
 	class Database;
-	class Dcc;
+	class DataComprControl;
 }
 
 void ALL_print_memory_pool_info(IB_FILE*, Jrd::Database*);
@@ -61,12 +62,12 @@ public:
 	static void deletePool(JrdMemoryPool* pool);
 	static void noDbbDeletePool(JrdMemoryPool* pool);
 
-	static blk* ALL_pop(class lls**);
-	static void       ALL_push(blk*, class lls**);
+	static blk* ALL_pop(lls**);
+	static void       ALL_push(blk*, lls**);
 
     Jrd::SparseBitmap* plb_buckets;   /* available bit map buckets */
     Jrd::BitmapSegment* plb_segments;  /* available bit map segments */
-	Jrd::Dcc* plb_dccs;
+	Jrd::DataComprControl* plb_dccs;
 
 private:
 	BlockCache<lls> lls_cache;  /* Was plb_lls */

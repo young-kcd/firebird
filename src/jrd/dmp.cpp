@@ -782,8 +782,8 @@ static void dmp_index(const btree_page* page, USHORT page_size)
 	const USHORT max_records = (page_size - sizeof(data_page)) /
 								(sizeof(data_page::dpg_repeat) + OFFSETA(RHD, rhd_data));
 
-	BTN const end  = (BTN) ((UCHAR *) page + page->btr_length);
-	BTN node = (BTN) page->btr_nodes;
+	const btree_nod* const end  = (btree_nod*) ((UCHAR *) page + page->btr_length);
+	btree_nod* node = (btree_nod*) page->btr_nodes;
 
 	UCHAR	value[256];
 	UCHAR	print[256];

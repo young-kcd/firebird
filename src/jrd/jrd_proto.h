@@ -29,7 +29,7 @@
 
 /* included for the bid structure */
 #ifndef WIN_NT
-#include "../jrd/Jrd::blb.h"
+#include "../jrd/blb.h"
 #endif
 
 /* included for the svc structure */

@@ -84,15 +84,15 @@ using namespace Jrd;
 using namespace Ods;
 
 static void delete_tail(thread_db*, RHDF, USHORT);
-static void fragment(thread_db*, record_param*, SSHORT, Dcc*, SSHORT, const jrd_tra*);
+static void fragment(thread_db*, record_param*, SSHORT, DataComprControl*, SSHORT, const jrd_tra*);
 static void extend_relation(thread_db*, jrd_rel*, WIN *);
 static UCHAR* find_space(thread_db*, record_param*, SSHORT, LLS *, Record*, USHORT);
 static bool get_header(WIN *, SSHORT, record_param*);
 static pointer_page* get_pointer_page(thread_db*, jrd_rel*, WIN *, USHORT, USHORT);
 static RHD locate_space(thread_db*, record_param*, SSHORT, LLS *, Record*, USHORT);
 static void mark_full(thread_db*, record_param*);
-static void release_dcc(Dcc*);
-static void store_big_record(thread_db*, record_param*, LLS *, Dcc*, USHORT);
+static void release_dcc(DataComprControl*);
+static void store_big_record(thread_db*, record_param*, LLS *, DataComprControl*, USHORT);
 
 
 PAG DPM_allocate(thread_db* tdbb, WIN* window)
@@ -192,7 +192,7 @@ void DPM_backout( thread_db* tdbb, record_param* rpb)
 }
 
 
-int DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
+bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 {
 /**************************************
  *
@@ -205,9 +205,9 @@ int DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
  *
  *	We need to create a new version of a record.  If the new version
  *	fits on the same page as the old record, things are simple and
- *	quick.  If not, return FALSE and let somebody else suffer.
+ *	quick.  If not, return false and let somebody else suffer.
  *
- *	Note that we also return FALSE if the record fetched doesn't
+ *	Note that we also return false if the record fetched doesn't
  *	match the state of the input rpb, or if there is no record for
  *	that record number.  The caller has to check the results to 
  *	see what failed if FALSE is returned.  At the moment, there is
@@ -242,7 +242,7 @@ int DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 #endif
 
 	record_param temp = *org_rpb;
-	Dcc dcc;
+	DataComprControl dcc;
 	const USHORT size =
 		SQZ_length(tdbb, (SCHAR*) new_rpb->rpb_address, (int) new_rpb->rpb_length,
 				   &dcc);
@@ -253,7 +253,7 @@ int DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 			ib_printf("    record not found in DPM_chain\n");
 #endif
 		release_dcc(dcc.dcc_next);
-		return FALSE;
+		return false;
 	}
 
 /* if somebody has modified the record since we looked last, stop now! */
@@ -268,7 +268,7 @@ int DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 			ib_printf("    record changed in DPM_chain\n");
 #endif
 		release_dcc(dcc.dcc_next);
-		return FALSE;
+		return false;
 	}
 
 
@@ -282,7 +282,7 @@ int DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 			ib_printf("    record delta state changed\n");
 #endif
 		release_dcc(dcc.dcc_next);
-		return FALSE;
+		return false;
 	}
 
 	data_page* page = (data_page*) org_rpb->rpb_window.win_buffer;
@@ -296,7 +296,7 @@ int DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 			ib_printf("    insufficient room found in DPM_chain\n");
 #endif
 		release_dcc(dcc.dcc_next);
-		return FALSE;
+		return false;
 	}
 
 /* The record must be long enough to permit fragmentation later.  If it's
@@ -346,7 +346,7 @@ int DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 			ib_printf("    compressed page doesn't have room in DPM_chain\n");
 #endif
 		release_dcc(dcc.dcc_next);
-		return FALSE;
+		return false;
 	}
 
 	CCH_precedence(tdbb, &org_rpb->rpb_window, -org_rpb->rpb_transaction_nr);
@@ -397,7 +397,7 @@ int DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 
 	CCH_RELEASE(tdbb, &org_rpb->rpb_window);
 
-	return TRUE;
+	return true;
 }
 
 
@@ -1185,7 +1185,7 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, USHORT initialize, SINT64 va
 }
 
 
-int DPM_get( thread_db* tdbb, record_param* rpb, SSHORT lock_type)
+bool DPM_get( thread_db* tdbb, record_param* rpb, SSHORT lock_type)
 {
 /**************************************
  *
@@ -1222,14 +1222,14 @@ int DPM_get( thread_db* tdbb, record_param* rpb, SSHORT lock_type)
 /* Check if the record number is OK */
 
 	if ((slot < 0) || (line < 0)) {
-		return FALSE;
+		return false;
 	}
 
 /* Find the next pointer page, data page, and record */
 	pointer_page* page = get_pointer_page(tdbb, rpb->rpb_relation, window, pp_sequence,
 						  LCK_read);
 	if (!page) {
-		return FALSE;
+		return false;
 	}
 
 #ifdef VIO_DEBUG
@@ -1243,19 +1243,19 @@ int DPM_get( thread_db* tdbb, record_param* rpb, SSHORT lock_type)
 		if (get_header(window, line, rpb) &&
 			!(rpb->rpb_flags & (rpb_blob | rpb_chained | rpb_fragment)))
 		{
-			return TRUE;
+			return true;
 		}
 	}
 
 	CCH_RELEASE(tdbb, window);
 
-	return FALSE;
+	return false;
 }
 
 
 ULONG DPM_get_blob(thread_db* tdbb,
 				   blb* blob,
-				   ULONG record_number, USHORT delete_flag, SLONG prior_page)
+				   ULONG record_number, bool delete_flag, SLONG prior_page)
 {
 /**************************************
  *
@@ -1284,7 +1284,7 @@ ULONG DPM_get_blob(thread_db* tdbb,
 		ib_printf
 			("DPM_get_blob (blob, record_number %"ULONGFORMAT
 			", delete_flag %d, prior_page %"SLONGFORMAT")\n",
-			 record_number, delete_flag, prior_page);
+			 record_number, (int) delete_flag, prior_page);
 	}
 #endif
 
@@ -1847,7 +1847,7 @@ void DPM_store( thread_db* tdbb, record_param* rpb, LLS * stack, USHORT type)
 	}
 #endif
 
-	Dcc dcc;
+	DataComprControl dcc;
 	const USHORT size =
 		SQZ_length(tdbb, (SCHAR*) rpb->rpb_address, (int) rpb->rpb_length, &dcc);
 
@@ -2092,7 +2092,7 @@ void DPM_update( thread_db* tdbb, record_param* rpb, LLS * stack,
 	CCH_precedence(tdbb, &rpb->rpb_window, -rpb->rpb_transaction_nr);
 	CCH_MARK(tdbb, &rpb->rpb_window);
 	data_page* page = (data_page*) rpb->rpb_window.win_buffer;
-	Dcc dcc;
+	DataComprControl dcc;
 	const USHORT size =
 		SQZ_length(tdbb, (SCHAR*) rpb->rpb_address, (int) rpb->rpb_length, &dcc);
 
@@ -2249,7 +2249,7 @@ static void fragment(
 					 thread_db* tdbb,
 					 record_param* rpb,
 					 SSHORT available_space,
-					 Dcc* dcc, SSHORT length, const jrd_tra* transaction)
+					 DataComprControl* dcc, SSHORT length, const jrd_tra* transaction)
 {
 /**************************************
  *
@@ -3044,7 +3044,7 @@ static void mark_full( thread_db* tdbb, record_param* rpb)
 }
 
 
-static void release_dcc( Dcc* dcc)
+static void release_dcc( DataComprControl* dcc)
 {
 /**************************************
  *
@@ -3057,7 +3057,7 @@ static void release_dcc( Dcc* dcc)
  *
  **************************************/
 	while (dcc) {
-		Dcc* temp = dcc;
+		DataComprControl* temp = dcc;
 		dcc = temp->dcc_next;
 		delete temp;
 	}
@@ -3067,7 +3067,7 @@ static void release_dcc( Dcc* dcc)
 static void store_big_record(
 							 thread_db* tdbb,
 							 record_param* rpb,
-							 LLS * stack, Dcc* head_dcc, USHORT size)
+							 LLS * stack, DataComprControl* head_dcc, USHORT size)
 {
 /**************************************
  *
@@ -3090,7 +3090,7 @@ static void store_big_record(
 
 /* Start by finding the last data compression control block and set up
     to start decompression from the end. */
-	Dcc* dcc;
+	DataComprControl* dcc;
 	for (dcc = head_dcc; dcc->dcc_next; dcc = dcc->dcc_next);
 
 	const SCHAR* control = dcc->dcc_end;
@@ -3139,7 +3139,7 @@ static void store_big_record(
 			/* If we've exhausted this data compression block, find the prior one */
 
 			if (control == dcc->dcc_string) {
-				Dcc* const temp_dcc = dcc;
+				DataComprControl* const temp_dcc = dcc;
 				for (dcc = head_dcc; dcc->dcc_next != temp_dcc;
 					 dcc = dcc->dcc_next); // empty loop body
 				control = dcc->dcc_string + sizeof(dcc->dcc_string);

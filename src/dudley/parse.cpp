@@ -232,17 +232,16 @@ FUNC PARSE_function( int flag)
  *	advance the token.  Create a new function requested.  
  *
  **************************************/
-	SYM symbol;
-	FUNC function;
-
 	if (DDL_token.tok_type != tok_ident)
 		PARSE_error(113, DDL_token.tok_string, 0);	/* msg 113: expected function, encountered \"%s\" */
 
-	symbol = HSH_typed_lookup(DDL_token.tok_string, DDL_token.tok_length,
+	SYM symbol = HSH_typed_lookup(DDL_token.tok_string, DDL_token.tok_length,
 							  SYM_function);
 
+	FUNC function;
 	if (symbol && (function = (FUNC) symbol->sym_object) &&
-		function->func_database == database) {
+		function->func_database == database) 
+	{
 		LEX_token();
 		return function;
 	}
@@ -275,11 +274,9 @@ enum kwwords PARSE_keyword(void)
  *	Get a real token and return the keyword number.
  *
  **************************************/
-	SYM symbol;
-
 	LEX_real();
 
-	for (symbol = DDL_token.tok_symbol; symbol; symbol = symbol->sym_homonym)
+	for (SYM symbol = DDL_token.tok_symbol; symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_keyword)
 			return (enum kwwords) symbol->sym_keyword;
 
@@ -300,19 +297,15 @@ DUDLEY_NOD PARSE_make_list(dudley_lls* stack)
  *	them first.
  *
  **************************************/
-	DUDLEY_NOD node;
-	dudley_lls* temp;
-	USHORT count;
-
-	temp = stack;
-	count = 0;
+	dudley_lls* temp = stack;
+	USHORT count = 0;
 
 	while (temp) {
 		count++;
 		temp = temp->lls_next;
 	}
 
-	node = PARSE_make_node(nod_list, count);
+	DUDLEY_NOD node = PARSE_make_node(nod_list, count);
 
 	while (stack)
 		node->nod_arg[--count] = LLS_POP(&stack);
@@ -333,9 +326,7 @@ DUDLEY_NOD PARSE_make_node(enum nod_t type, USHORT count)
  *	Allocate and initialize a syntax node of given type.
  *
  **************************************/
-	DUDLEY_NOD node;
-
-	node = (DUDLEY_NOD) DDL_alloc(NOD_LEN(count));
+	DUDLEY_NOD node = (DUDLEY_NOD) DDL_alloc(NOD_LEN(count));
 	node->nod_type = type;
 	node->nod_count = count;
 
@@ -356,16 +347,15 @@ bool PARSE_match( enum kwwords keyword)
  *	the token stream.
  *
  **************************************/
-	SYM symbol;
-
 	if (DDL_token.tok_keyword == keyword) {
 		LEX_token();
 		return true;
 	}
 
-	for (symbol = DDL_token.tok_symbol; symbol; symbol = symbol->sym_homonym)
+	for (SYM symbol = DDL_token.tok_symbol; symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_keyword &&
-			symbol->sym_keyword == (int) keyword) {
+			symbol->sym_keyword == (int) keyword) 
+		{
 			LEX_token();
 			return true;
 		}
@@ -386,15 +376,12 @@ int PARSE_number(void)
  *	Parse the next token as a number and return its value.
  *
  **************************************/
-	SSHORT negate;
-	int number;
-
-	negate = PARSE_match(KW_MINUS);
+	const bool negate = PARSE_match(KW_MINUS);
 
 	if (DDL_token.tok_type != tok_number)
 		PARSE_error(115, DDL_token.tok_string, 0);	/* msg 115: expected number, encountered \"%s\" */
 
-	number = atoi(DDL_token.tok_string);
+	const int number = atoi(DDL_token.tok_string);
 	LEX_token();
 
 	if (negate)
@@ -419,16 +406,16 @@ DUDLEY_REL PARSE_relation(void)
  *	this one is worth keeping.
  *
  **************************************/
-	SYM symbol;
-	DUDLEY_REL relation;
-
 	if (DDL_token.tok_type != tok_ident)
 		PARSE_error(116, DDL_token.tok_string, 0);	/* msg 116: expected relation name, encountered \"%s\" */
 
-	symbol = HSH_typed_lookup(DDL_token.tok_string, DDL_token.tok_length,
+	SYM symbol = HSH_typed_lookup(DDL_token.tok_string, DDL_token.tok_length,
 							  SYM_relation);
+
+	DUDLEY_REL relation;
 	if (symbol && (relation = (DUDLEY_REL) symbol->sym_object) &&
-		relation->rel_database == database) {
+		relation->rel_database == database)
+	{
 		LEX_token();
 		return relation;
 	}
@@ -460,10 +447,6 @@ SYM PARSE_symbol(enum tok_t type)
  *	Swallow the current token as a symbol.
  *
  **************************************/
-	SYM symbol;
-	TEXT c, *p, *q;
-	USHORT l;
-
 	if (DDL_token.tok_type != type)
 		switch (type) {
 		case tok_ident:
@@ -473,8 +456,9 @@ SYM PARSE_symbol(enum tok_t type)
 		default:
 			PARSE_error(119, DDL_token.tok_string, 0);	/* msg 119: expected symbol, encountered \"%s\" */
 		}
-	l = DDL_token.tok_length;
-	q = DDL_token.tok_string;
+
+	USHORT l = DDL_token.tok_length;
+	const TEXT* q = DDL_token.tok_string;
 
 	if (type == tok_quoted) {
 		if (l < 2)
@@ -483,21 +467,20 @@ SYM PARSE_symbol(enum tok_t type)
 		l -= 2;
 	}
 
-	symbol = (SYM) DDL_alloc(SYM_LEN + l);
+	SYM symbol = (SYM) DDL_alloc(SYM_LEN + l);
 	symbol->sym_length = l;
-	p = symbol->sym_string = symbol->sym_name;
+	TEXT* p = symbol->sym_string = symbol->sym_name;
 
 	if (l)
 		if (type == tok_ident)
 			do {
-				c = *q++;
+				const TEXT c = *q++;
 				*p++ = UPPER(c);
-			}
-			while (--l);
+			} while (--l);
 		else
-			do
+			do {
 				*p++ = *q++;
-			while (--l);
+			} while (--l);
 
 	LEX_token();
 
@@ -519,13 +502,14 @@ static bool check_filename(SYM name,
  *	inet node name.
  *
  **************************************/
-	USHORT l;
-	TEXT file_name[256], *p, *q;
+	TEXT file_name[256];
 
-	if (!(l = name->sym_length))
+	USHORT l = name->sym_length;
+	if (!l)
 		return true;
 	l = MIN(l, sizeof(file_name) - 1);
-	for (p = file_name, q = name->sym_string; l--; *p++ = *q++);
+	TEXT* p = file_name;
+	for (const TEXT* q = name->sym_string; l--; *p++ = *q++);
 	*p = 0;
 
 	for (p = file_name; *p; p++)
@@ -563,9 +547,7 @@ static SYM copy_symbol( SYM old_name)
  *    We'll just leave the type blank for now. 
  *
  **************************************/
-	SYM new_name;
-
-	new_name = (SYM) DDL_alloc(SYM_LEN + old_name->sym_length);
+	SYM new_name = (SYM) DDL_alloc(SYM_LEN + old_name->sym_length);
 	new_name->sym_length = old_name->sym_length;
 	new_name->sym_string = new_name->sym_name;
 	strcpy(new_name->sym_name, old_name->sym_name);
@@ -592,10 +574,7 @@ static DUDLEY_FLD create_global_field( DUDLEY_FLD local_field)
  *	block.
  *
  **************************************/
-	DUDLEY_FLD global_field;
-	SYM old_name, new_name;
-
-	global_field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
+	DUDLEY_FLD  global_field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 	global_field->fld_dtype = local_field->fld_dtype;
 	global_field->fld_length = local_field->fld_length;
 	global_field->fld_scale = local_field->fld_scale;
@@ -620,8 +599,9 @@ static DUDLEY_FLD create_global_field( DUDLEY_FLD local_field)
 	if (local_field->fld_source)
 		global_field->fld_name = local_field->fld_source;
 	else {
-		old_name = local_field->fld_name;
-		global_field->fld_name = new_name = copy_symbol(old_name);
+		SYM old_name = local_field->fld_name;
+		SYM new_name = copy_symbol(old_name);
+		global_field->fld_name = new_name;
 		new_name->sym_type = SYM_global;
 		new_name->sym_object = (DUDLEY_CTX) global_field;
 		local_field->fld_source = new_name;
@@ -647,9 +627,7 @@ static FIL define_cache(void)
  *	Add a shared cache to an existing database.
  *
  **************************************/
-	FIL file;
-
-	file = (FIL) DDL_alloc(sizeof(fil));
+	FIL file = (FIL) DDL_alloc(sizeof(fil));
 	file->fil_name = PARSE_symbol(tok_quoted);
 	if (!check_filename(file->fil_name, false))
 		PARSE_error(322, 0, 0);	/* msg 322: a node name is not permitted in a shared cache file name */
@@ -678,9 +656,6 @@ static void define_database( enum act_t action_type)
  *	Parse the tail of a DEFINE, MODIFY, or DELETE DATABASE statement.
  *
  **************************************/
-	FIL file;
-	SYM symbol;
-
 	if (database)
 		DDL_error_abort(0, 120, NULL, NULL, NULL, NULL, NULL);
 		// msg 120: GDEF processes only one database at a time 
@@ -698,11 +673,11 @@ static void define_database( enum act_t action_type)
 			PARSE_match(KW_PAGES);
 		}
 		else if (PARSE_match(KW_USER)) {
-			symbol = PARSE_symbol(tok_quoted);
+			SYM symbol = PARSE_symbol(tok_quoted);
 			DDL_default_user = symbol->sym_name;
 		}
 		else if (PARSE_match(KW_PASSWORD)) {
-			symbol = PARSE_symbol(tok_quoted);
+			SYM symbol = PARSE_symbol(tok_quoted);
 			DDL_default_password = symbol->sym_name;
 		}
 		else
@@ -732,7 +707,10 @@ static void define_database( enum act_t action_type)
 				database->dbb_flags |= DBB_null_security_class;
 			else if (PARSE_match(KW_LOG_FILE)) {
 				if ((database->dbb_flags & DBB_log_default)
-					|| (database->dbb_logfiles)) PARSE_error(337, 0, 0);
+					|| (database->dbb_logfiles))
+				{
+					PARSE_error(337, 0, 0);
+				}
 
 				database->dbb_flags |= DBB_drop_log;
 			}
@@ -747,7 +725,7 @@ static void define_database( enum act_t action_type)
 			// msg 121 only SECURITY_CLASS, DESCRIPTION and CACHE can be dropped 
 		}
 		else if (PARSE_match(KW_FILE)) {
-			file = define_file();
+			FIL file = define_file();
 			file->fil_next = database->dbb_files;
 			database->dbb_files = file;
 		}
@@ -774,7 +752,10 @@ static void define_database( enum act_t action_type)
 		}
 		else if (PARSE_match(KW_LOG_FILE)) {
 			if ((database->dbb_flags & DBB_log_default)
-				|| (database->dbb_logfiles)) PARSE_error(338, 0, 0);
+				|| (database->dbb_logfiles))
+			{
+					PARSE_error(338, 0, 0);
+			}
 
 			if (database->dbb_flags & DBB_drop_log)
 				PARSE_error(337, 0, 0);
@@ -782,7 +763,7 @@ static void define_database( enum act_t action_type)
 			if (PARSE_match(KW_LEFT_PAREN)) {
 				database->dbb_flags |= DBB_log_preallocated;
 				while (true) {
-					file = define_log_file(DBB_log_preallocated);
+					FIL file = define_log_file(DBB_log_preallocated);
 					file->fil_next = database->dbb_logfiles;
 					database->dbb_logfiles = file;
 					if (!PARSE_match(KW_COMMA))
@@ -838,9 +819,7 @@ static void define_field(void)
  *	Parse a DEFINE FIELD statement.
  *
  **************************************/
-	DUDLEY_FLD field;
-
-	field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
+	DUDLEY_FLD field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 	parse_field(field);
 	field->fld_database = database;
 
@@ -868,9 +847,7 @@ static FIL define_file(void)
  *	Add a new file to an existing database.
  *
  **************************************/
-	FIL file;
-
-	file = (FIL) DDL_alloc(sizeof(fil));
+	FIL file = (FIL) DDL_alloc(sizeof(fil));
 	file->fil_name = PARSE_symbol(tok_quoted);
 	if (!check_filename(file->fil_name, false))
 		PARSE_error(297, 0, 0);	/* msg 297: A node name is not permitted in a shadow or secondary file name */
@@ -905,12 +882,10 @@ static void define_filter(void)
  *	Parse a DEFINE FILTER statement.
  *
  **************************************/
-	FILTER new_filter;
-
 	if (DDL_token.tok_type != tok_ident)
 		PARSE_error(126, DDL_token.tok_string, 0);	/* msg 126: expected filter name, encountered \"%s\" */
 
-	new_filter = (FILTER) DDL_alloc(sizeof(filter));
+	FILTER new_filter = (FILTER) DDL_alloc(sizeof(filter));
 	new_filter->filter_name = PARSE_symbol(tok_ident);
 
 	while (true) {
@@ -953,11 +928,7 @@ static void define_function(void)
  *	Parse a DEFINE FUNCTION statement.
  *
  **************************************/
-	FUNC function;
-	FUNCARG function_arg;
-	SSHORT position;
-
-	function = PARSE_function(FALSE);
+	FUNC function = PARSE_function(FALSE);
 
 	while (true) {
 		if (DDL_token.tok_keyword == KW_DESCRIPTION)
@@ -982,12 +953,12 @@ static void define_function(void)
 
 /* Gobble function arguments */
 
-	position = 1;
+	SSHORT position = 1;
 
 	while (true) {
 		if (DDL_token.tok_keyword == KW_SEMI)
 			break;
-		function_arg = parse_function_arg(function, (USHORT*) &position);
+		FUNCARG function_arg = parse_function_arg(function, (USHORT*) &position);
 		function_arg->funcarg_funcname = function->func_name;
 		make_action(act_a_function_arg, (DBB) function_arg);
 		if (!PARSE_match(KW_COMMA))
@@ -1013,12 +984,10 @@ static void define_generator(void)
  *	Parse a DEFINE GENERATOR statement.
  *
  **************************************/
-	SYM symbol;
-
 	if (DDL_token.tok_type != tok_ident)
 		PARSE_error(274, DDL_token.tok_string, 0);	/* msg 274: expected generator name, encountered \"%s\" */
 
-	symbol = PARSE_symbol(tok_ident);
+	SYM symbol = PARSE_symbol(tok_ident);
 	parse_end();
 	make_action(act_a_generator, (DBB) symbol);
 }
@@ -1036,17 +1005,14 @@ static void define_index(void)
  *	Define a new index.
  *
  **************************************/
-	dudley_lls* stack;
-	SYM index_name, rel_name;
 	TXT description = NULL;
-	SSHORT count;
 	bool unique = false;
 	bool inactive = false;
 	idx_direction descending = IDX_type_none;
 
-	index_name = PARSE_symbol(tok_ident);
+	SYM index_name = PARSE_symbol(tok_ident);
 	PARSE_match(KW_FOR);
-	rel_name = PARSE_symbol(tok_ident);
+	SYM rel_name = PARSE_symbol(tok_ident);
 
 	while (true) {
 		if (PARSE_match(KW_DUPLICATES))
@@ -1067,9 +1033,9 @@ static void define_index(void)
 			break;
 	}
 
-	count = 0;
+	SSHORT count = 0;
 
-	stack = NULL;
+	dudley_lls* stack = NULL;
 
 	while (true) {
 		LLS_PUSH((DUDLEY_NOD) PARSE_symbol(tok_ident), &stack);
@@ -1109,9 +1075,7 @@ static FIL define_log_file( USHORT log_type)
  *	define a log file 
  *
  **************************************/
-	FIL file;
-
-	file = (FIL) DDL_alloc(sizeof(fil));
+	FIL file = (FIL) DDL_alloc(sizeof(fil));
 	file->fil_name = PARSE_symbol(tok_quoted);
 	if (!check_filename(file->fil_name, false))
 		PARSE_error(297, 0, 0);
@@ -1158,12 +1122,9 @@ static void define_old_trigger(void)
  *	Parse old style trigger definition
  *
  **************************************/
-	DUDLEY_REL relation;
-	DUDLEY_TRG trigger;
-	SYM name;
-
-	trigger = NULL;
-	relation = PARSE_relation();
+	SYM name = NULL;
+	DUDLEY_TRG trigger = NULL;
+	DUDLEY_REL relation = PARSE_relation();
 
 	while (!PARSE_match(KW_END_TRIGGER)) {
 		trigger = (DUDLEY_TRG) DDL_alloc(sizeof(dudley_trg));
@@ -1212,12 +1173,7 @@ static void define_relation(void)
  *	Parse a DEFINE RELATION statement.
  *
  **************************************/
-	DUDLEY_REL relation;
-	DUDLEY_FLD field, global;
-	SSHORT position;
-	ACT rel_actions, action;
-
-	relation = PARSE_relation();
+	DUDLEY_REL relation = PARSE_relation();
 	if (!(relation->rel_flags & rel_marked_for_delete) &&
 		((relation->rel_flags & rel_marked_for_creation)
 		 || EXE_relation(relation)))
@@ -1233,9 +1189,10 @@ static void define_relation(void)
 		// msg 298: A non-Decnet node name is not permitted in an external file name
 	}
 
-	rel_actions = action = make_action(act_a_relation, (DBB) relation);
+	ACT action = make_action(act_a_relation, (DBB) relation);
+	ACT rel_actions = action;
 	action->act_flags |= ACT_ignore;
-	position = 1;
+	SSHORT position = 1;
 
 	while (true)
 		if (DDL_token.tok_keyword == KW_DESCRIPTION)
@@ -1251,10 +1208,11 @@ static void define_relation(void)
 
 /* Gobble fields */
 
+	DUDLEY_FLD global;
 	while (true) {
 		PARSE_match(KW_ADD);
 		PARSE_match(KW_FIELD);
-		field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
+		DUDLEY_FLD field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 		parse_field(field);
 		field->fld_relation = relation;
 		field->fld_database = database;
@@ -1355,13 +1313,11 @@ static void define_shadow(void)
  *	setting the shadow number on all files.
  *
  **************************************/
-	FIL shadow, file;
-	int number;
-
-	shadow = (FIL) DDL_alloc(sizeof(fil));
+	FIL shadow = (FIL) DDL_alloc(sizeof(fil));
 
 /* get the shadow number, defaulting to 1 */
 
+	int number;
 	if (DDL_token.tok_type != tok_number)
 		number = 1;
 	else {
@@ -1393,7 +1349,7 @@ static void define_shadow(void)
 
 	while (true) {
 		if (PARSE_match(KW_FILE)) {
-			file = define_file();
+			FIL file = define_file();
 			file->fil_next = shadow;
 			shadow = file;
 		}
@@ -1403,7 +1359,7 @@ static void define_shadow(void)
 
 	parse_end();
 
-	for (file = shadow; file; file = file->fil_next)
+	for (FIL file = shadow; file; file = file->fil_next)
 		file->fil_shadow_number = number;
 
 	make_action(act_a_shadow, (DBB) shadow);
@@ -1424,23 +1380,19 @@ static void define_trigger(void)
  *	what comes when.
  *
  **************************************/
-	DUDLEY_TRG trigger;
-	TRGMSG trigmsg;
-	int flags, trg_state, trg_sequence;
-
 	if (PARSE_match(KW_FOR)) {
 		define_old_trigger();
 		return;
 	}
 
-	trigger = (DUDLEY_TRG) DDL_alloc(sizeof(dudley_trg));
+	DUDLEY_TRG trigger = (DUDLEY_TRG) DDL_alloc(sizeof(dudley_trg));
 	trigger->trg_name = PARSE_symbol(tok_ident);
 
 	PARSE_match(KW_FOR);
 
 	trigger->trg_relation = PARSE_relation();
 
-	flags = trg_state = trg_sequence = 0;
+	int flags = 0, trg_state = 0, trg_sequence = 0;
 	get_trigger_attributes(&flags, &trg_state, &trg_sequence);
 	trigger->trg_type = trig_table[trg_state & ~trig_inact];
 	trigger->trg_inactive = (trg_state & trig_inact);
@@ -1465,7 +1417,7 @@ static void define_trigger(void)
 			action = true;
 		}
 		else if (PARSE_match(KW_MESSAGE)) {
-			trigmsg = (TRGMSG) DDL_alloc(sizeof(trgmsg));
+			TRGMSG trigmsg = (TRGMSG) DDL_alloc(sizeof(trgmsg));
 			trigmsg->trgmsg_trg_name = trigger->trg_name;
 			trigmsg->trgmsg_number = PARSE_number();
 			if (trigmsg->trgmsg_number > 255)
@@ -1512,14 +1464,11 @@ static void define_type(void)
  *	Parse a type for a field.
  *
  **************************************/
-	SYM fldname;
-	TYP fldtype;
-
 	PARSE_match(KW_FOR);
-	fldname = PARSE_symbol(tok_ident);
+	SYM fldname = PARSE_symbol(tok_ident);
 
 	while (true) {
-		fldtype = (TYP) DDL_alloc(sizeof(typ));
+		TYP fldtype = (TYP) DDL_alloc(sizeof(typ));
 		fldtype->typ_field_name = fldname;
 		fldtype->typ_name = PARSE_symbol(tok_ident);
 		PARSE_match(KW_COLON);
@@ -1547,17 +1496,10 @@ static void define_view(void)
  *	Parse a DEFINE VIEW statement.
  *
  **************************************/
-	DUDLEY_REL relation;
-	DUDLEY_FLD field, *ptr;
-	SYM symbol;
-	SSHORT position;
-	DUDLEY_CTX context, my_context;
-	dudley_lls* contexts;
-	ACT rel_actions, action;
 
 /* Pick up relation name */
 
-	relation = PARSE_relation();
+	DUDLEY_REL relation = PARSE_relation();
 	if (!(relation->rel_flags & rel_marked_for_delete) &&
 		((relation->rel_flags & rel_marked_for_creation)
 		 || EXE_relation(relation)))
@@ -1570,7 +1512,7 @@ static void define_view(void)
 
 /* Parse record selection expression */
 
-	contexts = NULL;
+	dudley_lls* contexts = NULL;
 	relation->rel_view_source = start_text();
 	relation->rel_rse = EXPR_rse(true);
 	end_text(relation->rel_view_source);
@@ -1578,11 +1520,12 @@ static void define_view(void)
 /* add my context to the context stack */
 
 	contexts = (dudley_lls*) relation->rel_rse->nod_arg[s_rse_contexts];
-	my_context = make_context(0, relation);
+	DUDLEY_CTX my_context = make_context(0, relation);
 	LLS_PUSH((DUDLEY_NOD) my_context, &contexts);
 	relation->rel_rse->nod_arg[s_rse_contexts] = (DUDLEY_NOD) contexts;
 
-	rel_actions = action = make_action(act_a_relation, (DBB) relation);
+	ACT action = make_action(act_a_relation, (DBB) relation);
+	ACT rel_actions = action;
 	action->act_flags |= ACT_ignore;
 
 /* Pick up various fields and clauses */
@@ -1602,19 +1545,21 @@ static void define_view(void)
 
 /* Gobble fields */
 
-	position = 1;
-	ptr = &relation->rel_fields;
+	SSHORT position = 1;
+	DUDLEY_FLD* ptr = &relation->rel_fields;
 
 	while (true) {
 		PARSE_match(KW_ADD);
 		PARSE_match(KW_FIELD);
-		field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
+		DUDLEY_FLD field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 		field->fld_flags |= fld_local;
 		field->fld_relation = relation;
 		*ptr = field;
 		ptr = &field->fld_next;
-		field->fld_name = symbol = PARSE_symbol(tok_ident);
-		if (context = lookup_context(symbol, contexts)) {
+		SYM symbol = PARSE_symbol(tok_ident);
+		field->fld_name = symbol;
+		DUDLEY_CTX context = lookup_context(symbol, contexts);
+		if (context) {
 			if (!PARSE_match(KW_DOT))
 				PARSE_error(144, DDL_token.tok_string, 0);	/* msg 144: expected period, encountered \"%s\" */
 			field->fld_name = field->fld_base = PARSE_symbol(tok_ident);
@@ -1698,9 +1643,7 @@ static void drop_filter(void)
  *	Parse the DROP (DELETE) filter statement.
  *
  **************************************/
-	FILTER filter_to_drop;
-
-	filter_to_drop = (FILTER) DDL_alloc(sizeof(filter));
+	FILTER filter_to_drop = (FILTER) DDL_alloc(sizeof(filter));
 	filter_to_drop->filter_name = PARSE_symbol(tok_ident);
 	parse_end();
 
@@ -1720,9 +1663,7 @@ static void drop_function(void)
  *	Parse the DROP (DELETE) function statement.
  *
  **************************************/
-	FUNC function;
-
-	function = (FUNC) DDL_alloc(sizeof(func));
+	FUNC function = (FUNC) DDL_alloc(sizeof(func));
 	function->func_name = PARSE_symbol(tok_ident);
 	parse_end();
 
@@ -1742,9 +1683,7 @@ static void drop_gfield(void)
  *	Parse the DROP (DELETE) field statement.
  *
  **************************************/
-	DUDLEY_FLD field;
-
-	field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
+	DUDLEY_FLD field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 	field->fld_name = PARSE_symbol(tok_ident);
 	parse_end();
 
@@ -1851,7 +1790,6 @@ static void drop_trigger(void)
 	SYM name;
 	bool old_style;
 	DUDLEY_REL relation;
-	DUDLEY_TRG trigger;
 
 	if (PARSE_match(KW_FOR)) {
 		relation = PARSE_relation();
@@ -1864,7 +1802,7 @@ static void drop_trigger(void)
 
 	if (old_style) {
 		while (!PARSE_match(KW_END_TRIGGER)) {
-			trigger = (DUDLEY_TRG) DDL_alloc(sizeof(dudley_trg));
+			DUDLEY_TRG trigger = (DUDLEY_TRG) DDL_alloc(sizeof(dudley_trg));
 			if (PARSE_match(KW_STORE))
 				trigger->trg_type = trg_store;
 			else if (PARSE_match(KW_MODIFY))
@@ -1881,7 +1819,7 @@ static void drop_trigger(void)
 		}
 	}
 	else {
-		trigger = (DUDLEY_TRG) DDL_alloc(sizeof(dudley_trg));
+		DUDLEY_TRG trigger = (DUDLEY_TRG) DDL_alloc(sizeof(dudley_trg));
 		trigger->trg_name = name;
 		make_action(act_d_trigger, (DBB) trigger);
 	}
@@ -1902,21 +1840,18 @@ static void drop_type(void)
  *	Parse the DROP (DELETE) type statement.
  *
  **************************************/
-	SYM fldname;
-	TYP fldtype;
-
 	PARSE_match(KW_FOR);
 	if (PARSE_match(KW_ALL)) {
-		fldtype = (TYP) DDL_alloc(sizeof(typ));
+		TYP fldtype = (TYP) DDL_alloc(sizeof(typ));
 		fldtype->typ_field_name = PARSE_symbol(tok_ident);
 		fldtype->typ_name->sym_length = 3;
 		strncpy(fldtype->typ_name->sym_string, "ALL", 3);
 		make_action(act_d_type, (DBB) fldtype);
 	}
 	else {
-		fldname = PARSE_symbol(tok_ident);
+		SYM fldname = PARSE_symbol(tok_ident);
 		while (true) {
-			fldtype = (TYP) DDL_alloc(sizeof(typ));
+			TYP fldtype = (TYP) DDL_alloc(sizeof(typ));
 			fldtype->typ_field_name = fldname;
 			fldtype->typ_name = PARSE_symbol(tok_ident);
 			make_action(act_d_type,(DBB)  fldtype);
@@ -2442,13 +2377,12 @@ static void modify_field(void)
  *	Parse a MODIFY FIELD statement.
  *
  **************************************/
-	SYM symbol;
-
 	if (!local_context)
 		LLS_PUSH((DUDLEY_NOD) DDL_alloc(sizeof(dudley_ctx)), &local_context);
 
 /* Lookup global field */
 
+	SYM symbol;
 	for (symbol = DDL_token.tok_symbol; symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_global)
 			break;
@@ -2676,24 +2610,22 @@ static void modify_security_class(void)
  *	Modify an existing security class.
  *
  **************************************/
-	SCL class_;
-	SCE element, *next;
-	USHORT score;
 
 /* return error msg for now until fully coded */
 
 	PARSE_error(247, 0, 0);		/* msg 247: action not implemented yet */
 
-	class_ = (SCL) DDL_alloc(sizeof(scl));
-	class_->scl_name = PARSE_symbol(tok_ident);
+	SCL sec_class = (SCL) DDL_alloc(sizeof(scl));
+	sec_class->scl_name = PARSE_symbol(tok_ident);
 	if (DDL_token.tok_keyword == KW_DESCRIPTION)
-		class_->scl_description = parse_description();
+		sec_class->scl_description = parse_description();
 
 	while (true) {
-		if (!(element = parse_identifier()))
+		SCE element = parse_identifier();
+		if (!element)
 			return;
-		score = score_entry(element);
-		for (next = &class_->scl_entries;; next = &(*next)->sce_next)
+		const USHORT score = score_entry(element);
+		for (SCE* next = &sec_class->scl_entries;; next = &(*next)->sce_next)
 			if (!*next || score > score_entry(*next)) {
 				element->sce_next = *next;
 				*next = element;
@@ -2705,7 +2637,7 @@ static void modify_security_class(void)
 	}
 
 	parse_end();
-	make_action(act_m_security, (DBB) class_);
+	make_action(act_m_security, (DBB) sec_class);
 }
 
 
@@ -2722,15 +2654,7 @@ static void modify_trigger(void)
  *      (go elsewhere if this is an old trigger).
  *
  **************************************/
-	DUDLEY_REL relation;
-	DUDLEY_TRG trigger;
-	TRGMSG trigmsg;
-	TRGMSG_T msg_type;
-	SYM name;
-	bool action = false;
-	bool end = false;
-
-	msg_type = trgmsg_none;
+	TRGMSG_T msg_type = trgmsg_none;
 
 	if (PARSE_match(KW_FOR)) {		/* modify trigger for ... is the old syntax */
 		mod_old_trigger();
@@ -2739,6 +2663,7 @@ static void modify_trigger(void)
 
 /* lookup the trigger name, complain and quit if it's unknown */
 
+	SYM name;
 	for (name = DDL_token.tok_symbol;
 		 name && (name->sym_type != SYM_trigger); name = name->sym_homonym);
 	{
@@ -2746,11 +2671,12 @@ static void modify_trigger(void)
 			PARSE_error(176, DDL_token.tok_string, 0);
 		// msg 176: expected trigger name, encountered \"%s\"
 	}
-	trigger = (DUDLEY_TRG) name->sym_object;
+	DUDLEY_TRG trigger = (DUDLEY_TRG) name->sym_object;
 	LEX_token();
 
 /* in case somebody compulsive specifies the relation name */
 
+	DUDLEY_REL relation;
 	if (PARSE_match(KW_FOR)) {
 		relation = PARSE_relation();
 		if (relation != trigger->trg_relation)
@@ -2765,6 +2691,9 @@ static void modify_trigger(void)
 	SLONG sequence = 0;
 	get_trigger_attributes((int*) &flags, (int*) &type, (int*) &sequence);
 
+	bool action = false;
+	bool end = false;
+
 	while (!(DDL_token.tok_keyword == KW_SEMI)) {
 		if ((PARSE_match(KW_MESSAGE)) || (PARSE_match(KW_MSGADD)) ||
 			(PARSE_match(KW_MSGMODIFY))) 
@@ -2777,7 +2706,7 @@ static void modify_trigger(void)
 			msg_type = trgmsg_drop;
 		}
 		if (msg_type) {
-			trigmsg = (TRGMSG) DDL_alloc(sizeof(trgmsg));
+			TRGMSG trigmsg = (TRGMSG) DDL_alloc(sizeof(trgmsg));
 			trigmsg->trgmsg_trg_name = trigger->trg_name;
 			trigmsg->trgmsg_number = PARSE_number();
 			if (trigmsg->trgmsg_number > 255)
@@ -2824,7 +2753,6 @@ static void modify_trigger_action( DUDLEY_TRG trigger, DUDLEY_REL relation)
  *	Parse a trigger statement.
  *
  **************************************/
-
 	trigger->trg_source = start_text();
 
 	trigger->trg_statement = EXPR_statement();
@@ -2844,13 +2772,10 @@ static void modify_type(void)
  *	Parse a modify of an existing type value for a field.
  *
  **************************************/
-	SYM fldname;
-	TYP fldtype;
-
 	PARSE_match(KW_FOR);
-	fldname = PARSE_symbol(tok_ident);
+	SYM fldname = PARSE_symbol(tok_ident);
 	while (true) {
-		fldtype = (TYP) DDL_alloc(sizeof(typ));
+		TYP fldtype = (TYP) DDL_alloc(sizeof(typ));
 		fldtype->typ_field_name = fldname;
 		fldtype->typ_name = PARSE_symbol(tok_ident);
 		PARSE_match(KW_COLON);
@@ -2877,11 +2802,9 @@ static void modify_view(void)
  *	Parse a MODIFY VIEW  statement.
  *
  **************************************/
-	DUDLEY_REL relation;
-	DUDLEY_FLD field;
 	bool view_modify = false;
 
-	relation = PARSE_relation();
+	DUDLEY_REL relation = PARSE_relation();
 	make_action(act_m_relation, (DBB) relation);
 
 	while (true) {
@@ -2908,7 +2831,7 @@ static void modify_view(void)
 		while (true) {
 			if (PARSE_match(KW_MODIFY)) {
 				PARSE_match(KW_FIELD);
-				field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
+				DUDLEY_FLD field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 				field->fld_flags |= (fld_modify | fld_local);
 				parse_field(field);
 				field->fld_relation = relation;
@@ -2938,7 +2861,7 @@ static void modify_view(void)
 				}
 				else {
 					PARSE_match(KW_FIELD);
-					field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
+					DUDLEY_FLD field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 					field->fld_flags |= fld_local;
 					field->fld_relation = relation;
 					field->fld_database = database;
@@ -3159,14 +3082,14 @@ static void parse_array( DUDLEY_FLD field)
  *	Parse the multi-dimensional array specification.
  *
  **************************************/
-	SLONG n, *range, *end, *ptr, ranges[2 * MAX_DIMENSION];
-
 	if (!PARSE_match(KW_LEFT_PAREN))
 		return;
 
 /* Pick up ranges */
 
-	for (range = ranges;;) {
+	SLONG ranges[2 * MAX_DIMENSION];
+	SLONG* range = ranges;
+	for (;;) {
 		++field->fld_dimension;
 		range[0] = 1;
 		range[1] = PARSE_number();
@@ -3190,11 +3113,13 @@ static void parse_array( DUDLEY_FLD field)
 
 /* Allocate and copy block to hold ranges */
 
-	n = field->fld_dimension * sizeof(SLONG) * 2;
-	field->fld_ranges = ptr = (SLONG *) DDL_alloc(n);
+	const SLONG n = field->fld_dimension * sizeof(SLONG) * 2;
+	SLONG* ptr = (SLONG*) DDL_alloc(n);
+	field->fld_ranges = ptr;
 
-	for (end = range, range = ranges; range < end;)
-		*ptr++ = *range++;
+	const SLONG* const end = range;
+	for (const SLONG* range2 = ranges; range2 < end;)
+		*ptr++ = *range2++;
 }
 
 
@@ -3211,10 +3136,8 @@ static TXT parse_description(void)
  *	of the description of a metadata item.
  *
  **************************************/
-	TXT description;
-
 	DDL_description = true;
-	description = start_text();
+	TXT description = start_text();
 	description->txt_position = DDL_token.tok_position;
 
 	while (!DDL_eof && (!(DDL_token.tok_keyword == KW_END_DESCRIPTION)))
@@ -3303,8 +3226,6 @@ static void parse_field_clauses( DUDLEY_FLD field)
  *	Parse a field definition, complete with data type and clauses.
  *
  **************************************/
-	int n;
-	dudley_lls* stack;
 
 /* Pick up purely optional clauses */
 
@@ -3356,16 +3277,18 @@ static void parse_field_clauses( DUDLEY_FLD field)
 			break;
 
 		case KW_QUERY_HEADER:
-			LEX_token();
-			PARSE_match(KW_IS);
-			stack = NULL;
-			for (;;) {
-				LLS_PUSH((DUDLEY_NOD) PARSE_symbol(tok_quoted), &stack);
-				if (!PARSE_match(KW_SLASH))
-					break;
+			{
+				LEX_token();
+				PARSE_match(KW_IS);
+				dudley_lls* stack = NULL;
+				for (;;) {
+					LLS_PUSH((DUDLEY_NOD) PARSE_symbol(tok_quoted), &stack);
+					if (!PARSE_match(KW_SLASH))
+						break;
+				}
+				field->fld_query_header = PARSE_make_list(stack);
+				break;
 			}
-			field->fld_query_header = PARSE_make_list(stack);
-			break;
 
 		case KW_COMPUTED:
 			LEX_token();
@@ -3399,12 +3322,15 @@ static void parse_field_clauses( DUDLEY_FLD field)
 			break;
 
 		case KW_SEGMENT_LENGTH:
-			LEX_token();
-			PARSE_match(KW_IS);
-			field->fld_segment_length = n = PARSE_number();
-			if (n <= 0)
-				PARSE_error(197, 0, 0);	/* msg 197: segment length must be positive */
-			break;
+			{
+				LEX_token();
+				PARSE_match(KW_IS);
+				const int n = PARSE_number();
+				field->fld_segment_length = n;
+				if (n <= 0)
+					PARSE_error(197, 0, 0);	/* msg 197: segment length must be positive */
+				break;
+			}
 
 		case KW_SUB_TYPE:
 			LEX_token();
@@ -3446,8 +3372,6 @@ static void parse_field_dtype( DUDLEY_FLD field)
  *	Parse a field definition, complete with data type and clauses.
  *
  **************************************/
-	int n;
-
 	switch (PARSE_keyword()) {
 	case KW_CHAR:
 		field->fld_dtype = blr_text;
@@ -3503,10 +3427,12 @@ static void parse_field_dtype( DUDLEY_FLD field)
 	LEX_token();
 
 	if (field->fld_dtype == blr_text ||
-		field->fld_dtype == blr_varying || field->fld_dtype == blr_cstring) {
+		field->fld_dtype == blr_varying || field->fld_dtype == blr_cstring) 
+	{
 		if (!PARSE_match(KW_L_BRCKET) && !PARSE_match(KW_LT))
 			PARSE_error(200, DDL_token.tok_string, 0);	/* msg 200: expected \"[\", encountered \"%s\" */
-		field->fld_length = n = PARSE_number();
+		const int n = PARSE_number();
+		field->fld_length = n;
 		if (n <= 0)
 			PARSE_error(201, 0, 0);	/* msg 201: character field length must be positive */
 		if (!PARSE_match(KW_R_BRCKET) && !PARSE_match(KW_GT))
@@ -3524,8 +3450,10 @@ static void parse_field_dtype( DUDLEY_FLD field)
 
 	if ((field->fld_dtype == blr_short ||
 		 field->fld_dtype == blr_long || field->fld_dtype == blr_quad))
+	{
 		if (PARSE_match(KW_SCALE))
 			field->fld_scale = PARSE_number();
+	}
 }
 
 
@@ -3573,11 +3501,8 @@ static FUNCARG parse_function_arg( FUNC function, USHORT * position)
  *	Parse a function argument definition, complete with data type.
  *
  **************************************/
-	FUNCARG func_arg;
-	DUDLEY_FLD field;
-
-	func_arg = (FUNCARG) DDL_alloc(sizeof(funcarg));
-	field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
+	FUNCARG func_arg = (FUNCARG) DDL_alloc(sizeof(funcarg));
+	DUDLEY_FLD field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 	parse_field_dtype(field);
 	func_arg->funcarg_dtype = field->fld_dtype;
 	func_arg->funcarg_scale = field->fld_scale;
@@ -3597,7 +3522,9 @@ static FUNCARG parse_function_arg( FUNC function, USHORT * position)
 			field->fld_dtype == blr_varying ||
 			field->fld_dtype == blr_cstring ||
 			field->fld_dtype == blr_blob || field->fld_dtype == blr_timestamp)
+		{
 			PARSE_error(203, 0, 0);	/* msg 203: argument mode by value not allowed for this data type */
+		}
 		break;
 
 	case KW_REFERENCE:
@@ -3668,10 +3595,13 @@ static SCE parse_identifier(void)
  *	Parse the hard part of an access control element.
  *
  **************************************/
-	TEXT *idents[10], **s, **end, **s1, strings[256], *p, *q;
-	SCE element;
+	TEXT* idents[10];
+	TEXT**s;
+	const TEXT* const* end;
+	TEXT strings[256];
 
-	p = strings;
+	const TEXT* q;
+	TEXT* p = strings;
 	for (s = idents, end = s + 10; s < end; s++)
 		*s = NULL;
 
@@ -3753,15 +3683,17 @@ static SCE parse_identifier(void)
 
 /* Build access control element */
 
-	element = (SCE) DDL_alloc(sizeof(sce) + (p - strings));
+	SCE element = (SCE) DDL_alloc(sizeof(sce) + (p - strings));
 	p = (TEXT *) element->sce_strings;
 
-	for (s = idents, end = s + 10, s1 = (TEXT **) element->sce_idents;
-		 s < end; s++, s1++)
+	TEXT** s1 = (TEXT **) element->sce_idents;
+	for (s = idents, end = s + 10; s < end; s++, s1++)
+	{
 		if (q = *s) {
 			*s1 = p;
 			while (*p++ = *q++);
 		}
+	}
 
 	return element;
 }
@@ -3839,9 +3771,8 @@ static int parse_page_size(void)
  *	
  *
  **************************************/
-	int n1, n2;
-
 	PARSE_match(KW_EQUALS);
+	int n1, n2;
 	n2 = n1 = PARSE_number();
 
 	if (n1 <= 1024)
@@ -3875,15 +3806,13 @@ static SLONG parse_privileges(void)
  *	Parse an access control list.
  *
  **************************************/
-	TEXT *p, c;
-	SLONG privileges;
-
-	privileges = 0;
+	SLONG privileges = 0;
 
 	if (!PARSE_match(KW_MINUS)) {
 		if (DDL_token.tok_type != tok_ident)
 			PARSE_error(117, DDL_token.tok_string, 0);	/* msg 117: expected identifier, encountered \"%s\" */
-		p = DDL_token.tok_string;
+		const TEXT* p = DDL_token.tok_string;
+		TEXT c;
 		while (c = *p++)
 			switch (UPPER(c)) {
 			case 'P':
@@ -3933,11 +3862,7 @@ static void revoke_user_privilege(void)
  *	Parse a SQL grant statement.
  *
  **************************************/
-	UPFE upf;
-	USERPRIV upriv;
-	USRE usr;
-
-	upriv = (USERPRIV) DDL_alloc(sizeof(userpriv));
+	USERPRIV upriv = (USERPRIV) DDL_alloc(sizeof(userpriv));
 
 	while (true) {
 		if (PARSE_match(KW_ALL)) {
@@ -3975,7 +3900,7 @@ static void revoke_user_privilege(void)
 				{
 					break;
 				}
-				upf = (UPFE) DDL_alloc(sizeof(upfe));
+				UPFE upf = (UPFE) DDL_alloc(sizeof(upfe));
 				upf->upfe_fldname = PARSE_symbol(tok_ident);
 				upf->upfe_next = upriv->userpriv_upflist;
 				upriv->userpriv_upflist = upf;
@@ -4002,7 +3927,7 @@ static void revoke_user_privilege(void)
 
 /* get the userlist */
 	while (true) {
-		usr = (USRE) DDL_alloc(sizeof(usre));
+		USRE usr = (USRE) DDL_alloc(sizeof(usre));
 		usr->usre_name = PARSE_symbol(tok_ident);
 		usr->usre_next = upriv->userpriv_userlist;
 		upriv->userpriv_userlist = usr;
@@ -4029,15 +3954,14 @@ static SLONG score_entry( SCE element)
  *	control list.
  *
  **************************************/
-	SLONG score;
-	TEXT **ptr, **end;
-
-	score = 0;
+	SLONG score = 0;
 	if (element->sce_idents[id_view])
 		score++;
 
-	for (ptr = (TEXT **) element->sce_idents, end = ptr + id_max; ptr < end;
-		 ptr++) {
+	const TEXT* const* ptr = (TEXT**) element->sce_idents;
+	for (const TEXT* const* const end = ptr + id_max; ptr < end;
+		 ptr++) 
+	{
 		score <<= 1;
 		if (*ptr)
 			score |= 1;
@@ -4058,12 +3982,10 @@ static DUDLEY_NOD set_generator(void)
  * Functional description
  *      get the name and new value for generator
  **************************************/
-	DUDLEY_NOD node;
-
 	if (DDL_token.tok_type != tok_ident)
 		PARSE_error(274, DDL_token.tok_string, 0);	/* msg 274: expected generator name, encountered \"%s\" */
 
-	node = PARSE_make_node(nod_set_generator, 2);
+	DUDLEY_NOD node = PARSE_make_node(nod_set_generator, 2);
 	node->nod_count = 1;
 	node->nod_arg[1] = (DUDLEY_NOD) PARSE_symbol(tok_ident);
 	PARSE_match(KW_TO);
@@ -4158,9 +4080,7 @@ static TXT start_text(void)
  *	Make the current position to save description text.
  *
  **************************************/
-	TXT text;
-
-	text = (TXT) DDL_alloc(sizeof(txt));
+	TXT text = (TXT) DDL_alloc(sizeof(txt));
 	text->txt_position = DDL_token.tok_position - DDL_token.tok_length;
 	text->txt_start_line = DDL_line;
 

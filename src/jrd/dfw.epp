@@ -213,13 +213,13 @@ static const UCHAR nonnull_validation_blr[] =
 	blr_eoc
 };
 
-typedef struct task
+struct deferred_task
 {
 	enum dfw_t task_type;
 	bool (*task_routine) (thread_db*, SSHORT, DeferredWork*, jrd_tra*);
-} TASK;
+};
 
-static const TASK task_table[] =
+static const deferred_task task_table[] =
 {
 	{ dfw_add_file, add_file },
 	{ dfw_add_shadow, add_shadow },
@@ -490,8 +490,8 @@ void DFW_perform_work(jrd_tra* transaction)
 /* Loop for as long as any of the deferred work routines says that it has
    more to do.  A deferred work routine should be able to deal with any
    value of phase, either to say that it wants to be called again in the
-   next phase (by returning TRUE) or that it has nothing more to do in this
-   or later phases (by returning FALSE). By convention, phase 0 has been
+   next phase (by returning true) or that it has nothing more to do in this
+   or later phases (by returning false). By convention, phase 0 has been
    designated as the cleanup phase. If any non-zero phase punts, then phase 0
    is executed for all deferred work blocks to cleanup work-in-progress. */
 	bool dump_shadow = false;
@@ -502,7 +502,8 @@ void DFW_perform_work(jrd_tra* transaction)
 	{
 		more = false;
 		try {
-			for (const TASK* task = task_table; task->task_type != dfw_null; ++task)
+			for (const deferred_task* task = task_table; 
+				task->task_type != dfw_null; ++task)
 			{
 				for (DeferredWork* work = transaction->tra_deferred_work;
 					work;
@@ -1439,7 +1440,7 @@ static bool compute_security(	thread_db*	tdbb,
 		{
 		/* Get security class.  This may return NULL if it doesn't exist */
 
-		scl* s_class = SCL_recompute_class(tdbb, work->dfw_name);
+		SecurityClass* s_class = SCL_recompute_class(tdbb, work->dfw_name);
 
 		jrd_req* handle = NULL;
 		FOR(REQUEST_HANDLE handle) X IN RDB$DATABASE
@@ -1501,7 +1502,7 @@ static bool create_index(	thread_db*	tdbb,
 	jrd_req* request;
 	jrd_rel* relation;
 	jrd_rel* partner_relation;
-	IDX idx;
+	index_desc idx;
 	int key_count;
 	SSHORT text_type;
 	SSHORT collate;
@@ -1646,7 +1647,7 @@ static bool create_index(	thread_db*	tdbb,
 				FOR(REQUEST_HANDLE rc_request)
 					RC IN RDB$RELATION_CONSTRAINTS WITH
 					RC.RDB$INDEX_NAME EQ work->dfw_name AND
-					RC.RDB$CONSTRAINT_TYPE = "PRIMARY KEY"
+					RC.RDB$CONSTRAINT_TYPE = PRIMARY_KEY
 
 					idx.idx_flags |= idx_primary;
 
@@ -2602,7 +2603,8 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	jrd_req* request;
 	jrd_rel* relation;
 	Resource* rsc;
-	USHORT wait, view_count, adjusted;
+	USHORT wait, view_count;
+	bool adjusted;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -2665,7 +2667,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 		/* Let relation be deleted if only this transaction is using it */
 
-		adjusted = FALSE;
+		adjusted = false;
 		if (relation->rel_use_count == 1)
 		{
 			for (rsc = transaction->tra_resources; rsc; rsc = rsc->rsc_next)
@@ -2673,7 +2675,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				if (rsc->rsc_rel == relation)
 				{
 					--relation->rel_use_count;
-					adjusted = TRUE;
+					adjusted = true;
 					break;
 				}
 			}
@@ -2818,7 +2820,7 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work,
  **************************************/
 	int rel_exists, field_count, id;
 	jrd_req* handle;
-	TEXT f[32];
+	SqlIdentifier f;
 	jrd_rel* relation;
 	vec* vector;
 
@@ -2844,8 +2846,9 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			if (!find_depend_in_dfw(tdbb, VR.RDB$VIEW_NAME, obj_view,
 									0, transaction))
 			{
-				TEXT *p = f, *endp = f + sizeof(f)-1, *q;
-				for (q = VFLD.RDB$BASE_FIELD; *q && p < endp; *p++ = *q++)
+				TEXT* p = f;
+				const TEXT const* endp = f + sizeof(f) - 1;
+				for (const TEXT* q = VFLD.RDB$BASE_FIELD; *q && p < endp; *p++ = *q++)
 				{
 					;	/* empty body */
 				}
@@ -4239,7 +4242,7 @@ static bool shadow_defined(thread_db* tdbb)
  *
  * Functional description
  *	Return TRUE if any shadows have been has been defined 
- *      for the database else return FALSE.
+ *      for the database else return false.
  *
  **************************************/
 
@@ -4351,8 +4354,8 @@ static blb* setup_triggers(thread_db* tdbb, jrd_rel* relation, bool null_view,
 			RCN IN RDB$RELATION_CONSTRAINTS
 			WITH TRG.RDB$TRIGGER_NAME EQ CHK.RDB$TRIGGER_NAME
 			AND CHK.RDB$CONSTRAINT_NAME EQ RCN.RDB$CONSTRAINT_NAME
-			AND (RCN.RDB$CONSTRAINT_TYPE EQ "CHECK"
-			    OR RCN.RDB$CONSTRAINT_TYPE EQ "FOREIGN KEY")
+			AND (RCN.RDB$CONSTRAINT_TYPE EQ CHECK_CNSTRT
+			    OR RCN.RDB$CONSTRAINT_TYPE EQ FOREIGN_KEY)
 			)
 		SORTED BY TRG.RDB$TRIGGER_SEQUENCE
     
@@ -4381,8 +4384,8 @@ static blb* setup_triggers(thread_db* tdbb, jrd_rel* relation, bool null_view,
 			RCN IN RDB$RELATION_CONSTRAINTS
 				WITH TRG.RDB$TRIGGER_NAME EQ CHK.RDB$TRIGGER_NAME
 				AND CHK.RDB$CONSTRAINT_NAME EQ RCN.RDB$CONSTRAINT_NAME
-				AND (RCN.RDB$CONSTRAINT_TYPE EQ "CHECK"
-				    OR RCN.RDB$CONSTRAINT_TYPE EQ "FOREIGN KEY")
+				AND (RCN.RDB$CONSTRAINT_TYPE EQ CHECK_CNSTRT
+				    OR RCN.RDB$CONSTRAINT_TYPE EQ FOREIGN_KEY)
 		    	)
 			)
 		SORTED BY TRG.RDB$TRIGGER_SEQUENCE

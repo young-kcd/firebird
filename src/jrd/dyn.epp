@@ -1156,8 +1156,8 @@ static bool grantor_can_grant(	gbl*		gbl,
  **************************************
  *
  * Functional description
- *	return: TRUE is the grantor has grant privilege on the relation/field.
- *		FALSE otherwise.
+ *	return: true is the grantor has grant privilege on the relation/field.
+ *		false otherwise.
  *
  **************************************/
 	USHORT err_num;
@@ -1438,8 +1438,8 @@ static bool grantor_can_grant_role(	thread_db*	tdbb,
  *
  * Functional description
  *
- *	return: TRUE if the grantor has admin privilege on the role.
- *		FALSE otherwise.
+ *	return: true if the grantor has admin privilege on the role.
+ *		false otherwise.
  *
  **************************************/
 

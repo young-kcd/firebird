@@ -1133,7 +1133,7 @@ void DYN_delete_relation( gbl* gbl, const UCHAR** ptr, const TEXT* relation)
 		ERASE RFR;
 
 		if (!RFR.RDB$SECURITY_CLASS.NULL
-			&& !strncmp(RFR.RDB$SECURITY_CLASS, "SQL$", 4))
+			&& !strncmp(RFR.RDB$SECURITY_CLASS, SQL_SECCLASS_PREFIX, SQL_SECCLASS_PREFIX_LEN))
 			delete_security_class2(gbl, RFR.RDB$SECURITY_CLASS);
 
 		delete_gfield_for_lfield(gbl, RFR.RDB$FIELD_SOURCE);
@@ -1169,7 +1169,7 @@ void DYN_delete_relation( gbl* gbl, const UCHAR** ptr, const TEXT* relation)
 		ERASE R;
 
 		if (!R.RDB$SECURITY_CLASS.NULL
-			&& !strncmp(R.RDB$SECURITY_CLASS, "SQL$", 4))
+			&& !strncmp(R.RDB$SECURITY_CLASS, SQL_SECCLASS_PREFIX, SQL_SECCLASS_PREFIX_LEN))
 			delete_security_class2(gbl, R.RDB$SECURITY_CLASS);
 
 		found = true;

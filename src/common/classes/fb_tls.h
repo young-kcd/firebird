@@ -32,12 +32,12 @@
  *  Contributor(s):
  * 
  *
- *  $Id: fb_tls.h,v 1.1 2004-03-25 23:12:39 skidder Exp $
+ *  $Id: fb_tls.h,v 1.2 2004-03-28 09:10:08 robocop Exp $
  *
  */
  
-#ifndef FB_TLS_H
-#define FB_TLS_H
+#ifndef CLASSES_FB_TLS_H
+#define CLASSES_FB_TLS_H
 
 // This unit defines a few handy macros
 // TLS_DECLARE is used in place of variable declaration
@@ -101,4 +101,4 @@ private:
 
 #endif
 
-#endif
+#endif // CLASSES_FB_TLS_H

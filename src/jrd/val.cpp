@@ -1392,7 +1392,7 @@ static RTN walk_index(thread_db* tdbb,
 
 	SLONG next = page_number;
 	SLONG down = page_number;
-	KEY key;
+	temporary_key key;
 	key.key_length = 0;
 	SLONG previous_number = 0;
 

@@ -28,18 +28,18 @@
 #include "../jrd/sqz.h"
 
 namespace Jrd {
-	class Dcc;
+	class DataComprControl;
 	class Record;
 }
 
 USHORT	SQZ_apply_differences(Jrd::Record*, const SCHAR*, const SCHAR* const);
-USHORT	SQZ_compress(Jrd::Dcc*, const SCHAR*, SCHAR*, int);
-USHORT	SQZ_compress_length(Jrd::Dcc*, const SCHAR*, int);
+USHORT	SQZ_compress(Jrd::DataComprControl*, const SCHAR*, SCHAR*, int);
+USHORT	SQZ_compress_length(Jrd::DataComprControl*, const SCHAR*, int);
 SCHAR*	SQZ_decompress(const SCHAR*, USHORT, SCHAR*, const SCHAR* const);
 USHORT	SQZ_differences(const SCHAR*, USHORT, SCHAR*, USHORT, SCHAR*, int);
 USHORT	SQZ_no_differences(SCHAR* const, int);
-void	SQZ_fast(Jrd::Dcc*, const SCHAR*, SCHAR*);
-USHORT	SQZ_length(Jrd::thread_db*, const SCHAR*, int, Jrd::Dcc*);
+void	SQZ_fast(Jrd::DataComprControl*, const SCHAR*, SCHAR*);
+USHORT	SQZ_length(Jrd::thread_db*, const SCHAR*, int, Jrd::DataComprControl*);
 
 #endif // JRD_SQZ_PROTO_H
 

@@ -61,18 +61,18 @@ typedef struct wait {
 
 /* Lock status block */
 
-typedef struct lksb {
+struct lock_status {
 	SSHORT lksb_status;
 	SSHORT lksb_reserved;
 	SLONG lksb_lock_id;
 	SLONG lksb_value[4];
-} LKSB;
+};
 
 /* Poke block (for asynchronous poking) */
 
 typedef struct poke {
 	struct poke *poke_next;
-	LKSB poke_lksb;
+	lock_status poke_lksb;
 	SLONG poke_parent_id;
 	USHORT poke_value;
 	USHORT poke_use_count;
@@ -151,11 +151,11 @@ typedef struct mtx
 
 struct event_t
 {
-	SLONG			event_pid;
-	SLONG			event_count;
-	SLONG			event_type;
-	void*			event_handle;
-	struct event_t*	event_shared;
+	SLONG		event_pid;
+	SLONG		event_count;
+	SLONG		event_type;
+	void*		event_handle;
+	event_t*	event_shared;
 };
 
 #define SH_MEM_STRUCTURE_DEFINED

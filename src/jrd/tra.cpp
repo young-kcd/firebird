@@ -113,12 +113,12 @@ static SLONG inventory_page(thread_db*, SLONG);
 static SSHORT limbo_transaction(thread_db*, SLONG);
 static void restart_requests(thread_db*, jrd_tra*);
 #ifdef SWEEP_THREAD
-static BOOLEAN start_sweeper(thread_db*, Database*);
+static void start_sweeper(thread_db*, Database*);
 static void THREAD_ROUTINE sweep_database(char*);
 #endif
 static void transaction_options(thread_db*, jrd_tra*, const UCHAR*, USHORT);
 #ifdef VMS
-static BOOLEAN vms_convert(Lock*, SLONG *, SCHAR, BOOLEAN);
+static void vms_convert(Lock*, SLONG*, SCHAR, bool);
 #endif
 
 static const UCHAR sweep_tpb[] =
@@ -758,7 +758,7 @@ void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, Resource* resourc
  **************************************/
 	SET_TDBB(tdbb);
 
-	JrdMemoryPool* old_pool = tdbb->tdbb_default;
+	JrdMemoryPool* const old_pool = tdbb->tdbb_default;
 	tdbb->tdbb_default = transaction->tra_pool;
 
 	for (Resource* rsc = resources; rsc; rsc = rsc->rsc_next) {
@@ -1060,7 +1060,8 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 /* Unlink the transaction from the database block */
 
 	for (jrd_tra** ptr = &tdbb->tdbb_attachment->att_transactions;
-							*ptr; ptr = &(*ptr)->tra_next) { 
+							*ptr; ptr = &(*ptr)->tra_next) 
+	{ 
 		if (*ptr == transaction) {
 			*ptr = transaction->tra_next;
 			break;
@@ -1668,6 +1669,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
 		TRA_sweep(tdbb, trans);
 
 #else
+		// Why nobody checks the result? Changed the function to return nothing.
 		start_sweeper(tdbb, dbb);
 #endif
 	}
@@ -2151,7 +2153,7 @@ static void compute_oldest_retaining(
 #ifdef VMS
 		if (LCK_lock(tdbb, lock, LCK_EX, FALSE)) {
 			number = 0;
-			vms_convert(lock, &number, LCK_SR, TRUE);
+			vms_convert(lock, &number, LCK_SR, true);
 		}
 		else
 			LCK_lock(tdbb, lock, LCK_SR, TRUE);
@@ -2172,11 +2174,11 @@ static void compute_oldest_retaining(
 	
 	if (write_flag) {
 #ifdef VMS
-		vms_convert(lock, &youngest_retaining, LCK_PW, TRUE);
+		vms_convert(lock, &youngest_retaining, LCK_PW, true);
 		if (number > youngest_retaining)
-			vms_convert(lock, &number, LCK_SR, TRUE);
+			vms_convert(lock, &number, LCK_SR, true);
 		else
-			vms_convert(lock, 0, LCK_SR, TRUE);
+			vms_convert(lock, 0, LCK_SR, true);
 #else
 		LCK_convert(tdbb, lock, LCK_PW, TRUE);
 		youngest_retaining = LOCK_read_data(lock->lck_id);
@@ -2187,7 +2189,7 @@ static void compute_oldest_retaining(
 	}
 	else {
 #ifdef VMS
-		vms_convert(lock, &youngest_retaining, LCK_SR, TRUE);
+		vms_convert(lock, &youngest_retaining, LCK_SR, true);
 #else
 		youngest_retaining = LOCK_read_data(lock->lck_id);
 #endif
@@ -2624,7 +2626,7 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, const bool com
 
 
 #ifdef SWEEP_THREAD
-static BOOLEAN start_sweeper(thread_db* tdbb, Database* dbb)
+static void start_sweeper(thread_db* tdbb, Database* dbb)
 {
 /**************************************
  *
@@ -2640,7 +2642,7 @@ static BOOLEAN start_sweeper(thread_db* tdbb, Database* dbb)
 	if ((dbb->dbb_flags & DBB_sweep_in_progress)
 		|| (dbb->dbb_ast_flags & DBB_shutdown))
 	{
-		return FALSE;
+		return; // false;
 	}
 
 	SET_TDBB(tdbb);
@@ -2655,7 +2657,7 @@ static BOOLEAN start_sweeper(thread_db* tdbb, Database* dbb)
 
 	if (!LCK_lock(tdbb, &temp_lock, LCK_EX, FALSE))
 	{
-		return FALSE;
+		return; // false;
 	}
 
 	LCK_release(tdbb, &temp_lock);
@@ -2668,7 +2670,7 @@ static BOOLEAN start_sweeper(thread_db* tdbb, Database* dbb)
 	if (!database)
 	{
 		ERR_log(0, 0, "cannot start sweep thread, Out of Memory");
-		return FALSE;
+		return; // false;
 	}
 
 	strcpy(database, pszFilename);
@@ -2682,7 +2684,7 @@ static BOOLEAN start_sweeper(thread_db* tdbb, Database* dbb)
 		ERR_log(0, 0, "cannot start sweep thread");
 	}
 
-	return TRUE;
+	return; // true;
 }
 
 
@@ -2858,7 +2860,7 @@ static void transaction_options(
 		case isc_tpb_lock_write:
 		case isc_tpb_lock_read:
 			{
-			TEXT name[32];
+			SqlIdentifier name;
 			UCHAR* p = reinterpret_cast<UCHAR*>(name);
 			USHORT l = *tpb++;
 			if (l) {
@@ -2959,7 +2961,7 @@ static void transaction_options(
 
 
 #ifdef VMS
-static BOOLEAN vms_convert(Lock* lock, SLONG * data, SCHAR type, BOOLEAN wait)
+static void vms_convert(Lock* lock, SLONG* data, SCHAR type, bool wait)
 {
 /**************************************
  *
@@ -2971,7 +2973,7 @@ static BOOLEAN vms_convert(Lock* lock, SLONG * data, SCHAR type, BOOLEAN wait)
  *	Comply with VMS protocol for lock I/O.
  *
  **************************************/
-	LKSB lksb;
+	lock_status lksb;
 	lksb.lksb_lock_id = lock->lck_id;
 
 	if (data && type < lock->lck_physical)
@@ -2992,7 +2994,7 @@ static BOOLEAN vms_convert(Lock* lock, SLONG * data, SCHAR type, BOOLEAN wait)
 						NULL, NULL);
 
 	if (!wait && status == SS$_NOTQUEUED)
-		return FALSE;
+		return; // false;
 
 	if (!(status & 1) || !((status = lksb.lksb_status) & 1))
 		ERR_post(isc_sys_request, isc_arg_string,
@@ -3003,7 +3005,7 @@ static BOOLEAN vms_convert(Lock* lock, SLONG * data, SCHAR type, BOOLEAN wait)
 
 	lock->lck_physical = lock->lck_logical = type;
 
-	return TRUE;
+	return; // true;
 }
 #endif
 

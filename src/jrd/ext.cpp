@@ -107,7 +107,7 @@ namespace {
 
 
 
-void EXT_close(Rsb* rsb)
+void EXT_close(RecordSource* rsb)
 {
 /**************************************
  *
@@ -231,7 +231,7 @@ void EXT_fini(jrd_rel* relation)
 }
 
 
-int EXT_get(Rsb* rsb)
+bool EXT_get(RecordSource* rsb)
 {
 /**************************************
  *
@@ -250,7 +250,7 @@ int EXT_get(Rsb* rsb)
 	jrd_req* request = tdbb->tdbb_request;
 
 	if (request->req_flags & req_abort)
-		return FALSE;
+		return false;
 
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 	Record* record = rpb->rpb_record;
@@ -273,7 +273,7 @@ int EXT_get(Rsb* rsb)
 	while (l--) {
 		const SSHORT c = ib_getc((IB_FILE *) file->ext_ifi);
 		if (c == EOF)
-			return FALSE;
+			return false;
 		*p++ = c;
 	}
 	rpb->rpb_ext_pos = ib_ftell((IB_FILE *) file->ext_ifi);
@@ -302,7 +302,7 @@ int EXT_get(Rsb* rsb)
 		CLEAR_NULL(record, i);
 	}
 
-	return TRUE;
+	return true;
 }
 
 
@@ -324,7 +324,7 @@ void EXT_modify(record_param* old_rpb, record_param* new_rpb, int* transaction)
 }
 
 
-void EXT_open(Rsb* rsb)
+void EXT_open(RecordSource* rsb)
 {
 /**************************************
  *
@@ -353,7 +353,7 @@ void EXT_open(Rsb* rsb)
 }
 
 
-Rsb* EXT_optimize(OPT opt, SSHORT stream, jrd_nod** sort_ptr)
+RecordSource* EXT_optimize(OptimizerBlk* opt, SSHORT stream, jrd_nod** sort_ptr)
 {
 /**************************************
  *
@@ -368,14 +368,14 @@ Rsb* EXT_optimize(OPT opt, SSHORT stream, jrd_nod** sort_ptr)
  **************************************/
 /* all these are un refrenced due to the code commented below
 jrd_nod*		node, inversion;
-opt::opt_repeat	*tail, *opt_end;
+OptimizerBlk::opt_repeat	*tail, *opt_end;
 SSHORT		i, size;
 */
 
 	thread_db* tdbb = GET_THREAD_DATA;
 
-	Csb* csb = opt->opt_csb;
-	Csb::csb_repeat* csb_tail = &csb->csb_rpt[stream];
+	CompilerScratch* csb = opt->opt_csb;
+	CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[stream];
 	jrd_rel* relation = csb_tail->csb_relation;
 
 /* Time to find inversions.  For each index on the relation
@@ -410,7 +410,7 @@ if (opt->opt_count)
 */
 
 
-	Rsb* rsb = FB_NEW_RPT(*tdbb->tdbb_default,0) Rsb;
+	RecordSource* rsb = FB_NEW_RPT(*tdbb->tdbb_default,0) RecordSource;
 	rsb->rsb_type = rsb_ext_sequential;
 	const SSHORT size = sizeof(irsb);
 

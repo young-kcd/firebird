@@ -51,7 +51,7 @@ static Lock* allocate_relation_lock(MemoryPool*, jrd_rel*);
 static Lock* attachment_relation_lock(jrd_rel*);
 static void drop_record_lock(Lock*);
 static Lock* find_record_lock(record_param*);
-static BOOLEAN obtain_lock(jrd_tra*, Lock*, USHORT);
+static bool obtain_lock(jrd_tra*, Lock*, USHORT);
 static int start_record_locking(void*);
 #endif
 
@@ -953,7 +953,7 @@ static Lock* find_record_lock(record_param* rpb)
 #endif
 
 #ifdef PC_ENGINE
-static BOOLEAN obtain_lock(jrd_tra* transaction, Lock* lock, USHORT lock_level)
+static bool obtain_lock(jrd_tra* transaction, Lock* lock, USHORT lock_level)
 {
 /**************************************
  *
@@ -974,14 +974,14 @@ static BOOLEAN obtain_lock(jrd_tra* transaction, Lock* lock, USHORT lock_level)
 /* return if lock level OK and if the lock has not been released
    (like as part of a refresh range)  */
 	if ((lock_level <= lock->lck_logical) && (lock->lck_id != -1))
-		return TRUE;
+		return true;
 	if ((lock->lck_logical) && (lock->lck_id != -1)) {
 		if (LCK_convert_non_blocking(NULL, lock, lock_level, wait_flag))
-			return TRUE;
+			return true;
 	}
 	else if (LCK_lock_non_blocking(NULL, lock, lock_level, wait_flag))
-		return TRUE;
-	return FALSE;
+		return true;
+	return false;
 }
 #endif
 

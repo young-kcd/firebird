@@ -24,16 +24,18 @@
 #ifndef JRD_SDL_H
 #define JRD_SDL_H
 
-typedef struct sdl_info {
-	USHORT sdl_info_fid;
-	USHORT sdl_info_rid;
-	TEXT sdl_info_field[32];
-	TEXT sdl_info_relation[32];
-	DSC sdl_info_element;
-	USHORT sdl_info_dimensions;
-	SLONG sdl_info_lower[16];
-	SLONG sdl_info_upper[16];
-} *SDL_INFO;
+#include "../jrd/constants.h"
+
+struct sdl_info {
+	USHORT			sdl_info_fid;
+	USHORT			sdl_info_rid;
+	SqlIdentifier	sdl_info_field;
+	SqlIdentifier	sdl_info_relation;
+	dsc				sdl_info_element;
+	USHORT			sdl_info_dimensions;
+	SLONG			sdl_info_lower[16];
+	SLONG			sdl_info_upper[16];
+};
 
 typedef struct slice {
 	DSC slice_desc;
@@ -45,6 +47,6 @@ typedef struct slice {
 	SLONG slice_count;
 } *SLICE;
 
-typedef void (*SDL_walk_callback)(SLICE, ULONG, DSC*);
+typedef void (*SDL_walk_callback)(SLICE, ULONG, dsc*);
 #endif /* JRD_SDL_H */
 

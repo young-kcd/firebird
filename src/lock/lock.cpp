@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.88 2004-03-18 05:55:38 robocop Exp $
+$Id: lock.cpp,v 1.89 2004-03-28 09:10:22 robocop Exp $
 */
 
 #include "firebird.h"
@@ -685,7 +685,7 @@ SLONG LOCK_enq(	PTR		prior_request,
 }
 
 
-void LOCK_fini( ISC_STATUS * status_vector, PTR * owner_offset)
+void LOCK_fini( ISC_STATUS* status_vector, PTR * owner_offset)
 {
 /**************************************
  *
@@ -744,8 +744,8 @@ void LOCK_fini( ISC_STATUS * status_vector, PTR * owner_offset)
 
 
 int LOCK_init(
-			  ISC_STATUS * status_vector,
-			  SSHORT owner_flag,
+			  ISC_STATUS* status_vector,
+			  bool owner_flag,
 			  SLONG owner_id, UCHAR owner_type, SLONG * owner_handle)
 {
 /**************************************
