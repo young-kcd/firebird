@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.109 2004-10-07 09:15:30 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.110 2004-10-08 10:18:40 hvlad Exp $ 
  */
 
 /*
@@ -150,6 +150,7 @@ static SINT64 get_day_fraction(const dsc* d);
 static dsc* get_mask(thread_db*, jrd_nod*, impure_value*);
 static SINT64 get_timestamp_to_isc_ticks(const dsc* d);
 static void init_agg_distinct(thread_db*, const jrd_nod*);
+static void fini_agg_distinct(thread_db* tdbb, const jrd_nod *const);
 #ifdef PC_ENGINE
 static dsc* lock_record(thread_db*, jrd_nod*, impure_value*);
 static dsc* lock_relation(thread_db*, jrd_nod*, impure_value*);
@@ -1244,6 +1245,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 
 
 bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
+
 {
 /**************************************
  *
@@ -1409,8 +1411,49 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 	}
 }
 
+static void fini_agg_distinct(thread_db* tdbb, const jrd_nod *const node)
+{
+/**************************************
+ *
+ *      f i n i _ a g g _ d i s t i n c t
+ *
+ **************************************
+ *
+ * Functional description
+ *      Finalize a sort for distinct aggregate.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
 
-USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod* node, USHORT state)
+	DEV_BLKCHK(node, type_nod);
+
+	jrd_req* request = tdbb->tdbb_request;
+	jrd_nod* map = node->nod_arg[e_agg_map];
+
+	jrd_nod** ptr;
+	const jrd_nod* const* end;
+
+	for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++)
+	{
+		const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
+		switch (from->nod_type)
+		{
+		case nod_agg_count_distinct:
+		case nod_agg_total_distinct:
+		case nod_agg_average_distinct:
+		case nod_agg_average_distinct2:
+		case nod_agg_total_distinct2:
+			{
+			const AggregateSort* asb = (AggregateSort*) from->nod_arg[1];
+			impure_agg_sort* asb_impure = (impure_agg_sort*) ((SCHAR *) request + asb->nod_impure);
+			SORT_fini(asb_impure->iasb_sort_handle, tdbb->tdbb_attachment);
+			asb_impure->iasb_sort_handle = NULL;
+			}
+		}
+	}
+}
+
+USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, const jrd_nod *const node, USHORT state)
 {
 /**************************************
  *
@@ -1563,6 +1606,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod* node, USHORT state
 		if (!RSE_get_record(tdbb, rsb, g_RSE_get_mode))
 		{
 			if (group) {
+				fini_agg_distinct(tdbb, node);
 				return 0;
 			}
 			state = 2;
@@ -1845,24 +1889,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod* node, USHORT state
 	}
 	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++)
-		{
-			const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
-			switch (from->nod_type)
-			{
-			case nod_agg_count_distinct:
-			case nod_agg_total_distinct:
-			case nod_agg_average_distinct:
-			case nod_agg_average_distinct2:
-			case nod_agg_total_distinct2:
-				{
-				const AggregateSort* asb = (AggregateSort*) from->nod_arg[1];
-				impure_agg_sort* asb_impure = (impure_agg_sort*) ((SCHAR *) request + asb->nod_impure);
-				SORT_fini(asb_impure->iasb_sort_handle, tdbb->tdbb_attachment);
-				asb_impure->iasb_sort_handle = NULL;
-				}
-			}
-		}
+		fini_agg_distinct(tdbb, node);
 		ERR_punt();
 	}
 
