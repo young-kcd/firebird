@@ -234,9 +234,10 @@ begin
   else
     if VerInt[1]=3 then
       VerInt[1]:=5;
-  
+      
+  Result := '';
   for i:=0 to 3 do begin
-    result := Result+IntToStr(VerInt[i]);
+    Result := Result+IntToStr(VerInt[i]);
     if i<3 then
       Result:=Result+'.'
   end;

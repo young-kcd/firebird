@@ -33,10 +33,14 @@
 :SET_PARAMS
 ::Assume we are preparing a production build
 @set BUILDTYPE=release
+::Don't ship pdb files by default
+@set SHIP_PDB=no_pdb
+
 
 :: See what we have on the command line
 for %%v in ( %1 %2 )  do (
   ( if /I "%%v"=="DEBUG" (set BUILDTYPE=debug) )
+  ( if /I "%%v"=="PDB" (set SHIP_PDB=ship_pdb) )
 )
 @goto :EOF
 
@@ -52,9 +56,11 @@ sed /"#define PRODUCT_VER_STRING"/!d %ROOT_PATH%\src\jrd\build_no.h > %temp%.\b$
 sed -n -e s/\"//g -e s/"#define PRODUCT_VER_STRING "//w%temp%.\b$2.bat %temp%.\b$1.bat
 for /f "tokens=*" %%a in ('type %temp%.\b$2.bat') do set PRODUCT_VER_STRING=%%a
 @echo s/1.5.0/%PRODUCT_VER_STRING%/ > %temp%.\b$3.bat
-@echo s/define super_server_install/define %PACKAGE_TYPE%/ >> %temp%.\b$3.bat
+::@echo s/define super_server_install/define %PACKAGE_TYPE%/ >> %temp%.\b$3.bat
 @echo s/define release/define %BUILDTYPE%/ >> %temp%.\b$3.bat
 @echo s/define msvc_version 6/define msvc_version %MSVC_VERSION%/ >> %temp%.\b$3.bat
+@echo s/define no_pdb/define %SHIP_PDB%/ >> %temp%.\b$3.bat
+
 @echo s/PRODUCT_VER_STRING/%PRODUCT_VER_STRING%/ >> %temp%.\b$3.bat
 
 sed -f  %temp%.\b$3.bat FirebirdInstall_15.iss > FirebirdInstall_%PRODUCT_VER_STRING%.iss
@@ -79,22 +85,19 @@ del %temp%.\b$?.bat
 @copy %ROOT_PATH%\src\install\misc\firebird.conf %ROOT_PATH%\output\ > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY of firebird.conf failed with errorlevel %ERRORLEVEL% ) & (goto :EOF))
 
-:: We don't neeed to do this now, as examples have already been copied when make_examples.bat was run.
-::@mkdir %ROOT_PATH%\output\examples 2>nul 
-::@if %ERRORLEVEL% GEQ 2 ( (call :ERROR MKDIR for examples dir failed with errorlevel %ERRORLEVEL% ) & (goto :EOF))
-
-::@echo Copying examples
-::copy %ROOT_PATH%\src\v5_examples\*.* %ROOT_PATH%\output\examples\ > nul
-::@if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY examples failed with errorlevel %ERRORLEVEL% ) & (goto :EOF))
-
 @echo Copying ib_util etc
 for %%v in ( ib_util.h ib_util.pas ) do (
 	((copy %ROOT_PATH%\src\extlib\%%v %ROOT_PATH%\output\include\%%v > nul) || 	(@echo Copying %%v failed.)) 
 )
 	
 @echo Copying fbclient lib etc
-for %%v in (fbclient gds32 ib_util) do @(
+for %%v in (fbclient ib_util) do @(
 	((copy %ROOT_PATH%\temp\%BUILDTYPE%\%%v\%%v.lib %ROOT_PATH%\output\lib\%%v_ms.lib > nul) || (@echo Copying %%v.lib failed.))
+)
+
+@if "%SHIP_PDB%"=="ship_pdb" (
+(@echo Copying pdb files...)
+((@copy %ROOT_PATH%\temp\%BUILDTYPE%\firebird\bin\*.pdb %ROOT_PATH%\output\bin > nul) || (@echo Copying pdb files failed))
 )
 
 @echo Copying docs...
@@ -114,15 +117,15 @@ for %%v in (fbclient gds32 ib_util) do @(
 ::@copy %ROOT_PATH%\ChangeLog %ROOT_PATH%\output\doc\ChangeLog.txt  > nul
 
 @copy %ROOT_PATH%\output\doc\install_win32.txt %ROOT_PATH%\output\doc\InstallNotes.txt > nul
-@del %ROOT_PATH%\output\doc\install_win32.txt 
+@del %ROOT_PATH%\output\doc\install_win32.txt
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR Rename install_win32.txt failed with errorlevel %ERRORLEVEL% ) & (goto :EOF))
 
 @copy %ROOT_PATH%\src\install\arch-specific\win32\installation_readme.txt %ROOT_PATH%\output\doc\installation_readme.txt > nul
 
 :: This stuff doesn't make much sense to Windows users, although the troubleshooting doc 
 :: could be made more platform agnostic.
-@for %%v in (  README.makefiles README.user README.user.embedded README.user.troubleshooting README.build.*.html fb2-todo.txt ) do (
-  (@del %ROOT_PATH%\output\doc\%%v )
+@for %%v in (  README.makefiles README.user README.user.embedded README.user.troubleshooting README.build.*.html fb2-todo.txt *.*~) do (
+  (@del %ROOT_PATH%\output\doc\%%v 2>nul)
 )
 
 @copy %ROOT_PATH%\output\doc\WhatsNew %ROOT_PATH%\output\doc\WhatsNew.txt > nul
@@ -213,7 +216,7 @@ endlocal
 :: Note 2: MS documentation was incorrectly interpreted. .local files should not be created 
 ::         for libraries, they should be created for executables.
 :: Create libname.local files for each locally installed library
-::for %%v in ( gds32 fbclient msvcrt msvcp%MSVC_VERSION%0 )  do touch %ROOT_PATH%\output\bin\%%v.local
+::for %%v in ( fbclient msvcrt msvcp%MSVC_VERSION%0 )  do touch %ROOT_PATH%\output\bin\%%v.local
 @goto :EOF
 
 :TOUCH_ALL
@@ -240,8 +243,17 @@ start FirebirdInstall_%PRODUCT_VER_STRING%.iss
 :HELP
 ::===
 @echo.
-@echo   If you are testing a debug build you can
-@echo   pass DEBUG as a parameter to the script.
+@echo.
+@echo   Parameters can be passed in any order. 
+@echo   Currently the recognised params are:
+@echo.
+@echo       DEBUG  Use binaries from 'debug' dir, not 'release' dir.
+@echo              (Requires a debug build.)
+@echo.    
+@echo       PDB    Include pdb files. 
+@echo              (Doubles the size of the installable executable.)
+@echo.
+@echo       HELP   This help screen.
 @echo.
 @echo.
 @goto :EOF

@@ -62,6 +62,19 @@
 #define FirebirdURL "http://www.firebirdsql.org"
 #define BaseVer "1_5"
 #define release
+#define no_pdb
+
+;Some strings to distinguish the name of final executable
+#ifdef ship_pdb
+#define pdb_str="_pdb"
+#else
+#define  pdb_str=""
+#endif
+#ifdef debug
+#define debug_str="_debug"
+#else
+#define debug_str=""
+#endif
 
 
 [Setup]
@@ -86,7 +99,7 @@ WizardImageFile=src\install\arch-specific\win32\firebird_install_logo1.bmp
 PrivilegesRequired=admin
 UninstallDisplayIcon={code:ChooseUninstallIcon|{app}\bin\fbserver.exe}
 OutputDir=builds\win32\install_image
-OutputBaseFilename=Firebird-1.5.0-Win32
+OutputBaseFilename=Firebird-1.5.0-Win32{#debug_str}{#pdb_str}
 Compression=bzip
 ShowTasksTreeLines=false
 
@@ -211,9 +224,11 @@ Source: output\v5_examples\*.*; DestDir: {app}\examples; Components: DevAdminCom
 Source: output\system32\Firebird2Control.cpl; DestDir: {sys}; Components: SuperServerComponent; MinVersion: 0,4.0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Check: InstallCPLApplet
 Source: output\system32\FIREBI~1.CPL; DestDir: {sys}; Components: SuperServerComponent; MinVersion: 4.0,0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Check: InstallCPLApplet
 
-;TO DO note
-;We could add in the debug files here, if #define debug has been set above.
-;Until then we don't really support the debug option
+#ifdef ship_pdb
+Source: output\bin\fbclient.pdb; DestDir: {app}\bin; Components: ClientComponent;
+Source: output\bin\fb_inet_server.pdb; DestDir: {app}\bin; Components: ClassicServerComponent;
+Source: output\bin\fbserver.pdb; DestDir: {app}\bin; Components: SuperServerComponent;
+#endif
 
 [UninstallRun]
 Filename: {app}\bin\instsvc.exe; Parameters: " stop"; StatusMsg: "Stopping the service"; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; RunOnceId: StopService
