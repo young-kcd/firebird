@@ -11,7 +11,7 @@
 <BODY>
 <H2>MINGW Notes</H2>
 <hr/>
-Date: March 25 2003<br>
+Date: April 8 2003<br>
 Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 
 <h3>0.-Introduction</h3>
@@ -69,10 +69,18 @@ The valid switches for autogen are<br>
 --enable-superserver    Select superserver build, default classic build.<br>
 --enable-debug          Select debug build, default production build.<br>
 </li>
-<li>Make the build. For instance<br> make > make.log 2>&1</li>
+<li>Make the build. For instance if you want to get compiler messages isolated from make log<br> make > make.log 2>comp.log</li>
 <li>Depending on your configuration, you can get an error in the v5_examples target. This error is related with a failure in the lock mechanism. If you get this error you can finish the build using the make again. This error can be also avoided removing the v5_examples target from the builds/posix/Makefile.in.firebird, before you use the autogen.sh.</li>
 <li>After the build finish, the firebird directory with the binaries is created as gen/firebird.</li> 
 </ol>
+
+<p>BUILD NOTE:</p>
+<p>There is a bug in mingw (3.2) related with msvc format for 64bit integers. When the I64 format is used, the compiler throws warnings of two types:</p>
+<p>warning: [...] format, different type arg (arg 3)<br>
+or<br>
+warning: unknown conversion type character `I' in format<br>
+warning: too many arguments for format</p>
+
 
 </BODY>
 </HTML>
