@@ -17,6 +17,7 @@
  * Contributor(s): ______________________________________.
  * Changes made by Claudio Valderrama for the Firebird project 
  *   changes to substr and added substrlen 
+ * 2004.9.1 Claudio Valderrama, change some UDF's to be able to detect NULL.
  * 
  */
 #include "firebird.h"

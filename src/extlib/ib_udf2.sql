@@ -15,12 +15,14 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: ib_udf2.sql,v 1.1 2004-09-20 08:49:58 robocop Exp $
+ * $Id: ib_udf2.sql,v 1.2 2004-09-23 04:53:03 robocop Exp $
  * Revision 1.2  2000/11/28 06:47:52  fsg
  * Changed declaration of ascii_char in ib_udf.sql
  * to get correct result as proposed by Claudio Valderrama
  * 2001.5.19 Claudio Valderrama, add the declaration of alternative
  * substrlen function to handle string,start,length instead.
+ * 2004.9.1 Claudio Valderrama, changed some UDF's to be able to detect NULL
+ * and renamed the resulting file as ib_udf2.sql.
  *
  */
 /*****************************************
