@@ -29,6 +29,8 @@
  * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ * 2002.12.22 Alex Peshkoff: Bugcheck(291) fix for update_in_place
+ *							 of record, modified by pre_trigger
  *
  */
 
@@ -115,6 +117,7 @@ static void replace_record(TDBB, RPB *, LLS *, JRD_TRA);
 static void set_system_flag(RPB *, USHORT, SSHORT);
 static void update_in_place(TDBB, JRD_TRA, RPB *, RPB *);
 static void verb_post(TDBB, JRD_TRA, RPB *, REC, RPB *, BOOLEAN, BOOLEAN);
+static void RefetchRecord(TDBB tdbb, RPB * rpb, JRD_TRA transaction);
 
 /* Pick up relation ids */
 
@@ -1886,7 +1889,19 @@ void VIO_init(TDBB tdbb)
 }
 #endif
 
-static void RefetchRecord(TDBB tdbb, RPB * rpb, JRD_TRA transaction) {
+static void RefetchRecord(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
+{
+/**************************************
+ *
+ *	R e f e t c h R e c o r d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Refetch & release the record, if we unsure,
+ *  whether information about it is still valid.
+ *
+ **************************************/
 	SLONG tid_fetch = rpb->rpb_transaction;
 	if ((!DPM_get(tdbb, rpb, LCK_read)) ||
 		  (!VIO_chase_record_version
