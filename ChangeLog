@@ -1,3 +1,16 @@
+2003-12-04 01:55  arnobrinkman
+
+	* firebird2/src/jrd/btr.cpp:
+	
+	another descending problem
+
+2003-12-04 01:22  arnobrinkman
+
+	* firebird2/src/jrd/: btr.cpp, opt.cpp:
+	
+	Fix bugs created by myself and the problem (finally ;-) why
+	descending indices were slower as ascending in some cases.
+
 2003-12-03 09:44  robocop
 
 	* firebird2/src/jrd/: btn.cpp, btn.h:
