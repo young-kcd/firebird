@@ -329,9 +329,9 @@ static const serv services[] =
 #if !(defined LINUX || defined FREEBSD || defined NETBSD)
 #ifndef NETWARE386
 #ifdef WIN_NT
-	{ isc_action_max, "print_cache", "-svc", "bin/ibcachpr", NULL, 0 },
-	{ isc_action_max, "print_locks", "-svc", "bin/iblockpr", NULL, 0 },
-	{ isc_action_max, "start_cache", "-svc", "bin/ibcache", NULL, 0 },
+	{ isc_action_max, "print_cache", "-svc", "bin/fb_cache_print", NULL, 0 },
+	{ isc_action_max, "print_locks", "-svc", "bin/fb_lock_print", NULL, 0 },
+	{ isc_action_max, "start_cache", "-svc", "bin/fb_cache_manager", NULL, 0 },
 #else
 	{ isc_action_max, "print_cache", "-svc", "bin/gds_cache_print", NULL, 0 },
 	{ isc_action_max, "print_locks", "-svc", "bin/gds_lock_print", NULL, 0 },
