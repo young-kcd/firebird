@@ -1,3 +1,15 @@
+2003-08-03 21:20  skidder
+
+	* firebird2/builds/win32/parse.bat:
+	
+	Continue fixing MSVC build
+
+2003-08-03 17:56  skidder
+
+	* firebird2/doc/fb2-todo.txt:
+	
+	A couple TODO items I forgot
+
 2003-08-01 22:12  skidder
 
 	* firebird2/src/extlib/ib_udf.c:
