@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int_cxx.cpp,v 1.10 2003-03-27 17:15:43 brodsom Exp $
+//	$Id: int_cxx.cpp,v 1.11 2003-07-02 18:58:41 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -48,7 +48,7 @@ static int gen_blr(int *, int, TEXT *);
 static void gen_compile(GPRE_REQ, int);
 static void gen_database(ACT, int);
 static void gen_emodify(ACT, int);
-static void gen_estore(ACT, int);
+static void gen_estore(ACT, int, bool);
 static void gen_endfor(ACT, int);
 static void gen_erase(ACT, int);
 static void gen_for(ACT, int);
@@ -60,8 +60,8 @@ static void gen_routine(ACT, int);
 static void gen_s_end(ACT, int);
 static void gen_s_fetch(ACT, int);
 static void gen_s_start(ACT, int);
-static void gen_send(GPRE_REQ, POR, int);
-static void gen_start(GPRE_REQ, POR, int);
+static void gen_send(GPRE_REQ, POR, int, bool);
+static void gen_start(GPRE_REQ, POR, int, bool);
 static void gen_type(ACT, int);
 static void gen_variable(ACT, int);
 static void make_port(POR, int);
@@ -113,7 +113,10 @@ void INT_CXX_action( ACT action, int column)
 		gen_emodify(action, column);
 		break;
 	case ACT_endstore:
-		gen_estore(action, column);
+		gen_estore(action, column,false);
+		break;
+	case ACT_endstore_special:
+		gen_estore(action, column,true);
 		break;
 	case ACT_erase:
 		gen_erase(action, column);
@@ -355,7 +358,7 @@ static void gen_emodify( ACT action, int column)
 					   gen_name(s1, reference), gen_name(s2, source));
 	}
 
-	gen_send(action->act_request, modify->upd_port, column);
+	gen_send(action->act_request, modify->upd_port, column, false);
 }
 
 
@@ -364,14 +367,14 @@ static void gen_emodify( ACT action, int column)
 //		Generate substitution text for END_STORE.
 //  
 
-static void gen_estore( ACT action, int column)
+static void gen_estore( ACT action, int column, bool special)
 {
 	GPRE_REQ request;
 
 	request = action->act_request;
 	align(column);
 	gen_compile(request, column);
-	gen_start(request, request->req_primary, column);
+	gen_start(request, request->req_primary, column, special);
 }
 
 
@@ -388,7 +391,7 @@ static void gen_endfor( ACT action, int column)
 	column += INDENT;
 
 	if (request->req_sync)
-		gen_send(request, request->req_sync, column);
+		gen_send(request, request->req_sync, column, false);
 
 	END;
 }
@@ -404,7 +407,7 @@ static void gen_erase( ACT action, int column)
 	UPD erase;
 
 	erase = (UPD) action->act_object;
-	gen_send(erase->upd_request, erase->upd_port, column);
+	gen_send(erase->upd_request, erase->upd_port, column, false);
 }
 
 
@@ -536,8 +539,8 @@ static void gen_routine( ACT action, int column)
 	POR port;
 
 	for (request = (GPRE_REQ) action->act_object; request;
-		 request = request->req_routine) for (port = request->req_ports; port;
-											  port = port->por_next)
+		 request = request->req_routine) 
+		for (port = request->req_ports; port; port = port->por_next)
 			make_port(port, column + INDENT);
 }
 
@@ -567,7 +570,7 @@ static void gen_s_fetch( ACT action, int column)
 
 	request = action->act_request;
 	if (request->req_sync)
-		gen_send(request, request->req_sync, column);
+		gen_send(request, request->req_sync, column, false);
 
 	gen_receive(action->act_request, request->req_primary);
 }
@@ -590,7 +593,7 @@ static void gen_s_start( ACT action, int column)
 	if (port = request->req_vport)
 		asgn_from(port->por_references, column);
 
-	gen_start(request, port, column);
+	gen_start(request, port, column, false);
 }
 
 
@@ -599,9 +602,16 @@ static void gen_s_start( ACT action, int column)
 //		Generate a send or receive call for a port.
 //  
 
-static void gen_send( GPRE_REQ request, POR port, int column)
+static void gen_send( GPRE_REQ request, POR port, int column, bool special)
 {
+	if (special) {
+		align(column);
+		ib_fprintf(out_file, "if (ignore_perm)");
+		align(column);
+		ib_fprintf(out_file, "\t((JRD_REQ)request)->req_flags |= req_ignore_perm;"); 
+	}
 	align(column);
+
 	ib_fprintf(out_file, "EXE_send (tdbb, (JRD_REQ)%s, %d, %d, (UCHAR*)&jrd_%d);",
 			   request->req_handle,
 			   port->por_msg_number, port->por_length, port->por_ident);
@@ -613,7 +623,7 @@ static void gen_send( GPRE_REQ request, POR port, int column)
 //		Generate a START.
 //  
 
-static void gen_start( GPRE_REQ request, POR port, int column)
+static void gen_start( GPRE_REQ request, POR port, int column, bool special)
 {
 	align(column);
 
@@ -621,7 +631,7 @@ static void gen_start( GPRE_REQ request, POR port, int column)
 			   request->req_handle, request->req_trans);
 
 	if (port)
-		gen_send(request, port, column);
+		gen_send(request, port, column, special);
 }
 
 

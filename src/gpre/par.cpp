@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.19 2003-07-02 12:57:41 brodsom Exp $
+//  $Id: par.cpp,v 1.20 2003-07-02 18:58:41 brodsom Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: par.cpp,v 1.19 2003-07-02 12:57:41 brodsom Exp $
+//	$Id: par.cpp,v 1.20 2003-07-02 18:58:41 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -93,7 +93,7 @@ static ACT		par_end_menu();
 #endif
 static ACT		par_end_modify();
 static ACT		par_end_stream();
-static ACT		par_end_store();
+static ACT		par_end_store(bool);
 #ifdef PYXIS
 static ACT		par_entree();
 #endif
@@ -281,7 +281,9 @@ ACT PAR_action(TEXT* base_dir)
 		case KW_END_STREAM:
 			return cur_statement = par_end_stream();
 		case KW_END_STORE:
-			return cur_statement = par_end_store();
+			return cur_statement = par_end_store(false);
+		case KW_END_STORE_SPECIAL:
+			return cur_statement = par_end_store(true);
 #ifdef PYXIS
 		case KW_MENU_ENTREE:
 			return par_entree();
@@ -2022,7 +2024,7 @@ static ACT par_end_stream()
 //		Process an END_STORE.
 //  
 
-static ACT par_end_store()
+static ACT par_end_store(bool special)
 {
 	ACT begin_action, action2, action;
 	GPRE_REQ request;
@@ -2110,7 +2112,10 @@ static ACT par_end_store()
 	if ((context = request->req_contexts))
 		HSH_remove(context->ctx_symbol);
 
-	action = MAKE_ACTION(request, ACT_endstore);
+	if (special)
+		action = MAKE_ACTION(request, ACT_endstore_special);
+	else
+		action = MAKE_ACTION(request, ACT_endstore);
 	begin_action->act_pair = action;
 	action->act_pair = begin_action;
 	return action;
