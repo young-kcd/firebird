@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _DSQL_DDL_PROTO_H_
-#define _DSQL_DDL_PROTO_H_
+#ifndef DSQL_DDL_PROTO_H
+#define DSQL_DDL_PROTO_H
 
 // This is a DSQL internal file. Not to be used by anything but
 // the DSQL module itself.
@@ -39,4 +39,4 @@ void DDL_put_field_dtype(dsql_req*, const dsql_fld*, bool);
 void DDL_resolve_intl_type(dsql_req*, dsql_fld*, str*);
 void DDL_resolve_intl_type2(dsql_req*, dsql_fld*, str*, bool);
 
-#endif /* _DSQL_DDL_PROTO_H_ */
+#endif // DSQL_DDL_PROTO_H

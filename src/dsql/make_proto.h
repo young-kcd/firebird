@@ -23,8 +23,8 @@
  * 2002-07-20 Arno Brinkman: Added MAKE_desc_from_list
  */
 
-#ifndef _DSQL_MAKE_PROTO_H_
-#define _DSQL_MAKE_PROTO_H_
+#ifndef DSQL_MAKE_PROTO_H
+#define DSQL_MAKE_PROTO_H
 
 #include "../dsql/sym.h"
 
@@ -47,4 +47,4 @@ struct dsql_nod* MAKE_variable(class dsql_fld* , const TEXT* , USHORT, USHORT,
 								 USHORT, USHORT);
 
 
-#endif /* _DSQL_MAKE_PROTO_H_ */
+#endif // DSQL_MAKE_PROTO_H

@@ -27,5 +27,4 @@
 void		ALLD_init();				// initialize pool system
 void		ALLD_fini();				// get rid of everything
 
-#endif /* DSQL_ALLD_PROTO_H */
-
+#endif // DSQL_ALLD_PROTO_H

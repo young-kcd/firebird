@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _DSQL_PREPA_PROTO_H_
-#define _DSQL_PREPA_PROTO_H_
+#ifndef DSQL_PREPA_PROTO_H
+#define DSQL_PREPA_PROTO_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,4 +37,4 @@ extern int DLL_EXPORT PREPARSE_execute(ISC_STATUS *, FRBRD **, FRBRD **,
 #endif
 
 
-#endif /*  _DSQL_PREPA_PROTO_H_  */
+#endif //  DSQL_PREPA_PROTO_H

@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _DSQL_ARRAY_PROTO_H_
-#define _DSQL_ARRAY_PROTO_H_
+#ifndef DSQL_ARRAY_PROTO_H
+#define DSQL_ARRAY_PROTO_H
 
 extern ISC_STATUS API_ROUTINE isc_array_get_slice(ISC_STATUS *, void **, void **,
 											  GDS_QUAD *, ISC_ARRAY_DESC *,
@@ -40,4 +40,4 @@ extern ISC_STATUS API_ROUTINE isc_array_set_desc(ISC_STATUS *, SCHAR *, SCHAR *,
 											 SSHORT *, SSHORT *, SSHORT *,
 											 ISC_ARRAY_DESC *);
 
-#endif /*_DSQL_ARRAY_PROTO_H_ */
+#endif // DSQL_ARRAY_PROTO_H

@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _DSQL_BLOB_PROTO_H_
-#define _DSQL_BLOB_PROTO_H_
+#ifndef DSQL_BLOB_PROTO_H
+#define DSQL_BLOB_PROTO_H
 
 extern ISC_STATUS API_ROUTINE isc_blob_gen_bpb(ISC_STATUS *, ISC_BLOB_DESC *,
 										   ISC_BLOB_DESC *, USHORT, UCHAR *,
@@ -34,4 +34,4 @@ extern ISC_STATUS API_ROUTINE isc_blob_set_desc(ISC_STATUS *, UCHAR *, UCHAR *,
 											SSHORT, SSHORT, SSHORT,
 											ISC_BLOB_DESC *);
 
-#endif /*_DSQL_BLOB_PROTO_H_ */
+#endif // DSQL_BLOB_PROTO_H

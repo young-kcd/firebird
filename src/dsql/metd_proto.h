@@ -23,8 +23,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _DSQL_METD_PROTO_H
-#define _DSQL_METD_PROTO_H
+#ifndef DSQL_METD_PROTO_H
+#define DSQL_METD_PROTO_H
 
 #ifndef __cplusplus
 #error This header file can only be used from C++
@@ -56,4 +56,4 @@ DSQL_REL METD_get_view_relation(dsql_req*   request,
 								const char* relation_or_alias /* UTF-8 */,
 								USHORT      level);
 
-#endif /*_DSQL_METD_PROTO_H */
+#endif // DSQL_METD_PROTO_H

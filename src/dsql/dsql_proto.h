@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _DSQL_DSQL_PROTO_H_
-#define _DSQL_DSQL_PROTO_H_
+#ifndef DSQL_DSQL_PROTO_H
+#define DSQL_DSQL_PROTO_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -73,4 +73,4 @@ extern ISC_STATUS callback_execute_immediate(
 } /* extern "C" */
 #endif
 
-#endif /*  _DSQL_DSQL_PROTO_H_  */
+#endif //  DSQL_DSQL_PROTO_H

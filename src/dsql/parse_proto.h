@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _DSQL_PARSE_PROTO_H_
-#define _DSQL_PARSE_PROTO_H_
+#ifndef DSQL_PARSE_PROTO_H
+#define DSQL_PARSE_PROTO_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,4 +37,4 @@ extern void LEX_string(TEXT *, USHORT, SSHORT);
 } /* extern "C" */
 #endif
 
-#endif /*  _DSQL_PARSE_PROTO_H_  */
+#endif //  DSQL_PARSE_PROTO_H

@@ -21,9 +21,9 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _DSQL_MOVD_PROTO_H_
-#define _DSQL_MOVD_PROTO_H_
+#ifndef DSQL_MOVD_PROTO_H
+#define DSQL_MOVD_PROTO_H
 
 extern void MOVD_move(struct dsc *, struct dsc *);
 
-#endif /*  _DSQL_MOVD_PROTO_H_  */
+#endif //  DSQL_MOVD_PROTO_H
