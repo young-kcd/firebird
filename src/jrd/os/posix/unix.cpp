@@ -963,7 +963,7 @@ static FIL seek_file(FIL file, BDB bdb, UINT64 * offset, ISC_STATUS * status_vec
 			break;
 
 	if (file->fil_desc == -1)
-		return (FIL) unix_error("lseek", file, isc_io_access_err,
+		return (FIL)(ULONG) unix_error("lseek", file, isc_io_access_err,
 								status_vector);
 
 	page -= file->fil_min_page - file->fil_fudge;
@@ -973,7 +973,7 @@ static FIL seek_file(FIL file, BDB bdb, UINT64 * offset, ISC_STATUS * status_vec
 
 #if _FILE_OFFSET_BITS != 64
     if (lseek_offset > MAX_SLONG) {
-        return (FIL) unix_error ("lseek", file, isc_io_32bit_exceeded_err, status_vector);
+        return (FIL)(ULONG) unix_error ("lseek", file, isc_io_32bit_exceeded_err, status_vector);
     }
 #endif
 
@@ -984,7 +984,7 @@ static FIL seek_file(FIL file, BDB bdb, UINT64 * offset, ISC_STATUS * status_vec
 
 	if ((lseek(file->fil_desc, LSEEK_OFFSET_CAST lseek_offset, 0)) == (off_t)-1) {
 		THD_MUTEX_UNLOCK(file->fil_mutex);
-		return (FIL) unix_error("lseek", file, isc_io_access_err,
+		return (FIL)(ULONG) unix_error("lseek", file, isc_io_access_err,
 								status_vector);
 	}
 #endif
