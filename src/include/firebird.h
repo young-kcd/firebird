@@ -30,7 +30,7 @@
  *       John Bellardo  <bellardo@cs.ucsd.edu>
  *
  *
- *  $Id: firebird.h,v 1.11 2003-03-05 23:43:36 brodsom Exp $
+ *  $Id: firebird.h,v 1.12 2003-03-09 02:23:56 brodsom Exp $
  *
  */
 
@@ -50,7 +50,7 @@
 //
 // Macro for function attribute definition
 //
-#if defined(_GNUC_)
+#if defined(__GNUC__)
 #define ATTRIBUTE_FORMAT(a,b) __attribute__ ((format(printf,a,b)))
 #else
 #define ATTRIBUTE_FORMAT(a,b)
