@@ -25,6 +25,7 @@
 #define _JRD_CVT2_PROTO_H_
 
 extern SSHORT CVT2_compare(struct dsc *, struct dsc *, FPTR_VOID);
+extern SSHORT CVT2_blob_compare(struct dsc *, struct dsc *, FPTR_VOID);
 extern void CVT2_get_name(struct dsc *, TEXT *, FPTR_VOID);
 extern USHORT CVT2_make_string2(struct dsc *, USHORT, UCHAR **, struct vary *,
 								USHORT, struct str **, FPTR_VOID);

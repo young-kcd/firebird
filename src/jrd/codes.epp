@@ -750,11 +750,11 @@ CONST\n\
 			i = E.NUMBER;
 			ib_fprintf(sql_codes, ",\n");
 			if (E.SQL_CODE.NULL)
-				ib_fprintf(sql_codes, "%4d /* %3d %s (default) */",
+		        ib_fprintf(sql_codes, "%4d /* %3d %-32.32s (default) */",
 						   DEFAULT_SQL_CODE, E.NUMBER, E.GDS_SYMBOL);
 			else
-				ib_fprintf(sql_codes, "%4d /* %3d %31.31s */", E.SQL_CODE,
-						   E.NUMBER, E.GDS_SYMBOL);
+		        ib_fprintf(sql_codes, "%4d /* %3d %-32.32s */",
+						   E.SQL_CODE, E.NUMBER, E.GDS_SYMBOL);
 		}
 	END_FOR;
 

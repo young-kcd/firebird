@@ -19,6 +19,8 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * Claudio Valderrama: 2001.6.18: Add blr_current_role.
  */
 
 #ifndef _JRD_BLR_H_

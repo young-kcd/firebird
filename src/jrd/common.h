@@ -31,13 +31,22 @@
  *                          - EPSON, XENIX, DELTA, IMP, NCR3000, M88K
  *                          - NT Power PC and HP9000 s300
  *
+ * 2001.11.20  Ann Harrison - make 64bitio.h conditional on not windows.
+ * 2002.04.16  Paul Beach - HP10 and unistd.h
  */
 /*
-$Id: common.h,v 1.16 2002-03-11 16:34:01 skywalker Exp $
+$Id: common.h,v 1.17 2002-06-29 13:00:56 dimitr Exp $
 */
 
 #ifndef JRD_COMMON_H
 #define JRD_COMMON_H
+
+/* configure.sh builds the file 64bitio.h on all platforms
+   except windows.  Windows doesn't need it, happily */
+
+#ifndef WIN32
+#include "../jrd/64bitio.h"
+#endif
 
 #include "../include/gen/autoconfig.h"
 
@@ -74,6 +83,9 @@ $Id: common.h,v 1.16 2002-03-11 16:34:01 skywalker Exp $
 #ifdef SUPERSERVER
 #define GOVERNOR 1
 #define CANCEL_OPERATION
+#define FB_ARCHITECTURE isc_info_db_class_server_access
+#else
+#define FB_ARCHITECTURE isc_info_db_class_classic_access
 #endif
 
 
@@ -98,7 +110,7 @@ $Id: common.h,v 1.16 2002-03-11 16:34:01 skywalker Exp $
 #ifdef i386
 #define I386    1
 #define VAX     1
-#define IMPLEMENTATION  60		/* next higher unique number, See you later  */
+#define IMPLEMENTATION  isc_info_db_impl_i386 /* 60  next higher unique number, See you later  */
 #endif /* i386 */
 
 #define SETPGRP         setpgrp ()
@@ -111,8 +123,56 @@ $Id: common.h,v 1.16 2002-03-11 16:34:01 skywalker Exp $
 
 #endif /* LINUX */
 
+/* SINIX-Z 5.42 */
+#ifdef SINIXZ
+#define QUADFORMAT "ll"
+#define QUADCONST(n) (n##LL)
+#define MMAP_SUPPORTED
+
+#if 0 /* for I386 these are defined later */
+#define FB_ALIGN(n,b)	((n+1) & ~1)
+#define ALIGNMENT	4
+#define DOUBLE_ALIGN	4
+#endif
+
+#ifdef SUPERSERVER
+#define SET_TCP_NO_DELAY
+#endif
+
+#define KILLER_SIGNALS
+#define SIGACTION_SUPPORTED
+
+#define VA_START(list,parmN)    va_start (list, parmN)
+#define UNIX    1
+#define IEEE    1
+
+#ifdef i386
+#define I386    1
+#define VAX     1
+/* Change version string into SINIXZ */
+#define INTL
+#define IMPLEMENTATION  isc_info_db_impl_sinixz  /* 64 */
+#endif /* i386 */
+
+#define SETPGRP         setpgrp ()
+#define ATEXIT(c)       atexit (c)
+#define setreuid(ruid,euid)     setuid(euid)
+#define setregid(rgid,egid)     setgid(egid)
+#define NO_FLOCK
+#define NO_PYXIS
+
+#define MEMMOVE(from,to,length)		memmove ((void *)to, (void *)from, (size_t) length)
+#define MOVE_FAST(from,to,length)       memcpy (to, from, (int) (length))
+#define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
+#define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
+
+#endif /* SINIXZ */
+
 /* Darwin Platforms */
 #ifdef DARWIN
+#ifndef UNIX_64_BIT_IO
+#define UNIX_64_BIT_IO
+#endif
 #define __LINE__IS_INT
 #define SLONGFORMAT	"ld"
 #define ALIGNMENT       4
@@ -162,7 +222,7 @@ $Id: common.h,v 1.16 2002-03-11 16:34:01 skywalker Exp $
 #define IEEE  1
 #define I386  1
 #define VAX   1
-#define IMPLEMENTATION        61
+#define IMPLEMENTATION    isc_info_db_impl_freebsd   /* 61 */
 #define SETPGRP         setpgrp ()
 #define ATEXIT(c)       atexit(c)
 
@@ -193,7 +253,7 @@ $Id: common.h,v 1.16 2002-03-11 16:34:01 skywalker Exp $
 #define IEEE  1
 #define I386  1
 #define VAX   1
-#define IMPLEMENTATION        62
+#define IMPLEMENTATION        isc_info_db_impl_netbsd /* 62 */
 
 #define QUADFORMAT "ll"
 #define QUADCONST(n) (n##LL)
@@ -255,6 +315,10 @@ $Id: common.h,v 1.16 2002-03-11 16:34:01 skywalker Exp $
    macro, and we will supply that function where we need it. */
 #define PLATFORM_SUPPLIES_XDR_HYPER
 
+#ifdef SOLX86
+#define LSEEK_OFFSET_CAST (off_t)
+#endif
+
 #define ATEXIT(c)       atexit (c)
 #define SETPGRP         setpgrp ()
 #define SIGACTION_SUPPORTED
@@ -287,10 +351,12 @@ $Id: common.h,v 1.16 2002-03-11 16:34:01 skywalker Exp $
 
 #define STRICMP(s1, s2)		strcasecmp(s1, s2)
 
-#ifndef SOLARIS26
+#if !(defined(SOLARIS26) || defined(HP10))
+//#ifndef SOLARIS26
 
 /* If our build platform is at least Solaris release 2.6, then unistd.h
-   declares these functions, so we must not define them with macros. */
+   declares these functions, so we must not define them with macros. 
+   The same applies to HP10 16-Apr-2002 Paul Beach */
 
 #define setreuid(ruid,euid)     ((setuid (ruid) == -1 || seteuid (euid) == -1) ? -1 : 0)
 #define setregid(rgid,egid)     ((setgid (rgid) == -1 || setegid (egid) == -1) ? -1 : 0)
@@ -318,7 +384,7 @@ $Id: common.h,v 1.16 2002-03-11 16:34:01 skywalker Exp $
 #ifdef sparc
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
 #define ALIGNMENT       4
-#define IMPLEMENTATION  30
+#define IMPLEMENTATION  isc_info_db_impl_isc_sun4 /* 30 */
 #define DOUBLE_ALIGN    8
 #define INTL
 #else /* sparc */
@@ -326,10 +392,10 @@ $Id: common.h,v 1.16 2002-03-11 16:34:01 skywalker Exp $
 #ifdef i386
 #define I386            1
 #define VAX             1
-#define IMPLEMENTATION  32
+#define IMPLEMENTATION  isc_info_db_impl_isc_sun_386i  /* 32 */
 #else /* i386 */
 #define FB_ALIGN(n,b)      ((n+1) & ~1)
-#define IMPLEMENTATION  28
+#define IMPLEMENTATION  isc_info_db_impl_isc_sun_68k /* 28 */
 #endif /* i386 */
 
 #endif /* sparc */
@@ -359,12 +425,13 @@ $Id: common.h,v 1.16 2002-03-11 16:34:01 skywalker Exp $
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
 #define ALIGNMENT       8
 #define DOUBLE_ALIGN    8
-#define IMPLEMENTATION  31
+#define IMPLEMENTATION  isc_info_db_impl_isc_hp_ux /* 31 */
 
 #define                 IEEE
 #include "../jrd/pragma.h"
-#define setreuid(ruid,euid)     setresuid (ruid, euid, -1)
-#define setregid(rgid,egid)     setresgid (rgid, egid, -1)
+// 16-Apr-2002 HP10 in unistd.h Paul Beach
+//#define setreuid(ruid,euid)     setresuid (ruid, euid, -1)
+//#define setregid(rgid,egid)     setresgid (rgid, egid, -1)
 
 /* The following define is the prefix to go in front of a "d" or "u"
    format item in a ib_printf() format string, to indicate that the argument
@@ -395,13 +462,13 @@ $Id: common.h,v 1.16 2002-03-11 16:34:01 skywalker Exp $
 #define SETPGRP         setpgrp (0, 0)
 
 #ifdef mips
-#define IMPLEMENTATION  36
+#define IMPLEMENTATION  isc_info_db_impl_isc_mips_ult /* 36 */
 #define                 IEEE
 #define ALIGNMENT       4
 #define DOUBLE_ALIGN    8
 #else
 #define CTO32L(p)       (*(long*) p)
-#define IMPLEMENTATION  26
+#define IMPLEMENTATION  isc_info_db_impl_isc_vax_ultr /* 26 */
 #define SHMEM_PICKY
 #endif
 
@@ -424,7 +491,9 @@ $Id: common.h,v 1.16 2002-03-11 16:34:01 skywalker Exp $
 #undef LINKS_EXIST
 #define IEEE					/* IEEE floating point arith.  */
 
-#define IMPLEMENTATION  47
+#define LSEEK_OFFSET_CAST	/* LSEEK_OFFSET_CAST not needed on Windows */
+
+#define IMPLEMENTATION  isc_info_db_impl_isc_dos /* 47 */
 #define MEMMOVE(from,to,length)       memmove (to, from, (int) (length))
 #define MOVE_FAST(from,to,length)       memmove (to, from, (int) (length))
 #define MOVE_FASTER(from,to,length)     memmove (to, from, (int) (length))
@@ -472,7 +541,7 @@ $Id: common.h,v 1.16 2002-03-11 16:34:01 skywalker Exp $
 #define SYS_ARG		isc_arg_vms
 
 #if __ALPHA
-#define IMPLEMENTATION  53
+#define IMPLEMENTATION  isc_info_db_impl_alpha_vms /* 53 */
 #include <ints.h>
 #define ATOM_DEFINED
 typedef int64 SATOM;			/* 64 bit */
@@ -480,9 +549,9 @@ typedef unsigned int64 UATOM;
 #else
 
 #ifndef GATEWAY
-#define IMPLEMENTATION  27
+#define IMPLEMENTATION  isc_info_db_impl_isc_vms /* 27 */
 #else
-#define IMPLEMENTATION  33
+#define IMPLEMENTATION  isc_info_db_impl_isc_vms_orcl /* 33 */
 #endif
 
 #endif /* __ALPHA */
@@ -512,7 +581,7 @@ typedef unsigned int64 UATOM;
 #define CURSES_KEYPAD   1
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
 #define ALIGNMENT       4
-#define IMPLEMENTATION  35
+#define IMPLEMENTATION  isc_info_db_impl_isc_rt_aix /* 35 */
 #define                 IEEE
 #define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)
 #define MOVE_FAST(from,to,length)       memcpy (to, from, (int) (length))
@@ -534,7 +603,7 @@ typedef unsigned int64 UATOM;
 #define CURSES_KEYPAD   1
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
 #define ALIGNMENT       4
-#define IMPLEMENTATION  35
+#define IMPLEMENTATION  isc_info_db_impl_isc_rt_aix /* 35 */
 #define                 IEEE
 #define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)
 #define MOVE_FAST(from,to,length)       memcpy (to, from, (int) (length))
@@ -592,7 +661,7 @@ typedef unsigned __int64 UINT64;
 #ifndef I386
 #define I386
 #endif
-#define IMPLEMENTATION  50
+#define IMPLEMENTATION  isc_info_db_impl_isc_winnt_x86 /* 50 */
 #endif
 
 #define ATEXIT(c)       atexit (c)
@@ -604,6 +673,8 @@ typedef unsigned __int64 UINT64;
 #define CLIB_ROUTINE    __cdecl
 #define THREAD_ROUTINE  __stdcall
 #define INTERNAL_API_ROUTINE	API_ROUTINE
+
+#define SYNC_WRITE_DEFAULT      1
 
 #ifndef DLL_EXPORT
 #define DLL_EXPORT
@@ -651,13 +722,13 @@ typedef unsigned __int64 UINT64;
 #ifdef M_UNIX
 #define SCO_UNIX        1
 #define SETPGRP         setpgid (0, 0)
-#define IMPLEMENTATION  42
+#define IMPLEMENTATION  isc_info_db_impl_isc_sco_unix /* 42 */
 #define INTL
 #define INTL_BACKEND
 #else
 #define FB_ALIGN(n,b)      ((n+1) & ~1)
 #define SETPGRP
-#define IMPLEMENTATION  37
+#define IMPLEMENTATION  isc_info_db_impl_isc_xenix /* 37 */
 #endif
 
 #define                 IEEE
@@ -667,6 +738,8 @@ typedef unsigned __int64 UINT64;
 
 #else /* ifndef SCO_EV */
 
+#define QUADFORMAT "ll"
+#define QUADCONST(n) (n##LL)
 #define I386            1
 #define VAX             1
 #define UNIX            1
@@ -681,7 +754,7 @@ typedef unsigned __int64 UINT64;
 #define KILLER_SIGNALS
 */
 #define INTL
-#define IMPLEMENTATION  59
+#define IMPLEMENTATION  isc_info_db_impl_sco_ev /* 59 */
 #define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)
 #define MOVE_FAST(from,to,length)    memcpy (to, from, (unsigned int) (length))
 #define MOVE_FASTER(from,to,length)  memcpy (to, from, (unsigned int) (length))
@@ -712,10 +785,10 @@ typedef unsigned __int64 UINT64;
 #ifndef DG_X86
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
 #define ALIGNMENT       8
-#define IMPLEMENTATION  38
+#define IMPLEMENTATION  isc_info_db_impl_isc_dg /* 38 */
 #define DOUBLE_ALIGN    8
 #else
-#define IMPLEMENTATION        58
+#define IMPLEMENTATION	isc_info_db_impl_dg_x86 /* 58 */
 #define I386          1
 #define VAX           1
 #endif /* DG_X86 */
@@ -746,7 +819,7 @@ typedef unsigned __int64 UINT64;
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
 #define ALIGNMENT       8
 #define DOUBLE_ALIGN    8
-#define IMPLEMENTATION  52
+#define IMPLEMENTATION  isc_info_db_impl_alpha_osf	/* 52 */
 #define                 IEEE
 #define ATEXIT(c)       atexit (c)
 
@@ -777,7 +850,7 @@ typedef unsigned long UATOM;
 #define CURSES_KEYPAD   1
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
 #define ALIGNMENT       8
-#define IMPLEMENTATION  41
+#define IMPLEMENTATION  isc_info_db_impl_isc_sgi  /* 41 */
 #define DOUBLE_ALIGN    8
 #define                 IEEE
 #define SIGACTION_SUPPORTED
@@ -829,7 +902,7 @@ typedef unsigned long DWORD;
 #define OLD_ALIGNMENT
 #define NO_NFS
 #define SETPGRP
-#define IMPLEMENTATION 54
+#define IMPLEMENTATION isc_info_db_impl_netware_386,	/* 54 */
 #undef LINKS_EXIST
 #define VA_START(list,parmN)    va_start (list, parmN)
 
@@ -858,7 +931,7 @@ typedef unsigned long DWORD;
 #define VAX             1
 #define UNIX            1
 #define CURSES_KEYPAD   1
-#define IMPLEMENTATION  49
+#define IMPLEMENTATION  isc_info_db_impl_unixware,	/* 49 */
 #define                 IEEE
 #define ATEXIT(c)       atexit (c)
 #define vfork           fork
@@ -963,6 +1036,11 @@ typedef unsigned long DWORD;
 #define SUCCESS         0
 #define FAILURE         1
 
+
+/* Enable 64 bit io for unix platforms if UNIX_64_BIT_IO macro is set. */
+#ifdef UNIX_64_BIT_IO
+#define _FILE_OFFSET_BITS       64  /* Enable 64 bit IO functions */
+#endif
 
 
 /* data type definitions */
@@ -1228,8 +1306,9 @@ void GDS_breakpoint(int);
 #define BUFFER_SMALL    256
 #define BUFFER_TINY     128
 
+/* The default lseek offset type.  Changed from nothing to (off_t) to correctly support 64 bit IO */
 #ifndef LSEEK_OFFSET_CAST
-#define LSEEK_OFFSET_CAST
+#define LSEEK_OFFSET_CAST (off_t)
 #endif
 
 #ifndef DOUBLE_MULTIPLY

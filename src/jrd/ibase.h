@@ -20,9 +20,14 @@
  * Contributor(s): ______________________________________.
  * Added TCP_NO_DELAY option for superserver on Linux
  * FSG 16.03.2001
+ * 2001.07.28: John Bellardo:  Added blr_skip
+ * 2001.09.18: Ann Harrison:   New info codes
+ * 17-Oct-2001 Mike Nordell: CPU affinity
+ * 2001-04-16 Paul Beach: ISC_TIME_SECONDS_PRECISION_SCALE modified for HP10
+ * Compiler Compatibility
  */
 /*
-$Id: ibase.h,v 1.10 2002-03-11 16:34:01 skywalker Exp $
+$Id: ibase.h,v 1.11 2002-06-29 13:03:13 dimitr Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
  *                          - EPSON, XENIX, MAC (MAC_AUX), Cray and OS/2
@@ -107,7 +112,7 @@ typedef struct
 #endif	/* ISC_TIMESTAMP_DEFINED */
 
 #define ISC_TIME_SECONDS_PRECISION          10000L
-#define ISC_TIME_SECONDS_PRECISION_SCALE    -4
+#define ISC_TIME_SECONDS_PRECISION_SCALE    (-4)
 
 /*******************************************************************/
 /* Blob id structure                                               */
@@ -189,6 +194,112 @@ typedef struct bstream
 #define getb(p)	(--(p)->bstr_cnt >= 0 ? *(p)->bstr_ptr++ & 0377: BLOB_get (p))
 #define putb(x,p) (((x) == '\n' || (!(--(p)->bstr_cnt))) ? BLOB_put ((x),p) : ((int) (*(p)->bstr_ptr++ = (unsigned) (x))))
 #define putbx(x,p) ((!(--(p)->bstr_cnt)) ? BLOB_put ((x),p) : ((int) (*(p)->bstr_ptr++ = (unsigned) (x))))
+
+
+/********************************************************************/
+/* CVC: Public blob interface definition held in val.h.             */
+/* For some unknown reason, it was only documented in langRef       */
+/* and being the structure passed by the engine to UDFs it never    */
+/* made its way into this public definitions file.                  */
+/* Being its original name "blob", I renamed it blobcallback here.  */
+/* I did the full definition with the proper parameters instead of  */
+/* the weak C declaration with any number and type of parameters.   */
+/* Since the first parameter -BLB- is unknown outside the engine,   */
+/* it's more accurate to use void* than int* as the blob pointer    */
+/********************************************************************/
+
+#if !defined(_JRD_VAL_H_) && !defined(REQUESTER)
+/* Blob passing structure */
+
+enum lseek_mode {blb_seek_relative = 1, blb_seek_from_tail = 2};
+
+typedef struct blobcallback {
+    short (ISC_FAR *blob_get_segment)
+		(void ISC_FAR* hnd, unsigned char* buffer, ISC_USHORT buf_size, ISC_USHORT* result_len);
+    void		ISC_FAR	*blob_handle;
+    ISC_LONG	blob_number_segments;
+    ISC_LONG	blob_max_segment;
+    ISC_LONG	blob_total_length;
+    void (ISC_FAR *blob_put_segment)
+		(void ISC_FAR* hnd, unsigned char* buffer, ISC_USHORT buf_size);
+    ISC_LONG (ISC_FAR *blob_lseek)
+		(void ISC_FAR* hnd, ISC_USHORT mode, ISC_LONG offset);
+} ISC_FAR *BLOBCALLBACK;
+#endif /* !defined(_JRD_VAL_H_) && !defined(REQUESTER) */
+
+
+
+/********************************************************************/
+/* CVC: Public descriptor interface held in dsc.h.                  */
+/* We need it documented to be able to recognize NULL in UDFs.      */
+/* Being its original name "dsc", I renamed it paramdsc here.       */
+/* Notice that I adjust to the original definition: contrary to     */
+/* other cases, the typedef is the same struct not the pointer.     */
+/* I included the enumeration of dsc_dtype possible values.         */
+/* Ultimately, dsc.h should be part of the public interface.        */
+/********************************************************************/
+
+#if !defined(_JRD_DSC_H_)
+/* This is the famous internal descriptor that UDFs can use, too. */
+typedef struct paramdsc {
+    unsigned char	dsc_dtype;
+    signed char		dsc_scale;
+    ISC_USHORT		dsc_length;
+    short		dsc_sub_type;
+    ISC_USHORT		dsc_flags;
+    unsigned char	*dsc_address;
+} PARAMDSC;
+
+#if !defined(_JRD_VAL_H_)
+/* This is a helper struct to work with varchars. */
+typedef struct paramvary {
+    ISC_USHORT		vary_length;
+    unsigned char	vary_string [1];
+} PARAMVARY;
+#endif /* !defined(_JRD_VAL_H_) */
+
+/* values for dsc_flags */
+/* Note: DSC_null is only reliably set for local variables
+   (blr_variable) */
+#define DSC_null		1
+#define DSC_no_subtype		2	/* dsc has no sub type specified */
+#define DSC_nullable  		4	/* not stored. instead, is derived
+                                	from metadata primarily to flag
+                                 	SQLDA (in DSQL)               */
+
+/* Overload text typing information into the dsc_sub_type field.
+   See intl.h for definitions of text types */ 
+
+#ifndef dsc_ttype
+#define dsc_ttype	dsc_sub_type
+#endif
+
+
+/* Note that dtype_null actually means that we do not yet know the
+   dtype for this descriptor.  A nice cleanup item would be to globally
+   change it to dtype_unknown.  --chrisj 1999-02-17 */
+
+#define dtype_null	0
+#define dtype_text	1
+#define dtype_cstring	2
+#define dtype_varying	3
+
+#define dtype_packed	6
+#define dtype_byte	7
+#define dtype_short	8
+#define dtype_long	9
+#define dtype_quad	10
+#define dtype_real	11
+#define dtype_double	12
+#define dtype_d_float	13
+#define dtype_sql_date	14
+#define dtype_sql_time	15
+#define dtype_timestamp	16
+#define dtype_blob	17
+#define dtype_array	18
+#define dtype_int64     19
+#define DTYPE_TYPE_MAX	20
+#endif /* !defined(_JRD_DSC_H_) */
 
 
 /***************************/
@@ -1434,109 +1545,186 @@ ISC_STATUS ISC_EXPORT isc_suspend_window(ISC_STATUS ISC_FAR*,
 /* Database information items */
 /******************************/
 
-#define isc_info_db_id                    4
-#define isc_info_reads                    5
-#define isc_info_writes                   6
-#define isc_info_fetches                  7
-#define isc_info_marks                    8
-#define isc_info_implementation           11
-#define isc_info_version                  12
-#define isc_info_base_level               13
-#define isc_info_page_size                14
-#define isc_info_num_buffers              15
-#define isc_info_limbo                    16
-#define isc_info_current_memory           17
-#define isc_info_max_memory               18
-#define isc_info_window_turns             19
-#define isc_info_license                  20
-#define isc_info_allocation               21
-#define isc_info_attachment_id            22
-#define isc_info_read_seq_count           23
-#define isc_info_read_idx_count           24
-#define isc_info_insert_count             25
-#define isc_info_update_count             26
-#define isc_info_delete_count             27
-#define isc_info_backout_count            28
-#define isc_info_purge_count              29
-#define isc_info_expunge_count            30
-#define isc_info_sweep_interval           31
-#define isc_info_ods_version              32
-#define isc_info_ods_minor_version        33
-#define isc_info_no_reserve               34
-#define isc_info_logfile                  35
-#define isc_info_cur_logfile_name         36
-#define isc_info_cur_log_part_offset      37
-#define isc_info_num_wal_buffers          38
-#define isc_info_wal_buffer_size          39
-#define isc_info_wal_ckpt_length          40
-#define isc_info_wal_cur_ckpt_interval    41
-#define isc_info_wal_prv_ckpt_fname       42
-#define isc_info_wal_prv_ckpt_poffset     43
-#define isc_info_wal_recv_ckpt_fname      44
-#define isc_info_wal_recv_ckpt_poffset    45
-#define isc_info_wal_grpc_wait_usecs      47
-#define isc_info_wal_num_io               48
-#define isc_info_wal_avg_io_size          49
-#define isc_info_wal_num_commits          50
-#define isc_info_wal_avg_grpc_size        51
-#define isc_info_forced_writes		  52
-#define isc_info_user_names		  53
-#define isc_info_page_errors		  54
-#define isc_info_record_errors		  55
-#define isc_info_bpage_errors		  56
-#define isc_info_dpage_errors	  	  57
-#define isc_info_ipage_errors	  	  58
-#define isc_info_ppage_errors		  59
-#define isc_info_tpage_errors	  	  60
-#define isc_info_set_page_buffers         61
-#define isc_info_db_sql_dialect           62
-#define isc_info_db_read_only             63
-#define isc_info_db_size_in_pages	  64
-#define frb_info_att_charset		 101
+enum db_info_types
+    {
+	isc_info_db_id = 4,
+	isc_info_reads = 5,
+	isc_info_writes = 6,
+	isc_info_fetches = 7,
+	isc_info_marks = 8,
+
+	isc_info_implementation = 11,
+	isc_info_isc_version = 12,
+	isc_info_base_level = 13,
+	isc_info_page_size = 14,
+	isc_info_num_buffers = 15,
+	isc_info_limbo = 16,
+	isc_info_current_memory = 17,
+	isc_info_max_memory = 18,
+	isc_info_window_turns = 19,
+	isc_info_license = 20,   
+
+	isc_info_allocation = 21,
+	isc_info_attachment_id = 22,
+	isc_info_read_seq_count = 23,
+	isc_info_read_idx_count = 24,
+	isc_info_insert_count = 25,
+	isc_info_update_count = 26,
+	isc_info_delete_count = 27,
+	isc_info_backout_count = 28,
+	isc_info_purge_count = 29,
+	isc_info_expunge_count = 30, 
+
+	isc_info_sweep_interval = 31,
+	isc_info_ods_version = 32,
+	isc_info_ods_minor_version = 33,
+	isc_info_no_reserve = 34,
+	isc_info_logfile = 35,
+	isc_info_cur_logfile_name = 36,
+	isc_info_cur_log_part_offset = 37,
+	isc_info_num_wal_buffers = 38,
+	isc_info_wal_buffer_size = 39,
+	isc_info_wal_ckpt_length = 40,   
+
+	isc_info_wal_cur_ckpt_interval = 41,  
+	isc_info_wal_prv_ckpt_fname = 42,
+	isc_info_wal_prv_ckpt_poffset = 43,
+	isc_info_wal_recv_ckpt_fname = 44,
+	isc_info_wal_recv_ckpt_poffset = 45,
+	isc_info_wal_grpc_wait_usecs = 47,
+	isc_info_wal_num_io = 48,
+	isc_info_wal_avg_io_size = 49,
+	isc_info_wal_num_commits = 50,  
+
+	isc_info_wal_avg_grpc_size = 51,
+	isc_info_forced_writes = 52,
+	isc_info_user_names = 53,
+	isc_info_page_errors = 54,
+	isc_info_record_errors = 55,
+	isc_info_bpage_errors = 56,
+	isc_info_dpage_errors = 57,
+	isc_info_ipage_errors = 58,
+	isc_info_ppage_errors = 59,
+	isc_info_tpage_errors = 60,
+
+	isc_info_set_page_buffers = 61,
+	isc_info_db_sql_dialect = 62,   
+	isc_info_db_read_only = 63,
+	isc_info_db_size_in_pages = 64,
+
+    /* Values 65 -100 unused to avoid conflict with InterBase */
+	
+	frb_info_att_charset = 101,
+	isc_info_db_class = 102,
+	isc_info_firebird_version = 103,
+	isc_info_oldest_transaction = 104,
+	isc_info_oldest_active = 105,
+	isc_info_oldest_snapshot = 106,
+	isc_info_next_transaction = 107,
+	isc_info_db_provider = 108,
+
+	isc_info_db_last_value   /* Leave this LAST! */
+    };
+
+#define isc_info_version isc_info_isc_version
+
 
 /**************************************/
 /* Database information return values */
 /**************************************/
 
-#define isc_info_db_impl_rdb_vms          1
-#define isc_info_db_impl_rdb_eln          2
-#define isc_info_db_impl_rdb_eln_dev      3
-#define isc_info_db_impl_rdb_vms_y        4
-#define isc_info_db_impl_rdb_eln_y        5
-#define isc_info_db_impl_jri              6
-#define isc_info_db_impl_jsv              7
-#define isc_info_db_impl_isc_a            25
-#define isc_info_db_impl_isc_u            26
-#define isc_info_db_impl_isc_v            27
-#define isc_info_db_impl_isc_s            28
-#define isc_info_db_impl_isc_apl_68K      25
-#define isc_info_db_impl_isc_vax_ultr     26
-#define isc_info_db_impl_isc_vms          27
-#define isc_info_db_impl_isc_sun_68k      28
-#define isc_info_db_impl_isc_sun4         30
-#define isc_info_db_impl_isc_hp_ux        31
-#define isc_info_db_impl_isc_sun_386i     32
-#define isc_info_db_impl_isc_vms_orcl     33
-#define isc_info_db_impl_isc_rt_aix       35
-#define isc_info_db_impl_isc_mips_ult     36
-#define isc_info_db_impl_isc_dg           38
-#define isc_info_db_impl_isc_hp_mpexl     39
-#define isc_info_db_impl_isc_hp_ux68K     40
-#define isc_info_db_impl_isc_sgi          41
-#define isc_info_db_impl_isc_sco_unix     42
-#define isc_info_db_impl_isc_dos          47
-#define isc_info_db_impl_isc_winnt        48
+enum  info_db_implementations
+    {
+	isc_info_db_impl_rdb_vms = 1,
+	isc_info_db_impl_rdb_eln = 2,
+	isc_info_db_impl_rdb_eln_dev = 3,
+	isc_info_db_impl_rdb_vms_y = 4,
+	isc_info_db_impl_rdb_eln_y = 5,
+	isc_info_db_impl_jri = 6,
+	isc_info_db_impl_jsv = 7,
 
-#define isc_info_db_class_access          1
-#define isc_info_db_class_y_valve         2
-#define isc_info_db_class_rem_int         3
-#define isc_info_db_class_rem_srvr        4
-#define isc_info_db_class_pipe_int        7
-#define isc_info_db_class_pipe_srvr       8
-#define isc_info_db_class_sam_int         9
-#define isc_info_db_class_sam_srvr        10
-#define isc_info_db_class_gateway         11
-#define isc_info_db_class_cache           12
+	isc_info_db_impl_isc_apl_68K = 25,
+	isc_info_db_impl_isc_vax_ultr = 26,
+	isc_info_db_impl_isc_vms = 27,
+	isc_info_db_impl_isc_sun_68k = 28,
+	isc_info_db_impl_isc_os2 = 29,
+	isc_info_db_impl_isc_sun4 = 30,	   /* 30 */
+	
+	isc_info_db_impl_isc_hp_ux = 31,
+	isc_info_db_impl_isc_sun_386i = 32,
+	isc_info_db_impl_isc_vms_orcl = 33,
+	isc_info_db_impl_isc_mac_aux = 34,
+	isc_info_db_impl_isc_rt_aix = 35,
+	isc_info_db_impl_isc_mips_ult = 36,
+	isc_info_db_impl_isc_xenix = 37,
+	isc_info_db_impl_isc_dg = 38,
+	isc_info_db_impl_isc_hp_mpexl = 39,
+	isc_info_db_impl_isc_hp_ux68K = 40,	  /* 40 */
+
+	isc_info_db_impl_isc_sgi = 41,
+	isc_info_db_impl_isc_sco_unix = 42,
+	isc_info_db_impl_isc_cray = 43,
+	isc_info_db_impl_isc_imp = 44,
+	isc_info_db_impl_isc_delta = 45,
+	isc_info_db_impl_isc_next = 46,
+	isc_info_db_impl_isc_dos = 47,
+	isc_info_db_impl_m88K = 48,
+	isc_info_db_impl_unixware = 49,
+	isc_info_db_impl_isc_winnt_x86 = 50,
+
+	isc_info_db_impl_isc_epson = 51,
+	isc_info_db_impl_alpha_osf = 52,
+	isc_info_db_impl_alpha_vms = 53,
+	isc_info_db_impl_netware_386 = 54, 
+	isc_info_db_impl_win_only = 55,
+	isc_info_db_impl_ncr_3000 = 56,
+	isc_info_db_impl_winnt_ppc = 57,
+	isc_info_db_impl_dg_x86 = 58,
+	isc_info_db_impl_sco_ev = 59,
+	isc_info_db_impl_i386 = 60,
+
+	isc_info_db_impl_freebsd = 61,
+	isc_info_db_impl_netbsd = 62,
+	isc_info_db_impl_darwin = 63,
+	isc_info_db_impl_sinixz = 64,
+
+	isc_info_db_impl_last_value   /* Leave this LAST! */
+    };
+
+#define isc_info_db_impl_isc_a            isc_info_db_impl_isc_apl_68K
+#define isc_info_db_impl_isc_u            isc_info_db_impl_isc_vax_ultr
+#define isc_info_db_impl_isc_v            isc_info_db_impl_isc_vms
+#define isc_info_db_impl_isc_s            isc_info_db_impl_isc_sun_68k
+
+
+enum info_db_class
+    {
+	isc_info_db_class_access = 1,
+	isc_info_db_class_y_valve = 2,
+	isc_info_db_class_rem_int = 3,
+	isc_info_db_class_rem_srvr = 4,
+	isc_info_db_class_pipe_int = 7,
+	isc_info_db_class_pipe_srvr = 8,
+	isc_info_db_class_sam_int = 9,
+	isc_info_db_class_sam_srvr = 10,
+	isc_info_db_class_gateway = 11,
+	isc_info_db_class_cache = 12,
+	isc_info_db_class_classic_access = 13,
+	isc_info_db_class_server_access = 14,
+
+	isc_info_db_class_last_value   /* Leave this LAST! */
+    };
+
+enum info_db_provider
+    {
+	isc_info_db_code_rdb_eln = 1,
+	isc_info_db_code_rdb_vms = 2,
+	isc_info_db_code_interbase = 3,
+	isc_info_db_code_firebird = 4,
+
+	isc_info_db_code_last_value   /* Leave this LAST! */
+    };
+
 
 /*****************************/
 /* Request information items */
@@ -1888,6 +2076,12 @@ ISC_STATUS ISC_EXPORT isc_suspend_window(ISC_STATUS ISC_FAR*,
 #define ISCCFG_NO_NAGLE_KEY	21
 #endif
 
+#ifdef WIN_NT
+#if defined SET_TCP_NO_DELAY
+#error Currently unsupported configuration
+#endif
+#define ISCCFG_CPU_AFFINITY_KEY	21
+#endif
 
 
 /**********************************************/
@@ -2077,11 +2271,13 @@ ISC_STATUS ISC_EXPORT isc_suspend_window(ISC_STATUS ISC_FAR*,
 
 #define isc_dyn_scl_acl                   121
 #define isc_dyn_grant_user                130
+#define isc_dyn_grant_user_explicit       219
 #define isc_dyn_grant_proc                186
 #define isc_dyn_grant_trig                187
 #define isc_dyn_grant_view                188
 #define isc_dyn_grant_options             132
 #define isc_dyn_grant_user_group          205
+#define isc_dyn_grant_role                218
 
 
 /**********************************/
@@ -2193,6 +2389,13 @@ ISC_STATUS ISC_EXPORT isc_suspend_window(ISC_STATUS ISC_FAR*,
 #define isc_dyn_sql_role_name             212
 #define isc_dyn_grant_admin_options       213
 #define isc_dyn_del_sql_role              214
+/* 215 & 216 are used some lines above. */
+
+/**********************************************/
+/* Generators again                           */
+/**********************************************/
+
+#define isc_dyn_delete_generator          217
 
 /****************************/
 /* Last $dyn value assigned */

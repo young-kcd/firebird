@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2001.10.08 Claudio Valderrama: frb_sysflag enum with numbering
+ *   for automatically created triggers that aren't system triggers.
  */
 
 #ifndef _JRD_CONSTANTS_H_
@@ -69,9 +72,22 @@
 #define RI_RESTRICT       "RESTRICT"
 
 
+/******************************************/
+/* System flag meaning - mainly Firebird. */
+/******************************************/
+
+enum frb_sysflag {
+	frb_sysflag_user = 0,
+	frb_sysflag_system = 1,
+	frb_sysflag_qli = 2,
+	frb_sysflag_check_constraint = 3,
+	frb_sysflag_referential_constraint = 4,
+	frb_sysflag_view_check = 5
+};
+
 
 /* UDF Arguments are numbered from 0 to MAX_UDF_ARGUMENTS --
-   arguement 0 is reserved for the return-type of the UDF */
+   argument 0 is reserved for the return-type of the UDF */
 
 #define MAX_UDF_ARGUMENTS	10
 

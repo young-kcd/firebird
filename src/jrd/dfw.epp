@@ -20,6 +20,28 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
+ * 2001.6.25 Claudio Valderrama: Implement deferred check for udf usage
+ * inside a procedure before dropping the uff and creating stub for future
+ * processing of dependencies from dropped generators.
+ *
+ * 2001.8.12 Claudio Valderrama: find_depend_in_dfw() and other functions
+ *   should respect identifiers with embedded blanks instead of chopping them
+ *.
+ * 2001.10.01 Claudio Valderrama: check constraints should fire AFTER the
+ *   BEFORE <action> triggers; otherwise they allow invalid data to be stored.
+ *   This is a quick fix for SF Bug #444463 until a more robust one is devised
+ *   using trigger's rdb$flags or another mechanism.
+ *
+ * 2001.10.10 Ann Harrison:  Don't increment the format version unless the
+ *   table is actually reformatted.  At the same time, break out some of
+ *   the parts of make_version making some new subroutines with the goal
+ *   of making make_version readable.
+ *
+ * 2001.10.18 Ann Harrison: some cleanup of trigger & constraint handling.
+ *   it now appears to work correctly on new Firebird databases with lots
+ *   of system types and on InterBase databases, without checking for 
+ *   missing source.
+ *
  * 23-Feb-2002 Dmitry Yemanov - Events wildcarding
  *
  * 2002-02-24 Sean Leyne - Code Cleanup of old Win 3.1 port (WINDOWS_ONLY)
@@ -147,6 +169,8 @@ static bool create_trigger(TDBB, SSHORT, DFW, TRA);
 static bool delete_trigger(TDBB, SSHORT, DFW, TRA);
 static bool modify_trigger(TDBB, SSHORT, DFW, TRA);
 static bool delete_exception(TDBB, SSHORT, DFW, TRA);
+static bool delete_generator(TDBB, SSHORT, DFW, TRA);
+static bool delete_udf(TDBB, SSHORT, DFW, TRA);
 static bool delete_field(TDBB, SSHORT, DFW, TRA);
 static bool delete_global(TDBB, SSHORT, DFW, TRA);
 static bool delete_parameter(TDBB, SSHORT, DFW, TRA);
@@ -157,15 +181,21 @@ static bool make_version(TDBB, SSHORT, DFW, TRA);
 
 static void check_dependencies(TDBB, TEXT*, TEXT*, USHORT, TRA);
 static void check_filename(TEXT*, USHORT);
+static bool compare_formats(FMT, FMT);
 static bool	find_depend_in_dfw(TDBB, TEXT*, USHORT, USHORT, TRA);
 static void get_array_desc(TDBB, TEXT*, ADS);
 static void get_procedure_dependencies(DFW);
 static void get_trigger_dependencies(DFW);
-static FMT make_format(TDBB, REL, USHORT, TFB);
+static void	load_trigs(TDBB, REL, VEC *);
+static FMT	make_format(TDBB, REL, USHORT *, TFB);
 static USHORT name_length(TEXT *);
 static void put_summary_blob(BLB, enum rsr_t, SLONG[2]);
 static void put_summary_record(BLB, enum rsr_t, UCHAR *, USHORT);
+static void	setup_array(TDBB, BLB, UCHAR *, USHORT, TFB);
+static BLB	setup_triggers(TDBB, REL, BOOLEAN, VEC *, BLB);
+static void	setup_trigger_details(TDBB, REL, BLB, VEC *, UCHAR *, UCHAR *, BOOLEAN);
 static bool shadow_defined(TDBB);
+static bool validate_text_type (TDBB, STATUS *, TFB);
 static bool wal_defined(TDBB);
 
 static CONST UCHAR nonnull_validation_blr[] =
@@ -213,6 +243,8 @@ static CONST TASK task_table[] =
 	{ dfw_modify_procedure, modify_procedure },
 	{ dfw_delete_prm, delete_parameter },
 	{ dfw_delete_exception, delete_exception },
+    { dfw_delete_generator, delete_generator },
+    { dfw_delete_udf, delete_udf },
 	{ dfw_null, NULL }
 };
 
@@ -292,11 +324,9 @@ USHORT DFW_assign_index_type(DFW work, SSHORT field_type, SSHORT ttype)
 	else if (field_type == dtype_sql_time)
 		return idx_sql_time;
 
-#ifdef EXACT_NUMERICS
 /* idx_numeric2 used for 64-bit Integer support */
 	if (field_type == dtype_int64)
 		return idx_numeric2;
-#endif
 
 	return idx_numeric;
 }
@@ -361,7 +391,7 @@ void DFW_merge_work(TRA transaction,
  *
  * Functional description
  *	Merge the deferred work with the previous level.  This will
- *	be called only of there is a previous level.
+ *	be called only if there is a previous level.
  *
  **************************************/
 	DFW work, *ptr;
@@ -1157,6 +1187,12 @@ static void check_dependencies(TDBB tdbb,
 			case obj_exception:
 				obj_type = gds_exception_name;
 				break;
+			case obj_generator:
+				obj_type = gds_generator_name;
+				break;
+			case obj_udf:
+				obj_type = gds_udf_name;
+				break;
 			default:
 				assert(FALSE);
 				break;
@@ -1208,6 +1244,49 @@ static void check_filename( TEXT * name, USHORT l)
 	if (!valid || ISC_check_if_remote(file_name, FALSE))
 		ERR_post(gds_no_meta_update, gds_arg_gds, gds_node_name_err, 0);
 	/* Msg305: A node name is not permitted in a secondary, shadow, or log file name */
+}
+
+
+static bool compare_formats(FMT old_format, FMT new_format)
+{
+/**************************************
+ *
+ *	c o m p a r e _ f o r m a t s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Compare two format blocks
+ *
+ **************************************/
+	DSC *old_desc, *new_desc, *end;
+
+	if ((old_format->fmt_length != new_format->fmt_length)
+		|| (old_format->fmt_count != new_format->fmt_count))
+	{
+		return true;
+    }
+
+	old_desc = old_format->fmt_desc;
+	new_desc = new_format->fmt_desc;
+	end = old_format->fmt_desc + old_format->fmt_count;
+
+	while (old_desc < end)
+    {
+		if ((old_desc->dsc_dtype != new_desc->dsc_dtype)
+			|| (old_desc->dsc_scale != new_desc->dsc_scale)
+			|| (old_desc->dsc_length != new_desc->dsc_length)
+			|| (old_desc->dsc_sub_type != new_desc->dsc_sub_type)
+			|| (old_desc->dsc_flags != new_desc->dsc_flags)
+			|| (old_desc->dsc_address != new_desc->dsc_address))
+		{
+			return true;
+		}
+		old_desc++;
+		new_desc++;
+    }
+
+	return false;
 }
 
 
@@ -1267,7 +1346,7 @@ for (request_handle handle) x in rdb$relation_fields
 	with x.rdb$security_class eq work->dfw_name
     if (relation = MET_lookup_relation (tdbb, x.rdb$relation_name))
 	{
-    	id = MET_lookup_field (tdbb, relation, x.rdb$field_name);
+    	id = MET_lookup_field (tdbb, relation, x.rdb$field_name, 0);
     	if (field = MET_get_field (relation, id))
 	    field->fld_security_class = class;
 	}
@@ -1555,6 +1634,24 @@ static bool create_index(	TDBB	tdbb,
 						gds_arg_gds, gds_obj_in_use,
 						gds_arg_string, partner_relation->rel_name,
 						0);
+
+				/* CVC: Currently, the server doesn't enforce FK creation more than at DYN level.
+				If DYN is bypassed, then FK creation succeeds and operation will fail at run-time.
+				The aim is to check REFERENCES at DDL time instead of DML time and behave accordingly
+				to ANSI SQL rules for REFERENCES rights.
+				For testing purposes, I'm calling SCL_check_index, although most of the DFW ops are
+				carried using internal metadata structures that are refreshed from system tables. */
+
+				if (partner_relation)
+				{
+					/* Don't bother if the master's owner is the same than the detail's owner.
+					If both tables aren't defined in the same session, partner_relation->rel_owner_name
+					won't be loaded hence, we need to be careful about null pointers. */
+
+					if (!relation->rel_owner_name || !partner_relation->rel_owner_name
+						|| strcmp(relation->rel_owner_name, partner_relation->rel_owner_name))
+						SCL_check_index(tdbb, partner_relation->rel_name, idx.idx_id + 1, SCL_sql_references);
+				}
 			}
 		}
 
@@ -1940,6 +2037,80 @@ static bool delete_exception(	TDBB	tdbb,
 	case 4:
 		break;
 	}
+
+	return false;
+}
+
+
+static bool delete_generator(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
+{
+/**************************************
+ *
+ *	d e l e t e _ g e n e r a t o r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Check if it is allowable to delete
+ *	a generator, and if so, clean up after it.
+ * CVC: This function was modelled after delete_exception.
+ *
+ **************************************/
+
+	SET_TDBB(tdbb);
+
+	switch (phase)
+	{
+		case 0:
+			return false;
+	    case 1:
+			check_dependencies(tdbb, work->dfw_name, 0,
+							   obj_generator, transaction); 
+			return true;
+	    case 2:
+			return true;
+	    case 3:
+			return true;
+	    case 4:
+			break;
+    }
+
+	return false;
+}
+
+
+static bool delete_udf(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
+{
+/**************************************
+ *
+ *	d e l e t e _ u d f
+ *
+ **************************************
+ *
+ * Functional description
+ *	Check if it is allowable to delete
+ *	an udf, and if so, clean up after it.
+ * CVC: This function was modelled after delete_exception.
+ *
+ **************************************/
+
+	SET_TDBB(tdbb);
+
+	switch (phase)
+    {
+		case 0:
+			return false;
+		case 1:
+			check_dependencies(tdbb, work->dfw_name, 0,
+							   obj_udf, transaction); 
+			return true;
+		case 2:
+			return true;
+		case 3:
+			return true;
+		case 4:
+			break;
+    }
 
 	return false;
 }
@@ -2630,7 +2801,7 @@ static bool delete_rfr(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 	DBB dbb;
 	int rel_exists, field_count, id;
 	BLK handle;
-	TEXT f[32], *p, *q;
+	TEXT f[32];
 	REL relation;
 	VEC vector;
 
@@ -2656,13 +2827,13 @@ static bool delete_rfr(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 			if (!find_depend_in_dfw(tdbb, VR.RDB$VIEW_NAME, obj_view,
 									0, transaction))
 			{
-				for (p = f, q = VFLD.RDB$BASE_FIELD;
-					*q && *q != ' ';
-					*p++ = *q++)
+				TEXT *p = f, *endp = f + sizeof(f)-1, *q;
+				for (q = VFLD.RDB$BASE_FIELD; *q && p < endp; *p++ = *q++)
 				{
 					;	/* empty body */
 				}
 				*p = 0;
+				MET_exact_name(f);
 				field_count++;
 			}
 		END_FOR;
@@ -2732,7 +2903,7 @@ static bool delete_rfr(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 		relation = MET_lookup_relation_id(tdbb, work->dfw_id, FALSE);
 		if (relation)
 		{
-			id = MET_lookup_field(tdbb, relation, work->dfw_name);
+			id = MET_lookup_field(tdbb, relation, work->dfw_name, 0);
 			if (id >= 0)
 			{
 				vector = relation->rel_fields;
@@ -2835,22 +3006,18 @@ static bool find_depend_in_dfw(	TDBB	tdbb,
  * Functional description
  *	Check the object to see if it is being
  *	deleted as part of the deferred work.
- *	Return FALSE if it is, TRUE otherwise.
+ *	Return TRUE if it is, FALSE otherwise.
  *
  **************************************/
 
 	BLK request;
-	TEXT *p;
 	ENUM dfw_t dfw_type;
 	DFW work;
 
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
 
-	for (p = object_name; *p && *p != ' '; p++) {
-		;
-	}
-	*p = 0;
+	MET_exact_name(object_name);
 
 	switch (dep_type)
 	{
@@ -3108,7 +3275,49 @@ static void get_trigger_dependencies( DFW work)
 }
 
 
-static FMT make_format( TDBB tdbb, REL relation, USHORT version, TFB stack)
+static void load_trigs(TDBB tdbb, REL relation, VEC * triggers)
+{
+/**************************************
+ *
+ *	l o a d _ t r i g s
+ *
+ **************************************
+ *
+ * Functional description
+ *	We have just loaded the triggers onto the local vector 
+ *      triggers. Its now time to place them at their rightful 
+ *      place ie the relation block. 
+ *
+ **************************************/
+	VEC tmp_vector;
+
+	tmp_vector = relation->rel_pre_store;
+	relation->rel_pre_store = triggers[TRIGGER_PRE_STORE];
+	MET_release_triggers(tdbb, &tmp_vector);
+
+	tmp_vector = relation->rel_post_store;
+	relation->rel_post_store = triggers[TRIGGER_POST_STORE];
+	MET_release_triggers(tdbb, &tmp_vector);
+
+	tmp_vector = relation->rel_pre_erase;
+	relation->rel_pre_erase = triggers[TRIGGER_PRE_ERASE];
+	MET_release_triggers(tdbb, &tmp_vector);
+
+	tmp_vector = relation->rel_post_erase;
+	relation->rel_post_erase = triggers[TRIGGER_POST_ERASE];
+	MET_release_triggers(tdbb, &tmp_vector);
+
+	tmp_vector = relation->rel_pre_modify;
+	relation->rel_pre_modify = triggers[TRIGGER_PRE_MODIFY];
+	MET_release_triggers(tdbb, &tmp_vector);
+
+	tmp_vector = relation->rel_post_modify;
+	relation->rel_post_modify = triggers[TRIGGER_POST_MODIFY];
+	MET_release_triggers(tdbb, &tmp_vector);
+}
+
+
+static FMT make_format(TDBB tdbb, REL relation, USHORT * version, TFB stack)
 {
 /**************************************
  *
@@ -3122,7 +3331,7 @@ static FMT make_format( TDBB tdbb, REL relation, USHORT version, TFB stack)
  **************************************/
 	DBB dbb;
 	BLK request;
-	FMT format;
+	FMT	format, old_format;
 	TFB tfb;
 	BLB blob;
 	USHORT count;
@@ -3140,7 +3349,8 @@ static FMT make_format( TDBB tdbb, REL relation, USHORT version, TFB stack)
 
 	format = fmt::newFmt(*dbb->dbb_permanent, count + 1);
 	format->fmt_count = count + 1;
-	format->fmt_version = version;
+	if (version)
+		format->fmt_version = *version;
 
 /* Fill in the format block from the temporary field blocks */
 
@@ -3213,16 +3423,25 @@ static FMT make_format( TDBB tdbb, REL relation, USHORT version, TFB stack)
 		/* Msg361: new record size of %ld bytes is too big */
 	}
 
+	if ((format->fmt_version)
+		&& (old_format = MET_format(tdbb, relation, (format->fmt_version - 1)))    
+		&& (!compare_formats(old_format, format)))
+	{
+		delete format;
+		*version = old_format->fmt_version;
+		return old_format;
+    }
+
 /* Link the format block into the world */
 
 	VEC vector = relation->rel_formats;
 	if (!vector) {
-		vector = vec::newVector(*dbb->dbb_permanent, version+1);
+		vector = vec::newVector(*dbb->dbb_permanent, format->fmt_version + 1);
 		relation->rel_formats = vector;
 	} else {
-		vector->resize(version+1);
+		vector->resize(format->fmt_version + 1);
 	}
-	(*vector)[version] = (BLK) format;
+	(*vector)[format->fmt_version] = (BLK) format;
 
 /* Store format in system relation */
 
@@ -3232,7 +3451,7 @@ static FMT make_format( TDBB tdbb, REL relation, USHORT version, TFB stack)
 		FMT IN RDB$FORMATS 
         if (!REQUEST(irq_format3))
             REQUEST(irq_format3) = (BLK) request;
-		FMT.RDB$FORMAT = version;
+		FMT.RDB$FORMAT = format->fmt_version;
 		FMT.RDB$RELATION_ID = relation->rel_id;
 		blob = BLB_create(tdbb, dbb->dbb_sys_trans, (BID)&FMT.RDB$DESCRIPTOR);
 		BLB_put_segment(tdbb,
@@ -3279,7 +3498,7 @@ static bool make_version(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 	ADS array;
 	STATUS status[20];
 	SSHORT collation;
-	VEC triggers[TRIGGER_MAX], tmp_vector;
+	VEC triggers[TRIGGER_MAX];
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -3328,7 +3547,6 @@ static bool make_version(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 				/* Msg357: too many versions */
 			}
 			MODIFY REL USING
-				version = ++REL.RDB$FORMAT;
 				blob = BLB_create(tdbb,
 								dbb->dbb_sys_trans,
 								(BID)&REL.RDB$RUNTIME);
@@ -3339,8 +3557,6 @@ static bool make_version(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 						FLD IN RDB$FIELDS WITH
 						RFR.RDB$RELATION_NAME EQ work->dfw_name AND
 						RFR.RDB$FIELD_SOURCE EQ FLD.RDB$FIELD_NAME
-                    if (!REQUEST(irq_format2))
-                        REQUEST(irq_format2) = (BLK) request_fmtx;
 
 					/* Update RFR to reflect new fields id */
 
@@ -3464,14 +3680,7 @@ static bool make_version(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 										FLD.RDB$CHARACTER_SET_ID, collation);
 
 					/* Make sure the text type specified is implemented */
-					if ((IS_DTYPE_ANY_TEXT(tfb_->tfb_desc.dsc_dtype) &&
-						 !INTL_defined_type(tdbb, status,
-											tfb_->tfb_desc.dsc_ttype)) ||
-						(tfb_->tfb_desc.dsc_dtype == dtype_blob &&
-						 tfb_->tfb_desc.dsc_sub_type == BLOB_text &&
-						 !INTL_defined_type(tdbb,
-											status,
-											tfb_->tfb_desc.dsc_scale)))
+				    if (!(validate_text_type(tdbb, status, tfb)))
 					{
 						EXE_unwind(tdbb, (REQ)request_fmt1);
 						EXE_unwind(tdbb, (REQ)request_fmtx);
@@ -3486,25 +3695,8 @@ static bool make_version(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 						tfb_->tfb_flags |= TFB_computed;
 					tfb_->tfb_id = RFR.RDB$FIELD_ID;
 
-					if ( (n = FLD.RDB$DIMENSIONS) )
-					{
-						put_summary_record(	blob,
-											RSR_dimensions,
-											(UCHAR*)&n,
-											sizeof(n));
-						tfb_->tfb_flags |= TFB_array;
-						array = (ADS) stuff;
-						MOVE_CLEAR(array, (SLONG) sizeof(struct ads));
-						assert(n <= MAX_UCHAR);
-						array->ads_dimensions = (UCHAR)n;
-						array->ads_struct_count = 1;
-						array->ads_rpt[0].ads_desc = tfb_->tfb_desc;
-						get_array_desc(tdbb, FLD.RDB$FIELD_NAME, array);
-						put_summary_record(blob,
-											RSR_array_desc,
-											(UCHAR*)array,
-											array->ads_length);
-					}
+					if ((n = FLD.RDB$DIMENSIONS))
+						setup_array(tdbb, blob, FLD.RDB$FIELD_NAME, n, tfb);
 
 					if (external_flag)
 					{
@@ -3524,130 +3716,14 @@ static bool make_version(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 				if (!REQUEST(irq_format2))
 					REQUEST(irq_format2) = (BLK) request_fmtx;
 
-				request_fmtx =
-					(BLK) CMP_find_request(tdbb, irq_format4, IRQ_REQUESTS);
-				FOR(REQUEST_HANDLE request_fmtx)
-					TRG IN RDB$TRIGGERS
-						WITH TRG.RDB$RELATION_NAME = work->dfw_name AND
-						TRG.RDB$SYSTEM_FLAG != 0 AND 
-                        TRG.RDB$SYSTEM_FLAG NOT MISSING 
-                        SORTED BY TRG.RDB$TRIGGER_SEQUENCE 
-                    if (!REQUEST(irq_format4))
-						REQUEST(irq_format4) = (BLK) request_fmtx;
-
-					if (!TRG.RDB$TRIGGER_INACTIVE)
-					{
-						put_summary_record(blob, RSR_trigger_name,
-										   (UCHAR*) TRG.RDB$TRIGGER_NAME,
-										   name_length(TRG.RDB$TRIGGER_NAME));
-
-						/* for a view, load the trigger temporarily -- 
-						   this is inefficient since it will just be reloaded
-						   in MET_scan_relation () but it needs to be done
-						   in case the view would otherwise be non-updatable */
-
-						if (!null_view)
-						{
-							if (!relation->rel_name)
-								relation->rel_name =
-									MET_save_name(tdbb,
-												  TRG.RDB$RELATION_NAME);
-							MET_load_trigger(tdbb, relation,
-											 TRG.RDB$TRIGGER_NAME, triggers);
-						}
-					}
-				END_FOR;
-
-				if (!REQUEST(irq_format4))
-					REQUEST(irq_format4) = (BLK) request_fmtx;
-
-				request_fmtx =
-					(BLK) CMP_find_request(tdbb, irq_format5, IRQ_REQUESTS);
-				/* BUG #8458: Check constraint triggers have to be loaded
-				   (and hence executed) after the user-defined 
-				   triggers because user-defined triggers can modify
-				   the values being inserted or updated so that
-				   the end values stored in the database don't
-				   fulfill the check constraint */
-
-				FOR(REQUEST_HANDLE request_fmtx)
-					TRG IN RDB$TRIGGERS
-						WITH TRG.RDB$RELATION_NAME = work->dfw_name AND
-						(TRG.RDB$SYSTEM_FLAG = 0 OR
-						 TRG.RDB$SYSTEM_FLAG MISSING)
-						 AND NOT(TRG.RDB$TRIGGER_NAME STARTING WITH 'CHECK_'
-							AND TRG.RDB$TRIGGER_SOURCE MISSING)
-                         SORTED BY TRG.RDB$TRIGGER_SEQUENCE 
-                    if (!REQUEST(irq_format5))
-						REQUEST(irq_format5) = (BLK) request_fmtx;
-
-					if (!TRG.RDB$TRIGGER_INACTIVE)
-					{
-						put_summary_record(blob, RSR_trigger_name,
-										   (UCHAR*) TRG.RDB$TRIGGER_NAME,
-										   name_length(TRG.RDB$TRIGGER_NAME));
-
-						/* for a view, load the trigger temporarily -- 
-						   this is inefficient since it will just be reloaded
-						   in MET_scan_relation () but it needs to be done
-						   in case the view would otherwise be non-updatable */
-
-						if (!null_view)
-						{
-							if (!relation->rel_name)
-								relation->rel_name =
-									MET_save_name(tdbb,
-												  TRG.RDB$RELATION_NAME);
-							MET_load_trigger(tdbb, relation,
-											 TRG.RDB$TRIGGER_NAME, triggers);
-						}
-					}
-				END_FOR;
-
-				if (!REQUEST(irq_format5))
-					REQUEST(irq_format5) = (BLK) request_fmtx;
-
-				request_fmtx =
-					(BLK) CMP_find_request(tdbb, irq_format6, IRQ_REQUESTS);
-				FOR(REQUEST_HANDLE request_fmtx)
-					TRG IN RDB$TRIGGERS
-						WITH TRG.RDB$RELATION_NAME = work->dfw_name AND
-						(TRG.RDB$SYSTEM_FLAG = 0 OR 
-                         TRG.RDB$SYSTEM_FLAG MISSING)
-						AND (TRG.RDB$TRIGGER_NAME STARTING WITH 'CHECK_' AND
-						 TRG.RDB$TRIGGER_SOURCE MISSING) 
-                        SORTED BY TRG.RDB$TRIGGER_SEQUENCE 
-
-                    if (!REQUEST(irq_format6))
-						REQUEST(irq_format6) = (BLK) request_fmtx;
-
-					if (!TRG.RDB$TRIGGER_INACTIVE)
-					{
-						put_summary_record(blob, RSR_trigger_name,
-										   (UCHAR*) TRG.RDB$TRIGGER_NAME,
-										   name_length(TRG.RDB$TRIGGER_NAME));
-
-						/* for a view, load the trigger temporarily --
-						   this is inefficient since it will just be reloaded
-						   in MET_scan_relation () but it needs to be done
-						   in case the view would otherwise be non-updatable */
-
-						if (!null_view)
-						{
-							if (!relation->rel_name)
-								relation->rel_name =
-									MET_save_name(tdbb,
-												  TRG.RDB$RELATION_NAME);
-							MET_load_trigger(tdbb, relation,
-											 TRG.RDB$TRIGGER_NAME, triggers);
-						}
-					}
-				END_FOR;
-
-				if (!REQUEST(irq_format6))
-					REQUEST(irq_format6) = (BLK) request_fmtx;
+				blob = setup_triggers(tdbb, relation, null_view, triggers, blob);
 
 				BLB_close(tdbb, blob);
+				version = REL.RDB$FORMAT;
+				version++;
+				relation->rel_current_format = make_format(tdbb, relation,
+														   &version, stack);
+				REL.RDB$FORMAT = version;
 			END_MODIFY;
 		END_FOR;
 
@@ -3661,37 +3737,7 @@ static bool make_version(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 		}
 
 		if (!(relation->rel_flags & REL_sys_trigs_being_loaded))
-		{
-			/* We have just loaded the triggers onto the local vector triggers.
-			   Its now time to place them at their rightful place ie the relation
-			   block. 
-			 */
-			tmp_vector = relation->rel_pre_store;
-			relation->rel_pre_store = triggers[TRIGGER_PRE_STORE];
-			MET_release_triggers(tdbb, &tmp_vector);
-
-			tmp_vector = relation->rel_post_store;
-			relation->rel_post_store = triggers[TRIGGER_POST_STORE];
-			MET_release_triggers(tdbb, &tmp_vector);
-
-			tmp_vector = relation->rel_pre_erase;
-			relation->rel_pre_erase = triggers[TRIGGER_PRE_ERASE];
-			MET_release_triggers(tdbb, &tmp_vector);
-
-			tmp_vector = relation->rel_post_erase;
-			relation->rel_post_erase = triggers[TRIGGER_POST_ERASE];
-			MET_release_triggers(tdbb, &tmp_vector);
-
-			tmp_vector = relation->rel_pre_modify;
-			relation->rel_pre_modify = triggers[TRIGGER_PRE_MODIFY];
-			MET_release_triggers(tdbb, &tmp_vector);
-
-			tmp_vector = relation->rel_post_modify;
-			relation->rel_post_modify = triggers[TRIGGER_POST_MODIFY];
-			MET_release_triggers(tdbb, &tmp_vector);
-		}
-		relation->rel_current_format = make_format(tdbb, relation,
-												   version, stack);
+		    load_trigs(tdbb, relation, triggers);
 
 		/* in case somebody changed the view definition or a computed
 		   field, reset the dependencies by deleting the current ones
@@ -4119,6 +4165,205 @@ static bool shadow_defined(TDBB tdbb)
 	CMP_release(tdbb, (REQ)handle);
 
 	return result;
+}
+
+
+static void setup_array(TDBB tdbb, BLB blob, UCHAR * field_name, USHORT n, TFB tfb)
+{
+/**************************************
+ *
+ *	s e t u p _ a r r a y
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ *	setup an array descriptor in a tfb
+ *
+ **************************************/
+
+	SLONG stuff[64];
+	ADS array;
+
+	put_summary_record(blob, RSR_dimensions, &n, sizeof(n));
+	tfb->tfb_flags |= TFB_array;
+	array = reinterpret_cast<ADS>(stuff);
+	MOVE_CLEAR(array, (SLONG) sizeof(struct ads));
+	array->ads_dimensions = n;
+	array->ads_struct_count = 1;
+	array->ads_rpt[0].ads_desc = tfb->tfb_desc;
+	get_array_desc(tdbb, field_name, array);
+	put_summary_record(blob, RSR_array_desc, array, array->ads_length);
+}
+
+
+static BLB setup_triggers(TDBB tdbb, REL relation, BOOLEAN null_view, VEC * triggers, BLB blob)
+{
+/**************************************
+ *
+ *	s e t u p _ t r i g g e r s
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ *	Get the triggers in the right order, which appears
+ *      to be system triggers first, then user triggers,
+ *      then triggers that implement check constraints. 
+ *
+ * BUG #8458: Check constraint triggers have to be loaded
+ *	      (and hence executed) after the user-defined 
+ *	      triggers because user-defined triggers can modify
+ *	      the values being inserted or updated so that
+ *	      the end values stored in the database don't
+ *	      fulfill the check constraint.     .
+ *
+ **************************************/
+	BLK	request_fmtx;
+	DBB	dbb;
+
+	if (!relation)
+		return blob;
+
+	dbb = tdbb->tdbb_database;
+
+
+	/* system triggers */
+
+	request_fmtx = (BLK) CMP_find_request(tdbb, irq_format4, IRQ_REQUESTS);
+
+	FOR (REQUEST_HANDLE request_fmtx) 
+		TRG IN RDB$TRIGGERS 
+		WITH TRG.RDB$RELATION_NAME = relation->rel_name 
+			AND TRG.RDB$SYSTEM_FLAG = 1 
+		SORTED BY TRG.RDB$TRIGGER_SEQUENCE
+
+		if (!TRG.RDB$TRIGGER_INACTIVE)
+			setup_trigger_details(tdbb, relation,  blob,  triggers,  
+				TRG.RDB$TRIGGER_NAME, TRG.RDB$RELATION_NAME, null_view);
+	END_FOR;
+
+	if (!REQUEST(irq_format4))
+		REQUEST(irq_format4) = request_fmtx;
+
+
+	/* user triggers */
+
+	request_fmtx = (BLK) CMP_find_request(tdbb, irq_format5, IRQ_REQUESTS);
+
+	FOR (REQUEST_HANDLE request_fmtx)
+		TRG IN RDB$TRIGGERS
+		WITH TRG.RDB$RELATION_NAME EQ relation->rel_name
+		AND (TRG.RDB$SYSTEM_FLAG = 0 OR TRG.RDB$SYSTEM_FLAG MISSING)
+		AND (NOT ANY 
+			CHK IN RDB$CHECK_CONSTRAINTS CROSS
+			RCN IN RDB$RELATION_CONSTRAINTS
+			WITH TRG.RDB$TRIGGER_NAME EQ CHK.RDB$TRIGGER_NAME
+			AND CHK.RDB$CONSTRAINT_NAME EQ RCN.RDB$CONSTRAINT_NAME
+			AND (RCN.RDB$CONSTRAINT_TYPE EQ "CHECK"
+			    OR RCN.RDB$CONSTRAINT_TYPE EQ "FOREIGN KEY")
+			)
+		SORTED BY TRG.RDB$TRIGGER_SEQUENCE
+    
+		if (!TRG.RDB$TRIGGER_INACTIVE)
+			setup_trigger_details(tdbb, relation,  blob,  triggers,  
+			    TRG.RDB$TRIGGER_NAME, TRG.RDB$RELATION_NAME, null_view);
+	END_FOR;
+
+	if (!REQUEST(irq_format5))
+		REQUEST(irq_format5) = request_fmtx;
+
+
+	/* check constraint triggers */
+
+	request_fmtx = (BLK) CMP_find_request(tdbb, irq_format6, IRQ_REQUESTS);
+
+	FOR (REQUEST_HANDLE request_fmtx)
+		TRG IN RDB$TRIGGERS
+		WITH TRG.RDB$RELATION_NAME = relation->rel_name 
+		AND (TRG.RDB$SYSTEM_FLAG BT 3 AND 5	  
+			OR ((TRG.RDB$SYSTEM_FLAG = 0 OR TRG.RDB$SYSTEM_FLAG MISSING)
+				AND ANY 
+			CHK IN RDB$CHECK_CONSTRAINTS CROSS
+			RCN IN RDB$RELATION_CONSTRAINTS
+				WITH TRG.RDB$TRIGGER_NAME EQ CHK.RDB$TRIGGER_NAME
+				AND CHK.RDB$CONSTRAINT_NAME EQ RCN.RDB$CONSTRAINT_NAME
+				AND (RCN.RDB$CONSTRAINT_TYPE EQ "CHECK"
+				    OR RCN.RDB$CONSTRAINT_TYPE EQ "FOREIGN KEY")
+		    	)
+			)
+		SORTED BY TRG.RDB$TRIGGER_SEQUENCE
+
+		if (!TRG.RDB$TRIGGER_INACTIVE)
+			setup_trigger_details(tdbb, relation,  blob,  triggers,  
+				TRG.RDB$TRIGGER_NAME, TRG.RDB$RELATION_NAME, null_view);
+    END_FOR;
+
+	if (!REQUEST(irq_format6))
+		REQUEST(irq_format6) = request_fmtx;
+
+	return blob;
+}
+
+
+static void setup_trigger_details(TDBB tdbb,
+								  REL relation,
+								  BLB blob,
+								  VEC * triggers,
+								  UCHAR * trigger_name,
+								  UCHAR * relation_name, 
+								  BOOLEAN null_view)
+{
+/**************************************
+ *
+ *	s e t u p _ t r i g g e r _ d e t a i l s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Stuff trigger details in places.
+ *
+ * for a view, load the trigger temporarily -- 
+ * this is inefficient since it will just be reloaded
+ *  in MET_scan_relation () but it needs to be done
+ *  in case the view would otherwise be non-updatable 
+ *
+ **************************************/
+
+	put_summary_record(blob, RSR_trigger_name, 
+		trigger_name, name_length(trigger_name));
+
+	if (!null_view)
+    {
+		if (!relation->rel_name)
+			relation->rel_name = MET_save_name(tdbb, relation_name);
+		MET_load_trigger(tdbb, relation, trigger_name, triggers);
+	}
+}	
+
+
+static bool validate_text_type(TDBB tdbb, STATUS * status, TFB tfb)
+{
+/**************************************
+ *
+ *	v a l i d a t e _ t e x t _ t y p e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Make sure the text type specified is implemented 
+ *
+ **************************************/
+
+	if ((IS_DTYPE_ANY_TEXT (tfb->tfb_desc.dsc_dtype) &&
+		!INTL_defined_type(tdbb, status, tfb->tfb_desc.dsc_ttype))
+		||
+		(tfb->tfb_desc.dsc_dtype == dtype_blob && 
+		tfb->tfb_desc.dsc_sub_type == BLOB_text && 
+		!INTL_defined_type(tdbb, status, tfb->tfb_desc.dsc_scale)))
+		return false;
+	else
+		return true;
 }
 
 

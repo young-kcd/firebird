@@ -97,4 +97,8 @@ typedef usr *USR;
  */
 #define SYSDBA_USER_NAME	"SYSDBA"
 
+#define object_table "TABLE"
+#define object_procedure "PROCEDURE"
+#define object_column "COLUMN"
+
 #endif /* JRD_SCL_H */

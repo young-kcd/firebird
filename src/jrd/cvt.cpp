@@ -23,6 +23,10 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
  *                          - DELTA and IMP
  *
+ * 2001.6.16 Claudio Valderrama: Wiped out the leading space in
+ * cast(float_expr as char(n)) in dialect 1, reported in SF.
+ * 2001.11.19 Claudio Valderrama: integer_to_text() should use the
+ * source descriptor "from" to call conversion_error.
  */
 
 #include "firebird.h"
@@ -2159,6 +2163,15 @@ static void float_to_text(DSC * from, DSC * to, FPTR_VOID err)
    NUMERIC(15, -scale): print it in fixed format with -scale digits
    to the right of the ".". */
 
+/* CVC: Here sprintf was given an extra space in the two formatting
+		masks used below, "%- #*.*f" and "%- #*.*g" but certainly with positive
+		quantities and CAST it yields an annoying leading space.
+		However, by getting rid of the space you get in dialect 1:
+		cast(17/13 as char(5))  => 1.308
+		cast(-17/13 as char(5)) => -1.31
+		Since this is inconsistent with dialect 3, see workaround at the tail
+		of this function. */
+
 	if ((dtype_double == from->dsc_dtype) && (from->dsc_scale < 0))
 		chars_printed = sprintf(temp, "%- #*.*f", width, -from->dsc_scale, d);
 	else
@@ -2169,7 +2182,8 @@ static void float_to_text(DSC * from, DSC * to, FPTR_VOID err)
    for the input type: if it fits, we're done. */
 
 	if (chars_printed > width) {
-		chars_printed = sprintf(temp, "%- #*.*g", width, precision, d);
+		char num_format[] = "%- #*.*g";
+		chars_printed = sprintf(temp, num_format, width, precision, d);
 
 		/* If the full-precision result is too wide for the destination,
 		   reduce the precision and try again. */
@@ -2183,7 +2197,7 @@ static void float_to_text(DSC * from, DSC * to, FPTR_VOID err)
 				reinterpret_cast < pfn_cvt_private_cludge >
 					(err) (gds_arith_except, 0);
 
-			chars_printed = sprintf(temp, "%- #*.*g", width, precision, d);
+			chars_printed = sprintf(temp, num_format, width, precision, d);
 
 			/* It's possible that reducing the precision caused sprintf to switch
 			   from f-format to e-format, and that the output is still too long
@@ -2195,8 +2209,7 @@ static void float_to_text(DSC * from, DSC * to, FPTR_VOID err)
 				if (precision < 2)
 					reinterpret_cast < pfn_cvt_private_cludge >
 						(err) (gds_arith_except, 0);
-				chars_printed =
-					sprintf(temp, "%- #*.*g", width, precision, d);
+			    chars_printed = sprintf(temp, num_format, width, precision, d);
 			}
 		}
 	}
@@ -2207,8 +2220,22 @@ static void float_to_text(DSC * from, DSC * to, FPTR_VOID err)
 	DSC intermediate;
 	intermediate.dsc_dtype = dtype_text;
 	intermediate.dsc_ttype = ttype_ascii;
-	intermediate.dsc_address = (UCHAR *) temp;
-	intermediate.dsc_length = chars_printed;
+	/* CVC: If you think this is dangerous, replace the "else" with a call to
+			MEMMOVE(temp, temp + 1, chars_printed) or something cleverer.
+			Paranoid assumption:
+			UCHAR is unsigned char as seen on jrd\common.h => same size. */
+	if (d < 0)
+	{
+		intermediate.dsc_address = reinterpret_cast<UCHAR*>(temp);
+		intermediate.dsc_length = chars_printed;
+	}
+	else
+	{
+		if (!temp[0])
+			temp[1] = 0;
+		intermediate.dsc_address = reinterpret_cast<UCHAR*>(temp) + 1;
+		intermediate.dsc_length = chars_printed - 1;
+	}
 
 	CVT_move(&intermediate, to, err);
 }
@@ -2298,7 +2325,7 @@ static void integer_to_text(DSC * from, DSC * to, FPTR_VOID err)
 		(to->dsc_dtype == dtype_cstring && length >= to->dsc_length) ||
 		(to->dsc_dtype == dtype_varying
 		 && length > (SSHORT) (to->dsc_length - sizeof(USHORT))))
-		conversion_error(to, err);
+	    conversion_error(from, err);
 
 	q =
 		(to->dsc_dtype ==

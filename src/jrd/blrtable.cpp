@@ -216,6 +216,7 @@ static CONST VERB verbs[] = {
 	PAIR(nod_current_date, blr_current_date, e_current_date_length, 0, VALUE, OTHER),
 	PAIR(nod_current_time, blr_current_time, e_current_time_length, 0, VALUE, OTHER),
 	PAIR(nod_current_timestamp, blr_current_timestamp, e_current_timestamp_length, 0, VALUE, OTHER),
+    PAIR(nod_current_role, blr_current_role, 1, 0, VALUE, VALUE),
 	0
 };
 

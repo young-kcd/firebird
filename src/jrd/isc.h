@@ -21,9 +21,11 @@
  * Contributor(s): ______________________________________.
  * Added TCP_NO_DELAY option for superserver on Linux
  * FSG 16.03.2001 
+ * 26-Sept-2001 Paul Beach - External File Directory Config. Parameter
+ * 17-Oct-2001  Mike Nordell - CPU affinity
  */
 /*
-$Id: isc.h,v 1.2 2001-12-24 02:50:51 tamlin Exp $
+$Id: isc.h,v 1.3 2002-06-29 13:00:56 dimitr Exp $
 */
 #ifndef _JRD_ISC_H_
 #define _JRD_ISC_H_
@@ -44,7 +46,11 @@ extern "C" {
 #define	ISCCFG_LOCKMEM_DEF	98304
 
 #define ISCCFG_LOCKSEM		"V4_LOCK_SEM_COUNT"
+#ifdef SINIXZ
+#define ISCCFG_LOCKSEM_DEF	25
+#else
 #define ISCCFG_LOCKSEM_DEF	32
+#endif
 
 #define ISCCFG_LOCKSIG		"V4_LOCK_SIGNAL"
 #define ISCCFG_LOCKSIG_DEF	16
@@ -105,6 +111,7 @@ extern "C" {
 #define ISCCFG_TMPDIR		"TMP_DIRECTORY"
 
 #define ISCCFG_EXT_FUNC_DIR	"EXTERNAL_FUNCTION_DIRECTORY"
+#define ISCCFG_EXT_FILE_DIR	"EXTERNAL_FILE_DIRECTORY"
 
 #define ISCCFG_TRACE_POOLS	"TRACE_MEMORY_POOLS"	/* Internal Use only */
 #define ISCCFG_TRACE_POOLS_DEF	0	/* Off -  Internal Use only */
@@ -115,6 +122,11 @@ extern "C" {
 #ifdef SET_TCP_NO_DELAY
 #define ISCCFG_NO_NAGLE	"TCP_NO_NAGLE"
 #define ISCCFG_NO_NAGLE_DEF	0	/*Disable Nagle Algorithm */
+#endif
+
+#ifdef WIN_NT
+#define ISCCFG_CPU_AFFINITY_TAG		"CPU_AFFINITY"
+#define ISCCFG_CPU_AFFINITY_DEF		1	/* bit 0 set, only first CPU */
 #endif
 
 

@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 23-May-2001 Claudio Valderrama - isc_add_user allowed user names
+ *                           up to 32 characters length; changed to 31.
  */
 
 #include "firebird.h"
@@ -905,7 +908,7 @@ return 1;
 	userInfo.operation = ADD_OPER;
 
 	if (user_data->user_name) {
-		if (strlen(user_data->user_name) > 32) {
+		if (strlen(user_data->user_name) > 31) {
 			status[0] = isc_arg_gds;
 			status[1] = isc_usrname_too_long;
 			status[2] = isc_arg_end;

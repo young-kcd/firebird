@@ -20,6 +20,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2001.6.18 Claudio Valderrama: Implement comparison on blobs and blobs against
+ * other datatypes by request from Ann Harrison.
  */
 
 #include "firebird.h"
@@ -38,6 +41,12 @@
 #include "../jrd/thd_proto.h"
 #include "../jrd/intl_classes.h"
 #include "../jrd/gds_proto.h"
+/* CVC: I needed them here. */
+#include "../jrd/jrd.h"
+#include "../jrd/blb_proto.h"
+#include "../jrd/constants.h"
+#include "../jrd/tra.h"
+#include "../jrd/req.h"
 
 #ifdef VMS
 extern double MTH$CVT_D_G(), MTH$CVT_G_D();
@@ -88,6 +97,9 @@ static CONST BYTE compare_priority[] = { dtype_null,	/* dtype_null through dtype
 	dtype_long + 1
 };								/* int64 goes right after long       */
 
+#pragma FB_COMPILER_MESSAGE("Fix this! Ugly function pointer cast!")
+typedef void (*pfn_cvt_private_cludge) (int, int);
+typedef void (*pfn_cvt_private_cludge2) (int, int, ...);
 
 
 SSHORT CVT2_compare(DSC * arg1, DSC * arg2, FPTR_VOID err)
@@ -346,7 +358,7 @@ SSHORT CVT2_compare(DSC * arg1, DSC * arg2, FPTR_VOID err)
 		return 0;
 	}
 
-/* Handle hetergeneous compares */
+/* Handle heterogeneous compares */
 
 	if (compare_priority[arg1->dsc_dtype] < compare_priority[arg2->dsc_dtype])
 		return -CVT2_compare(arg2, arg1, err);
@@ -472,6 +484,8 @@ SSHORT CVT2_compare(DSC * arg1, DSC * arg2, FPTR_VOID err)
 		}
 
 	case dtype_blob:
+		return CVT2_blob_compare(arg1, arg2, err);
+
 	case dtype_array:
 		reinterpret_cast < void (*) (...) > (*err) (gds_wish_list,
 													gds_arg_gds,
@@ -488,6 +502,314 @@ SSHORT CVT2_compare(DSC * arg1, DSC * arg2, FPTR_VOID err)
 }
 
 
+SSHORT CVT2_blob_compare(DSC * arg1, DSC * arg2, FPTR_VOID err)
+{
+/**************************************
+ *
+ *	C V T 2 _ b l o b _ c o m p a r e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Compare two blobs.  Return (-1, 0, 1) if a<b, a=b, or a>b.
+ *  Alternatively, it will try to compare a blob against a string;
+ *	in this case, the string should be the second argument.
+ * CVC: Ann Harrison asked for this function to make comparisons more
+ * complete in the engine.
+ *
+ **************************************/
+	/* CHARSET_ID charset1, charset2; */
+	TDBB tdbb = NULL_TDBB;
+	SSHORT l1, l2;
+	USHORT ttype1, ttype2;
+	SSHORT ret_val = 0;
+	TextType *obj1 = 0, *obj2 = 0;
+	DSC desc1, desc2;
+	BOOLEAN bin_cmp = FALSE, both_are_text = FALSE;
+
+	SET_TDBB(tdbb);
+
+/* DEV_BLKCHK (node, type_nod); */
+
+	if (arg1->dsc_dtype != dtype_blob)
+		reinterpret_cast < pfn_cvt_private_cludge2 >
+			(err) (gds_wish_list, gds_arg_gds, gds_datnotsup, 0);
+
+	/* Is arg2 a blob? */
+	if (arg2->dsc_dtype == dtype_blob)
+	{
+		BLB	blob1, blob2;
+#ifndef STACK_REDUCTION
+		UCHAR buffer1[BUFFER_LARGE], buffer2[BUFFER_LARGE];
+#else
+		STR	temp_str = 0;
+		UCHAR *buffer1 = 0, *buffer2 = 0;
+#endif
+	
+	    /* Same blob id address? */
+		if (arg1->dsc_address == arg2->dsc_address)
+			return 0;
+		else
+		{
+			/* Second test for blob id, checking relation and slot. */
+			BID bid1 = (BID) arg1->dsc_address, bid2 = (BID) arg2->dsc_address;
+			if (bid1->bid_relation_id == bid2->bid_relation_id &&
+				(!bid1->bid_relation_id && bid1->bid_stuff.bid_blob == bid1->bid_stuff.bid_blob ||
+				bid1->bid_relation_id && bid1->bid_stuff.bid_number == bid2->bid_stuff.bid_number))
+				return 0;
+		}
+	
+		if (arg1->dsc_sub_type == BLOB_text)
+			ttype1 = arg1->dsc_scale;       /* Load blob character set */
+		else
+			ttype1 = ttype_none;
+		if (arg2->dsc_sub_type == BLOB_text)
+			ttype2 = arg2->dsc_scale;       /* Load blob character set */
+		else
+			ttype2 = ttype_none;
+
+	    desc1.dsc_dtype = dtype_text;
+		desc2.dsc_dtype = dtype_text;
+		desc1.dsc_address = buffer1;
+		desc2.dsc_address = buffer2;
+		INTL_ASSIGN_TTYPE(&desc1, ttype1);
+		INTL_ASSIGN_TTYPE(&desc2, ttype2);
+
+	    blob1 = BLB_open(tdbb, tdbb->tdbb_request->req_transaction, (BID) arg1->dsc_address);
+		blob2 = BLB_open(tdbb, tdbb->tdbb_request->req_transaction, (BID) arg2->dsc_address);
+
+		/* Can we have a lightweight, binary comparison? */
+		bin_cmp = (arg1->dsc_sub_type != BLOB_text || arg2->dsc_sub_type != BLOB_text);
+		if (!bin_cmp)
+		{
+			both_are_text = TRUE;
+			if (ttype1 == ttype_dynamic || ttype2 == ttype_dynamic)
+			{
+				obj1 = INTL_texttype_lookup(tdbb, ttype1, err, NULL);
+				obj2 = INTL_texttype_lookup(tdbb, ttype2, err, NULL);
+				ttype1 = obj1->getType();
+				ttype2 = obj2->getType();
+			}
+			bin_cmp = (ttype1 == ttype2 || ttype1 == ttype_none || ttype1 == ttype_ascii
+				|| ttype2 == ttype_none || ttype2 == ttype_ascii);
+		}
+
+		/* I'm sorry but if we can't make a binary comparison, it doesn't make sense to
+		compare different charsets by pulling fixed chunks of the blobs and compare those
+		slices, due to different sizes of the charsets. I do the last effort by comparing
+		the charsets regarding the max bytes per character: if they use one byte, I can
+		proceed with the comparison, knowing that I will at least get same number of
+		characters per chunk from both blobs. */
+		if (!bin_cmp && (blob1->blb_length > BUFFER_LARGE || blob2->blb_length > BUFFER_LARGE))
+		{
+			if (!obj1)
+			{
+				obj1 = INTL_texttype_lookup(tdbb, ttype1, err, NULL);
+				obj2 = INTL_texttype_lookup(tdbb, ttype2, err, NULL);
+			}
+			assert(obj1);
+			assert(obj2);
+			if (obj1->getBytesPerChar() != 1 || obj2->getBytesPerChar() != 1)
+				reinterpret_cast < pfn_cvt_private_cludge2 >
+					(err) (gds_wish_list, gds_arg_gds, gds_datnotsup, 0);
+	    }
+
+#ifdef STACK_REDUCTION
+		/* do a block allocate */
+		temp_str = new (*tdbb->tdbb_default, sizeof(UCHAR) * (2 * BUFFER_LARGE)) str();
+		buffer1 = temp_str->str_data;
+	    buffer2 = buffer1 + BUFFER_LARGE;
+#endif
+
+		while (!(blob1->blb_flags & BLB_eof) && !(blob2->blb_flags & BLB_eof))
+	    {
+			l1 = BLB_get_segment(tdbb, blob1, buffer1, BUFFER_LARGE);
+			l2 = BLB_get_segment(tdbb, blob2, buffer2, BUFFER_LARGE);
+			if (bin_cmp)
+			{
+				SSHORT safemin, common_top = MIN(l1, l2);
+				for (safemin = 0; safemin < common_top && !ret_val; ++safemin)
+				{
+					if (buffer1 [safemin] != buffer2[safemin])
+						ret_val = buffer1[safemin] < buffer2[safemin] ? -1 : 1;
+				}
+				/* This is the case when we hit eof on both blobs but with different number
+				of bytes read and there's still no definitive comparison.
+				This is not safe with MBCS for now. */
+				if (!ret_val)
+				{
+					UCHAR blank_char = both_are_text ? '\x20' : '\x0';
+					assert (safemin == common_top);
+					if (l1 < l2)
+					{
+						for (safemin = l1; safemin < l2 && !ret_val; ++safemin)
+							if (buffer2[safemin] != blank_char)
+								ret_val = buffer2[safemin] > blank_char ? -1: 1;
+					}
+					else if (l1 > l2)
+					{
+						for (safemin = l2; safemin < l1 && !ret_val; ++safemin)
+							if (buffer1[safemin] != blank_char)
+								ret_val = buffer1[safemin] > blank_char ? 1 : -1;
+					}
+					assert(ret_val || l1 == l2);
+				}
+			}
+			else 
+			{
+				desc1.dsc_length = l1;
+				desc2.dsc_length = l2;
+				ret_val = INTL_compare(tdbb, &desc1, &desc2, err);
+			}
+			if (ret_val)
+				break;
+		}
+		/* This is the case when both blobs still seem to be equivalent but one of them
+		has not hit eof yet.
+		This is not safe with MBCS for now. */
+		if (!ret_val)
+		{
+			BOOLEAN eof1 = (blob1->blb_flags & BLB_eof == BLB_eof);
+			BOOLEAN eof2 = (blob2->blb_flags & BLB_eof == BLB_eof);
+			UCHAR blank_char = both_are_text ? '\x20' : '\x0';
+			if (eof1 && !eof2)
+			{
+				if (bin_cmp)
+				{
+					SSHORT safemin;
+					while (!(blob2->blb_flags & BLB_eof) && !ret_val)
+					{
+						l2 = BLB_get_segment(tdbb, blob2, buffer2, BUFFER_LARGE);
+						for (safemin = 0; safemin < l2 && !ret_val; ++safemin)
+							if (buffer2[safemin] != blank_char)
+								ret_val = buffer2[safemin] > blank_char ? -1: 1;
+					}
+				}
+				else
+				{
+					desc1.dsc_length = 0;
+					desc2.dsc_length = l2;
+					ret_val = INTL_compare(tdbb, &desc1, &desc2, err);
+				}
+			}
+			else if (!eof1 && eof2)
+			{
+				if (bin_cmp)
+				{
+					SSHORT safemin;
+					while (!(blob1->blb_flags & BLB_eof) && !ret_val)
+					{
+						l1 = BLB_get_segment(tdbb, blob1, buffer1, BUFFER_LARGE);
+						for (safemin = 0; safemin < l1 && !ret_val; ++safemin)
+							if (buffer1[safemin] != blank_char)
+								ret_val = buffer1[safemin] > blank_char ? 1 : -1;
+					}
+				}
+				else
+				{
+					desc1.dsc_length = l1;
+					desc2.dsc_length = 0;
+					ret_val = INTL_compare(tdbb, &desc1, &desc2, err);
+				}
+			}
+		}
+		BLB_close(tdbb, blob1);
+		BLB_close(tdbb, blob2);
+#ifdef STACK_REDUCTION
+		/*  do a block deallocation of local variables */
+		if (temp_str)
+			delete temp_str;
+#endif
+	}
+	/* We do not accept arrays for now. Maybe ADS in the future. */
+	else if (arg2->dsc_dtype == dtype_array)
+		reinterpret_cast < pfn_cvt_private_cludge2 >
+		 (err) (gds_wish_list, gds_arg_gds, gds_datnotsup, 0);
+	/* The second parameter should be a string. */
+	else
+	{
+		BLB blob1;
+#ifndef STACK_REDUCTION
+		UCHAR buffer1[BUFFER_LARGE];
+#else
+		UCHAR *buffer1 = 0;
+#endif
+		STR temp_str = 0;
+		UCHAR *dbuf = 0;
+	
+		if (arg1->dsc_sub_type == BLOB_text)
+			ttype1 = arg1->dsc_scale;       /* Load blob character set */
+		else
+			ttype1 = ttype_none;
+		if (arg2->dsc_dtype <= dtype_varying)
+			ttype2 = arg2->dsc_ttype;
+		else
+			ttype2 = ttype_none;
+
+		desc1.dsc_dtype = dtype_text;
+		/* CVC: Cannot be there since we need dbuf pointing to valid address first.
+		Moved after the #if/#endif shown some lines below.
+		desc1.dsc_address = dbuf; */
+		INTL_ASSIGN_TTYPE(&desc1, ttype1);
+
+		/* Can we have a lightweight, binary comparison?*/
+		bin_cmp = (arg1->dsc_sub_type != BLOB_text || arg2->dsc_dtype > dtype_varying);
+		if (!bin_cmp)
+		{
+			if (arg1->dsc_sub_type == BLOB_text)
+			{
+				obj1 = INTL_texttype_lookup(tdbb, ttype1, err, NULL);
+				assert(obj1);
+				ttype1 = obj1->getType();
+				if (ttype1 == ttype_none || ttype1 == ttype_ascii)
+					bin_cmp = TRUE;
+			}
+			if (arg2->dsc_dtype <= dtype_varying)
+			{
+				obj2 = INTL_texttype_lookup(tdbb, ttype2, err, NULL);
+				assert(obj2);
+				ttype2 = obj2->getType();
+				if (ttype2 == ttype_none || ttype2 == ttype_ascii)
+					bin_cmp = TRUE;
+			}
+			if (ttype1 == ttype2)
+				bin_cmp = TRUE;
+		}
+
+		/* I will stop execution here until I can complete this function. */
+		if (!bin_cmp)
+			reinterpret_cast < pfn_cvt_private_cludge2 >
+			 (err) (gds_wish_list, gds_arg_gds, gds_datnotsup, 0);
+
+#ifdef STACK_REDUCTION
+		/* do a block allocate */
+		temp_str = new (*tdbb->tdbb_default, sizeof(UCHAR) * arg2->dsc_length) str();
+	    dbuf = temp_str->str_data;
+#else
+		if (arg2->dsc_length > BUFFER_LARGE)
+		{
+			temp_str = new (*tdbb->tdbb_default, sizeof(UCHAR) * arg2->dsc_length) str();
+			dbuf = temp_str->str_data;
+	    }
+		else
+			dbuf = buffer1;
+#endif
+
+		desc1.dsc_address = dbuf;
+		blob1 = BLB_open(tdbb, tdbb->tdbb_request->req_transaction, (BID) arg1->dsc_address);
+	    l1 = BLB_get_segment(tdbb, blob1, dbuf, arg2->dsc_length);
+		desc1.dsc_length = l1;
+	    ret_val = CVT2_compare(&desc1, arg2, err);
+		BLB_close(tdbb, blob1);
+
+		/*  do a block deallocation of local variables */
+		if (temp_str)
+			delete temp_str;
+	}
+	return ret_val;
+}
+
+
 void CVT2_get_name(DSC * desc, TEXT * string, FPTR_VOID err)
 {
 /**************************************
@@ -497,7 +819,7 @@ void CVT2_get_name(DSC * desc, TEXT * string, FPTR_VOID err)
  **************************************
  *
  * Functional description
- *	Get a name (max length 31, blank terminated) from a descriptor.
+ *	Get a name (max length 31, NULL terminated) from a descriptor.
  *
  **************************************/
 	USHORT length;

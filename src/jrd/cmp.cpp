@@ -19,9 +19,18 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2001.07.28: John Bellardo: Added code to handle rse_skip.
+ * 2001.07.17 Claudio Valderrama: Stop crash when parsing user-supplied SQL plan.
+ * 2001.10.04 Claudio Valderrama: Fix annoying & invalid server complaint about
+ *   triggers not having REFERENCES privilege over their owner table.
+ * 2002.02.24 Claudio Valderrama: substring() should signal output as string even
+ *   if source is blob and should check implementation limits on field lengths.
+ * 2002.02.25 Claudio Valderrama: concatenate() should be a civilized function.
+ *   This closes the heart of SF Bug #518282.
  */
 /*
-$Id: cmp.cpp,v 1.6 2002-06-14 12:09:36 dimitr Exp $
+$Id: cmp.cpp,v 1.7 2002-06-29 13:00:56 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -97,7 +106,8 @@ rel_MAX} RIDS;
 #define REQ_TAIL		sizeof (((REQ) 0)->req_rpb[0])
 #define MAP_LENGTH		256
 
-#if defined (HP10) && defined (SUPERSERVER)
+/* RITTER - changed HP10 to HPUX */
+#if defined (HPUX) && defined (SUPERSERVER)
 #define MAX_RECURSION		96
 #endif
 
@@ -138,7 +148,7 @@ static void plan_check(CSB, RSE);
 static void plan_set(CSB, RSE, NOD);
 static void post_procedure_access(TDBB, CSB, PRC);
 static RSB post_rse(TDBB, CSB, RSE);
-static void post_trigger_access(TDBB, CSB, VEC, REL);
+static void	post_trigger_access(TDBB, CSB, REL, VEC, REL);
 static void process_map(TDBB, CSB, NOD, FMT *);
 static BOOLEAN stream_in_rse(USHORT, RSE);
 static SSHORT strcmp_space(TEXT *, TEXT *);
@@ -253,7 +263,7 @@ REQ DLL_EXPORT CMP_clone_request(TDBB tdbb,
 							prc_security_name->str_data : (TEXT *) 0);
 			class_ = SCL_get_class(prc_sec_name);
 			SCL_check_access(class_, 0, 0,
-							 0, SCL_execute, "procedure",
+							 0, SCL_execute, object_procedure,
 							 reinterpret_cast <
 							 char *>(procedure->prc_name->str_data));
 		}
@@ -1370,22 +1380,26 @@ void DLL_EXPORT CMP_get_desc(
 	case nod_concatenate:
 		{
 			DSC desc1, desc2;
-
+			ULONG rc_len;
 			CMP_get_desc(tdbb, csb, node->nod_arg[0], &desc1);
 			CMP_get_desc(tdbb, csb, node->nod_arg[1], &desc2);
 			desc->dsc_dtype = dtype_text;
 			if (desc1.dsc_dtype <= dtype_varying) {
-				desc->dsc_length = desc1.dsc_length;
+			    rc_len = DSC_string_length(&desc1);
 				desc->dsc_ttype = desc1.dsc_ttype;
 			}
 			else {
-				desc->dsc_length =
-					DSC_convert_to_text_length(desc1.dsc_dtype);
+			    rc_len = DSC_convert_to_text_length(desc1.dsc_dtype);
 				desc->dsc_ttype = ttype_ascii;
 			}
-			desc->dsc_length += (desc2.dsc_dtype <= dtype_varying) ?
-				desc2.
-				dsc_length : DSC_convert_to_text_length(desc2.dsc_dtype);
+			if (desc2.dsc_dtype <= dtype_varying)
+				rc_len += DSC_string_length (&desc2);
+			else
+				rc_len += DSC_convert_to_text_length(desc2.dsc_dtype);
+			/* error() is a local routine in par.c, so we use plain ERR_post. */
+			if (rc_len > MAX_FORMAT_SIZE)
+				ERR_post(gds_imp_exc, gds_arg_gds, gds_blktoobig, 0);
+			desc->dsc_length = static_cast<USHORT>(rc_len);
 			desc->dsc_scale = 0;
 			desc->dsc_flags = 0;
 			return;
@@ -1447,6 +1461,7 @@ void DLL_EXPORT CMP_get_desc(
 		return;
 
 	case nod_user_name:
+    case nod_current_role:
 		desc->dsc_dtype = dtype_text;
 		desc->dsc_ttype = ttype_metadata;
 		desc->dsc_length = USERNAME_LENGTH;
@@ -1527,6 +1542,31 @@ void DLL_EXPORT CMP_get_desc(
 
 	case nod_substr:
 		CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
+		if (desc->dsc_dtype == dtype_blob)
+		{
+			DSC	desc1, desc2;
+			ULONG rc_len;
+			CMP_get_desc(tdbb, csb, node->nod_arg [1], &desc1);
+			CMP_get_desc(tdbb, csb, node->nod_arg [2], &desc2);
+			if (desc1.dsc_flags & DSC_null || desc2.dsc_flags & DSC_null)
+			{
+				rc_len = 0;
+				desc->dsc_flags |= DSC_null;
+			}
+			else
+			{
+				SLONG sl1 = MOV_get_long(&desc1, 0);
+				SLONG sl2 = MOV_get_long(&desc2, 0);
+				/* error() is a local routine in par.c, so we use plain ERR_post. */
+				if (sl1 < 0 || sl2 < 0 || sl2 > MAX_COLUMN_SIZE - sizeof(USHORT))
+					ERR_post(gds_imp_exc, gds_arg_gds, gds_blktoobig, 0);
+				rc_len = sl2;
+			}
+			desc->dsc_dtype = dtype_varying;
+			desc->dsc_ttype = desc->dsc_scale;
+			desc->dsc_scale = 0;
+			desc->dsc_length = static_cast<USHORT>(rc_len) + sizeof(USHORT);
+		}
 		return;
 
 	case nod_function:
@@ -2534,6 +2574,9 @@ static NOD copy(
 			new_rse->rse_first =
 				copy(tdbb, csb, old_rse->rse_first, remap, field_id,
 					 remap_fld);
+			new_rse->rse_skip =
+				copy (tdbb, csb, old_rse->rse_skip, remap, field_id,
+					remap_fld);
 			new_rse->rse_boolean =
 				copy(tdbb, csb, old_rse->rse_boolean, remap, field_id,
 					 remap_fld);
@@ -2810,7 +2853,8 @@ static void ignore_dbkey(TDBB tdbb, CSB csb, RSE rse, REL view)
 			if ( (relation = tail->csb_relation) )
 				CMP_post_access(tdbb, csb, relation->rel_security_name,
 								(tail->csb_view) ? tail->csb_view : view,
-								0, 0, SCL_read, "table", relation->rel_name);
+								0, 0, SCL_read, object_table,
+								relation->rel_name);
 		}
 		else if (node->nod_type == nod_rse)
 			ignore_dbkey(tdbb, csb, (RSE) node, view);
@@ -3049,13 +3093,15 @@ static NOD pass1(
 
 #ifndef GATEWAY
 			/* if this is a modify or store, check REFERENCES access to any foreign keys. */
-
+/* CVC: This is against the SQL standard. REFERENCES should be enforced only at the
+				time the FK is defined in DDL, not when a DML is going to be executed.
 			if (((tail->csb_flags & csb_modify)
 				 || (tail->csb_flags & csb_store)) && !(relation->rel_view_rse
 														||
 														relation->rel_file))
 					IDX_check_access(tdbb, *csb, tail->csb_view, relation,
 									 field);
+*/
 #endif
 			/* Posting the required privilege access to the current relation and field. */
 
@@ -3069,36 +3115,36 @@ static NOD pass1(
 				if (!validate_expr) {
 					CMP_post_access(tdbb, *csb, relation->rel_security_name,
 									(tail->csb_view) ? tail->csb_view : view,
-									0, 0, SCL_sql_update, "table",
+									0, 0, SCL_sql_update, object_table,
 									relation->rel_name);
 					CMP_post_access(tdbb, *csb, field->fld_security_name,
 									(tail->csb_view) ? tail->csb_view : view,
-									0, 0, SCL_sql_update, "column",
+									0, 0, SCL_sql_update, object_column,
 									field->fld_name);
 				}
 			}
 			else if (tail->csb_flags & csb_erase) {
 				CMP_post_access(tdbb, *csb, relation->rel_security_name,
 								(tail->csb_view) ? tail->csb_view : view,
-								0, 0, SCL_sql_delete, "table",
+								0, 0, SCL_sql_delete, object_table,
 								relation->rel_name);
 			}
 			else if (tail->csb_flags & csb_store) {
 				CMP_post_access(tdbb, *csb, relation->rel_security_name,
 								(tail->csb_view) ? tail->csb_view : view,
-								0, 0, SCL_sql_insert, "table",
+								0, 0, SCL_sql_insert, object_table,
 								relation->rel_name);
 				CMP_post_access(tdbb, *csb, field->fld_security_name,
 								(tail->csb_view) ? tail->csb_view : view, 0,
-								0, SCL_sql_insert, "column", field->fld_name);
+								0, SCL_sql_insert, object_column, field->fld_name);
 			}
 			else {
 				CMP_post_access(tdbb, *csb, relation->rel_security_name,
 								(tail->csb_view) ? tail->csb_view : view,
-								0, 0, SCL_read, "table", relation->rel_name);
+								0, 0, SCL_read, object_table, relation->rel_name);
 				CMP_post_access(tdbb, *csb, field->fld_security_name,
 								(tail->csb_view) ? tail->csb_view : view,
-								0, 0, SCL_read, "column", field->fld_name);
+								0, 0, SCL_read, object_column, field->fld_name);
 			}
 
 
@@ -3378,8 +3424,8 @@ static void pass1_erase(TDBB tdbb, CSB * csb, NOD node)
 		view = (relation->rel_view_rse) ? relation : view;
 		if (!parent)
 			parent = tail->csb_view;
-		post_trigger_access(tdbb, *csb, relation->rel_pre_erase, view);
-		post_trigger_access(tdbb, *csb, relation->rel_post_erase, view);
+	    post_trigger_access(tdbb, *csb, relation, relation->rel_pre_erase, view);
+		post_trigger_access(tdbb, *csb, relation, relation->rel_post_erase, view);
 
 		/* If this is a view trigger operation, get an extra stream to play with */
 
@@ -3554,8 +3600,8 @@ static void pass1_modify(TDBB tdbb, CSB * csb, NOD node)
 		view = (relation->rel_view_rse) ? relation : view;
 		if (!parent)
 			parent = tail->csb_view;
-		post_trigger_access(tdbb, *csb, relation->rel_pre_modify, view);
-		post_trigger_access(tdbb, *csb, relation->rel_post_modify, view);
+	    post_trigger_access(tdbb, *csb, relation, relation->rel_pre_modify, view);
+		post_trigger_access(tdbb, *csb, relation, relation->rel_post_modify, view);
 		trigger =
 			(relation->rel_pre_modify) ? relation->
 			rel_pre_modify : relation->rel_post_modify;
@@ -3650,7 +3696,7 @@ static RSE pass1_rse(
  **************************************/
 	USHORT count;
 	LLS stack, temp;
-	NOD *arg, *end, boolean, sort, project, first, plan;
+	NOD *arg, *end, boolean, sort, project, first, skip, plan;
 #ifdef SCROLLABLE_CURSORS
 	NOD async_message;
 #endif
@@ -3676,6 +3722,7 @@ static RSE pass1_rse(
 	sort = rse->rse_sorted;
 	project = rse->rse_projection;
 	first = rse->rse_first;
+	skip = rse->rse_skip;
 	plan = rse->rse_plan;
 #ifdef SCROLLABLE_CURSORS
 	async_message = rse->rse_async_message;
@@ -3711,6 +3758,8 @@ static RSE pass1_rse(
 
 	if (first)
 		rse->rse_first = pass1(tdbb, csb, first, view, view_stream, FALSE);
+	if (skip)
+		rse->rse_skip = pass1(tdbb, csb, skip, view, view_stream, FALSE);
 
 	if (boolean) {
 		if (rse->rse_boolean) {
@@ -4047,8 +4096,8 @@ static NOD pass1_store(TDBB tdbb, CSB * csb, NOD node)
 		view = (relation->rel_view_rse) ? relation : view;
 		if (!parent)
 			parent = tail->csb_view;
-		post_trigger_access(tdbb, *csb, relation->rel_pre_store, view);
-		post_trigger_access(tdbb, *csb, relation->rel_post_store, view);
+	    post_trigger_access(tdbb, *csb, relation, relation->rel_pre_store, view);
+		post_trigger_access(tdbb, *csb, relation, relation->rel_post_store, view);
 		trigger =
 			(relation->rel_pre_store) ? relation->
 			rel_pre_store : relation->rel_post_store;
@@ -4144,7 +4193,7 @@ USHORT update_stream, USHORT priv, REL view, USHORT view_stream)
 /* Unless this is an internal request, check access permission */
 
 	CMP_post_access(tdbb, *csb, relation->rel_security_name, view,
-					0, 0, priv, "table", relation->rel_name);
+					0, 0, priv, object_table, relation->rel_name);
 
 /* ensure that the view is set for the input streams,
    so that access to views can be checked at the field level */
@@ -4626,6 +4675,7 @@ static NOD pass2(TDBB tdbb, register CSB csb, register NOD node, NOD parent)
 	case nod_divide:
 	case nod_null:
 	case nod_user_name:
+    case nod_current_role:
 	case nod_internal_info:
 	case nod_gen_id:
 	case nod_gen_id2:
@@ -4784,6 +4834,8 @@ static void pass2_rse(TDBB tdbb, CSB csb, RSE rse)
 
 	if (rse->rse_first)
 		pass2(tdbb, csb, rse->rse_first, 0);
+	if (rse->rse_skip)
+	    pass2(tdbb, csb, rse->rse_skip, 0);
 
 	for (ptr = rse->rse_relation, end = ptr + rse->rse_count;
 		 ptr < end; ptr++) {
@@ -5039,11 +5091,16 @@ static void plan_set(CSB csb, RSE rse, NOD plan)
 				   with the view definition; failing that, try the base
 				   table name itself */
 
+				/* CVC: I found that "relation" can be NULL, too. This may be an
+				indication of a logic flaw while parsing the user supplied SQL plan
+				and not an oversight here. It's hard to imagine a csb->csb_rpt with
+				a NULL relation. See exe.h for csb struct and its inner csb_repeat struct. */
+
 				if (
 					(alias
 					 && !strcmp_space(reinterpret_cast <
 									  char *>(alias->str_data), p))
-					|| !strcmp_space(relation->rel_name, p))
+					|| (relation && !strcmp_space(relation->rel_name, p)))
 					  break;
 			}
 
@@ -5123,7 +5180,7 @@ static void post_procedure_access(TDBB tdbb, CSB csb, PRC procedure)
 /* This request must have EXECUTE permission on the stored procedure */
 	CMP_post_access(tdbb, csb, prc_sec_name, 0,
 					0, 0, SCL_execute,
-					"procedure",
+					object_procedure,
 					reinterpret_cast <
 					char *>(procedure->prc_name->str_data));
 
@@ -5185,7 +5242,7 @@ static RSB post_rse(TDBB tdbb, CSB csb, RSE rse)
 		rsb->rsb_flags |= rsb_stream_type;
 #endif
 
-/* mark all the substreams as active */
+/* mark all the substreams as inactive */
 
 	for (ptr = rse->rse_relation, end = ptr + rse->rse_count;
 		 ptr < end; ptr++) {
@@ -5205,7 +5262,7 @@ static RSB post_rse(TDBB tdbb, CSB csb, RSE rse)
 }
 
 
-static void post_trigger_access(TDBB tdbb, CSB csb, VEC triggers, REL view)
+static void post_trigger_access(TDBB tdbb, CSB csb, REL owner_relation, VEC triggers, REL view)
 {
 /**************************************
  *
@@ -5229,6 +5286,11 @@ static void post_trigger_access(TDBB tdbb, CSB csb, VEC triggers, REL view)
  *	an "accessor" name, then something accessed by this trigger
  *	must require the access.
  *
+ *  CVC: The third parameter is the owner of the triggers vector
+ *   and was added to avoid triggers posting access checks to
+ *   their base tables, since it's nonsense and causes weird
+ *   messages about false REFERENCES right failures.
+ *
  **************************************/
 	ACC access;
 	vec::iterator ptr, end;
@@ -5245,12 +5307,16 @@ static void post_trigger_access(TDBB tdbb, CSB csb, VEC triggers, REL view)
 
 	for (ptr = triggers->begin(), end = triggers->end(); ptr < end; ptr++)
 		if (*ptr) {
+			/* CVC: Definitely, I'm going to disable this check because REFERENCES should
+			be checked only at DDL time. If we discover another thing in the fluffy SQL
+			standard, we can revisit those lines.
 			read_only = TRUE;
 			for (access = ((REQ)(*ptr))->req_access; access;
 				 access = access->acc_next) if (access->acc_mask & ~SCL_read) {
 					read_only = FALSE;
 					break;
 				}
+			*/
 
 			/* for read-only triggers, translate a READ access into a REFERENCES;
 			   we must check for read-only to make sure people don't abuse the
@@ -5258,25 +5324,74 @@ static void post_trigger_access(TDBB tdbb, CSB csb, VEC triggers, REL view)
 
 			for (access = ((REQ)(*ptr))->req_access; access;
 				 access = access->acc_next) {
+				/* CVC:	Can't make any sense of this code, hence I disabled it.
 				if (read_only && (access->acc_mask & SCL_read)) {
 					access->acc_mask &= ~SCL_read;
 					access->acc_mask |= SCL_sql_references;
 				}
+				*/
 				if (access->acc_trg_name ||
 					access->acc_prc_name || access->acc_view)
+				{
+					/* If this is not a system relation, we don't post access check if:
+					- The table being checked is the owner of the trigger that's accessing it.
+					- The field being checked is owned by the same table than the trigger
+					that's accessing the field.
+					- Since the trigger name comes in the access list, we need to validate that
+					it's a trigger defined on our target table.
+					- Incidentally, access requests made through objects accessed by this trigger
+					are granted automatically. We should achieve the same propagation in
+					post_procedure_access() in the future, so the called proc/trg can use the
+					rights of the caller even if the latter is a procedure or a trigger, with
+					the difference that proc aren't bound to tables, so we need another place
+					instead of post_procedure_access() to achieve such propagation.
+					*/
+					if (access->acc_trg_name && !(owner_relation->rel_flags & REL_system))
+					{
+						if (!strcmp(access->acc_type, object_table)
+							&& !strcmp(access->acc_name, owner_relation->rel_name)
+							&& MET_relation_owns_trigger(tdbb, access->acc_name, access->acc_trg_name))
+							continue;
+						if (!strcmp(access->acc_type, object_column)
+							&& MET_relation_owns_trigger(tdbb, access->acc_name, access->acc_trg_name)
+							&& (MET_lookup_field(tdbb, owner_relation, access->acc_name, access->acc_security_name) >= 0
+							|| MET_relation_default_class(tdbb, owner_relation, access->acc_security_name)))
+							continue;
+					}
 					/* Inherited access needs from "object" to acc_security_name */
 					CMP_post_access(tdbb, csb, access->acc_security_name,
 									access->acc_view,
 									access->acc_trg_name,
 									access->acc_prc_name, access->acc_mask,
 									access->acc_type, access->acc_name);
+				}
 				else
+				{
+					/* If this is not a system relation, we don't post access check if:
+					- The table being checked is the owner of the trigger that's accessing it.
+					- The field being checked is owned by the same table than the trigger
+					that's accessing the field.
+					- Since the trigger name comes in the triggers vector of the table and each
+					trigger can be owned by only one table for now, we know for sure that
+					it's a trigger defined on our target table.
+					*/
+					if (!(owner_relation->rel_flags & REL_system))
+					{
+						if (!strcmp(access->acc_type, object_table)
+							&& !strcmp(access->acc_name, owner_relation->rel_name))
+							continue;
+						if (!strcmp(access->acc_type, object_column)
+							&& (MET_lookup_field(tdbb, owner_relation, access->acc_name, access->acc_security_name) >= 0
+							|| MET_relation_default_class(tdbb, owner_relation, access->acc_security_name)))
+							continue;
+					}
 					/* A direct access to an object from this trigger */
 					CMP_post_access(tdbb, csb, access->acc_security_name,
 									(access->
 									 acc_view) ? access->acc_view : view,
 									((REQ)(*ptr))->req_trg_name, 0, access->acc_mask,
 									access->acc_type, access->acc_name);
+				}
 			}
 		}
 }
