@@ -740,7 +740,7 @@ BOOLEAN VAL_validate(TDBB tdbb, USHORT switches)
 	tdbb->tdbb_default = old_pool;
 	tdbb->tdbb_flags &= ~TDBB_sweeper;
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		JrdMemoryPool::deletePool(val_pool);
 		tdbb->tdbb_default = old_pool;
 		tdbb->tdbb_flags &= ~TDBB_sweeper;
@@ -1945,7 +1945,7 @@ static RTN walk_relation(TDBB tdbb, VDR control, JRD_REL relation)
 	}
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		TEXT s[64];
 		TEXT* msg = (relation->rel_name) ?
 			(TEXT*)"bugcheck during scan of table %d (%s)" :

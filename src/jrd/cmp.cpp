@@ -388,7 +388,7 @@ JRD_REQ DLL_EXPORT CMP_compile2(TDBB tdbb, UCHAR* blr, USHORT internal_flag)
 		tdbb->tdbb_default = old_pool;
 
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		tdbb->tdbb_default = old_pool;
 		if (request) {
 			CMP_release(tdbb, request);
@@ -1866,7 +1866,7 @@ JRD_REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
 	tdbb->tdbb_request = old_request;
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		tdbb->tdbb_request = old_request;
 		ERR_punt();
 	}

@@ -1097,7 +1097,7 @@ if (header->hdr_implementation && header->hdr_implementation != CLASS)
 	if (temp_buffer)
 		gds__free(temp_buffer);
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		if (temp_buffer) {
 			gds__free(temp_buffer);
 		}
@@ -1309,7 +1309,7 @@ void PAG_init2(USHORT shadow_number)
 		gds__free(temp_buffer);
 	}
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		if (temp_buffer) {
 			gds__free(temp_buffer);
 		}

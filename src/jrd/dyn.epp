@@ -158,7 +158,7 @@ void DYN_ddl(ATT attachment, JRD_TRA transaction, USHORT length, UCHAR * ddl)
 #endif
 
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		const sav* savepoint = transaction->tra_save_point;
 		if (savepoint && savepoint)
 		{
@@ -169,7 +169,7 @@ void DYN_ddl(ATT attachment, JRD_TRA transaction, USHORT length, UCHAR * ddl)
 			try {
 				VIO_verb_cleanup(tdbb, transaction);
 			}
-			catch (...) {
+			catch (const std::exception&) {
 				BUGCHECK(290);	/* msg 290 error during savepoint backout */
 			}
 		}
@@ -702,7 +702,7 @@ USHORT DYN_put_blr_blob(GBL gbl, UCHAR** ptr, GDS__QUAD* blob_id)
 		BLB_put_segment(tdbb, blob, p, length);
 		BLB_close(tdbb, blob);
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		DYN_error_punt(TRUE, 106, NULL, NULL, NULL, NULL, NULL);
 		/* msg 106: "Create metadata blob failed" */
 	}
@@ -750,7 +750,7 @@ USHORT DYN_put_text_blob(GBL gbl, UCHAR ** ptr, GDS__QUAD * blob_id)
 		}
 		BLB_close(tdbb, blob);
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		DYN_error_punt(TRUE, 106, NULL, NULL, NULL, NULL, NULL);
 		/* msg 106: "Create metadata blob failed" */
 	}
@@ -1137,7 +1137,7 @@ static void grant( GBL gbl, UCHAR ** ptr)
 	}	// for (...)
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		/* we need to rundown as we have to set the env.
 		   But in case the error is from store_priveledge we have already
 		   unwound the request so passing that as null */
@@ -1444,7 +1444,7 @@ static bool grantor_can_grant(	GBL		gbl,
 	// all done.
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(TRUE, err_num, NULL, NULL, NULL, NULL, NULL);
 		/* msg 77: "SELECT RDB$USER_PRIVILEGES failed in grant" */
@@ -1802,7 +1802,7 @@ static void revoke_permission(GBL gbl, UCHAR ** ptr)
 	}
 
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		/* we need to rundown as we have to set the env.
 		   But in case the error is from store_priveledge we have already 
 		   unwound the request so passing that as null */
@@ -1941,7 +1941,7 @@ static void store_privilege(GBL		gbl,
 			DYN_REQUEST(drq_s_grant) = request;
 		}
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(TRUE, 79, NULL, NULL, NULL, NULL, NULL);
 		/* msg 79: "STORE RDB$USER_PRIVILEGES failed in grant" */

@@ -1092,7 +1092,7 @@ void CCH_fini(TDBB tdbb)
 	}
 
 	}	// try
-	catch (...)
+	catch (const std::exception&)
 	{
 		if (!flush_error) {
 			flush_error = TRUE;
@@ -1456,7 +1456,7 @@ void CCH_init(TDBB tdbb, ULONG number)
 	while (!bcb_) {
 		try {
 			bcb_ = FB_NEW_RPT(*dbb->dbb_bufferpool, number) bcb;
-		} catch(...) {
+		} catch(const std::exception&) {
 			/* If the buffer control block can't be allocated, memory is
 			very low. Recalculate the number of buffers to account for
 			page buffer overhead and reduce that number by a 25% fudge
@@ -2601,7 +2601,7 @@ BOOLEAN CCH_write_all_shadows(TDBB tdbb,
 		dbb->dbb_bufferpool->deallocate(spare_buffer);
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		if (spare_buffer) {
 			dbb->dbb_bufferpool->deallocate(spare_buffer);
 		}
@@ -2640,7 +2640,7 @@ static BDB alloc_bdb(TDBB tdbb, BCB bcb, UCHAR ** memory)
 	try {
 		bdb_->bdb_lock = lock = CCH_page_lock(tdbb);
 	}
-	catch (std::exception&) {
+	catch (const std::exception&) {
 		delete bdb_;
 		throw;
 	}
@@ -3063,7 +3063,7 @@ static void THREAD_ROUTINE cache_reader(DBB dbb)
 		bcb->bcb_flags |= BCB_cache_reader;
 		ISC_event_post(reader_event);	/* Notify our creator that we have started  */
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		gds__log_status(dbb->dbb_file->fil_string, status_vector);
 		THREAD_EXIT;
 		return;
@@ -3164,7 +3164,7 @@ static void THREAD_ROUTINE cache_reader(DBB dbb)
 	THREAD_EXIT;
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		bcb = dbb->dbb_bcb;
 		gds__log_status(dbb->dbb_file->fil_string, status_vector);
 	}
@@ -3234,7 +3234,7 @@ static void THREAD_ROUTINE cache_writer(DBB dbb)
 		/* Notify our creator that we have started */
 		ISC_event_post(dbb->dbb_writer_event_init);
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		gds__log_status(dbb->dbb_file->fil_string, status_vector);
 		ISC_event_fini(writer_event);
 		THREAD_EXIT;
@@ -3372,7 +3372,7 @@ static void THREAD_ROUTINE cache_writer(DBB dbb)
 		THREAD_EXIT;
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		bcb = dbb->dbb_bcb;
 		gds__log_status(dbb->dbb_file->fil_string, status_vector);
 	}
@@ -4701,7 +4701,7 @@ static ULONG memory_init(TDBB tdbb, BCB bcb, ULONG number)
 				try {
 					memory = (UCHAR *)gds__alloc(memory_size);
 					break;
-				} catch(...) {
+				} catch(const std::exception&) {
 					/* Either there's not enough virtual memory or there is
 					   but it's not virtually contiguous. Let's find out by
 					   cutting the size in half to see if the buffers can be

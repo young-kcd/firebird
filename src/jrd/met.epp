@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.48 2003-02-13 10:11:12 dimitr Exp $
+$Id: met.epp,v 1.49 2003-02-13 13:33:56 dimitr Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -2807,7 +2807,7 @@ JRD_PRC MET_procedure(TDBB tdbb, int id, BOOLEAN noscan, USHORT flags)
 #endif
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		procedure->prc_flags &= ~(PRC_being_scanned | PRC_scanned);
 #ifdef SUPERSERVER
 		THD_rec_mutex_unlock(&dbb->dbb_sp_rec_mutex);
@@ -3556,7 +3556,7 @@ void MET_scan_relation( TDBB tdbb, JRD_REL relation)
 	tdbb->tdbb_default = old_pool;
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		relation->rel_flags &= ~(REL_being_scanned | REL_scanned);
 		if (dependencies) {
 			relation->rel_flags |= REL_get_dependencies;

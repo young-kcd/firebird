@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.23 2003-02-10 13:28:20 eku Exp $
+$Id: blb.cpp,v 1.24 2003-02-13 13:33:54 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -733,7 +733,7 @@ SLONG BLB_get_slice(TDBB tdbb,
 	}
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		dbb->dbb_permanent->deallocate(data);
 		ERR_punt();
 	}

@@ -770,7 +770,7 @@ RSB OPT_compile(TDBB tdbb,
 #endif
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		for (i = 0; i < streams[0]; i++) {
 			stream = streams[i + 1];
 			if (csb->csb_rpt[stream].csb_idx_allocation)

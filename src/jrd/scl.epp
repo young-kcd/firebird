@@ -309,7 +309,7 @@ void SCL_check_index( TDBB tdbb, TEXT * index_name, UCHAR index_id, USHORT mask)
 
 	CMP_release(tdbb, (JRD_REQ) request);
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		if (request) {
 			CMP_release(tdbb, (JRD_REQ) request);
 		}
@@ -1044,7 +1044,7 @@ static BOOLEAN check_user_group(const TEXT*	acl,
 
 	delete buffer;
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		delete buffer;
 		Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);
 	}
@@ -1194,7 +1194,7 @@ static SLONG compute_access(TDBB		tdbb,
 
 	delete str_buffer;
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		delete str_buffer;
 		Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);
 	}

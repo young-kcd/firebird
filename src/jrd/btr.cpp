@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.20 2003-02-13 12:16:25 brodsom Exp $
+$Id: btr.cpp,v 1.21 2003-02-13 13:33:55 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -1036,7 +1036,7 @@ IDX_E BTR_key(TDBB tdbb, JRD_REL relation, REC record, IDX * idx, KEY * key)
 	return result;
 
 	}	// try
-	catch(...) {
+	catch(const std::exception&) {
 		key->key_length = 0;
 		return idx_e_conversion;
 	}
@@ -2965,7 +2965,7 @@ static SLONG fast_load(TDBB tdbb,
 	SORT_fini(sort_handle, tdbb->tdbb_attachment);
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		error = TRUE;
 	}
 
@@ -2988,7 +2988,7 @@ static SLONG fast_load(TDBB tdbb,
 	return window->win_page;
 
 	}	// try
-	catch(...) {
+	catch(const std::exception&) {
 		if (!error)
 			error = TRUE;
 		else {

@@ -17,7 +17,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: align.cpp,v 1.6 2002-12-02 08:25:17 eku Exp $
+$Id: align.cpp,v 1.7 2003-02-13 13:33:54 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -147,7 +147,7 @@ static int check_double()
 		*p = 3;
 		*p *= 2.5;
 	}
-	catch(...) {
+	catch(const std::exception&) {
 		return 1;
 	}
 

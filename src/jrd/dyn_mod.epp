@@ -243,7 +243,7 @@ void DYN_modify_database( GBL gbl, UCHAR ** ptr)
 		DYN_REQUEST(drq_m_database) = request;
 
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(TRUE, 84, NULL, NULL, NULL, NULL, NULL);
 		/* msg 84: "MODIFY DATABASE failed" */
@@ -311,7 +311,7 @@ void DYN_modify_exception( GBL gbl, UCHAR ** ptr)
 		DYN_REQUEST(drq_m_xcp) = request;
 
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(TRUE, 145, NULL, NULL, NULL, NULL, NULL);
 		/* msg 145: "MODIFY EXCEPTION failed" */
@@ -854,7 +854,7 @@ void DYN_modify_global_field(
 		gds__free((SLONG *) new_dom);
 
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		if (orig_dom) {
 			gds__free((SLONG *) orig_dom);
 		}
@@ -948,7 +948,7 @@ void DYN_modify_index( GBL gbl, UCHAR ** ptr)
 		DYN_REQUEST(drq_m_index) = request;
 
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(TRUE, 91, NULL, NULL, NULL, NULL, NULL);
 		/* msg 91: "MODIFY RDB$INDICES failed" */
@@ -1141,7 +1141,7 @@ void DYN_modify_local_field(
 
 
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(TRUE, 95, NULL, NULL, NULL, NULL, NULL);
 		/* msg 95: "MODIFY RDB$RELATION_FIELDS failed" */
@@ -1253,7 +1253,7 @@ void DYN_modify_procedure( GBL gbl, UCHAR ** ptr)
 		DYN_REQUEST(drq_m_prcs) = request;
 
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(TRUE, 141, NULL, NULL, NULL, NULL, NULL);
 		/* msg 141: "MODIFY RDB$PROCEDURES failed" */
@@ -1354,7 +1354,7 @@ void DYN_modify_relation( GBL gbl, UCHAR ** ptr)
 		DYN_REQUEST(drq_m_relation) = request;
 
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(TRUE, 99, NULL, NULL, NULL, NULL, NULL);
 		/* msg 99: "MODIFY RDB$RELATIONS failed" */
@@ -1491,7 +1491,7 @@ void DYN_modify_trigger( GBL gbl, UCHAR ** ptr)
 		DYN_REQUEST(drq_m_trigger) = request;
 
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(TRUE, 102, NULL, NULL, NULL, NULL, NULL);
 		/* msg 102: "MODIFY TRIGGER failed" */
@@ -1569,7 +1569,7 @@ void DYN_modify_trigger_msg( GBL gbl, UCHAR ** ptr, TEXT * trigger_name)
 		DYN_REQUEST(drq_m_trg_msg) = request;
 
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(TRUE, 105, NULL, NULL, NULL, NULL, NULL);
 		/* msg 105: "MODIFY TRIGGER MESSAGE failed" */
@@ -1662,7 +1662,7 @@ void DYN_modify_view( GBL gbl, UCHAR ** ptr)
 		DYN_REQUEST(drq_m_relation) = request;
 
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(TRUE, 99, NULL, NULL, NULL, NULL, NULL);
 		/* msg 99: "MODIFY RDB$RELATIONS failed" */
@@ -1712,7 +1712,7 @@ static void drop_cache( GBL gbl)
 	}
 
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		DYN_rundown_request(request, drq_s_cache);
 		DYN_error_punt(TRUE, 63, NULL, NULL, NULL, NULL, NULL);
 		/* msg 63: ERASE RDB$FILE failed */
@@ -1761,7 +1761,7 @@ static void drop_log( GBL gbl)
 		DYN_REQUEST(drq_d_log) = request;
 
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		DYN_rundown_request(request, drq_d_log);
 		DYN_error_punt(TRUE, 153, NULL, NULL, NULL, NULL, NULL);
 		/* msg 153: ERASE RDB$LOG_FILE failed */
@@ -1881,7 +1881,7 @@ static void modify_lfield_position(TDBB tdbb,
 
 	CMP_release(tdbb, (JRD_REQ)request);
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		DYN_error_punt(TRUE, 95, NULL, NULL, NULL, NULL, NULL);
 		/* msg 95: "MODIFY RDB$RELATION_FIELDS failed" */
 	}
@@ -2519,7 +2519,7 @@ void DYN_modify_sql_field(GBL		gbl,
 		gds__free((SLONG *) orig_fld);
 
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		if (new_fld) {
 			gds__free((SLONG *) new_fld);
 		}

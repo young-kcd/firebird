@@ -226,7 +226,7 @@ BOOLEAN SHUT_database(DBB dbb, SSHORT flag, SSHORT delay)
 	CCH_release_exclusive(tdbb);
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		return FALSE;
 	}
 

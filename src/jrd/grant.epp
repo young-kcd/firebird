@@ -262,7 +262,7 @@ int GRANT_privileges( TDBB tdbb, SSHORT phase, DFW work)
 									(USHORT)(acl - str_buffer->str_data));
 			}
 			}	// try
-			catch (...) {
+			catch (const std::exception&) {
 				delete str_buffer;
 				delete str_default_buffer;
 				ERR_punt();
@@ -1023,7 +1023,7 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 
 	*acl_ptr = relation_acl;
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		delete str_field_buffer;
 		delete str_field_buffer_start;
 		ERR_punt();

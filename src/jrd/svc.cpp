@@ -713,7 +713,7 @@ SVC SVC_attach(USHORT	service_length,
 	}
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		if (spb_buf) {
 			gds__free((SLONG *) spb_buf);
 		}
@@ -2194,7 +2194,7 @@ void *SVC_start(SVC service, USHORT spb_length, SCHAR * spb)
 #endif /* SUPERSERVER */
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		if (service->svc_switches) {
 			gds__free((SLONG *) service->svc_switches);
 		}

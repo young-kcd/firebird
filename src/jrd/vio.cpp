@@ -2602,7 +2602,7 @@ BOOLEAN VIO_sweep(TDBB tdbb, JRD_TRA transaction)
 		delete rpb.rpb_record;
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		delete rpb.rpb_record;
 		if (relation)
 		{
@@ -3442,7 +3442,7 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
 		ISC_event_post(dbb->dbb_gc_event_init);
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		goto gc_exit;
 	}
 
@@ -3616,7 +3616,7 @@ rel_exit:
 			}
 		}
     }
-	catch (...) {
+	catch (const std::exception&) {
 		/* Perfunctory error reporting -- got any better ideas ? */
 
 		gds__log_status(dbb->dbb_file->fil_string, status_vector);
@@ -3649,7 +3649,7 @@ gc_exit:
 		THREAD_EXIT;
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		/* Perfunctory error reporting -- got any better ideas ? */
 
 		gds__log_status(dbb->dbb_file->fil_string, status_vector);

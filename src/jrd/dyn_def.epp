@@ -208,7 +208,7 @@ void DYN_define_cache( GBL gbl, UCHAR ** ptr)
 	}
 
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		if (id == drq_s_cache)
 		{
 			DYN_rundown_request(request, drq_s_cache);
@@ -342,7 +342,7 @@ void DYN_define_constraint(GBL		gbl,
 	}
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		SSHORT local_id = -1;
 		USHORT number;
 		// msg 121: "STORE RDB$RELATION_CONSTRAINTS failed"
@@ -590,7 +590,7 @@ void DYN_define_constraint(GBL		gbl,
 	}
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		SSHORT local_id = -1;
 		USHORT number;
 		// msg 121: "STORE RDB$RELATION_CONSTRAINTS failed"
@@ -698,7 +698,7 @@ void DYN_define_dimension(GBL		gbl,
 	END_STORE;
 
 	}
-	catch (std::exception&) {
+	catch (const std::exception&) {
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_dims);
 			DYN_error_punt(TRUE, 3, NULL, NULL, NULL, NULL, NULL);
@@ -774,7 +774,7 @@ void DYN_define_exception( GBL gbl, UCHAR ** ptr)
 			DYN_REQUEST(drq_s_xcp) = request;
 		}
 	}
-	catch (std::exception&) {
+	catch (const std::exception&) {
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_trg_msgs);
 			DYN_error_punt(TRUE, 142, NULL, NULL, NULL, NULL, NULL);
@@ -882,7 +882,7 @@ void DYN_define_file(GBL		gbl,
 	}
 
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		if (id == drq_l_files)
 		{
 			DYN_rundown_request(request, drq_l_files);
@@ -981,7 +981,7 @@ void DYN_define_filter( GBL gbl, UCHAR ** ptr)
 			DYN_REQUEST(drq_s_filters) = request;
 		}
 	}
-	catch (std::exception&) {
+	catch (const std::exception&) {
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_filters);
 			DYN_error_punt(TRUE, 7, NULL, NULL, NULL, NULL, NULL);
@@ -1081,7 +1081,7 @@ void DYN_define_function( GBL gbl, UCHAR ** ptr)
 			DYN_REQUEST(drq_s_funcs) = request;
 		}
 	}
-	catch (std::exception&) {
+	catch (const std::exception&) {
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_funcs);
 			DYN_error_punt(TRUE, 10, NULL, NULL, NULL, NULL, NULL);
@@ -1207,7 +1207,7 @@ void DYN_define_function_arg(GBL gbl, UCHAR** ptr, TEXT* function_name)
 	}
 
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		if (request) {
 			DYN_rundown_request(request, drq_s_func_args);
 		}
@@ -1263,7 +1263,7 @@ void DYN_define_generator( GBL gbl, UCHAR ** ptr)
 			DYN_REQUEST(drq_s_gens) = request;
 		}
 	}
-	catch (std::exception&) {
+	catch (const std::exception&) {
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_gens);
 			DYN_error_punt(TRUE, 8, NULL, NULL, NULL, NULL, NULL);
@@ -1517,7 +1517,7 @@ void DYN_define_global_field(GBL		gbl,
 	}
 
 	}
-	catch (std::exception&) {
+	catch (const std::exception&) {
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_gfields);
 			DYN_error_punt(TRUE, 13, NULL, NULL, NULL, NULL, NULL);
@@ -2065,7 +2065,7 @@ void DYN_define_index(GBL		gbl,
 	}
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		if (id == drq_s_indices) {
 			DYN_rundown_request(request, id);
 			DYN_error_punt(TRUE, 21, NULL, NULL, NULL, NULL, NULL);
@@ -2402,7 +2402,7 @@ void DYN_define_local_field(GBL		gbl,
 	}
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		if (id == drq_s_lfields) {
 			DYN_rundown_request(request, id);
 			DYN_error_punt(TRUE, 23, NULL, NULL, NULL, NULL, NULL);
@@ -2529,7 +2529,7 @@ void DYN_define_log_file(
 	}
 
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		if (id == drq_s_log_files) {
 			DYN_rundown_request(request, drq_s_log_files);
 			DYN_error_punt(TRUE, 154, NULL, NULL, NULL, NULL, NULL);
@@ -2760,7 +2760,7 @@ void DYN_define_parameter( GBL gbl, UCHAR ** ptr, TEXT * procedure_name)
 	}
 
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		if (id == drq_s_prms) {
 			DYN_rundown_request(request, drq_s_prms);
 			DYN_error_punt(TRUE, 136, NULL, NULL, NULL, NULL, NULL);
@@ -2917,7 +2917,7 @@ void DYN_define_procedure( GBL gbl, UCHAR ** ptr)
 	}
 
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		if (id == drq_s_prcs) {
 			DYN_rundown_request(request, id);
 			DYN_error_punt(TRUE, 134, NULL, NULL, NULL, NULL, NULL);
@@ -3157,7 +3157,7 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
 		}
 
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		if (id == drq_s_rels) {
 			DYN_rundown_request(request, id);
 			DYN_error_punt(TRUE, 24, NULL, NULL, NULL, NULL, NULL);
@@ -3280,7 +3280,7 @@ void DYN_define_role( GBL gbl, UCHAR ** ptr)
 			goto do_error_punt_9;
 		}
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		if (request) {
 			DYN_rundown_request(request, drq_role_gens);
 		}
@@ -3357,7 +3357,7 @@ void DYN_define_security_class( GBL gbl, UCHAR ** ptr)
 			DYN_REQUEST(drq_s_classes) = request;
 		}
 	}
-	catch (std::exception&) {
+	catch (const std::exception&) {
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_classes);
 			DYN_error_punt(TRUE, 27, NULL, NULL, NULL, NULL, NULL);
@@ -3643,7 +3643,7 @@ void DYN_define_sql_field(GBL		gbl,
 		DYN_REQUEST(drq_s_sql_lfld) = request;
 
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		if (id == drq_s_sql_lfld) {
 			DYN_rundown_request(request, id);
 			DYN_error_punt(TRUE, 29, NULL, NULL, NULL, NULL, NULL);
@@ -3696,7 +3696,7 @@ void DYN_define_shadow( GBL gbl, UCHAR ** ptr)
 			DYN_REQUEST(drq_l_shadow) = request;
 		}
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		DYN_rundown_request(request, drq_l_shadow);
 		DYN_error_punt(TRUE, 164, NULL, NULL, NULL, NULL, NULL);
 		/* msg 164: "Shadow lookup failed" */
@@ -3891,7 +3891,7 @@ void DYN_define_trigger(GBL		gbl,
 	}
 
 	}
-	catch (std::exception&) {
+	catch (const std::exception&) {
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_triggers);
 			DYN_error_punt(TRUE, 31, NULL, NULL, NULL, NULL, NULL);
@@ -3966,7 +3966,7 @@ void DYN_define_trigger_msg(GBL gbl, UCHAR** ptr, TEXT* trigger_name)
 			DYN_REQUEST(drq_s_trg_msgs) = request;
 		}
 	}
-	catch (std::exception&) {
+	catch (const std::exception&) {
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_trg_msgs);
 			DYN_error_punt(TRUE, 33, NULL, NULL, NULL, NULL, NULL);
@@ -4067,7 +4067,7 @@ void DYN_define_view_relation( GBL gbl, UCHAR ** ptr, TEXT * view)
 			DYN_REQUEST(drq_s_view_rels) = request;
 		}
 	}
-	catch (std::exception&) {
+	catch (const std::exception&) {
 		if (b_ending_store) {
 			DYN_rundown_request(request, id);
 			if (id == drq_s_view_rels)
@@ -4145,7 +4145,7 @@ static void check_unique_name(	TDBB	tdbb,
 			DYN_REQUEST(drq_l_prc_name) = request;
 		}
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
 		if (!proc_flag)
 			DYN_error_punt(TRUE, 24, NULL, NULL, NULL, NULL, NULL);
@@ -4218,7 +4218,7 @@ that can be used against rdb$fields' rdb$field_name. */
 			DYN_REQUEST(drq_l_fld_src2) = request;
 		}
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(TRUE, 80, NULL, NULL, NULL, NULL, NULL);
 		/* msg 80: "Specified domain or source field does not exist" */
@@ -4256,7 +4256,7 @@ static BOOLEAN get_who( TDBB tdbb, GBL gbl, SCHAR * name)
 
 		DYN_rundown_request(request, drq_l_user_name);
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		DYN_rundown_request(request, drq_l_user_name);
 		return FB_FAILURE;
 	}
@@ -4328,7 +4328,7 @@ BOOLEAN is_it_user_name(GBL gbl, TEXT* role_name, TDBB tdbb)
 			DYN_REQUEST(drq_get_rel_owner) = request;
 		}
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		if (request) {
 			DYN_rundown_request(request, request_id);
 		}

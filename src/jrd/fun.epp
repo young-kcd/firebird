@@ -27,7 +27,7 @@
  *
  */
 /*
-$Id: fun.epp,v 1.15 2003-02-11 00:36:30 brodsom Exp $
+$Id: fun.epp,v 1.16 2003-02-13 13:33:56 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -572,7 +572,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 
 #if !defined(SUPERSERVER) && !defined(WIN_NT)
 	}
-	catch (...) {
+	catch (const std::exception&) {
 		delete temp_string;
 		while (array_stack) {
 			delete[] (UCHAR*)LLS_POP(&array_stack);

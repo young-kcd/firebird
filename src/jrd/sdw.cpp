@@ -263,7 +263,7 @@ else
 	}
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		if (spare_buffer) {
 			gds__free(spare_buffer);
 		}
@@ -1057,7 +1057,7 @@ void SDW_start(
 	}
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		if (header_fetched) {
 			CCH_RELEASE(tdbb, &window);
 		}
@@ -1246,7 +1246,7 @@ static BOOLEAN check_for_file(SCHAR * name, USHORT length)
 		FIL temp_file = PIO_open(dbb, name, length, FALSE, 0, name, length);
 		PIO_close(temp_file);
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		return FALSE;
 	}
 

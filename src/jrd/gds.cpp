@@ -2876,7 +2876,7 @@ int API_ROUTINE gds__print_blr(
 	PRINT_LINE;
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		return -1;
 	}
 

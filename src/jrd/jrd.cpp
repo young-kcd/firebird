@@ -244,7 +244,7 @@ void trig::compile(tdbb* _tdbb)
 					(USHORT)(flags & TRG_ignore_perm ? csb_ignore_perm : 0));
 			_tdbb->tdbb_default = old_pool;
 		}
-		catch (...) {
+		catch (const std::exception&) {
 			_tdbb->tdbb_default = old_pool;
 			compile_in_progress = FALSE;
 			if (request) {
@@ -1324,7 +1324,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 	return return_success(tdbb);
 
 	}	// try
-	catch (...)
+	catch (const std::exception&)
 	{
 		try
 		{
@@ -1358,7 +1358,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 			}
 			V4_JRD_MUTEX_UNLOCK(databases_mutex);
 		}	// try
-		catch (...) {}
+		catch (const std::exception&) {}
 		tdbb->tdbb_status_vector = status;
 		JRD_SS_MUTEX_UNLOCK;
 		return error(user_status);
@@ -1403,7 +1403,7 @@ STATUS DLL_EXPORT GDS_BLOB_INFO(STATUS*	user_status,
 
 		INF_blob_info(blob, items, item_length, buffer, buffer_length);
 	}
-	catch (...)
+	catch (const std::exception&)
 	{
 		return error(user_status);
 	}
@@ -1445,7 +1445,7 @@ STATUS DLL_EXPORT GDS_CANCEL_BLOB(STATUS * user_status, BLB * blob_handle)
 			BLB_cancel(tdbb, blob);
 			*blob_handle = NULL;
 		}
-		catch (...)
+		catch (const std::exception&)
 		{
 			return error(user_status);
 		}
@@ -1489,7 +1489,7 @@ STATUS DLL_EXPORT GDS_CANCEL_EVENTS(STATUS*	user_status,
 
 		EVENT_cancel(*id);
 	}
-	catch (...)
+	catch (const std::exception&)
 	{
 		return error(user_status);
 	}
@@ -1592,7 +1592,7 @@ STATUS DLL_EXPORT GDS_CLOSE_BLOB(STATUS * user_status, BLB * blob_handle)
 		BLB_close(tdbb, blob);
 		*blob_handle = NULL;
 	}
-	catch (...)
+	catch (const std::exception&)
 	{
 		return error(user_status);
 	}
@@ -1692,7 +1692,7 @@ STATUS DLL_EXPORT GDS_COMPILE(STATUS * user_status,
 		LOG_call(log_handle_returned, *req_handle);
 	#endif
 	}
-	catch (...)
+	catch (const std::exception&)
 	{
 		return error(user_status);
 	}
@@ -1749,7 +1749,7 @@ STATUS DLL_EXPORT GDS_CREATE_BLOB2(STATUS * user_status,
 		LOG_call(log_handle_returned, blob_id->bid_stuff.bid_blob);
 	#endif
 	}
-	catch (...)
+	catch (const std::exception&)
 	{
 		return error(user_status);
 	}
@@ -2082,7 +2082,7 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 	return return_success(tdbb);
 
 	}	// try
-	catch (...)
+	catch (const std::exception&)
 	{
 		try
 		{
@@ -2116,7 +2116,7 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 			}
 			V4_JRD_MUTEX_UNLOCK(databases_mutex);
 		}
-		catch (...) {}
+		catch (const std::exception&) {}
 		tdbb->tdbb_status_vector = status;
 		JRD_SS_MUTEX_UNLOCK;
 		return error(user_status);
@@ -2159,7 +2159,7 @@ STATUS DLL_EXPORT GDS_DATABASE_INFO(STATUS * user_status,
 
 		INF_database_info(items, item_length, buffer, buffer_length);
 	}
-	catch (...)
+	catch (const std::exception&)
 	{
 		return error(user_status);
 	}
@@ -2208,7 +2208,7 @@ STATUS DLL_EXPORT GDS_DDL(STATUS * user_status,
 				reinterpret_cast<UCHAR*>(ddl));
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		if (tdbb->tdbb_status_vector == temp_status) {
 			tdbb->tdbb_status_vector = user_status;
 		}
@@ -2234,7 +2234,7 @@ STATUS DLL_EXPORT GDS_DDL(STATUS * user_status,
 		try {
 			TRA_commit(tdbb, transaction, TRUE);
 		}
-		catch (...)  {
+		catch (const std::exception&)  {
 			tdbb->tdbb_status_vector = temp_status;
 			TRA_rollback(tdbb, transaction, TRUE);
 			tdbb->tdbb_status_vector = user_status;
@@ -2352,7 +2352,7 @@ STATUS DLL_EXPORT GDS_DETACH(STATUS * user_status, ATT * handle)
 	return return_success(tdbb);
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		V4_JRD_MUTEX_LOCK(databases_mutex);
 		dbb->dbb_flags &= ~DBB_not_in_use;
 		V4_JRD_MUTEX_UNLOCK(databases_mutex);
@@ -2447,7 +2447,7 @@ STATUS DLL_EXPORT GDS_DROP_DATABASE(STATUS * user_status, ATT * handle)
 		V4_JRD_MUTEX_LOCK(databases_mutex);
 		V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 	}
-	catch(...)
+	catch(const std::exception&)
 	{
 		return error(user_status);
 	}
@@ -2478,7 +2478,7 @@ STATUS DLL_EXPORT GDS_DROP_DATABASE(STATUS * user_status, ATT * handle)
 	CCH_RELEASE(tdbb, &window);
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		V4_JRD_MUTEX_UNLOCK(databases_mutex);
 		V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 		JRD_SS_MUTEX_UNLOCK;
@@ -2529,7 +2529,7 @@ STATUS DLL_EXPORT GDS_DROP_DATABASE(STATUS * user_status, ATT * handle)
 
 	V4_JRD_MUTEX_UNLOCK(databases_mutex);
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		JRD_SS_MUTEX_UNLOCK;
 		return error(user_status);
 	}
@@ -2599,7 +2599,7 @@ STATUS DLL_EXPORT GDS_GET_SEGMENT(STATUS * user_status,
 			return (user_status[1] = gds_segment);
 		}
 	}
-	catch (...)
+	catch (const std::exception&)
 	{
 		return error(user_status);
 	}
@@ -2663,7 +2663,7 @@ STATUS DLL_EXPORT GDS_GET_SLICE(STATUS * user_status,
 									   reinterpret_cast < long *>(param),
 									   slice_length, slice);
 	}
-	catch (...)
+	catch (const std::exception&)
 	{
 		return error(user_status);
 	}
@@ -2718,7 +2718,7 @@ STATUS DLL_EXPORT GDS_OPEN_BLOB2(STATUS * user_status,
 		LOG_call(log_handle_returned, *blob_handle);
 	#endif
 	}
-	catch (...)
+	catch (const std::exception&)
 	{
 		return error(user_status);
 	}
@@ -2798,7 +2798,7 @@ STATUS DLL_EXPORT GDS_PUT_SEGMENT(STATUS * user_status,
 	{
 		BLB_put_segment(tdbb, blob, buffer, buffer_length);
 	}
-	catch (...)
+	catch (const std::exception&)
 	{
 		return error(user_status);
 	}
@@ -2854,7 +2854,7 @@ STATUS DLL_EXPORT GDS_PUT_SLICE(STATUS * user_status,
 				  param_length,
 				  reinterpret_cast < long *>(param), slice_length, slice);
 	}
-	catch (...)
+	catch (const std::exception&)
 	{
 		return error(user_status);
 	}
@@ -2915,7 +2915,7 @@ STATUS DLL_EXPORT GDS_QUE_EVENTS(STATUS * user_status,
 		LOG_call(log_handle_returned, *id);
 	#endif
 	}
-	catch (...)
+	catch (const std::exception&)
 	{
 		return error(user_status);
 	}
@@ -2986,7 +2986,7 @@ STATUS DLL_EXPORT GDS_RECEIVE(STATUS * user_status,
 			return error(user_status);
 		}
 	}
-	catch (...)
+	catch (const std::exception&)
 	{
 		return error(user_status);
 	}
@@ -3037,7 +3037,7 @@ STATUS DLL_EXPORT GDS_RECONNECT(STATUS * user_status,
 		LOG_call(log_handle_returned, *tra_handle);
 	#endif
 	}
-	catch (...)
+	catch (const std::exception&)
 	{
 		return error(user_status);
 	}
@@ -3083,7 +3083,7 @@ STATUS DLL_EXPORT GDS_RELEASE_REQUEST(STATUS * user_status, JRD_REQ * req_handle
 		CMP_release(tdbb, request);
 		*req_handle = NULL;
 	}
-	catch (...)
+	catch (const std::exception&)
 	{
 		return error(user_status);
 	}
@@ -3140,7 +3140,7 @@ STATUS DLL_EXPORT GDS_REQUEST_INFO(STATUS * user_status,
 
 		INF_request_info(request, items, item_length, buffer, buffer_length);
 	}
-	catch (...)
+	catch (const std::exception&)
 	{
 		return error(user_status);
 	}
@@ -3256,7 +3256,7 @@ STATUS DLL_EXPORT GDS_SEEK_BLOB(STATUS * user_status,
 	{
 		*result = BLB_lseek(blob, mode, offset);
 	}
-	catch (...)
+	catch (const std::exception&)
 	{
 		return error(user_status);
 	}
@@ -3318,7 +3318,7 @@ STATUS DLL_EXPORT GDS_SEND(STATUS * user_status,
 			return error(user_status);
 		}
 	}
-	catch (...)
+	catch (const std::exception&)
 	{
 		return error(user_status);
 	}
@@ -3359,7 +3359,7 @@ STATUS DLL_EXPORT GDS_SERVICE_ATTACH(STATUS * user_status,
 	
 		*svc_handle = SVC_attach(service_length, service_name, spb_length, spb);
 	}
-	catch (...)
+	catch (const std::exception&)
 	{
 		return error(user_status);
 	}
@@ -3399,7 +3399,7 @@ STATUS DLL_EXPORT GDS_SERVICE_DETACH(STATUS * user_status, SVC * svc_handle)
 	
 		*svc_handle = NULL;
 	}
-	catch (...)
+	catch (const std::exception&)
 	{
 		return error(user_status);
 	}
@@ -3477,7 +3477,7 @@ STATUS DLL_EXPORT GDS_SERVICE_QUERY(STATUS*	user_status,
 				return error(user_status);
 		}
 	}
-	catch (...)
+	catch (const std::exception&)
 	{
 		return error(user_status);
 	}
@@ -3537,7 +3537,7 @@ STATUS DLL_EXPORT GDS_SERVICE_START(STATUS*	user_status,
 			return error(user_status);
 		}
 	}
-	catch (...)
+	catch (const std::exception&)
 	{
 		return error(user_status);
 	}
@@ -3600,7 +3600,7 @@ STATUS DLL_EXPORT GDS_START_AND_SEND(STATUS * user_status,
 			return error(user_status);
 		}
 	}
-	catch (...)
+	catch (const std::exception&)
 	{
 		return error(user_status);
 	}
@@ -3659,7 +3659,7 @@ STATUS DLL_EXPORT GDS_START(STATUS * user_status,
 			return error(user_status);
 		}
 	}
-	catch (...)
+	catch (const std::exception&)
 	{
 		return error(user_status);
 	}
@@ -3730,7 +3730,7 @@ STATUS DLL_EXPORT GDS_START_MULTIPLE(STATUS * user_status,
 	}
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		dbb = tdbb->tdbb_database;
 		--dbb->dbb_use_count;
 		if (prior) {
@@ -3922,7 +3922,7 @@ STATUS DLL_EXPORT GDS_TRANSACT_REQUEST(STATUS*	user_status,
 	return return_success(tdbb);
 
 	}	// try
-	catch (...)
+	catch (const std::exception&)
 	{
 		/* Set up to trap error in case release pool goes wrong. */
 
@@ -3936,7 +3936,7 @@ STATUS DLL_EXPORT GDS_TRANSACT_REQUEST(STATUS*	user_status,
 				JrdMemoryPool::deletePool(new_pool);
 			}
 		}	// try
-		catch (...) {
+		catch (const std::exception&) {
 		}
 
 		return error(user_status);
@@ -3984,7 +3984,7 @@ STATUS DLL_EXPORT GDS_TRANSACTION_INFO(STATUS * user_status,
 		INF_transaction_info(transaction, items, item_length, buffer,
 						 buffer_length);
 	}
-	catch (...)
+	catch (const std::exception&)
 	{
 		return error(user_status);
 	}
@@ -4085,7 +4085,7 @@ STATUS DLL_EXPORT GDS_UNWIND(STATUS * user_status,
 	return (user_status[1] = FB_SUCCESS);
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		JRD_restore_context();
 		return user_status[1];
 	}
@@ -4780,7 +4780,7 @@ static STATUS commit(
 	return return_success(tdbb);
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		dbb = tdbb->tdbb_database;
 		--dbb->dbb_use_count;
 		return error(user_status);
@@ -5640,7 +5640,7 @@ static DBB init(TDBB	tdbb,
 	return dbb_;
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		return 0;
 	}
 }
@@ -5722,7 +5722,7 @@ static STATUS prepare(TDBB		tdbb,
 	}
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		dbb = tdbb->tdbb_database;
 		--dbb->dbb_use_count;
 		return status_vector[1];
@@ -5939,7 +5939,7 @@ static BOOLEAN rollback(TDBB	tdbb,
 		--dbb->dbb_use_count;
 
 		}	// try
-		catch (...) {
+		catch (const std::exception&) {
 			status_vector = local_status;
 			dbb = tdbb->tdbb_database;
 			--dbb->dbb_use_count;
@@ -6405,7 +6405,7 @@ ULONG JRD_shutdown_all()
 					purge_attachment(tdbb, user_status, att, TRUE);
 					V4_JRD_MUTEX_UNLOCK(databases_mutex);
 				}	// try
-				catch (...) {
+				catch (const std::exception&) {
 					if (initialized) {
 						JRD_SS_MUTEX_UNLOCK;
 					}

@@ -1143,7 +1143,7 @@ static BOOLEAN find_dbkey(RSB rsb, ULONG record_number)
 	}
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		CCH_RELEASE(tdbb, &window);
 		Firebird::status_exception::raise(-1);
 	}
@@ -1331,7 +1331,7 @@ static BOOLEAN find_record(
 	}
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		CCH_RELEASE(tdbb, &window);
 		Firebird::status_exception::raise(-1);
 	}
@@ -1682,7 +1682,7 @@ static BOOLEAN get_record(
 	}
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		/* Cleanup the HACK should there be an error */
 		tdbb->tdbb_attachment->att_flags &= ~ATT_no_cleanup;
 		tdbb->tdbb_attachment->att_flags |=

@@ -212,7 +212,7 @@ void DYN_UTIL_generate_constraint_name( TDBB tdbb, GBL gbl, TEXT * buffer)
 	} while (found);
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		DYN_rundown_request(request, id);
 		DYN_error_punt(TRUE, 131, NULL, NULL, NULL, NULL, NULL);
 		/* msg 131: "Generation of constraint name failed" */
@@ -272,7 +272,7 @@ void DYN_UTIL_generate_field_name( TDBB tdbb, GBL gbl, TEXT * buffer)
 	} while (found);
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		DYN_rundown_request(request, id);
 		DYN_error_punt(TRUE, 81, NULL, NULL, NULL, NULL, NULL);
 		/* msg 81: "Generation of field name failed" */
@@ -327,7 +327,7 @@ void DYN_UTIL_generate_field_position(
 	*field_pos = field_position;
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(TRUE, 162, NULL, NULL, NULL, NULL, NULL);
 		/* msg 162: "Looking up field position failed" */
@@ -394,7 +394,7 @@ void DYN_UTIL_generate_index_name(TDBB tdbb,
 		request = NULL;
 	} while (found);
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		DYN_rundown_request(request, id);
 		DYN_error_punt(TRUE, 82, NULL, NULL, NULL, NULL, NULL);
 		/* msg 82: "Generation of index name failed" */
@@ -453,7 +453,7 @@ void DYN_UTIL_generate_trigger_name( TDBB tdbb, GBL gbl, TEXT * buffer)
 		request = NULL;
 	} while (found);
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		DYN_rundown_request(request, id);
 		DYN_error_punt(TRUE, 83, NULL, NULL, NULL, NULL, NULL);
 		/* msg 83: "Generation of trigger name failed" */
@@ -510,7 +510,7 @@ BOOLEAN DYN_UTIL_get_prot(TDBB		tdbb,
 						drq_l_prot_mask);
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		// Note that the following cast to BLK not only changes
 		// the type, it also casts away volatile!
 		DYN_rundown_request((BLK)request, drq_l_prot_mask);
@@ -555,7 +555,7 @@ void DYN_UTIL_store_check_constraints(TDBB	tdbb,
 		DYN_REQUEST(drq_s_chk_con) = request;
 	}
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		DYN_rundown_request(request, drq_s_chk_con);
 		DYN_error_punt(TRUE, 122, NULL, NULL, NULL, NULL, NULL);
 		/* msg 122: "STORE RDB$CHECK_CONSTRAINTS failed" */

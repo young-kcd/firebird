@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.42 2003-02-13 10:11:02 dimitr Exp $
+$Id: exe.cpp,v 1.43 2003-02-13 13:33:56 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -1289,7 +1289,7 @@ static JRD_NOD erase(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 #ifdef PC_ENGINE
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		Firebird::status_exception::raise(-1);
 	}
 
@@ -1512,7 +1512,7 @@ static void execute_procedure(TDBB tdbb, JRD_NOD node)
 	}
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		tdbb->tdbb_default = old_pool;
 		tdbb->tdbb_request = request;
 		EXE_unwind(tdbb, proc_request);
@@ -1604,7 +1604,7 @@ static JRD_REQ execute_triggers(TDBB tdbb,
 		return result;
 
 	}
-	catch (std::exception&)
+	catch (const std::exception&)
 	{
 		if (vector != *triggers) {
 			MET_release_triggers(tdbb, &vector);
@@ -1818,7 +1818,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 	try {												\
 	    VIO_verb_cleanup (tdbb, transaction);			\
     }													\
-	catch (std::exception&) {							\
+	catch (const std::exception&) {							\
 		if (dbb->dbb_flags & DBB_bugcheck) {				\
 			Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);	\
 		}																\
@@ -2608,7 +2608,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 		}
 #endif
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		// If we already have a pending error, and took another, simply
 		// pass the buck.
 		if (error_pending == TRUE) {
@@ -2898,7 +2898,7 @@ static JRD_NOD modify(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 #ifdef PC_ENGINE
 
 		}	// try
-		catch (...) {
+		catch (const std::exception&) {
 			Firebird::status_exception::raise(-1);
 		}
 

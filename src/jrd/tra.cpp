@@ -1227,7 +1227,7 @@ void TRA_rollback(TDBB tdbb, JRD_TRA transaction, USHORT retaining_flag)
 				TRA_set_state(tdbb, transaction, transaction->tra_number,
 							  tra_committed);
 		}
-		catch (...) {
+		catch (const std::exception&) {
 			/* Prevent a bugcheck in TRA_set_state to cause a loop */
 			/* Clear the error because the rollback will succeed. */
 			tdbb->tdbb_status_vector[0] = gds_arg_gds;
@@ -1959,14 +1959,14 @@ int TRA_sweep(TDBB tdbb, JRD_TRA trans)
 
 	tdbb->tdbb_flags &= ~TDBB_sweeper;
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		try {
 			if (!trans)
 			{
 				TRA_commit(tdbb, transaction, FALSE);
 			}
 		}
-		catch (...) {
+		catch (const std::exception&) {
 			LCK_release(tdbb, &temp_lock);
 			dbb->dbb_flags &= ~DBB_sweep_in_progress;
 			tdbb->tdbb_flags &= ~TDBB_sweeper;

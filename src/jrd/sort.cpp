@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.27 2003-02-13 10:11:16 dimitr Exp $
+ * $Id: sort.cpp,v 1.28 2003-02-13 13:33:57 dimitr Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -752,7 +752,7 @@ SCB SORT_init(STATUS * status_vector,
 
 	try {
 		scb = (SCB) gds__alloc((SLONG) SCB_LEN(keys));
-	} catch(...) {
+	} catch(const std::exception&) {
 /* FREE: scb is freed by SORT_fini(), called by higher level cleanup */
 /* FREE: or later in this module in error cases */
 		*status_vector++ = gds_arg_gds;
@@ -805,7 +805,7 @@ SCB SORT_init(STATUS * status_vector,
 			/* FREE: scb_memory is freed by local_fini() */
 				break;
 		#endif /* DEBUG_MERGE */
-	} catch(...) {
+	} catch(const std::exception&) {
 		*status_vector++ = gds_arg_gds;
 		*status_vector++ = gds_sort_mem_err;
 		/* Msg356: sort error: not enough memory */
@@ -1085,7 +1085,7 @@ int SORT_sort(STATUS * status_vector, SCB scb)
 	/* FREE: streams is freed later in this routine */
 		else
 			streams = streams_local;
-	} catch(...) {
+	} catch(const std::exception&) {
 		*status_vector++ = gds_arg_gds;
 		*status_vector++ = gds_sort_mem_err;
 		*status_vector = gds_arg_end;
@@ -1108,7 +1108,7 @@ int SORT_sort(STATUS * status_vector, SCB scb)
 		/* FREE: smb_merge_pool freed in local_fini() when the scb is released */
 
 			merge_pool = scb->scb_merge_pool;
-		} catch(...) {
+		} catch(const std::exception&) {
 			gds__free(streams);
 			*status_vector++ = gds_arg_gds;
 			*status_vector++ = gds_sort_mem_err;
@@ -1202,7 +1202,7 @@ int SORT_sort(STATUS * status_vector, SCB scb)
 			run->run_buffer =
 				(ULONG *) gds__alloc((SLONG) (size * sizeof(ULONG)));
 			/* FREE: smb_merge_space freed in local_fini() when the scb is released */
-		} catch(...) {
+		} catch(const std::exception&) {
 			*status_vector++ = gds_arg_gds;
 			*status_vector++ = gds_sort_mem_err;
 			*status_vector = gds_arg_end;
@@ -1324,7 +1324,7 @@ static UCHAR *sort_alloc(SCB scb, ULONG size)
 		block =
 			reinterpret_cast<UCHAR*>(gds__alloc(size));
 /* FREE: caller responsible for freeing */
-	} catch(...) {
+	} catch(const std::exception&) {
 		if (!block)
 		{
 			error_memory(scb);
@@ -2362,7 +2362,7 @@ static void merge_runs(SCB scb, USHORT n)
 				try {
 					run->run_buffer =
 						(ULONG *) gds__alloc((SLONG) rec_size * 2);
-				} catch (...) {
+				} catch (const std::exception&) {
 					/* FREE: smb_merge_space freed in local_fini() when scb released */
 					if (!run->run_buffer)
 						error_memory(scb);
@@ -2704,7 +2704,7 @@ static ULONG order(SCB scb)
 	else
 		buffer = temp;
 #endif /* STACK_EFFICIENT */
-	} catch(...) {
+	} catch(const std::exception&) {
 		if (!buffer)
 			error_memory(scb);
 	}
