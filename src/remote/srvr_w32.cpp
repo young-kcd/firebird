@@ -243,7 +243,9 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 		else if (server_flag & SRVR_wnet)
 			port = WNET_reconnect(connection_handle, 0, status_vector);
 		THREAD_EXIT;
-		service_connection(port);
+		if (port) {
+			service_connection(port);
+		}
 	}
 	else if (!(server_flag & SRVR_non_service)) {
 		CNTL_init((FPTR_VOID) start_connections_thread, REMOTE_SERVICE);
