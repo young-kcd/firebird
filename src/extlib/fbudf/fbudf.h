@@ -26,7 +26,7 @@
 // that uses this DLL. This way any other project whose source files include this file see 
 // FBUDF_API functions as being imported from a DLL, wheras this DLL sees symbols
 // defined with this macro as being exported.
-#if defined __WIN32__
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 #ifdef FBUDF_EXPORTS
 #define FBUDF_API __declspec(dllexport)
 #else
@@ -72,9 +72,7 @@ FBUDF_API ISC_TIMESTAMP* addSecond(ISC_TIMESTAMP* v, int& nseconds);
 FBUDF_API ISC_TIMESTAMP* addMinute(ISC_TIMESTAMP* v, int& nminutes);
 FBUDF_API ISC_TIMESTAMP* addHour(ISC_TIMESTAMP* v, int& nhours);
 
-#if defined(_WIN32)
 FBUDF_API ISC_TIMESTAMP* getExactTimestamp(ISC_TIMESTAMP* rc);
-#endif
 
 FBUDF_API paramdsc* fbtruncate(paramdsc* v, paramdsc* rc);
 FBUDF_API paramdsc* fbround(paramdsc* v, paramdsc* rc);
