@@ -12,6 +12,10 @@
 #include <unistd.h>
 #endif
 
+#ifdef HAVE_CRYPT_H
+#include <crypt.h>
+#endif
+
 
 #include "../jrd/common.h"
 #include "../jrd/enc_proto.h"
