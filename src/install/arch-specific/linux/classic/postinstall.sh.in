@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: postinstall.sh.in,v 1.7 2003-04-03 21:41:07 skidder Exp $
+#   $Id: postinstall.sh.in,v 1.8 2003-04-28 19:48:22 skidder Exp $
 # 
 
 # The post install script for Firebird Classic
@@ -591,30 +591,6 @@ buildUninstallFile() {
 }
 
 #------------------------------------------------------------------------
-# UpdateConfigFile
-# Ensure a configuration file /etc/firebird.conf exists.
-# save the original one if required.
-
-updateConfigFile() {
-
-    configFile=/etc/firebird.conf
-
-    if [ -f $configFile ]
-      then
-        ArchiveDateTag=`date +"%Y%m%d_%H%M"`
-        
-        saveConfigFile=$configFile.$ArchiveDateTag
-        echo "saving previous $configFile as $saveConfigFile"
-        cp $configFile $configFile.$ArchiveDateTag
-    fi
-
-    cp $FBRootDir/misc/firebird.conf $configFile
-    
-}
-
-
-
-#------------------------------------------------------------------------
 #  resetXinitdServer
 #  Check for both inetd and xinetd, only one will actually be running.
 #  depending upon your system.
@@ -726,7 +702,6 @@ createLinksForBackCompatibility() {
         fixFilePermissions
     fi
 
-    updateConfigFile
     createLinksForBackCompatibility
 
     buildUninstallFile

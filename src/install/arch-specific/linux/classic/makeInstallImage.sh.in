@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.9 2003-04-03 21:41:07 skidder Exp $
+#   $Id: makeInstallImage.sh.in,v 1.10 2003-04-28 19:48:20 skidder Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -166,7 +166,7 @@ copyFiles() {
     cp $BuildRootDir/doc/README.user $DestDir/README
 
     cp $BuiltFBDir/misc/firebird.xinetd $DestDir/misc/firebird.xinetd
-    cp $BuiltFBDir/misc/firebird.conf $DestDir/misc/firebird.conf
+    cp $BuiltFBDir/misc/firebird.conf $DestDir/firebird.conf
 
 
 # Create links from /usr/lib to install area.
