@@ -178,6 +178,11 @@
       Contributor(s):
         Erik S. LaBianca <labiance at users.sourceforge.net>
 
+    * Fixed bug SF #1063254
+        EXISTS or SINGULAR predicate burried inside aggregate-functions caused wrong detection/mapping for aggregate queries.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
   **************
   * v1.5.1
   **************
