@@ -1,3 +1,29 @@
+2003-03-28 14:53  brodsom
+
+	* firebird2/builds/posix/prefix.mingw.README.html:
+	
+	Update MINGW readme with a note about crash in v5_examples due to
+	locking bug.
+
+2003-03-28 12:31  aafemt
+
+	* firebird2/src/remote/property.rh:
+	
+	Fix DS_3DLOOK override warning
+
+2003-03-28 12:29  aafemt
+
+	* firebird2/builds/posix/: Makefile.in.client.gbak,
+	Makefile.in.client.gfix, Makefile.in.client.gpre,
+	Makefile.in.client.isql, Makefile.in.embed.gbak,
+	Makefile.in.embed.gfix, Makefile.in.embed.gpre,
+	Makefile.in.embed.isql, Makefile.in.embed.qli,
+	Makefile.in.embed.util, Makefile.in.fbserver,
+	Makefile.in.inet_server, Makefile.in.libfbserver, make.defaults,
+	make.rules, make.shared.targets, prefix.mingw:
+	
+	Ironing POSIX build. Resources were added to some exe and dll's
+
 2003-03-27 18:15  brodsom
 
 	* firebird2/src/gpre/: int_cxx.cpp, int.cpp, ftn.cpp, c_cxx.cpp,
