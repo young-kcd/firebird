@@ -355,7 +355,7 @@ TextType CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 	}
 	finish_texttype_init(tt);
 	if (charset_collations.getCount() <= id)
-		charset_collations.grow(id+1);
+		charset_collations.grow(id + 1);
 	charset_collations[id] = tt;
 
 	return tt;

@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: srvrmgr.cpp,v 1.19 2004-11-07 14:38:21 alexpeshkoff Exp $
+ * $Id: srvrmgr.cpp,v 1.20 2004-11-30 06:18:39 robocop Exp $
  */
 
 #include "firebird.h"
@@ -473,15 +473,22 @@ static bool start_server( ibmgr_data_t* data)
 */
 	TEXT path[MAXPATHLEN];
 	gds__prefix(path, SERVER_GUARDIAN);
+	
+	// CVC: Newer compilers won't accept assigning literal strings to non-const
+	// char pointers, so this code prevents changing argv's type to const TEXT* argv[4]
+	// that may not be accepted by execv().
+	static char option_o[] = "-o";
+	static char option_s[] = "-s";
+	static char option_f[] = "-f";
 
 	TEXT *argv[4];
 	argv[0] = path;
 	if (data->suboperation == SOP_START_ONCE)
-		argv[1] = "-o";
+		argv[1] = option_o;
 	else if (data->suboperation == SOP_START_SIGNORE)
-		argv[1] = "-s";
+		argv[1] = option_s;
 	else
-		argv[1] = "-f";
+		argv[1] = option_f;
 	argv[2] = NULL;
 
 

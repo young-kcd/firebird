@@ -539,8 +539,8 @@ int PAG_replace_entry_first(header_page* header, USHORT type, SSHORT len, const 
 	// Remove item if found it somewhere
 	if (*p != HDR_end) {
 		UCHAR l = p[1] + 2;
-		memmove(p, p+l, 
-			header->hdr_end - (p-(UCHAR*)header) - l + 1/*to preserve HDR_end*/);
+		memmove(p, p + l,
+			header->hdr_end - (p - (UCHAR*)header) - l + 1/*to preserve HDR_end*/);
 		header->hdr_end -= l;
 	}
 	
@@ -558,7 +558,7 @@ int PAG_replace_entry_first(header_page* header, USHORT type, SSHORT len, const 
 	memmove(header->hdr_data + len + 2, header->hdr_data, header->hdr_end - HDR_SIZE + 1);
 	header->hdr_data[0] = type;
 	header->hdr_data[1] = len;
-	memcpy(header->hdr_data+2, entry, len);
+	memcpy(header->hdr_data + 2, entry, len);
 	header->hdr_end += len + 2;
 	
 	return TRUE;

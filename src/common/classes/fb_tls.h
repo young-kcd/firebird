@@ -24,8 +24,6 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: fb_tls.h,v 1.10 2004-11-24 09:05:12 robocop Exp $
- *
  */
  
 #ifndef CLASSES_FB_TLS_H
@@ -42,12 +40,12 @@
 // Single-threaded case
 # define TLS_DECLARE(TYPE, NAME) TYPE NAME
 # define TLS_GET(NAME) NAME
-# define TLS_SET(NAME, VALUE) NAME=(VALUE)
+# define TLS_SET(NAME, VALUE) NAME = (VALUE)
 #elif defined(HAVE___THREAD)
 // Recent GCC supports __thread keyword. Sun compiler and HP-UX should have it too
 # define TLS_DECLARE(TYPE, NAME) __thread TYPE NAME
 # define TLS_GET(NAME) NAME
-# define TLS_SET(NAME, VALUE) NAME=(VALUE)
+# define TLS_SET(NAME, VALUE) NAME = (VALUE)
 #elif defined(WIN_NT)
 
 namespace Firebird {
@@ -92,7 +90,7 @@ private:
 //
 //# define TLS_DECLARE(TYPE, NAME) __declspec(thread) TYPE NAME
 //# define TLS_GET(NAME) NAME
-//# define TLS_SET(NAME, VALUE) NAME=(VALUE)
+//# define TLS_SET(NAME, VALUE) NAME = (VALUE)
 #else
 
 #if not (defined SOLARIS)

@@ -24,7 +24,6 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: nbackup.cpp,v 1.41 2004-11-29 10:06:34 alexpeshkoff Exp $
  *
  */
  
@@ -548,9 +547,9 @@ void nbackup::backup_database(int level, const char* fname)
 				pr_error(status, "allocate statement");
 			char str[200];
 			sprintf(str, "select rdb$guid, rdb$scn from rdb$backup_history "
-				"where rdb$backup_id="
+				"where rdb$backup_id ="
 				  "(select max(rdb$backup_id) from rdb$backup_history "
-				   "where rdb$backup_level=%d)", level - 1);
+				   "where rdb$backup_level = %d)", level - 1);
 			if (isc_dsql_prepare(status, &trans, &stmt, 0, str, 1, NULL))
 				pr_error(status, "prepare history query");
 			if (isc_dsql_describe(status, &stmt, 1, out_sqlda))

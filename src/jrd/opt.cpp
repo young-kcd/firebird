@@ -555,7 +555,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 			MOVE_FAST(local_streams + 1, river->riv_streams, i);
 			// AB: Save all inner-part streams
 			if (rse->rse_jointype == blr_inner || 
-			   (rse->rse_jointype == blr_left && (ptr - rse->rse_relation)==0))
+			   (rse->rse_jointype == blr_left && (ptr - rse->rse_relation) == 0))
 			{
 				find_used_streams(rsb, sub_streams);
 			}
@@ -2115,7 +2115,6 @@ static SLONG decompose(thread_db*		tdbb,
 	DEV_BLKCHK(boolean_node, type_nod);
 	DEV_BLKCHK(csb, type_csb);
 
-
 	if (boolean_node->nod_type == nod_and) {
 		return decompose(tdbb, boolean_node->nod_arg[0], stack, csb) +
 			decompose(tdbb, boolean_node->nod_arg[1], stack, csb);
@@ -2420,7 +2419,6 @@ static bool dump_rsb(const jrd_req* request,
  *	a particular rsb.
  *
  **************************************/
-	SSHORT return_length;
 	jrd_prc* procedure;
 
 	DEV_BLKCHK(rsb, type_rsb);
@@ -2463,8 +2461,9 @@ static bool dump_rsb(const jrd_req* request,
 
 /* print out the type followed immediately by any
    type-specific data */
-
+	SSHORT return_length;
 	*buffer++ = isc_info_rsb_type;
+	
 	switch (rsb->rsb_type) {
 	case rsb_indexed:
 		*buffer++ = isc_info_rsb_indexed;
@@ -3207,7 +3206,7 @@ static bool expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 		case nod_neq:
 	    case nod_and:
 		case nod_or:
-			// A+B is equivilant to B+A, ditto A*B==B*A
+			// A+B is equivalent to B+A, ditto A*B==B*A
 			// Note: If one expression is A+B+C, but the other is B+C+A we won't
 			// necessarily match them.
 			if (expression_equal2(tdbb, opt, node1->nod_arg[0],
@@ -4022,7 +4021,7 @@ static bool form_river(thread_db*		tdbb,
 
 	// Reform "temp" from streams not consumed.
 	stream = temp + 1;
-	UCHAR* end_stream = stream + temp[0];
+	const UCHAR* const end_stream = stream + temp[0];
 	if (!(temp[0] -= count)) {
 		return false;
 	}
@@ -4416,7 +4415,7 @@ static void gen_join(thread_db*		tdbb,
 	}
 
 	// Compute cardinality and indexed relationships for all streams.
-	const UCHAR* end_stream = streams + 1 + streams[0];
+	const UCHAR* const end_stream = streams + 1 + streams[0];
 	for (UCHAR* stream = streams + 1; stream < end_stream; stream++) {
 		CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[*stream];
 		fb_assert(csb_tail);
@@ -4445,7 +4444,7 @@ static void gen_join(thread_db*		tdbb,
 		// find indexed relationships from this stream to every other stream
 		OptimizerBlk::opt_stream* tail = opt->opt_streams.begin() + *stream;
 		csb_tail->csb_flags |= csb_active;
-		for (UCHAR* t2 = streams + 1; t2 < end_stream; t2++) {
+		for (const UCHAR* t2 = streams + 1; t2 < end_stream; t2++) {
 			if (*t2 != *stream) {
 				CompilerScratch::csb_repeat* csb_tail2 = &csb->csb_rpt[*t2];
 				csb_tail2->csb_flags |= csb_active;
@@ -4578,11 +4577,11 @@ static RecordSource* gen_navigation(thread_db* tdbb,
 			|| (USHORT)(IPTR) node->nod_arg[e_fld_id] != idx_tail->idx_field
 			// for ODS11 default nulls placement always may be matched to index
 			|| (dbb->dbb_ods_version >= ODS_VERSION11 && (
-			  (reinterpret_cast<IPTR>(ptr[2*sort->nod_count]) == rse_nulls_first && ptr[sort->nod_count])
-			  || (reinterpret_cast<IPTR>(ptr[2*sort->nod_count]) == rse_nulls_last && !ptr[sort->nod_count])))
+			  (reinterpret_cast<IPTR>(ptr[2 * sort->nod_count]) == rse_nulls_first && ptr[sort->nod_count])
+			  || (reinterpret_cast<IPTR>(ptr[2 * sort->nod_count]) == rse_nulls_last && !ptr[sort->nod_count])))
 			// for ODS10 and earlier indices always placed nulls at the end of dataset
 			|| (dbb->dbb_ods_version < ODS_VERSION11 && 
-			  reinterpret_cast<IPTR>(ptr[2*sort->nod_count]) == rse_nulls_first)
+			  reinterpret_cast<IPTR>(ptr[2 * sort->nod_count]) == rse_nulls_first)
 #ifdef SCROLLABLE_CURSORS
 			)
 #else
@@ -5413,7 +5412,7 @@ static RecordSource* gen_sort(thread_db* tdbb,
 	 * transactions.
 	 */
 
-	UCHAR* ptr;
+	const UCHAR* ptr;
 	dsc descriptor;
 
 	CompilerScratch* csb = opt->opt_csb;
@@ -6372,9 +6371,8 @@ static jrd_nod* make_inversion(thread_db* tdbb, OptimizerBlk* opt,
 	UINT64* idx_priority_level = idx_priority_level_vector.begin();
 
 	index_desc* idx = csb_tail->csb_idx->items;
-	SSHORT i;
 	if (opt->opt_base_conjuncts) {
-		for (i = 0; i < csb_tail->csb_indices; i++) {
+		for (SSHORT i = 0; i < csb_tail->csb_indices; i++) {
 
 			idx_walk[i] = idx;
 			idx_priority_level[i] = LOWEST_PRIORITY_LEVEL;
@@ -6428,7 +6426,7 @@ static jrd_nod* make_inversion(thread_db* tdbb, OptimizerBlk* opt,
 	bool accept = true;
 	idx = csb_tail->csb_idx->items;
 	if (opt->opt_base_conjuncts) {
-		for (i = 0; i < idx_walk_count; i++) {
+		for (SSHORT i = 0; i < idx_walk_count; i++) {
 			idx = idx_walk[i];
 			if (idx->idx_runtime_flags & idx_plan_dont_use) {
 				continue;

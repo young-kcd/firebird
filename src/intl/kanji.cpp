@@ -32,16 +32,16 @@ static void S2E(const UCHAR s1, const UCHAR s2, UCHAR& j1, UCHAR& j2)
 {
 	if (s2 >= 0x9f) {
 		if (s1 >= 0xe0)
-			j1 = (s1*2 - 0xe0);
+			j1 = (s1 * 2 - 0xe0);
     	else
-			j1 = (s1*2 - 0x60);
+			j1 = (s1 * 2 - 0x60);
 		j2 = (s2 + 2);
 	}
 	else {
 		if (s1 >= 0xe0)
-			j1 = (s1*2 - 0xe1);
+			j1 = (s1 * 2 - 0xe1);
 		else
-			j1 = (s1*2 - 0x61);
+			j1 = (s1 * 2 - 0x61);
 		if (s2 >= 0x7f)
 			j2 = (s2 + 0x60);
 		else

@@ -144,6 +144,8 @@ BLK ALLR_block(UCHAR type, ULONG count)
 				status_vector[3] = (ISC_STATUS) errmsg;
 #ifndef EMBEDDED
 				REMOTE_save_status_strings(tdrdb->trdb_status_vector);
+#else
+#pragma FB_COMPILER_MESSAGE("Problem in embedded with 'errmsg' if this file is used")
 #endif
 			}
 			Firebird::status_exception::raise();

@@ -1121,17 +1121,17 @@ void API_ROUTINE gds__trace(const TEXT * text)
 
 	char buffer[1024]; // 1K should be enough for the trace message
 	char* p = buffer;
-	gds__ulstr(p, today.tm_year+1900, 4, '0'); p+=4;
+	gds__ulstr(p, today.tm_year + 1900, 4, '0'); p += 4;
 	*p++ = '-';
-	gds__ulstr(p, today.tm_mon, 2, '0'); p+=2;
+	gds__ulstr(p, today.tm_mon, 2, '0'); p += 2;
 	*p++ = '-';
-	gds__ulstr(p, today.tm_mday, 2, '0'); p+=2;
+	gds__ulstr(p, today.tm_mday, 2, '0'); p += 2;
 	*p++ = 'T';
-	gds__ulstr(p, today.tm_hour, 2, '0'); p+=2;
+	gds__ulstr(p, today.tm_hour, 2, '0'); p += 2;
 	*p++ = ':';
-	gds__ulstr(p, today.tm_min, 2, '0'); p+=2;
+	gds__ulstr(p, today.tm_min, 2, '0'); p += 2;
 	*p++ = ':';
-	gds__ulstr(p, today.tm_sec, 2, '0'); p+=2;
+	gds__ulstr(p, today.tm_sec, 2, '0'); p += 2;
 	*p++ = ' ';
 	gds__ulstr(p, 
 #ifdef WIN_NT

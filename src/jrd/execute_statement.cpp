@@ -204,7 +204,7 @@ bool ExecuteStatement::Fetch(thread_db* tdbb, jrd_nod** JrdVar)
 		Firebird::status_exception::raise(tdbb->tdbb_status_vector);
 	}
 
-	XSQLVAR *var=Sqlda->sqlvar;
+	const XSQLVAR *var = Sqlda->sqlvar;
 	for (int i = 0; i < Sqlda->sqld; i++, var++, JrdVar++) {
 		dsc* d = EVL_assign_to(tdbb, *JrdVar);
 		if (d->dsc_dtype >= 

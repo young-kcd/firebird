@@ -55,14 +55,13 @@ int GENERATE_acl( SCL sec_class, UCHAR * buffer)
  *	Generate an access control list.
  *
  **************************************/
-	UCHAR** id;
-	USHORT i;
-
 	UCHAR* p = buffer;
 	*p++ = ACL_version;
 
 	for (SCE item = sec_class->scl_entries; item; item = item->sce_next) {
 		*p++ = ACL_id_list;
+		USHORT i;
+		const UCHAR* const* id;
 		for (i = 0, id = item->sce_idents; i < id_max; id++, i++)
 		{
 			const UCHAR* q = *id;
@@ -342,7 +341,7 @@ static void generate( STR blr, DUDLEY_NOD node)
 			check_blr(blr, 2);
 			blr->add_byte(blr_sort);
 			blr->add_byte(sub->nod_count / 2);
-			for (pos = 0; pos < sub->nod_count ; pos+=2) {
+			for (pos = 0; pos < sub->nod_count ; pos += 2) {
 				check_blr(blr, 1);
 				blr->add_byte((sub->nod_arg[pos + 1]) ? blr_descending : blr_ascending);
 				generate(blr, sub->nod_arg[pos]);
@@ -352,7 +351,7 @@ static void generate( STR blr, DUDLEY_NOD node)
 			check_blr(blr, 2);
 			blr->add_byte(blr_project);
 			blr->add_byte(sub->nod_count / 2);
-			for (pos = 0; pos < sub->nod_count ; pos+=2)
+			for (pos = 0; pos < sub->nod_count ; pos += 2)
 				generate(blr, sub->nod_arg[pos]);
 		}
 		check_blr(blr, 1);
@@ -589,22 +588,18 @@ static void get_set_generator( STR blr, DUDLEY_NOD node)
  *	generator name and the increment.
  *	The rest is canned.
  **************************************/
-	SYM symbol;
-	static SCHAR gen_prologue[] = {
+	static const UCHAR gen_prologue[] = {
 		blr_begin, blr_message, 0, 1, 0, blr_long, 0,
 		blr_send, 0, blr_begin, blr_assignment, blr_gen_id,
 	};
-	static SCHAR gen_epilogue[] = {
+	static const UCHAR gen_epilogue[] = {
 		blr_parameter, 0, 0, 0, blr_end, blr_end
 	};
-	int l;
-	CON constant;
-	SLONG value;
 
 /* copy the beginning of the blr into the buffer */
 
-	l = sizeof(gen_prologue);
-	const char* p = gen_prologue;
+	int l = sizeof(gen_prologue);
+	const UCHAR* p = gen_prologue;
 	check_blr(blr, l);
 	do {
 		blr->add_byte(*p++);
@@ -612,10 +607,10 @@ static void get_set_generator( STR blr, DUDLEY_NOD node)
 
 /* stuff in the name length and the name */
 
-	symbol = (SYM) node->nod_arg[1];
+	SYM symbol = (SYM) node->nod_arg[1];
 	check_blr(blr, 1);
 	blr->add_byte(l = symbol->sym_length);
-	p = symbol->sym_string;
+	p = (const UCHAR*) symbol->sym_string;
 	if (l) {
 		check_blr(blr, l);
 		do {
@@ -623,15 +618,15 @@ static void get_set_generator( STR blr, DUDLEY_NOD node)
 		} while (--l);
 	}
 
-/* now for the increvent value */
+/* now for the increment value */
 
 	check_blr(blr, 7);
 	blr->add_byte(blr_literal);
-	constant = (CON) node->nod_arg[0]->nod_arg[0];
+	CON constant = (CON) node->nod_arg[0]->nod_arg[0];
 	blr->add_byte(blr_long);
 	blr->add_byte(constant->con_desc.dsc_scale);
-	p = (const char*) constant->con_data;
-	value = *(SLONG *) p;
+	p = constant->con_data;
+	const SLONG value = *(SLONG *) p;
 	blr->add_word(value);
 	blr->add_word(value >> 16);
 

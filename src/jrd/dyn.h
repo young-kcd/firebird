@@ -72,7 +72,7 @@ void	DYN_error_punt(bool, USHORT, const TEXT*, const TEXT*,
 void	DYN_execute(Jrd::Global*, const UCHAR**, const TEXT*, TEXT*, TEXT*, TEXT*, TEXT*);
 SLONG	DYN_get_number(const UCHAR**);
 USHORT	DYN_get_string(const TEXT**, TEXT*, USHORT, bool);
-TEXT*	DYN_dup_string(MemoryPool&, const TEXT**, bool, USHORT=0);
+TEXT*	DYN_dup_string(MemoryPool&, const TEXT**, bool, USHORT = 0);
 
 // This function is not defined anywhere.
 // void	DYN_get_string2(TEXT**, TEXT*, USHORT);

@@ -669,15 +669,15 @@ int des_cipher(const char* in, char* out, SLONG salt, int num_iter)
 		loop_count = 8;
 		do {
 
-#define	SPTAB(t, i)	(*(SLONG *)((unsigned char *)t + i*(sizeof(SLONG)/4)))
+#define	SPTAB(t, i)	(*(SLONG *)((unsigned char *)t + i * (sizeof(SLONG) / 4)))
 			/* use this if "k" is allocated to a register ... */
-#define	DOXOR(x,y,i)	k=B.b[i]; x^=SPTAB(SPE[0][i],k); y^=SPTAB(SPE[1][i],k);
+#define	DOXOR(x,y,i)	k = B.b[i]; x ^= SPTAB(SPE[0][i], k); y ^= SPTAB(SPE[1][i], k);
 
 #define	CRUNCH(p0, p1, q0, q1)	\
 			k = (q0 ^ q1) & SALT;	\
 			B.b32.i0 = k ^ q0 ^ kp->b32.i0;		\
 			B.b32.i1 = k ^ q1 ^ kp->b32.i1;		\
-			kp = (C_block *)((char *)kp+ks_inc);	\
+			kp = (C_block *)((char *)kp + ks_inc);	\
 							\
 			DOXOR(p0, p1, 0);		\
 			DOXOR(p0, p1, 1);		\

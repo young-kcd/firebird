@@ -109,7 +109,7 @@ int main( int argc, char **argv)
 
 	for (;;) {
 		printf("Facility: ");
-		if (gets((char*) facility)==NULL)
+		if (gets((char*) facility) == NULL)
 			break;
 		ascii_str_upper(facility);
 		count = 0;

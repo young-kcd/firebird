@@ -24,8 +24,6 @@
  *  Contributor(s): ______________________________________.
  * 
  *
- *  $Id: class_perf.cpp,v 1.15 2004-11-24 09:05:11 robocop Exp $
- *
  */
 
 #include "tree.h"
@@ -208,7 +206,7 @@ static void testAllocatorMemoryPool() {
 	int i, n = 0;	
 	for (i=0;i<ALLOC_ITEMS;i++) {
 		n = n * 47163 - 57412;
-		AllocItem temp = {n, pool->allocate((n % MAX_ITEM_SIZE + MAX_ITEM_SIZE)/2+1)};
+		AllocItem temp = {n, pool->allocate((n % MAX_ITEM_SIZE + MAX_ITEM_SIZE) / 2 + 1)};
 		items.add(temp);
 	}
 	// Deallocate half of small items
@@ -220,7 +218,7 @@ static void testAllocatorMemoryPool() {
 	// Allocate big items
 	for (i=0;i<BIG_ITEMS;i++) {
 		n = n * 47163 - 57412;
-		AllocItem temp = {n, pool->allocate((n % BIG_SIZE + BIG_SIZE)/2+1)};
+		AllocItem temp = {n, pool->allocate((n % BIG_SIZE + BIG_SIZE) / 2 + 1)};
 		bigItems.add(temp);
 	}
 	// Deallocate the rest of small items
@@ -245,7 +243,7 @@ static void testAllocatorMalloc() {
 	int i, n = 0;
 	for (i=0;i<ALLOC_ITEMS;i++) {
 		n = n * 47163 - 57412;
-		AllocItem temp = {n, malloc((n % MAX_ITEM_SIZE + MAX_ITEM_SIZE)/2+1)};
+		AllocItem temp = {n, malloc((n % MAX_ITEM_SIZE + MAX_ITEM_SIZE) / 2 + 1)};
 		items.add(temp);
 	}
 	// Deallocate half of small items
@@ -257,7 +255,7 @@ static void testAllocatorMalloc() {
 	// Allocate big items
 	for (i=0;i<BIG_ITEMS;i++) {
 		n = n * 47163 - 57412;
-		AllocItem temp = {n, malloc((n % BIG_SIZE + BIG_SIZE)/2+1)};
+		AllocItem temp = {n, malloc((n % BIG_SIZE + BIG_SIZE) / 2 + 1)};
 		bigItems.add(temp);
 	}
 	// Deallocate the rest of small items

@@ -29,9 +29,6 @@
  * the length of string types containing binary data (char. set octets).
  * 2003.08.10 Claudio Valderrama: Fix SF Bugs #544132 and #728839.
  */
-/*
-$Id: fun.epp,v 1.68 2004-11-29 11:15:08 alexpeshkoff Exp $
-*/
 
 #include "firebird.h"
 #include <stdlib.h>

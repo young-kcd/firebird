@@ -45,9 +45,6 @@
  *		programming style. Almost all completely rewritten.
  *
  */
-/*
-$Id: flu.cpp,v 1.48 2004-11-29 11:15:08 alexpeshkoff Exp $
-*/
 
 #include "firebird.h"
 #include "../common/config/config.h"
@@ -230,7 +227,7 @@ namespace Jrd
 
 		// apply suffix (and/or prefix) and try that name
 		Firebird::PathName module(initialModule);
-		for (int i=0; i<sizeof(libfixes)/sizeof(Libfix); i++)
+		for (int i = 0; i < sizeof(libfixes) / sizeof(Libfix); i++)
 		{
 			const Libfix* l = &libfixes[i];
 			// os-dependent module name modification
@@ -264,7 +261,8 @@ namespace Jrd
 				// paths list
 				PathUtils::splitLastComponent(path, relative, fixedModule);
 				if (path.length() == 0 && 
-						PathUtils::isRelative(fixedModule)) {
+						PathUtils::isRelative(fixedModule))
+				{
 					path = fixedModule;
 					iUdfDirectoryList().expandFileName(fixedModule, path);
 				}

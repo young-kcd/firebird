@@ -97,7 +97,7 @@ void PathUtils::splitLastComponent(Firebird::PathName& path, Firebird::PathName&
 	path.erase();
 	path.append(orgPath, 0, pos);	// skip the directory separator
 	file.erase();
-	file.append(orgPath, pos+1, orgPath.length() - pos - 1);
+	file.append(orgPath, pos + 1, orgPath.length() - pos - 1);
 }
 
 void PathUtils::concatPath(Firebird::PathName& result,

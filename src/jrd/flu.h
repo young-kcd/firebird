@@ -159,7 +159,7 @@ namespace Jrd
 			return interMod->findSymbol(name);
 		}
 
-		operator bool()
+		operator bool() const
 		{
 			return interMod;
 		}

@@ -36,9 +36,6 @@
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
-/*
-$Id: met.epp,v 1.147 2004-11-29 11:15:09 alexpeshkoff Exp $
-*/
 // This MUST be at the top of the file
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -1858,14 +1855,14 @@ bool MET_lookup_partner(
 
 				dependencies->prim_relations = 
 					vec::newVector(*dbb->dbb_permanent, dependencies->prim_relations,
-								   index_number+1);
+								   index_number + 1);
 
 				(*dependencies->prim_relations)[index_number] =
 					(BLK) (IPTR) partner_relation->rel_id;
 
 				dependencies->prim_indexes =
 					vec::newVector(*dbb->dbb_permanent, dependencies->prim_indexes,
-								   index_number+1);
+								   index_number + 1);
 
 				(*dependencies->prim_indexes)[index_number] =
 					(BLK) (IPTR) (IND.RDB$INDEX_ID - 1);

@@ -591,7 +591,7 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
  *	return false.
  *
  **************************************/
-const int CCH_EXCLUSIVE_RETRY_INTERVAL	=1;	/* retry interval in seconds */
+	const int CCH_EXCLUSIVE_RETRY_INTERVAL = 1;	/* retry interval in seconds */
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;

@@ -3,7 +3,6 @@
 /* from Peter C. Gutmann's implementation as found in */
 /* Applied Cryptography by Bruce Schneier */
 /* This code is in the public domain */
-/* $Id: sha.cpp,v 1.3 2004-11-17 08:57:25 robocop Exp $ */
 
 // Adopted and added to firebird cvs tree - A.Peshkov, 2004
 
@@ -71,7 +70,7 @@ void sha_final(unsigned char [SHA_DIGESTSIZE], SHA_INFO *);
  *
  * This code is in the public domain
  *
- * $Id: sha.cpp,v 1.3 2004-11-17 08:57:25 robocop Exp $
+ * $Id: sha.cpp,v 1.4 2004-11-30 06:18:17 robocop Exp $
  */
 
 /* UNRAVEL should be fastest & biggest */
@@ -174,7 +173,7 @@ nether regions of the anatomy...
 	W[i] =  ((T << 24) & 0xff000000) | ((T <<  8) & 0x00ff0000) |
 		((T >>  8) & 0x0000ff00) | ((T >> 24) & 0x000000ff);
 	T >>= 32;
-	W[i+1] = ((T << 24) & 0xff000000) | ((T <<  8) & 0x00ff0000) |
+	W[i + 1] = ((T << 24) & 0xff000000) | ((T <<  8) & 0x00ff0000) |
 		 ((T >>  8) & 0x0000ff00) | ((T >> 24) & 0x000000ff);
     }
 #endif /* SHA_BYTE_ORDER == 12345678 */
@@ -185,7 +184,7 @@ nether regions of the anatomy...
 	T = *((LONG *) dp);
 	dp += 8;
 	W[i] = T32(T >> 32);
-	W[i+1] = T32(T);
+	W[i + 1] = T32(T);
     }
 #endif /* SHA_BYTE_ORDER == 87654321 */
 
