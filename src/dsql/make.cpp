@@ -1256,8 +1256,14 @@ void MAKE_desc_from_list(dsc* desc, dsql_nod* node, const TEXT* expression_name)
 			// Maybe first according SQL-standard which has an order 
 			// UTF32 -> UTF16 -> UTF8 then by a Firebird specified order
 			//
+			// At least give any first charset other then ASCII/NONE precedence
 			if (!any_text) {
 				ttype = desc1.dsc_ttype;
+			}
+			else {
+				if ((ttype == ttype_none) || (ttype == ttype_ascii)) {
+					ttype = desc1.dsc_ttype;
+				}
 			}
 			any_text = true;
 		}
