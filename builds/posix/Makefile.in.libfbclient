@@ -27,11 +27,11 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbclient,v 1.14.2.4 2004-09-17 20:34:21 skidder Exp $
+#  $Id: Makefile.in.libfbclient,v 1.14.2.5 2004-10-07 21:34:24 skidder Exp $
 #
 ROOT=..
 ObjModuleName=libfbclient
-CFLAGS:=-DSUPERCLIENT
+CFLAGS:=-DSUPERCLIENT @PTHREAD_CFLAGS@
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -122,7 +122,7 @@ $(LIBFBCLIENT_SO):	LINK_PROD=$(ClientLibraryNameMajor)
 $(LIBFBCLIENT_SO):	$(FBCLIENT_Objects)
 #	$(LIB_LINK) -Wl,-soname,libfbclient.$(SHRLIB_EXT).1 -Wl,-rpath,/usr/lib -o $@ $^
 	$(LIB_LINK) $(LINK_FIREBIRD_SYMBOLS) $(LIB_SHLIB_LINK_OPTIONS) $(LIB_CLIENT_LINK_OPTIONS) \
-		$(LIB_LINK_SONAME_LINE) $(LIB_LINK_RPATH_LINE) -o $@ $^ $(SO_LINK_LIBS)
+		$(LIB_LINK_SONAME_LINE) $(LIB_LINK_RPATH_LINE) -o $@ $^ $(SO_LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 
 
 AllObjects = $(FBCLIENT_Objects)

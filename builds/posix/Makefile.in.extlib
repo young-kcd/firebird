@@ -27,10 +27,11 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.extlib,v 1.10.2.6 2004-04-08 23:46:40 skidder Exp $
+#  $Id: Makefile.in.extlib,v 1.10.2.7 2004-10-07 21:34:24 skidder Exp $
 #
 ROOT=..
 ObjModuleName=extlib
+CFLAGS:=@PTHREAD_CFLAGS@
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -56,7 +57,7 @@ UTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(UTIL_Sources)))
 
 
 udf_client_library_super = $(LIBFBCLIENT_SO)
-udf_client_library_classic =
+udf_client_library_classic = 
 
 
 AllObjects = $(UDF_Objects) $(UTIL_Objects) $(FBUDF_Objects)
@@ -89,10 +90,8 @@ lib_ib_udf: $(UDF)/ib_udf.$(SHRLIB_EXT)
 
 $(UDF)/ib_udf.$(SHRLIB_EXT):	LINK_PROD=ib_udf.$(SHRLIB_EXT)
 $(UDF)/ib_udf.$(SHRLIB_EXT):	$(UDF_Objects) $(UTIL_Objects)
-#	$(LIB_LINK) $(LIB_LINK_SONAME_LINE) $(LIB_LINK_RPATH_LINE) -o $@ $^
-	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME_LINE) $(LIB_LINK_RPATH_LINE) -o $@ $^
-#	-$(LN) $(@F) $(LIBFBINTL_SOBASENAME) 
-#	-$(LN) $(notdir $(LIBFBINTL_SOBASENAME)) $(LIBFBINTL_SONAME)
+	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME_LINE) $(LIB_LINK_RPATH_LINE) \
+-o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 
 
 
@@ -101,7 +100,8 @@ lib_fb_udf: $(UDF)/fbudf.$(SHRLIB_EXT)
 
 $(UDF)/fbudf.$(SHRLIB_EXT):	LINK_PROD=fbudf.$(SHRLIB_EXT)
 $(UDF)/fbudf.$(SHRLIB_EXT):	$(FBUDF_Objects) $(UTIL_Objects)
-	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME_LINE) $(LIB_LINK_RPATH_LINE) -o $@ $^ $(udf_client_library_@FIREBIRD_ARCH_TYPE@)
+	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME_LINE) $(LIB_LINK_RPATH_LINE) -o $@ $^ \
+$(udf_client_library_@FIREBIRD_ARCH_TYPE@) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 #	-$(LN) $(@F) $(LIBFBINTL_SOBASENAME) 
 #	-$(LN) $(notdir $(LIBFBINTL_SOBASENAME)) $(LIBFBINTL_SONAME)
 
@@ -112,7 +112,8 @@ lib_ib_util: $(LIBIBUTIL_SO)
 
 $(LIBIBUTIL_SO):	LINK_PROD=libib_util.$(SHRLIB_EXT)
 $(LIBIBUTIL_SO):	$(UTIL_Objects)
-	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME_LINE) $(LIB_LINK_RPATH_LINE) -o $@ $^
+	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME_LINE) $(LIB_LINK_RPATH_LINE) \
+-o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 #	-$(LN) $(@F) $(LIBFBINTL_SOBASENAME) 
 #	-$(LN) $(notdir $(LIBFBINTL_SOBASENAME)) $(LIBFBINTL_SONAME)
 

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.fbserver,v 1.11.2.4 2004-07-05 14:21:59 kkuznetsov Exp $
+#  $Id: Makefile.in.fbserver,v 1.11.2.5 2004-10-07 21:34:24 skidder Exp $
 #
 ROOT=..
 ObjModuleName=fbserver
@@ -37,7 +37,7 @@ include     $(ROOT)/gen/make.platform
 include     $(ROOT)/gen/make.rules
 include     $(ROOT)/gen/make.shared.variables
 
-CFLAGS:=$(SUPER_CFLAGS)
+CFLAGS:=-DSUPERSERVER @PTHREAD_CFLAGS@
 
 
 @SET_MAKE@
@@ -63,7 +63,8 @@ fbserver : $(FB_SUPER_SERVER)
 
 $(FB_SUPER_SERVER):	$(SERVER_Objects) $(IPSERVER_Objects) -lfbserver
 #	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LIB_GUI) $(LINK_LIBS) 
-	$(LIB_LINK) $(LIB_LINK_OPTS) $^ -o $@ -L$(LIB) $(LIB_GUI) $(LINK_LIBS) 
+	$(LIB_LINK) $(LIB_LINK_OPTS) $^ -o $@ -L$(LIB) $(LIB_GUI) $(LINK_LIBS) \
+@PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 #	$(CHMOD_S7) $@
 
 #$(LIB)/libalice.a \

@@ -27,11 +27,11 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.intl,v 1.11.2.3 2004-09-17 20:34:21 skidder Exp $
+#  $Id: Makefile.in.intl,v 1.11.2.4 2004-10-07 21:34:24 skidder Exp $
 #
 ROOT=..
 ObjModuleName=intl
-CFLAGS:=-DSUPERCLIENT
+CFLAGS:=-DSUPERCLIENT @PTHREAD_CFLAGS@
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -80,7 +80,8 @@ libfbintl : $(LIBFBINTL_SO)
 $(LIBFBINTL_SO):	LINK_PROD=libintl.$(SHRLIB_EXT).1
 $(LIBFBINTL_SO):	$(INTL_Objects)
 #	$(LIB_LINK) -Wl,-soname,libintl.$(SHRLIB_EXT).1 -Wl,-rpath,/usr/lib -o $@ $^
-	$(LIB_LINK) $(LINK_FBINTL_SYMBOLS) $(LIB_LINK_OPTIONS)  $(LIB_LINK_SONAME_LINE) $(LIB_LINK_RPATH_LINE) -o $@ $^
+	$(LIB_LINK) $(LINK_FBINTL_SYMBOLS) $(LIB_LINK_OPTIONS)  $(LIB_LINK_SONAME_LINE) \
+$(LIB_LINK_RPATH_LINE) -o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 #	-$(LN) $(@F) $(LIBFBINTL_SOBASENAME) 
 #	-$(LN) $(notdir $(LIBFBINTL_SOBASENAME)) $(LIBFBINTL_SONAME)
 
