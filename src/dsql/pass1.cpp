@@ -406,7 +406,7 @@ dsql_ctx* PASS1_make_context(dsql_req* request, dsql_nod* relation_node)
 		// query level (if there are no subqueries, this checks that the
 		// alias is not used twice in the request).
 		for (DsqlContextStack::iterator stack(*request->req_context); 
-							stack; ++stack)
+							stack.notEmpty(); ++stack)
 		{
 			const dsql_ctx* conflict = stack.object();
 
@@ -641,8 +641,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		node->nod_arg[e_via_value_1] = rse->nod_arg[e_rse_items]->nod_arg[0];
 		node->nod_arg[e_via_value_2] = MAKE_node(nod_null, (int) 0);
 		// Finish off by cleaning up contexts
-		while (*request->req_context != base)
-			request->req_context->pop();
+		request->req_context->clear(base);
 		return node;
 		}
 
@@ -658,8 +657,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 		// Finish off by cleaning up contexts 
 
-		while (*request->req_context != base)
-			request->req_context->pop();
+		request->req_context->clear(base);
 		return node;
 		}
 
@@ -797,8 +795,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 				// Finish off by cleaning up contexts 
 
-				while (*request->req_context != base)
-					request->req_context->pop();
+				request->req_context->clear(base);
 				return node;
 			}
 			else {
@@ -1617,9 +1614,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 	}
 
 // Finish off by cleaning up contexts 
-
-	while (*request->req_context != base)
-		request->req_context->pop();
+	request->req_context->clear(base);
 
 #ifdef DSQL_DEBUG
 	if (DSQL_debug & 1) {
@@ -1943,7 +1938,7 @@ static dsql_nod* ambiguity_check(dsql_req* request, dsql_nod* node,
 	TEXT* b = buffer;
 	TEXT* p = 0;
 
-	for (DsqlContextStack::iterator stack(ambiguous_contexts); stack; ++stack)
+	for (DsqlContextStack::iterator stack(ambiguous_contexts); stack.notEmpty(); ++stack)
 	{
 		const dsql_ctx* context = stack.object();
 		const dsql_rel* relation = context->ctx_relation;
@@ -2965,9 +2960,7 @@ static dsql_nod* pass1_any( dsql_req* request, dsql_nod* input, NOD_TYPE ntype)
 	rse->nod_arg[e_rse_boolean] = 
 			compose(rse->nod_arg[e_rse_boolean], temp, nod_and);
 
-	while (*request->req_context != base) {
-		request->req_context->pop();
-	}
+	request->req_context->clear(base);
 
 	return node;
 }
@@ -3329,7 +3322,7 @@ static dsql_nod* pass1_cursor_name(const dsql_req* request, const dsql_str* stri
 	DEV_BLKCHK(string, dsql_type_str);
 	dsql_nod* cursor = NULL;
 
-	for (DsqlNodStack::iterator itr(request->req_cursors); itr; ++itr) {
+	for (DsqlNodStack::iterator itr(request->req_cursors); itr.notEmpty(); ++itr) {
 		cursor = itr.object();
 		const dsql_str* cname = (dsql_str*) cursor->nod_arg[e_cur_name];
 		if (!strcmp(string->str_data, cname->str_data))
@@ -3481,7 +3474,7 @@ static dsql_nod* pass1_dbkey( dsql_req* request, dsql_nod* input)
 		}
 	}
 	else {
-		for (DsqlContextStack::iterator stack(*request->req_context); stack; ++stack)
+		for (DsqlContextStack::iterator stack(*request->req_context); stack.notEmpty(); ++stack)
 		{
 			dsql_ctx* context = stack.object();
 			if ((!(context->ctx_relation) ||
@@ -3617,7 +3610,9 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 	// Finish off by cleaning up contexts and put them into req_dt_context
 	// so create view (ddl) can deal with it.
 	// Also add the used contexts into the childs stack.
-	while (*request->req_context && *request->req_context != dtStartContext) {
+	while ((request->req_context->notEmpty()) && 
+		   (*request->req_context != dtStartContext)) 
+	{
 		request->req_dt_context.push(request->req_context->object());
 		context->ctx_childs_derived_table.push(request->req_context->pop());
 	}
@@ -3864,7 +3859,7 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input, const bool lis
 			break;
 		}
 
-		for (DsqlContextStack::iterator stack(*request->req_context); stack; ++stack)
+		for (DsqlContextStack::iterator stack(*request->req_context); stack.notEmpty(); ++stack)
 		{
 			// resolve_context() checks the type of the
 			// given context, so the cast to dsql_ctx* is safe.
@@ -4773,7 +4768,7 @@ static dsql_nod* pass1_label(dsql_req* request, dsql_nod* input)
 		string = (dsql_str*) label->nod_arg[e_label_name];
 		const TEXT* label_string = (TEXT*) string->str_data;
 		int index = request->req_loop_level;
-		for (DsqlStrStack::iterator stack(request->req_labels); stack; ++stack) {
+		for (DsqlStrStack::iterator stack(request->req_labels); stack.notEmpty(); ++stack) {
 			const dsql_str* obj = stack.object();
 			if (obj) {
 				const TEXT* obj_string = (TEXT*) obj->str_data;
@@ -5023,7 +5018,7 @@ static dsql_nod* pass1_alias_list(dsql_req* request, dsql_nod* alias_list)
 	// a base table having a matching table name or alias.
 
 	if (!context) {
-		for (DsqlContextStack::iterator stack(*request->req_context); stack; ++stack) {
+		for (DsqlContextStack::iterator stack(*request->req_context); stack.notEmpty(); ++stack) {
 			context = stack.object();
 			DEV_BLKCHK(context, dsql_type_ctx);
 			if (context->ctx_scope_level == request->req_scope_level &&
@@ -5146,7 +5141,7 @@ static dsql_ctx* pass1_alias(dsql_req* request, const DsqlContextStack& stack, d
 	// look through all contexts at this scope level
 	// to find one that has a relation name or alias
 	// name which matches the identifier passed.    
-	for (DsqlContextStack::iterator itr(stack); itr; ++itr) {
+	for (DsqlContextStack::iterator itr(stack); itr.notEmpty(); ++itr) {
 		dsql_ctx* context = itr.object();
 		if (context->ctx_scope_level != request->req_scope_level) {
 			continue;
@@ -6062,7 +6057,7 @@ static dsql_nod* pass1_union( dsql_req* request, dsql_nod* input,
 		 ++ptr, ++uptr)
 	{
 		*uptr = PASS1_rse(request, *ptr, NULL, NULL, NULL);
-        while (*request->req_context != base) 
+        while (*(request->req_context) != base) 
 		{
             request->req_union_context.push(request->req_context->pop());
         }
