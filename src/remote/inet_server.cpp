@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: inet_server.cpp,v 1.26.2.3 2005-03-23 12:59:25 alexpeshkoff Exp $
+$Id: inet_server.cpp,v 1.26.2.4 2005-03-28 09:22:39 robocop Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -281,6 +281,7 @@ int CLIB_ROUTINE server_main( int argc, char **argv)
 					protocol[1] = 0;
 					strncat(protocol, *argv++, 
 						sizeof(protocol) - strlen(protocol) - 1);
+					protocol[sizeof(protocol) - 1] = 0;
 					break;
 
                 case 'H':
