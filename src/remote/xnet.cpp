@@ -33,7 +33,6 @@
 #include "../jrd/iberr.h"
 #include "../remote/xnet.h"
 #include "../utilities/install_nt.h"
-#include "../remote/cntl_proto.h"
 #include "../remote/proto_proto.h"
 #include "../remote/remot_proto.h"
 #include "../remote/xnet_proto.h"

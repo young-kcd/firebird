@@ -36,7 +36,6 @@
 
 #ifdef WIN_NT
 #include <windows.h>
-#include "../remote/window.rh"
 #endif
 
 typedef struct thread {
