@@ -95,7 +95,9 @@ class Config
 		KEY_REMOTE_PIPE_NAME,						// 28
 		KEY_IPC_NAME,								// 29
 		KEY_MAX_UNFLUSHED_WRITES,					// 30
-		KEY_MAX_UNFLUSHED_WRITE_TIME				// 31
+		KEY_MAX_UNFLUSHED_WRITE_TIME,				// 31
+		KEY_PROCESS_PRIORITY_LEVEL,					// 32
+		KEY_CREATE_INTERNAL_WINDOW					// 33
 	};
 
 public:
@@ -259,6 +261,16 @@ public:
 		Unflushed write time
 	*/
 	static int getMaxUnflushedWriteTime();
+
+	/*
+		Process priority level
+	*/
+	static int getProcessPriorityLevel();
+
+	/*
+		Create window for IPC stuff
+	*/
+	static bool getCreateInternalWindow();
 };
 
 #endif // CONFIG_H

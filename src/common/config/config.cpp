@@ -88,11 +88,13 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_STRING,		"IpcName",					(ConfigValue) FB_IPC_NAME},
 #ifdef WIN_NT
 	{TYPE_INTEGER,		"MaxUnflushedWrites",		(ConfigValue) 100},
-	{TYPE_INTEGER,		"MaxUnflushedWriteTime",	(ConfigValue) 5}
+	{TYPE_INTEGER,		"MaxUnflushedWriteTime",	(ConfigValue) 5},
 #else
 	{TYPE_INTEGER,		"MaxUnflushedWrites",		(ConfigValue) -1},
-	{TYPE_INTEGER,		"MaxUnflushedWriteTime",	(ConfigValue) -1}
+	{TYPE_INTEGER,		"MaxUnflushedWriteTime",	(ConfigValue) -1},
 #endif
+	{TYPE_INTEGER,		"ProcessPriorityLevel",		(ConfigValue) 0},
+	{TYPE_BOOLEAN,		"CreateInternalWindow",		(ConfigValue) true}
 };
 
 /******************************************************************************
@@ -104,8 +106,11 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 
 const ConfigImpl& ConfigImpl::instance()
 {
-	static ConfigImpl config;
-	return config;
+	static ConfigImpl *config = 0;
+	if (!config) {
+		config = FB_NEW(*getDefaultMemoryPool()) ConfigImpl;
+	}
+	return *config;
 }
 
 #define sysConfig ConfigImpl::instance()
@@ -385,4 +390,14 @@ int Config::getMaxUnflushedWrites()
 int Config::getMaxUnflushedWriteTime()
 {
 	return (int) sysConfig.values[KEY_MAX_UNFLUSHED_WRITE_TIME];
+}
+
+int Config::getProcessPriorityLevel()
+{
+	return (int) sysConfig.values[KEY_PROCESS_PRIORITY_LEVEL];
+}
+
+bool Config::getCreateInternalWindow()
+{
+	return (bool) sysConfig.values[KEY_CREATE_INTERNAL_WINDOW];
 }
