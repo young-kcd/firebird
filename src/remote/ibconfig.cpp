@@ -762,7 +762,7 @@ void HelpCmd( HWND hWnd, HINSTANCE hInst, WPARAM wId)
  *                                              
  *  H e l p C m d
  *
-/****************************************************************
+ ****************************************************************
  *
  *  Input:     hWnd     - Handle of dialog box from which help was
  *                        invoked.
