@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: ibmgrswi.h,v 1.3 2004-02-20 06:43:26 robocop Exp $
+ * $Id: ibmgrswi.h,v 1.4 2004-05-17 00:28:58 brodsom Exp $
  */
 
 #ifndef IBMGR_IBMGRSWI_H
@@ -28,35 +28,35 @@
 #include "../jrd/common.h"
 
 /* Switch constants */
-#define IN_SW_IBMGR_0		0	/* not a known switch */
-#define IN_SW_IBMGR_START	1	/* start server */
-#define IN_SW_IBMGR_ONCE	2	/* start server once */
-#define IN_SW_IBMGR_FOREVER	3	/* start server, restart when it dies */
-#define IN_SW_IBMGR_SHUT	4	/* shutdown server */
-#define IN_SW_IBMGR_NOW		5	/* immidiate shutdown */
-#define IN_SW_IBMGR_NOAT	6	/* no new attachments */
-#define IN_SW_IBMGR_NOTR	7	/* no new transaction */
-#define IN_SW_IBMGR_IGNORE	8	/* do not shutdown */
-#define IN_SW_IBMGR_PASSWORD	9	/* DB admin's password */
-#define IN_SW_IBMGR_USER	10	/* user's name */
-#define IN_SW_IBMGR_HOST	11	/* host where server's running */
-#define IN_SW_IBMGR_SET		12	/* sets host/user/password */
-#define IN_SW_IBMGR_SHOW	13	/* shows host/user/password */
-#define IN_SW_IBMGR_QUIT	14	/* exit command line interface */
-#define IN_SW_IBMGR_HELP	15	/* print help */
-#define IN_SW_IBMGR_Z		16	/* version */
-#define IN_SW_IBMGR_PRINT	17	/* Print Stats */
-#define IN_SW_IBMGR_POOL	18	/* Print pool */
+const int IN_SW_IBMGR_0			= 0;	/* not a known switch */
+const int IN_SW_IBMGR_START		= 1;	/* start server */
+const int IN_SW_IBMGR_ONCE		= 2;	/* start server once */
+const int IN_SW_IBMGR_FOREVER	= 3;	/* start server, restart when it dies */
+const int IN_SW_IBMGR_SHUT		= 4;	/* shutdown server */
+const int IN_SW_IBMGR_NOW		= 5;	/* immidiate shutdown */
+const int IN_SW_IBMGR_NOAT		= 6;	/* no new attachments */
+const int IN_SW_IBMGR_NOTR		= 7;	/* no new transaction */
+const int IN_SW_IBMGR_IGNORE	= 8;	/* do not shutdown */
+const int IN_SW_IBMGR_PASSWORD	= 9;	/* DB admin's password */
+const int IN_SW_IBMGR_USER		= 10;	/* user's name */
+const int IN_SW_IBMGR_HOST		= 11;	/* host where server's running */
+const int IN_SW_IBMGR_SET		= 12;	/* sets host/user/password */
+const int IN_SW_IBMGR_SHOW		= 13;	/* shows host/user/password */
+const int IN_SW_IBMGR_QUIT		= 14;	/* exit command line interface */
+const int IN_SW_IBMGR_HELP		= 15;	/* print help */
+const int IN_SW_IBMGR_Z			= 16;	/* version */
+const int IN_SW_IBMGR_PRINT		= 17;	/* Print Stats */
+const int IN_SW_IBMGR_POOL		= 18;	/* Print pool */
 
 /* I have added this to let the user decide whether startup errors should 
    stop ibguard from restating the server.
    FSG 10.Nov.2000
 */
 
-#define IN_SW_IBMGR_SIGNORE     19      /* start server, restart when it dies, even if it was a start up error */
+const int IN_SW_IBMGR_SIGNORE	= 19;	/* start server, restart when it dies, even if it was a start up error */
 
 
-#define IN_SW_IBMGR_AMBIG	99	/* ambiguous switch */
+const int IN_SW_IBMGR_AMBIG		= 99;	/* ambiguous switch */
 
 static const struct in_sw_tab_t ibmgr_in_sw_table [] =
 {

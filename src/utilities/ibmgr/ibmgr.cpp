@@ -23,7 +23,7 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
- * $Id: ibmgr.cpp,v 1.15 2004-05-02 23:06:21 skidder Exp $
+ * $Id: ibmgr.cpp,v 1.16 2004-05-17 00:28:58 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -52,23 +52,23 @@
 
 
 
-#define MAXARGS		20			/* max number of args allowed on command line */
-#define MAXSTUFF	1000		/* longest interactive command line */
+const int MAXARGS		= 20;		/* max number of args allowed on command line */
+const USHORT MAXSTUFF	= 1000;		/* longest interactive command line */
 
 
 /* Codes returned by get_switchesi()
    FB_SUCCESS is defined in common.h
 */
-#define ERR_SYNTAX	(-1)
-#define ERR_OTHER	(-2)
+const SSHORT ERR_SYNTAX	= -1;
+const SSHORT ERR_OTHER	= -2;
 
 
 /* Codes returned by parse_cmd_line()
    FB_SUCCESS is defined in common.h
 */
-#define ACT_NONE	(-1)
-#define ACT_QUIT	1
-#define ACT_PROMPT	2
+const SSHORT ACT_NONE	= -1;
+const SSHORT ACT_QUIT	= 1;
+const SSHORT ACT_PROMPT	= 2;
 
 static void copy_str_upper(TEXT*, const TEXT*);
 static bool get_line(int*, SCHAR**, TEXT*);

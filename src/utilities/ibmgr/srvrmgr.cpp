@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: srvrmgr.cpp,v 1.11 2004-05-02 23:06:21 skidder Exp $
+ * $Id: srvrmgr.cpp,v 1.12 2004-05-17 00:28:58 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -53,17 +53,17 @@
 
 #define STUFF_WORD(p, value)    {*p++ = value; *p++ = value >> 8;}
 
-#define SPB_BUFLEN              128	/* service params buffer length */
-#define SEND_BUFLEN             32	/* length of send and resp */
-#define RESP_BUFLEN             128	/* used by isc_service_query */
+const int SPB_BUFLEN		= 128;	/* service params buffer length */
+//#define SEND_BUFLEN             32	/* length of send and resp */
+//#define RESP_BUFLEN             128	/* used by isc_service_query */
 
 /* After we fork and exec a guardian process, to determine
    if the server have started we wait ATTACH_PAUSE seconds
    and try to attach to it. This happens ATTACH_RETRY number
    of times
 */
-#define ATTACH_PAUSE		1	/* seconds to pause before attach */
-#define ATTACH_RETRY		10	/* Number of attach retries */
+const int ATTACH_PAUSE		= 1;	/* seconds to pause before attach */
+const int ATTACH_RETRY		= 10;	/* Number of attach retries */
 
 
 static bool attach_service(ibmgr_data_t*);
