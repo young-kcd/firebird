@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: ClumpletReader.h,v 1.6 2004-11-24 18:24:51 alexpeshkoff Exp $
+ *  $Id: ClumpletReader.h,v 1.7 2004-11-27 03:30:09 robocop Exp $
  *
  */
 
@@ -61,7 +61,7 @@ public:
 	// Return the tag for buffer (usually structure version)
 	UCHAR getBufferTag();
 	size_t getBufferLength() { return getBufferEnd() - getBuffer(); }
-	size_t getCurOffset() { return cur_offset; }
+	size_t getCurOffset() const { return cur_offset; }
 	void setCurOffset(size_t newOffset) { cur_offset = newOffset; }
 protected:
 	size_t cur_offset;

@@ -97,27 +97,27 @@ template<typename BasePair>
 			: BasePair(AutoStorage::getAutoMemoryPool(), v1, v2) { }
 		Pair(const Pair& lp) 
 			: BasePair(AutoStorage::getAutoMemoryPool(), lp) { }
-		bool operator==(const Pair& v)
+		bool operator==(const Pair& v) const
 		{
 			return this->first == v.first && this->second == v.second; 
 		}
-		bool operator<(const Pair& v)
+		bool operator<(const Pair& v) const
 		{
 			return this->first < v.first || (!(this->first < v.first) && this->second < v.second); 
 		}
-		bool operator!=(const Pair& v)
+		bool operator!=(const Pair& v) const
 		{
 			return ! (*this == v); 
 		}
-		bool operator>(const Pair& v)
+		bool operator>(const Pair& v) const
 		{
 			return v < *this; 
 		}
-		bool operator<=(const Pair& v)
+		bool operator<=(const Pair& v) const
 		{
 			return ! (v < *this); 
 		}
-		bool operator>=(const Pair& v)
+		bool operator>=(const Pair& v) const
 		{
 			return ! (*this < v); 
 		}
