@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.44 2003-07-12 10:22:20 brodsom Exp $
+$Id: par.cpp,v 1.45 2003-07-23 22:42:09 arnobrinkman Exp $
 */
 
 #include "firebird.h"
@@ -184,7 +184,10 @@ JRD_NOD PAR_blr(TDBB	tdbb,
 
 	if (view_csb) {
 		Csb::rpt_itr ptr = view_csb->csb_rpt.begin();
-		Csb::rpt_itr end = ptr + view_csb->csb_n_stream;
+		// AB: csb_n_stream replaced by view_csb->csb_count, because there could
+		// be more then just csb_n_stream-numbers that hold data. 
+		// Certainly csb_stream (see par_context where the context is retrieved)
+		Csb::rpt_itr end = ptr + view_csb->csb_count;
 		for (stream = 0; ptr != end; ++ptr, ++stream) {
 			t2 = CMP_csb_element(&csb, stream);
 			t2->csb_relation = ptr->csb_relation;
