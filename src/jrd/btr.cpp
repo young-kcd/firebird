@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.35 2003-08-18 21:13:56 skidder Exp $
+$Id: btr.cpp,v 1.36 2003-09-16 17:08:44 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -176,28 +176,12 @@ static INT64_KEY make_int64_key(SINT64, SSHORT);
 #ifdef DEBUG_INDEXKEY
 static void print_int64_key(SINT64, SSHORT, INT64_KEY);
 #endif
-static void quad_put(SLONG, SCHAR *);
+static void quad_put(SLONG, UCHAR *);
 static void quad_move(UCHAR*, UCHAR*);
 static CONTENTS remove_node(TDBB, IIB *, WIN *);
 static CONTENTS remove_leaf_node(TDBB, IIB *, WIN *);
 static BOOLEAN scan(TDBB, BTN, SBM *, UCHAR, KEY *, USHORT);
 
-
-}                             // extern "C"
-
-
-//
-// TMN: Ease C -> C++ conversion. These functions must be outside the
-// extern "C" block since it uses function overloading.
-//
-
-inline void quad_put(SLONG value, UCHAR * data)
-{
-	quad_put(value, reinterpret_cast<SCHAR*>(data));
-}
-
-
-extern "C" {
 
 USHORT BTR_all(TDBB    tdbb,
 			   JRD_REL relation,
@@ -4133,7 +4117,7 @@ static void print_int64_key(SINT64 value, SSHORT scale, INT64_KEY key)
 #endif /* DEBUG_INDEXKEY */
 
 
-static void quad_put(SLONG value, SCHAR* data)
+static void quad_put(SLONG value, UCHAR* data)
 {
 /**************************************
  *
@@ -4146,7 +4130,7 @@ static void quad_put(SLONG value, SCHAR* data)
  *
  **************************************/
 
-	const SCHAR* p = (SCHAR*) &value;
+	const UCHAR* p = (UCHAR*) &value;
 
 	data[0] = p[0];
 	data[1] = p[1];

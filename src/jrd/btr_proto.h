@@ -45,7 +45,6 @@ extern struct btn *BTR_find_leaf(struct btr *, struct key *, UCHAR *, UCHAR *,
 extern struct btr *BTR_find_page(struct tdbb *, struct irb *, struct win *,
 								 struct idx *, struct key *, struct key *,
 								 BOOLEAN);
-extern SLONG BTR_get_quad(const SCHAR*);
 extern void BTR_insert(struct tdbb *, struct win *, struct iib *);
 extern enum idx_e BTR_key(struct tdbb *, struct jrd_rel *, struct rec *,
 						  struct idx *, struct key *, idx_null_state *);
