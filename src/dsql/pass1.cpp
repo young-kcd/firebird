@@ -213,6 +213,7 @@ static dsql_nod* pass1_derived_table(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_field(dsql_req*, dsql_nod*, const bool);
 static bool pass1_found_aggregate(const dsql_nod*, USHORT, USHORT, bool);
 static bool pass1_found_field(const dsql_nod*, USHORT, USHORT, bool*);
+static bool pass1_found_sub_select(const dsql_nod*);
 static dsql_nod* pass1_group_by_list(dsql_req*, dsql_nod*, dsql_nod*);
 static dsql_nod* pass1_insert(dsql_req*, dsql_nod*);
 static dsql_nod* pass1_join(dsql_req*, dsql_nod*, bool);
@@ -3639,8 +3640,38 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 		request->req_dt_base_context : &temp;
 	request->req_alias_relation_prefix = pass1_alias_concat(req_alias_relation_prefix, alias);
 
+	// AB: 2005-01-06
+	// If our derived table contains a single query with a sub-select burried
+	// inside the select items then we need a special handling, because we don't
+	// want creating a new sub-select for every reference outside the derived 
+	// table to that sub-select.
+	// To handle this we simple create a UNION ALL with derived table inside it.
+	// Due this mappings are created and we simple reference to these mappings.
+	// Optimizer effects: 
+	//   Good thing is that only 1 recordstream is made for the sub-select, but
+	//   the worse thing is that a UNION curently can't be used in 
+	//   deciding the JOIN order.
 	dsql_nod* const select_expr = input->nod_arg[e_derived_table_rse];
-	dsql_nod* rse = PASS1_rse(request, select_expr, NULL);
+	bool foundSubSelect = false;
+	if ((select_expr->nod_type == nod_select_expr) &&
+		(select_expr->nod_arg[e_sel_query_spec]) && 
+		(select_expr->nod_arg[e_sel_query_spec]->nod_type == nod_list) &&
+		(select_expr->nod_arg[e_sel_query_spec]->nod_count == 1))
+	{
+        dsql_nod* query = select_expr->nod_arg[e_sel_query_spec]->nod_arg[0];
+		foundSubSelect = pass1_found_sub_select(query->nod_arg[e_qry_list]);
+	}
+
+	dsql_nod* rse = NULL;
+	if (foundSubSelect) {
+		dsql_nod* union_expr = MAKE_node(nod_list, 1);
+		union_expr->nod_arg[0] = select_expr;
+		union_expr->nod_flags = NOD_UNION_ALL;
+		rse = pass1_union(request, union_expr, NULL, NULL, 0);
+	}
+	else {
+		rse = PASS1_rse(request, select_expr, NULL);
+	}
 	context->ctx_rse = node->nod_arg[e_derived_table_rse] = rse;
 
 	// Finish off by cleaning up contexts and put them into req_dt_context
@@ -4297,6 +4328,7 @@ static bool pass1_found_aggregate(const dsql_nod* node, USHORT check_scope_level
 	return found;
 }
 
+
 /**
   
  	pass1_found_field
@@ -4493,6 +4525,136 @@ static bool pass1_found_field(const dsql_nod* node, USHORT check_scope_level,
 		}
 
 	return found;
+}
+
+
+/**
+  
+ 	pass1_found_sub_select
+  
+    @brief	Search if a sub select is burried inside 
+   an select list from an query expression.
+
+    @param node
+
+ **/
+static bool pass1_found_sub_select(const dsql_nod* node)
+{
+	DEV_BLKCHK(node, dsql_type_nod);
+
+	if (node == NULL) return false;
+
+	switch (node->nod_type) {
+		case nod_gen_id:
+		case nod_gen_id2:
+		case nod_cast:
+		case nod_udf:
+			// If arguments are given to the UDF then there's a node list 
+			if (node->nod_count == 2) {
+				if (pass1_found_sub_select(node->nod_arg[1])) {
+					return true;
+				}
+			}
+			break;
+
+		case nod_exists:
+		case nod_singular:   
+		case nod_coalesce:
+		case nod_simple_case:
+		case nod_searched_case:
+		case nod_add:
+		case nod_concatenate:
+		case nod_divide:
+		case nod_multiply:
+		case nod_negate:
+		case nod_substr:
+		case nod_subtract:
+		case nod_upcase:
+		case nod_extract:
+		case nod_add2:
+		case nod_divide2:
+		case nod_multiply2:
+		case nod_subtract2:
+		case nod_equiv:
+		case nod_eql:
+		case nod_neq:
+		case nod_gtr:
+		case nod_geq:
+		case nod_leq:
+		case nod_lss:
+		case nod_eql_any:
+		case nod_neq_any:
+		case nod_gtr_any:
+		case nod_geq_any:
+		case nod_leq_any:
+		case nod_lss_any:
+		case nod_eql_all:
+		case nod_neq_all:
+		case nod_gtr_all:
+		case nod_geq_all:
+		case nod_leq_all:
+		case nod_lss_all:
+		case nod_between:
+		case nod_like:
+		case nod_missing:
+		case nod_and:
+		case nod_or:
+		case nod_any:
+		case nod_ansi_any:
+		case nod_ansi_all:
+		case nod_not:
+		case nod_unique:
+		case nod_containing:
+		case nod_starting:
+		case nod_list:
+		case nod_join:
+		case nod_join_inner:
+		case nod_join_left:
+		case nod_join_right:
+		case nod_join_full:
+			{
+				const dsql_nod* const* ptr = node->nod_arg;
+				for (const dsql_nod* const* const end = ptr + node->nod_count;
+					ptr < end; ++ptr)
+				{
+					if (pass1_found_sub_select(*ptr)) {
+						return true;
+					}
+				}
+				break;
+			}
+
+		case nod_via:
+			return true;
+
+		case nod_alias:
+			if (pass1_found_sub_select(node->nod_arg[e_alias_value])) {
+				return true;
+			}
+			break;
+
+		case nod_aggregate:
+		case nod_derived_field:
+		case nod_dbkey:
+		case nod_field:
+		case nod_parameter:
+		case nod_relation:
+		case nod_variable:
+		case nod_constant:
+		case nod_null:
+		case nod_current_date:
+		case nod_current_time:
+		case nod_current_timestamp:
+		case nod_user_name:
+		case nod_current_role:
+		case nod_internal_info:
+			return false;
+
+		default:
+			return true;
+		}
+
+	return false;
 }
 
 
