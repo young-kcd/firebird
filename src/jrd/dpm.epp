@@ -320,7 +320,7 @@ int DPM_chain( TDBB tdbb, RPB * org_rpb, RPB * new_rpb)
    too small, compute the number of pad bytes required */
 
 	fill = (RHDF_SIZE - RHD_SIZE) - size;
-	if (fill < 0 || (new_rpb->rpb_flags & rpb_deleted))
+	if (fill < 0)
 		fill = 0;
 
 	length = ROUNDUP(RHD_SIZE + size + fill, ODS_ALIGNMENT);
