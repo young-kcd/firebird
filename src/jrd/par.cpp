@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.43.2.3 2003-12-21 00:43:51 skidder Exp $
+$Id: par.cpp,v 1.43.2.4 2004-05-24 15:06:04 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -1269,16 +1269,14 @@ static JRD_NOD par_function(TDBB tdbb, CSB * csb)
 
 	SET_TDBB(tdbb);
 
-
 	count = par_name(csb, name);
-
 
 	function = FUN_lookup_function(name, 
 				!(tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment));
 	if (!function) {
 		if (tdbb->tdbb_flags & TDBB_prc_being_dropped) {
 			node = PAR_make_node(tdbb, e_fun_length);
-			node->nod_count = 1;
+			node->nod_count = 0;
 			node->nod_arg[e_fun_function] = (JRD_NOD) NULL;
 			node->nod_arg[e_fun_args] = par_args(tdbb, csb, VALUE);
 			return node;
@@ -1308,7 +1306,7 @@ static JRD_NOD par_function(TDBB tdbb, CSB * csb)
 		}
 
 	node = PAR_make_node(tdbb, e_fun_length);
-	node->nod_count = 1;
+	node->nod_count = 0;
 	node->nod_arg[e_fun_function] = (JRD_NOD) function;
 	node->nod_arg[e_fun_args] = par_args(tdbb, csb, VALUE);
 
