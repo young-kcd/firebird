@@ -30,13 +30,11 @@
 #include "../jrd/common.h"
 #include "../jrd/isc.h"
 #include "../jrd/file_params.h"
-#include "../ipserver/ips.h"
 
 #include "../jrd/svc_undoc.h"
 #include "../jrd/svc_proto.h"
 #include "../jrd/ods.h"			// to get MAX_PAGE_SIZE
 #include "../remote/os/win32/window_proto.h"
-#include "../ipserver/ipsrv_proto.h"
 
 #include "../remote/os/win32/ibconfig.h"
 #include "../remote/os/win32/property.rh"

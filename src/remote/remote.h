@@ -333,7 +333,7 @@ enum rem_port_t
 	port_pipe,			/* Windows NT named pipe connection */
 	port_mslan,			/* Microsoft LanManager connection */
 	port_spx,			/* Novell SPX connection */
-	port_ipserver,		/* InterBase interprocess server */
+	//port_ipserver,		// InterBase interprocess server
 	port_xnet			/* Windows NT named xnet connection */
 };
 

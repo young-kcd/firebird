@@ -30,9 +30,7 @@
 #include "../remote/remote_def.h"
 #include "../remote/os/win32/window.rh"
 #include "../remote/os/win32/property.rh"
-#ifdef IPSERVER
-#include "../ipserver/ips.h"
-#endif
+
 #include "../jrd/svc_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thd.h"
@@ -40,9 +38,6 @@
 #include "../jrd/jrd_proto.h"
 #include "../remote/os/win32/window_proto.h"
 #include "../remote/os/win32/propty_proto.h"
-#ifdef IPSERVER
-#include "../ipserver/ipsrv_proto.h"
-#endif
 #include "../jrd/gds_proto.h"
 
 #include "../remote/os/win32/window.h"
@@ -99,37 +94,6 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 
 	if (!(usServerFlagMask & SRVR_ipc)) {
 		szClassName = "FB_Disabled";
-	}
-	else {
-#ifdef IPSERVER
-		if (!IPS_init(hWnd, 0, (USHORT) Config::getIpcMapSize(), 0)) {
-			// The initialization failed.  Check to see if there is another
-			// server running.  If so, bring up it's property sheet and quit
-			// otherwise assume that a stale client is still around and tell
-			// the user to terminate it.
-			char szMsgString[TMP_STRINGLEN];
-			hWnd = FindWindow(szClassName, APP_NAME);
-			if (hWnd) {
-				LoadString(hInstance, IDS_ALREADYSTARTED, szMsgString,
-						   TMP_STRINGLEN);
-				if (usServerFlagMask & SRVR_non_service) {
-				   	MessageBox(NULL, szMsgString, APP_LABEL,
-				   			   MB_OK | MB_ICONHAND);
-				}
-				gds__log(szMsgString);
-			}
-			else {
-				LoadString(hInstance, IDS_MAPERROR, szMsgString,
-						   TMP_STRINGLEN);
-				if (usServerFlagMask & SRVR_non_service) {
-				   	MessageBox(NULL, szMsgString, APP_LABEL,
-				   			   MB_OK | MB_ICONHAND);
-				}
-				gds__log(szMsgString);
-			}
-			return 0;
-		}
-#endif
 	}
 
 /* initialize main window */
@@ -444,10 +408,6 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 
 		PostQuitMessage(0);
 		break;
-#ifdef IPSERVER
-	case IPI_CONNECT_MESSAGE:
-		return IPS_start_thread(lParam);
-#endif
 
 	case WM_DEVICECHANGE:
 		pdbcv = (PDEV_BROADCAST_VOLUME) lParam;

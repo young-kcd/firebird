@@ -46,12 +46,10 @@
 #include "../remote/remote_def.h"
 #include "../remote/os/win32/window.rh"
 #include "../remote/os/win32/property.rh"
-#include "../ipserver/ips.h"
 
 #include "../jrd/svc_proto.h"
 #include "../remote/os/win32/window_proto.h"
 #include "../remote/os/win32/propty_proto.h"
-#include "../ipserver/ipsrv_proto.h"
 #include "../remote/os/win32/ibconfig.h"
 
 #include "../jrd/ibase.h"
