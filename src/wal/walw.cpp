@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../jrd/jrd_time.h"
+#include "../jrd/jrd.h"
 #include "../jrd/isc.h"
 #include "../wal/wal.h"
 #include "../jrd/dsc.h"
