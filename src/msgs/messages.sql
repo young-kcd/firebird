@@ -3173,5 +3173,7 @@ INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FL
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('concat_overflow', NULL, 'evl.cpp', NULL, 0, 516, NULL, 'Concatenation overflow. Resulting string cannot exceed 32K in length.', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('bad_substring_param', NULL, 'evl.cpp', NULL, 0, 517, NULL, 'Invalid %s parameter to SUBSTRING. Only positive integers are allowed.', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('HLP_SETPLANONLY', 'help', 'isql.epp', NULL, 17, 109, NULL, '    SET HEADING            -- toggle display of query column titles', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('foreign_key_target_doesnt_exist', 'check_partner_index', 'IDX.C', NULL, 0, 518, NULL, 'Foreign key reference target does not exist', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('foreign_key_references_present', 'check_partner_index', 'IDX.C', NULL, 0, 519, NULL, 'Foreign key references are present for the record', NULL, NULL);
 
 COMMIT WORK;

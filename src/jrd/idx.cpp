@@ -1130,13 +1130,13 @@ static IDX_E check_partner_index(
 			result =
 				check_duplicates(tdbb, record, idx, &insertion, relation);
 			if (idx->idx_flags & (idx_primary | idx_unique))
-				result = result ? idx_e_foreign : idx_e_ok;
+				result = result ? idx_e_foreign_references_present : idx_e_ok;
 			if (idx->idx_flags & idx_foreign)
-				result = result ? idx_e_ok : idx_e_foreign;
+				result = result ? idx_e_ok : idx_e_foreign_target_doesnt_exist;
 			SBM_release(bitmap);
 		}
 		else if (idx->idx_flags & idx_foreign) {
-			result = idx_e_foreign;
+			result = idx_e_foreign_target_doesnt_exist;
 		}
 	}
 

@@ -1086,6 +1086,10 @@ C --
       PARAMETER (GDS__concat_overflow                  = 335544836)
       INTEGER*4 GDS__bad_substring_param             
       PARAMETER (GDS__bad_substring_param              = 335544837)
+      INTEGER*4 GDS__foreign_key_target_doesnt_exist 
+      PARAMETER (GDS__foreign_key_target_doesnt_exist  = 335544838)
+      INTEGER*4 GDS__foreign_key_references_present  
+      PARAMETER (GDS__foreign_key_references_present   = 335544839)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

@@ -203,10 +203,16 @@ void ERR_duplicate_error(IDX_E	code,
 		ERR_punt();
 		break;
 
-	case idx_e_foreign:
-		ERR_post(isc_foreign_key,
-				 isc_arg_string, ERR_cstring(constraint_name),
-				 isc_arg_string, relation->rel_name, 0);
+	case idx_e_foreign_target_doesnt_exist:
+		ERR_post(isc_foreign_key, isc_arg_string, ERR_cstring(constraint_name),
+			 	 isc_arg_string, relation->rel_name, 
+			 	 isc_arg_gds, isc_foreign_key_target_doesnt_exist, 0);
+		break;
+
+	case idx_e_foreign_references_present:
+		ERR_post(isc_foreign_key, isc_arg_string, ERR_cstring(constraint_name),
+			 	 isc_arg_string, relation->rel_name,
+			 	 isc_arg_gds, isc_foreign_key_references_present, 0);
 		break;
 
 	default:
