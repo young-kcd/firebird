@@ -71,20 +71,42 @@ public:
 			pool->deallocate(data);
 	}
 	void clear() { count = 0; };
-	T& operator[](int index) const {
+protected:
+	const T& getElement(int index) const {
   		fb_assert(index >= 0 && index < count);
   		return data[index];
 	}
-	T& front() const {
+	T& getElement(int index) {
+  		fb_assert(index >= 0 && index < count);
+  		return data[index];
+	}
+public:
+	const T& operator[](int index) const {
+  		return getElement(index);
+	}
+	T& operator[](int index) {
+  		return getElement(index);
+	}
+	const T& front() const {
   		fb_assert(count > 0);
 		return *data;
 	}
-	T& back() const {
+	const T& back() const {
   		fb_assert(count > 0);
 		return *(data + count - 1);
 	}
-	T* begin() const { return data; }
-	T* end() const { return data + count; }
+	const T* begin() const { return data; }
+	const T* end() const { return data + count; }
+	T& front() {
+  		fb_assert(count > 0);
+		return *data;
+	}
+	T& back() {
+  		fb_assert(count > 0);
+		return *(data + count - 1);
+	}
+	T* begin() { return data; }
+	T* end() { return data + count; }
 	void insert(int index, const T& item) {
 		fb_assert(index >= 0 && index <= count);
 		ensureCapacity(count + 1);
@@ -92,11 +114,16 @@ public:
 		data[index] = item;
 	}
 	int add(const T& item) {
-		ensureCapacity(count+1);
+		ensureCapacity(count + 1);
 		data[count++] = item;
   		return count;
 	};
 	void remove(int index) {
+  		fb_assert(index >= 0 && index < count);
+  		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
+	}
+	void remove(T* itr) {
+		int index = itr - begin();
   		fb_assert(index >= 0 && index < count);
   		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
 	}
