@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.108 2003-01-16 16:27:48 skidder Exp $
+dnl $Id: configure.in,v 1.109 2003-01-16 16:34:24 skidder Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -204,9 +204,9 @@ AC_ARG_WITH(service-name,
 AC_ARG_WITH(service-port,
   [  --with-service-port     specify inet service port (default=3050)],
   [FB_SERVICE_PORT=${withval}])
-AC_ARG_WITH(service-port,
+AC_ARG_WITH(ipc-name,
   [  --with-ipc-name     specify local IPC name (default=FirebirdIPI)],
-  [FB_SERVICE_PORT=${withval}])
+  [FB_IPC_NAME=${withval}])
 AC_DEFINE_UNQUOTED(FB_SERVICE_NAME,"$FB_SERVICE_NAME")
 AC_DEFINE_UNQUOTED(FB_SERVICE_PORT,$FB_SERVICE_PORT)
 AC_DEFINE_UNQUOTED(FB_IPC_NAME,"$FB_IPC_NAME")
