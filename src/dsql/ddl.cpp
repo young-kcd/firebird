@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.106 2004-06-08 13:39:40 alexpeshkoff Exp $
+ * $Id: ddl.cpp,v 1.107 2004-07-01 00:46:10 skidder Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -6023,6 +6023,7 @@ static void modify_field(dsql_req*	request,
 					  isc_arg_gds, isc_dsql_command_err,
 					  isc_arg_gds, isc_dsql_domain_not_found,
 					  // Specified domain or source field does not exist 
+					  isc_arg_string, domain_name->str_data,
 					  0);
 		}
 		DDL_resolve_intl_type(request, field, NULL);
