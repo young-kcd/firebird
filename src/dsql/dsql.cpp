@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: dsql.cpp,v 1.1.1.1 2001-05-23 13:25:36 tamlin Exp $
+$Id: dsql.cpp,v 1.2 2001-05-24 14:54:25 tamlin Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -2255,32 +2255,40 @@ static STATUS execute_request(REQ				request,
 
 /* If there is no data required, just start the request */
 
-	if (!(message = (MSG) request->req_send)) {
+	message = (MSG) request->req_send;
+	if (!message)
+	{
 		THREAD_EXIT;
 		s = isc_start_request(tdsql->tsql_status,
-							  reinterpret_cast <
-							  void **>(&request->req_handle),
-							  reinterpret_cast <
-							  void **>(&request->req_trans), 0);
+							  reinterpret_cast<void**>(&request->req_handle),
+							  reinterpret_cast<void**>(&request->req_trans),
+							  0);
 		THREAD_ENTER;
 		if (s)
 			punt();
 	}
-	else {
-		map_in_out(request, message, in_blr_length, in_blr, in_msg_length,
-				   in_msg);
+	else
+	{
+		map_in_out(	request,
+					message,
+					in_blr_length,
+					in_blr,
+					in_msg_length,
+					in_msg);
 
 		THREAD_EXIT;
 		s = isc_start_and_send(tdsql->tsql_status,
-							   reinterpret_cast <
-							   void **>(&request->req_handle),
-							   reinterpret_cast <
-							   void **>(&request->req_trans),
-							   message->msg_number, message->msg_length,
-							   message->msg_buffer, 0);
+							   reinterpret_cast<void**>(&request->req_handle),
+							   reinterpret_cast<void**>(&request->req_trans),
+							   message->msg_number,
+							   message->msg_length,
+							   message->msg_buffer,
+							   0);
 		THREAD_ENTER;
 		if (s)
+		{
 			punt();
+		}
 	}
 
 	if (out_msg_length && (message = (MSG) request->req_receive)) {
@@ -2293,9 +2301,11 @@ static STATUS execute_request(REQ				request,
 
 		THREAD_EXIT;
 		s = isc_receive(tdsql->tsql_status,
-						reinterpret_cast < void **>(&request->req_handle),
+						reinterpret_cast<void**>(&request->req_handle),
 						message->msg_number,
-						message->msg_length, message->msg_buffer, 0);
+						message->msg_length,
+						message->msg_buffer,
+						0);
 		THREAD_ENTER;
 		if (s)
 			punt();
@@ -2304,8 +2314,8 @@ static STATUS execute_request(REQ				request,
 
 		/* if this is a singleton select, make sure there's in fact one record */
 
-		if (singleton) {
-			UCHAR *message_buffer;
+		if (singleton)
+		{
 			USHORT counter;
 
 			/* Create a temp message buffer and try two more receives.
@@ -2313,60 +2323,75 @@ static STATUS execute_request(REQ				request,
 			   second is either another record or the end of record message.
 			   In either case, there's more than one record. */
 
-			message_buffer = ALLD_malloc((ULONG) message->msg_length);
+			UCHAR* message_buffer =
+				(UCHAR*)ALLD_malloc((ULONG) message->msg_length);
+
 			s = 0;
 			THREAD_EXIT;
-			for (counter = 0; counter < 2 && !s; counter++) {
+			for (counter = 0; counter < 2 && !s; counter++)
+			{
 				s = isc_receive(local_status,
-								reinterpret_cast <
-								void **>(&request->req_handle),
-								message->msg_number, message->msg_length,
-								message_buffer, 0);
+								reinterpret_cast<void**>(&request->req_handle),
+								message->msg_number,
+								message->msg_length,
+								message_buffer,
+								0);
 			}
 			THREAD_ENTER;
-			ALLD_free(reinterpret_cast < SCHAR * >(message_buffer));
+			ALLD_free(message_buffer);
 
 			/* two successful receives means more than one record
 			   a req_sync error on the first pass above means no records
 			   a non-req_sync error on any of the passes above is an error */
 
-			if (!s) {
+			if (!s)
+			{
 				tdsql->tsql_status[0] = gds_arg_gds;
 				tdsql->tsql_status[1] = gds_sing_select_err;
 				tdsql->tsql_status[2] = gds_arg_end;
 				return_status = gds_sing_select_err;
 			}
-			else if (s == gds_req_sync && counter == 1) {
+			else if (s == gds_req_sync && counter == 1)
+			{
 				tdsql->tsql_status[0] = gds_arg_gds;
 				tdsql->tsql_status[1] = gds_stream_eof;
 				tdsql->tsql_status[2] = gds_arg_end;
 				return_status = gds_stream_eof;
 			}
 			else if (s != gds_req_sync)
+			{
 				punt();
+			}
 		}
 	}
 
-	if (!(request->req_dbb->dbb_flags & DBB_v3)) {
-		if (request->req_type == REQ_UPDATE_CURSOR) {
+	if (!(request->req_dbb->dbb_flags & DBB_v3))
+	{
+		if (request->req_type == REQ_UPDATE_CURSOR)
+		{
 			GDS_DSQL_SQL_INFO(local_status, &request,
 							  sizeof(sql_records_info),
 							  const_cast < char *>(sql_records_info),
 							  sizeof(buffer), buffer);
 			if (!request->req_updates)
+			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 913,
 						  isc_arg_gds, isc_deadlock, isc_arg_gds,
 						  isc_update_conflict, 0);
+			}
 		}
-		else if (request->req_type == REQ_DELETE_CURSOR) {
+		else if (request->req_type == REQ_DELETE_CURSOR)
+		{
 			GDS_DSQL_SQL_INFO(local_status, &request,
 							  sizeof(sql_records_info),
 							  const_cast < char *>(sql_records_info),
 							  sizeof(buffer), buffer);
 			if (!request->req_deletes)
+			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 913,
 						  isc_arg_gds, isc_deadlock, isc_arg_gds,
 						  isc_update_conflict, 0);
+			}
 		}
 	}
 	return return_status;

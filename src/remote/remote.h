@@ -27,6 +27,7 @@
 #include "../jrd/common.h"
 #include "../remote/remote_def.h"
 #include "../jrd/ibsetjmp.h"
+#include "../jrd/thd_proto.h"
 
 /* Include some apollo include files for tasking */
 

@@ -410,23 +410,28 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR ** dpb, SSHORT * dpb_size, ...)
  * use than the natural alternative.
  *
  **************************************/
-	SSHORT length, new_dpb_length;
-	UCHAR *new_dpb;
-	char *p;
-	char *q;
-	va_list args;
-	USHORT type;
+	SSHORT	length;
+	SSHORT	new_dpb_length;
+	UCHAR*	new_dpb;
+	char*	p;
+	char*	q;
+	va_list	args;
+	USHORT	type;
 
 /* calculate length of database parameter block, 
    setting initial length to include version */
 
 	if (!*dpb || !(new_dpb_length = *dpb_size))
+	{
 		new_dpb_length = 1;
+	}
 
 	VA_START(args, dpb_size);
 
 	while (type = va_arg(args, int))
-		switch (type) {
+	{
+		switch (type)
+		{
 		case gds_dpb_user_name:
 		case gds_dpb_password:
 		case isc_dpb_sql_role_name:
@@ -434,7 +439,8 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR ** dpb, SSHORT * dpb_size, ...)
 		case gds_dpb_lc_ctype:
 		case isc_dpb_reserved:
 			p = va_arg(args, char *);
-			if (p) {
+			if (p)
+			{
 				length = strlen(p);
 				new_dpb_length += 2 + length;
 			}
@@ -444,29 +450,35 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR ** dpb, SSHORT * dpb_size, ...)
 			(void) va_arg(args, int);
 			break;
 		}
+	}
 
 /* if items have been added, allocate space
    for the new dpb and copy the old one over */
 
-	if (new_dpb_length > *dpb_size) {
+	if (new_dpb_length > *dpb_size)
+	{
 		/* Note: gds__free done by GPRE generated code */
 
-		new_dpb = gds__alloc((SLONG) (sizeof(UCHAR) * new_dpb_length));
+		new_dpb = (UCHAR*)gds__alloc((SLONG)(sizeof(UCHAR) * new_dpb_length));
 		p = reinterpret_cast < char *>(new_dpb);
 		/* FREE: done by client process in GPRE generated code */
-		if (!new_dpb) {			/* NOMEM: don't trash existing dpb */
+		if (!new_dpb)
+		{			/* NOMEM: don't trash existing dpb */
 			DEV_REPORT("isc_extend_dpb: out of memory");
 			return;				/* NOMEM: not really handled */
 		}
 
 		q = *dpb;
 		for (length = *dpb_size; length; length--)
+		{
 			*p++ = *q++;
+		}
 
 	}
-	else {
+	else
+	{
 		new_dpb = (UCHAR *) * dpb;
-		p = reinterpret_cast < char *>(new_dpb + *dpb_size);
+		p = reinterpret_cast<char*>(new_dpb + *dpb_size);
 	}
 
 	if (!*dpb_size)
@@ -477,14 +489,17 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR ** dpb, SSHORT * dpb_size, ...)
 	VA_START(args, dpb_size);
 
 	while (type = va_arg(args, int))
-		switch (type) {
+	{
+		switch (type)
+		{
 		case gds_dpb_user_name:
 		case gds_dpb_password:
 		case isc_dpb_sql_role_name:
 		case gds_dpb_lc_messages:
 		case gds_dpb_lc_ctype:
 		case isc_dpb_reserved:
-			if (q = va_arg(args, char *)) {
+			if (q = va_arg(args, char *))
+			{
 				length = strlen(q);
 				assert(type <= CHAR_MAX);
 				*p++ = (char) type;
@@ -499,16 +514,18 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR ** dpb, SSHORT * dpb_size, ...)
 			(void) va_arg(args, int);
 			break;
 		}
+	}
 
-	*dpb_size = p - reinterpret_cast < char *>(new_dpb);
-	*dpb = (SCHAR *) new_dpb;
+	*dpb_size = p - reinterpret_cast<char*>(new_dpb);
+	*dpb = (SCHAR*) new_dpb;
 }
 
 
-int API_ROUTINE isc_modify_dpb(
-							   SCHAR ** dpb,
-							   SSHORT * dpb_size,
-							   USHORT type, SCHAR * str, SSHORT str_len)
+int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
+							   SSHORT*	dpb_size,
+							   USHORT	type,
+							   SCHAR*	str,
+							   SSHORT	str_len)
 {
 /**************************************
  *
@@ -544,9 +561,12 @@ int API_ROUTINE isc_modify_dpb(
    setting initial length to include version */
 
 	if (!*dpb || !(new_dpb_length = *dpb_size))
+	{
 		new_dpb_length = 1;
+	}
 
-	switch (type) {
+	switch (type)
+	{
 	case gds_dpb_user_name:
 	case gds_dpb_password:
 	case isc_dpb_sql_role_name:
@@ -563,46 +583,59 @@ int API_ROUTINE isc_modify_dpb(
 /* if items have been added, allocate space
    for the new dpb and copy the old one over */
 
-	if (new_dpb_length > *dpb_size) {
+	if (new_dpb_length > *dpb_size)
+	{
 		/* Note: gds__free done by GPRE generated code */
 
-		p = new_dpb = gds__alloc((SLONG) (sizeof(UCHAR) * new_dpb_length));
+		new_dpb = (UCHAR*)gds__alloc((SLONG)(sizeof(UCHAR) * new_dpb_length));
+
 		/* FREE: done by client process in GPRE generated code */
-		if (!new_dpb) {			/* NOMEM: don't trash existing dpb */
+		if (!new_dpb)
+		{			/* NOMEM: don't trash existing dpb */
 			DEV_REPORT("isc_extend_dpb: out of memory");
 			return FAILURE;		/* NOMEM: not really handled */
 		}
 
-		q = (UCHAR *) * dpb;
+		p = new_dpb;
+		q = (UCHAR*) *dpb;
 		for (length = *dpb_size; length; length--)
+		{
 			*p++ = *q++;
+		}
 
 	}
-	else {
+	else
+	{
 		new_dpb = (UCHAR *) * dpb;
 		p = new_dpb + *dpb_size;
 	}
 
 	if (!*dpb_size)
+	{
 		*p++ = gds_dpb_version1;
+	}
 
 /* copy in the new runtime items */
 
-	switch (type) {
+	switch (type)
+	{
 	case gds_dpb_user_name:
 	case gds_dpb_password:
 	case isc_dpb_sql_role_name:
 	case gds_dpb_lc_messages:
 	case gds_dpb_lc_ctype:
 	case isc_dpb_reserved:
-		if (q = (UCHAR *) str) {
+		if (q = (UCHAR *) str)
+		{
 			length = str_len;
 			assert(type <= MAX_UCHAR);
 			*p++ = (UCHAR) type;
 			assert(length <= MAX_UCHAR);
 			*p++ = (UCHAR) length;
 			while (length--)
+			{
 				*p++ = *q++;
+			}
 		}
 		break;
 
@@ -612,12 +645,13 @@ int API_ROUTINE isc_modify_dpb(
 
 	*dpb_size = p - new_dpb;
 	*dpb = (SCHAR *) new_dpb;
+
 	return SUCCESS;
 }
 
 
 #ifdef GDS_EDIT
-int API_ROUTINE GDS_EDIT(TEXT * file_name, USHORT type)
+int API_ROUTINE GDS_EDIT(TEXT* file_name, USHORT type)
 {
 /**************************************
  *
@@ -637,7 +671,7 @@ int API_ROUTINE GDS_EDIT(TEXT * file_name, USHORT type)
 		editor = "vi";
 #else
 	if (!(editor = getenv("EDITOR")))
-		editor = "mep";
+		editor = "Notepad";
 #endif
 
 	statistics(file_name, &before);
@@ -647,8 +681,8 @@ int API_ROUTINE GDS_EDIT(TEXT * file_name, USHORT type)
 
 	statistics(file_name, &after);
 
-	return (before.st_mtime != after.st_mtime
-			|| before.st_size != after.st_size);
+	return (before.st_mtime != after.st_mtime ||
+			before.st_size != after.st_size);
 }
 #endif
 

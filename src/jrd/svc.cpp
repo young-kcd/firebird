@@ -2085,16 +2085,18 @@ void *SVC_start(SVC service, USHORT spb_length, SCHAR * spb)
 	if (service->svc_stdout)
 		gds__free(service->svc_stdout);
 
-	service->svc_stdout = gds__alloc((SLONG) SVC_STDOUT_BUFFER_SIZE + 1);
+	service->svc_stdout = (UCHAR*)gds__alloc((SLONG) SVC_STDOUT_BUFFER_SIZE + 1);
 /* FREE: at SVC_detach() */
 	if (!service->svc_stdout)	/* NOMEM: */
+	{	
 		ERR_post(isc_virmemexh, 0);
+	}
 
 	if (serv->serv_thd) {
 		SLONG count;
 #pragma FB_COMPILER_MESSAGE("Fix! Probable bug!")
 		EVENT evnt_ptr =
-			reinterpret_cast < EVENT > (&(service->svc_start_event));
+			reinterpret_cast<EVENT> (&(service->svc_start_event));
 
 		THREAD_EXIT;
 		/* create an event for the service.  The event will be signaled once the
@@ -2769,9 +2771,9 @@ static USHORT service_empty(SVC service)
  *
  **************************************/
 	if (service_add_one(service->svc_stdout_tail) == service->svc_stdout_head)
-		return (1);
-	else
-		return (0);
+		return 1;
+
+	return 0;
 }
 
 
@@ -2888,24 +2890,27 @@ static void service_fork(void (*service_executable) (), SVC service)
 	}
 	*arg = NULL;
 
-	service->svc_stdout = gds__alloc((SLONG) SVC_STDOUT_BUFFER_SIZE + 1);
+	service->svc_stdout = (UCHAR*)gds__alloc((SLONG) SVC_STDOUT_BUFFER_SIZE + 1);
 /* FREE: at SVC_detach() */
 	if (!service->svc_stdout)	/* NOMEM: */
 		ERR_post(isc_virmemexh, 0);
 
 	THREAD_EXIT;
-	gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
-					  (service_executable), service, 0, 0,
-					  (void *) &service->svc_handle);
+	gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>(service_executable),
+						service,
+						0,
+						0,
+						(void*)&service->svc_handle);
 	THREAD_ENTER;
 }
 
 
-static void service_get(
-						SVC service,
-						SCHAR * buffer,
-						USHORT length,
-						USHORT flags, USHORT timeout, USHORT * return_length)
+static void service_get(SVC		service,
+						SCHAR*	buffer,
+						USHORT	length,
+						USHORT	flags,
+						USHORT	timeout,
+						USHORT*	return_length)
 {
 /**************************************
  *
@@ -3772,7 +3777,8 @@ static void get_action_svc_string(
 
 
 	*spb += sizeof(ISC_USHORT);
-	if (*cmd) {
+	if (*cmd)
+	{
 		**cmd = SVC_TRMNTR;
 		*cmd += 1;
 		MOVE_FASTER(*spb, *cmd, l);

@@ -68,7 +68,9 @@
 
 #if defined(WIN_NT) && defined(_MSC_VER)
 #pragma FB_COMPILER_MESSAGE("Fix! warnings turned off!")
-#pragma warning(disable: 4244 4018)
+// 4018 - signed/unsigned mismatch
+// 4244 - conversion from 'type1' to 'type2', possible loss of data
+#pragma warning(disable: 4018 4244)
 #endif
 
 #define DYN_MSG_FAC	8
@@ -79,7 +81,8 @@
 
 #define EVENT_FLAG	15
 
-static CONST SCHAR lock_types[] = {
+static CONST SCHAR lock_types[] =
+{
 	0,
 	LCK$K_NLMODE,
 	LCK$K_CRMODE,
@@ -2883,48 +2886,52 @@ static BOOLEAN start_sweeper(TDBB tdbb, DBB dbb)
  *	Start a thread to sweep the database.
  *
  **************************************/
-	struct lck temp_lock;
-	UCHAR *database;
 
 	if (dbb->dbb_flags & DBB_sweep_in_progress)
+	{
 		return FALSE;
+	}
 
 	SET_TDBB(tdbb);
 
-/* fill out a lock block, zeroing it out first */
 
-	MOVE_CLEAR(&temp_lock, sizeof(struct lck));
+	/* fill out the lock block */
+	struct lck temp_lock = { 0 };
 	temp_lock.lck_header.blk_type = type_lck;
 	temp_lock.lck_dbb = dbb;
 	temp_lock.lck_type = LCK_sweep;
-	temp_lock.lck_owner_handle =
-		LCK_get_owner_handle(tdbb, temp_lock.lck_type);
+	temp_lock.lck_owner_handle = LCK_get_owner_handle(tdbb, temp_lock.lck_type);
 	temp_lock.lck_parent = dbb->dbb_lock;
 	temp_lock.lck_length = sizeof(SLONG);
 
 	if (!LCK_lock(tdbb, &temp_lock, LCK_EX, FALSE))
+	{
 		return FALSE;
+	}
 
 	LCK_release(tdbb, &temp_lock);
 
-/* allocate space for the string and a null at the end */
-	database =
-		gds__alloc(strlen
-				   (reinterpret_cast <
-					const char *>(dbb->dbb_filename->str_data)) +1);
-	if (database) {
-		strcpy(reinterpret_cast < char *>(database),
-			   reinterpret_cast < const char *>(dbb->dbb_filename->str_data));
-		if (gds__thread_start
-			(reinterpret_cast < FPTR_INT_VOID_PTR > (sweep_database),
-			 database, THREAD_low, 0, 0)) {
-			gds__free(database);
-			ERR_log(0, 0, "cannot start sweep thread");
-		}
-	}
-	else {
+	/* allocate space for the string and a null at the end */
+	const char* pszFilename =
+		reinterpret_cast<const char*>(dbb->dbb_filename->str_data);
+
+	char* database = (char*)gds__alloc(strlen(pszFilename) + 1);
+
+	if (!database)
+	{
 		ERR_log(0, 0, "cannot start sweep thread, Out of Memory");
 		return FALSE;
+	}
+
+	strcpy(database, pszFilename);
+	if (gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>(sweep_database),
+							database,
+							THREAD_low,
+							0,
+							0))
+	{
+		gds__free(database);
+		ERR_log(0, 0, "cannot start sweep thread");
 	}
 
 	return TRUE;
@@ -2943,18 +2950,13 @@ static void THREAD_ROUTINE sweep_database(UCHAR * database)
  *	Sweep database.
  *
  **************************************/
-	isc_db_handle	db_handle;
-	IHNDL			ihandle;
-	STATUS			status_vector[ISC_STATUS_LENGTH];
-	UCHAR*			dpb;
-	SSHORT			dpb_length;
-	char*			q;
+	STATUS	status_vector[ISC_STATUS_LENGTH];
+	char*	q;
 	UCHAR	sweep_dpb[100];
-	TEXT	password_enc[100];
 
-	db_handle = NULL;
+	isc_db_handle db_handle = NULL;
 
-	dpb = sweep_dpb;
+	UCHAR* dpb = sweep_dpb;
 
 	*dpb++ = gds_dpb_version1;
 	*dpb++ = gds_dpb_user_name;
@@ -2976,9 +2978,11 @@ static void THREAD_ROUTINE sweep_database(UCHAR * database)
 	*dpb++ = gds_dpb_sweep;
 	*dpb++ = 1;
 	*dpb++ = gds_dpb_records;
-	dpb_length = dpb - sweep_dpb;
+	
+	const SSHORT dpb_length = dpb - sweep_dpb;
 
 	/* Register as internal database handle */
+	IHNDL	ihandle;
 
 	THREAD_ENTER;
 	for (ihandle = internal_db_handles; ihandle; ihandle = ihandle->ihndl_next)

@@ -572,69 +572,73 @@ static JMP_BUF env;				/* Error return environment */
 
 static const UCHAR
 	/* generic print formats */
-	zero[] = { op_line, 0 },
-	one[] = { op_line, op_verb, 0},
-	two[] = { op_line, op_verb, op_verb, 0},
-	three[] = { op_line, op_verb, op_verb, op_verb, 0},
-	field[] = { op_byte, op_byte, op_literal, op_pad, op_line, 0},
-	byte[] = { op_byte, op_line, 0},
+	zero[]		= { op_line, 0 },
+	one[]		= { op_line, op_verb, 0},
+	two[]		= { op_line, op_verb, op_verb, 0},
+	three[]		= { op_line, op_verb, op_verb, op_verb, 0},
+	field[]		= { op_byte, op_byte, op_literal, op_pad, op_line, 0},
+	byte[]		= { op_byte, op_line, 0},
 	byte_args[] = { op_byte, op_line, op_args, 0},
 	byte_byte[] = { op_byte, op_byte, op_line, 0},
 	byte_verb[] = { op_byte, op_line, op_verb, 0},
 	byte_verb_verb[] = { op_byte, op_line, op_verb, op_verb, 0},
 	byte_literal[] = { op_byte, op_literal, op_line, 0},
 	byte_byte_verb[] = { op_byte, op_byte, op_line, op_verb, 0},
-	parm[] = { op_byte, op_word, op_line, 0},	/* also field id */
+	parm[]		= { op_byte, op_word, op_line, 0},	/* also field id */
 
-	parm2[] = { op_byte, op_word, op_word, op_line, 0},
-	parm3[] = { op_byte, op_word, op_word, op_word, op_line, 0},
+	parm2[]		= { op_byte, op_word, op_word, op_line, 0},
+	parm3[]		= { op_byte, op_word, op_word, op_word, op_line, 0},
 
 	/* formats specific to a verb */
-	begin[] = { op_line, op_begin, op_verb, 0},
-	literal[] = { op_dtype, op_literal, op_line, 0},
-	message[] = { op_byte, op_word, op_line, op_message, 0},
-	rse[] = { op_byte, op_line, op_begin, op_verb, 0},
-	relation[] = { op_byte, op_literal, op_pad, op_byte, op_line, 0},
-	relation2[] = { op_byte, op_literal, op_line, op_indent, op_byte, op_literal, op_pad,
-		op_byte, op_line, 0},
-		aggregate[] = { op_byte, op_line, op_verb, op_verb, op_verb, 0},
-	rid[] = { op_word, op_byte, op_line, 0},
-	rid2[] = { op_word, op_byte, op_literal, op_pad, op_byte, op_line, 0},
+	begin[]		= { op_line, op_begin, op_verb, 0},
+	literal[]	= { op_dtype, op_literal, op_line, 0},
+	message[]	= { op_byte, op_word, op_line, op_message, 0},
+	rse[]		= { op_byte, op_line, op_begin, op_verb, 0},
+	relation[]	= { op_byte, op_literal, op_pad, op_byte, op_line, 0},
+	relation2[] = { op_byte, op_literal, op_line, op_indent, op_byte,
+					op_literal, op_pad, op_byte, op_line, 0},
+	aggregate[] = { op_byte, op_line, op_verb, op_verb, op_verb, 0},
+	rid[]		= { op_word, op_byte, op_line, 0},
+	rid2[]		= { op_word, op_byte, op_literal, op_pad, op_byte, op_line, 0},
 	union_ops[] = { op_byte, op_byte, op_line, op_union, 0},
-	map[] = { op_word, op_line, op_map, 0},
-	function[] = { op_byte, op_literal, op_byte, op_line, op_args, 0},
-	gen_id[] = { op_byte, op_literal, op_line, op_verb, 0},
-	declare[] = { op_word, op_dtype, op_line, 0},
-	variable[] = { op_word, op_line, 0},
-	indx[] = { op_line, op_verb, op_indent, op_byte, op_line, op_args, 0},
-	find[] = { op_byte, op_verb, op_verb, op_indent, op_byte, op_line, op_args, 0},
-	seek[] = { op_line, op_verb, op_verb, 0},
-	join[] = { op_join, op_line, 0},
-	exec_proc[] = { op_byte, op_literal, op_line, op_indent, op_word, op_line, op_parameters,
-		op_indent, op_word, op_line, op_parameters, 0},
-	procedure[] = {  op_byte, op_literal, op_pad, op_byte, op_line, op_indent, op_word,
-		op_line, op_parameters, 0},
-	pid[] = { op_word, op_pad, op_byte, op_line, op_indent, op_word, op_line,
-		op_parameters, 0},
+	map[]		= { op_word, op_line, op_map, 0},
+	function[]	= { op_byte, op_literal, op_byte, op_line, op_args, 0},
+	gen_id[]	= { op_byte, op_literal, op_line, op_verb, 0},
+	declare[]	= { op_word, op_dtype, op_line, 0},
+	variable[]	= { op_word, op_line, 0},
+	indx[]		= { op_line, op_verb, op_indent, op_byte, op_line, op_args, 0},
+	find[]		= { op_byte, op_verb, op_verb, op_indent, op_byte, op_line, op_args, 0},
+	seek[]		= { op_line, op_verb, op_verb, 0},
+	join[]		= { op_join, op_line, 0},
+	exec_proc[] = { op_byte, op_literal, op_line, op_indent, op_word, op_line,
+					op_parameters, op_indent, op_word, op_line, op_parameters, 0},
+	procedure[] = { op_byte, op_literal, op_pad, op_byte, op_line, op_indent,
+					op_word, op_line, op_parameters, 0},
+	pid[]		= { op_word, op_pad, op_byte, op_line, op_indent, op_word,
+					op_line, op_parameters, 0},
 	error_handler[] = { op_word, op_line, op_error_handler, 0},
 	set_error[] = { op_set_error, op_line, 0},
-	cast[] = { op_dtype, op_line, op_verb, 0},
-	indices[] = { op_byte, op_line, op_literals, 0},
+	cast[]		= { op_dtype, op_line, op_verb, 0},
+	indices[]	= { op_byte, op_line, op_literals, 0},
 	lock_relation[] = { op_line, op_indent, op_relation, op_line, op_verb, 0},
 	range_relation[] = { op_line, op_verb, op_indent, op_relation, op_line, 0},
-	extract[] = { op_line, op_byte, op_verb, 0};
+	extract[]	= { op_line, op_byte, op_verb, 0};
 
 static const struct
 {
 	const char *blr_string;
 	const UCHAR *blr_operators;
-} FAR_VARIABLE blr_table[] = {
+} FAR_VARIABLE blr_table[] =
+{
+
+#pragma FB_COMPILER_MESSAGE("Fix this!")
+
 #include "../jrd/blp.h"
 	0, 0
 };
 
 
-#define ISC_ENV		"INTERBASE"
+#define ISC_ENV			"INTERBASE"
 #define ISC_LOCK_ENV    "INTERBASE_LOCK"
 #define ISC_MSG_ENV     "INTERBASE_MSG"
 
@@ -680,12 +684,12 @@ void gds_print_delta_counters(IB_FILE *);
 
 #ifdef DEBUG_GDS_ALLOC
 
-UCHAR *API_ROUTINE gds__alloc_debug(
-									SLONG size_request,
-									TEXT * filename, ULONG lineno)
+void* API_ROUTINE gds__alloc_debug(SLONG size_request,
+								   TEXT* filename,
+								   ULONG lineno)
 #else
 
-UCHAR *API_ROUTINE gds__alloc(SLONG size_request)
+void* API_ROUTINE gds__alloc(SLONG size_request)
 #endif
 {
 /**************************************
@@ -748,9 +752,12 @@ UCHAR *API_ROUTINE gds__alloc(SLONG size_request)
 */
 	factor = 1;
 	if (!(size_request & (1024 - 1)))
+	{
 		factor = size_request / 1024;
+	}
 	size = size_request + ALLOC_OVERHEAD * factor;
 	size = ROUNDUP(size, GDS_ALLOC_ALIGNMENT);
+
 #ifdef DEV_BUILD
 	gds_delta_alloc += size;
 #endif
@@ -917,7 +924,7 @@ UCHAR *API_ROUTINE gds__alloc(SLONG size_request)
 }
 
 
-STATUS API_ROUTINE gds__decode(STATUS code, USHORT * fac, USHORT * class_)
+STATUS API_ROUTINE gds__decode(STATUS code, USHORT* fac, USHORT* class_)
 {
 /**************************************
  *
@@ -932,10 +939,15 @@ STATUS API_ROUTINE gds__decode(STATUS code, USHORT * fac, USHORT * class_)
  **************************************/
 
 	if (!code)
+	{
 		return SUCCESS;
-	else if (code & ISC_MASK != ISC_MASK)
+	}
+
+	if (code & ISC_MASK != ISC_MASK)
+	{
 		/* not an ISC error message */
 		return code;
+	}
 
 	*fac = GET_FACILITY(code);
 	*class_ = GET_CLASS(code);
@@ -944,7 +956,7 @@ STATUS API_ROUTINE gds__decode(STATUS code, USHORT * fac, USHORT * class_)
 }
 
 
-void API_ROUTINE isc_decode_date(GDS_QUAD * date, void *times_arg)
+void API_ROUTINE isc_decode_date(GDS_QUAD* date, void* times_arg)
 {
 /**************************************
  *
@@ -959,11 +971,11 @@ void API_ROUTINE isc_decode_date(GDS_QUAD * date, void *times_arg)
  *	isc_decode_timestamp
  *
  **************************************/
-	isc_decode_timestamp((GDS_TIMESTAMP *) date, times_arg);
+	isc_decode_timestamp((GDS_TIMESTAMP*) date, times_arg);
 }
 
 
-void API_ROUTINE isc_decode_sql_date(GDS_DATE * date, void *times_arg)
+void API_ROUTINE isc_decode_sql_date(GDS_DATE* date, void* times_arg)
 {
 /**************************************
  *
@@ -1150,7 +1162,7 @@ void API_ROUTINE isc_encode_timestamp(void *times_arg, GDS_TIMESTAMP * date)
 }
 
 
-ULONG API_ROUTINE gds__free(void *blk)
+ULONG API_ROUTINE gds__free(void* blk)
 {
 /**************************************
  *
@@ -1249,7 +1261,7 @@ void GDS_breakpoint(int parameter)
 #endif
 
 
-SINT64 API_ROUTINE isc_portable_integer(UCHAR * ptr, SSHORT length)
+SINT64 API_ROUTINE isc_portable_integer(UCHAR* ptr, SSHORT length)
 {
 /**************************************
  *
@@ -1332,41 +1344,48 @@ static void gds_alloc_validate(ALLOC p)
 		DEV_REPORT("gds_alloc_validate: pointer doesn't look right\n");
 	}
 
-	if (!errors
-		&& strncmp(p->alloc_magic1, ALLOC_HEADER1_MAGIC_ALLOCATED,
-				   sizeof(p->alloc_magic1))) {
+	if (!errors &&
+		strncmp(p->alloc_magic1,
+				ALLOC_HEADER1_MAGIC_ALLOCATED,
+				sizeof(p->alloc_magic1)))
+	{
 		errors++;
 		DEV_REPORT("gds_alloc_validate: Header marker1 mismatch\n");
 	}
 
-	if (!errors
-		&& strncmp(p->alloc_magic2, ALLOC_HEADER2_MAGIC,
-				   sizeof(p->alloc_magic2))) {
+	if (!errors &&
+		strncmp(p->alloc_magic2,
+				ALLOC_HEADER2_MAGIC,
+				sizeof(p->alloc_magic2)))
+	{
 		errors++;
 		DEV_REPORT("gds_alloc_validate: Header marker2 mismatch\n");
 	}
 
-	if (!errors
-		&& memcmp(((BLOB_PTR *) p) + ALLOC_HEADER_SIZE +
-				  p->alloc_requested_length, ALLOC_TAILER_MAGIC,
-				  ALLOC_TAILER_SIZE)) {
+	if (!errors &&
+		memcmp(((BLOB_PTR*) p) + ALLOC_HEADER_SIZE + p->alloc_requested_length,
+				ALLOC_TAILER_MAGIC,
+				ALLOC_TAILER_SIZE))
+	{
 		errors++;
 		DEV_REPORT("gds_alloc_validate: tailer marker mismatch\n");
 	}
 
-	if (!errors && p->alloc_status.alloc_length < p->alloc_requested_length) {
+	if (!errors && p->alloc_status.alloc_length < p->alloc_requested_length)
+	{
 		errors++;
-		DEV_REPORT
-			("gds_alloc_validate: Header has been trashed (smaller than req)\n");
+		DEV_REPORT("gds_alloc_validate: Header has been trashed (smaller than req)\n");
 	}
 
-	if (!errors && p->alloc_status.alloc_length < ALLOC_OVERHEAD) {
+	if (!errors && p->alloc_status.alloc_length < ALLOC_OVERHEAD)
+	{
 		errors++;
 		DEV_REPORT
 			("gds_alloc_validate: Header has been trashed (smaller than min)\n");
 	}
 
-	if (errors) {
+	if (errors)
+	{
 		char buffer[150];
 		sprintf(buffer,
 				"gds_alloc_validate: %lx len=%5ld file=%15.30s line=%4ld call=%ld alloc=%ld free=%ld%s",
@@ -1375,7 +1394,9 @@ static void gds_alloc_validate(ALLOC p)
 				p->alloc_filename,
 				p->alloc_lineno,
 				p->alloc_callno,
-				gds_alloc_call_count, gds_free_call_count, NEWLINE);
+				gds_alloc_call_count,
+				gds_free_call_count,
+				NEWLINE);
 		DEV_REPORT(buffer);
 		BREAKPOINT(__LINE__);
 	}
@@ -1384,8 +1405,7 @@ static void gds_alloc_validate(ALLOC p)
 
 
 #ifdef DEBUG_GDS_ALLOC
-static BOOLEAN gds_alloc_validate_free_pattern(
-											   register UCHAR * ptr,
+static BOOLEAN gds_alloc_validate_free_pattern(register UCHAR* ptr,
 											   register ULONG len)
 {
 /**************************************
@@ -1403,7 +1423,9 @@ static BOOLEAN gds_alloc_validate_free_pattern(
  *
  **************************************/
 	while (len--)
-		if (*ptr++ != ALLOC_FREED_PATTERN) {
+	{
+		if (*ptr++ != ALLOC_FREED_PATTERN)
+		{
 			char buffer[100];
 			sprintf(buffer,
 					"gds_alloc_validate_free_pattern: Write to freed memory at %lx\n",
@@ -1412,6 +1434,7 @@ static BOOLEAN gds_alloc_validate_free_pattern(
 			BREAKPOINT(__LINE__);
 			return FALSE;
 		}
+	}
 
 	return TRUE;
 }
@@ -1435,22 +1458,27 @@ static void gds_alloc_validate_freed(ALLOC p)
 
 /* This might be a garbage pointer, so try and validate it first */
 
-	if (!p) {
+	if (!p)
+	{
 		errors++;
 		DEV_REPORT("gds_alloc_validate_freed: pointer doesn't look right\n");
 	}
 
 /* Now look at the space, is it all the same pattern? */
-	if (!errors) {
+	if (!errors)
+	{
 		register UCHAR *ptr;
 		register ULONG len;
 		ptr = ((UCHAR *) p) + sizeof(struct free);
 		len = p->alloc_status.alloc_freed.free_length - sizeof(struct free);
 		if (!gds_alloc_validate_free_pattern(ptr, len))
+		{
 			errors++;
+		}
 	}
 
-	if (errors) {
+	if (errors)
+	{
 		char buffer[150];
 		sprintf(buffer,
 				"gds_alloc_validate_freed: %lx len=%5ld alloc=%ld free=%ld%s",
@@ -1466,7 +1494,7 @@ static void gds_alloc_validate_freed(ALLOC p)
 
 #ifdef DEBUG_GDS_ALLOC
 
-void gds_alloc_watch(void *p)
+void gds_alloc_watch(void* p)
 {
 /**************************************
  *
@@ -1482,14 +1510,17 @@ void gds_alloc_watch(void *p)
 	gds_alloc_watch_call_count++;
 
 /* Do we have a new place to watch?  If so, set our watcher */
-	if (p) {
+	if (p)
+	{
 		gds_alloc_watchpoint = (ALLOC) ((UCHAR *) p - ALLOC_HEADER_SIZE);
 		gds_alloc_watch_call_count = 1;
 	}
 
 /* If we have a watchpoint, check that it's still valid */
 	if (gds_alloc_watchpoint)
+	{
 		gds_alloc_validate(gds_alloc_watchpoint);
+	}
 }
 #endif /* DEBUG_GDS_ALLOC */
 
@@ -1509,10 +1540,9 @@ void API_ROUTINE gds_alloc_flag_unfreed(void *blk)
  *	don't report it in gds_alloc_report
  *
  **************************************/
-	ALLOC p;
 
 /* Point to the start of the block */
-	p = (ALLOC) (((UCHAR *) blk) - ALLOC_HEADER_SIZE);
+	ALLOC p = (ALLOC) (((UCHAR *) blk) - ALLOC_HEADER_SIZE);
 
 /* Might as well validate it while we're here */
 	gds_alloc_validate(p);
@@ -1526,7 +1556,7 @@ void API_ROUTINE gds_alloc_flag_unfreed(void *blk)
 
 #ifdef DEBUG_GDS_ALLOC
 
-void API_ROUTINE gds_alloc_report(ULONG flags, char *filename, int lineno)
+void API_ROUTINE gds_alloc_report(ULONG flags, char* filename, int lineno)
 {
 /**************************************
  *
@@ -1546,11 +1576,16 @@ void API_ROUTINE gds_alloc_report(ULONG flags, char *filename, int lineno)
 	BOOLEAN stderr_reporting = TRUE;
 
 	if (flags & ALLOC_check_each_call)
+	{
 		gds_alloc_state = gds_alloc_call_count;
+	}
 	if (flags & ALLOC_dont_check)
+	{
 		gds_alloc_state = ~0;
+	}
 
-	for (p = gds_alloc_chain; p; p = p->alloc_next) {
+	for (p = gds_alloc_chain; p; p = p->alloc_next)
+	{
 		gds_alloc_validate(p);
 		if ((!(p->alloc_flags & ALLOC_dont_report) &&
 			 !(flags & ALLOC_silent)) ||
@@ -1569,14 +1604,25 @@ void API_ROUTINE gds_alloc_report(ULONG flags, char *filename, int lineno)
 				ib_fflush(ib_stderr);
 				sprintf(buffer,
 						"%sgds_alloc_report: flags %ld file %15.15s lineno %ld alloc=%ld free=%ld%s%s",
-						NEWLINE, flags, filename ? filename : "?", lineno,
-						gds_alloc_call_count, gds_free_call_count, NEWLINE,
+						NEWLINE,
+						flags,
+						filename ? filename : "?",
+						lineno,
+						gds_alloc_call_count,
+						gds_free_call_count,
+						NEWLINE,
 						NEWLINE);
+
 				if (getenv("NO_GDS_ALLOC_REPORT"))
+				{
 					stderr_reporting = FALSE;
+				}
 				if (stderr_reporting)
+				{
 					DEV_REPORT(buffer);
-				if (f) {
+				}
+				if (f)
+				{
 					ib_fprintf(f, buffer);
 				}
 			}
@@ -1586,10 +1632,12 @@ void API_ROUTINE gds_alloc_report(ULONG flags, char *filename, int lineno)
 					p->alloc_requested_length,
 					p->alloc_filename,
 					p->alloc_lineno, p->alloc_callno, NEWLINE);
-			if (stderr_reporting) {
+			if (stderr_reporting)
+			{
 				DEV_REPORT(buffer);
 			}
-			if (f) {
+			if (f)
+			{
 				ib_fprintf(f, buffer);
 			}
 		}
@@ -1599,13 +1647,13 @@ void API_ROUTINE gds_alloc_report(ULONG flags, char *filename, int lineno)
 	}
 
 /* Walk the list of free blocks and validate they haven't been referenced */
-	for (p = (ALLOC) pool; p;
-		 p = (ALLOC) p->alloc_status.alloc_freed.free_next)
+	for (p = (ALLOC)pool; p; p = (ALLOC)p->alloc_status.alloc_freed.free_next)
 	{
 		gds_alloc_validate_freed(p);
 	}
 
-	if (f) {
+	if (f)
+	{
 		ib_fclose(f);
 	}
 }
@@ -1671,7 +1719,7 @@ SLONG API_ROUTINE gds__interprete(char *s, STATUS ** vector)
 				/* We need a temporary buffer when cstrings are involved.
 				   Give up if we can't get one. */
 
-				p = temp = (TEXT *) gds__alloc((SLONG) BUFFER_SMALL);
+				p = temp = (TEXT*) gds__alloc((SLONG) BUFFER_SMALL);
 				temp_len = (SSHORT) BUFFER_SMALL;
 				/* FREE: at procedure exit */
 				if (!temp)		/* NOMEM: */
@@ -3048,7 +3096,7 @@ void API_ROUTINE gds__sqlcode_s(STATUS * status_vector, ULONG * sqlcode)
 }
 
 
-UCHAR *API_ROUTINE gds__sys_alloc(SLONG size)
+void* API_ROUTINE gds__sys_alloc(SLONG size)
 {
 /**************************************
  *
@@ -3151,7 +3199,7 @@ UCHAR *API_ROUTINE gds__sys_alloc(SLONG size)
 }
 
 
-SLONG API_ROUTINE gds__sys_free(void *blk)
+SLONG API_ROUTINE gds__sys_free(void* blk)
 {
 /**************************************
  *
@@ -4951,7 +4999,7 @@ static void sanitize(TEXT * locale)
 #ifdef DEBUG_GDS_ALLOC
 #undef gds__alloc
 
-UCHAR *API_ROUTINE gds__alloc(SLONG size)
+void* API_ROUTINE gds__alloc(SLONG size)
 {
 /**************************************
  *

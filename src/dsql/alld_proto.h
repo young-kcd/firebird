@@ -28,17 +28,17 @@
 extern "C" {
 #endif
 
-extern BLK ALLD_alloc(struct plb *, UCHAR, ULONG);
-extern BLK ALLD_extend(struct blk **, ULONG);
-extern void ALLD_fini(void);
-extern void ALLD_free(SCHAR *);
-extern USHORT ALLD_init(void);
-extern UCHAR *ALLD_malloc(ULONG);
-extern PLB ALLD_pool(void);
-extern BLK ALLD_pop(register struct lls **);
-extern void ALLD_push(struct blk *, register struct lls **);
-extern void ALLD_release(register struct frb *);
-extern void ALLD_rlpool(struct plb *);
+BLK		ALLD_alloc(struct plb*, UCHAR, ULONG);
+BLK		ALLD_extend(struct blk**, ULONG);
+void	ALLD_fini(void);
+void	ALLD_free(void*);
+USHORT	ALLD_init(void);
+void*	ALLD_malloc(ULONG);
+PLB		ALLD_pool(void);
+BLK		ALLD_pop(register struct lls**);
+void	ALLD_push(struct blk*, register struct lls**);
+void	ALLD_release(register struct frb*);
+void	ALLD_rlpool(struct plb*);
 
 #ifdef __cplusplus
 } /* extern "C" */

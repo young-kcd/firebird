@@ -1038,16 +1038,18 @@ static void deliver_request(REQ request)
 
 	for (next = request->req_interests;
 		 next && (interest = (RINT) ABS_PTR(next));
-		 next = interest->rint_next) {
+		 next = interest->rint_next)
+	{
 		interest = (RINT) ABS_PTR(next);
 		event = (EVNT) ABS_PTR(interest->rint_event);
-		if (end < p + event->evnt_length + 5) {
-			UCHAR *new_buffer;
+		if (end < p + event->evnt_length + 5)
+		{
 			/* Running out of space - allocate some more and copy it over */
 			assert(event_buffer == buffer);	/* we're in this block only once */
-			new_buffer = gds__alloc((SLONG) MAX_EVENT_BUFFER);
+			UCHAR* new_buffer = (UCHAR*)gds__alloc((SLONG) MAX_EVENT_BUFFER);
 			/* FREE: at procedure exit */
-			if (!new_buffer) {	/* NOMEM: */
+			if (!new_buffer)
+			{	/* NOMEM: */
 				gds__log("failed to post all events");
 				break;			/* exit loop and send what we have */
 			}
@@ -1068,10 +1070,11 @@ static void deliver_request(REQ request)
 
 	delete_request(request);
 	RELEASE;
-	reinterpret_cast < void (*) (...) > (*ast) (arg, p - event_buffer,
-												event_buffer);
+	reinterpret_cast<void(*)(...)>(*ast)(arg, p - event_buffer, event_buffer);
 	if (event_buffer != buffer)
+	{
 		gds__free(event_buffer);
+	}
 	ACQUIRE;
 }
 

@@ -270,28 +270,36 @@ STATUS GDS_ATTACH_DATABASE(STATUS*	user_status,
  *	Connect to an old, grungy database, corrupted by user data.
  *
  **************************************/
-	RDB rdb;
-	PORT port;
-	USHORT length, user_verification, new_dpb_length, result;
-	STATUS *v;
-	UCHAR expanded_name[MAXPATHLEN], new_dpb[MAXPATHLEN], *new_dpb_ptr;
-	TEXT user_string[256], *us;
-	TEXT node_name[MAXPATHLEN];
-	JMP_BUF env;
-	struct trdb thd_context, *trdb;
+	RDB		rdb;
+	PORT	port;
+	USHORT	length;
+	USHORT	user_verification;
+	USHORT	new_dpb_length;
+	USHORT	result;
+	UCHAR	expanded_name[MAXPATHLEN];
+	UCHAR	new_dpb[MAXPATHLEN];
+	UCHAR*	new_dpb_ptr;
+	TEXT	user_string[256];
+	TEXT*	us;
+	TEXT	node_name[MAXPATHLEN];
+	JMP_BUF	env;
+	struct trdb		thd_context;
+	struct trdb*	trdb;
 
 	(void) memset((void *) node_name, 0, (size_t) MAXPATHLEN);
 
-	v = user_status;
+	STATUS* v = user_status;
+
 	*v++ = gds_arg_gds;
 	*v++ = gds_unavailable;
 	*v = gds_arg_end;
 
 #ifdef UNIX
-/* If single user, return */
-
+	// If single user, return
 	if (get_single_user(dpb_length, dpb))
+	{
 		return gds_unavailable;
+	}
 #endif
 
 	SET_THREAD_DATA;
@@ -302,12 +310,13 @@ STATUS GDS_ATTACH_DATABASE(STATUS*	user_status,
 	length = strlen((char *) expanded_name);
 
 	new_dpb_ptr = new_dpb;
+
 	if ((dpb_length + MAX_USER_LENGTH + MAX_PASSWORD_ENC_LENGTH +
 		 MAX_OTHER_PARAMS) > sizeof(new_dpb))
 	{
 		new_dpb_ptr =
-			gds__alloc(dpb_length + MAX_USER_LENGTH +
-					   MAX_PASSWORD_ENC_LENGTH + MAX_OTHER_PARAMS);
+			(UCHAR*)gds__alloc(dpb_length + MAX_USER_LENGTH +
+							   MAX_PASSWORD_ENC_LENGTH + MAX_OTHER_PARAMS);
 
 		/* FREE: by return(s) from this procedure */
 
@@ -830,16 +839,18 @@ STATUS GDS_CREATE_DATABASE(STATUS * user_status,
 	length = strlen((char *) expanded_name);
 
 	new_dpb_ptr = new_dpb;
-	if (
-		(dpb_length + MAX_USER_LENGTH + MAX_PASSWORD_ENC_LENGTH +
-		 MAX_OTHER_PARAMS) > sizeof(new_dpb)) {
+
+	if ((dpb_length + MAX_USER_LENGTH + MAX_PASSWORD_ENC_LENGTH +
+		 MAX_OTHER_PARAMS) > sizeof(new_dpb))
+	{
 		new_dpb_ptr =
-			gds__alloc(dpb_length + MAX_USER_LENGTH +
-					   MAX_PASSWORD_ENC_LENGTH + MAX_OTHER_PARAMS);
+			(UCHAR*)gds__alloc(dpb_length + MAX_USER_LENGTH +
+							   MAX_PASSWORD_ENC_LENGTH + MAX_OTHER_PARAMS);
 
 		/* FREE: by return(s) in this routine */
 
-		if (!new_dpb_ptr) {		/* NOMEM: return error to client */
+		if (!new_dpb_ptr)
+		{		/* NOMEM: return error to client */
 			user_status[1] = gds_virmemexh;
 			return error(user_status);
 		}
@@ -3541,16 +3552,17 @@ STATUS GDS_SERVICE_ATTACH(STATUS * user_status,
 	*v = gds_arg_end;
 
 	new_spb_ptr = new_spb;
-	if (
-		(spb_length + MAX_USER_LENGTH + MAX_PASSWORD_ENC_LENGTH +
-		 MAX_OTHER_PARAMS) > sizeof(new_spb)) {
+	if ((spb_length + MAX_USER_LENGTH + MAX_PASSWORD_ENC_LENGTH +
+		 MAX_OTHER_PARAMS) > sizeof(new_spb))
+	{
 		new_spb_ptr =
-			gds__alloc(spb_length + MAX_USER_LENGTH +
+			(UCHAR*)gds__alloc(spb_length + MAX_USER_LENGTH +
 					   MAX_PASSWORD_ENC_LENGTH + MAX_OTHER_PARAMS);
 
 		/* FREE: by return(s) in this routine */
 
-		if (!new_spb_ptr) {		/* NOMEM: return error to client */
+		if (!new_spb_ptr)
+		{		/* NOMEM: return error to client */
 			user_status[1] = gds_virmemexh;
 			return error(user_status);
 		}

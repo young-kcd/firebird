@@ -23,18 +23,18 @@
 
 #include "../dsql/dsql.h"
 
-BLK ALLD_alloc(					/* alloc and init a block from a pool */
-				  PLB pool, UCHAR type, int count);
+/* alloc and init a block from a pool */
+BLK ALLD_alloc(PLB pool, UCHAR type, int count);
 
-BLK ALLD_extend(				/* extend a block by given size */
-				   BLK * pointer, int size);
+/* extend a block by given size */
+BLK ALLD_extend(BLK* pointer, int size);
 
-int ALLD_fini();				/* get rid of everything */
-int ALLD_free(SCHAR * memory);	/* give space back to system */
-int ALLD_init();				/* initialize pool system */
-UCHAR *ALLD_malloc(int size);	/* get memory from system */
-PLB ALLD_pool();				/* allocate a new pool */
-int ALLD_push(BLK object, LLS * stack);	/* push object on LLS stack */
-BLK ALLD_pop(LLS * stack);		/* pop object off LLS stack */
-int ALLD_release(FRB block);	/* release a block to its pool */
-int ALLD_rlpool(PLB pool);		/* release a pool */
+int		ALLD_fini();				/* get rid of everything */
+int		ALLD_free(void* memory);	/* give space back to system */
+int		ALLD_init();				/* initialize pool system */
+void*	ALLD_malloc(int size);		/* get memory from system */
+PLB		ALLD_pool();				/* allocate a new pool */
+int		ALLD_push(BLK object, LLS * stack);	/* push object on LLS stack */
+BLK		ALLD_pop(LLS* stack);		/* pop object off LLS stack */
+int		ALLD_release(FRB block);	/* release a block to its pool */
+int		ALLD_rlpool(PLB pool);		/* release a pool */

@@ -30,40 +30,45 @@
 extern "C" {
 #endif
 
-extern int API_ROUTINE gds__thread_start(FPTR_INT_VOID_PTR, void *, int, int,
-										 void *);
-extern long THD_get_thread_id(void);
-extern struct thdd *DLL_EXPORT THD_get_specific(void);
-extern void THD_getspecific_data(void **t_data);
-extern void DLL_EXPORT THD_init(void);
-extern void DLL_EXPORT THD_cleanup(void);
-extern int DLL_EXPORT THD_mutex_destroy(struct mutx_t *);
-extern int THD_mutex_init(struct mutx_t *);
-extern int THD_mutex_lock(struct mutx_t *);
-extern int THD_mutex_unlock(struct mutx_t *);
-extern int THD_mutex_destroy_n(struct mutx_t *, USHORT);
-extern int THD_mutex_init_n(struct mutx_t *, USHORT);
-extern int THD_mutex_lock_global(void);
-extern int THD_mutex_unlock_global(void);
-extern void DLL_EXPORT THD_put_specific(struct thdd *);
-extern void THD_putspecific_data(void *t_data);
+int		API_ROUTINE gds__thread_start(FPTR_INT_VOID_PTR, void*, int, int,
+										 void*);
+
+struct thdd* DLL_EXPORT THD_get_specific(void);
+void	DLL_EXPORT THD_init(void);
+void	DLL_EXPORT THD_cleanup(void);
+int		DLL_EXPORT THD_mutex_destroy(struct mutx_t*);
+void	DLL_EXPORT THD_put_specific(struct thdd*);
+int		DLL_EXPORT THD_wlck_destroy(struct wlck_t*);
+int		DLL_EXPORT THD_wlck_init(struct wlck_t*);
+int		DLL_EXPORT THD_wlck_lock(struct wlck_t*, USHORT);
+int		DLL_EXPORT THD_wlck_unlock(struct wlck_t*);
+
+long	THD_get_thread_id(void);
+void	THD_getspecific_data(void** t_data);
+
+int		THD_mutex_init(struct mutx_t*);
+int		THD_mutex_lock(struct mutx_t*);
+int		THD_mutex_unlock(struct mutx_t*);
+int		THD_mutex_destroy_n(struct mutx_t*, USHORT);
+int		THD_mutex_init_n(struct mutx_t*, USHORT);
+int		THD_mutex_lock_global(void);
+int		THD_mutex_unlock_global(void);
+void	THD_putspecific_data(void* t_data);
+
 #ifdef SUPERSERVER
-extern int THD_rec_mutex_destroy(struct rec_mutx_t *);
-extern int THD_rec_mutex_init(struct rec_mutx_t *);
-extern int THD_rec_mutex_lock(struct rec_mutx_t *);
-extern int THD_rec_mutex_unlock(struct rec_mutx_t *);
+int		THD_rec_mutex_destroy(struct rec_mutx_t*);
+int		THD_rec_mutex_init(struct rec_mutx_t*);
+int		THD_rec_mutex_lock(struct rec_mutx_t*);
+int		THD_rec_mutex_unlock(struct rec_mutx_t*);
 #endif
-extern struct thdd *DLL_EXPORT THD_restore_specific(void);
-extern int THD_resume(THD_T);
-extern void THD_sleep(ULONG);
-extern int THD_suspend(THD_T);
-extern int DLL_EXPORT THD_wlck_destroy(struct wlck_t *);
-extern int DLL_EXPORT THD_wlck_init(struct wlck_t *);
-extern int DLL_EXPORT THD_wlck_lock(struct wlck_t *, USHORT);
-extern int DLL_EXPORT THD_wlck_unlock(struct wlck_t *);
-extern void THD_wlck_destroy_n(struct wlck_t *, USHORT);
-extern void THD_wlck_init_n(struct wlck_t *, USHORT);
-extern void THD_yield(void);
+
+struct thdd* DLL_EXPORT THD_restore_specific(void);
+int		THD_resume(THD_T);
+void	THD_sleep(ULONG);
+int		THD_suspend(THD_T);
+void	THD_wlck_destroy_n(struct wlck_t*, USHORT);
+void	THD_wlck_init_n(struct wlck_t*, USHORT);
+void	THD_yield(void);
 
 #ifdef __cplusplus
 } /* extern "C" */

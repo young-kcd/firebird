@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.1.1.1 2001-05-23 13:25:29 tamlin Exp $
+//  $Id: gpre.cpp,v 1.2 2001-05-24 14:54:26 tamlin Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -38,7 +38,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.1.1.1 2001-05-23 13:25:29 tamlin Exp $
+//	$Id: gpre.cpp,v 1.2 2001-05-24 14:54:26 tamlin Exp $
 //
 
 #define GPRE_MAIN
@@ -237,11 +237,11 @@ static struct ext_table_t dml_ext_table[] =
 
 
 //____________________________________________________________
-//  
-//		Main line routine for C preprocessor.  Initializes
-//		system, performs pass 1 and pass 2.  Interprets
-//		command line.
-//  
+//
+//	Main line routine for C preprocessor.  Initializes
+//	system, performs pass 1 and pass 2.  Interprets
+//	command line.
+//
 
 int main(int argc, char* argv[])
 {

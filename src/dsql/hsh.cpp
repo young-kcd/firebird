@@ -149,12 +149,13 @@ void HSHD_fini(void)
  *	symbols are deallocated with their pools.
  *
  **************************************/
-	SSHORT i;
 
-	for (i = 0; i < HASH_SIZE; i++)
+	for (SSHORT i = 0; i < HASH_SIZE; i++)
+	{
 		hash_table[i] = NULL;
+	}
 
-	ALLD_free(reinterpret_cast < SCHAR * >(hash_table));
+	ALLD_free(hash_table);
 	hash_table = NULL;
 }
 

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.1.1.1 2001-05-23 13:25:33 tamlin Exp $
+//	$Id: tdr.cpp,v 1.2 2001-05-24 14:54:25 tamlin Exp $
 //
 
 #include "../jrd/ib_stdio.h"
@@ -452,7 +452,8 @@ BOOLEAN TDR_reconnect_multiple(int *handle,
 				switches |= sw_commit;
 			else if (switches & sw_two_phase)
 				switches |= sw_commit;
-			else if (switches & sw_prompt) {
+			else if (switches & sw_prompt)
+			{
 				ALICE_print(78, reinterpret_cast < char *>(trans->tdr_id), 0,
 							0, 0, 0);	/* msg 78: Transaction %ld has been partially committed. */
 				ALICE_print(79, 0, 0, 0, 0, 0);	/* msg 79: A commit is necessary to preserve the two-phase commit. */
@@ -470,7 +471,8 @@ BOOLEAN TDR_reconnect_multiple(int *handle,
 			break;
 
 		default:
-			if (!(switches & (sw_commit | sw_rollback))) {
+			if (!(switches & (sw_commit | sw_rollback)))
+			{
 				ALICE_print(82, reinterpret_cast < char *>(trans->tdr_id), 0,
 							0, 0, 0);	/* msg 82: Transaction %ld: All subtransactions have been prepared. */
 				ALICE_print(83, 0, 0, 0, 0, 0);	/* msg 83: Either commit or rollback is possible. */
@@ -480,16 +482,24 @@ BOOLEAN TDR_reconnect_multiple(int *handle,
 		}
 	}
 
-	if (switches != (ULONG) - 1) {
+	if (switches != (ULONG) - 1)
+	{
 		/* now do the required operation with all the subtransactions */
 
 		if (switches & (sw_commit | sw_rollback))
+		{
 			for (ptr = trans; ptr; ptr = ptr->tdr_next)
+			{
 				if (ptr->tdr_state == TRA_limbo)
+				{
 					reconnect(reinterpret_cast < int *>(ptr->tdr_db_handle),
 							  ptr->tdr_id, ptr->tdr_filename, switches);
+				}
+			}
+		}
 	}
-	else {
+	else
+	{
 		ALICE_print(84, 0, 0, 0, 0, 0);	/* msg 84: unexpected end of input */
 		error = TRUE;
 	}
@@ -514,59 +524,63 @@ static void print_description(TDR trans)
 {
 	TDR ptr;
 	BOOLEAN prepared_seen;
-	TGBL tdgbl;
-	int i;
 
-	tdgbl = GET_THREAD_DATA;
+#ifdef SUPERSERVER
+	int i;
+#endif
+
+	TGBL tdgbl = GET_THREAD_DATA;
 
 	if (!trans)
+	{
 		return;
+	}
 
 	if (!tdgbl->sw_service_thd)
+	{
 		ALICE_print(92, 0, 0, 0, 0, 0);	/* msg 92:   Multidatabase transaction: */
+	}
 
 	prepared_seen = FALSE;
-	for (ptr = trans; ptr; ptr = ptr->tdr_next) {
-		if (ptr->tdr_host_site) {
+	for (ptr = trans; ptr; ptr = ptr->tdr_next)
+	{
+		if (ptr->tdr_host_site)
+		{
+			char* pszHostSize =
+				reinterpret_cast<char*>(ptr->tdr_host_site->str_data);
+
 #ifndef SUPERSERVER
-			ALICE_print(93,
-						reinterpret_cast <
-						char *>(ptr->tdr_host_site->str_data), 0, 0, 0, 0);	/* msg 93: Host Site: %s */
+			/* msg 93: Host Site: %s */
+			ALICE_print(93, pszHostSize, 0, 0, 0, 0);
 #else
+			const size_t nHostSiteLen = strlen(pszHostSize);
+
 			SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_host_site);
-			SVC_putc(tdgbl->service_blk,
-					 (UCHAR) strlen(reinterpret_cast <
-									const char *>(ptr->
-												  tdr_host_site->str_data)));
-			SVC_putc(tdgbl->service_blk,
-					 (UCHAR) (strlen
-							  (reinterpret_cast <
-							   const char *>(ptr->
-											 tdr_host_site->str_data)) >> 8));
-			for (i = 0;
-				 i < (int) strlen(reinterpret_cast <
-								  const char *>(ptr->
-												tdr_host_site->str_data));
-				 i++);
-			SVC_putc(tdgbl->service_blk,
-					 (UCHAR) ptr->tdr_host_site->str_data[i]);
+			SVC_putc(tdgbl->service_blk, (UCHAR) nHostSiteLen);
+			SVC_putc(tdgbl->service_blk, (UCHAR) (nHostSiteLen >> 8 ));
+			for (i = 0; i < (int) nHostSiteLen; i++)
+			{
+				SVC_putc(tdgbl->service_blk, (UCHAR) pszHostSize[i]);
+			}
 #endif
 		}
 
 		if (ptr->tdr_id)
-#ifndef SUPERSERVER
-			ALICE_print(94, reinterpret_cast < char *>(ptr->tdr_id), 0, 0, 0, 0);	/* msg 94: Transaction %ld */
-#else
 		{
+#ifndef SUPERSERVER
+			/* msg 94: Transaction %ld */
+			ALICE_print(94, reinterpret_cast<char*>(ptr->tdr_id), 0, 0, 0, 0);
+#else
 			SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_id);
 			SVC_putc(tdgbl->service_blk, (UCHAR) ptr->tdr_id);
 			SVC_putc(tdgbl->service_blk, (UCHAR) (ptr->tdr_id >> 8));
 			SVC_putc(tdgbl->service_blk, (UCHAR) (ptr->tdr_id >> 16));
 			SVC_putc(tdgbl->service_blk, (UCHAR) (ptr->tdr_id >> 24));
-		}
 #endif
+		}
 
-		switch (ptr->tdr_state) {
+		switch (ptr->tdr_state)
+		{
 		case TRA_limbo:
 #ifndef SUPERSERVER
 			ALICE_print(95, 0, 0, 0, 0, 0);	/* msg 95: has been prepared. */
@@ -607,60 +621,58 @@ static void print_description(TDR trans)
 		default:
 #ifndef SUPERSERVER
 			if (prepared_seen)
-				ALICE_print(99, 0, 0, 0, 0, 0);	/* msg 99: is not found, assumed not prepared. */
+			{
+				/* msg 99: is not found, assumed not prepared. */
+				ALICE_print(99, 0, 0, 0, 0, 0);
+			}
 			else
-				ALICE_print(100, 0, 0, 0, 0, 0);	/* msg 100: is not found, assumed to be committed. */
+			{
+				/* msg 100: is not found, assumed to be committed. */
+				ALICE_print(100, 0, 0, 0, 0, 0);
+			}
 #endif
 			break;
 		}
 
-		if (ptr->tdr_remote_site) {
+		if (ptr->tdr_remote_site)
+		{
+			char* pszRemoteSite =
+				reinterpret_cast<char*>(ptr->tdr_remote_site->str_data);
+
 #ifndef SUPERSERVER
-			ALICE_print(101,
-						reinterpret_cast <
-						char *>(ptr->tdr_remote_site->str_data), 0, 0, 0, 0);	/*msg 101: Remote Site: %s */
+			/*msg 101: Remote Site: %s */
+			ALICE_print(101, pszRemoteSite, 0, 0, 0, 0);
 #else
+			const size_t nRemoteSiteLen = strlen(pszRemoteSite);
+
 			SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_remote_site);
-			SVC_putc(tdgbl->service_blk,
-					 (UCHAR) strlen(reinterpret_cast <
-									const char *>(ptr->
-												  tdr_remote_site->str_data)));
-			SVC_putc(tdgbl->service_blk,
-					 (UCHAR) (strlen
-							  (reinterpret_cast <
-							   const char *>(ptr->
-											 tdr_remote_site->str_data)) >>
-							  8));
-			for (i = 0;
-				 i < (int) strlen(reinterpret_cast <
-								  const char *>(ptr->
-												tdr_remote_site->str_data));
-				 i++) SVC_putc(tdgbl->service_blk,
-							   (UCHAR) ptr->tdr_remote_site->str_data[i]);
+			SVC_putc(tdgbl->service_blk, (UCHAR) nRemoteSiteLen);
+			SVC_putc(tdgbl->service_blk, (UCHAR) (nRemoteSiteLen >> 8));
+			for (i = 0; i < (int) nRemoteSiteLen; i++)
+			{
+				SVC_putc(tdgbl->service_blk, (UCHAR) nRemoteSiteLen);
+			}
 #endif
 		}
 
-		if (ptr->tdr_fullpath) {
+		if (ptr->tdr_fullpath)
+		{
+			char* pszFullpath =
+				reinterpret_cast<char*>(ptr->tdr_fullpath->str_data);
+
 #ifndef SUPERSERVER
-			ALICE_print(102,
-						reinterpret_cast <
-						char *>(ptr->tdr_fullpath->str_data), 0, 0, 0, 0);	/* msg 102: Database Path: %s */
+			/* msg 102: Database Path: %s */
+			ALICE_print(102, pszFullpath, 0, 0, 0, 0);
 #else
+			const size_t nFullpathLen = strlen(pszFullpath);
+
 			SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_db_path);
-			SVC_putc(tdgbl->service_blk,
-					 (UCHAR) strlen(reinterpret_cast <
-									const char *>(ptr->
-												  tdr_fullpath->str_data)));
-			SVC_putc(tdgbl->service_blk,
-					 (UCHAR) (strlen
-							  (reinterpret_cast <
-							   const char *>(ptr->
-											 tdr_fullpath->str_data)) >> 8));
-			for (i = 0;
-				 i < (int) strlen(reinterpret_cast <
-								  const char *>(ptr->tdr_fullpath->str_data));
-				 i++) SVC_putc(tdgbl->service_blk,
-							   (UCHAR) ptr->tdr_fullpath->str_data[i]);
+			SVC_putc(tdgbl->service_blk, (UCHAR) nFullpathLen);
+			SVC_putc(tdgbl->service_blk, (UCHAR) (nFullpathLen >> 8));
+			for (i = 0; i < (int) nFullpathLen; i++)
+			{
+				SVC_putc(tdgbl->service_blk, (UCHAR) pszFullpath[i]);
+			}
 #endif
 		}
 
@@ -668,10 +680,12 @@ static void print_description(TDR trans)
 
 //  let the user know what the suggested action is 
 
-	switch (TDR_analyze(trans)) {
+	switch (TDR_analyze(trans))
+	{
 	case TRA_commit:
 #ifndef SUPERSERVER
-		ALICE_print(103, 0, 0, 0, 0, 0);	/* msg 103: Automated recovery would commit this transaction. */
+		/* msg 103: Automated recovery would commit this transaction. */
+		ALICE_print(103, 0, 0, 0, 0, 0);
 #else
 		SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_advise);
 		SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_advise_commit);
@@ -680,7 +694,8 @@ static void print_description(TDR trans)
 
 	case TRA_rollback:
 #ifndef SUPERSERVER
-		ALICE_print(104, 0, 0, 0, 0, 0);	/* msg 104: Automated recovery would rollback this transaction. */
+		/* msg 104: Automated recovery would rollback this transaction. */
+		ALICE_print(104, 0, 0, 0, 0, 0);
 #else
 		SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_advise);
 		SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_advise_rollback);

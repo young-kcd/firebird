@@ -72,7 +72,7 @@ SLONG allr_delta_alloc = 0;
 //
 UCHAR* DLL_EXPORT ALLR_alloc(ULONG size)
 {
-	UCHAR* block = gds__alloc((SLONG) size);
+	UCHAR* block = (UCHAR*)gds__alloc((SLONG) size);
 
 	if (block)
 	{

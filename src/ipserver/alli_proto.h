@@ -24,9 +24,9 @@
 #ifndef _ALLI_PROTO_H_
 #define _ALLI_PROTO_H_
 
-extern UCHAR *ALLI_alloc(ULONG);
-extern BLK ALLI_block(UCHAR, int);
-extern void ALLI_free(UCHAR *);
-extern void ALLI_release(BLK);
+void*	ALLI_alloc(ULONG);
+BLK		ALLI_block(UCHAR, int);
+void	ALLI_free(void*);
+void	ALLI_release(BLK);
 
 #endif /*  _ALLI_PROTO_H_  */

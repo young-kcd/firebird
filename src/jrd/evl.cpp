@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.1.1.1 2001-05-23 13:26:09 tamlin Exp $ 
+  * $Id: evl.cpp,v 1.2 2001-05-24 14:54:26 tamlin Exp $ 
  */
 
 /*
@@ -4675,7 +4675,7 @@ static SSHORT string_boolean(TDBB tdbb, NOD node, DSC * desc1, DSC * desc2)
 	STR temp_str;
 	UCHAR *p1, *p2, *temp1, *temp2, *buffer;
 #endif
-	SSHORT l1, l2, l;
+	SSHORT l1, l2;
 	USHORT type1, xtype1;
 	STR match_str = NULL;
 	SSHORT ret_val;

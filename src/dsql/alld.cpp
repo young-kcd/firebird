@@ -350,7 +350,7 @@ void ALLD_fini(void)
 }
 
 
-void ALLD_free( SCHAR * memory)
+void ALLD_free(void* memory)
 {
 /**************************************
  *
@@ -412,7 +412,7 @@ USHORT ALLD_init(void)
 }
 
 
-UCHAR *ALLD_malloc(ULONG size)
+void* ALLD_malloc(ULONG size)
 {
 /**************************************
  *
@@ -424,26 +424,27 @@ UCHAR *ALLD_malloc(ULONG size)
  *	Get memory from system.
  *
  **************************************/
-	register UCHAR *memory;
-	TSQL tdsql;
 
-	tdsql = GET_THREAD_DATA;
+	TSQL tdsql = GET_THREAD_DATA;
 
-	if ((memory = gds__alloc((SLONG) size)) != NULL)
-#ifdef SUPERSERVER
+	UCHAR* memory = (UCHAR*)gds__alloc((SLONG) size);
+
+	if (memory)
 	{
+#ifdef SUPERSERVER
 		alld_delta_alloc += size;
+#endif
 		return memory;
 	}
-#else
-		return memory;
-#endif
+
 /* FREE: by ALLD_free, called during DSQL cleanup */
 /* NOMEM: post a user level error - if we can */
 
 	if (tdsql && tdsql->tsql_setjmp)
+	{
 		ERRD_post(gds__sys_request, gds_arg_string, "gds__alloc", gds_arg_gds,
 				  gds__virmemexh, gds_arg_end);
+	}
 
 /* Commentary:  This expands out to a call to ERRD_error - which
  * promply depends on tdsql being non-NULL.  Knock, knock, anyone home?
@@ -711,17 +712,21 @@ void ALLD_rlpool( PLB pool)
  * contains pool itself
  */
 #ifdef SUPERSERVER
-	if (trace_pools && pool->plb_blk_type_count) {
+	if (trace_pools && pool->plb_blk_type_count)
+	{
 		int i;
 		for (i = 0; i < type_MAX; i++)
+		{
 			alld_block_type_count[i] -= pool->plb_blk_type_count[i];
+		}
 		gds__free(pool->plb_blk_type_count);
 	}
 #endif
 
-	for (hunks = pool->plb_hunks; hunk = hunks;) {
+	for (hunks = pool->plb_hunks; hunk = hunks;)
+	{
 		hunks = hunk->hnk_next;
-		ALLD_free(reinterpret_cast < char *>(hunk->hnk_address));
+		ALLD_free(hunk->hnk_address);
 	}
 }
 

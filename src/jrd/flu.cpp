@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: flu.cpp,v 1.1.1.1 2001-05-23 13:26:12 tamlin Exp $
+$Id: flu.cpp,v 1.2 2001-05-24 14:54:26 tamlin Exp $
 */
 
 #include "../jrd/common.h"
@@ -104,13 +104,17 @@ const char* dirname(const char* fname)
 	if (strlen(fname) == 0)
 		return ".";
 	strcpy(result, fname);
-	while (*fname) {
+	while (*fname)
+	{
 		i++;
 		if (*fname == '/')
+		{
 			last = i;
+		}
 		fname++;
 	}
-	if (last == 0) {
+	if (last == 0)
+	{
 		last = 1;
 		result[0] = '.';
 	}
@@ -118,6 +122,18 @@ const char* dirname(const char* fname)
 	return result;
 }
 #endif
+
+
+static void terminate_at_space(char* psz)
+{
+	while (*psz && *psz != ' ')
+	{
+		++psz;
+	}
+	if (*psz) {
+		*psz = '\0';
+	}
+}
 
 
 /* DG specific stuff */
@@ -176,22 +192,20 @@ MOD FLU_lookup_module(TEXT* module)
  *	Lookup external function module descriptor.
  *
  **************************************/
-	MOD mod;
-	USHORT length;
-#ifndef WIN_NT
-	TEXT *p;
 
-	for (p = module; *p && *p != ' '; p++)
-		;
-	if (*p)
-		*p = 0;
+#ifndef WIN_NT
+	terminate_at_space(module);
 #endif
 
-	length = strlen(module);
+	const USHORT length = strlen(module);
 
-	for (mod = FLU_modules; mod; mod = mod->mod_next)
+	for (MOD mod = FLU_modules; mod; mod = mod->mod_next)
+	{
 		if (mod->mod_length == length && !strcmp(mod->mod_name, module))
+		{
 			return mod;
+		}
+	}
 
 	return 0;
 }
@@ -220,10 +234,13 @@ void FLU_unregister_module(MOD module)
 /* Unlink from list of active modules, unload it, and release memory. */
 
 	for (mod = &FLU_modules; *mod; mod = &(*mod)->mod_next)
-		if (*mod == module) {
+	{
+		if (*mod == module)
+		{
 			*mod = module->mod_next;
 			break;
 		}
+	}
 
 #if (defined HP700 || defined HP10)
 	shl_unload(module->mod_handle);
@@ -277,7 +294,11 @@ FPTR_INT ISC_lookup_entrypoint(TEXT * module,
 
 	ISC_make_desc(absolute_module, &mod_desc, p - absolute_module);
 
-	for (p = name; *p && *p != ' '; p++);
+	p = name;
+	while (*p && *p != ' ')
+	{
+		++p;
+	}
 
 	ISC_make_desc(name, &nam_desc, p - name);
 	VAXC$ESTABLISH(condition_handler);
@@ -300,8 +321,9 @@ FPTR_INT ISC_lookup_entrypoint(TEXT * module,
 */
 #if (defined OLD_AIX || defined OLD_AIX_PPC)
 #define LOOKUP
-FPTR_INT ISC_lookup_entrypoint(TEXT * module,
-							   TEXT * name, TEXT * ib_path_env_var)
+FPTR_INT ISC_lookup_entrypoint(TEXT* module,
+							   TEXT* name,
+							   TEXT* ib_path_env_var)
 {
 /**************************************
  *
@@ -317,19 +339,28 @@ FPTR_INT ISC_lookup_entrypoint(TEXT * module,
 	TEXT *p;
 	TEXT absolute_module[MAXPATHLEN];
 
-	if (function = FUNCTIONS_entrypoint(module, name))
+	function = FUNCTIONS_entrypoint(module, name);
+	if (function)
+	{
 		return function;
+	}
 
-	for (p = module; *p && *p != ' '; p++);
-	if (*p)
-		*p = 0;
+	terminate_at_space(module);
 
 	if (ib_path_env_var == NULL)
+	{
 		strcpy(absolute_module, module);
+	}
 	else
-		if (!gds__validate_lib_path
-			(module, ib_path_env_var, absolute_module,
-			 sizeof(absolute_module))) return NULL;
+	{
+		if (!gds__validate_lib_path(module,
+									ib_path_env_var,
+									absolute_module,
+									sizeof(absolute_module)))
+		{
+			return NULL;
+		}
+	}
 
 	REPLACE THIS COMPILER ERROR WITH CODE TO VERIFY THAT THE MODULE IS FOUND
 		EITHER IN $INTERBASE / UDF, OR $INTERBASE / intl,
@@ -358,49 +389,61 @@ FPTR_INT ISC_lookup_entrypoint(TEXT * module,
  **************************************/
 	FPTR_INT function;
 	TEXT *p;
-	MOD mod;
-	TEXT absolute_module[MAXPATHLEN];
 
-	if (function = FUNCTIONS_entrypoint(module, name))
+	function = FUNCTIONS_entrypoint(module, name);
+	if (function)
+	{
 		return function;
+	}
 
-	for (p = module; *p && *p != ' '; p++);
-	if (*p)
-		*p = 0;
-	for (p = name; *p && *p != ' '; p++);
-	if (*p)
-		*p = 0;
+	terminate_at_space(module);
+	terminate_at_space(name);
 
 	if (!*module || !*name)
+	{
 		return NULL;
+	}
 
-/* Check if external function module has already been loaded */
+	// Check if external function module has already been loaded
+	MOD mod = FLU_lookup_module(module);
 
-	if (!(mod = FLU_lookup_module(module))) {
-		USHORT length;
+	if (!mod)
+	{
+		TEXT absolute_module[MAXPATHLEN];
 
 #ifdef EXT_LIB_PATH
 		if (ib_path_env_var == NULL)
+		{
 			strcpy(absolute_module, module);
+		}
 		else
-			if (!gds__validate_lib_path
-				(module, ib_path_env_var, absolute_module,
-				 sizeof(absolute_module))) return NULL;
+		{
+			if (!gds__validate_lib_path(module,
+										ib_path_env_var,
+										absolute_module,
+										sizeof(absolute_module)))
+			{
+				return NULL;
+			}
+		}
 #else
 		strcpy(absolute_module, module);
 #endif /* EXT_LIB_PATH */
 
-		length = strlen(absolute_module);
+		const USHORT length = strlen(absolute_module);
 
 		/* call search_for_module with the supplied name, 
 		   and if unsuccessful, then with <name>.sl . */
 		mod = search_for_module(absolute_module, name);
-		if (!mod) {
+		if (!mod)
+		{
 			strcat(absolute_module, ".sl");
 			mod = search_for_module(absolute_module, name);
 		}
 		if (!mod)
+		{
 			return NULL;
+		}
 
 		assert(mod->mod_handle);	/* assert that we found the module */
 		mod->mod_use_count = 0;
@@ -445,45 +488,56 @@ static MOD search_for_module(TEXT * module, TEXT * name)
 								 strlen(absolute_module)))) return NULL;
 
 	dirp = dirname(absolute_module);
-	if (('.' == dirp[0]) && ('\0' == dirp[1])) {
+	if (('.' == dirp[0]) && ('\0' == dirp[1]))
+	{
 		/*  We have a simple module name, without a directory. */
 
 		gds__prefix(ib_lib_path, IB_UDF_DIR);
 		strncat(ib_lib_path, module, MAXPATHLEN - strlen(ib_lib_path) - 1);
-		if (!access(ib_lib_path, R_OK | X_OK)) {
+		if (!access(ib_lib_path, R_OK | X_OK))
+		{
 			/* Module is in the default UDF directory: load it. */
-			if (!(mod->mod_handle = shl_load(ib_lib_path, BIND_DEFERRED, 0))) {
+			if (!(mod->mod_handle = shl_load(ib_lib_path, BIND_DEFERRED, 0)))
+			{
 				gds__free(mod);
 				return NULL;
 			}
 		}
-		else {
+		else
+		{
 			gds__prefix(ib_lib_path, IB_INTL_DIR);
 			strncat(ib_lib_path, module,
 					MAXPATHLEN - strlen(ib_lib_path) - 1);
-			if (!access(ib_lib_path, R_OK | X_OK)) {
+			if (!access(ib_lib_path, R_OK | X_OK))
+			{
 				/* Module is in the international character set directory:
 				   load it. */
-				if (!(mod->mod_handle = shl_load(ib_lib_path,
-												 BIND_DEFERRED, 0))) {
+				mod->mod_handle = shl_load(ib_lib_path, BIND_DEFERRED, 0);
+				if (!mod->mod_handle)
+				{
 					gds__free(mod);
 					return NULL;
 				}
 			}
-			else {
+			else
+			{
 				/*  The module is not in a default directory, so ...
 				 *  use the EXTERNAL_FUNCTION_DIRECTORY lines from isc_config.
 				 */
 				dir_list = DLS_get_func_dirs();
 				found_module = FALSE;
-				while (dir_list && !found_module) {
+				while (dir_list && !found_module)
+				{
 					strcpy(ib_lib_path, dir_list->fdls_directory);
 					strcat(ib_lib_path, "/");
 					strncat(ib_lib_path, module,
 							MAXPATHLEN - strlen(ib_lib_path) - 1);
-					if (!access(ib_lib_path, R_OK | X_OK)) {
-						if (!(mod->mod_handle = shl_load(ib_lib_path,
-														 BIND_DEFERRED, 0))) {
+					if (!access(ib_lib_path, R_OK | X_OK))
+					{
+						mod->mod_handle = shl_load(ib_lib_path,
+													 BIND_DEFERRED, 0);
+						if (!mod->mod_handle)
+						{
 							gds__free(mod);
 							return NULL;
 						}
@@ -491,34 +545,39 @@ static MOD search_for_module(TEXT * module, TEXT * name)
 					}
 					dir_list = dir_list->fdls_next;
 				}
-				if (!found_module) {
+				if (!found_module)
+				{
 					gds__free(mod);
 					return NULL;
 				}
 			}					/* else module is not in the INTL directory */
 		}						/* else module is not in the default UDF directory, so ... */
 	}							/* if dirname is "." */
-	else {
+	else
+	{
 		/*  The module name includes a directory path.
 		 *  The directory must be the standard UDF directory, or the
-		 *  the standard international directory, or listed in
+		 *  standard international directory, or listed in
 		 *  an EXTERNAL_FUNCTION_DIRECTORY line in isc_config,
 		 *  and the module must be accessible in that directory.
 		 */
 		gds__prefix(ib_lib_path, IB_UDF_DIR);
 		ib_lib_path[strlen(ib_lib_path) - 1] = '\0';	/* drop trailing "/" */
 		found_module = !strcmp(ib_lib_path, dirp);
-		if (!found_module) {
+		if (!found_module)
+		{
 			gds__prefix(ib_lib_path, IB_INTL_DIR);
 			ib_lib_path[strlen(ib_lib_path) - 1] = '\0';	/* drop trailing / */
 			found_module = !strcmp(ib_lib_path, dirp);
 		}
-		if (!found_module) {
+		if (!found_module)
+		{
 			/* It's not the default directory, so try the ones listed
 			 * in EXTERNAL_FUNCTION_DIRECTORY lines in isc_config.
 			 */
 			dir_list = DLS_get_func_dirs();
-			while (dir_list && !found_module) {
+			while (dir_list && !found_module)
+			{
 				if (!strcmp(dir_list->fdls_directory, dirp))
 					found_module = TRUE;
 				dir_list = dir_list->fdls_next;
@@ -527,7 +586,8 @@ static MOD search_for_module(TEXT * module, TEXT * name)
 		if (found_module)
 			found_module = (!access(module, R_OK | X_OK)) &&
 				(0 != (mod->mod_handle = shl_load(module, BIND_DEFERRED, 0)));
-		if (!found_module) {
+		if (!found_module)
+		{
 			gds__free(mod);
 			return NULL;
 		}
@@ -553,7 +613,6 @@ FPTR_INT ISC_lookup_entrypoint(TEXT * module,
  *
  **************************************/
 	FPTR_INT function;
-	TEXT *p;
 	shl_t handle;
 	TEXT buffer[256];
 	TEXT absolute_module[MAXPATHLEN];
@@ -561,10 +620,9 @@ FPTR_INT ISC_lookup_entrypoint(TEXT * module,
 	if (function = FUNCTIONS_entrypoint(module, name))
 		return function;
 
-	for (p = module; *p && *p != ' '; p++);
-	if (*p)
-		*p = 0;
-	p = buffer;
+	terminate_at_space(module);
+
+	TEXT* p = buffer;
 	*p++ = '_';
 	for (; (*p = *name) && *name != ' '; p++, name++);
 	*p = 0;
@@ -580,9 +638,9 @@ FPTR_INT ISC_lookup_entrypoint(TEXT * module,
 		EITHER IN $INTERBASE / UDF, OR $INTERBASE / intl,
 		OR IN ONE OF THE DIRECTORIES NAMED IN EXTERNAL_FUNCTION_DIRECTORY
 		LINES IN
-		ISC_CONFIG.if (!
-					   (handle = shl_load(absolute_module, BIND_DEFERRED, 0L))
-|| shl_findsym(&handle, buffer, TYPE_PROCEDURE, &function))
+		ISC_CONFIG.
+	if (!(handle = shl_load(absolute_module, BIND_DEFERRED, 0L)) ||
+		shl_findsym(&handle, buffer, TYPE_PROCEDURE, &function))
 		return NULL;
 
 	return function;
@@ -592,8 +650,9 @@ FPTR_INT ISC_lookup_entrypoint(TEXT * module,
 
 #ifdef DYNAMIC_SHARED_LIBRARIES
 #define LOOKUP
-FPTR_INT ISC_lookup_entrypoint(TEXT * module,
-							   TEXT * name, TEXT * ib_path_env_var)
+FPTR_INT ISC_lookup_entrypoint(TEXT* module,
+							   TEXT* name,
+							   TEXT* ib_path_env_var)
 {
 /**************************************
  *
@@ -607,52 +666,65 @@ FPTR_INT ISC_lookup_entrypoint(TEXT * module,
  **************************************/
 	FPTR_INT function;
 	TEXT *p;
-	MOD mod;
-	TEXT absolute_module[MAXPATHLEN];
 
-	if (function = FUNCTIONS_entrypoint(module, name))
+	function = FUNCTIONS_entrypoint(module, name);
+	if (function)
+	{
 		return function;
+	}
 
 #ifdef NON_DL_COMPATIBLE
 	return NULL;
 #else
-	for (p = module; *p && *p != ' '; p++);
-	if (*p)
-		*p = 0;
-	for (p = name; *p && *p != ' '; p++);
-	if (*p)
-		*p = 0;
+
+	terminate_at_space(module);
+	terminate_at_space(name);
 
 	if (!*module || !*name)
+	{
 		return NULL;
+	}
 
-/* Check if external function module has already been loaded */
+	// Check if external function module has already been loaded
+	MOD mod = FLU_lookup_module(module);
 
-	if (!(mod = FLU_lookup_module(module))) {
-		USHORT length;
+	if (!mod)
+	{
+		TEXT absolute_module[MAXPATHLEN];
 
 #ifdef EXT_LIB_PATH
 		if (ib_path_env_var == NULL)
+		{
 			strcpy(absolute_module, module);
+		}
 		else
-			if (!gds__validate_lib_path
-				(module, ib_path_env_var, absolute_module,
-				 sizeof(absolute_module))) return NULL;
+		{
+			if (!gds__validate_lib_path(module,
+										ib_path_env_var,
+										absolute_module,
+										sizeof(absolute_module)))
+			{
+				return NULL;
+			}
+		}
 #else
 		strcpy(absolute_module, module);
 #endif /* EXT_LIB_PATH */
 
-		length = strlen(absolute_module);
+		const USHORT length = strlen(absolute_module);
 
 		/* call search_for_module with the supplied name, 
 		   and if unsuccessful, then with <name>.so . */
 		mod = search_for_module(absolute_module, name);
-		if (!mod) {
+		if (!mod)
+		{
 			strcat(absolute_module, ".so");
 			mod = search_for_module(absolute_module, name);
 		}
 		if (!mod)
+		{
 			return NULL;
+		}
 
 		assert(mod->mod_handle);	/* assert that we found the module */
 		mod->mod_use_count = 0;
@@ -682,8 +754,6 @@ static MOD search_for_module(TEXT * module, TEXT * name)
  *      statement.
  *
  **************************************/
-	MOD mod;
-	char *dirp;
 	TEXT ib_lib_path[MAXPATHLEN];
 	TEXT absolute_module[MAXPATHLEN];	/* for _access()  ???   */
 	FDLS *dir_list;
@@ -691,46 +761,63 @@ static MOD search_for_module(TEXT * module, TEXT * name)
 
 	strcpy(absolute_module, module);
 
-	if (!(mod = (MOD) gds__alloc(sizeof(struct mod) +
-								 strlen(absolute_module)))) return NULL;
-	dirp = dirname(absolute_module);
-	if (('.' == dirp[0]) && ('\0' == dirp[1])) {
+	MOD mod = (MOD) gds__alloc(sizeof(struct mod) + strlen(absolute_module));
+
+	if (!mod)
+	{
+		return NULL;
+	}
+
+	char* dirp = dirname(absolute_module);
+
+	if (('.' == dirp[0]) && ('\0' == dirp[1]))
+	{
 		/*  We have a simple module name without a directory. */
 
 		gds__prefix(ib_lib_path, IB_UDF_DIR);
 		strncat(ib_lib_path, module, MAXPATHLEN - strlen(ib_lib_path) - 1);
-		if (!access(ib_lib_path, R_OK)) {
+		if (!access(ib_lib_path, R_OK))
+		{
 			/* Module is in the standard UDF directory: load it. */
-			if (!(mod->mod_handle = dlopen(ib_lib_path, RTLD_LAZY))) {
+			if (!(mod->mod_handle = dlopen(ib_lib_path, RTLD_LAZY)))
+			{
 				gds__free(mod);
 				return NULL;
 			}
 		}
-		else {
+		else
+		{
 			gds__prefix(ib_lib_path, IB_INTL_DIR);
 			strncat(ib_lib_path, module,
 					MAXPATHLEN - strlen(ib_lib_path) - 1);
-			if (!access(ib_lib_path, R_OK)) {
+			if (!access(ib_lib_path, R_OK))
+			{
 				/* Module is in the default directory: load it. */
-				if (!(mod->mod_handle = dlopen(ib_lib_path, RTLD_LAZY))) {
+				mod->mod_handle = dlopen(ib_lib_path, RTLD_LAZY);
+				if (!mod->mod_handle)
+				{
 					gds__free(mod);
 					return NULL;
 				}
 			}
-			else {
+			else
+			{
 				/*  The module is not in the default directory, so ...
 				 *  use the EXTERNAL_FUNCTION_DIRECTORY lines from isc_config.
 				 */
 				dir_list = DLS_get_func_dirs();
 				found_module = FALSE;
-				while (dir_list && !found_module) {
+				while (dir_list && !found_module)
+				{
 					strcpy(ib_lib_path, dir_list->fdls_directory);
 					strcat(ib_lib_path, "/");
 					strncat(ib_lib_path, module,
 							MAXPATHLEN - strlen(ib_lib_path) - 1);
-					if (!access(ib_lib_path, R_OK)) {
-						if (!(mod->mod_handle = dlopen(ib_lib_path,
-													   RTLD_LAZY))) {
+					if (!access(ib_lib_path, R_OK))
+					{
+						mod->mod_handle = dlopen(ib_lib_path, RTLD_LAZY);
+						if (!mod->mod_handle)
+						{
 							gds__free(mod);
 							return NULL;
 						}
@@ -738,14 +825,16 @@ static MOD search_for_module(TEXT * module, TEXT * name)
 					}
 					dir_list = dir_list->fdls_next;
 				}
-				if (!found_module) {
+				if (!found_module)
+				{
 					gds__free(mod);
 					return NULL;
 				}
 			}					/* else module is not in the INTL directory */
 		}						/* else module is not in the default directory, so ... */
 	}							/* if *dirp is "." */
-	else {
+	else
+	{
 		/*  The module name includes a directory path.
 		 *  The directory must be the standard UDF directory, or the
 		 *  standard international directory, or listed in
@@ -754,27 +843,34 @@ static MOD search_for_module(TEXT * module, TEXT * name)
 		 */
 		gds__prefix(ib_lib_path, IB_UDF_DIR);
 		ib_lib_path[strlen(ib_lib_path) - 1] = '\0';	/* drop trailing "/" */
+
 		found_module = !strcmp(ib_lib_path, dirp);
-		if (!found_module) {
+		if (!found_module)
+		{
 			gds__prefix(ib_lib_path, IB_INTL_DIR);
 			ib_lib_path[strlen(ib_lib_path) - 1] = '\0';	/* drop trailing / */
 			found_module = !strcmp(ib_lib_path, dirp);
 		}
-		if (!found_module) {
+		if (!found_module)
+		{
 			/* It's not the default directory, so try the ones listed
 			 * in EXTERNAL_FUNCTION_DIRECTORY lines in isc_config.
 			 */
 			dir_list = DLS_get_func_dirs();
-			while (dir_list && !found_module) {
+			while (dir_list && !found_module)
+			{
 				if (!strcmp(dir_list->fdls_directory, dirp))
 					found_module = TRUE;
 				dir_list = dir_list->fdls_next;
 			}
 		}
 		if (found_module)
+		{
 			found_module = (!access(module, R_OK)) &&
 				(0 != (mod->mod_handle = dlopen(module, RTLD_LAZY)));
-		if (!found_module) {
+		}
+		if (!found_module)
+		{
 			gds__free(mod);
 			return NULL;
 		}
@@ -786,8 +882,9 @@ static MOD search_for_module(TEXT * module, TEXT * name)
 
 #ifdef DGUX
 #define LOOKUP
-FPTR_INT ISC_lookup_entrypoint(TEXT * module,
-							   TEXT * name, TEXT * ib_path_env_var)
+FPTR_INT ISC_lookup_entrypoint(TEXT* module,
+							   TEXT* name,
+							   TEXT* ib_path_env_var)
 {
 /**************************************
  *
@@ -811,29 +908,36 @@ FPTR_INT ISC_lookup_entrypoint(TEXT * module,
 #ifdef NON_DL_COMPATIBLE
 	return NULL;
 #else
-	for (p = module; *p && *p != ' '; p++);
-	if (*p)
-		*p = 0;
-	for (p = name; *p && *p != ' '; p++);
-	if (*p)
-		*p = 0;
+	terminate_at_space(module);
+	terminate_at_space(name);
 
 	if (!*module || stat(module, &stdbuf))
+	{
 		return NULL;
+	}
 
 	if (ib_path_env_var == NULL)
+	{
 		strcpy(absolute_module, module);
+	}
 	else
-		if (!gds__validate_lib_path
-			(module, ib_path_env_var, absolute_module,
-			 sizeof(absolute_module))) return NULL;
+	{
+		if (!gds__validate_lib_path(module,
+									ib_path_env_var,
+									absolute_module,
+									sizeof(absolute_module)))
+		{
+			return NULL;
+		}
+	}
 
 	REPLACE THIS COMPILER ERROR WITH CODE TO VERIFY THAT THE MODULE IS FOUND
 		EITHER IN $INTERBASE / UDF, OR $INTERBASE / intl,
 		OR IN ONE OF THE DIRECTORIES NAMED IN EXTERNAL_FUNCTION_DIRECTORY
 		LINES IN
-		ISC_CONFIG.if (!(handle = dlopen(absolute_module, RTLD_LAZY))) return
-			NULL;
+		ISC_CONFIG.
+	if (!(handle = dlopen(absolute_module, RTLD_LAZY)))
+		return NULL;
 
 	return dlsym(handle, name);
 #endif
@@ -843,8 +947,9 @@ FPTR_INT ISC_lookup_entrypoint(TEXT * module,
 
 #ifdef WIN_NT
 #define LOOKUP
-FPTR_INT ISC_lookup_entrypoint(TEXT * module,
-							   TEXT * name, TEXT * ib_path_env_var)
+FPTR_INT ISC_lookup_entrypoint(TEXT* module,
+							   TEXT* name,
+							   TEXT* ib_path_env_var)
 {
 /**************************************
  *
@@ -861,46 +966,59 @@ FPTR_INT ISC_lookup_entrypoint(TEXT * module,
  **************************************/
 	FPTR_INT function;
 	TEXT *p;
-	MOD mod;
-	TEXT absolute_module[MAXPATHLEN];	/* for _access()     */
 
-	if (function = FUNCTIONS_entrypoint(module, name))
+	function = FUNCTIONS_entrypoint(module, name);
+	if (function)
+	{
 		return function;
+	}
 
-	for (p = name; *p && *p != ' '; p++);
-	if (*p)
-		*p = 0;
+	terminate_at_space(name);
 
-	/* Check if external function module has already been loaded */
+	// Check if external function module has already been loaded
+	MOD mod = FLU_lookup_module(module);
 
-	if (!(mod = FLU_lookup_module(module))) {
-		USHORT length;
+	if (!mod)
+	{
+		TEXT absolute_module[MAXPATHLEN];	// for _access()
 
 #ifdef EXT_LIB_PATH
 		if (ib_path_env_var == NULL)
+		{
 			strcpy(absolute_module, module);
+		}
 		else
-			if (!gds__validate_lib_path
-				(module, ib_path_env_var, absolute_module,
-				 sizeof(absolute_module))) return NULL;
+		{
+			if (!gds__validate_lib_path(module,
+										ib_path_env_var,
+										absolute_module,
+										sizeof(absolute_module)))
+			{
+				return NULL;
+			}
+		}
 #else
 		strcpy(absolute_module, module);
 #endif /* EXT_LIB_PATH */
 
-		length = strlen(absolute_module);
+		const USHORT length = strlen(absolute_module);
 
 		/* call search_for_module with the supplied name, and if unsuccessful,
 		   then with <name>.DLL (if the name did not have a trailing "."). */
 		mod = search_for_module(absolute_module, name);
-		if (!mod) {
+		if (!mod)
+		{
 			if ((absolute_module[length - 1] != '.') &&
-				stricmp(absolute_module + length - 4, ".DLL")) {
+				stricmp(absolute_module + length - 4, ".DLL"))
+			{
 				strcat(absolute_module, ".DLL");
 				mod = search_for_module(absolute_module, name);
 			}
 		}
 		if (!mod)
+		{
 			return NULL;
+		}
 
 		assert(mod->mod_handle);	/* assert that we found the module */
 		mod->mod_use_count = 0;
@@ -912,15 +1030,16 @@ FPTR_INT ISC_lookup_entrypoint(TEXT * module,
 
 	++mod->mod_use_count;
 
-	/* The Borland compiler prefixes an '_' for functions compiled
-	   with the __cdecl calling convention. */
+	// The Borland compiler prefixes an '_' for functions compiled
+	// with the __cdecl calling convention.
+	// TMN: Doesn't all_ ompilers do that?
 
-	if (!(function = (FPTR_INT) GetProcAddress(mod->mod_handle, name))) {
+	function = (FPTR_INT) GetProcAddress(mod->mod_handle, name);
+	if (!function)
+	{
 		TEXT buffer[128];
-
-		p = buffer;
-		*p++ = '_';
-		while (*p++ = *name++);
+		buffer[0] = '_';
+		strcpy(&buffer[1], name);
 		function = (FPTR_INT) GetProcAddress(mod->mod_handle, buffer);
 	}
 
@@ -928,7 +1047,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT * module,
 }
 
 
-static MOD search_for_module(TEXT * module, TEXT * name)
+static MOD search_for_module(TEXT* module, TEXT* name)
 {
 /**************************************
  *
@@ -942,8 +1061,8 @@ static MOD search_for_module(TEXT * module, TEXT * name)
  *      _access() and LoadLibrary() w.r.t. implicit .DLL suffix.
  *
  **************************************/
-	MOD mod;
-/*  We need different versions of the file name to pass to _access()
+
+ /*  We need different versions of the file name to pass to _access()
  *  and to LoadLibrary(), because LoadLibrary() implicitly appends
  *  .DLL to the supplied name and access does not.  We need to control
  *  exactly what name is being used by each routine.
@@ -954,57 +1073,73 @@ static MOD search_for_module(TEXT * module, TEXT * name)
 	TEXT drive_buf[_MAX_DRIVE];
 	TEXT dir_buf[_MAX_DIR];
 	FDLS *dir_list;
-	USHORT length;
 	BOOLEAN found_module;
 
-	length = strlen(module);
+	const USHORT length = strlen(module);
 
-	if (!(mod = (MOD) gds__alloc(sizeof(struct mod) + length)))
+	MOD mod = (MOD) gds__alloc(sizeof(struct mod) + length);
+
+	if (!mod)
+	{
 		return NULL;
+	}
 
 	/* Set absolute_module to the drive and directory prefix part of
 	   module, like dirname() under Unix. */
-	_splitpath(module, drive_buf, dir_buf, (char *) 0, (char *) 0);
+	_splitpath(module, drive_buf, dir_buf, 0, 0);
 	strcpy(absolute_module, drive_buf);
 	strcat(absolute_module, dir_buf);
 
-	if (0 == absolute_module[0]) {
+	if (0 == absolute_module[0])
+	{
 		/*  We have a simple module name without a directory. */
 
 		gds__prefix(ib_lib_path, IB_UDF_DIR);
 		strncat(ib_lib_path, module, MAXPATHLEN - strlen(ib_lib_path) - 1);
 		adjust_loadlib_name(ib_lib_path, loadlib_name);
-		if (!_access(ib_lib_path, 4 /* read permission */ )) {
+		if (!_access(ib_lib_path, 4 /* read permission */ ))
+		{
 			/* Module is in the default UDF directory: load it. */
-			if (!(mod->mod_handle = LoadLibrary(loadlib_name))) {
+			mod->mod_handle = LoadLibrary(loadlib_name);
+			if (!mod->mod_handle)
+			{
 				gds__free(mod);
 				return NULL;
 			}
 		}
-		else {
+		else
+		{
 			gds__prefix(ib_lib_path, IB_INTL_DIR);
 			strncat(ib_lib_path, module,
 					MAXPATHLEN - strlen(ib_lib_path) - 1);
-			if (!_access(ib_lib_path, 4 /* read permission */ )) {
+			if (!_access(ib_lib_path, 4 /* read permission */ ))
+			{
 				/* Module is in the default international library: load it */
-				if (!(mod->mod_handle = LoadLibrary(ib_lib_path))) {
+				mod->mod_handle = LoadLibrary(ib_lib_path);
+				if (!mod->mod_handle)
+				{
 					gds__free(mod);
 					return NULL;
 				}
 			}
-			else {
+			else
+			{
 				/*  The module is not in the default directory, so ...
 				 *  use the EXTERNAL_FUNCTION_DIRECTORY lines from isc_config.
 				 */
 				dir_list = DLS_get_func_dirs();
 				found_module = FALSE;
-				while (dir_list && !found_module) {
+				while (dir_list && !found_module)
+				{
 					strcpy(ib_lib_path, dir_list->fdls_directory);
 					strcat(ib_lib_path, "\\");
 					strncat(ib_lib_path, module,
 							MAXPATHLEN - strlen(ib_lib_path) - 1);
-					if (!_access(ib_lib_path, 4 /* read permission */ )) {
-						if (!(mod->mod_handle = LoadLibrary(ib_lib_path))) {
+					if (!_access(ib_lib_path, 4 /* read permission */ ))
+					{
+						mod->mod_handle = LoadLibrary(ib_lib_path);
+						if (!mod->mod_handle)
+						{
 							gds__free(mod);
 							return NULL;
 						}
@@ -1012,14 +1147,16 @@ static MOD search_for_module(TEXT * module, TEXT * name)
 					}
 					dir_list = dir_list->fdls_next;
 				}
-				if (!found_module) {
+				if (!found_module)
+				{
 					gds__free(mod);
 					return NULL;
 				}
 			}					/* else module is not in the INTL directory */
 		}						/* else module is not in the default UDF directory, so ... */
 	}							/* if path part of name is empty */
-	else {
+	else
+	{
 		/*  The module name includes a directory path.
 		 *  The directory must be either $INTERBASE/UDF, or $INTERBASE/intl
 		 *  or listed in an EXTERNAL_FUNCTION_DIRECTORY line in isc_config,
@@ -1027,25 +1164,32 @@ static MOD search_for_module(TEXT * module, TEXT * name)
 		 */
 		gds__prefix(ib_lib_path, IB_UDF_DIR);
 		found_module = !stricmp(ib_lib_path, absolute_module);
-		if (!found_module) {
+		if (!found_module)
+		{
 			gds__prefix(ib_lib_path, IB_INTL_DIR);
 			found_module = !stricmp(ib_lib_path, absolute_module);
 		}
-		if (!found_module) {
+		if (!found_module)
+		{
 			/* It's not the default directory, so try the ones listed
 			 * in EXTERNAL_FUNCTION_DIRECTORY lines in isc_config.
 			 */
 			dir_list = DLS_get_func_dirs();
-			while (dir_list && !found_module) {
+			while (dir_list && !found_module)
+			{
 				if (!stricmp(dir_list->fdls_directory, absolute_module))
 					found_module = TRUE;
 				dir_list = dir_list->fdls_next;
 			}
 		}
 		if (found_module)
-			found_module = (!_access(module, 4 /* read ok? */ )) &&
+		{
+			found_module =
+				(!_access(module, 4 /* read ok? */ )) &&
 				(0 != (mod->mod_handle = LoadLibrary(module)));
-		if (!found_module) {
+		}
+		if (!found_module)
+		{
 			gds__free(mod);
 			return NULL;
 		}
@@ -1069,9 +1213,7 @@ static void adjust_loadlib_name(TEXT * access_path, TEXT * load_path)
  *
  **************************************/
 
-	USHORT length;
-
-	length = strlen(access_path);
+	const USHORT length = strlen(access_path);
 	strcpy(load_path, access_path);
 
 	/*  Adjust the names to be passed to _access() and LoadLibrary(),
@@ -1083,11 +1225,14 @@ static void adjust_loadlib_name(TEXT * access_path, TEXT * load_path)
 	 *  foo       foo             foo.               foo
 	 *  foo.dll   foo.dll         foo.dll            foo.dll
 	 */
-	if (stricmp(access_path + length - 4, ".dll")) {
-		if ('.' == access_path[length - 1]) {
+	if (stricmp(access_path + length - 4, ".dll"))
+	{
+		if ('.' == access_path[length - 1])
+		{
 			access_path[length - 1] = '\0';
 		}
-		else {
+		else
+		{
 			load_path[length] = '.';
 			load_path[length + 1] = '\0';
 		}
@@ -1097,8 +1242,9 @@ static void adjust_loadlib_name(TEXT * access_path, TEXT * load_path)
 
 
 #ifndef LOOKUP
-FPTR_INT ISC_lookup_entrypoint(TEXT * module,
-							   TEXT * name, TEXT * ib_path_env_var)
+FPTR_INT ISC_lookup_entrypoint(TEXT* module,
+							   TEXT* name,
+							   TEXT* ib_path_env_var)
 {
 /**************************************
  *
@@ -1110,12 +1256,9 @@ FPTR_INT ISC_lookup_entrypoint(TEXT * module,
  *	Lookup entrypoint of function.
  *
  **************************************/
-	FPTR_INT function;
 
-	if (function = FUNCTIONS_entrypoint(module, name))
-		return function;
-
-	return NULL;
+	FPTR_INT function = FUNCTIONS_entrypoint(module, name);
+	return function;
 }
 #endif
 

@@ -1887,7 +1887,7 @@ static UCHAR *get_buffer( IPS comm, USHORT length, USHORT n)
 		if (comm->ips_buffers[n].ips_sv_buffer)
 			gds__sys_free(comm->ips_buffers[n].ips_sv_buffer);
 		comm->ips_buffers[n].ips_sv_alloced = length;
-		comm->ips_buffers[n].ips_sv_buffer = gds__sys_alloc((SLONG) length);
+		comm->ips_buffers[n].ips_sv_buffer = (UCHAR*)gds__sys_alloc((SLONG) length);
 	}
 
 	/* Make sure that the buffer returned is empty */
@@ -2021,7 +2021,7 @@ static void get_slice( ICC icc)
 	slice_length = ips_data->ips_cl_size;
 	if (slice_length)
 	{
-		slice = gds__sys_alloc(slice_length);
+		slice = (UCHAR*)gds__sys_alloc(slice_length);
 		NOT_NULL(slice, TRUE);
 		memset(slice, 0, slice_length);
 	}
@@ -2699,7 +2699,7 @@ static void put_slice( ICC icc)
 	slice_length = ips_data->ips_cl_size;
 	if (slice_length)
 	{
-		slice = gds__sys_alloc(slice_length);
+		slice = (UCHAR*)gds__sys_alloc(slice_length);
 		NOT_NULL(slice, TRUE);
 		memset(slice, 0, slice_length);
 	}

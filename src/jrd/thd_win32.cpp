@@ -372,11 +372,14 @@ int THD_rec_mutex_init(REC_MUTX_T * rec_mutex)
 //
 int THD_rec_mutex_lock(REC_MUTX_T * rec_mutex)
 {
-	if (rec_mutex->rec_mutx_id == THD_get_thread_id()) {
+	if (rec_mutex->rec_mutx_id == THD_get_thread_id())
+	{
 		rec_mutex->rec_mutx_count++;
-	} else {
-		int ret = THD_mutex_lock(rec_mutex->rec_mutx_mtx);
-		if (ret) {
+	} else
+	{
+		const int ret = THD_mutex_lock(rec_mutex->rec_mutx_mtx);
+		if (ret)
+		{
 			return ret;
 		}
 		rec_mutex->rec_mutx_id = THD_get_thread_id();

@@ -244,9 +244,10 @@ UCHAR *DLL_EXPORT SDL_prepare_slice(UCHAR * sdl, USHORT sdl_length)
  *	blr_d_float to blr_double.
  *
  **************************************/
-	UCHAR *new_sdl, *old_sdl;
-	DSC junk;
-	USHORT n;
+	UCHAR*	new_sdl;
+	UCHAR*	old_sdl;
+	DSC		junk;
+	USHORT	n;
 
 	new_sdl = old_sdl = sdl;
 
@@ -254,14 +255,20 @@ UCHAR *DLL_EXPORT SDL_prepare_slice(UCHAR * sdl, USHORT sdl_length)
 		return old_sdl;
 
 	while ((SCHAR) * sdl != gds_sdl_eoc)
-		switch (*sdl++) {
+	{
+		switch (*sdl++)
+		{
 		case gds_sdl_struct:
-			for (n = *sdl++; n; --n) {
-				if (*sdl == blr_d_float) {
-					if (new_sdl == old_sdl) {
-						new_sdl = gds__alloc((SLONG) sdl_length);
+			for (n = *sdl++; n; --n)
+			{
+				if (*sdl == blr_d_float)
+				{
+					if (new_sdl == old_sdl)
+					{
+						new_sdl = (UCHAR*)gds__alloc((SLONG) sdl_length);
 						/* FREE: apparently never freed */
-						if (!new_sdl) {	/* NOMEM: ignore operation */
+						if (!new_sdl)
+						{	/* NOMEM: ignore operation */
 							assert(FALSE);	/* no real error handling */
 							return old_sdl;
 						}
@@ -290,6 +297,7 @@ UCHAR *DLL_EXPORT SDL_prepare_slice(UCHAR * sdl, USHORT sdl_length)
 		default:
 			return new_sdl;
 		}
+	}
 
 	return new_sdl;
 }

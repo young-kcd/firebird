@@ -52,15 +52,15 @@ UCHAR *MISC_alloc_burp(ULONG size)
  *  This could be optimized.
  *
  **************************************/
-	UCHAR *block;
-	TGBL tdgbl;
 
-	tdgbl = GET_THREAD_DATA;
+	TGBL tdgbl = GET_THREAD_DATA;
 
 /* Add some header space to store a list of blocks allocated for this gbak */
 	size += ROUNDUP(sizeof(UCHAR *), ALIGNMENT);
 
-	if (!(block = gds__alloc(size)))
+	UCHAR* block = (UCHAR*)gds__alloc(size);
+
+	if (!block)
 		/* NOMEM: message & abort FREE: all items freed at gbak exit */
 	{
 		BURP_error(238, NULL, NULL, NULL, NULL, NULL);	/* msg 238: System memory exhaused */

@@ -207,7 +207,6 @@ int EXT_get(RSB rsb)
 	FLD field, *field_ptr;
 	SSHORT c, l, offset, i;
 	UCHAR *p;
-	SLONG currec;
 
 	tdbb = GET_THREAD_DATA;
 

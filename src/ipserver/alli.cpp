@@ -26,53 +26,38 @@
 #include "../ipserver/ipc.h"
 
 #define BLKDEF(type, root, tail) sizeof (struct root), tail,
-static struct {
+static struct
+{
 	SSHORT typ_root_length;
 	SSHORT typ_tail_length;
 } PIPE_block_sizes[] = {
 	0, 0,
+
 #include "../ipserver/blk.h"
-0};
+	0
+};
 
 #include "../jrd/gds_proto.h"
 #include "../ipserver/alli_proto.h"
 
 
-
-UCHAR *ALLI_alloc(ULONG size)
+//____________________________________________________________
+//
+// Allocate a block.
+//
+void* ALLI_alloc(ULONG size)
 {
-/**************************************
- *
- *	A L L I _ a l l o c
- *
- **************************************
- *
- * Functional description
- *	Allocate a block.
- *
- **************************************/
-
 	return gds__alloc(size);
 }
 
 
+//____________________________________________________________
+//
+// Allocate a block from a given pool and initialize the block.
+// This is the primary block allocation routine.
+//
 BLK ALLI_block(UCHAR type, int count)
 {
-/**************************************
- *
- *	A L L I _ b l o c k
- *
- **************************************
- *
- * Functional description
- *	Allocate a block from a given pool and initialize the block.
- *	This is the primary block allocation routine.
- *
- **************************************/
-	register BLK block;
-	register USHORT size;
-	USHORT tail;
-
 /*
 
 if (type <= (SCHAR) type_MIN || type >= (SCHAR) type_MAX)
@@ -82,53 +67,42 @@ if (type <= (SCHAR) type_MIN || type >= (SCHAR) type_MAX)
 
 /* Compute block length */
 
-	size = PIPE_block_sizes[type].typ_root_length;
+	const USHORT tail = PIPE_block_sizes[type].typ_tail_length;
+	USHORT size = PIPE_block_sizes[type].typ_root_length + count * tail;
 
-	if (tail = PIPE_block_sizes[type].typ_tail_length)
-		size += count * tail;
+	BLK block = (BLK) ALLI_alloc((SLONG) size);
 
-	block = (BLK) ALLI_alloc((SLONG) size);
-	if (!block)
-		return block;
-	block->blk_type = type;
-	block->blk_length = size;
+	if (block)
+	{
+		block->blk_type = type;
+		block->blk_length = size;
 
-	if (size -= sizeof(struct blk))
-		memset((SCHAR *) block + sizeof(struct blk), 0, size);
+		size -= sizeof(struct blk);
+		if (size)
+		{
+			memset((SCHAR *) block + sizeof(struct blk), 0, size);
+		}
+	}
 
 	return block;
 }
 
 
-void ALLI_free( UCHAR * block)
+//____________________________________________________________
+//
+// Free a block.
+//
+void ALLI_free(void* block)
 {
-/**************************************
- *
- *	A L L I _ f r e e
- *
- **************************************
- *
- * Functional description
- *	Free a block.
- *
- **************************************/
-
-	gds__free((ULONG *) block);
+	gds__free(block);
 }
 
 
-void ALLI_release( BLK block)
+//____________________________________________________________
+//
+// Release a structured block.
+//
+void ALLI_release(BLK block)
 {
-/**************************************
- *
- *	A L L I _ r e l e a s e
- *
- **************************************
- *
- * Functional description
- *	Release a structured block.
- *
- **************************************/
-
-	ALLI_free((UCHAR *) block);
+	ALLI_free(block);
 }

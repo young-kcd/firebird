@@ -16,7 +16,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-NULL, NULL,
+	NULL, NULL,
 	"assignment", two,
 	"begin", begin,
 	"declare", declare,

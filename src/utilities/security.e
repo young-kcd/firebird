@@ -107,7 +107,6 @@ SSHORT SECURITY_exec_line(STATUS * isc_status,
  **************************************/
 	SCHAR encrypted1[MAX_PASSWORD_LENGTH + 2];
 	SCHAR encrypted2[MAX_PASSWORD_LENGTH + 2];
-	TEXT buff[MSG_LENGTH];
 	STATUS tmp_status[20];
 	void *gds__trans;
 	BOOLEAN found;
@@ -283,7 +282,7 @@ SSHORT SECURITY_exec_line(STATUS * isc_status,
 				strcpy(user_data->first_name, U.FIRST_NAME);
 				strcpy(user_data->middle_name, U.MIDDLE_NAME);
 				strcpy(user_data->last_name, U.LAST_NAME);
-				display_func(callback_arg, user_data, !found);
+				display_func(callback_arg, user_data, (BOOLEAN)!found);
 
 				found = TRUE;
 			END_FOR
@@ -302,7 +301,7 @@ SSHORT SECURITY_exec_line(STATUS * isc_status,
 				strcpy(user_data->first_name, U.FIRST_NAME);
 				strcpy(user_data->middle_name, U.MIDDLE_NAME);
 				strcpy(user_data->last_name, U.LAST_NAME);
-				display_func(callback_arg, user_data, !found);
+				display_func(callback_arg, user_data, (BOOLEAN)!found);
 
 				found = TRUE;
 			END_FOR
