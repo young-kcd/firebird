@@ -1099,7 +1099,7 @@ void MAKE_desc_from_list( DSC * desc, NOD node)
 	{
 		/* ignore NULL value from walking */
 		tnod = *arg;
-		if (tnod->nod_type == nod_null)
+		if (tnod->nod_type == nod_null || tnod->nod_type == nod_parameter)
 			continue;
 		MAKE_desc(&desc1, *arg);
 		if (firstarg)
@@ -1227,12 +1227,11 @@ void MAKE_desc_from_list( DSC * desc, NOD node)
 		}
 	}
 
-	/* If we haven't had a type at all then all values are NULL nodes */
+	/* If we haven't had a type at all then all values are NULL and/or parameter nodes */
 	if (firstarg) 
 	{
-		maxtextlength = desc1.dsc_length;
-		text_in_list = 1;
-		firstarg = 0;
+		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 804,
+				  gds_arg_gds, gds_dsql_datatype_err, 0);
 	}
 
 	desc->dsc_flags = DSC_nullable;

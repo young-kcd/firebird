@@ -33,7 +33,7 @@
  * 2001.10.08 Claudio Valderrama: put a comment with suggested code to hide
  *	special non-system triggers from user manipulation.
  * 2002-02-24 Sean Leyne - Code Cleanup of old Win 3.1 port (WINDOWS_ONLY)
- *
+ * 2002.08.10 Dmitry Yemanov: ALTER VIEW
  */
 
 #include "firebird.h"
@@ -1746,6 +1746,111 @@ void DYN_modify_trigger_msg( GBL gbl, UCHAR ** ptr, TEXT * trigger_name)
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(TRUE, 105, NULL, NULL, NULL, NULL, NULL);
 		/* msg 105: "MODIFY TRIGGER MESSAGE failed" */
+	}
+}
+
+
+void DYN_modify_view( GBL gbl, UCHAR ** ptr)
+{
+/**************************************
+ *
+ *	D Y N _ m o d i f y _ v i e w
+ *
+ **************************************
+ *
+ * Functional description
+ *	Execute a dynamic ddl statement.
+ *
+ **************************************/
+	TDBB tdbb;
+	DBB dbb;
+	BLK request;
+	UCHAR verb;
+	USHORT found;
+	TEXT view_name[32];
+
+	tdbb = GET_THREAD_DATA;
+	dbb = tdbb->tdbb_database;
+
+	view_name[0] = 0;
+	GET_STRING(ptr, view_name);
+
+	MET_exact_name(view_name);
+	if (!view_name[0])
+		DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+	/* msg 212: "Zero length identifiers not allowed" */
+
+	try {
+
+	request = (BLK) CMP_find_request(tdbb, drq_m_relation, DYN_REQUESTS);
+
+	found = FALSE;
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+		VRL IN RDB$VIEW_RELATIONS CROSS REL IN RDB$RELATIONS
+			WITH VRL.RDB$VIEW_NAME EQ REL.RDB$RELATION_NAME AND
+				VRL.RDB$VIEW_NAME EQ view_name
+
+        if (!DYN_REQUEST(drq_m_relation))
+			DYN_REQUEST(drq_m_relation) = request;
+
+		found = TRUE;
+		MODIFY REL
+			REL.RDB$SYSTEM_FLAG.NULL = TRUE;
+			REL.RDB$VIEW_BLR.NULL = TRUE;
+			REL.RDB$VIEW_SOURCE.NULL = TRUE;
+			REL.RDB$SECURITY_CLASS.NULL = TRUE;
+
+			while ((verb = *(*ptr)++) != gds_dyn_end)
+				switch (verb)
+				{
+				case gds_dyn_system_flag:
+					REL.RDB$SYSTEM_FLAG = DYN_get_number(ptr);
+					REL.RDB$SYSTEM_FLAG.NULL = FALSE;
+					break;
+
+				case gds_dyn_view_blr:
+					DYN_put_blr_blob(gbl, ptr, &REL.RDB$VIEW_BLR);
+					REL.RDB$VIEW_BLR.NULL = FALSE;
+					break;
+
+				case gds_dyn_view_source:
+					DYN_put_text_blob(gbl, ptr, &REL.RDB$VIEW_SOURCE);
+					REL.RDB$VIEW_SOURCE.NULL = FALSE;
+					break;
+
+#if (defined JPN_SJIS || defined JPN_EUC)
+				case gds_dyn_view_source2:
+					DYN_put_text_blob2(gbl, ptr, &REL.RDB$VIEW_SOURCE);
+					REL.RDB$VIEW_SOURCE.NULL = FALSE;
+					break;
+#endif
+
+				case gds_dyn_security_class:
+					GET_STRING(ptr, REL.RDB$SECURITY_CLASS);
+					REL.RDB$SECURITY_CLASS.NULL = FALSE;
+					break;
+
+				default:
+					--(*ptr);
+					DYN_execute(gbl, ptr, REL.RDB$RELATION_NAME, (TEXT*)NULL_PTR,
+								(TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
+				}
+		END_MODIFY;
+	END_FOR;
+
+	if (!DYN_REQUEST(drq_m_relation))
+		DYN_REQUEST(drq_m_relation) = request;
+
+	}
+	catch (...) {
+		DYN_rundown_request(request, -1);
+		DYN_error_punt(TRUE, 99, NULL, NULL, NULL, NULL, NULL);
+		/* msg 99: "MODIFY RDB$RELATIONS failed" */
+	}
+
+	if (!found) {
+		DYN_error_punt(FALSE, 61, NULL, NULL, NULL, NULL, NULL);
+		/* msg 61: "Relation not found" */
 	}
 }
 

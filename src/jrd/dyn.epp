@@ -31,6 +31,8 @@
  *			and complain if the grantee ROLE doesn't exist.
  *    2001.10.06 Claudio Valderrama: Forbid "NONE" from role-related operations.
  *				Honor explicit USER keyword in GRANTs and REVOKEs.
+ *
+ *    2002.08.10 Dmitry Yemanov: ALTER VIEW
  */
 
 #include "firebird.h"
@@ -407,6 +409,10 @@ TEXT * function_name, TEXT * procedure_name)
 
 		case gds_dyn_mod_rel:
 			DYN_modify_relation(gbl, ptr);
+			break;
+
+		case gds_dyn_mod_view:
+			DYN_modify_view(gbl, ptr);
 			break;
 
 		case gds_dyn_delete_rel:

@@ -239,8 +239,7 @@
 #define SKIP 495
 #define CONNECTION_ID 496
 #define TRANSACTION_ID 497
-#define LARGEINT 498
-#define KW_INT64 499
-#define CASE 500
-#define NULLIF 501
-#define COALESCE 502
+#define BIGINT 498
+#define CASE 499
+#define NULLIF 500
+#define COALESCE 501

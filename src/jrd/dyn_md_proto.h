@@ -34,6 +34,7 @@ extern void DYN_modify_relation(GBL, UCHAR **);
 extern void DYN_modify_trigger(GBL, UCHAR **);
 extern void DYN_modify_trigger_msg(GBL, UCHAR **, TEXT *);
 extern void DYN_modify_sql_field(GBL, UCHAR**, TEXT*, TEXT*);
+extern void DYN_modify_view(GBL, UCHAR **);
 
 
 #endif /* _JRD_DYN_MD_PROTO_H_ */

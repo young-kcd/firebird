@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.10 2002-07-02 12:17:44 dimitr Exp $
+ * $Id: ddl.cpp,v 1.11 2002-08-11 08:04:52 dimitr Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -59,8 +59,8 @@
  * 2001.10.26 Claudio Valderrama: added a call to the new METD_drop_function()
  *   in DDL_execute() so the metadata cache for udfs can be refreshed.
  * 2001.12.06 Claudio Valderrama: DDL_resolve_intl_type should calculate field length
- *
- *
+ * 2002.08.04 Claudio Valderrama: allow declaring and defining variables at the same time
+ * 2002.08.04 Dmitry Yemanov: ALTER VIEW
  */
 
 #include "firebird.h"
@@ -125,7 +125,7 @@ static void define_trigger(REQ, NOD);
 static void define_udf(REQ);
 static void define_update_action(REQ, NOD *, NOD *);
 static void define_upd_cascade_trg(REQ, NOD, NOD, NOD, TEXT *, TEXT *);
-static void define_view(REQ);
+static void define_view(REQ, NOD_TYPE);
 static void define_view_trigger(REQ, NOD, NOD, NOD);
 static void delete_procedure(REQ, NOD, BOOLEAN);
 static void delete_relation_view(REQ, NOD, BOOLEAN);
@@ -139,13 +139,13 @@ static void modify_domain(REQ);
 static void modify_field(REQ, NOD, SSHORT, STR);
 static void modify_index(REQ);
 static void modify_privilege(REQ, NOD_TYPE, SSHORT, UCHAR *, NOD, NOD, STR);
-static void process_role_nm_list(REQ, SSHORT, NOD, NOD, NOD_TYPE);
 static SCHAR modify_privileges(REQ, NOD_TYPE, SSHORT, NOD, NOD, NOD);
 static void modify_relation(REQ);
+static void process_role_nm_list(REQ, SSHORT, NOD, NOD, NOD_TYPE);
 static void put_descriptor(REQ, DSC *);
 static void put_dtype(REQ, FLD, USHORT);
 static void put_field(REQ, FLD, BOOLEAN);
-static void put_local_variable(REQ, VAR);
+static void put_local_variable(REQ, VAR, NOD);
 static SSHORT put_local_variables(REQ, NOD, SSHORT);
 static void put_msg_field(REQ, FLD);
 static NOD replace_field_names(NOD, NOD, NOD, SSHORT);
@@ -450,7 +450,6 @@ void DDL_resolve_intl_type2(REQ request,
  **************************************/
 
 	INTLSYM resolved_type;
-	ULONG field_length;
 
 	if ((field->fld_dtype > dtype_any_text) && field->fld_dtype != dtype_blob)
 	{
@@ -2324,6 +2323,7 @@ static void define_procedure( REQ request, NOD_TYPE op)
 			request->append_cstring(gds_dyn_def_parameter, field->fld_name);
 			request->append_number(gds_dyn_prm_number, position);
 			request->append_number(gds_dyn_prm_type, 0);
+
 			DDL_resolve_intl_type(request, field, NULL);
 			put_field(request, field, FALSE);
 
@@ -2432,7 +2432,7 @@ static void define_procedure( REQ request, NOD_TYPE op)
 		{
 			parameter = *ptr;
 			variable = (VAR) parameter->nod_arg[e_var_variable];
-			put_local_variable(request, variable);
+			put_local_variable(request, variable, 0);
 		}
 	}
 
@@ -3267,7 +3267,7 @@ static void define_upd_cascade_trg(	REQ		request,
 }
 
 
-static void define_view( REQ request)
+static void define_view( REQ request, NOD_TYPE op)
 {
 /**************************************
  *
@@ -3294,10 +3294,39 @@ static void define_view( REQ request)
 
 	node = request->req_ddl_node;
 	view_name = (STR) node->nod_arg[e_view_name];
-	request->append_cstring(gds_dyn_def_view,
-				reinterpret_cast<char*>(view_name->str_data));
-	save_relation(request, view_name);
-	request->append_number(gds_dyn_rel_sql_protection, 1);
+
+	if (op == nod_def_view)
+	{
+		request->append_cstring(gds_dyn_def_view,
+					reinterpret_cast<char*>(view_name->str_data));
+		request->append_number(gds_dyn_rel_sql_protection, 1);
+		save_relation(request, view_name);
+	}
+	else // nod_mod_view
+	{
+		request->append_cstring(gds_dyn_mod_view,
+					reinterpret_cast<char*>(view_name->str_data));
+		relation = METD_get_relation(request, view_name);
+		if (relation)
+		{
+			for (field = relation->rel_fields; field;
+				 field = field->fld_next)
+			{
+				request->append_cstring(gds_dyn_delete_local_fld,
+							field->fld_name);
+				request->append_uchar(gds_dyn_end);
+			}
+		}
+		else
+		{
+			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -607,
+					  /* gds_arg_gds, gds__dsql_command_err,
+						 gds_arg_gds, gds__dsql_view_not_found, */
+					  gds_arg_gds, 336068783L,
+					  gds_arg_string, view_name->str_data,
+					  gds_arg_end);
+		}
+	}
 
 /* compile the SELECT statement into a record selection expression,
    making sure to bump the context number since view contexts start
@@ -3952,7 +3981,8 @@ static void generate_dyn( REQ request, NOD node)
         break;
 
 	case nod_def_view:
-		define_view(request);
+	case nod_mod_view:
+		define_view(request, node->nod_type);
 		break;
 
 	case nod_def_exception:
@@ -5265,7 +5295,7 @@ static void put_field( REQ request, FLD field, BOOLEAN udf_flag)
 }
 
 
-static void put_local_variable( REQ request, VAR variable)
+static void put_local_variable( REQ request, VAR variable, NOD host_param)
 {
 /**************************************
  *
@@ -5293,10 +5323,20 @@ static void put_local_variable( REQ request, VAR variable)
 	put_dtype(request, field, TRUE);
 	field->fld_dtype = dtype;
 
-	// Initialize variable to NULL
+	/* Check for a default value, borrowed from define_domain */
 
 	request->append_uchar(blr_assignment);
-	request->append_uchar(blr_null);
+	NOD node = (host_param) ? host_param->nod_arg[e_dfl_default] : 0;
+	if (node)
+	{
+		node = PASS1_node(request, node, 0);
+		GEN_expr(request, node);
+	}
+	else
+	{
+		// Initialize variable to NULL
+		request->append_uchar(blr_null);
+	}
 	request->append_uchar(blr_variable);
 	request->append_ushort(variable->var_variable_number);
 }
@@ -5339,7 +5379,7 @@ static SSHORT put_local_variables(REQ request, NOD parameters, SSHORT locals)
 							  locals);
 			*ptr = var_node;
 			VAR variable = (VAR) var_node->nod_arg[e_var_variable];
-			put_local_variable(request, variable);
+			put_local_variable(request, variable, parameter);
 			locals++;
 		}
 	}

@@ -43,8 +43,12 @@
  * 2002.07.30 	tokens CASE, NULLIF, COALESCE added
  * 2002.07.30 	See block < CASE expression > what is added to value as case_expression
  * 2002.07.30 	function is split up into aggregate_function, numeric_value_function, string_value_function, generate_value_function
- * 2002.07.30 	new group_by_function and added to grp_column_elem. (TODO: allow these functions in select_group_by_list inside the engine)
+ * 2002.07.30 	new group_by_function and added to grp_column_elem
  * 2002.07.30 	cast removed from function and added as cast_specification to value
+ * 2002.08.04 Claudio Valderrama: allow declaring and defining variables at the same time
+ * 2002.08.04 Dmitry Yemanov: ALTER VIEW
+ * 2002.08.06 Arno Brinkman: ordinal added to grp_column_elem for using positions in group by
+ * 2002.08.07 Dmitry Yemanov: INT64/LARGEINT are replaced with BIGINT and available in dialect 3 only
  */
 
 
@@ -395,8 +399,7 @@ static void	yyerror (TEXT *);
 
 %token CONNECTION_ID
 %token TRANSACTION_ID
-%token LARGEINT
-%token KW_INT64
+%token BIGINT
 %token CASE
 %token NULLIF
 %token COALESCE
@@ -1369,9 +1372,21 @@ var_declarations	: var_declaration
 			{ $$ = make_node (nod_list, 2, $1, $2); }
 		;
 
-var_declaration : DECLARE VARIABLE column_def_name non_array_type ';'
+var_declaration : DECLARE var_decl_opt column_def_name non_array_type var_init_opt ';'
 			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
-				$3, NULL, NULL, NULL, NULL, NULL, NULL); }   
+				$3, $5, NULL, NULL, NULL, NULL, NULL); }   
+		;
+
+var_decl_opt	: VARIABLE
+			{ $$ = NULL; }
+		|
+			{ $$ = NULL; }
+		;
+
+var_init_opt	: '=' default_value
+			{ $$ = $2; }
+		| default_opt
+			{ $$ = $1; }
 		;
 
 proc_block	: proc_statement
@@ -1555,6 +1570,12 @@ rview_clause	: symbol_view_name column_parens_opt AS begin_string union_view
 		;        
 */
 
+alter_view_clause	: symbol_view_name column_parens_opt AS begin_string union_view 
+                                                            end_string
+ 			{ $$ = make_node (nod_mod_view, (int) e_view_count, 
+ 					  $1, $2, $5, NULL, $6); }   
+ 		;        
+ 
 union_view      : union_view_expr
 			{ $$ = make_node (nod_select, (int) 2, $1, NULL); }
 		;
@@ -1716,6 +1737,8 @@ alter_clause	: EXCEPTION symbol_exception_name sql_string
 		| TABLE simple_table_name alter_ops
 			{ $$ = make_node (nod_mod_relation, (int) e_alt_count, 
 						$2, make_list ($3)); }
+ 		| VIEW alter_view_clause
+ 			{ $$ = $2; }
 		| TRIGGER alter_trigger_clause
 			{ $$ = $2; }
 		| PROCEDURE alter_procedure_clause
@@ -1999,8 +2022,20 @@ simple_type	: non_charset_simple_type
 non_charset_simple_type	: national_character_type
 		| numeric_type
 		| float_type
-		| largeint_keyword
+		| BIGINT
 			{ 
+			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
+			    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
+				    gds_arg_gds, isc_sql_dialect_datatype_unsupport,
+				    gds_arg_number, client_dialect,
+				    gds_arg_string, "BIGINT",
+				    0);
+			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
+			    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
+				    gds_arg_gds, isc_sql_db_dialect_dtype_unsupport,
+				    gds_arg_number, db_dialect,
+				    gds_arg_string, "BIGINT",
+				    0);
 			g_field->fld_dtype = dtype_int64; 
 			g_field->fld_length = sizeof (SINT64); 
 			}
@@ -2055,10 +2090,6 @@ non_charset_simple_type	: national_character_type
 			g_field->fld_dtype = dtype_timestamp; 
 			g_field->fld_length = sizeof (GDS_TIMESTAMP);
 			}
-		;
-
-largeint_keyword : LARGEINT
-		| KW_INT64
 		;
 
 integer_keyword	: INTEGER	
@@ -2736,6 +2767,7 @@ grp_column_list	: grp_column_elem
 		;
 
 grp_column_elem : column_name
+		| ordinal
 		| udf
 		| group_by_function
 		| column_name COLLATE symbol_collation_name

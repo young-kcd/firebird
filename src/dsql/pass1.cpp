@@ -86,6 +86,15 @@
  *
  * 2002.07.30 Arno Brinkman: Added pass1_coalesce, pass1_simple_case, pass1_searched_case
  *   and pass1_put_args_on_stack
+ *
+ * 2002.08.04 Arno Brinkman: Added ignore_cast as parameter to node_match,
+ *   Changed invalid_reference procedure for allow EXTRACT, SUBSTRING, CASE,
+ *   COALESCE and NULLIF functions in GROUP BY and as select_items.
+ *   Removed aggregate_in_list procedure.
+ *
+ * 2002.08.07 Dmitry Yemanov: Disabled BREAK statement in triggers
+ *
+ * 2002.08.10 Dmitry Yemanov: ALTER VIEW
  */
 
 #include "firebird.h"
@@ -117,7 +126,6 @@
 ASSERT_FILENAME					/* Define things assert() needs */
 static BOOLEAN aggregate_found(REQ, NOD, NOD *);
 static BOOLEAN aggregate_found2(REQ, NOD, NOD *, BOOLEAN *);
-static BOOLEAN	aggregate_in_list (NOD, BOOLEAN *, NOD);
 static NOD ambiguity_check (NOD, REQ, FLD, DLLS, DLLS);
 static void assign_fld_dtype_from_dsc(FLD, DSC *);
 static NOD compose(NOD, NOD, NOD_TYPE);
@@ -128,9 +136,9 @@ static NOD explode_outputs(REQ, PRC);
 static void field_error(TEXT *, TEXT *, NOD);
 static PAR find_dbkey(REQ, NOD);
 static PAR find_record_version(REQ, NOD);
-static BOOLEAN invalid_reference(NOD, NOD);
+static BOOLEAN invalid_reference(REQ, NOD, NOD, BOOLEAN);
 static void mark_ctx_outer_join(NOD);
-static BOOLEAN node_match(NOD, NOD);
+static BOOLEAN node_match(NOD, NOD, BOOLEAN);
 static NOD pass1_alias_list(REQ, NOD);
 static CTX pass1_alias(REQ, STR);
 static NOD pass1_any(REQ, NOD, NOD_TYPE);
@@ -925,6 +933,7 @@ NOD PASS1_statement(REQ request, NOD input, USHORT proc_flag)
 	case nod_def_constraint:
 	case nod_def_exception:
 	case nod_mod_relation:
+	case nod_mod_view:
 	case nod_mod_exception:
 	case nod_del_relation:
     case nod_del_view:
@@ -1239,6 +1248,9 @@ NOD PASS1_statement(REQ request, NOD input, USHORT proc_flag)
 		return input;
 
     case nod_breakleave:
+		if (request->req_flags & REQ_trigger)
+			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, gds_arg_gds, gds_token_err,	/* Token unknown */
+					  gds_arg_gds, gds_random, gds_arg_string, "BREAK", 0);
         input->nod_arg [e_break_number] = (NOD) (request->req_loop_number - 1);
         return input;
 
@@ -1478,93 +1490,6 @@ static BOOLEAN aggregate_found2(
 }
 
 
-static BOOLEAN aggregate_in_list (NOD sub, BOOLEAN *field, NOD list)
-{
-/**************************************
- *
- *	a g g r e g a t e _ i n _ l i s t
- *
- **************************************
- *
- * Functional description
- *	Check for an aggregate expression in a
- *	node or list/chain of nodes.
- *
- **************************************/
-    BOOLEAN	aggregate;
-    NOD	*ptr, *end;
-    
-    DEV_BLKCHK (sub, dsql_type_nod);
-
-    switch (sub->nod_type) {
-            
-            /* handle the simple case of a straightforward aggregate */
-
-    case nod_agg_average:
-    case nod_agg_average2:
-    case nod_agg_total2:
-    case nod_agg_max:
-    case nod_agg_min:
-    case nod_agg_total:
-    case nod_agg_count:
-    case nod_aggregate:
-    case nod_map:
-        return TRUE;
-        
-    case nod_field:
-        /* field is only ok if it also appears in group by */
-        *field = invalid_reference (sub, list);	
-        return FALSE;
-    case nod_constant:
-        return FALSE;
-        
-        /* for expressions in which an aggregate might
-           be buried, recursively check for one */
-        
-    case nod_add:
-    case nod_concatenate:
-    case nod_divide:
-    case nod_multiply:
-    case nod_negate:
-    case nod_substr:
-    case nod_subtract:
-    case nod_add2:
-    case nod_divide2:
-    case nod_multiply2:
-    case nod_subtract2:
-    case nod_upcase:
-    case nod_extract:
-    case nod_coalesce:
-	case nod_simple_case:
-	case nod_searched_case:
-    case nod_list:
-        aggregate = FALSE;
-        for (ptr = sub->nod_arg, end = ptr + sub->nod_count; ptr < end; ptr++)
-            {
-                DEV_BLKCHK (*ptr, dsql_type_nod);
-                aggregate |= aggregate_in_list (*ptr,field,list);
-            }
-            return aggregate;
-
-    case nod_cast:
-    case nod_udf:
-    case nod_gen_id:
-    case nod_gen_id2:
-        if (sub->nod_count == 2)
-            return (aggregate_in_list (sub->nod_arg[1],field,list));
-        else 
-            return FALSE;
-        
-    case nod_via:
-		/* Allow sub-selects - no validation in context of group by */
-		return TRUE;
-
-    default:
-        return FALSE;
-    }
-}
-
-
 static NOD ambiguity_check (NOD node, REQ request, FLD field, 
                             DLLS relations,DLLS procedures)
 {
@@ -1756,6 +1681,60 @@ static NOD copy_field( NOD field, CTX context)
 		temp->nod_arg[e_alias_alias] = (NOD) alias;
 		return temp;
 
+/*-- Added for allowing EXTRACT, SUBSTRING, CASE, ... functions in GROUP BY CLAUSE --*/
+
+	case nod_via:
+		return post_map(field, context);
+
+	case nod_rse:
+		temp = MAKE_node(field->nod_type, field->nod_count);
+		ptr2 = temp->nod_arg;
+		for (ptr = field->nod_arg, end = ptr + field->nod_count; ptr < end;
+			 ptr++)	*ptr2++ = *ptr;
+		return temp;
+
+	case nod_coalesce:
+	case nod_simple_case:
+	case nod_searched_case:
+		temp = MAKE_node(field->nod_type, field->nod_count);
+		temp->nod_desc = field->nod_desc;
+		ptr2 = temp->nod_arg;
+		for (ptr = field->nod_arg, end = ptr + field->nod_count; ptr < end;
+			 ptr++)
+			*ptr2++ = copy_field(*ptr, context);
+		return temp;
+
+	case nod_relation:
+	case nod_or:
+	case nod_and:
+	case nod_not:
+	case nod_eql:
+	case nod_neq:
+	case nod_gtr:
+	case nod_geq:
+	case nod_lss:
+	case nod_leq:
+	case nod_eql_any:
+	case nod_neq_any:
+	case nod_gtr_any:
+	case nod_geq_any:
+	case nod_lss_any:
+	case nod_leq_any:
+	case nod_eql_all:
+	case nod_neq_all:
+	case nod_gtr_all:
+	case nod_geq_all:
+	case nod_lss_all:
+	case nod_leq_all:
+	case nod_between:
+	case nod_like:
+	case nod_containing:
+	case nod_starting:
+	case nod_exists:
+	case nod_singular:
+	case nod_missing:
+/*--- ---*/
+
 	case nod_add:
 	case nod_add2:
 	case nod_concatenate:
@@ -1770,9 +1749,6 @@ static NOD copy_field( NOD field, CTX context)
 	case nod_upcase:
 	case nod_internal_info:
 	case nod_extract:
-	case nod_coalesce:
-	case nod_simple_case:
-	case nod_searched_case:
 	case nod_list:
 		temp = MAKE_node(field->nod_type, field->nod_count);
 		ptr2 = temp->nod_arg;
@@ -1857,15 +1833,15 @@ static void explode_asterisk( NOD node, NOD aggregate, DLLS * stack)
 				node = MAKE_field(context, field, 0);
 				if (aggregate) {
 					if (invalid_reference
-						(node,
+						(NULL, node,
 						 aggregate->
-						 nod_arg[e_agg_group])) ERRD_post(gds_sqlerr,
-														  gds_arg_number,
-														  (SLONG) - 104,
-														  gds_arg_gds,
-														  gds_field_ref_err,
-														  /* invalid field reference */
-														  0);
+						 nod_arg[e_agg_group], FALSE)) ERRD_post(gds_sqlerr,
+																 gds_arg_number,
+																 (SLONG) - 104,
+																 gds_arg_gds,
+																 gds_field_ref_err,
+																 /* invalid field reference */
+																 0);
 				}
 				LLS_PUSH(MAKE_field(context, field, 0), stack);
 			}
@@ -1875,15 +1851,15 @@ static void explode_asterisk( NOD node, NOD aggregate, DLLS * stack)
 				node = MAKE_field(context, field, 0);
 				if (aggregate) {
 					if (invalid_reference
-						(node,
+						(NULL, node,
 						 aggregate->
-						 nod_arg[e_agg_group])) ERRD_post(gds_sqlerr,
-														  gds_arg_number,
-														  (SLONG) - 104,
-														  gds_arg_gds,
-														  gds_field_ref_err,
-														  /* invalid field reference */
-														  0);
+						 nod_arg[e_agg_group], FALSE)) ERRD_post(gds_sqlerr,
+																 gds_arg_number,
+																 (SLONG) - 104,
+																 gds_arg_gds,
+																 gds_field_ref_err,
+																 /* invalid field reference */
+																 0);
 				}
 				LLS_PUSH(MAKE_field(context, field, 0), stack);
 			}
@@ -2064,7 +2040,7 @@ static PAR find_record_version( REQ request, NOD relation_name)
 }
 
 
-static BOOLEAN invalid_reference( NOD node, NOD list)
+static BOOLEAN invalid_reference(REQ request, NOD node, NOD list, BOOLEAN exact_field)
 {
 /**************************************
  *
@@ -2088,6 +2064,7 @@ static BOOLEAN invalid_reference( NOD node, NOD list)
  **************************************/
 	NOD *ptr, *end;
 	BOOLEAN invalid;
+	CTX field_context;
 
 	DEV_BLKCHK(node, dsql_type_nod);
 	DEV_BLKCHK(list, dsql_type_nod);
@@ -2099,139 +2076,18 @@ static BOOLEAN invalid_reference( NOD node, NOD list)
 
 	invalid = FALSE;
 
-	if (node->nod_type == nod_field)
+	if (list)
 	{
-		FLD field;
-		CTX context;
-		NOD reference;
-
-		if (!list)
-			return TRUE;
-		field = (FLD) node->nod_arg[e_fld_field];
-		context = (CTX) node->nod_arg[e_fld_context];
-
-		DEV_BLKCHK(field, dsql_type_fld);
-		DEV_BLKCHK(context, dsql_type_ctx);
-
-		for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end;
-			 ptr++)
+		/* Check if this node (with ignoring of CASTs) appear also 
+		   in the list of group by. If yes then it's allowed */
+		for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++)
 		{
-			DEV_BLKCHK(*ptr, dsql_type_nod);
-			reference = *ptr;
-			if ((*ptr)->nod_type == nod_cast)
-			{
-				reference = (*ptr)->nod_arg[e_cast_source];
-			}
-			DEV_BLKCHK(reference, dsql_type_nod);
-			if (reference->nod_type == nod_field &&
-				field == (FLD) reference->nod_arg[e_fld_field] &&
-				context == (CTX) reference->nod_arg[e_fld_context])
-			{
-				return FALSE;
-			}
-			else
-			{
-				if (reference->nod_type == nod_udf )
-				{
-					return FALSE;
-				}
-			}
-		}
-		return TRUE;
-	}
-	else if (node->nod_type == nod_dbkey)
-	{
-		CTX context;
-		NOD reference, rel_node;
-
-		if (!list)
-			return TRUE;
-		rel_node = (NOD) node->nod_arg[0];
-		context = (CTX) rel_node->nod_arg[0];
-
-		DEV_BLKCHK(context, dsql_type_ctx);
-
-		for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end;
-			 ptr++)
-		{
-			DEV_BLKCHK(*ptr, dsql_type_nod);
-			reference = *ptr;
-			if ((*ptr)->nod_type == nod_cast)
-			{
-				reference = (*ptr)->nod_arg[e_cast_source];
-			}
-			DEV_BLKCHK(reference, dsql_type_nod);
-			if (reference->nod_type == nod_dbkey &&
-				rel_node == (NOD) reference->nod_arg[0] &&
-				context == (CTX) rel_node->nod_arg[0])
+			if (node_match(node, *ptr, TRUE))
 			{
 				return FALSE;
 			}
 		}
-		return TRUE;
 	}
-	else
-	{
-		if ((node->nod_type == nod_gen_id) ||
-			(node->nod_type == nod_gen_id2) ||
-			(node->nod_type == nod_cast)) {
-			if (node->nod_count == 2)
-				invalid |= invalid_reference(node->nod_arg[1], list);
-		}
-        else if (node->nod_type == nod_udf) {
-
-            NOD reference;
-            BOOLEAN non_agg_field;
-            
-            if (!list) { /* validating select element with no group by */
-                if (node->nod_count == 2)
-                    invalid = invalid_reference (node->nod_arg [1], list);
-                return invalid;
-            }
-
-            /* does this udf appear in list of group by  */
-            for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++) {
-                    DEV_BLKCHK(*ptr, dsql_type_nod);
-                    reference = *ptr;
-                    if ((*ptr)->nod_type == nod_cast)  {
-                        reference = (*ptr)->nod_arg[e_cast_source];
-                    }
-                    DEV_BLKCHK(reference, dsql_type_nod);
-                    if (reference->nod_type == nod_udf) {
-                        if (node_match (node, reference) == TRUE) {
-                            /* select item exists in group by */
-                            return FALSE;
-                        }
-                    }
-            }
-		
-            /*	if we have got here this udf element is not in group by 
-                but it may still be valid if it has aggregate functions 
-                as parameters in which case it points to a list to be traversed
-                if it doesn't then it is invalid
-            */
-            
-            if (node->nod_count == 2) {		
-                if(aggregate_in_list (node->nod_arg [1], &non_agg_field,list) == TRUE) {
-                    /* abs(trunc(sum(total)+field)) is not valid in select list
-                       unless it also appears in the group by clause when its
-                       value is then known
-                    */
-                    if (non_agg_field == TRUE) {
-                        invalid = TRUE;
-                    }
-                    else {
-                        invalid = FALSE;
-                    }
-                }
-                else {
-                    invalid = TRUE;
-                }
-                return invalid;			
-            }
-            
-            return TRUE;			
-        }
 
 #ifdef	CHECK_HAVING
 /*
@@ -2241,19 +2097,77 @@ static BOOLEAN invalid_reference( NOD node, NOD list)
 
 ******************************************************
 */
-		else if (node->nod_type == nod_map)
-		{
-			MAP map;
-			map = (MAP) node->nod_arg[e_map_map];
-			DEV_BLKCHK(map, dsql_type_map);
-			invalid |= invalid_reference(map->map_node, list);
-		}
+	if (node->nod_type == nod_map)
+	{
+		MAP map;
+		map = (MAP) node->nod_arg[e_map_map];
+		DEV_BLKCHK(map, dsql_type_map);
+		invalid |= invalid_reference(map->map_node, list);
+	}
+	else
 #endif
-		else
-			switch (node->nod_type) {
+		switch (node->nod_type) {
 			default:
 				ASSERT_FAIL;
 				/* FALLINTO */
+
+			case nod_field:
+
+				/* Wouldn't it be better to call a error from this 
+				   point where return is TRUE. Then we could give 
+				   the fieldname that's making the trouble */
+				if (!exact_field || !request)
+				{
+					return TRUE;
+				}
+
+				/* If we come here then this Field is used inside a 
+				   sub-select, singular- or exists-predicate.
+				   The ctx_scope_level gives the info how deep the
+				   context is inside the request.
+				   So if the context-scope-level from the field is 
+				   lower as the scope-level from the request then
+				   it is an invalid field */
+				field_context = (CTX) node->nod_arg[e_fld_context];
+
+				DEV_BLKCHK(field_context, dsql_type_ctx);
+
+				if (field_context->ctx_scope_level <= request->req_scope_level) 
+				{
+					return TRUE;
+				}
+
+				break;
+			
+			case nod_gen_id:
+			case nod_gen_id2:
+			case nod_cast:
+			case nod_udf:
+				/* If there are no arguments given to the UDF then it's always valid */
+                if (node->nod_count == 2)
+				{
+                    invalid |= invalid_reference(request, node->nod_arg [1], list, exact_field);
+				}
+				break;
+
+			case nod_via:
+			case nod_exists:     
+			case nod_singular:   
+				//return FALSE;
+				for (ptr = node->nod_arg, end = ptr + node->nod_count;
+					 ptr < end; ptr++)
+				{
+					invalid |= invalid_reference(request, *ptr, list, TRUE);
+				}
+				break;
+
+			case nod_parameter:
+				return FALSE;
+
+			case nod_coalesce:
+			case nod_simple_case:
+			case nod_searched_case:
+
 			case nod_add:
 			case nod_concatenate:
 			case nod_divide:
@@ -2263,9 +2177,6 @@ static BOOLEAN invalid_reference( NOD node, NOD list)
 			case nod_subtract:
 			case nod_upcase:
 			case nod_extract:
-			case nod_coalesce:
-			case nod_simple_case:
-			case nod_searched_case:
 			case nod_add2:
 			case nod_divide2:
 			case nod_multiply2:
@@ -2302,15 +2213,14 @@ static BOOLEAN invalid_reference( NOD node, NOD list)
 			case nod_starting:
 			case nod_rse:
 			case nod_list:
-			case nod_via:
 				for (ptr = node->nod_arg, end = ptr + node->nod_count;
 					 ptr < end; ptr++)
-					invalid |= invalid_reference(*ptr, list);
+					invalid |= invalid_reference(request, *ptr, list, exact_field);
 				break;
 
 			case nod_alias:
 				invalid |=
-					invalid_reference(node->nod_arg[e_alias_value], list);
+					invalid_reference(request, node->nod_arg[e_alias_value], list, exact_field);
 				break;
 
 				/* An embedded aggregate, even of an expression, is OK */
@@ -2337,8 +2247,7 @@ static BOOLEAN invalid_reference( NOD node, NOD list)
             case nod_current_role:
 			case nod_internal_info:
 				return FALSE;
-			}
-	}
+		}
 
 	return invalid;
 }
@@ -2390,7 +2299,7 @@ static void mark_ctx_outer_join( NOD node)
 }
 
 
-static BOOLEAN node_match( NOD node1, NOD node2)
+static BOOLEAN node_match( NOD node1, NOD node2, BOOLEAN ignore_cast)
 {
 /**************************************
  *
@@ -2400,6 +2309,14 @@ static BOOLEAN node_match( NOD node1, NOD node2)
  *
  * Functional description
  *	Compare two nodes for equality of value.
+ *
+ *  [2002-08-04]--- Arno Brinkman
+ *	If ignore_cast is TRUE and the node1 is of
+ *  type nod_cast then node_match is calling 
+ *  itselfs again with the node1 CASTs source.
+ *  This is for allow CAST to other datatypes
+ *  without complaining that it's an unknown
+ *  column reference. (Aggeregate functions) 
  *
  **************************************/
 	NOD *ptr1, *ptr2, *end;
@@ -2411,11 +2328,37 @@ static BOOLEAN node_match( NOD node1, NOD node2)
 	DEV_BLKCHK(node2, dsql_type_nod);
 
 	if ((!node1) && (!node2))
+	{
 		return TRUE;
+	}
 
-	if ((!node1) || (!node2) || (node1->nod_type != node2->nod_type)
-		|| (node1->nod_count != node2->nod_count))
+	if ((!node1) || (!node2))
+	{
 		return FALSE;
+	}
+
+	if (ignore_cast && node1->nod_type == nod_cast)
+	{
+		/* If node2 is also cast and same type continue with both sources */
+		if (node2->nod_type == nod_cast && 
+			node1->nod_desc.dsc_dtype == node2->nod_desc.dsc_dtype &&
+			node1->nod_desc.dsc_scale == node2->nod_desc.dsc_scale &&
+			node1->nod_desc.dsc_length == node2->nod_desc.dsc_length &&
+			node1->nod_desc.dsc_sub_type == node2->nod_desc.dsc_sub_type
+			)
+		{
+			return node_match(node1->nod_arg[e_cast_source], node2->nod_arg[e_cast_source], ignore_cast);
+		} 
+		else
+		{
+			return node_match(node1->nod_arg[e_cast_source], node2, ignore_cast);
+		}
+	}
+
+	if ((node1->nod_type != node2->nod_type) || (node1->nod_count != node2->nod_count))
+	{
+		return FALSE;
+	}
 
 /* This is to get rid of assertion failures when trying
    to node_match nod_aggregate's children. This was happening because not
@@ -2436,17 +2379,28 @@ static BOOLEAN node_match( NOD node1, NOD node2)
 		}
 
 		return node_match(	node1->nod_arg[e_agg_group],
-							node2->nod_arg[e_agg_group]) &&
+							node2->nod_arg[e_agg_group], ignore_cast) &&
 				node_match(	node1->nod_arg[e_agg_rse],
-							node2->nod_arg[e_agg_rse]);
+							node2->nod_arg[e_agg_rse], ignore_cast);
 	}
 
-	if (node1->nod_type == nod_alias) {
-		return node_match(node1->nod_arg[e_alias_value], node2);
+	if (node1->nod_type == nod_alias)
+	{
+		return node_match(node1->nod_arg[e_alias_value], node2, ignore_cast);
 	}
 
-	if (node2->nod_type == nod_alias) {
-		return node_match(node1, node2->nod_arg[e_alias_value]);
+	if (node2->nod_type == nod_alias)
+	{
+		return node_match(node1, node2->nod_arg[e_alias_value], ignore_cast);
+	}
+
+	if (node1->nod_type == nod_relation)
+	{
+		if (node1->nod_arg[e_rel_context] != node2->nod_arg[e_rel_context])
+		{
+			return FALSE;
+		} 
+		return TRUE;
 	}
 
 	if (node1->nod_type == nod_field)
@@ -2459,7 +2413,7 @@ static BOOLEAN node_match( NOD node1, NOD node2)
 		if (node1->nod_arg[e_fld_indices] || node2->nod_arg[e_fld_indices])
 		{
 			return node_match(node1->nod_arg[e_fld_indices],
-							  node2->nod_arg[e_fld_indices]);
+							  node2->nod_arg[e_fld_indices], ignore_cast);
 		}
 		return TRUE;
 	}
@@ -2488,7 +2442,7 @@ static BOOLEAN node_match( NOD node1, NOD node2)
 		map2 = (MAP)node2->nod_arg[e_map_map];
 		DEV_BLKCHK(map1, dsql_type_map);
 		DEV_BLKCHK(map2, dsql_type_map);
-		return node_match(map1->map_node, map2->map_node);
+		return node_match(map1->map_node, map2->map_node, ignore_cast);
 	}
 
 	if ((node1->nod_type == nod_gen_id)		||
@@ -2500,7 +2454,7 @@ static BOOLEAN node_match( NOD node1, NOD node2)
 			return FALSE;
 		}
 		if (node1->nod_count == 2) {
-			return node_match(node1->nod_arg[1], node2->nod_arg[1]);
+			return node_match(node1->nod_arg[1], node2->nod_arg[1], ignore_cast);
 		} else {
 			return TRUE;
 		}
@@ -2543,7 +2497,7 @@ static BOOLEAN node_match( NOD node1, NOD node2)
 	ptr2 = node2->nod_arg;
 
 	for (end = ptr1 + node1->nod_count; ptr1 < end; ptr1++, ptr2++)
-		if (!node_match(*ptr1, *ptr2))
+		if (!node_match(*ptr1, *ptr2, ignore_cast))
 			return FALSE;
 
 	return TRUE;
@@ -2697,7 +2651,7 @@ static NOD pass1_coalesce( REQ request, NOD input, USHORT proc_flag)
  *	Handle a reference to a coalesce function.
  *
  **************************************/
-	NOD	node;
+	NOD	node, *ptr, *end;
 	DLLS stack;
 
 	DEV_BLKCHK(request, dsql_type_req);
@@ -2714,6 +2668,13 @@ static NOD pass1_coalesce( REQ request, NOD input, USHORT proc_flag)
 
 	/* Set describer for output node */
 	MAKE_desc(&node->nod_desc, node);
+
+	/* Set parameter-types if parameters are there */
+	for (ptr = node->nod_arg[0]->nod_arg, end = ptr + node->nod_arg[0]->nod_count; 
+	     ptr < end; ptr++)
+	{
+		set_parameter_type(*ptr, node, FALSE);
+	}
 
 	return node;
 }
@@ -3704,10 +3665,11 @@ static NOD pass1_rse( REQ request, NOD input, NOD order)
  *
  **************************************/
 	NOD rse, parent_rse, target_rse, aggregate, node, list, sub, *ptr, *end,
-		proj;
+		proj, slist_node, *ptr2;
 	DLLS stack;
 	CTX parent_context;
 	TSQL tdsql;
+	ULONG position;
 
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
@@ -3797,8 +3759,37 @@ static NOD pass1_rse( REQ request, NOD input, NOD order)
 
 /* Process GROUP BY clause, if any */
 
-	if (node = input->nod_arg[e_sel_group]) {
-		aggregate->nod_arg[e_agg_group] = PASS1_node(request, node, 0);
+	if (node = input->nod_arg[e_sel_group])
+	{
+		/* if there are positions in the group by clause then replace them 
+		   by the (newly pass) items from the select_list */
+		aggregate->nod_arg[e_agg_group] = MAKE_node(node->nod_type,node->nod_count);
+		ptr2 = aggregate->nod_arg[e_agg_group]->nod_arg;
+		for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end; ptr++, ptr2++)
+		{
+			sub = *ptr;
+			if (sub->nod_type == nod_position)
+			{
+				if ((slist_node = input->nod_arg[e_sel_list]) && 
+					(slist_node->nod_type == nod_list))
+				{
+					/* an select list is there */
+					position = (ULONG) (sub->nod_arg[0]);
+					if ((position < 1) || (position > (ULONG) slist_node->nod_count)) 
+					{
+	/* !! This error should be replaced by an good GROUP BY clause error !! */
+						ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
+								gds_arg_gds, gds_dsql_command_err, 
+								gds_arg_gds, gds_field_aggregate_err, 0);
+					}
+					*ptr2 = PASS1_node(request, slist_node->nod_arg[position - 1], 0);
+				}
+			}
+			else
+			{
+				*ptr2 = PASS1_node(request, sub, 0);
+			}
+		}
     }
 
 	if (parent_context)
@@ -3819,7 +3810,7 @@ static NOD pass1_rse( REQ request, NOD input, NOD order)
 		if (aggregate)
 			for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end;
 				 ptr++)
-				if (invalid_reference(*ptr, aggregate->nod_arg[e_agg_group]))
+				if (invalid_reference(request, *ptr, aggregate->nod_arg[e_agg_group], FALSE))
 					ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
 							  gds_arg_gds, gds_field_ref_err,
 							  /* invalid field reference */
@@ -3922,7 +3913,7 @@ static NOD pass1_searched_case( REQ request, NOD input, USHORT proc_flag)
 	DEV_BLKCHK(input, dsql_type_nod);
 	DEV_BLKCHK(input->nod_arg[0], dsql_type_nod);
 
-	node = MAKE_node(nod_searched_case, 3);
+	node = MAKE_node(nod_searched_case, 2);
 
 	list = input->nod_arg[0];
 
@@ -3946,6 +3937,14 @@ static NOD pass1_searched_case( REQ request, NOD input, USHORT proc_flag)
 
 	/* Set describer for output node */
 	MAKE_desc(&node->nod_desc, node);
+
+	/* Set parameter-types if parameters are there */
+	for (ptr = node->nod_arg[e_searched_case_search_conditions]->nod_arg, 
+		 end = ptr + node->nod_arg[e_searched_case_search_conditions]->nod_count; 
+		 ptr < end; ptr++)
+	{
+		set_parameter_type(*ptr, node, FALSE);
+	}
 
 	return node;
 }
@@ -4045,6 +4044,15 @@ static NOD pass1_simple_case( REQ request, NOD input, USHORT proc_flag)
 
 	/* Set describer for output node */
 	MAKE_desc(&node->nod_desc, node);
+
+	/* Set parameter-types if parameters are there */
+	set_parameter_type(node->nod_arg[e_simple_case_case_operand], node, FALSE);
+	for (ptr = node->nod_arg[e_simple_case_results]->nod_arg, 
+		 end = ptr + node->nod_arg[e_simple_case_results]->nod_count; 
+		 ptr < end; ptr++)
+	{
+		set_parameter_type(*ptr, node, FALSE);
+	}
 
 	return node;
 }
@@ -4545,7 +4553,7 @@ static NOD post_map( NOD node, CTX context)
 /* Check to see if the item has already been posted */
 
 	for (map_ = context->ctx_map, count = 0; map_; map_ = map_->map_next, count++)
-		if (node_match(node, map_->map_node))
+		if (node_match(node, map_->map_node, FALSE))
 			break;
 
 	if (!map_) {

@@ -27,6 +27,7 @@
  * 2002.07.30 Arno Brinkman:
  * 2002.07.30	Added nod_searched_case, nod_simple_case, nod_coalesce
  * 2002.07.30	and constants for arguments
+ * 2002.08.04 Dmitry Yemanov: ALTER VIEW
  */
 
 #ifndef _DSQL_NODE_H_
@@ -316,7 +317,8 @@ typedef ENUM nod_t
 	nod_internal_info, /* internal engine info */
 	nod_searched_case, /* searched CASE function */
 	nod_simple_case, /* simple CASE function */
-	nod_coalesce /* COALESCE function */
+	nod_coalesce, /* COALESCE function */
+	nod_mod_view /* ALTER VIEW */
 } NOD_TYPE;
 
 

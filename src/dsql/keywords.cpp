@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.4 2002-08-03 15:27:20 dimitr Exp $
+ *  $Id: keywords.cpp,v 1.5 2002-08-11 08:04:53 dimitr Exp $
  *
  */
 
@@ -74,6 +74,7 @@ static CONST TOK tokens [] = {
 	{BEFORE, "BEFORE", 1},
 	{BEGIN, "BEGIN", 1},
 	{BETWEEN, "BETWEEN", 1},
+	{BIGINT, "BIGINT", 2},
 	{BLOB, "BLOB", 1},
 	{KW_BREAK, "BREAK", 2}, 
 	{BY, "BY", 1},
@@ -158,14 +159,12 @@ static CONST TOK tokens [] = {
 	{INPUT_TYPE, "INPUT_TYPE", 1},
 	{INSERT, "INSERT", 1},
 	{KW_INT, "INT", 1},
-	{KW_INT64, "INT64", 2},
 	{INTEGER, "INTEGER", 1},
 	{INTO, "INTO", 1},
 	{IS, "IS", 1},
 	{ISOLATION, "ISOLATION", 1},
 	{JOIN, "JOIN", 1},
 	{KEY, "KEY", 1},
-	{LARGEINT, "LARGEINT", 2},
 	{LEFT, "LEFT", 1},
 	{LENGTH, "LENGTH", 1},
 	{LEVEL, "LEVEL", 1},
