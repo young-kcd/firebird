@@ -23,7 +23,7 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *
- *  $Id: alloc.cpp,v 1.63 2004-08-24 23:11:02 brodsom Exp $
+ *  $Id: alloc.cpp,v 1.64 2004-08-25 03:09:57 skidder Exp $
  *
  */
 
@@ -1427,16 +1427,16 @@ void MemoryPool::free_blk_extent(MemoryBlock *blk)
 
 void MemoryPool::internal_deallocate(void *block)
 {
-	// Note that this method is also used to add blocks from pending free list
-	// These blocks are marked as unused already
 	MemoryBlock *blk = ptrToBlock(block);
 	
-	// Don't check flags for MBK_USED because this method may be called for blocks in
-	// pendingFree list (marked as not used already).
+	// This method is normally called for used blocks from our pool. Also it may
+	// be called for free blocks in pendingFree list by updateSpare routine. 
+	// Such blocks must have mbk_prev_fragment equal to NULL.
 
-	//fb_assert(blk->mbk_flags & MBK_USED);
-
-	fb_assert(blk->mbk_pool==this);
+	fb_assert(
+		blk->mbk_flags & MBK_USED ? 
+			blk->mbk_pool == this :
+			blk->mbk_prev_fragment == NULL);
 
 	MemoryBlock *prev;
 	// Try to merge block with preceding free block
