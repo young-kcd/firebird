@@ -48,6 +48,7 @@
 #include "../jrd/thd.h"
 #include "../jrd/os/pio.h"
 #include "../wal/wal.h"
+#include "../jrd/jrd.h"
 #include "../jrd/dsc.h"
 #include "../jrd/exe.h"
 #include "../jrd/btr.h"
