@@ -31,7 +31,9 @@
 #define PUT_WORD(ptr, value)	{*(ptr)++ = value; *(ptr)++ = value >> 8;}
 #define PUT(ptr, value)		*(ptr)++ = value;
 
+#ifdef NOT_USED_OR_REPLACED
 static SSHORT convert(ULONG, UCHAR *);
+#endif
 static STATUS merge_setup(UCHAR **, UCHAR **, UCHAR *, USHORT);
 
 #if (defined __cplusplus) && (defined SOLX86)
@@ -122,7 +124,7 @@ USHORT class_, USHORT base_level, UCHAR * version, UCHAR * id, ULONG mask)
 }
 #endif
 
-
+#ifdef NOT_USED_OR_REPLACED
 static SSHORT convert( ULONG number, UCHAR * buffer)
 {
 /**************************************
@@ -160,7 +162,7 @@ static SSHORT convert( ULONG number, UCHAR * buffer)
 
 	return 4;
 }
-
+#endif
 
 static STATUS merge_setup(
 						  UCHAR ** in,

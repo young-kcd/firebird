@@ -87,8 +87,10 @@
 #define	OSTYPE_NT	1
 #define	OSTYPE_WIN_95	2
 
+#ifndef IPSERV
 static USHORT ostype = 0;
 #endif
+#endif // WIN_NT
 
 #define ISC_USER		"ISC_USER"
 #define ISC_PASSWORD		"ISC_PASSWORD"
@@ -129,7 +131,9 @@ static STATUS fetch_blob(STATUS *, RSR, USHORT, UCHAR *, USHORT, USHORT,
 						 UCHAR *);
 static RVNT find_event(PORT, SLONG);
 static USHORT get_new_dpb(UCHAR *, SSHORT, SSHORT, UCHAR *, USHORT *, TEXT *);
+#ifdef UNIX
 static BOOLEAN get_single_user(USHORT, SCHAR *);
+#endif
 static STATUS handle_error(STATUS *, STATUS);
 static STATUS info(STATUS *, RDB, P_OP, USHORT, USHORT, USHORT, SCHAR *,
 				   USHORT, SCHAR *, USHORT, SCHAR *);
@@ -158,7 +162,9 @@ static STATUS send_and_receive(RDB, PACKET *, STATUS *);
 static STATUS send_blob(STATUS *, RBL, USHORT, UCHAR *);
 static void send_cancel_event(RVNT);
 static BOOLEAN send_packet(PORT, PACKET *, STATUS *);
+#ifdef NOT_USED_OR_REPLACED
 static BOOLEAN send_partial_packet(PORT, PACKET *, STATUS *);
+#endif
 static void server_death(PORT);
 static void stuff_vax_integer(UCHAR *, SLONG, USHORT);
 static STATUS svcstart(STATUS *, RDB, P_OP, USHORT, USHORT, USHORT, SCHAR *);
@@ -5949,7 +5955,7 @@ static USHORT get_new_dpb(UCHAR*	dpb,
 	return result;
 }
 
-
+#ifdef UNIX
 static BOOLEAN get_single_user(USHORT dpb_length, SCHAR * dpb)
 {
 /******************************************
@@ -5990,7 +5996,7 @@ static BOOLEAN get_single_user(USHORT dpb_length, SCHAR * dpb)
 
 	return FALSE;
 }
-
+#endif
 
 static STATUS handle_error( STATUS * user_status, STATUS code)
 {
@@ -7184,7 +7190,7 @@ static BOOLEAN send_packet(PORT port, PACKET* packet, STATUS* user_status)
 	return port->send(packet) ? TRUE : FALSE;
 }
 
-
+#ifdef NOT_USED_OR_REPLACED
 static BOOLEAN send_partial_packet(PORT		port,
 								   PACKET*	packet,
 								   STATUS*	user_status)
@@ -7220,7 +7226,7 @@ static BOOLEAN send_partial_packet(PORT		port,
 
 	return TRUE;
 }
-
+#endif
 
 #ifdef MULTI_THREAD
 static void server_death(PORT port)

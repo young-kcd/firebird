@@ -110,11 +110,17 @@ static int packet_send(PORT, SSHORT);
 static PORT receive(PORT, PACKET *);
 static int send_full(PORT, PACKET *);
 static int send_partial(PORT, PACKET *);
+#ifdef SUPERCLIENT
+#ifdef WIN_NT
 static void server_shutdown(void);
 static void server_watcher(void);
+#endif
+#endif
 static int xdrxnet_create(XDR *, PORT, UCHAR *, USHORT, enum xdr_op);
 static bool_t xdrxnet_endofrecord(XDR *, int);
+#ifdef NOT_USED_OR_REPLACED
 static void xnet_copy(SCHAR *, SCHAR *, int);
+#endif
 static int xnet_destroy(XDR *);
 static int xnet_error(PORT, TEXT *, STATUS, int);
 static void xnet_gen_error(PORT, STATUS, ...);
@@ -151,8 +157,10 @@ static XPM first_xpm = NULL;
 static XCC client_threads = NULL;
 static XPM client_maps = NULL;
 #ifdef WIN_NT
-static HANDLE server_watcher_handle = 0;
+#ifdef SUPERCLIENT
 static HANDLE server_process_handle = 0;
+#endif
+static HANDLE server_watcher_handle = 0;
 #endif
 static USHORT exit_flag = 0;
 static bool initialized = false;
@@ -1825,7 +1833,8 @@ static int send_partial( PORT port, PACKET * packet)
 	return xdr_protocol(&port->port_send, packet);
 }
 
-
+#ifdef SUPERCLIENT
+#ifdef WIN_NT
 static void server_shutdown(void)
 {
 /**************************************
@@ -1878,8 +1887,11 @@ static void server_shutdown(void)
 		xpm->xpm_handle = 0;
 	}
 }
+#endif
+#endif
 
-
+#ifdef SUPERCLIENT
+#ifdef WIN_NT
 static void server_watcher(void)
 {
 /**************************************
@@ -1895,7 +1907,6 @@ static void server_watcher(void)
  *      currently mapped maps.
  *
  **************************************/
-#ifdef WIN_NT
 	DWORD result;
 
 	for (;;) {
@@ -1911,11 +1922,9 @@ static void server_watcher(void)
 			break;
 		}
 	}
-#else /* WIN_NT */
-/* STUB : we donot use this for Solaris */
-#endif /* WIN_NT */
 }
-
+#endif // WIN_NT
+#endif // SUPERCLIENT
 
 static int xdrxnet_create(
 						  XDR * xdrs,
@@ -1959,7 +1968,7 @@ static bool_t xdrxnet_endofrecord( XDR * xdrs, bool_t flushnow)
 	return xnet_write(xdrs, flushnow);
 }
 
-
+#ifdef NOT_USED_OR_REPLACED
 static void xnet_copy( SCHAR * from, SCHAR * to, int length)
 {
 /**************************************
@@ -1976,7 +1985,7 @@ static void xnet_copy( SCHAR * from, SCHAR * to, int length)
 	if (length)
 		memcpy(to, from, length);
 }
-
+#endif
 
 static int xnet_destroy( XDR * xdrs)
 {
