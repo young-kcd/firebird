@@ -1,3 +1,222 @@
+2003-12-14 08:00  skywalker
+
+	* firebird2/src/install/arch-specific/linux/:
+	classic/postinstall.sh.in, classic/postuninstall.sh.in,
+	super/postinstall.sh.in, super/postuninstall.sh.in:
+	
+	Fixed up the compatibility links, for libgds.so etc, checks now for
+	links explicitly ( -e looks for the file at the end of the link)
+	and removing the links when package is removed.
+	
+	Updated super to do uninstall the same way as classic did (use same
+	routine and put uninstall.sh into bin directory)
+
+2003-12-14 05:44  skidder
+
+	* firebird2/src/: alice/alice.cpp, burp/burp.cpp, dudley/ddl.cpp,
+	journal/gjrn.cpp, jrd/svc.cpp, lock/print.cpp, utilities/cache.cpp,
+	utilities/sbc_print.cpp, utilities/gsec/gsec.cpp,
+	utilities/gstat/dba.epp, utilities/gstat/dba_full.epp,
+	wal/wal_prnt.cpp:
+	
+	Enable gfix/gstat services API on classic builds. Rollback Blas'
+	changes in this area
+
+2003-12-14 05:39  skidder
+
+	* firebird2/builds/win32/msvc7/: Firebird2.sln, common.vcproj,
+	common_classic.vcproj, common_static.vcproj, engine.vcproj,
+	engine_classic.vcproj, engine_embed.vcproj, fbclient.vcproj,
+	fbclient_static.vcproj, nbackup.vcproj:
+	
+	Fix MSVC7 makefiles. Note: I didn't test them with VC 7.0, only 7.1
+
+2003-12-14 05:34  skidder
+
+	* firebird2/src/common/config/config.cpp:
+	
+	Fix another initializatoin race condition
+
+2003-12-14 05:33  skidder
+
+	* firebird2/src/jrd/sch.cpp:
+	
+	Fix initializatoin race condition
+
+2003-12-14 05:23  skidder
+
+	* firebird2/src/: include/fb_types.h, journal/console.cpp,
+	journal/rebuild.epp:
+	
+	Fix Linux build
+
+2003-12-14 05:13  skywalker
+
+	*
+	
+	Remove extra copy of reset server left in build uninstall file
+	routine (my mistake from about 6mths ago).
+	firebird2/src/install/arch-specific/linux/classic/postinstall.sh.in
+	:
+
+2003-12-14 05:06  skywalker
+
+	*
+	firebird2/src/install/arch-specific/linux/misc/firebird.xinetd.in:
+	
+	Change run user for classic to be user firebird
+
+2003-12-14 05:05  skywalker
+
+	* firebird2/src/install/arch-specific/linux/super/:
+	makeInstallImage.sh.in, postinstall.sh.in:
+	
+	Updated super install change replace of /etc/services entry
+
+2003-12-14 05:03  skywalker
+
+	* firebird2/src/install/arch-specific/linux/classic/:
+	makeInstallImage.sh.in, postinstall.sh.in, postuninstall.sh.in:
+	
+	Update classic linux install
+	
+	1. fix examples database chmod to ug+rw *.fdb 2. fix check for
+	firebird user already exists 3. add mandrake specific useradd
+	method 4. makeImage gets .sh files from other location
+
+2003-12-14 04:59  skywalker
+
+	* firebird2/doc/README.user.troubleshooting:
+	
+	Update docs to specify that need to belong to firebird group to
+	access databases on classic.
+
+2003-12-14 04:58  skywalker
+
+	* firebird2/builds/posix/Makefile.in.firebird:
+	
+	make clean now should delete from tmp_root not gen_root
+
+2003-12-14 04:57  skywalker
+
+	* firebird2/configure.in:
+	
+	Change location of some of the generated files, so they won't be
+	deleted as part of make clean
+
+2003-12-13 15:43  dimitr
+
+	* firebird2/src/utilities/gstat/dba.epp:
+	
+	Make gstat to work with database aliases.
+
+2003-12-13 15:42  dimitr
+
+	* firebird2/builds/win32/msvc6/: Firebird2.dsw, common.dsp,
+	common_classic.dsp, engine.dsp, engine_classic.dsp, fbclient.dsp:
+	
+	1) Move db_alias.cpp to common.lib 2) Add common.lib to gstat.exe
+
+2003-12-13 13:16  dimitr
+
+	* firebird2/builds/win32/msvc6/: Firebird2.dsw, common.dsp,
+	common_classic.dsp, engine.dsp, engine_classic.dsp, fbclient.dsp:
+	
+	1) Move db_alias.cpp to common.lib 2) Add common.lib to gstat.exe
+
+2003-12-13 13:12  dimitr
+
+	* firebird2/src/utilities/dba.epp:
+	
+	Make gstat to work with database aliases.
+
+2003-12-13 11:59  dimitr
+
+	* firebird2/src/common/config/: config_file.cpp, config_file.cpp:
+	
+	Let's be compatible with the config files open in binary mode.
+
+2003-12-13 11:42  dimitr
+
+	* firebird2/src/jrd/: exe.cpp, tra.h, vio.cpp:
+	
+	Get rid of the free block lists. Our memory manager handles it
+	better.
+
+2003-12-12 18:33  dimitr
+
+	* firebird2/src/jrd/cmp.cpp:
+	
+	Always copy message structures. Keep all message references in
+	sync. Never allow one message node to be shared between different
+	RSBs.
+
+2003-12-12 18:26  dimitr
+
+	* firebird2/src/jrd/svc.cpp:
+	
+	Removed v1.5 stub.
+
+2003-12-12 00:06  arnobrinkman
+
+	* firebird2/src/jrd/: btr.cpp, opt.cpp:
+	
+	Fix some descending bugs i created
+
+2003-12-11 11:33  robocop
+
+	* firebird2/src/: include/fb_types.h, intl/cv_big5.cpp,
+	intl/cv_big5.h, intl/cv_gb2312.cpp, intl/cv_gb2312.h,
+	intl/cv_jis.cpp, intl/cv_jis.h, intl/cv_ksc.cpp, intl/cv_ksc.h,
+	intl/cv_unicode_fss.cpp, intl/cv_unicode_fss.h, intl/lc_ascii.cpp,
+	intl/lc_ascii.h, intl/lc_big5.cpp, intl/lc_dos.cpp, intl/lc_dos.h,
+	intl/lc_gb2312.cpp, intl/lc_iso8859_2.cpp, intl/lc_jis.cpp,
+	intl/lc_ksc.cpp, intl/lc_unicode_ucs2.cpp, journal/archive.cpp,
+	journal/console.cpp, journal/rebuild.epp, journal/server.epp,
+	jrd/ail.cpp, jrd/alt.cpp, jrd/blb.cpp, jrd/blb_proto.h,
+	jrd/blf_proto.h, jrd/blob_filter.cpp, jrd/blob_filter.h,
+	jrd/btr.cpp, jrd/cch.cpp, jrd/dfw.epp, jrd/dpm.epp, jrd/evl.cpp,
+	jrd/evl_like.cpp, jrd/evl_proto.h, jrd/exe.cpp, jrd/filters.cpp,
+	jrd/idx.cpp, jrd/idx_proto.h, jrd/ini.epp, jrd/intl.cpp,
+	jrd/intl_builtin.cpp, jrd/intl_classes.h, jrd/intl_proto.h,
+	jrd/jrd.cpp, jrd/jrd.h, jrd/jrn.cpp, jrd/jrn.h, jrd/met.epp,
+	jrd/met_proto.h, jrd/nav.cpp, jrd/nbak.cpp, jrd/ods.h, jrd/old.cpp,
+	jrd/opt.cpp, jrd/pag.cpp, jrd/par.cpp, jrd/rec.cpp, jrd/req.h,
+	jrd/rse.cpp, jrd/sbm.cpp, jrd/sdl.cpp, jrd/sdl_proto.h,
+	jrd/sdw.cpp, jrd/shut.cpp, jrd/sort.cpp, jrd/sort.h,
+	jrd/sort_proto.h, jrd/sqz.cpp, jrd/tpc.cpp, jrd/tra.cpp,
+	jrd/val.cpp, jrd/vio.cpp, lock/driver.cpp, remote/inet.cpp,
+	utilities/sbc_print.cpp, wal/wal.cpp:
+	
+	ping-pong cleanup: change one place and you have to change several
+	others
+
+2003-12-11 09:26  dimitr
+
+	* firebird2/src/remote/inet.cpp:
+	
+	Replaced itoa with snprintf.
+
+2003-12-11 09:18  dimitr
+
+	* firebird2/src/remote/inet.cpp:
+	
+	Replaced itoa with snprintf.
+
+2003-12-11 01:00  arnobrinkman
+
+	* firebird2/src/dsql/dsql.cpp:
+	
+	bugfix: Post a error when no input string is given else engine will
+	crash.
+
+2003-12-11 00:54  arnobrinkman
+
+	* firebird2/src/dsql/dsql.cpp:
+	
+	bugfix: Post a error when no input string is given else engine will
+	crash.
+
 2003-12-09 10:12  epocman
 
 	* firebird2/src/utilities/: gdsclient.cpp, gdsclient_proto.h,
