@@ -122,9 +122,9 @@ namespace {
 		time_t lastAttempt;
 		FailedLogin(Firebird::MemoryPool& p) 
 			: login(p), failCount(0), lastAttempt(time(0)) {}
-		static const Firebird::string& generate(const void* sender, const FailedLogin* f)
+		static const Firebird::string* generate(const void* sender, const FailedLogin* f)
 		{
-			return f->login;
+			return &(f->login);
 		}
 	};
 
