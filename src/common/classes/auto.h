@@ -56,7 +56,7 @@ public:
 	~AutoPtr<Where, Clear>() {Clear::clear(ptr);}
 private:
 	AutoPtr<Where, Clear>(AutoPtr<Where, Clear>&);
-	operator=(AutoPtr<Where, Clear>&);
+	void operator=(AutoPtr<Where, Clear>&);
 };
 
 } //namespace Firebird

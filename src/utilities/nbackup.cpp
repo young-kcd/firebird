@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbackup.cpp,v 1.21 2004-03-18 05:56:00 robocop Exp $
+ *  $Id: nbackup.cpp,v 1.22 2004-03-20 15:45:09 alexpeshkoff Exp $
  *
  */
  
@@ -374,7 +374,7 @@ void nbackup::close_backup()
 void nbackup::fixup_database()
 {
 	open_database_write();
-	header_page header;
+	Ods::header_page header;
 	if (read_file(dbase, &header, sizeof(header)) != sizeof(header))
 		b_error::raise("Unexpected end of database file", errno);
 	const int backup_state = header.hdr_flags & hdr_backup_mask;
@@ -479,7 +479,7 @@ void nbackup::backup_database(int level, const char* fname)
 	bool delete_backup = false;
 	ULONG prev_scn = 0;
 	char prev_guid[GUID_BUFF_SIZE] = "";
-	PAG page_buff = NULL;
+	Ods::pag* page_buff = NULL;
 	attach_database();
 	try {
 		// Look for SCN and GUID of previous-level backup in history table
@@ -569,7 +569,7 @@ void nbackup::backup_database(int level, const char* fname)
 		open_database_scan();
 		
 		// Read database header
-		header_page header;	
+		Ods::header_page header;	
 		if (read_file(dbase, &header, sizeof(header)) != sizeof(header))
 			b_error::raise("Unexpected end of file when reading header of database file");
 		if ((header.hdr_flags & hdr_backup_mask) != nbak_state_stalled)
@@ -578,7 +578,7 @@ void nbackup::backup_database(int level, const char* fname)
 				header.hdr_flags);
 		}
 	
-		page_buff = reinterpret_cast<PAG>(FB_NEW(*getDefaultMemoryPool()) UCHAR[header.hdr_page_size]);
+		page_buff = reinterpret_cast<Ods::pag*>(FB_NEW(*getDefaultMemoryPool()) UCHAR[header.hdr_page_size]);
 		
 		seek_file(dbase, 0);
 		
@@ -587,7 +587,7 @@ void nbackup::backup_database(int level, const char* fname)
 		
 		FB_GUID backup_guid;
 		bool guid_found = false;
-		const UCHAR* p = reinterpret_cast<header_page*>(page_buff)->hdr_data;
+		const UCHAR* p = reinterpret_cast<Ods::header_page*>(page_buff)->hdr_data;
 		while (true) {
 			switch(*p) {
 			case HDR_backup_guid:
@@ -827,7 +827,7 @@ void nbackup::restore_database(int filecount, const char* const* files)
 				seek_file(dbase, 0);
 #endif				
 				// Read database header
-				header_page header;
+				Ods::header_page header;
 				if (read_file(dbase, &header, sizeof(header)) != sizeof(header))
 					b_error::raise("Unexpected end of file when reading restored database header");
 				page_buffer = FB_NEW(*getDefaultMemoryPool()) UCHAR[header.hdr_page_size];
@@ -838,7 +838,7 @@ void nbackup::restore_database(int filecount, const char* const* files)
 					b_error::raise("Unexpected end of file when reading header of restored database file (stage 2)");
 				
 				bool guid_found = false;
-				const UCHAR* p = reinterpret_cast<header_page*>(page_buffer)->hdr_data;
+				const UCHAR* p = reinterpret_cast<Ods::header_page*>(page_buffer)->hdr_data;
 				while (true) {
 					switch(*p) {
 					case HDR_backup_guid:

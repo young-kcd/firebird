@@ -177,8 +177,7 @@ void ConfigFile::loadConfig()
 
 	parameters.clear();
 
-	Firebird::AutoPtr<IB_FILE, FileClose> ifile = 
-		fopen(configFile.c_str(), "rt");
+	Firebird::AutoPtr<IB_FILE, FileClose> ifile(fopen(configFile.c_str(), "rt"));
 	
 #ifdef EXIT_ON_NO_CONF
 	int BadLinesCount = 0;

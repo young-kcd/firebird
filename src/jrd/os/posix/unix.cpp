@@ -68,6 +68,8 @@
 #include "../jrd/os/pio_proto.h"
 #include "../jrd/thd_proto.h"
 
+using namespace Jrd;
+
 /* SUPERSERVER uses a mutex to allow atomic seek/read(write) sequences.
    SUPERSERVER_V2 uses "positioned" read (write) calls to avoid a seek
    and allow multiple threads to overlap database I/O. */
@@ -678,7 +680,7 @@ jrd_file* PIO_open(Database* dbb,
 }
 
 
-bool PIO_read(jrd_file* file, BufferDesc* bdb, PAG page, ISC_STATUS* status_vector)
+bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -771,7 +773,7 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, PAG page, ISC_STATUS* status_vect
 }
 
 
-bool PIO_write(jrd_file* file, BufferDesc* bdb, PAG page, ISC_STATUS* status_vector)
+bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -1040,7 +1042,7 @@ static jrd_file* setup_file(Database* dbb, const TEXT* file_name, USHORT file_le
 						isc_arg_string, ERR_string (file_name, file_length),
 						isc_arg_gds, isc_io_read_err,
 						isc_arg_unix, errno, 0);
-				if ((reinterpret_cast<header_page*>(header_page_buffer)->hdr_flags & hdr_shutdown_mask) == hdr_shutdown_single)
+				if ((reinterpret_cast<Ods::header_page*>(header_page_buffer)->hdr_flags & hdr_shutdown_mask) == hdr_shutdown_single)
 					ERR_post(isc_shutdown, isc_arg_string, ERR_string(file_name, file_length), 0);
 				dbb->dbb_file = NULL; // Will be set again later by the caller				
 			} catch(const std::exception&) {
@@ -1252,7 +1254,7 @@ raw_devices_validate_database (
  *
  **************************************/
 	char header[MIN_PAGE_SIZE];
-	header_page* hp = (header_page*)header;
+	Ods::header_page* hp = (Ods::header_page*)header;
 	BOOLEAN retval = FALSE;
 	int i;
 

@@ -61,7 +61,7 @@ int main( int argc, char **argv)
 	status_vector[1] = 0;
 	owner_handle = 0;
 	if (!LOCK_init
-		(status_vector, TRUE, getpid(), LCK_OWNER_process,
+		(status_vector, TRUE, getpid(), Jrd::LCK_OWNER_process,
 		 &owner_handle))
 #ifdef MANAGER_PROCESS
 			LOCK_manager(owner_handle);

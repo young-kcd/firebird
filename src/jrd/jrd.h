@@ -1031,7 +1031,7 @@ typedef str *STR;
 
 #ifndef PLATFORM_GET_THREAD_DATA
 
-//extern thread_db* gdbb;
+extern Jrd::thread_db* gdbb;
 
 #define PLATFORM_GET_THREAD_DATA (gdbb)
 #endif
