@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.33 2003-03-13 12:30:54 brodsom Exp $
+$Id: ibase.h,v 1.34 2003-04-08 10:20:44 aafemt Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -1234,7 +1234,7 @@ int  GDS_EXPORT isc_get_client_minor_version ();
 /* Blr definitions */
 /*******************/
 
-#include "../jrd/blr.h"
+#include "blr.h"
 
 
 /**********************************/
@@ -2394,7 +2394,7 @@ const unsigned char gds_dyn_delete_generator       = 217;
 #define isc_dpb_set_db_SQL_dialect        65
 
 
-#include "gen/iberror.h"
+#include "iberror.h"
 
 #endif /* JRD_IBASE_H */
 

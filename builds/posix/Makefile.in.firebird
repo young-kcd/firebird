@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.34 2003-04-07 10:14:17 aafemt Exp $
+#  $Id: Makefile.in.firebird,v 1.35 2003-04-08 10:20:37 aafemt Exp $
 #
 
 ROOT=..
@@ -438,24 +438,14 @@ GDS_ExtraFiles = misc/gds_header.txt include/fb_types.h \
 SRC_GDS_ExtraFiles = $(addprefix $(SRC_ROOT)/, $(GDS_ExtraFiles))
 
 $(INCLUDE_DEST)/gds.h: $(SRC_GDS_ExtraFiles)
-	$(CAT) $^ \
-           | grep -v '^#include "y_ref.h"' \
-           | grep -v '^#include "../jrd/blr.h"' \
-           | grep -v '^#include "fb_types.h"' \
-           | grep -v '^#include "gen/iberror.h"' \
-           | grep -v '^#include "iberror.h"' \
-           | grep -v '^#include "gen/codes.h"' > $@
+	$(CAT) $^ |grep -v '^#include' > $@
 
 
-IBASE_ExtraFiles = jrd/ibase.h jrd/blr.h include/gen/iberror.h
+IBASE_ExtraFiles = include/fb_types.h jrd/ibase.h jrd/blr.h include/gen/iberror.h
 SRC_IBASE_ExtraFiles = $(addprefix $(SRC_ROOT)/, $(IBASE_ExtraFiles))
 
 $(INCLUDE_DEST)/ibase.h: $(SRC_IBASE_ExtraFiles)
-	$(CAT) $^ \
-           | grep -v '^#include "../jrd/blr.h"' \
-           | grep -v '^#include "fb_types.h"' \
-           | grep -v '^#include "gen/iberror.h"' > $@
-
+	$(CAT) $^ |grep -v '^#include' > $@
 
 # Copy all the other headers to the distribution directory.  we use
 # ib_util.h as the marker for all the files.

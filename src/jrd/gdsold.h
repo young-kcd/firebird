@@ -1183,9 +1183,9 @@ const char gds_info_sql_stmt_select_for_upd = 12;
 /***************/
 
 
-#include "gen/codes.h"
+#include "codes.h"
 
-#include "gen/iberror.h"
+#include "iberror.h"
 
 
 

@@ -26,7 +26,7 @@
 #   Contributor(s):
 #
 #
-#   $Id: make.rules,v 1.15 2003-03-28 11:29:18 aafemt Exp $
+#   $Id: make.rules,v 1.16 2003-04-08 10:20:37 aafemt Exp $
 #
 
 #____________________________________________________________________________
@@ -52,7 +52,7 @@ IsProdTypeBuild = @PROD_BUILD_FLG@
 
 
 # Please don't use compiler/platform specific flags here - nmcc 02-Nov-2002
-CFLAGS:= $(CFLAGS) -I$(ROOT)/src -I$(ROOT)/src/include
+CFLAGS:= $(CFLAGS) -I$(SRC_ROOT)/include/gen -I$(SRC_ROOT)/include
 
 ifeq ($(IsProdTypeBuild),Y)
   CFLAGS:= $(CFLAGS) $(PROD_FLAGS) $(SUPER_FLAG) -DPROD_BUILD

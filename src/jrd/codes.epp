@@ -566,7 +566,7 @@ static void build_codes_h(void)
     from gen iberror routine.  I now do the include of that file.
     MOD 17-07-2001
 */
-    ib_fprintf(c_codes, "#include \"gen/iberror.h\"\n\n");
+    ib_fprintf(c_codes, "#include \"iberror.h\"\n\n");
     
 
     ib_fprintf(c_codes, "#endif /* JRD_GEN_CODES_H */\n");

@@ -1471,6 +1471,6 @@ const SLONG gds_err_max                          = 700L;
 
 #endif
 
-#include "gen/iberror.h"
+#include "iberror.h"
 
 #endif /* JRD_GEN_CODES_H */
