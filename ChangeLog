@@ -1,3 +1,134 @@
+2003-10-20 20:34  brodsom
+
+	* firebird2/src/jrd/: gds.cpp, gds_proto.h:
+	
+	-Warning removal -Style
+
+2003-10-20 14:41  brodsom
+
+	* firebird2/src/journal/rebuild.epp:
+	
+	Make journal build again
+
+2003-10-20 14:27  skidder
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Make Linux SS engine compile. Noted by Blas
+
+2003-10-20 12:53  aafemt
+
+	* firebird2/src/jrd/: ail.cpp, ail.h, alt.cpp, blb.cpp,
+	blb_proto.h, blf_proto.h, blob_filter.cpp, blob_filter.h,
+	bookmark.h, btr.cpp, btr.h, btr_proto.h, cch.cpp, cch.h,
+	cch_proto.h, cmp.cpp, cmp_proto.h, cvt.cpp, cvt2_proto.h,
+	cvt_proto.h, dbg_proto.h, dfw.epp, dfw_proto.h, dls.cpp, dpm.epp,
+	dyn_mod.epp, dyn_util.epp, err.cpp, nodebug.cpp:
+	
+	'struct' cleanup
+
+2003-10-20 12:35  robocop
+
+	* firebird2/src/utilities/install/install_reg.cpp:
+	
+	Style; vars in scope
+
+2003-10-20 12:33  robocop
+
+	* firebird2/src/include/: fb_blk.h, fb_types.h, old_fb_blk.h:
+	
+	Style
+
+2003-10-20 12:31  robocop
+
+	* firebird2/src/utilities/install/: registry.cpp, registry.h,
+	regis_proto.h:
+	
+	Style; vars in scope
+
+2003-10-20 12:28  robocop
+
+	* firebird2/src/remote/os/win32/srvr_w32.cpp:
+	
+	Style; bool
+
+2003-10-20 12:28  robocop
+
+	* firebird2/src/remote/os/win32/: winmain.cpp, wnet.cpp:
+	
+	Style; bool, vars in scope
+
+2003-10-20 12:26  robocop
+
+	* firebird2/src/common/classes/array.h:
+	
+	Style: make the code more readable, keep spaces around operators
+
+2003-10-20 12:18  robocop
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Style: make the code more readable, keep spaces around operators
+
+2003-10-20 12:12  robocop
+
+	* firebird2/src/dsql/ddl.cpp:
+	
+	Style; comment unused code
+
+2003-10-20 12:08  robocop
+
+	* firebird2/src/qli/lex.cpp:
+	
+	Style
+
+2003-10-20 12:04  robocop
+
+	* firebird2/src/jrd/rse.h:
+	
+	Style; spaces help to read code
+
+2003-10-20 04:49  brodsom
+
+	* firebird2/builds/install/arch-specific/mingw/prepare_mingw.bat:
+	
+	First step toward mingw installable
+
+2003-10-20 03:44  brodsom
+
+	* firebird2/: configure.in, builds/posix/Makefile.in.client.qli,
+	builds/posix/Makefile.in.firebird,
+	builds/posix/Makefile.in.client.gdef:
+	
+	Add gdef and qli to posix ss build (needed for the tcs)
+
+2003-10-20 01:03  brodsom
+
+	* firebird2/src/dsql/ddl.cpp:
+	
+	Correct recent Claudio's change to allow posix build again.
+
+2003-10-19 17:49  arnobrinkman
+
+	* firebird2/builds/win32/make_examples.bat:
+	
+	A batch-file i forgot, thanks to Blas
+
+2003-10-19 15:42  arnobrinkman
+
+	* firebird2/builds/win32/make_boot.bat:
+	
+	Let's make my life a little bit easier, so i don't have to change
+	everytime the files ;-)
+
+2003-10-19 15:35  arnobrinkman
+
+	* firebird2/builds/win32/: prepare.bat, preprocess.bat,
+	setenvvar.bat:
+	
+	Let's make my life a little bit easier, so i don't have to change
+	everytime the files ;-)
+
 2003-10-19 09:01  stryqx
 
 	* firebird2/src/jrd/rse.h:
