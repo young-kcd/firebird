@@ -312,11 +312,11 @@ bool ISC_analyze_nfs(tstring& expanded_filename, tstring& node_name)
 	}
 
 /* If the longest mount point was a local one, max_path is empty.
-   Return FALSE, leaving node_name empty and expanded_filename as is.
+   Return false, leaving node_name empty and expanded_filename as is.
 
    If the longest mount point is from a remote node, max_path
    contains the root of the file's path as it is known on the
-   remote node.  Return TRUE, loading node_name with the remote
+   remote node.  Return true, loading node_name with the remote
    node name and expanded_filename with the remote file name. */
 
 	bool flag = !max_path.isEmpty();
@@ -368,7 +368,7 @@ bool ISC_analyze_pclan(tstring& expanded_name, tstring& node_name)
 
 /* If a drive letter or TCP node name follows the slash after the
    named pipe node name, space over the slash. */
-	size q = expanded_name.find_first_of(":\\/", p + 1);
+	const size q = expanded_name.find_first_of(":\\/", p + 1);
 	if (q != npos && expanded_name[q] == ':')
 	{
 		++p;
@@ -400,7 +400,7 @@ bool ISC_analyze_tcp(tstring& file_name, tstring& node_name)
  * Functional description
  *	Analyze a filename for a TCP node name on the front.  If
  *	one is found, extract the node name, compute the residual
- *	file name, and return TRUE.  Otherwise return FALSE.
+ *	file name, and return true.  Otherwise return false.
  *
  **************************************/
 
@@ -418,9 +418,15 @@ bool ISC_analyze_tcp(tstring& file_name, tstring& node_name)
 
 	if (p == 1)
 	{
-		USHORT dtype = GetDriveType((node_name + ":\\").c_str());
-		if (dtype > 1 && dtype != DRIVE_REMOTE)
+		const ULONG dtype = GetDriveType((node_name + ":\\").c_str());
+		// Is it removable, fixed, cdrom or ramdisk?
+		if (dtype > DRIVE_NO_ROOT_DIR && dtype != DRIVE_REMOTE)
+		{
+			// CVC: If we didn't match, clean our garbage or we produce side effects
+			// in the caller.
+			node_name.erase();
 			return false;
+		}
 	}
 #endif
 
@@ -1662,7 +1668,7 @@ static bool get_server(tstring&, tstring& node_name)
  * Functional description
  *	If we're running on a cnode, the file system belongs
  *	to the server node - load node_name with the server
- *	name and return TRUE.
+ *	name and return true.
  *
  **************************************/
 	TEXT hostname[64];
