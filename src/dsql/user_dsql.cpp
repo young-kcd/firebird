@@ -1417,7 +1417,6 @@ static void error_post(STATUS status, ...)
 
 		case gds_arg_vms:
 		case gds_arg_unix:
-		case gds_arg_domain:
 		case gds_arg_dos:
 		case gds_arg_mpexl:
 		case gds_arg_mpexl_ipc:

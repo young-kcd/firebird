@@ -379,7 +379,6 @@ BOOLEAN DLL_EXPORT ERR_post_warning(STATUS status, ...)
 
 			case gds_arg_vms:
 			case gds_arg_unix:
-			case gds_arg_domain:
 			case gds_arg_dos:
 			case gds_arg_mpexl:
 			case gds_arg_next_mach:

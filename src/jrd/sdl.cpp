@@ -589,7 +589,6 @@ static STATUS error(STATUS * status_vector, ...)
 			assert(FALSE);
 		case gds_arg_vms:
 		case gds_arg_unix:
-		case gds_arg_domain:
 			*p++ = va_arg(args, int);
 			break;
 		}

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: par.cpp,v 1.5 2002-01-04 11:34:16 skywalker Exp $
+$Id: par.cpp,v 1.6 2002-02-23 07:49:48 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -642,7 +642,6 @@ static void error(CSB csb, ...)
 		case gds_arg_win32:
 		case gds_arg_dos:
 		case gds_arg_netware:
-		case gds_arg_domain:
 		case gds_arg_mpexl:
 			*p++ = va_arg(args, int);
 			break;
@@ -2934,7 +2933,6 @@ static void warning(CSB csb, ...)
 		case gds_arg_win32:
 		case gds_arg_dos:
 		case gds_arg_netware:
-		case gds_arg_domain:
 		case gds_arg_mpexl:
 			*p++ = va_arg(args, int);
 			break;

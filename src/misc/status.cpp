@@ -69,7 +69,6 @@ void STUFF_STATUS_function(STATUS* status_vector, STATUS status, va_list args)
 
 			case gds_arg_vms:
 			case gds_arg_unix:
-			case gds_arg_domain:
 			case gds_arg_dos:
 			case gds_arg_mpexl:
 			case gds_arg_next_mach:
@@ -107,7 +106,6 @@ void PARSE_STATUS(STATUS * status_vector, int &length, int &warning)
 		case gds_arg_number:
 		case gds_arg_vms:
 		case gds_arg_unix:
-		case gds_arg_domain:
 		case gds_arg_dos:
 		case gds_arg_mpexl:
 		case gds_arg_next_mach:
