@@ -568,11 +568,11 @@ SVC SVC_attach(USHORT	service_length,
 #ifdef HAVE_STRCASECMP
 		if (strcasecmp(options.spb_user_name, SYSDBA_USER_NAME))
 #else
-#ifdef STRICMP
+#ifdef HAVE_STRICMP
 		if (stricmp(options.spb_user_name, SYSDBA_USER_NAME))
 #else
 #error dont know how to compare strings case insensitive on this system
-#endif /* STRICMP */
+#endif /* HAVE_STRICMP */
 #endif /* HAVE_STRCASECMP */
 		{
 			user_flag = SVC_user_any;
