@@ -54,6 +54,8 @@
 #include "../jrd/os/path_utils.h"
 #include "../jrd/misc_proto.h"
 
+#include "../common/classes/locks.h"
+
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -1061,6 +1063,11 @@ void API_ROUTINE gds__interprete_a(
 #define	SECS_PER_HOUR	(60 * 60)
 #define	SECS_PER_DAY	(SECS_PER_HOUR * 24)
 
+#ifdef WIN_NT
+Firebird::Spinlock trace_mutex;
+HANDLE trace_file = INVALID_HANDLE_VALUE;
+#endif
+
 void API_ROUTINE gds__trace(const TEXT * text)
 {
 /**************************************
@@ -1074,14 +1081,6 @@ void API_ROUTINE gds__trace(const TEXT * text)
  *  This function tries to be async-signal safe
  *
  **************************************/
-	
-	TEXT name[MAXPATHLEN];
-
-	
-	// This function is not truly signal safe now.
-	// It calls string::c_str() and may call getenv(), not good.
-	// We can only hope that failure is unlikely in it...
-	gds__prefix(name, LOGFILE);
 	
 	time_t now = time((time_t *)0); // is specified in POSIX to be signal-safe
 	
@@ -1131,14 +1130,42 @@ void API_ROUTINE gds__trace(const TEXT * text)
 	strcpy(p, text); p += strlen(p);
 	strcat(p, "\n"); p += strlen(p);
 #ifdef WIN_NT
-	// Signal-unsafe code
-	IB_FILE *file;
-	if ((file = ib_fopen(name, FOPEN_APPEND_TYPE)) != NULL)
-	{
-		ib_fwrite(buffer, 1, p - buffer, file);
-		ib_fclose(file);
+	// Note: thread-safe code
+
+	// Nickolay Samofatov, 12 Sept 2003. Windows open files extremely slowly. 
+	// Slowly enough to make such trace useless. Thus we cache file handle !
+	trace_mutex.enter();
+	while (true) {
+		if (trace_file == INVALID_HANDLE_VALUE) {
+			TEXT name[MAXPATHLEN];
+			gds__prefix(name, LOGFILE);
+			// We do not care to close this file. 
+			// It will be closed automatically when our process terminates.
+			trace_file = CreateFile(name, GENERIC_WRITE, 
+				FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+				NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+			if (trace_file == INVALID_HANDLE_VALUE) break;
+		}
+		DWORD bytesWritten;
+		WriteFile(trace_file, buffer, p-buffer, &bytesWritten, NULL);
+		if (bytesWritten != p-buffer) {
+			// Handle the case when file was deleted by another process on Win9x
+			// On WinNT we are not going to notice that fact :(
+			CloseHandle(trace_file);
+			trace_file = INVALID_HANDLE_VALUE;
+			continue;
+		}
+		break;
 	}
+	trace_mutex.leave();
 #else
+	TEXT name[MAXPATHLEN];
+
+	// This function is not truly signal safe now.
+	// It calls string::c_str() and may call getenv(), not good.
+	// We can only hope that failure is unlikely in it...
+	gds__prefix(name, LOGFILE);
+
 	// Note: signal-safe code
 	int file = open(name, O_CREAT | O_APPEND | O_WRONLY, 0660);
 	if (file == -1) return;
