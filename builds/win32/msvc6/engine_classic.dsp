@@ -139,10 +139,6 @@ SOURCE=..\..\..\src\jrd\cvt2.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\db_alias.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\gen\jrd\dfw.cpp
 
 !IF  "$(CFG)" == "engine_classic - Win32 Release"
