@@ -39,7 +39,7 @@
 :BUILD_EMPBUILD
 @echo.
 @echo Building empbuild.fdb
-@copy %ROOT_PATH%\output\bin\isql.exe %ROOT_PATH%\gen\examples\ > nul
+@copy /y %ROOT_PATH%\output\bin\isql.exe %ROOT_PATH%\gen\examples\ > nul
 @copy /y %ROOT_PATH%\examples\empbuild\*.sql   %ROOT_PATH%\gen\examples\ > nul
 @copy /y %ROOT_PATH%\examples\empbuild\*.inp   %ROOT_PATH%\gen\examples\ > nul
 

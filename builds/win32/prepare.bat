@@ -55,7 +55,7 @@
 @set MSG_ISQL=@"%FIREBIRD%\bin\isql" -q %SERVER_NAME%:%DB_PATH%\gen\dbs\msg.fdb -i %ROOT_PATH%\src\msgs\
 @%MSG_ISQL%msg.sql
 @%MSG_ISQL%facilities.sql
-@echo _
+@echo.
 @echo loading locales
 @%MSG_ISQL%locales.sql
 @echo loading history

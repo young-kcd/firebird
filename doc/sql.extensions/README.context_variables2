@@ -30,7 +30,7 @@ Usage:
 
   RDB$SET_CONTEXT and RDB$GET_CONTEXT set and retrieve current value for the 
   context variables. Namespace name identifies a group of context variables with
-  similarproperties. Access rules such as the fact if variables may be read and
+  similar properties. Access rules such as the fact if variables may be read and
   written to and by whom are determined by namespace which they belong to.
 
   Namespace and variable names are case-sensitive.
