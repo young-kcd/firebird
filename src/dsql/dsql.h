@@ -618,10 +618,18 @@ private:
 	}
 
 public:
-	tsql(ISC_STATUS* status) 
+	typedef tsql* Pointer;
+	tsql(ISC_STATUS* status, Pointer& ptr) 
 		: ThreadData(tddSQL), tsql_default(0), 
 		tsql_status(status), tsql_user_status(0)
 	{
+		ptr = this;
+		putSpecific();
+	}
+
+	~tsql()
+	{
+		restoreSpecific();
 	}
 
 	ISC_STATUS*		tsql_status;
@@ -638,15 +646,6 @@ typedef Firebird::SubsystemContextPoolHolder <tsql, DsqlMemoryPool>
 
 inline tsql* DSQL_get_thread_data() {
 	return (tsql*) ThreadData::getSpecific();
-}
-
-inline void DSQL_set_thread_data(tsql* &tdsql, tsql* thd_context) {
-	tdsql = thd_context;
-	tdsql->putSpecific();
-}
-
-inline void DSQL_restore_thread_data() {
-	ThreadData::restoreSpecific();
 }
 
 /*! \var unsigned DSQL_debug

@@ -436,10 +436,8 @@ GDS_DSQL_ALLOCATE_CPP(	ISC_STATUS*    user_status,
 						FB_API_HANDLE*    db_handle,
 						dsql_req** req_handle)
 {
-	tsql thd_context(user_status);
 	tsql* tdsql;
-
-	DSQL_set_thread_data(tdsql, &thd_context);
+	tsql thd_context(user_status, tdsql);
 
 	try
 	{
@@ -461,7 +459,6 @@ GDS_DSQL_ALLOCATE_CPP(	ISC_STATUS*    user_status,
 	catch(const std::exception& ex)
 	{
 		Firebird::stuff_exception(tdsql->tsql_status, ex);
-		DSQL_restore_thread_data();
 		return tdsql->tsql_status[1];
 	}
 
@@ -506,11 +503,9 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 				USHORT		out_msg_length,
 				UCHAR*		out_msg)
 {
-	tsql thd_context(user_status);
 	tsql* tdsql;
+	tsql thd_context(user_status, tdsql);
 	ISC_STATUS sing_status;
-
-	DSQL_set_thread_data(tdsql, &thd_context);
 
 	try
 	{
@@ -607,11 +602,9 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 	catch (const std::exception& ex)
 	{
 		Firebird::stuff_exception(tdsql->tsql_status, ex);
-		DSQL_restore_thread_data();
 		return tdsql->tsql_status[1];
 	}
 
-	DSQL_restore_thread_data();
 	return sing_status;
 }
 
@@ -645,10 +638,8 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
  *
  **************************************/
 	ISC_STATUS status;
-	tsql thd_context(user_status);
 	tsql* tdsql;
-
-	DSQL_set_thread_data(tdsql, &thd_context);
+	tsql thd_context(user_status, tdsql);
 
 	try
 	{
@@ -726,14 +717,12 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
 			Firebird::stuff_exception(tdsql->tsql_status, ex);
 			status = error();
 			release_request(request, true);
-			DSQL_restore_thread_data();
 			return status;
 		}
 	}
 	catch(const std::exception& ex)
 	{
 		Firebird::stuff_exception(tdsql->tsql_status, ex);
-		DSQL_restore_thread_data();
 		return tdsql->tsql_status[1];
 	}
 
@@ -950,10 +939,8 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 	dsql_msg* message;
 	dsql_par* parameter;
 	ISC_STATUS s;
-	tsql thd_context(user_status);
 	tsql* tdsql;
-
-	DSQL_set_thread_data(tdsql, &thd_context);
+	tsql thd_context(user_status, tdsql);
 
 	try
 	{
@@ -1104,15 +1091,12 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 							reinterpret_cast<char*>(buffer));
 			THREAD_ENTER();
 			if (!s) {
-				DSQL_restore_thread_data();
 				return 0;
 			}
 			else if (s == isc_segment) {
-				DSQL_restore_thread_data();
 				return 101;
 			}
 			else if (s == isc_segstr_eof) {
-				DSQL_restore_thread_data();
 				return 100;
 			}
 			else
@@ -1133,7 +1117,6 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 		if (eof)
 		{
 			if (!*((USHORT *) eof->par_desc.dsc_address)) {
-				DSQL_restore_thread_data();
 				return 100;
 			}
 		}
@@ -1143,7 +1126,6 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 	catch(const std::exception& ex)
 	{
 		Firebird::stuff_exception(tdsql->tsql_status, ex);
-		DSQL_restore_thread_data();
 		return tdsql->tsql_status[1];
 	}
 
@@ -1168,10 +1150,8 @@ ISC_STATUS GDS_DSQL_FREE_CPP(ISC_STATUS*	user_status,
 						 USHORT		option)
 {
 	dsql_req* request;
-	tsql thd_context(user_status);
 	tsql* tdsql;
-
-	DSQL_set_thread_data(tdsql, &thd_context);
+	tsql thd_context(user_status, tdsql);
 
 	try
 	{
@@ -1199,7 +1179,6 @@ ISC_STATUS GDS_DSQL_FREE_CPP(ISC_STATUS*	user_status,
 	catch(const std::exception& ex)
 	{
 		Firebird::stuff_exception(tdsql->tsql_status, ex);
-		DSQL_restore_thread_data();
 		return tdsql->tsql_status[1];
 	}
 
@@ -1231,10 +1210,8 @@ ISC_STATUS GDS_DSQL_INSERT_CPP(	ISC_STATUS*	user_status,
 							USHORT	msg_length,
 							const UCHAR*	dsql_msg_buf)
 {
-	tsql thd_context(user_status);
 	tsql* tdsql;
-
-	DSQL_set_thread_data(tdsql, &thd_context);
+	tsql thd_context(user_status, tdsql);
 
 	try
 	{
@@ -1278,7 +1255,6 @@ ISC_STATUS GDS_DSQL_INSERT_CPP(	ISC_STATUS*	user_status,
 	catch(const std::exception& ex)
 	{
 		Firebird::stuff_exception(tdsql->tsql_status, ex);
-		DSQL_restore_thread_data();
 		return tdsql->tsql_status[1];
 	}
 
@@ -1317,10 +1293,8 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 							UCHAR*			buffer)
 {
 	ISC_STATUS status;
-	tsql thd_context(user_status);
 	tsql* tdsql;
-
-	DSQL_set_thread_data(tdsql, &thd_context);
+	tsql thd_context(user_status, tdsql);
 
 	try
 	{
@@ -1434,8 +1408,6 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 
 			*req_handle = request;
 
-			DSQL_restore_thread_data();
-
 			return GDS_DSQL_SQL_INFO_CPP(user_status,
 									req_handle,
 									item_length,
@@ -1448,14 +1420,12 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 			Firebird::stuff_exception(tdsql->tsql_status, ex);
 			status = error();
 			release_request(request, true);
-			DSQL_restore_thread_data();
 			return status;
 		}
 	}
 	catch(const std::exception& ex)
 	{
 		Firebird::stuff_exception(tdsql->tsql_status, ex);
-		DSQL_restore_thread_data();
 		return tdsql->tsql_status[1];
 	}
 }
@@ -1479,10 +1449,8 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 								const TEXT*	input_cursor,
 								USHORT	type)
 {
-	tsql thd_context(user_status);
 	tsql* tdsql;
-
-	DSQL_set_thread_data(tdsql, &thd_context);
+	tsql thd_context(user_status, tdsql);
 
 	try
 	{
@@ -1559,7 +1527,6 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 	catch(const std::exception& ex)
 	{
 		Firebird::stuff_exception(tdsql->tsql_status, ex);
-		DSQL_restore_thread_data();
 		return tdsql->tsql_status[1];
 	}
 
@@ -1591,10 +1558,8 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 {
 	UCHAR buffer[256];
 	USHORT length, number, first_index;
-	tsql thd_context(user_status);
 	tsql* tdsql;
-
-	DSQL_set_thread_data(tdsql, &thd_context);
+	tsql thd_context(user_status, tdsql);
 
 	try
 	{
@@ -1789,7 +1754,6 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 	catch(const std::exception& ex)
 	{
 		Firebird::stuff_exception(tdsql->tsql_status, ex);
-		DSQL_restore_thread_data();
 		return tdsql->tsql_status[1];
 	}
 
@@ -4962,8 +4926,6 @@ static ISC_STATUS return_success(void)
 	if (*p != isc_arg_warning) {
 		*p = isc_arg_end;
 	}
-
-	DSQL_restore_thread_data();
 
 	return FB_SUCCESS;
 }
