@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.16 2003-02-25 00:05:04 brodsom Exp $
+$Id: why.cpp,v 1.17 2003-02-27 13:55:50 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -466,8 +466,6 @@ typedef struct
 	TEXT *path;
 } IMAGE;
 
-#define CONST_IMAGE	const
-
 /* Define complicated table for multi-subsystem world */
 
 #ifdef VMS
@@ -501,7 +499,7 @@ typedef struct
 #endif
 #endif
 
-static CONST_IMAGE IMAGE images[] =
+static const IMAGE images[] =
 {
 	{"REMINT", "REMINT"},			/* Remote */
 
@@ -1712,8 +1710,8 @@ int API_ROUTINE gds__disable_subsystem(TEXT * subsystem)
  *	has been explicitly disabled, all are available.
  *
  **************************************/
-	CONST_IMAGE IMAGE* sys;
-	CONST_IMAGE IMAGE* end;
+	const IMAGE* sys;
+	const IMAGE* end;
 
 	for (sys = images, end = sys + SUBSYSTEMS; sys < end; sys++)
 	{

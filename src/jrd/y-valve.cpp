@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: y-valve.cpp,v 1.24 2003-02-15 00:55:10 brodsom Exp $
+$Id: y-valve.cpp,v 1.25 2003-02-27 13:55:50 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -472,8 +472,6 @@ typedef struct
 	TEXT *path;
 } IMAGE;
 
-#define CONST_IMAGE	const
-
 /* Define complicated table for multi-subsystem world */
 
 #ifdef VMS
@@ -507,7 +505,7 @@ typedef struct
 #endif
 #endif
 
-static CONST_IMAGE IMAGE images[] =
+static const IMAGE images[] =
 {
 	{"REMINT", "REMINT"},			/* Remote */
 
@@ -1696,8 +1694,8 @@ int API_ROUTINE gds__disable_subsystem(TEXT * subsystem)
  *	has been explicitly disabled, all are available.
  *
  **************************************/
-	CONST_IMAGE IMAGE* sys;
-	CONST_IMAGE IMAGE* end;
+	const IMAGE* sys;
+	const IMAGE* end;
 
 	for (sys = images, end = sys + SUBSYSTEMS; sys < end; sys++)
 	{
