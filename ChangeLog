@@ -1,3 +1,114 @@
+2003-03-18 16:28  brodsom
+
+	* firebird2/src/jrd/john.make:
+	
+	Remove unused make. (agreed with Mike)
+
+2003-03-18 16:09  brodsom
+
+	* firebird2/src/jrd/ids.h:
+	
+	Remove unused & wrong header. The good one is in include/gen.
+
+2003-03-18 14:27  brodsom
+
+	* firebird2/src/jrd/pcsleep.cpp:
+	
+	Remove DOS remains
+
+2003-03-18 14:27  brodsom
+
+	* firebird2/src/jrd/lck_dummy.cpp:
+	
+	Remove ultrix remains
+
+2003-03-18 13:25  brodsom
+
+	* firebird2/src/intl/: cs_unicode_fss.c, cs_unicode_ucs2.c,
+	cv_gb2312.c, cv_jis.c, cv_ksc.c, cv_narrow.c, lc_ascii.c,
+	lc_big5.c, lc_dos.c, lc_gb2312.c, lc_iso8859_1.c, lc_iso8859_2.c,
+	lc_jis.c, lc_ksc.c, lc_unicode_ucs2.c, cs_big5.c, cs_gb2312.c,
+	cs_jis.c, cs_ksc.c, cs_narrow.c:
+	
+	Add function pointers casts (remove warnings)
+
+2003-03-18 09:58  dimitr
+
+	* firebird2/builds/win32/msvc6/gds32.dsp:
+	
+	Updated project files:	 - moved gds32_debug.def   - removed IB7
+	functions from compatibility gds32
+
+2003-03-18 09:48  dimitr
+
+	* firebird2/builds/win32/: gds32_debug.def, defs/gds32.def,
+	defs/gds32_debug.def:
+	
+	Updated project files:	 - moved gds32_debug.def   - removed IB7
+	functions from compatibility gds32
+
+2003-03-18 07:49  eku
+
+	* firebird2/src/install/misc/firebird.conf:
+	
+	Removed again rubbish lines.
+
+2003-03-18 05:25  seanleyne
+
+	* firebird2/src/install/misc/firebird.conf:
+	
+	Update based on comments/notes from developers
+
+2003-03-18 04:05  brodsom
+
+	* firebird2/builds/win32/: prepare.bat, make6_debug.bat,
+	make6_release.bat, make7_debug.bat, make7_release.bat:
+	
+	Changes to build with help.fdb
+
+2003-03-18 03:57  brodsom
+
+	* firebird2/src/jrd/: common.h, pragma.h:
+	
+	Remove pragma.h (trivial hpux only header) and replace with the
+	code (1 line)
+
+2003-03-18 03:48  brodsom
+
+	* firebird2/src/jrd/gds_h3.f:
+	
+	Remove mpexl remains
+
+2003-03-18 03:47  brodsom
+
+	* firebird2/src/jrd/gds_apollo.f:
+	
+	Remove apollo remains
+
+2003-03-18 03:13  brodsom
+
+	* firebird2/src/include/fb_types.h:
+	
+	Comment unused types
+
+2003-03-18 03:03  brodsom
+
+	* firebird2/src/jrd/btr.cpp:
+	
+	Replace UTEXT with UCHAR
+
+2003-03-18 02:35  brodsom
+
+	* firebird2/src/burp/canonical.cpp:
+	
+	Remove unneeded/unused code
+
+2003-03-18 02:32  brodsom
+
+	* firebird2/src/jrd/gds.cpp:
+	
+	Remove nested NOT_USED_OR_REPLACED ifdefs
+
 2003-03-17 19:03  alexpeshkoff
 
 	* firebird2/src/jrd/ext.cpp:
