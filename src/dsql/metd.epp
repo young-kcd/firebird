@@ -1058,12 +1058,12 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
     
 /* Adjust the return type & length of the UDF to account for 
  * cstring & varying.  While a UDF can return CSTRING, we convert it
- * to CHAR for manipulation as CSTRING is not a SQL type.
- * (Q: why not use varying?)
+ * to VARCHAR for manipulation as CSTRING is not a SQL type.
  */
 
 	if (userFunc->udf_dtype == dtype_cstring) {
-		userFunc->udf_dtype = dtype_text;
+		userFunc->udf_dtype = dtype_varying;
+		userFunc->udf_length += sizeof(USHORT);
 	}
 	else if (userFunc->udf_dtype == dtype_varying)
 		userFunc->udf_length += sizeof(USHORT);
