@@ -36,7 +36,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.42 2003-03-25 12:07:05 skidder Exp $
+$Id: lock.cpp,v 1.43 2003-04-01 11:43:47 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -2886,13 +2886,13 @@ static LRQ get_request( PTR offset)
 
 	request = (LRQ) ABS_PTR(offset);
 	if ((SLONG) offset == -1 || request->lrq_type != type_lrq) {
-		sprintf(s, "invalid lock id (%d)", offset);
+		sprintf(s, "invalid lock id (%"SLONGFORMAT")", offset);
 		bug(NULL, s);
 	}
 
 	lock = (LBL) ABS_PTR(request->lrq_lock);
 	if (lock->lbl_type != type_lbl) {
-		sprintf(s, "invalid lock (%d)", offset);
+		sprintf(s, "invalid lock (%"SLONGFORMAT")", offset);
 		bug(NULL, s);
 	}
 
