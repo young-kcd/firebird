@@ -126,7 +126,7 @@ void CNTL_main_thread( SLONG argc, SCHAR * argv[])
 		report_status(SERVICE_START_PENDING, NO_ERROR, 2, 3000) &&
 		!gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
 						   (main_handler), (void *) flag, 0, 0, 0)
-		&& report_status(SERVICE_RUNNING, NO_ERROR, 0, 0)) {
+		&& report_status(SERVICE_RUNNING, NO_ERROR, 3, 0)) {
 		status = 0;
 		temp = WaitForSingleObject(stop_event_handle, INFINITE);
 	}
@@ -137,7 +137,10 @@ void CNTL_main_thread( SLONG argc, SCHAR * argv[])
 	if (stop_event_handle)
 		CloseHandle(stop_event_handle);
 
-/* ONce we are stopped, we will tell the server to
+	// We should report that we are busy stopping...
+	report_status(SERVICE_STOP_PENDING, NO_ERROR, 4, 10000);
+	
+/* While we are stopping, we will tell the server to
  * do the same.  We could not do this in the control_thread
  * since the Services Control Manager is single threaded,
  * and thus can only process one request at the time. */
@@ -148,7 +151,28 @@ void CNTL_main_thread( SLONG argc, SCHAR * argv[])
 			OpenSCManager(NULL, NULL, GENERIC_READ);
 		hService = OpenService(hScManager, REMOTE_SERVICE,
 			GENERIC_READ | GENERIC_EXECUTE);
-		ControlService(hService, SERVICE_CONTROL_STOP, &status_info);
+		if (ControlService(hService, SERVICE_CONTROL_STOP, &status_info))
+		{
+			/* Wait for the service to actually stop before returning. */
+			while (status_info.dwCurrentState == SERVICE_STOP_PENDING)
+			{
+				if (!QueryServiceStatus(hService, &status_info))
+				{
+					last_error = GetLastError();
+					break;
+				}
+				Sleep(100);	// Don't loop too quickly (would be useless)
+			}
+			// If the stop failed, report a meaningfull error to manager
+			if (status_info.dwCurrentState != SERVICE_STOPPED)
+				last_error = ERROR_DEPENDENT_SERVICES_RUNNING;
+		}
+		else
+		{
+			last_error = GetLastError();
+			if (last_error == ERROR_SERVICE_NOT_ACTIVE) last_error = 0;
+		}
+
 		CloseServiceHandle(hScManager);
 		CloseServiceHandle(hService);
 	}
