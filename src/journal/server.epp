@@ -3358,7 +3358,7 @@ static bool start_server(UCHAR * journal_dir,
 // Ignore end of child process for UNIX only
 // SUN leaves behind <defunct> processes if SIG_IGN is used
 
-	ISC_signal(SIGCLD, signal_child, NULL);
+	ISC_signal(SIGCHLD, signal_child, NULL);
 #endif
 
 // Check in with database
