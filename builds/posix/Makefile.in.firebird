@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.33 2003-03-27 11:21:45 aafemt Exp $
+#  $Id: Makefile.in.firebird,v 1.34 2003-04-07 10:14:17 aafemt Exp $
 #
 
 ROOT=..
@@ -254,7 +254,7 @@ lock_mgr :
 # the security module)
 #
 
-.PHONY: create_db empty_db gbak_static isql_static refDatabases
+.PHONY: create_db empty_db gbak_static isql_static ref_databases
 
 boot_phase2 : $(ISC_GDB)
 
