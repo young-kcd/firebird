@@ -34,7 +34,7 @@
 #include "../jrd/msg_encode.h"
 #include "../jrd/jrd.h"
 #include "../utilities/gsec.h"
-#include "../jrd/pwd.h"
+#include "../jrd/jrd_pwd.h"
 #include "../jrd/license.h"
 #include "../jrd/svc_proto.h"
 #include "../utilities/secur_proto.h"

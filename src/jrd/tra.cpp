@@ -39,7 +39,7 @@
 #include "../jrd/req.h"
 #include "../jrd/exe.h"
 #include "../jrd/rse.h"
-#include "../jrd/pwd.h"
+#include "../jrd/jrd_pwd.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cch_proto.h"

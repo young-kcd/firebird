@@ -40,7 +40,7 @@
 #include <stdarg.h>
 #include "../jrd/jrd.h"
 #include "../jrd/svc.h"
-#include "../jrd/pwd.h"
+#include "../jrd/jrd_pwd.h"
 #include "../alice/aliceswi.h"
 #include "../burp/burpswi.h"
 #include "../jrd/y_ref.h"

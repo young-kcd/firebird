@@ -49,7 +49,7 @@
 #include "../jrd/license.h"
 #include "../jrd/fil.h"
 #include "../jrd/sdl.h"
-#include "../jrd/pwd.h"
+#include "../jrd/jrd_pwd.h"
 #include "../remote/inet_proto.h"
 #include "../remote/inter_proto.h"
 #include "../remote/merge_proto.h"

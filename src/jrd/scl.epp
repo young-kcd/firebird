@@ -40,7 +40,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/scl.h"
-#include "../jrd/pwd.h"
+#include "../jrd/jrd_pwd.h"
 #include "../jrd/acl.h"
 #include "../jrd/blb.h"
 #include "../jrd/irq.h"

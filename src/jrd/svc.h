@@ -29,7 +29,7 @@
 #error You can not include both old_fb_blk.h and this file
 #endif
 
-#include "../jrd/pwd.h"
+#include "../jrd/jrd_pwd.h"
 #include "../jrd/isc.h"
 #include "../jrd/svc_undoc.h"
 #include "../jrd/svc_proto.h"

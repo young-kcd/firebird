@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include "../jrd/gds.h"
 #include "../jrd/jrd.h"
-#include "../jrd/pwd.h"
+#include "../jrd/jrd_pwd.h"
 #include "../jrd/enc_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"

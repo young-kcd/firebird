@@ -45,7 +45,7 @@
 
 #include <stdarg.h>
 #include "../jrd/gds.h"
-#include "../jrd/pwd.h"
+#include "../jrd/jrd_pwd.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"
 #include "../jrd/why_proto.h"
