@@ -1935,7 +1935,7 @@ bool VIO_get_current(
 		}
 		else {
 			state = TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr,
-							 jrd_tra::tra_probe);
+				jrd_tra::tra_probe);
 
 			if (state == tra_active) {
 				THREAD_EXIT();
@@ -3793,15 +3793,16 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 			   Express interest in the relation to prevent it from being deleted
 			   out from under us while garbage collection is in-progress. */
 
+			//hvlad: skip system relations
 			vec* vector = dbb->dbb_relations;
-			for (ULONG id = 0; vector && id < vector->count(); ++id) {
+			for (ULONG id = USER_DEF_REL_INIT_ID; vector && id < vector->count(); ++id) {
 
 				relation = (jrd_rel*) (*vector)[id];
 				RelationGarbage *relGarbage = 
 					relation ? (RelationGarbage*)relation->rel_garbage : NULL;
 
 				if (relation && (relation->rel_gc_bitmap || relGarbage) &&
-					!(relation->rel_flags & (REL_deleted | REL_deleting)))
+					!(relation->rel_flags & (REL_deleted | REL_deleting | REL_system)))
 				{
 					if (relGarbage) {
 						relGarbage->getGarbage(dbb->dbb_oldest_snapshot, 
@@ -3850,8 +3851,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 						while (VIO_next_record(tdbb, &rpb, NULL, transaction,
 							NULL, false, true))
 						{
-							if (rpb.rpb_window.win_bdb)
-								CCH_RELEASE(tdbb, &rpb.rpb_window);
+							CCH_RELEASE(tdbb, &rpb.rpb_window);
 
 							if (!(dbb->dbb_flags & DBB_garbage_collector)) {
 								--relation->rel_sweep_count;
@@ -4118,6 +4118,10 @@ static void notify_garbage_collector(thread_db* tdbb, record_param* rpb, SLONG t
 
 	if (tranid == -1)
 		tranid = rpb->rpb_transaction_nr;
+
+	// system transaction has its own rules
+	if (tranid == 0)
+		return;
 
 /* If this is a large sequential scan then defer the release
    of the data page to the LRU tail until the garbage collector
@@ -4460,7 +4464,7 @@ static int prepare_update(	thread_db*		tdbb,
 			else {
 				state =
 					TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr,
-							 jrd_tra::tra_probe);
+						jrd_tra::tra_probe);
 
 				if (state == tra_active) {
 					THREAD_EXIT();
