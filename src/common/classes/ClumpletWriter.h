@@ -24,8 +24,6 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: ClumpletWriter.h,v 1.5 2004-12-09 19:18:57 alexpeshkoff Exp $
- *
  */
 
 #ifndef CLUMPLETWRITER_H

@@ -24,7 +24,6 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.43 2004-12-09 19:18:31 alexpeshkoff Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //

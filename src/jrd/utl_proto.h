@@ -89,7 +89,9 @@ namespace Firebird
 {
 	class ClumpletWriter;
 }
+#ifdef UNIX
 void setSingleUser(Firebird::ClumpletWriter&, const TEXT*);
+#endif
 void setLogin(Firebird::ClumpletWriter&);
 
 #endif // JRD_UTL_PROTO_H

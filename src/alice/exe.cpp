@@ -24,7 +24,6 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.41 2004-12-09 19:18:30 alexpeshkoff Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -82,7 +81,7 @@ int EXE_action(const TEXT* database, const ULONG switches)
 //  generate the database parameter block for the attach,
 //  based on the various switches
 		Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE);
-		buildDpb(dpb, switches); // B.O.
+		buildDpb(dpb, switches);
 
 		FB_API_HANDLE handle = 0;
 		isc_attach_database(tdgbl->status, 0, database, &handle, 
@@ -149,7 +148,7 @@ int EXE_two_phase(const TEXT* database, const ULONG switches)
 //  generate the database parameter block for the attach,
 //  based on the various switches
 		Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE);
-		buildDpb(dpb, switches); // B.O.
+		buildDpb(dpb, switches);
 
 		FB_API_HANDLE handle = 0;
 		isc_attach_database(tdgbl->status, 0, database, &handle,
@@ -189,7 +188,7 @@ int EXE_two_phase(const TEXT* database, const ULONG switches)
 //  based on the various switches
 //
 
-void buildDpb(Firebird::ClumpletWriter& dpb, const ULONG switches)
+static void buildDpb(Firebird::ClumpletWriter& dpb, const ULONG switches)
 {
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 	dpb.reset(isc_dpb_version1);
@@ -246,7 +245,7 @@ void buildDpb(Firebird::ClumpletWriter& dpb, const ULONG switches)
 					   tdgbl->ALICE_data.ua_read_only ? 1 : 0);
 	}
 	else if (switches & sw_shut) {
-		char b = 0;
+		UCHAR b = 0;
 		if (switches & sw_attach)
 			b |= isc_dpb_shut_attachment;
 		else if (switches & sw_cache)
@@ -282,7 +281,7 @@ void buildDpb(Firebird::ClumpletWriter& dpb, const ULONG switches)
 		dpb.insertInt(isc_dpb_shutdown_delay, timeout);
 	}
 	else if (switches & sw_online) {
-		char b = 0;
+		UCHAR b = 0;
 		switch (tdgbl->ALICE_data.ua_shutdown_mode) {
 		case SHUT_NORMAL:
 			b |= isc_dpb_shut_normal;

@@ -224,10 +224,9 @@ void EXE_create_database( DBB dbb)
 	}
 
 	USHORT len;
-	ULONG llen;
 
-	if (llen = dbb->dbb_chkptlen) {
-		dpb.insertInt(isc_dpb_wal_chkptlen, llen);
+	if (len = dbb->dbb_chkptlen) {
+		dpb.insertInt(isc_dpb_wal_chkptlen, len);
 	}
 
 	if (len = dbb->dbb_numbufs) {
@@ -238,8 +237,8 @@ void EXE_create_database( DBB dbb)
 		dpb.insertInt(isc_dpb_wal_bufsize, len);
 	}
 
-	if ((llen = dbb->dbb_grp_cmt_wait) >= 0) {
-		dpb.insertInt(isc_dpb_wal_grp_cmt_wait, llen);
+	if ((len = dbb->dbb_grp_cmt_wait) >= 0) {
+		dpb.insertInt(isc_dpb_wal_grp_cmt_wait, len);
 	}
 
 	if (isc_create_database(gds_status, 0, file_name, &DB, 

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Client/Server Common Code
- *	MODULE:		ClumpletWriter.h
+ *	MODULE:		ClumpletWriter.cpp
  *	DESCRIPTION:	Secure handling of clumplet buffers
  *
  *  The contents of this file are subject to the Initial
@@ -23,8 +23,6 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *
- *
- *  $Id: ClumpletWriter.cpp,v 1.6 2004-12-09 19:18:57 alexpeshkoff Exp $
  *
  */
 

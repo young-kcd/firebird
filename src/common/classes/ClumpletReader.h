@@ -24,8 +24,6 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: ClumpletReader.h,v 1.8 2004-12-09 19:18:57 alexpeshkoff Exp $
- *
  */
 
 #ifndef CLUMPLETREADER_H

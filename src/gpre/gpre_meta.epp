@@ -26,7 +26,6 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.49 2004-12-09 19:19:11 alexpeshkoff Exp $
  */
 
 #include "firebird.h"
@@ -154,10 +153,10 @@ bool MET_database(dbb* database, bool print_version)
 	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
 
 	const TEXT* p;
-	if (p = database->dbb_c_user) {
+	if ((p = database->dbb_c_user)) {
 		dpb.insertString(isc_dpb_user_name, p, strlen(p));
 	}
-	if (p = database->dbb_c_password) {
+	if ((p = database->dbb_c_password)) {
 		dpb.insertString(isc_dpb_password, p, strlen(p));
 	}
 
@@ -166,7 +165,7 @@ bool MET_database(dbb* database, bool print_version)
 							reinterpret_cast<const char*>(dpb.getBuffer())))
 	{
 		/* We failed to attach, try in read only mode just in case 
-		dpb(isc_dpb_set_db_readonly, TRUE);
+		dpb.insertByte(isc_dpb_set_db_readonly, true);
 		if (isc_attach_database(gds_status, 0, database->dbb_filename, &DB, 
 								dpb.getBufferLength(), 
 								reinterpret_cast<const char*>(dpb.getBuffer()))) {
