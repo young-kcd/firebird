@@ -108,7 +108,7 @@ typedef struct fil {
 
 static SCHAR *alloc(SLONG);
 static void analyze_data(REL);
-static BOOLEAN analyze_data_page(REL, DPG);
+static bool analyze_data_page(REL, DPG);
 static void analyze_index(REL, IDX);
 
 #if (defined WIN_NT)
@@ -119,7 +119,7 @@ static void db_error(int);
 
 static FIL db_open(UCHAR *, USHORT);
 static PAG db_read(SLONG);
-static BOOLEAN key_equality(SSHORT, SCHAR *, BTN);
+static bool key_equality(SSHORT, SCHAR *, BTN);
 static void move(SCHAR *, SCHAR *, SSHORT);
 static void print_distribution(SCHAR *, SLONG *);
 static void print_header(HDR);
@@ -660,7 +660,7 @@ static void analyze_data( REL relation)
 }
 
 
-static BOOLEAN analyze_data_page( REL relation, DPG page)
+static bool analyze_data_page( REL relation, DPG page)
 {
 /**************************************
  *
@@ -679,7 +679,7 @@ static BOOLEAN analyze_data_page( REL relation, DPG page)
 	tddba = GET_THREAD_DATA;
 
 	if (page->dpg_header.pag_type != pag_data)
-		return FALSE;
+		return false;
 
 	space = page->dpg_count * sizeof(struct dpg_repeat);
 
@@ -696,7 +696,7 @@ static BOOLEAN analyze_data_page( REL relation, DPG page)
 
 	++relation->rel_fill_distribution[bucket];
 
-	return TRUE;
+	return true;
 }
 
 
@@ -715,7 +715,8 @@ static void analyze_index( REL relation, IDX index)
 	IRT index_root;
 	IRTD *desc;
 	BTN node;
-	SSHORT n, space, duplicates, key_length, l, dup, page_count;
+	SSHORT n, space, duplicates, key_length, l, page_count;
+	bool dup;
 	UCHAR key[256], *p, *q;
 	SLONG number, page, prior_page, right_sibling, node_count,
 		node_page_count;
@@ -1227,7 +1228,7 @@ static PAG db_read( SLONG page_number)
 #endif
 
 
-static BOOLEAN key_equality( SSHORT length, SCHAR * key, BTN node)
+static bool key_equality( SSHORT length, SCHAR * key, BTN node)
 {
 /**************************************
  *
@@ -1243,20 +1244,20 @@ static BOOLEAN key_equality( SSHORT length, SCHAR * key, BTN node)
 	SCHAR *p;
 
 	if (length != node->btn_length + node->btn_prefix)
-		return FALSE;
+		return false;
 
 	if (!(l = node->btn_length))
-		return TRUE;
+		return true;
 
 	p = (SCHAR *) node->btn_data;
 	key += node->btn_prefix;
 
 	do
 		if (*p++ != *key++)
-			return FALSE;
+			return false;
 	while (--l);
 
-	return TRUE;
+	return true;
 }
 
 

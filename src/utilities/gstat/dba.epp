@@ -127,8 +127,8 @@ typedef struct dba_fil {
 } *DBA_FIL;
 
 static SCHAR *alloc(size_t);
-static void analyze_data(DBA_REL, BOOLEAN);
-static BOOLEAN analyze_data_page(DBA_REL, DPG, BOOLEAN);
+static void analyze_data(DBA_REL, bool);
+static bool analyze_data_page(DBA_REL, DPG, bool);
 static ULONG analyze_fragments(DBA_REL, RHDF);
 static ULONG analyze_versions(DBA_REL, RHDF);
 static void analyze_index(DBA_REL, DBA_IDX);
@@ -144,7 +144,7 @@ static PAG db_read(SLONG);
 #ifdef SUPERSERVER
 static void db_close(int);
 #endif
-static BOOLEAN key_equality(SSHORT, SCHAR *, BTN);
+static bool key_equality(SSHORT, SCHAR *, BTN);
 static void move(SCHAR *, SCHAR *, SSHORT);
 static void print_distribution(SCHAR *, SLONG *);
 static void truncate_name(SCHAR *);
@@ -234,7 +234,7 @@ static struct tdba *gddba;
 #define GSTAT_MSG_FAC	21
 
 #if defined (WIN95)
-static BOOLEAN fAnsiCP = FALSE;
+static bool fAnsiCP = false;
 #define TRANSLATE_CP(a) if (!fAnsiCP) CharToOem(a, a)
 #else
 #define TRANSLATE_CP(a)
@@ -269,8 +269,14 @@ int CLIB_ROUTINE main(int argc, char **argv)
 	DBA_FIL current;
 	SCHAR **end, *name, *p, temp[1024], file_name[1024];
 	double average;
-	BOOLEAN sw_system, sw_data, sw_index, sw_version, sw_header, sw_log,
-		sw_record, sw_relation;
+	bool sw_system = false;
+	bool sw_data = false;
+	bool sw_index = false;
+	bool sw_version = false;
+	bool sw_header = false;
+	bool sw_log = false;
+	bool sw_record = false;
+	bool sw_relation = false;
 	SLONG page;
 	SLONG redir_in, redir_out, redir_err;
 	UCHAR *vp, *vend;
@@ -320,7 +326,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
 #endif
 
 #if defined (WIN95) && !defined (SUPERSERVER)
-	fAnsiCP = FALSE;
+	fAnsiCP = false;
 #endif
 
 /* Perform some special handling when run as an Interbase service.  The
@@ -347,7 +353,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
 		redir_err = atol(argv[4]);
 #ifdef WIN_NT
 #if defined (WIN95) && !defined (SUPERSERVER)
-		fAnsiCP = TRUE;
+		fAnsiCP = true;
 #endif
 		redir_in = _open_osfhandle(redir_in, 0);
 		redir_out = _open_osfhandle(redir_out, 0);
@@ -366,8 +372,6 @@ int CLIB_ROUTINE main(int argc, char **argv)
 		argc -= 4;
 	}
 	name = NULL;
-	sw_log = sw_system = sw_data = sw_index = sw_version = sw_header =
-		sw_record = sw_relation = FALSE;
 
 	MOVE_CLEAR(user_buff, sizeof(user_buff));
 	MOVE_CLEAR(pass_buff, sizeof(pass_buff));
@@ -408,31 +412,31 @@ int CLIB_ROUTINE main(int argc, char **argv)
 				strcpy((char*) password, *argv++);
 			}
 			else if (in_sw_tab->in_sw == IN_SW_DBA_SYSTEM) {
-				sw_system = TRUE;
+				sw_system = true;
 			}
 			else if (in_sw_tab->in_sw == IN_SW_DBA_DATA) {
-				sw_data = TRUE;
+				sw_data = true;
 			}
 			else if (in_sw_tab->in_sw == IN_SW_DBA_INDEX) {
-				sw_index = TRUE;
+				sw_index = true;
 			}
 			else if (in_sw_tab->in_sw == IN_SW_DBA_VERSION) {
-				sw_version = TRUE;
+				sw_version = true;
 			}
 			else if (in_sw_tab->in_sw == IN_SW_DBA_HEADER) {
-				sw_header = TRUE;
+				sw_header = true;
 			}
 			else if (in_sw_tab->in_sw == IN_SW_DBA_LOG) {
-				sw_log = TRUE;
+				sw_log = true;
 			}
 			else if (in_sw_tab->in_sw == IN_SW_DBA_DATAIDX) {
-				sw_index = sw_data = TRUE;
+				sw_index = sw_data = true;
 			}
 			else if (in_sw_tab->in_sw == IN_SW_DBA_RECORD) {
-				sw_record = TRUE;
+				sw_record = true;
 			}
 			else if (in_sw_tab->in_sw == IN_SW_DBA_RELATION) {
-				sw_relation = TRUE;
+				sw_relation = true;
 				while (argv < end && **argv != '-') {
 					DBA_REL *next;
 
@@ -464,10 +468,10 @@ int CLIB_ROUTINE main(int argc, char **argv)
 	}
 
 	if (!sw_data && !sw_index)
-		sw_data = sw_index = TRUE;
+		sw_data = sw_index = true;
 
 	if (sw_record && !sw_data)
-		sw_data = TRUE;
+		sw_data = true;
 
 #if defined (WIN95) && !defined (SUPERSERVER)
 	if (!fAnsiCP) {
@@ -475,7 +479,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
 
 		ulConsoleCP = GetConsoleCP();
 		if (ulConsoleCP == GetACP())
-			fAnsiCP = TRUE;
+			fAnsiCP = true;
 		else if (ulConsoleCP != GetOEMCP()) {
 			FPRINTF(sw_outfile,
 					"WARNING: The current codepage is not supported.  Any use of any\n"
@@ -579,13 +583,14 @@ int CLIB_ROUTINE main(int argc, char **argv)
 
 /* print continuation file sequence */
 
-	dba_print(7, 0, 0, 0, 0, 0);	/* msg 7: \n\nDatabase file sequence: */
-	for (current = tddba->files; current->fil_next;
-		 current =
-		 current->fil_next) dba_print(8, current->fil_string,
-									  current->fil_next->fil_string, 0, 0, 0);	/* msg 8: File %s continues as file %s */
+	dba_print(7, 0, 0, 0, 0, 0);
+	// msg 7: \n\nDatabase file sequence: 
+	for (current = tddba->files; current->fil_next; current = current->fil_next) 
+		dba_print(8, current->fil_string, current->fil_next->fil_string, 0, 0, 0);
+		//* msg 8: File %s continues as file %s
 	dba_print(9, current->fil_string,
-		 (TEXT*)((current == tddba->files) ? "only" : "last"), 0, 0, 0);	/* msg 9: File %s is the %s file\n */
+		 (TEXT*)((current == tddba->files) ? "only" : "last"), 0, 0, 0);
+		 // msg 9: File %s is the %s file\n
 
 /* print log page */
 
@@ -729,7 +734,8 @@ int CLIB_ROUTINE main(int argc, char **argv)
 		EXIT(FINI_ERROR);
 	END_ERROR
 
-	dba_print(10, 0, 0, 0, 0, 0);	/* msg 10: \nAnalyzing database pages ...\n */
+	dba_print(10, 0, 0, 0, 0, 0);
+	// msg 10: \nAnalyzing database pages ...\n 
 
 	for (relation = tddba->relations; relation; relation = relation->rel_next)
 	{
@@ -756,7 +762,8 @@ int CLIB_ROUTINE main(int argc, char **argv)
 		if (sw_data)
 		{
 			dba_print(11, (TEXT *) relation->rel_pointer_page,
-					  (TEXT *) relation->rel_index_root, 0, 0, 0);	/* msg 11: "    Primary pointer page: %ld, Index root page: %ld" */
+					  (TEXT *) relation->rel_index_root, 0, 0, 0);
+			// msg 11: "    Primary pointer page: %ld, Index root page: %ld" 
 			if (sw_record) {
 				average = (relation->rel_records) ?
 					(double) relation->rel_record_space /
@@ -765,8 +772,8 @@ int CLIB_ROUTINE main(int argc, char **argv)
 				FPRINTF(sw_outfile,
 						"    Average record length: %s, total records: %ld\n",
 						buf, relation->rel_records);
-/*	    dba_print(18, buf, relation->rel_records,
-		  0, 0, 0); *//* msg 18: "    Average record length: %s, total records: %ld */
+				// dba_print(18, buf, relation->rel_records, 0, 0, 0);
+				// msg 18: "    Average record length: %s, total records: %ld 
 				average = (relation->rel_versions) ?
 					(double) relation->rel_version_space /
 					relation->rel_versions : 0.0;
@@ -775,8 +782,9 @@ int CLIB_ROUTINE main(int argc, char **argv)
 						"    Average version length: %s, total versions: %ld, max versions: %ld\n",
 						buf, relation->rel_versions,
 						relation->rel_max_versions);
-/*	    dba_print(19, buf, relation->rel_versions, relation->rel_max_versions,
-		  0, 0); *//* msg 19: "    Average version length: %s, total versions: %ld, max versions: %ld */
+				// dba_print(19, buf, relation->rel_versions, 
+				//			 relation->rel_max_versions, 0, 0);
+				// msg 19: " Average version length: %s, total versions: %ld, max versions: %ld 
 			}
 
 			average = (relation->rel_data_pages) ?
@@ -792,17 +800,20 @@ int CLIB_ROUTINE main(int argc, char **argv)
 		FPRINTF(sw_outfile, "\n");
 		for (index = relation->rel_indexes; index; index = index->idx_next)
 		{
-			dba_print(14, index->idx_name, (TEXT *)(SLONG) index->idx_id, 0, 0, 0);	/* msg 14: "    Index %s (%d)" */
+			dba_print(14, index->idx_name, (TEXT *)(SLONG) index->idx_id, 0, 0, 0);
+			// msg 14: "    Index %s (%d)" 
 			dba_print(15, (TEXT *)(SLONG) index->idx_depth,
 					  (TEXT *) index->idx_leaf_buckets,
 					  (TEXT *) index->idx_nodes, 0, 0);
-			/* msg 15: \tDepth: %d, leaf buckets: %ld, nodes: %ld */
+			// msg 15: \tDepth: %d, leaf buckets: %ld, nodes: %ld 
 			average = (index->idx_nodes) ?
 				index->idx_data_length / index->idx_nodes : 0;
 			sprintf((char*) buf, "%.2f", average);
 			dba_print(16, (TEXT*) buf, (TEXT*) index->idx_total_duplicates,
-					  (TEXT*) index->idx_max_duplicates, 0, 0);	/* msg 16: \tAverage data length: %s, total dup: %ld, max dup: %ld" */
-			dba_print(17, 0, 0, 0, 0, 0);	/* msg 17: \tFill distribution: */
+					  (TEXT*) index->idx_max_duplicates, 0, 0);
+			// msg 16: \tAverage data length: %s, total dup: %ld, max dup: %ld"
+			dba_print(17, 0, 0, 0, 0, 0);
+			// msg 17: \tFill distribution:
 			print_distribution("\t    ", index->idx_fill_distribution);
 			FPRINTF(sw_outfile, "\n");
 		}
@@ -963,7 +974,7 @@ static char *alloc(size_t size)
 }
 
 
-static void analyze_data( DBA_REL relation, BOOLEAN sw_record)
+static void analyze_data( DBA_REL relation, bool sw_record)
 {
 /**************************************
  *
@@ -992,14 +1003,15 @@ static void analyze_data( DBA_REL relation, BOOLEAN sw_record)
 			if (*ptr) {
 				++relation->rel_data_pages;
 				if (!analyze_data_page(relation, (DPG) db_read(*ptr), sw_record))
-					dba_print(18, (TEXT *) * ptr, 0, 0, 0, 0);	/* msg 18: "    Expected data on page %ld" */
+					dba_print(18, (TEXT *) * ptr, 0, 0, 0, 0);
+					// msg 18: "    Expected data on page %ld" */
 			}
 		}
 	}
 }
 
 
-static BOOLEAN analyze_data_page( DBA_REL relation, DPG page, BOOLEAN sw_record)
+static bool analyze_data_page( DBA_REL relation, DPG page, bool sw_record)
 {
 /**************************************
  *
@@ -1019,7 +1031,7 @@ static BOOLEAN analyze_data_page( DBA_REL relation, DPG page, BOOLEAN sw_record)
 	tddba = GET_THREAD_DATA;
 
 	if (page->dpg_header.pag_type != pag_data)
-		return FALSE;
+		return false;
 
 	if (sw_record) {
 		move((SCHAR*) page, (SCHAR*) tddba->buffer2, tddba->page_size);
@@ -1062,7 +1074,7 @@ static BOOLEAN analyze_data_page( DBA_REL relation, DPG page, BOOLEAN sw_record)
 
 	++relation->rel_fill_distribution[bucket];
 
-	return TRUE;
+	return true;
 }
 
 
@@ -1121,7 +1133,8 @@ static void analyze_index( DBA_REL relation, DBA_IDX index)
 	BTR bucket;
 	IRT index_root;
 	BTN node;
-	SSHORT space, key_length, l, dup, n;
+	SSHORT space, key_length, l, n;
+	bool dup;
 	UCHAR key[256], *p, *q;
 	SLONG number, page, duplicates;
 	TDBA tddba;
@@ -1197,7 +1210,7 @@ static void analyze_index( DBA_REL relation, DBA_IDX index)
 		bucket = (BTR) db_read(page);
 		if (bucket->btr_header.pag_type != pag_index) {
 			dba_print(19, (TEXT *) page, (TEXT *) number, 0, 0, 0);
-			/* mag 19: "    Expected b-tree bucket on page %ld from %ld" */
+			// mag 19: "    Expected b-tree bucket on page %ld from %ld" 
 			break;
 		}
 	}
@@ -1358,7 +1371,8 @@ static DBA_FIL db_open( UCHAR * file_name, USHORT file_length)
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
 								GSTAT_MSG_FAC, 29,
 								isc_arg_string, file_name,
-								0, NULL, 0, NULL, 0, NULL, 0, NULL);	/* msg 29: Can't open database file %s */
+								0, NULL, 0, NULL, 0, NULL, 0, NULL);
+		// msg 29: Can't open database file %s
 #endif
 		db_error(GetLastError());
 	}
@@ -1421,7 +1435,8 @@ static PAG db_read( SLONG page_number)
 #ifdef SUPERSERVER
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
 								GSTAT_MSG_FAC, 30,
-								0, NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL);	/* msg 30: Can't read a database page */
+								0, NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL);
+		// msg 30: Can't read a database page 
 #endif
 		db_error(GetLastError());
 	}
@@ -1435,7 +1450,8 @@ static PAG db_read( SLONG page_number)
 #ifdef SUPERSERVER
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
 								GSTAT_MSG_FAC, 30,
-								0, NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL);	/* msg 30: Can't read a database page */
+								0, NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL);
+		// msg 30: Can't read a database page 
 #endif
 		db_error(GetLastError());
 	}
@@ -1445,7 +1461,8 @@ static PAG db_read( SLONG page_number)
 								GSTAT_MSG_FAC, 4,
 								0, NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL);
 #endif
-		dba_error(4, 0, 0, 0, 0, 0);	/* msg 4: Unexpected end of database file. */
+		dba_error(4, 0, 0, 0, 0, 0);
+		// msg 4: Unexpected end of database file. 
 	}
 
 	return tddba->global_buffer;
@@ -1555,7 +1572,8 @@ static DBA_FIL db_open( UCHAR * file_name, USHORT file_length)
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
 								GSTAT_MSG_FAC, 29,
 								isc_arg_string, file_name,
-								0, NULL, 0, NULL, 0, NULL, 0, NULL);	/* msg 29: Can't open database file %s */
+								0, NULL, 0, NULL, 0, NULL, 0, NULL);
+		// msg 29: Can't open database file %s 
 #endif
 		db_error(errno);
 	}
@@ -1616,7 +1634,8 @@ static PAG db_read( SLONG page_number)
 #ifdef SUPERSERVER
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
 								GSTAT_MSG_FAC, 30,
-								0, NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL);	/* msg 30: Can't read a database page */
+								0, NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL);
+		// msg 30: Can't read a database page 
 #endif
 		db_error(errno);
 	}
@@ -1628,7 +1647,8 @@ static PAG db_read( SLONG page_number)
 #ifdef SUPERSERVER
 			CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
 									GSTAT_MSG_FAC, 30,
-									0, NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL);	/* msg 30: Can't read a database page */
+									0, NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL);
+			// msg 30: Can't read a database page 
 #endif
 			db_error(errno);
 		}
@@ -1639,7 +1659,8 @@ static PAG db_read( SLONG page_number)
 									0, NULL,
 									0, NULL, 0, NULL, 0, NULL, 0, NULL);
 #endif
-			dba_error(4, 0, 0, 0, 0, 0);	/* msg 4: Unexpected end of database file. */
+			dba_error(4, 0, 0, 0, 0, 0);
+			// msg 4: Unexpected end of database file. 
 		}
 		p += l;
 		length -= l;
@@ -1695,14 +1716,14 @@ static void dba_print(
 
 	tddba = GET_THREAD_DATA;
 
-	gds__msg_format(NULL_PTR, GSTAT_MSG_FAC, number, sizeof(buffer), buffer,
+	gds__msg_format(NULL, GSTAT_MSG_FAC, number, sizeof(buffer), buffer,
 					arg1, arg2, arg3, arg4, arg5);
 	TRANSLATE_CP(buffer);
 	FPRINTF(tddba->sw_outfile, "%s\n", buffer);
 }
 
 
-static BOOLEAN key_equality( SSHORT length, SCHAR * key, BTN node)
+static bool key_equality( SSHORT length, SCHAR * key, BTN node)
 {
 /**************************************
  *
@@ -1718,20 +1739,20 @@ static BOOLEAN key_equality( SSHORT length, SCHAR * key, BTN node)
 	SCHAR *p;
 
 	if (length != node->btn_length + node->btn_prefix)
-		return FALSE;
+		return false;
 
 	if (!(l = node->btn_length))
-		return TRUE;
+		return true;
 
 	p = (SCHAR *) node->btn_data;
 	key += node->btn_prefix;
 
 	do
 		if (*p++ != *key++)
-			return FALSE;
+			return false;
 	while (--l);
 
-	return TRUE;
+	return true;
 }
 
 
