@@ -22,6 +22,8 @@
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix/MIPS" port
  * 2002.10.27 Sean Leyne - Completed removal of "NeXT" port
  *
+ * 2002.10.28 Sean Leyne - Code Cleanup, removed obsolete "DG" port
+ *
  */
 #ifndef _INTL_LANGDRV_H_
 #define _INTL_LANGDRV_H_
@@ -53,10 +55,6 @@
 #define	IB_CANADA_ENGLISH 6
 
 #ifdef SCO
-#define NON_DLINK_OS
-#endif
-
-#ifdef DG
 #define NON_DLINK_OS
 #endif
 
