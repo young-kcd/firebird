@@ -98,7 +98,6 @@ extern "C" {
 #define THD_MUTEX_DESTROY(mutx)
 #endif
 
-#define MAXPATHLEN	1024
 #define IO_RETRY	20
 
 #ifdef O_SYNC
@@ -754,7 +753,7 @@ int PIO_read(FIL file, BDB bdb, PAG page, STATUS * status_vector)
 #ifndef PREAD_PWRITE
 			THD_MUTEX_UNLOCK(file->fil_mutex);
 #endif
-			if (bytes == -1 && !SYSCALL_INTERRUPTED(errno))
+			if (bytes == -1U && !SYSCALL_INTERRUPTED(errno))
 				return unix_error("read", file, isc_io_read_err,
 								  status_vector);
 		}
@@ -773,7 +772,7 @@ int PIO_read(FIL file, BDB bdb, PAG page, STATUS * status_vector)
 				break;
 			THD_MUTEX_UNLOCK(file->fil_mutex);
 #endif
-			if (bytes == -1 && !SYSCALL_INTERRUPTED(errno))
+			if (bytes == -1U && !SYSCALL_INTERRUPTED(errno))
 				return unix_error("read", file, isc_io_read_err,
 								  status_vector);
 		}
@@ -847,7 +846,7 @@ int PIO_write(FIL file, BDB bdb, PAG page, STATUS * status_vector)
 				break;
 			THD_MUTEX_UNLOCK(file->fil_mutex);
 #endif
-			if (bytes == -1 && !SYSCALL_INTERRUPTED(errno))
+			if (bytes == -1U && !SYSCALL_INTERRUPTED(errno))
 				return unix_error("write", file, isc_io_write_err,
 								  status_vector);
 		}
@@ -866,7 +865,7 @@ int PIO_write(FIL file, BDB bdb, PAG page, STATUS * status_vector)
 				break;
 			THD_MUTEX_UNLOCK(file->fil_mutex);
 #endif
-			if (bytes == -1 && !SYSCALL_INTERRUPTED(errno))
+			if (bytes == -1U && !SYSCALL_INTERRUPTED(errno))
 				return unix_error("write", file, isc_io_write_err,
 								  status_vector);
 		}
@@ -976,7 +975,7 @@ static FIL seek_file(FIL file, BDB bdb, UINT64 * offset, STATUS * status_vector)
 #else
 	THD_MUTEX_LOCK(file->fil_mutex);
 
-	if ((lseek(file->fil_desc, LSEEK_OFFSET_CAST lseek_offset, 0)) == -1) {
+	if ((lseek(file->fil_desc, LSEEK_OFFSET_CAST lseek_offset, 0)) == (off_t)-1) {
 		THD_MUTEX_UNLOCK(file->fil_mutex);
 		return (FIL) unix_error("lseek", file, isc_io_access_err,
 								status_vector);

@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.33 2002-11-04 11:19:16 eku Exp $
+$Id: inet.cpp,v 1.34 2002-11-06 07:08:47 eku Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -74,14 +74,11 @@ $Id: inet.cpp,v 1.33 2002-11-04 11:19:16 eku Exp $
 #include <sys/param.h>
 #endif
 
-
 #ifdef HAVE_GRP_H
 #include <grp.h>
 #endif
 
-
 #ifdef HAVE_SYS_TYPES_H
-#include <pwd.h>
 #include <sys/types.h>
 #endif
 
@@ -340,10 +337,6 @@ static ULONG inet_debug_timer(void)
 // against the ODR (One Definition Rule).
 //SLONG INET_max_data;
 //SLONG     INET_remote_buffer;
-
-#ifndef MAXPATHLEN
-#define MAXPATHLEN	1024
-#endif
 
 #ifndef MAXHOSTLEN
 #define MAXHOSTLEN	64

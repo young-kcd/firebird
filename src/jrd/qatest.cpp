@@ -110,10 +110,6 @@ defined APIs for this function.
 #define TEXT	char
 #endif
 
-#ifndef MAXPATHLEN
-#define MAXPATHLEN	1024
-#endif
-
 #define QATEST_testing		0
 #define QATEST_delete_database	1
 #define QATEST_delete_shadow	2

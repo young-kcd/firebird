@@ -50,10 +50,6 @@
 #include "../jrd/sch_proto.h"
 #include "../remote/window.h"
 
-#ifndef MAXPATHLEN
-#define MAXPATHLEN      256
-#endif
-
 #define statistics      stat
 
 extern "C" {

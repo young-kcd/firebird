@@ -96,10 +96,6 @@ extern "C" {
 #define INVALID_SOCKET -1
 #endif
 
-#ifndef MAXPATHLEN
-#define MAXPATHLEN	1024
-#endif
-
 extern int xdrmem_create();
 
 static int accept_connection(PORT, P_CNCT *);

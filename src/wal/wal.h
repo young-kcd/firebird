@@ -47,10 +47,6 @@
 #define SYS_ERR			gds_arg_unix
 #endif
 
-#ifndef MAXPATHLEN
-#define MAXPATHLEN		1024
-#endif
-
 #define MAX_JRN_INIT_DATA	2 * (MAXPATHLEN + 2)
 
 #define WALS_VERSION1		1

@@ -36,9 +36,6 @@
 
 #include <vector>
 
-#ifndef MAXPATHLEN
-#define MAXPATHLEN      1024
-#endif
 
 #define BLKDEF(type, root, tail) type,
 enum alice_blk_t

@@ -100,10 +100,6 @@ static USHORT ostype = 0;
 #define MAX_USER_LENGTH		33
 #define MAX_OTHER_PARAMS	(1+1+sizeof(port->port_dummy_packet_interval))
 
-#ifndef MAXPATHLEN
-#define MAXPATHLEN	1024
-#endif
-
 extern "C" {
 
 static RVNT add_event(PORT);

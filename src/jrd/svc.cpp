@@ -132,10 +132,6 @@
 #define SYS_ERR		isc_arg_unix
 #endif
 
-#ifndef MAXPATHLEN
-#define MAXPATHLEN	256
-#endif
-
 #ifdef VMS
 #define waitpid(x,y,z)	wait (y)
 #endif

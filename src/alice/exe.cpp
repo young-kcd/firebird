@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.5 2002-10-31 05:05:49 seanleyne Exp $
+//	$Id: exe.cpp,v 1.6 2002-11-06 07:08:41 eku Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -66,10 +66,6 @@ static TEXT val_errors[] =
 	isc_info_dpage_errors, isc_info_ipage_errors, isc_info_ppage_errors,
 	isc_info_tpage_errors, gds_info_end
 };
-
-#ifndef MAXPATHLEN
-#define MAXPATHLEN	1024
-#endif
 
 #define STUFF_DPB(blr)  {*d++ = (UCHAR)(blr);}
 #define STUFF_DPB_INT(blr)			\

@@ -39,7 +39,7 @@
  *
  */
 /*
-$Id: why.c,v 1.21 2002-10-31 05:05:57 seanleyne Exp $
+$Id: why.c,v 1.22 2002-11-06 07:08:45 eku Exp $
 */
 
 #include "firebird.h"
@@ -107,10 +107,6 @@ $Id: why.c,v 1.21 2002-10-31 05:05:57 seanleyne Exp $
 #undef TEXT
 #endif
 #define TEXT		SCHAR
-#endif
-
-#ifndef MAXPATHLEN
-#define MAXPATHLEN	1024
 #endif
 
 #ifndef F_OK

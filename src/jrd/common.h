@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.45 2002-11-04 13:57:10 eku Exp $
+$Id: common.h,v 1.46 2002-11-06 07:08:44 eku Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -226,15 +226,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define MOVE_FAST(from,to,length)	memcpy (to, from, (int) (length))
 #define MOVE_FASTER(from,to,length)	memcpy (to, from, (int) (length))
 #define MOVE_CLEAR(to,length)		memset (to, 0, (int) (length))
-
-#if 0  /* sys/param included up top, wait till John says if need #define. MOD 16-07-2001 */
-#ifdef DARWIN
-#define _PPC_PARAM_H_
-#endif
-#ifndef MAXPATHLEN
-#include <sys/param.h>
-#endif
-#endif
 
 typedef RETSIGTYPE (*SIG_FPTR) (int);
 #endif /* Darwin Platforms */
@@ -590,10 +581,6 @@ typedef unsigned __int64 UINT64;
 //#define BOOLEAN_DEFINED
 //typedef unsigned char BOOLEAN;
 
-#ifndef MAXPATHLEN
-#define MAXPATHLEN	260
-#endif
-
 typedef RETSIGTYPE (CLIB_ROUTINE * SIG_FPTR) (int);
 #endif /* WIN_NT */
 
@@ -616,10 +603,6 @@ typedef RETSIGTYPE (CLIB_ROUTINE * SIG_FPTR) (int);
 #define NOHOSTNAME
 #define KILLER_SIGNALS
 #define SYSV_SIGNALS
-
-#ifndef MAXPATHLEN
-#define MAXPATHLEN      1024
-#endif
 
 #define I386            1
 #define UNIX            1
@@ -657,9 +640,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define MOVE_FASTER(from,to,length)  memcpy (to, from, (unsigned int) (length))
 #define MOVE_CLEAR(to,length)        memset (to, 0, (unsigned int) (length))
 
-#ifndef MAXPATHLEN
-#define MAXPATHLEN      1024
-#endif
 /*  These functions are supported so we don't need the defines
 #define setreuid(ruid,euid)     setuid(euid)
 #define setregid(rgid,egid)     setgid(egid)
@@ -679,10 +659,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 /*#define DOUBLE_ALIGN    8*/
 #define IMPLEMENTATION  isc_info_db_impl_alpha_osf	/* 52 */
 #define                 IEEE
-
-#ifndef MAXPATHLEN
-#define MAXPATHLEN      1024
-#endif
 
 #define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)
 #define MOVE_FAST(from,to,length)       memcpy (to, from, (int) (length))
@@ -1056,10 +1032,6 @@ void GDS_breakpoint(int);
 
 #ifndef ISC_EXT_LIB_PATH_ENV
 #define ISC_EXT_LIB_PATH_ENV	"INTERBASE_EXT_LIB_PATH"
-#endif
-
-#ifndef MAXPATHLEN
-#define MAXPATHLEN		1024
 #endif
 
 #define ISC_STATUS_LENGTH	20

@@ -29,7 +29,7 @@
  *
  */
 /*
-$Id: lock.cpp,v 1.20 2002-11-04 11:19:08 eku Exp $
+$Id: lock.cpp,v 1.21 2002-11-06 07:08:46 eku Exp $
 */
 
 #include "firebird.h"
@@ -182,10 +182,6 @@ SSHORT LOCK_debug_level = 0;
 
 #ifndef MUTEX
 #define MUTEX		LOCK_header->lhb_mutex
-#endif
-
-#ifndef MAXPATHLEN
-#define MAXPATHLEN	256
 #endif
 
 #ifndef SV_INTERRUPT

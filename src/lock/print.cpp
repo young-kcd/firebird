@@ -69,10 +69,6 @@
 #define FPRINTF         ib_fprintf
 #endif
 
-#ifndef MAXPATHLEN
-#define MAXPATHLEN      256
-#endif
-
 typedef IB_FILE *OUTFILE;
 
 #define SW_I_ACQUIRE	1

@@ -328,10 +328,6 @@ static void		validate_memory(void);
 #define O_BINARY		0
 #endif
 
-#ifndef MAXPATHLEN
-#define MAXPATHLEN		1024
-#endif
-
 #ifndef GENERIC_SQLCODE
 #define GENERIC_SQLCODE		-999
 #endif

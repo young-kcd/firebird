@@ -32,7 +32,7 @@
  *
  */
 
- /* $Id: head.cpp,v 1.14 2002-10-30 06:40:50 seanleyne Exp $ */
+ /* $Id: head.cpp,v 1.15 2002-11-06 07:08:46 eku Exp $ */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -95,10 +95,6 @@
 #define GDS_SERVER	"GDS_SERVER"
 #else
 #define GDS_SERVER	"GDS_BRIDGE"
-#endif
-
-#ifndef MAXPATHLEN
-#define MAXPATHLEN	256
 #endif
 
 #define ESTABLISH_PIPES { \

@@ -54,10 +54,6 @@
 #include "../isql/isql_proto.h"
 #include "../jrd/gds_proto.h"
 
-#ifndef MAXPATHLEN
-#define MAXPATHLEN      256
-#endif
-
 typedef struct scrollkeys {
 	WORD wVirtkey;
 	int iMessage;

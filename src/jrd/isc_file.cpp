@@ -93,7 +93,6 @@ typedef struct itm {
 
 #if (defined NFS || defined FREEBSD || defined NETBSD || defined SINIXZ)
 #include <pwd.h>
-#define MAXPATHLEN	1024
 #endif
 
 #ifdef hpux
@@ -218,16 +217,8 @@ extern struct passwd *getpwnam(), *getpwuid();
 #ifndef TEXT
 #define TEXT		SCHAR
 #endif
-
-#ifndef MAXPATHLEN
-#define MAXPATHLEN	_MAX_PATH
-#endif
 #endif
 
-
-#ifndef MAXPATHLEN
-#define MAXPATHLEN	512
-#endif
 
 #ifndef MAXHOSTLEN
 #define MAXHOSTLEN	64

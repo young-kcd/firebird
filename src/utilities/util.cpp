@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: util.cpp,v 1.7 2002-09-18 12:50:05 eku Exp $
+$Id: util.cpp,v 1.8 2002-11-06 07:08:47 eku Exp $
 */
 
 #include "firebird.h"
@@ -63,11 +63,6 @@ $Id: util.cpp,v 1.7 2002-09-18 12:50:05 eku Exp $
 #include "../utilities/util_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
-
-#ifndef MAXPATHLEN
-#define MAXPATHLEN      1024
-#endif
-
 
 
 pid_t UTIL_start_process(char *process, char **argv)

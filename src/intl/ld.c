@@ -26,6 +26,8 @@
 #include "../intl/ldcommon.h"
 #include "../intl/ld_proto.h"
 
+#include <sys/param.h> /* for MAXPATHLEN */
+
 /* Commented out to make Linux version work because it is inaccessiable on all 
   known platforms. Nickolay Samofatov, 10 Sept 2002
 extern void gds__log(UCHAR*, ...);

@@ -67,10 +67,6 @@
 #define BUFFER_SIZE	MAX_DATA
 #define MAX_SEQUENCE	256
 
-#ifndef MAXPATHLEN
-#define MAXPATHLEN	1024
-#endif
-
 #ifndef MAXHOSTLEN
 #define MAXHOSTLEN	64
 #endif

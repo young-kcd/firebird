@@ -43,12 +43,6 @@
 #define FOPEN_READ_TYPE	"r"
 #endif
 
-#ifndef MAXPATHLEN
-#define MAXPATHLEN	256
-#endif
-
-//extern LHB ISC_map_file();
-
 static USHORT sw_requests, sw_processes, sw_locks, sw_series, sw_history,
 	sw_mutex;
 
