@@ -123,6 +123,9 @@
  * 2003.01.14 Dmitry Yemanov: Fixed bug with cursors in triggers
  *
  * 2003.01.15 Dmitry Yemanov: Added support for parametrized events
+ *
+ * 2003.04.05 Dmitry Yemanov: Changed logic of ORDER BY with collations
+ *							  (because of the parser change)
  */
 
 #include "firebird.h"
@@ -203,7 +206,7 @@ static DSQL_FLD resolve_context(DSQL_REQ, STR, STR, DSQL_CTX);
 static BOOLEAN set_parameter_type(DSQL_NOD, DSQL_NOD, BOOLEAN);
 static void set_parameters_name(DSQL_NOD, DSQL_NOD);
 static void set_parameter_name(DSQL_NOD, DSQL_NOD, DSQL_REL);
-static TEXT *pass_exact_name (TEXT*);
+static TEXT *pass_exact_name(TEXT*);
 
 STR temp_collation_name = NULL;
 
@@ -1876,7 +1879,7 @@ static DSQL_NOD compose( DSQL_NOD expr1, DSQL_NOD expr2, NOD_TYPE operator_)
   
  	explode_asterisk
   
-    @brief	Expand an '   @brief' in a field list to the corresponding fields.
+    @brief	Expand an '*' in a field list to the corresponding fields.
  
 
     @param node
@@ -2842,7 +2845,6 @@ static DSQL_NOD pass1_collate( DSQL_REQ request, DSQL_NOD sub1, STR collation)
 
 	tdsql = GET_THREAD_DATA;
 
-
 	node = MAKE_node(nod_cast, e_cast_count);
 	field = FB_NEW_RPT(*tdsql->tsql_default, 1) dsql_fld;
 	field->fld_name[0] = 0;
@@ -3257,7 +3259,6 @@ static DSQL_NOD pass1_field( DSQL_REQ request, DSQL_NOD input, USHORT list)
         is_check_constraint = TRUE;
     else
         is_check_constraint = FALSE;
-
 
 /* handle an array element */
 
@@ -4229,20 +4230,20 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 
 /* Process LIMIT, if any */
 
-    if (node = input->nod_arg [e_sel_limit]) {
+    if (node = input->nod_arg[e_sel_limit]) {
         /* CVC: This line is a hint because set_parameter_type() doesn't receive
            the dialect currently as an argument. */
         node->nod_desc.dsc_scale = request->req_client_dialect;
         
-        if (node->nod_arg [e_limit_length]) {
-            sub = PASS1_node (request, node->nod_arg [e_limit_length], 0);
-            rse->nod_arg [e_rse_first] = sub;
-            set_parameter_type (sub, node, FALSE);
+        if (node->nod_arg[e_limit_length]) {
+            sub = PASS1_node(request, node->nod_arg[e_limit_length], 0);
+            rse->nod_arg[e_rse_first] = sub;
+            set_parameter_type(sub, node, FALSE);
         }
-        if (node->nod_arg [e_limit_skip]) {
-            sub = PASS1_node (request, node->nod_arg [e_limit_skip], 0);
-            rse->nod_arg [e_rse_skip] = sub;
-            set_parameter_type (sub, node, FALSE);
+        if (node->nod_arg[e_limit_skip]) {
+            sub = PASS1_node(request, node->nod_arg[e_limit_skip], 0);
+            rse->nod_arg[e_rse_skip] = sub;
+            set_parameter_type(sub, node, FALSE);
         }
     }
     
@@ -4267,11 +4268,11 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 		DSQL_pretty(input, 0);
 #endif
 
-/* Process select list, if any.  If not, generate one */
+/* Process select list, if any. If not, generate one */
 
 	if (node = input->nod_arg[e_sel_list]) {
 		++request->req_in_select_list;
-		rse->nod_arg[e_rse_items] = list = pass1_sel_list(request, node);
+		rse->nod_arg[e_rse_items] = pass1_sel_list(request, node);
 		--request->req_in_select_list;
 	}
 	else {
@@ -4280,9 +4281,25 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 		for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++) {
 			explode_asterisk(*ptr, aggregate, &stack);
 		}
-		rse->nod_arg[e_rse_items] = MAKE_list(stack);
+		list = rse->nod_arg[e_rse_items] = MAKE_list(stack);
+		/* dimitr: the below code reconstructs the select list after creation
+				   its internal format above. It allows to order/group by
+				   ordinals without using explicit field names (e.g. with asterisk).
+				   UNTESTED!!!
+		node = MAKE_node(nod_list, rse->nod_arg[e_rse_items]->nod_count);
+		USHORT i = 0;
+		for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; i++, ptr++) {
+			node->nod_arg[i] = MAKE_node(nod_field_name, e_fln_count);
+			TEXT * temp = ((DSQL_CTX)(*ptr)->nod_arg[e_fld_context])->ctx_relation->rel_name;
+			node->nod_arg[i]->nod_arg[e_fln_context] =
+				(DSQL_NOD) MAKE_string(temp, strlen(temp));
+			temp = ((DSQL_FLD)(*ptr)->nod_arg[e_fld_field])->fld_name;
+			node->nod_arg[i]->nod_arg[e_fln_name] =
+				(DSQL_NOD) MAKE_string(temp, strlen(temp));
+		}
+		input->nod_arg[e_sel_list] = node;
+		*/
 	}
-
 
 /* Process ORDER clause, if any */
 
@@ -4678,7 +4695,7 @@ static DSQL_NOD pass1_simple_case( DSQL_REQ request, DSQL_NOD input, USHORT proc
  **/
 static DSQL_NOD pass1_sort( DSQL_REQ request, DSQL_NOD input, DSQL_NOD s_list)
 {
-	DSQL_NOD node, *ptr, *end, *ptr2, node1, node2;
+	DSQL_NOD node, *ptr, *end, *ptr2;
 	SLONG position;
 
 	DEV_BLKCHK(request, dsql_type_req);
@@ -4697,15 +4714,26 @@ static DSQL_NOD pass1_sort( DSQL_REQ request, DSQL_NOD input, DSQL_NOD s_list)
 
 	for (ptr = input->nod_arg, end = ptr + input->nod_count; ptr < end; ptr++) {
 		DEV_BLKCHK(*ptr, dsql_type_nod);
-		node1 = *ptr;
+		DSQL_NOD node1 = *ptr;
 		if (node1->nod_type != nod_order) {
 			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, gds_arg_gds, 
 				gds_dsql_command_err, gds_arg_gds, gds_order_by_err, 0);	/* invalid ORDER BY clause */
 		}					  
-		node2 = MAKE_node(nod_order, e_order_count);
+		DSQL_NOD node2 = MAKE_node(nod_order, e_order_count);
 		node2->nod_arg[e_order_flag] = node1->nod_arg[e_order_flag]; /* asc/desc flag */
 		node2->nod_arg[e_order_nulls] = node1->nod_arg[e_order_nulls]; /* nulls first/last flag */
+
+		STR collate = 0;
+		
+		// get node of value to be ordered by
 		node1 = node1->nod_arg[e_order_field];
+
+		if (node1->nod_type == nod_collate) {
+			collate = (STR) node1->nod_arg[e_coll_target];
+			// substitute nod_collate with its argument (real value)
+			node1 = node1->nod_arg[e_coll_source];
+		}
+
 		if (node1->nod_type == nod_constant && node1->nod_desc.dsc_dtype == dtype_long) {
 			position = (SLONG) (node1->nod_arg[0]);
 			if ((position < 1) || !s_list || 
@@ -4713,18 +4741,18 @@ static DSQL_NOD pass1_sort( DSQL_REQ request, DSQL_NOD input, DSQL_NOD s_list)
 				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, gds_arg_gds,
 					gds_dsql_command_err, gds_arg_gds, gds_order_by_err, 0);	/* invalid ORDER BY clause */
 			}
-			node2->nod_arg[e_order_field] =	PASS1_node(request, s_list->nod_arg[position - 1], 0);
-		} 
-		else {
-			node2->nod_arg[e_order_field] = PASS1_node(request, node1, 0);
+			// substitute ordinal with appropriate field
+			node1 = s_list->nod_arg[position - 1];
         }
 
-		if ((*ptr)->nod_arg[e_order_collate]) {
-			DEV_BLKCHK((*ptr)->nod_arg[e_order_collate], dsql_type_str);
-			node2->nod_arg[e_order_field] =
-				pass1_collate(request, node2->nod_arg[e_order_field],
-							  (STR) (*ptr)->nod_arg[e_order_collate]);
+		node1 = PASS1_node(request, node1, 0);
+		if (collate) {
+			// finally apply collation order, if necessary
+			node1 = pass1_collate(request, node1, collate);
 		}
+
+		// store actual value to be ordered by
+		node2->nod_arg[e_order_field] = node1;
 		*ptr2++ = node2;
 	}
 
@@ -4953,8 +4981,17 @@ static DSQL_NOD pass1_union( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order_li
 		uptr = sort->nod_arg;
 		for (ptr = order_list->nod_arg, end = ptr + order_list->nod_count;
 			 ptr < end; ptr++, uptr++) {
+			
 			order1 = *ptr;
+
+			STR collate = 0;
 			position = order1->nod_arg[e_order_field];
+
+			if (position->nod_type == nod_collate) {
+				collate = (STR) position->nod_arg[e_coll_target];
+				position = position->nod_arg[e_coll_source];
+			}
+
 			if (position->nod_type != nod_constant || position->nod_desc.dsc_dtype != dtype_long)
 				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
 						  gds_arg_gds, gds_dsql_command_err, gds_arg_gds, gds_order_by_err,	/* invalid ORDER BY clause */
@@ -4970,10 +5007,10 @@ static DSQL_NOD pass1_union( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order_li
 			*uptr = order2 = MAKE_node(nod_order, e_order_count);
 			order2->nod_arg[e_order_field] = union_items->nod_arg[number - 1];
 			order2->nod_arg[e_order_flag] = order1->nod_arg[e_order_flag];
-			if (order1->nod_arg[e_order_collate])
+			if (collate) {
 				order2->nod_arg[e_order_field] = 
-					pass1_collate(request, order2->nod_arg[e_order_field],
-						(STR) order1->nod_arg[e_order_collate]);
+					pass1_collate(request, order2->nod_arg[e_order_field], collate);
+			}
 			order2->nod_arg[e_order_nulls] = order1->nod_arg[e_order_nulls];
 		}
 		union_rse->nod_arg[e_rse_sort] = sort;

@@ -29,11 +29,11 @@
 
 const InternalInfo::InfoAttr InternalInfo::attr_array[max_internal_id] = {
 	{"<UNKNOWN>", 0},
-	{"CONNECTION_ID", 0},
-	{"TRANSACTION_ID", 0},
+	{"CURRENT_CONNECTION", 0},
+	{"CURRENT_TRANSACTION", 0},
 	{"GDSCODE", REQ_procedure},
 	{"SQLCODE", REQ_procedure},
-	{"ROWS_AFFECTED", REQ_procedure},
+	{"ROW_COUNT", REQ_procedure},
 	{"INSERTING/UPDATING/DELETING", REQ_trigger}
 };
 
@@ -46,4 +46,3 @@ USHORT InternalInfo::getMask(internal_info_id info_id)
 {
 	return attr_array[info_id].req_mask;
 }
-

@@ -143,7 +143,6 @@ typedef ENUM nod_t
 	nod_order,
 	nod_flag,	/* 100 */
 	nod_join,
-	nod_top,
 /* NOTE: when adding an expression node, be sure to
    test various combinations; in particular, think 
    about parameterization using a '?' - there is code
@@ -326,7 +325,7 @@ typedef ENUM nod_t
 	nod_replace_view, /* CREATE OR ALTER VIEW */
 	nod_redef_view, /* allows silent creation/overwriting of a view */
 	nod_for_update, /* FOR UPDATE clause */
-	nod_user_savepoint, /* Savepoints support */
+	nod_user_savepoint, /* savepoints support */
 	nod_undo_savepoint,
 	nod_label, /* label support */
 	nod_exec_into /* EXECUTE STATEMENT INTO */
@@ -342,8 +341,8 @@ class dsql_nod : public pool_alloc_rpt<class dsql_nod*, dsql_type_nod>
 public:
 	NOD_TYPE nod_type;			/* Type of node */
 	DSC nod_desc;				/* Descriptor */
-    USHORT       nod_line;		/* Source line of the statement. */
-    USHORT       nod_column;		/* Source column of the statement. */
+    USHORT nod_line;			/* Source line of the statement. */
+    USHORT nod_column;			/* Source column of the statement. */
 	USHORT nod_count;			/* Number of arguments */
 	USHORT nod_flags;
 	struct dsql_nod *nod_arg[1];
@@ -471,7 +470,7 @@ typedef dsql_nod* DSQL_NOD;
 #define e_vrn_name	0			/* nod_variable_name */
 #define e_vrn_count	1
 
-#define e_fln_context	0		/* od_field_name */
+#define e_fln_context	0		/* nod_field_name */
 #define e_fln_name	1
 #define e_fln_count	2
 
@@ -733,9 +732,8 @@ typedef dsql_nod* DSQL_NOD;
 
 #define e_order_field   0		/* nod_order */
 #define e_order_flag    1
-#define e_order_collate 2
-#define e_order_nulls   3
-#define e_order_count   4
+#define e_order_nulls   2
+#define e_order_count   3
 
 #define e_lock_tables	0
 #define e_lock_mode	1

@@ -156,7 +156,7 @@ static DSQL_FLD	g_field;
 static FIL	g_file;
 static DSQL_NOD	g_field_name;
 static TEXT	*beginning;
-static SSHORT	log_defined, cache_defined;
+static SSHORT log_defined, cache_defined;
 static void	yyerror (TEXT *);
 
 #define YYPARSE_PARAM_TYPE
@@ -233,7 +233,6 @@ static USHORT   param_number;
 %token CHECK
 %token CHECK_POINT_LEN
 %token COLLATE
-%token COLLATION
 %token COMMA
 %token COMMIT
 %token COMMITTED
@@ -321,8 +320,8 @@ static USHORT   param_number;
 %token MANUAL
 %token MAXIMUM
 %token MAX_SEGMENT
-%token MERGE
 %token MESSAGE
+%token MERGE
 %token MINIMUM
 %token MODULE_NAME
 %token NAMES
@@ -458,8 +457,8 @@ static USHORT   param_number;
 
 /* tokens added for Firebird 1.5 */
 
-%token CONNECTION_ID
-%token TRANSACTION_ID
+%token CURRENT_CONNECTION
+%token CURRENT_TRANSACTION
 %token BIGINT
 %token CASE
 %token NULLIF
@@ -467,7 +466,7 @@ static USHORT   param_number;
 %token USING
 %token NULLS
 %token LAST
-%token ROWS_AFFECTED
+%token ROW_COUNT
 %token LOCK
 %token SAVEPOINT
 %token STATEMENT
@@ -1638,9 +1637,11 @@ while		: WHILE '(' search_condition ')' DO proc_block
 					  $3, $6, NULL); }
 		;
 
+/* dimitr: commented out until pass1.cpp is ready to assign label numbers properly
 label	: symbol_label_name ':'
 			{ $$ = make_node (nod_label, e_label_count, $1, NULL); }
 		;
+*/
 
 breakleave	: KW_BREAK ';'
 			{ $$ = make_node (nod_breakleave, e_breakleave_count, NULL, NULL); }
@@ -1725,7 +1726,7 @@ rview_clause	: symbol_view_name column_parens_opt AS begin_string union_view
 					  $1, $2, $5, $6, $7); }   
 		;        
 
-
+/*
 replace_view_clause	: symbol_view_name column_parens_opt AS begin_string union_view 
                                                             check_opt end_string
 			{ $$ = make_node (nod_replace_view, (int) e_view_count, 
@@ -1737,6 +1738,7 @@ alter_view_clause	: symbol_view_name column_parens_opt AS begin_string union_vie
  			{ $$ = make_node (nod_mod_view, (int) e_view_count, 
 					  $1, $2, $5, $6, $7); }   
  		;        
+*/
 
 union_view      : union_view_expr
 			{ $$ = make_node (nod_select, (int) 2, $1, NULL); }
@@ -2020,8 +2022,8 @@ keyword_or_column	: COLUMN
 			| KW_BREAK
 			| SUBSTRING
 			| KW_DESCRIPTOR
-			| CONNECTION_ID
-			| TRANSACTION_ID
+			| CURRENT_CONNECTION
+			| CURRENT_TRANSACTION
 			;
 
 col_opt		: ALTER
@@ -2679,9 +2681,9 @@ isolation_mode	: ISOLATION LEVEL iso_mode
 
 iso_mode	: snap_shot
 			{ $$ = $1;}
-		| READ UNCOMMITTED version_mode 
+		| READ UNCOMMITTED version_mode
 			{ $$ = make_flag_node (nod_isolation, NOD_READ_COMMITTED, 1, $3); }
-		| READ COMMITTED version_mode 
+		| READ COMMITTED version_mode
 			{ $$ = make_flag_node (nod_isolation, NOD_READ_COMMITTED, 1, $3); }
 		;
 
@@ -2770,8 +2772,8 @@ order_list	: order_item
 			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
 
-order_item	: value collate_clause order_direction nulls_placement
-			{ $$ = make_node (nod_order, e_order_count, $1, $3, $2, $4); }
+order_item	: value order_direction nulls_placement
+			{ $$ = make_node (nod_order, e_order_count, $1, $2, $3); }
 		;
 
 order_direction	: ASC
@@ -3000,15 +3002,6 @@ where_clause	: WHERE search_condition
 		| 
 			{ $$ = 0; }
 		;
-
-limit_range	: '(' long_integer ')'
-			{ $$ = make_node (nod_top, 1, $1);}
-		| '(' long_integer ':' long_integer ')'
-			{ $$ = make_node (nod_top, 2, $1, $2);}
-		|
-			{ $$ = 0;}	
-		;
-
 
 
 /* PLAN clause to specify an access plan for a query */
@@ -3425,7 +3418,7 @@ column_singleton : SELECT limit_clause
 
 /* value types */
 
-value		: column_name
+value	: column_name
 		| array_element
 		| function
 		| u_constant
@@ -3474,10 +3467,6 @@ value		: column_name
 			{ $$ = $2; }
 		| '(' column_singleton ')'
 			{ $$ = $2; }
-/*		| USER
-			{ $$ = make_node (nod_user_name, 0, NULL); }
-		| CURRENT_USER
-			{ $$ = make_node (nod_user_name, 0, NULL); }*/
 		| current_user
 		| current_role
 		| internal_info
@@ -3608,10 +3597,10 @@ current_role	: CURRENT_ROLE
 			{ $$ = make_node (nod_current_role, 0, NULL); }
 		;
 
-internal_info	: CONNECTION_ID
+internal_info	: CURRENT_CONNECTION
 			{ $$ = make_node (nod_internal_info, e_internal_info_count,
 						MAKE_constant ((STR) internal_connection_id, CONSTANT_SLONG)); }
-		| TRANSACTION_ID
+		| CURRENT_TRANSACTION
 			{ $$ = make_node (nod_internal_info, e_internal_info_count,
 						MAKE_constant ((STR) internal_transaction_id, CONSTANT_SLONG)); }
 		| GDSCODE
@@ -3620,7 +3609,7 @@ internal_info	: CONNECTION_ID
 		| SQLCODE
 			{ $$ = make_node (nod_internal_info, e_internal_info_count,
 						MAKE_constant ((STR) internal_sqlcode, CONSTANT_SLONG)); }
-		| ROWS_AFFECTED
+		| ROW_COUNT
 			{ $$ = make_node (nod_internal_info, e_internal_info_count,
 						MAKE_constant ((STR) internal_rows_affected, CONSTANT_SLONG)); }
 		;
@@ -3852,7 +3841,7 @@ null_value	: KW_NULL
 
 /* Performs special mapping of keywords into symbols */
 
-symbol_UDF_name	: valid_symbol_name
+symbol_UDF_name	: SYMBOL
 	;
 
 symbol_blob_subtype_name	: valid_symbol_name
@@ -3894,8 +3883,10 @@ symbol_index_name	: valid_symbol_name
 symbol_item_alias_name	: valid_symbol_name
 	;
 
+/* dimitr: commented out until pass1.cpp is ready to assign label numbers properly
 symbol_label_name	: valid_symbol_name
 	;
+*/
 
 symbol_procedure_name	: valid_symbol_name
 	;
@@ -3927,17 +3918,24 @@ symbol_savepoint_name	: valid_symbol_name
 /* symbols */
 
 valid_symbol_name	: SYMBOL
-/*
 	| non_reserved_word
-*/
 	;
 
 /* list of non-reserved words */
 
-/*
 non_reserved_word :
+	KW_BREAK
+	| COALESCE
+	| KW_DESCRIPTOR
+	| LAST
+	| LEAVE
+	| LOCK
+	| NULLIF
+	| NULLS
+	| STATEMENT
+	| SUBSTRING
+	| USING
 	;
-*/
 
 %%
 
@@ -3963,26 +3961,20 @@ void LEX_dsql_init (void)
  *	per session.
  *
  **************************************/
-const TOK	*token;
-
-for (token = KEYWORD_getTokens(); token->tok_string; ++token)
-    {
-    SYM         symbol;
-    STR         str_;
-
-    symbol = FB_NEW_RPT(*DSQL_permanent_pool, 0) sym;
-    symbol->sym_string = (TEXT *) token->tok_string;
-    symbol->sym_length = strlen (token->tok_string);
-    symbol->sym_type = SYM_keyword;
-    symbol->sym_keyword = token->tok_ident;
-    symbol->sym_version = token->tok_version;
-    str_ = FB_NEW_RPT(*DSQL_permanent_pool, symbol->sym_length) str;
-    str_->str_length = symbol->sym_length;
-    strncpy ((char*)str_->str_data, (char*)symbol->sym_string, symbol->sym_length);
-    symbol->sym_object = (void *) str_;
-    HSHD_insert (symbol);
-    }
-
+	for (const TOK *token = KEYWORD_getTokens(); token->tok_string; ++token)
+	{
+		SYM symbol = FB_NEW_RPT(*DSQL_permanent_pool, 0) sym;
+		symbol->sym_string = (TEXT *) token->tok_string;
+		symbol->sym_length = strlen(token->tok_string);
+		symbol->sym_type = SYM_keyword;
+		symbol->sym_keyword = token->tok_ident;
+		symbol->sym_version = token->tok_version;
+		STR str_ = FB_NEW_RPT(*DSQL_permanent_pool, symbol->sym_length) str;
+		str_->str_length = symbol->sym_length;
+		strncpy((char*)str_->str_data, (char*)symbol->sym_string, symbol->sym_length);
+		symbol->sym_object = (void *) str_;
+		HSHD_insert(symbol);
+	}
 }
 
 
@@ -4875,7 +4867,7 @@ if (tok_class & CHR_LETTER)
     last_token_bk = last_token;
     line_start_bk = line_start;
     lines_bk = lines;
-    return SYMBOL;
+	return SYMBOL;
     }
 
 /* Must be punctuation -- test for double character punctuation */
