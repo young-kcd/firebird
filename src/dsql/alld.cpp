@@ -50,10 +50,10 @@ nested FOR loops are added.
     THREAD_ENTER;               // First statment after FOR loop
 ***************************************************************/
 
-#include "../dsql/all.h"
 #include "firebird.h"
 #include <string.h>
 #include "../jrd/ib_stdio.h"
+#include "../dsql/all.h"
 #include "../dsql/dsql.h"
 #include "../dsql/alld_proto.h"
 #include "../dsql/errd_proto.h"
