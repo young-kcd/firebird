@@ -134,7 +134,7 @@ public:
 	bool add(const Value& item) { return defaultAccessor.add(item); }	
 	
 	/* Remove item as quickly as possible. Current position is undefined after this call */
-    void fastRemove() { return defaultAccessor.fastRemove(); }
+    void fastRemove() { defaultAccessor.fastRemove(); }
 	
 	bool locate(Key& key) { return defaultAccessor.locate(locEqual, key); }
 	
