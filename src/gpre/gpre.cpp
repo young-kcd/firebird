@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.23 2003-03-01 19:07:47 brodsom Exp $
+//  $Id: gpre.cpp,v 1.24 2003-04-02 12:07:10 brodsom Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -42,7 +42,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.23 2003-03-01 19:07:47 brodsom Exp $
+//	$Id: gpre.cpp,v 1.24 2003-04-02 12:07:10 brodsom Exp $
 //
 
 #define GPRE_MAIN
@@ -101,7 +101,9 @@ static int			arg_is_string(SLONG, TEXT **, TEXT *);
 static SSHORT		compare_ASCII7z(char *, char *);
 static SLONG		compile_module(SLONG);
 static BOOLEAN		file_rename(TEXT *, TEXT *, TEXT *);
+#ifdef GPRE_FORTRAN
 static void			finish_based(ACT);
+#endif
 static int			get_char(IB_FILE *);
 static BOOLEAN		get_switches(int, TEXT **, IN_SW_TAB, SW_TAB, TEXT **);
 static TOK			get_token();
@@ -1399,8 +1401,10 @@ static SLONG compile_module( SLONG start_position)
 
 //  finish up any based_ons that got deferred 
 
+#ifdef GPRE_FORTRAN
 	if (sw_language == lang_fortran)
 		finish_based(first_action);
+#endif
 
 	MET_fini(NULL);
 	PAR_fini();
@@ -1486,6 +1490,7 @@ static BOOLEAN file_rename(
 }
 
 
+#ifdef GPRE_FORTRAN
 //____________________________________________________________
 //  
 //		Scan through the based_on actions
@@ -1613,7 +1618,7 @@ static void finish_based( ACT action)
 		based_on->bas_field = field;
 	}
 }
-
+#endif
 
 //____________________________________________________________
 //  
@@ -1772,26 +1777,28 @@ static BOOLEAN get_switches(int			argc,
 			sw_tab--;
 			break;
 
+#ifdef GPRE_FORTRAN
 		case IN_SW_GPRE_F:
 			sw_language = lang_fortran;
 			sw_tab--;
 			break;
-
+#endif
+#ifdef GPRE_PASCAL
 		case IN_SW_GPRE_P:
 			sw_language = lang_pascal;
 			sw_tab--;
 			break;
-
+#endif
 		case IN_SW_GPRE_X:
 			sw_external = TRUE;
 			sw_tab--;
 			break;
-
+#ifdef GPRE_COBOL
 		case IN_SW_GPRE_COB:
 			sw_language = lang_cobol;
 			sw_tab--;
 			break;
-
+#endif
 		case IN_SW_GPRE_LANG_INTERNAL : 
 			sw_language = lang_internal;
 			/*sw_tab--;*/
@@ -1932,7 +1939,7 @@ static BOOLEAN get_switches(int			argc,
 
 static TOK get_token()
 {
-	SSHORT c, c1, c2, next;
+	SSHORT c, next;
 	USHORT peek, label;
 	TEXT *p, *end;
 	UCHAR class_;
@@ -1965,6 +1972,7 @@ static TOK get_token()
 
 //  Skip fortran line continuation characters 
 
+#ifdef GPRE_FORTRAN
 	if (sw_language == lang_fortran) {
 		while (line_position == 6) {
 			c = skip_white();
@@ -1983,7 +1991,7 @@ static TOK get_token()
 			return &token;
 		}
 	}
-
+#endif
 //  Get token rolling 
 
 	p = token.tok_string;
@@ -2000,7 +2008,9 @@ static TOK get_token()
 	token.tok_white_space = 0;
 	class_ = classes[c];
 
+#ifdef GPRE_ADA
 	if ((sw_language == lang_ada) && (c == '\'')) {
+		SSHORT c1, c2;
 		c1 = nextchar();
 		c2 = nextchar();
 		if (c2 != '\'')
@@ -2008,7 +2018,7 @@ static TOK get_token()
 		return_char(c2);
 		return_char(c1);
 	}
-
+#endif
 	if (sw_sql && (class_ & CHR_INTRODUCER)) {
 		while (classes[c = nextchar()] & CHR_IDENT)
 			if (p < end)
@@ -2031,8 +2041,10 @@ static TOK get_token()
 		token.tok_type = tok_ident;
 	}
 	else if (class_ & CHR_DIGIT) {
+#ifdef GPRE_FORTRAN
 		if (sw_language == lang_fortran && line_position < 7)
 			label = TRUE;
+#endif
 		while (classes[c = nextchar()] & CHR_DIGIT)
 			*p++ = (TEXT) c;
 		if (label) {
@@ -2261,15 +2273,19 @@ static int nextchar()
 		/* If the first character on a Fortran line is a tab, bump up the
 		   position indicator. */
 
+#ifdef GPRE_FORTRAN
 		if (sw_language == lang_fortran && c == '\t')
 			line_position = 7;
+#endif
 	}
 
 //  if this is a continuation line, the next token is not
 //  the start of a statement. 
 
+#ifdef GPRE_FORTRAN
 	if (sw_language == lang_fortran && line_position == 6 && c != ' '
 		&& c != '0') first_position = FALSE;
+#endif
 
 #ifdef GPRE_COBOL
 	if (sw_language == lang_cobol &&
@@ -2425,9 +2441,10 @@ static void pass2( SLONG start_position)
 				   comment_start, GDS_VERSION, comment_stop);
 	}
 
+#ifdef GPRE_ADA
 	if ((sw_language == lang_ada) && (ada_flags & ADA_create_database))
 		ib_fprintf(out_file, "with unchecked_conversion;\nwith system;\n");
-
+#endif
 //  
 //if (sw_lines)
 //   ib_fprintf (out_file, "#line 1 \"%s\"\n", file_name);
@@ -2698,11 +2715,13 @@ static SSHORT skip_white()
 
 		/* skip Fortran comments */
 
+#ifdef GPRE_FORTRAN
 		if (sw_language == lang_fortran &&
 			line_position == 1 && (c == 'C' || c == 'c' || c == '*')) {
 			while ((c = nextchar()) != '\n' && c != EOF);
 			continue;
 		}
+#endif
 
 #ifdef GPRE_COBOL
 		/* skip sequence numbers when ansi COBOL */
@@ -2761,7 +2780,7 @@ static SSHORT skip_white()
 			continue;
 		}
 
-#ifndef sun
+#if !defined(sun) && defined(GPRE_FORTRAN)
 		/* skip fortran embedded comments on VMS or hpux or sgi */
 
 		if (c == '!'
