@@ -2102,7 +2102,7 @@ static void check_unique_fields_names(StrArray& names, const dsql_nod* fields)
 
     @param expr1
     @param expr2
-    @param operator_
+    @param dsql_operator
 
  **/
 static dsql_nod* compose( dsql_nod* expr1, dsql_nod* expr2, NOD_TYPE dsql_operator)
