@@ -20,7 +20,7 @@
 #include <string.h>
 #include <stdlib.h>
 //#include "../jrd/common.h"
-#include "gds.h"
+#include "ibase.h"
 
 /* typedef char TEXT; */
 #define FINI_OK 0

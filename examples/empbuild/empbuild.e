@@ -21,7 +21,7 @@
 #include <stdlib.h>
 //#include "../jrd/common.h"
 
-#include "gds.h"
+#include "ibase.h"
 
 /* Some #defines that are used in the program - they actually come from
    jrd/common.h but should not be exposed externally with those name so 
