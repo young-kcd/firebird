@@ -27,17 +27,17 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.fbserver,v 1.11.2.5 2004-10-07 21:34:24 skidder Exp $
+#  $Id: Makefile.in.fbserver,v 1.11.2.6 2004-10-20 16:50:39 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleName=fbserver
+
+SUPER_FLAG = -DSUPERSERVER @PTHREAD_CFLAGS@
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
 include     $(ROOT)/gen/make.rules
 include     $(ROOT)/gen/make.shared.variables
-
-CFLAGS:=-DSUPERSERVER @PTHREAD_CFLAGS@
 
 
 @SET_MAKE@
@@ -46,7 +46,7 @@ IPSERVER_Files = $(WIN_IPSERVER_Files)
 IPSERVER_Sources =  $(addprefix ipserver/, $(IPSERVER_Files))
 IPSERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(IPSERVER_Sources))))
 
-SERVER_Files = $(OS_ServerFiles) server.cpp 
+SERVER_Files = $(OS_ServerFiles) server.cpp server_stub.cpp 
 SERVER_Sources = $(addprefix remote/, $(SERVER_Files))
 SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Sources))))
 
