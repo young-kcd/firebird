@@ -6117,11 +6117,17 @@ if (tok_class & CHR_LETTER)
 					return SYMBOL;
 				} else {
 					yylval = (DSQL_NOD) sym->sym_object;
+					last_token_bk = last_token;
+					line_start_bk = line_start;
+					lines_bk = lines;
 					return sym->sym_keyword;
 				}
 			} /* else fall down and return token as SYMBOL */
 		} else {
 			yylval = (DSQL_NOD) sym->sym_object;
+			last_token_bk = last_token;
+			line_start_bk = line_start;
+			lines_bk = lines;
 			return sym->sym_keyword;
 		}
 	}
