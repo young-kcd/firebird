@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.54 2003-02-10 15:06:02 brodsom Exp $
+$Id: common.h,v 1.55 2003-02-12 02:26:44 brodsom Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -91,8 +91,9 @@ $Id: common.h,v 1.54 2003-02-10 15:06:02 brodsom Exp $
 #endif
 
 
-
-/* Linux for Intel platforms*/
+/*****************************************************
+* Linux for Intel platforms 
+*****************************************************/
 #ifdef LINUX
 #define QUADFORMAT "ll"
 #define QUADCONST(n) (n##LL)
@@ -121,7 +122,9 @@ $Id: common.h,v 1.54 2003-02-10 15:06:02 brodsom Exp $
 typedef RETSIGTYPE (*SIG_FPTR) (int);
 #endif /* LINUX */
 
-/* SINIX-Z 5.42 */
+/*****************************************************
+* SINIX-Z 5.42
+*****************************************************/
 #ifdef SINIXZ
 #include <sys/types.h>
 #include <sys/time.h>
@@ -196,7 +199,9 @@ int shutdown(int s, int how);
 typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* SINIXZ */
 
-/* Darwin Platforms */
+/*****************************************************
+* Darwin Platforms 
+*****************************************************/
 #ifdef DARWIN
 /* EKU: obsolete, replaced by _FILE_OFFSET_BITS
 #ifndef UNIX_64_BIT_IO
@@ -227,7 +232,9 @@ typedef RETSIGTYPE (*SIG_FPTR) (int);
 #endif /* Darwin Platforms */
 
 
-/* FreeBSD for Intel platforms */
+/*****************************************************
+* FreeBSD for Intel platforms 
+*****************************************************/
 #ifdef FREEBSD
 
 /* EKU: obsolete, replaced by _FILE_OFFSET_BITS
@@ -258,7 +265,9 @@ typedef RETSIGTYPE (*SIG_FPTR) (int);
 typedef RETSIGTYPE (*SIG_FPTR) (int);
 #endif /* FREEBSD */
 
-/* NetBSD */
+/*****************************************************
+* NetBSD 
+*****************************************************/
 #ifdef NETBSD
 
 #if defined(__i386__)
@@ -291,7 +300,9 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 
 
 
-/* SUN platforms--the 386i is obsolete */
+/*****************************************************
+/* SUN platforms--the 386i is obsolete 
+*****************************************************/
 
 #ifdef sun
 /* Defined KILLER_SIGNALS for Sun - as we were getting lots of lockups
@@ -410,7 +421,9 @@ typedef RETSIGTYPE (*SIG_FPTR) (int);
 #endif /* sun */
 
 
-/* HP/UX platforms */
+/*****************************************************
+* HP/UX platforms 
+*****************************************************/
 
 #if (defined(hpux) || defined(HPUX))
 
@@ -450,7 +463,9 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* hpux */
 
 
-/* DEC VAX/VMS and AlphaVMS */
+/*****************************************************
+* DEC VAX/VMS and AlphaVMS 
+*****************************************************/
 #ifdef VMS
 #define VAX_FLOAT       1
 #define FB_ALIGN(n,b)      (n)
@@ -480,7 +495,9 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 
 
 
-/* IBM AIX RS/6000 and IBM AIX PowerPC */
+/*****************************************************
+* IBM AIX RS/6000 and IBM AIX PowerPC 
+*****************************************************/
 
 #ifdef _AIX						/* IBM AIX */
 #ifndef _POWER					/* IBM RS/6000 */
@@ -523,7 +540,9 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 
 
 
-/* Windows NT */
+/*****************************************************
+* Windows NT 
+*****************************************************/
 
 #ifdef WIN_NT
 #define NO_PYXIS
@@ -595,36 +614,10 @@ typedef RETSIGTYPE (CLIB_ROUTINE * SIG_FPTR) (int);
 #define ALLOC_LIB_MEMORY(size)   gds__alloc_debug ((size),(TEXT *)__FILE__,(ULONG)__LINE__)
 #endif
 
-/* SCO */
-
-#ifndef SCO_EV
-
-#ifdef M_I386
-
-#define SMALL_FILE_NAMES
-#define NOHOSTNAME
-#define KILLER_SIGNALS
-#define SYSV_SIGNALS
-
-#define I386            1
-#define UNIX            1
-#define CURSES_KEYPAD   1
-
-#ifdef M_UNIX
-#define SCO_UNIX        1
-#define IMPLEMENTATION  isc_info_db_impl_isc_sco_unix /* 42 */
-#define INTL_BACKEND
-#else
-#define FB_ALIGN(n,b)      ((n+1) & ~1)
-#define IMPLEMENTATION  isc_info_db_impl_isc_xenix /* 37 */
-#endif
-
-#define                 IEEE
-
-typedef RETSIGTYPE (*SIG_FPTR) ();
-#endif /* M_I386 */
-
-#else /* ifndef SCO_EV */
+/*****************************************************
+* SCO 
+*****************************************************/
+#ifdef SCO_EV
 
 #define QUADFORMAT "ll"
 #define QUADCONST(n) (n##LL)
@@ -647,9 +640,11 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 */
 
 typedef RETSIGTYPE (*SIG_FPTR) ();
-#endif /* ifndef SCO_EV */
+#endif /* SCO_EV */
 
-
+/*****************************************************
+/* UNIX
+*****************************************************/
 #ifdef UNIX
 #define NO_CHECKSUM     1
 #define SYS_ARG		isc_arg_unix
