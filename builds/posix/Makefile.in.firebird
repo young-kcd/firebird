@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.37.2.10 2003-11-26 19:42:12 bellardo Exp $
+#  $Id: Makefile.in.firebird,v 1.37.2.11 2003-12-14 03:58:10 skywalker Exp $
 #
 
 ROOT=..
@@ -531,10 +531,10 @@ clean_dbs:
 
 
 clean_objects:
-	$(RM) `find $(GEN_ROOT)/ -type f -name '*.o' -print`
+	$(RM) `find $(TMP_ROOT)/ -type f -name '*.o' -print`
 
 clean_extern_objects:
-	$(RM) `find $(SRC_ROOT)/extern/ -type f -name '*.o' -print`
+	$(RM) `find $(TMP_ROOT)/extern/ -type f -name '*.o' -print`
 
 # Clear out dependancies files created by the gcc compiler
 # since when .o and other files are deleted the dependant 
@@ -542,7 +542,7 @@ clean_extern_objects:
 # MOD 10-July-2002
 
 clean_dependancies:
-	$(RM) -f `find $(GEN_ROOT)/ -type f -name '*.d' -print`
+	$(RM) -f `find $(TMP_ROOT)/ -type f -name '*.d' -print`
 
 # delete only all of the files of type regular file in $FIREBIRD
 # leave the directories to make dependacies work still
