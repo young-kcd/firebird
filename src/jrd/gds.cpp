@@ -258,7 +258,7 @@ static void		blr_indent(CTL, SSHORT);
 static void		blr_print_blr(CTL, UCHAR);
 static SCHAR	blr_print_byte(CTL);
 static SCHAR	blr_print_char(CTL);
-static void		blr_print_cond(CTL);
+static bool		blr_print_cond(CTL);
 static int		blr_print_dtype(CTL);
 static void		blr_print_join(CTL);
 static SLONG	blr_print_line(CTL, SSHORT);
@@ -479,7 +479,7 @@ static const UCHAR
 	pid[]		= { op_word, op_pad, op_byte, op_line, op_indent, op_word,
 					op_line, op_parameters, 0},
 	error_handler[] = { op_word, op_line, op_error_handler, 0},
-	set_error[] = { op_set_error, op_line, 0},
+	set_error[] = { op_line, op_set_error, 0},
 	cast[]		= { op_dtype, op_line, op_verb, 0},
 	indices[]	= { op_byte, op_line, op_literals, 0},
 	lock_relation[] = { op_line, op_indent, op_relation, op_line, op_verb, 0},
@@ -2843,7 +2843,7 @@ static SCHAR blr_print_char(CTL control)
 }
 
 
-static void blr_print_cond(CTL control)
+static bool blr_print_cond(CTL control)
 {
 /**************************************
  *
@@ -2855,10 +2855,10 @@ static void blr_print_cond(CTL control)
  *	Print an error condition.
  *
  **************************************/
-	USHORT ctype;
 	SSHORT n;
 
-	ctype = BLR_BYTE;
+	USHORT ctype = BLR_BYTE;
+	bool has_verb = false;
 
 	switch (ctype) {
 	case blr_gds_code:
@@ -2884,11 +2884,24 @@ static void blr_print_cond(CTL control)
 		blr_format(control, "blr_default_code, ");
 		break;
 
+	case blr_raise:
+		blr_format(control, "blr_raise, ");
+		break;
+
+	case blr_exception_msg:
+		blr_format(control, "blr_exception_msg, ");
+		n = PRINT_BYTE;
+		while (--n >= 0)
+			PRINT_CHAR;
+		has_verb = true;
+		break;
+
 	default:
 		blr_error(control, "*** invalid condition type ***");
 		break;
 	}
-	return;
+
+	return has_verb;
 }
 
 
@@ -3198,7 +3211,14 @@ static void blr_print_verb(CTL control, SSHORT level)
 			break;
 
 		case op_set_error:
-			PRINT_COND;
+			blr_indent(control, level);
+			if (PRINT_COND) {
+				level++;
+				offset = PRINT_LINE;
+				PRINT_VERB;
+				level--;
+			}
+			offset = PRINT_LINE;
 			break;
 
 		case op_indent:
