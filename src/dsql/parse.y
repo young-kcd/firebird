@@ -3624,15 +3624,15 @@ generate_value_function	: GEN_ID '(' symbol_generator_name ',' value ')'
 
 numeric_value_function	:  EXTRACT '(' timestamp_part FROM value ')'
 				{ $$ = make_node (nod_extract, e_extract_count, $3, $5); }
-			/* CVC: It was easier to provide a constant with maximum value if the
-			third parameter -length- is ommitted than to chase and fix the functions
-			that treat nod_substr as an aggregate and do not expect NULL arguments. */
 			;
 
 string_value_function	:  SUBSTRING '(' value FROM pos_short_integer ')'
 				{ $$ = make_node (nod_substr, e_substr_count, $3,
 					MAKE_constant ((STR) ((SLONG)($5) - 1), CONSTANT_SLONG),
 					MAKE_constant ((STR) SHRT_POS_MAX, CONSTANT_SLONG)); }
+			/* CVC: It was easier to provide a constant with maximum value if the
+			third parameter -length- is ommitted than to chase and fix the functions
+			that treat nod_substr as an aggregate and do not expect NULL arguments. */
 			| SUBSTRING '(' value FROM pos_short_integer FOR nonneg_short_integer ')'
 				{ $$ = make_node (nod_substr, e_substr_count, $3,
 					MAKE_constant ((STR) ((SLONG)($5) - 1), CONSTANT_SLONG),
