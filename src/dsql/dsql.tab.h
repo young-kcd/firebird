@@ -270,6 +270,7 @@
 # define	CLOSE	519
 # define	FETCH	520
 # define	ROWS	521
+# define	BLOCK	522
 
 
 extern YYSTYPE yylval;
