@@ -314,7 +314,7 @@ static void define_default_class(
 	dbb = tdbb->tdbb_database;
 
 	if (!*default_class) {
-		sprintf(default_class, "%s%" QUADFORMAT "d\0", DEFAULT_CLASS,
+		sprintf(default_class, "%s%" QUADFORMAT "d", DEFAULT_CLASS,
 				DPM_gen_id(tdbb, MET_lookup_generator(tdbb, DEFAULT_CLASS), 0,
 						   (SINT64) 1));
 
@@ -921,7 +921,7 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 			       record is stored.  There's also a before store trigger
 				   on rdb$user_privileges, but it isn't so smart.  -- AWH
 			    */
-			    sprintf(s_class, "%s%" QUADFORMAT "d\0", "SQL$GRANT", 
+			    sprintf(s_class, "%s%" QUADFORMAT "d", "SQL$GRANT", 
 				DPM_gen_id(tdbb, MET_lookup_generator(tdbb, "RDB$SECURITY_CLASS"), 
 						   0, (SINT64) 1));
 
