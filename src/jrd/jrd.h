@@ -29,7 +29,7 @@
 #ifndef JRD_JRD_H
 #define JRD_JRD_H
 
-#include "../jrd./gdsassert.h"
+#include "../jrd/gdsassert.h"
 #include "../jrd/common.h"
 #include "../jrd/dsc.h"
 #include "../jrd/all.h"
