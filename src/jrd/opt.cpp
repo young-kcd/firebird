@@ -191,6 +191,7 @@ static int opt_debug_flag = DEBUG_NONE;
 #define INDEX_COST		30.0
 #define CACHE_PAGES_PER_STREAM	15
 #define SELECTIVITY_THRESHOLD_FACTOR	10
+#define OR_SELECTIVITY_THRESHOLD_FACTOR	2000
 
 #define SQL_MATCH_1_CHAR	'_'	/* Not translatable */
 #define SQL_MATCH_ANY_CHARS	'%'	/* Not translatable */
@@ -3838,6 +3839,7 @@ static RSB gen_retrieval(TDBB tdbb,
 				idx_priority_level[i] =
 					(idx_eql_count * MAX_IDX * MAX_IDX) + 
 					(idx_field_count * MAX_IDX) + (idx->idx_count);
+
 			}
 
 		}
@@ -3864,7 +3866,7 @@ static RSB gen_retrieval(TDBB tdbb,
 						   they are in fact, so we should be optimistic in this case. */
 				IDX *idx = idx_csb[last_idx];
 				bool should_be_used = true;
-				if (idx->idx_selectivity) {
+				if (idx->idx_selectivity && !(csb_tail->csb_plan)) {
 					if (selectivity * SELECTIVITY_THRESHOLD_FACTOR < idx->idx_selectivity) {
 						should_be_used = false;
 					}
@@ -4976,7 +4978,7 @@ static NOD make_inversion(TDBB tdbb,
 
 	
 	/* AB: If the boolean is a part of an earlier created index 
-	   retrieval don't think about to use a own index. */
+	   retrieval check with the selectivity if it's really interresting to use. */
 	accept = TRUE;
 	used_in_compound = FALSE;
 	selectivity = 1; /* Real maximum selectivity possible is 1 */
@@ -5021,7 +5023,7 @@ static NOD make_inversion(TDBB tdbb,
 			   interesting to use it if it's better as the compound index
 			   selectivity * factor */
 			if (((accept || used_in_compound) && 
-				 (idx->idx_selectivity < selectivity * 2000)) ||
+				 (idx->idx_selectivity < selectivity * OR_SELECTIVITY_THRESHOLD_FACTOR)) ||
 				(csb_tail->csb_plan)) {
 				match_index(tdbb, opt, stream, boolean, idx);
 				if (opt->opt_rpt[0].opt_lower || opt->opt_rpt[0].opt_upper) {
