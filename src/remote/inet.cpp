@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.118 2004-08-01 17:44:24 dimitr Exp $
+$Id: inet.cpp,v 1.119 2004-09-04 20:09:24 dimitr Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -1103,31 +1103,20 @@ static int accept_connection(rem_port* port,
 		case CNCT_user:
 			{
 				const int length = *id++;
-				rem_str* string = (rem_str*) ALLR_block(type_str, length);
-				port->port_user_name = string;
-				string->str_length = length;
-				if (length) {
-					TEXT* p = (TEXT *) string->str_data;
-					int l = length;
-					do {
-						*p++ = *id++;
-					} while (--l);
-				}
-				strncpy(name, string->str_data, length);
-				name[length] = (TEXT) 0;
+				const int l = MIN(length, FB_NELEM(name) - 1);
+				strncpy(name, id, l);
+				name[l] = 0;
+				id += length;
 				break;
 			}
 
 		case CNCT_passwd:
 			{
-				TEXT* p = password;
-				int length = *id++;
-				if (length != 0) {
-					do {
-						*p++ = *id++;
-					} while (--length);
-				}
-				*p = 0;
+				const int length = *id++;
+				const int l = MIN(length, FB_NELEM(password) - 1);
+				strncpy(password, id, l);
+				password[l] = 0;
+				id += length;
 				break;
 			}
 
@@ -1279,14 +1268,9 @@ static int accept_connection(rem_port* port,
 
 /* store FULL user identity in port_user_name for security purposes */
 
-	{
-		strncpy(name, port->port_user_name->str_data,
-				port->port_user_name->str_length);
-		TEXT* p = &name[port->port_user_name->str_length];
-		sprintf(p, ".%ld.%ld", eff_gid, eff_uid);
-		ALLR_free((UCHAR *) port->port_user_name);
-		port->port_user_name = REMOTE_make_string(name);
-	}
+	SNPRINTF(name, FB_NELEM(name), "%s.%ld.%ld",
+			 name, eff_gid, eff_uid);
+	port->port_user_name = REMOTE_make_string(name);
 
 	return TRUE;
 }
