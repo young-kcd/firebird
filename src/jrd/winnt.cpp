@@ -899,7 +899,8 @@ int PIO_write(FIL file, BDB bdb, PAG page, STATUS* status_vector)
  **************************************/
 static ULONG get_number_of_pages(FIL file, USHORT pagesize)
 {
-	HANDLE hFile = (HANDLE) file->fil_desc;
+	HANDLE hFile = (HANDLE) ((file->fil_flags & FIL_force_write) ?
+		file->fil_force_write_desc : file->fil_desc);
 	DWORD dwFileSizeLow;
 	DWORD dwFileSizeHigh;
 	ULONGLONG ullFileSize;
