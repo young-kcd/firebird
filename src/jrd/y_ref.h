@@ -1,5 +1,5 @@
-#ifndef __y_ref_h__
-#define __y_ref_h__
+#ifndef JRD_Y_REF_H
+#define JRD_Y_REF_H
 
 /*
  *  The contents of this file are subject to the Mozilla Public
@@ -35,7 +35,9 @@
  * is known, and where only the fact, that such structure
  * exists, is required. In latter case we include y_ref
  * instead of y_handle.
+ *
+ * This file (or y_handle.h) must be included BEFORE ibase.h !
  */
 
 #define FRBRD struct why_hndl
-#endif
+#endif  // JRD_Y_REF_H

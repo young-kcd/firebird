@@ -1,5 +1,5 @@
-#ifndef __y_handle_h__
-#define __y_handle_h__
+#ifndef JRD_Y_HANDLE_H
+#define JRD_Y_HANDLE_H
 
 /*
  *  The contents of this file are subject to the Mozilla Public
@@ -31,8 +31,10 @@
 
 /*
  * This definitions placed into separate file 
- * to avoid multiple definition of struct why_hndl in why.c
+ * to avoid multiple definition of struct why_hndl in why.cpp
  * and dsql.cpp
+ *
+ * This file (or y_ref.h) must be included BEFORE ibase.h !
  */
 
 union any_handle {
@@ -76,4 +78,4 @@ typedef struct why_hndl
 
 #include "../jrd/y_ref.h"
 
-#endif /* __y_handle_h__ */
+#endif // JRD_Y_HANDLE_H

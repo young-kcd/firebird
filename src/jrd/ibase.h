@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.37 2003-05-14 15:12:04 skidder Exp $
+$Id: ibase.h,v 1.38 2003-05-22 11:13:22 alexpeshkoff Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -72,7 +72,7 @@ typedef	unsigned char	ISC_UCHAR;
 /* InterBase Handle Definitions */
 /********************************/
 
-#ifndef __y_ref_h__
+#ifndef JRD_Y_REF_H
 #define FRBRD void
 #endif
 
