@@ -28,10 +28,6 @@
 
 #include <stdlib.h>
 
-#ifdef SOLX86
-#include <stdio.h>
-extern "C" char * gets (char *);
-#endif
 
 
 
@@ -66,18 +62,18 @@ int main( int argc, char **argv)
 
 	for (;;) {
 		ib_printf("Facility: ");
-		if (!gets(facility))
+		if (!ib_gets(facility))
 			break;
 		FOR Y IN FACILITIES WITH Y.FACILITY CONTAINING facility
 			ib_printf("Message number: ");
-			if (!gets(innumber))
+			if (!ib_gets(innumber))
 				break;
 			number = atoi(innumber);
 			FOR X IN MESSAGES WITH X.FAC_CODE = Y.FAC_CODE AND X.NUMBER = number
 				ib_printf(" Current text:");
 				explicit_print(X.TEXT);
 				ib_printf("\n New text: ");
-				if (!gets(newtext))
+				if (!ib_gets(newtext))
 					break;
 
 				MODIFY X USING

@@ -38,10 +38,6 @@
 #endif
 #include <stdlib.h>
 
-#ifdef SOLX86
-#include <stdio.h>
-extern "C" char * gets (char *);
-#endif
 
 
 DATABASE DB = "msg.gdb";
@@ -114,7 +110,7 @@ int main( int argc, char **argv)
 
 	for (;;) {
 		ib_printf("Facility: ");
-		if (gets((char*) facility)==NULL)
+		if (ib_gets((char*) facility)==NULL)
 			break;
 		ascii_str_upper(facility);
 		count = 0;
@@ -129,13 +125,13 @@ int main( int argc, char **argv)
 				MODIFY X USING
 					for (;;) {
 						ib_printf(" Module: ");
-						if (!gets((char*) module))
+						if (!ib_gets((char*) module))
 							break;
 						ib_printf(" Routine: ");
-						if (!gets((char*) routine))
+						if (!ib_gets((char*) routine))
 							break;
 						ib_printf(" Text: ");
-						if (!gets((char*) text))
+						if (!ib_gets((char*) text))
 							break;
 						symbol[0] = 0;
 
@@ -143,7 +139,7 @@ int main( int argc, char **argv)
 						 * in a component other than JRD */
 						if (X.FAC_CODE != 0) {
 							ib_printf("Public [y/n]: ");
-							gets((char*) pub);
+							ib_gets((char*) pub);
 							if (*pub == 'Y' || *pub == 'y')
 								public_msg = TRUE;
 							else
@@ -153,7 +149,7 @@ int main( int argc, char **argv)
 							public_msg = TRUE;
 
 						ib_printf(" Symbol: ");
-						if (!gets((char*) symbol))
+						if (!ib_gets((char*) symbol))
 							break;
 
 						if (public_msg) {
@@ -267,7 +263,7 @@ static int get_sql_class( UCHAR * sql_class)
 
 	while (1) {
 		ib_printf(" SQLCLASS: ");
-		gets((char*) sql_class);
+		ib_gets((char*) sql_class);
 		length = strlen((char*) sql_class);
 		if (length == 0 || !isalnum(sql_class[0]))
 			break;
@@ -306,7 +302,7 @@ static int get_sql_code( SSHORT * sql_code)
 	ret = FALSE;
 	while (1) {
 		ib_printf(" SQLCODE: ");
-		if (!gets((char*) nstring))
+		if (!ib_gets((char*) nstring))
 			break;
 		p = nstring;
 		sign = 1;
@@ -386,7 +382,7 @@ static int get_sql_subclass( UCHAR * sql_sub_class)
 
 	while (1) {
 		ib_printf(" SQLSUBCLASS: ");
-		gets((char*) sql_sub_class);
+		ib_gets((char*) sql_sub_class);
 		length = strlen((char*) sql_sub_class);
 		if (length == 0 || !isalnum(sql_sub_class[0]))
 			break;
@@ -422,7 +418,7 @@ static int get_symbol( UCHAR * symbol)
 	while (1) {
 		ib_fprintf(ib_stderr, "Symbols are required for system errors!\n");
 		ib_printf(" Symbol: ");
-		gets((char*) symbol);
+		ib_gets((char*) symbol);
 		if (!strlen((char*) symbol) || !isalnum(symbol[0]))
 			return FALSE;
 		else
@@ -451,12 +447,12 @@ static int store_sql_msg(void)
 
 	for (;;) {
 		ib_printf("Enter the sqlcode: ");
-		if (!gets((char*) nstring))
+		if (!ib_gets((char*) nstring))
 			break;;
 
 		sql_num = atoi((char*) nstring);
 		ib_printf(" Text: ");
-		if (!gets((char*) text))
+		if (!ib_gets((char*) text))
 			break;
 
 		STORE Y IN MESSAGES USING

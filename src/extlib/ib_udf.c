@@ -36,11 +36,14 @@
 #include "ib_util.h"
 #include "ib_udf.h"
 
+#ifndef SOLARIS
 
 int MATHERR(struct exception *e)
 {
 	return 1;
 }
+
+#endif
 
 double EXPORT IB_UDF_abs( double *a)
 {

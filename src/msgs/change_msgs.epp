@@ -32,10 +32,6 @@
 #include <string.h>
 #endif
 
-#ifdef SOLX86
-#include <stdio.h>
-extern "C" char * gets (char *);
-#endif
 
 
 DATABASE DB = "msg.gdb";
@@ -93,7 +89,7 @@ int main( int argc, char **argv)
 
 	for (;;) {
 		ib_printf("Facility: ");
-		if (!gets(facility))
+		if (!ib_gets(facility))
 			break;
 		count = 0;
 		msg_number = 0;
@@ -104,7 +100,7 @@ int main( int argc, char **argv)
 				BOOLEAN sys_error = FALSE;
 
 				ib_printf("Message number (%d) ? ", msg_number + 1);
-				if (!gets(input))
+				if (!ib_gets(input))
 					break;
 				if (!input[0])
 					msg_number++;
@@ -137,19 +133,19 @@ int main( int argc, char **argv)
 				if (mustget(yesno) && (yesno[0] == 'y' || yesno[0] == 'Y')) {
 					module[0] = 0;
 					ib_printf(" Module: ");
-					if (!gets(module))
+					if (!ib_gets(module))
 						break;
 					routine[0] = 0;
 					ib_printf("Routine: ");
-					if (!gets(routine))
+					if (!ib_gets(routine))
 						break;
 					text[0] = 0;
 					ib_printf("   Text: ");
-					if (!gets(text))
+					if (!ib_gets(text))
 						break;
 					symbol[0] = 0;
 					ib_printf(" Symbol: ");
-					if (!gets(symbol))
+					if (!ib_gets(symbol))
 						break;
 					if (sys_error || X.FAC_CODE == 0) {
 						ib_printf("SQLCODE: ");
@@ -318,7 +314,7 @@ static int get_sql_class( UCHAR * sql_class)
 
 	while (1) {
 		ib_printf("   SQLCLASS: ");
-		gets((char*) sql_class);
+		ib_gets((char*) sql_class);
 		length = strlen((char*) sql_class);
 		if (!length)
 			break;
@@ -350,7 +346,7 @@ static int get_sql_subclass( UCHAR * sql_sub_class)
 
 	while (1) {
 		ib_printf("SQLSUBCLASS: ");
-		gets((char*) sql_sub_class);
+		ib_gets((char*) sql_sub_class);
 		length = strlen((char*) sql_sub_class);
 		if (!length)
 			break;
@@ -382,7 +378,7 @@ static int get_symbol( UCHAR * symbol)
 	while (TRUE) {
 		ib_fprintf(ib_stderr, "Symbols are required for system errors!\n");
 		ib_printf(" Symbol: ");
-		gets((char*) symbol);
+		ib_gets((char*) symbol);
 		if (strlen((char*) symbol))
 			return TRUE;
 	}
@@ -403,7 +399,7 @@ static SSHORT mustget( SCHAR * s)
  *
  **************************************/
 
-	if (!gets((char*) s))
+	if (!ib_gets((char*) s))
 		return FALSE;
 
 	return (s[0] != 0);
