@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pat.cpp,v 1.19 2003-10-14 22:21:49 brodsom Exp $
+//	$Id: pat.cpp,v 1.20 2003-10-29 10:53:08 robocop Exp $
 //
 
 #include "firebird.h"
@@ -37,7 +37,7 @@
 #include "../gpre/lang_proto.h"
 
 
-extern TEXT *ident_pattern;
+extern TEXT* ident_pattern;
 
 typedef enum {
 	NL,
@@ -60,7 +60,7 @@ typedef enum {
 	FR							/* Field reference */
 } PAT_T;
 
-static struct ops {
+static const struct ops {
 	PAT_T ops_type;
 	TEXT ops_string[3];
 } operators[] =
@@ -182,7 +182,7 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 		const TEXT* string = NULL;
 		const ref* reference = NULL;
 		bool handle_flag = false, long_flag = false;
-		ops* oper_iter;
+		const ops* oper_iter;
 		for (oper_iter = operators; oper_iter->ops_type != NL; oper_iter++)
 			if (oper_iter->ops_string[0] == pattern[0] &&
 				oper_iter->ops_string[1] == pattern[1])

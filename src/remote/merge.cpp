@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Remote Interface/Server
- *	MODULE:		merge.c
- *	DESCRIPTION:	Merge database/server inforation
+ *	MODULE:		merge.cpp
+ *	DESCRIPTION:	Merge database/server information
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -34,7 +34,7 @@
 #ifdef NOT_USED_OR_REPLACED
 static SSHORT convert(ULONG, UCHAR *);
 #endif
-static ISC_STATUS merge_setup(UCHAR **, UCHAR **, UCHAR *, USHORT);
+static ISC_STATUS merge_setup(const UCHAR**, UCHAR**, const UCHAR* const, USHORT);
 
 #if (defined __cplusplus) && (defined SOLX86)
 /* Who else got mixed c and C++ linkage error - let join me. KLK
@@ -42,14 +42,14 @@ static ISC_STATUS merge_setup(UCHAR **, UCHAR **, UCHAR *, USHORT);
 extern "C" {
 #endif
 
-USHORT MERGE_database_info(UCHAR * in,
-							UCHAR * out,
+USHORT MERGE_database_info(const UCHAR* in,
+							UCHAR* out,
 							USHORT out_length,
 							USHORT impl,
 							USHORT class_,
 							USHORT base_level,
-							UCHAR * version,
-							UCHAR * id,
+							const UCHAR* version,
+							const UCHAR* id,
 							ULONG mask)
 {
 /**************************************
@@ -64,10 +64,10 @@ USHORT MERGE_database_info(UCHAR * in,
  *
  **************************************/
 	SSHORT length, l;
-	UCHAR *start, *end, *p;
+	const UCHAR* p;
 
-	start = out;
-	end = out + out_length;
+	UCHAR* start = out;
+	const UCHAR* const end = out + out_length;
 
 	for (;;)
 		switch (*out++ = *in++) {
@@ -80,9 +80,9 @@ USHORT MERGE_database_info(UCHAR * in,
 			if (merge_setup(&in, &out, end, l + 1))
 				return 0;
 			if ((*out++ = (UCHAR) l) != 0)
-				do
+				do {
 					*out++ = *p++;
-				while (--l);
+				} while (--l);
 			break;
 
 		case isc_info_db_id:
@@ -90,9 +90,9 @@ USHORT MERGE_database_info(UCHAR * in,
 			if (merge_setup(&in, &out, end, l + 1))
 				return 0;
 			if ((*out++ = (UCHAR) l) != 0)
-				do
+				do {
 					*out++ = *p++;
-				while (--l);
+				} while (--l);
 			break;
 
 		case isc_info_implementation:
@@ -117,9 +117,9 @@ USHORT MERGE_database_info(UCHAR * in,
 			}
 			PUT_WORD(out, (UCHAR) length);
 			if (length)
-				do
+				do {
 					*out++ = *in++;
-				while (--length);
+				} while (--length);
 			break;
 		}
 }
@@ -168,8 +168,9 @@ static SSHORT convert( ULONG number, UCHAR * buffer)
 #endif
 
 static ISC_STATUS merge_setup(
-						  UCHAR ** in,
-						  UCHAR ** out, UCHAR * end, USHORT delta_length)
+						  const UCHAR** in,
+						  UCHAR** out, const UCHAR* const end,
+						  USHORT delta_length)
 {
 /**************************************
  *
@@ -183,10 +184,8 @@ static ISC_STATUS merge_setup(
  *	already there.
  *
  **************************************/
-	USHORT length, new_length, count;
-
-	length = (USHORT) gds__vax_integer(*in, 2);
-	new_length = length + delta_length;
+	USHORT length = (USHORT) gds__vax_integer(*in, 2);
+	const USHORT new_length = length + delta_length;
 
 	if (*out + new_length + 2 >= end) {
 		(*out)[-1] = gds_info_truncated;
@@ -194,16 +193,17 @@ static ISC_STATUS merge_setup(
 	}
 
 	*in += 2;
-	count = 1 + *(*in)++;
+	const USHORT count = 1 + *(*in)++;
 	PUT_WORD(*out, (UCHAR) new_length);
 	PUT(*out, (UCHAR) count);
 
 /* Copy data portion of information sans original count */
 
 	if (--length)
-		do
+		do {
 			*(*out)++ = *(*in)++;
-		while (--length);
+		} while (--length);
 
 	return FB_SUCCESS;
 }
+

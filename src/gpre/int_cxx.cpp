@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int_cxx.cpp,v 1.21 2003-10-16 08:50:59 robocop Exp $
+//	$Id: int_cxx.cpp,v 1.22 2003-10-29 10:53:07 robocop Exp $
 //
 
 #include "firebird.h"
@@ -45,29 +45,29 @@ static void asgn_to(REF);
 #endif
 static void gen_at_end(const act*, int);
 static void gen_blr(void*, SSHORT, const char*);
-static void gen_compile(GPRE_REQ, int);
+static void gen_compile(const gpre_req*, int);
 static void gen_database(const act*, int);
 static void gen_emodify(const act*, int);
 static void gen_estore(const act*, int, bool);
 static void gen_endfor(const act*, int);
 static void gen_erase(const act*, int);
 static void gen_for(const act*, int);
-static char* gen_name(char*, const REF);
-static void gen_raw(GPRE_REQ);
-static void gen_receive(GPRE_REQ, POR);
-static void gen_request(GPRE_REQ);
+static char* gen_name(char*, const ref*);
+static void gen_raw(const gpre_req*);
+static void gen_receive(const gpre_req*, const por*);
+static void gen_request(const gpre_req*);
 static void gen_routine(const act*, int);
 static void gen_s_end(const act*, int);
 static void gen_s_fetch(const act*, int);
 static void gen_s_start(const act*, int);
-static void gen_send(GPRE_REQ, const por*, int, bool);
-static void gen_start(GPRE_REQ, const por*, int, bool);
+static void gen_send(const gpre_req*, const por*, int, bool);
+static void gen_start(const gpre_req*, const por*, int, bool);
 static void gen_type(const act*, int);
 static void gen_variable(const act*, int);
 static void make_port(POR, int);
 static void printa(const int, const TEXT*, ...);
 
-static int first_flag = 0;
+static bool global_first_flag = false;
 
 const int INDENT = 3;
 
@@ -267,7 +267,7 @@ static void gen_at_end( const act* action, int column)
 {
 	TEXT s[20];
 
-	GPRE_REQ request = action->act_request;
+	const gpre_req* request = action->act_request;
 	printa(column, "if (!%s) ", gen_name(s, request->req_eof));
 }
 
@@ -288,14 +288,11 @@ static void gen_blr(void* user_arg, SSHORT offset, const char* string)
 //		Generate text to compile a request.
 //  
 
-static void gen_compile( GPRE_REQ request, int column)
+static void gen_compile( const gpre_req* request, int column)
 {
-	DBB db;
-	SYM symbol;
-
 	column += INDENT;
-	db = request->req_database;
-	symbol = db->dbb_name;
+	const dbb* db = request->req_database;
+	const sym* symbol = db->dbb_name;
 	ib_fprintf(out_file, "if (!%s)", request->req_handle);
 	align(column);
 	ib_fprintf(out_file,
@@ -311,13 +308,12 @@ static void gen_compile( GPRE_REQ request, int column)
 
 static void gen_database( const act* action, int column)
 {
-	GPRE_REQ request;
-
-	if (first_flag++ != 0)
+	if (global_first_flag)
 		return;
+	global_first_flag = true;
 
 	align(0);
-	for (request = requests; request; request = request->req_next)
+	for (const gpre_req* request = requests; request; request = request->req_next)
 		gen_request(request);
 }
 
@@ -329,21 +325,18 @@ static void gen_database( const act* action, int column)
 
 static void gen_emodify( const act* action, int column)
 {
-	UPD modify;
-	REF reference;
-	GPRE_FLD field;
 	TEXT s1[20], s2[20];
 
-	modify = (UPD) action->act_object;
+	const upd* modify = (UPD) action->act_object;
 
-	for (reference = modify->upd_port->por_references; reference;
+	for (const ref* reference = modify->upd_port->por_references; reference;
 		 reference = reference->ref_next)
 	{
-		const REF source = reference->ref_source;
+		const ref* source = reference->ref_source;
 		if (!source) {
 			continue;
 		}
-		field = reference->ref_field;
+		const gpre_fld* field = reference->ref_field;
 		align(column);
 
 		if (field->fld_dtype == dtype_text)
@@ -371,7 +364,7 @@ static void gen_emodify( const act* action, int column)
 
 static void gen_estore( const act* action, int column, bool special)
 {
-	GPRE_REQ request = action->act_request;
+	const gpre_req* request = action->act_request;
 	align(column);
 	gen_compile(request, column);
 	gen_start(request, request->req_primary, column, special);
@@ -385,7 +378,7 @@ static void gen_estore( const act* action, int column, bool special)
 
 static void gen_endfor( const act* action, int column)
 {
-	GPRE_REQ request = action->act_request;
+	const gpre_req* request = action->act_request;
 	column += INDENT;
 
 	if (request->req_sync)
@@ -419,7 +412,7 @@ static void gen_for( const act* action, int column)
 	gen_s_start(action, column);
 
 	align(column);
-	GPRE_REQ request = action->act_request;
+	const gpre_req* request = action->act_request;
 	ib_fprintf(out_file, "while (1)");
 	column += INDENT;
 	begin(column);
@@ -436,7 +429,7 @@ static void gen_for( const act* action, int column)
 //		port and parameter idents.
 //  
 
-static char* gen_name(char* string, const REF reference)
+static char* gen_name(char* string, const ref* reference)
 {
 
 	sprintf(string, "jrd_%d.jrd_%d",
@@ -451,7 +444,7 @@ static char* gen_name(char* string, const REF reference)
 //		Generate BLR in raw, numeric form.  Ugly but dense.
 //  
 
-static void gen_raw( GPRE_REQ request)
+static void gen_raw( const gpre_req* request)
 {
 	TEXT buffer[80];
 
@@ -484,7 +477,7 @@ static void gen_raw( GPRE_REQ request)
 //		Generate a send or receive call for a port.
 //  
 
-static void gen_receive( GPRE_REQ request, POR port)
+static void gen_receive( const gpre_req* request, const por* port)
 {
 
 	ib_fprintf(out_file,
@@ -499,7 +492,7 @@ static void gen_receive( GPRE_REQ request, POR port)
 //		Generate definitions associated with a single request.
 //  
 
-static void gen_request( GPRE_REQ request)
+static void gen_request( const gpre_req* request)
 {
 
 	if (!(request->req_flags & REQ_exp_hand))
@@ -528,7 +521,7 @@ static void gen_request( GPRE_REQ request)
 
 static void gen_routine( const act* action, int column)
 {
-	for (GPRE_REQ request = (GPRE_REQ) action->act_object; request;
+	for (const gpre_req* request = (GPRE_REQ) action->act_object; request;
 		 request = request->req_routine) 
 	{
 		for (POR port = request->req_ports; port; port = port->por_next)
@@ -544,7 +537,7 @@ static void gen_routine( const act* action, int column)
 
 static void gen_s_end( const act* action, int column)
 {
-	GPRE_REQ request = action->act_request;
+	const gpre_req* request = action->act_request;
 	printa(column, "EXE_unwind (tdbb, %s);", request->req_handle);
 }
 
@@ -556,7 +549,7 @@ static void gen_s_end( const act* action, int column)
 
 static void gen_s_fetch( const act* action, int column)
 {
-	GPRE_REQ request = action->act_request;
+	const gpre_req* request = action->act_request;
 	if (request->req_sync)
 		gen_send(request, request->req_sync, column, false);
 
@@ -572,7 +565,7 @@ static void gen_s_fetch( const act* action, int column)
 
 static void gen_s_start( const act* action, int column)
 {
-	GPRE_REQ request = action->act_request;
+	const gpre_req* request = action->act_request;
 	gen_compile(request, column);
 
     const por* port = request->req_vport;
@@ -588,7 +581,7 @@ static void gen_s_start( const act* action, int column)
 //		Generate a send or receive call for a port.
 //  
 
-static void gen_send( GPRE_REQ request, const por* port, int column, bool special)
+static void gen_send( const gpre_req* request, const por* port, int column, bool special)
 {
 	if (special) {
 		align(column);
@@ -609,7 +602,7 @@ static void gen_send( GPRE_REQ request, const por* port, int column, bool specia
 //		Generate a START.
 //  
 
-static void gen_start( GPRE_REQ request, const por* port, int column, bool special)
+static void gen_start( const gpre_req* request, const por* port, int column, bool special)
 {
 	align(column);
 
@@ -655,8 +648,6 @@ static void gen_variable( const act* action, int column)
 
 static void make_port( POR port, int column)
 {
-	TEXT s[50];
-
 	printa(column, "struct {");
 
 	for (REF reference = port->por_references; reference;
@@ -723,10 +714,13 @@ static void make_port( POR port, int column)
 			break;
 
 		default:
-			sprintf(s, "datatype %d unknown for field %s, msg %d",
-					field->fld_dtype, name, port->por_msg_number);
-			CPR_error(s);
-			return;
+			{
+				TEXT s[80];
+				sprintf(s, "datatype %d unknown for field %s, msg %d",
+						field->fld_dtype, name, port->por_msg_number);
+				CPR_error(s);
+				return;
+			}
 		}
 	}
 	align(column);

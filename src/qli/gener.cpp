@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gener.cpp,v 1.24 2003-10-16 08:51:05 robocop Exp $
+$Id: gener.cpp,v 1.25 2003-10-29 10:53:33 robocop Exp $
 */
 
 #include "firebird.h"
@@ -618,7 +618,7 @@ static void gen_compile( QLI_REQ request)
 	SCHAR explain_buffer[512];
 	if (QLI_explain &&
 		!gds__request_info(status_vector, &request->req_handle, 0,
-						   sizeof(explain_info), const_cast<char*>(explain_info),
+						   sizeof(explain_info), explain_info,
 						   sizeof(explain_buffer), explain_buffer))
 	{
 			explain((UCHAR*) explain_buffer);

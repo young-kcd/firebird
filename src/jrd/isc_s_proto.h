@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		isc_s_proto.h
- *	DESCRIPTION:	Prototype header file for isc_sync.c
+ *	DESCRIPTION:	Prototype header file for isc_sync.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file

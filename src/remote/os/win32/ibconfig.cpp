@@ -317,8 +317,9 @@ BOOL ReadIBSettings(HWND hDlg)
 	char pchTmp[TEMP_BUFLEN];
 	ISC_STATUS_ARRAY pdwStatus;
 	isc_svc_handle hService = NULL;
-	char pchRcvBuf[SEND_BUFLEN], pchResBuf[RESP_BUFLEN];
-	char *pchPtr;
+	//char pchRcvBuf[SEND_BUFLEN],
+	char pchResBuf[RESP_BUFLEN];
+	char* pchPtr;
 
 	HCURSOR hOldCursor = NULL;
 
@@ -349,7 +350,7 @@ BOOL ReadIBSettings(HWND hDlg)
 		return bSuccess;
 	}
 
-	pchRcvBuf[0] = isc_info_svc_get_config;
+	const char pchRcvBuf[] = {isc_info_svc_get_config};
 
 // Query the service with get_config
 	isc_service_query(pdwStatus, &hService, NULL, 0, NULL, 1, pchRcvBuf,

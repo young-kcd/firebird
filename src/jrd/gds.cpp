@@ -215,6 +215,8 @@ static char ib_prefix_msg_val[MAXPATHLEN];
 #include "../include/fb_types.h"
 #endif
 
+
+// This structure is used to parse the firebird.msg file.
 typedef struct gds_msg
 {
 	ULONG msg_top_tree;
@@ -224,34 +226,40 @@ typedef struct gds_msg
 	SCHAR msg_bucket[1];
 } *GDS_MSG;
 
-typedef struct ctl
+// CVC: This structure has a totally different layout than "class ctl" from
+// blob_filter.h and "struct isc_blob_ctl" from ibase.h. These two should match
+// for blob filters to work. However, this one is private to gds.cpp and hence
+// I renamed it gds_ctl to avoid confusion and possible name clashes.
+// However, filters.cpp calls gds__print_blr(), but this struct is not shared
+// between the two modules.
+struct gds_ctl
 {
-	UCHAR *ctl_blr;				/* Running blr string */
-	UCHAR *ctl_blr_start;		/* Original start of blr string */
+	const UCHAR* ctl_blr;				/* Running blr string */
+	const UCHAR* ctl_blr_start;		/* Original start of blr string */
 	FPTR_PRINT_CALLBACK ctl_routine; /* Call back */
-	void *ctl_user_arg;			/* User argument */
-	TEXT *ctl_ptr;
+	void* ctl_user_arg;			/* User argument */
+	TEXT* ctl_ptr;
 	SSHORT ctl_language;
 	TEXT ctl_buffer[PRETTY_BUFFER_SIZE];
-} *CTL;
+};
 
 #ifdef DEV_BUILD
 void GDS_breakpoint(int);
 #endif
 
 
-static void		blr_error(CTL, TEXT *, ...) ATTRIBUTE_FORMAT(2,3);
-static void		blr_format(CTL, const char *, ...) ATTRIBUTE_FORMAT(2,3);
-static void		blr_indent(CTL, SSHORT);
-static void		blr_print_blr(CTL, UCHAR);
-static SCHAR	blr_print_byte(CTL);
-static SCHAR	blr_print_char(CTL);
-static void		blr_print_cond(CTL);
-static int		blr_print_dtype(CTL);
-static void		blr_print_join(CTL);
-static SLONG	blr_print_line(CTL, SSHORT);
-static void		blr_print_verb(CTL, SSHORT);
-static int		blr_print_word(CTL);
+static void		blr_error(gds_ctl*, const TEXT*, ...) ATTRIBUTE_FORMAT(2,3);
+static void		blr_format(gds_ctl*, const char*, ...) ATTRIBUTE_FORMAT(2,3);
+static void		blr_indent(gds_ctl*, SSHORT);
+static void		blr_print_blr(gds_ctl*, UCHAR);
+static SCHAR	blr_print_byte(gds_ctl*);
+static SCHAR	blr_print_char(gds_ctl*);
+static void		blr_print_cond(gds_ctl*);
+static int		blr_print_dtype(gds_ctl*);
+static void		blr_print_join(gds_ctl*);
+static SLONG	blr_print_line(gds_ctl*, SSHORT);
+static void		blr_print_verb(gds_ctl*, SSHORT);
+static int		blr_print_word(gds_ctl*);
 
 static void		init(void);
 static int		yday(const tm*);
@@ -418,25 +426,34 @@ static const UCHAR
 
 
 // This function is very crude, but signal-safe.
-void gds__ulstr(char* buffer, ULONG value, int maxlen, char filler) {
+// CVC: This function converts and ULONG into a string. I renamed the param
+// maxlen to minlen because it represents the minimum length the number will
+// be printed in. However, this means buffer should be large enough to contain
+// any ULONG (11 bytes) and thus prevent a buffer overflow. If minlen >= 11,
+// then buffer should have be of size = (minlen + 1). A small anomaly means
+// that when "value" is zero, only filler is stored in buffer: no ACSCII(48)
+// appears in buffer, unless filler itself is ASCII(48) == '0'.
+void gds__ulstr(char* buffer, ULONG value, const int minlen, const char filler)
+{
 	ULONG n = value;
 	int c = 0;
 	while (n) {
-		n = n/10;
+		n = n / 10;
 		c++;
 	}
-	if (maxlen > c)
-		c = maxlen;
-	char *p = buffer + c;
+	if (minlen > c)
+		c = minlen;
+	char* p = buffer + c;
 	while (value) {
 		*--p = '0' + (value % 10);
-		value = value/10;
+		value = value / 10;
 	}
 	while (p != buffer) {
 		*--p = filler;
 	}
 	buffer[c] = 0;
 }
+
 
 ISC_STATUS API_ROUTINE gds__decode(ISC_STATUS code, USHORT* fac, USHORT* class_)
 {
@@ -1130,7 +1147,7 @@ void API_ROUTINE gds__trace(const TEXT * text)
 	gds__trace_raw(buffer, p - buffer);
 }
 
-void API_ROUTINE gds__log(const TEXT * text, ...)
+void API_ROUTINE gds__log(const TEXT* text, ...)
 {
 /**************************************
  *
@@ -1186,7 +1203,8 @@ void API_ROUTINE gds__log(const TEXT * text, ...)
 }
 
 
-void API_ROUTINE gds__log_status(TEXT * database, const ISC_STATUS* status_vector)
+void API_ROUTINE gds__log_status(const TEXT* database,
+	const ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -1198,22 +1216,30 @@ void API_ROUTINE gds__log_status(TEXT * database, const ISC_STATUS* status_vecto
  *	Log error to error log.
  *
  **************************************/
-	TEXT *buffer, *p;
-
-	buffer = (TEXT *) gds__alloc((SLONG) BUFFER_XLARGE);
+	TEXT* const buffer = (TEXT*) gds__alloc((SLONG) BUFFER_XLARGE);
 /* FREE: at procedure exit */
 	if (!buffer)				/* NOMEM: */
 		return;
+		
+#ifdef DEV_BUILD
+	const size_t db_len = strlen(database);
+	assert(db_len < BUFFER_XLARGE - 2);
+	assert(db_len < MAXPATHLEN);
+#endif
 
-	p = buffer;
-	sprintf(p, "Database: %s", (database) ? database : "");
+	const int interpreted_line_length = 80; // raw estimation
+
+	TEXT* p = buffer;
+	const TEXT* const end = p + BUFFER_XLARGE - interpreted_line_length;
+	const int max_db_len = int(BUFFER_XLARGE - 12);
+	sprintf(p, "Database: %.*s", max_db_len, (database) ? database : "");
 
 	do {
 		while (*p)
 			p++;
 		*p++ = '\n';
 		*p++ = '\t';
-	} while (gds_interprete_cpp(p, &status_vector));
+	} while (p < end && gds_interprete_cpp(p, &status_vector));
 
 	p[-2] = 0;
 	gds__log(buffer, 0);
@@ -1338,11 +1364,11 @@ SSHORT API_ROUTINE gds__msg_format(void*       handle,
 }
 
 
-SSHORT API_ROUTINE gds__msg_lookup(void *handle,
+SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 								   USHORT facility,
 								   USHORT number,
 								   USHORT length,
-								   TEXT * buffer, USHORT * flags)
+								   TEXT* buffer, USHORT* flags)
 {
 /**************************************
  *
@@ -1467,7 +1493,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void *handle,
 }
 
 
-int API_ROUTINE gds__msg_open(void **handle, TEXT * filename)
+int API_ROUTINE gds__msg_open(void** handle, const TEXT* filename)
 {
 /**************************************
  *
@@ -1527,11 +1553,12 @@ int API_ROUTINE gds__msg_open(void **handle, TEXT * filename)
 
 
 void API_ROUTINE gds__msg_put(
-							  void *handle,
+							  void* handle,
 							  USHORT facility,
 							  USHORT number,
-							  TEXT * arg1,
-TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
+							  const TEXT* arg1, const TEXT* arg2,
+							  const TEXT* arg3, const TEXT* arg4,
+							  const TEXT* arg5)
 {
 /**************************************
  *
@@ -1552,7 +1579,7 @@ TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
 }
 
 
-SLONG API_ROUTINE gds__get_prefix(SSHORT arg_type, TEXT * passed_string)
+SLONG API_ROUTINE gds__get_prefix(SSHORT arg_type, const TEXT* passed_string)
 {
 /**************************************
  *
@@ -1609,7 +1636,7 @@ SLONG API_ROUTINE gds__get_prefix(SSHORT arg_type, TEXT * passed_string)
 
 
 #ifndef VMS
-void API_ROUTINE gds__prefix(TEXT *resultString, const TEXT *file)
+void API_ROUTINE gds__prefix(TEXT* resultString, const TEXT* file)
 {
 /**************************************
  *
@@ -1655,7 +1682,7 @@ void API_ROUTINE gds__prefix(TEXT *resultString, const TEXT *file)
 
 
 #ifdef VMS
-void API_ROUTINE gds__prefix(TEXT * string, const TEXT * root)
+void API_ROUTINE gds__prefix(TEXT* string, const TEXT* root)
 {
 /**************************************
  *
@@ -1705,7 +1732,7 @@ void API_ROUTINE gds__prefix(TEXT * string, const TEXT * root)
 
 
 #ifndef VMS
-void API_ROUTINE gds__prefix_lock(TEXT * string, const TEXT * root)
+void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
 {
 /********************************************************
  *
@@ -1748,7 +1775,7 @@ void API_ROUTINE gds__prefix_lock(TEXT * string, const TEXT * root)
 
 
 #ifdef VMS
-void API_ROUTINE gds__prefix_lock(TEXT * string, const TEXT * root)
+void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
 {
 /************************************************
  *
@@ -1798,7 +1825,7 @@ void API_ROUTINE gds__prefix_lock(TEXT * string, const TEXT * root)
 #endif
 
 #ifndef VMS
-void API_ROUTINE gds__prefix_msg(TEXT * string, const TEXT * root)
+void API_ROUTINE gds__prefix_msg(TEXT* string, const TEXT* root)
 {
 /********************************************************
  *
@@ -1831,7 +1858,7 @@ void API_ROUTINE gds__prefix_msg(TEXT * string, const TEXT * root)
 #endif
 
 #ifdef VMS
-void API_ROUTINE gds__prefix_msg(TEXT * string, const TEXT * root)
+void API_ROUTINE gds__prefix_msg(TEXT* string, const TEXT* root)
 {
 /************************************************
  *
@@ -1924,8 +1951,9 @@ ISC_STATUS API_ROUTINE gds__print_status(const ISC_STATUS* vec)
 
 
 USHORT API_ROUTINE gds__parse_bpb(USHORT bpb_length,
-								  UCHAR * bpb,
-								  USHORT * source, USHORT * target)
+								  const UCHAR* bpb,
+								  USHORT* source,
+								  USHORT* target)
 {
 /**************************************
  *
@@ -1946,11 +1974,11 @@ USHORT API_ROUTINE gds__parse_bpb(USHORT bpb_length,
 
 
 USHORT API_ROUTINE gds__parse_bpb2(USHORT bpb_length,
-								   UCHAR * bpb,
-								   SSHORT * source,
-								   SSHORT * target,
-								   USHORT * source_interp,
-								   USHORT * target_interp)
+								   const UCHAR* bpb,
+								   SSHORT* source,
+								   SSHORT* target,
+								   USHORT* source_interp,
+								   USHORT* target_interp)
 {
 /**************************************
  *
@@ -1965,7 +1993,6 @@ USHORT API_ROUTINE gds__parse_bpb2(USHORT bpb_length,
  *	source_interp and target_interp.
  *
  **************************************/
-	UCHAR *p, *end, op;
 	USHORT type, length;
 
 	type = *source = *target = 0;
@@ -1975,17 +2002,17 @@ USHORT API_ROUTINE gds__parse_bpb2(USHORT bpb_length,
 	if (target_interp)
 		*target_interp = 0;
 
-	if (!bpb_length)
+	if (!bpb_length || !bpb)
 		return type;
 
-	p = bpb;
-	end = p + bpb_length;
+	const UCHAR* p = bpb;
+	const UCHAR* const end = p + bpb_length;
 
 	if (*p++ != gds_bpb_version1)
 		return type;
 
 	while (p < end) {
-		op = *p++;
+		const UCHAR op = *p++;
 		length = *p++;
 		switch (op) {
 		case gds_bpb_source_type:
@@ -2020,10 +2047,10 @@ USHORT API_ROUTINE gds__parse_bpb2(USHORT bpb_length,
 }
 
 
-SLONG API_ROUTINE gds__ftof(SCHAR * string,
-							USHORT length1,
-							SCHAR * field,
-							USHORT length2)
+SLONG API_ROUTINE gds__ftof(const SCHAR* string,
+							const USHORT length1,
+							SCHAR* field,
+							const USHORT length2)
 {
 /**************************************
  *
@@ -2037,26 +2064,28 @@ SLONG API_ROUTINE gds__ftof(SCHAR * string,
  *	move strings around.
  *
  **************************************/
-	USHORT l, fill;
+	USHORT fill = 0;
+	// CVC: a logic bug rendered the fill > 0 test useless
+	if (length2 > length1)
+		fill = length2 - length1;
 
-	fill = length2 - length1;
-
-	if ((l = MIN(length1, length2)) > 0)
-		do
+	USHORT l = MIN(length1, length2);
+	if (l > 0)
+		do {
 			*field++ = *string++;
-		while (--l);
+		} while (--l);
 
 	if (fill > 0)
-		do
+		do {
 			*field++ = ' ';
-		while (--fill);
+		} while (--fill);
 
 	return 0;
 }
 
 
 int API_ROUTINE gds__print_blr(
-							   UCHAR * blr,
+							   const UCHAR* blr,
 							   FPTR_PRINT_CALLBACK routine,
 							   void* user_arg, SSHORT language)
 {
@@ -2070,16 +2099,12 @@ int API_ROUTINE gds__print_blr(
  *	Pretty print blr thru callback routine.
  *
  **************************************/
-	struct ctl ctl, *control;
-	SCHAR eoc;
-	SLONG offset;
-	SSHORT version, level;
-
 	try {
 
-	control = &ctl;
-	level = 0;
-	offset = 0;
+	gds_ctl ctl;
+	gds_ctl* control = &ctl;
+	SSHORT level = 0;
+	SLONG offset = 0;
 
 	if (!routine) {
 		routine = gds__default_printer;
@@ -2092,7 +2117,7 @@ int API_ROUTINE gds__print_blr(
 	control->ctl_ptr = control->ctl_buffer;
 	control->ctl_language = language;
 
-	version = BLR_BYTE;
+	const SSHORT version = BLR_BYTE;
 
 	if ((version != blr_version4) && (version != blr_version5))
 		blr_error(control, "*** blr version %d is not supported ***",
@@ -2104,7 +2129,7 @@ int API_ROUTINE gds__print_blr(
 	PRINT_VERB;
 
 	offset = control->ctl_blr - control->ctl_blr_start;
-	eoc = BLR_BYTE;
+	const SCHAR eoc = BLR_BYTE;
 
 	if (eoc != blr_eoc)
 		blr_error(control, "*** expected end of command, encounted %d ***",
@@ -2122,7 +2147,7 @@ int API_ROUTINE gds__print_blr(
 }
 
 
-void API_ROUTINE gds__put_error(TEXT * string)
+void API_ROUTINE gds__put_error(const TEXT* string)
 {
 /**************************************
  *
@@ -2153,7 +2178,7 @@ void API_ROUTINE gds__put_error(TEXT * string)
 }
 
 
-void API_ROUTINE gds__qtoq(void *quad_in, void *quad_out)
+void API_ROUTINE gds__qtoq(const void* quad_in, void* quad_out)
 {
 /**************************************
  *
@@ -2172,7 +2197,7 @@ void API_ROUTINE gds__qtoq(void *quad_in, void *quad_out)
 }
 
 
-void API_ROUTINE gds__register_cleanup(FPTR_VOID_PTR routine, void *arg)
+void API_ROUTINE gds__register_cleanup(FPTR_VOID_PTR routine, void* arg)
 {
 /**************************************
  *
@@ -2465,9 +2490,9 @@ void API_ROUTINE gds__unregister_cleanup(FPTR_VOID_PTR routine, void *arg)
 
 
 #ifndef VMS
-BOOLEAN API_ROUTINE gds__validate_lib_path(TEXT * module,
-										   TEXT * ib_env_var,
-										   TEXT * resolved_module,
+BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
+										   const TEXT* ib_env_var,
+										   TEXT* resolved_module,
 										   SLONG length)
 {
 /**************************************
@@ -2531,9 +2556,9 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(TEXT * module,
 
 
 #ifdef VMS
-BOOLEAN API_ROUTINE gds__validate_lib_path(TEXT * module,
-										   TEXT * ib_env_var,
-										   TEXT * resolved_module,
+BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
+										   const TEXT* ib_env_var,
+										   TEXT* resolved_module,
 										   SLONG length)
 {
 /**************************************
@@ -2614,8 +2639,8 @@ SLONG API_ROUTINE gds__vax_integer(const UCHAR* ptr, SSHORT length)
 
 
 void API_ROUTINE gds__vtof(
-						   SCHAR * string,
-						   SCHAR * field, USHORT length)
+						   const SCHAR* string,
+						   SCHAR* field, USHORT length)
 {
 /**************************************
  *
@@ -2654,7 +2679,7 @@ void API_ROUTINE gds__vtov(const SCHAR* string, char* field, SSHORT length)
  * Functional description
  *	Move a null terminated string to a fixed length
  *	field.  The call is primarily generated  by the
- *	preprocessor.  Until gds__vtof, the target string
+ *	preprocessor.  Unless gds__vtof, the target string
  *	is null terminated.
  *
  **************************************/
@@ -2669,7 +2694,7 @@ void API_ROUTINE gds__vtov(const SCHAR* string, char* field, SSHORT length)
 }
 
 
-void API_ROUTINE isc_print_sqlerror(SSHORT sqlcode, ISC_STATUS * status)
+void API_ROUTINE isc_print_sqlerror(SSHORT sqlcode, const ISC_STATUS* status)
 {
 /**************************************
  *
@@ -2705,7 +2730,7 @@ void API_ROUTINE isc_print_sqlerror(SSHORT sqlcode, ISC_STATUS * status)
 
 void API_ROUTINE isc_sql_interprete(
 									SSHORT sqlcode,
-									TEXT * buffer, SSHORT length)
+									TEXT* buffer, SSHORT length)
 {
 /**************************************
  *
@@ -2768,7 +2793,7 @@ int unlink(SCHAR * file)
 #endif
 
 
-static void blr_error(CTL control, TEXT * string, ...)
+static void blr_error(gds_ctl* control, const TEXT* string, ...)
 {
 /**************************************
  *
@@ -2791,7 +2816,7 @@ static void blr_error(CTL control, TEXT * string, ...)
 }
 
 
-static void blr_format(CTL control, const char * string, ...)
+static void blr_format(gds_ctl* control, const char* string, ...)
 {
 /**************************************
  *
@@ -2812,7 +2837,7 @@ static void blr_format(CTL control, const char * string, ...)
 }
 
 
-static void blr_indent(CTL control, SSHORT level)
+static void blr_indent(gds_ctl* control, SSHORT level)
 {
 /**************************************
  *
@@ -2832,7 +2857,7 @@ static void blr_indent(CTL control, SSHORT level)
 
 
 
-static void blr_print_blr(CTL control, UCHAR operator_)
+static void blr_print_blr(gds_ctl* control, UCHAR operator_)
 {
 /**************************************
  *
@@ -2855,7 +2880,7 @@ static void blr_print_blr(CTL control, UCHAR operator_)
 }
 
 
-static SCHAR blr_print_byte(CTL control)
+static SCHAR blr_print_byte(gds_ctl* control)
 {
 /**************************************
  *
@@ -2877,7 +2902,7 @@ static SCHAR blr_print_byte(CTL control)
 }
 
 
-static SCHAR blr_print_char(CTL control)
+static SCHAR blr_print_char(gds_ctl* control)
 {
 /**************************************
  *
@@ -2911,7 +2936,7 @@ static SCHAR blr_print_char(CTL control)
 }
 
 
-static void blr_print_cond(CTL control)
+static void blr_print_cond(gds_ctl* control)
 {
 /**************************************
  *
@@ -2960,7 +2985,7 @@ static void blr_print_cond(CTL control)
 }
 
 
-static int blr_print_dtype(CTL control)
+static int blr_print_dtype(gds_ctl* control)
 {
 /**************************************
  *
@@ -3111,7 +3136,7 @@ static int blr_print_dtype(CTL control)
 }
 
 
-static void blr_print_join(CTL control)
+static void blr_print_join(gds_ctl* control)
 {
 /**************************************
  *
@@ -3154,7 +3179,7 @@ static void blr_print_join(CTL control)
 }
 
 
-static SLONG blr_print_line(CTL control, SSHORT offset)
+static SLONG blr_print_line(gds_ctl* control, SSHORT offset)
 {
 /**************************************
  *
@@ -3176,7 +3201,7 @@ static SLONG blr_print_line(CTL control, SSHORT offset)
 }
 
 
-static void blr_print_verb(CTL control, SSHORT level)
+static void blr_print_verb(gds_ctl* control, SSHORT level)
 {
 /**************************************
  *
@@ -3193,17 +3218,17 @@ static void blr_print_verb(CTL control, SSHORT level)
 
 	offset = control->ctl_blr - control->ctl_blr_start;
 	blr_indent(control, level);
-	UCHAR operator_ = BLR_BYTE;
+	UCHAR blr_operator = BLR_BYTE;
 
-	if ((SCHAR) operator_ == (SCHAR) blr_end) {
+	if ((SCHAR) blr_operator == (SCHAR) blr_end) {
 		blr_format(control, "blr_end, ");
 		PRINT_LINE;
 		return;
 	}
 
-	blr_print_blr(control, operator_);
+	blr_print_blr(control, blr_operator);
 	level++;
-	const UCHAR *ops = blr_table[operator_].blr_operators;
+	const UCHAR *ops = blr_table[blr_operator].blr_operators;
 
 	while (*ops)
 		switch (*ops++) {
@@ -3308,14 +3333,14 @@ static void blr_print_verb(CTL control, SSHORT level)
 			break;
 
 		case op_relation:
-			operator_ = BLR_BYTE;
-			blr_print_blr(control, operator_);
-			if (operator_ != blr_relation && operator_ != blr_rid)
+			blr_operator = BLR_BYTE;
+			blr_print_blr(control, blr_operator);
+			if (blr_operator != blr_relation && blr_operator != blr_rid)
 				blr_error(control,
 						  "*** blr_relation or blr_rid must be object of blr_lock_relation, %d found ***",
-						  (int) operator_);
+						  (int) blr_operator);
 
-			if (operator_ == blr_relation) {
+			if (blr_operator == blr_relation) {
 				n = PRINT_BYTE;
 				while (--n >= 0)
 					PRINT_CHAR;
@@ -3340,7 +3365,7 @@ static void blr_print_verb(CTL control, SSHORT level)
 }
 
 
-static int blr_print_word(CTL control)
+static int blr_print_word(gds_ctl* control)
 {
 /**************************************
  *

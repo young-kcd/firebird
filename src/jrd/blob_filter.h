@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		blf.h
+ *	MODULE:		blob_filter.h
  *	DESCRIPTION:	Blob filter interface definitions
  *
  * The contents of this file are subject to the Interbase Public
@@ -43,7 +43,7 @@ public:
 	USHORT		ctl_buffer_length;		/* Length of buffer */
 	USHORT		ctl_segment_length;		/* Length of current segment */
 	USHORT		ctl_bpb_length;			/* Length of blob parameter block */
-	UCHAR*		ctl_bpb;				/* Address of blob parameter block */
+	const UCHAR*		ctl_bpb;				/* Address of blob parameter block */
 	UCHAR*		ctl_buffer;				/* Address of segment buffer */
 	SLONG		ctl_max_segment;		/* Length of longest segment */
 	SLONG		ctl_number_segments;	/* Total number of segments */
@@ -86,3 +86,4 @@ typedef blf *BLF;
 	"\tcaused the fatal exception:"
 
 #endif /* JRD_BLF_H */
+

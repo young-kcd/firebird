@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		old.c
+ *	MODULE:		old.cpp
  *	DESCRIPTION:	
  *
  * The contents of this file are subject to the Interbase Public
@@ -58,7 +58,7 @@ static void get_wal_offset(USHORT, ULONG *, ULONG *, USHORT);
 static SLONG old_dump_all_pages(OLD, PIP, SLONG, ULONG);
 static int old_dump_page(OLD, ULONG);
 static void old_fini(OLD *, USHORT);
-static int old_init(OLD *, SCHAR *, USHORT, SSHORT, SCHAR **, ULONG, ULONG,
+static int old_init(OLD*, const SCHAR*, USHORT, SSHORT, SCHAR**, ULONG, ULONG,
 					SSHORT, SSHORT, ULONG, ULONG, ULONG);
 static int old_put(OLD, SCHAR *, USHORT);
 static void old_put_db_filename(OLD);
@@ -67,12 +67,12 @@ static int open_next_file(OLD);
 
 
 int OLD_dump(
-			 TEXT * dbname,
+			 const TEXT* dbname,
 			 USHORT db_len,
 			 USHORT dump_id,
 			 ULONG file_size,
 			 ULONG start_page,
-ULONG start_seqno, USHORT start_file, USHORT num_files, SCHAR ** files)
+	ULONG start_seqno, USHORT start_file, USHORT num_files, SCHAR** files)
 {
 /**************************************
  *
@@ -89,15 +89,10 @@ ULONG start_seqno, USHORT start_file, USHORT num_files, SCHAR ** files)
  *			    Other relevent info to pick up where it leaves off.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
 	WIN window;
 	PGC pgc;
 	UCHAR byte;
 	SLONG sequence;
-	ULONG seqno;
-	ULONG offset;
-	ULONG p_offset;
 	OLD OLD_handle;
 	PIP page;
 	SLONG last_page;
@@ -109,8 +104,8 @@ ULONG start_seqno, USHORT start_file, USHORT num_files, SCHAR ** files)
 	SSHORT jd_len, d_len;
 	SLONG ret_val;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 	PAG_get_clump(HEADER_PAGE, HDR_backup_info,
 				  reinterpret_cast < USHORT * >(&d_len),
@@ -130,7 +125,9 @@ ULONG start_seqno, USHORT start_file, USHORT num_files, SCHAR ** files)
 							jd_len,
 							reinterpret_cast < UCHAR * >(data),
 							d_len)) != FB_SUCCESS)
+	{
 			AIL_process_jrn_error(ret_val);
+	}
 
 	if (db_len) {
 		MOVE_FAST(dbname, db, db_len);
@@ -139,7 +136,7 @@ ULONG start_seqno, USHORT start_file, USHORT num_files, SCHAR ** files)
 	else
 		strcpy(db, dbname);
 
-	seqno = offset = p_offset = 0;
+	ULONG seqno = 0, offset = 0, p_offset = 0;
 
 	if (!start_page) {
 		p_offset = 0;
@@ -521,15 +518,15 @@ static void old_fini(OLD * OLD_handle, USHORT code)
 
 
 static int old_init(
-					OLD * OLD_handle,
-					SCHAR * dbname,
+					OLD* OLD_handle,
+					const SCHAR* dbname,
 					USHORT dump_id,
 					SSHORT num_files,
-					SCHAR ** files,
-ULONG file_size,
-ULONG start_seqno,
-SSHORT start_file,
-SSHORT rec_size, ULONG log_seqno, ULONG log_offset, ULONG log_p_offset)
+					SCHAR** files,
+	ULONG file_size,
+	ULONG start_seqno,
+	SSHORT start_file,
+	SSHORT rec_size, ULONG log_seqno, ULONG log_offset, ULONG log_p_offset)
 {
 /**************************************
  *
@@ -542,12 +539,11 @@ SSHORT rec_size, ULONG log_seqno, ULONG log_offset, ULONG log_p_offset)
  *	Initialize and returns the OLD_handle.
  *
  **************************************/
-	OLD old;
-
 	if (*OLD_handle != NULL)
 		return FB_FAILURE;
 
-	*OLD_handle = old = (OLD) gds__alloc(sizeof(struct old));
+	OLD old = (OLD) gds__alloc(sizeof(struct old));
+	*OLD_handle = old;
 	MOVE_CLEAR(old, sizeof(struct old));
 
 	old->old_block = (OLDBLK) gds__alloc(sizeof(struct oldblk));
@@ -788,3 +784,4 @@ static int open_next_file(OLD old)
 
 	return FB_SUCCESS;
 }
+

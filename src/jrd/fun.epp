@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		fun.e
+ *	MODULE:		fun.epp
  *	DESCRIPTION:	External Function handling code.
  *
  * The contents of this file are subject to the Interbase Public
@@ -30,7 +30,7 @@
  * 2003.08.10 Claudio Valderrama: Fix SF Bugs #544132 and #728839.
  */
 /*
-$Id: fun.epp,v 1.25 2003-10-03 01:46:53 brodsom Exp $
+$Id: fun.epp,v 1.26 2003-10-29 10:53:14 robocop Exp $
 */
 
 #include "firebird.h"
@@ -79,10 +79,29 @@ double MTH$CVT_D_G(), MTH$CVT_G_D();
 
 #define EXCEPTION_MESSAGE "The user defined function: \t%s\n\t   referencing entrypoint: \t%s\n\t                in module: \t%s\n\tcaused the fatal exception:"
 
-static SSHORT blob_get_segment(BLB, UCHAR *, USHORT, USHORT *);
-static void blob_put_segment(BLB, UCHAR *, USHORT);
+/* Blob passing structure */
+/* Updated definitions from the static functions in fun.epp */
+
+typedef struct blob {
+//	SSHORT(*blob_get_segment) ();
+	SSHORT (*blob_get_segment) (BLB, UCHAR*, USHORT, USHORT*);
+//	int* blob_handle;
+	void* blob_handle;
+	SLONG blob_number_segments;
+	SLONG blob_max_segment;
+	SLONG blob_total_length;
+//	void (*blob_put_segment) ();
+	void (*blob_put_segment) (BLB, const UCHAR*, USHORT);
+//	SLONG(*blob_seek) ();
+	SLONG (*blob_seek) (BLB, USHORT, SLONG);
+} *BLOB;
+
+
+
+static SSHORT blob_get_segment(BLB, UCHAR*, USHORT, USHORT*);
+static void blob_put_segment(BLB, const UCHAR*, USHORT);
 static SLONG blob_lseek(BLB, USHORT, SLONG);
-static SLONG get_scalar_array(fun_repeat *, DSC *, SAD, LLS *);
+static SLONG get_scalar_array(fun_repeat*, DSC*, SAD, LLS*);
 
 
 void FUN_evaluate(FUN function, JRD_NOD node, VLU value)
@@ -432,10 +451,10 @@ void FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 									(BID)blob_id);
 				}
 				LLS_PUSH(blob, &blob_stack);
-				blob_desc->blob_get_segment = (SSHORT (*)())blob_get_segment;
-				blob_desc->blob_put_segment = (void (*)())blob_put_segment;
-				blob_desc->blob_seek = (SLONG (*)())blob_lseek;
-				blob_desc->blob_handle = (int *) blob;
+				blob_desc->blob_get_segment = blob_get_segment;
+				blob_desc->blob_put_segment = blob_put_segment;
+				blob_desc->blob_seek = blob_lseek;
+				blob_desc->blob_handle = blob;
 				blob_desc->blob_number_segments = blob->blb_count;
 				blob_desc->blob_max_segment = blob->blb_max_segment;
 				blob_desc->blob_total_length = blob->blb_length;
@@ -986,7 +1005,7 @@ static SLONG blob_lseek( BLB blob, USHORT mode, SLONG offset)
 }
 
 
-static void blob_put_segment( BLB blob, UCHAR * buffer, USHORT length)
+static void blob_put_segment( BLB blob, const UCHAR* buffer, USHORT length)
 {
 /**************************************
  *
@@ -1012,8 +1031,8 @@ static void blob_put_segment( BLB blob, UCHAR * buffer, USHORT length)
 
 static SSHORT blob_get_segment(
 							   BLB blob,
-							   UCHAR * buffer,
-							   USHORT length, USHORT * return_length)
+							   UCHAR* buffer,
+							   USHORT length, USHORT* return_length)
 {
 /**************************************
  *
@@ -1119,3 +1138,4 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 
 	return sizeof(struct sad) + (dimensions - 1) * sizeof(sad::sad_repeat);
 }
+

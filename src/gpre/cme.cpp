@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cme.cpp,v 1.15 2003-10-15 01:18:01 brodsom Exp $
+//	$Id: cme.cpp,v 1.16 2003-10-29 10:53:07 robocop Exp $
 //
 
 #include "firebird.h"
@@ -51,16 +51,16 @@ static void cmp_cast(GPRE_NOD, GPRE_REQ);
 static GPRE_NOD cmp_field(GPRE_NOD, GPRE_REQ);
 static GPRE_NOD cmp_literal(GPRE_NOD, GPRE_REQ);
 static void cmp_map(MAP, GPRE_REQ);
-static void cmp_plan(GPRE_NOD, GPRE_REQ);
+static void cmp_plan(const gpre_nod*, GPRE_REQ);
 static void cmp_sdl_dtype(GPRE_FLD, REF);
 static GPRE_NOD cmp_udf(GPRE_NOD, GPRE_REQ);
 static GPRE_NOD cmp_value(GPRE_NOD, GPRE_REQ);
 static USHORT get_string_len(GPRE_FLD);
 static void stuff_cstring(GPRE_REQ, const char *);
-static void stuff_sdl_dimension(DIM, REF, SSHORT);
-static void stuff_sdl_element(REF, GPRE_FLD);
-static void stuff_sdl_loops(REF, GPRE_FLD);
-static void stuff_sdl_number(SLONG, REF);
+static void stuff_sdl_dimension(const dim*, REF, SSHORT);
+static void stuff_sdl_element(REF, const gpre_fld*);
+static void stuff_sdl_loops(REF, const gpre_fld*);
+static void stuff_sdl_number(const SLONG, REF);
 
 const int USER_LENGTH = 32;
 #define STUFF(blr)		*request->req_blr++ = (UCHAR) (blr)
@@ -381,15 +381,15 @@ void CME_expr(GPRE_NOD node, GPRE_REQ request)
 //		Compute datatype, length, and scale of an expression.
 //  
 
-void CME_get_dtype( GPRE_NOD node, GPRE_FLD f)
+void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 {
 	gpre_fld field1, field2;
 	SSHORT dtype_max;
-	TEXT *string;
+	const TEXT* string;
 	MEL element;
 	REF reference;
 	GPRE_FLD tmp_field;
-	udf* a_udf;
+	const udf* a_udf;
 
 	f->fld_dtype = 0;
 	f->fld_length = 0;
@@ -860,14 +860,12 @@ void CME_get_dtype( GPRE_NOD node, GPRE_FLD f)
 			}
 			else
 			{
-				char *ptr, *s_ptr;
-				UINT64 uint64_val;
 				int scale;
 
-				s_ptr = string;
+				const char* s_ptr = string;
 
 			/** Get the scale **/
-				ptr = strpbrk(string, ".");
+				const char* ptr = strpbrk(string, ".");
 				if (!ptr)
 					scale = 0;
 				else
@@ -877,7 +875,7 @@ void CME_get_dtype( GPRE_NOD node, GPRE_FLD f)
 				}
 
 			/** Get rid of the decimal point **/
-				uint64_val = 0;
+				UINT64 uint64_val = 0;
 				while (*s_ptr)
 				{
 					if (*s_ptr != '.')
@@ -991,20 +989,19 @@ void CME_get_dtype( GPRE_NOD node, GPRE_FLD f)
 
 void CME_relation(GPRE_CTX context, GPRE_REQ request)
 {
-	GPRE_RSE rs_stream;
-	GPRE_REL relation;
 	GPRE_PRC procedure;
-	GPRE_NOD inputs, *ptr, *end;
 
 	CMP_check(request, 0);
 
-	if (rs_stream = context->ctx_stream)
+	GPRE_RSE rs_stream = context->ctx_stream;
+	if (rs_stream)
 	{
 		CME_rse(rs_stream, request);
 		return;
 	}
 
-	if (relation = context->ctx_relation)
+	GPRE_REL relation = context->ctx_relation;
+	if (relation)
 	{
 		if (sw_ids)
 		{
@@ -1048,10 +1045,15 @@ void CME_relation(GPRE_CTX context, GPRE_REQ request)
 		}
 		STUFF(context->ctx_internal);
 		STUFF_WORD(procedure->prc_in_count);
-		if (inputs = context->ctx_prc_inputs)
-			for (ptr = inputs->nod_arg, end = ptr + inputs->nod_count;
+		gpre_nod* inputs = context->ctx_prc_inputs;
+		if (inputs) {
+			gpre_nod** ptr = inputs->nod_arg;
+			for (gpre_nod** const end = ptr + inputs->nod_count;
 				 ptr < end; ptr++)
+			{
 				CME_expr(*ptr, request);
+			}
+		}
 	}
 }
 
@@ -1063,7 +1065,7 @@ void CME_relation(GPRE_CTX context, GPRE_REQ request)
 
 void CME_rse(gpre_rse* selection, GPRE_REQ request)
 {
-	GPRE_NOD temp, union_node, *ptr, *end, list;
+	GPRE_NOD *ptr, *end;
 	GPRE_RSE sub_rse;
 	SSHORT i;
 
@@ -1081,7 +1083,8 @@ void CME_rse(gpre_rse* selection, GPRE_REQ request)
 
 //  Process unions, if any, otherwise process relations 
 
-	if (union_node = selection->rse_union)
+	gpre_nod* union_node = selection->rse_union;
+	if (union_node)
 	{
 		STUFF(1);
 		STUFF(blr_union);
@@ -1102,7 +1105,8 @@ void CME_rse(gpre_rse* selection, GPRE_REQ request)
 		STUFF(sub_rse->rse_map->map_context->ctx_internal);
 		CME_rse(sub_rse, request);
 		STUFF(blr_group_by);
-		if (list = sub_rse->rse_group_by)
+		gpre_nod* list = sub_rse->rse_group_by;
+		if (list)
 		{
 			STUFF(list->nod_count);
 			ptr = list->nod_arg;
@@ -1134,7 +1138,8 @@ void CME_rse(gpre_rse* selection, GPRE_REQ request)
 		CME_expr(selection->rse_boolean, request);
 	}
 
-	if (temp = selection->rse_sort)
+	gpre_nod* temp = selection->rse_sort;
+	if (temp)
 	{
 		STUFF(blr_sort);
 		STUFF(temp->nod_count);
@@ -1209,12 +1214,9 @@ void CME_rse(gpre_rse* selection, GPRE_REQ request)
 
 static GPRE_NOD cmp_array( GPRE_NOD node, GPRE_REQ request)
 {
-	GPRE_FLD field;
-	REF reference;
-
 	CMP_check(request, 0);
 
-	reference = (REF) node->nod_arg[0];
+	ref* reference = (REF) node->nod_arg[0];
 
 	if (!reference->ref_context)
 	{
@@ -1222,7 +1224,8 @@ static GPRE_NOD cmp_array( GPRE_NOD node, GPRE_REQ request)
 		return NULL;
 	}
 
-	if (!(field = reference->ref_field))
+	gpre_fld* field = reference->ref_field;
+	if (!field)
 	{
 		CPR_error("cmp_array: field missing");
 		return NULL;
@@ -1294,15 +1297,13 @@ static GPRE_NOD cmp_array( GPRE_NOD node, GPRE_REQ request)
 
 static GPRE_NOD cmp_array_element( GPRE_NOD node, GPRE_REQ request)
 {
-	USHORT index_count;
-
 	STUFF(blr_index);
 
 	cmp_field(node, request);
 
 	STUFF(node->nod_count - 1);
 
-	for (index_count = 1; index_count < node->nod_count; index_count++)
+	for (USHORT index_count = 1; index_count < node->nod_count; index_count++)
 		CME_expr(node->nod_arg[index_count], request);
 
 	return node;
@@ -1329,25 +1330,24 @@ static void cmp_cast( GPRE_NOD node, GPRE_REQ request)
 
 static GPRE_NOD cmp_field( GPRE_NOD node, GPRE_REQ request)
 {
-	GPRE_FLD field;
-	REF reference;
-	GPRE_CTX context;
-
 	CMP_check(request, 0);
 
-	if (!(reference = (REF) node->nod_arg[0]))
+	ref* reference = (REF) node->nod_arg[0];
+	if (!reference)
 	{
 		CPR_error("cmp_field: reference missing");
 		return NULL;
 	}
 
-	if (!(context = reference->ref_context))
+	gpre_ctx* context = reference->ref_context;
+	if (!context)
 	{
 		CPR_error("cmp_field: context missing");
 		return NULL;
 	}
 
-	if (!(field = reference->ref_field))
+	gpre_fld* field = reference->ref_field;
+	if (!field)
 	{
 		CPR_error("cmp_field: field missing");
 		return NULL;
@@ -1391,12 +1391,6 @@ static GPRE_NOD cmp_field( GPRE_NOD node, GPRE_REQ request)
 
 static GPRE_NOD cmp_literal( GPRE_NOD node, GPRE_REQ request)
 {
-	REF reference;
-	char *p;
-	char buffer[MAXSYMLEN];
-	char *string;
-	SSHORT length;
-	DSC from, to;
 	bool negate = false;
 
 	if (node->nod_type == nod_negate)
@@ -1406,8 +1400,8 @@ static GPRE_NOD cmp_literal( GPRE_NOD node, GPRE_REQ request)
 	}
 
 	STUFF(blr_literal);
-	reference = (REF) node->nod_arg[0];
-	string = (char *) reference->ref_value;
+	const ref* reference = (REF) node->nod_arg[0];
+	const char* string = (char *) reference->ref_value;
 
 	if (*string != '"' && *string != '\'')
 	{
@@ -1438,17 +1432,11 @@ static GPRE_NOD cmp_literal( GPRE_NOD node, GPRE_REQ request)
 	    Then this must be a scaled int.  Figure out if there
 	    is a '.' in it and calculate its scale.
 	**/
-			char *ptr;
-			char *s_ptr;
-			UINT64 uint64_val;
-			SINT64 sint64_val;
-			long long_val;
-			int scale;
-
-			s_ptr = string;
+			const char* s_ptr = string;
 
 	/** Get the scale **/
-			ptr = strpbrk(string, ".");
+			int scale;
+			const char* ptr = strpbrk(string, ".");
 			if (!ptr)
 		/**  No '.' ?, Scale is 0 **/
 				scale = 0;
@@ -1459,7 +1447,7 @@ static GPRE_NOD cmp_literal( GPRE_NOD node, GPRE_REQ request)
 				scale = -scale;
 			}
 
-			uint64_val = 0;
+			UINT64 uint64_val = 0;
 			while (*s_ptr)
 			{
 				if (*s_ptr != '.')
@@ -1472,6 +1460,7 @@ static GPRE_NOD cmp_literal( GPRE_NOD node, GPRE_REQ request)
 				((uint64_val == (MAX_SLONG + (UINT64) 1))
 				 && (negate == true)))
 			{
+				long long_val;
 				if (negate == true)
 					long_val = -((long) uint64_val);
 				else
@@ -1485,6 +1474,7 @@ static GPRE_NOD cmp_literal( GPRE_NOD node, GPRE_REQ request)
 					 ((uint64_val == ((UINT64) MAX_SINT64 + 1))
 					  && (negate == true)))
 			{
+				SINT64 sint64_val;
 				if (negate == true)
 					sint64_val = -((SINT64) uint64_val);
 				else
@@ -1504,7 +1494,8 @@ static GPRE_NOD cmp_literal( GPRE_NOD node, GPRE_REQ request)
 	else
 	{
 		/* Remove surrounding quotes from string, etc. */
-		p = buffer;
+		char buffer[MAXSYMLEN];
+		char* p = buffer;
 
 		/* Skip introducing quote mark */
 		if (*string)
@@ -1515,13 +1506,15 @@ static GPRE_NOD cmp_literal( GPRE_NOD node, GPRE_REQ request)
 
 		/* Zap out terminating quote mark */
 		*--p = 0;
-		length = p - buffer;
+		const SSHORT length = p - buffer;
 
+		dsc from;
 		from.dsc_sub_type = ttype_ascii;
 		from.dsc_flags = 0;
 		from.dsc_dtype = dtype_text;
 		from.dsc_length = length;
 		from.dsc_address = (UCHAR *) buffer;
+		dsc to;
 		to.dsc_sub_type = 0;
 		to.dsc_flags = 0;
 		if (reference->ref_flags & REF_sql_date)
@@ -1586,12 +1579,10 @@ static GPRE_NOD cmp_literal( GPRE_NOD node, GPRE_REQ request)
 
 static void cmp_map(map* a_map, GPRE_REQ request)
 {
-	MEL element;
-
 	STUFF(blr_map);
 	STUFF_WORD(a_map->map_count);
 
-	for (element = a_map->map_elements; element; element = element->mel_next)
+	for (MEL element = a_map->map_elements; element; element = element->mel_next)
 	{
 		STUFF_WORD(element->mel_position);
 		CME_expr(element->mel_expr, request);
@@ -1604,16 +1595,15 @@ static void cmp_map(map* a_map, GPRE_REQ request)
 //		Generate an access plan for a query.
 //  
 
-static void cmp_plan( GPRE_NOD plan_expression, GPRE_REQ request)
+static void cmp_plan(const gpre_nod* plan_expression, GPRE_REQ request)
 {
-	GPRE_NOD list, node, arg, *ptr, *end, *ptr2, *end2;
-
 //  stuff the join type 
 
-	list = plan_expression->nod_arg[1];
+	const gpre_nod* list = plan_expression->nod_arg[1];
 	if (list->nod_count > 1)
 	{
-		if (node = plan_expression->nod_arg[0])
+		const gpre_nod* node = plan_expression->nod_arg[0];
+		if (node)
 			STUFF(blr_merge);
 		else
 			STUFF(blr_join);
@@ -1622,9 +1612,10 @@ static void cmp_plan( GPRE_NOD plan_expression, GPRE_REQ request)
 
 //  stuff one or more plan items 
 
-	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++)
+	gpre_nod* const* ptr = list->nod_arg;
+	for (gpre_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
 	{
-		node = *ptr;
+		GPRE_NOD node = *ptr;
 		if (node->nod_type == nod_plan_expr)
 		{
 			cmp_plan(node, request);
@@ -1642,7 +1633,7 @@ static void cmp_plan( GPRE_NOD plan_expression, GPRE_REQ request)
 
 		/* now stuff the access method for this stream */
 
-		arg = node->nod_arg[1];
+		const gpre_nod* arg = node->nod_arg[1];
 		switch (arg->nod_type)
 		{
 		case nod_natural:
@@ -1651,17 +1642,22 @@ static void cmp_plan( GPRE_NOD plan_expression, GPRE_REQ request)
 
 		case nod_index_order:
 			STUFF(blr_navigational);
-			stuff_cstring(request, (TEXT *) arg->nod_arg[0]);
+			stuff_cstring(request, (TEXT*) arg->nod_arg[0]);
 			break;
 
 		case nod_index:
-			STUFF(blr_indices);
-			arg = arg->nod_arg[0];
-			STUFF(arg->nod_count);
-			for (ptr2 = arg->nod_arg, end2 = ptr2 + arg->nod_count;
-				 ptr2 < end2; ptr2++)
-				stuff_cstring(request, (TEXT *) * ptr2);
-			break;
+			{
+				STUFF(blr_indices);
+				arg = arg->nod_arg[0];
+				STUFF(arg->nod_count);
+				const gpre_nod* const* ptr2 = arg->nod_arg;
+				for (const gpre_nod* const* const end2 = ptr2 + arg->nod_count;
+					 ptr2 < end2; ptr2++)
+				{
+					stuff_cstring(request, (TEXT*) *ptr2);
+				}
+				break;
+			}
 		}
 	}
 }
@@ -1784,26 +1780,25 @@ static void cmp_sdl_dtype( GPRE_FLD field, REF reference)
 
 static GPRE_NOD cmp_udf( GPRE_NOD node, GPRE_REQ request)
 {
-	GPRE_NOD list, *ptr, *end;
-	udf* an_udf;
-	TEXT *p;
-
-	an_udf = (udf*) node->nod_arg[1];
+	const udf* an_udf = (udf*) node->nod_arg[1];
 	STUFF(blr_function);
-	p = an_udf->udf_function;
+	const TEXT* p = an_udf->udf_function;
 	STUFF(strlen(p));
 
 	while (*p)
 		STUFF(*p++);
 
-	list = node->nod_arg[0];
+	gpre_nod* list = node->nod_arg[0];
 	if (list)
 	{
 		STUFF(list->nod_count);
 
-		for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end;
-			 ptr++)
+		gpre_nod** ptr = list->nod_arg;
+		for (gpre_nod** const end = ptr + list->nod_count;
+			ptr < end; ++ptr)
+		{
 			CME_expr(*ptr, request);
+		}
 	}
 	else
 		STUFF(0);
@@ -1819,9 +1814,7 @@ static GPRE_NOD cmp_udf( GPRE_NOD node, GPRE_REQ request)
 
 static GPRE_NOD cmp_value( GPRE_NOD node, GPRE_REQ request)
 {
-	REF reference, flag;
-
-	reference = (REF) node->nod_arg[0];
+	ref* reference = (REF) node->nod_arg[0];
 
 	if (!reference)
 		ib_puts("cmp_value: missing reference");
@@ -1829,7 +1822,8 @@ static GPRE_NOD cmp_value( GPRE_NOD node, GPRE_REQ request)
 	if (!reference->ref_port)
 		ib_puts("cmp_value: port missing");
 
-	if (flag = reference->ref_null)
+	ref* flag = reference->ref_null;
+	if (flag)
 	{
 		STUFF(blr_parameter2);
 		STUFF(reference->ref_port->por_msg_number);
@@ -1854,10 +1848,9 @@ static GPRE_NOD cmp_value( GPRE_NOD node, GPRE_REQ request)
 
 static USHORT get_string_len( GPRE_FLD field)
 {
-	DSC tmp_dsc;
-
 	assert(field->fld_dtype <= MAX_UCHAR);
 
+	dsc tmp_dsc;
 	tmp_dsc.dsc_dtype = (UCHAR) field->fld_dtype;
 	tmp_dsc.dsc_length = field->fld_length;
 	tmp_dsc.dsc_scale = 0;
@@ -1877,10 +1870,9 @@ static USHORT get_string_len( GPRE_FLD field)
 
 static void stuff_cstring( GPRE_REQ request, const char *string)
 {
-	UCHAR c;
-
 	STUFF(strlen(string));
 
+	UCHAR c;
 	while (c = *string++) {
 		STUFF(c);
 	}
@@ -1893,9 +1885,8 @@ static void stuff_cstring( GPRE_REQ request, const char *string)
 //       loop for a particular dimension.
 //  
 
-static void stuff_sdl_dimension(
-								DIM dimension,
-								REF reference, SSHORT dimension_count)
+static void stuff_sdl_dimension(const dim* dimension,
+								ref* reference, SSHORT dimension_count)
 {
 
 //   In the future, when we support slices, new code to handle the
@@ -1924,7 +1915,7 @@ static void stuff_sdl_dimension(
 //       the SDL string for the array.
 //  
 
-static void stuff_sdl_element( REF reference, GPRE_FLD field)
+static void stuff_sdl_element(ref* reference, const gpre_fld* field)
 {
 	SSHORT i;
 
@@ -1962,10 +1953,10 @@ static void stuff_sdl_element( REF reference, GPRE_FLD field)
 //       string for the array dimensions.
 //  
 
-static void stuff_sdl_loops( REF reference, GPRE_FLD field)
+static void stuff_sdl_loops(ref* reference, const gpre_fld* field)
 {
 	SSHORT i;
-	DIM dimension;
+	const dim* dimension;
 
 //  Fortran needs the array in column-major order 
 
@@ -1978,11 +1969,14 @@ static void stuff_sdl_loops( REF reference, GPRE_FLD field)
 			 i++, dimension = dimension->dim_previous)
 			stuff_sdl_dimension(dimension, reference, i);
 	}
-	else
+	else {
 		for (i = 0, dimension = field->fld_array_info->ary_dimension;
 			 i < field->fld_array_info->ary_dimension_count;
 			 i++, dimension = dimension->dim_next)
+		{
 				stuff_sdl_dimension(dimension, reference, i);
+		}
+	}
 }
 
 
@@ -1992,7 +1986,7 @@ static void stuff_sdl_loops( REF reference, GPRE_FLD field)
 //       form possible to the SDL string.
 //  
 
-static void stuff_sdl_number( SLONG number, REF reference)
+static void stuff_sdl_number(const SLONG number, REF reference)
 {
 
 	if ((number > -16) && (number < 15))

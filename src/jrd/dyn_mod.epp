@@ -137,7 +137,8 @@ void DYN_modify_database( GBL gbl, UCHAR ** ptr)
 
 	try {
 
-	INF_database_info((SCHAR*)alloc_info, sizeof(alloc_info), (SCHAR*)s, sizeof(s));
+	INF_database_info(reinterpret_cast<const SCHAR*>(alloc_info), sizeof(alloc_info),
+		reinterpret_cast<SCHAR*>(s), sizeof(s));
 
 	if (s[0] != gds_info_allocation) {
 		goto dyn_punt_84;

@@ -66,7 +66,7 @@ public:
 	Firebird::vector<dsc> fmt_desc;
 	typedef Firebird::vector<dsc>::iterator fmt_desc_iterator;
 };
-typedef fmt *FMT;
+typedef fmt* FMT;
 #endif /* REQUESTER */
 
 #define MAX_FORMAT_SIZE		65535
@@ -84,7 +84,10 @@ typedef vary VARY;
 typedef enum {
 		FUN_value,
 		FUN_reference,
-		FUN_descriptor, FUN_blob_struct, FUN_scalar_array} FUN_T;
+		FUN_descriptor,
+		FUN_blob_struct,
+		FUN_scalar_array
+} FUN_T;
 
 struct fun_repeat {
 	DSC fun_desc;			/* Datatype info */
@@ -105,22 +108,14 @@ class fun : public pool_alloc_rpt<fun_repeat, type_fun>
 	ULONG fun_temp_length;		/* Temporary space required */
     fun_repeat fun_rpt[1];
 };
-typedef fun *FUN;
+typedef fun* FUN;
 
+// Those two defines seems an intention to do something that was completed.
 #define FUN_value	0
 #define FUN_boolean	1
 
 /* Blob passing structure */
-
-typedef struct blob {
-	SSHORT(*blob_get_segment) ();
-	int *blob_handle;
-	SLONG blob_number_segments;
-	SLONG blob_max_segment;
-	SLONG blob_total_length;
-	void (*blob_put_segment) ();
-	  SLONG(*blob_seek) ();
-} *BLOB;
+// CVC: Moved to fun.epp where it belongs.
 
 /* Scalar array descriptor */
 
@@ -173,9 +168,10 @@ class arr : public pool_alloc_rpt<ads::ads_repeat, type_arr>
 	USHORT		arr_desc_length;		/* Length of array descriptor */
 	struct ads	arr_desc;		/* Array descriptor */
 };
-typedef arr *ARR;
+typedef arr* ARR;
 
 #endif /* REQUESTER */
 
 
 #endif /* JRD_VAL_H */
+

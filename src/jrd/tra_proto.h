@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		tra_proto.h
- *	DESCRIPTION:	Prototype header file for tra.c
+ *	DESCRIPTION:	Prototype header file for tra.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -45,7 +45,7 @@ void	TRA_invalidate(struct dbb *, ULONG);
 void	TRA_link_transaction(TDBB, struct jrd_tra *);
 void	TRA_post_resources(TDBB, struct jrd_tra *, class Rsc *);
 BOOLEAN TRA_precommited(TDBB, SLONG, SLONG);
-void	TRA_prepare(TDBB, struct jrd_tra *, USHORT, UCHAR *);
+void	TRA_prepare(TDBB, struct jrd_tra*, USHORT, const UCHAR*);
 struct jrd_tra*	TRA_reconnect(TDBB, UCHAR *, USHORT);
 void	TRA_release_transaction(TDBB, struct jrd_tra *);
 void	TRA_rollback(TDBB, struct jrd_tra *, USHORT);
@@ -63,3 +63,4 @@ int		TRA_wait(TDBB, struct jrd_tra *, SLONG, USHORT);
 #endif
 
 #endif // JRD_TRA_PROTO_H
+

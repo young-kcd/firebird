@@ -65,7 +65,7 @@ typedef struct oldblk {
 /* OLD handle, used in the API calls.*/
 
 typedef struct old {
-	SCHAR *old_db;				/* name of database */
+	const SCHAR* old_db;				/* name of database */
 	SLONG old_fd;				/* File descriptor for the OLD lock file */
 	USHORT old_dump_id;
 	ULONG old_log_seqno;		/* log seqno of OLD */
@@ -102,3 +102,4 @@ typedef struct hdr_page {
 } *OLD_HDR_PAGE;
 
 #endif /* JRD_OLD_H */
+

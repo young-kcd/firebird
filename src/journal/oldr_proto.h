@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Journalling Subsystem
  *	MODULE:		oldr_proto.h
- *	DESCRIPTION:	Prototype header file for oldr.c
+ *	DESCRIPTION:	Prototype header file for oldr.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -27,6 +27,7 @@
 int		OLDR_close(OLD *);
 int		OLDR_get(OLD, SCHAR *, SSHORT *);
 void	OLDR_get_info(OLD, SSHORT *, SSHORT *, SLONG *, SLONG *, SLONG *);
-int		OLDR_open(OLD *, SCHAR *, SSHORT, SCHAR **);
+int		OLDR_open(OLD*, const SCHAR*, SSHORT, SCHAR**);
 
 #endif // JOURNAL_OLDR_PROTO_H
+

@@ -175,7 +175,7 @@ typedef struct str
 
 #include "../jrd/dsc.h"
 
-typedef vary* VARY;
+//typedef vary* VARY;
 
 typedef struct fmt
 {

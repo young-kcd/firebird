@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access method
  *	MODULE:		inf_proto.h
- *	DESCRIPTION:	Prototype header file for inf.c
+ *	DESCRIPTION:	Prototype header file for inf.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -28,15 +28,19 @@
 extern "C" {
 #endif
 
-int		INF_blob_info(struct blb *, SCHAR *, SSHORT, SCHAR *, SSHORT);
-USHORT	INF_convert(SLONG, SCHAR *);
-int		INF_database_info(SCHAR *, SSHORT, SCHAR *, SSHORT);
-SCHAR*	INF_put_item(SCHAR, USHORT, SCHAR *, SCHAR *, SCHAR *);
-int		INF_request_info(struct jrd_req *, SCHAR *, SSHORT, SCHAR *, SSHORT);
-int		INF_transaction_info(struct jrd_tra *, SCHAR *, SSHORT, SCHAR *, SSHORT);
+int		INF_blob_info(const struct blb*, const SCHAR*, const SSHORT,
+						SCHAR*, const SSHORT);
+USHORT	INF_convert(SLONG, SCHAR*);
+int		INF_database_info(const SCHAR*, const SSHORT, SCHAR*, const SSHORT);
+SCHAR*	INF_put_item(SCHAR, USHORT, const SCHAR*, SCHAR*, const SCHAR*);
+int		INF_request_info(const struct jrd_req*, const SCHAR*, const SSHORT,
+						SCHAR*, const SSHORT);
+int		INF_transaction_info(const struct jrd_tra*, const SCHAR*, const SSHORT,
+						SCHAR*, const SSHORT);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
 #endif // JRD_INF_PROTO_H
+

@@ -117,7 +117,7 @@ static void db_error(SLONG);
 static void db_error(int);
 #endif
 
-static FIL db_open(UCHAR *, USHORT);
+static FIL db_open(const char*, USHORT);
 static PAG db_read(SLONG);
 static bool key_equality(SSHORT, SCHAR *, BTN);
 static void move(SCHAR *, SCHAR *, SSHORT);
@@ -193,7 +193,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	HDR header;
 	LIP logp;
 	FIL current;
-	SCHAR **end, *name, *p, temp[1024], file_name[1024];
+	SCHAR **end, *p, temp[1024], file_name[1024];
 	double average;
 	SSHORT n;
 	bool sw_system;
@@ -297,7 +297,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	}
 #endif
 
-	name = NULL;
+	const char* name = NULL;
 	sw_log = sw_system = sw_data = sw_index = sw_version = sw_header = false;
 
 	for (end = argv + argc, ++argv; argv < end;) {
@@ -1022,7 +1022,10 @@ static void db_error( SLONG status)
 }
 
 
-static FIL db_open( UCHAR * file_name, USHORT file_length)
+// CVC: This function was using cast to char* for the first param always
+// and the callers had to cast their char*'s to UCHAR*, too. Since the
+// real parameter is char* and always the usage is char*, I changed signature.
+static FIL db_open(const char* file_name, USHORT file_length)
 {
 /**************************************
  *
@@ -1154,7 +1157,10 @@ static void db_error( int status)
 }
 
 
-static FIL db_open( UCHAR * file_name, USHORT file_length)
+// CVC: This function was using cast to char* for the first param always
+// and the callers had to cast their char*'s to UCHAR*, too. Since the
+// real parameter is char* and always the usage is char*, I changed signature.
+static FIL db_open(const char* file_name, USHORT file_length)
 {
 /**************************************
  *

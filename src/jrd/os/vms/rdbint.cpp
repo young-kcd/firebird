@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Rdb/GDS Access Method Interface
- *	MODULE:		rdbint.c
+ *	MODULE:		rdbint.cpp
  *	DESCRIPTION:	Rdb/VMS interface
  *
  * The contents of this file are subject to the Interbase Public
@@ -94,11 +94,11 @@ static void make_desc(UCHAR *, int, struct dsc$descriptor *);
 
 
 int RDB_attach_database(
-						int *user_status,
+						int* user_status,
 						SSHORT file_length,
-						SCHAR * file_name,
-						DBB * handle,
-SSHORT dpb_length, SCHAR * dpb, SSHORT db_type)
+						const SCHAR* file_name,
+						DBB* handle,
+						SSHORT dpb_length, const SCHAR* dpb, SSHORT db_type)
 {
 /**************************************
  *
@@ -167,10 +167,10 @@ SSHORT dpb_length, SCHAR * dpb, SSHORT db_type)
 
 
 int RDB_blob_info(
-				  int *user_status,
-				  BLB * handle,
+				  int* user_status,
+				  BLB* handle,
 				  SSHORT item_length,
-				  SCHAR * items, SSHORT buffer_length, SCHAR * buffer)
+				  SCHAR* items, SSHORT buffer_length, SCHAR* buffer)
 {
 /**************************************
  *
@@ -372,11 +372,11 @@ int RDB_create_blob(
 
 
 int RDB_create_database(
-						int *user_status,
+						int* user_status,
 						USHORT file_length,
-						UCHAR * file_name,
-						DBB * handle,
-USHORT dpb_length, UCHAR * dpb, USHORT db_type)
+						const UCHAR* file_name,
+						DBB* handle,
+						USHORT dpb_length, const UCHAR* dpb, USHORT db_type)
 {
 /**************************************
  *
@@ -415,10 +415,10 @@ USHORT dpb_length, UCHAR * dpb, USHORT db_type)
 
 
 int RDB_database_info(
-					  int *user_status,
-					  DBB * handle,
+					  int* user_status,
+					  DBB* handle,
 					  SSHORT item_length,
-					  SCHAR * items, SSHORT buffer_length, SCHAR * buffer)
+					  const SCHAR* items, SSHORT buffer_length, SCHAR* buffer)
 {
 /**************************************
  *
@@ -431,8 +431,7 @@ int RDB_database_info(
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	SCHAR item, *item_ptr, *end, *tmp_ptr, tmp_buff[32];
-	SSHORT len;
+	SCHAR item, tmp_buff[32];
 
 	CHECK_HANDLE(handle, gds_bad_db_handle);
 
@@ -440,9 +439,9 @@ int RDB_database_info(
    If we're here, we're known to be coming from gds, so force them
    to return error by upping our codes */
 
-	tmp_ptr = tmp_buff;
-	item_ptr = items;
-	end = item_ptr + item_length;
+	SCHAR* tmp_ptr = tmp_buff;
+	const SCHAR* item_ptr = items;
+	const SCHAR* const end = item_ptr + item_length;
 	while (item_ptr < end) {
 		*tmp_ptr = item = *item_ptr++;
 		if (item > gds_info_limbo)
@@ -460,7 +459,7 @@ int RDB_database_info(
 	end = item_ptr + buffer_length;
 	while (item_ptr < end) {
 		item = *item_ptr++;
-		len = *item_ptr++;
+		SSHORT len = *item_ptr++;
 		len |= (*item_ptr++) << 8;
 		if (item == gds_info_error && *item_ptr > 200)
 			*item_ptr -= 200;
@@ -591,8 +590,8 @@ int RDB_prepare_transaction(int *user_status, TRA * tra_handle)
 
 
 int RDB_put_segment(
-					int *user_status,
-					BLB * blob_handle, SSHORT buffer_length, UCHAR * buffer)
+					int* user_status,
+					BLB* blob_handle, SSHORT buffer_length, const UCHAR* buffer)
 {
 /**************************************
  *
@@ -717,12 +716,11 @@ int RDB_release_request(int *user_status, REQ * req_handle)
 }
 
 
-int RDB_request_info(
-					 int *user_status,
-					 REQ * handle,
+int RDB_request_info(int* user_status,
+					 REQ* handle,
 					 SSHORT level,
 					 SSHORT item_length,
-					 SCHAR * items, SSHORT buffer_length, SCHAR * buffer)
+					 const SCHAR* items, SSHORT buffer_length, SCHAR* buffer)
 {
 /**************************************
  *
@@ -978,10 +976,11 @@ int RDB_start_transaction(
 
 
 int RDB_transaction_info(
-						 int *user_status,
-						 TRA * handle,
+						 int* user_status,
+						 TRA* handle,
 						 SSHORT item_length,
-						 SCHAR * items, SSHORT buffer_length, SCHAR * buffer)
+						 const SCHAR* items,
+						 SSHORT buffer_length, SCHAR* buffer)
 {
 /**************************************
  *
@@ -1226,3 +1225,4 @@ static void make_desc(
 	if (!(desc->dsc$w_length = length))
 		desc->dsc$w_length = strlen(string);
 }
+

@@ -142,6 +142,7 @@
 static int dump(GDS_QUAD *, FRBRD *, FRBRD *, IB_FILE *);
 static int edit(GDS_QUAD *, FRBRD *, FRBRD *, SSHORT, SCHAR *);
 static int get_ods_version(FRBRD **, USHORT *, USHORT *);
+static void isc_expand_dpb_internal(const UCHAR** dpb, SSHORT* dpb_size, ...);
 static int load(GDS_QUAD *, FRBRD *, FRBRD *, IB_FILE *);
 
 
@@ -151,21 +152,21 @@ static int display(GDS_QUAD *, int *, int *);
 
 /* Blob info stuff */
 
-static const SCHAR blob_items[] =
-	{ gds_info_blob_max_segment, gds_info_blob_num_segments,
+static const char blob_items[] = {
+	gds_info_blob_max_segment, gds_info_blob_num_segments,
 	gds_info_blob_total_length
 };
 
 
 /* gds__version stuff */
 
-static const UCHAR info[] =
+static const char info[] =
 	{ isc_info_firebird_version, isc_info_implementation, isc_info_end };
 
-static const UCHAR ods_info[] =
+static const char ods_info[] =
 	{ isc_info_ods_version, isc_info_ods_minor_version, isc_info_end };
 
-static const TEXT *const impl_class[] = {
+static const TEXT* const impl_class[] = {
 	NULL,						/* 0 */
 	"access method",			/* 1 */
 	"Y-valve",					/* 2 */
@@ -182,7 +183,7 @@ static const TEXT *const impl_class[] = {
 	"super server"			/* 13 */
 };
 
-static const TEXT *const impl_implementation[] = {
+static const TEXT* const impl_implementation[] = {
 	NULL,						/* 0 */
     "Rdb/VMS",				/* 1 */
     "Rdb/ELN target",		/* 2 */
@@ -261,7 +262,7 @@ ISC_STATUS API_ROUTINE gds__attach_database_d(
 										  struct dsc$descriptor_s *file_name,
 										  void **handle,
 										  SSHORT dpb_length,
-SCHAR * dpb, SSHORT db_type)
+	const SCHAR* dpb, SSHORT db_type)
 {
 /**************************************
  *
@@ -306,7 +307,7 @@ int API_ROUTINE gds__blob_size(
 #pragma FB_COMPILER_MESSAGE("Fix! Bad casts.")
 
 	if (gds__blob_info(status_vector, b, sizeof(blob_items),
-					   const_cast<char*>(blob_items),
+					   blob_items,
 					   sizeof(buffer), buffer)) {
 		gds__print_status(status_vector);
 		return FALSE;
@@ -347,7 +348,7 @@ int API_ROUTINE gds__blob_size(
 
 
 /* 17 May 2001 - isc_expand_dpb is DEPRECATED */
-void API_ROUTINE_VARARG isc_expand_dpb(SCHAR ** dpb, SSHORT * dpb_size, ...)
+void API_ROUTINE_VARARG isc_expand_dpb(SCHAR** dpb, SSHORT* dpb_size, ...)
 {
 /**************************************
  *
@@ -373,16 +374,16 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR ** dpb, SSHORT * dpb_size, ...)
  *
  **************************************/
 	SSHORT	length;
-	SSHORT	new_dpb_length;
-	UCHAR*	new_dpb;
-	char*	p;
-	char*	q;
+	char*	p = 0;
+	const char*	q;
 	va_list	args;
 	USHORT	type;
+	UCHAR* new_dpb;
 
 /* calculate length of database parameter block,
    setting initial length to include version */
 
+   	SSHORT new_dpb_length;
 	if (!*dpb || !(new_dpb_length = *dpb_size))
 	{
 		new_dpb_length = 1;
@@ -400,10 +401,10 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR ** dpb, SSHORT * dpb_size, ...)
 		case gds_dpb_lc_messages:
 		case gds_dpb_lc_ctype:
 		case isc_dpb_reserved:
-			p = va_arg(args, char *);
-			if (p)
+			q = va_arg(args, char*);
+			if (q)
 			{
-				length = strlen(p);
+				length = strlen(q);
 				new_dpb_length += 2 + length;
 			}
 			break;
@@ -439,7 +440,16 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR ** dpb, SSHORT * dpb_size, ...)
 	}
 	else
 	{
-		new_dpb = (UCHAR *) * dpb;
+	    // CVC: Notice this case is new_dpb_length <= *dpb_size, but since
+	    // we have new_dpb_length = MAX(*dpb_size, 1) our case is reduced
+	    // to new_dpb_length == *dpb_size. Therefore, this code is a waste
+	    // of time, since the function didn't find any param to add and thus,
+		// the loop below won't find anything worth adding either.
+	    // Notice, too that the original input dpb is used, yet the pointer "p"
+	    // is positioned exactly at the end, so if something was added at the
+		// tail, it would be a memory failure, unless the caller lies and is
+		// always passing a dpb bigger than *dpb_size.
+		new_dpb = reinterpret_cast<UCHAR*>(*dpb);
 		p = reinterpret_cast<char*>(new_dpb + *dpb_size);
 	}
 
@@ -460,7 +470,8 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR ** dpb, SSHORT * dpb_size, ...)
 		case gds_dpb_lc_messages:
 		case gds_dpb_lc_ctype:
 		case isc_dpb_reserved:
-			if (q = va_arg(args, char *))
+			q = va_arg(args, char*);
+			if (q)
 			{
 				length = strlen(q);
 				assert(type <= CHAR_MAX);
@@ -479,14 +490,14 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR ** dpb, SSHORT * dpb_size, ...)
 	}
 
 	*dpb_size = p - reinterpret_cast<char*>(new_dpb);
-	*dpb = (SCHAR*) new_dpb;
+	*dpb = reinterpret_cast<SCHAR*>(new_dpb);
 }
 
 
 int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
 							   SSHORT*	dpb_size,
 							   USHORT	type,
-							   SCHAR*	str,
+							   const SCHAR*	str,
 							   SSHORT	str_len)
 {
 /**************************************
@@ -494,7 +505,11 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
  *	i s c _ m o d i f y _ d p b
  *
  **************************************
- * CVC: this description seems copy/paste from isc_expand_dpb.
+ * CVC: This is exactly the same login than isc_expand_dpb, but for one param.
+ * However, the difference is that when presented with a dpb type it that's
+ * unknown, it returns FB_FAILURE immediately. In contrast, isc_expand_dpb
+ * doesn't complain and instead treats those as integers and tries to skip
+ * them, hoping to sync in the next iteration.
  *
  * Functional description
  *	Extend a database parameter block dynamically
@@ -517,12 +532,11 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
  *	with other calls (isc_attach_database) that take a dpb length.
  *
  **************************************/
-	SSHORT length, new_dpb_length;
-	UCHAR *new_dpb, *p, *q;
 
 /* calculate length of database parameter block,
    setting initial length to include version */
 
+	SSHORT new_dpb_length;
 	if (!*dpb || !(new_dpb_length = *dpb_size))
 	{
 		new_dpb_length = 1;
@@ -546,6 +560,8 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
 /* if items have been added, allocate space
    for the new dpb and copy the old one over */
 
+	UCHAR* new_dpb;
+	UCHAR* p;
 	if (new_dpb_length > *dpb_size)
 	{
 		/* Note: gds__free done by GPRE generated code */
@@ -560,8 +576,8 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
 		}
 
 		p = new_dpb;
-		q = (UCHAR*) *dpb;
-		for (length = *dpb_size; length; length--)
+		const UCHAR* q = reinterpret_cast<const UCHAR*>(*dpb);
+		for (SSHORT length = *dpb_size; length; length--)
 		{
 			*p++ = *q++;
 		}
@@ -569,7 +585,7 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
 	}
 	else
 	{
-		new_dpb = (UCHAR *) * dpb;
+		new_dpb = reinterpret_cast<UCHAR*>(*dpb);
 		p = new_dpb + *dpb_size;
 	}
 
@@ -588,19 +604,22 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
 	case gds_dpb_lc_messages:
 	case gds_dpb_lc_ctype:
 	case isc_dpb_reserved:
-		if (q = (UCHAR *) str)
 		{
-			length = str_len;
-			assert(type <= MAX_UCHAR);
-			*p++ = (UCHAR) type;
-			assert(length <= MAX_UCHAR);
-			*p++ = (UCHAR) length;
-			while (length--)
+		    const UCHAR* q = reinterpret_cast<const UCHAR*>(str);
+			if (q)
 			{
-				*p++ = *q++;
+				SSHORT length = str_len;
+				assert(type <= MAX_UCHAR);
+				*p++ = (UCHAR) type;
+				assert(length <= MAX_UCHAR);
+				*p++ = (UCHAR) length;
+				while (length--)
+				{
+					*p++ = *q++;
+				}
 			}
+			break;
 		}
-		break;
 
 	default:
 		return FB_FAILURE;
@@ -1035,7 +1054,7 @@ void API_ROUTINE gds__set_debug(int value)
 #endif
 
 
-void API_ROUTINE isc_set_login(UCHAR ** dpb, SSHORT * dpb_size)
+void API_ROUTINE isc_set_login(const UCHAR** dpb, SSHORT* dpb_size)
 {
 /**************************************
  *
@@ -1051,26 +1070,24 @@ void API_ROUTINE isc_set_login(UCHAR ** dpb, SSHORT * dpb_size)
  *
  **************************************/
 #ifndef SUPERSERVER
-	TEXT *username, *password;
-	UCHAR *p, *end_dpb;
-	BOOLEAN user_seen = FALSE, password_seen = FALSE;
-	USHORT l;
-	int item;
 
 /* look for the environment variables */
 
-	username = getenv("ISC_USER");
-	password = getenv("ISC_PASSWORD");
+	const TEXT* username = getenv("ISC_USER");
+	const TEXT* password = getenv("ISC_PASSWORD");
 
 	if (!username && !password)
 		return;
 
 /* figure out whether the username or 
    password have already been specified */
+   
+	bool user_seen = false, password_seen = false;
 
-	if (*dpb && *dpb_size)
-		for (p = *dpb, end_dpb = p + *dpb_size; p < end_dpb;) {
-			item = *p++;
+	if (*dpb && *dpb_size) {
+	    const UCHAR* p = *dpb;
+		for (const UCHAR* const end_dpb = p + *dpb_size; p < end_dpb;) {
+			const int item = *p++;
 
 			if (item == gds_dpb_version1)
 				continue;
@@ -1078,38 +1095,39 @@ void API_ROUTINE isc_set_login(UCHAR ** dpb, SSHORT * dpb_size)
 			switch (item) {
 			case gds_dpb_sys_user_name:
 			case gds_dpb_user_name:
-				user_seen = TRUE;
+				user_seen = true;
 				break;
 
 			case gds_dpb_password:
 			case gds_dpb_password_enc:
-				password_seen = TRUE;
+				password_seen = true;
 				break;
 			}
 
 			/* get the length and increment past the parameter. */
-			l = *p++;
+			const USHORT l = *p++;
 			p += l;
 		}
+	}
 
 	if (username && !user_seen) {
 		if (password && !password_seen)
-			isc_expand_dpb(reinterpret_cast<char**>(dpb), dpb_size,
+			isc_expand_dpb_internal(dpb, dpb_size,
 						   gds_dpb_user_name, username, gds_dpb_password,
 						   password, 0);
 		else
-			isc_expand_dpb(reinterpret_cast<char**>(dpb), dpb_size,
+			isc_expand_dpb_internal(dpb, dpb_size,
 						   gds_dpb_user_name, username, 0);
 	}
 	else if (password && !password_seen)
-		isc_expand_dpb(reinterpret_cast<char**>(dpb), dpb_size,
+		isc_expand_dpb_internal(dpb, dpb_size,
 					   gds_dpb_password, password, 0);
 #endif
 }
 
 
-BOOLEAN API_ROUTINE isc_set_path(TEXT * file_name,
-								 USHORT file_length, TEXT * expanded_name)
+BOOLEAN API_ROUTINE isc_set_path(TEXT* file_name,
+								 USHORT file_length, TEXT* expanded_name)
 {
 /**************************************
  *
@@ -1157,8 +1175,8 @@ BOOLEAN API_ROUTINE isc_set_path(TEXT * file_name,
 }
 
 
-void API_ROUTINE isc_set_single_user(UCHAR ** dpb,
-									 SSHORT * dpb_size, TEXT * single_user)
+void API_ROUTINE isc_set_single_user(const UCHAR** dpb,
+									 SSHORT* dpb_size, const TEXT* single_user)
 {
 /****************************************
  *
@@ -1172,17 +1190,15 @@ void API_ROUTINE isc_set_single_user(UCHAR ** dpb,
  *
  ****************************************/
 
-	UCHAR *p, *end_dpb;
-	BOOLEAN single_user_seen = FALSE;
-	USHORT l;
-	int item;
-
 /* Discover if single user access has already been specified */
 
-	if ((*dpb) && (*dpb_size))
-		for (p = *dpb, end_dpb = p + *dpb_size; p < end_dpb;) {
+	bool single_user_seen = false;
 
-			item = *p++;
+	if ((*dpb) && (*dpb_size)) {
+		const UCHAR* p = *dpb;
+		for (const UCHAR* const end_dpb = p + *dpb_size; p < end_dpb;) {
+
+			const int item = *p++;
 
 			if (item == gds_dpb_version1)
 				continue;
@@ -1191,28 +1207,28 @@ void API_ROUTINE isc_set_single_user(UCHAR ** dpb,
 
 			case isc_dpb_reserved:
 
-				single_user_seen = TRUE;
+				single_user_seen = true;
 				break;
 
 			}
 
 /* Get the length and increment past the parameter. */
 
-			l = *p++;
+			const USHORT l = *p++;
 			p += l;
 
 		}
+	}
 
 	if (!single_user_seen)
-		isc_expand_dpb(reinterpret_cast<char**>(dpb), dpb_size,
+		isc_expand_dpb_internal(dpb, dpb_size,
 					   isc_dpb_reserved, single_user, 0);
 
 }
 
 
-int API_ROUTINE gds__version(
-							 FRBRD **handle,
-							 FPTR_VOID routine, void *user_arg)
+int API_ROUTINE gds__version(FRBRD** handle,
+							 FPTR_VOID routine, void* user_arg)
 {
 /**************************************
  *
@@ -1244,7 +1260,7 @@ int API_ROUTINE gds__version(
 		if (isc_database_info(status_vector,
 							  handle,
 							  sizeof(info),
-							  reinterpret_cast<char*>(const_cast<UCHAR*>(info)),
+							  info,
 							  buf_len, reinterpret_cast<char*>(buf))) {
 			if (buf != buffer)
 				gds__free((SLONG *) buf);
@@ -1810,8 +1826,9 @@ int API_ROUTINE BLOB_load(
 }
 
 
-BSTREAM *API_ROUTINE Bopen(GDS_QUAD * blob_id,
-						   FRBRD *database, FRBRD *transaction, SCHAR * mode)
+BSTREAM* API_ROUTINE Bopen(GDS_QUAD* blob_id,
+						   FRBRD* database, FRBRD* transaction,
+						   const SCHAR* mode)
 {
 /**************************************
  *
@@ -1829,6 +1846,7 @@ BSTREAM *API_ROUTINE Bopen(GDS_QUAD * blob_id,
 	USHORT bpb_length;
 	UCHAR *bpb;
 
+	// bpb is irrelevant, not used.
 	bpb_length = 0;
 	bpb = NULL;
 
@@ -1837,7 +1855,7 @@ BSTREAM *API_ROUTINE Bopen(GDS_QUAD * blob_id,
 	if (*mode == 'w' || *mode == 'W') {
 		if (gds__create_blob2(status_vector, &database, &transaction, &blob,
 							  blob_id, bpb_length,
-							  reinterpret_cast<char*>(bpb)))
+							  reinterpret_cast<const char*>(bpb)))
 		{
 			return NULL;
 		}
@@ -1845,7 +1863,7 @@ BSTREAM *API_ROUTINE Bopen(GDS_QUAD * blob_id,
 	else if (*mode == 'r' || *mode == 'R') {
 		if (gds__open_blob2(status_vector, &database, &transaction, &blob,
 							blob_id, bpb_length,
-							reinterpret_cast<char*>(bpb)))
+							reinterpret_cast<const char*>(bpb)))
 		{
 			return NULL;
 		}
@@ -1869,7 +1887,7 @@ BSTREAM *API_ROUTINE Bopen(GDS_QUAD * blob_id,
 }
 
 
-BSTREAM *API_ROUTINE BLOB_open(FRBRD *blob, SCHAR * buffer, int length)
+BSTREAM* API_ROUTINE BLOB_open(FRBRD *blob, SCHAR * buffer, int length)
 {
 /**************************************
  *
@@ -2035,6 +2053,7 @@ static int dump(
 	USHORT bpb_length;
 	UCHAR *bpb;
 
+	// bpb is irrelevant, not used.
 	bpb_length = 0;
 	bpb = NULL;
 
@@ -2167,8 +2186,8 @@ static int edit(
 
 
 static int get_ods_version(
-						   FRBRD **handle,
-						   USHORT * ods_version, USHORT * ods_minor_version)
+						   FRBRD** handle,
+						   USHORT* ods_version, USHORT* ods_minor_version)
 {
 /**************************************
  *
@@ -2188,7 +2207,7 @@ static int get_ods_version(
 	isc_database_info(status_vector,
 					  handle,
 					  sizeof(ods_info),
-					  reinterpret_cast<char*>(const_cast<UCHAR*>(ods_info)),
+					  ods_info,
 					  sizeof(buffer), reinterpret_cast<char*>(buffer));
 
 	if (status_vector[1])
@@ -2218,6 +2237,162 @@ static int get_ods_version(
 	return FB_SUCCESS;
 }
 
+
+// CVC: I just made this alternative function to let the original unchanged.
+// However, the original logic doesn't make sense.
+static void isc_expand_dpb_internal(const UCHAR** dpb, SSHORT* dpb_size, ...)
+{
+/**************************************
+ *
+ *	i s c _ e x p a n d _ d p b _ i n t e r n a l
+ *
+ **************************************
+ *
+ * Functional description
+ *	Extend a database parameter block dynamically
+ *	to include runtime info.  Generated
+ *	by gpre to provide host variable support for
+ *	READY statement	options.
+ *	This expects the list of variable args
+ *	to be zero terminated.
+ *
+ *	Note: dpb_size is signed short only for compatibility
+ *	with other calls (isc_attach_database) that take a dpb length.
+ *
+ * TMN: Note: According to Ann Harrison:
+ * That routine should be deprecated.  It doesn't do what it
+ * should, and does do things it shouldn't, and is harder to
+ * use than the natural alternative.
+ *
+ * CVC: This alternative version returns either the original dpb or a
+ * new one, but never overwrites the original dpb. More accurately, it's
+ * clearer than the original function that really never modifies its source
+ * dpb, but there appears to be a logic failure on an impossible path.
+ * Also, since the change from UCHAR** to const UCHAR** is not transparent,
+ * a new version was needed to make sure the old world wasn't broken.
+ *
+ **************************************/
+	SSHORT	length;
+	unsigned char* p = 0;
+	const char* q;
+	const unsigned char* uq;
+	va_list	args;
+	USHORT	type;
+	UCHAR* new_dpb;
+
+/* calculate length of database parameter block,
+   setting initial length to include version */
+
+	SSHORT new_dpb_length;
+	if (!*dpb || !(new_dpb_length = *dpb_size))
+	{
+		new_dpb_length = 1;
+	}
+
+	va_start(args, dpb_size);
+
+	while (type = va_arg(args, int))
+	{
+		switch (type)
+		{
+		case gds_dpb_user_name:
+		case gds_dpb_password:
+		case isc_dpb_sql_role_name:
+		case gds_dpb_lc_messages:
+		case gds_dpb_lc_ctype:
+		case isc_dpb_reserved:
+			q = va_arg(args, char*);
+			if (q)
+			{
+				length = strlen(q);
+				new_dpb_length += 2 + length;
+			}
+			break;
+
+		default:
+			va_arg(args, int);
+			break;
+		}
+	}
+	va_end(args);
+
+/* if items have been added, allocate space
+   for the new dpb and copy the old one over */
+
+	if (new_dpb_length > *dpb_size)
+	{
+		/* Note: gds__free done by GPRE generated code */
+
+		new_dpb = (UCHAR*)gds__alloc((SLONG)(sizeof(UCHAR) * new_dpb_length));
+		p = new_dpb;
+		/* FREE: done by client process in GPRE generated code */
+		if (!new_dpb)
+		{			/* NOMEM: don't trash existing dpb */
+			DEV_REPORT("isc_extend_dpb: out of memory");
+			return;				/* NOMEM: not really handled */
+		}
+
+		uq = *dpb;
+		for (length = *dpb_size; length; length--)
+		{
+			*p++ = *uq++;
+		}
+
+	}
+	else
+	{
+		// CVC: Notice the initialization is: new_dpb_length = *dpb_size
+		// Therefore, the worst case is new_dpb_length == *dpb_size
+		// Also, if *dpb_size == 0, then new_dpb_length is set to 1,
+		// so there will be again a bigger new buffer.
+		// Hence, this else just means "we found nothing that we can
+		// recognize in the variable params list to add and thus,
+		// there's nothing to do". The case for new_dpb_length being less
+		// than the original length simply can't happen. Therefore,
+		// the input can be declared const.
+		return;
+	}
+
+	if (!*dpb_size)
+		*p++ = gds_dpb_version1;
+
+/* copy in the new runtime items */
+
+	va_start(args, dpb_size);
+
+	while (type = va_arg(args, int))
+	{
+		switch (type)
+		{
+		case gds_dpb_user_name:
+		case gds_dpb_password:
+		case isc_dpb_sql_role_name:
+		case gds_dpb_lc_messages:
+		case gds_dpb_lc_ctype:
+		case isc_dpb_reserved:
+		    q = va_arg(args, char*);
+			if (q)
+			{
+				length = strlen(q);
+				assert(type <= CHAR_MAX);
+				*p++ = (unsigned char) type;
+				assert(length <= CHAR_MAX);
+				*p++ = (unsigned char) length;
+				while (length--)
+					*p++ = *q++;
+			}
+			break;
+
+		default:
+			va_arg(args, int);
+			break;
+		}
+	}
+	va_end(args);
+
+	*dpb_size = p - new_dpb;
+	*dpb = new_dpb;
+}
 
 
 static int load(

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		utl_proto.h
- *	DESCRIPTION:	Prototype header file for utl.c
+ *	DESCRIPTION:	Prototype header file for utl.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -37,7 +37,7 @@ extern "C" {
 #endif
 
 int		API_ROUTINE gds__blob_size(FRBRD **, SLONG *, SLONG *, SLONG *);
-void	API_ROUTINE_VARARG isc_expand_dpb(SCHAR **, SSHORT *, ...);
+void	API_ROUTINE_VARARG isc_expand_dpb(SCHAR**, SSHORT*, ...);
 int		API_ROUTINE gds__edit(TEXT *, USHORT);
 SLONG	API_ROUTINE gds__event_block(SCHAR **, SCHAR **, USHORT, ...);
 USHORT	API_ROUTINE gds__event_block_a(SCHAR **, SCHAR **, SSHORT,
@@ -48,11 +48,11 @@ void	API_ROUTINE gds__event_counts(ULONG *, SSHORT, SCHAR *, SCHAR *);
 void	API_ROUTINE gds__get_client_version(SCHAR *);
 int		API_ROUTINE gds__get_client_major_version();
 int		API_ROUTINE gds__get_client_minor_version();
-void	API_ROUTINE gds__map_blobs(int *, int *);
+void	API_ROUTINE gds__map_blobs(int*, int*);
 void	API_ROUTINE gds__set_debug(int);
-void	API_ROUTINE isc_set_login(UCHAR **, SSHORT *);
-BOOLEAN	API_ROUTINE isc_set_path(TEXT *, USHORT, TEXT *);
-void	API_ROUTINE isc_set_single_user(UCHAR **, SSHORT *, TEXT *);
+void	API_ROUTINE isc_set_login(const UCHAR**, SSHORT*);
+BOOLEAN	API_ROUTINE isc_set_path(TEXT*, USHORT, TEXT*);
+void	API_ROUTINE isc_set_single_user(const UCHAR**, SSHORT*, const TEXT*);
 int		API_ROUTINE gds__version(FRBRD **, FPTR_VOID, void *);
 void	API_ROUTINE isc_format_implementation(USHORT, USHORT, TEXT *,
 												  USHORT, USHORT, TEXT *);
@@ -74,14 +74,14 @@ int		API_ROUTINE blob__load(SLONG *, FRBRD **, FRBRD **, TEXT *,
 //int API_ROUTINE BLOB_load(GDS_QUAD *, void *, void *, TEXT *);
 //int API_ROUTINE BLOB_text_dump(GDS_QUAD *, void *, void *, SCHAR *);
 //int API_ROUTINE BLOB_text_load(GDS_QUAD *, void *, void *, TEXT *);
-//struct bstream *API_ROUTINE Bopen(GDS_QUAD *, void *, void *, SCHAR *);
-//struct bstream *API_ROUTINE BLOB_open(void *, SCHAR *, int);
+//struct bstream* API_ROUTINE Bopen(GDS_QUAD*, void*, void*, const SCHAR*);
+//struct bstream* API_ROUTINE BLOB_open(void *, SCHAR *, int);
 int		API_ROUTINE BLOB_put(SCHAR, struct bstream *);
 
 #ifdef VMS
-ISC_STATUS API_ROUTINE gds__attach_database_d(ISC_STATUS *,
-												 struct dsc$descriptor_s *,
-												 int, SSHORT, SCHAR *,
+ISC_STATUS API_ROUTINE gds__attach_database_d(ISC_STATUS*,
+												 struct dsc$descriptor_s*,
+												 int, SSHORT, const SCHAR*,
 												 SSHORT);
 void	API_ROUTINE gds__wake_init(void);
 #endif
@@ -91,3 +91,4 @@ void	API_ROUTINE gds__wake_init(void);
 #endif
 
 #endif // JRD_UTL_PROTO_H
+

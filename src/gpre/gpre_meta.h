@@ -31,7 +31,7 @@ GPRE_FLD	MET_field(GPRE_REL, const char*);
 GPRE_NOD	MET_fields(GPRE_CTX);
 void		MET_fini(DBB);
 const SCHAR*		MET_generator(const TEXT*, DBB);
-bool		MET_get_column_default(GPRE_REL, const TEXT*, TEXT*, USHORT);
+bool		MET_get_column_default(const gpre_rel*, const TEXT*, TEXT*, USHORT);
 bool		MET_get_domain_default(DBB, const TEXT*, TEXT*, USHORT);
 USHORT		MET_get_dtype(USHORT, USHORT, USHORT*);
 LLS			MET_get_primary_key(DBB, const TEXT*);

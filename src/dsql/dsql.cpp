@@ -134,6 +134,7 @@ extern DSQL_NOD DSQL_parse;
 static bool init_flag = false;
 static DBB databases;
 static OPN open_cursors;
+
 static const SCHAR db_hdr_info_items[] = {
 	isc_info_db_sql_dialect,
 	gds_info_ods_version,
@@ -212,10 +213,10 @@ static
 ISC_STATUS GDS_DSQL_INSERT_CPP(	ISC_STATUS*	user_status,
 							dsql_req**	req_handle,
 							USHORT	blr_length,
-							UCHAR*	blr,
+							const UCHAR*	blr,
 							USHORT	msg_type,
 							USHORT	msg_length,
-							UCHAR*	dsql_msg);
+							const UCHAR*	dsql_msg);
 
 static
 ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
@@ -343,10 +344,10 @@ ISC_STATUS	dsql8_insert(
 	return GDS_DSQL_INSERT_CPP(	user_status,
 								req_handle,
 								blr_length,
-								reinterpret_cast<UCHAR*>(blr),
+								reinterpret_cast<const UCHAR*>(blr),
 								msg_type,
 								msg_length,
-								reinterpret_cast<UCHAR*>(dsql_msg));
+								reinterpret_cast<const UCHAR*>(dsql_msg));
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1225,15 +1226,14 @@ ISC_STATUS GDS_DSQL_FREE_CPP(ISC_STATUS*	user_status,
 ISC_STATUS GDS_DSQL_INSERT_CPP(	ISC_STATUS*	user_status,
 							dsql_req**	req_handle,
 							USHORT	blr_length,
-							UCHAR*	blr,
+							const UCHAR*	blr,
 							USHORT	msg_type,
 							USHORT	msg_length,
-							UCHAR*	dsql_msg)
+							const UCHAR*	dsql_msg)
 {
 	DSQL_REQ request;
 	DSQL_MSG message;
 	PAR parameter;
-	SCHAR *buffer;
 	ISC_STATUS s;
 	tsql thd_context;
 	tsql* tdsql;
@@ -1269,8 +1269,8 @@ ISC_STATUS GDS_DSQL_INSERT_CPP(	ISC_STATUS*	user_status,
 		/* For put segment, use the user buffer and indicator directly. */
 
 			parameter = request->req_blob->blb_segment;
-			buffer =
-				reinterpret_cast<SCHAR*>(
+			const SCHAR* buffer =
+				reinterpret_cast<const SCHAR*>(
 					dsql_msg + (SLONG) parameter->par_user_desc.dsc_address);
 			THREAD_EXIT;
 			s = isc_put_segment(tdsql->tsql_status, &request->req_handle,
@@ -1787,15 +1787,15 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 
 static void trace_line(const char* message, ...) {
 	char buffer[1024];
-	char *ptr = buffer;
 	va_list params;
 	va_start(params, message);
 #ifdef HAVE_VSNPRINTF
-	vsnprintf(ptr, sizeof(buffer), message, params);
+	vsnprintf(buffer, sizeof(buffer), message, params);
 #else
-	vsprintf(ptr, message, params);
+	vsprintf(buffer, message, params);
 #endif
 	va_end(params);
+	buffer[sizeof(buffer) - 1] = 0;
 	gds__trace_raw(buffer);
 }
 
@@ -3082,7 +3082,7 @@ static void execute_blob(	DSQL_REQ		request,
 						   &request->req_dbb->dbb_database_handle,
 						   &request->req_trans, &request->req_handle,
 						   blob_id, bpb_length,
-						   reinterpret_cast<UCHAR*>(bpb));
+						   reinterpret_cast<const UCHAR*>(bpb));
 		THREAD_ENTER;
 		if (s) {
 			punt();
@@ -3097,7 +3097,8 @@ static void execute_blob(	DSQL_REQ		request,
 		s = isc_create_blob2(tdsql->tsql_status,
 							 &request->req_dbb->dbb_database_handle,
 							 &request->req_trans, &request->req_handle,
-							 blob_id, bpb_length, reinterpret_cast<char*>(bpb));
+							 blob_id, bpb_length,
+							 reinterpret_cast<const char*>(bpb));
 		THREAD_ENTER;
 		if (s) {
 			punt();
@@ -3582,7 +3583,7 @@ static USHORT get_plan_info(
 						 &request->req_handle,
 						 0,
 						 sizeof(explain_info),
-						 const_cast < char *>(explain_info),
+						 explain_info,
 						 sizeof(explain_buffer), explain_buffer);
 	THREAD_ENTER;
 
@@ -3597,7 +3598,7 @@ static USHORT get_plan_info(
 		s = isc_request_info(tdsql->tsql_status,
 							 &request->req_handle, 0,
 							 sizeof(explain_info),
-							 const_cast < char *>(explain_info),
+							 explain_info,
 							 BUFFER_XLARGE, explain_ptr);
 		THREAD_ENTER;
 
@@ -3659,7 +3660,7 @@ static USHORT get_plan_info(
  **/
 static USHORT get_request_info(
 							   DSQL_REQ request,
-							   SSHORT buffer_length, SCHAR * buffer)
+							   SSHORT buffer_length, SCHAR* buffer)
 {
 	SCHAR *data;
 	UCHAR p;
@@ -3676,7 +3677,7 @@ static USHORT get_request_info(
 						 &request->req_handle,
 						 0,
 						 sizeof(record_info),
-						 const_cast < char *>(record_info),
+						 record_info,
 						 buffer_length, buffer);
 	THREAD_ENTER;
 
@@ -4131,7 +4132,7 @@ static DBB init(FRBRD** db_handle)
 	const ISC_STATUS s =
 		isc_database_info(user_status, db_handle,
 						  sizeof(db_hdr_info_items),
-						  const_cast<char*>(db_hdr_info_items),
+						  db_hdr_info_items,
 						  sizeof(buffer), buffer);
 	THREAD_ENTER;
 

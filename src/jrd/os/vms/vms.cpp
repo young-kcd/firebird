@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		vms.c
+ *	MODULE:		vms.cpp
  *	DESCRIPTION:	VMS specific physical IO
  *
  * The contents of this file are subject to the Interbase Public
@@ -60,7 +60,7 @@ extern gds__completion_ast();
 
 static bool extend_file(FIL, ISC_STATUS *);
 static FIL seek_file(FIL, BDB, int *);
-static FIL setup_file(DBB, TEXT *, USHORT, USHORT, struct NAM *);
+static FIL setup_file(DBB, const TEXT*, USHORT, USHORT, struct NAM*);
 static void setup_trace(FIL, SSHORT);
 static void trace_event(FIL, SSHORT, SCHAR *, SSHORT);
 static bool vms_io_error(ISC_STATUS *, TEXT *, ISC_STATUS, int, FIL);
@@ -181,7 +181,7 @@ void PIO_close(FIL main_file)
 }
 
 
-int PIO_connection(TEXT * file_name, USHORT * file_length)
+int PIO_connection(const TEXT* file_name, USHORT* file_length)
 {
 /**************************************
  *
@@ -197,13 +197,13 @@ int PIO_connection(TEXT * file_name, USHORT * file_length)
  *	Note: The file name must have been expanded prior to this call.
  *
  **************************************/
-	int node;
+//	int node;
 
 	return NULL;
 }
 
 
-FIL PIO_create(DBB dbb, TEXT * string, SSHORT length, BOOLEAN overwrite)
+FIL PIO_create(DBB dbb, const TEXT* string, SSHORT length, BOOLEAN overwrite)
 {
 /**************************************
  *
@@ -228,7 +228,8 @@ FIL PIO_create(DBB dbb, TEXT * string, SSHORT length, BOOLEAN overwrite)
 	fab.fab$l_nam = &nam;
 	nam.nam$l_rsa = expanded_name;
 	nam.nam$b_rss = sizeof(expanded_name);
-	fab.fab$l_fna = string;
+	// CVC: I assume the non-const condition would be needed, can't check.
+	fab.fab$l_fna = const_cast<TEXT*>(string);
 	fab.fab$b_fns = length;
 	fab.fab$l_dna = DEFAULT_FILE_NAME;
 	fab.fab$b_dns = sizeof(DEFAULT_FILE_NAME) - 1;
@@ -252,7 +253,7 @@ FIL PIO_create(DBB dbb, TEXT * string, SSHORT length, BOOLEAN overwrite)
 }
 
 
-int PIO_expand(TEXT * file_name, USHORT file_length, TEXT * expanded_name)
+int PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name)
 {
 /**************************************
  *
@@ -466,10 +467,10 @@ SLONG PIO_max_alloc(DBB dbb)
 
 
 FIL PIO_open(DBB dbb,
-			 TEXT * string,
+			 const TEXT* string,
 			 SSHORT length,
 			 SSHORT trace_flag,
-			 BLK connection, TEXT * file_name, USHORT file_length)
+			 BLK connection, const TEXT* file_name, USHORT file_length)
 {
 /**************************************
  *
@@ -493,7 +494,8 @@ FIL PIO_open(DBB dbb,
 	fab.fab$l_nam = &nam;
 	nam.nam$l_rsa = expanded_name;
 	nam.nam$b_rss = sizeof(expanded_name);
-	fab.fab$l_fna = string;
+	// CVC: I assume the non-const condition would be needed, can't check.
+	fab.fab$l_fna = const_cast<TEXT*>(string);
 	fab.fab$b_fns = length;
 	fab.fab$l_dna = DEFAULT_FILE_NAME;
 	fab.fab$b_dns = sizeof(DEFAULT_FILE_NAME) - 1;
@@ -525,7 +527,7 @@ FIL PIO_open(DBB dbb,
 }
 
 
-int PIO_read(FIL file, BDB bdb, PAG page, ISC_STATUS * status_vector)
+int PIO_read(FIL file, BDB bdb, PAG page, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -671,7 +673,7 @@ int PIO_write(FIL file, BDB bdb, PAG page, ISC_STATUS * status_vector)
 }
 
 
-static bool extend_file(FIL file, ISC_STATUS * status_vector)
+static bool extend_file(FIL file, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -793,10 +795,9 @@ static FIL seek_file(FIL file, BDB bdb, int *block)
 }
 
 
-static FIL setup_file(
-					  DBB dbb,
-					  TEXT * file_name,
-					  USHORT file_length, USHORT chan, struct NAM *nam)
+static FIL setup_file(DBB dbb,
+					  const TEXT* file_name,
+					  USHORT file_length, USHORT chan, struct NAM* nam)
 {
 /**************************************
  *

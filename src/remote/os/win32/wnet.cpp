@@ -97,7 +97,7 @@ static bool_t	wnet_getlong(XDR *, SLONG *);
 static u_int	wnet_getpostn(XDR *);
 static caddr_t	wnet_inline(XDR *, u_int);
 static bool_t	wnet_putlong(XDR *, SLONG *);
-static bool_t	wnet_putbytes(XDR *, SCHAR *, u_int);
+static bool_t	wnet_putbytes(XDR*, const SCHAR*, u_int);
 static bool_t	wnet_read(XDR *);
 static bool_t	wnet_setpostn(XDR *, u_int);
 static bool_t	wnet_write(XDR *, int);
@@ -106,7 +106,7 @@ static void		packet_print(TEXT *, UCHAR *, int);
 #endif
 static int		packet_receive(PORT, UCHAR *, SSHORT, SSHORT *);
 static int		packet_send(PORT, SCHAR *, SSHORT);
-static void		wnet_copy(SCHAR *, SCHAR *, int);
+static void		wnet_copy(const SCHAR*, SCHAR*, int);
 static void		wnet_make_file_name(TEXT *, DWORD);
 
 static xdr_t::xdr_ops wnet_ops =
@@ -788,8 +788,8 @@ static PORT aux_connect( PORT port, PACKET * packet, XDR_INT(*ast) (void))
 	response = &packet->p_resp;
 
 	if (response->p_resp_data.cstr_length) {
-		wnet_copy(reinterpret_cast <
-				  char *>(response->p_resp_data.cstr_address), str_pid,
+		wnet_copy(reinterpret_cast<const char*>(response->p_resp_data.cstr_address),
+				  str_pid,
 				  response->p_resp_data.cstr_length);
 		str_pid[response->p_resp_data.cstr_length] = 0;
 		p = str_pid;
@@ -882,7 +882,7 @@ static PORT aux_request( PORT port, PACKET * packet)
 	response = &packet->p_resp;
 	response->p_resp_data.cstr_length = strlen(str_pid);
 	wnet_copy(str_pid,
-			  reinterpret_cast < char *>(response->p_resp_data.cstr_address),
+			  reinterpret_cast<char*>(response->p_resp_data.cstr_address),
 			  response->p_resp_data.cstr_length);
 
 #endif /* REQUESTER */
@@ -1403,7 +1403,7 @@ static caddr_t wnet_inline( XDR * xdrs, u_int bytecount)
 }
 
 
-static bool_t wnet_putbytes( XDR * xdrs, SCHAR * buff, u_int count)
+static bool_t wnet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 {
 /**************************************
  *
@@ -1723,7 +1723,7 @@ static int packet_send( PORT port, SCHAR * buffer, SSHORT buffer_length)
 }
 
 
-static void wnet_copy( SCHAR * from, SCHAR * to, int length)
+static void wnet_copy(const SCHAR* from, SCHAR* to, int length)
 {
 /**************************************
  *
@@ -1737,9 +1737,9 @@ static void wnet_copy( SCHAR * from, SCHAR * to, int length)
  **************************************/
 
 	if (length)
-		do
+		do {
 			*to++ = *from++;
-		while ((--length) != 0);
+		} while ((--length) != 0);
 }
 
 
@@ -1772,9 +1772,9 @@ static void wnet_make_file_name( TEXT * name, DWORD number)
 	while (length) {
 		len = (length > 8) ? 8 : length;
 		length -= len;
-		do
+		do {
 			*p++ = *q++;
-		while ((--len) != 0);
+		} while ((--len) != 0);
 
 		if (length)
 			*p++ = '\\';

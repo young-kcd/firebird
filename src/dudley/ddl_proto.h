@@ -25,12 +25,17 @@
 #define DUDLEY_DDL_PROTO_H
 
 UCHAR*		DDL_alloc(int);
-int			DDL_db_error(ISC_STATUS*, USHORT, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*);
-int			DDL_err(USHORT, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*);
-void		DDL_error_abort(ISC_STATUS*, USHORT, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*);
+int			DDL_db_error(ISC_STATUS*, USHORT, const TEXT*, const TEXT*,
+						 const TEXT*, const TEXT*, const TEXT*);
+int			DDL_err(USHORT, const TEXT*, const TEXT*, const TEXT*, 
+					const TEXT*, const TEXT*);
+void		DDL_error_abort(ISC_STATUS*, USHORT, const TEXT*, const TEXT*,
+							const TEXT*, const TEXT*, const TEXT*);
 void		DDL_exit(int);
-void		DDL_msg_partial(USHORT, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*);
-void		DDL_msg_put(USHORT, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*);
+void		DDL_msg_partial(USHORT, const TEXT*, const TEXT*, const TEXT*,
+							const TEXT*, const TEXT*);
+void		DDL_msg_put(USHORT, const TEXT*, const TEXT*, const TEXT*,
+						const TEXT*, const TEXT*);
 DUDLEY_NOD	DDL_pop(LLS*);
 void		DDL_push(DUDLEY_NOD, LLS*);
 bool		DDL_yes_no(USHORT);

@@ -25,7 +25,7 @@
 #define GPRE_LANG_PROTO_H
 
 void	ADA_action(const act*, int);
-void	ADA_print_buffer(TEXT*, int);
+void	ADA_print_buffer(TEXT*, const int);
 //int		BAS_action(ACT, int);
 void	C_CXX_action(const act*, int);
 void	COB_action(const act*, int);

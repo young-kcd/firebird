@@ -753,7 +753,7 @@ static ISC_STATUS attach_database(
  *
  **************************************/
 	USHORT l, dl;
-	UCHAR *file, *dpb, new_dpb_buffer[512], *new_dpb, *p, *end;
+	UCHAR new_dpb_buffer[512], *new_dpb, *p, *end;
 	FRBRD *handle;
 	ISC_STATUS_ARRAY status_vector;
 	RDB rdb;
@@ -761,9 +761,9 @@ static ISC_STATUS attach_database(
 
 	send->p_operation = op_accept;
 	handle = NULL;
-	file = attach->p_atch_file.cstr_address;
+	const char* file = reinterpret_cast<const char*>(attach->p_atch_file.cstr_address);
 	l = attach->p_atch_file.cstr_length;
-	dpb = attach->p_atch_dpb.cstr_address;
+	UCHAR* dpb = attach->p_atch_dpb.cstr_address;
 	dl = attach->p_atch_dpb.cstr_length;
 
 /* If we have user identification, append it to database parameter block */
@@ -794,12 +794,12 @@ static ISC_STATUS attach_database(
 	THREAD_EXIT;
 	if (operation == op_attach)
 	{
-		isc_attach_database(status_vector, l, reinterpret_cast<char*>(file),
+		isc_attach_database(status_vector, l, file,
 							&handle, dl, reinterpret_cast<char*>(dpb));
 	}
 	else
 	{
-		isc_create_database(status_vector, l, reinterpret_cast<char*>(file),
+		isc_create_database(status_vector, l, file,
 							&handle, dl, reinterpret_cast<char*>(dpb), 0);
 	}
 	THREAD_ENTER;
@@ -2245,7 +2245,7 @@ static bool get_next_msg_no(RRQ request,
 
 	THREAD_EXIT;
 	isc_request_info(status_vector, &request->rrq_handle, incarnation,
-					 sizeof(request_info), (SCHAR *) request_info,	// const_cast
+					 sizeof(request_info), reinterpret_cast<const SCHAR*>(request_info),
 					 sizeof(info_buffer), reinterpret_cast<char*>(info_buffer));
 	THREAD_ENTER;
 
@@ -2545,7 +2545,7 @@ ISC_STATUS port::info(P_OP op, P_INFO * stuff, PACKET* send)
 		THREAD_EXIT;
 		isc_database_info(status_vector, &rdb->rdb_handle,
 						  stuff->p_info_items.cstr_length,
-						  reinterpret_cast<char*>(stuff->p_info_items.cstr_address),
+						  reinterpret_cast<const char*>(stuff->p_info_items.cstr_address),
 						  stuff->p_info_buffer_length /*sizeof (temp)*/,
 						  reinterpret_cast<char*>(temp_buffer) /*temp*/);
 		if (!status_vector[1]) {
@@ -2570,9 +2570,9 @@ ISC_STATUS port::info(P_OP op, P_INFO * stuff, PACKET* send)
 		isc_request_info(status_vector, &request->rrq_handle,
 						 stuff->p_info_incarnation,
 						 stuff->p_info_items.cstr_length,
-						 reinterpret_cast <char *>(stuff->p_info_items.cstr_address),
+						 reinterpret_cast<const char*>(stuff->p_info_items.cstr_address),
 						 stuff->p_info_buffer_length,
-						 reinterpret_cast < char *>(buffer));
+						 reinterpret_cast<char*>(buffer));
 		THREAD_ENTER;
 		break;
 
@@ -2585,7 +2585,7 @@ ISC_STATUS port::info(P_OP op, P_INFO * stuff, PACKET* send)
 		THREAD_EXIT;
 		isc_transaction_info(status_vector, &transaction->rtr_handle,
 							 stuff->p_info_items.cstr_length,
-							 reinterpret_cast <char*>(stuff->p_info_items.cstr_address),
+							 reinterpret_cast<const char*>(stuff->p_info_items.cstr_address),
 							 stuff->p_info_buffer_length,
 							 reinterpret_cast < char *>(buffer));
 		THREAD_ENTER;
@@ -2597,11 +2597,11 @@ ISC_STATUS port::info(P_OP op, P_INFO * stuff, PACKET* send)
 						  &rdb->rdb_handle,
 						  NULL,
 						  stuff->p_info_items.cstr_length,
-						  reinterpret_cast <
-						  char *>(stuff->p_info_items.cstr_address),
+						  reinterpret_cast<
+						  const char*>(stuff->p_info_items.cstr_address),
 						  stuff->p_info_recv_items.cstr_length,
-						  reinterpret_cast <
-						  char *>(stuff->p_info_recv_items.cstr_address),
+						  reinterpret_cast<
+						  const char*>(stuff->p_info_recv_items.cstr_address),
 						  stuff->p_info_buffer_length,
 						  reinterpret_cast < char *>(buffer));
 		THREAD_ENTER;
@@ -2617,8 +2617,8 @@ ISC_STATUS port::info(P_OP op, P_INFO * stuff, PACKET* send)
 		GDS_DSQL_SQL_INFO(status_vector,
 						  &statement->rsr_handle,
 						  stuff->p_info_items.cstr_length,
-						  reinterpret_cast <
-						  char *>(stuff->p_info_items.cstr_address),
+						  reinterpret_cast<
+						  const char*>(stuff->p_info_items.cstr_address),
 						  stuff->p_info_buffer_length,
 						  reinterpret_cast < char *>(buffer));
 		THREAD_ENTER;
@@ -2726,7 +2726,7 @@ static RTR make_transaction (RDB rdb, FRBRD *handle)
 }
 
 
-ISC_STATUS port::open_blob(P_OP op, P_BLOB * stuff, PACKET* send)
+ISC_STATUS port::open_blob(P_OP op, P_BLOB* stuff, PACKET* send)
 {
 /**************************************
  *
@@ -2742,7 +2742,6 @@ ISC_STATUS port::open_blob(P_OP op, P_BLOB * stuff, PACKET* send)
 	RBL blob;
 	RTR transaction;
 	USHORT bpb_length;
-	UCHAR *bpb;
 	FRBRD *handle;
 	USHORT object;
 	ISC_STATUS_ARRAY status_vector;
@@ -2756,7 +2755,7 @@ ISC_STATUS port::open_blob(P_OP op, P_BLOB * stuff, PACKET* send)
 	rdb = this->port_context;
 	handle = NULL;
 	bpb_length = 0;
-	bpb = NULL;
+	const UCHAR* bpb = NULL;
 
 	if (op == op_open_blob2 || op == op_create_blob2) {
 		bpb_length = stuff->p_blob_bpb.cstr_length;
@@ -2771,7 +2770,7 @@ ISC_STATUS port::open_blob(P_OP op, P_BLOB * stuff, PACKET* send)
 	else
 		isc_create_blob2(status_vector, &rdb->rdb_handle, &transaction->rtr_handle,
 						 &handle, (GDS_QUAD *) &send->p_resp.p_resp_blob_id,
-						 bpb_length, reinterpret_cast < char *>(bpb));
+						 bpb_length, reinterpret_cast<const char*>(bpb));
 	THREAD_ENTER;
 
 	if (status_vector[1])
@@ -3262,7 +3261,6 @@ ISC_STATUS port::put_segment(P_OP op, P_SGMT * segment, PACKET* send)
  **************************************/
 	RBL blob;
 	USHORT length;
-	UCHAR *p, *end;
 	ISC_STATUS_ARRAY status_vector;
 
 	CHECK_HANDLE_MEMBER(blob,
@@ -3271,7 +3269,7 @@ ISC_STATUS port::put_segment(P_OP op, P_SGMT * segment, PACKET* send)
 						segment->p_sgmt_blob,
 						isc_bad_segstr_handle);
 
-	p = segment->p_sgmt_segment.cstr_address;
+	const UCHAR* p = segment->p_sgmt_segment.cstr_address;
 	length = segment->p_sgmt_segment.cstr_length;
 
 /* Do the signal segment version.  If it failed, just pass on the
@@ -3280,21 +3278,21 @@ ISC_STATUS port::put_segment(P_OP op, P_SGMT * segment, PACKET* send)
 	if (op == op_put_segment) {
 		THREAD_EXIT;
 		isc_put_segment(status_vector, &blob->rbl_handle, length,
-						reinterpret_cast < char *>(p));
+						reinterpret_cast<const char*>(p));
 		THREAD_ENTER;
 		return this->send_response(send, 0, 0, status_vector);
 	}
 
 /* We've got a batch of segments.  This is only slightly more complicated */
 
-	end = p + length;
+	const UCHAR* const end = p + length;
 
 	while (p < end) {
 		length = *p++;
 		length += *p++ << 8;
 		THREAD_EXIT;
 		isc_put_segment(status_vector, &blob->rbl_handle, length,
-						reinterpret_cast < char *>(p));
+						reinterpret_cast<const char*>(p));
 		THREAD_ENTER;
 		if (status_vector[1])
 			return this->send_response(send, 0, 0, status_vector);
@@ -4929,3 +4927,4 @@ static void zap_packet(PACKET* packet,
 		memset(packet, 0, sizeof(PACKET));
 #endif
 }
+

@@ -884,7 +884,7 @@ static void resolve_rse( DUDLEY_NOD rse, LLS * stack)
  *	out of the whole thing;
  *
  **************************************/
-	DUDLEY_NOD sub; //, *arg, *end;
+	DUDLEY_NOD sub;
 	LLS contexts, temp;
 	DUDLEY_CTX context;
 	SYM name, symbol;

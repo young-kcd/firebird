@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exp.cpp,v 1.23 2003-10-15 01:18:01 brodsom Exp $
+//	$Id: exp.cpp,v 1.24 2003-10-29 10:53:07 robocop Exp $
 //
 
 #include "firebird.h"
@@ -215,17 +215,14 @@ GPRE_FLD EXP_cast(GPRE_FLD field)
 
 GPRE_CTX EXP_context(GPRE_REQ request, SYM initial_symbol)
 {
-	GPRE_CTX context;
-	SYM symbol;
-	GPRE_REL relation;
-
 //  Use the token (context name) to make up a symbol
 //  block.  Then check for the keyword IN.  If it's
 //  missing, either complain or punt, depending on the
 //  error flag.  In either case, be sure to get rid of
 //  the symbol.  If things look kosher, continue. 
 
-	if (!(symbol = initial_symbol)) {
+	sym* symbol = initial_symbol;
+	if (!symbol) {
 		symbol = PAR_symbol(SYM_context);
 		if (!MSC_match(KW_IN)) {
 			MSC_free((UCHAR *) symbol);
@@ -235,8 +232,8 @@ GPRE_CTX EXP_context(GPRE_REQ request, SYM initial_symbol)
 
 	symbol->sym_type = SYM_context;
 
-	relation = EXP_relation();
-	context = MSC_context(request);
+	gpre_rel* relation = EXP_relation();
+	gpre_ctx* context = MSC_context(request);
 	context->ctx_symbol = symbol;
 	context->ctx_relation = relation;
 	symbol->sym_object = context;
@@ -252,14 +249,9 @@ GPRE_CTX EXP_context(GPRE_REQ request, SYM initial_symbol)
 //		context block (by reference).
 //  
 
-GPRE_FLD EXP_field(GPRE_CTX * rcontext)
+GPRE_FLD EXP_field(GPRE_CTX* rcontext)
 {
-	SYM symbol;
-	GPRE_CTX context;
-	GPRE_FLD field;
-	GPRE_REL relation;
-	TEXT s[128];
-
+	sym* symbol;
 	for (symbol = token.tok_symbol; symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_context)
 			break;
@@ -267,15 +259,17 @@ GPRE_FLD EXP_field(GPRE_CTX * rcontext)
 	if (!symbol)
 		CPR_s_error("context variable");
 
-	context = symbol->sym_object;
-	relation = context->ctx_relation;
+	gpre_ctx* context = symbol->sym_object;
+	gpre_rel* relation = context->ctx_relation;
 	PAR_get_token();
 
 	if (!MSC_match(KW_DOT))
 		CPR_s_error("dot after context variable");
 
+	TEXT s[128];
 	SQL_resolve_identifier("<Field Name>", s);
-	if (!(field = MET_field(relation, token.tok_string))) {
+	gpre_fld* field = MET_field(relation, token.tok_string);
+	if (!field) {
 		sprintf(s, "field \"%s\" is not defined in relation %s",
 				token.tok_string, relation->rel_symbol->sym_string);
 		PAR_error(s);
@@ -293,7 +287,7 @@ GPRE_FLD EXP_field(GPRE_CTX * rcontext)
 //		Eat a left parenthesis, complain if not there.
 //  
 
-void EXP_left_paren( TEXT * string)
+void EXP_left_paren(const TEXT* string)
 {
 
 	if (!MSC_match(KW_LEFT_PAREN))

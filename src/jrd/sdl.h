@@ -37,13 +37,14 @@ typedef struct sdl_info {
 
 typedef struct slice {
 	DSC slice_desc;
-	BLOB_PTR *slice_end;
-	BLOB_PTR *slice_high_water;
-	BLOB_PTR *slice_base;
+	const BLOB_PTR* slice_end;
+	const BLOB_PTR* slice_high_water;
+	BLOB_PTR* slice_base;
 	USHORT slice_element_length;
 	USHORT slice_direction;
 	SLONG slice_count;
 } *SLICE;
 
-typedef void (*SDL_walk_callback)(SLICE, ULONG, DSC *);
+typedef void (*SDL_walk_callback)(SLICE, ULONG, DSC*);
 #endif /* JRD_SDL_H */
+

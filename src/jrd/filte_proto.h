@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access method
  *	MODULE:		filte_proto.h
- *	DESCRIPTION:	Prototype Header file for filters.c
+ *	DESCRIPTION:	Prototype Header file for filters.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -41,3 +41,4 @@ ISC_STATUS filter_trans(USHORT, struct ctl *);
 #endif
 
 #endif // JRD_FILTE_PROTO_H
+

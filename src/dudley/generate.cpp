@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Data Definition Utility
- *	MODULE:		generate.c
+ *	MODULE:		generate.cpp
  *	DESCRIPTION:	Blr generator
  *
  * The contents of this file are subject to the Interbase Public
@@ -36,7 +36,7 @@ static void get_set_generator(STR, DUDLEY_NOD);
 #define STUFF(c)	*blr->str_current++ = c
 #define STUFF_WORD(c)	{STUFF (c); STUFF (c >> 8);}
 
-static inline void check_blr(str* blr, int l)
+static inline void check_blr(str* blr, const int l)
 {
 	if (!(blr->str_current - blr->str_start + l <= blr->str_length) 
 		&& !TRN_get_buffer(blr, l) )
@@ -638,3 +638,4 @@ static void get_set_generator( STR blr, DUDLEY_NOD node)
 		STUFF(*p++);
 	while (--l);
 }
+

@@ -418,7 +418,7 @@ void METD_get_col_default(DSQL_REQ    request,
 		THREAD_EXIT;
 		stat = isc_open_blob2(status_vect, &DB, &gds_trans,
 							  &blob_handle, blob_id, sizeof(blr_bpb),
-							  (UCHAR*)blr_bpb);
+							  blr_bpb);
 		THREAD_ENTER;
 		if (stat)
 			ERRD_punt();
@@ -803,7 +803,7 @@ void METD_get_domain_default(DSQL_REQ request,
             THREAD_EXIT;
             stat = isc_open_blob2(status_vect, &DB, &gds_trans,
                                   &blob_handle, blob_id, sizeof(blr_bpb),
-                                  (UCHAR*)blr_bpb);
+                                  blr_bpb);
             THREAD_ENTER;
             if (stat)
                 ERRD_punt();

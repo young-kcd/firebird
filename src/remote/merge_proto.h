@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Remote Interface/Server
  *	MODULE:		merge_proto.h
- *	DESCRIPTION:	Prototpe header file for merge.c
+ *	DESCRIPTION:	Prototpe header file for merge.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -29,11 +29,12 @@
 extern "C" {
 #endif
 
-USHORT MERGE_database_info(UCHAR *, UCHAR *, USHORT, USHORT,
-							USHORT, USHORT, UCHAR *, UCHAR *, ULONG);
+USHORT MERGE_database_info(const UCHAR*, UCHAR*, USHORT, USHORT,
+							USHORT, USHORT, const UCHAR*, const UCHAR*, ULONG);
 
 #if (defined __cplusplus) && (defined SOLX86)
 } // extern "C"
 #endif
 
 #endif // REMOTE_MERGE_PROTO_H
+

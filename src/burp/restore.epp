@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.48 2003-09-25 11:48:59 robocop Exp $
+$Id: restore.epp,v 1.49 2003-10-29 10:53:03 robocop Exp $
 */
 
 #include "firebird.h"
@@ -129,10 +129,10 @@ enum scan_attr_t {
 	AFTER_SKIP	= 2	// After skipping and after scanning next byte for valid attribute 
 };
 
-void	add_files(const UCHAR *);
+void	add_files(const UCHAR*);
 void	bad_attribute(scan_attr_t, ATT_TYPE, USHORT);
 USHORT	check_db_version (void);
-void	create_database (const TEXT *);
+void	create_database (const TEXT*);
 void	decompress (UCHAR *, USHORT);
 void	eat_blob (void);
 BURP_REL	find_relation (const TEXT *);
@@ -269,8 +269,8 @@ const int USER_PRIV_OBJECT_TYPE		= 128;
 } // namespace
 
 
-int RESTORE_restore (TEXT	*file_name,
-					 TEXT	*database_name)
+int RESTORE_restore (const TEXT* file_name,
+					 const TEXT* database_name)
 {
 /**************************************
  *
@@ -680,7 +680,7 @@ int RESTORE_restore (TEXT	*file_name,
 namespace // unnamed, private
 {
 
-void add_files (const UCHAR	*file_name)
+void add_files (const UCHAR* file_name)
 {
 /**************************************
  *
@@ -847,7 +847,7 @@ USHORT check_db_version (void)
 	return db_version;
 }
 
-void create_database (const TEXT *file_name)
+void create_database (const TEXT* file_name)
 {
 /**************************************
  *
@@ -970,8 +970,8 @@ void create_database (const TEXT *file_name)
 	*d++ = (UCHAR) (page_size >> 8);
 	*d++ = (UCHAR) isc_dpb_gbak_attach;
 	*d++ = (UCHAR) strlen(GDS_VERSION);
-	for (q = (UCHAR*) GDS_VERSION; *q;)
-		*d++ = *q++;
+	for (const TEXT* gvp = GDS_VERSION; *gvp;)
+		*d++ = *gvp++;
 
 	if (sweep_interval != MAX_ULONG)
 	{
@@ -1048,8 +1048,7 @@ void create_database (const TEXT *file_name)
 
 	l = d - dpb;
 
-	// We'll have to fix the API someday, so const params are declared const.
-	if (isc_create_database (status_vector, 0, (TEXT*) file_name,
+	if (isc_create_database (status_vector, 0, file_name,
 							&DB, l, (SCHAR*) dpb, 0))
 	{
 		BURP_error_redirect (status_vector, 33, file_name, 0);
@@ -1067,7 +1066,7 @@ void create_database (const TEXT *file_name)
 	// msg 74 created database %s, page_size %ld bytes 
 }
 
-void decompress (UCHAR	*buffer,
+void decompress (UCHAR* buffer,
 				 USHORT	length)
 {
 /**************************************
@@ -1366,7 +1365,8 @@ bool get_acl (const TEXT	*owner_nm,
 		BURP_error_redirect (status_vector, 37, 0, 0);
 	}
 
-	if (isc_put_segment (status_vector, &blob_handle, new_len, (SCHAR*) new_buffer))
+	if (isc_put_segment (status_vector, &blob_handle, new_len,
+		reinterpret_cast<const SCHAR*>(new_buffer)))
 	{
 		if (buffer != static_buffer)
 			BURP_free (buffer);
@@ -1991,9 +1991,12 @@ void get_blob (BURP_FLD		fields,
 		{
 			get_block(tdgbl, buffer, length);
 		}
-		if (isc_put_segment (status_vector, &blob, length, (SCHAR*) buffer))
+		if (isc_put_segment (status_vector, &blob, length,
+			reinterpret_cast<const SCHAR*>(buffer)))
+		{
 			BURP_error_redirect (status_vector, 38, 0, 0);
 		// msg 38 gds__put_segment failed 
+		}
 	}
 
 	if (isc_close_blob (status_vector,  &blob))
@@ -2063,9 +2066,12 @@ void get_blr_blob (ISC_QUAD	*blob_id,
 		}
 	}
 
-	if (isc_put_segment (status_vector, &blob, length, (SCHAR*) buffer))
+	if (isc_put_segment (status_vector, &blob, length,
+		reinterpret_cast<const SCHAR*>(buffer)))
+	{
 		BURP_error_redirect (status_vector, 38, 0, 0);
 		// msg 38 gds__put_segment failed 
+	}
 
 	if (isc_close_blob (status_vector,  &blob))
 		BURP_error_redirect (status_vector, 23, 0, 0);
@@ -4447,10 +4453,10 @@ void get_misc_blob (ISC_QUAD	*blob_id,
 
 	// Create new blob
 
-	FRBRD *blob = NULL;
+	FRBRD* blob = NULL;
 
 	USHORT bpb_length = 0;
-	UCHAR *bpb = NULL;
+	UCHAR* bpb = NULL;
 
 	if (glb_trans && tdgbl->global_trans)
 		local_trans = tdgbl->global_trans;
@@ -4458,7 +4464,8 @@ void get_misc_blob (ISC_QUAD	*blob_id,
 		local_trans = gds_trans;
 
 	if (isc_create_blob2 (status_vector, &DB, &local_trans, &blob,
-						  blob_id, bpb_length, (SCHAR*) bpb))
+						  blob_id, bpb_length,
+						  reinterpret_cast<const SCHAR*>(bpb)))
 	{
 		BURP_error_redirect (status_vector, 37, 0, 0);
 		// msg 37 gds__create_blob failed 
@@ -4466,7 +4473,7 @@ void get_misc_blob (ISC_QUAD	*blob_id,
 
 	// Allocate blob buffer is static buffer is too short 
 
-	UCHAR *buffer;
+	UCHAR* buffer;
 	if (!length || length <= (USHORT)(sizeof(static_buffer)) )
 		buffer = static_buffer;
 	else
@@ -4477,9 +4484,12 @@ void get_misc_blob (ISC_QUAD	*blob_id,
 		get_block(tdgbl, buffer, length);
 	}
 
-	if (isc_put_segment (status_vector, &blob, length, (SCHAR*) buffer))
+	if (isc_put_segment (status_vector, &blob, length,
+		reinterpret_cast<const SCHAR*>(buffer)))
+	{
 		BURP_error_redirect (status_vector, 38, 0, 0);
 		// msg 38 gds__put_segment failed 
+	}
 
 	if (isc_close_blob (status_vector, &blob))
 		BURP_error_redirect (status_vector, 23, 0, 0);
@@ -5428,7 +5438,7 @@ void get_source_blob (
 
 	// Allocate blob buffer is static buffer is too short 
 
-	UCHAR *buffer;
+	UCHAR* buffer;
 	if (!length || length <= (USHORT)(sizeof(static_buffer)) )
 		buffer = static_buffer;
 	else
@@ -5436,16 +5446,19 @@ void get_source_blob (
 
 	while (length)
 	{
-		UCHAR *p = buffer;
+		UCHAR* p = buffer;
 		while (*p++ = get(tdgbl))
-		length--;
+			length--;
 		--p;
 		--length;
 		USHORT seg_len = p - buffer;
 
-		if (isc_put_segment (status_vector, &blob, seg_len, (SCHAR*) buffer))
+		if (isc_put_segment (status_vector, &blob, seg_len,
+			reinterpret_cast<const SCHAR*>(buffer)))
+		{
 			BURP_error_redirect (status_vector, 38, 0, 0);
 			// msg 38 gds__put_segment failed 
+		}
 	}
 
 	if (isc_close_blob (status_vector,  &blob))
@@ -6513,8 +6526,8 @@ USHORT recompute_length (BURP_REL	relation)
 #endif
 }
 
-bool restore (const TEXT	*file_name,
-			  const TEXT	*database_name)
+bool restore (const TEXT* file_name,
+			  const TEXT* database_name)
 {
 /**************************************
  *

@@ -201,9 +201,9 @@ static int expand_filename2(TEXT *, USHORT, TEXT *);
 #endif
 
 #if defined(WIN_NT)
-static void expand_share_name(TEXT *);
-static void share_name_from_resource(TEXT *, TEXT *, LPNETRESOURCE);
-static void share_name_from_unc(TEXT *, TEXT *, LPREMOTE_NAME_INFO);
+static void expand_share_name(TEXT*);
+static void share_name_from_resource(TEXT*, const TEXT*, LPNETRESOURCE);
+static void share_name_from_unc(TEXT*, const TEXT*, LPREMOTE_NAME_INFO);
 #endif
 
 #ifndef NO_NFS
@@ -223,7 +223,7 @@ static BOOLEAN get_server(TEXT *, TEXT *);
 
 
 #ifndef NO_NFS
-int ISC_analyze_nfs(TEXT * expanded_filename, TEXT * node_name)
+int ISC_analyze_nfs(TEXT* expanded_filename, TEXT* node_name)
 {
 /**************************************
  *
@@ -236,7 +236,6 @@ int ISC_analyze_nfs(TEXT * expanded_filename, TEXT * node_name)
  *	decompose into node name and remote file name.
  *
  **************************************/
-
 
 	TEXT mnt_buffer[BUFFER_LARGE], remote_filename[MAXPATHLEN],
 		max_node[MAXHOSTLEN], max_path[MAXPATHLEN], expand_mount[MAXPATHLEN];
@@ -361,7 +360,7 @@ int ISC_analyze_nfs(TEXT * expanded_filename, TEXT * node_name)
 
 
 #if defined(WIN_NT)
-int ISC_analyze_pclan(TEXT * expanded_name, TEXT * node_name)
+int ISC_analyze_pclan(TEXT* expanded_name, TEXT* node_name)
 {
 /**************************************
  *
@@ -375,15 +374,16 @@ int ISC_analyze_pclan(TEXT * expanded_name, TEXT * node_name)
  *	file name, and return TRUE.  Otherwise return FALSE.
  *
  **************************************/
-	TEXT *p, *q, localhost[64];
+	TEXT localhost[64];
 
 	if ((expanded_name[0] != '\\' && expanded_name[0] != '/') ||
 		(expanded_name[1] != '\\' && expanded_name[1] != '/'))
 		return FALSE;
 
-	p = node_name;
+	TEXT* p = node_name;
 	*p++ = '\\';
 	*p++ = '\\';
+	const TEXT* q;
 	for (q = expanded_name + 2; *q && *q != '\\' && *q != '/';)
 		*p++ = *q++;
 	*p = 0;
@@ -411,7 +411,7 @@ int ISC_analyze_pclan(TEXT * expanded_name, TEXT * node_name)
 #endif	// WIN_NT
 
 
-int ISC_analyze_tcp(TEXT * file_name, TEXT * node_name)
+int ISC_analyze_tcp(TEXT* file_name, TEXT* node_name)
 {
 /**************************************
  *
@@ -425,11 +425,11 @@ int ISC_analyze_tcp(TEXT * file_name, TEXT * node_name)
  *	file name, and return TRUE.  Otherwise return FALSE.
  *
  **************************************/
-	TEXT *p;
 
 /* Scan file name looking for separator character */
 
-	if (!(p = strchr(file_name, INET_FLAG)))
+	TEXT* p = strchr(file_name, INET_FLAG);
+	if (!p)
 		return FALSE;
 
 #ifdef WIN_NT
@@ -454,7 +454,7 @@ int ISC_analyze_tcp(TEXT * file_name, TEXT * node_name)
 }
 
 
-BOOLEAN ISC_check_if_remote(TEXT * file_name,
+BOOLEAN ISC_check_if_remote(const TEXT* file_name,
 							BOOLEAN implicit_flag)
 {
 /**************************************
@@ -521,7 +521,7 @@ BOOLEAN ISC_check_if_remote(TEXT * file_name,
 
 
 #if (!defined NO_NFS || defined FREEBSD || defined NETBSD || defined SINIXZ)
-int ISC_expand_filename(TEXT * from_buff, USHORT length, TEXT * to_buff)
+int ISC_expand_filename(const TEXT* from_buff, USHORT length, TEXT* to_buff)
 {
 /**************************************
  *
@@ -541,9 +541,8 @@ int ISC_expand_filename(TEXT * from_buff, USHORT length, TEXT * to_buff)
 
 
 #ifdef VMS
-int ISC_expand_filename(
-						TEXT * file_name,
-						USHORT file_length, TEXT * expanded_name)
+int ISC_expand_filename(const TEXT* file_name,
+						USHORT file_length, TEXT* expanded_name)
 {
 /**************************************
  *
@@ -582,9 +581,9 @@ int ISC_expand_filename(
 	if ((sys$parse(&fab) & 1) && (sys$search(&fab) & 1)) {
 		p = temp2;
 		if (length = l = nam.nam$b_rsl)
-			do
+			do {
 				*expanded_name++ = *p++;
-			while (--l);
+			} while (--l);
 		*expanded_name = 0;
 	}
 
@@ -719,9 +718,8 @@ static DWORD ShortToLongPathName(
     return path.length();
 }
 
-int ISC_expand_filename(
-						TEXT * file_name,
-						USHORT file_length, TEXT * expanded_name)
+int ISC_expand_filename(const TEXT* file_name,
+						USHORT file_length, TEXT* expanded_name)
 {
 /**************************************
  *
@@ -875,9 +873,8 @@ int ISC_expand_filename(
 
 
 #ifdef VMS
-int ISC_expand_logical(
-					   TEXT * file_name,
-					   USHORT file_length, TEXT * expanded_name)
+int ISC_expand_logical(const TEXT* file_name,
+					   USHORT file_length, TEXT* expanded_name)
 {
 /**************************************
  *
@@ -914,9 +911,9 @@ int ISC_expand_logical(
 
 	if (l = file_length) {
 		p = expanded_name;
-		do
+		do {
 			*p++ = *file_name++;
-		while (--l);
+		} while (--l);
 	}
 
 	for (n = 0; n < 10; n++) {
@@ -935,7 +932,7 @@ int ISC_expand_logical(
 
 
 #if defined(WIN_NT)
-int ISC_expand_share(TEXT * file_name, TEXT * expanded_name)
+int ISC_expand_share(const TEXT* file_name, TEXT* expanded_name)
 {
 /**************************************
  *
@@ -1025,7 +1022,7 @@ int ISC_expand_share(TEXT * file_name, TEXT * expanded_name)
 #endif	// WIN_NT
 
 #ifdef SUPERSERVER
-int ISC_strip_extension(TEXT * file_name)
+int ISC_strip_extension(TEXT* file_name)
 {
 /**************************************
  *
@@ -1067,7 +1064,7 @@ int ISC_strip_extension(TEXT * file_name)
 
 
 #if (!defined NO_NFS || defined FREEBSD || defined NETBSD || defined SINIXZ)
-static int expand_filename2(TEXT * from_buff, USHORT length, TEXT * to_buff)
+static int expand_filename2(const TEXT* from_buff, USHORT length, TEXT* to_buff)
 {
 /**************************************
  *
@@ -1081,10 +1078,10 @@ static int expand_filename2(TEXT * from_buff, USHORT length, TEXT * to_buff)
  *
  **************************************/
 	TEXT temp[MAXPATHLEN], temp2[MAXPATHLEN];
-	TEXT *from, *to, *p, *segment;
 	SSHORT n;
-	struct passwd *passwd;
+	struct passwd* passwd;
 
+	const TEXT* from;
 	if (length) {
 		strncpy(temp2, from_buff, length);
 		temp2[length] = 0;
@@ -1092,11 +1089,11 @@ static int expand_filename2(TEXT * from_buff, USHORT length, TEXT * to_buff)
 	}
 	else {
 		strncpy(temp2, from_buff, MAXPATHLEN);
-		temp2[MAXPATHLEN-1] = 0;
+		temp2[MAXPATHLEN - 1] = 0;
 		from = temp2;
 	}
 
-	to = to_buff;
+	TEXT* to = to_buff;
 
 /* If the filename contains a TCP node name, don't even try to expand it */
 
@@ -1109,14 +1106,14 @@ static int expand_filename2(TEXT * from_buff, USHORT length, TEXT * to_buff)
 
 	if (*from == '~') {
 		++from;
-		p = temp;
+		TEXT* q = temp;
 		while (*from && *from != '/')
-			*p++ = *from++;
-		*p = 0;
+			*q++ = *from++;
+		*q = 0;
 		passwd = (temp[0]) ? getpwnam(temp) : getpwuid(geteuid());
 		if (passwd) {
 			expand_filename2(passwd->pw_dir, 0, temp);
-			p = temp;
+			const TEXT* p = temp;
 			while (*p)
 				*to++ = *p++;
 			*to = 0;
@@ -1137,7 +1134,7 @@ static int expand_filename2(TEXT * from_buff, USHORT length, TEXT * to_buff)
    handled. */
 
 	while (*from) {
-		segment = to;
+		TEXT* segment = to;
 
 		/* skip dual // (will collapse /// to / as well) */
 		if (*from == '/' && from[1] == '/') {
@@ -1187,7 +1184,7 @@ static int expand_filename2(TEXT * from_buff, USHORT length, TEXT * to_buff)
 		   with a slash, it replaces the initial segment so far */
 
 		temp[n] = 0;
-		p = temp;
+		const TEXT* p = temp;
 
 		if (strchr(temp, INET_FLAG)) {
 			strcpy(to_buff, temp);
@@ -1217,7 +1214,7 @@ static int expand_filename2(TEXT * from_buff, USHORT length, TEXT * to_buff)
 
 
 #ifdef WIN_NT
-static void expand_share_name(TEXT * share_name)
+static void expand_share_name(TEXT* share_name)
 {
 /**************************************
  *
@@ -1651,9 +1648,9 @@ static BOOLEAN get_server(TEXT * file_name, TEXT * node_name)
 
 
 #ifdef WIN_NT
-static void share_name_from_resource(
-									 TEXT * expanded_name,
-									 TEXT * filename, LPNETRESOURCE resource)
+static void share_name_from_resource(TEXT* expanded_name,
+									 const TEXT* filename,
+									 LPNETRESOURCE resource)
 {
 /**************************************
  *
@@ -1711,9 +1708,8 @@ static void share_name_from_resource(
 }
 
 
-static void share_name_from_unc(
-								TEXT * expanded_name,
-								TEXT * file_name,
+static void share_name_from_unc(TEXT* expanded_name,
+								const TEXT* file_name,
 								LPREMOTE_NAME_INFO unc_remote)
 {
 /**************************************
@@ -1756,7 +1752,7 @@ static void share_name_from_unc(
 }
 #endif /* WIN_NT */
 
-bool ISC_verify_database_access(TEXT *name)
+bool ISC_verify_database_access(const TEXT* name)
 {
 /**************************************
  *

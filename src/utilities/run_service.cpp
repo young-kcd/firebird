@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Service manager
- *	MODULE:		run_service.c
+ *	MODULE:		run_service.cpp
  *	DESCRIPTION:	Run a utility as an Interbase service
  *
  * The contents of this file are subject to the Interbase Public
@@ -28,8 +28,8 @@
 #include "../jrd/gds.h"
 #include "../jrd/gds_proto.h"
 
-static SCHAR recv_items[] = { gds__info_svc_to_eof };
-static SCHAR send_timeout[] = { gds__info_svc_timeout, 1, 0, 30 };
+static const SCHAR recv_items[] = { gds__info_svc_to_eof };
+static const SCHAR send_timeout[] = { gds__info_svc_timeout, 1, 0, 30 };
 
 
 int CLIB_ROUTINE main( int argc, char *argv[])
@@ -45,10 +45,10 @@ int CLIB_ROUTINE main( int argc, char *argv[])
  *
  **************************************/
 	SCHAR *service_path;
-	SCHAR *spb, spb_buffer[2048], *p, *send_items, send_buffer[2048],
+	SCHAR *spb, spb_buffer[2048], *p, send_buffer[2048],
 		buffer[2048], item;
 	SLONG *handle;
-	SSHORT send_item_length, len;
+	SSHORT len;
 
 	if (argc < 2) {
 		ib_printf("usage: run_service service_path [args]\n");
@@ -74,6 +74,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	isc_service_attach(NULL, 0, service_path, &handle,
 					   (SSHORT) (spb - spb_buffer), spb_buffer);
 
+	const char* send_items;
+	SSHORT send_item_length;
 	if (strstr(service_path, "start_cache")) {
 		send_items = send_timeout;
 		send_item_length = sizeof(send_timeout);
@@ -121,3 +123,4 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	exit(FINI_OK);
 }
+

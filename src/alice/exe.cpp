@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.20 2003-10-16 08:50:54 robocop Exp $
+//	$Id: exe.cpp,v 1.21 2003-10-29 10:52:59 robocop Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -54,21 +54,21 @@
 static USHORT build_dpb(UCHAR *, ULONG);
 static void extract_db_info(UCHAR *);
 
-static TEXT val_errors[] =
+static const TEXT val_errors[] =
 {
 	isc_info_page_errors, isc_info_record_errors, isc_info_bpage_errors,
 	isc_info_dpage_errors, isc_info_ipage_errors, isc_info_ppage_errors,
 	isc_info_tpage_errors, gds_info_end
 };
 
-static inline void stuff_dpb(UCHAR **d, int blr)
+static inline void stuff_dpb(UCHAR** d, int blr)
 {
 	UCHAR *ptr = *d;
 	*ptr++ = (UCHAR)blr;
 	*d = ptr;
 }
 
-static inline void stuff_dpb_long(UCHAR **d, int blr)
+static inline void stuff_dpb_long(UCHAR** d, int blr)
 {
 	stuff_dpb(d, blr);
 	stuff_dpb(d, blr >> 8);
@@ -82,7 +82,7 @@ static inline void stuff_dpb_long(UCHAR **d, int blr)
 //
 //
 
-int EXE_action(TEXT * database, ULONG switches)
+int EXE_action(const TEXT* database, ULONG switches)
 {
 	UCHAR dpb[128];
 	TGBL tdgbl = GET_THREAD_DATA;
@@ -136,7 +136,7 @@ int EXE_action(TEXT * database, ULONG switches)
 //
 //
 
-int EXE_two_phase(TEXT* database, ULONG switches)
+int EXE_two_phase(const TEXT* database, ULONG switches)
 {
 	UCHAR dpb[128];
 	TGBL tdgbl = GET_THREAD_DATA;

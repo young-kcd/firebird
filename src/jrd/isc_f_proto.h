@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		isc_f_proto.h
- *	DESCRIPTION:	Prototype header file for isc_file.c
+ *	DESCRIPTION:	Prototype header file for isc_file.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -31,21 +31,22 @@
 extern "C" {
 #endif
 
-int			ISC_analyze_nfs(TEXT *, TEXT *);
-int			ISC_analyze_pclan(TEXT *, TEXT *);
-int			ISC_analyze_tcp(TEXT *, TEXT *);
-int			ISC_analyze_xnet(TEXT *, TEXT *);
-BOOLEAN		ISC_check_if_remote(TEXT *, BOOLEAN);
-int			ISC_expand_filename(TEXT *, USHORT, TEXT *);
-int			ISC_expand_logical(TEXT *, USHORT, TEXT *);
-int			ISC_expand_share(TEXT *, TEXT *);
+int			ISC_analyze_nfs(TEXT*, TEXT*);
+int			ISC_analyze_pclan(TEXT*, TEXT*);
+int			ISC_analyze_tcp(TEXT*, TEXT*);
+int			ISC_analyze_xnet(TEXT*, TEXT*);
+BOOLEAN		ISC_check_if_remote(const TEXT*, BOOLEAN);
+int			ISC_expand_filename(const TEXT*, USHORT, TEXT*);
+int			ISC_expand_logical(const TEXT*, USHORT, TEXT*);
+int			ISC_expand_share(const TEXT*, TEXT*);
 int			ISC_file_lock(SSHORT);
 int			ISC_file_unlock(SSHORT);
-int			ISC_strip_filename(TEXT *);
-bool		ISC_verify_database_access(TEXT *);
+int			ISC_strip_filename(TEXT*);
+bool		ISC_verify_database_access(const TEXT*);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
 #endif // JRD_ISC_FILE_PROTO_H
+

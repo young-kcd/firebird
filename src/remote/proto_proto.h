@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Remote Interface/Server
  *	MODULE:		proto_proto.h
- *	DESCRIPTION:	Prototype Header file for protocol.c
+ *	DESCRIPTION:	Prototype Header file for protocol.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -25,9 +25,9 @@
 #define REMOTE_PROTO_PROTO_H
 
 #ifdef DEBUG_XDR_MEMORY
-void	xdr_debug_memory (XDR *, enum xdr_op, void *, void *, ULONG);
+void	xdr_debug_memory (XDR*, enum xdr_op, const void*, const void*, ULONG);
 #endif
-bool_t	xdr_protocol (XDR *, struct packet *);
+bool_t	xdr_protocol (XDR*, struct packet*);
 ULONG	xdr_protocol_overhead (P_OP);
 
 #endif	//  REMOTE_PROTO_PROTO_H

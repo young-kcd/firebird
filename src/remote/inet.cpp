@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.79 2003-10-03 01:17:06 brodsom Exp $
+$Id: inet.cpp,v 1.80 2003-10-29 10:53:35 robocop Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -360,7 +360,7 @@ static void copy_p_cnct_repeat_array(	p_cnct::p_cnct_repeat*			pDest,
 										const p_cnct::p_cnct_repeat*	pSource,
 										size_t							nEntries);
 
-static void		inet_copy(SCHAR *, SCHAR *, int);
+static void		inet_copy(const SCHAR*, SCHAR*, int);
 static int		inet_destroy(XDR *);
 static void		inet_gen_error(PORT, ISC_STATUS, ...);
 static bool_t	inet_getbytes(XDR *, SCHAR *, u_int);
@@ -372,7 +372,7 @@ static void		inet_handler(void* _port);
 static caddr_t	inet_inline(XDR *, u_int);
 static int		inet_error(PORT, const TEXT *, ISC_STATUS, int);
 static bool_t	inet_putlong(XDR *, SLONG *);
-static bool_t	inet_putbytes(XDR *, SCHAR *, u_int);
+static bool_t	inet_putbytes(XDR*, const SCHAR*, u_int);
 static bool_t	inet_read(XDR *);
 static bool_t	inet_setpostn(XDR *, u_int);
 static PORT		inet_try_connect(	PACKET*,
@@ -381,7 +381,7 @@ static PORT		inet_try_connect(	PACKET*,
 									TEXT*,
 									TEXT*,
 									ISC_STATUS*,
-									SCHAR*,
+									const SCHAR*,
 									SSHORT);
 static bool_t	inet_write(XDR *, int);
 static void		inet_zero(SCHAR *, int);
@@ -518,7 +518,7 @@ PORT INET_analyze(	TEXT*	file_name,
 					TEXT*	node_name,
 					TEXT*	user_string,
 					USHORT	uv_flag,
-					SCHAR*	dpb,
+					const SCHAR*	dpb,
 					SSHORT	dpb_length)
 {
 /**************************************
@@ -718,10 +718,10 @@ PORT INET_analyze(	TEXT*	file_name,
 	return port;
 }
 
-PORT INET_connect(TEXT * name,
-							 PACKET * packet,
-							 ISC_STATUS * status_vector,
-							 USHORT flag, SCHAR * dpb, SSHORT dpb_length)
+PORT INET_connect(TEXT* name,
+							 PACKET* packet,
+							 ISC_STATUS* status_vector,
+							 USHORT flag, const SCHAR* dpb, SSHORT dpb_length)
 {
 /**************************************
  *
@@ -765,7 +765,7 @@ PORT INET_connect(TEXT * name,
 
 	port = alloc_port(0);
 	port->port_status_vector = status_vector;
-	REMOTE_get_timeout_params(port, reinterpret_cast < UCHAR * >(dpb),
+	REMOTE_get_timeout_params(port, reinterpret_cast<const UCHAR*>(dpb),
 							  dpb_length);
 	status_vector[0] = gds_arg_gds;
 	status_vector[1] = 0;
@@ -851,8 +851,9 @@ PORT INET_connect(TEXT * name,
 		host_addr = get_bind_address();
 	}
 
-	inet_copy((SCHAR*) &host_addr, (SCHAR *) &address.sin_addr,
-			  sizeof(address.sin_addr));
+	inet_copy(reinterpret_cast<const SCHAR*>(&host_addr),
+				(SCHAR*) &address.sin_addr,
+				sizeof(address.sin_addr));
 
 	THREAD_EXIT;
 
@@ -1548,7 +1549,7 @@ static PORT aux_connect(PORT port, PACKET* packet, XDR_INT (*ast)(void))
 	}
 
 	inet_zero((SCHAR *) & address, sizeof(address));
-	inet_copy(reinterpret_cast < char *>(response->p_resp_data.cstr_address),
+	inet_copy(reinterpret_cast<const char*>(response->p_resp_data.cstr_address),
 			  (SCHAR *) & address, response->p_resp_data.cstr_length);
 	address.sin_family = AF_INET;
 
@@ -1612,8 +1613,9 @@ static PORT aux_request( PORT port, PACKET * packet)
 
 	address.sin_family = AF_INET;
 	in_addr bind_addr = get_bind_address();
-	inet_copy((SCHAR *) &bind_addr, (SCHAR*) &address.sin_addr,
-			  sizeof(address.sin_addr));
+	inet_copy(reinterpret_cast<const SCHAR*>(&bind_addr),
+				(SCHAR*) &address.sin_addr,
+				sizeof(address.sin_addr));
 	address.sin_port = htons(Config::getRemoteAuxPort());
 
 	if ((n = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
@@ -1656,13 +1658,14 @@ static PORT aux_request( PORT port, PACKET * packet)
 		inet_error(port, "getsockname", isc_net_event_listen_err, ERRNO);
 		return NULL;
 	}
-	inet_copy((SCHAR *) &port_address.sin_addr, (SCHAR*) &address.sin_addr,
-			  sizeof(address.sin_addr));
+	inet_copy(reinterpret_cast<SCHAR*>(&port_address.sin_addr),
+				(SCHAR*) &address.sin_addr,
+				sizeof(address.sin_addr));
 
 	response->p_resp_data.cstr_address = (UCHAR *) & response->p_resp_blob_id;
 	response->p_resp_data.cstr_length = sizeof(response->p_resp_blob_id);
-	inet_copy((SCHAR *) &address,
-			  reinterpret_cast < char *>(response->p_resp_data.cstr_address),
+	inet_copy(reinterpret_cast<const SCHAR*>(&address),
+			  reinterpret_cast<char*>(response->p_resp_data.cstr_address),
 			  response->p_resp_data.cstr_length);
 
 	return new_port;
@@ -2207,7 +2210,7 @@ static void copy_p_cnct_repeat_array(	p_cnct::p_cnct_repeat*			pDest,
 }
 
 
-static void inet_copy( SCHAR * from, SCHAR * to, int length)
+static void inet_copy(const SCHAR* from, SCHAR* to, int length)
 {
 /**************************************
  *
@@ -2221,9 +2224,9 @@ static void inet_copy( SCHAR * from, SCHAR * to, int length)
  **************************************/
 
 	if (length)
-		do
+		do {
 			*to++ = *from++;
-		while ((--length) != 0);
+		} while ((--length) != 0);
 }
 
 static void inet_zero( SCHAR * address, int length)
@@ -3121,7 +3124,7 @@ static int inet_error(
 	return 0;
 }
 
-static bool_t inet_putbytes( XDR * xdrs, SCHAR * buff, u_int count)
+static bool_t inet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 {
 /**************************************
  *
@@ -3165,9 +3168,9 @@ static bool_t inet_putbytes( XDR * xdrs, SCHAR * buff, u_int count)
 
 	if (xdrs->x_handy >= bytecount) {
 		xdrs->x_handy -= bytecount;
-		do
+		do {
 			*xdrs->x_private++ = *buff++;
-		while (--bytecount);
+		} while (--bytecount);
 		return TRUE;
 	}
 
@@ -3239,7 +3242,7 @@ if (port->port_flags & PORT_pend_ack)
 	return FALSE;
 */
 
-	while (TRUE) {
+	while (true) {
 		length = end - p;
 		if (!packet_receive
 			(port, reinterpret_cast < UCHAR * >(p), length, &length)) {
@@ -3288,11 +3291,12 @@ static bool_t inet_setpostn( XDR * xdrs, u_int bytecount)
 }
 
 static PORT inet_try_connect(
-							 PACKET * packet,
+							 PACKET* packet,
 							 RDB rdb,
 							 USHORT file_length,
-							 TEXT * file_name,
-TEXT * node_name, ISC_STATUS * status_vector, SCHAR * dpb, SSHORT dpb_length)
+							 TEXT* file_name,
+	TEXT* node_name, ISC_STATUS* status_vector,
+	const SCHAR* dpb, SSHORT dpb_length)
 {
 /**************************************
  *

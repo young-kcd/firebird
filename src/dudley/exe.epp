@@ -75,7 +75,7 @@ static bool check_function(SYM);
 static bool check_range(DUDLEY_FLD);
 static bool check_relation(SYM);
 static void close_blob(FRBRD *);
-static FRBRD *create_blob(SLONG *, USHORT, UCHAR *);
+static FRBRD* create_blob(SLONG*, USHORT, const UCHAR*);
 static void drop_cache(DBB);
 static void drop_field(DUDLEY_FLD);
 static void drop_filter(FILTER);
@@ -120,11 +120,11 @@ static int string_length(SCHAR);
 static void wal_info(UCHAR *, SLONG *, SCHAR *, SLONG *);
 
 static LLS files_to_delete = NULL;
-static TEXT alloc_info[] = { gds_info_allocation, gds_info_end };
+static const TEXT alloc_info[] = { gds_info_allocation, gds_info_end };
 
 #define MOVE_SYMBOL(symbol, field)	move_symbol (symbol, field, sizeof (field) - 1)
 
-static SCHAR db_info[] =
+static const SCHAR db_info[] =
 {
 	gds_info_logfile,
 	gds_info_cur_logfile_name,
@@ -170,14 +170,13 @@ void EXE_create_database( DBB dbb)
  *	Create a new database.
  *
  **************************************/
-	TEXT *file_name, dpb[128], *d, *p;
+	TEXT dpb[128], *d, *p;
 	USHORT page_size, dpb_length;
 	USHORT len;
 	ULONG llen;
 	SLONG log, part_offset;
 	SCHAR db_info_buffer[512], cur_log[512];
 	SLONG ods_version;
-	SLONG result;
 
 /* Generate a dpb for attempting to attach to, and
    later to create, the specified database. */
@@ -204,9 +203,9 @@ void EXE_create_database( DBB dbb)
 	if (dpb_length == 1)
 		dpb_length = 0;
 
-	file_name = dbb->dbb_name->sym_string;
+	const TEXT* file_name = dbb->dbb_name->sym_string;
 
-	result = gds__attach_database(gds_status, 0, file_name, &DB, dpb_length, dpb);
+	const SLONG result = gds__attach_database(gds_status, 0, file_name, &DB, dpb_length, dpb);
 	if (!DDL_replace) {
 		if (!result) {
 			gds__detach_database(gds_status, &DB);
@@ -2116,7 +2115,7 @@ static void close_blob(FRBRD *blob)
 }
 
 
-static FRBRD *create_blob( SLONG * blob_id, USHORT bpb_length, UCHAR * bpb)
+static FRBRD* create_blob( SLONG* blob_id, USHORT bpb_length, const UCHAR* bpb)
 {
 /**************************************
  *
@@ -2132,7 +2131,9 @@ static FRBRD *create_blob( SLONG * blob_id, USHORT bpb_length, UCHAR * bpb)
 	FRBRD *blob = NULL;
 
 	if (gds__create_blob2(status_vector, &DB, &gds_trans, &blob,
-						 (GDS__QUAD*) blob_id, bpb_length, (SCHAR*) bpb)) {
+						 (GDS__QUAD*) blob_id, bpb_length,
+						 reinterpret_cast<const SCHAR*>(bpb)))
+	{
 		DDL_db_error(status_vector, 59, NULL, NULL, NULL, NULL, NULL);
 		/* msg 59: gds__create_blob failed */
 		return NULL;
@@ -4098,7 +4099,7 @@ static void store_blr( DUDLEY_NOD node, SLONG * blob_id, DUDLEY_REL relation)
 	length = blr.str_current - blr.str_start;
 
 	if (gds__put_segment(status_vector, &handle, length,
-		reinterpret_cast<SCHAR*>(blr.str_start))) 
+		reinterpret_cast<const SCHAR*>(blr.str_start)))
 	{
 		DDL_db_error(status_vector, 93, NULL, NULL, NULL, NULL, NULL);
 		/* msg 93: gds__put_segment failed */
@@ -4121,7 +4122,6 @@ static void store_query_header( DUDLEY_NOD node, SLONG * blob_id)
  *	Store a query header.
  *
  **************************************/
-	SYM symbol;
 	ISC_STATUS_ARRAY status_vector;
 	FRBRD *blob;
 	USHORT bpb_length;
@@ -4132,7 +4132,7 @@ static void store_query_header( DUDLEY_NOD node, SLONG * blob_id)
 	blob = create_blob(blob_id, bpb_length, bpb);
 
 	for (int pos = 0; pos < node->nod_count; pos++) {
-		symbol = (SYM) node->nod_arg[pos];
+		const sym* symbol = (SYM) node->nod_arg[pos];
 		if (gds__put_segment(status_vector, &blob, symbol->sym_length,
 							 symbol->sym_string)) {
 			DDL_db_error(status_vector, 93, NULL, NULL, NULL, NULL, NULL);
@@ -4327,3 +4327,4 @@ static void wal_info(UCHAR * db_info_buffer,
 		}
 	}
 }
+

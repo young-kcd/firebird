@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Remote Interface/Server
  *	MODULE:		remot_proto.h
- *	DESCRIPTION:	Prototpe header file for remot.c
+ *	DESCRIPTION:	Prototpe header file for remote.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -31,10 +31,10 @@ extern "C" {
 
 void		REMOTE_cleanup_transaction (struct rtr *);
 ULONG		REMOTE_compute_batch_size (struct port *, USHORT, P_OP, FMT);
-void		REMOTE_get_timeout_params (struct port *, UCHAR *, USHORT);
+void		REMOTE_get_timeout_params (struct port*, const UCHAR*, USHORT);
 struct rrq*	REMOTE_find_request (struct rrq *, USHORT);
 void		REMOTE_free_packet (struct port *, struct packet *);
-struct str*	REMOTE_make_string (SCHAR *);
+struct str*	REMOTE_make_string (const SCHAR*);
 void		REMOTE_release_messages (struct message *);
 void		REMOTE_release_request (struct rrq *);
 void		REMOTE_reset_request (struct rrq *, struct message *);

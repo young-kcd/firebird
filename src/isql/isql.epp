@@ -259,7 +259,7 @@ static bool have_trans = false; // translation of word "Yes"
 static TEXT yesword[MSG_LENGTH];
 static TEXT Print_buffer[PRINT_BUFFER_LENGTH];
 
-static SCHAR* alpha_months[] = {
+static const SCHAR* alpha_months[] = {
 	"JAN",
 	"FEB",
 	"MAR",
@@ -275,34 +275,35 @@ static SCHAR* alpha_months[] = {
 };
 
 #ifdef NOT_USED_OR_REPLACED
-static UCHAR db_version_info[] = { isc_info_ods_version,
+// There's a local version of this, more complete, in ISQL_get_version()
+static const UCHAR db_version_info[] = { isc_info_ods_version,
 	isc_info_ods_minor_version,
 	isc_info_db_sql_dialect
 };
 #endif
-static UCHAR blr_bpb[] = { isc_bpb_version1,
+static const UCHAR blr_bpb[] = { isc_bpb_version1,
 	isc_bpb_source_type, 1, BLOB_blr,
 	isc_bpb_target_type, 1, BLOB_text
 	};
 #ifdef NOT_USED_OR_REPLACED
-static UCHAR text_bpb[] = {
+static const UCHAR text_bpb[] = {
 	isc_bpb_version1,
 	isc_bpb_source_type, 1, BLOB_text,
 	isc_bpb_target_type, 1, BLOB_text};
 #endif
-static UCHAR acl_bpb[] = {
+static const UCHAR acl_bpb[] = {
 	isc_bpb_version1,
 	isc_bpb_source_type, 1, BLOB_acl, isc_bpb_target_type, 1, BLOB_text};
 
 /* Note that these transaction options aren't understood in Version 3.3 */
-static UCHAR default_tpb[] = { isc_tpb_version1, isc_tpb_write,
+static const UCHAR default_tpb[] = { isc_tpb_version1, isc_tpb_write,
 	isc_tpb_read_committed, isc_tpb_wait,
 	isc_tpb_no_rec_version
 };
 
 #ifdef NOT_USED_OR_REPLACED
 /* CVC: Just in case we need it for R/O operations in the future. */
-static UCHAR	batch_tpb [] = {isc_tpb_version3, isc_tpb_read,
+static const UCHAR	batch_tpb [] = {isc_tpb_version3, isc_tpb_read,
 				isc_tpb_read_committed, isc_tpb_nowait,
 				isc_tpb_rec_version
 };
@@ -787,7 +788,7 @@ int getNextInputChar() {
 			getColumn = -1;
 			return '\n';
 		}
-		c = lastInputLine[ getColumn++];
+		c = lastInputLine[getColumn++];
 	} while (c == 0x0D);
 
 	return c;
@@ -4216,11 +4217,12 @@ void ISQL_get_version(bool call_by_create_db)
  *	V4, V3.3 or earlier, as well as other info.
  *
  **************************************/
-	static const UCHAR db_version_info[] = { isc_info_ods_version,
-											 isc_info_ods_minor_version,
-											 isc_info_db_sql_dialect,
-											 isc_info_firebird_version,
-											 isc_info_end
+	static const UCHAR db_version_info[] = {
+		isc_info_ods_version,
+		isc_info_ods_minor_version,
+		isc_info_db_sql_dialect,
+		isc_info_firebird_version,
+		isc_info_end
 	};
 	/*
 	   ** Each info item requested will return
@@ -4235,8 +4237,8 @@ void ISQL_get_version(bool call_by_create_db)
 
 	// UCHAR buffer[sizeof(db_version_info) * (1 + 2 + 4)];
 
-	//Now we are also getting the Firebird server version which is a
-	//   string the above calculation does not apply.	 NM 03-Oct-2001
+	// Now we are also getting the Firebird server version which is a
+	// string the above calculation does not apply.	 NM 03-Oct-2001
 
 	UCHAR buffer[256];
 	TEXT bad_dialect_buf[512];
@@ -4247,7 +4249,9 @@ void ISQL_get_version(bool call_by_create_db)
 	dialect_spoken = 0;
 
 	if (isc_database_info(isc_status, &DB, sizeof(db_version_info),
-						  (SCHAR*) db_version_info, sizeof(buffer), (SCHAR*) buffer)) {
+						  reinterpret_cast<const char*>(db_version_info),
+						  sizeof(buffer), (SCHAR*) buffer))
+	{
 		ISQL_errmsg(isc_status);
 		return;
 	}
@@ -5143,7 +5147,7 @@ static SSHORT newdb(TEXT* dbname,
 	}
 
 	// CVC: Do not put the user and pw used to extract metadata in a script!
-	// Only acknowledge user connection parameters in interactive logins. */
+	// Only acknowledge user connection parameters in interactive logins.
 
 	if (Interactive) {
 		if (local_usr[0] != '\0') {
@@ -6076,12 +6080,11 @@ static int print_item_blob(IB_FILE* fp,
  *
  **************************************/
 	FRBRD* blob;
-	USHORT length, bpb_length;
+	USHORT length;
 	UCHAR* buffer;
 	UCHAR* b;
 	UCHAR bpb_buffer[64];
 	TEXT* msg;
-	UCHAR* bpb;
 	ISC_BLOB_DESC from_desc, to_desc;
 	ISC_QUAD* blobid;
 
@@ -6094,8 +6097,8 @@ static int print_item_blob(IB_FILE* fp,
 		return ERR;
 	}
 
-	bpb_length = 0;
-	bpb = NULL;
+	USHORT bpb_length = 0;
+	const UCHAR* bpb = NULL;
 	blobid = (ISC_QUAD*) var->sqldata;
 
 /* Don't bother with null blobs */
@@ -6123,11 +6126,15 @@ static int print_item_blob(IB_FILE* fp,
 		 */
 		if (!isc_blob_lookup_desc
 			(isc_status, &DB, &trans, (UCHAR*) var->relname, (UCHAR*) var->sqlname, &from_desc,
-			 NULL)) {
+			 NULL))
+		{
 			isc_blob_default_desc(&to_desc, (UCHAR*) var->relname, (UCHAR*) var->sqlname);
 			if (!isc_blob_gen_bpb
 				(isc_status, &to_desc, &from_desc, sizeof(bpb_buffer),
-				 bpb_buffer, &bpb_length)) bpb = bpb_buffer;
+				 bpb_buffer, &bpb_length))
+			{
+				bpb = bpb_buffer;
+			}
 		}
 		break;
 	case BLOB_blr:
@@ -6144,7 +6151,8 @@ static int print_item_blob(IB_FILE* fp,
 
 	blob = NULL;
 	if (isc_open_blob2(isc_status, &DB, &trans, &blob, blobid, bpb_length,
-					   bpb)) {
+					   bpb))
+	{
 		ISQL_errmsg(isc_status);
 		if (buffer)
 			ISQL_FREE(buffer);
@@ -6375,9 +6383,9 @@ static int process_statement(TEXT* string,
 	XSQLVAR* end;
 	FRBRD* prepare_trans;
 	int ret = CONT;
-	static SCHAR sqlda_info[] = { isc_info_sql_stmt_type };
-	static SCHAR plan_info[] = { isc_info_sql_get_plan };
-	static SCHAR count_info[] = { isc_info_sql_records };
+	static const SCHAR sqlda_info[] = { isc_info_sql_stmt_type };
+	static const SCHAR plan_info[] = { isc_info_sql_get_plan };
+	static const SCHAR count_info[] = { isc_info_sql_records };
 
 /* We received the address of the sqlda in case we realloc it */
 	sqlda = *sqldap;

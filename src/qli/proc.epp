@@ -167,10 +167,14 @@ void PRO_copy_procedure(
         strcpy(NEW.QLI$PROCEDURE_NAME, new_name);
 		if (gds__create_blob2(status_vector, &new_database->dbb_handle,
 							  &new_database->dbb_proc_trans, &new_blob,
-							  &NEW.QLI$PROCEDURE, bpb_length, (char*) bpb))
-				ERRQ_database_error(new_database, status_vector);
+							  &NEW.QLI$PROCEDURE, bpb_length,
+							  reinterpret_cast<const char*>(bpb)))
+		{
+			ERRQ_database_error(new_database, status_vector);
+		}
 		while (!(gds__get_segment(status_vector, &old_blob, (USHORT*) &length,
-								  sizeof(buffer), buffer))) {
+								  sizeof(buffer), buffer)))
+		{
 			buffer[length] = 0;
 			if (gds__put_segment(status_vector, &new_blob, length, buffer))
 					ERRQ_database_error(new_database, status_vector);
@@ -222,8 +226,11 @@ void PRO_create( DBB database, TEXT * name)
 		gds__vtof(name, X.QLI$PROCEDURE_NAME, sizeof(X.QLI$PROCEDURE_NAME));
 
 		if (gds__create_blob2(status_vector, &database->dbb_handle, &gds_trans,
-							  &blob, &X.QLI$PROCEDURE, bpb_length, (char*) bpb))
-				ERRQ_database_error(database, status_vector);
+							  &blob, &X.QLI$PROCEDURE, bpb_length,
+							  reinterpret_cast<const char*>(bpb)))
+		{
+			ERRQ_database_error(database, status_vector);
+		}
 		while (!MATCH(KW_END_PROCEDURE)) {
 			if (QLI_token->tok_type == tok_eof)
 				SYNTAX_ERROR(350);

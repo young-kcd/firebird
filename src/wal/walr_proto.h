@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Write Ahead LOG APIs 
  *	MODULE:		walr_proto.h
- *	DESCRIPTION:	Prototype header file for walr.c
+ *	DESCRIPTION:	Prototype header file for walr.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -28,7 +28,8 @@ SSHORT	WALR_close (ISC_STATUS *, struct walrs **);
 SSHORT	WALR_fixup_log_header (ISC_STATUS *, struct walrs *);
 SSHORT	WALR_get (ISC_STATUS *, struct walrs *, UCHAR *, USHORT *, SLONG *, SLONG *);
 SSHORT	WALR_get_blk_timestamp (struct walrs *, SLONG *);
-SSHORT	WALR_open (ISC_STATUS *, struct walrs **, SCHAR *, int, SCHAR **,
-						   SLONG *, SLONG, SLONG *, bool);
+SSHORT	WALR_open (ISC_STATUS*, struct walrs**, const SCHAR*, int, SCHAR**,
+						   SLONG*, SLONG, SLONG*, bool);
 
 #endif // WAL_WALR_PROTO_H
+

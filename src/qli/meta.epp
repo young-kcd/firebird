@@ -560,7 +560,8 @@ void MET_delete_database( DBB dbb)
 
 	TEXT db_info_buffer[512];
 	if (gds__database_info(status_vector, &DB, sizeof(db_log_info),
-						   (char*) db_log_info, sizeof(db_info_buffer),
+						   reinterpret_cast<const char*>(db_log_info),
+						   sizeof(db_info_buffer),
 						   db_info_buffer))
 		ERRQ_database_error(dbb, status_vector);
 
@@ -2735,7 +2736,8 @@ static void get_database_type( DBB new_dbb)
 	UCHAR buffer[1024];
 
 	gds__database_info(status_vector, &new_dbb->dbb_handle, sizeof(db_info),
-					   (char*) db_info, sizeof(buffer), (char*) buffer);
+					   reinterpret_cast<const char*>(db_info),
+					   sizeof(buffer), (char*) buffer);
 
 	if (status_vector[1])
 		ERRQ_database_error(new_dbb, gds_status);

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.51 2003-10-19 01:41:13 brodsom Exp $
+$Id: ibase.h,v 1.52 2003-10-29 10:53:14 robocop Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -153,18 +153,19 @@ typedef struct
 typedef struct isc_blob_ctl
 {
 	ISC_STATUS	(* ctl_source)();	/* Source filter */
-	struct isc_blob_ctl *	ctl_source_handle;	/* Argument to pass to source filter */
+	struct isc_blob_ctl*	ctl_source_handle;	/* Argument to pass to source filter */
 	short					ctl_to_sub_type;		/* Target type */
 	short					ctl_from_sub_type;		/* Source type */
 	unsigned short			ctl_buffer_length;		/* Length of buffer */
 	unsigned short			ctl_segment_length;		/* Length of current segment */
 	unsigned short			ctl_bpb_length;			/* Length of blob parameter  block */
-	char *					ctl_bpb;				/* Address of blob parameter block */
-	unsigned char *			ctl_buffer;				/* Address of segment buffer */
+	/* Internally, this is const UCHAR*, but this public struct probably can't change. */
+	char*					ctl_bpb;				/* Address of blob parameter block */
+	unsigned char*			ctl_buffer;				/* Address of segment buffer */
 	ISC_LONG				ctl_max_segment;		/* Length of longest segment */
 	ISC_LONG				ctl_number_segments;	/* Total number of segments */
 	ISC_LONG				ctl_total_length;		/* Total length of blob */
-	ISC_STATUS *			ctl_status;				/* Address of status vector */
+	ISC_STATUS*				ctl_status;				/* Address of status vector */
 	long					ctl_data[8];			/* Application specific data */
 } * ISC_BLOB_CTL;
 
@@ -206,16 +207,16 @@ typedef struct bstream
 enum lseek_mode {blb_seek_relative = 1, blb_seek_from_tail = 2};
 
 typedef struct blobcallback {
-    short ( *blob_get_segment)
-		(void * hnd, unsigned char* buffer, ISC_USHORT buf_size, ISC_USHORT* result_len);
-    void			*blob_handle;
+    short (*blob_get_segment)
+		(void* hnd, unsigned char* buffer, ISC_USHORT buf_size, ISC_USHORT* result_len);
+    void*		blob_handle;
     ISC_LONG	blob_number_segments;
     ISC_LONG	blob_max_segment;
     ISC_LONG	blob_total_length;
-    void ( *blob_put_segment)
-		(void * hnd, unsigned char* buffer, ISC_USHORT buf_size);
-    ISC_LONG ( *blob_lseek)
-		(void * hnd, ISC_USHORT mode, ISC_LONG offset);
+    void (*blob_put_segment)
+		(void* hnd, const unsigned char* buffer, ISC_USHORT buf_size);
+    ISC_LONG (*blob_lseek)
+		(void* hnd, ISC_USHORT mode, ISC_LONG offset);
 }  *BLOBCALLBACK;
 #endif /* !defined(JRD_VAL_H) && !defined(REQUESTER) */
 
@@ -359,12 +360,12 @@ typedef struct
 extern "C" {
 #endif
 
-ISC_STATUS ISC_EXPORT isc_attach_database(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_attach_database(ISC_STATUS*,
 										  short,
-										  char *,
-										  isc_db_handle *,
+										  const char*,
+										  isc_db_handle*,
 										  short,
-										  char *);
+										  const char*);
 
 ISC_STATUS ISC_EXPORT isc_array_get_slice(ISC_STATUS *,
 										  isc_db_handle *,
@@ -374,27 +375,27 @@ ISC_STATUS ISC_EXPORT isc_array_get_slice(ISC_STATUS *,
 										  void *,
 										  ISC_LONG *);
 
-ISC_STATUS ISC_EXPORT isc_array_lookup_bounds(ISC_STATUS *,
-											  isc_db_handle *,
-											  isc_tr_handle *,
-											  const char *,
-											  const char *,
-											  ISC_ARRAY_DESC *);
+ISC_STATUS ISC_EXPORT isc_array_lookup_bounds(ISC_STATUS*,
+											  isc_db_handle*,
+											  isc_tr_handle*,
+											  const char*,
+											  const char*,
+											  ISC_ARRAY_DESC*);
 
-ISC_STATUS ISC_EXPORT isc_array_lookup_desc(ISC_STATUS *,
-											isc_db_handle *,
-											isc_tr_handle *,
-											const char *,
-											const char *,
-											ISC_ARRAY_DESC *);
+ISC_STATUS ISC_EXPORT isc_array_lookup_desc(ISC_STATUS*,
+											isc_db_handle*,
+											isc_tr_handle*,
+											const char*,
+											const char*,
+											ISC_ARRAY_DESC*);
 
 ISC_STATUS ISC_EXPORT isc_array_set_desc(ISC_STATUS *,
-										 const char *,
-										 const char *,
-										 const short *,
-										 const short *,
-										 const short *,
-										 ISC_ARRAY_DESC *);
+										 const char*,
+										 const char*,
+										 const short*,
+										 const short*,
+										 const short*,
+										 ISC_ARRAY_DESC*);
 
 ISC_STATUS ISC_EXPORT isc_array_put_slice(ISC_STATUS *,
 										  isc_db_handle *,
@@ -415,12 +416,12 @@ ISC_STATUS ISC_EXPORT isc_blob_gen_bpb(ISC_STATUS *,
 									   unsigned char *,
 									   unsigned short *);
 
-ISC_STATUS ISC_EXPORT isc_blob_info(ISC_STATUS *,
-									isc_blob_handle *,
+ISC_STATUS ISC_EXPORT isc_blob_info(ISC_STATUS*,
+									isc_blob_handle*,
 									short,
-									char *,
+									const char*,
 									short,
-									char *);
+									char*);
 
 ISC_STATUS ISC_EXPORT isc_blob_lookup_desc(ISC_STATUS *,
 										   isc_db_handle *,
@@ -454,34 +455,34 @@ ISC_STATUS ISC_EXPORT isc_commit_retaining(ISC_STATUS *,
 ISC_STATUS ISC_EXPORT isc_commit_transaction(ISC_STATUS *,
 											 isc_tr_handle *);
 
-ISC_STATUS ISC_EXPORT isc_create_blob(ISC_STATUS *,
-									  isc_db_handle *,
-									  isc_tr_handle *,
-									  isc_blob_handle *,
-									  ISC_QUAD *);
+ISC_STATUS ISC_EXPORT isc_create_blob(ISC_STATUS*,
+									  isc_db_handle*,
+									  isc_tr_handle*,
+									  isc_blob_handle*,
+									  ISC_QUAD*);
 
-ISC_STATUS ISC_EXPORT isc_create_blob2(ISC_STATUS *,
-									   isc_db_handle *,
-									   isc_tr_handle *,
-									   isc_blob_handle *,
-									   ISC_QUAD *,
+ISC_STATUS ISC_EXPORT isc_create_blob2(ISC_STATUS*,
+									   isc_db_handle*,
+									   isc_tr_handle*,
+									   isc_blob_handle*,
+									   ISC_QUAD*,
 									   short,
-									   char *);
+									   const char*);
 
-ISC_STATUS ISC_EXPORT isc_create_database(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_create_database(ISC_STATUS*,
 										  short,
-										  char *,
-										  isc_db_handle *,
+										  const char*,
+										  isc_db_handle*,
 										  short,
-										  char *,
+										  const char*,
 										  short);
 
-ISC_STATUS ISC_EXPORT isc_database_info(ISC_STATUS *,
-										isc_db_handle *,
+ISC_STATUS ISC_EXPORT isc_database_info(ISC_STATUS*,
+										isc_db_handle*,
 										short,
-										char *,
+										const char*,
 										short,
-										char *);
+										char*);
 
 void ISC_EXPORT isc_decode_date(const ISC_QUAD*,
 								void*);
@@ -578,12 +579,12 @@ ISC_STATUS ISC_EXPORT isc_dsql_set_cursor_name(ISC_STATUS *,
 											   char *,
 											   unsigned short);
 
-ISC_STATUS ISC_EXPORT isc_dsql_sql_info(ISC_STATUS *,
-										isc_stmt_handle *,
+ISC_STATUS ISC_EXPORT isc_dsql_sql_info(ISC_STATUS*,
+										isc_stmt_handle*,
 										short,
-										const char *,
+										const char*,
 										short,
-										char *);
+										char*);
 
 void ISC_EXPORT isc_encode_date(const void*,
 								ISC_QUAD*);
@@ -607,13 +608,13 @@ void ISC_EXPORT isc_event_counts(ISC_ULONG *,
 								 char *);
 
 /* 17 May 2001 - isc_expand_dpb is DEPRECATED */
-void ISC_EXPORT_VARARG isc_expand_dpb(char * *,
-									  short *, ...);
+void ISC_EXPORT_VARARG isc_expand_dpb(char**,
+									  short*, ...);
 
-int ISC_EXPORT isc_modify_dpb(char * *,
-							  short *,
+int ISC_EXPORT isc_modify_dpb(char**,
+							  short*,
 							  unsigned short,
-							  char *,
+							  const char*,
 							  short);
 
 ISC_LONG ISC_EXPORT isc_free(char *);
@@ -644,19 +645,19 @@ ISC_LONG ISC_EXPORT isc_interprete(char*,
 ISC_LONG ISC_EXPORT isc_interprete_cpp(char* const,
 									 const ISC_STATUS**);
 									 
-ISC_STATUS ISC_EXPORT isc_open_blob(ISC_STATUS *,
-									isc_db_handle *,
-									isc_tr_handle *,
-									isc_blob_handle *,
-									ISC_QUAD *);
+ISC_STATUS ISC_EXPORT isc_open_blob(ISC_STATUS*,
+									isc_db_handle*,
+									isc_tr_handle*,
+									isc_blob_handle*,
+									ISC_QUAD*);
 
-ISC_STATUS ISC_EXPORT isc_open_blob2(ISC_STATUS *,
-									 isc_db_handle *,
-									 isc_tr_handle *,
-									 isc_blob_handle *,
-									 ISC_QUAD *,
+ISC_STATUS ISC_EXPORT isc_open_blob2(ISC_STATUS*,
+									 isc_db_handle*,
+									 isc_tr_handle*,
+									 isc_blob_handle*,
+									 ISC_QUAD*,
 									 ISC_USHORT,
-									 ISC_UCHAR *);
+									 const ISC_UCHAR*);
 
 ISC_STATUS ISC_EXPORT isc_prepare_transaction2(ISC_STATUS *,
 											   isc_tr_handle *,
@@ -664,14 +665,14 @@ ISC_STATUS ISC_EXPORT isc_prepare_transaction2(ISC_STATUS *,
 											   ISC_UCHAR *);
 
 void ISC_EXPORT isc_print_sqlerror(ISC_SHORT,
-								   ISC_STATUS *);
+								   const ISC_STATUS*);
 
-ISC_STATUS ISC_EXPORT isc_print_status(ISC_STATUS *);
+ISC_STATUS ISC_EXPORT isc_print_status(const ISC_STATUS*);
 
-ISC_STATUS ISC_EXPORT isc_put_segment(ISC_STATUS *,
-									  isc_blob_handle *,
+ISC_STATUS ISC_EXPORT isc_put_segment(ISC_STATUS*,
+									  isc_blob_handle*,
 									  unsigned short,
-									  char *);
+									  const char*);
 
 ISC_STATUS ISC_EXPORT isc_put_slice(ISC_STATUS *,
 									isc_db_handle *,
@@ -713,12 +714,12 @@ void ISC_EXPORT isc_sql_interprete(short,
 								   char *,
 								   short);
 
-ISC_STATUS ISC_EXPORT isc_transaction_info(ISC_STATUS *,
-										   isc_tr_handle *,
+ISC_STATUS ISC_EXPORT isc_transaction_info(ISC_STATUS*,
+										   isc_tr_handle*,
 										   short,
-										   char *,
+										   const char*,
 										   short,
-										   char *);
+										   char*);
 
 ISC_STATUS ISC_EXPORT isc_transact_request(ISC_STATUS *,
 										   isc_db_handle *,
@@ -820,13 +821,13 @@ ISC_STATUS ISC_EXPORT isc_reconnect_transaction(ISC_STATUS *,
 ISC_STATUS ISC_EXPORT isc_release_request(ISC_STATUS *,
 										  isc_req_handle *);
 
-ISC_STATUS ISC_EXPORT isc_request_info(ISC_STATUS *,
-									   isc_req_handle *,
+ISC_STATUS ISC_EXPORT isc_request_info(ISC_STATUS*,
+									   isc_req_handle*,
 									   short,
 									   short,
-									   char *,
+									   const char*,
 									   short,
-									   char *);
+									   char*);
 
 ISC_STATUS ISC_EXPORT isc_seek_blob(ISC_STATUS *,
 									isc_blob_handle *,
@@ -1118,15 +1119,15 @@ int ISC_EXPORT BLOB_text_load(ISC_QUAD *,
 							  isc_tr_handle,
 							  char *);
 
-BSTREAM *ISC_EXPORT Bopen(ISC_QUAD *,
+BSTREAM* ISC_EXPORT Bopen(ISC_QUAD*,
 								  isc_db_handle,
 								  isc_tr_handle,
-								  char *);
+								  const char*);
 
-BSTREAM *ISC_EXPORT Bopen2(ISC_QUAD *,
+BSTREAM* ISC_EXPORT Bopen2(ISC_QUAD*,
 								   isc_db_handle,
 								   isc_tr_handle,
-								   char *,
+								   const char*,
 								   unsigned short);
 
 
@@ -1134,27 +1135,27 @@ BSTREAM *ISC_EXPORT Bopen2(ISC_QUAD *,
 /* Other Misc functions       */
 /******************************/
 
-ISC_LONG ISC_EXPORT isc_ftof(char *,
-							 unsigned short,
-							 char *,
-							 unsigned short);
+ISC_LONG ISC_EXPORT isc_ftof(const char*,
+							 const unsigned short,
+							 char*,
+							 const unsigned short);
 
-ISC_STATUS ISC_EXPORT isc_print_blr(char *,
+ISC_STATUS ISC_EXPORT isc_print_blr(const char*,
 									isc_callback,
-									void *,
+									void*,
 									short);
 
 void ISC_EXPORT isc_set_debug(int);
 
-void ISC_EXPORT isc_qtoq(ISC_QUAD *,
-						 ISC_QUAD *);
+void ISC_EXPORT isc_qtoq(const ISC_QUAD*,
+						 ISC_QUAD*);
 
-void ISC_EXPORT isc_vtof(char *,
-						 char *,
+void ISC_EXPORT isc_vtof(const char*,
+						 char*,
 						 unsigned short);
 
-void ISC_EXPORT isc_vtov(char *,
-						 char *,
+void ISC_EXPORT isc_vtov(const char*,
+						 char*,
 						 short);
 
 int ISC_EXPORT isc_version(isc_db_handle *,
@@ -1186,15 +1187,15 @@ ISC_STATUS ISC_EXPORT isc_service_attach(ISC_STATUS *,
 ISC_STATUS ISC_EXPORT isc_service_detach(ISC_STATUS *,
 										 isc_svc_handle *);
 
-ISC_STATUS ISC_EXPORT isc_service_query(ISC_STATUS *,
-										isc_svc_handle *,
-										isc_resv_handle *,
+ISC_STATUS ISC_EXPORT isc_service_query(ISC_STATUS*,
+										isc_svc_handle*,
+										isc_resv_handle*,
 										unsigned short,
-										char *,
+										const char*,
 										unsigned short,
-										char *,
+										const char*,
 										unsigned short,
-										char *);
+										char*);
 
 ISC_STATUS ISC_EXPORT isc_service_start(ISC_STATUS *,
 										isc_svc_handle *,

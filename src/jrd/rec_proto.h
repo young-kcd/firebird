@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access method
  *	MODULE:		rec_proto.h		
- *	DESCRIPTION:	Prototype Header file for rec.c 
+ *	DESCRIPTION:	Prototype Header file for rec.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,8 +24,9 @@
 #ifndef JRD_REC_PROTO_H
 #define JRD_REC_PROTO_H
 
-void	REC_recover(TEXT *, TEXT *, struct ctrl_pt *, struct sbm **, USHORT);
-void	REC_recover_page(TEXT *, TEXT *, struct ctrl_pt *, SLONG, struct pag *);
+void	REC_recover(const TEXT*, TEXT*, struct ctrl_pt*, struct sbm**, USHORT);
+void	REC_recover_page(const TEXT*, TEXT*, struct ctrl_pt*, SLONG, struct pag*);
 void	REC_update_next_transid(void);
 
 #endif // JRD_REC_PROTO_H
+

@@ -68,19 +68,19 @@ typedef GDS_QUAD GDS__QUAD;
 #define FRBRD void
 #endif
 
-ISC_STATUS GDS_EXPORT gds__attach_database(ISC_STATUS  *,
+ISC_STATUS GDS_EXPORT gds__attach_database(ISC_STATUS*,
 										   short,
-										   char  *,
-										   FRBRD  **,
+										   const char*,
+										   FRBRD**,
 										   short,
-										   char  *);
+										   const char*);
 
-ISC_STATUS GDS_EXPORT gds__blob_info(ISC_STATUS  *,
-									 FRBRD  **,
+ISC_STATUS GDS_EXPORT gds__blob_info(ISC_STATUS*,
+									 FRBRD**,
 									 short,
-									 char  *,
+									 const char*,
 									 short,
-									 char  *);
+									 char*);
 
 ISC_STATUS GDS_EXPORT gds__cancel_blob(ISC_STATUS  *,
 									   FRBRD  **);
@@ -103,34 +103,34 @@ ISC_STATUS GDS_EXPORT gds__compile_request2(ISC_STATUS  *,
 											short,
 											char  *);
 
-ISC_STATUS GDS_EXPORT gds__create_blob(ISC_STATUS  *,
-									   FRBRD  **,
-									   FRBRD  **,
-									   FRBRD  **,
-									   GDS__QUAD  *);
+ISC_STATUS GDS_EXPORT gds__create_blob(ISC_STATUS*,
+									   FRBRD**,
+									   FRBRD**,
+									   FRBRD**,
+									   GDS__QUAD*);
 
-ISC_STATUS GDS_EXPORT gds__create_blob2(ISC_STATUS  *,
-										FRBRD  **,
-										FRBRD  **,
-										FRBRD  **,
-										GDS__QUAD  *,
+ISC_STATUS GDS_EXPORT gds__create_blob2(ISC_STATUS*,
+										FRBRD**,
+										FRBRD**,
+										FRBRD**,
+										GDS__QUAD*,
 										short,
-										char  *);
+										const char*);
 
-ISC_STATUS GDS_EXPORT gds__create_database(ISC_STATUS  *,
+ISC_STATUS GDS_EXPORT gds__create_database(ISC_STATUS*,
 										   short,
-										   char  *,
-										   FRBRD  **,
+										   const char*,
+										   FRBRD**,
 										   short,
-										   char  *,
+										   const char*,
 										   short);
 
-ISC_STATUS GDS_EXPORT gds__database_info(ISC_STATUS  *,
-										 FRBRD  **,
+ISC_STATUS GDS_EXPORT gds__database_info(ISC_STATUS*,
+										 FRBRD**,
 										 short,
-										 char  *,
+										 const char*,
 										 short,
-										 char  *);
+										 char*);
 
 void GDS_EXPORT gds__decode_date(const GDS__QUAD*,
 								 void*);
@@ -146,19 +146,19 @@ ISC_STATUS GDS_EXPORT gds__get_segment(ISC_STATUS  *,
 									   unsigned short,
 									   char  *);
 
-ISC_STATUS GDS_EXPORT gds__open_blob(ISC_STATUS  *,
-									 FRBRD  **,
-									 FRBRD  **,
-									 FRBRD  **,
-									 GDS__QUAD  *);
+ISC_STATUS GDS_EXPORT gds__open_blob(ISC_STATUS*,
+									 FRBRD**,
+									 FRBRD**,
+									 FRBRD**,
+									 GDS__QUAD*);
 
-ISC_STATUS GDS_EXPORT gds__open_blob2(ISC_STATUS  *,
-									  FRBRD  **,
-									  FRBRD  **,
-									  FRBRD  **,
-									  GDS__QUAD  *,
+ISC_STATUS GDS_EXPORT gds__open_blob2(ISC_STATUS*,
+									  FRBRD**,
+									  FRBRD**,
+									  FRBRD**,
+									  GDS__QUAD*,
 									  short,
-									  char  *);
+									  const char*);
 
 ISC_STATUS GDS_EXPORT gds__prepare_transaction(ISC_STATUS  *,
 											   FRBRD  **);
@@ -168,10 +168,10 @@ ISC_STATUS GDS_EXPORT gds__prepare_transaction2(ISC_STATUS  *,
 												short,
 												char  *);
 
-ISC_STATUS GDS_EXPORT gds__put_segment(ISC_STATUS  *,
-									   FRBRD  **,
+ISC_STATUS GDS_EXPORT gds__put_segment(ISC_STATUS*,
+									   FRBRD**,
 									   unsigned short,
-									   char  *);
+									   const char*);
 
 ISC_STATUS GDS_EXPORT gds__receive(ISC_STATUS  *,
 								   FRBRD  **,
@@ -186,13 +186,13 @@ ISC_STATUS GDS_EXPORT gds__reconnect_transaction(ISC_STATUS  *,
 												 short,
 												 char  *);
 
-ISC_STATUS GDS_EXPORT gds__request_info(ISC_STATUS  *,
-										FRBRD  **,
+ISC_STATUS GDS_EXPORT gds__request_info(ISC_STATUS*,
+										FRBRD**,
 										short,
 										short,
-										char  *,
+										const char*,
 										short,
-										char  *);
+										char*);
 
 ISC_STATUS GDS_EXPORT gds__release_request(ISC_STATUS  *,
 										   FRBRD  **);
@@ -237,22 +237,26 @@ ISC_STATUS GDS_EXPORT gds__start_transaction(ISC_STATUS  *,
 											 FRBRD  **,
 											 short, ...);
 
-ISC_STATUS GDS_EXPORT gds__transaction_info(ISC_STATUS  *,
-											FRBRD  **,
+ISC_STATUS GDS_EXPORT gds__transaction_info(ISC_STATUS*,
+											FRBRD**,
 											short,
-											char  *,
+											const char*,
 											short,
-											char  *);
+											char*);
 
 ISC_STATUS GDS_EXPORT gds__unwind_request(ISC_STATUS  *,
 										  FRBRD  **,
 										  short);
 
-ISC_STATUS GDS_EXPORT gds__ftof(char  *,
-							  unsigned short,
-							  char  *,
-							  unsigned short);
+ISC_STATUS GDS_EXPORT gds__ftof(const char*,
+							  const unsigned short,
+							  char*,
+							  const unsigned short);
 
+void GDS_EXPORT gds__vtof(const char*,
+						  char*,
+						  unsigned short);
+						  
 void GDS_EXPORT gds__vtov(const SCHAR*, char*, SSHORT);
 
 int GDS_EXPORT gds__version(FRBRD  **,
@@ -328,10 +332,6 @@ ISC_STATUS GDS_EXPORT gds__put_slice(ISC_STATUS  *,
 									 SLONG  *,
 									 SLONG,
 									 void  *);
-
-void GDS_EXPORT gds__vtof(char  *,
-						  char  *,
-						  unsigned short);
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -374,11 +374,11 @@ static BOOLEAN	drop_files(FIL);
 static ISC_STATUS	error(ISC_STATUS*);
 static void		find_intl_charset(TDBB, ATT, DPB*);
 static JRD_TRA		find_transaction(TDBB, JRD_TRA, ISC_STATUS);
-static void		get_options(UCHAR *, USHORT, TEXT **, ULONG, DPB *);
-static SLONG	get_parameter(UCHAR**);
-static TEXT*	get_string_parameter(UCHAR **, TEXT **, ULONG *);
+static void		get_options(const UCHAR*, USHORT, TEXT**, ULONG, DPB*);
+static SLONG	get_parameter(const UCHAR**);
+static TEXT*	get_string_parameter(const UCHAR**, TEXT**, ULONG *);
 static ISC_STATUS	handle_error(ISC_STATUS*, ISC_STATUS, TDBB);
-static bool		verify_database_name(TEXT *, ISC_STATUS *);
+static bool		verify_database_name(const TEXT*, ISC_STATUS*);
 
 #if defined (WIN_NT)
 #ifdef SERVER_SHUTDOWN
@@ -391,7 +391,7 @@ static BOOLEAN	handler_NT(SSHORT);
 
 static DBB		init(TDBB, ISC_STATUS*, TEXT*, USHORT);
 static void		make_jrn_data(UCHAR*, USHORT*, TEXT*, USHORT, TEXT*, USHORT);
-static ISC_STATUS	prepare(TDBB, JRD_TRA, ISC_STATUS*, USHORT, UCHAR*);
+static ISC_STATUS	prepare(TDBB, JRD_TRA, ISC_STATUS*, USHORT, const UCHAR*);
 static void		release_attachment(ATT);
 static ISC_STATUS	return_success(TDBB);
 static BOOLEAN	rollback(TDBB, JRD_TRA, ISC_STATUS*, USHORT);
@@ -589,10 +589,10 @@ static const char* DECRYPT = "decrypt";
 
 ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 								SSHORT	file_length,
-								TEXT*	file_name,
+								const TEXT*	file_name,
 								ATT*	handle,
 								SSHORT	dpb_length,
-								UCHAR*	dpb,
+								const UCHAR*	dpb,
 								TEXT* expanded_filename)
 {
 /**************************************
@@ -633,17 +633,18 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 /* Resolve given alias name */
 
-	if (!file_length) file_length = strlen(file_name);
+	if (!file_length) 
+		file_length = strlen(file_name);
 	memcpy(expanded_name, file_name, file_length);
 	expanded_name[file_length] = '\0';
 
-	bool is_alias = ResolveDatabaseAlias(expanded_name, expanded_name);
+	const bool is_alias = ResolveDatabaseAlias(expanded_name, expanded_name);
 	if (is_alias)
 		ISC_expand_filename(expanded_name, 0, expanded_name);
 	else
 		strcpy(expanded_name, expanded_filename);
 
-	USHORT length_expanded = strlen(expanded_name);
+	const USHORT length_expanded = strlen(expanded_name);
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
@@ -729,12 +730,14 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 			if ((dbb->dbb_encrypt_key && !options.dpb_key) ||
 				(!dbb->dbb_encrypt_key && options.dpb_key) ||
 				strcmp(options.dpb_key, reinterpret_cast<char*>(dbb->dbb_encrypt_key->str_data)))
+			{
 				ERR_post(gds_no_priv,
 						 gds_arg_string, "encryption",
 						 gds_arg_string, "database",
 						 gds_arg_string, 
                          ERR_string(file_name, file_length), 
                          0);
+			}
 		}
 		else if (options.dpb_key)
 			dbb->dbb_encrypt_key =
@@ -1212,7 +1215,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	if (((attachment->att_flags & ATT_gbak_attachment) ||
 		 (attachment->att_flags & ATT_gfix_attachment) ||
 		 (attachment->att_flags & ATT_gstat_attachment)) &&
-		!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner))) {
+		!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner)))
+	{
 		ERR_post(isc_adm_task_denied, 0);
 	}
 
@@ -1381,7 +1385,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 ISC_STATUS GDS_BLOB_INFO(ISC_STATUS*	user_status,
 						BLB*	blob_handle,
 						SSHORT	item_length,
-						SCHAR*	items,
+						const SCHAR*	items,
 						SSHORT	buffer_length,
 						SCHAR*	buffer)
 {
@@ -1401,7 +1405,7 @@ ISC_STATUS GDS_BLOB_INFO(ISC_STATUS*	user_status,
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	BLB blob = check_blob(tdbb, user_status, blob_handle);
+	const blb* blob = check_blob(tdbb, user_status, blob_handle);
 	if (!blob) {
 		return user_status[1];
 	}
@@ -1658,11 +1662,11 @@ ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS * user_status, JRD_TRA * tra_handle)
 }
 
 
-ISC_STATUS GDS_COMPILE(ISC_STATUS * user_status,
-						ATT * db_handle,
-						JRD_REQ * req_handle,
+ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
+						ATT* db_handle,
+						JRD_REQ* req_handle,
 						SSHORT blr_length,
-						SCHAR * blr)
+						SCHAR* blr)
 {
 /**************************************
  *
@@ -1715,13 +1719,13 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS * user_status,
-							ATT * db_handle,
-							JRD_TRA * tra_handle,
-							BLB * blob_handle,
+ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
+							ATT* db_handle,
+							JRD_TRA* tra_handle,
+							BLB* blob_handle,
 							BID blob_id,
 							USHORT bpb_length,
-							UCHAR * bpb)
+							const UCHAR* bpb)
 {
 /**************************************
  *
@@ -1776,10 +1780,10 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS * user_status,
 
 ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 								USHORT	file_length,
-								TEXT*	file_name,
+								const TEXT*	file_name,
 								ATT*	handle,
 								USHORT	dpb_length,
-								UCHAR*	dpb,
+								const UCHAR*	dpb,
 								USHORT	db_type,
 								TEXT*	expanded_filename)
 {
@@ -1811,15 +1815,17 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 		return handle_error(user_status, gds_bad_db_handle, 0);
 
 /* Get length of database file name, if not already known */
-	if (!file_length) file_length = strlen(file_name);
-	file_name[file_length] = 0;
+	if (!file_length) 
+		file_length = strlen(file_name);
+	memcpy(expanded_name, file_name, file_length);
+	expanded_name[file_length] = '\0';
 
-	bool is_alias = ResolveDatabaseAlias(file_name, expanded_name);
+	const bool is_alias = ResolveDatabaseAlias(expanded_name, expanded_name);
 	if (is_alias)
 		ISC_expand_filename(expanded_name, 0, expanded_name);
 	else
 		strcpy(expanded_name, expanded_filename);
-	USHORT length_expanded = strlen(expanded_name);
+	const USHORT length_expanded = strlen(expanded_name);
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
@@ -2147,12 +2153,12 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 }
 
 
-ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS * user_status,
-							ATT * handle,
+ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS* user_status,
+							ATT* handle,
 							SSHORT item_length,
-							SCHAR * items,
+							const SCHAR* items,
 							SSHORT buffer_length,
-							SCHAR * buffer)
+							SCHAR* buffer)
 {
 /**************************************
  *
@@ -2719,13 +2725,13 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS * user_status,
-						ATT * db_handle,
-						JRD_TRA * tra_handle,
-						BLB * blob_handle,
+ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
+						ATT* db_handle,
+						JRD_TRA* tra_handle,
+						BLB* blob_handle,
 						BID blob_id,
 						USHORT bpb_length,
-						UCHAR * bpb)
+						const UCHAR* bpb)
 {
 /**************************************
  *
@@ -2816,10 +2822,10 @@ ISC_STATUS GDS_PREPARE(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS * user_status,
-							BLB * blob_handle,
+ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
+							BLB* blob_handle,
 							USHORT buffer_length,
-							UCHAR * buffer)
+							const UCHAR* buffer)
 {
 /**************************************
  *
@@ -3152,13 +3158,13 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, JRD_REQ * req_handle)
 }
 
 
-ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS * user_status,
-							JRD_REQ * req_handle,
+ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
+							JRD_REQ* req_handle,
 							SSHORT level,
 							SSHORT item_length,
-							SCHAR * items,
+							const SCHAR* items,
 							SSHORT buffer_length,
-							SCHAR * buffer)
+							SCHAR* buffer)
 {
 /**************************************
  *
@@ -3478,9 +3484,9 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
 							SVC*	svc_handle,
 							ULONG*	reserved,
 							USHORT	send_item_length,
-							SCHAR*	send_items,
+							const SCHAR*	send_items,
 							USHORT	recv_item_length,
-							SCHAR*	recv_items,
+							const SCHAR*	recv_items,
 							USHORT	buffer_length,
 							SCHAR*	buffer)
 {
@@ -4015,12 +4021,12 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 }
 
 
-ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS * user_status,
-								JRD_TRA * tra_handle,
+ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
+								JRD_TRA* tra_handle,
 								SSHORT item_length,
-								SCHAR * items,
+								const SCHAR* items,
 								SSHORT buffer_length,
-								SCHAR * buffer)
+								SCHAR* buffer)
 {
 /**************************************
  *
@@ -4335,7 +4341,7 @@ void JRD_mutex_unlock(MUTX mutex)
 
 
 #ifdef SUPERSERVER
-void JRD_print_all_counters(char *fname)
+void JRD_print_all_counters(const char* fname)
 {
 /*****************************************************
  *
@@ -4634,7 +4640,7 @@ void jrd_vtof(const char* string, char* field, SSHORT length)
 	}
 }
 
-static BLB check_blob(TDBB tdbb, ISC_STATUS * user_status, BLB * blob_handle)
+static BLB check_blob(TDBB tdbb, ISC_STATUS* user_status, BLB* blob_handle)
 {
 /**************************************
  *
@@ -4647,24 +4653,25 @@ static BLB check_blob(TDBB tdbb, ISC_STATUS * user_status, BLB * blob_handle)
  *	the address of the blob if ok, NULL otherwise.
  *
  **************************************/
-	BLB blob;
-	JRD_TRA transaction;
+	JRD_TRA transaction = 0;
 
 	SET_TDBB(tdbb);
-	blob = *blob_handle;
+	 // this const made to check no accidental changes happen
+	const blb* const blob = *blob_handle;
 
 	if (!blob ||
 		(MemoryPool::blk_type(blob) != type_blb) ||
 		check_database(tdbb, blob->blb_attachment, user_status) ||
 		!(transaction = blob->blb_transaction) ||
-		MemoryPool::blk_type(transaction) != type_tra) {
+		MemoryPool::blk_type(transaction) != type_tra)
+	{
 		handle_error(user_status, gds_bad_segstr_handle, tdbb);
 		return NULL;
 	}
 
 	tdbb->tdbb_transaction = transaction;
 
-	return blob;
+	return const_cast<blb*>(blob); // harmless, see comment above
 }
 
 
@@ -4685,10 +4692,6 @@ static ISC_STATUS check_database(TDBB tdbb, ATT attachment, ISC_STATUS * user_st
 	ISC_STATUS *ptr;
 	TEXT *string;
 
-#ifndef SUPERSERVER
-	ATT attach;
-#endif /* SUPERSERVER */
-
 	SET_TDBB(tdbb);
 
 /* Make sure blocks look and feel kosher */
@@ -4697,11 +4700,14 @@ static ISC_STATUS check_database(TDBB tdbb, ATT attachment, ISC_STATUS * user_st
 		(MemoryPool::blk_type(attachment) != type_att) ||
 		!(dbb = attachment->att_database) ||
 		MemoryPool::blk_type(dbb)!= type_dbb)
+	{
 		return handle_error(user_status, gds_bad_db_handle, tdbb);
+	}
 
 /* Make sure this is a valid attachment */
 
 #ifndef SUPERSERVER
+	const att* attach;
 	for (attach = dbb->dbb_attachments; attach; attach = attach->att_next)
 		if (attach == attachment)
 			break;
@@ -4736,7 +4742,8 @@ static ISC_STATUS check_database(TDBB tdbb, ATT attachment, ISC_STATUS * user_st
 
 	if (attachment->att_flags & ATT_shutdown ||
 		(dbb->dbb_ast_flags & DBB_shutdown &&
-		 !(attachment->att_user->usr_flags & (USR_locksmith | USR_owner)))) {
+		 !(attachment->att_user->usr_flags & (USR_locksmith | USR_owner))))
+	{
 		tdbb->tdbb_status_vector = ptr = user_status;
 		*ptr++ = gds_arg_gds;
 		*ptr++ = gds_shutdown;
@@ -4750,7 +4757,8 @@ static ISC_STATUS check_database(TDBB tdbb, ATT attachment, ISC_STATUS * user_st
 
 #ifdef CANCEL_OPERATION
 	if ((attachment->att_flags & ATT_cancel_raise) &&
-		!(attachment->att_flags & ATT_cancel_disable)) {
+		!(attachment->att_flags & ATT_cancel_disable))
+	{
 		attachment->att_flags &= ~ATT_cancel_raise;
 		tdbb->tdbb_status_vector = ptr = user_status;
 		*ptr++ = isc_arg_gds;
@@ -5030,7 +5038,7 @@ static void find_intl_charset(TDBB tdbb, ATT attachment, DPB * options)
 }
 
 
-static void get_options(UCHAR*	dpb,
+static void get_options(const UCHAR*	dpb,
 						USHORT	dpb_length,
 						TEXT**	scratch,
 					    ULONG	buf_size,
@@ -5046,7 +5054,6 @@ static void get_options(UCHAR*	dpb,
  *	Parse database parameter block picking up options and things.
  *
  **************************************/
-	UCHAR *p, *end_dpb, *single;
 	USHORT l;
 	SSHORT num_old_files = 0;
 
@@ -5060,8 +5067,8 @@ static void get_options(UCHAR*	dpb,
 	options->dpb_overwrite = TRUE;
 	options->dpb_sql_dialect = 99;
 	invalid_client_SQL_dialect = FALSE;
-	p = dpb;
-	end_dpb = p + dpb_length;
+	const UCHAR* p = dpb;
+	const UCHAR* const end_dpb = p + dpb_length;
 
 	if ((dpb == NULL) && (dpb_length > 0))
 		ERR_post(gds_bad_dpb_form, 0);
@@ -5349,11 +5356,12 @@ static void get_options(UCHAR*	dpb,
 			break;
 
 		case isc_dpb_reserved:
-			single =
-				reinterpret_cast<UCHAR*>(get_string_parameter(&p, scratch, &buf_size));
-		    if (single && !strcmp(reinterpret_cast<char*>(single), "YES"))
-				  options->dpb_single_user = TRUE;
+			{
+				const TEXT* single = get_string_parameter(&p, scratch, &buf_size);
+		    	if (single && !strcmp(single, "YES"))
+					options->dpb_single_user = TRUE;
 			break;
+			}
 
 		case isc_dpb_overwrite:
 			options->dpb_overwrite = (BOOLEAN) get_parameter(&p);
@@ -5426,7 +5434,7 @@ static void get_options(UCHAR*	dpb,
 }
 
 
-static SLONG get_parameter(UCHAR** ptr)
+static SLONG get_parameter(const UCHAR** ptr)
 {
 /**************************************
  *
@@ -5439,18 +5447,16 @@ static SLONG get_parameter(UCHAR** ptr)
  *	length byte.
  *
  **************************************/
-	SLONG parameter;
-	SSHORT l;
-
-	l = *(*ptr)++;
-	parameter = gds__vax_integer(*ptr, l);
+	const SSHORT l = *(*ptr)++;
+	const SLONG parameter = gds__vax_integer(*ptr, l);
 	*ptr += l;
 
 	return parameter;
 }
 
 
-static TEXT* get_string_parameter(UCHAR** dpb_ptr, TEXT** opt_ptr, ULONG* buf_avail)
+static TEXT* get_string_parameter(const UCHAR** dpb_ptr, TEXT** opt_ptr,
+	ULONG* buf_avail)
 {
 /**************************************
  *
@@ -5463,17 +5469,16 @@ static TEXT* get_string_parameter(UCHAR** dpb_ptr, TEXT** opt_ptr, ULONG* buf_av
  *	and return pointer to copied string.
  *
  **************************************/
-	TEXT *opt;
-	UCHAR *dpb;
-	USHORT l;
 
 	if (!*buf_avail)  /* Because "l" may be zero but the NULL term still is set. */
 		return 0;
 
-	opt = *opt_ptr;
-	dpb = *dpb_ptr;
+	TEXT* opt = *opt_ptr;
+	TEXT* const rc = *opt_ptr; // On success, we return the incoming position.
+	const UCHAR* dpb = *dpb_ptr;
 
-	if ((l = *(dpb++)))
+	USHORT l = *(dpb++);
+	if (l)
 	{
 		if (l >= *buf_avail) /* >= to count the NULL term. */
 		{
@@ -5489,10 +5494,9 @@ static TEXT* get_string_parameter(UCHAR** dpb_ptr, TEXT** opt_ptr, ULONG* buf_av
 	--*buf_avail;
 	*opt++ = 0;
 	*dpb_ptr = dpb;
-	dpb = (UCHAR *) * opt_ptr;
 	*opt_ptr = opt;
 
-	return (TEXT *) dpb;
+	return rc;
 }
 
 
@@ -5763,7 +5767,7 @@ static ISC_STATUS prepare(TDBB		tdbb,
 					  JRD_TRA		transaction,
 					  ISC_STATUS*	status_vector,
 					  USHORT	length,
-					  UCHAR*	msg)
+					  const UCHAR*	msg)
 {
 /**************************************
  *
@@ -6216,8 +6220,8 @@ void JRD_set_cache_default(ULONG * num_ptr)
 
 
 #ifdef SERVER_SHUTDOWN
-TEXT *JRD_num_attachments(TEXT * buf, USHORT len, USHORT flag, USHORT * atts,
-						  USHORT * dbs)
+TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
+						USHORT* atts, USHORT* dbs)
 {
 /**************************************
  *
@@ -6245,18 +6249,22 @@ TEXT *JRD_num_attachments(TEXT * buf, USHORT len, USHORT flag, USHORT * atts,
 
 /* protect against NULL value for buf */
 
-	if (!(lbuf = buf))
-		len = 0;
+	lbuf = buf;
+	if (!lbuf)
+		buf_len = 0;
 
 #ifdef WIN_NT
 /* Check that the buffer is big enough for the requested
  * information.  If not, unset the flag
  */
 
-	if (flag == JRD_info_drivemask)
-		if (len < sizeof(ULONG))
-			if (!(lbuf = (TEXT *) gds__alloc((SLONG) (sizeof(ULONG)))))
+	if (flag == JRD_info_drivemask) {
+		if (buf_len < sizeof(ULONG)) {
+		    lbuf = (TEXT*) gds__alloc((SLONG) (sizeof(ULONG)));
+			if (!lbuf)
 				flag = 0;
+		}
+	}
 #endif
 
 	THREAD_ENTER;
@@ -6349,7 +6357,7 @@ TEXT *JRD_num_attachments(TEXT * buf, USHORT len, USHORT flag, USHORT * atts,
 	{
 		if (flag == JRD_info_dbnames)
 		{
-			if (len < (sizeof(USHORT) + total))
+			if (buf_len < (sizeof(USHORT) + total))
 			{
 				lbuf = (TEXT *) gds__alloc((SLONG) (sizeof(USHORT) + total));
 			}
@@ -6395,8 +6403,17 @@ TEXT *JRD_num_attachments(TEXT * buf, USHORT len, USHORT flag, USHORT * atts,
 		*(ULONG *) lbuf = drive_mask;
 #endif
 
+// CVC: Apparently, the original condition will leak memory, because flag
+// may be JRD_info_drivemask and memory could be allocated for that purpose,
+// as few as sizeof(ULONG), but a leak is a leak! I added the ifdef below.
 	if (num_dbs == 0)
+	{
+#ifdef WIN_NT
+		if (flag == JRD_info_drivemask && lbuf != buf)
+		    gds__free(lbuf);
+#endif
 		lbuf = NULL;
+	}
 
 	return lbuf;
 }
@@ -6641,7 +6658,7 @@ static void purge_attachment(TDBB		tdbb,
     @param status
 
  **/
-static bool verify_database_name(TEXT *name, ISC_STATUS *status)
+static bool verify_database_name(const TEXT* name, ISC_STATUS* status)
 {
 	// Check for security.fdb
 	static TEXT SecurityNameBuffer[MAXPATHLEN] = "";
@@ -6660,6 +6677,7 @@ static bool verify_database_name(TEXT *name, ISC_STATUS *status)
 		status[0] = gds_arg_gds;
 		status[1] = gds_conf_access_denied;
 		status[2] = gds_arg_string;
+		// CVC: Using STATUS to hold pointer to literal string!
 		status[3] = reinterpret_cast<ISC_STATUS>("database");
 		status[4] = gds_arg_string;
 		status[5] = reinterpret_cast<ISC_STATUS>(ERR_cstring(name));

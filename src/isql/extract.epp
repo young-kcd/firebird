@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.17 2003-09-29 12:43:05 robocop Exp $
+ * $Id: extract.epp,v 1.18 2003-10-29 10:53:11 robocop Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -1738,7 +1738,7 @@ static void list_create_db(void)
 		}
 
 		if (!isc_database_info
-			(gds_status, &DB, sizeof(wal_items), const_cast<char*>(wal_items), BUFFER_LENGTH128,
+			(gds_status, &DB, sizeof(wal_items), wal_items, BUFFER_LENGTH128,
 			 buffer))
 		{
 			for (d = buffer; *d != isc_info_end;)
@@ -2895,6 +2895,5 @@ static void list_views()
 		return;
 	END_ERROR;
 }
-
 
 

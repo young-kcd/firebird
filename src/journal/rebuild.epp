@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Journalling Subsystem
- *	MODULE:		rebuild.e
+ *	MODULE:		rebuild.epp
  *	DESCRIPTION:
  *
  * The contents of this file are subject to the Interbase Public
@@ -146,7 +146,7 @@ typedef struct drb {
 
 extern FILE *msg_file;
 
-static USHORT add_file(DRB, FIL, UCHAR *, SSHORT, SLONG, bool);
+static USHORT add_file(DRB, FIL, UCHAR*, SSHORT, SLONG, bool);
 static void add_time(timeval*, timeval*);
 static void apply_data(DRB, DPG, JRND *);
 static void apply_header(HDR, JRND *);
@@ -162,7 +162,7 @@ static void close_database(DRB);
 static bool commit(DRB, LTJC *, USHORT);
 static SSHORT compress(DRB, DPG);
 static void disable(DRB, LTJC *);
-static int error(TEXT *, ISC_STATUS, TEXT *, ISC_STATUS);
+static int error(const TEXT*, ISC_STATUS, const TEXT*, ISC_STATUS);
 static void expand_num_alloc(SCHAR ***, SSHORT *);
 static void fixup_header(DRB);
 static void format_time(SLONG[2], TEXT *);
@@ -173,11 +173,11 @@ static void get_old_files(SLONG, SCHAR ***, SSHORT *, SLONG *, SLONG *);
 static CACHE get_page(DRB, SLONG, bool);
 static JRNP *next_clump(JRND *, void *);
 static void open_all_files(void);
-static DRB open_database(TEXT *, USHORT, SSHORT);
-static bool open_database_file(DRB, TEXT *, bool, SLONG *);
-static int open_journal(SCHAR *, SCHAR **, SSHORT, SLONG, SLONG *);
-static int process_online_dump(SCHAR *, SCHAR **, SSHORT);
-static int process_journal(SCHAR *, SCHAR **, SSHORT, SLONG, SLONG, SLONG *);
+static DRB open_database(const TEXT*, USHORT, SSHORT);
+static bool open_database_file(DRB, const TEXT*, bool, SLONG*);
+static int open_journal(const SCHAR*, SCHAR**, SSHORT, SLONG, SLONG*);
+static int process_online_dump(const SCHAR*, SCHAR**, SSHORT);
+static int process_journal(const SCHAR*, SCHAR**, SSHORT, SLONG, SLONG, SLONG*);
 static SLONG process_new_file(DRB, JRNF *);
 static bool process_old_record(JRND *, USHORT);
 static void process_page(DRB, JRND *, ULONG, ULONG, bool);
@@ -198,7 +198,7 @@ static void rec_restore_manual(SCHAR *);
 static void release_db(DRB);
 static void release_page(DRB, CACHE);
 static FIL seek_file(DRB, FIL, CACHE, SLONG *);
-static FIL setup_file(UCHAR *, USHORT, int);
+static FIL setup_file(const UCHAR*, USHORT, int);
 static bool test_partial_db(SLONG);
 static void update_rebuild_seqno(SLONG);
 static void write_page(DRB, CACHE);
@@ -419,7 +419,7 @@ bool REBUILD_start_restore(int argc,
 
 static USHORT add_file(DRB database,
 					   FIL main_file,
-					   UCHAR * file_name,
+					   UCHAR* file_name,
 					   SSHORT length,
 					   SLONG start,
 					   bool new_file)
@@ -442,8 +442,11 @@ static USHORT add_file(DRB database,
 
 	file_name[length] = 0;
 
-	if (!(open_database_file(database, (SCHAR*) file_name, new_file, &file_handle)))
+	if (!(open_database_file(database, reinterpret_cast<const SCHAR*>(file_name),
+		new_file, &file_handle)))
+	{
 		return 0;
+	}
 
 	next_file = setup_file(file_name, strlen((const char*) file_name), (int) file_handle);
 
@@ -1315,9 +1318,9 @@ static void disable(DRB database,
 }
 
 
-static int error(TEXT * filename,
+static int error(const TEXT* filename,
 				 ISC_STATUS err_num,
-				 TEXT * string,
+				 const TEXT* string,
 				 ISC_STATUS operation)
 {
 /**************************************
@@ -1331,9 +1334,7 @@ static int error(TEXT * filename,
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	ISC_STATUS *s;
-
-	s = status_vector;
+	ISC_STATUS* s = status_vector;
 	*s++ = isc_arg_gds;
 	*s++ = isc_io_error, *s++ = gds_arg_string;
 	*s++ = (ISC_STATUS) string;
@@ -1983,7 +1984,7 @@ static void open_all_files(void)
 }
 
 
-static DRB open_database(TEXT * name,
+static DRB open_database(const TEXT* name,
 						 USHORT page_size,
 						 SSHORT new_file)
 {
@@ -2045,9 +2046,9 @@ static DRB open_database(TEXT * name,
 
 
 static bool open_database_file(DRB database,
-							   TEXT * name,
+							   const TEXT* name,
 							   bool new_file,
-							   SLONG * file_handle)
+							   SLONG* file_handle)
 {
 /**************************************
  *
@@ -2076,11 +2077,11 @@ static bool open_database_file(DRB database,
 }
 
 
-static int open_journal(SCHAR * dbname,
-						SCHAR ** files,
+static int open_journal(const SCHAR* dbname,
+						SCHAR** files,
 						SSHORT num_files,
 						SLONG start_offset,
-						SLONG * start_p_offset)
+						SLONG* start_p_offset)
 {
 /**************************************
  *
@@ -2124,8 +2125,8 @@ static int open_journal(SCHAR * dbname,
 }
 
 
-static int process_online_dump(SCHAR * dbname,
-							   SCHAR ** files,
+static int process_online_dump(const SCHAR* dbname,
+							   SCHAR** files,
 							   SSHORT num_files)
 {
 /**************************************
@@ -2210,12 +2211,12 @@ static int process_online_dump(SCHAR * dbname,
 }
 
 
-static int process_journal(SCHAR * dbname,
-						   SCHAR ** files,
+static int process_journal(const SCHAR* dbname,
+						   SCHAR** files,
 						   SSHORT num_files,
 						   SLONG start_seqno,
 						   SLONG start_offset,
-						   SLONG * start_p_offset)
+						   SLONG* start_p_offset)
 {
 /**************************************
  *
@@ -3649,7 +3650,7 @@ static FIL seek_file(DRB database,
 }
 
 
-static FIL setup_file(UCHAR * file_name,
+static FIL setup_file(const UCHAR* file_name,
 					  USHORT file_length,
 					  int desc)
 {
@@ -3663,9 +3664,8 @@ static FIL setup_file(UCHAR * file_name,
  *	Set up file descriptor.
  *
  **************************************/
-	FIL file;
 // Allocate file block and copy file name string
-	file = (FIL) MISC_alloc_jrnl(sizeof(fil) + file_length + 1);
+	FIL file = (FIL) MISC_alloc_jrnl(sizeof(fil) + file_length + 1);
 	file->fil_desc = desc;
 	file->fil_length = file_length;
 	file->fil_max_page = -1;
@@ -3788,3 +3788,4 @@ static void write_page(DRB database,
 	if (len_written != database->drb_page_size)
 		rebuild_abort(49);
 }
+

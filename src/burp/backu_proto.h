@@ -24,7 +24,7 @@
 #ifndef BURP_BACKU_PROTO_H
 #define BURP_BACKU_PROTO_H
 
-int	BACKUP_backup (TEXT*, const TEXT*);
+int	BACKUP_backup (const TEXT*, const TEXT*);
 
 #endif	/*  BURP_BACKU_PROTO_H  */
 

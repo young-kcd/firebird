@@ -75,7 +75,7 @@ typedef struct xdr_t
 		bool_t  (*x_getlong)(struct xdr_t*, SLONG*);		/* get a long from underlying stream */
 		bool_t  (*x_putlong)(struct xdr_t*, SLONG*);		/* put a long to " */
 		bool_t  (*x_getbytes)(struct xdr_t*, SCHAR *, u_int);	/* get some bytes from " */
-		bool_t  (*x_putbytes)(struct xdr_t*, SCHAR *, u_int);	/* put some bytes to " */
+		bool_t  (*x_putbytes)(struct xdr_t*, const SCHAR*, u_int);	/* put some bytes to " */
 		u_int   (*x_getpostn)(struct xdr_t*);	/* returns bytes offset from beginning*/
 		bool_t  (*x_setpostn)(struct xdr_t*, u_int);	/* repositions position in stream */
 		caddr_t (*x_inline)(struct xdr_t*, u_int);		/* buf quick ptr to buffered data */

@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.36 2003-10-16 08:50:59 robocop Exp $
+//	$Id: c_cxx.cpp,v 1.37 2003-10-29 10:53:07 robocop Exp $
 //
 
 #include "firebird.h"
@@ -52,7 +52,7 @@ extern TEXT* transaction_name;
 static void align(int);
 static void asgn_from(const act*, REF, int);
 static void asgn_to(const act*, REF, int);
-static void asgn_to_proc(REF, int);
+static void asgn_to_proc(const ref*, int);
 static void gen_any(const act*, int);
 static void gen_at_end(const act*, int);
 static void gen_based(const act*, int);
@@ -62,12 +62,12 @@ static void gen_blob_for(const act*, USHORT);
 static void gen_blob_open(const act*, USHORT);
 static void gen_blr(void*, SSHORT, const char*);
 static void gen_clear_handles(const act*, int);
-static void gen_compatibility_symbol(TEXT*, TEXT*, TEXT*);
+static void gen_compatibility_symbol(const TEXT*, const TEXT*, const TEXT*);
 static void gen_compile(const act*, int);
 static void gen_create_database(const act*, int);
-static int gen_cursor_close(const act*, GPRE_REQ, int);
+static int gen_cursor_close(const act*, const gpre_req*, int);
 static void gen_cursor_init(const act*, int);
-static int gen_cursor_open(const act*, GPRE_REQ, int);
+static int gen_cursor_open(const act*, const gpre_req*, int);
 static void gen_database(const act*, int);
 static void gen_ddl(const act*, int);
 static void gen_drop_database(const act*, int);
@@ -94,15 +94,15 @@ static void gen_function(const act*, int);
 static void gen_get_or_put_slice(const act*, REF, bool, int);
 static void gen_get_segment(const act*, int);
 static void gen_loop(const act*, int);
-static TEXT* gen_name(char *, REF, bool);
+static TEXT* gen_name(char*, const ref*, bool);
 static void gen_on_error(const act*, USHORT);
 static void gen_procedure(const act*, int);
 static void gen_put_segment(const act*, int);
-static void gen_raw(UCHAR *, int);
+static void gen_raw(const UCHAR*, int);
 static void gen_ready(const act*, int);
 static void gen_receive(const act*, int, POR);
 static void gen_release(const act*, int);
-static void gen_request(GPRE_REQ);
+static void gen_request(const gpre_req*);
 static void gen_return_value(const act*, int);
 static void gen_routine(const act*, int);
 static void gen_s_end(const act*, int);
@@ -120,20 +120,21 @@ static void gen_trans(const act*, int);
 static void gen_type(const act*, int);
 static void gen_update(const act*, int);
 static void gen_variable(const act*, int);
-static void gen_whenever(SWE, int);
-static void make_array_declaration(REF);
-static TEXT* make_name(TEXT*, SYM);
-static void make_ok_test(const act*, GPRE_REQ, int);
-static void make_port(POR, int);
-static void make_ready(DBB, const TEXT*, const TEXT*, USHORT, GPRE_REQ);
-static void printa(int, const char *, ...) ATTRIBUTE_FORMAT(2,3);
-static void printb(TEXT*, ...) ATTRIBUTE_FORMAT(1,2);
-static const TEXT* request_trans(const act*, GPRE_REQ);
+static void gen_whenever(const swe*, int);
+static void make_array_declaration(ref*);
+static TEXT* make_name(TEXT*, sym*);
+static void make_ok_test(const act*, const gpre_req*, int);
+static void make_port(const por*, int);
+static void make_ready(const dbb*, const TEXT*, const TEXT*, USHORT,
+	const gpre_req*);
+static void printa(int, const char*, ...) ATTRIBUTE_FORMAT(2,3);
+static void printb(const TEXT*, ...) ATTRIBUTE_FORMAT(1,2);
+static const TEXT* request_trans(const act*, const gpre_req*);
 static const TEXT* status_vector(const act*);
-static void t_start_auto(const act*, GPRE_REQ, const TEXT*, int, bool);
+static void t_start_auto(const act*, const gpre_req*, const TEXT*, int, bool);
 
-static int global_first_flag;
-static TEXT* status_name;
+static bool global_first_flag = false;
+static TEXT* global_status_name;
 
 const int INDENT	= 3;
 
@@ -165,7 +166,7 @@ static inline void endp(const int column)
 static inline void set_sqlcode(const act* action, const int column)
 {
 	if (action->act_flags & ACT_sql)
-		printa(column, "SQLCODE = isc_sqlcode(%s);", status_name);
+		printa(column, "SQLCODE = isc_sqlcode(%s);", global_status_name);
 }
 
 //____________________________________________________________
@@ -175,7 +176,7 @@ static inline void set_sqlcode(const act* action, const int column)
 void C_CXX_action(const act* action, int column)
 {
 
-	status_name = "isc_status";
+	global_status_name = "isc_status";
 
 //  Put leading braces where required 
 
@@ -699,14 +700,14 @@ static void asgn_to( const act* action, REF reference, int column)
 //		a port variable.
 //  
 
-static void asgn_to_proc( REF reference, int column)
+static void asgn_to_proc(const ref* reference, int column)
 {
 	char s[64];
 
 	for (; reference; reference = reference->ref_next) {
 		if (!reference->ref_value)
 			continue;
-		GPRE_FLD field = reference->ref_field;
+		const gpre_fld* field = reference->ref_field;
 		gen_name(s, reference, true);
 		align(column);
 
@@ -947,7 +948,7 @@ isc_close_blob (%V1, &%BH);\n\
 
 	args.pat_blob = blob = (BLB) action->act_object;
 	if (action->act_error) {
-		sprintf(s1, "%s2", status_name);
+		sprintf(s1, "%s2", global_status_name);
 		args.pat_vector1 = s1;
 	}
 	else
@@ -971,12 +972,12 @@ static void gen_blob_for( const act* action, USHORT column)
 
 	gen_blob_open(action, column);
 	args.pat_condition = (action->act_error != NULL);
-	args.pat_string1 = status_name;
+	args.pat_string1 = global_status_name;
 	PATTERN_expand(column, pattern1, &args);
 	column += INDENT;
 	gen_get_segment(action, column);
 	printa(column, "if (%s [1] && (%s [1] != isc_segment)) break;",
-		   status_name, status_name);
+		   global_status_name, global_status_name);
 }
 
 
@@ -1140,8 +1141,8 @@ static void gen_clear_handles( const act* action, int column)
 //  
 
 static void gen_compatibility_symbol(
-									 TEXT* symbol,
-									 TEXT* v4_prefix, TEXT* trailer)
+									 const TEXT* symbol,
+									 const TEXT* v4_prefix, const TEXT* trailer)
 {
 	const char* v3_prefix = (isLangCpp(sw_language)) ? "gds_" : "gds__";
     //	v3_prefix = (sw_language == lang_cxx) ? "gds_" : "gds__";
@@ -1163,7 +1164,7 @@ static void gen_compile( const act* action, int column)
 		"isc_compile_request%IF2%EN (%V1, (FRBRD**) &%DH, (FRBRD**) &%RH, (short) sizeof (%RI), (char *) %RI);";
 	const TEXT* pattern2 = "if (!%RH%IF && %S1%EN)";
 
-	GPRE_REQ request = action->act_request;
+	const gpre_req* request = action->act_request;
 	args.pat_request = request;
 	DBB db = request->req_database;
 	args.pat_database = db;
@@ -1184,7 +1185,7 @@ static void gen_compile( const act* action, int column)
 //  If blobs are present, zero out all of the blob handles.  After this
 //  point, the handles are the user's responsibility 
 
-	BLB blob = request->req_blobs;
+	const blb* blob = request->req_blobs;
 	if (blob) {
 		ib_fprintf(out_file, "\n");
 		align(column - INDENT);
@@ -1257,7 +1258,7 @@ static void gen_create_database( const act* action, int column)
 	}
 
 	request = action->act_request;
-	printa(column, "if (!%s [1])", status_name);
+	printa(column, "if (!%s [1])", global_status_name);
 	column += INDENT;
 	begin(column);
 	printa(column,
@@ -1271,10 +1272,10 @@ static void gen_create_database( const act* action, int column)
 			   request->req_database->dbb_name->sym_string,
 			   trname, request->req_length, request->req_ident);
 	column -= INDENT;
-	printa(column, "if (!%s [1])", status_name);
+	printa(column, "if (!%s [1])", global_status_name);
 	printa(column + INDENT, "isc_commit_transaction (%s, (FRBRD**) &%s);",
 		   status_vector(action), trname);
-	printa(column, "if (%s [1])", status_name);
+	printa(column, "if (%s [1])", global_status_name);
 	printa(column + INDENT, "isc_rollback_transaction (%s, (FRBRD**) &%s);",
 		   status_vector(NULL), trname);
 	set_sqlcode(action, column);
@@ -1290,7 +1291,7 @@ static void gen_create_database( const act* action, int column)
 //		Generate substitution text for END_STREAM.
 //  
 
-static int gen_cursor_close( const act* action, GPRE_REQ request, int column)
+static int gen_cursor_close( const act* action, const gpre_req* request, int column)
 {
 	PAT args;
 	const TEXT* pattern1 =
@@ -1333,7 +1334,7 @@ static void gen_cursor_init( const act* action, int column)
 //		Generate text to open an embedded SQL cursor.
 //  
 
-static int gen_cursor_open( const act* action, GPRE_REQ request, int column)
+static int gen_cursor_open( const act* action, const gpre_req* request, int column)
 {
 	PAT args;
 	TEXT s[64];
@@ -1377,8 +1378,9 @@ static int gen_cursor_open( const act* action, GPRE_REQ request, int column)
 
 static void gen_database( const act* action, int column)
 {
-	if (global_first_flag++ != 0)
+	if (global_first_flag)
 		return;
+	global_first_flag = true;
 
 	ib_fprintf(out_file, "\n/**** GDS Preprocessor Definitions ****/\n");
 	ib_fprintf(out_file, "#ifndef JRD_IBASE_H\n#include %s\n#endif\n",
@@ -1429,8 +1431,8 @@ static void gen_database( const act* action, int column)
 
 	printa(column, "%slong", scope);
 	column += INDENT;
-	printa(column, "%s [20],\t/* status vector */", status_name);
-	printa(column, "%s2 [20];\t/* status vector */", status_name);
+	printa(column, "%s [20],\t/* status vector */", global_status_name);
+	printa(column, "%s2 [20];\t/* status vector */", global_status_name);
 	printa(column - INDENT, "%s%s", scope, DCL_LONG);
 	printa(column, "isc_array_length, \t/* array return size */");
 	printa(column, "SQLCODE;\t\t/* SQL status code */");
@@ -1516,7 +1518,7 @@ static void gen_ddl( const act* action, int column)
 {
 //  Set up command type for call to RDB$DDL
 
-	GPRE_REQ request = action->act_request;
+	const gpre_req* request = action->act_request;
 
 	if (sw_auto) {
 		t_start_auto(action, 0, status_vector(action), column, true);
@@ -1532,10 +1534,10 @@ static void gen_ddl( const act* action, int column)
 
 	if (sw_auto) {
 		column -= INDENT;
-		printa(column, "if (!%s [1])", status_name);
+		printa(column, "if (!%s [1])", global_status_name);
 		printa(column + INDENT, "isc_commit_transaction (%s, (FRBRD**) &%s);",
 			   status_vector(action), transaction_name);
-		printa(column, "if (%s [1])", status_name);
+		printa(column, "if (%s [1])", global_status_name);
 		printa(column + INDENT, "isc_rollback_transaction (%s, (FRBRD**) &%s);",
 			   status_vector(NULL), transaction_name);
 	}
@@ -1571,10 +1573,10 @@ static void gen_dyn_close( const act* action, int column)
 {
 	TEXT s[64];
 
-	DYN statement = (DYN) action->act_object;
+	const dyn* statement = (DYN) action->act_object;
 	printa(column,
 		   "isc_embed_dsql_close (%s, %s);",
-		   status_name, make_name(s, statement->dyn_cursor_name));
+		   global_status_name, make_name(s, statement->dyn_cursor_name));
 	set_sqlcode(action, column);
 }
 
@@ -1588,10 +1590,10 @@ static void gen_dyn_declare( const act* action, int column)
 {
 	TEXT s1[64], s2[64];
 
-	DYN statement = (DYN) action->act_object;
+	const dyn* statement = (DYN) action->act_object;
 	printa(column,
 		   "isc_embed_dsql_declare (%s, %s, %s);",
-		   status_name,
+		   global_status_name,
 		   make_name(s1, statement->dyn_statement_name),
 		   make_name(s2, statement->dyn_cursor_name));
 	set_sqlcode(action, column);
@@ -1609,11 +1611,11 @@ static void gen_dyn_describe(const act* action,
 {
 	TEXT s[64];
 
-	DYN statement = (DYN) action->act_object;
+	const dyn* statement = (DYN) action->act_object;
 	printa(column,
 		   "isc_embed_dsql_describe%s (%s, %s, %d, %s);",
 		   bind_flag ? "_bind" : "",
-		   status_name,
+		   global_status_name,
 		   make_name(s, statement->dyn_statement_name),
 		   sw_sql_dialect, statement->dyn_sqlda);
 	set_sqlcode(action, column);
@@ -1652,7 +1654,7 @@ static void gen_dyn_execute( const act* action, int column)
 	if (statement->dyn_sqlda2)
 		printa(column,
 			   "isc_embed_dsql_execute2 (%s, &%s, %s, %d, %s, %s);",
-			   status_name,
+			   global_status_name,
 			   transaction,
 			   make_name(s, statement->dyn_statement_name),
 			   sw_sql_dialect,
@@ -1661,7 +1663,7 @@ static void gen_dyn_execute( const act* action, int column)
 	else
 		printa(column,
 			   "isc_embed_dsql_execute (%s, &%s, %s, %d, %s);",
-			   status_name,
+			   global_status_name,
 			   transaction,
 			   make_name(s, statement->dyn_statement_name),
 			   sw_sql_dialect,
@@ -1683,14 +1685,14 @@ static void gen_dyn_fetch( const act* action, int column)
 {
 	TEXT s[64];
 
-	DYN statement = (DYN) action->act_object;
+	const dyn* statement = (DYN) action->act_object;
 	printa(column, "SQLCODE = isc_embed_dsql_fetch (%s, %s, %d, %s);",
-		   status_name, make_name(s, statement->dyn_cursor_name),
+		   global_status_name, make_name(s, statement->dyn_cursor_name),
 		   sw_sql_dialect,
 		   (statement->dyn_sqlda) ? statement->dyn_sqlda : NULL_SQLDA);
 
 	printa(column, "if (SQLCODE != 100) SQLCODE = isc_sqlcode (%s);",
-		   status_name);
+		   global_status_name);
 }
 
 
@@ -1727,7 +1729,7 @@ static void gen_dyn_immediate( const act* action, int column)
 		   (statement->dyn_sqlda2) ?
 		   "isc_embed_dsql_execute_immed2 (%s, &%s, &%s, 0, %s, %d, %s, %s);"
 		   : "isc_embed_dsql_execute_immed (%s, &%s, &%s, 0, %s, %d, %s);",
-		   status_name, database->dbb_name->sym_string, transaction,
+		   global_status_name, database->dbb_name->sym_string, transaction,
 		   statement->dyn_string, sw_sql_dialect,
 		   (statement->dyn_sqlda) ? statement->dyn_sqlda : NULL_SQLDA,
 		   (statement->dyn_sqlda2) ? statement->dyn_sqlda2 : NULL_SQLDA);
@@ -1748,10 +1750,10 @@ static void gen_dyn_insert( const act* action, int column)
 {
 	TEXT s[64];
 
-	DYN statement = (DYN) action->act_object;
+	const dyn* statement = (DYN) action->act_object;
 	printa(column,
 		   "isc_embed_dsql_insert (%s, %s, %d, %s);",
-		   status_name,
+		   global_status_name,
 		   make_name(s, statement->dyn_cursor_name),
 		   sw_sql_dialect,
 		   (statement->dyn_sqlda) ? statement->dyn_sqlda : NULL_SQLDA);
@@ -1795,7 +1797,7 @@ static void gen_dyn_open( const act* action, int column)
 		   (statement->dyn_sqlda2) ?
 		   "isc_embed_dsql_open2 (%s, &%s, %s, %d, %s, %s);" :
 		   "isc_embed_dsql_open (%s, &%s, %s, %d, %s);",
-		   status_name,
+		   global_status_name,
 		   transaction,
 		   s,
 		   sw_sql_dialect,
@@ -1841,7 +1843,7 @@ static void gen_dyn_prepare( const act* action, int column)
     DBB database = statement->dyn_database;
 	printa(column,
 		   "isc_embed_dsql_prepare (%s, &%s, &%s, %s, 0, %s, %d, %s);",
-		   status_name, database->dbb_name->sym_string, transaction,
+		   global_status_name, database->dbb_name->sym_string, transaction,
 		   make_name(s, statement->dyn_statement_name), statement->dyn_string,
 		   sw_sql_dialect,
 		   (statement->dyn_sqlda) ? statement->dyn_sqlda : NULL_SQLDA);
@@ -2241,7 +2243,7 @@ static void gen_finish( const act* action, int column)
 			if ((action->act_error || (action->act_flags & ACT_sql)) &&
 				(db != isc_databases))
 					printa(column, "if (%s && !%s [1]) ",
-						   db->dbb_name->sym_string, status_name);
+						   db->dbb_name->sym_string, global_status_name);
 			else
 				printa(column, "if (%s)", db->dbb_name->sym_string);
 			printa(column + INDENT, "isc_detach_database (%s, &%s);",
@@ -2265,7 +2267,7 @@ static void gen_for( const act* action, int column)
 	GPRE_REQ request = action->act_request;
 
 	if (action->act_error || (action->act_flags & ACT_sql))
-		printa(column, "if (!%s [1]) {", status_name);
+		printa(column, "if (!%s [1]) {", global_status_name);
 
 	printa(column, "while (1)");
 	column += INDENT;
@@ -2274,7 +2276,7 @@ static void gen_for( const act* action, int column)
 
 	if (action->act_error || (action->act_flags & ACT_sql))
 		printa(column, "if (!%s || %s [1]) break;",
-			   gen_name(s, request->req_eof, true), status_name);
+			   gen_name(s, request->req_eof, true), global_status_name);
 	else
 		printa(column, "if (!%s) break;",
 			   gen_name(s, request->req_eof, true));
@@ -2485,7 +2487,7 @@ static void gen_get_segment( const act* action, int column)
 						   || (action->act_flags & ACT_sql));
 	args.pat_ident1 = blob->blb_len_ident;
 	args.pat_ident2 = blob->blb_buff_ident;
-	args.pat_string1 = status_name;
+	args.pat_string1 = global_status_name;
 	PATTERN_expand((USHORT) column, pattern1, &args);
 
 	if (action->act_flags & ACT_sql) {
@@ -2540,7 +2542,7 @@ static void gen_loop( const act* action, int column)
 //  
 
 static TEXT* gen_name(char *string,
-					  REF reference,
+					  const ref* reference,
 					  bool as_blob)
 {
 
@@ -2570,9 +2572,9 @@ static void gen_on_error( const act* action, USHORT column)
 		(err_action->act_type == ACT_endblob))
 			printa(column,
 				   "if (%s [1] && (%s [1] != isc_segment) && (%s [1] != isc_segstr_eof))",
-				   status_name, status_name, status_name);
+				   global_status_name, global_status_name, global_status_name);
 	else
-		printa(column, "if (%s [1])", status_name);
+		printa(column, "if (%s [1])", global_status_name);
 	column += INDENT;
 	begin(column);
 }
@@ -2590,7 +2592,7 @@ static void gen_procedure( const act* action, int column)
 	POR in_port = request->req_vport;
 	POR out_port = request->req_primary;
 
-	dbb* database = request->req_database;
+	const dbb* database = request->req_database;
 	PAT args;
 	args.pat_database = database;
 	args.pat_request = action->act_request;
@@ -2668,7 +2670,7 @@ static void gen_put_segment( const act* action, int column)
 						   || (action->act_flags & ACT_sql));
 	args.pat_ident1 = blob->blb_len_ident;
 	args.pat_ident2 = blob->blb_buff_ident;
-	args.pat_string1 = status_name;
+	args.pat_string1 = global_status_name;
 	PATTERN_expand((USHORT) column, pattern1, &args);
 
 	set_sqlcode(action, column);
@@ -2683,7 +2685,7 @@ static void gen_put_segment( const act* action, int column)
 //		Generate BLR/MBLR/etc. in raw, numeric form.  Ugly but dense.
 //  
 
-static void gen_raw( UCHAR * blr, int request_length)
+static void gen_raw(const UCHAR* blr, int request_length)
 {
 	TEXT buffer[80];
 
@@ -2722,14 +2724,14 @@ static void gen_ready( const act* action, int column)
 	const TEXT* vector = status_vector(action);
 
 	for (RDY ready = (RDY) action->act_object; ready; ready = ready->rdy_next) {
-		DBB db = ready->rdy_database;
+		const dbb* db = ready->rdy_database;
 		TEXT* filename = ready->rdy_filename;
 		if (!filename)
 			filename = db->dbb_runtime;
 		if ((action->act_error || (action->act_flags & ACT_sql)) &&
 			ready != (RDY) action->act_object)
 		{
-			printa(column, "if (!%s [1]) {", status_name);
+			printa(column, "if (!%s [1]) {", global_status_name);
 		}
 		make_ready(db, filename, vector, (USHORT) column, ready->rdy_request);
 		if ((action->act_error || (action->act_flags & ACT_sql)) &&
@@ -2785,7 +2787,7 @@ static void gen_release( const act* action, int column)
 			printa(column, "if (%s && %s)",
 				   db->dbb_name->sym_string, request->req_handle);
 			printa(column + INDENT, "isc_release_request (%s, &%s);",
-				   status_name, request->req_handle);
+				   global_status_name, request->req_handle);
 			printa(column, "%s = 0;", request->req_handle);
 		}
 	}
@@ -2797,7 +2799,7 @@ static void gen_release( const act* action, int column)
 //		Generate definitions associated with a single request.
 //  
 
-static void gen_request( GPRE_REQ request)
+static void gen_request(const gpre_req* request)
 {
 	if (!(request->req_flags & (REQ_exp_hand | REQ_sql_blob_open 
 		| REQ_sql_blob_create)) && request->req_type != REQ_slice
@@ -2845,6 +2847,7 @@ static void gen_request( GPRE_REQ request)
 		const TEXT* string_type = "blr";
 		if (sw_raw) {
 			gen_raw(request->req_blr, request->req_length);
+
 			switch (request->req_type) {
 			case REQ_create_database:
 			case REQ_ready:
@@ -2901,8 +2904,8 @@ static void gen_request( GPRE_REQ request)
 
 //   Print out slice description language if there are arrays associated with request  
 
-	for (POR port = request->req_ports; port; port = port->por_next)
-		for (REF reference = port->por_references; reference;
+	for (const por* port = request->req_ports; port; port = port->por_next)
+		for (const ref* reference = port->por_references; reference;
 			 reference = reference->ref_next) 
 		{
 			if (reference->ref_sdl) {
@@ -2926,7 +2929,7 @@ static void gen_request( GPRE_REQ request)
 
 //  Print out any blob parameter blocks required 
 
-	for (BLB blob = request->req_blobs; blob; blob = blob->blb_next)
+	for (const blb* blob = request->req_blobs; blob; blob = blob->blb_next)
 		if (blob->blb_bpb_length) {
 			printa(0, "static %schar\n   isc_%d [] = {", CONST_STR,
 				   blob->blb_bpb_ident);
@@ -3313,26 +3316,25 @@ static void gen_store( const act* action, int column)
 
 static void gen_t_start( const act* action, int column)
 {
-	GPRE_TRA trans;
-	tpb* tpb_iterator;
-
 	const TEXT* vector = status_vector(action);
 
 //  if this is a purely default transaction, just let it through 
 
+	const gpre_tra* trans;
 	if (!action || !(trans = (GPRE_TRA) action->act_object)) {
 		t_start_auto(action, 0, vector, column, false);
 		return;
 	}
 
 //  build a complete statement, including tpb's. Ready db's 
+	const tpb* tpb_iterator;
 
 	if (sw_auto)
 		for (tpb_iterator = trans->tra_tpb;
 			 tpb_iterator;
 			 tpb_iterator = tpb_iterator->tpb_tra_next)
 		{
-			DBB db = tpb_iterator->tpb_database;
+			const dbb* db = tpb_iterator->tpb_database;
 			TEXT* filename = db->dbb_runtime;
 			if (filename || !(db->dbb_flags & DBB_sqlca)) {
 				printa(column, "if (!%s)", db->dbb_name->sym_string);
@@ -3494,9 +3496,9 @@ static void gen_variable( const act* action, int column)
 //		Generate tests for any WHENEVER clauses that may have been declared.
 //  
 
-static void gen_whenever( SWE label, int column)
+static void gen_whenever( const swe* label, int column)
 {
-	TEXT* condition;
+	const TEXT* condition;
 
 	while (label) {
 		switch (label->swe_condition) {
@@ -3525,10 +3527,10 @@ static void gen_whenever( SWE label, int column)
 //		output file.
 //  
 
-static void make_array_declaration( REF reference)
+static void make_array_declaration(ref* reference)
 {
 
-	GPRE_FLD field = reference->ref_field;
+	gpre_fld* field = reference->ref_field;
 	const TEXT* name = field->fld_symbol->sym_string;
 	TEXT s[64];
 
@@ -3617,8 +3619,10 @@ static void make_array_declaration( REF reference)
 //  
 //		Turn a symbol into a varying string.
 //  
+// CVC: this code in unclear to me: it's advancing sym_string pointer,
+// so after this call the pointer is at the position of the null terminator.
 
-static TEXT* make_name( TEXT* string, SYM symbol)
+static TEXT* make_name( TEXT* string, sym* symbol)
 {
 
 	if (symbol->sym_type == SYM_delimited_cursor) {
@@ -3651,7 +3655,7 @@ static TEXT* make_name( TEXT* string, SYM symbol)
 //		active transaction
 //  
 
-static void make_ok_test( const act* action, GPRE_REQ request, int column)
+static void make_ok_test( const act* action, const gpre_req* request, int column)
 {
 
 	if (sw_auto)
@@ -3667,19 +3671,17 @@ static void make_ok_test( const act* action, GPRE_REQ request, int column)
 //		Insert a port record description in output.
 //  
 
-static void make_port( POR port, int column)
+static void make_port(const por* port, int column)
 {
-	TEXT s[80];
-
 	printa(column, "struct {");
 
-	for (REF reference = port->por_references; reference;
+	for (const ref* reference = port->por_references; reference;
 		 reference = reference->ref_next)
 	{
 		align(column + INDENT);
-		GPRE_FLD field = reference->ref_field;
+		const gpre_fld* field = reference->ref_field;
 		const TEXT* name;
-		SYM symbol = field->fld_symbol;
+		const sym* symbol = field->fld_symbol;
 		if (symbol)
 			name = symbol->sym_string;
 		else
@@ -3739,10 +3741,13 @@ static void make_port( POR port, int column)
 			break;
 
 		default:
-			sprintf(s, "datatype %d unknown for field %s, msg %d",
-					field->fld_dtype, name, port->por_msg_number);
-			CPR_error(s);
-			return;
+			{
+				TEXT s[80];
+				sprintf(s, "datatype %d unknown for field %s, msg %d",
+						field->fld_dtype, name, port->por_msg_number);
+				CPR_error(s);
+				return;
+			}
 		}
 		if (fld_len)
 			ib_fprintf(out_file, "    %s isc_%d [%d];\t/* %s */",
@@ -3763,9 +3768,10 @@ static void make_port( POR port, int column)
 //  
 
 static void make_ready(
-					   DBB db,
+					   const dbb* db,
 					   const TEXT* filename,
-					   const TEXT* vector, USHORT column, GPRE_REQ request)
+					   const TEXT* vector, USHORT column,
+					   const gpre_req* request)
 {
 	TEXT s1[32], s2[32];
 
@@ -3854,7 +3860,7 @@ static void printa( int column, const char* string, ...)
 //		Print a fixed string at a particular column.
 //  
 
-static void printb( TEXT* string, ...)
+static void printb( const TEXT* string, ...)
 {
 	va_list ptr;
 
@@ -3868,7 +3874,7 @@ static void printb( TEXT* string, ...)
 //		Generate the appropriate transaction handle.
 //  
 
-static const TEXT* request_trans( const act* action, GPRE_REQ request)
+static const TEXT* request_trans( const act* action, const gpre_req* request)
 {
 
 	if (action->act_type == ACT_open) {
@@ -3893,7 +3899,7 @@ static const TEXT* status_vector( const act* action)
 {
 
 	if (action && (action->act_error || (action->act_flags & ACT_sql)))
-		return status_name;
+		return global_status_name;
 
 	return NULL_STATUS;
 }
@@ -3908,26 +3914,26 @@ static const TEXT* status_vector( const act* action)
 //  
 
 static void t_start_auto(const act* action,
-						 GPRE_REQ request,
+						 const gpre_req* request,
 						 const TEXT* vector,
 						 int column,
 						 bool test)
 {
-	DBB db;
-	int count;
-	TEXT buffer[256];
-
 	const TEXT* trname = request_trans(action, request);
 
 //  find out whether we're using a status vector or not 
 
-	int stat = !strcmp(vector, status_name);
+	const int stat = !strcmp(vector, global_status_name);
 
 //  this is a default transaction, make sure all databases are ready 
 
 	begin(column);
 
+	const dbb* db;
+	int count;
+	
 	if (sw_auto) {
+	    TEXT buffer[256];
 		buffer[0] = 0;
 		for (count = 0, db = isc_databases; db; db = db->dbb_next, count++)
 		{

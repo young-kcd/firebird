@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Remote Interface
- *	MODULE:		remote.c
+ *	MODULE:		remote.cpp
  *	DESCRIPTION:	Common routines for remote interface/server
  *
  * The contents of this file are subject to the Interbase Public
@@ -47,10 +47,11 @@ extern "C" {
 #define DUMMY_INTERVAL		60	/* seconds */
 #define ATTACH_FAILURE_SPACE	2048	/* bytes */
 
-static TEXT *attach_failures = NULL, *attach_failures_ptr;
+static TEXT* attach_failures = NULL;
+static TEXT* attach_failures_ptr;
 
-static void cleanup_memory(void *);
-static SLONG get_parameter(UCHAR **);
+static void cleanup_memory(void*);
+static SLONG get_parameter(const UCHAR**);
 
 void THD_init_data();
 
@@ -69,29 +70,29 @@ void REMOTE_cleanup_transaction( RTR transaction)
  *	receive while we still have something cached.
  *
  **************************************/
-	RRQ request, level;
-	RSR statement;
-
-	for (request = transaction->rtr_rdb->rdb_requests; request;
-		 request = request->rrq_next) {
+	for (RRQ request = transaction->rtr_rdb->rdb_requests; request;
+		 request = request->rrq_next) 
+	{
 		if (request->rrq_rtr == transaction) {
 			REMOTE_reset_request(request, 0);
 			request->rrq_rtr = NULL;
 		}
-		for (level = request->rrq_levels; level; level = level->rrq_next)
+		for (RRQ level = request->rrq_levels; level; level = level->rrq_next)
 			if (level->rrq_rtr == transaction) {
 				REMOTE_reset_request(level, 0);
 				level->rrq_rtr = NULL;
 			}
 	}
 
-	for (statement = transaction->rtr_rdb->rdb_sql_requests; statement;
+	for (RSR statement = transaction->rtr_rdb->rdb_sql_requests; statement;
 		 statement = statement->rsr_next)
+	{
 		if (statement->rsr_rtr == transaction) {
 			REMOTE_reset_statement(statement);
 			statement->rsr_flags &= ~RSR_fetched;
 			statement->rsr_rtr = NULL;
 		}
+	}
 }
 
 
@@ -166,9 +167,7 @@ ULONG REMOTE_compute_batch_size(PORT port,
 #define MIN_ROWS_PER_BATCH	10	/* data rows  - picked by SWAG */
 
 	USHORT op_overhead = (USHORT) xdr_protocol_overhead(op_code);
-	USHORT num_packets;
 	ULONG row_size;
-	ULONG result;
 
 #ifdef DEBUG
 	ib_fprintf(ib_stderr,
@@ -188,13 +187,13 @@ ULONG REMOTE_compute_batch_size(PORT port,
 					+ op_overhead);
 	}
 
-	num_packets = (USHORT) (((DESIRED_ROWS_PER_BATCH * row_size)	/* data set */
-							 +buffer_used	/* used in 1st pkt */
+	USHORT num_packets = (USHORT) (((DESIRED_ROWS_PER_BATCH * row_size)	/* data set */
+							 + buffer_used	/* used in 1st pkt */
 							 + (port->port_buff_size - 1))	/* to round up */
 							/port->port_buff_size);
 	if (num_packets > MAX_PACKETS_PER_BATCH) {
 		num_packets = (USHORT) (((MIN_ROWS_PER_BATCH * row_size)	/* data set */
-								 +buffer_used	/* used in 1st pkt */
+								 + buffer_used	/* used in 1st pkt */
 								 + (port->port_buff_size - 1))	/* to round up */
 								/port->port_buff_size);
 	}
@@ -203,7 +202,7 @@ ULONG REMOTE_compute_batch_size(PORT port,
 /* Now that we've picked the number of packets in a batch,
    pack as many rows as we can into the set of packets */
 
-	result = (num_packets * port->port_buff_size - buffer_used) / row_size;
+	ULONG result = (num_packets * port->port_buff_size - buffer_used) / row_size;
 
 /* Must always send some messages, even if message size is more 
    than packet size. */
@@ -212,8 +211,8 @@ ULONG REMOTE_compute_batch_size(PORT port,
 
 #ifdef DEBUG
 	{
-		char *p;
-		if (p = getenv("DEBUG_BATCH_SIZE"))
+		char* p = getenv("DEBUG_BATCH_SIZE");
+		if (p)
 			result = atoi(p);
 		ib_fprintf(ib_stderr, "row_size = %lu num_packets = %d\n",
 				   row_size, num_packets);
@@ -237,9 +236,6 @@ RRQ REMOTE_find_request(RRQ request, USHORT level)
  *	Find sub-request if level is non-zero.
  *
  **************************************/
-	REM_MSG msg;
-	FMT format;
-	rrq::rrq_repeat * tail, *end;
 
 /* See if we already know about the request level */
 
@@ -265,12 +261,14 @@ RRQ REMOTE_find_request(RRQ request, USHORT level)
 
 /* Allocate message block for known messages */
 
-	tail = request->rrq_rpt;
-	end = tail + request->rrq_max_msg;
+	rrq::rrq_repeat* tail = request->rrq_rpt;
+	const rrq::rrq_repeat* const end = tail + request->rrq_max_msg;
 	for (; tail <= end; tail++) {
-		if (!(format = tail->rrq_format))
+		FMT format = tail->rrq_format;
+		if (!format)
 			continue;
-		tail->rrq_xdr = msg = (REM_MSG) ALLOCV(type_msg, format->fmt_length);
+		REM_MSG msg = (REM_MSG) ALLOCV(type_msg, format->fmt_length);
+		tail->rrq_xdr = msg;
 #ifdef DEBUG_REMOTE_MEMORY
 		ib_printf("REMOTE_find_request       allocate message %x\n", msg);
 #endif
@@ -323,7 +321,7 @@ void REMOTE_free_packet( PORT port, PACKET * packet)
 
 void REMOTE_get_timeout_params(
 										  PORT port,
-										  UCHAR * dpb, USHORT dpb_length)
+										  const UCHAR* dpb, USHORT dpb_length)
 {
 /**************************************
  *
@@ -339,8 +337,6 @@ void REMOTE_get_timeout_params(
  *	is no other specification.
  *
  **************************************/
-	UCHAR *p, *end;
-	USHORT len;
 	bool got_dpb_connect_timeout = false;
 	bool got_dpb_dummy_packet_interval = false;
 
@@ -350,8 +346,8 @@ void REMOTE_get_timeout_params(
 	port->port_flags &= ~PORT_dummy_pckt_set;
 
 	if (dpb && dpb_length) {
-		p = dpb;
-		end = p + dpb_length;
+		const UCHAR* p = dpb;
+		const UCHAR* const end = p + dpb_length;
 
 		if (*p++ == gds_dpb_version1) {
 			while (p < end)
@@ -381,12 +377,12 @@ void REMOTE_get_timeout_params(
 			has already called THREAD_ENTER
 		    **/
 					{
-						char *t_data;
-						int l, i = 0;
+						char* t_data;
+						int i = 0;
 
 						THD_init_data();
 
-						l = *(p++);
+						int l = *(p++);
 						if (l) {
 							t_data = (char *) malloc(l + 1);
 							do {
@@ -408,10 +404,12 @@ void REMOTE_get_timeout_params(
 					break;
 
 				default:
-					/* Skip over this parameter - not important to us */
-					len = *p++;
-					p += len;
-					break;
+					{
+						// Skip over this parameter - not important to us
+						const USHORT len = *p++;
+						p += len;
+						break;
+					}
 				}
 		}
 	}
@@ -444,7 +442,7 @@ void REMOTE_get_timeout_params(
 }
 
 
-STR REMOTE_make_string(SCHAR * input)
+STR REMOTE_make_string(const SCHAR* input)
 {
 /**************************************
  *
@@ -457,7 +455,7 @@ STR REMOTE_make_string(SCHAR * input)
  *	address of new string.
  *
  **************************************/
-	USHORT length = strlen(input);
+	const USHORT length = strlen(input);
 	STR string = (STR) ALLOCV(type_str, length);
 #ifdef DEBUG_REMOTE_MEMORY
 	ib_printf("REMOTE_make_string        allocate string  %x\n", string);
@@ -481,11 +479,10 @@ void REMOTE_release_messages( REM_MSG messages)
  *	Release a circular list of messages.
  *
  **************************************/
-	REM_MSG message, temp;
-
-	if (message = messages)
+	REM_MSG message = messages;
+	if (message)
 		while (true) {
-			temp = message;
+			REM_MSG temp = message;
 			message = message->msg_next;
 #ifdef DEBUG_REMOTE_MEMORY
 			ib_printf("REMOTE_release_messages   free message     %x\n",
@@ -510,14 +507,9 @@ void REMOTE_release_request( RRQ request)
  *	Release a request block and friends.
  *
  **************************************/
-	REM_MSG message;
-	RDB rdb;
-	RRQ *p, next;
-	rrq::rrq_repeat * tail, *end;
+	RDB rdb = request->rrq_rdb;
 
-	rdb = request->rrq_rdb;
-
-	for (p = &rdb->rdb_requests; *p; p = &(*p)->rrq_next)
+	for (RRQ* p = &rdb->rdb_requests; *p; p = &(*p)->rrq_next)
 		if (*p == request) {
 			*p = request->rrq_next;
 			break;
@@ -526,10 +518,12 @@ void REMOTE_release_request( RRQ request)
 /* Get rid of request and all levels */
 
 	for (;;) {
-		tail = request->rrq_rpt;
-		end = tail + request->rrq_max_msg;
+		rrq::rrq_repeat* tail = request->rrq_rpt;
+		rrq::rrq_repeat* const end = tail + request->rrq_max_msg;
 		for (; tail <= end; tail++)
-			if (message = tail->rrq_message) {
+		{
+		    REM_MSG message = tail->rrq_message;
+			if (message) {
 				if (!request->rrq_level) {
 #ifdef DEBUG_REMOTE_MEMORY
 					ib_printf
@@ -540,7 +534,8 @@ void REMOTE_release_request( RRQ request)
 				}
 				REMOTE_release_messages(message);
 			}
-		next = request->rrq_levels;
+		}
+		RRQ next = request->rrq_levels;
 #ifdef DEBUG_REMOTE_MEMORY
 		ib_printf("REMOTE_release_request    free request     %x\n", request);
 #endif
@@ -565,14 +560,11 @@ void REMOTE_reset_request( RRQ request, REM_MSG active_message)
  *	some care to avoid zapping that message.
  *
  **************************************/
-	REM_MSG message;
-	rrq::rrq_repeat * tail, *end;
-
-	tail = request->rrq_rpt;
-
-	for (end = tail + request->rrq_max_msg; tail <= end; tail++)
-		if ((message = tail->rrq_message) != NULL
-			&& message != active_message) {
+	rrq::rrq_repeat* tail = request->rrq_rpt;
+	rrq::rrq_repeat* end = tail + request->rrq_max_msg;
+	for (; tail <= end; tail++) {
+	    REM_MSG message = tail->rrq_message;
+		if (message != NULL && message != active_message) {
 			tail->rrq_xdr = message;
 			tail->rrq_rows_pending = 0;
 			tail->rrq_reorder_level = 0;
@@ -584,6 +576,7 @@ void REMOTE_reset_request( RRQ request, REM_MSG active_message)
 					break;
 			}
 		}
+	}
 
 /* Initialize the request status to FB_SUCCESS */
 
@@ -603,7 +596,7 @@ void REMOTE_reset_statement( RSR statement)
  *	Reset a statement by releasing all buffers except 1
  *
  **************************************/
-	REM_MSG message, temp;
+	REM_MSG message;
 
 	if ((!statement) || (!(message = statement->rsr_message)))
 		return;
@@ -622,6 +615,7 @@ void REMOTE_reset_statement( RSR statement)
 
 /* find the entry before statement->rsr_message */
 
+	REM_MSG temp;
 	for (temp = message->msg_next; temp->msg_next != message;
 		 temp = temp->msg_next);
 
@@ -637,7 +631,7 @@ void REMOTE_reset_statement( RSR statement)
 }
 
 
-void REMOTE_save_status_strings( ISC_STATUS * vector)
+void REMOTE_save_status_strings( ISC_STATUS* vector)
 {
 /**************************************
  *
@@ -653,14 +647,10 @@ void REMOTE_save_status_strings( ISC_STATUS * vector)
  *	strings to a special buffer.
  *
  **************************************/
-	TEXT *p;
-	ISC_STATUS status;
-	USHORT l;
-
 	if (!attach_failures)
 	{
 		attach_failures =
-			(TEXT *) ALLOC_LIB_MEMORY((SLONG) ATTACH_FAILURE_SPACE);
+			(TEXT*) ALLOC_LIB_MEMORY((SLONG) ATTACH_FAILURE_SPACE);
 		/* FREE: freed by exit handler cleanup_memory() */
 		if (!attach_failures)	/* NOMEM: don't bother trying to copy */
 			return;
@@ -669,32 +659,33 @@ void REMOTE_save_status_strings( ISC_STATUS * vector)
 		 * reporting mechanisms will report it anyway, so flag it as
 		 * "known unfreed" to get the reports quiet.
 		 */
-		gds_alloc_flag_unfreed((void *) attach_failures);
+		gds_alloc_flag_unfreed((void*) attach_failures);
 #endif	/* DEBUG_GDS_ALLOC */
 		attach_failures_ptr = attach_failures;
 		gds__register_cleanup(cleanup_memory, 0);
 	}
 
+	TEXT* p;
+	USHORT l;
 	while (*vector)
 	{
-		status = *vector++;
+		const ISC_STATUS status = *vector++;
 		switch (status)
 		{
 		case gds_arg_cstring:
-			l = (USHORT) * vector++;
+			l = (USHORT) *vector++;
 
 		case gds_arg_interpreted:
 		case gds_arg_string:
-			p = (TEXT *) * vector;
+			p = (TEXT*) *vector;
 			if (status != gds_arg_cstring)
 				l = strlen(p) + 1;
 
 			/* If there isn't any more room in the buffer,
 			   start at the beginning again */
 
-			if (attach_failures_ptr + l >
-				attach_failures + ATTACH_FAILURE_SPACE) attach_failures_ptr =
-					attach_failures;
+			if (attach_failures_ptr + l > attach_failures + ATTACH_FAILURE_SPACE)
+				attach_failures_ptr = attach_failures;
 			*vector++ = (ISC_STATUS) attach_failures_ptr;
 			while (l--)
 				*attach_failures_ptr++ = *p++;
@@ -720,13 +711,11 @@ OBJCT REMOTE_set_object(PORT port, BLK object, OBJCT slot)
  *	Set an object into the object vector.
  *
  **************************************/
-	VEC vector, new_vector;
-	BLK *p, *q, *end;
 
 /* If it fits, do it */
 
-	if (((vector = port->port_object_vector) != NULL) &&
-		slot < vector->vec_count) {
+	VEC vector = port->port_object_vector;
+	if ((vector != NULL) && slot < vector->vec_count) {
 		vector->vec_object[slot] = object;
 		return slot;
 	}
@@ -737,7 +726,8 @@ OBJCT REMOTE_set_object(PORT port, BLK object, OBJCT slot)
 	if (slot + 10 > MAX_OBJCT_HANDLES)
 		return (OBJCT) NULL;
 
-	port->port_object_vector = new_vector = (VEC) ALLOCV(type_vec, slot + 10);
+	VEC new_vector = (VEC) ALLOCV(type_vec, slot + 10);
+	port->port_object_vector = new_vector;
 #ifdef DEBUG_REMOTE_MEMORY
 	ib_printf("REMOTE_set_object         allocate vector  %x\n", new_vector);
 #endif
@@ -745,9 +735,9 @@ OBJCT REMOTE_set_object(PORT port, BLK object, OBJCT slot)
 	new_vector->vec_count = slot + 10;
 
 	if (vector) {
-		p = new_vector->vec_object;
-		q = vector->vec_object;
-		end = q + (int) vector->vec_count;
+		blk** p = new_vector->vec_object;
+		blk* const* q = vector->vec_object;
+		const blk* const* const end = q + (int) vector->vec_count;
 		while (q < end)
 			*p++ = *q++;
 #ifdef DEBUG_REMOTE_MEMORY
@@ -783,7 +773,7 @@ static void cleanup_memory( void *block)
 }
 
 
-static SLONG get_parameter( UCHAR ** ptr)
+static SLONG get_parameter(const UCHAR** ptr)
 {
 /**************************************
  *
@@ -797,11 +787,8 @@ static SLONG get_parameter( UCHAR ** ptr)
  *	This is a clone of jrd/jrd.c:get_parameter()
  *
  **************************************/
-	SLONG parameter;
-	SSHORT l;
-
-	l = *(*ptr)++;
-	parameter = gds__vax_integer(*ptr, l);
+	const SSHORT l = *(*ptr)++;
+	const SLONG parameter = gds__vax_integer(*ptr, l);
 	*ptr += l;
 
 	return parameter;

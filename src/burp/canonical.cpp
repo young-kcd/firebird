@@ -28,7 +28,7 @@
  *
  */
 /*
-$Id: canonical.cpp,v 1.29 2003-09-29 12:42:59 robocop Exp $
+$Id: canonical.cpp,v 1.30 2003-10-29 10:53:03 robocop Exp $
 */
 
 #include "firebird.h"
@@ -52,14 +52,14 @@ static bool_t burp_getbytes(XDR*, SCHAR *, u_int);
 static bool_t burp_getlong(XDR*, SLONG *);
 static u_int burp_getpostn(XDR*);
 static caddr_t burp_inline(XDR*, u_int);
-static bool_t burp_putbytes(XDR*, SCHAR *, u_int);
+static bool_t burp_putbytes(XDR*, const SCHAR*, u_int);
 static bool_t burp_putlong(XDR*, SLONG *);
 static bool_t burp_setpostn(XDR*, u_int);
 static bool_t expand_buffer(XDR*);
 static bool_t xdr_datum(XDR*, DSC*, UCHAR*);
 static bool_t xdr_quad(XDR*, SLONG*);
 static int xdr_init(XDR*, LSTRING*, enum xdr_op);
-static bool_t xdr_slice(XDR*, LSTRING*, USHORT, UCHAR*);
+static bool_t xdr_slice(XDR*, LSTRING*, USHORT, const UCHAR*);
 
 static xdr_t::xdr_ops burp_ops =
 {
@@ -358,7 +358,7 @@ static caddr_t burp_inline( XDR * xdrs, u_int bytecount)
 }
 
 
-static bool_t burp_putbytes(XDR* xdrs, SCHAR* buff, u_int bytecount)
+static bool_t burp_putbytes(XDR* xdrs, const SCHAR* buff, u_int bytecount)
 {
 /**************************************
  *
@@ -642,7 +642,7 @@ static int xdr_init( XDR * xdrs, LSTRING * buffer, enum xdr_op x_op)
 static bool_t xdr_slice(XDR* xdrs,
 						LSTRING* slice,
 						USHORT sdl_length,
-						UCHAR* sdl)
+						const UCHAR* sdl)
 {
 /**************************************
  *

@@ -62,8 +62,8 @@ static bool fAnsiCP = false;
 struct tsec *gdsec;
 #endif
 
-static int common_main(int, char **, pfn_svc_output, SLONG);
-static void util_output(const SCHAR *, ...);
+static int common_main(int, char**, pfn_svc_output, SLONG);
+static void util_output(const SCHAR*, ...);
 
 static void data_print(void *, USER_DATA, bool);
 static bool get_line(int *, SCHAR **, TEXT *, TSEC);
@@ -71,7 +71,7 @@ static bool get_switches(int, TEXT **, IN_SW_TAB, TSEC, bool *);
 static SSHORT parse_cmd_line(int, TEXT **, TSEC);
 static void printhelp(void);
 #ifndef SUPERSERVER
-static int output_main(SLONG, UCHAR *);
+static int output_main(SLONG, const UCHAR*);
 #endif
 
 void inline gsec_exit(int code, TSEC tdsec)
@@ -110,7 +110,7 @@ int GSEC_main(SVC service)
 
 #else
 
-int CLIB_ROUTINE main( int argc, char *argv[])
+int CLIB_ROUTINE main( int argc, char* argv[])
 {
 /**************************************
  *
@@ -128,7 +128,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	return 0;
 }
 
-static int output_main( SLONG output_data, UCHAR * output_buf)
+static int output_main( SLONG output_data, const UCHAR* output_buf)
 {
 /**************************************
  *
@@ -147,7 +147,7 @@ static int output_main( SLONG output_data, UCHAR * output_buf)
 #endif /* SUPERSERVER */
 
 int common_main(int argc,
-				char *argv[],
+				char* argv[],
 				pfn_svc_output output_proc,
 				SLONG output_data)
 {
@@ -165,7 +165,6 @@ int common_main(int argc,
  **************************************/
 	ISC_STATUS *status;
 	FRBRD *db_handle = NULL;		/* user info database handle */
-	TEXT user_info_name[MAXPATHLEN], *u;	/* user info database name */
 #ifdef SERVICE_REDIRECT
 	SLONG redir_in;
 	SLONG redir_out;
@@ -269,6 +268,9 @@ int common_main(int argc,
 
 	status = tdsec->tsec_status;
 	ret = parse_cmd_line(argc, argv, tdsec);
+	
+	TEXT user_info_name[MAXPATHLEN];	/* user info database name */
+	const TEXT* u;
 
 	if (user_data->database_entered)
 		u = user_data->database_name;
@@ -1173,7 +1175,7 @@ void GSEC_print_status(const ISC_STATUS* status_vector)
 	}
 }
 
-static void util_output( const SCHAR * format, ...)
+static void util_output( const SCHAR* format, ...)
 {
 /**************************************
  *

@@ -84,7 +84,7 @@ static bool_t mem_getbytes(XDR *, SCHAR *, u_int);
 static bool_t mem_getlong(XDR *, SLONG *);
 static u_int mem_getpostn(XDR *);
 static caddr_t mem_inline(XDR *, u_int);
-static bool_t mem_putbytes(XDR *, SCHAR *, u_int);
+static bool_t mem_putbytes(XDR*, const SCHAR*, u_int);
 static bool_t mem_putlong(XDR *, SLONG *);
 static bool_t mem_setpostn(XDR *, u_int);
 
@@ -1002,8 +1002,8 @@ static caddr_t mem_inline( XDR * xdrs, u_int bytecount)
 
 
 static bool_t mem_putbytes(
-						   XDR * xdrs,
-						   SCHAR * buff, u_int count)
+						   XDR* xdrs,
+						   const SCHAR* buff, u_int count)
 {
 /**************************************
  *

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Journalling Subsystem
  *	MODULE:		rebui_proto.h
- *	DESCRIPTION:	Prototype header file for rebuild.e
+ *	DESCRIPTION:	Prototype header file for rebuild.epp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,6 +24,7 @@
 #ifndef JOURNAL_REBUI_PROTO_H
 #define JOURNAL_REBUI_PROTO_H
 
-bool	REBUILD_start_restore(int, char **);
+bool	REBUILD_start_restore(int, char**);
 
 #endif // JOURNAL_REBUI_PROTO_H
+

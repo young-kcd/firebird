@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		inf.c
+ *	MODULE:		inf.cpp
  *	DESCRIPTION:	Information handler
  *
  * The contents of this file are subject to the Interbase Public
@@ -80,13 +80,14 @@ using namespace Firebird;
 #define STUFF_WORD(p, value)	{*p++ = value; *p++ = value >> 8;}
 #define STUFF(p, value)		*p++ = value
 
-static USHORT get_counts(USHORT, UCHAR *, USHORT);
+static USHORT get_counts(USHORT, SCHAR*, USHORT);
 
 
-int INF_blob_info(
-				  BLB blob,
-				  SCHAR * items,
-				  SSHORT item_length, SCHAR * info, SSHORT buffer_length)
+int INF_blob_info(const blb* blob,
+				  const SCHAR* items,
+				  const SSHORT item_length,
+				  SCHAR* info,
+				  const SSHORT output_length)
 {
 /**************************************
  *
@@ -98,14 +99,15 @@ int INF_blob_info(
  *	Process requests for blob info.
  *
  **************************************/
-	SCHAR item, *end_items, *end, buffer[128];
+	SCHAR buffer[128];
 	SSHORT length;
 
-	end_items = items + item_length;
-	end = info + buffer_length;
+	const SCHAR* const end_items = items + item_length;
+	const SCHAR* const end = info + output_length;
 
 	while (items < end_items && *items != gds_info_end) {
-		switch ((item = *items++)) {
+		SCHAR item = *items++;
+		switch (item) {
 		case gds_info_end:
 			break;
 
@@ -142,7 +144,7 @@ int INF_blob_info(
 }
 
 
-USHORT INF_convert(SLONG number, SCHAR * buffer)
+USHORT INF_convert(SLONG number, SCHAR* buffer)
 {
 /**************************************
  *
@@ -155,12 +157,12 @@ USHORT INF_convert(SLONG number, SCHAR * buffer)
  *	Return the length.
  *
  **************************************/
-	SLONG n;
-	SCHAR *p;
+	const SCHAR* p;
 
 #ifndef WORDS_BIGENDIAN
-	n = number;
-	p = (SCHAR *) & n;
+	// CVC: What's the need for an intermediate "n" here?
+	const SLONG n = number;
+	p = reinterpret_cast<const SCHAR*>(&n);
 	*buffer++ = *p++;
 	*buffer++ = *p++;
 	*buffer++ = *p++;
@@ -168,7 +170,7 @@ USHORT INF_convert(SLONG number, SCHAR * buffer)
 
 #else
 
-	p = (SCHAR *) & number;
+	p = reinterpret_cast<const SCHAR*>(&number);
 	p += 3;
 	*buffer++ = *p--;
 	*buffer++ = *p--;
@@ -181,9 +183,9 @@ USHORT INF_convert(SLONG number, SCHAR * buffer)
 }
 
 
-int INF_database_info(
-					  SCHAR * items,
-					  SSHORT item_length, SCHAR * info, SSHORT buffer_length)
+int INF_database_info(const SCHAR* items,
+					  const SSHORT item_length,
+					  SCHAR* info, const SSHORT output_length)
 {
 /**************************************
  *
@@ -195,12 +197,9 @@ int INF_database_info(
  *	Process requests for database info.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	JRD_TRA transaction;
 	STR str;
 	FIL file;
-	SCHAR item, *end_items, *end, buffer[256], *p, *q;
+	SCHAR item, buffer[256], *p;
 	SCHAR site[256];
 	SSHORT length, l;
 	SLONG id;
@@ -212,19 +211,20 @@ int INF_database_info(
 	SLONG err_val;
 	BOOLEAN	header_refreshed = FALSE;	
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	if (dbb->dbb_wal)
 		WAL_segment = dbb->dbb_wal->wal_segment;
 	else
 		WAL_segment = NULL;
-	transaction = NULL;
-	end_items = items + item_length;
-	end = info + buffer_length;
+	JRD_TRA transaction = NULL;
+	const SCHAR* const end_items = items + item_length;
+	const SCHAR* const end = info + output_length;
 
 	err_att = att = NULL;
+	const SCHAR* q;
 
 	while (items < end_items && *items != gds_info_end) {
 		p = buffer;
@@ -266,8 +266,10 @@ int INF_database_info(
 
 		case isc_info_cur_logfile_name:
 			wal_name[0] = 0;
-			if (WAL_segment)
-				strcpy(wal_name, WAL_segment->wals_logname);
+			if (WAL_segment) {
+				strncpy(wal_name, WAL_segment->wals_logname, sizeof(wal_name));
+				wal_name[sizeof(wal_name) - 1] = 0;
+			}
 			*p++ = l = strlen(wal_name);
 			for (q = wal_name; l; l--)
 				*p++ = *q++;
@@ -316,8 +318,10 @@ int INF_database_info(
 
 		case isc_info_wal_prv_ckpt_fname:
 			wal_name[0] = 0;
-			if (WAL_segment)
-				strcpy(wal_name, WAL_segment->wals_ckpt_logname);
+			if (WAL_segment) {
+				strncpy(wal_name, WAL_segment->wals_ckpt_logname, sizeof(wal_name));
+				wal_name[sizeof(wal_name) - 1] = 0;
+			}
 			*p++ = l = strlen(wal_name);
 			for (q = wal_name; l; l--)
 				*p++ = *q++;
@@ -425,56 +429,56 @@ int INF_database_info(
 		case isc_info_read_seq_count:
 			length =
 				get_counts(DBB_read_seq_count,
-						   reinterpret_cast < UCHAR * >(buffer),
+						   buffer,
 						   sizeof(buffer));
 			break;
 
 		case isc_info_read_idx_count:
 			length =
 				get_counts(DBB_read_idx_count,
-						   reinterpret_cast < UCHAR * >(buffer),
+						   buffer,
 						   sizeof(buffer));
 			break;
 
 		case isc_info_update_count:
 			length =
 				get_counts(DBB_update_count,
-						   reinterpret_cast < UCHAR * >(buffer),
+						   buffer,
 						   sizeof(buffer));
 			break;
 
 		case isc_info_insert_count:
 			length =
 				get_counts(DBB_insert_count,
-						   reinterpret_cast < UCHAR * >(buffer),
+						   buffer,
 						   sizeof(buffer));
 			break;
 
 		case isc_info_delete_count:
 			length =
 				get_counts(DBB_delete_count,
-						   reinterpret_cast < UCHAR * >(buffer),
+						   buffer,
 						   sizeof(buffer));
 			break;
 
 		case isc_info_backout_count:
 			length =
 				get_counts(DBB_backout_count,
-						   reinterpret_cast < UCHAR * >(buffer),
+						   buffer,
 						   sizeof(buffer));
 			break;
 
 		case isc_info_purge_count:
 			length =
 				get_counts(DBB_purge_count,
-						   reinterpret_cast < UCHAR * >(buffer),
+						   buffer,
 						   sizeof(buffer));
 			break;
 
 		case isc_info_expunge_count:
 			length =
 				get_counts(DBB_expunge_count,
-						   reinterpret_cast < UCHAR * >(buffer),
+						   buffer,
 						   sizeof(buffer));
 			break;
 
@@ -523,7 +527,7 @@ int INF_database_info(
 			str = tdbb->tdbb_attachment->att_filename;
 			STUFF(p, 2);
 			*p++ = l = str->str_length;
-			for (q = reinterpret_cast<SCHAR*>(str->str_data); *q;)
+			for (q = reinterpret_cast<const SCHAR*>(str->str_data); *q;)
 				*p++ = *q++;
 			ISC_get_host(site, sizeof(site));
 			*p++ = l = strlen(site);
@@ -554,11 +558,13 @@ int INF_database_info(
 			for (id = transaction->tra_oldest;
 				 id < transaction->tra_number; id++)
 				if (TRA_snapshot_state(tdbb, transaction, id) == tra_limbo &&
-					TRA_wait(tdbb, transaction, id, TRUE) == tra_limbo) {
+					TRA_wait(tdbb, transaction, id, TRUE) == tra_limbo)
+				{
 					length = INF_convert(id, buffer);
 					if (!
 						(info =
-						 INF_put_item(item, length, buffer, info, end))) {
+						 INF_put_item(item, length, buffer, info, end)))
+					{
 						if (transaction)
 							TRA_commit(tdbb, transaction, FALSE);
 						return FALSE;
@@ -575,7 +581,8 @@ int INF_database_info(
 					length = INF_convert(id, buffer);
 					if (!
 						(info =
-						 INF_put_item(item, length, buffer, info, end))) {
+						 INF_put_item(item, length, buffer, info, end)))
+					{
 						if (transaction)
 							TRA_commit(tdbb, transaction, FALSE);
 						return FALSE;
@@ -590,10 +597,11 @@ int INF_database_info(
                 
                 user = att->att_user;
 				if (user) {
-					const char *user_name = user->usr_user_name ? user->usr_user_name : "(SQL Server)";
+					const char* user_name = user->usr_user_name ?
+						user->usr_user_name : "(SQL Server)";
 					p = buffer;
 					*p++ = l = strlen (user_name);
-					for (q = const_cast<char*>(user_name); l; l--)
+					for (q = user_name; l; l--)
 						*p++ = *q++;
 					length = p - buffer;
                     info = INF_put_item(item, length, buffer, info, end);
@@ -729,16 +737,20 @@ int INF_database_info(
 			 */
 			if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original)
 				>= ODS_10_0)
-				if (dbb->dbb_flags & DBB_DB_SQL_dialect_3)
+			{
+				if (dbb->dbb_flags & DBB_DB_SQL_dialect_3) {
 					/*
 					   ** DB created in IB V6.0 by client SQL dialect 3
 					 */
 					*p++ = SQL_DIALECT_V6;
-				else
+				}
+				else {
 					/*
 					   ** old DB was gbaked in IB V6.0
 					 */
 					*p++ = SQL_DIALECT_V5;
+				}
+			}
 			else
 				*p++ = SQL_DIALECT_V5;	/* pre ODS 10 DB */
 
@@ -830,8 +842,9 @@ int INF_database_info(
 }
 
 
-SCHAR *INF_put_item(SCHAR item,
-					USHORT length, SCHAR * string, SCHAR * ptr, SCHAR * end)
+SCHAR* INF_put_item(SCHAR item,
+					USHORT length, const SCHAR* string, SCHAR* ptr,
+					const SCHAR* end)
 {
 /**************************************
  *
@@ -851,6 +864,7 @@ SCHAR *INF_put_item(SCHAR item,
 		return NULL;
 	}
 
+	// Typically, in other places, STUFF_WORD is applied to UCHAR*
 	*ptr++ = item;
 	STUFF_WORD(ptr, length);
 
@@ -863,10 +877,10 @@ SCHAR *INF_put_item(SCHAR item,
 }
 
 
-int INF_request_info(
-					 JRD_REQ request,
-					 SCHAR * items,
-					 SSHORT item_length, SCHAR * info, SSHORT buffer_length)
+int INF_request_info(const jrd_req* request,
+					 const SCHAR* items,
+					 const SSHORT item_length,
+					 SCHAR* info, const SSHORT output_length)
 {
 /**************************************
  *
@@ -880,14 +894,15 @@ int INF_request_info(
  **************************************/
 	JRD_NOD node;
 	FMT format;
-	SCHAR item, *end_items, *end, buffer[256], *buffer_ptr;
+	SCHAR item;
 	SSHORT state;
 	USHORT length = 0;
 
-	end_items = items + item_length;
-	end = info + buffer_length;
+	const SCHAR* const end_items = items + item_length;
+	const SCHAR* const end = info + output_length;
+	SCHAR buffer[256];
 	memset(buffer, 0, sizeof(buffer));
-	buffer_ptr = buffer;
+	SCHAR* buffer_ptr = buffer;
 
 	while (items < end_items && *items != gds_info_end) {
 		switch ((item = *items++)) {
@@ -933,8 +948,8 @@ int INF_request_info(
 			   continue to allocate larger and larger, because of the potential
 			   for a bug which would bring the server to its knees */
 
-			if (!OPT_access_path
-				(request, buffer_ptr, sizeof(buffer), &length)) {
+			if (!OPT_access_path(request, buffer_ptr, sizeof(buffer), &length))
+			{
 				buffer_ptr = (SCHAR *) gds__alloc(BUFFER_XLARGE);
 				OPT_access_path(request, buffer_ptr, BUFFER_XLARGE, &length);
 			}
@@ -963,7 +978,8 @@ int INF_request_info(
 		case gds_info_message_size:
 			if (!(request->req_flags & req_active) ||
 				(request->req_operation != jrd_req::req_receive &&
-				request->req_operation != jrd_req::req_send)) {
+				request->req_operation != jrd_req::req_send))
+			{
 				buffer_ptr[0] = item;
 				item = gds_info_error;
 				length = 1 + INF_convert(gds_infinap, buffer_ptr + 1);
@@ -1005,11 +1021,10 @@ int INF_request_info(
 }
 
 
-int INF_transaction_info(
-						 JRD_TRA transaction,
-						 SCHAR * items,
-						 SSHORT item_length,
-						 SCHAR * info, SSHORT buffer_length)
+int INF_transaction_info(const jrd_tra* transaction,
+						 const SCHAR* items,
+						 const SSHORT item_length,
+						 SCHAR* info, const SSHORT output_length)
 {
 /**************************************
  *
@@ -1021,11 +1036,11 @@ int INF_transaction_info(
  *	Process requests for blob info.
  *
  **************************************/
-	SCHAR item, *end_items, *end, buffer[128];
+	SCHAR item, buffer[128];
 	SSHORT length;
 
-	end_items = items + item_length;
-	end = info + buffer_length;
+	const SCHAR* const end_items = items + item_length;
+	const SCHAR* const end = info + output_length;
 
 	while (items < end_items && *items != gds_info_end) {
 		switch ((item = *items++)) {
@@ -1052,7 +1067,7 @@ int INF_transaction_info(
 }
 
 
-static USHORT get_counts(USHORT count_id, UCHAR * buffer, USHORT length)
+static USHORT get_counts(USHORT count_id, SCHAR* buffer, USHORT length)
 {
 /**************************************
  *
@@ -1067,7 +1082,6 @@ static USHORT get_counts(USHORT count_id, UCHAR * buffer, USHORT length)
 	TDBB tdbb;
 	SLONG n;
 	vcl::iterator ptr;
-	UCHAR *p, *end;
 	USHORT relation_id;
 	VCL vector;
 
@@ -1076,8 +1090,11 @@ static USHORT get_counts(USHORT count_id, UCHAR * buffer, USHORT length)
 	if (!(vector = tdbb->tdbb_attachment->att_counts[count_id]))
 		return 0;
 
-	p = buffer;
-	end = p + length - 6;
+	// CVC: This function was receiving UCHAR* but to avoid all the casts
+	// when calling it, I changed it to SCHAR* and I'm doing here the cast
+	// to avoid signed/unsigned surprises.
+	UCHAR* p = reinterpret_cast<UCHAR*>(buffer);
+	const UCHAR* const end = p + length - 6;
 
 	for (relation_id = 0, ptr = vector->begin();
 		 relation_id < vector->count() && p < end; ++relation_id)
@@ -1086,7 +1103,7 @@ static USHORT get_counts(USHORT count_id, UCHAR * buffer, USHORT length)
 			p += INF_convert(n, reinterpret_cast < char *>(p));
 		}
 
-	return p - buffer;
+	return p - reinterpret_cast<UCHAR*>(buffer);
 }
 
 

@@ -339,7 +339,7 @@ typedef struct {
 	ULONG ips_com_curr;			/* current mapped offset of comm buffer */
 	ULONG ips_flags;			/* flags */
 	UCHAR *ips_cl_addr;			/* address of client buffer */
-	UCHAR *ips_sv_addr;			/* address of server buffer */
+	const UCHAR* ips_sv_addr;			/* address of server buffer */
 	UCHAR *ips_sv_buffer;		/* allocated local buffer */
 } ips_string;
 

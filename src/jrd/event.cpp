@@ -1596,7 +1596,8 @@ static int validate(void)
 	next_free = 0;
 
 	for (offset = sizeof(evh); offset < EVENT_header->evh_length;
-		 offset += block->hdr_length) {
+		offset += block->hdr_length)
+	{
 		block = (HDR *) ABS_PTR(offset);
 		if (!block->hdr_length || !block->hdr_type
 			|| block->hdr_type >= type_max) {

@@ -1,7 +1,7 @@
 /*
  *
  *      PROGRAM:        InterBase server manager
- *      MODULE:         ibmgr.c
+ *      MODULE:         ibmgr.cpp
  *      DESCRIPTION:    server manager's routines
  *
  * The contents of this file are subject to the Interbase Public
@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: srvrmgr.cpp,v 1.5 2003-08-26 18:45:44 brodsom Exp $
+ * $Id: srvrmgr.cpp,v 1.6 2003-10-29 10:53:46 robocop Exp $
  */
 
 #include "firebird.h"
@@ -415,14 +415,13 @@ static bool start_shutdown( IBMGR_DATA * data)
  *
  **************************************/
 	ISC_STATUS_ARRAY status;
-	char sendbuf[SEND_BUFLEN];
 	char respbuf[2];
 
 /* We should be attached to ask for any service
 */
 	assert(data->attached);
 
-	sendbuf[0] = isc_info_svc_svr_offline;
+	const char sendbuf[] = { isc_info_svc_svr_offline };
 	isc_service_query(status, &data->attached, 0, 0, NULL,
 					  1, sendbuf, sizeof(respbuf), respbuf);
 
@@ -567,12 +566,12 @@ static bool server_is_ok( IBMGR_DATA * data)
  **************************************/
 	ISC_STATUS_ARRAY status;
 	TEXT path[MAXPATHLEN];
-	TEXT db_name[128];
+	TEXT db_name[MAXPATHLEN];
 	isc_db_handle db_handle = 0L;
 
 	strcpy(db_name, data->host);
 	gds__prefix(path, USER_INFO_NAME);
-	sprintf(db_name, "%s:%s", db_name, path);
+	sprintf(db_name, "%s:%s", db_name, path); // May be buffer overrun
 
 	isc_attach_database(status, strlen(db_name), db_name, &db_handle, 0,
 						NULL);
@@ -683,3 +682,4 @@ static bool print_pool( IBMGR_DATA * data)
 	}
 	return true;
 }
+

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.25 2003-10-16 08:50:54 robocop Exp $
+//	$Id: tdr.cpp,v 1.26 2003-10-29 10:52:59 robocop Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -56,9 +56,9 @@ static void reattach_databases(TDR);
 static bool reconnect(FRBRD*, SLONG, const TEXT*, ULONG);
 
 
-const char* NEWLINE = "\n";
+const char* const NEWLINE = "\n";
 
-static UCHAR limbo_info[] = { gds_info_limbo, gds_info_end };
+static const UCHAR limbo_info[] = { gds_info_limbo, gds_info_end };
 
 
 
@@ -180,7 +180,7 @@ USHORT TDR_analyze(TDR trans)
 
 bool TDR_attach_database(ISC_STATUS* status_vector,
 						 TDR trans,
-						 TEXT* pathname)
+						 const TEXT* pathname)
 {
 	UCHAR dpb[128];
 	TGBL tdgbl = GET_THREAD_DATA;
@@ -287,7 +287,7 @@ void TDR_shutdown_databases(TDR trans)
 //		prompt for commit, rollback, or leave well enough alone.
 //
 
-void TDR_list_limbo(FRBRD *handle, TEXT * name, ULONG switches)
+void TDR_list_limbo(FRBRD* handle, const TEXT* name, ULONG switches)
 {
 	UCHAR buffer[1024];
 	ISC_STATUS_ARRAY status_vector;
@@ -296,7 +296,7 @@ void TDR_list_limbo(FRBRD *handle, TEXT * name, ULONG switches)
 	TGBL tdgbl = GET_THREAD_DATA;
 
 	if (gds__database_info(status_vector, &handle, sizeof(limbo_info),
-						   reinterpret_cast<char*>(limbo_info),
+						   reinterpret_cast<const char*>(limbo_info),
 						   sizeof(buffer),
 						   reinterpret_cast<char*>(buffer))) {
 		ALICE_print_status(status_vector);

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Remote Interface
- *	MODULE:		interface.c
+ *	MODULE:		interface.cpp
  *	DESCRIPTION:	User visible entrypoints remote interface
  *
  * The contents of this file are subject to the Interbase Public
@@ -95,17 +95,17 @@ static USHORT ostype = 0;
 #define ISC_USER		"ISC_USER"
 #define ISC_PASSWORD		"ISC_PASSWORD"
 #define MAX_USER_LENGTH		33
-#define MAX_OTHER_PARAMS	(1+1+sizeof(port->port_dummy_packet_interval))
+#define MAX_OTHER_PARAMS	(1 + 1 + sizeof(port->port_dummy_packet_interval))
 
 extern "C" {
 
 static RVNT add_event(PORT);
 static void add_other_params(PORT, UCHAR *, USHORT *);
 static void add_working_directory(UCHAR *, USHORT *, TEXT *);
-static PORT analyze(TEXT *, USHORT *, ISC_STATUS *, TEXT *, USHORT, SCHAR *,
-					SSHORT, TEXT *);
-static PORT analyze_service(TEXT *, USHORT *, ISC_STATUS *, TEXT *, USHORT,
-							SCHAR *, SSHORT);
+static PORT analyze(TEXT*, USHORT*, ISC_STATUS*, TEXT*, USHORT, const SCHAR*,
+					SSHORT, TEXT*);
+static PORT analyze_service(TEXT*, USHORT*, ISC_STATUS*, TEXT*, USHORT,
+							const SCHAR*, SSHORT);
 static bool batch_gds_receive(struct trdb *, PORT, struct rmtque *,
 								 ISC_STATUS *, USHORT);
 static bool batch_dsql_fetch(struct trdb *, PORT, struct rmtque *,
@@ -130,13 +130,13 @@ static void THREAD_ROUTINE event_thread(PORT);
 static ISC_STATUS fetch_blob(ISC_STATUS *, RSR, USHORT, UCHAR *, USHORT, USHORT,
 						 UCHAR *);
 static RVNT find_event(PORT, SLONG);
-static USHORT get_new_dpb(UCHAR *, SSHORT, SSHORT, UCHAR *, USHORT *, TEXT *);
+static USHORT get_new_dpb(const UCHAR*, SSHORT, SSHORT, UCHAR*, USHORT*, TEXT*);
 #ifdef UNIX
-static bool get_single_user(USHORT, SCHAR *);
+static bool get_single_user(USHORT, const SCHAR*);
 #endif
 static ISC_STATUS handle_error(ISC_STATUS *, ISC_STATUS);
-static ISC_STATUS info(ISC_STATUS *, RDB, P_OP, USHORT, USHORT, USHORT, SCHAR *,
-				   USHORT, SCHAR *, USHORT, SCHAR *);
+static ISC_STATUS info(ISC_STATUS*, RDB, P_OP, USHORT, USHORT, USHORT,
+					const SCHAR*, USHORT, const SCHAR*, USHORT, SCHAR*);
 static bool init(ISC_STATUS *, PORT, P_OP, UCHAR *, USHORT, UCHAR *, USHORT);
 static RTR make_transaction(RDB, USHORT);
 static ISC_STATUS mov_dsql_message(UCHAR *, FMT, UCHAR *, FMT);
@@ -159,7 +159,7 @@ static REM_MSG scroll_cache(ISC_STATUS *, struct trdb *, RRQ, PORT, rrq::rrq_rep
 						USHORT *, ULONG *);
 #endif
 static ISC_STATUS send_and_receive(RDB, PACKET *, ISC_STATUS *);
-static ISC_STATUS send_blob(ISC_STATUS *, RBL, USHORT, UCHAR *);
+static ISC_STATUS send_blob(ISC_STATUS*, RBL, USHORT, const UCHAR*);
 static void send_cancel_event(RVNT);
 static bool send_packet(PORT, PACKET *, ISC_STATUS *);
 #ifdef NOT_USED_OR_REPLACED
@@ -173,7 +173,7 @@ static ISC_STATUS svcstart(ISC_STATUS *, RDB, P_OP, USHORT, USHORT, USHORT, SCHA
 static ISC_STATUS unsupported(ISC_STATUS *);
 static void zap_packet(PACKET *);
 
-static void mov_faster(SLONG *, SLONG *, USHORT);
+static void mov_faster(const SLONG*, SLONG*, USHORT);
 
 static ULONG remote_event_id = 0;
 
@@ -250,10 +250,10 @@ static ULONG remote_event_id = 0;
 
 ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 						   SSHORT	file_length,
-						   SCHAR*	file_name,
+						   const SCHAR*	file_name,
 						   RDB*		handle,
 						   SSHORT	dpb_length,
-						   SCHAR*	dpb,
+						   const SCHAR*	dpb,
 						   UCHAR*	expanded_filename)
 {
 /**************************************
@@ -320,7 +320,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 			return error(user_status);
 		}
 	}
-	user_verification = get_new_dpb((UCHAR *) dpb, dpb_length, TRUE, new_dpb_ptr,
+	user_verification = get_new_dpb(reinterpret_cast<const UCHAR*>(dpb),
+					dpb_length, TRUE, new_dpb_ptr,
 					&new_dpb_length, user_string);
 
 	us = (user_string[0]) ? user_string : 0;
@@ -373,7 +374,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 ISC_STATUS GDS_BLOB_INFO(ISC_STATUS*	user_status,
 					 RBL*		blob_handle,
 					 SSHORT		item_length,
-					 SCHAR*		items,
+					 const SCHAR*		items,
 					 SSHORT		buffer_length,
 					 SCHAR*		buffer)
 {
@@ -667,9 +668,9 @@ ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS * user_status, RTR * rtr_handle)
 }
 
 
-ISC_STATUS GDS_COMPILE(ISC_STATUS * user_status,
-				   RDB * db_handle,
-				   RRQ * req_handle, USHORT blr_length, UCHAR * blr)
+ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
+				   RDB* db_handle,
+				   RRQ* req_handle, USHORT blr_length, UCHAR* blr)
 {
 /**************************************
  *
@@ -780,11 +781,11 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS * user_status,
-						RDB * db_handle,
-						RTR * rtr_handle,
-						RBL * blob_handle,
-						BID blob_id, USHORT bpb_length, UCHAR * bpb)
+ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
+						RDB* db_handle,
+						RTR* rtr_handle,
+						RBL* blob_handle,
+						BID blob_id, USHORT bpb_length, const UCHAR* bpb)
 {
 /**************************************
  *
@@ -825,6 +826,12 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS * user_status,
 		if (rdb->rdb_port->port_protocol >= PROTOCOL_VERSION4) {
 			packet->p_operation = op_create_blob2;
 			p_blob->p_blob_bpb.cstr_length = bpb_length;
+			assert(!p_blob->p_blob_bpb.cstr_allocated ||
+				p_blob->p_blob_bpb.cstr_allocated < p_blob->p_blob_bpb.cstr_length);
+			// CVC: Should we ensure here that cstr_allocated < bpb_length???
+			// Otherwise, xdr_cstring() calling alloc_string() to decode would
+			// cause memory problems on the client side for SS, as the client
+			// would try to write to the application's provided R/O buffer.
 			p_blob->p_blob_bpb.cstr_address = bpb;
 		}
 
@@ -856,13 +863,13 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS * user_status,
+ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 						   SSHORT file_length,
-						   SCHAR * file_name,
-						   RDB * handle,
+						   const SCHAR* file_name,
+						   RDB* handle,
 						   SSHORT dpb_length,
-						   SCHAR * dpb,
-						   SSHORT db_type, UCHAR * expanded_filename)
+						   const SCHAR* dpb,
+						   SSHORT db_type, UCHAR* expanded_filename)
 {
 /**************************************
  *
@@ -922,7 +929,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS * user_status,
 		}
 	}
 	user_verification =
-		get_new_dpb((UCHAR *) dpb, dpb_length, TRUE, new_dpb_ptr,
+		get_new_dpb(reinterpret_cast<const UCHAR*>(dpb),
+					dpb_length, TRUE, new_dpb_ptr,
 					&new_dpb_length, user_string);
 
 	if (user_string[0])
@@ -976,7 +984,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS * user_status,
 ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS*	user_status,
 						 RDB*		handle,
 						 SSHORT		item_length,
-						 SCHAR*		items,
+						 const SCHAR*		items,
 						 SSHORT		buffer_length,
 						 SCHAR*		buffer)
 {
@@ -2388,10 +2396,11 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS * user_status,
-						 RSR * stmt_handle,
+ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
+						 RSR* stmt_handle,
 						 SSHORT item_length,
-						 SCHAR * items, SSHORT buffer_length, SCHAR * buffer)
+						 const SCHAR* items,
+						 SSHORT buffer_length, SCHAR* buffer)
 {
 /**************************************
  *
@@ -2783,11 +2792,11 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS * user_status,
-					  RDB * db_handle,
-					  RTR * rtr_handle,
-					  RBL * blob_handle,
-					  BID blob_id, USHORT bpb_length, UCHAR * bpb)
+ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
+					  RDB* db_handle,
+					  RTR* rtr_handle,
+					  RBL* blob_handle,
+					  BID blob_id, USHORT bpb_length, const UCHAR* bpb)
 {
 /**************************************
  *
@@ -2828,12 +2837,23 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS * user_status,
 		if (rdb->rdb_port->port_protocol >= PROTOCOL_VERSION4) {
 			packet->p_operation = op_open_blob2;
 			p_blob->p_blob_bpb.cstr_length = bpb_length;
+			assert(!p_blob->p_blob_bpb.cstr_allocated ||
+				p_blob->p_blob_bpb.cstr_allocated < p_blob->p_blob_bpb.cstr_length);
+			// CVC: Should we ensure here that cstr_allocated < bpb_length???
+			// Otherwise, xdr_cstring() calling alloc_string() to decode would
+			// cause memory problems on the client side for SS, as the client
+			// would try to write to the application's provided R/O buffer.
 			p_blob->p_blob_bpb.cstr_address = bpb;
 		}
 
 		if (send_and_receive(rdb, packet, user_status)) {
 			return error(user_status);
 		}
+		// CVC: It's not evident to me why these two lines that I've copied
+		// here as comments are only found in create_blob calls.
+		// I think they should be enabled to avoid whatever buffer corruption.
+		//p_blob->p_blob_bpb.cstr_length = 0;
+		//p_blob->p_blob_bpb.cstr_address = NULL;
 
 		*blob_handle = blob = (RBL) ALLOCV(type_rbl, BLOB_LENGTH);
 		blob->rbl_rdb = rdb;
@@ -2918,9 +2938,9 @@ ISC_STATUS GDS_PREPARE(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS * user_status,
-					   RBL * blob_handle,
-					   USHORT segment_length, UCHAR * segment)
+ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
+					   RBL* blob_handle,
+					   USHORT segment_length, const UCHAR* segment)
 {
 /**************************************
  *
@@ -2996,10 +3016,14 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS * user_status,
 
 		if (segment_length) {
 			if (((U_IPTR) segment & (ALIGNMENT - 1))
-				|| ((U_IPTR) p & (ALIGNMENT - 1))) memcpy(p, segment,
-														  segment_length);
-			else
-				mov_faster((SLONG *) segment, (SLONG *) p, segment_length);
+				|| ((U_IPTR) p & (ALIGNMENT - 1)))
+			{
+				memcpy(p, segment, segment_length);
+			}
+			else {
+				mov_faster(reinterpret_cast<const SLONG*>(segment), (SLONG*) p,
+					segment_length);
+			}
 		}
 
 		blob->rbl_ptr = p + segment_length;
@@ -3470,9 +3494,9 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_RECONNECT(ISC_STATUS * user_status,
-					 RDB * db_handle,
-					 RTR * rtr_handle, USHORT length, UCHAR * id)
+ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
+					 RDB* db_handle,
+					 RTR* rtr_handle, USHORT length, UCHAR* id)
 {
 /**************************************
  *
@@ -3565,11 +3589,11 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, RRQ * req_handle)
 }
 
 
-ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS * user_status,
-						RRQ * req_handle,
+ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
+						RRQ* req_handle,
 						SSHORT level,
 						SSHORT item_length,
-						UCHAR * items, SSHORT buffer_length, UCHAR * buffer)
+						const UCHAR* items, SSHORT buffer_length, UCHAR* buffer)
 {
 /**************************************
  *
@@ -3584,9 +3608,7 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS * user_status,
 	RRQ request;
 	RDB rdb;
 	REM_MSG msg;
-	UCHAR *out, item, *info_items, *end_items;
 	USHORT data;
-	FMT format;
 	ISC_STATUS status;
 	rrq::rrq_repeat * tail, *end;
 	struct trdb thd_context, *trdb;
@@ -3614,12 +3636,12 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS * user_status,
 
 			/* We've got a pending message, respond locally */
 
-			format = tail->rrq_format;
-			out = buffer;
-			info_items = items;
-			end_items = info_items + item_length;
+			const fmt* format = tail->rrq_format;
+			UCHAR* out = buffer;
+			const UCHAR* info_items = items;
+			const UCHAR* const end_items = info_items + item_length;
 			while (info_items < end_items) {
-				item = *info_items++;
+				const UCHAR item = *info_items++;
 				switch (item) {
 				case gds_info_end:
 					break;
@@ -3957,7 +3979,8 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS * user_status,
 		}
 	}
 	user_verification =
-		get_new_dpb((UCHAR *) spb, spb_length, FALSE, new_spb_ptr,
+		get_new_dpb(reinterpret_cast<const UCHAR*>(spb),
+					spb_length, FALSE, new_spb_ptr,
 					&new_spb_length, user_string);
 
 	if (user_string[0])
@@ -4077,14 +4100,14 @@ ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS * user_status, RDB * handle)
 }
 
 
-ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS * user_status,
-						 RDB * svc_handle,
-						 ULONG * reserved,
+ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS* user_status,
+						 RDB* svc_handle,
+						 ULONG* reserved,
 						 USHORT item_length,
-						 SCHAR * items,
+						 const SCHAR* items,
 						 USHORT recv_item_length,
-						 SCHAR * recv_items,
-						 USHORT buffer_length, SCHAR * buffer)
+						 const SCHAR* recv_items,
+						 USHORT buffer_length, SCHAR* buffer)
 {
 /**************************************
  *
@@ -4564,11 +4587,11 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS * user_status,
-							RTR * tra_handle,
+ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
+							RTR* tra_handle,
 							SSHORT item_length,
-							UCHAR * items,
-							SSHORT buffer_length, UCHAR * buffer)
+							const UCHAR* items,
+							SSHORT buffer_length, UCHAR* buffer)
 {
 /**************************************
  *
@@ -4598,8 +4621,8 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS * user_status,
 	{
 		status =
 			info(user_status, rdb, op_info_transaction, transaction->rtr_id, 0,
-				 item_length, (SCHAR *) items, 0, 0, buffer_length,
-				 (SCHAR *) buffer);
+				 item_length, reinterpret_cast<const SCHAR*>(items), 0, 0,
+				 buffer_length, (SCHAR *) buffer);
 	}
 	catch (const Firebird::status_exception& /*e*/)
 	{
@@ -4765,7 +4788,7 @@ static PORT analyze(TEXT*	file_name,
 					ISC_STATUS*	status_vector,
 					TEXT*	user_string,
 					USHORT	uv_flag,
-					SCHAR*	dpb,
+					const SCHAR*	dpb,
 					SSHORT	dpb_length,
 					TEXT*	node_name)
 {
@@ -4935,12 +4958,12 @@ static PORT analyze(TEXT*	file_name,
 }
 
 
-static PORT analyze_service(TEXT * service_name,
-							USHORT * service_length,
+static PORT analyze_service(TEXT* service_name,
+							USHORT* service_length,
 							ISC_STATUS * status_vector,
-							TEXT * user_string,
+							TEXT* user_string,
 							USHORT uv_flag,
-							SCHAR * dpb,
+							const SCHAR * dpb,
 							SSHORT dpb_length)
 {
 /**************************************
@@ -5662,6 +5685,7 @@ static void THREAD_ROUTINE event_thread( PORT port)
 				/* Call the asynchronous event routine associated
 				   with this event */
 
+				// CVC: Will try to review this function signature later.
 				(*event->rvnt_ast) (event->rvnt_arg,
 									pevent->p_event_items.cstr_length,
 									pevent->p_event_items.cstr_address);
@@ -5767,7 +5791,7 @@ static RVNT find_event( PORT port, SLONG id)
 }
 
 
-static USHORT get_new_dpb(UCHAR*	dpb,
+static USHORT get_new_dpb(const UCHAR*	dpb,
 						  SSHORT	dpb_length,
 						  SSHORT	dpb_vs_spb,
 						  UCHAR*	new_dpb,
@@ -5785,12 +5809,9 @@ static USHORT get_new_dpb(UCHAR*	dpb,
  *	(Based on JRD get_options())
  *
  **************************************/
-	UCHAR*	p;
 	UCHAR	c;
 	UCHAR*	q;
 	UCHAR*	s;
-	UCHAR*	password;
-	UCHAR*	end_dpb;
 	UCHAR	pw_buffer[MAX_PASSWORD_ENC_LENGTH + 6];
 	UCHAR	pb_version;
 	UCHAR	pb_sys_user_name;
@@ -5798,8 +5819,6 @@ static USHORT get_new_dpb(UCHAR*	dpb,
 	UCHAR	pb_user_name;
 	UCHAR	pb_password_enc;
 	SSHORT	l;
-	SSHORT	result;
-	SSHORT	moved_some;
 	SSHORT	password_length;
 
 	*user_string = 0;
@@ -5833,9 +5852,9 @@ static USHORT get_new_dpb(UCHAR*	dpb,
 		pb_user_name = isc_spb_user_name;
 		pb_password_enc = isc_spb_password_enc;
 	}
-	p = dpb;
+	const UCHAR* p = dpb;
 	s = new_dpb;
-	end_dpb = p + dpb_length;
+	const UCHAR* const end_dpb = p + dpb_length;
 
 	if ((dpb_length > 0) && (*p != pb_version))
 	{
@@ -5862,9 +5881,9 @@ static USHORT get_new_dpb(UCHAR*	dpb,
 		*s++ = *p++;
 	}
 
-	result = 0;
-	password = 0;
-	moved_some = 0;
+	SSHORT result = 0;
+	const UCHAR* password = 0;
+	bool moved_some = false;
 	while (p < end_dpb)
 	{
 		*s++ = c = *p++;
@@ -5882,7 +5901,7 @@ static USHORT get_new_dpb(UCHAR*	dpb,
 		}
 		else if (c == pb_password)
 		{
-			moved_some = 1;
+			moved_some = true;
 			s--;
 			password_length = *p++;
 			password = p;
@@ -5893,7 +5912,7 @@ static USHORT get_new_dpb(UCHAR*	dpb,
 			if (c == pb_user_name) {
 				result = 1;
 			}
-			moved_some = 1;
+			moved_some = true;
 			if (*s++ = static_cast < UCHAR > (l = *p++))
 			{
 				do {
@@ -5907,17 +5926,17 @@ static USHORT get_new_dpb(UCHAR*	dpb,
 #ifdef NO_PASSWORD_ENCRYPTION
 	if (password)
 	{
-		moved_some = 1;
+		moved_some = true;
 		*s++ = pb_password;
 		*s++ = password_length;
-		do
+		do {
 			*s++ = *password++;
-		while (--password_length);
+		} while (--password_length);
 	}
 #else
 	if (password)
 	{
-		moved_some = 1;
+		moved_some = true;
 		*s++ = pb_password_enc;
 		l = MIN(password_length, MAX_PASSWORD_ENC_LENGTH);
 		strncpy((char *) pw_buffer, (char *) password, l);
@@ -5942,7 +5961,7 @@ static USHORT get_new_dpb(UCHAR*	dpb,
 
 #ifdef UNIX
 static bool get_single_user(USHORT dpb_length,
-							SCHAR * dpb)
+							const SCHAR* dpb)
 {
 /******************************************
  *
@@ -5951,22 +5970,20 @@ static bool get_single_user(USHORT dpb_length,
  ******************************************
  *
  * Functional description
- *	Get the dpb and return TRUE if the
- *	dpb_single_user flag is set, FALSE
+ *	Get the dpb and return true if the
+ *	dpb_single_user flag is set, false
  *	otherwise.
  *
  ******************************************/
-	SCHAR *end_dpb;
-	USHORT l;
-
 	if (!dpb)
 		return false;
 
-	end_dpb = dpb + dpb_length;
+	const SCHAR* const end_dpb = dpb + dpb_length;
 
 	if (dpb < end_dpb && *dpb++ != gds_dpb_version1)
 		return false;
 
+	USHORT l;
 	while (dpb < end_dpb)
 		switch (*dpb++) {
 		case isc_dpb_reserved:
@@ -6010,15 +6027,17 @@ static ISC_STATUS handle_error( ISC_STATUS * user_status, ISC_STATUS code)
 
 
 static ISC_STATUS info(
-				   ISC_STATUS * user_status,
+				   ISC_STATUS* user_status,
 				   RDB rdb,
 				   P_OP operation,
 				   USHORT object,
 				   USHORT incarnation,
-USHORT item_length,
-SCHAR * items,
-USHORT recv_item_length,
-SCHAR * recv_items, USHORT buffer_length, SCHAR * buffer)
+				   USHORT item_length,
+				   const SCHAR* items,
+				   USHORT recv_item_length,
+				   const SCHAR* recv_items,
+				   USHORT buffer_length,
+				   SCHAR* buffer)
 {
 /**************************************
  *
@@ -6207,7 +6226,7 @@ static ISC_STATUS mov_dsql_message(	UCHAR*	from_msg,
 }
 
 
-static void mov_faster( SLONG * from, SLONG * to, USHORT length)
+static void mov_faster( const SLONG* from, SLONG* to, USHORT length)
 {
 /**************************************
  *
@@ -6220,7 +6239,6 @@ static void mov_faster( SLONG * from, SLONG * to, USHORT length)
  *
  **************************************/
 	USHORT l;
-	UCHAR *p, *q;
 
 	if (l = length >> 5) {
 		do {
@@ -6237,16 +6255,16 @@ static void mov_faster( SLONG * from, SLONG * to, USHORT length)
 	}
 
 	if (l = length >> 2)
-		do
+		do {
 			*to++ = *from++;
-		while (--l);
+		} while (--l);
 
 	if (l = length & 3) {
-		p = (UCHAR *) to;
-		q = (UCHAR *) from;
-		do
+		UCHAR* p = (UCHAR *) to;
+		const UCHAR* q = (UCHAR *) from;
+		do {
 			*p++ = *q++;
-		while (--l);
+		} while (--l);
 	}
 }
 
@@ -6832,7 +6850,8 @@ static REM_MSG scroll_cache(
 						struct trdb *trdb,
 						RRQ request,
 						PORT port,
-rrq::rrq_repeat * tail, USHORT * direction, ULONG * offset)
+						rrq::rrq_repeat * tail,
+						USHORT * direction, ULONG * offset)
 {
 /**************************************
  *
@@ -7039,7 +7058,7 @@ static ISC_STATUS send_and_receive(RDB rdb, PACKET* packet, ISC_STATUS* user_sta
 static ISC_STATUS send_blob(ISC_STATUS*	user_status,
 						RBL		blob,
 						USHORT	buffer_length,
-						UCHAR*	buffer)
+						const UCHAR*	buffer)
 {
 /**************************************
  *
@@ -7054,7 +7073,6 @@ static ISC_STATUS send_blob(ISC_STATUS*	user_status,
 	RDB		rdb;
 	PACKET*	packet;
 	P_SGMT*	segment;
-	CSTRING	temp;
 
 	rdb = blob->rbl_rdb;
 	packet = &rdb->rdb_packet;
@@ -7067,12 +7085,12 @@ static ISC_STATUS send_blob(ISC_STATUS*	user_status,
 	{
 		buffer = blob->rbl_buffer;
 		buffer_length = blob->rbl_ptr - buffer;
-		blob->rbl_ptr = buffer;
+		blob->rbl_ptr = 0;// <==> buffer;
 		packet->p_operation = op_batch_segments;
 	}
 
 	segment = &packet->p_sgmt;
-	temp = segment->p_sgmt_segment;
+	CSTRING_CONST temp = segment->p_sgmt_segment;
 	segment->p_sgmt_blob = blob->rbl_id;
 	segment->p_sgmt_segment.cstr_length = buffer_length;
 	segment->p_sgmt_segment.cstr_address = buffer;
@@ -7083,6 +7101,8 @@ static ISC_STATUS send_blob(ISC_STATUS*	user_status,
 		return user_status[1];
 	}
 
+     // restore the string; "buffer" is not referenced anymore, hence no
+     // possibility to overwrite it accidentally.
 	segment->p_sgmt_segment = temp;
 
 /* Set up for the response packet. */
@@ -7379,3 +7399,4 @@ static void zap_packet(PACKET* packet)
 }
 
 } // extern "C"
+

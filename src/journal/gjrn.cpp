@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Journal Server
- *	MODULE:		gjrn.c
+ *	MODULE:		gjrn.cpp
  *	DESCRIPTION:
  *
  * The contents of this file are subject to the Interbase Public
@@ -46,26 +46,28 @@
 #endif
 
 bool sw_service_gjrn;
-FILE *msg_file;
+FILE* msg_file;
 
-static void gjrn_msg_partial(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
-static void gjrn_msg_put(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
+static void gjrn_msg_partial(USHORT, const TEXT*, const TEXT*, const TEXT*,
+	const TEXT*, const TEXT*);
+static void gjrn_msg_put(USHORT, const TEXT*, const TEXT*, const TEXT*,
+	const TEXT*, const TEXT*);
 static USHORT get_new_files(SCHAR **, SLONG *);
-static bool start_disable(int, char **);
+static bool start_disable(int, char**);
 static bool start_dump(int, char **);
 static bool start_enable(int, char **);
 
 static jmp_buf gjrn_env;
 
-static UCHAR
+static const char
 	disable_dpb[] = { gds_dpb_version1, gds_dpb_disable_journal, 0 };
 
 struct func_tab {
-	SCHAR *name;
-	bool (*func_routine) (int, char **);
+	const SCHAR* name;
+	bool (*func_routine) (int, char**);
 };
 
-static func_tab option_table[] = {
+static const func_tab option_table[] = {
 #ifndef VMS
 	"console", CONSOLE_start_console,
 #endif
@@ -242,10 +244,10 @@ void GJRN_abort(int number)
 
 
 void GJRN_get_msg(USHORT number,
-				  TEXT * msg,
-				  TEXT * arg1,
-				  TEXT * arg2,
-				  TEXT * arg3)
+				  TEXT* msg,
+				  const TEXT* arg1,
+				  const TEXT* arg2,
+				  const TEXT* arg3)
 {
 /**************************************
  *
@@ -285,10 +287,10 @@ void GJRN_output(TEXT * format, ...)
 
 
 void GJRN_printf(USHORT number,
-				 TEXT * arg1,
-				 TEXT * arg2,
-				 TEXT * arg3,
-				 TEXT * arg4)
+				 const TEXT* arg1,
+				 const TEXT* arg2,
+				 const TEXT* arg3,
+				 const TEXT* arg4)
 {
 /**************************************
  *
@@ -325,11 +327,11 @@ void GJRN_print_syntax(void)
 
 
 static void gjrn_msg_partial(USHORT number,
-							 TEXT * arg1,
-							 TEXT * arg2,
-							 TEXT * arg3,
-							 TEXT * arg4,
-							 TEXT * arg5)
+							 const TEXT* arg1,
+							 const TEXT* arg2,
+							 const TEXT* arg3,
+							 const TEXT* arg4,
+							 const TEXT* arg5)
 {
 /**************************************
  *
@@ -353,11 +355,11 @@ static void gjrn_msg_partial(USHORT number,
 
 
 static void gjrn_msg_put(USHORT number,
-						 TEXT * arg1,
-						 TEXT * arg2,
-						 TEXT * arg3,
-						 TEXT * arg4,
-						 TEXT * arg5)
+						 const TEXT* arg1,
+						 const TEXT* arg2,
+						 const TEXT* arg3,
+						 const TEXT* arg4,
+						 const TEXT* arg5)
 {
 /**************************************
  *
@@ -426,7 +428,7 @@ static USHORT get_new_files(SCHAR ** old_files,
 
 
 static bool start_disable(int argc,
-						  char ** argv)
+						  char** argv)
 {
 /**************************************
  *
@@ -441,29 +443,28 @@ static bool start_disable(int argc,
 	why_hndl *handle;
 	USHORT dpb_length;
 	bool error;
-	UCHAR *database, string[512], *dpb;
+	UCHAR string[512];
 	ISC_STATUS_ARRAY status_vector;
 	SCHAR db_name[MAXPATHLEN];
 	bool sw_v;
 	bool sw_i;
 	TEXT msg[128];
-
 // Start by parsing switches
 
 	sw_i = sw_v = false;
 
 	error = false;
-	database = NULL;
+	const char* database = NULL;
 	argv++;
 
 	while (--argc > 0) {
 		if ((*argv)[0] != '-') {
 			if (database) {
-				GJRN_printf(12, (SCHAR*) database, NULL, NULL, NULL);
+				GJRN_printf(12, database, NULL, NULL, NULL);
 				// msg 12: database file name (%s) already specified
 				Firebird::status_exception::raise(FINI_ERROR);
 			}
-			database = (UCHAR*) *argv++;
+			database = *argv++;
 			continue;
 		}
 
@@ -490,7 +491,7 @@ static bool start_disable(int argc,
 		GJRN_get_msg(219, msg, NULL, NULL, NULL);
 		// enter database name:
 		if (MISC_get_line(msg, db_name, sizeof(db_name))) {
-			database = (UCHAR*) db_name;
+			database = db_name;
 		}
 	}
 
@@ -500,12 +501,11 @@ static bool start_disable(int argc,
 		MISC_print_journal_syntax();
 	}
 
-	dpb = disable_dpb;
 	dpb_length = sizeof(disable_dpb);
 
 	handle = NULL;
-	gds__attach_database(status_vector, 0, (SCHAR*) database, &handle,
-						 dpb_length, (SCHAR*) dpb);
+	gds__attach_database(status_vector, 0, database, &handle,
+						 dpb_length, disable_dpb);
 
 	if (status_vector[1]) {
 		error = true;
@@ -520,7 +520,7 @@ static bool start_disable(int argc,
 
 
 static bool start_dump(int argc,
-					   char ** argv)
+					   char** argv)
 {
 /**************************************
  *
@@ -900,3 +900,4 @@ static bool start_enable(int argc,
 
 	return error;
 }
+

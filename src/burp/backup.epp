@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.41 2003-09-25 11:48:59 robocop Exp $
+$Id: backup.epp,v 1.42 2003-10-29 10:53:03 robocop Exp $
 */
 
 #include "firebird.h"
@@ -99,7 +99,7 @@ BURP_FLD get_fields(BURP_REL);
 SINT64 get_gen_id(const TEXT *, SSHORT);
 void get_ranges(BURP_FLD);
 void put_array(BURP_FLD, BURP_REL, ISC_QUAD *);
-void put_asciz(const SCHAR, const TEXT *);
+void put_asciz(const SCHAR, const TEXT*);
 void put_blob(BURP_FLD, ISC_QUAD *, ULONG);
 bool put_blr_blob(SCHAR, ISC_QUAD *);
 void put_data(BURP_REL);
@@ -117,7 +117,7 @@ int symbol_length(const TEXT *, ULONG);
 void write_character_sets(void);
 void write_check_constraints(void);
 void write_collations(void);
-void write_database(const TEXT *);
+void write_database(const TEXT*);
 void write_exceptions(void);
 void write_field_dimensions(void);
 void write_filters(void);
@@ -240,7 +240,7 @@ const SCHAR limbo_nau_tpb[] =
 } // namespace
 
 
-int BACKUP_backup(TEXT* dbb_file, const TEXT* file_name)
+int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 {
 /**************************************
  *
@@ -318,7 +318,7 @@ int BACKUP_backup(TEXT* dbb_file, const TEXT* file_name)
 		tdgbl->action->act_file = tdgbl->gbl_sw_files;
 	}
 
-	MVOL_init_write(reinterpret_cast<UCHAR*>(dbb_file),
+	MVOL_init_write(reinterpret_cast<const UCHAR*>(dbb_file),
 					reinterpret_cast<const UCHAR*>(file_name),
 					&tdgbl->io_cnt, &tdgbl->io_ptr);
 
@@ -1347,7 +1347,7 @@ void put_blob( BURP_FLD field, ISC_QUAD * blob_id, ULONG count)
 	}
 
 	if (isc_blob_info(status_vector, &blob, sizeof(blob_items),
-					  (SCHAR *) blob_items, sizeof(blob_info),
+					  blob_items, sizeof(blob_info),
 					  (char*) blob_info))
 	{
 		BURP_error_redirect(status_vector, 20, NULL, NULL);
@@ -2716,7 +2716,7 @@ void write_collations(void)
 	MISC_release_request_silent(req_handle1);
 }
 
-void write_database( const TEXT * dbb_file)
+void write_database( const TEXT* dbb_file)
 {
 /**************************************
  *
@@ -2739,7 +2739,7 @@ void write_database( const TEXT * dbb_file)
 	put(tdgbl, (UCHAR) (rec_physical_db));
 
 	if (isc_database_info(status_vector, &DB, sizeof(db_info_items),
-						  (SCHAR *) db_info_items, sizeof(buffer), buffer))
+						  db_info_items, sizeof(buffer), buffer))
 	{
 		BURP_error_redirect(status_vector, 31, NULL, NULL);
 		// msg 31 isc_database_info failed 

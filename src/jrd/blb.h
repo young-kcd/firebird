@@ -77,7 +77,7 @@ class blb : public pool_alloc_rpt<UCHAR, type_blb>
 	/* blb_data must be longword aligned */
 	UCHAR blb_data[1];			/* A page's worth of blob */
 };
-typedef blb *BLB;
+typedef blb* BLB;
 
 #define BLB_temporary	1		/* Newly created blob */
 #define BLB_eof		2			/* This blob is exhausted */
@@ -103,6 +103,7 @@ class map : public pool_alloc<type_map>
 	blb *map_old_blob;
 	blb *map_new_blob;
 };
-typedef map *MAP;
+typedef map* MAP;
 
 #endif /* JRD_BLB_H */
+

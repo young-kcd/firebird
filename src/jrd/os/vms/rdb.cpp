@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Rdb/GDS Access Method Interface
- *	MODULE:		rdb.c
+ *	MODULE:		rdb.cpp
  *	DESCRIPTION:	User visible entrypoints
  *
  * The contents of this file are subject to the Interbase Public
@@ -106,10 +106,10 @@ static SLONG codes[] = {
 
 
 int rdb$attach_database(
-						int *user_status,
-						struct dsc$descriptor *file,
-						DBB * handle,
-						SSHORT dpb_length, SCHAR * dpb, SSHORT db_type)
+						int* user_status,
+						struct dsc$descriptor* file,
+						DBB* handle,
+						SSHORT dpb_length, const SCHAR* dpb, SSHORT db_type)
 {
 /**************************************
  *
@@ -328,10 +328,10 @@ int rdb$compile_request(
 
 
 int rdb$create_database(
-						int *user_status,
-						struct dsc$descriptor *file,
-						DBB * handle,
-						USHORT dpb_length, UCHAR * dpb, USHORT db_type)
+						int* user_status,
+						struct dsc$descriptor* file,
+						DBB* handle,
+						USHORT dpb_length, const UCHAR* dpb, USHORT db_type)
 {
 /**************************************
  *
@@ -407,10 +407,10 @@ HANDLE * blob_handle, GDS__QUAD * blob_id)
 
 
 int rdb$database_info(
-					  int *user_status,
-					  DBB * handle,
+					  int* user_status,
+					  DBB* handle,
 					  SSHORT item_length,
-					  SCHAR * items, SSHORT buffer_length, SCHAR * buffer)
+					  const SCHAR* items, SSHORT buffer_length, SCHAR* buffer)
 {
 /**************************************
  *
@@ -423,8 +423,6 @@ int rdb$database_info(
  *
  **************************************/
 	int stat;
-	SCHAR item, *item_ptr, *end, *tmp_ptr, tmp_buff[32];
-	SSHORT len;
 
 	if (!*handle)
 		return set_status(user_status, rdb$_bad_db_handle);
@@ -434,9 +432,12 @@ int rdb$database_info(
 		   and theirs overlap ours. So, force error on the ones
 		   we don't know about.  */
 
-		tmp_ptr = tmp_buff;
-		item_ptr = items;
-		end = item_ptr + item_length;
+        SCHAR tmp_buff[32];
+        SCHAR item;
+        
+		SCHAR* tmp_ptr = tmp_buff;
+		const SCHAR* item_ptr = items;
+		const SCHAR* const end = item_ptr + item_length;
 		while (item_ptr < end) {
 			*tmp_ptr = item = *item_ptr++;
 			if (item > gds__info_limbo)
@@ -453,7 +454,7 @@ int rdb$database_info(
 		end = item_ptr + buffer_length;
 		while (item_ptr < end) {
 			item = *item_ptr++;
-			len = *item_ptr++;
+			SSHORT len = *item_ptr++;
 			len |= (*item_ptr++) << 8;
 			if (item == gds__info_error && *item_ptr > 200)
 				*item_ptr -= 200;
@@ -680,8 +681,8 @@ int rdb$open_segmented_string(
 
 
 int rdb$put_segment(
-					int *user_status,
-					BLB * blob_handle, SSHORT buffer_length, UCHAR * buffer)
+					int* user_status,
+					BLB* blob_handle, SSHORT buffer_length, const UCHAR* buffer)
 {
 /**************************************
  *
@@ -823,11 +824,11 @@ int rdb$reconnect_transaction(
 
 
 int rdb$request_info(
-					 int *user_status,
-					 REQ * handle,
+					 int* user_status,
+					 REQ* handle,
 					 SSHORT level,
 					 SSHORT item_length,
-					 SCHAR * items, SSHORT buffer_length, SCHAR * buffer)
+					 const SCHAR* items, SSHORT buffer_length, SCHAR* buffer)
 {
 /**************************************
  *
@@ -938,11 +939,11 @@ int rdb$rollback_transaction(int *user_status, TRA * tra_handle)
 
 
 int rdb$segmented_string_info(
-							  int *user_status,
-							  BLB * handle,
+							  int* user_status,
+							  BLB* handle,
 							  SSHORT item_length,
-							  SCHAR * items,
-SSHORT buffer_length, SCHAR * buffer)
+							  const SCHAR* items,
+							SSHORT buffer_length, SCHAR* buffer)
 {
 /**************************************
  *
@@ -1187,10 +1188,10 @@ int rdb$start_transaction(
 
 
 int rdb$transaction_info(
-						 int *user_status,
-						 TRA * handle,
+						 int* user_status,
+						 TRA* handle,
 						 SSHORT item_length,
-						 SCHAR * items, SSHORT buffer_length, SCHAR * buffer)
+						 const SCHAR* items, SSHORT buffer_length, SCHAR* buffer)
 {
 /**************************************
  *
@@ -1441,3 +1442,4 @@ static int set_status(int *status, int code)
 
 #define DUMMY(name) name () {ib_printf ("name entered\n"); return 0;}
 DUMMY(rdb$dummy1);
+

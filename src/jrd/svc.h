@@ -111,14 +111,6 @@ extern "C" {
 
 void SVC_STATUS_ARG(ISC_STATUS*& status, USHORT type, const void* value);
 
-#define CK_SPACE_FOR_NUMERIC 	{{if ((info + 1 + sizeof (ULONG)) > end) \
-    				      { \
-				      if (info < end) \
-					  *info++ = isc_info_truncated; \
-				      THREAD_ENTER; \
-				      return 0; \
-				      }}}
-
 /* Service manager block */
 class svc : public pool_alloc<type_svc>
 {
@@ -174,6 +166,6 @@ typedef struct serv
 
 } /* extern "C" */
 
-typedef int(*pfn_svc_output)(SLONG, UCHAR*);
+typedef int (*pfn_svc_output)(SLONG, const UCHAR*);
 
 #endif /* JRD_SVC_H */

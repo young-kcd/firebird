@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.33 2003-10-16 08:50:59 robocop Exp $
+//	$Id: cob.cpp,v 1.34 2003-10-29 10:53:07 robocop Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -285,7 +285,7 @@ static void	gen_function (const act*);
 static void	gen_get_or_put_slice(const act*, REF, bool);
 static void	gen_get_segment (const act*);
 static void	gen_loop (const act*);
-static TEXT	*gen_name(TEXT *, REF, bool);
+static TEXT* gen_name(TEXT*, const ref*, bool);
 static void	gen_on_error (const act*);
 static void	gen_procedure (const act*);
 static void	gen_put_segment (const act*);
@@ -311,21 +311,22 @@ static void	gen_update (const act*);
 static void	gen_variable (const act*);
 static void	gen_whenever (SWE);
 static void	make_array_declaration (REF);
-static TEXT	*make_name (TEXT *, SYM);
-static TEXT	*make_name_formatted (TEXT *, TEXT *, SYM);
-static void	make_port (POR);
-static void	make_ready (DBB, const TEXT*, const TEXT*, GPRE_REQ, USHORT);
+static TEXT* make_name (TEXT*, const sym*);
+static TEXT* make_name_formatted (TEXT*, const TEXT*, const sym*);
+static void	make_port (const por*);
+static void	make_ready (const dbb*, const TEXT*, const TEXT*, const gpre_req*,
+	USHORT);
 static void	printa(const TEXT*, bool, const TEXT*, ...) ATTRIBUTE_FORMAT(3,4);
 #ifdef NOT_USED_OR_REPLACED
-static void	printb (TEXT *, ... ) ATTRIBUTE_FORMAT(1,2);
+static void	printb (const TEXT*, ... ) ATTRIBUTE_FORMAT(1,2);
 #endif
-static const TEXT* request_trans (const act*, GPRE_REQ);
+static const TEXT* request_trans (const act*, const gpre_req*);
 static void	set_sqlcode (const act*);
 static const TEXT* status_vector (const act*);
-static void	t_start_auto (GPRE_REQ, const TEXT*, const act*, bool);
+static void	t_start_auto (const gpre_req*, const TEXT*, const act*, bool);
 
 static TEXT output_buffer[512];
-static bool first_flag;
+static bool global_first_flag = false;
 static const TEXT** names;
 
 static const TEXT* vnames[] = {
@@ -438,7 +439,7 @@ void COB_action(const act* action, int column)
 {
 
 	if (action->act_flags & ACT_break)
-		first_flag = false;
+		global_first_flag = false;
 
 	switch (action->act_type) {
 	case ACT_alter_database:
@@ -558,7 +559,7 @@ void COB_action(const act* action, int column)
 		return;
 	case ACT_enderror:
 		sprintf(output_buffer, "%sEND-IF", names[COLUMN]);
-		COB_print_buffer(output_buffer, FALSE);
+		COB_print_buffer(output_buffer, false);
 		return;
 	case ACT_endfor:
 		gen_endfor(action);
@@ -889,18 +890,18 @@ static void asgn_from( const act* action, REF reference)
 		else {
 			sprintf(output_buffer, "%sIF %s < 0 THEN\n",
 					names[COLUMN], value);
-			COB_print_buffer(output_buffer, FALSE);
+			COB_print_buffer(output_buffer, false);
 			sprintf(output_buffer, "%sMOVE -1 TO %s\n", names[COLUMN_INDENT],
 					variable);
-			COB_print_buffer(output_buffer, FALSE);
+			COB_print_buffer(output_buffer, false);
 			sprintf(output_buffer, "%sELSE\n", names[COLUMN]);
-			COB_print_buffer(output_buffer, FALSE);
+			COB_print_buffer(output_buffer, false);
 			sprintf(output_buffer, "%sMOVE 0 TO %s\n", names[COLUMN_INDENT],
 					variable);
-			COB_print_buffer(output_buffer, FALSE);
+			COB_print_buffer(output_buffer, false);
 			sprintf(output_buffer, "%sEND-IF\n", names[COLUMN]);
 		}
-		COB_print_buffer(output_buffer, FALSE);
+		COB_print_buffer(output_buffer, false);
 	}
 }
 
@@ -929,7 +930,7 @@ static void asgn_to( const act* action, REF reference)
 	field = reference->ref_field;
 	sprintf(output_buffer, "%sMOVE %s TO %s\n",
 			names[COLUMN], s, reference->ref_value);
-	COB_print_buffer(output_buffer, FALSE);
+	COB_print_buffer(output_buffer, false);
 
 //  Pick up NULL value if one is there 
 
@@ -937,7 +938,7 @@ static void asgn_to( const act* action, REF reference)
 		sprintf(output_buffer, "%sMOVE %s TO %s\n",
 				names[COLUMN], gen_name(s, reference, true),
 				reference->ref_value);
-		COB_print_buffer(output_buffer, FALSE);
+		COB_print_buffer(output_buffer, false);
 	}
 }
 
@@ -960,7 +961,7 @@ static void asgn_to_proc( REF reference)
 		gen_name(s, reference, true);
 		sprintf(output_buffer, "%sMOVE %s TO %s\n",
 				names[COLUMN], s, reference->ref_value);
-		COB_print_buffer(output_buffer, FALSE);
+		COB_print_buffer(output_buffer, false);
 	}
 }
 
@@ -1181,11 +1182,6 @@ static void gen_blob_for( const act* action)
 
 static void gen_blob_open( const act* action)
 {
-	BLB blob;
-	USHORT column;
-	PAT args;
-	REF reference;
-	TEXT s[20];
 #ifdef VMS
 	TEXT *pattern1 =
 		"CALL \"ISC_%IFCREATE%ELOPEN%EN_BLOB2\" USING %V1, %RF%DH%RE, %RF%RT%RE, %RF%BH%RE, %RF%FR%RE, %VF%N1%VE, %RF%I1%RE\n",
@@ -1204,6 +1200,9 @@ static void gen_blob_open( const act* action)
 			   request_trans(action, action->act_request));
 	}
 
+    TEXT s[20];
+	BLB blob;
+	const ref* reference;
 	if (action->act_flags & ACT_sql) {
 		gen_cursor_open(action, action->act_request);
 		blob = (BLB) action->act_request->req_blobs;
@@ -1215,7 +1214,8 @@ static void gen_blob_open( const act* action)
 		reference = blob->blb_reference;
 	}
 
-	column = strlen(names[COLUMN]);
+	const USHORT column = strlen(names[COLUMN]);
+	PAT args;
 	args.pat_condition = (action->act_type == ACT_blob_create);	// open or create blob
 	args.pat_vector1 = status_vector(action);	// status vector
 	args.pat_database = blob->blb_request->req_database;	// database handle
@@ -1345,14 +1345,9 @@ static void gen_clear_handles( const act* action)
 
 static void gen_compile( const act* action)
 {
-	GPRE_REQ request;
-	DBB db;
-	SYM symbol;
-	BLB blob;
-
-	request = action->act_request;
-	db = request->req_database;
-	symbol = db->dbb_name;
+	const gpre_req* request = action->act_request;
+	const dbb* db = request->req_database;
+	const sym* symbol = db->dbb_name;
 
 //  generate automatic ready if appropriate 
 
@@ -1380,7 +1375,7 @@ static void gen_compile( const act* action)
 			request->req_handle, BY_VALUE, request->req_length, END_VALUE,
 			BY_REF, names[isc_a_pos], request->req_ident);
 
-	COB_print_buffer(output_buffer, TRUE);
+	COB_print_buffer(output_buffer, true);
 	if (sw_auto && action->act_error)
 		printa(names[COLUMN], false, "END-IF");
 
@@ -1390,12 +1385,13 @@ static void gen_compile( const act* action)
 //  If blobs are present, zero out all of the blob handles.  After this
 //  point, the handles are the user's responsibility 
 
-	if (blob = request->req_blobs)
+	const blb* blob = request->req_blobs;
+	if (blob)
 		for (; blob; blob = blob->blb_next) {
 			sprintf(output_buffer, "%sMOVE 0 TO %s%d\n",
 					names[COLUMN], names[isc_a_pos], blob->blb_ident);
 
-			COB_print_buffer(output_buffer, FALSE);
+			COB_print_buffer(output_buffer, false);
 		}
 }
 
@@ -1439,7 +1435,7 @@ static void gen_create_database( const act* action)
 						BY_REF, s1,
 						BY_DESC, db->dbb_r_user,
 						BY_VALUE, strlen(db->dbb_r_user) - 2, END_VALUE);
-				COB_print_buffer(output_buffer, TRUE);
+				COB_print_buffer(output_buffer, true);
 			}
 			if (db->dbb_r_password) {
 				sprintf(output_buffer,
@@ -1450,7 +1446,7 @@ static void gen_create_database( const act* action)
 						BY_REF, s1,
 						BY_DESC, db->dbb_r_password,
 						BY_VALUE, strlen(db->dbb_r_password) - 2, END_VALUE);
-				COB_print_buffer(output_buffer, TRUE);
+				COB_print_buffer(output_buffer, true);
 			}
 
 			/*
@@ -1470,7 +1466,7 @@ static void gen_create_database( const act* action)
 						BY_REF, s1,
 						BY_DESC, db->dbb_r_sql_role,
 						BY_VALUE, strlen(db->dbb_r_sql_role) - 2, END_VALUE);
-				COB_print_buffer(output_buffer, TRUE);
+				COB_print_buffer(output_buffer, true);
 			}
 
 			if (db->dbb_r_lc_messages) {
@@ -1483,7 +1479,7 @@ static void gen_create_database( const act* action)
 						BY_REF, db->dbb_r_lc_messages,
 						BY_VALUE, strlen(db->dbb_r_lc_messages) - 2,
 						END_VALUE);
-				COB_print_buffer(output_buffer, TRUE);
+				COB_print_buffer(output_buffer, true);
 			}
 			if (db->dbb_r_lc_ctype) {
 				sprintf(output_buffer,
@@ -1494,7 +1490,7 @@ static void gen_create_database( const act* action)
 						BY_REF, s1,
 						BY_REF, db->dbb_r_lc_ctype,
 						BY_VALUE, strlen(db->dbb_r_lc_ctype) - 2, END_VALUE);
-				COB_print_buffer(output_buffer, TRUE);
+				COB_print_buffer(output_buffer, true);
 			}
 		}
 
@@ -1529,24 +1525,24 @@ static void gen_create_database( const act* action)
 			(request->req_length) ? s1Tmp : OMITTED,
 			(request->req_length) ? s2Tmp : OMITTED, BY_VALUE, END_VALUE);
 
-	COB_print_buffer(output_buffer, TRUE);
+	COB_print_buffer(output_buffer, true);
 //  if the dpb was extended, free it here 
 
 	if (request && request->req_flags & REQ_extend_dpb) {
 		if (request->req_length) {
 			sprintf(output_buffer,
 					"if (%s != isc_%d)", s2, request->req_ident);
-			COB_print_buffer(output_buffer, TRUE);
+			COB_print_buffer(output_buffer, true);
 		}
 
 		sprintf(output_buffer,
 				"%sCALL \"%s\" USING %s\n", names[COLUMN], ISC_FREE, s2Tmp);
-		COB_print_buffer(output_buffer, TRUE);
+		COB_print_buffer(output_buffer, true);
 
 		/* reset the length of the dpb */
 		sprintf(output_buffer, "%sMOVE %d to %s",
 				names[COLUMN], request->req_length, s1);
-		COB_print_buffer(output_buffer, TRUE);
+		COB_print_buffer(output_buffer, true);
 	}
 	save_sw_auto = sw_auto;
 	sw_auto = true;
@@ -1671,13 +1667,13 @@ static void gen_database( const act* action)
 	GPRE_PRC procedure;
 	LLS stack_ptr;
 
-	if (first_flag)
+	if (global_first_flag)
 		return;
-	first_flag = true;
+	global_first_flag = true;
 
 	sprintf(output_buffer, "\n%s**** GDS Preprocessor Definitions ****\n\n",
 			names[COMMENT]);
-	COB_print_buffer(output_buffer, FALSE);
+	COB_print_buffer(output_buffer, false);
 
 	printa(names[COLUMN_0], false, "01  %s PIC S9(18) USAGE COMP VALUE IS 0.",
 		   names[isc_blob_null_pos]);
@@ -1890,11 +1886,9 @@ static void gen_database( const act* action)
 
 static void gen_ddl( const act* action)
 {
-	GPRE_REQ request;
+//  Set up command type for call to RDB$DDL
 
-//  Set up command type for call to RDB$DDL 
-
-	request = action->act_request;
+	const gpre_req* request = action->act_request;
 
 	if (sw_auto) {
 		t_start_auto(0, status_vector(action), action, true);
@@ -1909,7 +1903,7 @@ static void gen_ddl( const act* action)
 			names[isc_trans_pos], BY_VALUE, request->req_length, END_VALUE,
 			BY_REF, names[isc_a_pos], request->req_ident);
 
-	COB_print_buffer(output_buffer, TRUE);
+	COB_print_buffer(output_buffer, true);
 
 	if (sw_auto) {
 		printa(names[COLUMN], false, "END-IF");
@@ -1925,7 +1919,7 @@ static void gen_ddl( const act* action)
 			   ISC_ROLLBACK_TRANSACTION, OMITTED, BY_REF, names[isc_trans_pos]);
 		printa(names[COLUMN], false, "END-IF");
 	}
-	COB_print_buffer(output_buffer, TRUE);
+	COB_print_buffer(output_buffer, true);
 	set_sqlcode(action);
 }
 
@@ -2105,8 +2099,7 @@ static void gen_dyn_fetch( const act* action)
 
 static void gen_dyn_immediate( const act* action)
 {
-	DBB database;
-	TEXT s[64], *s2;
+	TEXT s[64];
 	gpre_req* request;
 	gpre_req req_const;
 
@@ -2122,10 +2115,10 @@ static void gen_dyn_immediate( const act* action)
 		request = NULL;
 	}
 
-	database = statement->dyn_database;
+	const dbb* database = statement->dyn_database;
 
 #ifndef VMS
-	s2 = "ISC-CONST-DYN-IMMEDL";
+	const TEXT* s2 = "ISC-CONST-DYN-IMMEDL";
 	printa(names[COLUMN], true, GET_LEN_CALL_TEMPLATE,
 		   STRING_LENGTH, statement->dyn_string, s2);
 	sprintf(s, " %s%s%s,", BY_VALUE, s2, END_VALUE);
@@ -2142,8 +2135,8 @@ static void gen_dyn_immediate( const act* action)
 		   (statement->dyn_sqlda2) ?
 		   (TEXT*) "CALL \"%s\" USING %s, %s%s, %s%s,%s %s%s, %s%d%s, %s%s, %s%s" :
 		   (TEXT*) "CALL \"%s\" USING %s, %s%s, %s%s,%s %s%s, %s%d%s, %s%s",
-		   (statement->
-			dyn_sqlda2) ? ISC_EXECUTE_IMMEDIATE2 : ISC_EXECUTE_IMMEDIATE,
+		   (statement->dyn_sqlda2) ?
+				ISC_EXECUTE_IMMEDIATE2 : ISC_EXECUTE_IMMEDIATE,
 		   status_vector(action), BY_REF, database->dbb_name->sym_string,
 		   BY_REF, transaction, s, BY_DESC, statement->dyn_string, BY_VALUE,
 		   sw_sql_dialect, END_VALUE, (statement->dyn_sqlda) ? BY_REF : "",
@@ -2256,7 +2249,7 @@ static void gen_dyn_prepare( const act* action)
 	gpre_req req_const;
 
 	DYN statement = (DYN) action->act_object;
-	DBB database = statement->dyn_database;
+	const dbb* database = statement->dyn_database;
 
 	const TEXT* transaction;
 	if (statement->dyn_trans) {
@@ -2333,7 +2326,7 @@ static void gen_emodify( const act* action)
 		else
 			sprintf(output_buffer, "%sMOVE %s TO %s\n",
 					names[COLUMN], s1, s2);
-		COB_print_buffer(output_buffer, TRUE);
+		COB_print_buffer(output_buffer, true);
 		if (field->fld_array_info)
 			gen_get_or_put_slice(action, reference, false);
 	}
@@ -2915,7 +2908,7 @@ static void gen_get_segment( const act* action)
 			BY_VALUE, blob->blb_seg_length, END_VALUE,
 			BY_REF, names[isc_a_pos], blob->blb_buff_ident, names[isc_status_pos]);
 
-	COB_print_buffer(output_buffer, TRUE);
+	COB_print_buffer(output_buffer, true);
 
 	if (action->act_flags & ACT_sql) {
 		into = action->act_object;
@@ -2962,8 +2955,8 @@ static void gen_loop( const act* action)
 //		port and parameter idents.
 //  
 
-static TEXT *gen_name(TEXT * string,
-					  REF reference,
+static TEXT* gen_name(TEXT* string,
+					  const ref* reference,
 					  bool as_blob)
 {
 
@@ -2997,22 +2990,18 @@ static void gen_on_error( const act* action)
 
 static void gen_procedure( const act* action)
 {
+	gpre_req* request = action->act_request;
+	POR in_port = request->req_vport;
+	POR out_port = request->req_primary;
+
 	PAT args;
-	TEXT *pattern;
-	GPRE_REQ request;
-	POR in_port, out_port;
-	USHORT column;
-
-	request = action->act_request;
-	in_port = request->req_vport;
-	out_port = request->req_primary;
-
 	args.pat_database = request->req_database;
 	args.pat_request = action->act_request;
 	args.pat_vector1 = status_vector(action);
 	args.pat_request = request;
 	args.pat_port = in_port;
 	args.pat_port2 = out_port;
+	const TEXT* pattern;
 #ifndef VMS
 	if (in_port && in_port->por_length)
 		pattern =
@@ -3040,7 +3029,7 @@ static void gen_procedure( const act* action)
 
 //  Execute the procedure 
 
-	column = strlen(names[COLUMN]);
+	const USHORT column = strlen(names[COLUMN]);
 	PATTERN_expand(column, pattern, &args);
 
 	set_sqlcode(action);
@@ -3085,7 +3074,7 @@ static void gen_put_segment( const act* action)
 			BY_REF, names[isc_a_pos], blob->blb_ident,
 			BY_VALUE, names[isc_a_pos], blob->blb_len_ident, END_VALUE,
 			BY_REF, names[isc_a_pos], blob->blb_buff_ident, names[isc_status_pos]);
-	COB_print_buffer(output_buffer, TRUE);
+	COB_print_buffer(output_buffer, true);
 
 	set_sqlcode(action);
 }
@@ -3143,7 +3132,7 @@ static void gen_raw(
 		strcat(s, "\n");
 		sprintf(output_buffer, s, names[isc_a_pos], ident, names[UNDER], length++,
 				blr_hunk.longword_blr);
-		COB_print_buffer(output_buffer, FALSE);
+		COB_print_buffer(output_buffer, false);
 	}
 }
 
@@ -3257,7 +3246,7 @@ static void gen_receive( const act* action, POR port)
 			BY_VALUE, port->por_length, END_VALUE,
 			BY_REF, names[isc_a_pos], port->por_ident,
 			BY_VALUE, request->req_request_level, END_VALUE);
-	COB_print_buffer(output_buffer, TRUE);
+	COB_print_buffer(output_buffer, true);
 
 	set_sqlcode(action);
 }
@@ -3542,7 +3531,7 @@ static void gen_send( const act* action, POR port)
 			BY_REF, names[isc_a_pos], port->por_ident,
 			BY_VALUE, request->req_request_level, END_VALUE);
 
-	COB_print_buffer(output_buffer, TRUE);
+	COB_print_buffer(output_buffer, true);
 	set_sqlcode(action);
 }
 
@@ -3728,7 +3717,7 @@ static void gen_start( const act* action, POR port)
 				BY_REF, request_trans(action, request),
 				BY_VALUE, request->req_request_level, END_VALUE);
 
-	COB_print_buffer(output_buffer, TRUE);
+	COB_print_buffer(output_buffer, true);
 
 	set_sqlcode(action);
 }
@@ -3771,14 +3760,11 @@ static void gen_store( const act* action)
 
 static void gen_t_start( const act* action)
 {
-	DBB db;
-	GPRE_TRA trans;
-	tpb* tpb_iterator;
-	TEXT *filename, dbname[80];
-	USHORT namelength;
+	TEXT dbname[80];
 
 //  if this is a purely default transaction, just let it through 
 
+	const gpre_tra* trans;
 	if (!action || !(trans = (GPRE_TRA) action->act_object)) {
 		t_start_auto(0, status_vector(action), action, false);
 		return;
@@ -3786,16 +3772,18 @@ static void gen_t_start( const act* action)
 
 //  build a complete statement, including tpb's.  Ready db's as gpre_req. 
 
+	const tpb* tpb_iterator;
 	if (sw_auto)
 		for (tpb_iterator = trans->tra_tpb;
 			 tpb_iterator;
 			 tpb_iterator = tpb_iterator->tpb_tra_next)
 		{
-			db = tpb_iterator->tpb_database;
-			if ((filename = db->dbb_runtime) || !(db->dbb_flags & DBB_sqlca)) {
+			const dbb* db = tpb_iterator->tpb_database;
+			const TEXT* filename = db->dbb_runtime;
+			if (filename || !(db->dbb_flags & DBB_sqlca)) {
 				printa(names[COLUMN], false, "IF %s = 0 THEN",
 					   db->dbb_name->sym_string);
-				namelength = filename ? strlen(filename) : 0;
+				const USHORT namelength = filename ? strlen(filename) : 0;
 #ifndef VMS
 				if (filename) {
 					sprintf(dbname, "isc-%ddb", db->dbb_id);
@@ -3838,8 +3826,6 @@ static void gen_t_start( const act* action)
 
 static void gen_tpb(tpb* tpb_buffer)
 {
-	UCHAR *text, *c;
-	int length, char_len;
 	union {
 #ifdef VMS
 		SCHAR bytewise_tpb[4];
@@ -3859,13 +3845,14 @@ static void gen_tpb(tpb* tpb_buffer)
 	printa(names[COLUMN_0], false, "01  %s%d.",
 		   names[isc_tpb_pos], tpb_buffer->tpb_ident);
 
-	text = tpb_buffer->tpb_string;
-	char_len = tpb_buffer->tpb_length;
-	length = 1;
+	const UCHAR* text = tpb_buffer->tpb_string;
+	int char_len = tpb_buffer->tpb_length;
+	int length = 1;
 
 	while (char_len) {
-		for (c = tpb_hunk.bytewise_tpb;
-			 c < tpb_hunk.bytewise_tpb + sizeof(SLONG); c++) {
+		for (UCHAR* c = tpb_hunk.bytewise_tpb;
+			 c < tpb_hunk.bytewise_tpb + sizeof(SLONG); c++)
+		{
 			*c = *text++;
 			if (!(--char_len))
 				break;
@@ -3878,7 +3865,7 @@ static void gen_tpb(tpb* tpb_buffer)
 
 	sprintf(output_buffer, "%sEnd of data for %s%d\n",
 			names[COMMENT], names[isc_tpb_pos], tpb_buffer->tpb_ident);
-	COB_print_buffer(output_buffer, FALSE);
+	COB_print_buffer(output_buffer, false);
 }
 
 
@@ -3931,11 +3918,8 @@ static void gen_type( const act* action)
 
 static void gen_update( const act* action)
 {
-	POR port;
-	UPD modify;
-
-	modify = (UPD) action->act_object;
-	port = modify->upd_port;
+	UPD modify = (UPD) action->act_object;
+	POR port = modify->upd_port;
 	asgn_from(action, port->por_references);
 	gen_send(action, port);
 }
@@ -3949,9 +3933,7 @@ static void gen_update( const act* action)
 static void gen_variable( const act* action)
 {
 	TEXT s[20];
-	REF reference;
-
-	reference = action->act_object;
+	const ref* reference = action->act_object;
 	ib_fprintf(out_file, "\n%s%s",
 			   names[COLUMN], gen_name(s, reference, false));
 }
@@ -3964,7 +3946,7 @@ static void gen_variable( const act* action)
 
 static void gen_whenever( SWE label)
 {
-	TEXT *condition;
+	const TEXT* condition;
 
 	while (label) {
 		switch (label->swe_condition) {
@@ -3998,13 +3980,10 @@ static void gen_whenever( SWE label)
 
 static void make_array_declaration( REF reference)
 {
-	GPRE_FLD field;
-	TEXT space[128], string1[256], *p;
-	DIM dimension;
-	int i, dimension_size;
-	SSHORT digits, scale;
+	TEXT space[128], string1[256];
+	int dimension_size;
 
-	field = reference->ref_field;
+	gpre_fld* field = reference->ref_field;
 	const TEXT* name = field->fld_symbol->sym_string;
 
 //  Don't generate multiple declarations for the array.  V3 Bug 569.  
@@ -4020,8 +3999,10 @@ static void make_array_declaration( REF reference)
 	strcpy(space, "       ");
 
 //   Print out the dimension part of the declaration  
-	for (dimension = field->fld_array_info->ary_dimension, i = 3;
-		 dimension->dim_next; dimension = dimension->dim_next, i += 2) {
+	const dim* dimension = field->fld_array_info->ary_dimension;
+	int i = 3;
+	for (; dimension->dim_next; dimension = dimension->dim_next, i += 2)
+	{
 		dimension_size = dimension->dim_upper - dimension->dim_lower + 1;
 		printa(space, false, "%02d  %s%d%s%d OCCURS %d TIMES.",
 			   i, names[isc_a_pos], field->fld_array_info->ary_ident,
@@ -4029,13 +4010,15 @@ static void make_array_declaration( REF reference)
 		strcat(space, "   ");
 	}
 
-	p = string1;
+	TEXT* p = string1;
 	dimension_size = dimension->dim_upper - dimension->dim_lower + 1;
 	sprintf(p, "%02d  %s%d OCCURS %d TIMES ",
 			i, names[isc_a_pos], field->fld_array_info->ary_ident, dimension_size);
 	while (*p)
 		p++;
 
+	SSHORT digits, scale;
+	
 	switch (field->fld_array_info->ary_dtype) {
 	case dtype_short:
 	case dtype_long:
@@ -4114,7 +4097,7 @@ static void make_array_declaration( REF reference)
 //		Turn a symbol into a varying string.
 //  
 
-static TEXT *make_name( TEXT * string, SYM symbol)
+static TEXT* make_name(TEXT* string, const sym* symbol)
 {
 
 #ifndef VMS
@@ -4137,12 +4120,11 @@ static TEXT *make_name( TEXT * string, SYM symbol)
 //		Turn a symbol into a varying string.
 //  
 
-static TEXT *make_name_formatted( TEXT * string, TEXT * format, SYM symbol)
+static TEXT* make_name_formatted(TEXT* string, const TEXT* format,
+	const sym* symbol)
 {
-	TEXT *s;
-
 	sprintf(string, format, symbol->sym_string);
-	for (s = string; *s; s++)
+	for (TEXT* s = string; *s; s++)
 		if (*s == '_')
 			*s = '-';
 
@@ -4155,21 +4137,19 @@ static TEXT *make_name_formatted( TEXT * string, TEXT * format, SYM symbol)
 //		Insert a port record description in output.
 //  
 
-static void make_port( POR port)
+static void make_port(const por* port)
 {
-	GPRE_FLD field;
-	REF reference;
-	SYM symbol;
-	TEXT s[80];
 	SSHORT digits;
 
 	printa(names[COLUMN_0], false, "01  %s%d.", names[isc_a_pos], port->por_ident);
 
-	for (reference = port->por_references; reference;
-		 reference = reference->ref_next) {
-		field = reference->ref_field;
+	for (const ref* reference = port->por_references; reference;
+		 reference = reference->ref_next)
+	{
+		const gpre_fld* field = reference->ref_field;
 		const TEXT* name;
-		if (symbol = field->fld_symbol)
+		const sym* symbol = field->fld_symbol;
+		if (symbol)
 			name = symbol->sym_string;
 		else
 			name = "<expression>";
@@ -4226,10 +4206,13 @@ static void make_port( POR port)
 			break;
 
 		default:
-			sprintf(s, "datatype %d unknown for field %s, msg %d",
-					field->fld_dtype, name, port->por_msg_number);
-			CPR_error(s);
-			return;
+		    {
+		    	TEXT s[80];
+				sprintf(s, "datatype %d unknown for field %s, msg %d",
+						field->fld_dtype, name, port->por_msg_number);
+				CPR_error(s);
+				return;
+			}
 		}
 	}
 
@@ -4243,12 +4226,13 @@ static void make_port( POR port)
 //  
 
 static void make_ready(
-				  DBB db,
+				  const dbb* db,
 				  const TEXT* filename,
-				  const TEXT* vector, GPRE_REQ request, USHORT namelength)
+				  const TEXT* vector,
+				  const gpre_req* request, USHORT namelength)
 {
 	TEXT s1[32], s1Tmp[32], s2[32], s2Tmp[32], dbname[128];
-	DBB dbisc = (DBB) db->dbb_name->sym_object;
+	const dbb* dbisc = (DBB) db->dbb_name->sym_object;
 
 	if (request) {
 		sprintf(s1, "%s%dL", names[isc_b_pos], request->req_ident);
@@ -4276,7 +4260,7 @@ static void make_ready(
 						BY_REF, s1,
 						BY_DESC, db->dbb_r_user,
 						BY_VALUE, strlen(db->dbb_r_user) - 2, END_VALUE);
-				COB_print_buffer(output_buffer, TRUE);
+				COB_print_buffer(output_buffer, true);
 			}
 			if (db->dbb_r_password) {
 				sprintf(output_buffer,
@@ -4287,7 +4271,7 @@ static void make_ready(
 						BY_REF, s1,
 						BY_DESC, db->dbb_r_password,
 						BY_VALUE, strlen(db->dbb_r_password) - 2, END_VALUE);
-				COB_print_buffer(output_buffer, TRUE);
+				COB_print_buffer(output_buffer, true);
 			}
 
 			/*
@@ -4307,7 +4291,7 @@ static void make_ready(
 						BY_REF, s1,
 						BY_DESC, db->dbb_r_sql_role,
 						BY_VALUE, strlen(db->dbb_r_sql_role) - 2, END_VALUE);
-				COB_print_buffer(output_buffer, TRUE);
+				COB_print_buffer(output_buffer, true);
 			}
 
 			if (db->dbb_r_lc_messages) {
@@ -4320,7 +4304,7 @@ static void make_ready(
 						BY_REF, db->dbb_r_lc_messages,
 						BY_VALUE, strlen(db->dbb_r_lc_messages) - 2,
 						END_VALUE);
-				COB_print_buffer(output_buffer, TRUE);
+				COB_print_buffer(output_buffer, true);
 			}
 			if (db->dbb_r_lc_ctype) {
 				sprintf(output_buffer,
@@ -4331,7 +4315,7 @@ static void make_ready(
 						BY_REF, s1,
 						BY_REF, db->dbb_r_lc_ctype,
 						BY_VALUE, strlen(db->dbb_r_lc_ctype) - 2, END_VALUE);
-				COB_print_buffer(output_buffer, TRUE);
+				COB_print_buffer(output_buffer, true);
 			}
 		}
 
@@ -4390,7 +4374,7 @@ static void make_ready(
 
 #endif
 
-	COB_print_buffer(output_buffer, TRUE);
+	COB_print_buffer(output_buffer, true);
 
 //  if the dpb was extended, free it here 
 
@@ -4398,17 +4382,17 @@ static void make_ready(
 		if (request->req_length) {
 			sprintf(output_buffer,
 					"if (%s != isc_%d)", s2, request->req_ident);
-			COB_print_buffer(output_buffer, TRUE);
+			COB_print_buffer(output_buffer, true);
 		}
 
 		sprintf(output_buffer,
 				"%sCALL \"%s\" USING %s\n", names[COLUMN], ISC_FREE, s2Tmp);
-		COB_print_buffer(output_buffer, TRUE);
+		COB_print_buffer(output_buffer, true);
 
 		/* reset the length of the dpb */
 		sprintf(output_buffer, "%sMOVE %d to %s\n",
 				names[COLUMN], request->req_length, s1);
-		COB_print_buffer(output_buffer, TRUE);
+		COB_print_buffer(output_buffer, true);
 	}
 }
 
@@ -4441,7 +4425,7 @@ static void printa(const TEXT* column,
 //		Print a fixed string at a particular column.
 //  
 
-static void printb( TEXT * string, ...)
+static void printb(const TEXT* string, ...)
 {
 	va_list ptr;
 
@@ -4455,7 +4439,7 @@ static void printb( TEXT * string, ...)
 //		Generate the appropriate transaction handle.
 //  
 
-static const TEXT* request_trans( const act* action, GPRE_REQ request)
+static const TEXT* request_trans( const act* action, const gpre_req* request)
 {
 	if (action->act_type == ACT_open) {
 		const TEXT* trname = ((OPN) action->act_object)->opn_trans;
@@ -4508,7 +4492,7 @@ static const TEXT* status_vector( const act* action)
 //		call.
 //  
 
-static void t_start_auto(GPRE_REQ request,
+static void t_start_auto(const gpre_req* request,
 						 const TEXT* vector,
 						 const act* action,
 						 bool test)
@@ -4578,3 +4562,4 @@ static void t_start_auto(GPRE_REQ request,
 
 	set_sqlcode(action);
 }
+

@@ -85,3 +85,4 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	isc_service_detach(status, &svc_handle);
 }
+

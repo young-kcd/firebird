@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Journal Server
- *	MODULE:		oldr.c
+ *	MODULE:		oldr.cpp
  *	DESCRIPTION:
  *
  * The contents of this file are subject to the Interbase Public
@@ -148,8 +148,8 @@ void OLDR_get_info(OLD OLD_handle,
 
 
 int OLDR_open(
-			  OLD * OLD_handle,
-			  SCHAR * dbname, SSHORT num_files, SCHAR ** files)
+			  OLD* OLD_handle,
+			  const SCHAR* dbname, SSHORT num_files, SCHAR** files)
 {
 /**************************************
  *
@@ -321,3 +321,4 @@ static SLONG oldr_open_file( OLD old)
 
 	return fd;
 }
+

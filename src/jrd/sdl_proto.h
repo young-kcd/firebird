@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		sdl_proto.h
- *	DESCRIPTION:	Prototype header file for sdl.c
+ *	DESCRIPTION:	Prototype header file for sdl.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -29,9 +29,9 @@ extern "C" {
 #endif
 
 SLONG	SDL_compute_subscript(ISC_STATUS *, struct ads *, USHORT, SLONG *);
-ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS *, UCHAR *, struct sdl_info *, SLONG *);
-UCHAR*	SDL_prepare_slice(UCHAR *, USHORT);
-int		SDL_walk(ISC_STATUS *, UCHAR *, USHORT, UCHAR *, struct ads *, SLONG *,
+ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS*, const UCHAR*, struct sdl_info*, SLONG*);
+UCHAR*	SDL_prepare_slice(UCHAR*, USHORT);
+int		SDL_walk(ISC_STATUS*, const UCHAR*, USHORT, UCHAR*, struct ads*, SLONG*,
 				SDL_walk_callback, struct slice *);
 
 #ifdef __cplusplus
@@ -39,3 +39,4 @@ int		SDL_walk(ISC_STATUS *, UCHAR *, USHORT, UCHAR *, struct ads *, SLONG *,
 #endif
 
 #endif // JRD_SDL_PROTO_H
+

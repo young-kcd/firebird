@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		opt_proto.h
- *	DESCRIPTION:	Prototype header file for opt.c
+ *	DESCRIPTION:	Prototype header file for opt.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -30,15 +30,16 @@
 #include "../jrd/lls.h"
 
 
-BOOLEAN OPT_access_path(struct jrd_req *, SCHAR *, SSHORT, USHORT *);
-class Rsb *OPT_compile(TDBB, class Csb *,
+BOOLEAN OPT_access_path(const struct jrd_req*, SCHAR*, SSHORT, USHORT*);
+class Rsb* OPT_compile(TDBB, class Csb *,
 							   struct rse *, struct lls *);
-struct jrd_nod *OPT_make_dbkey(struct opt *, struct jrd_nod *,
+struct jrd_nod* OPT_make_dbkey(struct opt *, struct jrd_nod *,
 								  USHORT);
-struct jrd_nod *OPT_make_index(TDBB, struct opt *, struct jrd_rel *,
+struct jrd_nod* OPT_make_index(TDBB, struct opt *, struct jrd_rel *,
 								  struct idx *);
 int OPT_match_index(struct opt *, USHORT, struct idx *);
 void OPT_set_index(TDBB, struct jrd_req *, class Rsb **, struct jrd_rel *,
 						  struct idx *);
 
 #endif // JRD_OPT_PROTO_H
+

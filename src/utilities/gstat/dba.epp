@@ -139,7 +139,7 @@ static void db_error(SLONG);
 static void db_error(int);
 #endif
 
-static DBA_FIL db_open(UCHAR *, USHORT);
+static DBA_FIL db_open(const char*, USHORT);
 static PAG db_read(SLONG);
 #ifdef SUPERSERVER
 static void db_close(int);
@@ -270,7 +270,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
 	HDR header;
 	LIP logp;
 	DBA_FIL current;
-	SCHAR **end, *name, *p, temp[1024], file_name[1024];
+	SCHAR **end, *p, temp[1024], file_name[1024];
 	double average;
 	bool sw_system = false;
 	bool sw_data = false;
@@ -386,7 +386,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
 		argc -= 4;
 	}
 #endif
-	name = NULL;
+	char* name = NULL;
 
 	MOVE_CLEAR(user_buff, sizeof(user_buff));
 	MOVE_CLEAR(pass_buff, sizeof(pass_buff));
@@ -510,7 +510,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
 
 /* Open database and go to work */
 
-	current = db_open((UCHAR*) name, strlen(name));
+	current = db_open(name, strlen(name));
 	tddba->page_size = sizeof(temp);
 	tddba->global_buffer = (PAG) temp;
 	tddba->page_number = -1;
@@ -558,7 +558,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
 	page = HEADER_PAGE;
 	do {
 		if (page != HEADER_PAGE)
-			current = db_open((UCHAR*) file_name, strlen(file_name));
+			current = db_open(file_name, strlen(file_name));
 		do {
 			header = (HDR) db_read((SLONG) page);
 			if (current != tddba->files)
@@ -1326,7 +1326,10 @@ static void db_error( SLONG status)
 }
 
 
-static DBA_FIL db_open( UCHAR * file_name, USHORT file_length)
+// CVC: This function was using cast to char* for the first param always
+// and the callers had to cast their char*'s to UCHAR*, too. Since the
+// real parameter is char* and always the usage is char*, I changed signature.
+static DBA_FIL db_open(const char* file_name, USHORT file_length)
 {
 /**************************************
  *
@@ -1346,20 +1349,20 @@ static DBA_FIL db_open( UCHAR * file_name, USHORT file_length)
 	if (tddba->files) {
 		for (fil = tddba->files; fil->fil_next; fil = fil->fil_next);
 		fil->fil_next =
-			(DBA_FIL) ALLOC(sizeof(struct dba_fil) + strlen((char*) file_name) + 1);
+			(DBA_FIL) ALLOC(sizeof(struct dba_fil) + strlen(file_name) + 1);
 		fil->fil_next->fil_min_page = fil->fil_max_page + 1;
 		fil = fil->fil_next;
 	}
 	else {						/* empty list */
 
 		fil = tddba->files =
-			(DBA_FIL) ALLOC(sizeof(struct dba_fil) + strlen((char*) file_name) + 1);
+			(DBA_FIL) ALLOC(sizeof(struct dba_fil) + strlen(file_name) + 1);
 		fil->fil_min_page = 0L;
 	}
 
 	fil->fil_next = NULL;
-	strcpy(fil->fil_string, (char*) file_name);
-	fil->fil_length = strlen((char*) file_name);
+	strcpy(fil->fil_string, file_name);
+	fil->fil_length = strlen(file_name);
 	fil->fil_fudge = 0;
 	fil->fil_max_page = 0L;
 
@@ -1474,7 +1477,7 @@ static PAG db_read( SLONG page_number)
 
 	return tddba->global_buffer;
 }
-#endif
+#endif // ifdef WIN_NT
 
 
 #ifndef WIN_NT
@@ -1532,7 +1535,10 @@ static void db_error( int status)
 }
 
 
-static DBA_FIL db_open( UCHAR * file_name, USHORT file_length)
+// CVC: This function was using cast to char* for the first param always
+// and the callers had to cast their char*'s to UCHAR*, too. Since the
+// real parameter is char* and always the usage is char*, I changed signature.
+static DBA_FIL db_open(const char* file_name, USHORT file_length)
 {
 /**************************************
  *
@@ -1556,24 +1562,24 @@ static DBA_FIL db_open( UCHAR * file_name, USHORT file_length)
 	if (tddba->files) {
 		for (fil = tddba->files; fil->fil_next; fil = fil->fil_next);
 		fil->fil_next =
-			(DBA_FIL) ALLOC(sizeof(struct dba_fil) + strlen((char*) file_name) + 1);
+			(DBA_FIL) ALLOC(sizeof(struct dba_fil) + strlen(file_name) + 1);
 		fil->fil_next->fil_min_page = fil->fil_max_page + 1;
 		fil = fil->fil_next;
 	}
 	else {						/* empty list */
 
 		fil = tddba->files =
-			(DBA_FIL) ALLOC(sizeof(struct dba_fil) + strlen((char*) file_name) + 1);
+			(DBA_FIL) ALLOC(sizeof(struct dba_fil) + strlen(file_name) + 1);
 		fil->fil_min_page = 0L;
 	}
 
 	fil->fil_next = NULL;
-	strcpy(fil->fil_string, (char*) file_name);
-	fil->fil_length = strlen((char*) file_name);
+	strcpy(fil->fil_string, file_name);
+	fil->fil_length = strlen(file_name);
 	fil->fil_fudge = 0;
 	fil->fil_max_page = 0L;
 
-	if ((fil->fil_desc = open((char*)file_name, O_RDONLY)) == -1)
+	if ((fil->fil_desc = open(file_name, O_RDONLY)) == -1)
 	{
 #ifdef SUPERSERVER
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,

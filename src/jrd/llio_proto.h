@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		llio_proto.h
- *	DESCRIPTION:	Prototype header file for llio.c
+ *	DESCRIPTION:	Prototype header file for llio.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -26,7 +26,7 @@
 
 int LLIO_allocate_file_space(ISC_STATUS *, TEXT *, SLONG, UCHAR, USHORT);
 int LLIO_close(ISC_STATUS *, SLONG);
-int LLIO_open(ISC_STATUS *, TEXT *, USHORT, USHORT, SLONG *);
+int LLIO_open(ISC_STATUS*, const TEXT*, USHORT, USHORT, SLONG*);
 int LLIO_read(ISC_STATUS *, SLONG, TEXT *, SLONG, USHORT, UCHAR *, SLONG,
 					 SLONG *);
 int LLIO_seek(ISC_STATUS *, SLONG, TEXT *, SLONG, USHORT);
@@ -35,3 +35,4 @@ int LLIO_write(ISC_STATUS *, SLONG, TEXT *, SLONG, USHORT, UCHAR *, SLONG,
 					  SLONG *);
 
 #endif // JRD_LLIO_PROTO_H
+

@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.72 2003-10-03 01:47:25 brodsom Exp $
+$Id: met.epp,v 1.73 2003-10-29 10:53:14 robocop Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -2545,7 +2545,8 @@ int MET_post_existence( TDBB tdbb, JRD_REL relation)
 }
 
 
-void MET_prepare( TDBB tdbb, JRD_TRA transaction, USHORT length, UCHAR * msg)
+void MET_prepare( TDBB tdbb, JRD_TRA transaction, USHORT length,
+	const UCHAR* msg)
 {
 /**************************************
  *
@@ -4593,3 +4594,4 @@ static BOOLEAN verify_TRG_ignore_perm(TDBB tdbb, TEXT* trig_name)
 
 	return FALSE;
 }
+

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		stats.e
+ *	MODULE:		stats.epp
  *	DESCRIPTION:	Record statistics manager
  *
  * The contents of this file are subject to the Interbase Public
@@ -48,7 +48,7 @@ typedef struct stats {
 static STATS expand_stats();
 static int print_line();
 
-static SCHAR info_request[] = {
+static const SCHAR info_request[] = {
 	gds_info_read_seq_count,
 	gds_info_read_idx_count,
 	gds_info_insert_count,
@@ -60,7 +60,7 @@ static SCHAR info_request[] = {
 	gds_info_end
 };
 
-static SCHAR *headers[] = {
+static const SCHAR* headers[] = {
 	"S-Reads",
 	"I-Reads",
 	"Inserts",
@@ -71,8 +71,8 @@ static SCHAR *headers[] = {
 	"Expunges"
 };
 
-static int *database_handle;
-static int *request_handle;
+static int* database_handle;
+static int* request_handle;
 
 
 int stats_analyze(STATS before, STATS after, int(*callback)(), SCHAR *arg)
@@ -354,3 +354,4 @@ static int zap_longs(SLONG *ptr, SSHORT count)
 		
 	return 0;
 }
+

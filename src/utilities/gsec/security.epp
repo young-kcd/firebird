@@ -1,7 +1,7 @@
 /*
  *
  *	PROGRAM:	Security data base manager
- *	MODULE:		security.e
+ *	MODULE:		security.epp
  *	DESCRIPTION:	Security routines
  *
  * The contents of this file are subject to the Interbase Public
@@ -364,7 +364,7 @@ void SECURITY_get_db_path( TEXT * server, TEXT * buffer)
 	ISC_STATUS_ARRAY status;
 	isc_svc_handle svc_handle = NULL;
 	TEXT svc_name[256];
-	TEXT sendbuf[] = { isc_info_svc_user_dbpath };
+	const TEXT sendbuf[] = { isc_info_svc_user_dbpath };
 	TEXT respbuf[RESPBUF], *p = respbuf;
 	USHORT path_length;
 
@@ -422,3 +422,4 @@ void SECURITY_msg_get( USHORT number, TEXT * msg)
 	gds__msg_format(NULL, GSEC_MSG_FAC, number, MSG_LENGTH, msg,
 					NULL, NULL, NULL, NULL, NULL);
 }
+

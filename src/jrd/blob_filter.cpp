@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		blf.epp
+ *	MODULE:		blob_filter.cpp
  *	DESCRIPTION:	Blob filter driver
  *
  * The contents of this file are subject to the Interbase Public
@@ -78,7 +78,7 @@ static ISC_STATUS open_blob(TDBB,
 							CTL*,
 							SLONG*,
 							USHORT,
-							UCHAR*,
+							const UCHAR*,
 							PTR,
 							USHORT,
 							BLF);
@@ -142,10 +142,10 @@ ISC_STATUS BLF_close_blob(TDBB tdbb, CTL * filter_handle)
 
 ISC_STATUS BLF_create_blob(TDBB tdbb,
 							JRD_TRA tra_handle,
-							CTL * filter_handle,
-							SLONG * blob_id,
+							CTL* filter_handle,
+							SLONG* blob_id,
 							USHORT bpb_length,
-							UCHAR * bpb,
+							const UCHAR* bpb,
 							ISC_STATUS (*callback)(),
 							BLF filter)
 {
@@ -161,7 +161,8 @@ ISC_STATUS BLF_create_blob(TDBB tdbb,
  **************************************/
 
 	return open_blob(tdbb, tra_handle, filter_handle,
-					 blob_id, bpb_length, bpb, (ISC_STATUS (*)(USHORT, CTL)) callback, ACTION_create,
+					 blob_id, bpb_length, bpb,
+					 (ISC_STATUS (*)(USHORT, CTL)) callback, ACTION_create,
 					 filter);
 }
 
@@ -195,7 +196,7 @@ ISC_STATUS BLF_get_segment(TDBB tdbb,
 
 	START_CHECK_FOR_EXCEPTIONS((TEXT*) control->ctl_exception_message)
 
-		user_status[0] = gds_arg_gds;
+	user_status[0] = gds_arg_gds;
 	user_status[1] = FB_SUCCESS;
 	user_status[2] = gds_arg_end;
 
@@ -213,7 +214,7 @@ ISC_STATUS BLF_get_segment(TDBB tdbb,
 
 	END_CHECK_FOR_EXCEPTIONS((TEXT*)control->ctl_exception_message)
 
-		return status;
+	return status;
 }
 
 
@@ -258,10 +259,10 @@ BLF BLF_lookup_internal_filter(TDBB tdbb, SSHORT from, SSHORT to)
 
 ISC_STATUS BLF_open_blob(TDBB tdbb,
 						JRD_TRA tra_handle,
-						CTL * filter_handle,
-						SLONG * blob_id,
+						CTL* filter_handle,
+						SLONG* blob_id,
 						USHORT bpb_length,
-						UCHAR * bpb,
+						const UCHAR* bpb,
 						ISC_STATUS (*callback)(),
 						BLF filter)
 {
@@ -277,14 +278,16 @@ ISC_STATUS BLF_open_blob(TDBB tdbb,
  **************************************/
 
 	return open_blob(tdbb, tra_handle, filter_handle,
-					 blob_id, bpb_length, bpb, (ISC_STATUS (*)(USHORT, CTL)) callback, ACTION_open, filter);
+					 blob_id, bpb_length, bpb,
+					 (ISC_STATUS (*)(USHORT, CTL)) callback,
+					 ACTION_open, filter);
 }
 
 
 ISC_STATUS BLF_put_segment(TDBB tdbb,
-							CTL * filter_handle,
+							CTL* filter_handle,
 							USHORT length,
-							UCHAR * buffer)
+							const UCHAR* buffer)
 {
 /**************************************
  *
@@ -304,12 +307,15 @@ ISC_STATUS BLF_put_segment(TDBB tdbb,
 
 	control = *filter_handle;
 	control->ctl_status = user_status;
-	control->ctl_buffer = buffer;
+	// If the filter is ill behaved, it won't respect the constness
+	// even though it's job is to process the buffer and write the
+	// result.
+	control->ctl_buffer = const_cast<UCHAR*>(buffer);
 	control->ctl_buffer_length = length;
 
 	START_CHECK_FOR_EXCEPTIONS( (TEXT*) control->ctl_exception_message)
 
-		user_status[0] = gds_arg_gds;
+	user_status[0] = gds_arg_gds;
 	user_status[1] = FB_SUCCESS;
 	user_status[2] = gds_arg_end;
 
@@ -322,17 +328,17 @@ ISC_STATUS BLF_put_segment(TDBB tdbb,
 
 	END_CHECK_FOR_EXCEPTIONS((TEXT*)control->ctl_exception_message)
 
-		return status;
+	return status;
 }
 
 
 static ISC_STATUS open_blob(
 					TDBB tdbb,
 					JRD_TRA tra_handle,
-					CTL * filter_handle,
-					SLONG * blob_id,
+					CTL* filter_handle,
+					SLONG* blob_id,
 					USHORT bpb_length,
-					UCHAR * bpb,
+					const UCHAR* bpb,
 					PTR callback,
 					USHORT action,
 					BLF filter)
@@ -455,3 +461,4 @@ static ISC_STATUS open_blob(
 }
 
 }	// extern "C"
+

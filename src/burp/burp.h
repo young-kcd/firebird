@@ -746,8 +746,8 @@ const unsigned int MIN_SPLIT_SIZE	= 2048;	/* bytes */
 typedef struct tgbl
 {
 	thdd		tgbl_thd_data;
-	TEXT		*gbl_database_file_name;
-	TEXT		gbl_backup_start_time [30];
+	const TEXT*	gbl_database_file_name;
+	TEXT		gbl_backup_start_time[30];
 	USHORT		gbl_sw_verbose;
 	USHORT		gbl_sw_ignore_limbo;
 	USHORT		gbl_sw_meta;
@@ -778,7 +778,7 @@ typedef struct tgbl
 	ACT			action;
 	ULONG		io_buffer_size;
 	redirect_vals	sw_redirect;
-	UCHAR		dpb_string [100];
+	UCHAR		dpb_string[100];
 	SSHORT		dpb_length;
 	UCHAR		*burp_env;
 	UCHAR		*io_ptr;

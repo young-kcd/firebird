@@ -24,7 +24,7 @@
 #ifndef BURP_RESTO_PROTO_H
 #define BURP_RESTO_PROTO_H
 
-int	RESTORE_restore(TEXT*, TEXT*);
+int	RESTORE_restore(const TEXT*, const TEXT*);
 
 #endif	// BURP_RESTO_PROTO_H
 

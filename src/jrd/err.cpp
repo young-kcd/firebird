@@ -506,7 +506,8 @@ void ERR_punt(void)
 	{
 		dbname = ((tdbb->tdbb_attachment->att_filename) ?
 			tdbb->tdbb_attachment->att_filename->str_data : NULL);
-		gds__log_status(reinterpret_cast<char*>(dbname), tdbb->tdbb_status_vector);
+		gds__log_status(reinterpret_cast<const char*>(dbname),
+			tdbb->tdbb_status_vector);
 	}
 
 #pragma FB_COMPILER_MESSAGE("FIXME! C functions can not throw! FIXME!")

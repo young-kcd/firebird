@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		tra.c
+ *	MODULE:		tra.cpp
  *	DESCRIPTION:	Transaction manager
  *
  * The contents of this file are subject to the Interbase Public
@@ -910,7 +910,8 @@ BOOLEAN TRA_precommited(TDBB tdbb, SLONG old_number, SLONG new_number)
 }
 
 
-void TRA_prepare(TDBB tdbb, JRD_TRA transaction, USHORT length, UCHAR * msg)
+void TRA_prepare(TDBB tdbb, JRD_TRA transaction, USHORT length,
+	const UCHAR* msg)
 {
 /**************************************
  *
@@ -3153,3 +3154,4 @@ static BOOLEAN vms_convert(LCK lock, SLONG * data, SCHAR type, BOOLEAN wait)
 	return TRUE;
 }
 #endif
+

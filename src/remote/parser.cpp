@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Remote Interface/Server
- *	MODULE:		parse.c
+ *	MODULE:		parse.cpp
  *	DESCRIPTION:	BLR parser
  *
  * The contents of this file are subject to the Interbase Public
@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: parser.cpp,v 1.9 2003-10-03 01:17:06 brodsom Exp $
+$Id: parser.cpp,v 1.10 2003-10-29 10:53:36 robocop Exp $
 */
 
 #include "firebird.h"
@@ -40,7 +40,7 @@ $Id: parser.cpp,v 1.9 2003-10-03 01:17:06 brodsom Exp $
 
 
 
-REM_MSG PARSE_messages(UCHAR * blr, USHORT blr_length)
+REM_MSG PARSE_messages(const UCHAR* blr, USHORT blr_length)
 {
 /**************************************
  *

@@ -91,7 +91,7 @@ static bool_t xnet_getlong(XDR *, SLONG *);
 static u_int xnet_getpostn(XDR *);
 static caddr_t xnet_inline(XDR *, u_int);
 static bool_t xnet_putlong(XDR *, SLONG *);
-static bool_t xnet_putbytes(XDR *, SCHAR *, u_int);
+static bool_t xnet_putbytes(XDR*, const SCHAR*, u_int);
 static bool_t xnet_setpostn(XDR *, u_int);
 static bool_t xnet_read(XDR * xdrs);
 static bool_t xnet_write(XDR * xdrs);
@@ -1802,7 +1802,7 @@ static caddr_t xnet_inline(XDR * xdrs, u_int bytecount)
 }
 
 
-static bool_t xnet_putbytes(XDR * xdrs, SCHAR * buff, u_int count)
+static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 {
 /**************************************
  *
@@ -1832,7 +1832,7 @@ static bool_t xnet_putbytes(XDR * xdrs, SCHAR * buff, u_int count)
 				xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
 				XNET_ERROR(port, "connection lost: another side is dead", 
 						   isc_lost_db_connection, 0);
-				}
+			}
 			return FALSE;
 		}
 #endif

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.39 2003-10-20 10:53:52 aafemt Exp $
+$Id: blb.cpp,v 1.40 2003-10-29 10:53:13 robocop Exp $
 */
 
 #include "firebird.h"
@@ -174,7 +174,8 @@ BLB BLB_create(TDBB tdbb, JRD_TRA transaction, BID blob_id)
 
 
 BLB BLB_create2(TDBB tdbb,
-				JRD_TRA transaction, BID blob_id, USHORT bpb_length, UCHAR * bpb)
+				JRD_TRA transaction, BID blob_id,
+				USHORT bpb_length, const UCHAR* bpb)
 {
 /**************************************
  *
@@ -363,12 +364,11 @@ BLB BLB_get_array(TDBB tdbb, JRD_TRA transaction, BID blob_id, ADS desc)
  *      Get array blob and array descriptor.
  *
  **************************************/
-	BLB blob;
 	USHORT n;
 
 	SET_TDBB(tdbb);
 
-	blob = BLB_open2(tdbb, transaction, blob_id, 0, 0);
+	BLB blob = BLB_open2(tdbb, transaction, blob_id, 0, 0);
 
 	if (blob->blb_length < sizeof(ads)) {
 		BLB_close(tdbb, blob);
@@ -424,7 +424,7 @@ SLONG BLB_get_data(TDBB tdbb, BLB blob, UCHAR* buffer, SLONG length)
 
 
 USHORT BLB_get_segment(TDBB tdbb,
-					   BLB blob, UCHAR * segment, USHORT buffer_length)
+					   BLB blob, UCHAR* segment, USHORT buffer_length)
 {
 /**************************************
  *
@@ -438,13 +438,11 @@ USHORT BLB_get_segment(TDBB tdbb,
  *
  **************************************/
 	DBB dbb;
-	BLOB_PTR *from;
-	BLOB_PTR *to;
 	UCHAR *p;
 	WIN window;
 	BLP page;
 	ISC_STATUS status;
-	USHORT length, l, seek;
+	USHORT l;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -463,9 +461,11 @@ USHORT BLB_get_segment(TDBB tdbb,
 
 	if (blob->blb_filter) {
 		blob->blb_fragment_size = 0;
+		USHORT tmp_len = 0;
 		if ( (status =
-			BLF_get_segment(tdbb, &blob->blb_filter, &length, buffer_length,
-							segment)) ) {
+			BLF_get_segment(tdbb, &blob->blb_filter, &tmp_len, buffer_length,
+							segment)) )
+		{
 			if (status == gds_segstr_eof)
 				blob->blb_flags |= BLB_eof;
 			else if (status == gds_segment)
@@ -474,12 +474,12 @@ USHORT BLB_get_segment(TDBB tdbb,
 				ERR_punt();
 		}
 
-		return length;
+		return tmp_len;
 	}
 
 /* If there is a seek pending, handle it here */
 
-	seek = 0;
+	USHORT seek = 0;
 
 	if (blob->blb_flags & BLB_seek) {
 		if (blob->blb_seek >= blob->blb_length) {
@@ -511,9 +511,9 @@ USHORT BLB_get_segment(TDBB tdbb,
    size (or fragment size), buffer size, and amount of data left
    in the blob. */
 
-	to = segment;
-	from = blob->blb_segment;
-	length = blob->blb_space_remaining;
+	BLOB_PTR* to = segment;
+	const BLOB_PTR* from = blob->blb_segment;
+	USHORT length = blob->blb_space_remaining;
 	bool active_page = false;
 	window.win_flags = 0;
 	if (blob->blb_flags & BLB_large_scan) {
@@ -563,7 +563,9 @@ USHORT BLB_get_segment(TDBB tdbb,
 		buffer_length -= l;
 		if (((U_IPTR) from & (ALIGNMENT - 1))
 			|| ((U_IPTR) to & (ALIGNMENT - 1)))
+		{
 			MOVE_FAST(from, to, l);
+		}
 		else
 			MOVE_FASTER(from, to, l);
 		to += l;
@@ -599,7 +601,9 @@ USHORT BLB_get_segment(TDBB tdbb,
 	if (active_page) {
 		if (((U_IPTR) from & (ALIGNMENT - 1))
 			|| ((U_IPTR) blob->blb_data & (ALIGNMENT - 1)))
+		{
 			MOVE_FAST(from, blob->blb_data, length);
+		}
 		else
 			MOVE_FASTER(from, blob->blb_data, length);
 		from = blob->blb_data;
@@ -609,7 +613,7 @@ USHORT BLB_get_segment(TDBB tdbb,
 			CCH_RELEASE(tdbb, &window);
 	}
 
-	blob->blb_segment = from;
+	blob->blb_segment = const_cast<BLOB_PTR*>(from); // safe cast
 	blob->blb_space_remaining = length;
 	length = to - segment;
 	blob->blb_seek += length;
@@ -627,9 +631,9 @@ USHORT BLB_get_segment(TDBB tdbb,
 SLONG BLB_get_slice(TDBB tdbb,
 					JRD_TRA transaction,
 					BID blob_id,
-					UCHAR * sdl,
+					const UCHAR* sdl,
 					USHORT param_length,
-					SLONG* param, SLONG slice_length, UCHAR* slice_addr)
+					const SLONG* param, SLONG slice_length, UCHAR* slice_addr)
 {
 /**************************************
  *
@@ -715,8 +719,8 @@ SLONG BLB_get_slice(TDBB tdbb,
 	arg.slice_count = 0;
 	arg.slice_element_length = info.sdl_info_element.dsc_length;
 	arg.slice_direction = FALSE;	/* fetching from array */
-	arg.slice_high_water = (BLOB_PTR *) data + length;
-	arg.slice_base = (BLOB_PTR *) data + offset;
+	arg.slice_high_water = (BLOB_PTR*) data + length;
+	arg.slice_base = (BLOB_PTR*) data + offset;
 
 	status = SDL_walk(tdbb->tdbb_status_vector,
 					  sdl,
@@ -800,14 +804,11 @@ void BLB_map_blobs(TDBB tdbb, BLB old_blob, BLB new_blob)
  *      replaying a log.
  *
  **************************************/
-	DBB dbb;
-	MAP new_map;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	new_map = FB_NEW(*dbb->dbb_permanent) map();
+	MAP new_map = FB_NEW(*dbb->dbb_permanent) map();
 	new_map->map_old_blob = old_blob;
 	new_map->map_new_blob = new_blob;
 
@@ -835,15 +836,6 @@ void BLB_move(TDBB tdbb, const dsc* from_desc, dsc* to_desc, JRD_NOD field)
  *      field in a message.
  *
  **************************************/
-	BLB blob;
-	BID source, destination;
-	USHORT id;
-	JRD_REQ request;
-	RPB *rpb;
-	REC record;
-	JRD_REL relation;
-	JRD_TRA transaction;
-
 	SET_TDBB(tdbb);
 
 	if (field->nod_type != nod_field)
@@ -855,26 +847,29 @@ void BLB_move(TDBB tdbb, const dsc* from_desc, dsc* to_desc, JRD_NOD field)
 		ERR_post(gds_convert_error, gds_arg_string, "BLOB", 0);
 	}
 
-	request = tdbb->tdbb_request;
-	source = (BID) from_desc->dsc_address;
-	destination = (BID) to_desc->dsc_address;
-	id = (USHORT) (ULONG) field->nod_arg[e_fld_id];
-	rpb = &request->req_rpb[(int) field->nod_arg[e_fld_stream]];
-	relation = rpb->rpb_relation;
-	record = rpb->rpb_record;
+	JRD_REQ request = tdbb->tdbb_request;
+	BID source = (BID) from_desc->dsc_address;
+	BID destination = (BID) to_desc->dsc_address;
+	USHORT id = (USHORT) (ULONG) field->nod_arg[e_fld_id];
+	RPB* rpb = &request->req_rpb[(int) field->nod_arg[e_fld_stream]];
+	JRD_REL relation = rpb->rpb_relation;
+	REC record = rpb->rpb_record;
 
 /* If nothing changed, do nothing.  If it isn't broken,
    don't fix it. */
 
 	if (source->bid_relation_id == destination->bid_relation_id &&
 		source->bid_stuff.bid_number == destination->bid_stuff.bid_number)
+	{
 		return;
+	}
 
 /* If either the source value is null or the blob id itself is null (all
    zeros, then the blob is null. */
 
 	if ((request->req_flags & req_null) || (!source->bid_relation_id &&
-											!source->bid_stuff.bid_blob)) {
+											!source->bid_stuff.bid_blob))
+	{
 		SET_NULL(record, id);
 		destination->bid_relation_id = 0;
 		destination->bid_stuff.bid_number = 0;
@@ -882,7 +877,7 @@ void BLB_move(TDBB tdbb, const dsc* from_desc, dsc* to_desc, JRD_NOD field)
 	}
 
 	CLEAR_NULL(record, id);
-	transaction = request->req_transaction;
+	JRD_TRA transaction = request->req_transaction;
 
 /* If the target is a view, this must be from a view update trigger.
    Just pass the blob id thru */
@@ -902,7 +897,7 @@ void BLB_move(TDBB tdbb, const dsc* from_desc, dsc* to_desc, JRD_NOD field)
    Otherwise find the temporary blob referenced.  */
 
 	ARR array = 0;
-
+	BLB blob;
 	bool materialized_blob, refetch_flag;
 	
 	do {
@@ -912,14 +907,17 @@ void BLB_move(TDBB tdbb, const dsc* from_desc, dsc* to_desc, JRD_NOD field)
 		else if ((to_desc->dsc_dtype == dtype_array) &&
 				 (array = find_array(transaction, source)) &&
 				 (blob = store_array(tdbb, transaction, source)))
+		{
 			materialized_blob = true;
-		else
+		}
+		else {
 			for (blob = transaction->tra_blobs; blob; blob = blob->blb_next)
 				if (blob == source->bid_stuff.bid_blob)
 				{
 					materialized_blob = true;
 					break;
 				}
+		}
 
 		if (!blob || MemoryPool::blk_type(blob) != type_blb ||
 			blob->blb_attachment != tdbb->tdbb_attachment ||
@@ -1023,7 +1021,8 @@ BLB BLB_open(TDBB tdbb, JRD_TRA transaction, BID blob_id)
 
 
 BLB BLB_open2(TDBB tdbb,
-			  JRD_TRA transaction, BID blob_id, USHORT bpb_length, UCHAR * bpb)
+			  JRD_TRA transaction, BID blob_id,
+			  USHORT bpb_length, const UCHAR* bpb)
 {
 /**************************************
  *
@@ -1094,7 +1093,10 @@ BLB BLB_open2(TDBB tdbb,
 						  bpb_length,
 						  bpb,
 						  reinterpret_cast < long (*)() > (blob_filter),
-						  filter)) ERR_punt();
+						  filter))
+		{
+			ERR_punt();
+		}
 		blob->blb_filter = control;
 		blob->blb_max_segment = control->ctl_max_segment;
 		blob->blb_count = control->ctl_number_segments;
@@ -1180,7 +1182,7 @@ BLB BLB_open2(TDBB tdbb,
 }
 
 
-void BLB_put_segment(TDBB tdbb, BLB blob, UCHAR* seg, USHORT segment_length)
+void BLB_put_segment(TDBB tdbb, BLB blob, const UCHAR* seg, USHORT segment_length)
 {
 /**************************************
  *
@@ -1193,17 +1195,9 @@ void BLB_put_segment(TDBB tdbb, BLB blob, UCHAR* seg, USHORT segment_length)
  *
  **************************************/
 	DBB dbb;
-	BLOB_PTR *segment;
-	BLOB_PTR *p;
-	BLOB_PTR *q;
-	UCHAR length_flag;
-	ULONG length;				/* length of segment + overhead */
-	USHORT l;
-	BLP page;
-
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
-	segment = (BLOB_PTR *) seg;
+	const BLOB_PTR* segment = reinterpret_cast<const BLOB_PTR*>(seg);
 
 /* Make sure blob is a temporary blob.  If not, complain bitterly. */
 
@@ -1228,6 +1222,8 @@ void BLB_put_segment(TDBB tdbb, BLB blob, UCHAR* seg, USHORT segment_length)
 /* Compute the effective length of the segment (counts length unless
    the blob is a stream blob). */
 
+	ULONG length;				// length of segment + overhead
+	UCHAR length_flag;
 	if (SEGMENTED) {
 		length = segment_length + 2;
 		length_flag = TRUE;
@@ -1245,7 +1241,7 @@ void BLB_put_segment(TDBB tdbb, BLB blob, UCHAR* seg, USHORT segment_length)
 
 		transaction = blob->blb_transaction;
 		blob->blb_pages = vcl::newVector(*transaction->tra_pool, 0);
-		l = dbb->dbb_page_size - BLP_SIZE;
+		const USHORT l = dbb->dbb_page_size - BLP_SIZE;
 		blob->blb_space_remaining += l - blob->blb_clump_size;
 		blob->blb_clump_size = l;
 		blob->blb_level = 1;
@@ -1254,10 +1250,10 @@ void BLB_put_segment(TDBB tdbb, BLB blob, UCHAR* seg, USHORT segment_length)
 /* Case 1: The segment fits.  In what is immaterial.  Just move the segment
    and get out! */
 
-	p = blob->blb_segment;
+	BLOB_PTR* p = blob->blb_segment;
 
 	if (length_flag && blob->blb_space_remaining >= 2) {
-		q = (UCHAR *) & segment_length;
+		const BLOB_PTR* q = (UCHAR*) &segment_length;
 		*p++ = *q++;
 		*p++ = *q++;
 		blob->blb_space_remaining -= 2;
@@ -1268,7 +1264,9 @@ void BLB_put_segment(TDBB tdbb, BLB blob, UCHAR* seg, USHORT segment_length)
 		blob->blb_space_remaining -= segment_length;
 		if (((U_IPTR) segment & (ALIGNMENT - 1))
 			|| ((U_IPTR) p & (ALIGNMENT - 1)))
+		{
 			MOVE_FAST(segment, p, segment_length);
+		}
 		else
 			MOVE_FASTER(segment, p, segment_length);
 		blob->blb_segment = p + segment_length;
@@ -1285,14 +1283,16 @@ void BLB_put_segment(TDBB tdbb, BLB blob, UCHAR* seg, USHORT segment_length)
 
 		/* Move what fits.  At this point, the length is known not to fit. */
 
-		l = MIN(segment_length, blob->blb_space_remaining);
+		const USHORT l = MIN(segment_length, blob->blb_space_remaining);
 
 		if (!length_flag && l) {
 			segment_length -= l;
 			blob->blb_space_remaining -= l;
 			if (((U_IPTR) segment & (ALIGNMENT - 1))
 				|| ((U_IPTR) p & (ALIGNMENT - 1)))
+			{
 				MOVE_FAST(segment, p, l);
+			}
 			else
 				MOVE_FASTER(segment, p, l);
 			p += l;
@@ -1310,14 +1310,14 @@ void BLB_put_segment(TDBB tdbb, BLB blob, UCHAR* seg, USHORT segment_length)
 
 		/* Get ready to start filling the next page. */
 
-		page = (BLP) blob->blb_data;
+		BLP page = (BLP) blob->blb_data;
 		p = blob->blb_segment = (UCHAR *) page->blp_data;
 		blob->blb_space_remaining = blob->blb_clump_size;
 
 		/* If there's still a length waiting to be moved, move it already! */
 
 		if (length_flag) {
-			q = (UCHAR *) & segment_length;
+			const BLOB_PTR* q = (UCHAR*) &segment_length;
 			*p++ = *q++;
 			*p++ = *q++;
 			blob->blb_space_remaining -= 2;
@@ -1332,9 +1332,9 @@ void BLB_put_segment(TDBB tdbb, BLB blob, UCHAR* seg, USHORT segment_length)
 void BLB_put_slice(	TDBB	tdbb,
 					JRD_TRA		transaction,
 					BID		blob_id,
-					UCHAR*	sdl,
+					const UCHAR*	sdl,
 					USHORT	param_length,
-					SLONG*	param,
+					const SLONG*	param,
 					SLONG	slice_length,
 					UCHAR*	slice_addr)
 {
@@ -1458,11 +1458,11 @@ void BLB_put_slice(	TDBB	tdbb,
 
 	arg.slice_desc = info.sdl_info_element;
 	arg.slice_desc.dsc_address = slice_addr;
-	arg.slice_end = (BLOB_PTR *) slice_addr + slice_length;
+	arg.slice_end = (BLOB_PTR*) slice_addr + slice_length;
 	arg.slice_count = 0;
 	arg.slice_element_length = info.sdl_info_element.dsc_length;
 	arg.slice_direction = TRUE;	/* storing INTO array */
-	arg.slice_base = (BLOB_PTR *) array->arr_data;
+	arg.slice_base = (BLOB_PTR*) array->arr_data;
 	MOVE_FAST(param, variables, MIN(sizeof(variables), param_length));
 
 	if (SDL_walk(tdbb->tdbb_status_vector,
@@ -1477,7 +1477,7 @@ void BLB_put_slice(	TDBB	tdbb,
 		ERR_punt();
 	}
 
-	SLONG length = (BLOB_PTR*)arg.slice_high_water - (BLOB_PTR*)array->arr_data;
+	SLONG length = arg.slice_high_water - (BLOB_PTR*)array->arr_data;
 
 	if (length > array->arr_effective_length) {
 		array->arr_effective_length = length;
@@ -2133,11 +2133,8 @@ static void get_replay_blob(TDBB tdbb, BID blob_id)
  *      blob id used in the original session.
  *
  **************************************/
-	DBB dbb;
-	MAP map_ptr;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 /* we're only interested in newly created blobs */
@@ -2147,7 +2144,8 @@ static void get_replay_blob(TDBB tdbb, BID blob_id)
 
 /* search the linked list for the old blob id */
 
-	for (map_ptr = dbb->dbb_blob_map; map_ptr; map_ptr = map_ptr->map_next) {
+	for (MAP map_ptr = dbb->dbb_blob_map; map_ptr; map_ptr = map_ptr->map_next)
+	{
 		if (blob_id->bid_stuff.bid_blob == map_ptr->map_old_blob)
 		{
 			blob_id->bid_stuff.bid_blob = map_ptr->map_new_blob;
@@ -2311,20 +2309,15 @@ static void slice_callback(SLICE arg, ULONG count, DSC * descriptors)
  *      Perform slice assignment.
  *
  **************************************/
-	DSC *array_desc, *slice_desc, temp_desc;
-	BLOB_PTR *next;
-	BLOB_PTR *end;
-	SLONG l;
-	USHORT len;
+	dsc* array_desc = descriptors;
+	dsc* slice_desc = &arg->slice_desc;
+	BLOB_PTR* const next =
+		(BLOB_PTR*) slice_desc->dsc_address + arg->slice_element_length;
 
-	array_desc = descriptors;
-	slice_desc = &arg->slice_desc;
-	next = (BLOB_PTR *) slice_desc->dsc_address + arg->slice_element_length;
-
-	if ((BLOB_PTR *) next > (BLOB_PTR *) arg->slice_end)
+	if (next > arg->slice_end)
 		ERR_post(gds_out_of_bounds, 0);
 
-	if ((BLOB_PTR *) array_desc->dsc_address < (BLOB_PTR *) arg->slice_base)
+	if ((BLOB_PTR *) array_desc->dsc_address < arg->slice_base)
 		ERR_error(198);			/* msg 198 array subscript computation error */
 
 	if (arg->slice_direction) {
@@ -2335,11 +2328,13 @@ static void slice_callback(SLICE arg, ULONG count, DSC * descriptors)
 		/* If storing beyond the high-water mark, ensure elements
 		 * from the high-water mark to current position are zeroed
 		 */
-		l =
-			(BLOB_PTR *) array_desc->dsc_address -
-			(BLOB_PTR *) arg->slice_high_water;
+
+		// Since we are only initializing, it makes sense to throw away
+		// the constness of arg->slice_high_water.
+		const SLONG l =
+			(BLOB_PTR*) array_desc->dsc_address - arg->slice_high_water;
 		if (l > 0)
-			memset(arg->slice_high_water, 0, l);
+			memset(const_cast<BLOB_PTR*>(arg->slice_high_water), 0, l);
 
 		/* The individual elements of a varying string array may not be aligned
 		   correctly.  If they aren't, some RISC machines may break.  In those
@@ -2351,18 +2346,14 @@ static void slice_callback(SLICE arg, ULONG count, DSC * descriptors)
 			FB_ALIGN((U_IPTR) array_desc->dsc_address,
 					 (MIN(sizeof(USHORT), ALIGNMENT))))
 		{
-			STR tmp_buffer;
-			USHORT tmp_len;
-			TDBB tdbb;
-			const char* p;
-
 			/* Note: cannot remove this GET_THREAD_DATA without api change
 			   to slice callback routines */
-			tdbb = GET_THREAD_DATA;
+			TDBB tdbb = GET_THREAD_DATA;
 
-			tmp_len = array_desc->dsc_length;
-			tmp_buffer = FB_NEW_RPT(*tdbb->tdbb_default, tmp_len) str();
-			len = MOV_make_string(slice_desc,
+			const USHORT tmp_len = array_desc->dsc_length;
+			STR tmp_buffer = FB_NEW_RPT(*tdbb->tdbb_default, tmp_len) str();
+			const char* p;
+			const USHORT len = MOV_make_string(slice_desc,
 								  INTL_TEXT_TYPE(*array_desc),
 								  &p,
 								  reinterpret_cast<vary*>(tmp_buffer->str_data),
@@ -2375,9 +2366,10 @@ static void slice_callback(SLICE arg, ULONG count, DSC * descriptors)
 		{
 			MOV_move(slice_desc, array_desc);
 		}
-		end = (BLOB_PTR *) array_desc->dsc_address + array_desc->dsc_length;
-		if ((BLOB_PTR *) end > (BLOB_PTR *) arg->slice_high_water)
-			arg->slice_high_water = (BLOB_PTR *) end;
+		const BLOB_PTR* const end =
+			(BLOB_PTR*) array_desc->dsc_address + array_desc->dsc_length;
+		if (end > arg->slice_high_water)
+			arg->slice_high_water = end;
 	}
 	else {
 
@@ -2387,15 +2379,18 @@ static void slice_callback(SLICE arg, ULONG count, DSC * descriptors)
 		/* If the element is under the high-water mark, fetch it,
 		 * otherwise just zero it
 		 */
-		if ((BLOB_PTR *) array_desc->dsc_address <
-			(BLOB_PTR *) arg->slice_high_water) {
+		if ((BLOB_PTR *) array_desc->dsc_address < arg->slice_high_water) {
 			/* If a varying string isn't aligned correctly, calculate the actual
 			   length and then treat the string as if it had type text. */
 
 			if (array_desc->dsc_dtype == dtype_varying &&
 				(U_IPTR) array_desc->dsc_address !=
 				FB_ALIGN((U_IPTR) array_desc->dsc_address,
-						 (MIN(sizeof(USHORT), ALIGNMENT)))) {
+						 (MIN(sizeof(USHORT), ALIGNMENT))))
+			{
+			    // temp_desc will vanish at the end of the block, but it's used
+			    // only as a way to transfer blocks of memory.
+				dsc temp_desc;
 				temp_desc.dsc_dtype = dtype_text;
 				temp_desc.dsc_sub_type = array_desc->dsc_sub_type;
 				temp_desc.dsc_scale = array_desc->dsc_scale;
@@ -2410,8 +2405,11 @@ static void slice_callback(SLICE arg, ULONG count, DSC * descriptors)
 				MOV_move(array_desc, slice_desc);
 			++arg->slice_count;
 		}
-		else if ( (l = slice_desc->dsc_length) )
-			memset(slice_desc->dsc_address, 0, l);
+		else {
+		    const SLONG l = slice_desc->dsc_length;
+			if (l)
+				memset(slice_desc->dsc_address, 0, l);
+		}
 	}
 
 	slice_desc->dsc_address = next;
@@ -2430,31 +2428,30 @@ static BLB store_array(TDBB tdbb, JRD_TRA transaction, BID blob_id)
  *      Actually store an array.  Oh boy!
  *
  **************************************/
-	ARR array;
-	BLB blob;
-	BLOB_PTR *p;
-	SLONG length;
-
 	SET_TDBB(tdbb);
 
 /* Validate array */
 
-	if (!(array = find_array(transaction, blob_id)))
+	ARR array = find_array(transaction, blob_id);
+	if (!array)
 		return NULL;
 
 /* Create blob for array */
 
-	blob = BLB_create2(tdbb, transaction, blob_id, 0, NULL);
+	BLB blob = BLB_create2(tdbb, transaction, blob_id, 0, NULL);
 	blob->blb_flags |= BLB_stream;
 
 /* Write out array descriptor */
 
 	BLB_put_segment(tdbb, blob,
-					reinterpret_cast < UCHAR * >(&array->arr_desc),
+					reinterpret_cast<const UCHAR*>(&array->arr_desc),
 					array->arr_desc.ads_length);
 
 /* Write out actual array */
 
+// CVC: Will fix this horrible loop later.
+	const BLOB_PTR* p;
+	SLONG length;
 	for (length = array->arr_effective_length, p =
 		 (BLOB_PTR *) array->arr_data; length > 32768;
 		 length -= 32768, p +=

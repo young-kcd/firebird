@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Shared Cache Manager
- *	MODULE:		cache_manager.c
+ *	MODULE:		cache.cpp
  *	DESCRIPTION:	Manage shared database cache
  *
  * The contents of this file are subject to the Interbase Public
@@ -51,7 +51,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
  *	Run the shared cache manager.
  *
  **************************************/
-	TEXT *sw_database, c, *p, **end;
+	TEXT c, *p, **end;
 	SLONG db_handle;
 	ISC_STATUS status;
 	ISC_STATUS_ARRAY status_vector;
@@ -123,7 +123,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	signal(SIGQUIT, SIG_IGN);
 #endif
 
-	sw_database = "";
+	const TEXT* sw_database = "";
 
 	for (end = argv++ + argc; argv < end;) {
 		p = *argv++;
@@ -163,3 +163,4 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	exit(status ? FINI_ERROR : FINI_OK);
 }
+

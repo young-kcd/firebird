@@ -308,3 +308,4 @@ entry(gds__attach_database)
 
 	return gds__unavailable;
 }
+

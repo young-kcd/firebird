@@ -98,8 +98,8 @@ static void compute_rse_streams(CSB, RSE, UCHAR *);
 static bool check_for_nod_from(JRD_NOD);
 static SLONG decompose(TDBB, JRD_NOD, LLS *, CSB);
 static USHORT distribute_equalities(LLS *, CSB);
-static bool dump_index(JRD_NOD, SCHAR **, SSHORT *);
-static bool dump_rsb(JRD_REQ, RSB, SCHAR **, SSHORT *);
+static bool dump_index(const jrd_nod*, SCHAR**, SSHORT*);
+static bool dump_rsb(const jrd_req*, RSB, SCHAR**, SSHORT*);
 static bool estimate_cost(TDBB, OPT, USHORT, double *, double *);
 #ifdef EXPRESSION_INDICES
 static bool expression_equal(TDBB, JRD_NOD, JRD_NOD);
@@ -233,9 +233,9 @@ static const UCHAR sort_dtypes[] = {
 };
 
 
-BOOLEAN OPT_access_path(JRD_REQ request,
-						SCHAR * buffer,
-						SSHORT buffer_length, USHORT * return_length)
+BOOLEAN OPT_access_path(const jrd_req* request,
+						SCHAR* buffer,
+						SSHORT buffer_length, USHORT* return_length)
 {
 /**************************************
  *
@@ -2137,8 +2137,8 @@ static USHORT distribute_equalities(LLS * org_stack, CSB csb)
 }
 
 
-static bool dump_index(JRD_NOD node,
-						  SCHAR ** buffer_ptr, SSHORT * buffer_length)
+static bool dump_index(const jrd_nod* node,
+						  SCHAR** buffer_ptr, SSHORT* buffer_length)
 {
 /**************************************
  *
@@ -2213,8 +2213,8 @@ static bool dump_index(JRD_NOD node,
 }
 
 
-static bool dump_rsb(JRD_REQ request,
-						RSB rsb, SCHAR ** buffer_ptr, SSHORT * buffer_length)
+static bool dump_rsb(const jrd_req* request,
+						RSB rsb, SCHAR** buffer_ptr, SSHORT* buffer_length)
 {
 /**************************************
  *
@@ -4895,37 +4895,39 @@ static bool gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
  *	return false.
  *
  **************************************/
-	DBB dbb;
 	RIV river1, river2;
 	LLS stack1, stack2;
-	USHORT i, cnt, river_cnt, stream_cnt;
+	USHORT i, river_cnt, stream_cnt;
 	ULONG selected_rivers[OPT_STREAM_BITS], selected_rivers2[OPT_STREAM_BITS];
 	UCHAR *stream;
-	JRD_NOD *classes, *class_, *last_class, node, node1, node2, sort, *ptr;
+	JRD_NOD *class_, node, node1, node2, *ptr;
 	RSB rsb, merge_rsb;
 	RSB *rsb_tail;
 	Opt::opt_conjunct *tail, *end;
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(*org_rivers, type_lls);
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	// Count the number of "rivers" involved in the operation, then allocate
 	// a scratch block large enough to hold values to compute equality
 	// classes.
-	for (cnt = 0, stack1 = *org_rivers; stack1; stack1 = stack1->lls_next) {
+	USHORT cnt = 0;
+	for (stack1 = *org_rivers; stack1; stack1 = stack1->lls_next) {
 		river1 = (RIV) stack1->lls_object;
 		river1->riv_number = cnt++;
 	}
 
-	Firebird::HalfStaticArray<JRD_NOD,OPT_STATIC_ITEMS> scratch(tdbb->tdbb_default);
+	Firebird::HalfStaticArray<JRD_NOD, OPT_STATIC_ITEMS> scratch(tdbb->tdbb_default);
 	scratch.grow(opt->opt_base_conjuncts * cnt);
-	classes = scratch.begin();
+	JRD_NOD* classes = scratch.begin();
 
 	// Compute equivalence classes among streams.  This involves finding groups
 	// of streams joined by field equalities.
-	last_class = classes;
-	for (tail = opt->opt_conjuncts.begin(), end = tail + opt->opt_base_conjuncts; tail < end; tail++) {
+	JRD_NOD* last_class = classes;
+	for (tail = opt->opt_conjuncts.begin(), end = tail + opt->opt_base_conjuncts;
+		tail < end; tail++)
+	{
 		if (tail->opt_conjunct_flags & opt_conjunct_used) {
 			continue;
 		}
@@ -5013,7 +5015,7 @@ static bool gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 			continue;
 		}
 		stream_cnt += river1->riv_count;
-		sort = FB_NEW_RPT(*tdbb->tdbb_default, selected_classes.getCount() * 2) jrd_nod();
+		JRD_NOD sort = FB_NEW_RPT(*tdbb->tdbb_default, selected_classes.getCount() * 2) jrd_nod();
 		sort->nod_type = nod_sort;
 		sort->nod_count = selected_classes.getCount();
 		JRD_NOD** selected_class;

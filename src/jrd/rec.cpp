@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		rec.c
+ *	MODULE:		rec.cpp
  *	DESCRIPTION:	
  *
  * The contents of this file are subject to the Interbase Public
@@ -65,14 +65,14 @@ static void process_page(TDBB, JRND *, SLONG, SLONG, PAG, SBM *, USHORT);
 static void quad_move(UCHAR *, UCHAR *);
 static void rec_process_record(TDBB, JRNH *, USHORT, ULONG,
 							   ULONG, PAG, SBM *, USHORT);
-static void scan_and_apply_logs(TEXT *, TEXT *, CP *, SBM *, USHORT, SLONG *,
+static void scan_and_apply_logs(const TEXT*, TEXT*, CP*, SBM*, USHORT, SLONG*,
 								SLONG, PAG);
 
 
 void REC_recover(
-				 TEXT * dbname,
-				 TEXT * walname,
-				 CP * cp1, SBM * sbm_rec, USHORT activate_shadow)
+				 const TEXT* dbname,
+				 TEXT* walname,
+				 CP* cp1, SBM* sbm_rec, USHORT activate_shadow)
 {
 /**************************************
  *
@@ -111,8 +111,8 @@ void REC_recover(
 
 
 void REC_recover_page(
-					  TEXT * dbname,
-					  TEXT * walname, CP * cp1, SLONG page_no, PAG page)
+					  const TEXT* dbname,
+					  TEXT* walname, CP* cp1, SLONG page_no, PAG page)
 {
 /**************************************
  *
@@ -1002,11 +1002,11 @@ PAG page, SBM * sbm_rec, USHORT activate_shadow)
 
 
 static void scan_and_apply_logs(
-								TEXT * dbname,
-								TEXT * start_logname,
-								CP * cp1,
-								SBM * sbm_rec,
-USHORT activate_shadow, SLONG * timestamp, SLONG page_no, PAG page)
+								const TEXT* dbname,
+								TEXT* start_logname,
+								CP* cp1,
+								SBM* sbm_rec,
+	USHORT activate_shadow, SLONG* timestamp, SLONG page_no, PAG page)
 {
 /**************************************
  *
@@ -1107,3 +1107,4 @@ USHORT activate_shadow, SLONG * timestamp, SLONG page_no, PAG page)
 
 	delete string;
 }
+

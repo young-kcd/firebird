@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Remote Interface/Server
  *	MODULE:		inet_proto.h
- *	DESCRIPTION:	Prototpe header file for inet.c
+ *	DESCRIPTION:	Prototpe header file for inet.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -28,8 +28,10 @@
 extern "C" {
 #endif
 
-PORT	INET_analyze(TEXT *, USHORT *, ISC_STATUS *, TEXT *, TEXT *, USHORT, SCHAR*, SSHORT);
-PORT	INET_connect(TEXT *, struct packet *, ISC_STATUS *, USHORT, SCHAR*, SSHORT);
+PORT	INET_analyze(TEXT*, USHORT*, ISC_STATUS*, TEXT*, TEXT*, USHORT,
+	const SCHAR*, SSHORT);
+PORT	INET_connect(TEXT*, struct packet*, ISC_STATUS*, USHORT,
+	const SCHAR*, SSHORT);
 PORT	INET_reconnect(HANDLE, TEXT *, ISC_STATUS *);
 PORT	INET_server(int);
 void	INET_set_clients(int);
@@ -39,3 +41,4 @@ void	INET_set_clients(int);
 #endif
 
 #endif // REMOTE_INET_PROTO_H
+

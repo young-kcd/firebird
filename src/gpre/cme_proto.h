@@ -25,7 +25,7 @@
 #define GPRE_CME_PROTO_H
 
 void	CME_expr(GPRE_NOD, GPRE_REQ);
-void	CME_get_dtype(GPRE_NOD, GPRE_FLD);
+void	CME_get_dtype(const gpre_nod*, gpre_fld*);
 void	CME_relation(GPRE_CTX, GPRE_REQ);
 void	CME_rse(GPRE_RSE, GPRE_REQ);
 

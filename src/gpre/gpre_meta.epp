@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.30 2003-10-17 23:41:27 brodsom Exp $
+ *	$Id: gpre_meta.epp,v 1.31 2003-10-29 10:53:07 robocop Exp $
  */
 
 #include "firebird.h"
@@ -43,6 +43,8 @@
 #include "../gpre/msc_proto.h"
 #include "../gpre/par_proto.h"
 #include "../jrd/constants.h"
+#include "../jrd/gdsassert.h"
+
 
 const int MAX_USER_LENGTH	= 33;
 const int MAX_PASSWORD_LENGTH	= 33;
@@ -53,13 +55,14 @@ extern enum lang_t sw_language;
 extern bool sw_cstring;
 extern DBB isc_databases;
 
-static const UCHAR blr_bpb[] = { isc_bpb_version1,
+static const UCHAR blr_bpb[] = {
+	isc_bpb_version1,
 	isc_bpb_source_type, 1, BLOB_blr,
 	isc_bpb_target_type, 1, BLOB_blr
 };
 
 #ifdef SCROLLABLE_CURSORS
-static SCHAR db_version_info[] = { gds__info_base_level };
+static const SCHAR db_version_info[] = { gds__info_base_level };
 #endif
 
 static SLONG array_size(GPRE_FLD);
@@ -200,7 +203,9 @@ bool MET_database(dbb* database, bool print_version)
 	sw_ods_version = 0;
 	sw_server_version = 0;
 	if (isc_database_info(isc_status, &DB, sizeof(sql_version_info),
-		  (char*) sql_version_info, sizeof(sql_buffer), (char*) sql_buffer)) {
+		reinterpret_cast<const char*>(sql_version_info), sizeof(sql_buffer),
+		reinterpret_cast<char*>(sql_buffer)))
+	{
 		gds__print_status(isc_status);
 		return false;
 	}
@@ -482,7 +487,7 @@ bool MET_get_domain_default(dbb* database,
 			isc_blob_handle blob_handle = NULL;
 			ISC_STATUS stat = isc_open_blob2(status_vect, &DB, &gds_trans,
 									&blob_handle, blob_id, sizeof(blr_bpb),
-									const_cast<unsigned char*>(blr_bpb));
+									blr_bpb);
 			if (stat) {
 				gds__print_status(status_vect);
 				CPR_exit(FINI_ERROR);
@@ -544,7 +549,7 @@ bool MET_get_domain_default(dbb* database,
  *		Reads the system tables RDB$FIELDS and RDB$RELATION_FIELDS.
  */  
 
-bool MET_get_column_default(GPRE_REL relation,
+bool MET_get_column_default(const gpre_rel* relation,
 							const TEXT* column_name,
 							TEXT* buffer,
 							USHORT buff_length)
@@ -590,7 +595,7 @@ bool MET_get_column_default(GPRE_REL relation,
 			isc_blob_handle blob_handle = NULL;
 			ISC_STATUS stat = isc_open_blob2(status_vect, &DB, &gds_trans,
 								  &blob_handle, blob_id, sizeof(blr_bpb),
-								  const_cast<unsigned char*>(blr_bpb));
+								  blr_bpb);
 			if (stat) {
 				gds__print_status(status_vect);
 				CPR_exit(FINI_ERROR);

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		unix.c
+ *	MODULE:		unix.cpp
  *	DESCRIPTION:	UNIX (BSD) specific physical IO
  *
  * The contents of this file are subject to the Interbase Public
@@ -126,16 +126,16 @@ extern "C" {
 
 static void close_marker_file(TEXT *);
 static FIL seek_file(FIL, BDB, UINT64 *, ISC_STATUS *);
-static FIL setup_file(DBB, TEXT *, USHORT, int);
+static FIL setup_file(DBB, const TEXT*, USHORT, int);
 static BOOLEAN unix_error(TEXT *, FIL, ISC_STATUS, ISC_STATUS *);
 #if defined PREAD_PWRITE && !(defined HAVE_PREAD && defined HAVE_PWRITE)
 static SLONG pread(int, SCHAR *, SLONG, SLONG);
 static SLONG pwrite(int, SCHAR *, SLONG, SLONG);
 #endif
 #ifdef SUPPORT_RAW_DEVICES
-static BOOLEAN  raw_devices_check_file (TEXT *);
-static BOOLEAN  raw_devices_validate_database (int, TEXT *, USHORT);
-static int  raw_devices_unlink_database (TEXT *);
+static BOOLEAN  raw_devices_check_file (const TEXT*);
+static BOOLEAN  raw_devices_validate_database (int, const TEXT*, USHORT);
+static int  raw_devices_unlink_database (const TEXT*);
 #endif
 
 #ifdef hpux
@@ -146,7 +146,7 @@ union fcntlun {
 #endif
 
 
-int PIO_add_file(DBB dbb, FIL main_file, TEXT * file_name, SLONG start)
+int PIO_add_file(DBB dbb, FIL main_file, const TEXT* file_name, SLONG start)
 {
 /**************************************
  *
@@ -223,7 +223,7 @@ void PIO_close(FIL main_file)
 }
 
 
-int PIO_connection(TEXT * file_name, USHORT * file_length)
+int PIO_connection(const TEXT* file_name, USHORT* file_length)
 {
 /**************************************
  *
@@ -244,7 +244,7 @@ int PIO_connection(TEXT * file_name, USHORT * file_length)
 }
 
 
-FIL PIO_create(DBB dbb, TEXT * string, SSHORT length, BOOLEAN overwrite)
+FIL PIO_create(DBB dbb, const TEXT* string, SSHORT length, BOOLEAN overwrite)
 {
 /**************************************
  *
@@ -261,9 +261,9 @@ FIL PIO_create(DBB dbb, TEXT * string, SSHORT length, BOOLEAN overwrite)
  **************************************/
 	int desc, flag;
 	FIL file;
-	TEXT expanded_name[256], temp[256], *file_name;
+	TEXT expanded_name[256], temp[256];
 
-	file_name = string;
+	const TEXT* file_name = string;
 
 	if (length) {
 		MOVE_FAST(file_name, temp, length);
@@ -299,7 +299,7 @@ FIL PIO_create(DBB dbb, TEXT * string, SSHORT length, BOOLEAN overwrite)
 }
 
 
-int PIO_expand(TEXT * file_name, USHORT file_length, TEXT * expanded_name)
+int PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name)
 {
 /**************************************
  *
@@ -572,10 +572,10 @@ SLONG PIO_act_alloc(DBB dbb)
 
 
 FIL PIO_open(DBB dbb,
-			 TEXT * string,
+			 const TEXT* string,
 			 SSHORT length,
 			 SSHORT trace_flag,
-			 BLK connection, TEXT * file_name, USHORT file_length)
+			 BLK connection, const TEXT* file_name, USHORT file_length)
 {
 /**************************************
  *
@@ -588,9 +588,10 @@ FIL PIO_open(DBB dbb,
  *	the connection to communication with a page/lock server.
  *
  **************************************/
-	TEXT *ptr, temp[256];
+	TEXT temp[256];
 	int desc, i, flag;
 
+	const TEXT* ptr;
 	if (string) {
 		ptr = string;
 		if (length) {
@@ -943,8 +944,7 @@ static FIL seek_file(FIL file, BDB bdb, UINT64 * offset, ISC_STATUS * status_vec
 }
 
 
-static FIL setup_file(
-					  DBB dbb, TEXT * file_name, USHORT file_length, int desc)
+static FIL setup_file(DBB dbb, const TEXT* file_name, USHORT file_length, int desc)
 {
 /**************************************
  *
@@ -1155,8 +1155,7 @@ static SLONG pwrite(int fd, SCHAR * buf, SLONG nbytes, SLONG offset)
 #endif /* PREAD_PWRITE && !(HAVE_PREAD && HAVE_PWRITE)*/
 
 
-int PIO_unlink (
-	TEXT *file_name)
+int PIO_unlink (const TEXT* file_name)
 {
 /**************************************
  *
@@ -1180,7 +1179,7 @@ int PIO_unlink (
 #ifdef SUPPORT_RAW_DEVICES
 static BOOLEAN
 raw_devices_check_file (
-	TEXT *file_name)
+	const TEXT* file_name)
 {
 /**************************************
  *
@@ -1201,7 +1200,7 @@ raw_devices_check_file (
 static BOOLEAN
 raw_devices_validate_database (
 	int desc,
-	TEXT *file_name,
+	const TEXT* file_name,
 	USHORT file_length)
 {
 /**************************************
@@ -1230,7 +1229,7 @@ raw_devices_validate_database (
 
 	for (i = 0; i < IO_RETRY; i++)
 	{
-		if (lseek (desc, LSEEK_OFFSET_CAST 0, 0) == (off_t)-1)
+		if (lseek (desc, LSEEK_OFFSET_CAST 0, 0) == (off_t) -1)
 			ERR_post (isc_io_error,
 						gds_arg_string, "lseek",
 						gds_arg_string, ERR_string (file_name, file_length),
@@ -1296,7 +1295,7 @@ raw_devices_validate_database (
 
 static int
 raw_devices_unlink_database (
-	TEXT *file_name)
+	const TEXT* file_name)
 {
 	char header[MIN_PAGE_SIZE];
 	size_t file_length = strlen(file_name);
@@ -1342,3 +1341,4 @@ raw_devices_unlink_database (
 #endif /* SUPPORT_RAW_DEVICES */
 
 } // extern "C"
+

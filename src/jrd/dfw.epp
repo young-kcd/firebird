@@ -192,7 +192,7 @@ static FMT	make_format(TDBB, JRD_REL, USHORT *, TFB);
 static USHORT name_length(TEXT *);
 static DFW	post_work(JRD_TRA, SLONG, DFW *, enum dfw_t, DSC *, USHORT);
 static void put_summary_blob(BLB, enum rsr_t, SLONG[2]);
-static void put_summary_record(BLB, enum rsr_t, UCHAR *, USHORT);
+static void put_summary_record(BLB, enum rsr_t, const UCHAR*, USHORT);
 static void	setup_array(TDBB, BLB, TEXT *, USHORT, TFB);
 static BLB	setup_triggers(TDBB, JRD_REL, BOOLEAN, TRIG_VEC *, BLB);
 static void	setup_trigger_details(TDBB, JRD_REL, BLB, TRIG_VEC *, TEXT*, TEXT*, BOOLEAN);
@@ -3599,7 +3599,7 @@ static FMT make_format(TDBB tdbb, JRD_REL relation, USHORT * version, TFB stack)
 		BLB_put_segment(tdbb,
 						blob,
 //						(UCHAR*) &*(format->fmt_desc.begin()),
-						(UCHAR*) &(format->fmt_desc[0]),
+						reinterpret_cast<const UCHAR*>(&(format->fmt_desc[0])),
 						(USHORT)(format->fmt_count * sizeof(dsc)));
 		BLB_close(tdbb, blob);
     END_STORE;
@@ -4305,7 +4305,7 @@ static void put_summary_blob(BLB blob, RSR_T type, SLONG blob_id[2])
 
 static void put_summary_record(BLB		blob,
 							   RSR_T	type,
-							   UCHAR*	data,
+							   const UCHAR*	data,
 							   USHORT	length)
 {
 /**************************************

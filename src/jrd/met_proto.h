@@ -68,7 +68,7 @@ struct jrd_nod*	MET_parse_blob(TDBB, struct jrd_rel *, SLONG[2], class Csb **,
 								  struct jrd_req **, BOOLEAN, BOOLEAN);
 void		MET_parse_sys_trigger(TDBB, struct jrd_rel *);
 int			MET_post_existence(TDBB, struct jrd_rel *);
-void		MET_prepare(TDBB, struct jrd_tra *, USHORT, UCHAR *);
+void		MET_prepare(TDBB, struct jrd_tra*, USHORT, const UCHAR*);
 struct jrd_prc*	MET_procedure(TDBB, int, BOOLEAN, USHORT);
 struct jrd_rel*	MET_relation(TDBB, USHORT);
 BOOLEAN		MET_relation_owns_trigger (TDBB, const TEXT *, const TEXT *);

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Remote Server
- *	MODULE:		inet_server.c
+ *	MODULE:		inet_server.cpp
  *	DESCRIPTION:	Internet remote server.
  *
  * The contents of this file are subject to the Interbase Public
@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: inet_server.cpp,v 1.28 2003-09-08 20:23:41 skidder Exp $
+$Id: inet_server.cpp,v 1.29 2003-10-29 10:53:35 robocop Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -627,3 +627,4 @@ static void signal_sigpipe_handler(int)
 
 
 } // extern "C"
+

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		blf_proto.h
- *	DESCRIPTION:	Prototype header file for blf.c
+ *	DESCRIPTION:	Prototype header file for blob_filter.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -28,13 +28,16 @@ extern "C" {
 
 ISC_STATUS	BLF_close_blob(TDBB, ctl**);
 ISC_STATUS	BLF_create_blob(TDBB, JRD_TRA, ctl**, SLONG*,
-										 USHORT, UCHAR *, ISC_STATUS(*)(), BLF);
+										 USHORT, const UCHAR*,
+										 ISC_STATUS(*)(), BLF);
 ISC_STATUS	BLF_get_segment(TDBB, ctl**, USHORT*, USHORT, UCHAR *);
 BLF			BLF_lookup_internal_filter(TDBB, SSHORT, SSHORT);
 ISC_STATUS	BLF_open_blob(TDBB, JRD_TRA, ctl**, SLONG*,
-									   USHORT, UCHAR *, ISC_STATUS(*)(), BLF);
-ISC_STATUS	BLF_put_segment(TDBB, ctl**, USHORT, UCHAR*);
+									   USHORT, const UCHAR*,
+									   ISC_STATUS(*)(), BLF);
+ISC_STATUS	BLF_put_segment(TDBB, ctl**, USHORT, const UCHAR*);
 
 } /* extern "C" */
 
 #endif /* JRD_BLF_PROTO_H */
+

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.24 2003-09-29 12:43:05 robocop Exp $
+ * $Id: show.epp,v 1.25 2003-10-29 10:53:11 robocop Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -288,7 +288,7 @@ const char* trigger_action(int type)
 
 bool SHOW_dbb_parameters(FRBRD* db_handle,
 						 SCHAR* info_buf,
-						 SCHAR* db_items,
+						 const SCHAR* db_items,
 						 USHORT item_length,
 						 bool translate)
 {
@@ -1010,7 +1010,8 @@ void SHOW_print_metadata_text_blob(IB_FILE* fp,
 
 	isc_blob_handle blob_handle = NULL;
 	if (isc_open_blob2(isc_status, &DB, &gds_trans, &blob_handle, blobid,
-					   sizeof(metadata_text_bpb), const_cast<unsigned char*>(metadata_text_bpb))) {
+					   sizeof(metadata_text_bpb), metadata_text_bpb))
+	{
 		ISQL_errmsg(isc_status);
 		return;
 	}
@@ -1802,7 +1803,7 @@ static void show_db(void)
 
 	bool translate = true;
 	
-	if (SHOW_dbb_parameters(DB, info_buf, const_cast<char*>(db_items), sizeof(db_items), translate)) {
+	if (SHOW_dbb_parameters(DB, info_buf, db_items, sizeof(db_items), translate)) {
         ISQL_printf(Out, info_buf);
     }
 
@@ -1867,7 +1868,7 @@ static void show_db(void)
 /* And now for Rich's show db parameters */
 
 	if (is_wal 
-        && SHOW_dbb_parameters(DB, info_buf, const_cast<char*>(wal_items), 
+        && SHOW_dbb_parameters(DB, info_buf, wal_items,
                             sizeof(wal_items), translate)) {
 		ISQL_printf(Out, info_buf);
 	}

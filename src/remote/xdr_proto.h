@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Remote Server 
  *	MODULE:		xdr_proto.h
- *	DESCRIPTION:	Prototype Header file for xdr.c
+ *	DESCRIPTION:	Prototype Header file for xdr.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -50,3 +50,4 @@ bool_t	xdr_wrapstring (XDR *, SCHAR **);
 bool_t	xdr_hyper(XDR *, SINT64 *);
 
 #endif	/* REMOTE_XDR_PROTO_H */
+

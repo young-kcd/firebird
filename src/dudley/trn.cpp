@@ -84,7 +84,7 @@ static IB_FILE *output_file;
 #define STUFF(c)	*dyn->str_current++ = c
 #define STUFF_WORD(c)	{STUFF (c); STUFF (c >> 8);}
 
-static inline void check_dyn(str* dyn, int l)
+static inline void check_dyn(str* dyn, const int l)
 {
 	if (!(dyn->str_current - dyn->str_start + l <=  dyn->str_length)
 		&& !TRN_get_buffer (dyn, l) )
@@ -93,7 +93,7 @@ static inline void check_dyn(str* dyn, int l)
 	}
 }
 
-static const char* FOPEN_WRITE_TYPE	= "w";
+static const char* const FOPEN_WRITE_TYPE	= "w";
 
 
 void TRN_translate(void)

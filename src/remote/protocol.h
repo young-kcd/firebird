@@ -32,10 +32,10 @@
  *
  */
 /*
-$Id: protocol.h,v 1.14 2003-08-15 10:23:46 aafemt Exp $
+$Id: protocol.h,v 1.15 2003-10-29 10:53:37 robocop Exp $
 */
-#ifndef _REMOTE_PROTOCOL_H_
-#define _REMOTE_PROTOCOL_H_
+#ifndef REMOTE_PROTOCOL_H
+#define REMOTE_PROTOCOL_H
 
 // dimitr: ask for asymmetric protocols only.
 // Comment it out to return back to FB 1.0 behaviour.
@@ -277,6 +277,19 @@ typedef struct cstring
 	UCHAR*	cstr_address;
 } CSTRING;
 
+// CVC: Only used in p_blob and p_sgmt, to validate constness.
+// We want to ensure our original bpb is not overwritten.
+// In turn, p_blob is used only to create and open a blob, so it's correct
+// to demand that those functions do not change the bpb.
+// We want to ensure our incoming segment to be stored isn't overwritten,
+// in the case of send/batch commands.
+typedef struct cstring_const
+{
+	USHORT	cstr_length;
+	USHORT	cstr_allocated;
+	const UCHAR*	cstr_address;
+} CSTRING_CONST;
+
 
 #ifdef DEBUG_XDR_MEMORY
 
@@ -436,13 +449,13 @@ typedef struct p_trrq {
 typedef struct p_blob {
     OBJCT	p_blob_transaction;	/* Transaction */
     struct bid	p_blob_id;		/* Blob id for open */
-    CSTRING	p_blob_bpb;		/* Blob parameter block */
+    CSTRING_CONST	p_blob_bpb;		/* Blob parameter block */
 } P_BLOB;
 
 typedef struct p_sgmt {
     OBJCT	p_sgmt_blob;		/* Blob handle id */
     USHORT	p_sgmt_length;		/* Length of segment */
-    CSTRING	p_sgmt_segment;		/* Data segment */
+    CSTRING_CONST	p_sgmt_segment;		/* Data segment */
 } P_SGMT;
 
 typedef struct p_seek {
@@ -590,4 +603,5 @@ typedef struct packet {
     P_TRRQ	p_trrq;		/* Transact request packet */
 } PACKET;
 
-#endif /* _REMOTE_PROTOCOL_H_ */
+#endif /* REMOTE_PROTOCOL_H */
+

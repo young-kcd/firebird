@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		why_proto.h
- *	DESCRIPTION:	Prototype header file for why.c
+ *	DESCRIPTION:	Prototype header file for why.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -102,8 +102,8 @@ ISC_STATUS API_ROUTINE isc_dsql_prepare_m(ISC_STATUS *, FRBRD **,
 											 SCHAR *);
 ISC_STATUS API_ROUTINE isc_dsql_set_cursor_name(ISC_STATUS *, FRBRD **,
 												   SCHAR *, USHORT);
-ISC_STATUS API_ROUTINE isc_dsql_sql_info(ISC_STATUS *, FRBRD **, SSHORT,
-											const SCHAR *, SSHORT, SCHAR *);
+ISC_STATUS API_ROUTINE isc_dsql_sql_info(ISC_STATUS*, FRBRD**, SSHORT,
+											const SCHAR*, SSHORT, SCHAR*);
 ISC_STATUS API_ROUTINE isc_prepare_transaction2(ISC_STATUS *, FRBRD **, USHORT,
 												   UCHAR *);
 typedef void event_ast_routine(UCHAR*, USHORT, UCHAR*);
@@ -145,3 +145,4 @@ BOOLEAN WHY_get_shutdown();
 #endif
 
 #endif /* JRD_WHY_PROTO_H */
+

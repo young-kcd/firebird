@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		pag.c
+ *	MODULE:		pag.cpp
  *	DESCRIPTION:	Page level ods manager
  *
  * The contents of this file are subject to the Interbase Public
@@ -1033,7 +1033,7 @@ int PAG_get_clump(SLONG page_num, USHORT type, USHORT * len, UCHAR * entry)
 }
 
 
-void PAG_header(TEXT * file_name, USHORT file_length)
+void PAG_header(const TEXT* file_name, USHORT file_length)
 {
 /**************************************
  *

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.51 2003-10-28 13:39:32 brodsom Exp $
+ * $Id: gpre.h,v 1.52 2003-10-29 10:53:07 robocop Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -64,7 +64,6 @@
 #include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
 #include "../jrd/y_ref.h"
-#include "../jrd/gdsassert.h"
 
 #ifdef GPRE_FORTRAN
 #if defined AIX || defined AIX_PPC || defined sun

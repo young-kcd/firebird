@@ -134,12 +134,12 @@ static void close_out_transaction(volatile gbak_action, isc_tr_handle *);
 //static void excp_handler(void);
 static SLONG get_number(const SCHAR *);
 static ULONG get_size(const SCHAR *, FIL);
-static gbak_action open_files(const TEXT *, TEXT **, USHORT, USHORT, USHORT);
+static gbak_action open_files(const TEXT *, const TEXT**, USHORT, USHORT, USHORT);
 static int common_main(int, char **, pfn_svc_output, SLONG);
 #ifndef SUPERSERVER
-static int output_main(SLONG, UCHAR *);
+static int output_main(SLONG, const UCHAR*);
 #endif
-static void burp_output(const SCHAR *, ...) ATTRIBUTE_FORMAT(1,2);
+static void burp_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
 
 #ifndef	SUPERSERVER
 static int api_gbak(int, char**, USHORT, TEXT*, TEXT*, TEXT *, bool, bool);
@@ -360,7 +360,7 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 }
 
 
-static int output_main( SLONG output_data, UCHAR * output_buf)
+static int output_main( SLONG output_data, const UCHAR* output_buf)
 {
 /**************************************
  *
@@ -399,10 +399,11 @@ int common_main(int		argc,
    for AIX PowerPC because of the problem (see comments below). So
    whoever will do a port on AIX, must reconsider a static definition */
 #ifdef AIX_PPC
-	static TEXT *file2 = NULL;			/* SomeHow, making this volatile does'nt give the
-								   desired value in case of AIX PowerPC */
+// SomeHow, making this volatile does'nt give the
+//desired value in case of AIX PowerPC */
+	static const TEXT* file2 = NULL;
 #else
-	TEXT *file2 = NULL;
+	const TEXT* file2 = NULL;
 #endif
 
 #ifdef SERVICE_REDIRECT
@@ -533,7 +534,7 @@ int common_main(int		argc,
 	FIL file = NULL, file_list = NULL;
 	tdgbl->io_buffer_size = GBAK_IO_BUFFER_SIZE;
 	
-	TEXT **end = argv + argc;
+	const TEXT* const* const end = argv + argc;
 	++argv;
 
 	while (argv < end) {
@@ -730,7 +731,7 @@ int common_main(int		argc,
 
 // pop off the obviously boring ones, plus do some checking 
 
-	TEXT *file1 = NULL;
+	const TEXT* file1 = NULL;
 	for (file = tdgbl->gbl_sw_files; file; file = file->fil_next) {
 		if (!file1)
 			file1 = file->fil_name;
@@ -747,12 +748,12 @@ int common_main(int		argc,
 	}
 
 	// Initialize 'dpb' and 'dpb_length'
-	UCHAR *dpb = const_cast<UCHAR*>(tdgbl->dpb_string);
+	UCHAR* dpb = const_cast<UCHAR*>(tdgbl->dpb_string);
 	*dpb++ = gds_dpb_version1;
 	*dpb++ = isc_dpb_gbak_attach;
 	*dpb++ = strlen(GDS_VERSION);
-	for (q = GDS_VERSION; *q;)
-		*dpb++ = *q++;
+	for (const TEXT* gvp = GDS_VERSION; *gvp;)
+		*dpb++ = *gvp++;
 	tdgbl->dpb_length = dpb - tdgbl->dpb_string;
 
 	for (in_sw_tab = burp_in_sw_table; in_sw_tab->in_sw_name; in_sw_tab++) {
@@ -1456,8 +1457,8 @@ static SLONG get_number( const SCHAR * string)
 }
 
 
-static gbak_action open_files(const TEXT * file1,
-							  TEXT ** file2,
+static gbak_action open_files(const TEXT* file1,
+							  const TEXT** file2,
 							  USHORT sw_verbose,
 							  USHORT sw_replace,
 							  USHORT sw_tape)
@@ -1477,15 +1478,14 @@ static gbak_action open_files(const TEXT * file1,
  *
  **************************************/
 	TGBL tdgbl = GET_THREAD_DATA;
-	ISC_STATUS *status_vector = tdgbl->status;
+	ISC_STATUS* status_vector = tdgbl->status;
 
 // try to attach the database using the first file_name 
 
 	if (sw_replace != IN_SW_BURP_C && sw_replace != IN_SW_BURP_R)
 		if (!(isc_attach_database(status_vector,
 								  (SSHORT) 0,
-								  // Why the db name isn't const char*???
-								  const_cast<TEXT*>(file1),
+								  file1,
 								  &tdgbl->db_handle,
 								  tdgbl->dpb_length,
 								  reinterpret_cast<char*>(tdgbl->dpb_string))))
@@ -1863,7 +1863,7 @@ static gbak_action open_files(const TEXT * file1,
 }
 
 
-static void burp_output( const SCHAR * format, ...)
+static void burp_output( const SCHAR* format, ...)
 {
 /**************************************
  *
@@ -1907,7 +1907,7 @@ static void burp_output( const SCHAR * format, ...)
 }
 
 
-static ULONG get_size( const SCHAR * string, FIL file)
+static ULONG get_size( const SCHAR* string, FIL file)
 {
 /**********************************************
  *
@@ -1968,11 +1968,11 @@ static ULONG get_size( const SCHAR * string, FIL file)
 
 #ifndef SUPERSERVER
 static int api_gbak(int argc,
-					char *argv[],
+					char* argv[],
 					USHORT length,
-					TEXT * password,
-					TEXT * user,
-					TEXT * service,
+					TEXT* password,
+					TEXT* user,
+					TEXT* service,
 					bool restore,
 					bool verbose)
 {
@@ -1987,7 +1987,7 @@ static int api_gbak(int argc,
  *
  **********************************************/
 	ISC_STATUS_ARRAY status;
- 	char sendbuf[] = { isc_info_svc_line };
+ 	const char sendbuf[] = { isc_info_svc_line };
 	char respbuf[1024];
 
 	tgbl ldgbl;
@@ -2007,7 +2007,7 @@ static int api_gbak(int argc,
 	else
 		pswd = password;
 
-	char *const spb = (char *) gds__alloc((SLONG) (2 + 2 + ((usr) ? strlen(usr) : 0) +
+	char* const spb = (char*) gds__alloc((SLONG) (2 + 2 + ((usr) ? strlen(usr) : 0) +
 									   2 + ((pswd) ? strlen(pswd) : 0)) +
 									   2 + length);
 	/* 'isc_spb_version'
@@ -2030,7 +2030,7 @@ static int api_gbak(int argc,
 		return FINI_ERROR;
 	}
 
-	char *spb_ptr = spb;
+	char* spb_ptr = spb;
 	*spb_ptr++ = isc_spb_version;
 	*spb_ptr++ = isc_spb_current_version;
 

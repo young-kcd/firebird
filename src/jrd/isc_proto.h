@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		isc_proto.h
- *	DESCRIPTION:	Prototype header file for isc.c
+ *	DESCRIPTION:	Prototype header file for isc.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -40,14 +40,14 @@ int		INTERNAL_API_ROUTINE ISC_get_user(TEXT *, int *, int *, TEXT *,
 											 TEXT *, int *, TEXT *);
 SLONG	ISC_get_user_group_id(TEXT *);
 void	ISC_set_user(TEXT *);
-SLONG	API_ROUTINE ISC_get_prefix(TEXT *);
-void	API_ROUTINE ISC_prefix(TEXT *, const TEXT *);
-void	API_ROUTINE ISC_prefix_lock(TEXT *, const TEXT *);
-void	API_ROUTINE ISC_prefix_msg(TEXT *, const TEXT *);
+SLONG	API_ROUTINE ISC_get_prefix(const TEXT*);
+void	API_ROUTINE ISC_prefix(TEXT*, const TEXT*);
+void	API_ROUTINE ISC_prefix_lock(TEXT*, const TEXT*);
+void	API_ROUTINE ISC_prefix_msg(TEXT*, const TEXT*);
 
 #ifdef VMS
-int		ISC_expand_logical_once(TEXT *, USHORT, TEXT *);
-int		ISC_make_desc(TEXT *, struct dsc$descriptor *, USHORT);
+int		ISC_expand_logical_once(const TEXT*, USHORT, TEXT*);
+int		ISC_make_desc(const TEXT*, struct dsc$descriptor*, USHORT);
 void	ISC_wait(SSHORT *, SLONG);
 void	ISC_wake(SLONG);
 void	ISC_wake_init(void);
@@ -64,3 +64,4 @@ TEXT*	ISC_prefix_interbase(TEXT *, TEXT *);
 #endif
 
 #endif // JRD_ISC_PROTO_H
+

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		jrd_proto.h
- *	DESCRIPTION:	Prototype header file for jrd.c
+ *	DESCRIPTION:	Prototype header file for jrd.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -44,11 +44,11 @@ extern "C" {
 #endif
 
 
-ISC_STATUS jrd8_attach_database(ISC_STATUS *, SSHORT, TEXT *,
-											  struct att **, SSHORT, UCHAR *,
-											  TEXT *);
-ISC_STATUS jrd8_blob_info(ISC_STATUS *, struct blb **, SSHORT,
-										SCHAR *, SSHORT, SCHAR *);
+ISC_STATUS jrd8_attach_database(ISC_STATUS*, SSHORT, const TEXT*,
+											  struct att**, SSHORT,
+											  const UCHAR*, TEXT*);
+ISC_STATUS jrd8_blob_info(ISC_STATUS*, struct blb**, SSHORT,
+										const SCHAR*, SSHORT, SCHAR*);
 ISC_STATUS jrd8_cancel_blob(ISC_STATUS *, struct blb **);
 ISC_STATUS jrd8_cancel_events(ISC_STATUS *, struct att **, SLONG *);
 #ifdef CANCEL_OPERATION
@@ -59,15 +59,15 @@ ISC_STATUS jrd8_close_blob(ISC_STATUS *, struct blb **);
 ISC_STATUS jrd8_commit_transaction(ISC_STATUS *, struct jrd_tra **);
 ISC_STATUS jrd8_commit_retaining(ISC_STATUS *, struct jrd_tra **);
 ISC_STATUS jrd8_compile_request(ISC_STATUS *, struct att **,
-											  struct jrd_req **, SSHORT, SCHAR *);
-ISC_STATUS jrd8_create_blob2(ISC_STATUS *, struct att **,
-										   struct jrd_tra **, struct blb **,
-										   struct bid *, USHORT, UCHAR *);
-ISC_STATUS jrd8_create_database(ISC_STATUS *, USHORT, TEXT *,
-											  struct att **, USHORT, UCHAR *,
-											  USHORT, TEXT *);
-ISC_STATUS jrd8_database_info(ISC_STATUS *, struct att **, SSHORT,
-											SCHAR *, SSHORT, SCHAR *);
+											  struct jrd_req**, SSHORT, SCHAR*);
+ISC_STATUS jrd8_create_blob2(ISC_STATUS*, struct att**,
+										   struct jrd_tra**, struct blb**,
+										   struct bid*, USHORT, const UCHAR*);
+ISC_STATUS jrd8_create_database(ISC_STATUS*, USHORT, const TEXT*,
+											  struct att**, USHORT,
+											  const UCHAR*, USHORT, TEXT*);
+ISC_STATUS jrd8_database_info(ISC_STATUS*, struct att**, SSHORT,
+											const SCHAR*, SSHORT, SCHAR*);
 ISC_STATUS jrd8_ddl(ISC_STATUS *, struct att **, struct jrd_tra **,
 								  USHORT, SCHAR *);
 ISC_STATUS jrd8_detach_database(ISC_STATUS *, struct att **);
@@ -78,13 +78,13 @@ ISC_STATUS jrd8_get_slice(ISC_STATUS *, struct att **,
 										struct jrd_tra **, SLONG *, USHORT,
 										UCHAR *, USHORT, UCHAR *, SLONG,
 										UCHAR *, SLONG *);
-ISC_STATUS jrd8_open_blob2(ISC_STATUS *, struct att **,
-										 struct jrd_tra **, struct blb **,
-										 struct bid *, USHORT, UCHAR *);
+ISC_STATUS jrd8_open_blob2(ISC_STATUS*, struct att**,
+										 struct jrd_tra**, struct blb**,
+										 struct bid*, USHORT, const UCHAR*);
 ISC_STATUS jrd8_prepare_transaction(ISC_STATUS *, struct jrd_tra **,
 												  USHORT, UCHAR *);
-ISC_STATUS jrd8_put_segment(ISC_STATUS *, struct blb **, USHORT,
-										  UCHAR *);
+ISC_STATUS jrd8_put_segment(ISC_STATUS*, struct blb**, USHORT,
+										  const UCHAR*);
 ISC_STATUS jrd8_put_slice(ISC_STATUS *, struct att **,
 										struct jrd_tra **, SLONG *, USHORT,
 										UCHAR *, USHORT, UCHAR *, SLONG,
@@ -97,8 +97,8 @@ ISC_STATUS jrd8_reconnect_transaction(ISC_STATUS *, struct att **,
 													struct jrd_tra **, SSHORT,
 													UCHAR *);
 ISC_STATUS jrd8_release_request(ISC_STATUS *, struct jrd_req **);
-ISC_STATUS jrd8_request_info(ISC_STATUS *, struct jrd_req **, SSHORT,
-										   SSHORT, SCHAR *, SSHORT, SCHAR *);
+ISC_STATUS jrd8_request_info(ISC_STATUS*, struct jrd_req**, SSHORT,
+										   SSHORT, const SCHAR*, SSHORT, SCHAR*);
 ISC_STATUS jrd8_rollback_transaction(ISC_STATUS *, struct jrd_tra **);
 ISC_STATUS jrd8_rollback_retaining(ISC_STATUS *, struct jrd_tra **);
 ISC_STATUS jrd8_seek_blob(ISC_STATUS *, struct blb **, SSHORT,
@@ -108,9 +108,10 @@ ISC_STATUS jrd8_send(ISC_STATUS *, struct jrd_req **, USHORT, USHORT,
 ISC_STATUS jrd8_service_attach(ISC_STATUS *, USHORT, SCHAR *,
 											 struct svc **, USHORT, SCHAR *);
 ISC_STATUS jrd8_service_detach(ISC_STATUS *, struct svc **);
-ISC_STATUS jrd8_service_query(ISC_STATUS *, struct svc **, ULONG *,
-											USHORT, SCHAR *, USHORT, SCHAR *,
-											USHORT, SCHAR *);
+ISC_STATUS jrd8_service_query(ISC_STATUS*, struct svc**, ULONG*,
+											USHORT, const SCHAR*,
+											USHORT, const SCHAR*,
+											USHORT, SCHAR*);
 ISC_STATUS jrd8_service_start(ISC_STATUS *, struct svc **, ULONG *,
 											USHORT, SCHAR *);
 ISC_STATUS jrd8_start_and_send(ISC_STATUS *, struct jrd_req **,
@@ -122,13 +123,13 @@ ISC_STATUS jrd8_start_multiple(ISC_STATUS *, struct jrd_tra **, USHORT,
 											 struct teb *);
 ISC_STATUS jrd8_start_transaction(ISC_STATUS *, struct jrd_tra **,
 												SSHORT, ...);
-ISC_STATUS jrd8_transaction_info(ISC_STATUS *, struct jrd_tra **,
-											   SSHORT, SCHAR *, SSHORT,
-											   SCHAR *);
-ISC_STATUS jrd8_transact_request(ISC_STATUS *, struct att **,
-											   struct jrd_tra **, USHORT, SCHAR *,
-											   USHORT, SCHAR *, USHORT,
-											   SCHAR *);
+ISC_STATUS jrd8_transaction_info(ISC_STATUS*, struct jrd_tra**,
+											   SSHORT, const SCHAR*, SSHORT,
+											   SCHAR*);
+ISC_STATUS jrd8_transact_request(ISC_STATUS*, struct att**,
+											   struct jrd_tra**, USHORT, SCHAR*,
+											   USHORT, SCHAR*, USHORT,
+											   SCHAR*);
 ISC_STATUS jrd8_unwind_request(ISC_STATUS *, struct jrd_req **, SSHORT);
 void jrd_vtof(const char*, char*, SSHORT);
 
@@ -137,7 +138,7 @@ void jrd_vtof(const char*, char*, SSHORT);
 #define JRD_info_drivemask	1
 #define JRD_info_dbnames	2
 
-TEXT*	JRD_num_attachments(TEXT *, USHORT, USHORT, USHORT *, USHORT *);
+TEXT*	JRD_num_attachments(TEXT* const, USHORT, USHORT, USHORT*, USHORT*);
 ULONG	JRD_shutdown_all();
 #endif /* SERVER_SHUTDOWN */
 
@@ -153,8 +154,8 @@ void	JRD_wlck_lock(struct mutx_t *);
 void	JRD_wlck_unlock(struct mutx_t *);
 
 #ifdef SUPERSERVER
-void	JRD_print_all_counters(TEXT *);
-USHORT	JRD_getdir(TEXT *, USHORT);
+void	JRD_print_all_counters(const TEXT*);
+USHORT	JRD_getdir(TEXT*, USHORT);
 #endif
 
 #ifdef DEBUG_PROCS
@@ -166,3 +167,4 @@ void	JRD_print_procedure_info(TDBB, char *);
 #endif
 
 #endif /* JRD_JRD_PROTO_H */
+

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		svc_proto.h
- *	DESCRIPTION:	Prototype header file for svc.c
+ *	DESCRIPTION:	Prototype header file for svc.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -31,15 +31,17 @@ extern "C" {
 class svc* SVC_attach(USHORT, TEXT *, USHORT, SCHAR *);
 void   SVC_cleanup(class svc *);
 void   SVC_detach(class svc *);
-void   SVC_fprintf(class svc *, const SCHAR *, ...);
+void   SVC_fprintf(class svc*, const SCHAR*, ...);
 void   SVC_putc(class svc*, UCHAR);
-void   SVC_query(class svc*, USHORT, SCHAR*, USHORT, SCHAR*, USHORT, SCHAR*);
-ISC_STATUS SVC_query2(class svc*, struct tdbb*, USHORT, SCHAR *, USHORT, SCHAR*, USHORT, SCHAR*);
+void   SVC_query(class svc*, USHORT, const SCHAR*, USHORT, const SCHAR*,
+	USHORT, SCHAR*);
+ISC_STATUS SVC_query2(class svc*, struct tdbb*, USHORT, const SCHAR*,
+	USHORT, const SCHAR*, USHORT, SCHAR*);
 void*  SVC_start(class svc*, USHORT, SCHAR*);
 void   SVC_finish(class svc*, USHORT);
 int   SVC_read_ib_log(class svc*);
 const TEXT* SVC_err_string(const TEXT*, USHORT);
-int SVC_output(SLONG, UCHAR *);
+int SVC_output(SLONG, const UCHAR*);
 
 #ifdef SERVER_SHUTDOWN
 typedef void (*shutdown_fct_t) (ULONG);
@@ -51,3 +53,4 @@ void SVC_shutdown_init(shutdown_fct_t, ULONG);
 #endif
 
 #endif /* JRD_SVC_PROTO_H */
+

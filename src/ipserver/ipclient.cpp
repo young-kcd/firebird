@@ -1,6 +1,6 @@
 /*
  *      PROGRAM:        Interprocess Client
- *      MODULE:         ipclient.c
+ *      MODULE:         ipclient.cpp
  *      DESCRIPTION:    Interprocess interface
  *
  * The contents of this file are subject to the Interbase Public
@@ -218,11 +218,11 @@ static HANDLE server_process_handle = 0;
 
 
 ISC_STATUS GDS_ATTACH_DATABASE(
-						   ISC_STATUS * user_status,
+						   ISC_STATUS* user_status,
 						   USHORT file_length,
-						   SCHAR * file_name,
-IDB * handle,
-USHORT dpb_length, SCHAR * dpb, SCHAR * expanded_filename)
+						   const SCHAR* file_name,
+	IDB* handle,
+	USHORT dpb_length, const SCHAR* dpb, SCHAR* expanded_filename)
 {
 /**************************************
  *
@@ -304,11 +304,11 @@ USHORT dpb_length, SCHAR * dpb, SCHAR * expanded_filename)
 }
 
 
-ISC_STATUS GDS_BLOB_INFO(ISC_STATUS * user_status,
-					 IBL * blob,
+ISC_STATUS GDS_BLOB_INFO(ISC_STATUS* user_status,
+					 IBL* blob,
 					 USHORT item_length,
-					 UCHAR * items,
-					 USHORT buffer_length, UCHAR * buffer)
+					 const UCHAR* items,
+					 USHORT buffer_length, UCHAR* buffer)
 {
 /**************************************
  *
@@ -717,11 +717,11 @@ ISC_STATUS GDS_CREATE_BLOB(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS * user_status,
-						IDB * db_handle,
-						ITR * itr_handle,
-						IBL * blob_handle,
-						BID blob_id, USHORT bpb_length, UCHAR * bpb)
+ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
+						IDB* db_handle,
+						ITR* itr_handle,
+						IBL* blob_handle,
+						BID blob_id, USHORT bpb_length, const UCHAR* bpb)
 {
 /**************************************
  *
@@ -784,13 +784,13 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS * user_status,
+ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 						   USHORT file_length,
-						   SCHAR * file_name,
-						   IDB * handle,
+						   const SCHAR* file_name,
+						   IDB* handle,
 						   USHORT dpb_length,
-						   SCHAR * dpb,
-						   SSHORT db_type, SCHAR * expanded_filename)
+						   const SCHAR* dpb,
+						   SSHORT db_type, SCHAR* expanded_filename)
 {
 /**************************************
  *
@@ -868,11 +868,11 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS * user_status,
-						 IDB * handle,
+ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS* user_status,
+						 IDB* handle,
 						 USHORT item_length,
-						 UCHAR * items,
-						 USHORT buffer_length, UCHAR * buffer)
+						 const UCHAR* items,
+						 USHORT buffer_length, UCHAR* buffer)
 {
 /**************************************
  *
@@ -1865,10 +1865,11 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS * user_status,
-						 IPSERVER_ISR * stmt_handle,
+ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
+						 IPSERVER_ISR* stmt_handle,
 						 USHORT item_length,
-						 UCHAR * items, USHORT buffer_length, UCHAR * buffer)
+						 const UCHAR* items,
+						 USHORT buffer_length, UCHAR* buffer)
 {
 /**************************************
  *
@@ -2031,9 +2032,9 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_OPEN_BLOB(ISC_STATUS * user_status,
-					 IDB * db_handle,
-					 ITR * itr_handle, IBL * blob_handle, BID blob_id)
+ISC_STATUS GDS_OPEN_BLOB(ISC_STATUS* user_status,
+					 IDB* db_handle,
+					 ITR* itr_handle, IBL* blob_handle, BID blob_id)
 {
 /**************************************
  *
@@ -2093,11 +2094,11 @@ ISC_STATUS GDS_OPEN_BLOB(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS * user_status,
-					  IDB * db_handle,
-					  ITR * itr_handle,
-					  IBL * blob_handle,
-					  BID blob_id, USHORT bpb_length, UCHAR * bpb)
+ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
+					  IDB* db_handle,
+					  ITR* itr_handle,
+					  IBL* blob_handle,
+					  BID blob_id, USHORT bpb_length, const UCHAR* bpb)
 {
 /**************************************
  *
@@ -2204,9 +2205,9 @@ ISC_STATUS GDS_PREPARE(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS * user_status,
-					   IBL * blob_handle,
-					   USHORT buffer_length, UCHAR * buffer)
+ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
+					   IBL* blob_handle,
+					   USHORT buffer_length, const UCHAR* buffer)
 {
 /**************************************
  *
@@ -2582,12 +2583,12 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, IRQ * req_handle)
 }
 
 
-ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS * user_status,
-						IRQ * request,
+ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
+						IRQ* request,
 						USHORT level,
 						USHORT item_length,
-						UCHAR * items,
-						USHORT buffer_length, UCHAR * buffer)
+						const UCHAR* items,
+						USHORT buffer_length, UCHAR* buffer)
 {
 /**************************************
  *
@@ -2946,14 +2947,14 @@ ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS * user_status, IDB * handle)
 	RETURN_SUCCESS;
 }
 
-ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS * user_status,
-						 IDB * service,
-						 ULONG * reserved,
+ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS* user_status,
+						 IDB* service,
+						 ULONG* reserved,
 						 USHORT send_item_length,
-						 SCHAR * send_items,
+						 const SCHAR* send_items,
 						 USHORT recv_item_length,
-						 SCHAR * recv_items,
-						 USHORT buffer_length, SCHAR * buffer)
+						 const SCHAR* recv_items,
+						 USHORT buffer_length, SCHAR* buffer)
 {
 /**************************************
  *
@@ -3300,11 +3301,11 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS * user_status,
-							ITR * transaction,
+ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
+							ITR* transaction,
 							USHORT item_length,
-							UCHAR * items,
-							USHORT buffer_length, UCHAR * buffer)
+							const UCHAR* items,
+							USHORT buffer_length, UCHAR* buffer)
 {
 /**************************************
  *
@@ -4724,3 +4725,4 @@ void IPC_release_all(void)
 
 
 } // extern "C"
+

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		sdl.c
+ *	MODULE:		sdl.cpp
  *	DESCRIPTION:	Array slice manipulator
  *
  * The contents of this file are subject to the Interbase Public
@@ -65,15 +65,15 @@
 typedef struct sdl_arg {
 	USHORT sdl_arg_mode;
 	ADS sdl_arg_desc;
-	UCHAR *sdl_arg_sdl;
-	UCHAR *sdl_arg_array;
-	SLONG *sdl_arg_variables;
+	const UCHAR* sdl_arg_sdl;
+	UCHAR* sdl_arg_array;
+	SLONG* sdl_arg_variables;
 	SDL_walk_callback sdl_arg_callback;
 	SLICE sdl_arg_argument;
 	ISC_STATUS *sdl_arg_status_vector;
 	IPTR sdl_arg_compiled[COMPILE_SIZE];
-	IPTR *sdl_arg_next;
-	IPTR *sdl_arg_end;
+	IPTR* sdl_arg_next;
+	IPTR* sdl_arg_end;
 } *SDL_ARG;
 
 /* Structure to computes ranges */
@@ -84,13 +84,13 @@ typedef struct rng {
 	SDL_INFO rng_info;
 } *RNG;
 
-static UCHAR *compile(UCHAR *, SDL_ARG);
-static ISC_STATUS error(ISC_STATUS *, ...);
+static const UCHAR* compile(const UCHAR*, SDL_ARG);
+static ISC_STATUS error(ISC_STATUS*, ...);
 static BOOLEAN execute(SDL_ARG);
-static UCHAR *get_range(UCHAR *, RNG, SLONG *, SLONG *);
-static SSHORT get_word(UCHAR *&);
-static UCHAR *sdl_desc(UCHAR *, DSC *);
-static IPTR *stuff(IPTR, SDL_ARG);
+static const UCHAR* get_range(const UCHAR*, RNG, SLONG*, SLONG*);
+static SSHORT get_word(const UCHAR*&);
+static const UCHAR* sdl_desc(const UCHAR*, DSC*);
+static IPTR* stuff(IPTR, SDL_ARG);
 
 
 #define op_literal	1
@@ -160,8 +160,8 @@ SLONG SDL_compute_subscript(ISC_STATUS * status_vector,
 }
 
 
-ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS * status_vector,
-							UCHAR * sdl, SDL_INFO info, SLONG * vector)
+ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS* status_vector,
+							const UCHAR* sdl, SDL_INFO info, SLONG* vector)
 {
 /**************************************
  *
@@ -174,13 +174,12 @@ ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS * status_vector,
  *	element descriptor.
  *
  **************************************/
-	UCHAR *p;
 	TEXT *q;
 	USHORT n, offset;
 	SLONG min, max;
 	struct rng range;
 
-	p = sdl;
+	const UCHAR* p = sdl;
 	info->sdl_info_fid = info->sdl_info_rid = 0;
 	info->sdl_info_relation[0] = info->sdl_info_field[0] = 0;
 
@@ -231,14 +230,17 @@ ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS * status_vector,
 				min = max = -1;
 				if (!(p = get_range(p - 1, &range, &min, &max))
 					|| (*p != gds_sdl_eoc))
+				{
 					info->sdl_info_dimensions = 0;
+				}
 			}
 			return FB_SUCCESS;
 		}
 }
 
 
-UCHAR* SDL_prepare_slice(UCHAR * sdl, USHORT sdl_length)
+// CVC: May revisit this function's tricky constness later.
+UCHAR* SDL_prepare_slice(UCHAR* sdl, USHORT sdl_length)
 {
 /**************************************
  *
@@ -251,11 +253,11 @@ UCHAR* SDL_prepare_slice(UCHAR * sdl, USHORT sdl_length)
  *	blr_d_float to blr_double.
  *
  **************************************/
-	UCHAR *new_sdl, *old_sdl;
 	DSC	junk;
 	USHORT	n;
 
-	new_sdl = old_sdl = sdl;
+	UCHAR* const old_sdl = sdl;
+	UCHAR* new_sdl = sdl;
 
 	if (*sdl++ != gds_sdl_version1)
 		return old_sdl;
@@ -284,7 +286,9 @@ UCHAR* SDL_prepare_slice(UCHAR * sdl, USHORT sdl_length)
 					*sdl = blr_double;
 				}
 
-				if (!(sdl = sdl_desc(sdl, &junk)))
+				// const_cast makes sense since we passed non-const object
+				// to sdl_desc, so we got just another position in the same string.
+				if (!(sdl = const_cast<UCHAR*>(sdl_desc(sdl, &junk))))
 					return new_sdl;
 			}
 			break;
@@ -309,12 +313,12 @@ UCHAR* SDL_prepare_slice(UCHAR * sdl, USHORT sdl_length)
 }
 
 
-int	SDL_walk(ISC_STATUS * status_vector,
-		UCHAR * sdl,
+int	SDL_walk(ISC_STATUS* status_vector,
+		const UCHAR* sdl,
 		USHORT mode,
-		UCHAR * array,
+		UCHAR* array,
 		ADS array_desc,
-		SLONG * variables,
+		SLONG* variables,
 		SDL_walk_callback callback,
 		SLICE argument)
 {
@@ -328,7 +332,6 @@ int	SDL_walk(ISC_STATUS * status_vector,
  *	Walk a slice.  
  *
  **************************************/
-	UCHAR *p;
 	DSC junk;
 	USHORT n, offset;
 	struct sdl_arg arg;
@@ -341,7 +344,7 @@ int	SDL_walk(ISC_STATUS * status_vector,
 	arg.sdl_arg_callback = callback;
 	arg.sdl_arg_argument = argument;
 	arg.sdl_arg_status_vector = status_vector;
-	p = sdl + 1;
+	const UCHAR* p = sdl + 1;
 
 	while (*p != gds_sdl_eoc) {
 		switch (*p++) {
@@ -386,7 +389,7 @@ int	SDL_walk(ISC_STATUS * status_vector,
 }
 
 
-static UCHAR *compile(UCHAR * sdl, SDL_ARG arg)
+static const UCHAR* compile(const UCHAR* sdl, SDL_ARG arg)
 {
 /**************************************
  *
@@ -401,14 +404,17 @@ static UCHAR *compile(UCHAR * sdl, SDL_ARG arg)
  **************************************/
 	SLONG n, count, variable, value, operator_;
 	IPTR *label;
-	UCHAR op, *p, *ptr1, *expressions[16], **expr;
+	const UCHAR* expressions[16];
+	const UCHAR** expr;
 
 #define STUFF(word, arg)	if (!stuff ((IPTR) word, arg)) return NULL
 #define COMPILE(p, arg)		if (!(p = compile (p, arg))) return NULL
 
-	p = sdl;
+	const UCHAR* ptr1;
+	const UCHAR* p = sdl;
 
-	switch (op = *p++) {
+	UCHAR op = *p++;
+	switch (op) {
 	case gds_sdl_do1:
 	case gds_sdl_do2:
 	case gds_sdl_do3:
@@ -749,7 +755,7 @@ static BOOLEAN execute(SDL_ARG arg)
 }
 
 
-static UCHAR *get_range(UCHAR * sdl, RNG arg, SLONG * min, SLONG * max)
+static const UCHAR* get_range(const UCHAR* sdl, RNG arg, SLONG* min, SLONG* max)
 {
 /**************************************
  *
@@ -763,10 +769,10 @@ static UCHAR *get_range(UCHAR * sdl, RNG arg, SLONG * min, SLONG * max)
  *
  **************************************/
 	SLONG n, variable, value, min1, max1, min2, max2, junk1, junk2;
-	UCHAR *p, op;
+	UCHAR op;
 	SDL_INFO info;
 
-	p = sdl;
+	const UCHAR* p = sdl;
 
 	switch (op = *p++) {
 	case gds_sdl_do1:
@@ -861,7 +867,7 @@ static UCHAR *get_range(UCHAR * sdl, RNG arg, SLONG * min, SLONG * max)
 	}
 }
 
-inline SSHORT get_word(UCHAR* &ptr)
+inline SSHORT get_word(const UCHAR*& ptr)
 {
 /**************************************
  *
@@ -874,15 +880,13 @@ inline SSHORT get_word(UCHAR* &ptr)
  *  unsigned chars and advance the pointer
  *
  **************************************/
-   SSHORT n;
-
-   n = *ptr++;
+   SSHORT n = *ptr++;
    n |= (*ptr++) << 8;
 
    return n;
 }
 
-static UCHAR *sdl_desc(UCHAR * ptr, DSC * desc)
+static const UCHAR* sdl_desc(const UCHAR* ptr, DSC* desc)
 {
 /**************************************
  *
@@ -895,9 +899,7 @@ static UCHAR *sdl_desc(UCHAR * ptr, DSC * desc)
  *	Return updated pointer is successful, otherwise NULL.
  *
  **************************************/
-	UCHAR *sdl;
-
-	sdl = ptr;
+	const UCHAR* sdl = ptr;
 	desc->dsc_scale = 0;
 	desc->dsc_length = 0;
 	desc->dsc_sub_type = 0;
@@ -1021,7 +1023,7 @@ static UCHAR *sdl_desc(UCHAR * ptr, DSC * desc)
 }
 
 
-static IPTR *stuff(IPTR value, SDL_ARG arg)
+static IPTR* stuff(IPTR value, SDL_ARG arg)
 {
 /**************************************
  *
@@ -1045,3 +1047,4 @@ static IPTR *stuff(IPTR value, SDL_ARG arg)
 
 	return arg->sdl_arg_next - 1;
 }
+

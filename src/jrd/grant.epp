@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		grant.e
+ *	MODULE:		grant.epp
  *	DESCRIPTION:	SQL Grant/Revoke Handler
  *
  * The contents of this file are subject to the Interbase Public
@@ -86,10 +86,10 @@ static void purge_default_class(TEXT *, SSHORT);
 #endif
 static USHORT save_field_privileges(TDBB, STR *, UCHAR **,
 									TEXT *, TEXT *, USHORT, ULONG *);
-static void save_security_class(TDBB, TEXT *, UCHAR *, USHORT);
+static void save_security_class(TDBB, const TEXT*, const UCHAR*, USHORT);
 static USHORT trans_sql_priv(TEXT *);
 static SLONG squeeze_acl(UCHAR *, UCHAR **, TEXT *, SSHORT);
-static BOOLEAN check_string(TEXT *, TEXT *);
+static bool check_string(const TEXT*, const TEXT*);
 
 
 STR GRANT_realloc_acl(STR		start_ptr,
@@ -1049,8 +1049,8 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 
 
 static void save_security_class(TDBB	tdbb,
-								TEXT*	s_class,
-								UCHAR*	buffer,
+								const TEXT*	s_class,
+								const UCHAR*	buffer,
 								USHORT	length)
 {
 /**************************************
@@ -1230,6 +1230,8 @@ static SLONG squeeze_acl(UCHAR*		acl_base,
 				case id_project:
 				case id_organization:
 					hit = FALSE;
+					// CVC: What's the idea of calling a function whose only
+					// result is boolean without checking it?
 					check_string((TEXT*)acl, user);
 					break;
 
@@ -1328,7 +1330,7 @@ static SLONG squeeze_acl(UCHAR*		acl_base,
 }
 
 
-static BOOLEAN check_string( TEXT * acl, TEXT * string)
+static bool check_string( const TEXT* acl, const TEXT* string)
 {
 /**************************************
  *
@@ -1338,21 +1340,21 @@ static BOOLEAN check_string( TEXT * acl, TEXT * string)
  *
  * Functional description
  *      Check a string against an acl string.  If they don't match,
- *      return TRUE.
+ *      return true.
  *
  **************************************/
 	USHORT l;
-	TEXT c1, c2;
 
 /* JPN: Since Kanji User names are not allowed, No need to fix this UPPER loop. */
 
 	if ( (l = *acl++) )
 		do {
-			c1 = *acl++;
-			c2 = *string++;
+			const TEXT c1 = *acl++;
+			const TEXT c2 = *string++;
 			if (UPPER7(c1) != UPPER7(c2))
-				return TRUE;
+				return true;
 		} while (--l);
 
-	return (*string && *string != ' ') ? TRUE : FALSE;
+	return (*string && *string != ' ') ? true : false;
 }
+

@@ -54,7 +54,10 @@ static SLONG get_parameter(SCHAR **);
 static void times(struct tms *);
 #endif
 
-static SCHAR items[] = { isc_info_reads, isc_info_writes, isc_info_fetches,
+static const SCHAR items[] = {
+	isc_info_reads,
+	isc_info_writes,
+	isc_info_fetches,
 	isc_info_marks,
 	isc_info_page_size, isc_info_num_buffers,
 	isc_info_current_memory, isc_info_max_memory
@@ -383,3 +386,4 @@ static void times(struct tms *buffer)
 
 
 } // extern "C"
+

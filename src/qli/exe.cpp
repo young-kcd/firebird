@@ -81,7 +81,7 @@ static void transaction_state(QLI_NOD, DBB);
 
 #define COUNT_ITEMS	4
 
-static SCHAR count_info[] = {
+static const SCHAR count_info[] = {
 	gds_info_req_select_count,
 	gds_info_req_insert_count,
 	gds_info_req_update_count,
@@ -245,8 +245,10 @@ FRBRD *EXEC_open_blob( QLI_NOD node)
 	ISC_STATUS_ARRAY status_vector;
 	if (gds__open_blob2(status_vector, &dbb->dbb_handle, &dbb->dbb_transaction,
 						&blob, (GDS_QUAD*) desc->dsc_address, bpb_length,
-						(char*) bpb))
+						reinterpret_cast<const char*>(bpb)))
+	{
 		ERRQ_database_error(dbb, status_vector);
+	}
 
 	return blob;
 }
@@ -693,7 +695,7 @@ static bool copy_blob( QLI_NOD value, PAR parameter)
 	if (gds__open_blob2(status_vector, &from_dbb->dbb_handle,
 						&from_dbb->dbb_transaction, &from_blob,
 						(GDS__QUAD*) from_desc->dsc_address, bpb_length,
-						(char*) bpb))
+						reinterpret_cast<const char*>(bpb)))
 	{
 		ERRQ_database_error(from_dbb, status_vector);
 	}
@@ -722,8 +724,11 @@ static bool copy_blob( QLI_NOD value, PAR parameter)
 	while (!gds__get_segment(status_vector, &from_blob, &length, buffer_length,
 							 (char*) buffer))
 	{
-		if (gds__put_segment(status_vector, &to_blob, length, (char*) buffer))
+		if (gds__put_segment(status_vector, &to_blob, length,
+			reinterpret_cast<const char*>(buffer)))
+		{
 			ERRQ_database_error(to_dbb, status_vector);
+		}
 	}
 
 	if (buffer != fixed_buffer)

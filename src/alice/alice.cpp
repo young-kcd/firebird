@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.39 2003-10-16 08:50:54 robocop Exp $
+//	$Id: alice.cpp,v 1.40 2003-10-29 10:52:58 robocop Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -108,7 +108,7 @@ static void ALICE_error(USHORT number);	// overloaded to keep down param count
 static inline void translate_cp(TEXT* sz);
 static void expand_filename(const TEXT*, TEXT*);
 #ifndef SUPERSERVER
-static int output_main(SLONG, UCHAR*);
+static int output_main(SLONG, const UCHAR*);
 #endif
 static int common_main(int, char**, pfn_svc_output, SLONG);
 static void alice_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
@@ -151,7 +151,7 @@ int ALICE_main(SVC service)
 //      Call the 'real' main.
 //
 
-int CLIB_ROUTINE main(int argc, char *argv[])
+int CLIB_ROUTINE main(int argc, char* argv[])
 {
 	const int exit_code = common_main(argc, argv, output_main, (SLONG) NULL);
 
@@ -164,7 +164,7 @@ int CLIB_ROUTINE main(int argc, char *argv[])
 //		Routine which is passed to GFIX for calling back when there is output.
 //
 
-static int output_main(SLONG output_data, UCHAR * output_buf)
+static int output_main(SLONG output_data, const UCHAR* output_buf)
 {
 	ib_fprintf(ib_stderr, "%s", output_buf);
 	return 0;
@@ -760,7 +760,7 @@ static void ALICE_error(USHORT number)
 //		Platform independent output routine.
 //
 
-static void alice_output(const SCHAR * format, ...)
+static void alice_output(const SCHAR* format, ...)
 {
 	va_list arglist;
 	UCHAR buf[1000];

@@ -70,7 +70,8 @@ static void add_global_fields(USHORT);
 static void add_index_set(DBB, USHORT, USHORT, USHORT);
 static void add_new_triggers(USHORT, USHORT);
 static void add_relation_fields(USHORT);
-static void add_security_to_sys_rel(TDBB, TEXT*, TEXT*, TEXT*, SSHORT);
+static void add_security_to_sys_rel(TDBB, const TEXT*, const TEXT*, const UCHAR*,
+	const SSHORT);
 #ifdef NOT_USED_OR_REPLACED
 static void add_trigger(TEXT*, BLK*, BLK*);
 #endif
@@ -272,10 +273,6 @@ void INI_format(const TEXT* owner, TEXT* charset)
 	BLK				handle1;
 	BLK				handle2;
 
-	UCHAR*			acl;
-	UCHAR			buffer[MAX_ACL_SIZE];
-	TEXT*			p_1;
-	USHORT			length;
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
@@ -437,12 +434,14 @@ void INI_format(const TEXT* owner, TEXT* charset)
 ======================================================================
 */
 
-	acl = buffer;
+	UCHAR buffer[MAX_ACL_SIZE];
+	UCHAR* acl = buffer;
 	*acl++ = ACL_version;
 	*acl++ = ACL_id_list;
 	*acl++ = id_person;
-	p_1 = string;
-	length = strlen(string);
+	
+	const TEXT* p_1 = string;
+	USHORT length = strlen(string);
 	*acl++ = (UCHAR)length;
 	if (length)
 	{
@@ -466,7 +465,7 @@ void INI_format(const TEXT* owner, TEXT* charset)
 	*acl++ = ACL_end;
 	length = acl - buffer;
 
-	add_security_to_sys_rel(tdbb, string, "RDB$ROLES", (TEXT*)buffer, length);
+	add_security_to_sys_rel(tdbb, string, "RDB$ROLES", buffer, length);
 
 }
 
@@ -1134,11 +1133,14 @@ static void add_relation_fields( USHORT minor_version)
 }
 
 
+// The caller used an UCHAR* to store the acl, it was converted to TEXT* to
+// be passed to this function, only to be converted to UCHAR* to be passed
+// to BLB_put_segment. Therefore, "acl" was changed to UCHAR* as param.
 static void add_security_to_sys_rel(TDBB	tdbb,
-									TEXT*	user_name,
-									TEXT*	rel_name,
-									TEXT*	acl,
-									SSHORT	acl_length)
+									const TEXT*	user_name,
+									const TEXT*	rel_name,
+									const UCHAR*	acl,
+									const SSHORT	acl_length)
 {
 /**************************************
  *
@@ -1170,11 +1172,11 @@ static void add_security_to_sys_rel(TDBB	tdbb,
 	strcat(sec_class_name, rel_name);
 
 	blob = BLB_create(tdbb, dbb->dbb_sys_trans, (BID)&blob_id_1);
-	BLB_put_segment(tdbb, blob, (UCHAR*)acl, acl_length);
+	BLB_put_segment(tdbb, blob, acl, acl_length);
 	BLB_close(tdbb, blob);
 
 	blob = BLB_create(tdbb, dbb->dbb_sys_trans, (BID)&blob_id_2);
-	BLB_put_segment(tdbb, blob, (UCHAR*)acl, acl_length);
+	BLB_put_segment(tdbb, blob, acl, acl_length);
 	BLB_close(tdbb, blob);
 
 	sprintf(default_class, "%s%" QUADFORMAT "d", DEFAULT_CLASS,

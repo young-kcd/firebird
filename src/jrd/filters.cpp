@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		filters.c
+ *	MODULE:		filters.cpp
  *	DESCRIPTION:	Blob filters for system define objects
  *
  * The contents of this file are subject to the Interbase Public
@@ -67,7 +67,7 @@ static const UCHAR char_tab[128] =
 /* Miscellaneous filter stuff (should be moved someday) */
 
 typedef struct tmp {
-	struct tmp *tmp_next;
+	struct tmp* tmp_next;
 	USHORT tmp_length;
 	TEXT tmp_string[1];
 } *TMP;
@@ -79,7 +79,9 @@ typedef struct tmp {
 #endif
 
 /* TXNN: Used on filter of internal data structure to text */
-static const TEXT acl_privs[] = "?CGDRWPIEUTX??", acl_ids[][16] = {
+static const TEXT acl_privs[] = "?CGDRWPIEUTX??";
+
+static const TEXT acl_ids[][16] = {
 	"?: ",
 	"group: ",
 	"user: ",
@@ -234,7 +236,7 @@ ISC_STATUS filter_blr(USHORT action, CTL control)
 	if (!status) {
 		if ((l > length) && (temp[length - 1] != blr_eoc))
 			temp[length] = blr_eoc;
-		gds__print_blr(reinterpret_cast<UCHAR*>(temp),
+		gds__print_blr(reinterpret_cast<const UCHAR*>(temp),
 					   dump_blr, control, 0);
 	}
 
@@ -435,7 +437,7 @@ ISC_STATUS filter_runtime(USHORT action, CTL control)
 	}
 
 	if (blr) {
-		gds__print_blr(reinterpret_cast<UCHAR*>(p),
+		gds__print_blr(reinterpret_cast<const UCHAR*>(p),
 					   dump_blr, control, 0);
 		control->ctl_data[1] = control->ctl_data[0];
 	}
@@ -544,12 +546,9 @@ ISC_STATUS filter_text(USHORT action, CTL control)
    left from previous get was used and there is still more of that segment
    not read, do a get segment */
 
-	if ((buffer_used == 0) || (control->ctl_data[2]
-							   &&
-							   ((l
-								 =
-								 (control->ctl_buffer_length - buffer_used)) >
-								0))) {
+	if ((buffer_used == 0) || (control->ctl_data[2] &&
+					((l = (control->ctl_buffer_length - buffer_used)) > 0)))
+	{
 		l = control->ctl_buffer_length - buffer_used;
 		status = caller(ACTION_get_segment,
 						control,
@@ -1272,3 +1271,4 @@ static void string_put(CTL control, const char* line)
 	control->ctl_total_length += l;
 	control->ctl_max_segment = MAX(control->ctl_max_segment, l);
 }
+

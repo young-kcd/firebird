@@ -36,7 +36,7 @@
 
 DATABASE DB = EXTERN FILENAME "yachts.lnk" RUNTIME DB_file_name;
 
-static const char* FOPEN_WRITE_TYPE	= "w";
+static const char* const FOPEN_WRITE_TYPE	= "w";
 
 inline bool blob_null(const GDS_QUAD id)
 {
@@ -49,10 +49,10 @@ struct view {
 };
 
 static void binary_to_ascii(SLONG, SSHORT, TEXT *);
-static void decompile_blr_literal(const SCHAR *);
+static void decompile_blr_literal(const SCHAR*);
 static void extract_acls(void);
-static void extract_computed(const TEXT *, bool);
-static void extract_database(const TEXT *);
+static void extract_computed(const TEXT*, bool);
+static void extract_database(const TEXT*);
 static void extract_fields(void);
 static void extract_filters(void);
 static void extract_functions(void);
@@ -61,30 +61,30 @@ static void extract_generators(void);
 static void extract_grants(const TEXT *);
 static void extract_indexes(void);
 static void extract_relations(void);
-static void extract_rfr(const TEXT *);
+static void extract_rfr(const TEXT*);
 static void extract_security(void);
 static void extract_triggers(void);
 static void extract_trig_msgs(const TEXT *);
 static void extract_view(const TEXT*, SLONG*, SLONG*, bool, bool, bool, bool*);
 static void extract_views(void);
-static void field_attributes(SLONG *, const TEXT *, SLONG *, const TEXT *, SSHORT);
+static void field_attributes(SLONG*, const TEXT*, SLONG*, const TEXT*, SSHORT);
 static void format_acl(const SCHAR *);
 static char name_trunc(const TEXT *, TEXT *);
 static void print_blob(SLONG *, TEXT);
 static void put_comment(USHORT);
-static void put_error(USHORT, const TEXT *);
+static void put_error(USHORT, const TEXT*);
 static void set_capabilities(void);
-static void type_scalar(USHORT, SSHORT, USHORT, SSHORT, USHORT, const TEXT *);
-static void view_fields(const TEXT *);
-static void wal_info(const UCHAR *, SSHORT *, SLONG *, SLONG *, SLONG *);
+static void type_scalar(USHORT, SSHORT, USHORT, SSHORT, USHORT, const TEXT*);
+static void view_fields(const TEXT*);
+static void wal_info(const UCHAR*, SSHORT*, SLONG*, SLONG*, SLONG*);
 
-static IB_FILE *output_file;
-static SCHAR db_items[] = { gds_info_page_size };
-static SCHAR db_info[] =
-	{ gds_info_num_wal_buffers, gds_info_wal_buffer_size,
+static IB_FILE* output_file;
+static const SCHAR db_items[] = { gds_info_page_size };
+static const SCHAR db_info[] = {
+	gds_info_num_wal_buffers, gds_info_wal_buffer_size,
 	gds_info_wal_ckpt_length, gds_info_wal_grpc_wait_usecs
 };
-static TEXT acl_privs[] = "?CGDRWP???";
+static const TEXT acl_privs[] = "?CGDRWP???";
 
 static SLONG EXT_capabilities;
 
@@ -601,8 +601,8 @@ static void extract_database(const TEXT * DB_file_name)
 
             SSHORT num_buf = 0;
 			SLONG buf_size = 0, chkpt_len = 0, grp_commit= 0;
-			wal_info((UCHAR*) db_info_buffer, &num_buf, &buf_size, &chkpt_len,
-					 &grp_commit);
+			wal_info(reinterpret_cast<const UCHAR*>(db_info_buffer), &num_buf,
+					&buf_size, &chkpt_len, &grp_commit);
 
 			if (num_buf)
 				ib_fprintf(output_file, "\n\tnum_log_buffers %d", num_buf);
@@ -1747,7 +1747,7 @@ static char name_trunc(const TEXT * in, TEXT * out)
 }
 
 
-static void print_blob(SLONG * blob_id, TEXT type)
+static void print_blob(SLONG* blob_id, TEXT type)
 {
 /**************************************
  *
@@ -1773,10 +1773,14 @@ static void print_blob(SLONG * blob_id, TEXT type)
 	UCHAR bpb_buffer[20], *bpb, *r;
 
 	FRBRD* blob = NULL;
+	// This logic was never finished: bpb_length (6th param) is always zero,
+	// so this call might be reduced to gds__open_blob().
 	bpb = r = bpb_buffer;
 
 	if (gds__open_blob2(status_vector, &DB, &gds_trans, &blob,
-						(GDS__QUAD*) blob_id, (USHORT) (r - bpb), (SCHAR*) bpb)) {
+						(GDS__QUAD*) blob_id, (USHORT) (r - bpb),
+						reinterpret_cast<const SCHAR*>(bpb)))
+	{
 		gds__print_status(status_vector);
 		DDL_err(269, NULL, NULL, NULL, NULL, NULL);	
 		/* msg 269: gds__open_blob failed */
@@ -2081,9 +2085,9 @@ static void view_fields(const TEXT * view_name)
 }
 
 
-static void wal_info(const UCHAR * db_info_buffer,
-					 SSHORT * num_buf,
-					 SLONG * buf_size, SLONG * chkpt_len, SLONG * grp_commit)
+static void wal_info(const UCHAR* db_info_buffer,
+					 SSHORT* num_buf,
+					 SLONG* buf_size, SLONG* chkpt_len, SLONG* grp_commit)
 {
 /**************************************
  *

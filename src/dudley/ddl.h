@@ -25,7 +25,6 @@
 #define DUDLEY_DDL_H
 
 #include "../jrd/common.h"
-#include "../jrd/gdsassert.h"
 
 #ifdef VMS
 const int BLOCK_SIZE = 512;
@@ -297,7 +296,8 @@ enum idx_flags_vals {
 
 static inline size_t IDX_LEN(const size_t cnt)
 {
-	return sizeof (struct dudley_idx) + (cnt ? cnt - 1 : 0) * sizeof (((DUDLEY_IDX) NULL)->idx_field[0]);
+	return sizeof (struct dudley_idx) +
+		(cnt ? cnt - 1 : 0) * sizeof (((DUDLEY_IDX) NULL)->idx_field[0]);
 }
 
 /* Linked list stack stuff */
@@ -345,7 +345,8 @@ typedef struct dudley_nod {
 
 static inline size_t NOD_LEN(const size_t cnt)
 {
-	return sizeof(dudley_nod) + (cnt ? cnt - 1 : 0) * sizeof (((DUDLEY_NOD) NULL)->nod_arg[0]);
+	return sizeof(dudley_nod) +
+		(cnt ? cnt - 1 : 0) * sizeof (((DUDLEY_NOD) NULL)->nod_arg[0]);
 }
 
 /* Relation block, not to be confused with siblings or in-laws */

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		llio.h
+ *	MODULE:		llio.cpp
  *	DESCRIPTION:	Low-level I/O routines
  *
  * The contents of this file are subject to the Interbase Public
@@ -84,7 +84,7 @@
 #define IO_RETRY	20
 #define BUFSIZE		32768
 
-static void io_error(ISC_STATUS *, TEXT *, TEXT *, ISC_STATUS);
+static void io_error(ISC_STATUS*, const TEXT*, const TEXT*, ISC_STATUS);
 
 
 int LLIO_allocate_file_space(
@@ -168,9 +168,9 @@ int LLIO_close(ISC_STATUS * status_vector, SLONG file_desc)
 
 
 int LLIO_open(
-			  ISC_STATUS * status_vector,
-			  TEXT * filename,
-			  USHORT open_mode, USHORT share_flag, SLONG * file_desc)
+			  ISC_STATUS* status_vector,
+			  const TEXT* filename,
+			  USHORT open_mode, USHORT share_flag, SLONG* file_desc)
 {
 /**************************************
  *
@@ -223,15 +223,18 @@ int LLIO_open(
 														|
 														FILE_FLAG_RANDOM_ACCESS
 														| attributes, 0));
-	if ((HANDLE) * file_desc == INVALID_HANDLE_VALUE
-		&& open_mode == LLIO_OPEN_WITH_TRUNC_RW) *file_desc =
+	if ((HANDLE) *file_desc == INVALID_HANDLE_VALUE
+		&& open_mode == LLIO_OPEN_WITH_TRUNC_RW)
+	{
+		*file_desc =
 			reinterpret_cast < SLONG >
 			(CreateFile
 			 (filename, access, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
 			  CREATE_NEW,
 			  FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS | attributes,
 			  0));
-	if ((HANDLE) * file_desc == INVALID_HANDLE_VALUE) {
+	}
+	if ((HANDLE) *file_desc == INVALID_HANDLE_VALUE) {
 		if (status_vector)
 			io_error(status_vector, "CreateFile", filename, isc_io_open_err);
 		return FB_FAILURE;
@@ -375,9 +378,8 @@ USHORT whence, UCHAR * buffer, SLONG length, SLONG * length_written)
 }
 
 
-static void io_error(
-					 ISC_STATUS * status_vector,
-					 TEXT * op, TEXT * filename, ISC_STATUS operation)
+static void io_error(ISC_STATUS* status_vector,
+					 const TEXT* op, const TEXT* filename, ISC_STATUS operation)
 {
 /**************************************
  *
@@ -416,8 +418,8 @@ int LLIO_close(ISC_STATUS * status_vector, SLONG file_desc)
 
 
 int LLIO_open(
-			  ISC_STATUS * status_vector,
-			  TEXT * filename,
+			  ISC_STATUS* status_vector,
+			  const TEXT* filename,
 			  USHORT open_mode, USHORT share_flag, SLONG * file_desc)
 {
 /**************************************
@@ -625,8 +627,8 @@ USHORT whence, UCHAR * buffer, SLONG length, SLONG * length_written)
 
 
 static void io_error(
-					 ISC_STATUS * status_vector,
-					 TEXT * op, TEXT * filename, ISC_STATUS operation)
+					 ISC_STATUS* status_vector,
+					 const TEXT* op, const TEXT* filename, ISC_STATUS operation)
 {
 /**************************************
  *
@@ -644,3 +646,4 @@ static void io_error(
 					   gds_arg_unix, errno, 0);
 }
 #endif
+

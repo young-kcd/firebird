@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.40 2003-10-03 01:46:53 brodsom Exp $
+$Id: isc.cpp,v 1.41 2003-10-29 10:53:14 robocop Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -254,9 +254,8 @@ int ISC_check_process_existence(SLONG	pid,
 
 
 #ifdef VMS
-int ISC_expand_logical_once(
-							TEXT * file_name,
-							USHORT file_length, TEXT * expanded_name)
+int ISC_expand_logical_once(const TEXT* file_name,
+							USHORT file_length, TEXT* expanded_name)
 {
 /**************************************
  *
@@ -481,8 +480,6 @@ int INTERNAL_API_ROUTINE ISC_get_user(TEXT*	name,
 
 	return (euid == 0);
 }
-
-
 #endif
 
 
@@ -770,8 +767,9 @@ static BOOLEAN check_user_privilege(void)
 }
 #endif
 
+
 #ifdef VMS
-int ISC_make_desc(TEXT * string, struct dsc$descriptor *desc, USHORT length)
+int ISC_make_desc(const TEXT* string, struct dsc$descriptor* desc, USHORT length)
 {
 /**************************************
  *
@@ -787,7 +785,8 @@ int ISC_make_desc(TEXT * string, struct dsc$descriptor *desc, USHORT length)
 
 	desc->dsc$b_dtype = DSC$K_DTYPE_T;
 	desc->dsc$b_class = DSC$K_CLASS_S;
-	desc->dsc$a_pointer = string;
+	// CVC: I assume the non-const condition would be needed, can't check.
+	desc->dsc$a_pointer = const_cast<TEXT*>(string);
 
 	if (length)
 		desc->dsc$w_length = length;
@@ -800,7 +799,9 @@ int ISC_make_desc(TEXT * string, struct dsc$descriptor *desc, USHORT length)
 	return desc->dsc$w_length;
 }
 #endif
-SLONG API_ROUTINE ISC_get_prefix(TEXT * passed_string)
+
+
+SLONG API_ROUTINE ISC_get_prefix(const TEXT* passed_string)
 {
 /**************************************
  *
@@ -813,7 +814,7 @@ SLONG API_ROUTINE ISC_get_prefix(TEXT * passed_string)
  *
  **************************************/
 
-	char c = *passed_string;
+	const char c = *passed_string;
 	int arg_type;
 
 	switch (UPPER(c)) {
@@ -837,7 +838,9 @@ SLONG API_ROUTINE ISC_get_prefix(TEXT * passed_string)
 	}
 	return (gds__get_prefix(arg_type, ++passed_string));
 }
-void API_ROUTINE ISC_prefix(TEXT * string, const TEXT * root)
+
+
+void API_ROUTINE ISC_prefix(TEXT* string, const TEXT* root)
 {
 /**************************************
  *
@@ -853,7 +856,9 @@ void API_ROUTINE ISC_prefix(TEXT * string, const TEXT * root)
 	gds__prefix(string, root);
 	return;
 }
-void API_ROUTINE ISC_prefix_lock(TEXT * string, const TEXT * root)
+
+
+void API_ROUTINE ISC_prefix_lock(TEXT* string, const TEXT* root)
 {
 /**************************************
  *
@@ -869,7 +874,9 @@ void API_ROUTINE ISC_prefix_lock(TEXT * string, const TEXT * root)
 	gds__prefix_lock(string, root);
 	return;
 }
-void API_ROUTINE ISC_prefix_msg(TEXT * string, const TEXT * root)
+
+
+void API_ROUTINE ISC_prefix_msg(TEXT* string, const TEXT* root)
 {
 /**************************************
  *

@@ -43,7 +43,7 @@ extern USHORT QLI_columns, QLI_name_columns;
 
 static void array_dimensions(DBB, const TEXT*);
 static void display_acl(DBB, SLONG[2]);
-static void display_blob(DBB, SLONG[2], const TEXT *, USHORT, UCHAR *, bool);
+static void display_blob(DBB, SLONG[2], const TEXT*, USHORT, const UCHAR*, bool);
 static void display_blr(DBB, SLONG[2]);
 static void display_text(DBB, SLONG[2], const TEXT *, bool);
 static void display_procedure(DBB, UCHAR *, FRBRD *);
@@ -84,7 +84,7 @@ static USHORT show_security_class_detail(DBB, const TEXT *);
 static USHORT show_security_classes_detail(DBB);
 static void show_string(USHORT, TEXT *, USHORT, TEXT *);
 static void show_sys_trigs(DBB);
-static void show_text_blob(DBB, const TEXT *, USHORT, SLONG *, USHORT, SLONG *, bool);
+static void show_text_blob(DBB, const TEXT*, USHORT, SLONG*, USHORT, SLONG*, bool);
 static void show_trig(QLI_REL);
 static int show_trigger_detail(DBB, const TEXT *);
 static void show_trigger_header(TEXT *, USHORT, USHORT, USHORT, SLONG *,
@@ -443,15 +443,15 @@ static void display_acl( DBB dbb, SLONG blob_id[2])
  *
  **************************************/
 
-	display_blob(dbb, blob_id, "\t    ", sizeof(acl_bpb), const_cast<UCHAR*>(acl_bpb), true);
+	display_blob(dbb, blob_id, "\t    ", sizeof(acl_bpb), acl_bpb, true);
 }
 
 
 static void display_blob(
 						 DBB dbb,
 						 SLONG blob_id[2],
-						 const TEXT * prefix,
-						 USHORT bpb_length, UCHAR * bpb,
+						 const TEXT* prefix,
+						 USHORT bpb_length, const UCHAR* bpb,
 						 bool strip_line)
 {
 /**************************************
@@ -467,11 +467,14 @@ static void display_blob(
 	buf_type buffer;
 	ISC_STATUS_ARRAY status_vector;
 
-	FRBRD *blob = NULL;
+	FRBRD* blob = NULL;
 
 	if (gds__open_blob2(status_vector, &dbb->dbb_handle, &dbb->dbb_meta_trans,
-						&blob, (GDS__QUAD*) blob_id, bpb_length, (char*) bpb))
+						&blob, (GDS__QUAD*) blob_id, bpb_length,
+						reinterpret_cast<const char*>(bpb)))
+	{
 			ERRQ_database_error(dbb, status_vector);
+	}
 
 	const USHORT buffer_length = sizeof(buffer) - 1;
 	for (;;) {
@@ -514,11 +517,11 @@ static void display_blr( DBB dbb, SLONG blob_id[2])
  *
  **************************************/
 
-	display_blob(dbb, blob_id, "\t    ", sizeof(blr_bpb), const_cast<UCHAR*>(blr_bpb), true);
+	display_blob(dbb, blob_id, "\t    ", sizeof(blr_bpb), blr_bpb, true);
 }
 
 
-static void display_text( DBB dbb, SLONG blob_id[2], const TEXT * prefix, bool strip)
+static void display_text( DBB dbb, SLONG blob_id[2], const TEXT* prefix, bool strip)
 {
 /**************************************
  *
@@ -807,7 +810,7 @@ static void show_dbb_parameters( DBB database)
 		return;
 
 	if (gds__database_info(status_vector, &database->dbb_handle,
-						   sizeof(db_items), const_cast<char*>(db_items),
+						   sizeof(db_items), db_items,
 						   sizeof(buffer), (char*) buffer))
 			ERRQ_database_error(database, status_vector);
 
@@ -2244,10 +2247,10 @@ static void show_sys_trigs( DBB database)
 
 static void show_text_blob(
 						   DBB database,
-						   const TEXT * column,
+						   const TEXT* column,
 						   USHORT msg1,
-						   SLONG * blob1,
-						   USHORT msg2, SLONG * blob2,
+						   SLONG* blob1,
+						   USHORT msg2, SLONG* blob2,
 						   bool strip)
 {
 /**************************************

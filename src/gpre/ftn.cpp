@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.35 2003-10-16 08:50:59 robocop Exp $
+//	$Id: ftn.cpp,v 1.36 2003-10-29 10:53:07 robocop Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -164,7 +164,7 @@ static void	t_start_auto (const gpre_req*, const TEXT*, const act*, bool);
 
 
 static TEXT output_buffer[512];
-static bool first_flag;
+static bool global_first_flag = false;
 static ADL array_decl_list;
 
 #ifdef VMS
@@ -364,7 +364,7 @@ const char* const NULL_SQLDA	= "0";
 void FTN_action(const act* action, int column)
 {
 	if (action->act_flags & ACT_break)
-		first_flag = false;
+		global_first_flag = false;
 
 	switch (action->act_type) {
 	case ACT_alter_database:
@@ -1383,9 +1383,9 @@ static void gen_cursor_open(const act* action, const gpre_req* request)
 
 static void gen_database(const act* action)
 {
-	if (first_flag)
+	if (global_first_flag)
 		return;
-	first_flag = true;
+	global_first_flag = true;
 
 	sprintf(output_buffer,
 			"\n%s      **** GDS Preprocessor Definitions ****\n\n", COMMENT);

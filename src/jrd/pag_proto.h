@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		pag_proto.h
- *	DESCRIPTION:	Prototype header file for pag.c
+ *	DESCRIPTION:	Prototype header file for pag.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -39,7 +39,7 @@ void	PAG_format_header(void);
 void	PAG_format_log(void);
 void	PAG_format_pip(void);
 int		PAG_get_clump(SLONG, USHORT, USHORT *, UCHAR *);
-void	PAG_header(TEXT *, USHORT);
+void	PAG_header(const TEXT*, USHORT);
 void	PAG_init(void);
 void	PAG_init2(USHORT);
 SLONG	PAG_last_page(void);

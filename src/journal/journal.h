@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JOURNAL_JOURNAL_H_
-#define _JOURNAL_JOURNAL_H_
+#ifndef JOURNAL_JOURNAL_H
+#define JOURNAL_JOURNAL_H
 
 #define JOURNAL_PATH_LENGTH     257
 #define MSG_LENGTH		1024
@@ -124,4 +124,5 @@ struct cmds {
 #define OUTFILE_QUEUE	230		/* Output files queued: */
 #define KNOWN_DBS	231			/* Known databases and connections: */
 
-#endif /* _JOURNAL_JOURNAL_H_ */
+#endif /* JOURNAL_JOURNAL_H */
+

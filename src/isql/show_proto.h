@@ -24,7 +24,7 @@
 #ifndef ISQL_SHOW_PROTO_H
 #define ISQL_SHOW_PROTO_H
 
-bool	SHOW_dbb_parameters (FRBRD*, SCHAR*, SCHAR*, USHORT, bool);
+bool	SHOW_dbb_parameters (FRBRD*, SCHAR*, const SCHAR*, USHORT, bool);
 int		SHOW_grants (SCHAR*, const SCHAR*, USHORT);
 int		SHOW_grants2 (SCHAR*, const SCHAR*, USHORT, TEXT*);
 void	SHOW_grant_roles (const SCHAR*, bool*);

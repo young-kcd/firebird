@@ -1,6 +1,6 @@
 /*
  *        PROGRAM:        JRD Write Ahead Log Reader
- *        MODULE:         walr.c
+ *        MODULE:         walr.cpp
  *        DESCRIPTION:    Write Ahead Log Reader routines
  *
  * The contents of this file are subject to the Interbase Public
@@ -199,14 +199,14 @@ SSHORT WALR_get_blk_timestamp(WALRS WALRS_handle, SLONG * timestamp)
 }
 
 
-SSHORT WALR_open(ISC_STATUS * status_vector,
-				 WALRS * WALRS_handle,
-				 SCHAR * dbname,
+SSHORT WALR_open(ISC_STATUS* status_vector,
+				 WALRS* WALRS_handle,
+				 const SCHAR* dbname,
 				 int numlogs,
-				 SCHAR ** lognames,
-				 SLONG * log_partitions_offsets,
+				 SCHAR** lognames,
+				 SLONG* log_partitions_offsets,
 				 SLONG first_log_offset,
-				 SLONG * timestamp,
+				 SLONG* timestamp,
 				 bool dont_scan_tail_logs)
 {
 /**************************************
@@ -678,3 +678,4 @@ static SSHORT read_next_block( ISC_STATUS * status_vector, WALRS WALRS_handle)
 
 	return FB_SUCCESS;
 }
+

@@ -56,7 +56,7 @@ const TEXT* DDL_prompt;
 static LLS free_stack;
 static TEXT DDL_message[256];
 
-static const char* FOPEN_INPUT_TYPE	= "r";
+static const char* const FOPEN_INPUT_TYPE	= "r";
 
 const char* DDL_EXT		= ".gdl";	// normal extension for a ddl file
 const int MAX_ERRORS	= 50;
@@ -104,7 +104,7 @@ static in_sw_tab_t gdef_in_sw_table[] = {
 };
 
 #ifndef SUPERSERVER
-int CLIB_ROUTINE main( int argc, char *argv[])
+int CLIB_ROUTINE main( int argc, char* argv[])
 {
 /**************************************
  *
@@ -471,10 +471,11 @@ UCHAR *DDL_alloc(int size)
 
 
 int DDL_db_error(
-				 ISC_STATUS * status_vector,
+				 ISC_STATUS* status_vector,
 				 USHORT number,
-				 TEXT * arg1,
-				 TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
+				 const TEXT* arg1,
+				 const TEXT* arg2, const TEXT* arg3,
+				 const TEXT* arg4, const TEXT* arg5)
 {
 /**************************************
  *
@@ -495,7 +496,8 @@ int DDL_db_error(
 
 int DDL_err(
 			USHORT number,
-			TEXT * arg1, TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
+			const TEXT* arg1, const TEXT* arg2, const TEXT* arg3,
+			const TEXT* arg4, const TEXT* arg5)
 {
 /**************************************
  *
@@ -523,10 +525,11 @@ int DDL_err(
 
 
 void DDL_error_abort(
-					 ISC_STATUS * status_vector,
+					 ISC_STATUS* status_vector,
 					 USHORT number,
-					 TEXT * arg1,
-					 TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
+					 const TEXT* arg1,
+					 const TEXT* arg2, const TEXT* arg3, 
+					 const TEXT* arg4, const TEXT* arg5)
 {
 /**************************************
  *
@@ -568,8 +571,9 @@ void DDL_exit( int stat)
 
 void DDL_msg_partial(
 					 USHORT number,
-					 TEXT * arg1,
-					 TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
+					 const TEXT* arg1,
+					 const TEXT* arg2, const TEXT* arg3,
+					 const TEXT* arg4, const TEXT* arg5)
 {
 /**************************************
  *
@@ -591,8 +595,9 @@ void DDL_msg_partial(
 
 void DDL_msg_put(
 				 USHORT number,
-				 TEXT * arg1,
-				 TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
+				 const TEXT* arg1,
+				 const TEXT* arg2, const TEXT* arg3,
+				 const TEXT* arg4, const TEXT* arg5)
 {
 /**************************************
  *

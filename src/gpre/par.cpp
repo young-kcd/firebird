@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.36 2003-10-16 08:50:59 robocop Exp $
+//  $Id: par.cpp,v 1.37 2003-10-29 10:53:07 robocop Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -1348,14 +1348,14 @@ static ACT par_based()
 	else {
 		based_on->bas_rel_name = (STR) MSC_alloc(token.tok_length + 1);
 		MSC_copy(token.tok_string, token.tok_length,
-			 (SCHAR *) based_on->bas_rel_name);
+			based_on->bas_rel_name->str_string);
 		PAR_get_token();
 		if (!MSC_match(KW_DOT))
 			PAR_error("expected qualified field name");
 		else {
 			based_on->bas_fld_name = (STR) MSC_alloc(token.tok_length + 1);
 			MSC_copy(token.tok_string, token.tok_length,
-				 (SCHAR *) based_on->bas_fld_name);
+				based_on->bas_fld_name->str_string);
 			ambiguous_flag = false;
 			PAR_get_token();
 			if (MSC_match(KW_DOT)) {
@@ -1363,7 +1363,7 @@ static ACT par_based()
 				based_on->bas_rel_name = based_on->bas_fld_name;
 				based_on->bas_fld_name = (STR) MSC_alloc(token.tok_length + 1);
 				MSC_copy(token.tok_string, token.tok_length,
-					 (SCHAR *) based_on->bas_fld_name);
+					based_on->bas_fld_name->str_string);
 				if (token.tok_keyword == KW_SEGMENT)
 					ambiguous_flag = true;
 				PAR_get_token();

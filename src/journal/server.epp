@@ -252,7 +252,7 @@ static void process_restart_archive(CNCT, SCHAR *);
 static void process_set_database(CNCT, SCHAR *);
 static void process_start_dump(CNCT, LTJW *);
 static void process_wal_file(CNCT, LTJW *);
-static void put_line(CNCT, SSHORT, TEXT *, TEXT *, TEXT *);
+static void put_line(CNCT, SSHORT, const TEXT*, const TEXT*, const TEXT*);
 static void put_message(SSHORT, DJB);
 static void read_asynchronous(CNCT);
 static void report_status(CNCT);
@@ -1725,7 +1725,8 @@ static void process_command(CNCT connection,
  **************************************/
 	cmds* command;
 	TEXT operand1[JOURNAL_PATH_LENGTH], operand2[JOURNAL_PATH_LENGTH];
-	TEXT cmd[32], *p, *q;
+	TEXT cmd[32], *q;
+	const TEXT* p;
 	USHORT n;
 	JRNR response;
 	SSHORT db_id;
@@ -1764,10 +1765,10 @@ static void process_command(CNCT connection,
 
 	case cmd_help:
 		put_line(connection, 112, 0, 0, 0);
-		for (command = commands; p = command->cmds_string; command++)
+		for (command = commands; p = command->cmds_string; command++) {
 			if (command->cmds_msg)
-				put_line(connection, command->cmds_msg,
-						 (TEXT *) command->cmds_string, 0, 0);
+				put_line(connection, command->cmds_msg, p, 0, 0);
+		}
 		break;
 
 	case cmd_version:
@@ -2739,9 +2740,9 @@ static void process_wal_file(CNCT connection,
 
 static void put_line(CNCT connection,
 					 SSHORT msg,
-					 TEXT * arg1,
-					 TEXT * arg2,
-					 TEXT * arg3)
+					 const TEXT* arg1,
+					 const TEXT* arg2,
+					 const TEXT* arg3)
 {
 /**************************************
  *

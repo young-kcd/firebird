@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.29 2003-09-22 17:52:27 brodsom Exp $
+$Id: why.cpp,v 1.30 2003-10-29 10:53:16 robocop Exp $
 */
 
 #include "firebird.h"
@@ -232,8 +232,8 @@ static ISC_STATUS get_transaction_info(ISC_STATUS *, WHY_TRA, TEXT **);
 static void iterative_sql_info(ISC_STATUS *, WHY_STMT *, SSHORT, const SCHAR *, SSHORT,
 							   SCHAR *, USHORT, XSQLDA *);
 static ISC_STATUS no_entrypoint(ISC_STATUS * user_status, ...);
-static ISC_STATUS open_blob(ISC_STATUS *, WHY_ATT *, WHY_TRA *, WHY_BLB *, SLONG *, USHORT,
-						UCHAR *, SSHORT, SSHORT);
+static ISC_STATUS open_blob(ISC_STATUS*, WHY_ATT*, WHY_TRA*, WHY_BLB*, SLONG*,
+						USHORT, const UCHAR*, SSHORT, SSHORT);
 #ifdef UNIX
 static ISC_STATUS open_marker_file(ISC_STATUS *, TEXT *, TEXT *);
 #endif
@@ -628,10 +628,10 @@ static const SCHAR describe_bind_info[] =
 
 ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 										   SSHORT	file_length,
-										   TEXT*	file_name,
+										   const TEXT*	file_name,
 										   WHY_ATT*		handle,
 										   SSHORT	dpb_length,
-										   SCHAR*	dpb)
+										   const SCHAR*	dpb)
 {
 /**************************************
  *
@@ -648,9 +648,7 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	ISC_STATUS_ARRAY local, temp;
 	USHORT n, length, org_length, temp_length;
 	WHY_DBB database;
-	UCHAR *current_dpb_ptr, *last_dpb_ptr;
 	TEXT expanded_filename[MAXPATHLEN], temp_filebuf[MAXPATHLEN];
-	TEXT *p, *q, *temp_filename;
 #if defined(UNIX)
 	TEXT single_user[5];
 #endif
@@ -689,7 +687,7 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	subsystem_enter();
 	SUBSYSTEM_USAGE_INCR;
 
-	temp_filename = temp_filebuf;
+	TEXT* temp_filename = temp_filebuf;
 
 	ptr = status;
 
@@ -697,10 +695,10 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	if (org_length)
 	{
-		p = file_name + org_length - 1;
+		const TEXT* p = file_name + org_length - 1;
 		while (*p == ' ')
 		{
-			p--;
+			--p;
 		}
 		org_length = p - file_name + 1;
 	}
@@ -722,7 +720,7 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		ISC_expand_filename(temp_filename, org_length, expanded_filename);
 	}
 
-	current_dpb_ptr = (UCHAR *) dpb;
+	const UCHAR* current_dpb_ptr = reinterpret_cast<const UCHAR*>(dpb);
 
 #ifdef UNIX
 /* added so that only the pipe_server goes in here */
@@ -739,10 +737,10 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 #endif
 
 /* Special handling of dpb pointers to handle multiple extends of the dpb */
-	last_dpb_ptr = current_dpb_ptr;
+	const UCHAR* const last_dpb_ptr = current_dpb_ptr;
 	isc_set_login(&current_dpb_ptr, &dpb_length);
 	if ((current_dpb_ptr != last_dpb_ptr) && (last_dpb_ptr != (UCHAR *)dpb))
-		gds__free((SLONG *) last_dpb_ptr);
+		gds__free((void*)last_dpb_ptr);
 
 	for (n = 0; n < SUBSYSTEMS; n++)
 	{
@@ -775,8 +773,8 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 			}
 
 			*handle = database;
-			p = database->db_path;
-			for (q = expanded_filename; length; length--)
+			TEXT* p = database->db_path;
+			for (const TEXT* q = expanded_filename; length; length--)
 			{
 				*p++ = *q++;
 			}
@@ -822,7 +820,7 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 ISC_STATUS API_ROUTINE GDS_BLOB_INFO(ISC_STATUS*	user_status,
 									 WHY_BLB*		blob_handle,
 									 SSHORT		item_length,
-									 SCHAR*		items,
+									 const SCHAR*		items,
 									 SSHORT		buffer_length,
 									 SCHAR*		buffer)
 {
@@ -838,10 +836,9 @@ ISC_STATUS API_ROUTINE GDS_BLOB_INFO(ISC_STATUS*	user_status,
  **************************************/
 	ISC_STATUS_ARRAY local;
 	ISC_STATUS *status;
-	WHY_BLB blob;
 
 	GET_STATUS;
-	blob = *blob_handle;
+	const why_hndl* blob = *blob_handle;
 	CHECK_HANDLE(blob, HANDLE_blob, isc_bad_segstr_handle);
 	subsystem_enter();
 
@@ -1212,11 +1209,11 @@ ISC_STATUS API_ROUTINE GDS_COMPILE2(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_CREATE_BLOB(ISC_STATUS * user_status,
-									   WHY_ATT * db_handle,
-									   WHY_TRA * tra_handle,
-									   WHY_BLB * blob_handle,
-									   SLONG * blob_id)
+ISC_STATUS API_ROUTINE GDS_CREATE_BLOB(ISC_STATUS* user_status,
+									   WHY_ATT* db_handle,
+									   WHY_TRA* tra_handle,
+									   WHY_BLB* blob_handle,
+									   SLONG* blob_id)
 {
 /**************************************
  *
@@ -1234,13 +1231,13 @@ ISC_STATUS API_ROUTINE GDS_CREATE_BLOB(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_CREATE_BLOB2(ISC_STATUS * user_status,
-										WHY_ATT * db_handle,
-										WHY_TRA * tra_handle,
-										WHY_BLB * blob_handle,
-										SLONG * blob_id,
+ISC_STATUS API_ROUTINE GDS_CREATE_BLOB2(ISC_STATUS* user_status,
+										WHY_ATT* db_handle,
+										WHY_TRA* tra_handle,
+										WHY_BLB* blob_handle,
+										SLONG* blob_id,
 										SSHORT bpb_length,
-										UCHAR * bpb)
+										const UCHAR* bpb)
 {
 /**************************************
  *
@@ -1260,12 +1257,12 @@ ISC_STATUS API_ROUTINE GDS_CREATE_BLOB2(ISC_STATUS * user_status,
 
 
 
-ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS * user_status,
+ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 										   USHORT file_length,
-										   TEXT * file_name,
-										   WHY_ATT * handle,
+										   const TEXT* file_name,
+										   WHY_ATT* handle,
 										   SSHORT dpb_length,
-										   UCHAR * dpb,
+										   const UCHAR* dpb,
 										   USHORT db_type)
 {
 /**************************************
@@ -1283,8 +1280,6 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS * user_status,
 	USHORT n, length, org_length, temp_length;
 	WHY_DBB database;
 	TEXT expanded_filename[MAXPATHLEN], temp_filebuf[MAXPATHLEN];
-	TEXT *p, *q, *temp_filename;
-	UCHAR *current_dpb_ptr, *last_dpb_ptr;
 #ifdef UNIX
 	TEXT single_user[5];
 #endif
@@ -1322,7 +1317,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS * user_status,
 	subsystem_enter();
 	SUBSYSTEM_USAGE_INCR;
 
-	temp_filename = temp_filebuf;
+	TEXT* temp_filename = temp_filebuf;
 
 	ptr = status;
 
@@ -1330,9 +1325,9 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS * user_status,
 
 	if (org_length)
 	{
-		p = file_name + org_length - 1;
+		const TEXT* p = file_name + org_length - 1;
 		while (*p == ' ')
-			p--;
+			--p;
 		org_length = p - file_name + 1;
 	}
 
@@ -1354,7 +1349,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS * user_status,
 	else
 		ISC_expand_filename(temp_filename, org_length, expanded_filename);
 
-	current_dpb_ptr = dpb;
+	const UCHAR* current_dpb_ptr = dpb;
 
 #ifdef UNIX
 	single_user[0] = 0;
@@ -1369,10 +1364,10 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS * user_status,
 #endif
 
 /* Special handling of dpb pointers to handle multiple extends of the dpb */
-	last_dpb_ptr = current_dpb_ptr;
+	const UCHAR* const last_dpb_ptr = current_dpb_ptr;
 	isc_set_login(&current_dpb_ptr, &dpb_length);
 	if ((current_dpb_ptr != last_dpb_ptr) && (last_dpb_ptr != dpb))
-		gds__free(last_dpb_ptr);
+		gds__free((void*) last_dpb_ptr);
 
 	for (n = 0; n < SUBSYSTEMS; n++)
 	{
@@ -1423,20 +1418,20 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS * user_status,
 			assert(database->db_path);
 
 			*handle = database;
-			p = database->db_path;
+			TEXT* p = database->db_path;
 
 #ifdef WIN_NT
             /* for (q = (*handle)->dbb_filename->str_data; length; length--) */
-            for (q = expanded_filename; length; length--)
+            for (const TEXT* q = expanded_filename; length; length--)
                 *p++ = *q++;
 #else
-            for (q = temp_filename; length; length--)
+            for (const TEXT* q = temp_filename; length; length--)
                 *p++ = *q++;
 #endif
 			*p = 0;
 
 			if (current_dpb_ptr != dpb)
-				gds__free((SLONG *) current_dpb_ptr);
+				gds__free((void*) current_dpb_ptr);
 			database->cleanup = NULL;
 			status[0] = isc_arg_gds;
 			status[1] = 0;
@@ -1451,7 +1446,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS * user_status,
 	}
 
 	if (current_dpb_ptr != dpb)
-		gds__free((SLONG *) current_dpb_ptr);
+		gds__free((void*) current_dpb_ptr);
 
 	SUBSYSTEM_USAGE_DECR;
 	return error(status, local);
@@ -1502,12 +1497,12 @@ ISC_STATUS API_ROUTINE gds__database_cleanup(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_DATABASE_INFO(ISC_STATUS * user_status,
-										 WHY_ATT * handle,
+ISC_STATUS API_ROUTINE GDS_DATABASE_INFO(ISC_STATUS* user_status,
+										 WHY_ATT* handle,
 										 SSHORT item_length,
-										 SCHAR * items,
+										 const SCHAR* items,
 										 SSHORT buffer_length,
-										 SCHAR * buffer)
+										 SCHAR* buffer)
 {
 /**************************************
  *
@@ -2568,7 +2563,6 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM2_M(ISC_STATUS * user_status,
 	ISC_STATUS *status, *s;
 	BOOLEAN stmt_eaten;
 	SCHAR buffer[16];
-	SCHAR ch;
 	BOOLEAN ret_v3_error;
 
 	GET_STATUS;
@@ -2597,9 +2591,10 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM2_M(ISC_STATUS * user_status,
 		if (!stmt_eaten) {
 			/* Check if against < 4.0 database */
 
-			ch = gds__info_base_level;
+			const SCHAR ch = gds__info_base_level;
 			if (!GDS_DATABASE_INFO(status, db_handle, 1, &ch, sizeof(buffer),
-								   buffer)) {
+								   buffer))
+			{
 				if ((buffer[0] != gds__info_base_level) || (buffer[4] > 3))
 					GDS_DSQL_EXEC_IMM3_M(status, db_handle,
 										 &crdb_trans_handle, length, string,
@@ -3372,12 +3367,12 @@ ISC_STATUS API_ROUTINE GDS_DSQL_SET_CURSOR(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_DSQL_SQL_INFO(ISC_STATUS * user_status,
-										 WHY_STMT * stmt_handle,
+ISC_STATUS API_ROUTINE GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
+										 WHY_STMT* stmt_handle,
 										 SSHORT item_length,
-										 const SCHAR * items,
+										 const SCHAR* items,
 										 SSHORT buffer_length,
-										 SCHAR * buffer)
+										 SCHAR* buffer)
 {
 /**************************************
  *
@@ -3650,11 +3645,11 @@ ISC_STATUS gds__handle_cleanup(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_OPEN_BLOB(ISC_STATUS * user_status,
-									 WHY_ATT * db_handle,
-									 WHY_TRA * tra_handle,
-									 WHY_BLB * blob_handle,
-									 SLONG * blob_id)
+ISC_STATUS API_ROUTINE GDS_OPEN_BLOB(ISC_STATUS* user_status,
+									 WHY_ATT* db_handle,
+									 WHY_TRA* tra_handle,
+									 WHY_BLB* blob_handle,
+									 SLONG* blob_id)
 {
 /**************************************
  *
@@ -3672,13 +3667,13 @@ ISC_STATUS API_ROUTINE GDS_OPEN_BLOB(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_OPEN_BLOB2(ISC_STATUS * user_status,
-									  WHY_ATT * db_handle,
-									  WHY_TRA * tra_handle,
-									  WHY_BLB * blob_handle,
-									  SLONG * blob_id,
+ISC_STATUS API_ROUTINE GDS_OPEN_BLOB2(ISC_STATUS* user_status,
+									  WHY_ATT* db_handle,
+									  WHY_TRA* tra_handle,
+									  WHY_BLB* blob_handle,
+									  SLONG* blob_id,
 									  SSHORT bpb_length,
-									  UCHAR * bpb)
+									  const UCHAR* bpb)
 {
 /**************************************
  *
@@ -3752,10 +3747,10 @@ ISC_STATUS API_ROUTINE GDS_PREPARE2(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_PUT_SEGMENT(ISC_STATUS * user_status,
-									   WHY_BLB * blob_handle,
+ISC_STATUS API_ROUTINE GDS_PUT_SEGMENT(ISC_STATUS* user_status,
+									   WHY_BLB* blob_handle,
 									   USHORT buffer_length,
-									   UCHAR * buffer)
+									   const UCHAR* buffer)
 {
 /**************************************
  *
@@ -4059,13 +4054,13 @@ ISC_STATUS API_ROUTINE GDS_RELEASE_REQUEST(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_REQUEST_INFO(ISC_STATUS * user_status,
-										WHY_REQ * req_handle,
+ISC_STATUS API_ROUTINE GDS_REQUEST_INFO(ISC_STATUS* user_status,
+										WHY_REQ* req_handle,
 										SSHORT level,
 										SSHORT item_length,
-										SCHAR * items,
+										const SCHAR* items,
 										SSHORT buffer_length,
-										SCHAR * buffer)
+										SCHAR* buffer)
 {
 /**************************************
  *
@@ -4077,7 +4072,7 @@ ISC_STATUS API_ROUTINE GDS_REQUEST_INFO(ISC_STATUS * user_status,
  *	Provide information on blob object.
  *
  **************************************/
-	ISC_STATUS *status;
+	ISC_STATUS* status;
 	ISC_STATUS_ARRAY local;
 	WHY_REQ request;
 
@@ -4466,15 +4461,15 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_DETACH(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_SERVICE_QUERY(ISC_STATUS * user_status,
-										 WHY_SVC * handle,
-										 ULONG * reserved,
+ISC_STATUS API_ROUTINE GDS_SERVICE_QUERY(ISC_STATUS* user_status,
+										 WHY_SVC* handle,
+										 ULONG* reserved,
 										 USHORT send_item_length,
-										 SCHAR * send_items,
+										 const SCHAR* send_items,
 										 USHORT recv_item_length,
-										 SCHAR * recv_items,
+										 const SCHAR* recv_items,
 										 USHORT buffer_length,
-										 SCHAR * buffer)
+										 SCHAR* buffer)
 {
 /**************************************
  *
@@ -4909,12 +4904,12 @@ ISC_STATUS API_ROUTINE gds__transaction_cleanup(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_TRANSACTION_INFO(ISC_STATUS * user_status,
-											WHY_TRA * tra_handle,
+ISC_STATUS API_ROUTINE GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
+											WHY_TRA* tra_handle,
 											SSHORT item_length,
-											SCHAR * items,
+											const SCHAR* items,
 											SSHORT buffer_length,
-											UCHAR * buffer)
+											UCHAR* buffer)
 {
 /**************************************
  *
@@ -5585,13 +5580,13 @@ static void iterative_sql_info(ISC_STATUS * user_status,
 	}
 }
 
-static ISC_STATUS open_blob(ISC_STATUS * user_status,
-							WHY_ATT * db_handle,
-							WHY_TRA * tra_handle,
-							WHY_BLB * blob_handle,
-							SLONG * blob_id,
+static ISC_STATUS open_blob(ISC_STATUS* user_status,
+							WHY_ATT* db_handle,
+							WHY_TRA* tra_handle,
+							WHY_BLB* blob_handle,
+							SLONG* blob_id,
 							USHORT bpb_length,
-							UCHAR * bpb,
+							const UCHAR* bpb,
 							SSHORT proc,
 							SSHORT proc2)
 {
@@ -5632,7 +5627,10 @@ static ISC_STATUS open_blob(ISC_STATUS * user_status,
 										  blob_handle,
 										  blob_id,
 										  bpb_length,
-										  bpb) != isc_unavailable) flags = 0;
+										  bpb) != isc_unavailable)
+	{
+		flags = 0;
+	}
 	else if (!to || from == to)
 		CALL(proc, dbb->implementation) (status,
 										 &dbb->handle,

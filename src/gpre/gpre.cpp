@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.42 2003-10-29 00:30:10 brodsom Exp $
+//  $Id: gpre.cpp,v 1.43 2003-10-29 10:53:07 robocop Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -93,14 +93,14 @@ static bool			file_rename(TEXT*, const TEXT*, const TEXT*);
 #ifdef GPRE_FORTRAN
 static void			finish_based(ACT);
 #endif
-static int			get_char(IB_FILE *);
-static bool			get_switches(int, TEXT **, const in_sw_tab_t*, SW_TAB, TEXT **);
+static int			get_char(IB_FILE*);
+static bool			get_switches(int, TEXT**, const in_sw_tab_t*, SW_TAB, TEXT**);
 static TOK			get_token();
 static int			nextchar();
 static SLONG		pass1(const TEXT*);
 static void			pass2(SLONG);
 static void			print_switches();
-static void			remember_label(TEXT *);
+static void			remember_label(const TEXT*);
 //static IB_FILE*		reposition_file(IB_FILE *, SLONG);
 static void			return_char(SSHORT);
 static SSHORT		skip_white();
@@ -1107,7 +1107,7 @@ TOK CPR_eol_token()
 //       Write text from the scratch trace file into a buffer.
 //  
 
-void CPR_get_text( TEXT* buffer, TXT text)
+void CPR_get_text( TEXT* buffer, const txt* text)
 {
 	SLONG start = text->txt_position;
 	int length = text->txt_length;
@@ -1514,7 +1514,7 @@ static void finish_based( ACT action)
 
 		DBB db = NULL;
 		if (based_on->bas_db_name) {
-			SYM symbol = HSH_lookup((SCHAR *) based_on->bas_db_name);
+			SYM symbol = HSH_lookup(based_on->bas_db_name->str_string);
 			for (; symbol; symbol = symbol->sym_homonym)
 				if (symbol->sym_type == SYM_database)
 					break;
@@ -1522,14 +1522,15 @@ static void finish_based( ACT action)
 			if (symbol) {
 				db = (DBB) symbol->sym_object;
 				relation =
-					MET_get_relation(db, (TEXT *) based_on->bas_rel_name, "");
+					MET_get_relation(db, based_on->bas_rel_name->str_string, "");
 				if (!relation) {
 					sprintf(s, "relation %s is not defined in database %s",
-							based_on->bas_rel_name->str_string, based_on->bas_db_name->str_string);
+							based_on->bas_rel_name->str_string,
+							based_on->bas_db_name->str_string);
 					CPR_error(s);
 					continue;
 				}
-				field = MET_field(relation, (char *) based_on->bas_fld_name);
+				field = MET_field(relation, based_on->bas_fld_name->str_string);
 			}
 			else {
 				if (based_on->bas_flags & BAS_ambiguous) {
@@ -1555,7 +1556,7 @@ static void finish_based( ACT action)
 			field = NULL;
 			for (db = isc_databases; db; db = db->dbb_next)
 				if (relation =
-					MET_get_relation(db, (TEXT *) based_on->bas_rel_name, "")) {
+					MET_get_relation(db, based_on->bas_rel_name->str_string, "")) {
 					if (field) {
 						/* The field reference is ambiguous.  It exists in more
 						   than one database. */
@@ -1567,7 +1568,7 @@ static void finish_based( ACT action)
 						break;
 					}
 					field =
-						MET_field(relation, (char *) based_on->bas_fld_name);
+						MET_field(relation, based_on->bas_fld_name->str_string);
 				}
 
 			if (db)
@@ -2673,14 +2674,11 @@ static void print_switches()
 //		is bigger than the vector, punt.
 //       
 
-static void remember_label( TEXT * label_string)
+static void remember_label(const TEXT* label_string)
 {
-	UCHAR target_byte;
-	SLONG label;
-
-	label = atoi(label_string);
+	SLONG label = atoi(label_string);
 	if (label < 8192) {
-		target_byte = label & 7;
+		const UCHAR target_byte = label & 7;
 		label >>= 3;
 		fortran_labels[label] |= 1 << target_byte;
 	}

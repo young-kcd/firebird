@@ -292,21 +292,21 @@ struct teb_t {
 }
 
 
-ISC_STATUS API_ROUTINE gds__attach_database(ISC_STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__attach_database(ISC_STATUS* status_vector,
 										SSHORT file_length,
-										SCHAR * file_name,
-										FRBRD **db_handle,
-										SSHORT dpb_length, SCHAR * dpb)
+										const SCHAR* file_name,
+										FRBRD** db_handle,
+										SSHORT dpb_length, const SCHAR* dpb)
 {
 	return isc_attach_database(status_vector, file_length, file_name,
 							   db_handle, dpb_length, dpb);
 }
 
-ISC_STATUS API_ROUTINE gds__blob_info(ISC_STATUS * status_vector,
-								  FRBRD **blob_handle,
+ISC_STATUS API_ROUTINE gds__blob_info(ISC_STATUS* status_vector,
+								  FRBRD** blob_handle,
 								  SSHORT msg_length,
-								  SCHAR * msg,
-								  SSHORT buffer_length, SCHAR * buffer)
+								  const SCHAR* msg,
+								  SSHORT buffer_length, SCHAR* buffer)
 {
 	return isc_blob_info(status_vector, blob_handle, msg_length,
 						 msg, buffer_length, buffer);
@@ -359,32 +359,32 @@ ISC_STATUS API_ROUTINE gds__compile_request2(ISC_STATUS * status_vector,
 								blr);
 }
 
-ISC_STATUS API_ROUTINE gds__create_blob(ISC_STATUS * status_vector,
-									FRBRD **db_handle,
-									FRBRD **tra_handle,
-									FRBRD **blob_handle, GDS_QUAD * blob_id)
+ISC_STATUS API_ROUTINE gds__create_blob(ISC_STATUS* status_vector,
+									FRBRD** db_handle,
+									FRBRD** tra_handle,
+									FRBRD** blob_handle, GDS_QUAD* blob_id)
 {
 	return isc_create_blob(status_vector, db_handle, tra_handle, blob_handle, 
 						   blob_id);
 }
 
-ISC_STATUS API_ROUTINE gds__create_blob2(ISC_STATUS * status_vector,
-									 FRBRD **db_handle,
-									 FRBRD **tra_handle,
-									 FRBRD **blob_handle,
-									 GDS_QUAD * blob_id,
-									 SSHORT bpb_length, SCHAR * bpb)
+ISC_STATUS API_ROUTINE gds__create_blob2(ISC_STATUS* status_vector,
+									 FRBRD** db_handle,
+									 FRBRD** tra_handle,
+									 FRBRD** blob_handle,
+									 GDS_QUAD* blob_id,
+									 SSHORT bpb_length, const SCHAR* bpb)
 {
 	return isc_create_blob2(status_vector, db_handle, tra_handle, blob_handle,
 							blob_id, bpb_length, bpb);
 }
 
-ISC_STATUS API_ROUTINE gds__create_database(ISC_STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__create_database(ISC_STATUS* status_vector,
 										SSHORT file_length,
-										SCHAR * file_name,
-										FRBRD **db_handle,
+										const SCHAR* file_name,
+										FRBRD** db_handle,
 										SSHORT dpb_length,
-										SCHAR * dpb, SSHORT db_type)
+										const SCHAR* dpb, SSHORT db_type)
 {
 	return isc_create_database(status_vector, file_length, file_name, db_handle,
 							   dpb_length, dpb, db_type);
@@ -399,11 +399,11 @@ ISC_STATUS API_ROUTINE isc_database_cleanup(ISC_STATUS * status_vector,
 								 routine, (SLONG) arg);
 }
 
-ISC_STATUS API_ROUTINE gds__database_info(ISC_STATUS * status_vector,
-									  FRBRD **db_handle,
+ISC_STATUS API_ROUTINE gds__database_info(ISC_STATUS* status_vector,
+									  FRBRD** db_handle,
 									  SSHORT msg_length,
-									  SCHAR * msg,
-									  SSHORT buffer_length, SCHAR * buffer)
+									  const SCHAR* msg,
+									  SSHORT buffer_length, SCHAR* buffer)
 {
 	return isc_database_info(status_vector, db_handle, msg_length,
 							 msg, buffer_length, buffer);
@@ -440,25 +440,25 @@ ISC_STATUS API_ROUTINE gds__get_slice(ISC_STATUS * status_vector,
 						 slice_length, (SCHAR *) slice, return_length);
 }
 
-ISC_STATUS API_ROUTINE gds__open_blob(ISC_STATUS * status_vector,
-								  FRBRD **db_handle,
-								  FRBRD **tra_handle,
-								  FRBRD **blob_handle, GDS_QUAD * blob_id)
+ISC_STATUS API_ROUTINE gds__open_blob(ISC_STATUS* status_vector,
+								  FRBRD** db_handle,
+								  FRBRD** tra_handle,
+								  FRBRD** blob_handle, GDS_QUAD* blob_id)
 {
 	return isc_open_blob(status_vector, db_handle, tra_handle, blob_handle,
 						 blob_id);
 }
 
-ISC_STATUS API_ROUTINE gds__open_blob2(ISC_STATUS * status_vector,
-								   FRBRD **db_handle,
-								   FRBRD **tra_handle,
-								   FRBRD **blob_handle,
-								   GDS_QUAD * blob_id,
-								   SSHORT bpb_length, SCHAR * bpb)
+ISC_STATUS API_ROUTINE gds__open_blob2(ISC_STATUS* status_vector,
+								   FRBRD** db_handle,
+								   FRBRD** tra_handle,
+								   FRBRD** blob_handle,
+								   GDS_QUAD* blob_id,
+								   SSHORT bpb_length, const SCHAR* bpb)
 {
 	return isc_open_blob2(status_vector, db_handle, tra_handle, blob_handle,
 						  blob_id, bpb_length,
-						  reinterpret_cast<UCHAR*>(bpb));
+						  reinterpret_cast<const UCHAR*>(bpb));
 }
 
 ISC_STATUS API_ROUTINE gds__prepare_transaction(ISC_STATUS * status_vector,
@@ -475,9 +475,9 @@ ISC_STATUS API_ROUTINE gds__prepare_transaction2(ISC_STATUS * status_vector,
 									reinterpret_cast<UCHAR*>(msg));
 }
 
-ISC_STATUS API_ROUTINE gds__put_segment(ISC_STATUS * status_vector,
-									FRBRD **blob_handle,
-									USHORT segment_length, SCHAR * segment)
+ISC_STATUS API_ROUTINE gds__put_segment(ISC_STATUS* status_vector,
+									FRBRD** blob_handle,
+									USHORT segment_length, const SCHAR* segment)
 {
 	return isc_put_segment(status_vector, blob_handle, segment_length, segment);
 }
@@ -533,12 +533,12 @@ ISC_STATUS API_ROUTINE gds__release_request(ISC_STATUS * status_vector,
 	return isc_release_request(status_vector, req_handle);
 }
 
-ISC_STATUS API_ROUTINE gds__request_info(ISC_STATUS * status_vector,
-									 FRBRD **req_handle,
+ISC_STATUS API_ROUTINE gds__request_info(ISC_STATUS* status_vector,
+									 FRBRD** req_handle,
 									 SSHORT req_level,
 									 SSHORT msg_length,
-									 SCHAR * msg,
-									 SSHORT buffer_length, SCHAR * buffer)
+									 const SCHAR* msg,
+									 SSHORT buffer_length, SCHAR* buffer)
 {
 	return isc_request_info(status_vector, req_handle, req_level, msg_length,
 							msg, buffer_length, buffer);
@@ -592,11 +592,11 @@ ISC_STATUS API_ROUTINE gds__start_request(ISC_STATUS * status_vector,
 	return isc_start_request(status_vector, req_handle, tra_handle, req_level);
 }
 
-ISC_STATUS API_ROUTINE gds__transaction_info(ISC_STATUS * status_vector,
-										 FRBRD **tra_handle,
+ISC_STATUS API_ROUTINE gds__transaction_info(ISC_STATUS* status_vector,
+										 FRBRD** tra_handle,
 										 SSHORT msg_length,
-										 SCHAR * msg,
-										 SSHORT buffer_length, SCHAR * buffer)
+										 const SCHAR* msg,
+										 SSHORT buffer_length, SCHAR* buffer)
 {
 	return isc_transaction_info(status_vector, tra_handle, msg_length,
 								msg, buffer_length, buffer);
@@ -629,8 +629,9 @@ SLONG API_ROUTINE isc_free(SCHAR * blk)
 	return gds__free((SLONG *) blk);
 }
 
-SLONG API_ROUTINE isc_ftof(SCHAR * string1,
-						   USHORT length1, SCHAR * string2, USHORT length2)
+SLONG API_ROUTINE isc_ftof(const SCHAR* string1,
+						   const USHORT length1,
+						   SCHAR* string2, const USHORT length2)
 {
 	return gds__ftof(string1, length1, string2, length2);
 }
@@ -650,21 +651,21 @@ int API_ROUTINE isc_get_client_minor_version()
 	return gds__get_client_minor_version();
 }
 
-ISC_STATUS API_ROUTINE isc_print_blr(SCHAR * blr,
+ISC_STATUS API_ROUTINE isc_print_blr(const SCHAR* blr,
 								 void (*callback) (),
-								 void *callback_argument, SSHORT language)
+								 void* callback_argument, SSHORT language)
 {
-	return gds__print_blr((UCHAR *) blr, 
+	return gds__print_blr(reinterpret_cast<const UCHAR*>(blr),
 						  reinterpret_cast<FPTR_PRINT_CALLBACK>(callback),
 						  callback_argument, language);
 }
 
-ISC_STATUS API_ROUTINE isc_print_status(ISC_STATUS * status_vector)
+ISC_STATUS API_ROUTINE isc_print_status(const ISC_STATUS* status_vector)
 {
 	return gds__print_status(status_vector);
 }
 
-void API_ROUTINE isc_qtoq(GDS_QUAD * quad1, GDS_QUAD * quad2)
+void API_ROUTINE isc_qtoq(const GDS_QUAD* quad1, GDS_QUAD* quad2)
 {
 	gds__qtoq(quad1, quad2);
 }
@@ -680,12 +681,12 @@ void API_ROUTINE isc_sqlcode_s(const ISC_STATUS* status_vector, ULONG * sqlcode)
 	return;
 }
 
-void API_ROUTINE isc_vtof(SCHAR * string1, SCHAR * string2, USHORT length)
+void API_ROUTINE isc_vtof(const SCHAR* string1, SCHAR* string2, USHORT length)
 {
 	gds__vtof(string1, string2, length);
 }
 
-void API_ROUTINE isc_vtov(SCHAR * string1, SCHAR * string2, SSHORT length)
+void API_ROUTINE isc_vtov(const SCHAR* string1, SCHAR* string2, SSHORT length)
 {
 	gds__vtov(string1, string2, length);
 }

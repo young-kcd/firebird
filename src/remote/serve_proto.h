@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Remote server  
  *	MODULE:		serve_proto.h
- *	DESCRIPTION:	Prototype Header file for server.c
+ *	DESCRIPTION:	Prototype Header file for server.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -50,3 +50,4 @@ void THREAD_ROUTINE process_connection_thread(PORT);
 
 
 #endif	// REMOTE_SERVE_PROTO_H
+

@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.30 2003-10-17 23:41:27 brodsom Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.31 2003-10-29 10:53:07 robocop Exp $
  */
 
 #include "firebird.h"
@@ -211,7 +211,7 @@ bool MET_get_domain_default(DBB db,
  *		Reads the system tables RDB$FIELDS and RDB$RELATION_FIELDS.
  */  
 
-bool MET_get_column_default(GPRE_REL relation,
+bool MET_get_column_default(const gpre_rel* relation,
 							const TEXT* column_name,
 							TEXT* buffer,
 							USHORT buff_length)

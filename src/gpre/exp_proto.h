@@ -28,7 +28,7 @@ GPRE_NOD	EXP_array(GPRE_REQ, GPRE_FLD, SSHORT, SSHORT);
 GPRE_FLD	EXP_cast(GPRE_FLD);
 GPRE_CTX	EXP_context(GPRE_REQ, SYM);
 GPRE_FLD	EXP_field(GPRE_CTX*);
-void		EXP_left_paren(TEXT*);
+void		EXP_left_paren(const TEXT*);
 GPRE_NOD	EXP_literal(void);
 void		EXP_post_array(REF);
 REF			EXP_post_field(GPRE_FLD, GPRE_CTX, USHORT);
