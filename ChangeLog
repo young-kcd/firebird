@@ -1,3 +1,16 @@
+2003-06-25 09:43  dimitr
+
+	* firebird2/src/: jrd/gds.cpp, jrd/isc.cpp,
+	common/config/dir_list.cpp, install/misc/firebird.conf:
+	
+	Renamed environment variable. Fixed one temp-related crash.
+
+2003-06-25 09:38  dimitr
+
+	* firebird2/src/: common/config/config.cpp, remote/inet.cpp:
+	
+	Fixed manual TCP port assignment.
+
 2003-06-24 12:33  dimitr
 
 	* firebird2/src/isql/isql.epp:
