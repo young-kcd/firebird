@@ -65,8 +65,6 @@ typedef struct sig {
 #define MTAB		"/etc/mtab"
 #define sigvector	sigvec
 
-typedef void (*SIG_FPTR) ();
-
 TEXT *ISC_hostname();
 extern UCHAR *gds__alloc();
 

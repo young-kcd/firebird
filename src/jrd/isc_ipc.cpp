@@ -26,7 +26,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.15 2002-08-22 10:48:23 eku Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.16 2002-08-26 12:13:21 eku Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -76,23 +76,6 @@ typedef struct sig {
 #define SIG_informs_continue	0	/* continue on signal processing */
 #define SIG_informs_stop	1	/* stop signal processing */
 
-
-// Keep the following SIG_FPTR definitions in sync
-// with the same code in isc_sync.cpp
-
-#ifdef SUN3_3
-typedef RETSIGTYPE (*CLIB_ROUTINE SIG_FPTR) ();
-#else
-#if ((defined(WIN32) || defined(_WIN32)) && defined(_MSC_VER))
-typedef RETSIGTYPE (CLIB_ROUTINE * SIG_FPTR) ();
-#else
-#if (defined(DARWIN))
-typedef RETSIGTYPE (*CLIB_ROUTINE SIG_FPTR) (int);
-#else
-typedef RETSIGTYPE (*CLIB_ROUTINE SIG_FPTR) ();
-#endif
-#endif
-#endif
 
 #ifdef DGUX
 #define GT_32_SIGNALS
@@ -789,7 +772,6 @@ static void isc_signal2(
 		else
 #endif
 #pragma FB_COMPILER_MESSAGE("Fix! Ugly function pointer casts!")
-//			vec.sa_handler = (void(*)(int)) signal_handler;
 			vec.sa_handler = (SIG_FPTR) signal_handler;
 		memset(&vec.sa_mask, 0, sizeof(vec.sa_mask));
 		vec.sa_flags = SA_RESTART;

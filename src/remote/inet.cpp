@@ -31,7 +31,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.17 2002-08-22 11:22:49 dimitr Exp $
+$Id: inet.cpp,v 1.18 2002-08-26 12:13:22 eku Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -4068,7 +4068,7 @@ static bool_t packet_send( PORT port, SCHAR * buffer, SSHORT buffer_length)
 				internal_handler.sv_flags = SV_INTERRUPT;
 				sigvector(SIGALRM, &internal_handler, &client_handler);
 #else
-				internal_handler.sa_handler = alarm_handler;
+				internal_handler.sa_handler = (SIG_FPTR)alarm_handler;
 				memset(&internal_handler.sa_mask, 0,
 					   sizeof(internal_handler.sa_mask));
 				internal_handler.sa_flags = SA_RESTART;
