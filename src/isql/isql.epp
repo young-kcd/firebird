@@ -4071,8 +4071,8 @@ void ISQL_get_version(bool call_by_create_db)
 	// Now we are also getting the Firebird server version which is a
 	// string the above calculation does not apply.	 NM 03-Oct-2001
 
-	UCHAR buffer[256];
-	char bad_dialect_buf[512];
+	UCHAR buffer[BUFFER_LENGTH512];
+	char bad_dialect_buf[BUFFER_LENGTH512];
 	bool print_warning = false;
 
 	dialect_spoken = 0;
@@ -4086,7 +4086,7 @@ void ISQL_get_version(bool call_by_create_db)
 	}
 
 	const UCHAR* p = buffer;
-	while (*p != isc_info_end) {
+	while (*p != isc_info_end && *p != isc_info_truncated) {
 		const UCHAR item = (UCHAR) *p++;
 		const USHORT length = gds__vax_integer(p, sizeof(USHORT));
 		p += sizeof(USHORT);
