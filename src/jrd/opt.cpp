@@ -4308,6 +4308,14 @@ static RecordSource* gen_navigation(thread_db* tdbb,
 		return NULL;
 	}
 
+#ifdef EXPRESSION_INDICES
+	if (idx->idx_flags & idx_expressn)
+	{
+		if (sort->nod_count != 1)
+			return NULL;
+	}
+#endif
+
 	// check to see if the fields in the sort match the fields in the index 
 	// in the exact same order--we used to check for ascending/descending prior 
 	// to SCROLLABLE_CURSORS, but now descending sorts can use ascending indices 
@@ -4323,6 +4331,14 @@ static RecordSource* gen_navigation(thread_db* tdbb,
 		ptr++, idx_tail++)
 	{
 		jrd_nod* node = *ptr;
+#ifdef EXPRESSION_INDICES
+		if (idx->idx_flags & idx_expressn)
+		{
+			if (!expression_equal(tdbb, opt, idx, node, stream))
+				return NULL;	
+		}
+		else
+#endif    
 		if (node->nod_type != nod_field
 			|| (USHORT)(IPTR) node->nod_arg[e_fld_stream] != stream
 			|| (USHORT)(IPTR) node->nod_arg[e_fld_id] != idx_tail->idx_field
@@ -4333,18 +4349,18 @@ static RecordSource* gen_navigation(thread_db* tdbb,
 			// for ODS10 and earlier indices always placed nulls at the end of dataset
 			|| (dbb->dbb_ods_version < ODS_VERSION11 && 
 			  reinterpret_cast<IPTR>(ptr[2 * sort->nod_count]) == rse_nulls_first)
-#ifdef SCROLLABLE_CURSORS
 			)
-#else
-			|| (ptr[sort->nod_count]
-				&& !(idx->idx_flags & idx_descending))
-			|| (!ptr[sort->nod_count]
-				&& (idx->idx_flags & idx_descending)) )
-#endif
 		{
 			return NULL;
 		}
-#ifdef SCROLLABLE_CURSORS
+
+#ifndef SCROLLABLE_CURSORS
+		if ((ptr[sort->nod_count] && !(idx->idx_flags & idx_descending)) ||
+			(!ptr[sort->nod_count] && (idx->idx_flags & idx_descending)))
+		{
+			return NULL;
+		}
+#else
 		// determine whether we ought to navigate backwards or forwards through 
 		// the index--we can't allow navigating one index in two different directions 
 		// on two different fields at the same time!
