@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.7 2002-06-04 19:56:15 bellardo Exp $ 
+  * $Id: evl.cpp,v 1.8 2002-06-14 12:09:36 dimitr Exp $ 
  */
 
 /*
@@ -159,8 +159,14 @@ static SSHORT string_boolean(TDBB, NOD, DSC *, DSC *);
 static SSHORT string_function(TDBB, NOD, SSHORT, UCHAR *,
 							  SSHORT, UCHAR *, USHORT);
 static DSC *substring(TDBB, VLU, DSC *, USHORT, USHORT);
-
 static DSC *upcase(TDBB, DSC *, VLU);
+static DSC *internal_info(TDBB, DSC *, VLU);
+
+enum internal_info_req
+{
+	connection_id = 1,
+	transaction_id = 2
+};
 
 static CONST UCHAR special[256] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -884,7 +890,6 @@ DSC* DLL_EXPORT EVL_expr(TDBB tdbb, register NOD node)
 			impure->vlu_desc.dsc_length = 0;
 		return &impure->vlu_desc;
 
-
 	case nod_extract:
 		{
 			DSC *value;
@@ -1113,6 +1118,9 @@ DSC* DLL_EXPORT EVL_expr(TDBB tdbb, register NOD node)
 
 		case nod_cast:
 			return cast(tdbb, values[0], node, impure);
+
+		case nod_internal_info:
+			return internal_info(tdbb, values[0], impure);
 
 		default:
 			BUGCHECK(232);		/* msg 232 EVL_expr: invalid operation */
@@ -4830,6 +4838,41 @@ static DSC *upcase(TDBB tdbb, DSC * value, VLU impure)
 	}
 	else
 		INTL_str_to_upper(tdbb, &impure->vlu_desc);
+
+	return &impure->vlu_desc;
+}
+
+
+static DSC *internal_info(TDBB tdbb, DSC * value, VLU impure)
+{
+/**************************************
+ *
+ *      i n t e r n a l _ i n f o
+ *
+ **************************************
+ *
+ * Functional description
+ *      Return a given element
+ *      of the internal engine data.
+ *
+ **************************************/
+	EVL_make_value(tdbb, value, impure);
+
+	internal_info_req request =
+		*reinterpret_cast<internal_info_req*>(impure->vlu_desc.dsc_address);
+
+	switch (request)
+	{
+	case connection_id:
+		impure->vlu_misc.vlu_long = PAG_attachment_id();
+		break;
+	case transaction_id:
+		impure->vlu_misc.vlu_long = tdbb->tdbb_transaction->tra_number;
+		break;
+	default:
+		BUGCHECK(232);	/* msg 232 EVL_expr: invalid operation */
+	}
+	impure->vlu_desc.dsc_address = (UCHAR *) &impure->vlu_misc.vlu_long;
 
 	return &impure->vlu_desc;
 }

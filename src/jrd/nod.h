@@ -191,3 +191,6 @@ NODE(nod_asn_list, asn_list, "")
 
 /* EXECUTE VARCHAR */
 		  NODE(nod_exec_sql, exec_sql, "EXECUTE VARCHAR")
+
+/* Internal engine info */
+		  NODE(nod_internal_info, internal_info, "INTERNAL INFO")

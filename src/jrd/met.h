@@ -68,8 +68,8 @@ class tfb : public pool_alloc<type_tfb>
 };
 typedef tfb *TFB;
 
-#define TFB_computed	1
-#define TFB_array	2
+#define TFB_computed		1
+#define TFB_array			2
 
 #define MET_object_active	0
 #define MET_object_inactive	1
@@ -81,7 +81,52 @@ typedef tfb *TFB;
 #define TRIGGER_POST_MODIFY	4
 #define TRIGGER_PRE_ERASE	5
 #define TRIGGER_POST_ERASE	6
-#define TRIGGER_MAX		7
+#define TRIGGER_MAX			7
+
+// trigger type prefixes
+#define TRIGGER_PRE			0
+#define TRIGGER_POST		1
+
+// trigger type suffixes
+#define TRIGGER_STORE		1
+#define TRIGGER_MODIFY		2
+#define TRIGGER_ERASE		3
+
+// that's how trigger action types are encoded
+/*
+	bit 0 = TRIGGER_PRE/TRIGGER_POST flag,
+	bits 1-2 = TRIGGER_STORE/TRIGGER_MODIFY/TRIGGER_ERASE (slot #1),
+	bits 3-4 = TRIGGER_STORE/TRIGGER_MODIFY/TRIGGER_ERASE (slot #2),
+	bits 5-6 = TRIGGER_STORE/TRIGGER_MODIFY/TRIGGER_ERASE (slot #3),
+	and finally the above calculated value is decremented
+
+example #1:
+	TRIGGER_POST_ERASE =
+	= ((TRIGGER_ERASE << 1) | TRIGGER_POST) - 1 =
+	= ((3 << 1) | 1) - 1 =
+	= 0x00000110 (6)
+
+example #2:
+	TRIGGER_PRE_STORE_MODIFY =
+	= ((TRIGGER_MODIFY << 3) | (TRIGGER_STORE << 1) | TRIGGER_PRE) - 1 =
+	= ((2 << 3) | (1 << 1) | 0) - 1 =
+	= 0x00010001 (17)
+
+example #3:
+	TRIGGER_POST_MODIFY_ERASE_STORE =
+	= ((TRIGGER_STORE << 5) | (TRIGGER_ERASE << 3) | (TRIGGER_MODIFY << 1) | TRIGGER_POST) - 1 =
+	= ((1 << 5) | (3 << 3) | (2 << 1) | 1) - 1 =
+	= 0x00111100 (60)
+*/
+
+// that's how trigger types are decoded
+#define TRIGGER_ACTION(value, shift) \
+	(((((value + 1) >> shift) & 3) << 1) | ((value + 1) & 1)) - 1
+
+#define TRIGGER_ACTION_SLOT(value, slot) \
+	TRIGGER_ACTION(value, slot * 2 - 1)
+
+#define TRIGGER_COMBINED_MAX 128
 
 #include "../jrd/obj.h"
 

@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.9 2002-04-04 07:10:40 bellardo Exp $
+$Id: met.epp,v 1.10 2002-06-14 12:09:36 dimitr Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -890,7 +890,6 @@ void MET_load_trigger(
  **************************************/
 	DBB dbb;
 	BLK trigger_request;
-	VEC *ptr;
 	USHORT trig_flags;
 	TEXT errmsg[MAX_ERRMSG_LEN + 1];
 
@@ -917,16 +916,16 @@ void MET_load_trigger(
 			RDB$TRIGGER_NAME EQ trigger_name if (!REQUEST(irq_s_triggers))
 			REQUEST(irq_s_triggers) = trigger_request;
 
-		if (TRG.RDB$TRIGGER_TYPE > 0 && TRG.RDB$TRIGGER_TYPE < TRIGGER_MAX) {
-			ptr = triggers + TRG.RDB$TRIGGER_TYPE;
-
+		if (TRG.RDB$TRIGGER_TYPE > 0 && TRG.RDB$TRIGGER_TYPE < TRIGGER_COMBINED_MAX)
+		{
 			/* check if the trigger is to be fired without any permissions
 			   checks. Verify such a claim */
 			trig_flags = (USHORT) TRG.RDB$FLAGS;
 
 			/* if there is an ignore permission flag, see if it is legit */
 			if ((TRG.RDB$FLAGS & TRG_ignore_perm) &&
-				!verify_TRG_ignore_perm(tdbb, trigger_name)) {
+				!verify_TRG_ignore_perm(tdbb, trigger_name))
+			{
 				gds__msg_format(NULL_PTR, JRD_BUGCHK, 304, sizeof(errmsg),
 								errmsg, trigger_name, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR,
 								(TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
@@ -935,13 +934,18 @@ void MET_load_trigger(
 				trig_flags &= ~TRG_ignore_perm;
 			}
 
-			get_trigger(tdbb,
-						relation,
-						(SLONG*)&TRG.RDB$TRIGGER_BLR,
-						ptr,
-						TRG.RDB$TRIGGER_NAME,
-						(BOOLEAN)TRG.RDB$SYSTEM_FLAG,
-						trig_flags);
+			// dimitr: support for the universal triggers
+			int trigger_action, slot_index = 0;
+			while ((trigger_action = TRIGGER_ACTION_SLOT(TRG.RDB$TRIGGER_TYPE, ++slot_index)) > 0)
+			{
+				get_trigger(tdbb,
+							relation,
+							(SLONG*)&TRG.RDB$TRIGGER_BLR,
+							triggers + trigger_action,
+							TRG.RDB$TRIGGER_NAME,
+							(BOOLEAN)TRG.RDB$SYSTEM_FLAG,
+							trig_flags);
+			}
 		}
 	END_FOR;
 

@@ -86,6 +86,7 @@ static CONST VERB verbs[] = {
 	PAIR(nod_store, blr_store2, e_sto_length, e_sto_length - 1, STATEMENT, STATEMENT),
 	PAIR(nod_post, blr_post, 1, 1, STATEMENT, VALUE),
 	PAIR(nod_exec_sql, blr_exec_sql, 1, 1, STATEMENT, VALUE),
+	PAIR(nod_internal_info, blr_internal_info, 1, 1, VALUE, VALUE),
 	PAIR2(nod_add, blr_add, 2, 2, VALUE, VALUE),
 	PAIR(nod_agg_count, blr_agg_count, 1, 0, VALUE, VALUE),
 	PAIR(nod_agg_count2, blr_agg_count2, 1, 1, VALUE, VALUE),

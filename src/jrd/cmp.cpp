@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: cmp.cpp,v 1.5 2002-01-04 11:34:15 skywalker Exp $
+$Id: cmp.cpp,v 1.6 2002-06-14 12:09:36 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -1450,6 +1450,13 @@ void DLL_EXPORT CMP_get_desc(
 		desc->dsc_dtype = dtype_text;
 		desc->dsc_ttype = ttype_metadata;
 		desc->dsc_length = USERNAME_LENGTH;
+		desc->dsc_scale = 0;
+		desc->dsc_flags = 0;
+		return;
+
+	case nod_internal_info:
+		desc->dsc_dtype = dtype_long;
+		desc->dsc_length = sizeof(SLONG);
 		desc->dsc_scale = 0;
 		desc->dsc_flags = 0;
 		return;
@@ -4619,6 +4626,7 @@ static NOD pass2(TDBB tdbb, register CSB csb, register NOD node, NOD parent)
 	case nod_divide:
 	case nod_null:
 	case nod_user_name:
+	case nod_internal_info:
 	case nod_gen_id:
 	case nod_gen_id2:
 	case nod_upcase:

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: opt.cpp,v 1.6 2002-06-04 19:56:16 bellardo Exp $
+$Id: opt.cpp,v 1.7 2002-06-14 12:09:36 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -2395,6 +2395,7 @@ static BOOLEAN expression_equal(TDBB tdbb, NOD node1, NOD node2)
 
 	case nod_negate:
 	case nod_upcase:
+	case nod_internal_info:
 		if (expression_equal(tdbb, node1->nod_arg[0], node2->nod_arg[0])) {
 			return TRUE;
 		}
