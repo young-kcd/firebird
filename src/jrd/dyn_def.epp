@@ -2052,9 +2052,6 @@ void DYN_define_index(GBL		gbl,
 
 				if (list_ptr) {
 					fb_utils::fb_exact_name_limit(Z.RDB$FIELD_NAME, sizeof(Z.RDB$FIELD_NAME));
-					fb_utils::fb_exact_name_limit((TEXT*)((STR) list_ptr->lls_object)->str_data,
-								  (int) ((STR) list_ptr->lls_object)->
-								  str_length);
 					if (strcmp((char*)((STR) list_ptr->lls_object)->str_data,
 								(char*)Z.RDB$FIELD_NAME))
 					{
