@@ -3055,6 +3055,8 @@ group_by_list	: group_by_item
 			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
 
+/* Except aggregate-functions are all expressions supported in group_by_item, 
+   they are caught inside pass1.cpp */
 group_by_item : value
 		;
 
