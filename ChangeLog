@@ -1,3 +1,22 @@
+2003-07-18 23:41  skidder
+
+	* firebird2/src/lock/lock.cpp:
+	
+	Apply Windows CS lock manager fix to release branch
+
+2003-07-18 23:34  skidder
+
+	* firebird2/src/lock/lock.cpp:
+	
+	Work around Windows bug with missing events.  This should finally
+	solve the problem with lockups of Windows CS builds.
+
+2003-07-18 11:58  alexpeshkoff
+
+	* firebird2/src/install/arch-specific/linux/super/miniInstall.sh:
+	
+	Trivial SS installation script
+
 2003-07-17 17:40  skidder
 
 	* firebird2/builds/win32/msvc7/: fbclient.vcproj, fbguard.vcproj,
