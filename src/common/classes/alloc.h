@@ -28,16 +28,16 @@
 #ifndef ALLOC_H
 #define ALLOC_H
 
-#ifdef HAVE_MALLOC_H
-#include <malloc.h>
-#endif
-
 #include "../../include/fb_types.h"
 #include "../../include/firebird.h"
 #include "../jrd/common.h"
 #include "../jrd/ib_stdio.h"
 #include "tree.h"
 #include "locks.h"
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h> /* XPG: prototypes for malloc/free have to be in
+					   stdlib.h (EKU) */
+#endif
 
 #define MAX_TREE_DEPTH 4
 // Must be a power of 2

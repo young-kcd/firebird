@@ -28,8 +28,9 @@
 
 #include <assert.h>
 #include <string.h>
-#ifdef HAVE_MALLOC_H
-#include <malloc.h>
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h> /* XPG: prototypes for malloc/free have to be in
+					   stdlib.h (EKU) */
 #endif
 #include "vector.h"
 // FIXME: Temporary until we switch out of using STL
