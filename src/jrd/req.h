@@ -128,7 +128,7 @@ typedef srpb *SRPB;
 class jrd_req : public pool_alloc_rpt<rpb, type_req>
 {
 public:
-	jrd_req(JrdMemoryPool* pool) : req_invariants(pool) { };
+	jrd_req(JrdMemoryPool* pool) : req_fors(pool), req_invariants(pool) { };
 	ATT			req_attachment;		// database attachment
 	USHORT		req_count;			// number of streams
 	USHORT		req_incarnation;	// incarnation number
@@ -168,7 +168,7 @@ public:
 
 	struct jrd_nod* req_top_node;	/* top of execution tree */
 	struct jrd_nod* req_next;		/* next node for execution */
-	struct vec* req_fors;		/* Vector of for loops, if any */
+	Firebird::Array<class Rsb*> req_fors;		/* Vector of for loops, if any */
 	struct vec* req_cursors;	/* Vector of named cursors, if any */
 	Firebird::Array<struct jrd_nod*> req_invariants;	/* Vector of invariant nodes, if any */
 	USHORT req_label;			/* label for leave */

@@ -307,6 +307,7 @@ jrd_req* CMP_clone_request(TDBB tdbb, jrd_req* request, USHORT level, bool valid
 	clone->req_flags = request->req_flags & REQ_FLAGS_CLONE_MASK;
 	clone->req_last_xcp = request->req_last_xcp;
 	clone->req_invariants.join(request->req_invariants);
+	clone->req_fors.join(request->req_fors);
 
 	RPB* rpb1 = clone->req_rpb;
 	const RPB* const end = rpb1 + clone->req_count;
@@ -1940,19 +1941,7 @@ jrd_req* CMP_make_request(TDBB tdbb, CSB csb)
 	}
 
 	// make a vector of all used RSEs
-	USHORT count = 0;
-	for (const lls* temp = csb->csb_fors; temp; count++) {
-		temp = temp->lls_next;
-	}
-
-	if (count) {
-		VEC vector = request->req_fors =
-			vec::newVector(*request->req_pool, request->req_fors, count + 1);
-		vec::iterator ptr = vector->begin();
-		while (csb->csb_fors) {
-			*ptr++ = (BLK) LLS_POP(&csb->csb_fors);
-		}
-	}
+	request->req_fors.join(csb->csb_fors);
 
 	// make a vector of all invariant-type nodes, so that we will
 	// be able to easily reinitialize them when we restart the request
@@ -5432,7 +5421,7 @@ static RSB post_rse(TDBB tdbb, CSB csb, RSE rse)
 		}
 	}
 
-	LLS_PUSH(rsb, &csb->csb_fors);
+	csb->csb_fors.push(rsb);
 #ifdef SCROLLABLE_CURSORS
 	rse->rse_rsb = rsb;
 #endif

@@ -245,7 +245,6 @@ BOOLEAN OPT_access_path(const jrd_req* request,
  *	rse's in the specified request.
  *
  **************************************/
-	VEC vector;
 	RSB rsb;
 	SLONG i;
 
@@ -258,12 +257,8 @@ BOOLEAN OPT_access_path(const jrd_req* request,
    go backwards because items were popped
    off the stack backwards */
 
-	vector = request->req_fors;
-	if (!vector)
-		return FALSE;
-
-	for (i = vector->count() - 1; i >= 0; i--) {
-		rsb = (RSB) (*vector)[i];
+	for (i = request->req_fors.getCount() - 1; i >= 0; i--) {
+		rsb = request->req_fors[i];
 		if (rsb && !dump_rsb(request, rsb, &buffer, &buffer_length))
 			break;
 	}
@@ -999,7 +994,6 @@ void OPT_set_index(TDBB tdbb,
 	JRD_NOD index_node, new_index_node;
 	IRB retrieval;
 	IDL index;
-	VEC vector;
 	DBB dbb;
 
 	DEV_BLKCHK(request, type_req);
@@ -1119,10 +1113,9 @@ void OPT_set_index(TDBB tdbb,
 /* go out to the vector which stores all rsbs for the 
    request, and replace the old with the new */
 
-	vector = request->req_fors;
-	for (i = 0; i < vector->count(); i++) {
-		if ((*vector)[i] == (BLK) old_rsb) {
-			(*vector)[i] = (BLK) new_rsb;
+	for (i = 0; i < request->req_fors.getCount(); i++) {
+		if (request->req_fors[i] == old_rsb) {
+			request->req_fors[i] = new_rsb;
 			break;
 		}
 	}
@@ -2349,7 +2342,7 @@ static bool dump_rsb(const jrd_req* request,
         // because they don't access tables. In this case, the engine gives up and swallows
         // the whole plan. Not acceptable.
 
-        if (!procedure->prc_request->req_fors) {
+        if (procedure->prc_request->req_fors.getCount() == 0) {
             STR n = procedure->prc_name;
             length = (n && n->str_data) ? n->str_length : 0;
             *buffer_length -= 6 + length;

@@ -568,7 +568,6 @@ public:
 		csb_variables(0),
 		csb_resources(0),
 		csb_dependencies(0),
-		csb_fors(0),
 #ifdef SCROLLABLE_CURSORS
 		csb_current_rse(0),
 #endif
@@ -578,6 +577,7 @@ public:
 		csb_msg_number(0),
 		csb_impure(0),
 		csb_g_flags(0),*/
+		csb_fors(&p),
 		csb_invariants(&p),
 		csb_current_nodes(&p),
 		csb_rpt(&p, len)
@@ -593,7 +593,7 @@ public:
 	struct vec*	csb_variables;	/* Vector of variables, if any */
 	class Rsc*	csb_resources;	/* Resources (relations and indexes) */
 	struct lls*	csb_dependencies;	/* objects this request depends upon */
-	struct lls*	csb_fors;		/* stack of fors */
+	Firebird::Array<class Rsb*> csb_fors;		/* stack of fors */
 	Firebird::Array<struct jrd_nod*> csb_invariants;	/* stack of invariant nodes */
 	Firebird::Array<struct jrd_node_base*> csb_current_nodes;	/* rse's and other invariant candidates within whose scope we are */
 #ifdef SCROLLABLE_CURSORS

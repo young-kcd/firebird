@@ -708,14 +708,10 @@ void EXE_seek(TDBB tdbb, jrd_req* request, USHORT direction, ULONG offset)
    go backwards because items were popped
    off the stack backwards */
 
-	vec* vector = request->req_fors;
-	if (!vector)
-		return;
-
 /* find the top-level rsb in the request and seek it */
 
-	for (SLONG i = vector->vec_count - 1; i >= 0; i--) {
-		RSB rsb = (RSB) vector->vec_object[i];
+	for (SLONG i = request->req_fors.getCount() - 1; i >= 0; i--) {
+		RSB rsb = request->req_fors[i];
 		if (rsb) {
 			seek_rsb(tdbb, request, rsb, direction, offset);
 			break;
@@ -959,7 +955,7 @@ void EXE_unwind(TDBB tdbb, jrd_req* request)
 	SET_TDBB(tdbb);
 
 	if (request->req_flags & req_active) {
-		if (request->req_fors) {
+		if (request->req_fors.getCount()) {
 			JrdMemoryPool *old_pool = tdbb->tdbb_default;
 			tdbb->tdbb_default = request->req_pool;
 			jrd_req* old_request = tdbb->tdbb_request;
@@ -967,12 +963,12 @@ void EXE_unwind(TDBB tdbb, jrd_req* request)
 			jrd_tra* old_transaction = tdbb->tdbb_transaction;
 			tdbb->tdbb_transaction = request->req_transaction;
 
-			vec::iterator ptr, end;
-			for (ptr = request->req_fors->begin(), end =
-				 request->req_fors->end(); ptr < end; ptr++)
+			Rsb **ptr, **end;
+			for (ptr = request->req_fors.begin(), end =
+				 request->req_fors.end(); ptr < end; ptr++)
 			{
 				if (*ptr)
-					RSE_close(tdbb, (RSB) *ptr);
+					RSE_close(tdbb, *ptr);
 			}
 			tdbb->tdbb_default = old_pool;
 			tdbb->tdbb_request = old_request;
