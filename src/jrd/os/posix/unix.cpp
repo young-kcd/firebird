@@ -1298,7 +1298,7 @@ static bool raw_devices_validate_database (
 					isc_arg_unix, errno, 0);
 
 	/* Validate database header. Code lifted from PAG_header. */
-	if (hp->pag_type != pag_header /*|| hp->hdr_sequence*/)
+	if (hp->hdr_header.pag_type != pag_header /*|| hp->hdr_sequence*/)
 		goto quit;
 
 #ifdef ODS_8_TO_CURRENT
