@@ -24,8 +24,6 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: guid.cpp,v 1.10 2004-12-02 12:15:33 aafemt Exp $
- *
  */
  
 // minimum win32 version: win95 / winnt4

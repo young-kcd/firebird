@@ -28,8 +28,6 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.39 2004-12-02 22:51:40 dimitr Exp $
- *
  */
 
 

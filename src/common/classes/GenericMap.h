@@ -24,8 +24,6 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: GenericMap.h,v 1.5 2004-12-02 12:11:48 aafemt Exp $
- *
  */
 
 #ifndef STRINGMAP_H
