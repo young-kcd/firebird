@@ -1063,6 +1063,8 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 	if (userFunc->udf_dtype == dtype_cstring) {
 		userFunc->udf_dtype = dtype_varying;
 		userFunc->udf_length += sizeof(USHORT);
+		if (userFunc->udf_length > MAX_SSHORT)
+			userFunc->udf_length = MAX_SSHORT;
 	}
 	else if (userFunc->udf_dtype == dtype_varying)
 		userFunc->udf_length += sizeof(USHORT);
