@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.100 2004-03-22 11:37:55 alexpeshkoff Exp $
+$Id: met.epp,v 1.101 2004-03-25 19:27:18 skidder Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -1406,39 +1406,38 @@ int MET_lookup_field(thread_db* tdbb, jrd_rel* relation, const TEXT* name,
 	Database* dbb = tdbb->tdbb_database;
 
 /* Start by checking field names that we already know */
-	vec* vector = relation->rel_fields;
-	if (vector) {
-		const UCHAR length = strlen(name);
-		USHORT id = 0;
-		vec::iterator fieldIter = vector->begin();
-		for (const vec::const_iterator end = vector->end();
-             fieldIter < end; fieldIter++, id++)
-		{
-            if (*fieldIter) {
-                const jrd_fld* field = (jrd_fld*) *fieldIter;
-				const TEXT* p;
-                if (field->fld_length == length && (p = field->fld_name)) {
-                    const TEXT* q = name;
-                    while (*p++ == *q) {  // Check equal till end of string
-                        if (!*q++) {  // Found end of string and so are equal
-                            if (!security_name) {
-                                return id;
-                            }
+	for (;;)
+	{
+		vec* vector = relation->rel_fields;
 
-                            const size_t nl2 = name_length (security_name);
-                            if (field->fld_security_name) {
-                                const size_t nl = name_length(field->fld_security_name);
-                                if (nl == nl2 && !strncmp(field->fld_security_name, security_name, nl))
-								{
-                                    return id;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+		if (vector)
+		{
+			UCHAR length = strlen(name);
+			USHORT id;
+			vec::iterator	fieldIter, end;
+
+			for (fieldIter = vector->begin(), id = 0, end = vector->end();  fieldIter < end; fieldIter++, id++)
+				if (*fieldIter) 
+				{
+					jrd_fld* field = reinterpret_cast<jrd_fld*>(*fieldIter);
+					if (field->fld_length == length && strcmp (field->fld_name, name) == 0)
+					{
+						if (!security_name) 
+							return id;
+						const size_t nl2 = name_length (security_name);
+						if (field->fld_security_name) 
+						{
+							const size_t nl = name_length(field->fld_security_name);
+							if (nl == nl2 && !strncmp(field->fld_security_name, security_name, nl)) 
+								return id;
+						}
+					}
+				}
+		}
+		if (relation->rel_flags & REL_scanned)
+			break;
+		MET_scan_relation (tdbb, relation);
+	}
 
 /* Not found.  Next, try system relations directly */
 
