@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.65 2003-03-18 02:57:02 brodsom Exp $
+$Id: common.h,v 1.66 2003-04-01 11:24:18 brodsom Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -211,6 +211,7 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 */
 #define __LINE__IS_INT
 #define SLONGFORMAT	"ld"
+#define ULONGFORMAT "lu"
 /*#define ALIGNMENT       4*/
 /*#define DOUBLE_ALIGN    4*/
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
@@ -552,6 +553,9 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define MEMMOVE(from,to,length)         memmove ((void *)to, (void *)from, (size_t) length)
 
 #define SYS_ARG		isc_arg_win32
+#define SLONGFORMAT	"ld"
+#define ULONGFORMAT	"lu"
+#define __LINE__IS_INT
 
 typedef __int64 SINT64;
 typedef unsigned __int64 UINT64;
@@ -782,6 +786,7 @@ typedef struct
 
 #ifndef SLONGFORMAT
 #define SLONGFORMAT	"d"
+#define ULONGFORMAT	"u"
 #endif
 
 
