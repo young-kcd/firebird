@@ -275,11 +275,6 @@ typedef struct irtd {
 #define END_LEVEL	-1
 #define END_BUCKET	-2
 
-#ifdef IGNORE_NULL_IDX_KEY
-#define END_NON_NULL	-3
-#define SPECIAL_BTN_NUMBER_COUNT 3	/* This is later used in fast_load() for 
-									   calculating fill_limit. */
-#endif /* IGNORE_NULL_IDX_KEY */
 
 
 

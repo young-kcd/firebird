@@ -1179,11 +1179,6 @@ static void analyze_index( DBA_REL relation, DBA_IDX index)
 		for (node = bucket->btr_nodes;;
 			 node = (BTN) (node->btn_data + node->btn_length)) {
 			move((SCHAR*) node->btn_number, (SCHAR*) &number, sizeof(number));
-#ifdef IGNORE_NULL_IDX_KEY
-			/* ignore this node and go to the next one */
-			if (number == END_NON_NULL)
-				continue;
-#endif /* IGNORE_NULL_IDX_KEY */
 
 			if (number == END_LEVEL || number == END_BUCKET)
 				break;

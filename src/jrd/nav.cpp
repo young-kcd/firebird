@@ -620,24 +620,6 @@ BOOLEAN NAV_get_record(
 				continue;
 			}
 
-#ifdef IGNORE_NULL_IDX_KEY
-			if (number == END_NON_NULL) {
-				if (retrieval->irb_generic & irb_ignore_null_value_key) {
-					/* we have reached the END_NON_NULL marker. Return since we are
-					   * not interested in the remaining nodes.
-					 */
-					RSE_MARK_CRACK(tdbb, rdb, irsb_crack);
-					break;
-				}
-				else {
-					/* ignore this node, and go to the next one */
-					next = BTR_next_node(node, &expanded_node);
-					expanded_next = expanded_node;
-					continue;
-				}
-			}
-#endif /* IGNORE_NULL_IDX_KEY */
-
 		}
 
 		/* In the project (DISTINCT) case, we need to determine if the key has changed
@@ -1278,14 +1260,6 @@ static BOOLEAN find_record(
 			continue;
 		}
 
-#ifdef IGNORE_NULL_IDX_KEY
-		if (rpb->rpb_number == END_NON_NULL) {
-			/* ignore this node, and go to the next one. */
-			node = BTR_next_node(node, &expanded_node);
-			continue;
-		}
-#endif /* IGNORE_NULL_IDX_KEY */
-
 		/* update the current stored key value */
 
 		value.key_length = BTN_LENGTH(node) + BTN_PREFIX(node);
@@ -1427,12 +1401,6 @@ static BOOLEAN find_saved_node(
 									  LCK_read, pag_index);
 				break;
 			}
-#ifdef IGNORE_NULL_IDX_KEY
-			if (number == END_NON_NULL) {
-				/* ignore this node, and go to the next one. */
-				continue;
-			}
-#endif /* IGNORE_NULL_IDX_KEY */
 
 			/* maintain the running key value and compare it with the stored value */
 
