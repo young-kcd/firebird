@@ -361,7 +361,7 @@ void SCL_check_procedure(const dsc* dsc_name, SecurityClass::flags_t mask)
 	}
 	*p = 0;
 	} // end scope block
-    fb_utils::fb_exact_name(name);
+    fb_utils::exact_name(name);
 
 	Database* dbb = tdbb->tdbb_database;
 
@@ -418,7 +418,7 @@ void SCL_check_relation(const dsc* dsc_name, SecurityClass::flags_t mask)
 	}
 	*p = 0;
 	} // end scope block
-	fb_utils::fb_exact_name(name);
+	fb_utils::exact_name(name);
 
 	Database* dbb = tdbb->tdbb_database;
 
@@ -468,7 +468,7 @@ SecurityClass* SCL_get_class(const TEXT* _string)
 
 	Firebird::string string = _string;
 
-	fb_utils::fb_exact_name(string);
+	fb_utils::exact_name(string);
 
 	if (string.empty())
 	{
@@ -736,7 +736,7 @@ void SCL_init(bool create,
             strcpy(role_name, sql_role);
         }
         /* CVC: Role is an identifier, it may have embedded blanks. */
-        fb_utils::fb_exact_name(role_name);
+        fb_utils::exact_name(role_name);
 	}
 	else {
 		strcpy(role_name, "NONE");

@@ -483,7 +483,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 					}
 					dba_rel* relation = (dba_rel*) alloc(sizeof(struct dba_rel));
 					strcpy(relation->rel_name, *argv++);
-					fb_utils::fb_exact_name(relation->rel_name);
+					fb_utils::exact_name(relation->rel_name);
 					relation->rel_id = -1;
 					dba_rel** next = &tddba->relations;
 					while (*next) {
@@ -705,7 +705,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 		dba_rel* relation;
 		if (sw_relation)
 		{
-			fb_utils::fb_exact_name(X.RDB$RELATION_NAME);
+			fb_utils::exact_name(X.RDB$RELATION_NAME);
 			for (relation = tddba->relations; relation;
 				relation = relation->rel_next)
 			{
@@ -724,7 +724,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 			tddba->relations = relation;
 			relation->rel_id = X.RDB$RELATION_ID;
 			strcpy(relation->rel_name, X.RDB$RELATION_NAME);
-			fb_utils::fb_exact_name(relation->rel_name);
+			fb_utils::exact_name(relation->rel_name);
 		}
 
 		FOR(TRANSACTION_HANDLE transact1 REQUEST_HANDLE request2)
@@ -752,7 +752,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 			index->idx_next = relation->rel_indexes;
 			relation->rel_indexes = index;
 			strcpy(index->idx_name, Y.RDB$INDEX_NAME);
-			fb_utils::fb_exact_name(index->idx_name);
+			fb_utils::exact_name(index->idx_name);
 			index->idx_id = Y.RDB$INDEX_ID - 1;
         END_FOR;
 		ON_ERROR

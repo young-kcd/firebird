@@ -413,7 +413,7 @@ jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb,
        mysterious message "cannot access column z x in view VF" when selecting from
        such view that has field "z x". This closes Firebird Bug #227758. */
 	Firebird::string name = base_field;
-    fb_utils::fb_exact_name(name);
+    fb_utils::exact_name(name);
 
     const SSHORT id =
 		MET_lookup_field (tdbb, csb->csb_rpt[stream].csb_relation, name.c_str(), 0);

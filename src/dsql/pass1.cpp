@@ -308,7 +308,7 @@ dsql_ctx* PASS1_make_context(dsql_req* request, dsql_nod* relation_node)
 
     // CVC: Let's skim the context, too.
     if (relation_name && relation_name->str_data) {
-        fb_utils::fb_exact_name((TEXT*) relation_name->str_data);
+        fb_utils::exact_name((TEXT*) relation_name->str_data);
 	}
 
 	DEV_BLKCHK(relation_name, dsql_type_str);
@@ -3799,7 +3799,7 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input, const bool lis
 
     // CVC: Let's strip trailing blanks or comparisons may fail in dialect 3.
 	if (name && name->str_data) {
-		fb_utils::fb_exact_name((TEXT*) name->str_data);
+		fb_utils::exact_name((TEXT*) name->str_data);
 	}
 
     /* CVC: PLEASE READ THIS EXPLANATION IF YOU NEED TO CHANGE THIS CODE.
@@ -5134,7 +5134,7 @@ static dsql_ctx* pass1_alias(dsql_req* request, DsqlContextStack& stack, dsql_st
 	
 	// CVC: Getting rid of trailing spaces.
 	if (alias && alias->str_data) {
-		fb_utils::fb_exact_name(reinterpret_cast<TEXT*>(alias->str_data));
+		fb_utils::exact_name(reinterpret_cast<TEXT*>(alias->str_data));
 	}
 
 	// look through all contexts at this scope level
@@ -7062,7 +7062,7 @@ static dsql_fld* resolve_context( dsql_req* request, const dsql_str* qualifier,
 			table_name = procedure->prc_name;
 		}
 	}
-	fb_utils::fb_exact_name(table_name);
+	fb_utils::exact_name(table_name);
 
 // If a context qualifier is present, make sure this is the proper context
 	if (qualifier && strcmp(reinterpret_cast<const char*>(qualifier->str_data), table_name)) {

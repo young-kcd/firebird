@@ -963,7 +963,7 @@ static int show_field_detail(
 			 RFR.RDB$QUERY_NAME = field_name OR
 			 (RFR.RDB$QUERY_NAME MISSING AND F.RDB$QUERY_NAME = field_name))
 
-		fb_utils::fb_exact_name(RFR.RDB$RELATION_NAME);
+		fb_utils::exact_name(RFR.RDB$RELATION_NAME);
 
 		if (relation_name && (strcmp(RFR.RDB$RELATION_NAME, relation_name)))
 			continue;
@@ -978,8 +978,8 @@ static int show_field_detail(
 		if (count++)
 			printf("\n");
 
-		fb_utils::fb_exact_name(RFR.RDB$FIELD_NAME);
-		fb_utils::fb_exact_name(F.RDB$FIELD_NAME);
+		fb_utils::exact_name(RFR.RDB$FIELD_NAME);
+		fb_utils::exact_name(F.RDB$FIELD_NAME);
 
 		if (!R.RDB$VIEW_BLR.NULL) {
 			ERRQ_msg_put(495, RFR.RDB$FIELD_NAME, RFR.RDB$RELATION_NAME,
@@ -995,7 +995,7 @@ static int show_field_detail(
 		// Msg265 Global field %s
 
 		if (!RFR.RDB$BASE_FIELD.NULL) {
-			fb_utils::fb_exact_name(RFR.RDB$BASE_FIELD);
+			fb_utils::exact_name(RFR.RDB$BASE_FIELD);
 			view_info(database, RFR.RDB$RELATION_NAME, RFR.RDB$BASE_FIELD,
 					  RFR.RDB$VIEW_CONTEXT, 0);
 		}
@@ -1053,8 +1053,8 @@ static int show_field_instances( DBB database, const TEXT * field_name)
 						 NULL, NULL, NULL);
 			// Msg335 Global field %s is used database %s as:
 		}
-		fb_utils::fb_exact_name(RFR.RDB$FIELD_NAME);
-		fb_utils::fb_exact_name(RFR.RDB$RELATION_NAME);
+		fb_utils::exact_name(RFR.RDB$FIELD_NAME);
+		fb_utils::exact_name(RFR.RDB$RELATION_NAME);
 		ERRQ_msg_put(336, RFR.RDB$FIELD_NAME, RFR.RDB$RELATION_NAME, NULL,
 					 NULL, NULL);	// Msg336 %s in relation %s
 	END_FOR;
@@ -1210,7 +1210,7 @@ static int show_filter_detail( DBB database, TEXT* filter_name)
 		F IN RDB$FILTERS WITH F.RDB$FUNCTION_NAME = filter_name
 
 		count++;
-		fb_utils::fb_exact_name(filter_name);
+		fb_utils::exact_name(filter_name);
 
 		ERRQ_msg_put(444,		// Msg444 Filter %s in database \"%s\" (%s): 
 					 filter_name, database->dbb_filename,
@@ -1443,8 +1443,8 @@ static int show_func_detail( DBB database, TEXT* func_name)
 		F IN RDB$FUNCTIONS WITH
 			(F.RDB$FUNCTION_NAME = func_name OR F.RDB$QUERY_NAME = func_name)
 		count++;
-		fb_utils::fb_exact_name(F.RDB$QUERY_NAME);
-		fb_utils::fb_exact_name(F.RDB$FUNCTION_NAME);
+		fb_utils::exact_name(F.RDB$QUERY_NAME);
+		fb_utils::exact_name(F.RDB$FUNCTION_NAME);
 		strcpy(func_name, F.RDB$FUNCTION_NAME);
 
 		if (F.RDB$QUERY_NAME[0]) {
@@ -1585,13 +1585,13 @@ static int show_insecure_fields(
 			 RFR.RDB$QUERY_NAME = field_name OR
 			 (RFR.RDB$QUERY_NAME MISSING AND F.RDB$QUERY_NAME = field_name))
 
-		fb_utils::fb_exact_name(RFR.RDB$RELATION_NAME);
+		fb_utils::exact_name(RFR.RDB$RELATION_NAME);
 		if (relation_name && (strcmp(RFR.RDB$RELATION_NAME, relation_name)))
 			continue;
 		if (count++)
 			printf("\n");
-		fb_utils::fb_exact_name(RFR.RDB$FIELD_NAME);
-		fb_utils::fb_exact_name(F.RDB$FIELD_NAME);
+		fb_utils::exact_name(RFR.RDB$FIELD_NAME);
+		fb_utils::exact_name(F.RDB$FIELD_NAME);
 
 		if (R.RDB$VIEW_BLR.NULL) {
 			ERRQ_msg_put(496, RFR.RDB$FIELD_NAME, RFR.RDB$RELATION_NAME,
@@ -1607,7 +1607,7 @@ static int show_insecure_fields(
 		// Msg338 Global field %s
 
 		if (!RFR.RDB$BASE_FIELD.NULL) {
-			fb_utils::fb_exact_name(RFR.RDB$BASE_FIELD);
+			fb_utils::exact_name(RFR.RDB$BASE_FIELD);
 			view_info(database, RFR.RDB$RELATION_NAME, RFR.RDB$BASE_FIELD,
 					  RFR.RDB$VIEW_CONTEXT, 0);
 		}
@@ -1735,7 +1735,7 @@ static int show_gbl_field_detail( DBB database, const TEXT* field_name)
 
 		if (count++)
 			printf("\n");
-		fb_utils::fb_exact_name(F.RDB$FIELD_NAME);
+		fb_utils::exact_name(F.RDB$FIELD_NAME);
 
 		ERRQ_msg_put(276, F.RDB$FIELD_NAME, database->dbb_symbol->sym_string,
 					 NULL, NULL, NULL);	// Msg276 Global field %s in database %s
@@ -1883,8 +1883,8 @@ static int show_indices_detail( qli_rel* relation)
 
 			// Index name can have spaces, we need something like MET_exact_name()
 			// to replace the custom loops that get rid of trailing spaces.
-			// I found truncate_string(). But later replaced it by fb_utils::fb_exact_name().
-			fb_utils::fb_exact_name(X.RDB$INDEX_NAME);
+			// I found truncate_string(). But later replaced it by fb_utils::exact_name().
+			fb_utils::exact_name(X.RDB$INDEX_NAME);
 			ERRQ_msg_put(450, X.RDB$INDEX_NAME,
 						 (X.RDB$UNIQUE_FLAG) ? " (unique)" : "",
 						 (type == 1) ? " (descending)" : "",
@@ -1895,7 +1895,7 @@ static int show_indices_detail( qli_rel* relation)
 					Y.RDB$INDEX_NAME EQ X.RDB$INDEX_NAME
 					SORTED BY Y.RDB$FIELD_POSITION
 
-				fb_utils::fb_exact_name(Y.RDB$FIELD_NAME);
+				fb_utils::exact_name(Y.RDB$FIELD_NAME);
 				printf("            %s\n", Y.RDB$FIELD_NAME);
 			END_FOR;
 
@@ -1920,14 +1920,14 @@ static int show_indices_detail( qli_rel* relation)
 				AND Z.RDB$VIEW_BLR MISSING SORTED BY X.RDB$INDEX_NAME
 
 			++count;
-			fb_utils::fb_exact_name(X.RDB$INDEX_NAME);
+			fb_utils::exact_name(X.RDB$INDEX_NAME);
 			ERRQ_msg_put(290, X.RDB$INDEX_NAME,
 						 (X.RDB$UNIQUE_FLAG) ? " (unique)" : "", NULL, NULL, NULL);	// Msg290 Index %s%s
 			FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_index])
 				Y IN RDB$INDEX_SEGMENTS WITH
 					Y.RDB$INDEX_NAME EQ X.RDB$INDEX_NAME
 					SORTED BY Y.RDB$FIELD_POSITION
-				fb_utils::fb_exact_name(Y.RDB$FIELD_NAME);
+				fb_utils::exact_name(Y.RDB$FIELD_NAME);
 				printf("            %s\n", Y.RDB$FIELD_NAME);
 			END_FOR;
 		END_FOR;
@@ -2228,7 +2228,7 @@ static USHORT show_security_class_detail( DBB database, const TEXT * name)
 	USHORT count = 0;
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_secur_class])
 		S IN RDB$SECURITY_CLASSES WITH S.RDB$SECURITY_CLASS = name
-		if (fb_utils::fb_exact_name(S.RDB$SECURITY_CLASS)[0]) {
+		if (fb_utils::exact_name(S.RDB$SECURITY_CLASS)[0]) {
 			printf("\t%s:\n", S.RDB$SECURITY_CLASS);
 			display_acl(database, &S.RDB$ACL);
 		}
@@ -2264,7 +2264,7 @@ static USHORT show_security_classes_detail( DBB database)
 			// Msg297 Security classes for database %s
 		}
 
-		if (fb_utils::fb_exact_name(S.RDB$SECURITY_CLASS)[0]) {
+		if (fb_utils::exact_name(S.RDB$SECURITY_CLASS)[0]) {
 			printf("\t%s:\n", S.RDB$SECURITY_CLASS);
 			display_acl(database, &S.RDB$ACL);
 		}
@@ -2298,7 +2298,7 @@ static void show_string(
 	if (!*string1 || *string1 == ' ')
 		return;
 
-	fb_utils::fb_exact_name(string1);
+	fb_utils::exact_name(string1);
 	ERRQ_msg_put(msg1, string1, NULL, NULL, NULL, NULL);
 }
 
@@ -2577,7 +2577,7 @@ static void show_trigger_status(
 	ERRQ_msg_format(msg_num, sizeof(trigger_active), trigger_active, NULL,
 					NULL, NULL, NULL, NULL);
 
-	fb_utils::fb_exact_name(name);
+	fb_utils::exact_name(name);
 	ERRQ_msg_put(366, name, trigger_type, (TEXT*)(IPTR) sequence,
 				 trigger_active, NULL);	// Msg366 Name: %s, Type: %s, Sequence: %d, Active: %s
 }
@@ -2642,7 +2642,7 @@ static int show_triggers_detail( DBB database)
 				OR X.RDB$SYSTEM_FLAG EQ 0 SORTED BY X.RDB$RELATION_NAME,
 				X.RDB$TRIGGER_TYPE, X.RDB$TRIGGER_SEQUENCE, X.RDB$TRIGGER_NAME
 			if (!X.RDB$TRIGGER_BLR.NULL) {
-				fb_utils::fb_exact_name(X.RDB$RELATION_NAME);
+				fb_utils::exact_name(X.RDB$RELATION_NAME);
 				ERRQ_msg_put(381, X.RDB$RELATION_NAME, NULL, NULL, NULL, NULL);
 				// Msg365 Triggers for relation %s
 				show_trigger_header(X.RDB$TRIGGER_NAME, X.RDB$TRIGGER_TYPE,
@@ -2820,7 +2820,7 @@ static int show_views_detail( DBB database)
 			// Msg316 Views in database %s:
 		}
 
-		fb_utils::fb_exact_name(X.RDB$RELATION_NAME);
+		fb_utils::exact_name(X.RDB$RELATION_NAME);
 		ERRQ_msg_put(317, X.RDB$RELATION_NAME, NULL, NULL, NULL, NULL);	// Msg317 %s comprised of:
 		FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_view_rel])
 			V IN RDB$VIEW_RELATIONS
@@ -2862,7 +2862,7 @@ static void view_info(
 			RFR.RDB$RELATION_NAME = VR.RDB$RELATION_NAME AND
 			VR.RDB$VIEW_NAME = view AND
 			VR.RDB$VIEW_CONTEXT = context
-		fb_utils::fb_exact_name(RFR.RDB$RELATION_NAME);
+		fb_utils::exact_name(RFR.RDB$RELATION_NAME);
 
 		// create some space according to how many levels deep we are;
 		// this is to avoid using %*s in the printf, which doesn't work for OS/2
@@ -2895,7 +2895,7 @@ static void view_info(
 		if (!RFR.RDB$BASE_FIELD.NULL
 			&& (dbb->dbb_capabilities & DBB_cap_multi_trans))
 		{
-			fb_utils::fb_exact_name(RFR.RDB$BASE_FIELD);
+			fb_utils::exact_name(RFR.RDB$BASE_FIELD);
 			view_info(dbb, RFR.RDB$RELATION_NAME, RFR.RDB$BASE_FIELD,
 					  RFR.RDB$VIEW_CONTEXT, level + 1);
 		}

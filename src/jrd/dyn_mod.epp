@@ -1080,7 +1080,7 @@ void DYN_modify_local_field(
 				SqlIdentifier new_fld;
 				new_fld[0] = 0;
 				GET_STRING(&new_name, new_fld);
-				fb_utils::fb_exact_name(new_fld);
+				fb_utils::exact_name(new_fld);
 				if (!new_fld[0])
 					DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 					/* msg 212: "Zero length identifiers not allowed" */
@@ -1419,7 +1419,7 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 					new_trigger_name[0] = 0;
 					/* GET_STRING(ptr, X.RDB$TRIGGER_NAME); */
 					GET_STRING(ptr, new_trigger_name);
-					fb_utils::fb_exact_name(new_trigger_name);
+					fb_utils::exact_name(new_trigger_name);
 					if (!new_trigger_name[0])
 						DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 						/* msg 212: "Zero length identifiers not allowed" */
@@ -1581,7 +1581,7 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 	view_name[0] = 0;
 	GET_STRING(ptr, view_name);
 
-	fb_utils::fb_exact_name(view_name);
+	fb_utils::exact_name(view_name);
 	if (!view_name[0])
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
@@ -1934,7 +1934,7 @@ static void modify_lfield_position(thread_db* tdbb,
 			/* If the field is the one we want, change the position, otherwise
 			 * increase the value of RDB$FIELD_POSITION
 			 */
-			fb_utils::fb_exact_name(FLD.RDB$FIELD_NAME);
+			fb_utils::exact_name(FLD.RDB$FIELD_NAME);
 			if (strcmp(FLD.RDB$FIELD_NAME, field_name) == 0) {
 				if (new_position > max_position)
 					/* This prevents gaps in the position sequence of the

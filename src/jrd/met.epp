@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.140 2004-09-25 10:27:42 robocop Exp $
+$Id: met.epp,v 1.141 2004-09-26 01:49:45 robocop Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -1493,8 +1493,8 @@ BlobFilter* MET_lookup_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 
         if (!REQUEST(irq_r_filters))
             REQUEST(irq_r_filters) = request;
-		fb_utils::fb_exact_name(X.RDB$MODULE_NAME);
-		fb_utils::fb_exact_name(X.RDB$ENTRYPOINT);
+		fb_utils::exact_name(X.RDB$MODULE_NAME);
+		fb_utils::exact_name(X.RDB$ENTRYPOINT);
 		filter = (FPTR_BFILTER_CALLBACK)
 			ISC_lookup_entrypoint(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT,
 								  ISC_EXT_LIB_PATH_ENV, true);
@@ -4436,8 +4436,8 @@ static bool verify_TRG_ignore_perm(thread_db* tdbb, const TEXT* trig_name)
 		}
 
 		EXE_unwind(tdbb, request);
-		fb_utils::fb_exact_name_limit(REF.RDB$UPDATE_RULE, sizeof(REF.RDB$UPDATE_RULE));
-		fb_utils::fb_exact_name_limit(REF.RDB$DELETE_RULE, sizeof(REF.RDB$DELETE_RULE));
+		fb_utils::exact_name_limit(REF.RDB$UPDATE_RULE, sizeof(REF.RDB$UPDATE_RULE));
+		fb_utils::exact_name_limit(REF.RDB$DELETE_RULE, sizeof(REF.RDB$DELETE_RULE));
 
 		if (!strcmp(REF.RDB$UPDATE_RULE, RI_ACTION_CASCADE) ||
 			!strcmp(REF.RDB$UPDATE_RULE, RI_ACTION_NULL) ||

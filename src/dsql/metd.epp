@@ -655,7 +655,7 @@ dsql_str* METD_get_default_charset(dsql_req* request)
 	    THREAD_ENTER();
 
         // Terminate ASCIIZ string on first trailing blank 
-        fb_utils::fb_exact_name(DBB.RDB$CHARACTER_SET_NAME);
+        fb_utils::exact_name(DBB.RDB$CHARACTER_SET_NAME);
         length = strlen(DBB.RDB$CHARACTER_SET_NAME);
         dbb->dbb_dfl_charset = FB_NEW_RPT(*dbb->dbb_pool, length) dsql_str;
         dbb->dbb_dfl_charset->str_length = length;
@@ -1239,7 +1239,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 
         THREAD_ENTER();
 
-	    fb_utils::fb_exact_name(X.RDB$OWNER_NAME);
+	    fb_utils::exact_name(X.RDB$OWNER_NAME);
 
         procedure = FB_NEW_RPT(*dbb->dbb_pool,
                                  name->str_length + strlen(X.RDB$OWNER_NAME)) dsql_prc;
@@ -1287,7 +1287,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 		    count++;
             // allocate the field block 
 
-            fb_utils::fb_exact_name(PR.RDB$PARAMETER_NAME);
+            fb_utils::exact_name(PR.RDB$PARAMETER_NAME);
             parameter = FB_NEW_RPT(*dbb->dbb_pool,
                                      strlen(PR.RDB$PARAMETER_NAME)) dsql_fld;
             parameter->fld_next = *ptr;
@@ -1441,7 +1441,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 		   information without caching it */
         THREAD_ENTER();
 
-	    fb_utils::fb_exact_name(X.RDB$OWNER_NAME);
+	    fb_utils::exact_name(X.RDB$OWNER_NAME);
 
         if (!X.RDB$RELATION_ID.NULL) {
             relation = FB_NEW_RPT(*dbb->dbb_pool,
@@ -1504,7 +1504,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 
 		    // allocate the field block 
 
-	        fb_utils::fb_exact_name(RFR.RDB$FIELD_NAME);
+	        fb_utils::exact_name(RFR.RDB$FIELD_NAME);
 
             // Allocate from default or permanent pool as appropriate 
             
@@ -1558,7 +1558,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 
 		    // allocate the field block 
 
-		    fb_utils::fb_exact_name(RFR.RDB$FIELD_NAME);
+		    fb_utils::exact_name(RFR.RDB$FIELD_NAME);
 
             // Allocate from default or permanent pool as appropriate 
             
@@ -1684,7 +1684,7 @@ dsql_str* METD_get_trigger_relation(dsql_req* request, const dsql_str* name, USH
 
 		THREAD_ENTER();
 
-		fb_utils::fb_exact_name(X.RDB$RELATION_NAME);
+		fb_utils::exact_name(X.RDB$RELATION_NAME);
 
 		relation = MAKE_string(X.RDB$RELATION_NAME, strlen(X.RDB$RELATION_NAME));
 		*trig_type = X.RDB$TRIGGER_TYPE;
@@ -1776,8 +1776,8 @@ dsql_rel* METD_get_view_relation(dsql_req*    request,
 
 		THREAD_ENTER();
 
-		fb_utils::fb_exact_name(X.RDB$CONTEXT_NAME);
-		fb_utils::fb_exact_name(X.RDB$RELATION_NAME);
+		fb_utils::exact_name(X.RDB$CONTEXT_NAME);
+		fb_utils::exact_name(X.RDB$RELATION_NAME);
 
 		if (!strcmp(X.RDB$RELATION_NAME, relation_or_alias) ||
 			!strcmp(X.RDB$CONTEXT_NAME, relation_or_alias))

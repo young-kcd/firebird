@@ -32,12 +32,12 @@
 
 namespace fb_utils
 {
-	char* fb_exact_name(char* const str);
-	inline void fb_exact_name(Firebird::string& str)
+	char* exact_name(char* const str);
+	inline void exact_name(Firebird::string& str)
 	{
 		str.rtrim();
 	}
-	char* fb_exact_name_limit(char* const str, size_t bufsize);
+	char* exact_name_limit(char* const str, size_t bufsize);
 	USHORT name_length(const TEXT* const name);
 } // namespace fb_utils
 

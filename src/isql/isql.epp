@@ -613,7 +613,7 @@ void ISQL_array_dimensions(const TEXT* fieldname)
 }
 
 
-// Same than fb_utils::fb_exact_name, but writes the output to the second argument.
+// Same than fb_utils::exact_name, but writes the output to the second argument.
 TEXT* ISQL_blankterm2(const TEXT* input, TEXT* output)
 {
 	TEXT* q = output - 1;
@@ -844,7 +844,7 @@ void ISQL_copy_SQL_id(const TEXT* in_str,
 	   requested by Ann. Notice empty names need double quotes.
 	   Assume the caller invoked previously ISQL_blankterm() that's
 	   just another function like DYN_terminate, MET_exact_name, etc.
-	   ISQL_blankterm has been replaced by fb_utils::fb_exact_name. */
+	   ISQL_blankterm has been replaced by fb_utils::exact_name. */
 
 	if (escape_char == DBL_QUOTE) {
 		// Cannot rely on ANSI functions that may be localized. 
@@ -1101,9 +1101,9 @@ void ISQL_get_character_sets(
 #ifdef DEV_BUILD
 			found = true;
 #endif
-			fb_utils::fb_exact_name(CST.RDB$CHARACTER_SET_NAME);
-			fb_utils::fb_exact_name(COL.RDB$COLLATION_NAME);
-			fb_utils::fb_exact_name(CST.RDB$DEFAULT_COLLATE_NAME);
+			fb_utils::exact_name(CST.RDB$CHARACTER_SET_NAME);
+			fb_utils::exact_name(COL.RDB$COLLATION_NAME);
+			fb_utils::exact_name(CST.RDB$DEFAULT_COLLATE_NAME);
 
 			/* Is specified collation the default collation for character set? */
 			if (strcmp (CST.RDB$DEFAULT_COLLATE_NAME, COL.RDB$COLLATION_NAME) == 0) {
@@ -1137,7 +1137,7 @@ void ISQL_get_character_sets(
 #ifdef DEV_BUILD
 			found = true;
 #endif
-			fb_utils::fb_exact_name(CST.RDB$CHARACTER_SET_NAME);
+			fb_utils::exact_name(CST.RDB$CHARACTER_SET_NAME);
 
 			sprintf (string, " CHARACTER SET %s", CST.RDB$CHARACTER_SET_NAME);
 		END_FOR
@@ -1173,7 +1173,7 @@ void ISQL_get_default_source(const TEXT* rel_name,
  *	For a domain, a NULL is passed for rel_name
  **************************************/
 
-	fb_utils::fb_exact_name(field_name);
+	fb_utils::exact_name(field_name);
 
 	*blob_id = isc_blob_null;
 
@@ -1256,7 +1256,7 @@ SLONG ISQL_get_index_segments(TEXT* segs,
 
 		// Place a comma and a blank between each segment column name 
 
-		fb_utils::fb_exact_name(SEG.RDB$FIELD_NAME);
+		fb_utils::exact_name(SEG.RDB$FIELD_NAME);
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION && delimited_yes) {
 			ISQL_copy_SQL_id (SEG.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
 		}
@@ -1322,8 +1322,8 @@ bool ISQL_get_base_column_null_flag(const TEXT* view_name,
 	bool done = false;
 	bool error = false;
 	while (!done && !error) {
-		fb_utils::fb_exact_name(save_view_name);
-		fb_utils::fb_exact_name(save_base_field);
+		fb_utils::exact_name(save_view_name);
+		fb_utils::exact_name(save_base_field);
 		FOR FIRST 1
 			VR IN RDB$VIEW_RELATIONS
 			CROSS NEWRFR IN RDB$RELATION_FIELDS
@@ -1367,7 +1367,7 @@ bool ISQL_get_null_flag(const TEXT* rel_name,
  *	We are passed the relation name and the relation_field name
  *  	For domains, the relation name is null.
  **************************************/
-	fb_utils::fb_exact_name(field_name);
+	fb_utils::exact_name(field_name);
 
 	bool null_flag = true;
 
@@ -5499,7 +5499,7 @@ static SSHORT print_item(TEXT** s,
 	const SLONG length = printlength;
 
 	if (List) {
-		sprintf(Print_buffer, "%-31s ", fb_utils::fb_exact_name(var->aliasname));
+		sprintf(Print_buffer, "%-31s ", fb_utils::exact_name(var->aliasname));
 		ISQL_printf(isqlGlob.Out, Print_buffer);
 	}
 

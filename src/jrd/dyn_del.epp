@@ -420,9 +420,9 @@ void DYN_delete_global_field( Global* gbl, const UCHAR** ptr)
         if (!DYN_REQUEST(drq_l_fld_src))
             DYN_REQUEST(drq_l_fld_src) = request;
 
-		fb_utils::fb_exact_name_limit(Y.RDB$FIELD_SOURCE, sizeof(Y.RDB$FIELD_SOURCE));
-		fb_utils::fb_exact_name_limit(Y.RDB$RELATION_NAME, sizeof(Y.RDB$RELATION_NAME));
-		fb_utils::fb_exact_name_limit(Y.RDB$FIELD_NAME, sizeof(Y.RDB$FIELD_NAME));
+		fb_utils::exact_name_limit(Y.RDB$FIELD_SOURCE, sizeof(Y.RDB$FIELD_SOURCE));
+		fb_utils::exact_name_limit(Y.RDB$RELATION_NAME, sizeof(Y.RDB$RELATION_NAME));
+		fb_utils::exact_name_limit(Y.RDB$FIELD_NAME, sizeof(Y.RDB$FIELD_NAME));
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(false, 43, Y.RDB$FIELD_SOURCE, Y.RDB$RELATION_NAME,
 					   Y.RDB$FIELD_NAME, NULL, NULL);
@@ -507,7 +507,7 @@ void DYN_delete_index( Global* gbl, const UCHAR** ptr)
             DYN_REQUEST(drq_e_indices) = request;
 
 		strcpy(rel_name, IDX.RDB$RELATION_NAME);
-		fb_utils::fb_exact_name(rel_name);
+		fb_utils::exact_name(rel_name);
 		found = true;
 		is_expression = !IDX.RDB$EXPRESSION_BLR.NULL;
 		ERASE IDX;
@@ -663,11 +663,11 @@ void DYN_delete_local_field(
             DYN_REQUEST(drq_g_rel_constr_nm) = request;
 
 		if (IDX.RDB$SEGMENT_COUNT == 1) {
-			fb_utils::fb_exact_name_limit(REL_CONST.RDB$CONSTRAINT_NAME,
+			fb_utils::exact_name_limit(REL_CONST.RDB$CONSTRAINT_NAME,
 						  sizeof(REL_CONST.RDB$CONSTRAINT_NAME));
 			strcpy(constraint, REL_CONST.RDB$CONSTRAINT_NAME);
 
-			fb_utils::fb_exact_name_limit(IDX.RDB$INDEX_NAME, sizeof(IDX.RDB$INDEX_NAME));
+			fb_utils::exact_name_limit(IDX.RDB$INDEX_NAME, sizeof(IDX.RDB$INDEX_NAME));
 			strcpy(index_name, IDX.RDB$INDEX_NAME);
 
 			delete_f_key_constraint(tdbb, gbl, tbl_nm, col_nm,
@@ -1331,7 +1331,7 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
 				XX.RDB$ROLE_NAME EQ role_name if (!DYN_REQUEST(drq_drop_role))
 				  DYN_REQUEST(drq_drop_role) = request;
 
-			fb_utils::fb_exact_name_limit(XX.RDB$OWNER_NAME, sizeof(XX.RDB$OWNER_NAME));
+			fb_utils::exact_name_limit(XX.RDB$OWNER_NAME, sizeof(XX.RDB$OWNER_NAME));
 			strcpy(role_owner, XX.RDB$OWNER_NAME);
 
 			if ((tdbb->tdbb_attachment->att_user->usr_flags & USR_locksmith) ||

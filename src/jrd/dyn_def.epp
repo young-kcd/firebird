@@ -248,11 +248,11 @@ void DYN_define_constraint(Global*		gbl,
 
 	constraint_name[0] = 0;
 	GET_STRING(ptr, constraint_name);
-	fb_utils::fb_exact_name(constraint_name);
+	fb_utils::exact_name(constraint_name);
 	if (!constraint_name[0])
 	{
 		DYN_UTIL_generate_constraint_name(tdbb, gbl, constraint_name);
-		fb_utils::fb_exact_name(constraint_name);
+		fb_utils::exact_name(constraint_name);
 	}
 	if (!constraint_name[0])
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
@@ -281,7 +281,7 @@ void DYN_define_constraint(Global*		gbl,
 		case isc_dyn_def_foreign_key:
 			foreign_flag = true;
 			strcpy(CRT.RDB$CONSTRAINT_TYPE, FOREIGN_KEY);
-			fb_utils::fb_exact_name_limit(CRT.RDB$CONSTRAINT_NAME,
+			fb_utils::exact_name_limit(CRT.RDB$CONSTRAINT_NAME,
 						  sizeof(CRT.RDB$CONSTRAINT_NAME));
 			break;
 
@@ -406,7 +406,7 @@ void DYN_define_constraint(Global*		gbl,
 			primary_flag) 
 		{
 			not_null = false;
-			fb_utils::fb_exact_name_limit(RFR.RDB$FIELD_NAME, sizeof(RFR.RDB$FIELD_NAME));
+			fb_utils::exact_name_limit(RFR.RDB$FIELD_NAME, sizeof(RFR.RDB$FIELD_NAME));
 			strcpy(null_field_name, RFR.RDB$FIELD_NAME);
 			EXE_unwind(tdbb, request);
 			break;
@@ -465,7 +465,7 @@ void DYN_define_constraint(Global*		gbl,
             if (!DYN_REQUEST(drq_c_dup_con))
                 DYN_REQUEST(drq_c_dup_con) = request;
 
-			fb_utils::fb_exact_name_limit(CRT.RDB$INDEX_NAME, sizeof(CRT.RDB$INDEX_NAME));
+			fb_utils::exact_name_limit(CRT.RDB$INDEX_NAME, sizeof(CRT.RDB$INDEX_NAME));
 			if (strcmp(index_name, CRT.RDB$INDEX_NAME))
 			{
 				if (list_index >= 0) {
@@ -528,7 +528,7 @@ void DYN_define_constraint(Global*		gbl,
                 if (!DYN_REQUEST(drq_l_intg_con))
 					DYN_REQUEST(drq_l_intg_con) = request;
 
-				fb_utils::fb_exact_name_limit(CRT.RDB$CONSTRAINT_NAME,
+				fb_utils::exact_name_limit(CRT.RDB$CONSTRAINT_NAME,
 							  sizeof(CRT.RDB$CONSTRAINT_NAME));
 				strcpy(REF.RDB$CONST_NAME_UQ, CRT.RDB$CONSTRAINT_NAME);
 				strcpy(REF.RDB$CONSTRAINT_NAME, constraint_name);
@@ -715,7 +715,7 @@ void DYN_define_exception( Global* gbl, const UCHAR** ptr)
 	exception_name[0] = 0;
 	GET_STRING(ptr, exception_name);
 
-	fb_utils::fb_exact_name(exception_name);
+	fb_utils::exact_name(exception_name);
 	if (!exception_name[0])
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
@@ -980,7 +980,7 @@ void DYN_define_filter( Global* gbl, const UCHAR** ptr)
 	filter_name[0] = 0;
 	GET_STRING(ptr, filter_name);
 
-	fb_utils::fb_exact_name(filter_name);
+	fb_utils::exact_name(filter_name);
 	if (!filter_name[0])
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
@@ -1074,7 +1074,7 @@ void DYN_define_function( Global* gbl, const UCHAR** ptr)
 	function_name[0] = 0;
 	GET_STRING(ptr, function_name);
 
-	fb_utils::fb_exact_name(function_name);
+	fb_utils::exact_name(function_name);
 	if (!function_name[0])
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
@@ -1303,7 +1303,7 @@ void DYN_define_generator( Global* gbl, const UCHAR** ptr)
 
 	generator_name[0] = 0;
 	GET_STRING(ptr, generator_name);
-	fb_utils::fb_exact_name(generator_name);
+	fb_utils::exact_name(generator_name);
 
 	if (!generator_name[0])
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
@@ -1372,11 +1372,11 @@ void DYN_define_global_field(Global*		gbl,
 	global_field_name[0] = 0;
 	GET_STRING(ptr, global_field_name);
 
-	fb_utils::fb_exact_name(global_field_name);
+	fb_utils::exact_name(global_field_name);
 	if (!global_field_name[0])
 	{
 		DYN_UTIL_generate_field_name(tdbb, gbl, global_field_name);
-		fb_utils::fb_exact_name(global_field_name);
+		fb_utils::exact_name(global_field_name);
 	}
 	if (!global_field_name[0])
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
@@ -1634,11 +1634,11 @@ void DYN_define_index(Global*		gbl,
 	index_name[0] = 0;
 	GET_STRING(ptr, index_name);
 
-	fb_utils::fb_exact_name(index_name);
+	fb_utils::exact_name(index_name);
 	if (!index_name[0])
 	{
 		DYN_UTIL_generate_index_name(tdbb, gbl, index_name, index_type);
-		fb_utils::fb_exact_name(index_name);
+		fb_utils::exact_name(index_name);
 	}
 	if (!index_name[0])
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
@@ -1834,7 +1834,7 @@ void DYN_define_index(Global*		gbl,
 
 			case isc_dyn_idx_foreign_key:
 				GET_STRING(ptr, referenced_relation);
-				fb_utils::fb_exact_name(referenced_relation);
+				fb_utils::exact_name(referenced_relation);
 				if (!referenced_relation[0])
 					DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 				/* msg 212: "Zero length identifiers not allowed" */
@@ -2029,7 +2029,7 @@ void DYN_define_index(Global*		gbl,
 				/* create a control break on index name, in which we set up
 				   to handle a new index, assuming it is the right one */
 
-				fb_utils::fb_exact_name_limit(Y.RDB$INDEX_NAME, sizeof(Y.RDB$INDEX_NAME));
+				fb_utils::exact_name_limit(Y.RDB$INDEX_NAME, sizeof(Y.RDB$INDEX_NAME));
 				if (strcmp((char*)index_name, (char*)Y.RDB$INDEX_NAME)) {
 					if (list_index >= 0)
 						found = false;
@@ -2046,7 +2046,7 @@ void DYN_define_index(Global*		gbl,
 				   match, then this is not the correct index */
 
 				if (list_index >= 0) {
-					fb_utils::fb_exact_name_limit(Z.RDB$FIELD_NAME, sizeof(Z.RDB$FIELD_NAME));
+					fb_utils::exact_name_limit(Z.RDB$FIELD_NAME, sizeof(Z.RDB$FIELD_NAME));
 					if (strcmp(field_list[list_index--], (char*)Z.RDB$FIELD_NAME))
 					{
 						found = false;
@@ -2096,7 +2096,7 @@ void DYN_define_index(Global*		gbl,
 					DYN_error_punt(true, 133, NULL, NULL, NULL, NULL, NULL);
 				/* msg 133: "Number of referencing columns do not equal number of referenced columns" */
 
-				fb_utils::fb_exact_name_limit(IND.RDB$INDEX_NAME, sizeof(IND.RDB$INDEX_NAME));
+				fb_utils::exact_name_limit(IND.RDB$INDEX_NAME, sizeof(IND.RDB$INDEX_NAME));
 				strcpy(IDX.RDB$FOREIGN_KEY, IND.RDB$INDEX_NAME);
 				IDX.RDB$FOREIGN_KEY.NULL = FALSE;
 				if (referred_index_name != NULL)
@@ -2186,7 +2186,7 @@ void DYN_define_local_field(Global*		gbl,
 	local_field_name[0] = 0;
 	GET_STRING(ptr, local_field_name);
 
-	fb_utils::fb_exact_name(local_field_name);
+	fb_utils::exact_name(local_field_name);
 	if (!local_field_name[0])
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
@@ -2632,7 +2632,7 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, TEXT* procedure_name)
 	parameter_name[0] = 0;
 	GET_STRING(ptr, parameter_name);
 
-	fb_utils::fb_exact_name(parameter_name);
+	fb_utils::exact_name(parameter_name);
 	if (!parameter_name[0])
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
@@ -2874,7 +2874,7 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 	procedure_name[0] = 0;
 	GET_STRING(ptr, procedure_name);
 
-	fb_utils::fb_exact_name(procedure_name);
+	fb_utils::exact_name(procedure_name);
 	if (!procedure_name[0])
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
@@ -3028,7 +3028,7 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 	relation_name[0] = 0;
 	GET_STRING(ptr, relation_name);
 
-	fb_utils::fb_exact_name(relation_name);
+	fb_utils::exact_name(relation_name);
 	if (!relation_name[0])
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
@@ -3141,7 +3141,7 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 
 					/* CVC: This never matches so it causes unnecessary calls to verify,
 							so I included a call to strip trailing blanks. */
-					fb_utils::fb_exact_name_limit(PREL.RDB$OWNER_NAME, sizeof(PREL.RDB$OWNER_NAME));
+					fb_utils::exact_name_limit(PREL.RDB$OWNER_NAME, sizeof(PREL.RDB$OWNER_NAME));
 					if (strcmp(PREL.RDB$OWNER_NAME, owner_name)) {
 						SecurityClass::flags_t priv;
 						if (!DYN_UTIL_get_prot
@@ -3446,7 +3446,7 @@ void DYN_define_sql_field(Global*		gbl,
 	sql_field_name[0] = 0;
 	GET_STRING(ptr, sql_field_name);
 
-	fb_utils::fb_exact_name(sql_field_name);
+	fb_utils::exact_name(sql_field_name);
 	if (!sql_field_name[0])
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
@@ -3802,11 +3802,11 @@ void DYN_define_trigger(Global*		gbl,
 	SqlIdentifier t;
 
 	GET_STRING(ptr, t);
-	fb_utils::fb_exact_name(t);
+	fb_utils::exact_name(t);
 	if (!t[0])
 	{
 		DYN_UTIL_generate_trigger_name(tdbb, gbl, t);
-		fb_utils::fb_exact_name(t);
+		fb_utils::exact_name(t);
 	}
 
 	if (!t[0])
@@ -4043,7 +4043,7 @@ void DYN_define_view_relation( Global* gbl, const UCHAR** ptr, const TEXT* view)
 	SqlIdentifier view_name;
 	strncpy(view_name, view, sizeof(view_name));
 	view_name[sizeof(view_name) - 1] = 0;
-	fb_utils::fb_exact_name(view_name);
+	fb_utils::exact_name(view_name);
 	if (!view_name[0])
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
@@ -4259,7 +4259,7 @@ that can be used against rdb$fields' rdb$field_name. */
 			}
 
 			found = true;
-			fb_utils::fb_exact_name_limit(RFR.RDB$FIELD_SOURCE, sizeof(RFR.RDB$FIELD_SOURCE));
+			fb_utils::exact_name_limit(RFR.RDB$FIELD_SOURCE, sizeof(RFR.RDB$FIELD_SOURCE));
 			strcpy(output_field_name, RFR.RDB$FIELD_SOURCE);
 		END_FOR;
 		if (!DYN_REQUEST(drq_l_fld_src2)) {

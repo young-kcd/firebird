@@ -39,7 +39,7 @@
 namespace fb_utils
 {
 
-char* fb_exact_name(char* const str)
+char* exact_name(char* const str)
 {
 /**************************************
  *
@@ -69,7 +69,7 @@ char* fb_exact_name(char* const str)
 }
 
 
-char* fb_exact_name_limit(char* const str, size_t bufsize)
+char* exact_name_limit(char* const str, size_t bufsize)
 {
 /**************************************
  *

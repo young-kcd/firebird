@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.41 2004-09-22 01:55:37 robocop Exp $
+ * $Id: extract.epp,v 1.42 2004-09-26 01:49:42 robocop Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -337,7 +337,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 			if (domain_flag)
 				list_domain_table (relation_name, default_char_set_id);
 
-			fb_utils::fb_exact_name(REL.RDB$OWNER_NAME);
+			fb_utils::exact_name(REL.RDB$OWNER_NAME);
 			sprintf (Print_buffer, "%s/* Table: %s, Owner: %s */%s",
 					 NEWLINE,
 					 relation_name,
@@ -373,12 +373,12 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
-			ISQL_copy_SQL_id (fb_utils::fb_exact_name(RFR.RDB$FIELD_NAME),
+			ISQL_copy_SQL_id (fb_utils::exact_name(RFR.RDB$FIELD_NAME),
 							  SQL_identifier, DBL_QUOTE);
 			sprintf (Print_buffer, "%s ", SQL_identifier);
 		}
 		else
-			sprintf (Print_buffer, "%s ", fb_utils::fb_exact_name(RFR.RDB$FIELD_NAME));
+			sprintf (Print_buffer, "%s ", fb_utils::exact_name(RFR.RDB$FIELD_NAME));
 		ISQL_printf (isqlGlob.Out, Print_buffer);
 
 		/*
@@ -398,7 +398,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 				isdigit (FLD.RDB$FIELD_NAME[4]) &&
 				FLD.RDB$SYSTEM_FLAG != 1))
 		{
-			fb_utils::fb_exact_name(FLD.RDB$FIELD_NAME);
+			fb_utils::exact_name(FLD.RDB$FIELD_NAME);
 			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			{
 				ISQL_copy_SQL_id (FLD.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
@@ -578,7 +578,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 
 				if (strncmp(CON.RDB$CONSTRAINT_NAME, "INTEG", 5))
 				{
-					fb_utils::fb_exact_name(CON.RDB$CONSTRAINT_NAME);
+					fb_utils::exact_name(CON.RDB$CONSTRAINT_NAME);
 					if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 					{
 
@@ -639,7 +639,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 		// If the name of the constraint is not INTEG..., print it 
 		if (strncmp(RELC.RDB$CONSTRAINT_NAME, "INTEG", 5))
 		{
-			fb_utils::fb_exact_name(RELC.RDB$CONSTRAINT_NAME);
+			fb_utils::exact_name(RELC.RDB$CONSTRAINT_NAME);
 			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			{
 				ISQL_copy_SQL_id (RELC.RDB$CONSTRAINT_NAME, SQL_identifier,
@@ -742,7 +742,7 @@ static void get_procedure_args(char* proc_name)
 					ISQL_printf (isqlGlob.Out, Print_buffer);
 				}
 
-				fb_utils::fb_exact_name(PRM.RDB$PARAMETER_NAME);
+				fb_utils::exact_name(PRM.RDB$PARAMETER_NAME);
 
 				// CVC: Parameter names need check for dialect 3, too. 
 
@@ -938,8 +938,8 @@ static processing_state list_all_grants2(bool show_role_list,
 			first = false;
 
 			// Null terminate name string 
-			fb_utils::fb_exact_name(XX.RDB$ROLE_NAME);
-			fb_utils::fb_exact_name(XX.RDB$OWNER_NAME);
+			fb_utils::exact_name(XX.RDB$ROLE_NAME);
+			fb_utils::exact_name(XX.RDB$OWNER_NAME);
 
 			if (strcmp (prev_owner, XX.RDB$OWNER_NAME) != 0)
 			{
@@ -993,7 +993,7 @@ static processing_state list_all_grants2(bool show_role_list,
 
 		// Null terminate name string 
 
-		fb_utils::fb_exact_name(REL.RDB$RELATION_NAME);
+		fb_utils::exact_name(REL.RDB$RELATION_NAME);
 
 		const processing_state rc =
 			SHOW_grants2 (REL.RDB$RELATION_NAME, terminator, obj_relation,
@@ -1038,7 +1038,7 @@ static processing_state list_all_grants2(bool show_role_list,
 
 		// Null terminate name string 
 
-		fb_utils::fb_exact_name(PRC.RDB$PROCEDURE_NAME);
+		fb_utils::exact_name(PRC.RDB$PROCEDURE_NAME);
 
 		const processing_state rc =
 			SHOW_grants2 (PRC.RDB$PROCEDURE_NAME, terminator, obj_procedure,
@@ -1098,7 +1098,7 @@ static void list_all_procs()
 			ISQL_printf (isqlGlob.Out, Print_buffer);
 			header = false;
 		}
-		fb_utils::fb_exact_name(PRC.RDB$PROCEDURE_NAME);
+		fb_utils::exact_name(PRC.RDB$PROCEDURE_NAME);
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
 			ISQL_copy_SQL_id (PRC.RDB$PROCEDURE_NAME, SQL_identifier, DBL_QUOTE);
@@ -1128,7 +1128,7 @@ static void list_all_procs()
 	FOR PRC IN RDB$PROCEDURES
 		SORTED BY PRC.RDB$PROCEDURE_NAME
 
-		fb_utils::fb_exact_name(PRC.RDB$PROCEDURE_NAME);
+		fb_utils::exact_name(PRC.RDB$PROCEDURE_NAME);
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
@@ -1202,7 +1202,7 @@ static void list_all_tables(SSHORT flag,
 			continue;
 		// Null terminate name string 
 
-		fb_utils::fb_exact_name(REL.RDB$RELATION_NAME);
+		fb_utils::exact_name(REL.RDB$RELATION_NAME);
 
 		if (flag || !strncmp (REL.RDB$SECURITY_CLASS, "SQL$", 4))
 			EXTRACT_list_table (REL.RDB$RELATION_NAME, NULL, false,default_char_set_id);
@@ -1253,8 +1253,8 @@ static void list_all_triggers()
 			ISQL_printf (isqlGlob.Out, Print_buffer);
 			header = false;
 		}
-		fb_utils::fb_exact_name(TRG.RDB$TRIGGER_NAME);
-		fb_utils::fb_exact_name(TRG.RDB$RELATION_NAME);
+		fb_utils::exact_name(TRG.RDB$TRIGGER_NAME);
+		fb_utils::exact_name(TRG.RDB$RELATION_NAME);
 
 		if (TRG.RDB$TRIGGER_INACTIVE.NULL)
 			TRG.RDB$TRIGGER_INACTIVE = 0;
@@ -1336,7 +1336,7 @@ static void list_check()
 		SORTED BY CHK.RDB$CONSTRAINT_NAME
 
 
-		fb_utils::fb_exact_name(TRG.RDB$RELATION_NAME);
+		fb_utils::exact_name(TRG.RDB$RELATION_NAME);
 
 		sprintf (Print_buffer, " %s ", NEWLINE);
 		ISQL_printf (isqlGlob.Out, Print_buffer);
@@ -1355,7 +1355,7 @@ static void list_check()
 		// If the name of the constraint is not INTEG..., print it 
 		if (strncmp(CHK.RDB$CONSTRAINT_NAME, "INTEG", 5))
 		{
-			fb_utils::fb_exact_name(CHK.RDB$CONSTRAINT_NAME);
+			fb_utils::exact_name(CHK.RDB$CONSTRAINT_NAME);
 			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			{
 				ISQL_copy_SQL_id (CHK.RDB$CONSTRAINT_NAME, SQL_identifier,
@@ -1459,7 +1459,7 @@ static void list_create_db()
 		WITH DBP.RDB$CHARACTER_SET_NAME NOT MISSING
 		AND DBP.RDB$CHARACTER_SET_NAME != " ";
 		sprintf (Print_buffer, " DEFAULT CHARACTER SET %s",
-		fb_utils::fb_exact_name(DBP.RDB$CHARACTER_SET_NAME));
+		fb_utils::exact_name(DBP.RDB$CHARACTER_SET_NAME));
 		ISQL_printf (isqlGlob.Out, Print_buffer);
 	END_FOR
 	ON_ERROR
@@ -1504,7 +1504,7 @@ static void list_create_db()
 			FIL.RDB$FILE_SEQUENCE = 0;
 		if (FIL.RDB$FILE_START.NULL)
 			FIL.RDB$FILE_START = 0;
-		fb_utils::fb_exact_name(FIL.RDB$FILE_NAME);
+		fb_utils::exact_name(FIL.RDB$FILE_NAME);
 
 		// Pure secondary files 
 		if (FIL.RDB$FILE_FLAGS == 0)
@@ -1788,7 +1788,7 @@ static void list_domain_table(const SCHAR* table_name,
 			ISQL_printf (isqlGlob.Out, Print_buffer);
 			first = false;
 		}
-		fb_utils::fb_exact_name(FLD.RDB$FIELD_NAME);
+		fb_utils::exact_name(FLD.RDB$FIELD_NAME);
 
 		sprintf (Print_buffer, "CREATE DOMAIN %s AS ", FLD.RDB$FIELD_NAME);
 		ISQL_printf (isqlGlob.Out, Print_buffer);
@@ -1973,7 +1973,7 @@ static void list_domains(SSHORT default_char_set_id)
 			ISQL_printf (isqlGlob.Out, Print_buffer);
 			first = false;
 		}
-		fb_utils::fb_exact_name(FLD.RDB$FIELD_NAME);
+		fb_utils::exact_name(FLD.RDB$FIELD_NAME);
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
@@ -2161,7 +2161,7 @@ static void list_exception()
 			ISQL_printf (isqlGlob.Out, Print_buffer);
 		}
 		first = false;
-		fb_utils::fb_exact_name(EXC.RDB$EXCEPTION_NAME);
+		fb_utils::exact_name(EXC.RDB$EXCEPTION_NAME);
 
 		ISQL_copy_SQL_id (EXC.RDB$MESSAGE, SQL_identifier2, SINGLE_QUOTE);
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
@@ -2205,9 +2205,9 @@ static void list_filters()
 	FOR FIL IN RDB$FILTERS
 		SORTED BY FIL.RDB$FUNCTION_NAME
 
-		fb_utils::fb_exact_name(FIL.RDB$FUNCTION_NAME);
-		fb_utils::fb_exact_name(FIL.RDB$MODULE_NAME);
-		fb_utils::fb_exact_name(FIL.RDB$ENTRYPOINT);
+		fb_utils::exact_name(FIL.RDB$FUNCTION_NAME);
+		fb_utils::exact_name(FIL.RDB$MODULE_NAME);
+		fb_utils::exact_name(FIL.RDB$ENTRYPOINT);
 
 		if (first)
 		{
@@ -2269,8 +2269,8 @@ static void list_foreign()
 		RELC2.RDB$CONSTRAINT_TYPE EQ "PRIMARY KEY")
 		SORTED BY RELC1.RDB$RELATION_NAME, RELC1.RDB$CONSTRAINT_NAME
 
-		fb_utils::fb_exact_name(RELC1.RDB$RELATION_NAME);
-		fb_utils::fb_exact_name(RELC2.RDB$RELATION_NAME);
+		fb_utils::exact_name(RELC1.RDB$RELATION_NAME);
+		fb_utils::exact_name(RELC2.RDB$RELATION_NAME);
 
 		ISQL_get_index_segments (collist, RELC1.RDB$INDEX_NAME, true);
 
@@ -2423,9 +2423,9 @@ static void list_functions()
 	FOR FUN IN RDB$FUNCTIONS
 		SORTED BY FUN.RDB$FUNCTION_NAME
 
-		fb_utils::fb_exact_name(FUN.RDB$FUNCTION_NAME);
-		fb_utils::fb_exact_name(FUN.RDB$MODULE_NAME);
-		fb_utils::fb_exact_name(FUN.RDB$ENTRYPOINT);
+		fb_utils::exact_name(FUN.RDB$FUNCTION_NAME);
+		fb_utils::exact_name(FUN.RDB$MODULE_NAME);
+		fb_utils::exact_name(FUN.RDB$ENTRYPOINT);
 		if (first)
 		{
 			sprintf (Print_buffer, "%s/*  External Function declarations */%s",
@@ -2462,7 +2462,7 @@ static void list_functions()
 					WITH CHARSET.RDB$CHARACTER_SET_ID = FNA.RDB$CHARACTER_SET_ID
 
 					did_charset = true;
-					fb_utils::fb_exact_name(CHARSET.RDB$CHARACTER_SET_NAME);
+					fb_utils::exact_name(CHARSET.RDB$CHARACTER_SET_NAME);
 					sprintf (type_buffer, "%s(%d) CHARACTER SET %s",
 							 Column_types[i].type_name,
 							 (FNA.RDB$FIELD_LENGTH / MAX (1, CHARSET.RDB$BYTES_PER_CHARACTER)),
@@ -2645,7 +2645,7 @@ static void list_generators()
 		(GEN.RDB$SYSTEM_FLAG MISSING OR GEN.RDB$SYSTEM_FLAG NE 1)
 		SORTED BY GEN.RDB$GENERATOR_NAME
 
-		fb_utils::fb_exact_name(GEN.RDB$GENERATOR_NAME);
+		fb_utils::exact_name(GEN.RDB$GENERATOR_NAME);
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			ISQL_copy_SQL_id (GEN.RDB$GENERATOR_NAME, SQL_identifier, DBL_QUOTE);
@@ -2713,8 +2713,8 @@ static void list_index()
 		first = false;
 	// Strip trailing blanks 
 
-		fb_utils::fb_exact_name(IDX.RDB$RELATION_NAME);
-		fb_utils::fb_exact_name(IDX.RDB$INDEX_NAME);
+		fb_utils::exact_name(IDX.RDB$RELATION_NAME);
+		fb_utils::exact_name(IDX.RDB$INDEX_NAME);
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
@@ -2777,14 +2777,14 @@ static void list_views()
 		SORTED BY REL.RDB$RELATION_ID
 
 		bool first = true;
-		fb_utils::fb_exact_name(REL.RDB$RELATION_NAME);
+		fb_utils::exact_name(REL.RDB$RELATION_NAME);
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			ISQL_copy_SQL_id (REL.RDB$RELATION_NAME, SQL_identifier, DBL_QUOTE);
 		else
 			strcpy (SQL_identifier, REL.RDB$RELATION_NAME);
 
-		fb_utils::fb_exact_name(REL.RDB$OWNER_NAME);
+		fb_utils::exact_name(REL.RDB$OWNER_NAME);
 
 		sprintf (Print_buffer, "%s/* View: %s, Owner: %s */%s",
 				 NEWLINE,
@@ -2800,7 +2800,7 @@ static void list_views()
 			RFR.RDB$RELATION_NAME = REL.RDB$RELATION_NAME
 			SORTED BY RFR.RDB$FIELD_POSITION
 
-			fb_utils::fb_exact_name(RFR.RDB$FIELD_NAME);
+			fb_utils::exact_name(RFR.RDB$FIELD_NAME);
 
 			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 				ISQL_copy_SQL_id (RFR.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);

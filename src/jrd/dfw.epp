@@ -2894,7 +2894,7 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					;	/* empty body */
 				}
 				*p = 0;
-				fb_utils::fb_exact_name(f);
+				fb_utils::exact_name(f);
 				field_count++;
 			}
 		END_FOR;
@@ -3073,7 +3073,7 @@ static bool find_depend_in_dfw(	thread_db*	tdbb,
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	fb_utils::fb_exact_name(object_name);
+	fb_utils::exact_name(object_name);
 	enum dfw_t dfw_type;
 	switch (dep_type)
 	{

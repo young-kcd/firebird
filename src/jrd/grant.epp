@@ -480,11 +480,11 @@ static void get_object_info(
 
             if (!REQUEST(irq_grant1))
                 REQUEST(irq_grant1) = request;
-			fb_utils::fb_exact_name_limit(REL.RDB$SECURITY_CLASS, sizeof(REL.RDB$SECURITY_CLASS));
+			fb_utils::exact_name_limit(REL.RDB$SECURITY_CLASS, sizeof(REL.RDB$SECURITY_CLASS));
 			strcpy(s_class, REL.RDB$SECURITY_CLASS);
-			fb_utils::fb_exact_name_limit(REL.RDB$DEFAULT_CLASS, sizeof(REL.RDB$DEFAULT_CLASS));
+			fb_utils::exact_name_limit(REL.RDB$DEFAULT_CLASS, sizeof(REL.RDB$DEFAULT_CLASS));
 			strcpy(default_class, REL.RDB$DEFAULT_CLASS);
-			fb_utils::fb_exact_name_limit(REL.RDB$OWNER_NAME, sizeof(REL.RDB$OWNER_NAME));
+			fb_utils::exact_name_limit(REL.RDB$OWNER_NAME, sizeof(REL.RDB$OWNER_NAME));
 			strcpy(owner, REL.RDB$OWNER_NAME);
 			*view = !REL.RDB$VIEW_BLR.isEmpty();
 		END_FOR;
@@ -501,10 +501,10 @@ static void get_object_info(
 
             if (!REQUEST(irq_grant9)) REQUEST(irq_grant9) = request;
 
-			fb_utils::fb_exact_name_limit(REL.RDB$SECURITY_CLASS, sizeof(REL.RDB$SECURITY_CLASS));
+			fb_utils::exact_name_limit(REL.RDB$SECURITY_CLASS, sizeof(REL.RDB$SECURITY_CLASS));
 			strcpy(s_class, REL.RDB$SECURITY_CLASS);
 			strcpy(default_class, "");
-			fb_utils::fb_exact_name_limit(REL.RDB$OWNER_NAME, sizeof(REL.RDB$OWNER_NAME));
+			fb_utils::exact_name_limit(REL.RDB$OWNER_NAME, sizeof(REL.RDB$OWNER_NAME));
 			strcpy(owner, REL.RDB$OWNER_NAME);
 			*view = false;
 		END_FOR;
@@ -557,7 +557,7 @@ static void get_user_privs(thread_db*		tdbb,
         if (!REQUEST(irq_grant2))
 			REQUEST(irq_grant2) = request;
 
-		fb_utils::fb_exact_name_limit(PRV.RDB$USER, sizeof(PRV.RDB$USER));
+		fb_utils::exact_name_limit(PRV.RDB$USER, sizeof(PRV.RDB$USER));
 		if (strcmp(PRV.RDB$USER, user) || PRV.RDB$USER_TYPE != user_type)
 		{
 			if (user[0])
@@ -703,7 +703,7 @@ static void purge_default_class( TEXT* object_name, SSHORT obj_type)
 
         if (!REQUEST(irq_grant8))
             REQUEST(irq_grant8) = request;
-		fb_utils::fb_exact_name_limit(REL.RDB$DEFAULT_CLASS, sizeof(REL.RDB$DEFAULT_CLASS));
+		fb_utils::exact_name_limit(REL.RDB$DEFAULT_CLASS, sizeof(REL.RDB$DEFAULT_CLASS));
 		delete_security_class(tdbb, REL.RDB$DEFAULT_CLASS);
 
 		MODIFY REL USING
@@ -797,8 +797,8 @@ static SecurityClass::flags_t save_field_privileges(
 
         if (!REQUEST(irq_grant6))
             REQUEST(irq_grant6) = request;
-		 fb_utils::fb_exact_name_limit(PRV.RDB$USER, sizeof(PRV.RDB$USER));
-		 fb_utils::fb_exact_name_limit(PRV.RDB$FIELD_NAME, sizeof(PRV.RDB$FIELD_NAME));
+		 fb_utils::exact_name_limit(PRV.RDB$USER, sizeof(PRV.RDB$USER));
+		 fb_utils::exact_name_limit(PRV.RDB$FIELD_NAME, sizeof(PRV.RDB$FIELD_NAME));
 
 		/* create a control break on field_name,user */
 
@@ -874,7 +874,7 @@ static SecurityClass::flags_t save_field_privileges(
 			/* initialize for new field */
 
 			strcpy(field_name, PRV.RDB$FIELD_NAME);
-			fb_utils::fb_exact_name_limit(FLD.RDB$SECURITY_CLASS, sizeof(FLD.RDB$SECURITY_CLASS));
+			fb_utils::exact_name_limit(FLD.RDB$SECURITY_CLASS, sizeof(FLD.RDB$SECURITY_CLASS));
 			strcpy(s_class, FLD.RDB$SECURITY_CLASS);
 			if (!s_class[0]) {
 			    /* We should never get here (I think) because this
