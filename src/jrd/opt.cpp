@@ -4112,10 +4112,12 @@ static RSB gen_retrieval(TDBB tdbb,
 						   should use. Since all indices are already ordered by their selectivity,
 						   it becomes a trivial task. But note that indices with zero (unknown)
 						   selectivity are always used, because we don't have a clue how useful
-						   they are in fact, so we should be optimistic in this case. */
-				IDX *idx = idx_csb[last_idx];
+						   they are in fact, so we should be optimistic in this case. Unique
+						   indices are also always used, because they are good by definition,
+						   regardless of their (probably old) selectivity value. */
+				idx = idx_csb[last_idx];
 				bool should_be_used = true;
-				if (idx->idx_selectivity && !(csb_tail->csb_plan)) {
+				if (!(idx->idx_flags & idx_unique) && idx->idx_selectivity && !(csb_tail->csb_plan)) {
 					if (selectivity * SELECTIVITY_THRESHOLD_FACTOR < idx->idx_selectivity) {
 						should_be_used = false;
 					}
