@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.7 2003-10-10 23:17:04 skidder Exp $
+dnl $Id: configure.in,v 1.141.2.8 2003-10-15 11:09:07 alexpeshkoff Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -704,9 +704,10 @@ case "$PLATFORM" in
                      gen/firebird/misc/firebird.init.d.generic:src/install/arch-specific/linux/misc/firebird.init.d.generic.in
                      gen/firebird/misc/firebird.init.d.mandrake:src/install/arch-specific/linux/misc/firebird.init.d.mandrake.in
                      gen/firebird/misc/firebird.init.d.suse:src/install/arch-specific/linux/misc/firebird.init.d.suse.in
+                     gen/firebird/misc/firebird.init.d.debian:src/install/arch-specific/linux/misc/firebird.init.d.debian.in
+                     gen/firebird/misc/firebird.init.d.gentoo:src/install/arch-specific/linux/misc/firebird.init.d.gentoo.in
                      gen/firebird/misc/rc.config.firebird:src/install/arch-specific/linux/misc/rc.config.firebird.in
                      gen/firebird/bin/changeDBAPassword.sh:src/install/arch-specific/linux/misc/changeDBAPassword.sh.in
-                     gen/firebird/bin/SSchangePasswd.sh:src/install/arch-specific/linux/super/SSchangePasswd.sh.in
                      gen/firebird/bin/CSchangeRunUser.sh:src/install/misc/CSchangeRunUser.sh.in
                      gen/firebird/bin/CSrestoreRootRunUser.sh:src/install/misc/CSrestoreRootRunUser.sh.in
                      gen/firebird/bin/SSchangeRunUser.sh:src/install/misc/SSchangeRunUser.sh.in
