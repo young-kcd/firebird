@@ -808,7 +808,7 @@ ISC_STATUS	dsql8_execute_immediate(
 static bool check_for_create_database(const Firebird::string& sql,
 									  const TEXT* crdb)
 {
-	for (int i = 0; i < sql.length(); i++) {
+	for (Firebird::string::size_type i = 0; i < sql.length(); i++) {
     	switch (sql[i]) {
         	case '\t':
         	case '\n':
@@ -887,11 +887,13 @@ ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
     THREAD_ENTER;
 
 	// 3. Call execute... function 
-	return dsql8_execute_immediate_common(status,
+	ISC_STATUS rc = dsql8_execute_immediate_common(status,
 						&why_db_handle, &why_trans_handle,
 						sql_operator.length(), sql_operator.c_str(), 
 						database->dbb_db_SQL_dialect,
 						0, NULL, 0, 0, NULL, 0, NULL, 0, 0, NULL, requests);
+	WHY_cleanup_transaction(why_trans_handle);
+	return rc;
 }
 
 
