@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.57 2003-05-04 15:39:42 dimitr Exp $
+$Id: exe.cpp,v 1.58 2003-05-05 11:47:45 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -139,6 +139,7 @@ static JRD_NOD store(TDBB, JRD_NOD, SSHORT);
 static BOOLEAN test_and_fixup_error(TDBB, const XCP, JRD_REQ);
 static void trigger_failure(TDBB, JRD_REQ);
 static void validate(TDBB, JRD_NOD);
+inline void PreModifyEraseTriggers(TDBB, trig_vec**, SSHORT, RPB*, REC, jrd_req::req_ta);
 
 #ifdef PC_ENGINE
 static BOOLEAN check_crack(RSB, USHORT);
@@ -1077,6 +1078,40 @@ static void cleanup_rpb(TDBB tdbb, RPB *rpb)
 	}
 }
 
+inline void PreModifyEraseTriggers(TDBB tdbb, 
+								   trig_vec** trigs, 
+								   SSHORT which_trig, 
+								   RPB *rpb, 
+								   REC rec,
+								   jrd_req::req_ta op)
+{
+/******************************************************
+ *
+ *	P r e M o d i f y E r a s e T r i g g e r s
+ *
+ ******************************************************
+ *
+ * Functional description
+ *	Perform operation's pre-triggers, 
+ *  storing active rpb in chain.
+ *
+ ******************************************************/
+	if ((*trigs) && (which_trig != POST_TRIG)) {
+		if (! tdbb->tdbb_transaction->tra_rpblist) {
+			tdbb->tdbb_transaction->tra_rpblist = 
+				FB_NEW(*tdbb->tdbb_database->dbb_permanent) 
+					traRpbList(tdbb->tdbb_database->dbb_permanent);
+		}
+		int rpblevel = tdbb->tdbb_transaction->
+						tra_rpblist->PushRpb(rpb);
+		JRD_REQ trigger = execute_triggers(tdbb, trigs,
+					rpb->rpb_record, rec, op);
+		tdbb->tdbb_transaction->tra_rpblist->PopRpb(rpb, rpblevel);
+		if (trigger) {
+			trigger_failure(tdbb, trigger);
+		}
+	}
+}
 
 static JRD_NOD erase(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 {
@@ -1214,23 +1249,8 @@ static JRD_NOD erase(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 		++transaction->tra_save_point->sav_verb_count;
 
 /* Handle pre-operation trigger */
-
-	if (relation->rel_pre_erase && which_trig != POST_TRIG) {
-		if (! tdbb->tdbb_transaction->tra_rpblist) {
-			assert(tdbb->tdbb_transaction->tra_pool);
-			tdbb->tdbb_transaction->tra_rpblist = 
-				FB_NEW(*tdbb->tdbb_database->dbb_permanent) 
-					traRpbList(tdbb->tdbb_database->dbb_permanent);
-		}
-		int rpblevel = tdbb->tdbb_transaction->
-					tra_rpblist->PushRpb(rpb);
-		trigger = execute_triggers(tdbb, &relation->rel_pre_erase,
-					rpb->rpb_record, 0, jrd_req::req_trigger_delete);
-		tdbb->tdbb_transaction->tra_rpblist->PopRpb(rpb, rpblevel);
-		if (trigger) {
-			trigger_failure(tdbb, trigger);
-		}
-	}
+	PreModifyEraseTriggers(tdbb, &relation->rel_pre_erase,
+				which_trig, rpb, 0, jrd_req::req_trigger_delete);
 
 	if (relation->rel_file)
 		EXT_erase(rpb, reinterpret_cast < int *>(transaction));
@@ -2847,25 +2867,9 @@ static JRD_NOD modify(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 		if (transaction != dbb->dbb_sys_trans)
 			++transaction->tra_save_point->sav_verb_count;
 
-
-		if (relation->rel_pre_modify && which_trig != POST_TRIG) {
-			if (! tdbb->tdbb_transaction->tra_rpblist) {
-				assert(tdbb->tdbb_transaction->tra_pool);
-				tdbb->tdbb_transaction->tra_rpblist = 
-					FB_NEW(*tdbb->tdbb_database->dbb_permanent) 
-						traRpbList(tdbb->tdbb_database->dbb_permanent);
-			}
-			int rpblevel = tdbb->tdbb_transaction->
-							tra_rpblist->PushRpb(org_rpb);
-			trigger = execute_triggers(tdbb, &relation->rel_pre_modify,
-							org_rpb->rpb_record, new_rpb->rpb_record,
-							jrd_req::req_trigger_update);
-			tdbb->tdbb_transaction->tra_rpblist->
-							PopRpb(org_rpb, rpblevel);
-			if (trigger) {
-				trigger_failure(tdbb, trigger);
-			}
-		}
+		PreModifyEraseTriggers(tdbb, &relation->rel_pre_modify,
+				which_trig, org_rpb, new_rpb->rpb_record, 
+				jrd_req::req_trigger_update);
 
 		if (node->nod_arg[e_mod_validate]) {
 			validate(tdbb, node->nod_arg[e_mod_validate]);
