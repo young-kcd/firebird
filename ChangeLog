@@ -1,3 +1,56 @@
+2003-04-06 17:00  alexpeshkoff
+
+	* firebird2/src/: jrd/jrd.cpp, jrd/isc_file.cpp, jrd/ext.cpp,
+	jrd/isc_f_proto.h, jrd/dfw.epp, install/misc/firebird.conf,
+	common/config/dir_list.h, common/config/config.cpp,
+	common/config/config.h, common/config/dir_list.cpp:
+	
+	New style of files access configuration
+
+2003-04-06 13:40  alexpeshkoff
+
+	* firebird2/src/: jrd/svc.cpp, jrd/gds.cpp, jrd/gds_proto.h,
+	jrd/isc.cpp, jrd/isc_proto.h, qli/help.epp, gpre/ftn.cpp:
+	
+	1. Fixed potential buffer overflow in gds__prefix* family of
+	functions.  2. Changed second parameter declaration to be const.
+
+2003-04-06 13:34  dimitr
+
+	* firebird2/src/dsql/parse.y:
+	
+	no message
+
+2003-04-06 13:20  dimitr
+
+	* firebird2/src/dsql/: dsql.tab.h, keywords.cpp, misc_func.cpp,
+	node.h, parse.cpp, parse.y, pass1.cpp:
+	
+	1. Cleanup 2. ROWS_AFFECTED is renamed to ROW_COUNT (see SQL2002
+	specification) 3. CONNECTION_ID/TRANSACTION_ID are renamed to
+	CURRENT_CONNECTION/CURRENT_TRANSACTION (see SQL2002 recommendations
+	for context functions) 4. Solved most of the shift/reduce conflicts
+	and all reduce/reduce conflicts in the grammar 5. Fixed ambiguity
+	in ORDER BY clause, when both the value and the clause itself could
+	contain COLLATE word (now explicit collation sequence of the value
+	is used in the ordering logic) 6. Some of newly introduced tokens
+	are made non-reserved 7. Added code to enable ORDER/GROUP BY
+	ordinal when asterisk is used in the select list (not sure which
+	version it should go, so it's commented out so far)
+
+2003-04-06 12:09  dimitr
+
+	* firebird2/src/dsql/: dsql.h, make.cpp:
+	
+	Cleanup.
+
+2003-04-06 11:08  alexpeshkoff
+
+	* firebird2/src/: jrd/jrd.cpp, jrd/ext.cpp, jrd/isc_file.cpp,
+	common/config/dir_list.h:
+	
+	Code cleanup
+
 2003-04-04 12:40  aafemt
 
 	* firebird2/builds/posix/Makefile.in.static.gbak:
