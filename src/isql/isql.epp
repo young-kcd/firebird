@@ -77,7 +77,7 @@
 #include "editline.h"
 #endif
 
-#include <string>
+//#include <string>
 
 enum literal_string_type
 {
@@ -670,8 +670,10 @@ bool ISQL_dbcheck()
 		return true;
 }
 
-static std::string userPrompt;
-static char* lastInputLine = NULL;
+//static std::string userPrompt;
+static char userPrompt2[MSG_LENGTH];
+static const char* const userPrompt = userPrompt2;
+static char* lastInputLine = NULL; // Apparently never deallocated when isql exits.
 static int getColumn = -1;
 
 
@@ -688,7 +690,9 @@ void ISQL_prompt(const TEXT* string)
  *	Print a prompt string for interactive user
  *	Not for Windows, otherwise flush the string
  **************************************/
-	userPrompt = (const char*) string;
+	//userPrompt = (const char*) string;
+	strncpy(userPrompt2, string, MSG_LENGTH - 1);
+	userPrompt2[MSG_LENGTH - 1] = 0;
 
 	//#ifndef HAVE_READLINE_READLINE_H
 	//	fprintf(stdout, userPrompt.c_str());
@@ -730,7 +734,7 @@ static void readNextInputLine(const char* prompt)
 			// Write the prompt out.
 			fprintf(stdout, prompt);
 			fflush(stdout);
-
+			/*
 			std::string inputLine;
 
 			std::getline(std::cin, inputLine);
@@ -741,7 +745,8 @@ static void readNextInputLine(const char* prompt)
 				lastInputLine = (char*) malloc(lineSize + 1);
 				strncpy(lastInputLine, inputLine.c_str(), lineSize + 1);
 			}
-#endif
+			*/
+//#endif
 		}
 		else {
 			// Write the prompt out, only if !Interactive && Echo
@@ -749,8 +754,9 @@ static void readNextInputLine(const char* prompt)
 				fprintf(stdout, prompt);
 				fflush(stdout);
 			}
+		}
 
-			const int growStep = 128;
+			const int growStep = 1024;//128;
 			int size = 0;
 			int pos = 0;
 			while (true) {
@@ -775,8 +781,9 @@ static void readNextInputLine(const char* prompt)
 			}
 			if (lastInputLine != NULL)
 				lastInputLine[pos] = '\0';
-		}
-		if (lastInputLine != NULL && strlen(lastInputLine) >= 2
+		//}
+#endif
+		if (lastInputLine != NULL //&& strlen(lastInputLine) >= 2 redundant
 			&& lastInputLine[0] == '-' && lastInputLine[1] == '-')
 		{
 			if (Interactive || Echo) {
@@ -794,7 +801,7 @@ static void readNextInputLine(const char* prompt)
 
 static void readNextInputLine()
 {
-	readNextInputLine(userPrompt.c_str());
+	readNextInputLine(userPrompt); //.c_str());
 	if (Echo && (lastInputLine != NULL)) {
 		ISQL_printf(isqlGlob.Out, lastInputLine);
 		ISQL_printf(isqlGlob.Out, NEWLINE);
@@ -805,7 +812,7 @@ int getNextInputChar()
 {
 /**************************************
  *
- *	g e t _ N e x t I n p u t C h a r
+ *	g e t N e x t I n p u t C h a r
  *
  **************************************
  *
@@ -814,9 +821,12 @@ int getNextInputChar()
  *
  *
  **************************************/
+	static int inputLen = 0;
 	// At end of line try and read next line
 	if (getColumn == -1) {
 		readNextInputLine();
+		if (lastInputLine)
+			inputLen = (int) strlen(lastInputLine);
 	}
 
 	// readline found EOF
@@ -827,7 +837,8 @@ int getNextInputChar()
 	// If at end of line return \n
 	char c;
 	do {
-		if (getColumn == (int) strlen(lastInputLine)) {
+		if (getColumn == inputLen) //(int) strlen(lastInputLine))
+		{
 			getColumn = -1;
 			return '\n';
 		}
@@ -1759,6 +1770,8 @@ static processing_state add_row(const TEXT* tabname)
 						 isqlGlob.SQL_dialect, sqlda))
 	{
 		ISQL_errmsg(isc_status);
+		if (sqlda)
+			ISQL_FREE(sqlda);
 		return (SKIP);
 	}
 
@@ -4764,8 +4777,10 @@ static processing_state newdb(TEXT* dbname,
 	strcpy(dbname, save_database);
 
 	TEXT* errbuf = (TEXT*) ISQL_ALLOC(MSG_LENGTH);
-	if (!errbuf)
+	if (!errbuf) {
+		ISQL_FREE(save_database);
 		return ERR;
+	}
 	TEXT* local_psw = (TEXT*) ISQL_ALLOC(BUFFER_LENGTH128);
 	if (!local_psw) {
 		ISQL_FREE(save_database);
@@ -5027,6 +5042,8 @@ static processing_state newdb(TEXT* dbname,
 				ISQL_FREE(local_psw);
 			if (local_usr)
 				ISQL_FREE(local_usr);
+			if (local_sql_role)
+				ISQL_FREE(local_sql_role);
 			if (dpb_buffer)
 				ISQL_FREE(dpb_buffer);
 			if (errbuf)
@@ -5945,7 +5962,7 @@ static processing_state print_item_blob(FILE* fp,
  **************************************
  *
  * Functional description
- *	Print a isqlGlob.User Selected BLOB field (as oppposed to
+ *	Print a User Selected BLOB field (as oppposed to
  *	any BLOB selected in a show or extract command)
  *
  **************************************/
