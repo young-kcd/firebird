@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.142 2003-07-08 12:23:42 brodsom Exp $
+dnl $Id: configure.in,v 1.143 2003-07-09 01:20:17 brodsom Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -672,7 +672,7 @@ case "$PLATFORM" in
     AC_CONFIG_COMMANDS(,,[
         mkdir -p gen/install/scripts
         mkdir -p gen/install/misc])
-    INSTALL_SRC_DIR=src/install/arch-specific/linux/${FIREBIRD_ARCH_TYPE}
+    INSTALL_SRC_DIR=builds/install/arch-specific/linux/${FIREBIRD_ARCH_TYPE}
     AC_CONFIG_FILES([gen/install/makeInstallImage.sh:${INSTALL_SRC_DIR}/makeInstallImage.sh.in
                      gen/install/scripts/preinstall.sh:${INSTALL_SRC_DIR}/preinstall.sh.in
                      gen/install/scripts/tarinstall.sh:${INSTALL_SRC_DIR}/tarinstall.sh.in
@@ -684,17 +684,17 @@ case "$PLATFORM" in
                      gen/install/scripts/postuninstall.sh:${INSTALL_SRC_DIR}/postuninstall.sh.in
                      gen/install/scripts/rpmheader.txt:${INSTALL_SRC_DIR}/rpmheader.txt.in
                      gen/install/scripts/rpmfiles.txt:${INSTALL_SRC_DIR}/rpmfiles.txt.in
-                     gen/firebird/misc/firebird.xinetd:src/install/arch-specific/linux/misc/firebird.xinetd.in
-                     gen/firebird/bin/changeDBAPassword.sh:src/install/arch-specific/linux/misc/changeDBAPassword.sh.in
+                     gen/firebird/misc/firebird.xinetd:builds/install/arch-specific/linux/misc/firebird.xinetd.in
+                     gen/firebird/bin/changeDBAPassword.sh:builds/install/arch-specific/linux/misc/changeDBAPassword.sh.in
       ],[chmod a+x gen/install/scripts/*.sh gen/install/*sh 2>/dev/null])
     ;;
 
   SINIX-Z)
-    AC_CONFIG_FILES([gen/install/pkginfo:src/install/arch-specific/sinixz/pkginfo.in
-                     gen/install/prototype:src/install/arch-specific/sinixz/prototype.in
-                     gen/install/preinstall:src/install/arch-specific/sinixz/preinstall.in
-                     gen/install/postinstall:src/install/arch-specific/sinixz/postinstall.in
-                     gen/install/postremove:src/install/arch-specific/sinixz/postremove.in
+    AC_CONFIG_FILES([gen/install/pkginfo:builds/install/arch-specific/sinixz/pkginfo.in
+                     gen/install/prototype:builds/install/arch-specific/sinixz/prototype.in
+                     gen/install/preinstall:builds/install/arch-specific/sinixz/preinstall.in
+                     gen/install/postinstall:builds/install/arch-specific/sinixz/postinstall.in
+                     gen/install/postremove:builds/install/arch-specific/sinixz/postremove.in
       ],[chmod a+x gen/install/pre* gen/install/post* 2>/dev/null])
     ;;
 esac
@@ -739,7 +739,7 @@ gen/Makefile.embed.gdef:${MAKE_SRC_DIR}/Makefile.in.embed.gdef
 gen/Makefile.embed.qli:${MAKE_SRC_DIR}/Makefile.in.embed.qli
 gen/Makefile.embed.gpre:${MAKE_SRC_DIR}/Makefile.in.embed.gpre
 src/v5_examples/Makefile:${MAKE_SRC_DIR}/Makefile.in.example5
-gen/Makefile.install:src/install/arch-specific/${MAKEFILE_PREFIX}/Makefile.in
+gen/Makefile.install:builds/install/arch-specific/${MAKEFILE_PREFIX}/Makefile.in
 Makefile:Makefile.in
 gen/Makefile.extern.editline:${MAKE_SRC_DIR}/Makefile.in.extern.editline
 )
