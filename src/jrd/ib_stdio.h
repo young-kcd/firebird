@@ -40,7 +40,7 @@
 #ifndef	IB_STDIO_H_
 #define	IB_STDIO_H_
 
-#ifndef IB_COMMON_H
+#ifndef JRD_COMMON_H
 #include "../jrd/common.h"
 #endif
 
