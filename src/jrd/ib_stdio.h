@@ -40,9 +40,7 @@
 #ifndef	IB_STDIO_H_
 #define	IB_STDIO_H_
 
-#ifndef JRD_COMMON_H
 #include "../jrd/common.h"
-#endif
 
 #include <stdio.h>
 #include <stdarg.h>

@@ -57,12 +57,9 @@
 #include <sys/select.h>
 #endif
 
-#ifndef VMS
 #ifdef WIN_NT
 #include <io.h>
 #endif
-#endif	// !VMS
-
 
 #ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
