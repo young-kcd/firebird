@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.60 2003-05-14 08:24:49 alexpeshkoff Exp $
+$Id: exe.cpp,v 1.61 2003-05-22 16:59:49 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -1099,8 +1099,8 @@ inline void PreModifyEraseTriggers(TDBB tdbb,
 	if ((*trigs) && (which_trig != POST_TRIG)) {
 		if (! tdbb->tdbb_transaction->tra_rpblist) {
 			tdbb->tdbb_transaction->tra_rpblist = 
-				FB_NEW(*tdbb->tdbb_database->dbb_permanent) 
-					traRpbList(tdbb->tdbb_database->dbb_permanent);
+				FB_NEW(*tdbb->tdbb_transaction->tra_pool) 
+					traRpbList(tdbb->tdbb_transaction->tra_pool);
 		}
 		int rpblevel = tdbb->tdbb_transaction->
 						tra_rpblist->PushRpb(rpb);
