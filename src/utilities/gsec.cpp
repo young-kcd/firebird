@@ -322,8 +322,8 @@ int UTIL_gsec(
 	if (!tdsec->tsec_interactive) {
 		if (ret == 0) {
 #ifdef SUPERSERVER
-			/* Signal the start of the service here ONLY if we are displaying users.
-			 * since the number of users in ISC4 may exceed the service buffer.  This
+			/* Signal the start of the service here ONLY if we are displaying users
+			 * since the number of users may exceed the service buffer.  This
 			 * will cause the service to wait for the client to request data.  However,
 			 * if the server is not signaled, then the client can never request anything */
 			if (user_data->operation == DIS_OPER)
