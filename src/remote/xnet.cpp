@@ -118,18 +118,10 @@ static int xnet_destroy(XDR *);
 static int xnet_error(PORT, TEXT *, STATUS, int);
 static void xnet_gen_error(PORT, STATUS, ...);
 static bool_t xnet_getbytes(XDR *, SCHAR *, u_int);
-#ifndef NEW
 static bool_t xnet_getlong(XDR *, SLONG *);
-#else
-static bool_t xnet_getlong(XDR *, SCHAR *);
-#endif
 static u_int xnet_getpostn(XDR *);
 static caddr_t xnet_inline(XDR *, u_int);
-#ifndef NEW
 static bool_t xnet_putlong(XDR *, SLONG *);
-#else
-static bool_t xnet_putlong(XDR *, SCHAR *);
-#endif
 static bool_t xnet_putbytes(XDR *, SCHAR *, u_int);
 static bool_t xnet_read(XDR *);
 static bool_t xnet_setpostn(XDR *, u_int);
@@ -1349,47 +1341,6 @@ ULONG connection_setup(TEXT * name, PACKET * packet, STATUS * status_vector)
 		}
 	}
 
-#ifdef CHECK_THIS
-/* We're a server, so wait for a host to show up */
-
-	if (flag & SRVR_multi_client) {
-		int optlen;
-		int optval = TRUE;
-		struct linger lingerInfo;
-
-		lingerInfo.l_onoff = 0;
-		lingerInfo.l_linger = 0;
-
-		n = setsockopt((SOCKET) port->port_handle, SOL_SOCKET, SO_REUSEADDR,
-					   (SCHAR *) & optval, sizeof(optval));
-		if (n == -1) {
-			xnet_error(port, "setsockopt REUSE", isc_net_connect_listen_err,
-					   ERRNO);
-			disconnect(port);
-			return NULL;
-		}
-
-		/* Get any values for SO_LINGER so that they can be reset during
-		 * disconnect.  SO_LINGER should be set by default on the socket
-		 */
-		optlen = sizeof(port->port_linger);
-		n = getsockopt((SOCKET) port->port_handle, SOL_SOCKET, SO_LINGER,
-					   (SCHAR *) & port->port_linger, &optlen);
-
-		if (n != 0)				/* getsockopt failed */
-			port->port_linger.l_onoff = 0;
-
-		n = setsockopt((SOCKET) port->port_handle, SOL_SOCKET, SO_LINGER,
-					   (SCHAR *) & lingerInfo, sizeof(lingerInfo));
-		if (n == -1) {
-			xnet_error(port, "setsockopt LINGER", isc_net_connect_listen_err,
-					   ERRNO);
-			disconnect(port);
-			return NULL;
-		}
-	}
-#endif /* CHECK_THIS */
-
 	sock_id = bind((SOCKET) port->port_handle,
 				   (struct sockaddr *) &address, sizeof(address));
 
@@ -1406,7 +1357,6 @@ ULONG connection_setup(TEXT * name, PACKET * packet, STATUS * status_vector)
 		return NULL;
 	}
 
-#ifdef							/* CHECK_THIS */
 	if (flag & SRVR_multi_client) {
 		/* Prevent the generation of dummy keepalive packets on the
 		   connect port. */
@@ -1417,7 +1367,6 @@ ULONG connection_setup(TEXT * name, PACKET * packet, STATUS * status_vector)
 		gds__register_cleanup(exit_handler, (void *) port);
 		return port;
 	}
-#endif /* CHECK_THIS */
 
 	while (TRUE) {
 		int l;
@@ -2153,12 +2102,7 @@ static bool_t xnet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
 }
 
 
-static bool_t xnet_getlong( XDR * xdrs,
-#ifndef NEW
-						   SLONG * lp)
-#else
-						   SCHAR * lp)
-#endif
+static bool_t xnet_getlong( XDR * xdrs,  SLONG * lp)
 {
 /**************************************
  *
@@ -2170,27 +2114,12 @@ static bool_t xnet_getlong( XDR * xdrs,
  *	Fetch a longword into a memory stream if it fits.
  *
  **************************************/
-#ifndef NEW
 	SLONG l;
 
 	if (!(*xdrs->x_ops->x_getbytes) (xdrs, reinterpret_cast<SCHAR*>(&l), 4))
 		return FALSE;
 	*lp = ntohl(l);
 	return TRUE;
-#else /* NEW */
-/* check how many spare bytes we already have, if we less than four then we
- * need to get more else just move the required bytes.*/
-	if (xdrs->x_handy < 4)
-		return (*xdrs->x_ops->x_getbytes) (xdrs, lp, 4);
-	else {
-		*lp++ = *xdrs->x_private++;
-		*lp++ = *xdrs->x_private++;
-		*lp++ = *xdrs->x_private++;
-		*lp++ = *xdrs->x_private++;
-		xdrs->x_handy -= 4;
-		return TRUE;
-	}
-#endif /* NEW */
 }
 
 
@@ -2294,12 +2223,7 @@ static bool_t xnet_putbytes( XDR * xdrs, SCHAR * buff, u_int count)
 }
 
 
-static bool_t xnet_putlong( XDR * xdrs,
-#ifndef NEW
-						   SLONG * lp)
-#else
-						   SCHAR * lp)
-#endif
+static bool_t xnet_putlong( XDR * xdrs, SLONG * lp)
 {
 /**************************************
  *
@@ -2311,23 +2235,10 @@ static bool_t xnet_putlong( XDR * xdrs,
  *	Fetch a longword into a memory stream if it fits.
  *
  **************************************/
-#ifndef NEW
 	SLONG l;
 
 	l = htonl(*lp);
 	return (*xdrs->x_ops->x_putbytes) (xdrs, reinterpret_cast<SCHAR*>(AOF32L(l)), 4);
-#else /* NEW */
-	if (xdrs->x_handy < 4)
-		return (*xdrs->x_ops->x_putbytes) (xdrs, lp, 4);
-	else {
-		*xdrs->x_private++ = *lp++;
-		*xdrs->x_private++ = *lp++;
-		*xdrs->x_private++ = *lp++;
-		*xdrs->x_private++ = *lp++;
-		xdrs->x_handy -= 4;
-		return TRUE;
-	}
-#endif /* NEW */
 }
 
 
