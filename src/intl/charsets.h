@@ -19,6 +19,8 @@
 #ifndef INTL_CHARSETS_H
 #define INTL_CHARSETS_H
 
+#define DEFAULT_ATTACHMENT_CHARSET	CS_NONE
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -52,7 +54,6 @@ extern "C" {
 #define   CS_LATIN8             38	/* ISO-8859.8       */
 #define   CS_LATIN9             39	/* ISO-8859.9       */
 
-#define   CS_ANSI               40	/* ANSI             */
 #define   CS_KSC5601            44	/* KOREAN STANDARD 5601 */
 
 #define   CS_DOS_852		45	/* DOS CP 852   */
