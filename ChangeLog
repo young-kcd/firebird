@@ -1,3 +1,41 @@
+2004-03-19 12:25  aafemt
+
+	* firebird2/src/jrd/: opt.cpp, par.cpp:
+	
+	Fix double const
+
+2004-03-19 12:21  aafemt
+
+	* firebird2/src/jrd/jrd.h:
+	
+	reorder initializers to satisfy gcc
+
+2004-03-19 07:14  robocop
+
+	* firebird2/src/: alice/alice.cpp, alice/alice.h,
+	alice/alice_meta.epp, alice/all.cpp, alice/exe.cpp, alice/tdr.cpp,
+	dsql/metd.epp, dudley/lex.cpp, dudley/parse.cpp, jrd/blb.cpp,
+	jrd/blb.h, jrd/blb_proto.h, jrd/blf_proto.h, jrd/blk.h,
+	jrd/blob_filter.cpp, jrd/blob_filter.h, jrd/bookmark.cpp,
+	jrd/bookmark.h, jrd/btr.cpp, jrd/btr.h, jrd/btr_proto.h,
+	jrd/cmp.cpp, jrd/cmp_proto.h, jrd/cvt2.cpp, jrd/dbg.cpp,
+	jrd/dbt.cpp, jrd/dfw.epp, jrd/dls.cpp, jrd/dls_proto.h,
+	jrd/dmp.cpp, jrd/dyn.epp, jrd/dyn_def.epp, jrd/evl.cpp,
+	jrd/evl_like.cpp, jrd/evl_proto.h, jrd/exe.cpp, jrd/exe.h,
+	jrd/filte_proto.h, jrd/filters.cpp, jrd/fun.epp, jrd/grant.epp,
+	jrd/idx.cpp, jrd/idx_proto.h, jrd/inf.cpp, jrd/intl.cpp,
+	jrd/jrd.cpp, jrd/jrd.h, jrd/met.epp, jrd/met.h, jrd/met_proto.h,
+	jrd/nav.cpp, jrd/nav_proto.h, jrd/opt.cpp, jrd/pag.cpp, jrd/pag.h,
+	jrd/pcmet.epp, jrd/req.h, jrd/rng.cpp, jrd/rng.h, jrd/rng_proto.h,
+	jrd/rse.cpp, jrd/rse.h, jrd/rse_proto.h, jrd/scl.epp, jrd/scl.h,
+	jrd/sdl.cpp, jrd/sdl_proto.h, jrd/sdw.cpp, jrd/sort.cpp,
+	jrd/sort.h, jrd/sort_mem.cpp, jrd/sort_mem.h, jrd/sort_proto.h,
+	jrd/svc.cpp, jrd/sym.cpp, jrd/sym_proto.h, jrd/tpc.cpp, jrd/tpc.h,
+	jrd/tra.h, jrd/val.cpp, jrd/val.h, jrd/os/vms/extvms.cpp,
+	qli/eval.cpp, qli/eval_proto.h, utilities/rebuild/rebuild.cpp:
+	
+	Cleanup A few new[] - delete[] pairs fixed.
+
 2004-03-18 20:19  skidder
 
 	* firebird2/src/jrd/opt.cpp:
