@@ -589,7 +589,6 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 		strcpy(temp_buffer, file_name);
 	}
 	strcpy(alias_buffer, temp_buffer);
-	strupr(alias_buffer);
 	bool is_alias = ResolveDatabaseAlias(alias_buffer, temp_buffer);
 	file_name = temp_buffer;
 	file_length = strlen(file_name);
