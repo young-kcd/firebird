@@ -1,3 +1,29 @@
+2004-10-05 17:09  hvlad
+
+	* firebird2/src/dsql/ddl.cpp (1.50.2.3):
+	
+	Use named constant
+
+2004-10-05 17:01  dimitr
+
+	* firebird2/doc/WhatsNew (1.36.2.23):
+	
+	Added recent commits.
+
+2004-10-05 16:32  dimitr
+
+	* firebird2/src/jrd/isc_version.h (1.1.2.21):
+	
+	Corrected compatibility version info.
+
+2004-10-05 12:56  paul_reeves
+
+	* firebird2/: builds/win32/make_examples.bat (1.4.2.3),
+	src/install/arch-specific/win32/BuildExecutableInstall.bat
+	(1.10.2.14), src/jrd/isc_version.h (1.1.2.20):
+	
+	Minor tweaks to Win32 build process. Increment Build Number.
+
 2004-10-04 18:55  alexpeshkoff
 
 	* firebird2/src/jrd/ExecuteStatement.cpp (1.14.2.4):
