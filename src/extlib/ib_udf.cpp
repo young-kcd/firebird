@@ -141,7 +141,7 @@ double EXPORT IB_UDF_div( long *a, long *b)
 		/* This is a Kludge!  We need to return INF, 
 		   but this seems to be the only way to do 
 		   it since there seens to be no constant for it. */
-		return (1 / tan(0));
+		return (1 / tan(0.0));
 
 }
 
@@ -244,7 +244,7 @@ double EXPORT IB_UDF_mod( long *a, long *b)
 		/* This is a Kludge!  We need to return INF, 
 		   but this seems to be the only way to do 
 		   it since there seens to be no constant for it. */
-		return (1 / tan(0));
+		return (1 / tan(0.0));
 }
 
 double EXPORT IB_UDF_pi()
