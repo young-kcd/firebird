@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.linux:	$(VERSION)	$(PLATFORM)
-#$Id: prefix.linux,v 1.14 2003-02-11 05:13:36 aafemt Exp $
+#$Id: prefix.linux,v 1.15 2003-03-05 15:42:26 brodsom Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major cleanup
 
 # The foillowing has been commented out since gcc 3.2 has some problems
@@ -24,8 +24,12 @@
 PROD_FLAGS=-O3 -march=i386 -DNDEBUG -DLINUX -pipe -MMD -fPIC
 DEV_FLAGS=-ggdb -DLINUX -DDEBUG_GDS_ALLOC -pipe -MMD -p -fPIC -Wall -Wno-switch
 
+OS_ServerFiles=inet_server.cpp
+
 LIB_LINK_OPTIONS:=-shared
 LIB_LINK_RPATH:=-Wl,-rpath,
 LIB_LINK_SONAME:=-Wl,-soname,
+EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec 
+CLIENT_UTIL_TARGETS=gds_drop gds_delay gstat gsec fbguard fbmgr_bin
 
 Physical_IO_Module=unix.cpp

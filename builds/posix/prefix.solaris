@@ -52,8 +52,12 @@ DEV_FLAGS= $(CFLAGS_COMMON) $(SFIO_FLAGS) $(COMMON_GCC_CFLAGS) $(DEBUG_GCC_FLAGS
 # extra modules needed on this platform during bootstrap phase
 JRDBOOT_Extra_Files=isc_sync.cpp thd.cpp
 
+OS_ServerFiles=inet_server.cpp
+
 LIB_LINK_OPTIONS:= -G
 LIB_LINK_RPATH:=-R
 LIB_LINK_SONAME:=-h
+EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec 
+CLIENT_UTIL_TARGETS=gds_drop gds_delay gstat gsec fbguard fbmgr_bin
 
 Physical_IO_Module=unix.cpp
