@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin,v 1.4 2001-08-07 02:15:26 bellardo Exp $
+#$Id: prefix.darwin,v 1.5 2001-10-17 22:48:01 bellardo Exp $
 
 
 #_____________________________________________________________________________
@@ -178,11 +178,15 @@ DARWIN_FOUNDATION_LINK=	-framework Foundation
 
 # Options for linking the FB shared library.
 LIBGDS_SO := $(LIB)/libgds.dylib
-LIB_LINK := libtool -dynamic \
-		-install_name $(FW_NAME)/Versions/A/$(FBFW_PREFIX) \
+LIB_LINK := libtool
+LIBGDS_LINK_OPTIONS := -dynamic -install_name \
+		$(FW_NAME)/Versions/A/$(FBFW_PREFIX) \
 		-current_version $(FW_VERS) \
-		-compatibility_version $(FW_COMPAT_VERS)
-LIB_LINK_OPTIONS := -framework System -framework CoreFoundation -lstdc++ -lcc_dynamic
+		-compatibility_version $(FW_COMPAT_VERS) \
+		-framework System -framework CoreFoundation \
+		-lstdc++ -lcc_dynamic
+
+LIB_LINK_OPTIONS := -dynamic
 
 # The routines used for IO.  Darwin uses the unix routines.
 IO_Sources=             unix.cpp

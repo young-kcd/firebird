@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-  $Id: isql.epp,v 1.4 2001-10-17 21:53:38 bellardo Exp $
+  $Id: isql.epp,v 1.5 2001-10-17 22:48:01 bellardo Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -663,7 +663,7 @@ static void readNextInputLine(const char* prompt) {
     //   (need to check if lineSize or lineSize +1 - I hate C and don't remember it exactly
     //   I've left it here as a guide.
 
-    lastInputLine = malloc(BUFFER_LENGTH512);
+    lastInputLine = (char*)malloc(BUFFER_LENGTH512);
     if (!ib_fgets(lastInputLine, BUFFER_LENGTH512, ib_stdin)) {
         free(lastInputLine);
         lastInputLine = NULL;

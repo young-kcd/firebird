@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.intl,v 1.4 2001-08-13 08:14:38 skywalker Exp $
+#   $Id: Makefile.in.intl,v 1.5 2001-10-17 22:48:01 bellardo Exp $
 # 
 
 ROOT=../..
@@ -68,7 +68,7 @@ INTL_DIR = $(FIREBIRD)/intl
 intl: $(LIBGDSINTL_LA)
 
 $(LIBGDSINTL_LA) : $(INTL_Objects1)
-	$(LIB_LINK)  $(LIB_LINK_OPTIONS) -o$(LIBGDSINTL_LA) $^
+	$(LIB_LINK)  $(LIB_LINK_OPTIONS) -o $(LIBGDSINTL_LA) $^
 
 
 # In the original there was a few quite involved things being done to make

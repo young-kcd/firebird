@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.rules,v 1.10 2001-08-27 15:29:18 skywalker Exp $
+#   $Id: make.rules,v 1.11 2001-10-17 22:48:01 bellardo Exp $
 # 
 
 #____________________________________________________________________________
@@ -125,10 +125,10 @@ else
 #    LIB_LINK_OPTIONS = -soname libgds.so.2 -rpath /usr/lib
     LIB_LINK_OPTIONS =
 
-    EXE_LINK = g++
-    STATICEXE_LINK = g++
-#    EXE_LINK = @CXX@
-#    STATICEXE_LINK = @CXX@
+#    EXE_LINK = g++
+#    STATICEXE_LINK = g++
+    EXE_LINK = @CXX@
+    STATICEXE_LINK = @CXX@
 endif
 
 
