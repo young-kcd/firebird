@@ -76,7 +76,7 @@ void main( int argc, char **argv)
 	UCHAR op[500], arg[500];
 	SSHORT type, slot, n, agg;
 	SLONG lock, parent, data;
-	STATUS status, status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status, status_vector[ISC_STATUS_LENGTH];
 
 	ib_printf("\nStand alone Lock Manager driver program.\n");
 	ib_printf("****************************************\n\n");
@@ -236,7 +236,7 @@ static void ast( int slot)
  *	Dummy blocking ast.
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	int sw_release_use = sw_release;
 
 	ib_printf("*** blocking AST for lock# %d ", slot);

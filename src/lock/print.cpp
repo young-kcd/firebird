@@ -141,7 +141,7 @@ void CLIB_ROUTINE main( int argc, char *argv[])
 	SHB shb;
 	SRQ que, slot;
 	SCHAR *p, c;
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	SLONG redir_in, redir_out, redir_err;
 	SLONG hash_total_count, hash_lock_count, hash_min_count, hash_max_count;
 	float bottleneck;

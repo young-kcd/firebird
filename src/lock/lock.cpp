@@ -36,7 +36,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.45 2003-04-08 01:02:29 brodsom Exp $
+$Id: lock.cpp,v 1.46 2003-04-10 10:08:31 aafemt Exp $
 */
 
 #include "firebird.h"
@@ -194,10 +194,10 @@ extern SCHAR *sys_errlist[];
 #endif
 
 static void acquire(PTR);
-static UCHAR *alloc(SSHORT, STATUS *);
-static LBL alloc_lock(USHORT, STATUS *);
+static UCHAR *alloc(SSHORT, ISC_STATUS *);
+static LBL alloc_lock(USHORT, ISC_STATUS *);
 #ifdef USE_STATIC_SEMAPHORES
-static USHORT alloc_semaphore(OWN, STATUS *);
+static USHORT alloc_semaphore(OWN, ISC_STATUS *);
 #endif
 #ifndef SUPERSERVER
 // This is either signal handler of called from blocking_thread
@@ -208,12 +208,12 @@ static void blocking_action2(PTR, PTR);
 #ifdef USE_BLOCKING_THREAD
 static void THREAD_ROUTINE blocking_action_thread(PTR *);
 #endif
-static void bug(STATUS *, const TEXT *);
+static void bug(ISC_STATUS *, const TEXT *);
 #ifdef DEV_BUILD
 static void bug_assert(const TEXT *, ULONG);
 #endif
-static BOOLEAN convert(PTR, UCHAR, SSHORT, FPTR_INT, int *, STATUS *);
-static USHORT create_owner(STATUS *, SLONG, UCHAR, SLONG *);
+static BOOLEAN convert(PTR, UCHAR, SSHORT, FPTR_INT, int *, ISC_STATUS *);
+static USHORT create_owner(ISC_STATUS *, SLONG, UCHAR, SLONG *);
 #ifdef DEV_BUILD
 static void current_is_active_owner(BOOLEAN, ULONG);
 #endif
@@ -227,13 +227,13 @@ static void debug_delay(ULONG);
 static void exit_handler(void *);
 static LBL find_lock(PTR, USHORT, UCHAR *, USHORT, USHORT *);
 #ifdef MANAGER_PROCESS
-static USHORT fork_lock_manager(STATUS *);
+static USHORT fork_lock_manager(ISC_STATUS *);
 static OWN get_manager(BOOLEAN);
 #endif
 static LRQ get_request(PTR);
 static void grant(LRQ, LBL);
 static PTR grant_or_que(LRQ, LBL, SSHORT);
-static STATUS init_lock_table(STATUS *);
+static ISC_STATUS init_lock_table(ISC_STATUS *);
 static void init_owner_block(OWN, UCHAR, ULONG, USHORT);
 #ifdef USE_WAKEUP_EVENTS
 static void lock_alarm_handler(EVENT);
@@ -259,7 +259,7 @@ static void release_request(LRQ);
 static void release_semaphore(OWN);
 #endif
 #ifdef USE_BLOCKING_THREAD
-static void shutdown_blocking_thread(STATUS *);
+static void shutdown_blocking_thread(ISC_STATUS *);
 #endif
 static int signal_owner(OWN, PTR);
 #ifdef VALIDATE_LOCK_TABLE
@@ -271,7 +271,7 @@ static void validate_request(PTR, USHORT, USHORT);
 //static void validate_block(PTR);
 #endif
 
-static USHORT wait_for_request(LRQ, SSHORT, STATUS *);
+static USHORT wait_for_request(LRQ, SSHORT, ISC_STATUS *);
 //static void wakeup_action(PTR *);
 
 static struct own LOCK_process_owner;	/* Place holder */
@@ -375,7 +375,7 @@ int LOCK_convert(PTR		request_offset,
 				 SSHORT		lck_wait,
 				 int		(*ast_routine) (void *),
 				 void*		ast_argument,
-				 STATUS*	status_vector)
+				 ISC_STATUS*	status_vector)
 {
 /**************************************
  *
@@ -458,7 +458,7 @@ int LOCK_deq( PTR request_offset)
 }
 
 
-UCHAR LOCK_downgrade(PTR request_offset, STATUS * status_vector)
+UCHAR LOCK_downgrade(PTR request_offset, ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -533,7 +533,7 @@ SLONG LOCK_enq(	PTR		prior_request,
 				void*	ast_argument,
 				SLONG	data,
 				SSHORT	lck_wait,
-				STATUS*	status_vector,
+				ISC_STATUS*	status_vector,
 				PTR		owner_offset)
 {
 /**************************************
@@ -697,7 +697,7 @@ SLONG LOCK_enq(	PTR		prior_request,
 }
 
 
-void LOCK_fini( STATUS * status_vector, PTR * owner_offset)
+void LOCK_fini( ISC_STATUS * status_vector, PTR * owner_offset)
 {
 /**************************************
  *
@@ -760,7 +760,7 @@ void LOCK_fini( STATUS * status_vector, PTR * owner_offset)
 
 
 int LOCK_init(
-			  STATUS * status_vector,
+			  ISC_STATUS * status_vector,
 			  SSHORT owner_flag,
 			  SLONG owner_id, UCHAR owner_type, SLONG * owner_handle)
 {
@@ -838,7 +838,7 @@ int LOCK_init(
 		*status_vector++ = gds_arg_gds;
 		*status_vector++ = gds_sys_request;
 		*status_vector++ = gds_arg_string;
-		*status_vector++ = (STATUS) "CreateThread";
+		*status_vector++ = (ISC_STATUS) "CreateThread";
 		*status_vector++ = gds_arg_win32;
 		*status_vector++ = GetLastError();
 		*status_vector++ = gds_arg_end;
@@ -869,7 +869,7 @@ int LOCK_init(
 		*status_vector++ = gds_arg_gds;
 		*status_vector++ = gds_sys_request;
 		*status_vector++ = gds_arg_string;
-		*status_vector++ = (STATUS) "thr_create";
+		*status_vector++ = (ISC_STATUS) "thr_create";
 		*status_vector++ = gds_arg_unix;
 		*status_vector++ = status;
 		*status_vector++ = gds_arg_end;
@@ -909,7 +909,7 @@ void LOCK_manager( PTR manager_owner_offset)
 	OWN manager_owner, owner;
 	SRQ que;
 	int ret = FB_FAILURE;
-	STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS local_status[ISC_STATUS_LENGTH];
 	SLONG value;
 	USHORT semaphore;
 	EVENT event_ptr;
@@ -1481,7 +1481,7 @@ static void acquire( PTR owner_offset)
 /* Do not do Lock table remapping for SUPERSERVER. Specify required
    lock table size in the configuration file */
 #if !defined SUPERSERVER && defined HAVE_MMAP
-		STATUS status_vector[ISC_STATUS_LENGTH];
+		ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 		header =
 			(LHB) ISC_remap_file(status_vector, &LOCK_data, length, FALSE);
 		if (!header)
@@ -1573,7 +1573,7 @@ static void acquire( PTR owner_offset)
 }
 
 
-static UCHAR *alloc( SSHORT size, STATUS * status_vector)
+static UCHAR *alloc( SSHORT size, ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -1619,7 +1619,7 @@ static UCHAR *alloc( SSHORT size, STATUS * status_vector)
 				*status_vector++ = gds_arg_gds;
 				*status_vector++ = gds_random;
 				*status_vector++ = gds_arg_string;
-				*status_vector++ = (STATUS) "lock manager out of room";
+				*status_vector++ = (ISC_STATUS) "lock manager out of room";
 				*status_vector++ = gds_arg_end;
 			}
 
@@ -1637,7 +1637,7 @@ static UCHAR *alloc( SSHORT size, STATUS * status_vector)
 }
 
 
-static LBL alloc_lock( USHORT length, STATUS * status_vector)
+static LBL alloc_lock( USHORT length, ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -1683,7 +1683,7 @@ static LBL alloc_lock( USHORT length, STATUS * status_vector)
 
 
 #ifdef USE_STATIC_SEMAPHORES
-static USHORT alloc_semaphore( OWN owner, STATUS * status_vector)
+static USHORT alloc_semaphore( OWN owner, ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -1997,7 +1997,7 @@ static void bug_assert( const TEXT * string, ULONG line)
 #endif
 
 
-static void bug( STATUS * status_vector, const TEXT * string)
+static void bug( ISC_STATUS * status_vector, const TEXT * string)
 {
 /**************************************
  *
@@ -2047,7 +2047,7 @@ static void bug( STATUS * status_vector, const TEXT * string)
 			*status_vector++ = gds_arg_gds;
 			*status_vector++ = gds_random;
 			*status_vector++ = gds_arg_string;
-			*status_vector++ = (STATUS) string;
+			*status_vector++ = (ISC_STATUS) string;
 			*status_vector++ = gds_arg_end;
 			return;
 		}
@@ -2076,7 +2076,7 @@ static BOOLEAN convert(PTR		request_offset,
 					   SSHORT	lck_wait,
 					   int		(*ast_routine)(),
 					   int*		ast_argument,
-					   STATUS*	status_vector)
+					   ISC_STATUS*	status_vector)
 {
 /**************************************
  *
@@ -2175,7 +2175,7 @@ static BOOLEAN convert(PTR		request_offset,
 }
 
 
-static USHORT create_owner(STATUS*	status_vector,
+static USHORT create_owner(ISC_STATUS*	status_vector,
 						   SLONG	owner_id,
 						   UCHAR	owner_type,
 						   SLONG*	owner_handle)
@@ -2656,7 +2656,7 @@ static void exit_handler( void *arg)
  *	by the cleanup handler.
  *
  **************************************/
-	STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS local_status[ISC_STATUS_LENGTH];
 
 	if (!LOCK_header) {
 		return;
@@ -2769,7 +2769,7 @@ static LBL find_lock(
 
 
 #ifdef MANAGER_PROCESS
-static USHORT fork_lock_manager( STATUS * status_vector)
+static USHORT fork_lock_manager( ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -2861,7 +2861,7 @@ static OWN get_manager( BOOLEAN flag)
 /* Oops -- no lock manager.  */
 
 	if (flag)
-		fork_lock_manager((STATUS *) NULL);
+		fork_lock_manager((ISC_STATUS *) NULL);
 
 	return NULL;
 }
@@ -2980,7 +2980,7 @@ static PTR grant_or_que( LRQ request, LBL lock, SSHORT lck_wait)
 
 	if (lck_wait)
 	{
-		(void) wait_for_request(request, lck_wait, (STATUS *) NULL);
+		(void) wait_for_request(request, lck_wait, (ISC_STATUS *) NULL);
 
 		/* For performance reasons, we're going to look at the 
 		 * request's status without re-acquiring the lock table.
@@ -3012,7 +3012,7 @@ static PTR grant_or_que( LRQ request, LBL lock, SSHORT lck_wait)
 }
 
 
-static STATUS init_lock_table( STATUS * status_vector)
+static ISC_STATUS init_lock_table( ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -4105,7 +4105,7 @@ static void release_semaphore( OWN owner)
 
 
 #ifdef USE_BLOCKING_THREAD
-static void shutdown_blocking_thread( STATUS * status_vector)
+static void shutdown_blocking_thread( ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -4840,7 +4840,7 @@ static void validate_shb( PTR shb_ptr)
 
 static USHORT wait_for_request(
 							   LRQ request,
-							   SSHORT lck_wait, STATUS * status_vector)
+							   SSHORT lck_wait, ISC_STATUS * status_vector)
 {
 /**************************************
  *

@@ -49,7 +49,7 @@ int main( int argc, char **argv)
  * Functional description
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	SLONG owner_handle;
 
 	if (setreuid(0, 0) < 0)

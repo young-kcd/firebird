@@ -25,14 +25,14 @@
 #define _LOCK_LOCK_PROTO_H_
 
 int	LOCK_convert(SLONG, UCHAR, SSHORT, int (*)(void *), void *,
-						STATUS *);
+						ISC_STATUS *);
 int		LOCK_deq(SLONG);
-UCHAR	LOCK_downgrade(SLONG, STATUS *);
+UCHAR	LOCK_downgrade(SLONG, ISC_STATUS *);
 SLONG	LOCK_enq(SLONG, SLONG, USHORT, UCHAR *, USHORT, UCHAR,
-					  int (*)(void *), void *, SLONG, SSHORT, STATUS *,
+					  int (*)(void *), void *, SLONG, SSHORT, ISC_STATUS *,
 					  SLONG);
-void	LOCK_fini(STATUS *, SLONG *);
-int		LOCK_init(STATUS *, SSHORT, SLONG, UCHAR, SLONG *);
+void	LOCK_fini(ISC_STATUS *, SLONG *);
+int		LOCK_init(ISC_STATUS *, SSHORT, SLONG, UCHAR, SLONG *);
 void	LOCK_manager(SLONG);
 SLONG	LOCK_query_data(SLONG, USHORT, USHORT);
 SLONG	LOCK_read_data(SLONG);
