@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.15 2003-02-27 04:36:03 brodsom Exp $
+ *  $Id: fb_types.h,v 1.16 2003-02-27 21:09:51 brodsom Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -38,10 +38,35 @@
 #define INCLUDE_FB_TYPES_H
 
 
+/******************************************************************/
+/* Define type, export and other stuff based on c/c++ and Windows */
+/******************************************************************/
+
+#define  ISC_FAR
+
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
-#  define  GDS_EXPORT	__stdcall
+#define  ISC_FAR
+#ifndef __GNUC__
+typedef __int64				ISC_INT64;
+typedef unsigned __int64	ISC_UINT64;
+#define  ISC_INT64_DEFINED
+#endif
+#define  GDS_EXPORT	__stdcall
+#define  GDS_EXPORT_VARARG	__cdecl
 #else
-#  define  GDS_EXPORT
+#define  GDS_EXPORT
+#define  GDS_EXPORT_VARARG
+#endif
+
+/*******************************************************************/
+/* 64 bit Integers                                                 */
+/*******************************************************************/
+
+#ifdef  ISC_INT64_DEFINED
+#undef  ISC_INT64_DEFINED
+#else
+typedef long long int			ISC_INT64;
+typedef unsigned long long int	ISC_UINT64;
 #endif
 
 #if SIZEOF_LONG == 8

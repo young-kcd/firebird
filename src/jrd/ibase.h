@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.30 2003-02-27 20:06:44 brodsom Exp $
+$Id: ibase.h,v 1.31 2003-02-27 21:09:37 brodsom Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -70,24 +70,6 @@ $Id: ibase.h,v 1.30 2003-02-27 20:06:44 brodsom Exp $
 #define  DSQL_drop      2
 
 
-/******************************************************************/
-/* Define type, export and other stuff based on c/c++ and Windows */
-/******************************************************************/
-
-#define ISC_FAR
-
-#if (defined(WIN32) || defined(_WIN32) || defined(__WIN32__))
-#define  ISC_FAR
-#define  GDS_EXPORT_VARARG	__cdecl
-#ifndef __GNUC__
-typedef __int64				ISC_INT64;
-typedef unsigned __int64	ISC_UINT64;
-#define  ISC_INT64_DEFINED
-#endif
-#else /* Not Windows */
-#define  GDS_EXPORT_VARARG
-#endif /* Windows/NT */
-
 /********************************/
 /* InterBase Handle Definitions */
 /********************************/
@@ -105,17 +87,6 @@ typedef FRBRD ISC_FAR* isc_svc_handle;
 typedef FRBRD ISC_FAR* isc_tr_handle;
 typedef void (ISC_FAR* isc_callback) ();
 typedef ISC_LONG isc_resv_handle;
-
-/*******************************************************************/
-/* 64 bit Integers                                                 */
-/*******************************************************************/
-
-#ifdef  ISC_INT64_DEFINED
-#undef  ISC_INT64_DEFINED
-#else
-typedef long long int			ISC_INT64;
-typedef unsigned long long int	ISC_UINT64;
-#endif
 
 /*******************************************************************/
 /* Time & Date Support                                             */
