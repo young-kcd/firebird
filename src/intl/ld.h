@@ -500,6 +500,7 @@ struct CompressPair {
 /*
 #define USERDEFINED_MIN         201
 #define USERDEFINED_MAX         255
+*/
 
 /*
 //-----------------------------------------------------------------
@@ -558,9 +559,12 @@ struct CompressPair {
 // VCS AREA
 //-----------------------------------------------------------------
 
-//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.17 2003-02-13 09:52:17 dimitr Exp $
+//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.18 2003-02-14 13:47:27 eku Exp $
 
 //	$Log: not supported by cvs2svn $
+//	Revision 1.17  2003/02/13 09:52:17  dimitr
+//	CONST -> const
+//	
 //	Revision 1.16  2003/02/12 02:53:47  brodsom
 //	Remove commit non used defines
 //	
