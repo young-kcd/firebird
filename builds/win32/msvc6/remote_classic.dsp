@@ -151,7 +151,6 @@ SOURCE=..\..\..\src\remote\xdr.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\remote\xnet.cpp
-# PROP Exclude_From_Build 1
 # End Source File
 # End Group
 # Begin Group "Header files"
