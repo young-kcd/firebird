@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: locks.h,v 1.8 2003-09-08 20:23:32 skidder Exp $
+ *  $Id: locks.h,v 1.9 2003-11-11 23:58:49 stryqx Exp $
  *
  */
 
@@ -90,7 +90,7 @@ public:
 
 /* Process-local spinlock. Used to manage memory heaps in threaded environment. */
 // Pthreads version of the class
-#ifndef SOLARIS
+#if !defined(SOLARIS) && !defined(DARWIN) && !defined(FREEBSD)
 class Spinlock {
 private:
 	pthread_spinlock_t spinlock;
@@ -113,6 +113,7 @@ public:
 	}
 };
 #else
+#ifdef SOLARIS
 // Who knows why Solaris 2.6 have not THIS funny spins?
 //The next code is not comlpeted but let me compile //Konstantin
 class Spinlock {
@@ -136,6 +137,29 @@ public:
 			system_call_failed::raise();
 	}
 };
+#else  // DARWIN and FREEBSD
+class Spinlock {
+private:
+	pthread_mutex_t mlock;
+public:
+	Spinlock() {
+		if (pthread_mutex_init(&mlock, 0))
+			system_call_failed::raise();
+	}
+	~Spinlock() {
+		if (pthread_mutex_destroy(&mlock))
+			system_call_failed::raise();
+	}
+	void enter() {
+		if (pthread_mutex_lock(&mlock))
+			system_call_failed::raise();
+	}
+	void leave() {
+		if (pthread_mutex_unlock(&mlock))
+			system_call_failed::raise();
+	}
+};
+#endif
 
 #endif
 #endif
