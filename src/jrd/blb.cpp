@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.69 2004-04-25 21:52:42 skidder Exp $
+$Id: blb.cpp,v 1.70 2004-04-27 01:45:53 skidder Exp $
 */
 
 #include "firebird.h"
@@ -951,7 +951,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 		if (array)
 			array->arr_request = request;
 	}
-	release_blob(blob, true);
+	release_blob(blob, !materialized_blob);
 }
 
 
