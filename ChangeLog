@@ -1,3 +1,9 @@
+2004-01-14 10:57  stryqx
+
+	* firebird2/src/install/arch-specific/freebsd/install.sh.in:
+	
+	Make this script work on a clean system.
+
 2004-01-13 14:40  eku
 
 	* firebird2/src/common/utils.cpp:
