@@ -132,6 +132,21 @@ Package=<4>
 
 ###############################################################################
 
+Project: "gdef"=.\gdef.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name fbclient
+    End Project Dependency
+}}}
+
+###############################################################################
+
 Project: "gds32"=.\gds32.dsp - Package Owner=<4>
 
 Package=<5>
@@ -223,6 +238,30 @@ Package=<4>
 ###############################################################################
 
 Project: "ib_util"=.\ib_util.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "instreg"=.\instreg.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "instsvc"=.\instsvc.dsp - Package Owner=<4>
 
 Package=<5>
 {{{

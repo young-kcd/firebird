@@ -111,13 +111,6 @@ SOURCE=..\..\..\src\jrd\dsc.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\enc.cpp
-
-!IF  "$(CFG)" == "fbclient - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "fbclient - Win32 Release"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
@@ -334,46 +327,18 @@ SOURCE=..\..\..\src\remote\remote.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\remote\spxnet32.cpp
-
-!IF  "$(CFG)" == "fbclient - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "fbclient - Win32 Release"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\remote\wnet.cpp
-
-!IF  "$(CFG)" == "fbclient - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "fbclient - Win32 Release"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\remote\xdr.cpp
-
-!IF  "$(CFG)" == "fbclient - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "fbclient - Win32 Release"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\remote\xnet.cpp
-
-!IF  "$(CFG)" == "fbclient - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "fbclient - Win32 Release"
-
-!ENDIF 
-
 # End Source File
 # End Group
 # Begin Group "dsql Source Files"
