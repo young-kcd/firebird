@@ -107,6 +107,7 @@ void PARSE_STATUS(STATUS * status_vector, int &length, int &warning)
 		case gds_arg_gds:
 		case gds_arg_string:
 		case gds_arg_number:
+		case gds_arg_interpreted:
 		case gds_arg_vms:
 		case gds_arg_unix:
 		case gds_arg_win32:
