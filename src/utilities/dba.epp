@@ -37,7 +37,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include "../jrd/ibsetjmp.h"
-#include "../jrd/time.h"
+#include "../jrd/jrd_time.h"
 #include "../jrd/gds.h"
 #include "../jrd/ods.h"
 #include "../jrd/license.h"
@@ -63,7 +63,7 @@
 #ifdef WIN_NT
 #include <io.h>
 #include <windows.h>
-#include "../jrd/pwd.h"
+#include "../jrd/jrd_pwd.h"
 #endif
 
 
@@ -169,7 +169,7 @@ static void dba_print(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
 #include <share.h>
 #endif
 
-#include "../jrd/pwd.h"
+#include "../jrd/jrd_pwd.h"
 #include "../utilities/ppg_proto.h"
 
 #define FPRINTF		SVC_fprintf

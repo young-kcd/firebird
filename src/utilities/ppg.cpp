@@ -28,7 +28,7 @@
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../jrd/common.h"
-#include "../jrd/time.h"
+#include "../jrd/jrd_time.h"
 #include "../jrd/gds.h"
 #include "../jrd/ods.h"
 #include "../jrd/gds_proto.h"

@@ -29,7 +29,7 @@
 
 #include "../jrd/gds.h"
 #include "../jrd/jrd.h"
-#include "../jrd/time.h"
+#include "../jrd/jrd_time.h"
 #include "../jrd/pag.h"
 #include "../jrd/tra.h"
 #include "../utilities/rebuild.h"

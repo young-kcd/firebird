@@ -31,7 +31,7 @@
 #include <errno.h>
 #include <string.h>
 #include "../jrd/ibsetjmp.h"
-#include "../jrd/time.h"
+#include "../jrd/jrd_time.h"
 #include "../jrd/gds.h"
 #include "../jrd/ods.h"
 #include "../jrd/license.h"
@@ -45,7 +45,7 @@
 #ifdef WIN_NT
 #include <io.h>
 #include <windows.h>
-#include "../jrd/pwd.h"
+#include "../jrd/jrd_pwd.h"
 #define TEXT		SCHAR
 #endif
 
