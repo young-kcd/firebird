@@ -45,7 +45,6 @@
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
-#include <malloc.h>
 #include "../jrd/gds.h"
 #include "../jrd/jrd.h"
 #include "../jrd/align.h"
@@ -78,6 +77,7 @@
 #include "../jrd/thd_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/dbg_proto.h"
+#include "../common/classes/array.h"
 
 #ifdef DEV_BUILD
 #define OPT_DEBUG
@@ -6392,7 +6392,7 @@ static void sort_indices_by_selectivity(csb_repeat * csb_tail)
  ***************************************************/
 	IDX *idx, *selected_idx = NULL;
 	USHORT i, j;
-	IDX *idx_sort = (IDX*)alloca(csb_tail->csb_indices*sizeof(IDX));
+	Firebird::Array<IDX> idx_sort(GET_THREAD_DATA->tdbb_default, csb_tail->csb_indices);
 	float selectivity;
 	BOOLEAN same_selectivity;
 
@@ -6436,7 +6436,7 @@ static void sort_indices_by_selectivity(csb_repeat * csb_tail)
 				}
 			}
 			selected_idx->idx_runtime_flags |= idx_marker;
-			MOVE_FAST(selected_idx, &idx_sort[j], sizeof(IDX));
+			idx_sort.add(*selected_idx);
 		}
 
 		// Finally store the right order in cbs_tail->csb_idx
