@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: nbackup.cpp,v 1.37 2004-11-04 19:08:45 skidder Exp $
+ *  $Id: nbackup.cpp,v 1.38 2004-11-10 04:25:51 robocop Exp $
  *
  */
  
@@ -98,13 +98,16 @@ class b_error : public std::exception
 {
 public:
 	explicit b_error(const char* message) {
-		strcpy(txt, message);
+		size_t len = sizeof(txt) - 1;
+		strncpy(txt, message, len);
+		txt[len] = 0;
 	}
+	enum {MSG_LEN = 1024};
 	virtual ~b_error() throw() {}
 	virtual const char* what() const throw()
 		{ return txt; }
 	static void raise(const char* message, ...) {
-		char temp[1024];		
+		char temp[MSG_LEN];
 		va_list params;
 		va_start(params, message);
 		VSNPRINTF(temp, sizeof(temp), message, params);
@@ -114,7 +117,7 @@ public:
 		throw b_error(temp);
 	}
 private:
-	char txt[1024];
+	char txt[MSG_LEN];
 };
 
 
@@ -915,7 +918,7 @@ int main( int argc, char *argv[] )
 	// Do not constify. GCC 3.4.0 chokes on minus below in this case
 	char **end = argv + argc, **argp;
 
-	char *username = NULL, *password = NULL;
+	const char *username = NULL, *password = NULL;
 	
 	try {
 		// Read global command line parameters
