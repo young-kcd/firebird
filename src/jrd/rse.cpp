@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.77 2004-09-28 06:27:24 skidder Exp $
+ * $Id: rse.cpp,v 1.78 2004-10-05 20:16:29 dimitr Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -2128,7 +2128,13 @@ static bool get_procedure(thread_db*			tdbb,
 	else
 		record = rpb->rpb_record;
 
-	EXE_receive(tdbb, proc_request, 1, oml, om);
+	try {
+		EXE_receive(tdbb, proc_request, 1, oml, om);
+	}
+	catch (const std::exception&) {
+		close_procedure(tdbb, rsb);
+		throw;
+	}
 
 	dsc desc = msg_format->fmt_desc[msg_format->fmt_count - 1];
 	desc.dsc_address = (UCHAR *) (om + (IPTR) desc.dsc_address);
@@ -3088,10 +3094,18 @@ static void open_procedure(thread_db* tdbb, RecordSource* rsb, IRSB_PROCEDURE im
    is set at end of open_procedure (). */
 
 	proc_request->req_flags &= ~req_proc_fetch;
-	EXE_start(tdbb, proc_request, request->req_transaction);
-	if (iml) {
-		EXE_send(tdbb, proc_request, 0, iml, im);
+
+	try {
+		EXE_start(tdbb, proc_request, request->req_transaction);
+		if (iml) {
+			EXE_send(tdbb, proc_request, 0, iml, im);
+		}
 	}
+	catch (const std::exception&) {
+		close_procedure(tdbb, rsb);
+		throw;
+	}
+
 	proc_request->req_flags |= req_proc_fetch;
 }
 
