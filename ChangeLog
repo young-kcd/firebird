@@ -1,3 +1,10 @@
+2004-10-21 13:45  hvlad
+
+	* firebird2/src/jrd/idx.cpp (1.78):
+	
+	More precise check for primary key\unique\foreign key constraints.
+	Second part - expression indexes. Style
+
 2004-10-20 19:42  dimitr
 
 	* firebird2/src/remote/: inet.cpp (1.124), server.cpp (1.96):
