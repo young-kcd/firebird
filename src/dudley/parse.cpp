@@ -1522,6 +1522,7 @@ static ACT define_type(void)
 	}
 
 	parse_end();
+	return 0;
 }
 
 
@@ -1670,6 +1671,7 @@ static ACT define_view(void)
 	HSH_insert(relation->rel_name);
 	relation->rel_flags &= ~rel_marked_for_delete;
 	relation->rel_flags |= rel_marked_for_creation;
+	return 0;
 }
 
 
@@ -4085,6 +4087,7 @@ static NOD set_generator(void)
 
 	parse_end();
 	make_action(act_s_generator, (DBB) node);
+	return 0;
 }
 
 

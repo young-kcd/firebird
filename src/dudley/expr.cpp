@@ -58,9 +58,12 @@ static struct nod_types {
 	enum kwwords nod_t_keyword;
 	enum nod_t nod_t_node;
 } statisticals[] = {
-	KW_MAX, nod_max,
-		KW_MIN, nod_min,
-		KW_COUNT, nod_count, KW_AVERAGE, nod_average, KW_TOTAL, nod_total};
+	{ KW_MAX, nod_max },
+	{ KW_MIN, nod_min },
+	{ KW_COUNT, nod_count },
+	{ KW_AVERAGE, nod_average },
+	{ KW_TOTAL, nod_total }
+};
 
 static enum nod_t relationals[] = {
 	nod_eql, nod_neq, nod_leq, nod_lss, nod_gtr, nod_geq, nod_containing,
@@ -704,6 +707,7 @@ static int parse_matching_paren(void)
 
 	if (!MATCH(KW_RIGHT_PAREN))
 		PARSE_error(243, DDL_token.tok_string, NULL);	/* msg 243: expected right parenthesis, encountered \"%s\" */
+	return 0;
 }
 
 
@@ -1154,4 +1158,5 @@ static int parse_terminating_parens(
 		do
 			parse_matching_paren();
 		while (--(*paren_count));
+	return 0;
 }

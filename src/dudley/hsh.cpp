@@ -280,7 +280,8 @@ void HSH_init(void)
  **************************************/
 	register SCHAR *string;
 	register SYM symbol;
-	register SSHORT i, length;
+	register USHORT i;
+	register SSHORT length;
 
 	for (i = 0; i < NUMWORDS; i++) {
 		string = keywords[i].keyword;

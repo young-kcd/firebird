@@ -123,18 +123,18 @@ typedef struct rfr_tab_t {
 } *RFR_TAB;
 
 static struct rfr_tab_t rfr_table[] = {
-	"RDB$INDICES", "RDB$INDEX_INACTIVE", EXT_idx_inactive,
+	{ "RDB$INDICES", "RDB$INDEX_INACTIVE", EXT_idx_inactive },
 /* Obsolete - 1996-Aug-05 David Schnepper 
-	"RDB$RELATIONS",	"RDB$STORE_TRIGGER",	EXT_triggers,
+	{ "RDB$RELATIONS",	"RDB$STORE_TRIGGER",	EXT_triggers },
 */
-	"RDB$RELATIONS", "RDB$EXTERNAL_FILE", EXT_external,
-	"RDB$SECURITY_CLASSES", "RDB$SECURITY_CLASS", EXT_security,
-	"RDB$FILES", "RDB$FILE_NAME", EXT_files,
-	"RDB$VIEW_RELATIONS", "RDB$CONTEXT_NAME", EXT_context_name,
-	"RDB$DATABASE", "RDB$DESCRIPTION", EXT_db_description,
-	"RDB$FUNCTIONS", "RDB$FUNCTION_NAME", EXT_v3,
-	"RDB$LOG_FILES", "RDB$FILE_PARTITIONS", EXT_v4,
-	0, 0, 0
+	{ "RDB$RELATIONS", "RDB$EXTERNAL_FILE", EXT_external },
+	{ "RDB$SECURITY_CLASSES", "RDB$SECURITY_CLASS", EXT_security },
+	{ "RDB$FILES", "RDB$FILE_NAME", EXT_files },
+	{ "RDB$VIEW_RELATIONS", "RDB$CONTEXT_NAME", EXT_context_name },
+	{ "RDB$DATABASE", "RDB$DESCRIPTION", EXT_db_description },
+	{ "RDB$FUNCTIONS", "RDB$FUNCTION_NAME", EXT_v3 },
+	{ "RDB$LOG_FILES", "RDB$FILE_PARTITIONS", EXT_v4 },
+	{ 0, 0, 0 }
 };
 
 

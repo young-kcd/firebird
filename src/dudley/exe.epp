@@ -3449,7 +3449,7 @@ static void make_desc( NOD node, DSC * desc)
 			desc->dsc_dtype = blr_int64;
 			break;
 		case dtype_blob:
-			desc->dsc_dtype = blr_blob;
+			desc->dsc_dtype = (UCHAR) blr_blob;
 			break;
 		default:
 			desc->dsc_dtype = blr_double;
