@@ -279,14 +279,7 @@ static RVNT	PSV_events = NULL;
 	    } \
 	return c.element
 
-#ifdef GATEWAY
-/* The Gateway needs to close any extraneous pipes that it
-   inherits.  Define a maximum file descriptor to close. */
 
-#define MAX_FD		128
-#endif
-
-#ifndef GATEWAY
 #define GDS_ATTACH_DATABASE	gds__attach_database
 #define GDS_SERVICE_ATTACH	isc_service_attach
 #define GDS_BLOB_INFO		gds__blob_info
@@ -342,45 +335,8 @@ static RVNT	PSV_events = NULL;
 #define GDS_DSQL_PREPARE	isc_dsql_prepare_m
 #define GDS_DSQL_SET_CURSOR	isc_dsql_set_cursor_name
 #define GDS_DSQL_SQL_INFO	isc_dsql_sql_info
-#else
-#define GDS_ATTACH_DATABASE	GWAY_attach_database
-#define GDS_BLOB_INFO		GWAY_blob_info
-#define GDS_CANCEL_BLOB		GWAY_cancel_blob
-#define GDS_CANCEL_EVENTS	GWAY_cancel_events
-#define GDS_CLOSE_BLOB		GWAY_close_blob
-#define GDS_COMMIT		GWAY_commit_transaction
-#define GDS_COMMIT_RETAINING	GWAY_commit_retaining
-#define GDS_COMPILE		GWAY_compile_request
-#define GDS_CREATE_BLOB		GWAY_create_blob2
-#define GDS_CREATE_BLOB2	GWAY_create_blob2
-#define GDS_CREATE_DATABASE	GWAY_create_database
-#define GDS_DATABASE_INFO	GWAY_database_info
-#define GDS_DDL			GWAY_ddl
-#define GDS_DETACH		GWAY_detach_database
-#define GDS_GET_SEGMENT		GWAY_get_segment
-#define GDS_GET_SLICE		GWAY_get_slice
-#define GDS_OPEN_BLOB		GWAY_open_blob2
-#define GDS_OPEN_BLOB2		GWAY_open_blob2
-#define GDS_PREPARE		GWAY_prepare_transaction
-#define GDS_PREPARE2		GWAY_prepare_transaction
-#define GDS_PUT_SEGMENT		GWAY_put_segment
-#define GDS_PUT_SLICE		GWAY_put_slice
-#define GDS_QUE_EVENTS		GWAY_que_events
-#define GDS_RECONNECT		GWAY_reconnect_transaction
-#define GDS_RECEIVE		GWAY_receive
-#define GDS_RELEASE_REQUEST	GWAY_release_request
-#define GDS_REQUEST_INFO	GWAY_request_info
-#define GDS_ROLLBACK		GWAY_rollback_transaction
-#define GDS_SEEK_BLOB		GWAY_seek_blob
-#define GDS_SEND		GWAY_send
-#define GDS_START_AND_SEND	GWAY_start_and_send
-#define GDS_START		GWAY_start_request
-#define GDS_START_MULTIPLE	GWAY_start_multiple
-#define GDS_START_TRANSACTION	GWAY_start_transaction
-#define GDS_TRANSACTION_INFO	GWAY_transaction_info
-#define GDS_UNWIND		GWAY_unwind_request
-#endif
-
+
+
 int CLIB_ROUTINE main (
     USHORT	argc,
     TEXT	*argv[])
@@ -439,16 +395,6 @@ if (!(read_pipe = fdopen (desc_in, "r")) ||
 setbuf(read_pipe, (char *)0);
 #endif
  
-#ifdef GATEWAY
-/* Let's close any extraneous file descriptors inherited from parent */
-
-for (fd = 3; fd < MAX_FD; fd++)
-    if (fd != desc_in && fd != desc_out && fd != desc_event)
-	close (fd);
-
-errno = 0;
-#endif
-
 op = (P_OP) 0;
 
 while (TRUE)
@@ -609,7 +555,6 @@ while (TRUE)
 	    set_cursor();
 	    break;
 
-#ifndef GATEWAY
 	case op_attach_service:
 	    service_attach();
 	    break;
@@ -621,19 +566,8 @@ while (TRUE)
 	case op_info_service:
 	    info (op);
 	    break;
-#endif
 
 	default:
-#ifdef GATEWAY
-	    /* In the Gateway we have a terrible battle between
-	       siblings.  They feel the need to send each other
-	       EOF signals.  But our protective parent will warn
-	       us before this is going to occur so that we can
-               prepare ourselves for the onslaught. */
-
-	    if (op == op_gateway_sync || prev_op == op_gateway_sync)
-		continue;
-#endif
 	    if ((int) op != -1)
                 gds__log ("Pipe Server op code %d unknown, previous %d\n",
                           (int) op, (int) prev_op);
@@ -734,8 +668,8 @@ if (!send_response (status_vector))
     PUT_HANDLE (rdb);
     }
 }
-
-#ifndef GATEWAY
+
+
 static void service_attach (void)
 {
 /**************************************
@@ -775,8 +709,8 @@ if (!send_response (status_vector))
     PUT_HANDLE (rdb);
     }
 }
-#endif
-
+
+
 static void cancel_events (void)
 {
 /**************************************
@@ -886,8 +820,8 @@ GDS_DDL (status_vector,
 
 (void) send_response (status_vector);
 }
-
-#ifndef GATEWAY
+
+
 static void drop_database (void)
 {
 /**************************************
@@ -926,8 +860,8 @@ if (!code || (code == gds__drdb_completed_with_errs))
     ALLP_release (rdb);
     }
 }
-#endif
-
+
+
 static void end_blob (
     P_OP	operation)
 {
@@ -1018,8 +952,8 @@ GDS_RELEASE_REQUEST (status_vector,
 if (!send_response (status_vector))
     release_request (request);
 }
-
-#ifndef GATEWAY
+
+
 static void service_end (void)
 {
 /**************************************
@@ -1050,8 +984,8 @@ if (!send_response (status_vector))
     ALLP_release (rdb);
     }
 }
-#endif
-
+
+
 static void end_statement (void)
 {
 /**************************************
@@ -1746,7 +1680,6 @@ switch (operation)
 		GDS_VAL (buffer));
 	break;
 
-#ifndef GATEWAY
     case op_info_service:
 	rdb = (RDB) handle;
 	CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
@@ -1760,7 +1693,6 @@ switch (operation)
 		buffer_length,
 		buffer);
 	break;
-#endif
 
     case op_info_sql:
 	statement = (RSR) handle;
@@ -2609,7 +2541,6 @@ while (*status_vector)
 	    PUT_STRING (length, p);
 	    break;
 	
-#ifndef GATEWAY
 	case gds_arg_number:
 	case gds_arg_gds:
 	    PUT_WORD ((SLONG) *status_vector++);
@@ -2626,12 +2557,6 @@ while (*status_vector)
 	    PUT_WORD (length);
 	    PUT_STRING (length, buffer);
 	    break;
-#else
-	default:
-	    PUT_WORD ((SLONG) *status_vector++);
-	    PUT_WORD ((SLONG) *status_vector++);
-	    break;
-#endif
 	}
 
 PUT_WORD (gds_arg_end);
@@ -2689,21 +2614,12 @@ STATUS	status_vector [20];
 
 for (rdb = PSV_databases; rdb; rdb = rdb->rdb_next)
     {
-#ifdef GATEWAY
-    /* Abort any outstanding, non-limbo transactions */
-
-    for (transaction = rdb->rdb_transactions; transaction; transaction = transaction->rtr_next)
-	if (!(transaction->rtr_flags & RTR_limbo))
-	    GDS_ROLLBACK (status_vector, GDS_REF (transaction->rtr_handle));
-#endif
 
     GDS_DETACH (status_vector, GDS_REF (rdb->rdb_handle));
     }
 
-#ifndef GATEWAY
 for (rdb = PSV_services; rdb; rdb = rdb->rdb_next)
     GDS_SERVICE_DETACH (status_vector, &rdb->rdb_handle);
-#endif
 }
 
 static void start (void)

@@ -89,17 +89,6 @@ typedef struct alt_dsc {
 #define DSC_EQUIV(d1,d2) ((((ALT_DSC*) d1)->dsc_combined_type == ((ALT_DSC*) d2)->dsc_combined_type) && \
 			  ((DSC_GET_CHARSET (d1) == DSC_GET_CHARSET (d2)) || d1->dsc_dtype > dtype_any_text))
 
-#ifdef GATEWAY
-typedef struct xdsc {
-	UCHAR dsc_frgn_dtype;
-	SCHAR dsc_frgn_scale;
-	USHORT dsc_frgn_length;
-	UCHAR dsc_isc_dtype;
-	SCHAR dsc_isc_scale;
-	USHORT dsc_isc_length;
-} XDSC;
-#endif
-
 
 
 /* Data types */

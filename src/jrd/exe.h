@@ -198,27 +198,6 @@ typedef struct vlux {
 } *VLUX;
 
 
-
-#ifdef GATEWAY
-typedef struct vluk {
-	struct dsc vlu_desc;
-	struct str *vlu_string;
-	union {
-		SSHORT vlu_short;
-		SLONG vlu_long;
-		SINT64 vlu_int64;
-		SQUAD vlu_quad;
-		SLONG vlu_dbkey[2];
-		float vlu_float;
-		double vlu_double;
-		SCHAR vlu_rowid[18];
-		GDS_TIMESTAMP vlu_timestamp;
-		GDS_TIME vlu_sql_time;
-		GDS_DATE vlu_sql_date;
-	} vlu_misc;
-} *VLUK;
-#endif
-
 #define VLU_computed	1		/* An invariant sub-query has been computed */
 #define VLU_null	2			/* An invariant sub-query computed to null */
 
@@ -268,23 +247,13 @@ typedef struct iasb {
 #define e_sto_validate		3
 #define	e_sto_relation		4
 #define e_sto_stream		5
-#ifndef GATEWAY
 #define	e_sto_length		6
-#else
-#define e_sto_sql		6
-#define	e_sto_length		7
-#endif
 
 #define e_erase_statement	0
 #define e_erase_sub_erase 	1
 #define	e_erase_stream		2
 #define e_erase_rsb		3
-#ifndef GATEWAY
 #define	e_erase_length		4
-#else
-#define e_erase_sql		4
-#define	e_erase_length		5
-#endif
 
 #define	e_mod_statement		0
 #define e_mod_sub_mod		1
@@ -293,12 +262,7 @@ typedef struct iasb {
 #define	e_mod_org_stream	4
 #define	e_mod_new_stream	5
 #define e_mod_rsb		6
-#ifndef GATEWAY
 #define	e_mod_length		7
-#else
-#define e_mod_sql		7
-#define	e_mod_length		8
-#endif
 
 #define	e_send_statement	0
 #define	e_send_message		1
@@ -540,18 +504,8 @@ struct csb_repeat
 		csb_message(0),
 		csb_format(0),
 		csb_fields(0),
-#ifndef GATEWAY
 		csb_cardinality(0.0f),	// TMN: Non-natural cardinality?!
 		csb_plan(0),
-#else
-		csb_asgn_flds(0),
-		csb_selct_rsb(0),
-		csb_selct_bool(0),
-		csb_selct_sort(0),
-		csb_sql_selct(0),
-		csb_other_nod(0),
-		csb_sql_other(0),
-#endif
 		csb_map(0),
 		csb_rsb_ptr(0)
 	{}
@@ -571,18 +525,8 @@ struct csb_repeat
 	nod*		csb_message;	/* Msg for send/receive */
 	struct fmt* csb_format;		/* Default fmt for stream */
 	struct sbm* csb_fields;		/* Fields referenced */
-#ifndef GATEWAY
 	float csb_cardinality;		/* Cardinality of relation */
 	nod*		csb_plan;		/* user-specified plan for this relation */
-#else
-	struct sbm* csb_asgn_flds;	/* Fields that are assigned from */
-	struct rsb* csb_selct_rsb;	/* SELECT statement's rsb */
-	nod*		csb_selct_bool;	/* SELECT statement's boolean */
-	nod*		csb_selct_sort;	/* SELECT statement's sort clause */
-	struct sql* csb_sql_selct;	/* SELECT statement */
-	nod*		csb_other_nod;	/* non-SELECT statement's node */
-	struct sql* csb_sql_other;	/* non-SELECT statement */
-#endif
 	UCHAR* csb_map;				/* Stream map for views */
 	struct rsb** csb_rsb_ptr;	/* point to rsb for nod_stream */
 };

@@ -35,7 +35,7 @@
  * 2002.04.16  Paul Beach - HP10 and unistd.h
  */
 /*
-$Id: common.h,v 1.19 2002-07-05 15:00:19 skywalker Exp $
+$Id: common.h,v 1.20 2002-08-22 08:20:26 dimitr Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -538,13 +538,7 @@ $Id: common.h,v 1.19 2002-07-05 15:00:19 skywalker Exp $
 typedef int64 SATOM;			/* 64 bit */
 typedef unsigned int64 UATOM;
 #else
-
-#ifndef GATEWAY
 #define IMPLEMENTATION  isc_info_db_impl_isc_vms /* 27 */
-#else
-#define IMPLEMENTATION  isc_info_db_impl_isc_vms_orcl /* 33 */
-#endif
-
 #endif /* __ALPHA */
 
 #define FINI_OK         1

@@ -196,8 +196,6 @@ JMB: As part of the c++ conversion I removed the check for lck block type.
 #endif
 
 
-
-#ifndef GATEWAY
 void LCK_assert(TDBB tdbb, LCK lock)
 {
 /**************************************
@@ -221,7 +219,6 @@ void LCK_assert(TDBB tdbb, LCK lock)
 		BUGCHECK(159);			/* msg 159 cannot assert logical lock */
 	assert(LCK_CHECK_LOCK(lock));
 }
-#endif
 
 
 int LCK_convert(TDBB tdbb, LCK lock, USHORT level, SSHORT wait)
@@ -360,7 +357,6 @@ int LCK_convert_non_blocking(TDBB tdbb, LCK lock, USHORT level, SSHORT wait)
 #endif
 
 
-#ifndef GATEWAY
 int LCK_convert_opt(TDBB tdbb, LCK lock, USHORT level)
 {
 /**************************************
@@ -390,7 +386,6 @@ int LCK_convert_opt(TDBB tdbb, LCK lock, USHORT level)
 	assert(LCK_CHECK_LOCK(lock));
 	return TRUE;
 }
-#endif
 
 
 #ifndef VMS
@@ -722,7 +717,6 @@ int LCK_lock_non_blocking(TDBB tdbb, LCK lock, USHORT level, SSHORT wait)
 }
 
 
-#ifndef GATEWAY
 int LCK_lock_opt(TDBB tdbb, LCK lock, USHORT level, SSHORT wait)
 {
 /**************************************
@@ -749,10 +743,8 @@ int LCK_lock_opt(TDBB tdbb, LCK lock, USHORT level, SSHORT wait)
 	assert(LCK_CHECK_LOCK(lock));
 	return TRUE;
 }
-#endif
 
 
-#ifndef GATEWAY
 #ifndef VMS
 SLONG LCK_query_data(LCK parent, enum lck_t lock_type, USHORT aggregate)
 {
@@ -773,10 +765,8 @@ SLONG LCK_query_data(LCK parent, enum lck_t lock_type, USHORT aggregate)
 	return LOCK_query_data(parent->lck_id, lock_type, aggregate);
 }
 #endif
-#endif
 
 
-#ifndef GATEWAY
 SLONG LCK_read_data(LCK lock)
 {
 /**************************************
@@ -810,7 +800,6 @@ SLONG LCK_read_data(LCK lock)
 	assert(LCK_CHECK_LOCK(lock));
 	return data;
 }
-#endif
 
 
 void LCK_release(TDBB tdbb, LCK lock)
@@ -870,7 +859,6 @@ void LCK_release(TDBB tdbb, LCK lock)
 }
 
 
-#ifndef GATEWAY
 void LCK_re_post(LCK lock)
 {
 /**************************************
@@ -897,10 +885,8 @@ void LCK_re_post(LCK lock)
 				 lock->lck_object, lock->lck_owner_handle);
 	assert(LCK_CHECK_LOCK(lock));
 }
-#endif
 
 
-#ifndef GATEWAY
 void LCK_write_data(LCK lock, SLONG data)
 {
 /**************************************
@@ -919,7 +905,6 @@ void LCK_write_data(LCK lock, SLONG data)
 	lock->lck_data = data;
 	assert(LCK_CHECK_LOCK(lock));
 }
-#endif
 
 
 static void bug_lck(TEXT* string)

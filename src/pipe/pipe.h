@@ -135,9 +135,6 @@ typedef struct rdb {
 	struct rdb *rdb_next;
 	int *rdb_status_vector;
 	SCHAR *rdb_setjmp;
-#ifdef GATEWAY
-	struct cnct rdb_pipes;		/* pipe connection */
-#endif
 } *RDB;
 
 typedef struct rtr {

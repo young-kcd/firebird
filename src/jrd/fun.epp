@@ -24,7 +24,7 @@
  * to signal NULL by testing the flags of the parameter's descriptor.
  */
 /*
-$Id: fun.epp,v 1.6 2002-07-29 15:37:53 skywalker Exp $
+$Id: fun.epp,v 1.7 2002-08-22 08:20:26 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -42,11 +42,7 @@ $Id: fun.epp,v 1.6 2002-07-29 15:37:53 skywalker Exp $
 #include "../jrd/common.h"
 #include "../jrd/constants.h"
 #include "../jrd/ibsetjmp.h"
-#ifndef GATEWAY
 #include "../jrd/irq.h"
-#else
-#include "../gway/irq.h"
-#endif
 #include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
@@ -226,12 +222,10 @@ void DLL_EXPORT FUN_evaluate(FUN function, NOD node, VLU value)
 				MOVE_CLEAR(temp_ptr, (SLONG) length);
 			}
 		}
-#ifndef GATEWAY
 		else if ((SSHORT) abs(tail->fun_mechanism) == FUN_scalar_array)
 		{
 			length = get_scalar_array(tail, input, (SAD)temp_ptr, &array_stack);
 		}
-#endif
 		else
 		{
 			switch (tail->fun_desc.dsc_dtype)
@@ -696,13 +690,6 @@ FUN DLL_EXPORT FUN_lookup_function(TEXT * name)
 		}
 	}
 
-#ifdef GATEWAY
-/* Trap any potential errors */
-
-	try {
-
-#endif
-
 	prior = NULL;
 
 	request_fun = (BLK) CMP_find_request(tdbb, irq_l_functions, IRQ_REQUESTS);
@@ -827,14 +814,6 @@ FUN DLL_EXPORT FUN_lookup_function(TEXT * name)
 		REQUEST(irq_l_args) = request_arg;
 
 	V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_udf);
-
-#ifdef GATEWAY
-	}	// try
-	catch (...) {
-		return prior;
-	}
-
-#endif
 
 	return prior;
 }
@@ -977,7 +956,6 @@ static SSHORT blob_get_segment(
 }
 
 
-#ifndef GATEWAY
 static SLONG get_scalar_array(fun_repeat*	arg,
 							  DSC*	value,
 							  SAD	scalar_desc,
@@ -1051,4 +1029,3 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 
 	return sizeof(struct sad) + (dimensions - 1) * sizeof(sad::sad_repeat);
 }
-#endif

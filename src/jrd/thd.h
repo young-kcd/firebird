@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: thd.h,v 1.5 2002-07-06 05:31:56 skywalker Exp $
+$Id: thd.h,v 1.6 2002-08-22 08:20:27 dimitr Exp $
 */
 
 #ifndef _JRD_THD_H_
@@ -77,14 +77,12 @@ $Id: thd.h,v 1.5 2002-07-06 05:31:56 skywalker Exp $
 #endif
 
 #ifdef VMS
-#ifndef GATEWAY
 #define MULTI_THREAD		1
 /*
 #define POSIX_THREADS		1
 */
 #include "../jrd/isc.h"
 #define THD_MUTEX_STRUCT	MTX_T
-#endif
 #endif
 
 #ifdef WIN_NT

@@ -62,12 +62,8 @@ class blb : public pool_alloc_rpt<UCHAR, type_blb>
 	struct ctl *blb_filter;		/* Blob filter control block, if any */
 	struct bid blb_blob_id;		/* Id of materialized blob */
 	struct req *blb_request;	/* request that assigned temporary blob */
-#ifndef GATEWAY
 	vcl *blb_pages;		/* Vector of pages */
 	USHORT blb_pointers;		/* Max pointer on a page */
-#else
-	struct vec *blb_pages;		/* Vector of pages */
-#endif
 	USHORT blb_level;			/* Storage type */
 	USHORT blb_max_segment;		/* Longest segment */
 	USHORT blb_flags;			/* Interesting stuff (see below) */

@@ -99,9 +99,6 @@ extern "C" {
 /* the database block, the topmost block in the metadata 
    cache for a database */
 
-#ifdef GATEWAY
-#include ".._gway/gway/gway.h"
-#else
 #define HASH_SIZE 101
 
 
@@ -626,7 +623,6 @@ class vcx: public pool_alloc<type_vcx>
 	USHORT vcx_context;
 };
 typedef vcx *VCX;
-#endif
 
 
 /* general purpose vector */

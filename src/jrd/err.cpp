@@ -154,7 +154,6 @@ TEXT* DLL_EXPORT ERR_cstring(CONST TEXT* in_string)
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
-#ifndef GATEWAY
 void DLL_EXPORT ERR_duplicate_error(IDX_E	code,
 									REL		relation,
 									USHORT index_number)
@@ -216,7 +215,6 @@ void DLL_EXPORT ERR_duplicate_error(IDX_E	code,
 			ERR_post(gds_no_dup, gds_arg_string, ERR_cstring(index_name), 0);
 	}
 }
-#endif
 #endif
 
 
@@ -295,12 +293,8 @@ void DLL_EXPORT ERR_log(int facility, int number, CONST TEXT* message)
 
 	if (tdbb && tdbb->tdbb_attachment)
 	{
-#ifndef GATEWAY
 		dbname = ((tdbb->tdbb_attachment->att_filename) ?
 			tdbb->tdbb_attachment->att_filename->str_data : NULL);
-#else
-		dbname = tdbb->tdbb_attachment->att_filename->str_data;
-#endif
 	}
 
 	gds__log("Database: %s\n\t%s", (dbname) ? reinterpret_cast<SCHAR*>(dbname) : "", errmsg, 0);
@@ -513,12 +507,8 @@ void DLL_EXPORT ERR_punt(void)
 
 	if (dbb && (dbb->dbb_flags & DBB_bugcheck))
 	{
-#ifndef GATEWAY
 		dbname = ((tdbb->tdbb_attachment->att_filename) ?
 			tdbb->tdbb_attachment->att_filename->str_data : NULL);
-#else
-		dbname = tdbb->tdbb_attachment->att_filename->str_data;
-#endif
 		gds__log_status(reinterpret_cast<char*>(dbname), tdbb->tdbb_status_vector);
 	}
 

@@ -218,45 +218,6 @@ BLK CSS_alloc_local(USHORT type, USHORT length)
 }
 
 
-#ifdef GATEWAY
-#ifndef PIPE_SERVER
-int CSS_check_partner( PTR connection_id, USHORT process_flags)
-{
-/**************************************
- *
- *	C S S _ c h e c k _ p a r t n e r
- *
- **************************************
- *
- * Functional description
- *	Make sure the process flags of a connection
- *	match the specified flags.
- *
- **************************************/
-	CNCT connection;
-	PRB partner;
-	USHORT result;
-
-	ACQUIRE;
-	connection = (CNCT) ABS_PTR(connection_id);
-
-	if (!connection->cnct_partner) {
-		RELEASE;
-		return FALSE;
-	}
-
-	partner = (PRB) ABS_PTR(connection->cnct_partner);
-	result =
-		((partner->prb_flags & process_flags) ==
-		 process_flags) ? TRUE : FALSE;
-	RELEASE;
-
-	return result;
-}
-#endif
-#endif
-
-
 PTR CSS_connect(SLONG proc_offset)
 {
 /**************************************
@@ -532,76 +493,6 @@ MSG CSS_get_message(PTR partner, MSG old_message, SSHORT timeout)
 
 
 #ifdef PIPE_SERVER
-#ifdef GATEWAY
-CSH CSS_init(STATUS * status_vector, USHORT server_flag, TEXT * filename)
-{
-/**************************************
- *
- *	C S S _ i n i t		( g a t e w a y _ p i p e _ s e r v e r )
- *
- **************************************
- *
- * Functional description
- *	Initialize for access to shared global region.  Return
- *	address of header if region exits, otherwise return NULL.
- *
- **************************************/
-	TEXT csi_file[128], *p;
-	int (*init_routine) ();
-#ifndef VMS
-	SH_MEM_T shmem_data;
-#endif
-	SLONG desc[2];
-	STATUS status;
-
-/* If we're already initialized, there's nothing to do */
-
-	if (CSS_region)
-		return CSS_region;
-
-	init_routine = server_flag ? init : NULL;
-
-	for (p = csi_file; *p = *filename++; p++);
-	for (filename = ".%s"; *p++ = *filename++;);
-	filename = csi_file;
-
-#ifdef VMS
-	shmem_data->sh_mem_system_flag = TRUE;
-#endif
-	if (!(CSS_header = ISC_map_file(status_vector,
-									filename, init_routine, 0,
-									CSI_DEFAULT_SIZE,
-									&shmem_data))) return NULL;
-
-	CSS_length = shmem_data.sh_mem_length_mapped;
-
-#ifdef VMS
-/* Strip off any device prefix. */
-
-	for (p = filename; *p; p++)
-		if (*p == ':' || *p == ']')
-			filename = p + 1;
-	ISC_make_desc(filename, desc, 0);
-
-	status = sys$enqw(EVENT_FLAG, LCK$K_NLMODE, &CSS_lksb, LCK$M_NODLCKWT, &desc, NULL,	/* Lock parent (not used) */
-					  0,		/* AST routine when granted */
-					  0, 0, NULL, NULL);
-
-	if (!(status & 1) || !((status = CSS_lksb.lksb_status) & 1)) {
-		error(status_vector, "sys$enqw", status);
-		return NULL;
-	}
-#endif
-
-	CSS_region = CSS_header;
-	gds__register_cleanup(exit_handler, 0);
-
-	return CSS_header;
-}
-#endif
-
-
-#ifndef GATEWAY
 CSH CSS_init(STATUS * status_vector, USHORT server_flag, SSHORT id)
 {
 /**************************************
@@ -667,7 +558,6 @@ CSH CSS_init(STATUS * status_vector, USHORT server_flag, SSHORT id)
 
 	return CSS_header;
 }
-#endif
 #endif
 
 
@@ -852,13 +742,11 @@ void CSS_release(void)
 	CSS_header = (CSH) - 1;
 	--acquire_count;
 
-#ifndef GATEWAY
 #ifndef MULTI_THREAD
 	if (resignal) {
 		resignal = FALSE;
 		ISC_kill(pid, EVENT_SIGNAL);
 	}
-#endif
 #endif
 }
 
@@ -1531,11 +1419,9 @@ static int put_message( PTR connection_id, MSG message, int release_flag)
 
 	ISC_event_post(process->prb_event);
 
-#ifndef GATEWAY
 #ifndef MULTI_THREAD
 	if (message->msg_type == MSG_event)
 		ISC_kill(process->prb_process_id, EVENT_SIGNAL);
-#endif
 #endif
 
 	return TRUE;

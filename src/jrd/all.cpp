@@ -31,11 +31,7 @@
 
 #include "gen/codes.h"
 
-#ifndef GATEWAY
 #include "../jrd/everything.h"
-#else
-#include ".._gway/gway/everything.h"
-#endif
 #include "../jrd/all_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"

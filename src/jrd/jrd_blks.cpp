@@ -7,22 +7,14 @@ plb::alloc_info jrd_alloc_info =
     {
         {0, 0},
 #define BLKDEF(type, root, tail) { sizeof (struct root), tail },
-#ifndef GATEWAY
 #include "../jrd/blk.h"
-#else
-#include ".._gway/gway/blk.h"
-#endif
 #undef BLKDEF
         {0, 0}
     },
     {
         "type_MIN",
 #define BLKDEF(type, root, tail)  #type,
-#ifndef GATEWAY
 #include "../jrd/blk.h"
-#else
-#include ".._gway/gway/blk.h"
-#endif
 #undef BLKDEF
         "type_MAX"
     }

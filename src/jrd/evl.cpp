@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.12 2002-07-10 14:52:41 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.13 2002-08-22 08:20:26 dimitr Exp $ 
  */
 
 /*
@@ -3284,7 +3284,6 @@ static DSC *concatenate(TDBB tdbb, NOD node, VLU impure)
 }
 
 
-#ifndef GATEWAY
 static DSC *dbkey(TDBB tdbb, NOD node, VLU impure)
 {
 /**************************************
@@ -3333,54 +3332,6 @@ static DSC *dbkey(TDBB tdbb, NOD node, VLU impure)
 
 	return &impure->vlu_desc;
 }
-#else
-
-
-static DSC *dbkey(TDBB tdbb, NOD node, VLUK impure)
-{
-/**************************************
- *
- *      d b k e y       ( G a t e w a y )
- *
- **************************************
- *
- * Functional description
- *      Make up a dbkey for a record stream.  A dbkey is expressed
- *      as an 18 byte character string.
- *
- **************************************/
-	RPB *rpb;
-	REQ request;
-	REL relation;
-
-	SET_TDBB(tdbb);
-
-	DEV_BLKCHK(node, type_nod);
-
-/* Get request, record parameter block, and relation for stream */
-
-	request = tdbb->tdbb_request;
-	impure = (VLUK) ((SCHAR *) request + node->nod_impure);
-	rpb = &request->req_rpb[(int) node->nod_arg[0]];
-	relation = rpb->rpb_relation;
-
-/* Copy rowid from record buffer */
-
-	MOVE_FAST(rpb->rpb_record->rec_data +
-			  (int) relation->rel_current_format->
-			  fmt_desc[relation->rel_key_field].dsc_address,
-			  impure->vlu_misc.vlu_rowid, 18);
-
-/* Initialize descriptor */
-
-	impure->vlu_desc.dsc_address = (UCHAR *) impure->vlu_misc.vlu_rowid;
-	impure->vlu_desc.dsc_dtype = dtype_text;
-	impure->vlu_desc.dsc_length = 18;
-	impure->vlu_desc.dsc_ttype = ttype_binary;
-
-	return &impure->vlu_desc;
-}
-#endif
 
 
 static DSC *eval_statistical(TDBB tdbb, NOD node, VLU impure)

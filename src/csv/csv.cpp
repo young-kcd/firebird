@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: csv.cpp,v 1.3 2001-12-24 02:50:48 tamlin Exp $
+$Id: csv.cpp,v 1.4 2002-08-22 08:20:24 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -58,11 +58,7 @@ static void compile(MSG_OP);
 static void ddl(MSG_DDL);
 static void disable_or_kill(DBN, USHORT);
 static void disconnect(PTR);
-
-#ifndef GATEWAY
 static void drop_database(MSG_OP);
-#endif
-
 static void end_blob(MSG_OP);
 static void end_database(MSG_OP);
 static void end_request(MSG_OP);
@@ -70,11 +66,6 @@ static void end_statement(MSG_OP);
 static void end_transaction(MSG_OP);
 static void execute_immediate(MSG_EXNOW);
 static void execute_statement(MSG_SQLMSG);
-#ifdef GATEWAY
-#ifndef PIPE_SERVER
-static int expand_filename(TEXT *, TEXT *);
-#endif
-#endif
 static void fetch(MSG_SQLMSG);
 static DBN find_dbname(TEXT *, USHORT, USHORT);
 static void free_buffer(UCHAR *, USHORT);
@@ -84,11 +75,6 @@ static void get_slice(MSG_SLICE);
 static void info(MSG_INFO);
 static void insert(MSG_SQLMSG);
 static RTR make_transaction(RDB, HANDLE);
-#ifdef GATEWAY
-#ifndef PIPE_SERVER
-static void mdi_attach_db(MSG_OP);
-#endif
-#endif
 static void move(UCHAR *, UCHAR *, USHORT);
 static void multi_thread(void);
 static void open_blob(MSG_BLOB);
@@ -98,11 +84,6 @@ static void process_message(MSG);
 static void put_segment(MSG_SEG);
 static void put_slice(MSG_SLICE);
 static void que_events(MSG_EVENT);
-#ifdef GATEWAY
-#ifndef PIPE_SERVER
-static void query_connect(MSG_ATT);
-#endif
-#endif
 static void receive_msg(MSG_MSG);
 static void reconnect(MSG_OP);
 static void release_array(ARRAY);
@@ -172,7 +153,6 @@ static SCHAR *inherit_logicals[] = {
 #endif
 
 
-#ifndef GATEWAY
 #define GDS_ATTACH_DATABASE	gds__attach_database
 #define GDS_BLOB_INFO		gds__blob_info
 #define GDS_CANCEL_BLOB		gds__cancel_blob
@@ -218,41 +198,6 @@ static SCHAR *inherit_logicals[] = {
 #define GDS_DSQL_PREPARE	isc_dsql_prepare_m
 #define GDS_DSQL_SET_CURSOR	isc_dsql_set_cursor_name
 #define GDS_DSQL_SQL_INFO	isc_dsql_sql_info
-#else
-#define GDS_ATTACH_DATABASE	GWAY_attach_database
-#define GDS_BLOB_INFO		GWAY_blob_info
-#define GDS_CANCEL_BLOB		GWAY_cancel_blob
-#define GDS_CLOSE_BLOB		GWAY_close_blob
-#define GDS_COMMIT		GWAY_commit_transaction
-#define GDS_COMMIT_RETAINING	GWAY_commit_retaining
-#define GDS_COMPILE		GWAY_compile_request
-#define GDS_CREATE_BLOB		GWAY_create_blob2
-#define GDS_CREATE_DATABASE	GWAY_create_database
-#define GDS_DATABASE_INFO	GWAY_database_info
-#define GDS_DETACH		GWAY_detach_database
-#define GDS_GET_SEGMENT		GWAY_get_segment
-#define GDS_OPEN_BLOB		GWAY_open_blob2
-#define GDS_PREPARE2		GWAY_prepare_transaction
-#define GDS_PUT_SEGMENT		GWAY_put_segment
-#define GDS_RECONNECT		GWAY_reconnect_transaction
-#define GDS_RECEIVE		GWAY_receive
-#define GDS_RELEASE_REQUEST	GWAY_release_request
-#define GDS_REQUEST_INFO	GWAY_request_info
-#define GDS_ROLLBACK		GWAY_rollback_transaction
-#define GDS_SEEK_BLOB		GWAY_seek_blob
-#define GDS_SEND		GWAY_send
-#define GDS_START_AND_SEND	GWAY_start_and_send
-#define GDS_START		GWAY_start_request
-#define GDS_START_MULTIPLE	GWAY_start_multiple
-#define GDS_START_TRANSACTION	GWAY_start_transaction
-#define GDS_TRANSACT_REQUEST	GWAY_transact_request
-#define GDS_TRANSACTION_INFO	GWAY_transaction_info
-#define GDS_UNWIND		GWAY_unwind_request
-#define GDS_QUE_EVENTS		GWAY_que_events
-#define GDS_CANCEL_EVENTS	GWAY_cancel_events
-#define GDS_DDL			GWAY_ddl
-#endif
-
 
 #ifndef PIPE_SERVER
 int CLIB_ROUTINE main( int argc, char **argv)
@@ -282,13 +227,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	THREAD_ENTER;
 
-#ifndef GATEWAY
 	gds__enable_subsystem("GDSSHR");
 	gds__enable_subsystem("GDSSHR5");
 	num_buffers = 500;			/* choose a liberal number of buffers */
-#else
-	num_buffers = 0;
-#endif
 
 #ifdef MULTI_THREAD
 	sw_multi = TRUE;
@@ -340,16 +281,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				}
 		}
 		else if (!sw_name && !sw_buffers && !sw_limit) {
-#ifndef GATEWAY
 			length = ISC_expand_filename(p, 0, expanded_name);
-#else
-			if (!(length = expand_filename(p, expanded_name))) {
-				printf
-					("%s is not a database that can be serviced\nby this central server.\n",
-					 expanded_name);
-				exit(FINI_ERROR);
-			}
-#endif
 			db_name = (DBN) ALLOC(type_dbn, sizeof(struct dbn) + length);
 			db_name->dbn_next = CSV_dbnames;
 			CSV_dbnames = db_name;
@@ -389,11 +321,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				exit(FINI_ERROR);
 			}
 
-#ifndef GATEWAY
 	process = (PRB) ABS_PTR(CSS_create_process(PRB_server));
-#else
-	process = (PRB) ABS_PTR(CSS_create_process(PRB_server | PRB_server_t1));
-#endif
 
 	if (!CSV_name) {
 		sprintf(dflt_name, "CSV_%ld", process->prb_process_number);
@@ -413,7 +341,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 
 #ifdef PIPE_SERVER
-#ifndef GATEWAY
 int CLIB_ROUTINE main( int argc, char **argv)
 {
 /**************************************
@@ -477,116 +404,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		while (!sw_shutdown && (message = CSS_get_message((SLONG) 0, 0, 0)))
 			process_message(message);
 }
-#endif
-
-
-#ifdef GATEWAY
-int CLIB_ROUTINE main( int argc, char **argv)
-{
-/**************************************
- *
- *	m a i n		( g a t e w a y _ p i p e _ s e r v e r )
- *
- **************************************
- *
- * Functional description
- *	Start up single user server.
- *
- **************************************/
-	STATUS status_vector[20];
-	TEXT csi_file[256], *p, *q;
-	CSH CSS_header;
-	SRQ *que;
-	PRB process;
-	PTR connection, server, client;
-	MSG_RESP response;
-	MSG message;
-	SLONG code;
-	USHORT len;
-	struct dsc$descriptor desc;
-
-	THREAD_ENTER;
-
-/* Create the name of the global section. */
-
-	trans_logicals();
-	q = csi_file - 1;
-	if (ISC_expand_logical_once
-		("SYS$LOGIN", sizeof("SYS$LOGIN") - 1, csi_file)) {
-		for (p = csi_file; *p; p++)
-			if (*p == ':' || *p == ']')
-				q = p;
-		if (q < csi_file)
-			*(q = p) = ':';
-	}
-	ISC_make_desc(++q, &desc, 15);
-	code = JPI$_PRCNAM;
-	if (!(lib$getjpi(&code, NULL, NULL, NULL, &desc, &len) & 1)) {
-		printf("Unable to find parent process.\n");
-		exit(FINI_ERROR);
-	}
-	q[len] = 0;
-	while (*q)
-		if (*q++ == '_') {
-			while (*q && *q != '_')
-				q++;
-			*q = 0;
-		}
-
-#ifdef ORACLE_ALT
-	strcpy(q, "_ALT");
-#endif
-
-	if (!(CSS_header = CSS_init(status_vector, FALSE, csi_file))) {
-		gds__print_status(status_vector);
-		exit(FINI_ERROR);
-	}
-
-	client = (PRB) ABS_PTR(CSS_create_process(0));
-
-	CSS_header = ACQUIRE;
-	server = (PTR) 0;
-
-	QUE_LOOP(CSS_header->csh_processes, que) {
-		process = (PRB) ((UCHAR *) que - OFFSET(PRB, prb_processes));
-		if (client != REL_PTR(process) &&
-			process->prb_flags & PRB_server &&
-			process->prb_protocol_version == CSI_PROTOCOL_VERSION) {
-			server = REL_PTR(process);
-			break;
-		}
-	}
-
-	RELEASE;
-
-	if (!server) {
-		printf("Unable to find parent process.\n");
-		exit(FINI_ERROR);
-	}
-
-	connection = CSS_connect(server);
-	response = CSS_alloc_message(type_msg, sizeof(struct msg_resp));
-	response->msg_resp_header.msg_type = MSG_response;
-	response->msg_resp_length = 0;
-	if (CSS_put_message(connection, response, 0))
-		while (message = CSS_get_message(connection, 0, 0))
-			process_message(message);
-
-/* If nothing was written to stderr, delete
-   the file.  Ditto about stdout. */
-
-	if (!ftell(stderr)) {
-		fgetname(stderr, csi_file);
-		fclose(stderr);
-		remove(csi_file);
-	}
-	if (!ftell(stdout)) {
-		fgetname(stdout, csi_file);
-		fclose(stdout);
-		remove(csi_file);
-	}
-}
-#endif
 #endif
 
 
@@ -676,18 +493,6 @@ static void attach_database( MSG_ATT message)
 	status_vector[0] = gds_arg_gds;
 	status_vector[1] = gds__unavailable;
 	status_vector[2] = gds_arg_end;
-
-#ifdef GATEWAY
-#ifndef PIPE_SERVER
-/* Make sure we're willing to talk to this client */
-
-	if (!CSS_check_partner
-		(message->msg_att_header.msg_connection, PRB_client_t1)) {
-		send_response(message, status_vector, 0, 0, 0);
-		return;
-	}
-#endif
-#endif
 
 	handle = NULL;
 	expanded_name =
@@ -781,20 +586,13 @@ static STATUS attach_for_servicing(
 						db_name->dbn_length,
 						GDS_VAL(db_name->dbn_name),
 						GDS_REF(handle), length, GDS_VAL(dpb));
-#ifndef GATEWAY
 	if (sw_version && !status_vector[1])
 		gds__version(&handle, NULL, NULL);
-#endif
 	THREAD_ENTER;
 
 	if (!status_vector[1]) {
 		db_name->dbn_server = rdb = (RDB) ALLOC(type_rdb, sizeof(struct rdb));
 		rdb->rdb_handle = handle;
-#ifdef GATEWAY
-		db_name->dbn_length =
-			FRGN_analyze_attach(db_name->dbn_name, db_name->dbn_name, dummy,
-								dummy);
-#endif
 		db_name->dbn_flags |= DBN_server_att;
 	}
 	else if (detach_flag) {
@@ -1064,7 +862,6 @@ static void disconnect( PTR connection)
 }
 
 
-#ifndef GATEWAY
 static void drop_database( MSG_OP message)
 {
 /**************************************
@@ -1095,7 +892,6 @@ static void drop_database( MSG_OP message)
 		release_database(rdb);
 	}
 }
-#endif
 
 
 static void end_blob( MSG_OP message)
@@ -1147,37 +943,17 @@ static void end_database( MSG_OP message)
 
 	rdb = (RDB) message->msg_op_handle;
 
-#ifdef GATEWAY
-/* If there isn't a handle, then the server was queried but a
-   database wasn't opened.  In that case, act as if everything
-   is normal so that we can release the rdb. */
-
-	if (!rdb->rdb_handle) {
-		status_vector[0] = gds_arg_gds;
-		status_vector[1] = 0;
-	}
-	else
-#endif
-	{
-		THREAD_EXIT;
-		GDS_DETACH(status_vector, GDS_REF(rdb->rdb_handle));
-		THREAD_ENTER;
-	}
+	THREAD_EXIT;
+	GDS_DETACH(status_vector, GDS_REF(rdb->rdb_handle));
+	THREAD_ENTER;
 
 	send_response(message, status_vector, 0, 0, 0);
 
 	if (!status_vector[1]) {
-#ifdef GATEWAY
-#ifdef PIPE_SERVER
-#define GWAY_PIPE
-#endif
-#endif
 
-#ifndef GWAY_PIPE
 		/* Start by breaking connection to remote */
 
 		CSS_disconnect(rdb->rdb_connection);
-#endif
 		release_database(rdb);
 	}
 }
@@ -1417,49 +1193,6 @@ static void execute_statement( MSG_SQLMSG message)
 }
 
 
-#ifdef GATEWAY
-#ifndef PIPE_SERVER
-static expand_filename( TEXT * file_name, TEXT * expanded_name)
-{
-/**************************************
- *
- *	e x p a n d _ f i l e n a m e
- *
- **************************************
- *
- * Functional description
- *	Fully expand a Gateway database name.
- *
- **************************************/
-	USHORT length;
-	TEXT dummy[128], *p;
-
-	length = ISC_expand_filename(file_name, 0, expanded_name);
-
-#ifdef VMS
-/* Look for an '@' after the first character in expanded_filename.
-   If one is found, try to expand the remainder of the string. */
-
-	if (*(p = expanded_name) != '@') {
-		while (*p)
-			if (*p++ == '@' && *p) {
-				length =
-					ISC_expand_logical(p, length - (p - expanded_name),
-									   p) + (p - expanded_name);
-				break;
-			}
-	}
-#endif
-
-	if (!FRGN_analyze_attach(expanded_name, dummy, dummy, dummy))
-		return 0;
-
-	return length;
-}
-#endif
-#endif
-
-
 static void fetch( MSG_SQLMSG message)
 {
 /**************************************
@@ -1516,12 +1249,7 @@ static DBN find_dbname(
 
 	for (db_name = CSV_dbnames; db_name; db_name = db_name->dbn_next)
 		if (search_flag || !(db_name->dbn_flags & (DBN_disable | DBN_kill)))
-#ifndef GATEWAY
 			if (!strncmp(db_name->dbn_name, expanded_name, expanded_length))
-#else
-			if (!strncmp
-				(db_name->dbn_name, expanded_name, db_name->dbn_length))
-#endif
 				return db_name;
 
 	return NULL;
@@ -1958,59 +1686,6 @@ static RTR make_transaction( RDB rdb, HANDLE handle)
 }
 
 
-#ifdef GATEWAY
-#ifndef PIPE_SERVER
-static void mdi_attach_db( MSG_OP message)
-{
-/**************************************
- *
- *	m d i _ a t t a c h _ d b
- *
- **************************************
- *
- * Functional description
- *	Process an alternative attach packet.
- *
- **************************************/
-	HANDLE handle;
-	STATUS status_vector[20];
-	RDB rdb;
-	DBN db_name;
-
-	rdb = (RDB) message->msg_op_handle;
-
-	if (!
-		(db_name =
-		 find_dbname(message->msg_op_data, message->msg_op_length, FALSE))
-|| db_name != rdb->rdb_dbn) {
-		status_vector[0] = gds_arg_gds;
-		status_vector[1] = gds__unavailable;
-		status_vector[2] = gds_arg_end;
-		{
-			send_response(message, status_vector, rdb, 0, 0);
-			return;
-		}
-	}
-
-/* Try initially with expanded name.  If that fails, try once more with
-   original name */
-
-	handle = NULL;
-	THREAD_EXIT;
-	GDS_ATTACH_DATABASE(status_vector,
-						message->msg_op_length,
-						message->msg_op_data, GDS_REF(handle), 0, 0);
-	THREAD_ENTER;
-
-	if (!status_vector[1])
-		rdb->rdb_handle = handle;
-
-	send_response(message, status_vector, rdb, 0, 0);
-}
-#endif
-#endif
-
-
 static void move( UCHAR * from_ptr, UCHAR * to_ptr, USHORT length)
 {
 /**************************************
@@ -2341,18 +2016,6 @@ static void process_message( MSG message)
 		ping(message);
 		break;
 
-#ifdef GATEWAY
-#ifndef PIPE_SERVER
-	case MSG_mdi_attach_db:
-		mdi_attach_db(message);
-		break;
-
-	case MSG_query_connect:
-		query_connect(message);
-		break;
-#endif
-#endif
-
 	case MSG_allocate_stmt:
 		allocate_statement(message);
 		break;
@@ -2603,74 +2266,6 @@ static void que_events( MSG_EVENT message)
 
 	send_response(message, status_vector, event->evnt_id, 0, 0);
 }
-
-
-#ifdef GATEWAY
-#ifndef PIPE_SERVER
-static void query_connect( MSG_ATT message)
-{
-/**************************************
- *
- *	q u e r y _ c o n n e c t
- *
- **************************************
- *
- * Functional description
- *	Process an server attach packet.
- *
- **************************************/
-	STATUS status_vector[20];
-	RDB rdb;
-	TEXT *expanded_name, connect_method[128];
-	DBN db_name;
-	USHORT connect_length;
-
-/* Assume this is going to fail! */
-
-	status_vector[0] = gds_arg_gds;
-	status_vector[1] = gds__unavailable;
-	status_vector[2] = gds_arg_end;
-
-/* Make sure we're willing to talk to this client */
-
-	if (!CSS_check_partner
-		(message->msg_att_header.msg_connection, PRB_client_t1)) {
-		send_response(message, status_vector, 0, 0, 0);
-		return;
-	}
-
-	expanded_name =
-		(TEXT *) message->msg_att_data + message->msg_att_file_length;
-
-	if (!
-		(db_name =
-		 find_dbname(expanded_name, message->msg_att_expanded_length,
-					 FALSE))) {
-		send_response(message, status_vector, 0, 0, 0);
-		return;
-	}
-
-/* Try initially with expanded name.  If that fails, try once more with
-   original name */
-
-	rdb = NULL;
-
-	if (!GWAY_query_connect(status_vector,
-							GDS_VAL(expanded_name),
-							connect_method, &connect_length)) {
-		rdb = (RDB) ALLOC(type_rdb, sizeof(struct rdb));
-		rdb->rdb_connection = message->msg_att_header.msg_connection;
-		rdb->rdb_dbn = db_name;
-		rdb->rdb_next = CSV_databases;
-		CSV_databases = rdb;
-		++db_name->dbn_attaches;
-	}
-
-	send_response(message, status_vector, rdb, connect_length,
-				  connect_method);
-}
-#endif
-#endif
 
 
 static void receive_msg( MSG_MSG message)

@@ -25,7 +25,7 @@
  * 2001.07.28: Added parse code for blr_skip to support LIMIT.
  */
 /*
-$Id: par.cpp,v 1.9 2002-07-01 16:59:09 skywalker Exp $
+$Id: par.cpp,v 1.10 2002-08-22 08:20:27 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -1077,12 +1077,6 @@ static NOD par_fetch(TDBB tdbb, CSB * csb, NOD for_node)
 	rse->rse_count = 1;
 	rse->rse_relation[0] = relation = parse(tdbb, csb, RELATION);
 
-#ifdef GATEWAY
-	if (!(((REL) relation->nod_arg[e_rel_relation])->rel_flags & REL_dbkey))
-		error(*csb, gds__no_dbkey, 0);
-	/* Msg365 dbkey not available for multi-table views */
-#endif
-
 /* Fake boolean */
 
 	node = rse->rse_boolean = PAR_make_node(tdbb, 2);
@@ -1900,9 +1894,6 @@ static NOD par_relation(
  *	Parse a relation reference.
  *
  **************************************/
-#ifdef GATEWAY
-	DBB dbb;
-#endif
 	NOD node;
 	REL relation;
 	TEXT name[32];
@@ -1910,9 +1901,6 @@ static NOD par_relation(
 	SSHORT id, stream, length, context;
 
 	SET_TDBB(tdbb);
-#ifdef GATEWAY
-	dbb = tdbb->tdbb_database;
-#endif
 
 /* Make a relation reference node */
 
@@ -1929,19 +1917,10 @@ static NOD par_relation(
 			alias_string->str_length = length;
 			par_name(csb, reinterpret_cast < char *>(alias_string->str_data));
 		}
-#ifndef GATEWAY
 		if (!(relation = MET_lookup_relation_id(tdbb, id, FALSE))) {
 			sprintf(name, "id %d", id);
 			error(*csb, gds_relnotdef, gds_arg_string, ERR_cstring(name), 0);
 		}
-#else
-		/* To use rid, the relation slot must already have been filled in */
-
-		if (id >= dbb->dbb_relations->count()
-			|| !(*dbb->dbb_relations)[id])
-			error(*csb, gds_ctxnotdef, 0);
-		relation = MET_relation(tdbb, id);
-#endif
 	}
 	else if (operator_ == blr_relation || operator_ == blr_relation2) {
 		par_name(csb, name);
@@ -2321,9 +2300,7 @@ static NOD parse(TDBB tdbb, register CSB * csb, USHORT expected)
 	case blr_handler:
 	case blr_loop:
 
-#ifndef GATEWAY
 	case blr_lock_state:
-#endif
 	case blr_upcase:
 	case blr_negate:
 	case blr_not:
@@ -2408,13 +2385,8 @@ static NOD parse(TDBB tdbb, register CSB * csb, USHORT expected)
 		break;
 
 	case blr_index:
-#ifndef GATEWAY
 		node->nod_arg[0] = parse(tdbb, csb, sub_type);
 		node->nod_arg[1] = par_args(tdbb, csb, sub_type);
-#else
-		error(*csb, gds_wish_list,
-			  gds_arg_interpreted, "blr_index not supported", 0);
-#endif
 		break;
 
 	case blr_for:
@@ -2468,7 +2440,6 @@ static NOD parse(TDBB tdbb, register CSB * csb, USHORT expected)
 		node = par_field(tdbb, csb, operator_);
 		break;
 
-#ifndef GATEWAY
 	case blr_gen_id:
 	case blr_set_generator:
 	case blr_gen_id2:
@@ -2499,16 +2470,6 @@ static NOD parse(TDBB tdbb, register CSB * csb, USHORT expected)
 
 		}
 		break;
-#else
-	case blr_gen_id:
-		error(*csb, gds_wish_list,
-			  gds_arg_interpreted, "blr_gen_id not supported", 0);
-		break;
-	case blr_set_generator:
-		error(*csb, gds_wish_list,
-			  gds_arg_interpreted, "blr_set_generator not supported", 0);
-		break;
-#endif
 
 	case blr_record_version:
 	case blr_dbkey:
@@ -2685,12 +2646,6 @@ static NOD parse(TDBB tdbb, register CSB * csb, USHORT expected)
 		node->nod_arg[0] = (NOD) (SLONG) BLR_BYTE;
 		break;
 
-#ifdef GATEWAY
-	case blr_lock_state:
-		error(*csb, gds_wish_list,
-			  gds_arg_interpreted, "blr_lock_state not supported", 0);
-		break;
-#endif
 
 	case blr_maximum:
 	case blr_minimum:

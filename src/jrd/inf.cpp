@@ -47,14 +47,9 @@
 #include "../jrd/pio.h"
 #include "../jrd/ods.h"
 #include "../jrd/scl.h"
-#ifndef GATEWAY
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
 #include "../jrd/license.h"
-#else
-#include ".._gway/gway/csr.h"
-#include ".._gway/gway/license.h"
-#endif
 #include "../wal/wal.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/inf_proto.h"
@@ -186,7 +181,6 @@ USHORT DLL_EXPORT INF_convert(SLONG number, SCHAR * buffer)
 }
 
 
-#ifndef GATEWAY
 int INF_database_info(
 					  SCHAR * items,
 					  SSHORT item_length, SCHAR * info, SSHORT buffer_length)
@@ -807,146 +801,6 @@ int INF_database_info(
 
 	return TRUE;
 }
-#else
-
-
-int INF_database_info(
-					  SCHAR * items,
-					  SSHORT item_length, SCHAR * info, SSHORT buffer_length)
-{
-/**************************************
- *
- *	I N F _ d a t a b a s e _ i n f o	( G a t e w a y )
- *
- **************************************
- *
- * Functional description
- *	Process requests for database info.
- *
- **************************************/
-	DBB dbb;
-	ATT att;
-	STR file;
-	SCHAR item, *end_items, *end, buffer[256], *p, *q;
-	SCHAR site[256];
-	SSHORT length, l;
-	SLONG id;
-	TDBB tdbb;
-
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
-	att = tdbb->tdbb_attachment;
-
-	CHECK_DBB(dbb);
-
-	end_items = items + item_length;
-	end = info + buffer_length;
-
-	while (items < end_items && *items != gds_info_end) {
-		p = buffer;
-		switch ((item = *items++)) {
-		case gds_info_end:
-			break;
-
-		case gds_info_reads:
-			length = INF_convert(dbb->dbb_reads, buffer);
-			break;
-
-		case gds_info_writes:
-			length = INF_convert(dbb->dbb_writes, buffer);
-			break;
-
-		case gds_info_fetches:
-			length = INF_convert(dbb->dbb_fetches, buffer);
-			break;
-
-		case gds_info_marks:
-			length = INF_convert(dbb->dbb_marks, buffer);
-			break;
-
-		case gds_info_page_size:
-			length = INF_convert(0, buffer);
-			break;
-
-		case gds_info_num_buffers:
-			length =
-				INF_convert(dbb->dbb_attachment->att_fdb->fdb_count, buffer);
-			break;
-
-		case gds_info_current_memory:
-			length = INF_convert(dbb->dbb_current_memory, buffer);
-			break;
-
-		case gds_info_max_memory:
-			length = INF_convert(dbb->dbb_max_memory, buffer);
-			break;
-
-		case gds_info_attachment_id:
-		case gds_info_allocation:
-		case gds_info_read_seq_count:
-		case gds_info_read_idx_count:
-		case gds_info_update_count:
-		case gds_info_insert_count:
-		case gds_info_delete_count:
-		case gds_info_backout_count:
-		case gds_info_purge_count:
-		case gds_info_expunge_count:
-		case gds_info_sweep_interval:
-			length = INF_convert(0, buffer);
-			break;
-
-		case gds_info_implementation:
-			STUFF(p, 1);		/* Count */
-			STUFF(p, IMPLEMENTATION);
-			STUFF(p, 11);		/* Class */
-			length = p - buffer;
-			break;
-
-		case gds_info_base_level:
-			STUFF(p, 1);		/* Count */
-			STUFF(p, 4);		/* base level */
-			length = p - buffer;
-			break;
-
-		case gds_info_version:
-			STUFF(p, 1);
-			STUFF(p, sizeof(GWAY_GDS_VERSION) - 1);
-			for (q = GWAY_GDS_VERSION; *q;)
-				STUFF(p, *q++);
-			length = p - buffer;
-			break;
-
-		case gds_info_db_id:
-			file = att->att_filename;
-			STUFF(p, 2);
-			*p++ = l = file->str_length;
-			for (q = file->str_data; *q;)
-				*p++ = *q++;
-			ISC_get_host(site, sizeof(site));
-			*p++ = l = strlen(site);
-			for (q = site; *q;)
-				*p++ = *q++;
-			length = p - buffer;
-			break;
-
-		case gds_info_limbo:
-			continue;
-
-		default:
-			buffer[0] = item;
-			item = gds_info_error;
-			length = 1 + INF_convert(gds_infunk, buffer + 1);
-			break;
-		}
-		if (!(info = INF_put_item(item, length, buffer, info, end)))
-			return FALSE;
-	}
-
-	*info++ = gds_info_end;
-
-	return TRUE;
-}
-#endif
 
 
 SCHAR *INF_put_item(SCHAR item,
@@ -1171,7 +1025,6 @@ int INF_transaction_info(
 }
 
 
-#ifndef GATEWAY
 static USHORT get_counts(USHORT count_id, UCHAR * buffer, USHORT length)
 {
 /**************************************
@@ -1208,6 +1061,5 @@ static USHORT get_counts(USHORT count_id, UCHAR * buffer, USHORT length)
 
 	return p - buffer;
 }
-#endif
 
 

@@ -28,7 +28,7 @@
  *
  */
 
- /* $Id: head.cpp,v 1.8 2002-07-05 15:00:21 skywalker Exp $ */
+ /* $Id: head.cpp,v 1.9 2002-08-22 08:20:27 dimitr Exp $ */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -99,7 +99,6 @@
 #define MAXPATHLEN	256
 #endif
 
-#ifndef GATEWAY
 #define ESTABLISH_PIPES { \
 	    if (!read_pipe || !write_pipe) \
 	        { \
@@ -109,9 +108,6 @@
 		return user_status [1]; \
 		}; \
 	    }
-#else
-#define ESTABLISH_PIPES		read_pipe = (FILE*) rdb->rdb_pipes.cnct_read_pipe; write_pipe = (FILE*) rdb->rdb_pipes.cnct_write_pipe; connection = rdb;
-#endif
 
 #define statistics	stat
 
@@ -147,9 +143,6 @@ static int	event_fd = -1;
 static TEXT	error_text [1024];
 static RDB	PSI_databases = NULL;
 
-#ifdef GATEWAY
-static RDB	connection = NULL;
-#endif
 
 #ifdef SOLARIS
 /* NOTE: This code is cloned in foot.c */
@@ -442,7 +435,6 @@ RETURN_SUCCESS;
 }
 
 #ifndef BRIDGE
-#ifndef GATEWAY
 STATUS GDS_ATTACH_SERVICE (
     STATUS	*user_status,
     USHORT	service_length,
@@ -473,7 +465,6 @@ if (!(rdb = init (user_status, op_attach_service,
 
 RETURN_SUCCESS;
 }
-#endif
 #endif
 
 STATUS GDS_BLOB_INFO (
@@ -764,8 +755,8 @@ rdb->rdb_requests = request;
 
 RETURN_SUCCESS;
 }
-
-#ifndef GATEWAY
+
+
 STATUS GDS_CREATE_BLOB (
     STATUS	*user_status,
     RDB		*db_handle,
@@ -819,8 +810,8 @@ blob_id->bid_number = GET_WORD;
 
 RETURN_SUCCESS;
 }
-#endif
-
+
+
 STATUS GDS_CREATE_BLOB2 (
     STATUS	*user_status,
     RDB		*db_handle,
@@ -883,8 +874,8 @@ blob_id->bid_number = GET_WORD;
 RETURN_SUCCESS;
 #endif
 }
-
-#ifndef GATEWAY
+
+
 STATUS GDS_CREATE_DATABASE (
     STATUS	*user_status,
     SSHORT	GDS_VAL (file_length),
@@ -921,8 +912,8 @@ if (!(rdb = init (user_status, op_create, (UCHAR*)file_name, l,
 
 RETURN_SUCCESS;
 }
-#endif
-
+
+
 STATUS GDS_DATABASE_INFO (
     STATUS	*user_status,
     RDB		*handle,
@@ -1060,34 +1051,15 @@ while (rdb->rdb_sql_requests)
 while (rdb->rdb_transactions)
     release_transaction (rdb->rdb_transactions);
 
-#ifdef GATEWAY
-/* Unhook the rdb block */
-
-for (ptr = &PSI_databases; *ptr; ptr = &(*ptr)->rdb_next)
-    if (*ptr == rdb)
-	{
-	*ptr = rdb->rdb_next;
-	break;
-	}
-
-/* Close the pipes relating to this fork */
-
-fclose (rdb->rdb_pipes.cnct_read_pipe);
-fclose (rdb->rdb_pipes.cnct_write_pipe);
-
-ALLP_release (rdb);
-
-#else
 ALLP_release ((BLK) rdb);
-#endif
 
 *handle = NULL;
 
 RETURN_SUCCESS;
 }
-
+
+
 #ifndef BRIDGE
-#ifndef GATEWAY
 STATUS GDS_DETACH_SERVICE (
     STATUS	*user_status,
     RDB		*handle)
@@ -1121,10 +1093,9 @@ ALLP_release ((BLK) rdb);
 RETURN_SUCCESS;
 }
 #endif
-#endif
-
+
+
 #ifndef BRIDGE
-#ifndef GATEWAY
 STATUS GDS_DROP_DATABASE (
     STATUS	*user_status,
     RDB		*handle)
@@ -1177,8 +1148,8 @@ if (code)
 RETURN_SUCCESS;
 }
 #endif
-#endif
-
+
+
 STATUS GDS_DSQL_ALLOCATE (
     STATUS	*user_status,
     RDB		*db_handle,
@@ -2045,8 +2016,8 @@ if (return_length)
 RETURN_SUCCESS;
 #endif
 }
-
-#ifndef GATEWAY
+
+
 STATUS GDS_OPEN_BLOB (
     STATUS	*user_status,
     RDB		*db_handle,
@@ -2098,8 +2069,8 @@ transaction->rtr_blobs = blob;
 
 RETURN_SUCCESS;
 }
-#endif
-
+
+
 STATUS GDS_OPEN_BLOB2 (
     STATUS	*user_status,
     RDB		*db_handle,
@@ -2345,8 +2316,8 @@ array_id->bid_number = GET_WORD;
 RETURN_SUCCESS;
 #endif
 }
-
-#ifndef GATEWAY
+
+
 STATUS GDS_QUE_EVENTS (
     STATUS	*user_status,
     RDB		*handle,
@@ -2416,10 +2387,9 @@ if (check_response (user_status))
 return SUCCESS;
 #endif
 }
-#endif
-
+
+
 #ifndef BRIDGE
-#ifndef GATEWAY
 STATUS GDS_QUERY_SERVICE (
     STATUS	*user_status,
     RDB		*service,
@@ -2876,15 +2846,6 @@ UCHAR	*p;
 
 NULL_CHECK (rtr_handle, gds_bad_trans_handle);
 
-#ifdef GATEWAY
-/* We must peek at the rdb so that we know who to talk to.
-   This is safe since the gateway is guaranteed to have a
-   single database transaction. */
-
-rdb = (RDB) **vector;
-CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
-#endif
-
 ESTABLISH_PIPES;
 
 PUT_BYTE (op_transaction);
@@ -2933,16 +2894,6 @@ USHORT	l, i;
 UCHAR	*p;
 
 NULL_CHECK (rtr_handle, gds_bad_trans_handle);
-
-#ifdef GATEWAY
-/* We must peek at the rdb so that we know who to talk to.
-   This is safe since the gateway is guaranteed to have a
-   single database transaction. */
-
-VA_START (args, count);
-rdb = *(va_arg (args, RDB*));
-CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
-#endif
 
 ESTABLISH_PIPES;
 
@@ -3089,31 +3040,14 @@ CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
-#ifdef GATEWAY
-
-/* Let's start by trying to flush the input buffer */
-
-if (fseek (read_pipe, (SLONG) 0, 2))
-    {
-    clearerr (read_pipe);
-    fseek (read_pipe, (SLONG) 0, 2);
-    }
-
 PUT_BYTE (op_unwind);
 PUT_HANDLE (request->rrq_handle);
 PUT_WORD (level);
 
 return check_response (user_status);
-#else
-
-PUT_BYTE (op_unwind);
-PUT_HANDLE (request->rrq_handle);
-PUT_WORD (level);
-
-return check_response (user_status);
-#endif
 }
-
+
+
 static STATUS check_response (
     STATUS	*user_status)
 {
@@ -3180,13 +3114,9 @@ else
 		 * and just return a connection lost message.
 		 */
 		pipe_io_error (user_status, "getw", "pipe server", errno);
-#ifndef GATEWAY
 		(void) fclose (read_pipe);
 		read_pipe = NULL;
 		/* ERRORCHECK - perhaps write_pipe should also be closed here */
-#else
-		connection->rdb_pipes.cnct_read_pipe = 0;
-#endif
 		return user_status [1];
 
 	    case gds_arg_gds:
@@ -3209,8 +3139,8 @@ else
 
 return user_status [1];
 }
-
-#ifndef GATEWAY
+
+
 static void event_handler (void)
 {
 /**************************************
@@ -3244,8 +3174,8 @@ if (l = length)
 
 (*((void (*)(void*, SSHORT, UCHAR*))ast)) (arg, length, events);
 }
-#endif
-
+
+
 #ifdef KILLER_SIGNALS
 static int get_byte (void)
 {
@@ -3456,33 +3386,15 @@ FILE	*save_pipe;
 STATUS	status;
 struct stat	stat_buf;
 
-#ifndef GATEWAY
 /* Check to see if pipes are already open.  If not, fork. */
 
 if (!read_pipe && !write_pipe)
     {
     if (pipe (pair1) < 0 || pipe (pair2) < 0 || pipe (pair3))
-#else
-    {
-    pair3 [0] = pair3 [1] = -1;
-    if (pipe (pair1) < 0 || pipe (pair2) < 0)
-#endif
 	{
 	pipe_io_error (user_status, "pipe", "pipe server", errno);
 	return NULL;
 	}
-
-#ifdef GATEWAY
-    /* We must inform all of our children that the expected
-       arrival may try to kill them (by sending them an EOF). */
-
-    for (rdb = PSI_databases; rdb; rdb = rdb->rdb_next)
-	{
-	write_pipe = (FILE*) rdb->rdb_pipes.cnct_write_pipe;
-	PUT_BYTE (op_gateway_sync);
-	fflush (write_pipe);
-	}
-#endif
 
     parent_pid = getpid();
 
@@ -3607,54 +3519,16 @@ PUT_STRING (dpb_length, dpb);
 
 /* Check the return status.  If it failed, return error */
 
-#ifndef GATEWAY
 if (check_response (user_status))
     return NULL;
-#else
-connection = NULL;
-status = check_response (user_status);
-
-/* The new child is devious and may try to trick us into
-   thinking that the other siblings are dead.  Out smart
-   it by reading the EOF (and pray there is one!).  This
-   should not be attempted by the faint of heart. */
-
-save_pipe = read_pipe;
-
-for (rdb = PSI_databases; rdb; rdb = rdb->rdb_next)
-    {
-    read_pipe = (FILE*) rdb->rdb_pipes.cnct_read_pipe;
-    GET_BYTE;
-    }
-
-read_pipe = save_pipe;
-
-if (status)
-    {
-    /* Can't connect to database.  Close fork down. */
-
-    fclose (read_pipe);
-    fclose (write_pipe);
-    return NULL;
-    }
-#endif
 
 rdb = (RDB) ALLOC (type_rdb);
 rdb->rdb_handle = (int*) GET_HANDLE;
 
-#ifdef GATEWAY
-rdb->rdb_next = PSI_databases;
-PSI_databases = rdb;
-
-/* Since we can fork many processes, save the pipe info */
-
-rdb->rdb_pipes.cnct_read_pipe = (int*) read_pipe;
-rdb->rdb_pipes.cnct_write_pipe = (int*) write_pipe;
-#endif
-
 return rdb;
 }
-
+
+
 static RTR make_transaction (
     RDB		rdb,
     HANDLE	handle)

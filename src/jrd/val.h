@@ -31,27 +31,16 @@
 #include "../jrd/dsc.h"
 
 
-#ifdef GATEWAY
-#define FLAG_BYTES(n)	(n * sizeof (SSHORT) * 2)
-#else
 #define FLAG_BYTES(n)	(((n + BITS_PER_LONG) & ~((ULONG)BITS_PER_LONG - 1)) >> 3)
-#endif
 
 #ifndef VMS
 #define DEFAULT_DOUBLE	dtype_double
 #else
 
-#ifndef GATEWAY
 #define DEFAULT_DOUBLE	dtype_double
 #define SPECIAL_DOUBLE	dtype_d_float
 #define CNVT_TO_DFLT(x)	MTH$CVT_D_G (x)
 #define CNVT_FROM_DFLT(x)	MTH$CVT_G_D (x)
-#else
-#define DEFAULT_DOUBLE	dtype_d_float
-#define SPECIAL_DOUBLE	dtype_double
-#define CNVT_TO_DFLT(x)	MTH$CVT_G_D (x)
-#define CNVT_FROM_DFLT(x)	MTH$CVT_D_G (x)
-#endif
 
 #endif
 
@@ -79,9 +68,6 @@ public:
 #endif
 	Firebird::vector<dsc> fmt_desc;
 	typedef Firebird::vector<dsc>::iterator fmt_desc_iterator;
-#ifdef GATEWAY
-	Firebird::vector<xdsc> fmt_ext_desc[1];
-#endif
 };
 typedef fmt *FMT;
 #endif /* REQUESTER */

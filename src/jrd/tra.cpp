@@ -209,7 +209,6 @@ BOOLEAN TRA_active_transactions(TDBB tdbb, DBB dbb)
 #endif
 }
 
-#ifndef GATEWAY
 void TRA_cleanup(TDBB tdbb)
 {
 /**************************************
@@ -338,7 +337,6 @@ void TRA_cleanup(TDBB tdbb)
 	CCH_RELEASE(tdbb, &window);
 #endif
 }
-#endif
 
 
 void TRA_commit(TDBB tdbb, TRA transaction, USHORT retaining_flag)
@@ -380,11 +378,6 @@ void TRA_commit(TDBB tdbb, TRA transaction, USHORT retaining_flag)
 
 	if (transaction->tra_flags & (TRA_prepare2 | TRA_reconnected))
 		MET_update_transaction(tdbb, transaction, TRUE);
-
-#ifdef GATEWAY
-	FRGN_commit_transaction(transaction);
-
-#else
 
 /* Check in with external file system */
 
@@ -439,13 +432,10 @@ void TRA_commit(TDBB tdbb, TRA transaction, USHORT retaining_flag)
 		LCK_convert(tdbb, lock, LCK_write, TRUE);
 	--transaction->tra_use_count;
 
-#endif
-
 	TRA_release_transaction(tdbb, transaction);
 }
 
 
-#ifndef GATEWAY
 void TRA_extend_tip(TDBB tdbb, ULONG sequence, WIN * precedence_window)
 {
 /**************************************
@@ -515,7 +505,6 @@ void TRA_extend_tip(TDBB tdbb, ULONG sequence, WIN * precedence_window)
 
 	DPM_pages(tdbb, 0, pag_transactions, sequence, window.win_page);
 }
-#endif
 
 
 int TRA_fetch_state(TDBB tdbb, SLONG number)
@@ -754,7 +743,6 @@ void TRA_init(TDBB tdbb)
 }
 
 
-#ifndef GATEWAY
 void TRA_invalidate(DBB database, ULONG mask)
 {
 /**************************************
@@ -784,7 +772,6 @@ void TRA_invalidate(DBB database, ULONG mask)
 				transaction->tra_flags |= TRA_invalidated;
 		}
 }
-#endif
 
 
 void TRA_link_transaction(TDBB tdbb, TRA transaction)
@@ -963,7 +950,6 @@ void TRA_prepare(TDBB tdbb, TRA transaction, USHORT length, UCHAR * msg)
 		transaction->tra_flags |= TRA_prepare2;
 	}
 
-#ifndef GATEWAY
 /* Check in with external file system */
 
 	EXT_trans_prepare(transaction);
@@ -987,7 +973,6 @@ void TRA_prepare(TDBB tdbb, TRA transaction, USHORT length, UCHAR * msg)
 		CCH_flush(tdbb, (USHORT) FLUSH_SYSTEM, 0);
 	}
 #endif
-#endif
 
 /* Set the state on the inventory page to be limbo */
 
@@ -996,7 +981,6 @@ void TRA_prepare(TDBB tdbb, TRA transaction, USHORT length, UCHAR * msg)
 }
 
 
-#ifndef GATEWAY
 TRA TRA_reconnect(TDBB tdbb, UCHAR * id, USHORT length)
 {
 /**************************************
@@ -1062,7 +1046,6 @@ TRA TRA_reconnect(TDBB tdbb, UCHAR * id, USHORT length)
 
 	return trans;
 }
-#endif
 
 
 void TRA_release_transaction(TDBB tdbb, TRA transaction)
@@ -1160,17 +1143,14 @@ void TRA_rollback(TDBB tdbb, TRA transaction, USHORT retaining_flag)
 
 	tdbb->tdbb_default = transaction->tra_pool;
 
-#ifndef GATEWAY
 /* Check in with external file system */
 
 	EXT_trans_rollback(transaction);
-#endif
 
 /* If no writes have been made, commit the transaction instead. */
 
 	if (transaction->tra_flags & (TRA_prepare2 | TRA_reconnected))
 		MET_update_transaction(tdbb, transaction, FALSE);
-#ifndef GATEWAY
 
 /* If there is a transaction-level savepoint, then use that to undo
    this transaction's work and mark it committed in the TIP page
@@ -1223,10 +1203,6 @@ void TRA_rollback(TDBB tdbb, TRA transaction, USHORT retaining_flag)
 		TRA_set_state(tdbb, transaction, transaction->tra_number, tra_dead);
 	}
 
-#else
-	FRGN_rollback_transaction(transaction);
-#endif
-
 /* if this is a rollback retain (used only by ExpressLink), abort
  * this transaction and start a new one.
  */
@@ -1252,7 +1228,6 @@ void TRA_set_state(TDBB tdbb, TRA transaction, SLONG number, SSHORT state)
  *	Set the state of a transaction in the inventory page.
  *
  **************************************/
-#ifndef GATEWAY
 	DBB dbb;
 	WIN window;
 	TIP tip;
@@ -1341,8 +1316,6 @@ void TRA_set_state(TDBB tdbb, TRA transaction, SLONG number, SSHORT state)
 	if ((dbb->dbb_wal) && (state == tra_committed)) {
 		AIL_commit(number);
 	}
-
-#endif /* GATEWAY */
 }
 
 
@@ -1385,7 +1358,6 @@ void TRA_shutdown_attachment(TDBB tdbb, ATT attachment)
 }
 
 
-#ifndef GATEWAY
 int TRA_snapshot_state(TDBB tdbb, TRA trans, SLONG number)
 {
 /**************************************
@@ -1438,7 +1410,6 @@ int TRA_snapshot_state(TDBB tdbb, TRA trans, SLONG number)
 
 	return TRA_state(trans->tra_transactions, trans->tra_oldest, number);
 }
-#endif
 
 
 TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
@@ -1475,13 +1446,6 @@ TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
 				 tdbb->tdbb_attachment->att_filename->str_data,
 				 0);
 
-#ifdef GATEWAY
-/* SQL allows only one transaction per attach. */
-
-	if (attachment->att_transactions)
-		ERR_post(gds__excess_trans, gds_arg_number, (SLONG) 1, 0);
-#endif
-
 /* To handle the problems of relation locks, allocate a temporary
    transaction block first, sieze relation locks, the go ahead and
    make up the real transaction block. */
@@ -1492,7 +1456,6 @@ TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
 	transaction_options(tdbb, temp, reinterpret_cast < UCHAR * >(tpb),
 						tpb_length);
 
-#ifndef GATEWAY
 	lock = TRA_transaction_lock(tdbb, reinterpret_cast < blk * >(temp));
 
 /* Read header page and allocate transaction number.  Since
@@ -1539,9 +1502,6 @@ TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
 	else {
 		trans = new(*tdbb->tdbb_default, (number - base + TRA_MASK) / 4) tra;
 	}
-#else
-	trans = new(*tdbb->tdbb_default) tra();
-#endif
 
 	trans->tra_pool = temp->tra_pool;
 	trans->tra_relation_locks = temp->tra_relation_locks;
@@ -1552,7 +1512,6 @@ TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
 	trans->tra_oldest_active = active;
 	delete temp;
 
-#ifndef GATEWAY
 	trans->tra_lock = lock;
 	lock->lck_key.lck_long = number;
 
@@ -1587,16 +1546,11 @@ TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
 		CCH_RELEASE(tdbb, &window);
 #endif
 
-#else
-	TRA_link_transaction(tdbb, trans);
-#endif
-
 	if (dbb->dbb_flags & DBB_read_only) {
 		/* Set transaction flags to TRA_precommitted, TRA_readonly */
 		trans->tra_flags |= (TRA_readonly | TRA_precommitted);
 	}
 
-#ifndef GATEWAY
 /* Next, take a snapshot of all transactions between the oldest interesting
    transaction and the current.  Don't bother to get a snapshot for
    read-committed transactions; they use the snapshot off the dbb block
@@ -1744,7 +1698,6 @@ TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
 /* Check in with external file system */
 
 	EXT_trans_start(trans);
-#endif
 
 /* Start a 'transaction-level' savepoint, unless this is the
    system transaction, or unless the transactions doesn't want
@@ -1814,7 +1767,6 @@ int TRA_state(UCHAR * bit_vector, ULONG oldest, ULONG number)
 }
 
 
-#ifndef GATEWAY
 int TRA_sweep(TDBB tdbb, TRA trans)
 {
 /**************************************
@@ -1989,7 +1941,6 @@ int TRA_sweep(TDBB tdbb, TRA trans)
 
 	return TRUE;
 }
-#endif
 
 
 LCK TRA_transaction_lock(TDBB tdbb, BLK object)
@@ -2023,32 +1974,6 @@ LCK TRA_transaction_lock(TDBB tdbb, BLK object)
 }
 
 
-#ifdef GATEWAY
-int TRA_wait(TDBB tdbb, TRA trans, SLONG number, USHORT wait)
-{
-/**************************************
- *
- *	T R A _ w a i t			( G A T E W A Y )
- *
- **************************************
- *
- * Functional description
- *	Wait for a given transaction to drop into a stable state (i.e. non-active)
- *	state.  To do this, we first wait on the transaction number.  When we
- *	are able to get the lock, the transaction is not longer bona fide
- *	active.  Next, we determine the state of the transaction from the
- *	transaction inventory page.  If either committed, dead, or limbo,
- *	we return the state.  If the transaction is still marked active,
- *	however, declare the transaction dead, and mark the transaction
- *	inventory page accordingly.
- *
- **************************************/
-
-	return tra_dead;
-}
-
-
-#else
 int TRA_wait(TDBB tdbb, TRA trans, SLONG number, USHORT wait)
 {
 /**************************************
@@ -2134,10 +2059,8 @@ int TRA_wait(TDBB tdbb, TRA trans, SLONG number, USHORT wait)
 
 	return state;
 }
-#endif
 
 
-#ifndef GATEWAY
 #ifdef SUPERSERVER_V2
 static SLONG bump_transaction_id(TDBB tdbb, WIN * window)
 {
@@ -2292,10 +2215,8 @@ static HDR bump_transaction_id(TDBB tdbb, WIN * window)
 	return header;
 }
 #endif
-#endif
 
 
-#ifndef GATEWAY
 #ifdef VMS
 static void compute_oldest_retaining(
 									 TDBB tdbb,
@@ -2401,7 +2322,6 @@ static void compute_oldest_retaining(
 	}
 }
 #endif
-#endif
 
 
 static void downgrade_lock(TRA transaction)
@@ -2478,9 +2398,6 @@ static void expand_view_lock(TRA transaction, REL relation, SCHAR lock_type)
 	LCK lock = RLCK_transaction_relation_lock(transaction, relation);
 
 	lock->lck_logical = lock_type;
-#ifdef GATEWAY
-	lock->lck_reserved = lock->lck_logical;
-#endif
 
 	VCX ctx = relation->rel_view_contexts;
 	if (!ctx) {
@@ -2509,7 +2426,6 @@ static void expand_view_lock(TRA transaction, REL relation, SCHAR lock_type)
 }
 
 
-#ifndef GATEWAY
 static TIP fetch_inventory_page(
 								TDBB tdbb,
 								WIN * window,
@@ -2538,10 +2454,8 @@ static TIP fetch_inventory_page(
 
 	return tip;
 }
-#endif
 
 
-#ifndef GATEWAY
 static SLONG inventory_page(TDBB tdbb, SLONG sequence)
 {
 /**************************************
@@ -2587,10 +2501,8 @@ static SLONG inventory_page(TDBB tdbb, SLONG sequence)
 
 	return (*vector)[sequence];
 }
-#endif
 
 
-#ifndef GATEWAY
 static SSHORT limbo_transaction(TDBB tdbb, SLONG id)
 {
 /**************************************
@@ -2634,7 +2546,6 @@ static SSHORT limbo_transaction(TDBB tdbb, SLONG id)
 
 	return state;
 }
-#endif
 
 
 static void restart_requests(TDBB tdbb, TRA trans)
@@ -2677,7 +2588,6 @@ static void restart_requests(TDBB tdbb, TRA trans)
 }
 
 
-#ifndef GATEWAY
 static void retain_context(TDBB tdbb, TRA transaction, USHORT commit)
 {
 /**************************************
@@ -2821,7 +2731,6 @@ static void retain_context(TDBB tdbb, TRA transaction, USHORT commit)
 		(void) TRA_precommited(tdbb, old_number, new_number);
 	}
 }
-#endif /* GATEWAY */
 
 
 #ifdef SWEEP_THREAD
@@ -3144,13 +3053,6 @@ static void transaction_options(
 				LCK_release(tdbb, lock);
 				lock->lck_logical = level;
 			}
-#ifdef GATEWAY
-		/* ORACLE doesn't have any way of releasing locks except through
-		   rollback and commit.  Therefore, to get rid of any locks that we
-		   obtained, let's rollback. */
-
-		FRGN_rollback_transaction(transaction);
-#endif
 		id = 0;
 		if (!wait)
 			ERR_post(gds_lock_conflict, 0);
@@ -3160,7 +3062,6 @@ static void transaction_options(
 }
 
 
-#ifndef GATEWAY
 #ifdef VMS
 static BOOLEAN vms_convert(LCK lock, SLONG * data, SCHAR type, BOOLEAN wait)
 {
@@ -3209,5 +3110,4 @@ static BOOLEAN vms_convert(LCK lock, SLONG * data, SCHAR type, BOOLEAN wait)
 
 	return TRUE;
 }
-#endif
 #endif

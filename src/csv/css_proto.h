@@ -38,11 +38,7 @@ extern MSG CSS_get_message(PTR, MSG, SSHORT);
 #ifndef PIPE_SERVER
 extern CSH CSS_init(STATUS *, USHORT);
 #else
-#ifdef GATEWAY
-extern CSH CSS_init(STATUS *, USHORT, TEXT *);
-#else
 extern CSH CSS_init(STATUS *, USHORT, SSHORT);
-#endif
 #endif
 extern void CSS_probe_processes(void);
 extern int CSS_put_message(PTR, MSG, MSG);

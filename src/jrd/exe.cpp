@@ -31,7 +31,7 @@
  * to count virtual operations, not real I/O on the underlying tables.
  */
 /*
-$Id: exe.cpp,v 1.12 2002-06-30 10:15:57 dimitr Exp $
+$Id: exe.cpp,v 1.13 2002-08-22 08:20:26 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -835,36 +835,6 @@ void EXE_send(TDBB		tdbb,
 }
 
 
-#ifdef GATEWAY
-void EXE_set_fields_null(TDBB tdbb, REC record, FMT format)
-{
-/**************************************
- *
- *	E X E _ s e t _ f i e l d s _ n u l l
- *
- **************************************
- *
- * Functional description
- *	Initialize all fields in a record to missing.
- *
- **************************************/
-	USHORT count;
-
-	SET_TDBB(tdbb);
-	DEV_BLKCHK(record, type_rec);
-	DEV_BLKCHK(format, type_fmt);
-
-	if ((count = format->fmt_count) <= 1)
-		((SSHORT *) record->rec_data)[0] = -1;
-	else {
-		((SSHORT *) record->rec_data)[0] = ((SSHORT *) record->rec_data)[1] = -1;
-		MOVE_FAST(record->rec_data, record->rec_data + (2 * sizeof(SSHORT)),
-				  (USHORT) ((count - 2) * sizeof(SSHORT)));
-	}
-}
-#endif
-
-
 void EXE_start(TDBB tdbb, REQ request, TRA transaction)
 {
 /**************************************
@@ -1010,11 +980,6 @@ void EXE_unwind(TDBB tdbb, REQ request)
 	request->req_flags |= req_abort | req_stall;
 	request->req_timestamp = 0;
 
-#ifdef GATEWAY
-/* Unwind request from connected DBMS's point of view */
-
-	FRGN_unwind(request);
-#endif
 }
 
 
@@ -1185,8 +1150,6 @@ static NOD erase(TDBB tdbb, NOD node, SSHORT which_trig)
 		rpb->rpb_stream_flags &= ~RPB_s_refetch;
 	}
 
-#ifndef GATEWAY
-
 #ifdef PC_ENGINE
 /* set up to do record locking; in case of a consistency
    mode transaction, we already have an exclusive lock on
@@ -1289,9 +1252,6 @@ static NOD erase(TDBB tdbb, NOD node, SSHORT which_trig)
 	if (rsb) {
 		RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
 	}
-#endif
-#else
-	VIO_erase(rpb, transaction, node->nod_arg[e_erase_sql]);
 #endif
 
 	return node->nod_parent;
@@ -1535,7 +1495,6 @@ static void execute_procedure(TDBB tdbb, NOD node)
 }
 
 
-#ifndef GATEWAY
 static REQ execute_triggers(TDBB	tdbb,
 							VEC*	triggers,
 							REC		old_rec,
@@ -1605,10 +1564,8 @@ static REQ execute_triggers(TDBB	tdbb,
 		return trigger;
 	}
 }
-#endif
 
 
-#ifndef GATEWAY
 #ifdef PC_ENGINE
 static NOD find(TDBB tdbb, register NOD node)
 {
@@ -1687,10 +1644,8 @@ static NOD find(TDBB tdbb, register NOD node)
 	return node->nod_parent;
 }
 #endif
-#endif
 
 
-#ifndef GATEWAY
 #ifdef PC_ENGINE
 static NOD find_dbkey(TDBB tdbb, register NOD node)
 {
@@ -1727,7 +1682,6 @@ static NOD find_dbkey(TDBB tdbb, register NOD node)
 
 	return node->nod_parent;
 }
-#endif
 #endif
 
 
@@ -2528,23 +2482,6 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 			Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);
 		}
 
-#ifdef GATEWAY
-		try {
-
-			/* Unwind request from connected DBMS's point of view.
-			   Set up special error handling in case something
-			   happens there. */
-
-			FRGN_unwind(request);
-
-			/* Continue with normal JRD unwind */
-
-		}	// try
-		catch (...) {
-		}
-
-#endif
-
 		/* Since an error happened, the current savepoint needs to be undone. */
 		if (transaction != dbb->dbb_sys_trans) {
 			++transaction->tra_save_point->sav_verb_count;
@@ -2723,7 +2660,6 @@ static NOD modify(TDBB tdbb, register NOD node, SSHORT which_trig)
 				varchar field whose tail may contain garbage. */
 		cleanup_rpb(tdbb, new_rpb);
 
-#ifndef GATEWAY
 #ifdef PC_ENGINE
 		/* check to see if record locking has been initiated in this database;
 		   if so then lock the record for shared write so that normal processing
@@ -2832,13 +2768,6 @@ static NOD modify(TDBB tdbb, register NOD node, SSHORT which_trig)
 		if (rsb) {
 			RSE_reset_position(tdbb, rsb, new_rpb);
 		}
-#endif
-#else
-		if (node->nod_arg[e_mod_validate]) {
-			validate(tdbb, node->nod_arg[e_mod_validate]);
-		}
-		VIO_modify(tdbb, org_rpb, new_rpb, transaction,
-				   node->nod_arg[e_mod_sql]);
 #endif
 
 		/* CVC: Increment the counter only if we called VIO/EXT_modify() and
@@ -3660,7 +3589,6 @@ static NOD store(TDBB tdbb, register NOD node, SSHORT which_trig)
 		record = rpb->rpb_record;
 		format = record->rec_format;
 
-#ifndef GATEWAY
 		if (transaction != dbb->dbb_sys_trans)
 			++transaction->tra_save_point->sav_verb_count;
 
@@ -3671,7 +3599,6 @@ static NOD store(TDBB tdbb, register NOD node, SSHORT which_trig)
 		{
 			trigger_failure(tdbb, trigger);
 		}
-#endif
 
 		if (node->nod_arg[e_sto_validate]) {
 			validate(tdbb, node->nod_arg[e_sto_validate]);
@@ -3686,7 +3613,6 @@ static NOD store(TDBB tdbb, register NOD node, SSHORT which_trig)
 
 		cleanup_rpb(tdbb, rpb);
 
-#ifndef GATEWAY
 		if (relation->rel_file) {
 			EXT_store(rpb, reinterpret_cast < int *>(transaction));
 		}
@@ -3734,9 +3660,6 @@ static NOD store(TDBB tdbb, register NOD node, SSHORT which_trig)
 		if (transaction != dbb->dbb_sys_trans) {
 			--transaction->tra_save_point->sav_verb_count;
 		}
-#else
-		VIO_store(tdbb, rpb, transaction, node->nod_arg[e_sto_sql]);
-#endif
 
 		if (node->nod_arg[e_sto_statement2]) {
 			impure->sta_state = 1;
@@ -3775,7 +3698,6 @@ static NOD store(TDBB tdbb, register NOD node, SSHORT which_trig)
 
 /* Initialize all fields to missing */
 
-#ifndef GATEWAY
 	p = record->rec_data;
 	n = (format->fmt_count + 7) >> 3;
 	if (n) {
@@ -3783,9 +3705,6 @@ static NOD store(TDBB tdbb, register NOD node, SSHORT which_trig)
 			*p++ = 0xff;
 		} while (--n);
 	}
-#else
-	EXE_set_fields_null(tdbb, record, format);
-#endif
 
 	return node->nod_arg[e_sto_statement];
 }
@@ -3890,7 +3809,6 @@ static BOOLEAN test_error(TDBB tdbb, const XCP conditions)
 }
 
 
-#ifndef GATEWAY
 static void trigger_failure(TDBB tdbb, REQ trigger)
 {
 /**************************************
@@ -3945,7 +3863,6 @@ static void trigger_failure(TDBB tdbb, REQ trigger)
 		ERR_punt();
 	}
 }
-#endif
 
 
 static void validate(TDBB tdbb, NOD list)

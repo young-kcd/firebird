@@ -89,11 +89,7 @@ public:
 		lck_length(0),
 		lck_logical(0),
 		lck_physical(0),
-#ifndef GATEWAY
 		lck_data(0)
-#else
-		lck_reserved(0)
-#endif
 	{
 		lck_key.lck_long = 0;
 		lck_tail[0] = 0;
@@ -120,11 +116,7 @@ public:
 	SSHORT		lck_length;			/* Length of lock string */
 	UCHAR		lck_logical;			/* Logical lock level */
 	UCHAR		lck_physical;			/* Physical lock level */
-#ifndef GATEWAY
 	SLONG		lck_data;				/* Data associated with a lock */
-#else
-	SCHAR		lck_reserved;			/* Logical level of reserving lock */
-#endif
 	enum lck_t lck_type;
 	union {
 		SCHAR lck_string[1];

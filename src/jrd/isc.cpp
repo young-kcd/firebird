@@ -28,7 +28,7 @@
  * 01-Feb-2002 Paul Reeves: Removed hard-coded registry path
  */
 /*
-$Id: isc.cpp,v 1.13 2002-08-14 11:13:58 eku Exp $
+$Id: isc.cpp,v 1.14 2002-08-22 08:20:26 dimitr Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -1310,16 +1310,6 @@ void ISC_wake_init(void)
 	TEXT string[32];
 	FPTR_INT master;
 	struct dsc$descriptor_s desc;
-
-#ifdef GATEWAY
-/* See if the shared image knows abouts wake_init.
-   If it does, rely on it. */
-
-	if (master = ISC_lookup_entrypoint("GDSSHR", "gds__wake_init", NULL)) {
-		(*master) ();
-		return;
-	}
-#endif
 
 /* If we already have lock, we're done */
 

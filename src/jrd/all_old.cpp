@@ -31,11 +31,7 @@
 
 #include "gen/codes.h"
 
-#ifndef GATEWAY
 #include "../jrd/everything.h"
-#else
-#include ".._gway/gway/everything.h"
-#endif
 #include "../jrd/all_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
@@ -52,11 +48,7 @@ static const struct {
 	SSHORT typ_tail_length;
 } block_sizes[] = {
 	{0, 0},
-#ifndef GATEWAY
 #include "../jrd/blk.h"
-#else
-#include ".._gway/gway/blk.h"
-#endif
     {0, 0}
 };
 

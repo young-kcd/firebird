@@ -26,7 +26,6 @@
 
 /* Security class definition */
 
-#ifndef GATEWAY
 class scl : public pool_alloc_rpt<SCHAR, type_scl>
 {
     public:
@@ -35,15 +34,6 @@ class scl : public pool_alloc_rpt<SCHAR, type_scl>
 	TEXT scl_name[2];
 };
 typedef scl *SCL;
-
-#else
-class scl : public pool_alloc<type_scl>
-{
-    public:
-	struct sbm *scl_flags;		/* Access permissions */
-};
-typedef scl *SCL;
-#endif
 
 #define SCL_read		1		/* Read access */
 #define SCL_write		2		/* Write access */
@@ -76,12 +66,6 @@ class usr : public pool_alloc_rpt<SCHAR, type_usr>
 	USHORT usr_group_id;		/* Group id */
 	USHORT usr_node_id;			/* Node id */
 	USHORT usr_flags;			/* Misc. crud */
-#ifdef GATEWAY
-	struct rel *usr_relations;	/* Relations owned by the user */
-	struct sbm *usr_security_class;	/* Security information for user */
-	TEXT *usr_dbms_user;		/* Name of user as defined by DBMS */
-	SLONG usr_dbms_uid;			/* Number of user as defined by DBMS */
-#endif
 	TEXT usr_data[2];
 };
 typedef usr *USR;

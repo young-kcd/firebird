@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.6 2002-07-01 16:59:09 skywalker Exp $
+ * $Id: rse.cpp,v 1.7 2002-08-22 08:20:27 dimitr Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -47,9 +47,6 @@
 #include "../jrd/cch.h"
 #include "gen/codes.h"
 #include "../jrd/gdsassert.h"
-#ifdef GATEWAY
-#include ".._gway/gway/sql.h"
-#endif
 #include "../jrd/all_proto.h"
 #include "../jrd/bookmark.h"
 #include "../jrd/dpm_proto.h"
@@ -167,7 +164,6 @@ void RSE_close(TDBB tdbb, RSB rsb)
 		impure->irsb_flags &= ~irsb_open;
 
 		switch (rsb->rsb_type) {
-#ifndef GATEWAY
 		case rsb_indexed:
 		case rsb_navigate:
 			return;
@@ -184,7 +180,6 @@ void RSE_close(TDBB tdbb, RSB rsb)
 						--rpb->rpb_relation->rel_scan_count;
 				return;
 			}
-#endif
 
 		case rsb_first:
         case rsb_skip:
@@ -235,50 +230,11 @@ void RSE_close(TDBB tdbb, RSB rsb)
 			}
 			break;
 
-#ifndef GATEWAY
 		case rsb_ext_sequential:
 		case rsb_ext_indexed:
 		case rsb_ext_dbkey:
 			EXT_close(rsb);
 			return;
-
-#else
-		case rsb_select:
-			FRGN_complete_sql(tdbb->tdbb_request, rsb->rsb_arg[0], FALSE);
-			if (rsb = rsb->rsb_next)
-				break;
-			return;
-
-		case rsb_sql_join:
-			{
-				RSB *ptr, *end;
-
-				for (ptr = &rsb->rsb_arg[1], end = ptr + rsb->rsb_count;
-					 ptr < end; ptr++)
-					RSE_close(tdbb, *ptr);
-				FRGN_complete_sql(request, rsb->rsb_arg[0], FALSE);
-				if (rsb = rsb->rsb_next)
-					break;
-				return;
-			}
-
-		case rsb_simulate:
-			return;
-
-		case rsb_sim_cross:
-			{
-				RSB *ptr, *end;
-
-				for (ptr = &rsb->rsb_arg[1], end = ptr + rsb->rsb_count;
-					 ptr < end; ptr++)
-					RSE_close(tdbb, *ptr);
-				return;
-			}
-
-		case rsb_once:
-			rsb = rsb->rsb_next;
-			break;
-#endif
 
 		default:
 			BUGCHECK(166);		/* msg 166 invalid rsb type */
@@ -649,7 +605,6 @@ void RSE_open(TDBB tdbb, RSB rsb)
 		rpb->rpb_window.win_flags = 0;
 
 		switch (rsb->rsb_type) {
-#ifndef GATEWAY
 		case rsb_indexed:
 			impure->irsb_bitmap = EVL_bitmap(tdbb, (NOD) rsb->rsb_arg[0]);
 			impure->irsb_prefetch_number = -1;
@@ -702,7 +657,6 @@ void RSE_open(TDBB tdbb, RSB rsb)
 
 			rpb->rpb_number = -1;
 			return;
-#endif
 
 		case rsb_cross:
 			return;
@@ -770,13 +724,11 @@ void RSE_open(TDBB tdbb, RSB rsb)
 			open_merge(tdbb, rsb, (IRSB_MRG) impure);
 			return;
 
-#ifndef GATEWAY
 		case rsb_ext_sequential:
 		case rsb_ext_indexed:
 		case rsb_ext_dbkey:
 			EXT_open(rsb);
 			return;
-#endif
 
 		case rsb_left_cross:
 			{
@@ -801,65 +753,6 @@ void RSE_open(TDBB tdbb, RSB rsb)
 				}
 				return;
 			}
-
-#ifdef GATEWAY
-		case rsb_select:
-			{
-				USHORT upd_flag;
-
-				upd_flag =
-					(((SQL) rsb->rsb_arg[0])->sql_flags & sql_for_update) ?
-					TRUE : FALSE;
-				RLCK_reserve_relation(tdbb, request->req_transaction,
-									  rpb->rpb_relation, upd_flag, TRUE);
-				rpb->rpb_number = -1;
-				VIO_record(tdbb, rpb, rsb->rsb_format, tdbb->tdbb_default);
-				if (rsb = rsb->rsb_next)
-					break;
-				return;
-			}
-
-		case rsb_sql_join:
-			{
-				RSB *ptr, *end;
-
-				for (ptr = &rsb->rsb_arg[1], end = ptr + rsb->rsb_count;
-					 ptr < end; ptr++)
-					RSE_open(tdbb, *ptr);
-				if (rsb = rsb->rsb_next)
-					break;
-				return;
-			}
-
-		case rsb_simulate:
-			{
-				REC record;
-
-				record =
-					VIO_record(tdbb, rpb, rsb->rsb_format,
-							   tdbb->tdbb_default);
-				EXE_set_fields_null(tdbb, record, record->rec_format);
-				((IRSB_SIM) impure)->irsb_flags = irsb_first;
-				((IRSB_SIM) impure)->irsb_sim_rid = 0;
-				return;
-			}
-
-		case rsb_sim_cross:
-			{
-				RSB *ptr, *end;
-
-				for (ptr = &rsb->rsb_arg[1], end = ptr + rsb->rsb_count;
-					 ptr < end; ptr++)
-					RSE_open(tdbb, *ptr);
-				((IRSB_SIM) impure)->irsb_flags = irsb_first;
-				((IRSB_SIM) impure)->irsb_sim_rid = 0;
-				return;
-			}
-
-		case rsb_once:
-			rsb = rsb->rsb_next;
-			break;
-#endif
 
 		default:
 			BUGCHECK(166);		/* msg 166 invalid rsb type */
@@ -2247,7 +2140,6 @@ static BOOLEAN get_record(TDBB			tdbb,
 
 	switch (rsb->rsb_type)
 	{
-#ifndef GATEWAY
 	case rsb_sequential:
 		if (impure->irsb_flags & irsb_bof)
 		{
@@ -2327,7 +2219,6 @@ static BOOLEAN get_record(TDBB			tdbb,
 			return FALSE;
 		}
 		break;
-#endif
 
 	case rsb_boolean:
 		{
@@ -2755,14 +2646,12 @@ static BOOLEAN get_record(TDBB			tdbb,
 										   impure->irsb_count)) ) break;
 		return FALSE;
 
-#ifndef GATEWAY
 	case rsb_ext_sequential:
 	case rsb_ext_indexed:
 	case rsb_ext_dbkey:
 		if (!EXT_get(rsb))
 			return FALSE;
 		break;
-#endif
 
 	case rsb_left_cross:
 		if (!fetch_left(tdbb, rsb, impure
@@ -2772,32 +2661,6 @@ static BOOLEAN get_record(TDBB			tdbb,
 			))
 			return FALSE;
 		break;
-
-#ifdef GATEWAY
-	case rsb_select:
-	case rsb_sql_join:
-		if (!VIO_next_record(tdbb, rpb, NULL, request->req_transaction,
-							 request->req_pool, rsb->rsb_arg[0], FALSE))
-			return FALSE;
-		break;
-
-	case rsb_simulate:
-		if (!SIM_get(rsb))
-			return FALSE;
-		break;
-
-	case rsb_sim_cross:
-		if (!SIM_get_cross(rsb))
-			return FALSE;
-		break;
-
-	case rsb_once:
-		if (impure->irsb_flags & irsb_first)
-			impure->irsb_flags &= ~irsb_first;
-		else
-			return FALSE;
-		break;
-#endif
 
 	default:
 		BUGCHECK(166);			/* msg 166 invalid rsb type */
@@ -2949,21 +2812,8 @@ static void join_to_nulls(TDBB tdbb, RSB rsb, USHORT streams)
 			record = VIO_record(tdbb, rpb, format, tdbb->tdbb_default);
 		}
 
-#ifndef GATEWAY
         record->rec_fmt_bk = record->rec_format;
 		record->rec_format = NULL;
-#else
-		/* A null format pointer in the record block is used to indicate
-		   a completely null record. If a record's been read since the
-		   last time this routine was called (format pointer is not null),
-		   then must set the null flags to "missing" so that foreign DBMS
-		   has an indicator variable. */
-
-		if (format = record->rec_format) {
-			EXE_set_fields_null(tdbb, record, format);
-			record->rec_format = NULL;
-		}
-#endif
 	}
 }
 
@@ -3400,7 +3250,6 @@ static void pop_rpbs(REQ request, RSB rsb)
 	impure = (IRSB_MRG) ((UCHAR *) request + rsb->rsb_impure);
 
 	switch (rsb->rsb_type) {
-#ifndef GATEWAY
 	case rsb_indexed:
 	case rsb_sequential:
 	case rsb_procedure:
@@ -3408,7 +3257,6 @@ static void pop_rpbs(REQ request, RSB rsb)
 	case rsb_ext_indexed:
 	case rsb_ext_dbkey:
 	case rsb_navigate:
-#endif
 	case rsb_union:
 	case rsb_aggregate:
 		rpb = request->req_rpb + rsb->rsb_stream;
@@ -3488,9 +3336,6 @@ static void pop_rpbs(REQ request, RSB rsb)
 		pop_rpbs(request, rsb->rsb_arg[RSB_LEFT_inner]);
 		return;
 
-#ifdef GATEWAY
-		Gateway not done
-#endif
 		default:BUGCHECK(166);	/* msg 166 invalid rsb type */
 	}
 }
@@ -3514,7 +3359,6 @@ static void push_rpbs(TDBB tdbb, REQ request, RSB rsb)
 	SET_TDBB(tdbb);
 
 	switch (rsb->rsb_type) {
-#ifndef GATEWAY
 	case rsb_indexed:
 	case rsb_sequential:
 	case rsb_procedure:
@@ -3522,7 +3366,6 @@ static void push_rpbs(TDBB tdbb, REQ request, RSB rsb)
 	case rsb_ext_indexed:
 	case rsb_ext_dbkey:
 	case rsb_navigate:
-#endif
 	case rsb_union:
 	case rsb_aggregate:
 		rpb = request->req_rpb + rsb->rsb_stream;
@@ -3604,9 +3447,6 @@ static void push_rpbs(TDBB tdbb, REQ request, RSB rsb)
 		push_rpbs(tdbb, request, rsb->rsb_arg[RSB_LEFT_inner]);
 		return;
 
-#ifdef GATEWAY
-		Gateway not done
-#endif
 		default:BUGCHECK(166);	/* msg 166 invalid rsb type */
 	}
 }

@@ -41,7 +41,6 @@ typedef struct rpb {
 	struct rec *rpb_undo;		/* our first version of data if this is a second modification */
 	USHORT rpb_format_number;	/* format number in relation */
 
-#ifndef GATEWAY
 	SLONG rpb_page;				/* page number */
 	USHORT rpb_line;			/* line number on page */
 
@@ -50,21 +49,13 @@ typedef struct rpb {
 
 	SLONG rpb_b_page;			/* back page */
 	USHORT rpb_b_line;			/* back line */
-#else
-	struct sbm *rpb_fields;		/* referenced fields */
-	struct sbm *rpb_asgn_flds;	/* referenced assigned from fields */
-	struct sql *rpb_sql_selct;	/* SQL select statement */
-	struct sql *rpb_sql_other;	/* SQL non-select statement */
-#endif
 
 	UCHAR *rpb_address;			/* address of record sans header */
 	USHORT rpb_length;			/* length of record */
 	USHORT rpb_flags;			/* record ODS flags replica */
 	USHORT rpb_stream_flags;	/* stream flags */
 	SSHORT rpb_org_scans;		/* relation scan count at stream open */
-#ifndef GATEWAY
 	struct win rpb_window;
-#endif
 } RPB;
 
 /* Record flags must be an exact replica of ODS record header flags */
@@ -83,15 +74,9 @@ typedef struct rpb {
 #define RPB_s_refetch	0x1		/* re-fetch required due to sort */
 #define RPB_s_update	0x2		/* input stream fetched for update */
 
-#ifndef GATEWAY
 #define SET_NULL(record,id)	record->rec_data [id >> 3] |=  (1 << (id & 7))
 #define CLEAR_NULL(record,id)	record->rec_data [id >> 3] &= ~(1 << (id & 7))
 #define TEST_NULL(record,id)	record->rec_data [id >> 3] &   (1 << (id & 7))
-#else
-#define SET_NULL(record,id)	((SSHORT*) record->rec_data) [id] = -1
-#define CLEAR_NULL(record,id)	((SSHORT*) record->rec_data) [id] = 0
-#define TEST_NULL(record,id)	(((SSHORT*) record->rec_data) [id] < 0)
-#endif
 
 #define MAX_DIFFERENCES		1024	/* Max length of generated Differences string 
 									   between two records */
@@ -287,11 +272,7 @@ class acc : public pool_alloc<type_acc>
 {
     public:
 	struct acc*	acc_next;
-#ifndef GATEWAY
 	TEXT*		acc_security_name;	/* WRITTEN into by SCL_get_class() */
-#else
-	struct scl*	acc_security_name;
-#endif
 	struct rel*	acc_view;
 	CONST TEXT*	acc_trg_name;
 	CONST TEXT*	acc_prc_name;

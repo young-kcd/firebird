@@ -1263,11 +1263,7 @@ int ISC_event_init(EVENT event, int semid, int semnum)
  *
  **************************************/
 
-#ifndef GATEWAY
 	gds__wake_init();
-#else
-	ISC_wake_init();
-#endif
 	event->event_count = 0;
 	event->event_pid = getpid();
 

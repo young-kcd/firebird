@@ -321,14 +321,10 @@ class Opt : public pool_alloc<type_opt>
 	USHORT opt_g_flags;			/* global flags */
 	struct opt_repeat {
 		struct nod *opt_conjunct;	/* Conjunction */
-#ifndef GATEWAY
 		struct nod *opt_lower;	/* Lower bound on index value */
 		struct nod *opt_upper;	/* Upper bound on index value */
 		struct nod *opt_match;	/* Conjunct which matches index segment */
 		IRL opt_relationships;	/* Streams directly reachable by index */
-#else
-		SRL opt_relationships;	/* Streams directly reachable by index */
-#endif
 		ULONG opt_dependencies[MAX_OPT_ITEMS / 32];
 		/* Stream dependencies to compute conjunct */
 		double opt_best_stream_cost;	/* best cost of retrieving first n streams */

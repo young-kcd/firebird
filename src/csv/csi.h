@@ -55,12 +55,6 @@
 #define CSI_DEFAULT_SIZE	65535
 #endif
 
-#ifdef GATEWAY
-#ifdef PIPE_SERVER
-#define CSI_DEFAULT_SIZE	69632
-#endif
-#endif
-
 #ifndef CSI_DEFAULT_SIZE
 #define CSI_DEFAULT_SIZE	262144
 #endif

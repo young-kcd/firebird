@@ -30,7 +30,7 @@
  *   This closes the heart of SF Bug #518282.
  */
 /*
-$Id: cmp.cpp,v 1.8 2002-07-04 09:34:19 skywalker Exp $
+$Id: cmp.cpp,v 1.9 2002-08-22 08:20:25 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -269,17 +269,10 @@ REQ DLL_EXPORT CMP_clone_request(TDBB tdbb,
 							 char *>(procedure->prc_name->str_data));
 		}
 		for (access = request->req_access; access; access = access->acc_next) {
-#ifndef GATEWAY
 			class_ = SCL_get_class(access->acc_security_name);
 			SCL_check_access(class_, access->acc_view, access->acc_trg_name,
 							 access->acc_prc_name, access->acc_mask,
 							 access->acc_type, access->acc_name);
-#else
-			SCL_check_access(access->acc_security_name, access->acc_view,
-							 access->acc_trg_name, access->acc_prc_name,
-							 access->acc_mask, access->acc_type,
-							 access->acc_name);
-#endif
 		}
 	}
 
@@ -314,11 +307,6 @@ REQ DLL_EXPORT CMP_clone_request(TDBB tdbb,
 		if (rpb2->rpb_stream_flags & RPB_s_update)
 			rpb1->rpb_stream_flags |= RPB_s_update;
 		rpb1->rpb_relation = rpb2->rpb_relation;
-#ifdef GATEWAY
-		rpb1->rpb_fields = rpb2->rpb_fields;
-		rpb1->rpb_sql_selct = rpb2->rpb_sql_selct;
-		rpb1->rpb_sql_other = rpb2->rpb_sql_other;
-#endif
 	}
 
 	return clone;
@@ -383,17 +371,10 @@ REQ DLL_EXPORT CMP_compile2(TDBB tdbb, UCHAR* blr, USHORT internal_flag)
 
 		for (access = request->req_access; access; access = access->acc_next)
 		{
-#ifndef GATEWAY
 			SCL class_ = SCL_get_class(access->acc_security_name);
 			SCL_check_access(class_, access->acc_view, access->acc_trg_name,
 							 access->acc_prc_name, access->acc_mask,
 							 access->acc_type, access->acc_name);
-#else
-			SCL_check_access(access->acc_security_name, access->acc_view,
-							 access->acc_trg_name, access->acc_prc_name,
-							 access->acc_mask, access->acc_type,
-							 access->acc_name);
-#endif
 		}
 
 		delete csb;
@@ -791,7 +772,6 @@ void DLL_EXPORT CMP_get_desc(
 			return;
 		}
 
-#ifndef GATEWAY
 	case nod_scalar:
 		{
 			NOD sub;
@@ -811,7 +791,6 @@ void DLL_EXPORT CMP_get_desc(
 			*desc = array->arr_desc.ads_rpt[0].ads_desc;
 			return;
 		}
-#endif
 
 	case nod_divide:
 		{
@@ -1420,11 +1399,7 @@ void DLL_EXPORT CMP_get_desc(
 	case nod_dbkey:
 		desc->dsc_dtype = dtype_text;
 		desc->dsc_ttype = ttype_binary;
-#ifndef GATEWAY
 		desc->dsc_length = 8;
-#else
-		desc->dsc_length = 18;
-#endif
 		desc->dsc_scale = 0;
 		desc->dsc_flags = 0;
 		return;
@@ -1725,9 +1700,6 @@ REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
 	DEV_BLKCHK(*csb_ptr, type_csb);
 
 	SET_TDBB(tdbb);
-#ifdef GATEWAY
-	DBB dbb = tdbb->tdbb_database;
-#endif
 
 	REQ old_request = tdbb->tdbb_request;
 	tdbb->tdbb_request = NULL;
@@ -1748,10 +1720,6 @@ REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
 	if (csb->csb_impure > MAX_REQUEST_SIZE)
 		IBERROR(226);			/* msg 226 request size limit exceeded */
 
-#ifdef GATEWAY
-	SQL_make_statements(csb);
-#endif
-
 /* Build the final request block.  First, compute the "effective" repeat
    count of hold the impure areas. */
 
@@ -1770,12 +1738,6 @@ REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
 
 #ifdef SCROLLABLE_CURSORS
 	request->req_async_message = csb->csb_async_message;
-#endif
-#ifdef GATEWAY
-	if (csb->csb_g_flags & csb_internal)
-		request->req_attachment =
-			(dbb->dbb_system_att) ? dbb->
-			dbb_system_att : tdbb->tdbb_attachment;
 #endif
 
 /* Take out existence locks on resources used in request.  This is
@@ -1844,14 +1806,7 @@ REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
 			&& !(tail->csb_flags & csb_unmatched)) rpb->rpb_stream_flags |=
 				RPB_s_update;
 		rpb->rpb_relation = tail->csb_relation;
-#ifndef GATEWAY
 		SBM_release(tail->csb_fields);
-#else
-		rpb->rpb_fields = tail->csb_fields;
-		rpb->rpb_asgn_flds = tail->csb_asgn_flds;
-		rpb->rpb_sql_selct = tail->csb_sql_selct;
-		rpb->rpb_sql_other = tail->csb_sql_other;
-#endif
 	}
 
 	USHORT count;
@@ -1911,11 +1866,7 @@ REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
 
 int DLL_EXPORT CMP_post_access(TDBB			tdbb,
 							   CSB			csb,
-#ifndef GATEWAY
 							   TEXT*		security_name,
-#else
-							   SCL			security_name,
-#endif
 							   REL			view,
 							   CONST TEXT*	trig,
 							   CONST TEXT*	proc,
@@ -2141,10 +2092,6 @@ void DLL_EXPORT CMP_release(TDBB tdbb, REQ request)
 	IDL index;
 	REL relation;
 	RSC resource;
-#ifdef GATEWAY
-	VEC vector;
-	vec::iterator sub_req, end;
-#endif
 	ATT attachment;
 
 	SET_TDBB(tdbb);
@@ -2186,26 +2133,7 @@ void DLL_EXPORT CMP_release(TDBB tdbb, REQ request)
 			}
 		}
 
-#ifdef GATEWAY
-
-/* Unwind and release cursors of any sub-requests */
-
-	if (vector = request->req_sub_requests)
-		for (sub_req = vector->begin(), end = vector->end();
-			 sub_req < end; sub_req++)
-			if (*sub_req) {
-				EXE_unwind(tdbb, (REQ)*sub_req);
-				FRGN_release_cursors((REQ)*sub_req);
-			}
-
-/* Unwind and release cursors of top level request */
-
 	EXE_unwind(tdbb, request);
-	FRGN_release_cursors(request);
-
-#else
-	EXE_unwind(tdbb, request);
-#endif
 
 #ifdef PC_ENGINE
 	RNG_release_ranges(request);
@@ -2898,9 +2826,6 @@ static NOD make_defaults(TDBB tdbb, CSB * csb, USHORT stream, NOD statement)
 	DEV_BLKCHK(*csb, type_csb);
 	DEV_BLKCHK(statement, type_nod);
 
-#ifdef GATEWAY
-	return statement;
-#else
 	relation = (*csb)->csb_rpt[stream].csb_relation;
 
 	if (!(vector = relation->rel_fields))
@@ -2937,7 +2862,6 @@ static NOD make_defaults(TDBB tdbb, CSB * csb, USHORT stream, NOD statement)
 	LLS_PUSH(statement, &stack);
 
 	return PAR_make_list(tdbb, stack);
-#endif
 }
 
 
@@ -2966,9 +2890,6 @@ static NOD make_validation(TDBB tdbb, CSB * csb, USHORT stream)
 
 	DEV_BLKCHK(*csb, type_csb);
 
-#ifdef GATEWAY
-	return NULL;
-#else
 	relation = (*csb)->csb_rpt[stream].csb_relation;
 
 	if (!(vector = relation->rel_fields))
@@ -3008,12 +2929,10 @@ static NOD make_validation(TDBB tdbb, CSB * csb, USHORT stream)
 		}
 	}
 
-
 	if (!stack)
 		return NULL;
 
 	return PAR_make_list(tdbb, stack);
-#endif
 }
 
 
@@ -3092,8 +3011,8 @@ static NOD pass1(
 				  MET_get_field(relation,
 								(USHORT) node->nod_arg[e_fld_id]))) break;
 
-#ifndef GATEWAY
 			/* if this is a modify or store, check REFERENCES access to any foreign keys. */
+
 /* CVC: This is against the SQL standard. REFERENCES should be enforced only at the
 				time the FK is defined in DDL, not when a DML is going to be executed.
 			if (((tail->csb_flags & csb_modify)
@@ -3103,7 +3022,7 @@ static NOD pass1(
 					IDX_check_access(tdbb, *csb, tail->csb_view, relation,
 									 field);
 */
-#endif
+
 			/* Posting the required privilege access to the current relation and field. */
 
 			/* if this is in a "validate_subtree" then we must not
@@ -3148,10 +3067,6 @@ static NOD pass1(
 								0, 0, SCL_read, object_column, field->fld_name);
 			}
 
-
-#ifdef GATEWAY
-			break;
-#else
 			if (!(sub = field->fld_computation) && !(sub = field->fld_source)) {
 
 				if (!relation->rel_view_rse)
@@ -3190,7 +3105,6 @@ static NOD pass1(
 			sub = copy(tdbb, csb, sub, map, 0, FALSE);
 			return pass1(tdbb, csb, sub, view, view_stream, validate_expr);
 		}
-#endif
 
 	case nod_assignment:
 		{
@@ -3201,10 +3115,8 @@ static NOD pass1(
 				stream = (USHORT) sub->nod_arg[e_fld_stream];
 				field = MET_get_field((*csb)->csb_rpt[stream].csb_relation,
 									  (USHORT) sub->nod_arg[e_fld_id]);
-#ifndef GATEWAY
 				if (field)
 					node->nod_arg[e_asgn_missing2] = field->fld_missing_value;
-#endif
 			}
 
 			sub = node->nod_arg[e_asgn_to];
@@ -3216,15 +3128,10 @@ static NOD pass1(
 				(field =
 				 MET_get_field(tail->csb_relation,
 							   (USHORT) sub->nod_arg[e_fld_id]))) break;
-#ifdef GATEWAY
-			if (field->fld_flags & FLD_no_update)
-				ERR_post(gds__read_only_field, 0);
-#else
 			if (field->fld_missing_value) {
 				node->nod_arg[e_asgn_missing] = field->fld_missing_value;
 				node->nod_count = 3;
 			}
-#endif
 		}
 		break;
 
@@ -3957,7 +3864,6 @@ static void pass1_source(
 
 /* Check for a view -- if not, nothing more to do */
 
-#ifndef GATEWAY
 	if (!(view_rse = view->rel_view_rse)) {
 		return;
 	}
@@ -4044,7 +3950,6 @@ static void pass1_source(
 		else
 			*boolean = node;
 	}
-#endif
 
 	return;
 }
@@ -4209,14 +4114,6 @@ USHORT update_stream, USHORT priv, REL view, USHORT view_stream)
 	CMP_csb_element(csb, update_stream)->csb_view_stream =
 		(UCHAR) view_stream;
 
-#ifdef GATEWAY
-/* If relation doesn't have a dbkey, it can't be updated */
-
-	if (!(relation->rel_flags & REL_dbkey))
-		ERR_post(gds__read_only_view, gds_arg_string, relation->rel_name, 0);
-
-	return NULL;
-#else
 /* If we're not a view, everything's cool */
 
 	if (!(rse = relation->rel_view_rse))
@@ -4247,8 +4144,6 @@ USHORT update_stream, USHORT priv, REL view, USHORT view_stream)
 		(*csb)->csb_rpt[update_stream].csb_flags |= csb_view_update;
 		return rse->rse_relation[0];
 	}
-
-#endif
 }
 
 
@@ -4597,17 +4492,11 @@ static NOD pass2(TDBB tdbb, register CSB csb, register NOD node, NOD parent)
 
 			stream = (USHORT) node->nod_arg[e_mod_org_stream];
 			csb->csb_rpt[stream].csb_flags |= csb_update;
-#ifndef GATEWAY
 			format = CMP_format(tdbb, csb, stream);
 			desc = format->fmt_desc.begin();
 			for (id = 0; id < format->fmt_count; id++, desc++)
 				if (desc->dsc_dtype)
 					SBM_set(tdbb, &csb->csb_rpt[stream].csb_fields, id);
-#else
-			id = csb->csb_rpt[stream].csb_relation->rel_key_field;
-			SBM_set(tdbb, &csb->csb_rpt[stream].csb_fields, id);
-			csb->csb_rpt[stream].csb_other_nod = node;
-#endif
 			csb->csb_impure += sizeof(struct sta);
 		}
 		break;
@@ -4621,41 +4510,19 @@ static NOD pass2(TDBB tdbb, register CSB csb, register NOD node, NOD parent)
 			}
 		/* FALL INTO */
 
-#ifndef GATEWAY
 	case nod_store:
-#endif
 		csb->csb_impure += sizeof(struct sta);
 		break;
-
-#ifdef GATEWAY
-	case nod_store:
-		stream =
-			(USHORT) node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
-		csb->csb_rpt[stream].csb_other_nod = node;
-		csb->csb_impure += sizeof(struct sta);
-		break;
-#endif
 
 	case nod_erase:
 		stream = (USHORT) node->nod_arg[e_erase_stream];
 		csb->csb_rpt[stream].csb_flags |= csb_update;
-#ifdef GATEWAY
-		id = csb->csb_rpt[stream].csb_relation->rel_key_field;
-		SBM_set(tdbb, &csb->csb_rpt[stream].csb_fields, id);
-		csb->csb_rpt[stream].csb_other_nod = node;
-#endif
 		break;
 
 	case nod_field:
 		stream = (USHORT) node->nod_arg[e_fld_stream];
 		id = (USHORT) node->nod_arg[e_fld_id];
 		SBM_set(tdbb, &csb->csb_rpt[stream].csb_fields, id);
-#ifdef GATEWAY
-		if (parent &&
-			parent->nod_type == nod_assignment &&
-			node == parent->nod_arg[e_asgn_from])
-				SBM_set(tdbb, &csb->csb_rpt[stream].csb_asgn_flds, id);
-#endif
 		if (node->nod_flags & nod_value) {
 			csb->csb_impure += sizeof(struct vlux);
 			break;
@@ -4667,9 +4534,7 @@ static NOD pass2(TDBB tdbb, register CSB csb, register NOD node, NOD parent)
 		break;
 
 	case nod_concatenate:
-#ifndef GATEWAY
 	case nod_dbkey:
-#endif
 	case nod_rec_version:
 	case nod_negate:
 	case nod_substr:
@@ -4708,17 +4573,7 @@ static NOD pass2(TDBB tdbb, register CSB csb, register NOD node, NOD parent)
 		}
 		break;
 
-#ifdef GATEWAY
-	case nod_dbkey:
-		stream = (USHORT) node->nod_arg[0];
-		csb->csb_rpt[stream].csb_flags |= csb_dbkey;
-		id = csb->csb_rpt[stream].csb_relation->rel_key_field;
-		SBM_set(tdbb, &csb->csb_rpt[stream].csb_fields, id);
-		csb->csb_impure += sizeof(struct vluk);
-		break;
-#endif
-
-		/* Compute the target descriptor to compute computational class */
+	/* Compute the target descriptor to compute computational class */
 
 	case nod_multiply:
 	case nod_add:
@@ -4865,7 +4720,6 @@ static void pass2_rse(TDBB tdbb, CSB csb, RSE rse)
 	if (rse->rse_projection)
 		pass2(tdbb, csb, rse->rse_projection, 0);
 
-#ifndef GATEWAY
 /* if the user has submitted a plan for this rse, check it for correctness */
 
 	if (rse->rse_plan) {
@@ -4876,7 +4730,6 @@ static void pass2_rse(TDBB tdbb, CSB csb, RSE rse)
 #ifdef SCROLLABLE_CURSORS
 	if (rse->rse_async_message)
 		pass2(tdbb, csb, rse->rse_async_message, 0);
-#endif
 #endif
 }
 

@@ -61,10 +61,6 @@ class tfb : public pool_alloc<type_tfb>
 	USHORT tfb_id;				/* id of field in relation */
 	USHORT tfb_flags;
 	DSC tfb_desc;
-#ifdef GATEWAY
-	XDSC tfb_ext_desc;			/* external descriptor */
-	STR tfb_name;				/* name of field in relation */
-#endif
 };
 typedef tfb *TFB;
 

@@ -98,12 +98,8 @@ static STATUS get_response(RDB, MSG, STATUS *, HANDLE *, USHORT, UCHAR *,
 static STATUS handle_error(STATUS *, STATUS);
 static STATUS info(RDB, STATUS *, HANDLE, MSG_T, USHORT, USHORT, UCHAR *,
 				   USHORT, UCHAR *);
-#ifndef GATEWAY
 static RDB init(STATUS *, MSG_T, UCHAR *, USHORT, UCHAR *, USHORT, TEXT *,
 				USHORT, USHORT, TEXT *, USHORT *);
-#else
-static RDB init(STATUS *, MSG_T, UCHAR *, USHORT, UCHAR *, USHORT, TEXT *);
-#endif
 static RTR make_transaction(RDB, HANDLE);
 static void move(UCHAR *, UCHAR *, USHORT);
 static USHORT name_length(TEXT *);
@@ -238,7 +234,6 @@ typedef struct teb {
 #endif
 
 
-#ifndef GATEWAY
 STATUS GDS_ATTACH_DATABASE(
 						   STATUS * user_status,
 						   SSHORT file_length,
@@ -267,40 +262,6 @@ SSHORT dpb_length, SCHAR * dpb, TEXT * expanded_filename)
 
 	return user_status[1];
 }
-#endif
-
-
-#ifdef GATEWAY
-#ifdef PIPE_SERVER
-STATUS GDS_ATTACH_DATABASE(STATUS * user_status,
-						   SSHORT file_length,
-						   SCHAR * file_name,
-						   RDB * handle,
-						   SSHORT dpb_length,
-						   SCHAR * dpb, TEXT * expanded_filename)
-{
-/**************************************
- *
- *	g d s _ A T T A C H _ D A T A B A S E	( G a t e w a y _ s e r v e r )
- *
- **************************************
- *
- * Functional description
- *	Create a nice, squeeky clean database, uncorrupted by user data.
- *
- **************************************/
-	RDB rdb;
-
-	NULL_CHECK(handle, gds__bad_db_handle);
-
-	if (rdb = init(user_status, MSG_attach_database,
-				   file_name, file_length, dpb, dpb_length,
-				   expanded_filename)) *handle = rdb;
-
-	return user_status[1];
-}
-#endif
-#endif
 
 
 STATUS GDS_BLOB_INFO(STATUS * user_status,
@@ -611,7 +572,6 @@ STATUS GDS_CREATE_BLOB(STATUS * user_status,
 #endif
 
 
-#ifndef GATEWAY
 STATUS GDS_CREATE_DATABASE(STATUS * user_status,
 						   SSHORT file_length,
 						   SCHAR * file_name,
@@ -641,7 +601,6 @@ STATUS GDS_CREATE_DATABASE(STATUS * user_status,
 
 	return user_status[1];
 }
-#endif
 
 
 STATUS GDS_DATABASE_INFO(STATUS * user_status,
@@ -754,38 +713,15 @@ STATUS GDS_DETACH(STATUS * user_status, RDB * handle)
 		release_transaction(rdb->rdb_transactions);
 
 	if (rdb->rdb_connection2) {
-#ifndef GATEWAY
 #ifndef MULTI_THREAD
 		ISC_signal_cancel(EVENT_SIGNAL, event_handler, rdb->rdb_connection2);
-#endif
 #endif
 		CSS_disconnect(rdb->rdb_connection2);
 	}
 
-#ifdef GATEWAY
-#ifdef PIPE_SERVER
-#define GWAY_PIPE
-	rdb->rdb_connection2 = NULL;
-	rdb->rdb_handle = NULL;
-
-/* Unhook the rdb block and then add it to the free server list */
-
-	for (ptr = &CSI_databases; *ptr; ptr = &(*ptr)->rdb_next)
-		if (*ptr == rdb) {
-			*ptr = rdb->rdb_next;
-			break;
-		}
-
-	rdb->rdb_next = CSI_free_servers;
-	CSI_free_servers = rdb;
-#endif
-#endif
-
-#ifndef GWAY_PIPE
 	CSS_disconnect(rdb->rdb_connection);
 
 	FREE(rdb);
-#endif
 
 	*handle = NULL;
 
@@ -827,38 +763,15 @@ STATUS GDS_DROP_DATABASE(STATUS * user_status, RDB * handle)
 		release_transaction(rdb->rdb_transactions);
 
 	if (rdb->rdb_connection2) {
-#ifndef GATEWAY
 #ifndef MULTI_THREAD
 		ISC_signal_cancel(EVENT_SIGNAL, event_handler, rdb->rdb_connection2);
-#endif
 #endif
 		CSS_disconnect(rdb->rdb_connection2);
 	}
 
-#ifdef GATEWAY
-#ifdef PIPE_SERVER
-#define GWAY_PIPE
-	rdb->rdb_connection2 = NULL;
-	rdb->rdb_handle = NULL;
-
-/* Unhook the rdb block and then add it to the free server list */
-
-	for (ptr = &CSI_databases; *ptr; ptr = &(*ptr)->rdb_next)
-		if (*ptr == rdb) {
-			*ptr = rdb->rdb_next;
-			break;
-		}
-
-	rdb->rdb_next = CSI_free_servers;
-	CSI_free_servers = rdb;
-#endif
-#endif
-
-#ifndef GWAY_PIPE
 	CSS_disconnect(rdb->rdb_connection);
 
 	FREE(rdb);
-#endif
 
 	*handle = NULL;
 
@@ -1663,44 +1576,6 @@ STATUS GDS_GET_SLICE(STATUS * user_status,
 }
 
 
-#ifdef GATEWAY
-#ifndef PIPE_SERVER
-STATUS CSI_mdi_attach_db(STATUS * user_status,
-						 SSHORT file_length, SCHAR * file_name, RDB * handle)
-{
-/**************************************
- *
- *	C S I _ m d i _ a t t a c h _ d b
- *
- **************************************
- *
- * Functional description
- *	Create a nice, squeeky clean database, uncorrupted by user data.
- *
- **************************************/
-	RDB rdb;
-	MSG_OP message;
-
-/* Check and validate handles, etc. */
-
-	rdb = *handle;
-	CHECK_HANDLE(rdb, type_rdb, gds__bad_db_handle);
-
-	message =
-		(MSG_OP) CSS_alloc_message(type_msg,
-								   (int) (sizeof(struct msg_op) +
-										  file_length));
-	message->msg_op_header.msg_type = MSG_mdi_attach_db;
-	message->msg_op_handle = rdb->rdb_handle;
-	message->msg_op_length = file_length;
-	MOVE(file_name, message->msg_op_data, file_length);
-
-	return get_response(rdb, message, user_status, 0, 0, 0, 0);
-}
-#endif
-#endif
-
-
 STATUS GDS_OPEN_BLOB2(STATUS * user_status,
 					  RDB * db_handle,
 					  RTR * rtr_handle,
@@ -1989,12 +1864,10 @@ STATUS GDS_QUE_EVENTS(STATUS * user_status,
 		CSS_put_message(rdb->rdb_connection2, connect, 0);
 		response = CSS_get_message(rdb->rdb_connection2, 0, 0);
 		CSS_free_global(response);
-#ifndef GATEWAY
 #ifdef MULTI_THREAD
 		gds__thread_start(event_thread, rdb->rdb_connection2);
 #else
 		ISC_signal(EVENT_SIGNAL, event_handler, rdb->rdb_connection2);
-#endif
 #endif
 	}
 
@@ -2011,39 +1884,6 @@ STATUS GDS_QUE_EVENTS(STATUS * user_status,
 
 	return get_response(rdb, message, user_status, id, 0, 0, 0);
 }
-
-
-#ifdef GATEWAY
-#ifndef PIPE_SERVER
-STATUS CSI_query_connect(STATUS * user_status,
-						 SSHORT file_length,
-						 SCHAR * file_name,
-						 RDB * handle,
-						 TEXT * connect_method, SSHORT * connect_length)
-{
-/**************************************
- *
- *	C S I _ q u e r y _ c o n n e c t
- *
- **************************************
- *
- * Functional description
- *	Attach to a central server and return the "connection method".
- *
- **************************************/
-	RDB rdb;
-
-	NULL_CHECK(handle, gds__bad_db_handle);
-
-	if (rdb = init(user_status, MSG_query_connect,
-				   file_name, file_length, 0, 0, file_name,
-				   PRB_server_t1, PRB_client_t1, connect_method,
-				   connect_length)) *handle = rdb;
-
-	return user_status[1];
-}
-#endif
-#endif
 
 
 STATUS GDS_RECEIVE(STATUS * user_status,
@@ -2503,17 +2343,6 @@ STATUS GDS_UNWIND(STATUS * user_status, RRQ * req_handle, SSHORT level)
 	user_status[1] = 0;
 	user_status[2] = 0;
 
-#ifdef GATEWAY
-#ifndef PIPE_SERVER
-	message = (MSG_OP) CSS_alloc_message(type_msg, sizeof(struct msg_op));
-	message->msg_op_header.msg_type = MSG_unwind;
-	message->msg_op_handle = request->rrq_handle;
-	message->msg_op_level = level;
-
-	get_response(rdb, message, user_status, 0, 0, 0, 0);
-#endif
-#endif
-
 	return user_status[1];
 }
 
@@ -2755,12 +2584,7 @@ USHORT client_flags, TEXT * buffer, USHORT * buffer_length)
 				 dpb_length);
 			if (CSS_put_message(connection, message, 0)
 				&& (response = CSS_get_message(connection, 0, 0)) &&
-#ifdef GATEWAY
-				!process_response(response, user_status, &handle,
-								  *buffer_length, buffer, buffer_length))
-#else
 				!process_response(response, user_status, &handle, 0, 0, 0))
-#endif
 			{
 				rdb = (RDB) ALLOC(type_rdb, sizeof(struct rdb));
 				rdb->rdb_handle = handle;
@@ -2778,7 +2602,6 @@ USHORT client_flags, TEXT * buffer, USHORT * buffer_length)
 
 
 #ifdef PIPE_SERVER
-#ifndef GATEWAY
 static RDB init(
 				STATUS * user_status,
 				MSG_T type,
@@ -3019,147 +2842,6 @@ USHORT client_flags, TEXT * buffer, USHORT * buffer_length)
 
 	return NULL;
 }
-#endif
-
-
-#ifdef GATEWAY
-static RDB init(
-				STATUS * user_status,
-				MSG_T type,
-				UCHAR * file_name,
-				USHORT file_length,
-				UCHAR * dpb, USHORT dpb_length, TEXT * expanded_filename)
-{
-/**************************************
- *
- *	i n i t		( g a t e w a y _ p i p e _ s e r v e r )
- *
- **************************************
- *
- * Functional description
- *	Initialize for database access.  First call from both CREATE and
- *	OPEN.
- *
- **************************************/
-	MSG_ATT message;
-	MSG_RESP response;
-	RDB rdb;
-	SRQ *que;
-	PRB process;
-	PTR connection, server, client;
-	CSH CSS_header;
-	HANDLE handle;
-	UCHAR gbl_file[16], csi_file[256], *p, *q;
-	USHORT expanded_length, length;
-	int pid;
-
-	sprintf(gbl_file, "ISC_%08lx", getpid());
-	q = csi_file - 1;
-	if (ISC_expand_logical_once
-		("SYS$LOGIN", sizeof("SYS$LOGIN") - 1, csi_file)) {
-		for (p = csi_file; *p; p++)
-			if (*p == ':' || *p == ']')
-				q = p;
-		if (q < csi_file)
-			*(q = p) = ':';
-	}
-	strcpy(++q, gbl_file);
-#ifdef ORACLE_ALT
-	strcat(q, "_ALT");
-#endif
-
-	if (!CSS_init(user_status, TRUE, csi_file)) {
-		*user_status++ = gds_arg_gds;
-		*user_status++ = gds__unavailable;
-		*user_status = 0;
-		return NULL;
-	}
-
-	if (!file_length)
-		file_length = strlen(file_name);
-
-	expanded_length = strlen(expanded_filename);
-
-	client = CSS_create_process(PRB_server);
-	CSS_header = ACQUIRE;
-
-/* Try to find a user on the free list whose connection is
-   still around.  Delete any that aren't. */
-
-	CSS_probe_processes();
-	while (CSI_free_servers) {
-		QUE_LOOP(CSS_header->csh_processes, que)
-			if (CSI_free_servers->rdb_server ==
-				REL_PTR((PRB) ((UCHAR *) que - OFFSET(PRB, prb_processes))))
-			break;
-
-		if (que != &CSS_header->csh_processes)
-			break;
-		else {
-			rdb = CSI_free_servers;
-			CSI_free_servers = rdb->rdb_next;
-			FREE(rdb);
-		}
-	}
-
-	RELEASE;
-
-/* If there aren't any available users, create one and then find it */
-
-	if (!CSI_free_servers) {
-		if ((pid = spawn(user_status, gbl_file, &connection)) > 0) {
-			ACQUIRE;
-
-			QUE_LOOP(CSS_header->csh_processes, que) {
-				process = (PRB) ((UCHAR *) que - OFFSET(PRB, prb_processes));
-				if (client != REL_PTR(process) &&
-					process->prb_protocol_version == CSI_PROTOCOL_VERSION &&
-					process->prb_process_id == pid) {
-					rdb = (RDB) ALLOC(type_rdb, sizeof(struct rdb));
-					rdb->rdb_next = CSI_free_servers;
-					CSI_free_servers = rdb;
-					rdb->rdb_connection = connection;
-					rdb->rdb_server = REL_PTR(process);
-					break;
-				}
-			}
-
-			RELEASE;
-		}
-	}
-
-	if (CSI_free_servers) {
-		connection = CSI_free_servers->rdb_connection;
-
-		length =
-			sizeof(struct msg_att) + file_length + expanded_length +
-			dpb_length;
-		message = (MSG_ATT) CSS_alloc_message(type_msg, (int) length);
-		message->msg_att_header.msg_type = type;
-		message->msg_att_dpb_length = dpb_length;
-		message->msg_att_file_length = file_length;
-		message->msg_att_expanded_length = expanded_length;
-		MOVE(file_name, message->msg_att_data, file_length);
-		MOVE(expanded_filename, message->msg_att_data + file_length,
-			 expanded_length);
-		MOVE(dpb, message->msg_att_data + file_length + expanded_length,
-			 dpb_length);
-		if (CSS_put_message(connection, message, 0)
-			&& (response = CSS_get_message(connection, 0, 0))
-			&& !process_response(response, user_status, &handle, 0, 0, 0)) {
-			rdb = CSI_free_servers;
-			CSI_free_servers = rdb->rdb_next;
-
-			rdb->rdb_handle = handle;
-			rdb->rdb_next = CSI_databases;
-			CSI_databases = rdb;
-			return rdb;
-		}
-	}
-
-	return NULL;
-}
-#endif
 #endif
 
 
