@@ -65,8 +65,7 @@ SSHORT WALF_delink_log(ISC_STATUS * status_vector,
 /* NOMEM: error return, FREE: by error returns & WALF_dispose_log_header() */
 	if (!log_header)
 		return FB_FAILURE;
-	ret =
-		WALF_open_log_file(status_vector, dbname, logname,
+	ret = WALF_open_log_file(status_vector, dbname, logname,
 						   log_partition_offset, log_header, &log_fd);
 	if (ret != FB_SUCCESS) {
 		gds__free((SLONG *) log_header);
@@ -140,8 +139,7 @@ SSHORT WALF_delink_prev_log(ISC_STATUS * status_vector,
 /* NOMEM: error return, FREE: by error returns & WALF_dispose_log_header() */
 	if (!log_header)
 		return FB_FAILURE;
-	ret =
-		WALF_open_log_file(status_vector, dbname, logname,
+	ret = WALF_open_log_file(status_vector, dbname, logname,
 						   log_partition_offset, log_header, &log_fd);
 	if (ret != FB_SUCCESS) {
 		gds__free((SLONG *) log_header);
@@ -186,15 +184,15 @@ void WALF_dispose_log_header( WALFH log_header)
 }
 
 
-SSHORT WALF_get_linked_logs_info(ISC_STATUS * status_vector,
-								 SCHAR * dbname,
-								 SCHAR * starting_logname,
-								 SLONG starting_log_partition_offset,
-								 int *prev_logs_count,
-								 SCHAR * last_logname,
-								 SLONG * last_log_partition_offset,
-								 SLONG * last_log_flags,
-								 SSHORT * any_log_to_be_archived)
+bool WALF_get_linked_logs_info(ISC_STATUS * status_vector,
+							   SCHAR * dbname,
+							   SCHAR * starting_logname,
+							   SLONG starting_log_partition_offset,
+							   int *prev_logs_count,
+							   SCHAR * last_logname,
+							   SLONG * last_log_partition_offset,
+							   SLONG * last_log_flags,
+							   bool * any_log_to_be_archived)
 {
 /**************************************
  *
@@ -210,7 +208,7 @@ SSHORT WALF_get_linked_logs_info(ISC_STATUS * status_vector,
  *        If any log file in the chain (including the starting logname)
  *        needs to be archived (i.e. its WALFH_KEEP_FOR_LONG_TERM_RECV 
  *        is set), the parameter any_log_to_be_archived would be set to 
- *        TRUE else it would be set to FALSE.
+ *        true else it would be set to false.
  *
  *        If there is any error, return FB_FAILURE else return FB_SUCCESS. 
  *        In case of error, status_vector would be updated.
@@ -233,9 +231,11 @@ SSHORT WALF_get_linked_logs_info(ISC_STATUS * status_vector,
 	if ((ret = WALF_get_log_info(status_vector, dbname, starting_logname,
 								 starting_log_partition_offset,
 								 &log_seqno, &log_length,
-								 &log_flags)) != FB_SUCCESS) return FB_FAILURE;
-	*any_log_to_be_archived =
-		((log_flags & WALFH_KEEP_FOR_LONG_TERM_RECV) ? TRUE : FALSE);
+								 &log_flags)) != FB_SUCCESS) 
+	{
+		return false;
+	}
+	*any_log_to_be_archived = (log_flags & WALFH_KEEP_FOR_LONG_TERM_RECV);
 	strcpy(log_name1, starting_logname);
 	curr_name = log_name1;
 	curr_log_partition_offset = starting_log_partition_offset;
@@ -247,7 +247,9 @@ SSHORT WALF_get_linked_logs_info(ISC_STATUS * status_vector,
 			(status_vector, dbname, curr_name, curr_log_partition_offset,
 			 prev_name, &prev_log_partition_offset, &log_seqno, &log_length,
 			 &log_flags, -1) != FB_SUCCESS)
+		{
 			break;
+		}
 		log_count++;
 		temp_name = prev_name;
 		prev_name = curr_name;
@@ -255,7 +257,9 @@ SSHORT WALF_get_linked_logs_info(ISC_STATUS * status_vector,
 		curr_log_partition_offset = prev_log_partition_offset;
 		if (!(*any_log_to_be_archived) &&
 			(log_flags & WALFH_KEEP_FOR_LONG_TERM_RECV))
-				*any_log_to_be_archived = TRUE;
+		{
+			*any_log_to_be_archived = true;
+		}
 	}
 
 /* Now initialize the passed parameters with the oldest log info. */
@@ -265,7 +269,7 @@ SSHORT WALF_get_linked_logs_info(ISC_STATUS * status_vector,
 	*last_log_partition_offset = curr_log_partition_offset;
 	*last_log_flags = log_flags;
 
-	return FB_SUCCESS;
+	return true;
 }
 
 
@@ -274,7 +278,8 @@ SSHORT WALF_get_log_info(ISC_STATUS * status_vector,
 						 SCHAR * logname,
 						 SLONG log_partition_offset,
 						 SLONG * log_seqno,
-						 SLONG * log_length, SLONG * log_flag)
+						 SLONG * log_length,
+						 SLONG * log_flag)
 {
 /**************************************
  *
@@ -285,7 +290,7 @@ SSHORT WALF_get_log_info(ISC_STATUS * status_vector,
  * Functional description
  *       Get the seqno, length and the header flag of the given log file.
  *
- *       If there is any error, return FB_FAILURE else return FB_SUCCESS.
+ *       If there is any error, return false else return true.
  *       In case of error, status_vector would be updated.
  *
  **************************************/
@@ -296,13 +301,12 @@ SSHORT WALF_get_log_info(ISC_STATUS * status_vector,
 	log_header = (WALFH) gds__alloc(WALFH_LENGTH);
 /* NOMEM: error return, FREE: by error returns & WALF_dispose_log_header() */
 	if (!log_header)
-		return FB_FAILURE;
-	ret =
-		WALF_open_log_file(status_vector, dbname, logname,
-						   log_partition_offset, log_header, &log_fd);
+		return false;
+	ret = WALF_open_log_file(status_vector, dbname, logname,
+							 log_partition_offset, log_header, &log_fd);
 	if (ret != FB_SUCCESS) {
 		gds__free((SLONG *) log_header);
-		return FB_FAILURE;
+		return false;
 	}
 
 	*log_seqno = log_header->walfh_seqno;
@@ -324,7 +328,8 @@ SSHORT WALF_get_next_log_info(ISC_STATUS * status_vector,
 							  SLONG * next_log_partition_offset,
 							  SLONG * next_log_seqno,
 							  SLONG * next_log_length,
-							  SLONG * next_log_flags, SSHORT direction)
+							  SLONG * next_log_flags,
+							  SSHORT direction)
 {
 /**************************************
  *
@@ -354,9 +359,8 @@ SSHORT WALF_get_next_log_info(ISC_STATUS * status_vector,
 	if (!log_header)
 		return FB_FAILURE;
 
-	ret =
-		WALF_open_log_file(status_vector, dbname, logname,
-						   log_partition_offset, log_header, &log_fd);
+	ret = WALF_open_log_file(status_vector, dbname, logname,
+							 log_partition_offset, log_header, &log_fd);
 	if (ret != FB_SUCCESS) {
 		gds__free((SLONG *) log_header);
 		return FB_FAILURE;
@@ -736,7 +740,8 @@ SSHORT WALF_set_log_header_flag(ISC_STATUS * status_vector,
 								SCHAR * dbname,
 								SCHAR * logname,
 								SLONG log_partition_offset,
-								SLONG flag, int set)
+								SLONG flag,
+								bool set)
 {
 /**************************************
  *
@@ -747,7 +752,7 @@ SSHORT WALF_set_log_header_flag(ISC_STATUS * status_vector,
  * Functional description
  *        Update the walfh_flags field of the log header in the log 
  *        file by the passed flag setting(s).  If the parameter 'set'
- *        is TRUE, the flag bit(s) would be set else they would be reset.
+ *        is true, the flag bit(s) would be set else they would be reset.
  *        If there is any error, return FB_FAILURE else return FB_SUCCESS.
  *        In case of error, status_vector would be updated.
  *

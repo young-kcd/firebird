@@ -93,12 +93,12 @@ static SSHORT grpc_wait_for_group_commit_finish(ISC_STATUS *, WAL, SSHORT,
 												GRP_COMMIT *);
 static void inform_wal_writer(WAL);
 static SSHORT next_buffer_available(WALS);
-static void setup_buffer_for_writing(WAL, WALS, SSHORT);
-static SSHORT shutdown_writer(ISC_STATUS *, WAL, SSHORT);
+static void setup_buffer_for_writing(WAL, WALS, bool);
+static SSHORT shutdown_writer(ISC_STATUS *, WAL, bool);
 static SSHORT sync_with_wal_writer(ISC_STATUS *, WAL);
 static SSHORT wait_for_writer(ISC_STATUS *, WAL);
 static SSHORT wal_put2(ISC_STATUS *, WAL, UCHAR *, USHORT, UCHAR *, USHORT,
-					   SLONG *, SLONG *, SSHORT);
+					   SLONG *, SLONG *, bool);
 
 #ifdef WIN_NT
 #define WAL_WRITER	"bin/walw"
@@ -140,7 +140,7 @@ SSHORT WAL_attach( ISC_STATUS * status_vector, WAL * WAL_handle, SCHAR * dbname)
 	ISC_STATUS_ARRAY local_status;
 
 	int ret = WALC_init(status_vector, WAL_handle, dbname, 0,
-					NULL, 0L, FALSE, 1L, 0, NULL, FALSE);
+					NULL, 0L, false, 1L, 0, NULL, false);
 	if (ret == FB_SUCCESS) {
 		if ((ret = WALC_check_writer(*WAL_handle)) != FB_SUCCESS)
 			ret = fork_writer(status_vector, *WAL_handle);
@@ -199,7 +199,7 @@ SSHORT WAL_checkpoint_finish(ISC_STATUS * status_vector,
 
 	UCHAR chkpt_rec[100];
 	wal_put2(status_vector, WAL_handle, chkpt_rec, 0,
-			 NULL, 0, log_seqno, log_offset, TRUE);
+			 NULL, 0, log_seqno, log_offset, true);
 
 /* Now save the checkpoint record offset to be used by WAL writer later after
    it flushes the block containing the checkpoint record.  We need to do this
@@ -213,7 +213,7 @@ SSHORT WAL_checkpoint_finish(ISC_STATUS * status_vector,
 
 	SLONG dummy_seqno;
 	SLONG dummy_offset;
-	WAL_flush(status_vector, WAL_handle, &dummy_seqno, &dummy_offset, FALSE);
+	WAL_flush(status_vector, WAL_handle, &dummy_seqno, &dummy_offset, false);
 	WALC_acquire(WAL_handle, &WAL_segment);
 	*log_seqno = WAL_segment->wals_ckpted_log_seqno;
 	strcpy(logname, WAL_segment->wals_ckpt_logname);
@@ -257,7 +257,8 @@ SSHORT WAL_checkpoint_force(ISC_STATUS * status_vector,
 
 
 SSHORT WAL_checkpoint_start(ISC_STATUS * status_vector,
-							WAL WAL_handle, SSHORT * ckpt_start)
+							WAL WAL_handle,
+							bool * ckpt_start)
 {
 /**************************************
  *
@@ -267,7 +268,7 @@ SSHORT WAL_checkpoint_start(ISC_STATUS * status_vector,
  *
  * Functional description
  *	To inform the caller if checkpoint needs to be started.
- *	Returns TRUE or FASLE through ckpt_start parameter.
+ *	Returns true or false through ckpt_start parameter.
  *
  *	Returns FB_SUCCESS or FB_FAILURE.
  *
@@ -276,10 +277,10 @@ SSHORT WAL_checkpoint_start(ISC_STATUS * status_vector,
 
 	WALC_acquire(WAL_handle, &WAL_segment);
 	WAL_CHECK_BUG(WAL_handle, WAL_segment);
-	*ckpt_start = FALSE;
+	*ckpt_start = false;
 	if ((WAL_segment->wals_flags & WALS_CKPT_START) &&
 		!(WAL_segment->wals_flags & WALS_CKPT_RECORDED))
-		*ckpt_start = TRUE;
+		*ckpt_start = true;
 	WALC_release(WAL_handle);
 
 	return FB_SUCCESS;
@@ -345,8 +346,10 @@ SSHORT WAL_commit(ISC_STATUS * status_vector,
 	WALS WAL_segment;
 
 	if (len && wal_put2(status_vector, WAL_handle, commit_logrec, len,
-						NULL, 0, log_seqno, log_offset, 0) != FB_SUCCESS)
+						NULL, 0, log_seqno, log_offset, false) != FB_SUCCESS)
+	{
 		return FB_FAILURE;
+	}
 
 	SSHORT ret = FB_SUCCESS;
 
@@ -381,7 +384,7 @@ SSHORT WAL_commit(ISC_STATUS * status_vector,
 		SLONG dummy_seqno;
 		SLONG dummy_offset;
 		return WAL_flush(status_vector, WAL_handle,
-						 &dummy_seqno, &dummy_offset, FALSE);
+						 &dummy_seqno, &dummy_offset, false);
 	}
 
 	SSHORT grpc_blknum = WAL_segment->wals_cur_grpc_blknum;
@@ -421,10 +424,11 @@ void WAL_fini( ISC_STATUS * status_vector, WAL * WAL_handle)
 }
 
 
-SSHORT WAL_flush(
-				 ISC_STATUS * status_vector,
+SSHORT WAL_flush(ISC_STATUS * status_vector,
 				 WAL WAL_handle,
-				 SLONG * log_seqno, SLONG * log_offset, BOOLEAN conditional)
+				 SLONG * log_seqno,
+				 SLONG * log_offset,
+				 bool conditional)
 {
 /**************************************
  *
@@ -481,7 +485,7 @@ SSHORT WAL_flush(
    switched to this buffer.  */
 
 	if (CUR_BUF != -1 && (WAL_BLOCK(CUR_BUF))->walblk_cur_offset > 0)
-		setup_buffer_for_writing(WAL_handle, WAL_segment, 0);
+		setup_buffer_for_writing(WAL_handle, WAL_segment, false);
 
 	WAL_segment->wals_buf_waiters++;
 	inform_wal_writer(WAL_handle);
@@ -516,8 +520,10 @@ SSHORT WAL_init(ISC_STATUS * status_vector,
 				USHORT db_page_len,
 				SCHAR * logname,
 				SLONG log_partition_offset,
-				SSHORT first_time_log,
-				SLONG new_log_seqno, SSHORT wpb_length, SCHAR * wpb)
+				bool first_time_log,
+				SLONG new_log_seqno,
+				SSHORT wpb_length,
+				SCHAR * wpb)
 {
 /**************************************
  *
@@ -531,7 +537,7 @@ SSHORT WAL_init(ISC_STATUS * status_vector,
  *
  *	Initialize the WAL_handle.
  *
- *	If first_time_log is TRUE then use the new_log_seqno
+ *	If first_time_log is true then use the new_log_seqno
  *	as the starting sequence number for the set of new log
  *	files.
  *
@@ -541,15 +547,10 @@ SSHORT WAL_init(ISC_STATUS * status_vector,
  **************************************/
 	ISC_STATUS_ARRAY local_status;
 
-	SSHORT ret = WALC_init(status_vector,
-					WAL_handle,
-					dbname,
-					db_page_len,
-					logname,
-					log_partition_offset,
-					first_time_log,
-					new_log_seqno,
-					wpb_length, reinterpret_cast < UCHAR * >(wpb), TRUE);
+	SSHORT ret = WALC_init(status_vector, WAL_handle, dbname, db_page_len,
+						   logname, log_partition_offset, first_time_log,
+						   new_log_seqno, wpb_length,
+						   reinterpret_cast < UCHAR * >(wpb), TRUE);
 	if (ret == FB_SUCCESS) {
 		if ((ret = fork_writer(status_vector, *WAL_handle)) != FB_SUCCESS)
 			WALC_fini(local_status, WAL_handle);
@@ -691,7 +692,7 @@ SSHORT WAL_put(ISC_STATUS * status_vector,
  **************************************/
 
 	return wal_put2(status_vector, WAL_handle,
-					logrec1, len1, logrec2, len2, log_seqno, log_offset, 0);
+					logrec1, len1, logrec2, len2, log_seqno, log_offset, false);
 }
 
 
@@ -709,7 +710,7 @@ bool WAL_rollover_happened(ISC_STATUS * status_vector,
  *
  * Functional description
  *	To inform the caller if rollover to a new log file has happened.
- *	Returns TRUE or FASLE.   If TRUE then new_logname,
+ *	Returns true or false.   If true then new_logname,
  *	new_log_partition_offset and new_seqno parameters are initialized
  *	with the new information.  The caller should invoke
  *	WAL_rollover_recorded() after recording the rollover
@@ -883,7 +884,8 @@ SSHORT WAL_shutdown(ISC_STATUS * status_vector,
 					SLONG * log_seqno,
 					SCHAR * logname,
 					SLONG * log_partition_offset,
-					SLONG * shutdown_offset, SSHORT inform_close_to_jserver)
+					SLONG * shutdown_offset,
+					bool inform_close_to_jserver)
 {
 /**************************************
  *
@@ -941,7 +943,7 @@ SSHORT WAL_shutdown_old_writer(ISC_STATUS * status_vector, SCHAR * dbname)
 		return FB_SUCCESS;			/* Nobody is attached to the shared WAL segment */
 
 	if (WALC_check_writer(WAL_handle) == FB_SUCCESS)
-		shutdown_writer(status_vector, WAL_handle, (SSHORT) 0);
+		shutdown_writer(status_vector, WAL_handle, false);
 
 	WAL_fini(status_vector, &WAL_handle);
 
@@ -1191,9 +1193,8 @@ static SSHORT grpc_do_group_commit(
 	if (ret != FB_SUCCESS)
 		return ret;
 
-	ret =
-		WAL_flush(status_vector, WAL_handle, &dummy_seqno, &dummy_offset,
-				  FALSE);
+	ret = WAL_flush(status_vector, WAL_handle, &dummy_seqno, &dummy_offset,
+					false);
 	if (ret != FB_SUCCESS)
 		return ret;
 
@@ -1263,10 +1264,7 @@ static SSHORT grpc_wait_for_grouping(
 	SLONG value = ISC_event_clear(ptr);
 	WALC_release(WAL_handle);
 
-	ISC_event_wait(1,
-				   &ptr,
-				   &value,
-				   WAL_handle->wal_grpc_wait_usecs,
+	ISC_event_wait(1, &ptr, &value, WAL_handle->wal_grpc_wait_usecs,
 				   WALC_alarm_handler, ptr);
 
 /* Now make sure that the other group-commit block is available */
@@ -1347,8 +1345,7 @@ static SSHORT grpc_wait_for_group_commit_finish(
 	ptr = &WAL_EVENTS[grpc->grp_commit_event_num];
 	value = ISC_event_clear(ptr);
 	WALC_release(WAL_handle);
-	while (ISC_event_wait(1, &ptr, &value, 
-						  WAL_handle->wal_grpc_wait_coord_usecs, 
+	while (ISC_event_wait(1, &ptr, &value, WAL_handle->wal_grpc_wait_coord_usecs,
 						  WALC_alarm_handler, ptr) != FB_SUCCESS) 
 	{
 		/* Check to make sure that the coordinator is still alive. */
@@ -1422,9 +1419,9 @@ static SSHORT next_buffer_available( WALS WAL_segment)
 }
 
 
-static void setup_buffer_for_writing(
-									 WAL WAL_handle,
-									 WALS WAL_segment, SSHORT ckpt)
+static void setup_buffer_for_writing(WAL WAL_handle,
+									 WALS WAL_segment,
+									 bool ckpt)
 {
 /**************************************
  *
@@ -1437,7 +1434,7 @@ static void setup_buffer_for_writing(
  *	Inform the WAL writer that the current buffer is ready
  *	to be flushed to disk.  Assumes that acquire() has
  *	been done, before calling this routine.
- *	If 'ckpt' flag is TRUE then this buffer finishes a checkpoint.
+ *	If 'ckpt' flag is true then this buffer finishes a checkpoint.
  ***************************************/
 	WALBLK *wblk;
 
@@ -1454,9 +1451,9 @@ static void setup_buffer_for_writing(
 }
 
 
-static SSHORT shutdown_writer(
-							  ISC_STATUS * status_vector,
-							  WAL WAL_handle, SSHORT inform_close_to_jserver)
+static SSHORT shutdown_writer(ISC_STATUS * status_vector,
+							  WAL WAL_handle,
+							  bool inform_close_to_jserver)
 {
 /**************************************
  *
@@ -1562,9 +1559,8 @@ static SSHORT wait_for_writer( ISC_STATUS * status_vector, WAL WAL_handle)
 	value = ISC_event_clear(ptr);
 	WALC_release(WAL_handle);
 
-	ret =
-		ISC_event_wait(1, &ptr, &value, WAIT_TIME,
-					   WALC_alarm_handler, ptr);
+	ret = ISC_event_wait(1, &ptr, &value, WAIT_TIME,
+						 WALC_alarm_handler, ptr);
 	if (ret == FB_FAILURE) {
 		/* We got out because of timeout.  May be our condition is
 		   already met.  Let the caller decide that.  In any case, make
@@ -1580,13 +1576,15 @@ static SSHORT wait_for_writer( ISC_STATUS * status_vector, WAL WAL_handle)
 }
 
 
-static SSHORT wal_put2(
-					   ISC_STATUS * status_vector,
+static SSHORT wal_put2(ISC_STATUS * status_vector,
 					   WAL WAL_handle,
 					   UCHAR * logrec1,
 					   USHORT len1,
-UCHAR * logrec2,
-USHORT len2, SLONG * log_seqno, SLONG * log_offset, SSHORT ckpt)
+					   UCHAR * logrec2,
+					   USHORT len2,
+					   SLONG * log_seqno,
+					   SLONG * log_offset,
+					   bool ckpt)
  {
 /**************************************
  *
@@ -1612,7 +1610,7 @@ USHORT len2, SLONG * log_seqno, SLONG * log_offset, SSHORT ckpt)
  *	series and the offset of this logrec in that file where
  *	this log record would eventually be written.
  *
- *	If 'ckpt' parameter is TRUE then steup the buffer with
+ *	If 'ckpt' parameter is true then steup the buffer with
  *	this logrec for writing and mark it as a checkpoint buffer.
  *	The WAL writer will handle this checkpointed buffer in a special
  *	way.
@@ -1621,7 +1619,8 @@ USHORT len2, SLONG * log_seqno, SLONG * log_offset, SSHORT ckpt)
  *
  **************************************/
 	int available_bytes;
-	USHORT total_len, done = FALSE;
+	USHORT total_len;
+	bool done = false;
 	WALBLK *wblk;
 	SLONG lsn;
 	SLONG offset;
@@ -1664,7 +1663,7 @@ USHORT len2, SLONG * log_seqno, SLONG * log_offset, SSHORT ckpt)
 		{
 			WAL_segment->wals_flags |= WALS_ROLLOVER_REQUIRED;
 			if (wblk->walblk_cur_offset > BLK_HDROVHD)
-				setup_buffer_for_writing(WAL_handle, WAL_segment, 0);
+				setup_buffer_for_writing(WAL_handle, WAL_segment, false);
 			WAL_segment->wals_buf_waiters++;
 			wait_for_writer(status_vector, WAL_handle);
 			WAL_segment = WAL_handle->wal_segment;
@@ -1680,15 +1679,14 @@ USHORT len2, SLONG * log_seqno, SLONG * log_offset, SSHORT ckpt)
 			/* Found a large enough buffer, use it. */
 
 			lsn = WAL_segment->wals_log_seqno;
-			offset =
-				copy_buffer(WAL_segment, wblk, logrec1, len1, logrec2, len2);
-			done = TRUE;
+			offset = copy_buffer(WAL_segment, wblk, logrec1, len1, logrec2, len2);
+			done = true;
 		}
 		else
 			/* Assumption: One empty WAL buffer is long enough to fully accommodate
 			   any one log record.  Let's try the next buffer. */
 
-			setup_buffer_for_writing(WAL_handle, WAL_segment, 0);
+			setup_buffer_for_writing(WAL_handle, WAL_segment, false);
 	}
 
 	if (ckpt)

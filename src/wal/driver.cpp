@@ -120,7 +120,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	USHORT wal_buf_count;
 	USHORT wal_buflen;
 	SLONG wal_ckpt_intrvl;
-	SSHORT first_time_log;
+	bool first_time_log;
 
 	SSHORT logcount;
 
@@ -148,7 +148,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	SCHAR last_logname[MAXPATHLEN];
 	SLONG last_log_partition_offset;
 	SLONG last_log_flags;
-	SSHORT any_log_to_be_archived;
+	bool any_log_to_be_archived;
 
 	if (argc < 2) {
 		ib_printf
@@ -164,11 +164,11 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	wal_buflen = MIN_WALBUFLEN;
 	wal_ckpt_intrvl = 100;		/* 100K bytes */
 	if (argc == 6) {
-		first_time_log = TRUE;
+		first_time_log = true;
 		sscanf(argv[5], "%ld", &new_log_seqno);
 	}
 	else {
-		first_time_log = FALSE;
+		first_time_log = false;
 		/* Set some default value for the log_seqno.  If using an existing
 		   log file, log_seqno will be set accordingly by the WAL writer */
 		new_log_seqno = 1L;
@@ -313,8 +313,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		if (strcmp(buff, "Q") == 0)
 			break;
 		if (strcmp(buff, "F") == 0) {
-			WAL_flush(status_vector, WAL_handle, &log_seqno, &log_offset,
-					  FALSE);
+			WAL_flush(status_vector, WAL_handle, &log_seqno, &log_offset, false);
 			ib_printf("flushed_seqno=%ld, flushed_offset=%ld\n", log_seqno,
 					  log_offset);
 		}
@@ -392,7 +391,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			ib_printf("Enter the partition offset: ");
 			ib_scanf("%ld", &log_partition_offset);
 			ib_scanf("%c", &dbnum);	/* get rid of the trailing '\n' character */
-			any_log_to_be_archived = 0;
+			any_log_to_be_archived = false;
 			WALF_get_linked_logs_info(status_vector, dbname,
 									  log_name, log_partition_offset,
 									  &log_count,
@@ -419,7 +418,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			ib_scanf("%c", &dbnum);	/* get rid of the trailing '\n' character */
 			WALF_set_log_header_flag(status_vector, dbname, log_name,
 									 log_partition_offset, log_flag,
-									 (set == 'S') ? TRUE : FALSE);
+									 (set == 'S'));
 		}
 		else if (strcmp(buff, "J") == 0) {
 			WAL_journal_enable(status_vector, WAL_handle,
@@ -471,14 +470,13 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		}
 	}
 
-	WAL_flush(status_vector, WAL_handle, &log_seqno, &log_offset, FALSE);
+	WAL_flush(status_vector, WAL_handle, &log_seqno, &log_offset, false);
 	ib_printf("\nDo you want to shutdown the WAL writer(s) ? <y/n> ");
 	ib_scanf("%c", &shutdown);
 
 	if (shutdown == 'y' || shutdown == 'Y') {
-		WAL_shutdown(status_vector, WAL_handle,
-					 &log_seqno, log_name, &log_partition_offset, &log_offset,
-					 FALSE);
+		WAL_shutdown(status_vector, WAL_handle, &log_seqno, log_name,
+					 &log_partition_offset, &log_offset, false);
 		ib_printf("At shutdown:\n");
 		ib_printf
 			("log_seqno=%ld, logname=%s, log_partition_offset=%ld, shutdown offset=%ld\n",
@@ -751,7 +749,7 @@ log_count = 3;
 	WALRS_handle = NULL;
 	if ((ret = WALR_open(status_vector, &WALRS_handle, dbname,
 						 log_count, lognames, log_p_offsets,
-						 0L, NULL, FALSE)) != FB_SUCCESS) {
+						 0L, NULL, false)) != FB_SUCCESS) {
 		if (ret == -1) {
 			ib_printf("End of log...\n");
 			return FB_SUCCESS;

@@ -134,15 +134,15 @@ int CLIB_ROUTINE main( int argc, char *argv[])
    first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
    by 3 file descriptors to use in re-directing ib_stdin, ib_stdout, and ib_stderr. */
 
-	DDL_service = FALSE;
+	DDL_service = false;
 
 	if (argc > 1 && !strcmp(argv[1], "-svc")) {
-		DDL_service = TRUE;
+		DDL_service = true;
 		argv++;
 		argc--;
 	}
 	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
-		DDL_service = TRUE;
+		DDL_service = true;
 		redir_in = atol(argv[2]);
 		redir_out = atol(argv[3]);
 		redir_err = atol(argv[4]);
@@ -167,7 +167,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	DDL_file_name = NULL;
 	DB_file_name = NULL;
 	DDL_drop_database = DDL_quit = DDL_extract = DDL_dynamic = DDL_trace =
-		DDL_version = FALSE;
+		DDL_version = false;
 	DDL_default_user = DDL_default_password = NULL;
 
 	file_name_1[0] = file_name_2[0] = 0;
@@ -211,7 +211,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		}
 		switch (in_sw) {
 		case IN_SW_GDEF_D:
-			DDL_dynamic = TRUE;
+			DDL_dynamic = true;
 			DYN_file_name[0] = 0;
 			if (argc == 1)
 				break;
@@ -252,20 +252,20 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			break;
 
 		case IN_SW_GDEF_G:
-			DDL_extract = TRUE;
+			DDL_extract = true;
 			break;
 
 		case IN_SW_GDEF_R:
-			DDL_replace = TRUE;
+			DDL_replace = true;
 			break;
 
 		case IN_SW_GDEF_T:
-			DDL_trace = TRUE;
+			DDL_trace = true;
 			break;
 
 		case IN_SW_GDEF_Z:
 			DDL_msg_put(0, GDS_VERSION, 0, 0, 0, 0);	/* msg 0: gdef version %s\n */
-			DDL_version = TRUE;
+			DDL_version = true;
 			break;
 
 		case IN_SW_GDEF_PASSWORD:
@@ -378,8 +378,10 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			DDL_msg_partial(9, 0, 0, 0, 0, 0);	/* msg 9: \n1 error during input. */
 		else
 			DDL_msg_partial(8, 0, 0, 0, 0, 0);	/* msg 8: \nNo errors. */
-		if (DDL_yes_no(10))		/* msg 10 : save changes before exiting? */
-			DDL_quit = DDL_errors = 0;
+		if (DDL_yes_no(10)){ // msg 10 : save changes before exiting?
+			DDL_quit = false;
+			DDL_errors = 0;
+		}
 	}
 
 /* Reverse the set of actions */
@@ -649,7 +651,7 @@ void DDL_push( DUDLEY_NOD object, LLS * pointer)
 }
 
 
-int DDL_yes_no( USHORT number)
+bool DDL_yes_no( USHORT number)
 {
 /**************************************
  *
@@ -693,11 +695,11 @@ int DDL_yes_no( USHORT number)
 		if (c != '\n' && c != EOF)
 			while ((d = ib_getc(ib_stdin)) != '\n' && d != EOF);
 		if (!count && c == EOF)
-			return FALSE;
+			return false;
 		if (UPPER(c) == UPPER(yes_ans[0]))
-			return TRUE;
+			return true;
 		if (UPPER(c) == UPPER(no_ans[0]))
-			return FALSE;
+			return false;
 		if (!reprompt
 			&& gds__msg_format(0, DDL_MSG_FAC, re_num, sizeof(reprompt),
 							   reprompt, NULL, NULL, NULL, NULL, NULL) <= 0)

@@ -36,9 +36,9 @@
 #include "../jrd/jrn_proto.h"
 #include "../jrd/llio_proto.h"
 
-static USHORT copy_file(SLONG, SLONG, SLONG);
+static bool copy_file(SLONG, SLONG, SLONG);
 static void error_exit(ISC_STATUS *, JRN *, SLONG, SLONG, SLONG);
-static USHORT open_file(TEXT *, SLONG, USHORT, SLONG *);
+static bool open_file(TEXT *, SLONG, USHORT, SLONG *);
 
 
 int CLIB_ROUTINE main(int argc,
@@ -61,7 +61,7 @@ int CLIB_ROUTINE main(int argc,
 	SLONG s_fd, d_fd;
 	SLONG p_offset;
 	USHORT j_length;
-	USHORT ret_val;
+	bool ret_val;
 	SLONG size;
 	SLONG db_id;
 	ISC_STATUS_ARRAY status;
@@ -89,11 +89,11 @@ int CLIB_ROUTINE main(int argc,
 
 // Check in with database
 
-	if (open_file(s_file, p_offset, LLIO_OPEN_R, &s_fd) == FB_FAILURE)
+	if (!open_file(s_file, p_offset, LLIO_OPEN_R, &s_fd))
 		error_exit(status, &journal, db_id, file_id, 236);
 		// msg 236: Archive process unable to open log file.
 
-	if (open_file(d_file, 0L, LLIO_OPEN_NEW_RW, &d_fd) == FB_FAILURE) {
+	if (!open_file(d_file, 0L, LLIO_OPEN_NEW_RW, &d_fd)) {
 		LLIO_close(0, s_fd);
 		error_exit(status, &journal, db_id, file_id, 237);
 		// msg 237: Archive process unable to create archive file.
@@ -101,10 +101,10 @@ int CLIB_ROUTINE main(int argc,
 
 	ret_val = copy_file(s_fd, d_fd, size);
 
-	ret_val |= LLIO_close(0, s_fd);
-	ret_val |= LLIO_close(0, d_fd);
+	ret_val |= (LLIO_close(0, s_fd) == FB_SUCCESS);
+	ret_val |= (LLIO_close(0, d_fd) == FB_SUCCESS);
 
-	if (ret_val)
+	if (!ret_val)
 		error_exit(status, &journal, db_id, file_id, 238);
 		// msg 238: Archive process unable to close log and/or archive files.
 
@@ -118,7 +118,7 @@ int CLIB_ROUTINE main(int argc,
 }
 
 
-static USHORT copy_file(SLONG s_fd,
+static bool copy_file(SLONG s_fd,
 						SLONG d_fd,
 						SLONG size)
 {
@@ -130,6 +130,7 @@ static USHORT copy_file(SLONG s_fd,
  *
  * Functional description
  *	copy source file to destination file
+ *	Return true on success, false on failure
  *
  **************************************/
 	UCHAR buff[1024];
@@ -148,16 +149,16 @@ static USHORT copy_file(SLONG s_fd,
 		if (LLIO_read(0, s_fd, 0, 0L, LLIO_SEEK_NONE, buff, l, &read) ||
 			l != read)
 		{
-			return FB_FAILURE;
+			return false;
 		}
 		if (LLIO_write(0, d_fd, 0, 0L, LLIO_SEEK_NONE, buff, l, &written) ||
 			l != written)
 		{
-			return FB_FAILURE;
+			return false;
 		}
 	}
 
-	return FB_SUCCESS;
+	return true;
 }
 
 
@@ -182,10 +183,10 @@ static void error_exit(ISC_STATUS * status_vector,
 }
 
 
-static USHORT open_file(TEXT * full_name,
-						SLONG p_offset,
-						USHORT mode,
-						SLONG * fd)
+static bool open_file(TEXT * full_name,
+					  SLONG p_offset,
+					  USHORT mode,
+					  SLONG * fd)
 {
 /**************************************
  *
@@ -195,17 +196,18 @@ static USHORT open_file(TEXT * full_name,
  *
  * Functional description
  *	open a file with a given mask
- *	Return file descriptor.
+ *	Return true if success false if failure.
+ *	The output file descriptor return in fd parameter.
  *
  **************************************/
 
 	if (LLIO_open(0, full_name, mode, FALSE, fd))
-		return FB_FAILURE;
+		return false;
 
 	if (p_offset) {
 		if (LLIO_seek(0, *fd, 0, p_offset, LLIO_SEEK_BEGIN))
-			return FB_FAILURE;
+			return false;
 	}
 
-	return FB_SUCCESS;
+	return true;
 }

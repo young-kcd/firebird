@@ -31,7 +31,7 @@ extern void	PRO_create (struct dbb *, TEXT *);
 extern int	PRO_delete_procedure (struct dbb *, TEXT *);
 extern void	PRO_edit_procedure (struct dbb *, TEXT *);
 extern FRBRD	*PRO_fetch_procedure (struct dbb *, TEXT *);
-extern int	PRO_get_line (FRBRD *, TEXT *, USHORT);
+extern bool	PRO_get_line (FRBRD *, TEXT *, USHORT);
 extern void	PRO_invoke (struct dbb *, TEXT *);
 extern FRBRD	*PRO_open_blob (struct dbb *, SLONG *);
 extern int	PRO_rename_procedure (struct dbb *, TEXT *, TEXT *);

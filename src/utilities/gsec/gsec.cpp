@@ -235,22 +235,22 @@ int UTIL_gsec(int argc,
 	tdsec->tsec_env = &env;
 	tdsec->tsec_output_proc = output_proc;
 	tdsec->tsec_output_data = output_data;
-	tdsec->tsec_interactive = TRUE;
-	tdsec->tsec_service_gsec = FALSE;
-	tdsec->tsec_service_thd = FALSE;
+	tdsec->tsec_interactive = true;
+	tdsec->tsec_service_gsec = false;
+	tdsec->tsec_service_thd = false;
 	tdsec->tsec_service_blk = NULL;
 	tdsec->tsec_status = tdsec->tsec_status_vector;
 	user_data = tdsec->tsec_user_data;
 
 	if (argc > 1 && !strcmp(argv[1], "-svc")) {
-		tdsec->tsec_service_gsec = TRUE;
+		tdsec->tsec_service_gsec = true;
 		argv++;
 		argc--;
 	}
 #ifdef SUPERSERVER
 	else if (argc > 1 && !strcmp(argv[1], "-svc_thd")) {
-		tdsec->tsec_service_gsec = TRUE;
-		tdsec->tsec_service_thd = TRUE;
+		tdsec->tsec_service_gsec = true;
+		tdsec->tsec_service_thd = true;
 		tdsec->tsec_service_blk = (SVC) output_data;
 		tdsec->tsec_status = tdsec->tsec_service_blk->svc_status;
 		argv++;
@@ -258,7 +258,7 @@ int UTIL_gsec(int argc,
 	}
 #endif
 	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
-		tdsec->tsec_service_gsec = TRUE;
+		tdsec->tsec_service_gsec = true;
 		redir_in = atol(argv[2]);
 		redir_out = atol(argv[3]);
 		redir_err = atol(argv[4]);
@@ -579,7 +579,7 @@ static bool get_switches(
 	user_data = tdsec->tsec_user_data;
 	*quitflag = false;
 	last_sw = IN_SW_GSEC_0;
-	tdsec->tsec_sw_version = FALSE;
+	tdsec->tsec_sw_version = false;
 	for (--argc; argc > 0; argc--) {
 		string = *++argv;
 		if (*string == '?')
@@ -605,7 +605,7 @@ static bool get_switches(
 					return false;
 				}
 				user_data->user_name[l] = '\0';
-				user_data->user_name_entered = TRUE;
+				user_data->user_name_entered = true;
 				break;
 			case IN_SW_GSEC_PASSWORD:
 				for (l = 0; l < 9 && string[l] && string[l] != ' '; l++)
@@ -615,51 +615,51 @@ static bool get_switches(
 					/* warning password maximum 8 significant bytes used */
 				}
 				user_data->password[l] = '\0';
-				user_data->password_entered = TRUE;
+				user_data->password_entered = true;
 				break;
 			case IN_SW_GSEC_UID:
 				user_data->uid = atoi(string);
-				user_data->uid_entered = TRUE;
+				user_data->uid_entered = true;
 				break;
 			case IN_SW_GSEC_GID:
 				user_data->gid = atoi(string);
-				user_data->gid_entered = TRUE;
+				user_data->gid_entered = true;
 				break;
 			case IN_SW_GSEC_SYSU:
 				strncpy(user_data->sys_user_name, string, 128);
-				user_data->sys_user_entered = TRUE;
+				user_data->sys_user_entered = true;
 				break;
 			case IN_SW_GSEC_GROUP:
 				strncpy(user_data->group_name, string, 128);
-				user_data->group_name_entered = TRUE;
+				user_data->group_name_entered = true;
 				break;
 			case IN_SW_GSEC_FNAME:
 				strncpy(user_data->first_name, string, 17);
-				user_data->first_name_entered = TRUE;
+				user_data->first_name_entered = true;
 				break;
 			case IN_SW_GSEC_MNAME:
 				strncpy(user_data->middle_name, string, 17);
-				user_data->middle_name_entered = TRUE;
+				user_data->middle_name_entered = true;
 				break;
 			case IN_SW_GSEC_LNAME:
 				strncpy(user_data->last_name, string, 17);
-				user_data->last_name_entered = TRUE;
+				user_data->last_name_entered = true;
 				break;
 			case IN_SW_GSEC_DATABASE:
 				strncpy(user_data->database_name, string, 512);
-				user_data->database_entered = TRUE;
+				user_data->database_entered = true;
 				break;
 			case IN_SW_GSEC_DBA_USER_NAME:
 				strncpy(user_data->dba_user_name, string, 133);
-				user_data->dba_user_name_entered = TRUE;
+				user_data->dba_user_name_entered = true;
 				break;
 			case IN_SW_GSEC_DBA_PASSWORD:
 				strncpy(user_data->dba_password, string, 33);
-				user_data->dba_password_entered = TRUE;
+				user_data->dba_password_entered = true;
 				break;
 			case IN_SW_GSEC_SQL_ROLE_NAME:
 				strncpy(user_data->sql_role_name, string, 33);
-				user_data->sql_role_name_entered = TRUE;
+				user_data->sql_role_name_entered = true;
 				break;
 			case IN_SW_GSEC_Z:
 			case IN_SW_GSEC_0:
@@ -747,7 +747,7 @@ static bool get_switches(
 					break;
 				}
 				user_data->user_name[0] = '\0';
-				tdsec->tsec_interactive = FALSE;
+				tdsec->tsec_interactive = false;
 				break;
 			case IN_SW_GSEC_PASSWORD:
 			case IN_SW_GSEC_UID:
@@ -768,7 +768,7 @@ static bool get_switches(
 						err_msg_no = GsecMsg31;
 						break;
 					}
-					user_data->password_specified = TRUE;
+					user_data->password_specified = true;
 					user_data->password[0] = '\0';
 					break;
 				case IN_SW_GSEC_UID:
@@ -776,7 +776,7 @@ static bool get_switches(
 						err_msg_no = GsecMsg32;
 						break;
 					}
-					user_data->uid_specified = TRUE;
+					user_data->uid_specified = true;
 					user_data->uid = 0;
 					break;
 				case IN_SW_GSEC_GID:
@@ -784,7 +784,7 @@ static bool get_switches(
 						err_msg_no = GsecMsg33;
 						break;
 					}
-					user_data->gid_specified = TRUE;
+					user_data->gid_specified = true;
 					user_data->gid = 0;
 					break;
 				case IN_SW_GSEC_SYSU:
@@ -792,7 +792,7 @@ static bool get_switches(
 						err_msg_no = GsecMsg34;
 						break;
 					}
-					user_data->sys_user_specified = TRUE;
+					user_data->sys_user_specified = true;
 					user_data->sys_user_name[0] = '\0';
 					break;
 				case IN_SW_GSEC_GROUP:
@@ -800,7 +800,7 @@ static bool get_switches(
 						err_msg_no = GsecMsg35;
 						break;
 					}
-					user_data->group_name_specified = TRUE;
+					user_data->group_name_specified = true;
 					user_data->group_name[0] = '\0';
 					break;
 				case IN_SW_GSEC_FNAME:
@@ -808,7 +808,7 @@ static bool get_switches(
 						err_msg_no = GsecMsg36;
 						break;
 					}
-					user_data->first_name_specified = TRUE;
+					user_data->first_name_specified = true;
 					user_data->first_name[0] = '\0';
 					break;
 				case IN_SW_GSEC_MNAME:
@@ -816,7 +816,7 @@ static bool get_switches(
 						err_msg_no = GsecMsg37;
 						break;
 					}
-					user_data->middle_name_specified = TRUE;
+					user_data->middle_name_specified = true;
 					user_data->middle_name[0] = '\0';
 					break;
 				case IN_SW_GSEC_LNAME:
@@ -824,7 +824,7 @@ static bool get_switches(
 						err_msg_no = GsecMsg38;
 						break;
 					}
-					user_data->last_name_specified = TRUE;
+					user_data->last_name_specified = true;
 					user_data->last_name[0] = '\0';
 					break;
 				case IN_SW_GSEC_DATABASE:
@@ -832,7 +832,7 @@ static bool get_switches(
 						err_msg_no = GsecMsg78;
 						break;
 					}
-					user_data->database_specified = TRUE;
+					user_data->database_specified = true;
 					user_data->database_name[0] = '\0';
 					break;
 				case IN_SW_GSEC_DBA_USER_NAME:
@@ -840,7 +840,7 @@ static bool get_switches(
 						err_msg_no = GsecMsg79;
 						break;
 					}
-					user_data->dba_user_name_specified = TRUE;
+					user_data->dba_user_name_specified = true;
 					user_data->dba_user_name[0] = '\0';
 					break;
 				case IN_SW_GSEC_DBA_PASSWORD:
@@ -848,7 +848,7 @@ static bool get_switches(
 						err_msg_no = GsecMsg80;
 						break;
 					}
-					user_data->dba_password_specified = TRUE;
+					user_data->dba_password_specified = true;
 					user_data->dba_password[0] = '\0';
 					break;
 				case IN_SW_GSEC_SQL_ROLE_NAME:
@@ -856,7 +856,7 @@ static bool get_switches(
 						err_msg_no = GsecMsg81;
 						break;
 					}
-					user_data->sql_role_name_specified = TRUE;
+					user_data->sql_role_name_specified = true;
 					user_data->sql_role_name[0] = '\0';
 					break;
 				}
@@ -870,7 +870,7 @@ static bool get_switches(
 					SECURITY_msg_get(GsecMsg39, msg);
 					util_output("%s %s\n", msg, GDS_VERSION);
 				}
-				tdsec->tsec_sw_version = TRUE;
+				tdsec->tsec_sw_version = true;
 				break;
 			case IN_SW_GSEC_0:
 #ifdef SUPERSERVER

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.14 2003-09-08 01:46:46 brodsom Exp $
+//	$Id: exe.cpp,v 1.15 2003-09-10 17:46:44 brodsom Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -78,7 +78,8 @@ static TEXT val_errors[] =
 int EXE_action(TEXT * database, ULONG switches)
 {
 	UCHAR dpb[128];
-	USHORT dpb_length, error;
+	USHORT dpb_length;
+	bool error;
 	FRBRD *handle;
 	UCHAR error_string[128];
 	USHORT i;
@@ -96,7 +97,7 @@ int EXE_action(TEXT * database, ULONG switches)
 
 	dpb_length = build_dpb(dpb, switches);
 
-	error = FALSE;
+	error = false;
 	handle = NULL;
 	gds__attach_database(tdgbl->status, 0, database, &handle, dpb_length,
 						 reinterpret_cast <SCHAR *>(dpb));
@@ -104,7 +105,7 @@ int EXE_action(TEXT * database, ULONG switches)
 	SVC_STARTED(tdgbl->service_blk);
 
 	if (tdgbl->status[1])
-		error = TRUE;
+		error = true;
 
 	if (tdgbl->status[2] == isc_arg_warning)
 		ALICE_print_status(tdgbl->status);
@@ -137,7 +138,8 @@ int EXE_action(TEXT * database, ULONG switches)
 int EXE_two_phase(TEXT * database, ULONG switches)
 {
 	UCHAR dpb[128];
-	USHORT dpb_length, error;
+	USHORT dpb_length;
+	bool error;
 	FRBRD *handle;
 	USHORT i;
 	TGBL tdgbl;
@@ -154,7 +156,7 @@ int EXE_two_phase(TEXT * database, ULONG switches)
 
 	dpb_length = build_dpb(dpb, switches);
 
-	error = FALSE;
+	error = false;
 	handle = NULL;
 	gds__attach_database(tdgbl->status, 0, database, &handle,
 						 dpb_length,  reinterpret_cast < char *>(dpb));
@@ -162,14 +164,13 @@ int EXE_two_phase(TEXT * database, ULONG switches)
 	SVC_STARTED(tdgbl->service_blk);
 
 	if (tdgbl->status[1])
-		error = TRUE;
+		error = true;
 	else if (switches & sw_list)
 		TDR_list_limbo((handle), database, switches);
 	else if (switches & (sw_commit | sw_rollback | sw_two_phase))
-		error =
-			TDR_reconnect_multiple((handle),
-								   tdgbl->ALICE_data.ua_transaction, database,
-								   switches);
+		error = TDR_reconnect_multiple((handle),
+									   tdgbl->ALICE_data.ua_transaction, database,
+									   switches);
 
 	if (handle)
 		gds__detach_database(tdgbl->status, &handle);
@@ -261,18 +262,18 @@ static USHORT build_dpb(UCHAR * dpb, ULONG switches)
 	else if (switches & sw_write) {
 		*d++ = gds_dpb_force_write;
 		*d++ = 1;
-		*d++ = tdgbl->ALICE_data.ua_force;
+		*d++ = tdgbl->ALICE_data.ua_force ? 1 : 0;
 	}
 	else if (switches & sw_use) {
 		*d++ = gds_dpb_no_reserve;
 		*d++ = 1;
-		*d++ = tdgbl->ALICE_data.ua_use;
+		*d++ = tdgbl->ALICE_data.ua_use ? 1 : 0;
 	}
 
 	else if (switches & sw_mode) {
 		*d++ = isc_dpb_set_db_readonly;
 		*d++ = 1;
-		*d++ = tdgbl->ALICE_data.ua_read_only;
+		*d++ = (tdgbl->ALICE_data.ua_read_only) ? 1 : 0;
 	}
 	else if (switches & sw_shut) {
 		*d++ = gds_dpb_shutdown;

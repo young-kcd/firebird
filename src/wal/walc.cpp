@@ -82,8 +82,8 @@ typedef struct walc {
 	USHORT walc_db_page_len;
 	TEXT *walc_logname;
 	SLONG walc_log_partition_offset;
-	SSHORT walc_first_time_log;
-	SLONG walc_new_log_seqno;	/* used when first_time_log is TRUE */
+	bool walc_first_time_log;
+	SLONG walc_new_log_seqno;	// used when first_time_log is true
 
 	SSHORT walc_maxbufs;
 	USHORT walc_bufsize;
@@ -362,9 +362,11 @@ SSHORT WALC_init(ISC_STATUS * status_vector,
 				 USHORT db_page_len,
 				 TEXT * logname,
 				 SLONG log_partition_offset,
-				 SSHORT first_time_log,
+				 bool first_time_log,
 				 SLONG new_log_seqno,
-				 SSHORT wpb_length, UCHAR * wpb, USHORT first_attach)
+				 SSHORT wpb_length,
+				 UCHAR * wpb,
+				 bool first_attach)
 {
 /**************************************
  *
@@ -376,7 +378,7 @@ SSHORT WALC_init(ISC_STATUS * status_vector,
  *	Initialize Write Ahead Log segment for the database.
  *	Initialize WAL_handle for the process (thread).
  *
- *	If first_time_log is TRUE then use the new_log_seqno
+ *	If first_time_log is true then use the new_log_seqno
  *	as the starting sequence number for the set of new log
  *	files.
  *
@@ -571,7 +573,9 @@ void WALC_save_status_strings( ISC_STATUS * vector)
 }
 
 
-void WALC_setup_buffer_block( WALS WAL_segment, WALBLK * wblk, SSHORT ckpt)
+void WALC_setup_buffer_block(WALS WAL_segment,
+							 WALBLK * wblk,
+							 bool ckpt)
 {
 /**************************************
  *
@@ -581,7 +585,7 @@ void WALC_setup_buffer_block( WALS WAL_segment, WALBLK * wblk, SSHORT ckpt)
  *
  * Functional description
  *      Mark the passed buffer as ready to be written.
- *      If 'ckpt' flag is TRUE then this buffer finishes a checkpoint.
+ *      If 'ckpt' flag is true then this buffer finishes a checkpoint.
  *      Assumes that acquire() has been done, before calling this routine.
  *
  ***************************************/

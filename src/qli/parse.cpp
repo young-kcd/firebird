@@ -733,7 +733,7 @@ static SYN parse_add( USHORT * paren_count, USHORT * bool_flag)
 
 	node = parse_multiply(paren_count, bool_flag);
 
-	while (TRUE) {
+	while (true) {
 		if (MATCH(KW_PLUS))
 			operatr = nod_add;
 		else if (MATCH(KW_MINUS))
@@ -1158,7 +1158,7 @@ static SYN parse_def_index(void)
 
 	PAR_real();
 
-	while (TRUE) {
+	while (true) {
 		PAR_real();
 		if (MATCH(KW_UNIQUE))
 			node->syn_flags |= s_dfi_flag_unique;
@@ -1763,7 +1763,7 @@ static SYN parse_field_name( SYN * fld_ptr)
 
 	stack = NULL;
 
-	while (TRUE) {
+	while (true) {
 		if (MATCH(KW_ASTERISK)) {
 			if (!stack)
 				SYNTAX_ERROR(181);	// Msg181 field name or asterisk expression 
@@ -1940,7 +1940,7 @@ static TEXT *parse_header(void)
 
 	p = header;
 
-	while (TRUE) {
+	while (true) {
 		PAR_real();
 		if ((QLI_token->tok_keyword != KW_MINUS) &&
 			(QLI_token->tok_type != tok_quoted)) SYNTAX_ERROR(184);	// Msg184 quoted header segment 
@@ -2111,7 +2111,7 @@ static SYN parse_insert(void)
 	PAR_real();
 
 	if (MATCH(KW_LEFT_PAREN))
-		while (TRUE) {
+		while (true) {
 			LLS_PUSH(parse_field_name(0), &fields);
 			if (MATCH(KW_RIGHT_PAREN))
 				break;
@@ -2134,7 +2134,7 @@ static SYN parse_insert(void)
 		SYNTAX_ERROR(188);		// Msg188 VALUES list or SELECT clause 
 
 
-	while (TRUE) {
+	while (true) {
 		if (distinct || MATCH(KW_DISTINCT)) {
 			LLS_PUSH(parse_value(0, 0), &distinct);
 			LLS_PUSH(distinct->lls_object, &values);
@@ -2453,7 +2453,7 @@ static SYN parse_modify(void)
 			node->syn_arg[s_mod_statement] = parse_statement();
 	else if (!KEYWORD(KW_SEMI)) {
 		stack = NULL;
-		while (TRUE) {
+		while (true) {
 			LLS_PUSH(parse_field_name(0), &stack);
 			if (!MATCH(KW_COMMA))
 				break;
@@ -2487,7 +2487,7 @@ static SYN parse_modify_index(void)
 	node->syn_arg[s_mfi_name] = (SYN) parse_name();
 	PAR_real();
 
-	while (TRUE) {
+	while (true) {
 		if (MATCH(KW_UNIQUE))
 			node->syn_flags |= (s_dfi_flag_selectivity | s_dfi_flag_unique);
 		else if (MATCH(KW_DUPLICATE)) {
@@ -2596,7 +2596,7 @@ static SYN parse_multiply( USHORT * paren_count, USHORT * bool_flag)
 
 	node = parse_from(paren_count, bool_flag);
 
-	while (TRUE) {
+	while (true) {
 		if (MATCH(KW_ASTERISK))
 			operatr = nod_multiply;
 		else if (MATCH(KW_SLASH))
@@ -2891,7 +2891,7 @@ static SYN parse_print_list(void)
 
 	stack = NULL;
 
-	while (TRUE) {
+	while (true) {
 		if (MATCH(KW_SKIP))
 			op = nod_skip;
 		else if (MATCH(KW_SPACE))
@@ -3178,7 +3178,7 @@ static SYN parse_ready( NOD_T node_type)
 
 	stack = NULL;
 
-	while (TRUE) {
+	while (true) {
 		LEX_filename();
 		if (!(l = QLI_token->tok_length))
 			ERRQ_error(204, NULL, NULL, NULL, NULL, NULL);	// Msg204 database file name required on READY 
@@ -3724,13 +3724,13 @@ static SYN parse_rse(void)
 	if (MATCH(KW_FIRST))
 		first = parse_value(0, 0);
 
-	while (TRUE) {
+	while (true) {
 		count++;
 		LLS_PUSH(parse_relation(), &stack);
 		over = NULL;
 		if (MATCH(KW_OVER)) {
 			field_stack = NULL;
-			while (TRUE) {
+			while (true) {
 				LLS_PUSH(parse_field_name(0), &field_stack);
 				if (!MATCH(KW_COMMA))
 					break;
@@ -3752,7 +3752,7 @@ static SYN parse_rse(void)
 
 // Pick up various other clauses 
 
-	while (TRUE) {
+	while (true) {
 		if (MATCH(KW_WITH)) {
 			if (!sw_with) {
 				sw_with++;
@@ -3786,7 +3786,7 @@ static SYN parse_rse(void)
 			PAR_real();
 			MATCH(KW_BY);
 			stack = NULL;
-			while (TRUE) {
+			while (true) {
 				LLS_PUSH(parse_udf_or_field(), &stack);
 				if (!MATCH(KW_COMMA))
 					break;
@@ -3827,7 +3827,7 @@ static SYN parse_select(void)
 
 	if (!MATCH(KW_ASTERISK)) {
 		stack = NULL;
-		while (TRUE) {
+		while (true) {
 			item = SYNTAX_NODE(nod_print_item, s_itm_count);
 			item->syn_arg[s_itm_value] = parse_value(0, 0);
 			LLS_PUSH(item, &stack);
@@ -3873,7 +3873,7 @@ static SYN parse_set(void)
 	stack = NULL;
 	count = 0;
 
-	while (TRUE) {
+	while (true) {
 		PAR_real();
 		value = TRUE;
 		if (MATCH(KW_NO)) {
@@ -4063,7 +4063,7 @@ static SYN parse_show(void)
 	stack = NULL;
 	count = 0;
 
-	while (TRUE) {
+	while (true) {
 		PAR_real();
 		value = NULL;
 		symbol = QLI_token->tok_symbol;
@@ -4321,7 +4321,7 @@ static SYN parse_sort(void)
 	direction = sensitive = 0;
 	stack = NULL;
 
-	while (TRUE) {
+	while (true) {
 		PAR_real();
 		if (!sql_flag) {
 			if (MATCH(KW_ASCENDING)) {
@@ -4441,7 +4441,7 @@ static SYN parse_sql_create(void)
 	if (KEYWORD(KW_UNIQUE) || KEYWORD(KW_ASCENDING)
 		|| KEYWORD(KW_DESCENDING) || KEYWORD(KW_INDEX)) {
 		unique = descending = FALSE;
-		while (TRUE) {
+		while (true) {
 			if (MATCH(KW_UNIQUE))
 				unique = TRUE;
 			else if (MATCH(KW_ASCENDING))
@@ -4642,7 +4642,7 @@ static SYN parse_sql_grant_revoke( USHORT type)
 		privileges |= PRV_all;
 	}
 	else
-		while (TRUE) {
+		while (true) {
 			PAR_real();
 			if (MATCH(KW_SELECT)) {
 				privileges |= PRV_select;
@@ -4708,7 +4708,7 @@ static SYN parse_sql_grant_revoke( USHORT type)
 
 	stack = NULL;
 
-	while (TRUE) {
+	while (true) {
 		PAR_real();
 		LLS_PUSH(parse_name(), &stack);
 		if (!MATCH(KW_COMMA))
@@ -4999,7 +4999,7 @@ static SYN parse_sql_rse(void)
 
 // Parse FROM list of relations 
 
-	while (TRUE) {
+	while (true) {
 		count++;
 		LLS_PUSH(parse_sql_joined_relation(0), &stack);
 		if (!MATCH(KW_COMMA))
@@ -5027,7 +5027,7 @@ static SYN parse_sql_rse(void)
 		PAR_real();
 		MATCH(KW_BY);
 		stack = NULL;
-		while (TRUE) {
+		while (true) {
 			LLS_PUSH(parse_udf_or_field(), &stack);
 			if (!MATCH(KW_COMMA))
 				break;
@@ -5220,7 +5220,7 @@ static SYN parse_statement(void)
 	case KW_BEGIN:
 		stack = NULL;
 		PAR_token();
-		while (TRUE) {
+		while (true) {
 			PAR_real();
 			if (MATCH(KW_END))
 				break;
@@ -5447,7 +5447,7 @@ static SYN parse_transaction( NOD_T node_type)
 	PAR_token();
 
 	if (!KEYWORD(KW_SEMI))
-		while (TRUE) {
+		while (true) {
 			for (symbol = QLI_token->tok_symbol; symbol;
 				 symbol = symbol->sym_homonym)
 					if (symbol->sym_type == SYM_database) break;
@@ -5518,7 +5518,7 @@ static SYN parse_update(void)
 
 	stack = NULL;
 
-	while (TRUE) {
+	while (true) {
 		LLS_PUSH(parse_assignment(), &stack);
 		if (!MATCH(KW_COMMA))
 			break;
@@ -5563,7 +5563,7 @@ static SYN parse_value( USHORT * paren_count, USHORT * bool_flag)
 
 	node = parse_add(paren_count, bool_flag);
 
-	while (TRUE) {
+	while (true) {
 		if (!MATCH(KW_BAR)) {
 			parse_terminating_parens(paren_count, &local_count);
 			return node;

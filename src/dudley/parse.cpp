@@ -95,7 +95,7 @@ jmp_buf parse_env;
 
 extern TEXT *DDL_prompt;
 
-static bool check_filename(SYM, USHORT);
+static bool check_filename(SYM, bool);
 static SYM copy_symbol(SYM);
 static DUDLEY_FLD create_global_field(DUDLEY_FLD);
 #ifdef FLINT_CACHE
@@ -197,7 +197,7 @@ void PARSE_actions(void)
 			}
 		}
 		else {
-			DDL_drop_database = FALSE;
+			DDL_drop_database = false;
 			parse_action();
 		}
 	}
@@ -347,7 +347,7 @@ DUDLEY_NOD PARSE_make_node(enum nod_t type, USHORT count)
 }
 
 
-int PARSE_match( enum kwwords keyword)
+bool PARSE_match( enum kwwords keyword)
 {
 /**************************************
  *
@@ -364,17 +364,17 @@ int PARSE_match( enum kwwords keyword)
 
 	if (KEYWORD(keyword)) {
 		LEX_token();
-		return TRUE;
+		return true;
 	}
 
 	for (symbol = DDL_token.tok_symbol; symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_keyword &&
 			symbol->sym_keyword == (int) keyword) {
 			LEX_token();
-			return TRUE;
+			return true;
 		}
 
-	return FALSE;
+	return false;
 }
 
 
@@ -509,7 +509,8 @@ SYM PARSE_symbol(enum tok_t type)
 }
 
 
-static bool check_filename( SYM name, USHORT decnet_flag)
+static bool check_filename(SYM name,
+						   bool decnet_flag)
 {
 /**************************************
  *
@@ -654,7 +655,7 @@ static FIL define_cache(void)
 
 	file = (FIL) DDL_alloc(sizeof(struct fil));
 	file->fil_name = PARSE_symbol(tok_quoted);
-	if (!check_filename(file->fil_name, FALSE))
+	if (!check_filename(file->fil_name, false))
 		PARSE_error(322, 0, 0);	/* msg 322: a node name is not permitted in a shared cache file name */
 
 	if (MATCH(KW_LENGTH)) {
@@ -694,7 +695,7 @@ static void define_database( enum act_t action_type)
 
 /* parse options for the database parameter block */
 
-	while (TRUE) {
+	while (true) {
 		if (MATCH(KW_LENGTH)) {
 			database->dbb_length = PARSE_number();
 			MATCH(KW_PAGES);
@@ -715,13 +716,13 @@ static void define_database( enum act_t action_type)
 		if (MATCH(KW_CASCADE))
 			database->dbb_flags |= DBB_cascade;
 		EXE_drop_database(database);
-		DDL_drop_database = TRUE;
+		DDL_drop_database = true;
 		return;
 	}
 
 /* parse add/drop items */
 
-	while (TRUE) {
+	while (true) {
 		MATCH(KW_ADD);
 		if (KEYWORD(KW_DESCRIPTION))
 			database->dbb_description = parse_description();
@@ -782,7 +783,7 @@ static void define_database( enum act_t action_type)
 
 			if (MATCH(KW_LEFT_PAREN)) {
 				database->dbb_flags |= DBB_log_preallocated;
-				while (TRUE) {
+				while (true) {
 					file = define_log_file(DBB_log_preallocated);
 					file->fil_next = database->dbb_logfiles;
 					database->dbb_logfiles = file;
@@ -873,10 +874,10 @@ static FIL define_file(void)
 
 	file = (FIL) DDL_alloc(sizeof(struct fil));
 	file->fil_name = PARSE_symbol(tok_quoted);
-	if (!check_filename(file->fil_name, FALSE))
+	if (!check_filename(file->fil_name, false))
 		PARSE_error(297, 0, 0);	/* msg 297: A node name is not permitted in a shadow or secondary file name */
 
-	while (TRUE) {
+	while (true) {
 		if (MATCH(KW_LENGTH)) {
 			file->fil_length = PARSE_number();
 			MATCH(KW_PAGES);
@@ -914,7 +915,7 @@ static void define_filter(void)
 	filter = (FILTER) DDL_alloc(sizeof(struct filter));
 	filter->filter_name = PARSE_symbol(tok_ident);
 
-	while (TRUE) {
+	while (true) {
 		if (KEYWORD(KW_DESCRIPTION))
 			filter->filter_description = parse_description();
 		else if (MATCH(KW_INPUT_TYPE))
@@ -960,7 +961,7 @@ static void define_function(void)
 
 	function = PARSE_function(FALSE);
 
-	while (TRUE) {
+	while (true) {
 		if (KEYWORD(KW_DESCRIPTION))
 			function->func_description = parse_description();
 		else if (MATCH(KW_FUNCTION_MODULE_NAME))
@@ -985,7 +986,7 @@ static void define_function(void)
 
 	position = 1;
 
-	while (TRUE) {
+	while (true) {
 		if (KEYWORD(KW_SEMI))
 			break;
 		function_arg = parse_function_arg(function, (USHORT*) &position);
@@ -1039,31 +1040,31 @@ static void define_index(void)
  **************************************/
 	LLS stack;
 	SYM index_name, rel_name, *ptr;
-	TXT description;
-	SSHORT count, unique, inactive, descending;
+	TXT description = NULL;
+	SSHORT count;
+	bool unique = false;
+	bool inactive = false;
+	bool descending = false;
 
 	index_name = PARSE_symbol(tok_ident);
 	MATCH(KW_FOR);
 	rel_name = PARSE_symbol(tok_ident);
 
-	unique = inactive = descending = FALSE;
-	description = NULL;
-
-	while (TRUE) {
+	while (true) {
 		if (MATCH(KW_DUPLICATES))
-			unique = FALSE;
+			unique = false;
 		else if (MATCH(KW_UNIQUE))
-			unique = TRUE;
+			unique = true;
 		else if (KEYWORD(KW_DESCRIPTION))
 			description = parse_description();
 		else if (MATCH(KW_ACTIVE))
-			inactive = FALSE;
+			inactive = false;
 		else if (MATCH(KW_INACTIVE))
-			inactive = TRUE;
+			inactive = true;
 		else if (MATCH(KW_ASCENDING))
-			descending = IDX_type_none;
+			descending = false;
 		else if (MATCH(KW_DESCENDING))
-			descending = IDX_type_descend;
+			descending = true;
 		else
 			break;
 	}
@@ -1072,7 +1073,7 @@ static void define_index(void)
 
 	stack = NULL;
 
-	while (TRUE) {
+	while (true) {
 		LLS_PUSH(PARSE_symbol(tok_ident), &stack);
 		count++;
 		if (!MATCH(KW_COMMA))
@@ -1115,10 +1116,10 @@ static FIL define_log_file( USHORT log_type)
 
 	file = (FIL) DDL_alloc(sizeof(struct fil));
 	file->fil_name = PARSE_symbol(tok_quoted);
-	if (!check_filename(file->fil_name, FALSE))
+	if (!check_filename(file->fil_name, false))
 		PARSE_error(297, 0, 0);	/* msg 297: A node name is not permitted in a shadow or secondary file name */
 
-	while (TRUE) {
+	while (true) {
 		if (MATCH(KW_SIZE)) {
 			MATCH(KW_EQUALS);
 			file->fil_length = PARSE_number();
@@ -1228,20 +1229,24 @@ static void define_relation(void)
 	relation = PARSE_relation();
 	if (!(relation->rel_flags & rel_marked_for_delete) &&
 		((relation->rel_flags & rel_marked_for_creation)
-		 || EXE_relation(relation))) PARSE_error(137,
-												 relation->rel_name->sym_string, 0);	/* msg 137: relation %s already exists  */
+		 || EXE_relation(relation)))
+	{
+		PARSE_error(137, relation->rel_name->sym_string, 0);
+		// msg 137: relation %s already exists 
+	}
 
 	if (MATCH(KW_EXTERNAL_FILE)) {
 		relation->rel_filename = PARSE_symbol(tok_quoted);
-		if (!check_filename(relation->rel_filename, TRUE))
-			PARSE_error(298, 0, 0);	/* msg 298: A non-Decnet node name is not permitted in an external file name */
+		if (!check_filename(relation->rel_filename, true))
+			PARSE_error(298, 0, 0);
+		// msg 298: A non-Decnet node name is not permitted in an external file name
 	}
 
 	rel_actions = action = make_action(act_a_relation, (DBB) relation);
 	action->act_flags |= ACT_ignore;
 	position = 1;
 
-	while (TRUE)
+	while (true)
 		if (KEYWORD(KW_DESCRIPTION))
 			relation->rel_description = parse_description();
 		else if (MATCH(KW_SECURITY_CLASS))
@@ -1255,7 +1260,7 @@ static void define_relation(void)
 
 /* Gobble fields */
 
-	while (TRUE) {
+	while (true) {
 		MATCH(KW_ADD);
 		MATCH(KW_FIELD);
 		field = (DUDLEY_FLD) DDL_alloc(FLD_LEN);
@@ -1294,7 +1299,7 @@ static void define_relation(void)
    have been defined would have to be ignored.  Everything has gone well so
    turn them on. */
 
-	while (TRUE) {
+	while (true) {
 		action->act_flags &= ~ACT_ignore;
 		if (action == rel_actions)
 			break;
@@ -1329,7 +1334,7 @@ static void define_security_class(void)
 
 /* Pick up entries. Use the users's order */
 
-	while (TRUE) {
+	while (true) {
 		if (!(element = parse_identifier()))
 			return;
 		for (next = &class_->scl_entries; *next; next = &(*next)->sce_next);
@@ -1386,7 +1391,7 @@ static void define_shadow(void)
 		shadow->fil_conditional = 1;
 
 	shadow->fil_name = PARSE_symbol(tok_quoted);
-	if (!check_filename(shadow->fil_name, FALSE))
+	if (!check_filename(shadow->fil_name, false))
 		PARSE_error(297, 0, 0);	/* msg 297: A node name is not permitted in a shadow or secondary file name */
 
 	if (MATCH(KW_LENGTH)) {
@@ -1394,7 +1399,7 @@ static void define_shadow(void)
 		MATCH(KW_PAGES);
 	}
 
-	while (TRUE) {
+	while (true) {
 		if (MATCH(KW_FILE)) {
 			file = define_file();
 			file->fil_next = shadow;
@@ -1430,7 +1435,6 @@ static void define_trigger(void)
 	DUDLEY_TRG trigger;
 	TRGMSG trigmsg;
 	int flags, trg_state, trg_sequence;
-	USHORT action, end;
 
 	if (MATCH(KW_FOR)) {
 		define_old_trigger();
@@ -1454,18 +1458,19 @@ static void define_trigger(void)
 		PARSE_error(141, DDL_token.tok_string, 0);	
 		/* msg 141: expected STORE, MODIFY, ERASE, encountered \"%s\" */
 
-	action = end = FALSE;
+	bool action = false;
+	bool end = false;
 
 	while (!KEYWORD(KW_SEMI)) {
 		if (KEYWORD(KW_DESCRIPTION))
 			trigger->trg_description = parse_description();
 		else if (MATCH(KW_END_TRIGGER))
-			action = end = TRUE;
+			action = end = true;
 		else if (!action) {
 			trigger->trg_source = start_text();
 			trigger->trg_statement = EXPR_statement();
 			end_text(trigger->trg_source);
-			action = TRUE;
+			action = true;
 		}
 		else if (MATCH(KW_MESSAGE)) {
 			trigmsg = (TRGMSG) DDL_alloc(sizeof(struct trgmsg));
@@ -1521,7 +1526,7 @@ static void define_type(void)
 	MATCH(KW_FOR);
 	fldname = PARSE_symbol(tok_ident);
 
-	while (TRUE) {
+	while (true) {
 		fldtype = (TYP) DDL_alloc(sizeof(struct typ));
 		fldtype->typ_field_name = fldname;
 		fldtype->typ_name = PARSE_symbol(tok_ident);
@@ -1563,8 +1568,11 @@ static void define_view(void)
 	relation = PARSE_relation();
 	if (!(relation->rel_flags & rel_marked_for_delete) &&
 		((relation->rel_flags & rel_marked_for_creation)
-		 || EXE_relation(relation))) PARSE_error(300,
-												 relation->rel_name->sym_string, 0);	/* msg 300: relation %s already exists  */
+		 || EXE_relation(relation)))
+	{
+		PARSE_error(300, relation->rel_name->sym_string, 0);
+		// msg 300: relation %s already exists 
+	}
 
 	MATCH(KW_OF);
 
@@ -1572,7 +1580,7 @@ static void define_view(void)
 
 	contexts = NULL;
 	relation->rel_view_source = start_text();
-	relation->rel_rse = EXPR_rse(TRUE);
+	relation->rel_rse = EXPR_rse(true);
 	end_text(relation->rel_view_source);
 
 /* add my context to the context stack */
@@ -1587,7 +1595,7 @@ static void define_view(void)
 
 /* Pick up various fields and clauses */
 
-	while (TRUE) {
+	while (true) {
 		if (KEYWORD(KW_DESCRIPTION))
 			relation->rel_description = parse_description();
 		else if (MATCH(KW_SECURITY_CLASS))
@@ -1605,7 +1613,7 @@ static void define_view(void)
 	position = 1;
 	ptr = &relation->rel_fields;
 
-	while (TRUE) {
+	while (true) {
 		MATCH(KW_ADD);
 		MATCH(KW_FIELD);
 		field = (DUDLEY_FLD) DDL_alloc(FLD_LEN);
@@ -1640,7 +1648,7 @@ static void define_view(void)
 					if (!(MATCH(KW_LEFT_PAREN)))
 						PARSE_error(148, 0, 0);	/* msg 148: computed by expression must be parenthesized  */
 					field->fld_compute_src = start_text();
-					field->fld_computed = EXPR_value(0, 0);
+					field->fld_computed = EXPR_value(0, NULL);
 					end_text(field->fld_compute_src);
 					if (!(MATCH(KW_RIGHT_PAREN)))
 						PARSE_error(149, 0, 0);	/* msg 149: unmatched parenthesis */
@@ -1673,7 +1681,7 @@ static void define_view(void)
    have been defined would have to be ignored.  Everything has gone well so
    turn them on. */
 
-	while (TRUE) {
+	while (true) {
 		action->act_flags &= ~ACT_ignore;
 		if (action == rel_actions)
 			break;
@@ -1855,16 +1863,16 @@ static void drop_trigger(void)
  *
  **************************************/
 	SYM name;
-	SSHORT old_style;
+	bool old_style;
 	DUDLEY_REL relation;
 	DUDLEY_TRG trigger;
 
 	if (MATCH(KW_FOR)) {
 		relation = PARSE_relation();
-		old_style = TRUE;
+		old_style = true;
 	}
 	else {
-		old_style = FALSE;
+		old_style = false;
 		name = PARSE_symbol(tok_ident);
 	}
 
@@ -1921,7 +1929,7 @@ static void drop_type(void)
 	}
 	else {
 		fldname = PARSE_symbol(tok_ident);
-		while (TRUE) {
+		while (true) {
 			fldtype = (TYP) DDL_alloc(sizeof(struct typ));
 			fldtype->typ_field_name = fldname;
 			fldtype->typ_name = PARSE_symbol(tok_ident);
@@ -2128,7 +2136,7 @@ static void grant_user_privilege(void)
 	upriv = (USERPRIV) DDL_alloc(sizeof(struct userpriv));
 	upriv->userpriv_flags = 0;
 
-	while (TRUE) {
+	while (true) {
 		/* ALL is translated to mean four individual privileges */
 
 		if (MATCH(KW_ALL)) {
@@ -2192,7 +2200,7 @@ static void grant_user_privilege(void)
 
 /* get the userlist */
 
-	while (TRUE) {
+	while (true) {
 		usr = (USRE) DDL_alloc(sizeof(struct usre));
 		usr->usre_name = PARSE_symbol(tok_ident);
 		usr->usre_next = upriv->userpriv_userlist;
@@ -2516,29 +2524,29 @@ static void modify_index(void)
 	DUDLEY_IDX index = (DUDLEY_IDX) DDL_alloc(IDX_LEN(1)); // 0 is invalid
 	index->idx_name = PARSE_symbol(tok_ident);
 
-	while (TRUE) {
+	while (true) {
 		if (MATCH(KW_DUPLICATES)) {
-			index->idx_unique = FALSE;
+			index->idx_unique = false;
 			index->idx_flags |= IDX_unique_flag;
 		}
 		else if (MATCH(KW_UNIQUE)) {
-			index->idx_unique = TRUE;
+			index->idx_unique = true;
 			index->idx_flags |= IDX_unique_flag;
 		}
 		else if (MATCH(KW_ACTIVE)) {
-			index->idx_inactive = FALSE;
+			index->idx_inactive = false;
 			index->idx_flags |= IDX_active_flag;
 		}
 		else if (MATCH(KW_INACTIVE)) {
-			index->idx_inactive = TRUE;
+			index->idx_inactive = true;
 			index->idx_flags |= IDX_active_flag;
 		}
 		else if (MATCH(KW_ASCENDING)) {
-			index->idx_type = IDX_type_none;
+			index->idx_type = false;
 			index->idx_flags |= IDX_type_flag;
 		}
 		else if (MATCH(KW_DESCENDING)) {
-			index->idx_type = IDX_type_descend;
+			index->idx_type = true;
 			index->idx_flags |= IDX_type_flag;
 		}
 		else if (KEYWORD(KW_DESCRIPTION)) {
@@ -2574,33 +2582,32 @@ static void modify_relation(void)
  **************************************/
 	DUDLEY_REL relation;
 	DUDLEY_FLD field, global;
-	TEXT modify_relation;
 
 	relation = PARSE_relation();
 	make_action(act_m_relation, (DBB) relation);
 
 	if (MATCH(KW_EXTERNAL_FILE)) {
 		relation->rel_filename = PARSE_symbol(tok_quoted);
-		if (!check_filename(relation->rel_filename, TRUE))
+		if (!check_filename(relation->rel_filename, true))
 			PARSE_error(298, 0, 0);	/* msg 298: A non-Decnet node name is not permitted in an external file name */
 	}
 
-	modify_relation = FALSE;
+	bool modify_relation = false;
 
-	while (TRUE) {
+	while (true) {
 		if (KEYWORD(KW_DESCRIPTION)) {
 			relation->rel_description = parse_description();
-			modify_relation = TRUE;
+			modify_relation = true;
 		}
 		else if (MATCH(KW_SECURITY_CLASS))
 		 {
-			modify_relation = TRUE;
+			modify_relation = true;
 			relation->rel_security_class = PARSE_symbol(tok_ident);
 		}
 		else if (MATCH(KW_SYSTEM_FLAG)) {
 			relation->rel_system = get_system_flag();
 			relation->rel_flags |= rel_explicit_system;
-			modify_relation = TRUE;
+			modify_relation = true;
 		}
 		else
 			break;
@@ -2609,7 +2616,7 @@ static void modify_relation(void)
 /* Act on field actions */
 
 	if (!KEYWORD(KW_SEMI))
-		while (TRUE) {
+		while (true) {
 			if (MATCH(KW_ADD)) {
 				MATCH(KW_FIELD);
 				{
@@ -2651,7 +2658,7 @@ static void modify_relation(void)
 			else if (MATCH(KW_DROP)) {
 				if (MATCH(KW_SECURITY_CLASS)) {
 					relation->rel_flags |= rel_null_security_class;
-					modify_relation = TRUE;
+					modify_relation = true;
 					MATCH(KW_COMMA);
 					if (KEYWORD(KW_SEMI))
 						break;
@@ -2659,7 +2666,7 @@ static void modify_relation(void)
 						continue;
 				}
 				else if (MATCH(KW_DESCRIP)) {
-					modify_relation = TRUE;
+					modify_relation = true;
 					relation->rel_flags |= rel_null_description;
 					MATCH(KW_COMMA);
 					if (KEYWORD(KW_SEMI))
@@ -2715,7 +2722,7 @@ static void modify_security_class(void)
 	if (KEYWORD(KW_DESCRIPTION))
 		class_->scl_description = parse_description();
 
-	while (TRUE) {
+	while (true) {
 		if (!(element = parse_identifier()))
 			return;
 		score = score_entry(element);
@@ -2752,11 +2759,10 @@ static void modify_trigger(void)
 	DUDLEY_TRG trigger;
 	TRGMSG trigmsg;
 	TRGMSG_T msg_type;
-	SLONG flags, type, sequence;
 	SYM name;
-	SCHAR action, end;
+	bool action = false;
+	bool end = false;
 
-	action = end = FALSE;
 	msg_type = trgmsg_none;
 
 	if (MATCH(KW_FOR)) {		/* modify trigger for ... is the old syntax */
@@ -2768,9 +2774,11 @@ static void modify_trigger(void)
 
 	for (name = DDL_token.tok_symbol;
 		 name && (name->sym_type != SYM_trigger); name = name->sym_homonym);
-	if (!name)
-		PARSE_error(176, DDL_token.tok_string, 0);
-	/* msg 176: expected trigger name, encountered \"%s\" */
+	{
+		if (!name)
+			PARSE_error(176, DDL_token.tok_string, 0);
+		// msg 176: expected trigger name, encountered \"%s\"
+	}
 	trigger = (DUDLEY_TRG) name->sym_object;
 	LEX_token();
 
@@ -2785,7 +2793,9 @@ static void modify_trigger(void)
 	else
 		relation = trigger->trg_relation;
 
-	flags = type = sequence = 0;
+	SLONG flags = 0;
+	SLONG type = 0;
+	SLONG sequence = 0;
 	get_trigger_attributes((int*) &flags, (int*) &type, (int*) &sequence);
 
 	while (!KEYWORD(KW_SEMI)) {
@@ -2813,12 +2823,12 @@ static void modify_trigger(void)
 			msg_type = trgmsg_none;
 		}
 		else if (MATCH(KW_END_TRIGGER))
-			end = TRUE;
+			end = true;
 		else if (KEYWORD(KW_DESCRIPTION))
 			trigger->trg_description = parse_description();
 		else if (!action && !end) {
 			modify_trigger_action(trigger, relation);
-			action = TRUE;
+			action = true;
 		}
 		else
 			PARSE_error(179, DDL_token.tok_string, 0);
@@ -2868,7 +2878,7 @@ static void modify_type(void)
 
 	MATCH(KW_FOR);
 	fldname = PARSE_symbol(tok_ident);
-	while (TRUE) {
+	while (true) {
 		fldtype = (TYP) DDL_alloc(sizeof(struct typ));
 		fldtype->typ_field_name = fldname;
 		fldtype->typ_name = PARSE_symbol(tok_ident);
@@ -2898,25 +2908,24 @@ static void modify_view(void)
  **************************************/
 	DUDLEY_REL relation;
 	DUDLEY_FLD field;
-	USHORT view_modify;
+	bool view_modify = false;
 
 	relation = PARSE_relation();
 	make_action(act_m_relation, (DBB) relation);
-	view_modify = FALSE;
 
-	while (TRUE) {
+	while (true) {
 		if (KEYWORD(KW_DESCRIPTION)) {
 			relation->rel_description = parse_description();
-			view_modify = TRUE;
+			view_modify = true;
 		}
 		else if (MATCH(KW_SECURITY_CLASS)) {
 			relation->rel_security_class = PARSE_symbol(tok_ident);
-			view_modify = TRUE;
+			view_modify = true;
 		}
 		else if (MATCH(KW_SYSTEM_FLAG)) {
 			relation->rel_system = get_system_flag();
 			relation->rel_flags |= rel_explicit_system;
-			view_modify = TRUE;
+			view_modify = true;
 		}
 		else
 			break;
@@ -2925,7 +2934,7 @@ static void modify_view(void)
 /* Act on field actions */
 
 	if (!KEYWORD(KW_SEMI))
-		while (TRUE) {
+		while (true) {
 			if (MATCH(KW_MODIFY)) {
 				MATCH(KW_FIELD);
 				field = (DUDLEY_FLD) DDL_alloc(FLD_LEN);
@@ -2939,7 +2948,7 @@ static void modify_view(void)
 			}
 			else if (MATCH(KW_DROP)) {
 				if (MATCH(KW_DESCRIP)) {
-					view_modify = TRUE;
+					view_modify = true;
 					relation->rel_flags |= rel_null_description;
 
 					if (KEYWORD(KW_SEMI))
@@ -2948,7 +2957,7 @@ static void modify_view(void)
 						continue;
 				}
 				else if (MATCH(KW_SECURITY_CLASS)) {
-					view_modify = TRUE;
+					view_modify = true;
 					relation->rel_flags |= rel_null_security_class;
 
 					if (KEYWORD(KW_SEMI))
@@ -2988,7 +2997,7 @@ static bool parse_action(void)
  **************************************
  *
  * Functional description
- *	Parse a single action.  If an token flush is required, return TRUE.
+ *	Parse a single action.  If an token flush is required, return true.
  *
  **************************************/
 
@@ -3144,16 +3153,16 @@ static bool parse_action(void)
 		return true;
 	}
 	else if (DDL_interactive && KEYWORD(KW_EXIT)) {
-		DDL_eof = TRUE;
+		DDL_eof = true;
 		return false;
 	}
 	else if (DDL_interactive && KEYWORD(KW_QUIT)) {
-		DDL_quit = DDL_eof = TRUE;
+		DDL_quit = DDL_eof = true;
 		return false;
 	}
 
 	PARSE_error(186, DDL_token.tok_string, 0);	/* msg 186: expected command, encountered \"%s\" */
-	return FALSE;
+	return false;
 
 	}	// try
 	catch (const std::exception&) {
@@ -3233,7 +3242,7 @@ static TXT parse_description(void)
  **************************************/
 	TXT description;
 
-	DDL_description = TRUE;
+	DDL_description = true;
 	description = start_text();
 	description->txt_position = DDL_token.tok_position;
 
@@ -3245,7 +3254,7 @@ static TXT parse_description(void)
 
 	end_text(description);
 	MATCH(KW_END_DESCRIPTION);
-	DDL_description = FALSE;
+	DDL_description = false;
 
 	return description;
 }
@@ -3328,7 +3337,7 @@ static void parse_field_clauses( DUDLEY_FLD field)
 
 /* Pick up purely optional clauses */
 
-	while (TRUE)
+	while (true)
 		switch (PARSE_keyword()) {
 		case KW_POSITION:
 			LEX_token();
@@ -3393,7 +3402,7 @@ static void parse_field_clauses( DUDLEY_FLD field)
 			if (!(MATCH(KW_LEFT_PAREN)))
 				PARSE_error(194, 0, 0);	/* msg 194: computed by expression must be parenthesized */
 			field->fld_compute_src = start_text();
-			field->fld_computed = EXPR_value(0, 0);
+			field->fld_computed = EXPR_value(0, NULL);
 			end_text(field->fld_compute_src);
 			if (!(MATCH(KW_RIGHT_PAREN)))
 				PARSE_error(195, 0, 0);	/* msg 195: unmatched parenthesis */
@@ -3403,7 +3412,7 @@ static void parse_field_clauses( DUDLEY_FLD field)
 			LEX_token();
 			MATCH(KW_VALUE);
 			MATCH(KW_IS);
-			field->fld_missing = EXPR_value(0, 0);
+			field->fld_missing = EXPR_value(0, NULL);
 			break;
 
 		case KW_VALID_IF:
@@ -3435,7 +3444,7 @@ static void parse_field_clauses( DUDLEY_FLD field)
 			LEX_token();
 			MATCH(KW_VALUE);
 			MATCH(KW_IS);
-			field->fld_default = EXPR_value(0, 0);
+			field->fld_default = EXPR_value(0, NULL);
 			break;
 
 		case KW_DESCRIPTION:
@@ -3959,7 +3968,7 @@ static void revoke_user_privilege(void)
 
 	upriv = (USERPRIV) DDL_alloc(sizeof(struct userpriv));
 
-	while (TRUE) {
+	while (true) {
 		if (MATCH(KW_ALL)) {
 			/* optional keyword following ALL */
 
@@ -4007,7 +4016,7 @@ static void revoke_user_privilege(void)
 				PARSE_error(214, DDL_token.tok_string, 0);	/* msg 214: expected ON, encountered \"%s\" */
 			break;
 		}
-	}							/* while (TRUE) */
+	}	// while (true)
 
 	if (!upriv->userpriv_flags)
 		PARSE_error(215, 0, 0);	/* msg 215: REVOKE privilege was not specified */
@@ -4017,7 +4026,7 @@ static void revoke_user_privilege(void)
 		PARSE_error(216, DDL_token.tok_string, 0);	/* msg 216: expected FROM, encountered \"%s\" */
 
 /* get the userlist */
-	while (TRUE) {
+	while (true) {
 		usr = (USRE) DDL_alloc(sizeof(struct usre));
 		usr->usre_name = PARSE_symbol(tok_ident);
 		usr->usre_next = upriv->userpriv_userlist;
@@ -4083,7 +4092,7 @@ static DUDLEY_NOD set_generator(void)
 	node->nod_count = 1;
 	node->nod_arg[1] = (DUDLEY_NOD) PARSE_symbol(tok_ident);
 	MATCH(KW_TO);
-	node->nod_arg[0] = EXPR_value(0, 0);
+	node->nod_arg[0] = EXPR_value(0, NULL);
 
 	parse_end();
 	make_action(act_s_generator, (DBB) node);

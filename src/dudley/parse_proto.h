@@ -32,7 +32,7 @@ extern FUNC PARSE_function(int);
 extern enum kwwords PARSE_keyword(void);
 extern DUDLEY_NOD PARSE_make_list(LLS);
 extern DUDLEY_NOD PARSE_make_node(enum nod_t, USHORT);
-extern int PARSE_match(enum kwwords);
+extern bool PARSE_match(enum kwwords);
 extern int PARSE_number(void);
 extern DUDLEY_REL PARSE_relation(void);
 extern SYM PARSE_symbol(enum tok_t);

@@ -206,7 +206,8 @@ SSHORT WALR_open(ISC_STATUS * status_vector,
 				 SCHAR ** lognames,
 				 SLONG * log_partitions_offsets,
 				 SLONG first_log_offset,
-				 SLONG * timestamp, SSHORT dont_scan_tail_logs)
+				 SLONG * timestamp,
+				 bool dont_scan_tail_logs)
 {
 /**************************************
  *

@@ -250,7 +250,7 @@ void LEX_init( void *file)
 	input_file = (IB_FILE *) file;
 	DDL_char = DDL_buffer;
 	DDL_token.tok_position = 0;
-	DDL_description = FALSE;
+	DDL_description = false;
 	DDL_line = 1;
 }
 
@@ -464,7 +464,7 @@ static int nextchar(void)
 			if (DDL_interactive)
 				ib_printf("\n");
 #endif
-			DDL_eof = TRUE;
+			DDL_eof = true;
 			return EOF;
 		}
 		DDL_char = DDL_buffer;

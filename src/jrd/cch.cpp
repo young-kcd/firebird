@@ -3539,7 +3539,7 @@ static void THREAD_ROUTINE cache_writer(DBB dbb)
 #ifdef SUPERSERVER_V2
 	SLONG commit_mask;
 #endif
-	SSHORT start_chkpt;
+	bool start_chkpt;
 	ISC_STATUS_ARRAY status_vector;
 	SCHAR walname[256];
 	EVENT writer_event;
@@ -5871,10 +5871,9 @@ static BOOLEAN write_page(
 		AST_CHECK;
 		dbb->dbb_writes++;
 		if (dbb->dbb_wal)
-			WAL_flush(status,
-					  dbb->dbb_wal,
+			WAL_flush(status, dbb->dbb_wal,
 					  reinterpret_cast < long *>(&page->pag_seqno),
-					  reinterpret_cast < long *>(&page->pag_offset), TRUE);
+					  reinterpret_cast < long *>(&page->pag_offset), true);
 
 #ifdef DEBUG_SAVE_BDB_PAGE
 		/* Save page number into page->pag_offset before computing the checksum */

@@ -97,10 +97,12 @@ void PRO_commit( DBB database)
 
 	if ((database->dbb_capabilities & DBB_cap_multi_trans) &&
 		!(LEX_active_procedure()))
+	{
 		if (gds__commit_transaction(status_vector, &database->dbb_proc_trans)) {
 			PRO_rollback(database);
 			ERRQ_database_error(database, status_vector);
 		}
+	}
 }
 
 
@@ -350,7 +352,9 @@ FRBRD *PRO_fetch_procedure( DBB database, TEXT * proc)
 }
 
 
-int PRO_get_line( FRBRD *blob, TEXT * buffer, USHORT size)
+bool PRO_get_line(FRBRD *blob,
+				  TEXT * buffer,
+				  USHORT size)
 {
 /**************************************
  *
@@ -371,7 +375,7 @@ int PRO_get_line( FRBRD *blob, TEXT * buffer, USHORT size)
 					 &blob, &length, size, buffer);
 
 	if (status_vector[1] && status_vector[1] != gds_segment)
-		return FALSE;
+		return false;
 
 	p = buffer + length;
 
@@ -380,7 +384,7 @@ int PRO_get_line( FRBRD *blob, TEXT * buffer, USHORT size)
 
 	*p = 0;
 
-	return TRUE;
+	return true;
 }
 
 
@@ -865,7 +869,7 @@ static int upcase_name( TEXT * name, TEXT * buffer)
 
 	l = 0;
 
-	while (TRUE) {
+	while (true) {
 		c = *name++;
 		*buffer++ = UPPER(c);
 		if (!c)

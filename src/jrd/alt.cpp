@@ -929,7 +929,7 @@ return 1;
 			userInfo.user_name[l] = UPPER(user_data->user_name[l]);
 
 		userInfo.user_name[l] = '\0';
-		userInfo.user_name_entered = TRUE;
+		userInfo.user_name_entered = true;
 	}
 	else {
 		status[0] = isc_arg_gds;
@@ -952,8 +952,8 @@ return 1;
 			userInfo.password[l] = user_data->password[l];
 
 		userInfo.password[l] = '\0';
-		userInfo.password_entered = TRUE;
-		userInfo.password_specified = TRUE;
+		userInfo.password_entered = true;
+		userInfo.password_specified = true;
 	}
 	else {
 		status[0] = isc_arg_gds;
@@ -964,47 +964,47 @@ return 1;
 
 
 	if ((user_data->sec_flags & sec_uid_spec)
-		&& (userInfo.uid_entered = user_data->uid)) {
+		&& (userInfo.uid_entered = (user_data->uid))) {
 		userInfo.uid = user_data->uid;
-		userInfo.uid_specified = TRUE;
+		userInfo.uid_specified = true;
 	}
 	else {
-		userInfo.uid_specified = FALSE;
-		userInfo.uid_entered = FALSE;
+		userInfo.uid_specified = false;
+		userInfo.uid_entered = false;
 	}
 
 	if ((user_data->sec_flags & sec_gid_spec)
-		&& (userInfo.gid_entered = user_data->gid)) {
+		&& (userInfo.gid_entered = (user_data->gid))) {
 		userInfo.gid = user_data->gid;
-		userInfo.gid_specified = TRUE;
+		userInfo.gid_specified = true;
 	}
 	else {
-		userInfo.gid_specified = FALSE;
-		userInfo.gid_entered = FALSE;
+		userInfo.gid_specified = false;
+		userInfo.gid_entered = false;
 	}
 
 	if ((user_data->sec_flags & sec_group_name_spec) && user_data->group_name) {
 		int l = MIN(ALT_NAME_LEN - 1, strlen(user_data->group_name));
 		strncpy(userInfo.group_name, user_data->group_name, l);
 		userInfo.group_name[l] = '\0';
-		userInfo.group_name_entered = TRUE;
-		userInfo.group_name_specified = TRUE;
+		userInfo.group_name_entered = true;
+		userInfo.group_name_specified = true;
 	}
 	else {
-		userInfo.group_name_entered = FALSE;
-		userInfo.group_name_specified = FALSE;
+		userInfo.group_name_entered = false;
+		userInfo.group_name_specified = false;
 	}
 
 	if ((user_data->sec_flags & sec_first_name_spec) && user_data->first_name) {
 		int l = MIN(NAME_LEN - 1, strlen(user_data->first_name));
 		strncpy(userInfo.first_name, user_data->first_name, l);
 		userInfo.first_name[l] = '\0';
-		userInfo.first_name_entered = TRUE;
-		userInfo.first_name_specified = TRUE;
+		userInfo.first_name_entered = true;
+		userInfo.first_name_specified = true;
 	}
 	else {
-		userInfo.first_name_entered = FALSE;
-		userInfo.first_name_specified = FALSE;
+		userInfo.first_name_entered = false;
+		userInfo.first_name_specified = false;
 	}
 
 	if ((user_data->sec_flags & sec_middle_name_spec)
@@ -1012,24 +1012,24 @@ return 1;
 		int l = MIN(NAME_LEN - 1, strlen(user_data->middle_name));
 		strncpy(userInfo.middle_name, user_data->middle_name, l);
 		userInfo.middle_name[l] = '\0';
-		userInfo.middle_name_entered = TRUE;
-		userInfo.middle_name_specified = TRUE;
+		userInfo.middle_name_entered = true;
+		userInfo.middle_name_specified = true;
 	}
 	else {
-		userInfo.middle_name_entered = FALSE;
-		userInfo.middle_name_specified = FALSE;
+		userInfo.middle_name_entered = false;
+		userInfo.middle_name_specified = false;
 	}
 
 	if ((user_data->sec_flags & sec_last_name_spec) && user_data->last_name) {
 		int l = MIN(NAME_LEN - 1, strlen(user_data->last_name));
 		strncpy(userInfo.last_name, user_data->last_name, l);
 		userInfo.last_name[l] = '\0';
-		userInfo.last_name_entered = TRUE;
-		userInfo.last_name_specified = TRUE;
+		userInfo.last_name_entered = true;
+		userInfo.last_name_specified = true;
 	}
 	else {
-		userInfo.last_name_entered = FALSE;
-		userInfo.last_name_specified = FALSE;
+		userInfo.last_name_entered = false;
+		userInfo.last_name_specified = false;
 	}
 
 	db_handle = open_security_db(status,
@@ -1114,7 +1114,7 @@ return 1;
 			userInfo.user_name[l] = UPPER(user_data->user_name[l]);
 
 		userInfo.user_name[l] = '\0';
-		userInfo.user_name_entered = TRUE;
+		userInfo.user_name_entered = true;
 	}
 	else {
 		status[0] = isc_arg_gds;
@@ -1179,7 +1179,7 @@ return 1;
 			userInfo.user_name[l] = UPPER(user_data->user_name[l]);
 
 		userInfo.user_name[l] = '\0';
-		userInfo.user_name_entered = TRUE;
+		userInfo.user_name_entered = true;
 	}
 	else {
 		status[0] = isc_arg_gds;
@@ -1202,81 +1202,81 @@ return 1;
 			userInfo.password[l] = user_data->password[l];
 
 		userInfo.password[l] = '\0';
-		userInfo.password_entered = TRUE;
-		userInfo.password_specified = TRUE;
+		userInfo.password_entered = true;
+		userInfo.password_specified = true;
 	}
 	else {
-		userInfo.password_specified = FALSE;
-		userInfo.password_entered = FALSE;
+		userInfo.password_specified = false;
+		userInfo.password_entered = false;
 	}
 
 
 	if (user_data->sec_flags & sec_uid_spec) {
 		userInfo.uid = user_data->uid;
-		userInfo.uid_specified = TRUE;
-		userInfo.uid_entered = TRUE;
+		userInfo.uid_specified = true;
+		userInfo.uid_entered = true;
 	}
 	else {
-		userInfo.uid_specified = FALSE;
-		userInfo.uid_entered = FALSE;
+		userInfo.uid_specified = false;
+		userInfo.uid_entered = false;
 	}
 
 	if (user_data->sec_flags & sec_gid_spec) {
 		userInfo.gid = user_data->gid;
-		userInfo.gid_specified = TRUE;
-		userInfo.gid_entered = TRUE;
+		userInfo.gid_specified = true;
+		userInfo.gid_entered = true;
 	}
 	else {
-		userInfo.gid_specified = FALSE;
-		userInfo.gid_entered = FALSE;
+		userInfo.gid_specified = false;
+		userInfo.gid_entered = false;
 	}
 
 	if (user_data->sec_flags & sec_group_name_spec) {
 		int l = MIN(ALT_NAME_LEN - 1, strlen(user_data->group_name));
 		strncpy(userInfo.group_name, user_data->group_name, l);
 		userInfo.group_name[l] = '\0';
-		userInfo.group_name_entered = TRUE;
-		userInfo.group_name_specified = TRUE;
+		userInfo.group_name_entered = true;
+		userInfo.group_name_specified = true;
 	}
 	else {
-		userInfo.group_name_entered = FALSE;
-		userInfo.group_name_specified = FALSE;
+		userInfo.group_name_entered = false;
+		userInfo.group_name_specified = false;
 	}
 
 	if (user_data->sec_flags & sec_first_name_spec) {
 		int l = MIN(NAME_LEN - 1, strlen(user_data->first_name));
 		strncpy(userInfo.first_name, user_data->first_name, l);
 		userInfo.first_name[l] = '\0';
-		userInfo.first_name_entered = TRUE;
-		userInfo.first_name_specified = TRUE;
+		userInfo.first_name_entered = true;
+		userInfo.first_name_specified = true;
 	}
 	else {
-		userInfo.first_name_entered = FALSE;
-		userInfo.first_name_specified = FALSE;
+		userInfo.first_name_entered = false;
+		userInfo.first_name_specified = false;
 	}
 
 	if (user_data->sec_flags & sec_middle_name_spec) {
 		int l = MIN(NAME_LEN - 1, strlen(user_data->middle_name));
 		strncpy(userInfo.middle_name, user_data->middle_name, l);
 		userInfo.middle_name[l] = '\0';
-		userInfo.middle_name_entered = TRUE;
-		userInfo.middle_name_specified = TRUE;
+		userInfo.middle_name_entered = true;
+		userInfo.middle_name_specified = true;
 	}
 	else {
-		userInfo.middle_name_entered = FALSE;
-		userInfo.middle_name_specified = FALSE;
+		userInfo.middle_name_entered = false;
+		userInfo.middle_name_specified = false;
 	}
 
 	if (user_data->sec_flags & sec_last_name_spec) {
 		int l = MIN(NAME_LEN - 1, strlen(user_data->last_name));
 		strncpy(userInfo.last_name, user_data->last_name, l);
 		userInfo.last_name[l] = '\0';
-		userInfo.last_name_entered = TRUE;
-		userInfo.last_name_specified = TRUE;
+		userInfo.last_name_entered = true;
+		userInfo.last_name_specified = true;
 	}
 	else {
-		userInfo.last_name_entered = FALSE;
-		userInfo.last_name_specified = FALSE;
+		userInfo.last_name_entered = false;
+		userInfo.last_name_specified = false;
 	}
 
 	db_handle = open_security_db(status,

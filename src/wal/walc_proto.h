@@ -31,9 +31,10 @@ extern void	WALC_build_dbg_filename (TEXT *, TEXT *);
 extern void	WALC_build_logname (TEXT *, TEXT *, SLONG);
 extern SSHORT	WALC_check_writer (struct wal *);
 extern void	WALC_fini (ISC_STATUS *, struct wal **);
-extern SSHORT	WALC_init (ISC_STATUS *, struct wal **, TEXT *, USHORT, TEXT *, SLONG, SSHORT, SLONG, SSHORT, UCHAR *, USHORT);
+extern SSHORT	WALC_init (ISC_STATUS *, struct wal **, TEXT *, USHORT, TEXT *,
+						   SLONG, bool, SLONG, SSHORT, UCHAR *, bool);
 extern void	WALC_release (struct wal *);
 extern void	WALC_save_status_strings (ISC_STATUS *);
-extern void	WALC_setup_buffer_block (struct wals *, struct walblk *, SSHORT);
+extern void	WALC_setup_buffer_block (struct wals *, struct walblk *, bool);
 
 #endif	/* _WAL_WALC_PROTO_H_ */

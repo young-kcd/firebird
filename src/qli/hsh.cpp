@@ -31,8 +31,7 @@
 #define HASH_SIZE	224
 
 static int hash(SCHAR *, int);
-static BOOLEAN scompare(SCHAR *, int, SCHAR *,
-						int);
+static bool scompare(SCHAR *, int, SCHAR *, int);
 
 static SYM hash_table[HASH_SIZE];
 static SYM key_symbols;
@@ -220,10 +219,10 @@ static int hash( SCHAR * string, int length)
 }
 
 
-static BOOLEAN scompare(
-						SCHAR * string1,
-						int length1,
-						SCHAR * string2, int length2)
+static bool scompare(SCHAR * string1,
+					 int length1,
+					 SCHAR * string2,
+					 int length2)
 {
 /**************************************
  *
@@ -238,11 +237,11 @@ static BOOLEAN scompare(
 	SCHAR c1, c2;
 
 	if (length1 != length2)
-		return FALSE;
+		return false;
 
 	while (length1--)
 		if ((c1 = *string1++) != (c2 = *string2++) && UPPER(c1) != UPPER(c2))
-			return FALSE;
+			return false;
 
-	return TRUE;
+	return true;
 }

@@ -108,9 +108,9 @@ static int   get_text(UCHAR*, SSHORT);
 static void  prompt_for_name(SCHAR*, int);
 static void  put_asciz(SCHAR, SCHAR*);
 static void  put_numeric(SCHAR, int);
-static bool  read_header(DESC, ULONG*, USHORT*, USHORT);
-static bool  write_header(DESC, ULONG, USHORT);
-static DESC	 next_volume(DESC, int, USHORT);
+static bool  read_header(DESC, ULONG*, USHORT*, bool);
+static bool  write_header(DESC, ULONG, bool);
+static DESC	 next_volume(DESC, int, bool);
 
 
 //____________________________________________________________
@@ -218,7 +218,7 @@ void MVOL_init_read(UCHAR*	database_name,
 	tdgbl->mvol_io_buffer = BURP_ALLOC(temp_buffer_size);
 	tdgbl->gbl_backup_start_time[0] = 0;
 
-	read_header(tdgbl->file_desc, &temp_buffer_size, format, TRUE);
+	read_header(tdgbl->file_desc, &temp_buffer_size, format, true);
 
 	if (temp_buffer_size > tdgbl->mvol_actual_buffer_size)
 	{
@@ -270,14 +270,14 @@ void MVOL_init_write(UCHAR*		database_name,
 		BURP_ALLOC(temp_buffer_size + MAX_HEADER_SIZE);
 	tdgbl->mvol_io_cnt = tdgbl->mvol_actual_buffer_size;
 
-	while (!write_header(tdgbl->file_desc, temp_buffer_size, FALSE))
+	while (!write_header(tdgbl->file_desc, temp_buffer_size, false))
 	{
 		if (tdgbl->action->act_action == ACT_backup_split)
 		{
 			BURP_error(269, tdgbl->action->act_file->fil_name, 0, 0, 0, 0);
 			/* msg 269 can't write a header record to file %s */
 		}
-		tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_WRITE, FALSE);
+		tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_WRITE, false);
 	}
 
 	tdgbl->mvol_actual_buffer_size = temp_buffer_size;
@@ -313,7 +313,7 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 		{
 			if (!tdgbl->mvol_io_cnt || errno == EIO)
 			{
-				tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_READ, FALSE);
+				tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_READ, false);
 				if (tdgbl->mvol_io_cnt > 0)
 				{
 					break;
@@ -371,7 +371,7 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 		{
 			if (!tdgbl->mvol_io_cnt)
 			{
-				tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_READ, FALSE);
+				tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_READ, false);
 				if (tdgbl->mvol_io_cnt > 0)
 					break;
 			}
@@ -554,7 +554,7 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 {
 	UCHAR *ptr;
 	ULONG left, cnt, size_to_write;
-	USHORT full_buffer;
+	bool full_buffer;
 	TGBL tdgbl;
 	FIL	file;
 
@@ -684,9 +684,9 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 				}
 				left += tdgbl->mvol_io_data - tdgbl->mvol_io_header;
 				if (left >=  tdgbl->mvol_io_buffer_size)
-					full_buffer = TRUE;
+					full_buffer = true;
 				else
-					full_buffer = FALSE;
+					full_buffer = false;
 				tdgbl->file_desc =
 					next_volume(tdgbl->file_desc, MODE_WRITE, full_buffer);
 				if (full_buffer)
@@ -870,7 +870,9 @@ static int get_text(UCHAR* text, SSHORT length)
 // Get specification for the next volume (tape).
 // Try to open it. Return file descriptor.
 //
-static DESC next_volume( DESC handle, int mode, USHORT full_buffer)
+static DESC next_volume(DESC handle,
+						int mode,
+						bool full_buffer)
 {
 	SCHAR new_file[MAX_FILE_NAME_LENGTH];
 	DESC new_desc;
@@ -967,7 +969,7 @@ static DESC next_volume( DESC handle, int mode, USHORT full_buffer)
 		{
 			/* File is open for read only.  Read the header. */
 
-			if (!read_header(new_desc, &temp_buffer_size, &format, FALSE))
+			if (!read_header(new_desc, &temp_buffer_size, &format, false))
 			{
 				BURP_print(224, new_file, 0, 0, 0, 0);
 				continue;
@@ -1145,10 +1147,10 @@ static void put_numeric( SCHAR attribute, int value)
 //
 // Functional description
 //
-static bool read_header(DESC    handle,
-						ULONG*  buffer_size,
-						USHORT* format,
-						USHORT  init_flag)
+static bool read_header(DESC	handle,
+						ULONG*	buffer_size,
+						USHORT*	format,
+						bool	init_flag)
 {
 	int attribute, temp;
 	SSHORT l;
@@ -1281,9 +1283,9 @@ static bool read_header(DESC    handle,
 //____________________________________________________________
 //
 //
-static bool write_header(DESC   handle,
-						 ULONG  backup_buffer_size,
-						 USHORT full_buffer)
+static bool write_header(DESC	handle,
+						 ULONG	backup_buffer_size,
+						 bool	full_buffer)
 {
 	ULONG vax_value;
 	USHORT i;

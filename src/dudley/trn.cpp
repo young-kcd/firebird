@@ -347,7 +347,8 @@ static void add_dimensions( STR dyn, DUDLEY_FLD field)
 	STUFF(gds_dyn_end);
 
 	for (range = field->fld_ranges, n = 0; n < field->fld_dimension;
-		 range += 2, ++n) {
+		 range += 2, ++n)
+	{
 		put_number(dyn, gds_dyn_def_dimension, n);
 		put_symbol(dyn, gds_dyn_fld_name, field->fld_name);
 		put_number(dyn, gds_dyn_dim_lower, (SSHORT) range[0]);
@@ -637,13 +638,10 @@ static void add_index( STR dyn, DUDLEY_IDX index)
 
 	put_symbol(dyn, gds_dyn_def_idx, index->idx_name);
 	put_symbol(dyn, gds_dyn_rel_name, index->idx_relation);
-	put_number(dyn, gds_dyn_idx_unique, index->idx_unique);
-	if (index->idx_inactive)
-		put_number(dyn, gds_dyn_idx_inactive, TRUE);
-	else
-		put_number(dyn, gds_dyn_idx_inactive, FALSE);
+	put_number(dyn, gds_dyn_idx_unique, (index->idx_unique) ? TRUE : FALSE);
+	put_number(dyn, gds_dyn_idx_inactive, (index->idx_inactive) ? TRUE : FALSE);
 	if (index->idx_type)
-		put_number(dyn, gds_dyn_idx_type, index->idx_type);
+		put_number(dyn, gds_dyn_idx_type, (index->idx_type) ? TRUE : FALSE);
 
 	put_text(dyn, gds_dyn_description, index->idx_description);
 
@@ -1376,14 +1374,14 @@ static void modify_index( STR dyn, DUDLEY_IDX index)
 	put_symbol(dyn, gds_dyn_mod_idx, index->idx_name);
 
 	if (index->idx_flags & IDX_unique_flag)
-		put_number(dyn, gds_dyn_idx_unique, index->idx_unique);
+		put_number(dyn, gds_dyn_idx_unique, (index->idx_unique) ? TRUE : FALSE);
 
 	if (index->idx_flags & IDX_active_flag)
 		put_number(dyn, gds_dyn_idx_inactive,
 				   (index->idx_inactive) ? TRUE : FALSE);
 
 	if (index->idx_flags & IDX_type_flag)
-		put_number(dyn, gds_dyn_idx_type, index->idx_type);
+		put_number(dyn, gds_dyn_idx_type, (index->idx_type) ? TRUE : FALSE);
 
 	if (index->idx_flags & IDX_null_description) {
 		CHECK_DYN(3);

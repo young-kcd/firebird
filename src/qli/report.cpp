@@ -37,9 +37,9 @@
 static void bottom_break(BRK, PRT);
 static void increment_break(BRK);
 static void initialize_break(BRK);
-static int test_break(BRK, RPT, QLI_MSG);
+static bool test_break(BRK, RPT, QLI_MSG);
 static void top_break(BRK, PRT);
-static void top_of_page(PRT, BOOLEAN);
+static void top_of_page(PRT, bool);
 
 #define SWAP(a,b)	{temp = a; a = b; b = temp;}
 
@@ -110,7 +110,7 @@ void RPT_report( QLI_NOD loop)
 	if (control = report->rpt_top_rpt)
 		FMT_print((QLI_NOD) control->brk_line, print);
 
-	top_of_page(print, TRUE);
+	top_of_page(print, true);
 
 	initialize_break(report->rpt_bottom_breaks);
 	initialize_break(report->rpt_bottom_page);
@@ -126,25 +126,29 @@ void RPT_report( QLI_NOD loop)
 
 		for (control = report->rpt_bottom_breaks; control;
 			 control = control->brk_next)
-				if (test_break(control, report, message)) {
+		{
+			if (test_break(control, report, message)) {
 				SWAP(message->msg_buffer, report->rpt_buffer);
 				bottom_break(control, print);
 				SWAP(message->msg_buffer, report->rpt_buffer);
 				initialize_break(control);
 				break;
 			}
+		}
 
 		if (print->prt_lines_remaining <= 0)
-			top_of_page(print, FALSE);
+			top_of_page(print, false);
 
 		/* Now check for top breaks. */
 
 		for (control = report->rpt_top_breaks; control;
 			 control = control->brk_next)
-				if (test_break(control, report, message)) {
+		{
+			if (test_break(control, report, message)) {
 				top_break(control, print);
 				break;
 			}
+		}
 
 		/* Increment statisticals and print detail line, if any */
 
@@ -241,7 +245,9 @@ static void initialize_break( BRK control)
 }
 
 
-static int test_break( BRK control, RPT report, QLI_MSG message)
+static bool test_break(BRK control,
+					   RPT report,
+					   QLI_MSG message)
 {
 /**************************************
  *
@@ -288,10 +294,10 @@ static int test_break( BRK control, RPT report, QLI_MSG message)
 	if (l)
 		do
 			if (*p1++ != *p2++)
-				return TRUE;
+				return true;
 		while (--l);
 
-	return FALSE;
+	return false;
 }
 
 
@@ -317,7 +323,8 @@ static void top_break( BRK control, PRT print)
 }
 
 
-static void top_of_page( PRT print, BOOLEAN first_flag)
+static void top_of_page(PRT print,
+						bool first_flag)
 {
 /**************************************
  *

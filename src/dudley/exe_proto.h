@@ -30,6 +30,6 @@ extern void EXE_drop_database(DBB);
 extern void EXE_execute(void);
 extern void EXE_fini(DBB);
 extern void EXE_modify_database(DBB);
-extern int EXE_relation(DUDLEY_REL);
+extern bool EXE_relation(DUDLEY_REL);
 
 #endif /* _DUDLEY_EXE_PROTO_H_ */

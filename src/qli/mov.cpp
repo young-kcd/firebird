@@ -1374,7 +1374,7 @@ static void string_to_date( TEXT * string, USHORT length, SLONG date[2])
 			}
 			*t = 0;
 			month_ptr = months;
-			while (TRUE) {
+			while (true) {
 				if (!*month_ptr) {
 					while (++p < end)
 						if (*p != ' ' && *p != '\t' && *p != 0)

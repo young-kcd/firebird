@@ -28,6 +28,7 @@ extern SSHORT	WALR_close (ISC_STATUS *, struct walrs **);
 extern SSHORT	WALR_fixup_log_header (ISC_STATUS *, struct walrs *);
 extern SSHORT	WALR_get (ISC_STATUS *, struct walrs *, UCHAR *, USHORT *, SLONG *, SLONG *);
 extern SSHORT	WALR_get_blk_timestamp (struct walrs *, SLONG *);
-extern SSHORT	WALR_open (ISC_STATUS *, struct walrs **, SCHAR *, int, SCHAR **, SLONG *, SLONG, SLONG *, SSHORT);
+extern SSHORT	WALR_open (ISC_STATUS *, struct walrs **, SCHAR *, int, SCHAR **,
+						   SLONG *, SLONG, SLONG *, bool);
 
 #endif /* _WAL_WALR_PROTO_H_ */ 

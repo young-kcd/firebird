@@ -2094,7 +2094,7 @@ static int open_journal(SCHAR * dbname,
  **************************************/
 	int i, n;
 	SCHAR buf[MAX_PATH_LENGTH];
-	SSHORT stop_flag;
+	bool stop_flag;
 	SLONG *until_ptr;
 
 	WALR_handle = 0;
@@ -2109,7 +2109,7 @@ static int open_journal(SCHAR * dbname,
 			GJRN_printf(20, files[i], NULL, NULL, NULL);
 		}
 
-	stop_flag = (sw_partial && !sw_activate) ? TRUE : FALSE;
+	stop_flag = (sw_partial && !sw_activate);
 	until_ptr = sw_until ? until : 0;
 
 	n = WALR_open(wal_status, &WALR_handle, dbname, num_files,

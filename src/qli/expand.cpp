@@ -43,8 +43,8 @@ extern USHORT QLI_columns, QLI_lines;
 
 #define MAKE_NODE(type,count)	make_node (type, count)
 
-static int compare_names(NAM, SYM);
-static int compare_symbols(SYM, SYM);
+static bool compare_names(NAM, SYM);
+static bool compare_symbols(SYM, SYM);
 static SYM copy_symbol(SYM);
 static void declare_global(QLI_FLD, SYN);
 static SYN decompile_field(QLI_FLD, QLI_CTX);
@@ -87,9 +87,9 @@ static void expand_values(SYN, LLS);
 static QLI_CTX find_context(NAM, LLS);
 static int generate_fields(QLI_CTX, LLS, SYN);
 static int generate_items(SYN, LLS, LLS, QLI_NOD);
-static SLONG global_agg(SYN, SYN);
-static int invalid_nod_field(QLI_NOD, QLI_NOD);
-static int invalid_syn_field(SYN, SYN);
+static bool global_agg(SYN, SYN);
+static bool invalid_nod_field(QLI_NOD, QLI_NOD);
+static bool invalid_syn_field(SYN, SYN);
 static QLI_NOD make_and(QLI_NOD, QLI_NOD);
 static QLI_NOD make_assignment(QLI_NOD, QLI_NOD, LLS);
 #ifdef PYXIS
@@ -100,7 +100,7 @@ static QLI_NOD make_field(QLI_FLD, QLI_CTX);
 static QLI_NOD make_list(LLS);
 static QLI_NOD make_node(NOD_T, USHORT);
 static QLI_NOD negate(QLI_NOD);
-static QLI_NOD possible_literal(SYN, LLS, USHORT);
+static QLI_NOD possible_literal(SYN, LLS, bool);
 static QLI_NOD post_map(QLI_NOD, QLI_CTX);
 static QLI_FLD resolve(SYN, LLS, QLI_CTX *);
 #ifdef PYXIS
@@ -289,7 +289,7 @@ QLI_NOD EXP_expand( SYN node)
 }
 
 
-static int compare_names( NAM name, SYM symbol)
+static bool compare_names( NAM name, SYM symbol)
 {
 /**************************************
  *
@@ -298,14 +298,14 @@ static int compare_names( NAM name, SYM symbol)
  **************************************
  *
  * Functional description
- *	Compare a name node to a symbol.  If they are equal, return TRUE.
+ *	Compare a name node to a symbol.  If they are equal, return true.
  *
  **************************************/
 	USHORT l;
 	TEXT *p, *q;
 
 	if (!symbol || (l = name->nam_length) != symbol->sym_length)
-		return FALSE;
+		return false;
 
 	p = symbol->sym_string;
 	q = name->nam_string;
@@ -313,14 +313,14 @@ static int compare_names( NAM name, SYM symbol)
 	if (l)
 		do
 			if (*p++ != *q++)
-				return FALSE;
+				return false;
 		while (--l);
 
-	return TRUE;
+	return true;
 }
 
 
-static int compare_symbols( SYM symbol1, SYM symbol2)
+static bool compare_symbols( SYM symbol1, SYM symbol2)
 {
 /**************************************
  *
@@ -336,10 +336,10 @@ static int compare_symbols( SYM symbol1, SYM symbol2)
 	TEXT *p, *q;
 
 	if (!symbol1 || !symbol2)
-		return FALSE;
+		return false;
 
 	if ((l = symbol1->sym_length) != symbol2->sym_length)
-		return FALSE;
+		return false;
 
 	p = symbol1->sym_string;
 	q = symbol2->sym_string;
@@ -347,10 +347,10 @@ static int compare_symbols( SYM symbol1, SYM symbol2)
 	if (l)
 		do
 			if (*p++ != *q++)
-				return FALSE;
+				return false;
 		while (--l);
 
-	return TRUE;
+	return true;
 }
 
 
@@ -633,7 +633,7 @@ static QLI_NOD expand_boolean( SYN input, LLS stack)
 	*ptr++ = value = expand_expression(input->syn_arg[0], stack);
 
 	for (i = 1; i < input->syn_count; i++, ptr++)
-		if (!(*ptr = possible_literal(input->syn_arg[i], stack, TRUE)))
+		if (!(*ptr = possible_literal(input->syn_arg[i], stack, true)))
 			*ptr = expand_expression(input->syn_arg[i], stack);
 
 // Try to match any prompts against fields to determine prompt length 
@@ -1561,7 +1561,7 @@ static QLI_NOD expand_output( SYN input, LLS right, PRT * print)
 	output = MAKE_NODE(nod_output, e_out_count);
 	LLS_PUSH(output, &output_stack);
 
-	if (!(node = possible_literal(input->syn_arg[s_out_file], right, FALSE)))
+	if (!(node = possible_literal(input->syn_arg[s_out_file], right, false)))
 		node = expand_expression(input->syn_arg[s_out_file], right);
 
 	output->nod_arg[e_out_file] = node;
@@ -1964,33 +1964,34 @@ static QLI_NOD expand_restructure( SYN input, LLS right, LLS left)
 				// First look for an exact field name match 
 
 				for (fld = ctx->ctx_relation->rel_fields; fld;
-					 fld =
-					 fld->fld_next) if (compare_symbols(field->fld_name,
-														fld->fld_name)) break;
-
+					 fld = fld->fld_next) 
+				{
+					if (compare_symbols(field->fld_name, fld->fld_name))
+						break;
+				}
 				/* Next try, target field name matching source query name */
 
 				if (!fld)
 					for (fld = ctx->ctx_relation->rel_fields; fld;
-						 fld =
-						 fld->fld_next) if (compare_symbols(field->fld_name,
-															fld->
-															fld_query_name))
-								break;
-
+						 fld = fld->fld_next)
+					{
+						if (compare_symbols(field->fld_name, fld->fld_query_name))
+							break;
+					}
 				/* If nothing yet, look for any old match */
 
 				if (!fld)
 					for (fld = ctx->ctx_relation->rel_fields; fld;
-						 fld =
-						 fld->fld_next) if (compare_symbols(field->
-															fld_query_name,
-															fld->fld_name)
-											|| compare_symbols(field->
-															   fld_query_name,
-															   fld->
-															   fld_query_name))
+						 fld = fld->fld_next)
+					{
+						 if (compare_symbols(field-> fld_query_name,
+											 fld->fld_name)
+							|| compare_symbols(field->fld_query_name,
+											   fld->fld_query_name))
+						{
 								break;
+						}
+					}
 
 				if (fld) {
 					assignment = MAKE_NODE(nod_assign, e_asn_count);
@@ -2692,7 +2693,7 @@ static int generate_items( SYN symbol, LLS right, LLS items, QLI_NOD rse)
 }
 
 
-static SLONG global_agg( SYN item, SYN group_list)
+static bool global_agg( SYN item, SYN group_list)
 {
 /**************************************
  *
@@ -2712,10 +2713,8 @@ static SLONG global_agg( SYN item, SYN group_list)
  *
  **************************************/
 	SYN *ptr, *end;
-	int normal_field, aggregate;
-
-	normal_field = FALSE;
-	aggregate = FALSE;
+	bool normal_field = false;
+	bool aggregate = false;
 
 	switch (item->syn_type) {
 	case nod_agg_average:
@@ -2725,7 +2724,7 @@ static SLONG global_agg( SYN item, SYN group_list)
 	case nod_agg_count:
 	case nod_running_total:
 	case nod_running_count:
-		return TRUE;
+		return true;
 
 	case nod_upcase:
 	case nod_add:
@@ -2741,9 +2740,9 @@ static SLONG global_agg( SYN item, SYN group_list)
 				if ((*ptr)->syn_type == nod_constant)
 					continue;
 				if (global_agg(*ptr, group_list))
-					aggregate = TRUE;
+					aggregate = true;
 				else if (!group_list || invalid_syn_field(*ptr, group_list))
-					normal_field = TRUE;
+					normal_field = true;
 			}
 		}
 
@@ -2758,7 +2757,7 @@ static SLONG global_agg( SYN item, SYN group_list)
 }
 
 
-static int invalid_nod_field( QLI_NOD node, QLI_NOD list)
+static bool invalid_nod_field( QLI_NOD node, QLI_NOD list)
 {
 /**************************************
  *
@@ -2777,23 +2776,22 @@ static int invalid_nod_field( QLI_NOD node, QLI_NOD list)
  **************************************/
 	QLI_FLD field;
 	QLI_CTX context;
-	SCHAR invalid;
+	bool invalid = false;
 	QLI_NOD *ptr, *end;
 
 	if (!list)
-		return TRUE;
-
-	invalid = FALSE;
+		return true;
 
 	if (node->nod_type == nod_field) {
 		field = (QLI_FLD) node->nod_arg[e_fld_field];
 		context = (QLI_CTX) node->nod_arg[e_fld_context];
-		for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end;
-			 ptr++)
+		for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++)
 			if (field == (QLI_FLD) (*ptr)->nod_arg[e_fld_field]
 				&& context == (QLI_CTX) (*ptr)->nod_arg[e_fld_context])
-				return FALSE;
-		return TRUE;
+			{
+				return false;
+			}
+		return true;
 	}
 	else
 		for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end;
@@ -2818,7 +2816,7 @@ static int invalid_nod_field( QLI_NOD node, QLI_NOD list)
 }
 
 
-static int invalid_syn_field( SYN syn_node, SYN list)
+static bool invalid_syn_field( SYN syn_node, SYN list)
 {
 /**************************************
  *
@@ -2842,16 +2840,13 @@ static int invalid_syn_field( SYN syn_node, SYN list)
 	SYN element, *ptr, *end;
 	NAM gname, fname, gctx, fctx;
 	SSHORT count;
-	SCHAR invalid;
-
+	bool invalid = false;
 
 	if (syn_node->syn_type == nod_star)
-		return FALSE;
+		return false;
 
 	if (!list)
-		return TRUE;
-
-	invalid = FALSE;
+		return true;
 
 	if (syn_node->syn_type == nod_field) {
 		fctx = NULL;
@@ -2871,10 +2866,12 @@ static int invalid_syn_field( SYN syn_node, SYN list)
 			}
 			if (!strcmp(fname->nam_string, gname->nam_string))
 				if (!gctx || !fctx
-					|| (!strcmp(fctx->nam_string, gctx->nam_string))) return
-						FALSE;
+					|| (!strcmp(fctx->nam_string, gctx->nam_string))) 
+				{
+					return false;
+				}
 		}
-		return TRUE;
+		return true;
 	}
 	else
 		for (ptr = syn_node->syn_arg, end = ptr + syn_node->syn_count;
@@ -3189,7 +3186,9 @@ static QLI_NOD negate( QLI_NOD expr)
 }
 
 
-static QLI_NOD possible_literal( SYN input, LLS stack, USHORT upper_flag)
+static QLI_NOD possible_literal(SYN input,
+								LLS stack,
+								bool upper_flag)
 {
 /**************************************
  *
@@ -3346,12 +3345,14 @@ static QLI_FLD resolve( SYN node, LLS stack, QLI_CTX * out_context)
 		case CTX_VARIABLE:
 			if (ptr == base)
 				for (field = context->ctx_variable; field;
-					 field =
-					 field->fld_next) if (compare_names(name, field->fld_name)
-										  || compare_names(name,
-														   field->
-														   fld_query_name))
-							return field;
+					 field = field->fld_next) 
+				{
+					if (compare_names(name, field->fld_name)
+						|| compare_names(name, field->fld_query_name))
+					{
+						return field;
+					}
+				}
 			break;
 
 		case CTX_RELATION:
@@ -3364,7 +3365,8 @@ static QLI_FLD resolve( SYN node, LLS stack, QLI_CTX * out_context)
 
 			for (field = relation->rel_fields; field; field = field->fld_next)
 				if (compare_names(name, field->fld_name) ||
-					compare_names(name, field->fld_query_name)) {
+					compare_names(name, field->fld_query_name)) 
+				{
 					if (ptr == base)
 						return field;
 					name = *--ptr;
@@ -3429,12 +3431,13 @@ static QLI_FLD resolve_name( SYM name, LLS stack, QLI_CTX * out_context)
 			break;
 		case CTX_VARIABLE:
 			for (field = context->ctx_variable; field;
-				 field =
-				 field->fld_next) if (compare_symbols(name, field->fld_name)
-									  || compare_symbols(name,
-														 field->
-														 fld_query_name))
-						return field;
+				 field = field->fld_next)
+			{
+				if (compare_symbols(name, field->fld_name)
+					|| compare_symbols(name, field->fld_query_name))
+				{
+					return field;
+				}
 			break;
 
 		case CTX_RELATION:
@@ -3443,7 +3446,9 @@ static QLI_FLD resolve_name( SYM name, LLS stack, QLI_CTX * out_context)
 			for (field = relation->rel_fields; field; field = field->fld_next)
 				if (compare_symbols(name, field->fld_name) ||
 					compare_symbols(name, field->fld_query_name))
+				{
 					return field;
+				}
 
 			break;
 		}
@@ -3468,16 +3473,15 @@ static void resolve_really( QLI_FLD variable, SYN field_node)
  *
  **************************************/
 	USHORT offset;
-	BOOLEAN resolved, local;
-	NAM fld_name, rel_name, db_name;
+	bool resolved = false;
+	bool local = false;
+	NAM fld_name = NULL;
+	NAM rel_name = NULL;
+	NAM db_name = NULL;
 	SYM symbol;
-	QLI_FLD field;
+	QLI_FLD field = NULL;
 	QLI_REL relation;
 	DBB dbb;
-
-	db_name = rel_name = fld_name = NULL;
-	field = NULL;
-	resolved = local = FALSE;
 
 /* For ease, break down the syntax block.
    It should contain at least one name; two names are a  potential ambiguity:
@@ -3493,35 +3497,39 @@ static void resolve_really( QLI_FLD variable, SYN field_node)
 	}
 
 	if (field_node->syn_count == 1)
-		resolved = MET_declare(0, variable, fld_name);
+		resolved = (MET_declare(0, variable, fld_name));
 	else if (field_node->syn_count == 2) {
 		for (symbol = rel_name->nam_symbol; symbol;
 			 symbol =
 			 symbol->sym_homonym) if (symbol->sym_type == SYM_database) {
 				dbb = (DBB) symbol->sym_object;
-				resolved = MET_declare(dbb, variable, fld_name);
-				break;			// should be only one db in homonym list 
+				resolved = (MET_declare(dbb, variable, fld_name));
+				break;			// should be only one db in homonym list
 			}
 
 		if (!resolved) {
 			for (dbb = QLI_databases; dbb && !resolved; dbb = dbb->dbb_next)
 				for (symbol = rel_name->nam_symbol; symbol;
-					 symbol =
-					 symbol->sym_homonym) if (symbol->sym_type == SYM_relation
-											  && (relation =
-												  (QLI_REL) symbol->sym_object)
-											  && relation->rel_database ==
-											  dbb) {
+					 symbol = symbol->sym_homonym) 
+				{
+					if (symbol->sym_type == SYM_relation
+						&& (relation = (QLI_REL) symbol->sym_object)
+						&& relation->rel_database == dbb) 
+					{
 						if (!relation->rel_fields)
 							MET_fields(relation);
 						for (field = relation->rel_fields; field;
-							 field = field->fld_next) if (resolved = local =
-														  compare_names
-														  (fld_name,
-														   field->
-														   fld_name)) break;
-						break;	// should be only one rel in homonym list for each db 
+							 field = field->fld_next) 
+						{
+							if (resolved = local = compare_names (fld_name,
+														   field->fld_name))
+							{
+								break;
+							}
+						}
+						break;	// should be only one rel in homonym list for each db
 					}
+				}
 		}
 	}
 	else {

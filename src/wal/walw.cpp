@@ -128,8 +128,8 @@ typedef struct walwl
 
 #define PRINT_TIME(fd,t)	{ time((time_t*) t); ib_fprintf (fd, "%s", ctime((time_t*) t)); }
 
-static void close_log(ISC_STATUS *, WAL, SCHAR *, WALFH, SLONG);
-static SSHORT discard_prev_logs(ISC_STATUS *, SCHAR *, SCHAR *, SLONG, SSHORT);
+static void close_log(ISC_STATUS *, WAL, SCHAR *, WALFH, bool);
+static SSHORT discard_prev_logs(ISC_STATUS *, SCHAR *, SCHAR *, SLONG, bool);
 static void finishup_checkpoint(WALS);
 static SSHORT flush_all_buffers(ISC_STATUS *, WAL);
 static SSHORT get_logfile_index(WALS, SCHAR *);
@@ -153,9 +153,9 @@ static void report_walw_bug_or_error(ISC_STATUS *, struct wal *, SSHORT, ISC_STA
 static SSHORT rollover_log(ISC_STATUS *, WAL, WALFH);
 static void setup_for_checkpoint(WALS);
 static SSHORT setup_log(ISC_STATUS *, WAL, SCHAR *, SLONG, SLONG, SLONG *, WALFH,
-						SSHORT, SCHAR *, SLONG);
+						bool, SCHAR *, SLONG);
 static SSHORT setup_log_header_info(ISC_STATUS *, WAL, SCHAR *, SLONG, SLONG,
-									SLONG *, WALFH, SSHORT, SCHAR *, SLONG,
+									SLONG *, WALFH, bool, SCHAR *, SLONG,
 									bool*);
 static SSHORT write_log_header_and_reposition(ISC_STATUS *, SCHAR *, SLONG,
 											  WALFH);
@@ -233,7 +233,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	WAL WAL_handle = NULL;
 	if (WALC_init(status_vector, &WAL_handle, dbname, 0,
-				  NULL, 0L, FALSE, 1L, 0, NULL, FALSE) != FB_SUCCESS) {
+				  NULL, 0L, false, 1L, 0, NULL, false) != FB_SUCCESS)
+	{
 		gds__log_status(dbname, status_vector);
 		gds__print_status(status_vector);
 		exit(FINI_ERROR);
@@ -351,7 +352,7 @@ static SSHORT walw_writer(ISC_STATUS * status_vector, WAL WAL_handle)
 	WALS WAL_segment;
 	WALBLK *wblk;
 	SSHORT bufnum;
-	SSHORT first_logfile;
+	bool first_logfile;
 	int buffer_full;
 	int journal_enable_or_disable;
 	int rollover_required;
@@ -394,8 +395,7 @@ static SSHORT walw_writer(ISC_STATUS * status_vector, WAL WAL_handle)
 	WAL_segment->wals_last_err = 0;
 	WAL_CHECK_BUG_ERROR(WAL_handle, WAL_segment);
 
-	first_logfile =
-		(WAL_segment->wals_flags & WALS_FIRST_TIME_LOG) ? TRUE : FALSE;
+	first_logfile = (WAL_segment->wals_flags & WALS_FIRST_TIME_LOG);
 	log_type = 0L;
 	if (first_logfile) {
 		/* Initialize raw partitions which need root permission */
@@ -489,7 +489,7 @@ static SSHORT walw_writer(ISC_STATUS * status_vector, WAL WAL_handle)
 			WALC_release(WAL_handle);
 			acquired = false;
 			ISC_event_wait(1, &ptr, &value, WALW_WRITER_TIMEOUT_USECS,
-						   WALC_alarm_handler, ptr);
+						   (WALC_alarm_handler), ptr);
 			continue;
 		}
 
@@ -553,7 +553,7 @@ static SSHORT walw_writer(ISC_STATUS * status_vector, WAL WAL_handle)
 			discard_prev_logs(status_vector, WAL_segment->wals_dbname,
 							  WAL_segment->wals_prev_ckpt_logname,
 							  WAL_segment->wals_prev_ckpt_log_p_offset,
-							  FALSE);
+							  false);
 #ifdef SUPERSERVER
 			/* In Netware, file handles are shared if the file is reopened in the
 			   same thread.  discard_prev_log() may open the current log file to
@@ -603,7 +603,7 @@ static SSHORT walw_writer(ISC_STATUS * status_vector, WAL WAL_handle)
 	log_header->walfh_hibsn = WAL_segment->wals_blkseqno - 1;
 	close_log(status_vector, WAL_handle, WAL_segment->wals_logname,
 			  log_header,
-			  WAL_segment->wals_flags & WALS_INFORM_CLOSE_TO_JOURNAL);
+			  (WAL_segment->wals_flags & WALS_INFORM_CLOSE_TO_JOURNAL) );
 	write_wal_statistics(WAL_handle);
 	WAL_segment->wals_flags |= WALS_WRITER_DONE;
 	WAL_segment->wals_writer_pid = 0;
@@ -627,10 +627,11 @@ static SSHORT walw_writer(ISC_STATUS * status_vector, WAL WAL_handle)
 }
 
 
-static void close_log(
-					  ISC_STATUS * status_vector,
+static void close_log(ISC_STATUS * status_vector,
 					  WAL WAL_handle,
-					  SCHAR * logname, WALFH log_header, SLONG journal_flag)
+					  SCHAR * logname,
+					  WALFH log_header,
+					  bool journal_flag)
 {
 /**************************************
  *
@@ -701,11 +702,11 @@ static void close_log(
 }
 
 
-static SSHORT discard_prev_logs(
-								ISC_STATUS * status_vector,
+static SSHORT discard_prev_logs(ISC_STATUS * status_vector,
 								SCHAR * dbname,
 								SCHAR * starting_logname,
-SLONG starting_log_partition_offset, SSHORT delete_flag)
+								SLONG starting_log_partition_offset,
+								bool delete_flag)
 {
 /**************************************
  *
@@ -717,7 +718,7 @@ SLONG starting_log_partition_offset, SSHORT delete_flag)
  *	From the starting_logname backwards, excluding the starting
  *	one, mark all the log files as NOT needed for short-term
  *	recovery.  Delete those files if appropriate AND/OR if
- *	delete_flag is TRUE.
+ *	delete_flag is true.
  *
  *	If there is any error, return FB_FAILURE else return FB_SUCCESS.
  *	In case of error, status_vector would be updated.
@@ -797,7 +798,7 @@ SLONG starting_log_partition_offset, SSHORT delete_flag)
 				   file for short-term recovery. */
 				WALF_set_log_header_flag(status_vector, dbname, log_name,
 										 log_partition_offset,
-										 WALFH_KEEP_FOR_SHORT_TERM_RECV, 0);
+										 WALFH_KEEP_FOR_SHORT_TERM_RECV, false);
 			}
 		}
 
@@ -876,7 +877,7 @@ static SSHORT flush_all_buffers( ISC_STATUS * status_vector, WAL WAL_handle)
 			/* Prepare and flush the associated buffer to log file. */
 
 			if (!wblk->walblk_flags & WALBLK_to_be_written)
-				WALC_setup_buffer_block(WAL_segment, wblk, 0);
+				WALC_setup_buffer_block(WAL_segment, wblk, false);
 
 			prepare_wal_block(WAL_segment, wblk);
 			if ((ret = write_wal_block(status_vector, wblk,
@@ -936,10 +937,10 @@ static SSHORT get_logfile_index( WALS WAL_segment, SCHAR * logname)
 }
 
 
-static bool get_log_usability(
-								 ISC_STATUS * status_vector,
-								 SCHAR * dbname,
-								 SCHAR * logname, SLONG log_partition_offset)
+static bool get_log_usability(ISC_STATUS * status_vector,
+							  SCHAR * dbname,
+							  SCHAR * logname,
+							  SLONG log_partition_offset)
 {
 /**************************************
  *
@@ -948,7 +949,7 @@ static bool get_log_usability(
  **************************************
  *
  * Functional description
- *	Returns TRUE if the given logname is usable else returns FALSE.
+ *	Returns true if the given logname is usable else returns false.
  *	If logname is usable, new_logname and new_offset are updated.
  *
  **************************************/
@@ -1077,11 +1078,11 @@ SLONG * new_offset, SLONG * log_type)
 }
 
 
-static SSHORT get_next_serial_logname(
-									  ISC_STATUS * status_vector,
+static SSHORT get_next_serial_logname(ISC_STATUS * status_vector,
 									  WALS WAL_segment,
 									  SCHAR * new_logname,
-SLONG * new_offset, SLONG * log_type)
+									  SLONG * new_offset,
+									  SLONG * log_type)
 {
 /**************************************
  *
@@ -1098,7 +1099,7 @@ SLONG * new_offset, SLONG * log_type)
 	SCHAR last_logname[MAXPATHLEN];
 	SLONG last_log_partition_offset;
 	SLONG last_log_flags;
-	SSHORT any_log_to_be_archived;
+	bool any_log_to_be_archived;
 	SLONG fd;
 	int retry_count;
 #define MAX_RETRIES	1000
@@ -1120,7 +1121,8 @@ SLONG * new_offset, SLONG * log_type)
 						   logf->logf_fname_seqno);
 		logf->logf_fname_seqno++;
 		if (LLIO_open(status_vector, new_logname, LLIO_OPEN_NEW_RW, TRUE, &fd)
-			== FB_SUCCESS) {
+			== FB_SUCCESS)
+		{
 			/* Found one */
 
 			LLIO_close(status_vector, fd);
@@ -1186,24 +1188,26 @@ static bool get_next_usable_partition(
  *
  * Functional description
  *	Tries to find a usable partition in the master_logname.
- *	Returns TRUE if a usable partition is found else returns FALSE.
+ *	Returns true if a usable partition is found else returns false.
  *	new_logname and new_offset are updated in case of success.
  *
  **************************************/
 	SLONG p_log_fd;
-	int i, j, count;
+	int i;
+	int j;
+	int count;
 	bool found;
 	SLONG p_offset;
 
 	P_LOGFH p_log_header = (P_LOGFH) gds__alloc(P_LOGFH_LENGTH);
 /* NOMEM: return failure, FREE: by returns in this procedure */
 	if (!p_log_header)
-		return FALSE;
+		return false;
 
 	if (WALF_open_partitioned_log_file(status_vector, dbname, master_logname,
 									   p_log_header, &p_log_fd) != FB_SUCCESS) {
 		gds__free((SLONG *) p_log_header);
-		return FALSE;
+		return false;
 	}
 
 /* Now check for a free partition */
@@ -1270,7 +1274,8 @@ SLONG * new_offset, SLONG * log_type)
 			logf->logf_fname_seqno++;
 			if (LLIO_open
 				(status_vector, new_logname, LLIO_OPEN_NEW_RW, TRUE,
-				 &fd) == FB_SUCCESS) {
+				 &fd) == FB_SUCCESS) 
+			{
 				LLIO_close(status_vector, fd);
 				*new_offset = 0;
 				break;
@@ -1772,7 +1777,7 @@ static SSHORT rollover_log(
 
 	ret = setup_log(status_vector, WAL_handle, new_logname,
 					new_log_partition_offset, log_type,
-					&new_log_fd, new_log_header, TRUE,
+					&new_log_fd, new_log_header, true,
 					WAL_segment->wals_logname,
 					WAL_segment->wals_log_partition_offset);
 	if (ret == FB_SUCCESS) {
@@ -1804,7 +1809,7 @@ static SSHORT rollover_log(
 
 		log_header->walfh_length = saved_flushed_offset;
 		log_header->walfh_hibsn = WAL_segment->wals_blkseqno - 1;
-		close_log(status_vector, WAL_handle, saved_logname, log_header, TRUE);
+		close_log(status_vector, WAL_handle, saved_logname, log_header, true);
 
 		/* This is a good place to inform the long term journal server
 		   that we have rolled over to a new log file.  Note that the close
@@ -1881,15 +1886,16 @@ static void setup_for_checkpoint( WALS WAL_segment)
 }
 
 
-static SSHORT setup_log(
-						ISC_STATUS * status_vector,
+static SSHORT setup_log(ISC_STATUS * status_vector,
 						WAL WAL_handle,
 						SCHAR * logname,
 						SLONG log_partition_offset,
-SLONG log_type,
-SLONG * logfile_fd,
-WALFH log_header,
-SSHORT rollover, SCHAR * prev_logname, SLONG prev_log_partition_offset)
+						SLONG log_type,
+						SLONG * logfile_fd,
+						WALFH log_header,
+						bool rollover,
+						SCHAR * prev_logname,
+						SLONG prev_log_partition_offset)
 {
 /**************************************
  *
@@ -1962,18 +1968,17 @@ SSHORT rollover, SCHAR * prev_logname, SLONG prev_log_partition_offset)
 }
 
 
-static SSHORT setup_log_header_info(
-						ISC_STATUS * status_vector,
-						WAL WAL_handle,
-						SCHAR * logname,
-	SLONG log_partition_offset,
-	SLONG log_type,
-	SLONG * logfile_fd,
-	WALFH log_header,
-	SSHORT rollover,
-	SCHAR * prev_logname,
-	SLONG prev_log_partition_offset,
-	bool* takeover)
+static SSHORT setup_log_header_info(ISC_STATUS * status_vector,
+									WAL WAL_handle,
+									SCHAR * logname,
+									SLONG log_partition_offset,
+									SLONG log_type,
+									SLONG * logfile_fd,
+									WALFH log_header,
+									bool rollover,
+									SCHAR * prev_logname,
+									SLONG prev_log_partition_offset,
+									bool * takeover)
 {
 /**************************************
  *
@@ -1984,7 +1989,7 @@ static SSHORT setup_log_header_info(
  * Functional description
  *	Open a given log file.
  *	Initialize the log file header information.
- *	If 'rollover' flag is TRUE, then we are going to open a new log
+ *	If 'rollover' flag is true, then we are going to open a new log
  *	file.  So use the 'prev_logname' as the previous log file
  *	name for the new log file.
  *	If we are opening an existing log file and it has a 'next' log
@@ -1992,7 +1997,7 @@ static SSHORT setup_log_header_info(
  *	call.
  *
  *	If we determine that this is a takeover situation, set the takeover
- *	parameter to TRUE.
+ *	parameter to true.
  *
  *	Returns FB_SUCCESS or FB_FAILURE.
  *

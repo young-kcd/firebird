@@ -910,7 +910,7 @@ static void delete_wal(void)
 
 			WALF_set_log_header_flag(status, (char*) database->djb_db_name,
 									 J.LOG_NAME, J.PARTITION_OFFSET,
-									 WALFH_KEEP_FOR_LONG_TERM_RECV, 0);
+									 WALFH_KEEP_FOR_LONG_TERM_RECV, false);
 			MODIFY J USING
 				strcpy(J.DELETE_STATUS, LOG_DELETED);
 			END_MODIFY
@@ -1907,7 +1907,7 @@ static void process_archive_end(CNCT connection,
 	FOR J IN JOURNAL_FILES WITH J.FILE_ID EQ file_id
 		WALF_set_log_header_flag(status, db, J.LOG_NAME,
 								 J.PARTITION_OFFSET,
-								 WALFH_KEEP_FOR_LONG_TERM_RECV, 0);
+								 WALFH_KEEP_FOR_LONG_TERM_RECV, false);
 		strcpy(file_name, J.LOG_NAME);
 		build_indexed_name(name, arch, J.FILE_SEQUENCE);
 		MODIFY J USING

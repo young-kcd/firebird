@@ -143,7 +143,7 @@ static int output_svc(SLONG, UCHAR *);
 static void burp_output(const SCHAR *, ...) ATTRIBUTE_FORMAT(1,2);
 
 #ifndef	SUPERSERVER
-static int api_gbak(int, char**, USHORT, TEXT*, TEXT*, TEXT *, BOOLEAN, BOOLEAN);
+static int api_gbak(int, char**, USHORT, TEXT*, TEXT*, TEXT *, bool, bool);
 #endif
 
 #define QUIT		0
@@ -158,7 +158,7 @@ static int api_gbak(int, char**, USHORT, TEXT*, TEXT*, TEXT *, BOOLEAN, BOOLEAN)
 #define GBYTE	MBYTE * KBYTE
 
 #if defined (WIN95)
-static BOOL fAnsiCP = FALSE;
+static bool fAnsiCP = false;
 #define TRANSLATE_CP(a) if (!fAnsiCP) AnsiToOem(a, a)
 #else
 #define TRANSLATE_CP(a)
@@ -275,7 +275,9 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 	USHORT total;
 	TEXT **end, **argvp, *string, *p, *q, c;
 	IN_SW_TAB in_sw_tab;
-	BOOLEAN flag_restore, flag_verbose, err;
+	bool flag_restore = false;
+	bool flag_verbose = false;
+	bool err = false;
 	TEXT *sw_user, *sw_password, *sw_service;
 	TEXT *d_user, *d_password, *d_service;
 
@@ -286,7 +288,6 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 
 /* Initialize data */
 	total = 0;
-	flag_restore = flag_verbose = err = FALSE;
 	sw_user = sw_password = sw_service = d_user = d_password = d_service = NULL;
 
 /* Parse the command line for the -USER, -PASSWORD, -SERVICE,
@@ -317,11 +318,11 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 		case IN_SW_BURP_C:		/* create database */
 		case IN_SW_BURP_R:		/* replace database */
 			total += strlen(string) + 1;
-			flag_restore = TRUE;
+			flag_restore = true;
 			break;
 		case IN_SW_BURP_USER:	/* default user name */
 			if (argvp >= end)
-				err = TRUE;
+				err = true;
 			else {
 				sw_user = string;
 				d_user = *argvp++;
@@ -329,7 +330,7 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 			break;
 		case IN_SW_BURP_PASS:	/* default password */
 			if (argvp >= end)
-				err = TRUE;
+				err = true;
 			else {
 				sw_password = string;
 				d_password = *argvp++;
@@ -337,7 +338,7 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 			break;
 		case IN_SW_BURP_SE:	/* service name */
 			if (argvp >= end) {
-				err = TRUE;
+				err = true;
 			} else {
 				sw_service = string;
 				d_service = *argvp++;
@@ -345,7 +346,7 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 			break;
 		case IN_SW_BURP_V:		/* verify actions */
 			total += strlen(string) + 1;
-			flag_verbose = TRUE;
+			flag_verbose = true;
 			break;
 		default:
 			total += strlen(string) + 1;
@@ -527,7 +528,7 @@ int BURP_gbak(int		argc,
 		redir_err = atol(argv[4]);
 #ifdef WIN_NT
 #if defined (WIN95)
-		fAnsiCP = TRUE;
+		fAnsiCP = true;
 #endif
 		redir_in = _open_osfhandle(redir_in, 0);
 		redir_out = _open_osfhandle(redir_out, 0);
@@ -1953,14 +1954,14 @@ static ULONG get_size( SCHAR * string, FIL file)
  **********************************************/
 	SCHAR *num, c;
 	ULONG size;
-	BOOLEAN digit;
+	bool digit;
 
 
 	file->fil_size_code = size_n;
-	for (size = 0, digit = FALSE, num = string; c = *num++;) {
+	for (size = 0, digit = false, num = string; c = *num++;) {
 		if (isdigit(c)) {
 			size = size * 10 + (c - '0');
-			digit = TRUE;
+			digit = true;
 		}
 		else {
 			if (isalpha(c)) {
@@ -2004,8 +2005,8 @@ static int api_gbak(int argc,
 					TEXT * password,
 					TEXT * user,
 					TEXT * service,
-					BOOLEAN restore,
-					BOOLEAN verbose)
+					bool restore,
+					bool verbose)
 {
 /**********************************************
  *

@@ -86,43 +86,43 @@
 typedef struct user_data {
     int		operation;		/* what's to be done */
     TEXT	user_name [USER_NAME_LEN];	/* the user's name */
-    BOOLEAN	user_name_entered;	/* user name entered flag */
+    bool	user_name_entered;	/* user name entered flag */
     int		uid;			/* the user's id */
-    BOOLEAN	uid_entered;		/* UID entered flag */
-    BOOLEAN	uid_specified;		/* UID specified flag */
+    bool	uid_entered;		/* UID entered flag */
+    bool	uid_specified;		/* UID specified flag */
     int		gid;			/* the user's group id */
-    BOOLEAN	gid_entered;		/* GID entered flag */
-    BOOLEAN	gid_specified;		/* GID specified flag */
+    bool	gid_entered;		/* GID entered flag */
+    bool	gid_specified;		/* GID specified flag */
     TEXT	sys_user_name [ALT_NAME_LEN];	/* the sys_user's name */
-    BOOLEAN	sys_user_entered;	/* sys_user entered flag */
-    BOOLEAN	sys_user_specified;	/* sys_user specified flag */
+    bool	sys_user_entered;	/* sys_user entered flag */
+    bool	sys_user_specified;	/* sys_user specified flag */
     TEXT	group_name [ALT_NAME_LEN];	/* the group name */
-    BOOLEAN	group_name_entered;	/* group_name entered flag */
-    BOOLEAN	group_name_specified;	/* group_name specified flag */
+    bool	group_name_entered;	/* group_name entered flag */
+    bool	group_name_specified;	/* group_name specified flag */
     TEXT	password [NAME_LEN];		/* the user's password */
-    BOOLEAN	password_entered;	/* password entered flag */
-    BOOLEAN	password_specified;	/* password specified flag */
+    bool	password_entered;	/* password entered flag */
+    bool	password_specified;	/* password specified flag */
     TEXT	first_name [NAME_LEN];	/* the user's first name */
-    BOOLEAN	first_name_entered;	/* first name entered flag */
-    BOOLEAN	first_name_specified;	/* first name specified flag */
+    bool	first_name_entered;	/* first name entered flag */
+    bool	first_name_specified;	/* first name specified flag */
     TEXT	middle_name [NAME_LEN];	/* the user's middle name */
-    BOOLEAN	middle_name_entered;	/* middle name entered flag */
-    BOOLEAN	middle_name_specified;	/* middle name specified flag */
+    bool	middle_name_entered;	/* middle name entered flag */
+    bool	middle_name_specified;	/* middle name specified flag */
     TEXT	last_name [NAME_LEN];		/* the user's last name */
-    BOOLEAN	last_name_entered;	/* last name entered flag */
-    BOOLEAN	last_name_specified;	/* last name specified flag */
+    bool	last_name_entered;	/* last name entered flag */
+    bool	last_name_specified;	/* last name specified flag */
     TEXT	dba_user_name [USER_NAME_LEN];	/* the user's name */
-    BOOLEAN	dba_user_name_entered;	/* user name entered flag */
-    BOOLEAN	dba_user_name_specified;/* database specified flag */
+    bool	dba_user_name_entered;	/* user name entered flag */
+    bool	dba_user_name_specified;/* database specified flag */
     TEXT	dba_password [NAME_LEN];	/* the user's name */
-    BOOLEAN	dba_password_entered;	/* user name entered flag */
-    BOOLEAN	dba_password_specified;	/* database specified flag */
+    bool	dba_password_entered;	/* user name entered flag */
+    bool	dba_password_specified;	/* database specified flag */
     TEXT	sql_role_name [NAME_LEN];	/* the user's name */
-    BOOLEAN	sql_role_name_entered;	/* user name entered flag */
-    BOOLEAN	sql_role_name_specified;/* database specified flag */
+    bool	sql_role_name_entered;	/* user name entered flag */
+    bool	sql_role_name_specified;/* database specified flag */
     TEXT	database_name [512];	/* database pathname */
-    BOOLEAN	database_entered;	/* database entered flag */
-    BOOLEAN	database_specified;	/* database specified flag */
+    bool	database_entered;	/* database entered flag */
+    bool	database_specified;	/* database specified flag */
 
 } *USER_DATA;
 
@@ -133,10 +133,10 @@ typedef struct tsec {
     jmp_buf*	tsec_env;
     ISC_STATUS		*tsec_status;
     ISC_STATUS_ARRAY	tsec_status_vector;
-    BOOLEAN		tsec_interactive;
-    BOOLEAN		tsec_sw_version;
-    BOOLEAN		tsec_service_gsec;
-    BOOLEAN		tsec_service_thd;
+    bool		tsec_interactive;
+    bool		tsec_sw_version;
+    bool		tsec_service_gsec;
+    bool		tsec_service_thd;
     int(*tsec_output_proc)(SLONG, UCHAR*);
     SLONG       	tsec_output_data;
     IB_FILE        	*tsec_output_file;

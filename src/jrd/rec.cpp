@@ -1041,11 +1041,10 @@ USHORT activate_shadow, SLONG * timestamp, SLONG page_no, PAG page)
 /* Open wal files */
 
 	WALRS_handle = 0;
-	ret_val =
-		WALR_open(tdbb->tdbb_status_vector,
-				  reinterpret_cast < walrs ** >(&WALRS_handle), dbname, 1,
-				  &start_logname, &cp1->cp_p_offset, cp1->cp_offset,
-				  timestamp, FALSE);
+	ret_val = WALR_open(tdbb->tdbb_status_vector,
+						reinterpret_cast < walrs ** >(&WALRS_handle), dbname, 1,
+						&start_logname, &cp1->cp_p_offset, cp1->cp_offset,
+						timestamp, false);
 	if (ret_val == -1)
 		return;					/* reached EOF */
 	else if (ret_val != FB_SUCCESS)

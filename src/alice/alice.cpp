@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.30 2003-09-08 01:46:46 brodsom Exp $
+//	$Id: alice.cpp,v 1.31 2003-09-10 17:46:44 brodsom Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -125,11 +125,8 @@ static void alice_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
 
 int main_gfix(SVC service)
 {
-	int exit_code =
-		ALICE_gfix(	service->svc_argc,
-					service->svc_argv,
-					output_thread,
-					(SLONG) service);
+	int exit_code = ALICE_gfix(service->svc_argc, service->svc_argv,
+					output_thread, (SLONG) service);
 
 	service->svc_handle = 0;
 	if (service->svc_service->in_use != NULL) {
@@ -206,12 +203,12 @@ static int output_svc(SLONG output_data, UCHAR * output_buf)
 
 int ALICE_gfix(int			argc,
 			   char*		argv[],
-			   int(*output_proc)(SLONG, UCHAR*),
+			   int(*output_proc) (SLONG, UCHAR*),
 			   SLONG		output_data)
 {
 	IN_SW_TAB table = alice_in_sw_table;
 
-	USHORT	error;
+	bool	error;
 	TEXT*	database;
 	TEXT	string[512];
 	ULONG	switches;
@@ -247,28 +244,28 @@ int ALICE_gfix(int			argc,
 //  first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
 //  by 3 file descriptors to use in re-directing ib_stdin, ib_stdout, and ib_stderr.
 
-	tdgbl->sw_service = FALSE;
-	tdgbl->sw_service_thd = FALSE;
+	tdgbl->sw_service = false;
+	tdgbl->sw_service_thd = false;
 	tdgbl->service_blk = NULL;
 	tdgbl->status =
 		/* TMN: cast away volatile */
 		(long *) tdgbl->status_vector;
 
 	if (argc > 1 && !strcmp(argv[1], "-svc")) {
-		tdgbl->sw_service = TRUE;
+		tdgbl->sw_service = true;
 		argv++;
 		argc--;
 	}
 	else if (argc > 1 && !strcmp(argv[1], "-svc_thd")) {
-		tdgbl->sw_service = TRUE;
-		tdgbl->sw_service_thd = TRUE;
+		tdgbl->sw_service = true;
+		tdgbl->sw_service_thd = true;
 		tdgbl->service_blk = (SVC) output_data;
 		tdgbl->status = tdgbl->service_blk->svc_status;
 		argv++;
 		argc--;
 	}
 	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
-		tdgbl->sw_service = TRUE;
+		tdgbl->sw_service = true;
 		tdgbl->output_proc = output_svc;
 		redir_in = atol(argv[2]);
 		redir_out = atol(argv[3]);
@@ -304,7 +301,7 @@ int ALICE_gfix(int			argc,
 
 //  Start by parsing switches
 
-	error = 0;
+	error = false;
 	switches = 0;
 	tdgbl->ALICE_data.ua_shutdown_delay = 0;
 	database = NULL;
@@ -335,12 +332,12 @@ int ALICE_gfix(int			argc,
 		if (!string[1]) {
 			continue;
 		}
-		for (table = alice_in_sw_table; TRUE; ++table)
+		for (table = alice_in_sw_table; true; ++table)
 		{
 			const TEXT* p = (TEXT*) table->in_sw_name;
 			if (!p) {
 				ALICE_print(2, *--argv, 0, 0, 0, 0);	/* msg 2: invalid switch %s */
-				error = TRUE;
+				error = true;
 				break;
 			}
 
@@ -364,7 +361,7 @@ int ALICE_gfix(int			argc,
 		if ((table->in_sw_incompatibilities & switches) ||
 			(table->in_sw_requires && !(table->in_sw_requires & switches))) {
 			ALICE_print(4, 0, 0, 0, 0, 0);	/* msg 4: incompatible switch combination */
-			error = TRUE;
+			error = true;
 			break;
 		}
 		switches |= table->in_sw_value;
@@ -449,9 +446,9 @@ int ALICE_gfix(int			argc,
 			}
 			ALICE_down_case(*argv++, string);
 			if (!strcmp(string, ALICE_SW_SYNC)) {
-				tdgbl->ALICE_data.ua_force = TRUE;
+				tdgbl->ALICE_data.ua_force = true;
 			} else if (!strcmp(string, ALICE_SW_ASYNC)) {
-				tdgbl->ALICE_data.ua_force = FALSE;
+				tdgbl->ALICE_data.ua_force = false;
 			} else {
 				ALICE_error(11);	/* msg 11: "sync" or "async" required */
 			}
@@ -463,9 +460,9 @@ int ALICE_gfix(int			argc,
 			}
 			ALICE_down_case(*argv++, string);
 			if (!strcmp(string, "full")) {
-				tdgbl->ALICE_data.ua_use = TRUE;
+				tdgbl->ALICE_data.ua_use = true;
 			} else if (!strcmp(string, "reserve")) {
-				tdgbl->ALICE_data.ua_use = FALSE;
+				tdgbl->ALICE_data.ua_use = false;
 			} else {
 				ALICE_error(12);	/* msg 12: "full" or "reserve" required */
 			}
@@ -520,9 +517,9 @@ int ALICE_gfix(int			argc,
 			}
 			ALICE_down_case(*argv++, string);
 			if (!strcmp(string, ALICE_SW_MODE_RO)) {
-				tdgbl->ALICE_data.ua_read_only = TRUE;
+				tdgbl->ALICE_data.ua_read_only = true;
 			} else if (!strcmp(string, ALICE_SW_MODE_RW)) {
-				tdgbl->ALICE_data.ua_read_only = FALSE;
+				tdgbl->ALICE_data.ua_read_only = false;
 			} else {
 				ALICE_error(110);	/* msg 110: "read_only" or "read_write" required */
 			}
@@ -548,7 +545,7 @@ int ALICE_gfix(int			argc,
 #ifndef SUPERSERVER
 		ALICE_print(20, 0, 0, 0, 0, 0);	/* msg 20: please retry, specifying an option */
 #endif
-		error = TRUE;
+		error = true;
 	}
 
 	if (error) {

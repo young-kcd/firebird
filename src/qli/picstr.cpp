@@ -552,7 +552,8 @@ static void edit_date( DSC * desc, PICS picture, TEXT ** output)
 	DSC temp_desc;
 	TEXT c, d, *p, *out, *month, *weekday, *year, *nmonth, *day,
 		*hours, temp[256], *meridian, *julians;
-	USHORT sig_day, blank;
+	bool sig_day;
+	bool blank;
 	struct tm times;
 
 	temp_desc.dsc_dtype = dtype_timestamp;
@@ -607,8 +608,8 @@ static void edit_date( DSC * desc, PICS picture, TEXT ** output)
 	picture->pic_pointer = picture->pic_string;
 	picture->pic_count = 0;
 	out = *output;
-	sig_day = FALSE;
-	blank = TRUE;
+	sig_day = false;
+	blank = true;
 
 	for (;;) {
 		c = generate(picture);
@@ -635,7 +636,7 @@ static void edit_date( DSC * desc, PICS picture, TEXT ** output)
 			if (!sig_day && d == '0' && blank)
 				*out++ = ' ';
 			else {
-				sig_day = TRUE;
+				sig_day = true;
 				*out++ = d;
 			}
 			break;
@@ -675,7 +676,7 @@ static void edit_date( DSC * desc, PICS picture, TEXT ** output)
 			break;
 		}
 		if (c != 'B')
-			blank = FALSE;
+			blank = false;
 	}
 
 	*output = out;
@@ -696,27 +697,21 @@ static void edit_float( DSC * desc, PICS picture, TEXT ** output)
  *
  **************************************/
 	TEXT c, d, e, *p, *out, temp[512];
-	BOOLEAN negative, is_signed;
+	bool negative = false;
+	bool is_signed = false;
 	USHORT l, width, decimal_digits, w_digits, f_digits;
 	double number;
 
 #ifdef VMS
-	BOOLEAN hack_for_vms_flag;
+	bool hack_for_vms_flag = false;
 #endif
 #ifdef WIN_NT
-	BOOLEAN hack_for_nt_flag;
+	bool hack_for_nt_flag = false;
 #endif
 
-	negative = is_signed = FALSE;
-#ifdef VMS
-	hack_for_vms_flag = FALSE;
-#endif
-#ifdef WIN_NT
-	hack_for_nt_flag = FALSE;
-#endif
 	number = MOVQ_get_double(desc);
 	if (number < 0) {
-		negative = TRUE;
+		negative = true;
 		number = -number;
 	}
 
@@ -733,10 +728,10 @@ static void edit_float( DSC * desc, PICS picture, TEXT ** output)
 		sprintf(temp, "%*.*e", width, decimal_digits, number);
 #ifdef VMS
 		if (!decimal_digits)
-			hack_for_vms_flag = TRUE;
+			hack_for_vms_flag = true;
 #endif
 #ifdef WIN_NT
-		hack_for_nt_flag = TRUE;
+		hack_for_nt_flag = true;
 #endif
 	}
 	else if (number == 0)
@@ -768,10 +763,10 @@ static void edit_float( DSC * desc, PICS picture, TEXT ** output)
 			sprintf(temp, "%.*e", decimal_digits, number);
 #ifdef VMS
 			if (!decimal_digits)
-				hack_for_vms_flag = TRUE;
+				hack_for_vms_flag = true;
 #endif
 #ifdef WIN_NT
-			hack_for_nt_flag = TRUE;
+			hack_for_nt_flag = true;
 #endif
 		}
 	}
@@ -827,7 +822,7 @@ static void edit_float( DSC * desc, PICS picture, TEXT ** output)
 					*out++ = '-';
 				else
 					*out++ = ' ';
-				is_signed = TRUE;
+				is_signed = true;
 			}
 			else if (*p)
 				*out++ = *p++;
@@ -880,7 +875,7 @@ static void edit_float( DSC * desc, PICS picture, TEXT ** output)
 					*out++ = '-';
 				else
 					*out++ = c;
-				is_signed = TRUE;
+				is_signed = true;
 			}
 			else if (*p == '-' || c == '+')
 				*out++ = *p++;
@@ -913,23 +908,33 @@ static void edit_numeric( DSC * desc, PICS picture, TEXT ** output)
  *	output pointer.
  *
  **************************************/
-	TEXT c, d, float_char, temp[512], *p, *float_ptr, *out, *hex, *digits;
-	USHORT power, negative, signif, hex_overflow, overflow, l;
+	TEXT c;
+	TEXT d;
+	TEXT float_char;
+	TEXT temp[512];
+	TEXT *p;
+	TEXT *float_ptr = NULL;
+	TEXT *out;
+	TEXT *hex;
+	TEXT *digits;
+	bool negative = false;
+	bool signif = false;
+	bool hex_overflow = false;
+	bool overflow = false;
+	USHORT power, l;
 	SSHORT scale;
 	SLONG n;
 	double check, number;
 
 	out = *output;
 	float_ptr = NULL;
-	negative = signif = FALSE;
-	hex_overflow = overflow = FALSE;
 
 	number = MOVQ_get_double(desc);
 	if (number < 0) {
 		number = -number;
-		negative = TRUE;
+		negative = true;
 		if (!(picture->pic_flags & PIC_signed))
-			overflow = TRUE;
+			overflow = true;
 	}
 
 	if (scale = picture->pic_fractions)
@@ -948,7 +953,7 @@ static void edit_numeric( DSC * desc, PICS picture, TEXT ** output)
 		for (check = number, power = picture->pic_digits; power; --power)
 			check /= 10.;
 		if (check >= 1)
-			overflow = TRUE;
+			overflow = true;
 		else {
 			sprintf(digits, "%0*.0f", picture->pic_digits, number);
 			p = digits + strlen(digits);
@@ -962,7 +967,7 @@ static void edit_numeric( DSC * desc, PICS picture, TEXT ** output)
 		for (check = number, power = picture->pic_hex_digits; power; --power)
 			check /= 16.;
 		if (check >= 1)
-			hex_overflow = TRUE;
+			hex_overflow = true;
 		else {
 			n = number;
 			while (p-- > hex) {
@@ -989,7 +994,7 @@ static void edit_numeric( DSC * desc, PICS picture, TEXT ** output)
 		}
 		switch (c) {
 		case '9':
-			signif = TRUE;
+			signif = true;
 			*out++ = *digits++;
 			break;
 
@@ -1003,7 +1008,7 @@ static void edit_numeric( DSC * desc, PICS picture, TEXT ** output)
 			d = (c == 'H') ? *hex++ : *digits++;
 			if (signif || d != '0') {
 				*out++ = d;
-				signif = TRUE;
+				signif = true;
 			}
 			else
 				*out++ = (c == '*') ? '*' : ' ';
@@ -1025,7 +1030,7 @@ static void edit_numeric( DSC * desc, PICS picture, TEXT ** output)
 			d = *digits++;
 			if (signif || d != '0') {
 				*out++ = d;
-				signif = TRUE;
+				signif = true;
 				break;
 			}
 			*float_ptr = ' ';
@@ -1052,7 +1057,7 @@ static void edit_numeric( DSC * desc, PICS picture, TEXT ** output)
 			break;
 
 		case '.':
-			signif = TRUE;
+			signif = true;
 			*out++ = c;
 			break;
 

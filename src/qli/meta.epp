@@ -61,14 +61,14 @@ static void add_field(QLI_REL, QLI_FLD, USHORT);
 static void add_sql_field(QLI_REL, QLI_FLD, USHORT, RLB);
 static int blob_copy(RLB, QLI_REL, SLONG *);
 static void change_field(QLI_REL, QLI_FLD);
-static int check_global_field(DBB, QLI_FLD, TEXT *);
-static int check_relation(QLI_REL);
+static bool check_global_field(DBB, QLI_FLD, TEXT *);
+static bool check_relation(QLI_REL);
 static int clone_fields(QLI_REL, QLI_REL);
 static int clone_global_fields(QLI_REL, QLI_REL);
 static void define_global_field(DBB, QLI_FLD, SYM);
 static void delete_fields(QLI_REL);
 static ISC_STATUS detach(ISC_STATUS *, DBB);
-static int execute_dynamic_ddl(DBB, RLB);
+static void execute_dynamic_ddl(DBB, RLB);
 static int field_length(USHORT, USHORT);
 static void get_database_type(DBB);
 static void get_log_names(DBB, SCHAR *, LLS *, SCHAR *, SLONG, SSHORT,
@@ -1766,7 +1766,7 @@ static void add_field( QLI_REL relation, QLI_FLD field, USHORT position)
  **************************************/
 	DBB database;
 	SYM relation_name, field_name, symbol, global_field;
-	USHORT global_flag;
+	bool global_flag;
 
 	database = relation->rel_database;
 	relation_name = relation->rel_symbol;
@@ -1790,9 +1790,9 @@ static void add_field( QLI_REL relation, QLI_FLD field, USHORT position)
 
 /* Check global field.  Define it if it doesn't exist. */
 
-	global_flag = FALSE;
+	global_flag = false;
 	if (!check_global_field(database, field, global_field->sym_string)) {
-		global_flag = TRUE;
+		global_flag = true;
 		define_global_field(database, field, global_field);
 	}
 
@@ -2052,7 +2052,9 @@ static void change_field( QLI_REL relation, QLI_FLD field)
 }
 
 
-static int check_global_field( DBB database, QLI_FLD field, TEXT * name)
+static bool check_global_field(DBB database,
+							   QLI_FLD field,
+							   TEXT * name)
 {
 /**************************************
  *
@@ -2067,10 +2069,8 @@ static int check_global_field( DBB database, QLI_FLD field, TEXT * name)
  *	If it is not fully defined, flesh it out from the global.
  *
  **************************************/
-	BOOLEAN previously_defined;
+	bool previously_defined = false;
 	SLONG *blob;
-
-	previously_defined = FALSE;
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_field_def])
 		X IN DB.RDB$FIELDS WITH X.RDB$FIELD_NAME EQ name 
@@ -2116,7 +2116,7 @@ static int check_global_field( DBB database, QLI_FLD field, TEXT * name)
 				}
 			}
 		}
-		previously_defined = TRUE;
+		previously_defined = true;
 	END_FOR
 	ON_ERROR
 		ERRQ_database_error(database, gds_status);
@@ -2126,7 +2126,7 @@ static int check_global_field( DBB database, QLI_FLD field, TEXT * name)
 }
 
 
-static int check_relation( QLI_REL relation)
+static bool check_relation( QLI_REL relation)
 {
 /**************************************
  *
@@ -2138,10 +2138,8 @@ static int check_relation( QLI_REL relation)
  *	Check the existence of the named relation.
  *
  **************************************/
-	BOOLEAN previously_defined;
+	bool previously_defined = false;
 	FRBRD *spare;
-
-	previously_defined = FALSE;
 
 	spare = DB;
 	DB = relation->rel_database->dbb_handle;
@@ -2149,7 +2147,7 @@ static int check_relation( QLI_REL relation)
 	FOR(REQUEST_HANDLE relation->rel_database->dbb_requests[REQ_relation_def]
 		TRANSACTION_HANDLE relation->rel_database->dbb_meta_trans)
 			X IN DB.RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ relation->rel_symbol->sym_string 
-		previously_defined = TRUE;
+		previously_defined = true;
 	END_FOR
 	ON_ERROR
 		ERRQ_database_error(relation->rel_database, gds_status);
@@ -2658,7 +2656,8 @@ static void delete_fields( QLI_REL relation)
 }
 
 
-static ISC_STATUS detach( ISC_STATUS * status_vector, DBB dbb)
+static ISC_STATUS detach(ISC_STATUS * status_vector,
+						 DBB dbb)
 {
 /**************************************
  *
@@ -2675,7 +2674,7 @@ static ISC_STATUS detach( ISC_STATUS * status_vector, DBB dbb)
 	ISC_STATUS_ARRAY alt_vector;
 
 	if (!dbb->dbb_handle)
-		return FB_SUCCESS;
+		return NULL;
 
 	status = status_vector;
 
@@ -2697,7 +2696,7 @@ static ISC_STATUS detach( ISC_STATUS * status_vector, DBB dbb)
 }
 
 
-static int execute_dynamic_ddl( DBB database, RLB rlb)
+static void execute_dynamic_ddl( DBB database, RLB rlb)
 {
 /**************************************
  *
@@ -2724,7 +2723,6 @@ static int execute_dynamic_ddl( DBB database, RLB rlb)
 
 	RELEASE_RLB;
 
-	return FB_SUCCESS;
 }
 
 
@@ -2832,8 +2830,9 @@ static void get_log_names(
  **************************************/
 	SCHAR next_log[512];
 	SCHAR *cl, *nl;
-	int log_count, ret_val;
-	SSHORT not_archived;
+	int log_count;
+	int ret_val;
+	bool not_archived;
 	SLONG last_log_flag, next_offset;
 	SLONG log_seqno, log_length;
 	SSHORT loop;
@@ -2843,12 +2842,14 @@ static void get_log_names(
 
 // loop up to 10 times to allow the file to be archived 
 
-	while (TRUE) {
+	while (true) {
 		loop++;
-		if (WALF_get_linked_logs_info
+		if (!WALF_get_linked_logs_info
 			(gds_status, db_name, cur_log, part_offset, &log_count, next_log,
-			 &next_offset, &last_log_flag, &not_archived) != FB_SUCCESS)
+			 &next_offset, &last_log_flag, &not_archived))
+		{
 			ERRQ_database_error(dbb, gds_status);
+		}
 
 		if ((!not_archived) || force)
 			break;

@@ -894,7 +894,7 @@ static void execute_for( QLI_NOD node)
 /* Receive messages in a loop until the end of file field comes up
    true. */
 
-	while (TRUE) {
+	while (true) {
 		desc = EXEC_receive(message, (PAR) node->nod_arg[e_for_eof]);
 		if (*(USHORT *) desc->dsc_address)
 			break;

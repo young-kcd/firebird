@@ -72,7 +72,9 @@
 jmp_buf QLI_env;					// Error return environment 
 
 TEXT *QLI_error;
-USHORT sw_verify, sw_trace, sw_buffers;
+bool sw_verify;
+bool sw_trace;
+USHORT sw_buffers;
 #ifdef PYXIS
 USHORT sw_forms;
 #endif
@@ -89,21 +91,21 @@ USHORT QLI_columns = 80;
 extern TEXT *QLI_prompt;
 
 static void enable_signals(void);
-static USHORT process_statement(USHORT);
+static bool process_statement(bool);
 static void CLIB_ROUTINE signal_arith_excp(USHORT, USHORT, USHORT);
 static void CLIB_ROUTINE signal_quit(void);
-static BOOLEAN yes_no(USHORT, TEXT *);
+static bool yes_no(USHORT, TEXT *);
 
 typedef struct answer_t {
 	TEXT answer[30];
-	BOOLEAN value;
+	bool value;
 } *ANS;
 
 static int yes_no_loaded = 0;
 static struct answer_t answer_table[] = {
-	{ "", FALSE },					// NO   
-	{ "", TRUE },					// YES  
-	{ NULL, 0 }
+	{ "", false },					/* NO   */
+	{ "", true },					/* YES  */
+	{ NULL, false }
 };
 
 
@@ -124,9 +126,12 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 	SCHAR home_directory[256];
 #endif
 	PLB temp;
-	USHORT flush_flag, banner_flag, version_flag, got_started;
+	bool flush_flag;
+	bool banner_flag;
+	bool version_flag;
+	bool got_started;
 #ifdef VMS
-	USHORT vms_tryagain_flag;
+	bool vms_tryagain_flag;
 #endif
 	SLONG debug_value;
 	jmp_buf env;
@@ -151,8 +156,8 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 	application_file = NULL;
 	ALLQ_init();
 	LEX_init();
-	version_flag = flush_flag = FALSE;
-	banner_flag = TRUE;
+	version_flag = flush_flag = false;
+	banner_flag = true;
 	sw_buffers = 0;
 	strcpy(QLI_prompt_string, "QLI> ");
 	strcpy(QLI_cont_string, "CON> ");
@@ -173,7 +178,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 	for (arg_end = argv + argc, argv++; argv < arg_end;) {
 		p = *argv++;
 		if (*p++ != '-') {
-			banner_flag = FALSE;
+			banner_flag = false;
 			LEX_pop_line();
 			LEX_push_string(p - 1);
 			continue;
@@ -202,7 +207,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 				break;
 
 			case 'N':
-				banner_flag = FALSE;
+				banner_flag = false;
 				break;
 
 			case 'P':
@@ -216,7 +221,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 				break;
 
 			case 'T':
-				sw_trace = TRUE;
+				sw_trace = true;
 				break;
 
 			case 'U':
@@ -230,7 +235,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 				break;
 
 			case 'V':
-				sw_verify = TRUE;
+				sw_verify = true;
 				break;
 
 			case 'X':
@@ -246,7 +251,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 				break;
 
 			case 'Z':
-				version_flag = TRUE;
+				version_flag = true;
 				break;
 
 			default:
@@ -264,34 +269,36 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 		ERRQ_msg_put(25, GDS_VERSION, NULL, NULL, NULL, NULL);	/* Msg25 qli version %s */
 
 	if (application_file)
-		LEX_push_file(application_file, TRUE);
+		LEX_push_file(application_file, true);
 
 	if (startup_file)
-		LEX_push_file(startup_file, FALSE);
+		LEX_push_file(startup_file, false);
 
 #ifdef VMS
-	vms_tryagain_flag = FALSE;
+	vms_tryagain_flag = false;
 	if (startup_file)
-		vms_tryagain_flag = LEX_push_file(startup_file, FALSE);
+		vms_tryagain_flag = LEX_push_file(startup_file, false);
 
 /* If default value of startup file wasn't altered by the use of -i,
    and LEX returned FALSE (above), try the old logical name, QLI_INIT */
 
 	if (!vms_tryagain_flag && startup_file
-		&& !(strcmp(startup_file, STARTUP_FILE))) LEX_push_file("QLI_INIT",
-																FALSE);
+		&& !(strcmp(startup_file, STARTUP_FILE)))
+	{
+		LEX_push_file("QLI_INIT", false);
+	}
 #endif
 
-	for (got_started = 0; !got_started;)
+	for (got_started = false; !got_started;)
 	{
-		got_started = 1;
+		got_started = true;
 		try {
 			memcpy(QLI_env, env, sizeof(QLI_env));
 			PAR_token();
 		}
 		catch (const std::exception&) {
-			// try again 
-			got_started = 0;
+			/* try again */
+			got_started = false;
 			ERRQ_pending();
 		}
 	}
@@ -351,7 +358,7 @@ static void enable_signals(void)
 }
 
 
-static USHORT process_statement( USHORT flush_flag)
+static bool process_statement(bool flush_flag)
 {
 /**************************************
  *
@@ -361,7 +368,7 @@ static USHORT process_statement( USHORT flush_flag)
  *
  * Functional description
  *	Parse, compile, and execute a single statement.  If an input flush
- *	is required, return TRUE (or status), otherwise return FALSE.
+ *	is required, return true (or status), otherwise return false.
  *
  **************************************/
 	SYN syntax_tree;
@@ -417,7 +424,7 @@ static USHORT process_statement( USHORT flush_flag)
 	PAR_real();
 
 	if (!QLI_line)
-		return FALSE;
+		return false;
 
 	EXEC_poll_abort();
 
@@ -432,7 +439,7 @@ static USHORT process_statement( USHORT flush_flag)
 	QLI_prompt = QLI_cont_string;
 
 	if (!(syntax_tree = PARQ_parse()))
-		return FALSE;
+		return false;
 
 	EXEC_poll_abort();
 
@@ -440,7 +447,7 @@ static USHORT process_statement( USHORT flush_flag)
 
 	if (syntax_tree->syn_type == nod_exit) {
 		QLI_line = NULL;
-		return FALSE;
+		return false;
 	}
 
 /* If the statement was quit, ask the user if he want to rollback */
@@ -453,24 +460,24 @@ static USHORT process_statement( USHORT flush_flag)
 					MET_transaction(nod_rollback, dbb);
 				else
 					MET_transaction(nod_commit, dbb);
-		return FALSE;
+		return false;
 	}
 
 /* Expand the statement.  It will return NULL is the statement was
    a command.  An error will be unwound */
 
 	if (!(expanded_tree = (BLK) EXP_expand(syntax_tree)))
-		return FALSE;
+		return false;
 
 // Compile the statement 
 
 	if (!(execution_tree = (BLK) CMPQ_compile((qli_nod*) expanded_tree)))
-		return FALSE;
+		return false;
 
 // Generate any BLR needed to support the request 
 
 	if (!GEN_generate(( (qli_nod*) execution_tree)))
-		return FALSE;
+		return false;
 
 	if (QLI_statistics)
 		for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
@@ -513,7 +520,7 @@ static USHORT process_statement( USHORT flush_flag)
 
 	GEN_release();
 
-	return FALSE;
+	return false;
 
 	}	// try
 	catch (const Firebird::status_exception& e) {
@@ -611,7 +618,7 @@ static void CLIB_ROUTINE signal_quit(void)
 }
 
 
-static BOOLEAN yes_no( USHORT number, TEXT * arg1)
+static bool yes_no(USHORT number, TEXT * arg1)
 {
 /**************************************
  *
@@ -638,16 +645,16 @@ static BOOLEAN yes_no( USHORT number, TEXT * arg1)
 			strcpy(answer_table[1].answer, "YES");
 	}
 
-	while (TRUE) {
+	while (true) {
 		buffer[0] = 0;
 		if (!LEX_get_line(prompt, buffer, sizeof(buffer)))
-			return TRUE;
+			return true;
 		for (response = answer_table; (TEXT *) response->answer; response++) {
 			p = buffer;
 			while (*p == ' ')
 				p++;
 			if (*p == EOF)
-				return TRUE;
+				return true;
 			for (q = response->answer; *p && UPPER(*p) == *q++; p++);
 			if (!*p || *p == '\n')
 				return response->value;

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.18 2003-08-30 02:02:36 brodsom Exp $
+//	$Id: tdr.cpp,v 1.19 2003-09-10 17:46:44 brodsom Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -54,7 +54,7 @@ static ULONG ask(void);
 static void print_description(TDR);
 static void reattach_database(TDR);
 static void reattach_databases(TDR);
-static BOOLEAN reconnect(FRBRD *, SLONG, TEXT *, ULONG);
+static bool reconnect(FRBRD *, SLONG, TEXT *, ULONG);
 
 
 #define NEWLINE	"\n"
@@ -175,8 +175,9 @@ USHORT TDR_analyze(TDR trans)
 //		Attempt to attach a database with a given pathname.
 //
 
-BOOLEAN TDR_attach_database(ISC_STATUS * status_vector,
-							TDR trans, TEXT * pathname)
+bool TDR_attach_database(ISC_STATUS * status_vector,
+						 TDR trans,
+						 TEXT * pathname)
 {
 	UCHAR dpb[128], *d, *q;
 	USHORT dpb_length;
@@ -197,9 +198,7 @@ BOOLEAN TDR_attach_database(ISC_STATUS * status_vector,
 
 	if (tdgbl->ALICE_data.ua_user) {
 		*d++ = gds_dpb_user_name;
-		*d++ =
-			strlen(reinterpret_cast <
-				   const char *>(tdgbl->ALICE_data.ua_user));
+		*d++ = strlen(reinterpret_cast <const char *>(tdgbl->ALICE_data.ua_user));
 		for (q = tdgbl->ALICE_data.ua_user; *q;)
 			*d++ = *q++;
 	}
@@ -231,7 +230,7 @@ BOOLEAN TDR_attach_database(ISC_STATUS * status_vector,
 			ALICE_print(69, 0, 0, 0, 0, 0);	/* msg 69:  failed */
 			ALICE_print_status(status_vector);
 		}
-		return FALSE;
+		return false;
 	}
 
 	MET_set_capabilities(status_vector, trans);
@@ -239,7 +238,7 @@ BOOLEAN TDR_attach_database(ISC_STATUS * status_vector,
 	if (tdgbl->ALICE_data.ua_debug)
 		ALICE_print(70, 0, 0, 0, 0, 0);	/* msg 70:  succeeded */
 
-	return TRUE;
+	return true;
 }
 
 
@@ -295,7 +294,9 @@ void TDR_list_limbo(FRBRD *handle, TEXT * name, ULONG switches)
 	UCHAR buffer[1024], *ptr;
 	ISC_STATUS_ARRAY status_vector;
 	SLONG id;
-	USHORT item, flag, length;
+	USHORT item;
+	bool flag;
+	USHORT length;
 	TDR trans;
 	TGBL tdgbl;
 
@@ -310,7 +311,7 @@ void TDR_list_limbo(FRBRD *handle, TEXT * name, ULONG switches)
 	}
 
 	ptr = buffer;
-	flag = TRUE;
+	flag = true;
 
 	while (flag) {
 		item = *ptr++;
@@ -320,7 +321,8 @@ void TDR_list_limbo(FRBRD *handle, TEXT * name, ULONG switches)
 		case gds_info_limbo:
 			id = gds__vax_integer(ptr, length);
 			if (switches &
-				(sw_commit | sw_rollback | sw_two_phase | sw_prompt)) {
+				(sw_commit | sw_rollback | sw_two_phase | sw_prompt))
+			{
 				TDR_reconnect_multiple(handle, id, name, switches);
 				ptr += length;
 				break;
@@ -357,7 +359,7 @@ void TDR_list_limbo(FRBRD *handle, TEXT * name, ULONG switches)
 				ALICE_print(72, 0, 0, 0, 0, 0);	/* msg 72: More limbo transactions than fit.  Try again */
 
 		case gds_info_end:
-			flag = FALSE;
+			flag = false;
 			break;
 
 		default:
@@ -381,13 +383,15 @@ void TDR_list_limbo(FRBRD *handle, TEXT * name, ULONG switches)
 //		gfix user.
 //
 
-BOOLEAN TDR_reconnect_multiple(FRBRD *handle,
-							   SLONG id, TEXT * name, ULONG switches)
+bool TDR_reconnect_multiple(FRBRD *handle,
+							SLONG id,
+							TEXT * name,
+							ULONG switches)
 {
 	TDR trans, ptr;
 	ISC_STATUS_ARRAY status_vector;
 	USHORT advice;
-	BOOLEAN error = FALSE;
+	bool error = false;
 
 //  get the state of all the associated transactions
 
@@ -488,7 +492,7 @@ BOOLEAN TDR_reconnect_multiple(FRBRD *handle,
 	else
 	{
 		ALICE_print(84, 0, 0, 0, 0, 0);	/* msg 84: unexpected end of input */
-		error = TRUE;
+		error = true;
 	}
 
 //  shutdown all the databases for cleanliness' sake
@@ -510,7 +514,7 @@ BOOLEAN TDR_reconnect_multiple(FRBRD *handle,
 static void print_description(TDR trans)
 {
 	TDR ptr;
-	BOOLEAN prepared_seen;
+	bool prepared_seen;
 
 #ifdef SUPERSERVER
 	int i;
@@ -528,7 +532,7 @@ static void print_description(TDR trans)
 		ALICE_print(92, 0, 0, 0, 0, 0);	/* msg 92:   Multidatabase transaction: */
 	}
 
-	prepared_seen = FALSE;
+	prepared_seen = false;
 	for (ptr = trans; ptr; ptr = ptr->tdr_next)
 	{
 		if (ptr->tdr_host_site)
@@ -575,7 +579,7 @@ static void print_description(TDR trans)
 			SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_state);
 			SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_state_limbo);
 #endif
-			prepared_seen = TRUE;
+			prepared_seen = true;
 			break;
 
 		case TRA_commit:
@@ -717,7 +721,7 @@ static ULONG ask(void)
 
 	switches = 0;
 
-	while (TRUE) {
+	while (true) {
 		ALICE_print(85, 0, 0, 0, 0, 0);	/* msg 85: Commit, rollback, or neither (c, r, or n)? */
 		if (tdgbl->sw_service)
 			ib_putc('\001', ib_stdout);
@@ -764,15 +768,16 @@ static void reattach_database(TDR trans)
  //  if this is being run from the same host,
  //  try to reconnect using the same pathname
 
-    if (!strcmp(reinterpret_cast < const char *>(buffer),
-        reinterpret_cast < const char *>(trans->tdr_host_site->str_data)))
-    {
-        if (TDR_attach_database(status_vector, trans,
-            reinterpret_cast<char*>(trans->tdr_fullpath->str_data)))
-        {
-                return;
-        }
-    }
+	if (!strcmp(reinterpret_cast < const char *>(buffer),
+		reinterpret_cast < const char *>(trans->tdr_host_site->str_data)))
+	{
+		if (TDR_attach_database(status_vector, trans,
+								reinterpret_cast<char*>
+								(trans->tdr_fullpath->str_data)))
+		{
+			return;
+		}
+	}
 
 
 //  try going through the previous host with all available
@@ -789,9 +794,11 @@ static void reattach_database(TDR trans)
 		for (q = trans->tdr_fullpath->str_data; *q;)
 			*p++ = *q++;
 		*q = 0;
-		if (TDR_attach_database
-			(status_vector, trans,
-			 reinterpret_cast < char *>(buffer))) return;
+		if (TDR_attach_database(status_vector, trans,
+								reinterpret_cast < char *>(buffer)))
+		{
+			return;
+		}
 	}
 
 //  attaching using the old method didn't work;
@@ -807,9 +814,11 @@ static void reattach_database(TDR trans)
 		for (q = (UCHAR *) trans->tdr_filename; *q;)
 			*p++ = *q++;
 		*q = 0;
-		if (TDR_attach_database
-			(status_vector, trans,
-			 reinterpret_cast < char *>(buffer))) return;
+		if (TDR_attach_database (status_vector, trans,
+								 reinterpret_cast < char *>(buffer)))
+		{
+			return;
+		}
 	}
 
 //  we have failed to reattach; notify the user
@@ -828,8 +837,7 @@ static void reattach_database(TDR trans)
 		p = buffer;
 		while (*p == ' ')
 			*p++;
-		if (TDR_attach_database(status_vector,
-								trans,
+		if (TDR_attach_database(status_vector, trans,
 								reinterpret_cast<char*>(p)))
 		{
 			string = FB_NEW_RPT(*tdgbl->ALICE_default_pool,
@@ -868,8 +876,10 @@ static void reattach_databases(TDR trans)
 //		Commit or rollback a named transaction.
 //
 
-static BOOLEAN reconnect(FRBRD *handle,
-						 SLONG number, TEXT * name, ULONG switches)
+static bool reconnect(FRBRD *handle,
+					  SLONG number,
+					  TEXT * name,
+					  ULONG switches)
 {
 	FRBRD *transaction;
 	SLONG id;
@@ -878,18 +888,21 @@ static BOOLEAN reconnect(FRBRD *handle,
 	id = gds__vax_integer((UCHAR *) & number, 4);
 	transaction = NULL;
 	if (gds__reconnect_transaction(status_vector, &handle, &transaction,
-    							   sizeof(id), reinterpret_cast <char *>(&id))) {
-		ALICE_print(90, name, 0, 0, 0, 0);	/* msg 90: failed to reconnect to a transaction in database %s */
+								   sizeof(id), reinterpret_cast <char *>(&id))) {
+		ALICE_print(90, name, 0, 0, 0, 0);
+		// msg 90: failed to reconnect to a transaction in database %s
 		ALICE_print_status(status_vector);
-		return TRUE;
+		return true;
 	}
 
 	if (!(switches & (sw_commit | sw_rollback))) {
-		ALICE_print(91, reinterpret_cast < char *>(number), 0, 0, 0, 0);	/* msg 91: Transaction %ld: */
+		ALICE_print(91, reinterpret_cast < char *>(number), 0, 0, 0, 0);
+		// msg 91: Transaction %ld:
 		switches = ask();
 		if (switches == (ULONG) - 1) {
-			ALICE_print(84, 0, 0, 0, 0, 0);	/* msg 84: unexpected end of input */
-			return TRUE;
+			ALICE_print(84, 0, 0, 0, 0, 0);
+			// msg 84: unexpected end of input
+			return true;
 		}
 	}
 
@@ -898,13 +911,13 @@ static BOOLEAN reconnect(FRBRD *handle,
 	else if (switches & sw_rollback)
 		gds__rollback_transaction(status_vector, &transaction);
 	else
-		return FALSE;
+		return false;
 
 	if (status_vector[1]) {
 		ALICE_print_status(status_vector);
-		return TRUE;
+		return true;
 	}
 
-	return FALSE;
+	return false;
 }
 

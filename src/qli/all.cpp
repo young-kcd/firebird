@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: all.cpp,v 1.15 2003-09-10 11:48:07 robocop Exp $
+$Id: all.cpp,v 1.16 2003-09-10 17:50:39 brodsom Exp $
 */
 
 /***************************************************
@@ -109,7 +109,7 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
 /* Find best fit.  Best fit is defined to be the free block of SHORTest
    tail.  If there isn't a fit, extend the pool and try, try again. */
 
-	while (TRUE) {
+	while (true) {
 		best = NULL;
 		best_tail = 32767;
 		for (ptr = &pool->plb_free; (free = *ptr); ptr = &free->frb_next)

@@ -553,7 +553,7 @@ void AIL_enable(
 	PAG_add_clump(HEADER_PAGE, HDR_backup_info, d_len, data, CLUMP_ADD, 1);
 	WAL_flush(tdbb->tdbb_status_vector, dbb->dbb_wal,
 			  reinterpret_cast < long *>(&seqno),
-			  reinterpret_cast < long *>(&offset), FALSE);
+			  reinterpret_cast < long *>(&offset), false);
 }
 
 
@@ -901,7 +901,7 @@ void AIL_journal_tid(void)
 	CCH_RELEASE(tdbb, &window);
 
 	SLONG offset;
-	WAL_flush(tdbb->tdbb_status_vector, dbb->dbb_wal, &seqno, &offset, FALSE);
+	WAL_flush(tdbb->tdbb_status_vector, dbb->dbb_wal, &seqno, &offset, false);
 }
 
 
@@ -1029,7 +1029,7 @@ void AIL_recover_page(SLONG page_no, PAG page)
  * page
  */
 
-	WAL_flush(tdbb->tdbb_status_vector, dbb->dbb_wal, &seqno, &offset, FALSE);
+	WAL_flush(tdbb->tdbb_status_vector, dbb->dbb_wal, &seqno, &offset, false);
 
 	window.win_page = LOG_PAGE;
 	window.win_flags = 0;
@@ -1135,9 +1135,9 @@ void AIL_shutdown(
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
 
-	WAL_flush(tdbb->tdbb_status_vector, dbb->dbb_wal, seqno, offset, FALSE);
+	WAL_flush(tdbb->tdbb_status_vector, dbb->dbb_wal, seqno, offset, false);
 	WAL_shutdown(tdbb->tdbb_status_vector, dbb->dbb_wal, seqno, walname,
-				 p_offset, offset, force_archive);
+				 p_offset, offset, (force_archive));
 	AIL_fini();
 }
 

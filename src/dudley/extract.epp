@@ -68,7 +68,7 @@ static void extract_rfr(const TEXT *);
 static void extract_security(void);
 static void extract_triggers(void);
 static void extract_trig_msgs(const TEXT *);
-static void extract_view(const TEXT*, SLONG*, SLONG*, bool, bool, USHORT, bool*);
+static void extract_view(const TEXT*, SLONG*, SLONG*, bool, bool, bool, bool*);
 static void extract_views(void);
 static void field_attributes(SLONG *, const TEXT *, SLONG *, const TEXT *, SSHORT);
 static void format_acl(const SCHAR *);
@@ -636,18 +636,18 @@ static void extract_database(const TEXT * DB_file_name)
 	if (EXT_capabilities & EXT_v3) {
 		bool any_shadows = false;
 
-	       FOR F IN RDB$FILES WITH F.RDB$SHADOW_NUMBER GT 0
-	           SORTED BY F.RDB$SHADOW_NUMBER, F.RDB$FILE_START
-	           name_trunc(F.RDB$FILE_NAME, buffer);
-	           if (F.RDB$FILE_START)
-                   ib_fprintf(output_file, "\n\tfile \"%s\" starting at page %ld",
-                              buffer, F.RDB$FILE_START);
-               else
-                   ib_fprintf(output_file, "%s\ndefine shadow %d \"%s\"",
-                              (any_shadows) ? ";\n" : "", F.RDB$SHADOW_NUMBER,
-                              buffer);
-               any_shadows = true;
-	       END_FOR;
+			FOR F IN RDB$FILES WITH F.RDB$SHADOW_NUMBER GT 0
+				SORTED BY F.RDB$SHADOW_NUMBER, F.RDB$FILE_START
+				name_trunc(F.RDB$FILE_NAME, buffer);
+				if (F.RDB$FILE_START)
+					ib_fprintf(output_file, "\n\tfile \"%s\" starting at page %ld",
+							   buffer, F.RDB$FILE_START);
+				else
+					ib_fprintf(output_file, "%s\ndefine shadow %d \"%s\"",
+							   (any_shadows) ? ";\n" : "", F.RDB$SHADOW_NUMBER,
+							   buffer);
+				any_shadows = true;
+			END_FOR;
 
 		if (any_shadows)
 			ib_fprintf(output_file, ";\n");
@@ -1066,7 +1066,7 @@ static void extract_indexes(void)
         
         if (EXT_capabilities & EXT_v3)
             FOR ACT IN RDB$INDICES WITH ACT.RDB$INDEX_NAME = index
-                   if (ACT.RDB$INDEX_TYPE == IDX_type_descend)
+                   if (ACT.RDB$INDEX_TYPE)
                        ib_fprintf(output_file, "\ndescending");
         END_FOR;
         
@@ -1419,9 +1419,9 @@ static void extract_view(const TEXT * rel_name,
 						 SLONG * source,
 						 SLONG * description,
 						 bool source_null,
-                         bool desc_null,
-						 USHORT system_flag,
-						 bool* first)
+						 bool desc_null,
+						 bool system_flag,
+						 bool * first)
 {
 /**************************************
  *
@@ -1477,7 +1477,8 @@ static void extract_views(void)
  *	and write it to the output file.
  *
  **************************************/
-	bool source_null, desc_null;
+	bool source_null;
+	bool desc_null;
 	TEXT s[32];
 
 	bool first = true;
@@ -1485,35 +1486,35 @@ static void extract_views(void)
 	if (!(EXT_capabilities & EXT_v3)) {
 		/* In V2 we have no choice but to output views in the order they appear */
 
-        FOR V IN RDB$RELATIONS WITH
-            (V.RDB$SYSTEM_FLAG NE 1 OR V.RDB$SYSTEM_FLAG MISSING) AND
-            V.RDB$VIEW_BLR NOT MISSING
-            SORTED BY V.RDB$RELATION_NAME
-            source_null = V.RDB$VIEW_SOURCE.NULL ? true : false;
-            desc_null = blob_null(V.RDB$DESCRIPTION) ? true : false;
-	        extract_view(V.RDB$RELATION_NAME, (SLONG*) &V.RDB$VIEW_SOURCE,
-                         (SLONG*) &V.RDB$DESCRIPTION, source_null, desc_null,
-                         V.RDB$SYSTEM_FLAG, &first);
+		FOR V IN RDB$RELATIONS WITH
+			(V.RDB$SYSTEM_FLAG NE 1 OR V.RDB$SYSTEM_FLAG MISSING) AND
+			V.RDB$VIEW_BLR NOT MISSING
+			SORTED BY V.RDB$RELATION_NAME
+			source_null = (V.RDB$VIEW_SOURCE.NULL);
+			desc_null = (blob_null(V.RDB$DESCRIPTION));
+			extract_view(V.RDB$RELATION_NAME, (SLONG*) &V.RDB$VIEW_SOURCE,
+						 (SLONG*) &V.RDB$DESCRIPTION, source_null, desc_null,
+						 (V.RDB$SYSTEM_FLAG), &first);
 	
-	    END_FOR;
+		END_FOR;
 		return;
 	}
 
-/* In V3 there are dependencies that can help us to output the views in
-   the correct order.  But first let's just save the names of the views. */
+// In V3 there are dependencies that can help us to output the views in
+// the correct order.  But first let's just save the names of the views.
 
 	view* view_list = NULL;
 
-    FOR V IN RDB$RELATIONS WITH
-        (V.RDB$SYSTEM_FLAG NE 1 OR V.RDB$SYSTEM_FLAG MISSING) AND
-        V.RDB$VIEW_BLR NOT MISSING
-        SORTED BY DESC V.RDB$RELATION_NAME
+	FOR V IN RDB$RELATIONS WITH
+		(V.RDB$SYSTEM_FLAG NE 1 OR V.RDB$SYSTEM_FLAG MISSING) AND
+		V.RDB$VIEW_BLR NOT MISSING
+		SORTED BY DESC V.RDB$RELATION_NAME
 		name_trunc(V.RDB$RELATION_NAME, s);
-        view* viewp = (view*) DDL_alloc(sizeof(view) + strlen(s));
-        strcpy(viewp->view_name, s);
-        viewp->view_next = view_list;
-        view_list = viewp;
-        
+		view* viewp = (view*) DDL_alloc(sizeof(view) + strlen(s));
+		strcpy(viewp->view_name, s);
+		viewp->view_next = view_list;
+		view_list = viewp;
+
 	END_FOR;
 
 	if (!view_list)
@@ -1530,34 +1531,34 @@ static void extract_views(void)
 		for (view **view_ptr = &view_list; *view_ptr;) {
 			bool do_this_one = true;
 			const TEXT* view_name = (*view_ptr)->view_name;
-            
-			/* fields of rdb$dependencies have been renamed for V4.0
-			   This means if we are extracting a pre V3 definition, views
-			   will not be spit out in the optimal order. */
+
+			// fields of rdb$dependencies have been renamed for V4.0
+			// This means if we are extracting a pre V3 definition, views
+			// will not be spit out in the optimal order. */
 
 			if (EXT_capabilities & EXT_v4) {
-                FOR D IN RDB$DEPENDENCIES WITH
-                    D.RDB$DEPENDENT_NAME EQ view_name AND
-                    D.RDB$DEPENDENT_TYPE EQ 0 AND
-                    D.RDB$DEPENDED_ON_TYPE EQ 0
-                    name_trunc(D.RDB$DEPENDED_ON_NAME, s);
-                    for (view* viewp = view_list; viewp; viewp = viewp->view_next)
-                        if (!strcmp(s, viewp->view_name)) {
-                            do_this_one = false;
-                            break;
-                        }
-                END_FOR;
+				FOR D IN RDB$DEPENDENCIES WITH
+					D.RDB$DEPENDENT_NAME EQ view_name AND
+					D.RDB$DEPENDENT_TYPE EQ 0 AND
+					D.RDB$DEPENDED_ON_TYPE EQ 0
+					name_trunc(D.RDB$DEPENDED_ON_NAME, s);
+					for (view* viewp = view_list; viewp; viewp = viewp->view_next)
+						if (!strcmp(s, viewp->view_name)) {
+							do_this_one = false;
+							break;
+						}
+				END_FOR;
 			}
 			if (do_this_one) {
-                FOR V IN RDB$RELATIONS WITH
-                    V.RDB$RELATION_NAME EQ view_name
-                    source_null = V.RDB$VIEW_SOURCE.NULL ? true : false;
-                    desc_null = blob_null(V.RDB$DESCRIPTION) ? true : false;
-                    extract_view(V.RDB$RELATION_NAME, (SLONG*) &V.RDB$VIEW_SOURCE,
-                                 (SLONG*) &V.RDB$DESCRIPTION, source_null, desc_null,
-                                 V.RDB$SYSTEM_FLAG, &first);
+				FOR V IN RDB$RELATIONS WITH
+					V.RDB$RELATION_NAME EQ view_name
+					source_null = (V.RDB$VIEW_SOURCE.NULL);
+					desc_null = (blob_null(V.RDB$DESCRIPTION));
+					extract_view(V.RDB$RELATION_NAME, (SLONG*) &V.RDB$VIEW_SOURCE,
+								 (SLONG*) &V.RDB$DESCRIPTION, source_null, desc_null,
+								 (V.RDB$SYSTEM_FLAG), &first);
 	
-	            END_FOR;
+				END_FOR;
 				did_any = true;
 				*view_ptr = (*view_ptr)->view_next;
 			}
@@ -1565,19 +1566,19 @@ static void extract_views(void)
 				view_ptr = &(*view_ptr)->view_next;
 		}
 	} while (did_any);
-    
-    /* If any views remain, we can't figure out an order so just dump them */
-    
+
+	// If any views remain, we can't figure out an order so just dump them 
+
 	for (view* viewp = view_list; viewp; viewp = viewp->view_next) {
-        FOR V IN RDB$RELATIONS WITH
-            V.RDB$RELATION_NAME EQ viewp->view_name
-            source_null = V.RDB$VIEW_SOURCE.NULL ? true : false;
-            desc_null = blob_null(V.RDB$DESCRIPTION) ? true : false;
-	         extract_view(V.RDB$RELATION_NAME, (SLONG*) &V.RDB$VIEW_SOURCE,
-                          (SLONG*) &V.RDB$DESCRIPTION, source_null, desc_null,
-                          V.RDB$SYSTEM_FLAG, &first);
+		FOR V IN RDB$RELATIONS WITH
+			V.RDB$RELATION_NAME EQ viewp->view_name
+			source_null = (V.RDB$VIEW_SOURCE.NULL);
+			desc_null = (blob_null(V.RDB$DESCRIPTION));
+			extract_view(V.RDB$RELATION_NAME, (SLONG*) &V.RDB$VIEW_SOURCE,
+						 (SLONG*) &V.RDB$DESCRIPTION, source_null, desc_null,
+						 (V.RDB$SYSTEM_FLAG), &first);
 	
-        END_FOR;
+		END_FOR;
 	}
 }
 

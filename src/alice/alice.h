@@ -62,9 +62,9 @@ typedef struct user_action
 	ULONG ua_switches;
 	UCHAR *ua_user;
 	UCHAR *ua_password;
-	UCHAR ua_use;
-	UCHAR ua_force;
-	BOOLEAN ua_read_only;
+	bool ua_use;
+	bool ua_force;
+	bool ua_read_only;
 	SLONG ua_shutdown_delay;
 	SLONG ua_sweep_interval;
 	SLONG ua_transaction;
@@ -170,8 +170,8 @@ public:
 	isc_tr_handle	tr_handle;
 	ISC_STATUS*		status;
 	USHORT			sw_redirect;
-	USHORT			sw_service;
-	USHORT			sw_service_thd;
+	bool			sw_service;
+	bool			sw_service_thd;
 };
 typedef tgbl *TGBL;
 

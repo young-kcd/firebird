@@ -286,18 +286,15 @@ typedef struct funcarg {
 
 typedef struct dudley_idx {
 	USHORT idx_count;			/* Number of fields */
-	UCHAR idx_unique;			/* TRUE if unique index */
-	UCHAR idx_inactive;			/* FALSE if index is active */
-	UCHAR idx_type;				/* 1 = descending */
+	bool idx_unique;			/* true if unique index */
+	bool idx_inactive;			/* false if index is active */
+	bool idx_type;				/* true descending */
 	USHORT idx_flags;			/* Indicate which attributes have changed */
 	struct sym *idx_name;		/* Index name */
 	struct sym *idx_relation;	/* Relation in question */
 	struct txt *idx_description;	/* Description pointer */
 	struct sym *idx_field[1];	/* Fields */
 } *DUDLEY_IDX;
-
-#define IDX_type_none   0
-#define IDX_type_descend	1
 
 #define IDX_active_flag	1
 #define IDX_unique_flag	2
@@ -612,10 +609,19 @@ typedef enum lan_t {
 #endif
 
 EXTERN enum lan_t language;
-EXTERN USHORT DDL_eof, DDL_errors, DDL_line, DDL_interactive, DDL_quit,
-	DDL_dynamic, DDL_drop_database, DDL_service;
-EXTERN UCHAR DDL_replace, DDL_description, DDL_extract, DDL_trace,
-	DDL_version;
+EXTERN bool DDL_eof;
+EXTERN USHORT DDL_errors;
+EXTERN USHORT DDL_line;
+EXTERN bool DDL_interactive;
+EXTERN bool DDL_quit;
+EXTERN bool DDL_dynamic;
+EXTERN bool DDL_drop_database;
+EXTERN bool DDL_service;
+EXTERN bool DDL_replace;
+EXTERN bool DDL_description;
+EXTERN bool DDL_extract;
+EXTERN bool DDL_trace;
+EXTERN bool DDL_version;
 EXTERN TEXT *DDL_file_name, DYN_file_name[256], *DB_file_name,
 	DDL_file_string[256], DB_file_string[256];
 EXTERN TEXT *DDL_default_user, *DDL_default_password;

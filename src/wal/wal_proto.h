@@ -32,12 +32,13 @@
 extern SSHORT	WAL_attach (ISC_STATUS *, struct wal **, SCHAR *);
 extern SSHORT	WAL_checkpoint_finish (ISC_STATUS *, struct wal *, SLONG *, SCHAR *, SLONG *, SLONG *);
 extern SSHORT	WAL_checkpoint_force (ISC_STATUS *, struct wal *, SLONG *, SCHAR *, SLONG *, SLONG *);
-extern SSHORT	WAL_checkpoint_start (ISC_STATUS *, struct wal *, SSHORT *);
+extern SSHORT	WAL_checkpoint_start (ISC_STATUS *, struct wal *, bool *);
 extern SSHORT	WAL_checkpoint_recorded (ISC_STATUS *, struct wal *);
 extern SSHORT	WAL_commit (ISC_STATUS *, struct wal *, UCHAR *, USHORT, SLONG *, SLONG *);
 extern void		WAL_fini (ISC_STATUS *, struct wal **);
-extern SSHORT	WAL_flush (ISC_STATUS *, struct wal *, SLONG *, SLONG *, BOOLEAN);
-extern SSHORT	WAL_init (ISC_STATUS *, struct wal **, SCHAR *, USHORT, SCHAR *, SLONG, SSHORT, SLONG, SSHORT, SCHAR *);
+extern SSHORT	WAL_flush (ISC_STATUS *, struct wal *, SLONG *, SLONG *, bool);
+extern SSHORT	WAL_init (ISC_STATUS *, struct wal **, SCHAR *, USHORT, SCHAR *,
+						  SLONG, bool, SLONG, SSHORT, SCHAR *);
 extern SSHORT	WAL_journal_disable (ISC_STATUS *, struct wal *);
 extern SSHORT	WAL_journal_enable (ISC_STATUS *, struct wal *, SCHAR *, USHORT, SCHAR *);
 extern SSHORT	WAL_put (ISC_STATUS *, struct wal *, UCHAR *, USHORT, UCHAR *, USHORT, SLONG *, SLONG *);
@@ -47,7 +48,8 @@ extern SSHORT	WAL_set_checkpoint_length (ISC_STATUS *, struct wal *, SLONG);
 extern void		WAL_set_cleanup_flag (struct wal *);
 extern SSHORT	WAL_set_grpc_wait_time (ISC_STATUS *, struct wal *, SLONG);
 extern SSHORT	WAL_set_rollover_log (ISC_STATUS *, struct wal *, struct logfiles *);
-extern SSHORT	WAL_shutdown (ISC_STATUS *, struct wal *, SLONG *, SCHAR *, SLONG *, SLONG *, SSHORT);
+extern SSHORT	WAL_shutdown (ISC_STATUS *, struct wal *, SLONG *, SCHAR *,
+							  SLONG *, SLONG *, bool);
 extern SSHORT	WAL_shutdown_old_writer (ISC_STATUS *, SCHAR *);
 extern SSHORT	WAL_status (ISC_STATUS *, struct wal *, SLONG *, SCHAR *, SLONG *, SLONG *, SLONG *, SCHAR *, SLONG *, SLONG *);
 
