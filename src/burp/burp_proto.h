@@ -41,6 +41,7 @@ void	BURP_msg_partial(USHORT, const void*, const void*, const void*,
 						const void*, const void*);
 void	BURP_msg_put(USHORT, const void*, const void*, const void*,
 					const void*, const void*);
+const int BURP_MSG_GET_SIZE = 128; // Use it for buffers passed to this function.
 void	BURP_msg_get(USHORT, TEXT*, const void*, const void*, const void*,
 					const void*, const void*);
 void	BURP_output_version(void*, const TEXT*);

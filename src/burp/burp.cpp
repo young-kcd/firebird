@@ -1112,7 +1112,7 @@ int common_main(int		argc,
 		BURP_error(11, true, 0, 0, 0, 0, 0);
 	// msg 11 input and output have the same name.  Disallowed. 
 
-	time_t clock = time(NULL);
+	const time_t clock = time(NULL);
 	strcpy(tdgbl->gbl_backup_start_time, ctime(&clock));
 	TEXT* nlp = tdgbl->gbl_backup_start_time +
 				strlen(tdgbl->gbl_backup_start_time) - 1;
@@ -1407,7 +1407,7 @@ void BURP_msg_get(	USHORT number,
  *	Retrieve a message from the error file, format it and copy it to the buffer
  *
  **************************************/
-	TEXT buffer[128];
+	TEXT buffer[BURP_MSG_GET_SIZE];
 
 	gds__msg_format(NULL, burp_msg_fac, number, sizeof(buffer), buffer,
 					static_cast<const char*>(arg1),
@@ -1892,7 +1892,7 @@ static gbak_action open_files(const TEXT* file1,
 		if (MVOL_split_hdr_read() == TRUE) {
 			tdgbl->action->act_action = ACT_restore_join;
 			// number of files to be join 
-			int total = tdgbl->action->act_total;
+			const int total = tdgbl->action->act_total;
 			if (fil->fil_seq != seq || seq > total) {
 				BURP_error(263, true, fil->fil_name, 0, 0, 0, 0);
 				// msg 263 file %s out of sequence 

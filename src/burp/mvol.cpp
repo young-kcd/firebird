@@ -246,7 +246,7 @@ void MVOL_init_write(const char*		database_name, // unused?
 	}
 
 	tdgbl->mvol_actual_buffer_size = tdgbl->mvol_io_buffer_size;
-	ULONG temp_buffer_size = tdgbl->mvol_io_buffer_size * tdgbl->gbl_sw_blk_factor;
+	const ULONG temp_buffer_size = tdgbl->mvol_io_buffer_size * tdgbl->gbl_sw_blk_factor;
 	tdgbl->mvol_io_ptr = tdgbl->mvol_io_buffer =
 		BURP_alloc(temp_buffer_size + MAX_HEADER_SIZE);
 	tdgbl->mvol_io_cnt = tdgbl->mvol_actual_buffer_size;
@@ -949,7 +949,7 @@ static void prompt_for_name(SCHAR* name, int length)
 {
 	FILE*	term_in = NULL;
 	FILE*	term_out =  NULL;
-	TEXT		msg[128];
+	TEXT	msg[BURP_MSG_GET_SIZE];
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -1097,9 +1097,7 @@ static bool read_header(DESC	handle,
 						USHORT*	format,
 						bool	init_flag)
 {
-	SSHORT l;
-	ULONG temp_buffer_size;
-	TEXT buffer[256], *p, msg[128];
+	TEXT buffer[MAX_FILE_NAME_LENGTH], msg[BURP_MSG_GET_SIZE];
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -1121,15 +1119,19 @@ static bool read_header(DESC	handle,
 		BURP_error_redirect(0, 45, NULL, NULL);
 		// msg 45 expected backup description record 
 
+	SSHORT l;
 	int temp;
+	TEXT* p;
 	for (attribute = get(tdgbl); attribute != att_end; attribute = get(tdgbl))
 	{
 		switch (attribute)
 		{
 		case att_backup_blksize:
-			temp_buffer_size = get_numeric();
-			if (init_flag)
-				*buffer_size = temp_buffer_size;
+			{
+				ULONG temp_buffer_size = get_numeric();
+				if (init_flag)
+					*buffer_size = temp_buffer_size;
+			}
 			break;
 
 		case att_backup_compress:
@@ -1145,9 +1147,12 @@ static bool read_header(DESC	handle,
 			else
 				p = buffer;
 			if (l)
+			{
+				// B.O.
 				do {
 					*p++ = get(tdgbl);
 				} while (--l);
+			}
 			*p = 0;
 			if (!init_flag && strcmp(buffer, tdgbl->gbl_backup_start_time))
 			{
@@ -1171,6 +1176,7 @@ static bool read_header(DESC	handle,
 			}
 			if (l)
 			{
+				// B.O.
 				do {
 					*p++ = get(tdgbl);
 				} while (--l);
