@@ -1,3 +1,9 @@
+2003-05-15 13:16  skidder
+
+	* firebird2/src/jrd/utl.cpp:
+	
+	Make engine compile again
+
 2003-05-14 17:12  skidder
 
 	* firebird2/src/jrd/ibase.h:
