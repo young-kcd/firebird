@@ -58,10 +58,6 @@
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/jrd_proto.h"
 
-#ifndef NO_NFS
-#define NFS	1
-#endif
-
 
 /* VMS Specific Stuff */
 
@@ -163,7 +159,7 @@ typedef struct itm {
 #endif
 
 #ifdef HAVE_MNTENT_H
-#ifdef NFS
+#ifndef NO_NFS
 #include <mntent.h>
 #define MTAB_OPEN(path,type)	setmntent (path, "r")
 #define MTAB_CLOSE(stream)	endmntent (stream)
@@ -297,7 +293,7 @@ extern SCHAR *getcwd();
 #endif
 
 
-#ifdef NFS
+#ifndef NO_NFS
 int ISC_analyze_nfs(TEXT * expanded_filename, TEXT * node_name)
 {
 /**************************************
@@ -587,7 +583,7 @@ BOOLEAN DLL_EXPORT ISC_check_if_remote(TEXT * file_name,
 
 		return TRUE;
 	}
-#ifdef NFS
+#ifndef NO_NFS
 	if (implicit_flag) {
 		/* Check for a file on an NFS mounted device */
 
@@ -650,7 +646,7 @@ BOOLEAN DLL_EXPORT ISC_check_if_remote(TEXT * file_name,
 }
 
 
-#if (defined NFS || defined FREEBSD || defined NETBSD || defined SINIXZ)
+#if (!defined NO_NFS || defined FREEBSD || defined NETBSD || defined SINIXZ)
 int ISC_expand_filename(TEXT * from_buff, USHORT length, TEXT * to_buff)
 {
 /**************************************
@@ -1134,7 +1130,7 @@ int ISC_strip_extension(TEXT * file_name)
 #endif
 
 
-#if (defined NFS || defined FREEBSD || defined NETBSD || defined SINIXZ)
+#if (!defined NO_NFS || defined FREEBSD || defined NETBSD || defined SINIXZ)
 static int expand_filename2(TEXT * from_buff, USHORT length, TEXT * to_buff)
 {
 /**************************************
@@ -1417,7 +1413,7 @@ static void expand_share_name(TEXT * share_name)
 #endif
 
 
-#ifdef NFS
+#ifndef NO_NFS
 #if (defined AIX || defined AIX_PPC)
 #define GET_MOUNTS
 static BOOLEAN get_mounts(

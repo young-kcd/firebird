@@ -42,7 +42,6 @@
 #ifndef VMS
 #include <sys/param.h>
 #endif
-#define NFS	1
 #endif
 
 #include "../jrd/gds.h"
@@ -4844,7 +4843,7 @@ static PORT analyze(TEXT*	file_name,
 		}
 		else
 		{
-#ifdef NFS
+#ifndef NO_NFS
 			if (!port)
 			{
 				if (ISC_analyze_nfs(file_name, node_name))
