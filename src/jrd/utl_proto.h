@@ -45,6 +45,9 @@ extern USHORT API_ROUTINE gds__event_block_a(SCHAR **, SCHAR **, SSHORT,
 extern void API_ROUTINE gds__event_block_s(SCHAR **, SCHAR **, SSHORT,
 										   SCHAR **, SSHORT *);
 extern void API_ROUTINE gds__event_counts(ULONG *, SSHORT, SCHAR *, SCHAR *);
+extern void API_ROUTINE gds__get_client_version(SCHAR *);
+extern int API_ROUTINE gds__get_client_major_version();
+extern int API_ROUTINE gds__get_client_minor_version();
 extern void API_ROUTINE gds__map_blobs(int *, int *);
 extern void API_ROUTINE gds__set_debug(int);
 extern void API_ROUTINE isc_set_login(UCHAR **, SSHORT *);

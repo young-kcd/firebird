@@ -168,6 +168,9 @@ EXPORTS
     isc_expand_dpb
     isc_modify_dpb
     isc_version
+	isc_get_client_version
+	isc_get_client_major_version
+	isc_get_client_minor_version
 
 	; Conversion functions
 

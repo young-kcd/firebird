@@ -49,6 +49,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../jrd/common.h"
+#include "../jrd/license.h"
 #include <stdarg.h>
 #include "../jrd/jrd_time.h"
 #include "../jrd/misc.h"
@@ -990,6 +991,55 @@ SCHAR * result_buffer)
 }
 
 
+void API_ROUTINE gds__get_client_version(SCHAR *buffer)
+{
+/**************************************
+ *
+ *	g d s _ $ g e t _ c l i e n t _ v e r s i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+
+	if (buffer)
+		strcpy(buffer, FB_VERSION);
+}
+
+
+int API_ROUTINE gds__get_client_major_version()
+{
+/**************************************
+ *
+ *	g d s _ $ g e t _ c l i e n t _ m a j o r _ v e r s i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+
+	return atoi(FB_MAJOR_VER);
+}
+
+
+int API_ROUTINE gds__get_client_minor_version()
+{
+/**************************************
+ *
+ *	g d s _ $ g e t _ c l i e n t _ m i n o r _ v e r s i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+
+	return atoi(FB_MINOR_VER);
+}
+
+
 #ifndef PIPE_CLIENT
 void API_ROUTINE gds__map_blobs(int *handle1, int *handle2)
 {
@@ -1261,20 +1311,20 @@ int API_ROUTINE gds__version(
 		p = buf;
 		redo = FALSE;
 
-		while (!redo && *p != gds_info_end && p < buf + buf_len) {
+		while (!redo && *p != isc_info_end && p < buf + buf_len) {
 			item = *p++;
 			len = static_cast < USHORT > (gds__vax_integer(p, 2));
 			p += 2;
 			switch (item) {
-			case gds_info_version:
+			case isc_info_isc_version:
 				versions = (TEXT *) p;
 				break;
 
-			case gds_info_implementation:
+			case isc_info_implementation:
 				implementations = (TEXT *) p;
 				break;
 
-			case gds_info_truncated:
+			case isc_info_truncated:
 				redo = TRUE;
 				break;
 

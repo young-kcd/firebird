@@ -709,6 +709,21 @@ SLONG API_ROUTINE isc_ftof(SCHAR * string1,
 	return gds__ftof(GDS_VAL(string1), length1, GDS_VAL(string2), length2);
 }
 
+void API_ROUTINE isc_get_client_version(SCHAR * buffer)
+{
+	gds__get_client_version(GDS_VAL(buffer));
+}
+
+int API_ROUTINE isc_get_client_major_version()
+{
+	return gds__get_client_major_version();
+}
+
+int API_ROUTINE isc_get_client_minor_version()
+{
+	return gds__get_client_minor_version();
+}
+
 STATUS API_ROUTINE isc_print_blr(SCHAR * blr,
 								 void (*callback) (),
 								 void *callback_argument, SSHORT language)

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.22 2003-01-03 12:49:59 alexpeshkoff Exp $
+$Id: ibase.h,v 1.23 2003-01-19 14:30:23 dimitr Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -1235,6 +1235,15 @@ ISC_STATUS ISC_EXPORT isc_service_start(ISC_STATUS ISC_FAR*,
 										isc_resv_handle ISC_FAR*,
 										unsigned short,
 										char ISC_FAR*);
+
+
+/********************************/
+/* Client information functions */
+/********************************/
+
+void ISC_EXPORT isc_get_client_version ( char ISC_FAR *);
+int  ISC_EXPORT isc_get_client_major_version ();
+int  ISC_EXPORT isc_get_client_minor_version ();
 
 
 /*******************************/
