@@ -2019,8 +2019,8 @@ keyword_or_column	: valid_symbol_name
 		| TIMESTAMP
 		| CURRENT_DATE
 		| CURRENT_TIME
-		| CURRENT_TIMESTAMP		/* added in FB 1.0 */
-		| CURRENT_USER
+		| CURRENT_TIMESTAMP
+		| CURRENT_USER			/* added in FB 1.0 */
 		| CURRENT_ROLE
 		| FIRST
 		| SKIP
