@@ -1,3 +1,15 @@
+2005-04-05 09:08  kkuznetsov
+
+	* firebird2/builds/install/misc/firebird.conf (1.16):
+	
+	Changed commented value of TCPNONAGLE to default 1
+
+2005-04-05 08:47  robocop
+
+	* firebird2/src/remote/inet.cpp (1.142):
+	
+	Style.
+
 2005-04-04 14:57  kkuznetsov
 
 	* firebird2/src/remote/protocol.cpp (1.49):
