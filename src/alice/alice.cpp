@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.27 2003-04-10 06:04:41 aafemt Exp $
+//	$Id: alice.cpp,v 1.27.2.1 2004-01-07 10:09:52 dimitr Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -130,11 +130,6 @@ int main_gfix(SVC service)
 					service->svc_argv,
 					output_thread,
 					(SLONG) service);
-
-	service->svc_handle = 0;
-	if (service->svc_service->in_use != NULL) {
-		*(service->svc_service->in_use) = FALSE;
-	}
 
 //  Mark service thread as finished.
 //  If service is detached, cleanup memory being used by service.

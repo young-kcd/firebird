@@ -97,10 +97,6 @@ int main_gsec( SVC service)
 	exit_code = UTIL_gsec(service->svc_argc, service->svc_argv,
 						  output_svc, (SLONG) service);
 
-	service->svc_handle = 0;
-	if (service->svc_service->in_use != NULL)
-		*(service->svc_service->in_use) = FALSE;
-
 /* Mark service thread as finished. */
 /* If service is detached, cleanup memory being used by service. */
 	SVC_finish(service, SVC_finished);
