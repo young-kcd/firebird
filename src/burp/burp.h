@@ -640,7 +640,7 @@ enum gfld_flags_vals {
 
 // CVC: Could use MAXPATHLEN, but what about restoring in a different system?
 // I need to review if we tolerate different lengths for different OS's here.
-const int MAX_FILE_NAME_LENGTH		= 256;
+const int MAX_FILE_NAME_SIZE		= 256;
 
 // Note that this typedef is also defined in JRD.H and REMOTE.H 
 // but for some reason we are avoiding including JRD.H
@@ -832,8 +832,8 @@ public:
 	UCHAR*		mvol_io_volume;
 	UCHAR*		mvol_io_header;
 	UCHAR*		mvol_io_data;
-	TEXT		mvol_db_name_buffer [MAX_FILE_NAME_LENGTH];
-	SCHAR		mvol_old_file [MAX_FILE_NAME_LENGTH];
+	TEXT		mvol_db_name_buffer [MAX_FILE_NAME_SIZE];
+	SCHAR		mvol_old_file [MAX_FILE_NAME_SIZE];
 	int			mvol_volume_count;
 	USHORT		mvol_empty_file;
 	isc_db_handle	db_handle;

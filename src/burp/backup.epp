@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.67 2004-10-30 05:58:47 robocop Exp $
+$Id: backup.epp,v 1.68 2004-10-30 07:05:41 robocop Exp $
 */
 
 #include "firebird.h"
@@ -1262,7 +1262,7 @@ void put_array( burp_fld* field, burp_rel* relation, ISC_QUAD* blob_id)
 
 	if (return_length)
 	{
-		UCHAR* p;
+		const UCHAR* p;
 		if (tdgbl->gbl_sw_transportable)
 		{
 			lstring xdr_slice;
@@ -1305,7 +1305,7 @@ void put_asciz( const SCHAR attribute, const TEXT* string)
 
 	const ULONG l = strlen(string);
 #pragma FB_COMPILER_MESSAGE("CVC: Check that file doesn't exceed 255 in length!")
-	// We'll have to ensure that length < MAX_FILE_NAME_LENGTH
+	// We'll have to ensure that length < MAX_FILE_NAME_SIZE
 
 	put(tdgbl, (UCHAR) (attribute));
 	put(tdgbl, (UCHAR) (l));

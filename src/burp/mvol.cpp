@@ -189,8 +189,8 @@ void MVOL_init_read(const char* database_name, // unused?
 
 	if (file_name != NULL)
 	{
-		strncpy(tdgbl->mvol_old_file, file_name, MAX_FILE_NAME_LENGTH);
-		tdgbl->mvol_old_file[MAX_FILE_NAME_LENGTH - 1] = 0;
+		strncpy(tdgbl->mvol_old_file, file_name, MAX_FILE_NAME_SIZE);
+		tdgbl->mvol_old_file[MAX_FILE_NAME_SIZE - 1] = 0;
 	}
 	else
 	{
@@ -237,8 +237,8 @@ void MVOL_init_write(const char*		database_name, // unused?
 
 	if (file_name != NULL)
 	{
-		strncpy(tdgbl->mvol_old_file, file_name, MAX_FILE_NAME_LENGTH);
-		tdgbl->mvol_old_file[MAX_FILE_NAME_LENGTH - 1] = 0;
+		strncpy(tdgbl->mvol_old_file, file_name, MAX_FILE_NAME_SIZE);
+		tdgbl->mvol_old_file[MAX_FILE_NAME_SIZE - 1] = 0;
 	}
 	else
 	{
@@ -866,7 +866,7 @@ static DESC next_volume( DESC handle, ULONG mode, bool full_buffer)
 
 // Loop until we have opened a file successfully 
 
-	SCHAR new_file[MAX_FILE_NAME_LENGTH];
+	SCHAR new_file[MAX_FILE_NAME_SIZE];
 	DESC new_desc = INVALID_HANDLE_VALUE;
 	for (;;)
 	{
@@ -1097,7 +1097,7 @@ static bool read_header(DESC	handle,
 						USHORT*	format,
 						bool	init_flag)
 {
-	TEXT buffer[MAX_FILE_NAME_LENGTH], msg[BURP_MSG_GET_SIZE];
+	TEXT buffer[MAX_FILE_NAME_SIZE], msg[BURP_MSG_GET_SIZE];
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
