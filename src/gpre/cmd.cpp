@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmd.cpp,v 1.4 2001-12-24 02:50:49 tamlin Exp $
+//	$Id: cmd.cpp,v 1.5 2002-11-11 19:19:43 hippoman Exp $
 //
 
 #include "firebird.h"
@@ -41,7 +41,7 @@
 #include "../gpre/msc_proto.h"
 #include "../gpre/gpre_meta.h"
 
-typedef void (*pfn_local_trigger_cb) (NOD, REQ,
+typedef void (*pfn_local_trigger_cb) (GPRE_NOD, REQ,
 									  void *
 									  /* TMN: NOTE, parameter type unknown! */
 									  );
@@ -71,14 +71,14 @@ static void create_trg_firing_cond(REQ, CNSTRT);
 static void create_trigger(REQ, ACT, TRG, pfn_local_trigger_cb);
 static void create_upd_cascade_trg(REQ, ACT, CNSTRT);
 static BOOLEAN create_view(REQ, ACT);
-static void create_view_trigger(REQ, ACT, TRG, NOD, CTX *, NOD);
+static void create_view_trigger(REQ, ACT, TRG, GPRE_NOD, CTX *, GPRE_NOD);
 static void declare_filter(REQ, ACT);
 static void declare_udf(REQ, ACT);
 static void get_referred_fields(ACT, CNSTRT);
 static void grant_revoke_privileges(REQ, ACT);
 static void init_field_struct(FLD);
 static void put_array_info(REQ, FLD);
-static void put_blr(REQ, USHORT, NOD, pfn_local_trigger_cb);
+static void put_blr(REQ, USHORT, GPRE_NOD, pfn_local_trigger_cb);
 static void put_computed_blr(REQ, FLD);
 static void put_computed_source(REQ, FLD);
 static void put_cstring(REQ, USHORT, TEXT *);
@@ -88,9 +88,9 @@ static void put_numeric(REQ, USHORT, SSHORT);
 static void put_short_cstring(REQ, USHORT, TEXT *);
 static void put_string(REQ, USHORT, TEXT *, USHORT);
 static void put_symbol(REQ, int, SYM);
-static void put_trigger_blr(REQ, USHORT, NOD, pfn_local_trigger_cb);
-static void put_view_trigger_blr(REQ, REL, USHORT, TRG, NOD, CTX *, NOD);
-static void replace_field_names(NOD, NOD, FLD, SSHORT, CTX *);
+static void put_trigger_blr(REQ, USHORT, GPRE_NOD, pfn_local_trigger_cb);
+static void put_view_trigger_blr(REQ, REL, USHORT, TRG, GPRE_NOD, CTX *, GPRE_NOD);
+static void replace_field_names(GPRE_NOD, GPRE_NOD, FLD, SSHORT, CTX *);
 static void set_statistics(REQ, ACT);
 
 #define STUFF(blr)	*request->req_blr++ = (UCHAR)(blr)
@@ -434,7 +434,7 @@ static void alter_domain( REQ request, ACT action)
 {
 	FLD field;
 	TEXT *default_source;
-	NOD default_node;
+	GPRE_NOD default_node;
 	CNSTRT cnstrt;
 
 	field = (FLD) action->act_object;
@@ -1898,9 +1898,9 @@ static void create_trigger(
 static BOOLEAN create_view( REQ request, ACT action)
 {
 	FLD field, fld;
-	NOD *ptr, *end, fields, value, view_field, and_nod, eq_nod;
-	NOD view_boolean, new_view_field, set_item, set_list;
-	NOD iand_node, or_node, anull_node, bnull_node;
+	GPRE_NOD *ptr, *end, fields, value, view_field, and_nod, eq_nod;
+	GPRE_NOD view_boolean, new_view_field, set_item, set_list;
+	GPRE_NOD iand_node, or_node, anull_node, bnull_node;
 	REL relation, sub_relation;
 	REF new_view_ref, view_ref, reference;
 	CTX context;
@@ -1924,7 +1924,7 @@ static BOOLEAN create_view( REQ request, ACT action)
 
 //  write out blr 
 
-	put_blr(request, gds_dyn_view_blr, (NOD) relation->rel_view_rse,
+	put_blr(request, gds_dyn_view_blr, (GPRE_NOD) relation->rel_view_rse,
 			reinterpret_cast < pfn_local_trigger_cb > (CME_rse));
 
 //  write out view source   
@@ -2057,8 +2057,8 @@ static BOOLEAN create_view( REQ request, ACT action)
 			new_view_ref->ref_context = contexts[1];
 			new_view_ref->ref_field = view_ref->ref_field =
 				(field) ? field : fld;
-			view_field = MSC_unary(nod_field, (NOD) view_ref);
-			new_view_field = MSC_unary(nod_field, (NOD) new_view_ref);
+			view_field = MSC_unary(nod_field, (GPRE_NOD) view_ref);
+			new_view_field = MSC_unary(nod_field, (GPRE_NOD) new_view_ref);
 
 			anull_node = MSC_unary(nod_missing, view_field);
 			bnull_node = MSC_unary(nod_missing, value);
@@ -2087,7 +2087,7 @@ static BOOLEAN create_view( REQ request, ACT action)
 		set_list = MAKE_NODE(nod_list, count);
 		ptr = set_list->nod_arg + count;
 		while (stack)
-			*--ptr = (NOD) POP(&stack);
+			*--ptr = (GPRE_NOD) POP(&stack);
 
 		/* Modify the context of fields in boolean to be that of the
 		   sub-relation. */
@@ -2107,7 +2107,7 @@ static BOOLEAN create_view( REQ request, ACT action)
 		/* "update violates CHECK constraint on view" */
 
 		trigger->trg_message = (STR) NULL;
-		trigger->trg_boolean = (NOD) select;
+		trigger->trg_boolean = (GPRE_NOD) select;
 		create_view_trigger(request, action, trigger, view_boolean, contexts,
 							set_list);
 
@@ -2136,8 +2136,8 @@ static void create_view_trigger(
 								REQ request,
 								ACT action,
 								TRG trigger,
-								NOD view_boolean,
-								CTX * contexts, NOD set_list)
+								GPRE_NOD view_boolean,
+								CTX * contexts, GPRE_NOD set_list)
 {
 	REL relation;
 
@@ -2486,7 +2486,7 @@ static void put_array_info( REQ request, FLD field)
 
 static void put_blr(
 					REQ request,
-					USHORT operator_, NOD node, pfn_local_trigger_cb routine)
+					USHORT operator_, GPRE_NOD node, pfn_local_trigger_cb routine)
 {
 	USHORT length, offset;
 
@@ -2868,7 +2868,7 @@ static void put_symbol( REQ request, int operator_, SYM symbol)
 static void put_trigger_blr(
 							REQ request,
 							USHORT operator_,
-							NOD node, pfn_local_trigger_cb routine)
+							GPRE_NOD node, pfn_local_trigger_cb routine)
 {
 	USHORT length, offset;
 
@@ -2913,7 +2913,7 @@ static void put_view_trigger_blr(
 								 REL relation,
 								 USHORT operator_,
 								 TRG trigger,
-NOD view_boolean, CTX * contexts, NOD set_list)
+GPRE_NOD view_boolean, CTX * contexts, GPRE_NOD set_list)
 {
 	USHORT length, offset;
 	RSE node;
@@ -2994,13 +2994,13 @@ NOD view_boolean, CTX * contexts, NOD set_list)
 //  
 
 static void replace_field_names(
-								NOD input,
-								NOD search_list,
+								GPRE_NOD input,
+								GPRE_NOD search_list,
 								FLD replace_with,
 								SSHORT null_them, CTX * contexts)
 {
-	NOD *ptr, *end;
-	NOD *ptrs, *ends;
+	GPRE_NOD *ptr, *end;
+	GPRE_NOD *ptrs, *ends;
 	REF reference, references;
 	FLD rse_field, select_field, view_field;
 

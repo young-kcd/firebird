@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmp.cpp,v 1.6 2002-09-24 12:57:07 eku Exp $
+//	$Id: cmp.cpp,v 1.7 2002-11-11 19:19:43 hippoman Exp $
 //
 
 #include "firebird.h"
@@ -51,7 +51,7 @@ extern TEXT *ident_pattern, *utility_name, *count_name, *slack_name,
 	*transaction_name;
 
 static void cmp_any(register REQ);
-static void cmp_assignment(register NOD, register REQ);
+static void cmp_assignment(register GPRE_NOD, register REQ);
 static void cmp_blob(BLB, BOOLEAN);
 static void cmp_blr(REQ);
 static void cmp_erase(ACT, REQ);
@@ -69,7 +69,7 @@ static void cmp_sdl_fudge(REQ, SLONG);
 static BOOLEAN cmp_sdl_loop(REQ, USHORT, SLC, ARY);
 static void cmp_sdl_number(REQ, SLONG);
 static void cmp_sdl_subscript(REQ, USHORT, SLC, ARY);
-static void cmp_sdl_value(REQ, NOD);
+static void cmp_sdl_value(REQ, GPRE_NOD);
 static void cmp_set_generator(REQ);
 static void cmp_slice(REQ);
 static void cmp_store(register REQ);
@@ -79,7 +79,7 @@ static void make_receive(register POR, register REQ);
 static void make_send(register POR, register REQ);
 static void update_references(register REF);
 
-static NOD lit0, lit1;
+static GPRE_NOD lit0, lit1;
 static FLD eof_field, count_field, slack_byte_field;
 static USHORT next_ident;
 
@@ -176,11 +176,11 @@ void CMP_compile_request( register REQ request)
 		slack_byte_field = MET_make_field(slack_name, dtype_text, 1, FALSE);
 		reference = (REF) ALLOC(REF_LEN);
 		reference->ref_value = "0";
-		lit0 = MSC_unary(nod_literal, (NOD) reference);
+		lit0 = MSC_unary(nod_literal, (GPRE_NOD) reference);
 
 		reference = (REF) ALLOC(REF_LEN);
 		reference->ref_value = "1";
-		lit1 = MSC_unary(nod_literal, (NOD) reference);
+		lit1 = MSC_unary(nod_literal, (GPRE_NOD) reference);
 	}
 
 //  Handle different request types differently 
@@ -334,7 +334,7 @@ CMP_display_code(FINT display, REF reference)
 {
 	int code;
 
-	if (MSC_member((NOD) reference, display->fint_override_fields))
+	if (MSC_member((GPRE_NOD) reference, display->fint_override_fields))
 		return -1;
 
 	code = 0;
@@ -343,26 +343,26 @@ CMP_display_code(FINT display, REF reference)
 
 	if (display->fint_flags & FINT_display_all)
 		code |= PYXIS_OPT_DISPLAY;
-	else if (MSC_member((NOD) reference, display->fint_display_fields))
+	else if (MSC_member((GPRE_NOD) reference, display->fint_display_fields))
 		code |= PYXIS_OPT_DISPLAY;
 
 //  Handle update attribute 
 
 	if (display->fint_flags & FINT_update_all)
 		code |= PYXIS_OPT_UPDATE;
-	else if (MSC_member((NOD) reference, display->fint_update_fields))
+	else if (MSC_member((GPRE_NOD) reference, display->fint_update_fields))
 		code |= PYXIS_OPT_UPDATE;
 
 //  Handle wakeup attribute 
 
 	if (display->fint_flags & FINT_wakeup_all)
 		code |= PYXIS_OPT_WAKEUP;
-	else if (MSC_member((NOD) reference, display->fint_wakeup_fields))
+	else if (MSC_member((GPRE_NOD) reference, display->fint_wakeup_fields))
 		code |= PYXIS_OPT_WAKEUP;
 
 //  Handle cursor position attribute 
 
-	if (MSC_member((NOD) reference, display->fint_position_fields))
+	if (MSC_member((GPRE_NOD) reference, display->fint_position_fields))
 		code |= PYXIS_OPT_POSITION;
 
 	return code;
@@ -570,7 +570,7 @@ void CMP_t_start( register TRA trans)
 
 static void cmp_any( register REQ request)
 {
-	NOD value;
+	GPRE_NOD value;
 	POR port;
 	REF reference, source;
 
@@ -583,7 +583,7 @@ static void cmp_any( register REQ request)
 	STUFF(blr_any);
 	CME_rse(request->req_rse, request);
 
-	value = MSC_unary(nod_value, (NOD) port->por_references);
+	value = MSC_unary(nod_value, (GPRE_NOD) port->por_references);
 
 //  Make a send to signal end of file 
 
@@ -609,7 +609,7 @@ static void cmp_any( register REQ request)
 //		Compile a build assignment statement.
 //  
 
-static void cmp_assignment( register NOD node, register REQ request)
+static void cmp_assignment( register GPRE_NOD node, register REQ request)
 {
 
 	CMP_check(request, 0);
@@ -780,9 +780,9 @@ static void cmp_erase( ACT action, REQ request)
 static void cmp_fetch( ACT action)
 {
 	REF var;
-	NOD *ptr, *end, list;
+	GPRE_NOD *ptr, *end, list;
 
-	if (!(list = (NOD) action->act_object))
+	if (!(list = (GPRE_NOD) action->act_object))
 		return;
 
 	if (list->nod_type != nod_list)
@@ -922,7 +922,7 @@ static void cmp_field( REQ request, FLD field, REF reference)
 
 static void cmp_for( register REQ request)
 {
-	NOD field, value;
+	GPRE_NOD field, value;
 	POR port;
 	register ACT action;
 	register REF reference;
@@ -989,11 +989,11 @@ static void cmp_for( register REQ request)
 			if (reference->ref_expr)
 				CME_expr(reference->ref_expr, request);
 			else {
-				field->nod_arg[0] = (NOD) reference;
+				field->nod_arg[0] = (GPRE_NOD) reference;
 				CME_expr(field, request);
 			}
 		}
-		value->nod_arg[0] = (NOD) reference;
+		value->nod_arg[0] = (GPRE_NOD) reference;
 		CME_expr(value, request);
 	}
 	STUFF(blr_end);
@@ -1028,7 +1028,7 @@ static void cmp_for( register REQ request)
 	make_send(port, request);
 	STUFF(blr_assignment);
 	CME_expr(lit0, request);
-	value->nod_arg[0] = (NOD) request->req_eof;
+	value->nod_arg[0] = (GPRE_NOD) request->req_eof;
 	CME_expr(value, request);
 
 	STUFF(blr_end);
@@ -1136,7 +1136,7 @@ static void cmp_form( REQ request)
 
 static void cmp_loop( register REQ request)
 {
-	NOD node, list, *ptr, *end, counter;
+	GPRE_NOD node, list, *ptr, *end, counter;
 	POR primary;
 	CTX for_context, update_context;
 	register RSE rse;
@@ -1153,7 +1153,7 @@ static void cmp_loop( register REQ request)
 		 reference =
 		 reference->ref_next) if (reference->ref_field ==
 								  count_field) counter->nod_arg[0] =
-				(NOD) reference;
+				(GPRE_NOD) reference;
 
 	STUFF(blr_assignment);
 	CME_expr(lit0, request);
@@ -1281,7 +1281,7 @@ static void cmp_menu( REQ request)
 static void cmp_modify( ACT action, register REQ request)
 {
 	UPD update;
-	NOD list, field_node, *ptr, *end;
+	GPRE_NOD list, field_node, *ptr, *end;
 	REF reference;
 	POR port;
 
@@ -1347,7 +1347,7 @@ static void cmp_procedure( REQ request)
 	PRC procedure;
 	REF reference;
 	LLS outputs, *list;
-	NOD *ptr, *end, node;
+	GPRE_NOD *ptr, *end, node;
 
 	action = request->req_actions;
 	procedure = (PRC) action->act_object;
@@ -1359,7 +1359,7 @@ static void cmp_procedure( REQ request)
 	outputs = NULL;
 	if (reference = request->req_references)
 		for (list = &outputs; reference; reference = reference->ref_next) {
-			PUSH((NOD) reference, list);
+			PUSH((GPRE_NOD) reference, list);
 			list = &(*list)->lls_next;
 		}
 
@@ -1649,7 +1649,7 @@ static void cmp_sdl_subscript(
 //		Stuff a slice description language value.
 //  
 
-static void cmp_sdl_value( REQ request, NOD node)
+static void cmp_sdl_value( REQ request, GPRE_NOD node)
 {
 	REF reference;
 
@@ -1779,7 +1779,7 @@ static void cmp_slice( REQ request)
 static void cmp_store( register REQ request)
 {
 	register POR port;
-	register NOD list, *ptr, *end;
+	register GPRE_NOD list, *ptr, *end;
 	register ACT action;
 	register UPD update;
 	SSHORT count;

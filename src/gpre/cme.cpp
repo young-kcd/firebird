@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cme.cpp,v 1.3 2001-12-24 02:50:49 tamlin Exp $
+//	$Id: cme.cpp,v 1.4 2002-11-11 19:19:43 hippoman Exp $
 //
 
 #include "firebird.h"
@@ -44,16 +44,16 @@
 #include "../gpre/prett_proto.h"
 #include "../jrd/dsc_proto.h"
 
-static NOD cmp_array(NOD, REQ);
-static NOD cmp_array_element(NOD, REQ);
-static void cmp_cast(NOD, REQ);
-static NOD cmp_field(NOD, REQ);
-static NOD cmp_literal(NOD, REQ);
+static GPRE_NOD cmp_array(GPRE_NOD, REQ);
+static GPRE_NOD cmp_array_element(GPRE_NOD, REQ);
+static void cmp_cast(GPRE_NOD, REQ);
+static GPRE_NOD cmp_field(GPRE_NOD, REQ);
+static GPRE_NOD cmp_literal(GPRE_NOD, REQ);
 static void cmp_map(MAP, REQ);
-static void cmp_plan(NOD, REQ);
+static void cmp_plan(GPRE_NOD, REQ);
 static void cmp_sdl_dtype(FLD, REF);
-static NOD cmp_udf(NOD, REQ);
-static NOD cmp_value(NOD, REQ);
+static GPRE_NOD cmp_udf(GPRE_NOD, REQ);
+static GPRE_NOD cmp_value(GPRE_NOD, REQ);
 static USHORT get_string_len(FLD);
 static void stuff_cstring(REQ, const char *);
 static void stuff_sdl_dimension(DIM, REF, SSHORT);
@@ -157,9 +157,9 @@ const op_table operators[] =
 //		Compile a random expression.
 //  
 
-void CME_expr(NOD node, REQ request)
+void CME_expr(GPRE_NOD node, REQ request)
 {
-	NOD *ptr, *end;
+	GPRE_NOD *ptr, *end;
 	MEL element;
 	CTX context;
 	REF reference;
@@ -380,7 +380,7 @@ void CME_expr(NOD node, REQ request)
 //		Compute datatype, length, and scale of an expression.
 //  
 
-void CME_get_dtype( NOD node, FLD f)
+void CME_get_dtype( GPRE_NOD node, FLD f)
 {
 	struct fld field1, field2;
 	SSHORT dtype_max;
@@ -991,7 +991,7 @@ void CME_relation(CTX context, REQ request)
 	RSE rs_stream;
 	REL relation;
 	PRC procedure;
-	NOD inputs, *ptr, *end;
+	GPRE_NOD inputs, *ptr, *end;
 
 	CMP_check(request, 0);
 
@@ -1060,7 +1060,7 @@ void CME_relation(CTX context, REQ request)
 
 void CME_rse(RSE rse, REQ request)
 {
-	NOD temp, union_node, *ptr, *end, list;
+	GPRE_NOD temp, union_node, *ptr, *end, list;
 	RSE sub_rse;
 	SSHORT i;
 
@@ -1204,7 +1204,7 @@ void CME_rse(RSE rse, REQ request)
 //       out sdl (slice description language)
 //  
 
-static NOD cmp_array( NOD node, REQ request)
+static GPRE_NOD cmp_array( GPRE_NOD node, REQ request)
 {
 	FLD field;
 	REF reference;
@@ -1288,7 +1288,7 @@ static NOD cmp_array( NOD node, REQ request)
 //       from an RSE and output blr for this reference
 //  
 
-static NOD cmp_array_element( NOD node, REQ request)
+static GPRE_NOD cmp_array_element( GPRE_NOD node, REQ request)
 {
 	USHORT index_count;
 
@@ -1309,7 +1309,7 @@ static NOD cmp_array_element( NOD node, REQ request)
 //  
 //  
 
-static void cmp_cast( NOD node, REQ request)
+static void cmp_cast( GPRE_NOD node, REQ request)
 {
 
 	STUFF(blr_cast);
@@ -1323,7 +1323,7 @@ static void cmp_cast( NOD node, REQ request)
 //		Compile up a field reference.
 //  
 
-static NOD cmp_field( NOD node, REQ request)
+static GPRE_NOD cmp_field( GPRE_NOD node, REQ request)
 {
 	FLD field;
 	REF reference;
@@ -1385,7 +1385,7 @@ static NOD cmp_field( NOD node, REQ request)
 //		Handle a literal expression.
 //  
 
-static NOD cmp_literal( NOD node, REQ request)
+static GPRE_NOD cmp_literal( GPRE_NOD node, REQ request)
 {
 	REF reference;
 	char *p;
@@ -1600,9 +1600,9 @@ static void cmp_map( MAP map, REQ request)
 //		Generate an access plan for a query.
 //  
 
-static void cmp_plan( NOD plan_expression, REQ request)
+static void cmp_plan( GPRE_NOD plan_expression, REQ request)
 {
-	NOD list, node, arg, *ptr, *end, *ptr2, *end2;
+	GPRE_NOD list, node, arg, *ptr, *end, *ptr2, *end2;
 
 //  stuff the join type 
 
@@ -1778,9 +1778,9 @@ static void cmp_sdl_dtype( FLD field, REF reference)
 //		Compile a reference to a user defined function.
 //  
 
-static NOD cmp_udf( NOD node, REQ request)
+static GPRE_NOD cmp_udf( GPRE_NOD node, REQ request)
 {
-	NOD list, *ptr, *end;
+	GPRE_NOD list, *ptr, *end;
 	UDF udf;
 	TEXT *p;
 
@@ -1813,7 +1813,7 @@ static NOD cmp_udf( NOD node, REQ request)
 //		Process a random value expression.
 //  
 
-static NOD cmp_value( NOD node, REQ request)
+static GPRE_NOD cmp_value( GPRE_NOD node, REQ request)
 {
 	REF reference, flag;
 

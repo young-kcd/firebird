@@ -32,7 +32,7 @@ extern FLD MET_context_field(CTX, char *);
 extern BOOLEAN MET_database(DBB, BOOLEAN);
 extern USHORT MET_domain_lookup(REQ, FLD, char *);
 extern FLD MET_field(REL, char *);
-extern NOD MET_fields(CTX);
+extern GPRE_NOD MET_fields(CTX);
 extern void MET_fini(DBB);
 extern SCHAR *MET_generator(TEXT *, DBB);
 extern BOOLEAN MET_get_column_default(REL, TEXT *, TEXT *, USHORT);

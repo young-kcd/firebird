@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.15 2002-10-31 05:05:54 seanleyne Exp $
+ * $Id: gpre.h,v 1.16 2002-11-11 19:19:43 hippoman Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -882,14 +882,14 @@ typedef enum nod_t {
 	nod_natural, nod_index_order, nod_ansi_all,
 	nod_extract, nod_current_date,
 	nod_current_time, nod_current_timestamp,
-	nod_LASTNOD					/* Leave this debugging NOD last */
+	nod_LASTNOD					/* Leave this debugging GPRE_NOD last */
 } NOD_T;
 
 typedef struct nod {
 	enum nod_t nod_type;		/* node type */
 	USHORT nod_count;			/* number of sub-items */
 	struct nod *nod_arg[1];		/* argument */
-} *NOD;
+} *GPRE_NOD;
 
 #define nod_arg0 nod_arg[0]
 #define nod_arg1 nod_arg[1]
@@ -1242,13 +1242,13 @@ typedef struct sgen {
 typedef struct slc {
 	REQ slc_parent_request;		/* request for blob id */
 	FLD slc_field;				/* database array field */
-	NOD slc_array;				/* user defined array */
+	GPRE_NOD slc_array;				/* user defined array */
 	REF slc_field_ref;			/* array field reference */
 	USHORT slc_dimensions;		/* dimensions */
 	USHORT slc_parameters;		/* number of parameters */
 	struct slc_repeat {
-		NOD slc_lower;
-		NOD slc_upper;
+		GPRE_NOD slc_lower;
+		GPRE_NOD slc_upper;
 	} slc_rpt[1];
 } *SLC;
 

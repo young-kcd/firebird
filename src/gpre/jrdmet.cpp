@@ -26,7 +26,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: jrdmet.cpp,v 1.3 2001-12-24 02:50:49 tamlin Exp $
+//	$Id: jrdmet.cpp,v 1.4 2002-11-11 19:19:43 hippoman Exp $
 //
 
 #include "firebird.h"
@@ -90,11 +90,11 @@ void JRDMET_init( DBB db)
 
 		for (n = 0, fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];
 			 n++, fld += RFLD_F_LENGTH) {
-			relation->rel_fields = field;
 			gfield = const_cast < gfld * >((fld[RFLD_F_UPD_MINOR]) ?
 										   &gfields[fld[RFLD_F_UPD_ID]] :
 										   &gfields[fld[RFLD_F_ID]]);
 			field = (FLD) ALLOC(FLD_LEN);
+			relation->rel_fields = field;
 			field->fld_relation = relation;
 			field->fld_next = relation->rel_fields;
 			field->fld_id = n;

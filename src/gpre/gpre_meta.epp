@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.8 2002-11-03 22:22:52 tamlin Exp $
+ *	$Id: gpre_meta.epp,v 1.9 2002-11-11 19:19:43 hippoman Exp $
  */
 
 #include "firebird.h"
@@ -696,7 +696,7 @@ LLS MET_get_primary_key(DBB dbb, TEXT * relation_name)
 		*tmp++;
 	*tmp = '\0';
 
-	PUSH((NOD) field_name, ptr_fields);
+	PUSH((GPRE_NOD) field_name, ptr_fields);
 	ptr_fields = &(*ptr_fields)->lls_next;
 
 	END_FOR COMMIT;
@@ -856,12 +856,12 @@ FLD MET_field(REL relation, char *string)
  *     Return a list of the fields in a relation
  */  
 
-NOD MET_fields(CTX context)
+GPRE_NOD MET_fields(CTX context)
 {
 	DBB dbb;
 	FLD field;
 	LLS stack;
-	NOD node, field_node;
+	GPRE_NOD node, field_node;
 	REF reference;
 	PRC procedure;
 	REL relation;
@@ -875,7 +875,7 @@ NOD MET_fields(CTX context)
 			reference = (REF) ALLOC(REF_LEN);
 			reference->ref_field = field;
 			reference->ref_context = context;
-			field_node = MSC_unary(nod_field, (NOD) reference);
+			field_node = MSC_unary(nod_field, (GPRE_NOD) reference);
 			node->nod_arg[field->fld_position] = field_node;
 			count++;
 		}
@@ -892,7 +892,7 @@ NOD MET_fields(CTX context)
 			reference = (REF) ALLOC(REF_LEN);
 			reference->ref_field = field;
 			reference->ref_context = context;
-			field_node = MSC_unary(nod_field, (NOD) reference);
+			field_node = MSC_unary(nod_field, (GPRE_NOD) reference);
 			node->nod_arg[field->fld_position] = field_node;
 			count++;
 		}
@@ -915,7 +915,7 @@ NOD MET_fields(CTX context)
 		SORTED BY RFR.RDB$FIELD_POSITION
 		for (p = RFR.RDB$FIELD_NAME; *p && *p != ' '; p++);
 	*p = 0;
-	PUSH((NOD) MET_field(relation, RFR.RDB$FIELD_NAME), &stack);
+	PUSH((GPRE_NOD) MET_field(relation, RFR.RDB$FIELD_NAME), &stack);
 	count++;
 	END_FOR;
 
@@ -926,7 +926,7 @@ NOD MET_fields(CTX context)
 		reference = (REF) ALLOC(REF_LEN);
 		reference->ref_field = field;
 		reference->ref_context = context;
-		field_node = MSC_unary(nod_field, (NOD) reference);
+		field_node = MSC_unary(nod_field, (GPRE_NOD) reference);
 		node->nod_arg[--count] = field_node;
 	}
 

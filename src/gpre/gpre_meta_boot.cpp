@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.7 2002-10-24 09:01:26 eku Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.8 2002-11-11 19:19:43 hippoman Exp $
  */
 
 #include "firebird.h"
@@ -329,12 +329,12 @@ FLD MET_field(REL relation, char *string)
  *     Return a list of the fields in a relation
  */  
 
-NOD MET_fields(CTX context)
+GPRE_NOD MET_fields(CTX context)
 {
 	DBB dbb;
 	FLD field;
 	LLS stack;
-	NOD node, field_node;
+	GPRE_NOD node, field_node;
 	REF reference;
 	PRC procedure;
 	REL relation;
@@ -348,7 +348,7 @@ NOD MET_fields(CTX context)
 			reference = (REF) ALLOC(REF_LEN);
 			reference->ref_field = field;
 			reference->ref_context = context;
-			field_node = MSC_unary(nod_field, (NOD)reference);
+			field_node = MSC_unary(nod_field, (GPRE_NOD)reference);
 			node->nod_arg[field->fld_position] = field_node;
 			count++;
 		}
@@ -365,7 +365,7 @@ NOD MET_fields(CTX context)
 			reference = (REF) ALLOC(REF_LEN);
 			reference->ref_field = field;
 			reference->ref_context = context;
-			field_node = MSC_unary(nod_field, (NOD)reference);
+			field_node = MSC_unary(nod_field, (GPRE_NOD)reference);
 			node->nod_arg[field->fld_position] = field_node;
 			count++;
 		}

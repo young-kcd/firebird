@@ -33,7 +33,7 @@ extern "C" {
 extern ACT MSC_action(REQ, enum act_t);
 extern UCHAR *MSC_alloc(int);
 extern UCHAR *MSC_alloc_permanent(int);
-extern NOD MSC_binary(NOD_T, NOD, NOD);
+extern GPRE_NOD MSC_binary(NOD_T, GPRE_NOD, GPRE_NOD);
 extern CTX MSC_context(REQ);
 extern void MSC_copy(char *, int, char *);
 extern SYM MSC_find_symbol(SYM, enum sym_t);
@@ -41,16 +41,16 @@ extern void MSC_free(UCHAR *);
 extern void MSC_free_request(REQ);
 extern void MSC_init(void);
 extern BOOLEAN MSC_match(KWWORDS);
-extern BOOLEAN MSC_member(NOD, LLS);
-extern NOD MSC_node(enum nod_t, SSHORT);
-extern NOD MSC_pop(LLS *);
+extern BOOLEAN MSC_member(GPRE_NOD, LLS);
+extern GPRE_NOD MSC_node(enum nod_t, SSHORT);
+extern GPRE_NOD MSC_pop(LLS *);
 extern PRV MSC_privilege_block(void);
-extern void MSC_push(NOD, LLS *);
+extern void MSC_push(GPRE_NOD, LLS *);
 extern REF MSC_reference(REF *);
 extern REQ MSC_request(enum req_t);
 extern SCHAR *MSC_string(TEXT *);
 extern SYM MSC_symbol(enum sym_t, TEXT *, USHORT, CTX);
-extern NOD MSC_unary(NOD_T, NOD);
+extern GPRE_NOD MSC_unary(NOD_T, GPRE_NOD);
 extern USN MSC_username(SCHAR *, USHORT);
 
 #ifdef __cplusplus

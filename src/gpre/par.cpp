@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.6 2002-01-04 11:34:15 skywalker Exp $
+//  $Id: par.cpp,v 1.7 2002-11-11 19:19:43 hippoman Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: par.cpp,v 1.6 2002-01-04 11:34:15 skywalker Exp $
+//	$Id: par.cpp,v 1.7 2002-11-11 19:19:43 hippoman Exp $
 //
 
 #include "firebird.h"
@@ -702,7 +702,7 @@ void PAR_error( TEXT * string)
 
 ACT PAR_event_init( USHORT sql)
 {
-	NOD init, event_list, node, *ptr;
+	GPRE_NOD init, event_list, node, *ptr;
 	ACT action;
 	LLS stack = NULL;
 	SYM symbol;
@@ -717,8 +717,8 @@ ACT PAR_event_init( USHORT sql)
 	SQL_resolve_identifier("<identifier>", req_name);
 	strcpy(token.tok_string, req_name);
 	init = MAKE_NODE(nod_event_init, 4);
-	init->nod_arg[0] = (NOD) PAR_symbol(SYM_dummy);
-	init->nod_arg[3] = (NOD) isc_databases;
+	init->nod_arg[0] = (GPRE_NOD) PAR_symbol(SYM_dummy);
+	init->nod_arg[3] = (GPRE_NOD) isc_databases;
 
 	action = MAKE_ACTION(0, ACT_event_init);
 	action->act_object = (REF) init;
@@ -727,7 +727,7 @@ ACT PAR_event_init( USHORT sql)
 
 	if (!MATCH(KW_LEFT_PAREN)) {
 		if ((symbol = token.tok_symbol) && (symbol->sym_type == SYM_database))
-			init->nod_arg[3] = (NOD) symbol->sym_object;
+			init->nod_arg[3] = (GPRE_NOD) symbol->sym_object;
 		else
 			SYNTAX_ERROR("left parenthesis or database handle");
 
@@ -748,14 +748,14 @@ ACT PAR_event_init( USHORT sql)
 			field = EXP_field(&context);
 			reference = EXP_post_field(field, context, FALSE);
 			node = MAKE_NODE(nod_field, 1);
-			node->nod_arg[0] = (NOD) reference;
+			node->nod_arg[0] = (GPRE_NOD) reference;
 		}
 		else {
 			node = MAKE_NODE(nod_null, 1);
 			if (sql)
-				node->nod_arg[0] = (NOD) SQL_var_or_string((USHORT) FALSE);
+				node->nod_arg[0] = (GPRE_NOD) SQL_var_or_string((USHORT) FALSE);
 			else
-				node->nod_arg[0] = (NOD) PAR_native_value(FALSE, FALSE);
+				node->nod_arg[0] = (GPRE_NOD) PAR_native_value(FALSE, FALSE);
 		}
 		PUSH(node, &stack);
 		count++;
@@ -768,9 +768,9 @@ ACT PAR_event_init( USHORT sql)
 	event_list = init->nod_arg[1] = MAKE_NODE(nod_list, (SSHORT) count);
 	ptr = event_list->nod_arg + count;
 	while (stack)
-		*--ptr = (NOD) POP(&stack);
+		*--ptr = (GPRE_NOD) POP(&stack);
 
-	PUSH((NOD) action, &events);
+	PUSH((GPRE_NOD) action, &events);
 
 	if (!sql)
 		PAR_end();
@@ -877,7 +877,7 @@ void PAR_init()
 
 	cur_routine = MAKE_ACTION(0, ACT_routine);
 	cur_routine->act_flags |= ACT_main;
-	PUSH((NOD) cur_routine, &routine_stack);
+	PUSH((GPRE_NOD) cur_routine, &routine_stack);
 	routine_decl = TRUE;
 
 	flag_field = NULL;
@@ -1313,7 +1313,7 @@ static ACT par_array_element()
 	register REF reference;
 	REQ request;
 	CTX context;
-	NOD node;
+	GPRE_NOD node;
 
 	if (!MSC_find_symbol(token.tok_symbol, SYM_context))
 		return NULL;
@@ -1326,7 +1326,7 @@ static ACT par_array_element()
 	reference->ref_field = element = field->fld_array;
 	element->fld_symbol = field->fld_symbol;
 	reference->ref_context = context;
-	node->nod_arg[0] = (NOD) reference;
+	node->nod_arg[0] = (GPRE_NOD) reference;
 
 	action = MAKE_ACTION(request, ACT_variable);
 	action->act_object = reference;
@@ -1473,7 +1473,7 @@ static ACT par_based()
 	case lang_c:
 	case lang_cxx:
 		do {
-			PUSH((NOD) PAR_native_value(FALSE, FALSE),
+			PUSH((GPRE_NOD) PAR_native_value(FALSE, FALSE),
 				 &based_on->bas_variables);
 		} while (MATCH(KW_COMMA));
 		/* 
@@ -1700,7 +1700,7 @@ static ACT par_derived_from()
 	based_on->bas_variables = (LLS) ALLOC(LLS_LEN);;
 	based_on->bas_variables->lls_next = NULL;
 	based_on->bas_variables->lls_object =
-		(NOD) PAR_native_value(FALSE, FALSE);
+		(GPRE_NOD) PAR_native_value(FALSE, FALSE);
 
 	strcpy(based_on->bas_terminator, token.tok_string);
 	ADVANCE_TOKEN;
@@ -1897,7 +1897,7 @@ static ACT par_end_modify()
 	REQ request;
 	REF change, reference, flag;
 	UPD modify;
-	NOD assignments, item, *ptr;
+	GPRE_NOD assignments, item, *ptr;
 	LLS stack;
 	int count;
 
@@ -1933,9 +1933,9 @@ static ACT par_end_modify()
 			change->ref_flags = reference->ref_flags;
 
 			item = MAKE_NODE(nod_assignment, 2);
-			item->nod_arg[0] = MSC_unary(nod_value, (NOD) change);
-			item->nod_arg[1] = MSC_unary(nod_field, (NOD) change);
-			PUSH((NOD) item, &stack);
+			item->nod_arg[0] = MSC_unary(nod_value, (GPRE_NOD) change);
+			item->nod_arg[1] = MSC_unary(nod_field, (GPRE_NOD) change);
+			PUSH((GPRE_NOD) item, &stack);
 			count++;
 
 			if (reference->ref_null) {
@@ -1947,9 +1947,9 @@ static ACT par_end_modify()
 				change->ref_null = flag;
 
 				item = MAKE_NODE(nod_assignment, 2);
-				item->nod_arg[0] = MSC_unary(nod_value, (NOD) flag);
-				item->nod_arg[1] = MSC_unary(nod_field, (NOD) flag);
-				PUSH((NOD) item, &stack);
+				item->nod_arg[0] = MSC_unary(nod_value, (GPRE_NOD) flag);
+				item->nod_arg[1] = MSC_unary(nod_field, (GPRE_NOD) flag);
+				PUSH((GPRE_NOD) item, &stack);
 				count++;
 			}
 		}
@@ -1961,7 +1961,7 @@ static ACT par_end_modify()
 	ptr = assignments->nod_arg + count;
 
 	while (stack)
-		*--ptr = (NOD) POP(&stack);
+		*--ptr = (GPRE_NOD) POP(&stack);
 
 	action = MAKE_ACTION(request, ACT_endmodify);
 	action->act_object = (REF) modify;
@@ -2008,9 +2008,9 @@ static ACT par_end_store()
 	CTX context;
 	UPD return_values;
 	register REF reference, change;
-	register NOD assignments, item;
+	register GPRE_NOD assignments, item;
 	int count;
-	NOD *ptr;
+	GPRE_NOD *ptr;
 	LLS stack;
 
 	if (!cur_store)
@@ -2040,8 +2040,8 @@ static ACT par_end_store()
 			if (reference->ref_master)
 				continue;
 			item = MAKE_NODE(nod_assignment, 2);
-			item->nod_arg[0] = MSC_unary(nod_value, (NOD) reference);
-			item->nod_arg[1] = MSC_unary(nod_field, (NOD) reference);
+			item->nod_arg[0] = MSC_unary(nod_value, (GPRE_NOD) reference);
+			item->nod_arg[1] = MSC_unary(nod_field, (GPRE_NOD) reference);
 			assignments->nod_arg[count++] = item;
 		}
 	}
@@ -2071,9 +2071,9 @@ static ACT par_end_store()
 				change->ref_flags = reference->ref_flags;
 
 				item = MAKE_NODE(nod_assignment, 2);
-				item->nod_arg[0] = MSC_unary(nod_field, (NOD) change);
-				item->nod_arg[1] = MSC_unary(nod_value, (NOD) change);
-				PUSH((NOD) item, &stack);
+				item->nod_arg[0] = MSC_unary(nod_field, (GPRE_NOD) change);
+				item->nod_arg[1] = MSC_unary(nod_value, (GPRE_NOD) change);
+				PUSH((GPRE_NOD) item, &stack);
 				count++;
 			}
 
@@ -2084,7 +2084,7 @@ static ACT par_end_store()
 		ptr = assignments->nod_arg + count;
 
 		while (stack)
-			*--ptr = (NOD) POP(&stack);
+			*--ptr = (GPRE_NOD) POP(&stack);
 	}
 	if ((context = request->req_contexts))
 		HSH_remove(context->ctx_symbol);
@@ -2196,7 +2196,7 @@ static ACT par_fetch()
 	PAR_end();
 
 	action = MAKE_ACTION(request, ACT_s_fetch);
-	PUSH((NOD) action, &cur_fetch);
+	PUSH((GPRE_NOD) action, &cur_fetch);
 
 	return action;
 }
@@ -2295,7 +2295,7 @@ static ACT par_for()
 	}
 
 	action = MAKE_ACTION(request, ACT_for);
-	PUSH((NOD) action, &cur_for);
+	PUSH((GPRE_NOD) action, &cur_for);
 
 	request->req_rse = rec_expr;
 	context = rec_expr->rse_context[0];
@@ -2476,7 +2476,7 @@ static void par_form_fields( REQ request, LLS * stack)
 		}
 		reference = EXP_post_field(field, request->req_contexts, FALSE);
 		reference->ref_friend = parent;
-		PUSH((NOD) reference, stack);
+		PUSH((GPRE_NOD) reference, stack);
 		if (!MATCH(KW_COMMA))
 			break;
 	}
@@ -2573,7 +2573,7 @@ static ACT par_form_for()
 	context->ctx_symbol = symbol;
 	symbol->sym_object = context;
 	HSH_insert(symbol);
-	PUSH((NOD) request, &cur_form);
+	PUSH((GPRE_NOD) request, &cur_form);
 
 //  Do it here to get the next one right
 //  FSG 26.Nov.2000 
@@ -2703,7 +2703,7 @@ static ACT par_item_for( ACT_T type)
 	symbol->sym_object = context;
 	HSH_insert(symbol);
 	action = MAKE_ACTION(request, type);
-	PUSH((NOD) action, (LLS *) & cur_item);
+	PUSH((GPRE_NOD) action, (LLS *) & cur_item);
 
 //  If this is a FOR_ITEM, generate an index variable 
 
@@ -2806,7 +2806,7 @@ static ACT par_menu_case()
 
 	sw_pyxis = TRUE;
 	request = MAKE_REQUEST(REQ_menu);
-	PUSH((NOD) request, &cur_menu);
+	PUSH((GPRE_NOD) request, &cur_menu);
 	action = MAKE_ACTION(request, ACT_menu);
 
 	if (MATCH(KW_LEFT_PAREN)) {
@@ -2961,7 +2961,7 @@ static ACT par_menu_for()
 	context->ctx_symbol = symbol;
 	symbol->sym_object = context;
 	HSH_insert(symbol);
-	PUSH((NOD) request, &cur_menu);
+	PUSH((GPRE_NOD) request, &cur_menu);
 
 	action = MAKE_ACTION(request, ACT_menu_for);
 	menu = (MENU) ALLOC(sizeof(struct menu));
@@ -2997,7 +2997,7 @@ static ACT par_menu_item_for( SYM symbol, CTX context, ACT_T type)
 	symbol->sym_object = context;
 	HSH_insert(symbol);
 	action = MAKE_ACTION(request, type);
-	PUSH((NOD) action, (LLS *) & cur_item);
+	PUSH((GPRE_NOD) action, (LLS *) & cur_item);
 
 	entree = (ENTREE) ALLOC(sizeof(struct entree));
 	action->act_object = (REF) entree;
@@ -3025,7 +3025,7 @@ static ACT par_modify()
 //  structure in place to cleanly handle END_MODIFY under error conditions. 
 
 	modify = (UPD) ALLOC(UPD_LEN);
-	PUSH((NOD) modify, &cur_modify);
+	PUSH((GPRE_NOD) modify, &cur_modify);
 
 //  If the next token isn't a context variable, we can't continue 
 
@@ -3099,7 +3099,7 @@ static ACT par_on_error()
 	cur_statement->act_error = action = MAKE_ACTION(0, ACT_on_error);
 	action->act_object = (REF) cur_statement;
 
-	PUSH((NOD) action, &cur_error);
+	PUSH((GPRE_NOD) action, &cur_error);
 
 	if (cur_statement->act_pair)
 		cur_statement->act_pair->act_error = action;
@@ -3215,7 +3215,7 @@ static ACT par_open_blob( ACT_T act_op, SYM symbol)
 	action->act_object = (REF) blob;
 
 	if (act_op == ACT_blob_for)
-		PUSH((NOD) action, &cur_for);
+		PUSH((GPRE_NOD) action, &cur_for);
 
 //   Need to eat the semicolon if present  
 
@@ -3290,7 +3290,7 @@ static ACT par_procedure()
 		routine_decl = TRUE;
 		action = scan_routine_header();
 		if (!(action->act_flags & ACT_decl)) {
-			PUSH((NOD) cur_routine, &routine_stack);
+			PUSH((GPRE_NOD) cur_routine, &routine_stack);
 			cur_routine = action;
 		}
 	}
@@ -3501,7 +3501,7 @@ static ACT par_returning_values()
 {
 
 	register REF reference;
-	register NOD assignments;
+	register GPRE_NOD assignments;
 	int count;
 
 	if (!cur_store)
@@ -3532,9 +3532,9 @@ static ACT par_returning_values()
 
 		if (reference->ref_master)
 			continue;
-		NOD item = MAKE_NODE(nod_assignment, 2);
-		item->nod_arg[0] = MSC_unary(nod_value, (NOD) save_ref);
-		item->nod_arg[1] = MSC_unary(nod_field, (NOD) save_ref);
+		GPRE_NOD item = MAKE_NODE(nod_assignment, 2);
+		item->nod_arg[0] = MSC_unary(nod_value, (GPRE_NOD) save_ref);
+		item->nod_arg[1] = MSC_unary(nod_field, (GPRE_NOD) save_ref);
 		assignments->nod_arg[count++] = item;
 	}
 
@@ -3562,8 +3562,8 @@ static ACT par_returning_values()
 
 //  both actions go on the cur_store stack, the store topmost 
 
-	PUSH((NOD) action, &cur_store);
-	PUSH((NOD) begin_action, &cur_store);
+	PUSH((GPRE_NOD) action, &cur_store);
+	PUSH((GPRE_NOD) begin_action, &cur_store);
 	return action;
 }
 
@@ -3691,7 +3691,7 @@ static ACT par_store()
 	request = MAKE_REQUEST(REQ_store);
 	par_options(request, FALSE);
 	action = MAKE_ACTION(request, ACT_store);
-	PUSH((NOD) action, &cur_store);
+	PUSH((GPRE_NOD) action, &cur_store);
 
 	context = EXP_context(request, 0);
 	relation = context->ctx_relation;

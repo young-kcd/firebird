@@ -24,20 +24,20 @@
 #ifndef _GPRE_EXP_PROTO_H_
 #define _GPRE_EXP_PROTO_H_
 
-extern NOD EXP_array(REQ, FLD, SSHORT, SSHORT);
+extern GPRE_NOD EXP_array(REQ, FLD, SSHORT, SSHORT);
 extern FLD EXP_cast(FLD);
 extern CTX EXP_context(REQ, SYM);
 extern FLD EXP_field(CTX *);
 extern FLD EXP_form_field(CTX *);
 extern void EXP_left_paren(TEXT *);
-extern NOD EXP_literal(void);
+extern GPRE_NOD EXP_literal(void);
 extern void EXP_post_array(REF);
 extern REF EXP_post_field(FLD, CTX, USHORT);
 extern BOOLEAN EXP_match_paren(void);
 extern REL EXP_relation(void);
 extern RSE EXP_rse(REQ, SYM);
 extern void EXP_rse_cleanup(RSE);
-extern NOD EXP_subscript(REQ);
+extern GPRE_NOD EXP_subscript(REQ);
 extern SLONG EXP_SLONG_ordinal(USHORT);
 extern SINT64 EXP_SINT64_ordinal(USHORT);
 extern SSHORT EXP_SSHORT_ordinal(USHORT);

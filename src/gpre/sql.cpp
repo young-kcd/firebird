@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.3 2001-12-24 02:50:49 tamlin Exp $
+//	$Id: sql.cpp,v 1.4 2002-11-11 19:19:43 hippoman Exp $
 //
 
 #include "firebird.h"
@@ -117,11 +117,11 @@ static DBB dup_dbb(DBB);
 static void error(TEXT *, TEXT *);
 static TEXT *extract_string(BOOLEAN);
 static SWE gen_whenever(void);
-static void into(REQ, NOD, NOD);
+static void into(REQ, GPRE_NOD, GPRE_NOD);
 static FLD make_field(REL);
 static IND make_index(REQ, TEXT *);
 static REL make_relation(REQ, TEXT *);
-static void pair(NOD, NOD);
+static void pair(GPRE_NOD, GPRE_NOD);
 static void par_array(FLD);
 static SSHORT par_char_set(void);
 static void par_computed(REQ, FLD);
@@ -1178,7 +1178,7 @@ static ACT act_alter_domain(void)
 	REQ request;
 	FLD field;
 	CNSTRT *cnstrt_ptr, cnstrt;
-	NOD literal_node;
+	GPRE_NOD literal_node;
 
 //  create request block 
 
@@ -1739,7 +1739,7 @@ static ACT act_create_domain(void)
 	FLD field;
 	CNSTRT *cnstrt;
 	int in_constraints;
-	NOD literal_node;
+	GPRE_NOD literal_node;
 
 //  create request block 
 
@@ -3043,7 +3043,7 @@ static ACT act_fetch(void)
 	VAL value;
 	TEXT *direction_string, *offset_string, *string;
 #endif
-	NOD offset_node = NULL;
+	GPRE_NOD offset_node = NULL;
 
 //  Handle dynamic SQL statement, if appropriate 
 
@@ -3063,7 +3063,7 @@ static ACT act_fetch(void)
 				statement->dyn_sqlda = PAR_native_value(FALSE, FALSE);
 			else
 				statement->dyn_using =
-					(NOD) SQE_list(reinterpret_cast < pfn_SQE_list_cb >
+					(GPRE_NOD) SQE_list(reinterpret_cast < pfn_SQE_list_cb >
 								   (SQE_variable), 0, FALSE);
 			if (statement->dyn_using)
 				PAR_error("Using host-variable list not supported.");
@@ -3184,7 +3184,7 @@ static ACT act_fetch(void)
 			(REF) SQE_list(reinterpret_cast < pfn_SQE_list_cb >
 						   (SQE_variable), request, FALSE);
 		select = request->req_rse;
-		into(request, select->rse_fields, (NOD) action->act_object);
+		into(request, select->rse_fields, (GPRE_NOD) action->act_object);
 	}
 
 	return action;
@@ -3254,7 +3254,7 @@ static ACT act_grant_revoke( enum act_t type)
 					do {
 						SQL_resolve_identifier("<column name>", col_name);
 						field_name = (STR) MAKE_STRING(col_name);
-						PUSH((NOD) field_name, fields);
+						PUSH((GPRE_NOD) field_name, fields);
 						fields = &(*fields)->lls_next;
 						CPR_token();
 					} while (MATCH(KW_COMMA));
@@ -3462,7 +3462,7 @@ static ACT act_insert(void)
 	CTX context;
 	LLS fields, values;
 	RSE select;
-	NOD node, store, assignment, list, select_list, *ptr, *ptr2;
+	GPRE_NOD node, store, assignment, list, select_list, *ptr, *ptr2;
 	TEXT *transaction;
 	int count, count2, i;
 
@@ -3547,8 +3547,8 @@ static ACT act_insert(void)
 
 		while (values) {
 			assignment = MAKE_NODE(nod_assignment, 2);
-			assignment->nod_arg[0] = (NOD) POP(&values);
-			assignment->nod_arg[1] = (NOD) POP(&fields);
+			assignment->nod_arg[0] = (GPRE_NOD) POP(&values);
+			assignment->nod_arg[1] = (GPRE_NOD) POP(&fields);
 			pair(assignment->nod_arg[0], assignment->nod_arg[1]);
 			*--ptr = assignment;
 		}
@@ -3588,12 +3588,12 @@ static ACT act_insert(void)
 	while (fields) {
 		assignment = MAKE_NODE(nod_assignment, 2);
 		assignment->nod_arg[0] = *--ptr2;
-		assignment->nod_arg[1] = (NOD) POP(&fields);
+		assignment->nod_arg[1] = (GPRE_NOD) POP(&fields);
 		pair(assignment->nod_arg[0], assignment->nod_arg[1]);
 		*--ptr = assignment;
 	}
 
-	store = MSC_binary(nod_store, (NOD) context, list);
+	store = MSC_binary(nod_store, (GPRE_NOD) context, list);
 	request->req_node = store;
 	EXP_rse_cleanup(select);
 	if (context->ctx_symbol)
@@ -3983,7 +3983,7 @@ static ACT act_procedure(void)
 	FLD field;
 	SSHORT inputs, outputs;
 	LLS values;
-	NOD list, *ptr;
+	GPRE_NOD list, *ptr;
 	SCHAR p_name[NAME_SIZE + 1], db_name[NAME_SIZE + 1],
 		owner_name[NAME_SIZE + 1];
 	BOOLEAN paren;
@@ -4007,7 +4007,7 @@ static ACT act_procedure(void)
 			else {
 				*ref_ptr = reference = SQE_parameter(request, FALSE);
 				reference->ref_field = field;
-				PUSH(MSC_unary(nod_value, (NOD) reference), &values);
+				PUSH(MSC_unary(nod_value, (GPRE_NOD) reference), &values);
 				ref_ptr = &reference->ref_next;
 			}
 			if (field)
@@ -4043,7 +4043,7 @@ static ACT act_procedure(void)
 	request->req_node = list = MAKE_NODE(nod_list, inputs);
 	ptr = &list->nod_arg[inputs];
 	while (values)
-		*--ptr = (NOD) POP(&values);
+		*--ptr = (GPRE_NOD) POP(&values);
 
 	action = MAKE_ACTION(request, ACT_procedure);
 	action->act_object = (REF) procedure;
@@ -4452,7 +4452,7 @@ static ACT act_update(void)
 	REL relation;
 	RSE rse;
 	CTX input_context, update_context;
-	NOD set_list, *end_list, set_item, modify, *ptr;
+	GPRE_NOD set_list, *end_list, set_item, modify, *ptr;
 	UPD update;
 	LLS stack;
 	SYM alias;
@@ -4509,7 +4509,7 @@ static ACT act_update(void)
 	ptr = end_list = set_list->nod_arg + count;
 
 	while (stack)
-		*--ptr = (NOD) POP(&stack);
+		*--ptr = (GPRE_NOD) POP(&stack);
 
 //  Now the moment of truth.  If the next few tokens are WHERE CURRENT OF
 //  then this is a sub-action of an existing request.  If not, then it is
@@ -4598,7 +4598,7 @@ static ACT act_update(void)
 				slice_request->req_next = requests;
 				requests = slice_request;
 				slice->slc_field_ref = field_ref;
-				slice->slc_array = (NOD) set_item->nod_arg[0];
+				slice->slc_array = (GPRE_NOD) set_item->nod_arg[0];
 				slice->slc_parent_request = request;
 				slice_action->act_type = ACT_put_slice;
 
@@ -4610,7 +4610,7 @@ static ACT act_update(void)
 				for (req_ref = request->req_references; req_ref;
 					 req_ref = req_ref->ref_next) {
 					if (req_ref == field_ref) {
-						set_item->nod_arg[1]->nod_arg[0] = (NOD) req_ref;
+						set_item->nod_arg[1]->nod_arg[0] = (GPRE_NOD) req_ref;
 						found = TRUE;
 						break;
 					}
@@ -5109,10 +5109,10 @@ static SWE gen_whenever(void)
 //		to form full references (post same against request).
 //  
 
-static void into( REQ request, NOD field_list, NOD var_list)
+static void into( REQ request, GPRE_NOD field_list, GPRE_NOD var_list)
 {
 	REF var_ref, field_ref, reference;
-	NOD *var_ptr, *fld_ptr, *end;
+	GPRE_NOD *var_ptr, *fld_ptr, *end;
 	FLD field;
 	REQ slice_req;
 	SSHORT found = FALSE;
@@ -5246,9 +5246,9 @@ static REL make_relation( REQ request, TEXT * relation_name)
 //		of a host language variable.
 //  
 
-static void pair( NOD expr, NOD field_expr)
+static void pair( GPRE_NOD expr, GPRE_NOD field_expr)
 {
-	NOD *ptr, *end_ptr;
+	GPRE_NOD *ptr, *end_ptr;
 	REF ref1, ref2;
 	MEL element;
 
@@ -5507,7 +5507,7 @@ static FLD par_field( REQ request, REL relation)
 // *IND		index; 
 	CNSTRT *cnstrt;
 	int in_constraints;
-	NOD literal_node;
+	GPRE_NOD literal_node;
 
 	field = make_field(relation);
 
@@ -5654,7 +5654,7 @@ static CNSTRT par_field_constraint( REQ request, FLD for_field, REL relation)
 
 		field_name = (STR) ALLOC(NAME_SIZE + 1);
 		strcpy((char *) field_name, for_field->fld_symbol->sym_string);
-		PUSH((NOD) field_name, &cnstrt->cnstrt_fields);
+		PUSH((GPRE_NOD) field_name, &cnstrt->cnstrt_fields);
 
 		if (keyword == KW_REFERENCES) {
 			/* Relation name for foreign key  */
@@ -5671,7 +5671,7 @@ static CNSTRT par_field_constraint( REQ request, FLD for_field, REL relation)
 
 				field_name = (STR) ALLOC(NAME_SIZE + 1);
 				SQL_resolve_identifier("<column name>", (TEXT *) field_name);
-				PUSH((NOD) field_name, &cnstrt->cnstrt_referred_fields);
+				PUSH((GPRE_NOD) field_name, &cnstrt->cnstrt_referred_fields);
 				CPR_token();
 				EXP_match_paren();
 			}
@@ -5948,7 +5948,7 @@ static CNSTRT par_table_constraint( REQ request, REL relation)
 		do {
 			field_name = (STR) ALLOC(NAME_SIZE + 1);
 			SQL_resolve_identifier("<column name>", (TEXT *) field_name);
-			PUSH((NOD) field_name, fields);
+			PUSH((GPRE_NOD) field_name, fields);
 			fields = &(*fields)->lls_next;
 			++num_for_key_flds;
 			CPR_token();
@@ -5981,7 +5981,7 @@ static CNSTRT par_table_constraint( REQ request, REL relation)
 					field_name = (STR) ALLOC(NAME_SIZE + 1);
 					SQL_resolve_identifier("<column name>",
 										   (TEXT *) field_name);
-					PUSH((NOD) field_name, fields);
+					PUSH((GPRE_NOD) field_name, fields);
 					fields = &(*fields)->lls_next;
 					++num_prim_key_flds;
 					CPR_token();
@@ -6101,7 +6101,7 @@ static BOOLEAN par_using( DYN statement)
 		statement->dyn_sqlda = PAR_native_value(FALSE, FALSE);
 	else
 		statement->dyn_using =
-			(NOD) SQE_list(reinterpret_cast < pfn_SQE_list_cb >
+			(GPRE_NOD) SQE_list(reinterpret_cast < pfn_SQE_list_cb >
 						   (SQE_variable), 0, FALSE);
 
 	return TRUE;

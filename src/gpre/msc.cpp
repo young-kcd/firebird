@@ -25,10 +25,10 @@
 //
 //____________________________________________________________
 //
-//	$Id: msc.cpp,v 1.3 2001-12-24 02:50:49 tamlin Exp $
+//	$Id: msc.cpp,v 1.4 2002-11-11 19:19:43 hippoman Exp $
 //
 //  
-//$Id: msc.cpp,v 1.3 2001-12-24 02:50:49 tamlin Exp $
+//$Id: msc.cpp,v 1.4 2002-11-11 19:19:43 hippoman Exp $
 //  
 
 // ***************************************************
@@ -174,9 +174,9 @@ UCHAR *MSC_alloc_permanent(int size)
 //		Make a binary node.
 //  
 
-NOD MSC_binary(NOD_T type, NOD arg1, NOD arg2)
+GPRE_NOD MSC_binary(NOD_T type, GPRE_NOD arg1, GPRE_NOD arg2)
 {
-	NOD node;
+	GPRE_NOD node;
 
 	node = MSC_node(type, 2);
 	node->nod_arg[0] = arg1;
@@ -326,7 +326,7 @@ BOOLEAN MSC_match(KWWORDS keyword)
 //		represented on a linked list stack.
 //  
 
-BOOLEAN MSC_member(NOD object, LLS stack)
+BOOLEAN MSC_member(GPRE_NOD object, LLS stack)
 {
 
 	for (; stack; stack = stack->lls_next)
@@ -342,11 +342,11 @@ BOOLEAN MSC_member(NOD object, LLS stack)
 //		Allocate an initialize a syntax node.
 //  
 
-NOD MSC_node(enum nod_t type, SSHORT count)
+GPRE_NOD MSC_node(enum nod_t type, SSHORT count)
 {
-	NOD node;
+	GPRE_NOD node;
 
-	node = (NOD) ALLOC(NOD_LEN(count));
+	node = (GPRE_NOD) ALLOC(NOD_LEN(count));
 	node->nod_count = count;
 	node->nod_type = type;
 
@@ -359,10 +359,10 @@ NOD MSC_node(enum nod_t type, SSHORT count)
 //		Pop an item off a linked list stack.  Free the stack node.
 //  
 
-NOD MSC_pop(LLS * pointer)
+GPRE_NOD MSC_pop(LLS * pointer)
 {
 	LLS stack;
-	NOD node;
+	GPRE_NOD node;
 
 	stack = *pointer;
 	node = stack->lls_object;
@@ -400,7 +400,7 @@ PRV MSC_privilege_block(void)
 //		Push an arbitrary object onto a linked list stack.
 //  
 
-void MSC_push( NOD object, LLS * pointer)
+void MSC_push( GPRE_NOD object, LLS * pointer)
 {
 	LLS stack;
 
@@ -508,9 +508,9 @@ SYM MSC_symbol(enum sym_t type, TEXT * string, USHORT length, CTX object)
 //		Make a unary node.
 //  
 
-NOD MSC_unary(NOD_T type, NOD arg)
+GPRE_NOD MSC_unary(NOD_T type, GPRE_NOD arg)
 {
-	NOD node;
+	GPRE_NOD node;
 
 	node = MSC_node(type, 1);
 	node->nod_arg[0] = arg;
