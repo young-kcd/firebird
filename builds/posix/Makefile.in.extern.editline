@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.extern.editline,v 1.4 2004-05-08 03:28:09 skidder Exp $
+#  $Id: Makefile.in.extern.editline,v 1.5 2004-05-11 07:30:56 eku Exp $
 #
 ROOT=..
 #ObjModuleType=std
@@ -64,7 +64,7 @@ libeditline : $(LIB)/libeditline.a
 
 $(LIB)/libeditline.a:
 	cd $(SRC_ROOT)/extern/editline; ./configure
-	make -C $(SRC_ROOT)/extern/editline lib_a
+	$(MAKE) -C $(SRC_ROOT)/extern/editline lib_a
 	cp $(SRC_ROOT)/extern/editline/libedit.a $(LIB)/libeditline.a
 
 
