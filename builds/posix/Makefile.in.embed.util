@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.util,v 1.5 2003-02-12 09:23:12 eku Exp $
+#  $Id: Makefile.in.embed.util,v 1.6 2003-03-05 16:13:07 brodsom Exp $
 #
 ROOT=..
 ObjModuleName=embed.util
@@ -92,7 +92,7 @@ Dependencies = $(AllObjects:.o=.d)
 
 .PHONY: create_db gstat gds_drop gds_relay gsec ibguard ibmgr_bin
 
-all: gstat gds_drop gds_relay gsec 
+all: $(EMBED_UTIL_TARGETS)
 
 
 # it's important to note here that create_db is linked against the static
