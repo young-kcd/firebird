@@ -37,3 +37,9 @@ CLIENT_UTIL_TARGETS:=gstat gsec ibguard instsvc instreg
 WIN_IPSERVER_Files:=ipserver.cpp alli.cpp
 
 Physical_IO_Module=winnt.cpp
+
+# Add resources to some files
+FilesToAddVersionInfo=$(LIBFBEMBED_SO) $(LIBFBCLIENT_SO) $(LIBFBINTL_SO) \
+ $(GSTAT) $(GSEC) $(GFIX) $(QLI) $(ISQL) $(GBAK) $(GPRE)
+# TODO: guardians also must be here
+FilesToAddDialog=$(FB_SUPER_SERVER) $(FB_CLASSIC_SERVER)

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.qli,v 1.7 2003-03-27 11:21:44 aafemt Exp $
+#  $Id: Makefile.in.embed.qli,v 1.8 2003-03-28 11:29:18 aafemt Exp $
 #
 ROOT=..
 ObjModuleName=embed.qli
@@ -57,10 +57,10 @@ Dependencies = $(AllObjects:.o=.d)
 all:	qli   
 
 
-qli : $(QLI)
+qli : create_yachts $(LIBFBEMBED_SO) $(QLI)
 
-$(QLI): create_yachts $(QLI_Objects) $(LIBFBEMBED_SO)  
-	$(LD) $(LINK_OPTS) $(QLI_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+$(QLI): $(QLI_Objects)
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
 	$(CHMOD_S7) $@
 
 # EKU: At this point yachts.lnk is a link to empty.fdb, but gpre will fail

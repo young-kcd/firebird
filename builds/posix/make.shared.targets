@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: make.shared.targets,v 1.6 2003-03-17 12:05:51 eku Exp $
+#  $Id: make.shared.targets,v 1.7 2003-03-28 11:29:18 aafemt Exp $
 #
 
 
@@ -100,6 +100,16 @@ $(SRC)/include/gen/blrtable.h: $(BLRTABLE)
 
 $(BLRTABLE): $(BLRTABLE_Objects)
 	$(CXX) $(LINK_OPTS) $(BLRTABLE_Objects) -o $@ -L $(LIB) -lfbcommon $(LINK_LIBS)
+
+# Adding resources as prerequisite for some files
+
+$(FilesToAddVersionInfo): $(GEN_ROOT)/jrd/version.res
+$(FilesToAddDialog): $(GEN_ROOT)/remote/window.res
+
+# Explicit dependence of resource script
+$(GEN_ROOT)/remote/window.res: $(SRC_ROOT)/remote/window.rc $(SRC_ROOT)/remote/window.rh \
+ $(SRC_ROOT)/jrd/version.rc $(SRC_ROOT)/jrd/build_no.h $(SRC_ROOT)/remote/property.rc \
+ $(SRC_ROOT)/remote/property.rh $(SRC_ROOT)/remote/ibconfig.rc
 
 .PHONY: clean FORCE
 

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.gbak,v 1.5 2003-03-27 11:21:43 aafemt Exp $
+#  $Id: Makefile.in.client.gbak,v 1.6 2003-03-28 11:29:17 aafemt Exp $
 #
 
 ROOT=..
@@ -60,16 +60,16 @@ Dependencies = $(AllObjects:.o=.d)
 
 all: gbak gsplit
 
-gbak : $(GBAK)
+gbak : $(LIBFBCLIENT_SO) $(GBAK)
 
-$(GBAK):	$(GBAK_Objects) $(LIBFBCLIENT_SO)
-	$(LD) $(LINK_OPTS) $(GBAK_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+$(GBAK):	$(GBAK_Objects)
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
 
 
-gsplit : $(GSPLIT)
+gsplit : $(LIBFBCLIENT_SO) $(GSPLIT)
 
-$(GSPLIT):	$(GSPLIT_Objects) $(LIBFBCLIENT_SO)
-	$(LD) $(LINK_OPTS) $(GSPLIT_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+$(GSPLIT):	$(GSPLIT_Objects)
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
 
 
 

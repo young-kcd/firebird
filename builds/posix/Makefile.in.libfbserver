@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbserver,v 1.5 2003-03-27 11:21:45 aafemt Exp $
+#  $Id: Makefile.in.libfbserver,v 1.6 2003-03-28 11:29:18 aafemt Exp $
 #
 ROOT=..
 ObjModuleName=libfbserver
@@ -67,9 +67,9 @@ unexport ISC_PASSWORD
 .PHONY: libfbserver
 
 
-libfbserver : $(LIB)/libfbserver.a
+libfbserver : $(LIBFBSERVER_A)
 
-$(LIB)/libfbserver.a:	$(LIBFBSERVER_Objects)
+$(LIBFBSERVER_A):	$(LIBFBSERVER_Objects)
 	-$(RM) $@
 	$(AR) $@ $^
 	-$(RANLIB) $@

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.gfix,v 1.6 2003-03-27 11:21:43 aafemt Exp $
+#  $Id: Makefile.in.client.gfix,v 1.7 2003-03-28 11:29:18 aafemt Exp $
 #
 ROOT=..
 ObjModuleName=client.gfix
@@ -54,10 +54,10 @@ Dependencies = $(AllObjects:.o=.d)
 .PHONY: gfix
 
 
-gfix : $(BIN)/gfix
+gfix : $(LIBFBCLIENT_SO) $(GFIX)
 
-$(BIN)/gfix:	$(GFIX_Objects) $(LIB)/libfbclient.$(SHRLIB_EXT)  
-	$(LD) $(LINK_OPTS) $(GFIX_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+$(GFIX):	$(GFIX_Objects)
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
 
 
 include $(ROOT)/gen/make.shared.targets

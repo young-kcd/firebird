@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.21 2003-03-27 11:21:45 aafemt Exp $
+#   $Id: make.defaults,v 1.22 2003-03-28 11:29:18 aafemt Exp $
 # 
 
 
@@ -128,6 +128,16 @@ SHRLIB_EXT=@SHRLIB_EXT@
 
 -include $(ROOT)/gen/Make.Version
 
+# Add windows dll to library patterns
+
+.LIBPATTERNS += %.dll lib%.dll
+
+# Search path for libraries
+
+vpath %.so $(LIB)
+vpath %.a $(LIB)
+vpath %.dll $(LIB)
+
 #_____________________________________________________________________________
 
 
@@ -174,6 +184,7 @@ LIBFBINTL_SO = $(FIREBIRD)/intl/libfbintl.$(SHRLIB_EXT)
 
 LIBFBCOMMON_A = $(LIB)/libfbcommon.a
 LIBFBSTATIC_A = $(LIB)/libfbstatic.a
+LIBFBSERVER_A = $(LIB)/libfbserver.a
 LIBEDITLINE_A = $(LIB)/libeditline.a
 
 ifdef UseSharedLibraries   
@@ -195,6 +206,8 @@ else
     LIBGDS_LINK_OPTIONS =
 endif
 
+FB_SUPER_SERVER	= $(BIN)/fbserver$(EXEC_EXT)
+FB_CLASSIC_SERVER = $(BIN)/fb_inet_server$(EXEC_EXT)
 
 # From lock
 GDS_LOCK_MGR    = $(BIN)/fb_lock_mgr
@@ -204,6 +217,7 @@ CREATE_DB       = $(BIN)/create_db$(EXEC_EXT)
 GDS_DROP        = $(BIN)/gds_drop$(EXEC_EXT)
 GSTAT           = $(BIN)/gstat$(EXEC_EXT)
 GSEC            = $(BIN)/gsec$(EXEC_EXT)
+GFIX		= $(BIN)/gfix$(EXEC_EXT)
 GDS_REBUILD     = $(BIN)/gds_rebuild$(EXEC_EXT)
 GDS_RELAY       = $(BIN)/gds_relay$(EXEC_EXT)
 GDS_INSTALL     = $(BIN)/gds_install$(EXEC_EXT)

@@ -26,7 +26,7 @@
 #   Contributor(s):
 #
 #
-#   $Id: make.rules,v 1.14 2003-03-27 11:21:45 aafemt Exp $
+#   $Id: make.rules,v 1.15 2003-03-28 11:29:18 aafemt Exp $
 #
 
 #____________________________________________________________________________
@@ -242,6 +242,10 @@ $(DEP)/%.d:: $(SRC)/%.cpp
 	echo $(OBJ)/$(*).o " : FORCE" > $@
 #	touch $^
 
+# Rules for making resource files
+
+$(GEN_ROOT)/%.res: $(SRC_ROOT)/%.rc
+	windres --output-format=coff --include-dir=$(<D) $< $@
 
 # code to move the dependancy files from the current directory
 
