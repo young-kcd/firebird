@@ -13,17 +13,17 @@
 @echo Creating directories
 @cd ..\..
 @rmdir gen 2>nul
-@mkdir gen\alice
-@mkdir gen\burp
-@mkdir gen\dsql
-@mkdir gen\dudley
-@mkdir gen\gpre
-@mkdir gen\isql
-@mkdir gen\jrd
-@mkdir gen\msgs
-@mkdir gen\qli
-@mkdir gen\utilities
-@mkdir gen\v5_examples
+@mkdir gen\alice 2>nul
+@mkdir gen\burp 2>nul
+@mkdir gen\dsql 2>nul
+@mkdir gen\dudley 2>nul
+@mkdir gen\gpre 2>nul
+@mkdir gen\isql 2>nul
+@mkdir gen\jrd 2>nul
+@mkdir gen\msgs 2>nul
+@mkdir gen\qli 2>nul
+@mkdir gen\utilities 2>nul
+@mkdir gen\v5_examples 2>nul
 @cd builds\win32
 
 ::provisional, copy all fdbs to the same directory to be used from preprocess

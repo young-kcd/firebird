@@ -1,6 +1,7 @@
 @echo off
 
-@cd msvc7
+::===========
+:: Read input values
 @set DBG=
 @set DBG_DIR=release
 @set CLEAN=/build
@@ -8,6 +9,10 @@
 @if "%2"=="DEBUG" ((set DBG=TRUE) && (set DBG_DIR=debug))
 @if "%1"=="CLEAN" (set CLEAN=/clean)
 @if "%2"=="CLEAN" (set CLEAN=/clean)
+
+::==========
+:: MAIN
+@cd msvc7
 @if "%DBG%"=="" (call :RELEASE) else (call :DEBUG)
 @cd ..
 @call :MOVE
