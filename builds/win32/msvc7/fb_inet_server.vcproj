@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="comctl32.lib wsock32.lib mpr.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				OutputFile="release/firebird/bin/fb_inet_server.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -99,65 +99,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="comctl32.lib wsock32.lib mpr.lib version.lib"
-				OutputFile="debug/firebird/bin/fb_inet_server.exe"
-				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\debug\fb_inet_server/fb_inet_server.pdb"
-				SubSystem="2"
-				StackReserveSize="2097152"/>
-			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="_DEBUG"
-				MkTypLibCompatible="TRUE"
-				SuppressStartupBanner="TRUE"
-				TargetEnvironment="1"
-				TypeLibraryName=".\debug\fb_inet_server/fb_inet_server.tlb"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="1053"/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCWebDeploymentTool"/>
-		</Configuration>
-		<Configuration
-			Name="Debug Classic|Win32"
-			OutputDirectory="Debug Classic"
-			IntermediateDirectory="Debug Classic"
-			ConfigurationType="1"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include"
-				PreprocessorDefinitions="_DEBUG;_WINDOWS;WIN32_LEAN_AND_MEAN;WIN32;_X86_;DEV_BUILD"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\fb_inet_server/fb_inet_server.pch"
-				AssemblerListingLocation=".\debug\fb_inet_server/"
-				ObjectFile=".\debug\fb_inet_server/"
-				ProgramDataBaseFileName=".\debug\fb_inet_server/"
-				BrowseInformation="1"
-				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"
-				CompileAs="0"/>
-			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="comctl32.lib wsock32.lib mpr.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				OutputFile="debug/firebird/bin/fb_inet_server.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -218,12 +160,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug|Win32">
-					<Tool
-						Name="VCResourceCompilerTool"
-						AdditionalIncludeDirectories="\firebird\firebird2\src\remote;$(NoInherit)"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug Classic|Win32">
 					<Tool
 						Name="VCResourceCompilerTool"
 						AdditionalIncludeDirectories="\firebird\firebird2\src\remote;$(NoInherit)"/>

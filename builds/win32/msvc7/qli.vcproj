@@ -38,7 +38,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="odbc32.lib odbccp32.lib mpr.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				OutputFile="debug/firebird/bin/qli.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -95,7 +95,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="odbc32.lib odbccp32.lib mpr.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				OutputFile="release/firebird/bin/qli.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -104,59 +104,6 @@
 			<Tool
 				Name="VCMIDLTool"
 				TypeLibraryName=".\release\qli/qli.tlb"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="1053"/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCWebDeploymentTool"/>
-		</Configuration>
-		<Configuration
-			Name="Debug Classic|Win32"
-			OutputDirectory="Debug Classic"
-			IntermediateDirectory="Debug Classic"
-			ConfigurationType="1"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include"
-				PreprocessorDefinitions="WIN32,_DEBUG,_CONSOLE,DEV_BUILD,SUPERCLIENT"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\qli/qli.pch"
-				AssemblerListingLocation=".\debug\qli/"
-				ObjectFile=".\debug\qli/"
-				ProgramDataBaseFileName=".\debug\qli/"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"
-				CompileAs="0"/>
-			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="odbc32.lib odbccp32.lib mpr.lib"
-				OutputFile="debug/firebird/bin/qli.exe"
-				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\debug\qli/qli.pdb"
-				SubSystem="1"/>
-			<Tool
-				Name="VCMIDLTool"
-				TypeLibraryName=".\debug\qli/qli.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -425,12 +372,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32">
-					<Tool
-						Name="VCResourceCompilerTool"
-						AdditionalIncludeDirectories="\firebird\firebird2\src\jrd;$(NoInherit)"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug Classic|Win32">
 					<Tool
 						Name="VCResourceCompilerTool"
 						AdditionalIncludeDirectories="\firebird\firebird2\src\jrd;$(NoInherit)"/>

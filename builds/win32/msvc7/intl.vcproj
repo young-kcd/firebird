@@ -43,7 +43,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="odbc32.lib odbccp32.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				OutputFile="release/firebird/intl/fbintl.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -100,65 +100,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="odbc32.lib odbccp32.lib"
-				OutputFile="debug/firebird/intl/fbintl.dll"
-				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\debug\intl/fbintl.pdb"
-				ImportLibrary=".\debug\intl/fbintl.lib"/>
-			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="_DEBUG"
-				MkTypLibCompatible="TRUE"
-				SuppressStartupBanner="TRUE"
-				TargetEnvironment="1"
-				TypeLibraryName=".\debug\intl/intl.tlb"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="1053"/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCWebDeploymentTool"/>
-		</Configuration>
-		<Configuration
-			Name="Debug Classic|Win32"
-			OutputDirectory="Debug Classic"
-			IntermediateDirectory="Debug Classic"
-			ConfigurationType="2"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include"
-				PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;WINDOWS_ONLY;SUPERCLIENT;WIN32;_X86_"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\intl/intl.pch"
-				AssemblerListingLocation=".\debug\intl/"
-				ObjectFile=".\debug\intl/"
-				ProgramDataBaseFileName=".\debug\intl/"
-				BrowseInformation="1"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"
-				CompileAs="0"/>
-			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="odbc32.lib odbccp32.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				OutputFile="debug/firebird/intl/fbintl.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -200,9 +142,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\cs_jis.c">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\cs_jis_20208_1990.c">
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\cs_ksc.c">
@@ -272,106 +211,67 @@
 			Name="Header files"
 			Filter="h;hpp;hxx;hm;inl">
 			<File
-				RelativePath="..\..\..\src\intl\ancyrr.h">
+				RelativePath="..\..\..\src\intl\collations\ascii.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\anczech.h">
+				RelativePath="..\..\..\src\intl\collations\ascii2.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\angreek1.h">
+				RelativePath="..\..\..\src\intl\collations\bl88591ca0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\anhun.h">
+				RelativePath="..\..\..\src\intl\collations\bl88591da0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\anhundc.h">
+				RelativePath="..\..\..\src\intl\collations\bl88591de0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\anpolish.h">
+				RelativePath="..\..\..\src\intl\collations\bl88591es0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\ansii850.h">
+				RelativePath="..\..\..\src\intl\collations\bl88591fi0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\ansiintl.h">
+				RelativePath="..\..\..\src\intl\collations\bl88591fr0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\ansinor4.h">
+				RelativePath="..\..\..\src\intl\collations\bl88591is0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\ansislov.h">
+				RelativePath="..\..\..\src\intl\collations\bl88591it0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\ansispan.h">
+				RelativePath="..\..\..\src\intl\collations\bl88591nl0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\ansiswfn.h">
+				RelativePath="..\..\..\src\intl\collations\bl88591no0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\anturk.h">
+				RelativePath="..\..\..\src\intl\collations\bl88591pt0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\ascii.h">
+				RelativePath="..\..\..\src\intl\collations\bl88591sv0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\ascii2.h">
+				RelativePath="..\..\..\src\intl\collations\bl88591uk0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\bllt1ca0.h">
+				RelativePath="..\..\..\src\intl\collations\bl88591us0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\bllt1da0.h">
+				RelativePath="..\..\..\src\intl\collations\blNEXTde0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\bllt1de0.h">
+				RelativePath="..\..\..\src\intl\collations\blNEXTes0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\bllt1es0.h">
+				RelativePath="..\..\..\src\intl\collations\blNEXTfr0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\bllt1fi0.h">
+				RelativePath="..\..\..\src\intl\collations\blNEXTit0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\bllt1fr0.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\bllt1is0.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\bllt1it0.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\bllt1nl0.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\bllt1no0.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\bllt1pt0.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\bllt1sv0.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\bllt1uk0.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\bllt1us0.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\blnxtde0.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\blnxtes0.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\blnxtfr0.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\blnxtit0.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\blnxtus0.h">
+				RelativePath="..\..\..\src\intl\collations\blNEXTus0.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\charsets.h">
@@ -383,175 +283,157 @@
 				RelativePath="..\..\..\src\intl\country_codes.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\cs_437.h">
+				RelativePath="..\..\..\src\intl\charsets\cs_437.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\cs_850.h">
+				RelativePath="..\..\..\src\intl\charsets\cs_850.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\cs_852.h">
+				RelativePath="..\..\..\src\intl\charsets\cs_852.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\cs_857.h">
+				RelativePath="..\..\..\src\intl\charsets\cs_857.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\cs_860.h">
+				RelativePath="..\..\..\src\intl\charsets\cs_860.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\cs_861.h">
+				RelativePath="..\..\..\src\intl\charsets\cs_861.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\cs_863.h">
+				RelativePath="..\..\..\src\intl\charsets\cs_863.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\cs_865.h">
+				RelativePath="..\..\..\src\intl\charsets\cs_865.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\cs_big5.h">
+				RelativePath="..\..\..\src\intl\charsets\cs_big5.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\cs_cyrl.h">
+				RelativePath="..\..\..\src\intl\charsets\cs_cyrl.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\cs_gb2312.h">
+				RelativePath="..\..\..\src\intl\charsets\cs_gb2312.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\cs_jis_0208_1990.h">
+				RelativePath="..\..\..\src\intl\charsets\cs_jis_0208_1990.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\cs_ksc5601.h">
+				RelativePath="..\..\..\src\intl\charsets\cs_ksc5601.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\cs_latin1.h">
+				RelativePath="..\..\..\src\intl\charsets\cs_latin1.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\cs_latin2.h">
+				RelativePath="..\..\..\src\intl\charsets\cs_latin2.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\cs_next.h">
+				RelativePath="..\..\..\src\intl\charsets\cs_next.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\cs_sjis.h">
+				RelativePath="..\..\..\src\intl\charsets\cs_sjis.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\cs_w1250.h">
+				RelativePath="..\..\..\src\intl\charsets\cs_w1250.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\cs_w1251.h">
+				RelativePath="..\..\..\src\intl\charsets\cs_w1251.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\cs_w1252.h">
+				RelativePath="..\..\..\src\intl\charsets\cs_w1252.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\cs_w1253.h">
+				RelativePath="..\..\..\src\intl\charsets\cs_w1253.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\cs_w1254.h">
+				RelativePath="..\..\..\src\intl\charsets\cs_w1254.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\csjis2_p.h">
+				RelativePath="..\..\..\src\intl\collations\db437de0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\cyrr.h">
+				RelativePath="..\..\..\src\intl\collations\db437es1.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\czech.h">
+				RelativePath="..\..\..\src\intl\collations\db437fi0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\db437de0.h">
+				RelativePath="..\..\..\src\intl\collations\db437fr0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\db437es1.h">
+				RelativePath="..\..\..\src\intl\collations\db437it0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\db437fi0.h">
+				RelativePath="..\..\..\src\intl\collations\db437nl0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\db437fr0.h">
+				RelativePath="..\..\..\src\intl\collations\db437sv0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\db437it0.h">
+				RelativePath="..\..\..\src\intl\collations\db437uk0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\db437nl0.h">
+				RelativePath="..\..\..\src\intl\collations\db437us0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\db437sv0.h">
+				RelativePath="..\..\..\src\intl\collations\db850cf0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\db437uk0.h">
+				RelativePath="..\..\..\src\intl\collations\db850de0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\db437us0.h">
+				RelativePath="..\..\..\src\intl\collations\db850es0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\db850cf0.h">
+				RelativePath="..\..\..\src\intl\collations\db850fr0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\db850de0.h">
+				RelativePath="..\..\..\src\intl\collations\db850it1.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\db850es0.h">
+				RelativePath="..\..\..\src\intl\collations\db850nl0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\db850fr0.h">
+				RelativePath="..\..\..\src\intl\collations\db850pt0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\db850it1.h">
+				RelativePath="..\..\..\src\intl\collations\db850sv1.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\db850nl0.h">
+				RelativePath="..\..\..\src\intl\collations\db850uk0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\db850pt0.h">
+				RelativePath="..\..\..\src\intl\collations\db850us0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\db850sv1.h">
+				RelativePath="..\..\..\src\intl\collations\db852cz0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\db850uk0.h">
+				RelativePath="..\..\..\src\intl\collations\db852hdc.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\db850us0.h">
+				RelativePath="..\..\..\src\intl\collations\db852po0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\db852cz0.h">
+				RelativePath="..\..\..\src\intl\collations\db852sl0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\db852hdc.h">
+				RelativePath="..\..\..\src\intl\collations\db857tr0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\db852po0.h">
+				RelativePath="..\..\..\src\intl\collations\db860pt0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\db852sl0.h">
+				RelativePath="..\..\..\src\intl\collations\db863cf1.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\db857tr0.h">
+				RelativePath="..\..\..\src\intl\collations\db865da0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\db860pt0.h">
+				RelativePath="..\..\..\src\intl\collations\db865no0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\db863cf1.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\db865da0.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\db865no0.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\db866ru0.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\hun852dc.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\iceland.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\intl.h">
+				RelativePath="..\..\..\src\intl\collations\db866ru0.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\kanji.h">
@@ -572,46 +454,91 @@
 				RelativePath="..\..\..\src\intl\ldcommon.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\lt2czech.h">
+				RelativePath="..\..\..\src\intl\collations\pd437intl.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\mac_437.h">
+				RelativePath="..\..\..\src\intl\collations\pd437swedfin.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\mac_865.h">
+				RelativePath="..\..\..\src\intl\collations\pd852hundc.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\mac_lat1.h">
+				RelativePath="..\..\..\src\intl\collations\pd852polish.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\nordan40.h">
+				RelativePath="..\..\..\src\intl\collations\pd852slovene.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\polish.h">
+				RelativePath="..\..\..\src\intl\collations\pd857turk.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\slovene.h">
+				RelativePath="..\..\..\src\intl\collations\pd861iceland.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\swedfin.h">
+				RelativePath="..\..\..\src\intl\collations\pd865nordan40.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\turk.h">
+				RelativePath="..\..\..\src\intl\collations\pd866cyrr.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\tx437_865.h">
+				RelativePath="..\..\..\src\intl\collations\ps852czech.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\tx437_lat1.h">
+				RelativePath="..\..\..\src\intl\collations\pw1250czech.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\tx865_lat1.h">
+				RelativePath="..\..\..\src\intl\collations\pw1250hun.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\undef.h">
+				RelativePath="..\..\..\src\intl\collations\pw1250hundc.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\win1251_ua.h">
+				RelativePath="..\..\..\src\intl\collations\pw1250polish.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\collations\pw1250slov.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\collations\pw1251cyrr.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\collations\pw1252i850.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\collations\pw1252intl.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\collations\pw1252nor4.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\collations\pw1252span.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\collations\pw1252swfn.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\collations\pw1253greek1.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\collations\pw1253turk.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\conversions\tx437_865.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\conversions\tx437_lat1.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\conversions\tx865_lat1.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\collations\undef.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\collations\win1251_ua.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\collations\xx88592czech.h">
 			</File>
 		</Filter>
 		<Filter
@@ -627,12 +554,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug|Win32">
-					<Tool
-						Name="VCResourceCompilerTool"
-						AdditionalIncludeDirectories="\firebird\firebird2\src\jrd;$(NoInherit)"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug Classic|Win32">
 					<Tool
 						Name="VCResourceCompilerTool"
 						AdditionalIncludeDirectories="\firebird\firebird2\src\jrd;$(NoInherit)"/>

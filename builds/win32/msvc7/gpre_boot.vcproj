@@ -25,8 +25,8 @@
 				EnableIntrinsicFunctions="TRUE"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="../../../src/include,../../../src/jrd"
-				PreprocessorDefinitions="NDEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_"
+				AdditionalIncludeDirectories="../../../src/include"
+				PreprocessorDefinitions="NDEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_,WIN32_LEAN_AND_MEAN"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="2"
 				PrecompiledHeaderFile=".\release\gpre_boot/gpre_boot.pch"
@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="odbc32.lib odbccp32.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				OutputFile="release/firebird/bin/gpre_boot.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -77,8 +77,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include,../../../src/jrd"
-				PreprocessorDefinitions="_DEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_"
+				AdditionalIncludeDirectories="../../../src/include"
+				PreprocessorDefinitions="_DEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_,DEV_BUILD,_WINDOWS,_USRDLL,CLIENT,WIN32_LEAN_AND_MEAN"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile=".\debug\gpre_boot/gpre_boot.pch"
@@ -95,61 +95,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="odbc32.lib odbccp32.lib debug\fbclient\fbclient.lib"
-				OutputFile="debug/firebird/bin/gpre_boot.exe"
-				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\debug\gpre_boot/gpre_boot.pdb"
-				SubSystem="1"/>
-			<Tool
-				Name="VCMIDLTool"
-				TypeLibraryName=".\debug\gpre_boot/gpre_boot.tlb"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="1053"/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCWebDeploymentTool"/>
-		</Configuration>
-		<Configuration
-			Name="Debug Classic|Win32"
-			OutputDirectory="Debug Classic"
-			IntermediateDirectory="Debug Classic"
-			ConfigurationType="1"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include,../../../src/jrd"
-				PreprocessorDefinitions="_DEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\gpre_boot/gpre_boot.pch"
-				AssemblerListingLocation=".\debug\gpre_boot/"
-				ObjectFile=".\debug\gpre_boot/"
-				ProgramDataBaseFileName=".\debug\gpre_boot/"
-				BrowseInformation="1"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"
-				CompileAs="0"/>
-			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="odbc32.lib odbccp32.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				OutputFile="debug/firebird/bin/gpre_boot.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -253,10 +199,28 @@
 			Name="JRD files"
 			Filter="h;c">
 			<File
+				RelativePath="..\..\..\src\jrd\dls.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\dsc.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\dsc.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\gds.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\isc.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\isc_ipc.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\isc_sync.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\thd.cpp">
 			</File>
 		</Filter>
 		<Filter
@@ -360,12 +324,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug|Win32">
-					<Tool
-						Name="VCResourceCompilerTool"
-						AdditionalIncludeDirectories="\firebird\firebird2\src\jrd;$(NoInherit)"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug Classic|Win32">
 					<Tool
 						Name="VCResourceCompilerTool"
 						AdditionalIncludeDirectories="\firebird\firebird2\src\jrd;$(NoInherit)"/>

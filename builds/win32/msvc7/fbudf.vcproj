@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.00"
-	Name="gds32"
+	Name="fbudf"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>
@@ -12,28 +12,24 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\gds32"
-			IntermediateDirectory=".\release\gds32"
+			OutputDirectory=".\release\fbudf"
+			IntermediateDirectory=".\release\fbudf"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="4"
-				InlineFunctionExpansion="2"
-				EnableIntrinsicFunctions="TRUE"
-				ImproveFloatingPointConsistency="TRUE"
-				FavorSizeOrSpeed="1"
-				OmitFramePointers="TRUE"
+				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="../../../src/include"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;GDS32"
-				BasicRuntimeChecks="3"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FBUDF_EXPORTS"
+				StringPooling="TRUE"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\gds32/gds32.pch"
-				AssemblerListingLocation=".\release\gds32/"
-				ObjectFile=".\release\gds32/"
-				ProgramDataBaseFileName=".\release\gds32/"
+				EnableFunctionLevelLinking="TRUE"
+				PrecompiledHeaderFile=".\release\fbudf/fbudf.pch"
+				AssemblerListingLocation=".\release\fbudf/"
+				ObjectFile=".\release\fbudf/"
+				ProgramDataBaseFileName=".\release\fbudf/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -42,20 +38,18 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="msvcrt.lib"
-				OutputFile="release/firebird/bin/gds32.dll"
+				AdditionalDependencies="odbc32.lib odbccp32.lib"
+				OutputFile="release/firebird/udf/fbudf.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ModuleDefinitionFile="..\gds32.def"
-				ProgramDatabaseFile=".\release\gds32/gds32.pdb"
-				ImportLibrary=".\release\gds32/gds32.lib"/>
+				ImportLibrary=".\release\fbudf/fbudf.lib"/>
 			<Tool
 				Name="VCMIDLTool"
-				PreprocessorDefinitions="_DEBUG"
+				PreprocessorDefinitions="NDEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\release\gds32/gds32.tlb"/>
+				TypeLibraryName=".\release\fbudf/fbudf.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -64,8 +58,8 @@
 				Name="VCPreLinkEventTool"/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="1053"/>
+				PreprocessorDefinitions="NDEBUG"
+				Culture="13322"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
@@ -73,8 +67,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\gds32"
-			IntermediateDirectory=".\debug\gds32"
+			OutputDirectory=".\debug\fbudf"
+			IntermediateDirectory=".\debug\fbudf"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -83,37 +77,37 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;GDS32"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;FBUDF_EXPORTS"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\gds32/gds32.pch"
-				AssemblerListingLocation=".\debug\gds32/"
-				ObjectFile=".\debug\gds32/"
-				ProgramDataBaseFileName=".\debug\gds32/"
-				WarningLevel="3"
+				PrecompiledHeaderFile=".\debug\fbudf/fbudf.pch"
+				AssemblerListingLocation=".\debug\fbudf/"
+				ObjectFile=".\debug\fbudf/"
+				ProgramDataBaseFileName=".\debug\fbudf/"
+				WarningLevel="4"
 				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"
+				DebugInformationFormat="4"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="msvcrt.lib"
-				OutputFile="debug/firebird/bin/gds32.dll"
-				LinkIncremental="1"
+				AdditionalDependencies="odbc32.lib odbccp32.lib"
+				OutputFile="debug/firebird/udf/fbudf.dll"
+				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
-				ModuleDefinitionFile="..\gds32_debug.def"
+				AdditionalLibraryDirectories="H:\ibdev\fbbuild\interbase\interbase\lib"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\debug\gds32/gds32.pdb"
-				ImportLibrary=".\debug\gds32/gds32.lib"/>
+				ProgramDatabaseFile=".\debug\fbudf/fbudf.pdb"
+				ImportLibrary=".\debug\fbudf/fbudf.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\debug\gds32/gds32.tlb"/>
+				TypeLibraryName=".\debug\fbudf/fbudf.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -123,7 +117,7 @@
 			<Tool
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="_DEBUG"
-				Culture="1053"/>
+				Culture="13322"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
@@ -132,36 +126,40 @@
 	</Configurations>
 	<Files>
 		<Filter
-			Name="JRD files"
-			Filter="">
+			Name="Source Files"
+			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
-				RelativePath="..\..\..\src\jrd\ibinitdll.cpp">
+				RelativePath="..\..\..\src\extlib\fbudf\fbudf.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\extlib\fbudf\stdafx.cpp">
 			</File>
 		</Filter>
 		<Filter
-			Name="Resource files"
-			Filter="">
+			Name="Header Files"
+			Filter="h;hpp;hxx;hm;inl">
 			<File
-				RelativePath="..\..\..\src\jrd\isc_version.rc">
-				<FileConfiguration
-					Name="Release|Win32">
-					<Tool
-						Name="VCResourceCompilerTool"
-						AdditionalIncludeDirectories="\firebird\firebird2\src\jrd;$(NoInherit)"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32">
-					<Tool
-						Name="VCResourceCompilerTool"
-						AdditionalIncludeDirectories="\firebird\firebird2\src\jrd;$(NoInherit)"/>
-				</FileConfiguration>
+				RelativePath="..\..\..\src\extlib\fbudf\fbudf.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\ibase.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\extlib\fbudf\stdafx.h">
 			</File>
 		</Filter>
+		<Filter
+			Name="Resource Files"
+			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe">
+		</Filter>
 		<File
-			RelativePath="..\gds32.def">
+			RelativePath="..\..\..\src\extlib\fbudf\MSReadMe.txt">
 		</File>
 		<File
-			RelativePath="..\gds32_debug.def">
+			RelativePath="..\..\..\src\extlib\fbudf\fbudf.sql">
+		</File>
+		<File
+			RelativePath="..\..\..\src\extlib\fbudf\fbudf.txt">
 		</File>
 	</Files>
 	<Globals>

@@ -22,7 +22,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include"
-				PreprocessorDefinitions="_DEBUG,DEV_BUILD,WIN32,_CONSOLE,_X86_,WIN32_LEAN_AND_MEAN"
+				PreprocessorDefinitions="_DEBUG,DEV_BUILD,WIN32,_CONSOLE,_X86_,WIN32_LEAN_AND_MEAN,SUPERCLIENT"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile=".\debug\gbak/gbak.pch"
@@ -39,7 +39,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="wsock32.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				OutputFile="debug/firebird/bin/gbak.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -97,7 +97,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="wsock32.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				OutputFile="release/firebird/bin/gbak.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -106,60 +106,6 @@
 			<Tool
 				Name="VCMIDLTool"
 				TypeLibraryName=".\release\gbak/gbak.tlb"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="1053"/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCWebDeploymentTool"/>
-		</Configuration>
-		<Configuration
-			Name="Debug Classic|Win32"
-			OutputDirectory="Debug Classic"
-			IntermediateDirectory="Debug Classic"
-			ConfigurationType="1"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include"
-				PreprocessorDefinitions="_DEBUG,DEV_BUILD,WIN32,_CONSOLE,_X86_,WIN32_LEAN_AND_MEAN"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\gbak/gbak.pch"
-				AssemblerListingLocation=".\debug\gbak/"
-				ObjectFile=".\debug\gbak/"
-				ProgramDataBaseFileName=".\debug\gbak/"
-				BrowseInformation="1"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"
-				CompileAs="0"/>
-			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="wsock32.lib"
-				OutputFile="debug/firebird/bin/gbak.exe"
-				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\debug\gbak/gbak.pdb"
-				SubSystem="1"/>
-			<Tool
-				Name="VCMIDLTool"
-				TypeLibraryName=".\debug\gbak/gbak.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -277,12 +223,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32">
-					<Tool
-						Name="VCResourceCompilerTool"
-						AdditionalIncludeDirectories="\firebird\firebird2\src\jrd;$(NoInherit)"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug Classic|Win32">
 					<Tool
 						Name="VCResourceCompilerTool"
 						AdditionalIncludeDirectories="\firebird\firebird2\src\jrd;$(NoInherit)"/>

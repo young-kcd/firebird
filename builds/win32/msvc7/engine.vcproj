@@ -101,50 +101,6 @@
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 		</Configuration>
-		<Configuration
-			Name="Debug Classic|Win32"
-			OutputDirectory="Debug Classic"
-			IntermediateDirectory="Debug Classic"
-			ConfigurationType="4"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include"
-				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_LIB,WIN32_LEAN_AND_MEAN,_X86_,SUPERSERVER,SERVER_SHUTDOWN,DEV_BUILD"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\engine_ss/engine.pch"
-				AssemblerListingLocation=".\debug\engine_ss/"
-				ObjectFile=".\debug\engine_ss/"
-				ProgramDataBaseFileName=".\debug\engine_ss/"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="4"
-				CompileAs="0"/>
-			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLibrarianTool"
-				OutputFile=".\debug\engine_ss\engine.lib"
-				SuppressStartupBanner="TRUE"/>
-			<Tool
-				Name="VCMIDLTool"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="1049"/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
-		</Configuration>
 	</Configurations>
 	<Files>
 		<Filter
@@ -1040,57 +996,6 @@
 				RelativePath="..\..\..\src\jrd\why_proto.h">
 			</File>
 		</Filter>
-		<File
-			RelativePath="..\..\..\src\jrd\blob_filter.epp">
-		</File>
-		<File
-			RelativePath="..\..\..\src\jrd\codes.epp">
-		</File>
-		<File
-			RelativePath="..\..\..\src\jrd\dfw.epp">
-		</File>
-		<File
-			RelativePath="..\..\..\src\jrd\dpm.epp">
-		</File>
-		<File
-			RelativePath="..\..\..\src\jrd\dyn.epp">
-		</File>
-		<File
-			RelativePath="..\..\..\src\jrd\dyn_def.epp">
-		</File>
-		<File
-			RelativePath="..\..\..\src\jrd\dyn_del.epp">
-		</File>
-		<File
-			RelativePath="..\..\..\src\jrd\dyn_mod.epp">
-		</File>
-		<File
-			RelativePath="..\..\..\src\jrd\dyn_util.epp">
-		</File>
-		<File
-			RelativePath="..\..\..\src\jrd\envelope.epp">
-		</File>
-		<File
-			RelativePath="..\..\..\src\jrd\fun.epp">
-		</File>
-		<File
-			RelativePath="..\..\..\src\jrd\grant.epp">
-		</File>
-		<File
-			RelativePath="..\..\..\src\jrd\ini.epp">
-		</File>
-		<File
-			RelativePath="..\..\..\src\jrd\met.epp">
-		</File>
-		<File
-			RelativePath="..\..\..\src\jrd\pcmet.epp">
-		</File>
-		<File
-			RelativePath="..\..\..\src\jrd\scl.epp">
-		</File>
-		<File
-			RelativePath="..\..\..\src\jrd\stats.epp">
-		</File>
 	</Files>
 	<Globals>
 	</Globals>

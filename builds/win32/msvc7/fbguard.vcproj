@@ -3,7 +3,6 @@
 	ProjectType="Visual C++"
 	Version="7.00"
 	Name="fbguard"
-	ProjectGUID="{E7D478D9-45A3-40C2-9F62-9D251BDC8786}"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>
@@ -43,7 +42,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="comctl32.lib version.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				OutputFile="release/firebird/bin/fbguard.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -100,7 +99,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="comctl32.lib version.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				OutputFile="debug/firebird/bin/fbguard.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -140,12 +139,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\iscguard\iscguard.cpp">
-				<FileConfiguration
-					Name="Debug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=";_DEBUG;WIN32;_WINDOWS;SERVER_SHUTDOWN;SUPERSERVER;WIN32_LEAN_AND_MEAN;_MBCS;$(NOINHERIT)"/>
-				</FileConfiguration>
 			</File>
 		</Filter>
 		<Filter
@@ -177,15 +170,13 @@
 					Name="Release|Win32">
 					<Tool
 						Name="VCResourceCompilerTool"
-						Culture="1047"
-						AdditionalIncludeDirectories="\firebird\firebird2\src\iscguard;..\..\..\src\iscguard;..\..\..\;$(NoInherit)"/>
+						AdditionalIncludeDirectories="\firebird\firebird2\src\iscguard;$(NoInherit)"/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug|Win32">
 					<Tool
 						Name="VCResourceCompilerTool"
-						Culture="1047"
-						AdditionalIncludeDirectories="\firebird\firebird2\src\iscguard;..\..\..\src\iscguard;..\..\..\;$(NoInherit)"/>
+						AdditionalIncludeDirectories="\firebird\firebird2\src\iscguard;$(NoInherit)"/>
 				</FileConfiguration>
 			</File>
 		</Filter>

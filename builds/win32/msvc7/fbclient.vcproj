@@ -21,8 +21,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include,../../../src"
-				PreprocessorDefinitions="_DEBUG;DEV_BUILD;_WINDOWS;_USRDLL;GDS32_EXPORTS;CLIENT;SUPERCLIENT;WIN32_LEAN_AND_MEAN;SERVER_SHUTDOWN;IPSERV;GOVERNOR;EXACT_NUMERICS;WIN32;_X86_"
+				AdditionalIncludeDirectories="../../../src/include"
+				PreprocessorDefinitions="_DEBUG;DEV_BUILD;_WINDOWS;_USRDLL;CLIENT;SUPERCLIENT;WIN32_LEAN_AND_MEAN;SERVER_SHUTDOWN;IPSERV;GOVERNOR;EXACT_NUMERICS;WIN32;_X86_"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile=".\debug\fbclient/fbclient.pch"
@@ -39,7 +39,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="mpr.lib wsock32.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				OutputFile="debug/firebird/bin/fbclient.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -85,8 +85,8 @@
 				ImproveFloatingPointConsistency="TRUE"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="../../../src/include,../../../src"
-				PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GDS32_EXPORTS;CLIENT;SUPERCLIENT;WIN32_LEAN_AND_MEAN;SERVER_SHUTDOWN;IPSERV;GOVERNOR;EXACT_NUMERICS;I386;_X86_=1;WIN32;_X86_"
+				AdditionalIncludeDirectories="../../../src/include"
+				PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;CLIENT;SUPERCLIENT;WIN32_LEAN_AND_MEAN;SERVER_SHUTDOWN;IPSERV;GOVERNOR;EXACT_NUMERICS;I386;_X86_=1;WIN32;_X86_"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="2"
 				PrecompiledHeaderFile=".\release\fbclient/fbclient.pch"
@@ -102,7 +102,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="mpr.lib wsock32.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				OutputFile="release/firebird/bin/fbclient.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -116,65 +116,6 @@
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
 				TypeLibraryName=".\release\fbclient/fbclient.tlb"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="1053"/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCWebDeploymentTool"/>
-		</Configuration>
-		<Configuration
-			Name="Debug Classic|Win32"
-			OutputDirectory="Debug Classic"
-			IntermediateDirectory="Debug Classic"
-			ConfigurationType="2"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include,../../../src"
-				PreprocessorDefinitions="_DEBUG;DEV_BUILD;_WINDOWS;_USRDLL;GDS32_EXPORTS;CLIENT;SUPERCLIENT;WIN32_LEAN_AND_MEAN;SERVER_SHUTDOWN;IPSERV;GOVERNOR;EXACT_NUMERICS;WIN32;_X86_"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\fbclient/fbclient.pch"
-				AssemblerListingLocation=".\debug\fbclient/"
-				ObjectFile=".\debug\fbclient/"
-				ProgramDataBaseFileName=".\debug\fbclient/"
-				BrowseInformation="1"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"
-				CompileAs="0"/>
-			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="mpr.lib wsock32.lib"
-				OutputFile="debug/firebird/bin/fbclient.dll"
-				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
-				ModuleDefinitionFile="..\fbclient_debug.def"
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\debug\fbclient/fbclient.pdb"
-				ImportLibrary=".\debug\fbclient/fbclient.lib"/>
-			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="_DEBUG"
-				MkTypLibCompatible="TRUE"
-				SuppressStartupBanner="TRUE"
-				TargetEnvironment="1"
-				TypeLibraryName=".\debug\fbclient/fbclient.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -227,18 +168,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc_sync.cpp">
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug Classic|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\perf.cpp">
@@ -292,12 +221,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\ipserver\ipcevent.cpp">
-				<FileConfiguration
-					Name="Debug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="_DEBUG;DEV_BUILD;_WINDOWS;_USRDLL;GDS32_EXPORTS;CLIENT;SUPERCLIENT;WIN32_LEAN_AND_MEAN;SERVER_SHUTDOWN;IPSERV;GOVERNOR;EXACT_NUMERICS;WIN32;_X86_;_MBCS;_WINDLL;$(NOINHERIT)"/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\..\src\ipserver\ipclient.cpp">
@@ -335,24 +258,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\remote\xnet.cpp">
-				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug Classic|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
 			</File>
 		</Filter>
 		<Filter
@@ -439,12 +344,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32">
-					<Tool
-						Name="VCResourceCompilerTool"
-						AdditionalIncludeDirectories="\firebird\firebird2\src\jrd;$(NoInherit)"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug Classic|Win32">
 					<Tool
 						Name="VCResourceCompilerTool"
 						AdditionalIncludeDirectories="\firebird\firebird2\src\jrd;$(NoInherit)"/>

@@ -22,7 +22,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;WIN32_LEAN_AND_MEAN;_X86_;SUPERSERVER;SERVER_SHUTDOWN;DEV_BUILD"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;WIN32_LEAN_AND_MEAN;_X86_;SUPERSERVER;SERVER_SHUTDOWN;DEV_BUILD;EMBEDDED"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile=".\debug\fbembed/fbembed.pch"
@@ -38,7 +38,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="odbc32.lib odbccp32.lib wsock32.lib mpr.lib version.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				OutputFile="debug/firebird/bin/fbembed.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -84,7 +84,7 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FBEMBED_EXPORTS;WIN32_LEAN_AND_MEAN;_X86_;SERVER_SHUTDOWN;SUPERSERVER"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;WIN32_LEAN_AND_MEAN;_X86_;SERVER_SHUTDOWN;SUPERSERVER;EMBEDDED"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile=".\release\fbembed/fbembed.pch"
@@ -99,7 +99,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="odbc32.lib odbccp32.lib wsock32.lib mpr.lib comctl32.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				OutputFile="release/firebird/bin/fbembed.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -128,66 +128,21 @@
 			<Tool
 				Name="VCWebDeploymentTool"/>
 		</Configuration>
-		<Configuration
-			Name="Debug Classic|Win32"
-			OutputDirectory="Debug Classic"
-			IntermediateDirectory="Debug Classic"
-			ConfigurationType="2"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;WIN32_LEAN_AND_MEAN;_X86_;SUPERSERVER;SERVER_SHUTDOWN;DEV_BUILD"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\fbembed/fbembed.pch"
-				AssemblerListingLocation=".\debug\fbembed/"
-				ObjectFile=".\debug\fbembed/"
-				ProgramDataBaseFileName=".\debug\fbembed/"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="4"
-				CompileAs="0"/>
-			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="odbc32.lib odbccp32.lib wsock32.lib mpr.lib"
-				OutputFile="debug/firebird/bin/fbembed.dll"
-				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
-				ModuleDefinitionFile="..\fbclient_debug.def"
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\debug\fbembed/fbembed.pdb"
-				ImportLibrary=".\debug\fbembed/fbembed.lib"/>
-			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="_DEBUG"
-				MkTypLibCompatible="TRUE"
-				SuppressStartupBanner="TRUE"
-				TargetEnvironment="1"
-				TypeLibraryName=".\debug\fbembed/fbembed.tlb"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="1049"/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCWebDeploymentTool"/>
-		</Configuration>
 	</Configurations>
 	<Files>
+		<Filter
+			Name="JRD files"
+			Filter="">
+			<File
+				RelativePath="..\..\..\src\jrd\perf.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\pwd.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\why.cpp">
+			</File>
+		</Filter>
 		<Filter
 			Name="REMOTE files"
 			Filter="">
@@ -195,43 +150,7 @@
 				RelativePath="..\..\..\src\remote\allr.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\inet.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\interface.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\merge.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\parser.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\protocol.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\remote.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\wnet.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\remote\xdr.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\xnet.cpp">
-				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug Classic|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
 			</File>
 		</Filter>
 		<Filter
@@ -261,19 +180,6 @@
 						Name="VCResourceCompilerTool"
 						AdditionalIncludeDirectories="\firebird\firebird2\src\jrd;$(NoInherit)"/>
 				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug Classic|Win32">
-					<Tool
-						Name="VCResourceCompilerTool"
-						AdditionalIncludeDirectories="\firebird\firebird2\src\jrd;$(NoInherit)"/>
-				</FileConfiguration>
-			</File>
-		</Filter>
-		<Filter
-			Name="JRD files"
-			Filter="">
-			<File
-				RelativePath="..\..\..\src\jrd\perf.cpp">
 			</File>
 		</Filter>
 		<File

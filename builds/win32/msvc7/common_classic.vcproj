@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.00"
-	Name="lock"
+	Name="common_classic"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>
@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\lock_ss"
-			IntermediateDirectory=".\debug\lock_ss"
+			OutputDirectory=".\debug\common_cs"
+			IntermediateDirectory=".\debug\common_cs"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -22,22 +22,23 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include"
-				PreprocessorDefinitions="WIN32,_DEBUG,_LIB,SUPERSERVER"
+				PreprocessorDefinitions="WIN32,_DEBUG,_LIB,DEV_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\lock_ss/lock.pch"
-				AssemblerListingLocation=".\debug\lock_ss/"
-				ObjectFile=".\debug\lock_ss/"
-				ProgramDataBaseFileName=".\debug\lock_ss/"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderFile=".\debug\common_cs/common_classic.pch"
+				AssemblerListingLocation=".\debug\common_cs/"
+				ObjectFile=".\debug\common_cs/"
+				ProgramDataBaseFileName=".\debug\common_cs/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="4"
+				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\debug\lock_ss\lock.lib"
+				OutputFile=".\debug\common_cs\common_classic.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -56,8 +57,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\lock_ss"
-			IntermediateDirectory=".\release\lock_ss"
+			OutputDirectory=".\release\common_cs"
+			IntermediateDirectory=".\release\common_cs"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -71,13 +72,13 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include"
-				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,WIN32,_X86_"
+				PreprocessorDefinitions="WIN32,NDEBUG,_LIB"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\lock_ss/lock.pch"
-				AssemblerListingLocation=".\release\lock_ss/"
-				ObjectFile=".\release\lock_ss/"
-				ProgramDataBaseFileName=".\release\lock_ss/"
+				PrecompiledHeaderFile=".\release\common_cs/common_classic.pch"
+				AssemblerListingLocation=".\release\common_cs/"
+				ObjectFile=".\release\common_cs/"
+				ProgramDataBaseFileName=".\release\common_cs/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -85,7 +86,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\release\lock_ss\lock.lib"
+				OutputFile=".\release\common_cs\common_classic.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -105,20 +106,62 @@
 	</Configurations>
 	<Files>
 		<Filter
-			Name="LOCK files"
-			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
+			Name="MEMORY files"
+			Filter="">
 			<File
-				RelativePath="..\..\..\src\lock\lock.cpp">
+				RelativePath="..\..\..\src\common\classes\alloc.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\locks.cpp">
+			</File>
+		</Filter>
+		<Filter
+			Name="EXCEPTION files"
+			Filter="">
+			<File
+				RelativePath="..\..\..\src\common\fb_exception.cpp">
+			</File>
+		</Filter>
+		<Filter
+			Name="CONFIG files"
+			Filter="">
+			<File
+				RelativePath="..\..\..\src\common\config\config.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\config\config_file.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\os\win32\config_root.cpp">
+			</File>
+		</Filter>
+		<Filter
+			Name="OTHER files"
+			Filter="">
+			<File
+				RelativePath="..\..\..\src\jrd\os\win32\mod_loader.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\os\win32\path_utils.cpp">
 			</File>
 		</Filter>
 		<Filter
 			Name="Header files"
-			Filter="h;hpp;hxx;hm;inl">
+			Filter="h">
 			<File
-				RelativePath="..\..\..\src\lock\lock.h">
+				RelativePath="..\..\..\src\common\classes\alloc.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\lock\lock_proto.h">
+				RelativePath="..\..\..\src\common\config\config.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\config\config_file.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\config\config_impl.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\os\config_root.h">
 			</File>
 		</Filter>
 	</Files>

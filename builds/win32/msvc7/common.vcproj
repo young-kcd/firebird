@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\common"
-			IntermediateDirectory=".\release\common"
+			OutputDirectory=".\release\common_ss"
+			IntermediateDirectory=".\release\common_ss"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -27,13 +27,14 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include"
-				PreprocessorDefinitions="WIN32,NDEBUG,_LIB"
+				PreprocessorDefinitions="WIN32,NDEBUG,_LIB,SUPERSERVER"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\common/common.pch"
-				AssemblerListingLocation=".\release\common/"
-				ObjectFile=".\release\common/"
-				ProgramDataBaseFileName=".\release\common/"
+				PrecompiledHeaderFile=".\release\common_ss/common.pch"
+				AssemblerListingLocation=".\release\common_ss/"
+				ObjectFile=".\release\common_ss/"
+				ProgramDataBaseFileName=".\release\common_ss/"
+				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -41,7 +42,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\release\common\common.lib"
+				OutputFile=".\release\common_ss\common.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -60,8 +61,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\common"
-			IntermediateDirectory=".\debug\common"
+			OutputDirectory=".\debug\common_ss"
+			IntermediateDirectory=".\debug\common_ss"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -70,14 +71,14 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include"
-				PreprocessorDefinitions="WIN32,_DEBUG,_LIB,DEV_BUILD"
+				PreprocessorDefinitions="WIN32,_DEBUG,_LIB,DEV_BUILD,SUPERSERVER"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\debug\common/common.pch"
-				AssemblerListingLocation=".\debug\common/"
-				ObjectFile=".\debug\common/"
-				ProgramDataBaseFileName=".\debug\common/"
+				PrecompiledHeaderFile=".\debug\common_ss/common.pch"
+				AssemblerListingLocation=".\debug\common_ss/"
+				ObjectFile=".\debug\common_ss/"
+				ProgramDataBaseFileName=".\debug\common_ss/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
@@ -86,52 +87,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\debug\common\common.lib"
-				SuppressStartupBanner="TRUE"/>
-			<Tool
-				Name="VCMIDLTool"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="1053"/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
-		</Configuration>
-		<Configuration
-			Name="Debug Classic|Win32"
-			OutputDirectory="Debug Classic"
-			IntermediateDirectory="Debug Classic"
-			ConfigurationType="4"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include"
-				PreprocessorDefinitions="WIN32,_DEBUG,_LIB,DEV_BUILD"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\debug\common/common.pch"
-				AssemblerListingLocation=".\debug\common/"
-				ObjectFile=".\debug\common/"
-				ProgramDataBaseFileName=".\debug\common/"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"
-				CompileAs="0"/>
-			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLibrarianTool"
-				OutputFile=".\debug\common\common.lib"
+				OutputFile=".\debug\common_ss\common.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -154,10 +110,10 @@
 			Name="MEMORY files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\src\common\memory\allocators.cpp">
+				RelativePath="..\..\..\src\common\classes\alloc.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\memory\memory_pool.cpp">
+				RelativePath="..\..\..\src\common\classes\locks.cpp">
 			</File>
 		</Filter>
 		<Filter
@@ -181,10 +137,20 @@
 			</File>
 		</Filter>
 		<Filter
+			Name="OTHER files"
+			Filter="">
+			<File
+				RelativePath="..\..\..\src\jrd\os\win32\mod_loader.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\os\win32\path_utils.cpp">
+			</File>
+		</Filter>
+		<Filter
 			Name="Header files"
 			Filter="h">
 			<File
-				RelativePath="..\..\..\src\common\memory\allocators.h">
+				RelativePath="..\..\..\src\common\classes\alloc.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\config\config.h">
@@ -197,19 +163,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\os\config_root.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\memory\memory_pool.h">
-			</File>
-		</Filter>
-		<Filter
-			Name="OTHER files"
-			Filter="">
-			<File
-				RelativePath="..\..\..\src\jrd\os\win32\mod_loader.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\os\win32\path_utils.cpp">
 			</File>
 		</Filter>
 	</Files>

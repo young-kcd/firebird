@@ -101,50 +101,6 @@
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 		</Configuration>
-		<Configuration
-			Name="Debug Classic|Win32"
-			OutputDirectory="Debug Classic"
-			IntermediateDirectory="Debug Classic"
-			ConfigurationType="4"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include"
-				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_LIB,WIN32_LEAN_AND_MEAN,_X86_,SERVER_SHUTDOWN,DEV_BUILD"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\engine_cs/engine_classic.pch"
-				AssemblerListingLocation=".\debug\engine_cs/"
-				ObjectFile=".\debug\engine_cs/"
-				ProgramDataBaseFileName=".\debug\engine_cs/"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="4"
-				CompileAs="0"/>
-			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLibrarianTool"
-				OutputFile="debug\engine_cs\engine.lib"
-				SuppressStartupBanner="TRUE"/>
-			<Tool
-				Name="VCMIDLTool"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="1049"/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
-		</Configuration>
 	</Configurations>
 	<Files>
 		<Filter
@@ -410,16 +366,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\winnt.cpp">
-			</File>
-		</Filter>
-		<Filter
-			Name="OS_SPECIFIC files"
-			Filter="">
-			<File
-				RelativePath="..\..\..\src\jrd\os\win32\mod_loader.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\os\win32\path_utils.cpp">
 			</File>
 		</Filter>
 		<Filter
