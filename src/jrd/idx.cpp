@@ -239,12 +239,16 @@ void IDX_create_index(
 	key_desc.skd_offset = 0;
 	key_desc.skd_vary_offset = 0;
 
+	typedef BOOLEAN(*callback_function_t)();
+	callback_function_t callback =
+		(idx->idx_flags & idx_unique) ? (callback_function_t) duplicate_key : NULL;
+	void* callback_arg =
+		(idx->idx_flags & idx_unique) ? &ifl_data : NULL;
+
 	sort_handle = SORT_init(tdbb->tdbb_status_vector,
 							key_length + sizeof(struct isr),
-							1,
-							&key_desc,
-							reinterpret_cast < BOOLEAN(*)() > (duplicate_key),
-							&ifl_data, tdbb->tdbb_attachment, 0);
+							1, &key_desc, callback, callback_arg,
+							tdbb->tdbb_attachment, 0);
 
 	if (!sort_handle)
 		ERR_punt();
@@ -379,7 +383,7 @@ void IDX_create_index(
 
 			/* try to catch duplicates early */
 
-			if ((idx->idx_flags & idx_unique) && ifl_data.ifl_duplicates > 0) {
+			if (ifl_data.ifl_duplicates > 0) {
 				do {
 					if (record != gc_record)
 						delete record;
@@ -428,7 +432,7 @@ void IDX_create_index(
 		ERR_punt();
 	}
 
-	if ((idx->idx_flags & idx_unique) && ifl_data.ifl_duplicates > 0) {
+	if (ifl_data.ifl_duplicates > 0) {
 		SORT_fini(sort_handle, tdbb->tdbb_attachment);
 		ERR_post(gds_no_dup, gds_arg_string,
 				 ERR_cstring(reinterpret_cast < char *>(index_name)), 0);
@@ -436,7 +440,7 @@ void IDX_create_index(
 
 	BTR_create(tdbb, relation, idx, key_length, sort_handle, selectivity);
 
-	if ((idx->idx_flags & idx_unique) && ifl_data.ifl_duplicates > 0) {
+	if (ifl_data.ifl_duplicates > 0) {
 		SORT_fini(sort_handle, tdbb->tdbb_attachment);
 		ERR_post(gds_no_dup, gds_arg_string,
 				 ERR_cstring(reinterpret_cast < char *>(index_name)), 0);
