@@ -1,3 +1,97 @@
+2003-03-17 19:03  alexpeshkoff
+
+	* firebird2/src/jrd/ext.cpp:
+	
+	Cleanup
+
+2003-03-17 19:01  alexpeshkoff
+
+	* firebird2/src/common/config/dir_list.h:
+	
+	Added required comments
+
+2003-03-17 18:57  alexpeshkoff
+
+	* firebird2/src/: common/config/config.cpp, common/config/config.h,
+	install/misc/firebird.conf:
+	
+	Fixed names and default value for EXTERNAL_TABLES_DIRS config
+	parameter
+
+2003-03-17 18:52  alexpeshkoff
+
+	* firebird2/src/jrd/ExecuteStatement.cpp:
+	
+	Cleanup
+
+2003-03-17 17:44  alexpeshkoff
+
+	* firebird2/src/jrd/ExecuteStatement.cpp:
+	
+	Fixed use of: 1. Numeric variables 2. Dialect-3 databases
+
+2003-03-17 14:26  eku
+
+	* firebird2/src/install/misc/firebird.conf:
+	
+	Removed rubbish line.
+
+2003-03-17 13:12  eku
+
+	* firebird2/src/jrd/isc_file.cpp:
+	
+	Changed the default extensions for databases from .gdb to .fdb The
+	Windows and OS X builds have not been updated yet.
+
+2003-03-17 13:05  eku
+
+	* firebird2/: builds/posix/Makefile.in.codes,
+	builds/posix/Makefile.in.embed.qli,
+	builds/posix/Makefile.in.example5,
+	builds/posix/Makefile.in.firebird, builds/posix/Makefile.in.jrd,
+	builds/posix/Makefile.in.msgs,
+	builds/posix/Makefile.in.refDatabases,
+	builds/posix/Makefile.in.v5_examples,
+	builds/posix/make.shared.targets,
+	src/install/arch-specific/sinixz/prototype.in,
+	src/journal/gjrn.cpp, src/journal/journal.gdl,
+	src/journal/journal_vms.e, src/journal/journal_vms.gdl,
+	src/journal/rebuild.e, src/journal/server.e, src/jrd/codes.epp,
+	src/jrd/dflt.gdl, src/jrd/envelope.epp, src/jrd/grant.gdl,
+	src/jrd/isc_file.cpp, src/jrd/ods10.gdl, src/jrd/ods101.gdl,
+	src/jrd/ods72.gdl, src/jrd/ods80.gdl, src/jrd/ods80dif.gdl,
+	src/jrd/ods81.gdl, src/jrd/ods91.gdl, src/jrd/procs2.gdl,
+	src/jrd/stored_proc.gdl, src/jrd/val.cpp, src/jrd/vms.cpp,
+	src/misc/metadata.sql, src/msgs/build_file.epp,
+	src/msgs/change_msgs.epp, src/msgs/check_msgs.epp,
+	src/msgs/enter_msgs.epp, src/msgs/include.epp, src/msgs/load.epp,
+	src/msgs/modify_msgs.epp, src/msgs/msg.gdl, src/qli/help.epp,
+	src/utilities/isc.gdl, src/utilities/rebuild.gdl,
+	src/utilities/rmet.epp, src/utilities/rstore.epp,
+	src/utilities/scrty_unix.gdl, src/utilities/scrty_vms.gdl,
+	src/utilities/security.epp, src/v5_examples/api1.c,
+	src/v5_examples/api10.c, src/v5_examples/api11.c,
+	src/v5_examples/api12.c, src/v5_examples/api13.c,
+	src/v5_examples/api14.e, src/v5_examples/api15.c,
+	src/v5_examples/api16.c, src/v5_examples/api16t.c,
+	src/v5_examples/api2.c, src/v5_examples/api3.c,
+	src/v5_examples/api4.c, src/v5_examples/api5.c,
+	src/v5_examples/api6.c, src/v5_examples/api7.c,
+	src/v5_examples/api8.c, src/v5_examples/api9.c,
+	src/v5_examples/dyn1.e, src/v5_examples/dyn2.e,
+	src/v5_examples/dyn3.e, src/v5_examples/dyn4.e,
+	src/v5_examples/dyn5.e, src/v5_examples/dynfull.e,
+	src/v5_examples/empbld.sql, src/v5_examples/empbuild.c,
+	src/v5_examples/empbuild.e, src/v5_examples/empddl.sql,
+	src/v5_examples/employe2.sql, src/v5_examples/intlbld.e,
+	src/v5_examples/intlbld.sql, src/v5_examples/intlddl.sql,
+	src/v5_examples/intldml.sql, src/v5_examples/stat10.e,
+	src/v5_examples/stat11.e, src/v5_examples/stat12.e,
+	src/v5_examples/stat12t.e, src/v5_examples/winevent.c:
+	
+	Changed the default extensions for databases from .gdb to .fdb The
+	Windows and OS X builds have not been updated yet.
+
 2003-03-16 13:04  dimitr
 
 	* firebird2/src/dsql/keywords.cpp:
