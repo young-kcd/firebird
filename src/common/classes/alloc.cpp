@@ -23,7 +23,6 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *
- *  $Id: alloc.cpp,v 1.75 2004-12-17 11:12:58 alexpeshkoff Exp $
  *
  */
 

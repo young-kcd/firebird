@@ -29,7 +29,6 @@
  *		Alex Peshkoff <peshkoff@mail.ru>
  *				added PermanentStorage and AutoStorage classes.
  *
- *  $Id: alloc.h,v 1.57 2004-12-17 11:12:58 alexpeshkoff Exp $
  *
  */
 
