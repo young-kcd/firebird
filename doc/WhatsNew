@@ -3,6 +3,11 @@
   **************
 
     * Fixed unregistered bug.
+        Server leaks resources when an exception is thrown from the selectable stored procedure
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
         Problem with deadlock detection when pessimistic locking (WITH LOCK syntax) is used
       Contributor(s):
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
