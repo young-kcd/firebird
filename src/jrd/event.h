@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 23-Feb-2002 Dmitry Yemanov - Events wildcarding
+ *
  */
 
 #ifndef _JRD_EVENT_H_
@@ -43,6 +46,7 @@
 #define QUE_INIT(que)	{que.srq_forward = que.srq_backward = REL_PTR (&que);}
 #define QUE_EMPTY(que)	(que.srq_forward == REL_PTR (&que))
 #define QUE_NEXT(que)	ABS_PTR (que.srq_forward)
+#define QUE_PREV(que)	ABS_PTR (que.srq_backward)
 
 #define QUE_LOOP(header,que)	for (que = (SRQ*) QUE_NEXT (header);\
 	que != &header; que = (SRQ*) QUE_NEXT ((*que)))
@@ -83,7 +87,8 @@ typedef struct evh {
 #define type_req	5			/* Request block */
 #define type_evnt	6			/* Event */
 #define type_ses	7			/* Session */
-#define type_max	8
+#define type_ape	8			/* Actually posted event block */
+#define type_max	9
 
 typedef struct hdr
 {
@@ -168,6 +173,20 @@ typedef struct rint {
 	PTR rint_request;			/* Request of interest */
 	PTR rint_next;				/* Next interest of request */
 	SLONG rint_count;			/* Threshhold count */
+#ifdef EVENTS_WILDCARDING
+	PTR	rint_apes;				/* List of actually posted events */
+#endif /* EVENTS_WILDCARDING */
 } *RINT;
+
+/* Actually posted event block */
+
+#ifdef EVENTS_WILDCARDING
+typedef struct ape {
+	PTR	ape_next;				/* Next actually posted event block */
+	USHORT ape_count;			/* Current actually posted event count */
+	USHORT ape_length;			/* Length of actually posted event name */
+	TEXT ape_name[1];			/* Actually posted event name */
+} *APE;
+#endif /* EVENTS_WILDCARDING */
 
 #endif /* _JRD_EVENT_H_ */

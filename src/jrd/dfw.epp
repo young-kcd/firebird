@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 23-Feb-2002 Dmitry Yemanov - Events wildcarding
+ *
  */
 
 #ifdef SHLIB_DEFS
@@ -613,6 +616,13 @@ void DFW_perform_post_commit_work(TRA transaction)
 		{
 			ptr = &(*ptr)->dfw_next;
 		}
+
+#ifdef EVENTS_WILDCARDING
+#ifndef WINDOWS_ONLY /* Events are not supported under LIBS */
+	/* Deliver all pending events */
+	EVENT_post_finalize();
+#endif
+#endif /* EVENTS_WILDCARDING */
 }
 
 

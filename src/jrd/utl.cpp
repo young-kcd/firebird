@@ -22,6 +22,7 @@
  *
  * 2002.02.15 Sean Leyne - Code Cleanup is required of obsolete "EPSON", "XENIX" ports
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
+ * 23-Feb-2002 Dmitry Yemanov - Events wildcarding
  *
  */
 
@@ -955,7 +956,11 @@ SCHAR * result_buffer)
 
 	p++;
 	q++;
+#ifdef EVENTS_WILDCARDING
+	while (p < end && *q) { /* Ignore the detailed part of EPB */
+#else /* EVENTS_WILDCARDING */
 	while (p < end) {
+#endif /* EVENTS_WILDCARDING */
 		/* skip over the event name */
 
 		i = (USHORT) * p++;

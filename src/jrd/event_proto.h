@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 23-Feb-2002 Dmitry Yemanov - Events wildcarding
+ *
  */
 
 #ifndef _JRD_EVENT_PROTO_H_
@@ -33,6 +36,9 @@ SLONG EVENT_create_session(STATUS *);
 int EVENT_delete_session(SLONG);
 struct evh *EVENT_init(STATUS *, USHORT);
 int EVENT_post(STATUS *, USHORT, TEXT *, USHORT, TEXT *, USHORT);
+#ifdef EVENTS_WILDCARDING
+void EVENT_post_finalize();
+#endif /* EVENTS_WILDCARDING */
 SLONG EVENT_que(STATUS *, SLONG, USHORT, TEXT *, USHORT, UCHAR *, FPTR_VOID,
 				void *);
 
