@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  * 
  *
- *  $Id: class_test.cpp,v 1.20 2004-08-22 21:31:19 skidder Exp $
+ *  $Id: class_test.cpp,v 1.21 2004-08-28 05:19:23 skidder Exp $
  *
  */
 
@@ -366,8 +366,8 @@ void testBePlusTree() {
 	printf(passed ? "PASSED\n" : "FAILED\n");
 }
 
-const int ALLOC_ITEMS	= 10000000;
-const int MAX_ITEM_SIZE	= 50;
+const int ALLOC_ITEMS	= 5000000;
+const int MAX_ITEM_SIZE	= 300;
 const int BIG_ITEMS		= ALLOC_ITEMS / 10;
 const int BIG_SIZE		= MAX_ITEM_SIZE * 5;
 
@@ -375,8 +375,8 @@ const int LARGE_ITEMS	= 10;
 const size_t LARGE_ITEM_SIZE	= 300000;
 
 // Use define to be able to disable some of the checks easily
-//#define VERIFY_POOL(pool) pool->verify_pool()
-#define VERIFY_POOL(pool)
+#define VERIFY_POOL(pool) pool->verify_pool(true)
+//#define VERIFY_POOL(pool)
 
 struct AllocItem {
 	int order;
@@ -410,6 +410,7 @@ void testAllocator() {
 	VERIFY_POOL(pool);
 	for (i = 0; i < ALLOC_ITEMS; i++) {
 		n = n * 47163 - 57412;
+//		n = n * 45578 - 17651;
 		AllocItem temp = {n, pool->allocate((n % MAX_ITEM_SIZE + MAX_ITEM_SIZE) / 2 + 1)};
 		items.add(temp);
 	}
@@ -432,6 +433,7 @@ void testAllocator() {
 	VERIFY_POOL(pool);
 	for (i = 0; i < BIG_ITEMS; i++) {
 		n = n * 47163 - 57412;
+//		n = n * 45578 - 17651;
 		AllocItem temp = {n, pool->allocate((n % BIG_SIZE + BIG_SIZE) / 2 + 1)};
 		bigItems.add(temp);
 	}
