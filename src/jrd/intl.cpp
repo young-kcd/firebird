@@ -1660,7 +1660,7 @@ unsigned short TextTypeNC::mbtowc(WCHAR *wc, unsigned char *ptr, unsigned short 
 	}
 	if (wc)
 		*wc = 0;
-	return -1;					/* No more characters */
+	return (unsigned short)-1;			/* No more characters */
 }
 
 unsigned short TextTypeMB::contains(TDBB a, unsigned char *b,
@@ -1731,7 +1731,7 @@ unsigned short TextTypeMB::mbtowc(WCHAR *wc, unsigned char *ptr, unsigned short 
 	}
 	if (wc)
 		*wc = 0;
-	return -1;					/* No more characters */
+	return (unsigned short)-1;			/* No more characters */
 }
 
 unsigned short TextTypeWC::to_wc(unsigned char *pDestUC,
@@ -1844,7 +1844,7 @@ unsigned short TextTypeWC::mbtowc(WCHAR *wc, unsigned char *ptr, unsigned short 
 	}
 	if (wc)
 		*wc = 0;
-	return -1;					/* No more characters */
+	return (unsigned short)-1;			/* No more characters */
 }
 
 

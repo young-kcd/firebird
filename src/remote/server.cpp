@@ -4373,7 +4373,7 @@ STATUS port::service_attach(P_ATCH* attach, PACKET* send)
 	new_spb = new_spb_buffer;
 	if (string = this->port_user_name)
 	{
-		if ((spb_length + 3 + string->str_length) > sizeof(new_spb_buffer))
+		if ((spb_length + 3 + string->str_length) > (int)sizeof(new_spb_buffer))
 			new_spb =
 				ALLR_alloc((SLONG) (spb_length + 3 + string->str_length));
 		p = new_spb;
