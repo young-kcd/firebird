@@ -146,13 +146,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\btr.cpp">
-				<FileConfiguration
-					Name="Release|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						GlobalOptimizations="FALSE"/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\builtin.cpp">
@@ -246,13 +239,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\idx.cpp">
-				<FileConfiguration
-					Name="Release|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						GlobalOptimizations="FALSE"/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\inf.cpp">
@@ -298,12 +284,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\nav.cpp">
-				<FileConfiguration
-					Name="Release|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						GlobalOptimizations="FALSE"/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\nbak.cpp">
@@ -313,12 +293,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\opt.cpp">
-				<FileConfiguration
-					Name="Release|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						GlobalOptimizations="FALSE"/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\Optimizer.cpp">
@@ -370,13 +344,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\sort.cpp">
-				<FileConfiguration
-					Name="Release|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						GlobalOptimizations="FALSE"/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\sort_mem.cpp">
