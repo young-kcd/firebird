@@ -1,3 +1,116 @@
+2004-03-20 16:45  alexpeshkoff
+
+	* firebird2/src/: common/classes/auto.h,
+	common/config/config_file.cpp, jrd/jrd.h, lock/manager.cpp,
+	utilities/nbackup.cpp, jrd/os/posix/unix.cpp:
+	
+	1. introduced Jrd and Ods namespaces 2. cleanup of blk* request
+	conversions 3. fixed memory allocation in Execute Statement ***
+	posix build fixes ***
+
+2004-03-20 16:30  alexpeshkoff
+
+	* firebird2/src/jrd/: exe.cpp, bookmark.cpp, idx.cpp, shut.cpp:
+	
+	1. introduced Jrd and Ods namespaces 2. cleanup of blk* request
+	conversions 3. fixed memory allocation in Execute Statement
+
+2004-03-20 16:26  alexpeshkoff
+
+	* firebird2/src/jrd/: cch.cpp, cmp.cpp:
+	
+	1. introduced Jrd and Ods namespaces 2. cleanup of blk* request
+	conversions 3. fixed memory allocation in Execute Statement
+
+2004-03-20 16:21  alexpeshkoff
+
+	* firebird2/src/jrd/dyn.epp:
+	
+	1. introduced Jrd and Ods namespaces 2. cleanup of blk* request
+	conversions 3. fixed memory allocation in Execute Statement
+
+2004-03-20 16:12  alexpeshkoff
+
+	* firebird2/src/jrd/dpm.epp:
+	
+	1. introduced Jrd and Ods namespaces 2. cleanup of blk* request
+	conversions 3. fixed memory allocation in Execute Statement
+
+2004-03-20 15:57  alexpeshkoff
+
+	* firebird2/src/: alice/alice.cpp, alice/alice.h,
+	alice/alice_proto.h, burp/burp.cpp, burp/burp.h, burp/burp_proto.h,
+	common/classes/fb_pair.h, common/classes/fb_string.cpp,
+	dsql/dsql.cpp, dsql/dsql.h, dsql/dsql_proto.h, include/fb_string.h,
+	jrd/all.cpp, jrd/all.h, jrd/blb.cpp, jrd/blb.h, jrd/blb_proto.h,
+	jrd/blf_proto.h, jrd/blk.h, jrd/blob_filter.cpp, jrd/blob_filter.h,
+	jrd/bookmark.h, jrd/btn.cpp, jrd/btn.h, jrd/btr.cpp, jrd/btr.h,
+	jrd/btr_proto.h, jrd/cch.h, jrd/cch_proto.h, jrd/cmp_proto.h,
+	jrd/cvt.cpp, jrd/cvt2.cpp, jrd/dbg_proto.h, jrd/dfw.epp,
+	jrd/dfw_proto.h, jrd/dls.cpp, jrd/dls_proto.h, jrd/dmp_proto.h,
+	jrd/dpm_proto.h, jrd/dyn.h, jrd/dyn_def.epp, jrd/dyn_del.epp,
+	jrd/dyn_df_proto.h, jrd/dyn_dl_proto.h, jrd/dyn_md_proto.h,
+	jrd/dyn_mod.epp, jrd/dyn_proto.h, jrd/dyn_ut_proto.h,
+	jrd/dyn_util.epp, jrd/err.cpp, jrd/err_proto.h, jrd/evl.cpp,
+	jrd/evl_proto.h, jrd/exe.h, jrd/exe_proto.h,
+	jrd/execute_statement.cpp, jrd/execute_statement.h, jrd/ext.cpp,
+	jrd/ext.h, jrd/ext_proto.h, jrd/filte_proto.h, jrd/filters.cpp,
+	jrd/fun.epp, jrd/fun_proto.h, jrd/grant.epp, jrd/grant_proto.h,
+	jrd/idx_proto.h, jrd/inf.cpp, jrd/inf_proto.h, jrd/ini.epp,
+	jrd/ini_proto.h, jrd/intl.cpp, jrd/intl_classes.h,
+	jrd/intl_proto.h, jrd/intlobj.h, jrd/isc_sync.cpp, jrd/jrd.cpp,
+	jrd/jrd.h, jrd/jrd_proto.h, jrd/lck.cpp, jrd/lck.h,
+	jrd/lck_proto.h, jrd/lls.h, jrd/met.epp, jrd/met_proto.h,
+	jrd/nav.cpp, jrd/nav_proto.h, jrd/nbak.cpp, jrd/nbak.h, jrd/ods.h,
+	jrd/opt.cpp, jrd/opt_proto.h, jrd/pag.cpp, jrd/pag.h,
+	jrd/pag_proto.h, jrd/par.cpp, jrd/par_proto.h, jrd/pcmet.epp,
+	jrd/pcmet_proto.h, jrd/pwd.cpp, jrd/req.h, jrd/rlck.cpp,
+	jrd/rlck_proto.h, jrd/rng.h, jrd/rng_proto.h, jrd/rpb_chain.cpp,
+	jrd/rpb_chain.h, jrd/rse.cpp, jrd/rse.h, jrd/rse_proto.h,
+	jrd/sbm.cpp, jrd/sbm.h, jrd/sbm_proto.h, jrd/scl.epp, jrd/scl.h,
+	jrd/scl_proto.h, jrd/sdl.cpp, jrd/sdl_proto.h, jrd/sdw.cpp,
+	jrd/sdw.h, jrd/sdw_proto.h, jrd/shut_proto.h, jrd/sort.cpp,
+	jrd/sort.h, jrd/sort_mem.cpp, jrd/sort_mem.h, jrd/sort_proto.h,
+	jrd/sqz.cpp, jrd/sqz.h, jrd/sqz_proto.h, jrd/svc.cpp, jrd/svc.h,
+	jrd/svc_proto.h, jrd/sym.cpp, jrd/sym_proto.h, jrd/tpc.cpp,
+	jrd/tpc.h, jrd/tpc_proto.h, jrd/tra.cpp, jrd/tra.h,
+	jrd/tra_proto.h, jrd/trig.h, jrd/val.cpp, jrd/val.h,
+	jrd/val_proto.h, jrd/vio.cpp, jrd/vio_proto.h, jrd/why.cpp,
+	jrd/y_handle.h, jrd/os/pio.h, jrd/os/pio_proto.h,
+	jrd/os/win32/winnt.cpp, lock/print.cpp, utilities/gsec/gsec.cpp,
+	utilities/gsec/gsec.h, utilities/gsec/gsec_proto.h,
+	utilities/gstat/dba.epp, utilities/gstat/ppg.cpp,
+	utilities/gstat/ppg_proto.h, utilities/rebuild/rebui_proto.h:
+	
+	1. introduced Jrd and Ods namespaces 2. cleanup of blk* request
+	conversions 3. fixed memory allocation in Execute Statement
+
+2004-03-20 15:31  alexpeshkoff
+
+	* firebird2/src/gpre/int_cxx.cpp:
+	
+	dropped unneeded conversion of all requests to/from blk*
+
+2004-03-20 15:30  alexpeshkoff
+
+	* firebird2/src/common/classes/auto.h:
+	
+	1. dropped unneeded AutoPtrFromString 2. added private copy
+	constructor and assignment to avoid errors
+
+2004-03-20 15:29  alexpeshkoff
+
+	* firebird2/src/common/classes/alloc.h:
+	
+	assert if AutoStorage() used for object not on the stack
+
+2004-03-20 04:07  robocop
+
+	* firebird2/src/jrd/: exe.h, intl.cpp, intl_classes.h, intlobj.h,
+	opt.cpp, par.cpp:
+	
+	Cleanup.
+
 2004-03-19 12:25  aafemt
 
 	* firebird2/src/jrd/: opt.cpp, par.cpp:
