@@ -3297,10 +3297,8 @@ static JRD_NOD release_bookmark(TDBB tdbb, JRD_NOD node)
  *	Deallocate the passed bookmark.
  *
  **************************************/
-	JRD_REQ request;
-
 	SET_TDBB(tdbb);
-	request = tdbb->tdbb_request;
+	JRD_REQ request = tdbb->tdbb_request;
 	BLKCHK(node, type_nod);
 
 	if (request->req_operation == jrd_req::req_evaluate) {
@@ -3325,17 +3323,14 @@ static void release_proc_save_points(JRD_REQ request)
  *	Release temporary blobs assigned by this request.
  *
  **************************************/
-	JRD_TRA transaction;
-	SAV sav_point, temp_sav_point;
+	SAV sav_point = request->req_proc_sav_point;
 
-/* Release savepoints assigned by this request */
-
-	if ((transaction = request->req_transaction) &&
-		(sav_point = request->req_proc_sav_point)) {
-		for (temp_sav_point = sav_point; temp_sav_point->sav_next;
-			 temp_sav_point = temp_sav_point->sav_next);
-		temp_sav_point->sav_next = transaction->tra_save_free;
-		transaction->tra_save_free = sav_point;
+	if (request->req_transaction) {
+		while (sav_point) {
+			SAV temp_sav_point = sav_point->sav_next;
+			delete sav_point;
+			sav_point = temp_sav_point;
+		}
 	}
 	request->req_proc_sav_point = NULL;
 }

@@ -57,7 +57,6 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 	struct vec *tra_relation_locks;	/* locks for relations */
 	struct sbm *tra_commit_sub_trans;	/* commited sub-transactions */
 	struct sav *tra_save_point;	/* list of savepoints  */
-	struct sav *tra_save_free;	/* free savepoints */
 	SLONG tra_save_point_number;	/* next save point number to use */
 	ULONG tra_flags;
 #ifdef PC_ENGINE
@@ -130,7 +129,6 @@ class sav : public pool_alloc<type_sav>
 {
     public:
 	struct vct *sav_verb_actions;	/* verb action list */
-	struct vct *sav_verb_free;	/* free verb action block */
 	USHORT sav_verb_count;		/* Active verb count */
 	SLONG sav_number;			/* save point number */
 	struct sav *sav_next;

@@ -103,7 +103,6 @@ static void garbage_collect_idx(TDBB, RPB *, RPB *, REC);
 #ifdef GARBAGE_THREAD
 static void THREAD_ROUTINE garbage_collector(DBB);
 #endif
-static SAV get_free_save_point_block(JRD_TRA);
 static void list_staying(TDBB, RPB *, LLS *);
 #ifdef GARBAGE_THREAD
 static void notify_garbage_collector(TDBB, RPB *);
@@ -163,20 +162,16 @@ SLONG VIO_savepoint_large(struct sav *savepoint, SLONG size)
  *      value gets negative
  *
  **************************************/
-	VCT verb_actions;
-	SLONG count;
-
-	count = size;
-	verb_actions = savepoint->sav_verb_actions;
+	VCT verb_actions = savepoint->sav_verb_actions;
 
 	while (verb_actions) {
-		count -= SBM_size(&verb_actions->vct_records);
-		if (count < 0)
+		size -= SBM_size(&verb_actions->vct_records);
+		if (size < 0)
 			break;
 		verb_actions = verb_actions->vct_next;
 	}
 
-	return count;
+	return size;
 }
 
 void VIO_backout(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
@@ -2471,12 +2466,7 @@ void VIO_start_save_point(TDBB tdbb, JRD_TRA transaction)
 
 	SET_TDBB(tdbb);
 
-	if ( (sav_point = transaction->tra_save_free) ) {
-		transaction->tra_save_free = sav_point->sav_next;
-		sav_point->sav_flags = 0;
-	} else
-		sav_point = FB_NEW(*transaction->tra_pool) sav();
-
+	sav_point = FB_NEW(*transaction->tra_pool) sav();
 	sav_point->sav_number = ++transaction->tra_save_point_number;
 	sav_point->sav_next = transaction->tra_save_point;
 	transaction->tra_save_point = sav_point;
@@ -2940,19 +2930,16 @@ void VIO_verb_cleanup(TDBB tdbb, JRD_TRA transaction)
 		}
 		SBM_reset(&action->vct_records);
 		if (action->vct_undo) {
-			if (action->vct_undo->getFirst()) do {
-				delete action->vct_undo->current().rec_data;
-			} while (action->vct_undo->getNext());
+			if (action->vct_undo->getFirst())
+				do {
+					delete action->vct_undo->current().rec_data;
+				} while (action->vct_undo->getNext());
 			delete action->vct_undo;
-			action->vct_undo = NULL;
 		}
-		action->vct_next = sav_point->sav_verb_free;
-		sav_point->sav_verb_free = action;
+		delete action;
 	}
 
-	sav_point->sav_verb_count = 0;
-	sav_point->sav_next = transaction->tra_save_free;
-	transaction->tra_save_free = sav_point;
+	delete sav_point;
 
 /* If the only remaining savepoint is the 'transaction-level' savepoint
    that was started by TRA_start, then check if it hasn't grown out of
@@ -2961,8 +2948,10 @@ void VIO_verb_cleanup(TDBB tdbb, JRD_TRA transaction)
 
 	if (transaction->tra_save_point &&
 		(transaction->tra_save_point->sav_flags & SAV_trans_level) &&
-		VIO_savepoint_large(transaction->tra_save_point,SAV_LARGE) < 0)
-		VIO_verb_cleanup(tdbb, transaction);	/* get rid of savepoint */
+		VIO_savepoint_large(transaction->tra_save_point, SAV_LARGE) < 0)
+	{
+		VIO_verb_cleanup(tdbb, transaction);	// get rid of savepoint
+	}
 
 	tdbb->tdbb_default = old_pool;
 }
@@ -2997,27 +2986,29 @@ void VIO_merge_proc_sav_points(
 	if (!transaction->tra_save_point)
 		return;
 
-/* One by one go on putting all savepoints in the sav_point_list on
-   top of transaction save points and call VIO_verb_cleanup () */
+	// one by one go on putting all savepoints in the sav_point_list on
+	// top of transaction save points and call VIO_verb_cleanup()
 
 	for (sav_point = *sav_point_list; sav_point;
-		 sav_point = sav_point->sav_next) {
+		 sav_point = sav_point->sav_next)
+	{
 		sav_next = sav_point->sav_next;
 		sav_number = sav_point->sav_number;
 
-		/* Add it to the front */
+		// add it to the front
+
 		sav_point->sav_next = transaction->tra_save_point;
 		transaction->tra_save_point = sav_point;
 
 		VIO_verb_cleanup(tdbb, transaction);
-		sav_point = get_free_save_point_block(transaction);
+
+		sav_point = FB_NEW(*transaction->tra_pool) sav();
 		sav_point->sav_verb_count = 0;
 		sav_point->sav_next = sav_next;
 		sav_point->sav_number = sav_number;
 		*sav_point_list = sav_point;
 		sav_point_list = &sav_point->sav_next;
 	}
-
 }
 
 
@@ -3039,7 +3030,6 @@ static void check_class(
  *
  **************************************/
 	DSC desc1, desc2;
-	ATT attachment;
 
 	SET_TDBB(tdbb);
 
@@ -3048,7 +3038,7 @@ static void check_class(
 	if (!MOV_compare(&desc1, &desc2))
 		return;
 
-	attachment = tdbb->tdbb_attachment;
+	ATT attachment = tdbb->tdbb_attachment;
 
 	SCL_check_access(attachment->att_security_class, 0, 0, 0, SCL_protect,
 					 "DATABASE", "");
@@ -3069,11 +3059,9 @@ static void check_control(TDBB tdbb)
  *	privilege on the current database.
  *
  **************************************/
-	ATT attachment;
-
 	SET_TDBB(tdbb);
 
-	attachment = tdbb->tdbb_attachment;
+	ATT attachment = tdbb->tdbb_attachment;
 
 	SCL_check_access(attachment->att_security_class,
 					 0, 0, 0, SCL_control, "DATABASE", "");
@@ -3092,13 +3080,11 @@ static BOOLEAN check_user(TDBB tdbb, DSC * desc)
  *	Validate string against current user name.
  *
  **************************************/
-	TEXT *p, *end, *q;
-
 	SET_TDBB(tdbb);
 
-	p = (TEXT *) desc->dsc_address;
-	end = p + desc->dsc_length;
-	q = tdbb->tdbb_attachment->att_user->usr_user_name;
+	TEXT* p = (TEXT *) desc->dsc_address;
+	TEXT* end = p + desc->dsc_length;
+	TEXT* q = tdbb->tdbb_attachment->att_user->usr_user_name;
 
 /* It is OK to not internationalize this function for v4.00 as
  * User names are limited to 7-bit ASCII for v4.00
@@ -3719,30 +3705,6 @@ gc_exit:
 	}
 }
 #endif
-
-
-static SAV get_free_save_point_block(JRD_TRA transaction)
-{
-/**************************************
- *
- *      g e t _ f r e e _ s a v e _ p o i n t _ b l o c k
- *
- **************************************
- *
- * Functional description
- *      Get a free save point block from free list.
- *	If not available make one.
- *
- **************************************/
-	SAV sav_point;
-
-	if ( (sav_point = transaction->tra_save_free) )
-		transaction->tra_save_free = sav_point->sav_next;
-	else
-		sav_point = FB_NEW(*transaction->tra_pool) sav();
-
-	return sav_point;
-}
 
 
 static void list_staying(TDBB tdbb, RPB * rpb, LLS * staying)
@@ -4669,10 +4631,7 @@ static void verb_post(
 			break;
 
 	if (!action) {
-		if ( (action = transaction->tra_save_point->sav_verb_free) )
-			transaction->tra_save_point->sav_verb_free = action->vct_next;
-		else
-			action = FB_NEW(*tdbb->tdbb_default) vct();
+		action = FB_NEW(*tdbb->tdbb_default) vct();
 		action->vct_next = transaction->tra_save_point->sav_verb_actions;
 		transaction->tra_save_point->sav_verb_actions = action;
 		action->vct_relation = rpb->rpb_relation;
