@@ -124,6 +124,9 @@ static void	yyerror (TEXT *);
 #ifdef IN
 #undef IN
 #endif
+#ifdef SHARED /* sys/mman.h */
+#undef SHARED
+#endif
 
 /* Fix 69th procedure problem - solution from Oleg Loa */
 #define YYSTACKSIZE		2048
