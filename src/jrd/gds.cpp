@@ -67,6 +67,7 @@
 #include "../jrd/misc.h"
 
 #ifdef DARWIN
+#include <CoreServices.framework/Frameworks/CarbonCore.framework/Headers/MacTypes.h>
 #include <CoreFoundation/CFBundle.h>
 #include <CoreFoundation/CFURL.h>
 #endif
