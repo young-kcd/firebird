@@ -349,6 +349,17 @@ namespace Firebird
 		bool LoadFromFile(FILE *file);
 		void vprintf(const char* Format, va_list params);
 		void printf(const char* Format, ...);
+		inline int saveTo(char* to, size_type toSize) const
+		{
+			if (--toSize > length())
+			{
+				toSize = length();
+			}
+			memcpy(to, c_str(), toSize);
+			to[toSize] = 0;
+			return toSize;
+		}
+
 		inline ~AbstractString() {
 			if (stringBuffer != inlineBuffer)
 				delete[] stringBuffer;
