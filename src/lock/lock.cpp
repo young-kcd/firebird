@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.53 2003-05-26 15:44:20 dimitr Exp $
+$Id: lock.cpp,v 1.54 2003-06-01 15:49:48 skidder Exp $
 */
 
 #include "firebird.h"
@@ -851,6 +851,9 @@ int LOCK_init(
 #endif
 
 #if !defined SUPERSERVER && defined HAVE_MMAP
+/* Map the owner block separately so that threads waiting
+   on synchronization variables embedded in the owner block
+   don't have to coordinate during lock table unmapping. */
 	if (LOCK_owner_offset &&
 		!(LOCK_owner = (OWN) ISC_map_object(status_vector, &LOCK_data,
 											LOCK_owner_offset,
@@ -859,9 +862,6 @@ int LOCK_init(
 #endif
 
 #if !defined SUPERSERVER && defined SOLARIS_MT
-/* Map the owner block separately so that threads waiting
-   on synchronization variables embedded in the owner block
-   don't have to coordinate during lock table unmapping. */
 	AST_ALLOC;
 	ULONG status = gds__thread_start( reinterpret_cast < FPTR_INT_VOID_PTR > ( 
 		blocking_action_thread ), &LOCK_owner_offset, THREAD_high, 0, 0);
@@ -1495,7 +1495,10 @@ static void acquire( PTR owner_offset)
 			return;
 		}
 		LOCK_header = header;
+#ifdef WIN_NT
+		// Other platforms use directly mapped objects
 		LOCK_owner = (OWN)ABS_PTR(LOCK_owner_offset);
+#endif
 	}
 
 /* If we were able to acquire the MUTEX, but there is an prior owner marked
@@ -1613,7 +1616,10 @@ static UCHAR *alloc( SSHORT size, ISC_STATUS * status_vector)
 			(LHB) ISC_remap_file(status_vector, &LOCK_data, length, TRUE);
 		if (header) {
 			LOCK_header = header;
+#ifdef WIN_NT
+			// Other platforms use directly mapped objects
 			LOCK_owner = (OWN)ABS_PTR(LOCK_owner_offset);
+#endif
 			ASSERT_ACQUIRED;
 			LOCK_header->lhb_length = LOCK_data.sh_mem_length_mapped;
 			LOCK_header->lhb_used += size;
