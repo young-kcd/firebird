@@ -1,167 +1,178 @@
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License, or (at your option) any later version.
+# You may obtain a copy of the Licence at
+# http://www.gnu.org/licences/lgpl.html
 # 
-#   The contents of this file are subject to the Mozilla Public
-#   License Version 1.1 (the "License"); you may not use this file
-#   except in compliance with the License. You may obtain a copy of
-#   the License at http://www.mozilla.org/MPL/
-#   Alternatively, the contents of this file may be used under the
-#   terms of the GNU General Public License Version 2 or later (the
-#   "GPL"), in which case the provisions of the GPL are applicable
-#   instead of those above. You may obtain a copy of the Licence at
-#   http://www.gnu.org/copyleft/gpl.html
+# As a special exception this file can also be included in modules
+# with other source code as long as that source code has been 
+# released under an Open Source Initiative certificed licence.  
+# More information about OSI certification can be found at: 
+# http://www.opensource.org 
 # 
-#   This program is distributed in the hope that it will be useful,
-#   but WITHOUT ANY WARRANTY; without even the implied warranty of
-#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#   Relevant for more details.
+# This module is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public Licence for more details.
 # 
-#   This file was created by members of the firebird development team.
-#   All individual contributions remain the Copyright (C) of those
-#   individuals.  Contributors to this file are either listed here or
-#   can be obtained from a CVS history command.
-# 
-#   All rights reserved.
+# This module was created by members of the firebird development 
+# team.  All individual contributions remain the Copyright (C) of 
+# those individuals and all rights are reserved.  Contributors to 
+# this file are either listed below or can be obtained from a CVS 
+# history command.
 #
-#   Created by: Mark O'Donohue <mark.odonohue@ludwig.edu.au>
+#  Created by:  Mark O'Donohue <mark.odonohue@ludwig.edu.au>
+#
+#  Contributor(s):
 # 
-#   Contributor(s):
-# 
-# 
-#   $Id: Makefile.in,v 1.4 2002-11-11 13:09:18 eku Exp $
-# 
-
-#RedhatPackageDir=/usr/src/redhat/RPMS/i386
-RedhatPackageDir=/usr/src/RPM/RPMS/i386
-
-
-ClassicRPMFile=FirebirdCS-$(Version).i386.rpm
-SuperRPMFile=FirebirdSS-$(Version).i386.rpm
-
-
-classicpackages: classictarfile classicrpmfile
-
-
-classicrpmfile: runclassicinstall $(ClassicRPMFile)
-
-superrpmfile: runsuperinstall $(SuperRPMFile)
-
-
-$(ClassicRPMFile): CSrpmscript
-	rpm -bb CSrpmscript
-	cp $(RedhatPackageDir)/$(ClassicRPMFile) .
-
-
-$(SuperRPMFile): SSrpmscript
-	rpm -bb SSrpmscript
-	cp $(RedhatPackageDir)/$(SuperRPMFile) .
+#
+#  $Id: Makefile.in,v 1.5 2002-11-11 15:17:01 skywalker Exp $
+#
+ROOT=..
 
 
 
-CSrpmscript: 
+include     $(ROOT)/gen/make.platform
+include     $(ROOT)/gen/make.rules
+include     $(ROOT)/gen/make.defaults
+include     $(ROOT)/gen/make.shared.variables
+
+
+FirebirdInstallPrefix=@prefix@
+
+ @SET_MAKE@
+
+FIREBIRD=$(FirebirdInstallPrefix)
+
+export -n FIREBIRD
+export -n INTERBASE
+
+.PHONY: install dist packages tarfile rpmfile 
+.PHONY: buildTarDir buildImageDir
+
+# Some of these targets are run from the root tree of the build.
+# those need to know where the install subdirectory is kept.
+# Others are run locally these need to know the path back to the
+# root of the build tree.
+
+BuildRoot=$(GEN_ROOT)
+
+InstallRoot=.
+
+
+FirebirdBuildPrefix=$(GEN_ROOT)
+
+#export FirebirdBuildPrefix
+#export FirebirdInstallPrefix
+#export PackageVersion
+
+BuildVersion=@FIREBIRD_VERSION@.@FB_BUILD_NUM@
+PackageVersion=@FIREBIRD_PACKAGE_VERSION@
+
+Version=$(BuildVersion)-$(PackageVersion)
+
+
+
+# This means something like: FirebirdCS-2.0.0-1.i386.tar.gz
+
+TarDir= Firebird$(ArchPrefix)-$(Version).$(CpuType)
+TarFile=Firebird$(ArchPrefix)-$(Version).$(CpuType).tar.gz
+RPMFile=Firebird$(ArchPrefix)-$(Version).$(CpuType).rpm
+
+
+# Determine where the packages are built.  Each distribution builds them in
+# their own spot.
+# This should be moved to configure.in file
+RedhatPackageDir=/usr/src/redhat/RPMS/$(CpuType)
+MandrakePackageDir=/usr/src/RPM/RPMS/$(CpuType)
+SuSEPackageDir=/usr/src/packages/RPMS/$(CpuType)
+
+PackageDir:=$(shell if [ -d $(RedhatPackageDir) ]; then echo $(RedhatPackageDir); \
+		           elif [ -d $(MandrakePackageDir) ]; then echo $(MandrakePackageDir); \
+		           elif [ -d $(SuSEPackageDir) ]; then echo $(SuSEPackageDir); \
+				   fi)
+
+
+
+PkgSrcDir=$(InstallRoot)/$(ArchType)
+ScriptDir=$(GEN_ROOT)/install/scripts/
+RPMSrcDir=$(GEN_ROOT)/install/scripts
+
+
+TarInstallDir=$(GEN_ROOT)/install
+
+
+
+dist : packages
+
+packages: tarfile rpmfile
+
+tarfile:  $(TarFile)
+
+#
+#$(TarFile) :  buildInstallDir
+#	(cd $(GEN_ROOT); tar -czf $(TarFile) install)
+
+$(TarFile) :  buildTarDir
+	(cd $(GEN_ROOT); tar -czf $(TarFile) $(TarDir))
+
+
+# No longer needed: MOD 7-Nov-2002
+#buildInstallDir:
+#	(cd $(GEN_ROOT); tar -czf install/firebird.tar.gz firebird)
+
+buildImageDir:
+	(cd $(GEN_ROOT); ./install/makeInstallImage.sh)
+
+
+buildTarDir: buildImageDir
+	mkdir -p $(GEN_ROOT)/$(TarDir)
+	cp -r $(GEN_ROOT)/install/scripts $(GEN_ROOT)/$(TarDir)
+	cp -r $(GEN_ROOT)/install/scripts/tarMainInstall.sh $(GEN_ROOT)/$(TarDir)/install.sh
+	chmod a+x $(GEN_ROOT)/$(TarDir)/install.sh $(GEN_ROOT)/$(TarDir)/scripts/*sh
+	(cd $(GEN_ROOT)/$(TarDir); tar -C ../buildroot -czf buildroot.tar.gz . )
+	(cd $(GEN_ROOT)/$(TarDir); tar -tzf buildroot.tar.gz > manifest.txt )
+
+
+install: buildTarDir
+	(cd $(GEN_ROOT)/$(TarDir); ./install.sh)
+
+
+rpmfile: $(RPMFile)
+
+$(RPMFile) : $(GEN_ROOT)/install/rpmscript buildImageDir
+	rpm -bb $(GEN_ROOT)/install/rpmscript
+#	rpm -bb --buildroot `pwd`/buildroot $(GEN_ROOT)/rpmscript
+	cp $(PackageDir)/$(RPMFile) .
+
+
+.PHONY: $(GEN_ROOT)/install/rpmscript
+
+$(GEN_ROOT)/install/rpmscript :
 	echo $@
-	cat $(ClassicSrcDir)/CSrpmheader.txt > $@
+	cat $(RPMSrcDir)/rpmheader.txt > $@
 	echo "" >> $@
 	echo "%prep" >> $@
-#	cat $(ClassicSrcDir)/CSprepinstall.sh >> $@
+#	cat $(ClassicSrcDir)/prepinstall.sh >> $@
 	echo "" >> $@
 	echo "%build" >> $@
-#	cat $(ClassicSrcDir)/CSbuildinstall.sh >> $@
+#	cat $(ScriptDir)/buildinstall.sh >> $@
 	echo "" >> $@
 	echo "%install" >> $@
-#	cat $(ClassicSrcDir)/CSinstall.sh >> $@
+#	cat $(ScriptDir)/install.sh >> $@
 	echo "" >> $@
 	echo "%files" >> $@
-	cat $(ClassicSrcDir)/CSrpmfiles.txt >> $@
+	cat $(RPMSrcDir)/rpmfiles.txt >> $@
 	echo "" >> $@
 	echo "%pre" >> $@
-	cat $(ClassicSrcDir)/CSpreinstall.sh >> $@
+	cat $(ScriptDir)/preinstall.sh >> $@
 	echo "" >> $@
 	echo "%post" >> $@
-	cat $(ClassicSrcDir)/CSpostinstall.sh >> $@
+	cat $(ScriptDir)/postinstall.sh >> $@
 	echo "" >> $@
 	echo "%preun" >> $@
-	cat $(ClassicSrcDir)/CSpreuninstall.sh >> $@
+	cat $(ScriptDir)/preuninstall.sh >> $@
 	echo "" >> $@
 	echo "%postun" >> $@
-	cat $(ClassicSrcDir)/CSpostuninstall.sh >> $@
-
-SSrpmscript: 
-	echo $@
-	cat $(SuperSrcDir)/SSrpmheader.txt > $@
-	echo "" >> $@
-	echo "%prep" >> $@
-#	cat $(SuperSrcDir)/SSprepinstall.sh >> $@
-	echo "" >> $@
-	echo "%build" >> $@
-#	cat $(SuperSrcDir)/SSbuildinstall.sh >> $@
-	echo "" >> $@
-	echo "%install" >> $@
-#	cat $(SuperSrcDir)/SSinstall.sh >> $@
-	echo "" >> $@
-	echo "%files" >> $@
-	cat $(SuperSrcDir)/SSrpmfiles.txt >> $@
-	echo "" >> $@
-	echo "%pre" >> $@
-	cat $(SuperSrcDir)/SSpreinstall.sh >> $@
-	echo "" >> $@
-	echo "%post" >> $@
-	cat $(SuperSrcDir)/SSpostinstall.sh >> $@
-	echo "" >> $@
-	echo "%preun" >> $@
-	cat $(SuperSrcDir)/SSpreuninstall.sh >> $@
-	echo "" >> $@
-	echo "%postun" >> $@
-	cat $(SuperSrcDir)/SSpostuninstall.sh >> $@
-
-# EKU: taken from Makefile.in.firebird, please adjust
-
-#____________________________________________________________________________
-# The installations need to find a better and possibly linux
-# specific home.  The tar installs should probably work with
-# other unix type of systems.
-
-# I have seperated super and classic out since I needed different
-# files in each case.
-
-miscFiles:	force
-	$(QUIET_ECHO) "Building miscellaneous install files..."
-	mkdir -p $(OBJS)/firebird/misc
-	-$(CP) $(SOURCE)/makefiles/install.unix $(OBJS)/firebird/install
-	-$(CP) $(SOURCE)/makefiles/servers.isc $(OBJS)/firebird
-	-$(CP) $(SOURCE)/makefiles/inetd.conf.unx $(OBJS)/firebird/inetd.conf.isc
-	-$(CP) $(SOURCE)/makefiles/services.isc $(OBJS)/firebird
-	-$(CP) $(SOURCE)/makefiles/sys.conf.isc $(OBJS)/firebird
-	-$(CP) $(SOURCE)/sandbox/skywalker/install/misc/firebird.xinetd $(OBJS)/firebird/misc
-
-superMiscFiles:	force
-	$(QUIET_ECHO) "Building miscellaneous install files..."
-	$(CP) source/$(SYSTEM)/install source/interbase
-	-$(CP) source/$(SYSTEM)/servers.isc source/interbase
-	$(CP) source/$(SYSTEM)/inetd.conf.isc source/interbase
-	$(CP) source/$(SYSTEM)/original/services.isc source/interbase
-	-$(CP) source/$(SYSTEM)/sys.conf.isc source/interbase
-	mkdir -p source/interbase/misc
-	$(CP) firebird/skywalker/install/misc/firebird.init.d.* source/interbase/misc
-
-#install: force
-#	$(MAKE) -f firebird/skywalker/install/Makefile install
-
-runclassicinstall: force
-	$(MAKE) -f firebird/skywalker/install/Makefile runclassicinstall
-
-classicpackages: force
-	$(MAKE) -f firebird/skywalker/install/Makefile classicpackages
-
-classictarfile: force
-	$(MAKE) -f firebird/skywalker/install/Makefile classictarfile
-
-classicrpmfile: force
-	$(MAKE) -f firebird/skywalker/install/Makefile classicrpmfile
-
-superpackages: force
-	$(MAKE) -f firebird/skywalker/install/Makefile superpackages
-
-supertarfile: force
-	$(MAKE) -f firebird/skywalker/install/Makefile supertarfile
-
-superrpmfile: force
-	$(MAKE) -f firebird/skywalker/install/Makefile superrpmfile
+	cat $(ScriptDir)/postuninstall.sh >> $@
