@@ -1,3 +1,149 @@
+2003-02-20 22:39  hippoman
+
+	* firebird2/builds/win32/msvc6/ib_udf.dsp:
+	
+	* deleted an empty /D switch that was causing problems when
+	importing the projects in msvc7
+
+2003-02-20 21:25  fsg
+
+	* firebird2/src/qli/dtr.cpp:
+	
+	Blas, could you please stop to replace warnings with errors :-)
+	main needs to return int
+
+2003-02-20 20:37  fsg
+
+	* firebird2/src/dudley/ddl.cpp:
+	
+	main needs to be int
+
+2003-02-20 16:50  brodsom
+
+	* firebird2/src/intlcpp/: lc_ascii.cpp, cs_unicode_ucs2.cpp:
+	
+	Some cleaning
+
+2003-02-20 16:46  brodsom
+
+	* firebird2/src/intl/: lc_narrow.h, cs_unicode_fss.h, cv_big5.h,
+	cv_gb2312.h, cv_jis.h, cv_ksc.h, cv_narrow.h, cv_unicode_fss.c,
+	cv_unicode_fss.h, lc_ascii.h, lc_big5.h, lc_dos.h, lc_ksc.c,
+	lc_narrow.c, lc_unicode_ucs2.c, cv_big5.c, cv_gb2312.c, cv_jis.c,
+	cv_ksc.c, cv_narrow.c, lc_ascii.c, lc_big5.c, lc_dos.c,
+	lc_gb2312.c, lc_iso8859_1.c, lc_iso8859_2.c, lc_jis.c, cs_ksc.c,
+	cs_narrow.c, cs_unicode_fss.c, cs_unicode_ucs2.c, cs_big5.c,
+	cs_gb2312.c, cs_jis.c:
+	
+	Update prototypes not valid for gcc when the function declaration
+	is updated (Thank to Erik)
+
+2003-02-20 15:51  dimitr
+
+	* firebird2/src/jrd/met.epp:
+	
+	Fixed SEGV implicitly caused by one of recent Blas' commits.
+
+2003-02-20 15:41  kkuznetsov
+
+	* firebird2/builds/posix/prefix.solx86:
+	
+	Some Impruvements with sfio
+
+2003-02-20 14:34  brodsom
+
+	* firebird2/src/intl/: lc_big5.c, lc_dos.c, lc_iso8859_1.c,
+	lc_iso8859_2.c, lc_jis.c, lc_ksc.c, lc_narrow.c, lc_unicode_ucs2.c:
+	
+	Update prototypes not valid for gcc when the function declaration
+	is updated (Thank to Erik)
+
+2003-02-20 11:58  dimitr
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Fixed stack oveflow caused by deep recursion and big stack arrays
+	in the optimizer.
+
+2003-02-20 07:57  tamlin
+
+	* firebird2/src/jrd/btr.cpp:
+	
+	back out const-correcntess fix
+
+2003-02-20 07:36  eku
+
+	* firebird2/: configure.in, src/common/classes/alloc.h,
+	src/common/classes/tree.h, src/make.new/config/config.h.in:
+	
+	XPG defines that prototypes for malloc/free have to be defined in
+	stdlib.h.  malloc.h is deprecated - removed.
+
+2003-02-20 07:17  eku
+
+	* firebird2/builds/posix/make.shared.variables:
+	
+	This file does not compile on POSIX platforms. Exclude it from the
+	build process until someone has fixed it.
+
+2003-02-20 07:15  eku
+
+	* firebird2/src/jrd/unix.cpp:
+	
+	Fixed typo. Thanks to Blas.
+
+2003-02-20 02:59  brodsom
+
+	* firebird2/src/: jrd/enc.cpp, dsql/parse.cpp:
+	
+	Remove lint and LIBC_SCCS defines (dummy)
+
+2003-02-20 02:39  brodsom
+
+	* firebird2/src/dsql/parse.cpp:
+	
+	Remove warnings
+
+2003-02-20 02:28  brodsom
+
+	* firebird2/builds/win32/: make6_debug.bat, make6_release.bat:
+	
+	Add gsplit and intlcpp projects to batch
+
+2003-02-20 02:28  brodsom
+
+	* firebird2/builds/win32/msvc6/: burp.dsp, burp_classic.dsp:
+	
+	Remove spit from burp project (and remove some warnings)
+
+2003-02-20 02:17  brodsom
+
+	* firebird2/builds/win32/msvc6/: Firebird2.dsw, gsplit.dsp:
+	
+	Add gsplit project
+
+2003-02-20 01:27  brodsom
+
+	* firebird2/src/: dudley/ddl.cpp, qli/show.epp:
+	
+	Remove warnings
+
+2003-02-20 01:24  tamlin
+
+	* firebird2/src/jrd/: btr.cpp, btr_proto.h:
+	
+	const correctness and a quite large speed-up in BTR_get_quad for
+	IA32 CPU arch.
+
+2003-02-20 01:08  brodsom
+
+	* firebird2/src/: utilities/install_reg.cpp,
+	utilities/install_svc.cpp, qli/dtr.cpp, qli/gener.cpp,
+	lock/print.cpp, jrd/blb.cpp, jrd/ibase.h, jrd/met.epp, jrd/met.h,
+	intlcpp/ld2.cpp:
+	
+	Remove warnings
+
 2003-02-19 17:22  dimitr
 
 	* firebird2/src/jrd/ini.epp:
