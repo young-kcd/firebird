@@ -1406,13 +1406,13 @@ static void add_index( DUDLEY_IDX index)
 	}
 
 	if ((index->idx_count == 1) && size > 254) {
-		DDL_err(46, (TEXT *) size, index->idx_name->sym_string, NULL, NULL,
+		DDL_err(46, (TEXT *)(ULONG) size, index->idx_name->sym_string, NULL, NULL,
 				NULL);
 		/* msg 46: combined key length (%d) for index %s is > 254 bytes */
 		return;
 	}
 	else if ((index->idx_count > 1) && size > 202) {
-		DDL_err(312, (TEXT *) size, index->idx_name->sym_string, NULL, NULL,
+		DDL_err(312, (TEXT *)(ULONG) size, index->idx_name->sym_string, NULL, NULL,
 				NULL);
 		/* msg 312:  key length (%d) for compound index %s exceeds 202  */
 		return;
@@ -2644,7 +2644,7 @@ static void drop_trigger_msg( TRGMSG trigmsg)
 
 	if (!if_any)
 		DDL_err(74,
-				(TEXT *) trigmsg->trgmsg_number,
+				(TEXT *)(SLONG) trigmsg->trgmsg_number,
 				trigmsg->trgmsg_trg_name->sym_string, NULL, NULL, NULL);
 	/* msg 74: Trigger message number %d for trigger %s doesn't exist */
 }
@@ -3931,7 +3931,7 @@ static void move_symbol( SYM symbol, SCHAR * field, SSHORT length)
 
 	if (symbol) {
 		if ((l = symbol->sym_length) > length) {
-			DDL_err(296, symbol->sym_string, (TEXT *) length, NULL, NULL,
+			DDL_err(296, symbol->sym_string, (TEXT *)(SLONG) length, NULL, NULL,
 					NULL);
 			/*msg 296: symbol %s is too long, truncating it to %ld characters */
 			DDL_errors--;

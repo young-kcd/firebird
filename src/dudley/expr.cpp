@@ -1086,7 +1086,7 @@ static DUDLEY_NOD parse_sort(void)
 		else if (MATCH(KW_DESCENDING))
 			direction = 1;
 		LLS_PUSH(EXPR_value(0, 0), &stack);
-		LLS_PUSH(direction, &stack);
+		LLS_PUSH((SLONG) direction, &stack);
 		if (!MATCH(KW_COMMA))
 			break;
 	}

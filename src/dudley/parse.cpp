@@ -1451,7 +1451,8 @@ static void define_trigger(void)
 	trigger->trg_sequence = trg_sequence;
 
 	if (!(int) trigger->trg_type)	/* still none */
-		PARSE_error(141, DDL_token.tok_string, 0);	/* msg 141: expected STORE, MODIFY, ERASE, encountered \"%s\" */
+		PARSE_error(141, DDL_token.tok_string, 0);	
+		/* msg 141: expected STORE, MODIFY, ERASE, encountered \"%s\" */
 
 	action = end = FALSE;
 
@@ -1471,7 +1472,8 @@ static void define_trigger(void)
 			trigmsg->trgmsg_trg_name = trigger->trg_name;
 			trigmsg->trgmsg_number = PARSE_number();
 			if (trigmsg->trgmsg_number > 255)
-				PARSE_error(142, (TEXT *) (trigmsg->trgmsg_number), 0);	/* msg 142: message number %d exceeds 255 */
+				PARSE_error(142, (TEXT *)(SLONG)(trigmsg->trgmsg_number), 0);
+			/* msg 142: message number %d exceeds 255 */
 			MATCH(KW_COLON);
 			trigmsg->trgmsg_text = PARSE_symbol(tok_quoted);
 			make_action(act_a_trigger_msg, (DBB) trigmsg);
@@ -1480,11 +1482,14 @@ static void define_trigger(void)
 		else {
 			/* if none of the other cases were true, we must be stuck on a bum token */
 			if (end)
-				PARSE_error(304, DDL_token.tok_string, 0);	/* msg 304: expected message keyword, encountered \"%s\" */
+				PARSE_error(304, DDL_token.tok_string, 0);
+			/* msg 304: expected message keyword, encountered \"%s\" */
 			else if (!action)
-				PARSE_error(305, DDL_token.tok_string, 0);	/* msg 305: expected trigger action, encountered \"%s\" */
+				PARSE_error(305, DDL_token.tok_string, 0);
+			/* msg 305: expected trigger action, encountered \"%s\" */
 			else
-				PARSE_error(306, DDL_token.tok_string, 0);	/* msg 306: expected end_trigger or description keyword, encountered \"%s\" */
+				PARSE_error(306, DDL_token.tok_string, 0);
+			/* msg 306: expected end_trigger or description keyword, encountered \"%s\" */
 			break;
 		}
 	}
@@ -2764,7 +2769,8 @@ static void modify_trigger(void)
 	for (name = DDL_token.tok_symbol;
 		 name && (name->sym_type != SYM_trigger); name = name->sym_homonym);
 	if (!name)
-		PARSE_error(176, DDL_token.tok_string, 0);	/* msg 176: expected trigger name, encountered \"%s\" */
+		PARSE_error(176, DDL_token.tok_string, 0);
+	/* msg 176: expected trigger name, encountered \"%s\" */
 	trigger = (DUDLEY_TRG) name->sym_object;
 	LEX_token();
 
@@ -2773,7 +2779,8 @@ static void modify_trigger(void)
 	if (MATCH(KW_FOR)) {
 		relation = PARSE_relation();
 		if (relation != trigger->trg_relation)
-			PARSE_error(177, 0, 0);	/* msg 177: Unsuccesful attempt to modify trigger relation */
+			PARSE_error(177, 0, 0);
+		/* msg 177: Unsuccesful attempt to modify trigger relation */
 	}
 	else
 		relation = trigger->trg_relation;
@@ -2793,7 +2800,8 @@ static void modify_trigger(void)
 			trigmsg->trgmsg_trg_name = trigger->trg_name;
 			trigmsg->trgmsg_number = PARSE_number();
 			if (trigmsg->trgmsg_number > 255)
-				PARSE_error(178, (TEXT *) trigmsg->trgmsg_number, 0);	/* msg 178: message number %d exceeds 255 */
+				PARSE_error(178, (TEXT *)(SLONG) trigmsg->trgmsg_number, 0);
+			/* msg 178: message number %d exceeds 255 */
 			if (msg_type == trgmsg_drop)
 				make_action(act_d_trigger_msg, (DBB) trigmsg);
 			else if (msg_type == trgmsg_modify) {
@@ -3923,7 +3931,7 @@ static SLONG parse_privileges(void)
 				break;
 
 			default:
-				PARSE_error(212, (TEXT *) p[-1], 0);
+				PARSE_error(212, (TEXT *)(SLONG) p[-1], 0);
 				/* msg 212: Unrecognized privilege \"%c\" or unrecognized identifier */
 			}
 		LEX_token();
