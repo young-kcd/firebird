@@ -71,6 +71,7 @@ Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 <li>prepare.bat [FIREBIRD]</li>
 <li>makeX_boot.bat</li>
 <li>makeX_all.bat [DEBUG] [CLEAN]</li>
+<li>makeX_examples.bat [DEBUG] [CLEAN] (this is only needed if you want to build examples)</li>
 </ol>
 </ol>
 <ul>
@@ -78,9 +79,15 @@ Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 <li>To make a clean build from scratch after making changes to the code use the clean_all.bat script</li>
 </ul>
 <h4>4.2.-Parser rebuild</h4>
+<p>Remember, you need sed and bison or yacc in the path to rebuild the parser</p>
 <p>If you change parser.cpp or parser.sed you will need to rebuild parser.cpp, to do so use parser.bat</p>
 <h4>4.3.-Installer build</h4>
-<p>To build an install package ........</p>
+<p>Remember, you need sed and innosetup in the path to build the installer</p>
+<li>Open a command line window.</li>
+<li>Go to the firebird2 src\install\arch-specific\win32 directory.</li>
+<li>The batch to build the installer is<br>
+BuildExecutableInstall.bat [MSVC_VERSION] [DEBUG] [CS]<br>
+Where MSVC_VERSION can be 6 o 7, DEBUG means if the build is a debug one or not and CS means classic server installer.</li>
 
 </blockquote>
 </BODY>
