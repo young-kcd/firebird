@@ -30,7 +30,7 @@
  *       John Bellardo  <bellardo@cs.ucsd.edu>
  *
  *
- *  $Id: firebird.h,v 1.7 2003-01-18 19:42:51 dimitr Exp $
+ *  $Id: firebird.h,v 1.8 2003-02-07 14:38:49 kkuznetsov Exp $
  *
  */
 
@@ -44,6 +44,7 @@
 #endif
 #if defined(SOLX86)
 #define __PRAGMA_REDEFINE_EXTNAME 
+#define __EXTENSIONS__
 #endif
 
 #ifdef __cplusplus
