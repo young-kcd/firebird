@@ -25,8 +25,9 @@
 #ifndef _REGISTRY_DEFINES_
 #define _REGISTRY_DEFINES_
 
-//#define REG_KEY_ROOT			"SOFTWARE\\FirebirdSQL\\Firebird"
-#define REG_KEY_ROOT_INSTANCES	"SOFTWARE\\FirebirdSQL\\Firebird\\Instances"
+#define REG_KEY_ROOT_COMPANY	"SOFTWARE\\Firebird Project"
+#define REG_KEY_ROOT_PRODUCT	"SOFTWARE\\Firebird Project\\Firebird Server"
+#define REG_KEY_ROOT_INSTANCES	"SOFTWARE\\Firebird Project\\Firebird Server\\Instances"
 #define FB_DEFAULT_INSTANCE	  	"DefaultInstance"
 
 #endif /* _REGISTRY_DEFINES_ */
