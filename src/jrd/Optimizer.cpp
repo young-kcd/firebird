@@ -1309,6 +1309,14 @@ RecordSource* OptimizerRetrieval::generateNavigation()
 			continue;
 		}
 
+#ifdef EXPRESSION_INDICES
+		if (idx->idx_flags & idx_expressn)
+		{
+			if (sortPtr->nod_count != 1)
+				continue;
+		}
+#endif
+
 		// check to see if the fields in the sort match the fields in the index 
 		// in the exact same order--we used to check for ascending/descending prior 
 		// to SCROLLABLE_CURSORS, but now descending sorts can use ascending indices 
@@ -1321,20 +1329,31 @@ RecordSource* OptimizerRetrieval::generateNavigation()
 			ptr++, idx_tail++)
 		{
 			jrd_nod* node = *ptr;
+#ifdef EXPRESSION_INDICES
+			if (idx->idx_flags & idx_expressn)
+			{
+				if (!expression_equal(tdbb, optimizer, idx, node, stream))
+					return NULL;	
+			}
+			else
+#endif
 			if (node->nod_type != nod_field
 				|| (USHORT)(IPTR) node->nod_arg[e_fld_stream] != stream
-				|| (USHORT)(IPTR) node->nod_arg[e_fld_id] != idx_tail->idx_field
+				|| (USHORT)(IPTR) node->nod_arg[e_fld_id] != idx_tail->idx_field)
+			{
+				usableIndex = false;
+				break;
+			}
+
+			if ((ptr[sortPtr->nod_count] && !(idx->idx_flags & idx_descending))
+				|| (!ptr[sortPtr->nod_count] && (idx->idx_flags & idx_descending))
 				// for ODS11 default nulls placement always may be matched to index
 				|| (database->dbb_ods_version >= ODS_VERSION11 && (
-				(reinterpret_cast<IPTR>(ptr[2 * sortPtr->nod_count]) == rse_nulls_first && ptr[sortPtr->nod_count])
-				|| (reinterpret_cast<IPTR>(ptr[2 * sortPtr->nod_count]) == rse_nulls_last && !ptr[sortPtr->nod_count])))
+					(reinterpret_cast<IPTR>(ptr[2 * sortPtr->nod_count]) == rse_nulls_first && ptr[sortPtr->nod_count])
+					|| (reinterpret_cast<IPTR>(ptr[2 * sortPtr->nod_count]) == rse_nulls_last && !ptr[sortPtr->nod_count])))
 				// for ODS10 and earlier indices always placed nulls at the end of dataset
 				|| (database->dbb_ods_version < ODS_VERSION11 && 
-				reinterpret_cast<IPTR>(ptr[2 * sortPtr->nod_count]) == rse_nulls_first)
-				|| (ptr[sortPtr->nod_count]
-					&& !(idx->idx_flags & idx_descending))
-				|| (!ptr[sortPtr->nod_count]
-					&& (idx->idx_flags & idx_descending)) )
+					reinterpret_cast<IPTR>(ptr[2 * sortPtr->nod_count]) == rse_nulls_first) )
 			{
 				usableIndex = false;
 				break;

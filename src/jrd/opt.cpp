@@ -4338,29 +4338,28 @@ static RecordSource* gen_navigation(thread_db* tdbb,
 				return NULL;	
 		}
 		else
-#endif    
+#endif
 		if (node->nod_type != nod_field
 			|| (USHORT)(IPTR) node->nod_arg[e_fld_stream] != stream
-			|| (USHORT)(IPTR) node->nod_arg[e_fld_id] != idx_tail->idx_field
-			// for ODS11 default nulls placement always may be matched to index
-			|| (dbb->dbb_ods_version >= ODS_VERSION11 && (
-			  (reinterpret_cast<IPTR>(ptr[2 * sort->nod_count]) == rse_nulls_first && ptr[sort->nod_count])
-			  || (reinterpret_cast<IPTR>(ptr[2 * sort->nod_count]) == rse_nulls_last && !ptr[sort->nod_count])))
-			// for ODS10 and earlier indices always placed nulls at the end of dataset
-			|| (dbb->dbb_ods_version < ODS_VERSION11 && 
-			  reinterpret_cast<IPTR>(ptr[2 * sort->nod_count]) == rse_nulls_first)
-			)
+			|| (USHORT)(IPTR) node->nod_arg[e_fld_id] != idx_tail->idx_field )
 		{
 			return NULL;
 		}
 
-#ifndef SCROLLABLE_CURSORS
-		if ((ptr[sort->nod_count] && !(idx->idx_flags & idx_descending)) ||
-			(!ptr[sort->nod_count] && (idx->idx_flags & idx_descending)))
+		if ( (ptr[sort->nod_count] && !(idx->idx_flags & idx_descending))
+			|| (!ptr[sort->nod_count] && (idx->idx_flags & idx_descending))
+			// for ODS11 default nulls placement always may be matched to index
+			|| (dbb->dbb_ods_version >= ODS_VERSION11 && (
+			  (reinterpret_cast<IPTR>(ptr[2 * sort->nod_count]) == rse_nulls_first && ptr[sort->nod_count])
+			    || (reinterpret_cast<IPTR>(ptr[2 * sort->nod_count]) == rse_nulls_last && !ptr[sort->nod_count])))
+			// for ODS10 and earlier indices always placed nulls at the end of dataset
+			|| (dbb->dbb_ods_version < ODS_VERSION11 && 
+			  reinterpret_cast<IPTR>(ptr[2 * sort->nod_count]) == rse_nulls_first) )
 		{
 			return NULL;
 		}
-#else
+
+#ifdef SCROLLABLE_CURSORS
 		// determine whether we ought to navigate backwards or forwards through 
 		// the index--we can't allow navigating one index in two different directions 
 		// on two different fields at the same time!
