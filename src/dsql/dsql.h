@@ -73,7 +73,7 @@ class str : public pool_alloc_rpt<char, dsql_type_str>
 public:
 	const char* str_charset;	// ASCIIZ Character set identifier for string
 	USHORT      str_flags;
-	USHORT      str_length;		// length of string in BYTES
+	ULONG       str_length;		// length of string in BYTES
 	char        str_data[2];	// one for ALLOC and one for the NULL
 };
 typedef str* STR;
