@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.59 2003-05-13 12:04:22 alexpeshkoff Exp $
+$Id: exe.cpp,v 1.60 2003-05-14 08:24:49 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -1534,6 +1534,7 @@ static void execute_procedure(TDBB tdbb, JRD_NOD node)
 		tdbb->tdbb_default = old_pool;
 		tdbb->tdbb_request = request;
 		EXE_unwind(tdbb, proc_request);
+		proc_request->req_attachment = NULL;
 		proc_request->req_flags &= ~(req_in_use | req_proc_fetch);
 		proc_request->req_timestamp = 0;
 		delete temp_buffer;
