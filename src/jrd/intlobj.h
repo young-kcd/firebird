@@ -57,7 +57,7 @@ typedef class vec* VEC;
 #define type_csconvert 56
 
 #ifndef JRD_CONSTANTS_H
-#define MAX_KEY 256
+#define MAX_KEY 4096
 #endif
 
 typedef struct intl_blk {
