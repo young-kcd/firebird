@@ -110,6 +110,9 @@
 			Name="JRD files"
 			Filter="">
 			<File
+				RelativePath="..\..\..\src\jrd\ExecuteStatement.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\ail.cpp">
 			</File>
 			<File
@@ -407,6 +410,9 @@
 		<Filter
 			Name="Header files"
 			Filter="">
+			<File
+				RelativePath="..\..\..\src\jrd\ExecuteStatement.h">
+			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\acl.h">
 			</File>
