@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.10 2002-10-28 05:19:43 seanleyne Exp $
+//	$Id: tdr.cpp,v 1.11 2002-12-16 15:16:09 alexpeshkoff Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -55,7 +55,7 @@ static ULONG ask(void);
 static void print_description(TDR);
 static void reattach_database(TDR);
 static void reattach_databases(TDR);
-static BOOLEAN reconnect(int *, SLONG, TEXT *, ULONG);
+static BOOLEAN reconnect(struct why_hndl *, SLONG, TEXT *, ULONG);
 
 
 #ifdef GUI_TOOLS
@@ -232,8 +232,7 @@ BOOLEAN TDR_attach_database(STATUS * status_vector,
 	gds__attach_database(status_vector,
 						 0,
 						 GDS_VAL(pathname),
-						 reinterpret_cast <
-						 void **>(GDS_REF(trans->tdr_db_handle)), dpb_length,
+						 (GDS_REF(trans->tdr_db_handle)), dpb_length,
 						 reinterpret_cast < char *>(GDS_VAL(dpb)));
 
 	if (status_vector[1]) {
@@ -288,8 +287,7 @@ void TDR_shutdown_databases(TDR trans)
 
 	for (ptr = trans; ptr; ptr = ptr->tdr_next)
 		gds__detach_database(status_vector,
-							 reinterpret_cast <
-							 void **>(GDS_REF(ptr->tdr_db_handle)));
+							 (GDS_REF(ptr->tdr_db_handle)));
 }
 
 
@@ -307,7 +305,7 @@ void TDR_shutdown_databases(TDR trans)
 //		prompt for commit, rollback, or leave well enough alone.
 //
 
-void TDR_list_limbo(int *handle, TEXT * name, ULONG switches)
+void TDR_list_limbo(struct why_hndl *handle, TEXT * name, ULONG switches)
 {
 	UCHAR buffer[1024], *ptr;
 	STATUS status_vector[ISC_STATUS_LENGTH];
@@ -319,7 +317,7 @@ void TDR_list_limbo(int *handle, TEXT * name, ULONG switches)
 	tdgbl = GET_THREAD_DATA;
 
 	if (gds__database_info(status_vector,
-						   reinterpret_cast < void **>(GDS_REF(handle)),
+						   (GDS_REF(handle)),
 						   sizeof(limbo_info),
 						   reinterpret_cast < char *>(limbo_info),
 						   sizeof(buffer),
@@ -400,7 +398,7 @@ void TDR_list_limbo(int *handle, TEXT * name, ULONG switches)
 //		gfix user.
 //
 
-BOOLEAN TDR_reconnect_multiple(int *handle,
+BOOLEAN TDR_reconnect_multiple(struct why_hndl *handle,
 							   SLONG id, TEXT * name, ULONG switches)
 {
 	TDR trans, ptr;
@@ -498,7 +496,7 @@ BOOLEAN TDR_reconnect_multiple(int *handle,
 			{
 				if (ptr->tdr_state == TRA_limbo)
 				{
-					reconnect(reinterpret_cast < int *>(ptr->tdr_db_handle),
+					reconnect((ptr->tdr_db_handle),
 							  ptr->tdr_id, ptr->tdr_filename, switches);
 				}
 			}
@@ -961,19 +959,18 @@ static void reattach_databases(TDR trans)
 //		Commit or rollback a named transaction.
 //
 
-static BOOLEAN reconnect(int *handle,
+static BOOLEAN reconnect(struct why_hndl *handle,
 						 SLONG number, TEXT * name, ULONG switches)
 {
-	int *transaction;
+	struct why_hndl *transaction;
 	SLONG id;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	id = gds__vax_integer((UCHAR *) & number, 4);
 	transaction = NULL;
 	if (gds__reconnect_transaction(status_vector,
-								   reinterpret_cast <
-								   void **>(GDS_REF(handle)),
-								   reinterpret_cast <void **>(GDS_REF(transaction)),
+								   (GDS_REF(handle)),
+								   (GDS_REF(transaction)),
     							   sizeof(id),
 								   reinterpret_cast <char *>(GDS_REF(id)))) {
 		ALICE_print(90, name, 0, 0, 0, 0);	/* msg 90: failed to reconnect to a transaction in database %s */
@@ -992,10 +989,10 @@ static BOOLEAN reconnect(int *handle,
 
 	if (switches & sw_commit)
 		gds__commit_transaction(status_vector,
-								reinterpret_cast <void **>(GDS_REF(transaction)));
+								(GDS_REF(transaction)));
 	else if (switches & sw_rollback)
 		gds__rollback_transaction(status_vector,
-								  reinterpret_cast <void **>(GDS_REF(transaction)));
+								(GDS_REF(transaction)));
 	else
 		return FALSE;
 

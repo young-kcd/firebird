@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.6 2002-11-06 07:08:41 eku Exp $
+//	$Id: exe.cpp,v 1.7 2002-12-16 15:16:00 alexpeshkoff Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -86,7 +86,7 @@ int EXE_action(TEXT * database, ULONG switches)
 {
 	UCHAR dpb[128];
 	USHORT dpb_length, error;
-	SLONG *handle;
+	struct why_hndl *handle;
 	UCHAR error_string[128];
 	USHORT i;
 	TGBL tdgbl;
@@ -108,9 +108,9 @@ int EXE_action(TEXT * database, ULONG switches)
 	gds__attach_database(tdgbl->status,
 						 0,
 						 GDS_VAL(database),
-						 reinterpret_cast < void **>(GDS_REF(handle)),
+						 (GDS_REF(handle)),
 						 dpb_length,
-						 reinterpret_cast < char *>(GDS_VAL(dpb)));
+						 reinterpret_cast <SCHAR *>(GDS_VAL(dpb)));
 
 	SVC_STARTED(tdgbl->service_blk);
 
@@ -123,7 +123,7 @@ int EXE_action(TEXT * database, ULONG switches)
 	if (handle != NULL) {
 		if ((switches & sw_validate) && (tdgbl->status[1] != isc_bug_check)) {
 			gds__database_info(tdgbl->status,
-							   reinterpret_cast < void **>(GDS_REF(handle)),
+							   (GDS_REF(handle)),
 							   sizeof(val_errors),
 							   val_errors,
 							   sizeof(error_string),
@@ -136,7 +136,7 @@ int EXE_action(TEXT * database, ULONG switches)
 			MET_disable_wal(tdgbl->status, handle);
 
 		gds__detach_database(tdgbl->status,
-							 reinterpret_cast < void **>(GDS_REF(handle)));
+							 (GDS_REF(handle)));
 	}
 
 	ALLA_fini();
@@ -154,7 +154,7 @@ int EXE_two_phase(TEXT * database, ULONG switches)
 {
 	UCHAR dpb[128];
 	USHORT dpb_length, error;
-	SLONG *handle;
+	struct why_hndl *handle;
 	USHORT i;
 	TGBL tdgbl;
 
@@ -175,7 +175,7 @@ int EXE_two_phase(TEXT * database, ULONG switches)
 	gds__attach_database(tdgbl->status,
 						 0,
 						 GDS_VAL(database),
-						 reinterpret_cast < void **>(GDS_REF(handle)),
+						 (GDS_REF(handle)),
 						 dpb_length,
 						 reinterpret_cast < char *>(GDS_VAL(dpb)));
 
@@ -184,16 +184,16 @@ int EXE_two_phase(TEXT * database, ULONG switches)
 	if (tdgbl->status[1])
 		error = TRUE;
 	else if (switches & sw_list)
-		TDR_list_limbo(reinterpret_cast < int *>(handle), database, switches);
+		TDR_list_limbo((handle), database, switches);
 	else if (switches & (sw_commit | sw_rollback | sw_two_phase))
 		error =
-			TDR_reconnect_multiple(reinterpret_cast < int *>(handle),
+			TDR_reconnect_multiple((handle),
 								   tdgbl->ALICE_data.ua_transaction, database,
 								   switches);
 
 	if (handle)
 		gds__detach_database(tdgbl->status,
-							 reinterpret_cast < void **>(GDS_REF(handle)));
+							 (GDS_REF(handle)));
 
 	ALLA_fini();
 

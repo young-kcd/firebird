@@ -26,6 +26,7 @@
 
 #include "../jrd/ib_stdio.h"
 
+#include "../jrd/y_handle.h"
 #include "../jrd/ibase.h"
 #include "../jrd/ibsetjmp.h"
 #include "../jrd/thd.h"
@@ -97,8 +98,8 @@ typedef struct tdr : public pool_alloc<alice_type_tdr>
 	TEXT *tdr_filename;			/* filename within full pathname */
 	struct str *tdr_host_site;	/* host for transaction */
 	struct str *tdr_remote_site;	/* site for remote transaction */
-	SLONG *tdr_handle;			/* reconnected transaction handle */
-	SLONG *tdr_db_handle;		/* reattached database handle */
+	struct why_hndl *tdr_handle;			/* reconnected transaction handle */
+	struct why_hndl *tdr_db_handle;		/* reattached database handle */
 	USHORT tdr_db_caps;			/* capabilities of database */
 	USHORT tdr_state;			/* see flags below */
 } *TDR;

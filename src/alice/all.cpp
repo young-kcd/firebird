@@ -24,11 +24,11 @@
 //
 //____________________________________________________________
 //
-//	$Id: all.cpp,v 1.6 2002-09-25 17:12:00 skidder Exp $
+//	$Id: all.cpp,v 1.7 2002-12-16 15:15:54 alexpeshkoff Exp $
 //
 
 #include "../alice/all.h"
-//#include "firebird.h"
+#include "firebird.h"
 //#include "../jrd/ib_stdio.h"
 //#include "../jrd/common.h"
 //#include "../jrd/ibsetjmp.h"
@@ -74,7 +74,6 @@ void ALLA_init(void)
 	TGBL tdgbl;
 
 	tdgbl = GET_THREAD_DATA;
-
 #if 0
 	tdgbl->ALICE_default_pool = tdgbl->ALICE_permanent_pool =
 		AliceMemoryPool::create_new_pool();

@@ -27,7 +27,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: alice_meta.epp,v 1.6 2002-09-25 17:12:00 skidder Exp $
+ *	$Id: alice_meta.epp,v 1.7 2002-12-16 15:15:42 alexpeshkoff Exp $
  */
 
 #include "firebird.h"
@@ -60,7 +60,8 @@
  *  GPRE.  This is to avoid multiple threading problems with module           
  *  level statics.
  */
-DATABASE DB = STATIC FILENAME "yachts.lnk";
+DATABASE DB = STATIC FILENAME "ok:C:\GDB\ODS.RDB";
+//DATABASE DB = STATIC FILENAME "yachts.lnk";
 
 #define DB          tdgbl->db_handle
 #define gds_trans   tdgbl->tr_handle
@@ -107,7 +108,7 @@ static struct rfr_tab_t rfr_table[] = {
 
 void MET_disable_wal(STATUS * user_status, isc_db_handle handle)
 {
-	SLONG *request = NULL;
+	FRBRD *request = NULL;
 	TGBL tdgbl;
 
 	tdgbl = GET_THREAD_DATA;
@@ -131,7 +132,7 @@ void MET_disable_wal(STATUS * user_status, isc_db_handle handle)
 
 void MET_get_state(STATUS * user_status, TDR trans)
 {
-	SLONG *request = NULL;
+	FRBRD *request = NULL;
 	TGBL tdgbl;
 
 	tdgbl = GET_THREAD_DATA;
@@ -150,7 +151,7 @@ void MET_get_state(STATUS * user_status, TDR trans)
 		trans->tdr_state = TRA.RDB$TRANSACTION_STATE;
 	END_FOR ON_ERROR RETURN_ERROR(user_status) END_ERROR;
 
-	gds__release_request(gds_status, (void**) GDS_REF(request));
+	gds__release_request(gds_status, GDS_REF(request));
 	if (gds_status[1]) {
 		RETURN_ERROR(user_status)
 	}
@@ -168,7 +169,7 @@ void MET_get_state(STATUS * user_status, TDR trans)
 
 TDR MET_get_transaction(STATUS * user_status, isc_db_handle handle, SLONG id)
 {
-	SLONG *request = NULL;
+	FRBRD *request = NULL;
 	TDR trans = NULL;
 	USHORT capabilities;
 	TGBL tdgbl;
@@ -190,7 +191,7 @@ TDR MET_get_transaction(STATUS * user_status, isc_db_handle handle, SLONG id)
 			trans = get_description((SLONG*)&TRA.RDB$TRANSACTION_DESCRIPTION);
 		END_FOR ON_ERROR RETURN_ERROR(user_status) END_ERROR;
 
-		gds__release_request(gds_status, (void**) GDS_REF(request));
+		gds__release_request(gds_status, GDS_REF(request));
 		if (gds_status[1]) {
 			RETURN_ERROR(user_status)
 		}
@@ -267,7 +268,7 @@ static STR alloc_string(TEXT ** ptr)
 
 static USHORT get_capabilities(STATUS * user_status)
 {
-	ULONG *req;
+	FRBRD *req;
 	RFR_TAB rel_field_table;
 	USHORT capabilities = CAP_none;
 	TGBL tdgbl;
@@ -287,7 +288,7 @@ static USHORT get_capabilities(STATUS * user_status)
 		END_FOR ON_ERROR RETURN_ERROR(user_status) END_ERROR;
 	}
 
-	gds__release_request(gds_status, (void**) GDS_REF(req));
+	gds__release_request(gds_status, GDS_REF(req));
 	if (gds_status[1]) {
 		RETURN_ERROR(user_status)
 	}
@@ -454,7 +455,7 @@ static USHORT snarf_blob(SLONG blob_id[2],
 	USHORT returned_length;
 	TEXT *ptr, *end;
 	STATUS status;
-	int *blob;
+	FRBRD *blob;
 	TGBL tdgbl;
 
 	tdgbl = GET_THREAD_DATA;
@@ -466,8 +467,8 @@ static USHORT snarf_blob(SLONG blob_id[2],
 
 	blob = NULL;
 	if (gds__open_blob(gds_status,
-					   (void**) GDS_REF(DB),
-					   (void**) GDS_REF(gds_trans), (void**) GDS_REF(blob), (GDS_QUAD*) GDS_VAL(blob_id))) {
+					   GDS_REF(DB),
+					   GDS_REF(gds_trans), GDS_REF(blob), (GDS_QUAD*) GDS_VAL(blob_id))) {
 		ALICE_print_status(gds_status);
 		return 0;
 	}
@@ -482,7 +483,7 @@ static USHORT snarf_blob(SLONG blob_id[2],
 		if (!(buffer_length = end - ptr))
 			break;
 		status = gds__get_segment(gds_status,
-							(void**) GDS_REF(blob),
+							GDS_REF(blob),
 								  GDS_REF(returned_length),
 								  buffer_length, GDS_VAL(ptr));
 		if (status && status != gds_segment)
@@ -495,7 +496,7 @@ static USHORT snarf_blob(SLONG blob_id[2],
 	if (!buffer_length)
 		for (;;) {
 			status = gds__get_segment(gds_status,
-									  (void**) GDS_REF(blob),
+									  GDS_REF(blob),
 									  GDS_REF(returned_length),
 									  buffer_length, buffer);
 			if (status && status != gds_segment)
@@ -505,7 +506,7 @@ static USHORT snarf_blob(SLONG blob_id[2],
 	else
 		buffer_length = 0;
 
-	gds__close_blob(gds_status, (void**) GDS_REF(blob));
+	gds__close_blob(gds_status, GDS_REF(blob));
 
 	*ptr = 0;
 
