@@ -37,14 +37,14 @@ public:
 	traRpbListElement(struct rpb *r, USHORT l) : 
 			lr_rpb(r), level(l) {}
 	traRpbListElement() {}
-	static const inline bool compare(const traRpbListElement& i1, const traRpbListElement& i2) {
+	static inline const bool compare(const traRpbListElement& i1, const traRpbListElement& i2) {
 		return i1.lr_rpb->rpb_relation->rel_id != i2.lr_rpb->rpb_relation->rel_id ? 
 			   i1.lr_rpb->rpb_relation->rel_id > i2.lr_rpb->rpb_relation->rel_id :
 			   i1.lr_rpb->rpb_number != i2.lr_rpb->rpb_number ?
 			   i1.lr_rpb->rpb_number > i2.lr_rpb->rpb_number : 
 			   i1.level > i2.level;
 	}
-	static const inline traRpbListElement& generate(void *sender, const traRpbListElement& Item) {
+	static inline const traRpbListElement& generate(void *sender, const traRpbListElement& Item) {
 		return Item;
 	}
 };
