@@ -89,7 +89,7 @@
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * ODS change
-        Enlarged exception messages from 80 to 1021 bytes
+        Enlarged exception messages from 78 to 1021 bytes
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
