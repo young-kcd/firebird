@@ -112,7 +112,7 @@ rel_MAX} RIDS;
    (((d2).dsc_dtype==dtype_sql_time)&&((d1).dsc_dtype==dtype_sql_date)))
 
 // size of req_rpb[0]
-const size_t REQ_TAIL = sizeof (jrd_req::blk_repeat_type);
+const size_t REQ_TAIL = sizeof (Jrd::jrd_req::blk_repeat_type);
 #define MAP_LENGTH		256
 
 /* RITTER - changed HP10 to HPUX */
@@ -125,6 +125,8 @@ const size_t REQ_TAIL = sizeof (jrd_req::blk_repeat_type);
 #endif
 
 #define MAX_REQUEST_SIZE	10485760	// 10 MB - just to be safe
+
+using namespace Jrd;
 
 static UCHAR* alloc_map(thread_db*, Csb*, USHORT);
 static jrd_nod* catenate_nodes(thread_db*, LLS);
@@ -145,7 +147,7 @@ static jrd_nod* pass1_update(thread_db*, Csb*, jrd_rel*, trig_vec*, USHORT, USHO
 static jrd_nod* pass2(thread_db*, Csb*, jrd_nod* const, jrd_nod*);
 static void pass2_rse(thread_db*, Csb*, RSE);
 static jrd_nod* pass2_union(thread_db*, Csb*, jrd_nod*);
-static void plan_check(const Csb*, const class rse*);
+static void plan_check(const Csb*, const rse*);
 static void plan_set(Csb*, RSE, jrd_nod*);
 static void post_procedure_access(thread_db*, Csb*, jrd_prc*);
 static Rsb* post_rse(thread_db*, Csb*, RSE);
@@ -260,7 +262,7 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 	}
 		
 	jrd_req* clone;
-	VEC vector = request->req_sub_requests;
+	vec* vector = request->req_sub_requests;
 	if (vector && level < vector->count() && (clone = (jrd_req*) (*vector)[level]))
 	{
 		return clone;
@@ -274,11 +276,11 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 			// can't use const
 			TEXT* prc_sec_name = (procedure->prc_security_name ?
 							(TEXT *) procedure->
-							prc_security_name->str_data : NULL);
+							prc_security_name.c_str() : NULL);
 			const scl* sec_class = SCL_get_class(prc_sec_name);
 			SCL_check_access(sec_class, 0, 0,
 							 0, SCL_execute, object_procedure,
-							 reinterpret_cast<char*>(procedure->prc_name->str_data));
+							 procedure->prc_name.c_str());
 		}
 		for (const AccessItem* access = request->req_access; access;
 			access = access->acc_next) 
@@ -5369,14 +5371,13 @@ static void post_procedure_access(thread_db* tdbb, Csb* csb, jrd_prc* procedure)
 	DEV_BLKCHK(procedure, type_prc);
 
 	const TEXT* prc_sec_name = (procedure->prc_security_name ?
-					(TEXT *) procedure->
-					prc_security_name->str_data : NULL);
+					procedure->prc_security_name.c_str() : NULL);
 
 	// this request must have EXECUTE permission on the stored procedure
 	CMP_post_access(tdbb, csb, prc_sec_name, 0,
 					0, 0, SCL_execute,
 					object_procedure,
-					reinterpret_cast<const char*>(procedure->prc_name->str_data));
+					procedure->prc_name.c_str());
 
 	// this request also inherits all the access requirements that
 	// the procedure has
@@ -5398,7 +5399,7 @@ static void post_procedure_access(thread_db* tdbb, Csb* csb, jrd_prc* procedure)
 				// direct access from this SP to a resource
 				CMP_post_access(tdbb, csb, access->acc_security_name,
 								0, 0,
-								reinterpret_cast<const char*>(procedure->prc_name->str_data),
+								procedure->prc_name.c_str(),
 								access->acc_mask, access->acc_type,
 								access->acc_name);
 			}

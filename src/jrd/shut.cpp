@@ -39,6 +39,8 @@
 #include "../jrd/thd_proto.h"
 #include "../jrd/tra_proto.h"
 
+using namespace Jrd;
+
 #define SHUT_WAIT_TIME	5
 
 // Define this to true if you need to allow no-op behavior when requested shutdown mode 
@@ -232,8 +234,8 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
 	++dbb->dbb_use_count;
 	dbb->dbb_ast_flags &= ~(DBB_shut_force | DBB_shut_attach | DBB_shut_tran);
 	WIN window(HEADER_PAGE);
-	header_page* header =
-		(header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	Ods::header_page* header =
+		(Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	// Set appropriate shutdown mode in database header
 	header->hdr_flags &= ~hdr_shutdown_mask;
@@ -342,7 +344,7 @@ bool SHUT_online(Database* dbb, SSHORT flag)
 	/* Clear shutdown flag on database header page */
 
 	WIN window(HEADER_PAGE);
-	header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	// Set appropriate shutdown mode in database header
 	header->hdr_flags &= ~hdr_shutdown_mask;

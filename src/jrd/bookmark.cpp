@@ -34,6 +34,7 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/thd_proto.h"
 
+using namespace Jrd;
 
 #ifdef PC_ENGINE
 Bookmark* BKM_allocate(Rsb* rsb, USHORT length)

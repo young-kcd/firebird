@@ -67,6 +67,8 @@
 #include "../jrd/vio_proto.h"
 
 
+using namespace Jrd;
+typedef Ods::index_root_page index_root_page;
 
 static const SCHAR NULL_STR = '\0';
 

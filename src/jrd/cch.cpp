@@ -70,6 +70,9 @@
 #include "../common/config/config.h"
 #include "../jrd/jrd_time.h"
 
+using namespace Jrd;
+using namespace Ods;
+
 /* In the superserver mode, no page locks are acquired through the lock manager.
    Instead, a latching mechanism is used.  So the calls to lock subsystem for
    database pages in the original code should not be made, lest they should cause
@@ -701,7 +704,7 @@ void CCH_expand(thread_db* tdbb, ULONG number)
 }
 
 
-PAG CCH_fake(thread_db* tdbb, WIN * window, SSHORT latch_wait)
+pag* CCH_fake(thread_db* tdbb, WIN * window, SSHORT latch_wait)
 {
 /**************************************
  *
@@ -783,7 +786,7 @@ PAG CCH_fake(thread_db* tdbb, WIN * window, SSHORT latch_wait)
 }
 
 
-PAG CCH_fetch(thread_db* tdbb,
+pag* CCH_fetch(thread_db* tdbb,
 			  WIN* window,
 			  USHORT lock_type,
 			  SSHORT page_type,
@@ -1493,7 +1496,7 @@ SLONG CCH_get_incarnation(WIN * window)
 }
 
 
-PAG CCH_handoff(thread_db*	tdbb,
+pag* CCH_handoff(thread_db*	tdbb,
 				WIN* window,
 				SLONG	page,
 				SSHORT	lock,
@@ -2387,7 +2390,7 @@ void CCH_unwind(thread_db* tdbb, bool punt)
 		while (bdb->bdb_use_count) {
 			release_bdb(tdbb, bdb, true, false, false);
 		}
-		PAG page = bdb->bdb_buffer;
+		pag* page = bdb->bdb_buffer;
 		if ((page->pag_type == pag_header) ||
 			(page->pag_type == pag_transactions))
 		{
@@ -2509,7 +2512,7 @@ bool CCH_write_all_shadows(thread_db* tdbb,
 #endif
 			);
 
-		page = (PAG) spare_buffer;
+		page = (pag*) spare_buffer;
 		MOVE_FAST((const UCHAR*) bdb->bdb_buffer, (UCHAR*) page, HDR_SIZE);
 		old_buffer = bdb->bdb_buffer;
 		bdb->bdb_buffer = page;
