@@ -34,7 +34,6 @@
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #define DEBUG
-#include <assert.h>
 
 static int full_debug = 0;
 #define	FULL_DEBUG	if (full_debug) ib_printf
