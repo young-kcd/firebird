@@ -593,6 +593,15 @@ RSB OPT_compile(TDBB tdbb,
 		if (rivers_stack) {
 			sort = NULL;
 			outer_rivers = TRUE;
+			/* AB: We could already have multiple rivers at this
+			   point so try to do some sort/merging now. */
+			while (rivers_stack->lls_next
+			   && gen_sort_merge(tdbb, opt_, &rivers_stack));
+			/* AB: Mark the previous used streams (sub-rse's) again
+			   as active, because an SORT/MERGE could reset the flags */
+			for (i = 1; i <= sub_streams[0]; i++) {
+				csb->csb_rpt[sub_streams[i]].csb_flags |= csb_active;			
+			}
 		}
 
 		/* attempt to form joins in decreasing order of desirability */
