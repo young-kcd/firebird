@@ -174,7 +174,8 @@ static PAR find_record_version(DSQL_REQ, DSQL_NOD);
 static BOOLEAN invalid_reference(DSQL_CTX, DSQL_NOD, DSQL_NOD, BOOLEAN, BOOLEAN);
 static BOOLEAN node_match(DSQL_NOD, DSQL_NOD, BOOLEAN);
 static DSQL_NOD pass1_alias_list(DSQL_REQ, DSQL_NOD);
-static DSQL_CTX pass1_alias(DSQL_REQ, STR);
+static DSQL_CTX pass1_alias(DSQL_REQ, DLLS, STR);
+static STR pass1_alias_concat(STR, STR);
 static DSQL_NOD pass1_any(DSQL_REQ, DSQL_NOD, NOD_TYPE);
 static DSQL_REL pass1_base_table(DSQL_REQ, DSQL_REL, STR);
 static void pass1_blob(DSQL_REQ, DSQL_NOD);
@@ -372,6 +373,9 @@ DSQL_CTX PASS1_make_context(DSQL_REQ request, DSQL_NOD relation_node)
 	}
 
 	DEV_BLKCHK(string, dsql_type_str);
+	if (request->req_alias_relation_prefix) {
+		string = pass1_alias_concat(request->req_alias_relation_prefix, string);
+	}
 
 	if (string) {
 		DLLS stack;
@@ -3248,8 +3252,7 @@ static DSQL_NOD pass1_delete( DSQL_REQ request, DSQL_NOD input)
  **/
 static DSQL_NOD pass1_derived_table(DSQL_REQ request, DSQL_NOD input)
 {
-	DSQL_NOD node, *ptr, *end, node_select_item, rse;
-	DLLS req_base, req_union_base;
+	DSQL_NOD *ptr, *end;
 	int count;
 	TSQL tdsql;
 
@@ -3258,37 +3261,52 @@ static DSQL_NOD pass1_derived_table(DSQL_REQ request, DSQL_NOD input)
 
 	tdsql = GET_THREAD_DATA;
 	
-	node = MAKE_node (nod_derived_table, e_derived_table_count);
+	DSQL_NOD node = MAKE_node (nod_derived_table, e_derived_table_count);
+	STR alias = (STR) input->nod_arg[e_derived_table_alias];
+	node->nod_arg[e_derived_table_alias] = (DSQL_NOD) alias;
+	node->nod_arg[e_derived_table_column_alias] = input->nod_arg[e_derived_table_column_alias];
+
+	// Create the context now, because we need to know it for the tables inside.
+	DSQL_CTX context = PASS1_make_context(request, node);	
+
 	// Pass the rse, because the derived table should start at the
 	// current scope_level we use pass1_rse instead of PASS1_rse and
 	// we decrememt the current_scope level, because _always_ 
 	// PASS1_rse is called from pass1_rse from this node (nod_list)!!
 
-	req_base = request->req_context;
-	req_union_base = request->req_union_context;
+	// Save some values to restore after rse process.
+	DLLS req_base = request->req_context;
+	DLLS req_union_base = request->req_union_context;
+	STR req_alias_relation_prefix = request->req_alias_relation_prefix;
+
 	request->req_context = NULL;
 	request->req_union_context = NULL;
-
+	request->req_alias_relation_prefix = pass1_alias_concat(alias, req_alias_relation_prefix);
+	
 	request->req_scope_level--;
-	node->nod_arg[e_derived_table_rse] = rse = 
+	DSQL_NOD rse = 
 		pass1_rse(request, input->nod_arg[e_derived_table_rse], NULL, NULL);
+	context->ctx_rse = node->nod_arg[e_derived_table_rse] = rse;
+	request->req_scope_level++;
+
 	// Finish off by cleaning up contexts and put them into req_dt_context
 	// so create view (ddl) can deal with it.
+	// Also add the used contexts into the childs stack.
 	while (request->req_context) {
 		LLS_PUSH(request->req_context->lls_object, &request->req_dt_context);
+		LLS_PUSH(request->req_context->lls_object, &context->ctx_childs_derived_table);
 		LLS_POP(&request->req_context);
 	}
 	while (request->req_union_context) {
 		LLS_PUSH(request->req_union_context->lls_object, &request->req_dt_context);
 		LLS_POP(&request->req_union_context);
 	}
-	// Restore our orginal context base.
-	request->req_scope_level++;
+
+	delete request->req_alias_relation_prefix;
+	// Restore our orginal values.
 	request->req_context = req_base;
 	request->req_union_context = req_union_base;
-
-	node->nod_arg[e_derived_table_alias] = input->nod_arg[e_derived_table_alias];
-	node->nod_arg[e_derived_table_column_alias] = input->nod_arg[e_derived_table_column_alias];
+	request->req_alias_relation_prefix = req_alias_relation_prefix;
 
 	// If an alias-list is specified add them to the rse select-items.
 	if (node->nod_arg[e_derived_table_column_alias] && 
@@ -3362,7 +3380,7 @@ static DSQL_NOD pass1_derived_table(DSQL_REQ request, DSQL_NOD input)
 	ptr = rse->nod_arg[e_rse_items]->nod_arg;
 	end = ptr + rse->nod_arg[e_rse_items]->nod_count;
 	for (; ptr < end; ptr++) {
-		node_select_item = (*ptr);
+		DSQL_NOD node_select_item = (*ptr);
 		if (node_select_item->nod_type == nod_field) {
 			STR alias;
 			TEXT *src, *dest;
@@ -3396,7 +3414,7 @@ static DSQL_NOD pass1_derived_table(DSQL_REQ request, DSQL_NOD input)
 	ptr = rse->nod_arg[e_rse_items]->nod_arg;
 	end = ptr + rse->nod_arg[e_rse_items]->nod_count;
 	for (; ptr < end; ptr++) {
-		node_select_item = (*ptr);
+		DSQL_NOD node_select_item = (*ptr);
 		if (node_select_item->nod_type != nod_alias) {
 			// No columnname specified for column number %d
 			//
@@ -3411,9 +3429,6 @@ static DSQL_NOD pass1_derived_table(DSQL_REQ request, DSQL_NOD input)
 		}		
 		count++;
 	}
-
-	// Also create a context inside this scope.
-	PASS1_make_context(request, node);	
 
 	return node;
 }
@@ -3446,10 +3461,8 @@ static DSQL_NOD pass1_field( DSQL_REQ request, DSQL_NOD input, USHORT list)
 	STR name, qualifier;
 	DSQL_FLD field;
 	DLLS stack, ambiguous_ctx_stack = NULL;
-	DSQL_CTX context;
-    DSQL_NOD ddl_node;
+	DSQL_NOD ddl_node;
     BOOLEAN is_check_constraint;
-	bool is_derived_table;
 
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
@@ -3526,11 +3539,19 @@ static DSQL_NOD pass1_field( DSQL_REQ request, DSQL_NOD input, USHORT list)
 	{
 		// resolve_context() checks the type of the
 		// given context, so the cast to DSQL_CTX is safe.
+		
+        DSQL_CTX context = reinterpret_cast<DSQL_CTX>(stack->lls_object);
 
-        context = reinterpret_cast<DSQL_CTX>(stack->lls_object);
-        field = resolve_context (request, name, qualifier, context);
+		if (request->req_alias_relation_prefix) {
+			STR req_qualifier = pass1_alias_concat(request->req_alias_relation_prefix, qualifier);
+			field = resolve_context(request, name, req_qualifier, context);
+			delete req_qualifier;
+		}
+		else {
+			field = resolve_context(request, name, qualifier, context);
+		}
 		// AB: When there's no relation and no procedure then we have a derived table.
-		is_derived_table = (!context->ctx_procedure && !context->ctx_relation && context->ctx_rse);		
+		bool is_derived_table = (!context->ctx_procedure && !context->ctx_relation && context->ctx_rse);		
 
 		if (field)
 		{
@@ -4404,89 +4425,122 @@ static DSQL_NOD pass1_relation( DSQL_REQ request, DSQL_NOD input)
     @param alias_list
 
  **/
-static DSQL_NOD pass1_alias_list( DSQL_REQ request, DSQL_NOD alias_list)
+static DSQL_NOD pass1_alias_list(DSQL_REQ request, DSQL_NOD alias_list)
 {
-	DSQL_CTX context, new_context;
-	DSQL_REL relation;
 	DSQL_NOD *arg, *end;
-	USHORT alias_length;
-	TEXT *p, *q;
-	DLLS stack;
-	STR alias;
-	TSQL tdsql;
+	STR internal_qualifier;
 
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(alias_list, dsql_type_nod);
 
-	tdsql = GET_THREAD_DATA;
-
 	arg = alias_list->nod_arg;
 	end = alias_list->nod_arg + alias_list->nod_count;
 
-/* check the first alias in the list with the relations
-   in the current context for a match */
+	if (request->req_alias_relation_prefix) {
+		internal_qualifier = 
+			pass1_alias_concat(request->req_alias_relation_prefix, (STR)* arg);
+	}
+	else {
+		internal_qualifier = (STR) * arg;
+	}
 
-	if (context = pass1_alias(request, (STR) * arg)) {
-		if (alias_list->nod_count == 1)
+	// check the first alias in the list with the relations
+	// in the current context for a match.
+	DSQL_CTX context;
+	DSQL_REL relation;
+	if (context = pass1_alias(request, request->req_context, internal_qualifier)) {
+		if (alias_list->nod_count == 1) {
 			return (DSQL_NOD) context;
+		}
 		relation = context->ctx_relation;
 	}
 
-/* if the first alias didn't specify a table in the context stack, 
-   look through all contexts to find one which might be a view with
-   a base table having a matching table name or alias */
+	// if the first alias didn't specify a table in the context stack, 
+	// look through all contexts to find one which might be a view with
+	// a base table having a matching table name or alias.
 
-	if (!context)
+	if (!context) {
+		DLLS stack;
 		for (stack = request->req_context; stack; stack = stack->lls_next) {
 			context = (DSQL_CTX) stack->lls_object;
+			DEV_BLKCHK(context, dsql_type_ctx);
 			if (context->ctx_scope_level == request->req_scope_level &&
 				context->ctx_relation)
-					if (relation =
-						pass1_base_table(request, context->ctx_relation,
-										 (STR) * arg))
+			{
+				if (relation = pass1_base_table(request, context->ctx_relation, 
+						(STR) * arg)) {
 					break;
+				}
+			}
 			context = NULL;
 		}
+	}
 
-	if (!context)
-		/* there is no alias or table named %s at this scope level */
+	if (!context) {
+		// there is no alias or table named %s at this scope level.
 		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
 				  gds_arg_gds, gds_dsql_command_err,
 				  gds_arg_gds, gds_dsql_no_relation_alias,
 				  gds_arg_string, ((STR) * arg)->str_data, 0);
+	}
 
-/* find the base table using the specified alias list, skipping the first one
-   since we already matched it to the context */
+	// Is this context a derived table.
+	if (!context->ctx_relation && !context->ctx_procedure && context->ctx_rse) {
+		STR tmp_qualifier = (STR)* arg;
+		arg++;
+		tmp_qualifier = pass1_alias_concat(tmp_qualifier, (STR)* arg);
+		DSQL_CTX dt_context = 
+			pass1_alias(request, context->ctx_childs_derived_table, tmp_qualifier);
+		if (!dt_context) {
+			dt_context = 
+				pass1_alias(request, context->ctx_childs_derived_table, (STR)* arg);
+		}
 
-	for (arg++; arg < end; arg++)
-		if (!(relation = pass1_base_table(request, relation, (STR) * arg)))
+		if (!dt_context) {
+			// there is no alias or table named %s at this scope level.
+			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
+				  gds_arg_gds, gds_dsql_command_err,
+				  gds_arg_gds, gds_dsql_no_relation_alias,
+				  gds_arg_string, ((STR) * arg)->str_data, 0);
+		}
+		return (DSQL_NOD) dt_context;
+	}
+
+	// find the base table using the specified alias list, skipping the first one
+	// since we already matched it to the context.
+	for (arg++; arg < end; arg++) {
+		if (!(relation = pass1_base_table(request, relation, (STR) * arg))) {
 			break;
+		}
+	}
 
-	if (!relation)
-		/* there is no alias or table named %s at this scope level */
+	if (!relation) {
+		// there is no alias or table named %s at this scope level.
 		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
 				  gds_arg_gds, gds_dsql_command_err,
 				  gds_arg_gds, gds_dsql_no_relation_alias,
 				  gds_arg_string, ((STR) * arg)->str_data, 0);
+	}
 
-/* make up a dummy context to hold the resultant relation */
-
-	new_context = FB_NEW(*tdsql->tsql_default) dsql_ctx;
+	// make up a dummy context to hold the resultant relation.
+	TSQL tdsql = GET_THREAD_DATA;
+	DSQL_CTX new_context = FB_NEW(*tdsql->tsql_default) dsql_ctx;
 	new_context->ctx_context = context->ctx_context;
 	new_context->ctx_relation = relation;
 
 /* concatenate all the contexts to form the alias name;
    calculate the length leaving room for spaces and a null */
 
-	alias_length = alias_list->nod_count;
+	USHORT alias_length = alias_list->nod_count;
 	for (arg = alias_list->nod_arg; arg < end; arg++) {
 		DEV_BLKCHK(*arg, dsql_type_str);
 		alias_length += static_cast < USHORT > (((STR) * arg)->str_length);
 	}
 
-	alias = FB_NEW_RPT(*tdsql->tsql_default, alias_length) str;
+	STR alias = FB_NEW_RPT(*tdsql->tsql_default, alias_length) str;
 	alias->str_length = alias_length;
 
+	TEXT *p, *q;
 	p = new_context->ctx_alias = (TEXT *) alias->str_data;
 	for (arg = alias_list->nod_arg; arg < end; arg++) {
 		DEV_BLKCHK(*arg, dsql_type_str);
@@ -4515,47 +4569,48 @@ static DSQL_NOD pass1_alias_list( DSQL_REQ request, DSQL_NOD alias_list)
     @param alias
 
  **/
-static DSQL_CTX pass1_alias( DSQL_REQ request, STR alias)
+static DSQL_CTX pass1_alias(DSQL_REQ request, DLLS stack, STR alias)
 {
-	DLLS stack;
 	DSQL_CTX context, relation_context = NULL;
 
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(alias, dsql_type_str);
 
-    /* look through all contexts at this scope level
-       to find one that has a relation name or alias
-       name which matches the identifier passed */
-    
-	for (stack = request->req_context; stack; stack = stack->lls_next) {
+	// look through all contexts at this scope level
+	// to find one that has a relation name or alias
+	// name which matches the identifier passed.    
+	for (; stack; stack = stack->lls_next) {
 		context = (DSQL_CTX) stack->lls_object;
-		if (context->ctx_scope_level != request->req_scope_level)
+		if (context->ctx_scope_level != request->req_scope_level) {
 			continue;
+		}
 
-        /* CVC: Getting rid of trailing spaces */
-        if (alias && alias->str_data)
-            pass_exact_name ( (TEXT*) alias->str_data);
+        // CVC: Getting rid of trailing spaces.
+        if (alias && alias->str_data) {
+            pass_exact_name((TEXT*) alias->str_data);
+		}
         
-		/* check for matching alias */
-
+		// check for matching alias.
 		if (context->ctx_alias &&
 			!strcmp(context->ctx_alias,
 					reinterpret_cast <
-					const char *>(alias->str_data))) return context;
+					const char *>(alias->str_data))) {
+			return context;
+		}
 
-		/* check for matching relation name; aliases take priority so
-		   save the context in case there is an alias of the same name;
-		   also to check that there is no self-join in the query */
-
+		// check for matching relation name; aliases take priority so
+		// save the context in case there is an alias of the same name;
+		// also to check that there is no self-join in the query.
 		if (context->ctx_relation &&
 			!strcmp(context->ctx_relation->rel_name,
 					reinterpret_cast < const char *>(alias->str_data))) {
-			if (relation_context)
+			if (relation_context) {
 				/* the table %s is referenced twice; use aliases to differentiate */
 				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
 						  gds_arg_gds, gds_dsql_command_err,
 						  gds_arg_gds, gds_dsql_self_join,
 						  gds_arg_string, alias->str_data, 0);
+			}
 			relation_context = context;
 		}
 	}
@@ -4563,6 +4618,52 @@ static DSQL_CTX pass1_alias( DSQL_REQ request, STR alias)
 	return relation_context;
 }
 
+
+/**
+  
+ 	pass1_alias_concat
+  
+    @brief	Concatenate 2 input strings together for
+	a new alias string. 
+	Note: Both input params can be empty.
+ 
+
+    @param input1
+    @param input2
+
+ **/
+static STR pass1_alias_concat(STR input1, STR input2)
+{
+	TSQL tdsql = GET_THREAD_DATA;
+
+	DEV_BLKCHK(input1, dsql_type_str);
+	DEV_BLKCHK(input2, dsql_type_str);
+
+	int length = 0; 
+	if (input1) {
+		length += input1->str_length;
+	}
+	if (input1 && input2) {
+		length++; // Room for space character.
+	}
+	if (input2) {
+		length += input2->str_length;
+	}
+	STR output = FB_NEW_RPT(*tdsql->tsql_default, length) str;
+	output->str_length = length;
+	TEXT *ptr;
+	ptr = output->str_data;
+	if (input1) {
+		strcat(ptr, input1->str_data);
+	}
+	if (input1 && input2) {
+		strcat(ptr, " ");
+	}
+	if (input2) {
+		strcat(ptr, input2->str_data);
+	}
+	return output;
+}
 
 
 /**

@@ -445,6 +445,7 @@ public:
 	USHORT	req_flags;			//!< generic flag
 	USHORT	req_client_dialect;	//!< dialect passed into the API call
 	USHORT	req_in_outer_join;	//!< processing inside outer-join part
+	STR		req_alias_relation_prefix;	//!< prefix for every relation-alias.
 };
 typedef dsql_req* DSQL_REQ;
 
@@ -502,17 +503,18 @@ typedef dsql_tra* DSQL_TRA;
 class dsql_ctx : public pool_alloc<dsql_type_ctx>
 {
 public:
-	dsql_req*		ctx_request;		//!< Parent request
-	dsql_rel*	ctx_relation;		//!< Relation for context
-	dsql_prc*		ctx_procedure;		//!< Procedure for context
+	dsql_req*			ctx_request;		//!< Parent request
+	dsql_rel*			ctx_relation;		//!< Relation for context
+	dsql_prc*			ctx_procedure;		//!< Procedure for context
 	struct dsql_nod*	ctx_proc_inputs;	//!< Procedure input parameters
-	class map*	ctx_map;			//!< Map for aggregates
+	class map*			ctx_map;			//!< Map for aggregates
 	struct dsql_nod*	ctx_rse;			//!< Sub-rse for aggregates
-	dsql_ctx*		ctx_parent;			//!< Parent context for aggregates
-	TEXT*		ctx_alias;			//!< Context alias
-	USHORT		ctx_context;		//!< Context id
-	USHORT		ctx_scope_level;	//!< Subquery level within this request
-	USHORT		ctx_flags;			//!< Various flag values
+	dsql_ctx*			ctx_parent;			//!< Parent context for aggregates
+	TEXT*				ctx_alias;			//!< Context alias
+	USHORT				ctx_context;		//!< Context id
+	USHORT				ctx_scope_level;	//!< Subquery level within this request
+	USHORT				ctx_flags;			//!< Various flag values
+	DLLS				ctx_childs_derived_table;	//!< Childs derived table context
 };
 typedef dsql_ctx* DSQL_CTX;
 

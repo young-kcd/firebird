@@ -29,7 +29,7 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 /*
-$Id: gen.cpp,v 1.36 2003-08-14 23:33:43 arnobrinkman Exp $
+$Id: gen.cpp,v 1.37 2003-08-19 23:34:22 arnobrinkman Exp $
 */
 
 #include "firebird.h"
@@ -1951,7 +1951,7 @@ static void gen_relation( DSQL_REQ request, DSQL_CTX context)
 			STUFF_CSTRING(context->ctx_alias);
 		STUFF(context->ctx_context);
 	}
-	else {
+	else if (procedure) {
 		if (DDL_ids(request)) {
 			STUFF(blr_pid);
 			STUFF_WORD(procedure->prc_id);
