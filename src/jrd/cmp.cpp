@@ -40,7 +40,7 @@
  *
  */
 /*
-$Id: cmp.cpp,v 1.25 2002-11-23 17:58:29 dimitr Exp $
+$Id: cmp.cpp,v 1.26 2002-11-23 23:36:21 arnobrinkman Exp $
 */
 
 #include "firebird.h"
@@ -4744,8 +4744,16 @@ static void pass2_rse(TDBB tdbb, CSB csb, RSE rse)
 			csb->csb_rpt[stream].csb_flags |= csb_active;
 			pass2(tdbb, csb, node, (JRD_NOD) rse);
 		}
-		else if (node->nod_type == nod_rse)
+		else if (node->nod_type == nod_rse) {
 			pass2_rse(tdbb, csb, (RSE) node);
+		}
+		else if (node->nod_type == nod_procedure) {
+			USHORT stream;
+
+			stream = (USHORT) node->nod_arg[e_prc_stream];
+			csb->csb_rpt[stream].csb_flags |= csb_active;
+			pass2(tdbb, csb, node, (JRD_NOD) rse);
+		}
 		else
 			pass2(tdbb, csb, node, (JRD_NOD) rse);
 	}
@@ -5142,6 +5150,10 @@ static RSB post_rse(TDBB tdbb, CSB csb, RSE rse)
 		node = *ptr;
 		if (node->nod_type == nod_relation) {
 			stream = (USHORT) node->nod_arg[e_rel_stream];
+			csb->csb_rpt[stream].csb_flags &= ~csb_active;
+		}
+		else if (node->nod_type == nod_procedure) {
+			stream = (USHORT) node->nod_arg[e_prc_stream];
 			csb->csb_rpt[stream].csb_flags &= ~csb_active;
 		}
 	}

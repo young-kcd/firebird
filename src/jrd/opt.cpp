@@ -4018,7 +4018,7 @@ static RSB gen_retrieval(TDBB tdbb,
 			compose(&inversion, OPT_make_dbkey(opt, node, stream), nod_bit_and);
 		}
 		if (!(tail->opt_flags & opt_used)
-			&& computable(csb, node, -1, (BOOLEAN) (inner_flag || outer_flag) ? TRUE : FALSE)) {
+			&& computable(csb, node, -1, FALSE)) {
 			if (node->nod_type == nod_or) {
 				compose(&inversion, make_inversion(tdbb, opt, node, stream),
 					nod_bit_and); 
