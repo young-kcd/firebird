@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.6 2002-04-13 06:04:27 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.7 2002-06-04 19:56:15 bellardo Exp $ 
  */
 
 /*
@@ -56,7 +56,7 @@
 #include "../jrd/lck.h"
 #include "../jrd/lls.h"
 #include "../jrd/intl.h"
-#include "../jrd/intlobj.h"
+#include "../jrd/intl_classes.h"
 #include "../jrd/rse.h"
 #include "../jrd/quad.h"
 #include "../jrd/sort.h"
@@ -90,13 +90,11 @@
 #include "../jrd/sort_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/align.h"
+//#include "../jrd/authenticate.h"
 
 #ifdef DARWIN
 #include </usr/include/time.h>
 #endif
-
-extern "C" {
-
 
 #if defined(WIN_NT) && defined(_MSC_VER)
 #pragma warning(disable: 4244)
@@ -151,12 +149,12 @@ static DSC *record_version(TDBB, NOD, VLU);
 static BOOLEAN reject_duplicate(UCHAR *, UCHAR *, int);
 static DSC *scalar(TDBB, NOD, VLU);
 static SSHORT sleuth(TDBB, NOD, DSC *, DSC *);
-static BOOLEAN nc_sleuth_check(TEXTTYPE, USHORT, UCHAR *, UCHAR *, UCHAR *,
+static BOOLEAN nc_sleuth_check(class TextType*, USHORT, UCHAR *, UCHAR *, UCHAR *,
 							   UCHAR *);
-static BOOLEAN nc_sleuth_class(TEXTTYPE, USHORT, UCHAR *, UCHAR *, UCHAR);
-static BOOLEAN wc_sleuth_check(TEXTTYPE, USHORT, WCHAR *, WCHAR *, WCHAR *,
+static BOOLEAN nc_sleuth_class(class TextType*, USHORT, UCHAR *, UCHAR *, UCHAR);
+static BOOLEAN wc_sleuth_check(class TextType*, USHORT, WCHAR *, WCHAR *, WCHAR *,
 							   WCHAR *);
-static BOOLEAN wc_sleuth_class(TEXTTYPE, USHORT, WCHAR *, WCHAR *, WCHAR);
+static BOOLEAN wc_sleuth_class(class TextType*, USHORT, WCHAR *, WCHAR *, WCHAR);
 static SSHORT string_boolean(TDBB, NOD, DSC *, DSC *);
 static SSHORT string_function(TDBB, NOD, SSHORT, UCHAR *,
 							  SSHORT, UCHAR *, USHORT);
@@ -1785,7 +1783,7 @@ void DLL_EXPORT EVL_make_value(TDBB tdbb, DSC * desc, VLU value)
 
 
 USHORT DLL_EXPORT EVL_mb_contains(TDBB tdbb,
-								  TEXTTYPE obj,
+								  class TextType* obj,
 								  UCHAR * p1,
 								  USHORT l1, UCHAR * p2, USHORT l2)
 {
@@ -1809,18 +1807,8 @@ USHORT DLL_EXPORT EVL_mb_contains(TDBB tdbb,
 
 	SET_TDBB(tdbb);
 
-	len1 =
-		reinterpret_cast < USHORT(*)(...) > (obj->texttype_fn_to_wc) (obj,
-																	  NULL, 0,
-																	  p1, l1,
-																	  &err_code,
-																	  &err_pos);
-	len2 =
-		reinterpret_cast < USHORT(*)(...) > (obj->texttype_fn_to_wc) (obj,
-																	  NULL, 0,
-																	  p2, l2,
-																	  &err_code,
-																	  &err_pos);
+	len1 = obj->to_wc(NULL, 0, p1, l1, &err_code, &err_pos);
+	len2 = obj->to_wc(NULL, 0, p2, l2, &err_code, &err_pos);
 
 	if (len1 > sizeof(buffer1)) {
 		buf1 = new(*tdbb->tdbb_default, len1) str();
@@ -1831,20 +1819,8 @@ USHORT DLL_EXPORT EVL_mb_contains(TDBB tdbb,
 		pp2 = (USHORT *) buf2->str_data;
 	}
 
-	len1 =
-		reinterpret_cast < USHORT(*)(...) > (obj->texttype_fn_to_wc) (obj,
-																	  pp1,
-																	  len1,
-																	  p1, l1,
-																	  &err_code,
-																	  &err_pos);
-	len2 =
-		reinterpret_cast < USHORT(*)(...) > (obj->texttype_fn_to_wc) (obj,
-																	  pp2,
-																	  len2,
-																	  p2, l2,
-																	  &err_code,
-																	  &err_pos);
+	len1 = obj->to_wc((unsigned char*)pp1, len1, p1, l1, &err_code, &err_pos);
+	len2 = obj->to_wc((unsigned char*)pp2, len2, p2, l2, &err_code, &err_pos);
 
 	ret_val = EVL_wc_contains(tdbb, obj, pp1, len1, pp2, len2);
 
@@ -1858,7 +1834,7 @@ USHORT DLL_EXPORT EVL_mb_contains(TDBB tdbb,
 
 
 USHORT DLL_EXPORT EVL_mb_like(TDBB tdbb,
-							  TEXTTYPE obj,
+							  class TextType* obj,
 							  UCHAR * p1,
 							  SSHORT l1,
 							  UCHAR * p2, SSHORT l2, WCHAR escape_char)
@@ -1889,18 +1865,8 @@ USHORT DLL_EXPORT EVL_mb_like(TDBB tdbb,
 
 	SET_TDBB(tdbb);
 
-	len1 =
-		reinterpret_cast <USHORT(*)(...)>(obj->texttype_fn_to_wc) (	obj,
-																	NULL, 0,
-																	p1, l1,
-																	&err_code,
-																	&err_pos);
-	len2 =
-		reinterpret_cast <USHORT(*)(...)>(obj->texttype_fn_to_wc)(	obj,
-																	NULL, 0,
-																	p2, l2,
-																	&err_code,
-																	&err_pos);
+	len1 = obj->to_wc(NULL, 0, p1, l1, &err_code, &err_pos);
+	len2 = obj->to_wc(NULL, 0, p2, l2, &err_code, &err_pos);
 	if (len1 > sizeof(buffer1)) {
 		buf1 = new(*tdbb->tdbb_default, len1) str();
 		pp1 = (USHORT *) buf1->str_data;
@@ -1910,20 +1876,8 @@ USHORT DLL_EXPORT EVL_mb_like(TDBB tdbb,
 		pp2 = (USHORT *) buf2->str_data;
 	}
 
-	len1 =
-		reinterpret_cast <USHORT(*)(...)>(obj->texttype_fn_to_wc)(	obj,
-																	pp1,
-																	len1,
-																	p1, l1,
-																	&err_code,
-																	&err_pos);
-	len2 =
-		reinterpret_cast <USHORT(*)(...)> (obj->texttype_fn_to_wc)(	obj,
-																	pp2,
-																	len2,
-																	p2, l2,
-																	&err_code,
-																	&err_pos);
+	len1 = obj->to_wc((unsigned char*)pp1, len1, p1, l1, &err_code, &err_pos);
+	len2 = obj->to_wc((unsigned char*)pp2, len2, p2, l2, &err_code, &err_pos);
 
 	ret_val = EVL_wc_like(tdbb, obj, pp1, len1, pp2, len2, escape_char);
 
@@ -1937,7 +1891,7 @@ USHORT DLL_EXPORT EVL_mb_like(TDBB tdbb,
 
 
 USHORT DLL_EXPORT EVL_mb_matches(TDBB tdbb,
-								 TEXTTYPE obj,
+								 class TextType* obj,
 								 UCHAR * p1, SSHORT l1, UCHAR * p2, SSHORT l2)
 {
 /**************************************
@@ -1964,18 +1918,8 @@ USHORT DLL_EXPORT EVL_mb_matches(TDBB tdbb,
 
 	SET_TDBB(tdbb);
 
-	len1 =
-		reinterpret_cast < USHORT(*)(...) > (obj->texttype_fn_to_wc) (obj,
-																	  NULL, 0,
-																	  p1, l1,
-																	  &err_code,
-																	  &err_pos);
-	len2 =
-		reinterpret_cast < USHORT(*)(...) > (obj->texttype_fn_to_wc) (obj,
-																	  NULL, 0,
-																	  p2, l2,
-																	  &err_code,
-																	  &err_pos);
+	len1 = obj->to_wc(NULL, 0, p1, l1, &err_code, &err_pos);
+	len2 = obj->to_wc(NULL, 0, p2, l2, &err_code, &err_pos);
 	if (len1 > sizeof(buffer1)) {
 		buf1 = new(*tdbb->tdbb_default, len1) str();
 		pp1 = (USHORT *) buf1->str_data;
@@ -1985,20 +1929,8 @@ USHORT DLL_EXPORT EVL_mb_matches(TDBB tdbb,
 		pp2 = (USHORT *) buf2->str_data;
 	}
 
-	len1 =
-		reinterpret_cast < USHORT(*)(...) > (obj->texttype_fn_to_wc) (obj,
-																	  pp1,
-																	  len1,
-																	  p1, l1,
-																	  &err_code,
-																	  &err_pos);
-	len2 =
-		reinterpret_cast < USHORT(*)(...) > (obj->texttype_fn_to_wc) (obj,
-																	  pp2,
-																	  len2,
-																	  p2, l2,
-																	  &err_code,
-																	  &err_pos);
+	len1 = obj->to_wc((unsigned char*)pp1, len1, p1, l1, &err_code, &err_pos);
+	len2 = obj->to_wc((unsigned char*)pp2, len2, p2, l2, &err_code, &err_pos);
 
 	ret_val = EVL_wc_matches(tdbb, obj, pp1, len1, pp2, len2);
 
@@ -2012,7 +1944,7 @@ USHORT DLL_EXPORT EVL_mb_matches(TDBB tdbb,
 
 
 USHORT DLL_EXPORT EVL_mb_sleuth_check(TDBB tdbb,
-									  TEXTTYPE obj,
+									  class TextType* obj,
 									  USHORT flags,
 									  UCHAR * search,
 									  USHORT search_bytes,
@@ -2039,7 +1971,6 @@ USHORT DLL_EXPORT EVL_mb_sleuth_check(TDBB tdbb,
 	SSHORT err_code;
 	USHORT err_pos;
 
-	assert(obj != NULL);
 	assert(search != NULL);
 	assert(match != NULL);
 
@@ -2048,26 +1979,13 @@ USHORT DLL_EXPORT EVL_mb_sleuth_check(TDBB tdbb,
 
 	SET_TDBB(tdbb);
 
-	len1 =
-		reinterpret_cast < USHORT(*)(...) > (obj->texttype_fn_to_wc) (obj,
-																	  NULL, 0,
-																	  search,
-																	  search_bytes,
-																	  &err_code,
-																	  &err_pos);
+	len1 = obj->to_wc(NULL, 0, search, search_bytes, &err_code, &err_pos);
 	if (len1 > sizeof(buffer1)) {
 		buf1 = new(*tdbb->tdbb_default, len1) str();
 		pp1 = (USHORT *) buf1->str_data;
 	}
 
-	len1 =
-		reinterpret_cast < USHORT(*)(...) > (obj->texttype_fn_to_wc) (obj,
-																	  pp1,
-																	  len1,
-																	  search,
-																	  search_bytes,
-																	  &err_code,
-																	  &err_pos);
+	len1 = obj->to_wc((unsigned char*)pp1, len1, search, search_bytes, &err_code, &err_pos);
 
 	ret_val =
 		EVL_wc_sleuth_check(tdbb, obj, 0, pp1, len1,
@@ -2082,7 +2000,7 @@ USHORT DLL_EXPORT EVL_mb_sleuth_check(TDBB tdbb,
 
 
 USHORT DLL_EXPORT EVL_mb_sleuth_merge(TDBB tdbb,
-									  TEXTTYPE obj,
+									  class TextType* obj,
 									  UCHAR * match,
 									  USHORT match_bytes,
 									  UCHAR * control,
@@ -2108,27 +2026,14 @@ USHORT DLL_EXPORT EVL_mb_sleuth_merge(TDBB tdbb,
 	SSHORT err_code;
 	USHORT err_pos;
 
-	assert(obj != NULL);
 	assert(control != NULL);
 	assert(match != NULL);
 	assert(combined != NULL);
 
 	SET_TDBB(tdbb);
 
-	len1 =
-		reinterpret_cast < USHORT(*)(...) > (obj->texttype_fn_to_wc) (obj,
-																	  NULL, 0,
-																	  match,
-																	  match_bytes,
-																	  &err_code,
-																	  &err_pos);
-	len2 =
-		reinterpret_cast < USHORT(*)(...) > (obj->texttype_fn_to_wc) (obj,
-																	  NULL, 0,
-																	  control,
-																	  control_bytes,
-																	  &err_code,
-																	  &err_pos);
+	len1 = obj->to_wc(NULL, 0, match, match_bytes, &err_code, &err_pos);
+	len2 = obj->to_wc(NULL, 0, control, control_bytes, &err_code, &err_pos);
 	if (len1 > sizeof(buffer1)) {
 		buf1 = new(*tdbb->tdbb_default, len1) str();
 		pp1 = (USHORT *) buf1->str_data;
@@ -2138,22 +2043,10 @@ USHORT DLL_EXPORT EVL_mb_sleuth_merge(TDBB tdbb,
 		pp2 = (USHORT *) buf2->str_data;
 	}
 
-	len1 =
-		reinterpret_cast < USHORT(*)(...) > (obj->texttype_fn_to_wc) (obj,
-																	  pp1,
-																	  len1,
-																	  match,
-																	  match_bytes,
-																	  &err_code,
-																	  &err_pos);
-	len2 =
-		reinterpret_cast < USHORT(*)(...) > (obj->texttype_fn_to_wc) (obj,
-																	  pp2,
-																	  len2,
-																	  control,
-																	  control_bytes,
-																	  &err_code,
-																	  &err_pos);
+	len1 = obj->to_wc((unsigned char*)pp1, len1, match, match_bytes,
+												&err_code, &err_pos);
+	len2 = obj->to_wc((unsigned char*)pp2, len2, control, control_bytes,
+												&err_code, &err_pos);
 
 	ret_val = EVL_wc_sleuth_merge(tdbb, obj, pp1, len1, pp2,
 								  len2,
@@ -2170,7 +2063,7 @@ USHORT DLL_EXPORT EVL_mb_sleuth_merge(TDBB tdbb,
 
 
 USHORT DLL_EXPORT EVL_nc_contains(TDBB tdbb_dummy,
-								  TEXTTYPE obj,
+								  class TextType* obj,
 								  UCHAR * p1,
 								  USHORT l1, UCHAR * p2, USHORT l2)
 {
@@ -2196,10 +2089,7 @@ USHORT DLL_EXPORT EVL_nc_contains(TDBB tdbb_dummy,
 				return TRUE;
 			c1 = *q1++;
 			c2 = *q2++;
-		} while (reinterpret_cast < USHORT(*)(...) >
-				 (*obj->texttype_fn_to_upper) (obj,
-											   c1) == reinterpret_cast <
-				 USHORT(*)(...) > (*obj->texttype_fn_to_upper) (obj, c2));
+		} while (obj->to_upper(c1) == obj->to_upper(c2));
 	}
 
 	return FALSE;
@@ -2235,9 +2125,7 @@ USHORT DLL_EXPORT EVL_nc_contains(TDBB tdbb_dummy,
 #define SLEUTHTYPE              UCHAR
 
 #define EVL_LIKE_INCLUDED_BY_EVL_CPP
-} // extern "C"
 #include "../jrd/evl_like.cpp"
-extern "C" {
 #undef EVL_LIKE_INCLUDED_BY_EVL_CPP
 
 #undef LIKENAME
@@ -2252,7 +2140,7 @@ extern "C" {
 
 
 USHORT DLL_EXPORT EVL_wc_contains(TDBB tdbb_dumm,
-								  TEXTTYPE obj, WCHAR * p1, USHORT l1,	/* byte count */
+								  class TextType* obj, WCHAR * p1, USHORT l1,	/* byte count */
 								  WCHAR * p2, USHORT l2)
 {
 /**************************************
@@ -2278,10 +2166,7 @@ USHORT DLL_EXPORT EVL_wc_contains(TDBB tdbb_dumm,
 				return TRUE;
 			c1 = *q1++;
 			c2 = *q2++;
-		} while (reinterpret_cast < USHORT(*)(...) >
-				 (*obj->texttype_fn_to_upper) (obj,
-											   c1) == reinterpret_cast <
-				 USHORT(*)(...) > (*obj->texttype_fn_to_upper) (obj, c2));
+		} while (obj->to_upper(c1) == obj->to_upper(c2));
 	}
 
 	return FALSE;
@@ -4566,7 +4451,7 @@ static SSHORT sleuth(TDBB tdbb, NOD node, DSC * desc1, DSC * desc2)
 	USHORT ttype;
 	STR data_str = NULL, match_str = NULL, sleuth_str = NULL;
 	SSHORT ret_val;
-	TEXTTYPE obj;
+	class TextType* obj;
 
 	SET_TDBB(tdbb);
 
@@ -4595,10 +4480,7 @@ static SSHORT sleuth(TDBB tdbb, NOD node, DSC * desc1, DSC * desc2)
 	else
 		ttype = INTL_TTYPE(desc1);
 
-	obj =
-		reinterpret_cast < TEXTTYPE >
-		(INTL_obj_lookup
-		 (tdbb, type_texttype, ttype, (FPTR_VOID) ERR_post, NULL));
+	obj = INTL_texttype_lookup(tdbb, ttype, (FPTR_VOID) ERR_post, NULL);
 
 /* Get operator definition string (control string) */
 
@@ -4613,9 +4495,7 @@ static SSHORT sleuth(TDBB tdbb, NOD node, DSC * desc1, DSC * desc2)
 						 reinterpret_cast < vary * >(temp2), TEMP_SIZE(temp2),
 						 &match_str);
 /* Merge search and control strings */
-	l2 =
-		reinterpret_cast < USHORT(*)(...) >
-		(obj->texttype_fn_sleuth_merge) (tdbb, obj, p2, l2, p1, l1, control,
+	l2 = obj->sleuth_merge(tdbb, p2, l2, p1, l1, control,
 										 BUFFER_SMALL);
 
 /* l2 is result's byte-count */
@@ -4630,10 +4510,7 @@ static SSHORT sleuth(TDBB tdbb, NOD node, DSC * desc1, DSC * desc2)
 			MOV_make_string2(desc1, ttype, &p1,
 							 reinterpret_cast < vary * >(temp1),
 							 TEMP_SIZE(temp1), &data_str);
-		ret_val =
-			reinterpret_cast < USHORT(*)(...) >
-			(obj->texttype_fn_sleuth_check) (tdbb, obj, 0, p1, l1, control,
-											 l2);
+		ret_val = obj->sleuth_check(tdbb, 0, p1, l1, control, l2);
 	}
 	else {
 		/* Source string is a blob, things get interesting */
@@ -4649,9 +4526,8 @@ static SSHORT sleuth(TDBB tdbb, NOD node, DSC * desc1, DSC * desc2)
 #else
 			l1 = BLB_get_segment(tdbb, blob, buffer, sizeof(buffer));
 #endif
-			if (reinterpret_cast < USHORT(*)(...) >
-				(obj->texttype_fn_sleuth_check) (tdbb, obj, 0, buffer, l1,
-												 control, l2)) {
+			if (obj->sleuth_check(tdbb, 0, buffer, l1, control, l2))
+			{
 				ret_val = TRUE;
 				break;
 			}
@@ -4812,7 +4688,7 @@ static SSHORT string_function(
  *      or STARTS WITH.
  *
  **************************************/
-	TEXTTYPE obj;
+	class TextType* obj;
 
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(node, type_nod);
@@ -4828,16 +4704,12 @@ static SSHORT string_function(
 		return TRUE;
 	}
 
-	obj =
-		reinterpret_cast < TEXTTYPE >
-		(INTL_obj_lookup
-		 (tdbb, type_texttype, ttype, (FPTR_VOID) ERR_post, NULL));
+	obj = INTL_texttype_lookup(tdbb, ttype, (FPTR_VOID) ERR_post, NULL);
 
 /* Handle contains */
 
 	if (node->nod_type == nod_contains) {
-		return reinterpret_cast < USHORT(*)(...) >
-			(obj->texttype_fn_contains) (tdbb, obj, p1, l1, p2, l2);
+		return obj->contains(tdbb, p1, l1, p2, l2);
 	}
 
 /* Handle LIKE and MATCHES*/
@@ -4868,9 +4740,7 @@ static SSHORT string_function(
 			if (!l3)
 				ERR_post(gds_like_escape_invalid, 0);
 			/* Grab the first character from the string */
-			consumed =
-				reinterpret_cast < USHORT(*)(...) >
-				(obj->texttype_fn_mbtowc) (obj, &escape, q1, l3);
+			consumed = obj->mbtowc(&escape, q1, l3);
 
 			/* If characters left, or null byte character, return error */
 			if (consumed <= 0 || consumed != l3 || (escape == 0))
@@ -4880,12 +4750,10 @@ static SSHORT string_function(
 			delete temp_str;
 #endif
 		}
-		return reinterpret_cast < USHORT(*)(...) >
-			(obj->texttype_fn_like) (tdbb, obj, p1, l1, p2, l2, escape);
+		return obj->like(tdbb, p1, l1, p2, l2, escape);
 	}
 
-	return reinterpret_cast < USHORT(*)(...) >
-		(obj->texttype_fn_matches) (tdbb, obj, p1, l1, p2, l2);
+	return obj->matches(tdbb, p1, l1, p2, l2);
 }
 
 
@@ -4965,6 +4833,3 @@ static DSC *upcase(TDBB tdbb, DSC * value, VLU impure)
 
 	return &impure->vlu_desc;
 }
-
-
-} // extern "C"

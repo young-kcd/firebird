@@ -188,8 +188,8 @@ public:
 
 	class map *dbb_blob_map;	/* mapping of blobs for REPLAY */
 	struct log *dbb_log;		/* log file for REPLAY */
- 	vec*		dbb_text_objects;	/* intl text type descriptions */
- 	vec*		dbb_charsets;	/* intl character set descriptions */
+	Firebird::vector<class TextType*>		dbb_text_objects;	/* intl text type descriptions */
+	Firebird::vector<class CharSetContainer*>		dbb_charsets;	/* intl character set descriptions */
 	struct wal *dbb_wal;		/* WAL handle for WAL API */
 	struct tpc *dbb_tip_cache;	/* cache of latest known state of all transactions in system */
 	class vcl *dbb_pc_transactions;	/* active precommitted transactions */
@@ -197,7 +197,9 @@ public:
 
 private:
 	dbb(MemoryPool& p)
-	:	dbb_pools(10, p, type_dbb)
+	:	dbb_pools(10, p, type_dbb),
+		dbb_text_objects(p),
+		dbb_charsets(p)
 	{
 	}
 	dbb(const dbb&);	// no impl.

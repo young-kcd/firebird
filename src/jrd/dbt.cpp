@@ -367,32 +367,32 @@ static TEXT_PTR Csb[] = {
 		FLD(CSB, "BLR: %x", csb_blr),
 		0
 };
+
 static TEXT_PTR texttype[] = {
-	"INTL TEXT OBJECT",
+/*	"INTL TEXT OBJECT",
 		FLD(TEXTTYPE, "Name: %s", texttype_name),
 		FLD(TEXTTYPE, "Vers: %d", texttype_version),
 		FLD(TEXTTYPE, "ID:   %d", texttype_type),
 		FLD(TEXTTYPE, "CS:   %d", texttype_character_set),
 		FLD(TEXTTYPE, "Cntry:%d", texttype_country),
-		FLD(TEXTTYPE, "Flags:%d", texttype_flags),
+		FLD(TEXTTYPE, "Flags:%d", texttype_flags),*/
 		0
 };
 static TEXT_PTR charset[] = {
-	"INTL Character Set",
+/*	"INTL Character Set",
 		FLD(CHARSET, "Name: %s", charset_name),
 		FLD(CHARSET, "Vers: %d", charset_version),
 		FLD(CHARSET, "ID:   %d", charset_id),
 		FLD(CHARSET, "B/Ch: %d", charset_max_bytes_per_char),
 		FLD(CHARSET, "B/Ch: %d", charset_min_bytes_per_char),
-		FLD(CHARSET, "Flags:%d", charset_flags),
+		FLD(CHARSET, "Flags:%d", charset_flags), */
 		0
 };
 static TEXT_PTR csconvert[] = {
-
-	"INTL Character set converter",
+/*	"INTL Character set converter",
 		FLD(CSCONVERT, "Name: %s", csconvert_name),
 		FLD(CSCONVERT, "from: %d", csconvert_from),
-		FLD(CSCONVERT, "to:   %d", csconvert_to),
+		FLD(CSCONVERT, "to:   %d", csconvert_to), */
 		0
 };
 static TEXT_PTR tdbb[] = {

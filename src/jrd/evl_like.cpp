@@ -29,7 +29,7 @@
 
 #define SLEUTH_insensitive	1
 #define COND_UPPER(obj,c)	((flags & SLEUTH_insensitive) ?	\
-		reinterpret_cast<USHORT(*)(...)>(((obj)->texttype_fn_to_upper)) ((obj), (c)) : (c))
+		(obj)->to_upper(c) : (c))
 
 #define SQL_MATCH_ONE		'_'
 #define SQL_MATCH_ANY		'%'
@@ -50,10 +50,7 @@
 #define GDML_RPAREN		')'
 
 
-extern "C" {
-
-
-USHORT LIKENAME(TDBB tdbb, TEXTTYPE obj, LIKETYPE * p1, SSHORT l1_bytes,	/* byte count */
+USHORT LIKENAME(TDBB tdbb, class TextType* obj, LIKETYPE * p1, SSHORT l1_bytes,	/* byte count */
 				LIKETYPE * p2, SSHORT l2_bytes,	/* byte count */
 				WCHAR escape_char)
 {
@@ -84,7 +81,6 @@ USHORT LIKENAME(TDBB tdbb, TEXTTYPE obj, LIKETYPE * p1, SSHORT l1_bytes,	/* byte
 	USHORT escape;
 	SSHORT l1, l2;
 
-	assert(obj != NULL);
 	assert(p1 != NULL);
 	assert(p2 != NULL);
 	assert((l1_bytes % sizeof(LIKETYPE)) == 0);
@@ -135,7 +131,7 @@ USHORT LIKENAME(TDBB tdbb, TEXTTYPE obj, LIKETYPE * p1, SSHORT l1_bytes,	/* byte
 
 
 USHORT MATCHESNAME(TDBB tdbb,
-				   TEXTTYPE obj,
+				   class TextType* obj,
 				   MATCHESTYPE * p1,
 				   SSHORT l1_bytes, MATCHESTYPE * p2, SSHORT l2_bytes)
 {
@@ -163,7 +159,6 @@ USHORT MATCHESNAME(TDBB tdbb,
 	MATCHESTYPE c;
 	SSHORT l1, l2;
 
-	assert(obj != NULL);
 	assert(p1 != NULL);
 	assert(p2 != NULL);
 	assert((l1_bytes % sizeof(MATCHESTYPE)) == 0);
@@ -199,7 +194,7 @@ USHORT MATCHESNAME(TDBB tdbb,
 
 
 USHORT SLEUTHNAME(TDBB tdbb_dummy,
-				  TEXTTYPE obj,
+				  class TextType* obj,
 				  USHORT flags,
 				  SLEUTHTYPE * search,
 				  USHORT search_len, SLEUTHTYPE * match, USHORT match_len)
@@ -231,7 +226,7 @@ USHORT SLEUTHNAME(TDBB tdbb_dummy,
 
 
 USHORT SLEUTH_MERGE_NAME(TDBB tdbb_dummy,
-						 TEXTTYPE obj,
+						 class TextType* obj,
 						 SLEUTHTYPE * match,
 						 USHORT match_bytes,
 						 SLEUTHTYPE * control,
@@ -263,7 +258,6 @@ USHORT SLEUTH_MERGE_NAME(TDBB tdbb_dummy,
 	SLEUTHTYPE c, *comb, **v, *vector[256], **end_vector, *p, max_op,
 		temp[256], *t, *end_match, *end_control;
 
-	assert(obj != NULL);
 	assert(match != NULL);
 	assert(control != NULL);
 	assert(combined != NULL);
@@ -354,7 +348,7 @@ USHORT SLEUTH_MERGE_NAME(TDBB tdbb_dummy,
 
 
 static BOOLEAN SLEUTH_AUX(
-						  TEXTTYPE obj,
+						  class TextType* obj,
 						  USHORT flags,
 						  SLEUTHTYPE * search,
 						  SLEUTHTYPE * end_search,
@@ -372,7 +366,6 @@ SLEUTHTYPE * match, SLEUTHTYPE * end_match)
  **************************************/
 	SLEUTHTYPE c, d, *class_, *end_class;
 
-	assert(obj != NULL);
 	assert(search != NULL);
 	assert(end_search != NULL);
 	assert(match != NULL);
@@ -469,7 +462,7 @@ SLEUTHTYPE * match, SLEUTHTYPE * end_match)
 
 
 static BOOLEAN SLEUTH_CLASS_NAME(
-								 TEXTTYPE obj,
+								 class TextType* obj,
 								 USHORT flags,
 								 SLEUTHTYPE * class_,
 								 SLEUTHTYPE * end_class, SLEUTHTYPE character)
@@ -489,7 +482,6 @@ static BOOLEAN SLEUTH_CLASS_NAME(
 	SLEUTHTYPE c;
 	USHORT result;
 
-	assert(obj != NULL);
 	assert(class_ != NULL);
 	assert(end_class != NULL);
 	assert(class_ <= end_class);
@@ -520,7 +512,5 @@ static BOOLEAN SLEUTH_CLASS_NAME(
 	return (result) ? FALSE : TRUE;
 }
 
-
-} // extern "C"
 
 #endif // EVL_LIKE_INCLUDED_BY_EVL_CPP

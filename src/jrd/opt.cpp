@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: opt.cpp,v 1.5 2002-04-04 07:10:40 bellardo Exp $
+$Id: opt.cpp,v 1.6 2002-06-04 19:56:16 bellardo Exp $
 */
 
 #include "firebird.h"
@@ -5198,7 +5198,7 @@ static NOD optimize_like(TDBB tdbb, NOD like_node)
 	USHORT ch, escape_ch;
 	USHORT p_count;
 	UCHAR tmp_buffer[32];		/* large enough to hold 1 ch of escape string */
-	BLK text_obj;
+	TextType *text_obj;
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(like_node, type_nod);
 	search_node = like_node->nod_arg[1];
@@ -5228,7 +5228,7 @@ static NOD optimize_like(TDBB tdbb, NOD like_node)
 							sizeof(tmp_buffer));
 		/* Now get first character from escape string */
 		escape_ch =
-			INTL_getch(tdbb, reinterpret_cast < TEXTTYPE * >(&text_obj),
+			INTL_getch(tdbb, &text_obj,
 					   INTL_TTYPE(search_desc), &p, &p_count);
 	}
 
@@ -5237,7 +5237,7 @@ static NOD optimize_like(TDBB tdbb, NOD like_node)
 	p = search_desc->dsc_address;
 	p_count = search_desc->dsc_length;
 	ch =
-		INTL_getch(tdbb, reinterpret_cast < TEXTTYPE * >(&text_obj),
+		INTL_getch(tdbb, &text_obj,
 				   INTL_TTYPE(search_desc), &p, &p_count);
 	if ((!escape_node || ch != escape_ch)
 		&& (ch == SQL_MATCH_1_CHAR || ch == SQL_MATCH_ANY_CHARS))
@@ -5261,7 +5261,7 @@ static NOD optimize_like(TDBB tdbb, NOD like_node)
 
 		p_start = p;
 		ch =
-			INTL_getch(tdbb, reinterpret_cast < TEXTTYPE * >(&text_obj),
+			INTL_getch(tdbb, &text_obj,
 					   INTL_TTYPE(search_desc), &p, &p_count);
 		if (escape_node && (ch == escape_ch)) {
 			/* Check for Escape character at end of string */
@@ -5270,7 +5270,7 @@ static NOD optimize_like(TDBB tdbb, NOD like_node)
 				break;
 			p_start = p;
 			ch =
-				INTL_getch(tdbb, reinterpret_cast < TEXTTYPE * >(&text_obj),
+				INTL_getch(tdbb, &text_obj,
 						   INTL_TTYPE(search_desc), &p, &p_count);
 		}
 		else if (ch == SQL_MATCH_1_CHAR || ch == SQL_MATCH_ANY_CHARS)

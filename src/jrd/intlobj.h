@@ -28,10 +28,22 @@
 extern "C" {
 #endif
 
+#define USHORT unsigned short
+#define SSHORT short
+#define UCHAR unsigned char
+#define CHAR char
+#define SCHAR char
+#define ULONG unsigned long
+#define LONG long
+#define SLONG signed long
+#define VEC	void*
+#define BYTE unsigned char
+
 /* duplicate definition from flu.c */
 
-typedef USHORT(*FPTR_SHORT) ();
 typedef SSHORT(*FPTR_short) ();
+#ifndef INTL_ENGINE_INTERNAL
+typedef USHORT(*FPTR_SHORT) ();
 
 typedef SSHORT CHARSET_ID;
 typedef SSHORT COLLATE_ID;
@@ -40,6 +52,13 @@ typedef SCHAR ASCII;
 typedef unsigned char NCHAR;	/* Narrow Char */
 typedef unsigned short WCHAR;	/* Wide   Char */
 typedef unsigned char MBCHAR;	/* Multibyte Char */
+
+#define type_texttype 54
+#define type_charset 55
+#define type_csconvert 56
+
+#define MAX_KEY		256
+#endif
 
 typedef struct intl_blk {
     UCHAR blk_type;
@@ -56,6 +75,14 @@ typedef struct texttype {
 	CHARSET_ID texttype_character_set;	/* ID of base character set */
 	SSHORT texttype_country;	/* ID of base country values */
 	BYTE texttype_bytes_per_char;	/* max bytes per character */
+
+    /* CVC: This struct member is needed for compatibility with older versions
+    regarding the international support module, so don't remove it. It was removed
+    in an oversight when the code was opensourced and reinstalled by Borland later,
+    but never put back by Firebird until 2001.10.09. Originally it was named
+    texttype_license_mask, but since it's useless in the open source version, I
+    followed the new name given in the BSC tree. */
+    ULONG   texttype_obsolete_field;        /* required bits for license */
 
 	/* MUST BE ALIGNED */
 	FPTR_SHORT texttype_fn_init;
@@ -119,9 +146,8 @@ typedef struct csconvert {
 
 
 
-class charset
+typedef struct charset
 {
-public:
 	struct intl_blk charset_blk;
 	USHORT charset_version;
 	USHORT charset_flags;
@@ -140,8 +166,7 @@ public:
 	VEC charset_converters;
 	VEC charset_collations;
 	ULONG *charset_unused[2];
-};
-typedef charset *CHARSET;
+} *CHARSET;
 
 /* values for charset_flags */
 

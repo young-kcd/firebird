@@ -237,7 +237,7 @@ static CONST TRIGMSG FAR_VARIABLE trigger_messages[] =
 
 
 
-void INI_format(TEXT* owner)
+void INI_format(const TEXT* owner)
 {
 /**************************************
  *

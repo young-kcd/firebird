@@ -65,7 +65,7 @@
 #endif
 
 #if !(defined REQUESTER && defined SUPERCLIENT)
-#include "../jrd/intlobj.h"
+#include "../jrd/intl_classes.h"
 #endif
 
 #ifdef sun

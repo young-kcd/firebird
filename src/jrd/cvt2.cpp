@@ -36,7 +36,7 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/thd_proto.h"
-#include "../jrd/intlobj.h"
+#include "../jrd/intl_classes.h"
 #include "../jrd/gds_proto.h"
 
 #ifdef VMS

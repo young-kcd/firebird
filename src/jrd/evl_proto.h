@@ -24,12 +24,7 @@
 #ifndef _JRD_EVL_PROTO_H_
 #define _JRD_EVL_PROTO_H_
 
-/* for structure texttype */
-#include "../jrd/intlobj.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "../jrd/intl_classes.h"
 
 extern struct dsc *DLL_EXPORT EVL_assign_to(TDBB tdbb, register struct nod *);
 
@@ -47,59 +42,51 @@ extern USHORT DLL_EXPORT EVL_group
 	(TDBB tdbb, struct blk *, struct nod *, USHORT);
 
 extern USHORT DLL_EXPORT EVL_mb_contains
-	(TDBB tdbb, struct texttype *, UCHAR *, USHORT, UCHAR *, USHORT);
+	(TDBB tdbb, TextType*, UCHAR *, USHORT, UCHAR *, USHORT);
 
 extern USHORT DLL_EXPORT EVL_mb_like
-	(TDBB tdbb, struct texttype *, UCHAR *, SSHORT, UCHAR *, SSHORT, USHORT);
+	(TDBB tdbb, TextType*, UCHAR *, SSHORT, UCHAR *, SSHORT, USHORT);
 
 extern USHORT DLL_EXPORT EVL_mb_matches
-	(TDBB tdbb, struct texttype *, UCHAR *, SSHORT, UCHAR *, SSHORT);
+	(TDBB tdbb, TextType*, UCHAR *, SSHORT, UCHAR *, SSHORT);
 
 extern USHORT DLL_EXPORT EVL_mb_sleuth_check
-	(TDBB tdbb, struct texttype *, USHORT, UCHAR *, USHORT, UCHAR *, USHORT);
+	(TDBB tdbb, TextType*, USHORT, UCHAR *, USHORT, UCHAR *, USHORT);
 
 extern USHORT DLL_EXPORT EVL_mb_sleuth_merge
-	(TDBB tdbb,
-	 struct texttype *, UCHAR *, USHORT, UCHAR *, USHORT, UCHAR *, USHORT);
+	(TDBB tdbb, TextType*, UCHAR *, USHORT, UCHAR *, USHORT, UCHAR *, USHORT);
 
 extern void DLL_EXPORT EVL_make_value(TDBB tdbb, struct dsc *, struct vlu *);
 
 extern USHORT DLL_EXPORT EVL_nc_contains
-	(TDBB tdbb, struct texttype *, UCHAR *, USHORT, UCHAR *, USHORT);
+	(TDBB tdbb, TextType*, UCHAR *, USHORT, UCHAR *, USHORT);
 
 extern USHORT EVL_nc_like
-	(TDBB tdbb, struct texttype *, UCHAR *, SSHORT, UCHAR *, SSHORT, USHORT);
+	(TDBB tdbb, TextType*, UCHAR *, SSHORT, UCHAR *, SSHORT, USHORT);
 
 extern USHORT EVL_nc_matches
-	(TDBB tdbb, struct texttype *, UCHAR *, SSHORT, UCHAR *, SSHORT);
+	(TDBB tdbb, TextType*, UCHAR *, SSHORT, UCHAR *, SSHORT);
 
 extern USHORT EVL_nc_sleuth_check
-	(TDBB tdbb, struct texttype *, USHORT, UCHAR *, USHORT, UCHAR *, USHORT);
+	(TDBB tdbb, TextType*, USHORT, UCHAR *, USHORT, UCHAR *, USHORT);
 
 extern USHORT EVL_nc_sleuth_merge
-	(TDBB tdbb,
-	 struct texttype *, UCHAR *, USHORT, UCHAR *, USHORT, UCHAR *, USHORT);
+	(TDBB tdbb, TextType*, UCHAR *, USHORT, UCHAR *, USHORT, UCHAR *, USHORT);
 
 extern USHORT DLL_EXPORT EVL_wc_contains
-	(TDBB tdbb, struct texttype *, USHORT *, USHORT, USHORT *, USHORT);
+	(TDBB tdbb, TextType*, USHORT *, USHORT, USHORT *, USHORT);
 
 extern USHORT EVL_wc_like
-	(TDBB tdbb,
-	 struct texttype *, USHORT *, SSHORT, USHORT *, SSHORT, USHORT);
+	(TDBB tdbb, TextType*, USHORT *, SSHORT, USHORT *, SSHORT, USHORT);
 
 extern USHORT EVL_wc_matches
-	(TDBB tdbb, struct texttype *, USHORT *, SSHORT, USHORT *, SSHORT);
+	(TDBB tdbb, TextType*, USHORT *, SSHORT, USHORT *, SSHORT);
 
 extern USHORT EVL_wc_sleuth_check
-	(TDBB tdbb,
-	 struct texttype *, USHORT, USHORT *, USHORT, USHORT *, USHORT);
+	(TDBB tdbb, TextType*, USHORT, USHORT *, USHORT, USHORT *, USHORT);
 
 extern USHORT EVL_wc_sleuth_merge
 	(TDBB tdbb,
-	 struct texttype *, USHORT *, USHORT, USHORT *, USHORT, USHORT *, USHORT);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
+	 TextType*, USHORT *, USHORT, USHORT *, USHORT, USHORT *, USHORT);
 
 #endif /* _JRD_EVL_PROTO_H_ */

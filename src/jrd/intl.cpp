@@ -88,7 +88,7 @@
 #include "../jrd/val.h"
 #include "gen/codes.h"
 #include "../jrd/intl.h"
-#include "../jrd/intlobj.h"
+#include "../jrd/intl_classes.h"
 #include "../jrd/ods.h"
 #include "../jrd/btr.h"
 #include "../intl/charsets.h"
@@ -110,9 +110,7 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/thd_proto.h"
 
-
-extern "C" {
-
+#include "../jrd/plugin_manager.h"
 
 #ifdef DEV_BUILD
 
@@ -141,62 +139,35 @@ typedef USHORT UNICODE;
 typedef USHORT fss_wchar_t;
 typedef int fss_size_t;
 
+// extern declarations for the allocator functions for builtin charsets
+extern CharSetAllocFunc INTL_charset_alloc_func(short);
+extern TextTypeAllocFunc INTL_texttype_alloc_func(short);
+extern CsConvertAllocFunc INTL_csconvert_alloc_func(short, short);
+
 static BOOLEAN all_spaces(TDBB, CHARSET_ID, BYTE *, USHORT, USHORT);
-static void common_8bit_init(CHARSET, USHORT, ASCII *, BYTE *, BYTE *,
-							 BYTE *);
-static void common_convert_init(CSCONVERT, USHORT, USHORT, FPTR_SHORT, BYTE *,
-								BYTE *);
-static USHORT cs_ascii_init(CHARSET, USHORT, USHORT);
-static USHORT cs_none_init(CHARSET, USHORT, USHORT);
-static USHORT cs_binary_init(CHARSET, USHORT, USHORT);
-static USHORT cs_unicode_fss_init(CHARSET, USHORT, USHORT);
-static USHORT cs_unicode_init(CHARSET, USHORT, USHORT);
-static USHORT cvt_ascii_utf_init(CSCONVERT, USHORT, USHORT);
-static USHORT cvt_none_to_unicode(CSCONVERT, WCHAR *, USHORT, UCHAR *, USHORT,
-								  SSHORT *, USHORT *);
-static USHORT cvt_ascii_to_unicode(CSCONVERT, WCHAR *, USHORT, UCHAR *,
-								   USHORT, SSHORT *, USHORT *);
-static USHORT cvt_unicode_to_ascii(CSCONVERT, NCHAR *, USHORT, WCHAR *,
-								   USHORT, SSHORT *, USHORT *);
 static void dump_hex(UCHAR *, USHORT);
 static void dump_latin(UCHAR *, USHORT);
-static void finish_texttype_init(TEXTTYPE, FPTR_VOID, STATUS *);
-static fss_size_t fss_mbtowc(fss_wchar_t *, UCHAR *, fss_size_t);
-static fss_size_t fss_wctomb(UCHAR *, fss_wchar_t);
-static USHORT internal_ch_copy(TEXTTYPE, UCHAR);
-static USHORT internal_ch_to_lower(TEXTTYPE, UCHAR);
-static USHORT internal_ch_to_upper(TEXTTYPE, UCHAR);
-static SSHORT internal_compare(TEXTTYPE, USHORT, UCHAR *, USHORT, UCHAR *);
-static USHORT internal_keylength(TEXTTYPE, USHORT);
-static SSHORT internal_mb_mbtowc(TEXTTYPE, WCHAR *, UCHAR *, USHORT);
-static SSHORT internal_nc_mbtowc(TEXTTYPE, WCHAR *, UCHAR *, USHORT);
-static SSHORT internal_str_copy(TEXTTYPE, USHORT, UCHAR *, USHORT, UCHAR *);
-static USHORT cvt_utffss_to_ascii(CSCONVERT, UCHAR *, USHORT, UCHAR *, USHORT,
-								  SSHORT *, USHORT *);
-static SSHORT internal_str_to_upper(TEXTTYPE, USHORT, UCHAR *, USHORT,
+static void finish_texttype_init(TextType*, FPTR_VOID, STATUS *);
+static SSHORT internal_str_to_upper(TextType*, USHORT, UCHAR *, USHORT,
 									UCHAR *);
-static USHORT internal_string_to_key(TEXTTYPE, USHORT, UCHAR *, USHORT,
+static USHORT internal_string_to_key(TextType*, USHORT, UCHAR *, USHORT,
 									 UCHAR *, USHORT);
-static SSHORT internal_wc_mbtowc(TEXTTYPE, WCHAR *, UCHAR *, USHORT);
-static USHORT mb_to_wc(CSCONVERT, WCHAR *, USHORT, MBCHAR *, USHORT, SSHORT *,
+static USHORT mb_to_wc(CsConvert*, WCHAR *, USHORT, MBCHAR *, USHORT, SSHORT *,
 					   USHORT *);
-static USHORT nc_to_wc(CSCONVERT, WCHAR *, USHORT, UCHAR *, USHORT, SSHORT *,
+static USHORT nc_to_wc(CsConvert*, WCHAR *, USHORT, UCHAR *, USHORT, SSHORT *,
 					   USHORT *);
-static BOOLEAN obj_init(USHORT, SSHORT, SSHORT, void *, FPTR_VOID, STATUS *);
 static void pad_spaces(TDBB, CHARSET_ID, BYTE *, USHORT);
-static USHORT ttype_ascii_init(TEXTTYPE, USHORT, USHORT);
-static USHORT ttype_none_init(TEXTTYPE, USHORT, USHORT);
-static USHORT ttype_binary_init(TEXTTYPE, USHORT, USHORT);
-static USHORT ttype_unicode_fss_init(TEXTTYPE, USHORT, USHORT);
-static USHORT wc_to_mb(CSCONVERT, MBCHAR *, USHORT, WCHAR *, USHORT, SSHORT *,
+static USHORT wc_to_mb(CsConvert*, MBCHAR *, USHORT, WCHAR *, USHORT, SSHORT *,
 					   USHORT *);
-static USHORT wc_to_nc(CSCONVERT, NCHAR *, USHORT, WCHAR *, USHORT, SSHORT *,
+static USHORT wc_to_nc(CsConvert*, NCHAR *, USHORT, WCHAR *, USHORT, SSHORT *,
 					   USHORT *);
-static USHORT wc_to_wc(CSCONVERT, WCHAR *, USHORT, WCHAR *, USHORT, SSHORT *,
+static USHORT wc_to_wc(CsConvert*, WCHAR *, USHORT, WCHAR *, USHORT, SSHORT *,
 					   USHORT *);
-
-#define INTL_TEXTTYPE(p,err)    ((TEXTTYPE) INTL_obj_lookup (tdbb, type_texttype, (p), (err), NULL))
-#define INTL_CHARSETTYPE(p,err) ((CHARSET) INTL_obj_lookup (tdbb, type_charset, (p), (err), NULL))
+					   
+static CharSetContainer *internal_charset_container_lookup(TDBB, SSHORT, STATUS *);
+static void* search_out_alloc_func(const char *, CHARSET_ID, CHARSET_ID);
+static void* intl_back_compat_alloc_func_lookup(USHORT, CHARSET_ID, CHARSET_ID);
+static void* intl_back_compat_obj_init_lookup(USHORT, SSHORT, SSHORT);
 
 
 #define NUM_ELEMENTS(x)         (sizeof ((x))/sizeof ((x)[0]))
@@ -238,6 +209,68 @@ static USHORT wc_to_wc(CSCONVERT, WCHAR *, USHORT, WCHAR *, USHORT, SSHORT *,
 #define INTL_USER_ENTRY         "_USER_TEXTTYPE_%03d"
 #endif
 
+
+// Classes and structures used internally to this file and intl implementation
+class CharSetContainer
+{
+public:
+	CharSetContainer(MemoryPool &p, CharSet *cs = 0) :
+		charset_converters(p),
+		charset_collations(p),
+		impossible_conversions(p),
+		cs(cs)
+	{}
+	
+	CharSet *getCharSet() { return cs; }
+	
+	void setCollation(TextType *cs, short id)
+	{
+		if (id >= charset_collations.size())
+			charset_collations.resize(id + 10);
+		charset_collations[id] = cs;
+	}
+	
+	TextType *collation(short id)
+	{
+		if (id >= charset_collations.size())
+			return NULL;
+		return charset_collations[id];
+	}
+	
+	bool findConverter(CHARSET_ID id, CsConvert **cvt)
+	{
+		*cvt = NULL;
+		for(Firebird::vector<CsConvert*>::iterator itr = charset_converters.begin();
+				itr != charset_converters.end(); ++itr)
+			if ((*itr)->getToCS() == id)
+			{
+				*cvt = *itr;
+				return true;
+			}
+
+		for(Firebird::vector<CHARSET_ID>::iterator itr = impossible_conversions.begin();
+				itr != impossible_conversions.end(); ++itr)
+			if (*itr == id)
+				return true;
+		return false;
+	}
+	
+	void addConverter(CsConvert *conv)
+	{
+		charset_converters.push_back(conv);
+	}
+	
+	void addNullConverter(CHARSET_ID nullId)
+	{
+		impossible_conversions.push_back(nullId);
+	}
+	
+private:
+	Firebird::vector<CsConvert*>	charset_converters;
+	Firebird::vector<TextType*>	charset_collations;
+	Firebird::vector<CHARSET_ID>	impossible_conversions;
+	CharSet *cs;
+};
 
 CHARSET_ID DLL_EXPORT INTL_charset(TDBB tdbb, USHORT ttype, FPTR_VOID err)
 {
@@ -289,7 +322,7 @@ int DLL_EXPORT INTL_compare(
 	USHORT length1, length2;
 	UCHAR buffer[MAX_KEY];
 	SSHORT compare_type;
-	TEXTTYPE obj;
+	TextType* obj;
 	USHORT t1, t2;
 
 	SET_TDBB(tdbb);
@@ -343,10 +376,9 @@ int DLL_EXPORT INTL_compare(
 		}
 	}
 
-	obj = INTL_TEXTTYPE(compare_type, err);
+	obj = INTL_texttype_lookup(tdbb, compare_type, err, NULL);
 
-	return reinterpret_cast < short (*) (...) >
-		(obj->texttype_fn_compare) (obj, length1, p1, length2, p2);
+	return obj->compare(length1, p1, length2, p2);
 }
 
 
@@ -379,8 +411,8 @@ CHARSET_ID src_type, BYTE * src_ptr, USHORT src_len, FPTR_VOID err)
 	UCHAR *start_dest_ptr;
 	USHORT len;
 	USHORT len2;
-	CSCONVERT cs_obj;
-	CHARSET from_cs, to_cs;
+	CsConvert* cs_obj;
+	CharSet* from_cs, *to_cs;
 	SSHORT err_code = 0;
 	USHORT err_position;
 	BYTE *tmp_buffer;
@@ -427,11 +459,8 @@ CHARSET_ID src_type, BYTE * src_ptr, USHORT src_len, FPTR_VOID err)
 
 		cs_obj = INTL_convert_lookup(tdbb, dest_type, src_type);
 		if (cs_obj != NULL) {
-			len =
-				reinterpret_cast < USHORT(*)(...) >
-				(*cs_obj->csconvert_convert) (cs_obj, dest_ptr, dest_len,
-											  src_ptr, src_len, &err_code,
-											  &err_position);
+			len = cs_obj->convert(dest_ptr, dest_len, src_ptr,
+									src_len, &err_code, &err_position);
 			if (!err_code || ((err_code == CS_TRUNCATION_ERROR)
 							  && all_spaces(tdbb, src_type, src_ptr, src_len,
 											err_position))) return (len);
@@ -448,7 +477,7 @@ CHARSET_ID src_type, BYTE * src_ptr, USHORT src_len, FPTR_VOID err)
 
 		/* Find a CS1 to UNICODE object */
 
-		from_cs = INTL_CHARSETTYPE(src_type, (FPTR_VOID) NULL);
+		from_cs = INTL_charset_lookup(tdbb, src_type, NULL);
 		if (from_cs == NULL)
 			reinterpret_cast < void (*) (...) > (*err) (gds_arith_except,
 														gds_arg_gds,
@@ -459,19 +488,16 @@ CHARSET_ID src_type, BYTE * src_ptr, USHORT src_len, FPTR_VOID err)
 		/* 
 		   ** allocate a temporary buffer that is large enough. 2 = sizeof WCHAR
 		 */
-		tmp_buffer = (BYTE *) gds__alloc((SLONG) src_len * 2);
+		tmp_buffer = (BYTE *) new(*getDefaultMemoryPool()) char[(SLONG) src_len * 2];
 
-		cs_obj = &from_cs->charset_to_unicode;
+		cs_obj = from_cs->getConvToUnicode();
 		assert(cs_obj != NULL);
-		len =
-			reinterpret_cast < USHORT(*)(...) >
-			(*cs_obj->csconvert_convert) (cs_obj, tmp_buffer, src_len * 2,
-										  src_ptr, src_len, &err_code,
-										  &err_position);
+		len = cs_obj->convert(tmp_buffer, src_len * 2, src_ptr,
+								src_len, &err_code, &err_position);
 		if (err_code && !((err_code == CS_TRUNCATION_ERROR)
 						  && all_spaces(tdbb, src_type, src_ptr, src_len,
 										err_position))) {
-			gds__free((SLONG *) tmp_buffer);
+			delete [] tmp_buffer;
 			if (err_code == CS_TRUNCATION_ERROR)
 				reinterpret_cast < void (*) (...) > (*err) (gds_arith_except,
 															0);
@@ -484,27 +510,24 @@ CHARSET_ID src_type, BYTE * src_ptr, USHORT src_len, FPTR_VOID err)
 
 		/* Find a UNICODE to CS2 object */
 
-		to_cs = INTL_CHARSETTYPE(dest_type, (FPTR_VOID) NULL);
+		to_cs = INTL_charset_lookup(tdbb, dest_type, NULL);
 		if (to_cs == NULL) {
-			gds__free((SLONG *) tmp_buffer);
+			delete [] tmp_buffer;
 			reinterpret_cast < void (*) (...) > (*err) (gds_arith_except,
 														gds_arg_gds,
 														gds_text_subtype,
 														gds_arg_number,
 														(SLONG) dest_type, 0);
 		}
-		cs_obj = &to_cs->charset_from_unicode;
+		cs_obj = to_cs->getConvFromUnicode();
 		assert(cs_obj != NULL);
-		len2 =
-			reinterpret_cast < USHORT(*)(...) >
-			(*cs_obj->csconvert_convert) (cs_obj, dest_ptr, dest_len,
-										  tmp_buffer, len, &err_code,
-										  &err_position);
+		len2 = cs_obj->convert(dest_ptr, dest_len, tmp_buffer,
+							len, &err_code, &err_position);
 
 		if (err_code &&
 			!((err_code == CS_TRUNCATION_ERROR) &&
 			  all_spaces(tdbb, CS_UNICODE101, tmp_buffer, len, err_position))) {
-			gds__free((SLONG *) tmp_buffer);
+			delete [] tmp_buffer;
 			if (err_code == CS_TRUNCATION_ERROR)
 				reinterpret_cast < void (*) (...) > (*err) (gds_arith_except,
 															0);
@@ -515,14 +538,14 @@ CHARSET_ID src_type, BYTE * src_ptr, USHORT src_len, FPTR_VOID err)
 															0);
 		}
 
-		gds__free((SLONG *) tmp_buffer);
+		delete [] tmp_buffer;
 		return (len2);
 	}
 	return (0);					/* to remove compiler errors.  This should never be executed */
 }
 
 
-CSCONVERT DLL_EXPORT INTL_convert_lookup(TDBB tdbb,
+CsConvert* DLL_EXPORT INTL_convert_lookup(TDBB tdbb,
 										 CHARSET_ID to_cs, CHARSET_ID from_cs)
 {
 /**************************************
@@ -535,8 +558,8 @@ CSCONVERT DLL_EXPORT INTL_convert_lookup(TDBB tdbb,
  *
  **************************************/
 	VEC vector;
-	CHARSET charset;
-	CSCONVERT converter;
+	CharSetContainer *charset;
+	CsConvert* converter;
 	USHORT i;
 	DBB dbb;
 
@@ -555,65 +578,52 @@ CSCONVERT DLL_EXPORT INTL_convert_lookup(TDBB tdbb,
 	assert(from_cs != CS_dynamic);
 	assert(to_cs != CS_dynamic);
 
-	charset = INTL_CHARSETTYPE(from_cs, (FPTR_VOID) NULL);
+	charset = internal_charset_container_lookup(tdbb, from_cs, NULL);
 	if (charset == NULL)
 		return (NULL);
 
-	vector = charset->charset_converters;
-
-	if (!(vector)) {
-		vector = charset->charset_converters = vec::newVector(*dbb->dbb_permanent, 10);
-	}
-
-	for (i = 0; i < vector->count(); i++) {
-		converter = (CSCONVERT) ((*vector)[i]);
-		if (converter == NULL)
-			break;
-		if (converter->csconvert_to == to_cs) {
-			if (converter->csconvert_flags & CONVERTTYPE_init)
-				return (converter);
-			else
-				return NULL;
-		}
-	}
-
-	if (i >= vector->count()) {
-		vector->resize(i+11);
-		converter = NULL;
-	}
-
+	if (charset->findConverter(to_cs, &converter))
+		return converter;
+		
 	if (to_cs == CS_UNICODE101) {
-		converter = &charset->charset_to_unicode;
+		converter = charset->getCharSet()->getConvToUnicode();
 	}
 	else if (from_cs == CS_UNICODE101) {
-		CHARSET charset2;
-		charset2 = INTL_CHARSETTYPE(to_cs, (FPTR_VOID) NULL);
+		CharSet* charset2;
+		charset2 = INTL_charset_lookup(tdbb, to_cs, NULL);
 		if (charset2 == NULL)
 			return (NULL);
-		converter = &charset2->charset_from_unicode;
+		converter = charset2->getConvFromUnicode();
 	}
 	else {
-		if (converter == NULL)
-			//converter = (CSCONVERT) ALLOCP(type_csconvert);
-			converter = new(*dbb->dbb_permanent) csconvert;
-
-		if (obj_init(type_csconvert, to_cs, from_cs, converter, NULL, NULL)) {
-			/* Can't find a conversion object - cache that info in the
-			 * list of converters.
-			 */
-			(*vector)[i] = (BLK) converter;
-			converter->csconvert_flags = 0;
-			converter->csconvert_from = from_cs;
-			converter->csconvert_to = to_cs;
+		CsConvertAllocFunc allocFunc;
+		
+		allocFunc = INTL_csconvert_alloc_func(from_cs, to_cs);
+		if (!allocFunc)
+			allocFunc = (CsConvertAllocFunc)
+					search_out_alloc_func("FB_CsConvert_lookup", from_cs, to_cs);
+		if (!allocFunc)
+			allocFunc = (CsConvertAllocFunc)
+//				intl_back_compat_alloc_func_lookup(type_csconvert, from_cs, to_cs);
+				intl_back_compat_alloc_func_lookup(type_csconvert, to_cs, from_cs);
+		if (!allocFunc)
+		{
+			charset->addNullConverter(to_cs);
+			return NULL;
+		}
+			
+		converter = (*allocFunc)(*dbb->dbb_permanent, from_cs, to_cs);
+		if (!converter)
+		{
+			charset->addNullConverter(to_cs);
 			return NULL;
 		}
 	}
 
-	(*vector)[i] = (BLK) converter;
-	converter->csconvert_flags |= CONVERTTYPE_init;
+	charset->addConverter(converter);
 
-	assert(converter->csconvert_from == from_cs);
-	assert(converter->csconvert_to == to_cs);
+	assert(converter->getFromCS() == from_cs);
+	assert(converter->getToCS() == to_cs);
 
 	return (converter);
 }
@@ -812,355 +822,21 @@ int DLL_EXPORT INTL_defined_type(TDBB tdbb, STATUS * status, SSHORT t_type)
  *      must return, and not call ERR directly.
  *
  **************************************/
-	TEXTTYPE obj;
+	TextType* obj;
 
 	SET_TDBB(tdbb);
 
 	if (status)
 		status[0] = gds_arg_end;
-	obj =
-		reinterpret_cast < TEXTTYPE >
-		(INTL_obj_lookup
-		 (tdbb, type_texttype, t_type, (FPTR_VOID) NULL, status));
+	obj = INTL_texttype_lookup(tdbb, t_type, NULL, status);
 	if (obj == NULL)
 		return FALSE;
-	return ((obj->texttype_flags & TEXTTYPE_init) == TEXTTYPE_init);
-}
-
-
-SSHORT DLL_EXPORT INTL_fss_mbtowc(TEXTTYPE * obj,
-								  WCHAR * wc, NCHAR * p, USHORT n)
-{
-/**************************************
- *
- *      I N T L _ f s s _ m b t o w c
- *
- **************************************
- *
- * Functional description
- *      InterBase interface to mbtowc function for Unicode
- *      text in FSS bytestream format.
- *
- * Return:      (common to all mbtowc routines)
- *      -1      Error in parsing next character
- *      <n>     Count of characters consumed.
- *      *wc     Next character from byte steam (if wc <> NULL)
- *
- * Note: This routine has a cousin in intl/cv_utffss.c
- *
- **************************************/
-	assert(obj);
-	assert(wc);
-	assert(p);
-
-	return fss_mbtowc(wc, p, n);
-}
-
-
-/*
- * The following was provided by Ken Thompson of AT&T Bell Laboratories,
- * <ken@research.att.com>, on Tue, 8 Sep 92 03:22:07 EDT, to the X/Open
- * Joint Internationalization Group.  Some minor formatting changes have
- * been made by Glenn Adams, <glenn@metis.com>.
- *
- * -------------------------------------------------------------------------
- *  File System Safe Universal Character Set Transformation Format (FSS-UTF)
- * -------------------------------------------------------------------------
- *
- * With the approval of ISO/IEC 10646 (Unicode) as an international
- * standard and the anticipated wide spread use of this universal coded
- * character set (UCS), it is necessary for historically ASCII based
- * operating systems to devise ways to cope with representation and
- * handling of the large number of characters that are possible to be
- * encoded by this new standard.
- *
- * There are several challenges presented by UCS which must be dealt with
- * by historical operating systems and the C-language programming
- * environment.  The most significant of these challenges is the encoding
- * scheme used by UCS. More precisely, the challenge is the marrying of
- * the UCS standard with existing programming languages and existing
- * operating systems and utilities.
- *
- * The challenges of the programming languages and the UCS standard are
- * being dealt with by other activities in the industry.  However, we are
- * still faced with the handling of UCS by historical operating systems
- * and utilities.  Prominent among the operating system UCS handling
- * concerns is the representation of the data within the file system.  An
- * underlying assumption is that there is an absolute requirement to
- * maintain the existing operating system software investment while at
- * the same time taking advantage of the use the large number of
- * characters provided by the UCS.
- *
- * UCS provides the capability to encode multi-lingual text within a
- * single coded character set.  However, UCS and its UTF variant do not
- * protect null bytes and/or the ASCII slash ("/") making these character
- * encodings incompatible with existing Unix implementations.  The
- * following proposal provides a Unix compatible transformation format of
- * UCS such that Unix systems can support multi-lingual text in a single
- * encoding.  This transformation format encoding is intended to be used
- * as a file code.  This transformation format encoding of UCS is
- * intended as an intermediate step towards full UCS support.  However,
- * since nearly all Unix implementations face the same obstacles in
- * supporting UCS, this proposal is intended to provide a common and
- * compatible encoding during this transition stage.
- *
- * Goal/Objective
- * --------------
- *
- * With the assumption that most, if not all, of the issues surrounding
- * the handling and storing of UCS in historical operating system file
- * systems are understood, the objective is to define a UCS
- * transformation format which also meets the requirement of being usable
- * on a historical operating system file system in a non-disruptive
- * manner.  The intent is that UCS will be the process code for the
- * transformation format, which is usable as a file code.
- *
- * Criteria for the Transformation Format
- * --------------------------------------
- *
- * Below are the guidelines that were used in defining the UCS
- * transformation format:
- *
- *      1) Compatibility with historical file systems:
- *
- *      Historical file systems disallow the null byte and the ASCII
- *      slash character as a part of the file name.
- *
- *      2) Compatibility with existing programs:
- *
- *      The existing model for multibyte processing is that ASCII does
- *      not occur anywhere in a multibyte encoding.  There should be
- *      no ASCII code values for any part of a transformation format
- *      representation of a character that was not in the ASCII
- *      character set in the UCS representation of the character.
- *
- *      3) Ease of conversion from/to UCS.
- *
- *      4) The first byte should indicate the number of bytes to
- *      follow in a multibyte sequence.
- *
- *      5) The transformation format should not be extravagant in
- *      terms of number of bytes used for encoding.
- *
- *      6) It should be possible to find the start of a character
- *      efficiently starting from an arbitrary location in a byte
- *      stream.
- *
- * Proposed FSS-UTF
- * ----------------
- *
- * The proposed UCS transformation format encodes UCS values in the range
- * [0,0x7fffffff] using multibyte characters of lengths 1, 2, 3, 4, 5,
- * and 6 bytes.  For all encodings of more than one byte, the initial
- * byte determines the number of bytes used and the high-order bit in
- * each byte is set.  Every byte that does not start 10xxxxxx is the
- * start of a UCS character sequence.
- *
- * An easy way to remember this transformation format is to note that the
- * number of high-order 1's in the first byte signifies the number of
- * bytes in the multibyte character:
- *
- * Bits  Hex Min  Hex Max  Byte Sequence in Binary
- *   7  00000000 0000007f 0vvvvvvv
- *  11  00000080 000007FF 110vvvvv 10vvvvvv
- *  16  00000800 0000FFFF 1110vvvv 10vvvvvv 10vvvvvv
- *  21  00010000 001FFFFF 11110vvv 10vvvvvv 10vvvvvv 10vvvvvv
- *  26  00200000 03FFFFFF 111110vv 10vvvvvv 10vvvvvv 10vvvvvv 10vvvvvv
- *  31  04000000 7FFFFFFF 1111110v 10vvvvvv 10vvvvvv 10vvvvvv 10vvvvvv 10vvvvvv
- *
- * The UCS value is just the concatenation of the v bits in the multibyte
- * encoding.  When there are multiple ways to encode a value, for example
- * UCS 0, only the SSHORTest encoding is legal.
- *
- * Below are sample implementations of the C standard wctomb() and
- * mbtowc() functions which demonstrate the algorithms for converting
- * from UCS to the transformation format and converting from the
- * transformation format to UCS. The sample implementations include error
- * checks, some of which may not be necessary for conformance:
- *
- */
-
-typedef struct {
-	int cmask;
-	int cval;
-	int shift;
-	SLONG lmask;
-	SLONG lval;
-} Tab;
-
-static CONST Tab tab[] = {
-	{ 0x80, 0x00, 0 * 6, 0x7F, 0 },	/* 1 byte sequence */
-	{ 0xE0, 0xC0, 1 * 6, 0x7FF, 0x80 },	/* 2 byte sequence */
-	{ 0xF0, 0xE0, 2 * 6, 0xFFFF, 0x800 },	/* 3 byte sequence */
-	{ 0xF8, 0xF0, 3 * 6, 0x1FFFFF, 0x10000 },	/* 4 byte sequence */
-	{ 0xFC, 0xF8, 4 * 6, 0x3FFFFFF, 0x200000 },	/* 5 byte sequence */
-	{ 0xFE, 0xFC, 5 * 6, 0x7FFFFFFF, 0x4000000 },	/* 6 byte sequence */
-	{ 0, 0, 0, 0, 0 } 				/* end of table    */
-};
-
-
-static fss_size_t fss_mbtowc(fss_wchar_t * p, UCHAR * s, fss_size_t n)
-{
-	SLONG l;
-	int c0, c, nc;
-	Tab *t;
-
-	if (s == 0)
-		return 0;
-
-	nc = 0;
-	if (n <= nc)
-		return -1;
-	c0 = *s & 0xff;
-	l = c0;
-	for (t = const_cast < Tab * >(tab); t->cmask; t++) {
-		nc++;
-		if ((c0 & t->cmask) == t->cval) {
-			l &= t->lmask;
-			if (l < t->lval)
-				return -1;
-			*p = l;
-			return nc;
-		}
-		if (n <= nc)
-			return -1;
-		s++;
-		c = (*s ^ 0x80) & 0xFF;
-		if (c & 0xC0)
-			return -1;
-		l = (l << 6) | c;
-	}
-	return -1;
-}
-
-
-static fss_size_t fss_wctomb(UCHAR * s, fss_wchar_t wc)
-{
-	SLONG l;
-	int c, nc;
-	Tab *t;
-
-	if (s == 0)
-		return 0;
-
-	l = wc;
-	nc = 0;
-	for (t = const_cast < Tab * >(tab); t->cmask; t++) {
-		nc++;
-		if (l <= t->lmask) {
-			c = t->shift;
-			*s = t->cval | (l >> c);
-			while (c > 0) {
-				c -= 6;
-				s++;
-				*s = 0x80 | ((l >> c) & 0x3F);
-			}
-			return nc;
-		}
-	}
-	return -1;
-}
-
-
-USHORT DLL_EXPORT INTL_fss_to_unicode(CSCONVERT obj,
-									  UNICODE * dest_ptr, USHORT dest_len,	/* BYTE count */
-									  NCHAR * src_ptr,
-									  USHORT src_len,
-									  SSHORT * err_code,
-									  USHORT * err_position)
-{
-	UNICODE *start;
-	USHORT src_start = src_len;
-	fss_size_t res;
-
-	assert(src_ptr != NULL || dest_ptr == NULL);
-	assert(err_code != NULL);
-	assert(err_position != NULL);
-	assert(obj != NULL);
-
-	*err_code = 0;
-
-/* See if we're only after a length estimate */
-	if (dest_ptr == NULL)
-		return (src_len * 2);	/* All single byte narrow characters */
-
-	start = dest_ptr;
-	src_start = src_len;
-	while ((src_len) && (dest_len >= sizeof(*dest_ptr))) {
-		res = fss_mbtowc(dest_ptr, src_ptr, src_len);
-		if (res == -1) {
-			*err_code = CS_BAD_INPUT;
-			break;
-		}
-		assert(res <= src_len);
-		dest_ptr++;
-		dest_len -= sizeof(*dest_ptr);
-		src_ptr += res;
-		src_len -= res;
-	}
-	if (src_len && !*err_code) {
-		*err_code = CS_TRUNCATION_ERROR;
-	}
-	*err_position = src_start - src_len;
-	return ((dest_ptr - start) * sizeof(*dest_ptr));
-}
-
-
-USHORT DLL_EXPORT INTL_unicode_to_fss(CSCONVERT obj,
-									  MBCHAR * fss_str,
-									  USHORT fss_len,
-									  UNICODE * unicode_str, USHORT unicode_len,	/* BYTE count */
-									  SSHORT * err_code,
-									  USHORT * err_position)
-{
-	UCHAR *start;
-	USHORT src_start = unicode_len;
-	UCHAR tmp_buffer[6];
-	UCHAR *p;
-	fss_size_t res;
-
-	assert(unicode_str != NULL || fss_str == NULL);
-	assert(err_code != NULL);
-	assert(err_position != NULL);
-	assert(obj != NULL);
-	assert(obj->csconvert_convert == (FPTR_SHORT) INTL_unicode_to_fss);
-
-	*err_code = 0;
-
-/* See if we're only after a length estimate */
-	if (fss_str == NULL)
-		return ((unicode_len + 1) / 2 * 3);	/* worst case - all han character input */
-
-	start = fss_str;
-	while ((fss_len) && (unicode_len >= sizeof(*unicode_str))) {
-		/* Convert the wide character into temp buffer */
-		res = fss_wctomb(tmp_buffer, *unicode_str);
-		if (res == -1) {
-			*err_code = CS_BAD_INPUT;
-			break;
-		}
-		/* will the mb sequence fit into space left? */
-		if (res > fss_len) {
-			*err_code = CS_TRUNCATION_ERROR;
-			break;
-		}
-		/* copy the converted bytes into the destination */
-		p = tmp_buffer;
-		for (; res; res--, fss_len--)
-			*fss_str++ = *p++;
-		unicode_len -= sizeof(*unicode_str);
-		unicode_str++;
-	}
-	if (unicode_len && !*err_code) {
-		*err_code = CS_TRUNCATION_ERROR;
-	}
-	*err_position = src_start - unicode_len;
-	return ((fss_str - start) * sizeof(*fss_str));
+	return TRUE;
 }
 
 
 WCHAR DLL_EXPORT INTL_getch(TDBB tdbb,
-							TEXTTYPE * obj,
+							TextType* * obj,
 							SSHORT t_type, UCHAR ** ptr, USHORT * count)
 {
 /**************************************
@@ -1182,13 +858,10 @@ WCHAR DLL_EXPORT INTL_getch(TDBB tdbb,
 	assert(ptr);
 
 	if (*obj == NULL) {
-		*obj = INTL_TEXTTYPE(t_type, (FPTR_VOID) ERR_post);
+		*obj = INTL_texttype_lookup(tdbb, t_type, (FPTR_VOID) ERR_post, NULL);
 		assert(*obj);
-		assert((*obj)->texttype_fn_mbtowc);
 	}
-	used =
-		reinterpret_cast < short (*) (...) >
-		(*(*obj)->texttype_fn_mbtowc) (*obj, &wc, *ptr, *count);
+	used = (*obj)->mbtowc(&wc, *ptr, *count);
 	if (used == -1)
 		return 0;
 	*ptr += used;
@@ -1208,7 +881,7 @@ void DLL_EXPORT INTL_init(TDBB tdbb)
  * Functional description
  *
  **************************************/
-	DBB dbb;
+	/*DBB dbb;
 	VEC vector;
 
 	SET_TDBB(tdbb);
@@ -1220,7 +893,7 @@ void DLL_EXPORT INTL_init(TDBB tdbb)
 	}
 	if (!(vector = dbb->dbb_charsets)) {
 		vector = dbb->dbb_charsets = vec::newVector(*dbb->dbb_permanent, 25);
-	}
+	}*/
 }
 
 
@@ -1239,7 +912,7 @@ USHORT DLL_EXPORT INTL_key_length(TDBB tdbb, USHORT idxType, USHORT iLength)
  *
  **************************************/
 	USHORT key_length;
-	TEXTTYPE obj;
+	TextType* obj;
 	SSHORT ttype;
 
 	SET_TDBB(tdbb);
@@ -1252,10 +925,8 @@ USHORT DLL_EXPORT INTL_key_length(TDBB tdbb, USHORT idxType, USHORT iLength)
 	if (ttype >= 0 && ttype <= ttype_last_internal)
 		key_length = iLength;
 	else {
-		obj = INTL_TEXTTYPE(ttype, (FPTR_VOID) ERR_post);
-		key_length =
-			reinterpret_cast < USHORT(*)(...) >
-			(*obj->texttype_fn_key_length) (obj, iLength);
+		obj = INTL_texttype_lookup(tdbb, ttype, (FPTR_VOID) ERR_post, NULL);
+		key_length = obj->key_length(iLength);
 	}
 
 /* Validity checks on the computed key_length */
@@ -1269,15 +940,117 @@ USHORT DLL_EXPORT INTL_key_length(TDBB tdbb, USHORT idxType, USHORT iLength)
 	return (key_length);
 }
 
+static CharSetContainer *internal_charset_container_lookup(TDBB tdbb, SSHORT parm1, STATUS * status)
+{
+/**************************************
+ *
+ *      I N T L _ c h a r s e t _ l o o k u p
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ *      Lookup a character set descriptor.
+ *
+ *      First, search the appropriate vector that hangs
+ *      off the dbb.  If not found, then call the lower
+ *      level lookup routine to allocate it, or return
+ *		null if we don't know about the charset.
+ *
+ * Returns:
+ *      *charset        - if no errors;
+ *      <never>         - if error & err non NULL
+ *      NULL            - if error & err NULL
+ *
+ **************************************/
+	DBB dbb;
+	CharSetContainer *cs = 0;
+	USHORT id;
 
-void *DLL_EXPORT INTL_obj_lookup(
+	SET_TDBB(tdbb);
+	dbb = tdbb->tdbb_database;
+
+	id = TTYPE_TO_CHARSET(parm1);
+	if (id == CS_dynamic)
+		id = tdbb->tdbb_attachment->att_charset;
+
+	if (id >= dbb->dbb_charsets.size())
+		dbb->dbb_charsets.resize(id + 10);
+	else
+		cs = dbb->dbb_charsets[id];
+
+	// allocate a new character set object if we couldn't find one.
+	if (!cs)
+	{
+		CharSet *newCs = NULL;
+		CharSetAllocFunc allocFunc;
+		
+		allocFunc = INTL_charset_alloc_func(id);
+		if (!allocFunc)
+			allocFunc = (CharSetAllocFunc)search_out_alloc_func("FB_CharSet_lookup",id,0);
+		if (!allocFunc)
+			allocFunc = (CharSetAllocFunc)
+					intl_back_compat_alloc_func_lookup(type_charset,id,0);
+		if (!allocFunc)
+			return NULL;
+			
+		newCs = (*allocFunc)(*dbb->dbb_permanent, id, 0);
+		if (!newCs)
+			return NULL;
+		
+		cs = new(*dbb->dbb_permanent) CharSetContainer(*dbb->dbb_permanent, newCs);
+		if (!cs)
+		{
+			delete newCs;
+			return NULL;
+		}
+		
+		dbb->dbb_charsets[id] = cs;
+	}
+
+	assert(cs != NULL);
+	return cs;
+}
+
+CharSet *DLL_EXPORT INTL_charset_lookup(TDBB tdbb, SSHORT parm1, STATUS * status)
+{
+/**************************************
+ *
+ *      I N T L _ c h a r s e t _ l o o k u p
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ *      Lookup a character set descriptor.
+ *
+ *      First, search the appropriate vector that hangs
+ *      off the dbb.  If not found, then call the lower
+ *      level lookup routine to allocate it, or return
+ *		null if we don't know about the charset.
+ *
+ * Returns:
+ *      *charset        - if no errors;
+ *      <never>         - if error & err non NULL
+ *      NULL            - if error & err NULL
+ *
+ **************************************/
+	CharSetContainer *cs;
+
+	cs = internal_charset_container_lookup(tdbb, parm1, status);
+	if (!cs)
+		return NULL;
+	return cs->getCharSet();
+}
+
+
+TextType *DLL_EXPORT INTL_texttype_lookup(
 								 TDBB tdbb,
-								 USHORT objtype,
 								 SSHORT parm1, FPTR_VOID err, STATUS * status)
 {
 /**************************************
  *
- *      I N T L _ o b j _ l o o k u p
+ *      I N T L _ t e x t t y p e _ l o o k u p
  *
  **************************************
  *
@@ -1298,78 +1071,48 @@ void *DLL_EXPORT INTL_obj_lookup(
  **************************************/
 	DBB dbb;
 	VEC vector, *pVector;
-	BLK cs_object;
-	CHARSET cs;
+	TextType *cs_object;
+	CharSet* cs;
+	CharSetContainer *csc;
 	USHORT id;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
 
-	assert((objtype == type_charset) || (objtype == type_texttype));
+	if (parm1 == ttype_dynamic)
+		parm1 = MAP_CHARSET_TO_TTYPE(tdbb->tdbb_attachment->att_charset);
 
-	if (objtype == type_charset) {
-		pVector = &dbb->dbb_charsets;
-		id = TTYPE_TO_CHARSET(parm1);
-		if (id == CS_dynamic)
-			id = tdbb->tdbb_attachment->att_charset;
-	}
-	else {
-		if (parm1 == ttype_dynamic)
-			parm1 = MAP_CHARSET_TO_TTYPE(tdbb->tdbb_attachment->att_charset);
+	csc = internal_charset_container_lookup(tdbb, parm1, status);
+	if (!csc)
+		return NULL;
+	id = TTYPE_TO_COLLATION(parm1);
 
-		cs =
-			(CHARSET) INTL_obj_lookup(tdbb, type_charset, parm1, err, status);
-		if (!cs)
-			return NULL;
-		pVector = &cs->charset_collations;
-		id = TTYPE_TO_COLLATION(parm1);
-	}
+	cs_object = csc->collation(id);
 
-	assert(pVector != NULL);
-	vector = *pVector;
-	assert(vector != NULL);
-
-	if (id >= vector->count())
-		vector->resize(id + 11);
-
-	if (!(cs_object = (*vector)[id])) {
-		if (objtype == type_charset)
-		    cs_object = (BLK) new(*dbb->dbb_permanent) charset;
-		else if (objtype == type_texttype)
-		    cs_object = (BLK) new(*dbb->dbb_permanent) texttype;
-		else
-			assert(0);
+	// allocate a new TextType object if needed
+	if (!cs_object)
+	{
+		TextTypeAllocFunc allocFunc;
 		
-		(*vector)[id] = (BLK) cs_object;
+		allocFunc = INTL_texttype_alloc_func(parm1);
+		if (!allocFunc)
+			allocFunc = (TextTypeAllocFunc)search_out_alloc_func("FB_texttype_lookup",parm1,0);
+		if (!allocFunc)
+			allocFunc = (TextTypeAllocFunc)
+				intl_back_compat_alloc_func_lookup(type_texttype,parm1,0);
+		if (!allocFunc)
+			return NULL;
+			
+		cs_object = (*allocFunc)(*dbb->dbb_permanent,parm1,0);
+		if (!cs_object)
+			return NULL;
+		
+		csc->setCollation(cs_object, id);
 	}
 
 	assert(cs_object != NULL);
-
-	if (objtype == type_charset) {
-		if (((CHARSET) cs_object)->charset_flags & CHARSET_init)
-			return (cs_object);
-		if (obj_init
-			(objtype, TTYPE_TO_CHARSET(parm1), 0, cs_object, err,
-			 (STATUS *) status)) return (NULL);
-		((CHARSET) cs_object)->charset_collations =
-			vec::newVector(*dbb->dbb_permanent, 10);
-		((CHARSET) cs_object)->charset_flags |= CHARSET_init;
-		return (cs_object);
-	}
-
-	assert(objtype == type_texttype);
-
-	if (((TEXTTYPE) cs_object)->texttype_flags & TEXTTYPE_init)
-		return (cs_object);
-
-	if (obj_init(objtype, parm1, 0, cs_object, err, (STATUS *) status))
-		return (NULL);
-	finish_texttype_init((TEXTTYPE) cs_object, err, status);
-	if (((TEXTTYPE) cs_object)->texttype_flags & TEXTTYPE_init)
-		return (cs_object);
-	return NULL;
+	return (cs_object);
 }
-
 
 void DLL_EXPORT INTL_pad_spaces(
 								TDBB tdbb,
@@ -1422,7 +1165,7 @@ USHORT DLL_EXPORT INTL_string_to_key(
 	UCHAR *src, *dest;
 	UCHAR buffer[MAX_KEY];
 	UCHAR pad_char;
-	TEXTTYPE obj;
+	TextType* obj;
 	SSHORT ttype;
 
 	SET_TDBB(tdbb);
@@ -1479,12 +1222,9 @@ USHORT DLL_EXPORT INTL_string_to_key(
 		outlen = (dest - pByte->dsc_address);
 		break;
 	default:
-		obj = INTL_TEXTTYPE(ttype, (FPTR_VOID) ERR_post);
-		outlen =
-			reinterpret_cast < USHORT(*)(...) >
-			(*obj->texttype_fn_string_to_key) (obj, len, src,
-											   pByte->dsc_length, dest,
-											   partial);
+		obj = INTL_texttype_lookup(tdbb, ttype, (FPTR_VOID) ERR_post, NULL);
+		outlen = obj->string_to_key(len, src, pByte->dsc_length,
+										dest, partial);
 		break;
 	}
 
@@ -1508,7 +1248,7 @@ int DLL_EXPORT INTL_str_to_upper(TDBB tdbb, DSC * pString)
 	UCHAR *src, *dest;
 	UCHAR buffer[MAX_KEY];
 	USHORT ttype;
-	TEXTTYPE obj;
+	TextType* obj;
 
 	SET_TDBB(tdbb);
 
@@ -1535,10 +1275,8 @@ int DLL_EXPORT INTL_str_to_upper(TDBB tdbb, DSC * pString)
 		break;
 
 	default:
-		obj = INTL_TEXTTYPE(ttype, (FPTR_VOID) ERR_post);
-
-		(void) reinterpret_cast < short (*) (...) >
-			(*obj->texttype_fn_str_to_upper) (obj, len, src, len, src);
+		obj = INTL_texttype_lookup(tdbb, ttype, (FPTR_VOID) ERR_post, NULL);
+		obj->str_to_upper(len, src, len, src);
 		break;
 	}
 /* 
@@ -1561,7 +1299,7 @@ UCHAR DLL_EXPORT INTL_upper(TDBB tdbb, USHORT ttype, UCHAR ch)
  *      Given an input character, convert it to uppercase 
  *
  **************************************/
-	TEXTTYPE obj;
+	TextType* obj;
 
 	SET_TDBB(tdbb);
 
@@ -1577,9 +1315,8 @@ UCHAR DLL_EXPORT INTL_upper(TDBB tdbb, USHORT ttype, UCHAR ch)
 		return (UPPER7(ch));
 
 	default:
-		obj = INTL_TEXTTYPE(ttype, (FPTR_VOID) ERR_post);
-		return ((UCHAR) reinterpret_cast < USHORT(*)(...) >
-				(*obj->texttype_fn_to_upper) (obj, ch));
+		obj = INTL_texttype_lookup(tdbb, ttype, (FPTR_VOID) ERR_post, NULL);
+		return obj->to_upper(ch);
 	}
 
 }
@@ -1603,15 +1340,16 @@ static BOOLEAN all_spaces(
  *      (0x20 for Ascii, 0x0020 for Unicode, 0x20 for SJIS, but must watch for 
  *      0x??20, which is NOT a space.
  **************************************/
-	CHARSET obj;
+	CharSet* obj;
 	BYTE *p;
-	BYTE *end, *space, *end_space;
+	BYTE *end;
+	const unsigned char *space, *end_space;
 
 	SET_TDBB(tdbb);
 
 	assert(ptr != NULL);
 
-	obj = INTL_CHARSETTYPE(charset, (FPTR_VOID) ERR_post);
+	obj = INTL_charset_lookup(tdbb, charset, NULL);
 
 	assert(obj != NULL);
 
@@ -1623,11 +1361,11 @@ static BOOLEAN all_spaces(
 
 /* Single-octet character sets are optimized here */
 
-	if (obj->charset_space_length == 1) {
+	if (obj->getSpaceLength() == 1) {
 		p = &ptr[offset];
 		end = &ptr[len];
 		while (p < end) {
-			if (*p++ != *obj->charset_space_character)
+			if (*p++ != *obj->getSpace())
 				return (FALSE);
 		}
 		return (TRUE);
@@ -1635,9 +1373,10 @@ static BOOLEAN all_spaces(
 	else {
 		p = &ptr[offset];
 		end = &ptr[len];
-		end_space = &obj->charset_space_character[obj->charset_space_length];
+		space = obj->getSpace();
+		end_space = &space[obj->getSpaceLength()];
 		while (p < end) {
-			space = obj->charset_space_character;
+			space = obj->getSpace();
 			while (p < end && space < end_space) {
 				if (*p++ != *space++)
 					return (FALSE);
@@ -1647,211 +1386,7 @@ static BOOLEAN all_spaces(
 	}
 }
 
-
-static void common_convert_init(
-								CSCONVERT csptr,
-								USHORT to_cs,
-								USHORT from_cs,
-								FPTR_SHORT cvt_fn,
-BYTE * datatable, BYTE * datatable2)
-{
-/**************************************
- *
- *      c o m m o n _ c o n v e r t _ i n i t
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	csptr->csconvert_version = 40;
-	csptr->csconvert_name = (ASCII *) "DIRECT";
-	csptr->csconvert_from = from_cs;
-	csptr->csconvert_to = to_cs;
-	csptr->csconvert_convert = cvt_fn;
-	csptr->csconvert_datatable = datatable;
-	csptr->csconvert_misc = datatable2;
-}
-
-
-static void finish_texttype_init(
-								 TEXTTYPE txtobj,
-								 FPTR_VOID err, STATUS * status)
-{
-/**************************************
- *
- *      f i n i s h _ t e x t t y p e _ i n i t
- *
- **************************************
- *
- * Functional description
- *
- *      Finish initializing a text object with pointers to 
- *      internal routines.
- *      This is also a handy place to check the licensing bits
- *      for the text object.
- *
- * Returns:
- *      The TEXTTYPE_init bit in texttype_flags is set if the
- *      object is sucessfully initialized.
- *
- **************************************/
-
-	if ((txtobj->texttype_fn_to_wc == NULL) &&
-		(txtobj->texttype_bytes_per_char == 1)) {
-		/* Finish initialization of a narrow character object */
-
-		txtobj->texttype_fn_to_wc = (FPTR_SHORT) nc_to_wc;
-		txtobj->texttype_fn_contains = (FPTR_SHORT) EVL_nc_contains;
-		txtobj->texttype_fn_matches = (FPTR_SHORT) EVL_nc_matches;
-		txtobj->texttype_fn_like = (FPTR_SHORT) EVL_nc_like;
-		txtobj->texttype_fn_sleuth_merge = (FPTR_SHORT) EVL_nc_sleuth_merge;
-		txtobj->texttype_fn_sleuth_check = (FPTR_SHORT) EVL_nc_sleuth_check;
-
-		if (!txtobj->texttype_fn_mbtowc)
-			txtobj->texttype_fn_mbtowc = (FPTR_short) internal_nc_mbtowc;
-	}
-	else if ((txtobj->texttype_fn_to_wc == NULL) &&
-			 (txtobj->texttype_bytes_per_char == 2)) {
-		/* Finish initialization of a wide character object */
-
-		txtobj->texttype_fn_to_wc = (FPTR_SHORT) wc_to_wc;
-		txtobj->texttype_fn_contains = (FPTR_SHORT) EVL_wc_contains;
-		txtobj->texttype_fn_matches = (FPTR_SHORT) EVL_wc_matches;
-		txtobj->texttype_fn_like = (FPTR_SHORT) EVL_wc_like;
-		txtobj->texttype_fn_sleuth_merge = (FPTR_SHORT) EVL_wc_sleuth_merge;
-		txtobj->texttype_fn_sleuth_check = (FPTR_SHORT) EVL_wc_sleuth_check;
-		if (!txtobj->texttype_fn_mbtowc)
-			txtobj->texttype_fn_mbtowc = (FPTR_short) internal_wc_mbtowc;
-	}
-	else if (txtobj->texttype_fn_to_wc != NULL) {
-		/* Finish initialization of a multibyte character object */
-
-		txtobj->texttype_fn_contains = (FPTR_SHORT) EVL_mb_contains;
-		txtobj->texttype_fn_matches = (FPTR_SHORT) EVL_mb_matches;
-		txtobj->texttype_fn_like = (FPTR_SHORT) EVL_mb_like;
-		txtobj->texttype_fn_sleuth_merge = (FPTR_SHORT) EVL_mb_sleuth_merge;
-		txtobj->texttype_fn_sleuth_check = (FPTR_SHORT) EVL_mb_sleuth_check;
-		if (!txtobj->texttype_fn_mbtowc)
-			txtobj->texttype_fn_mbtowc = (FPTR_short) internal_mb_mbtowc;
-	}
-	else
-		assert(0);
-
-	txtobj->texttype_flags |= TEXTTYPE_init;
-}
-
-
-static USHORT internal_ch_copy(TEXTTYPE obj, UCHAR ch)
-{
-/**************************************
- *
- *      i n t e r n a l _ c h _ c o p y
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	return (ch);
-}
-
-
-static USHORT internal_ch_to_upper(TEXTTYPE obj, UCHAR ch)
-{
-/**************************************
- *
- *      i n t e r n a l _ c h _ t o _ u p p e r
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	return (UPPER7(ch));
-}
-
-
-static USHORT internal_ch_to_lower(TEXTTYPE obj, UCHAR ch)
-{
-/**************************************
- *
- *      i n t e r n a l _ c h _ t o _ l o w e r
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	return ((((ch) >= 'A') && ((ch) < 'Z')) ? ((ch) - 'A' + 'a') : (ch));
-}
-
-
-static SSHORT internal_compare(
-							   TEXTTYPE obj,
-							   USHORT length1,
-							   UCHAR * p1, USHORT length2, UCHAR * p2)
-{
-/**************************************
- *
- *      i n t e r n a l _ c o m p a r e
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	SSHORT fill;
-	UCHAR pad;
-
-	pad = (obj->texttype_type == ttype_binary) ? 0 : ' ';
-	fill = length1 - length2;
-	if (length1 >= length2) {
-		if (length2)
-			do
-				if (*p1++ != *p2++)
-					if (p1[-1] > p2[-1])
-						return 1;
-					else
-						return -1;
-			while (--length2);
-		if (fill > 0)
-			do
-				if (*p1++ != pad)
-					if (p1[-1] > pad)
-						return 1;
-					else
-						return -1;
-			while (--fill);
-		return 0;
-	}
-
-	if (length1)
-		do
-			if (*p1++ != *p2++)
-				if (p1[-1] > p2[-1])
-					return 1;
-				else
-					return -1;
-		while (--length1);
-
-	do
-		if (*p2++ != pad)
-			if (pad > p2[-1])
-				return 1;
-			else
-				return -1;
-	while (++fill);
-
-	return 0;
-}
-
-
-static USHORT internal_keylength(TEXTTYPE obj, USHORT iLength)
+static USHORT internal_keylength(TextType* obj, USHORT iLength)
 {
 /**************************************
  *
@@ -1866,582 +1401,7 @@ static USHORT internal_keylength(TEXTTYPE obj, USHORT iLength)
 	return (iLength);
 }
 
-
-static SSHORT internal_nc_mbtowc(
-								 TEXTTYPE obj,
-								 WCHAR * wc, UCHAR * ptr, USHORT count)
-{
-/**************************************
- *
- *      i n t e r n a l _ n c _ m b t o w c 
- *
- **************************************
- *
- * Functional description
- *      Get the next character from the multibyte
- *      input stream.
- *      Narrow character version.
- *  Returns:
- *      Count of bytes consumed from the input stream.
- *
- **************************************/
-
-	assert(obj);
-	assert(ptr);
-
-	if (count >= 1) {
-		if (wc)
-			*wc = *ptr;
-		return 1;
-	}
-	if (wc)
-		*wc = 0;
-	return -1;					/* No more characters */
-}
-
-
-static SSHORT internal_mb_mbtowc(
-								 TEXTTYPE obj,
-								 WCHAR * wc, UCHAR * ptr, USHORT count)
-{
-/**************************************
- *
- *      i n t e r n a l _ m b _ m b t o w c 
- *
- **************************************
- *
- * Functional description
- *      Get the next character from the multibyte
- *      input stream.
- *      Multibyte version character version.
- *  Returns:
- *      Count of bytes consumed from the input stream.
- *
- **************************************/
-
-	assert(obj);
-	assert(ptr);
-
-	if (count >= 2) {
-		if (wc)
-			*wc = *(WCHAR *) ptr;
-		return 2;
-	}
-	if (wc)
-		*wc = 0;
-	return -1;					/* No more characters */
-}
-
-
-static SSHORT internal_wc_mbtowc(
-								 TEXTTYPE obj,
-								 WCHAR * wc, UCHAR * ptr, USHORT count)
-{
-/**************************************
- *
- *      i n t e r n a l _ w c _ m b t o w c 
- *
- **************************************
- *
- * Functional description
- *      Get the next character from the multibyte
- *      input stream.
- *      Wide character version.
- *  Returns:
- *      Count of bytes consumed from the input stream.
- *
- **************************************/
-
-	assert(obj);
-	assert(ptr);
-
-	if (count >= 2) {
-		if (wc)
-			*wc = *(WCHAR *) ptr;
-		return 2;
-	}
-	if (wc)
-		*wc = 0;
-	return -1;					/* No more characters */
-}
-
-
-static SSHORT internal_str_copy(
-								TEXTTYPE obj,
-								USHORT inLen,
-								UCHAR * src, USHORT outLen, UCHAR * dest)
-{
-/**************************************
- *
- *      i n t e r n a l _ s t r _ c o p y
- *
- **************************************
- *
- * Functional description
- *      Note: dest may equal src.
- *
- **************************************/
-	UCHAR *pStart;
-
-	pStart = dest;
-	while (inLen-- && outLen--) {
-		*dest++ = *src++;
-	}
-
-	return (dest - pStart);
-}
-
-
-static USHORT cvt_utffss_to_ascii(CSCONVERT obj, UCHAR * pDest, USHORT nDest,	/* byte count */
-								  UCHAR * pSrc, USHORT nSrc,	/* byte count */
-								  SSHORT * err_code, USHORT * err_position)
-{
-/**************************************
- *
- *      c v t _ u t f f s s _ t o _ a s c i i 
- * also
- *      c v t _ a s c i i _ t o _ u t f f s s 
- * also
- *      c v t _ n o n e _ t o _ u t f f s s 
- *
- **************************************
- *
- * Functional description
- *      Perform a pass-through transformation of ASCII to Unicode
- *      in FSS format.  Note that any byte values greater than 127
- *      cannot be converted in either direction, so the same
- *      routine does double duty.
- *
- *************************************/
-	UCHAR *pStart;
-	UCHAR *pStart_src;
-
-	assert(obj != NULL);
-	assert((pSrc != NULL) || (pDest == NULL));
-	assert(err_code != NULL);
-
-	*err_code = 0;
-	if (pDest == NULL)			/* length estimate needed? */
-		return (nSrc);
-	pStart = pDest;
-	pStart_src = pSrc;
-	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
-		if (*pSrc > 127) {
-			/* In the cvt_ascii_to_utffss case this should be CS_BAD_INPUT */
-			/* but not in cvt_none_to_utffss or cvt_utffss_to_ascii */
-			*err_code = CS_CONVERT_ERROR;
-			break;
-		}
-		*pDest++ = *pSrc++;
-		nDest -= sizeof(*pDest);
-		nSrc -= sizeof(*pSrc);
-	}
-	if (!*err_code && nSrc) {
-		*err_code = CS_TRUNCATION_ERROR;
-	}
-	*err_position = (pSrc - pStart_src) * sizeof(*pSrc);
-
-	return ((pDest - pStart) * sizeof(*pDest));
-}
-
-
-static USHORT cvt_none_to_unicode(CSCONVERT obj, WCHAR * pDest, USHORT nDest,	/* byte count */
-								  UCHAR * pSrc, USHORT nSrc,	/* byte count */
-								  SSHORT * err_code, USHORT * err_position)
-{
-/**************************************
- *
- *      c v t _ n o n e _ t o _ u n i c o d e
- *
- **************************************
- *
- * Functional description
- *      Convert CHARACTER SET NONE to UNICODE (wide char).
- *      Byte values below 128 treated as ASCII.
- *      Byte values >= 128 create CONVERT ERROR
- *
- *************************************/
-	WCHAR *pStart;
-	UCHAR *pStart_src;
-
-	assert(obj != NULL);
-	assert((pSrc != NULL) || (pDest == NULL));
-	assert(err_code != NULL);
-
-	*err_code = 0;
-	if (pDest == NULL)			/* length estimate needed? */
-		return (2 * nSrc);
-	pStart = pDest;
-	pStart_src = pSrc;
-	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
-		if (*pSrc > 127) {
-			*err_code = CS_CONVERT_ERROR;
-			break;
-		}
-		*pDest++ = *pSrc++;
-		nDest -= sizeof(*pDest);
-		nSrc -= sizeof(*pSrc);
-	}
-	if (!*err_code && nSrc) {
-		*err_code = CS_TRUNCATION_ERROR;
-	}
-	*err_position = (pSrc - pStart_src) * sizeof(*pSrc);
-
-	return ((pDest - pStart) * sizeof(*pDest));
-}
-
-
-static USHORT cvt_ascii_to_unicode(CSCONVERT obj, WCHAR * pDest, USHORT nDest,	/* byte count */
-								   UCHAR * pSrc, USHORT nSrc,	/* byte count */
-								   SSHORT * err_code, USHORT * err_position)
-{
-/**************************************
- *
- *      c v t _ a s c i i _ t o _ u n i c o d e
- *
- **************************************
- *
- * Functional description
- *      Convert CHARACTER SET NONE to UNICODE (wide char).
- *      Byte values below 128 treated as ASCII.
- *      Byte values >= 128 create BAD_INPUT
- *
- *************************************/
-	WCHAR *pStart;
-	UCHAR *pStart_src;
-
-	assert(obj != NULL);
-	assert((pSrc != NULL) || (pDest == NULL));
-	assert(err_code != NULL);
-
-	*err_code = 0;
-	if (pDest == NULL)			/* length estimate needed? */
-		return (2 * nSrc);
-	pStart = pDest;
-	pStart_src = pSrc;
-	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
-		if (*pSrc > 127) {
-			*err_code = CS_BAD_INPUT;
-			break;
-		}
-		*pDest++ = *pSrc++;
-		nDest -= sizeof(*pDest);
-		nSrc -= sizeof(*pSrc);
-	}
-	if (!*err_code && nSrc) {
-		*err_code = CS_TRUNCATION_ERROR;
-	}
-	*err_position = (pSrc - pStart_src) * sizeof(*pSrc);
-
-	return ((pDest - pStart) * sizeof(*pDest));
-}
-
-
-static USHORT cvt_unicode_to_ascii(CSCONVERT obj, NCHAR * pDest, USHORT nDest,	/* byte count */
-								   WCHAR * pSrc, USHORT nSrc,	/* byte count */
-								   SSHORT * err_code, USHORT * err_position)
-{
-/**************************************
- *
- *      c v t _ u n i c o d e _ t o _ a s c i i 
- *
- **************************************
- *
- * Functional description
- *      Convert UNICODE to CHARACTER SET ASCII (wide char).
- *      Byte values below 128 treated as ASCII.
- *      Byte values >= 128 create CONVERT_ERROR
- *
- *************************************/
-	NCHAR *pStart;
-	WCHAR *pStart_src;
-
-	assert(obj != NULL);
-	assert((pSrc != NULL) || (pDest == NULL));
-	assert(err_code != NULL);
-
-	*err_code = 0;
-	if (pDest == NULL)			/* length estimate needed? */
-		return (nSrc / 2);
-	pStart = pDest;
-	pStart_src = pSrc;
-	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
-		if (*pSrc > 127) {
-			*err_code = CS_CONVERT_ERROR;
-			break;
-		}
-		*pDest++ = *pSrc++;
-		nDest -= sizeof(*pDest);
-		nSrc -= sizeof(*pSrc);
-	}
-	if (!*err_code && nSrc) {
-		*err_code = CS_TRUNCATION_ERROR;
-	}
-	*err_position = (pSrc - pStart_src) * sizeof(*pSrc);
-
-	return ((pDest - pStart) * sizeof(*pDest));
-}
-
-
-static SSHORT internal_str_to_upper(
-									TEXTTYPE obj,
-									USHORT inLen,
-									UCHAR * src, USHORT outLen, UCHAR * dest)
-{
-/**************************************
- *
- *      i n t e r n a l _ s t r _ t o _ u p p e r
- *
- **************************************
- *
- * Functional description
- *      Note: dest may equal src.
- *
- **************************************/
-	UCHAR *pStart;
-
-	pStart = dest;
-	while (inLen-- && outLen--) {
-		*dest++ = UPPER7(*src);
-		src++;
-	}
-
-	return (dest - pStart);
-}
-
-
-static USHORT internal_string_to_key(
-									 TEXTTYPE obj,
-									 USHORT inLen,
-									 UCHAR * src,
-									 USHORT outLen,
-UCHAR * dest, USHORT partial)
-{
-/**************************************
- *
- *      i n t e r n a l _ s t r i n g _ t o _ k e y
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	UCHAR *pStart;
-	UCHAR pad_char;
-
-	pStart = dest;
-	pad_char = *obj->texttype_collation_table;
-	while (inLen-- && outLen--)
-		*dest++ = *src++;
-
-/* strip off ending pad characters */
-	while (dest > pStart)
-		if (*(dest - 1) == pad_char)
-			dest--;
-		else
-			break;
-
-	return (dest - pStart);
-}
-
-
-static BOOLEAN obj_init(
-						USHORT objtype,
-						SSHORT parm1,
-						SSHORT parm2,
-						void *text_object, FPTR_VOID err, STATUS * status)
-{
-/**************************************
- *
- *      o b j _ i n i t
- *
- **************************************
- *
- * Functional description
- *      Find the module that implements a given text type, and initialize
- *      the text type.
- *      Search algorithm is:
- *              Check list of internal implementations.
- *              Look for general entrypoint in intllib 
- *              Look for general entrypoint in intllib2 
- *              Look for a normal UDF entry
- *              Abort with an error.
- *
- * Returns:
- *      FALSE   - no errors
- *      TRUE    - error occurred, and parameter <err> was NULL;
- *      <never> - error occurred, and parameter <err> non-NULL;
- *
- *
- **************************************/
-	FILECHAR path[MAX_PATH_LENGTH];
-	ASCII entry[32];
-	USHORT(*lookup_fn) (USHORT, FPTR_SHORT *, SSHORT, SSHORT);
-	FPTR_SHORT function;
-
-	INTL_TRACE(("INTL: looking for obj %d ttype %d\n", objtype, parm1));
-
-	function = NULL;
-
-	switch (objtype) {
-	case type_texttype:
-		if (parm1 == ttype_none)
-			function = (FPTR_SHORT) ttype_none_init;
-		else if (parm1 == ttype_ascii)
-			function = (FPTR_SHORT) ttype_ascii_init;
-		else if (parm1 == ttype_unicode_fss)
-			function = (FPTR_SHORT) ttype_unicode_fss_init;
-		else if (parm1 == ttype_binary)
-			function = (FPTR_SHORT) ttype_binary_init;
-		break;
-	case type_charset:
-		if (parm1 == CS_NONE)
-			function = (FPTR_SHORT) cs_none_init;
-		else if (parm1 == CS_ASCII)
-			function = (FPTR_SHORT) cs_ascii_init;
-		else if (parm1 == CS_UNICODE_FSS)
-			function = (FPTR_SHORT) cs_unicode_fss_init;
-		else if (parm1 == CS_UNICODE101)
-			function = (FPTR_SHORT) cs_unicode_init;
-		else if (parm1 == CS_BINARY)
-			function = (FPTR_SHORT) cs_binary_init;
-		break;
-	case type_csconvert:
-		if (((parm1 == CS_ASCII) && (parm2 == CS_UNICODE_FSS)) ||
-			((parm2 == CS_ASCII) && (parm1 == CS_UNICODE_FSS)))
-			function = (FPTR_SHORT) cvt_ascii_utf_init;
-
-		/* converting FROM NONE to UNICODE has a short cut 
-		 * - it's treated like ASCII */
-		else if ((parm2 == CS_NONE) && (parm1 == CS_UNICODE_FSS))
-			function = (FPTR_SHORT) cvt_ascii_utf_init;
-
-#ifdef DEV_BUILD
-		/* Converting TO character set NONE should have been handled at
-		 * a higher level
-		 */
-		assert(parm1 != CS_NONE);
-#endif
-		break;
-	default:
-		BUGCHECK(1);
-		break;
-	}
-
-	if (function == NULL) {
-#ifdef INTL_BACKEND
-		if (LD_lookup(objtype, &function, parm1, parm2) != 0)
-			function = NULL;
-#else
-		/* Look for an InterBase supplied object to implement the text type */
-		/* The flu.c uses searchpath which expects a file name not a path */
-		strcpy(reinterpret_cast < char *>(path), INTL_MODULE1);
-		INTL_TRACE(("INTL: trying %s %s\n", path, INTL_LOOKUP_ENTRY1));
-		if ( (lookup_fn = reinterpret_cast <USHORT(*)(USHORT, USHORT(**)(), short, short)>
-            (ISC_lookup_entrypoint(reinterpret_cast < char *>(path), INTL_LOOKUP_ENTRY1, NULL))) ) {
-			INTL_TRACE(("INTL: calling lookup %s %s\n", path,
-						INTL_LOOKUP_ENTRY1));
-			if ((*lookup_fn) (objtype, &function, parm1, parm2) != 0) {
-				function = NULL;
-			}
-		}
-#endif
-	}
-
-/* Still not found, check the set of supplimental international objects */
-
-	if (function == NULL) {
-#ifdef INTL_BACKEND
-		if (LD2_lookup(objtype, &function, parm1, parm2) != 0)
-			function = NULL;
-#else
-		gds__prefix(reinterpret_cast < char *>(path), INTL_MODULE2);
-		INTL_TRACE(("INTL: trying %s %s\n", path, INTL_LOOKUP_ENTRY2));
-		if ( (lookup_fn =
-			reinterpret_cast < USHORT(*)(USHORT, USHORT(**)(), short,
-										 short)
-			>(ISC_lookup_entrypoint
-			  (reinterpret_cast < char *>(path), INTL_LOOKUP_ENTRY2, NULL))) ) {
-			INTL_TRACE(
-					   ("INTL: calling lookup %s %s\n", path,
-						INTL_LOOKUP_ENTRY2));
-			if ((*lookup_fn) (objtype, &function, parm1, parm2) != 0) {
-				function = NULL;
-			}
-		}
-#endif
-	}
-
-/* Still not found, check if there is a UDF in the database defined the right way */
-	if (function == NULL) {
-		FUN function_block;
-		USHORT argcount;
-		switch (objtype) {
-		case type_texttype:
-			sprintf((SCHAR *) entry, INTL_USER_ENTRY, parm1);
-			argcount = 2;
-			break;
-		case type_charset:
-			sprintf((SCHAR *) entry, "USER_CHARSET_%03d", parm1);
-			argcount = 2;
-			break;
-		case type_csconvert:
-			sprintf((SCHAR *) entry, "USER_TRANSLATE_%03d_%03d", parm1,
-					parm2);
-			argcount = 3;
-			break;
-		default:
-			BUGCHECK(1);
-			break;
-		}
-		INTL_TRACE(("INTL: trying user fn %s\n", entry));
-		if ( (function_block = FUN_lookup_function(entry)) ) {
-			INTL_TRACE(("INTL: found a user fn, validating\n"));
-			if ((function_block->fun_count == argcount) &&
-				(function_block->fun_args == argcount) &&
-				(function_block->fun_return_arg == 0) &&
-				(function_block->fun_entrypoint != NULL) &&
-				(function_block->fun_rpt[0].fun_mechanism == FUN_value) &&
-				(function_block->fun_rpt[0].fun_desc.dsc_dtype == dtype_short)
-				&& (function_block->fun_rpt[1].fun_desc.dsc_dtype ==
-					dtype_short)
-				&& (function_block->fun_rpt[argcount - 1].
-					fun_desc.dsc_dtype == dtype_short)
-				&& (function_block->fun_rpt[argcount].fun_mechanism ==
-					FUN_reference)
-				&& (function_block->fun_rpt[argcount].fun_desc.dsc_dtype ==
-					dtype_text)) function =
-					(FPTR_SHORT) function_block->fun_entrypoint;
-		}
-	}
-
-/* If we found an entry point, call it, if it returns OK flag the
- * text object as initialized
- * Otherwise, report error condition "Can't resolve text type"
- */
-
-	if (function != NULL) {
-		if ((USHORT) reinterpret_cast < USHORT(*)(...) >
-			(*function) (text_object, parm1, parm2) == 0) {
-			INTL_TRACE(
-					   ("INTL: object %d, ttype %d init ok\n", objtype,
-						parm1));
-			return FALSE;
-		}
-	}
-	if (err != NULL)
-		reinterpret_cast < void (*) (...) > (*err) (gds_text_subtype,
-													gds_arg_number,
-													(SLONG) parm1, 0);
-	else if (status)
-		IBERR_build_status(status, gds_text_subtype, gds_arg_number,
-						   (SLONG) parm1, 0);
-
-	return TRUE;
-}
-
-
-static USHORT nc_to_wc(CSCONVERT obj, WCHAR * pWide, USHORT nWide,	/* byte count */
+static USHORT nc_to_wc(CsConvert* obj, WCHAR * pWide, USHORT nWide,	/* byte count */
 					   UCHAR * pNarrow, USHORT nNarrow,	/* byte count */
 					   SSHORT * err_code, USHORT * err_position)
 {
@@ -2494,511 +1454,40 @@ static void pad_spaces(TDBB tdbb, CHARSET_ID charset, BYTE * ptr, USHORT len)
  *      Pad a buffer with the character set defined space character.
  *      
  **************************************/
-	CHARSET obj;
-	BYTE *end, *space, *end_space, *pptr;
+	CharSet* obj;
+	BYTE *end;
+	const unsigned char *space, *end_space;
 
 	SET_TDBB(tdbb);
 
 	assert(ptr != NULL);
 
-	obj = INTL_CHARSETTYPE(charset, (FPTR_VOID) ERR_post);
+	obj = INTL_charset_lookup(tdbb, charset, NULL);
 
 	assert(obj != NULL);
-	if (len < 1 )
-	    return; /* Exit, if nothing to fill */
-	    
-	pptr=ptr; /*So not good idea incrementing function argument
-		                Konstantin Kuznetsov */
-				
 
 /* Single-octet character sets are optimized here */
-	if (obj->charset_space_length == 1) {
+	if (obj->getSpaceLength() == 1) {
 		end = &ptr[len];
-		space = obj->charset_space_character;
-		while (pptr < end){
-			*pptr = *space;
-			pptr++;
-		};	
+		while (ptr < end)
+			*ptr++ = *obj->getSpace();
 	}
 	else {
 		end = &ptr[len];
-		end_space = &obj->charset_space_character[obj->charset_space_length];
-		while (pptr < end) {
-			space = obj->charset_space_character;
-			while ((pptr < end) && (space < end_space)) {
-				*pptr++ = *space++;
+		space = obj->getSpace();
+		end_space = &space[obj->getSpaceLength()];
+		while (ptr < end) {
+			space = obj->getSpace();
+			while (ptr < end && space < end_space) {
+				*ptr++ = *space++;
 			}
 			/* This assert is checking that we didn't have a buffer-end
 			 * in the middle of a space character
 			 */
-			assert(!(pptr == end) || (space == end_space));
+			assert(!(ptr == end) || (space == end_space));
 		}
 	}
 }
-
-
-static USHORT wc_to_nc(CSCONVERT obj, NCHAR * pDest, USHORT nDest,	/* byte count */
-					   WCHAR * pSrc, USHORT nSrc,	/* byte count */
-					   SSHORT * err_code, USHORT * err_position)
-{
-/**************************************
- *
- *      w c _ t o _ n c
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	NCHAR *pStart;
-	WCHAR *pStart_src;
-
-	assert(obj != NULL);
-	assert((pSrc != NULL) || (pDest == NULL));
-	assert(err_code != NULL);
-	assert(err_position != NULL);
-
-	*err_code = 0;
-	if (pDest == NULL)			/* length estimate needed? */
-		return ((nSrc + 1) / 2);
-	pStart = pDest;
-	pStart_src = pSrc;
-	while (nDest && nSrc >= sizeof(*pSrc)) {
-		if (*pSrc >= 256) {
-			*err_code = CS_CONVERT_ERROR;
-			break;
-		}
-		*pDest++ = *pSrc++;
-		nDest -= sizeof(*pDest);
-		nSrc -= sizeof(*pSrc);
-	}
-	if (!*err_code && nSrc) {
-		*err_code = CS_TRUNCATION_ERROR;
-	}
-	*err_position = (pSrc - pStart_src) * sizeof(*pSrc);
-
-	return ((pDest - pStart) * sizeof(*pDest));
-}
-
-
-static USHORT mb_to_wc(CSCONVERT obj, WCHAR * pDest, USHORT nDest,	/* byte count */
-					   MBCHAR * pSrc, USHORT nSrc,	/* byte count */
-					   SSHORT * err_code, USHORT * err_position)
-{
-/**************************************
- *
- *      m b _ t o _ w c
- *
- **************************************
- *
- * Functional description
- *      Convert a wc string from network form - high-endian
- *      byte stream.
- *
- *************************************/
-	WCHAR *pStart;
-	MBCHAR *pStart_src;
-
-	assert(obj != NULL);
-	assert((pSrc != NULL) || (pDest == NULL));
-	assert(err_code != NULL);
-	assert(err_position != NULL);
-
-	*err_code = 0;
-	if (pDest == NULL)			/* length estimate needed? */
-		return (nSrc);
-	pStart = pDest;
-	pStart_src = pSrc;
-	while (nDest > 1 && nSrc > 1) {
-		*pDest++ = *pSrc * 256 + *(pSrc + 1);
-		pSrc += 2;
-		nDest -= 2;
-		nSrc -= 2;
-	}
-	if (!*err_code && nSrc) {
-		*err_code = CS_TRUNCATION_ERROR;
-	}
-	*err_position = (pSrc - pStart_src) * sizeof(*pSrc);
-
-	return ((pDest - pStart) * sizeof(*pDest));
-}
-
-
-static USHORT wc_to_mb(CSCONVERT obj, MBCHAR * pDest, USHORT nDest,	/* byte count */
-					   WCHAR * pSrc, USHORT nSrc,	/* byte count */
-					   SSHORT * err_code, USHORT * err_position)
-{
-/**************************************
- *
- *      w c _ t o _ m b 
- *
- **************************************
- *
- * Functional description
- *      Convert a wc string to network form - high-endian
- *      byte stream.
- *
- *************************************/
-	MBCHAR *pStart;
-	WCHAR *pStart_src;
-
-	assert(obj != NULL);
-	assert((pSrc != NULL) || (pDest == NULL));
-	assert(err_code != NULL);
-	assert(err_position != NULL);
-
-	*err_code = 0;
-	if (pDest == NULL)			/* length estimate needed? */
-		return (nSrc);
-	pStart = pDest;
-	pStart_src = pSrc;
-	while (nDest > 1 && nSrc > 1) {
-		*pDest++ = *pSrc / 256;
-		*pDest++ = *pSrc++ % 256;
-		nDest -= 2;
-		nSrc -= 2;
-	}
-	if (!*err_code && nSrc) {
-		*err_code = CS_TRUNCATION_ERROR;
-	}
-	*err_position = (pSrc - pStart_src) * sizeof(*pSrc);
-
-	return ((pDest - pStart) * sizeof(*pDest));
-}
-
-
-static USHORT wc_to_wc(CSCONVERT obj, WCHAR * pDest, USHORT nDest,	/* byte count */
-					   WCHAR * pSrc, USHORT nSrc,	/* byte count */
-					   SSHORT * err_code, USHORT * err_position)
-{
-/**************************************
- *
- *      w c _ t o _ w c 
- *
- **************************************
- *
- * Functional description
- *
- *************************************/
-	WCHAR *pStart;
-	WCHAR *pStart_src;
-
-	assert(obj != NULL);
-	assert((pSrc != NULL) || (pDest == NULL));
-	assert(err_code != NULL);
-	assert(err_position != NULL);
-
-	*err_code = 0;
-	if (pDest == NULL)			/* length estimate needed? */
-		return (nSrc);
-
-	pStart = pDest;
-	pStart_src = pSrc;
-	while (nDest > 1 && nSrc > 1) {
-		*pDest++ = *pSrc++;
-		nDest -= 2;
-		nSrc -= 2;
-	}
-	if (!*err_code && nSrc) {
-		*err_code = CS_TRUNCATION_ERROR;
-	}
-	*err_position = (pSrc - pStart_src) * sizeof(*pSrc);
-
-	return ((pDest - pStart) * sizeof(*pDest));
-}
-
-
-#define TEXTTYPE_RETURN         return (0)
-
-#define FAMILY_INTERNAL(id_number, name, charset, country) \
-	cache->texttype_version =               40; \
-	cache->texttype_type =                  (id_number); \
-	cache->texttype_character_set =         (charset); \
-	cache->texttype_country =               (country); \
-	cache->texttype_bytes_per_char =        1; \
-	cache->texttype_fn_init =               (FPTR_SHORT) (name); \
-	cache->texttype_fn_key_length =         (FPTR_SHORT) internal_keylength; \
-	cache->texttype_fn_string_to_key =      (FPTR_SHORT) internal_string_to_key; \
-	cache->texttype_fn_compare =            (FPTR_short) internal_compare; \
-	cache->texttype_fn_to_upper =           (FPTR_SHORT) internal_ch_to_upper; \
-	cache->texttype_fn_to_lower =           (FPTR_SHORT) internal_ch_to_lower; \
-	cache->texttype_fn_str_to_upper =       (FPTR_short) internal_str_to_upper; \
-	cache->texttype_fn_mbtowc =             (FPTR_short) internal_nc_mbtowc; \
-	cache->texttype_collation_table =       (BYTE *) " "; \
-	cache->texttype_toupper_table =         (BYTE *) NULL; \
-	cache->texttype_tolower_table =         (BYTE *) NULL; \
-	cache->texttype_compress_table =        (BYTE *) NULL; \
-	cache->texttype_expand_table =          (BYTE *) NULL; \
-	cache->texttype_name =                  const_cast<char*>(POSIX); \
-
-
-
-static USHORT ttype_ascii_init(TEXTTYPE cache, USHORT parm1, USHORT dummy)
-{
-/**************************************
- *
- *      t t y p e _ a s c i i _ i n i t
- *
- **************************************
- *
- * Functional description
- *
- *************************************/
-	static CONST ASCII POSIX[] = "C.ASCII";
-
-	FAMILY_INTERNAL(ttype_ascii, ttype_ascii_init, CS_ASCII, CC_C);
-
-	TEXTTYPE_RETURN;
-}
-
-
-static USHORT ttype_none_init(TEXTTYPE cache, USHORT parm1, USHORT dummy)
-{
-/**************************************
- *
- *      t t y p e _ n o n e _ i n i t
- *
- **************************************
- *
- * Functional description
- *
- *************************************/
-	static CONST ASCII POSIX[] = "C";
-
-	FAMILY_INTERNAL(ttype_none, ttype_none_init, CS_NONE, CC_C);
-
-	TEXTTYPE_RETURN;
-}
-
-
-static USHORT ttype_unicode_fss_init(
-									 TEXTTYPE cache,
-									 USHORT parm1, USHORT dummy)
-{
-/**************************************
- *
- *      t t y p e _ u n i c o d e _ f s s _ i n i t
- *
- **************************************
- *
- * Functional description
- *
- *************************************/
-	static CONST ASCII POSIX[] = "C.UNICODE_FSS";
-
-	FAMILY_INTERNAL(ttype_unicode_fss, ttype_unicode_fss_init, CS_UNICODE_FSS,
-					CC_C);
-	cache->texttype_bytes_per_char = 3;
-	cache->texttype_fn_to_wc = (FPTR_SHORT) INTL_fss_to_unicode;
-	cache->texttype_fn_mbtowc = (FPTR_short) INTL_fss_mbtowc;
-
-	TEXTTYPE_RETURN;
-}
-
-
-static USHORT ttype_binary_init(TEXTTYPE cache, USHORT parm1, USHORT dummy)
-{
-/**************************************
- *
- *      t t y p e _ b i n a r y _ i n i t
- *
- **************************************
- *
- * Functional description
- *
- *************************************/
-	static CONST ASCII POSIX[] = "C.OCTETS";
-
-	FAMILY_INTERNAL(ttype_binary, ttype_binary_init, CS_BINARY, CC_C);
-	cache->texttype_fn_to_upper = (FPTR_SHORT) internal_ch_copy;
-	cache->texttype_fn_to_lower = (FPTR_SHORT) internal_ch_copy;
-	cache->texttype_fn_str_to_upper = (FPTR_short) internal_str_copy;
-	cache->texttype_collation_table = (BYTE *) "\0";	/* pad character */
-
-	TEXTTYPE_RETURN;
-}
-
-
-/*
- *      Start of Character set definitions 
- */
-
-#define CHARSET_RETURN          return (0)
-
-static void common_8bit_init(
-							 CHARSET csptr,
-							 USHORT id,
-							 ASCII * name,
-							 BYTE * to_unicode_tbl,
-							 BYTE * from_unicode_tbl1,
-BYTE * from_unicode_tbl2)
-{
-/**************************************
- *
- *      c o m m o n _ 8 b i t _ i n i t
- *
- **************************************
- *
- * Functional description
- *
- *************************************/
-
-	csptr->charset_version = 40;
-	csptr->charset_id = id;
-	csptr->charset_name = name;
-	csptr->charset_flags = 0;
-	csptr->charset_min_bytes_per_char = 1;
-	csptr->charset_max_bytes_per_char = 1;
-	csptr->charset_space_length = 1;
-	csptr->charset_space_character = (BYTE *) " ";
-	csptr->charset_well_formed = (FPTR_SHORT) NULL;
-}
-
-
-static USHORT cs_ascii_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
-{
-/**************************************
- *
- *      c s _ a s c i i _ i n i t
- *
- **************************************
- *
- * Functional description
- *
- *************************************/
-
-	common_8bit_init(csptr, CS_ASCII, (ASCII *) "ASCII", NULL, NULL, NULL);
-	common_convert_init(&csptr->charset_to_unicode, CS_UNICODE101, CS_ASCII,
-						(FPTR_SHORT) cvt_ascii_to_unicode, NULL, NULL);
-	common_convert_init(&csptr->charset_from_unicode, CS_ASCII, CS_UNICODE101,
-						(FPTR_SHORT) cvt_unicode_to_ascii, NULL, NULL);
-	CHARSET_RETURN;
-}
-
-
-static USHORT cs_none_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
-{
-/**************************************
- *
- *      c s _ n o n e _ i n i t
- *
- **************************************
- *
- * Functional description
- *
- *************************************/
-
-	common_8bit_init(csptr, CS_NONE, (ASCII *) "NONE", NULL, NULL, NULL);
-/*
-common_convert_init (&csptr->charset_to_unicode, CS_UNICODE101, id,
-	nc_to_wc, to_unicode_tbl, NULL);
-*/
-	common_convert_init(&csptr->charset_to_unicode, CS_UNICODE101, CS_NONE,
-						(FPTR_SHORT) cvt_none_to_unicode, NULL, NULL);
-	common_convert_init(&csptr->charset_from_unicode, CS_NONE, CS_UNICODE101,
-						(FPTR_SHORT) wc_to_nc, NULL, NULL);
-	CHARSET_RETURN;
-}
-
-
-static USHORT cs_unicode_fss_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
-{
-/**************************************
- *
- *      c s _ u n i c o d e _ f s s _ i n i t
- *
- **************************************
- *
- * Functional description
- *
- *************************************/
-
-	common_8bit_init(csptr, CS_UNICODE_FSS, (ASCII *) "UNICODE_FSS", NULL,
-					 NULL, NULL);
-	common_convert_init(&csptr->charset_to_unicode, CS_UNICODE101,
-						CS_UNICODE_FSS, (FPTR_SHORT) INTL_fss_to_unicode,
-						NULL, NULL);
-	common_convert_init(&csptr->charset_from_unicode, CS_UNICODE_FSS,
-						CS_UNICODE101, (FPTR_SHORT) INTL_unicode_to_fss, NULL,
-						NULL);
-	CHARSET_RETURN;
-}
-
-
-static USHORT cs_unicode_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
-{
-/**************************************
- *
- *      c s _ u n i c o d e _ i n i t
- *
- **************************************
- *
- * Functional description
- *
- *************************************/
-	static CONST WCHAR space = 0x0020;
-
-	csptr->charset_version = 40;
-	csptr->charset_id = CS_UNICODE101;
-	csptr->charset_name = ( /*CONST*/ ASCII *) "UNICODE101";
-	csptr->charset_flags = 0;
-	csptr->charset_min_bytes_per_char = 2;
-	csptr->charset_max_bytes_per_char = 2;
-	csptr->charset_space_length = 2;
-	csptr->charset_space_character = (BYTE *) & space;	/* 0x0020 */
-	csptr->charset_well_formed = (FPTR_SHORT) NULL;
-	CHARSET_RETURN;
-}
-
-
-static USHORT cs_binary_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
-{
-/**************************************
- *
- *      c s _ b i n a r y _ i n i t
- *
- **************************************
- *
- * Functional description
- *
- *************************************/
-
-	common_8bit_init(csptr, CS_BINARY, (ASCII *) "BINARY", NULL, NULL, NULL);
-	csptr->charset_space_character = (BYTE *) "\0";
-	common_convert_init(&csptr->charset_to_unicode, CS_UNICODE101, CS_BINARY,
-						(FPTR_SHORT) mb_to_wc, NULL, NULL);
-	common_convert_init(&csptr->charset_from_unicode, CS_BINARY,
-						CS_UNICODE101, (FPTR_SHORT) wc_to_mb, NULL, NULL);
-	CHARSET_RETURN;
-}
-
-
-/*
- *      Start of Conversion entries
- */
-
-#define CONVERT_RETURN  return (0)
-
-
-static USHORT cvt_ascii_utf_init(
-								 CSCONVERT csptr,
-								 USHORT dest_cs, USHORT source_cs)
-{
-/**************************************
- *
- *      c v t _ a s c i i _ u t f _ i n i t
- *
- **************************************
- *
- * Functional description
- *
- *************************************/
-
-	common_convert_init(csptr, dest_cs, source_cs,
-						(FPTR_SHORT) cvt_utffss_to_ascii, NULL, NULL);
-	CONVERT_RETURN;
-}
-
 
 #ifdef DEV_BUILD
 
@@ -3046,5 +1535,844 @@ static void dump_latin(UCHAR * p, USHORT len)
 }
 #endif
 
+unsigned short TextTypeNC::to_wc(unsigned char *pWideUC,
+									unsigned short nWide,
+									unsigned char *pNarrow,
+									unsigned short nNarrow,
+									short *err_code,
+									unsigned short *err_position)
+/**************************************
+ *
+ *      TextTypeNC::to_wc
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+{
+	WCHAR *pStart, *pWide = (WCHAR*)pWideUC;
+	UCHAR *pNarrowStart;
 
-} // extern "C"
+	assert((pNarrow != NULL) || (pWide == NULL));
+	assert(err_code != NULL);
+	assert(err_position != NULL);
+
+	*err_code = 0;
+	if (pWide == NULL)
+		return (2 * nNarrow);	/* all cases */
+	pStart = pWide;
+	pNarrowStart = pNarrow;
+	while (nWide-- > 1 && nNarrow) {
+		/* YYY - Byte order issues here */
+		*pWide++ = (WCHAR) * pNarrow++;
+		nWide--;
+		nNarrow--;
+	}
+	if (!*err_code && nNarrow) {
+		*err_code = CS_TRUNCATION_ERROR;
+	}
+	*err_position = (pNarrow - pNarrowStart) * sizeof(*pNarrow);
+
+	return ((pWide - pStart) * sizeof(*pWide));
+}
+
+unsigned short TextTypeNC::contains(TDBB a, unsigned char *b,
+									unsigned short c,
+									unsigned char *d,
+									unsigned short e)
+{
+		return EVL_nc_contains(a,this,b,c,d,e);
+}
+
+unsigned short TextTypeNC::like(TDBB a, unsigned char *b,
+								short c,
+								unsigned char *d,
+								short e,
+								short f)
+{
+	return EVL_nc_like(a,this,b,c,d,e,f);
+}
+
+unsigned short TextTypeNC::matches(TDBB a, unsigned char *b, short c,
+								   unsigned char *d, short e)
+{
+	return EVL_nc_matches(a,this,b,c,d,e);
+}
+
+unsigned short TextTypeNC::sleuth_check(TDBB a, unsigned short b,
+										unsigned char *c,
+										unsigned short d,
+										unsigned char *e,
+										unsigned short f)
+{
+	return EVL_nc_sleuth_check(a,this,b,c,d,e,f);
+}
+
+unsigned short TextTypeNC::sleuth_merge(TDBB a, unsigned char *b,
+										unsigned short c,
+										unsigned char *d,
+										unsigned short e,
+										unsigned char *f,
+										unsigned short g)
+{
+	return EVL_nc_sleuth_merge(a,this,b,c,d,e,f,g);
+}
+
+unsigned short TextTypeNC::mbtowc(WCHAR *wc, unsigned char *ptr, unsigned short count)
+/**************************************
+ *
+ *      i n t e r n a l _ n c _ m b t o w c 
+ *
+ **************************************
+ *
+ * Functional description
+ *      Get the next character from the multibyte
+ *      input stream.
+ *      Narrow character version.
+ *  Returns:
+ *      Count of bytes consumed from the input stream.
+ *
+ **************************************/
+{
+	assert(ptr);
+
+	if (count >= 1) {
+		if (wc)
+			*wc = *ptr;
+		return 1;
+	}
+	if (wc)
+		*wc = 0;
+	return -1;					/* No more characters */
+}
+
+unsigned short TextTypeMB::contains(TDBB a, unsigned char *b,
+									unsigned short c,
+									unsigned char *d,
+									unsigned short e)
+{
+	return EVL_mb_contains(a,this,b,c,d,e);
+}
+
+unsigned short TextTypeMB::like(TDBB a, unsigned char *b,
+								short c,
+								unsigned char *d,
+								short e,
+								short f)
+{
+	return EVL_mb_like(a,this,b,c,d,e,f);
+}
+
+unsigned short TextTypeMB::matches(TDBB a, unsigned char *b, short c,
+								   unsigned char *d, short e)
+{
+	return EVL_mb_matches(a,this,b,c,d,e);
+}
+
+unsigned short TextTypeMB::sleuth_check(TDBB a, unsigned short b,
+										unsigned char *c,
+										unsigned short d,
+										unsigned char *e,
+										unsigned short f)
+{
+	return EVL_mb_sleuth_check(a,this,b,c,d,e,f);
+}
+
+unsigned short TextTypeMB::sleuth_merge(TDBB a, unsigned char *b,
+										unsigned short c,
+										unsigned char *d,
+										unsigned short e,
+										unsigned char *f,
+										unsigned short g)
+{
+	return EVL_mb_sleuth_merge(a,this,b,c,d,e,f,g);
+}
+
+unsigned short TextTypeMB::mbtowc(WCHAR *wc, unsigned char *ptr, unsigned short count)
+{
+/**************************************
+ *
+ *      TextTypeMB::mbtowc 
+ *
+ **************************************
+ *
+ * Functional description
+ *      Get the next character from the multibyte
+ *      input stream.
+ *      Multibyte version character version.
+ *  Returns:
+ *      Count of bytes consumed from the input stream.
+ *
+ **************************************/
+
+	assert(ptr);
+
+	if (count >= 2) {
+		if (wc)
+			*wc = *(WCHAR *) ptr;
+		return 2;
+	}
+	if (wc)
+		*wc = 0;
+	return -1;					/* No more characters */
+}
+
+unsigned short TextTypeWC::to_wc(unsigned char *pDestUC,
+									unsigned short nDest,
+									unsigned char *pSrcUC,
+									unsigned short nSrc,
+									short *err_code,
+									unsigned short *err_position)
+{
+/**************************************
+ *
+ *      TextTypeWC::to_wc 
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ *************************************/
+	WCHAR *pStart, *pDest = (WCHAR*)pDestUC;
+	WCHAR *pStart_src, *pSrc = (WCHAR*)pSrcUC;
+	
+	assert((pSrc != NULL) || (pDest == NULL));
+	assert(err_code != NULL);
+	assert(err_position != NULL);
+
+	*err_code = 0;
+	if (pDest == NULL)			/* length estimate needed? */
+		return (nSrc);
+
+	pStart = pDest;
+	pStart_src = pSrc;
+	while (nDest > 1 && nSrc > 1) {
+		*pDest++ = *pSrc++;
+		nDest -= 2;
+		nSrc -= 2;
+	}
+	if (!*err_code && nSrc) {
+		*err_code = CS_TRUNCATION_ERROR;
+	}
+	*err_position = (pSrc - pStart_src) * sizeof(*pSrc);
+
+	return ((pDest - pStart) * sizeof(*pDest));
+}
+
+unsigned short TextTypeWC::contains(TDBB a, unsigned char *b,
+									unsigned short c,
+									unsigned char *d,
+									unsigned short e)
+{
+	return EVL_wc_contains(a,this,(WCHAR*)b,c,(WCHAR*)d,e);
+}
+
+unsigned short TextTypeWC::like(TDBB a, unsigned char *b,
+								short c,
+								unsigned char *d,
+								short e,
+								short f)
+{
+	return EVL_wc_like(a,this,(WCHAR*)b,c,(WCHAR*)d,e,f);
+}
+
+unsigned short TextTypeWC::matches(TDBB a, unsigned char *b, short c,
+								   unsigned char *d, short e)
+{
+	return EVL_wc_matches(a,this,(WCHAR*)b,c,(WCHAR*)d,e);
+}
+
+unsigned short TextTypeWC::sleuth_check(TDBB a, unsigned short b,
+										unsigned char *c,
+										unsigned short d,
+										unsigned char *e,
+										unsigned short f)
+{
+	return EVL_wc_sleuth_check(a,this,b,(WCHAR*)c,d,(WCHAR*)e,f);
+}
+
+unsigned short TextTypeWC::sleuth_merge(TDBB a, unsigned char *b,
+										unsigned short c,
+										unsigned char *d,
+										unsigned short e,
+										unsigned char *f,
+										unsigned short g)
+{
+	return EVL_wc_sleuth_merge(a,this,(WCHAR*)b,c,(WCHAR*)d,e,(WCHAR*)f,g);
+}
+
+unsigned short TextTypeWC::mbtowc(WCHAR *wc, unsigned char *ptr, unsigned short count)
+{
+/**************************************
+ *
+ *      TextTypeWC::mbtowc 
+ *
+ **************************************
+ *
+ * Functional description
+ *      Get the next character from the multibyte
+ *      input stream.
+ *      Wide character version.
+ *  Returns:
+ *      Count of bytes consumed from the input stream.
+ *
+ **************************************/
+
+	assert(ptr);
+
+	if (count >= 2) {
+		if (wc)
+			*wc = *(WCHAR *) ptr;
+		return 2;
+	}
+	if (wc)
+		*wc = 0;
+	return -1;					/* No more characters */
+}
+
+
+//===============================================================================
+//===============================================================================
+//===============================================================================
+// Code to handle loading international charset plugins
+// in the new c++ OO format.
+
+static const char *INTL_PLUGIN_DIR = "intl";
+static PluginManager intlPlugins;
+static bool loaded = false;
+
+static void* search_out_alloc_func(const char *sym, CHARSET_ID p1, CHARSET_ID p2)
+{
+	typedef void* (*lookupFuncType)(CHARSET_ID,CHARSET_ID);
+	
+	void* result = 0;
+	lookupFuncType lookupFunc;
+	Firebird::string entryPoint(sym);
+	
+	if (!loaded)
+	{
+		intlPlugins.addSearchPath(INTL_PLUGIN_DIR);
+		intlPlugins.addIgnoreModule(INTL_MODULE1);
+		intlPlugins.addIgnoreModule(INTL_MODULE2);
+		intlPlugins.loadAllPlugins();
+		loaded = true;
+	}
+	
+	for(PluginManager::iterator itr = intlPlugins.begin();
+			result == 0 && itr != intlPlugins.end(); ++itr)
+	{
+		lookupFunc = (lookupFuncType)(*itr).lookupSymbol(entryPoint);
+		if (!lookupFunc)
+			continue;
+		result = (*lookupFunc)(p1,p2);
+	}
+	return result;
+}
+
+//===============================================================================
+//===============================================================================
+//===============================================================================
+// This code handles backwards compatibility with the old internation
+// character set plugin format.
+
+// We need all the structure definitions from the old interface
+#define INTL_ENGINE_INTERNAL
+#include "../jrd/intlobj.h"
+
+// storage for the loadable modules
+static PluginManager intlBCPlugins;
+static bool bcLoaded = false;
+
+class CsConvert_BC : public CsConvert
+{
+public:
+	CsConvert_BC(struct csconvert *csv, bool deleteMemory) :
+		CsConvert(
+			csv->csconvert_id,
+			(const char*)csv->csconvert_name,
+			csv->csconvert_from,
+			csv->csconvert_to),
+		cnvt(csv),
+		deleteOnDestruct(deleteMemory)
+	{}
+	virtual ~CsConvert_BC() { if (deleteOnDestruct) delete cnvt; }
+
+	unsigned short convert(unsigned char *a,
+							unsigned short b,
+							unsigned char *c,
+							unsigned short d,
+							short *e,
+							unsigned short *f)
+	{
+		assert(cnvt != NULL);
+		return (*(reinterpret_cast<USHORT (*)(struct csconvert*, UCHAR*,USHORT,
+					UCHAR*,USHORT,short*,USHORT*)>(cnvt->csconvert_convert)))
+						(cnvt,a,b,c,d,e,f);
+	}
+
+private:
+	struct csconvert *cnvt;
+	bool deleteOnDestruct;
+};
+
+class CharSet_BC : public CharSet
+{
+public:
+	CharSet_BC(MemoryPool &p, struct charset *csStruct) :
+		CharSet(
+			csStruct->charset_id,
+			(const char*)csStruct->charset_name,
+			csStruct->charset_min_bytes_per_char,
+			csStruct->charset_max_bytes_per_char,
+			csStruct->charset_space_length,
+			(char*)csStruct->charset_space_character),
+		cs(csStruct)
+	{
+		charset_to_unicode = new(p) CsConvert_BC(&cs->charset_to_unicode, false);
+		charset_from_unicode = new(p) CsConvert_BC(&cs->charset_from_unicode, false);
+	}
+	
+	~CharSet_BC() { delete cs; }
+private:
+	struct charset *cs;
+};
+
+template <class T>
+class TextType_BC : public T
+{
+public:
+	TextType_BC(struct texttype *textt) :
+			T(
+				textt->texttype_type,
+				(char*)textt->texttype_name,
+				textt->texttype_character_set,
+				textt->texttype_country,
+				textt->texttype_bytes_per_char),
+			tt(textt)
+		{}
+
+	unsigned short key_length(unsigned short a)
+	{
+		assert(tt);
+		assert(tt->texttype_fn_key_length);
+		return (*(reinterpret_cast<USHORT (*)(TEXTTYPE,USHORT)>
+					(tt->texttype_fn_key_length)))(tt,a);
+	}
+	
+	unsigned short string_to_key(unsigned short a,
+									unsigned char *b,
+									unsigned short c,
+									unsigned char *d,
+									unsigned short e)
+	{
+		assert(tt);
+		assert(tt->texttype_fn_string_to_key);
+		return (*(reinterpret_cast
+			<USHORT(*)(TEXTTYPE,USHORT,UCHAR*,USHORT,UCHAR*,USHORT)>
+				(tt->texttype_fn_string_to_key)))
+					(tt,a,b,c,d,e);
+	}
+	
+	short compare(unsigned short a,
+						  unsigned char *b,
+						  unsigned short c,
+						  unsigned char *d)
+	{
+		assert(tt);
+		assert(tt->texttype_fn_compare);
+		return (*(reinterpret_cast
+			<short (*)(TEXTTYPE,USHORT,UCHAR*,USHORT,UCHAR*)>
+				(tt->texttype_fn_compare)))(tt,a,b,c,d);
+	}
+	
+	unsigned short to_upper(unsigned short a)
+	{
+		assert(tt);
+		assert(tt->texttype_fn_to_upper);
+		return (*(reinterpret_cast
+			<short (*)(TEXTTYPE,USHORT)>
+				(tt->texttype_fn_to_upper)))(tt,a);
+	}
+	
+	unsigned short to_lower(unsigned short a)
+	{
+		assert(tt);
+		assert(tt->texttype_fn_to_lower);
+		return (*(reinterpret_cast
+			<USHORT (*)(TEXTTYPE,USHORT)>
+				(tt->texttype_fn_to_lower)))(tt,a);
+	}
+	
+	short str_to_upper(unsigned short a,
+						unsigned char *b,
+						unsigned short c,
+						unsigned char *d)
+	{
+		assert(tt);
+		assert(tt->texttype_fn_str_to_upper);
+		return (*(reinterpret_cast
+					<short (*)(TEXTTYPE,USHORT,UCHAR*,USHORT,UCHAR*)>
+						(tt->texttype_fn_str_to_upper)))
+							(tt,a,b,c,d);
+	}
+	
+	unsigned short to_wc(unsigned char *a,
+						 unsigned short b,
+						 unsigned char *c,
+						 unsigned short d,
+						 short *e,
+						 unsigned short *f)
+	{
+		assert(tt);
+		assert(tt->texttype_fn_to_wc);
+		return (*(reinterpret_cast
+					<USHORT (*)(TEXTTYPE,UCHAR*,USHORT,UCHAR*,USHORT,short*,USHORT*)>
+						(tt->texttype_fn_to_wc)))
+							(tt,a,b,c,d,e,f);
+	}
+									
+	unsigned short mbtowc(WCHAR *a, unsigned char *b, unsigned short c)
+	{
+		assert(tt);
+		if (!tt->texttype_fn_mbtowc)
+			return T::mbtowc(a,b,c);
+		return (*(reinterpret_cast<
+					USHORT (*)(TEXTTYPE, WCHAR*, UCHAR*, USHORT)>
+						(tt->texttype_fn_mbtowc)))(tt,a,b,c);
+	}
+
+	unsigned short contains(TDBB a, unsigned char *b,
+									unsigned short c,
+									unsigned char *d,
+									unsigned short e)
+	{
+		assert(tt);
+		if (!tt->texttype_fn_contains)
+			return T::contains(a,b,c,d,e);
+		return (*(reinterpret_cast<
+					USHORT (*)(TDBB,TEXTTYPE,UCHAR*,USHORT,UCHAR*,USHORT)>
+						(tt->texttype_fn_contains)))
+							(a,tt,b,c,d,e);
+	}
+	
+	unsigned short like(TDBB tdbb, unsigned char *a,
+							  short b,
+							  unsigned char *c,
+							  short d,
+							  short e)
+	{
+		assert(tt);
+		if (!tt->texttype_fn_like)
+			return T::like(tdbb,a,b,c,d,e);
+		else
+			return (*(reinterpret_cast<
+						USHORT(*)(TDBB,TEXTTYPE,UCHAR*,short,UCHAR*,short,short)>
+							(tt->texttype_fn_like)))(tdbb,tt,a,b,c,d,e);
+	}
+	
+	unsigned short matches(TDBB tdbb, unsigned char *a, short b,
+								   unsigned char *c, short d)
+	{
+		assert(tt);
+		if (!tt->texttype_fn_matches)
+			return T::matches(tdbb,a,b,c,d);
+		return (*(reinterpret_cast<
+					USHORT (*)(TDBB,TEXTTYPE,UCHAR*,short,UCHAR*,short)>
+						(tt->texttype_fn_matches)))
+							(tdbb,tt,a,b,c,d);
+	}
+	
+	unsigned short sleuth_check(TDBB tdbb, unsigned short a,
+										unsigned char *b,
+										unsigned short c,
+										unsigned char *d,
+										unsigned short e)
+	{
+		assert(tt);
+		if (!tt->texttype_fn_sleuth_check)
+			return T::sleuth_check(tdbb,a,b,c,d,e);
+		return (*(reinterpret_cast<
+					USHORT(*)(TDBB,TEXTTYPE,USHORT,UCHAR*,USHORT,UCHAR*,USHORT)>
+						(tt->texttype_fn_sleuth_check)))
+							(tdbb,tt,a,b,c,d,e);
+	}
+	
+	unsigned short sleuth_merge(TDBB tdbb, unsigned char *a,
+										unsigned short b,
+										unsigned char *c,
+										unsigned short d,
+										unsigned char *e,
+										unsigned short f)
+	{
+		assert(tt);
+		if (!tt->texttype_fn_sleuth_merge)
+			return T::sleuth_merge(tdbb,a,b,c,d,e,f);
+		return (*(reinterpret_cast<
+					USHORT(*)(TDBB,TEXTTYPE,UCHAR*,USHORT,UCHAR*,USHORT,UCHAR*,USHORT)>
+						(tt->texttype_fn_sleuth_merge)))
+							(tdbb,tt,a,b,c,d,e,f);
+	}
+	
+private:
+	struct texttype *tt;
+};
+
+static void* intl_back_compat_obj_init_lookup(
+						USHORT type,
+						SSHORT parm1,
+						SSHORT parm2)
+{
+/**************************************
+ *
+ *      intl_back_compat_alloc_func_lookup
+ *
+ **************************************
+ *
+ * Functional description
+ *      Find the allocator function for the requested international
+ *		character set using the obsolete c/IB/FB 6.0 interface.
+ *      Search algorithm is:
+ *              Look in intllib 
+ *              Look in intllib2 
+ *              Look for a normal UDF entry
+ *              Abort with an error.
+ *
+ * Returns:
+ *      FALSE   - no errors
+ *      TRUE    - error occurred, and parameter <err> was NULL;
+ *      <never> - error occurred, and parameter <err> non-NULL;
+ *
+ *
+ ***************************************/
+	USHORT (*function)();
+	
+	if (!bcLoaded)
+	{
+		intlBCPlugins.addSearchPath(INTL_PLUGIN_DIR);
+		bcLoaded = true;
+	}
+	
+	PluginManager::Plugin intlMod1 = intlBCPlugins.findPlugin(INTL_MODULE1);
+	PluginManager::Plugin intlMod2 = intlBCPlugins.findPlugin(INTL_MODULE2);
+
+	USHORT(*lookup_fn) (USHORT, FPTR_SHORT *, SSHORT, SSHORT);
+
+	INTL_TRACE(("INTL: looking for obj %d ttype %d\n", objtype, parm1));
+
+	function = NULL;
+
+#ifdef INTL_BACKEND
+	if (LD_lookup(type, &function, parm1, parm2) != 0)
+		function = NULL;
+#else
+	/* Look for an InterBase supplied object to implement the text type */
+	/* The flu.c uses searchpath which expects a file name not a path */
+	INTL_TRACE(("INTL: trying %s %s\n", INTL_MODULE1, INTL_LOOKUP_ENTRY1));
+	Firebird::string tempStr(INTL_LOOKUP_ENTRY1);
+	if ( intlMod1 && (lookup_fn = (USHORT(*)(USHORT, USHORT(**)(), short, short))
+		(intlMod1.lookupSymbol(tempStr))) ) {
+		INTL_TRACE(("INTL: calling lookup %s %s\n", INTL_MODULE1,
+					INTL_LOOKUP_ENTRY1));
+		if ((*lookup_fn) (type, &function, parm1, parm2) != 0) {
+			function = NULL;
+		}
+		else
+		{
+			return function;
+		}
+	}
+#endif
+
+/* Still not found, check the set of supplimental international objects */
+#ifdef INTL_BACKEND
+	if (LD2_lookup(type, &function, parm1, parm2) != 0)
+		function = NULL;
+#else
+	/* Look for an InterBase supplied object to implement the text type */
+	/* The flu.c uses searchpath which expects a file name not a path */
+	INTL_TRACE(("INTL: trying %s %s\n", INTL_MODULE2, INTL_LOOKUP_ENTRY2));
+	tempStr = INTL_LOOKUP_ENTRY2;
+	if ( intlMod2 && (lookup_fn = (USHORT(*)(USHORT, USHORT(**)(), short, short))
+		(intlMod2.lookupSymbol(tempStr))) ) {
+		INTL_TRACE(("INTL: calling lookup %s %s\n", INTL_MODULE2,
+					INTL_LOOKUP_ENTRY2));
+		if ((*lookup_fn) (type, &function, parm1, parm2) != 0) {
+			function = NULL;
+		}
+		else
+		{
+			return function;
+		}
+	}
+#endif
+
+/* Still not found, check if there is a UDF in the database defined the right way */
+	FUN function_block;
+	USHORT argcount;
+	char entry[48];
+	
+	switch (type) {
+		case type_texttype:
+			snprintf((SCHAR *) entry, sizeof(entry), INTL_USER_ENTRY, parm1);
+			argcount = 2;
+			break;
+		case type_charset:
+			snprintf((SCHAR *) entry, sizeof(entry), "USER_CHARSET_%03d", parm1);
+			argcount = 2;
+			break;
+		case type_csconvert:
+			snprintf((SCHAR *) entry, sizeof(entry), "USER_TRANSLATE_%03d_%03d", parm1,
+					parm2);
+			argcount = 3;
+			break;
+		default:
+			BUGCHECK(1);
+			break;
+	}
+	INTL_TRACE(("INTL: trying user fn %s\n", entry));
+	if ( (function_block = FUN_lookup_function((TEXT*)entry)) ) {
+		INTL_TRACE(("INTL: found a user fn, validating\n"));
+		if ((function_block->fun_count == argcount) &&
+			(function_block->fun_args == argcount) &&
+			(function_block->fun_return_arg == 0) &&
+			(function_block->fun_entrypoint != NULL) &&
+			(function_block->fun_rpt[0].fun_mechanism == FUN_value) &&
+			(function_block->fun_rpt[0].fun_desc.dsc_dtype == dtype_short)
+			&& (function_block->fun_rpt[1].fun_desc.dsc_dtype ==
+				dtype_short)
+			&& (function_block->fun_rpt[argcount - 1].
+				fun_desc.dsc_dtype == dtype_short)
+			&& (function_block->fun_rpt[argcount].fun_mechanism ==
+				FUN_reference)
+			&& (function_block->fun_rpt[argcount].fun_desc.dsc_dtype ==
+				dtype_text))
+		{
+			function = (FPTR_SHORT) function_block->fun_entrypoint;
+			return function;
+		}
+	}
+	return NULL;
+}
+
+static CharSet *BC_CharSetAllocFunc(MemoryPool &p, SSHORT cs_id, SSHORT unused)
+{
+	typedef USHORT (*CSInitFunc)(CHARSET, SSHORT, SSHORT);
+	CSInitFunc csInitFunc;
+	
+	csInitFunc = (CSInitFunc) intl_back_compat_obj_init_lookup(type_charset, cs_id, unused);
+	assert(csInitFunc != 0);
+	CHARSET cs = new(p) charset;
+	bzero(cs, sizeof(charset));
+	
+	if (0 != (*csInitFunc)(cs, cs_id, unused))
+	{
+		delete cs;
+		return 0;
+	}
+	
+	CharSet *result = 0;
+	try
+	{
+		result = new(p) CharSet_BC(p, cs);
+	}
+	catch(std::exception &e)
+	{
+		delete cs;
+		throw;
+	}
+	
+	return result;
+}
+
+static CsConvert *BC_CsConvertAllocFunc(MemoryPool &p, SSHORT from_id, SSHORT to_id)
+{
+	typedef USHORT (*CVTInitFunc)(CSCONVERT, SSHORT, SSHORT);
+	CVTInitFunc cvtInitFunc;
+	
+	//cvtInitFunc = (CVTInitFunc) intl_back_compat_obj_init_lookup(type_csconvert, from_id, to_id);
+	cvtInitFunc = (CVTInitFunc) intl_back_compat_obj_init_lookup(type_csconvert, to_id, from_id);
+	assert(cvtInitFunc != 0);
+	CSCONVERT cvt = new(p) csconvert;
+	bzero(cvt, sizeof(csconvert));
+	
+	//if (0 != (*cvtInitFunc)(cvt, from_id, to_id))
+	if (0 != (*cvtInitFunc)(cvt, to_id, from_id))
+	{
+		delete cvt;
+		return 0;
+	}
+	
+	CsConvert *result = 0;
+	try
+	{
+		result = new(p) CsConvert_BC(cvt, true);
+	}
+	catch(std::exception &e)
+	{
+		delete cvt;
+		throw;
+	}
+	
+	return result;
+}
+
+static TextType *BC_TextTypeAllocFunc(MemoryPool &p, SSHORT tt_id, SSHORT unused)
+{
+	typedef USHORT (*TTInitFunc)(TEXTTYPE, SSHORT, SSHORT);
+	TTInitFunc ttInitFunc;
+	
+	ttInitFunc = (TTInitFunc) intl_back_compat_obj_init_lookup(type_texttype, tt_id, unused);
+	assert(ttInitFunc != 0);
+	TEXTTYPE tt = new(p) texttype;
+	bzero(tt, sizeof(texttype));
+	
+	if (0 != (*ttInitFunc)(tt, tt_id, unused))
+	{
+		delete tt;
+		return 0;
+	}
+	
+	TextType *result = 0;
+	try
+	{
+		if (tt->texttype_bytes_per_char == 1 && tt->texttype_fn_to_wc == NULL)
+			result = new(p) TextType_BC<TextTypeNC>(tt);
+		else if (tt->texttype_bytes_per_char == 2 && tt->texttype_fn_to_wc == NULL)
+			result = new(p) TextType_BC<TextTypeWC>(tt);
+		else if (tt->texttype_fn_to_wc != NULL)
+			result = new(p) TextType_BC<TextTypeMB>(tt);
+		else
+			BUGCHECK(1);
+	}
+	catch(std::exception &e)
+	{
+		delete tt;
+		throw;
+	}
+	
+	return result;
+}
+
+static void* intl_back_compat_alloc_func_lookup(
+						USHORT type,
+						CHARSET_ID parm1,
+						CHARSET_ID parm2)
+{
+	if (NULL != intl_back_compat_obj_init_lookup(type,parm1,parm2))
+	{
+		switch(type)
+		{
+			case type_charset:
+				return (void*)BC_CharSetAllocFunc;
+			case type_texttype:
+				return (void*)BC_TextTypeAllocFunc;
+			case type_csconvert:
+				return (void*)BC_CsConvertAllocFunc;
+			default:
+				BUGCHECK(1);
+		}
+	}
+	
+	return NULL;
+}

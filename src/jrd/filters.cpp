@@ -31,7 +31,7 @@
 #include "../jrd/met.h"
 #include "../jrd/blob_filter.h"
 #include "../jrd/intl.h"
-#include "../jrd/intlobj.h"
+#include "../jrd/intl_classes.h"
 #include "../intl/charsets.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/err_proto.h"
@@ -670,7 +670,7 @@ STATUS filter_transliterate_text(USHORT action, CTL control)
 	USHORT result_length;
 
 	typedef struct ctlaux {
-		CSCONVERT ctlaux_obj1;	/* Intl object that does tx for us */
+		CsConvert *ctlaux_obj1;	/* Intl object that does tx for us */
 		BYTE *ctlaux_buffer1;	/* Temporary buffer for transliteration */
 		CTL ctlaux_subfilter;	/* For chaining transliterate filters */
 		STATUS ctlaux_source_blob_status;	/* marks when source is EOF, etc */
@@ -774,13 +774,8 @@ STATUS filter_transliterate_text(USHORT action, CTL control)
 
 		if (action == ACTION_open) {
 			control->ctl_max_segment =
-				reinterpret_cast < USHORT(*)(...) >
-				(*aux->ctlaux_obj1->csconvert_convert) (aux->ctlaux_obj1,
-														NULL, 0, NULL,
-														(USHORT)
-														source->ctl_max_segment,
-														&err_code,
-														&err_position);
+				aux->ctlaux_obj1->convert(NULL, 0, NULL,
+						source->ctl_max_segment, &err_code, &err_position);
 
 			if (source->ctl_max_segment && control->ctl_max_segment)
 				aux->ctlaux_expansion_factor =
@@ -810,13 +805,8 @@ STATUS filter_transliterate_text(USHORT action, CTL control)
 			 * for an appropriate buffer size, allocate that, and re-allocate
 			 * later if we guess wrong.
 			 */
-			tmp =
-				reinterpret_cast < USHORT(*)(...) >
-				(*aux->ctlaux_obj1->csconvert_convert) (aux->ctlaux_obj1,
-														NULL, 0, NULL,
-														(USHORT) 128,
-														&err_code,
-														&err_position);
+			tmp = aux->ctlaux_obj1->convert( NULL, 0, NULL,
+							128, &err_code, &err_position);
 			aux->ctlaux_expansion_factor = (EXP_SCALE * tmp) / 128;
 
 			assert(aux->ctlaux_expansion_factor != 0);
@@ -866,12 +856,9 @@ STATUS filter_transliterate_text(USHORT action, CTL control)
 		/* Now convert from the input buffer into the temporary buffer */
 
 		/* How much space do we need to convert? */
-		result_length =
-			reinterpret_cast < USHORT(*)(...) >
-			(*aux->ctlaux_obj1->csconvert_convert) (aux->ctlaux_obj1, NULL, 0,
-													control->ctl_buffer,
-													control->ctl_buffer_length,
-													&err_code, &err_position);
+		result_length = aux->ctlaux_obj1->convert(NULL, 0,
+			control->ctl_buffer, control->ctl_buffer_length,
+			&err_code, &err_position);
 
 		/* Allocate a new buffer if we don't have enough */
 		if (result_length > aux->ctlaux_buffer1_len) {
@@ -885,14 +872,9 @@ STATUS filter_transliterate_text(USHORT action, CTL control)
 
 		/* convert the text */
 
-		result_length =
-			reinterpret_cast < USHORT(*)(...) >
-			(*aux->ctlaux_obj1->csconvert_convert) (aux->ctlaux_obj1,
-													aux->ctlaux_buffer1,
-													aux->ctlaux_buffer1_len,
-													control->ctl_buffer,
-													control->ctl_buffer_length,
-													&err_code, &err_position);
+		result_length = aux->ctlaux_obj1->convert(aux->ctlaux_buffer1,
+			aux->ctlaux_buffer1_len, control->ctl_buffer,
+			control->ctl_buffer_length, &err_code, &err_position);
 
 		if (err_code)
 			return gds_transliteration_failed;
@@ -984,13 +966,9 @@ STATUS filter_transliterate_text(USHORT action, CTL control)
 
 /* Now convert from the temporary buffer into the destination buffer */
 
-	result_length =
-		reinterpret_cast < USHORT(*)(...) >
-		(*aux->ctlaux_obj1->csconvert_convert) (aux->ctlaux_obj1,
-												control->ctl_buffer,
-												control->ctl_buffer_length,
-												aux->ctlaux_buffer1, length,
-												&err_code, &err_position);
+	result_length = aux->ctlaux_obj1->convert(control->ctl_buffer,
+					control->ctl_buffer_length, aux->ctlaux_buffer1, length,
+					&err_code, &err_position);
 
 	if (err_code == CS_CONVERT_ERROR)
 		return gds_transliteration_failed;
