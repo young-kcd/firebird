@@ -5668,10 +5668,13 @@ static void release_attachment(Attachment* attachment)
    were hung off this attachment block, to ensure that the attachment
    block doesn't get dereferenced after it is released */
 
-	for (record_lock = attachment->att_long_locks; record_lock;
-		 record_lock = record_lock->lck_next)
-	{
+	record_lock = attachment->att_long_locks;
+	while (record_lock) {
+		Lock* next = record_lock->lck_next;
 		record_lock->lck_attachment = NULL;
+		record_lock->lck_next = NULL;
+		record_lock->lck_prior = NULL;
+		record_lock = next;
 	}
 
 	if (attachment->att_flags & ATT_lck_init_done)

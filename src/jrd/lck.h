@@ -99,8 +99,9 @@ public:
 
 	int		lck_test_field;
 	Lock*	lck_parent;
-	Lock*	lck_next;		/* Next lock in chain owned by Database */
-	Lock*	lck_att_next;	/* Next in chain owned by attachment */
+	Lock*	lck_next;		/* lck_next and lck_prior form a doubly linked list of locks 
+							   bound to attachment. Used in MULTI_THREAD builds only */
+	Lock*	lck_att_next;	/* Next in chain owned by attachment (RLCK, currntly unused) */
 	Lock*	lck_prior;
 	Lock*	lck_collision;	/* collisions in compatibility table */
 	Lock*	lck_identical;	/* identical locks in compatibility table */
@@ -109,7 +110,7 @@ public:
 	blk*	lck_owner;		/* Logical owner block (transaction, etc.) */
 	blk*	lck_compatible;	/* Enter into internal_enqueue() and treat as compatible */
 	blk*	lck_compatible2;	/* Sub-level for internal compatibility */
-	class Attachment* lck_attachment;	/* Attachment that owns lock */
+	class Attachment* lck_attachment;	/* Attachment that owns lock, set only using set_lock_attachment */
 	BlockingThread* lck_blocked_threads;	/* Threads blocked by lock */
 	lock_ast_t	lck_ast;	        /* Blocking AST routine */
 	SLONG		lck_id;				/* Lock id from lock manager */

@@ -330,7 +330,6 @@ void SDW_check(void)
 		if (SDW_lck_update((SLONG) 0)) {
 			Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();
 			lock->lck_dbb = dbb;
-			lock->lck_attachment = tdbb->tdbb_attachment;
 			lock->lck_length = sizeof(SLONG);
 			lock->lck_key.lck_long = -1;
 			lock->lck_type = LCK_update_shadow;
@@ -738,7 +737,6 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
 	Lock temp_lock;
 	Lock* update_lock = &temp_lock;
 	update_lock->lck_dbb = dbb;
-	update_lock->lck_attachment = tdbb->tdbb_attachment;
 	update_lock->lck_length = sizeof(SLONG);
 	update_lock->lck_key.lck_long = -1;
 	update_lock->lck_type = LCK_update_shadow;
@@ -1100,7 +1098,6 @@ int SDW_start_shadowing(void* ast_object)
 	SET_THREAD_DATA;
 
 	tdbb->tdbb_database = new_dbb;
-	tdbb->tdbb_attachment = lock->lck_attachment;
 	tdbb->tdbb_quantum = QUANTUM;
 	tdbb->tdbb_request = NULL;
 	tdbb->tdbb_transaction = NULL;

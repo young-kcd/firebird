@@ -84,6 +84,8 @@ static void internal_dequeue(thread_db*, Lock*);
 static USHORT internal_downgrade(thread_db*, Lock*);
 static bool internal_enqueue(thread_db*, Lock*, USHORT, SSHORT, bool);
 
+static void set_lock_attachment(Lock*, Attachment*);
+
 
 /* globals and macros */
 
@@ -237,6 +239,7 @@ void LCK_assert(thread_db* tdbb, Lock* lock)
 
 	if (!LCK_lock(tdbb, lock, lock->lck_logical, LCK_WAIT))
 		BUGCHECK(159);			/* msg 159 cannot fb_assert logical lock */
+
 	fb_assert(LCK_CHECK_LOCK(lock));
 }
 
@@ -259,11 +262,14 @@ bool LCK_convert(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 	Database* dbb = lock->lck_dbb;
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
 
-	lock->lck_attachment = tdbb->tdbb_attachment;
+	Attachment *old_attachment = lock->lck_attachment;
+	set_lock_attachment(lock, tdbb->tdbb_attachment);
 
 	const bool result = CONVERT(tdbb, lock, level, wait, status);
 
 	if (!result) {
+	    set_lock_attachment(lock, old_attachment);
+
 		if (status[1] == isc_deadlock ||
 			status[1] == isc_lock_conflict || status[1] == isc_lock_timeout)
 		{
@@ -299,16 +305,17 @@ int LCK_convert_non_blocking(thread_db* tdbb, Lock* lock, USHORT level, SSHORT w
 	SET_TDBB(tdbb);
 
 	Database* dbb = lock->lck_dbb;
-	lock->lck_attachment = tdbb->tdbb_attachment;
 
 	if (!wait || !gds__thread_enable(FALSE))
 		return LCK_convert(tdbb, lock, level, wait);
+
+	Attachment* old_attachment = lock->lck_attachment;
+	set_lock_attachment(lock, tdbb->tdbb_attachment);
 
 /* Save context and checkout from the scheduler */
 
 	check_lock(lock, level);
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
-	Attachment* attachment = tdbb->tdbb_attachment;
 	AST_DISABLE;
 
 /* SuperServer: Do Not release engine here, it creates a race
@@ -331,6 +338,8 @@ int LCK_convert_non_blocking(thread_db* tdbb, Lock* lock, USHORT level, SSHORT w
 	AST_ENABLE;
 
 	if (!result) {
+		set_lock_attachment(lock, old_attachment);
+
 		if (status[1] == isc_deadlock ||
 			status[1] == isc_lock_conflict || status[1] == isc_lock_timeout)
 		{
@@ -426,8 +435,10 @@ int LCK_downgrade(thread_db* tdbb, Lock* lock)
 			lock->lck_physical = lock->lck_logical = level;
 	}
 
-	if (lock->lck_physical == LCK_none)
+	if (lock->lck_physical == LCK_none) {
 		lock->lck_id = lock->lck_data = 0;
+	    set_lock_attachment(lock, NULL);
+	}
 
 	fb_assert(LCK_CHECK_LOCK(lock));
 	return TRUE;
@@ -592,13 +603,13 @@ int LCK_lock(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 	Database* dbb = lock->lck_dbb;
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
 	lock->lck_blocked_threads = NULL;
-	lock->lck_next = lock->lck_prior = NULL;
-	lock->lck_attachment = tdbb->tdbb_attachment;
+    set_lock_attachment(lock, tdbb->tdbb_attachment);
 
 	ENQUEUE(tdbb, lock, level, wait);
 	fb_assert(LCK_CHECK_LOCK(lock));
 	if (!lock->lck_id)
 	{
+    	set_lock_attachment(lock, NULL);
 		if (!wait ||
 			status[1] == isc_deadlock ||
 			status[1] == isc_lock_conflict || status[1] == isc_lock_timeout)
@@ -638,18 +649,17 @@ int LCK_lock_non_blocking(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait
 	SET_TDBB(tdbb);
 
 	Database* dbb = lock->lck_dbb;
-	Attachment* attachment = tdbb->tdbb_attachment;
-	lock->lck_attachment = attachment;
 
 /* Don't bother for the non-wait or non-multi-threading case */
 
 	if (!wait || !gds__thread_enable(FALSE))
 		return LCK_lock(tdbb, lock, level, wait);
 
+	set_lock_attachment(lock, tdbb->tdbb_attachment);
+
 /* Make sure we're not about to wait for ourselves */
 
 	lock->lck_blocked_threads = NULL;
-	lock->lck_next = lock->lck_prior = NULL;
 	check_lock(lock, level);
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
 
@@ -686,7 +696,9 @@ int LCK_lock_non_blocking(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait
 
 		/* If lock was rejected, there's trouble */
 
-		if (!lock->lck_id)
+		if (!lock->lck_id) {
+			set_lock_attachment(lock, NULL);
+
 			if (status[1] == isc_deadlock ||
 				status[1] == isc_lock_conflict ||
 				status[1] == isc_lock_timeout) {
@@ -697,20 +709,11 @@ int LCK_lock_non_blocking(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait
 					dbb->dbb_flags |= DBB_bugcheck;
 				ERR_punt();
 			}
+		}
 	}
 
 	if (!lock->lck_compatible)
 		lock->lck_physical = lock->lck_logical = level;
-
-/* Link into list of two phased locks */
-
-	lock->lck_next = attachment->att_long_locks;
-	lock->lck_prior = NULL;
-	attachment->att_long_locks = lock;
-
-	Lock* next = lock->lck_next;
-	if (next)
-		next->lck_prior = lock;
 
 	fb_assert(LCK_CHECK_LOCK(lock));
 	return TRUE;
@@ -821,10 +824,6 @@ void LCK_release(thread_db* tdbb, Lock* lock)
  *
  **************************************/
 
-#ifdef MULTI_THREAD
-	Attachment* attachment = lock->lck_attachment;
-#endif
-
 	SET_TDBB(tdbb);
 	fb_assert(LCK_CHECK_LOCK(lock));
 
@@ -834,29 +833,9 @@ void LCK_release(thread_db* tdbb, Lock* lock)
 
 	lock->lck_physical = lock->lck_logical = LCK_none;
 	lock->lck_id = lock->lck_data = 0;
+	set_lock_attachment(lock, NULL);
 
 #ifdef MULTI_THREAD
-
-	Lock* next = lock->lck_next;
-	Lock* prior = lock->lck_prior;
-
-	if (prior) {
-		fb_assert(prior->lck_next == lock);
-		prior->lck_next = next;
-	}
-	else if (attachment) {
-		if (attachment->att_long_locks == lock)
-			attachment->att_long_locks = lock->lck_next;
-	}
-
-	if (next) {
-		fb_assert(next->lck_prior == lock);
-		next->lck_prior = prior;
-	}
-
-	lock->lck_next = NULL;
-	lock->lck_prior = NULL;
-
 	if (lock->lck_blocked_threads)
 		JRD_unblock(&lock->lck_blocked_threads);
 #endif
@@ -1606,4 +1585,56 @@ static bool internal_enqueue(
 	return lock->lck_id ? true : false;
 }
 
+
+static void set_lock_attachment(Lock* lock, Attachment* attachment) {
+#ifdef MULTI_THREAD
+	if (lock->lck_attachment == attachment) return;
+
+	// If lock has an attachment it must not be a part of linked list
+	fb_assert(!lock->lck_attachment ? !lock->lck_prior && !lock->lck_next : true);
+
+	// Delist in old attachment
+	if (lock->lck_attachment) {
+		// Check that attachment seems to be valid, check works only when DEBUG_GDS_ALLOC is defined
+		fb_assert(lock->lck_attachment->att_flags != 0xDEADBEEF);
+
+		Lock* next = lock->lck_next;
+		Lock* prior = lock->lck_prior;
+
+		if (prior) {
+			fb_assert(prior->lck_next == lock);
+			prior->lck_next = next;
+		}
+		else {
+			fb_assert(lock->lck_attachment->att_long_locks == lock);
+			lock->lck_attachment->att_long_locks = next;
+		}
+
+		if (next) {
+			fb_assert(next->lck_prior == lock);
+			next->lck_prior = prior;
+		}
+
+		lock->lck_next = NULL;
+		lock->lck_prior = NULL;
+	}
+	
+
+	// Enlist in new attachment
+	if (attachment) {
+		// Check that attachment seems to be valid, check works only when DEBUG_GDS_ALLOC is defined
+		fb_assert(attachment->att_flags != 0xDEADBEEF);
+
+		lock->lck_next = attachment->att_long_locks;
+		lock->lck_prior = NULL;
+		attachment->att_long_locks = lock;
+
+		Lock* next = lock->lck_next;
+		if (next)
+			next->lck_prior = lock;
+	}
+#endif
+
+	lock->lck_attachment = attachment;
+}
 
