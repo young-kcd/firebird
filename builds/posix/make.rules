@@ -26,7 +26,7 @@
 #   Contributor(s):
 #
 #
-#   $Id: make.rules,v 1.2 2002-08-05 07:14:53 skywalker Exp $
+#   $Id: make.rules,v 1.3 2002-08-13 10:02:13 eku Exp $
 #
 
 #____________________________________________________________________________
@@ -172,7 +172,7 @@ STATICLINK_LIBS = @LIBS@
 
 
 ifdef IsProdTypeBuild
-    CXXFLAGS:=            -O3 -m486 -DPROD_BUILD  $(CXXFLAGS)
+    CXXFLAGS:=		-O3 -DPROD_BUILD  $(CXXFLAGS)
 
 else
     CXXFLAGS:=		-ggdb -DDEV_BUILD $(CXXFLAGS)
