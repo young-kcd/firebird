@@ -89,7 +89,7 @@ addFirebirdUser() {
     testStr=`grep firebird /etc/passwd`
     if [ -z "$testStr" ]
       then
-        useradd -m -d $IBRootDir -s /bin/bash \
+        useradd -M -d $IBRootDir -s /bin/bash \
             -c "Firebird Database Administrator" -g firebird firebird 
 
         # >/dev/null 2>&1 
