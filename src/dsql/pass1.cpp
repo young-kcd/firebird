@@ -87,7 +87,7 @@ static NOD pass1_variable(REQ, NOD);
 static NOD post_map(NOD, CTX);
 static void remap_streams_to_parent_context(NOD, CTX);
 static FLD resolve_context(REQ, STR, STR, CTX);
-static BOOLEAN set_parameter_type(NOD, NOD, BOOLEAN, BOOLEAN = FALSE);
+static BOOLEAN set_parameter_type(NOD, NOD, BOOLEAN);
 static void set_parameters_name(NOD, NOD);
 static void set_parameter_name(NOD, NOD, DSQL_REL);
 
@@ -950,16 +950,18 @@ NOD PASS1_statement(REQ request, NOD input, USHORT proc_flag)
 			if (count != request->req_procedure->prc_in_count)
 				ERRD_post(gds_prcmismat, gds_arg_string, name->str_data, 0);
 			if (count) {
-				/* Initialize this stack variable, and make it look like a node */
-				memset((SCHAR *) & desc_node, 0, sizeof(desc_node));
-				//desc_node.nod_header.blk_type = type_nod;
+				// Initialize this stack variable, and make it look like a node
+                std::auto_ptr<nod> desc_node(new(*getDefaultMemoryPool(), 0) nod);
+
 				for (ptr = node->nod_arg[e_exe_inputs]->nod_arg,
 					 field = request->req_procedure->prc_inputs;
 					 field; ptr++, field = field->fld_next) {
 					DEV_BLKCHK(field, dsql_type_fld);
 					DEV_BLKCHK(*ptr, dsql_type_nod);
-					MAKE_desc_from_field(&desc_node.nod_desc, field);
-					set_parameter_type(*ptr, &desc_node, FALSE, TRUE);
+					// MAKE_desc_from_field(&desc_node.nod_desc, field);
+					// set_parameter_type(*ptr, &desc_node, FALSE);
+					MAKE_desc_from_field(&(desc_node->nod_desc), field);
+					set_parameter_type(*ptr, desc_node.get(), FALSE);
 				}
 			}
 		}
@@ -1094,7 +1096,7 @@ NOD PASS1_statement(REQ request, NOD input, USHORT proc_flag)
 												proc_flag);
 		return node;
 
-	case nod_exec_sql:
+    case nod_exec_sql:
 		node = MAKE_node(input->nod_type, input->nod_count);
 		node->nod_arg[e_exec_vc] = PASS1_node(request,
 											  input->nod_arg[e_exec_vc],
@@ -3948,7 +3950,7 @@ static FLD resolve_context( REQ request, STR name, STR qualifier, CTX context)
 
 static BOOLEAN set_parameter_type(
 								  NOD in_node,
-								  NOD node, BOOLEAN force_varchar, BOOLEAN node_stack_var )
+								  NOD node, BOOLEAN force_varchar )
 {
 /**************************************
  *
@@ -3965,9 +3967,7 @@ static BOOLEAN set_parameter_type(
 	BOOLEAN result = 0;
 
 	DEV_BLKCHK(in_node, dsql_type_nod);
-#ifdef DEV_BUILD
-	if (!node_stack_var) DEV_BLKCHK(node, dsql_type_nod);
-#endif
+	DEV_BLKCHK(node, dsql_type_nod);
 
 	if (in_node == NULL)
 		return FALSE;
