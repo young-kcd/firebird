@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.24 2002-12-29 14:59:40 nmcc Exp $
+#  $Id: Makefile.in.firebird,v 1.25 2003-01-04 17:10:43 skidder Exp $
 #
 
 ROOT=..
@@ -439,7 +439,7 @@ SRC_GDS_ExtraFiles = $(addprefix $(SRC_ROOT)/, $(GDS_ExtraFiles))
 
 $(INCLUDE_DEST)/gds.h: $(SRC_GDS_ExtraFiles)
 	$(CAT) $^ \
-           | grep -v '^#include "y_handle.h"' \
+           | grep -v '^#include "y_ref.h"' \
            | grep -v '^#include "../jrd/blr.h"' \
            | grep -v '^#include "fb_types.h"' \
            | grep -v '^#include "gen/iberror.h"' \
