@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: fb_tls.h,v 1.2 2004-03-28 09:10:08 robocop Exp $
+ *  $Id: fb_tls.h,v 1.3 2004-04-06 05:53:36 aafemt Exp $
  *
  */
  
@@ -51,17 +51,51 @@
 # define TLS_DECLARE(TYPE, NAME) TYPE NAME
 # define TLS_GET(NAME) NAME
 # define TLS_SET(NAME,VALUE) NAME=(VALUE)
-#elif defined(WIN_NT)
-// Windows native. Does MinGW support it?
-// If no MinGW should adapt Tls API approach like generic POSIX does
-# define TLS_DECLARE(TYPE, NAME) __declspec(thread) TYPE NAME
-# define TLS_GET(NAME) NAME
-# define TLS_SET(NAME,VALUE) NAME=(VALUE)
 #elif defined(HAVE___THREAD)
 // Recent GCC supports __thread keyword. Sun compiler and HP-UX should have it too
 # define TLS_DECLARE(TYPE, NAME) __thread TYPE NAME
 # define TLS_GET(NAME) NAME
 # define TLS_SET(NAME,VALUE) NAME=(VALUE)
+#elif defined(WIN_NT)
+
+#ifdef __GNUC__
+// this is gcc, but it does not support __thread, as checked above
+namespace Firebird {
+
+template <typename T>
+class Win32Tls {
+public:
+	Win32Tls() {
+		if ((key = TlsAlloc()) == 0xFFFFFFFF)
+			system_call_failed::raise("TlsAlloc");
+	}
+	const T get() {
+	 	LPVOID value = TlsGetValue(key);
+		if ((value == NULL) && (GetLastError() != NO_ERROR))
+			system_call_failed::raise("TlsGetValue");
+		return reinterpret_cast<T>(value);
+	}
+	void set(const T value) {
+		if (TlsSetValue(key, value) == 0)
+			system_call_failed::raise("TlsSetValue");
+	}
+	~Win32Tls() {
+		if (TlsFree(key) == 0)
+			system_call_failed::raise("TlsFree");
+	}
+private:
+	DWORD key;	
+};
+} // namespace Firebird
+# define TLS_DECLARE(TYPE, NAME) Win32Tls<TYPE> NAME
+# define TLS_GET(NAME) NAME.get()
+# define TLS_SET(NAME,VALUE) NAME.set(VALUE)
+
+#else // MSVC or Intel
+# define TLS_DECLARE(TYPE, NAME) __declspec(thread) TYPE NAME
+# define TLS_GET(NAME) NAME
+# define TLS_SET(NAME,VALUE) NAME=(VALUE)
+#endif
 #else
 
 #include <pthread.h>
