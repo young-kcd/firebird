@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.16 2002-10-30 05:04:56 seanleyne Exp $
+$Id: ibase.h,v 1.17 2002-11-17 16:21:41 dimitr Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -77,15 +77,16 @@ $Id: ibase.h,v 1.16 2002-10-30 05:04:56 seanleyne Exp $
 #define ISC_EXPORT GDS_EXPORT
 #define ISC_FAR
 
-#if (defined(_MSC_VER) && defined(_WIN32)) || \
-    (defined(__BORLANDC__) && defined(__WIN32__))
-#  define  ISC_FAR
-#  define  ISC_EXPORT_VARARG	__cdecl
-	typedef __int64 ISC_INT64;
-	typedef unsigned __int64 ISC_UINT64;
-#  define  ISC_INT64_DEFINED
-#else /* Not Windows*/
-#   define  ISC_EXPORT_VARARG
+#if (defined(WIN32) || defined(_WIN32) || defined(__WIN32__))
+#define  ISC_FAR
+#define  ISC_EXPORT_VARARG	__cdecl
+#ifndef __GNUC__
+typedef __int64				ISC_INT64;
+typedef unsigned __int64	ISC_UINT64;
+#define  ISC_INT64_DEFINED
+#endif
+#else /* Not Windows */
+#define  ISC_EXPORT_VARARG
 #endif /* Windows/NT */
 
 /*******************************************************************/
