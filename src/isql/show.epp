@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.14 2003-04-03 09:26:17 brodsom Exp $
+ * $Id: show.epp,v 1.15 2003-04-08 10:38:59 brodsom Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -999,7 +999,7 @@ void SHOW_print_metadata_text_blob( IB_FILE * fp, ISC_QUAD * blobid)
  **************************************/
 	isc_blob_handle blob_handle;
 	USHORT length;
-	UCHAR* buffer;
+	SCHAR* buffer;
 
 
 /* Don't bother with null blobs */
@@ -1014,7 +1014,7 @@ void SHOW_print_metadata_text_blob( IB_FILE * fp, ISC_QUAD * blobid)
 		return;
 	}
 
-	buffer = (UCHAR *) ISQL_ALLOC(BUFFER_LENGTH512);
+	buffer = (SCHAR *) ISQL_ALLOC(BUFFER_LENGTH512);
 	if (!buffer) {
 		isc_status[0] = isc_arg_gds;
 		isc_status[1] = isc_virmemexh;
@@ -1024,14 +1024,14 @@ void SHOW_print_metadata_text_blob( IB_FILE * fp, ISC_QUAD * blobid)
 	}
 
 	while (!isc_get_segment(isc_status, &blob_handle, &length,
-							(USHORT) (BUFFER_LENGTH512 - 1), (char*) buffer) ||
+							(USHORT) (BUFFER_LENGTH512 - 1), buffer) ||
 		   isc_status[1] == isc_segment) {
 /*
  * Need to step through the buffer until we hit a '\n' and then print the
  * line.  This is because '\n' are included in blob text.
 */
 		buffer[length] = 0;
-		ISQL_printf(fp, (TEXT*) buffer);
+		ISQL_printf(fp, buffer);
 	}
 
 	if (isc_status[1] && isc_status[1] != isc_segstr_eof)
@@ -2764,7 +2764,7 @@ static int show_proc( SCHAR * procname)
  *	procname -- Name of procedure to investigate
  *
  **************************************/
-	SCHAR type_name[33], lenstring[33];
+	SCHAR type_name[33], lenstring[33]="";
 	SSHORT i;
 	SSHORT first_proc = TRUE, first = TRUE;
 
@@ -2915,8 +2915,6 @@ static int show_proc( SCHAR * procname)
             if (((FLD.RDB$FIELD_TYPE == FCHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR)) &&
                 !FLD.RDB$CHARACTER_LENGTH.NULL)
                 sprintf (lenstring, "(%d)", FLD.RDB$CHARACTER_LENGTH);
-            else
-                sprintf (lenstring, "");
             
             sprintf (Print_buffer, "%-33s %s %s%s ", PRM.RDB$PARAMETER_NAME,
                      (PRM.RDB$PARAMETER_TYPE ? "OUTPUT" : "INPUT"),

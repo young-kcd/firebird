@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.27 2003-04-03 09:26:18 brodsom Exp $
+  $Id: isql.epp,v 1.28 2003-04-08 10:38:59 brodsom Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -698,7 +698,7 @@ int getNextInputChar() {
     }
 
     // If at end of line return \n
-    if (getColumn == strlen(lastInputLine)) {
+    if (getColumn == (int) strlen(lastInputLine)) {
         getColumn = -1;
         return '\n';
     }
@@ -1914,8 +1914,8 @@ static SSHORT add_row(TEXT * tabname)
 						else {
 							dscale = var->sqlscale - lscale;
 							if (dscale > 0) {
-								TEXT *err_buf[256];
-								sprintf((char*) err_buf,
+								TEXT err_buf[256];
+								sprintf(err_buf,
 										"input error: input scale %d exceeds the field's scale %d",
 										-lscale, -var->sqlscale);
 								STDERROUT(err_buf, 1);
@@ -2007,7 +2007,7 @@ static SSHORT blobedit( TEXT * action, TEXT ** cmd)
 
 /* Find the high and low values of the blob id */
 
-	sscanf(p, "%x:%x", &blobid.gds_quad_high, &blobid.gds_quad_low);
+	sscanf(p, "%"xLONGFORMAT":%"xLONGFORMAT, &blobid.gds_quad_high, &blobid.gds_quad_low);
 
 /* If it isn't an explicit blobedit, then do a dump. Since this is a 
    user operation, put it on the M__trans handle */
@@ -5566,11 +5566,11 @@ static SSHORT print_item( TEXT ** s, XSQLVAR * var, SLONG printlength)
 
 		for (t = var->sqldata; t < var->sqldata + var->sqllen; t += 4) {
 			if (List) {
-				sprintf(Print_buffer, "%.8X", *(SLONG *) t);
+				sprintf(Print_buffer, "%.8"XLONGFORMAT, *(SLONG *) t);
 				ISQL_printf(Out, Print_buffer);
 			}
 			else {
-				sprintf(d, "%.8X", *(SLONG *) t);
+				sprintf(d, "%.8"XLONGFORMAT, *(SLONG *) t);
 				strcat(p, d);
 			}
 		}
@@ -5586,7 +5586,7 @@ static SSHORT print_item( TEXT ** s, XSQLVAR * var, SLONG printlength)
 			/* Print blob-ids only here */
 
 			blobid = *(ISC_QUAD *) var->sqldata;
-			sprintf(blobbuf, "%x:%x", blobid.gds_quad_high,
+			sprintf(blobbuf, "%"xLONGFORMAT":%"xLONGFORMAT, blobid.gds_quad_high,
 					blobid.gds_quad_low);
 			sprintf(p, "%17s ", blobbuf);
 			break;
@@ -5595,7 +5595,7 @@ static SSHORT print_item( TEXT ** s, XSQLVAR * var, SLONG printlength)
 			/* Print blob-ids only here */
 
 			blobid = *(ISC_QUAD *) var->sqldata;
-			sprintf(blobbuf, "%x:%x", blobid.gds_quad_high,
+			sprintf(blobbuf, "%"xLONGFORMAT":%"xLONGFORMAT, blobid.gds_quad_high,
 					blobid.gds_quad_low);
 			sprintf(p, "%17s ", blobbuf);
 			if (List) {
@@ -5743,7 +5743,7 @@ static SSHORT print_item( TEXT ** s, XSQLVAR * var, SLONG printlength)
 			isc_decode_date((GDS_QUAD_t*)var->sqldata, &times);
 
 			if (SQL_dialect > SQL_DIALECT_V5) {
-				sprintf(d, "%4.4d-%2.2d-%2.2d %2.2d:%2.2d:%2.2d.%4.4d",
+				sprintf(d, "%4.4d-%2.2d-%2.2d %2.2d:%2.2d:%2.2d.%4.4"ULONGFORMAT,
 						times.tm_year + 1900, (times.tm_mon + 1),
 						times.tm_mday, times.tm_hour, times.tm_min,
 						times.tm_sec,
@@ -5752,7 +5752,7 @@ static SSHORT print_item( TEXT ** s, XSQLVAR * var, SLONG printlength)
 			}
 			else {
 				if (Time_display)
-					sprintf(d, "%2d-%s-%4d %2.2d:%2.2d:%2.2d.%4.4d",
+					sprintf(d, "%2d-%s-%4d %2.2d:%2.2d:%2.2d.%4.4"ULONGFORMAT,
 							times.tm_mday, alpha_months[times.tm_mon],
 							times.tm_year + 1900, times.tm_hour, times.tm_min,
 							times.tm_sec,
@@ -5779,7 +5779,7 @@ static SSHORT print_item( TEXT ** s, XSQLVAR * var, SLONG printlength)
 				time_and_date[0] = 0;
 				time_and_date[1] = *(ULONG *) var->sqldata;
 				isc_decode_date((GDS_QUAD_t*)time_and_date, &times);
-				sprintf(d, "%2.2d:%2.2d:%2.2d.%4.4d",
+				sprintf(d, "%2.2d:%2.2d:%2.2d.%4.4"ULONGFORMAT,
 						times.tm_hour, times.tm_min, times.tm_sec,
 						(*(ULONG *) var->sqldata) %
 						ISC_TIME_SECONDS_PRECISION);
@@ -5892,8 +5892,8 @@ static int print_item_blob( IB_FILE * fp, XSQLVAR * var, FRBRD *trans)
 		return CONT;
 
 	if ((var->sqlsubtype != Doblob) && (Doblob != ALL_BLOBS)) {
-		ISQL_msg_get(BLOB_SUBTYPE, msg, (TEXT *) Doblob,
-					 (TEXT *) var->sqlsubtype, NULL, NULL, NULL);
+		ISQL_msg_get(BLOB_SUBTYPE, msg, (TEXT *) (SLONG) Doblob,
+					 (TEXT*) (SLONG) var->sqlsubtype, NULL, NULL, NULL);
 		/* Blob display set to subtype %d. This blob: subtype = %d\n */
 		ISQL_printf(fp, msg);
 		if (buffer)
@@ -6256,9 +6256,9 @@ static int process_statement( TEXT * string, XSQLDA ** sqldap)
         if ((statement_type == isc_info_sql_stmt_select) ||
             (statement_type == isc_info_sql_stmt_select_for_upd) ||
             (statement_type == isc_info_sql_stmt_exec_procedure)) {
-			UCHAR buffer[100];
+			SCHAR buffer[100];
 			USHORT i;
-			sprintf((char*) buffer,
+			sprintf(buffer,
 					"\nINPUT  SQLDA version: %d sqldaid: %s sqldabc: %ld sqln: %d sqld: %d\n",
 					input_sqlda->version, input_sqlda->sqldaid,
 					input_sqlda->sqldabc, input_sqlda->sqln,
@@ -6266,18 +6266,18 @@ static int process_statement( TEXT * string, XSQLDA ** sqldap)
 			ISQL_printf(Out, (TEXT*) buffer);
 			for (i = 0, var = input_sqlda->sqlvar, end =
 				 var + input_sqlda->sqld; var < end; var++, i++) {
-				sprintf((char*) buffer,
+				sprintf(buffer,
 						"%02d: sqltype: %d %s %s sqlscale: %d sqlsubtype: %d sqllen: %d\n",
 						i + 1, var->sqltype, sqltype_to_string(var->sqltype),
 						(var->sqltype & 1) ? "Nullable" : "        ",
 						var->sqlscale, var->sqlsubtype, var->sqllen);
 				ISQL_printf(Out, (TEXT*) buffer);
-				sprintf((char*) buffer, "  :  name: (%d)%*s  alias: (%d)%*s\n",
+				sprintf(buffer, "  :  name: (%d)%*s  alias: (%d)%*s\n",
 						var->sqlname_length, var->sqlname_length,
 						var->sqlname, var->aliasname_length,
 						var->aliasname_length, var->aliasname);
 				ISQL_printf(Out, (TEXT*) buffer);
-				sprintf((char*) buffer, "  : table: (%d)%*s  owner: (%d)%*s\n",
+				sprintf(buffer, "  : table: (%d)%*s  owner: (%d)%*s\n",
 						var->relname_length, var->relname_length,
 						var->relname, var->ownname_length,
 						var->ownname_length, var->ownname);
@@ -6472,27 +6472,27 @@ static int process_statement( TEXT * string, XSQLDA ** sqldap)
    will activate code to display the SQLDA after each statement. */
 
 	if (Sqlda_display) {
-		UCHAR buffer[100];
+		SCHAR buffer[100];
 		USHORT i;
-		sprintf((char*) buffer,
+		sprintf(buffer,
 				"\nOUTPUT SQLDA version: %d sqldaid: %s sqldabc: %ld sqln: %d sqld: %d\n",
 				sqlda->version, sqlda->sqldaid, sqlda->sqldabc, sqlda->sqln,
 				sqlda->sqld);
 		ISQL_printf(Out, (TEXT*) buffer);
 		for (i = 0, var = sqlda->sqlvar, end = var + sqlda->sqld; var < end;
 			 var++, i++) {
-			sprintf((char*) buffer,
+			sprintf(buffer,
 					"%02d: sqltype: %d %s %s sqlscale: %d sqlsubtype: %d sqllen: %d\n",
 					i + 1, var->sqltype, sqltype_to_string(var->sqltype),
 					(var->sqltype & 1) ? "Nullable" : "        ",
 					var->sqlscale, var->sqlsubtype, var->sqllen);
 			ISQL_printf(Out, (TEXT*) buffer);
-			sprintf((char*) buffer, "  :  name: (%d)%*s  alias: (%d)%*s\n",
+			sprintf(buffer, "  :  name: (%d)%*s  alias: (%d)%*s\n",
 					var->sqlname_length, var->sqlname_length, var->sqlname,
 					var->aliasname_length, var->aliasname_length,
 					var->aliasname);
 			ISQL_printf(Out, (TEXT*) buffer);
-			sprintf((char*) buffer, "  : table: (%d)%*s  owner: (%d)%*s\n",
+			sprintf(buffer, "  : table: (%d)%*s  owner: (%d)%*s\n",
 					var->relname_length, var->relname_length, var->relname,
 					var->ownname_length, var->ownname_length, var->ownname);
 			ISQL_printf(Out, (TEXT*) buffer);
@@ -6691,7 +6691,7 @@ static int process_statement( TEXT * string, XSQLDA ** sqldap)
 		else
 			sprintf(p, "%*s ", (int) (pad[i]), var->aliasname);
 		/* Separators need not go on forever no more than a line */
-		for (j = 1; j < strlen(p) && j < 80; j++)
+		for (j = 1; j < (int) strlen(p) && j < 80; j++)
 			*p2++ = '=';
 		*p2++ = BLANK;
 		p += strlen(p);
