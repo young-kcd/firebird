@@ -27,7 +27,7 @@
  *
  */
 /*
-$Id: fun.epp,v 1.14 2003-02-10 13:28:22 eku Exp $
+$Id: fun.epp,v 1.15 2003-02-11 00:36:30 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -142,7 +142,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 /* Trap any potential errors */
 
 #pragma FB_COMPILER_MESSAGE("Note that we cannot use C++ EH here for Win32 SS!")
-#if !defined(SUPERSERVER) && !defined(WINNT)
+#if !defined(SUPERSERVER) && !defined(WIN_NT)
 	try {
 #endif
 
@@ -570,7 +570,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 		IBERROR(169);			/* msg 169 return data type not supported */
 	}
 
-#if !defined(SUPERSERVER) && !defined(WINNT)
+#if !defined(SUPERSERVER) && !defined(WIN_NT)
 	}
 	catch (...) {
 		delete temp_string;
