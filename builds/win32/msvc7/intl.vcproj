@@ -23,7 +23,7 @@
 				AdditionalOptions="/EHc- "
 				Optimization="4"
 				GlobalOptimizations="TRUE"
-				InlineFunctionExpansion="2"
+				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="TRUE"
 				ImproveFloatingPointConsistency="TRUE"
 				FavorSizeOrSpeed="1"
@@ -101,6 +101,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				OutputFile="debug/firebird/intl/fbintl.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -337,9 +338,6 @@
 				RelativePath="..\..\..\src\intl\charsets\cs_sjis.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\cs_unicode_fss.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\intl\charsets\cs_w1250.h">
 			</File>
 			<File
@@ -353,24 +351,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\charsets\cs_w1254.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\cv_big5.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\cv_gb2312.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\cv_jis.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\cv_ksc.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\cv_narrow.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\cv_unicode_fss.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\collations\db437de0.h">
@@ -467,18 +447,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\langdrv.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\lc_ascii.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\lc_big5.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\lc_dos.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\lc_narrow.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\ld.h">

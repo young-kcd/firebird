@@ -23,7 +23,7 @@
 				AdditionalOptions="/EHc- "
 				Optimization="4"
 				GlobalOptimizations="TRUE"
-				InlineFunctionExpansion="2"
+				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="TRUE"
 				ImproveFloatingPointConsistency="TRUE"
 				FavorSizeOrSpeed="1"
@@ -142,13 +142,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\utilities\ppg.cpp">
-			</File>
-		</Filter>
-		<Filter
-			Name="JRD files"
-			Filter="">
-			<File
-				RelativePath="..\..\..\src\jrd\svc.cpp">
 			</File>
 		</Filter>
 		<Filter

@@ -81,6 +81,7 @@
 				AdditionalOptions="/EHc- "
 				Optimization="4"
 				GlobalOptimizations="TRUE"
+				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="TRUE"
 				ImproveFloatingPointConsistency="TRUE"
 				FavorSizeOrSpeed="1"
@@ -101,7 +102,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
+				AdditionalDependencies="mpr.lib ws2_32.lib version.lib"
 				OutputFile="release/firebird/bin/fbembed.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -147,12 +148,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\perf.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\pwd.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\why.cpp">
 			</File>
 		</Filter>
 		<Filter

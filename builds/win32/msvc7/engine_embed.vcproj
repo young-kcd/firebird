@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.00"
-	Name="engine_classic"
+	Name="engine_embed"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>
@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\engine_cs"
-			IntermediateDirectory=".\release\engine_cs"
+			OutputDirectory=".\release\engine_es"
+			IntermediateDirectory=".\release\engine_es"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -29,13 +29,13 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include"
-				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_LIB,_X86_,SERVER_SHUTDOWN"
+				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_LIB,_X86_,SERVER_SHUTDOWN,SUPERSERVER,EMBEDDED"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\release\engine_cs/engine_classic.pch"
-				AssemblerListingLocation=".\release\engine_cs/"
-				ObjectFile=".\release\engine_cs/"
-				ProgramDataBaseFileName=".\release\engine_cs/"
+				PrecompiledHeaderFile=".\release\engine_es/engine_embed.pch"
+				AssemblerListingLocation=".\release\engine_es/"
+				ObjectFile=".\release\engine_es/"
+				ProgramDataBaseFileName=".\release\engine_es/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -43,7 +43,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="release\engine_cs\engine.lib"
+				OutputFile="release\engine_es\engine.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -62,8 +62,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\engine_cs"
-			IntermediateDirectory=".\debug\engine_cs"
+			OutputDirectory=".\debug\engine_es"
+			IntermediateDirectory=".\debug\engine_es"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -72,13 +72,13 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include"
-				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_LIB,_X86_,SERVER_SHUTDOWN,DEV_BUILD"
+				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_LIB,_X86_,SERVER_SHUTDOWN,SUPERSERVER,DEV_BUILD,EMBEDDED"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\engine_cs/engine_classic.pch"
-				AssemblerListingLocation=".\debug\engine_cs/"
-				ObjectFile=".\debug\engine_cs/"
-				ProgramDataBaseFileName=".\debug\engine_cs/"
+				PrecompiledHeaderFile=".\debug\engine_es/engine_embed.pch"
+				AssemblerListingLocation=".\debug\engine_es/"
+				ObjectFile=".\debug\engine_es/"
+				ProgramDataBaseFileName=".\debug\engine_es/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="4"
@@ -87,7 +87,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="debug\engine_cs\engine.lib"
+				OutputFile="debug\engine_es\engine.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
