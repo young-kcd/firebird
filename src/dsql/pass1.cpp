@@ -3581,36 +3581,39 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 
 	// Save some values to restore after rse process.
 	dsql_lls* const req_base = request->req_context;
-	dsql_lls* const req_union_base = request->req_union_context;
 	dsql_str* const req_alias_relation_prefix = request->req_alias_relation_prefix;
+	dsql_lls* const dtStartContext = request->req_dt_base_context;
 
-	request->req_context = NULL;
-	request->req_union_context = NULL;
+	// Change req_context, because when we are processing the derived table rse
+	// it may not reference to other streams in the same scope_level.
+	request->req_context = request->req_dt_base_context;
 	request->req_alias_relation_prefix = pass1_alias_concat(req_alias_relation_prefix, alias);
 
-	// Call PASS1_statement (for nod_select) which will call internally PASS1_rse.
+	// Calling pass1_rse (for nod_select) which will call internally PASS1_rse.
 	// nod_select can contain ORDER BY information.
+	// We need to keep scope_level on the same level and because PASS1_rse 
+	// increments scope_level with 1 we decrease it first.
+	request->req_scope_level--;
+	dsql_nod* const select = input->nod_arg[e_derived_table_rse];
 	dsql_nod* rse =
-		PASS1_statement(request, input->nod_arg[e_derived_table_rse], proc_flag);
+		pass1_rse(request, select->nod_arg[e_select_expr], select->nod_arg[e_select_order],
+			select->nod_arg[e_select_rows], NULL);
 	context->ctx_rse = node->nod_arg[e_derived_table_rse] = rse;
+	request->req_scope_level++;
 
 	// Finish off by cleaning up contexts and put them into req_dt_context
 	// so create view (ddl) can deal with it.
 	// Also add the used contexts into the childs stack.
-	while (request->req_context) {
-		LLS_PUSH(request->req_context->lls_object, &request->req_dt_context);
-		LLS_PUSH(request->req_context->lls_object, &context->ctx_childs_derived_table);
+	dsql_lls* nextContext = request->req_context;
+	for (; nextContext && nextContext != dtStartContext; nextContext = nextContext->lls_next) {
+		LLS_PUSH(nextContext->lls_object, &request->req_dt_context);
+		LLS_PUSH(nextContext->lls_object, &context->ctx_childs_derived_table);
 		LLS_POP(&request->req_context);
-	}
-	while (request->req_union_context) {
-		LLS_PUSH(request->req_union_context->lls_object, &request->req_dt_context);
-		LLS_POP(&request->req_union_context);
 	}
 
 	delete request->req_alias_relation_prefix;
 	// Restore our original values.
 	request->req_context = req_base;
-	request->req_union_context = req_union_base;
 	request->req_alias_relation_prefix = req_alias_relation_prefix;
 
 	// If an alias-list is specified process it.
@@ -3841,8 +3844,9 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input, const bool lis
 	dsql_nod* node = 0; // This var must be initialized.
 	
 	// AB: Loop through the scope_levels starting by its own.
+	bool done = false;
 	USHORT current_scope_level = request->req_scope_level + 1;
-	for (; current_scope_level > 0; current_scope_level--) {
+	for (; (current_scope_level > 0) && !done; current_scope_level--) {
 
 		// If we've found a node we're done.
 		if (node) {
@@ -3900,6 +3904,10 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input, const bool lis
 				}
 
 				if (qualifier && !field) {
+					// If a qualifier was present and we don't have found
+					// a matching field then we should stop searching.
+					// Column unknown error will be raised at bottom of function.
+					done = true;
 					break;
 				}
 
@@ -4016,6 +4024,14 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input, const bool lis
 				// If we found the field and qualifier is present or this
 				// is a check constraint we're done.
 				if (node && (is_check_constraint || qualifier)) {
+					break;
+				}
+
+				if (!node && qualifier) {
+					// If a qualifier was present and we don't have found
+					// a matching field then we should stop searching.
+					// Column unknown error will be raised at bottom of function.
+					done = true;
 					break;
 				}
 			}
@@ -5175,7 +5191,7 @@ static dsql_str* pass1_alias_concat(const dsql_str* input1, const dsql_str* inpu
 	if (input1) {
 		length += input1->str_length;
 	}
-	if (input1 && input2) {
+	if (input1 && input1->str_length && input2) {
 		length++; // Room for space character.
 	}
 	if (input2) {
@@ -5187,7 +5203,7 @@ static dsql_str* pass1_alias_concat(const dsql_str* input1, const dsql_str* inpu
 	if (input1) {
 		strcat(ptr, input1->str_data);
 	}
-	if (input1 && input2) {
+	if (input1 && input1->str_length && input2) {
 		strcat(ptr, " ");
 	}
 	if (input2) {
@@ -5268,8 +5284,17 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 	dsql_nod* target_rse = MAKE_node(nod_rse, e_rse_count);
 	dsql_nod* rse = target_rse;
 	rse->nod_arg[e_rse_lock] = update_lock;
+
+	// Save current context base for derived tables.
+	// Derived tables may not internally reference to outer contexts in from clause.
+	request->req_dt_base_context = request->req_context;
+
 	dsql_nod* list = rse->nod_arg[e_rse_streams] =
 		PASS1_node(request, input->nod_arg[e_sel_from], false);
+
+	// Save new current context for derived tables, because in other 
+	// elements a reference to outer context is allowed. 
+	request->req_dt_base_context = request->req_context;
 
 	{ // scope block
 	const dsql_rel* relation;
