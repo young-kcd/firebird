@@ -62,6 +62,7 @@
  * 2003.01.14 Dmitry Yemanov: Fixed bug with cursors in triggers.
  * 2003.01.15 Dmitry Yemanov: Added support for runtime trigger action checks.
  * 2003.02.10 Mike Nordell  : Undefined Microsoft introduced macros to get a clean compile.
+ * 2003.05.24 Nickolay Samofatov: Make SKIP and FIRST non-reserved keywords
  */
 
 #if defined(DEV_BUILD) && defined(WIN_NT) && defined(SUPERSERVER)
