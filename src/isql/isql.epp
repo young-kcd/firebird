@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.25 2003-03-04 00:02:52 brodsom Exp $
+  $Id: isql.epp,v 1.26 2003-03-07 21:30:39 tamlin Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -4763,7 +4763,7 @@ static SSHORT newdb(TEXT * dbname, TEXT * usr, TEXT * psw, TEXT * numbufs,
 	UCHAR *dpb, *dpb_buffer;
 	SCHAR *save_database;
 	int dpb_len;
-	SSHORT l, i, cnt;
+	SSHORT l, cnt;
 	UCHAR *p, *p1, *p2;
 	TEXT end_quote;
 	BOOLEAN delimited_done = FALSE;
@@ -4919,7 +4919,7 @@ static SSHORT newdb(TEXT * dbname, TEXT * usr, TEXT * psw, TEXT * numbufs,
 	}
 
 	if (l = strlen(local_numbufs)) {
-		i = atoi(local_numbufs);
+		const int i = atoi(local_numbufs);
 		STUFF(isc_dpb_num_buffers);
 		STUFF(4);
 		STUFF_INT(i);
@@ -5237,19 +5237,18 @@ static SSHORT parse_arg(
  *	the - and make it so.
  *
  **************************************/
-	int c, lgth, ret = SKIP;
-	SCHAR *s, switchchar;
-	TEXT *errbuf;
-	SSHORT i;
+	int ret = SKIP;
+
 #ifdef	DEV_BUILD
 	BOOLEAN istable = FALSE;
 #endif
 
-	errbuf = (TEXT *) ISQL_ALLOC(MSG_LENGTH);
-	if (!errbuf)
+	TEXT* errbuf = (TEXT *) ISQL_ALLOC(MSG_LENGTH);
+	if (!errbuf) {
 		return (ERR);
+	}
 
-	switchchar = '-';
+	SCHAR switchchar = '-';
 
 /* Initialize database name */
 
@@ -5278,7 +5277,7 @@ static SSHORT parse_arg(
 #define STRARGNCPY	strncpy
 #endif
 
-	lgth = strlen(DEFCHARSET);
+	int lgth = strlen(DEFCHARSET);
 	if (lgth <= MAXCHARSET_LENGTH)
 		strcpy(ISQL_charset, DEFCHARSET);
 	else
@@ -5304,15 +5303,15 @@ static SSHORT parse_arg(
 
 /* Interpret each command line argument */
 
-	i = 1;
-	s = argv[i];
+	SSHORT i = 1;
+	SCHAR* s = argv[i];
 	while (i < argc) {
 		/* Look at flags to find unique match.  If the flag has an arg,
 		   ** advance the pointer (and i).  Only change the return value
 		   ** for extract switch or error.
 		 */
 		if (*s == switchchar) {
-			c = UPPER(s[1]);
+			int c = UPPER(s[1]);
 			if (c == 'X' || (c == 'E' && UPPER(s[2]) == 'X')) {
 #ifdef DEV_BUILD
 				if (UPPER(s[2]) == 'T')
