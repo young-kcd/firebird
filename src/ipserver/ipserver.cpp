@@ -296,19 +296,20 @@ static const char* op_strings[] =
 
 
 #if defined(SUPERSERVER) && defined(WIN_NT)
-
-extern "C" static void atexit_close_handles()
-{
-	IPM pFirstIpm = ipserver_private_data.first_ipm;
-	for (IPM pIpm = pFirstIpm; pIpm; pIpm = pIpm->ipm_next)
+extern "C" {
+	static void atexit_close_handles()
 	{
-		if (pIpm->ipm_address) {
-			UnmapViewOfFile(pIpm->ipm_address);
-			pIpm->ipm_address = 0;
-		}
-		if (pIpm->ipm_handle) {
-			CloseHandle(pIpm->ipm_handle);
-			pIpm->ipm_handle = 0;
+		IPM pFirstIpm = ipserver_private_data.first_ipm;
+		for (IPM pIpm = pFirstIpm; pIpm; pIpm = pIpm->ipm_next)
+		{
+			if (pIpm->ipm_address) {
+				UnmapViewOfFile(pIpm->ipm_address);
+				pIpm->ipm_address = 0;
+			}
+			if (pIpm->ipm_handle) {
+				CloseHandle(pIpm->ipm_handle);
+				pIpm->ipm_handle = 0;
+			}
 		}
 	}
 }

@@ -735,16 +735,18 @@ for (xcc = client_threads; xcc; xcc = xcc->xcc_next)
 
 
 #if defined(SUPERSERVER) && defined(WIN_NT)
-extern "C" static void atexit_close_handles()
-{
-	for (XPM pXpm = first_xpm; pXpm; pXpm = pXpm->xpm_next) {
-		if (pXpm->xpm_address) {
-			UnmapViewOfFile(pXpm->xpm_address);
-			pXpm->xpm_address = 0;
-		}
-		if (pXpm->xpm_handle) {
-			CloseHandle(pXpm->xpm_handle);
-			pXpm->xpm_handle = 0;
+extern "C" {
+	static void atexit_close_handles()
+	{
+		for (XPM pXpm = first_xpm; pXpm; pXpm = pXpm->xpm_next) {
+			if (pXpm->xpm_address) {
+				UnmapViewOfFile(pXpm->xpm_address);
+				pXpm->xpm_address = 0;
+			}
+			if (pXpm->xpm_handle) {
+				CloseHandle(pXpm->xpm_handle);
+				pXpm->xpm_handle = 0;
+			}
 		}
 	}
 }

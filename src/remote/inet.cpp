@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.58 2003-03-11 05:50:26 tamlin Exp $
+$Id: inet.cpp,v 1.59 2003-03-11 19:51:07 brodsom Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -1479,9 +1479,11 @@ static int accept_connection(PORT port, P_CNCT* cnct)
 
 
 #if defined(SUPERSERVER) && defined(WIN_NT)
-extern "C" static void atexit_shutdown_winsock()
-{
-	WSACleanup();
+extern "C" {
+	static void atexit_shutdown_winsock()
+	{
+		WSACleanup();
+	}
 }
 #endif	// SUPERSERVER && WIN_NT
 
