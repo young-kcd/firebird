@@ -12,7 +12,7 @@
 <H2>MINGW Notes</H2>
 <hr/>
 First version: Mar 6 2003<br>
-Last Update: Nov 18 2003<br>
+Last Update: Apr 21 2004<br>
 Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 
 <h3>0.-Introduction</h3>
@@ -41,6 +41,10 @@ Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 <li>MSYS-1.0.9.exe</li>
 <li>msysDTK-1.0.1.exe</li>
 </ul>
+<p>If you intend to build an executable installer you will also need to download InnoSetup from <a href="http://www.jrsoftware.org/isdl.php">http://www.jrsoftware.org/isdl.php</a></p>
+<ul>
+<li><a href="http://files.jrsoftware.org/ispack/ispackl-4.2.1.exe">InnoSetup QuickStart Pack 4.2.1 </a
+</ul>
 </p>
 <p>STEPS TO INSTALL
 <ol>
@@ -52,6 +56,7 @@ Do you have mingw installed? [yn] ANSWER y<br>
 Where is your mingw installation? ANSWER your mingw directory using slashes (as in unix) no backslashes (as in windows)<br><br>
 </li>
 <li>run msysDTK-1.0.1.exe. You must the msys installation directory as the installation directory for msysDTK (default to c:\msys\1.0).</li>
+<li>run ispack-4.2.1.exe if you want to make a executable installer</li>
 </ol>
 </p>
 
@@ -69,10 +74,8 @@ The valid switches for autogen are<br>
 <li>Make the build. For instance if you want to get compiler messages isolated from make log<br> make > make.log 2>comp.log</li>
 <li>After the build finish, the firebird directory with the binaries is created as gen/firebird.</li> 
 </ol>
-<ul>
-<li>To make a clean build from scratch after making changes to the code use the clean.sh script</li>
-</ul>
 
+<p>To make a clean build from scratch after making changes to the code use the clean.sh script</p>
 <p>BUILD NOTE:</p>
 <p>There is a bug in mingw (3.2) related with msvc format for 64bit integers. When the I64 format is used, the compiler throws warnings of two types:</p>
 <p>warning: [...] format, different type arg (arg 3)<br>
@@ -81,16 +84,14 @@ warning: unknown conversion type character `I' in format<br>
 warning: too many arguments for format</p>
 
 <h3>4.- INSTALL.</h3>
-<p>To create an installable build you need to do it in two steps, first prepare the output directory and then run the msvc BuildExecutableInstall.bat</p>
-<p>First change to builds/install/arch-specific/mingw directory and run<p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;./prepare_mingw.sh</p>
-<p>After the script finish you need to open a dos window and cd to the builds/install/arch-specific/win32 directory under the firebird sources root.</p>
-<p>The batch to build the installer is<p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;BuildExecutableInstall.bat [DEBUG] [CS]</p>
-<p>Where DEBUG means if the build is a debug one or not and CS means classic server installer.</li>
-<p>After you start the batch, you will get a InnoSetup window. To build the install exe select the option compile. The installer will be located in builds/win32/install_image.</p>
-
-<p>To install the build, simply run the resulting exe and <b>copy MINGWM10.DLL file to the bin directory</b> in the firebird install directory</b></p>
+<p>To create an installable build you need to execute the InnoSetup script.</p>
+<ol>
+<li>Open firebird2/builds/install/arch-specific/mingw/super/FirebirdInstall_15.iss with InnoSetup.</li>
+<li>Run the script with F9 or Run->Run</li>
+<li>Close Innosetup</li>
+</ol>
+<p>A executable installer will be in firebird2/builds/install/arch-specific/mingw/super/</p>
+<p>To install the build, simply run the resulting exe.</p>
 
 <h3>5.- TROUBLESHOOTING</h3>
 
