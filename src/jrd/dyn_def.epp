@@ -144,8 +144,6 @@ void DYN_define_cache( GBL gbl, UCHAR ** ptr)
 	DBB dbb;
 	UCHAR verb;
 	VOLATILE BLK request;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
 	USHORT found = FALSE;
 	VOLATILE SSHORT id;
 
@@ -155,8 +153,6 @@ void DYN_define_cache( GBL gbl, UCHAR ** ptr)
 
 	try {
 
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 	id = -1;
 
 	id = drq_l_cache;
@@ -171,7 +167,6 @@ void DYN_define_cache( GBL gbl, UCHAR ** ptr)
 	}
 
 	if (found) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		goto dyn_punt_148;
 	}
 
@@ -206,19 +201,17 @@ void DYN_define_cache( GBL gbl, UCHAR ** ptr)
 		DYN_REQUEST(drq_s_cache) = request;
 	}
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}
 	catch (...) {
 		if (id == drq_s_cache)
 		{
-			DYN_rundown_request(old_env, request, drq_s_cache);
+			DYN_rundown_request(0, request, drq_s_cache);
 			DYN_error_punt(TRUE, 150, NULL, NULL, NULL, NULL, NULL);
 			/* msg 150: STORE RDB$FILES failed */
 		}
 		else
 		{
-			DYN_rundown_request(old_env, request, drq_l_cache);
+			DYN_rundown_request(0, request, drq_l_cache);
 			DYN_error_punt(TRUE, 156, NULL, NULL, NULL, NULL, NULL);
 			/* msg 156: Shared cache lookup failed */
 		}
@@ -261,8 +254,6 @@ void DYN_define_constraint(GBL		gbl,
 	LLS field_list = NULL, list_ptr;
 	STR str_;
 	USHORT found, foreign_flag = FALSE, not_null;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
 	UCHAR ri_action = 0;
 
 	tdbb = GET_THREAD_DATA;
@@ -275,9 +266,6 @@ void DYN_define_constraint(GBL		gbl,
 	id = -1;
 
 	try {
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_rel_con, DYN_REQUESTS);
 	id = drq_s_rel_con;
@@ -355,7 +343,7 @@ void DYN_define_constraint(GBL		gbl,
 			default:			number = 125;					break;
 		}
 
-		DYN_rundown_request(old_env, request, local_id);
+		DYN_rundown_request(0, request, local_id);
 		
 		DYN_error_punt(TRUE,
 						number,
@@ -368,7 +356,6 @@ void DYN_define_constraint(GBL		gbl,
 
 	if (verb == gds_dyn_def_trigger)
 	{
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		do {
 			DYN_define_trigger(gbl, ptr, relation_name, trigger_name, FALSE);
 			DYN_UTIL_store_check_constraints(tdbb, gbl, constraint_name,
@@ -383,7 +370,6 @@ void DYN_define_constraint(GBL		gbl,
 
 	if (verb == gds_dyn_fld_not_null)
 	{
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		DYN_UTIL_store_check_constraints(tdbb, gbl, constraint_name,
 										 field_name);
 
@@ -437,7 +423,6 @@ void DYN_define_constraint(GBL		gbl,
 	}
 
 	if (not_null == FALSE) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		DYN_error_punt(FALSE, 123, null_field_name, NULL, NULL, NULL, NULL);
 		/* msg 123: "Field: %s not defined as NOT NULL - can't be used in PRIMARY KEY/UNIQUE constraint definition" */
 	}
@@ -458,7 +443,6 @@ void DYN_define_constraint(GBL		gbl,
 	}
 
 	if (unique_count != all_count) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		goto dyn_punt_false_124;
 	}
 
@@ -520,7 +504,6 @@ void DYN_define_constraint(GBL		gbl,
 		}
 
 		if (found) {
-			tdbb->tdbb_setjmp = (UCHAR *) old_env;
 			goto dyn_punt_false_126;
 		}
 	}
@@ -590,8 +573,6 @@ void DYN_define_constraint(GBL		gbl,
 			DYN_REQUEST(drq_s_ref_con) = request;
 	}
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}	// try
 	catch (...) {
 		SSHORT local_id = -1;
@@ -609,7 +590,7 @@ void DYN_define_constraint(GBL		gbl,
 			default:			number = 125;					break;
 		}
 
-		DYN_rundown_request(old_env, request, local_id);
+		DYN_rundown_request(0, request, local_id);
 		
 		DYN_error_punt(TRUE,
 						number,
@@ -649,25 +630,27 @@ void DYN_define_dimension(GBL		gbl,
  *	defines a single dimension for a field.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
+
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB  dbb  = tdbb->tdbb_database;
+
 	UCHAR verb;
 	VOLATILE BLK request;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
-
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_dims, DYN_REQUESTS);
+
+	bool b_ending_store = false;
+
+	try {
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		DIM IN RDB$FIELD_DIMENSIONS 
         DIM.RDB$UPPER_BOUND.NULL = TRUE;
 		DIM.RDB$LOWER_BOUND.NULL = TRUE;
 		DIM.RDB$DIMENSION = (SSHORT)DYN_get_number(ptr);
-		if (field_name)
+		if (field_name) {
 			strcpy(DIM.RDB$FIELD_NAME, field_name);
+		}
 
 		while ((verb = *(*ptr)++) != gds_dyn_end)
 		{
@@ -694,23 +677,23 @@ void DYN_define_dimension(GBL		gbl,
 			}
 		}
 
-#pragma FB_COMPILER_MESSAGE("TMN: FIXME! SETJMP across scope!")
+		b_ending_store = true;
 
-		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-		tdbb->tdbb_setjmp = (UCHAR *) env;
-		if (SETJMP(env))
-		{
-			DYN_rundown_request(old_env, request, drq_s_dims);
+	END_STORE;
+
+	}
+	catch (std::exception&) {
+		if (b_ending_store) {
+			DYN_rundown_request(0, request, drq_s_dims);
 			DYN_error_punt(TRUE, 3, NULL, NULL, NULL, NULL, NULL);
 			/* msg 3: "STORE RDB$FIELD_DIMENSIONS failed" */
 		}
-	END_STORE;
+		throw;
+	}
 
 	if (!DYN_REQUEST(drq_s_dims)) {
 		DYN_REQUEST(drq_s_dims) = request;
 	}
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 }
 
 
@@ -726,60 +709,60 @@ void DYN_define_exception( GBL gbl, UCHAR ** ptr)
  *	Define an exception.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
+
 	VOLATILE BLK request;
 	UCHAR verb;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB  dbb  = tdbb->tdbb_database;
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_xcp, DYN_REQUESTS);
 
-	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		X IN RDB$EXCEPTIONS 
-        GET_STRING(ptr, X.RDB$EXCEPTION_NAME);
-		X.RDB$MESSAGE.NULL = TRUE;
-		while ((verb = *(*ptr)++) != gds_dyn_end)
-		{
-			switch (verb)
+	bool b_ending_store = false;
+
+	try {
+
+		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			X IN RDB$EXCEPTIONS 
+			GET_STRING(ptr, X.RDB$EXCEPTION_NAME);
+			X.RDB$MESSAGE.NULL = TRUE;
+			while ((verb = *(*ptr)++) != gds_dyn_end)
 			{
-			case gds_dyn_xcp_msg:
-				GET_STRING_2(ptr, X.RDB$MESSAGE);
-				X.RDB$MESSAGE.NULL = FALSE;
-				break;
+				switch (verb)
+				{
+				case gds_dyn_xcp_msg:
+					GET_STRING_2(ptr, X.RDB$MESSAGE);
+					X.RDB$MESSAGE.NULL = FALSE;
+					break;
 
 #if (defined JPN_SJIS || defined JPN_EUC)
-			case gds_dyn_xcp_msg2:
-				DYN_get_string2(ptr, X.RDB$MESSAGE, sizeof(X.RDB$MESSAGE));
-				X.RDB$MESSAGE.NULL = FALSE;
-				break;
+				case gds_dyn_xcp_msg2:
+					DYN_get_string2(ptr, X.RDB$MESSAGE, sizeof(X.RDB$MESSAGE));
+					X.RDB$MESSAGE.NULL = FALSE;
+					break;
 #endif
 
-			default:
-				DYN_unsupported_verb();
+				default:
+					DYN_unsupported_verb();
+				}
 			}
+
+			b_ending_store = true;
+
+		END_STORE;
+
+		if (!DYN_REQUEST(drq_s_xcp)) {
+			DYN_REQUEST(drq_s_xcp) = request;
 		}
-
-#pragma FB_COMPILER_MESSAGE("TMN: FIXME! SETJMP across scope!")
-
-		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-		tdbb->tdbb_setjmp = (UCHAR *) env;
-		if (SETJMP(env))
-		{
-			DYN_rundown_request(old_env, request, drq_s_trg_msgs);
+	}
+	catch (std::exception&) {
+		if (b_ending_store) {
+			DYN_rundown_request(0, request, drq_s_trg_msgs);
 			DYN_error_punt(TRUE, 142, NULL, NULL, NULL, NULL, NULL);
 			/* msg 142: "DEFINE EXCEPTION failed" */
 		}
-	END_STORE;
-
-	if (!DYN_REQUEST(drq_s_xcp)) {
-		DYN_REQUEST(drq_s_xcp) = request;
+		throw;
 	}
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 }
 
 
@@ -805,8 +788,6 @@ void DYN_define_file(GBL		gbl,
 	VOLATILE BLK request;
 	SLONG temp;
 	USHORT man_auto;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
 	TEXT temp_f1[MAXPATHLEN], temp_f[MAXPATHLEN];
 	VOLATILE SSHORT id;
 
@@ -817,16 +798,15 @@ void DYN_define_file(GBL		gbl,
 
 	try {
 
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 	id = -1;
 
 	request = (BLK) CMP_find_request(tdbb, id = drq_l_files, DYN_REQUESTS);
 
 	GET_STRING(ptr, temp_f1);
 	ISC_expand_filename(temp_f1, 0, temp_f);
-	if (!strcmp((char*)dbb->dbb_filename->str_data, temp_f))
+	if (!strcmp((char*)dbb->dbb_filename->str_data, temp_f)) {
 		DYN_error_punt(FALSE, 166, NULL, NULL, NULL, NULL, NULL);
+	}
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FIRST 1 X IN RDB$FILES WITH X.RDB$FILE_NAME EQ temp_f
@@ -882,18 +862,16 @@ void DYN_define_file(GBL		gbl,
 		DYN_REQUEST(drq_s_files) = request;
 	}
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}
 	catch (...) {
 		if (id == drq_l_files)
 		{
-			DYN_rundown_request(old_env, request, drq_l_files);
+			DYN_rundown_request(0, request, drq_l_files);
 			DYN_error_punt(FALSE, 166, NULL, NULL, NULL, NULL, NULL);
 		}
 		else
 		{
-			DYN_rundown_request(old_env, request, drq_s_files);
+			DYN_rundown_request(0, request, drq_s_files);
 			DYN_error_punt(TRUE, msg, NULL, NULL, NULL, NULL, NULL);
 		}
 	}
@@ -913,83 +891,82 @@ void DYN_define_filter( GBL gbl, UCHAR ** ptr)
  *	Define a blob filter.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
+
 	UCHAR verb;
 	VOLATILE BLK request;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB  dbb  = tdbb->tdbb_database;
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_filters, DYN_REQUESTS);
 
-	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		X IN RDB$FILTERS USING 
-        GET_STRING(ptr, X.RDB$FUNCTION_NAME);
-		X.RDB$OUTPUT_SUB_TYPE.NULL = TRUE;
-		X.RDB$INPUT_SUB_TYPE.NULL = TRUE;
-		X.RDB$MODULE_NAME.NULL = TRUE;
-		X.RDB$ENTRYPOINT.NULL = TRUE;
-		X.RDB$DESCRIPTION.NULL = TRUE;
-		while ((verb = *(*ptr)++) != gds_dyn_end)
-		{
-			switch (verb)
+	bool b_ending_store = false;
+
+	try {
+
+		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			X IN RDB$FILTERS USING 
+			GET_STRING(ptr, X.RDB$FUNCTION_NAME);
+			X.RDB$OUTPUT_SUB_TYPE.NULL = TRUE;
+			X.RDB$INPUT_SUB_TYPE.NULL = TRUE;
+			X.RDB$MODULE_NAME.NULL = TRUE;
+			X.RDB$ENTRYPOINT.NULL = TRUE;
+			X.RDB$DESCRIPTION.NULL = TRUE;
+			while ((verb = *(*ptr)++) != gds_dyn_end)
 			{
-			case gds_dyn_filter_in_subtype:
-				X.RDB$INPUT_SUB_TYPE = (SSHORT)DYN_get_number(ptr);
-				X.RDB$INPUT_SUB_TYPE.NULL = FALSE;
-				break;
+				switch (verb)
+				{
+				case gds_dyn_filter_in_subtype:
+					X.RDB$INPUT_SUB_TYPE = (SSHORT)DYN_get_number(ptr);
+					X.RDB$INPUT_SUB_TYPE.NULL = FALSE;
+					break;
 
-			case gds_dyn_filter_out_subtype:
-				X.RDB$OUTPUT_SUB_TYPE = (SSHORT)DYN_get_number(ptr);
-				X.RDB$OUTPUT_SUB_TYPE.NULL = FALSE;
-				break;
+				case gds_dyn_filter_out_subtype:
+					X.RDB$OUTPUT_SUB_TYPE = (SSHORT)DYN_get_number(ptr);
+					X.RDB$OUTPUT_SUB_TYPE.NULL = FALSE;
+					break;
 
-			case gds_dyn_func_module_name:
-				GET_STRING(ptr, X.RDB$MODULE_NAME);
-				X.RDB$MODULE_NAME.NULL = FALSE;
-				break;
+				case gds_dyn_func_module_name:
+					GET_STRING(ptr, X.RDB$MODULE_NAME);
+					X.RDB$MODULE_NAME.NULL = FALSE;
+					break;
 
-			case gds_dyn_func_entry_point:
-				GET_STRING(ptr, X.RDB$ENTRYPOINT);
-				X.RDB$ENTRYPOINT.NULL = FALSE;
-				break;
+				case gds_dyn_func_entry_point:
+					GET_STRING(ptr, X.RDB$ENTRYPOINT);
+					X.RDB$ENTRYPOINT.NULL = FALSE;
+					break;
 
-			case gds_dyn_description:
-				DYN_put_text_blob(gbl, ptr, &X.RDB$DESCRIPTION);
-				X.RDB$DESCRIPTION.NULL = FALSE;
-				break;
+				case gds_dyn_description:
+					DYN_put_text_blob(gbl, ptr, &X.RDB$DESCRIPTION);
+					X.RDB$DESCRIPTION.NULL = FALSE;
+					break;
 
 #if (defined JPN_SJIS || defined JPN_EUC)
-			case gds_dyn_description2:
-				DYN_put_text_blob2(gbl, ptr, &X.RDB$DESCRIPTION);
-				X.RDB$DESCRIPTION.NULL = FALSE;
-				break;
+				case gds_dyn_description2:
+					DYN_put_text_blob2(gbl, ptr, &X.RDB$DESCRIPTION);
+					X.RDB$DESCRIPTION.NULL = FALSE;
+					break;
 #endif
 
-			default:
-				DYN_unsupported_verb();
+				default:
+					DYN_unsupported_verb();
+				}
 			}
+
+		END_STORE;
+
+		if (!DYN_REQUEST(drq_s_filters)) {
+			DYN_REQUEST(drq_s_filters) = request;
 		}
-
-#pragma FB_COMPILER_MESSAGE("TMN: FIXME! SETJMP across scope!")
-
-		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-		tdbb->tdbb_setjmp = (UCHAR *) env;
-		if (SETJMP(env))
-		{
-			DYN_rundown_request(old_env, request, drq_s_filters);
+	}
+	catch (std::exception&) {
+		if (b_ending_store) {
+			DYN_rundown_request(0, request, drq_s_filters);
 			DYN_error_punt(TRUE, 7, NULL, NULL, NULL, NULL, NULL);
 			/* msg 7: "DEFINE BLOB FILTER failed" */
 		}
-	END_STORE;
-
-	if (!DYN_REQUEST(drq_s_filters))
-		DYN_REQUEST(drq_s_filters) = request;
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+		throw;
+	}
 }
 
 
@@ -1005,90 +982,88 @@ void DYN_define_function( GBL gbl, UCHAR ** ptr)
  *	Define a user defined function.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
+
 	UCHAR verb;
 	VOLATILE BLK request;
-	JMP_BUF env;
-	VOLATILE JMP_BUF *old_env;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB  dbb  = tdbb->tdbb_database;
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_funcs, DYN_REQUESTS);
 
-	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		X IN RDB$FUNCTIONS USING 
-        GET_STRING(ptr, X.RDB$FUNCTION_NAME);
-		X.RDB$RETURN_ARGUMENT.NULL = TRUE;
-		X.RDB$QUERY_NAME.NULL = TRUE;
-		X.RDB$MODULE_NAME.NULL = TRUE;
-		X.RDB$ENTRYPOINT.NULL = TRUE;
-		X.RDB$DESCRIPTION.NULL = TRUE;
-		while ((verb = *(*ptr)++) != gds_dyn_end)
-		{
-			switch (verb)
+	bool b_ending_store = false;
+
+	try {
+
+		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			X IN RDB$FUNCTIONS USING 
+			GET_STRING(ptr, X.RDB$FUNCTION_NAME);
+			X.RDB$RETURN_ARGUMENT.NULL = TRUE;
+			X.RDB$QUERY_NAME.NULL = TRUE;
+			X.RDB$MODULE_NAME.NULL = TRUE;
+			X.RDB$ENTRYPOINT.NULL = TRUE;
+			X.RDB$DESCRIPTION.NULL = TRUE;
+			while ((verb = *(*ptr)++) != gds_dyn_end)
 			{
-			case gds_dyn_func_return_argument:
-				X.RDB$RETURN_ARGUMENT = (SSHORT)DYN_get_number(ptr);
-				X.RDB$RETURN_ARGUMENT.NULL = FALSE;
-				if (X.RDB$RETURN_ARGUMENT > MAX_UDF_ARGUMENTS)
-					DYN_error_punt(TRUE, 10, NULL, NULL, NULL, NULL, NULL);
-				/* msg 10: "DEFINE FUNCTION failed" */
-				break;
+				switch (verb)
+				{
+				case gds_dyn_func_return_argument:
+					X.RDB$RETURN_ARGUMENT = (SSHORT)DYN_get_number(ptr);
+					X.RDB$RETURN_ARGUMENT.NULL = FALSE;
+					if (X.RDB$RETURN_ARGUMENT > MAX_UDF_ARGUMENTS)
+						DYN_error_punt(TRUE, 10, NULL, NULL, NULL, NULL, NULL);
+					/* msg 10: "DEFINE FUNCTION failed" */
+					break;
 
-			case gds_dyn_func_module_name:
-				GET_STRING(ptr, X.RDB$MODULE_NAME);
-				X.RDB$MODULE_NAME.NULL = FALSE;
-				break;
+				case gds_dyn_func_module_name:
+					GET_STRING(ptr, X.RDB$MODULE_NAME);
+					X.RDB$MODULE_NAME.NULL = FALSE;
+					break;
 
-			case gds_dyn_fld_query_name:
-				GET_STRING(ptr, X.RDB$QUERY_NAME);
-				X.RDB$QUERY_NAME.NULL = FALSE;
-				break;
+				case gds_dyn_fld_query_name:
+					GET_STRING(ptr, X.RDB$QUERY_NAME);
+					X.RDB$QUERY_NAME.NULL = FALSE;
+					break;
 
-			case gds_dyn_func_entry_point:
-				GET_STRING(ptr, X.RDB$ENTRYPOINT);
-				X.RDB$ENTRYPOINT.NULL = FALSE;
-				break;
+				case gds_dyn_func_entry_point:
+					GET_STRING(ptr, X.RDB$ENTRYPOINT);
+					X.RDB$ENTRYPOINT.NULL = FALSE;
+					break;
 
-			case gds_dyn_description:
-				DYN_put_text_blob(gbl, ptr, &X.RDB$DESCRIPTION);
-				X.RDB$DESCRIPTION.NULL = FALSE;
-				break;
+				case gds_dyn_description:
+					DYN_put_text_blob(gbl, ptr, &X.RDB$DESCRIPTION);
+					X.RDB$DESCRIPTION.NULL = FALSE;
+					break;
 
 #if (defined JPN_SJIS || defined JPN_EUC)
-			case gds_dyn_description2:
-				DYN_put_text_blob2(gbl, ptr, &X.RDB$DESCRIPTION);
-				X.RDB$DESCRIPTION.NULL = FALSE;
-				break;
+				case gds_dyn_description2:
+					DYN_put_text_blob2(gbl, ptr, &X.RDB$DESCRIPTION);
+					X.RDB$DESCRIPTION.NULL = FALSE;
+					break;
 #endif
 
-			default:
-				--(*ptr);
-				DYN_execute(gbl, ptr, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR,
-							(TEXT*)NULL_PTR, X.RDB$FUNCTION_NAME, (TEXT*)NULL_PTR);
+				default:
+					--(*ptr);
+					DYN_execute(gbl, ptr, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR,
+								(TEXT*)NULL_PTR, X.RDB$FUNCTION_NAME, (TEXT*)NULL_PTR);
+				}
 			}
+
+			b_ending_store = true;
+		END_STORE;
+
+		if (!DYN_REQUEST(drq_s_funcs)) {
+			DYN_REQUEST(drq_s_funcs) = request;
 		}
-
-#pragma FB_COMPILER_MESSAGE("TMN: FIXME! SETJMP across scope!")
-
-		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-		tdbb->tdbb_setjmp = (UCHAR *) env;
-		if (SETJMP(env))
-		{
-			/* TMN: Cast away volatile */
-			DYN_rundown_request((JMP_BUF*)old_env, request, drq_s_funcs);
+	}
+	catch (std::exception&) {
+		if (b_ending_store) {
+			DYN_rundown_request(0, request, drq_s_funcs);
 			DYN_error_punt(TRUE, 10, NULL, NULL, NULL, NULL, NULL);
 			/* msg 10: "DEFINE FUNCTION failed" */
 		}
-	END_STORE;
-
-	if (!DYN_REQUEST(drq_s_funcs)) {
-		DYN_REQUEST(drq_s_funcs) = request;
+		throw;
 	}
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 }
 
 
@@ -1108,16 +1083,11 @@ void DYN_define_function_arg(GBL gbl, UCHAR** ptr, TEXT* function_name)
 	DBB dbb;
 	UCHAR verb;
 	VOLATILE BLK request = NULL;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
 
 	try {
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_func_args, DYN_REQUESTS);
 
@@ -1207,15 +1177,14 @@ void DYN_define_function_arg(GBL gbl, UCHAR** ptr, TEXT* function_name)
 
 	END_STORE;
 
-	if (!DYN_REQUEST(drq_s_func_args))
+	if (!DYN_REQUEST(drq_s_func_args)) {
 		DYN_REQUEST(drq_s_func_args) = request;
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+	}
 
 	}
 	catch (...) {
 		if (request) {
-			DYN_rundown_request(old_env, request, drq_s_func_args);
+			DYN_rundown_request(0, request, drq_s_func_args);
 		}
 		DYN_error_punt(TRUE, 12, NULL, NULL, NULL, NULL, NULL);
 		/* msg 12: "DEFINE FUNCTION ARGUMENT failed" */
@@ -1235,38 +1204,38 @@ void DYN_define_generator( GBL gbl, UCHAR ** ptr)
  *	Define a generator.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	VOLATILE BLK request;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB  dbb  = tdbb->tdbb_database;
+
+	VOLATILE BLK request;
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_gens, DYN_REQUESTS);
 
-	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		X IN RDB$GENERATORS 
+	bool b_ending_store = false;
 
-        GET_STRING(ptr, X.RDB$GENERATOR_NAME);
+	try {
+		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			X IN RDB$GENERATORS 
 
-#pragma FB_COMPILER_MESSAGE("TMN: FIXME! SETJMP across scope!")
+			GET_STRING(ptr, X.RDB$GENERATOR_NAME);
 
-		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-		tdbb->tdbb_setjmp = (UCHAR *) env;
-		if (SETJMP(env))
-		{
-			DYN_rundown_request(old_env, request, drq_s_gens);
+			b_ending_store = true;
+
+		END_STORE;
+
+		if (!DYN_REQUEST(drq_s_gens)) {
+			DYN_REQUEST(drq_s_gens) = request;
+		}
+	}
+	catch (std::exception&) {
+		if (b_ending_store) {
+			DYN_rundown_request(0, request, drq_s_gens);
 			DYN_error_punt(TRUE, 8, NULL, NULL, NULL, NULL, NULL);
 			/* msg 8: "DEFINE GENERATOR failed" */
 		}
-	END_STORE;
-
-	if (!DYN_REQUEST(drq_s_gens))
-		DYN_REQUEST(drq_s_gens) = request;
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+		throw;
+	}
 
 	if (*(*ptr)++ != gds_dyn_end)
 	{
@@ -1293,8 +1262,6 @@ void DYN_define_role( GBL gbl, UCHAR ** ptr)
 	TDBB tdbb;
 	DBB dbb;
 	VOLATILE BLK request = NULL;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
 	TEXT dummy_name[32], owner_name[32], role_name[32], *p;
 
 	tdbb = GET_THREAD_DATA;
@@ -1315,50 +1282,44 @@ void DYN_define_role( GBL gbl, UCHAR ** ptr)
 	GET_STRING(ptr, role_name);
 
 	if (strcmp(role_name, owner_name) == 0) {
-	/************************************************
-    **
-    ** user name could not be used for SQL role
-    **
-    *************************************************/
+		/************************************************
+		**
+		** user name could not be used for SQL role
+		**
+		*************************************************/
 		DYN_error(FALSE, 193, owner_name, NULL, NULL, NULL, NULL);
 		ERR_punt();
 	}
 
 	if (strcmp(role_name, "NONE") == 0) {
-	/************************************************
-    **
-    ** keyword NONE could not be used as SQL role name
-    **
-    *************************************************/
+		/************************************************
+		**
+		** keyword NONE could not be used as SQL role name
+		**
+		*************************************************/
 		DYN_error(FALSE, 195, role_name, NULL, NULL, NULL, NULL);
 		ERR_punt();
 	}
 
 	try {
 
-		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;	/* save environment */
-		tdbb->tdbb_setjmp = (UCHAR *) env;	/* get new environment */
-
-
 		if (is_it_user_name(gbl, role_name, tdbb)) {
-		/************************************************
-		**
-		** user name could not be used for SQL role
-		**
-		*************************************************/
+			/************************************************
+			**
+			** user name could not be used for SQL role
+			**
+			*************************************************/
 			DYN_error(FALSE, 193, role_name, NULL, NULL, NULL, NULL);
-			tdbb->tdbb_setjmp = (UCHAR *) old_env;	/* restore environment */
 			goto do_err_punt;
 		}
 
 		if (DYN_is_it_sql_role(gbl, role_name, dummy_name, tdbb)) {
-		/************************************************
-		**
-		** SQL role already exist
-		**
-		*************************************************/
+			/************************************************
+			**
+			** SQL role already exist
+			**
+			*************************************************/
 			DYN_error(FALSE, 194, role_name, NULL, NULL, NULL, NULL);
-			tdbb->tdbb_setjmp = (UCHAR *) old_env;	/* restore environment */
 			goto do_err_punt;
 		}
 
@@ -1378,14 +1339,11 @@ void DYN_define_role( GBL gbl, UCHAR ** ptr)
 		if (*(*ptr)++ != gds_dyn_end) {
 			goto do_error_punt_9;
 		}
-
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;	/* restore environment */
 	}
 	catch (...) {
 		if (request) {
-			DYN_rundown_request(old_env, request, drq_role_gens);
+			DYN_rundown_request(0, request, drq_role_gens);
 		}
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;	/* restore environment */
 		DYN_error_punt(TRUE, 8, NULL, NULL, NULL, NULL, NULL);
 		/* msg 8: "DEFINE ROLE failed" */
 	}
@@ -1418,16 +1376,18 @@ void DYN_define_global_field(GBL		gbl,
  *
  **************************************/
 
-	UCHAR verb;
-	VOLATILE BLK request;
-	USHORT dtype;
-	JMP_BUF env;
-	JMP_BUF* VOLATILE old_env;
-
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB  dbb  = tdbb->tdbb_database;
 
+	UCHAR verb;
+	VOLATILE BLK request;
+	USHORT dtype;
+
 	request = (BLK) CMP_find_request(tdbb, drq_s_gfields, DYN_REQUESTS);
+
+	bool b_ending_store = false;
+
+	try {
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FLD IN RDB$FIELDS USING 
@@ -1650,23 +1610,23 @@ void DYN_define_global_field(GBL		gbl,
 			}
 		}
 
-#pragma FB_COMPILER_MESSAGE("TMN: FIXME! SETJMP across scope!")
+		b_ending_store = true;
 
-		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-		tdbb->tdbb_setjmp = (UCHAR *) env;
-		if (SETJMP(env))
-		{
-			DYN_rundown_request(old_env, request, drq_s_gfields);
-			DYN_error_punt(TRUE, 13, NULL, NULL, NULL, NULL, NULL);
-			/* msg 13: "STORE RDB$FIELDS failed" */
-		}
 	END_STORE;
 
 	if (!DYN_REQUEST(drq_s_gfields)) {
 		DYN_REQUEST(drq_s_gfields) = request;
 	}
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+	}
+	catch (std::exception&) {
+		if (b_ending_store) {
+			DYN_rundown_request(0, request, drq_s_gfields);
+			DYN_error_punt(TRUE, 13, NULL, NULL, NULL, NULL, NULL);
+			/* msg 13: "STORE RDB$FIELDS failed" */
+		}
+		throw;
+	}
 }
 
 
@@ -1690,34 +1650,34 @@ void DYN_define_index(GBL		gbl,
  *	creates an index.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
+
 	VOLATILE BLK request;
 	BLK old_request;
 	VOLATILE SSHORT id, old_id;
 	const size_t field_name_size = 32;
-	UCHAR index_name[32], referenced_relation[32];
-	UCHAR verb, seg_count, fld_count;
-	LLS field_list = NULL, seg_list = NULL, list_ptr;
+	UCHAR index_name[32];
+	UCHAR referenced_relation[32];
+	UCHAR verb;
+	UCHAR seg_count;
+	UCHAR fld_count;
+	LLS field_list = NULL;
+	LLS seg_list = NULL;
+	LLS list_ptr;
 	STR str_;
 	USHORT found, key_length, length, referred_cols = 0;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
 	TEXT trigger_name[32];
 
-	if (ri_actionP != NULL)
+	if (ri_actionP != NULL) {
 		(*ri_actionP) = 0;
+	}
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB  dbb  = tdbb->tdbb_database;
 
 	request = NULL;
 	id = -1;
 
 	try {
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_indices, DYN_REQUESTS);
 	id = drq_s_indices;
@@ -2189,22 +2149,20 @@ void DYN_define_index(GBL		gbl,
 		DYN_REQUEST(drq_s_indices) = request;
 	}
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}	// try
 	catch (...) {
 		if (id == drq_s_indices) {
-			DYN_rundown_request(old_env, request, id);
+			DYN_rundown_request(0, request, id);
 			DYN_error_punt(TRUE, 21, NULL, NULL, NULL, NULL, NULL);
 			/* msg 21: "STORE RDB$INDICES failed" */
 		}
 		else if (id == drq_s_idx_segs) {
-			DYN_rundown_request(old_env, request, id);
+			DYN_rundown_request(0, request, id);
 			DYN_error_punt(TRUE, 15, NULL, NULL, NULL, NULL, NULL);
 			/* msg 15: "STORE RDB$INDICES failed" */
 		}
 
-		DYN_rundown_request(old_env, request, -1);
+		DYN_rundown_request(0, request, -1);
 		if (id == drq_l_lfield)
 			DYN_error_punt(TRUE, 15, NULL, NULL, NULL, NULL, NULL);
 		/* msg 15: "STORE RDB$INDICES failed" */
@@ -2248,8 +2206,6 @@ void DYN_define_local_field(GBL		gbl,
 	SSHORT charset_id;
 	USHORT charset_id_flag;
 	TEXT *source;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
 	SLONG fld_pos;
 
 	tdbb = GET_THREAD_DATA;
@@ -2257,9 +2213,6 @@ void DYN_define_local_field(GBL		gbl,
 
 	request = NULL;
 	id = -1;
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	try {
 
@@ -2556,17 +2509,15 @@ void DYN_define_local_field(GBL		gbl,
 		DYN_REQUEST(drq_s_lfields) = request;
 	}
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}	// try
 	catch (...) {
 		if (id == drq_s_lfields) {
-			DYN_rundown_request(old_env, request, id);
+			DYN_rundown_request(0, request, id);
 			DYN_error_punt(TRUE, 23, NULL, NULL, NULL, NULL, NULL);
 			/* msg 23: "STORE RDB$RELATION_FIELDS failed" */
 		}
 		else {
-			DYN_rundown_request(old_env, request, id);
+			DYN_rundown_request(0, request, id);
 			DYN_error_punt(TRUE, 22, NULL, NULL, NULL, NULL, NULL);
 			/* msg 22: "STORE RDB$FIELDS failed" */
 		}
@@ -2593,8 +2544,6 @@ void DYN_define_log_file(
 	DBB dbb;
 	UCHAR verb;
 	VOLATILE BLK request;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
 	USHORT found = FALSE;
 	VOLATILE SSHORT id;
 	STR db_filename;
@@ -2607,9 +2556,6 @@ void DYN_define_log_file(
 
 	try {
 	
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
-
 	if (first_log_file)
 	{
 		id = drq_l_log_files;
@@ -2622,7 +2568,6 @@ void DYN_define_log_file(
 			DYN_REQUEST(drq_l_log_files) = request;
 
 		if (found) {
-			tdbb->tdbb_setjmp = (UCHAR *) old_env;
 			goto local_punt_false_151;
 		}
 	}
@@ -2696,20 +2641,19 @@ void DYN_define_log_file(
 
 	END_STORE;
 
-	if (!DYN_REQUEST(drq_s_log_files))
+	if (!DYN_REQUEST(drq_s_log_files)) {
 		DYN_REQUEST(drq_s_log_files) = request;
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+	}
 
 	}
 	catch (...) {
 		if (id == drq_s_log_files) {
-			DYN_rundown_request(old_env, request, drq_s_log_files);
+			DYN_rundown_request(0, request, drq_s_log_files);
 			DYN_error_punt(TRUE, 154, NULL, NULL, NULL, NULL, NULL);
 			/* msg 154: STORE RDB$LOG_FILES failed */
 		}
 		else {
-			DYN_rundown_request(old_env, request, drq_l_log_files);
+			DYN_rundown_request(0, request, drq_l_log_files);
 			DYN_error_punt(TRUE, 155, NULL, NULL, NULL, NULL, NULL);
 			/* msg 155: Write ahead log lookup failed */
 		}
@@ -2746,8 +2690,6 @@ void DYN_define_parameter( GBL gbl, UCHAR ** ptr, TEXT * procedure_name)
 	VOLATILE SSHORT id;
 	SSHORT f_subtype, f_scale, f_precision;
 	SSHORT f_charset, f_collation;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
@@ -2756,8 +2698,6 @@ void DYN_define_parameter( GBL gbl, UCHAR ** ptr, TEXT * procedure_name)
 
 	try {
 
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 	id = -1;
 
 	f_length = f_type = f_subtype = f_charlength = f_scale = f_seg_length = 0;
@@ -2929,24 +2869,23 @@ void DYN_define_parameter( GBL gbl, UCHAR ** ptr, TEXT * procedure_name)
 		}
 	END_STORE;
 
-	if (!DYN_REQUEST(drq_s_prms))
+	if (!DYN_REQUEST(drq_s_prms)) {
 		DYN_REQUEST(drq_s_prms) = request;
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+	}
 
 	}
 	catch (...) {
 		if (id == drq_s_prms) {
-			DYN_rundown_request(old_env, request, drq_s_prms);
+			DYN_rundown_request(0, request, drq_s_prms);
 			DYN_error_punt(TRUE, 136, NULL, NULL, NULL, NULL, NULL);
 			/* msg 163: "STORE RDB$PROCEDURE_PARAMETERS failed" */
 		}
 		else if (id == drq_s_prm_src) {
-			DYN_rundown_request(old_env, request, drq_s_prm_src);
+			DYN_rundown_request(0, request, drq_s_prm_src);
 			DYN_error_punt(TRUE, 136, NULL, NULL, NULL, NULL, NULL);
 			/* msg 136: "STORE RDB$PROCEDURE_PARAMETERS failed" */
 		}
-		DYN_rundown_request(old_env, request, -1);
+		DYN_rundown_request(0, request, -1);
 
 		/* Control should never reach this point,
 		   because id should always have one of the values tested above.  */
@@ -2975,8 +2914,6 @@ void DYN_define_procedure( GBL gbl, UCHAR ** ptr)
 	USHORT sql_prot;
 	VOLATILE SSHORT id;
 	TEXT procedure_name[PROC_NAME_SIZE], owner_name[32], *p;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
 
 	GET_STRING(ptr, procedure_name);
 
@@ -2988,9 +2925,6 @@ void DYN_define_procedure( GBL gbl, UCHAR ** ptr)
 	id = -1;
 
 	try {
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	id = drq_l_prc_name;
 	check_unique_name(tdbb, gbl, procedure_name, TRUE);
@@ -3097,25 +3031,24 @@ void DYN_define_procedure( GBL gbl, UCHAR ** ptr)
 		}
 	}
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}
 	catch (...) {
 		if (id == drq_s_prcs) {
-			DYN_rundown_request(old_env, request, id);
+			DYN_rundown_request(0, request, id);
 			DYN_error_punt(TRUE, 134, NULL, NULL, NULL, NULL, NULL);
 			/* msg 134: "STORE RDB$PROCEDURES failed" */
 		}
 		else if (id == drq_s_prc_usr_prvs) {
-			DYN_rundown_request(old_env, request, id);
+			DYN_rundown_request(0, request, id);
 			DYN_error_punt(TRUE, 25, NULL, NULL, NULL, NULL, NULL);
 			/* msg 25: "STORE RDB$USER_PRIVILEGES failed defining a relation" */
 		}
 
-		DYN_rundown_request(old_env, request, -1);
-		if (id == drq_l_prc_name)
+		DYN_rundown_request(0, request, -1);
+		if (id == drq_l_prc_name) {
 			DYN_error_punt(TRUE, 134, NULL, NULL, NULL, NULL, NULL);
-		/* msg 134: "STORE RDB$PROCEDURES failed" */
+			/* msg 134: "STORE RDB$PROCEDURES failed" */
+		}
 
 		/* Control should never reach this point, because id should have
 		   one of the values tested-for above. */
@@ -3146,8 +3079,6 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
 	VOLATILE SSHORT id, old_id;
 	STATUS *s;
 	TEXT relation_name[32], owner_name[32], field_name[32], *p;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
@@ -3159,9 +3090,6 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
 	id = -1;
 
 	try {
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	id = drq_l_rel_name;
 	check_unique_name(tdbb, gbl, relation_name, FALSE);
@@ -3326,22 +3254,20 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
 				DYN_REQUEST(drq_s_usr_prvs) = request;
 		}
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}
 	catch (...) {
 		if (id == drq_s_rels) {
-			DYN_rundown_request(old_env, request, id);
+			DYN_rundown_request(0, request, id);
 			DYN_error_punt(TRUE, 24, NULL, NULL, NULL, NULL, NULL);
 			/* msg 24: "STORE RDB$RELATIONS failed" */
 		}
 		else if (id == drq_s_usr_prvs) {
-			DYN_rundown_request(old_env, request, id);
+			DYN_rundown_request(0, request, id);
 			DYN_error_punt(TRUE, 25, NULL, NULL, NULL, NULL, NULL);
 			/* msg 25: "STORE RDB$USER_PRIVILEGES failed defining a relation" */
 		}
 
-		DYN_rundown_request(old_env, request, -1);
+		DYN_rundown_request(0, request, -1);
 		if (id == drq_l_rel_name)
 			DYN_error_punt(TRUE, 24, NULL, NULL, NULL, NULL, NULL);
 		/* msg 24: "STORE RDB$RELATIONS failed" */
@@ -3369,63 +3295,66 @@ void DYN_define_security_class( GBL gbl, UCHAR ** ptr)
  *	Execute a dynamic ddl statement.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
+
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB  dbb  = tdbb->tdbb_database;
+
 	VOLATILE BLK request;
 	UCHAR verb;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
-
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_classes, DYN_REQUESTS);
 
-	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		SC IN RDB$SECURITY_CLASSES 
-        GET_STRING(ptr, SC.RDB$SECURITY_CLASS);
-		SC.RDB$ACL.NULL = TRUE;
-		SC.RDB$DESCRIPTION.NULL = TRUE;
-		while ((verb = *(*ptr)++) != gds_dyn_end)
-			switch (verb)
-			{
-			case gds_dyn_scl_acl:
-				DYN_put_blr_blob(gbl, ptr, &SC.RDB$ACL);
-				SC.RDB$ACL.NULL = FALSE;
-				break;
+	bool b_ending_store = false;
 
-			case gds_dyn_description:
-				DYN_put_text_blob(gbl, ptr, &SC.RDB$DESCRIPTION);
-				SC.RDB$DESCRIPTION.NULL = FALSE;
-				break;
+	try {
+
+		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			SC IN RDB$SECURITY_CLASSES 
+			GET_STRING(ptr, SC.RDB$SECURITY_CLASS);
+			SC.RDB$ACL.NULL = TRUE;
+			SC.RDB$DESCRIPTION.NULL = TRUE;
+			while ((verb = *(*ptr)++) != gds_dyn_end)
+			{
+				switch (verb)
+				{
+				case gds_dyn_scl_acl:
+					DYN_put_blr_blob(gbl, ptr, &SC.RDB$ACL);
+					SC.RDB$ACL.NULL = FALSE;
+					break;
+
+				case gds_dyn_description:
+					DYN_put_text_blob(gbl, ptr, &SC.RDB$DESCRIPTION);
+					SC.RDB$DESCRIPTION.NULL = FALSE;
+					break;
 
 #if (defined JPN_SJIS || defined JPN_EUC)
-			case gds_dyn_description2:
-				DYN_put_text_blob2(gbl, ptr, &SC.RDB$DESCRIPTION);
-				SC.RDB$DESCRIPTION.NULL = FALSE;
-				break;
+				case gds_dyn_description2:
+					DYN_put_text_blob2(gbl, ptr, &SC.RDB$DESCRIPTION);
+					SC.RDB$DESCRIPTION.NULL = FALSE;
+					break;
 #endif
 
-			default:
-				DYN_unsupported_verb();
+				default:
+					DYN_unsupported_verb();
+				}
 			}
 
-#pragma FB_COMPILER_MESSAGE("TMN: FIXME! SETJMP across scope!")
+			b_ending_store = true;
 
-		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-		tdbb->tdbb_setjmp = (UCHAR *) env;
-		if (SETJMP(env))
-		{
-			DYN_rundown_request(old_env, request, drq_s_classes);
+		END_STORE;
+
+		if (!DYN_REQUEST(drq_s_classes)) {
+			DYN_REQUEST(drq_s_classes) = request;
+		}
+	}
+	catch (std::exception&) {
+		if (b_ending_store) {
+			DYN_rundown_request(0, request, drq_s_classes);
 			DYN_error_punt(TRUE, 27, NULL, NULL, NULL, NULL, NULL);
 			/* msg 27: "STORE RDB$RELATIONS failed" */
 		}
-	END_STORE;
-
-	if (!DYN_REQUEST(drq_s_classes))
-		DYN_REQUEST(drq_s_classes) = request;
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+		throw;
+	}
 }
 
 
@@ -3452,8 +3381,6 @@ void DYN_define_sql_field(GBL		gbl,
 	VOLATILE SSHORT id, old_id;
 	UCHAR verb;
 	USHORT dtype;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
 	SLONG fld_pos;
 
 	tdbb = GET_THREAD_DATA;
@@ -3463,9 +3390,6 @@ void DYN_define_sql_field(GBL		gbl,
 	id = -1;
 
 	try {
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_sql_lfld, DYN_REQUESTS);
 	id = drq_s_sql_lfld;
@@ -3713,17 +3637,15 @@ void DYN_define_sql_field(GBL		gbl,
 	if (!DYN_REQUEST(drq_s_sql_lfld))
 		DYN_REQUEST(drq_s_sql_lfld) = request;
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}
 	catch (...) {
 		if (id == drq_s_sql_lfld) {
-			DYN_rundown_request(old_env, request, id);
+			DYN_rundown_request(0, request, id);
 			DYN_error_punt(TRUE, 29, NULL, NULL, NULL, NULL, NULL);
 			/* msg 29: "STORE RDB$RELATION_FIELDS failed" */
 		}
 		else {
-			DYN_rundown_request(old_env, request, id);
+			DYN_rundown_request(0, request, id);
 			DYN_error_punt(TRUE, 28, NULL, NULL, NULL, NULL, NULL);
 			/* msg 28: "STORE RDB$FIELDS failed" */
 		}
@@ -3743,19 +3665,15 @@ void DYN_define_shadow( GBL gbl, UCHAR ** ptr)
  *	Define a shadow.
  *
  **************************************/
-	SLONG shadow_number, start;
+
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB  dbb  = tdbb->tdbb_database;
+
 	UCHAR verb;
-	TDBB tdbb;
-	DBB dbb;
 	VOLATILE BLK request;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
-	BOOLEAN found = FALSE;
+	bool found = false;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
-
-	shadow_number = DYN_get_number(ptr);
+	SLONG shadow_number = DYN_get_number(ptr);
 
 /* If a shadow set identified by the
    shadow number already exists return error.  */
@@ -3764,22 +3682,17 @@ void DYN_define_shadow( GBL gbl, UCHAR ** ptr)
 
 	try {
 
-		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-		tdbb->tdbb_setjmp = (UCHAR *) env;
-
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			FIRST 1 X IN RDB$FILES WITH X.RDB$SHADOW_NUMBER EQ shadow_number
-				found = TRUE;
+				found = true;
 		END_FOR;
 
 		if (!DYN_REQUEST(drq_l_shadow)) {
 			DYN_REQUEST(drq_l_shadow) = request;
 		}
-
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 	}
 	catch (...) {
-		DYN_rundown_request(old_env, request, drq_l_shadow);
+		DYN_rundown_request(0, request, drq_l_shadow);
 		DYN_error_punt(TRUE, 164, NULL, NULL, NULL, NULL, NULL);
 		/* msg 164: "Shadow lookup failed" */
 	}
@@ -3787,10 +3700,10 @@ void DYN_define_shadow( GBL gbl, UCHAR ** ptr)
 	if (found) {
 		DYN_error_punt(FALSE, 165, (TEXT *) shadow_number, NULL, NULL, NULL,
 					   NULL);
+		/* msg 165: "Shadow %ld already exists" */
 	}
-	/* msg 165: "Shadow %ld already exists" */
 
-	start = 0;
+	SLONG start = 0;
 	while ((verb = *(*ptr)++) != gds_dyn_end)
 	{
 		switch (verb)
@@ -3806,11 +3719,11 @@ void DYN_define_shadow( GBL gbl, UCHAR ** ptr)
 }
 
 
-void DYN_define_trigger(
-						GBL gbl,
-						UCHAR ** ptr,
-						TEXT * relation_name,
-						TEXT * trigger_name, BOOLEAN ignore_perm)
+void DYN_define_trigger(GBL		gbl,
+						UCHAR**	ptr,
+						TEXT*	relation_name,
+						TEXT*	trigger_name,
+						BOOLEAN	ignore_perm)
 {
 /**************************************
  *
@@ -3829,27 +3742,30 @@ void DYN_define_trigger(
  * cascading referential interity.
  * 
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
+
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB  dbb  = tdbb->tdbb_database;
+
 	VOLATILE BLK request;
-	UCHAR verb, *blr;
-	TEXT t[32], *source;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
+	UCHAR	verb;
+	TEXT	t[32];
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
-
-	if (!GET_STRING(ptr, t))
+	if (!GET_STRING(ptr, t)) {
 		DYN_UTIL_generate_trigger_name(tdbb, gbl, t);
+	}
 
-	if (trigger_name != NULL)
+	if (trigger_name) {
 		strcpy(trigger_name, t);
+	}
 
-	source = NULL;
-	blr = NULL;
+	TEXT*	source = 0;
+	UCHAR*	blr    = 0;
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_triggers, DYN_REQUESTS);
+
+	bool b_ending_store = false;
+
+	try {
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$TRIGGERS 
@@ -3879,6 +3795,7 @@ void DYN_define_trigger(
 		X.RDB$DESCRIPTION.NULL = TRUE;
 		strcpy(X.RDB$TRIGGER_NAME, t);
 		while ((verb = *(*ptr)++) != gds_dyn_end)
+		{
 			switch (verb)
 			{
 			case gds_dyn_trg_type:
@@ -3943,17 +3860,9 @@ void DYN_define_trigger(
 				DYN_execute(gbl, ptr, X.RDB$RELATION_NAME, (TEXT*)NULL_PTR,
 							t, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
 			}
-
-#pragma FB_COMPILER_MESSAGE("TMN: FIXME! SETJMP across scope!")
-
-		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-		tdbb->tdbb_setjmp = (UCHAR *) env;
-		if (SETJMP(env))
-		{
-			DYN_rundown_request(old_env, request, drq_s_triggers);
-			DYN_error_punt(TRUE, 31, NULL, NULL, NULL, NULL, NULL);
-			/* msg 31: "DEFINE TRIGGER failed" */
 		}
+
+		b_ending_store = true;
 
 /* the sed script dyn_def.sed adds the foll. lines of code to the
    dyn_def.c file.
@@ -3969,14 +3878,23 @@ void DYN_define_trigger(
 	if (ignore_perm)
 		((REQ) request)->req_flags &= ~req_ignore_perm;
 
-	if (!DYN_REQUEST(drq_s_triggers))
+	if (!DYN_REQUEST(drq_s_triggers)) {
 		DYN_REQUEST(drq_s_triggers) = request;
+	}
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+	}
+	catch (std::exception&) {
+		if (b_ending_store) {
+			DYN_rundown_request(0, request, drq_s_triggers);
+			DYN_error_punt(TRUE, 31, NULL, NULL, NULL, NULL, NULL);
+			/* msg 31: "DEFINE TRIGGER failed" */
+		}
+		throw;
+	}
 }
 
 
-void DYN_define_trigger_msg( GBL gbl, UCHAR ** ptr, TEXT * trigger_name)
+void DYN_define_trigger_msg(GBL gbl, UCHAR** ptr, TEXT* trigger_name)
 {
 /**************************************
  *
@@ -3988,68 +3906,73 @@ void DYN_define_trigger_msg( GBL gbl, UCHAR ** ptr, TEXT * trigger_name)
  *	Define a trigger message.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
+
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB  dbb  = tdbb->tdbb_database;
+
 	VOLATILE BLK request;
 	UCHAR verb;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
-
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_trg_msgs, DYN_REQUESTS);
 
-	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		X IN RDB$TRIGGER_MESSAGES 
-        X.RDB$MESSAGE_NUMBER = DYN_get_number(ptr);
-		X.RDB$MESSAGE.NULL = TRUE;
-		if (trigger_name) {
-			strcpy(X.RDB$TRIGGER_NAME, trigger_name);
-			X.RDB$TRIGGER_NAME.NULL = FALSE;
-		}
-		else
-			X.RDB$TRIGGER_NAME.NULL = TRUE;
-		while ((verb = *(*ptr)++) != gds_dyn_end)
-			switch (verb)
-			{
-			case gds_dyn_trg_name:
-				GET_STRING(ptr, X.RDB$TRIGGER_NAME);
+	bool b_ending_store = false;
+
+	try {
+
+		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			X IN RDB$TRIGGER_MESSAGES 
+			X.RDB$MESSAGE_NUMBER = DYN_get_number(ptr);
+			X.RDB$MESSAGE.NULL = TRUE;
+			if (trigger_name) {
+				strcpy(X.RDB$TRIGGER_NAME, trigger_name);
 				X.RDB$TRIGGER_NAME.NULL = FALSE;
-				break;
-
-			case gds_dyn_trg_msg:
-				GET_STRING(ptr, X.RDB$MESSAGE);
-				X.RDB$MESSAGE.NULL = FALSE;
-				break;
-
-#if (defined JPN_SJIS || defined JPN_EUC)
-			case gds_dyn_trg_msg2:
-				DYN_get_string2(ptr, X.RDB$MESSAGE, sizeof(X.RDB$MESSAGE));
-				X.RDB$MESSAGE.NULL = FALSE;
-				break;
-#endif
-
-			default:
-				DYN_unsupported_verb();
+			}
+			else {
+				X.RDB$TRIGGER_NAME.NULL = TRUE;
 			}
 
-#pragma FB_COMPILER_MESSAGE("TMN: FIXME! SETJMP across scope!")
+			while ((verb = *(*ptr)++) != gds_dyn_end)
+			{
+				switch (verb)
+				{
+				case gds_dyn_trg_name:
+					GET_STRING(ptr, X.RDB$TRIGGER_NAME);
+					X.RDB$TRIGGER_NAME.NULL = FALSE;
+					break;
 
-		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-		tdbb->tdbb_setjmp = (UCHAR *) env;
-		if (SETJMP(env))
-		{
-			DYN_rundown_request(old_env, request, drq_s_trg_msgs);
+				case gds_dyn_trg_msg:
+					GET_STRING(ptr, X.RDB$MESSAGE);
+					X.RDB$MESSAGE.NULL = FALSE;
+					break;
+
+#if (defined JPN_SJIS || defined JPN_EUC)
+				case gds_dyn_trg_msg2:
+					DYN_get_string2(ptr, X.RDB$MESSAGE, sizeof(X.RDB$MESSAGE));
+					X.RDB$MESSAGE.NULL = FALSE;
+					break;
+#endif
+
+				default:
+					DYN_unsupported_verb();
+				}
+			}
+
+			b_ending_store = true;
+
+		END_STORE;
+
+		if (!DYN_REQUEST(drq_s_trg_msgs)) {
+			DYN_REQUEST(drq_s_trg_msgs) = request;
+		}
+	}
+	catch (std::exception&) {
+		if (b_ending_store) {
+			DYN_rundown_request(0, request, drq_s_trg_msgs);
 			DYN_error_punt(TRUE, 33, NULL, NULL, NULL, NULL, NULL);
 			/* msg 33: "DEFINE TRIGGER MESSAGE failed" */
 		}
-	END_STORE;
-
-	if (!DYN_REQUEST(drq_s_trg_msgs))
-		DYN_REQUEST(drq_s_trg_msgs) = request;
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+		throw;
+	}
 }
 
 
@@ -4065,65 +3988,68 @@ void DYN_define_view_relation( GBL gbl, UCHAR ** ptr, TEXT * view)
  *	Store a RDB$VIEW_RELATION record.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
+
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB  dbb  = tdbb->tdbb_database;
+
 	VOLATILE BLK request;
 	UCHAR verb;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
-
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_view_rels, DYN_REQUESTS);
 
-	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		VRL IN RDB$VIEW_RELATIONS 
-        strcpy(VRL.RDB$VIEW_NAME, view);
-		GET_STRING(ptr, VRL.RDB$RELATION_NAME);
-		VRL.RDB$CONTEXT_NAME.NULL = TRUE;
-		VRL.RDB$VIEW_CONTEXT.NULL = TRUE;
-		while ((verb = *(*ptr)++) != gds_dyn_end)
-			switch (verb)
+	bool b_ending_store = false;
+
+	try {
+
+		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			VRL IN RDB$VIEW_RELATIONS 
+			strcpy(VRL.RDB$VIEW_NAME, view);
+			GET_STRING(ptr, VRL.RDB$RELATION_NAME);
+			VRL.RDB$CONTEXT_NAME.NULL = TRUE;
+			VRL.RDB$VIEW_CONTEXT.NULL = TRUE;
+			while ((verb = *(*ptr)++) != gds_dyn_end)
 			{
-			case gds_dyn_view_context:
-				VRL.RDB$VIEW_CONTEXT = DYN_get_number(ptr);
-				VRL.RDB$VIEW_CONTEXT.NULL = FALSE;
-				break;
+				switch (verb)
+				{
+				case gds_dyn_view_context:
+					VRL.RDB$VIEW_CONTEXT = DYN_get_number(ptr);
+					VRL.RDB$VIEW_CONTEXT.NULL = FALSE;
+					break;
 
-			case gds_dyn_view_context_name:
-				GET_STRING(ptr, VRL.RDB$CONTEXT_NAME);
-				VRL.RDB$CONTEXT_NAME.NULL = FALSE;
-				break;
+				case gds_dyn_view_context_name:
+					GET_STRING(ptr, VRL.RDB$CONTEXT_NAME);
+					VRL.RDB$CONTEXT_NAME.NULL = FALSE;
+					break;
 
-			default:
-				--(*ptr);
-				DYN_execute(gbl, ptr, VRL.RDB$RELATION_NAME, (TEXT*)NULL_PTR,
-							(TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
+				default:
+					--(*ptr);
+					DYN_execute(gbl, ptr, VRL.RDB$RELATION_NAME, (TEXT*)NULL_PTR,
+								(TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
+				}
 			}
 
-#pragma FB_COMPILER_MESSAGE("TMN: FIXME! SETJMP across scope!")
+			b_ending_store = true;
+		END_STORE;
 
-		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-		tdbb->tdbb_setjmp = (UCHAR *) env;
-		if (SETJMP(env))
-		{
-			DYN_rundown_request(old_env, request, drq_s_view_rels);
+		if (!DYN_REQUEST(drq_s_view_rels)) {
+			DYN_REQUEST(drq_s_view_rels) = request;
+		}
+	}
+	catch (std::exception&) {
+		if (b_ending_store) {
+			DYN_rundown_request(0, request, drq_s_view_rels);
 			DYN_error_punt(TRUE, 34, NULL, NULL, NULL, NULL, NULL);
 			/* msg 34: "STORE RDB$VIEW_RELATIONS failed" */
 		}
-	END_STORE;
-
-	if (!DYN_REQUEST(drq_s_view_rels))
-		DYN_REQUEST(drq_s_view_rels) = request;
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+		throw;
+	}
 }
 
 
-static void check_unique_name(
-							  TDBB tdbb,
-							  GBL gbl, TEXT * object_name, BOOLEAN proc_flag)
+static void check_unique_name(	TDBB	tdbb,
+								GBL		gbl,
+								TEXT*	object_name,
+								BOOLEAN	proc_flag)
 {
 /**************************************
  *
@@ -4137,58 +4063,50 @@ static void check_unique_name(
  *	If yes then return error.
  *
  **************************************/
-	DBB dbb;
+
 	VOLATILE BLK request;
-	BOOLEAN found;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
+	bool found;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	request = NULL;
 
 	try {
 
-		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-		tdbb->tdbb_setjmp = (UCHAR *) env;
-
 		request = (BLK) CMP_find_request(tdbb, drq_l_rel_name, DYN_REQUESTS);
 
-		found = FALSE;
+		found = false;
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			EREL IN RDB$RELATIONS WITH EREL.RDB$RELATION_NAME EQ object_name
-			if (!DYN_REQUEST(drq_l_rel_name))
+			if (!DYN_REQUEST(drq_l_rel_name)) {
 				DYN_REQUEST(drq_l_rel_name) = request;
-
-			found = TRUE;
+			}
+			found = true;
 		END_FOR;
 		if (!DYN_REQUEST(drq_l_rel_name))
 			DYN_REQUEST(drq_l_rel_name) = request;
 
 		if (found) {
-			tdbb->tdbb_setjmp = (UCHAR *) old_env;
 			goto local_punt_false_132;
 		}
 
 		request = (BLK) CMP_find_request(tdbb, drq_l_prc_name, DYN_REQUESTS);
 
-		found = FALSE;
+		found = false;
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			EPRC IN RDB$PROCEDURES WITH EPRC.RDB$PROCEDURE_NAME EQ object_name
-			if (!DYN_REQUEST(drq_l_prc_name))
+			if (!DYN_REQUEST(drq_l_prc_name)) {
 				DYN_REQUEST(drq_l_prc_name) = request;
-
-			found = TRUE;
+			}
+			found = true;
 		END_FOR;
-		if (!DYN_REQUEST(drq_l_prc_name))
+		if (!DYN_REQUEST(drq_l_prc_name)) {
 			DYN_REQUEST(drq_l_prc_name) = request;
-
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
+		}
 	}
 	catch (...) {
-		DYN_rundown_request(old_env, request, -1);
+		DYN_rundown_request(0, request, -1);
 		if (!proc_flag)
 			DYN_error_punt(TRUE, 24, NULL, NULL, NULL, NULL, NULL);
 		/* msg 24: "STORE RDB$RELATIONS failed" */
@@ -4226,8 +4144,6 @@ static BOOLEAN find_field_source(TDBB	tdbb,
 
 	VOLATILE BLK request;
 	BOOLEAN found;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
 
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
@@ -4235,33 +4151,28 @@ static BOOLEAN find_field_source(TDBB	tdbb,
 	request = (BLK) CMP_find_request(tdbb, drq_l_fld_src2, DYN_REQUESTS);
 
 	try {
+		found = FALSE;
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			VRL IN RDB$VIEW_RELATIONS CROSS
+				RFR IN RDB$RELATION_FIELDS OVER RDB$RELATION_NAME
+				WITH VRL.RDB$VIEW_NAME EQ view_name AND
+				VRL.RDB$VIEW_CONTEXT EQ context AND
+				RFR.RDB$FIELD_NAME EQ local_name 
 
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
+			if (!DYN_REQUEST(drq_l_fld_src2)) {
+				DYN_REQUEST(drq_l_fld_src2) = request;
+			}
 
-	found = FALSE;
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		VRL IN RDB$VIEW_RELATIONS CROSS
-			RFR IN RDB$RELATION_FIELDS OVER RDB$RELATION_NAME
-			WITH VRL.RDB$VIEW_NAME EQ view_name AND
-			VRL.RDB$VIEW_CONTEXT EQ context AND
-			RFR.RDB$FIELD_NAME EQ local_name 
-
-        if (!DYN_REQUEST(drq_l_fld_src2))
-            DYN_REQUEST(drq_l_fld_src2) = request;
-
-		found = TRUE;
-		DYN_terminate(RFR.RDB$FIELD_SOURCE, sizeof(RFR.RDB$FIELD_SOURCE));
-		strcpy(field_name, RFR.RDB$FIELD_SOURCE);
-	END_FOR;
-	if (!DYN_REQUEST(drq_l_fld_src2))
-		DYN_REQUEST(drq_l_fld_src2) = request;
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
+			found = TRUE;
+			DYN_terminate(RFR.RDB$FIELD_SOURCE, sizeof(RFR.RDB$FIELD_SOURCE));
+			strcpy(field_name, RFR.RDB$FIELD_SOURCE);
+		END_FOR;
+		if (!DYN_REQUEST(drq_l_fld_src2)) {
+			DYN_REQUEST(drq_l_fld_src2) = request;
+		}
 	}
 	catch (...) {
-		DYN_rundown_request(old_env, request, -1);
+		DYN_rundown_request(0, request, -1);
 		DYN_error_punt(TRUE, 80, NULL, NULL, NULL, NULL, NULL);
 		/* msg 80: "Specified domain or source field does not exist" */
 	}
@@ -4283,18 +4194,12 @@ static BOOLEAN get_who( TDBB tdbb, GBL gbl, SCHAR * name)
  *
  **************************************/
 	VOLATILE BLK request;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
 
 	SET_TDBB(tdbb);
 
 	request = (BLK) CMP_find_request(tdbb, drq_l_user_name, DYN_REQUESTS);
 
 	try {
-
-		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-		tdbb->tdbb_setjmp = (UCHAR *) env;
-
 		if (!request)
 		{
 			request = (BLK) CMP_compile2(tdbb, const_cast<UCHAR*>(who_blr), TRUE);
@@ -4302,10 +4207,10 @@ static BOOLEAN get_who( TDBB tdbb, GBL gbl, SCHAR * name)
 		EXE_start(tdbb, (REQ) request, gbl->gbl_transaction);
 		EXE_receive(tdbb, (REQ) request, 0, 32, (UCHAR*)name);
 
-		DYN_rundown_request(old_env, request, drq_l_user_name);
+		DYN_rundown_request(0, request, drq_l_user_name);
 	}
 	catch (...) {
-		DYN_rundown_request(old_env, request, drq_l_user_name);
+		DYN_rundown_request(0, request, drq_l_user_name);
 		return FAILURE;
 	}
 
@@ -4313,7 +4218,7 @@ static BOOLEAN get_who( TDBB tdbb, GBL gbl, SCHAR * name)
 }
 
 
-BOOLEAN is_it_user_name(GBL gbl, TEXT * role_name, TDBB tdbb)
+BOOLEAN is_it_user_name(GBL gbl, TEXT* role_name, TDBB tdbb)
 {
 /**************************************
  *
@@ -4326,69 +4231,60 @@ BOOLEAN is_it_user_name(GBL gbl, TEXT * role_name, TDBB tdbb)
  *     if role_name is user name returns TRUE. Otherwise returns FALSE
  *
  **************************************/
-	DBB dbb;
+
 	VOLATILE BLK request;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
 	BOOLEAN found = FALSE;
 	VOLATILE USHORT request_id;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	try {
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;	/* save environment */
-	tdbb->tdbb_setjmp = (UCHAR *) env;	/* get new environment */
 
 /* If there is a user with privilege or a grantor on a relation we
    can infer there is a user with this name */
 
-	request_id = drq_get_user_priv;
-	request = (BLK) CMP_find_request(tdbb, request_id, DYN_REQUESTS);
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		PRIV IN RDB$USER_PRIVILEGES WITH
-			(PRIV.RDB$USER EQ role_name AND
-			 PRIV.RDB$USER_TYPE = obj_user) OR
-			(PRIV.RDB$GRANTOR EQ role_name AND
-			 PRIV.RDB$OBJECT_TYPE = obj_relation)
+		request_id = drq_get_user_priv;
+		request = (BLK) CMP_find_request(tdbb, request_id, DYN_REQUESTS);
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			PRIV IN RDB$USER_PRIVILEGES WITH
+				(PRIV.RDB$USER EQ role_name AND
+				 PRIV.RDB$USER_TYPE = obj_user) OR
+				(PRIV.RDB$GRANTOR EQ role_name AND
+				 PRIV.RDB$OBJECT_TYPE = obj_relation)
 
-			found = TRUE;
+				found = TRUE;
 
-	END_FOR;
+		END_FOR;
 
-	if (!DYN_REQUEST(drq_get_user_priv))
-		DYN_REQUEST(drq_get_user_priv) = request;
+		if (!DYN_REQUEST(drq_get_user_priv))
+			DYN_REQUEST(drq_get_user_priv) = request;
 
-	if (found) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;	/* restore environment */
-		return found;
-	}
+		if (found) {
+			return found;
+		}
 
 /* We can infer that 'role_name' is a user name if it owns any relations
    Note we can only get here if a user creates a table and revokes all
    his privileges on the table */
 
-	request_id = drq_get_rel_owner;
-	request = (BLK) CMP_find_request(tdbb, request_id, DYN_REQUESTS);
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		REL IN RDB$RELATIONS WITH
-			REL.RDB$OWNER_NAME EQ role_name 
+		request_id = drq_get_rel_owner;
+		request = (BLK) CMP_find_request(tdbb, request_id, DYN_REQUESTS);
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			REL IN RDB$RELATIONS WITH
+				REL.RDB$OWNER_NAME EQ role_name 
 
-        found = TRUE;
-	END_FOR;
+			found = TRUE;
+		END_FOR;
 
-	if (!DYN_REQUEST(drq_get_rel_owner))
-		DYN_REQUEST(drq_get_rel_owner) = request;
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;	/* restore environment */
-
+		if (!DYN_REQUEST(drq_get_rel_owner)) {
+			DYN_REQUEST(drq_get_rel_owner) = request;
+		}
 	}
 	catch (...) {
 		if (request) {
-			DYN_rundown_request(old_env, request, request_id);
+			DYN_rundown_request(0, request, request_id);
 		}
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;	/* restore old env */
 		ERR_punt();
 	}
 
