@@ -696,8 +696,8 @@ mkdir -p gen/firebird/UDF
 mkdir -p gen/firebird/bin
 mkdir -p gen/firebird/examples/api
 mkdir -p gen/firebird/examples/dyn
-mkdir -p gen/firebird/examples/build_unix
-mkdir -p gen/firebird/examples/build_win32
+dnl # mkdir -p gen/firebird/examples/build_unix
+dnl # mkdir -p gen/firebird/examples/build_win32
 mkdir -p gen/firebird/examples/empbuild
 mkdir -p gen/firebird/examples/include
 mkdir -p gen/firebird/examples/stat
