@@ -18,9 +18,12 @@
 #
 # Use SOLX86 to identify x86 version of Solaris.  Neil McCalden
 #  
-# $Id: prefix.solx86,v 1.2 2002-09-10 06:08:56 eku Exp $
+# $Id: prefix.solx86,v 1.3 2002-09-25 11:20:30 kkuznetsov Exp $
 #
 # Start of file prefix.solaris X 86 :	$(VERSION)	$(PLATFORM)
+
+
+
 ifeq ($(IsProdTypeBuild),Y)
 DEBUG_Sources= nodebug.cpp
 CFLAGS:=   -m486 -DPROD_BUILD $(CFLAGS)
@@ -31,9 +34,18 @@ DEBUG_Sources= nodebug.cpp
 #    DEBUG_Sources= grammar.c dbg.cpp dbt.cpp dmp.cpp
 CFLAGS:= -ggdb -DDEV_BUILD $(CFLAGS)
 endif
-		
-CFLAGS:= $(CFLAGS)  -DSOLARIS -DSOLARIS26 -DSOLARIS_MT -DSOLX86 -DBSD_COMP -DEXACT_NUMERICS -Isource/interbase/include  -Wall
 
+SFIO= /export/home/interbase/SfIO
+#SfIO is a pretty portable stdIO from http://www.research.att.com/sw/tools/sfio/
+
+
+STLPort=/export/home/kostik/STL/STLport-4.5.3/stlport	
+CFLAGS:= $(CFLAGS) -I$(STLPort)
+ifdef SFIO
+CFLAGS:= $(CFLAGS)  -DSFIO -DSOLARIS -DSOLARIS26 -DSOLARIS_MT -DSOLX86 -DBSD_COMP -DEXACT_NUMERICS -Isource/interbase/include  -Wall
+else
+CFLAGS:= $(CFLAGS)   -DSOLARIS -DSOLARIS26 -DSOLARIS_MT -DSOLX86 -DBSD_COMP -DEXACT_NUMERICS -Isource/interbase/include  -Wall
+endif
 
 
 
