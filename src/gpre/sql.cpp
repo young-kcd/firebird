@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.9 2003-02-10 13:28:18 eku Exp $
+//	$Id: sql.cpp,v 1.10 2003-03-03 08:26:35 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -110,7 +110,9 @@ static ACT act_update(void);
 static ACT act_whenever(void);
 static BOOLEAN check_filename(TEXT *);
 static void connect_opts(TEXT **, TEXT **, TEXT **, TEXT **, USHORT *);
+#ifdef FLINT_CACHE
 static FIL define_cache(void);
+#endif
 static FIL define_file(void);
 static FIL define_log_file(BOOLEAN);
 static DBB dup_dbb(DBB);
@@ -4843,7 +4845,7 @@ static void connect_opts(
 
 }
 
-
+#ifdef FLINT_CACHE
 //____________________________________________________________
 //  
 //		Add a shared cache to an existing database.
@@ -4880,7 +4882,7 @@ static FIL define_cache(void)
 
 	return file;
 }
-
+#endif
 
 //____________________________________________________________
 //  
