@@ -827,10 +827,10 @@ static CONST TEXT trigger_4_msg_0 [] = "cannot modify or erase a system trigger"
 static CONST UCHAR trigger4[] = {
 	blr_version5,
 	blr_if,
-	blr_containing,
-	blr_field, 0, 16, 'R', 'D', 'B', '$', 'T', 'R', 'I', 'G', 'G', 'E', 'R',
-		'_', 'N', 'A', 'M', 'E',
-	blr_literal, blr_text, 4, 0, 'R', 'D', 'B', '$',
+	blr_eql,
+	blr_field, 0, 15, 'R', 'D', 'B', '$', 'S', 'Y', 'S', 'T', 'E', 'M',
+		'_', 'F', 'L', 'A', 'G',
+	blr_literal, blr_short, 0, 1, 0,
 	blr_leave, 0,
 	blr_end,
 	blr_eoc

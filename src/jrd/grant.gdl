@@ -210,12 +210,12 @@ define trigger grant_revoke for rdb$user_privileges pre modify 0
 end_trigger;
 
 define trigger system_protection_1 for rdb$triggers pre modify 0
-    if old.rdb$trigger_name containing 'RDB$'
+    if old.rdb$system_flag = 1
 	abort 0;
 end_trigger;
 
 define trigger system_protection_2 for rdb$triggers pre erase 0
-    if old.rdb$trigger_name containing 'RDB$'
+    if old.rdb$system_flag = 1
 	abort 0;
 end_trigger;
 
