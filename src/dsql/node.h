@@ -898,7 +898,11 @@ enum node_args {
 	e_cur_stmt_id = 0,
 	e_cur_stmt_seek,
 	e_cur_stmt_into,
-	e_cur_stmt_count
+	e_cur_stmt_count,
+
+	e_agg_function_expression = 0,
+	e_agg_function_scope_level,
+	e_agg_function_count
 };
 
 #endif // DSQL_NODE_H

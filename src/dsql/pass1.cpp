@@ -851,10 +851,15 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					  isc_arg_gds, isc_dsql_agg_ref_err, 0);
 		}
-		node = MAKE_node(input->nod_type, input->nod_count);
+		node = MAKE_node(input->nod_type, e_agg_function_count);
+		node->nod_count = input->nod_count;  // Copy count, because this must be exactly the same as input.
 		node->nod_flags = input->nod_flags;
 		if (input->nod_count) {
-			node->nod_arg[0] = PASS1_node(request, input->nod_arg[0], proc_flag);
+			node->nod_arg[e_agg_function_expression] = PASS1_node(request, input->nod_arg[0], proc_flag);
+		}
+		else {
+			// Scope level is needed to determine to which context COUNT(*) belongs.
+			node->nod_arg[e_agg_function_scope_level] = (dsql_nod*)(IPTR) request->req_scope_level;
 		}
 		return node;
 
@@ -1696,7 +1701,8 @@ static bool aggregate_found2(const dsql_req* request, const dsql_nod* node,
 					// If we are already in a aggregate function don't search inside 
 					// sub-selects and other aggregate-functions for the deepest field 
 					// used else we would have a wrong deepest_level value.
-					aggregate_found2(request, node->nod_arg[0], current_level, &ldeepest_level, true);
+					aggregate_found2(request, node->nod_arg[e_agg_function_expression], 
+						current_level, &ldeepest_level, true);
 					if (ldeepest_level == 0) {					 
 						*deepest_level = *current_level;
 					}
@@ -1710,13 +1716,13 @@ static bool aggregate_found2(const dsql_req* request, const dsql_nod* node,
 					}
 					else {
 						// Check also for a nested aggregate that could belong to this context
-						aggregate |= aggregate_found2(request, node->nod_arg[0], 
+						aggregate |= aggregate_found2(request, node->nod_arg[e_agg_function_expression], 
 							current_level, &ldeepest_level, false);
 					}
 				}
 				else {
 					// we have Count(*)
-					if (*current_level == request->req_scope_level) {
+					if (request->req_scope_level == (USHORT)(U_IPTR)node->nod_arg[e_agg_function_scope_level]) {
 						aggregate = true;
 					}
 				}
@@ -2487,7 +2493,7 @@ static bool invalid_reference(const dsql_ctx* context, const dsql_nod* node,
 				// We are not in an aggregate from the same scope_level so 
 				// check for valid fields inside this aggregate
 				if (node->nod_count) {
-					invalid |= invalid_reference(context, node->nod_arg[0], list, 
+					invalid |= invalid_reference(context, node->nod_arg[e_agg_function_expression], list, 
 						inside_own_map, inside_higher_map);
 				}
 			} 
@@ -2497,7 +2503,7 @@ static bool invalid_reference(const dsql_ctx* context, const dsql_nod* node,
 					// an higher one then it's a invalid aggregate, because
 					// aggregate-functions from the same context can't 
 					// be part of each other. 
-					if (pass1_found_aggregate(node->nod_arg[0], context->ctx_scope_level,
+					if (pass1_found_aggregate(node->nod_arg[e_agg_function_expression], context->ctx_scope_level,
 							FIELD_MATCH_TYPE_EQUAL, true)) 
 					{
 						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
@@ -4204,8 +4210,8 @@ static bool pass1_found_aggregate(const dsql_nod* node, USHORT check_scope_level
 			{
 				bool field = false;
 				if (node->nod_count) {
-					found |= pass1_found_field(node->nod_arg[0], check_scope_level, 
-						match_type, &field);
+					found |= pass1_found_field(node->nod_arg[e_agg_function_expression], 
+						check_scope_level, match_type, &field);
 				}
 				if (!field) {
 					/* For example COUNT(*) is always same scope_level (node->nod_count = 0) 
@@ -4430,8 +4436,8 @@ static bool pass1_found_field(const dsql_nod* node, USHORT check_scope_level,
 		case nod_agg_average2:
 		case nod_agg_total2:
 			if (node->nod_count) {
-				found |= pass1_found_field(node->nod_arg[0], check_scope_level, 
-					match_type, field);
+				found |= pass1_found_field(node->nod_arg[e_agg_function_expression], 
+					check_scope_level, match_type, field);
 			}
 			break;
 
@@ -6708,16 +6714,18 @@ static dsql_nod* remap_field(dsql_req* request, dsql_nod* field,
 					}
 					else {
 						if (field->nod_count) {
-							field->nod_arg[0] =
-								 remap_field(request, field->nod_arg[0], context, current_level);
+							field->nod_arg[e_agg_function_expression] =
+								 remap_field(request, field->nod_arg[e_agg_function_expression], 
+								 context, current_level);
 						}
 						return field;
 					}
 				}
 				else {
 					if (field->nod_count) {
-						field->nod_arg[0] =
-							 remap_field(request, field->nod_arg[0], context, current_level);
+						field->nod_arg[e_agg_function_expression] =
+							 remap_field(request, field->nod_arg[e_agg_function_expression], 
+							 context, current_level);
 					}
 					return field;
 				}
