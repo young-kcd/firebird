@@ -1,3 +1,166 @@
+2003-11-12 19:30  dimitr
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Fixed new bug with explicit plans.
+
+2003-11-12 19:23  dimitr
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Fixed new bug with explicit plans.
+
+2003-11-12 10:02  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/majorvers.c:
+	
+	file majorvers.c was initially added on branch B1_5_Release.
+
+2003-11-12 10:02  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/minorvers.c:
+	
+	file minorvers.c was initially added on branch B1_5_Release.
+
+2003-11-12 10:02  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/: majorvers.c,
+	minorvers.c:
+	
+	Need the source files too
+
+2003-11-12 10:00  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/: FB.info, Info.plist,
+	Makefile.in:
+	
+	Fix up a few more version strings
+
+2003-11-12 09:34  bellardo
+
+	*
+	
+	file installer_background.psd was initially added on branch
+	B1_5_Release.
+	firebird2/src/install/arch-specific/darwin/installer_background.psd
+	:
+
+2003-11-12 09:34  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/: Makefile.in,
+	installer_background.pdf, installer_background.psd:
+	
+	Add a background image to the installer
+
+2003-11-12 09:34  bellardo
+
+	*
+	
+	file installer_background.pdf was initially added on branch
+	B1_5_Release.
+	firebird2/src/install/arch-specific/darwin/installer_background.pdf
+	:
+
+2003-11-12 08:10  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/fullvers.c:
+	
+	file fullvers.c was initially added on branch B1_5_Release.
+
+2003-11-12 08:10  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/buildsuffix.c:
+	
+	file buildsuffix.c was initially added on branch B1_5_Release.
+
+2003-11-12 08:10  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/: Description.plist,
+	Info.plist, Makefile.in, buildsuffix.c, fullvers.c:
+	
+	Determine the build version automatically
+
+2003-11-12 07:17  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/: install-script,
+	preinstall-script, preupgrade-script:
+	
+	Saved/Restore security.fdb when doing an "upgrade" install
+
+2003-11-12 06:57  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/FB.info:
+	
+	file FB.info was initially added on branch B1_5_Release.
+
+2003-11-12 06:57  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/: Description.plist,
+	FB.info, Info.plist, License.txt, Makefile.in, PkgInfo, ReadMe.txt,
+	Welcome.txt, install-script, preinstall-script, preupgrade-script:
+	
+	Darwin installer files
+
+2003-11-12 06:57  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/Welcome.txt:
+	
+	file Welcome.txt was initially added on branch B1_5_Release.
+
+2003-11-12 06:57  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/ReadMe.txt:
+	
+	file ReadMe.txt was initially added on branch B1_5_Release.
+
+2003-11-12 06:57  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/Info.plist:
+	
+	file Info.plist was initially added on branch B1_5_Release.
+
+2003-11-12 06:57  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/Description.plist:
+	
+	file Description.plist was initially added on branch B1_5_Release.
+
+2003-11-12 06:57  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/PkgInfo:
+	
+	file PkgInfo was initially added on branch B1_5_Release.
+
+2003-11-12 06:57  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/preinstall-script:
+	
+	file preinstall-script was initially added on branch B1_5_Release.
+
+2003-11-12 06:57  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/install-script:
+	
+	file install-script was initially added on branch B1_5_Release.
+
+2003-11-12 06:57  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/License.txt:
+	
+	file License.txt was initially added on branch B1_5_Release.
+
+2003-11-12 06:57  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/preupgrade-script:
+	
+	file preupgrade-script was initially added on branch B1_5_Release.
+
+2003-11-12 00:57  stryqx
+
+	* firebird2/src/common/classes/: locks.h, locks.h:
+	
+	Fix the spinlocks case for FreeBSD 4.x
+
 2003-11-11 15:47  eku
 
 	* firebird2/src/dsql/parse.y:
