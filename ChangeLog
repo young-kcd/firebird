@@ -1,3 +1,25 @@
+2004-08-22 23:31  skidder
+
+	* firebird2/src/common/classes/: class_perf.cpp (1.14),
+	class_test.cpp (1.20), test.sh (1.13):
+	
+	Update memory manager tests
+
+2004-08-22 23:28  skidder
+
+	* firebird2/src/common/classes/: alloc.cpp (1.61), alloc.h (1.48):
+	
+	Slightly streamline logic of allocation critical path. Correct 2
+	memory manager bugs added during last optimization attempt. We are
+	now ~40faster than malloc from GLIBC 2.3
+
+2004-08-22 23:09  skidder
+
+	* firebird2/src/common/classes/tree.h (1.40):
+	
+	Use fine-tuned tree page sizes by default. This increases tree
+	performance by ~7 We are now 1.5 times faster than GNU STL tree
+
 2004-08-22 03:00  arnobrinkman
 
 	* firebird2/src/jrd/btr.cpp (1.110):
