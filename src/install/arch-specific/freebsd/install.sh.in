@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: install.sh.in,v 1.1.2.4 2004-01-12 06:27:33 stryqx Exp $
+#   $Id: install.sh.in,v 1.1.2.5 2004-01-14 09:57:00 stryqx Exp $
 # 
 
 #  Install script for FirebirdSQL database engine
@@ -198,11 +198,11 @@ echo "# ------------------------------" >> $DestDir/aliases.conf.sample
 echo "#" >> $DestDir/aliases.conf.sample
 echo "# Examples:" >> $DestDir/aliases.conf.sample
 echo "#" >> $DestDir/aliases.conf.sample
-echo "# employee = /$DestDir/examples/employee.fdb" >> $DestDir/aliases.conf.sample
+echo "# employee = $DestDir/examples/employee.fdb" >> $DestDir/aliases.conf.sample
 echo "#" >> $DestDir/aliases.conf.sample
     
 
-chown -R firebird:firebird $InstallFirebirdPrefix
+chown -R $fbUID:$fbGID $InstallFirebirdPrefix
 chmod -R o= $InstallFirebirdPrefix
 
 # Now fix up the mess.
@@ -265,11 +265,11 @@ do
 	FileName=$i.`hostname`
 	touch $FileName
 	chmod ug=rw,o= $FileName
-	chown firebird:firebird $FileName
+	chown $fbUID:$fbGID $FileName
 done
 
 touch firebird.log
-chown firebird:firebird firebird.log
+chown $fbUID:$fbGID firebird.log
 chmod ug=rw,o= firebird.log
 chmod a=r firebird.msg README
 chown root:wheel *.sample
@@ -281,9 +281,9 @@ chmod ug=rw,o= examples/*.fdb
 chmod ug=rw,o= help/*.fdb
 
 # install the samples if they don't exist
-[ -f aliases.conf ] || install -o firebird -g firebird -m 440 aliases.conf.sample aliases.conf
-[ -f firebird.conf ] || install -o firebird -g firebird -m 440 firebird.conf.sample firebird.conf
-[ -f security.fdb ] || install -o firebird -g firebird -m 660 security.fdb.sample security.fdb
+[ -f aliases.conf ] || install -o $fbUID -g $fbGID -m 440 aliases.conf.sample aliases.conf
+[ -f firebird.conf ] || install -o $fbUID -g $fbGID -m 440 firebird.conf.sample firebird.conf
+[ -f security.fdb ] || install -o $fbUID -g $fbGID -m 660 security.fdb.sample security.fdb
 
 # remove any existing gds service
 cp /etc/services /etc/services.old
