@@ -104,6 +104,7 @@ static USHORT distribute_equalities(LLS *, Csb*, USHORT);
 static bool dump_index(const jrd_nod*, SCHAR**, SSHORT*);
 static bool dump_rsb(const jrd_req*, const Rsb*, SCHAR**, SSHORT*);
 static bool estimate_cost(thread_db*, OPT, USHORT, double *, double *);
+static bool expression_contains(const jrd_nod*, NOD_T, bool, bool);
 #ifdef EXPRESSION_INDICES
 static bool expression_equal(thread_db*, jrd_nod*, jrd_nod*);
 #endif
@@ -180,7 +181,8 @@ static SSHORT sort_indices_by_priority(Csb::csb_repeat*, IDX **, UINT64 *);
 #define DEBUG_NONE		0
 
 IB_FILE *opt_debug_file = 0;
-static int opt_debug_flag = DEBUG_NONE;
+static int opt_debug_flag = DEBUG_RELATIONSHIPS;
+//static int opt_debug_flag = DEBUG_NONE;
 #endif
 
 inline void SET_DEP_BIT(ULONG* array, const SLONG bit)
@@ -361,10 +363,9 @@ Rsb* OPT_compile(thread_db* tdbb,
 	jrd_nod* project = rse->rse_projection;
 	jrd_nod* aggregate = rse->rse_aggregate;
 
-// put any additional booleans on the conjunct stack, and see if we 
-// can generate additional booleans by associativity--this will help 
-// to utilize indices that we might not have noticed
-
+	// put any additional booleans on the conjunct stack, and see if we 
+	// can generate additional booleans by associativity--this will help 
+	// to utilize indices that we might not have noticed
 	if (rse->rse_boolean) {
 		conjunct_count =
 			decompose(tdbb, rse->rse_boolean, &conjunct_stack, csb);
@@ -372,19 +373,26 @@ Rsb* OPT_compile(thread_db* tdbb,
 
 	conjunct_count += distribute_equalities(&conjunct_stack, csb, conjunct_count);
 
-// find the end of the conjunct stack.
+	// find the end of the conjunct stack.
 	lls** stack_end = &conjunct_stack;
 	while (*stack_end) {
 		stack_end = &(*stack_end)->lls_next;
 	}
 
-// clear the csb_active flag of all streams in the rse
+	// AB: If we have limit our retrieval with FIRST / SKIP syntax then
+	// we may not deliver above conditions (from higher rse's) to this 
+	// rse, because the results should be consistent.
+    if (rse->rse_skip || rse->rse_first) {
+		parent_stack = NULL;
+	}
+
+	// clear the csb_active flag of all streams in the rse
 	set_rse_inactive(csb, rse);
 
 	UCHAR* p = streams + 1;
 
-// go through the record selection expression generating 
-// record source blocks for all streams
+	// go through the record selection expression generating 
+	// record source blocks for all streams
 
 	// CVC: I defined this var here because it's assigned inside an if() shortly
 	// below but it's used later in the loop always, so I assume the idea is that
@@ -461,9 +469,40 @@ Rsb* OPT_compile(thread_db* tdbb,
 						csb->csb_rpt[outer_streams[i]].csb_flags |= csb_active;
 					}
 				}
-				*stack_end = parent_stack;
+
+				lls** stackSavepoint = &conjunct_stack;
+				if (rse->rse_jointype != blr_inner) {
+					// Make list of nodes that can be delivered to a outer-stream.
+					// In fact this are all nodes except IS NULL (nod_missing).
+					// Note! That for OR nodes this meant the whole node must be ignored.
+					lls** stackItem = &parent_stack;
+					for (; *stackItem; stackItem = &(*stackItem)->lls_next) {
+						jrd_nod* deliverNode = (jrd_nod*) (*stackItem)->lls_object;
+						if (!expression_contains(deliverNode, nod_missing, true, true)) {
+							LLS_PUSH(deliverNode, &conjunct_stack);
+						}
+					}
+				}
+				else {
+					*stack_end = parent_stack;
+				}
+
 				rsb = OPT_compile(tdbb, csb, (RSE) node, conjunct_stack);
-				*stack_end = NULL;
+
+				if (rse->rse_jointype != blr_inner) {
+					if (parent_stack) {
+						// Remove previously added parent conjuctions from the stack.
+						lls** stackItem = &conjunct_stack;
+						for (; stackSavepoint != stackItem; stackItem = &(*stackItem)->lls_next) {
+							LLS_POP(&conjunct_stack);
+						}
+					}
+				}
+				else {
+					*stack_end = NULL;
+				}
+
+
 				if (rse->rse_jointype == blr_left) {
 					for (SSHORT i = 1; i <= outer_streams[0]; i++) {
 						csb->csb_rpt[outer_streams[i]].csb_flags &= ~csb_active;
@@ -543,36 +582,37 @@ Rsb* OPT_compile(thread_db* tdbb,
 		}
 	}
 
-// this is an attempt to make sure we have a large enough cache to 
-// efficiently retrieve this query; make sure the cache has a minimum
-// number of pages for each stream in the RSE (the number is just a guess)
+	// this is an attempt to make sure we have a large enough cache to 
+	// efficiently retrieve this query; make sure the cache has a minimum
+	// number of pages for each stream in the RSE (the number is just a guess)
 	if (streams[0] > 5) {
 		CCH_expand(tdbb, (ULONG) (streams[0] * CACHE_PAGES_PER_STREAM));
 	}
 
-// At this point we are ready to start optimizing.  
-// We will use the opt block to hold information of
-// a global nature, meaning that it needs to stick 
-// around for the rest of the optimization process.
+	// At this point we are ready to start optimizing.  
+	// We will use the opt block to hold information of
+	// a global nature, meaning that it needs to stick 
+	// around for the rest of the optimization process.
 
-// first fill out the conjuncts at the end of opt
+	// first fill out the conjuncts at the end of opt
 	opt_->opt_base_conjuncts = (SSHORT) conjunct_count;
 
-// Check if size of optimizer block exceeded.
+	// Check if size of optimizer block exceeded.
 	if (conjunct_count > MAX_CONJUNCTS) {
 		ERR_post(isc_optimizer_blk_exc, 0);
 		// Msg442: size of optimizer block exceeded
 	}
 
-// AB: Because know we're going to use both parent & conjunct_stack
-//   try to again to make additional conjuncts for an inner join,
-//   but be sure that opt_->opt_base_conjuncts contains the real "base"
+	// AB: Because know we're going to use both parent & conjunct_stack
+	//   try to again to make additional conjuncts for an inner join,
+	//   but be sure that opt_->opt_base_conjuncts contains the real "base"
 
-// find the end of the conjunct stack.
+	// find the end of the conjunct stack.
 	for (stack_end = &conjunct_stack; *stack_end;
 		 stack_end = &(*stack_end)->lls_next);
 	const SLONG saved_conjunct_count = conjunct_count;
-	*stack_end = parent_stack;
+
+	*stack_end = parent_stack;		
 	conjunct_count += distribute_equalities(&conjunct_stack, csb, conjunct_count);
 	if (parent_stack) {
 		// Find parent_stack position and reset it to NULL
@@ -590,7 +630,7 @@ Rsb* OPT_compile(thread_db* tdbb,
 	
 	SSHORT i;
 
-// AB: If equality nodes could be made get them first from the stack
+	// AB: If equality nodes could be made get them first from the stack
 	for (i = saved_conjunct_count; i < conjunct_count; i++) {
 		jrd_nod* node = (jrd_nod*) LLS_POP(&conjunct_stack);
 		opt_->opt_conjuncts[i].opt_conjunct_node = node;
@@ -603,25 +643,25 @@ Rsb* OPT_compile(thread_db* tdbb,
 		compute_dependencies(node, opt_->opt_conjuncts[i].opt_dependencies);
 	}
 
-// Store the conjuncts from the parent rse.  But don't fiddle with
-// the parent's stack itself.
+	// Store the conjuncts from the parent rse.  But don't fiddle with
+	// the parent's stack itself.
 	for (; parent_stack && conjunct_count < MAX_CONJUNCTS;
-		 parent_stack = parent_stack->lls_next, conjunct_count++)
+		parent_stack = parent_stack->lls_next, conjunct_count++)
 	{
 		opt_->opt_conjuncts.grow(conjunct_count + 1);
 		jrd_nod* node = (jrd_nod*) parent_stack->lls_object;
 		opt_->opt_conjuncts[conjunct_count].opt_conjunct_node = node;
 		compute_dependencies(node,
-							 opt_->opt_conjuncts[conjunct_count].opt_dependencies);
+							opt_->opt_conjuncts[conjunct_count].opt_dependencies);
 	}
 
-// Check if size of optimizer block exceeded.
+	// Check if size of optimizer block exceeded.
 	if (parent_stack) {
 		ERR_post(isc_optimizer_blk_exc, 0);
 		// Msg442: size of optimizer block exceeded
 	}
 
-// attempt to optimize aggregates via an index, if possible
+	// attempt to optimize aggregates via an index, if possible
 	if (aggregate && !sort && !project) {
 		sort = aggregate;
 	}
@@ -629,12 +669,12 @@ Rsb* OPT_compile(thread_db* tdbb,
 		rse->rse_aggregate = aggregate = NULL;
 	}
 
-// AB: Mark the previous used streams (sub-rse's) as active
+	// AB: Mark the previous used streams (sub-rse's) as active
 	for (i = 1; i <= sub_streams[0]; i++) {
 		csb->csb_rpt[sub_streams[i]].csb_flags |= csb_active;			
 	}
 
-// outer joins require some extra processing
+	// outer joins require some extra processing
 	if (rse->rse_jointype != blr_inner) {
 		rsb = gen_outer(tdbb, opt_, rse, rivers_stack, &sort, &project);
 	}
@@ -2672,6 +2712,46 @@ static bool estimate_cost(thread_db* tdbb,
 
 	// AB: Nice that we return a boolean, but do we ever need it?
 	return (indexes != 0);
+}
+
+
+static bool expression_contains(const jrd_nod* node, NOD_T node_type, bool go_into_or, bool go_into_and)
+{
+/**************************************
+ *
+ *      e x p r e s s i o n _ c o n t a i n s
+ *
+ **************************************
+ *
+ * Functional description
+ *  Search if somewhere in the expression the give 
+ *  node_type is burried.
+ *
+ **************************************/
+	DEV_BLKCHK(node, type_nod);
+
+	if (!node) {
+		return false;
+	}
+
+	if (node->nod_type == node_type) {
+		return true;
+	}
+	else {
+
+		if (go_into_or && (node->nod_type == nod_or)) {
+			return expression_contains(node->nod_arg[0], node_type, go_into_or, go_into_and) ||
+				expression_contains(node->nod_arg[1], node_type, go_into_or, go_into_and);
+		}
+
+		if (go_into_and && (node->nod_type == nod_and)) {
+			return expression_contains(node->nod_arg[0], node_type, go_into_or, go_into_and) ||
+				expression_contains(node->nod_arg[1], node_type, go_into_or, go_into_and);
+		}
+
+		return false;
+	}
+
 }
 
 
