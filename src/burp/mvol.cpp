@@ -633,7 +633,7 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 						tdgbl->action->act_file->fil_fd = INVALID_HANDLE_VALUE;
 						BURP_print(272,
 									tdgbl->action->act_file->fil_name,
-									(TEXT *) tdgbl->action->act_file->fil_length,
+									(void*) tdgbl->action->act_file->fil_length,
 									tdgbl->action->act_file->fil_next->fil_name,
 									0, 0);	// msg 272 Warning -- free disk space exhausted for file %s, the rest of the bytes (%d) will be written to file %s 
 						tdgbl->action->act_file->fil_next->fil_length +=
@@ -772,7 +772,7 @@ static void bad_attribute(USHORT attribute, USHORT type)
 	TGBL tdgbl = GET_THREAD_DATA;
 
 	gds__msg_format(0, 12, type, sizeof(name), name, 0, 0, 0, 0, 0);
-	BURP_print(80, name, (TEXT *) (ULONG) attribute, NULL, NULL, NULL);
+	BURP_print(80, name, (void*) (ULONG) attribute, NULL, NULL, NULL);
 	// msg 80  don't recognize %s attribute %ld -- continuing 
 	SSHORT l = GET();
 	if (l)
@@ -932,7 +932,7 @@ static DESC next_volume( DESC handle, int mode, bool full_buffer)
 			}
 			else
 			{
-				BURP_msg_put(261, (TEXT *) (SLONG) (tdgbl->mvol_volume_count),
+				BURP_msg_put(261, (void*) (SLONG) (tdgbl->mvol_volume_count),
 							 new_file, 0, 0, 0);
 				// Starting with volume #vol_count, new_file 
 				BURP_verbose(75, new_file, 0, 0, 0, 0);	// msg 75  creating file %s 
@@ -949,7 +949,7 @@ static DESC next_volume( DESC handle, int mode, bool full_buffer)
 			}
 			else
 			{
-				BURP_msg_put(261, (TEXT *) (SLONG) (tdgbl->mvol_volume_count),
+				BURP_msg_put(261, (void*) (SLONG) (tdgbl->mvol_volume_count),
 							 new_file, 0, 0, 0);
 				// Starting with volume #vol_count, new_file 
 				BURP_verbose(100, new_file, 0, 0, 0, 0);	// msg 100  opened file %s 
@@ -997,7 +997,7 @@ static void prompt_for_name(SCHAR* name, int length)
 
 		if (strlen(tdgbl->mvol_old_file) > 0)
 		{
-			BURP_msg_get(225, msg, (TEXT *) (SLONG) (tdgbl->mvol_volume_count - 1),
+			BURP_msg_get(225, msg, (void*) (SLONG) (tdgbl->mvol_volume_count - 1),
 						 tdgbl->mvol_old_file, 0, 0, 0);
 			ib_fprintf(term_out, msg);
 			BURP_msg_get(226, msg, 0, 0, 0, 0, 0);
@@ -1226,8 +1226,8 @@ static bool read_header(DESC    handle,
 			if (temp != tdgbl->mvol_volume_count)
 			{
 				BURP_msg_get(232, msg,
-							 (TEXT *) (SLONG) (tdgbl->mvol_volume_count),
-							 (TEXT *) (SLONG) temp, 0, 0, 0);
+							 (void*) (SLONG) (tdgbl->mvol_volume_count),
+							 (void*) (SLONG) temp, 0, 0, 0);
 				/* Expected volume number %d, found volume %d\n */
 				ib_printf(msg);
 				return false;

@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.37 2003-09-12 23:25:16 brodsom Exp $
+$Id: backup.epp,v 1.38 2003-09-14 01:08:18 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -501,7 +501,7 @@ int BACKUP_backup(TEXT* dbb_file, const TEXT* file_name)
 	UINT64 cumul_count = MVOL_fini_write(&tdgbl->io_cnt, &tdgbl->io_ptr);
 	if (cumul_count <= MAX_SLONG) {
 		SLONG tempcount = cumul_count;
-		BURP_verbose(176, (TEXT *) tempcount, NULL, NULL, NULL, NULL);
+		BURP_verbose(176, (void*) tempcount, NULL, NULL, NULL, NULL);
 		/* msg 176 closing file, committing, and finishing.  %ld bytes written */
 	} else {
 		char psz[64];

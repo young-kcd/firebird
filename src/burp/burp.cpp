@@ -596,8 +596,10 @@ int BURP_gbak(int		argc,
 			}
 			in_sw_tab->in_sw_state = TRUE;
 			if (!in_sw_tab->in_sw) {
-				BURP_print(137, string + 1, 0, 0, 0, 0);	// msg 137  unknown switch %s 
-				BURP_print(95, 0, 0, 0, 0, 0);	// msg 95  legal switches are 
+				BURP_print(137, string + 1, 0, 0, 0, 0);
+				// msg 137  unknown switch %s 
+				BURP_print(95, 0, 0, 0, 0, 0);
+				// msg 95  legal switches are
 				for (in_sw_tab = burp_in_sw_table; in_sw_tab->in_sw;
 					 in_sw_tab++)
 					if (in_sw_tab->in_sw_msg) {
@@ -605,8 +607,10 @@ int BURP_gbak(int		argc,
 									 0, 0);
 					}
 
-				BURP_print(132, 0, 0, 0, 0, 0);	// msg 132 switches can be abbreviated to one character 
-				BURP_error(1, 0, 0, 0, 0, 0);	// msg 1: found unknown switch 
+				BURP_print(132, 0, 0, 0, 0, 0);
+				// msg 132 switches can be abbreviated to one character 
+				BURP_error(1, 0, 0, 0, 0, 0);
+				// msg 1: found unknown switch 
 			}
 			else if (in_sw_tab->in_sw == IN_SW_BURP_S) {
 				if (argv >= end)
@@ -620,59 +624,71 @@ int BURP_gbak(int		argc,
 			}
 			else if (in_sw_tab->in_sw == IN_SW_BURP_P) {
 				if (argv >= end)
-					BURP_error(2, 0, 0, 0, 0, 0);	// msg 2 page size parameter missing 
+					BURP_error(2, 0, 0, 0, 0, 0);
+					// msg 2 page size parameter missing 
 				tdgbl->gbl_sw_page_size = (USHORT) get_number(*argv);
 				if (!tdgbl->gbl_sw_page_size)
-					BURP_error(12, *argv, 0, 0, 0, 0);	// msg 12 expected page size, encountered "%s" 
+					BURP_error(12, *argv, 0, 0, 0, 0);
+					// msg 12 expected page size, encountered "%s" 
 				argv++;
 			}
 			else if (in_sw_tab->in_sw == IN_SW_BURP_BU) {
 				if (argv >= end)
-					BURP_error(258, 0, 0, 0, 0, 0);	// msg 258 page buffers parameter missing 
+					BURP_error(258, 0, 0, 0, 0, 0);
+					// msg 258 page buffers parameter missing 
 				tdgbl->gbl_sw_page_buffers = get_number(*argv);
 				if (!tdgbl->gbl_sw_page_buffers)
-					BURP_error(259, *argv, 0, 0, 0, 0);	// msg 259 expected page buffers, encountered "%s" 
+					BURP_error(259, *argv, 0, 0, 0, 0);
+					// msg 259 expected page buffers, encountered "%s" 
 				argv++;
 			}
 			else if (in_sw_tab->in_sw == IN_SW_BURP_MODE) {
 				if (argv >= end)
-					BURP_error(279, 0, 0, 0, 0, 0);	// msg 279: "read_only" or "read_write" required 
+					BURP_error(279, 0, 0, 0, 0, 0);
+					// msg 279: "read_only" or "read_write" required 
 				string = *argv++;
 				if (!strcmp(string, BURP_SW_MODE_RO))
 					tdgbl->gbl_sw_mode_val = true;
 				else if (!strcmp(string, BURP_SW_MODE_RW))
 					tdgbl->gbl_sw_mode_val = false;
 				else
-					BURP_error(279, 0, 0, 0, 0, 0);	// msg 279: "read_only" or "read_write" required 
+					BURP_error(279, 0, 0, 0, 0, 0);
+					// msg 279: "read_only" or "read_write" required 
 				tdgbl->gbl_sw_mode = true;
 			}
 			else if (in_sw_tab->in_sw == IN_SW_BURP_PASS) {
 				if (argv >= end)
-					BURP_error(189, 0, 0, 0, 0, 0);	// password parameter missing 
+					BURP_error(189, 0, 0, 0, 0, 0);
+					// password parameter missing 
 				tdgbl->gbl_sw_password = *argv++;
 			}
 			else if (in_sw_tab->in_sw == IN_SW_BURP_USER) {
 				if (argv >= end)
-					BURP_error(188, 0, 0, 0, 0, 0);	// user name parameter missing 
+					BURP_error(188, 0, 0, 0, 0, 0);
+					// user name parameter missing 
 				tdgbl->gbl_sw_user = *argv++;
 			}
 			else if (in_sw_tab->in_sw == IN_SW_BURP_ROLE) {
 				if (argv >= end)
-					BURP_error(253, 0, 0, 0, 0, 0);	// SQL role parameter missing 
+					BURP_error(253, 0, 0, 0, 0, 0);
+					// SQL role parameter missing 
 				tdgbl->gbl_sw_sql_role = *argv++;
 			}
 			else if (in_sw_tab->in_sw == IN_SW_BURP_FA) {
 				if (argv >= end)
-					BURP_error(182, 0, 0, 0, 0, 0);	// msg 182 blocking factor parameter missing 
+					BURP_error(182, 0, 0, 0, 0, 0);
+					// msg 182 blocking factor parameter missing 
 				tdgbl->gbl_sw_blk_factor =
 					(volatile USHORT) get_number(*argv);
 				if (!tdgbl->gbl_sw_blk_factor)
-					BURP_error(183, *argv, 0, 0, 0, 0);	// msg 183 expected blocking factor, encountered "%s"  
+					BURP_error(183, *argv, 0, 0, 0, 0);	
+					// msg 183 expected blocking factor, encountered "%s"  
 				argv++;
 			}
 			else if (in_sw_tab->in_sw == IN_SW_BURP_SE) {
 				if (argv >= end) {
-					BURP_error(273, 0, 0, 0, 0, 0);	// msg 273: service name parameter missing 
+					BURP_error(273, 0, 0, 0, 0, 0);
+					// msg 273: service name parameter missing 
 				}
 				in_sw_tab->in_sw_state = FALSE;
 				++argv;			// skip a service specification 
@@ -687,7 +703,8 @@ int BURP_gbak(int		argc,
 				else
 					++argv;
 				if (!redirect)
-					BURP_error(4, 0, 0, 0, 0, 0);	// msg 4 redirect location for output is not specified 
+					BURP_error(4, 0, 0, 0, 0, 0);
+				// msg 4 redirect location for output is not specified 
 
 				const TEXT *p = redirect;
 				TEXT c;
@@ -699,7 +716,7 @@ int BURP_gbak(int		argc,
 						break;
 					}
 				}
-				if (tdgbl->sw_redirect == TRUE) {	// not FALSE, and not NOOUTPUT 
+				if (tdgbl->sw_redirect == TRUE) { // not FALSE, and not NOOUTPUT 
 
 					// Make sure the status file doesn't already exist 
 					IB_FILE* tmp_outfile = ib_fopen(redirect, FOPEN_READ_TYPE);
@@ -741,9 +758,11 @@ int BURP_gbak(int		argc,
 		else if (!file2)
 			file2 = file->fil_name;
 		for (file_list = file->fil_next; file_list;
-			 file_list = file_list->fil_next) {
+			 file_list = file_list->fil_next)
+		{
 			if (!strcmp(file->fil_name, file_list->fil_name))
-				BURP_error(9, 0, 0, 0, 0, 0);	// msg 9 mutiple sources or destinations specified 
+				BURP_error(9, 0, 0, 0, 0, 0);
+			// msg 9 mutiple sources or destinations specified 
 		}
 
 	}
@@ -762,13 +781,15 @@ int BURP_gbak(int		argc,
 			switch (in_sw_tab->in_sw) {
 			case (IN_SW_BURP_B):
 				if (sw_replace)
-					BURP_error(5, 0, 0, 0, 0, 0);	// msg 5 conflicting switches for backup/restore 
+					BURP_error(5, 0, 0, 0, 0, 0);
+				// msg 5 conflicting switches for backup/restore 
 				sw_replace = IN_SW_BURP_B;
 				break;
 
 			case (IN_SW_BURP_C):
 				if (sw_replace == IN_SW_BURP_B)
-					BURP_error(5, 0, 0, 0, 0, 0);	// msg 5 conflicting switches for backup/restore 
+					BURP_error(5, 0, 0, 0, 0, 0);
+				// msg 5 conflicting switches for backup/restore 
 				if (sw_replace != IN_SW_BURP_R)
 					sw_replace = IN_SW_BURP_C;
 				break;
@@ -849,7 +870,8 @@ int BURP_gbak(int		argc,
 
 			case (IN_SW_BURP_R):
 				if (sw_replace == IN_SW_BURP_B)
-					BURP_error(5, 0, 0, 0, 0, 0);	// msg 5 conflicting switches for backup/restore 
+					BURP_error(5, 0, 0, 0, 0, 0);
+				// msg 5 conflicting switches for backup/restore 
 				sw_replace = IN_SW_BURP_R;
 				break;
 
@@ -858,7 +880,8 @@ int BURP_gbak(int		argc,
 				break;
 
 			case (IN_SW_BURP_U):
-				BURP_error(7, 0, 0, 0, 0, 0);	// msg 7 protection isn't there yet 
+				BURP_error(7, 0, 0, 0, 0, 0);
+				// msg 7 protection isn't there yet 
 				break;
 
 			case (IN_SW_BURP_US):
@@ -890,7 +913,8 @@ int BURP_gbak(int		argc,
 				break;
 
 			case (IN_SW_BURP_Z):
-				BURP_print(91, (void*) GDS_VERSION, 0, 0, 0, 0);	// msg 91 gbak version %s 
+				BURP_print(91, (void*) GDS_VERSION, 0, 0, 0, 0);
+				// msg 91 gbak version %s 
 				tdgbl->gbl_sw_version = TRUE;
 				break;
 
@@ -906,7 +930,8 @@ int BURP_gbak(int		argc,
 	if (tdgbl->gbl_sw_page_size)
 	{
 		if (sw_replace == IN_SW_BURP_B)
-			BURP_error(8, 0, 0, 0, 0, 0);	// msg 8 page size is allowed only on restore or create 
+			BURP_error(8, 0, 0, 0, 0, 0);
+		// msg 8 page size is allowed only on restore or create 
 		int temp = tdgbl->gbl_sw_page_size;
 		{
 			int curr_pg_size = 1024;
@@ -932,26 +957,30 @@ int BURP_gbak(int		argc,
 #endif
 		}
 		if (temp != tdgbl->gbl_sw_page_size) {
-			BURP_print(103, (TEXT *) (ULONG) tdgbl->gbl_sw_page_size
-					   , (TEXT *) (SLONG) temp,
-					   0, 0, 0);	// msg 103 page size specified (%ld bytes) rounded up to %ld bytes 
+			BURP_print(103, (void*)(ULONG) tdgbl->gbl_sw_page_size
+					   , (void*)(SLONG) temp,
+					   0, 0, 0);
+			// msg 103 page size specified (%ld bytes) rounded up to %ld bytes 
 			tdgbl->gbl_sw_page_size = temp;
 		}
 	}
 
 	if (tdgbl->gbl_sw_page_buffers) {
 		if (sw_replace == IN_SW_BURP_B)
-			BURP_error(260, 0, 0, 0, 0, 0);	// msg 260 page buffers is allowed only on restore or create 
+			BURP_error(260, 0, 0, 0, 0, 0);
+		// msg 260 page buffers is allowed only on restore or create 
 	}
 
 	if (!tdgbl->gbl_sw_blk_factor || sw_replace != IN_SW_BURP_B)
 		tdgbl->gbl_sw_blk_factor = 1;
 
 	if (!file2)
-		BURP_error(10, 0, 0, 0, 0, 0);	// msg 10 requires both input and output filenames 
+		BURP_error(10, 0, 0, 0, 0, 0);
+	// msg 10 requires both input and output filenames 
 
 	if (!strcmp(file1, file2))
-		BURP_error(11, 0, 0, 0, 0, 0);	// msg 11 input and output have the same name.  Disallowed. 
+		BURP_error(11, 0, 0, 0, 0, 0);
+	// msg 11 input and output have the same name.  Disallowed. 
 
 	time_t clock = time(NULL);
 	strcpy(const_cast<char*>(tdgbl->gbl_backup_start_time), ctime(&clock));
@@ -1071,7 +1100,8 @@ void BURP_abort(void)
  **************************************/
 	TGBL tdgbl = GET_THREAD_DATA;
 
-	BURP_print(83, 0, 0, 0, 0, 0);	// msg 83 Exiting before completion due to errors 
+	BURP_print(83, 0, 0, 0, 0, 0);
+	// msg 83 Exiting before completion due to errors 
 
 #ifdef SUPERSERVER
 	SVC_STARTED(tdgbl->service_blk);
@@ -1158,11 +1188,7 @@ void BURP_msg_partial(	USHORT number,
  **************************************/
 	TEXT buffer[256];
 
-	gds__msg_format(NULL,
-					BURP_MSG_FAC,
-					number,
-					sizeof(buffer),
-					buffer,
+	gds__msg_format(NULL, BURP_MSG_FAC, number, sizeof(buffer), buffer,
 					static_cast<const char*>(arg1),
 					static_cast<const char*>(arg2),
 					static_cast<const char*>(arg3),
@@ -1191,11 +1217,7 @@ void BURP_msg_put(	USHORT number,
  **************************************/
 	TEXT buffer[256];
 
-	gds__msg_format(NULL,
-					BURP_MSG_FAC,
-					number,
-					sizeof(buffer),
-					buffer,
+	gds__msg_format(NULL, BURP_MSG_FAC, number, sizeof(buffer), buffer,
 					static_cast<const char*>(arg1),
 					static_cast<const char*>(arg2),
 					static_cast<const char*>(arg3),
@@ -1314,11 +1336,11 @@ void BURP_print_status( ISC_STATUS * status_vector)
         SCHAR s[1024];
 		if (isc_interprete(s, &vector)) {
 			TRANSLATE_CP(s);
-			BURP_msg_partial(256, 0, 0, 0, 0, 0);	// msg 256: gbak: ERROR: 
+			BURP_msg_partial(256, 0, 0, 0, 0, 0); // msg 256: gbak: ERROR: 
 			burp_output("%s\n", s);
 			while (isc_interprete(s, &vector)) {
 				TRANSLATE_CP(s);
-				BURP_msg_partial(256, 0, 0, 0, 0, 0);	// msg 256: gbak: ERROR: 
+				BURP_msg_partial(256, 0, 0, 0, 0, 0); // msg 256: gbak: ERROR:
 				burp_output("    %s\n", s);
 			}
 		}
@@ -1348,11 +1370,11 @@ void BURP_print_warning( ISC_STATUS * status_vector)
 		SCHAR s[1024];
 		if (isc_interprete(s, &vector)) {
 			TRANSLATE_CP(s);
-			BURP_msg_partial(255, 0, 0, 0, 0, 0);	// msg 255: gbak: WARNING: 
+			BURP_msg_partial(255, 0, 0, 0, 0, 0); // msg 255: gbak: WARNING: 
 			burp_output("%s\n", s);
 			while (isc_interprete(s, &vector)) {
 				TRANSLATE_CP(s);
-				BURP_msg_partial(255, 0, 0, 0, 0, 0);	// msg 255: gbak: WARNING: 
+				BURP_msg_partial(255, 0, 0, 0, 0, 0); // msg 255: gbak: WARNING: 
 				burp_output("    %s\n", s);
 			}
 		}
@@ -1461,8 +1483,10 @@ static SLONG get_number( const SCHAR * string)
 
 
 static gbak_action open_files(const TEXT * file1,
-						 TEXT ** file2,
-						 USHORT sw_verbose, USHORT sw_replace, USHORT sw_tape)
+							  TEXT ** file2,
+							  USHORT sw_verbose,
+							  USHORT sw_replace,
+							  USHORT sw_tape)
 {
 /**************************************
  *
@@ -1626,8 +1650,8 @@ static gbak_action open_files(const TEXT * file1,
 								reinterpret_cast<void*>(MIN_SPLIT_SIZE),
 								0, NULL, 0, NULL, 0, NULL);
 #else
-				BURP_error(271, (TEXT *) fil->fil_length,
-						   (TEXT *) (SLONG) MIN_SPLIT_SIZE, 0, 0, 0);
+				BURP_error(271, (void*) fil->fil_length,
+						   (void*) (SLONG) MIN_SPLIT_SIZE, 0, 0, 0);
 				// msg file size given (%d) is less than minimum allowed (%d) 
 #endif
 				flag = QUIT;
@@ -2089,23 +2113,20 @@ static int api_gbak(int argc,
 
 	USHORT spblen = spb_ptr - spb;
 
-    FRBRD *svc_handle = NULL;
-	if (isc_service_attach(	status,
-							0,
-							svc_name,
-							(&svc_handle),
-							spblen, spb))
+	FRBRD *svc_handle = NULL;
+	if (isc_service_attach(status, 0, svc_name, (&svc_handle), spblen, spb))
 	{
 		BURP_print_status(status);
 		gds__free(spb);
 		gds__free(svc_name);
-		BURP_print(83, 0, 0, 0, 0, 0);	// msg 83 Exiting before completion due to errors 
+		BURP_print(83, 0, 0, 0, 0, 0);
+		// msg 83 Exiting before completion due to errors 
 		return FINI_ERROR;
 	}
 
 	char *const thd = (char *) gds__alloc((SLONG) (2));
-	/* 'isc_action_svc_restore/isc_action_svc_backup'
-	   'isc_spb_verbose' */
+	// 'isc_action_svc_restore/isc_action_svc_backup'
+	// 'isc_spb_verbose'
 
 	if (thd == NULL) {
 		status[0] = isc_arg_gds;
@@ -2115,7 +2136,8 @@ static int api_gbak(int argc,
 		isc_service_detach(status, (&svc_handle));
 		gds__free(spb);
 		gds__free(svc_name);
-		BURP_print(83, 0, 0, 0, 0, 0);	// msg 83 Exiting before completion due to errors 
+		BURP_print(83, 0, 0, 0, 0, 0);
+		// msg 83 Exiting before completion due to errors 
 		return FINI_ERROR;
 	}
 
@@ -2130,11 +2152,7 @@ static int api_gbak(int argc,
 
 	USHORT thdlen = thd_ptr - thd;
 
-	if (isc_service_start(	status,
-							(&svc_handle),
-							NULL,
-							thdlen,
-							thd))
+	if (isc_service_start(status, (&svc_handle), NULL, thdlen, thd))
 	{
 		BURP_print_status(status);
 		gds__free(spb);
@@ -2161,8 +2179,7 @@ static int api_gbak(int argc,
 			gds__free(spb);
 			gds__free(svc_name);
 			gds__free(thd);
-			isc_service_detach(status,
-							   (&svc_handle));
+			isc_service_detach(status, (&svc_handle));
 			BURP_print(83, 0, 0, 0, 0, 0);	// msg 83 Exiting before completion due to errors 
 			return FINI_ERROR;
 		}
