@@ -2774,7 +2774,7 @@ UCHAR *DLL_EXPORT ISC_map_file(
 /* Create the real file mapping object. */
 
 	for (p = expanded_filename; *p; p++);
-	sprintf(p, "%d", header_address[1]);
+	sprintf(p, "%"SLONGFORMAT, header_address[1]);
 
 	HANDLE file_obj =
 		CreateFileMapping(file_handle,
@@ -3676,7 +3676,7 @@ UCHAR *DLL_EXPORT ISC_remap_file(STATUS * status_vector,
 
 	while (1) {
 		TEXT expanded_filename[MAXPATHLEN];
-		sprintf(expanded_filename, "%s%d", shmem_data->sh_mem_name,
+		sprintf(expanded_filename, "%s%"SLONGFORMAT, shmem_data->sh_mem_name,
 				shmem_data->sh_mem_hdr_address[1] + 1);
 
 		file_obj = CreateFileMapping(shmem_data->sh_mem_handle,

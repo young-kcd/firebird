@@ -1752,7 +1752,7 @@ static void report_walw_bug_or_error(
 
 	if (PRINT_DEBUG_MSGS) {
 		PRINT_TIME(DEBUG_FD, LOCAL_TIME);
-		ib_fprintf(DEBUG_FD, "WAL writer encountered error, code=%d\n", code);
+		ib_fprintf(DEBUG_FD, "WAL writer encountered error, code=%ld\n", code);
 	}
 
 	Firebird::status_exception::raise(status_vector[1]);
@@ -2300,7 +2300,8 @@ static void write_wal_statistics( WAL WAL_handle)
 				   WAL_segment->wals_acquire_count,
 				   WAL_segment->wals_put_count);
 		ib_fprintf(stat_file,
-				   "Total IOs=%ld, Avg IO size=%d, last blk_seqno=%ld\n",
+				   "Total IOs=%"SLONGFORMAT", Avg IO size=%"SLONGFORMAT
+				   ", last blk_seqno=%"SLONGFORMAT"\n",
 				   WAL_segment->wals_IO_count,
 				   WAL_segment->wals_total_IO_bytes /
 				   (WAL_segment->wals_IO_count ? WAL_segment->
@@ -2318,7 +2319,8 @@ static void write_wal_statistics( WAL WAL_handle)
 		ib_fprintf(stat_file, "current log seqno=%ld, logfile=%s\n",
 				   WAL_segment->wals_log_seqno, WAL_segment->wals_logname);
 		ib_fprintf(stat_file,
-				   "log partition offset=%ld, current offset=%ld\n",
+				   "log partition offset=%"SLONGFORMAT", current offset=%"
+				   SLONGFORMAT"\n",
 				   WAL_segment->wals_log_partition_offset,
 				   WAL_segment->wals_buf_offset);
 		ib_fprintf(stat_file,

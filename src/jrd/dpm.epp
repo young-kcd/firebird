@@ -2101,7 +2101,7 @@ void DPM_update( TDBB tdbb, RPB * rpb, LLS * stack, JRD_TRA transaction)
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES)
-		ib_printf("DPM_update (rpb %"SLONGFORMAT", stack, transaction %d)\n",
+		ib_printf("DPM_update (rpb %"SLONGFORMAT", stack, transaction %"SLONGFORMAT")\n",
 				  rpb->rpb_number, transaction ? transaction->tra_number : 0);
 	if (debug_flag > DEBUG_WRITES_INFO)
 		ib_printf
@@ -2350,7 +2350,8 @@ static void fragment(
 	if (debug_flag > DEBUG_WRITES)
 		ib_printf
 			("fragment (rpb %"SLONGFORMAT
-			 ", available_space %d, dcc, length %d, transaction %d)\n",
+			 ", available_space %d, dcc, length %d, transaction %"
+			 SLONGFORMAT")\n",
 			 rpb->rpb_number, available_space, length,
 			 transaction ? transaction->tra_number : 0);
 	if (debug_flag > DEBUG_WRITES_INFO)

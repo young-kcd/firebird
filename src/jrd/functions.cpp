@@ -120,7 +120,7 @@ static int test(long n, char *result)
  *
  **************************************/
 
-	sprintf(result, "%d is a number", n);
+	sprintf(result, "%ld is a number", n);
 	const char *end = result + 20;
 
 	while (*result)

@@ -177,9 +177,9 @@ int API_ROUTINE perf_format(
 			case 'u':
 			case 's':
 #ifdef VMS
-				sprintf(p, "%d.%.2d", delta / 100, (delta % 100));
+				sprintf(p, "%"SLONGFORMAT".%.2"SLONGFORMAT, delta / 100, (delta % 100));
 #else
-				sprintf(p, "%d.%.2d", delta / TICK,
+				sprintf(p, "%"SLONGFORMAT".%.2"SLONGFORMAT, delta / TICK,
 						(delta % TICK) * 100 / TICK);
 #endif
 				while (*p)
@@ -187,7 +187,7 @@ int API_ROUTINE perf_format(
 				break;
 
 			case 'e':
-				sprintf(p, "%d.%.2d", delta / 100, delta % 100);
+				sprintf(p, "%"SLONGFORMAT".%.2"SLONGFORMAT, delta / 100, delta % 100);
 				while (*p)
 					p++;
 				break;

@@ -129,7 +129,8 @@ void WSTATUS_dump_wal_segment( WAL WAL_handle, int acquire_flag,
 	FPRINTF(outfile,
 			"---------------------------------------------------------\n");
 	FPRINTF(outfile,
-			"Total WAL IOs=%ld, Avg IO size=%d, next block seqno=%ld\n",
+			"Total WAL IOs=%"SLONGFORMAT", Avg IO size=%"SLONGFORMAT
+			", next block seqno=%"SLONGFORMAT"\n",
 			WAL_segment->wals_IO_count,
 			WAL_segment->wals_total_IO_bytes /
 			(WAL_segment->wals_IO_count ? WAL_segment->wals_IO_count : 1),

@@ -377,7 +377,7 @@ static void build_iberror_h(void)
 
 		last_code = N.CODE;
 		new_code = ENCODE_ISC_MSG(S.NUMBER, N.FAC_CODE);
-		ib_fprintf(iberror, "#define isc_%-32.32s %dL\n", S.GDS_SYMBOL,
+		ib_fprintf(iberror, "#define isc_%-32.32s %luL\n", S.GDS_SYMBOL,
 				   new_code);
 		++code;
     END_FOR;
@@ -442,7 +442,7 @@ static void build_codes_h(void)
 
 		last_code = N.CODE;
 		new_code = ENCODE_ISC_MSG(S.NUMBER, N.FAC_CODE);
-		ib_fprintf(c_codes, "const SLONG gds_%-32.32s = %dL;\n", S.GDS_SYMBOL,
+		ib_fprintf(c_codes, "const SLONG gds_%-32.32s = %luL;\n", S.GDS_SYMBOL,
 				   new_code);
 		++code;
 
@@ -514,7 +514,7 @@ static void build_codes_h(void)
 
 		last_code = N.CODE;
 		new_code = ENCODE_ISC_MSG(S.NUMBER, N.FAC_CODE);
-		ib_fprintf(c_codes, "#define gds__%-32.32s %dL\n", S.GDS_SYMBOL,
+		ib_fprintf(c_codes, "#define gds__%-32.32s %luL\n", S.GDS_SYMBOL,
 				   new_code);
 		++code;
 
@@ -674,10 +674,10 @@ const\n\
 		last_code = N.CODE;
 		new_code = ENCODE_ISC_MSG(N.NUMBER, N.FAC_CODE);
 
-		ib_fprintf(pas_codes, "\tgds_%-32.32s = %d;\n", S.GDS_SYMBOL,
+		ib_fprintf(pas_codes, "\tgds_%-32.32s = %lu;\n", S.GDS_SYMBOL,
 				   new_code);
 		ib_fprintf(ftn_codes,
-				   "      INTEGER*4 GDS__%-32.32s\n      PARAMETER (GDS__%-32.32s = %d)\n",
+				   "      INTEGER*4 GDS__%-32.32s\n      PARAMETER (GDS__%-32.32s = %lu)\n",
 				   S.GDS_SYMBOL, S.GDS_SYMBOL, new_code);
 		ib_fprintf(rdbcodes, "%d,\n", S.VMS_CODE);
 
@@ -697,7 +697,7 @@ const\n\
 			 *p && *p != ' ' && p < S.GDS_SYMBOL + sizeof(S.GDS_SYMBOL) - 1;
 			 p++);
 		*p = 0;
-		ib_fprintf(code_text, "{\"%s\", %d},\n", S.GDS_SYMBOL, new_code);
+		ib_fprintf(code_text, "{\"%s\", %lu},\n", S.GDS_SYMBOL, new_code);
 		++code;
 
 	END_FOR;
