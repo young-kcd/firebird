@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.54 2004-08-30 10:10:14 robocop Exp $
+ * $Id: show.epp,v 1.55 2004-08-31 06:26:27 robocop Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -2883,11 +2883,19 @@ static processing_state show_role(const SCHAR* object)
 
 		FOR FIRST 1 R IN RDB$ROLES WITH R.RDB$ROLE_NAME EQ object
 
-			if (!R.RDB$DESCRIPTION.NULL)
+			if (isqlGlob.major_ods >= ODS_VERSION11)
 			{
-				ISQL_printf(isqlGlob.Out, "Role description: ");
-				SHOW_print_metadata_text_blob(isqlGlob.Out, &R.RDB$DESCRIPTION);
-				ISQL_printf(isqlGlob.Out, "\n");
+				FOR FIRST 1 R2 IN RDB$ROLES
+				WITH R2.RDB$ROLE_NAME EQ R.RDB$ROLE_NAME
+				AND R2.RDB$DESCRIPTION NOT MISSING
+					ISQL_printf(isqlGlob.Out, "Role description: ");
+					SHOW_print_metadata_text_blob(isqlGlob.Out, &R2.RDB$DESCRIPTION);
+					ISQL_printf(isqlGlob.Out, "\n");
+				END_FOR
+				ON_ERROR
+					ISQL_errmsg (isc_status);
+					return (ERR);
+				END_ERROR
 			}
 			
 			FOR PRV IN RDB$USER_PRIVILEGES WITH
@@ -2920,7 +2928,7 @@ static processing_state show_role(const SCHAR* object)
 			ON_ERROR
 				ISQL_errmsg (isc_status);
 				return (ERR);
-			END_ERROR;
+			END_ERROR
 			
 			if (first)
 			{
@@ -2940,7 +2948,7 @@ static processing_state show_role(const SCHAR* object)
 		ON_ERROR
 			ISQL_errmsg(isc_status);
 			return (ERR);
-		END_ERROR;
+		END_ERROR
 
 		if (first)
 			return (OBJECT_NOT_FOUND);
