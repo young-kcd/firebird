@@ -1,3 +1,15 @@
+2004-11-21 17:46  alexpeshkoff
+
+	* firebird2/src/jrd/isc_file.cpp (1.87):
+	
+	fixed work with NFS mount points
+
+2004-11-21 17:25  alexpeshkoff
+
+	* firebird2/src/jrd/alt.cpp (1.58):
+	
+	comment
+
 2004-11-20 13:15  dimitr
 
 	* firebird2/src/jrd/rse.cpp (1.83):
