@@ -1,0 +1,75 @@
+-----------------------------------------------------------
+Firebird 1.5 Embedded Server notes (Beta and RC builds)
+-----------------------------------------------------------
+
+1. GENERIC INFORMATION
+
+  The embedded server is a fully functional server linked
+  as a dynamic library (fbembed.dll). It has exactly the
+  same features as the usual server and exports the
+  standard Firebird API entrypoints.
+
+2. ISSUES AND LIMITATIONS
+
+  2.1. Registry
+
+    The Firebird registry entries are ignored. The root
+    directory of the embedded server is the directory of
+    its binary file (library).
+
+  2.2. Database access
+
+    Only true local access is allowed. The embedded server
+    doesn't have any support for remote protocols, so even
+    access via "localhost" won't work.
+
+  2.3. Authentication and security
+
+    The security database (namely security.fdb) is not used
+    in the embedded server and hence is not required. Any
+    user is able to attach to any database. Since both
+    the server and the client run in the same address space,
+    the security becomes just an agreement between both
+    sides which can be easily compromised.
+
+    But note that SQL privileges are still checked.
+
+  2.4. Compatibility
+
+    You may run any number of applications with the embedded
+    server without any conflicts. Having IB/FB server running
+    is not a problem either.
+
+    But you should be aware that you cannot access single
+    database from a number of the embedded servers
+    simultaneously, because they have SuperServer architecture
+    and hence exclusively lock attached databases.
+
+3. USAGE
+
+  Just copy fbembed.dll into the directory with your
+  application. Then rename it to either fbclient.dll or
+  gds32.dll depending on your database connectivity software.
+  Then start your application and it will use the embedded
+  server as a client library and will be able to access
+  local datasases. You should also copy firebird.msg and
+  firebird.conf (if necessary) to the same directory.
+
+  If external libraries are required for your application,
+  then you should have them separately. Most probably, it
+  will be INTL support (fbintl.dll) or UDF libraries. To
+  be able to use them, you should place them into the
+  directory tree which emulates the Firebird server one,
+  i.e. has subdirectories like /intl or /udf. Then open
+  your firebird.conf and set RootDirectory to the
+  aforementioned directory tree. Example:
+
+  /my_app/app.exe
+  /my_app/gds32.dll
+  /my_app/firebird.conf
+  /my_app/fb/firebird.msg
+  /my_app/fb/intl/fbintl.dll
+  /my_app/fb/udf/fbudf.dll
+
+  firebird.conf:
+  RootDirectory = /my_app/fb
