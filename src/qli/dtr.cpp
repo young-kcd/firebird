@@ -602,7 +602,7 @@ static void CLIB_ROUTINE signal_quit(void)
  *	Stop whatever we happened to be doing.
  *
  **************************************/
-	void (*prev_handler) ();
+	//void (*prev_handler) ();
 
 	signal(SIGQUIT, SIG_DFL);
 	signal(SIGINT, SIG_DFL);
