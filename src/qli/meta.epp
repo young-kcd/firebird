@@ -2872,7 +2872,7 @@ static void get_log_names(
 
 /* loop up to 10 times to allow the file to be archived */
 
-#ifndef SUPERCLIENT
+#if 0
 	while (TRUE) {
 		loop++;
 		if (WALF_get_linked_logs_info

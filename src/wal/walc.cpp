@@ -931,7 +931,7 @@ static SSHORT setup_wal_params(
 
 	wal_args->walc_log_names_offset = ROUNDUP_LONG(sizeof(struct wals));
 
-	wal_args->walc_logf_size = ROUNDUP_LONG(sizeof(struct logf));
+	wal_args->walc_logf_size = ROUNDUP_LONG(sizeof(struct logfil));
 	wal_args->walc_logf_offset = wal_args->walc_log_names_offset +
 		ROUNDUP_LONG(wal_args->walc_log_names_buf_len);
 
@@ -964,7 +964,7 @@ static void wals_initialize( WALC wal_args, SH_MEM shmem_data, int initialize)
 	SSHORT maxbufs;
 	SSHORT i;
 	WALBLK *wblk;
-	LOGF *logf;
+	LOGF *logfil;
 	UCHAR *p, *q;
 	LGFILE *log_file;
 #if (defined WIN_NT)
@@ -1069,32 +1069,32 @@ static void wals_initialize( WALC wal_args, SH_MEM shmem_data, int initialize)
 
 /* Now setup the serial log file info */
 
-	logf = &WAL_segment->wals_log_serial_file_info;
+	logfil = &WAL_segment->wals_log_serial_file_info;
 	if (log_file = wal_args->walc_log_serial_file_info) {
 		p = (UCHAR *) log_file->lg_name;
 		strcpy(reinterpret_cast < char *>(q),
 			   reinterpret_cast < const char *>(p));
-		logf->logf_name_offset = q - (UCHAR *) WAL_segment;
-		logf->logf_max_size = log_file->lg_size;
-		logf->logf_roundup_size = 0;
-		logf->logf_flags = 0;
-		logf->logf_base_offset = 0L;
-		logf->logf_fname_seqno = 0L;
+		logfil->logf_name_offset = q - (UCHAR *) WAL_segment;
+		logfil->logf_max_size = log_file->lg_size;
+		logfil->logf_roundup_size = 0;
+		logfil->logf_flags = 0;
+		logfil->logf_base_offset = 0L;
+		logfil->logf_fname_seqno = 0L;
 		if (log_file->lg_flags & LOG_raw) {
-			logf->logf_roundup_size = 512;
-			logf->logf_flags |= LOGF_RAW;
+			logfil->logf_roundup_size = 512;
+			logfil->logf_flags |= LOGF_RAW;
 		}
 		q += strlen(reinterpret_cast < const char *>(p)) + 1;
 	}
 	else {
 		/* Set some default values */
 
-		logf->logf_name_offset = 0;
-		logf->logf_max_size = WAL_segment->wals_max_log_length;
-		logf->logf_roundup_size = 0;
-		logf->logf_flags = 0;
-		logf->logf_base_offset = 0L;
-		logf->logf_fname_seqno = 0L;
+		logfil->logf_name_offset = 0;
+		logfil->logf_max_size = WAL_segment->wals_max_log_length;
+		logfil->logf_roundup_size = 0;
+		logfil->logf_flags = 0;
+		logfil->logf_base_offset = 0L;
+		logfil->logf_fname_seqno = 0L;
 	}
 
 /* Now setup the pre-allocated round-robin log files info */
@@ -1105,23 +1105,23 @@ static void wals_initialize( WALC wal_args, SH_MEM shmem_data, int initialize)
 			p = (UCHAR *) log_file->lg_name;
 			strcpy(reinterpret_cast < char *>(q),
 				   reinterpret_cast < const char *>(p));
-			logf = LOGF_INFO(i);
-			logf->logf_name_offset = q - (UCHAR *) WAL_segment;
-			logf->logf_partitions = log_file->lg_partitions;
-			logf->logf_max_size = log_file->lg_size;
-			logf->logf_roundup_size = 0;
-			logf->logf_flags = 0;
-			logf->logf_base_offset = 0L;
-			logf->logf_fname_seqno = 0L;
+			logfil = LOGF_INFO(i);
+			logfil->logf_name_offset = q - (UCHAR *) WAL_segment;
+			logfil->logf_partitions = log_file->lg_partitions;
+			logfil->logf_max_size = log_file->lg_size;
+			logfil->logf_roundup_size = 0;
+			logfil->logf_flags = 0;
+			logfil->logf_base_offset = 0L;
+			logfil->logf_fname_seqno = 0L;
 			if (log_file->lg_partitions > 1) {
-				logf->logf_max_size = PARTITION_SIZE(logf->logf_max_size,
+				logfil->logf_max_size = PARTITION_SIZE(logfil->logf_max_size,
 													 log_file->lg_partitions);
-				logf->logf_flags |= LOGF_PARTITIONED;
+				logfil->logf_flags |= LOGF_PARTITIONED;
 			}
 			if (log_file->lg_flags & LOG_raw) {
-				logf->logf_roundup_size = 512;
-				logf->logf_flags |= LOGF_RAW;
-				logf->logf_max_size = (logf->logf_max_size & ~((SLONG) 511));
+				logfil->logf_roundup_size = 512;
+				logfil->logf_flags |= LOGF_RAW;
+				logfil->logf_max_size = (logfil->logf_max_size & ~((SLONG) 511));
 			}
 			q += strlen(reinterpret_cast < const char *>(p)) + 1;
 		}
@@ -1129,31 +1129,31 @@ static void wals_initialize( WALC wal_args, SH_MEM shmem_data, int initialize)
 
 /* Now setup the overflow log file info */
 
-	logf = &WAL_segment->wals_log_ovflow_file_info;
+	logfil = &WAL_segment->wals_log_ovflow_file_info;
 	if (log_file = wal_args->walc_log_ovflow_file_info) {
 		p = (UCHAR *) log_file->lg_name;
 		strcpy(reinterpret_cast < char *>(q),
 			   reinterpret_cast < const char *>(p));
-		logf->logf_name_offset = q - (UCHAR *) WAL_segment;
-		logf->logf_max_size = log_file->lg_size;
-		logf->logf_roundup_size = 0;
-		logf->logf_flags = 0;
-		logf->logf_base_offset = 0L;
-		logf->logf_fname_seqno = 0L;
+		logfil->logf_name_offset = q - (UCHAR *) WAL_segment;
+		logfil->logf_max_size = log_file->lg_size;
+		logfil->logf_roundup_size = 0;
+		logfil->logf_flags = 0;
+		logfil->logf_base_offset = 0L;
+		logfil->logf_fname_seqno = 0L;
 		if (log_file->lg_flags & LOG_raw) {
-			logf->logf_roundup_size = 512;
-			logf->logf_flags |= LOGF_RAW;
+			logfil->logf_roundup_size = 512;
+			logfil->logf_flags |= LOGF_RAW;
 		}
 	}
 	else {
 		/* Set some default values */
 
-		logf->logf_name_offset = 0;
-		logf->logf_max_size = WAL_segment->wals_max_log_length;
-		logf->logf_roundup_size = 0;
-		logf->logf_flags = 0;
-		logf->logf_base_offset = 0L;
-		logf->logf_fname_seqno = 0L;
+		logfil->logf_name_offset = 0;
+		logfil->logf_max_size = WAL_segment->wals_max_log_length;
+		logfil->logf_roundup_size = 0;
+		logfil->logf_flags = 0;
+		logfil->logf_base_offset = 0L;
+		logfil->logf_fname_seqno = 0L;
 	}
 
 /* Now setup the WAL buffers info */

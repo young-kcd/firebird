@@ -1,4 +1,38 @@
   **************
+  * v1.5.2
+  **************
+
+    * Fixed v1.5.1 regression
+        Broken support for multi-dimensional array fields
+      Contributor(s):
+        Claudio Varderrama <cvalde at usa.net>
+
+    * Fixed v1.5.1 regression
+        Plans for selectable stored procedures containing multiple FOR loops reported in reverse order
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Performance improvement
+        Resource lists to check permissions are now computed on the fly as needed. This significantly reduces memory and CPU time consumption for complex schemas
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+        Daniel Urban <daniel at sente.pl>
+
+    * POSIX build and packaging change
+        1) Work around bugs in GCC 3.3.2 and 3.3.3
+        2) Support GCC 3.4 build
+        3) Limit exports of Firebird libraries using version script
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * POSIX build and packaging change
+        Various build and packaging fixes
+      Contributor(s):
+        Erik S. LaBianca <labiance at users.sourceforge.net>
+        Dale Mullins <dale_mullins at users.sourceforge.net>
+
+  **************
   * v1.5.1
   **************
 

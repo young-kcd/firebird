@@ -162,7 +162,7 @@ typedef struct evt_req {
 
 /* Request interest block */
 
-typedef struct rint {
+typedef struct req_int {
 	HDR rint_header;
 	SRQ rint_interests;			/* Que owned by event */
 	PTR rint_event;				/* Event of interest */

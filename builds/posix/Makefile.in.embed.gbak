@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.gbak,v 1.6.2.1 2003-11-10 23:28:40 bellardo Exp $
+#  $Id: Makefile.in.embed.gbak,v 1.6.2.2 2004-09-17 20:34:21 skidder Exp $
 #
 ROOT=..
 ObjModuleName=embed.gbak
@@ -40,10 +40,10 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
+GBAK_Other_Sources = remote/xdr.cpp jrd/sdl.cpp common/fb_exception.cpp
 GBAK_Files = backup.epp  restore.epp \
 			 burp.cpp canonical.cpp misc.cpp mvol.cpp
-
-GBAK_Sources = $(addprefix burp/, $(GBAK_Files))
+GBAK_Sources = $(addprefix burp/, $(GBAK_Files)) $(GBAK_Other_Sources)
 GBAK_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GBAK_Sources))))
 
 GSPLIT_Files=	spit.cpp

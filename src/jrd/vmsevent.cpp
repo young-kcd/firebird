@@ -49,7 +49,7 @@ typedef struct evh {
 typedef struct ses {
 	struct ses *ses_next;		/* Next active session */
 	struct vms_req *ses_requests;	/* Outstanding requests in session */
-	struct rint *ses_interests;	/* Historical interests */
+	struct req_int *ses_interests;	/* Historical interests */
 } *SES;
 
 /* Event block */
@@ -58,7 +58,7 @@ typedef struct evnt {
 	struct evnt *evnt_next;		/* Next lock */
 	struct evnt *evnt_parent;	/* Parent lock, if any */
 	struct evnt *evnt_offspring;	/* Offspring locks, if any */
-	struct rint *evnt_interests;	/* Interests in event */
+	struct req_int *evnt_interests;	/* Interests in event */
 	struct lksb evnt_lksb;		/* Event lock status block */
 	SLONG evnt_count;			/* Last know lock count */
 	USHORT evnt_length;			/* Length of event string */
@@ -70,7 +70,7 @@ typedef struct evnt {
 typedef struct vms_req {
 	struct vms_req *req_next;		/* Next request in session */
 	struct ses *req_session;	/* Parent session */
-	struct rint *req_interests;	/* Request interests */
+	struct req_int *req_interests;	/* Request interests */
 	int (*req_ast) ();			/* Associated AST (zero is fired) */
 	void *req_ast_arg;			/* Argument for ast */
 	SLONG req_request_id;		/* Request id */
@@ -78,11 +78,11 @@ typedef struct vms_req {
 
 /* Request interest block */
 
-typedef struct rint {
+typedef struct req_int {
 	VMS_REQ rint_request;			/* Parent request block */
 	EVNT rint_event;			/* Parent event block */
-	struct rint *rint_req_interests;	/* Other interests of request */
-	struct rint *rint_evnt_interests;	/* Other interests for event */
+	struct req_int *rint_req_interests;	/* Other interests of request */
+	struct req_int *rint_evnt_interests;	/* Other interests for event */
 	SLONG rint_count;			/* Threadhold count */
 } *RINT;
 

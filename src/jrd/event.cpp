@@ -497,7 +497,7 @@ SLONG EVENT_que(ISC_STATUS * status_vector,
 		}
 		else {
 			interest =
-				(RINT) alloc_global(type_rint, (SLONG) sizeof(struct rint),
+				(RINT) alloc_global(type_rint, (SLONG) sizeof(struct req_int),
 									FALSE);
 			event = (EVNT) ABS_PTR(event_offset);
 			insert_tail(&event->evnt_interests, &interest->rint_interests);

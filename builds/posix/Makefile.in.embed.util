@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.util,v 1.8.2.2 2003-11-10 23:28:40 bellardo Exp $
+#  $Id: Makefile.in.embed.util,v 1.8.2.3 2004-09-17 20:34:21 skidder Exp $
 #
 ROOT=..
 ObjModuleName=embed.util
@@ -40,9 +40,12 @@ include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@
 
+LOCKPRINT_Other_Sources = lock/lock.cpp jrd/isc_sync.cpp jrd/isc.cpp \
+common/classes/alloc.cpp common/fb_exception.cpp jrd/isc_ipc.cpp \
+common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
 
 LOCKPRINT_Files= print.cpp
-LOCKPRINT_Sources = $(addprefix lock/, $(LOCKPRINT_Files))
+LOCKPRINT_Sources = $(addprefix lock/, $(LOCKPRINT_Files)) $(LOCKPRINT_Other_Sources)
 LOCKPRINT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(LOCKPRINT_Sources))))
 
 
@@ -51,16 +54,26 @@ CREATEDB_Sources = $(addprefix utilities/, $(CREATEDB_Files))
 CREATEDB_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CREATEDB_Sources))))
 
 
+DROP_Other_Sources = lock/lock.cpp jrd/isc_sync.cpp jrd/isc.cpp jrd/isc_ipc.cpp \
+common/classes/alloc.cpp common/fb_exception.cpp \
+common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
+
 DROP_Files= drop.cpp
-DROP_Sources = $(addprefix utilities/, $(DROP_Files))
+DROP_Sources = $(addprefix utilities/, $(DROP_Files)) $(DROP_Other_Sources)
 DROP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DROP_Sources))))
 
-GSEC_Files =  gsec.cpp
-GSEC_Sources = $(addprefix utilities/, $(GSEC_Files))
+GSEC_Other_Sources = jrd/enc.cpp common/fb_exception.cpp
+
+GSEC_Files =  gsec.cpp security.cpp
+GSEC_Sources = $(addprefix utilities/, $(GSEC_Files)) $(GSEC_Other_Sources)
 GSEC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSEC_Sources))))
 
+GSTAT_Other_Sources = jrd/db_alias.cpp jrd/isc_file.cpp common/config/dir_list.cpp \
+common/classes/alloc.cpp common/fb_exception.cpp \
+common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
+
 GSTAT_Files =  dba.epp ppg.cpp
-GSTAT_Sources = $(addprefix utilities/, $(GSTAT_Files))
+GSTAT_Sources = $(addprefix utilities/, $(GSTAT_Files)) $(GSTAT_Other_Sources)
 GSTAT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSTAT_Sources))))
 
 

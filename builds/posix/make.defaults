@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.25.2.7 2004-07-05 14:21:59 kkuznetsov Exp $
+#   $Id: make.defaults,v 1.25.2.8 2004-09-17 20:34:21 skidder Exp $
 # 
 
 
@@ -204,6 +204,11 @@ else
     LIBGDS_LINK =
     LIBGDS_LINK_OPTIONS =
 endif
+
+LIB_LINK_MAPFILE= -Wl,--version-script,
+
+LINK_FIREBIRD_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.vers
+LINK_FBINTL_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.vers
 
 FB_SUPER_SERVER	= $(BIN)/fbserver$(EXEC_EXT)
 FB_CLASSIC_SERVER = $(BIN)/fb_inet_server$(EXEC_EXT)

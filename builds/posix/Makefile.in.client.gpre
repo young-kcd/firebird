@@ -27,11 +27,10 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.gpre,v 1.9.2.2 2004-03-29 03:49:24 skidder Exp $
+#  $Id: Makefile.in.client.gpre,v 1.9.2.3 2004-09-17 20:34:21 skidder Exp $
 #
 ROOT=..
 ObjModuleName=client.gpre
-CFLAGS:= -DSUPERCLIENT
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -41,13 +40,15 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
+GPRE_Other_Sources = jrd/dsc.cpp common/fb_exception.cpp
+
 GPRE_Files = gpre_meta.epp \
 		cmd.cpp cme.cpp cmp.cpp c_cxx.cpp exp.cpp gpre.cpp \
 		hsh.cpp int_cxx.cpp jrdmet.cpp movg.cpp msc.cpp par.cpp \
 		pat.cpp pretty.cpp sqe.cpp sql.cpp cob.cpp noform.cpp \
 		@GPRE_LANGUAGE_MODULES@
 
-GPRE_Sources = $(addprefix gpre/, $(GPRE_Files))
+GPRE_Sources = $(addprefix gpre/, $(GPRE_Files)) $(GPRE_Other_Sources)
 GPRE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GPRE_Sources))))
 
 AllObjects = $(GPRE_Objects)

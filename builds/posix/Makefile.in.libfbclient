@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbclient,v 1.14.2.3 2003-11-25 23:09:06 bellardo Exp $
+#  $Id: Makefile.in.libfbclient,v 1.14.2.4 2004-09-17 20:34:21 skidder Exp $
 #
 ROOT=..
 ObjModuleName=libfbclient
@@ -53,6 +53,8 @@ unexport ISC_PASSWORD
 # I would eventually like to set these based on a determination
 # if the file GPRE_STATIC exists or not.
 
+SMD_Sources =	$(addprefix remote/,$(Server_main_dummy))
+SMD_Objects =	$(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SMD_Sources))))
 
 JRD_ClientSources = $(addprefix jrd/, $(JRD_ClientFiles))
 JRD_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(JRD_ClientSources))))
@@ -97,7 +99,8 @@ FBCLIENT_Objects =  $(JRD_ClientObjects) \
 					$(FBCOMMON_ClientObjects)\
 					$(FBCLASSES_ClientObjects)\
 					$(OS_SPECIFIC_Objects)\
-					$(FBCONFIG_Objects)
+					$(FBCONFIG_Objects)\
+					$(SMD_Objects)
 
 
 .PHONY: libfbclient
@@ -118,7 +121,7 @@ endif
 $(LIBFBCLIENT_SO):	LINK_PROD=$(ClientLibraryNameMajor)
 $(LIBFBCLIENT_SO):	$(FBCLIENT_Objects)
 #	$(LIB_LINK) -Wl,-soname,libfbclient.$(SHRLIB_EXT).1 -Wl,-rpath,/usr/lib -o $@ $^
-	$(LIB_LINK) $(LIB_SHLIB_LINK_OPTIONS) $(LIB_CLIENT_LINK_OPTIONS) \
+	$(LIB_LINK) $(LINK_FIREBIRD_SYMBOLS) $(LIB_SHLIB_LINK_OPTIONS) $(LIB_CLIENT_LINK_OPTIONS) \
 		$(LIB_LINK_SONAME_LINE) $(LIB_LINK_RPATH_LINE) -o $@ $^ $(SO_LINK_LIBS)
 
 

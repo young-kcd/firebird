@@ -932,7 +932,7 @@ static SSHORT get_logfile_index( WALS WAL_segment, SCHAR * logname)
  *	log files.  If not found, return -1.
  *
  **************************************/
-	LOGF *logf;
+	LOGF *logfil;
 	SSHORT i, j, count;
 
 	if (WAL_segment->wals_max_logfiles == 0)
@@ -947,8 +947,8 @@ static SSHORT get_logfile_index( WALS WAL_segment, SCHAR * logname)
 	while (TRUE) {
 		if ((j == i) && (count > 1))
 			return -1;			/* We have gone through the whole list */
-		logf = LOGF_INFO(j);
-		if (!strcmp(logname, LOGF_NAME(logf)))
+		logfil = LOGF_INFO(j);
+		if (!strcmp(logname, LOGF_NAME(logfil)))
 			return j;
 		j = (j + 1) % WAL_segment->wals_max_logfiles;
 		count++;
@@ -1051,7 +1051,7 @@ SLONG * new_offset, SLONG * log_type)
  *	returns FB_FAILURE.
  *
  **************************************/
-	LOGF *logf;
+	LOGF *logfil;
 	SSHORT i, j, count, found;
 	SLONG p_offset;
 
@@ -1064,23 +1064,23 @@ SLONG * new_offset, SLONG * log_type)
 	while (TRUE) {
 		if ((j == i) && (count > 1))	/* We have exhausted all the preallocated files */
 			break;
-		logf = LOGF_INFO(j);
-		if (logf->logf_flags & LOGF_PARTITIONED)
+		logfil = LOGF_INFO(j);
+		if (logfil->logf_flags & LOGF_PARTITIONED)
 			found = get_next_usable_partition(status_vector,
 											  WAL_segment->wals_dbname,
-											  LOGF_NAME(logf), &p_offset);
+											  LOGF_NAME(logfil), &p_offset);
 		else
 			found = get_log_usability(status_vector,
 									  WAL_segment->wals_dbname,
-									  LOGF_NAME(logf), p_offset);
+									  LOGF_NAME(logfil), p_offset);
 		if (found) {
-			strcpy(new_logname, LOGF_NAME(logf));
+			strcpy(new_logname, LOGF_NAME(logfil));
 			*new_offset = p_offset;
 			WAL_segment->wals_cur_logfile = j;
 			*log_type = *log_type | WALFH_PREALLOCATED;
-			if (logf->logf_flags & LOGF_PARTITIONED)
+			if (logfil->logf_flags & LOGF_PARTITIONED)
 				*log_type = *log_type | WALFH_PARTITIONED;
-			if (logf->logf_flags & LOGF_RAW)
+			if (logfil->logf_flags & LOGF_RAW)
 				*log_type = *log_type | WALFH_RAW;
 			return FB_SUCCESS;
 		}
@@ -1120,27 +1120,27 @@ SLONG * new_offset, SLONG * log_type)
 	SLONG last_log_partition_offset;
 	SLONG last_log_flags;
 	SSHORT any_log_to_be_archived;
-	LOGF *logf;
+	LOGF *logfil;
 	SLONG fd;
 	int retry_count;
 #define MAX_RETRIES	1000
 
-	logf = &WAL_segment->wals_log_serial_file_info;
-	if (logf->logf_name_offset == 0)
+	logfil = &WAL_segment->wals_log_serial_file_info;
+	if (logfil->logf_name_offset == 0)
 		return FB_FAILURE;
 
 /* The next log name is formed in the following fashion :
    <basename>.log.<seqno>  */
 
-	if (logf->logf_fname_seqno == 0L)	/* Initialize for the first time */
-		logf->logf_fname_seqno = WAL_segment->wals_log_seqno + 1;
+	if (logfil->logf_fname_seqno == 0L)	/* Initialize for the first time */
+		logfil->logf_fname_seqno = WAL_segment->wals_log_seqno + 1;
 
 	for (retry_count = 0; retry_count < MAX_RETRIES; retry_count++) {
 		/* Now find a non-existent (i.e. new) serial log file. */
 
-		WALC_build_logname(new_logname, LOGF_NAME(logf),
-						   logf->logf_fname_seqno);
-		logf->logf_fname_seqno++;
+		WALC_build_logname(new_logname, LOGF_NAME(logfil),
+						   logfil->logf_fname_seqno);
+		logfil->logf_fname_seqno++;
 		if (LLIO_open(status_vector, new_logname, LLIO_OPEN_NEW_RW, TRUE, &fd)
 			== FB_SUCCESS) {
 			/* Found one */
@@ -1278,20 +1278,20 @@ SLONG * new_offset, SLONG * log_type)
  *	returns FB_FAILURE.
  *
  **************************************/
-	LOGF *logf;
+	LOGF *logfil;
 	SLONG fd;
 
-	logf = &WAL_segment->wals_log_ovflow_file_info;
-	if (logf->logf_name_offset != 0) {
-		if (logf->logf_fname_seqno <= WAL_segment->wals_log_seqno)
-			logf->logf_fname_seqno = WAL_segment->wals_log_seqno + 1;
+	logfil = &WAL_segment->wals_log_ovflow_file_info;
+	if (logfil->logf_name_offset != 0) {
+		if (logfil->logf_fname_seqno <= WAL_segment->wals_log_seqno)
+			logfil->logf_fname_seqno = WAL_segment->wals_log_seqno + 1;
 
 		for (;;) {
 			/* Now find a non-existent (i.e. new) overflow log file. */
 
-			WALC_build_logname(new_logname, LOGF_NAME(logf),
-							   logf->logf_fname_seqno);
-			logf->logf_fname_seqno++;
+			WALC_build_logname(new_logname, LOGF_NAME(logfil),
+							   logfil->logf_fname_seqno);
+			logfil->logf_fname_seqno++;
 			if (LLIO_open
 				(status_vector, new_logname, LLIO_OPEN_NEW_RW, TRUE,
 				 &fd) == FB_SUCCESS) {
@@ -1448,20 +1448,20 @@ static SSHORT init_raw_partitions( ISC_STATUS * status_vector, WAL WAL_handle)
  *
  **************************************/
 	WALS WAL_segment;
-	LOGF *logf;
+	LOGF *logfil;
 	SSHORT i, ret_val;
 
 	WAL_segment = WAL_handle->wal_segment;
 
 	for (i = 0; i < WAL_segment->wals_max_logfiles; i++) {
-		logf = LOGF_INFO(i);
-		if (logf->logf_flags & LOGF_RAW) {
-			ret_val = WALF_init_p_log(status_vector, DBNAME, LOGF_NAME(logf),
-									  PARTITIONED_LOG_TOTAL_SIZE(logf->
+		logfil = LOGF_INFO(i);
+		if (logfil->logf_flags & LOGF_RAW) {
+			ret_val = WALF_init_p_log(status_vector, DBNAME, LOGF_NAME(logfil),
+									  PARTITIONED_LOG_TOTAL_SIZE(logfil->
 																 logf_partitions,
-																 logf->
+																 logfil->
 																 logf_max_size),
-									  logf->logf_partitions);
+									  logfil->logf_partitions);
 			if (ret_val != FB_SUCCESS)
 				report_walw_bug_or_error(status_vector, WAL_handle, ret_val,
 										 (ISC_STATUS) gds_wal_err_logwrite);
@@ -1946,7 +1946,7 @@ SSHORT rollover, SCHAR * prev_logname, SLONG prev_log_partition_offset)
  *
  **************************************/
 	SSHORT ret;
-	LOGF *logf;
+	LOGF *logfil;
 	SSHORT takeover;
 	WALS WAL_segment;
 
@@ -1983,18 +1983,18 @@ SSHORT rollover, SCHAR * prev_logname, SLONG prev_log_partition_offset)
 				get_logfile_index(WAL_segment, logname);
 			if (WAL_segment->wals_cur_logfile == -1)
 				/* we are using an overflow log */
-				logf = &WAL_segment->wals_log_ovflow_file_info;
+				logfil = &WAL_segment->wals_log_ovflow_file_info;
 			else
-				logf = LOGF_INFO(WAL_segment->wals_cur_logfile);
+				logfil = LOGF_INFO(WAL_segment->wals_cur_logfile);
 		}
 		else
-			logf = &WAL_segment->wals_log_serial_file_info;
+			logfil = &WAL_segment->wals_log_serial_file_info;
 
-		WAL_segment->wals_rollover_threshold = (logf->logf_max_size ?
-												logf->
+		WAL_segment->wals_rollover_threshold = (logfil->logf_max_size ?
+												logfil->
 												logf_max_size : WAL_segment->
 												wals_max_log_length);
-		WAL_segment->wals_roundup_size = logf->logf_roundup_size;
+		WAL_segment->wals_roundup_size = logfil->logf_roundup_size;
 
 		if ((PRINT_DEBUG_MSGS) && rollover) {
 			PRINT_TIME(DEBUG_FD, LOCAL_TIME);

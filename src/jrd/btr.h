@@ -197,7 +197,7 @@ typedef struct btx {
 
 /* format of expanded index buffer */
 
-typedef struct exp {
+typedef struct exp_index_buf {
 	USHORT exp_length;
 	ULONG exp_incarnation;
 	struct btx exp_nodes[1];

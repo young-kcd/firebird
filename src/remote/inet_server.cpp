@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: inet_server.cpp,v 1.26 2003-06-06 09:16:54 alexpeshkoff Exp $
+$Id: inet_server.cpp,v 1.26.2.1 2004-09-17 20:35:04 skidder Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -171,7 +171,7 @@ int PASCAL WinMain(
 				   HINSTANCE hInstance,
 				   HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
 #else /* WINDOWS_ROUTER */
-int CLIB_ROUTINE main( int argc, char **argv)
+int CLIB_ROUTINE server_main( int argc, char **argv)
 #endif							/* WINDOWS_ROUTER */
 {
 /**************************************

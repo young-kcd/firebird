@@ -141,7 +141,7 @@ typedef struct grp_commit {
 /* Log files info block, to hold pre-allocated log files and overflow
    log information */
 
-typedef struct logf {
+typedef struct logfil {
     USHORT   logf_name_offset;        /* Offset within WAL segment of the name of the pre-allocated log file */
     USHORT   logf_partitions;         /* Number of partitions */
     SLONG    logf_max_size;           /* For rollover; if -1 use wals_max_log_length */
@@ -207,7 +207,7 @@ typedef struct wals {
     SSHORT   wals_max_logfiles;      /* Total number of preallocated log files */
     SSHORT   wals_cur_logfile;       /* Currently used pre-allocated log file, -1 if none used. */
     USHORT   wals_logf_offset;       /* Offset for the info about the first pre-allocated log file. */
-    USHORT   wals_logf_size;         /* Roundup size of each logf structure in the array starting at wals_logf_offset. */
+    USHORT   wals_logf_size;         /* Roundup size of each logfil structure in the array starting at wals_logf_offset. */
     LOGF    wals_log_serial_file_info; /* Info about the serial log files */
     LOGF    wals_log_ovflow_file_info; /* Info about the overflow log files */
 

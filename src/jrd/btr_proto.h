@@ -50,7 +50,7 @@ extern void BTR_insert(struct tdbb *, struct win *, struct iib *);
 extern enum idx_e BTR_key(struct tdbb *, struct jrd_rel *, struct rec *,
 						  struct idx *, struct key *, idx_null_state *);
 extern USHORT BTR_key_length(struct jrd_rel *, struct idx *);
-extern struct btn *BTR_last_node(struct btr *, struct exp *, struct btx **);
+extern struct btn *BTR_last_node(struct btr *, struct exp_index_buf *, struct btx **);
 extern struct btr *BTR_left_handoff(struct tdbb *, struct win *, struct btr *,
 									SSHORT);
 extern USHORT BTR_lookup(TDBB, struct jrd_rel *, USHORT, struct idx *);

@@ -27,11 +27,10 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.isql,v 1.6.2.1 2003-11-10 02:09:33 bellardo Exp $
+#  $Id: Makefile.in.client.isql,v 1.6.2.2 2004-09-17 20:34:21 skidder Exp $
 #
 ROOT=..
 ObjModuleName=client.isql
-CFLAGS:=-DSUPERCLIENT
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -42,7 +41,6 @@ include     $(ROOT)/gen/make.shared.variables
 
 unexport ISC_USER
 unexport ISC_PASSWORD
-
 
 ISQL_Files = extract.epp isql.epp show.epp
 ISQL_Sources = $(addprefix isql/, $(ISQL_Files))

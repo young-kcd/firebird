@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.25 2004-08-06 13:49:15 kkuznetsov Exp $
+dnl $Id: configure.in,v 1.141.2.26 2004-09-17 20:34:15 skidder Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -732,6 +732,53 @@ mkdir -p temp/codes
 mkdir -p temp/codes/jrd
 
 mkdir -p temp/editline/extern/editline
+
+mkdir -p temp/client.gbak/remote
+mkdir -p temp/client.gbak/jrd
+mkdir -p temp/client.gbak/common
+mkdir -p temp/client.gfix/jrd
+mkdir -p temp/client.gfix/common/classes
+mkdir -p temp/client.gpre/jrd
+mkdir -p temp/client.gpre/common
+mkdir -p temp/client.gdef/jrd/os/posix
+mkdir -p temp/client.gdef/jrd/os/win32
+mkdir -p temp/client.gdef/common/classes
+mkdir -p temp/client.gdef/common/config
+mkdir -p temp/client.gdef/gpre
+mkdir -p temp/client.qli/common/classes
+mkdir -p temp/client.qli/common/config
+mkdir -p temp/client.qli/gpre
+mkdir -p temp/client.qli/jrd
+mkdir -p temp/client.qli/jrd/os/posix
+mkdir -p temp/client.qli/jrd/os/win32
+mkdir -p temp/client.isql/common
+mkdir -p temp/client.util/jrd/os/posix
+mkdir -p temp/client.util/common/classes
+mkdir -p temp/client.util/common/config
+mkdir -p temp/embed.util/jrd/os/posix
+mkdir -p temp/embed.util/jrd/os/win32
+mkdir -p temp/embed.util/common/classes
+mkdir -p temp/embed.util/common/config
+mkdir -p temp/embed.gbak/remote
+mkdir -p temp/embed.gbak/jrd
+mkdir -p temp/embed.gbak/common
+mkdir -p temp/embed.gfix/common/classes
+mkdir -p temp/embed.gfix/jrd
+mkdir -p temp/embed.isql/common
+mkdir -p temp/embed.gdef/jrd
+mkdir -p temp/embed.gdef/jrd/os/posix
+mkdir -p temp/embed.gdef/jrd/os/win32
+mkdir -p temp/embed.gdef/gpre
+mkdir -p temp/embed.gdef/common/classes
+mkdir -p temp/embed.gdef/common/config
+mkdir -p temp/embed.qli/jrd
+mkdir -p temp/embed.qli/gpre
+mkdir -p temp/embed.qli/common/classes
+mkdir -p temp/embed.qli/common/config
+mkdir -p temp/embed.qli/jrd/os/posix
+mkdir -p temp/embed.qli/jrd/os/win32
+mkdir -p temp/embed.gpre/jrd
+mkdir -p temp/embed.gpre/common
 
 ])
 

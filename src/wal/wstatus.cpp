@@ -53,7 +53,7 @@ void WSTATUS_dump_wal_segment( WAL WAL_handle, int acquire_flag,
  **************************************/
 	WALS WAL_segment;
 	WALBLK *wblk;
-	LOGF *logf;
+	LOGF *logfil;
 	int i;
 
 	if (acquire_flag)
@@ -171,23 +171,23 @@ void WSTATUS_dump_wal_segment( WAL WAL_handle, int acquire_flag,
 		FPRINTF(outfile,
 				"Number \tName \t\tPartitions \tPartition size \tBase offset \tFlags\n");
 		for (i = 0; i < WAL_segment->wals_max_logfiles; i++) {
-			logf = LOGF_INFO(i);
+			logfil = LOGF_INFO(i);
 			FPRINTF(outfile, "%d \t%s \t\t%d \t%ld \t%ld \t%ud\n",
-					i + 1, LOGF_NAME(logf), logf->logf_partitions,
-					logf->logf_max_size, logf->logf_base_offset,
-					logf->logf_flags);
+					i + 1, LOGF_NAME(logfil), logfil->logf_partitions,
+					logfil->logf_max_size, logfil->logf_base_offset,
+					logfil->logf_flags);
 		}
 	}
-	logf = &WAL_segment->wals_log_serial_file_info;
-	if (logf->logf_name_offset > 0)
+	logfil = &WAL_segment->wals_log_serial_file_info;
+	if (logfil->logf_name_offset > 0)
 		FPRINTF(outfile,
 				"Serial log file name=%s, size=%ld, fname seqno=%ld\n",
-				LOGF_NAME(logf), logf->logf_max_size, logf->logf_fname_seqno);
-	logf = &WAL_segment->wals_log_ovflow_file_info;
-	if (logf->logf_name_offset > 0)
+				LOGF_NAME(logfil), logfil->logf_max_size, logfil->logf_fname_seqno);
+	logfil = &WAL_segment->wals_log_ovflow_file_info;
+	if (logfil->logf_name_offset > 0)
 		FPRINTF(outfile,
 				"Overflow log file name=%s, size=%ld, fname seqno=%ld\n",
-				LOGF_NAME(logf), logf->logf_max_size, logf->logf_fname_seqno);
+				LOGF_NAME(logfil), logfil->logf_max_size, logfil->logf_fname_seqno);
 	FPRINTF(outfile,
 			"---------------------------------------------------------\n");
 

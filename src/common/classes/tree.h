@@ -33,9 +33,7 @@
 					   stdlib.h (EKU) */
 #endif
 #include "vector.h"
-#ifndef __GNUC__
 #include <new>
-#endif
 
 // This macro controls merging of nodes of all B+ trees
 // Now it merges pages only when resulting page will be 3/4 filled or less

@@ -231,59 +231,6 @@ using Firebird::MemoryPool;
 
 MemoryPool* getDefaultMemoryPool();
 
-#ifdef __GNUC__
-// All this crappy code below under __GNUC__ conditional is to avoid replacing 
-// STL operator new as this replacement causes crashes if client library is 
-// loaded by host application using STL
-
-// This is to prevent inclusion of <new> header
-#ifdef __NEW__
-#error "alloc.h must be included before <new>"
-#endif
-#define __NEW__
-namespace std {
-	class bad_alloc : public exception {};
-}
-// Define operators as static inline to prevent replacement of STL versions
-static inline void* operator new(size_t s) {
-#if defined(DEV_BUILD)
-// Do not complain here. It causes client tools to crash on Red Hat 8.0
-//	fprintf(stderr, "You MUST allocate all memory from a pool.  Don't use the default global new().\n");
-#endif	// DEV_BUILD
-//	return getDefaultMemoryPool()->calloc(s, 0
-	return getDefaultMemoryPool()->allocate(s, 0
-#ifdef DEBUG_GDS_ALLOC
-	  ,__FILE__,__LINE__
-#endif
-	);
-}
-
-static inline void* operator new[](size_t s) {
-#if defined(DEV_BUILD)
-// Do not complain here. It causes client tools to crash on Red Hat 8.0
-//	fprintf(stderr, "You MUST allocate all memory from a pool.  Don't use the default global new[]().\n");
-#endif	// DEV_BUILD
-//	return getDefaultMemoryPool()->->calloc(s, 0
-	return getDefaultMemoryPool()->allocate(s, 0
-#ifdef DEBUG_GDS_ALLOC
-	  ,__FILE__,__LINE__
-#endif
-	);
-}
-
-static inline void operator delete(void* mem) throw() {
-	Firebird::MemoryPool::globalFree(mem);
-}
-
-static inline void operator delete[](void* mem) throw() {
-	Firebird::MemoryPool::globalFree(mem);
-}
-
-// Default placement versions of operator new.
-static inline void* operator new(size_t, void* __p) throw() { return __p; }
-static inline void* operator new[](size_t, void* __p) throw() { return __p; }
-
-#else
 // Global versions of operator new() for compatibility with crappy libraries
 void* operator new(size_t) THROW_BAD_ALLOC;
 void* operator new[](size_t) THROW_BAD_ALLOC;
@@ -293,7 +240,6 @@ void* operator new[](size_t) THROW_BAD_ALLOC;
 void operator delete(void* mem) throw();
 
 void operator delete[](void* mem) throw();
-#endif
 
 #ifdef DEBUG_GDS_ALLOC
 static inline void* operator new(size_t s, Firebird::MemoryPool& pool, char* file, int line) {

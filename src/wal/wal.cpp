@@ -863,24 +863,24 @@ SSHORT WAL_set_rollover_log(ISC_STATUS * status_vector,
  *
  **************************************/
 	WALS WAL_segment;
-	LOGF *logf;
+	LOGF *logfil;
 
 	WALC_acquire(WAL_handle, &WAL_segment);
 	WAL_CHECK_BUG(WAL_handle, WAL_segment);
 
 	if (WAL_segment->wals_max_logfiles > 0)
-		logf = &WAL_segment->wals_log_ovflow_file_info;
+		logfil = &WAL_segment->wals_log_ovflow_file_info;
 	else
-		logf = &WAL_segment->wals_log_serial_file_info;
+		logfil = &WAL_segment->wals_log_serial_file_info;
 
 	strcpy(WAL_segment->wals_rollover_logname_base,
 		   rollover_log_info->lg_name);
-	logf->logf_name_offset =
+	logfil->logf_name_offset =
 		(UCHAR *) WAL_segment->wals_rollover_logname_base -
 		(UCHAR *) WAL_segment;
-	logf->logf_max_size = MAX(rollover_log_info->lg_size, MIN_LOG_LENGTH);
-	logf->logf_roundup_size = 0;
-	logf->logf_flags = rollover_log_info->lg_flags;
+	logfil->logf_max_size = MAX(rollover_log_info->lg_size, MIN_LOG_LENGTH);
+	logfil->logf_roundup_size = 0;
+	logfil->logf_flags = rollover_log_info->lg_flags;
 
 	WALC_release(WAL_handle);
 
