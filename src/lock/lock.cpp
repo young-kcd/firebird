@@ -29,7 +29,7 @@
  *
  */
 /*
-$Id: lock.cpp,v 1.37 2003-03-04 00:04:33 brodsom Exp $
+$Id: lock.cpp,v 1.38 2003-03-04 00:38:31 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -198,7 +198,8 @@ static LBL alloc_lock(USHORT, STATUS *);
 #ifdef STATIC_SEMAPHORES
 static USHORT alloc_semaphore(OWN, STATUS *);
 #endif
-#if !(defined WIN_NT || defined SOLARIS_MT || POSIX_THREADS)
+#if (!(defined WIN_NT || defined SOLARIS_MT || POSIX_THREADS)) \
+|| (defined SOLARIS_MT && !defined SUPERSERVER) || (defined WIN_NT && !defined SUPERSERVER)
 static void blocking_action(PTR);
 #endif
 static void blocking_action2(PTR, PTR);
@@ -1744,7 +1745,8 @@ static USHORT alloc_semaphore( OWN owner, STATUS * status_vector)
 #endif
 
 
-#if !(defined WIN_NT || defined SOLARIS_MT || POSIX_THREADS)
+#if (!(defined WIN_NT || defined SOLARIS_MT || POSIX_THREADS)) \
+|| (defined SOLARIS_MT && !defined SUPERSERVER) || (defined WIN_NT && !defined SUPERSERVER)
 static void blocking_action( PTR owner_offset)
 {
 /**************************************
