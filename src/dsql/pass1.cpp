@@ -3641,7 +3641,7 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 	request->req_alias_relation_prefix = pass1_alias_concat(req_alias_relation_prefix, alias);
 
 	// AB: 2005-01-06
-	// If our derived table contains a single query with a sub-select burried
+	// If our derived table contains a single query with a sub-select buried
 	// inside the select items then we need a special handling, because we don't
 	// want creating a new sub-select for every reference outside the derived 
 	// table to that sub-select.
@@ -4532,7 +4532,7 @@ static bool pass1_found_field(const dsql_nod* node, USHORT check_scope_level,
   
  	pass1_found_sub_select
   
-    @brief	Search if a sub select is burried inside 
+    @brief	Search if a sub select is buried inside 
    an select list from an query expression.
 
     @param node

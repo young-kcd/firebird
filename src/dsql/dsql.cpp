@@ -3326,10 +3326,10 @@ static ISC_STATUS execute_request(dsql_req*			request,
 	// REQ_EXEC_BLOCK has no outputs so there are no out_msg 
 	// supplied from client side, but REQ_EXEC_BLOCK requires
 	// 2-byte message for EOS synchronization
-	bool isBlock = (request->req_type == REQ_EXEC_BLOCK);
+	const bool isBlock = (request->req_type == REQ_EXEC_BLOCK);
 
 	if (out_msg_length && (message = request->req_receive) || isBlock) {
-		char		temp_buffer[DOUBLE_ALIGN*2];
+		char		temp_buffer[DOUBLE_ALIGN * 2];
 		dsql_msg	temp_msg;
 
 		/* Insure that the blr for the message is parsed, regardless of
