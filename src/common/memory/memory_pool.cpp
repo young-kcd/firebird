@@ -292,7 +292,7 @@ private:
 	// to keep track of block types
 	typedef std::map<int, int> pool_map_t;
 	pool_map_t*	blk_type_count;
-	int extend_increment;
+	size_t extend_increment;
 };
 
 
