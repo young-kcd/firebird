@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.19 2003-04-10 06:02:30 aafemt Exp $
+ *  $Id: fb_types.h,v 1.20 2003-04-10 10:48:20 aafemt Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -153,7 +153,6 @@ typedef char TEXT;				// To be expunged over time
 typedef unsigned char BYTE;		// Unsigned byte - common
 //typedef char SBYTE;			Signed byte - not used
 typedef long ISC_STATUS;
-typedef ISC_STATUS STATUS; // Temporary until I replace STATUS in all sources
 typedef long IPTR;
 typedef unsigned long U_IPTR;
 typedef void (*FPTR_VOID) ();
