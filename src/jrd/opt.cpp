@@ -5749,7 +5749,10 @@ static jrd_nod* get_unmapped_node(thread_db* tdbb, jrd_nod* node,
 		if (!rootNode || (fieldId >= map->nod_count)) {
 			return NULL;
 		}
-		return map->nod_arg[fieldId]->nod_arg[e_asgn_from];
+		// Check also the expression inside the map, because aggregate
+		// functions aren't allowed to be delivered to the WHERE clause.
+		return get_unmapped_node(tdbb, map->nod_arg[fieldId]->nod_arg[e_asgn_from], 
+			map, shellStream, false);
 	}
 
 	jrd_nod* returnNode = NULL;
