@@ -93,6 +93,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
+#include "../common/utils_proto.h"
 
 #ifdef UNIX
 #ifdef NETBSD
@@ -213,16 +214,13 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 					if (ISC_get_prefix(p) == -1)
 						printf("Invalid argument Ignored\n");
 					else
-						argv++;	/* donot skip next argument if this one 
+						argv++;	/* do not skip next argument if this one
 								   is invalid */
 					done = true;
 					break;
 
 				case 'P':
-					protocol[0] = '/';
-					protocol[1] = 0;
-					strncat(protocol, *argv++, 
-						sizeof(protocol) - strlen(protocol) - 1);
+					fb_utils::snprintf(protocol, sizeof(protocol), "/%s", *argv++);
 					break;
 
                 case 'H':
@@ -359,7 +357,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 				TEMP_DIR, errno);
 	}
 
-/* Server tries to attach to security.fdb to make sure everything is OK
+/* Server tries to attach to security2.fdb to make sure everything is OK
    This code fixes bug# 8429 + all other bug of that kind - from 
    now on the server exits if it cannot attach to the database
    (wrong or no license, not enough memory, etc.
