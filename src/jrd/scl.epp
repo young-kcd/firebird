@@ -72,13 +72,6 @@
 #endif
 
 #define	BLOB_BUFFER_SIZE	4096	/* used to read in acl blob */
-/*
-#define CHECK_ACL_BOUND(to, start, length_ptr, check_length)\
-          {\
-          if (((start)->str_data + *length_ptr) < (to + check_length))  {start = GRANT_realloc_acl( start, &to, length_ptr);} \
-          }
-#define CHECK_AND_MOVE(to, from, start, length_ptr) {CHECK_ACL_BOUND (to, start, length_ptr, 1); *(to)++ = from;}
-*/
 
 DATABASE DB = FILENAME "ODS.RDB";
 
