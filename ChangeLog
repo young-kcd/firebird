@@ -1,3 +1,28 @@
+2004-03-05 10:37  alexpeshkoff
+
+	* firebird2/src/: common/classes/auto.h, jrd/ExecuteStatement.cpp,
+	jrd/ExecuteStatement.h:
+	
+	1. front-ported blob returning fix 2.correct license
+
+2004-03-05 08:37  skidder
+
+	* firebird2/src/jrd/intl.cpp:
+	
+	Fix error spotted by Claudio
+
+2004-03-05 08:33  skidder
+
+	* firebird2/src/dsql/user_dsql.cpp:
+	
+	correction
+
+2004-03-05 08:21  skidder
+
+	* firebird2/src/dsql/: user_dsql.cpp, user_dsql.cpp:
+	
+	Fix memory corruption
+
 2004-03-04 22:38  skidder
 
 	* firebird2/src/utilities/gstat/dba.epp:
