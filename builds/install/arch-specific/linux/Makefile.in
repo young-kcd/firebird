@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in,v 1.1 2003-07-08 22:57:24 brodsom Exp $
+#  $Id: Makefile.in,v 1.2 2003-12-30 02:06:13 skidder Exp $
 #
 ROOT=..
 
@@ -78,6 +78,8 @@ Version=$(BuildVersion)-$(PackageVersion)
 TarDir= Firebird$(ArchPrefix)-$(Version).$(CpuType)
 TarFile=Firebird$(ArchPrefix)-$(Version).$(CpuType).tar.gz
 RPMFile=Firebird$(ArchPrefix)-$(Version).$(CpuType).rpm
+DebugDir=Firebird$(ArchPrefix)-debuginfo-$(Version).$(CpuType)
+DebugFile=Firebird$(ArchPrefix)-debuginfo-$(Version).$(CpuType).tar.gz
 
 
 # Determine where the packages are built.  Each distribution builds them in
@@ -105,17 +107,57 @@ TarInstallDir=$(GEN_ROOT)/install
 
 dist : packages
 
-packages: tarfile rpmfile
+packages: tarfile rpmfile debugfile
 
 tarfile:  $(TarFile)
 
 $(TarFile) :  buildTarDir
 	(cd $(GEN_ROOT); tar -czf $(TarFile) $(TarDir))
 
+debugfile:  $(DebugFile)
 
+$(DebugFile) :  buildImageDir
+	(cd $(GEN_ROOT)/$(DebugDir); tar -czf ../$(DebugFile) *)
+
+# objcopy --add-gnu-debuglink fails with binutils 2.14 or older
+# its failure affects only GDB ability to pick up external debug 
+# symbols automatically. We may use eu-strip command from elfutils 
+# instead, but it doesn't work or compile with such distros 
+# as Mandrake 9.0 not saying about older ones. New binutils
+# seem to compile and work everywhere I tried, but we try to 
+# use eu-strip first since it is a part of default Red Hat 9 
+# install and is available in binary form for Mandrake 9.1 and newer.
+#
+#     28-Dec-2003. Nickolay Samofatov
 
 buildImageDir:
 	(cd $(GEN_ROOT); ./install/makeInstallImage.sh)
+	mkdir -p $(GEN_ROOT)/$(DebugDir)
+	for x in `(cd $(GEN_ROOT)/buildroot; find)`; do \
+        FIL=$(GEN_ROOT)/buildroot/$$x; \
+        D_FIL=$(GEN_ROOT)/$(DebugDir)/`dirname $${x}`/.debug/`basename $${x}`.debug; \
+        if [ ! -h $$FIL ] && readelf -h $$FIL > /dev/null 2> /dev/null; then \
+            mkdir -p $(GEN_ROOT)/$(DebugDir)/`dirname $$x`/.debug; \
+            echo Generating external debug info for $$x; \
+            if eu-strip -g -f $${D_FIL} $${FIL} > /dev/null 2> /dev/null; then \
+               echo Succeeded using eu-strip from elfutils; \
+            else \
+                cp $${FIL} $${D_FIL}; \
+                if objcopy --add-gnu-debuglink $${D_FIL} $${FIL}; > /dev/null 2> /dev/null; then \
+                    echo Succeeded using objcopy from binutils; \
+                else \
+                    echo Failed to set debug link for $${x}; \
+                fi; \
+            fi; \
+            echo Stripping unneeded symbols from $${x}; \
+            objcopy --strip-debug --strip-unneeded $${FIL}; \
+        fi; \
+    done
+# Work around GDB 6.0 bug
+	mkdir -p $(GEN_ROOT)/$(DebugDir)/usr/lib/.debug
+	for x in `ls $(GEN_ROOT)/$(DebugDir)@prefix@/lib/.debug`; do \
+        ln -f -s @prefix@/lib/.debug/`basename $$x` $(GEN_ROOT)/$(DebugDir)/usr/lib/.debug; \
+    done
 
 
 buildTarDir: buildImageDir
@@ -129,6 +171,7 @@ buildTarDir: buildImageDir
 
 install: buildTarDir
 	(cd $(GEN_ROOT)/$(TarDir); ./install.sh)
+	cp -r $(GEN_ROOT)/$(DebugDir)/* /
 
 
 rpmfile: $(RPMFile)
