@@ -69,8 +69,9 @@
 #define MAXHOSTLEN	64
 #endif
 
-#define SERVER_PIPE_NAME  "\\pipe\\interbas\\server"
-#define SERVER_EVENT_NAME "\\pipe\\interbas\\event"
+#define PIPE_PREFIX "pipe" // win32-specific
+#define SERVER_PIPE_SUFFIX "server"
+#define EVENT_PIPE_SUFFIX "event"
 
 extern int xdrmem_create();
 
@@ -460,7 +461,7 @@ PORT WNET_connect(TEXT*		name,
 
 	if (port->port_connection)
 		ALLR_free(port->port_connection);
-	port->port_connection = make_pipe_name(name, SERVER_PIPE_NAME, 0);
+	port->port_connection = make_pipe_name(name, SERVER_PIPE_SUFFIX, 0);
 
 /* If we're a host, just make the connection */
 
@@ -635,7 +636,7 @@ PORT WNET_reconnect(HANDLE handle, TEXT * name, STATUS * status_vector)
 
 	if (port->port_connection)
 		ALLR_free(port->port_connection);
-	port->port_connection = make_pipe_name(name, SERVER_PIPE_NAME, 0);
+	port->port_connection = make_pipe_name(name, SERVER_PIPE_SUFFIX, 0);
 
 	port->port_handle = handle;
 	port->port_server_flags |= SRVR_server;
@@ -881,7 +882,7 @@ static PORT aux_connect( PORT port, PACKET * packet, XDR_INT(*ast) (void))
 	port->port_async = new_port = alloc_port(port->port_parent);
 	new_port->port_flags |= PORT_async;
 	new_port->port_connection =
-		make_pipe_name(port->port_connection->str_data, SERVER_EVENT_NAME, p);
+		make_pipe_name(port->port_connection->str_data, EVENT_PIPE_SUFFIX, p);
 
 	THREAD_EXIT;
 	while (TRUE) {
@@ -938,8 +939,7 @@ static PORT aux_request( PORT port, PACKET * packet)
 
 	wnet_make_file_name(str_pid, server_pid);
 	new_port->port_connection =
-		make_pipe_name(port->port_connection->str_data, SERVER_EVENT_NAME,
-					   str_pid);
+		make_pipe_name(port->port_connection->str_data, EVENT_PIPE_SUFFIX, str_pid);
 
 	security_attr = ISC_get_security_desc();
 	THREAD_EXIT;
@@ -1093,7 +1093,8 @@ static void exit_handler( PORT main_port)
 
 static STR make_pipe_name(
 						  TEXT * connect_name,
-						  TEXT * service_name, TEXT * str_pid)
+						  TEXT * suffix_name,
+						  TEXT * str_pid)
 {
 /**************************************
  *
@@ -1132,9 +1133,15 @@ static STR make_pipe_name(
 				protocol = p;
 	}
 
-	strcpy(q, service_name);
-	while (*q)
-		q++;
+	*q++ = '\\';
+	strcpy(q, PIPE_PREFIX);
+	q += strlen(PIPE_PREFIX);
+	*q++ = '\\';
+	strcpy(q, FB_PIPE_NAME);
+	q += strlen(FB_PIPE_NAME);
+	*q++ = '\\';
+	strcpy(q, suffix_name);
+	q += strlen(suffix_name);
 	*q++ = '\\';
 	strcpy(q, protocol);
 

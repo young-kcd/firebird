@@ -130,9 +130,12 @@
 /* Support databases on Raw Devices (UNIX only) */
 #undef SUPPORT_RAW_DEVICES
 
-/* Inet service name and port (UNIX only) */
+/* Inet service name and port */
 #define FB_SERVICE_NAME "gds_db"
 #define FB_SERVICE_PORT 3050
+
+/* Wnet pipe name */
+#define FB_PIPE_NAME "interbas"
 
 /* Maximum allowed pathname length */
 #define MAXPATHLEN 260 // should correspond to MAX_PATH define in windef.h
