@@ -1,3 +1,35 @@
+2004-02-17 21:10  skidder
+
+	* firebird2/builds/win32/msvc7/: alice.vcproj,
+	alice_classic.vcproj, burp.vcproj, burp_classic.vcproj,
+	common.vcproj, common_classic.vcproj, common_static.vcproj,
+	dsql_server.vcproj, dsql_server_classic.vcproj, engine.vcproj,
+	engine_classic.vcproj, engine_embed.vcproj, fb_inet_server.vcproj,
+	fb_lock_print.vcproj, fbclient.vcproj, fbembed.vcproj,
+	fbguard.vcproj, fbserver.vcproj, fbudf.vcproj, gbak.vcproj,
+	gdef.vcproj, gds32.vcproj, gfix.vcproj, gpre.vcproj,
+	gpre_boot.vcproj, gsec.vcproj, gsplit.vcproj, gstat.vcproj,
+	ib_udf.vcproj, ib_util.vcproj, instreg.vcproj, instsvc.vcproj,
+	intl.vcproj, isql.vcproj, lock.vcproj, lock_classic.vcproj,
+	nbackup.vcproj, qli.vcproj, remote.vcproj, remote_classic.vcproj,
+	utilities.vcproj, utilities_classic.vcproj:
+	
+	Update MSVC makefiles.	1) add PDB generation for release binaries
+	2) add fb_string stuff
+
+2004-02-17 12:08  aafemt
+
+	* firebird2/src/common/classes/fb_string.cpp:
+	
+	Fix a couple of warnings
+
+2004-02-17 00:24  arnobrinkman
+
+	* firebird2/src/burp/restore.epp:
+	
+	Change rdb$db_key recalculation to the right solution, Thanks to
+	Oleg.
+
 2004-02-15 09:51  dimitr
 
 	* firebird2/builds/posix/Makefile.in.extlib:
