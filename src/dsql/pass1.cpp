@@ -6274,6 +6274,7 @@ static void pass1_union_auto_cast(dsql_nod* input, const dsc& desc,
 						// Because this select item has a different descriptor then
 						// our finally descriptor CAST it.
 						dsql_nod* cast_node = NULL;
+						dsql_nod* alias_node = NULL;
 
 						// Pick a existing cast if available else make a new one.
 						if ((select_item->nod_type == nod_alias) &&
@@ -6298,6 +6299,19 @@ static void pass1_union_auto_cast(dsql_nod* input, const dsc& desc,
 							}
 							else {
 								cast_node->nod_arg[e_cast_source] = select_item;
+							}
+							// When a cast is created we're losing our fieldname, thus
+							// create a alias to keep it.
+							if (select_item->nod_type == nod_field) {
+								dsql_fld* sub_field = (dsql_fld*) select_item->nod_arg[e_fld_field];
+								// Create new node for alias and copy fieldname
+								alias_node = MAKE_node(nod_alias, e_alias_count);
+								// Copy fieldname to a new string.
+								dsql_str* str_alias = FB_NEW_RPT(*tdsql->tsql_default, 
+									strlen(sub_field->fld_name)) dsql_str;
+								strcpy(str_alias->str_data, sub_field->fld_name);
+								str_alias->str_length = strlen(sub_field->fld_name);
+								alias_node->nod_arg[e_alias_alias] = (dsql_nod*) str_alias;
 							}
 						}
 						
@@ -6329,7 +6343,16 @@ static void pass1_union_auto_cast(dsql_nod* input, const dsc& desc,
 							select_item->nod_desc = desc;
 						}
 						else {
-							input->nod_arg[position] = cast_node;
+							// If a new alias was created for keeping original field-name
+							// make the alias the "top" node.
+							if (alias_node) {
+								alias_node->nod_arg[e_alias_value] = cast_node;
+								alias_node->nod_desc = cast_node->nod_desc;
+								input->nod_arg[position] = alias_node;
+							}
+							else {
+								input->nod_arg[position] = cast_node;
+							}
 						}
 					}
 				}
@@ -7004,10 +7027,13 @@ static dsql_fld* resolve_context( dsql_req* request, const dsql_str* qualifier,
 //     to reference a field by the complete table-name as alias 
 //     (see EMPLOYEE table in examples for a example).
 	if (isCheckConstraint && table_name) {
-		if ((!strcmp(reinterpret_cast<const char*>(table_name), OLD_CONTEXT)) || 
-			(!strcmp(reinterpret_cast<const char*>(table_name), NEW_CONTEXT))) 
-		{
-			table_name = NULL;
+		// If a qualifier is present and it's equal to the alias then we've already the right table-name
+		if (!(qualifier && !strcmp(reinterpret_cast<const char*>(qualifier->str_data), table_name))) {
+			if ((!strcmp(reinterpret_cast<const char*>(table_name), OLD_CONTEXT)) || 
+				(!strcmp(reinterpret_cast<const char*>(table_name), NEW_CONTEXT))) 
+			{
+				table_name = NULL;
+			}
 		}
 	}
 	if (table_name == NULL) {
