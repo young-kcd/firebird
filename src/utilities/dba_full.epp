@@ -544,7 +544,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	ON_ERROR
 		EXIT(FINI_ERROR);
 	END_ERROR
-	FINISH;
+	/* FINISH; ! error
+	FINISH
 	ON_ERROR
 		EXIT(FINI_ERROR);
 	END_ERROR
