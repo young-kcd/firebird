@@ -31,19 +31,19 @@ extern "C" {
 ISC_STATUS API_ROUTINE isc_array_gen_sdl(ISC_STATUS*, const ISC_ARRAY_DESC*,
 					 SSHORT*, UCHAR*, SSHORT*);
 
-ISC_STATUS API_ROUTINE isc_array_get_slice(ISC_STATUS*, void**, void**,
+ISC_STATUS API_ROUTINE isc_array_get_slice(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*,
 					   ISC_QUAD*, const ISC_ARRAY_DESC*,
 					   void*, SLONG*);
 
-ISC_STATUS API_ROUTINE isc_array_lookup_bounds(ISC_STATUS*, void**, void**,
+ISC_STATUS API_ROUTINE isc_array_lookup_bounds(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*,
 						const SCHAR*, const SCHAR*,
 						ISC_ARRAY_DESC*);
 
-ISC_STATUS API_ROUTINE isc_array_lookup_desc(ISC_STATUS*, void**, void**,
+ISC_STATUS API_ROUTINE isc_array_lookup_desc(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*,
 						const SCHAR*, const SCHAR*,
 						ISC_ARRAY_DESC*);
 
-ISC_STATUS API_ROUTINE isc_array_put_slice(ISC_STATUS*, void**, void**,
+ISC_STATUS API_ROUTINE isc_array_put_slice(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*,
     					   	ISC_QUAD*, const ISC_ARRAY_DESC*,
 						void*, SLONG*);
 
