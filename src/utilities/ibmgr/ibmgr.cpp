@@ -23,7 +23,7 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
- * $Id: ibmgr.cpp,v 1.2 2003-08-10 00:41:14 brodsom Exp $
+ * $Id: ibmgr.cpp,v 1.3 2003-08-20 09:34:23 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -411,15 +411,9 @@ static SSHORT get_switches(
 
 			default:
 #ifdef DEV_BUILD
-#ifdef __LINE__IS_INT
 				ib_fprintf(OUTFILE,
-						   "ASSERT: file %s line %d: last_sw = %d\n",
+						   "ASSERT: file %s line %"LINEFORMAT": last_sw = %d\n",
 						   __FILE__, __LINE__, last_sw);
-#else
-				ib_fprintf(OUTFILE,
-						   "ASSERT: file %s line %ld: last_sw = %d\n",
-						   __FILE__, __LINE__, last_sw);
-#endif
 #endif
 				;
 			}

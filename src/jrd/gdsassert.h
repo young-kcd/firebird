@@ -34,11 +34,7 @@
  * 1996-Feb-09 David Schnepper 
  */
 
-#ifndef __LINE__IS_INT
-#define FB_GDS_ASSERT_FAILURE_STRING	"GDS Assertion failure: %s %ld\n"
-#else
-#define FB_GDS_ASSERT_FAILURE_STRING	"GDS Assertion failure: %s %d\n"
-#endif
+#define FB_GDS_ASSERT_FAILURE_STRING	"GDS Assertion failure: %s %"LINEFORMAT"\n"
 
 #ifdef SUPERSERVER
 

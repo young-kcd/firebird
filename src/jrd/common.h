@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.75 2003-08-12 10:44:54 aafemt Exp $
+$Id: common.h,v 1.76 2003-08-20 09:35:00 brodsom Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -106,7 +106,8 @@ $Id: common.h,v 1.75 2003-08-12 10:44:54 aafemt Exp $
 #define xLONGFORMAT "lx"
 
 
-#define __LINE__IS_INT
+//format for __LINE__
+#define LINEFORMAT "d"
 
 #ifdef SUPERSERVER
 #define SET_TCP_NO_DELAY
@@ -206,7 +207,9 @@ int syslog(int pri, char *fmt, ...);
 
 typedef RETSIGTYPE (*SIG_FPTR) ();
 
-#define __LINE__IS_INT
+//format for __LINE__
+#define LINEFORMAT "d"
+
 #define SLONGFORMAT	"ld"
 #define ULONGFORMAT "lu"
 #define XLONGFORMAT "lX"
@@ -222,7 +225,9 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define UNIX_64_BIT_IO
 #endif
 */
-#define __LINE__IS_INT
+//format for __LINE__
+#define LINEFORMAT "d"
+
 #define SLONGFORMAT	"ld"
 #define ULONGFORMAT "lu"
 #define XLONGFORMAT "lX"
@@ -563,7 +568,9 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define ULONGFORMAT	"lu"
 #define XLONGFORMAT "lX"
 #define xLONGFORMAT "lx"
-#define __LINE__IS_INT
+
+//format for __LINE__
+#define LINEFORMAT "d"
 
 typedef __int64 SINT64;
 typedef unsigned __int64 UINT64;
@@ -798,7 +805,10 @@ typedef struct
 #define xLONGFORMAT "x"
 #endif
 
-
+//format for __LINE__
+#ifndef LINEFORMAT
+#define LINEFORMAT "ld"
+#endif
 
 /* variable argument definitions */
 

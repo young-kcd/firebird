@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: srvrmgr.cpp,v 1.2 2003-08-10 00:41:14 brodsom Exp $
+ * $Id: srvrmgr.cpp,v 1.3 2003-08-20 09:34:23 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -175,15 +175,9 @@ USHORT SRVRMGR_exec_line(IBMGR_DATA * data)
 
 	default:
 #ifdef DEV_BUILD
-#ifdef __LINE__IS_INT
 		ib_fprintf(OUTFILE,
-				   "ASSERT: file %s line %d: unknown operation %d\n",
+				   "ASSERT: file %s line %"LINEFORMAT": unknown operation %d\n",
 				   __FILE__, __LINE__, data->operation);
-#else
-		ib_fprintf(OUTFILE,
-				   "ASSERT: file %s line %ld: unknown operation %d\n",
-				   __FILE__, __LINE__, data->operation);
-#endif
 #endif
 		;
 	}

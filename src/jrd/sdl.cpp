@@ -45,11 +45,7 @@
 #ifdef _assert
 #undef _assert
 #endif
-#ifdef __LINE__IS_INT
-#define _assert(ex)	{if (!(ex)){(void) ib_fprintf (ib_stderr, "assert failure: %s %d\n", __FILE__, __LINE__);}}
-#else
-#define _assert(ex)	{if (!(ex)){(void) ib_fprintf (ib_stderr, "assert failure: %s %ld\n", __FILE__, __LINE__);}}
-#endif
+#define _assert(ex)	{if (!(ex)){(void) ib_fprintf (ib_stderr, "assert failure: %s %"LINEFORMAT"\n", __FILE__, __LINE__);}}
 #ifdef assert
 #undef assert
 #endif
