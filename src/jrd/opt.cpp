@@ -4918,7 +4918,8 @@ static bool gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 		river1->riv_number = cnt++;
 	}
 
-	Firebird::Array<JRD_NOD> scratch(tdbb->tdbb_default, opt->opt_base_conjuncts * cnt);
+	Firebird::HalfStaticArray<JRD_NOD,OPT_STATIC_ITEMS> scratch(tdbb->tdbb_default);
+	scratch.grow(opt->opt_base_conjuncts * cnt);
 	classes = scratch.begin();
 
 	// Compute equivalence classes among streams.  This involves finding groups
