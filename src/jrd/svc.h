@@ -114,27 +114,7 @@ extern "C" {
 
 #endif /* SUPERSERVER */
 
-inline void SVC_STATUS_ARG(STATUS*& status, USHORT type, const void* value)
-{
-	if (value)
-	{
-		switch (type)
-		{
-		case isc_arg_number:
-			*status++ = type;
-			*status++ = reinterpret_cast<STATUS>(value);
-			break;
-		case isc_arg_string:
-			*status++ = type;
-			*status++ = (STATUS)
-			SVC_err_string(static_cast<const char*>(value),
-						   strlen(static_cast<const char*>(value)));
-			break;
-		default:
-			break;
-		}
-	}
-}
+void SVC_STATUS_ARG(STATUS*& status, USHORT type, const void* value);
 
 #define CK_SPACE_FOR_NUMERIC 	{{if ((info + 1 + sizeof (ULONG)) > end) \
     				      { \

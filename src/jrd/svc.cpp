@@ -298,6 +298,28 @@ extern int main_gsec(SVC service);
 #define MAIN_GSEC		NULL
 #endif
 
+void SVC_STATUS_ARG(STATUS*& status, USHORT type, const void* value)
+{
+	if (value)
+	{
+		switch (type)
+		{
+		case isc_arg_number:
+			*status++ = type;
+			*status++ = reinterpret_cast<STATUS>(value);
+			break;
+		case isc_arg_string:
+			*status++ = type;
+			*status++ = (STATUS)
+			SVC_err_string(static_cast<const char*>(value),
+						   strlen(static_cast<const char*>(value)));
+			break;
+		default:
+			break;
+		}
+	}
+}
+
 /* Entries which have a NULL serv_executable field will not fork
    a process on the server, but will establish a valid connection
    which can be used for isc_info_svc calls.
