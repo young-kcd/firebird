@@ -479,6 +479,7 @@ class jrd_prc : public pool_alloc_rpt<SCHAR, type_prc>
 	USHORT prc_id; // Should be first field because MET_remove_procedure relies on that
 	USHORT prc_flags;
 	USHORT prc_inputs;
+	USHORT prc_defaults;
 	USHORT prc_outputs;
 	struct jrd_nod *prc_input_msg;
 	struct jrd_nod *prc_output_msg;
@@ -520,6 +521,7 @@ class prm : public pool_alloc_rpt<SCHAR, type_prm>
     public:
 	USHORT prm_number;
 	struct dsc prm_desc;
+	jrd_nod *prm_default_val;
 	TEXT *prm_name;				/* pointer to asciiz name */
 	TEXT prm_string[2];			/* one byte for ALLOC and one for the terminating null */
 };

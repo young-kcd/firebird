@@ -34,10 +34,10 @@
  * 2002-02-24 Sean Leyne - Code Cleanup of old Win 3.1 port (WINDOWS_ONLY)
  * 2002-09-16 Nickolay Samofatov - Deferred trigger compilation changes
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
- *
+ * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.87 2004-01-13 09:52:14 robocop Exp $
+$Id: met.epp,v 1.88 2004-01-16 12:59:15 hvlad Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -137,6 +137,7 @@ static bool get_type(TDBB, SSHORT*, const UCHAR*, const TEXT*);
 static void lookup_view_contexts(TDBB, jrd_rel*);
 static void name_copy(TEXT*, const TEXT*);
 static USHORT name_length(const TEXT *);
+static jrd_nod* parse_param_blr(TDBB, jrd_prc*, SLONG[2], Csb*);
 static jrd_nod* parse_procedure_blr(TDBB, jrd_prc*, SLONG[2], Csb*);
 static BOOLEAN par_messages(TDBB, const UCHAR*, USHORT, jrd_prc*, Csb*);
 static BOOLEAN resolve_charset_and_collation(TDBB, SSHORT*, const UCHAR*,
@@ -2692,6 +2693,7 @@ jrd_prc* MET_procedure(TDBB tdbb, int id, BOOLEAN noscan, USHORT flags)
 								   P.RDB$PROCEDURE_OUTPUTS + 1);
 			}
 
+			procedure->prc_defaults = 0;
 			FOR(REQUEST_HANDLE request2) PA IN RDB$PROCEDURE_PARAMETERS CROSS
 				F IN RDB$FIELDS WITH F.RDB$FIELD_NAME = PA.RDB$FIELD_SOURCE
 					AND PA.RDB$PROCEDURE_NAME = P.RDB$PROCEDURE_NAME
@@ -2718,6 +2720,21 @@ jrd_prc* MET_procedure(TDBB tdbb, int id, BOOLEAN noscan, USHORT flags)
 									F.RDB$FIELD_SCALE, F.RDB$FIELD_LENGTH,
 									F.RDB$FIELD_SUB_TYPE, F.RDB$CHARACTER_SET_ID,
 									F.RDB$COLLATION_ID);
+
+				if ((PA.RDB$PARAMETER_TYPE == 0) && !F.RDB$DEFAULT_VALUE.NULL) {
+					procedure->prc_defaults++;
+
+					old_pool = tdbb->tdbb_default;
+					tdbb->tdbb_default = JrdMemoryPool::createPool();
+
+					Csb *csb_ = Csb::newCsb(*tdbb->tdbb_default, 5);
+					parameter->prm_default_val = 
+						parse_param_blr(tdbb, procedure, (SLONG*)&F.RDB$DEFAULT_VALUE, csb_);
+					
+					delete csb_;
+					tdbb->tdbb_default = old_pool;
+				}
+
 			END_FOR;
 
 			if (!REQUEST(irq_r_params)) {
@@ -3921,6 +3938,25 @@ static USHORT name_length(const TEXT* name)
 	return (q + 1) - name;
 }
 
+static jrd_nod* parse_param_blr(TDBB tdbb, 
+		jrd_prc* procedure, SLONG blob_id[2], Csb* csb)
+{
+	SET_TDBB(tdbb);
+	DBB dbb = tdbb->tdbb_database;
+
+	BLB		blob   = BLB_open(tdbb, dbb->dbb_sys_trans, (BID)blob_id);
+	SLONG	length = blob->blb_length + 10;
+	STR		temp   = FB_NEW_RPT(*tdbb->tdbb_default, length) str();
+
+	BLB_get_data(tdbb, blob, temp->str_data, length);
+	csb->csb_blr = temp->str_data;
+
+	jrd_nod* node = PAR_blr(tdbb, NULL, temp->str_data, NULL, &csb,
+				&procedure->prc_request, false, 0);
+	delete temp;
+
+	return node;
+}
 
 static jrd_nod* parse_procedure_blr(
 							   TDBB tdbb,

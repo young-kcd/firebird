@@ -34,6 +34,7 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 
 #include "firebird.h"
@@ -2609,6 +2610,35 @@ local_punt_false_151:
 	/* msg 151: "Write ahead log already exists" */
 }
 
+static USHORT skip_blr_blob(const UCHAR** ptr)
+{
+/**************************************
+ *
+ *	s k i p _ b l r _ b l o b
+ *
+ **************************************
+ *
+ * Functional description
+ *	Skip a blr blob.
+ *
+ **************************************/
+	USHORT	length;
+	const UCHAR*	p;
+
+	p = *ptr;
+	length = *p++;
+	length |= (*p++) << 8;
+
+	if (!length) {
+		*ptr = p;
+		return length;
+	}
+
+	*ptr = p + length;
+
+	return length;
+}
+
 
 void DYN_define_parameter( GBL gbl, const UCHAR** ptr, TEXT* procedure_name)
 {
@@ -2632,6 +2662,7 @@ void DYN_define_parameter( GBL gbl, const UCHAR** ptr, TEXT* procedure_name)
 	volatile SSHORT id;
 	SSHORT f_subtype, f_scale, f_precision;
 	SSHORT f_charset, f_collation;
+	const UCHAR *default_value_ptr = NULL, *default_source_ptr = NULL;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
@@ -2774,6 +2805,16 @@ void DYN_define_parameter( GBL gbl, const UCHAR** ptr, TEXT* procedure_name)
 				P.RDB$DESCRIPTION.NULL = FALSE;
 				break;
 
+			case isc_dyn_fld_default_value:
+				default_value_ptr = *ptr;
+				skip_blr_blob(ptr);
+				break;
+
+			case isc_dyn_fld_default_source:
+				default_source_ptr = *ptr;
+				skip_blr_blob(ptr);
+				break;
+
 			default:
 				--(*ptr);
 				DYN_execute(gbl, ptr, NULL, NULL, NULL, NULL, procedure_name);
@@ -2805,6 +2846,17 @@ void DYN_define_parameter( GBL gbl, const UCHAR** ptr, TEXT* procedure_name)
 				PS.RDB$CHARACTER_SET_ID.NULL = f_charset_null;
 				PS.RDB$COLLATION_ID = f_collation;
 				PS.RDB$COLLATION_ID.NULL = f_collation_null;
+
+				PS.RDB$DEFAULT_VALUE.NULL = (default_value_ptr == NULL);
+				if (default_value_ptr) {
+					DYN_put_blr_blob(gbl, &default_value_ptr, &PS.RDB$DEFAULT_VALUE);
+				}
+
+				PS.RDB$DEFAULT_SOURCE.NULL = (default_source_ptr == NULL);
+				if (default_source_ptr) {
+					DYN_put_text_blob(gbl, &default_source_ptr, &PS.RDB$DEFAULT_SOURCE);
+				}
+
 			END_STORE;
 			if (!DYN_REQUEST(drq_s_prm_src))
 				DYN_REQUEST(drq_s_prm_src) = request2;

@@ -32,6 +32,7 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  * 2003.10.05 Dmitry Yemanov: Added support for explicit cursors in PSQL
+ * 2004.01.16 Vlad Horsun: Added support for default parameters 
  */
 
 #include "firebird.h"
@@ -1803,8 +1804,10 @@ static void par_procedure_parms(
 	USHORT count = BLR_WORD;
 
 /** Check to see if the parameter count matches **/
-	if (count !=
-		(input_flag ? procedure->prc_inputs : procedure->prc_outputs))
+	if (input_flag ? 
+			(count < (procedure->prc_inputs - procedure->prc_defaults) ||
+			(count > procedure->prc_inputs) ) : 
+			(count != procedure->prc_outputs)) 
 	{
 	/** They don't match...Hmmm...Its OK if we were dropping the procedure **/
 		if (!(tdbb->tdbb_flags & TDBB_prc_being_dropped)) {
@@ -1818,7 +1821,7 @@ static void par_procedure_parms(
 			mismatch = true;
 	}
 
-	if (count) {
+	if (count || input_flag && procedure->prc_defaults) {
 	/** We have a few parameters. Get on with creating the message block **/
 		USHORT n = ++csb->csb_msg_number;
 		if (n < 2)
@@ -1875,12 +1878,21 @@ static void par_procedure_parms(
 			asgn_arg1 = e_asgn_to;
 			asgn_arg2 = e_asgn_from;
 		}
-		for (USHORT i = 0; count; count--) {
+		for (USHORT i = 0; n; count--, n--) {
 			jrd_nod* asgn = PAR_make_node(tdbb, e_asgn_length);
 			*ptr++ = asgn;
 			asgn->nod_type = nod_assignment;
 			asgn->nod_count = count_table[blr_assignment];
-			asgn->nod_arg[asgn_arg1] = parse(tdbb, csb, VALUE);
+
+			// default value for parameter 
+			if((count <= 0) && input_flag) {
+				prm* parameter = (prm*)(*procedure->prc_input_fields)
+					[procedure->prc_inputs - n];
+
+				asgn->nod_arg[asgn_arg1] = parameter->prm_default_val;
+			}
+			else
+				asgn->nod_arg[asgn_arg1] = parse(tdbb, csb, VALUE);
 			jrd_nod* prm = asgn->nod_arg[asgn_arg2] =
 				PAR_make_node(tdbb, e_arg_length);
 			prm->nod_type = nod_argument;
