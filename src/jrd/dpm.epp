@@ -2079,7 +2079,7 @@ void DPM_update( thread_db* tdbb, record_param* rpb, PageStack& stack,
    replacement record. */
 
 	DEBUG
-	while (stack) {
+	while (stack.notEmpty()) {
 		CCH_precedence(tdbb, &rpb->rpb_window, stack.pop());
 	}
 
@@ -2682,7 +2682,7 @@ static UCHAR* find_space(thread_db*	tdbb,
 /* There's space on page.  If the line index needs expansion, do so.
    If the page need to be compressed, compress it. */
 
-	while (stack) {
+	while (stack.notEmpty()) {
 		CCH_precedence(tdbb, &rpb->rpb_window, stack.pop());
 	}
 	CCH_MARK(tdbb, &rpb->rpb_window);

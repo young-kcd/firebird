@@ -80,8 +80,7 @@ public:
 	}
 	~Array()
 	{
-		if (data != getStorage())
-			getPool().deallocate(data);
+		freeData();
 	}
 	void clear() { count = 0; };
 protected:
@@ -92,6 +91,11 @@ protected:
 	T& getElement(int index) {
   		fb_assert(index >= 0 && index < count);
   		return data[index];
+	}
+	void freeData()
+	{
+		if (data != getStorage())
+			getPool().deallocate(data);
 	}
 public:
 	Array<T, Storage>& operator =(const Array<T, Storage>& L) 
@@ -180,11 +184,21 @@ public:
 		count--;
 		return data[count];
 	}
+	// prepare array to be used as a buffer of capacity items
 	T* getBuffer(int capacity) {
 		ensureCapacity(capacity);
 		count = capacity;
 		return data;
 	}
+	// clear array and release dinamically allocated memory
+	void free() 
+	{
+		clear();
+		freeData();
+		capacity = getStorageSize();
+		data = getStorage();
+	}
+
 protected:
 	int count, capacity;
 	T* data;
@@ -200,8 +214,7 @@ protected:
 #endif
 						));
 			memcpy(newdata, data, sizeof(T) * count);
-			if (data != getStorage())
-				getPool().deallocate(data);
+			freeData();
 			data = newdata;
 			capacity = newcapacity;
 		}

@@ -401,11 +401,11 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 	BLB_garbage_collect(tdbb, going, staying, rpb->rpb_page, relation);
 	IDX_garbage_collect(tdbb, rpb, going, staying);
 
-	if (going) {
+	if (going.notEmpty()) {
 		going.pop();
 	}
 
-	while (staying) {
+	while (staying.notEmpty()) {
 		delete staying.pop();
 	}
 
@@ -3483,7 +3483,7 @@ static void garbage_collect(thread_db* tdbb,
 	BLB_garbage_collect(tdbb, going, staying, prior_page, rpb->rpb_relation);
 	IDX_garbage_collect(tdbb, rpb, going, staying);
 
-	while (going) {
+	while (going.notEmpty()) {
 		delete going.pop();
 	}
 }
@@ -3527,7 +3527,7 @@ static void garbage_collect_idx(
 
 	going.pop();
 
-	while (staying) {
+	while (staying.notEmpty()) {
 		delete staying.pop();
 	}
 }
@@ -3865,7 +3865,7 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 
 		/* If the entire record disappeared, then there is nothing staying. */
 		if (!DPM_fetch(tdbb, &temp, LCK_read)) {
-			while (staying) {
+			while (staying.notEmpty()) {
 				delete staying.pop();
 			}
 			return;
@@ -3878,7 +3878,7 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 			temp.rpb_b_line != rpb->rpb_b_line ||
 			temp.rpb_flags != rpb->rpb_flags)
 		{
-			while (staying) {
+			while (staying.notEmpty()) {
 				delete staying.pop();
 			}
 			next_page = temp.rpb_page;
@@ -3940,7 +3940,7 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
    somebody else must have been garbage collecting also.  Remove the entries
    in 'staying' that have already been garbage collected. */
 	while (depth < max_depth--) {
-		if (staying) {
+		if (staying.notEmpty()) {
 			delete staying.pop();
 		}
 	}
@@ -4692,7 +4692,7 @@ static void update_in_place(
 		IDX_garbage_collect(tdbb, org_rpb, going, staying);
 
 		staying.pop();
-		while (staying) {
+		while (staying.notEmpty()) {
 			delete staying.pop();
 		}
 	}

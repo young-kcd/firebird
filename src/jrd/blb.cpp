@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.67 2004-04-18 14:22:18 alexpeshkoff Exp $
+$Id: blb.cpp,v 1.68 2004-04-21 14:08:58 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -313,7 +313,7 @@ void BLB_garbage_collect(
 
 /* Loop thru records on the way out looking for blobs to garbage collect */
 
-	for (RecordStack::iterator stack1(going); stack1; ++stack1) {
+	for (RecordStack::iterator stack1(going); stack1.notEmpty(); ++stack1) {
 		Record* rec1 = stack1.object();
 		if (!rec1)
 			continue;
@@ -331,7 +331,7 @@ void BLB_garbage_collect(
 
 			/* Got active blob, cancel it out of any remaining records on the way out */
 
-			for (RecordStack::iterator stack2(stack1); stack2; ++stack2) {
+			for (RecordStack::iterator stack2(stack1); stack2.notEmpty(); ++stack2) {
 				Record* rec2 = stack2.object();
 				if (!EVL_field(0, rec2, id, &desc2))
 					continue;
@@ -346,7 +346,7 @@ void BLB_garbage_collect(
 			/* Make sure the blob doesn't stack in any record remaining */
 
 			RecordStack::iterator stack3(staying);
-			for (; stack3; ++stack3) {
+			for (; stack3.notEmpty(); ++stack3) {
 				Record* rec3 = stack3.object();
 				if (!EVL_field(0, rec3, id, &desc2))
 					continue;
@@ -357,7 +357,7 @@ void BLB_garbage_collect(
 					break;
 				}
 			}
-			if (stack3)
+			if (stack3.notEmpty())
 				continue;
 
 			/* Get rid of blob */

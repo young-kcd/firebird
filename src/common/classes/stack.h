@@ -129,6 +129,7 @@ namespace Firebird {
 		}
 
 	private:
+		// disable use of default operator=
 		Stack<Object, Capacity>& operator= (Stack<Object, Capacity>& s);
 
 	public:
@@ -164,9 +165,14 @@ namespace Firebird {
 				return *this;
 			}
 
-			operator bool() const
+			bool notEmpty() const
 			{
 				return stk;
+			}
+
+			bool isEmpty() const
+			{
+				return !stk;
 			}
 
 			Object object() const
@@ -180,10 +186,19 @@ namespace Firebird {
 				return (stk == i.stk) && (elem == i.elem);
 			}
 
+			bool operator!= (const iterator &i) const
+			{
+				return !(*this == i);
+			}
+
 			bool operator== (const Stack<Object, Capacity>& s) const
 			{
-				return (stk == s.stk) && (s.stk) && 
-					   (elem == s.stk->getCount());
+				return (s == *this);
+			}
+
+			bool operator!= (const Stack<Object, Capacity>& s) const
+			{
+				return !(*this == s);
 			}
 
 			iterator& operator= (const iterator& i) {
@@ -215,6 +230,7 @@ namespace Firebird {
 			return rc;
 		}
 
+		// split stacks at mark
 		void split (const iterator &mark, Stack<Object, Capacity>& s)
 		{
 			fb_assert(&getPool() == &s.getPool());
@@ -251,6 +267,43 @@ namespace Firebird {
 			}
 		}
 
+		// clear stacks until mark
+		void clear (const iterator &mark)
+		{
+			// for empty mark just clear all stack
+			if (!mark.stk)
+			{
+				clear();
+				return;
+			}
+
+			// find entry to clear
+			while (stk != mark.stk)
+			{
+				if (!stk)
+				{
+					return;
+				}
+				Entry *tmp = stk->next;
+				stk->next = 0;
+				delete stk;
+				stk = tmp;
+			}
+
+			// remove extra elements from Entry
+			fb_assert(stk->getCount() >= mark.elem);
+			if (mark.elem == 0)
+			{
+				Entry *tmp = stk->next;
+				stk->next = 0;
+				delete stk;
+				stk = tmp;
+			}
+			else {
+				stk->shrink(mark.elem);
+			}
+		}
+
 	private:
 		friend class ::Firebird::Stack<Object,Capacity>::iterator;
 
@@ -272,15 +325,26 @@ namespace Firebird {
 		}
 
 		// returns true if stack is not empty
-		operator bool() const
+		bool notEmpty() const
 		{
 			return stk;
 		}
 
-		bool operator== (iterator &i) const
+		// returns true if stack is empty
+		bool isEmpty() const
 		{
-			return (i.stk == stk) && (stk) && 
-				   (i.elem == stk->getCount());
+			return !stk;
+		}
+
+		bool operator== (const iterator &i) const
+		{
+			return (i.stk == stk) && 
+				   (stk ? i.elem == stk->getCount() : true);
+		}
+
+		bool operator!= (const iterator &i) const
+		{
+			return !(*this == i);
 		}
 
 		void assign(Stack<Object,Capacity>& v) {

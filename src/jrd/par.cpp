@@ -476,7 +476,7 @@ jrd_nod* PAR_make_list(thread_db* tdbb, NodeStack& stack)
 	node->nod_type = nod_list;
 	jrd_nod** ptr = node->nod_arg + count;
 
-	while (stack) {
+	while (stack.notEmpty()) {
 		*--ptr = stack.pop();
 	}
 

@@ -983,7 +983,6 @@ static bool check_user_group(const TEXT* acl,
 	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
-	CharBuffer buffer(*length_ptr);
 	SLONG n = 0;
 
 	USHORT l = *acl++;
@@ -997,7 +996,8 @@ static bool check_user_group(const TEXT* acl,
 		}
 		else				// processing group name
 		{
-			TEXT* user_group_name = buffer.begin();
+			CharBuffer buffer;
+			TEXT* user_group_name = buffer.getBuffer(*length_ptr);
 			do {
 				const TEXT one_char = *acl++;
 				*user_group_name++ = LOWWER(one_char);
@@ -1079,8 +1079,8 @@ static SLONG compute_access(thread_db* tdbb,
  *	access permissions.  Return a flag word of recognized privileges.
  *
  **************************************/
-	CharBuffer str_buffer(BLOB_BUFFER_SIZE);
-	TEXT* buffer = str_buffer.begin();
+	CharBuffer str_buffer;
+	TEXT* buffer = str_buffer.getBuffer(BLOB_BUFFER_SIZE);
 
 	SLONG length = BLOB_BUFFER_SIZE, *length_ptr = &length;
 

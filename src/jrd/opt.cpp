@@ -476,7 +476,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 					{
 						stackItem = *parent_stack;
 					}
-					for (; stackItem; ++stackItem) {
+					for (; stackItem.notEmpty(); ++stackItem) {
 						jrd_nod* deliverNode = stackItem.object();
 						if (!expression_contains(deliverNode, nod_missing, true, true)) {
 							conjunct_stack.push(deliverNode);
@@ -649,7 +649,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	// the parent's stack itself.
 	if (parent_stack) {
 		NodeStack::iterator iter(*parent_stack);
-		for (; iter && conjunct_count < MAX_CONJUNCTS; ++conjunct_count, ++iter)
+		for (; iter.notEmpty() && conjunct_count < MAX_CONJUNCTS; ++conjunct_count, ++iter)
 		{
 			opt->opt_conjuncts.grow(conjunct_count + 1);
 			jrd_nod* node = iter.object();
@@ -659,7 +659,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		}
 
 		// Check if size of optimizer block exceeded.
-		if (iter) {
+		if (iter.notEmpty()) {
 			ERR_post(isc_optimizer_blk_exc, 0);
 			// Msg442: size of optimizer block exceeded
 		}
@@ -690,7 +690,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		// AB: If previous rsb's are already on the stack we can't use
 		// an navigational-retrieval for an ORDER BY cause the next
 		// streams are JOINed to the previous onces
-		if (rivers_stack) {
+		if (rivers_stack.notEmpty()) {
 			sort = NULL;
 			outer_rivers = true;
 			// AB: We could already have multiple rivers at this
@@ -1218,7 +1218,7 @@ static bool augment_stack(jrd_nod* node, NodeStack& stack)
  **************************************/
 	DEV_BLKCHK(node, type_nod);
 
-	for (NodeStack::iterator temp(stack); temp; ++temp) {
+	for (NodeStack::iterator temp(stack); temp.notEmpty(); ++temp) {
 		if (node_equality(node, temp.object())) {
 			return false;
 		}
@@ -2083,7 +2083,7 @@ static USHORT distribute_equalities(NodeStack& org_stack, CompilerScratch* csb, 
 
 /* Zip thru stack of booleans looking for field equalities */
 
-	for (NodeStack::iterator stack1(org_stack); stack1; ++stack1) {
+	for (NodeStack::iterator stack1(org_stack); stack1.notEmpty(); ++stack1) {
 		jrd_nod* boolean = stack1.object();
 		if (boolean->nod_type != nod_eql)
 			continue;
@@ -2120,13 +2120,13 @@ static USHORT distribute_equalities(NodeStack& org_stack, CompilerScratch* csb, 
    sequence (A = B, C = D, B = C) */
 
 	for (eq_class = classes.begin(); eq_class != classes.end(); ++eq_class) {
-		for (NodeStack::iterator stack2(*eq_class); stack2; ++stack2) {
+		for (NodeStack::iterator stack2(*eq_class); stack2.notEmpty(); ++stack2) {
 			for (Firebird::ObjectsArray<NodeStack>::iterator eq_class2(eq_class); 
 				++eq_class2 != classes.end();)
 			{
 				if (search_stack(stack2.object(), *eq_class2)) {
 					DEBUG;
-					while (*eq_class2) {
+					while (eq_class2->notEmpty()) {
 						augment_stack(eq_class2->pop(), *eq_class);
 					}
 				}
@@ -2141,8 +2141,8 @@ static USHORT distribute_equalities(NodeStack& org_stack, CompilerScratch* csb, 
 	for (eq_class = classes.begin(); eq_class != classes.end(); ++eq_class) {
 		int n = eq_class->getCount();
 		if (n >= 3) {
-			for (NodeStack::iterator outer(*eq_class); outer; ++outer) {
-				for (NodeStack::iterator inner(outer); ++inner; ) {
+			for (NodeStack::iterator outer(*eq_class); outer.notEmpty(); ++outer) {
+				for (NodeStack::iterator inner(outer); (++inner).notEmpty(); ) {
 					jrd_nod* boolean =
 						make_binary_node(nod_eql, outer.object(),
 										 inner.object(), true);
@@ -2161,7 +2161,7 @@ static USHORT distribute_equalities(NodeStack& org_stack, CompilerScratch* csb, 
 
 /* Now make a second pass looking for non-field equalities */
 
-	for (NodeStack::iterator stack3(org_stack); stack3; ++stack3) {
+	for (NodeStack::iterator stack3(org_stack); stack3.notEmpty(); ++stack3) {
 		jrd_nod* boolean = stack3.object();
 		if (boolean->nod_type != nod_eql &&
 			boolean->nod_type != nod_gtr &&
@@ -2194,7 +2194,7 @@ static USHORT distribute_equalities(NodeStack& org_stack, CompilerScratch* csb, 
 		}
 		for (eq_class = classes.begin(); eq_class != classes.end(); ++eq_class) {
 			if (search_stack(node1, *eq_class)) {
-				for (NodeStack::iterator temp(*eq_class); temp; ++temp) {
+				for (NodeStack::iterator temp(*eq_class); temp.notEmpty(); ++temp) {
 					if (!node_equality(node1, temp.object())) {
 						jrd_nod* arg1;
 						jrd_nod* arg2;
@@ -4953,7 +4953,7 @@ static RecordSource* gen_sort(thread_db* tdbb,
 /* Now go back and process all to fields involved with the sort.  If the
    field has already been mentioned as a sort key, don't bother to repeat
    it. */
-	while (stream_stack) {
+	while (stream_stack.notEmpty()) {
 		const SLONG id = id_stack.pop();
 		// AP: why USHORT - we pushed UCHAR
 		const USHORT stream = stream_stack.pop();
@@ -5070,7 +5070,7 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 	// a scratch block large enough to hold values to compute equality
 	// classes.
 	USHORT cnt = 0;
-	for (RiverStack::iterator stack1(org_rivers); stack1; ++stack1) {
+	for (RiverStack::iterator stack1(org_rivers); stack1.notEmpty(); ++stack1) {
 		stack1.object()->riv_number = cnt++;
 	}
 
@@ -5094,7 +5094,7 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 		}
 		jrd_nod* node1 = node->nod_arg[0];
 		jrd_nod* node2 = node->nod_arg[1];
-		for (RiverStack::iterator stack0(org_rivers); stack0; ++stack0) {
+		for (RiverStack::iterator stack0(org_rivers); stack0.notEmpty(); ++stack0) {
 			River* river1 = stack0.object();
 			if (!river_reference(river1, node1)) {
 				if (river_reference(river1, node2)) {
@@ -5106,7 +5106,7 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 					continue;
 				}
 			}
-			for (RiverStack::iterator stack2(stack0); ++stack2;)
+			for (RiverStack::iterator stack2(stack0); (++stack2).notEmpty();)
 			{
 				River* river2 = stack2.object();
 				if (river_reference(river2, node2)) {
@@ -5168,7 +5168,7 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 
 	RecordSource** rsb_tail = merge_rsb->rsb_arg;
 	stream_cnt = 0;
-	for (RiverStack::iterator stack3(org_rivers); stack3; ++stack3) {
+	for (RiverStack::iterator stack3(org_rivers); stack3.notEmpty(); ++stack3) {
 		River* river1 = stack3.object();
 		if (!(TEST_DEP_BIT(selected_rivers, river1->riv_number))) {
 			continue;
@@ -5196,7 +5196,7 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 	river1->riv_rsb = merge_rsb;
 	UCHAR* stream = river1->riv_streams;
 	RiverStack newRivers(org_rivers.getPool());
-	while (org_rivers) {
+	while (org_rivers.notEmpty()) {
 		River* river2 = org_rivers.pop();
 		if (TEST_DEP_BIT(selected_rivers, river2->riv_number)) {
 			MOVE_FAST(river2->riv_streams, stream, river2->riv_count);
@@ -5204,7 +5204,7 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 		}
 		else {
 			// AB: Be sure that the rivers 'order' will be kept.
-			if (newRivers) {
+			if (newRivers.notEmpty()) {
 				River* river3 = newRivers.pop();
 				newRivers.push(river2);
 				newRivers.push(river3);
@@ -5534,7 +5534,7 @@ static RecordSource* make_cross(thread_db* tdbb, OptimizerBlk* opt, RiverStack& 
 	rsb->rsb_count = count;
 	rsb->rsb_impure = CMP_impure(csb, sizeof(struct irsb));
 	RecordSource** ptr = rsb->rsb_arg + count;
-	while (stack) {
+	while (stack.notEmpty()) {
 		*--ptr = stack.pop()->riv_rsb;
 	}
 
@@ -6615,7 +6615,7 @@ static bool search_stack(jrd_nod* node, const NodeStack& stack)
  *
  **************************************/
 	DEV_BLKCHK(node, type_nod);
-	for (NodeStack::iterator iter(stack); iter; ++iter) {
+	for (NodeStack::iterator iter(stack); iter.notEmpty(); ++iter) {
 		if (node_equality(node, iter.object())) {
 			return true;
 		}

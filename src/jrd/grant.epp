@@ -179,10 +179,11 @@ bool GRANT_privileges( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			}
 
 			/* start the acl off by giving the owner all privileges */
-			CharBuffer str_buffer(ACL_BUFFER_SIZE - 1);
-			CharBuffer str_default_buffer(ACL_BUFFER_SIZE - 1);
+			CharBuffer str_buffer;
+			CharBuffer str_default_buffer;
 
-			acl = str_buffer.begin();
+			acl = str_buffer.getBuffer(ACL_BUFFER_SIZE - 1);
+			str_default_buffer.getBuffer(ACL_BUFFER_SIZE - 1);
 
 			CHECK_AND_MOVE(acl, ACL_version, str_buffer, length_ptr);
 			grant_user(&acl,

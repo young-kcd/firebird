@@ -30,7 +30,7 @@
  * 2003.08.10 Claudio Valderrama: Fix SF Bugs #544132 and #728839.
  */
 /*
-$Id: fun.epp,v 1.48 2004-04-18 14:22:19 alexpeshkoff Exp $
+$Id: fun.epp,v 1.49 2004-04-21 14:10:34 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -683,7 +683,7 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 	}
 	catch (const std::exception&) {
 		delete temp_string;
-		while (array_stack) {
+		while (array_stack.notEmpty()) {
 			delete[] array_stack.pop();
 		}
 		throw;
@@ -693,12 +693,12 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
     // if the length of the stack-based buffer is not enough. Moved below.
 	//delete temp_string;
 
-	while (blob_stack)
+	while (blob_stack.notEmpty())
 	{
 		BLB_close(tdbb, blob_stack.pop());
 	}
 
-	while (array_stack)
+	while (array_stack.notEmpty())
 	{
 		delete[] array_stack.pop();
 	}
@@ -746,8 +746,10 @@ void FUN_fini( thread_db* tdbb)
  **************************************/
 	Database* dbb = tdbb->tdbb_database;
 
-	while (dbb->dbb_modules)
+	while (dbb->dbb_modules.notEmpty()) 
+	{
 		FLU_unregister_module(dbb->dbb_modules.pop());
+	}
 }
 
 
@@ -865,7 +867,7 @@ UserFunction* FUN_lookup_function(const Firebird::string& name, bool ShowAccessE
 			/* Register interest in the module by database. */
 
 			Firebird::Stack<mod*>::iterator stack(dbb->dbb_modules);
-			while (stack)
+			while (stack.notEmpty())
 			{
 				if (module == stack.object())
 				{
@@ -879,7 +881,7 @@ UserFunction* FUN_lookup_function(const Firebird::string& name, bool ShowAccessE
 			   ISC_lookup_entrypoint() above. Otherwise push it onto
 			   the stack of registered modules. */
 
-			if (stack)
+			if (stack.notEmpty())
 			{
 				FLU_unregister_module(module);
 			}

@@ -309,13 +309,15 @@ void IDX_create_index(
 			secondary.rpb_line = secondary.rpb_b_line;
 		}
 
-		while (stack) {
+		while (stack.notEmpty()) 
+		{
 			Record* record = stack.pop();
 
 			/* If foreign key index is being defined, make sure foreign
 			   key definition will not be violated */
 
-			if (idx->idx_flags & idx_foreign) {
+			if (idx->idx_flags & idx_foreign) 
+			{
 				idx_null_state null_state;
 				/* find out if there is a null segment by faking uniqueness --
 				   if there is one, don't bother to check the primary key */
@@ -349,7 +351,7 @@ void IDX_create_index(
 				do {
 					if (record != gc_record)
 						delete record;
-				} while (stack && (record = stack.pop()));
+				} while (stack.notEmpty() && (record = stack.pop()));
 				SORT_fini(sort_handle, tdbb->tdbb_attachment);
 				gc_record->rec_flags &= ~REC_gc_active;
 				if (primary.rpb_window.win_flags & WIN_large_scan)
@@ -362,7 +364,7 @@ void IDX_create_index(
 				do {
 					if (record != gc_record)
 						delete record;
-				} while (stack && (record = stack.pop()));
+				} while (stack.notEmpty() && (record = stack.pop()));
 				SORT_fini(sort_handle, tdbb->tdbb_attachment);
 				gc_record->rec_flags &= ~REC_gc_active;
 				if (primary.rpb_window.win_flags & WIN_large_scan)
@@ -380,7 +382,7 @@ void IDX_create_index(
 				do {
 					if (record != gc_record)
 						delete record;
-				} while (stack && (record = stack.pop()));
+				} while (stack.notEmpty() && (record = stack.pop()));
 				SORT_fini(sort_handle, tdbb->tdbb_attachment);
 				gc_record->rec_flags &= ~REC_gc_active;
 				if (primary.rpb_window.win_flags & WIN_large_scan)
@@ -405,7 +407,7 @@ void IDX_create_index(
 			index_sort_record* isr = (index_sort_record*) p;
 			isr->isr_key_length = key.key_length;
 			isr->isr_record_number = primary.rpb_number;
-			isr->isr_flags = (stack ? ISR_secondary : 0) | (key_is_null ? ISR_null : 0);
+			isr->isr_flags = (stack.notEmpty() ? ISR_secondary : 0) | (key_is_null ? ISR_null : 0);
 			if (record != gc_record)
 				delete record;
 		}
@@ -609,14 +611,14 @@ void IDX_garbage_collect(thread_db*			tdbb,
 
 	for (USHORT i = 0; i < root->irt_count; i++) {
 		if (BTR_description(rpb->rpb_relation, root, &idx, i)) {
-			for (RecordStack::iterator stack1(going); stack1; ++stack1) {
+			for (RecordStack::iterator stack1(going); stack1.notEmpty(); ++stack1) {
 				Record* rec1 = stack1.object();
 				BTR_key(tdbb, rpb->rpb_relation, rec1, &idx, &key1, 0);
 
 				/* Cancel index if there are duplicates in the remaining records */
 
 				RecordStack::iterator stack2(stack1);
-				for (++stack2; stack2; ++stack2)
+				for (++stack2; stack2.notEmpty(); ++stack2)
 				{
 					Record* rec2 = stack2.object();
 					if (rec2->rec_number == rec1->rec_number) {
@@ -625,27 +627,29 @@ void IDX_garbage_collect(thread_db*			tdbb,
 							break;
 					}
 				}
-				if (stack2)
+				if (stack2.notEmpty())
 					continue;
 
 				/* Make sure the index doesn't exist in any record remaining */
 
 				RecordStack::iterator stack3(staying);
-				for (; stack3; ++stack3) {
+				for (; stack3.notEmpty(); ++stack3) {
 					Record* rec3 = stack3.object();
 					BTR_key(tdbb, rpb->rpb_relation, rec3, &idx, &key2, 0);
 					if (key_equal(&key1, &key2))
 						break;
 				}
-				if (stack3)
+				if (stack3.notEmpty())
 					continue;
 
 				/* Get rid of index node */
 
 				BTR_remove(tdbb, &window, &insertion);
 				root = (index_root_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_root);
-				if (stack1)
+				if (stack1.notEmpty())
+				{
 					BTR_description(rpb->rpb_relation, root, &idx, i);
+				}
 			}
 		}
 	}

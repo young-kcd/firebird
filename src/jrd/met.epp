@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.111 2004-04-19 15:29:29 alexpeshkoff Exp $
+$Id: met.epp,v 1.112 2004-04-21 14:11:52 alexpeshkoff Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -1518,7 +1518,7 @@ BlobFilter* MET_lookup_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 			/* Register interest in the module by database. */
 
 			Firebird::Stack<MOD>::iterator stack(dbb->dbb_modules);
-			while (stack)
+			while (stack.notEmpty())
 			{
 				if (module == stack.object())
 				{
@@ -1532,7 +1532,7 @@ BlobFilter* MET_lookup_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 			   ISC_lookup_entrypoint() above. Otherwise push it onto
 			   the stack of registered modules. */
 
-			if (stack) {
+			if (stack.notEmpty()) {
 				FLU_unregister_module(module);
 			}
 			else
@@ -4301,7 +4301,7 @@ static void store_dependencies(thread_db*	tdbb,
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	while (csb->csb_dependencies)
+	while (csb->csb_dependencies.notEmpty())
 	{
 		jrd_nod* node = csb->csb_dependencies.pop();
 		if (!node->nod_arg[e_dep_object])

@@ -2580,7 +2580,7 @@ static jrd_nod* catenate_nodes(thread_db* tdbb, NodeStack& stack)
 
 	jrd_nod* node1 = stack.pop();
 
-	if (!stack)
+	if (stack.isEmpty())
 		return node1;
 
 	jrd_nod* cat_node = PAR_make_node(tdbb, 2);
@@ -3162,7 +3162,7 @@ static jrd_nod* make_defaults(thread_db* tdbb, CompilerScratch* csb, USHORT stre
 		}
 	}
 
-	if (!stack)
+	if (stack.isEmpty())
 		return statement;
 
 	// we have some default - add the original statement and make a list out of
@@ -3235,7 +3235,7 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 		}
 	}
 
-	if (!stack)
+	if (stack.isEmpty())
 		return NULL;
 
 	return PAR_make_list(tdbb, stack);
@@ -3596,7 +3596,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 				return node;
 			NodeStack stack;
 			expand_view_nodes(tdbb, csb, stream, stack, type);
-			if (stack)
+			if (stack.notEmpty())
 				return catenate_nodes(tdbb, stack);
 
 			// The user is asking for the dbkey/record version of an aggregate.
@@ -4027,7 +4027,7 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb,
 
 	arg = rse->rse_relation + count;
 
-	while (stack) 
+	while (stack.notEmpty()) 
 	{
 		*--arg = stack.pop();
 	}

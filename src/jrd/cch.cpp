@@ -1246,13 +1246,16 @@ void CCH_fini(thread_db* tdbb)
 		PIO_close(dbb->dbb_file);
 		SDW_close();
 
-		if ( (bcb = dbb->dbb_bcb) ) {
-			while (bcb->bcb_memory) {
+		if ( (bcb = dbb->dbb_bcb) ) 
+		{
+			while (bcb->bcb_memory.notEmpty()) 
+			{
 				gds__free(bcb->bcb_memory.pop());
 			}
 #ifdef CACHE_WRITER
 			/* Dispose off any associated latching semaphores */
-			while (QUE_NOT_EMPTY(bcb->bcb_free_lwt)) {
+			while (QUE_NOT_EMPTY(bcb->bcb_free_lwt)) 
+			{
 				QUE que = bcb->bcb_free_lwt.que_forward;
 				QUE_DELETE((*que));
 				LatchWait* lwt = (LatchWait*) BLOCK(que, LatchWait*, lwt_waiters);
@@ -3796,7 +3799,7 @@ static void expand_buffers(thread_db* tdbb, ULONG number)
 
 /* Copy addresses of previously allocated buffer space to new block */
 
-	for (Jrd::UCharStack::iterator stack(old->bcb_memory); stack; ++stack) {
+	for (Jrd::UCharStack::iterator stack(old->bcb_memory); stack.notEmpty(); ++stack) {
 		new_block->bcb_memory.push(stack.object());
 	}
 
