@@ -14,9 +14,9 @@
       Contributor(s):
         Dmitry Yemanov <yemanov@yandex.ru>
 
-	* Fixed Beta 4 bugs.
-		1) sub-selects inside COALESCE function
-		2) parameter ordering
+    * Fixed Beta 4 bugs.
+        1) sub-selects inside COALESCE function
+        2) parameter ordering
       Contributor(s):
         Arno Brinkman <firebird@abvisie.nl>
 
@@ -35,6 +35,11 @@
         Optimizer couldn't ignore bad indices in some cases.
       Contributor(s):
         Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Improved lock manager
+        Deadlocks are now detected and reported as soon all blocking processes received notifications, i.e. instantly in all normal cases
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
 
     * Fixed Beta 4 bug.
         Locking and performance issues in win32 CS.
