@@ -1,3 +1,9 @@
+2004-09-27 10:34  hvlad
+
+	* firebird2/src/jrd/cch.cpp (1.35.2.3):
+	
+	Fix 100% CPU use by cache_writer in some rare cases
+
 2004-09-25 21:38  dimitr
 
 	* firebird2/src/jrd/rse.cpp (1.28.2.4):
