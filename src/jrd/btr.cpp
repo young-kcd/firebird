@@ -3698,7 +3698,7 @@ static UCHAR* find_node_start_point(btree_page* bucket, temporary_key* key,
 					// be inserted on this page, because the first node on the next
 					// page could be a equal node with a higher recordnumber than 
 					// this one and that would cause a overwrite of the first node
-					// in the next page, but the first node of a page may never change!!
+					// in the next page, but the first node of a page must not change!!
 					goto done1;
 				}
 				else {
