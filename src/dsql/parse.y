@@ -117,6 +117,10 @@ const int DEF_CACHE_BUFFERS	= 1000;
 #define YYSTACKSIZE	2048
 #define YYMAXDEPTH	2048
 
+/* Make bison allocate static stack */
+#define YYINITDEPTH 2048
+#define YYSTACK_USE_ALLOCA 1
+
 #define YYSTYPE		DSQL_NOD
 #if defined(DEBUG) || defined(DEV_BUILD)
 #define YYDEBUG		1
