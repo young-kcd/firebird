@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.gfix,v 1.11 2004-09-09 11:32:54 kkuznetsov Exp $
+#  $Id: Makefile.in.embed.gfix,v 1.12 2004-12-09 19:18:20 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -49,7 +49,7 @@ common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp
 GFIX_Sources = $(addprefix alice/, $(GFIX_Files)) $(GFIX_Other_Sources)
 GFIX_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GFIX_Sources))))
 
-AllObjects = $(GFIX_Objects)
+AllObjects = $(GFIX_Objects) $(CLUMPLETS_Objects)
 
 Dependencies = $(AllObjects:.o=.d) 
 
@@ -59,7 +59,7 @@ Dependencies = $(AllObjects:.o=.d)
 
 gfix : $(LIBFBEMBED_SO) $(GFIX)
 
-$(GFIX):	$(GFIX_Objects)
+$(GFIX):	$(GFIX_Objects) $(CLUMPLETS_Objects)
 	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
 
 

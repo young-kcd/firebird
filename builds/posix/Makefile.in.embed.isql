@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.isql,v 1.8 2004-04-30 23:02:07 brodsom Exp $
+#  $Id: Makefile.in.embed.isql,v 1.9 2004-12-09 19:18:20 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -42,12 +42,13 @@ include     $(ROOT)/gen/make.shared.variables
 unexport ISC_USER
 unexport ISC_PASSWORD
 
-ISQL_Other_Sources = common/utils.cpp
+ISQL_Other_Sources = common/utils.cpp \
+common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp
 ISQL_Files = extract.epp isql.epp show.epp
 ISQL_Sources = $(addprefix isql/, $(ISQL_Files)) $(ISQL_Other_Sources)
 ISQL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(ISQL_Sources))))
 
-AllObjects = $(ISQL_Objects)
+AllObjects = $(ISQL_Objects) $(CLUMPLETS_Objects)
 
 Dependencies = $(AllObjects:.o=.d) 
 
@@ -58,7 +59,7 @@ Dependencies = $(AllObjects:.o=.d)
 
 isql : $(LIBFBEMBED_SO) $(ISQL)
 
-$(ISQL):	$(ISQL_Objects)
+$(ISQL):	$(ISQL_Objects) $(CLUMPLETS_Objects)
 	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
 
 

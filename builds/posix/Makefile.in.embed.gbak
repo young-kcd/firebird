@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.gbak,v 1.8 2004-04-30 23:02:07 brodsom Exp $
+#  $Id: Makefile.in.embed.gbak,v 1.9 2004-12-09 19:18:19 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -40,18 +40,20 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
-GBAK_Other_Sources = remote/xdr.cpp jrd/sdl.cpp
+GBAK_Other_Sources = remote/xdr.cpp jrd/sdl.cpp \
+common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp
 GBAK_Files = backup.epp  restore.epp \
 			 burp.cpp canonical.cpp misc.cpp mvol.cpp
 GBAK_Sources = $(addprefix burp/, $(GBAK_Files)) $(GBAK_Other_Sources)
 GBAK_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GBAK_Sources))))
 
+GSPLIT_Other_Sources = common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp
 GSPLIT_Files=	spit.cpp
-GSPLIT_Sources = $(addprefix burp/, $(GSPLIT_Files))
+GSPLIT_Sources = $(addprefix burp/, $(GSPLIT_Files)) $(GSPLIT_Other_Sources)
 GSPLIT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSPLIT_Sources))))
 
 
-AllObjects = $(GBAK_Objects) $(GSPLIT_Objects)
+AllObjects = $(GBAK_Objects) $(GSPLIT_Objects) $(CLUMPLETS_Objects)
 Dependencies = $(AllObjects:.o=.d) 
 
 
@@ -61,14 +63,14 @@ all: gbak gsplit
 
 gbak : $(LIBFBEMBED_SO) $(GBAK)
 
-$(GBAK):	$(GBAK_Objects)
+$(GBAK):	$(GBAK_Objects) $(CLUMPLETS_Objects)
 	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
 
 
 
 gsplit : $(LIBFBEMBED_SO) $(GSPLIT)
 
-$(GSPLIT):	$(GSPLIT_Objects)
+$(GSPLIT):	$(GSPLIT_Objects) $(CLUMPLETS_Objects)
 	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
 
 include $(ROOT)/gen/make.shared.targets

@@ -56,6 +56,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/why_proto.h"
 #include "../jrd/gdsassert.h"
+#include "../common/classes/ClumpletWriter.h"
 
 #ifdef HAVE_CTYPE_H
 #include <ctype.h>
@@ -122,7 +123,8 @@ static void close_out_transaction(gbak_action, isc_tr_handle*);
 //static void excp_handler(void);
 static SLONG get_number(const SCHAR*);
 static ULONG get_size(const SCHAR*, burp_fil*);
-static gbak_action open_files(const TEXT *, const TEXT**, bool, USHORT);
+static gbak_action open_files(const TEXT *, const TEXT**, bool, USHORT,
+							  const Firebird::ClumpletWriter&);
 static int common_main(int, char**, Jrd::pfn_svc_output, Jrd::Service*);
 #ifndef SUPERSERVER
 BurpGlobals* gdgbl;
@@ -675,7 +677,6 @@ int common_main(int		argc,
 	tdgbl->gbl_sw_skip_count = 0;
 	tdgbl->action = NULL;
 
-	tdgbl->dpb_length = 0;
 	burp_fil* file = NULL;
 	burp_fil* file_list = NULL;
 	tdgbl->io_buffer_size = GBAK_IO_BUFFER_SIZE;
@@ -897,14 +898,10 @@ int common_main(int		argc,
 
 	}
 
-	// Initialize 'dpb' and 'dpb_length' and cast away volatile
-	UCHAR* dpb = tdgbl->dpb_string;
-	*dpb++ = isc_dpb_version1;
-	*dpb++ = isc_dpb_gbak_attach;
-	*dpb++ = strlen(GDS_VERSION);
-	for (const TEXT* gvp = GDS_VERSION; *gvp;)
-		*dpb++ = *gvp++;
-	tdgbl->dpb_length = dpb - tdgbl->dpb_string;
+	// Initialize 'dpb'
+	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
+
+	dpb.insertString(isc_dpb_gbak_attach, GDS_VERSION, strlen(GDS_VERSION));
 
 	for (in_sw_tab = burp_in_sw_table; in_sw_tab->in_sw_name; in_sw_tab++) {
 		if (in_sw_tab->in_sw_state) {
@@ -933,11 +930,7 @@ int common_main(int		argc,
 				break;
 
 			case (IN_SW_BURP_G):
-				if (!tdgbl->dpb_length)
-					*dpb++ = isc_dpb_version1;
-				*dpb++ = isc_dpb_no_garbage_collect;
-				*dpb++ = 0;
-				tdgbl->dpb_length = dpb - tdgbl->dpb_string;
+				dpb.insertTag(isc_dpb_no_garbage_collect);
 				break;
 
 			case (IN_SW_BURP_I):
@@ -945,12 +938,7 @@ int common_main(int		argc,
 				break;
 
 			case (IN_SW_BURP_IG):
-				if (!tdgbl->dpb_length)
-					*dpb++ = isc_dpb_version1;
-				*dpb++ = isc_dpb_damaged;
-				*dpb++ = 1;
-				*dpb++ = 1;
-				tdgbl->dpb_length = dpb - tdgbl->dpb_string;
+				dpb.insertByte(isc_dpb_damaged, 1);
 				break;
 
 			case (IN_SW_BURP_K):
@@ -966,10 +954,10 @@ int common_main(int		argc,
 				break;
 
 			case (IN_SW_BURP_MODE):
-				tdgbl->gbl_sw_mode = true;
 				break;
 
 			case (IN_SW_BURP_N):
+				tdgbl->gbl_sw_mode = true;
 				tdgbl->gbl_sw_novalidity = true;
 				break;
 
@@ -986,19 +974,11 @@ int common_main(int		argc,
 				break;
 
 			case (IN_SW_BURP_PASS):
-				{
-					if (!tdgbl->dpb_length)
-						*dpb++ = isc_dpb_version1;
-					if (!tdgbl->gbl_sw_service_gbak)
-						*dpb++ = isc_dpb_password;
-					else
-						*dpb++ = isc_dpb_password_enc;
-					*dpb++ = strlen(tdgbl->gbl_sw_password);
-					for (const TEXT* q = tdgbl->gbl_sw_password; *q;)
-						*dpb++ = *q++;
-					tdgbl->dpb_length = dpb - tdgbl->dpb_string;
-					break;
-				}
+				dpb.insertString(tdgbl->gbl_sw_service_gbak ?
+									isc_dpb_password_enc : isc_dpb_password,
+								 tdgbl->gbl_sw_password, 
+								 strlen(tdgbl->gbl_sw_password));
+				break;
 
 			case (IN_SW_BURP_R):
 				if (sw_replace == IN_SW_BURP_B)
@@ -1021,28 +1001,16 @@ int common_main(int		argc,
 				break;
 
 			case (IN_SW_BURP_ROLE):
-				{
-					if (!tdgbl->dpb_length)
-						*dpb++ = isc_dpb_version1;
-					*dpb++ = isc_dpb_sql_role_name;
-					*dpb++ = strlen(tdgbl->gbl_sw_sql_role);
-					for (const TEXT* q = tdgbl->gbl_sw_sql_role; *q;)
-						*dpb++ = *q++;
-					tdgbl->dpb_length = dpb - tdgbl->dpb_string;
-					break;
-				}
+				dpb.insertString(isc_dpb_sql_role_name, 
+								 tdgbl->gbl_sw_sql_role,
+								 strlen(tdgbl->gbl_sw_sql_role));
+				break;
 
 			case (IN_SW_BURP_USER):
-				{
-					if (!tdgbl->dpb_length)
-						*dpb++ = isc_dpb_version1;
-					*dpb++ = isc_dpb_user_name;
-					*dpb++ = strlen(tdgbl->gbl_sw_user);
-					for (const TEXT* q = tdgbl->gbl_sw_user; *q;)
-						*dpb++ = *q++;
-					tdgbl->dpb_length = dpb - tdgbl->dpb_string;
-					break;
-				}
+				dpb.insertString(isc_dpb_user_name, 
+								 tdgbl->gbl_sw_user,
+								 strlen(tdgbl->gbl_sw_user));
+				break;
 
 			case (IN_SW_BURP_V):
 				tdgbl->gbl_sw_verbose = true;
@@ -1124,8 +1092,8 @@ int common_main(int		argc,
 	tdgbl->action->act_file = NULL;
 	tdgbl->action->act_action = ACT_unknown;
 
-	action =
-		open_files(file1, &file2, tdgbl->gbl_sw_verbose, sw_replace);
+	action = open_files(file1, &file2, tdgbl->gbl_sw_verbose, 
+						sw_replace, dpb);
 
 	MVOL_init(tdgbl->io_buffer_size);
 	
@@ -1642,7 +1610,8 @@ static SLONG get_number( const SCHAR* string)
 static gbak_action open_files(const TEXT* file1,
 							  const TEXT** file2,
 							  bool sw_verbose,
-							  USHORT sw_replace)
+							  USHORT sw_replace,
+							  const Firebird::ClumpletWriter& dpb)
 {
 /**************************************
  *
@@ -1668,8 +1637,8 @@ static gbak_action open_files(const TEXT* file1,
 								  (SSHORT) 0,
 								  file1,
 								  &tdgbl->db_handle,
-								  tdgbl->dpb_length,
-								  reinterpret_cast<char*>(tdgbl->dpb_string))))
+								  dpb.getBufferLength(),
+								  reinterpret_cast<const char*>(dpb.getBuffer()))))
 		{
 			if (sw_replace != IN_SW_BURP_B) {
 				// msg 13 REPLACE specified, but the first file %s is a database 
@@ -1985,8 +1954,8 @@ static gbak_action open_files(const TEXT* file1,
 							 (SSHORT) 0,
 							 *file2,
 							 &tdgbl->db_handle,
-							 tdgbl->dpb_length,
-							 reinterpret_cast<char*>(tdgbl->dpb_string)))
+							 dpb.getBufferLength(),
+							 reinterpret_cast<const char*>(dpb.getBuffer())))
 	{
 		if (sw_replace == IN_SW_BURP_C) {
 			if (isc_detach_database(status_vector, &tdgbl->db_handle)) {

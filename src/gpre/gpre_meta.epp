@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.48 2004-11-10 04:18:58 robocop Exp $
+ *	$Id: gpre_meta.epp,v 1.49 2004-12-09 19:19:11 alexpeshkoff Exp $
  */
 
 #include "firebird.h"
@@ -42,6 +42,7 @@
 #include "../gpre/msc_proto.h"
 #include "../gpre/par_proto.h"
 #include "../common/utils_proto.h"
+#include "../common/classes/ClumpletWriter.h"
 
 
 const int MAX_USER_LENGTH	= 33;
@@ -150,37 +151,25 @@ bool MET_database(dbb* database, bool print_version)
  *  compiletime user name and password 
  */
 
- 	SCHAR dpb[MAX_PASSWORD_LENGTH + MAX_USER_LENGTH + 5];
-	SCHAR* d = dpb;
-	if (database->dbb_c_user || database->dbb_c_password) {
-		*d++ = isc_dpb_version1;
-		const SCHAR* p = database->dbb_c_user;
-		if (p) {
-			*d++ = isc_dpb_user_name;
-			*d++ = strlen(p);
-			while (*p)
-				*d++ = *p++;
-		}
-		p = database->dbb_c_password;
-		if (p) {
-			*d++ = isc_dpb_password;
-			*d++ = strlen(p);
-			while (*p)
-				*d++ = *p++;
-		}
+	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
+
+	const TEXT* p;
+	if (p = database->dbb_c_user) {
+		dpb.insertString(isc_dpb_user_name, p, strlen(p));
+	}
+	if (p = database->dbb_c_password) {
+		dpb.insertString(isc_dpb_password, p, strlen(p));
 	}
 
-	if (isc_attach_database
-		(gds_status, 0, database->dbb_filename, &DB, d - &dpb[0], dpb))
+	if (isc_attach_database(gds_status, 0, database->dbb_filename, &DB, 
+							dpb.getBufferLength(), 
+							reinterpret_cast<const char*>(dpb.getBuffer())))
 	{
 		/* We failed to attach, try in read only mode just in case 
-		if (d == dpb)
-			*d++ = isc_dpb_version1;
-		*d++ = isc_dpb_set_db_readonly;
-		*d++ = 1;
-		*d++ = TRUE;
-		if (isc_attach_database
-			(gds_status, 0, database->dbb_filename, &DB, d - &dpb[0], dpb)) {
+		dpb(isc_dpb_set_db_readonly, TRUE);
+		if (isc_attach_database(gds_status, 0, database->dbb_filename, &DB, 
+								dpb.getBufferLength(), 
+								reinterpret_cast<const char*>(dpb.getBuffer()))) {
 		*/
 				isc_print_status(gds_status);
 				return false;

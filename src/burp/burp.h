@@ -814,8 +814,6 @@ public:
 	ACT			action;
 	ULONG		io_buffer_size;
 	redirect_vals	sw_redirect;
-	UCHAR		dpb_string[100];
-	SSHORT		dpb_length;
 	UCHAR*		burp_env;
 	UCHAR*		io_ptr;
 	int			io_cnt;

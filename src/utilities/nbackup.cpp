@@ -43,6 +43,7 @@
 #include "../jrd/os/guid.h"
 #include "../jrd/ibase.h"
 #include "../common/classes/array.h"
+#include "../common/classes/ClumpletWriter.h"
 #include <typeinfo>
 
 #ifdef HAVE_UNISTD_H
@@ -432,33 +433,21 @@ void nbackup::attach_database()
 	if (username.length() > 255 || password.length() > 255)
 		b_error::raise("Username or password is too long");
 
-
-	Firebird::HalfStaticArray<char, 100> dpbArray;
-
-	char *dpb = dpbArray.getBuffer(
-		1 + // isc_dpb_version1
-		1 + 1 + // isc_dpb_user_name + length
-		username.length() + 
-		1 + 1 + // isc_dpb_password + length
-		password.length());
+	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
 	
-	*dpb++ = isc_dpb_version1;
 	if (!username.isEmpty()) {
-		*dpb++ = isc_dpb_user_name;
-		*dpb++ = username.length();
-		memcpy(dpb, username.c_str(), username.length());
-		dpb += username.length();
+		dpb.insertString(isc_dpb_user_name, username);
 	}
 
 	if (!password.isEmpty()) {
-		*dpb++ = isc_dpb_password;
-		*dpb++ = password.length();
-		memcpy(dpb, password.c_str(), password.length());
-		dpb += password.length();
+		dpb.insertString(isc_dpb_password, password);
 	}
 
-	if (isc_attach_database(status, 0, database.c_str(), &newdb, dpb - dpbArray.begin(), dpbArray.begin()))
+	if (isc_attach_database(status, 0, database.c_str(), &newdb, 
+		dpb.getBufferLength(), reinterpret_cast<const char*>(dpb.getBuffer())))
+	{
         pr_error(status, "attach database");
+	}
 }
 
 void nbackup::detach_database()

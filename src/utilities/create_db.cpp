@@ -3,6 +3,7 @@
 
 #include "../jrd/ibase.h"
 #include "../jrd/common.h"
+#include "../common/classes/ClumpletWriter.h"
 #include <stdio.h>
 
 int main(int argc, char** argv)
@@ -12,14 +13,6 @@ int main(int argc, char** argv)
 		printf("Usage: %s <new db name>\n", argv[0]);
 		return -1;
 	}
-
-	UCHAR dpb[128];
-	UCHAR* d = dpb;
-	*d++ = (UCHAR) isc_dpb_version1;
-	*d++ = (UCHAR) isc_dpb_set_db_readonly;
-	*d++ = 1;
-	*d++ = TRUE;
-	const SSHORT len = d - dpb;
 
 	ISC_STATUS_ARRAY sv;
 	isc_db_handle db = 0;
@@ -50,7 +43,11 @@ int main(int argc, char** argv)
 		isc_print_status(sv);
 		return -3;
 	}
-	isc_attach_database(sv, 0, argv[1], &db, len, (char*) dpb);
+
+	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
+	dpb.insertByte(isc_dpb_set_db_readonly, TRUE);
+	isc_attach_database(sv, 0, argv[1], &db, dpb.getBufferLength(), 
+		reinterpret_cast<const char*>(dpb.getBuffer()));
 	if (sv[0] == 1 && sv[1] > 0)
 	{
 		isc_print_status(sv);

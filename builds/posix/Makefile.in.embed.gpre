@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.gpre,v 1.16 2004-10-07 20:25:40 skidder Exp $
+#  $Id: Makefile.in.embed.gpre,v 1.17 2004-12-09 19:18:20 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -40,7 +40,7 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 GPRE_Other_Sources = jrd/dsc.cpp jrd/isc.cpp common/utils.cpp \
-common/fb_exception.cpp common/classes/alloc.cpp
+common/fb_exception.cpp common/classes/alloc.cpp common/classes/fb_string.cpp
 GPRE_Files = gpre_meta.epp \
 		cmd.cpp cme.cpp cmp.cpp c_cxx.cpp exp.cpp gpre.cpp \
 		hsh.cpp int_cxx.cpp jrdmet.cpp movg.cpp msc.cpp par.cpp \
@@ -50,7 +50,7 @@ GPRE_Files = gpre_meta.epp \
 GPRE_Sources = $(addprefix gpre/, $(GPRE_Files)) $(GPRE_Other_Sources)
 GPRE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GPRE_Sources))))
 
-AllObjects = $(GPRE_Objects)
+AllObjects = $(GPRE_Objects) $(CLUMPLETS_Objects)
 Dependencies = $(AllObjects:.o=.d) 
 
 
@@ -59,7 +59,7 @@ Dependencies = $(AllObjects:.o=.d)
 
 gpre : $(LIBFBEMBED_SO) $(GPRE)
 
-$(GPRE):	$(GPRE_Objects)
+$(GPRE):	$(GPRE_Objects) $(CLUMPLETS_Objects)
 	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
 
 

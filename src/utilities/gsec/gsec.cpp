@@ -42,6 +42,7 @@
 #include "../utilities/gsec/secur_proto.h"
 #include "../utilities/gsec/gsecswi.h"
 #include "../utilities/common/cmd_util_proto.h"
+#include "../common/classes/ClumpletWriter.h"
 
 #include "../utilities/gsec/call_service.h"
 
@@ -262,45 +263,35 @@ int common_main(int argc,
 #else //SUPERCLIENT
 	bool useServices = serverName[0] ? true : false;
 
-    char dpb_buffer[256];
-	char* dpb = dpb_buffer;
 	FB_API_HANDLE db_handle = 0;
 
 	if (! useServices) 
 	{
-		*dpb++ = isc_dpb_version1;
-		*dpb++ = isc_dpb_gsec_attach;
-		*dpb++ = 1;	// size of parameter
-		*dpb++ = 1; // not 0 - yes, we are gsec
+		Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
+		dpb.insertByte(isc_dpb_gsec_attach, 1); // not 0 - yes, I'm gsec
 
 		if (user_data->dba_user_name_entered) {
-			*dpb++ = isc_dpb_user_name;
-			*dpb++ = strlen(user_data->dba_user_name);
-			for (const char* p = user_data->dba_user_name; *p;)
-				*dpb++ = *p++;
+			dpb.insertString(isc_dpb_user_name, 
+				user_data->dba_user_name, strlen(user_data->dba_user_name));
 		}
 
 		if (user_data->dba_password_entered) {
-			if (tdsec->tsec_service_gsec)
-				*dpb++ = isc_dpb_password_enc;
-			else
-				*dpb++ = isc_dpb_password;
-			*dpb++ = strlen(user_data->dba_password);
-			for (const char* p = user_data->dba_password; *p;)
-				*dpb++ = *p++;
+			dpb.insertString(tdsec->tsec_service_gsec ? 
+							isc_dpb_password_enc : isc_dpb_password, 
+				user_data->dba_password, strlen(user_data->dba_password));
 		}
 
 		if (user_data->sql_role_name_entered) {
-			*dpb++ = isc_dpb_sql_role_name;
-			*dpb++ = strlen(user_data->sql_role_name);
-			for (const char* p = user_data->sql_role_name; *p;)
-				*dpb++ = *p++;
+			dpb.insertString(isc_dpb_sql_role_name, 
+				user_data->sql_role_name, strlen(user_data->sql_role_name));
 		}
 
-		const SSHORT dpb_length = dpb - dpb_buffer;
-
-		if (isc_attach_database(status, 0, database_name, &db_handle, dpb_length, dpb_buffer))
+		if (isc_attach_database(status, 0, database_name, &db_handle, 
+				dpb.getBufferLength(), 
+				reinterpret_cast<const char*>(dpb.getBuffer())))
+		{
 			GSEC_error_redirect(status, GsecMsg15, NULL, NULL);
+		}
 	}
 
 #endif //SUPERCLIENT

@@ -59,6 +59,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include "../common/utils_proto.h"
+#include "../common/classes/ClumpletWriter.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -112,9 +113,6 @@ enum literal_string_type
 DATABASE DB = COMPILETIME "yachts.lnk";
 
 IsqlGlobals isqlGlob;
-
-//#define STUFF(x)	  *dpb++ = (x)
-//#define STUFF_INT(x)  {STUFF (x); STUFF ((x) >> 8); STUFF ((x) >> 16); STUFF ((x) >> 24);}
 
 #define DIGIT(c)		((c) >= '0' && (c) <= '9')
 #define INT64_LIMIT	 ((((SINT64) 1) << 62) / 5)	// same as in cvt.cpp 
@@ -4798,22 +4796,12 @@ static processing_state newdb(TEXT* dbname,
 		ISQL_FREE(local_usr);
 		return ERR;
 	}
-	UCHAR* dpb_buffer = (UCHAR*) ISQL_ALLOC(BUFFER_LENGTH256);
-	if (!dpb_buffer) {
-		ISQL_FREE(save_database);
-		ISQL_FREE(errbuf);
-		ISQL_FREE(local_psw);
-		ISQL_FREE(local_usr);
-		ISQL_FREE(local_sql_role);
-		return ERR;
-	}
 
 #ifdef DEBUG_GDS_ALLOC
 	gds_alloc_flag_unfreed((void*) errbuf);
 	gds_alloc_flag_unfreed((void*) local_psw);
 	gds_alloc_flag_unfreed((void*) local_usr);
 	gds_alloc_flag_unfreed((void*) local_sql_role);
-	gds_alloc_flag_unfreed((void*) dpb_buffer);
 #endif
 
 // global user and passwords are set only if they are not originally set 
@@ -4864,60 +4852,29 @@ static processing_state newdb(TEXT* dbname,
 	if (!(strlen(local_numbufs)) && has_global_numbufs)
 		strcpy(local_numbufs, global_Numbufs);
 
-// Build up a dpb 
-
-	UCHAR* dpb = dpb_buffer;
-	*dpb++ = isc_dpb_version1;
-	UCHAR* p;
+// Build up a dpb
+	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
 
 	if (*ISQL_charset && strcmp(ISQL_charset, DEFCHARSET)) {
-		*dpb++ = isc_dpb_lc_ctype;
-		p = (UCHAR*) ISQL_charset;
-		*dpb++ = strlen((char*)p);
-		while (*p)
-			*dpb++ = *p++;
+		dpb.insertString(isc_dpb_lc_ctype, ISQL_charset, strlen(ISQL_charset));
 	}
 
     SSHORT l;
 	if (l = strlen(local_usr)) {
-		*dpb++ = isc_dpb_user_name;
-		*dpb++ = l;
-		p = (UCHAR*) local_usr;
-		while (*p)
-			*dpb++ = *p++;
+		dpb.insertString(isc_dpb_user_name, local_usr, l);
 	}
 
 	if (l = strlen(local_psw)) {
-		*dpb++ = isc_dpb_password;
-		*dpb++ = l;
-		p = (UCHAR*) local_psw;
-		while (*p)
-			*dpb++ = *p++;
+		dpb.insertString(isc_dpb_password, local_psw, l);
 	}
 
 	if (l = strlen(local_sql_role)) {
-		add_byte(dpb, isc_dpb_sql_dialect);
-		add_byte(dpb, 4);
-		add_long(dpb, isqlGlob.SQL_dialect);
-		*dpb++ = isc_dpb_sql_role_name;
-		*dpb++ = l;
-		p = (UCHAR*) local_sql_role;
-		while (*p)
-			*dpb++ = *p++;
+		dpb.insertInt(isc_dpb_sql_dialect, isqlGlob.SQL_dialect);
+		dpb.insertString(isc_dpb_sql_role_name, local_sql_role, l);
 	}
 
 	if (l = strlen(local_numbufs)) {
-		const int i = atoi(local_numbufs);
-		add_byte(dpb, isc_dpb_num_buffers);
-		add_byte(dpb, 4);
-		add_long(dpb, i);
-	}
-
-	int dpb_len = (dpb - dpb_buffer);
-	dpb = dpb_buffer;
-	if (dpb_len < 2) {
-		dpb = NULL;
-		dpb_len = 0;
+		dpb.insertInt(isc_dpb_num_buffers, atoi(local_numbufs));
 	}
 
 	TEXT* local_name = isqlGlob.global_Db_name;
@@ -4929,7 +4886,8 @@ static processing_state newdb(TEXT* dbname,
 	}
 #endif
 	if (isc_attach_database
-		(isc_status, 0, local_name, &DB, dpb_len, (SCHAR*) dpb))
+		(isc_status, 0, local_name, &DB, dpb.getBufferLength(), 
+								reinterpret_cast<const char*>(dpb.getBuffer())))
 	{
 		ISQL_errmsg(isc_status);
 		isqlGlob.global_Db_name[0] = '\0';
@@ -4941,8 +4899,6 @@ static processing_state newdb(TEXT* dbname,
 			ISQL_FREE(local_usr);
 		if (local_sql_role)
 			ISQL_FREE(local_sql_role);
-		if (dpb_buffer)
-			ISQL_FREE(dpb_buffer);
 		if (errbuf)
 			ISQL_FREE(errbuf);
 		return FAIL;
@@ -5040,8 +4996,6 @@ static processing_state newdb(TEXT* dbname,
 				ISQL_FREE(local_usr);
 			if (local_sql_role)
 				ISQL_FREE(local_sql_role);
-			if (dpb_buffer)
-				ISQL_FREE(dpb_buffer);
 			if (errbuf)
 				ISQL_FREE(errbuf);
 			return FAIL;
@@ -5059,8 +5013,6 @@ static processing_state newdb(TEXT* dbname,
 		ISQL_FREE(local_usr);
 	if (local_sql_role)
 		ISQL_FREE(local_sql_role);
-	if (dpb_buffer)
-		ISQL_FREE(dpb_buffer);
 	if (errbuf)
 		ISQL_FREE(errbuf);
 	return (SKIP);

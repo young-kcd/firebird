@@ -55,6 +55,25 @@ void ClumpletReader::moveNext() {
 	cur_offset += length + 2;
 }
 
+void ClumpletReader::rewind()
+{
+	cur_offset = mIsTagged ? 1 : 0;
+}
+
+bool ClumpletReader::find(UCHAR tag)
+{
+	size_t co = getCurOffset();
+	for (rewind(); !isEof(); moveNext())
+	{
+		if (tag == getClumpTag())
+		{
+			return true;
+		}
+	}
+	setCurOffset(co);
+	return false;
+}
+
 // Methods which work with currently selected clumplet
 UCHAR ClumpletReader::getClumpTag() {
 	const UCHAR* clumplet = getBuffer() + cur_offset;

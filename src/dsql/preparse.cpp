@@ -146,9 +146,9 @@ bool PREPARSE_execute(
 
 		Firebird::PathName file_name(token.ToPathName());
 		*stmt_eaten = false;
-		Firebird::ClumpletWriter dpb(true, 0x1000, isc_dpb_version1);
+		Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
 
-		dpb.insertString(isc_dpb_overwrite, "\0", 1);
+		dpb.insertByte(isc_dpb_overwrite, 0);
 		dpb.insertInt(isc_dpb_sql_dialect, dialect);
 
 		SLONG page_size = 0;

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.gdef,v 1.7 2004-04-30 23:02:07 brodsom Exp $
+#  $Id: Makefile.in.embed.gdef,v 1.8 2004-12-09 19:18:20 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -54,7 +54,7 @@ GDEF_Files=	exe.epp extract.epp \
 GDEF_Sources = $(addprefix dudley/, $(GDEF_Files)) $(GDEF_Other_Sources)
 GDEF_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GDEF_Sources))))
 
-AllObjects = $(GDEF_Objects)
+AllObjects = $(GDEF_Objects) $(CLUMPLETS_Objects)
 Dependencies = $(AllObjects:.o=.d)
 
 
@@ -64,8 +64,8 @@ all:	gdef
 
 gdef:   $(BIN)/gdef
 
-$(BIN)/gdef: $(GDEF_Objects) $(LIBFBEMBED_SO)  
-	$(LD) $(LINK_OPTS) $(GDEF_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+$(BIN)/gdef: $(GDEF_Objects) $(CLUMPLETS_Objects) $(LIBFBEMBED_SO) 
+	$(LD) $(LINK_OPTS) $(GDEF_Objects) $(CLUMPLETS_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
 
 
 

@@ -192,5 +192,17 @@ SOURCE=..\..\..\src\common\classes\timestamp.h
 SOURCE=..\..\..\src\common\utils_proto.h
 # End Source File
 # End Group
+# Begin Group "CLUMPLET files"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\src\common\classes\ClumpletReader.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\classes\ClumpletWriter.cpp
+# End Source File
+# End Group
 # End Target
 # End Project

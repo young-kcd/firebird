@@ -160,11 +160,16 @@ public:
   		fb_assert(index < count);
   		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
 	}
-	void remove(size_t from, size_t to) {
+	void removeRange(size_t from, size_t to) {
   		fb_assert(from <= to);
   		fb_assert(to <= count);
   		memmove(data + from, data + to, sizeof(T) * (to - from));
 		count -= (to - from);
+	}
+	void removeCount(size_t index, size_t n) {
+  		fb_assert(index + n <= count);
+  		memmove(data + index, data + index + n, sizeof(T) * n);
+		count -= n;
 	}
 	void remove(T* itr) {
 		const size_t index = itr - begin();

@@ -41,6 +41,7 @@
 #include "../common/config/config.h"
 #include "../common/classes/objects_array.h"
 #include "../common/classes/init.h"
+#include "../common/classes/ClumpletWriter.h"
 
 using namespace Jrd;
 
@@ -336,54 +337,32 @@ bool SecurityDatabase::prepare()
 	lookup_db = lookup_req = 0;
 
 	// Initialize the database name
-
 	getPath(user_info_name);
 
 	// Perhaps build up a dpb
-	SCHAR dpb_buffer[256];
-	char* dpb = dpb_buffer;
-
-	*dpb++ = isc_dpb_version1;
+	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
 
 	// Insert username
-
-	static const char szAuthenticator[] = "authenticator";
-	const size_t nAuthNameLen = strlen(szAuthenticator);
-	*dpb++ = isc_dpb_user_name;
-	*dpb++ = nAuthNameLen;
-	memcpy(dpb, szAuthenticator, nAuthNameLen);
-	dpb += nAuthNameLen;
+	const char* szAuthenticator = "authenticator";
+	dpb.insertString(isc_dpb_user_name, 
+		szAuthenticator, strlen(szAuthenticator));
 
 	// Insert password
+	const char* szPassword = "none";
+	dpb.insertString(isc_dpb_password, 
+		szPassword, strlen(szPassword));
 
-	static const char szPassword[] = "none";
-	const size_t nPswdLen = strlen(szPassword);
-	*dpb++ = isc_dpb_password;
-	*dpb++ = nPswdLen;
-	memcpy(dpb, szPassword, nPswdLen);
-	dpb += nPswdLen;
+	// Attachment is for the security database
+	dpb.insertByte(isc_dpb_sec_attach, TRUE);
 
-	*dpb++ = isc_dpb_sec_attach;	// Attachment is for the security database
-	*dpb++ = 1;						// Parameter value length
-	*dpb++ = TRUE;					// Parameter value
-
-	const SSHORT dpb_len = dpb - dpb_buffer;
-	fb_assert(dpb_len <= sizeof(dpb_buffer));
-	
 	// Temporarily disable security checks for this thread
 	JRD_thread_security_disable(true);
 
-	isc_attach_database(status, 0, user_info_name, &lookup_db, dpb_len, dpb_buffer);
+	isc_attach_database(status, 0, user_info_name, &lookup_db, 
+		dpb.getBufferLength(), 
+		reinterpret_cast<const char*>(dpb.getBuffer()));
 	
 	JRD_thread_security_disable(false);
-
-	if (status[1] == isc_login)
-	{
-		// We may be going against a V3 database which does not
-		// understand this combination
-
-		isc_attach_database(status, 0, user_info_name, &lookup_db, 0, 0);
-	}
 
 	isc_compile_request(status, &lookup_db, &lookup_req, sizeof(PWD_REQUEST),
 						reinterpret_cast<const char*>(PWD_REQUEST));

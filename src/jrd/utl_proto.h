@@ -84,5 +84,13 @@ void	API_ROUTINE gds__wake_init(void);
 } /* extern "C" */
 #endif
 
+// new utl
+namespace Firebird
+{
+	class ClumpletWriter;
+}
+void setSingleUser(Firebird::ClumpletWriter&, const TEXT*);
+void setLogin(Firebird::ClumpletWriter&);
+
 #endif // JRD_UTL_PROTO_H
 

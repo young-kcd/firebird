@@ -37,6 +37,7 @@
 #include "../dudley/lex_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_f_proto.h"
+#include "../common/classes/ClumpletWriter.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -172,34 +173,21 @@ void EXE_create_database( DBB dbb)
 /* Generate a dpb for attempting to attach to, and
    later to create, the specified database. */
 
-	USHORT dpb_length = 0;
-	TEXT dpb[128];
-	TEXT* d = dpb;
-	*d++ = isc_dpb_version1;
+	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
 
 	const TEXT* p;
-	
 	if (p = dudleyGlob.DDL_default_user) {
-		*d++ = isc_dpb_user_name;
-		*d++ = strlen(p);
-		while (*p)
-			*d++ = *p++;
+		dpb.insertString(isc_dpb_user_name, p, strlen(p));
 	}
-
 	if (p = dudleyGlob.DDL_default_password) {
-		*d++ = isc_dpb_password;
-		*d++ = strlen(p);
-		while (*p)
-			*d++ = *p++;
+		dpb.insertString(isc_dpb_password, p, strlen(p));
 	}
-
-	dpb_length = d - dpb;
-	if (dpb_length == 1)
-		dpb_length = 0;
 
 	const TEXT* file_name = dbb->dbb_name->sym_string;
 
-	const SLONG result = isc_attach_database(gds_status, 0, file_name, &DB, dpb_length, dpb);
+	const SLONG result = isc_attach_database(gds_status, 0, file_name, 
+		&DB, dpb.getBufferLength(), 
+		reinterpret_cast<const char*>(dpb.getBuffer()));
 	if (!dudleyGlob.DDL_replace) {
 		if (!result) {
 			isc_detach_database(gds_status, &DB);
@@ -232,51 +220,35 @@ void EXE_create_database( DBB dbb)
 
 	if (dbb->dbb_page_size) {
 		const USHORT page_size = MAX(dbb->dbb_page_size, 1024);
-		*d++ = isc_dpb_page_size;
-		*d++ = 2;
-		*d++ = page_size;
-		*d++ = page_size >> 8;
-		dpb_length = d - dpb;
+		dpb.insertInt(isc_dpb_page_size, page_size);
 	}
 
 	USHORT len;
 	ULONG llen;
 
 	if (llen = dbb->dbb_chkptlen) {
-		*d++ = isc_dpb_wal_chkptlen;
-		*d++ = 4;
-		for (len = 0; len < 4; len++, llen = llen >> 8)
-			*d++ = llen;
+		dpb.insertInt(isc_dpb_wal_chkptlen, llen);
 	}
 
 	if (len = dbb->dbb_numbufs) {
-		*d++ = isc_dpb_wal_numbufs;
-		*d++ = 2;
-		*d++ = len;
-		*d++ = len >> 8;
+		dpb.insertInt(isc_dpb_wal_numbufs, len);
 	}
 
 	if (len = dbb->dbb_bufsize) {
-		*d++ = isc_dpb_wal_bufsize;
-		*d++ = 2;
-		*d++ = len;
-		*d++ = len >> 8;
+		dpb.insertInt(isc_dpb_wal_bufsize, len);
 	}
 
 	if ((llen = dbb->dbb_grp_cmt_wait) >= 0) {
-		*d++ = isc_dpb_wal_grp_cmt_wait;
-		*d++ = 4;
-		for (len = 0; len < 4; len++, llen = llen >> 8)
-			*d++ = llen;
+		dpb.insertInt(isc_dpb_wal_grp_cmt_wait, llen);
 	}
 
-	dpb_length = d - dpb;
-	if (dpb_length == 1)
-		dpb_length = 0;
-
-	if (isc_create_database(gds_status, 0, file_name, &DB, dpb_length, dpb, 0))
-			DDL_error_abort(gds_status, 21, file_name, NULL, NULL, NULL, NULL);
+	if (isc_create_database(gds_status, 0, file_name, &DB, 
+			dpb.getBufferLength(), 
+			reinterpret_cast<const char*>(dpb.getBuffer()), 0))
+	{
+		DDL_error_abort(gds_status, 21, file_name, NULL, NULL, NULL, NULL);
 			/* msg 21: Couldn't create database \"%s\" */
+	}
 
 	if (dudleyGlob.DDL_version) {
 		DDL_msg_put(23, file_name, NULL, NULL, NULL, NULL);
@@ -370,35 +342,23 @@ void EXE_drop_database( DBB dbb)
  *	its files.
  *
  **************************************/
-	USHORT dpb_length = 0;
-	TEXT dpb[128];
-	TEXT* d = dpb;
-	*d++ = isc_dpb_version1;
+	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
 
 	const TEXT* p;
-
 	if (p = dudleyGlob.DDL_default_user) {
-		*d++ = isc_dpb_user_name;
-		*d++ = strlen(p);
-		while (*p)
-			*d++ = *p++;
+		dpb.insertString(isc_dpb_user_name, p, strlen(p));
 	}
-
 	if (p = dudleyGlob.DDL_default_password) {
-		*d++ = isc_dpb_password;
-		*d++ = strlen(p);
-		while (*p)
-			*d++ = *p++;
+		dpb.insertString(isc_dpb_password, p, strlen(p));
 	}
 
-	dpb_length = d - dpb;
-	if (dpb_length == 1)
-		dpb_length = 0;
-
-	if (isc_attach_database(gds_status, 0, dbb->dbb_name->sym_string, &DB,
-							 dpb_length, dpb))
-			DDL_error_abort(gds_status, 25, NULL, NULL, NULL, NULL, NULL);
-			/* msg 25: Couldn't locate database */
+	if (isc_attach_database(gds_status, 0, dbb->dbb_name->sym_string, 
+				&DB, dpb.getBufferLength(), 
+				reinterpret_cast<const char*>(dpb.getBuffer())))
+	{
+		DDL_error_abort(gds_status, 25, NULL, NULL, NULL, NULL, NULL);
+		/* msg 25: Couldn't locate database */
+	}
 
 	START_TRANSACTION;
 
@@ -675,25 +635,14 @@ void EXE_modify_database( DBB dbb)
  *	Modify an existing database.
  *
  **************************************/
-	USHORT dpb_length = 0;
-	TEXT dpb[128];
-	TEXT* d = dpb;
-	*d++ = isc_dpb_version1;
+	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
 
 	const TEXT* p;
-
 	if (p = dudleyGlob.DDL_default_user) {
-		*d++ = isc_dpb_user_name;
-		*d++ = strlen(p);
-		while (*p)
-			*d++ = *p++;
+		dpb.insertString(isc_dpb_user_name, p, strlen(p));
 	}
-
 	if (p = dudleyGlob.DDL_default_password) {
-		*d++ = isc_dpb_password;
-		*d++ = strlen(p);
-		while (*p)
-			*d++ = *p++;
+		dpb.insertString(isc_dpb_password, p, strlen(p));
 	}
 
 /*
@@ -735,14 +684,13 @@ void EXE_modify_database( DBB dbb)
 	}
 */
 
-	dpb_length = d - dpb;
-	if (dpb_length == 1)
-		dpb_length = 0;
-
-	if (isc_attach_database(gds_status, 0, dbb->dbb_name->sym_string, &DB,
-							 dpb_length, dpb))
-			DDL_error_abort(gds_status, 29, dbb->dbb_name->sym_string, NULL,
-							NULL, NULL, NULL);	/* msg 29: Couldn't attach database */
+	if (isc_attach_database(gds_status, 0, dbb->dbb_name->sym_string, 
+				&DB, dpb.getBufferLength(), 
+				reinterpret_cast<const char*>(dpb.getBuffer())))
+	{
+		DDL_error_abort(gds_status, 29, dbb->dbb_name->sym_string, NULL,
+						NULL, NULL, NULL);	/* msg 29: Couldn't attach database */
+	}
 
 	if (dudleyGlob.DDL_version) {
 		DDL_msg_put(30, dbb->dbb_name->sym_string, NULL, NULL, NULL, NULL);

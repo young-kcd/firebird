@@ -59,6 +59,7 @@
 #include "../jrd/blb_proto.h"
 #endif
 #include "../jrd/constants.h"
+#include "../common/classes/ClumpletWriter.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -2438,3 +2439,34 @@ static int load(ISC_QUAD* blob_id,
 	return TRUE;
 }
 
+// new utl
+inline void setTag(Firebird::ClumpletWriter& dpb, UCHAR tag, const TEXT* value)
+{
+	if (dpb.find(tag))
+	{
+		return;
+	}
+	dpb.insertString(tag, value, strlen(value));
+}
+
+#ifdef UNIX
+void setSingleUser(Firebird::ClumpletWriter& dpb, const TEXT* single_user)
+{
+	setTag(dpb, isc_dpb_reserved, single_user);
+}
+#endif
+
+void setLogin(Firebird::ClumpletWriter& dpb)
+{
+	const TEXT* username = getenv("ISC_USER");
+	if (username && !dpb.find(isc_dpb_sys_user_name))
+	{
+		setTag(dpb, isc_dpb_user_name, username);
+	}
+
+	const TEXT* password = getenv("ISC_PASSWORD");
+	if (password && !dpb.find(isc_dpb_password_enc))
+	{
+		setTag(dpb, isc_dpb_password, password);
+	}
+}

@@ -64,6 +64,7 @@
 #include "../jrd/vio_proto.h"
 #include "../jrd/enc_proto.h"
 #include "../jrd/jrd_proto.h"
+#include "../common/classes/ClumpletWriter.h"
 
 #ifndef VMS
 #include "../lock/lock_proto.h"
@@ -2768,34 +2769,16 @@ static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM database)
  *	Sweep database.
  *
  **************************************/
-	UCHAR	sweep_dpb[100];
-
 	isc_db_handle db_handle = 0;
+	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
 
-	UCHAR* dpb = sweep_dpb;
-
-	*dpb++ = isc_dpb_version1;
-	*dpb++ = isc_dpb_user_name;
-	const char* q = "sweeper";
-	*dpb++ = strlen (q);
-	while (*q)
-	{
-		*dpb++ = *q++;
-	}
-
-	*dpb++ = isc_dpb_password;
-	q = "none";
-	*dpb++ = strlen(q);
-	while (*q)
-	{
-		*dpb++ = *q++;
-	}
-
-	*dpb++ = isc_dpb_sweep;
-	*dpb++ = 1;
-	*dpb++ = isc_dpb_records;
-
-	const SSHORT dpb_length = dpb - sweep_dpb;
+	const char* szAuthenticator = "sweeper";
+	dpb.insertString(isc_dpb_user_name, 
+		szAuthenticator, strlen(szAuthenticator));
+	const char* szPassword = "none";
+	dpb.insertString(isc_dpb_password, 
+		szPassword, strlen(szPassword));
+	dpb.insertByte(isc_dpb_sweep, isc_dpb_records);
 
 	ISC_STATUS_ARRAY status_vector;
 
@@ -2803,8 +2786,8 @@ static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM database)
 	JRD_thread_security_disable(true);
 
 	isc_attach_database(status_vector, 0, (char*)database,
-						 &db_handle, dpb_length,
-						 reinterpret_cast<const char*>(sweep_dpb));
+						&db_handle, dpb.getBufferLength(),
+						reinterpret_cast<const char*>(dpb.getBuffer()));
 
 	JRD_thread_security_disable(false);
 

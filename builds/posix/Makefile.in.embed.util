@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.util,v 1.16 2004-11-15 04:15:20 skidder Exp $
+#  $Id: Makefile.in.embed.util,v 1.17 2004-12-09 19:18:20 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -106,10 +106,10 @@ RELAY_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(RELAY_Sources)
 
 AllObjects = $(CREATEDB_Object) $(DROP_Object) \
 			 $(GSEC_Objects) $(GSTAT_Object) $(IBGUARD_Objects) \
-			 $(IBMGR_Objects) $(REBUILD_Objects) $(RELAY_Objects)
+			 $(IBMGR_Objects) $(REBUILD_Objects) $(RELAY_Objects) $(CLUMPLETS_Objects)
 
 AllObjects = $(CREATEDB_Objects) $(DROP_Objects) \
-			 $(GSEC_Objects) $(GSTAT_Objects) 
+			 $(GSEC_Objects) $(GSTAT_Objects) $(CLUMPLETS_Objects)
 
 
 Dependencies = $(AllObjects:.o=.d) 
@@ -132,7 +132,7 @@ $(CREATE_DB):	$(CREATEDB_Objects) $(LIBFBSTATIC_A) $(LIBFBCOMMON_A)
 
 nbackup: $(LIBFBEMBED_SO) $(NBACKUP)
 
-$(NBACKUP):	$(NBACKUP_Objects) 
+$(NBACKUP):	$(NBACKUP_Objects) $(CLUMPLETS_Objects)
 	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
 
 fb_lock_print: $(LIBFBEMBED_SO) $(LOCKPRINT)
@@ -143,7 +143,7 @@ $(LOCKPRINT):	$(LOCKPRINT_Objects)
 
 gstat : $(LIBFBEMBED_SO) $(GSTAT)
 
-$(GSTAT):	$(GSTAT_Objects)
+$(GSTAT):	$(GSTAT_Objects) $(CLUMPLETS_Objects)
 	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
 
 
@@ -162,7 +162,7 @@ $(GDS_RELAY):	$(RELAY_Objects) $(LIBFBEMBED_SO)
 
 gsec: $(LIBFBEMBED_SO) $(GSEC)
 
-$(GSEC):	$(GSEC_Objects)
+$(GSEC):	$(GSEC_Objects) $(CLUMPLETS_Objects)
 	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS) $(LIBFBCOMMON_A)
 
 ibguard: $(IBGUARD)

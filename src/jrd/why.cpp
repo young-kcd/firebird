@@ -62,6 +62,7 @@
 #include "../jrd/isc.h"
 #include "../jrd/fil.h"
 #include "../jrd/flu.h"
+#include "../common/classes/ClumpletWriter.h"
 
 /* includes specific for DSQL */
 
@@ -87,6 +88,12 @@
 #include "../common/classes/rwlock.h"
 #include "../common/classes/auto.h"
 
+
+// In 2.0 it's hard to include ibase.h in why.cpp due to API declaration conflicts.
+// Taking into account that given y-valve lives it's last version,
+// in which dpb version is not likely to change, define it here.
+// #include "../jrd/ibase.h"
+const UCHAR isc_dpb_version1 = 1;
 
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
@@ -798,7 +805,8 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 				expanded_filename, sizeof(expanded_filename), true);
 	}
 
-	const UCHAR* current_dpb_ptr = reinterpret_cast<const UCHAR*>(dpb);
+	Firebird::ClumpletWriter newDpb(true, MAX_DPB_SIZE, reinterpret_cast<const UCHAR*>(dpb), 
+									dpb_length, isc_dpb_version1);
 
 #ifdef UNIX
 /* added so that only the pipe_server goes in here */
@@ -809,16 +817,13 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		return error(status, local);
 	}
 
-	if (single_user[0]) {
-		isc_set_single_user(&current_dpb_ptr, &dpb_length, single_user);
+	if (single_user[0]) 
+	{
+		setSingleUser(newDpb, single_user);
 	}
 #endif
 
-/* Special handling of dpb pointers to handle multiple extends of the dpb */
-	const UCHAR* const last_dpb_ptr = current_dpb_ptr;
-	isc_set_login(&current_dpb_ptr, &dpb_length);
-	if ((current_dpb_ptr != last_dpb_ptr) && (last_dpb_ptr != (UCHAR *)dpb))
-		gds__free((void*)last_dpb_ptr);
+	setLogin(newDpb);
 
 	for (n = 0; n < SUBSYSTEMS; n++)
 	{
@@ -828,7 +833,8 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		}
 		WHY_ATT handle = NULL;
 		if (!CALL(PROC_ATTACH_DATABASE, n) (ptr, org_length, temp_filename,
-											&handle, dpb_length, current_dpb_ptr,
+											&handle, newDpb.getBufferLength(), 
+											reinterpret_cast<const char*>(newDpb.getBuffer()),
 											expanded_filename))
 		{
 			length = strlen(expanded_filename);
@@ -858,10 +864,6 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 			}
 			*p = 0;
 
-			if (current_dpb_ptr != (UCHAR *) dpb) {
-				gds__free((SLONG *) current_dpb_ptr);
-			}
-
 			database->cleanup = NULL;
 			status[0] = isc_arg_gds;
 			status[1] = 0;
@@ -884,10 +886,6 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		if (ptr[1] != isc_unavailable) {
 			ptr = temp;
 		}
-	}
-
-	if (current_dpb_ptr != (UCHAR *) dpb) {
-		gds__free((SLONG *) current_dpb_ptr);
 	}
 
 	SUBSYSTEM_USAGE_DECR;
@@ -1424,7 +1422,8 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 			expanded_filename, sizeof(expanded_filename), true);
 	}
 
-	const UCHAR* current_dpb_ptr = dpb;
+	Firebird::ClumpletWriter newDpb(true, MAX_DPB_SIZE, reinterpret_cast<const UCHAR*>(dpb), 
+									dpb_length, isc_dpb_version1);
 
 #ifdef UNIX
 	single_user[0] = 0;
@@ -1435,14 +1434,10 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	}
 
 	if (single_user[0])
-		isc_set_single_user(&current_dpb_ptr, &dpb_length, single_user);
+		setSingleUser(newDpb, single_user);
 #endif
 
-/* Special handling of dpb pointers to handle multiple extends of the dpb */
-	const UCHAR* const last_dpb_ptr = current_dpb_ptr;
-	isc_set_login(&current_dpb_ptr, &dpb_length);
-	if ((current_dpb_ptr != last_dpb_ptr) && (last_dpb_ptr != dpb))
-		gds__free((void*) last_dpb_ptr);
+	setLogin(newDpb);
 
 	for (n = 0; n < SUBSYSTEMS; n++)
 	{
@@ -1450,9 +1445,9 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 			continue;
 		WHY_ATT handle = NULL;
 		if (!CALL(PROC_CREATE_DATABASE, n) (ptr, org_length, temp_filename,
-											&handle, dpb_length, 
-											current_dpb_ptr, 0,
-											expanded_filename))
+											&handle, newDpb.getBufferLength(), 
+											reinterpret_cast<const char*>(newDpb.getBuffer()), 
+											0, expanded_filename))
 		{
 #ifdef WIN_NT
             /* Now we can expand, the file exists. */
@@ -1502,8 +1497,6 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 #endif
 			*p = 0;
 
-			if (current_dpb_ptr != dpb)
-				gds__free((void*) current_dpb_ptr);
 			database->cleanup = NULL;
 			status[0] = isc_arg_gds;
 			status[1] = 0;
@@ -1516,9 +1509,6 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		if (ptr[1] != isc_unavailable)
 			ptr = temp;
 	}
-
-	if (current_dpb_ptr != dpb)
-		gds__free((void*) current_dpb_ptr);
 
 	SUBSYSTEM_USAGE_DECR;
 	return error(status, local);

@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: ClumpletWriter.cpp,v 1.5 2004-11-27 08:13:39 robocop Exp $
+ *  $Id: ClumpletWriter.cpp,v 1.6 2004-12-09 19:18:57 alexpeshkoff Exp $
  *
  */
 
@@ -36,18 +36,22 @@
 namespace Firebird {
 
 ClumpletWriter::ClumpletWriter(bool isTagged, size_t limit, UCHAR tag) : 
-  ClumpletReader(isTagged, NULL, 0), sizeLimit(limit), dynamic_buffer(getPool()) 
+	ClumpletReader(isTagged, NULL, 0), sizeLimit(limit), dynamic_buffer(getPool()) 
 {
 	if (isTagged) {
 		dynamic_buffer.push(tag);
 	}
 }
  
-ClumpletWriter::ClumpletWriter(bool isTagged, size_t limit, const UCHAR* buffer, size_t buffLen) :
-  ClumpletReader(isTagged, NULL, 0), sizeLimit(limit), 
-	  dynamic_buffer(getPool()) 
+ClumpletWriter::ClumpletWriter(bool isTagged, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag) :
+	ClumpletReader(isTagged, NULL, 0), sizeLimit(limit), dynamic_buffer(getPool()) 
 {
-	  dynamic_buffer.push(buffer, buffLen);
+	if (buffer) {
+		dynamic_buffer.push(buffer, buffLen);
+	}
+	else if (isTagged) {
+		dynamic_buffer.push(tag);
+	}
 }
 
 void ClumpletWriter::reset(UCHAR tag) {
@@ -150,12 +154,32 @@ void ClumpletWriter::insertBytesNoLengthCheck(UCHAR tag, const UCHAR* bytes, UCH
 		size_overflow();
 	}
 
-	// Insert the data
+		// Insert the data
 	dynamic_buffer.insert(cur_offset, tag);
 	dynamic_buffer.insert(cur_offset + 1, length);
 	dynamic_buffer.insert(cur_offset + 2, bytes, length);
 	cur_offset += length + 2;
 }
+
+void ClumpletWriter::insertTag(UCHAR tag)
+{
+	// Check that we're not beyond the end of buffer.
+	// We get there when we set end marker.
+	if (cur_offset > dynamic_buffer.getCount()) {
+		usage_mistake("write past EOF");
+		return;
+	}
+	
+	// Check that resulting data doesn't overflow size limit
+	if (dynamic_buffer.getCount() + 2 > sizeLimit) {
+		size_overflow();
+	}
+
+	// Insert the data
+	dynamic_buffer.insert(cur_offset++, tag);
+	dynamic_buffer.insert(cur_offset++, 0);
+}
+
 
 void ClumpletWriter::insertEndMarker(UCHAR tag) {
 	// Check that we're not beyond the end of buffer.
@@ -191,9 +215,8 @@ void ClumpletWriter::deleteClumplet() {
 		dynamic_buffer.shrink(cur_offset);
 	} else {
 		size_t length = clumplet[1];
-		dynamic_buffer.remove(cur_offset, length + 2);
+		dynamic_buffer.removeCount(cur_offset, length + 2);
 	}
 }
-
 
 }

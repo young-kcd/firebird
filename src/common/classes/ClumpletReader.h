@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: ClumpletReader.h,v 1.7 2004-11-27 03:30:09 robocop Exp $
+ *  $Id: ClumpletReader.h,v 1.8 2004-12-09 19:18:57 alexpeshkoff Exp $
  *
  */
 
@@ -46,6 +46,8 @@ public:
 	// Navigation in clumplet buffer
 	bool isEof() { return cur_offset >= getBufferLength(); }
 	void moveNext();
+	void rewind();
+	bool find(UCHAR tag);
 
     // Methods which work with currently selected clumplet
 	UCHAR getClumpTag();
@@ -60,7 +62,15 @@ public:
 
 	// Return the tag for buffer (usually structure version)
 	UCHAR getBufferTag();
-	size_t getBufferLength() { return getBufferEnd() - getBuffer(); }
+	size_t getBufferLength() const 
+	{
+		size_t rc = getBufferEnd() - getBuffer();
+		if (rc == 1)
+		{
+			rc = 0;
+		}
+		return rc;
+	}
 	size_t getCurOffset() const { return cur_offset; }
 	void setCurOffset(size_t newOffset) { cur_offset = newOffset; }
 protected:
@@ -68,8 +78,8 @@ protected:
 	bool mIsTagged;
 
 	// Methods are virtual so writer can override 'em
-	virtual const UCHAR* getBuffer() { return static_buffer; }
-	virtual const UCHAR* getBufferEnd() { return static_buffer_end; }
+	virtual const UCHAR* getBuffer() const { return static_buffer; }
+	virtual const UCHAR* getBufferEnd() const { return static_buffer_end; }
 
 	// These functions are called when error condition is detected by this class. 
 	// They may throw exceptions. If they don't reader tries to do something

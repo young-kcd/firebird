@@ -41,6 +41,7 @@
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/utl_proto.h"
 #include "../common/utils_proto.h"
+#include "../common/classes/ClumpletWriter.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -506,32 +507,18 @@ void MET_delete_database( DBB dbb)
 		password_length = strlen(QLI_default_password);
 	}
 
-	UCHAR* p = global_parm_buffer;
-	UCHAR* const dpb = p;
-	*p++ = isc_dpb_version1;
-
+	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
 	if (user_length) {
-		*p++ = isc_dpb_user_name;
-		*p++ = user_length;
-		while (user_length--)
-			*p++ = *user++;
+		dpb.insertString(isc_dpb_user_name, user, user_length);
 	}
-
 	if (password_length) {
-		*p++ = isc_dpb_password;
-		*p++ = password_length;
-		while (password_length--)
-			*p++ = *password++;
+		dpb.insertString(isc_dpb_password, password, password_length);
 	}
-
-	USHORT dpb_length = p - global_parm_buffer;
-
-	if (dpb_length == 1)
-		dpb_length = 0;
 
 	ISC_STATUS_ARRAY status_vector;
 	if (isc_attach_database(status_vector, 0, dbb->dbb_filename,
-							 &dbb->dbb_handle, dpb_length, (char*) dpb))
+							&dbb->dbb_handle, dpb.getBufferLength(), 
+							reinterpret_cast<const char*>(dpb.getBuffer())))
 			ERRQ_database_error(dbb, status_vector);
 
 	qli_lls* stack = NULL;
@@ -1379,45 +1366,32 @@ void MET_ready( qli_syntax* node, USHORT create_flag)
  *	fail, all fail.  Fair enough?
  *
  **************************************/
-	UCHAR* p = global_parm_buffer;
+	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
+
 	DBB temp = (DBB) node->syn_arg[0];
 
 /* Only a SQL CREATE DATABASE will have a pagesize parameter,
    so only looking at the first pointer is justified.	*/
 
-	*p++ = isc_dpb_version1;
-
 	SSHORT length;
 	const TEXT* lc_ctype = QLI_charset;
 	if (lc_ctype && (length = strlen(lc_ctype))) {
-		*p++ = isc_dpb_lc_ctype;
-		*p++ = length;
-		while (*lc_ctype)
-			*p++ = *lc_ctype++;
+		dpb.insertString(isc_dpb_lc_ctype, lc_ctype, length);
 	}
 
 	if (QLI_trace) {
-		*p++ = isc_dpb_trace;
-		*p++ = 1;
-		*p++ = 1;
+		dpb.insertByte(isc_dpb_trace, 1);
 	}
 
 	if (sw_buffers) {
-		*p++ = isc_dpb_num_buffers;
-		*p++ = 2;
-		*p++ = sw_buffers % 256;
-		*p++ = sw_buffers / 256;
+		dpb.insertInt(isc_dpb_num_buffers, ULONG(sw_buffers));
 	}
 
 	if (temp->dbb_pagesize) {
-		*p++ = isc_dpb_page_size;
-		*p++ = 2;
-		*p++ = temp->dbb_pagesize % 256;
-		*p++ = temp->dbb_pagesize / 256;
+		dpb.insertInt(isc_dpb_page_size, ULONG(temp->dbb_pagesize));
 	}
 
-/* get a username, if specified globally or on
-   the command line */
+// get a username, if specified globally or on the command line
 
 	const TEXT* q;
 	if (temp->dbb_user) {
@@ -1429,10 +1403,7 @@ void MET_ready( qli_syntax* node, USHORT create_flag)
 		length = strlen(QLI_default_user);
 	}
 	if (length) {
-		*p++ = isc_dpb_user_name;
-		*p++ = length;
-		while (length--)
-			*p++ = *q++;
+		dpb.insertString(isc_dpb_user_name, q, length);
 	}
 
 // get a password, if specified
@@ -1446,20 +1417,8 @@ void MET_ready( qli_syntax* node, USHORT create_flag)
 		length = strlen(QLI_default_password);
 	}
 	if (length) {
-		*p++ = isc_dpb_password;
-		*p++ = length;
-		while (length--)
-			*p++ = *q++;
+		dpb.insertString(isc_dpb_password, q, length);
 	}
-
-	USHORT dpb_length = p - global_parm_buffer;
-	UCHAR* dpb;
-	if (dpb_length == 1) {
-		dpb = NULL;
-		dpb_length = 0;
-	}
-	else
-		dpb = global_parm_buffer;
 
 	const qli_syntax* const* const end = node->syn_arg + node->syn_count;
 
@@ -1472,10 +1431,12 @@ void MET_ready( qli_syntax* node, USHORT create_flag)
 		dbb = (DBB) *ptr;
 		if (create_flag)
 			isc_create_database(status_vector, 0, dbb->dbb_filename,
-								 &dbb->dbb_handle, dpb_length, (char*) dpb, 0);
+								&dbb->dbb_handle, dpb.getBufferLength(), 
+								reinterpret_cast<const char*>(dpb.getBuffer()), 0);
 		else
 			isc_attach_database(status_vector, 0, dbb->dbb_filename,
-								 &dbb->dbb_handle, dpb_length, (char*) dpb);
+								&dbb->dbb_handle, dpb.getBufferLength(), 
+								reinterpret_cast<const char*>(dpb.getBuffer()));
 		if (status_vector[1])
 			break;
 	}

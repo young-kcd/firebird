@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: ClumpletWriter.h,v 1.4 2004-11-15 16:34:47 alexpeshkoff Exp $
+ *  $Id: ClumpletWriter.h,v 1.5 2004-12-09 19:18:57 alexpeshkoff Exp $
  *
  */
 
@@ -33,6 +33,11 @@
 
 #include "../common/classes/ClumpletReader.h"
 #include "../common/classes/array.h"
+
+// This setting of maximum dpb size doesn't mean, that we
+// can't process larger DBPs! This is just recommended limit 
+// cause it's hard to imagine sensefull DPB of even this size.
+const size_t MAX_DPB_SIZE = 1024;
 
 namespace Firebird {
 
@@ -43,7 +48,7 @@ public:
 	ClumpletWriter(bool isTagged, size_t limit, UCHAR tag = 0);
 
 	// Create writer from a given buffer
-	ClumpletWriter(bool isTagged, size_t limit, const UCHAR* buffer, size_t buffLen);
+	ClumpletWriter(bool isTagged, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag);
 
 	void reset(UCHAR tag);
 	void reset(const UCHAR* buffer, size_t buffLen);
@@ -55,14 +60,19 @@ public:
 	void insertString(UCHAR tag, const string& str);
 	void insertPath(UCHAR tag, const PathName& str);
 	void insertString(UCHAR tag, const char* str, size_t length);
+	void insertByte(UCHAR tag, const UCHAR byte)
+	{
+		insertBytesNoLengthCheck(tag, &byte, 1);
+	}
+	void insertTag(UCHAR tag);
 	void insertEndMarker(UCHAR tag);
 
     // Delete currently selected clumplet from buffer
 	void deleteClumplet();
 
-	virtual const UCHAR* getBuffer() { return dynamic_buffer.begin(); }
+	virtual const UCHAR* getBuffer() const { return dynamic_buffer.begin(); }
 protected:
-	virtual const UCHAR* getBufferEnd() { return dynamic_buffer.end(); }
+	virtual const UCHAR* getBufferEnd() const { return dynamic_buffer.end(); }
 	virtual void size_overflow();
 	void insertBytesNoLengthCheck(UCHAR tag, const UCHAR* bytes, UCHAR length);
 private:

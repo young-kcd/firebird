@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.42 2004-10-07 08:21:15 robocop Exp $
+//	$Id: tdr.cpp,v 1.43 2004-12-09 19:18:31 alexpeshkoff Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -48,6 +48,7 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/svc_proto.h"
 #include "../jrd/thd.h"
+#include "../common/classes/ClumpletWriter.h"
 
 static ULONG ask(void);
 static void print_description(const tdr*);
@@ -182,48 +183,32 @@ bool TDR_attach_database(ISC_STATUS* status_vector,
 						 TDR trans,
 						 const TEXT* pathname)
 {
-	UCHAR dpb[128];
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 
 	if (tdgbl->ALICE_data.ua_debug)
 		ALICE_print(68, pathname, 0, 0, 0, 0);
 		// msg 68: ATTACH_DATABASE: attempted attach of %s
 
-	UCHAR* d = dpb;
-
-	*d++ = isc_dpb_version1;
-	*d++ = isc_dpb_no_garbage_collect;
-	*d++ = 0;
-	*d++ = isc_dpb_gfix_attach;
-	*d++ = 0;
-
+	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
+	dpb.insertTag(isc_dpb_no_garbage_collect);
+	dpb.insertTag(isc_dpb_gfix_attach);
 	if (tdgbl->ALICE_data.ua_user) {
-		*d++ = isc_dpb_user_name;
-		*d++ = strlen(reinterpret_cast<const char*>(tdgbl->ALICE_data.ua_user));
-		for (const UCHAR* q = tdgbl->ALICE_data.ua_user; *q;)
-			*d++ = *q++;
+		dpb.insertBytes(isc_dpb_user_name, 
+						tdgbl->ALICE_data.ua_user,
+						strlen(reinterpret_cast<const char*>(tdgbl->ALICE_data.ua_user)));
 	}
-
 	if (tdgbl->ALICE_data.ua_password) {
-		if (!tdgbl->sw_service)
-			*d++ = isc_dpb_password;
-		else
-			*d++ = isc_dpb_password_enc;
-		*d++ =
-			strlen(reinterpret_cast<const char*>(tdgbl->ALICE_data.ua_password));
-		for (const UCHAR* q = tdgbl->ALICE_data.ua_password; *q;)
-			*d++ = *q++;
+		dpb.insertBytes(tdgbl->sw_service ? isc_dpb_password_enc :
+							isc_dpb_password,
+						tdgbl->ALICE_data.ua_password, 
+						strlen(reinterpret_cast<const char*>(tdgbl->ALICE_data.ua_password)));
 	}
-
-	USHORT dpb_length = d - dpb;
-	if (dpb_length == 1)
-		dpb_length = 0;
 
 	trans->tdr_db_handle = 0;
 
 	isc_attach_database(status_vector, 0, pathname,
-						 &trans->tdr_db_handle, dpb_length,
-						 reinterpret_cast<char*>(dpb));
+						 &trans->tdr_db_handle, dpb.getBufferLength(),
+						 reinterpret_cast<const char*>(dpb.getBuffer()));
 
 	if (status_vector[1]) {
 		if (tdgbl->ALICE_data.ua_debug) {

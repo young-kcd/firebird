@@ -102,5 +102,17 @@ SOURCE=..\..\..\gen\msgs\build_file.cpp
 SOURCE=..\..\..\src\jrd\version.rc
 # End Source File
 # End Group
+# Begin Group "CLUMPLET files"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\src\common\classes\ClumpletReader.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\classes\ClumpletWriter.cpp
+# End Source File
+# End Group
 # End Target
 # End Project

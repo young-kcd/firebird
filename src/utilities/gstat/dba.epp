@@ -58,6 +58,7 @@
 #include "../utilities/common/cmd_util_proto.h"
 #endif
 #include "../common/utils_proto.h"
+#include "../common/classes/ClumpletWriter.h"
 
 
 #ifdef HAVE_UNISTD_H
@@ -649,33 +650,20 @@ int CLIB_ROUTINE main(int argc, char** argv)
 
 /* Check to make sure that the user accessing the database is either
  * SYSDBA or owner of the database */
-	UCHAR dpb_string[256];
-	UCHAR* dpb = dpb_string;
-	*dpb++ = isc_dpb_version1;
-	*dpb++ = isc_dpb_gstat_attach;
-	*dpb++ = 0;
+	
+	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
+	dpb.insertTag(isc_dpb_gstat_attach);
 
 	if (*username) {
-		*dpb++ = isc_dpb_user_name;
-		*dpb++ = strlen((char*) username);
-		strcpy((char*) dpb, (char*) username);
-		dpb += strlen((char*) username);
+		dpb.insertBytes(isc_dpb_user_name, username, strlen((char*) username));
 	}
-
 	if (*password) {
-		if (called_as_service)
-			*dpb++ = isc_dpb_password_enc;
-		else
-			*dpb++ = isc_dpb_password;
-		*dpb++ = strlen((char*) password);
-		strcpy((char*) dpb, (char*) password);
-		dpb += strlen((char*) password);
+		dpb.insertBytes(called_as_service ? isc_dpb_password_enc : isc_dpb_password,
+							password, strlen((char*) password));
 	}
 
-	const SSHORT dpb_length = dpb - dpb_string;
-
-	isc_attach_database(status_vector, 0, name, &DB, dpb_length,
-						(char*) dpb_string);
+	isc_attach_database(status_vector, 0, name, &DB, dpb.getBufferLength(), 
+						reinterpret_cast<const char*>(dpb.getBuffer()));
 	if (status_vector[1])
 		dba_exit(FINI_ERROR, tddba);
 
