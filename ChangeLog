@@ -1,3 +1,191 @@
+2003-03-01 23:04  hippoman
+
+	* firebird2/builds/win32/msvc7/: Firebird2.sln, alice.vcproj,
+	alice_classic.vcproj, burp.vcproj, burp_classic.vcproj,
+	common.vcproj, common_classic.vcproj, dsql_server.vcproj,
+	dsql_server_classic.vcproj, engine.vcproj, engine_classic.vcproj,
+	engine_embed.vcproj, fb_inet_server.vcproj, fb_lock_print.vcproj,
+	fbclient.vcproj, fbembed.vcproj, fbguard.vcproj, fbserver.vcproj,
+	fbudf.vcproj, gbak.vcproj, gdef.vcproj, gds32.vcproj, gfix.vcproj,
+	gpre.vcproj, gpre_boot.vcproj, gsec.vcproj, gsplit.vcproj,
+	gstat.vcproj, ib_udf.vcproj, ib_util.vcproj, instreg.vcproj,
+	instsvc.vcproj, intl.vcproj, intlcpp.vcproj, ipserver.vcproj,
+	isql.vcproj, lock.vcproj, lock_classic.vcproj, qli.vcproj,
+	remote.vcproj, remote_classic.vcproj, utilities.vcproj,
+	utilities_classic.vcproj, wal.vcproj, wal_classic.vcproj:
+	
+	* updated msvc7 build files.
+
+2003-03-01 21:37  skidder
+
+	* firebird2/src/jrd/vio.cpp:
+	
+	Fixed database corruption when backing out the savepoint after
+	large number of DML operations (so transaction-level savepoint is
+	dropped) and record was updated _not_ under the savepoint and
+	deleted under savepoint. Bug affected all kinds of savepoints
+	(explicit, statement, PSQL, ...)
+
+2003-03-01 20:32  alexpeshkoff
+
+	* firebird2/src/dsql/parse.cpp:
+	
+	Fixed EXECUTE STATEMENT to support INTO clause
+
+2003-03-01 20:19  alexpeshkoff
+
+	* firebird2/src/: jrd/ExecuteStatement.cpp, jrd/blr.h,
+	jrd/blrtable.cpp, jrd/cmp.cpp, jrd/exe.cpp, jrd/nod.h, jrd/par.cpp,
+	dsql/dsql.cpp, dsql/gen.cpp, dsql/node.h, dsql/parse.y,
+	dsql/pass1.cpp:
+	
+	Fixed EXECUTE STATEMENT to support INTO clause
+
+2003-03-01 20:11  brodsom
+
+	* firebird2/src/: remote/inet.cpp, jrd/intl.cpp, jrd/sort.cpp,
+	jrd/ini.epp:
+	
+	-Comment declared but undefined functions. (found with gcc never
+	defined warnings)
+
+2003-03-01 20:10  alexpeshkoff
+
+	* firebird2/src/remote/cntl.cpp:
+	
+	Fixed bug with service shutdown - rolled back Dmitry's commit
+
+2003-03-01 20:07  brodsom
+
+	* firebird2/src/: gpre/gpre.cpp, jrd/ext.cpp, lock/lock.cpp:
+	
+	-Comment declared but undefined functions. (found with gcc never
+	defined warnings)
+
+2003-03-01 20:06  brodsom
+
+	* firebird2/src/burp/burp.cpp:
+	
+	-Comment declared but undefined functions. (found with gcc never
+	defined warnings) -Add ifdef for output_netware.
+
+2003-03-01 19:27  alexpeshkoff
+
+	* firebird2/src/jrd/: ExecuteStatement.cpp, ExecuteStatement.h:
+	
+	Fixed EXECUTE STATEMENT to support INTO clause
+
+2003-03-01 19:15  brodsom
+
+	* firebird2/src/: remote/window.cpp, jrd/thd.h, include/firebird.h:
+	
+	-Add IPSERVER define to window.cpp, now it is possible to do a
+	server build without ipserver.	-Add SERVER_SHUTDOWN define to
+	window.cpp.  -Move the setting of SERVER_SHUTDOWN when SUPERSERVER
+	to firebird.h, previously a SUPERSERVER build fail if
+	SERVER_SHUTDOWN is not defined in the command line.
+
+2003-03-01 19:10  brodsom
+
+	* firebird2/src/jrd/cch.cpp:
+	
+	Use the same ifdef for function declarations and definitions.
+	(found with gcc never defined warnings) -In this source some
+	defines must be moved to set the value for CACHE_WRITER,
+	CACHE_READER and PAGE_LATCHING before function declaration
+
+2003-03-01 19:04  brodsom
+
+	* firebird2/src/jrd/: isc_ipc.cpp, blb.cpp, isc_file.cpp:
+	
+	Use the same ifdef for function declarations and definitions.
+	(found with gcc never defined warnings)
+
+2003-03-01 18:59  brodsom
+
+	* firebird2/src/jrd/: tra.cpp, why.cpp, jrd.cpp, jrn.cpp, rlck.cpp:
+	
+	Use the same ifdef for function declarations and definitions.
+	(found with gcc never defined warnings)
+
+2003-03-01 18:51  brodsom
+
+	* firebird2/src/remote/: xnet.cpp, inet.cpp, protocol.cpp,
+	wnet.cpp:
+	
+	Use the same ifdef for function declarations and definitions.
+	(found with gcc never defined warnings)
+
+2003-03-01 18:43  brodsom
+
+	* firebird2/src/: lock/lock.cpp, utilities/gsec.cpp:
+	
+	Use the same ifdef for function declarations and definitions.
+	(found with gcc never defined warnings)
+
+2003-03-01 18:33  brodsom
+
+	* firebird2/src/: alice/alice.cpp, burp/burp.cpp:
+	
+	Use the same ifdef for function declarations and definitions.
+	(found with gcc never defined warnings)
+
+2003-03-01 17:28  dimitr
+
+	* firebird2/: src/remote/cntl.cpp,
+	src/jrd/os/win32/config_root.cpp, src/jrd/os/thd_priority.h,
+	builds/win32/msvc6/Firebird2.dsw, builds/win32/msvc6/fbembed.dsp,
+	builds/win32/msvc6/engine_embed.dsp:
+	
+	Some changes for the embedded server.
+
+2003-03-01 17:10  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp:
+	
+	Fixed macro redefinition warnings - changed order of include files
+
+2003-03-01 16:59  alexpeshkoff
+
+	* firebird2/src/dsql/errd.cpp:
+	
+	Fixed macro redefinition warnings
+
+2003-03-01 13:29  brodsom
+
+	* firebird2/src/jrd/isc_sync.cpp:
+	
+	Put declaration of functions only defined when #ifdef UNIX inside
+	an #ifdef UNIX
+
+2003-03-01 13:10  brodsom
+
+	* firebird2/src/gpre/par.cpp:
+	
+	-Add some needed PYXIS defines (found with gcc warnings) -Add one
+	needed FTN_BLK_DATA define (found with gcc warnings)
+
+2003-03-01 00:53  brodsom
+
+	* firebird2/src/: qli/mov.cpp, qli/mov_proto.h, jrd/common.h,
+	jrd/cvt.cpp, jrd/cvt_proto.h:
+	
+	Remove obsolete PASCAL_ROUTINE macro
+
+2003-03-01 00:46  brodsom
+
+	* firebird2/src/jrd/isc_sync.cpp:
+	
+	Rollback change from assert to fb_assert, this source uses
+	<assert.h> from included jrd.h from included fb_vector.h
+
+2003-03-01 00:32  brodsom
+
+	* firebird2/src/burp/spit.cpp:
+	
+	Change gds_assert to fb_assert (gds_assert is a synonym for
+	fb_assert)
+
 2003-02-28 21:41  tamlin
 
 	* firebird2/doc/Firebird_conf.txt:
