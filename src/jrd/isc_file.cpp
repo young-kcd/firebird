@@ -59,7 +59,7 @@
 #include "../jrd/jrd_proto.h"
 
 #include <sys/types.h>
-#ifdef HABE_SYS_IPC_H
+#ifdef HAVE_SYS_IPC_H
 #include <sys/ipc.h>
 #endif
 #ifdef HAVE_SYS_FILE_H
