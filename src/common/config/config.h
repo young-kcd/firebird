@@ -72,7 +72,11 @@ class Config
 		KEY_CPU_AFFINITY_MASK,						// 5
 		KEY_OLD_PARAMETER_ORDERING,					// 6
 		KEY_TCP_REMOTE_BUFFER_SIZE,					// 7
-		KEY_TCP_NO_NAGLE							// 8
+		KEY_TCP_NO_NAGLE,							// 8
+		KEY_IPC_MAP_SIZE,							// 9
+		KEY_DEFAULT_DB_CACHE_PAGES,					// 10
+		KEY_CONNECTION_TIMEOUT,						// 11
+		KEY_DUMMY_PACKET_INTERVAL					// 12
 	};
 
 public:
@@ -121,6 +125,26 @@ public:
 		Disable Nagle algorithm
 	*/
 	static bool getTcpNoNagle();
+
+	/*
+		IPC client mapping
+	*/
+	static int getIpcMapSize();
+
+	/*
+		Default database cache size
+	*/
+	static int getDefaultDbCachePages();
+
+	/*
+		Connection timeout
+	*/
+	static int getConnectionTimeout();
+
+	/*
+		Dummy packet interval
+	*/
+	static int getDummyPacketInterval();
 };
 
 #endif // CONFIG_H

@@ -405,13 +405,6 @@ static DBB		databases = NULL;
 static MUTX_T	databases_mutex[1];
 static ULONG	JRD_cache_default;
 
-static struct ipccfg JRD_hdrtbl[] =
-{
-	{ ISCCFG_DBCACHE, -1, reinterpret_cast<SLONG*>(&JRD_cache_default), 0,
-	0 },
-	{ NULL, 0, NULL, 0, 0 }
-};
-
 #ifdef GOVERNOR
 #define ATTACHMENTS_PER_USER 1
 static ULONG JRD_max_users = 0;
@@ -5584,7 +5577,7 @@ static DBB init(TDBB	tdbb,
 			JRD_SS_INIT_MUTEX;
 			gds__register_cleanup(cleanup, 0);
 			initialized = TRUE;
-			ISC_get_config(LOCK_HEADER, JRD_hdrtbl);
+			JRD_cache_default = Config::getDefaultDbCachePages();
 			if (JRD_cache_default < MIN_PAGE_BUFFERS)
 				JRD_cache_default = MIN_PAGE_BUFFERS;
 			if (JRD_cache_default > MAX_PAGE_BUFFERS)

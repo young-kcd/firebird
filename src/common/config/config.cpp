@@ -57,7 +57,15 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_INTEGER,		"CpuAffinityMask",			(ConfigValue) 1},
 	{TYPE_BOOLEAN,		"OldParameterOrdering",		(ConfigValue) false},
 	{TYPE_INTEGER,		"TcpRemoteBufferSize",		(ConfigValue) 8192},
-	{TYPE_BOOLEAN,      "TcpNoNagle",				(ConfigValue) false}
+	{TYPE_BOOLEAN,		"TcpNoNagle",				(ConfigValue) false},
+	{TYPE_INTEGER,		"IpcMapSize",				(ConfigValue) 4096},
+#ifdef SUPERSERVER
+	{TYPE_INTEGER,		"DefaultDbCachePages",		(ConfigValue) 2048},
+#else
+	{TYPE_INTEGER,		"DefaultDbCachePages",		(ConfigValue) 75},
+#endif
+	{TYPE_INTEGER,		"ConnectionTimeout",		(ConfigValue) 180},
+	{TYPE_INTEGER,		"DummyPacketInterval",		(ConfigValue) 60}
 };
 
 /******************************************************************************
@@ -217,4 +225,24 @@ int Config::getTcpRemoteBufferSize()
 bool Config::getTcpNoNagle()
 {
 	return (bool) sysConfig.values[KEY_TCP_NO_NAGLE];
+}
+
+int Config::getIpcMapSize()
+{
+	return (int) sysConfig.values[KEY_IPC_MAP_SIZE];
+}
+
+int Config::getDefaultDbCachePages()
+{
+	return (int) sysConfig.values[KEY_DEFAULT_DB_CACHE_PAGES];
+}
+
+int Config::getConnectionTimeout()
+{
+	return (int) sysConfig.values[KEY_CONNECTION_TIMEOUT];
+}
+
+int Config::getDummyPacketInterval()
+{
+	return (int) sysConfig.values[KEY_DUMMY_PACKET_INTERVAL];
 }
