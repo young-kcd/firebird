@@ -279,7 +279,6 @@ void inline dba_exit(int code, tdba* tddba)
 const USHORT GSTAT_MSG_FAC	= 21;
 
 #if defined (WIN95)
-static bool fAnsiCP = false;
 #define TRANSLATE_CP(a) if (!fAnsiCP) CharToOem(a, a)
 #else
 #define TRANSLATE_CP(a)
@@ -306,7 +305,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
  *	of a database.
  *
  **************************************/
-	SCHAR temp[1024], file_name[1024];
+	SCHAR temp[1024];
 	bool sw_system = false;
 	bool sw_data = false;
 	bool sw_index = false;
@@ -320,12 +319,9 @@ int CLIB_ROUTINE main(int argc, char** argv)
 	UCHAR buf[256];
 	UCHAR pass_buff[128], user_buff[128], *password = pass_buff, *username =
 		user_buff;
+
 	tdba thd_context, *tddba;
 	JMP_BUF env;
-#if defined (WIN95) && !defined (SUPERSERVER)
-	BOOL fAnsiCP;
-#endif
-
 	tdba::putSpecific(tddba, &thd_context);
 	tddba->dba_env = (UCHAR *) env;
 
@@ -347,7 +343,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 #endif
 
 #if defined (WIN95) && !defined (SUPERSERVER)
-	fAnsiCP = false;
+	bool fAnsiCP = false;
 #endif
 
 /* Perform some special handling when run as an Interbase service.  The
@@ -564,6 +560,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 				  0, 0, 0);		/* msg 3: Wrong ODS version, expected %d, encountered %d? */
 	}
 
+	char file_name[1024];
 #if defined (WIN95) && !defined (SUPERSERVER)
 	if (!fAnsiCP)
 		AnsiToOem(name, file_name);
@@ -633,7 +630,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 		//* msg 8: File %s continues as file %s
 	}
 	dba_print(9, current->fil_string,
-		 (TEXT*)((current == tddba->files) ? "only" : "last"), 0, 0, 0);
+		 (const TEXT*)((current == tddba->files) ? "only" : "last"), 0, 0, 0);
 		 // msg 9: File %s is the %s file\n
 
 /* print log page */
@@ -835,7 +832,8 @@ int CLIB_ROUTINE main(int argc, char** argv)
 				((double) relation->rel_data_pages *
 				 (tddba->page_size - DPG_SIZE)) : 0.0;
 			sprintf((char*) buf, "%.0f%%", average);
-			dba_print(12, (TEXT*)(IPTR) relation->rel_data_pages, (TEXT*)(IPTR) relation->rel_slots,
+			dba_print(12, (TEXT*)(IPTR) relation->rel_data_pages,
+					  (TEXT*)(IPTR) relation->rel_slots,
 					  (TEXT*) buf, 0, 0);	/* msg 12: "    Data pages: %ld, data page slots: %ld, average fill: %s */
 			dba_print(13, 0, 0, 0, 0, 0);	/* msg 13: "    Fill distribution:" */
 			print_distribution("\t", relation->rel_fill_distribution);
