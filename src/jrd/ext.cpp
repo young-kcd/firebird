@@ -56,8 +56,22 @@
 #include "../jrd/dls_proto.h"
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
+#include "../jrd/os/path_utils.h"
 
 static IB_FILE *ext_fopen(const char *filename, const char *mode);
+
+class ExternalFilesDirectoryList : public DirectoryList {
+	virtual const Firebird::string GetConfigString(void) {
+		return Firebird::string(Config::getExternalTablesDirs());
+	}
+};
+static ExternalFilesDirectoryList iExternalFilesDirectoryList;
+
+static IB_FILE *ext_fopen(const char *filename, const char *mode) {
+	if (!iExternalFilesDirectoryList.IsPathInList(filename))
+		return 0;
+	return ib_fopen(filename, mode);
+}
 
 extern "C" {
 
@@ -115,7 +129,7 @@ void EXT_erase(RPB * rpb, int *transaction)
 }
 
 
-EXT EXT_file(JRD_REL relation, TEXT * file_name, SLONG * description)
+EXT EXT_file(JRD_REL relation, const TEXT * file_name, SLONG * description)
 {
 /**************************************
  *
@@ -144,6 +158,14 @@ EXT EXT_file(JRD_REL relation, TEXT * file_name, SLONG * description)
 	call to increase and set to the maximum */
 	_setmaxstdio(2048);
 #endif
+
+	// If file_name has no path part, expand it in ExternalTablesDirs.
+	Firebird::string Path, Name;
+	PathUtils::splitLastComponent(Path, Name, file_name);
+	if (Path.length() == 0)	{	// path component not present in file_name
+		iExternalFilesDirectoryList.ExpandFileName(Path, Name, 4);
+		file_name = Path.c_str();
+	}
 
 	relation->rel_file = file =
 		FB_NEW_RPT(*dbb->dbb_permanent, (strlen(file_name) + 1)) ext();
@@ -577,16 +599,3 @@ void EXT_trans_start(JRD_TRA transaction)
 
 
 } // extern "C"
-
-class ExternalFilesDirectoryList : public DirectoryList {
-	virtual const Firebird::string GetConfigString(void) {
-		return Firebird::string(Config::getExternalTablesDirs());
-	}
-};
-static ExternalFilesDirectoryList iExternalFilesDirectoryList;
-
-static IB_FILE *ext_fopen(const char *filename, const char *mode) {
-	if (! iExternalFilesDirectoryList.IsPathInList(filename))
-		return 0;
-	return ib_fopen(filename, mode);
-}

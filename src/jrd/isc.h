@@ -29,7 +29,7 @@
  *
  */
 /*
-$Id: isc.h,v 1.5 2002-10-31 05:05:57 seanleyne Exp $
+$Id: isc.h,v 1.6 2003-03-23 16:50:52 alexpeshkoff Exp $
 */
 #ifndef _JRD_ISC_H_
 #define _JRD_ISC_H_
@@ -115,7 +115,6 @@ extern "C" {
 #define ISCCFG_TMPDIR		"TMP_DIRECTORY"
 
 #define ISCCFG_EXT_FUNC_DIR	"EXTERNAL_FUNCTION_DIRECTORY"
-#define ISCCFG_EXT_FILE_DIR	"EXTERNAL_FILE_DIRECTORY"
 
 #define ISCCFG_TRACE_POOLS	"TRACE_MEMORY_POOLS"	/* Internal Use only */
 #define ISCCFG_TRACE_POOLS_DEF	0	/* Off -  Internal Use only */

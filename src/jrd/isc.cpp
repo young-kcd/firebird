@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.29 2003-03-03 09:22:30 brodsom Exp $
+$Id: isc.cpp,v 1.30 2003-03-23 16:50:52 alexpeshkoff Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -103,10 +103,8 @@ static struct cfgtbl *ISC_cfg_tbl = NULL;
 static BOOLEAN dls_init = FALSE;
 static BOOLEAN dls_flag = FALSE;
 static BOOLEAN fdls_init = FALSE;
-static BOOLEAN edls_init = FALSE;
 #ifdef SUPERSERVER
 static BOOLEAN fdls_flag = FALSE;
-static BOOLEAN edls_flag = FALSE;
 #endif
 
 /* End of temporary file management specific stuff */
@@ -465,30 +463,6 @@ void DLL_EXPORT ISC_get_config(TEXT * config_file, IPCCFG config_table)
 					continue;
 				}
 
-				/* The external file directory keyword can also be used
-				more than once, so handle it separately. */
-				if (0 == strncmp(buf, ISCCFG_EXT_FILE_DIR,
-								 sizeof(ISCCFG_EXT_FILE_DIR) - 1))
-				{
-#ifdef SUPERSERVER
-				/* There is external file directory definition */
-				if (!edls_init)
-					if (1 == sscanf(buf + sizeof(ISCCFG_EXT_FILE_DIR) - 1,
-                                    " \"%[^\"]", dir_name))
-					{
-						if (DLS_add_file_dir(dir_name))
-							edls_flag = TRUE;
-						else
-						{
-							gds__log("Unable to use config parameter %s : No memory ",
-								ISCCFG_EXT_FILE_DIR);
-							edls_flag = FALSE;
-						}
-					}
-#endif
-					continue;
-				}
-
 				for (tbl = ISC_cfg_tbl; (q = tbl->cfgtbl_keyword) ; tbl++)
 				{
 					p = buf;
@@ -547,8 +521,6 @@ void DLL_EXPORT ISC_get_config(TEXT * config_file, IPCCFG config_table)
 		dls_init = TRUE;		/* Temp dir config should be read only once */
 
 		fdls_init = TRUE;		/* Ext func dir config should be read only once. */
-	
-		edls_init = TRUE;		/* Ext file dir config should be read only once. */
 
 	}							/* if ICS_cfg_tbl == NULL */
 

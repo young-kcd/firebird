@@ -2,6 +2,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <unistd.h>
 
 /// The POSIX implementation of the path_utils abstraction.
 
@@ -133,4 +134,8 @@ bool PathUtils::isSymLink(const Firebird::string& path)
 bool PathUtils::comparePaths(const Firebird::string& path1, 
  							 const Firebird::string& path2) {
  	return path1 == path2;
+}
+
+bool PathUtils::canAccess(const Firebird::string& path, int mode) {
+	return access(path.c_str(), mode) == 0;
 }

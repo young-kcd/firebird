@@ -30,7 +30,7 @@ extern "C" {
 
 extern void EXT_close(class Rsb *);
 extern void EXT_erase(struct rpb *, int *);
-extern struct ext *EXT_file(struct jrd_rel *, TEXT *, SLONG *);
+extern struct ext *EXT_file(struct jrd_rel *, const TEXT *, SLONG *);
 extern void EXT_fini(struct jrd_rel *);
 extern int EXT_get(class Rsb *);
 extern void EXT_modify(struct rpb *, struct rpb *, int *);

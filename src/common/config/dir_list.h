@@ -19,8 +19,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _DIR_LIST_H_
-#define _DIR_LIST_H_
+#ifndef DIR_LIST_H
+#define DIR_LIST_H
 
 //
 // This class is used internally by DirectoryList
@@ -36,18 +36,18 @@ class ParsedPath {
 	Firebird::string SubPath(int n) const;
 public:
 	ParsedPath(void);
-	ParsedPath(const Firebird::string & path);
+	ParsedPath(const Firebird::string& path);
 	~ParsedPath();
 	// Take new path inside
-	void Parse(const Firebird::string & path);
+	void Parse(const Firebird::string& path);
 	// Convert internal representation to traditional one
-	operator Firebird::string();
+	operator Firebird::string() const;
 	// Compare with path given by constant
-	bool operator==(const char * path);
+	bool operator==(const char* path) const;
 	// Check, whether pPath lies inside directory tree,
 	// specified by *this ParsedPath. Also checks against
 	// possible symbolic links.
-	bool Contains(const ParsedPath & pPath);
+	bool Contains(const ParsedPath& pPath) const;
 };
 
 class DirectoryList {
@@ -66,7 +66,21 @@ protected:
 public:
 	DirectoryList();
 	~DirectoryList();
+
+	// TODO
+	// All functions, checking DirectoryList contents,
+	// should be const. But with today's implementation
+	// of Config manager, thay have to call Initialize.
+
 	// Check, whether Path inside this DirectoryList
 	bool IsPathInList(const Firebird::string & Path);
+	// Search for file Name in all direcories of DirectoryList.
+	// If found, return full path to it in Path. 
+	// Otherwise Path = Name.
+	// Last parameter defines required access rights
+	// to the file - like access().
+	void ExpandFileName(Firebird::string & Path, 
+						const Firebird::string & Name,
+						int Access);
 };
-#endif //	_DIR_LIST_H_	
+#endif //	DIR_LIST_H

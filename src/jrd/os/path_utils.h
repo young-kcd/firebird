@@ -78,6 +78,11 @@ public:
 		and insert desired rows into mytable.
 	**/
 	static bool isSymLink(const Firebird::string& path);
+
+	/** canAccess returns true if the given path can be accessed
+		by this process. mode - like in ACCESS(2).
+	**/
+	static bool canAccess(const Firebird::string& path, int mode);
 	
 	/** comparePaths returns true if two given paths
 		point to the same place in FileSystem.

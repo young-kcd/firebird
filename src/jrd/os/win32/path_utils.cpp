@@ -1,5 +1,6 @@
 #include "../jrd/os/path_utils.h"
 #include <windows.h>
+#include <io.h>
 
 /// The Win32 implementation of the path_utils abstraction.
 
@@ -140,4 +141,8 @@ bool PathUtils::isSymLink(const Firebird::string& path)
 bool PathUtils::comparePaths(const Firebird::string& path1, 
 							 const Firebird::string& path2) {
 	return stricmp(path1.c_str(), path2.c_str()) == 0;
+}
+
+bool PathUtils::canAccess(const Firebird::string& path, int mode) {
+	return _access(path.c_str(), mode) == 0;
 }

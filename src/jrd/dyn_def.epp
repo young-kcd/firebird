@@ -78,6 +78,7 @@
 #include "../jrd/vio_proto.h"
 #include "../jrd/scl_proto.h"
 #include "../jrd/gdsassert.h"
+#include "../jrd/os/path_utils.h"
 
 #ifdef SUPERSERVER
 #define V4_THREADING
@@ -2955,8 +2956,6 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
  *	Execute a dynamic ddl statement.
  *
  **************************************/
-	EDLS *dir_list; /* external file directory list */
-	BOOLEAN	found_dir;
 	TDBB tdbb;
 	DBB dbb;
 	volatile BLK request;
@@ -2982,6 +2981,8 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
 
 	request = NULL;
 	id = -1;
+
+	Firebird::string Path, Name;
 
 	try {
 
@@ -3040,28 +3041,16 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
 				if (ISC_check_if_remote(REL.RDB$EXTERNAL_FILE, FALSE))
 					DYN_error_punt(TRUE, 163, NULL, NULL, NULL, NULL, NULL);
 
-				/*	If external file directory exists, do not expand the
-					external file name */
-
-				found_dir = FALSE;
-				dir_list = DLS_get_file_dirs();
-				while (dir_list && !found_dir)
-				{
-					dir_list->edls_directory;
-					if (dir_list)
-					{
-						found_dir = TRUE;
-						REL.RDB$EXTERNAL_FILE.NULL = FALSE;
-					}
-					dir_list = dir_list->edls_next;
-				}
-				if (!dir_list)
-				{
+				// Check for any path, present in filename.
+				// If miss it, file will be searched in External Tables Dirs,
+				// that's why no expand_filename required.
+				PathUtils::splitLastComponent(Path, Name, REL.RDB$EXTERNAL_FILE);
+				if (Path.length() > 0)	{	// path component present in filename
 					ISC_expand_filename(REL.RDB$EXTERNAL_FILE,
-										strlen(REL.RDB$EXTERNAL_FILE),
-										REL.RDB$EXTERNAL_FILE);
-					REL.RDB$EXTERNAL_FILE.NULL = FALSE;
+									strlen(REL.RDB$EXTERNAL_FILE),
+									REL.RDB$EXTERNAL_FILE);
 				}
+				REL.RDB$EXTERNAL_FILE.NULL = FALSE;
 				break;
 
 			case gds_dyn_rel_sql_protection:
