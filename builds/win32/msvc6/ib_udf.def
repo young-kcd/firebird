@@ -1,0 +1,58 @@
+; The contents of this file are subject to the Interbase Public
+; License Version 1.0 (the "License"); you may not use this file
+; except in compliance with the License. You may obtain a copy
+; of the License at http://www.Inprise.com/IPL.html
+;
+; Software distributed under the License is distributed on an
+; "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+; or implied. See the License for the specific language governing
+; rights and limitations under the License.
+;
+; The Original Code was created by Inprise Corporation
+; and its predecessors. Portions created by Inprise Corporation are
+; Copyright (C) Inprise Corporation.
+;
+; All Rights Reserved.
+; Contributor(s): ______________________________________.
+
+LIBRARY ib_udf
+
+DESCRIPTION 'InterBase UDF Library'
+
+DATA READ WRITE
+
+EXPORTS
+	IB_UDF_abs		@1
+	IB_UDF_acos		@2
+	IB_UDF_ascii_char	@3
+	IB_UDF_ascii_val	@4
+	IB_UDF_asin		@5
+	IB_UDF_atan		@6
+	IB_UDF_atan2		@7
+	IB_UDF_bin_and		@8
+	IB_UDF_bin_or		@9
+	IB_UDF_bin_xor		@10
+	IB_UDF_ceiling		@11
+	IB_UDF_cos		@12
+	IB_UDF_cosh		@13
+	IB_UDF_cot		@14
+	IB_UDF_div		@15
+	IB_UDF_floor		@17
+	IB_UDF_ln		@18
+	IB_UDF_log		@19
+	IB_UDF_log10		@20
+	IB_UDF_lower		@21
+	IB_UDF_ltrim		@22
+	IB_UDF_mod		@23
+	IB_UDF_pi		@24
+	IB_UDF_rand		@26
+	IB_UDF_rtrim		@27
+	IB_UDF_sign		@28
+	IB_UDF_sin		@29
+	IB_UDF_sinh		@30
+	IB_UDF_sqrt		@31
+	IB_UDF_substr		@32
+	IB_UDF_strlen		@33
+	IB_UDF_tan		@34
+	IB_UDF_tanh		@35
+	IB_UDF_substrlen	@36
