@@ -23,32 +23,30 @@
 ;
 ;   This script has been designed to work with My InnoSetup Extensions 3.0.6.2
 ;   or later. It may work with earlier versions but this is neither guaranteed
-;   nor tested.
+;   nor tested. My InnoSetup Extensions is available from
+;     http://www.wintax.nl/isx/
 ;
-
-
-This script is not finished. Please don't try to use it yet.
 
 ;Either classic_server_install or super_server_install
 ;Default to SuperServer if not defined
 #define super_server_install
-#define msvc_version "7"
-;#define classic_server_install
+#define server_architecture "SuperServer"
+#define msvc_version 6
 #define FirebirdURL "http://www.firebirdsql.org"
 #define BaseVer "1_5"
 
 [Setup]
-AppName=Firebird Database Server 1.5
+AppName=Firebird Database Server 1.5 ({#server_architecture})
 ;The following is important - all ISS install packages should
 ;duplicate this for v1.5. See the InnoSetup help for details.
 AppID=FBDBServer_{#BaseVer}
-AppVerName=Firebird 1.5.0
+AppVerName=Firebird 1.5.0 {#server_architecture}
 AppPublisher=Firebird Project
 AppPublisherURL={#FirebirdURL}
 AppSupportURL={#FirebirdURL}
 AppUpdatesURL={#FirebirdURL}
-DefaultDirName={code:InstallDir|{pf}\FirebirdSQL\Firebird\{#BaseVer}}
-DefaultGroupName=Firebird
+DefaultDirName={code:InstallDir|{pf}\Firebird\Firebird_{#BaseVer}}
+DefaultGroupName=Firebird_{#BaseVer}
 AllowNoIcons=true
 SourceDir=..\..\..\..\..\firebird2
 LicenseFile=src\install\misc\IPLicense.txt
@@ -57,13 +55,13 @@ InfoAfterFile=src\install\arch-specific\win32\readme.txt
 AlwaysShowComponentsList=true
 WizardImageFile=src\install\arch-specific\win32\firebird_install_logo1.bmp
 PrivilegesRequired=admin
-UninstallDisplayIcon={app}\bin\fbserver.exe
-OutputDir=builds\win32\install_image
 #ifdef classic_server_install
-OutputBaseFilename=Firebird-1.5.0-Win32-Classic
+UninstallDisplayIcon={app}\bin\fb_inet_server.exe
 #else
-OutputBaseFilename=Firebird-1.5.0-Win32-SuperServer
+UninstallDisplayIcon={app}\bin\fbserver.exe
 #endif
+OutputDir=builds\win32\install_image
+OutputBaseFilename=Firebird-1.5.0-Win32-{#server_architecture}
 Compression=bzip
 
 [Types]
@@ -93,13 +91,13 @@ Filename: "{app}\bin\instreg.exe"; Parameters: "install ""{app}"" "; StatusMsg: 
 
 ;If on NT/Win2k etc and 'Install and start service' requested
 Filename: "{app}\bin\instsvc.exe"; Parameters: "install ""{app}"" {code:ServiceStartFlags|""""} "; StatusMsg: "Setting up the service"; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask;
-Filename: "{app}\bin\instsvc.exe"; Description: "Start Firebird Service now?"; Parameters: start; StatusMsg: Starting the server; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized postinstall; Tasks: UseServiceTask
+Filename: "{app}\bin\instsvc.exe"; Description: "Start Firebird Service now?"; Parameters: start; StatusMsg: Starting the server; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized postinstall; Tasks: UseServiceTask; Check: StartEngine;
 
 ;If 'start as application' requested
 #ifdef classic_server_install
-Filename: "{code:StartApp|{app}\bin\fb_inet_server.exe}"; Description: "Start Firebird now?"; Parameters: "-a"; StatusMsg: Starting the server; MinVersion: 0,4.0; Components: ServerComponent; Flags: nowait postinstall; Tasks: UseApplicationTask
+Filename: "{code:StartApp|{app}\bin\fb_inet_server.exe}"; Description: "Start Firebird now?"; Parameters: "-a"; StatusMsg: Starting the server; MinVersion: 0,4.0; Components: ServerComponent; Flags: nowait postinstall; Tasks: UseApplicationTask; Check: StartEngine;
 #else
-Filename: "{code:StartApp|{app}\bin\fbserver.exe}"; Description: "Start Firebird now?"; Parameters: "-a"; StatusMsg: Starting the server; MinVersion: 0,4.0; Components: ServerComponent; Flags: nowait postinstall; Tasks: UseApplicationTask
+Filename: "{code:StartApp|{app}\bin\fbserver.exe}"; Description: "Start Firebird now?"; Parameters: "-a"; StatusMsg: Starting the server; MinVersion: 0,4.0; Components: ServerComponent; Flags: nowait postinstall; Tasks: UseApplicationTask; Check: StartEngine;
 #endif
 
 [Registry]
@@ -138,23 +136,30 @@ Source: builds\win32\output\bin\gfix.exe; DestDir: {app}\bin; Components: DevAdm
 Source: builds\win32\output\bin\gpre.exe; DestDir: {app}\bin; Components: DevAdminComponent;  Flags: ignoreversion;
 Source: builds\win32\output\bin\gsec.exe; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion;
 Source: builds\win32\output\bin\gsec.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: sharedfile ignoreversion;
+Source: builds\win32\output\bin\gsplit.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: sharedfile ignoreversion;
 Source: builds\win32\output\bin\gstat.exe; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion;
 Source: builds\win32\output\bin\fbguard.exe; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion;
 Source: builds\win32\output\bin\fb_lock_print.exe; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion;
+#ifdef  classic_server_install
 Source: builds\win32\output\bin\fb_inet_server.exe; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion;
+#else
 Source: builds\win32\output\bin\fbserver.exe; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion;
+#endif
 Source: builds\win32\output\bin\ib_util.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion;
 Source: builds\win32\output\bin\instreg.exe; DestDir: {app}\bin; Components: ClientComponent; Flags: sharedfile ignoreversion;
 Source: builds\win32\output\bin\instsvc.exe; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion;
 Source: builds\win32\output\bin\isql.exe; DestDir: {app}\bin; Components: DevAdminComponent;  Flags: ignoreversion;
 Source: builds\win32\output\bin\qli.exe; DestDir: {app}\bin; Components: DevAdminComponent;  Flags: ignoreversion;
-Source: builds\win32\output\doc\*.*; DestDir: {app}\doc; Components: DevAdminComponent; Flags: skipifsourcedoesntexist external ignoreversion;
+Source: builds\win32\output\doc\*.*; DestDir: {app}\doc; Components: DevAdminComponent; Flags: skipifsourcedoesntexist  ignoreversion;
+Source: builds\win32\output\doc\sql.extensions\*.*; DestDir: {app}\doc\sql.extensions; Components: DevAdminComponent; Flags: skipifsourcedoesntexist ignoreversion;
 Source: builds\win32\output\help\*.*; DestDir: {app}\help; Components: DevAdminComponent;  Flags: ignoreversion;
 Source: builds\win32\output\include\*.*; DestDir: {app}\include; Components: DevAdminComponent; Flags: ignoreversion;
 Source: builds\win32\output\intl\fbintl.dll; DestDir: {app}\intl; Components: ServerComponent; Flags: sharedfile ignoreversion;
 Source: builds\win32\output\lib\*.*; DestDir: {app}\lib; Components: DevAdminComponent;  Flags: ignoreversion;
 Source: builds\win32\output\UDF\*.*; DestDir: {app}\UDF; Components: ServerComponent; Flags: sharedfile ignoreversion;
 Source: builds\win32\output\examples\*.*; DestDir: {app}\examples; Components: DevAdminComponent;  Flags: ignoreversion;
+;For now (RC2 timeframe) we are not recommending co-existence with other versions of Firebird or InterBase
+;so we can install the client library and its wrapper into {sys}
 ;Source: builds\win32\output\bin\gds32.dll; DestDir: {app}\bin; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder;
 ;Source: builds\win32\output\bin\fbclient.dll; DestDir: {app}\bin; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder;
 Source: builds\win32\output\bin\gds32.dll; DestDir: {sys}\; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder;
@@ -168,9 +173,9 @@ Source: src\extlib\ib_util.pas; DestDir: {app}\include; Components: DevAdminComp
 ;Source: firebird\install\doc_all_platforms\Firebird_v1_*.html; DestDir: {app}\doc; Components: DevAdminComponent;  Flags: ignoreversion;
 
 [UninstallRun]
-Filename: {app}\bin\instsvc.exe; Parameters: stop; StatusMsg: "Stopping the service"; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask;
-Filename: {app}\bin\instsvc.exe; Parameters: remove -g; StatusMsg: "Removing the service"; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask;
-Filename: {app}\bin\instreg.exe; Parameters: remove; StatusMsg: "Updating the registry"; MinVersion: 4.0,4.0; Flags: runminimized;
+Filename: {app}\bin\instsvc.exe; Parameters: stop; StatusMsg: "Stopping the service"; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; check: RemoveThisVersion;
+Filename: {app}\bin\instsvc.exe; Parameters: remove -g; StatusMsg: "Removing the service"; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; check: RemoveThisVersion;
+Filename: {app}\bin\instreg.exe; Parameters: remove; StatusMsg: "Updating the registry"; MinVersion: 4.0,4.0; Flags: runminimized; check: RemoveThisVersion;
 
 [UninstallDelete]
 Type: files; Name: {app}\*.lck
@@ -187,6 +192,7 @@ const
   sNoWinsock2 = 'Please Install Winsock 2 Update before continuing';
   sMSWinsock2Update = 'http://www.microsoft.com/windows95/downloads/contents/WUAdminTools/S_WUNetworkingTools/W95Sockets2/Default.asp';
   sWinsock2Web = 'Winsock 2 is not installed.'#13#13'Would you like to Visit the Winsock 2 Update Home Page?';
+  ProductVersion = 'PRODUCT_VER_STRING';
 
 var
   Winsock2Failure:    Boolean;
@@ -205,6 +211,57 @@ var
   //  [6,2,3,nnn]   Firebird 1.0.3
   //  [1,5,0,nnnn]  Firebird 1.5.0
 
+  fbclientStartCount,
+  gds32StartCount : Integer;
+
+procedure GetSharedLibCountAtStart;
+var
+  dw: Cardinal;
+begin
+  if RegQueryDWordValue(HKEY_LOCAL_MACHINE,
+    'SOFTWARE\Microsoft\Windows\CurrentVersion\SharedDLLs','C:\WINNT\System32\fbclient.dll', dw) then
+    fbclientStartCount := dw
+  else
+    fbclientStartCount := 0;
+
+  if RegQueryDWordValue(HKEY_LOCAL_MACHINE,
+    'SOFTWARE\Microsoft\Windows\CurrentVersion\SharedDLLs','C:\WINNT\System32\gds32.dll', dw) then
+    gds32StartCount := dw
+  else
+    gds32StartCount := 0;
+  
+end;
+
+procedure SetSharedLibCountAtEnd;
+// gds32 and fbclient get registered twice as shared libraries.
+// This appears to be a bug in InnoSetup. It only appears to affect
+// libraries the first time they are registered, and it only seems
+// to affect stuff in the {sys} directory. To work around this we
+// check the count before install and after install.
+var
+  dw: cardinal;
+begin
+  if RegQueryDWordValue(HKEY_LOCAL_MACHINE,
+    'SOFTWARE\Microsoft\Windows\CurrentVersion\SharedDLLs','C:\WINNT\System32\fbclient.dll', dw) then begin
+
+    if (( dw - fbclientStartCount ) > 1 ) then begin
+      dw := fbclientStartCount + 1 ;
+      RegWriteDWordValue(HKEY_LOCAL_MACHINE,
+      'SOFTWARE\Microsoft\Windows\CurrentVersion\SharedDLLs','C:\WINNT\System32\fbclient.dll', dw);
+    end;
+  end;
+
+  if RegQueryDWordValue(HKEY_LOCAL_MACHINE,
+    'SOFTWARE\Microsoft\Windows\CurrentVersion\SharedDLLs','C:\WINNT\System32\gds32.dll', dw) then begin
+    
+    if (( dw - gds32StartCount ) > 1 ) then begin
+      dw := gds32StartCount + 1 ;
+      RegWriteDWordValue(HKEY_LOCAL_MACHINE,
+      'SOFTWARE\Microsoft\Windows\CurrentVersion\SharedDLLs','C:\WINNT\System32\gds32.dll', dw);
+    end;
+  end;
+end;
+
 function CheckWinsock2(): Boolean;
 begin
   Result := True;
@@ -217,22 +274,11 @@ begin
   	Winsock2Failure := False;
 end;
 
-procedure DeInitializeSetup();
-var
-  ErrCode: Integer;
-begin
-  // Did the install fail because winsock 2 was not installed?
-  if Winsock2Failure then
-    // Ask user if they want to visit the Winsock2 update web page.
-  	if MsgBox(sWinsock2Web, mbInformation, MB_YESNO) = idYes then
-  	  // User wants to visit the web page
-      InstShellExec(sMSWinsock2Update, '', '', SW_SHOWNORMAL, ErrCode);
-end;
-
 function InitializeSetup(): Boolean;
 var
   i: Integer;
 begin
+
   result := true;
 
   if not CheckWinsock2 then
@@ -243,11 +289,29 @@ begin
   if ( i=0 ) then
     i:=FindWindowByClassName('FB_Server');
     
-  if i<>0 then begin
+  if ( i<>0 ) then begin
     result := false;
     MsgBox('An existing Firebird Server is running. You must close the '+
            'application or stop the service before continuing.', mbError, MB_OK);
   end;
+  
+  //Check the shared library count.
+  if ( result=true ) then
+    GetSharedLibCountAtStart;
+  
+end;
+
+procedure DeInitializeSetup();
+var
+  ErrCode: Integer;
+begin
+  // Did the install fail because winsock 2 was not installed?
+  if Winsock2Failure then
+    // Ask user if they want to visit the Winsock2 update web page.
+  	if MsgBox(sWinsock2Web, mbInformation, MB_YESNO) = idYes then
+  	  // User wants to visit the web page
+      InstShellExec(sMSWinsock2Update, '', '', SW_SHOWNORMAL, ErrCode);
+      
 end;
 
 procedure DecodeVersion( verstr: String; var verint: array of Integer );
@@ -326,7 +390,7 @@ begin
   InterBaseRootDir:=GetInterBaseDir;
   FirebirdRootDir:=GetFirebirdDir;
   
-  if ( FirebirdRootDir = InterBaseRootDir ) then  //Fb 1.0 must be installed so don't overwrite it.
+  if (FirebirdRootDir <> '') and ( FirebirdRootDir = InterBaseRootDir ) then  //Fb 1.0 must be installed so don't overwrite it.
     InstallRootDir := Default;
     
   if (( InstallRootDir = '' ) and
@@ -343,7 +407,7 @@ begin
   if (InstallRootDir = '') then
     InstallRootDir:=getenv('FIREBIRD');
     
-  //if no existing locations found so make sure we default to the default.
+  //if no existing locations found make sure we default to the default.
   if (InstallRootDir = '') then
     InstallRootDir := Default;
 
@@ -415,18 +479,53 @@ procedure CurStepChanged(CurStep: Integer);
 var
   AppStr: String;
 begin
-if CurStep=csFinished then begin
-  //If user has chosen to install an app and run it automatically set up the registry accordingly
-  //so that the server or guardian starts evertime they login.
-  if (ShouldProcessEntry('ServerComponent', 'AutoStartTask')= srYes) and
-      ( ShouldProcessEntry('ServerComponent', 'UseApplicationTask')= srYes ) then begin
-    AppStr := StartApp('')+' -a';
+  if ( CurStep=csFinished ) then begin
+    //If user has chosen to install an app and run it automatically set up the registry accordingly
+    //so that the server or guardian starts evertime they login.
+    if (ShouldProcessEntry('ServerComponent', 'AutoStartTask')= srYes) and
+        ( ShouldProcessEntry('ServerComponent', 'UseApplicationTask')= srYes ) then begin
+      AppStr := StartApp('')+' -a';
 
-    RegWriteStringValue (HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Run', 'Firebird', AppStr);
+      RegWriteStringValue (HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Run', 'Firebird', AppStr);
 
+    end;
   end;
+  
+  if ( CurStep=csFinished ) then
+    //Check that the shared lib count is correct.
+    SetSharedLibCountAtEnd;
+
 end;
 
+function FirebirdOneRunning: boolean;
+var
+  i: Integer;
+begin
+  result := false;
+  
+  //Look for a running copy of InterBase or Firebird 1.0.
+  i:=0;
+  i:=FindWindowByClassName('IB_Server') ;
+  if ( i<>0 ) then
+    result := true;
+    
+end;
+
+function StartEngine: boolean;
+begin
+  result := not FirebirdOneRunning;
+end;
+
+function RemoveThisVersion: boolean;
+//check if we are still the current version before removing
+var
+  VersionStr: string;
+begin
+  result := false;
+  if RegQueryStringValue(HKEY_LOCAL_MACHINE,
+    'SOFTWARE\FirebirdSQL\Firebird\CurrentVersion','Version', VersionStr ) then
+    if (pos(ProductVersion,VersionStr)>0) then
+      result := true;
 end;
 
 begin

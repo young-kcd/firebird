@@ -4,15 +4,24 @@
 ::===========
 :MAIN
 @if "%1"=="" (@goto :ERROR_PARAM_EXPECTED)
+
+
+::Make sure that the db path is set to a style that wont break SED
+set DB_PATH=%1
+for /f "tokens=*" %%a in ('@echo %DB_PATH:\=/%') do (set DB_PATH=%%a)
+
+if "%2" NEQ "" (set FIREBIRD="%2")
 @md dbs
 @cd dbs
-@gbak -r %1\src\misc\metadata.gbak localhost:%1\builds\win32\dbs\metadata.fdb
+
+
+@%FIREBIRD%\bin\gbak -r %1\src\misc\metadata.gbak localhost:%DB_PATH\builds\win32\dbs\metadata.fdb
 @md jrd
-@gbak -r %1\src\misc\security.gbak localhost:%1\builds\win32\dbs\jrd\security.fdb
+@%FIREBIRD%\bin\gbak -r %1\src\misc\security.gbak localhost:%DB_PATH\builds\win32\dbs\jrd\security.fdb
 @md msgs
-@gbak -r %1\src\msgs\msg.gbak localhost:%1\builds\win32\dbs\msgs\msg.fdb
+@%FIREBIRD%\bin\gbak -r %1\src\msgs\msg.gbak localhost:%DB_PATH\builds\win32\dbs\msgs\msg.fdb
 @md qli
-@gbak -r %1\src\misc\help.gbak localhost:%1\builds\win32\dbs\qli\help.fdb
+@%FIREBIRD%\bin\gbak -r %1\src\misc\help.gbak localhost:%DB_PATH\builds\win32\dbs\qli\help.fdb
 @cd ..
 @del expand.sed
 @call :SED yachts.lnk %1 metadata.fdb
@@ -38,12 +47,14 @@
 ::===========
 :ERROR_PARAM_EXPECTED
 @echo You must specify the root directory of the Firebird source tree.
-@echo Only forward (POSIX-style) slashes should be used in the path.
 @echo Example:
-@echo     prepare.bat d:/work/firebird
+@echo     prepare.bat d:\work\firebird
 @echo.
-@echo.
-@echo Gbak must be available on your path
+@echo If gbak is not available on your path specify the  
+@echo root directory of your Firebird installation.
+@echo Example:
+@echo c:\program files\firebird
+@echo. 
 @goto :END
 
 :END
