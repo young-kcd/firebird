@@ -115,7 +115,7 @@ for %%v in (fbclient gds32 ib_util) do @(
 @del %ROOT_PATH%\output\doc\install_win32.txt 
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR Rename install_win32.txt failed with errorlevel %ERRORLEVEL% ) & (goto :EOF))
 
-@copy %ROOT_PATH%\src\install\arch-specific\win32\installation_readme.txt %ROOT_PATH%\output\doc\InstallerReadme.txt > nul
+@copy %ROOT_PATH%\src\install\arch-specific\win32\installation_readme.txt %ROOT_PATH%\output\doc\installation_readme.txt > nul
 
 :: This stuff doesn't make much sense to Windows users, although the troubleshooting doc 
 :: could be made more platform agnostic.
@@ -132,6 +132,33 @@ for %%v in (fbclient gds32 ib_util) do @(
 @copy %ROOT_PATH%\doc\sql.extensions\*.* %ROOT_PATH%\output\doc\sql.extensions\ > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY doc\sql.extensions failed  ) & (goto :EOF))
 
+@goto :EOF
+
+:IBASE_H
+:: Concatenate header files into ibase.h
+::======================================
+:: o This section of code takes two header files, strips comments and 
+::   inserts them into ibase.h for distribution. The only drawback is that
+::   it strips all the comments.
+:: o No error checking is done.
+:: o Take note that different versions of sed use different
+::   string delimiters. The firebird_tools version uses double quotes - ".
+::   The cygwin one probably uses single quotes.
+:: o The script 'strip_comments.sed' is taken from 
+::      http://sed.sourceforge.net/grabbag/scripts/testo.htm
+
+setlocal 
+set OUTPATH=%ROOT_PATH%\output\include
+for %%v in ( %ROOT_PATH%\src\include\fb_types.h %ROOT_PATH%\src\jrd\blr.h ) do (
+  del %OUTPATH%\%%~nxv 2> nul
+  copy %%v %OUTPATH%\%%~nxv > nul
+  sed -n -f strip_comments.sed %OUTPATH%\%%~nxv > %OUTPATH%\%%~nv.more
+  more /s %OUTPATH%\%%~nv.more > %OUTPATH%\%%~nv.sed
+)
+ren %OUTPATH%\ibase.h ibase.sed 
+sed -e "/#include \"fb_types\.h\"/r %OUTPATH%\fb_types.h" -e "/#include \"fb_types\.h\"/d" -e "/#include \"blr\.h\"/r %OUTPATH%\blr.h" -e "/#include \"blr\.h\"/d" %OUTPATH%\ibase.sed > %OUTPATH%\ibase.h
+del %OUTPATH%\ibase.sed %OUTPATH%\fb_types.* %OUTPATH%\blr.* 
+endlocal
 @goto :EOF
 
 
@@ -225,6 +252,7 @@ start FirebirdInstall_%PRODUCT_VER_STRING%.iss
 
 :MAIN
 ::====
+
 @Echo.
 @Echo Reading command-line parameters
 @(@call :SET_PARAMS %1 %2 )|| (@goto :EOF) 
@@ -234,6 +262,9 @@ start FirebirdInstall_%PRODUCT_VER_STRING%.iss
 @Echo.
 @Echo Copying additonal files needed for installation, documentation etc.
 @(@call :COPY_XTRA ) || (@goto :EOF)
+@Echo.
+@Echo Concatenating header files for ibase.h
+@(@call :IBASE_H ) || (@goto :EOF)
 @Echo.
 @Echo alias conf
 @(@call :ALIAS_CONF ) || (@goto :EOF)

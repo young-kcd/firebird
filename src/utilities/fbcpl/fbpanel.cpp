@@ -1,5 +1,5 @@
 /*
- *  PROGRAM:        Firebird 1.0 control panel applet
+ *  PROGRAM:        Firebird 1.5 control panel applet
  *  MODULE:         fbpanel.cpp
  *  DESCRIPTION:    The FBPanel unit does the following things:
  *                    - It manages the display of the icon in the 

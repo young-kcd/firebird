@@ -81,7 +81,7 @@ DefaultGroupName=Firebird_{#BaseVer}
 AllowNoIcons=true
 SourceDir=..\..\..\..\..\firebird2
 LicenseFile=src\install\misc\IPLicense.txt
-InfoBeforeFile=output\doc\InstallerReadme.txt
+InfoBeforeFile=output\doc\installation_readme.txt
 InfoAfterFile=src\install\arch-specific\win32\readme.txt
 AlwaysShowComponentsList=true
 WizardImageFile=src\install\arch-specific\win32\firebird_install_logo1.bmp
@@ -100,8 +100,8 @@ Name: ClientInstall; Description: "Minimum client install - no server, no tools.
 Name: CustomInstall; Description: "Custom installation"; Flags: iscustom
 
 [Components]
-Name: SuperServerComponent; Description: Super Server binary; Types: SuperServerInstall;
-Name: ClassicServerComponent; Description: Classic Server binary; Types: ClassicServerInstall;
+Name: SuperServerComponent; Description: Super Server binary; Types: SuperServerInstall; Flags: exclusive;
+Name: ClassicServerComponent; Description: Classic Server binary; Types: ClassicServerInstall; Flags: exclusive;
 Name: ServerComponent; Description: Server components; Types: SuperServerInstall ClassicServerInstall;
 Name: DevAdminComponent; Description: Developer and admin tools components; Types: SuperServerInstall ClassicServerInstall DeveloperInstall;
 Name: ClientComponent; Description: Client components; Types: SuperServerInstall ClassicServerInstall DeveloperInstall ClientInstall CustomInstall; Flags: fixed disablenouninstallwarning;
@@ -207,7 +207,7 @@ Source: output\system32\FIREBI~1.CPL; DestDir: {sys}; Components: SuperServerCom
 
 [UninstallRun]
 Filename: {app}\bin\instsvc.exe; Parameters: " stop"; StatusMsg: Stopping the service; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; RunOnceId: StopService
-Filename: {app}\bin\instsvc.exe; Parameters: " remove -g"; StatusMsg: Removing the service; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; RunOnceId: RemoveService
+Filename: {app}\bin\instsvc.exe; Parameters: " remove"; StatusMsg: Removing the service; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; RunOnceId: RemoveService
 Filename: {app}\bin\instreg.exe; Parameters: " remove"; StatusMsg: Updating the registry; MinVersion: 4.0,4.0; Flags: runminimized; RunOnceId: RemoveRegistryEntry
 
 [UninstallDelete]
@@ -479,7 +479,11 @@ begin
   FirebirdDir := '';
 	FirebirdVer := [0,0,0,0];
   RegQueryStringValue(HKEY_LOCAL_MACHINE,
-    'SOFTWARE\FirebirdSQL\Firebird\CurrentVersion','RootDirectory', FirebirdDir);
+    'SOFTWARE\FirebirdSQL\Firebird\Instances','DefaultInstance', FirebirdDir);
+  //If nothing returned then check for the registry entry used during beta/RC phase
+  if (FirebirdDir='') then
+    RegQueryStringValue(HKEY_LOCAL_MACHINE,
+      'SOFTWARE\FirebirdSQL\Firebird\CurrentVersion','RootDirectory', FirebirdDir);
   if (FirebirdDir<>'') then
     FirebirdVer:=GetInstalledVersion(FirebirdDir);
 
@@ -646,6 +650,16 @@ begin
   end;
   fbconf.savetofile(AppPath+'\firebird.conf');
 end;
+
+
+procedure CurPageChanged(CurPage: Integer);
+begin
+  case CurPage of
+    wpInfoBefore:   WizardForm.INFOBEFOREMEMO.font.name:='Courier New';
+    wpSelectTasks:  WizardForm.TASKSLIST.height := WizardForm.TASKSLIST.height+20;
+  end;
+end;
+
 
 procedure CurStepChanged(CurStep: Integer);
 var

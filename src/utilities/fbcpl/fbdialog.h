@@ -1,8 +1,8 @@
 /*
- *	PROGRAM:	Firebird 1.0 control panel applet
+ *	PROGRAM:	Firebird 1.5 control panel applet
  *	MODULE:		FBDialog.h
  *	DESCRIPTION:	Main file to provide GUI based server control functions
- *					for Firebird 1.0
+ *					for Firebird 1.5
  *
  * The contents of this file are subject to the Independant Developer's 
  * Public License Version 1.0 (the "License"); you may not use this

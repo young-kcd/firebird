@@ -98,7 +98,7 @@ void CFBDialog::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_BUTTON_STOP, m_Button_Stop);
 	DDX_Control(pDX, IDC_STATUS_ICON, m_Icon);
 	DDX_Text(pDX, IDC_FB_VERSION, m_FB_Version);
-	DDV_MaxChars(pDX, m_FB_Version, 64);
+	DDV_MaxChars(pDX, m_FB_Version, 128);
 	DDX_Text(pDX, IDC_FIREBIRD_STATUS, m_Firebird_Status);
 	//}}AFX_DATA_MAP
 }

@@ -1,5 +1,5 @@
 /*
- *  PROGRAM:        Firebird 1.0 control panel applet
+ *  PROGRAM:        Firebird 1.5 control panel applet
  *  MODULE:         fbpanel.h
  *
  * The contents of this file are subject to the Independant Developer's 
