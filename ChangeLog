@@ -1,3 +1,88 @@
+2004-10-30 21:41  dimitr
+
+	* firebird2/src/jrd/: cvt.cpp (1.53), evl.cpp (1.117), exe.cpp
+	(1.129), jrd.cpp (1.183), jrd.h (1.117), mov.cpp (1.18), req.h
+	(1.43):
+	
+	Replaced non-centralized datetime management with a new class.
+
+2004-10-30 21:28  dimitr
+
+	* firebird2/src/common/classes/timestamp.h (1.1):
+	
+	Replaced non-centralized datetime management with a new class.
+
+2004-10-30 09:05  robocop
+
+	* firebird2/src/burp/: backup.epp (1.68), burp.h (1.61), mvol.cpp
+	(1.42):
+	
+	Constant is the max size of the string, not the max length.
+
+2004-10-30 08:48  robocop
+
+	* firebird2/src/misc/upgrade/recovering_build.txt (1.1):
+	
+	Provides information on how to recover a failed build due to new
+	fields added.
+
+2004-10-30 08:03  robocop
+
+	* firebird2/src/common/classes/sparse_bitmap.h (1.10):
+	
+	Misc.
+
+2004-10-30 07:58  robocop
+
+	* firebird2/src/burp/: backup.epp (1.67), burp.h (1.60),
+	restore.epp (1.83):
+	
+	Implement rdb$description in rdb$generators.  Gbak should be able
+	to backup and restore the new field(s).  Following Borland's
+	practice when adding fields, I raised the backup number to 7. I
+	should have done that when enhancing rdb$roles.
+
+2004-10-30 07:51  robocop
+
+	* firebird2/src/jrd/dfw.epp (1.135):
+	
+	Misc.
+
+2004-10-30 07:41  robocop
+
+	* firebird2/src/burp/: burp.cpp (1.91), burp_proto.h (1.18),
+	mvol.cpp (1.41):
+	
+	Fix possible buffer overrun.
+
+2004-10-30 07:36  robocop
+
+	* firebird2/src/gpre/par.cpp (1.54):
+	
+	Wrong macro to inline function conversion (but harmless)
+
+2004-10-30 07:30  robocop
+
+	* firebird2/src/gpre/: ada.cpp (1.45), c_cxx.cpp (1.56), cob.cpp
+	(1.50), ftn.cpp (1.51), gpre.cpp (1.65), gpre.h (1.72), pas.cpp
+	(1.43), sqe.cpp (1.34), sql.cpp (1.49):
+	
+	Be more respectful of literal strings.
+
+2004-10-30 07:23  robocop
+
+	* firebird2/src/: include/gen/ids.h (1.9), jrd/dfw.epp (1.134),
+	jrd/ini.epp (1.60), jrd/relations.h (1.8), jrd/trig.h (1.15),
+	jrd/vio.cpp (1.117):
+	
+	Implement rdb$description in rdb$generators. What a chore.
+
+2004-10-30 07:12  robocop
+
+	* firebird2/src/jrd/: cvt.cpp (1.52), rse.cpp (1.81):
+	
+	Misc.
+
 2004-10-29 19:51  skidder
 
 	* firebird2/src/common/classes/sparse_bitmap.h (1.9):
