@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.106 2004-09-28 06:27:24 skidder Exp $ 
+  * $Id: evl.cpp,v 1.107 2004-10-02 09:29:48 robocop Exp $ 
  */
 
 /*
@@ -343,7 +343,7 @@ RecordBitmap* EVL_bitmap(thread_db* tdbb, jrd_nod* node)
 			RecordNumber rel_dbkey;
 			rel_dbkey.bid_decode(numbers);
 			// NS: Why the heck we decrement record number here? I have no idea, but retain the algorithm for now.
-			rel_dbkey.setValue(rel_dbkey.getValue() - 1);
+			rel_dbkey.decrement();
 			RBM_SET(tdbb->getDefaultPool(), &impure->inv_bitmap, rel_dbkey.getValue());
 			return impure->inv_bitmap;
 		}
