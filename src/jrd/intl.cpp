@@ -1062,7 +1062,7 @@ int INTL_convert_string(dsc* to, const dsc* from, FPTR_ERROR err)
 	const UCHAR* q = from_ptr;
 	switch (to->dsc_dtype) {
 	case dtype_text:
-		if ((from_cs != to_cs) && (to_cs != CS_BINARY) && (to_cs != CS_NONE)) {
+		if ((from_cs != to_cs) && (to_cs != CS_BINARY) && (to_cs != CS_NONE) && (from_cs != CS_NONE)) {
 
 			to_len = INTL_convert_bytes(tdbb, to_cs, to->dsc_address, to_size,
 										from_cs, from_ptr, from_len, err);
@@ -1087,7 +1087,7 @@ int INTL_convert_string(dsc* to, const dsc* from, FPTR_ERROR err)
 		break;
 
 	case dtype_cstring:
-		if ((from_cs != to_cs) && (to_cs != CS_BINARY) && (to_cs != CS_NONE)) {
+		if ((from_cs != to_cs) && (to_cs != CS_BINARY) && (to_cs != CS_NONE) && (from_cs != CS_NONE)) {
 			to_len = INTL_convert_bytes(tdbb, to_cs, to->dsc_address, to_size,
 										from_cs, from_ptr, from_len, err);
 			to->dsc_address[to_len] = 0;
@@ -1107,7 +1107,7 @@ int INTL_convert_string(dsc* to, const dsc* from, FPTR_ERROR err)
 		break;
 
 	case dtype_varying:
-		if ((from_cs != to_cs) && (to_cs != CS_BINARY) && (to_cs != CS_NONE)) {
+		if ((from_cs != to_cs) && (to_cs != CS_BINARY) && (to_cs != CS_NONE) && (from_cs != CS_NONE)) {
 
 			to_len =
 				INTL_convert_bytes(tdbb, to_cs,
