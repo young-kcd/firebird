@@ -2030,7 +2030,7 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS * user_status, RSR * stmt_handle, USHORT opt
 			return error(user_status);
 		}
 
-		statement->rsr_handle = (FB_API_HANDLE) packet->p_resp.p_resp_object;
+		statement->rsr_handle = (FB_API_HANDLE) (IPTR) packet->p_resp.p_resp_object;
 		if (packet->p_resp.p_resp_object == 0xFFFF) {
 			release_sql_request(statement);
 			*stmt_handle = NULL;
