@@ -142,6 +142,13 @@
 			</File>
 		</Filter>
 		<Filter
+			Name="UTILITIES files"
+			Filter="">
+			<File
+				RelativePath="..\..\..\src\jrd\svc.cpp">
+			</File>
+		</Filter>
+		<Filter
 			Name="Resource files"
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe">
 			<File

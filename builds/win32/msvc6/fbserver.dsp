@@ -104,6 +104,12 @@ SOURCE=..\..\..\generated\utilities\dba.cpp
 SOURCE=..\..\..\src\utilities\ppg.cpp
 # End Source File
 # End Group
+# Begin Group "JRD files"
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\svc.cpp
+# End Source File
+# End Group
 # Begin Group "Resource files"
 
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
