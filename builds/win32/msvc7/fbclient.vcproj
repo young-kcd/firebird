@@ -158,6 +158,9 @@
 			Name="COMMON files"
 			Filter="">
 			<File
+				RelativePath="..\..\..\src\common\classes\alloc.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\common\config\config_file.cpp">
 			</File>
 			<File

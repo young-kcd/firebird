@@ -247,7 +247,9 @@ namespace {
 	{
 		MemoryPool* p = MemoryPool::createPool();
 		fb_assert(p);
+#ifndef SUPERCLIENT
 		MemoryPool::setContextPool(p);
+#endif
 		return p;
 	}
 } // anonymous namespace
@@ -1699,6 +1701,42 @@ void MemoryPool::deallocate(void *block)
 	lock.leave();
 }
 
+MemoryPool& AutoStorage::getAutoMemoryPool() { 
+#ifndef SUPERCLIENT
+	MemoryPool* p = MemoryPool::getContextPool();
+#ifdef EMBEDDED
+	if (! p)
+	{
+		p = getDefaultMemoryPool();
+	}
+#endif //EMBEDDED
+#else //SUPERCLIENT
+	MemoryPool* p = getDefaultMemoryPool();
+#endif //SUPERCLIENT
+	fb_assert(p);
+	return *p; 
+}
+
+#if defined(DEV_BUILD)
+void AutoStorage::ProbeStack() const {
+	//
+	// AutoStorage() default constructor can be used only 
+	// for objects on the stack. ProbeStack() uses the 
+	// following assumptions to check it:
+	//	1. One and only one stack is used for all kind of variables.
+	//	2. Objects don't grow > 64K.
+	//
+	char ProbeVar = '\0';
+	const char *MyStack = &ProbeVar;
+	const char *ThisLocation = (const char *)this;
+	ptrdiff_t distance = ThisLocation - MyStack;
+	if (distance < 0) {
+		distance = -distance;
+	}
+	fb_assert(distance < 64 * 1024);
+}
+#endif
+
 } // namespace Firebird
 
 /******************************** Global functions *****************************/
@@ -1740,24 +1778,4 @@ void operator delete[](void* mem) throw()
 {
 	Firebird::MemoryPool::globalFree(mem);
 }
-
-#if defined(DEV_BUILD)
-void Firebird::AutoStorage::ProbeStack() const {
-	//
-	// AutoStorage() default constructor can be used only 
-	// for objects on the stack. ProbeStack() uses the 
-	// following assumptions to check it:
-	//	1. One and only one stack is used for all kind of variables.
-	//	2. Objects don't grow > 64K.
-	//
-	char ProbeVar = '\0';
-	const char *MyStack = &ProbeVar;
-	const char *ThisLocation = (const char *)this;
-	ptrdiff_t distance = ThisLocation - MyStack;
-	if (distance < 0) {
-		distance = -distance;
-	}
-	fb_assert(distance < 64 * 1024);
-}
-#endif
 
