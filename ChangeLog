@@ -1,3 +1,38 @@
+2004-08-19 02:48  skidder
+
+	* firebird2/src/jrd/btr.cpp (1.105):
+	
+	Fix some of the problems in new indices code noted by Valgrind.
+	These fixes are result of discussion with Arno. But indices are
+	still broken; Arno promised to fix remaining stuff from this area
+	during next weekend
+
+2004-08-19 02:04  skidder
+
+	* firebird2/src/misc/src_bundle.sh (1.1):
+	
+	Script which I use to generate Firebird source packages
+
+2004-08-19 01:39  skidder
+
+	* firebird2/src/common/classes/alloc.cpp (1.59):
+	
+	Old Valgrind stacktraces need to be cleaned up on pool destruction
+
+2004-08-18 20:33  skidder
+
+	* firebird2/src/dsql/pass1.cpp (1.155):
+	
+	Fix one more possible random crash noted by Valgrind. This
+	particular problem is old and happens when UNION DSQL construct is
+	used. Fix is the result of consultations with Arno Brinkman
+
+2004-08-18 05:09  skidder
+
+	* firebird2/src/jrd/intlobj_new.h (1.9):
+	
+	A little bit more clarification
+
 2004-08-18 02:02  skidder
 
 	* firebird2/src/dsql/parse.y (1.142):
