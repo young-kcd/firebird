@@ -1,3 +1,51 @@
+2004-04-20 21:21  brodsom
+
+	* firebird2/builds/posix/Makefile.in.libfbembed (1.12):
+	
+	Correction needed for fbembed build to succeed
+
+2004-04-20 07:57  skidder
+
+	* firebird2/src/: include/fb_types.h (1.43), jrd/jrd.cpp (1.152),
+	jrd/jrd.h (1.91), jrd/sch.cpp (1.21), jrd/thd.cpp (1.28), jrd/thd.h
+	(1.18), jrd/thd_proto.h (1.6), jrd/os/posix/isc_ipc.cpp (1.10):
+	
+	Fix problem with 64-bit SS NPTL builds
+
+2004-04-19 20:45  brodsom
+
+	* firebird2/builds/install/arch-specific/mingw/prepare_mingw.sh
+	(1.4):
+	
+	Correction use generated gbak not installed one
+
+2004-04-19 17:29  alexpeshkoff
+
+	* firebird2/src/jrd/: cmp.cpp (1.112), jrd.cpp (1.151), jrd.h
+	(1.90), met.epp (1.111):
+	
+	struct trig moved to class Trigger
+
+2004-04-19 16:53  hvlad
+
+	* firebird2/src/jrd/idx.cpp (1.53):
+	
+	Fixed GC in indexes after replace 'lls' with 'Stack'
+
+2004-04-19 15:40  alexpeshkoff
+
+	* firebird2/src/: common/classes/array.h (1.23),
+	common/classes/objects_array.h (1.8), common/classes/stack.h (1.2),
+	jrd/opt.cpp (1.155):
+	
+	applied fixes, mentioned by Claudio
+
+2004-04-19 12:20  paulbeach
+
+	* firebird2/builds/install/misc/firebird.conf (1.6):
+	
+	Improve NFS Warning in conf file
+
 2004-04-18 16:22  alexpeshkoff
 
 	* firebird2/src/: alice/all.cpp (1.19), alice/all.h (1.10),
