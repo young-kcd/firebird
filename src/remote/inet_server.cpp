@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: inet_server.cpp,v 1.26.2.2 2004-09-29 10:03:39 paul_reeves Exp $
+$Id: inet_server.cpp,v 1.26.2.3 2005-03-23 12:59:25 alexpeshkoff Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -277,7 +277,10 @@ int CLIB_ROUTINE server_main( int argc, char **argv)
 					break;
 
 				case 'P':
-					sprintf(protocol, "/%s", *argv++);
+					protocol[0] = '/';
+					protocol[1] = 0;
+					strncat(protocol, *argv++, 
+						sizeof(protocol) - strlen(protocol) - 1);
 					break;
 
                 case 'H':
@@ -407,12 +410,9 @@ int CLIB_ROUTINE server_main( int argc, char **argv)
 
 /* before starting the superserver stuff change directory to tmp */
 	if (CHANGE_DIR(TEMP_DIR)) {
-		char err_buf[1024];
-
 		/* error on changing the directory */
-		sprintf(err_buf, "Could not change directory to %s due to errno %d",
+		gds__log("Could not change directory to %s due to errno %d",
 				TEMP_DIR, errno);
-		gds__log(err_buf);
 	}
 
 /* Server tries to attash to security.fdb to make sure everything is OK
