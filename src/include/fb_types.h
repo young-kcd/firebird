@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.44 2004-05-02 23:04:19 skidder Exp $
+ *  $Id: fb_types.h,v 1.45 2004-05-14 16:22:33 brodsom Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -61,20 +61,21 @@ typedef long long int			ISC_INT64;
 typedef unsigned long long int	ISC_UINT64;
 #endif
 
-// Nickolay: it is easier to assume that integer is at least 32-bit.
-// This comes from limitation that we cannot reliably detect datatype size at
-// compile time in cases when we do not control compilation (public headers) 
-// We are not going to support 16-bit platforms, right?
-//
-// Temporarly restrict new definition until ULONG clash with Windows
-// type is solved. Win64 port is not possible before that point.
-// Cannot use SIZEOF_LONG define here because we are in a public header
+/* Nickolay: it is easier to assume that integer is at least 32-bit.
+ * This comes from limitation that we cannot reliably detect datatype size at
+ *  compile time in cases when we do not control compilation (public headers) 
+ *  We are not going to support 16-bit platforms, right?
+ *
+ * Temporarly restrict new definition until ULONG clash with Windows
+ * type is solved. Win64 port is not possible before that point.
+ * Cannot use SIZEOF_LONG define here because we are in a public header
+ */
 #if defined(_LP64) || defined(__LP64__) || defined(__arch64__)
-	// EKU: Firebird requires (S)LONG to be 32 bit
+	/* EKU: Firebird requires (S)LONG to be 32 bit */
 	typedef int SLONG;
 	typedef unsigned int ULONG;
 	typedef unsigned int FB_API_HANDLE;
-//	typedef void* FB_API_HANDLE;
+/*	typedef void* FB_API_HANDLE; */
 #else
 	typedef long SLONG;
 	typedef unsigned long ULONG;
@@ -97,12 +98,12 @@ typedef struct GDS_QUAD_t ISC_QUAD;
 #define	isc_quad_high	gds_quad_high
 #define	isc_quad_low	gds_quad_low
 
-// Basic data types
+/* Basic data types */
 
-// typedef signed char SCHAR;
-// TMN: TODO It seems SCHAR is used just about *everywhere* where a plain
-// "char" is really intended. This currently forces us to this bad definition.
-//
+/* typedef signed char SCHAR;
+ * TMN: TODO It seems SCHAR is used just about *everywhere* where a plain
+ * "char" is really intended. This currently forces us to this bad definition.
+ */
 typedef char SCHAR;
 
 
@@ -111,13 +112,13 @@ typedef short SSHORT;
 typedef unsigned short USHORT;
 
 
-//
-// TMN: some misc data types from all over the place
-//
+/*
+ * TMN: some misc data types from all over the place
+ */
 struct vary
 {
 	USHORT vary_length;
-	char   vary_string[1]; // CVC: The original declaration used UCHAR.
+	char   vary_string[1]; /* CVC: The original declaration used UCHAR. */
 };
 
 struct lstring
@@ -147,8 +148,9 @@ typedef void (*FPTR_VERSION_CALLBACK)(void*, const char*);
 /* Used for isc_que_events and internal functions */
 typedef void (*FPTR_EVENT_CALLBACK)(void*, USHORT, const UCHAR*);
 
-// The type of JRD's ERR_post, DSQL's ERRD_post & post_error,
-// REMOTE's move_error & GPRE's post_error.
+/* The type of JRD's ERR_post, DSQL's ERRD_post & post_error,
+ * REMOTE's move_error & GPRE's post_error.
+ */
 typedef void (*FPTR_ERROR) (ISC_STATUS, ...);
 
 typedef ULONG RCRD_OFFSET;

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.77 2004-05-12 00:02:07 brodsom Exp $
+$Id: ibase.h,v 1.78 2004-05-14 16:23:41 brodsom Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -53,13 +53,16 @@ $Id: ibase.h,v 1.77 2004-05-12 00:02:07 brodsom Exp $
 
 #define ISC_FAR
 
-// It is difficult to detect 64-bit long from the redistributable header
-// we do not care of 16-bit platforms anymore thus we may use plain "int"
-// which is 32-bit on all platforms we support
-//
-// Temporarly restrict new definition until ULONG clash with Windows
-// type is solved. Win64 port is not possible before that point.
-// Cannot use SIZEOF_LONG define here because we are in a public header
+/* 
+ * It is difficult to detect 64-bit long from the redistributable header
+ * we do not care of 16-bit platforms anymore thus we may use plain "int"
+ * which is 32-bit on all platforms we support
+ *
+ * Temporarly restrict new definition until ULONG clash with Windows
+ * type is solved. Win64 port is not possible before that point.
+ * Cannot use SIZEOF_LONG define here because we are in a public header
+ */
+
 #if defined(_LP64) || defined(__LP64__) || defined(__arch64__)
 typedef	int		ISC_LONG;
 typedef	unsigned int	ISC_ULONG;
@@ -102,10 +105,11 @@ typedef struct
 #define ISC_TIMESTAMP_DEFINED
 #endif	/* ISC_TIMESTAMP_DEFINED */
 
-//Included in dsc.h
-//#define ISC_TIME_SECONDS_PRECISION          10000L
-//#define ISC_TIME_SECONDS_PRECISION_SCALE    (-4)
-
+/*
+ * Included in dsc.h
+ * #define ISC_TIME_SECONDS_PRECISION          10000L
+ * #define ISC_TIME_SECONDS_PRECISION_SCALE    (-4)
+ */
 /*******************************************************************/
 /* Blob id structure                                               */
 /*******************************************************************/

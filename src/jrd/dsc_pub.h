@@ -27,30 +27,31 @@
 #define JRD_DSC_PUB_H
 
 
-//
-// The following flags are used in an internal structure dsc (dsc.h) or in the external one paramdsc (ibase.h)
-//
+/*
+ * The following flags are used in an internal structure dsc (dsc.h) or in the external one paramdsc (ibase.h)
+ */
 
-// values for dsc_flags
-// Note: DSC_null is only reliably set for local variables (blr_variable)
-//
+/* values for dsc_flags
+ * Note: DSC_null is only reliably set for local variables (blr_variable)
+ */
 #define DSC_null		1
 #define DSC_no_subtype		2	/* dsc has no sub type specified */
 #define DSC_nullable  		4	/* not stored. instead, is derived
 								   from metadata primarily to flag
 								   SQLDA (in DSQL)               */
 
-// Data types
-
-// WARNING: if you add another manifest constant to this group, then you
-// must add another entry to the array compare_priority in jrd/cvt2.c.
-//
-
-// Note that dtype_null actually means that we do not yet know the
-// dtype for this descriptor.  A nice cleanup item would be to globally
-// change it to dtype_unknown.  --chrisj 1999-02-17 */
-// Name changed on 2003.12.17 by CVC.
-
+/*
+ * Data types
+ *
+ * WARNING: if you add another manifest constant to this group, then you
+ * must add another entry to the array compare_priority in jrd/cvt2.c.
+ *
+ *
+ * Note that dtype_null actually means that we do not yet know the
+ * dtype for this descriptor.  A nice cleanup item would be to globally
+ * change it to dtype_unknown.  --chrisj 1999-02-17
+ * Name changed on 2003.12.17 by CVC.
+ */
 #define dtype_unknown	0
 #define dtype_text	1
 #define dtype_cstring	2
@@ -72,7 +73,7 @@
 #define dtype_int64     19
 #define DTYPE_TYPE_MAX	20
 
-// 
+
 #define ISC_TIME_SECONDS_PRECISION		10000L
 #define ISC_TIME_SECONDS_PRECISION_SCALE	(-4)
 
