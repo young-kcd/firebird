@@ -1,3 +1,129 @@
+2004-03-07 22:50  arnobrinkman
+
+	* firebird2/src/: jrd/btn.cpp, jrd/btn.h, jrd/btr.cpp, jrd/nav.cpp,
+	jrd/ods.h, jrd/val.cpp, utilities/gstat/dba.epp:
+	
+	some optimization in index-stuff
+
+2004-03-07 16:32  dimitr
+
+	* firebird2/src/jrd/dpm.epp:
+	
+	If a transaction is committed and its buffers are flushed, never
+	allow a generator page to be still cached.  Discussed with Oleg Loa
+	and Vlad Horsun.
+
+2004-03-07 16:13  dimitr
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Added short-circuit optimization of user-supplied plans. Call
+	find_best() exactly number-of-stream times.
+
+2004-03-07 15:37  dimitr
+
+	* firebird2/src/jrd/cmp.cpp:
+	
+	1) Propagate fragments of the user-supplied plan to nested levels
+	of joins, thus allowing to manually optimize complex outer joins. 
+	2) Check the user-supplied plan for correctness in outer joins.
+
+2004-03-07 12:52  alexpeshkoff
+
+	* firebird2/src/jrd/rse.cpp:
+	
+	Make it compile with MSVC6
+
+2004-03-07 10:48  dimitr
+
+	* firebird2/src/jrd/: cmp.cpp, exe.h, par.cpp, rse.cpp:
+	
+	1) Some cleanup and encapsulation.  2) Fixed a number of
+	stream-related crashes.
+
+2004-03-07 08:58  robocop
+
+	* firebird2/: builds/win32/msvc6/build_msg.dsp,
+	builds/win32/msvc6/codes.dsp, builds/win32/msvc6/gbak.dsp,
+	builds/win32/msvc6/gpre.dsp, builds/win32/msvc6/gpre_boot.dsp,
+	builds/win32/msvc6/gpre_static.dsp, builds/win32/msvc6/gsec.dsp,
+	builds/win32/msvc6/gsplit.dsp, builds/win32/msvc6/isql.dsp,
+	src/alice/alice.cpp, src/alice/alice.h, src/alice/alice_meta.epp,
+	src/alice/aliceswi.h, src/alice/all_proto.h,
+	src/burp/backu_proto.h, src/burp/backup.epp, src/burp/burp.cpp,
+	src/burp/burp.h, src/burp/burpswi.h, src/burp/restore.epp,
+	src/burp/spit.cpp, src/burp/spit.h, src/burp/std_desc.h,
+	src/common/fb_exception.cpp, src/common/classes/alloc.cpp,
+	src/common/classes/alloc.h, src/common/classes/array.h,
+	src/common/classes/fb_pair.h, src/common/classes/locks.h,
+	src/common/classes/objects_array.h, src/dsql/ddl.cpp,
+	src/dsql/dsql.cpp, src/dsql/dsql.h, src/dsql/dsql_proto.h,
+	src/dsql/errd.cpp, src/dsql/errd_proto.h, src/dsql/hsh_proto.h,
+	src/dsql/keywords.cpp, src/dsql/make.cpp, src/dsql/metd_proto.h,
+	src/dsql/node.h, src/dsql/pass1.cpp, src/dsql/preparse.cpp,
+	src/dsql/sqlda.h, src/dsql/sym.h, src/dsql/user__proto.h,
+	src/dsql/user_dsql.cpp, src/dsql/utld.cpp, src/dudley/ddl.cpp,
+	src/dudley/exe.epp, src/include/fb_string.h, src/intl/cs_big5.cpp,
+	src/intl/cs_gb2312.cpp, src/intl/cs_jis.cpp, src/intl/cs_ksc.cpp,
+	src/intl/cs_narrow.cpp, src/intl/cs_unicode_fss.cpp,
+	src/intl/cs_unicode_ucs2.cpp, src/intl/cv_big5.cpp,
+	src/intl/cv_big5.h, src/intl/cv_gb2312.cpp, src/intl/cv_gb2312.h,
+	src/intl/cv_jis.cpp, src/intl/cv_jis.h, src/intl/cv_ksc.cpp,
+	src/intl/cv_ksc.h, src/intl/cv_narrow.cpp, src/intl/cv_narrow.h,
+	src/intl/cv_unicode_fss.cpp, src/intl/cv_unicode_fss.h,
+	src/intl/kanji.cpp, src/intl/kanji_proto.h, src/intl/lc_ascii.cpp,
+	src/intl/lc_ascii.h, src/intl/lc_big5.cpp, src/intl/lc_dos.cpp,
+	src/intl/lc_gb2312.cpp, src/intl/lc_iso8859_1.cpp,
+	src/intl/lc_iso8859_2.cpp, src/intl/lc_jis.cpp,
+	src/intl/lc_ksc.cpp, src/intl/lc_narrow.cpp, src/intl/lc_narrow.h,
+	src/intl/lc_unicode_ucs2.cpp, src/intl/ld.cpp, src/intl/ldcommon.h,
+	src/intl/conversions/tx865_lat1.h, src/isql/extract.epp,
+	src/isql/isql.epp, src/isql/isql.h, src/isql/isql_win.cpp,
+	src/isql/isql_win.h, src/isql/isqlw_proto.h, src/isql/show.epp,
+	src/jrd/ExecuteStatement.cpp, src/jrd/all.cpp, src/jrd/all.h,
+	src/jrd/blb.cpp, src/jrd/blk.h, src/jrd/blob_filter.cpp,
+	src/jrd/bookmark.cpp, src/jrd/btr.cpp, src/jrd/cch.cpp,
+	src/jrd/cch.h, src/jrd/cch_proto.h, src/jrd/cmp.cpp,
+	src/jrd/cvt2.cpp, src/jrd/dbg.cpp, src/jrd/dfw.epp,
+	src/jrd/dmp.cpp, src/jrd/dpm.epp, src/jrd/dyn.epp,
+	src/jrd/dyn_def.epp, src/jrd/dyn_del.epp, src/jrd/dyn_mod.epp,
+	src/jrd/dyn_util.epp, src/jrd/err.cpp, src/jrd/evl.cpp,
+	src/jrd/exe.cpp, src/jrd/ext.cpp, src/jrd/fun.epp, src/jrd/gds.cpp,
+	src/jrd/grant.epp, src/jrd/idx.cpp, src/jrd/inf.cpp,
+	src/jrd/ini.epp, src/jrd/intl.cpp, src/jrd/intl.h,
+	src/jrd/intl_builtin.cpp, src/jrd/intl_classes.h,
+	src/jrd/intl_proto.h, src/jrd/intlobj.h, src/jrd/jrd.cpp,
+	src/jrd/jrd.h, src/jrd/lck.cpp, src/jrd/lck.h, src/jrd/log.cpp,
+	src/jrd/met.epp, src/jrd/nav.cpp, src/jrd/nav_proto.h,
+	src/jrd/nbak.cpp, src/jrd/nbak.h, src/jrd/opt.cpp, src/jrd/pag.cpp,
+	src/jrd/pag_proto.h, src/jrd/pcmet.epp, src/jrd/plugin_manager.cpp,
+	src/jrd/plugin_manager.h, src/jrd/req.h, src/jrd/rlck.cpp,
+	src/jrd/rlck_proto.h, src/jrd/rng.cpp, src/jrd/rse.cpp,
+	src/jrd/rse_proto.h, src/jrd/scl.epp, src/jrd/sdw.cpp,
+	src/jrd/shut.cpp, src/jrd/shut_proto.h, src/jrd/svc_proto.h,
+	src/jrd/sym.cpp, src/jrd/tpc.cpp, src/jrd/tra.cpp,
+	src/jrd/tra_proto.h, src/jrd/val.cpp, src/jrd/val_proto.h,
+	src/jrd/vio.cpp, src/jrd/why.cpp, src/jrd/why_proto.h,
+	src/jrd/os/config_root.h, src/jrd/os/pio_proto.h,
+	src/jrd/os/posix/unix.cpp, src/jrd/os/vms/extvms.cpp,
+	src/jrd/os/vms/rdb.cpp, src/jrd/os/vms/rdbint.cpp,
+	src/jrd/os/vms/vms.cpp, src/jrd/os/win32/config_root.cpp,
+	src/jrd/os/win32/guid.cpp, src/jrd/os/win32/thd_priority.cpp,
+	src/jrd/os/win32/winnt.cpp, src/qli/all.cpp, src/qli/blk.h,
+	src/qli/comma_proto.h, src/qli/command.cpp, src/qli/compile.cpp,
+	src/qli/compile.h, src/qli/dtr.cpp, src/qli/dtr.h,
+	src/qli/eval.cpp, src/qli/exe.cpp, src/qli/exe.h,
+	src/qli/expan_proto.h, src/qli/expand.cpp, src/qli/format.h,
+	src/qli/gener.cpp, src/qli/help.epp, src/qli/help_proto.h,
+	src/qli/meta.epp, src/qli/meta_proto.h, src/qli/mov.cpp,
+	src/qli/parse.cpp, src/qli/parse.h, src/qli/parse_proto.h,
+	src/qli/proc.epp, src/qli/report.h, src/qli/show.epp,
+	src/qli/show_proto.h, src/remote/allr.cpp, src/remote/inet.cpp,
+	src/remote/interface.cpp, src/remote/remote.h,
+	src/utilities/gstat/ppg.cpp:
+	
+	Cleanup Some bug fixes Style
+
 2004-03-06 12:56  dimitr
 
 	* firebird2/src/jrd/: evl.cpp, exe.h:
