@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.53 2004-09-25 10:27:32 robocop Exp $
+//	$Id: c_cxx.cpp,v 1.54 2004-10-03 04:43:43 robocop Exp $
 //
 
 #include "firebird.h"
@@ -3687,7 +3687,11 @@ static void make_ok_test( const act* action, const gpre_req* request, int column
 
 static void make_port(const gpre_port* port, int column)
 {
-	printa(column, "struct {");
+	// CVC: C++ compliance with constructors.
+	if (isLangCpp(gpreGlob.sw_language))
+		printa(column, "struct isc_%d_t {", port->por_ident);
+	else
+		printa(column, "struct {");
 
 	for (const ref* reference = port->por_references; reference;
 		 reference = reference->ref_next)
