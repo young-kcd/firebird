@@ -2747,7 +2747,8 @@ static BOOLEAN start_sweeper(TDBB tdbb, DBB dbb)
  *
  **************************************/
 
-	if (dbb->dbb_flags & DBB_sweep_in_progress)
+	if ((dbb->dbb_flags & DBB_sweep_in_progress)
+		|| (dbb->dbb_ast_flags & DBB_shutdown))
 	{
 		return FALSE;
 	}
