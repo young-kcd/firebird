@@ -25,7 +25,7 @@
 #include "../qli/dtr.h"
 #include "../qli/parse.h"
 #ifdef JPN_SJIS
-#include "../jrd/kanji.h"
+#include "../intl/kanji.h"
 #endif
 #include "../qli/all_proto.h"
 #include "../qli/err_proto.h"

@@ -15,9 +15,10 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.linux:	$(VERSION)	$(PLATFORM)
-#$Id: prefix.linux,v 1.3 2002-01-04 11:34:16 skywalker Exp $
+#$Id: prefix.linux,v 1.4 2002-06-23 19:51:30 paul_reeves Exp $
 #Revision 1.6  2000/12/01 11:20:31  fsg
 #Added SHRLIB_EXT to  prefix.linux
+#Added Platform Manager rules	PR 2002-06-22
 
 
 # use the following to define conditional DEV/PROD compile
@@ -127,11 +128,13 @@ LX_SUPER_GDSSHR=		source/interbase/lib/gds.so.1
 SUPER_CLIENT_GDSSHR=    $(LX_SUPER_GDSSHR)
 SUPER_BACKEND=		source/jrd/gds_ss.a
 SUPER_LINK=		-Lsource/jrd -lgds_ss -lc -ldl -lcrypt -lpthread
-SUPER_SERVER=	
+SUPER_SERVER=
 
-UTILITIES=		
+UTILITIES=
 
-
+#------------------------------------
+# Platform Manager stuff
+PLATFORM_PATH=		jrd/os/posix
 
 
 #   End of file prefix.linux:	$(VERSION)	$(PLATFORM)

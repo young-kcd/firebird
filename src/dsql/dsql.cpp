@@ -25,7 +25,7 @@
  * December 2001 Mike Nordell: Major overhaul to (try to) make it C++
  */
 /*
-$Id: dsql.cpp,v 1.11 2002-06-14 12:07:18 dimitr Exp $
+$Id: dsql.cpp,v 1.12 2002-06-23 19:51:29 paul_reeves Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -85,6 +85,11 @@ nested FOR loops are added.
 #include "../jrd/thd_proto.h"
 #include "../jrd/why_proto.h"
 #include "../jrd/gds.h"
+#include <locale_facets.h>
+
+#ifdef HAVE_CTYPE_H
+#include <ctype.h>
+#endif
 
 ASSERT_FILENAME
 #ifdef VMS

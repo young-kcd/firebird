@@ -26,7 +26,7 @@
 #   Contributor(s):
 #
 #
-#   $Id: Makefile.in.jrd,v 1.11 2002-02-16 02:21:27 seanleyne Exp $
+#   $Id: Makefile.in.jrd,v 1.12 2002-06-23 19:51:30 paul_reeves Exp $
 #
 # 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
 #
@@ -85,7 +85,7 @@ $(LIBGDS_A) : $(GDSLIB_Objects)
 # This is the first dynamic link library that we build in phase2 it still
 # does not contain security objects.  Also used to produce the object files
 # that the *_static programs link against.
-jrdlib_dependencies: $(JRD_Objects)
+jrdlib_dependencies: $(JRD_Objects) $(OS_SPECIFIC_Objects)
 
 
 
@@ -412,6 +412,7 @@ gds.dylib: $(DO_FORCE) \
 		$(LOCK_P_MISC) $(REMOTE_P_MISC) $(SECURITY_P_MISC) $(BRIDGE_P_MISC) \
 		$(INTL_P_MISC) $(WAL_P_MISC) \
 		$(FUNCTIONS)  $(PYXIS_P_OBJECTS) $(PYXIS_P_MISC)
+
 	-$(RM) gds.dylib
 	libtool -dynamic -o gds.dylib -current_version $(FW_VERS) \
 		-compatibility_version $(FW_COMPAT_VERS) \
@@ -795,7 +796,7 @@ head5.bin:	head.cpp
 	$(CXX) -c $(PIC_FLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) -DGDS_PIPE=\"bin/gds_pipe5\" $< -o $@
 
 
-AllObjects = $(BOOT_Objects) $(JRD_Objects)
+AllObjects = $(BOOT_Objects) $(JRD_Objects) $(OS_SPECIFIC_Objects)
 
 Dependencies = $(AllObjects:.o=.d)
 

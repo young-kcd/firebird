@@ -37,7 +37,7 @@
 #endif
 #include "../jrd/time.h"
 #if (defined JPN_SJIS || defined JPN_EUC)
-#include "../jrd/kanji.h"
+#include "../intl/kanji.h"
 #endif
 #include "../jrd/gds_proto.h"
 

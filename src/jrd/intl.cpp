@@ -5,6 +5,11 @@
 *       from dev              db        on 4-JAN-1995
 *****************************************************************
 *
+*       PR	2002-06-02 Added ugly c hack in
+*       intl_back_compat_alloc_func_lookup.
+*       When someone has time we need to change the references to
+*       return (void*) function to something more C++ like
+*
 *       42 4711 3 11 17  tamlin   2001
 *       Added silly numbers before my name, and converted it to C++.
 *
@@ -2084,7 +2089,7 @@ public:
 						(tt->texttype_fn_matches)))
 							(tdbb,tt,a,b,c,d);
 	}
-	
+
 	unsigned short sleuth_check(TDBB tdbb, unsigned short a,
 										unsigned char *b,
 										unsigned short c,
@@ -2115,7 +2120,7 @@ public:
 						(tt->texttype_fn_sleuth_merge)))
 							(tdbb,tt,a,b,c,d,e,f);
 	}
-	
+
 private:
 	struct texttype *tt;
 };
@@ -2135,8 +2140,8 @@ static void* intl_back_compat_obj_init_lookup(
  *      Find the allocator function for the requested international
  *		character set using the obsolete c/IB/FB 6.0 interface.
  *      Search algorithm is:
- *              Look in intllib 
- *              Look in intllib2 
+ *              Look in intllib
+ *              Look in intllib2
  *              Look for a normal UDF entry
  *              Abort with an error.
  *
@@ -2148,13 +2153,13 @@ static void* intl_back_compat_obj_init_lookup(
  *
  ***************************************/
 	USHORT (*function)();
-	
+
 	if (!bcLoaded)
 	{
 		intlBCPlugins.addSearchPath(INTL_PLUGIN_DIR);
 		bcLoaded = true;
 	}
-	
+
 	PluginManager::Plugin intlMod1 = intlBCPlugins.findPlugin(INTL_MODULE1);
 	PluginManager::Plugin intlMod2 = intlBCPlugins.findPlugin(INTL_MODULE2);
 
@@ -2181,7 +2186,7 @@ static void* intl_back_compat_obj_init_lookup(
 		}
 		else
 		{
-			return function;
+			return (void*) function;
 		}
 	}
 #endif
@@ -2204,7 +2209,7 @@ static void* intl_back_compat_obj_init_lookup(
 		}
 		else
 		{
-			return function;
+			return (void*) function;
 		}
 	}
 #endif
@@ -2255,7 +2260,7 @@ static void* intl_back_compat_obj_init_lookup(
 				dtype_text))
 		{
 			function = (FPTR_SHORT) function_block->fun_entrypoint;
-			return function;
+			return (void*) function;
 		}
 	}
 	return NULL;

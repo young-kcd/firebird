@@ -1,38 +1,38 @@
 //____________________________________________________________
-//  
+//
 //		PROGRAM:	C preprocessor
 //		MODULE:		hsh.cpp
 //		DESCRIPTION:	Hash table and symbol manager
-//  
+//
 //  The contents of this file are subject to the Interbase Public
 //  License Version 1.0 (the "License"); you may not use this file
 //  except in compliance with the License. You may obtain a copy
 //  of the License at http://www.Inprise.com/IPL.html
-//  
+//
 //  Software distributed under the License is distributed on an
 //  "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
 //  or implied. See the License for the specific language governing
 //  rights and limitations under the License.
-//  
+//
 //  The Original Code was created by Inprise Corporation
 //  and its predecessors. Portions created by Inprise Corporation are
 //  Copyright (C) Inprise Corporation.
-//  
+//
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
 //  TMN (Mike Nordell) 11.APR.2001 - Reduce compiler warnings
-//  
+//
 //
 //____________________________________________________________
 //
-//	$Id: hsh.cpp,v 1.4 2001-12-24 02:50:49 tamlin Exp $
+//	$Id: hsh.cpp,v 1.5 2002-06-23 19:51:30 paul_reeves Exp $
 //
 
 #include "firebird.h"
 #include "../gpre/gpre.h"
 #include "../gpre/parse.h"
 #ifdef JPN_SJIS
-#include "../jrd/kanji.h"
+#include "../intl/kanji.h"
 #endif
 #include "../gpre/hsh_proto.h"
 #include "../gpre/gpre_proto.h"

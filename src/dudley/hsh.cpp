@@ -26,7 +26,7 @@
 #include "../dudley/parse.h"
 
 #if (defined JPN_SJIS || defined JPN_EUC)
-#include "../jrd/kanji.h"
+#include "../intl/kanji.h"
 #endif
 #include "../dudley/ddl_proto.h"
 #include "../dudley/hsh_proto.h"

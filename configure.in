@@ -37,7 +37,7 @@ AC_CHECK_HEADERS(ctype.h)
 AC_CHECK_HEADERS(string.h)
 AC_CHECK_HEADERS(signal.h)
 AC_CHECK_HEADERS(readline/readline.h)
-
+AC_CHECK_HEADERS(pwd.h)
 
 AC_MSG_CHECKING(Checking for socklen_t type)
 AC_TRY_COMPILE([#include <stdlib.h>
@@ -106,7 +106,7 @@ AC_SUBST(FIREBIRD_PACKAGE_VERSION)
 
 
 
-PROD_BUILD_FLG= 
+PROD_BUILD_FLG=
 #PROD_BUILD_FLG=Y
 AC_SUBST(PROD_BUILD_FLG)
 
@@ -150,6 +150,11 @@ AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/help])
 
 AC_OUTPUT_COMMANDS([chmod a+x gen/install/install.sh])
 AC_OUTPUT_COMMANDS([chmod a+x gen/install/scripts/*.sh])
+
+AC_OUTPUT_COMMANDS([mkdir -p gen/jrd/os])
+AC_OUTPUT_COMMANDS([mkdir -p gen/jrd/os/darwin])
+AC_OUTPUT_COMMANDS([mkdir -p gen/jrd/os/posix])
+AC_OUTPUT_COMMANDS([mkdir -p gen/jrd/os/win32])
 
 
 AC_OUTPUT( \

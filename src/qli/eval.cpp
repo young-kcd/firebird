@@ -29,7 +29,7 @@
 #include "../qli/dtr.h"
 #include "../qli/exe.h"
 #if (defined JPN_EUC || defined JPN_SJIS)
-#include "../jrd/kanji.h"
+#include "../intl/kanji.h"
 #endif /* (defined JPN_EUC || defined JPN_SJIS) */
 #include "../qli/err_proto.h"
 #include "../qli/eval_proto.h"

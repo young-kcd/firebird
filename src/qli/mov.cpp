@@ -32,7 +32,7 @@
 #include "../jrd/time.h"
 #include "../jrd/intl.h"
 #if (defined JPN_SJIS || defined JPN_EUC)
-#include "../jrd/kanji.h"
+#include "../intl/kanji.h"
 #endif
 #ifndef PYXIS
 #include "../qli/err_proto.h"

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		kanji.c
- *	DESCRIPTION:	
+ *	DESCRIPTION:
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,8 +24,8 @@
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
-#include "../jrd/kanji.h"
-#include "../jrd/kanji_proto.h"
+#include "kanji.h"
+#include "kanji_proto.h"
 
 
 #define S2E(s1, s2, j1, j2) \

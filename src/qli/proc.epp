@@ -28,7 +28,7 @@
 #include "../qli/parse.h"
 #include "../qli/compile.h"
 #if (defined JPN_EUC || defined JPN_SJIS)
-#include "../jrd/kanji.h"
+#include "../intl/kanji.h"
 #endif
 #include "../qli/err_proto.h"
 #include "../qli/lex_proto.h"

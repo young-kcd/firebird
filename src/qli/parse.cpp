@@ -32,7 +32,7 @@
 #include "../qli/compile.h"
 #include "../qli/report.h"
 #if (defined JPN_SJIS || defined JPN_EUC)
-#include "../jrd/kanji.h"
+#include "../intl/kanji.h"
 #endif
 #include "../qli/all_proto.h"
 #include "../qli/err_proto.h"

@@ -30,7 +30,7 @@
 #include "../qli/report.h"
 #include "../qli/form.h"
 #ifdef JPN_SJIS
-#include "../jrd/kanji.h"
+#include "../intl/kanji.h"
 #endif
 #include "../qli/all_proto.h"
 #include "../qli/comma_proto.h"
