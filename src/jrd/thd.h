@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: thd.h,v 1.7 2002-09-25 06:22:42 kkuznetsov Exp $
+$Id: thd.h,v 1.8 2002-10-12 04:16:31 stryqx Exp $
 */
 
 #ifndef _JRD_THD_H_
@@ -55,6 +55,11 @@ $Id: thd.h,v 1.7 2002-09-25 06:22:42 kkuznetsov Exp $
 #endif
 
 #if (defined(LINUX) && defined(SUPERSERVER))
+#define POSIX_THREADS           1
+#define MULTI_THREAD            1
+#endif
+
+#if (defined(FREEBSD) && defined(SUPERSERVER))
 #define POSIX_THREADS           1
 #define MULTI_THREAD            1
 #endif

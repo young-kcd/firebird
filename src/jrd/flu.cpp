@@ -27,7 +27,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.10 2002-08-14 12:27:40 eku Exp $
+$Id: flu.cpp,v 1.11 2002-10-12 04:16:31 stryqx Exp $
 */
 
 #include "firebird.h"
@@ -84,7 +84,7 @@ static int condition_handler(int *, int *, int *);
 
 /* SGI, UNIXWARE, DECOSF specific stuff */
 
-#if (defined SOLARIS || defined sgi || defined UNIXWARE || defined DECOSF || defined SCO_EV || defined linux || defined AIX_PPC || defined SINIXZ)
+#if (defined SOLARIS || defined sgi || defined UNIXWARE || defined DECOSF || defined SCO_EV || defined linux || defined AIX_PPC || defined SINIXZ || defined FREEBSD)
 #include <dlfcn.h>
 #define DYNAMIC_SHARED_LIBRARIES
 #include <unistd.h>
@@ -98,7 +98,7 @@ static int condition_handler(int *, int *, int *);
 #define IB_UDF_DIR              "UDF/"
 #endif
 
-#if defined FREEBSD || defined NETBSD
+#if defined NETBSD
 #include <dlfcn.h>
 #define DYNAMIC_SHARED_LIBRARIES
 #include <unistd.h>

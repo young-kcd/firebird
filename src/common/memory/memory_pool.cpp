@@ -1595,12 +1595,12 @@ void* FBMemoryPool::mmap_alloc(size_t size)
 #ifdef UNIX
 #ifdef MAP_ANONYMOUS
 	memory = (UCHAR*)mmap(NULL, size, (PROT_READ | PROT_WRITE),
-#if (defined(MAP_ANONYMOUS) && !defined(DARWIN))
+#if (defined(MAP_ANONYMOUS) && !defined(DARWIN) && !defined(FREEBSD))
                                 (MAP_ANONYMOUS |
 #else
                                 (MAP_ANON |
 #endif
-#if (!defined(LINUX) && !defined(DARWIN))
+#if (!defined(LINUX) && !defined(DARWIN) && !defined(FREEBSD))
 /* In LINUX and Darwin there is no such thing as MAP_VARIABLE. Hence, it gives
    compilation error. The equivalent functionality is default,
    if you do not specify MAP_FIXED */

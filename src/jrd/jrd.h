@@ -940,7 +940,7 @@ typedef struct ihndl
 #ifdef MULTI_THREAD
 #if (defined DECOSF || defined NETWARE_386 || \
 	defined SOLARIS_MT || defined WIN_NT || \
-	defined HPUX || defined LINUX || defined DARWIN )
+	defined HPUX || defined LINUX || defined DARWIN || defined FREEBSD )
 #define PLATFORM_GET_THREAD_DATA ((TDBB) THD_get_specific())
 #endif
 #endif

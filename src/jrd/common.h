@@ -35,7 +35,7 @@
  * 2002.04.16  Paul Beach - HP10 and unistd.h
  */
 /*
-$Id: common.h,v 1.34 2002-09-27 13:12:46 kkuznetsov Exp $
+$Id: common.h,v 1.35 2002-10-12 04:16:31 stryqx Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -227,6 +227,10 @@ typedef RETSIGTYPE (*SIG_FPTR) (int);
 /* FreeBSD for Intel platforms */
 #ifdef FREEBSD
 
+#ifndef UNIX_64_BIT_IO
+#define UNIX_64_BIT_IO
+#endif
+
 #define FB_ALIGN(n,b) ((n + b - 1) & ~(b - 1))
 /*#define ALIGNMENT     4*/
 /*#define DOUBLE_ALIGN  4*/
@@ -246,7 +250,7 @@ typedef RETSIGTYPE (*SIG_FPTR) (int);
 #define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
 #define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
 
-typedef RETSIGTYPE (*SIG_FPTR) ();
+typedef RETSIGTYPE (*SIG_FPTR) (int);
 #endif /* FREEBSD */
 
 /* NetBSD */

@@ -110,6 +110,12 @@ typedef struct itm {
 #define MTAB_CLOSE(stream)	ib_fclose (stream)
 #endif
 
+#ifdef FREEBSD
+#define MTAB			"/etc/fstab"
+#define MTAB_OPEN(path,type)	ib_fopen (path, type)
+#define MTAB_CLOSE(stream)	ib_fclose (stream)
+#endif
+
 #ifdef DARWIN
 #define MTAB			"/etc/fstab.hd"
 #define MTAB_OPEN(path,type)	ib_fopen (path, type)
