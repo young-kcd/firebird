@@ -36,7 +36,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.3 2003-09-11 02:32:40 brodsom Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.4 2003-09-12 10:20:32 aafemt Exp $ */
 
 #include <windows.h>
 #include <process.h>
@@ -57,9 +57,11 @@
 #include <string.h>
 #endif
 
-#ifdef MINGW
-// signals not defined in MINGW
+// signals may be not defined in MINGW
+#ifndef SIG_SGE
 #define SIG_SGE (void (__cdecl *)(int))3           /* signal gets error */
+#endif
+#ifndef SIG_ACK
 #define SIG_ACK (void (__cdecl *)(int))4           /* acknowledge */
 #endif
 
