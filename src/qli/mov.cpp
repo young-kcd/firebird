@@ -335,7 +335,7 @@ int MOVQ_compare( DSC * arg1, DSC * arg2)
 }
 
 
-double PASCAL_ROUTINE MOVQ_date_to_double( DSC * desc)
+double MOVQ_date_to_double( DSC * desc)
 {
 /**************************************
  *
@@ -489,7 +489,7 @@ void MOVQ_fast(
 }
 
 
-double PASCAL_ROUTINE MOVQ_get_double( DSC * desc)
+double MOVQ_get_double( DSC * desc)
 {
 /**************************************
  *

@@ -219,7 +219,7 @@ typedef void (*pfn_cvt_private_cludge) (int, int);
 typedef void (*pfn_cvt_private_cludge2) (int, int, ...);
 
 
-double PASCAL_ROUTINE CVT_date_to_double(DSC * desc, FPTR_VOID err)
+double CVT_date_to_double(DSC * desc, FPTR_VOID err)
 {
 /**************************************
  *
@@ -303,7 +303,7 @@ void CVT_double_to_date(double real, SLONG fixed[2], FPTR_VOID err)
 }
 
 
-double PASCAL_ROUTINE CVT_get_double(DSC * desc, FPTR_VOID err)
+double CVT_get_double(DSC * desc, FPTR_VOID err)
 {
 /**************************************
  *
@@ -1180,7 +1180,7 @@ USHORT CVT_get_string_ptr(DSC * desc,
 }
 
 
-GDS_DATE PASCAL_ROUTINE CVT_get_sql_date(DSC * desc, FPTR_VOID err)
+GDS_DATE CVT_get_sql_date(DSC * desc, FPTR_VOID err)
 {
 /**************************************
  *
@@ -1206,7 +1206,7 @@ GDS_DATE PASCAL_ROUTINE CVT_get_sql_date(DSC * desc, FPTR_VOID err)
 }
 
 
-GDS_TIME PASCAL_ROUTINE CVT_get_sql_time(DSC * desc, FPTR_VOID err)
+GDS_TIME CVT_get_sql_time(DSC * desc, FPTR_VOID err)
 {
 /**************************************
  *
@@ -1232,7 +1232,7 @@ GDS_TIME PASCAL_ROUTINE CVT_get_sql_time(DSC * desc, FPTR_VOID err)
 }
 
 
-GDS_TIMESTAMP PASCAL_ROUTINE CVT_get_timestamp(DSC * desc, FPTR_VOID err)
+GDS_TIMESTAMP CVT_get_timestamp(DSC * desc, FPTR_VOID err)
 {
 /**************************************
  *
@@ -2738,7 +2738,7 @@ static void string_to_datetime(
 }
 
 
-double PASCAL_ROUTINE power_of_ten(int scale)
+double power_of_ten(int scale)
 {
 /*************************************
  *

@@ -25,12 +25,12 @@
 #define _QLI_MOV_PROTO_H_
 
 extern int			MOVQ_compare (struct dsc *, struct dsc *);
-extern double PASCAL_ROUTINE	MOVQ_date_to_double (struct dsc *);
+extern double		MOVQ_date_to_double (struct dsc *);
 extern int			MOVQ_decompose (TEXT *, USHORT, SLONG *);
 extern void			MOVQ_double_to_date (double, SLONG [2]);
 extern void			MOVQ_fast (SCHAR *, SCHAR *, ULONG);
-extern double PASCAL_ROUTINE	MOVQ_get_double (struct dsc *);
-extern SLONG			MOVQ_get_long (struct dsc *, SSHORT);
+extern double		MOVQ_get_double (struct dsc *);
+extern SLONG		MOVQ_get_long (struct dsc *, SSHORT);
 extern int			MOVQ_get_string (struct dsc *, TEXT **, struct vary *, USHORT);
 extern void			MOVQ_move (struct dsc *, struct dsc *);
 extern void			MOVQ_terminate (SCHAR *, SCHAR *, SSHORT, SSHORT);

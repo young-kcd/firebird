@@ -24,9 +24,9 @@
 #ifndef _JRD_CVT_PROTO_H_
 #define _JRD_CVT_PROTO_H_
 
-extern double PASCAL_ROUTINE CVT_date_to_double(struct dsc *, FPTR_VOID);
+extern double CVT_date_to_double(struct dsc *, FPTR_VOID);
 extern void CVT_double_to_date(double, SLONG[2], FPTR_VOID);
-extern double PASCAL_ROUTINE CVT_get_double(struct dsc *, FPTR_VOID);
+extern double CVT_get_double(struct dsc *, FPTR_VOID);
 extern SLONG CVT_get_long(struct dsc *, SSHORT, FPTR_VOID);
 extern SINT64 CVT_get_int64(struct dsc *, SSHORT, FPTR_VOID);
 extern UCHAR CVT_get_numeric(UCHAR *, USHORT, SSHORT *, double *, FPTR_VOID);
