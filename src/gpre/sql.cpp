@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.20 2003-09-11 02:13:45 brodsom Exp $
+//	$Id: sql.cpp,v 1.21 2003-09-11 10:36:45 aafemt Exp $
 //
 
 #include "firebird.h"
@@ -512,7 +512,7 @@ void SQL_par_field_collate( GPRE_REQ request, GPRE_FLD field)
 
 void SQL_par_field_dtype(GPRE_REQ request,
 						 GPRE_FLD field,
-						 bool udf)
+						 bool is_udf)
 {
 	int l, p, q;
 	enum kwwords keyword;
@@ -567,13 +567,13 @@ void SQL_par_field_dtype(GPRE_REQ request,
 		break;
 
 	case KW_COMPUTED:
-		if (udf)
+		if (is_udf)
 			SYNTAX_ERROR("<data type>");
 		/* just return - actual parse is done later */
 		return;
 
 	default:
-		if (udf) {
+		if (is_udf) {
 			if (keyword == KW_CSTRING)
 				ADVANCE_TOKEN;
 			else
@@ -749,7 +749,7 @@ void SQL_par_field_dtype(GPRE_REQ request,
 
 //   Check for array declaration 
 
-	if ((keyword != KW_BLOB) && !udf && (MATCH(KW_L_BRCKET))) {
+	if ((keyword != KW_BLOB) && !is_udf && (MATCH(KW_L_BRCKET))) {
 		field->fld_array_info = (ary*) ALLOC(sizeof(ary));
 		par_array(field);
 	}
@@ -4421,15 +4421,15 @@ static ACT act_update(void)
 
 		/* Given the target relation, find the input context for the modify */
 
-		RSE rse = request->req_rse;
+		RSE select = request->req_rse;
 		SSHORT i;
-		for (i = 0; i < rse->rse_count; i++) {
-			input_context = rse->rse_context[i];
+		for (i = 0; i < select->rse_count; i++) {
+			input_context = select->rse_context[i];
 			if (input_context->ctx_relation == relation)
 				break;
 		}
 
-		if (i == rse->rse_count)
+		if (i == select->rse_count)
 			PAR_error("table not in request");
 
 		/* Resolve input fields first */
@@ -4519,10 +4519,10 @@ static ACT act_update(void)
 
 //  Generate record select expression, then resolve input values 
 
-	RSE rse = (RSE) ALLOC(RSE_LEN(1));
-	request->req_rse = rse;
-	rse->rse_count = 1;
-	rse->rse_context[0] = input_context;
+	RSE select = (RSE) ALLOC(RSE_LEN(1));
+	request->req_rse = select;
+	select->rse_count = 1;
+	select->rse_context[0] = input_context;
 
 	if (!alias && !token.tok_symbol)
 		/* may have a relation name put parser didn't know it when it parsed it */
@@ -4530,13 +4530,13 @@ static ACT act_update(void)
 
 	for (ptr = set_list->nod_arg; ptr < end_list; ptr++) {
 		GPRE_NOD set_item = *ptr;
-		SQE_resolve(set_item->nod_arg[0], request, rse);
+		SQE_resolve(set_item->nod_arg[0], request, select);
 	}
 
 //  Process boolean, if any 
 
 	if (where)
-		rse->rse_boolean = SQE_boolean(request, 0);
+		select->rse_boolean = SQE_boolean(request, 0);
 
 //  Resolve update fields to update context 
 

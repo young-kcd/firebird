@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.16 2003-09-11 02:13:45 brodsom Exp $
+//	$Id: pas.cpp,v 1.17 2003-09-11 10:36:45 aafemt Exp $
 //
 
 #include "firebird.h"
@@ -2414,15 +2414,13 @@ static void gen_procedure( ACT action, int column)
 	TEXT *pattern;
 	GPRE_REQ request;
 	POR in_port, out_port;
-	DBB db;
 
 	column += INDENT;
 	request = action->act_request;
 	in_port = request->req_vport;
 	out_port = request->req_primary;
 
-	db = request->req_database;
-	args.pat_database = db;
+	args.pat_database = request->req_database;
 	args.pat_request = action->act_request;
 	args.pat_vector1 = status_vector(action);
 	args.pat_request = request;

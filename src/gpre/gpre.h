@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.40 2003-09-11 02:13:45 brodsom Exp $
+ * $Id: gpre.h,v 1.41 2003-09-11 10:36:45 aafemt Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -517,6 +517,14 @@ typedef struct cmpf {
 
 /***************** end of tree top **********************/
 
+// Forward declarations
+
+struct gpre_ctx;
+struct gpre_fld;
+struct gpre_rel;
+struct gpre_req;
+struct ref;
+
 typedef enum act_t {
 	ACT_any,
 	ACT_alter_database,
@@ -638,8 +646,8 @@ typedef struct act {
 	act* act_rest;				/* remaining actions in module */
 	act* act_error;				/* on-error action (maybe) */
 	act* act_pair;				/* begin/end action (maybe) */
-	struct gpre_req *act_request;	/* parent request */
-	struct ref *act_object;		/* dependent on action type */
+	gpre_req* act_request;		/* parent request */
+	ref* act_object;			/* dependent on action type */
 	swe* act_whenever;			/* SQL whenever blocks */
 	USHORT act_flags;			/* flags that affect the action */
 	USHORT act_count;			/* used to hold begin/end count for routines */
@@ -656,15 +664,56 @@ typedef struct act {
 #define ACT_LEN sizeof(act)
 
 
+/* Symbol block, also used for hash table */
+
+enum sym_t {
+	SYM_keyword,
+	SYM_context,
+	SYM_database,
+	SYM_relation,
+	SYM_field,
+	SYM_variable,
+	SYM_stream,
+	SYM_cursor,
+	SYM_delimited_cursor,
+	SYM_index,
+	SYM_blob,
+	SYM_statement,
+	SYM_dyn_cursor,
+	SYM_type,
+	SYM_udf,
+	SYM_username,
+	SYM_procedure,
+	SYM_charset,
+	SYM_collate,
+	SYM_generator,
+	SYM_dummy,
+
+	SYM_LASTSYM					/* Leave this debugging SYM last */
+};
+
+typedef struct sym {
+	char *sym_string;			/* address of asciz string */
+	enum sym_t sym_type;		/* symbol type */
+	USHORT sym_keyword;			/* keyword number, if keyword */
+	gpre_ctx* sym_object;		/* general pointer to object */
+	sym* sym_collision;			/* collision pointer */
+	sym* sym_homonym;			/* homonym pointer */
+	SCHAR sym_name[1];			/* space for name, if necessary */
+} *SYM;
+
+#define SYM_LEN sizeof(sym)
+
+
 /* Blob block.  Used for blob calls */
 
 class blb
 {
 public:
-	struct gpre_req *blb_request;	/* parent request */
+	gpre_req* blb_request;		/* parent request */
 	blb* blb_next;				/* next blob in request */
-	struct ref *blb_reference;	/* field reference for blob field */
-	struct sym *blb_symbol;		/* Blob context variable */
+	ref* blb_reference;			/* field reference for blob field */
+	sym* blb_symbol;			/* Blob context variable */
 	USHORT blb_ident;			/* Blob handle */
 	USHORT blb_buff_ident;		/* Ident of segment buffer */
 	USHORT blb_len_ident;		/* Ident of segment length */
@@ -699,37 +748,32 @@ typedef blb* BLB;
 #define BLB_symbol_released	2
 
 
-/* Context block, used to define context symbols, etc. */
+/* Reserved relation lock block */
 
-typedef struct gpre_ctx {
-	USHORT ctx_internal;		/* internal context number */
-	USHORT ctx_scope_level;		/* scope level for SQL alias subquery scoping */
-	struct gpre_req *ctx_request;	/* parent request */
-	gpre_ctx* ctx_next;			/* next context in request */
-	struct sym *ctx_symbol;		/* symbol for context */
-	struct gpre_rel *ctx_relation;	/* relation for context */
-	TEXT *ctx_alias;			/* holds SQL alias for passing to engine */
-	struct gpre_prc *ctx_procedure;	/* procedure for context */
-	gpre_nod* ctx_prc_inputs;	/* procedure input parameters */
-	struct rse *ctx_stream;		/* stream for context */
-} *GPRE_CTX;
+typedef struct rrl {
+	rrl* rrl_next;				/* next locked relation */
+	UCHAR rrl_lock_level;		/* lock level (SHARE, PROT, EXC */
+	UCHAR rrl_lock_mode;		/* lock mode (READ/WRITE) */
+	gpre_rel* rrl_relation;		/* relation block */
+} *RRL;
 
-#define CTX_LEN sizeof(gpre_ctx)
+#define RRL_LEN sizeof(rrl)
 
+struct tpb; // forward declaration
 
 /* Database block, more or less the granddaddy */
 
 typedef struct dbb {
 	dbb* dbb_next;				/* next database in program */
-	struct gpre_rel *dbb_relations;	/* relations in database */
-	struct gpre_rel *dbb_procedures;	/* procedures in database */
+	gpre_rel* dbb_relations;	/* relations in database */
+	gpre_rel* dbb_procedures;	/* procedures in database */
 	USHORT dbb_id;				/* database id in program */
 	USHORT dbb_flags;			/* Misc flag bytes */
-	struct sym *dbb_name;		/* database name */
+	sym* dbb_name;				/* database name */
 	FRBRD *dbb_handle;			/* OUR db handle */
 	FRBRD *dbb_transaction;		/* default transaction */
-	struct rrl *dbb_rrls;		/* temporary list of relation locks */
-	struct tpb *dbb_tpbs;		/* real tpbs for this db */
+	rrl* dbb_rrls;				/* temporary list of relation locks */
+	tpb* dbb_tpbs;				/* real tpbs for this db */
 	TEXT *dbb_filename;
 	TEXT *dbb_runtime;
 	TEXT *dbb_c_user;			/* compiletime user name */
@@ -798,6 +842,168 @@ typedef struct dbb {
 #define DBB_EXTERN 	1
 #define DBB_STATIC 	2
 
+/* TPB block */
+
+typedef struct tpb {
+	tpb* tpb_tra_next;			/* next TPB for this transaction */
+	tpb* tpb_dbb_next;			/* next TPB for this database */
+	dbb* tpb_database;			/* DBB of this part of the transaction */
+	USHORT tpb_length;			/* length of actual TPB */
+	USHORT tpb_ident;			/* unique part of name for this TPB */
+	UCHAR tpb_string[1];		/* actual TPB */
+} *TPB;
+
+#define TPB_LEN(tpb_string) (sizeof(tpb) + tpb_string)
+
+
+/* Procedure structure */
+
+typedef struct gpre_prc {
+	sym* prc_symbol;			/* symbol for relation */
+	SSHORT prc_id;				/* procedure id */
+	sym* prc_owner;				/* owner of procedure, if any */
+	dbb* prc_database;			/* parent database */
+	gpre_prc* prc_next;			/* next procedure in database */
+	gpre_fld* prc_inputs;		/* linked list of input parameters */
+	gpre_fld* prc_outputs;		/* linked list of output parameters */
+	SSHORT prc_in_count;		/* count of input parameters */
+	SSHORT prc_out_count;		/* count of output parameters */
+	SSHORT prc_flags;			/* procedure flags */
+} *GPRE_PRC;
+
+#define PRC_LEN sizeof(gpre_prc)
+#define PRC_scanned	1
+
+
+/* Maps used by union and global aggregates */
+
+typedef struct mel {
+	mel* mel_next;				/* Next element in map */
+	gpre_nod* mel_expr;			/* Expression */
+	ref* mel_reference;
+	gpre_ctx* mel_context;
+	USHORT mel_position;		/* Position in map */
+} *MEL;
+
+typedef struct map {
+	gpre_ctx* map_context;		/* Pseudo context for map */
+	mel* map_elements;			/* Map elements */
+	USHORT map_count;			/* Number of things in map */
+} *MAP;
+
+
+/* Record selection expresion syntax node */
+
+typedef struct rse {
+	USHORT rse_type;			/* node type */
+	gpre_nod* rse_boolean;		/* boolean expression, if present */
+	gpre_nod* rse_first;		/* "first n" clause, if present */
+	gpre_nod* rse_reduced;		/* projection clause, if present */
+	gpre_nod* rse_sort;			/* sort clause, if present */
+	gpre_nod* rse_fields;		/* list of fields */
+	gpre_nod* rse_into;			/* list of output variables */
+	gpre_nod* rse_union;		/* if union, list of sub-rses */
+	gpre_nod* rse_group_by;		/* list of grouping fields */
+	gpre_nod* rse_plan;			/* user-specified access plan */
+	map* rse_map;				/* map for aggregates */
+	rse* rse_aggregate;			/* Aggregate rse */
+	enum nod_t rse_join_type;	/* Join type */
+	USHORT rse_flags;			/* flags */
+	USHORT rse_count;			/* number of relations */
+	gpre_ctx* rse_context[1];	/* context block */
+} *RSE;
+
+
+#ifdef __cplusplus
+
+inline size_t RSE_LEN(size_t nItems)
+{
+	return offsetof(rse, rse_context) + nItems * sizeof(int*);
+}
+
+#else /* __cplusplus */
+
+#define RSE_LEN(nItems) (offsetof(rse, rse_context) + (nItems) * sizeof(int*))
+
+#endif /* __cplusplus */
+
+//#define RSE_LEN(cnt) (sizeof(rse) + (cnt - 1) * sizeof (int *))
+
+#define RSE_singleton 1
+
+
+/* Relation block, not to be confused with siblings or in-laws */
+
+typedef struct gpre_rel {
+	USHORT rel_id;				/* relation id */
+	gpre_fld* rel_fields;		/* linked list of known fields */
+	gpre_fld* rel_dbkey;		/* linked list of known fields */
+	sym* rel_symbol;			/* symbol for relation */
+	dbb* rel_database;			/* parent database */
+	gpre_rel* rel_next;			/* next relation in database */
+	bool rel_meta;				/* if true, created for a metadata operation */
+	rse* rel_view_rse;
+	txt* rel_view_text;			/* source for VIEW definition */
+	sym* rel_owner;				/* owner of relation, if any */
+	cnstrt* rel_constraints;	/* linked list of constraints defined
+								   during a meta operation */
+	TEXT *rel_ext_file;			/* external file name */
+	USHORT rel_flags;
+} *GPRE_REL;
+
+#define REL_LEN sizeof(gpre_rel)
+
+#define REL_view_check	1		/* View created with check option */
+
+
+/* Index block. Used for DDL INDEX commands */
+
+typedef struct ind {
+	sym* ind_symbol;			/* index name */
+	gpre_rel* ind_relation;		/* relation name */
+	gpre_fld* ind_fields;		/* list of fields */
+	USHORT ind_flags;			/* Miscellaneous flags */
+} *IND;
+
+#define IND_LEN		sizeof(ind)
+#define IND_dup_flag	1		/* if false, duplicates not allowed */
+#define IND_meta	2			/* if true, created for a metadata operation */
+#define IND_descend	4			/* if true, a descending-order index */
+#define IND_active	8			/* activate index */
+#define IND_inactive	16		/* de-activate index */
+
+
+/* Symbolic names for international text types */
+/* (either collation or character set name)    */
+
+typedef struct intlsym {		/* International symbol */
+	dbb* intlsym_database;
+	sym* intlsym_symbol;		/* Hash symbol for intlsym */
+	intlsym* intlsym_next;
+	USHORT intlsym_type;		/* what type of name */
+	USHORT intlsym_flags;
+	SSHORT intlsym_ttype;		/* id of implementation */
+	SSHORT intlsym_charset_id;
+	SSHORT intlsym_collate_id;
+	USHORT intlsym_bytes_per_char;
+	TEXT intlsym_name[2];
+} *INTLSYM;
+
+#define INTLSYM_LEN		sizeof(intlsym)
+
+/* values used in intlsym_type */
+
+#define INTLSYM_collation	1
+#define	INTLSYM_charset		2
+
+/* values used in intlsym_flags */
+
+/* Macro for detecting fields which may have embedded nulls */
+
+#define SUBTYPE_ALLOWS_NULLS(s)	((s) == 1)
+#define FIELD_ALLOWS_NULLS(f)	(SUBTYPE_ALLOWS_NULLS((f)->fld_sub_type))
+
+
 /* Field block.  Fields are what farms and databases are all about */
 
 typedef struct gpre_fld {
@@ -812,21 +1018,20 @@ typedef struct gpre_fld {
 	SSHORT fld_sub_type;		/* Field sub-type */
 	gpre_fld* fld_next;			/* next field in relation */
 	gpre_fld* fld_array;		/* array element if field is array */
-	struct gpre_rel *fld_relation;	/* relation */
-	struct gpre_prc *fld_procedure;	/* procedure */
-	struct sym *fld_symbol;		/* symbol for field */
-	struct sym *fld_global;		/* symbol for global field */
+	gpre_rel* fld_relation;		/* relation */
+	gpre_prc* fld_procedure;	/* procedure */
+	sym* fld_symbol;			/* symbol for field */
+	sym* fld_global;			/* symbol for global field */
 	ary* fld_array_info;		/* Dimension and range information about an
 								   array field */
-	gpre_nod* fld_default_value;	/* field's default value */
+	gpre_nod* fld_default_value;/* field's default value */
 	txt* fld_default_source;	/* source for field default value */
-	struct ind *fld_index;		/* If CREATE TABLE, specifies field with
+	ind* fld_index;				/* If CREATE TABLE, specifies field with
 								   the unique constraint */
 	cnstrt* fld_constraints;	/* linked list of constraints defined
 								   during a meta operation */
-	struct intlsym *fld_character_set;
-	/* character set for SQL declared field */
-	struct intlsym *fld_collate;	/* collation clause for SQL declared field */
+	intlsym* fld_character_set; /* character set for SQL declared field */
+	intlsym* fld_collate;		/* collation clause for SQL declared field */
 	cmpf* fld_computed;			/* computed field definition */
 	USHORT fld_char_length;		/* field length in CHARACTERS */
 	SSHORT fld_charset_id;		/* Field character set id for text */
@@ -855,79 +1060,13 @@ typedef enum {
 		FUN_descriptor, FUN_blob_struct, FUN_scalar_array} FUN_T;
 
 
-/* Index block. Used for DDL INDEX commands */
-
-typedef struct ind {
-	struct sym *ind_symbol;		/* index name */
-	struct gpre_rel *ind_relation;	/* relation name */
-	struct gpre_fld *ind_fields;		/* list of fields */
-	USHORT ind_flags;			/* Miscellaneous flags */
-} *IND;
-
-#define IND_LEN		sizeof(ind)
-#define IND_dup_flag	1		/* if false, duplicates not allowed */
-#define IND_meta	2			/* if true, created for a metadata operation */
-#define IND_descend	4			/* if true, a descending-order index */
-#define IND_active	8			/* activate index */
-#define IND_inactive	16		/* de-activate index */
-
-
-
-/* Symbolic names for international text types */
-/* (either collation or character set name)    */
-
-typedef struct intlsym {		/* International symbol */
-	struct dbb *intlsym_database;
-	struct sym *intlsym_symbol;	/* Hash symbol for intlsym */
-	intlsym* intlsym_next;
-	USHORT intlsym_type;		/* what type of name */
-	USHORT intlsym_flags;
-	SSHORT intlsym_ttype;		/* id of implementation */
-	SSHORT intlsym_charset_id;
-	SSHORT intlsym_collate_id;
-	USHORT intlsym_bytes_per_char;
-	TEXT intlsym_name[2];
-} *INTLSYM;
-
-#define INTLSYM_LEN		sizeof(intlsym)
-
-/* values used in intlsym_type */
-
-#define INTLSYM_collation	1
-#define	INTLSYM_charset		2
-
-/* values used in intlsym_flags */
-
-/* Macro for detecting fields which may have embedded nulls */
-
-#define SUBTYPE_ALLOWS_NULLS(s)	((s) == 1)
-#define FIELD_ALLOWS_NULLS(f)	(SUBTYPE_ALLOWS_NULLS((f)->fld_sub_type))
-
-
-/* Maps used by union and global aggregates */
-
-typedef struct mel {
-	mel* mel_next;		/* Next element in map */
-	gpre_nod* mel_expr;			/* Expression */
-	struct ref *mel_reference;
-	struct gpre_ctx *mel_context;
-	USHORT mel_position;		/* Position in map */
-} *MEL;
-
-typedef struct map {
-	struct gpre_ctx *map_context;	/* Pseudo context for map */
-	mel* map_elements;	/* Map elements */
-	USHORT map_count;			/* Number of things in map */
-} *MAP;
-
-
 /* Port block */
 
 typedef struct por {
 	USHORT por_msg_number;		/* message number within request */
 	USHORT por_ident;			/* ident in source */
 	int por_length;				/* length of port in bytes */
-	struct ref *por_references;	/* linked list of field references */
+	ref* por_references;		/* linked list of field references */
 	por* por_next;				/* next port in request */
 	USHORT por_count;			/* number of items in port */
 } *POR;
@@ -935,90 +1074,22 @@ typedef struct por {
 #define POR_LEN (sizeof(por))
 
 
-/* Procedure structure */
+/* Slice description block */
 
-typedef struct gpre_prc {
-	struct sym *prc_symbol;		/* symbol for relation */
-	SSHORT prc_id;				/* procedure id */
-	struct sym *prc_owner;		/* owner of procedure, if any */
-	struct dbb *prc_database;	/* parent database */
-	gpre_prc* prc_next;			/* next procedure in database */
-	struct gpre_fld *prc_inputs;		/* linked list of input parameters */
-	struct gpre_fld *prc_outputs;	/* linked list of output parameters */
-	SSHORT prc_in_count;		/* count of input parameters */
-	SSHORT prc_out_count;		/* count of output parameters */
-	SSHORT prc_flags;			/* procedure flags */
-} *GPRE_PRC;
+typedef struct slc {
+	gpre_req* slc_parent_request;		/* request for blob id */
+	gpre_fld* slc_field;				/* database array field */
+	gpre_nod* slc_array;				/* user defined array */
+	ref* slc_field_ref;			/* array field reference */
+	USHORT slc_dimensions;		/* dimensions */
+	USHORT slc_parameters;		/* number of parameters */
+	struct slc_repeat {
+		gpre_nod* slc_lower;
+		gpre_nod* slc_upper;
+	} slc_rpt[1];
+} *SLC;
 
-#define PRC_LEN sizeof(gpre_prc)
-#define PRC_scanned	1
-
-
-/* Field reference */
-
-typedef struct ref {
-	USHORT ref_ident;			/* identifier */
-	USHORT ref_level;			/* highest level of access */
-	USHORT ref_parameter;		/* parameter in port */
-	USHORT ref_id;				/* id of reference in union */
-	struct gpre_fld *ref_field;		/* field in question */
-	struct gpre_ctx *ref_context;	/* context for reference */
-	ref* ref_next;				/* next reference in context */
-	struct por *ref_port;		/* associated port */
-	ref* ref_source;			/* source reference for modified field */
-	ref* ref_null;				/* reference for null value */
-	ref* ref_master;			/* master field for null value */
-	ref* ref_friend;			/* value for variable */
-	gpre_nod* ref_expr;			/* expression, if node is expression */
-	TEXT *ref_value;			/* value string if host language value */
-	val* ref_values;			/* linked list of values */
-	TEXT *ref_null_value;		/* value string if host language value */
-	TEXT *ref_sdl;				/* Raw slice description language for an array */
-	TEXT *ref_sdl_base;			/* base of sdl string during generation */
-	int ref_sdl_length;			/* sdl length for this reference */
-	struct slc *ref_slice;		/* Slice, if field referenced is sliced */
-	USHORT ref_sdl_ident;		/* identifier of sdl structure */
-	USHORT ref_offset;			/* offset of field in port */
-	USHORT ref_flags;
-	SSHORT ref_ttype;			/* Character set type for literals */
-} *REF;
-
-#define REF_union	1			/* Pseudo field for union */
-#define REF_pseudo	2			/* Other pseudo field (probably for forms) */
-#define REF_null	4			/* Only here cause of related null reference */
-#define REF_fetch_array	8		/* Need to fetch full array */
-#define REF_literal	16			/* Reference is to a constant */
-#define REF_ttype	32			/* Reference contains character set spec */
-#define REF_array_elem	64		/* Reference to an array element */
-#define REF_sql_date	128		/* Reference is to a date constant */
-#define REF_sql_time	256		/* Reference is to a time constant */
-#define REF_timestamp  	512		/* Reference is to a timestamp constant */
-
-#define REF_LEN sizeof(ref)
-
-
-/* Relation block, not to be confused with siblings or in-laws */
-
-typedef struct gpre_rel {
-	USHORT rel_id;				/* relation id */
-	struct gpre_fld *rel_fields;		/* linked list of known fields */
-	struct gpre_fld *rel_dbkey;		/* linked list of known fields */
-	struct sym *rel_symbol;		/* symbol for relation */
-	struct dbb *rel_database;	/* parent database */
-	gpre_rel* rel_next;			/* next relation in database */
-	bool rel_meta;			/* if true, created for a metadata operation */
-	struct rse *rel_view_rse;
-	txt* rel_view_text;			/* source for VIEW definition */
-	struct sym *rel_owner;		/* owner of relation, if any */
-	cnstrt* rel_constraints;	/* linked list of constraints defined
-								   during a meta operation */
-	TEXT *rel_ext_file;			/* external file name */
-	USHORT rel_flags;
-} *GPRE_REL;
-
-#define REL_LEN sizeof(gpre_rel)
-
-#define REL_view_check	1		/* View created with check option */
+#define SLC_LEN(count)	(sizeof(slc) + sizeof(slc::slc_repeat) * (count - 1))
 
 
 /* Request block, corresponds to a single JRD request */
@@ -1060,31 +1131,31 @@ typedef struct gpre_req {
 	USHORT req_top_label;		/* fortran label for top of request */
 	USHORT req_btm_label;		/* fortran label for request exit */
 	gpre_nod* req_node;			/* request definition tree */
-	struct dbb *req_database;	/* database */
-	struct act *req_actions;	/* actions within request */
-	struct gpre_ctx *req_contexts;	/* contexts within request */
-	struct gpre_ctx *req_update;		/* update context for mass insert */
+	dbb* req_database;			/* database */
+	act* req_actions;			/* actions within request */
+	gpre_ctx* req_contexts;		/* contexts within request */
+	gpre_ctx* req_update;		/* update context for mass insert */
 	gpre_req* req_next;			/* next request in module or metadata action */
-	struct ref *req_values;		/* host values required */
+	ref* req_values;			/* host values required */
 #ifdef SCROLLABLE_CURSORS
-	struct ref *req_avalues;	/* parameters to pass to asynchronous message */
+	ref* req_avalues;			/* parameters to pass to asynchronous message */
 #endif
-	struct ref *req_eof;		/* eof reference for FOR */
-	struct ref *req_index;		/* index variable */
-	struct ref *req_references;	/* fields referenced in context */
-	struct map *req_map;		/* map for aggregates, etc */
-	struct rse *req_rse;		/* record selection expression */
-	struct por *req_ports;		/* linked list of ports */
-	struct por *req_primary;	/* primary input or output port */
-	struct por *req_sync;		/* synchronization port */
-	struct por *req_vport;		/* port to send values in */
+	ref* req_eof;				/* eof reference for FOR */
+	ref* req_index;				/* index variable */
+	ref* req_references;		/* fields referenced in context */
+	map* req_map;				/* map for aggregates, etc */
+	rse* req_rse;				/* record selection expression */
+	por* req_ports;				/* linked list of ports */
+	por* req_primary;			/* primary input or output port */
+	por* req_sync;				/* synchronization port */
+	por* req_vport;				/* port to send values in */
 #ifdef SCROLLABLE_CURSORS
-	struct por *req_aport;		/* port for asynchronous message */
+	por* req_aport;				/* port for asynchronous message */
 #endif
 	gpre_req* req_routine;		/* other requests in routine */
 	blb*		req_blobs;		/* blobs in request */
-	struct slc *req_slice;		/* slice for request */
-	struct ref *req_array_references;	/* array fields referenced in context */
+	slc* req_slice;				/* slice for request */
+	ref* req_array_references;	/* array fields referenced in context */
 	USHORT req_scope_level;		/* scope level for SQL subquery parsing */
 	USHORT req_in_aggregate;	/* now processing value expr for aggr */
 	USHORT req_in_select_list;	/* processing select list */
@@ -1112,144 +1183,65 @@ typedef struct gpre_req {
 #define REQ_LEN sizeof(gpre_req)
 
 
-/* Reserved relation lock block */
+/* Context block, used to define context symbols, etc. */
 
-typedef struct rrl {
-	rrl* rrl_next;				/* next locked relation */
-	UCHAR rrl_lock_level;		/* lock level (SHARE, PROT, EXC */
-	UCHAR rrl_lock_mode;		/* lock mode (READ/WRITE) */
-	struct gpre_rel *rrl_relation;	/* relation block */
-} *RRL;
+typedef struct gpre_ctx {
+	USHORT ctx_internal;		/* internal context number */
+	USHORT ctx_scope_level;		/* scope level for SQL alias subquery scoping */
+	gpre_req* ctx_request;		/* parent request */
+	gpre_ctx* ctx_next;			/* next context in request */
+	sym* ctx_symbol;			/* symbol for context */
+	gpre_rel* ctx_relation;		/* relation for context */
+	TEXT *ctx_alias;			/* holds SQL alias for passing to engine */
+	gpre_prc* ctx_procedure;	/* procedure for context */
+	gpre_nod* ctx_prc_inputs;	/* procedure input parameters */
+	rse* ctx_stream;			/* stream for context */
+} *GPRE_CTX;
 
-#define RRL_LEN sizeof(rrl)
-
-
-/* Record selection expresion syntax node */
-
-typedef struct rse {
-	USHORT rse_type;			/* node type */
-	gpre_nod* rse_boolean;		/* boolean expression, if present */
-	gpre_nod* rse_first;		/* "first n" clause, if present */
-	gpre_nod* rse_reduced;		/* projection clause, if present */
-	gpre_nod* rse_sort;			/* sort clause, if present */
-	gpre_nod* rse_fields;		/* list of fields */
-	gpre_nod* rse_into;			/* list of output variables */
-	gpre_nod* rse_union;		/* if union, list of sub-rses */
-	gpre_nod* rse_group_by;		/* list of grouping fields */
-	gpre_nod* rse_plan;			/* user-specified access plan */
-	struct map *rse_map;		/* map for aggregates */
-	rse* rse_aggregate;			/* Aggregate rse */
-	enum nod_t rse_join_type;	/* Join type */
-	USHORT rse_flags;			/* flags */
-	USHORT rse_count;			/* number of relations */
-	struct gpre_ctx *rse_context[1];	/* context block */
-} *RSE;
+#define CTX_LEN sizeof(gpre_ctx)
 
 
-#ifdef __cplusplus
+/* Field reference */
 
-inline size_t RSE_LEN(size_t nItems)
-{
-	return offsetof(rse, rse_context) + nItems * sizeof(int*);
-}
+typedef struct ref {
+	USHORT ref_ident;			/* identifier */
+	USHORT ref_level;			/* highest level of access */
+	USHORT ref_parameter;		/* parameter in port */
+	USHORT ref_id;				/* id of reference in union */
+	gpre_fld* ref_field;		/* field in question */
+	gpre_ctx* ref_context;		/* context for reference */
+	ref* ref_next;				/* next reference in context */
+	por* ref_port;				/* associated port */
+	ref* ref_source;			/* source reference for modified field */
+	ref* ref_null;				/* reference for null value */
+	ref* ref_master;			/* master field for null value */
+	ref* ref_friend;			/* value for variable */
+	gpre_nod* ref_expr;			/* expression, if node is expression */
+	TEXT *ref_value;			/* value string if host language value */
+	val* ref_values;			/* linked list of values */
+	TEXT *ref_null_value;		/* value string if host language value */
+	TEXT *ref_sdl;				/* Raw slice description language for an array */
+	TEXT *ref_sdl_base;			/* base of sdl string during generation */
+	int ref_sdl_length;			/* sdl length for this reference */
+	slc* ref_slice;				/* Slice, if field referenced is sliced */
+	USHORT ref_sdl_ident;		/* identifier of sdl structure */
+	USHORT ref_offset;			/* offset of field in port */
+	USHORT ref_flags;
+	SSHORT ref_ttype;			/* Character set type for literals */
+} *REF;
 
-#else /* __cplusplus */
+#define REF_union	1			/* Pseudo field for union */
+#define REF_pseudo	2			/* Other pseudo field (probably for forms) */
+#define REF_null	4			/* Only here cause of related null reference */
+#define REF_fetch_array	8		/* Need to fetch full array */
+#define REF_literal	16			/* Reference is to a constant */
+#define REF_ttype	32			/* Reference contains character set spec */
+#define REF_array_elem	64		/* Reference to an array element */
+#define REF_sql_date	128		/* Reference is to a date constant */
+#define REF_sql_time	256		/* Reference is to a time constant */
+#define REF_timestamp  	512		/* Reference is to a timestamp constant */
 
-#define RSE_LEN(nItems) (offsetof(rse, rse_context) + (nItems) * sizeof(int*))
-
-#endif /* __cplusplus */
-
-//#define RSE_LEN(cnt) (sizeof(rse) + (cnt - 1) * sizeof (int *))
-
-#define RSE_singleton 1
-
-
-/* Slice description block */
-
-typedef struct slc {
-	gpre_req* slc_parent_request;		/* request for blob id */
-	gpre_fld* slc_field;				/* database array field */
-	gpre_nod* slc_array;				/* user defined array */
-	ref* slc_field_ref;			/* array field reference */
-	USHORT slc_dimensions;		/* dimensions */
-	USHORT slc_parameters;		/* number of parameters */
-	struct slc_repeat {
-		gpre_nod* slc_lower;
-		gpre_nod* slc_upper;
-	} slc_rpt[1];
-} *SLC;
-
-#define SLC_LEN(count)	(sizeof(slc) + sizeof(slc::slc_repeat) * (count - 1))
-
-
-/* Symbol block, also used for hash table */
-
-enum sym_t {
-	SYM_keyword,
-	SYM_context,
-	SYM_database,
-	SYM_relation,
-	SYM_field,
-	SYM_variable,
-	SYM_stream,
-	SYM_cursor,
-	SYM_delimited_cursor,
-	SYM_index,
-	SYM_blob,
-	SYM_statement,
-	SYM_dyn_cursor,
-	SYM_type,
-	SYM_udf,
-	SYM_username,
-	SYM_procedure,
-	SYM_charset,
-	SYM_collate,
-	SYM_generator,
-	SYM_dummy,
-
-	SYM_LASTSYM					/* Leave this debugging SYM last */
-};
-
-typedef struct sym {
-	char *sym_string;			/* address of asciz string */
-	enum sym_t sym_type;		/* symbol type */
-	USHORT sym_keyword;			/* keyword number, if keyword */
-	struct gpre_ctx *sym_object;		/* general pointer to object */
-	sym* sym_collision;			/* collision pointer */
-	sym* sym_homonym;			/* homonym pointer */
-	SCHAR sym_name[1];			/* space for name, if necessary */
-} *SYM;
-
-#define SYM_LEN sizeof(sym)
-
-
-/* values for tra_flags */
-
-#define TRA_ro			1
-#define TRA_nw			2
-#define TRA_con			4
-#define TRA_rrl 		8
-#define TRA_inc 		16
-#define TRA_read_committed	32
-#define TRA_autocommit		64
-#define TRA_rec_version		128
-#define TRA_no_auto_undo	256
-
-#define MAX_TRA_OPTIONS		8
-
-
-/* TPB block */
-
-typedef struct tpb {
-	tpb* tpb_tra_next;			/* next TPB for this transaction */
-	tpb* tpb_dbb_next;			/* next TPB for this database */
-	struct dbb *tpb_database;	/* DBB of this part of the transaction */
-	USHORT tpb_length;			/* length of actual TPB */
-	USHORT tpb_ident;			/* unique part of name for this TPB */
-	UCHAR tpb_string[1];		/* actual TPB */
-} *TPB;
-
-#define TPB_LEN(tpb_string) (sizeof(tpb) + tpb_string)
+#define REF_LEN sizeof(ref)
 
 
 /**************** start of tree roots *****************/
@@ -1315,6 +1307,21 @@ typedef struct gpre_tra {
 } *GPRE_TRA;
 
 #define TRA_LEN	sizeof(gpre_tra)
+
+
+/* values for tra_flags */
+
+#define TRA_ro			1
+#define TRA_nw			2
+#define TRA_con			4
+#define TRA_rrl 		8
+#define TRA_inc 		16
+#define TRA_read_committed	32
+#define TRA_autocommit		64
+#define TRA_rec_version		128
+#define TRA_no_auto_undo	256
+
+#define MAX_TRA_OPTIONS		8
 
 
 /* act_object block for SQL database commands. */

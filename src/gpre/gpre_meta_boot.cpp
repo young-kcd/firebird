@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.19 2003-09-10 19:48:53 brodsom Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.20 2003-09-11 10:36:45 aafemt Exp $
  */
 
 #include "firebird.h"
@@ -228,7 +228,6 @@ BOOLEAN MET_get_column_default(GPRE_REL relation,
 
 LLS MET_get_primary_key(DBB db, TEXT * relation_name)
 {
-	SLONG *gds__trans;
 	SCHAR name[NAME_SIZE];
 
 	strcpy(name, relation_name);
@@ -240,7 +239,6 @@ LLS MET_get_primary_key(DBB db, TEXT * relation_name)
 		CPR_exit(FINI_ERROR);
 
 	assert(db->dbb_transaction == NULL);
-	gds__trans = NULL;
 	assert(0);
 	return FALSE;
 }
