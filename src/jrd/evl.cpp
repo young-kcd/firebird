@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.100 2004-08-16 12:28:18 alexpeshkoff Exp $ 
+  * $Id: evl.cpp,v 1.101 2004-08-17 12:28:57 dimitr Exp $ 
  */
 
 /*
@@ -4400,8 +4400,10 @@ static dsc* scalar(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 	jrd_nod** ptr = list->nod_arg;
 	for (const jrd_nod* const* const end = ptr + list->nod_count; ptr < end;)
 	{
-		*p++ = MOV_get_long(EVL_expr(tdbb, *ptr++), 0);
-		if (request->req_flags & req_null)
+		const dsc* temp = EVL_expr(tdbb, *ptr++);
+		if (temp && !(request->req_flags & req_null))
+			*p++ = MOV_get_long(temp, 0);
+		else
 			return NULL;
 	}
 

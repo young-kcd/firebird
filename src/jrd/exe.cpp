@@ -1606,11 +1606,11 @@ static jrd_nod* find(thread_db* tdbb, jrd_nod* node)
 	{
 		RecordSource* rsb = *((RecordSource**) node->nod_arg[e_find_rsb]);
 
-		const USHORT blr_operator =
-			(USHORT) MOV_get_long(EVL_expr(	tdbb,
-											node->nod_arg
-											[e_find_operator]),
-									0);
+		const dsc* desc = EVL_expr(tdbb, node->nod_arg[e_find_operator]);
+
+		const USHORT blr_operator = (desc && !(request->req_flags & req_null)) ?
+			(USHORT) MOV_get_long(desc, 0) : MAX_USHORT;
+
 		if (blr_operator != blr_eql &&
 			blr_operator != blr_leq &&
 			blr_operator != blr_lss &&
@@ -1620,10 +1620,11 @@ static jrd_nod* find(thread_db* tdbb, jrd_nod* node)
 			ERR_post(isc_invalid_operator, 0);
 		}
 
-		const USHORT direction = (USHORT) MOV_get_long(EVL_expr(tdbb,
-												   node->nod_arg
-												   [e_find_direction]),
-												   0);
+		desc = EVL_expr(tdbb, node->nod_arg[e_find_direction]);
+
+		const USHORT direction = (desc && !(request->req_flags & req_null)) ?
+			(USHORT) MOV_get_long(desc, 0) : MAX_USHORT;
+
 		if (direction != blr_backward &&
 			direction != blr_forward &&
 			direction != blr_backward_starting &&
@@ -1636,11 +1637,8 @@ static jrd_nod* find(thread_db* tdbb, jrd_nod* node)
 		   regardless of whether we are at BOF or EOF; also be sure to perpetuate
 		   the forced crack (bug #7024) */
 
-		if (!RSE_find_record(	tdbb,
-								rsb,
-								blr_operator,
-								direction,
-								node->nod_arg[e_find_args]))
+		if (!RSE_find_record(tdbb, rsb, blr_operator, direction,
+							 node->nod_arg[e_find_args]))
 		{
 			if (EXE_crack(tdbb, rsb, irsb_bof | irsb_eof | irsb_crack))
 			{
@@ -3347,11 +3345,13 @@ static jrd_nod* seek_rse(thread_db* tdbb, jrd_req* request, jrd_nod* node)
 	if (request->req_operation == jrd_req::req_proceed) {
 		/* get input arguments */
 
-		const USHORT direction = MOV_get_long(EVL_expr(tdbb,
-										  node->nod_arg[e_seek_direction]),
-								 0);
-		const SLONG offset =
-			MOV_get_long(EVL_expr(tdbb, node->nod_arg[e_seek_offset]), 0);
+		const dsc* desc = EVL_expr(tdbb, node->nod_arg[e_seek_direction]);
+		const USHORT direction = (desc && !(request->req_flags & req_null)) ?
+			MOV_get_long(desc, 0) : MAX_USHORT;
+
+		desc = EVL_expr(tdbb, node->nod_arg[e_seek_offset]);
+		const SLONG offset = (desc && !(request->req_flags & req_null)) ?
+			MOV_get_long(desc, 0) : 0;
 
 		RecordSelExpr* rse = (RecordSelExpr*) node->nod_arg[e_seek_rse];
 
@@ -3792,7 +3792,10 @@ static jrd_nod* set_index(thread_db* tdbb, jrd_nod* node)
 		/* if id is non-zero, get the index definition;
 		   otherwise it indicates revert to natural order */
 
-		const USHORT id = MOV_get_long(EVL_expr(tdbb, node->nod_arg[e_index_index]), 0);
+		const dsc* desc = EVL_expr(tdbb, node->nod_arg[e_index_index]);
+		const USHORT id = (desc && !(request->req_flags & req_null)) ?
+			MOV_get_long(desc, 0) : 0;
+
 		index_desc idx;
 		if (id && BTR_lookup(tdbb, relation, id - 1, &idx))
 		{
@@ -4201,11 +4204,11 @@ static void validate(thread_db* tdbb, jrd_nod* list)
 
 			jrd_nod* node = (*ptr1)->nod_arg[e_val_value];
 			jrd_req* request = tdbb->tdbb_request;
-			const USHORT length = MOV_make_string(EVL_expr(tdbb, node),
-									 ttype_dynamic,
-									 &value,
-									 reinterpret_cast<vary*>(temp),
-									 sizeof(temp));
+			const dsc* desc = EVL_expr(tdbb, node);
+			const USHORT length = (desc && !(request->req_flags & req_null)) ?
+				MOV_make_string(desc, ttype_dynamic, &value,
+								reinterpret_cast<vary*>(temp),
+								sizeof(temp)) : 0;
 
 			if (request->req_flags & req_null ||
 				request->req_flags & req_clone_data_from_default_clause)
