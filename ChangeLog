@@ -1,3 +1,25 @@
+2004-06-27 00:23  skidder
+
+	* firebird2/src/: common/classes/fb_string.cpp (1.17),
+	include/fb_string.h (1.22):
+	
+	Minor bugfixing/cleanup of string class. I hope this change doesn't
+	break anything, but Alex should look at it
+
+2004-06-27 00:17  skidder
+
+	* firebird2/src/jrd/exe.h (1.56):
+	
+	Disable debugging code unintentionally enabled in previous commit
+
+2004-06-27 00:12  skidder
+
+	* firebird2/src/jrd/: all.cpp (1.36), all.h (1.18), exe.h (1.55),
+	par.cpp (1.100):
+	
+	Be slightly more explicit in our memory allocation desires. Also
+	fix savepoints breakage
+
 2004-06-26 00:12  skidder
 
 	* firebird2/src/jrd/: cmp.cpp (1.132), evl.cpp (1.93), exe.h
