@@ -63,8 +63,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "instsvc", "instsvc.vcproj",
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "intl", "intl.vcproj", "{DFFA2117-E6A8-4806-BB69-94DAC8F8F42A}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "intlcpp", "intlcpp.vcproj", "{B1B6A747-47F5-4FBE-877F-87542EBA1BD3}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ipserver", "ipserver.vcproj", "{C1F6F4FD-C786-4D0A-8433-FFC7729CEE54}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "isql", "isql.vcproj", "{DEE75AD5-F165-40E1-80B2-400E27725D5C}"
