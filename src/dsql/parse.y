@@ -1783,9 +1783,12 @@ from_view_list	: view_table
 			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
 
-view_table      : joined_view_table
-                | table_name
-                ;
+view_table : joined_view_table
+        | table_name
+/* AB: derived table support */
+		| '(' select_expr ')' as_noise symbol_table_alias_name derived_column_list
+			{ $$ = make_node(nod_derived_table, (int) e_derived_table_count, $2, $5, $6); }
+		;
 
 joined_view_table	: view_table join_type JOIN view_table ON search_condition
 				{ $$ = make_node (nod_join, (int) e_join_count,
@@ -2935,19 +2938,18 @@ select_items	: select_item
 		;
 
 select_item	: rhs
-		| rhs symbol_item_alias_name
-			{ $$ = make_node (nod_alias, 2, $1, $2); }
-		| rhs AS symbol_item_alias_name
+		| rhs as_noise symbol_item_alias_name
 			{ $$ = make_node (nod_alias, 2, $1, $3); }
 		;
 
+as_noise : AS
+		|
+		;
 
 /* FROM clause */
 
 from_clause	: FROM from_list
 		 	{ $$ = make_list ($2); }
-/*		| FROM '(' select_expr ')'
-			{ $$ = make_list ($3); }*/
 		;
 
 from_list	: table_reference
@@ -2957,6 +2959,20 @@ from_list	: table_reference
 
 table_reference	: joined_table
 		| table_proc
+/* AB: derived table support */
+		| '(' union_expr ')' as_noise symbol_table_alias_name derived_column_list
+			{ $$ = make_node(nod_derived_table, (int) e_derived_table_count, $2, $5, $6); }
+		;
+
+derived_column_list : '(' alias_list ')'
+			{ $$ = make_list ($2); }
+		|
+			{ $$ = NULL; }
+		;
+
+alias_list : symbol_item_alias_name
+		| alias_list ',' symbol_item_alias_name
+			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
 
 joined_table	: table_reference join_type JOIN table_reference ON search_condition
@@ -2965,10 +2981,7 @@ joined_table	: table_reference join_type JOIN table_reference ON search_conditio
 			{ $$ = $2; }
 		;
 
-table_proc	: symbol_procedure_name proc_table_inputs symbol_table_alias_name
-			{ $$ = make_node (nod_rel_proc_name, 
-					(int) e_rpn_count, $1, $3, $2); }
-		| symbol_procedure_name proc_table_inputs AS symbol_table_alias_name
+table_proc	: symbol_procedure_name proc_table_inputs as_noise symbol_table_alias_name
 			{ $$ = make_node (nod_rel_proc_name, 
 					(int) e_rpn_count, $1, $4, $2); }
 		| symbol_procedure_name proc_table_inputs
