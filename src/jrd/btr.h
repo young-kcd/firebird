@@ -156,7 +156,7 @@ typedef struct isr {
 } *ISR;
 
 #define ISR_secondary	1		/* Record is secondary verion */
-
+#define ISR_null		2		/* Record consists of NULL values only */
 
 
 /* Index retrieval block -- hold stuff for index retrieval */
