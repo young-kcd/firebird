@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.7 2002-10-29 03:17:41 seanleyne Exp $
+//	$Id: c_cxx.cpp,v 1.8 2002-11-03 22:23:34 tamlin Exp $
 //
 
 #include "firebird.h"
@@ -2711,7 +2711,7 @@ static void gen_function( ACT function, int column)
 
 	request = action->act_request;
 
-#pragma FB_COMPILER WARNING fix format string
+#pragma FB_COMPILER_MESSAGE("fix format string")
 	ib_fprintf(out_file, "static %s_r (request, transaction ",
 			   request->req_handle, request->req_handle, request->req_trans);
 
@@ -2721,7 +2721,7 @@ static void gen_function( ACT function, int column)
 				ib_fprintf(out_file, ", %s",
 						   gen_name(s, reference->ref_source, TRUE));
 
-#pragma FB_COMPILER WARNING fix format string
+#pragma FB_COMPILER_MESSAGE("fix format string")
 	ib_fprintf(out_file,
 			   ")\n    isc_req_handle\trequest;\n    isc_tr_handle\ttransaction;\n",
 			   request->req_handle, request->req_trans);
