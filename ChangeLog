@@ -1,3 +1,9 @@
+2005-03-12 03:46  robocop
+
+	* firebird2/src/jrd/functions.cpp (1.23):
+	
+	Little correction.
+
 2005-03-11 16:19  kkuznetsov
 
 	* firebird2/builds/install/arch-specific/solx86gcc/: CS/pkginfo.in
