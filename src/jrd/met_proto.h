@@ -34,56 +34,56 @@ extern "C" {
 
 void MET_activate_shadow(TDBB);
 ULONG MET_align(struct dsc *, USHORT);
-void MET_change_fields(TDBB, struct tra *, struct dsc *);
-struct fmt *MET_current(TDBB, struct rel *);
+void MET_change_fields(TDBB, struct jrd_tra *, struct dsc *);
+struct fmt *MET_current(TDBB, struct jrd_rel *);
 void MET_delete_dependencies(TDBB, TEXT *, USHORT);
 void MET_delete_shadow(TDBB, USHORT);
 void MET_error(TEXT *, ...);
 SCHAR *MET_exact_name(TEXT *);
-struct fmt *MET_format(TDBB, register struct rel *, USHORT);
+struct fmt *MET_format(TDBB, register struct jrd_rel *, USHORT);
 BOOLEAN MET_get_char_subtype(TDBB, SSHORT *, UCHAR *, USHORT);
-struct nod *MET_get_dependencies(TDBB, struct rel*, TEXT*,
-								class Csb*, SLONG[2], struct req**,
+struct jrd_nod *MET_get_dependencies(TDBB, struct jrd_rel*, TEXT*,
+								class Csb*, SLONG[2], struct jrd_req**,
 								class Csb **, CONST TEXT*, USHORT);
-struct fld *MET_get_field(struct rel *, USHORT);
+struct fld *MET_get_field(struct jrd_rel *, USHORT);
 void MET_get_shadow_files(TDBB, USHORT);
 int MET_get_walinfo(TDBB, struct logfiles **, ULONG *,
 						   struct logfiles **);
-void MET_load_trigger(TDBB, struct rel *, TEXT *, TRIG_VEC *);
+void MET_load_trigger(TDBB, struct jrd_rel *, TEXT *, TRIG_VEC *);
 void DLL_EXPORT MET_lookup_cnstrt_for_index(TDBB, TEXT* constraint, const TEXT* index_name);
 void MET_lookup_cnstrt_for_trigger(TDBB, TEXT *, TEXT *, TEXT *);
 void MET_lookup_exception(TDBB, SLONG, /* INOUT */ TEXT*, /* INOUT */ TEXT*);
 SLONG MET_lookup_exception_number(TDBB, TEXT*);
-int MET_lookup_field(TDBB, struct rel*, CONST TEXT*, CONST TEXT*);
+int MET_lookup_field(TDBB, struct jrd_rel*, CONST TEXT*, CONST TEXT*);
 BLF MET_lookup_filter(TDBB, SSHORT, SSHORT);
 SLONG MET_lookup_generator(TDBB, TEXT *);
 void MET_lookup_generator_id(TDBB, SLONG, TEXT *);
 void DLL_EXPORT MET_lookup_index(TDBB, TEXT *, TEXT *, USHORT);
 SLONG MET_lookup_index_name(TDBB, TEXT *, SLONG *, SSHORT *);
-int MET_lookup_partner(TDBB, struct rel *, struct idx *, UCHAR *);
-struct prc *MET_lookup_procedure(TDBB, SCHAR *, BOOLEAN);
-struct prc *MET_lookup_procedure_id(TDBB, SSHORT, BOOLEAN, BOOLEAN, USHORT);
-struct rel *MET_lookup_relation(TDBB, const char*);
-struct rel *MET_lookup_relation_id(TDBB, SLONG, BOOLEAN);
-struct nod *MET_parse_blob(TDBB, struct rel *, SLONG[2], class Csb **,
-								  struct req **, BOOLEAN, BOOLEAN);
-void MET_parse_sys_trigger(TDBB, struct rel *);
-int MET_post_existence(TDBB, struct rel *);
-void MET_prepare(TDBB, struct tra *, USHORT, UCHAR *);
-struct prc *MET_procedure(TDBB, int, BOOLEAN, USHORT);
-struct rel *MET_relation(TDBB, USHORT);
+int MET_lookup_partner(TDBB, struct jrd_rel *, struct idx *, UCHAR *);
+struct jrd_prc *MET_lookup_procedure(TDBB, SCHAR *, BOOLEAN);
+struct jrd_prc *MET_lookup_procedure_id(TDBB, SSHORT, BOOLEAN, BOOLEAN, USHORT);
+struct jrd_rel *MET_lookup_relation(TDBB, const char*);
+struct jrd_rel *MET_lookup_relation_id(TDBB, SLONG, BOOLEAN);
+struct jrd_nod *MET_parse_blob(TDBB, struct jrd_rel *, SLONG[2], class Csb **,
+								  struct jrd_req **, BOOLEAN, BOOLEAN);
+void MET_parse_sys_trigger(TDBB, struct jrd_rel *);
+int MET_post_existence(TDBB, struct jrd_rel *);
+void MET_prepare(TDBB, struct jrd_tra *, USHORT, UCHAR *);
+struct jrd_prc *MET_procedure(TDBB, int, BOOLEAN, USHORT);
+struct jrd_rel *MET_relation(TDBB, USHORT);
 extern BOOLEAN 		MET_relation_owns_trigger (TDBB, const TEXT *, const TEXT *);
 extern BOOLEAN		MET_relation_default_class (TDBB, const TEXT *, const TEXT *);
-void MET_release_existence(struct rel *);
+void MET_release_existence(struct jrd_rel *);
 void MET_release_triggers(TDBB, TRIG_VEC *);
 BOOLEAN MET_clear_cache(TDBB, JRD_PRC);
 void MET_remove_procedure(TDBB, int, JRD_PRC);
-void MET_revoke(TDBB, struct tra *, TEXT *, TEXT *, TEXT *);
+void MET_revoke(TDBB, struct jrd_tra *, TEXT *, TEXT *, TEXT *);
 TEXT*MET_save_name(TDBB, CONST TEXT*);
-void MET_scan_relation(TDBB, struct rel *);
+void MET_scan_relation(TDBB, struct jrd_rel *);
 const TEXT* MET_trigger_msg(TDBB, const TEXT*, USHORT);
 void MET_update_shadow(TDBB, struct sdw *, USHORT);
-void MET_update_transaction(TDBB, struct tra *, USHORT);
+void MET_update_transaction(TDBB, struct jrd_tra *, USHORT);
 void MET_update_partners(TDBB);
 
 

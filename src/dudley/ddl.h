@@ -95,7 +95,7 @@ enum act_t {
 typedef struct act {
 	enum act_t act_type;		/* what to do */
 	struct act *act_next;		/* next action in system */
-	struct dbb *act_object;		/* object in question (rel, fld, idx, etc.) */
+	struct dbb *act_object;		/* object in question (dudley_rel, fld, idx, etc.) */
 	USHORT act_line;			/* line the action started on */
 	USHORT act_flags;
 } *ACT;
@@ -107,22 +107,22 @@ typedef struct act {
 
 /* Context block */
 
-typedef struct ctx {
+typedef struct dudley_ctx {
 	struct sym *ctx_name;
-	struct rel *ctx_relation;
+	struct dudley_rel *ctx_relation;
 	struct fld *ctx_field;
 	USHORT ctx_view_rse;
 	USHORT ctx_context_id;
 } *DUDLEY_CTX;
 
-#define CTX_LEN sizeof (struct ctx)
+#define CTX_LEN sizeof (struct dudley_ctx)
 
 
 /* Database Definition Block */
 
 typedef struct dbb {
 	struct sym *dbb_name;
-	struct rel *dbb_relations;
+	struct dudley_rel *dbb_relations;
 	struct gfl *dbb_fields;
 	struct dbb *dbb_next;
 	struct sym *dbb_security_class;
@@ -174,21 +174,21 @@ typedef struct fld {
 	SSHORT fld_system;			/* 0 if field is user defined */
 	USHORT fld_flags;			/* misc trash */
 	struct fld *fld_next;		/* next field in relation */
-	struct rel *fld_relation;	/* relation */
+	struct dudley_rel *fld_relation;	/* relation */
 	struct sym *fld_security_class;
-	struct ctx *fld_context;	/* context for view */
+	struct dudley_ctx *fld_context;	/* context for view */
 	struct dbb *fld_database;	/* database for global fields */
 	struct sym *fld_name;		/* field name */
 	struct sym *fld_source;		/* name of global field */
 	struct fld *fld_source_field;	/* global field for computed field */
 	struct sym *fld_base;		/* base field for views */
 	struct sym *fld_query_name;	/* query name */
-	struct nod *fld_query_header;	/* query header */
+	struct dudley_nod *fld_query_header;	/* query header */
 	struct sym *fld_edit_string;	/* edit string */
-	struct nod *fld_computed;	/* computed by expression */
-	struct nod *fld_missing;	/* missing value */
-	struct nod *fld_default;	/* default value */
-	struct nod *fld_validation;	/* valid if value */
+	struct dudley_nod *fld_computed;	/* computed by expression */
+	struct dudley_nod *fld_missing;	/* missing value */
+	struct dudley_nod *fld_default;	/* default value */
+	struct dudley_nod *fld_validation;	/* valid if value */
 	struct txt *fld_description;	/* description of field */
 	struct txt *fld_compute_src;	/* computed_by source */
 	struct txt *fld_valid_src;	/* validation source */
@@ -311,7 +311,7 @@ typedef struct dudley_idx {
 /* Linked list stack stuff */
 
 typedef struct lls {
-	struct nod *lls_object;		/* object on stack */
+	struct dudley_nod *lls_object;		/* object on stack */
 	struct lls *lls_next;		/* next item on stack */
 } *LLS;
 
@@ -346,26 +346,26 @@ enum nod_t {
 	nod_set_generator, nod_index
 };
 
-typedef struct nod {
+typedef struct dudley_nod {
 	enum nod_t nod_type;		/* node type */
 	UCHAR *nod_blr;				/* symbolic blr string */
 	SSHORT nod_count;			/* number of sub-items */
-	struct nod *nod_arg[1];		/* argument */
+	struct dudley_nod *nod_arg[1];		/* argument */
 } *DUDLEY_NOD;
 
-#define NOD_LEN(cnt) (sizeof (struct nod) + (cnt - 1) * sizeof (((DUDLEY_NOD) 0)->nod_arg[0]))
+#define NOD_LEN(cnt) (sizeof (struct dudley_nod) + (cnt - 1) * sizeof (((DUDLEY_NOD) 0)->nod_arg[0]))
 
 
 /* Relation block, not to be confused with siblings or in-laws */
 
-typedef struct rel {
+typedef struct dudley_rel {
 	struct dbb *rel_database;	/* parent database */
 	struct sym *rel_filename;	/* external filename */
 	struct fld *rel_fields;		/* linked list of known fields */
 	struct sym *rel_name;		/* symbol for relation */
 	struct sym *rel_security_class;	/* name of security class */
-	struct rel *rel_next;		/* next relation in database */
-	struct nod *rel_rse;		/* view rse */
+	struct dudley_rel *rel_next;		/* next relation in database */
+	struct dudley_nod *rel_rse;		/* view rse */
 	struct txt *rel_description;	/* description of relation */
 	struct txt *rel_view_source;	/* source dml for view definition */
 	USHORT rel_field_position;	/* highest used field position */
@@ -381,7 +381,7 @@ typedef struct rel {
 #define rel_marked_for_modify	32
 #define rel_marked_for_creation	64
 
-#define REL_LEN sizeof (struct rel)
+#define REL_LEN sizeof (struct dudley_rel)
 
 
 /* Security class handling */
@@ -436,7 +436,7 @@ typedef struct sym {
 	SSHORT sym_length;			/* length of string (exc. term.) */
 	enum sym_t sym_type;		/* symbol type */
 	SSHORT sym_keyword;			/* keyword number, if keyword */
-	struct ctx *sym_object;		/* general pointer to object */
+	struct dudley_ctx *sym_object;		/* general pointer to object */
 	struct sym *sym_collision;	/* collision pointer */
 	struct sym *sym_homonym;	/* homonym pointer */
 	TEXT sym_name[1];			/* space for name, if necessary */
@@ -483,7 +483,7 @@ static TRG_T trig_table[] = {
 	trg_erase
 };
 
-typedef struct trg {
+typedef struct dudley_trg {
 	TRG_T trg_type;
 	DUDLEY_REL trg_relation;
 	DUDLEY_NOD trg_statement;			/* blr */
@@ -502,7 +502,7 @@ typedef struct trg {
 #define trg_mflag_seqnum        4
 #define trg_mflag_order		8
 
-#define TRG_LEN sizeof (struct trg)
+#define TRG_LEN sizeof (struct dudley_trg)
 
 /* Trigger message block */
 

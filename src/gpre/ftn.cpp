@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.10 2002-11-17 00:04:18 hippoman Exp $
+//	$Id: ftn.cpp,v 1.11 2002-11-20 23:13:21 hippoman Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -1875,7 +1875,7 @@ static void gen_dyn_execute( ACT action)
 {
 	DYN statement;
 	TEXT *transaction, s1[64], s2[64], s3[64], *sqlda, *sqlda2;
-	struct req *request, req_const;
+	struct gpre_req *request, req_const;
 
 	statement = (DYN) action->act_object;
 	if (statement->dyn_trans) {
@@ -1965,7 +1965,7 @@ static void gen_dyn_immediate( ACT action)
 	DYN statement;
 	DBB database;
 	TEXT *transaction, s2[64], s3[64], *sqlda, *sqlda2;
-	struct req *request, req_const;
+	struct gpre_req *request, req_const;
 
 	statement = (DYN) action->act_object;
 	if (statement->dyn_trans) {
@@ -2057,7 +2057,7 @@ static void gen_dyn_open( ACT action)
 {
 	DYN statement;
 	TEXT *transaction, s1[64], s2[64], s3[64], *sqlda, *sqlda2;
-	struct req *request, req_const;
+	struct gpre_req *request, req_const;
 
 	statement = (DYN) action->act_object;
 	if (statement->dyn_trans) {
@@ -2115,7 +2115,7 @@ static void gen_dyn_prepare( ACT action)
 	DYN statement;
 	DBB database;
 	TEXT *transaction, s1[64], s2[64], *sqlda;
-	struct req *request, req_const;
+	struct gpre_req *request, req_const;
 
 	statement = (DYN) action->act_object;
 	database = statement->dyn_database;

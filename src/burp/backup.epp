@@ -36,7 +36,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.9 2002-11-16 23:57:18 hippoman Exp $
+$Id: backup.epp,v 1.10 2002-11-20 23:09:19 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -3704,7 +3704,7 @@ static void write_relations(void)
                 }
 	
             PUT (att_end); 
-            relation = (BURP_REL) BURP_ALLOC_ZERO (sizeof (struct rel));
+            relation = (BURP_REL) BURP_ALLOC_ZERO (sizeof (struct burp_rel));
             relation->rel_next = tdgbl->relations;
             tdgbl->relations = relation;
             relation->rel_id = X.RDB$RELATION_ID;
@@ -3781,7 +3781,7 @@ static void write_relations(void)
                 END_ERROR;
             }
             PUT (att_end); 
-            relation = (BURP_REL) BURP_ALLOC_ZERO (sizeof (struct rel));
+            relation = (BURP_REL) BURP_ALLOC_ZERO (sizeof (struct burp_rel));
             relation->rel_next = tdgbl->relations;
             tdgbl->relations = relation;
             relation->rel_id = X.RDB$RELATION_ID;

@@ -37,12 +37,12 @@ BLKDEF(type_pre, pre, 0)
 BLKDEF(type_lck, lck, 1)
 BLKDEF(type_fil, fil, 1)
 BLKDEF(type_pgc, pgc, 0)
-BLKDEF(type_rel, rel, 0)
+BLKDEF(type_rel, jrd_rel, 0)
 BLKDEF(type_fmt, fmt, sizeof(((FMT) 0)->fmt_desc[0]))   /* Done */
 BLKDEF(type_vcl, vcl, sizeof(((VCL) 0)->vcl_long[0]))   /* Done */
-BLKDEF(type_req, req, sizeof(((JRD_REQ) 0)->req_rpb[0]))    /* Done */
-BLKDEF(type_tra, tra, 1)
-BLKDEF(type_nod, nod, sizeof(((JRD_NOD) 0)->nod_arg[0]))    /* Done */
+BLKDEF(type_req, jrd_req, sizeof(((JRD_REQ) 0)->req_rpb[0]))    /* Done */
+BLKDEF(type_tra, jrd_tra, 1)
+BLKDEF(type_nod, jrd_nod, sizeof(((JRD_NOD) 0)->nod_arg[0]))    /* Done */
 BLKDEF(type_csb, Csb, sizeof(((CSB) 0)->csb_rpt[0]))    /* Done */
 BLKDEF(type_lls, lls, 0)	/* linked list stack */
 BLKDEF(type_rec, rec, 1)	/* record parameter */
@@ -82,7 +82,7 @@ BLKDEF(type_ail, logfiles, 1)	/* wal file */
 BLKDEF(type_texttype_alloc_id, texttype, 0)	/* Intl Text Impl Object */
 BLKDEF(type_charset_alloc_id, charset, 0)	/* Intl Charset definition */
 BLKDEF(type_csconvert_alloc_id, csconvert, 0)	/* Intl character set converter */
-BLKDEF(type_prc, prc, 1)	/* procedure block */
+BLKDEF(type_prc, jrd_prc, 1)	/* procedure block */
 BLKDEF(type_prm, prm, 1)	/* parameter block */
 BLKDEF(type_sav, sav, 0)	/* save points */
 BLKDEF(type_xcp, xcp, sizeof(((XCP) 0)->xcp_rpt[0]))	/* exception condition list */

@@ -136,7 +136,7 @@ public:
 	vec*		dbb_relations;	/* relation vector */
 	vec*		dbb_procedures;	/* scanned procedures */
 	struct lck *dbb_lock;		/* granddaddy lock */
-	struct tra *dbb_sys_trans;	/* system transaction */
+	struct jrd_tra *dbb_sys_trans;	/* system transaction */
 	struct fil *dbb_file;		/* files for I/O operations */
 	struct sdw *dbb_shadow;		/* shadow control block */
 	struct lck *dbb_shadow_lock;	/* lock for synchronizing addition of shadows */
@@ -410,9 +410,9 @@ public:
 	att*		att_next;			// Next attachment to database
 	att*		att_blocking;		// Blocking attachment, if any
 	class usr*	att_user;			// User identification
-	struct tra*	att_transactions;	// Transactions belonging to attachment
-	struct tra*	att_dbkey_trans;	// transaction to control db-key scope
-	struct req*	att_requests;		// Requests belonging to attachment
+	struct jrd_tra*	att_transactions;	// Transactions belonging to attachment
+	struct jrd_tra*	att_dbkey_trans;	// transaction to control db-key scope
+	struct jrd_req*	att_requests;		// Requests belonging to attachment
 	struct scb*	att_active_sorts;	// Active sorts
 	struct lck*	att_id_lock;		// Attachment lock (if any)
 	SLONG		att_attachment_id;	// Attachment ID
@@ -471,21 +471,21 @@ typedef att* ATT;
 
 /* Procedure block */
 
-class prc : public pool_alloc_rpt<SCHAR, type_prc>
+class jrd_prc : public pool_alloc_rpt<SCHAR, type_prc>
 {
     public:
 	USHORT prc_id; // Should be first field because MET_remove_procedure relies on that
 	USHORT prc_flags;
 	USHORT prc_inputs;
 	USHORT prc_outputs;
-	struct nod *prc_input_msg;
-	struct nod *prc_output_msg;
+	struct jrd_nod *prc_input_msg;
+	struct jrd_nod *prc_output_msg;
 	struct fmt *prc_input_fmt;
 	struct fmt *prc_output_fmt;
 	struct fmt *prc_format;
 	vec*		prc_input_fields;	/* vector of field blocks */
 	vec*		prc_output_fields;	/* vector of field blocks */
-	struct req *prc_request;	/* compiled procedure request */
+	struct jrd_req *prc_request;	/* compiled procedure request */
 	class str *prc_security_name;	/* pointer to security class name for procedure */
 	USHORT prc_use_count;		/* requests compiled with procedure */
 	SSHORT prc_int_use_count;	/* number of procedures compiled with procedure, set and 
@@ -497,7 +497,7 @@ class prc : public pool_alloc_rpt<SCHAR, type_prc>
 	class str *prc_name;		/* pointer to ascic name */
 	USHORT prc_alter_count;		/* No. of times the procedure was altered */
 };
-typedef prc* JRD_PRC;
+typedef jrd_prc* JRD_PRC;
 
 #define PRC_scanned           1		/* Field expressions scanned */
 #define PRC_system            2
@@ -544,11 +544,11 @@ typedef struct frgn {
 // Relation trigger definition
 typedef struct trig {
     class str* blr; // BLR code
-	req* request; // Compiled request. Gets filled on first invocation
+	jrd_req* request; // Compiled request. Gets filled on first invocation
 	BOOLEAN compile_in_progress;
 	BOOLEAN sys_trigger;
 	USHORT flags; // Flags as they are in RDB$TRIGGERS table
-	class rel* relation; // Trigger parent relation
+	class jrd_rel* relation; // Trigger parent relation
 	class str* name; // Trigger name
 	void compile(tdbb* _tdbb); // Ensure that trigger is compiled
 	BOOLEAN release(tdbb* _tdbb); // Try to free trigger request
@@ -562,7 +562,7 @@ typedef trig_vec* TRIG_VEC;
    in the database, though it is not really filled out until
    the relation is scanned */
 
-class rel : public pool_alloc<type_rel>
+class jrd_rel : public pool_alloc<type_rel>
 {
 public:
 	USHORT rel_id;
@@ -615,7 +615,7 @@ public:
 	struct prim rel_primary_dpnds;	/* foreign dependencies on this relation's primary key */
 	struct frgn rel_foreign_refs;	/* foreign references to other relations' primary keys */
 };
-typedef rel* JRD_REL;
+typedef jrd_rel* JRD_REL;
 
 #define REL_scanned					1		/* Field expressions scanned (or being scanned) */
 #define REL_system					2
@@ -637,12 +637,12 @@ typedef rel* JRD_REL;
 class fld : public pool_alloc_rpt<SCHAR, type_fld>
 {
     public:
-	struct nod*	fld_validation;		/* validation clause, if any */
-	struct nod*	fld_not_null;		/* if field cannot be NULL */
-	struct nod*	fld_missing_value;	/* missing value, if any */
-	struct nod*	fld_computation;	/* computation for virtual field */
-	struct nod*	fld_source;			/* source for view fields */
-	struct nod*	fld_default_value;	/* default value, if any */
+	struct jrd_nod*	fld_validation;		/* validation clause, if any */
+	struct jrd_nod*	fld_not_null;		/* if field cannot be NULL */
+	struct jrd_nod*	fld_missing_value;	/* missing value, if any */
+	struct jrd_nod*	fld_computation;	/* computation for virtual field */
+	struct jrd_nod*	fld_source;			/* source for view fields */
+	struct jrd_nod*	fld_default_value;	/* default value, if any */
 	TEXT *		fld_security_name;	/* pointer to security class name for field */
 	struct arr*	fld_array;			/* array description, if array */
 	CONST TEXT*	fld_name;			/* Field name */
@@ -659,8 +659,8 @@ class idb
 {
     public:
 	struct idb*	idb_next;
-	struct nod*	idb_expression;			/* node tree for index expression */
-	struct req*	idb_expression_request;	/* request in which index expression is evaluated */
+	struct jrd_nod*	idb_expression;			/* node tree for index expression */
+	struct jrd_req*	idb_expression_request;	/* request in which index expression is evaluated */
 	struct dsc	idb_expression_desc;	/* descriptor for expression result */
 	struct lck*	idb_lock;				/* lock to synchronize changes to index */
 	UCHAR idb_id;
@@ -887,8 +887,8 @@ typedef struct tdbb
 	struct thdd	tdbb_thd_data;
 	dbb*	tdbb_database;
 	att*	tdbb_attachment;
-	struct tra*	tdbb_transaction;
-	struct req*	tdbb_request;
+	struct jrd_tra*	tdbb_transaction;
+	struct jrd_req*	tdbb_request;
 	JrdMemoryPool*	tdbb_default;
 	STATUS*		tdbb_status_vector;
 	void*		tdbb_setjmp;

@@ -24,11 +24,11 @@
 #ifndef _DSQL_DDL_PROTO_H_
 #define _DSQL_DDL_PROTO_H_
 
-void DDL_execute(class req*);
-void DDL_generate(class req*, struct nod*);
-int	DDL_ids(class req*);
-void DDL_put_field_dtype(class req*, class fld*, USHORT);
-void DDL_resolve_intl_type(class req*, class fld*, class str*);
-void DDL_resolve_intl_type2 (struct req *, struct fld *, struct str *, BOOLEAN);
+void DDL_execute(class dsql_req*);
+void DDL_generate(class dsql_req*, struct dsql_nod*);
+int	DDL_ids(class dsql_req*);
+void DDL_put_field_dtype(class dsql_req*, class fld*, USHORT);
+void DDL_resolve_intl_type(class dsql_req*, class fld*, class str*);
+void DDL_resolve_intl_type2 (struct dsql_req *, struct fld *, struct str *, BOOLEAN);
 
 #endif /* _DSQL_DDL_PROTO_H_ */

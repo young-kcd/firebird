@@ -32,8 +32,8 @@ extern int INF_blob_info(struct blb *, SCHAR *, SSHORT, SCHAR *, SSHORT);
 extern USHORT DLL_EXPORT INF_convert(SLONG, SCHAR *);
 extern int INF_database_info(SCHAR *, SSHORT, SCHAR *, SSHORT);
 extern SCHAR *INF_put_item(SCHAR, USHORT, SCHAR *, SCHAR *, SCHAR *);
-extern int INF_request_info(struct req *, SCHAR *, SSHORT, SCHAR *, SSHORT);
-extern int INF_transaction_info(struct tra *, SCHAR *, SSHORT, SCHAR *,
+extern int INF_request_info(struct jrd_req *, SCHAR *, SSHORT, SCHAR *, SSHORT);
+extern int INF_transaction_info(struct jrd_tra *, SCHAR *, SSHORT, SCHAR *,
 								SSHORT);
 
 #ifdef __cplusplus

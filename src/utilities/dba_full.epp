@@ -67,8 +67,8 @@ DATABASE DB = STATIC "/gds/dev_nt/utilities/yachts.lnk";
 extern SCHAR *sys_errlist[];
 #endif
 
-typedef struct rel {
-	struct rel *rel_next;
+typedef struct dba_rel {
+	struct dba_rel *rel_next;
 	struct idx *rel_indexes;
 	SLONG rel_index_root;
 	SLONG rel_pointer_page;
@@ -495,7 +495,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			  continue;
 		if (!X.RDB$VIEW_BLR.NULL || !X.RDB$EXTERNAL_FILE.NULL)
 			continue;
-		relation = (REL) ALLOC(sizeof(struct rel));
+		relation = (REL) ALLOC(sizeof(struct dba_rel));
 		relation->rel_next = tddba->relations;
 		tddba->relations = relation;
 		relation->rel_id = X.RDB$RELATION_ID;

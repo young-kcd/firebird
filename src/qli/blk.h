@@ -26,19 +26,19 @@ BLKDEF (type_hnk, hnk, 0)
 BLKDEF (type_plb, plb, 0)
 BLKDEF (type_vec, vec, sizeof (((VEC) 0)->vec_object[0]))
 BLKDEF (type_dbb, dbb, 1)
-BLKDEF (type_rel, rel, 0)
+BLKDEF (type_rel, qli_rel, 0)
 BLKDEF (type_fld, fld, 1)
 BLKDEF (type_vcl, vcl, sizeof (((VCL) 0)->vcl_long[0]))
-BLKDEF (type_req, req, 0)				/* Request block */
-BLKDEF (type_nod, nod, sizeof (((QLI_NOD) 0)->nod_arg[0]))
-BLKDEF (type_syn, nod, sizeof (((SYN) 0)->syn_arg[0]))
+BLKDEF (type_req, qli_req, 0)				/* Request block */
+BLKDEF (type_nod, qli_nod, sizeof (((QLI_NOD) 0)->nod_arg[0]))
+BLKDEF (type_syn, qli_nod, sizeof (((SYN) 0)->syn_arg[0]))
 BLKDEF (type_lls, lls, 0)				/* linked list stack */
 BLKDEF (type_str, str, 1)				/* random string block */
 BLKDEF (type_tok, tok, 1)				/* token block */
 BLKDEF (type_sym, sym, 1)				/* symbol block */
 BLKDEF (type_msg, qli_msg, 0)				/* Message block */
 BLKDEF (type_nam, nam, 1)				/* Name node */
-BLKDEF (type_ctx, ctx, 0)				/* Context block */
+BLKDEF (type_ctx, qli_ctx, 0)				/* Context block */
 BLKDEF (type_con, con, 1)				/* Constant block */
 BLKDEF (type_itm, itm, 0)				/* Print item */
 BLKDEF (type_par, par, 0)				/* Parameter block */

@@ -30,8 +30,8 @@ extern "C" {
 
 extern void EXT_close(class Rsb *);
 extern void EXT_erase(struct rpb *, int *);
-extern struct ext *EXT_file(struct rel *, TEXT *, SLONG *);
-extern void EXT_fini(struct rel *);
+extern struct ext *EXT_file(struct jrd_rel *, TEXT *, SLONG *);
+extern void EXT_fini(struct jrd_rel *);
 extern int EXT_get(class Rsb *);
 extern void EXT_modify(struct rpb *, struct rpb *, int *);
 #ifdef VMS
@@ -39,13 +39,13 @@ extern int EXT_open(class Rsb *);
 #else
 extern void EXT_open(class Rsb *);
 #endif
-extern class Rsb *EXT_optimize(register class Opt *, SSHORT, struct nod **);
-extern void EXT_ready(struct rel *);
+extern class Rsb *EXT_optimize(register class Opt *, SSHORT, struct jrd_nod **);
+extern void EXT_ready(struct jrd_rel *);
 extern void EXT_store(struct rpb *, int *);
-extern void EXT_trans_commit(struct tra *);
-extern void EXT_trans_prepare(struct tra *);
-extern void EXT_trans_rollback(struct tra *);
-extern void EXT_trans_start(struct tra *);
+extern void EXT_trans_commit(struct jrd_tra *);
+extern void EXT_trans_prepare(struct jrd_tra *);
+extern void EXT_trans_rollback(struct jrd_tra *);
+extern void EXT_trans_start(struct jrd_tra *);
 
 #ifdef __cplusplus
 } /* extern "C" */

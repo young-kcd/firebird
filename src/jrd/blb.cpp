@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.18 2002-11-17 00:10:48 hippoman Exp $
+$Id: blb.cpp,v 1.19 2002-11-20 23:16:37 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -1152,7 +1152,7 @@ BLB BLB_open2(TDBB tdbb,
 
 	if (blob_id->bid_relation_id >= vector->count() ||
 		!(blob->blb_relation =
-		  reinterpret_cast<rel*>( (*vector)[blob_id->bid_relation_id]) ) )
+		  reinterpret_cast<jrd_rel*>( (*vector)[blob_id->bid_relation_id]) ) )
 	{
 			ERR_post(gds_bad_segstr_id, 0);
 	}

@@ -555,7 +555,7 @@ SLONG EVENT_que(STATUS * status_vector,
 /* Allocate request block */
 
 	ACQUIRE;
-	request = (JRD_REQ) alloc_global(type_req, (SLONG) sizeof(struct req), FALSE);
+	request = (JRD_REQ) alloc_global(type_req, (SLONG) sizeof(struct jrd_req), FALSE);
 	session = (SES) ABS_PTR(session_id);
 	insert_tail(&session->ses_requests, &request->req_requests);
 	request->req_session = session_id;

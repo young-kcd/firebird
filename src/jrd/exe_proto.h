@@ -28,14 +28,14 @@
 extern "C" {
 #endif
 
-extern void EXE_assignment(TDBB, struct nod*);
-extern struct req *EXE_find_request(TDBB, struct req *, BOOLEAN);
-extern void EXE_receive(TDBB, struct req*, USHORT, USHORT, UCHAR*);
-extern void EXE_send(TDBB, struct req *, USHORT, USHORT, UCHAR *);
-extern void EXE_start(TDBB, struct req *, struct tra *);
-extern void EXE_unwind(TDBB, struct req *);
+extern void EXE_assignment(TDBB, struct jrd_nod*);
+extern struct jrd_req *EXE_find_request(TDBB, struct jrd_req *, BOOLEAN);
+extern void EXE_receive(TDBB, struct jrd_req*, USHORT, USHORT, UCHAR*);
+extern void EXE_send(TDBB, struct jrd_req *, USHORT, USHORT, UCHAR *);
+extern void EXE_start(TDBB, struct jrd_req *, struct jrd_tra *);
+extern void EXE_unwind(TDBB, struct jrd_req *);
 #ifdef SCROLLABLE_CURSORS
-extern void EXE_seek(TDBB, struct req *, USHORT, ULONG);
+extern void EXE_seek(TDBB, struct jrd_req *, USHORT, ULONG);
 #endif
 
 #ifdef PC_ENGINE

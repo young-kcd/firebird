@@ -25,7 +25,7 @@
 #define JRD_BOOKMARK_H
 
 struct bkm*	BKM_allocate(struct rsb*, USHORT);
-struct bkm*	BKM_lookup(struct nod*);
-void		BKM_release(struct nod*);
+struct bkm*	BKM_lookup(struct jrd_nod*);
+void		BKM_release(struct jrd_nod*);
 
 #endif /* JRD_BOOKMARK_H */

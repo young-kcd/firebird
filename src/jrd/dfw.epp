@@ -3216,7 +3216,7 @@ static void get_procedure_dependencies(DFW work)
 		/* Nickolay Samofatov: allocate statement memory pool... */
 		tdbb->tdbb_default = FB_NEW(*dbb->dbb_permanent) JrdMemoryPool;
 		MET_get_dependencies(tdbb,
-							(struct rel*)NULL_PTR,
+							(struct jrd_rel*)NULL_PTR,
 							(TEXT*)NULL_PTR,
 							(CSB)NULL_PTR,
 							(SLONG*)&blob_id,

@@ -48,7 +48,7 @@ typedef struct evh {
 
 typedef struct ses {
 	struct ses *ses_next;		/* Next active session */
-	struct req *ses_requests;	/* Outstanding requests in session */
+	struct vms_req *ses_requests;	/* Outstanding requests in session */
 	struct rint *ses_interests;	/* Historical interests */
 } *SES;
 
@@ -67,19 +67,19 @@ typedef struct evnt {
 
 /* Request block */
 
-typedef struct req {
-	struct req *req_next;		/* Next request in session */
+typedef struct vms_req {
+	struct vms_req *req_next;		/* Next request in session */
 	struct ses *req_session;	/* Parent session */
 	struct rint *req_interests;	/* Request interests */
 	int (*req_ast) ();			/* Associated AST (zero is fired) */
 	void *req_ast_arg;			/* Argument for ast */
 	SLONG req_request_id;		/* Request id */
-} *REQ;
+} *VMS_REQ;
 
 /* Request interest block */
 
 typedef struct rint {
-	REQ rint_request;			/* Parent request block */
+	VMS_REQ rint_request;			/* Parent request block */
 	EVNT rint_event;			/* Parent event block */
 	struct rint *rint_req_interests;	/* Other interests of request */
 	struct rint *rint_evnt_interests;	/* Other interests for event */
@@ -96,9 +96,9 @@ static USHORT thread_started, delivery_flag;
 static UCHAR *alloc(USHORT);
 static void blocking_ast(EVNT);
 static void delete_event(EVNT);
-static void delete_request(REQ);
+static void delete_request(VMS_REQ);
 static void deliver(EVNT);
-static void deliver_request(REQ);
+static void deliver_request(VMS_REQ);
 static void delivery_thread(void);
 static int delivery_wait(void);
 static STATUS error(STATUS *, TEXT *, STATUS);
@@ -107,7 +107,7 @@ static void free(SCHAR *);
 static RINT historical_interest(SES, EVNT);
 static EVNT make_event(USHORT, TEXT *, EVNT);
 static void poke_ast(POKE);
-static BOOLEAN request_completed(REQ);
+static BOOLEAN request_completed(VMS_REQ);
 static int return_ok(STATUS *);
 
 
@@ -123,7 +123,7 @@ int EVENT_cancel(SLONG request_id)
  *	Cancel an outstanding event.
  *
  **************************************/
-	REQ request;
+	VMS_REQ request;
 	SES session;
 
 	for (session = sessions; session; session = session->ses_next)
@@ -179,7 +179,7 @@ void EVENT_delete_session(SLONG session_id)
  **************************************/
 	SES session;
 	SES *ptr;
-	REQ request;
+	VMS_REQ request;
 	EVNT event;
 	RINT interest, *int_ptr;
 
@@ -340,7 +340,7 @@ SLONG EVENT_que(STATUS * status_vector,
 	SES session;
 	UCHAR *p, *end, *find_end;
 	USHORT count, flag, len;
-	REQ request, next;
+	VMS_REQ request, next;
 	EVNT event, parent;
 	RINT interest, *ptr, *ptr2;
 	SLONG id;
@@ -365,7 +365,7 @@ SLONG EVENT_que(STATUS * status_vector,
 
 /* Allocate request block */
 
-	request = (REQ) alloc(sizeof(struct req));
+	request = (VMS_REQ) alloc(sizeof(struct vms_req));
 /* FREE: unknown */
 	if (!request)				/* NOMEM: */
 		return error(status_vector, "gds__alloc", 0);
@@ -408,7 +408,7 @@ SLONG EVENT_que(STATUS * status_vector,
 				}
 		}
 		else {
-			interest = (RINT) alloc(sizeof(struct req));
+			interest = (RINT) alloc(sizeof(struct vms_req));
 			/* FREE: unknown */
 			if (!interest)		/* NOMEM: */
 				return error(status_vector, "gds__alloc", 0);
@@ -546,7 +546,7 @@ static void delete_event(EVNT event)
 }
 
 
-static void delete_request(REQ request)
+static void delete_request(VMS_REQ request)
 {
 /**************************************
  *
@@ -561,7 +561,7 @@ static void delete_request(REQ request)
 	SES session;
 	RINT *ptr, interest;
 	EVNT event;
-	REQ *req_ptr;
+	VMS_REQ *req_ptr;
 
 	session = request->req_session;
 
@@ -606,7 +606,7 @@ static void deliver(EVNT event)
  *
  **************************************/
 	RINT interest;
-	REQ request;
+	VMS_REQ request;
 	SES session;
 	USHORT flag;
 
@@ -622,7 +622,7 @@ static void deliver(EVNT event)
 }
 
 
-static void deliver_request(REQ request)
+static void deliver_request(VMS_REQ request)
 {
 /**************************************
  *
@@ -697,7 +697,7 @@ static void delivery_thread(void)
  *	Look for events to deliver.
  *
  **************************************/
-	REQ request;
+	VMS_REQ request;
 	SES session;
 
 	for (;;) {
@@ -904,7 +904,7 @@ static STATUS error(STATUS * status_vector;
 					--poke->poke_use_count;}
 
 
-					static BOOLEAN request_completed(REQ request) {
+					static BOOLEAN request_completed(VMS_REQ request) {
 /**************************************
  *
  *	r e q u e s t _ c o m p l e t e d

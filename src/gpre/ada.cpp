@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.8 2002-11-17 00:04:18 hippoman Exp $
+//	$Id: ada.cpp,v 1.9 2002-11-20 23:13:21 hippoman Exp $
 //
 
 #include "firebird.h"
@@ -1535,7 +1535,7 @@ static void gen_dyn_execute( ACT action, int column)
 {
 	DYN statement;
 	TEXT *transaction, s[64];
-	struct req *request, req_const;
+	struct gpre_req *request, req_const;
 
 	statement = (DYN) action->act_object;
 	if (statement->dyn_trans) {
@@ -1623,7 +1623,7 @@ static void gen_dyn_immediate( ACT action, int column)
 	DYN statement;
 	DBB database;
 	TEXT *transaction, s[64];
-	struct req *request, req_const;
+	struct gpre_req *request, req_const;
 
 	statement = (DYN) action->act_object;
 	if (statement->dyn_trans) {
@@ -1693,7 +1693,7 @@ static void gen_dyn_open( ACT action, int column)
 {
 	DYN statement;
 	TEXT *transaction, s[64];
-	struct req *request, req_const;
+	struct gpre_req *request, req_const;
 	int i;
 
 	statement = (DYN) action->act_object;
@@ -1744,7 +1744,7 @@ static void gen_dyn_prepare( ACT action, int column)
 	DYN statement;
 	DBB database;
 	TEXT *transaction, s[64];
-	struct req *request, req_const;
+	struct gpre_req *request, req_const;
 
 	statement = (DYN) action->act_object;
 	database = statement->dyn_database;

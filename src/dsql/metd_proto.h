@@ -24,23 +24,23 @@
 #ifndef _DSQL_METD_PROTO_H
 #define _DSQL_METD_PROTO_H
 
-void METD_drop_function(class req*, class str*);
-void METD_drop_procedure(class req*, class str*);
-void METD_drop_relation(class req*, class str*);
-INTLSYM METD_get_charset(class req*, USHORT, UCHAR *);
-USHORT METD_get_charset_bpc (struct req *, SSHORT);
-INTLSYM METD_get_collation(class req*, class str*);
+void METD_drop_function(class dsql_req*, class str*);
+void METD_drop_procedure(class dsql_req*, class str*);
+void METD_drop_relation(class dsql_req*, class str*);
+INTLSYM METD_get_charset(class dsql_req*, USHORT, UCHAR *);
+USHORT METD_get_charset_bpc (struct dsql_req *, SSHORT);
+INTLSYM METD_get_collation(class dsql_req*, class str*);
 void METD_get_col_default(DSQL_REQ, TEXT*, TEXT*, BOOLEAN*, TEXT*, USHORT);
-STR METD_get_default_charset(class req*);
-USHORT METD_get_domain(class req*, class fld*, UCHAR*);
-void METD_get_domain_default(class req*, TEXT*, BOOLEAN*, TEXT*, USHORT);
-UDF METD_get_function(class req*, class str*);
-DSQL_NOD METD_get_primary_key(class req*, class str*);
-DSQL_PRC METD_get_procedure(class req*, class str*);
-DSQL_REL METD_get_relation(class req*, class str*);
-STR METD_get_trigger_relation(class req*, class str*, USHORT*);
-USHORT METD_get_type(class req*, class str*, UCHAR*, SSHORT*);
-DSQL_REL METD_get_view_relation(class req*, UCHAR*, UCHAR*, USHORT);
+STR METD_get_default_charset(class dsql_req*);
+USHORT METD_get_domain(class dsql_req*, class fld*, UCHAR*);
+void METD_get_domain_default(class dsql_req*, TEXT*, BOOLEAN*, TEXT*, USHORT);
+UDF METD_get_function(class dsql_req*, class str*);
+DSQL_NOD METD_get_primary_key(class dsql_req*, class str*);
+DSQL_PRC METD_get_procedure(class dsql_req*, class str*);
+DSQL_REL METD_get_relation(class dsql_req*, class str*);
+STR METD_get_trigger_relation(class dsql_req*, class str*, USHORT*);
+USHORT METD_get_type(class dsql_req*, class str*, UCHAR*, SSHORT*);
+DSQL_REL METD_get_view_relation(class dsql_req*, UCHAR*, UCHAR*, USHORT);
 
 
 #endif /*_DSQL_METD_PROTO_H */

@@ -27,18 +27,18 @@
 #ifdef PC_ENGINE
 extern struct lck *RLCK_lock_record(struct rpb *, USHORT, int (*)(),
 									struct blk *);
-extern struct lck *RLCK_lock_record_implicit(struct tra *, struct rpb *,
+extern struct lck *RLCK_lock_record_implicit(struct jrd_tra *, struct rpb *,
 											 USHORT, int (*)(), struct blk *);
-extern struct lck *RLCK_lock_relation(struct rel *, USHORT, int (*)(),
+extern struct lck *RLCK_lock_relation(struct jrd_rel *, USHORT, int (*)(),
 									  struct blk *);
-extern struct lck *RLCK_range_relation(struct tra *, struct rel *, int (*)(),
+extern struct lck *RLCK_range_relation(struct jrd_tra *, struct jrd_rel *, int (*)(),
 									   struct blk *);
-extern struct lck *RLCK_record_locking(struct rel *);
+extern struct lck *RLCK_record_locking(struct jrd_rel *);
 extern void RLCK_release_lock(struct lck *);
 extern void RLCK_release_locks(struct att *);
 #endif
-extern struct lck *RLCK_reserve_relation(struct tdbb *, struct tra *,
-										 struct rel *, USHORT, USHORT);
+extern struct lck *RLCK_reserve_relation(struct tdbb *, struct jrd_tra *,
+										 struct jrd_rel *, USHORT, USHORT);
 
 /* TMN: This header did not match the implementation.
  * I moved the #ifdef as noted
@@ -47,15 +47,15 @@ extern struct lck *RLCK_reserve_relation(struct tdbb *, struct tra *,
 extern void RLCK_shutdown_attachment(struct att *);
 extern void RLCK_shutdown_database(struct dbb *);
 #ifdef PC_ENGINE
-extern void RLCK_signal_refresh(struct tra *);
+extern void RLCK_signal_refresh(struct jrd_tra *);
 #endif
 
-extern struct lck *RLCK_transaction_relation_lock(struct tra *, struct rel *);
+extern struct lck *RLCK_transaction_relation_lock(struct jrd_tra *, struct jrd_rel *);
 
 #ifdef PC_ENGINE
 extern void RLCK_unlock_record(struct lck *, struct rpb *);
 extern void RLCK_unlock_record_implicit(struct lck *, struct rpb *);
-extern void RLCK_unlock_relation(struct lck *, struct rel *);
+extern void RLCK_unlock_relation(struct lck *, struct jrd_rel *);
 #endif
 
 #endif /* JRD_RLCK_PROTO_H */

@@ -84,7 +84,7 @@ DSQL_NOD MAKE_constant(STR constant, int numeric_flag)
 
 	node = FB_NEW_RPT(*tdsql->tsql_default,
 						(numeric_flag == CONSTANT_TIMESTAMP ||
-						  numeric_flag == CONSTANT_SINT64) ? 2 : 1) nod;
+						  numeric_flag == CONSTANT_SINT64) ? 2 : 1) dsql_nod;
 	node->nod_type = nod_constant;
 
 	if (numeric_flag == CONSTANT_SLONG) {
@@ -223,7 +223,7 @@ DSQL_NOD MAKE_str_constant(STR constant, SSHORT character_set)
 
 	tdsql = GET_THREAD_DATA;
 
-	node = FB_NEW_RPT(*tdsql->tsql_default, 1) nod;
+	node = FB_NEW_RPT(*tdsql->tsql_default, 1) dsql_nod;
 	node->nod_type = nod_constant;
 
 	DEV_BLKCHK(constant, dsql_type_str);
@@ -1019,7 +1019,7 @@ void MAKE_desc( DSC * desc, DSQL_NOD node)
 		return;
 
 	default:
-		ASSERT_FAIL;			/* unexpected nod type */
+		ASSERT_FAIL;			/* unexpected dsql_nod type */
 
 	case nod_dom_value:		/* computed value not used */
 		/* By the time we get here, any nod_dom_value node should have had
@@ -1358,7 +1358,7 @@ DSQL_NOD MAKE_node(NOD_TYPE type, int count)
 
 	tdsql = GET_THREAD_DATA;
 
-	node = FB_NEW_RPT(*tdsql->tsql_default, count) nod;
+	node = FB_NEW_RPT(*tdsql->tsql_default, count) dsql_nod;
 	node->nod_type = type;
 	node->nod_count = count;
 

@@ -32,7 +32,7 @@ extern void INI_format(const TEXT *);
 extern USHORT INI_get_trig_flags(TEXT *);
 extern void INI_init(void);
 extern void INI_init2(void);
-extern struct trg *INI_lookup_sys_trigger(struct rel *, struct trg *,
+extern struct jrd_trg *INI_lookup_sys_trigger(struct jrd_rel *, struct jrd_trg *,
 										  CONST UCHAR**, UCHAR*, CONST SCHAR**,
 										  USHORT *);
 extern void INI_update_database(void);

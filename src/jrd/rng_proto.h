@@ -27,14 +27,14 @@
 #ifdef PC_ENGINE
 extern void RNG_add_page(ULONG);
 extern void RNG_add_record(struct rpb *);
-extern struct nod *RNG_add_relation(struct nod *);
+extern struct jrd_nod *RNG_add_relation(struct jrd_nod *);
 extern void RNG_add_uncommitted_record(struct rpb *);
-extern struct dsc *RNG_begin(struct nod *, struct vlu *);
-extern struct nod *RNG_delete(struct nod *);
-extern void RNG_delete_ranges(struct req *);
-extern struct nod *RNG_end(struct nod *);
+extern struct dsc *RNG_begin(struct jrd_nod *, struct vlu *);
+extern struct jrd_nod *RNG_delete(struct jrd_nod *);
+extern void RNG_delete_ranges(struct jrd_req *);
+extern struct jrd_nod *RNG_end(struct jrd_nod *);
 extern void RNG_release_locks(struct rng *);
-extern void RNG_release_ranges(struct req *);
+extern void RNG_release_ranges(struct jrd_req *);
 extern void RNG_shutdown_attachment(struct att *);
 #endif
 

@@ -32,25 +32,25 @@
 extern "C" {
 #endif
 
-extern void IDX_check_access(TDBB, class Csb *, struct rel *, struct rel *,
+extern void IDX_check_access(TDBB, class Csb *, struct jrd_rel *, struct jrd_rel *,
 							 struct fld *);
-extern void IDX_create_index(TDBB, struct rel *, struct idx *, UCHAR *,
-							 USHORT *, struct tra *, float *);
-extern struct idb *IDX_create_index_block(TDBB, struct rel *, UCHAR);
-extern void IDX_delete_index(TDBB, struct rel *, USHORT);
-extern void IDX_delete_indices(TDBB, struct rel *);
-extern enum idx_e IDX_erase(TDBB, struct rpb *, struct tra *, struct rel **,
+extern void IDX_create_index(TDBB, struct jrd_rel *, struct idx *, UCHAR *,
+							 USHORT *, struct jrd_tra *, float *);
+extern struct idb *IDX_create_index_block(TDBB, struct jrd_rel *, UCHAR);
+extern void IDX_delete_index(TDBB, struct jrd_rel *, USHORT);
+extern void IDX_delete_indices(TDBB, struct jrd_rel *);
+extern enum idx_e IDX_erase(TDBB, struct rpb *, struct jrd_tra *, struct jrd_rel **,
 							USHORT *);
 extern void IDX_garbage_collect(TDBB, struct rpb *, struct lls *,
 								struct lls *);
 extern enum idx_e IDX_modify(struct tdbb *, struct rpb *, struct rpb *,
-							 struct tra *, struct rel **, USHORT *);
+							 struct jrd_tra *, struct jrd_rel **, USHORT *);
 extern enum idx_e IDX_modify_check_constraint(struct rpb *, struct rpb *,
-											  struct tra *, struct rel **,
+											  struct jrd_tra *, struct jrd_rel **,
 											  USHORT *);
-extern float IDX_statistics(TDBB, struct rel *, USHORT);
-extern enum idx_e IDX_store(struct tdbb *, struct rpb *, struct tra *,
-							struct rel **, USHORT *);
+extern float IDX_statistics(TDBB, struct jrd_rel *, USHORT);
+extern enum idx_e IDX_store(struct tdbb *, struct rpb *, struct jrd_tra *,
+							struct jrd_rel **, USHORT *);
 
 #ifdef __cplusplus
 } /* extern "C" */

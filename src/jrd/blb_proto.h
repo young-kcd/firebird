@@ -32,36 +32,36 @@
 
 // fwd decl.
 class blb;
-struct tra;
+struct jrd_tra;
 struct bid;
 struct lls;
-struct rel;
+struct jrd_rel;
 struct dsc;
 struct arr;
-struct nod;
+struct jrd_nod;
 struct vlu;
 struct ads;
 
 void   BLB_cancel(TDBB, blb*);
 void   BLB_close(TDBB, blb*);
-blb*   BLB_create(TDBB, tra*, bid*);
-blb*   BLB_create2(TDBB, tra*, bid*, USHORT, UCHAR*);
-void   BLB_garbage_collect(TDBB, lls*, lls*, SLONG, rel*);
-blb*   BLB_get_array(TDBB, tra*, bid*, ads*);
+blb*   BLB_create(TDBB, jrd_tra*, bid*);
+blb*   BLB_create2(TDBB, jrd_tra*, bid*, USHORT, UCHAR*);
+void   BLB_garbage_collect(TDBB, lls*, lls*, SLONG, jrd_rel*);
+blb*   BLB_get_array(TDBB, jrd_tra*, bid*, ads*);
 SLONG  BLB_get_data(TDBB, blb*, UCHAR *, SLONG);
 USHORT BLB_get_segment(TDBB, blb*, UCHAR*, USHORT);
-SLONG  BLB_get_slice(TDBB, tra*, bid*, UCHAR*, USHORT, SLONG*, SLONG, UCHAR*);
+SLONG  BLB_get_slice(TDBB, jrd_tra*, bid*, UCHAR*, USHORT, SLONG*, SLONG, UCHAR*);
 SLONG  BLB_lseek(blb*, USHORT, SLONG);
 
-void BLB_move(TDBB, dsc*, dsc*, nod*);
-void BLB_move_from_string(TDBB, dsc*, dsc*, nod*);
-blb* BLB_open(TDBB, tra*, bid*);
-blb* BLB_open2(TDBB, tra*, bid*, USHORT,
+void BLB_move(TDBB, dsc*, dsc*, jrd_nod*);
+void BLB_move_from_string(TDBB, dsc*, dsc*, jrd_nod*);
+blb* BLB_open(TDBB, jrd_tra*, bid*);
+blb* BLB_open2(TDBB, jrd_tra*, bid*, USHORT,
 						 UCHAR *);
 void BLB_put_segment(TDBB, blb*, UCHAR *, USHORT);
-void BLB_put_slice(TDBB, tra*, bid*, UCHAR*, USHORT, SLONG*, SLONG, UCHAR*);
+void BLB_put_slice(TDBB, jrd_tra*, bid*, UCHAR*, USHORT, SLONG*, SLONG, UCHAR*);
 void BLB_release_array(arr*);
-void BLB_scalar(TDBB, tra*, bid*, USHORT, SLONG*, vlu*);
+void BLB_scalar(TDBB, jrd_tra*, bid*, USHORT, SLONG*, vlu*);
 
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM

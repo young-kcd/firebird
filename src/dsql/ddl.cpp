@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.25 2002-11-17 00:00:39 hippoman Exp $
+ * $Id: ddl.cpp,v 1.26 2002-11-20 23:11:22 hippoman Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -703,7 +703,7 @@ static void assign_field_length (
 //	Write out a string of blr as part of a ddl string,
 //	as in a view or computed field definition.
 //
-void req::begin_blr(UCHAR verb)
+void dsql_req::begin_blr(UCHAR verb)
 {
 	if (verb) {
 		append_uchar(verb);
@@ -2347,7 +2347,7 @@ static void define_procedure( DSQL_REQ request, NOD_TYPE op)
 
 /* Fill req_procedure to allow procedure to self reference */
 	procedure = FB_NEW_RPT(*tdsql->tsql_default,
-			strlen(reinterpret_cast<char*>(procedure_name->str_data))) prc;
+			strlen(reinterpret_cast<char*>(procedure_name->str_data))) dsql_prc;
 	procedure->prc_name = procedure->prc_data;
 	procedure->prc_owner =
 		procedure->prc_data + procedure_name->str_length + 1;
@@ -2808,7 +2808,7 @@ static void define_trigger( DSQL_REQ request, DSQL_NOD node)
 							  gds_random, gds_arg_string,
 							  trigger_name->str_data, 0);
 			}
-			relation_node = FB_NEW_RPT(*tdsql->tsql_default, e_rln_count) nod;
+			relation_node = FB_NEW_RPT(*tdsql->tsql_default, e_rln_count) dsql_nod;
 			node->nod_arg[e_trg_table] = relation_node;
 			relation_node->nod_type = nod_relation_name;
 			relation_node->nod_count = e_rln_count;
@@ -3749,7 +3749,7 @@ static void define_view_trigger( DSQL_REQ request, DSQL_NOD node, DSQL_NOD rse, 
 			stack = request->req_context;
 			context = (DSQL_CTX) stack->lls_object;
 			if (context->ctx_alias) {
-				sav_context = FB_NEW(*tdsql->tsql_default) ctx;
+				sav_context = FB_NEW(*tdsql->tsql_default) dsql_ctx;
 				*sav_context = *context;
 			}
 		}
@@ -3949,7 +3949,7 @@ static void delete_relation_view (
 //	Complete the stuffing of a piece of
 //	blr by going back and inserting the length.
 //
-void req::end_blr()
+void dsql_req::end_blr()
 {
 	append_uchar(blr_eoc);
 
@@ -5545,7 +5545,7 @@ static void put_msg_field( DSQL_REQ request, FLD field)
 }
 
 
-void req::append_number(UCHAR verb, SSHORT number)
+void dsql_req::append_number(UCHAR verb, SSHORT number)
 {
 /**************************************
  *
@@ -5569,7 +5569,7 @@ void req::append_number(UCHAR verb, SSHORT number)
 //
 //	Write out a string valued attribute.
 //
-void req::append_cstring(UCHAR verb, char* string)
+void dsql_req::append_cstring(UCHAR verb, char* string)
 {
 	const USHORT length = string ? strlen(string) : 0;
 	append_string(verb, string, length);
@@ -5579,7 +5579,7 @@ void req::append_cstring(UCHAR verb, char* string)
 //
 //	Write out a string valued attribute.
 //
-void req::append_string(UCHAR verb, char* string, USHORT length)
+void dsql_req::append_string(UCHAR verb, char* string, USHORT length)
 {
 	// TMN: Doesn't this look pretty awkward? If we are given
 	// a verb, the length is a ushort, else it's uchar.
@@ -6063,7 +6063,7 @@ static void set_nod_value_attributes( DSQL_NOD node, FLD field)
 }
 
 
-void req::append_uchar(UCHAR byte)
+void dsql_req::append_uchar(UCHAR byte)
 {
 	if (req_blr < req_blr_yellow) {
 		*req_blr++ = byte;
@@ -6072,46 +6072,46 @@ void req::append_uchar(UCHAR byte)
 	}
 }
 
-void req::append_uchars(UCHAR byte, UCHAR count)
+void dsql_req::append_uchars(UCHAR byte, UCHAR count)
 {
 	for (int i=0; i< count ; ++i) {
 		append_uchar(byte);
 	}
 }
 
-void req::append_ushort(USHORT val)
+void dsql_req::append_ushort(USHORT val)
 {
 	append_uchar(val);
 	append_uchar(val >> 8);
 }
 
-void req::append_ulong(ULONG val)
+void dsql_req::append_ulong(ULONG val)
 {
 	append_ushort(val);
 	append_ushort(val >> 16);
 }
 
-void req::append_ushort_with_length(USHORT val)
+void dsql_req::append_ushort_with_length(USHORT val)
 {
 	// append an USHORT value, prepended with the USHORT length of an USHORT
 	append_ushort(2);
 	append_ushort(val);
 }
 
-void req::append_ulong_with_length(ULONG val)
+void dsql_req::append_ulong_with_length(ULONG val)
 {
 	// append an ULONG value, prepended with the USHORT length of an ULONG
 	append_ushort(4);
 	append_ulong(val);
 }
 
-void req::append_file_length(ULONG length)
+void dsql_req::append_file_length(ULONG length)
 {
 	append_uchar(gds_dyn_file_length);
 	append_ulong_with_length(length);
 }
 
-void req::append_file_start(ULONG start)
+void dsql_req::append_file_start(ULONG start)
 {
 	append_uchar(gds_dyn_file_start);
 	append_ulong_with_length(start);
@@ -6120,11 +6120,11 @@ void req::append_file_start(ULONG start)
 //
 // common code factored out
 //
-void req::generate_unnamed_trigger_beginning(	bool		on_update_trigger,
+void dsql_req::generate_unnamed_trigger_beginning(	bool		on_update_trigger,
 												TEXT*		prim_rel_name,
-												struct nod*	prim_columns,
+												struct dsql_nod*	prim_columns,
 												TEXT*		for_rel_name,
-												struct nod*	for_columns)
+												struct dsql_nod*	for_columns)
 {
 	// no trigger name. It is generated by the engine
 	append_string(gds_dyn_def_trigger, "", 0);

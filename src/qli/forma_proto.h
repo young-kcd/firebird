@@ -24,10 +24,10 @@
 #ifndef _QLI_FORMA_PROTO_H_
 #define _QLI_FORMA_PROTO_H_
 
-extern int		FMT_expression (struct nod *);
+extern int		FMT_expression (struct qli_nod *);
 extern TEXT		*FMT_format (struct lls *);
-extern struct nod	*FMT_list (struct nod *);
-extern void		FMT_print (struct nod *, struct prt *);
+extern struct qli_nod	*FMT_list (struct qli_nod *);
+extern void		FMT_print (struct qli_nod *, struct prt *);
 extern void		FMT_put (TEXT *, struct prt *);
 extern void		FMT_report (struct rpt *);
 

@@ -25,16 +25,16 @@
 #define _QLI_FORM_PROTO_H_
 
 extern struct frm	*FORM_default_form (struct dbb *, TEXT *);
-extern void		FORM_display (struct nod *);
+extern void		FORM_display (struct qli_nod *);
 extern void		FORM_edit (struct dbb *, TEXT *);
 extern void		FORM_fini (void);
 extern void		FORM_finish (struct dbb *);
-extern int		FORM_get_blob (struct nod *, struct par *);
-extern struct dsc	*FORM_get_field (struct nod *);
+extern int		FORM_get_blob (struct qli_nod *, struct par *);
+extern struct dsc	*FORM_get_field (struct qli_nod *);
 extern struct frm	*FORM_lookup_form (struct dbb *, TEXT *);
 extern struct ffl	*FORM_lookup_field (struct frm *, TEXT *);
-extern int		FORM_put_field (struct nod *, struct nod *);
+extern int		FORM_put_field (struct qli_nod *, struct qli_nod *);
 extern void		FORM_reset (void);
-extern void		FORM_update (struct nod *);
+extern void		FORM_update (struct qli_nod *);
 
 #endif /* _QLI_FORM_PROTO_H_ */

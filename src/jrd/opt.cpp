@@ -4528,7 +4528,7 @@ static BOOLEAN gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 		if (!(TEST_DEP_BIT(selected_rivers, river1->riv_number)))
 			continue;
 		stream_cnt += river1->riv_count;
-		sort = FB_NEW_RPT(*tdbb->tdbb_default, class_cnt * 2) nod();
+		sort = FB_NEW_RPT(*tdbb->tdbb_default, class_cnt * 2) jrd_nod();
 		sort->nod_type = nod_sort;
 		sort->nod_count = class_cnt;
 		for (selected_class = selected_classes, ptr = sort->nod_arg;

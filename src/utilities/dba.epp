@@ -99,8 +99,8 @@ typedef struct dba_idx {
 	SCHAR idx_name[32];
 } *DBA_IDX;
 
-typedef struct rel {
-	struct rel *rel_next;
+typedef struct dba_rel {
+	struct dba_rel *rel_next;
 	struct dba_idx *rel_indexes;
 	SLONG rel_index_root;
 	SLONG rel_pointer_page;
@@ -445,7 +445,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
 						argv++;
 						continue;
 					}
-					relation = (DBA_REL) ALLOC(sizeof(struct rel));
+					relation = (DBA_REL) ALLOC(sizeof(struct dba_rel));
 					strcpy(relation->rel_name, *argv++);
 					truncate_name(relation->rel_name);
 					relation->rel_id = -1;
@@ -671,7 +671,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
 		}
 		else
 		{
-			relation = (DBA_REL) ALLOC(sizeof(struct rel));
+			relation = (DBA_REL) ALLOC(sizeof(struct dba_rel));
 			relation->rel_next = tddba->relations;
 			tddba->relations = relation;
 			relation->rel_id = X.RDB$RELATION_ID;

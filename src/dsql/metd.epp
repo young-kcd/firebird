@@ -994,7 +994,7 @@ UDF METD_get_function(DSQL_REQ request, STR name)
             else {
                 DSC* d;
                 /* udf_param_node = MAKE_node (type_nod, 0); */
-			    udf_param_node = FB_NEW_RPT(*dbb->dbb_pool, 0) nod;
+			    udf_param_node = FB_NEW_RPT(*dbb->dbb_pool, 0) dsql_nod;
                 d = &udf_param_node->nod_desc;
                 d->dsc_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
                     gds_cvt_blr_dtype [X.RDB$FIELD_TYPE] : dtype_blob;
@@ -1055,7 +1055,7 @@ UDF METD_get_function(DSQL_REQ request, STR name)
     }
 
     /* udf->udf_arguments = MAKE_node (nod_list, count); */
-    udf_->udf_arguments = FB_NEW_RPT(*dbb->dbb_pool, arg_count) nod;
+    udf_->udf_arguments = FB_NEW_RPT(*dbb->dbb_pool, arg_count) dsql_nod;
     udf_->udf_arguments->nod_type = nod_list;
     udf_->udf_arguments->nod_count = arg_count;
     
@@ -1229,7 +1229,7 @@ DSQL_PRC METD_get_procedure(DSQL_REQ request, STR name)
 	    metd_exact_name(X.RDB$OWNER_NAME);
 
         procedure = FB_NEW_RPT(*dbb->dbb_pool,
-                                 name->str_length + strlen(X.RDB$OWNER_NAME)) prc;
+                                 name->str_length + strlen(X.RDB$OWNER_NAME)) dsql_prc;
         procedure->prc_id = X.RDB$PROCEDURE_ID;
         
         procedure->prc_name = procedure->prc_data;

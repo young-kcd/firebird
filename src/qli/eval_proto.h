@@ -24,11 +24,11 @@
 #ifndef _QLI_EVAL_PROTO_H_
 #define _QLI_EVAL_PROTO_H_
 
-extern int		EVAL_boolean (struct nod *);
-extern void		EVAL_break_compute (struct nod *);
-extern void		EVAL_break_increment (struct nod *);
-extern void		EVAL_break_init (struct nod *);
+extern int		EVAL_boolean (struct qli_nod *);
+extern void		EVAL_break_compute (struct qli_nod *);
+extern void		EVAL_break_increment (struct qli_nod *);
+extern void		EVAL_break_init (struct qli_nod *);
 extern struct dsc	*EVAL_parameter (struct par *);
-extern struct dsc	*EVAL_value (struct nod *);
+extern struct dsc	*EVAL_value (struct qli_nod *);
 
 #endif /* _QLI_EVAL_PROTO_H_ */

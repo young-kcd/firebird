@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.32 2002-11-18 20:27:23 skidder Exp $
+$Id: exe.cpp,v 1.33 2002-11-20 23:16:37 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -126,7 +126,7 @@ IDX_E IDX_modify_check_constraints(TDBB tdbb,
 static void assign_xcp_message(TDBB, STR *, const TEXT *);
 static void cleanup_rpb(TDBB, RPB *);
 static JRD_NOD erase(TDBB, JRD_NOD, SSHORT);
-static void execute_looper(TDBB, JRD_REQ, JRD_TRA, ENUM req::req_s);
+static void execute_looper(TDBB, JRD_REQ, JRD_TRA, ENUM jrd_req::req_s);
 static void exec_sql(TDBB, JRD_REQ, DSC *);
 static void execute_procedure(TDBB, JRD_NOD);
 static JRD_REQ execute_triggers(TDBB, TRIG_VEC *, REC, REC);
@@ -424,7 +424,7 @@ void EXE_assignment(TDBB tdbb, JRD_NOD node)
 		}
 	}
 
-	request->req_operation = req::req_return;
+	request->req_operation = jrd_req::req_return;
 }
 
 
@@ -640,10 +640,10 @@ void EXE_receive(TDBB		tdbb,
 		|| request->req_flags & req_fetch_required
 #endif
 		)
-		execute_looper(tdbb, request, transaction, req::req_sync);
+		execute_looper(tdbb, request, transaction, jrd_req::req_sync);
 
 	if (!(request->req_flags & req_active) ||
-		request->req_operation != req::req_send)
+		request->req_operation != jrd_req::req_send)
 	{
 		ERR_post(gds_req_sync, 0);
 	}
@@ -664,7 +664,7 @@ void EXE_receive(TDBB		tdbb,
 	else
 		MOVE_FASTER((SCHAR *) request + message->nod_impure, buffer, length);
 
-	execute_looper(tdbb, request, transaction, req::req_proceed);
+	execute_looper(tdbb, request, transaction, jrd_req::req_proceed);
 
 	}	//try
 	catch (std::exception &e)
@@ -788,7 +788,7 @@ void EXE_send(TDBB		tdbb,
 	}
 	else {
 #endif
-		if (request->req_operation != req::req_receive)
+		if (request->req_operation != jrd_req::req_receive)
 			ERR_post(gds_req_sync, 0);
 		node = request->req_message;
 #ifdef SCROLLABLE_CURSORS
@@ -826,7 +826,7 @@ void EXE_send(TDBB		tdbb,
 	else
 		MOVE_FASTER(buffer, (SCHAR *) request + message->nod_impure, length);
 
-	execute_looper(tdbb, request, transaction, req::req_proceed);
+	execute_looper(tdbb, request, transaction, jrd_req::req_proceed);
 
 #ifdef SCROLLABLE_CURSORS
 	if (save_next) {
@@ -880,7 +880,7 @@ void EXE_start(TDBB tdbb, JRD_REQ request, JRD_TRA transaction)
 	request->req_flags &= REQ_FLAGS_INIT_MASK;
 	request->req_flags |= req_active;
 	request->req_flags &= ~req_reserved;
-	request->req_operation = req::req_evaluate;
+	request->req_operation = jrd_req::req_evaluate;
 
 /* set up to count records affected by request */
 
@@ -1118,7 +1118,7 @@ static JRD_NOD erase(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 #endif
 
 	switch (request->req_operation) {
-	case req::req_evaluate:
+	case jrd_req::req_evaluate:
 		if (!node->nod_arg[e_erase_statement])
 			break;
 		format = MET_current(tdbb, rpb->rpb_relation);
@@ -1128,7 +1128,7 @@ static JRD_NOD erase(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 		rpb->rpb_format_number = format->fmt_version;
 		return node->nod_arg[e_erase_statement];
 
-	case req::req_return:
+	case jrd_req::req_return:
 		break;
 
 	default:
@@ -1141,12 +1141,12 @@ static JRD_NOD erase(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 
 	if (rsb && EXE_crack(tdbb, rsb, irsb_bof | irsb_eof | irsb_crack)) {
 		EXE_mark_crack(tdbb, rsb, impure->irsb_flags);
-		request->req_operation = req::req_return;
+		request->req_operation = jrd_req::req_return;
 		return node->nod_parent;
 	}
 #endif
 
-	request->req_operation = req::req_return;
+	request->req_operation = jrd_req::req_return;
 	RLCK_reserve_relation(tdbb, transaction, relation, TRUE, TRUE);
 
 /* If the stream was sorted, the various fields in the rpb are
@@ -1295,7 +1295,7 @@ static JRD_NOD erase(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 static void execute_looper(
 						   TDBB tdbb,
 						   JRD_REQ request,
-						   JRD_TRA transaction, ENUM req::req_s next_state)
+						   JRD_TRA transaction, ENUM jrd_req::req_s next_state)
 {
 /**************************************
  *
@@ -1576,7 +1576,7 @@ static JRD_REQ execute_triggers(TDBB		tdbb,
 			trigger->req_attachment = NULL;
 			trigger->req_flags &= ~req_in_use;
 			trigger->req_timestamp = 0;
-			if (trigger->req_operation == req::req_unwind) {
+			if (trigger->req_operation == jrd_req::req_unwind) {
 				result = trigger;
 				break;
 			}
@@ -1623,7 +1623,7 @@ static JRD_NOD find(TDBB tdbb, register JRD_NOD node)
 	JRD_REQ request = tdbb->tdbb_request;
 	BLKCHK(node, type_nod);
 
-	if (request->req_operation == req::req_evaluate)
+	if (request->req_operation == jrd_req::req_evaluate)
 	{
 		RSB rsb = *((RSB *) node->nod_arg[e_find_rsb]);
 
@@ -1676,7 +1676,7 @@ static JRD_NOD find(TDBB tdbb, register JRD_NOD node)
 				}
 			}
 		}
-		request->req_operation = req::req_return;
+		request->req_operation = jrd_req::req_return;
 	}
 
 	return node->nod_parent;
@@ -1703,7 +1703,7 @@ static JRD_NOD find_dbkey(TDBB tdbb, register JRD_NOD node)
 	JRD_REQ request = tdbb->tdbb_request;
 	BLKCHK(node, type_nod);
 
-	if (request->req_operation == req::req_evaluate)
+	if (request->req_operation == jrd_req::req_evaluate)
 	{
 		RSB rsb = *((RSB *) node->nod_arg[e_find_dbkey_rsb]);
 
@@ -1715,7 +1715,7 @@ static JRD_NOD find_dbkey(TDBB tdbb, register JRD_NOD node)
 			  EXE_mark_crack(tdbb, rsb, irsb_crack);
 		}
 
-		request->req_operation = req::req_return;
+		request->req_operation = jrd_req::req_return;
 	}
 
 	return node->nod_parent;
@@ -1847,7 +1847,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 
 #ifdef MULTI_THREAD
 
-		if (request->req_operation == req::req_evaluate &&
+		if (request->req_operation == jrd_req::req_evaluate &&
 			(--tdbb->tdbb_quantum < 0) && !tdbb->tdbb_inhibit)
 			(void) JRD_reschedule(tdbb, 0, TRUE);
 
@@ -1858,19 +1858,19 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 
 		switch (node->nod_type) {
 		case nod_asn_list:
-			if (request->req_operation == req::req_evaluate) {
+			if (request->req_operation == jrd_req::req_evaluate) {
 				volatile JRD_NOD *ptr, *end;
 
 				for (ptr = node->nod_arg, end = ptr + node->nod_count;
 					 ptr < end; ptr++)
 					EXE_assignment(tdbb, *ptr);
-				request->req_operation = req::req_return;
+				request->req_operation = jrd_req::req_return;
 			}
 			node = node->nod_parent;
 			break;
 
 		case nod_assignment:
-			if (request->req_operation == req::req_evaluate)
+			if (request->req_operation == jrd_req::req_evaluate)
 				EXE_assignment(tdbb, node);
 			node = node->nod_parent;
 			break;
@@ -1894,13 +1894,13 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 					variable->vlu_desc.dsc_address =
 						variable->vlu_string->str_data;
 				}
-				request->req_operation = req::req_return;
+				request->req_operation = jrd_req::req_return;
 				node = node->nod_parent;
 			}
 			break;
 
 		case nod_erase:
-			if ((request->req_operation == req::req_return) &&
+			if ((request->req_operation == jrd_req::req_return) &&
 				(node->nod_arg[e_erase_sub_erase]))
 			{
 				if (!top_node) {
@@ -1918,7 +1918,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 					which_erase_trig = ALL_TRIGS;
 				}
 				else
-					request->req_operation = req::req_evaluate;
+					request->req_operation = jrd_req::req_evaluate;
 			}
 			else {
 				prev_node = node;
@@ -1932,25 +1932,25 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 			break;
 		
 		case nod_exec_proc:
-			if (request->req_operation == req::req_unwind) {
+			if (request->req_operation == jrd_req::req_unwind) {
 				node = node->nod_parent;
 				break;
 			}
 			execute_procedure(tdbb, node);
 			node = node->nod_parent;
-			request->req_operation = req::req_return;
+			request->req_operation = jrd_req::req_return;
 			break;
 
 		case nod_for:
 			switch (request->req_operation) {
-			case req::req_evaluate:
+			case jrd_req::req_evaluate:
 				RSE_open(tdbb, (RSB) node->nod_arg[e_for_rsb]);
-			case req::req_return:
+			case jrd_req::req_return:
 				if (node->nod_arg[e_for_stall]) {
 					node = node->nod_arg[e_for_stall];
 					break;
 				}
-			case req::req_sync:
+			case jrd_req::req_sync:
 				if (RSE_get_record(tdbb, (RSB) node->nod_arg[e_for_rsb],
 #ifdef SCROLLABLE_CURSORS
 								   RSE_get_next))
@@ -1959,10 +1959,10 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 #endif
 				{
 					node = node->nod_arg[e_for_statement];
-					request->req_operation = req::req_evaluate;
+					request->req_operation = jrd_req::req_evaluate;
 					break;
 				}
-				request->req_operation = req::req_return;
+				request->req_operation = jrd_req::req_return;
 			default:
 				RSE_close(tdbb, (RSB) node->nod_arg[e_for_rsb]);
 				node = node->nod_parent;
@@ -1971,7 +1971,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 
 		case nod_abort:
 			switch (request->req_operation) {
-			case req::req_evaluate:
+			case jrd_req::req_evaluate:
 				{
 				XCP xcp_node = reinterpret_cast<XCP>(node->nod_arg[0]);
 				if (xcp_node)
@@ -1997,7 +1997,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 				{
 					/* XCP is undefined and there weren't any exceptions before,
 					   so just do nothing */
-					request->req_operation = req::req_return;
+					request->req_operation = jrd_req::req_return;
 				}
 				}
 
@@ -2013,7 +2013,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 				strcpy(transaction->tra_save_point->sav_name, (TEXT*)node->nod_arg[e_sav_name]);
 			}
 			node = node->nod_parent;
-			request->req_operation = req::req_return;
+			request->req_operation = jrd_req::req_return;
 			break;
 
 		case nod_undo_savepoint:
@@ -2049,12 +2049,12 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 				strcpy(transaction->tra_save_point->sav_name, (TEXT*)node->nod_arg[e_sav_name]);
 			}
 			node = node->nod_parent;
-			request->req_operation = req::req_return;
+			request->req_operation = jrd_req::req_return;
 			break;
 
 		case nod_start_savepoint:
 			switch (request->req_operation) {
-			case req::req_evaluate:
+			case jrd_req::req_evaluate:
 				/* Start a save point */
 
 				if (transaction != dbb->dbb_sys_trans)
@@ -2062,14 +2062,14 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 
 			default:
 				node = node->nod_parent;
-				request->req_operation = req::req_return;
+				request->req_operation = jrd_req::req_return;
 			}
 			break;
 
 		case nod_end_savepoint:
 			switch (request->req_operation) {
-			case req::req_evaluate:
-			case req::req_unwind:
+			case jrd_req::req_evaluate:
+			case jrd_req::req_unwind:
 				/* If any requested modify/delete/insert
 				   ops have completed, forget them */
 				if (transaction != dbb->dbb_sys_trans) {
@@ -2084,19 +2084,19 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 
 			default:
 				node = node->nod_parent;
-				request->req_operation = req::req_return;
+				request->req_operation = jrd_req::req_return;
 			}
 			break;
 
 		case nod_handler:
 			switch (request->req_operation) {
-			case req::req_evaluate:
+			case jrd_req::req_evaluate:
 				node = node->nod_arg[0];
 				break;
 
-			case req::req_unwind:
+			case jrd_req::req_unwind:
 				if (!request->req_label)
-					request->req_operation = req::req_return;
+					request->req_operation = jrd_req::req_return;
 
 			default:
 				node = node->nod_parent;
@@ -2108,7 +2108,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 				SLONG count;
 				SAV save_point;
 
-			case req::req_evaluate:
+			case jrd_req::req_evaluate:
 				if (transaction != dbb->dbb_sys_trans) {
 					VIO_start_save_point(tdbb, transaction);
 					save_point = transaction->tra_save_point;
@@ -2120,7 +2120,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 				node = node->nod_arg[e_blk_action];
 				break;
 
-			case req::req_unwind:
+			case jrd_req::req_unwind:
 				{
 					volatile JRD_NOD *ptr, *end;
 
@@ -2164,7 +2164,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 								reinterpret_cast<XCP>((*ptr)->nod_arg[e_err_conditions]);
 							if (test_and_fixup_error(tdbb, xcp_node, request))
 							{
-								request->req_operation = req::req_evaluate;
+								request->req_operation = jrd_req::req_evaluate;
 								node = (*ptr)->nod_arg[e_err_action];
 								error_pending = FALSE;
 
@@ -2235,7 +2235,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 				}
 				break;
 
-			case req::req_return:
+			case jrd_req::req_return:
 				if (transaction != dbb->dbb_sys_trans) {
 					MOVE_FAST((SCHAR *) request + node->nod_impure,
 							  &count, sizeof(SLONG));
@@ -2255,22 +2255,22 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 			}
 			node = node->nod_parent;
 			node = node->nod_parent;
-			if (request->req_operation == req::req_unwind)
+			if (request->req_operation == jrd_req::req_unwind)
 				node = node->nod_parent;
 			request->req_last_xcp.xcp_type = 0;
 			break;
 
 		case nod_label:
 			switch (request->req_operation) {
-			case req::req_evaluate:
+			case jrd_req::req_evaluate:
 				node = node->nod_arg[e_lbl_statement];
 				break;
 
-			case req::req_unwind:
+			case jrd_req::req_unwind:
 				if ((request->req_label == (USHORT) node->nod_arg[e_lbl_label]) &&
 							(request->req_flags & req_leave)) {
 					request->req_flags &= ~req_leave;
-					request->req_operation = req::req_return;
+					request->req_operation = jrd_req::req_return;
 				}
 
 			default:
@@ -2280,7 +2280,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 
 		case nod_leave:
 			request->req_flags |= req_leave;
-			request->req_operation = req::req_unwind;
+			request->req_operation = jrd_req::req_unwind;
 			request->req_label = (USHORT) node->nod_arg[0];
 			node = node->nod_parent;
 			break;
@@ -2288,16 +2288,16 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 		case nod_list:
 			impure = (STA) ((SCHAR *) request + node->nod_impure);
 			switch (request->req_operation) {
-			case req::req_evaluate:
+			case jrd_req::req_evaluate:
 				impure->sta_state = 0;
-			case req::req_return:
-			case req::req_sync:
+			case jrd_req::req_return:
+			case jrd_req::req_sync:
 				if (impure->sta_state < node->nod_count) {
-					request->req_operation = req::req_evaluate;
+					request->req_operation = jrd_req::req_evaluate;
 					node = node->nod_arg[impure->sta_state++];
 					break;
 				}
-				request->req_operation = req::req_return;
+				request->req_operation = jrd_req::req_return;
 			default:
 				node = node->nod_parent;
 			}
@@ -2305,10 +2305,10 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 
 		case nod_loop:
 			switch (request->req_operation) {
-			case req::req_evaluate:
-			case req::req_return:
+			case jrd_req::req_evaluate:
+			case jrd_req::req_return:
 				node = node->nod_arg[0];
-				request->req_operation = req::req_evaluate;
+				request->req_operation = jrd_req::req_evaluate;
 				break;
 
 			default:
@@ -2317,7 +2317,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 			break;
 
 		case nod_if:
-			if (request->req_operation == req::req_evaluate)
+			if (request->req_operation == jrd_req::req_evaluate)
 				if (EVL_boolean(tdbb, node->nod_arg[e_if_boolean])) {
 					node = node->nod_arg[e_if_true];
 					break;
@@ -2327,13 +2327,13 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 					break;
 				}
 				else
-					request->req_operation = req::req_return;
+					request->req_operation = jrd_req::req_return;
 			node = node->nod_parent;
 			break;
 
 		case nod_modify:
 			impure = (STA) ((SCHAR *) request + node->nod_impure);
-			if ((request->req_operation == req::req_return) &&
+			if ((request->req_operation == jrd_req::req_return) &&
 				(!impure->sta_state) && (node->nod_arg[e_mod_sub_mod])) {
 				if (!top_node) {
 					top_node = node;
@@ -2350,7 +2350,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 					which_mod_trig = ALL_TRIGS;
 				}
 				else {
-					request->req_operation = req::req_evaluate;
+					request->req_operation = jrd_req::req_evaluate;
 				}
 			}
 			else {
@@ -2366,7 +2366,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 			break;
 
 		case nod_nop:
-			request->req_operation = req::req_return;
+			request->req_operation = jrd_req::req_return;
 			node = node->nod_parent;
 			break;
 
@@ -2375,13 +2375,13 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 			break;
 
 		case nod_exec_sql:
-			if (request->req_operation == req::req_unwind) {
+			if (request->req_operation == jrd_req::req_unwind) {
 				node = node->nod_parent;
 				break;
 			}
 			exec_sql(tdbb, request, EVL_expr(tdbb, node->nod_arg[0]));
-			if (request->req_operation == req::req_evaluate)
-				request->req_operation = req::req_return;
+			if (request->req_operation == jrd_req::req_evaluate)
+				request->req_operation = jrd_req::req_return;
 			node = node->nod_parent;
 			break;
 
@@ -2395,8 +2395,8 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 			if (transaction->tra_flags & TRA_autocommit)
 				transaction->tra_flags |= TRA_perform_autocommit;
 		case nod_message:
-			if (request->req_operation == req::req_evaluate)
-				request->req_operation = req::req_return;
+			if (request->req_operation == jrd_req::req_evaluate)
+				request->req_operation = jrd_req::req_return;
 			node = node->nod_parent;
 			break;
 
@@ -2414,7 +2414,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 
 		case nod_store:
 			impure = (STA) ((SCHAR *) request + node->nod_impure);
-			if ((request->req_operation == req::req_return) &&
+			if ((request->req_operation == jrd_req::req_return) &&
 				(!impure->sta_state) && (node->nod_arg[e_sto_sub_store])) {
 				if (!top_node) {
 					top_node = node;
@@ -2431,7 +2431,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 					which_sto_trig = ALL_TRIGS;
 				}
 				else
-					request->req_operation = req::req_evaluate;
+					request->req_operation = jrd_req::req_evaluate;
 			}
 			else {
 				prev_node = node;
@@ -2484,9 +2484,9 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 			break;
 
 		case nod_delete_ranges:
-			if (request->req_operation == req::req_evaluate) {
+			if (request->req_operation == jrd_req::req_evaluate) {
 				RNG_delete_ranges(request);
-				request->req_operation = req::req_return;
+				request->req_operation = jrd_req::req_return;
 			}
 			node = node->nod_parent;
 			break;
@@ -2496,7 +2496,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 			break;
 
 		case nod_release_lock:
-			if (request->req_operation == req::req_evaluate) {
+			if (request->req_operation == jrd_req::req_evaluate) {
 				DSC *desc;
 
 				desc = EVL_expr(tdbb, node->nod_arg[e_rellock_lock]);
@@ -2520,60 +2520,60 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 					vector->vec_object[slot] = NULL;
 				}
 #endif
-				request->req_operation = req::req_return;
+				request->req_operation = jrd_req::req_return;
 			}
 			node = node->nod_parent;
 			break;
 
 		case nod_release_locks:
-			if (request->req_operation == req::req_evaluate) {
+			if (request->req_operation == jrd_req::req_evaluate) {
 				RLCK_release_locks(request->req_attachment);
-				request->req_operation = req::req_return;
+				request->req_operation = jrd_req::req_return;
 			}
 			node = node->nod_parent;
 			break;
 
 		case nod_force_crack:
-			if (request->req_operation == req::req_evaluate) {
+			if (request->req_operation == jrd_req::req_evaluate) {
 				RSE_MARK_CRACK(tdbb, *(RSB *) node->nod_arg[1],
 							   irsb_crack | irsb_forced_crack);
-				request->req_operation = req::req_return;
+				request->req_operation = jrd_req::req_return;
 			}
 			node = node->nod_parent;
 			break;
 
 		case nod_reset_stream:
-			if (request->req_operation == req::req_evaluate) {
+			if (request->req_operation == jrd_req::req_evaluate) {
 				RSE_reset_position(tdbb,
 								   *(RSB *) node->nod_arg[e_reset_from_rsb],
 								   request->req_rpb +
 								   (USHORT) node->nod_arg[e_reset_to_stream]);
-				request->req_operation = req::req_return;
+				request->req_operation = jrd_req::req_return;
 			}
 			node = node->nod_parent;
 			break;
 #endif
 
 		case nod_set_generator:
-			if (request->req_operation == req::req_evaluate) {
+			if (request->req_operation == jrd_req::req_evaluate) {
 				DSC *desc;
 
 				desc = EVL_expr(tdbb, node->nod_arg[e_gen_value]);
 				(void) DPM_gen_id(tdbb, (SLONG) node->nod_arg[e_gen_id], 1,
 								  MOV_get_int64(desc, 0));
-				request->req_operation = req::req_return;
+				request->req_operation = jrd_req::req_return;
 			}
 			node = node->nod_parent;
 			break;
 
 		case nod_set_generator2:
-			if (request->req_operation == req::req_evaluate) {
+			if (request->req_operation == jrd_req::req_evaluate) {
 				DSC *desc;
 
 				desc = EVL_expr(tdbb, node->nod_arg[e_gen_value]);
 				(void) DPM_gen_id(tdbb, (SLONG) node->nod_arg[e_gen_id], 1,
 								  MOV_get_int64(desc, 0));
-				request->req_operation = req::req_return;
+				request->req_operation = jrd_req::req_return;
 			}
 			node = node->nod_parent;
 			break;
@@ -2611,7 +2611,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 		}
 
 		error_pending = TRUE;
-		request->req_operation = req::req_unwind;
+		request->req_operation = jrd_req::req_unwind;
 		request->req_label = 0;
 	}
 	} // while()
@@ -2724,7 +2724,7 @@ static JRD_NOD modify(TDBB tdbb, register JRD_NOD node, SSHORT which_trig)
 
 	if (rsb && EXE_crack(tdbb, rsb, irsb_bof | irsb_eof | irsb_crack)) {
 		EXE_mark_crack(tdbb, rsb, irsb->irsb_flags);
-		request->req_operation = req::req_return;
+		request->req_operation = jrd_req::req_return;
 		return node->nod_parent;
 	}
 #endif
@@ -2764,17 +2764,17 @@ static JRD_NOD modify(TDBB tdbb, register JRD_NOD node, SSHORT which_trig)
 	}
 
 	switch (request->req_operation) {
-	case req::req_evaluate:
+	case jrd_req::req_evaluate:
 		break;
 
-	case req::req_return:
+	case jrd_req::req_return:
 		if (impure->sta_state) {
 			impure->sta_state = 0;
 			org_record = org_rpb->rpb_record;
 			new_record = new_rpb->rpb_record;
 			MOVE_FASTER(new_record->rec_data, org_record->rec_data,
 						new_record->rec_length);
-			request->req_operation = req::req_evaluate;
+			request->req_operation = jrd_req::req_evaluate;
 			return node->nod_arg[e_mod_statement];
 		}
 
@@ -3015,14 +3015,14 @@ static JRD_NOD receive_msg(TDBB tdbb, register JRD_NOD node)
 	BLKCHK(node, type_nod);
 
 	switch (request->req_operation) {
-	case req::req_evaluate:
-		request->req_operation = req::req_receive;
+	case jrd_req::req_evaluate:
+		request->req_operation = jrd_req::req_receive;
 		request->req_message = node->nod_arg[e_send_message];
 		request->req_flags |= req_stall;
 		return node;
 
-	case req::req_proceed:
-		request->req_operation = req::req_evaluate;
+	case jrd_req::req_proceed:
+		request->req_operation = jrd_req::req_evaluate;
 		return (node->nod_arg[e_send_statement]);
 
 	default:
@@ -3095,9 +3095,9 @@ static JRD_NOD release_bookmark(TDBB tdbb, JRD_NOD node)
 	request = tdbb->tdbb_request;
 	BLKCHK(node, type_nod);
 
-	if (request->req_operation == req::req_evaluate) {
+	if (request->req_operation == jrd_req::req_evaluate) {
 		BKM_release(node->nod_arg[e_relmark_id]);
-		request->req_operation = req::req_return;
+		request->req_operation = jrd_req::req_return;
 	}
 
 	return node->nod_parent;
@@ -3155,7 +3155,7 @@ static JRD_NOD seek_rse(TDBB tdbb, JRD_REQ request, JRD_NOD node)
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(node, type_nod);
 
-	if (request->req_operation == req::req_proceed) {
+	if (request->req_operation == jrd_req::req_proceed) {
 		/* get input arguments */
 
 		direction = MOV_get_long(EVL_expr(tdbb,
@@ -3168,7 +3168,7 @@ static JRD_NOD seek_rse(TDBB tdbb, JRD_REQ request, JRD_NOD node)
 
 		seek_rsb(tdbb, request, rse->rse_rsb, direction, offset);
 
-		request->req_operation = req::req_return;
+		request->req_operation = jrd_req::req_return;
 	}
 
 	return node->nod_parent;
@@ -3380,9 +3380,9 @@ static JRD_NOD selct(TDBB tdbb, register JRD_NOD node)
 	BLKCHK(node, type_nod);
 
 	switch (request->req_operation) {
-	case req::req_evaluate:
+	case jrd_req::req_evaluate:
 		request->req_message = node;
-		request->req_operation = req::req_receive;
+		request->req_operation = jrd_req::req_receive;
 		request->req_flags |= req_stall;
 		return node;
 
@@ -3412,17 +3412,17 @@ static JRD_NOD send_msg(TDBB tdbb, register JRD_NOD node)
 	BLKCHK(node, type_nod);
 
 	switch (request->req_operation) {
-	case req::req_evaluate:
+	case jrd_req::req_evaluate:
 		return (node->nod_arg[e_send_statement]);
 
-	case req::req_return:
-		request->req_operation = req::req_send;
+	case jrd_req::req_return:
+		request->req_operation = jrd_req::req_send;
 		request->req_message = node->nod_arg[e_send_message];
 		request->req_flags |= req_stall;
 		return node;
 
-	case req::req_proceed:
-		request->req_operation = req::req_return;
+	case jrd_req::req_proceed:
+		request->req_operation = jrd_req::req_return;
 		return node->nod_parent;
 
 	default:
@@ -3457,7 +3457,7 @@ static JRD_NOD set_bookmark(TDBB tdbb, JRD_NOD node)
 	request = tdbb->tdbb_request;
 	BLKCHK(node, type_nod);
 
-	if (request->req_operation == req::req_evaluate) {
+	if (request->req_operation == jrd_req::req_evaluate) {
 		bookmark = BKM_lookup(node->nod_arg[e_setmark_id]);
 		stream = (USHORT) node->nod_arg[e_setmark_stream];
 		rpb = &request->req_rpb[stream];
@@ -3483,7 +3483,7 @@ static JRD_NOD set_bookmark(TDBB tdbb, JRD_NOD node)
 						   impure->irsb_flags & (irsb_crack | irsb_eof |
 												 irsb_bof));
 
-		request->req_operation = req::req_return;
+		request->req_operation = jrd_req::req_return;
 	}
 
 	return node->nod_parent;
@@ -3608,7 +3608,7 @@ static JRD_NOD set_index(TDBB tdbb, register JRD_NOD node)
 	request = tdbb->tdbb_request;
 	BLKCHK(node, type_nod);
 
-	if (request->req_operation == req::req_evaluate) {
+	if (request->req_operation == jrd_req::req_evaluate) {
 		stream = (USHORT) node->nod_arg[e_index_stream];
 
 		rpb = &request->req_rpb[stream];
@@ -3629,7 +3629,7 @@ static JRD_NOD set_index(TDBB tdbb, register JRD_NOD node)
 					  relation, id ? &idx : (IDX *) 0);
 		RSE_open(tdbb, *(RSB *) node->nod_arg[e_index_rsb]);
 
-		request->req_operation = req::req_return;
+		request->req_operation = jrd_req::req_return;
 	}
 
 	return node->nod_parent;
@@ -3659,16 +3659,16 @@ static JRD_NOD stall(TDBB tdbb, register JRD_NOD node)
 	BLKCHK(node, type_nod);
 
 	switch (request->req_operation) {
-	case req::req_sync:
+	case jrd_req::req_sync:
 		return node->nod_parent;
 
-	case req::req_proceed:
-		request->req_operation = req::req_return;
+	case jrd_req::req_proceed:
+		request->req_operation = jrd_req::req_return;
 		return node->nod_parent;
 
 	default:
 		request->req_message = node;
-		request->req_operation = req::req_return;
+		request->req_operation = jrd_req::req_return;
 		request->req_flags |= req_stall;
 		return node;
 	}
@@ -3708,12 +3708,12 @@ static JRD_NOD store(TDBB tdbb, register JRD_NOD node, SSHORT which_trig)
 	JRD_REL    relation    = rpb->rpb_relation;
 
 	switch (request->req_operation) {
-	case req::req_evaluate:
+	case jrd_req::req_evaluate:
 		impure->sta_state = 0;
 		RLCK_reserve_relation(tdbb, transaction, relation, TRUE, TRUE);
 		break;
 
-	case req::req_return:
+	case jrd_req::req_return:
 		if (impure->sta_state)
 			return node->nod_parent;
 		record = rpb->rpb_record;
@@ -3795,7 +3795,7 @@ static JRD_NOD store(TDBB tdbb, register JRD_NOD node, SSHORT which_trig)
 
 		if (node->nod_arg[e_sto_statement2]) {
 			impure->sta_state = 1;
-			request->req_operation = req::req_evaluate;
+			request->req_operation = jrd_req::req_evaluate;
 			return node->nod_arg[e_sto_statement2];
 		}
 
@@ -3865,11 +3865,11 @@ static JRD_NOD stream(TDBB tdbb, register JRD_NOD node)
 	rsb = ((RSE) node)->rse_rsb;
 
 	switch (request->req_operation) {
-	case req::req_evaluate:
+	case jrd_req::req_evaluate:
 		RSE_open(tdbb, rsb);
-		request->req_operation = req::req_return;
+		request->req_operation = jrd_req::req_return;
 
-	case req::req_return:
+	case jrd_req::req_return:
 		node = node->nod_parent;
 		break;
 

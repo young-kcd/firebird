@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.38 2002-11-17 00:10:49 hippoman Exp $
+$Id: met.epp,v 1.39 2002-11-20 23:16:37 hippoman Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -2397,12 +2397,12 @@ void MET_parse_sys_trigger(TDBB tdbb, JRD_REL relation)
 	relation->rel_flags |= REL_sys_trigs_being_loaded;
 
 	trigger = NULL;
-	/* TMN: The cast "(struct trg*)" is a bad lie. Fix later
+	/* TMN: The cast "(struct jrd_trg*)" is a bad lie. Fix later
 	 * and remove this comment when it's done.
 	 */
 	while ( (trigger =
 		   (BLK*)INI_lookup_sys_trigger(relation,
-										(struct trg*)trigger,
+										(struct jrd_trg*)trigger,
 										&blr,
 										&type,
 										&name,
@@ -2626,7 +2626,7 @@ JRD_PRC MET_procedure(TDBB tdbb, int id, BOOLEAN noscan, USHORT flags)
 
 	if (!procedure)
 	{
-		procedure = FB_NEW_RPT(*dbb->dbb_permanent, 0) prc;
+		procedure = FB_NEW_RPT(*dbb->dbb_permanent, 0) jrd_prc;
 	}
 
 	try {
@@ -2866,7 +2866,7 @@ JRD_REL MET_relation(TDBB tdbb, USHORT id)
 	else
 		max_sys_rel = (USHORT) USER_DEF_REL_INIT_ID - 1;
 
-	relation = FB_NEW(*dbb->dbb_permanent) rel();
+	relation = FB_NEW(*dbb->dbb_permanent) jrd_rel();
 	(*vector)[id] = (BLK) relation;
 	relation->rel_id = id;
 
@@ -3110,7 +3110,7 @@ void MET_remove_procedure( TDBB tdbb, int id, JRD_PRC procedure)
 	{
 		save_proc_flags = procedure->prc_flags;		
 		memset(((SCHAR *)&procedure->prc_id), 0,
-			   sizeof(struct prc) - ((SCHAR *)&procedure->prc_id-(SCHAR *)procedure));
+			   sizeof(struct jrd_prc) - ((SCHAR *)&procedure->prc_id-(SCHAR *)procedure));
 		procedure->prc_flags = save_proc_flags;
 	}
 }

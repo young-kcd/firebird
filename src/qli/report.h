@@ -38,7 +38,7 @@ typedef struct brk {
 
 typedef struct rpt {
     struct blk	rpt_hdr;
-    struct nod	*rpt_detail_line;	/* Detail line print list */
+    struct qli_nod	*rpt_detail_line;	/* Detail line print list */
     BRK		rpt_top_page;		/* Top of page print list */
     BRK		rpt_bottom_page;	/* Bottom of page print list */
     BRK		rpt_top_rpt;		/* Top of report print list */

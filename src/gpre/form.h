@@ -31,7 +31,7 @@ typedef struct form {
 	struct form *form_next;		/* Next form in database */
 	struct sym *form_name;		/* Form name */
 	struct fld *form_fields;	/* Form fields */
-	struct req *form_parent;	/* Parent form request */
+	struct gpre_req *form_parent;	/* Parent form request */
 	struct fld *form_field;		/* Field in parent */
 	int *form_object;			/* Form data structure */
 	TEXT *form_handle;			/* Runtime form handle */
@@ -40,7 +40,7 @@ typedef struct form {
 /* Form Interaction */
 
 typedef struct fint {
-	struct req *fint_request;	/* Parent request */
+	struct gpre_req *fint_request;	/* Parent request */
 	USHORT fint_flags;			/* Misc crud */
 	struct lls *fint_display_fields;	/* List of fields for display */
 	struct lls *fint_update_fields;	/* List of fields for update */
@@ -60,7 +60,7 @@ typedef struct fint {
 
 
 typedef struct entree {
-	struct req *entree_request;	/* Parent request */
+	struct gpre_req *entree_request;	/* Parent request */
 	USHORT entree_entree;		/* ident for entree */
 	USHORT entree_value;		/* ident for entree value */
 	USHORT entree_end;			/* ident for end flag for get */

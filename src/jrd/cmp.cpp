@@ -40,7 +40,7 @@
  *
  */
 /*
-$Id: cmp.cpp,v 1.23 2002-11-18 20:27:23 skidder Exp $
+$Id: cmp.cpp,v 1.24 2002-11-20 23:16:37 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -296,7 +296,7 @@ JRD_REQ DLL_EXPORT CMP_clone_request(TDBB tdbb,
 	n =
 		(USHORT) ((request->req_impure_size - REQ_SIZE + REQ_TAIL - 1) /
 				  REQ_TAIL);
-	clone = FB_NEW_RPT(*request->req_pool, n) req;
+	clone = FB_NEW_RPT(*request->req_pool, n) jrd_req;
 	(*vector)[level] = (BLK) clone;
 	clone->req_attachment = tdbb->tdbb_attachment;
 	clone->req_count = request->req_count;
@@ -1737,7 +1737,7 @@ JRD_REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
    count of hold the impure areas. */
 
 	int n = (csb->csb_impure - REQ_SIZE + REQ_TAIL - 1) / REQ_TAIL;
-	request = FB_NEW_RPT(*tdbb->tdbb_default, n) req;
+	request = FB_NEW_RPT(*tdbb->tdbb_default, n) jrd_req;
 	request->req_count = csb->csb_n_stream;
 	request->req_pool = tdbb->tdbb_default;
 	request->req_impure_size = csb->csb_impure;

@@ -76,11 +76,11 @@ class Rsb : public pool_alloc_rpt<class Rsb*, type_rsb>
 	ULONG rsb_cardinality;		/* estimated cardinality of stream */
 	ULONG rsb_record_count;		/* count of records returned from rsb (not candidate records processed) */
 	struct Rsb *rsb_next;		/* next rsb, if appropriate */
-	struct rel *rsb_relation;	/* relation, if appropriate */
+	struct jrd_rel *rsb_relation;	/* relation, if appropriate */
 	struct str *rsb_alias;		/* SQL alias for relation */
-	struct prc *rsb_procedure;	/* procedure, if appropriate */
+	struct jrd_prc *rsb_procedure;	/* procedure, if appropriate */
 	struct fmt *rsb_format;		/* format, if appropriate */
-	struct nod *rsb_any_boolean;	/* any/all boolean */
+	struct jrd_nod *rsb_any_boolean;	/* any/all boolean */
 	Rsb* rsb_arg[1];
 };
 typedef Rsb *RSB;
@@ -163,7 +163,7 @@ typedef struct irsb_sort {
 
 typedef struct irsb_procedure {
 	ULONG irsb_flags;
-	struct req *irsb_req_handle;
+	struct jrd_req *irsb_req_handle;
 	struct str *irsb_message;
 } *IRSB_PROCEDURE;
 
@@ -184,8 +184,8 @@ typedef struct irsb_sim {
 	ULONG irsb_flags;
 	USHORT irsb_sim_rid;		/* Next relation id */
 	USHORT irsb_sim_fid;		/* Next field id */
-	struct req *irsb_sim_req1;	/* Request handle */
-	struct req *irsb_sim_req2;	/* Request handle */
+	struct jrd_req *irsb_sim_req1;	/* Request handle */
+	struct jrd_req *irsb_sim_req2;	/* Request handle */
 } *IRSB_SIM;
 
 #define irsb_sim_alias	32		/* Duplicate relation but w/o user name */
@@ -239,7 +239,7 @@ typedef struct irsb_nav {
 		USHORT smb_flag_offset;	/* Offset of missing flag */
 		USHORT smb_stream;		/* Stream for field id */
 		SSHORT smb_field_id;	/* Id for field (-1 if dbkey) */
-		struct nod *smb_node;	/* Expression node */
+		struct jrd_nod *smb_node;	/* Expression node */
 	};
 
 class smb : public pool_alloc_rpt<smb_repeat, type_smb>
@@ -321,10 +321,10 @@ class Opt : public pool_alloc<type_opt>
 	USHORT opt_best_count; /* Longest length of indexable streams */
 	USHORT opt_g_flags; /* global flags */
 	struct opt_repeat {
-		struct nod *opt_conjunct; /* Conjunction */
-		struct nod *opt_lower; /* Lower bound on index value */
-		struct nod *opt_upper; /* Upper bound on index value */
-		struct nod *opt_match; /* Conjunct which matches index segment */
+		struct jrd_nod *opt_conjunct; /* Conjunction */
+		struct jrd_nod *opt_lower; /* Lower bound on index value */
+		struct jrd_nod *opt_upper; /* Upper bound on index value */
+		struct jrd_nod *opt_match; /* Conjunct which matches index segment */
 		IRL opt_relationships; /* Streams directly reachable by index */
 		ULONG opt_dependencies[MAX_OPT_ITEMS / 32];
 		/* Stream dependencies to compute conjunct */

@@ -24,7 +24,7 @@
 #ifndef _JRD_PCMET_PROTO_H_
 #define _JRD_PCMET_PROTO_H_
 
-extern int PCMET_expression_index(TDBB, SSHORT, struct dfw *, struct tra *);
-extern void PCMET_lookup_index(struct rel *, struct idx *);
+extern int PCMET_expression_index(TDBB, SSHORT, struct dfw *, struct jrd_tra *);
+extern void PCMET_lookup_index(struct jrd_rel *, struct idx *);
 
 #endif /* _JRD_PCMET_PROTO_H_ */

@@ -24,6 +24,6 @@
 #ifndef _QLI_EXPAN_PROTO_H_
 #define _QLI_EXPAN_PROTO_H_
 
-extern struct nod	*EXP_expand (struct syn *);
+extern struct qli_nod	*EXP_expand (struct syn *);
 
 #endif /* _QLI_EXPAN_PROTO_H_ */

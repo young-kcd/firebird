@@ -1950,7 +1950,7 @@ static void setup_bitmaps(RSB rsb, IRSB_NAV impure)
 
 		impure->irsb_nav_bitmap = EVL_bitmap(tdbb,
 											 reinterpret_cast <
-											 nod *
+											 jrd_nod *
 											 >(rsb->rsb_arg
 											   [RSB_NAV_inversion]));
 	}

@@ -166,9 +166,9 @@ class arr : public pool_alloc_rpt<ads::ads_repeat, type_arr>
     public:
 	UCHAR*		arr_data;			/* Data block, if allocated */
 	class blb*	arr_blob;		/* Blob for data access */
-	struct tra* arr_transaction;	/* Parent transaction block */
+	struct jrd_tra* arr_transaction;	/* Parent transaction block */
 	struct arr* arr_next;		/* Next array in transaction */
-	struct req* arr_request;	/* request */
+	struct jrd_req* arr_request;	/* request */
 	SLONG		arr_effective_length;	/* Length of array instance */
 	USHORT		arr_desc_length;		/* Length of array descriptor */
 	struct ads	arr_desc;		/* Array descriptor */

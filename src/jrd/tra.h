@@ -37,7 +37,7 @@
 
 /* Transaction block */
 
-class tra : public pool_alloc_rpt<SCHAR, type_tra>
+class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 {
     public:
 	struct att *tra_attachment;	/* database attachment */
@@ -46,8 +46,8 @@ class tra : public pool_alloc_rpt<SCHAR, type_tra>
 	SLONG tra_oldest;			/* oldest interesting transaction */
 	SLONG tra_oldest_active;	/* record versions older than this can be
 								   gargage-collected by this tx */
-	struct tra *tra_next;		/* next transaction in database */
-	struct tra *tra_sibling;	/* next transaction in group */
+	struct jrd_tra *tra_next;		/* next transaction in database */
+	struct jrd_tra *tra_sibling;	/* next transaction in group */
 	JrdMemoryPool* tra_pool;		/* pool for transaction */
 	class blb *tra_blobs;		/* Linked list of active blobs */
 	struct arr *tra_arrays;		/* Linked list of active arrays */
@@ -67,7 +67,7 @@ class tra : public pool_alloc_rpt<SCHAR, type_tra>
 	UCHAR tra_callback_count;	/* callback count for 'execute varchar' */
 	UCHAR tra_transactions[1];
 };
-typedef tra *JRD_TRA;
+typedef jrd_tra *JRD_TRA;
 
 #define TRA_system		1L		/* system transaction */
 #define TRA_update		2L		/* update is permitted */
@@ -207,7 +207,7 @@ class vct : public pool_alloc<type_vct>
 {
     public:
 	struct vct *vct_next;		/* Next action within verb */
-	struct rel *vct_relation;	/* Relation involved */
+	struct jrd_rel *vct_relation;	/* Relation involved */
 	struct sbm *vct_records;	/* Record involved */
 	struct sbm *vct_undo;		/* Record involved that have to be replaced */
 	struct lls *vct_data;		/* Data for undo records */

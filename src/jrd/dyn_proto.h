@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-extern void DYN_ddl(struct att *, struct tra *, USHORT, UCHAR *);
+extern void DYN_ddl(struct att *, struct jrd_tra *, USHORT, UCHAR *);
 extern void	DYN_terminate(TEXT *, int);
 
 

@@ -566,8 +566,8 @@ typedef struct fld {
 
 /* relation definition - holds useful relation type stuff */
 
-typedef struct rel {
-    struct rel		*rel_next;
+typedef struct burp_rel {
+    struct burp_rel		*rel_next;
     struct fld		*rel_fields;
     SSHORT		rel_flags;
     SSHORT		rel_id;
@@ -587,8 +587,8 @@ typedef struct rel {
 
 /* procedure definition - holds useful procedure type stuff */
 
-typedef struct prc {
-    struct prc	*prc_next;
+typedef struct burp_prc {
+    struct burp_prc	*prc_next;
     SSHORT	prc_name_length;
     GDS_NAME	prc_name;
     GDS_NAME	prc_owner;		/* relation owner, if not us */

@@ -46,9 +46,9 @@ typedef struct rlb {
 
 /* Request block */
 
-typedef struct req {
+typedef struct qli_req {
     struct blk	req_header;
-    struct req	*req_next;		/* Next request in statement */
+    struct qli_req	*req_next;		/* Next request in statement */
     struct dbb	*req_database;		/* Database for request */
     int		*req_handle;		/* Database request handle */
     struct rlb	*req_blr;
@@ -77,21 +77,21 @@ typedef enum {
     CTX_STREAM
 } CTX_T;
 
-typedef struct ctx {
+typedef struct qli_ctx {
     struct blk	ctx_header;
     CTX_T	ctx_type;		/* Type of context */
-    struct ctx	*ctx_source;		/* Source context for MODIFY */
-    struct ctx	*ctx_primary;		/* Primary context */
+    struct qli_ctx	*ctx_source;		/* Source context for MODIFY */
+    struct qli_ctx	*ctx_primary;		/* Primary context */
     struct sym	*ctx_symbol;		/* Context symbol, if any */
-    struct rel	*ctx_relation;		/* Relation of context */
-    struct nod	*ctx_stream;		/* Stream of context */
+    struct qli_rel	*ctx_relation;		/* Relation of context */
+    struct qli_nod	*ctx_stream;		/* Stream of context */
     struct frm	*ctx_form;		/* Form block, if any */
     struct fld	*ctx_variable;		/* Variable reference */
-    struct req	*ctx_request;		/* Request block */
+    struct qli_req	*ctx_request;		/* Request block */
     struct qli_msg	*ctx_message;		/* Message for data */
-    struct nod	*ctx_rse;		/* RSE node for root context */
-    struct nod	*ctx_sub_rse;		/* RSE node aggregate */
-    struct ctx	*ctx_parent;		/* Parent context for map */
+    struct qli_nod	*ctx_rse;		/* RSE node for root context */
+    struct qli_nod	*ctx_sub_rse;		/* RSE node aggregate */
+    struct qli_ctx	*ctx_parent;		/* Parent context for map */
     struct map	*ctx_map;		/* Map items, if any */
     USHORT	ctx_context;		/* Context in request */
 } *QLI_CTX;
@@ -101,7 +101,7 @@ typedef struct ctx {
 typedef struct map {
     struct blk	map_header;
     struct map	*map_next;		/* Next map in item */
-    struct nod	*map_node;		/* Value for map item */
+    struct qli_nod	*map_node;		/* Value for map item */
     USHORT	map_position;		/* Position in map */
 } *MAP;
 
@@ -109,8 +109,8 @@ typedef struct map {
 
 typedef struct qli_msg {
     struct blk	msg_header;
-    struct req	*msg_request;		/* Parent request */
-    struct ctx	*msg_context;		/* Contexts in message */
+    struct qli_req	*msg_request;		/* Parent request */
+    struct qli_ctx	*msg_context;		/* Contexts in message */
     struct qli_msg	*msg_next;		/* Next message in request */
     struct par	*msg_parameters;	/* Field instances */
     USHORT	msg_number;		/* Message number */
@@ -126,7 +126,7 @@ typedef struct par {
     DSC		par_desc;		/* Value descriptor */
     struct par	*par_next;		/* Next par block in context */
     struct qli_msg	*par_message;		/* Parent message */
-    struct nod	*par_value;		/* Value */
+    struct qli_nod	*par_value;		/* Value */
     USHORT	par_parameter;		/* Parameter number */
     USHORT	par_offset;		/* Offset of parameter in message */
     struct par	*par_missing;		/* Parameter block for missing value */
@@ -148,7 +148,7 @@ typedef ENUM itm_t
 
 typedef struct itm {
     struct blk	itm_header;
-    struct nod	*itm_value;
+    struct qli_nod	*itm_value;
     TEXT	*itm_edit_string;
     struct pic	*itm_picture;			/* picture string block */
     TEXT	*itm_query_header;
@@ -184,7 +184,7 @@ typedef struct prt {
 
 /* General node blocks */
 
-typedef struct nod {
+typedef struct qli_nod {
     struct blk	nod_header;
     NOD_T	nod_type;		/* Type of node */
     DSC		nod_desc;		/* Descriptor */
@@ -192,7 +192,7 @@ typedef struct nod {
     PAR		nod_export;		/* To pass random value */
     SSHORT	nod_count;		/* Number of arguments */
     UCHAR	nod_flags;
-    struct nod	*nod_arg[1];
+    struct qli_nod	*nod_arg[1];
 } *QLI_NOD;
 
 #define NOD_local	1		/* locally computed expression */

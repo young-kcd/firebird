@@ -49,13 +49,13 @@ class blb : public pool_alloc_rpt<UCHAR, type_blb>
 {
     public:
 	att *blb_attachment;	/* database attachment */
-	rel *blb_relation;	/* Relation, if known */
-	struct tra *blb_transaction;	/* Parent transaction block */
+	jrd_rel *blb_relation;	/* Relation, if known */
+	struct jrd_tra *blb_transaction;	/* Parent transaction block */
 	blb *blb_next;		/* Next blob in transaction */
 	UCHAR *blb_segment;			/* Next segment to be addressed */
 	struct ctl *blb_filter;		/* Blob filter control block, if any */
 	struct bid blb_blob_id;		/* Id of materialized blob */
-	struct req *blb_request;	/* request that assigned temporary blob */
+	struct jrd_req *blb_request;	/* request that assigned temporary blob */
 	vcl *blb_pages;		/* Vector of pages */
 	USHORT blb_pointers;		/* Max pointer on a page */
 	USHORT blb_level;			/* Storage type */

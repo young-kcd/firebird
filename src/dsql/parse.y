@@ -4074,7 +4074,7 @@ for (l = 0, temp = stack; temp; temp = temp->lls_next)
     l++;
 
 old  = node;
-node = FB_NEW_RPT(*tdsql->tsql_default, l) nod;
+node = FB_NEW_RPT(*tdsql->tsql_default, l) dsql_nod;
 node->nod_count = l;
 node->nod_type  = nod_list;
 node->nod_flags = old->nod_flags;
@@ -4109,7 +4109,7 @@ TSQL    tdsql;
 
 tdsql = GET_THREAD_DATA;
 
-node = FB_NEW_RPT(*tdsql->tsql_default, count) nod;
+node = FB_NEW_RPT(*tdsql->tsql_default, count) dsql_nod;
 node->nod_type = type;
 node->nod_line = (USHORT) lines_bk;
 node->nod_column = (USHORT) (last_token_bk - line_start_bk + 1);
@@ -4146,7 +4146,7 @@ TSQL    tdsql;
 
 tdsql = GET_THREAD_DATA;
 
-node = FB_NEW_RPT(*tdsql->tsql_default, count) nod;
+node = FB_NEW_RPT(*tdsql->tsql_default, count) dsql_nod;
 node->nod_type = type;
 node->nod_flags = flag;
 node->nod_line = (USHORT) lines_bk;

@@ -467,12 +467,12 @@ static USHORT process_statement( USHORT flush_flag)
 
 /* Compile the statement */
 
-	if (!(execution_tree = (BLK) CMPQ_compile((nod*) expanded_tree)))
+	if (!(execution_tree = (BLK) CMPQ_compile((qli_nod*) expanded_tree)))
 		return FALSE;
 
 /* Generate any BLR needed to support the request */
 
-	if (!GEN_generate(( (nod*) execution_tree)))
+	if (!GEN_generate(( (qli_nod*) execution_tree)))
 		return FALSE;
 
 	if (QLI_statistics)
@@ -491,7 +491,7 @@ static USHORT process_statement( USHORT flush_flag)
 
 /* Execute the request, for better or worse */
 
-	EXEC_top((nod*) execution_tree);
+	EXEC_top((qli_nod*) execution_tree);
 
 	if (QLI_statistics)
 	{

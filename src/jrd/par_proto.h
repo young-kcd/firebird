@@ -28,13 +28,13 @@
 extern "C" {
 #endif
 
-struct nod *PAR_blr(TDBB, struct rel *, UCHAR *, class Csb *, class Csb **,
-					struct req **, BOOLEAN, USHORT);
+struct jrd_nod *PAR_blr(TDBB, struct jrd_rel *, UCHAR *, class Csb *, class Csb **,
+					struct jrd_req **, BOOLEAN, USHORT);
 int PAR_desc(class Csb **, struct dsc *);
-struct nod *PAR_gen_field(TDBB, USHORT, USHORT);
-struct nod *PAR_make_field(TDBB, class Csb *, USHORT, TEXT *);
-struct nod *PAR_make_list(TDBB, struct lls *);
-struct nod *PAR_make_node(TDBB, int);
+struct jrd_nod *PAR_gen_field(TDBB, USHORT, USHORT);
+struct jrd_nod *PAR_make_field(TDBB, class Csb *, USHORT, TEXT *);
+struct jrd_nod *PAR_make_list(TDBB, struct lls *);
+struct jrd_nod *PAR_make_node(TDBB, int);
 class Csb *PAR_parse(TDBB, UCHAR *, USHORT);
 SLONG PAR_symbol_to_gdscode(const char*);
 

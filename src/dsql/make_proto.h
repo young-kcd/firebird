@@ -28,22 +28,22 @@
 
 #include "../dsql/sym.h"
 
-struct nod* MAKE_constant(class str* , int);
-struct nod* MAKE_str_constant(class str* , SSHORT);
+struct dsql_nod* MAKE_constant(class str* , int);
+struct dsql_nod* MAKE_str_constant(class str* , SSHORT);
 class str* MAKE_cstring(CONST SCHAR*);
-void MAKE_desc(struct dsc* , struct nod*);
+void MAKE_desc(struct dsc* , struct dsql_nod*);
 void MAKE_desc_from_field(struct dsc* , class fld*);
-void MAKE_desc_from_list(struct dsc* , struct nod*);
-struct nod* MAKE_field(class ctx* , class fld* , struct nod*);
-struct nod* MAKE_list(class dsql_lls*);
-struct nod* MAKE_node(ENUM nod_t, int);
+void MAKE_desc_from_list(struct dsc* , struct dsql_nod*);
+struct dsql_nod* MAKE_field(class dsql_ctx* , class fld* , struct dsql_nod*);
+struct dsql_nod* MAKE_list(class dsql_lls*);
+struct dsql_nod* MAKE_node(ENUM nod_t, int);
 class par* MAKE_parameter(class dsql_msg* , USHORT, USHORT);
 class str* MAKE_string(CONST UCHAR* , int);
 struct sym* MAKE_symbol(class dbb* , CONST TEXT* , USHORT,
-						   ENUM sym_type, class req*);
+						   ENUM sym_type, class dsql_req*);
 class str* MAKE_tagged_string(CONST UCHAR* , int, CONST TEXT*);
-struct nod* MAKE_trigger_type(struct nod*, struct nod*);
-struct nod* MAKE_variable(class fld* , CONST TEXT* , USHORT, USHORT,
+struct dsql_nod* MAKE_trigger_type(struct dsql_nod*, struct dsql_nod*);
+struct dsql_nod* MAKE_variable(class fld* , CONST TEXT* , USHORT, USHORT,
 								 USHORT, USHORT);
 
 

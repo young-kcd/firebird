@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: sqe.cpp,v 1.5 2002-11-17 00:04:18 hippoman Exp $
+//  $Id: sqe.cpp,v 1.6 2002-11-20 23:13:21 hippoman Exp $
 //  Revision 1.3  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -38,7 +38,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sqe.cpp,v 1.5 2002-11-17 00:04:18 hippoman Exp $
+//	$Id: sqe.cpp,v 1.6 2002-11-20 23:13:21 hippoman Exp $
 //
 #include "firebird.h"
 #include <stdio.h>
@@ -63,7 +63,7 @@ extern "C" {
 #define ERROR_LENGTH	256
 
 struct scope {
-	struct ctx *req_contexts;
+	struct gpre_ctx *req_contexts;
 	USHORT req_scope_level;		/* scope level for SQL subquery parsing */
 	USHORT req_in_aggregate;	/* now processing value expr for aggr */
 	USHORT req_in_select_list;	/* processing select list */
@@ -3058,7 +3058,7 @@ static GPRE_NOD par_udf( GPRE_REQ request)
 		if (MATCH(KW_YEAR) || MATCH(KW_MONTH) || MATCH(KW_DAY) ||
 			MATCH(KW_HOUR) || MATCH(KW_MINUTE) || MATCH(KW_SECOND) ||
 			MATCH(KW_WEEKDAY) || MATCH(KW_YEARDAY)) {
-			node->nod_arg[0] = (struct nod *) kw_word;
+			node->nod_arg[0] = (struct gpre_nod *) kw_word;
 			if (!MATCH(KW_FROM))
 				SYNTAX_ERROR("FROM");
 		}

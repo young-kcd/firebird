@@ -52,9 +52,9 @@ typedef struct idx {
 	struct vec *idx_foreign_primaries;	/* ids for primary/unique indexes with partners */
 	struct vec *idx_foreign_relations;	/* ids for foreign key partner relations */
 	struct vec *idx_foreign_indexes;	/* ids for foreign key partner indexes */
-	struct nod *idx_expression;	/* node tree for indexed expresssion */
+	struct jrd_nod *idx_expression;	/* node tree for indexed expresssion */
 	struct dsc idx_expression_desc;	/* descriptor for expression result */
-	struct req *idx_expression_request;	/* stored request for expression evaluation */
+	struct jrd_req *idx_expression_request;	/* stored request for expression evaluation */
 	struct idx_repeat {
 		USHORT idx_field;		/* field id */
 		USHORT idx_itype;		/* data of field in index */
@@ -115,10 +115,10 @@ typedef struct iib {
 	SLONG iib_number;			/* record number (or lower level page) */
 	SLONG iib_sibling;			/* right sibling page */
 	struct idx *iib_descriptor;	/* index descriptor */
-	struct rel *iib_relation;	/* relation block */
+	struct jrd_rel *iib_relation;	/* relation block */
 	struct key *iib_key;		/* varying string for insertion */
 	struct sbm *iib_duplicates;	/* spare bit map of duplicates */
-	struct tra *iib_transaction;	/* insertion transaction */
+	struct jrd_tra *iib_transaction;	/* insertion transaction */
 } IIB;
 
 
@@ -155,17 +155,17 @@ typedef struct isr {
 
 /* Index retrieval block -- hold stuff for index retrieval */
 
-class irb : public pool_alloc_rpt<nod*, type_irb>
+class irb : public pool_alloc_rpt<jrd_nod*, type_irb>
 {
     public:
 	IDX irb_desc;				/* Index descriptor */
 	USHORT irb_index;			/* Index id */
 	USHORT irb_generic;			/* Flags for generic search */
-	struct rel *irb_relation;	/* Relation for retrieval */
+	struct jrd_rel *irb_relation;	/* Relation for retrieval */
 	USHORT irb_lower_count;		/* Number of segments for retrieval */
 	USHORT irb_upper_count;		/* Number of segments for retrieval */
 	KEY *irb_key;				/* key for equality retrival */
-	nod* irb_value[1];
+	jrd_nod* irb_value[1];
 };
 typedef irb *IRB;
 

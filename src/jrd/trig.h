@@ -45,7 +45,7 @@
 
 /* trigger definition structure */
 
-typedef struct trg
+typedef struct jrd_trg
 {
 	CONST SCHAR*	trg_name;
 	UCHAR			trg_relation;

@@ -915,16 +915,16 @@ int INF_request_info(
 
 		case gds_info_state:
 			state = gds_info_req_active;
-			if (request->req_operation == req::req_send)
+			if (request->req_operation == jrd_req::req_send)
 				state = gds_info_req_send;
-			else if (request->req_operation == req::req_receive) {
+			else if (request->req_operation == jrd_req::req_receive) {
 				node = request->req_next;
 				if (node->nod_type == nod_select)
 					state = gds_info_req_select;
 				else
 					state = gds_info_req_receive;
 			}
-			else if ((request->req_operation == req::req_return) &&
+			else if ((request->req_operation == jrd_req::req_return) &&
 					 (request->req_flags & req_stall))
 				state = isc_info_req_sql_stall;
 			if (!(request->req_flags & req_active))
@@ -935,8 +935,8 @@ int INF_request_info(
 		case gds_info_message_number:
 		case gds_info_message_size:
 			if (!(request->req_flags & req_active) ||
-				(request->req_operation != req::req_receive &&
-				request->req_operation != req::req_send)) {
+				(request->req_operation != jrd_req::req_receive &&
+				request->req_operation != jrd_req::req_send)) {
 				buffer_ptr[0] = item;
 				item = gds_info_error;
 				length = 1 + INF_convert(gds_infinap, buffer_ptr + 1);

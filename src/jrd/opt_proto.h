@@ -30,15 +30,15 @@
 #include "../jrd/lls.h"
 
 
-extern BOOLEAN OPT_access_path(struct req *, SCHAR *, SSHORT, USHORT *);
+extern BOOLEAN OPT_access_path(struct jrd_req *, SCHAR *, SSHORT, USHORT *);
 extern class Rsb *OPT_compile(TDBB, register class Csb *,
 							   register struct rse *, struct lls *);
-extern struct nod *OPT_make_dbkey(register struct opt *, struct nod *,
+extern struct jrd_nod *OPT_make_dbkey(register struct opt *, struct jrd_nod *,
 								  USHORT);
-extern struct nod *OPT_make_index(TDBB, struct opt *, struct rel *,
+extern struct jrd_nod *OPT_make_index(TDBB, struct opt *, struct jrd_rel *,
 								  struct idx *);
 extern int OPT_match_index(struct opt *, USHORT, struct idx *);
-extern void OPT_set_index(TDBB, struct req *, class Rsb **, struct rel *,
+extern void OPT_set_index(TDBB, struct jrd_req *, class Rsb **, struct jrd_rel *,
 						  struct idx *);
 
 #endif /* _JRD_OPT_PROTO_H_ */

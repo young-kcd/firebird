@@ -40,7 +40,7 @@
 typedef struct rpb {
 	SLONG rpb_number;			/* record number in relation */
 	SLONG rpb_transaction;		/* transaction number */
-	struct rel *rpb_relation;	/* relation of record */
+	struct jrd_rel *rpb_relation;	/* relation of record */
 	struct rec *rpb_record;		/* final record block */
 	struct rec *rpb_prior;		/* prior record block if this is a delta record */
 	struct srpb *rpb_copy;		/* rpb copy for singleton verification */
@@ -124,7 +124,7 @@ typedef srpb *SRPB;
 
 /* request block */
 
-class req : public pool_alloc_rpt<rpb, type_req>
+class jrd_req : public pool_alloc_rpt<rpb, type_req>
 {
 public:
 	ATT			req_attachment;		// database attachment
@@ -133,18 +133,18 @@ public:
 	ULONG		req_impure_size;	// size of impure area
 	JrdMemoryPool* req_pool;
 	struct vec*	req_sub_requests;	// vector of sub-requests
-	struct tra* req_transaction;
-	req*		req_request;	/* next request in dbb */
+	struct jrd_tra* req_transaction;
+	jrd_req*		req_request;	/* next request in dbb */
 	struct acc*	req_access;		/* Access items to be checked */
 	struct vec*	req_variables;	/* Vector of variables, if any */
 	class Rsc*	req_resources;	/* Resources (relations and indices) */
-	struct nod*	req_message;	/* Current message for send/receive */
+	struct jrd_nod*	req_message;	/* Current message for send/receive */
 #ifdef SCROLLABLE_CURSORS
-	struct nod *req_async_message;	/* Asynchronous message (used in scrolling) */
+	struct jrd_nod *req_async_message;	/* Asynchronous message (used in scrolling) */
 #endif
 	struct vec*	req_refresh_ranges;	/* Vector of refresh_ranges */
 	struct rng*	req_begin_ranges;	/* Vector of refresh_ranges */
-	struct prc*	req_procedure;		/* procedure, if any */
+	struct jrd_prc*	req_procedure;		/* procedure, if any */
 	TEXT*		req_trg_name;		/* name of request (trigger), if any */
 	USHORT req_length;			/* message length for send/receive */
 	USHORT req_nmsgs;			/* number of message types */
@@ -160,12 +160,12 @@ public:
 	ULONG req_records_affected; /* count of records affected by the last statement */
 
 	USHORT req_view_flags;		/* special flags for virtual ops on views */
-	struct rel* req_top_view_store;	/* the top view in store(), if any */
-	struct rel* req_top_view_modify;	/* the top view in modify(), if any */
-	struct rel* req_top_view_erase;	/* the top view in erase(), if any */
+	struct jrd_rel* req_top_view_store;	/* the top view in store(), if any */
+	struct jrd_rel* req_top_view_modify;	/* the top view in modify(), if any */
+	struct jrd_rel* req_top_view_erase;	/* the top view in erase(), if any */
 
-	struct nod* req_top_node;	/* top of execution tree */
-	struct nod* req_next;		/* next node for execution */
+	struct jrd_nod* req_top_node;	/* top of execution tree */
+	struct jrd_nod* req_next;		/* next node for execution */
 	struct vec* req_fors;		/* Vector of for loops, if any */
 	struct vec* req_invariants;	/* Vector of invariant nodes, if any */
 	USHORT req_label;			/* label for leave */
@@ -187,9 +187,9 @@ public:
 
 	rpb req_rpb[1];		/* record parameter blocks */
 };
-typedef req *JRD_REQ;
+typedef jrd_req *JRD_REQ;
 
-#define REQ_SIZE	(sizeof (struct req) - sizeof (((JRD_REQ) 0)->req_rpb[0]))
+#define REQ_SIZE	(sizeof (struct jrd_req) - sizeof (((JRD_REQ) 0)->req_rpb[0]))
 
 /* Flags for req_flags */
 #define req_active				0x1L
@@ -255,8 +255,8 @@ class Rsc : public pool_alloc<type_rsc>
 {
     public:
 	class Rsc *rsc_next;		/* Next resource in request */
-	struct rel *rsc_rel;		/* Relation block */
-	struct prc *rsc_prc;		/* Relation block */
+	struct jrd_rel *rsc_rel;		/* Relation block */
+	struct jrd_prc *rsc_prc;		/* Relation block */
 	USHORT rsc_id;				/* Id of parent */
 	enum rsc_s rsc_type;
 };
@@ -269,7 +269,7 @@ class idl : public pool_alloc<type_idl>
     public:
 	struct idl*	idl_next;		/* Next index lock block for relation */
 	struct lck*	idl_lock;		/* Lock block */
-	struct rel*	idl_relation;	/* Parent relation */
+	struct jrd_rel*	idl_relation;	/* Parent relation */
 	USHORT		idl_id;			/* Index id */
 	USHORT		idl_count;		/* Use count */
 };
@@ -283,7 +283,7 @@ class acc : public pool_alloc<type_acc>
     public:
 	struct acc*	acc_next;
 	TEXT*		acc_security_name;	/* WRITTEN into by SCL_get_class() */
-	struct rel*	acc_view;
+	struct jrd_rel*	acc_view;
 	CONST TEXT*	acc_trg_name;
 	CONST TEXT*	acc_prc_name;
 	CONST TEXT*	acc_name;

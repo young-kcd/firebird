@@ -47,13 +47,13 @@ typedef ENUM nod_t {
 
 
 /* NOTE: The definition of structures rse and lit must be defined in
-	 exactly the same way as structure nod through item nod_count.
+	 exactly the same way as structure jrd_nod through item nod_count.
 	 If you change one, be sure to change all of them. */
 
-class nod : public pool_alloc_rpt<class nod*, type_nod>
+class jrd_nod : public pool_alloc_rpt<class jrd_nod*, type_nod>
 {
 public:
-	nod()
+	jrd_nod()
 	:	nod_parent(0),
 		nod_impure(0),
 		nod_type(nod_nop),
@@ -64,15 +64,15 @@ public:
 		nod_arg[0] = 0;
 	}
 
-	nod*	nod_parent;
+	jrd_nod*	nod_parent;
 	SLONG	nod_impure;			/* Inpure offset from request block */
 	NOD_T	nod_type;				/* Type of node */
 	UCHAR	nod_flags;
 	SCHAR	nod_scale;			/* Target scale factor */
 	USHORT	nod_count;			/* Number of arguments */
-	nod*	nod_arg[1];
+	jrd_nod*	nod_arg[1];
 };
-typedef nod* JRD_NOD;
+typedef jrd_nod* JRD_NOD;
 
 #define nod_comparison 	1
 #define nod_id		1			/* marks a field node as a blr_fid guy */
@@ -89,10 +89,10 @@ typedef nod* JRD_NOD;
 
 /* Special RSE node */
 
-class rse : public pool_alloc_rpt<nod*, type_rse>
+class rse : public pool_alloc_rpt<jrd_nod*, type_rse>
 {
 public:
-	nod*	nod_parent;
+	jrd_nod*	nod_parent;
 	SLONG	nod_impure;			/* Inpure offset from request block */
 	NOD_T	nod_type;				/* Type of node */
 	UCHAR	nod_flags;
@@ -102,17 +102,17 @@ public:
 	USHORT	rse_jointype;		/* inner, left, right, full */
 	BOOLEAN rse_writelock;
 	struct rsb *rse_rsb;
-	nod*	rse_first;
-    nod*	rse_skip;
-	nod*	rse_boolean;
-	nod*	rse_sorted;
-	nod*	rse_projection;
-	nod*	rse_aggregate;	/* singleton aggregate for optimizing to index */
-	nod*	rse_plan;		/* user-specified access plan */
+	jrd_nod*	rse_first;
+    jrd_nod*	rse_skip;
+	jrd_nod*	rse_boolean;
+	jrd_nod*	rse_sorted;
+	jrd_nod*	rse_projection;
+	jrd_nod*	rse_aggregate;	/* singleton aggregate for optimizing to index */
+	jrd_nod*	rse_plan;		/* user-specified access plan */
 #ifdef SCROLLABLE_CURSORS
-	nod*	rse_async_message;	/* asynchronous message to send for scrolling */
+	jrd_nod*	rse_async_message;	/* asynchronous message to send for scrolling */
 #endif
-	nod*	rse_relation[1];
+	jrd_nod*	rse_relation[1];
 };
 typedef rse* RSE;
 
@@ -120,7 +120,7 @@ typedef rse* RSE;
 #define rse_singular	2		/* flags rse-type node as from a singleton select */
 #define rse_variant	4			/* flags rse as variant (not invariant?) */
 
-#define rse_delta	(sizeof(struct rse)-sizeof(struct nod))/sizeof(((JRD_NOD) 0)->nod_arg[0])
+#define rse_delta	(sizeof(struct rse)-sizeof(struct jrd_nod))/sizeof(((JRD_NOD) 0)->nod_arg[0])
 
 
 /* Literal value */
@@ -128,7 +128,7 @@ typedef rse* RSE;
 class lit : public pool_alloc<type_lit>
 {
 public:
-	nod*	nod_parent;
+	jrd_nod*	nod_parent;
 	SLONG	nod_impure;			/* Inpure offset from request block */
 	NOD_T	nod_type;				/* Type of node */
 	UCHAR	nod_flags;
@@ -147,7 +147,7 @@ typedef lit* LIT;
 class asb : public pool_alloc<type_asb>
 {
 public:
-	nod*	nod_parent;
+	jrd_nod*	nod_parent;
 	SLONG	nod_impure;			/* Impure offset from request block */
 	NOD_T	nod_type;				/* Type of node */
 	UCHAR	nod_flags;
@@ -159,7 +159,7 @@ public:
 };
 typedef asb* ASB;
 
-#define asb_delta	((sizeof(struct asb) - sizeof(struct nod)) / sizeof (JRD_NOD*))
+#define asb_delta	((sizeof(struct asb) - sizeof(struct jrd_nod)) / sizeof (JRD_NOD*))
 
 
 /* Various structures in the impure area */
@@ -525,18 +525,18 @@ struct csb_repeat
 	USHORT csb_flags;
 	USHORT csb_indices;			/* Number of indices */
 
-	struct rel* csb_relation;
+	struct jrd_rel* csb_relation;
 	struct str* csb_alias;		/* SQL alias name for this instance of relation */
-	struct prc* csb_procedure;
-	struct rel* csb_view;		/* parent view */
+	struct jrd_prc* csb_procedure;
+	struct jrd_rel* csb_view;		/* parent view */
 
 	struct idx* csb_idx;		/* Packed description of indices */
 	struct str* csb_idx_allocation;	/* Memory allocated to hold index descriptions */
-	nod* csb_message;			/* Msg for send/receive */
+	jrd_nod* csb_message;			/* Msg for send/receive */
 	struct fmt* csb_format;		/* Default fmt for stream */
 	struct sbm* csb_fields;		/* Fields referenced */
 	float csb_cardinality;		/* Cardinality of relation */
-	nod* csb_plan;				/* user-specified plan for this relation */
+	jrd_nod* csb_plan;				/* user-specified plan for this relation */
 	UCHAR* csb_map;				/* Stream map for views */
 	struct rsb** csb_rsb_ptr;	/* point to rsb for nod_stream */
 };
@@ -573,7 +573,7 @@ public:
 
 	UCHAR*		csb_blr;
 	UCHAR*		csb_running;
-	nod*		csb_node;
+	jrd_nod*		csb_node;
 	struct acc*	csb_access;		/* Access items to be checked */
 	struct vec*	csb_variables;	/* Vector of variables, if any */
 	class Rsc*	csb_resources;	/* Resources (relations and indexes) */
@@ -585,7 +585,7 @@ public:
 	struct rse*	csb_current_rse;	/* this holds the rse currently being processed; 
 									   unlike the current_rses stack, it references any expanded view rse */
 #endif
-	nod*		csb_async_message;	/* asynchronous message to send to request */
+	jrd_nod*		csb_async_message;	/* asynchronous message to send to request */
 	USHORT		csb_count;			/* Current tail count */
 	USHORT		csb_n_stream;		/* Next available stream */
 	USHORT		csb_msg_number;		/* Highest used message number */

@@ -72,7 +72,7 @@ typedef struct vcl {
 typedef struct dbb {
     struct blk	dbb_header;
     struct dbb	*dbb_next;		/* Next database in system */
-    struct rel	*dbb_relations;		/* Linked list of relations */
+    struct qli_rel	*dbb_relations;		/* Linked list of relations */
     struct frm	*dbb_forms;		/* Known forms in database */
     struct fun	*dbb_functions;		/* Known functions in database */
     void	*dbb_handle;		/* database handle */
@@ -128,9 +128,9 @@ typedef struct dbb {
 #define DBB_cap_index_type	65536	/* Database has too damn much stuff */
 /* Relation block */
 
-typedef struct rel {
+typedef struct qli_rel {
     struct blk	rel_header;
-    struct rel	*rel_next;		/* Next relation in database */
+    struct qli_rel	*rel_next;		/* Next relation in database */
     struct dbb	*rel_database;		/* Parent database */
     struct sym	*rel_symbol;		/* Hash symbol for relation */
     struct fld	*rel_fields;		/* Field block */
@@ -150,7 +150,7 @@ typedef struct rel {
 typedef struct fld {
     struct blk	fld_header;
     struct fld	*fld_next;		/* Next field in relation */
-    struct rel	*fld_relation;		/* Parent relation */
+    struct qli_rel	*fld_relation;		/* Parent relation */
     struct sym	*fld_name;		/* Field name */
     struct sym	*fld_query_name;	/* Field query name */
     struct ffl	*fld_form;		/* Field form, if known */

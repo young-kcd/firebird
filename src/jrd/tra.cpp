@@ -175,7 +175,7 @@ BOOLEAN TRA_active_transactions(TDBB tdbb, DBB dbb)
 
 	base = oldest & ~TRA_MASK;
 
-	trans = FB_NEW_RPT(*dbb->dbb_permanent, (number - base + TRA_MASK) / 4) tra();
+	trans = FB_NEW_RPT(*dbb->dbb_permanent, (number - base + TRA_MASK) / 4) jrd_tra();
 
 /* Build transaction bitmap to scan for active transactions. */
 
@@ -736,7 +736,7 @@ void TRA_init(TDBB tdbb)
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	dbb->dbb_sys_trans = trans = FB_NEW_RPT(*dbb->dbb_permanent, 0) tra();
+	dbb->dbb_sys_trans = trans = FB_NEW_RPT(*dbb->dbb_permanent, 0) jrd_tra();
 	trans->tra_flags |= TRA_system | TRA_ignore_limbo;
 	trans->tra_pool = dbb->dbb_permanent;
 }
@@ -1009,7 +1009,7 @@ JRD_TRA TRA_reconnect(TDBB tdbb, UCHAR * id, USHORT length)
 
 
 	tdbb->tdbb_default = FB_NEW(*dbb->dbb_permanent) JrdMemoryPool;
-	trans = FB_NEW_RPT(*tdbb->tdbb_default, 0) tra();
+	trans = FB_NEW_RPT(*tdbb->tdbb_default, 0) jrd_tra();
 	trans->tra_pool = tdbb->tdbb_default;
 	trans->tra_number = gds__vax_integer(id, length);
 	trans->tra_flags |= TRA_prepared | TRA_reconnected | TRA_write;
@@ -1491,7 +1491,7 @@ JRD_TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
    make up the real transaction block. */
 
 	tdbb->tdbb_default = FB_NEW(*dbb->dbb_permanent) JrdMemoryPool;
-	temp = FB_NEW_RPT(*tdbb->tdbb_default, 0) tra;
+	temp = FB_NEW_RPT(*tdbb->tdbb_default, 0) jrd_tra;
 	temp->tra_pool = tdbb->tdbb_default;
 	transaction_options(tdbb, temp, reinterpret_cast < UCHAR * >(tpb),
 						tpb_length);
@@ -1538,9 +1538,9 @@ JRD_TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
 	base = oldest & ~TRA_MASK;
 
 	if (temp->tra_flags & TRA_read_committed)
-		trans = FB_NEW_RPT(*tdbb->tdbb_default, 0) tra;
+		trans = FB_NEW_RPT(*tdbb->tdbb_default, 0) jrd_tra;
 	else {
-		trans = FB_NEW_RPT(*tdbb->tdbb_default, (number - base + TRA_MASK) / 4) tra;
+		trans = FB_NEW_RPT(*tdbb->tdbb_default, (number - base + TRA_MASK) / 4) jrd_tra;
 	}
 
 	trans->tra_pool = temp->tra_pool;

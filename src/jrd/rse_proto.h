@@ -29,9 +29,9 @@
 
 extern void RSE_close(TDBB, register class Rsb *);
 #ifdef PC_ENGINE
-extern BOOLEAN RSE_find_dbkey(TDBB, class Rsb *, struct nod *, struct nod *);
+extern BOOLEAN RSE_find_dbkey(TDBB, class Rsb *, struct jrd_nod *, struct jrd_nod *);
 extern BOOLEAN RSE_find_record(TDBB, class Rsb *, USHORT, USHORT,
-							   struct nod *);
+							   struct jrd_nod *);
 #endif
 extern BOOLEAN RSE_get_record(TDBB, class Rsb *, enum rse_get_mode);
 #ifdef PC_ENGINE

@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.24 2002-11-18 20:27:24 skidder Exp $
+$Id: par.cpp,v 1.25 2002-11-20 23:16:38 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -374,7 +374,7 @@ JRD_NOD PAR_gen_field(TDBB tdbb, USHORT stream, USHORT id)
 
 	SET_TDBB(tdbb);
 
-	node = FB_NEW_RPT(*tdbb->tdbb_default, e_fld_length) nod();
+	node = FB_NEW_RPT(*tdbb->tdbb_default, e_fld_length) jrd_nod();
 	node->nod_type = nod_field;
 	node->nod_arg[e_fld_id] = (JRD_NOD) (SLONG) id;
 	node->nod_arg[e_fld_stream] = (JRD_NOD) (SLONG) stream;
@@ -508,7 +508,7 @@ JRD_NOD PAR_make_node(TDBB tdbb, int size)
 
 	SET_TDBB(tdbb);
 
-	node = FB_NEW_RPT(*tdbb->tdbb_default, size) nod();
+	node = FB_NEW_RPT(*tdbb->tdbb_default, size) jrd_nod();
 	node->nod_count = size;
 
 	return node;
@@ -2546,7 +2546,7 @@ static JRD_NOD parse(TDBB tdbb, register CSB * csb, USHORT expected)
 		break;
 
 	case blr_extract:
-		node->nod_arg[e_extract_part] = reinterpret_cast < nod * >(BLR_BYTE);
+		node->nod_arg[e_extract_part] = reinterpret_cast < jrd_nod * >(BLR_BYTE);
 		node->nod_arg[e_extract_value] = parse(tdbb, csb, sub_type);
 		node->nod_count = e_extract_count;
 		break;

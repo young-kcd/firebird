@@ -320,7 +320,7 @@ DSQL_CTX PASS1_make_context( DSQL_REQ request, DSQL_NOD relation_node)
     }
 /* Set up context block */
 
-	context = FB_NEW(*tdsql->tsql_default) ctx;
+	context = FB_NEW(*tdsql->tsql_default) dsql_ctx;
 	context->ctx_relation = relation;
 	context->ctx_procedure = procedure;
 	context->ctx_request = request;
@@ -401,7 +401,7 @@ DSQL_CTX PASS1_make_context( DSQL_REQ request, DSQL_NOD relation_node)
 			if (count)
 			{
 				// Initialize this stack variable, and make it look like a node
-                std::auto_ptr<nod> desc_node(FB_NEW_RPT(*tdsql->tsql_default, 0) nod);
+                std::auto_ptr<dsql_nod> desc_node(FB_NEW_RPT(*tdsql->tsql_default, 0) dsql_nod);
 
 				for (input = context->ctx_proc_inputs->nod_arg,
 					 field = procedure->prc_inputs;
@@ -750,7 +750,7 @@ DSQL_NOD PASS1_node(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 		else
 			/* post map to the current context */
 			agg_context =
-				reinterpret_cast < ctx * >(request->req_context->lls_object);
+				reinterpret_cast < dsql_ctx * >(request->req_context->lls_object);
 
 		temp = post_map(node, agg_context);
 		--request->req_inhibit_map;
@@ -1107,7 +1107,7 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 				ERRD_post(gds_prcmismat, gds_arg_string, name->str_data, 0);
 			if (count) {
 				// Initialize this stack variable, and make it look like a node
-                std::auto_ptr<nod> desc_node(FB_NEW_RPT(*getDefaultMemoryPool(), 0) nod);
+                std::auto_ptr<dsql_nod> desc_node(FB_NEW_RPT(*getDefaultMemoryPool(), 0) dsql_nod);
 
 				for (ptr = node->nod_arg[e_exe_inputs]->nod_arg,
 					 field = request->req_procedure->prc_inputs;
@@ -2489,7 +2489,7 @@ static BOOLEAN node_match( DSQL_NOD node1, DSQL_NOD node2, BOOLEAN ignore_cast)
 
 /* This is to get rid of assertion failures when trying
    to node_match nod_aggregate's children. This was happening because not
-   all of the chilren are of type "struct nod". Pointer to the first child
+   all of the chilren are of type "struct dsql_nod". Pointer to the first child
    (argument) is actually a pointer to context structure.
    To compare two nodes of type nod_aggregate we need first to see if they
    both refer to same context structure. If they do not they are different
@@ -4013,7 +4013,7 @@ static DSQL_NOD pass1_alias_list( DSQL_REQ request, DSQL_NOD alias_list)
 
 /* make up a dummy context to hold the resultant relation */
 
-	new_context = FB_NEW(*tdsql->tsql_default) ctx;
+	new_context = FB_NEW(*tdsql->tsql_default) dsql_ctx;
 	new_context->ctx_context = context->ctx_context;
 	new_context->ctx_relation = relation;
 
@@ -4190,14 +4190,14 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 				sub = sub->nod_arg[e_alias_value];
 
 			if (aggregate_found(request, sub, &proj)) {
-				parent_context = FB_NEW(*tdsql->tsql_default) ctx;
+				parent_context = FB_NEW(*tdsql->tsql_default) dsql_ctx;
 				break;
 			}
 		}
 
 	if (!parent_context && (input->nod_arg[e_sel_group] ||
 							input->nod_arg[e_sel_having]))
-			parent_context = FB_NEW(*tdsql->tsql_default) ctx;
+			parent_context = FB_NEW(*tdsql->tsql_default) dsql_ctx;
 
 	if (parent_context) {
 		parent_context->ctx_context = request->req_context_number++;
@@ -4821,7 +4821,7 @@ static DSQL_NOD pass1_union( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order_li
 
 /* generate a context for the union itself */
 
-	union_context = FB_NEW(*tdsql->tsql_default) ctx;
+	union_context = FB_NEW(*tdsql->tsql_default) dsql_ctx;
 	union_context->ctx_context = request->req_context_number++;
 
 /* generate the list of fields to select */

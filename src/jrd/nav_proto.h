@@ -33,7 +33,7 @@ extern BOOLEAN NAV_get_record(class Rsb *, struct irsb_nav *, struct rpb *,
 							  enum rse_get_mode);
 
 #ifdef PC_ENGINE
-extern BOOLEAN NAV_find_record(class Rsb *, USHORT, USHORT, struct nod *);
+extern BOOLEAN NAV_find_record(class Rsb *, USHORT, USHORT, struct jrd_nod *);
 extern void NAV_get_bookmark(class Rsb *, struct irsb_nav *, struct bkm *);
 extern BOOLEAN NAV_reset_position(class Rsb *, struct rpb *);
 extern BOOLEAN NAV_set_bookmark(class Rsb *, struct irsb_nav *, struct rpb *,

@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.10 2002-11-17 00:04:18 hippoman Exp $
+//	$Id: c_cxx.cpp,v 1.11 2002-11-20 23:13:21 hippoman Exp $
 //
 
 #include "firebird.h"
@@ -1879,7 +1879,7 @@ static void gen_dyn_execute( ACT action, int column)
 	DYN statement = (DYN) action->act_object;
 	TEXT *transaction;
 	TEXT s[64];
-	struct req *request, req_const;
+	struct gpre_req *request, req_const;
 
 	if (statement->dyn_trans) {
 		transaction = statement->dyn_trans;
@@ -1955,7 +1955,7 @@ static void gen_dyn_immediate( ACT action, int column)
 	DYN statement;
 	DBB database;
 	TEXT *transaction;
-	struct req *request, req_const;
+	struct gpre_req *request, req_const;
 
 	statement = (DYN) action->act_object;
 	database = statement->dyn_database;
@@ -2022,7 +2022,7 @@ static void gen_dyn_open( ACT action, int column)
 {
 	DYN statement;
 	TEXT *transaction, s[64];
-	struct req *request, req_const;
+	struct gpre_req *request, req_const;
 
 	statement = (DYN) action->act_object;
 	if (statement->dyn_trans) {
@@ -2071,7 +2071,7 @@ static void gen_dyn_prepare( ACT action, int column)
 	DYN statement;
 	DBB database;
 	TEXT s[64], *transaction;
-	struct req *request, req_const;
+	struct gpre_req *request, req_const;
 
 	statement = (DYN) action->act_object;
 	database = statement->dyn_database;

@@ -150,7 +150,7 @@ typedef struct evnt {
 
 /* Request block */
 
-typedef struct req {
+typedef struct jrd_req {
 	HDR req_header;
 	SRQ req_requests;			/* Request que owned by session block */
 	PTR req_process;			/* Parent process block */

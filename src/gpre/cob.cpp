@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.13 2002-11-17 00:04:18 hippoman Exp $
+//	$Id: cob.cpp,v 1.14 2002-11-20 23:13:21 hippoman Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -2199,7 +2199,7 @@ static void gen_dyn_execute( ACT action)
 {
 	DYN statement;
 	TEXT *transaction, s[64];
-	struct req *request, req_const;
+	struct gpre_req *request, req_const;
 
 	statement = (DYN) action->act_object;
 	if (statement->dyn_trans) {
@@ -2295,7 +2295,7 @@ static void gen_dyn_immediate( ACT action)
 	DYN statement;
 	DBB database;
 	TEXT *transaction, s[64], *s2;
-	struct req *request, req_const;
+	struct gpre_req *request, req_const;
 
 #ifdef GIVING_SUPPORTED
 #define GET_LEN_CALL_TEMPLATE	"CALL %s USING %s GIVING %s"
@@ -2390,7 +2390,7 @@ static void gen_dyn_open( ACT action)
 {
 	DYN statement;
 	TEXT *transaction, s[64];
-	struct req *request, req_const;
+	struct gpre_req *request, req_const;
 
 	statement = (DYN) action->act_object;
 	if (statement->dyn_trans) {
@@ -2445,7 +2445,7 @@ static void gen_dyn_prepare( ACT action)
 	DYN statement;
 	DBB database;
 	TEXT *transaction, s[64], s2[64], s3[64];
-	struct req *request, req_const;
+	struct gpre_req *request, req_const;
 
 	statement = (DYN) action->act_object;
 	database = statement->dyn_database;
@@ -4565,7 +4565,7 @@ static void gen_t_start( ACT action)
 		return;
 	}
 
-//  build a complete statement, including tpb's.  Ready db's as req. 
+//  build a complete statement, including tpb's.  Ready db's as gpre_req. 
 
 	if (sw_auto)
 		for (tpb = trans->tra_tpb; tpb; tpb = tpb->tpb_tra_next) {

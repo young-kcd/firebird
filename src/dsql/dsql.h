@@ -165,7 +165,7 @@ class dbb : public pool_alloc<dsql_type_dbb>
 public:
 	dbb*			dbb_next;
 	class dsql_rel* dbb_relations;		// known relations in database
-	class prc*		dbb_procedures;		// known procedures in database
+	class dsql_prc*		dbb_procedures;		// known procedures in database
 	class udf*		dbb_functions;		// known functions in database
 	DsqlMemoryPool*		dbb_pool;		// The current pool for the dbb
 	SLONG*			dbb_database_handle;
@@ -215,10 +215,10 @@ class fld : public pool_alloc_rpt<SCHAR, dsql_type_fld>
 public:
 	fld*		fld_next;				// Next field in relation
 	dsql_rel*	fld_relation;			// Parent relation
-	class prc*	fld_procedure;			// Parent procedure
-	struct nod*	fld_ranges;				// ranges for multi dimension array
-	struct nod*	fld_character_set;		// null means not specified
-	struct nod*	fld_sub_type_name;		// Subtype name for later resolution
+	class dsql_prc*	fld_procedure;			// Parent procedure
+	struct dsql_nod*	fld_ranges;				// ranges for multi dimension array
+	struct dsql_nod*	fld_character_set;		// null means not specified
+	struct dsql_nod*	fld_sub_type_name;		// Subtype name for later resolution
 	USHORT		fld_flags;
 	USHORT		fld_id;					// Field in in database
 	USHORT		fld_dtype;				// Data type of field
@@ -267,10 +267,10 @@ typedef fil* FIL;
 // Stored Procedure block
 
 // Relation block
-class prc : public pool_alloc_rpt<SCHAR, dsql_type_prc>
+class dsql_prc : public pool_alloc_rpt<SCHAR, dsql_type_prc>
 {
 public:
-	prc*		prc_next;		// Next relation in database
+	dsql_prc*		prc_next;		// Next relation in database
 	struct sym*	prc_symbol;		// Hash symbol for procedure
 	fld*		prc_inputs;		// Input parameters
 	fld*		prc_outputs;	// Output parameters
@@ -282,7 +282,7 @@ public:
 	USHORT		prc_flags;
 	TEXT		prc_data[3];
 };
-typedef prc* DSQL_PRC;
+typedef dsql_prc* DSQL_PRC;
 
 // prc_flags bits
 
@@ -302,7 +302,7 @@ public:
 	USHORT		udf_length;
 	SSHORT		udf_character_set_id;
 	USHORT		udf_character_length;
-    struct nod  *udf_arguments;
+    struct dsql_nod  *udf_arguments;
     USHORT      udf_flags;
 
 	TEXT		udf_name[2];
@@ -386,7 +386,7 @@ enum REQ_TYPE
 };
 
 
-class req : public pool_alloc<dsql_type_req>
+class dsql_req : public pool_alloc<dsql_type_req>
 {
 public:
 	// begin - member functions that should be private
@@ -405,14 +405,14 @@ public:
 	void		append_file_start(ULONG start);
 	void		generate_unnamed_trigger_beginning(	bool		on_update_trigger,
 													TEXT*		prim_rel_name,
-													struct nod* prim_columns,
+													struct dsql_nod* prim_columns,
 													TEXT*		for_rel_name,
-													struct nod* for_columns);
+													struct dsql_nod* for_columns);
 	// end - member functions that should be private
 
-	req*	req_parent;		// Source request, if cursor update
-	req*	req_sibling;	// Next sibling request, if cursor update
-	req*	req_offspring;	// Cursor update requests
+	dsql_req*	req_parent;		// Source request, if cursor update
+	dsql_req*	req_sibling;	// Next sibling request, if cursor update
+	dsql_req*	req_offspring;	// Cursor update requests
 	DsqlMemoryPool*	req_pool;
 	DLLS	req_context;
     DLLS    req_union_context; // Save contexts for views of unions
@@ -421,7 +421,7 @@ public:
 	dbb*	req_dbb;		// Database handle
 	int*	req_trans;				// Database transaction handle
 	class opn* req_open_cursor;
-	struct nod* req_ddl_node;	// Store metadata request
+	struct dsql_nod* req_ddl_node;	// Store metadata request
 	class blb* req_blob;		// Blob info for blob requests
 	int*	req_handle;			// OSRI request handle
 	str*	req_blr_string;	// String block during BLR generation
@@ -434,8 +434,8 @@ public:
 	class par* req_parent_rec_version;	// parent record version
 	class par* req_parent_dbkey;	// Parent database key for current of
 	dsql_rel* req_relation;	// relation created by this request (for DDL)
-	prc* req_procedure;	// procedure created by this request (for DDL)
-	class ctx* req_outer_agg_context;	// agg context for outer ref
+	dsql_prc* req_procedure;	// procedure created by this request (for DDL)
+	class dsql_ctx* req_outer_agg_context;	// agg context for outer ref
 	BLOB_PTR* req_blr;			// Running blr address
 	BLOB_PTR* req_blr_yellow;	// Threshold for upping blr buffer size
 	ULONG	req_inserts;			// records processed in request
@@ -457,7 +457,7 @@ public:
 	USHORT	req_flags;			// generic flag
 	USHORT	req_client_dialect;	// dialect passed into the API call
 };
-typedef req* DSQL_REQ;
+typedef dsql_req* DSQL_REQ;
 
 
 // values used in req_flags
@@ -480,11 +480,11 @@ typedef req* DSQL_REQ;
 class blb : public pool_alloc<dsql_type_blb>
 {
 public:
-	struct nod*	blb_field;			// Related blob field
+	struct dsql_nod*	blb_field;			// Related blob field
 	class par*	blb_blob_id;		// Parameter to hold blob id
 	class par*	blb_segment;		// Parameter for segments
-	struct nod* blb_from;
-	struct nod* blb_to;
+	struct dsql_nod* blb_from;
+	struct dsql_nod* blb_to;
 	class dsql_msg*	blb_open_in_msg;	// Input message to open cursor
 	class dsql_msg*	blb_open_out_msg;	// Output message from open cursor
 	class dsql_msg*	blb_segment_msg;	// Segment message
@@ -497,39 +497,39 @@ class opn : public pool_alloc<dsql_type_opn>
 {
 public:
 	opn*	opn_next;			// Next open cursor
-	req*	opn_request;		// Request owning the cursor
+	dsql_req*	opn_request;		// Request owning the cursor
 	SLONG*	opn_transaction;	// Transaction executing request
 };
 typedef opn* OPN;
 
 // Transaction block
 
-class tra : public pool_alloc<dsql_type_tra>
+class dsql_tra : public pool_alloc<dsql_type_tra>
 {
 public:
-	tra* tra_next;		// Next open transaction
+	dsql_tra* tra_next;		// Next open transaction
 };
-typedef tra* TRA;
+typedef dsql_tra* DSQL_TRA;
 
 
 // Context block used to create an instance of a relation reference
 
-class ctx : public pool_alloc<dsql_type_ctx>
+class dsql_ctx : public pool_alloc<dsql_type_ctx>
 {
 public:
-	req*		ctx_request;		// Parent request
+	dsql_req*		ctx_request;		// Parent request
 	dsql_rel*	ctx_relation;		// Relation for context
-	prc*		ctx_procedure;		// Procedure for context
-	struct nod*	ctx_proc_inputs;	// Procedure input parameters
+	dsql_prc*		ctx_procedure;		// Procedure for context
+	struct dsql_nod*	ctx_proc_inputs;	// Procedure input parameters
 	class map*	ctx_map;			// Map for aggregates
-	struct nod*	ctx_rse;			// Sub-rse for aggregates
-	ctx*		ctx_parent;			// Parent context for aggregates
+	struct dsql_nod*	ctx_rse;			// Sub-rse for aggregates
+	dsql_ctx*		ctx_parent;			// Parent context for aggregates
 	TEXT*		ctx_alias;			// Context alias
 	USHORT		ctx_context;		// Context id
 	USHORT		ctx_scope_level;	// Subquery level within this request
 	USHORT		ctx_flags;			// Various flag values
 };
-typedef ctx* DSQL_CTX;
+typedef dsql_ctx* DSQL_CTX;
 
 // Flag values for ctx_flags
 
@@ -542,7 +542,7 @@ class map : public pool_alloc<dsql_type_map>
 {
 public:
 	map*		map_next;		// Next map in item
-	struct nod*	map_node;		// Value for map item
+	struct dsql_nod*	map_node;		// Value for map item
 	USHORT		map_position;	// Position in map
 };
 typedef map* MAP;
@@ -576,9 +576,9 @@ public:
 	class par*	par_next;			// Next parameter in linked list
 	class par*	par_ordered;		// Next parameter in order of index
 	class par*	par_null;			// Null parameter, if used
-	struct nod*	par_node;			// Associated value node, if any
-	ctx*	par_dbkey_ctx;		// Context of internally requested dbkey
-	ctx*	par_rec_version_ctx;	// Context of internally requested record version
+	struct dsql_nod*	par_node;			// Associated value node, if any
+	dsql_ctx*	par_dbkey_ctx;		// Context of internally requested dbkey
+	dsql_ctx*	par_rec_version_ctx;	// Context of internally requested record version
 	TEXT*	par_name;			// Parameter name, if any
 	TEXT*	par_rel_name;		// Relation name, if any
 	TEXT*	par_owner_name;		// Owner name, if any

@@ -336,7 +336,7 @@ typedef ENUM nod_t
 /* definition of a syntax node created both
    in parsing and in context recognition */
 
-class nod : public pool_alloc_rpt<class nod*, dsql_type_nod>
+class dsql_nod : public pool_alloc_rpt<class dsql_nod*, dsql_type_nod>
 {
 public:
 	NOD_TYPE nod_type;			/* Type of node */
@@ -345,11 +345,11 @@ public:
     USHORT       nod_column;		/* Source column of the statement. */
 	USHORT nod_count;			/* Number of arguments */
 	USHORT nod_flags;
-	struct nod *nod_arg[1];
+	struct dsql_nod *nod_arg[1];
 	
-	nod() : nod_type(nod_unknown_type), nod_count(0), nod_flags(0) {}
+	dsql_nod() : nod_type(nod_unknown_type), nod_count(0), nod_flags(0) {}
 };
-typedef nod *DSQL_NOD;
+typedef dsql_nod *DSQL_NOD;
 
 /* values of flags */
 

@@ -29,12 +29,12 @@ extern "C" {
 #endif
 
 USHORT DFW_assign_index_type(struct dfw *, SSHORT, SSHORT);
-void DFW_delete_deferred(struct tra *, SLONG);
-void DFW_merge_work(struct tra *, SLONG, SLONG);
+void DFW_delete_deferred(struct jrd_tra *, SLONG);
+void DFW_merge_work(struct jrd_tra *, SLONG, SLONG);
 void DFW_perform_system_work(void);
-void DFW_perform_work(struct tra *);
-void DFW_perform_post_commit_work(struct tra *);
-void DFW_post_work(struct tra *, ENUM dfw_t, struct dsc *, USHORT);
+void DFW_perform_work(struct jrd_tra *);
+void DFW_perform_post_commit_work(struct jrd_tra *);
+void DFW_post_work(struct jrd_tra *, ENUM dfw_t, struct dsc *, USHORT);
 void DFW_update_index(struct dfw *, USHORT, float);
 
 #ifdef __cplusplus

@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.15 2002-11-18 20:27:24 skidder Exp $
+ * $Id: rse.cpp,v 1.16 2002-11-20 23:16:38 hippoman Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -2992,7 +2992,7 @@ static void open_procedure(TDBB tdbb, RSB rsb, IRSB_PROCEDURE impure)
 	proc_request = EXE_find_request(tdbb, procedure->prc_request, FALSE);
 	impure->irsb_req_handle = proc_request;
 	if (inputs) {
-		ENUM req::req_s saved_state = request->req_operation;
+		ENUM jrd_req::req_s saved_state = request->req_operation;
 
 		for (ptr = inputs->nod_arg, end = ptr + inputs->nod_count; ptr < end;
 			 ptr++)

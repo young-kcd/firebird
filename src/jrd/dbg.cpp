@@ -72,7 +72,7 @@ int (*dbg_eval) (int) = DBG_eval;
 int (*dbg_open) () = DBG_open;
 int (*dbg_close) () = DBG_close;
 int (*dbg_pool) (JrdMemoryPool*) = DBG_pool;
-int (*dbg_pretty) (nod *, int) = DBG_pretty;
+int (*dbg_pretty) (jrd_nod *, int) = DBG_pretty;
 int (*dbg_window) (int *) = DBG_window;
 int (*dbg_rpb) (rpb *) = DBG_rpb;
 static int (*dbg_bdbs) () = DBG_bdbs;
@@ -718,7 +718,7 @@ int DBG_pretty(register JRD_NOD node, register int column)
  *
  **************************************/
 	RSE rse;
-	REL relation;
+	JRD_REL relation;
 	JRD_PRC procedure;
 	JRD_NOD *ptr, *end;
 	IRB retrieval;
@@ -748,7 +748,7 @@ int DBG_pretty(register JRD_NOD node, register int column)
 		rse = (RSE) node;
 		ib_fprintf(dbg_file, "\n");
 		if (rse->rse_rsb)
-			DBG_pretty(reinterpret_cast < nod * >(rse->rse_rsb), column);
+			DBG_pretty(reinterpret_cast < jrd_nod * >(rse->rse_rsb), column);
 		else {
 			DBG_pretty(rse->rse_first, column);
 			DBG_pretty(rse->rse_boolean, column);
@@ -798,7 +798,7 @@ int DBG_pretty(register JRD_NOD node, register int column)
 		return TRUE;
 
 	case nod_relation:
-		relation = (REL) node->nod_arg[e_rel_relation];
+		relation = (JRD_REL) node->nod_arg[e_rel_relation];
 		ib_fprintf(dbg_file, ", stream: %d, %s (%X)\n",
 				   node->nod_arg[e_rel_stream], relation->rel_name, relation);
 		return TRUE;
@@ -1199,7 +1199,7 @@ static int rsb_pretty(register RSB rsb, register int column)
  *	Pretty print an rsb tree.
  *
  **************************************/
-	REL relation;
+	JRD_REL relation;
 	RSB *ptr, *end;
 	USHORT i;
 
@@ -1227,17 +1227,17 @@ static int rsb_pretty(register RSB rsb, register int column)
 	if (rsb->rsb_type == rsb_merge)
 		for (ptr = rsb->rsb_arg, end = ptr + rsb->rsb_count * 2; ptr < end;
 			 ptr += 2)
-			DBG_pretty(reinterpret_cast < nod * >(*ptr), column);
+			DBG_pretty(reinterpret_cast < jrd_nod * >(*ptr), column);
 	else if (rsb->rsb_type != rsb_left_cross)
 		for (ptr = rsb->rsb_arg, end = ptr + rsb->rsb_count; ptr < end; ptr++)
-			DBG_pretty(reinterpret_cast < nod * >(*ptr), column);
+			DBG_pretty(reinterpret_cast < jrd_nod * >(*ptr), column);
 	else
 		for (ptr = rsb->rsb_arg, end = ptr + rsb->rsb_count + 1; ptr < end;
 			 ptr++)
-			DBG_pretty(reinterpret_cast < nod * >(*ptr), column);
+			DBG_pretty(reinterpret_cast < jrd_nod * >(*ptr), column);
 
 	if (rsb->rsb_next)
-		DBG_pretty(reinterpret_cast < nod * >(rsb->rsb_next), column);
+		DBG_pretty(reinterpret_cast < jrd_nod * >(rsb->rsb_next), column);
 	return TRUE;
 }
 

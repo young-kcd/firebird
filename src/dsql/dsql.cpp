@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: dsql.cpp,v 1.33 2002-11-19 12:35:28 dimitr Exp $
+$Id: dsql.cpp,v 1.34 2002-11-20 23:11:22 hippoman Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -194,12 +194,12 @@ static USHORT mutex_inited = 0;
 static
 STATUS GDS_DSQL_ALLOCATE_CPP(	STATUS*	user_status,
 								int**	db_handle,
-								req**	req_handle);
+								dsql_req**	req_handle);
 
 static
 STATUS GDS_DSQL_EXECUTE_CPP(	STATUS*			user_status,
 							   isc_tr_handle*	trans_handle,
-							   req**			req_handle,
+							   dsql_req**			req_handle,
 							   USHORT			in_blr_length,
 							   UCHAR*			in_blr,
 							   USHORT			in_msg_type,
@@ -213,7 +213,7 @@ STATUS GDS_DSQL_EXECUTE_CPP(	STATUS*			user_status,
 
 static
 STATUS GDS_DSQL_FETCH_CPP(	STATUS*		user_status,
-							 req**		req_handle,
+							 dsql_req**		req_handle,
 							 USHORT		blr_length,
 							 UCHAR*		blr,
 							 USHORT		msg_type,
@@ -227,12 +227,12 @@ STATUS GDS_DSQL_FETCH_CPP(	STATUS*		user_status,
 
 static
 STATUS GDS_DSQL_FREE_CPP(STATUS*	user_status,
-						 req**		req_handle,
+						 dsql_req**		req_handle,
 						 USHORT		option);
 
 static
 STATUS GDS_DSQL_INSERT_CPP(	STATUS*	user_status,
-							req**	req_handle,
+							dsql_req**	req_handle,
 							USHORT	blr_length,
 							UCHAR*	blr,
 							USHORT	msg_type,
@@ -242,7 +242,7 @@ STATUS GDS_DSQL_INSERT_CPP(	STATUS*	user_status,
 static
 STATUS GDS_DSQL_PREPARE_CPP(STATUS*			user_status,
 							isc_tr_handle*	trans_handle,
-							req**			req_handle,
+							dsql_req**			req_handle,
 							USHORT			length,
 							TEXT*			string,
 							USHORT			dialect,
@@ -253,14 +253,14 @@ STATUS GDS_DSQL_PREPARE_CPP(STATUS*			user_status,
 
 static
 STATUS GDS_DSQL_SQL_INFO_CPP(	STATUS*		user_status,
-								req**		req_handle,
+								dsql_req**		req_handle,
 								USHORT		item_length,
 								SCHAR*		items,
 								USHORT		info_length,
 								SCHAR*		info);
 
 STATUS GDS_DSQL_SET_CURSOR_CPP(	STATUS*		user_status,
-								req**		req_handle,
+								dsql_req**		req_handle,
 								TEXT*		input_cursor,
 								USHORT		type);
 
@@ -293,7 +293,7 @@ GDS_DSQL_ALLOCATE(	STATUS*				user_status,
 {
 	return GDS_DSQL_ALLOCATE_CPP(user_status,
 									db_handle,
-									reinterpret_cast<req**>(req_handle));
+									reinterpret_cast<dsql_req**>(req_handle));
 }
 
 //////////////////////////////////////////////////////////////////
@@ -315,7 +315,7 @@ GDS_DSQL_EXECUTE(	STATUS*			user_status,
 {
 	return GDS_DSQL_EXECUTE_CPP(user_status,
 								trans_handle,
-								reinterpret_cast<req**>(req_handle),
+								reinterpret_cast<dsql_req**>(req_handle),
 								in_blr_length,
 								in_blr,
 								in_msg_type,
@@ -344,7 +344,7 @@ GDS_DSQL_FETCH(	STATUS*				user_status,
 				 )
 {
 	return GDS_DSQL_FETCH_CPP(	user_status,
-								reinterpret_cast<req**>(req_handle),
+								reinterpret_cast<dsql_req**>(req_handle),
 								blr_length,
 								blr,
 								msg_type,
@@ -364,7 +364,7 @@ GDS_DSQL_FREE(	STATUS*				user_status,
 				USHORT				option)
 {
 	return GDS_DSQL_FREE_CPP(user_status,
-							reinterpret_cast<req**>(req_handle),
+							reinterpret_cast<dsql_req**>(req_handle),
 							option);
 }
 
@@ -380,7 +380,7 @@ GDS_DSQL_INSERT(STATUS*				user_status,
 				UCHAR*				dsql_msg)
 {
 	return GDS_DSQL_INSERT_CPP(	user_status,
-								reinterpret_cast<req**>(req_handle),
+								reinterpret_cast<dsql_req**>(req_handle),
 								blr_length,
 								blr,
 								msg_type,
@@ -404,7 +404,7 @@ GDS_DSQL_PREPARE(	STATUS*				user_status,
 {
 	return GDS_DSQL_PREPARE_CPP(user_status,
 								trans_handle,
-								reinterpret_cast<req**>(req_handle),
+								reinterpret_cast<dsql_req**>(req_handle),
 								length,
 								string,
 								dialect,
@@ -426,7 +426,7 @@ GDS_DSQL_SQL_INFO(	STATUS*				user_status,
 					SCHAR*				info)
 {
 	return GDS_DSQL_SQL_INFO_CPP(	user_status,
-									reinterpret_cast<req**>(req_handle),
+									reinterpret_cast<dsql_req**>(req_handle),
 									item_length,
 									items,
 									info_length,
@@ -442,7 +442,7 @@ GDS_DSQL_SET_CURSOR(STATUS*		user_status,
 					USHORT		type)
 {
 	return GDS_DSQL_SET_CURSOR_CPP(user_status,
-									reinterpret_cast<req**>(req_handle),
+									reinterpret_cast<dsql_req**>(req_handle),
 									input_cursor,
 									type);
 }
@@ -462,7 +462,7 @@ extern "C" {
 static STATUS
 GDS_DSQL_ALLOCATE_CPP(	STATUS*	user_status,
 						int**	db_handle,
-						req**	req_handle)
+						dsql_req**	req_handle)
 {
 /**************************************
  *
@@ -495,7 +495,7 @@ GDS_DSQL_ALLOCATE_CPP(	STATUS*	user_status,
 
 /* allocate the request block */
 
-		request = FB_NEW(*tdsql->tsql_default) req;
+		request = FB_NEW(*tdsql->tsql_default) dsql_req;
 		request->req_dbb = database;
 		request->req_pool = tdsql->tsql_default;
 
@@ -513,7 +513,7 @@ GDS_DSQL_ALLOCATE_CPP(	STATUS*	user_status,
 
 STATUS DLL_EXPORT GDS_DSQL_EXECUTE_CPP(STATUS*		user_status,
 									   isc_tr_handle* trans_handle,
-									   req**		req_handle,
+									   dsql_req**		req_handle,
 									   USHORT		in_blr_length,
 									   UCHAR*		in_blr,
 									   USHORT		in_msg_type,
@@ -689,7 +689,7 @@ static STATUS dsql8_execute_immediate_common(STATUS*	user_status,
 
 	/* allocate the request block, then prepare the request */
 
-		request = FB_NEW(*tdsql->tsql_default) req;
+		request = FB_NEW(*tdsql->tsql_default) dsql_req;
 		request->req_dbb = database;
 		request->req_pool = tdsql->tsql_default;
 		request->req_trans = (int *) *trans_handle;
@@ -921,7 +921,7 @@ STATUS callback_execute_immediate( STATUS* status,
 
 
 STATUS GDS_DSQL_FETCH_CPP(	STATUS*	user_status,
-							req**	req_handle,
+							dsql_req**	req_handle,
 							USHORT	blr_length,
 							UCHAR*	blr,
 							USHORT	msg_type,
@@ -1144,7 +1144,7 @@ STATUS GDS_DSQL_FETCH_CPP(	STATUS*	user_status,
 
 
 STATUS GDS_DSQL_FREE_CPP(STATUS*	user_status,
-						 req**		req_handle,
+						 dsql_req**		req_handle,
 						 USHORT		option)
 {
 /**************************************
@@ -1199,7 +1199,7 @@ STATUS GDS_DSQL_FREE_CPP(STATUS*	user_status,
 
 
 STATUS GDS_DSQL_INSERT_CPP(	STATUS*	user_status,
-							req**	req_handle,
+							dsql_req**	req_handle,
 							USHORT	blr_length,
 							UCHAR*	blr,
 							USHORT	msg_type,
@@ -1280,7 +1280,7 @@ STATUS GDS_DSQL_INSERT_CPP(	STATUS*	user_status,
 
 STATUS GDS_DSQL_PREPARE_CPP(STATUS*			user_status,
 							isc_tr_handle*	trans_handle,
-							req**			req_handle,
+							dsql_req**			req_handle,
 							USHORT			length,
 							TEXT*			string,
 							USHORT			dialect,
@@ -1346,7 +1346,7 @@ STATUS GDS_DSQL_PREPARE_CPP(STATUS*			user_status,
    don't want to trash the context in it -- 2001-Oct-27 Ann Harrison */
 
 		tdsql->tsql_default = FB_NEW(*DSQL_permanent_pool) DsqlMemoryPool;
-		request = FB_NEW(*tdsql->tsql_default) req;
+		request = FB_NEW(*tdsql->tsql_default) dsql_req;
 		request->req_dbb = database;
 		request->req_pool = tdsql->tsql_default;
 		request->req_trans = (int *) *trans_handle;
@@ -1437,7 +1437,7 @@ STATUS GDS_DSQL_PREPARE_CPP(STATUS*			user_status,
 
 
 STATUS GDS_DSQL_SET_CURSOR_CPP(	STATUS*	user_status,
-								req**	req_handle,
+								dsql_req**	req_handle,
 								TEXT*	input_cursor,
 								USHORT	type)
 {
@@ -1535,7 +1535,7 @@ STATUS GDS_DSQL_SET_CURSOR_CPP(	STATUS*	user_status,
 
 
 STATUS GDS_DSQL_SQL_INFO_CPP(	STATUS*		user_status,
-								req**		req_handle,
+								dsql_req**		req_handle,
 								USHORT		item_length,
 								SCHAR*		items,
 								USHORT		info_length,
