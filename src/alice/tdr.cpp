@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.40 2004-08-16 12:28:13 alexpeshkoff Exp $
+//	$Id: tdr.cpp,v 1.41 2004-09-26 07:37:34 robocop Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -710,8 +710,7 @@ static void print_description(const tdr* trans)
 
 static ULONG ask(void)
 {
-	UCHAR response[32];
-	char* const resp_ptr = reinterpret_cast<char*>(response);
+	char response[32];
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 
 	ULONG switches = 0;
@@ -723,15 +722,15 @@ static ULONG ask(void)
 			putc('\001', stdout);
 		fflush(stdout);
 		int c;
-		UCHAR* p;
+		char* p;
 		for (p = response; (c = getchar()) != '\n' && c != EOF;)
 			*p++ = c;
 		if (c == EOF && p == response)
 			return (ULONG) -1;
 		*p = 0;
-		ALICE_down_case(resp_ptr, resp_ptr, sizeof(response));
-		if (!strcmp(resp_ptr, "n") || !strcmp(resp_ptr, "c")
-			|| !strcmp(resp_ptr, "r"))
+		ALICE_down_case(response, response, sizeof(response));
+		if (!strcmp(response, "n") || !strcmp(response, "c")
+			|| !strcmp(response, "r"))
 		{
 			  break;
 		}
@@ -755,17 +754,17 @@ static ULONG ask(void)
 static void reattach_database(TDR trans)
 {
 	ISC_STATUS_ARRAY status_vector;
-	UCHAR buffer[1024];
+	char buffer[1024];
 	// sizeof(buffer) - 1 => leave space for the terminator.
-	const UCHAR* const end = buffer + sizeof(buffer) - 1;
+	const char* const end = buffer + sizeof(buffer) - 1;
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 
-	ISC_get_host(reinterpret_cast<char*>(buffer), sizeof(buffer));
+	ISC_get_host(buffer, sizeof(buffer));
 
  //  if this is being run from the same host,
  //  try to reconnect using the same pathname
 
-	if (!strcmp(reinterpret_cast<const char*>(buffer),
+	if (!strcmp(buffer,
 		reinterpret_cast<const char*>(trans->tdr_host_site->str_data)))
 	{
 		if (TDR_attach_database(status_vector, trans,
@@ -775,11 +774,11 @@ static void reattach_database(TDR trans)
 			return;
 		}
 	}
-    else if (trans->tdr_host_site) {
+	else if (trans->tdr_host_site) {
 		//  try going through the previous host with all available
 		//  protocols, using chaining to try the same method of
 		//  attachment originally used from that host
-		UCHAR* p = buffer;
+		char* p = buffer;
 		const UCHAR* q = trans->tdr_host_site->str_data;
 		while (*q && p < end)
 			*p++ = *q++;
@@ -788,8 +787,7 @@ static void reattach_database(TDR trans)
 		while (*q && p < end)
 			*p++ = *q++;
 		*p = 0;
-		if (TDR_attach_database(status_vector, trans,
-								reinterpret_cast<char*>(buffer)))
+		if (TDR_attach_database(status_vector, trans, buffer))
 		{
 			return;
 		}
@@ -799,17 +797,16 @@ static void reattach_database(TDR trans)
 //  try attaching to the remote node directly
 
 	if (trans->tdr_remote_site) {
-	    UCHAR* p = buffer;
+		char* p = buffer;
 		const UCHAR* q = trans->tdr_remote_site->str_data;
 		while (*q && p < end)
 			*p++ = *q++;
 		*p++ = ':';
-		q = (UCHAR *) trans->tdr_filename;
+		q = reinterpret_cast<const UCHAR*>(trans->tdr_filename);
 		while (*q && p < end)
 			*p++ = *q++;
 		*p = 0;
-		if (TDR_attach_database (status_vector, trans,
-								 reinterpret_cast<char*>(buffer)))
+		if (TDR_attach_database (status_vector, trans, buffer))
 		{
 			return;
 		}
@@ -825,7 +822,7 @@ static void reattach_database(TDR trans)
 
 	for (;;) {
 		ALICE_print(88, 0, 0, 0, 0, 0);	// msg 88: Enter a valid path:
-		UCHAR* p = buffer;
+		char* p = buffer;
 		while (p < end && (*p = getchar()) != '\n')
 			++p;
 		*p = 0;
@@ -834,14 +831,13 @@ static void reattach_database(TDR trans)
 		p = buffer;
 		while (*p == ' ')
 			++p;
-		if (TDR_attach_database(status_vector, trans,
-								reinterpret_cast<char*>(p)))
+		if (TDR_attach_database(status_vector, trans, p))
 		{
+			const size_t p_len = strlen(p);
 			alice_str* string = FB_NEW_RPT(*tdgbl->getDefaultPool(),
-						strlen(reinterpret_cast<const char*>(p)) + 1) alice_str;
-			strcpy(reinterpret_cast<char*>(string->str_data),
-				   reinterpret_cast<const char*>(p));
-			string->str_length = strlen(reinterpret_cast<const char*>(p));
+						p_len + 1) alice_str;
+			strcpy(reinterpret_cast<char*>(string->str_data), p);
+			string->str_length = p_len;
 			trans->tdr_fullpath = string;
 			trans->tdr_filename = (TEXT *) string->str_data;
 			return;
