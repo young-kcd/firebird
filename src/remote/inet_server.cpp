@@ -180,11 +180,6 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 				case 'D':
 					INET_SERVER_flag |= SRVR_debug;
 					debug = standalone = true;
-#ifdef NEVERDEF
-#ifdef SUPERSERVER
-					free_map_debug = 1;
-#endif
-#endif
 					break;
 #ifndef SUPERSERVER
 
@@ -224,7 +219,10 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 					break;
 
 				case 'P':
-					sprintf(protocol, "/%s", *argv++);
+					protocol[0] = '/';
+					protocol[1] = 0;
+					strncat(protocol, *argv++, 
+						sizeof(protocol) - strlen(protocol) - 1);
 					break;
 
                 case 'H':
@@ -356,15 +354,12 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 
 /* before starting the superserver stuff change directory to tmp */
 	if (CHANGE_DIR(TEMP_DIR)) {
-		char err_buf[1024];
-
 		/* error on changing the directory */
-		sprintf(err_buf, "Could not change directory to %s due to errno %d",
+		gds__log("Could not change directory to %s due to errno %d",
 				TEMP_DIR, errno);
-		gds__log(err_buf);
 	}
 
-/* Server tries to attach to security2.fdb to make sure everything is OK
+/* Server tries to attach to security.fdb to make sure everything is OK
    This code fixes bug# 8429 + all other bug of that kind - from 
    now on the server exits if it cannot attach to the database
    (wrong or no license, not enough memory, etc.
