@@ -39,26 +39,12 @@ struct _facilities {
 
 static const struct _facilities facilities[] = {
 	{0,  "JRD       "},
-	{1,  "QLI       "},
-	{2,  "GDEF      "},
 	{3,  "GFIX      "},
-	{4,  "GPRE      "},
-	{5,  "GLTJ      "},
-	{6,  "GRST      "},
 	{7,  "DSQL      "},
 	{8,  "DYN       "},
-	{9,  "FRED      "},
-	{10,  "INSTALL   "},
-	{11,  "TEST      "},
 	{12,  "GBAK      "},
-	{13,  "SQLERR    "},
-	{14,  "SQLWARN   "},
-	{15,  "JRD_BUGCHK"},
-	{16,  "GJRN      "},
-	{17,  "ISQL      "},
 	{18,  "GSEC      "},
 	{19,  "LICENSE   "},
-	{20,  "DOS       "},
 	{21,  "GSTAT     "},
 	{0, NULL}
 };
