@@ -36,7 +36,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.24.2.4 2004-04-04 08:12:03 dimitr Exp $
+$Id: backup.epp,v 1.24.2.5 2004-12-10 05:30:38 skidder Exp $
 */
 
 #include "firebird.h"
@@ -1319,7 +1319,7 @@ static void put_blob( BURP_FLD field, ISC_QUAD * blob_id, ULONG count)
 	FRBRD *blob;
 	ULONG segments;
 	UCHAR *p, blob_info[32], item, *buffer, static_buffer[1024];
-	USHORT l, max_segment, n;
+	USHORT l, max_segment;
 	TGBL tdgbl;
 
 	tdgbl = GET_THREAD_DATA;
@@ -1366,7 +1366,7 @@ static void put_blob( BURP_FLD field, ISC_QUAD * blob_id, ULONG count)
 	{
 		l = (USHORT) isc_vax_integer((char*) p, 2);
 		p += 2;
-		n = (USHORT) isc_vax_integer((char*) p, l);
+		ULONG n = isc_vax_integer((char*) p, l);
 		p += l;
 		switch (item)
 		{
@@ -1489,7 +1489,7 @@ static int put_blr_blob( SCHAR attribute, ISC_QUAD * blob_id)
 	{
 		l = (USHORT) isc_vax_integer((char*) p, 2);
 		p += 2;
-		n = (USHORT) isc_vax_integer((char*) p, l);
+		n = isc_vax_integer((char*) p, l);
 		p += l;
 		switch (item)
 		{
@@ -2422,7 +2422,7 @@ static int put_source_blob(SCHAR		attribute,
 	{
 		l = (USHORT) isc_vax_integer((SCHAR*) p, 2);
 		p += 2;
-		n = (USHORT) isc_vax_integer((SCHAR*) p, l);
+		n = isc_vax_integer((SCHAR*) p, l);
 		p += l;
 		switch (item)
 		{
