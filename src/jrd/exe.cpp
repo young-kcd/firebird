@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: exe.cpp,v 1.9 2002-04-06 08:50:37 dimitr Exp $
+$Id: exe.cpp,v 1.10 2002-04-18 03:54:35 bellardo Exp $
 */
 
 #include "firebird.h"
@@ -651,7 +651,7 @@ void EXE_receive(TDBB		tdbb,
 			release_proc_save_points(request);
 			Firebird::status_exception::raise(-1);
 		}
-		throw e;
+		throw;
 	}
 
 	if (request->req_flags & req_proc_fetch) {
