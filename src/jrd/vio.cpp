@@ -1989,6 +1989,7 @@ bool VIO_get_current(
 			//	  PK is ok if PK values are not equal to old and not equal to 
 			//	  new values 
 
+/*
 			if (!rpb->rpb_b_page)
 				return !foreign_key;
 			else if (old_rpb)
@@ -2027,6 +2028,7 @@ bool VIO_get_current(
 				return true;
 			}
 			else
+*/
 				return !foreign_key;
 
 		case tra_dead:

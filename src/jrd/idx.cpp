@@ -944,7 +944,7 @@ static IDX_E check_duplicates(
 			// P.S. I think the check for a status vector should be enough,
 			//      but for sure let's keep the old one as well.
 			//														2003.05.27
-/*
+// /*
 			const bool lock_error =
 				(tdbb->tdbb_status_vector[1] == isc_deadlock ||
 				tdbb->tdbb_status_vector[1] == isc_lock_conflict ||
@@ -955,7 +955,7 @@ static IDX_E check_duplicates(
 				result = idx_e_duplicate;
 				break;
 			}
-*/
+// */
 			const bool has_cur_values = !(rpb.rpb_flags & rpb_deleted);
 			if (!has_cur_values && !has_old_values) {
 				result = idx_e_duplicate;
