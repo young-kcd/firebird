@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.v5_examples,v 1.7 2003-03-27 11:21:45 aafemt Exp $
+#  $Id: Makefile.in.v5_examples,v 1.8 2003-04-08 10:09:05 aafemt Exp $
 #
 ROOT=../..
 ObjModuleName=v5_examples
@@ -65,75 +65,39 @@ INPUT_FILES=	empddl.sql empdml.sql indexoff.sql indexon.sql \
 INTL_FILES=	intlddl.sql intldml.sql indexoff.sql indexon.sql \
 		job.inp lang.inp proj.inp qtr.inp
 
+EXAMPLE_FILES=	readme align.h api1.c api10.c api11.c api12.c api13.c \
+		api14.e api15.c api16.c api16t.c api2.c api3.c api4.c \
+		api5.c api6.c api7.c api8.c api9.c api9f.c apifull.c \
+		employe2.sql dyn1.e dyn2.e dyn3.e dyn4.e dyn5.e dynfull.e \
+		example.h api9f.sql stat1.e stat10.e stat11.e stat12.e \
+		stat12t.e stat2.e stat3.e stat4.e stat5.e stat6.e stat7.e \
+		stat8.e stat9.e udf.sql udflib.c
+
+EXAMPLES=	$(addprefix $(EXAMPLES_DEST), $(EXAMPLE_FILES))
+
+NT_EXAMPLES_FILES=		api9f.def udflib.def #makefile.bc makefile.msc
+
+NT_EXAMPLES=	$(addprefix $(EXAMPLES_DEST), $(NT_EXAMPLE_FILES))
+
+EXAMPLE_DB=	$(EXAMPLES_DEST)employee.fdb
 
 
-.PHONY: all
+.PHONY: all v5_examples
 
 all: v5_examples
 
 # PR 2002-06-23 - Temporarily removed intlemp from the build as it caused a segfault
 # The lines to change back are prefixed with ##
 ##v5_examples: employee.fdb intlemp.fdb $(EXAMPLE_SRC)Makefile
-v5_examples: employee.fdb nt_examples
-	$(CP) $(EXAMPLES_SRC)readme $(EXAMPLES_DEST)README
-	$(CP) $(EXAMPLES_SRC)align.h $(EXAMPLES_DEST)align.h
-	$(CP) $(EXAMPLES_SRC)api1.c $(EXAMPLES_DEST)api1.c
-	$(CP) $(EXAMPLES_SRC)api10.c $(EXAMPLES_DEST)api10.c
-	$(CP) $(EXAMPLES_SRC)api11.c $(EXAMPLES_DEST)api11.c
-	$(CP) $(EXAMPLES_SRC)api12.c $(EXAMPLES_DEST)api12.c
-	$(CP) $(EXAMPLES_SRC)api13.c $(EXAMPLES_DEST)api13.c
-	$(CP) $(EXAMPLES_SRC)api14.e $(EXAMPLES_DEST)api14.e
-	$(CP) $(EXAMPLES_SRC)api15.c $(EXAMPLES_DEST)api15.c
-	$(CP) $(EXAMPLES_SRC)api16.c $(EXAMPLES_DEST)api16.c
-	$(CP) $(EXAMPLES_SRC)api16t.c $(EXAMPLES_DEST)api16t.c
-	$(CP) $(EXAMPLES_SRC)api2.c $(EXAMPLES_DEST)api2.c
-	$(CP) $(EXAMPLES_SRC)api3.c $(EXAMPLES_DEST)api3.c
-	$(CP) $(EXAMPLES_SRC)api4.c $(EXAMPLES_DEST)api4.c
-	$(CP) $(EXAMPLES_SRC)api5.c $(EXAMPLES_DEST)api5.c
-	$(CP) $(EXAMPLES_SRC)api6.c $(EXAMPLES_DEST)api6.c
-	$(CP) $(EXAMPLES_SRC)api7.c $(EXAMPLES_DEST)api7.c
-	$(CP) $(EXAMPLES_SRC)api8.c $(EXAMPLES_DEST)api8.c
-	$(CP) $(EXAMPLES_SRC)api9.c $(EXAMPLES_DEST)api9.c
-	$(CP) $(EXAMPLES_SRC)api9f.c $(EXAMPLES_DEST)api9f.c
-	$(CP) $(EXAMPLES_SRC)apifull.c $(EXAMPLES_DEST)apifull.c
-	$(CP) $(EXAMPLES_SRC)employe2.sql $(EXAMPLES_DEST)employe2.sql
-	$(CP) $(EXAMPLES_SRC)dyn1.e $(EXAMPLES_DEST)dyn1.e
-	$(CP) $(EXAMPLES_SRC)dyn2.e $(EXAMPLES_DEST)dyn2.e
-	$(CP) $(EXAMPLES_SRC)dyn3.e $(EXAMPLES_DEST)dyn3.e
-	$(CP) $(EXAMPLES_SRC)dyn4.e $(EXAMPLES_DEST)dyn4.e
-	$(CP) $(EXAMPLES_SRC)dyn5.e $(EXAMPLES_DEST)dyn5.e
-	$(CP) $(EXAMPLES_SRC)dynfull.e $(EXAMPLES_DEST)dynfull.e
-	echo $(LD_LIBRARY_PATH)
-	$(GBAK_STATIC) employee.fdb $(EXAMPLES_DEST)employee.gbk
-#	-$(RM) $(EXAMPLES_DEST)employee.fdb
-	$(GBAK_STATIC) -r $(EXAMPLES_DEST)employee.gbk $(EXAMPLES_DEST)employee.fdb
-	$(CP) $(EXAMPLES_SRC)example.h $(EXAMPLES_DEST)example.h
-	$(CP) $(EXAMPLES_SRC)api9f.sql $(EXAMPLES_DEST)api9f.sql
-##	$(GBAK_STATIC) intlemp.fdb $(EXAMPLES_DEST)intlemp.gbk
-#	-$(RM) $(EXAMPLES_DEST)intlemp.fdb
-##	$(GBAK_STATIC) -r $(EXAMPLES_DEST)intlemp.gbk $(EXAMPLES_DEST)intlemp.fdb
-	$(CP) $(EXAMPLES_SRC)stat1.e $(EXAMPLES_DEST)stat1.e
-	$(CP) $(EXAMPLES_SRC)stat10.e $(EXAMPLES_DEST)stat10.e
-	$(CP) $(EXAMPLES_SRC)stat11.e $(EXAMPLES_DEST)stat11.e
-	$(CP) $(EXAMPLES_SRC)stat12.e $(EXAMPLES_DEST)stat12.e
-	$(CP) $(EXAMPLES_SRC)stat12t.e $(EXAMPLES_DEST)stat12t.e
-	$(CP) $(EXAMPLES_SRC)stat2.e $(EXAMPLES_DEST)stat2.e
-	$(CP) $(EXAMPLES_SRC)stat3.e $(EXAMPLES_DEST)stat3.e
-	$(CP) $(EXAMPLES_SRC)stat4.e $(EXAMPLES_DEST)stat4.e
-	$(CP) $(EXAMPLES_SRC)stat5.e $(EXAMPLES_DEST)stat5.e
-	$(CP) $(EXAMPLES_SRC)stat6.e $(EXAMPLES_DEST)stat6.e
-	$(CP) $(EXAMPLES_SRC)stat7.e $(EXAMPLES_DEST)stat7.e
-	$(CP) $(EXAMPLES_SRC)stat8.e $(EXAMPLES_DEST)stat8.e
-	$(CP) $(EXAMPLES_SRC)stat9.e $(EXAMPLES_DEST)stat9.e
-	$(CP) $(EXAMPLES_SRC)udf.sql $(EXAMPLES_DEST)udf.sql
-	$(CP) $(EXAMPLES_SRC)udflib.c $(EXAMPLES_DEST)udflib.c
-#	$(CP) makefile.example $(EXAMPLES_DEST)makefile
+v5_examples: $(EXAMPLE_DB) $(EXAMPLES) $(NT_EXAMPLES)
 
-nt_examples:
-	$(CP) $(EXAMPLES_SRC)api9f.def $(EXAMPLES_DEST)api9f.def
-	$(CP) $(EXAMPLES_SRC)udflib.def $(EXAMPLES_DEST)udflib.def
-#	$(CP) $(EXAMPLES_SRC)makefile.bc $(EXAMPLES_DEST)Makefile.bc
-#	$(CP) $(EXAMPLES_SRC)makefile.msc $(EXAMPLES_DEST)Makefile.msc
+$(EXAMPLES_DEST)% : $(EXAMPLES_SRC)%
+	$(CP) $^ $@
+
+$(EXAMPLE_DB) : employee.fdb
+	$(GBAK_STATIC) employee.fdb $(EXAMPLES_DEST)employee.gbk
+#	-$(RM) $(EXAMPLE_DB)
+	$(GBAK_STATIC) -r $(EXAMPLES_DEST)employee.gbk $(EXAMPLE_DB)
 
 # Ok the following little story is, first build empbuild.fdb an empty db
 # using a script file.  Then we can compile the empbuild.e file, then we 
@@ -167,7 +131,6 @@ empbuild.fdb : $(EXAMPLES_SRC)empddl.sql $(EXAMPLES_SRC)empbld.sql
 	-$(CP) $^ .
 	-$(RM) $@
 	$(ISQL_STATIC) -i empbld.sql
-
 
 # The chain for intlemp.fdb is the same a script file to create an empty database
 # to allow a .e program to be compiled, to then create and populate with data
