@@ -67,20 +67,19 @@ ParsedPath::operator PathName() const
 
 bool ParsedPath::contains(const ParsedPath& pPath) const 
 {
-	int nFullElem = getCount();
+	size_t nFullElem = getCount();
 	if (nFullElem > 1 && (*this)[nFullElem - 1].length() == 0)
 		nFullElem--;
 
 	if (pPath.getCount() < nFullElem) {
 		return false;
 	}
-	int i;
-	for (i = 0; i < nFullElem; i++) {
+	for (size_t i = 0; i < nFullElem; i++) {
 		if (pPath[i] != (*this)[i]) {
 			return false;
 		}
 	}
-	for (i = nFullElem + 1; i <= pPath.getCount(); i++) {
+	for (size_t i = nFullElem + 1; i <= pPath.getCount(); i++) {
 		PathName x = pPath.subPath(i);
 		if (PathUtils::isSymLink(x)) {
 			return false;
@@ -215,7 +214,7 @@ bool DirectoryList::isPathInList(const PathName& path) const
 
 	ParsedPath pPath(path);
     bool rc = 0;
-    for (int i = 0; i < getCount(); i++) {
+    for (size_t i = 0; i < getCount(); i++) {
 		if ((*this)[i].contains(pPath)) {
 			rc = true;
 			break;
@@ -232,7 +231,7 @@ void DirectoryList::expandFileName (
 const 
 {
 	fb_assert(mode != NotInitialized);
-    for (int i = 0; i < getCount(); i++) {
+    for (size_t i = 0; i < getCount(); i++) {
 		PathUtils::concatPath(path, (*this)[i], name);
 		if (PathUtils::canAccess(path, access)) {
 			return;
@@ -247,7 +246,7 @@ void TempDirectoryList::initTemp()
 
 	// Iterate through directories to parse them
 	// and fill the "items" vector
-	for (int i = 0; i < getCount(); i++) {
+	for (size_t i = 0; i < getCount(); i++) {
 		PathName dir = (*(inherited*)this)[i];
 		size_t pos = dir.rfind(" ");
 		long size = atol(dir.substr(pos + 1, PathName::npos).c_str());
