@@ -1,3 +1,180 @@
+2002-11-14 17:23  dimitr
+
+	* firebird2/doc/WhatsNew:
+	
+	Added alpha 4 changes.
+
+2002-11-14 14:53  dimitr
+
+	* firebird2/builds/posix/: Makefile.in.boot.gpre, make.defaults,
+	make.shared.variables:
+	
+	A few changes contributed by Dimitry Sibiryakov.
+
+2002-11-14 14:40  dimitr
+
+	* firebird2/builds/posix/prefix.mingw:
+	
+	Cleanup.
+
+2002-11-14 14:39  skidder
+
+	* firebird2/src/jrd/: cmp.cpp, dfw.epp, met.epp, met_proto.h:
+	
+	Better cache dependency tracking for procedure modification
+
+2002-11-14 14:35  dimitr
+
+	* firebird2/src/jrd/: common.h, sort_mem.cpp,
+	os/win32/config_root.cpp, os/win32/mod_loader.cpp:
+	
+	Cleanup.
+
+2002-11-14 13:16  skidder
+
+	* firebird2/src/jrd/met.epp:
+	
+	Fixed procedure dependency tracking problem in MET_clear_cache
+
+2002-11-14 10:17  skidder
+
+	* firebird2/src/jrd/met.epp:
+	
+	Fixed MET_clear_cache error that prevented restore of many
+	databases
+
+2002-11-14 09:32  dimitr
+
+	* firebird2/src/: utilities/ibmgr.cpp, utilities/install_reg.cpp,
+	utilities/install_svc.cpp, utilities/registry.cpp,
+	utilities/services.cpp, utilities/srvrmgr.cpp, v5_examples/api9f.c,
+	wal/driver.cpp, wal/wal.cpp, wal/wal.h, wal/wal_prnt.cpp,
+	wal/walc.cpp, wal/walf.cpp, wal/walr.cpp, wal/walw.cpp:
+	
+	Global names change: FBOK=>FB_SUCCESS FAILURE=>FB_FAILURE
+	xxx_FBOK=>xxx_SUCCESS
+
+2002-11-14 09:27  dimitr
+
+	* firebird2/src/: qli/meta.epp, remote/interface.cpp,
+	remote/merge.cpp, remote/multivx.cpp, remote/remote.cpp,
+	remote/server.cpp, remote/wfwnp.cpp, remote/winvx.cpp:
+	
+	Global names change: FBOK=>FB_SUCCESS FAILURE=>FB_FAILURE
+	xxx_FBOK=>xxx_SUCCESS
+
+2002-11-14 09:25  eku
+
+	* firebird2/src/: jrd/isc_file.cpp, remote/interface.cpp:
+	
+	We don't need two different defines for the same thing: NFS meant
+	!NO_NFS.
+
+2002-11-14 09:23  dimitr
+
+	* firebird2/src/: jrd/ail.cpp, jrd/blb.cpp, jrd/blob_filter.epp,
+	jrd/btr.cpp, jrd/cch.cpp, jrd/common.h, jrd/dyn_def.epp,
+	jrd/dyn_mod.epp, jrd/dyn_util.epp, jrd/filters.cpp, jrd/gds.cpp,
+	jrd/isc_sync.cpp, jrd/jio.cpp, jrd/jrd.cpp, jrd/jrn.cpp,
+	jrd/lck_dummy.cpp, jrd/llio.cpp, jrd/map.cpp, jrd/old.cpp,
+	jrd/rec.cpp, jrd/sdl.cpp, jrd/sort.cpp, jrd/svc.cpp, jrd/thd.cpp,
+	jrd/thd_win32.cpp, jrd/utl.cpp, jrd/vmslock.cpp, jrd/why.c,
+	jrd/y-valve.cpp, lock/lock.cpp, lock/pls.cpp, lock/printv3.cpp,
+	lock/printv3s4.cpp, pipe/foot.cpp, pipe/head.cpp:
+	
+	Global names change: FBOK=>FB_SUCCESS FAILURE=>FB_FAILURE
+	xxx_FBOK=>xxx_SUCCESS
+
+2002-11-14 09:22  skywalker
+
+	* firebird2/src/install/:
+	arch-specific/linux/classic/makeInstallImage.sh.in,
+	misc/changeDBAPassword.sh:
+	
+	Change libgds.so.0 link to enable backward compatibility Update
+	changeDBAPassword.sh so script points to install location.
+
+2002-11-14 09:20  eku
+
+	* firebird2/src/jrd/perf.h:
+	
+	NOTIME meant that the function times() is not available. Renamed
+	into !HAVE_TIMES.
+
+2002-11-14 09:19  dimitr
+
+	* firebird2/src/: ipserver/ipclient.cpp, journal/archive.cpp,
+	journal/misc.cpp, journal/oldr.cpp, journal/rebuild.e:
+	
+	Global names change: FBOK=>FB_SUCCESS FAILURE=>FB_FAILURE
+	xxx_FBOK=>xxx_SUCCESS
+
+2002-11-14 09:18  eku
+
+	* firebird2/configure.in:
+	
+	Flags are named XXX_FLG.
+
+2002-11-14 09:16  dimitr
+
+	* firebird2/src/: burp/spit.cpp, csv/csi.cpp, csv/csv.cpp,
+	dsql/array.epp, dsql/blob.epp, dsql/dsql.cpp, dsql/preparse.cpp,
+	dsql/user_dsql.cpp, dsql/utld.cpp, dudley/exe.epp:
+	
+	Global names change: FBOK=>FB_SUCCESS FAILURE=>FB_FAILURE
+	xxx_FBOK=>xxx_SUCCESS
+
+2002-11-14 09:01  kkuznetsov
+
+	* firebird2/configure.in:
+	
+	Solaris always chech for -lnsl
+
+2002-11-14 08:42  dimitr
+
+	* firebird2/src/jrd/exe.cpp:
+	
+	Fixed bug with dynamic exception messages.
+
+2002-11-14 08:37  dimitr
+
+	* firebird2/src/: include/gen/autoconfig_msvc.h, jrd/file_params.h:
+	
+	Cleanup.
+
+2002-11-14 08:35  eku
+
+	* firebird2/: configure.in, src/include/gen/autoconfig_msvc.h,
+	src/make.new/config/config.h.in, src/remote/inet.cpp:
+	
+	Autoconf cleanup:  o added tests for setitimer	o updated
+	config.h.in and autoconfig_msvc.h (the latter may be incorrect)  o
+	replaced NO_ITIMER with HAVE_SETITIMER
+
+2002-11-14 08:35  dimitr
+
+	* firebird2/src/jrd/: cmp.cpp, exe.cpp, exe.h:
+	
+	Fixed bug with dynamic exception messages.
+
+2002-11-14 08:12  eku
+
+	* firebird2/src/: jrd/enc.cpp, remote/interface.cpp:
+	
+	Autoconf: check for crypt.h and crypt
+
+2002-11-14 07:53  eku
+
+	* firebird2/configure.in:
+	
+	Set defaults for lock manager and editline per platform.
+
+2002-11-14 07:48  eku
+
+	* firebird2/src/remote/inet.cpp:
+	
+	Cleanup
+
 2002-11-13 17:37  alexpeshkoff
 
 	* firebird2/src/jrd/: isc_file.cpp, isc_win32.cpp:
