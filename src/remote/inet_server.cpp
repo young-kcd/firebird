@@ -23,7 +23,7 @@
  * FSG 16.03.2001 
  */
 /*
-$Id: inet_server.cpp,v 1.7 2002-08-22 10:48:24 eku Exp $
+$Id: inet_server.cpp,v 1.8 2002-08-28 07:10:32 eku Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -584,7 +584,7 @@ static void set_signal( int signal_number, void (*handler) (void))
 #else
 	struct sigaction vec, old_vec;
 
-	vec.sa_handler = (void(*)(int)) handler;
+	vec.sa_handler = (SIG_FPTR) handler;
 	memset(&vec.sa_mask, 0, sizeof(vec.sa_mask));
 	vec.sa_flags = 0;
 	sigaction(signal_number, &vec, &old_vec);
