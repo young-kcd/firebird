@@ -24,16 +24,9 @@
 #ifndef ALICE_ALICE_META_H
 #define ALICE_ALICE_META_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 void	MET_disable_wal(STATUS*, isc_db_handle);
 void	MET_get_state(STATUS*, TDR);
 TDR		MET_get_transaction(STATUS*, isc_db_handle, SLONG);
 void	MET_set_capabilities(STATUS*, TDR);
 
-#ifdef __cplusplus
-}
-#endif
-#endif /* ALICE_ALICE_META_H */
+#endif	// ALICE_ALICE_META_H

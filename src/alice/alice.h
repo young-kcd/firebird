@@ -92,7 +92,7 @@ typedef str *STR;
 
 /*  Transaction block: used to store info about a multidatabase transaction. */
 
-typedef struct tdr
+typedef struct tdr : public pool_alloc<alice_type_tdr>
 {
 	struct tdr *tdr_next;		/* next subtransaction */
 	SLONG tdr_id;				/* database-specific transaction id */
@@ -163,7 +163,6 @@ public:
 	STATUS			status_vector[ISC_STATUS_LENGTH];
 	typedef			std::vector<AliceMemoryPool*, Firebird::allocator<AliceMemoryPool*> > pool_vec_t;
 	pool_vec_t		pools;
-	UCHAR*			alice_env;
 	int				exit_code;
 	OUTPUTPROC		output_proc;
 	SLONG			output_data;
@@ -212,14 +211,6 @@ extern struct tgbl *gdgbl;
 #endif
 #define RESTORE_THREAD_DATA
 #endif
-
-#if defined(__cplusplus)
-#define EXIT(code)		{  tdgbl->exit_code = (code); \
-					if (tdgbl->alice_env != NULL) \
-						Firebird::status_longjmp_error::raise(1);  }
-#else
-#error Dont do this, it hurts!
-#endif	// __cplusplus
 
 #define	NOOUTPUT	2
 
