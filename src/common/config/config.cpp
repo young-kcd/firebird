@@ -373,14 +373,6 @@ int Config::getPrioritySwitchDelay()
 	return rc;
 }
 
-int Config::getDeadThreadsCollection()
-{
-	int rc = (int) sysConfig.values[KEY_DEAD_THREADS_COLLECTION];
-	if (rc < 1)
-		rc = 1;
-	return rc;
-}
-
 int Config::getPriorityBoost()
 {
 	int rc = (int) sysConfig.values[KEY_PRIORITY_BOOST];

@@ -37,7 +37,6 @@
 
 // configurable parameters
 #define THPS_TIME (Config::getPrioritySwitchDelay())	// ms between rescheds
-//#define THPS_TICKS (Config::getDeadThreadsCollection())	// sched loops before thread killing
 
 #include <stdio.h>
 #include <errno.h>

@@ -230,11 +230,6 @@ public:
 	static int getPrioritySwitchDelay();
 
 	/*
-		Dead threads collection
-	*/
-	static int getDeadThreadsCollection();
-
-	/*
 		Priority boost
 	*/
 	static int getPriorityBoost();
