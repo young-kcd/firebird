@@ -1,3 +1,10 @@
+2004-10-26 01:22  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp (1.73.2.25):
+	
+	Better solution for not distributing "possible Unknown candidates"
+	to outer joins.
+
 2004-10-24 13:57  arnobrinkman
 
 	* firebird2/src/jrd/: opt.cpp (1.73.2.24), rse.h (1.13.2.2):
