@@ -1,4 +1,4 @@
-#ident "$Id: autoconfig_msvc.h,v 1.28 2002-09-17 05:58:34 eku Exp $"
+#ident "$Id: autoconfig_msvc.h,v 1.29 2002-09-18 12:50:02 eku Exp $"
 
 /*
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
@@ -39,6 +39,7 @@
 #define HAVE_SYS_STAT_H
 #undef HAVE_SYS_UIO_H
 #undef HAVE_SYS_WAIT_H
+#undef TIME_WITH_SYS_TIME
 #define HAVE_TIME_H
 #undef HAVE_SYS_TIME_H
 #define HAVE_SYS_TIMEB_H
@@ -81,10 +82,17 @@
 #undef GETTIMEOFDAY_RETURNS_TIMEZONE
 
 /* Are we doing 64bit IO on unix */
-#undef UNIX_64_BIT_IO 
+#undef _FILE_OFFSET_BITS
+#undef _LARGE_FILES
 
 /* sizeof(void *) = 8 ==> HAS_64BIT_POINTERS */
 #define SIZEOF_VOID_P 4
+
+/* alignment of long */
+#define ALIGNMENT 4
+
+/* alignment of double */
+#define DOUBLE_ALIGN 4
 
 /* Functions */
 #define snprintf _snprintf

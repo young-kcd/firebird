@@ -35,7 +35,7 @@
  * 2002.04.16  Paul Beach - HP10 and unistd.h
  */
 /*
-$Id: common.h,v 1.28 2002-09-17 05:58:35 eku Exp $
+$Id: common.h,v 1.29 2002-09-18 12:50:03 eku Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -117,7 +117,6 @@ typedef RETSIGTYPE (*SIG_FPTR) (int);
 #include <sys/mman.h>
 #include <sys/socket.h>
 #include <string.h>
-#include <sys/time.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -154,8 +153,8 @@ int shutdown(int s, int how);
 #define QUADFORMAT "ll"
 #define QUADCONST(n) (n##LL)
 
-#define ALIGNMENT	4
-#define DOUBLE_ALIGN	8
+/*#define ALIGNMENT	4*/
+/*#define DOUBLE_ALIGN	8*/
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
 
 #ifdef SUPERSERVER
@@ -194,8 +193,8 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif
 #define __LINE__IS_INT
 #define SLONGFORMAT	"ld"
-#define ALIGNMENT       4
-#define DOUBLE_ALIGN    4
+/*#define ALIGNMENT       4*/
+/*#define DOUBLE_ALIGN    4*/
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
 #define BSD_UNIX        1
 #define UNIX            1
@@ -231,8 +230,8 @@ typedef RETSIGTYPE (*SIG_FPTR) (int);
 #ifdef FREEBSD
 
 #define FB_ALIGN(n,b) ((n + b - 1) & ~(b - 1))
-#define ALIGNMENT     4
-#define DOUBLE_ALIGN  4
+/*#define ALIGNMENT     4*/
+/*#define DOUBLE_ALIGN  4*/
 
 #define UNIX  1
 #define IEEE  1
@@ -257,8 +256,8 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 
 #if defined(__i386__)
 #define FB_ALIGN(n,b) ((n + b - 1) & ~(b - 1))
-#define ALIGNMENT     4
-#define DOUBLE_ALIGN  4
+/*#define ALIGNMENT     4*/
+/*#define DOUBLE_ALIGN  4*/
 
 #define IEEE  1
 #define I386  1
@@ -377,9 +376,9 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 
 #ifdef sparc
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
-#define ALIGNMENT       4
+/*#define ALIGNMENT       4*/
+/*#define DOUBLE_ALIGN    8*/
 #define IMPLEMENTATION  isc_info_db_impl_isc_sun4 /* 30 */
-#define DOUBLE_ALIGN    8
 #define INTL
 #else /* sparc */
 
@@ -415,8 +414,8 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define INTL
 
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
-#define ALIGNMENT       8
-#define DOUBLE_ALIGN    8
+/*#define ALIGNMENT       8*/
+/*#define DOUBLE_ALIGN    8*/
 #define IMPLEMENTATION  isc_info_db_impl_isc_hp_ux /* 31 */
 
 #define                 IEEE
@@ -455,8 +454,8 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #ifdef mips
 #define IMPLEMENTATION  isc_info_db_impl_isc_mips_ult /* 36 */
 #define                 IEEE
-#define ALIGNMENT       4
-#define DOUBLE_ALIGN    8
+/*#define ALIGNMENT       4*/
+/*#define DOUBLE_ALIGN    8*/
 #else
 #define CTO32L(p)       (*(long*) p)
 #define IMPLEMENTATION  isc_info_db_impl_isc_vax_ultr /* 26 */
@@ -522,7 +521,7 @@ typedef RETSIGTYPE (API_ROUTINE * SIG_FPTR) ();
 #ifdef VMS
 #define VAX_FLOAT       1
 #define FB_ALIGN(n,b)      (n)
-#define ALIGNMENT       4
+/*#define ALIGNMENT       4*/
 #define NO_NFS
 #define CTO32L(p)       (*(long*)p)
 #define NO_CHECKSUM	1
@@ -558,7 +557,7 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define UNIX            1
 #define CURSES_KEYPAD   1
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
-#define ALIGNMENT       4
+/*#define ALIGNMENT       4*/
 #define IMPLEMENTATION  isc_info_db_impl_isc_rt_aix /* 35 */
 #define                 IEEE
 #define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)
@@ -573,7 +572,7 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define UNIX            1
 #define CURSES_KEYPAD   1
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
-#define ALIGNMENT       4
+/*#define ALIGNMENT       4*/
 #define IMPLEMENTATION  isc_info_db_impl_isc_rt_aix /* 35 */
 #define                 IEEE
 #define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)
@@ -739,9 +738,9 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define CURSES_KEYPAD   1
 #ifndef DG_X86
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
-#define ALIGNMENT       8
+/*#define ALIGNMENT       8*/
+/*#define DOUBLE_ALIGN    8*/
 #define IMPLEMENTATION  isc_info_db_impl_isc_dg /* 38 */
-#define DOUBLE_ALIGN    8
 #else
 #define IMPLEMENTATION	isc_info_db_impl_dg_x86 /* 58 */
 #define I386          1
@@ -767,8 +766,8 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define KILLER_SIGNALS
 #define UNIX            1
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
-#define ALIGNMENT       8
-#define DOUBLE_ALIGN    8
+/*#define ALIGNMENT       8*/
+/*#define DOUBLE_ALIGN    8*/
 #define IMPLEMENTATION  isc_info_db_impl_alpha_osf	/* 52 */
 #define                 IEEE
 
@@ -796,9 +795,9 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define UNIX            1
 #define CURSES_KEYPAD   1
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
-#define ALIGNMENT       8
+/*#define ALIGNMENT       8*/
+/*#define DOUBLE_ALIGN    8*/
 #define IMPLEMENTATION  isc_info_db_impl_isc_sgi  /* 41 */
-#define DOUBLE_ALIGN    8
 #define                 IEEE
 #define INTL
 #define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)
@@ -927,14 +926,15 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #ifdef I386
 /* Using internal alignment optimal for 386 processor and above
  */
-#define ALIGNMENT       4
-#define DOUBLE_ALIGN    8
+/*#define ALIGNMENT       4*/
+/*#define DOUBLE_ALIGN    8*/
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
 #endif
 #endif
 
 #ifndef ALIGNMENT
-#define ALIGNMENT       2
+/*#define ALIGNMENT       2*/
+#error must define ALIGNMENT for your system
 #endif
 
 #ifndef SHIFTLONG
@@ -945,7 +945,8 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif
 
 #ifndef DOUBLE_ALIGN
-#define DOUBLE_ALIGN    4
+/*#define DOUBLE_ALIGN    4*/
+#error must define DOUBLE_ALIGN for your system
 #endif
 
 
@@ -971,12 +972,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif
 #define SUCCESS         0
 #define FAILURE         1
-
-
-/* Enable 64 bit io for unix platforms if UNIX_64_BIT_IO macro is set. */
-#ifdef UNIX_64_BIT_IO
-#define _FILE_OFFSET_BITS       64  /* Enable 64 bit IO functions */
-#endif
 
 
 /* data type definitions */

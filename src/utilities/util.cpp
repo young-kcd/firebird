@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: util.cpp,v 1.6 2002-09-11 11:30:45 eku Exp $
+$Id: util.cpp,v 1.7 2002-09-18 12:50:05 eku Exp $
 */
 
 #include "firebird.h"
@@ -47,8 +47,14 @@ $Id: util.cpp,v 1.6 2002-09-11 11:30:45 eku Exp $
 #include <wait.h>				/* for waitpid() */
 #endif
 
-#ifdef HAVE_SYS_WAIT_H
-#include <sys/wait.h>			/* for waitpid() */
+#if HAVE_SYS_WAIT_H
+# include <sys/wait.h>
+#endif
+#ifndef WEXITSTATUS
+# define WEXITSTATUS(stat_val) ((unsigned)(stat_val) >> 8)
+#endif
+#ifndef WIFEXITED
+# define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
 #endif
 
 

@@ -31,11 +31,20 @@
  * to count virtual operations, not real I/O on the underlying tables.
  */
 /*
-$Id: exe.cpp,v 1.15 2002-09-17 05:58:35 eku Exp $
+$Id: exe.cpp,v 1.16 2002-09-18 12:50:03 eku Exp $
 */
 
 #include "firebird.h"
-#include <time.h>
+#if TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# if HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
 
 #include "../jrd/common.h"
 #include "../jrd/ibsetjmp.h"

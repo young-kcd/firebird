@@ -23,7 +23,7 @@
  * FSG 16.03.2001 
  */
 /*
-$Id: inet_server.cpp,v 1.9 2002-09-08 07:56:50 dimitr Exp $
+$Id: inet_server.cpp,v 1.10 2002-09-18 12:50:04 eku Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -39,16 +39,29 @@ $Id: inet_server.cpp,v 1.9 2002-09-08 07:56:50 dimitr Exp $
 #include <sys/types.h>
 #endif
 
-#ifdef HAVE_SYS_TIME_H
-#include <sys/time.h>
+#if TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# if HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
 #endif
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
-#ifdef HAVE_SYS_WAIT_H
-#include <sys/wait.h>
+#if HAVE_SYS_WAIT_H
+# include <sys/wait.h>
+#endif
+#ifndef WEXITSTATUS
+# define WEXITSTATUS(stat_val) ((unsigned)(stat_val) >> 8)
+#endif
+#ifndef WIFEXITED
+# define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
 #endif
 
 #ifdef HAVE_STRING_H

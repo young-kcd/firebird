@@ -36,11 +36,11 @@
 #include "../jrd/perf_proto.h"
 #include "../jrd/gdsassert.h"
 
-#ifdef HAVE_SYS_TIMEB_H
-#include <sys/timeb.h>
-#endif
 #ifdef HAVE_SYS_TIMES_H
 #include <sys/times.h>
+#endif
+#ifdef HAVE_SYS_TIMEB_H
+# include <sys/timeb.h>
 #endif
 
 

@@ -31,7 +31,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.18 2002-08-26 12:13:22 eku Exp $
+$Id: inet.cpp,v 1.19 2002-09-18 12:50:04 eku Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -281,7 +281,9 @@ static struct ipccfg INET_tcp_delay[] =
 
 #ifndef REQUESTER
 #ifdef DEBUG
-#include <sys/timeb.h>
+#ifdef HAVE_SYS_TIMEB_H
+# include <sys/timeb.h>
+#endif
 #define TRACE_packets		(1 << 0)	/* bit 0 */
 #define TRACE_operations	(1 << 1)	/* bit 1 */
 #define TRACE_summary		(1 << 2)	/* bit 2 */

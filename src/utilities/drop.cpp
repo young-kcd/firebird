@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: drop.cpp,v 1.8 2002-08-26 13:20:05 eku Exp $
+$Id: drop.cpp,v 1.9 2002-09-18 12:50:05 eku Exp $
 */
 
 #include "firebird.h"
@@ -50,8 +50,14 @@ $Id: drop.cpp,v 1.8 2002-08-26 13:20:05 eku Exp $
 #include <unistd.h>
 #endif
 
-#ifdef HAVE_SYS_WAIT_H
-#include <sys/wait.h>
+#if HAVE_SYS_WAIT_H
+# include <sys/wait.h>
+#endif
+#ifndef WEXITSTATUS
+# define WEXITSTATUS(stat_val) ((unsigned)(stat_val) >> 8)
+#endif
+#ifndef WIFEXITED
+# define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
 #endif
 
 #ifdef HAVE_STRING_H

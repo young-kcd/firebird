@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: lock.cpp,v 1.11 2002-09-11 11:30:44 eku Exp $
+$Id: lock.cpp,v 1.12 2002-09-18 12:50:04 eku Exp $
 */
 
 #include "firebird.h"
@@ -54,12 +54,25 @@ $Id: lock.cpp,v 1.11 2002-09-11 11:30:44 eku Exp $
 #include <sys/types.h>
 #endif
 
-#ifdef HAVE_SYS_WAIT_H
-#include <sys/wait.h>
+#if HAVE_SYS_WAIT_H
+# include <sys/wait.h>
+#endif
+#ifndef WEXITSTATUS
+# define WEXITSTATUS(stat_val) ((unsigned)(stat_val) >> 8)
+#endif
+#ifndef WIFEXITED
+# define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
 #endif
 
-#ifdef HAVE_TIME_H
-#include <time.h>
+#if TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# if HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
 #endif
 
 #ifdef HAVE_UNISTD_H

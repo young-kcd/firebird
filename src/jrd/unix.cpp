@@ -935,7 +935,7 @@ static FIL seek_file(FIL file, BDB bdb, UINT64 * offset, STATUS * status_vector)
     lseek_offset = page;
     lseek_offset *= dbb->dbb_page_size;
 
-#ifndef UNIX_64_BIT_IO
+#if _FILE_OFFSET_BITS != 64
     if (lseek_offset > MAX_SLONG) {
         return (FIL) unix_error ("lseek", file, isc_io_32bit_exceeded_err, status_vector);
     }

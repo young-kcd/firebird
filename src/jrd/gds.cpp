@@ -4768,7 +4768,8 @@ static void init(void)
 		if (!getrlimit(RLIMIT_NOFILE, &old) && old.rlim_cur < old.rlim_max) {
 			new_.rlim_cur = new_.rlim_max = old.rlim_max;
 			if (!setrlimit(RLIMIT_NOFILE, &new_))
-#if (defined UNIX_64_BIT_IO && defined SOLARIS)
+			{
+#if _FILE_OFFSET_BITS == 64 && defined SOLARIS
 				gds__log("64 bit i/o support is on.");
 				gds__log("Open file limit increased from %lld to %lld",
 						 old.rlim_cur, new_.rlim_cur);
@@ -4777,6 +4778,7 @@ static void init(void)
 				gds__log("Open file limit increased from %d to %d",
 						 old.rlim_cur, new_.rlim_cur);
 #endif
+			}
 		}
 	}
 #endif

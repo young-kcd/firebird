@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.44 2002-09-17 05:58:33 eku Exp $
+dnl $Id: configure.in,v 1.45 2002-09-18 12:50:01 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -110,9 +110,8 @@ AC_CHECK_HEADERS(pthread.h)
 AC_CHECK_HEADERS(sys/types.h)
 AC_CHECK_HEADERS(sys/stat.h)
 AC_CHECK_HEADERS(sys/uio.h)
-AC_CHECK_HEADERS(sys/wait.h)
-AC_CHECK_HEADERS(time.h)
-AC_CHECK_HEADERS(sys/time.h)
+AC_HEADER_SYS_WAIT
+AC_HEADER_TIME
 AC_CHECK_HEADERS(sys/timeb.h)
 AC_CHECK_HEADERS(sys/param.h)
 AC_CHECK_HEADERS(sys/ioctl.h)
@@ -168,7 +167,7 @@ if test "$ac_cv_func_connect" = "no"; then
   AC_CHECK_LIB(socket, connect, XE_APPEND(-lsocket,LIBS),, $LIBS)
 fi  
 AC_CHECK_FUNCS(strcasecmp stricmp)
-if test "$ac_cv_func_strcasecmp" = "no"; then
+if test "$ac_cv_func_strcasecmp" = "no" -a "$ac_cv_func_stricmp" = "no"; then
   dnl EKU: On SINIX-Z strcasecmp is in libresolv.
   AC_CHECK_LIB(resolv, strcasecmp,
     [XE_APPEND(-lresolv,LIBS)
@@ -199,11 +198,43 @@ AC_C_CONST dnl EKU: we should replace the CONST define in the source!!!
 AC_C_VOLATILE 
 AC_TYPE_SIGNAL
 AC_CHECK_TYPE(socklen_t,int)
-AC_CHECK_TYPE(off64_t,
-  [UNIX_64_BIT_IO=Y
-   AC_DEFINE(UNIX_64_BIT_IO)],
-  [UNIX_64_BIT_IO=N])
+AC_SYS_LARGEFILE
 AC_CHECK_SIZEOF(void*)
+
+dnl EKU: try to determine the alignment of long and double
+dnl      replaces ALIGNMENT and DOUBLE_ALIGN in src/jrd/common.h
+AC_MSG_CHECKING(alignment of long)
+AC_TRY_RUN([main () {
+  struct s {
+    char a;
+    long b;
+  };
+  exit((int)&((struct s*)0)->b);
+}], ac_cv_c_alignment=$ac_status, ac_cv_c_alignment=$ac_status)
+AC_MSG_RESULT($ac_cv_c_alignment)
+AC_DEFINE_UNQUOTED(ALIGNMENT,$ac_cv_c_alignment)
+
+AC_MSG_CHECKING(alignment of double)
+AC_TRY_RUN([main () {
+  struct s {
+    char a;
+    double b;
+  };
+  exit((int)&((struct s*)0)->b);
+}], ac_cv_c_double_align=$ac_status, ac_cv_c_double_align=$ac_status)
+AC_MSG_RESULT($ac_cv_c_double_align)
+AC_DEFINE_UNQUOTED(DOUBLE_ALIGN,$ac_cv_c_double_align)
+
+dnl EKU: don't know how to convert this into an autoconf test:
+dnl      #define FB_ALIGN(n,b) ...
+dnl
+dnl      VMS           (n)                       -> no
+dnl      sun_68k       ((n+1) & ~1)              -> even
+dnl      XENIX         ((n+1) & ~1)              -> even
+dnl      netware_386   ((n+1) & ~1)              -> even
+dnl      all others    ((n + b - 1) & ~(b - 1))  -> multiple of b
+dnl
+dnl      volunters are welcome!
 
 dnl ##################### DO NOT ADD ANY TESTS BELOW ###########################
 
@@ -460,9 +491,9 @@ case $PROD_BUILD_FLG in
  N)       echo "       Debug : enabled";;
 esac
 
-case $UNIX_64_BIT_IO in
- Y)       echo "  64 bit I/O : enabled";;
- N)       echo "  64 bit I/O : disabled";;
+case $ac_cv_sys_file_offset_bits in
+ no)      echo "  64 bit I/O : disabled";;
+ 64)      echo "  64 bit I/O : enabled";;
 esac
 
 if test "$FIREBIRD_ARCH_TYPE" = "classic"; then

@@ -21,13 +21,22 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: apifull.c,v 1.1 2001-07-23 16:05:46 skywalker Exp $
+$Id: apifull.c,v 1.2 2002-09-18 12:50:05 eku Exp $
 */
 
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <time.h>
+#if TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# if HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
 #include <ctype.h>
 #include <ibase.h>
 #include "align.h"

@@ -31,7 +31,9 @@
 #include "../jrd/common.h"
 
 #ifdef WIN_NT
-#include <sys/timeb.h>
+#ifdef HAVE_SYS_TIMEB_H
+# include <sys/timeb.h>
+#endif
 #include <winsock2.h>
 #define TEXT	SCHAR
 #endif
