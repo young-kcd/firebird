@@ -15,13 +15,13 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.linux:	$(VERSION)	$(PLATFORM)
-#$Id: prefix.linux,v 1.21 2003-08-11 01:25:09 brodsom Exp $
+#$Id: prefix.linux,v 1.22 2003-08-19 11:42:45 brodsom Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major cleanup
 
 # -fno-builtin is used because GCC 3.0-3.2.2 had bug with builtins expansion
 # you may remove it if engine is getting compiled with any other GCC version
-PROD_FLAGS=-O3 -march=i586 -mcpu=i686 -fomit-frame-pointer -fno-builtin -DNDEBUG -DLINUX -pipe -MMD -fPIC -fmessage-length=0
-DEV_FLAGS=-ggdb -DLINUX -DDEBUG_GDS_ALLOC -pipe -MMD -p -fPIC -Wall -Wno-switch -Wno-parentheses -Wno-unknown-pragmas -Wno-unused-variable -fmessage-length=0
+PROD_FLAGS=-O3 -march=i586 -mcpu=i686 -fomit-frame-pointer -fno-builtin -DNDEBUG -DLINUX -Dlint -pipe -MMD -fPIC -fmessage-length=0
+DEV_FLAGS=-ggdb -DLINUX -DDEBUG_GDS_ALLOC -Dlint -pipe -MMD -p -fPIC -Wall -Wno-switch -Wno-parentheses -Wno-unknown-pragmas -Wno-unused-variable -fmessage-length=0
 
 OS_ServerFiles=inet_server.cpp
 
