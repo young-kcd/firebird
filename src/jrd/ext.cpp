@@ -158,11 +158,14 @@ ExternalFile* EXT_file(jrd_rel* relation, const TEXT* file_name, bid* descriptio
 	_setmaxstdio(2048);
 #endif
 
-	// If file_name has no path part, expand it in ExternalTablesDirs.
+	// If file_name has no path part, expand it in ExternalFilesPath.
 	Firebird::PathName Path, Name;
 	PathUtils::splitLastComponent(Path, Name, file_name);
 	if (Path.length() == 0)	{	// path component not present in file_name
-		iExternalFileDirectoryList().expandFileName(Path, Name);
+		if (!(iExternalFileDirectoryList().expandFileName(Path, Name)))
+		{
+			iExternalFileDirectoryList().defaultName(Path, Name);
+		}
 		file_name = Path.c_str();
 	}
 

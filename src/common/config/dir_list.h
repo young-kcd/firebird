@@ -104,15 +104,18 @@ public:
 		: ObjectsArray<ParsedPath>(), mode(NotInitialized) { }
 	virtual ~DirectoryList() {clear();}
 
-	// Check, whether Path inside this DirectoryList
+	// Check, whether Path is inside this DirectoryList
 	bool isPathInList(const PathName& path) const;
 
 	// Search for file Name in all direcories of DirectoryList.
 	// If found, return full path to it in Path. 
 	// Otherwise Path = Name.
-	// Last parameter defines required access rights
-	// to the file - like access().
-	void expandFileName(PathName& path, 
+	bool expandFileName(PathName& path, 
+						const PathName& name) const;
+
+	// Use first directory in this directory list
+	// to build default full name for a file
+	bool defaultName(PathName& path, 
 						const PathName& name) const;
 };
 

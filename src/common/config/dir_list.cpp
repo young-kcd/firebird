@@ -226,7 +226,7 @@ bool DirectoryList::isPathInList(const PathName& path) const
 #endif //BOOT_BUILD
 }
 
-void DirectoryList::expandFileName (
+bool DirectoryList::expandFileName (
 					PathName& path, 
 					const PathName& name) 
 const 
@@ -235,10 +235,25 @@ const
     for (size_t i = 0; i < getCount(); i++) {
 		PathUtils::concatPath(path, (*this)[i], name);
 		if (PathUtils::canAccess(path, 4)) {
-			return;
+			return true;
 		}
 	}
 	path = name;
+	return false;
+}
+
+bool DirectoryList::defaultName (
+					PathName& path, 
+					const PathName& name) 
+const
+{
+	fb_assert(mode != NotInitialized);
+	if (! getCount())
+	{
+		return false;
+	}
+	PathUtils::concatPath(path, (*this)[0], name);
+	return true;
 }
 
 void TempDirectoryList::initTemp() 
