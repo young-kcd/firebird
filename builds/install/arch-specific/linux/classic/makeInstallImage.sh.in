@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.3 2003-08-06 16:30:28 skidder Exp $
+#   $Id: makeInstallImage.sh.in,v 1.4 2003-10-28 17:58:10 skidder Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -153,6 +153,7 @@ copyFiles() {
 
 
     cp -df $BuiltFBDir/lib/libfbembed.so* $DestDir/lib
+    cp -df $BuiltFBDir/lib/libfbclient.so* $DestDir/lib
 
 #    cp -f $BuiltFBDir/lib/gds.a /usr/lib/libgds.a 
     cp -f $BuiltFBDir/lib/libib_util.so $DestDir/lib/libib_util.so 
@@ -191,7 +192,7 @@ copyFiles() {
 
     origDir=`pwd`
     cd $DestDir
-    for i in lib/libfbembed.so*; do ln -s ../../$FBRootDir/$i $origDir/$TargetDir/usr/$i; done
+    for i in lib/libfb*.so*; do ln -s ../../$FBRootDir/$i $origDir/$TargetDir/usr/$i; done
     cd $origDir
     #ln -s ../../$FBRootDir/lib/libgds.a $TargetDir/usr/lib/libgds.a
     ln -s ../../$FBRootDir/lib/libib_util.so $TargetDir/usr/lib/libib_util.so
