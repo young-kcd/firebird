@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.25 2003-03-01 17:33:19 brodsom Exp $
+//	$Id: alice.cpp,v 1.26 2003-03-07 00:35:10 brodsom Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -106,8 +106,9 @@ static bool fAnsiCP = false;
 static void ALICE_error(USHORT number);	// overloaded to keep down param count
 static inline void translate_cp(TEXT* sz);
 static void expand_filename(TEXT*, TEXT*);
+#ifdef SUPERSERVER
 static int output_thread(SLONG, UCHAR*);
-#ifndef SUPERSERVER
+#else
 static int output_main(SLONG, UCHAR*);
 #endif
 static int output_svc(SLONG, UCHAR*);
