@@ -1129,9 +1129,9 @@ static void analyze_index( REL relation, DBA_IDX index)
 	BTR bucket;
 	IRT index_root;
 	BTN node;
-	SSHORT space, duplicates, key_length, l, dup, n;
+	SSHORT space, key_length, l, dup, n;
 	UCHAR key[256], *p, *q;
-	SLONG number, page;
+	SLONG number, page, duplicates;
 	TDBA tddba;
 
 	tddba = GET_THREAD_DATA;
