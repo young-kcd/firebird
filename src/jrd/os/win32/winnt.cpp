@@ -240,7 +240,8 @@ jrd_file* PIO_create(Database* dbb, const TEXT* string, SSHORT length, bool over
 }
 
 
-int PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name, size_t len_expanded)
+int PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name,
+	size_t len_expanded)
 {
 /**************************************
  *

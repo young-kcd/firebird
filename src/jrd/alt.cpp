@@ -1230,4 +1230,4 @@ static ISC_STATUS executeSecurityCommand(
 
 #endif // BOOT_BUILD
 
-#endif // !defined(SUPERSERVER) || defined EMBEDDED
+#endif // !defined(SUPERSERVER) || defined(EMBEDDED) || defined(SUPERCLIENT)
