@@ -3946,7 +3946,7 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input, const bool lis
 				field = resolve_context(request, qualifier, context, is_check_constraint);
 			}
 			// AB: When there's no relation and no procedure then we have a derived table.
-			bool is_derived_table = 
+			const bool is_derived_table = 
 				(!context->ctx_procedure && !context->ctx_relation && context->ctx_rse);		
 
 			if (field)
