@@ -487,12 +487,13 @@ dsc* EVAL_value(qli_nod* node)
 				-MOVQ_get_long(values[0], desc->dsc_scale);
 			break;
 
-    	case dtype_int64:
+/*   	lets throw arithmetic not supported until fixed
+        case dtype_int64:
 			*((SINT64 *) desc->dsc_address) =
 				-MOVQ_get_long(values[0], desc->dsc_scale);
 			break;
 
-		case dtype_real:
+*/		case dtype_real:
 			*((float *) desc->dsc_address) = -MOVQ_get_double(values[0]);
 			break;
 

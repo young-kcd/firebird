@@ -1103,7 +1103,7 @@ static qli_nod* compile_prompt( qli_nod* node)
 			prompt_length = 8;
 			break;
 
-		case dtype_int64:
+		
 		case dtype_long:
 		case dtype_real:
 			prompt_length = 15;
