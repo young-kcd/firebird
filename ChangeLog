@@ -1,3 +1,125 @@
+2003-11-08 17:39  brodsom
+
+	* firebird2/src/jrd/: alt.cpp, blob_filter.cpp, opt.cpp, pag.cpp,
+	par.cpp, pcmet.epp, perf.cpp, pwd.cpp, rec.cpp, sch.cpp, scl.epp,
+	sdl.cpp, shut.cpp, tra.cpp, utl.cpp, val.cpp, why.cpp, why_proto.h,
+	met.epp:
+	
+	Removing gdsold.h and gds.h
+
+2003-11-08 17:33  brodsom
+
+	* firebird2/src/: utilities/ibmgr/ibmgr.cpp,
+	utilities/ibmgr/srvrmgr.cpp, jrd/cmp.cpp, jrd/dfw.epp, jrd/dpm.epp,
+	jrd/dsc.cpp, jrd/dyn.epp, jrd/dyn.h, jrd/dyn_def.epp,
+	jrd/dyn_del.epp, jrd/dyn_mod.epp, jrd/dyn_util.epp,
+	jrd/filters.cpp, jrd/fun.epp, jrd/grant.epp, jrd/ibase.h,
+	jrd/inf.cpp, jrd/inf.h, jrd/ini.epp, jrd/jrd.cpp, jrd/jrd_proto.h,
+	jrd/jrn.cpp:
+	
+	Removing gdsold.h and gds.h
+
+2003-11-08 17:30  brodsom
+
+	* firebird2/src/: remote/inet.cpp, remote/inet_server.cpp,
+	remote/interface.cpp, remote/merge.cpp, remote/mgr.cpp,
+	remote/parser.cpp, remote/remote.cpp, remote/server.cpp,
+	remote/xnet.cpp, qli/command.cpp, qli/dtr.cpp, qli/eval.cpp,
+	qli/exe.cpp, qli/format.cpp, qli/gener.cpp, qli/help.epp,
+	qli/lex.cpp, qli/meta.epp, qli/proc.epp, qli/procddl4.h,
+	qli/show.epp, gpre/jrdmet.cpp, gpre/par.cpp, gpre/pas.cpp,
+	gpre/pretty.cpp, gpre/sql.cpp, gpre/ada.cpp, gpre/c_cxx.cpp,
+	gpre/cmd.cpp, gpre/cme.cpp, gpre/cmp.cpp, gpre/cob.cpp,
+	gpre/dyntable.cpp, gpre/exp.cpp, gpre/ftn.cpp, gpre/gpre_meta.epp,
+	gpre/gpre_meta_boot.cpp, gpre/int.cpp, gpre/int_cxx.cpp,
+	isql/extract.epp, isql/isql.epp, isql/isql_proto.h,
+	isql/isql_win.cpp, isql/show.epp, isql/show_proto.h,
+	journal/gjrn.cpp, journal/journal_vms.e, journal/miscj.cpp,
+	journal/rebuild.epp, journal/server.epp:
+	
+	Removing gdsold.h and gds.h
+
+2003-11-08 17:26  brodsom
+
+	* firebird2/src/: utilities/gstat/dba_full.epp,
+	utilities/gstat/ppg.cpp, utilities/gstat/dba.epp,
+	utilities/gsec/gsec.cpp, utilities/gsec/security.epp,
+	utilities/common/cmd_util.cpp, utilities/cache.cpp,
+	utilities/run_service.cpp, utilities/stats.epp,
+	msgs/build_file.epp, msgs/change_msgs.epp, msgs/check_msgs.epp,
+	msgs/enter_msgs.epp, msgs/load.epp, msgs/modify_msgs.epp:
+	
+	Removing gdsold.h and gds.h
+
+2003-11-08 17:21  brodsom
+
+	* firebird2/src/: jrd/os/vms/map.cpp, jrd/os/vms/mblr.cpp,
+	jrd/os/vms/rdb.cpp, jrd/os/vms/rdbint.cpp, jrd/os/vms/vmslock.cpp,
+	lock/driver.cpp, remote/os/win32/wnet.cpp, misc/blrtable.cpp,
+	misc/codes.epp, utilities/rebuild/rstore.epp,
+	utilities/rebuild/rebuild.cpp, utilities/rebuild/rmet.epp:
+	
+	Removing gdsold.h and gds.h
+
+2003-11-08 17:18  brodsom
+
+	* firebird2/src/: wal/wal.h, wal/walf.cpp, dsql/user_dsql.cpp,
+	dsql/utld.cpp, ipserver/ipserver.cpp:
+	
+	Removing gdsold.h
+
+2003-11-08 08:48  bellardo
+
+	* firebird2/src/remote/xdr.cpp:
+	
+	SWAP_DOUBLE definition implementation for darwin
+
+2003-11-08 08:39  bellardo
+
+	* firebird2/builds/posix/: Makefile.in.boot.gpre,
+	Makefile.in.client.util, Makefile.in.codes,
+	Makefile.in.embed.lockmgr, Makefile.in.fbserver,
+	Makefile.in.inet_server, Makefile.in.static.gbak,
+	Makefile.in.static.gpre, make.shared.targets:
+	
+	Get rid of the space between the "-L" parameter and the library
+	name.  The space breaks the darwin build.
+
+2003-11-08 08:31  bellardo
+
+	* firebird2/src/jrd/gds.cpp:
+	
+	Header files no longer needed in OS X 10.3.
+
+2003-11-08 00:26  brodsom
+
+	* firebird2/src/: dudley/lex.cpp, dudley/parse.cpp, dudley/trn.cpp,
+	dudley/ddl.cpp, dudley/exe.epp, dudley/expand.cpp, dudley/expr.cpp,
+	dudley/extract.epp, dudley/generate.cpp, jrd/alt.cpp:
+	
+	Removing gdsold.h
+
+2003-11-08 00:22  brodsom
+
+	* firebird2/src/dsql/: parse.y, pass1.cpp, preparse.cpp, utld.cpp,
+	parse.cpp, array.epp, blob.epp, ddl.cpp, dsql.cpp, gen.cpp,
+	hsh.cpp, make.cpp, metd.epp:
+	
+	Removing gdsold.h
+
+2003-11-08 00:15  brodsom
+
+	* firebird2/src/burp/: restore.epp, backup.epp, burp.cpp, burp.h:
+	
+	Removing gdsold.h
+
+2003-11-08 00:09  brodsom
+
+	* firebird2/src/alice/: alice.cpp, alice_meta.epp, exe.cpp,
+	tdr.cpp:
+	
+	Removing gdsold.h
+
 2003-11-07 16:39  brodsom
 
 	* firebird2/src/remote/os/win32/srvr_w32.cpp:
