@@ -1,3 +1,115 @@
+2004-03-31 20:10  alexpeshkoff
+
+	* firebird2/src/common/: utils.cpp (1.6), utils_proto.h (1.2):
+	
+	string cleanup
+
+2004-03-31 20:09  alexpeshkoff
+
+	* firebird2/src/common/classes/fb_string.cpp (1.10):
+	
+	fixed serious bug in string::printf - thanks to Nickolay
+
+2004-03-31 20:07  alexpeshkoff
+
+	* firebird2/src/include/fb_string.h (1.14):
+	
+	added some functionality to string
+
+2004-03-31 20:03  alexpeshkoff
+
+	* firebird2/src/jrd/: cmp.cpp (1.109), exe.h (1.46), fun.epp
+	(1.45), fun_proto.h (1.12), intl.cpp (1.57), jrd.h (1.86),
+	met_proto.h (1.39), opt.cpp (1.148), par.cpp (1.86), par_proto.h
+	(1.14):
+	
+	string cleanup
+
+2004-03-31 20:02  alexpeshkoff
+
+	* firebird2/src/jrd/: sym.cpp (1.14), sym.h (1.1), sym_proto.h
+	(1.8):
+	
+	big class Symbol cleanup
+
+2004-03-31 19:59  alexpeshkoff
+
+	* firebird2/src/jrd/met.epp (1.104):
+	
+	string cleanup, also fixed problem with DROP VIEW
+
+2004-03-31 19:55  alexpeshkoff
+
+	* firebird2/src/jrd/: ext_proto.h (1.15), jrd_proto.h (1.28):
+	
+	reverted class bid back to struct - thanks to Claudio
+
+2004-03-31 19:52  alexpeshkoff
+
+	* firebird2/src/jrd/: err.cpp (1.38), err_proto.h (1.17):
+	
+	one more form of ERR_cstring()
+
+2004-03-31 19:51  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp (1.149):
+	
+	fixed posix warning - dropped unneeded copy_string()
+
+2004-03-31 19:50  alexpeshkoff
+
+	* firebird2/builds/win32/: prepare.bat (1.31), preprocess.bat
+	(1.28), setenvvar.bat (1.6):
+	
+	rolling back bat files commit - sorry, please
+
+2004-03-31 19:38  alexpeshkoff
+
+	* firebird2/src/jrd/: dyn.epp (1.54), dyn.h (1.18), dyn_def.epp
+	(1.62), dyn_del.epp (1.28), dyn_df_proto.h (1.9), dyn_dl_proto.h
+	(1.6), dyn_md_proto.h (1.7), dyn_mod.epp (1.41), dyn_ut_proto.h
+	(1.7), dyn_util.epp (1.31):
+	
+	renamed gbl to Global with small class cleanup
+
+2004-03-31 19:37  alexpeshkoff
+
+	* firebird2/src/jrd/: all.cpp (1.28), all.h (1.15):
+	
+	moving to Firebird::string
+
+2004-03-31 19:27  alexpeshkoff
+
+	* firebird2/src/dsql/dsql.cpp (1.98):
+	
+	fixed memory leak in execute statement
+
+2004-03-31 19:17  alexpeshkoff
+
+	* firebird2/src/jrd/dfw.epp (1.97):
+	
+	fixed posix warning
+
+2004-03-31 19:17  alexpeshkoff
+
+	* firebird2/src/jrd/: blb.h (1.15), blf_proto.h (1.15):
+	
+	reverted class bid back to struct - thanks to Claudio
+
+2004-03-31 19:13  alexpeshkoff
+
+	* firebird2/src/common/classes/: alloc.cpp (1.48), alloc.h (1.39):
+	
+	moved use of fb_assert to correct place
+
+2004-03-31 19:08  alexpeshkoff
+
+	* firebird2/builds/win32/: prepare.bat (1.30), preprocess.bat
+	(1.27), setenvvar.bat (1.5), msvc6/engine.dsp (1.45),
+	msvc6/engine_classic.dsp (1.40), msvc6/engine_embed.dsp (1.19):
+	
+	renamed header - non-critical change for non-VC6 builds
+
 2004-03-30 12:26  aafemt
 
 	* firebird2/src/jrd/opt.cpp (1.147):
