@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Data Definition Utility
- *	MODULE:		trn.c
+ *	MODULE:		trn.cpp
  *	DESCRIPTION:	Translate meta-data change to dynamic meta data
  *
  * The contents of this file are subject to the Interbase Public

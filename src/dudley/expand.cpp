@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Data Definition Utility
- *	MODULE:		expand.c
+ *	MODULE:		expand.cpp
  *	DESCRIPTION:	Expand field references to get context.
  *
  * The contents of this file are subject to the Interbase Public
@@ -912,9 +912,9 @@ static void resolve_rse( DUDLEY_NOD rse, LLS * stack)
 	for (contexts = temp; contexts; contexts = contexts->lls_next) {
 		context = (DUDLEY_CTX) contexts->lls_object;
 		name = context->ctx_relation->rel_name;
-		if (!(symbol = HSH_typed_lookup(name->sym_string, name->sym_length,
-										SYM_relation))
-			|| !symbol->sym_object)
+		symbol = HSH_typed_lookup(name->sym_string, name->sym_length,
+										SYM_relation);
+		if (!symbol || !symbol->sym_object)
 		{
 			expand_error(110, name->sym_string, 0, 0, 0, 0);
 			// msg 110: relation %s is not defined

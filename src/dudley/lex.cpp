@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Data Definition Language
- *	MODULE:		lex.c
+ *	MODULE:		lex.cpp
  *	DESCRIPTION:	Lexical analyser
  *
  * The contents of this file are subject to the Interbase Public
@@ -54,7 +54,7 @@ const char* SCRATCH = "fb_query_";
 #include <io.h>
 #endif
 
-extern const TEXT *DDL_prompt;
+extern const TEXT* DDL_prompt;
 
 
 static int nextchar(void);

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Data Definition Utility
  *	MODULE:		lex_proto.h
- *	DESCRIPTION:	Prototype header file for lex.c
+ *	DESCRIPTION:	Prototype header file for lex.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -27,10 +27,11 @@
 tok*	LEX_filename(void);
 void	LEX_fini(void);
 void	LEX_flush(void);
-void	LEX_get_text(UCHAR *, TXT);
-void	LEX_init(void *);
-void	LEX_put_text(FRBRD *, TXT);
+void	LEX_get_text(UCHAR*, TXT);
+void	LEX_init(void*);
+void	LEX_put_text(FRBRD*, TXT);
 void	LEX_real(void);
 tok*	LEX_token(void);
 
 #endif // DUDLEY_LEX_PROTO_H
+

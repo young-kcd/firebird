@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
- *	MODULE:		expr.c
+ *	MODULE:		expr.cpp
  *	DESCRIPTION:	Expression parser
  *
  * The contents of this file are subject to the Interbase Public

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Data Definition Utility
  *	MODULE:		gener_proto.h
- *	DESCRIPTION:	Prototype header file for generate.c
+ *	DESCRIPTION:	Prototype header file for generate.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,7 +24,8 @@
 #ifndef DUDLEY_GENER_PROTO_H
 #define DUDLEY_GENER_PROTO_H
 
-int		GENERATE_acl(SCL, UCHAR *);
+int		GENERATE_acl(SCL, UCHAR*);
 void	GENERATE_blr(STR, DUDLEY_NOD);
 
 #endif // DUDLEY_GENER_PROTO_H
+

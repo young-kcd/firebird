@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Data Definition Utility
  *	MODULE:		exe_proto.h
- *	DESCRIPTION:	Prototype header file for exe.e
+ *	DESCRIPTION:	Prototype header file for exe.epp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -33,3 +33,4 @@ void	EXE_modify_database(DBB);
 bool	EXE_relation(DUDLEY_REL);
 
 #endif // DUDLEY_EXE_PROTO_H
+

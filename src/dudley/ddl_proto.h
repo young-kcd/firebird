@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Data Definition Utility
  *	MODULE:		ddl_proto.h
- *	DESCRIPTION:	Prototype header file for ddl.c
+ *	DESCRIPTION:	Prototype header file for ddl.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -35,11 +35,15 @@ DUDLEY_NOD	DDL_pop(LLS*);
 void		DDL_push(DUDLEY_NOD, LLS*);
 bool		DDL_yes_no(USHORT);
 
-inline void LLS_PUSH(DUDLEY_NOD object, LLS* stack){
+inline void LLS_PUSH(DUDLEY_NOD object, LLS* stack)
+{
 	DDL_push(object, stack);
 }
-inline DUDLEY_NOD LLS_POP(LLS* stack){
+
+inline DUDLEY_NOD LLS_POP(LLS* stack)
+{
 	return DDL_pop(stack);
 }
 
 #endif // DUDLEY_DDL_PROTO_H
+

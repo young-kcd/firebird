@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Data Definition Utility
  *	MODULE:		parse_proto.h
- *	DESCRIPTION:	Prototype header file for parse.c
+ *	DESCRIPTION:	Prototype header file for parse.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -27,7 +27,7 @@
 #include "../dudley/parse.h"
 
 void		PARSE_actions(void);
-void		PARSE_error(USHORT, TEXT *, TEXT *);
+void		PARSE_error(USHORT, TEXT*, TEXT*);
 FUNC		PARSE_function(int);
 enum kwwords PARSE_keyword(void);
 DUDLEY_NOD	PARSE_make_list(LLS);
@@ -38,3 +38,4 @@ DUDLEY_REL	PARSE_relation(void);
 SYM			PARSE_symbol(enum tok_t);
 
 #endif // DUDLEY_PARSE_PROTO_H
+

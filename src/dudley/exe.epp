@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Data Definition Utility
- *	MODULE:		exe.e
+ *	MODULE:		exe.epp
  *	DESCRIPTION:	Meta-data update execution module.
  *
  * The contents of this file are subject to the Interbase Public
