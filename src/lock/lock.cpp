@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.91 2004-05-03 17:35:46 brodsom Exp $
+$Id: lock.cpp,v 1.92 2004-05-04 15:57:56 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -3305,7 +3305,7 @@ static void lock_initialize(void* arg, SH_MEM shmem_data, bool initialize)
 		exit(STARTUP_ERROR);
 	}
 	LOCK_header->lhb_mask = SRQ_REL_PTR(semaphores);
-	semaphores->smb_type = type_smb;
+	semaphores->smb_type = type_smbx;
 	for (i = LOCK_sem_count / BITS_PER_LONG + 1; i--;)
 	{
 		semaphores->smb_mask[i] = 0;
