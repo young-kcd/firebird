@@ -39,11 +39,7 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  *
  * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
- *
  */
-/*
-$Id: exe.cpp,v 1.69 2003-07-14 13:21:07 alexpeshkoff Exp $
-*/
 
 #include "firebird.h"
 #if TIME_WITH_SYS_TIME
@@ -4047,8 +4043,16 @@ static BOOLEAN test_and_fixup_error(TDBB tdbb, XCP conditions, JRD_REQ request)
 		case xcp_gds_code:
 			if (status_vector[1] == conditions->xcp_rpt[i].xcp_code)
 			{
-				request->req_last_xcp.xcp_type = xcp_gds_code;
-				request->req_last_xcp.xcp_code = status_vector[1];
+				if ((sqlcode != XCP_SQLCODE) || (status_vector[1] != gds_except))
+				{
+					request->req_last_xcp.xcp_type = xcp_gds_code;
+					request->req_last_xcp.xcp_code = status_vector[1];
+				}
+				else
+				{
+					request->req_last_xcp.xcp_type = xcp_xcp_code;
+					request->req_last_xcp.xcp_code = status_vector[3];
+				}              
 				status_vector[0] = 0;
 				status_vector[1] = 0;
 				return TRUE;
@@ -4075,20 +4079,17 @@ static BOOLEAN test_and_fixup_error(TDBB tdbb, XCP conditions, JRD_REQ request)
 				request->req_last_xcp.xcp_type = xcp_sql_code;
 				request->req_last_xcp.xcp_code = sqlcode;
 			}
+			else if (status_vector[1] != gds_except) 
+			{
+				request->req_last_xcp.xcp_type = xcp_gds_code;
+				request->req_last_xcp.xcp_code = status_vector[1];
+			}
 			else
 			{
-				if (status_vector[1] != gds_except) 
-				{
-					request->req_last_xcp.xcp_type = xcp_gds_code;
-					request->req_last_xcp.xcp_code = status_vector[1];
-				}
-				else
-				{
-					request->req_last_xcp.xcp_type = xcp_xcp_code;
-					request->req_last_xcp.xcp_code = status_vector[3];
-					TEXT *msg = reinterpret_cast<TEXT*>(status_vector[7]);
-					assign_xcp_message(tdbb, &request->req_last_xcp.xcp_msg, msg);
-				}
+				request->req_last_xcp.xcp_type = xcp_xcp_code;
+				request->req_last_xcp.xcp_code = status_vector[3];
+				TEXT *msg = reinterpret_cast<TEXT*>(status_vector[7]);
+				assign_xcp_message(tdbb, &request->req_last_xcp.xcp_msg, msg);
 			}
 			status_vector[0] = 0;
 			status_vector[1] = 0;
