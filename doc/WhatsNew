@@ -1,4 +1,69 @@
   **************
+  * v1.5 Beta 4
+  **************
+
+    * Fixed bugs SF #213460, #678718.
+        Various issues with events used on multihomed hosts.
+      Note:
+        Now it's also possible to setup a definite port for event processing.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed some resource leaks.
+      Contributor(s):
+        Mike Nordell <tamlin@algonet.se>
+        Alexander Peshkoff <peshkoff@hotmail.ru>
+
+    * Fixed Beta 3 bug.
+        Bug with an aggregate sub-query inside a IN clause.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Fixed Services API.
+        Enabled Services API for posix CS builds.
+      Note:
+        Appropriate changes in Win32 CS are not ready yet.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * SQL enhancement.
+        Allowed NULLs in unique constraints and indices (SQL-99 spec).
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Fixed Beta 3 bug.
+        Problems with RECREATE VIEW.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Performance improvement.
+        VIO undo log now uses B+ tree to store savepoint record data. It improves performance when doing multiple updates of
+        record in a single transaction just a little (usually 2-3 orders of magnitude for 100000 records).
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Fixed unregistered bug.
+        Database corruption when backing out the savepoint after large number of DML operations
+        (so transaction-level savepoint is dropped) and record was updated _not_ under the savepoint and deleted under savepoint.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+        
+    * Improved EXECUTE STATEMENT.
+        Now it's possible to return values from the dynamic SQL.
+      Syntax:
+        EXECUTE STATEMENT <value> INTO <var_list>; (singleton form)
+        or
+        FOR EXECUTE STATEMENT <value> INTO <var_list> DO <stmt_list>;
+      Contributor(s):
+        Alexander Peshkoff <peshkoff@hotmail.ru>
+
+    * Fixed Beta 3 bug.
+        With a large amount of SQL the server crashed on generating BLR.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+  **************
   * v1.5 Beta 3
   **************
 
