@@ -1,3 +1,60 @@
+2004-04-04 19:57  skidder
+
+	* firebird2/src/jrd/dpm.epp (1.15.2.3):
+	
+	Allow to modify generators from read-only transactions again
+
+2004-04-04 18:31  skidder
+
+	* firebird2/doc/WhatsNew (1.36.2.15):
+	
+	Make fixes descriptions slightly more precise
+
+2004-04-04 15:08  dimitr
+
+	* firebird2/doc/WhatsNew (1.36.2.14):
+	
+	Added v1.5.1 changes.
+
+2004-04-04 14:14  dimitr
+
+	* firebird2/src/jrd/isc_version.h (1.1.2.14):
+	
+	Updated build number.
+
+2004-04-04 12:15  dimitr
+
+	* firebird2/src/burp/restore.epp (1.31.2.3):
+	
+	Backported Claudio's solution to restore violated not-null
+	constraints
+
+2004-04-04 10:41  dimitr
+
+	* firebird2/src/dsql/: dsql.cpp (1.54.2.4), user_dsql.cpp
+	(1.20.2.3):
+	
+	Fixed the build.
+
+2004-04-04 10:12  dimitr
+
+	* firebird2/src/burp/backup.epp (1.24.2.4):
+	
+	Backported bugfix for SF #750659.
+
+2004-04-04 10:04  dimitr
+
+	* firebird2/src/jrd/svc.cpp (1.67.2.5):
+	
+	Fixed memory leak.
+
+2004-04-04 01:05  skidder
+
+	* firebird2/src/jrd/dfw.epp (1.45.2.6):
+	
+	Use more mild language in warning message in log file as requested
+	by Dmitry Emanov
+
 2004-04-03 01:31  arnobrinkman
 
 	* firebird2/src/burp/burp.h (1.17.2.2):
