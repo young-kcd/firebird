@@ -24,23 +24,22 @@ Firebird 1.5 installation notes
 
   Now the client library is named "fbclient.dll". To provide a
   compatibility with existing applications, a gateway library
-  "gds32.dll" is included in the distribution kit. This library
-  doesn't have any code but just redirects all calls to
-  fbclient.dll. Hence for old applications you must to have both
-  fbclient.dll and gds32.dll in the program directory or OS system
-  directory. It's recommended to use native fbclient.dll library
+  "gds32.dll" can be installed to the Windows System Directory.
+  See instclient.exe utility for this. This tool can also properly
+  install fbclient.dll to Windows System Directory, should you like or
+  need so.
+  It's recommended to use native fbclient.dll library
   in newly developed applications. All server utilities (gbak,
   gfix, etc) uses only fbclient.dll and do not require gds32.dll.
 
 1.3. New configuration file
 
-  inconfig file is no longer used and it has been replaced with
+  ibconfig file is no longer used and it has been replaced with
   firebird.conf, which is a part of new configuration manager and
   allows you to use both old and some new options. You can see
   the list of all supported configuration options (as well as
   their default values) in the distributed version of this file.
   
-
 1.4. Classic Server (CS)
 
   Since Firebird 1.5, Classic engine is included in win32
@@ -107,9 +106,38 @@ Firebird 1.5 installation notes
     (HKLM\Software\Firebird Project\Firebird Server\Instances)
   - if you want to register a service, run also instsvc.exe:
       instsvc.exe install
-  - optionally, you should copy both fbclient.dll and gds32.dll
-    to the OS system directory
+    (This is a Windows NT/2K/XP specific step.)
+  - optionally, you can copy both fbclient.dll and gds32.dll
+    to the OS system directory. To do so, use the provided instclient.exe
+    tool.
+    
+    Usage:
+      instclient i[nstall] [ -f[orce] ] library
+                 q[uery] library
+                 r[emove] library
 
+      where library is:  f[bclient] | g[ds32]
+
+      This utility should be located and run from the 'bin' directory
+      of your Firebird installation.
+      '-z' can be used with any other option, prints version
+
+    Purpose:
+      This utility manages deployment of the Firebird client library
+      into the Windows system directory. It caters for two installation
+      scenarios:
+
+        Deployment of the native fbclient.dll.
+        Deployment of gds32.dll to support legacy applications.
+
+      Version information and shared library counts are handled
+      automatically. You may provide the -f[orce] option to override
+      version checks.
+
+      Please, note that if you -f[orce] the installation, you might have
+      to reboot the machine in order to finalize the copy and you might
+      break some other Firebird or InterBase(R) version on the system.
+  
 2.2. Installation of CS
 
   To install the CS engine, the only difference is the additional
@@ -127,16 +155,18 @@ Firebird 1.5 installation notes
     fbserver.exe -a
   It should treat its parent directory as a root directory in this
   case.
+  You can also use instclient.exe to copy client library to System.
 
 2.4. Uninstallation
 
   To remove FB 1.5 you should:
 
-  - stop the server
-  - run "instreg.exe remove"
+  - stop the server (running "instsvc.exe stop" for instance)
   - run "instsvc.exe remove"
+  - run "instreg.exe remove"
+  - run "instclient.exe remove fbclient" and/or "insclient.exe remove gds32"
+    if you used that tool to install those libraries the OS system directory.
   - delete installation directory
-  - delete fbclient.dll and gds32.dll from the OS system directory
 
 3. INFORMATION ABOUT THIS VERSION
 
