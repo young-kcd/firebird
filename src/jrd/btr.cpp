@@ -1520,7 +1520,7 @@ retry:
 	}
 
 	slot->irt_root = 0;
-	MOVE_FASTER(idx->idx_rpt, desc, l);
+	memcpy(desc, idx->idx_rpt, l);
 
 	if (dbb->dbb_wal) {
 		CCH_journal_page(tdbb, &window);
@@ -2223,7 +2223,7 @@ static USHORT compress_root(TDBB tdbb, IRT page)
 	  ,__FILE__,__LINE__
 #endif
 	);
-	MOVE_FASTER(page, temp, dbb->dbb_page_size);
+	memcpy(temp, page, dbb->dbb_page_size);
 	p = temp + dbb->dbb_page_size;
 
 	for (root_idx = page->irt_rpt, end = root_idx + page->irt_count;
@@ -2232,7 +2232,7 @@ static USHORT compress_root(TDBB tdbb, IRT page)
 		if (root_idx->irt_root) {
 			l = root_idx->irt_keys * sizeof(IRTD);
 			p -= l;
-			MOVE_FAST((SCHAR *) page + root_idx->irt_desc, p, l);
+			memcpy(p, (SCHAR*)page + root_idx->irt_desc, l);
 			root_idx->irt_desc = p - temp;
 		}
 	}
@@ -2255,14 +2255,9 @@ static void copy_key(const KEY* in, KEY* out)
  *	Copy a key.
  *
  **************************************/
-	USHORT l = out->key_length = in->key_length;
-	if (l) {
-		UCHAR* p = out->key_data;
-		const UCHAR* q = in->key_data;
-		do {
-			*p++ = *q++;
-		} while (--l);
-	}
+
+	out->key_length = in->key_length;
+	memcpy(out->key_data, in->key_data, in->key_length);
 }
 
 
@@ -2319,9 +2314,9 @@ static CONTENTS delete_node(TDBB tdbb, WIN *window, UCHAR *pointer)
 		length = nextNode.prefix - removingNode.prefix;
 		newNextPrefix -= length;
 		newNextLength += length;
-		MOVE_FASTER(removingNode.data, tempData, length);
+		memcpy(tempData, removingNode.data, length);
 	}
-	MOVE_FASTER(nextNode.data, tempData + length, nextNode.length);
+	memcpy(tempData + length, nextNode.data, nextNode.length);
 	newNextLength += nextNode.length;
 
 	// Update the page prefix total.
@@ -2341,7 +2336,7 @@ static CONTENTS delete_node(TDBB tdbb, WIN *window, UCHAR *pointer)
 		// Use MEMMOVE macro which is memmove() in most platforms, instead 
 		// of MOVE_FAST which is memcpy() in most platforms. 
 		// memmove() is guaranteed to work non-destructivly on overlapping buffers. 
-		MEMMOVE(localPointer, pointer, length);
+		memmove(pointer, localPointer, length);
 		pointer += length;
 		localPointer += length;
 	}
@@ -2382,9 +2377,8 @@ static CONTENTS delete_node(TDBB tdbb, WIN *window, UCHAR *pointer)
 						newJumpNode.offset -= delta;
 					}
 					newJumpNode.data = FB_NEW(*tdbb->tdbb_default) UCHAR[newJumpNode.length];
-					MOVE_FASTER(delJumpNode.data, newJumpNode.data, addLength);					
-					MOVE_FASTER(jumpNode.data, newJumpNode.data + addLength, 
-						jumpNode.length);
+					memcpy(newJumpNode.data, delJumpNode.data, addLength);					
+					memcpy(newJumpNode.data + addLength, jumpNode.data, jumpNode.length);
 				}
 				else {
 					newJumpNode.prefix = jumpNode.prefix;
@@ -2394,7 +2388,7 @@ static CONTENTS delete_node(TDBB tdbb, WIN *window, UCHAR *pointer)
 						newJumpNode.offset -= delta;
 					}
 					newJumpNode.data = FB_NEW(*tdbb->tdbb_default) UCHAR[newJumpNode.length];
-					MOVE_FASTER(jumpNode.data, newJumpNode.data, newJumpNode.length);
+					memcpy(newJumpNode.data, jumpNode.data, newJumpNode.length);
 				}
 				jumpNodes->add(newJumpNode);
 				rebuild = false;
@@ -2791,12 +2785,8 @@ static SLONG fast_load(TDBB tdbb,
 					// memmove or to ensure manually that totalJumpSize[0] > l
 					// Also, "sliding down" here is moving contents higher in memory.
 					USHORT l = bucket->btr_length - headerSize;
-					UCHAR* p = (UCHAR*)bucket + bucket->btr_length;
-					UCHAR* q = p + totalJumpSize[0];
-					while (l) {
-						*--q = *--p;
-						l--;
-					}
+					UCHAR* p = (UCHAR*)bucket + headerSize;
+					memmove(p + totalJumpSize[0], p, l);
 
 					// Update JumpInfo
 					jumpInfo.firstNodeOffset = headerSize + totalJumpSize[0];
@@ -2954,7 +2944,7 @@ static SLONG fast_load(TDBB tdbb,
 
 			// Remember the last key inserted to compress the next one.
 			key->key_length = isr->isr_key_length;
-			MOVE_FAST(record, key->key_data, key->key_length);
+			memcpy(key->key_data, record, key->key_length);
 
 			if (useJumpInfo && (newAreaPointers[0] < pointer) &&
 				(bucket->btr_length + totalJumpSize[0] + newNode.prefix + 6 < lp_fill_limit)) 
@@ -2966,11 +2956,11 @@ static SLONG fast_load(TDBB tdbb,
 				jumpNode.length = newNode.prefix - jumpNode.prefix;
 				jumpNode.offset = (newNode.nodePointer - (UCHAR*)bucket);
 				jumpNode.data = FB_NEW(*tdbb->tdbb_default) UCHAR[jumpNode.length];
-				MOVE_FAST(key->key_data + jumpNode.prefix, jumpNode.data, jumpNode.length);
+				memcpy(jumpNode.data, key->key_data + jumpNode.prefix, jumpNode.length);
 				// Push node on end in list
 				leafJumpNodes->add(jumpNode);
 				// Store new data in jumpKey, so a new jump node can calculate prefix
-				MOVE_FAST(jumpNode.data, jumpKey->keyData + jumpNode.prefix, jumpNode.length);
+				memcpy(jumpKey->keyData + jumpNode.prefix, jumpNode.data, jumpNode.length);
 				jumpKey->keyLength = jumpNode.length + jumpNode.prefix;
 				// Set new position for generating jumpnode
 				newAreaPointers[0] += jumpInfo.jumpAreaSize;
@@ -3067,12 +3057,8 @@ static SLONG fast_load(TDBB tdbb,
 						// memmove or to ensure manually that totalJumpSize[0] > l
 						// Also, "sliding down" here is moving contents higher in memory.
 						USHORT l = bucket->btr_length - headerSize;
-						UCHAR* p = (UCHAR*)bucket + bucket->btr_length;
-						UCHAR* q = p + totalJumpSize[level];
-						while (l) {
-							*--q = *--p;
-							l--;
-						}
+						UCHAR* p = (UCHAR*)bucket + headerSize;
+						memmove(p + totalJumpSize[level], p, l);
 
 						// Update JumpInfo
 						jumpInfo.firstNodeOffset = headerSize + totalJumpSize[level];
@@ -3164,12 +3150,12 @@ static SLONG fast_load(TDBB tdbb,
 					jumpNode.length = levelNode.prefix - jumpNode.prefix;
 					jumpNode.offset = (levelNode.nodePointer - (UCHAR*)bucket);
 					jumpNode.data = FB_NEW(*tdbb->tdbb_default) UCHAR[jumpNode.length];
-					MOVE_FAST(temp_key.key_data + jumpNode.prefix, 
-						jumpNode.data, jumpNode.length);
+					memcpy(jumpNode.data, temp_key.key_data + jumpNode.prefix, 
+						jumpNode.length);
 					// Push node on end in list
 					pageJumpNodes->add(jumpNode);
 					// Store new data in jumpKey, so a new jump node can calculate prefix
-					MOVE_FAST(jumpNode.data, pageJumpKey->keyData + jumpNode.prefix, 
+					memcpy(pageJumpKey->keyData + jumpNode.prefix, jumpNode.data, 
 						jumpNode.length);
 					pageJumpKey->keyLength = jumpNode.length + jumpNode.prefix;
 					// Set new position for generating jumpnode
@@ -3217,12 +3203,8 @@ static SLONG fast_load(TDBB tdbb,
 				// memmove or to ensure manually that totalJumpSize[0] > l
 				// Also, "sliding down" here is moving contents higher in memory.
 				USHORT l = bucket->btr_length - headerSize;
-				UCHAR* p = (UCHAR*)bucket + bucket->btr_length;
-				UCHAR* q = p + totalJumpSize[level];
-				while (l) {
-					*--q = *--p;
-					l--;
-				}
+				UCHAR* p = (UCHAR*)bucket + headerSize;
+				memmove(p + totalJumpSize[level], p, l);
 
 				// Update JumpInfo
 				jumpInfo.firstNodeOffset = headerSize + totalJumpSize[level];
@@ -3415,7 +3397,7 @@ static UCHAR *find_node_start_point(BTR bucket, KEY * key, UCHAR * value,
 			// Pick up data from node
 			if (value && node.length) {
 				r = value + node.prefix;
-				MOVE_FAST(node.data, r, node.length);
+				memcpy(r, node.data, node.length);
 			}
 
 			// If the record number is -1, the node is the last in the level
@@ -3514,7 +3496,7 @@ static UCHAR *find_node_start_point(BTR bucket, KEY * key, UCHAR * value,
 
 			if (value && node->btn_length) {
 				r = value + node->btn_prefix;
-				MOVE_FAST(node->btn_data, r, node->btn_length);
+				memcpy(r, node->btn_data, node->btn_length);
 			}
 
 			// If the page/record number is -1, the node is the last in the level
@@ -3645,9 +3627,9 @@ static UCHAR* find_area_start_point(BTR bucket, const KEY* key, UCHAR * value,
 
 			// jumpKey will hold complete data off referenced node 
 			q = jumpKey.key_data + jumpNode.prefix;
-			MOVE_FASTER(jumpNode.data, q, jumpNode.length);
+			memcpy(q, jumpNode.data, jumpNode.length);
 			q = jumpKey.key_data + node.prefix;
-			MOVE_FASTER(node.data, q, node.length);
+			memcpy(q, node.data, node.length);
 			jumpKey.key_length = node.prefix + node.length;
 
 			keyPointer = key->key_data + jumpNode.prefix;
@@ -3778,7 +3760,7 @@ static UCHAR* find_area_start_point(BTR bucket, const KEY* key, UCHAR * value,
 				if (value && (jumpNode.length + jumpNode.prefix)) {
 					// Copy prefix data from referenced node to value
 					UCHAR *r = value;
-					MOVE_FASTER(jumpKey.key_data, r, jumpNode.length + jumpNode.prefix);
+					memcpy(r, jumpKey.key_data, jumpNode.length + jumpNode.prefix);
 				}
 				prevJumpNode = jumpNode;
 			}
@@ -4310,7 +4292,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 				BTreeNode::isEndLevel(&leftNode, leafPage))) 
 			{
 				if (jumpNode.length) {
-					MOVE_FASTER(jumpNode.data, lastKey.key_data + jumpNode.prefix,
+					memcpy(lastKey.key_data + jumpNode.prefix, jumpNode.data,
 						jumpNode.length);
 				}
 				leftPointer = (UCHAR*)left_page + jumpNode.offset;
@@ -4333,7 +4315,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 		// Save data
 		if (leftNode.length) {
 			UCHAR* p = lastKey.key_data + leftNode.prefix;
-			MOVE_FASTER(leftNode.data, p, leftNode.length);
+			memcpy(p, leftNode.data, leftNode.length);
 			lastKey.key_length = leftNode.prefix + leftNode.length;
 		}
 	}
@@ -4380,9 +4362,9 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 		USHORT jumpersOriginalSize = jumpInfo.firstNodeOffset - headerSize;
 
 		// Copy header and data
-		MOVE_FASTER((UCHAR*)left_page, newBucket, headerSize);
-		MOVE_FASTER((UCHAR*)left_page + jumpInfo.firstNodeOffset, 
-			(UCHAR*)newBucket + headerSize, 
+		memcpy(newBucket, (UCHAR*)left_page, headerSize);
+		memcpy((UCHAR*)newBucket + headerSize, 
+			(UCHAR*)left_page + jumpInfo.firstNodeOffset, 
 			left_page->btr_length - jumpInfo.firstNodeOffset);
 
 		// Update leftPointer to scratch page. 
@@ -4414,7 +4396,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 		newBucket->btr_length = (leftPointer - (UCHAR*)newBucket);
 		// copy over the remainder of the page to be garbage-collected.
 		USHORT l = gc_page->btr_length - (gcPointer - (UCHAR*)(gc_page));
-		MOVE_FASTER(gcPointer, leftPointer, l);
+		memcpy(leftPointer, gcPointer, l);
 		// update page size.
 		newBucket->btr_length += l;
 		
@@ -4506,7 +4488,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 			}
 		}
 		// Copy data.
-		MOVE_FASTER((UCHAR*)newBucket + headerSize, pointer,
+		memcpy(pointer, (UCHAR*)newBucket + headerSize, 
 			newBucket->btr_length - headerSize);
 		// Update page header information.
 		left_page->btr_prefix_total = newBucket->btr_prefix_total;
@@ -4584,7 +4566,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 
 		// copy over the remainder of the page to be garbage-collected
 		const USHORT l = gc_page->btr_length - (gcPointer - (UCHAR*)(gc_page));
-		MOVE_FASTER(gcPointer, leftPointer, l);
+		memcpy(leftPointer, gcPointer, l);
 		leftPointer += l;
 		// update page size
 		left_page->btr_length = leftPointer - (UCHAR*)(left_page);
@@ -4691,9 +4673,9 @@ static void generate_jump_nodes(TDBB tdbb, BTR page, jumpNodeList* jumpNodes,
 	UCHAR* pointer = (UCHAR*)page + jumpInfo.firstNodeOffset;
 
 	key jumpKey, currentKey;
-	UCHAR* jumpData = jumpKey.key_data;// FB_NEW(*tdbb->tdbb_default) UCHAR[jumpInfo.keyLength];
+	UCHAR* jumpData = jumpKey.key_data;
 	USHORT jumpLength = 0;
-	UCHAR* currentData = currentKey.key_data;//FB_NEW(*tdbb->tdbb_default) UCHAR[jumpInfo.keyLength];
+	UCHAR* currentData = currentKey.key_data;
 
 	if (splitIndex) {
 		*splitIndex = 0;
@@ -4712,9 +4694,14 @@ static void generate_jump_nodes(TDBB tdbb, BTR page, jumpNodeList* jumpNodes,
 		IndexNode node;
 		while (pointer < endpoint) {
 			pointer = BTreeNode::readNode(&node, pointer, flags, leafPage);
+			if (BTreeNode::isEndBucket(&node, leafPage) ||
+				BTreeNode::isEndLevel(&node, leafPage))
+			{
+				break;
+			}
 			if (node.length) {
 				UCHAR* q = currentData + node.prefix;
-				MOVE_FAST(node.data, q, node.length);
+				memcpy(q, node.data, node.length);
 			}
 					
 			if (splitIndex && splitPrefix && !*splitIndex) {
@@ -4722,9 +4709,7 @@ static void generate_jump_nodes(TDBB tdbb, BTR page, jumpNodeList* jumpNodes,
 			}
 
 			if ((node.nodePointer > newAreaPosition) && 
-				(node.nodePointer != excludePointer) &&
-				!BTreeNode::isEndBucket(&node, leafPage) &&
-				!BTreeNode::isEndLevel(&node, leafPage)) 
+				(node.nodePointer != excludePointer)) 
 			{
 				// Create a jumpnode, but it may not point to the new
 				// insert pointer or any MARKER else we make split 
@@ -4736,7 +4721,7 @@ static void generate_jump_nodes(TDBB tdbb, BTR page, jumpNodeList* jumpNodes,
 				if (jumpNode.length) {
 					jumpNode.data = FB_NEW(*tdbb->tdbb_default) UCHAR[jumpNode.length];
 					const UCHAR* const q = currentData + jumpNode.prefix;
-					MOVE_FAST(q, jumpNode.data, jumpNode.length);
+					memcpy(jumpNode.data, q, jumpNode.length);
 				}
 				else {
 					jumpNode.data = NULL;
@@ -4744,7 +4729,7 @@ static void generate_jump_nodes(TDBB tdbb, BTR page, jumpNodeList* jumpNodes,
 				// Push node on end in list
 				jumpNodes->add(jumpNode);
 				// Store new data in jumpKey, so a new jump node can calculate prefix
-				MOVE_FAST(jumpNode.data, jumpData + jumpNode.prefix, jumpNode.length);
+				memcpy(jumpData + jumpNode.prefix, jumpNode.data, jumpNode.length);
 				jumpLength = jumpNode.length + jumpNode.prefix;
 				// Check if this could be our split point (if we need to split)
 				if (splitIndex && !*splitIndex && (pointer > halfpoint)) {
@@ -4769,7 +4754,7 @@ static void generate_jump_nodes(TDBB tdbb, BTR page, jumpNodeList* jumpNodes,
 			}
 			if (node->btn_length) {
 				UCHAR* q = currentData + node->btn_prefix;
-				MOVE_FAST(node->btn_data, q, node->btn_length);
+				memcpy(q, node->btn_data, node->btn_length);
 			}
 					
 			if (splitIndex && splitPrefix && !*splitIndex) {
@@ -4790,7 +4775,7 @@ static void generate_jump_nodes(TDBB tdbb, BTR page, jumpNodeList* jumpNodes,
 				if (jumpNode.length) {
 					jumpNode.data = FB_NEW(*tdbb->tdbb_default) UCHAR[jumpNode.length];
 					const UCHAR* const q = currentData + jumpNode.prefix;
-					MOVE_FAST(q, jumpNode.data, jumpNode.length);
+					memcpy(jumpNode.data, q, jumpNode.length);
 				}
 				else {
 					jumpNode.data = NULL;
@@ -4798,7 +4783,7 @@ static void generate_jump_nodes(TDBB tdbb, BTR page, jumpNodeList* jumpNodes,
 				// Push node on end in list
 				jumpNodes->add(jumpNode);
 				// Store new data in jumpKey, so a new jump node can calculate prefix
-				MOVE_FAST(jumpNode.data, jumpData + jumpNode.prefix, jumpNode.length);
+				memcpy(jumpData + jumpNode.prefix, jumpNode.data, jumpNode.length);
 				jumpLength = jumpNode.length + jumpNode.prefix;
 				// Check if this could be our split point (if we need to split)
 				if (splitIndex && !*splitIndex && (pointer > halfpoint)) {
@@ -4811,9 +4796,6 @@ static void generate_jump_nodes(TDBB tdbb, BTR page, jumpNodeList* jumpNodes,
 
 		}
 	}
-
-	//delete jumpData;
-	//delete currentData;
 }
 
 
@@ -4947,7 +4929,7 @@ static SLONG insert_node(TDBB tdbb,
 	// First, store needed data for beforeInsertNode into tempData.
 	UCHAR* tempData = FB_NEW(*tdbb->tdbb_default) UCHAR[newLength];
 	const UCHAR* p = beforeInsertNode.data + newPrefix - beforeInsertNode.prefix;
-	MOVE_FASTER(p, tempData, newLength);
+	memcpy(tempData, p, newLength);
 
 	beforeInsertNode.prefix = newPrefix;
 	beforeInsertNode.length = newLength;
@@ -4970,7 +4952,7 @@ static SLONG insert_node(TDBB tdbb,
 
 	// Copy data up to insert point to scratch page.
 	SLONG scratchPage[OVERSIZE];
-	MOVE_FASTER(bucket, scratchPage, nodeOffset);
+	memcpy(scratchPage, bucket, nodeOffset);
 	BTR newBucket = (BTR) scratchPage;
 
 	// Set pointer of new node to right place.
@@ -4986,8 +4968,10 @@ static SLONG insert_node(TDBB tdbb,
 	delete tempData;
 
 	// Copy remaining data to scratch page.
-	MOVE_FASTER((UCHAR*)bucket + nodeOffset + beforeInsertOriginalSize, pointer, 
-		bucket->btr_length - (nodeOffset + beforeInsertOriginalSize));
+	if ((nodeOffset + beforeInsertOriginalSize) < bucket->btr_length) {
+		memcpy(pointer, (UCHAR*)bucket + nodeOffset + beforeInsertOriginalSize, 
+			bucket->btr_length - (nodeOffset + beforeInsertOriginalSize));
+	} 
 
 	// Update bucket size.
 	newBucket->btr_length += delta;
@@ -5006,6 +4990,14 @@ static SLONG insert_node(TDBB tdbb,
 	USHORT splitJumpNodeIndex = 0;
 	IndexJumpInfo jumpInfo;
 	jumpNodeList* jumpNodes = FB_NEW(*tdbb->tdbb_default) jumpNodeList(tdbb->tdbb_default);
+
+	USHORT ensureEndInsert = 0;
+	if (endOfPage) {
+		// If we're adding a node at the end we don't want that a page 
+		// splits in the middle, but at the end. We can never be sure
+		// that this will happen, but at least give it a bigger change.
+		ensureEndInsert = 6 + key->key_length;
+	}
 		
 	if (useJumpInfo) {
 		// Get the total size of the jump nodes currently in use.
@@ -5053,7 +5045,7 @@ static SLONG insert_node(TDBB tdbb,
 			fragmentedOffset = true;
 		}
 		// Rebuild jump nodes if we gona split.
-		if (newBucket->btr_length > dbb->dbb_page_size) {
+		if (newBucket->btr_length + ensureEndInsert > dbb->dbb_page_size) {
 			fragmentedOffset = true;
 		}
 
@@ -5068,8 +5060,8 @@ static SLONG insert_node(TDBB tdbb,
 	}
 
 	// If the bucket still fits on a page, we're almost done.
-	if (newBucket->btr_length + jumpersNewSize - jumpersOriginalSize <= 
-		dbb->dbb_page_size) 
+	if (newBucket->btr_length + ensureEndInsert +
+		jumpersNewSize - jumpersOriginalSize <= dbb->dbb_page_size) 
 	{
 		// if we are a pointer page, make sure that the page we are 
 		// pointing to gets written before we do for on-disk integrity
@@ -5101,8 +5093,8 @@ static SLONG insert_node(TDBB tdbb,
 			}		
 			pointer = (UCHAR*)bucket + jumpInfo.firstNodeOffset;
 			// Copy data block.
-			MOVE_FASTER((UCHAR*)newBucket + headerSize + jumpersOriginalSize, 
-				pointer, newBucket->btr_length - (headerSize + jumpersOriginalSize));
+			memcpy(pointer, (UCHAR*)newBucket + headerSize + jumpersOriginalSize, 
+				newBucket->btr_length - (headerSize + jumpersOriginalSize));
 			
 			// Update header information.
 			bucket->btr_prefix_total = newBucket->btr_prefix_total;
@@ -5110,7 +5102,7 @@ static SLONG insert_node(TDBB tdbb,
 		} 
 		else {
 			// Copy temp-buffer data to window buffer.
-			MOVE_FASTER(newBucket, window->win_buffer, newBucket->btr_length);
+			memcpy(window->win_buffer, newBucket, newBucket->btr_length);
 		}
 
 		// journal the page
@@ -5168,7 +5160,7 @@ static SLONG insert_node(TDBB tdbb,
 			p = key->key_data;
 			UCHAR* q = new_key->key_data;
 			l = new_key->key_length = key->key_length;
-			MOVE_FAST(p, q, l);
+			memcpy(q, p, l);
 			prefix_total = newBucket->btr_prefix_total - beforeInsertNode.prefix;
 			splitJumpNodeIndex = 0;
 		}
@@ -5187,7 +5179,7 @@ static SLONG insert_node(TDBB tdbb,
 			int i;
 			for (i = 0; i < jumpNodes->getCount(); i++, index++) {
 				UCHAR* q = new_key->key_data + walkJumpNode[i].prefix;
-				MOVE_FAST(walkJumpNode[i].data, q, walkJumpNode[i].length);
+				memcpy(q, walkJumpNode[i].data, walkJumpNode[i].length);
 				if (index == splitJumpNodeIndex) {
 					jn = &walkJumpNode[i];
 					break;
@@ -5198,7 +5190,7 @@ static SLONG insert_node(TDBB tdbb,
 			splitpoint = (UCHAR*)newBucket + jn->offset;
 			splitpoint = BTreeNode::readNode(&node, splitpoint, flags, leafPage);
 			UCHAR* q = new_key->key_data + node.prefix;
-			MOVE_FAST(node.data, q, node.length);
+			memcpy(q, node.data, node.length);
 			new_key->key_length = node.prefix + node.length;
 			prefix_total = newPrefixTotalBySplit;
 
@@ -5209,8 +5201,8 @@ static SLONG insert_node(TDBB tdbb,
 				if (index > splitJumpNodeIndex) {
 					USHORT length = walkJumpNode[i].prefix + walkJumpNode[i].length;
 					UCHAR *newData = FB_NEW(*tdbb->tdbb_default) UCHAR[length];
-					MOVE_FAST(new_key->key_data, newData, walkJumpNode[i].prefix);
-					MOVE_FAST(walkJumpNode[i].data, newData + walkJumpNode[i].prefix, 
+					memcpy(newData, new_key->key_data, walkJumpNode[i].prefix);
+					memcpy(newData + walkJumpNode[i].prefix, walkJumpNode[i].data, 
 						walkJumpNode[i].length);
 					if (walkJumpNode[i].data) {
 						delete walkJumpNode[i].data;
@@ -5254,7 +5246,7 @@ static SLONG insert_node(TDBB tdbb,
 			prefix_total += node.prefix;
 			UCHAR* q = new_key->key_data + node.prefix;
 			new_key->key_length = node.prefix + node.length;
-			MOVE_FASTER(node.data, q, node.length);
+			memcpy(q, node.data, node.length);
 		}
 	}
 
@@ -5330,7 +5322,7 @@ static SLONG insert_node(TDBB tdbb,
 
 	// Copy down the remaining data from scratch page.
 	l = newBucket->btr_length - (splitpoint - (UCHAR*)newBucket);
-	MOVE_FASTER(splitpoint, pointer, l);
+	memcpy(pointer, splitpoint, l);
 	split->btr_length = ((pointer + l) - (UCHAR*)split);
 
 	// the sum of the prefixes on the split page is the previous total minus
@@ -5378,8 +5370,8 @@ static SLONG insert_node(TDBB tdbb,
 		}
 		pointer = (UCHAR*)bucket + jumpInfo.firstNodeOffset;
 
-		MOVE_FASTER((UCHAR*)newBucket + headerSize + jumpersOriginalSize, 
-			pointer, newBucket->btr_length - (headerSize + jumpersOriginalSize));
+		memcpy(pointer, (UCHAR*)newBucket + headerSize + jumpersOriginalSize, 
+			newBucket->btr_length - (headerSize + jumpersOriginalSize));
 		bucket->btr_length = newBucket->btr_length + jumpersNewSize - jumpersOriginalSize;
 
 		if (fragmentedOffset) {
@@ -5392,7 +5384,7 @@ static SLONG insert_node(TDBB tdbb,
 		}
 	}
 	else {
-		MOVE_FASTER(newBucket, window->win_buffer, newBucket->btr_length);
+		memcpy(window->win_buffer, newBucket, newBucket->btr_length);
 	}
 
 	// Update page information.

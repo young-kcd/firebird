@@ -24,6 +24,7 @@
  *  Contributor(s): ______________________________________.
  */
 
+
 #include "firebird.h"			// needed for get_long
 #include "memory_routines.h"	// needed for get_long
 
@@ -694,14 +695,11 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags,
 	}
 
 	if (withData) {
-		USHORT size = indexNode->length;
-		const UCHAR* ptr = indexNode->data;
-		while (size) {
-			*pagePointer++ = *ptr++;
-			size--;
-		}
+		memcpy(pagePointer, indexNode->data, indexNode->length);
+		pagePointer += indexNode->length;
 	} 
 	else {
+		memmove(pagePointer, indexNode->data, indexNode->length);
 		pagePointer += indexNode->length;
 	}
 
