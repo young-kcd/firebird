@@ -149,12 +149,7 @@ unsigned char gen_han[18][2] = {
 
 
 
-STATIC USHORT LCKSC_string_to_key(obj, iInLen, pInChar, iOutLen, pOutChar)
-	 TEXTTYPE obj;
-	 USHORT iInLen;
-	 BYTE *pInChar;
-	 USHORT iOutLen;
-	 BYTE *pOutChar;
+STATIC USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHORT iOutLen, BYTE *pOutChar)
 {
 	USHORT i;
 	int idx;
@@ -233,8 +228,7 @@ STATIC USHORT LCKSC_string_to_key(obj, iInLen, pInChar, iOutLen, pOutChar)
 *	description	:	in case of gen_han, get the index number from gen_han table
 */
 
-static int GetGenHanNdx(b1, b2)
-	 unsigned char b1, b2;
+static int GetGenHanNdx(unsigned char b1, unsigned char b2)
 {
 	int i;
 
@@ -251,8 +245,7 @@ static int GetGenHanNdx(b1, b2)
 *	description	:	in case of spe_han, get index from spe_han table
 */
 
-static int GetSpeHanNdx(b1, b2)
-	 unsigned char b1, b2;
+static int GetSpeHanNdx(unsigned char b1, unsigned char b2)
 {
 	int i;
 
@@ -264,9 +257,7 @@ static int GetSpeHanNdx(b1, b2)
 }
 
 
-STATIC USHORT LCKSC_key_length(obj, inLen)
-	 TEXTTYPE obj;
-	 USHORT inLen;
+STATIC USHORT LCKSC_key_length(TEXTTYPE obj, USHORT inLen)
 {
 	USHORT len;
 
@@ -280,12 +271,7 @@ STATIC USHORT LCKSC_key_length(obj, inLen)
 *	function name	:	LCKSC_compare
 *	description	:	compare two string
 */
-STATIC short LCKSC_compare(obj, l1, s1, l2, s2)
-	 TEXTTYPE obj;
-	 USHORT l1;
-	 BYTE *s1;
-	 USHORT l2;
-	 BYTE *s2;
+STATIC short LCKSC_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2)
 {
 	BYTE key1[LANGKSC_MAX_KEY];
 	BYTE key2[LANGKSC_MAX_KEY];

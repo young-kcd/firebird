@@ -77,9 +77,7 @@ TEXTTYPE_RETURN;
 #define	LOCALE_LOWER(ch)	(obj->texttype_tolower_table[ (unsigned) (ch) ])
 
 
-STATIC	USHORT	fam2_to_upper (obj, ch)
-TEXTTYPE	obj;
-BYTE		ch;
+STATIC USHORT fam2_to_upper (TEXTTYPE obj, BYTE ch)
 {
 	return (LOCALE_UPPER (ch));
 }
@@ -88,12 +86,7 @@ BYTE		ch;
 /*
  *	Returns -1 if output buffer was too small
  */
-STATIC	SSHORT	fam2_str_to_upper (obj, iLen, pStr, iOutLen, pOutStr)
-TEXTTYPE	obj;
-USHORT		iLen;
-BYTE		*pStr;
-USHORT		iOutLen;
-BYTE		*pOutStr;
+STATIC	SSHORT	fam2_str_to_upper (TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr)
 {
 	BYTE	*p;
 	assert (pStr != NULL);
@@ -114,9 +107,7 @@ BYTE		*pOutStr;
 }
 
 
-STATIC	USHORT	fam2_to_lower (obj, ch)
-TEXTTYPE	obj;
-BYTE		ch;
+STATIC	USHORT	fam2_to_lower (TEXTTYPE obj, BYTE ch)
 {
 	return (LOCALE_LOWER (ch));
 }

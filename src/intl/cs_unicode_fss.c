@@ -33,7 +33,7 @@ extern USHORT CS_UTFFSS_fss_to_unicode();
 typedef USHORT fss_wchar_t;
 typedef SLONG fss_size_t;
 
-static fss_size_t fss_mbtowc(fss_wchar_t *, char *, fss_size_t);
+static fss_size_t fss_mbtowc(fss_wchar_t *, NCHAR *, fss_size_t);
 
 
 
@@ -56,11 +56,7 @@ CHARSET_ENTRY(CS_unicode_fss)
 }
 
 
-SSHORT CS_UTFFSS_fss_mbtowc(obj, wc, p, n)
-	 TEXTTYPE *obj;
-	 UCS2_CHAR *wc;
-	 NCHAR *p;
-	 USHORT n;
+SSHORT CS_UTFFSS_fss_mbtowc(TEXTTYPE *obj, UCS2_CHAR *wc, NCHAR *p, USHORT n)
 {
 /**************************************
  *
@@ -231,11 +227,11 @@ static const Tab tab[] = {
 };
 
 
-static fss_size_t fss_mbtowc( fss_wchar_t * p, char *s, fss_size_t n)
+static fss_size_t fss_mbtowc( fss_wchar_t * p, NCHAR *s, fss_size_t n)
 {
 	long l;
 	int c0, c, nc;
-	Tab *t;
+	const Tab *t;
 
 	if (s == 0)
 		return 0;
@@ -266,13 +262,11 @@ static fss_size_t fss_mbtowc( fss_wchar_t * p, char *s, fss_size_t n)
 }
 
 
-static fss_size_t fss_wctomb(s, wc)
-	 char *s;
-	 fss_wchar_t wc;
+static fss_size_t fss_wctomb(MBCHAR *s, fss_wchar_t wc)
 {
 	long l;
 	int c, nc;
-	Tab *t;
+	const Tab *t;
 
 	if (s == 0)
 		return 0;
@@ -296,15 +290,8 @@ static fss_size_t fss_wctomb(s, wc)
 }
 
 
-USHORT CS_UTFFSS_fss_to_unicode(obj, dest_ptr, dest_len, src_ptr, src_len,
-								err_code, err_position)
-	 CSCONVERT obj;
-	 UNICODE *dest_ptr;
-	 USHORT dest_len;			/* BYTE count */
-	 NCHAR *src_ptr;
-	 USHORT src_len;
-	 SSHORT *err_code;
-	 USHORT *err_position;
+USHORT CS_UTFFSS_fss_to_unicode(CSCONVERT obj, UNICODE *dest_ptr, USHORT dest_len, NCHAR *src_ptr
+								, USHORT src_len, SSHORT *err_code, USHORT *err_position)
 {
 	UNICODE *start;
 	USHORT src_start = src_len;
@@ -345,15 +332,8 @@ USHORT CS_UTFFSS_fss_to_unicode(obj, dest_ptr, dest_len, src_ptr, src_len,
 }
 
 
-USHORT CS_UTFFSS_unicode_to_fss(obj, fss_str, fss_len, unicode_str,
-								unicode_len, err_code, err_position)
-	 CSCONVERT obj;
-	 MBCHAR *fss_str;
-	 USHORT fss_len;
-	 UNICODE *unicode_str;
-	 USHORT unicode_len;		/* BYTE count */
-	 SSHORT *err_code;
-	 USHORT *err_position;
+USHORT CS_UTFFSS_unicode_to_fss(CSCONVERT obj, MBCHAR *fss_str, USHORT fss_len, UNICODE *unicode_str,
+								USHORT unicode_len, SSHORT *err_code, USHORT *err_position)
 {
 	MBCHAR *start;
 	USHORT src_start = unicode_len;

@@ -38,15 +38,8 @@
 #define	KSC2(uc)	((uc) >= 0x41)
 
 
-USHORT CVKSC_ksc_to_unicode(obj, dest_ptr, dest_len, ksc_str, ksc_len,
-							err_code, err_position)
-	 CSCONVERT obj;
-	 UCS2_CHAR *dest_ptr;
-	 USHORT dest_len;
-	 UCHAR *ksc_str;
-	 USHORT ksc_len;
-	 short *err_code;
-	 USHORT *err_position;
+USHORT CVKSC_ksc_to_unicode(CSCONVERT obj, UCS2_CHAR *dest_ptr, USHORT dest_len, UCHAR *ksc_str
+							, USHORT ksc_len, SSHORT *err_code, USHORT *err_position)
 {
 	UCS2_CHAR *start;
 	UCS2_CHAR ch;
@@ -117,15 +110,8 @@ USHORT CVKSC_ksc_to_unicode(obj, dest_ptr, dest_len, ksc_str, ksc_len,
 }
 
 
-USHORT CVKSC_unicode_to_ksc(obj, ksc_str, ksc_len, unicode_str, unicode_len,
-							err_code, err_position)
-	 CSCONVERT obj;
-	 UCHAR *ksc_str;
-	 USHORT ksc_len;
-	 UCS2_CHAR *unicode_str;
-	 USHORT unicode_len;
-	 short *err_code;
-	 USHORT *err_position;
+USHORT CVKSC_unicode_to_ksc(CSCONVERT obj, UCHAR *ksc_str, USHORT ksc_len, UCS2_CHAR *unicode_str
+							, USHORT unicode_len, SSHORT *err_code, USHORT *err_position)
 {
 	UCHAR *start;
 	UCS2_CHAR ksc_ch;
@@ -186,9 +172,7 @@ USHORT CVKSC_unicode_to_ksc(obj, ksc_str, ksc_len, unicode_str, unicode_len,
 }
 
 
-USHORT CVKSC_check_ksc(ksc_str, ksc_len)
-	 UCHAR *ksc_str;
-	 USHORT ksc_len;
+USHORT CVKSC_check_ksc(UCHAR *ksc_str, USHORT ksc_len)
 {
 	UCHAR c1;
 
@@ -211,15 +195,8 @@ USHORT CVKSC_check_ksc(ksc_str, ksc_len)
 }
 
 
-USHORT CVKSC_ksc_byte2short(obj, dst, dst_len, src, src_len, err_code,
-							err_position)
-	 CSCONVERT obj;
-	 USHORT *dst;
-	 USHORT dst_len;
-	 UCHAR *src;
-	 USHORT src_len;
-	 short *err_code;
-	 USHORT *err_position;
+USHORT CVKSC_ksc_byte2short(CSCONVERT obj, USHORT *dst, USHORT dst_len, UCHAR *src, USHORT src_len
+							, SSHORT *err_code, USHORT *err_position)
 {
 	USHORT x;
 	USHORT *dst_start;
@@ -277,11 +254,7 @@ USHORT CVKSC_ksc_byte2short(obj, dst, dst_len, src, src_len, err_code,
 }
 
 
-short CVKSC_ksc_mbtowc(obj, wc, src, src_len)
-	 CSCONVERT obj;
-	 UCS2_CHAR *wc;
-	 UCHAR *src;
-	 USHORT src_len;
+short CVKSC_ksc_mbtowc(CSCONVERT obj, UCS2_CHAR *wc, UCHAR *src, USHORT src_len)
 {
 	assert(src != NULL);
 	assert(obj != NULL);

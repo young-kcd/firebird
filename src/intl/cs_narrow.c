@@ -29,14 +29,8 @@ extern USHORT CV_unicode_to_nc();
 
 
 
-static void common_8bit_init(csptr, id, name, to_unicode_tbl,
-							 from_unicode_tbl1, from_unicode_tbl2)
-	 CHARSET csptr;
-	 SSHORT id;
-	 ASCII *name;
-	 BYTE *to_unicode_tbl;
-	 BYTE *from_unicode_tbl1;
-	 BYTE *from_unicode_tbl2;
+static void common_8bit_init(CHARSET csptr, SSHORT id, const ASCII *name, const USHORT *to_unicode_tbl,
+							 const UCHAR *from_unicode_tbl1, const USHORT *from_unicode_tbl2)
 {
 	csptr->charset_version = 40;
 	csptr->charset_id = id;

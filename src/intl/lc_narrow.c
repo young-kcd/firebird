@@ -92,9 +92,7 @@ SSHORT LC_NARROW_compare();
  *	The degenerate case of short strings is handled by a minimal key
  *	length.
  */
-USHORT LC_NARROW_key_length(obj, inLen)
-	 TEXTTYPE obj;
-	 USHORT inLen;
+USHORT LC_NARROW_key_length(TEXTTYPE obj, USHORT inLen)
 {
 	USHORT len;
 /* assert (inLen <= LANGFAM2_MAX_KEY); *//* almost certainly an error */
@@ -116,14 +114,8 @@ static ULONG do_debug = 0;
  * RETURN:
  *		Length, in bytes, of returned key
  */
-USHORT LC_NARROW_string_to_key(obj, iInLen, pInChar, iOutLen, pOutChar,
-							   partial)
-	 TEXTTYPE obj;
-	 USHORT iInLen;
-	 BYTE *pInChar;
-	 USHORT iOutLen;
-	 BYTE *pOutChar;
-	 USHORT partial;
+USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHORT iOutLen, BYTE *pOutChar,
+							   USHORT partial)
 {
 	USHORT lprimary;
 	BYTE secondary[LANGFAM2_MAX_KEY];
@@ -313,12 +305,7 @@ typedef struct coltab_status {
 
 
 
-static SSHORT special_scan(obj, l1, s1, l2, s2)
-	 TEXTTYPE obj;
-	 USHORT l1;
-	 BYTE *s1;
-	 USHORT l2;
-	 BYTE *s2;
+static SSHORT special_scan(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2)
 {
 	struct SortOrderTblEntry *col1;
 	struct SortOrderTblEntry *col2;
@@ -373,11 +360,7 @@ static SSHORT special_scan(obj, l1, s1, l2, s2)
 }
 
 
-struct SortOrderTblEntry *get_coltab_entry(obj, p, l, stat)
-	 TEXTTYPE obj;
-	 UCHAR **p;
-	 USHORT *l;
-	 COLSTAT stat;
+struct SortOrderTblEntry *get_coltab_entry(TEXTTYPE obj, UCHAR **p, USHORT *l, COLSTAT stat)
 {
 	struct SortOrderTblEntry *col;
 
@@ -455,12 +438,7 @@ struct SortOrderTblEntry *get_coltab_entry(obj, p, l, stat)
 
 #define XOR	^					/* C bitwise XOR operator - defined for readability */
 
-SSHORT LC_NARROW_compare(obj, l1, s1, l2, s2)
-	 TEXTTYPE obj;
-	 USHORT l1;
-	 BYTE *s1;
-	 USHORT l2;
-	 BYTE *s2;
+SSHORT LC_NARROW_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2)
 {
 	struct SortOrderTblEntry *col1, *col2;
 	struct coltab_status stat1, stat2;
@@ -555,12 +533,7 @@ SSHORT LC_NARROW_compare(obj, l1, s1, l2, s2)
  * Routine used for comparing results from comparision algorithm
  * to results from key creation algorithm
  */
-STATIC SSHORT old_fam2_compare(obj, l1, s1, l2, s2)
-	 TEXTTYPE obj;
-	 USHORT l1;
-	 BYTE *s1;
-	 USHORT l2;
-	 BYTE *s2;
+STATIC SSHORT old_fam2_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2)
 {
 	BYTE key1[LANGFAM2_MAX_KEY];
 	BYTE key2[LANGFAM2_MAX_KEY];
@@ -602,12 +575,7 @@ STATIC SSHORT old_fam2_compare(obj, l1, s1, l2, s2)
  * Routine used for comparing results from comparision algorithm
  * to results from key creation algorithm
  */
-STATIC SSHORT fam2_compare(obj, l1, s1, l2, s2)
-	 TEXTTYPE obj;
-	 USHORT l1;
-	 BYTE *s1;
-	 USHORT l2;
-	 BYTE *s2;
+STATIC SSHORT fam2_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2)
 {
 	SSHORT res1, res2;
 

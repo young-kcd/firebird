@@ -27,8 +27,6 @@
 extern USHORT CVGB_gb2312_to_unicode();
 extern USHORT CVGB_unicode_to_gb2312();
 extern USHORT CVGB_check_gb2312();
-extern void CV_convert_init();
-
 
 CHARSET_ENTRY(CS_gb_2312)
 {

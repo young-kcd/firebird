@@ -497,9 +497,7 @@ TEXTTYPE_ENTRY(NEXT_c0_init)
  * This is used for index buffer allocation within the
  * Engine.
  */
-USHORT famasc_key_length(obj, inLen)
-	 TEXTTYPE obj;
-	 USHORT inLen;
+USHORT famasc_key_length(TEXTTYPE obj, USHORT inLen)
 {
 /* assert (inLen <= LANGASCII_MAX_KEY); - possible upper logic error if true */
 	return (MIN(inLen, LANGASCII_MAX_KEY));
@@ -516,13 +514,8 @@ USHORT famasc_key_length(obj, inLen)
  * RETURN:
  *		Length, in bytes, of returned key
  */
-USHORT famasc_string_to_key(obj, iInLen, pInChar, iOutLen, pOutChar, partial)
-	 TEXTTYPE obj;
-	 USHORT iInLen;
-	 BYTE *pInChar;
-	 USHORT iOutLen;
-	 BYTE *pOutChar;
-	 USHORT partial;
+USHORT famasc_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHORT iOutLen, BYTE *pOutChar
+	, USHORT partial)
 {
 	BYTE *outbuff;
 	BYTE *inbuff;
@@ -549,9 +542,7 @@ USHORT famasc_string_to_key(obj, iInLen, pInChar, iOutLen, pOutChar, partial)
 }
 
 
-static SSHORT all_spaces(s, len)
-	 BYTE *s;
-	 SSHORT len;
+static SSHORT all_spaces(BYTE *s, SSHORT len)
 {
 	assert(s != NULL);
 
@@ -562,12 +553,7 @@ static SSHORT all_spaces(s, len)
 }
 
 
-SSHORT famasc_compare(obj, l1, s1, l2, s2)
-	 TEXTTYPE obj;
-	 USHORT l1;
-	 BYTE *s1;
-	 USHORT l2;
-	 BYTE *s2;
+SSHORT famasc_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2)
 {
 	USHORT len;
 	USHORT i;
@@ -580,9 +566,9 @@ SSHORT famasc_compare(obj, l1, s1, l2, s2)
 	for (i = 0; i < len; i++) {
 		if (s1[i] == s2[i])
 			continue;
-		else if (all_spaces(&s1[i], l1 - i))
+		else if (all_spaces(&s1[i], (SSHORT) (l1 - i)))
 			return -1;
-		else if (all_spaces(&s2[i], l2 - i))
+		else if (all_spaces(&s2[i], (SSHORT) (l2 - i)))
 			return 1;
 		else if (s1[i] < s2[i])
 			return -1;
@@ -591,12 +577,12 @@ SSHORT famasc_compare(obj, l1, s1, l2, s2)
 	}
 
 	if (l1 > len) {
-		if (all_spaces(&s1[len], l1 - len))
+		if (all_spaces(&s1[len], (SSHORT) (l1 - len)))
 			return 0;
 		return 1;
 	}
 	if (l2 > len) {
-		if (all_spaces(&s2[len], l2 - len))
+		if (all_spaces(&s2[len], (SSHORT) (l2 - len)))
 			return 0;
 		return -1;
 	}
@@ -605,21 +591,14 @@ SSHORT famasc_compare(obj, l1, s1, l2, s2)
 
 
 
-USHORT famasc_to_upper(obj, ch)
-	 TEXTTYPE obj;
-	 BYTE ch;
+USHORT famasc_to_upper(TEXTTYPE obj, BYTE ch)
 {
 	return ((USHORT) ASCII7_UPPER(ch));
 }
 
 
 
-SSHORT famasc_str_to_upper(obj, iLen, pStr, iOutLen, pOutStr)
-	 TEXTTYPE obj;
-	 USHORT iLen;
-	 BYTE *pStr;
-	 USHORT iOutLen;
-	 BYTE *pOutStr;
+SSHORT famasc_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr)
 {
 	BYTE *p;
 	assert(pStr != NULL);
@@ -642,9 +621,7 @@ SSHORT famasc_str_to_upper(obj, iLen, pStr, iOutLen, pOutStr)
 
 
 
-USHORT famasc_to_lower(obj, ch)
-	 TEXTTYPE obj;
-	 BYTE ch;
+USHORT famasc_to_lower(TEXTTYPE obj, BYTE ch)
 {
 	return (ASCII7_LOWER(ch));
 }

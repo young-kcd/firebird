@@ -103,11 +103,7 @@ TEXTTYPE_ENTRY(UNI201_init)
 #include "../intl/collations/undef.h"
 
 
-static SSHORT wc_mbtowc(obj, wc, p, n)
-	 TEXTTYPE *obj;
-	 UCS2_CHAR *wc;
-	 NCHAR *p;
-	 USHORT n;
+static SSHORT wc_mbtowc(TEXTTYPE *obj, UCS2_CHAR *wc, NCHAR *p, USHORT n)
 {
 	assert(obj);
 	assert(wc);

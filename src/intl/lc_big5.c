@@ -91,9 +91,7 @@ TEXTTYPE_ENTRY(BIG5_init)
  *	Note: This function expects Wide-Char input, not
  *	Multibyte input
  */
-STATIC USHORT big5_to_upper(obj, ch)
-	 TEXTTYPE obj;
-	 UCS2_CHAR ch;
+STATIC USHORT big5_to_upper(TEXTTYPE obj, UCS2_CHAR ch)
 {
 	if (ch >= (UCS2_CHAR) ASCII_LOWER_A && ch <= (UCS2_CHAR) ASCII_LOWER_Z)
 		return (ch - (UCS2_CHAR) ASCII_LOWER_A + (UCS2_CHAR) ASCII_UPPER_A);
@@ -107,12 +105,7 @@ STATIC USHORT big5_to_upper(obj, ch)
 /*
  *	Note: This function expects Multibyte input
  */
-STATIC SSHORT big5_str_to_upper(obj, iLen, pStr, iOutLen, pOutStr)
-	 TEXTTYPE obj;
-	 USHORT iLen;
-	 BYTE *pStr;
-	 USHORT iOutLen;
-	 BYTE *pOutStr;
+STATIC SSHORT big5_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr)
 {
 	BYTE *p;
 	USHORT waiting_for_big52 = FALSE;
@@ -149,9 +142,7 @@ STATIC SSHORT big5_str_to_upper(obj, iLen, pStr, iOutLen, pOutStr)
  *	Note: This function expects Wide-Char input, not
  *	Multibyte input
  */
-STATIC USHORT big5_to_lower(obj, ch)
-	 TEXTTYPE obj;
-	 UCS2_CHAR ch;
+STATIC USHORT big5_to_lower(TEXTTYPE obj, UCS2_CHAR ch)
 {
 	if (ch >= (UCS2_CHAR) ASCII_UPPER_A && ch <= (UCS2_CHAR) ASCII_UPPER_Z)
 		return (ch - (UCS2_CHAR) ASCII_UPPER_A + (UCS2_CHAR) ASCII_LOWER_A);

@@ -27,15 +27,8 @@
 #include "../intl/kanji.h"
 
 
-USHORT CVJIS_eucj_to_unicode(obj, dest_ptr, dest_len, src_ptr, src_len,
-							 err_code, err_position)
-	 CSCONVERT obj;
-	 UCS2_CHAR *dest_ptr;
-	 USHORT dest_len;
-	 UCHAR *src_ptr;
-	 USHORT src_len;
-	 SSHORT *err_code;
-	 USHORT *err_position;
+USHORT CVJIS_eucj_to_unicode(CSCONVERT obj, UCS2_CHAR *dest_ptr, USHORT dest_len, UCHAR *src_ptr
+							, USHORT src_len, SSHORT *err_code, USHORT *err_position)
 {
 	UCS2_CHAR *start;
 	UCS2_CHAR ch;
@@ -120,15 +113,8 @@ USHORT CVJIS_eucj_to_unicode(obj, dest_ptr, dest_len, src_ptr, src_len,
 }
 
 
-USHORT CVJIS_sjis_to_unicode(obj, dest_ptr, dest_len, sjis_str, sjis_len,
-							 err_code, err_position)
-	 CSCONVERT obj;
-	 UCS2_CHAR *dest_ptr;
-	 USHORT dest_len;
-	 UCHAR *sjis_str;
-	 USHORT sjis_len;
-	 SSHORT *err_code;
-	 USHORT *err_position;
+USHORT CVJIS_sjis_to_unicode(CSCONVERT obj, UCS2_CHAR *dest_ptr, USHORT dest_len, UCHAR *sjis_str
+							, USHORT sjis_len, SSHORT *err_code, USHORT *err_position)
 {
 	UCS2_CHAR *start;
 	UCS2_CHAR ch;
@@ -272,9 +258,7 @@ C O D E:
 
 #define	isodd(x)	((x) & 1)
 
-static void seven2eight(p1, p2)
-	 USHORT *p1;
-	 USHORT *p2;
+static void seven2eight(USHORT *p1, USHORT *p2)
 {
 	if (isodd(*p1))
 		*p2 += 31;
@@ -382,15 +366,8 @@ I hope this helps in the discussion.
 */
 
 
-USHORT CVJIS_unicode_to_sjis(obj, sjis_str, sjis_len, unicode_str,
-							 unicode_len, err_code, err_position)
-	 CSCONVERT obj;
-	 UCHAR *sjis_str;
-	 USHORT sjis_len;
-	 UCS2_CHAR *unicode_str;
-	 USHORT unicode_len;
-	 SSHORT *err_code;
-	 USHORT *err_position;
+USHORT CVJIS_unicode_to_sjis(CSCONVERT obj, UCHAR *sjis_str, USHORT sjis_len, UCS2_CHAR *unicode_str,
+							 USHORT unicode_len, SSHORT *err_code, USHORT *err_position)
 {
 	UCHAR *start;
 	UCS2_CHAR jis_ch;
@@ -470,15 +447,8 @@ USHORT CVJIS_unicode_to_sjis(obj, sjis_str, sjis_len, unicode_str,
 }
 
 
-USHORT CVJIS_unicode_to_eucj(obj, eucj_str, eucj_len, unicode_str,
-							 unicode_len, err_code, err_position)
-	 CSCONVERT obj;
-	 UCHAR *eucj_str;
-	 USHORT eucj_len;
-	 UCS2_CHAR *unicode_str;
-	 USHORT unicode_len;
-	 SSHORT *err_code;
-	 USHORT *err_position;
+USHORT CVJIS_unicode_to_eucj(CSCONVERT obj, UCHAR *eucj_str, USHORT eucj_len, UCS2_CHAR *unicode_str,
+							 USHORT unicode_len, SSHORT *err_code, USHORT *err_position)
 {
 	UCHAR *start;
 	UCS2_CHAR jis_ch;
@@ -549,9 +519,7 @@ USHORT CVJIS_unicode_to_eucj(obj, eucj_str, eucj_len, unicode_str,
 }
 
 
-static USHORT CVJIS_check_euc(euc_str, euc_len)
-	 UCHAR *euc_str;
-	 USHORT euc_len;
+static USHORT CVJIS_check_euc(UCHAR *euc_str, USHORT euc_len)
 {
 /**************************************
  *
@@ -586,9 +554,7 @@ static USHORT CVJIS_check_euc(euc_str, euc_len)
 
 
 
-static USHORT CVJIS_check_sjis(sjis_str, sjis_len)
-	 UCHAR *sjis_str;
-	 USHORT sjis_len;
+static USHORT CVJIS_check_sjis(UCHAR *sjis_str, USHORT sjis_len)
 {
 /**************************************
  *
@@ -633,13 +599,8 @@ static USHORT CVJIS_check_sjis(sjis_str, sjis_len)
 
 
 
-static USHORT CVJIS_euc2sjis(obj, sjis_str, sjis_len, euc_str, euc_len,
-							 err_code, err_position)
-	 CSCONVERT obj;
-	 UCHAR *euc_str, *sjis_str;
-	 USHORT euc_len, sjis_len;
-	 SSHORT *err_code;
-	 USHORT *err_position;
+static USHORT CVJIS_euc2sjis(CSCONVERT obj, UCHAR *sjis_str, USHORT sjis_len, UCHAR *euc_str, USHORT euc_len,
+							 SSHORT *err_code, USHORT *err_position)
 {
 /**************************************
  *
@@ -728,15 +689,8 @@ static USHORT CVJIS_euc2sjis(obj, sjis_str, sjis_len, euc_str, euc_len,
 
 
 
-USHORT CVJIS_euc_byte2short(obj, dst, dst_len, src, src_len, err_code,
-							err_position)
-	 CSCONVERT obj;
-	 UCHAR *dst;
-	 USHORT dst_len;
-	 UCHAR *src;
-	 USHORT src_len;
-	 SSHORT *err_code;
-	 USHORT *err_position;
+USHORT CVJIS_euc_byte2short(CSCONVERT obj, UCHAR *dst, USHORT dst_len, UCHAR *src, USHORT src_len
+							, SSHORT *err_code,	USHORT *err_position)
 {
 /**************************************
  *
@@ -792,11 +746,7 @@ USHORT CVJIS_euc_byte2short(obj, dst, dst_len, src, src_len, err_code,
 }
 
 
-SSHORT CVJIS_euc_mbtowc(obj, wc, src, src_len)
-	 CSCONVERT obj;
-	 UCS2_CHAR *wc;
-	 UCHAR *src;
-	 USHORT src_len;
+SSHORT CVJIS_euc_mbtowc(CSCONVERT obj, UCS2_CHAR *wc, UCHAR *src, USHORT src_len)
 {
 /**************************************
  *
@@ -829,13 +779,8 @@ SSHORT CVJIS_euc_mbtowc(obj, wc, src, src_len)
 	};
 }
 
-static USHORT CVJIS_sjis2euc(obj, euc_str, euc_len, sjis_str, sjis_len,
-							 err_code, err_position)
-	 CSCONVERT obj;
-	 UCHAR *euc_str, *sjis_str;
-	 USHORT sjis_len, euc_len;
-	 SSHORT *err_code;
-	 USHORT *err_position;
+static USHORT CVJIS_sjis2euc(CSCONVERT obj, UCHAR *euc_str, USHORT euc_len, UCHAR *sjis_str, USHORT sjis_len,
+							 SSHORT *err_code, USHORT *err_position)
 {
 /**************************************
  *
@@ -916,15 +861,8 @@ static USHORT CVJIS_sjis2euc(obj, euc_str, euc_len, sjis_str, sjis_len,
 
 
 
-USHORT CVJIS_sjis_byte2short(obj, dst, dst_len, src, src_len, err_code,
-							 err_position)
-	 CSCONVERT obj;
-	 UCHAR *dst;
-	 USHORT dst_len;			/* byte count */
-	 UCHAR *src;
-	 USHORT src_len;
-	 SSHORT *err_code;
-	 USHORT *err_position;
+USHORT CVJIS_sjis_byte2short(CSCONVERT obj, UCHAR *dst, USHORT dst_len, UCHAR *src, USHORT src_len
+							, SSHORT *err_code, USHORT *err_position)
 {
 /**************************************
  *
@@ -982,11 +920,7 @@ USHORT CVJIS_sjis_byte2short(obj, dst, dst_len, src, src_len, err_code,
 }
 
 
-SSHORT CVJIS_sjis_mbtowc(obj, wc, src, src_len)
-	 CSCONVERT obj;
-	 UCS2_CHAR *wc;
-	 UCHAR *src;
-	 USHORT src_len;
+SSHORT CVJIS_sjis_mbtowc(CSCONVERT obj, UCS2_CHAR *wc, UCHAR *src, USHORT src_len)
 {
 /**************************************
  *
