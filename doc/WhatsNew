@@ -101,8 +101,8 @@
     * Fixed RC3 problem.
          Server crash on restore (caused by GCC 3.2 bug).
       Contributor(s):
-        Dimitry Sibiryakov <sd@topol.udm.net>
         Nickolay Samofatov <skidder@bssys.com>
+        Dimitry Sibiryakov <sd@topol.udm.net>
 
   **************
   * v1.5 RC 3
