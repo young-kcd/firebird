@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.129 2004-11-26 01:01:16 skidder Exp $
+$Id: inet.cpp,v 1.130 2004-12-17 05:56:04 robocop Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -458,19 +458,20 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 	UCHAR user_id[BUFFER_SMALL];
 	user_id[0] = CNCT_user;
 	UCHAR* p = user_id + 2;
+	// CVC: Warning: p2 is a reference. It avoids several casts below.
+	char*& p2 = reinterpret_cast<char*&>(p);
 	int eff_gid;
 	int eff_uid;
-	ISC_get_user(reinterpret_cast<char*>(p), &eff_uid, &eff_gid, 0, 0, 0,
-				 user_string);
-	user_id[1] = (UCHAR) strlen((SCHAR *) p);
+	ISC_get_user(p2, &eff_uid, &eff_gid, 0, 0, 0, user_string);
+	user_id[1] = (UCHAR) strlen(p2);
 	p = p + user_id[1];
 	fb_assert(user_id[1] < BUFFER_SMALL);
 
 	*p++ = CNCT_host;
 	p++;
 	fb_assert(MAXHOSTLEN <= BUFFER_SMALL - (p - user_id));
-	ISC_get_host(reinterpret_cast <char*>(p), MAXHOSTLEN);
-	p[-1] = (UCHAR) strlen((SCHAR *) p);
+	ISC_get_host(p2, MAXHOSTLEN);
+	p[-1] = (UCHAR) strlen(p2);
 
 	for (; *p; p++) {
 		if (*p >= 'A' && *p <= 'Z') {
