@@ -1962,9 +1962,12 @@ int TRA_sweep(TDBB tdbb, JRD_TRA trans)
 	catch (const std::exception&) {
 		try {
 			if (!trans)
-			{
 				TRA_commit(tdbb, transaction, FALSE);
-			}
+				
+			LCK_release(tdbb, &temp_lock);
+			dbb->dbb_flags &= ~DBB_sweep_in_progress;
+			tdbb->tdbb_flags &= ~TDBB_sweeper;
+			
 		}
 		catch (const std::exception&) {
 			LCK_release(tdbb, &temp_lock);
