@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.5 2002-04-29 11:22:26 dimitr Exp $
+ * $Id: sort.cpp,v 1.6 2002-04-29 12:06:19 dimitr Exp $
  */
 
 // dimitr: uncomment to use new memory-based sort I/O
@@ -1776,10 +1776,15 @@ static ULONG find_file_space(SCB scb, ULONG size, SFB * ret_sfb)
 		   and return. */
 
 		if (!sfb || !DLS_get_temp_space(size, sfb) ||
-			(scb->scb_runs->run_seek + size) >= MAX_TEMPFILE_SIZE) {
+			(sfb->sfb_file_size + size >= MAX_TEMPFILE_SIZE)) {
 
 			sfb = (SFB) sort_alloc(scb, (ULONG) sizeof(struct sfb));
 			/* FREE: scb_sfb chain is freed in local_fini() */
+
+			// Is the last DLS at it's size limit? If so, add a new DLS dir   M.E.G
+			if (last_sfb && (last_sfb->sfb_dls->dls_inuse + size >= MAX_TEMPFILE_SIZE))
+				if (!DLS_add_dir(MAX_TEMPFILE_SIZE, last_sfb->sfb_dls->dls_directory))
+					error_memory(scb);
 
 			if (last_sfb)
 				last_sfb->sfb_next = sfb;
