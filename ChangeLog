@@ -1,3 +1,10 @@
+2005-01-20 12:27  dimitr
+
+	* firebird2/src/burp/: backup.epp (1.24.2.6), restore.epp
+	(1.31.2.4):
+	
+	Fixed v1.5.1 regression.
+
 2005-01-18 17:38  kkuznetsov
 
 	* firebird2/src/common/config/config_file.cpp (1.11.2.4):
