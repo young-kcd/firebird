@@ -1143,6 +1143,7 @@ static SLONG compute_access(TDBB		tdbb,
 
 /* Get some space that's not off the stack */
 	str_buffer = FB_NEW_RPT(*dbb->dbb_permanent, BLOB_BUFFER_SIZE) str();
+	str_buffer->str_length = BLOB_BUFFER_SIZE - 1;
 	buffer = (TEXT*) str_buffer->str_data;
 
 
