@@ -27,7 +27,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: alice_meta.epp,v 1.42 2004-10-04 08:14:34 robocop Exp $
+ *	$Id: alice_meta.epp,v 1.43 2004-10-07 08:21:15 robocop Exp $
  */
 
 #include "firebird.h"
@@ -69,8 +69,8 @@ static USHORT snarf_blob(ISC_QUAD*, USHORT, TEXT*);
 */
 
 struct rfr_tab_t {
-	TEXT* relation;
-	TEXT* field;
+	const TEXT* relation;
+	const TEXT* field;
 	int bit_mask;
 };
 

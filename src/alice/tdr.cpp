@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.41 2004-09-26 07:37:34 robocop Exp $
+//	$Id: tdr.cpp,v 1.42 2004-10-07 08:21:15 robocop Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -56,7 +56,7 @@ static void reattach_databases(TDR);
 static bool reconnect(FB_API_HANDLE, SLONG, const TEXT*, ULONG);
 
 
-const char* const NEWLINE = "\n";
+//const char* const NEWLINE = "\n";
 
 static const UCHAR limbo_info[] = { isc_info_limbo, isc_info_end };
 
