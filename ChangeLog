@@ -1,3 +1,70 @@
+2003-09-07 23:39  epocman
+
+	* firebird2/builds/win32/: uninstall.bat, uninstall.bat:
+	
+	instsvc 'remove' new syntax does'nt need a '-g' option.
+
+2003-09-07 23:36  epocman
+
+	* firebird2/builds/win32/: install_classic.bat, install_super.bat,
+	install_classic.bat, install_super.bat:
+	
+	instsvc new syntax does not take root_directory on the
+	command-line.
+
+2003-09-07 21:11  epocman
+
+	* firebird2/src/: iscguard/cntl_guard.cpp, iscguard/iscguard.cpp,
+	utilities/install/install_svc.cpp, utilities/install/servi_proto.h,
+	utilities/install/services.cpp:
+	
+	Win32 - 'instsvc install -guardian -login user' now also sets the
+	Guardian to run as 'user'.  This is achieved by giving appropriate
+	security rights to 'user' on the firebird service object (instsvc
+	utility) and fixing some wrong security flags in the Guardian code
+	itself.
+
+2003-09-07 02:53  brodsom
+
+	* firebird2/src/lock/: lock.cpp, print.cpp:
+	
+	Code cleaning (Thanks to Claudio)
+
+2003-09-07 02:48  brodsom
+
+	* firebird2/src/jrd/os/vms/vmsevent.cpp:
+	
+	Fix wrong change (Thanks to Claudio)
+
+2003-09-07 02:48  brodsom
+
+	* firebird2/src/jrd/os/vms/: extvms.cpp, map.cpp:
+	
+	Code cleaning (Thanks to Claudio)
+
+2003-09-06 12:55  epocman
+
+	* firebird2/src/utilities/install/services.cpp:
+	
+	Never sets NT services as 'Interactive'. Fights 'Shatter'-kind
+	attacks.  http://www.idefense.com/idpapers/Shatter_Redux.pdf This
+	blocks 'local' protocol from working, but is not an issue as new
+	XNET will replace it for FB > 1.5.
+
+2003-09-06 02:49  brodsom
+
+	* firebird2/src/: dudley/hsh.cpp, dudley/hsh_proto.h, wal/wal.cpp,
+	wal/wal_proto.h, wal/walw.cpp, wal/walw_proto.h, qli/hsh_proto.h,
+	gpre/c_cxx.cpp, gpre/cmp.cpp, gpre/cmp_proto.h, gpre/ftn.cpp,
+	gpre/gpre.cpp, gpre/gpre.h, gpre/gpre_meta.h,
+	gpre/gpre_meta_boot.cpp, gpre/gpre_proto.h, gpre/hsh.cpp,
+	gpre/hsh_proto.h, gpre/jrdme_proto.h, gpre/jrdmet.cpp,
+	gpre/lang_proto.h, gpre/msc.cpp, gpre/msc_proto.h, gpre/par.cpp,
+	gpre/par_proto.h, gpre/pat.cpp, gpre/pat_proto.h, gpre/sqe.cpp,
+	gpre/sqe_proto.h, gpre/sql.cpp, gpre/sql_proto.h:
+	
+	Remove unneeded extern C
+
 2003-09-05 16:55  brodsom
 
 	* firebird2/src/gpre/: par.cpp, pas.cpp, sqe.cpp, sql.cpp, ada.cpp,
