@@ -120,7 +120,7 @@ example #3:
 	(((((value + 1) >> shift) & 3) << 1) | ((value + 1) & 1)) - 1
 
 #define TRIGGER_ACTION_SLOT(value, slot) \
-	TRIGGER_ACTION(value, slot * 2 - 1)
+	TRIGGER_ACTION(value, (slot * 2 - 1) )
 
 #define TRIGGER_COMBINED_MAX 128
 

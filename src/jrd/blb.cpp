@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.25 2003-02-14 02:24:44 brodsom Exp $
+$Id: blb.cpp,v 1.26 2003-02-20 00:10:09 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -966,7 +966,7 @@ void BLB_move_from_string(TDBB tdbb, DSC * from_desc, DSC * to_desc, JRD_NOD fie
 		DSC_dtype_tostring(from_desc->dsc_dtype), 0);
 	else
 	{
-		USHORT ttype = -1U;
+		USHORT ttype = 0;
 		BLB blob = 0;
 		UCHAR *fromstr = 0;
 		struct bid temp_bid;

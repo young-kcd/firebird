@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.26 2003-02-13 10:11:05 dimitr Exp $
+$Id: ibase.h,v 1.27 2003-02-20 00:10:09 brodsom Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -1204,10 +1204,10 @@ ISC_LONG ISC_EXPORT isc_reset_fpe(unsigned short);
 #define ADD_SPB_LENGTH(p, length)	{*(p)++ = (length); \
     					 *(p)++ = (length) >> 8;}
 
-#define ADD_SPB_NUMERIC(p, data)	{*(p)++ = (data); \
-    					 *(p)++ = (data) >> 8; \
-					 *(p)++ = (data) >> 16; \
-					 *(p)++ = (data) >> 24;}
+#define ADD_SPB_NUMERIC(p, data)	{*(p)++ = (SCHAR) (data); \
+    					 *(p)++ = (SCHAR) ((data) >> 8); \
+					 *(p)++ = (SCHAR) ((data) >> 16); \
+					 *(p)++ = (SCHAR) ((data) >> 24);}
 
 ISC_STATUS ISC_EXPORT isc_service_attach(ISC_STATUS ISC_FAR*,
 										 unsigned short,

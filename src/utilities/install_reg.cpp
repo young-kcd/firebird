@@ -41,7 +41,7 @@ static struct {
 "INSTALL", 1, COMMAND_INSTALL, "REMOVE", 1, COMMAND_REMOVE, NULL, 0, 0};
 
 
-int CLIB_ROUTINE main( int argc, char **argv)
+void CLIB_ROUTINE main( int argc, char **argv)
 {
 /**************************************
  *

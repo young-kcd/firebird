@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.51 2003-02-19 15:25:25 dimitr Exp $
+$Id: met.epp,v 1.52 2003-02-20 00:10:09 brodsom Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -1347,14 +1347,16 @@ int MET_lookup_field(TDBB tdbb, JRD_REL relation, const TEXT* name, const TEXT* 
  *	it's used to include the condition that it should match
  *	the field's security class name, too.
  *
- **************************************/
+ *	if the field is not found return -1
+ *
+ *****************************************/
 	DBB			dbb;
 	BLK			request;
 	VEC			vector;
 	vec::iterator	fieldIter, end;
 	const TEXT*	p;
 	const TEXT*	q;
-	USHORT		id;
+	SSHORT		id;
 	UCHAR		length;
 
 	SET_TDBB(tdbb);
@@ -1393,7 +1395,7 @@ int MET_lookup_field(TDBB tdbb, JRD_REL relation, const TEXT* name, const TEXT* 
 
 /* Not found.  Next, try system relations directly */
 
-	id = -1U;
+	id = -1;
 
 	if (!relation->rel_name)
 	{

@@ -95,22 +95,14 @@ USHORT DLL_EXPORT LD2_lookup(USHORT objtype,
 
    switch (objtype) {
    case type_texttype:
-       switch (parm1) {
-       default:
-           *fun = NULL;
-           return 1;
-       };
+       *fun = NULL;
+        return 1;
    case type_charset:
-       switch (parm1) {
-       default:
-           *fun = NULL;
-           return 1;
-       };
+       *fun = NULL;
+       return 1;
    case type_csconvert:
-       {
-           *fun = NULL;
-           return 1;
-       }
+       *fun = NULL;
+       return 1;
    default:
 #ifdef DEV_BUILD
        assert(0);

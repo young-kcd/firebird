@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gener.cpp,v 1.13 2003-02-08 00:58:10 brodsom Exp $
+$Id: gener.cpp,v 1.14 2003-02-20 00:09:32 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -662,7 +662,7 @@ static void gen_descriptor( DSC * desc, QLI_REQ request)
 
 	case dtype_varying:
 		STUFF(blr_varying);
-		STUFF_WORD(desc->dsc_length - sizeof(SSHORT));
+		STUFF_WORD((desc->dsc_length - sizeof(SSHORT)));
 		break;
 
 	case dtype_cstring:
