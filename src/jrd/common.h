@@ -45,9 +45,11 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 /*
-$Id: common.h,v 1.43 2002-10-30 06:40:47 seanleyne Exp $
+$Id: common.h,v 1.44 2002-10-31 05:05:56 seanleyne Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -463,54 +465,7 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* hpux */
 
 
-/* PC Platforms are NetWare, Windows 3.1, and Windows and DOS Clients */
-
-#ifdef PC_PLATFORM
-
-#define SYS_ARG		isc_arg_dos
-#define VA_START(list,parmN)    va_start (list, parmN)
-#define NO_PYXIS
-#define I386            1
-#define NO_NFS
-#undef LINKS_EXIST
-#define IEEE					/* IEEE floating point arith.  */
-
-#define LSEEK_OFFSET_CAST	/* LSEEK_OFFSET_CAST not needed on Windows */
-
-#define IMPLEMENTATION  isc_info_db_impl_isc_dos /* 47 */
-#define MEMMOVE(from,to,length)       memmove (to, from, (int) (length))
-#define MOVE_FAST(from,to,length)       memmove (to, from, (int) (length))
-#define MOVE_FASTER(from,to,length)     memmove (to, from, (int) (length))
-#define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
-
-#define API_ROUTINE     __far __cdecl __loadds __export
-#define API_ROUTINE_VARARG      API_ROUTINE
-#define FAR_VARIABLE    __far
-
-/* added for routines which are not to used by customers. */
-#define INTERNAL_API_ROUTINE	API_ROUTINE
-
-#ifndef DLL_EXPORT
-#define DLL_EXPORT      API_ROUTINE
-#endif
-
-typedef RETSIGTYPE (API_ROUTINE * SIG_FPTR) ();
-
-
-/* DOS does not compare the high order word of far pointers,
-   so we must cast them to huge in comparions; also, for routines
-   which return a double, they must be given a pascal type so that
-   they will work in a multithreaded environment */
-
-#define HUGE_PTR        huge
-#define PASCAL_ROUTINE  pascal
-
-#endif /* PC_PLATFORM */
-
-
-
 /* DEC VAX/VMS and AlphaVMS */
-
 #ifdef VMS
 #define VAX_FLOAT       1
 #define FB_ALIGN(n,b)      (n)

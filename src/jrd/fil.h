@@ -24,6 +24,8 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 #ifndef _JRD_FIL_H_
@@ -33,10 +35,6 @@
 
 #ifdef UNIX
 #define WORKDIR        "/tmp/"
-#endif
-
-#ifdef PC_PLATFORM
-#define WORKDIR        ""
 #endif
 
 #ifdef WIN_NT

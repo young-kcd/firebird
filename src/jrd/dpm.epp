@@ -22,6 +22,8 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 /*
@@ -421,11 +423,7 @@ int DPM_compress( TDBB tdbb, DPG page)
  **************************************/
 	DBB dbb;
 	register SSHORT space, l;
-#if (defined PC_PLATFORM)
-	UCHAR *temp_page = NULL;
-#else
 	UCHAR temp_page[MAX_PAGE_SIZE];
-#endif
 	dpg::dpg_repeat *index, *end;
 
 	SET_TDBB(tdbb);
@@ -437,21 +435,9 @@ int DPM_compress( TDBB tdbb, DPG page)
 	if (debug_flag > DEBUG_TRACE_ALL_INFO)
 		ib_printf("    sequence %"SLONGFORMAT"\n", page->dpg_sequence);
 #endif
-
-#if (defined PC_PLATFORM)
-/* allocate a spare buffer which is large enough,
-   and set up to release it in case of error */
-
-	temp_page = (UCHAR *) ALL_malloc((SLONG) dbb->dbb_page_size, ERR_jmp);
-
-	try {
-
-#else
 	if (dbb->dbb_page_size > sizeof(temp_page)) {
 		BUGCHECK(250);			/* msg 250 temporary page buffer too small */
 	}
-#endif
-
 	space = dbb->dbb_page_size;
 	end = page->dpg_rpt + page->dpg_count;
 
@@ -472,20 +458,6 @@ int DPM_compress( TDBB tdbb, DPG page)
 
 	if (page->dpg_header.pag_type != pag_data)
 		BUGCHECK(251);			/* msg 251 damaged data page */
-
-#if (defined PC_PLATFORM)
-	if (temp_page) {
-		ALL_free(temp_page);
-	}
-	
-	}	// try
-	catch (...) {
-		if (temp_page) {
-			ALL_free(temp_page);
-		}
-		ERR_punt();
-	}
-#endif
 
 	return space;
 }

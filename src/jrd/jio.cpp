@@ -26,6 +26,8 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 /* NOTE that this module is used only on platforms that use
@@ -58,14 +60,7 @@
 #include <sys/stat.h>
 #endif
 
-#ifdef PC_PLATFORM
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <io.h>
-#define FILE_OPEN(name,access,mask)	open (name, access)
-#else
 #include <sys/file.h>
-#endif
 
 #define SYS_ERROR	gds_arg_unix
 extern int errno;

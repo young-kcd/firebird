@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 #include "firebird.h"
@@ -235,12 +238,10 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				sw_verify = TRUE;
 				break;
 
-#ifndef PC_PLATFORM
 			case 'X':
 				debug_value = 1;
 				gds__set_debug(debug_value);
 				break;
-#endif
 
 				/* This switch's name is arbitrary; since it is an internal 
 				   mechanism it can be changed at will */
@@ -485,9 +486,7 @@ static USHORT process_statement( USHORT flush_flag)
 					gds_alloc_flag_unfreed((void *) dbb->dbb_statistics);	/* QLI: don't care */
 #endif
 				}
-#ifndef PC_PLATFORM
 				perf_get_info((int**)&dbb->dbb_handle, (perf*) dbb->dbb_statistics);
-#endif
 			}
 
 /* Execute the request, for better or worse */
@@ -500,7 +499,6 @@ static USHORT process_statement( USHORT flush_flag)
 		{
 			if (dbb->dbb_flags & DBB_active)
 			{
-#ifndef PC_PLATFORM
 				ERRQ_msg_get(505, report);
 				/* Msg505 "    reads = !r writes = !w fetches = !f marks = !m\n" */
 				ERRQ_msg_get(506, report + strlen(report));
@@ -508,7 +506,6 @@ static USHORT process_statement( USHORT flush_flag)
 				perf_get_info((int**)&dbb->dbb_handle, &statistics);
 				perf_format((perf*) dbb->dbb_statistics, &statistics,
 							report, buffer, 0);
-#endif
 				ERRQ_msg_put(26, dbb->dbb_filename, buffer, NULL, NULL, NULL);	/* Msg26 Statistics for database %s %s  */
 				QLI_skip_line = TRUE;
 			}

@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 #include "firebird.h"
@@ -50,28 +53,22 @@
 
 #ifdef VMS
 #include <descrip.h>
-#define SCRATCH		"gds_query"
+#define SCRATCH		"Fb_query"
 #define LIB$_INPSTRTRU	0x15821c
 #endif
 
 #ifdef UNIX
 #ifdef SMALL_FILE_NAMES
-#define SCRATCH		"gds_q"
+#define SCRATCH		"Fb_q"
 #else
-#define SCRATCH		"gds_query"
+#define SCRATCH		"Fb_query"
 #endif
 #define UNIX_LINE	1
-#endif
-
-#ifdef PC_PLATFORM
-#define SCRATCH		"I"
-#define UNIX_LINE	1
-#define PC_FILE_SEEK
 #endif
 
 #if (defined WIN_NT)
 #include <io.h>
-#define SCRATCH		"ib"
+#define SCRATCH		"Fb"
 #define UNIX_LINE	1
 #define PC_FILE_SEEK
 #endif

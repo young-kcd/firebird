@@ -22,6 +22,8 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 #ifndef _JRD_ISC_S_PROTO_H_
@@ -84,10 +86,6 @@ extern ULONG ISC_exception_post(ULONG, TEXT *);
 #endif /* WIN_NT */
 
 #endif /* SUPERSERVER */
-
-#if (defined PC_PLATFORM)
-extern void ISC_semaphore_open(ULONG *, ULONG);
-#endif
 
 extern UCHAR *DLL_EXPORT ISC_remap_file(STATUS *,
 										struct sh_mem *, SLONG, USHORT);

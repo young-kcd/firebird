@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.11 2002-07-06 05:31:56 skywalker Exp $
+//  $Id: gpre.cpp,v 1.12 2002-10-31 05:05:54 seanleyne Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -38,9 +38,11 @@
 //  FSG (Frank Schlottmann-Gödde) 8.Mar.2002 - tiny cobol support
 //       fixed Bug No. 526204 
 //
+// 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+//
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.11 2002-07-06 05:31:56 skywalker Exp $
+//	$Id: gpre.cpp,v 1.12 2002-10-31 05:05:54 seanleyne Exp $
 //
 
 #define GPRE_MAIN
@@ -77,20 +79,15 @@ extern int lib$get_foreign();
 
 extern "C" {
 
-
-#ifdef PC_PLATFORM
-#define SCRATCH			"I"
-#endif
-
 #if defined(WIN_NT)
-#define SCRATCH			"ib"
+#define SCRATCH			"Fb"
 #endif
 
 #ifndef SCRATCH
 #ifdef SMALL_FILE_NAMES
-#define SCRATCH			"gds_q"
+#define SCRATCH			"Fb_q"
 #else
-#define SCRATCH			"gds_query_"
+#define SCRATCH			"Fb_query_"
 #endif
 #endif
 
@@ -219,7 +216,7 @@ static struct ext_table_t dml_ext_table[] =
 #ifdef ALSYS_ADA
 	{ lang_ada, IN_SW_GPRE_ALSYS, ".eada", ".ada" },
 #endif
-#if ( defined( PC_PLATFORM) || defined( WIN_NT))
+#if (defined( WIN_NT))
 	{ lang_cplusplus, IN_SW_GPRE_CPLUSPLUS, ".epp", ".cpp" },
 #else
 	{ lang_cplusplus, IN_SW_GPRE_CPLUSPLUS, ".exx", ".cxx" },
@@ -1170,7 +1167,7 @@ void CPR_get_text( TEXT * buffer, TXT text)
 //  and use them appropriately. for now use ib_getc ()
 //  
 
-#if (defined WIN_NT || defined PC_PLATFORM)
+#if (defined WIN_NT)
 	if (ib_fseek(trace_file, 0L, 0))
 #else
 	if (ib_fseek(trace_file, start, 0))
@@ -1179,7 +1176,7 @@ void CPR_get_text( TEXT * buffer, TXT text)
 		ib_fseek(trace_file, 0L, 2);
 		CPR_error("ib_fseek failed for trace file");
 	}
-#if (defined WIN_NT || defined PC_PLATFORM)
+#if (defined WIN_NT)
 //  move forward to actual position 
 
 	while (start--)
@@ -1401,7 +1398,7 @@ static SLONG compile_module( SLONG start_position)
 	ib_fseek(input_file, start_position, 0);
 	input_char = input_buffer;
 
-#if !(defined WIN_NT || defined PC_PLATFORM)
+#if !(defined WIN_NT)
 	trace_file = (IB_FILE *) gds__temp_file(TRUE, SCRATCH, 0);
 #else
 #ifndef __BORLANDC__

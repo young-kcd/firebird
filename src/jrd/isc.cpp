@@ -31,9 +31,11 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 /*
-$Id: isc.cpp,v 1.17 2002-10-30 06:40:47 seanleyne Exp $
+$Id: isc.cpp,v 1.18 2002-10-31 05:05:57 seanleyne Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -763,53 +765,6 @@ TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT * string, USHORT length)
 	gethostname(string, length);
 
 	return string;
-}
-#endif
-#endif	// !WIN_NT
-
-
-#if !defined(WIN_NT)	// implemented in isc_win32.cpp
-#ifdef PC_PLATFORM
-
-int INTERNAL_API_ROUTINE ISC_get_user(TEXT*	name,
-									  int*	id,
-									  int*	group,
-									  TEXT*	project,
-									  TEXT*	organization,
-									  int*	node,
-									  TEXT*	user_string)
-{
-/**************************************
- *
- *      I S C _ g e t _ u s e r   D O S
- *
- **************************************
- *
- * Functional description
- *      Find out who the user is.  (On a PC,
- *      there's only 1 user anyway...)
- *
- **************************************/
-
-	if (name)
-		strcpy(name, (user_name[0]) ? user_name : "user");
-
-	if (id)
-		*id = 0;
-
-	if (group)
-		*group = 0;
-
-	if (project)
-		*project = 0;
-
-	if (organization)
-		*organization = 0;
-
-	if (node)
-		*node = 0;
-
-	return TRUE;
 }
 #endif
 #endif	// !WIN_NT

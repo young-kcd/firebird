@@ -26,6 +26,8 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 #ifndef _JRD_ODS_H_
@@ -414,14 +416,6 @@ typedef struct rhdf {
 	USHORT rhdf_b_line;			/* back line */
 	USHORT rhdf_flags;			/* flags, etc */
 	UCHAR rhdf_format;			/* format version */
-#if (defined PC_PLATFORM)
-	SCHAR rhdf_fill[3];			/* IMPORTANT!  THE SOLE PURPOSE OF THIS FIELD
-								   IS TO INSURE THAT THE SUCCEEDING FIELD IS ALIGNED ON A
-								   4 BYTE BOUNDARY.  IT IS NECESSARY BECAUSE THE 16-BIT
-								   COMPILER CANNOT DO THIS ALIGNMENT FOR US.  HAVING
-								   THIS FIELD INSURES THAT A PC_PLATFORM DATABASE IS
-								   IDENTICAL TO ONE ON Windows/NT. */
-#endif
 	SLONG rhdf_f_page;			/* next fragment page */
 	USHORT rhdf_f_line;			/* next fragment line */
 	UCHAR rhdf_data[1];			/* Blob data */
@@ -437,14 +431,6 @@ typedef struct blh {
 	USHORT blh_max_segment;		/* Longest segment */
 	USHORT blh_flags;
 	UCHAR blh_level;			/* Number of address levels */
-#if (defined PC_PLATFORM)
-	SCHAR blh_fill[3];			/* IMPORTANT!  THE SOLE PURPOSE OF THIS FIELD
-								   IS TO INSURE THAT THE SUCCEEDING FIELD IS ALIGNED ON A
-								   4 BYTE BOUNDARY.  IT IS NECESSARY BECAUSE THE 16-BIT
-								   COMPILER CANNOT DO THIS ALIGNMENT FOR US.  HAVING
-								   THIS FIELD INSURES THAT A PC_PLATFORM DATABASE IS
-								   IDENTICAL TO ONE ON Windows/NT. */
-#endif
 	SLONG blh_count;			/* Total number of segments */
 	SLONG blh_length;			/* Total length of data */
 	USHORT blh_sub_type;		/* Blob sub-type */

@@ -22,6 +22,8 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 #ifndef JRD_AIL_H
@@ -51,20 +53,6 @@ extern void AIL_recover_page(SLONG, struct pag *);
 extern void AIL_set_log_options(SLONG, SSHORT, USHORT, SLONG);
 extern void AIL_shutdown(SCHAR *, SLONG *, SLONG *, SLONG *, SSHORT);
 extern void AIL_upd_cntrl_pt(TEXT *, USHORT, ULONG, ULONG, ULONG);
-
-#if (defined PC_PLATFORM)
-#define AIL_add_log()
-#define AIL_commit(a)
-#define AIL_disable()
-#define AIL_drop_log()
-#define AIL_drop_log_force()
-#define AIL_enable(a,b,c,d,e)
-#define AIL_fini()
-#define AIL_put(a,b,c,d,e,f,g,h,i,j)
-#define AIL_set_log_options(a,b,c,d)
-#define AIL_shutdown(a,b,c,d,e)
-#define AIL_upd_cntrl_pt(a,b,c,d,e)
-#endif
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -24,6 +24,8 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 #ifndef _JRD_FILE_PARAMS_H_
@@ -126,16 +128,6 @@
 
 
 /* keep MSG_FILE_LANG in sync with build_file.e */
-
-#ifdef PC_PLATFORM
-#define WORKFILE	""
-#define ISC_PREFIX	"c:/firebird/"
-#define TEMP_PATTERN	"XXXXXX"
-#define MSG_FILE	"firebird.msg"
-#define MSG_FILE_LANG	"%.8s.msg"
-#define LOCALE_MAX	5
-#define LOGFILE		"firebird.log"
-#endif
 
 #ifdef WIN_NT
 #define WORKFILE	"c:\\temp\\"

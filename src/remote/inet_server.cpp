@@ -28,9 +28,11 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 /*
-$Id: inet_server.cpp,v 1.15 2002-10-30 06:40:50 seanleyne Exp $
+$Id: inet_server.cpp,v 1.16 2002-10-31 05:05:59 seanleyne Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -39,7 +41,7 @@ $Id: inet_server.cpp,v 1.15 2002-10-30 06:40:50 seanleyne Exp $
 #include "../jrd/isc_proto.h"
 #include "../jrd/divorce.h"
 #include "../common/memory/memory_pool.h"
-#if !(defined VMS || defined PC_PLATFORM)
+#if !(defined VMS)
 #include <sys/param.h>
 #endif
 
@@ -204,7 +206,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	int child, debug, channel, standalone, multi_threaded, multi_client;
 	TEXT *p, **end, c;
 	int done = FALSE;
-#if !(defined VMS || defined PC_PLATFORM)
+#if !(defined VMS)
 	fd_set mask;
 #endif
 
@@ -232,13 +234,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	channel = 0;
 	protocol[0] = 0;
 	multi_client = multi_threaded = FALSE;
-
-
-
-#ifdef PC_PLATFORM
-	INET_SERVER_flag |= SRVR_multi_client;
-	standalone = TRUE;
-#endif
 
 #ifdef SUPERSERVER
 	INET_SERVER_flag |= SRVR_multi_client;
@@ -278,11 +273,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 					standalone = FALSE;
 					break;
 
-#ifndef	PC_PLATFORM
 				case 'T':
 					multi_threaded = TRUE;
 					break;
-#endif
 
 				case 'U':
 					multi_threaded = FALSE;
@@ -346,7 +339,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 /* Fork off a server, wait for it to die, then fork off another,
    but give up after 100 tries */
 
-#if !(defined SUPERSERVER || defined VMS || defined PC_PLATFORM)
+#if !(defined SUPERSERVER || defined VMS)
 	if (multi_client && !debug) {
 		set_signal(SIGUSR1, signal_handler);
 		for (n = 0; n < 100; n++) {
@@ -581,7 +574,7 @@ static int assign( SCHAR * string)
 
 
 
-#if !(defined VMS || defined PC_PLATFORM)
+#if !(defined VMS)
 static void set_signal( int signal_number, void (*handler) (void))
 {
 /**************************************

@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 #include "firebird.h"
@@ -919,7 +922,7 @@ static void define_filter(void)
 	if (!filter->filter_entry_point)
 		PARSE_error(127, 0, 0);	/* msg 127: Filter entry point must be specified */
 
-#if (defined WIN_NT || defined PC_PLATFORM)
+#if (defined WIN_NT)
 	if (!filter->filter_module_name)
 		PARSE_error(128, 0, 0);	/* msg 128: Filter module name must be specified */
 #endif
@@ -963,7 +966,7 @@ static void define_function(void)
 	if (!function->func_entry_point)
 		PARSE_error(130, 0, 0);	/* msg 130: Function entry point must be specified */
 
-#if (defined WIN_NT || defined PC_PLATFORM)
+#if (defined WIN_NT)
 	if (!function->func_module_name)
 		PARSE_error(131, 0, 0);	/* msg 131: Function module name must be specified */
 #endif
@@ -1941,7 +1944,7 @@ static void end_text( TXT text)
 	text->txt_length =
 		DDL_token.tok_position - DDL_token.tok_length - text->txt_position;
 
-#if (defined WIN_NT || defined PC_PLATFORM)
+#if (defined WIN_NT)
 /* the length of the text field should subtract out the 
    line feeds, since they are automatically filtered out
    when reading from a file */

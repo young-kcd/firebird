@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 #ifndef _JRD_ARG_H_
@@ -108,10 +111,6 @@ static CONST SCHAR arg_types1[log_max][10] = {
 
 #if defined (WIN_NT)
 #define LOG_FILE_NAME	"replay.log"
-#else
-#if defined(PC_PLATFORM)
-#define LOG_FILE_NAME	"c:/interbas/replay.log"
-#endif
 #endif /* WIN_NT */
 
 #ifndef LOG_FILE_NAME
@@ -120,7 +119,7 @@ static CONST SCHAR arg_types1[log_max][10] = {
 
 /* these are the modes for opening the log file */
 
-#if (defined PC_PLATFORM || defined WIN_NT)
+#if (defined WIN_NT)
 #define MODE_READ	"rb"
 #define MODE_WRITE	"wb"
 #define MODE_APPEND	"ab"

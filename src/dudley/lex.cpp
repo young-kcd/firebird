@@ -22,6 +22,8 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 #include "firebird.h"
@@ -42,19 +44,15 @@
 #include <unistd.h>
 #endif
 
-#ifdef PC_PLATFORM
-#define SCRATCH		"I"
-#endif
-
 #if defined(WIN_NT)
-#define SCRATCH		"ib"
+#define SCRATCH		"Fb"
 #endif
 
 #ifndef SCRATCH
 #ifdef SMALL_FILE_NAMES
-#define SCRATCH		"gds_q"
+#define SCRATCH		"Fb_q"
 #else
-#define SCRATCH		"gds_query_"
+#define SCRATCH		"Fb_query_"
 #endif
 #endif
 
@@ -241,7 +239,7 @@ void LEX_init( void *file)
  **************************************/
 	TEXT *p, *end;
 
-#if !(defined WIN_NT || defined PC_PLATFORM)
+#if !(defined WIN_NT)
 	trace_file = (IB_FILE *) gds__temp_file(TRUE, SCRATCH, 0);
 #else
 #ifndef __BORLANDC__
@@ -521,7 +519,7 @@ static int nextchar(void)
 	DDL_token.tok_position++;
 	if (c == '\n') {
 		++DDL_line;
-#if (defined WIN_NT || defined PC_PLATFORM)
+#if (defined WIN_NT)
 		/* need to account for extra linefeed on newline */
 
 		DDL_token.tok_position++;
@@ -547,7 +545,7 @@ static void retchar( SSHORT c)
 
 	if (c == '\n') {
 		--DDL_line;
-#if (defined WIN_NT || defined PC_PLATFORM)
+#if (defined WIN_NT)
 		/* account for the extra linefeed in a newline */
 
 		--DDL_token.tok_position;

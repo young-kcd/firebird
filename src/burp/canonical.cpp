@@ -24,9 +24,11 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 /*
-$Id: canonical.cpp,v 1.7 2002-10-30 06:40:45 seanleyne Exp $
+$Id: canonical.cpp,v 1.8 2002-10-31 05:05:53 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -48,11 +50,6 @@ $Id: canonical.cpp,v 1.7 2002-10-30 06:40:45 seanleyne Exp $
 // we have to make the type definition here.
 
 typedef vary* VARY;
-
-
-#ifdef PC_PLATFORM
-extern SLONG ntohl(), htonl();
-#endif
 
 
 extern "C" {

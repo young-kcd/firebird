@@ -15,6 +15,8 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 #ifndef AUTOCONFIG_H
@@ -141,7 +143,6 @@
 #undef sun
 #undef SOLARIS
 #undef hpux
-#undef PC_PLATFORM
 #undef VMS
 #undef AIX
 #define WIN_NT

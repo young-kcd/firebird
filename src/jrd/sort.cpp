@@ -19,11 +19,13 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.13 2002-10-30 06:40:49 seanleyne Exp $
+ * $Id: sort.cpp,v 1.14 2002-10-31 05:05:57 seanleyne Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
  *
  */
 
@@ -170,20 +172,16 @@ static void write_trace(UCHAR *, SFB, ULONG, BLOB_PTR *, ULONG);
 IB_FILE *trace_file = NULL;
 #endif
 
-#ifdef PC_PLATFORM
-#define SCRATCH         "s"
-#endif
-
 #ifdef SMALL_FILE_NAMES
-#define SCRATCH         "gds_s"
+#define SCRATCH         "Fb_s"
 #endif
 
 #if (defined WIN_NT)
-#define SCRATCH         "fb_sort_"
+#define SCRATCH         "Fb_sort_"
 #endif
 
 #ifndef SCRATCH
-#define SCRATCH         "gds_sort_"
+#define SCRATCH         "Fb_sort_"
 #endif
 
 #ifdef WIN_NT
@@ -3094,7 +3092,7 @@ static void write_trace(
 #endif
 
 	if (!trace_file) {
-#if (defined WIN_NT || defined PC_PLATFORM)
+#if (defined WIN_NT)
 		strcpy(file_name, "/interbas/stXXXXXX");
 #else
 		strcpy(file_name, "/interbase/sort_trace_XXXXXX");

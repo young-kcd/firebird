@@ -26,6 +26,8 @@
  * 2002.10.29 Sean Leyne - Removed support for obsolete IPX/SPX Protocol
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 #include "firebird.h"
@@ -792,19 +794,6 @@ void API_ROUTINE isc_set_debug(int flag)
 #endif
 #endif
 }
-
-#ifdef PC_PLATFORM
-void gds__extend_dpb(
-					 SCHAR ** dpb,
-					 SSHORT * dpb_size, SCHAR * user_name, SCHAR * password)
-{
-	isc_expand_dpb(dpb, dpb_size,
-				   gds__dpb_user_name, user_name,
-				   gds__dpb_password, password, 0);
-}
-#endif
-
-
 
 int API_ROUTINE isc_blob_display(
 								 STATUS * status_vector,

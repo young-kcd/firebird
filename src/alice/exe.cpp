@@ -24,11 +24,13 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.4 2001-12-24 02:50:47 tamlin Exp $
+//	$Id: exe.cpp,v 1.5 2002-10-31 05:05:49 seanleyne Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
 //                         readonly databases.
+//
+// 2002.10.30 Sean Leyne - Removed obsolete "PC_PLATFORM" define
 //
 
 #include "firebird.h"

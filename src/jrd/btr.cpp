@@ -20,9 +20,11 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 /*
-$Id: btr.cpp,v 1.8 2002-10-30 06:40:47 seanleyne Exp $
+$Id: btr.cpp,v 1.9 2002-10-31 05:05:56 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -82,11 +84,7 @@ __inline void MOVE_BYTE(UCHAR*& x_from, UCHAR*& x_to)
 	*x_to++ = *x_from++;
 }
 
-#if (defined PC_PLATFORM)
-#define OVERSIZE	(dbb->dbb_page_size + BTN_SIZE + MAX_KEY + sizeof (SLONG) - 1)
-#else
 #define OVERSIZE	(MAX_PAGE_SIZE + BTN_SIZE + MAX_KEY + sizeof (SLONG) - 1) / sizeof (SLONG)
-#endif
 
 typedef union {
 	SLONG n;
@@ -3618,11 +3616,7 @@ static SLONG insert_node(TDBB tdbb,
 	UCHAR prefix, old_prefix, old_length;
 	USHORT delta, l, node_offset;
 	SLONG old_number, split_page, right_sibling;
-#if (defined PC_PLATFORM)
-	SLONG *overflow_page = NULL;
-#else
 	SLONG overflow_page[OVERSIZE];
-#endif
 	UCHAR *p, *q;
 	UCHAR *midpoint;
 	SLONG prefix_total;
@@ -3731,15 +3725,6 @@ static SLONG insert_node(TDBB tdbb,
    mark the buffer as dirty. */
 
 	if (bucket->btr_length + delta > dbb->dbb_page_size) {
-#if (defined PC_PLATFORM)
-		/* allocate an overflow buffer which is large enough,
-		   and set up to release it in case of error */
-
-		overflow_page = (SLONG *) plb::ALL_malloc((SLONG)
-											 OVERSIZE);
-		try {
-
-#endif
 		MOVE_FASTER(bucket, overflow_page, bucket->btr_length);
 		node = (BTN) ((UCHAR *) overflow_page + node_offset);
 		bucket = (BTR) overflow_page;
@@ -3832,20 +3817,6 @@ static SLONG insert_node(TDBB tdbb,
 		}
 
 		CCH_RELEASE(tdbb, window);
-
-#if (defined PC_PLATFORM)
-		if (overflow_page)
-			plb::ALL_free(overflow_page);
-
-	}	// try
-	catch (...) {
-		if (overflow_page) {
-			plb::ALL_free(overflow_page);
-		}
-		ERR_punt();
-	}
-
-#endif
 
 		return 0;
 	}
@@ -4011,11 +3982,6 @@ midpoint = (UCHAR *) new_node;
 			CCH_journal_page(tdbb, window);
 	}
 	CCH_RELEASE(tdbb, window);
-
-#if (defined PC_PLATFORM)
-	if (overflow_page)
-		plb::ALL_free(overflow_page);
-#endif
 
 /* return the page number of the right sibling page */
 

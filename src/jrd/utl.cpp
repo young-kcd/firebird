@@ -35,6 +35,8 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 #ifdef SHLIB_DEFS
@@ -76,16 +78,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#ifdef PC_PLATFORM
-#include <fcntl.h>
-#include <direct.h>
-#else
 #if defined(WIN_NT)
 #include <io.h>
 #include <process.h>
 #else
 #include <sys/file.h>
-#endif
 #endif
 
 #endif /* VMS */
@@ -99,10 +96,6 @@ extern int ib_printf();
 #endif
 
 #ifdef UNIX
-#define GDS_EDIT	gds__edit
-#endif
-
-#ifdef PC_PLATFORM
 #define GDS_EDIT	gds__edit
 #endif
 
@@ -2123,7 +2116,7 @@ static int edit(
  *
  **************************************/
 	TEXT file_name[50], *p, *q;
-#if (defined PC_PLATFORM || defined WIN_NT)
+#if (defined WIN_NT)
 	TEXT buffer[9];
 #else
 	TEXT buffer[25];

@@ -22,6 +22,8 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 #ifndef _WAL_WAL_PROTO_H_
@@ -52,13 +54,6 @@ extern SSHORT	WAL_set_rollover_log (STATUS *, struct wal *, struct logfiles *);
 extern SSHORT	WAL_shutdown (STATUS *, struct wal *, SLONG *, SCHAR *, SLONG *, SLONG *, SSHORT);
 extern SSHORT	WAL_shutdown_old_writer (STATUS *, SCHAR *);
 extern SSHORT	WAL_status (STATUS *, struct wal *, SLONG *, SCHAR *, SLONG *, SLONG *, SLONG *, SCHAR *, SLONG *, SLONG *);
-
-#if (defined PC_PLATFORM)
-#define WAL_attach(a,b,c)			FAILURE
-#define WAL_checkpoint_force(a,b,c,d,e,f)	FAILURE
-#define WAL_checkpoint_recorded(a,b)		FAILURE
-#define WAL_flush(a,b,c,d,e)			FAILURE
-#endif
 
 #ifdef __cplusplus
 }	/* extern "C" */

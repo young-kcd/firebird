@@ -22,6 +22,8 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 #ifndef _JRD_VAL_H_
@@ -61,14 +63,6 @@ public:
 	USHORT fmt_length;
 	USHORT fmt_count;
 	USHORT fmt_version;
-#if (defined PC_PLATFORM)
-	SCHAR fmt_fill[2];			/* IMPORTANT!  THE SOLE PURPOSE OF THIS FIELD
-								   IS TO INSURE THAT THE SUCCEEDING FIELD IS ALIGNED ON A
-								   4 BYTE BOUNDARY.  IT IS NECESSARY BECAUSE THE 16-BIT
-								   COMPILER CANNOT DO THIS ALIGNMENT FOR US.  HAVING
-								   THIS FIELD INSURES THAT A PC_PLATFORM DATABASE IS
-								   IDENTICAL TO ONE ON Windows/NT. */
-#endif
 	Firebird::vector<dsc> fmt_desc;
 	typedef Firebird::vector<dsc>::iterator fmt_desc_iterator;
 };

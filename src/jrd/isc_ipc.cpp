@@ -30,9 +30,11 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
- /* $Id: isc_ipc.cpp,v 1.26 2002-10-30 06:40:48 seanleyne Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.27 2002-10-31 05:05:57 seanleyne Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -199,15 +201,6 @@ typedef struct opn_event {
 static struct opn_event opn_events[MAX_OPN_EVENTS];
 static USHORT opn_event_count;
 static ULONG opn_event_clock;
-#endif
-
-
-/* PC_PLATFORM stuff */
-
-#if (defined PC_PLATFORM)
-#include <signal.h>
-
-#define SIGVEC		SIG_FPTR
 #endif
 
 
@@ -647,7 +640,7 @@ static void isc_signal2(
 
 
 #ifndef BRIDGE
-#if (defined UNIX || defined WIN_NT || (defined PC_PLATFORM))
+#if (defined UNIX || defined WIN_NT)
 #ifndef SYSV_SIGNALS
 static void isc_signal2(
 						int signal_number,
@@ -668,11 +661,8 @@ static void isc_signal2(
 	SIG_FPTR ptr;
 
 /* The signal handler needs the process id */
-
-#ifndef PC_PLATFORM
 	if (!process_id)
 		process_id = getpid();
-#endif
 
 #if defined(WIN_NT)
 /* If not a UNIX signal, just queue for port watcher. */
@@ -698,7 +688,7 @@ static void isc_signal2(
    multiplexor, there is no need to save it. */
 
 	if (!sig) {
-#if (defined WIN_NT || defined PC_PLATFORM)
+#if (defined WIN_NT)
 		ptr = (SIG_FPTR) signal(signal_number, (SIG_FPTR) signal_handler);
 #else
 		SIGVEC vec, old_vec;
@@ -831,14 +821,11 @@ void DLL_EXPORT ISC_signal_init(void)
 	gds__register_cleanup(cleanup, 0);
 
 #ifndef VMS
-#ifndef PC_PLATFORM
 	process_id = getpid();
 
 	THD_MUTEX_INIT(&sig_mutex);
 
 	isc_signal2(SIGFPE, (SIG_FPTR) overflow_handler, 0, SIG_informs);
-
-#endif // !defined(PC_PLATFORM)
 #endif
 
 #endif /* PIPE_CLIENT */

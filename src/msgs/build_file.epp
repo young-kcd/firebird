@@ -23,6 +23,8 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 #include "firebird.h"
@@ -60,14 +62,6 @@ static int file;
 #define PATH_SEPARATOR	'\\'
 #endif
 
-#ifdef PC_PLATFORM
-#include <fcntl.h>
-#include <io.h>
-#define FILENAME	"firebird.msg"
-#define LOCALE_PAT	"%.8s.msg"
-#define PATH_SEPARATOR	'\\'
-#endif
-
 #ifndef FILENAME
 #define FILENAME	"firebird.msg"
 #define LOCALE_PAT	"%.10s.msg"
@@ -78,10 +72,8 @@ static int file;
 #include <file.h>
 #else
 #include <sys/types.h>
-#ifndef PC_PLATFORM
 #ifndef WIN_NT
 #include <sys/file.h>
-#endif
 #endif
 #endif  /* VMS */
 

@@ -35,9 +35,11 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 /*
-$Id: why.c,v 1.20 2002-10-30 06:40:49 seanleyne Exp $
+$Id: why.c,v 1.21 2002-10-31 05:05:57 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -620,13 +622,11 @@ static CONST_IMAGE IMAGE images[] =
 	{"GDSRDB", "GDSRDB"},			/* Rdb Interface */
 #endif
 
-#ifndef	PC_PLATFORM
 #ifndef SINIX-Z
 	{"GDS_A", GDS_A_PATH},
 	{"GDS_B", GDS_B_PATH},
 	{"GDS_C", GDS_C_PATH},
     {"GDS_D", GDS_D_PATH},
-#endif
 #endif
 #ifdef IPSERV
 #ifndef XNET
@@ -6059,11 +6059,7 @@ static STATUS prepare(STATUS * status, TRA transaction)
  **************************************/
 	TRA sub;
 	UCHAR *p, *description;
-#ifdef PC_PLATFORM
-	UCHAR tdr_buffer[256];
-#else
 	UCHAR tdr_buffer[1024];
-#endif
 	USHORT length = 0;
 
 	for (sub = transaction->next; sub; sub = sub->next)

@@ -22,6 +22,8 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 #include "firebird.h"
@@ -82,7 +84,7 @@ static void set_first_user(LGFILE **, LIP, TEXT *);
 #define MOVE_BYTE(x_from,x_to)	*x_to++ = *x_from++;
 
 
-#if (!defined PC_PLATFORM || defined SUPERSERVER)
+#if (defined SUPERSERVER)
 void AIL_add_log(void)
 {
 /**************************************
@@ -865,7 +867,7 @@ void AIL_init_log_page(LIP logp, SLONG seqno)
 }
 
 
-#if (!defined PC_PLATFORM || defined SUPERSERVER)
+#if (defined SUPERSERVER)
 void AIL_journal_tid(void)
 {
 /**************************************
@@ -1471,15 +1473,6 @@ USHORT activate_shadow, SBM * sbm_rec)
 
 	dbb->dbb_wal = 0;
 
-#if (defined PC_PLATFORM)
-
-/* On PC_PLATFORM, there's no log */
-
-	logp->log_flags |= log_no_ail;
-	logp->log_flags &= ~log_add;
-
-#endif
-
 /* If there is no log, just return */
 
 	if ((logp->log_flags & log_no_ail) && (!(logp->log_flags & log_add))) {
@@ -1495,7 +1488,7 @@ USHORT activate_shadow, SBM * sbm_rec)
 }
 
 
-#if (!defined PC_PLATFORM || defined SUPERSERVER)
+#if (defined SUPERSERVER)
 static void process_log_updater(LIP logp)
 {
 /**************************************

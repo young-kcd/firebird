@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: license.h,v 1.25 2002-10-30 06:40:48 seanleyne Exp $
+ * $Id: license.h,v 1.26 2002-10-31 05:05:57 seanleyne Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -55,6 +55,8 @@
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "HP700" port
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
  *
  */
 
@@ -97,11 +99,6 @@
 #else
 #define FB_PLATFORM	"VM"
 #endif
-#endif
-
-#ifdef PC_PLATFORM
-#undef NODE_CHECK
-#define NODE_CHECK(val,resp)
 #endif
 
 #ifdef AIX

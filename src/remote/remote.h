@@ -22,6 +22,8 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 #ifndef REMOTE_REMOTE_H
@@ -34,10 +36,6 @@
 /* Include some apollo include files for tasking */
 
 #if !(defined VMS || defined WIN_NT)
-#if !(defined PC_PLATFORM)
-//#include <pwd.h>
-#include <signal.h>
-#endif
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>

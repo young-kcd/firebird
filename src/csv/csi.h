@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 #ifndef _CSV_CSI_H_
@@ -49,10 +52,6 @@
 
 #ifdef WIN_NT
 #define CSI_FILE		"/interbas/%s.csv"
-#endif
-
-#ifdef PC_PLATFORM
-#define CSI_DEFAULT_SIZE	65535
 #endif
 
 #ifndef CSI_DEFAULT_SIZE

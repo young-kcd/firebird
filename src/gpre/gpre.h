@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.14 2002-10-29 03:37:48 seanleyne Exp $
+ * $Id: gpre.h,v 1.15 2002-10-31 05:05:54 seanleyne Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -51,6 +51,8 @@
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "HP700" port
+ *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
  *
  */
 
@@ -111,8 +113,7 @@ extern "C" {
 /* If the C compiler supports the ANSI const directive, we emit it before
    BLR string definitions */
 
-#if (defined (PC_PLATFORM) || defined (SOLARIS) || \
-	defined (AIX) || defined (WIN_NT))
+#if (defined (SOLARIS) || defined (AIX) || defined (WIN_NT))
 #define CONST_STR	"const "
 #endif
 

@@ -36,9 +36,11 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 /*
-$Id: inet.cpp,v 1.30 2002-10-30 06:40:50 seanleyne Exp $
+$Id: inet.cpp,v 1.31 2002-10-31 05:05:59 seanleyne Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -99,9 +101,7 @@ $Id: inet.cpp,v 1.30 2002-10-30 06:40:50 seanleyne Exp $
 
 #if !(defined VMS || defined WIN_NT)
 #include <netdb.h>
-#if !(defined PC_PLATFORM)
 #include <sys/param.h>
-#endif
 #endif
 
 #ifdef DARWIN
@@ -170,11 +170,6 @@ typedef int socklen_t;
 #define H_ERRNO		WSAGetLastError()
 
 #endif /* WIN_NT */
-
-
-#ifdef PC_PLATFORM
-#define NO_FORK
-#endif
 
 #ifdef SYSV_SIGNALS
 #define NO_ITIMER
@@ -735,7 +730,7 @@ PORT INET_analyze(	TEXT*	file_name,
 		*p++ = CNCT_user_verification;
 		*p++ = 0;
 	}
-#if !(defined VMS || defined PC_PLATFORM)
+#if !(defined VMS)
 	else
 	{
 		/* Communicate group id info to server, as user maybe running under group
@@ -1627,12 +1622,7 @@ static PORT alloc_port( PORT parent)
 	port->port_state = state_pending;
 	REMOTE_get_timeout_params(port, 0, 0);
 
-#if (defined PC_PLATFORM)
-	strcpy(buffer, "localhost");
-#else
 	GETHOSTNAME(buffer, sizeof(buffer));
-#endif
-
 	port->port_host = REMOTE_make_string(buffer);
 	port->port_connection = REMOTE_make_string(buffer);
 	sprintf(buffer, "tcp (%s)", port->port_host->str_data);
@@ -1691,7 +1681,7 @@ static PORT aux_connect(PORT port, PACKET* packet, XDR_INT (*ast)(void))
     int status;
 	PORT new_port;
 	struct sockaddr_in address;
-#if !(defined VMS || defined PC_PLATFORM || defined WIN_NT)
+#if !(defined VMS || defined WIN_NT)
 	int arg;
 #endif
 
@@ -1740,7 +1730,7 @@ static PORT aux_connect(PORT port, PACKET* packet, XDR_INT (*ast)(void))
 		return NULL;
 	}
 
-#if !(defined VMS || defined PC_PLATFORM || defined WIN_NT || defined SINIXZ)
+#if !(defined VMS || defined WIN_NT || defined SINIXZ)
 	if (ast)
 	{
 
@@ -1901,7 +1891,7 @@ static check_host( PORT port, TEXT * host_name, TEXT * user_name)
 }
 #endif
 
-#if !(defined VMS || defined PC_PLATFORM || defined WIN_NT)
+#if !(defined VMS || defined WIN_NT)
 static int check_host(
 					  PORT port,
 					  TEXT * host_name,
@@ -1964,7 +1954,7 @@ static int check_host(
 }
 #endif
 
-#if !(defined PC_PLATFORM || defined WIN_NT)
+#if !(defined WIN_NT)
 static BOOLEAN check_proxy( PORT port, TEXT * host_name, TEXT * user_name)
 {
 /**************************************
@@ -2079,7 +2069,7 @@ static void disconnect( PORT port)
 
 #endif /* !VMS */
 
-#if !(defined VMS || defined PC_PLATFORM || defined WIN_NT)
+#if !(defined VMS || defined WIN_NT)
 	if (port->port_ast) {
 		ISC_signal_cancel(SIGURG, (FPTR_VOID) inet_handler, port);
 	}
@@ -2367,7 +2357,7 @@ static void inet_zero( SCHAR * address, int length)
 		while ((--length) != 0);
 }
 
-#if !(defined PC_PLATFORM || defined WIN_NT)
+#if !(defined WIN_NT)
 static int parse_hosts( TEXT * file_name, TEXT * host_name, TEXT * user_name)
 {
 /*****************************************************************
@@ -2408,7 +2398,7 @@ static int parse_hosts( TEXT * file_name, TEXT * host_name, TEXT * user_name)
 }
 #endif
 
-#if !(defined PC_PLATFORM || defined WIN_NT)
+#if !(defined WIN_NT)
 static int parse_line(
 					  TEXT * entry1,
 					  TEXT * entry2, TEXT * host_name, TEXT * user_name)
@@ -2619,7 +2609,7 @@ static PORT select_accept( PORT main_port)
 	socklen_t l;
 	struct sockaddr_in address;
 	int optval = 1;
-#if !(defined PC_PLATFORM || defined WIN_NT)
+#if !(defined WIN_NT)
 	TEXT msg[64];
 	int n;
 #endif
@@ -2638,7 +2628,7 @@ static PORT select_accept( PORT main_port)
 	setsockopt((SOCKET) port->port_handle, SOL_SOCKET, SO_KEEPALIVE,
 			   (SCHAR *) & optval, sizeof(optval));
 
-#if !(defined SUPERSERVER || defined VMS || defined PC_PLATFORM || defined WIN_NT)
+#if !(defined SUPERSERVER || defined VMS || defined WIN_NT)
 	for (n = 0, port = main_port->port_clients; port;
 		 n++, port = port->port_next);
 	if (n >= INET_max_clients) {
@@ -2713,20 +2703,6 @@ static PORT select_port( PORT main_port, SLCT * selct)
 
 	STOP_PORT_CRITICAL;
 #else
-#ifdef PC_PLATFORM
-/* Check for handle in the FD array */
-
-	for (port = main_port; port; port = port->port_next)
-		for (n = 0; n < selct->slct_fdset.fd_count; n++)
-			if (selct->slct_fdset.fd_array[n] == (int) (port->port_handle)) {
-				port->port_dummy_timeout = port->port_dummy_packet_interval;
-				FD_CLR((int) (port->port_handle), &selct->slct_fdset);
-				--selct->slct_count;
-				return port;
-			}
-			else if (port->port_dummy_timeout < 0)
-				return port;
-#else
 	START_PORT_CRITICAL;
 #ifdef  DEFER_PORT_CLEANUP
 	unhook_disconnected_ports(main_port);
@@ -2746,7 +2722,6 @@ static PORT select_port( PORT main_port, SLCT * selct)
 		}
 	}
 	STOP_PORT_CRITICAL;
-#endif
 #endif
 
 	return NULL;
@@ -3158,7 +3133,7 @@ static u_int inet_getpostn( XDR * xdrs)
 	return (u_int) (xdrs->x_private - xdrs->x_base);
 }
 
-#if !(defined PC_PLATFORM || defined WIN_NT)
+#if !(defined WIN_NT)
 static void inet_handler( PORT port)
 {
 /**************************************

@@ -22,6 +22,8 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+// 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+//
  */
 
 #ifndef _BURP_BURP_H_
@@ -908,11 +910,6 @@ extern struct tgbl *gdgbl;
 
 /* Move the read and write mode declarations in here from burp.c
    so that other files can see them for multivolume opens */
-
-#ifdef PC_PLATFORM
-#define MODE_READ	O_RDONLY | O_BINARY
-#define MODE_WRITE	O_WRONLY | O_BINARY | O_CREAT
-#endif
 
 #ifdef WIN_NT
 #define MODE_READ	GENERIC_READ

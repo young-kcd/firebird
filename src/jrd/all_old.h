@@ -22,6 +22,8 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 #ifndef _JRD_ALL_H_
@@ -38,16 +40,9 @@
    for a length, 8 bytes for a free block, and 2 bytes to 
    allow rounding to a 4 byte boundary */
 
-#if (defined PC_PLATFORM)
-#define MAX_BLOCK	65520
-#else
 #define MAX_BLOCK	(262144 - MIN_ALLOCATION - sizeof (struct hnk) - 8)
-#endif
-
 #define	FUDGE		1
-
 #define SHIFT		SHIFTLONG
-
 #define MIN_ALLOCATION	1024	/* Minimum allocation from operating system */
 
 /* Prevent shared memory pools from fragmenting into very long

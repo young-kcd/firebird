@@ -23,6 +23,8 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 #include "firebird.h"
@@ -167,11 +169,7 @@ int API_ROUTINE perf_format(
 			case 'b':
 			case 'c':
 			case 'x':
-#ifdef PC_PLATFORM
-				sprintf(p, "%ld", delta);
-#else
 				sprintf(p, "%d", delta);
-#endif
 				while (*p)
 					p++;
 				break;
@@ -181,26 +179,15 @@ int API_ROUTINE perf_format(
 #ifdef VMS
 				sprintf(p, "%d.%.2d", delta / 100, (delta % 100));
 #else
-#ifdef PC_PLATFORM
-				sprintf(p, "%ld.%.2ld", (SLONG) (delta / (SLONG) TICK),
-						(SLONG) (((delta % (SLONG) TICK) * 100L) /
-								 (SLONG) TICK));
-#else
 				sprintf(p, "%d.%.2d", delta / TICK,
 						(delta % TICK) * 100 / TICK);
-#endif
 #endif
 				while (*p)
 					p++;
 				break;
 
 			case 'e':
-#ifdef PC_PLATFORM
-				sprintf(p, "%ld.%.2ld", (SLONG) (delta / 100L),
-						(SLONG) (delta % 100L));
-#else
 				sprintf(p, "%d.%.2d", delta / 100, delta % 100);
-#endif
 				while (*p)
 					p++;
 				break;

@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 #include "firebird.h"
@@ -219,9 +222,6 @@ void PRO_create( DBB database, TEXT * name)
 	TEXT s[64];
 	USHORT bpb_length;
 	UCHAR bpb[20], *p;
-#ifdef PC_PLATFORM
-	SLONG lines = 0, last_lines = 0;
-#endif
 
 /* See if procedure is already in use */
 
@@ -229,11 +229,6 @@ void PRO_create( DBB database, TEXT * name)
 
 	blob = NULL;
 	start = QLI_token->tok_position;
-#ifdef PC_PLATFORM
-/* skip over the CR-LF pair for OS/2 */
-
-	start += 2;
-#endif
 	stop = start;
 
 	p = bpb;
@@ -270,25 +265,10 @@ void PRO_create( DBB database, TEXT * name)
 			if (QLI_token->tok_type == tok_eof)
 				SYNTAX_ERROR(350);
 			if (QLI_token->tok_type != tok_eol)
-#ifdef PC_PLATFORM
-			{
 				stop = QLI_token->tok_position + QLI_token->tok_length;
-				last_lines = lines;
-			}
-			else
-				lines++;
-#else
-				stop = QLI_token->tok_position + QLI_token->tok_length;
-#endif
 			LEX_token();
 		}
 
-#ifdef PC_PLATFORM
-		/* adjust the length downward to ignore line feeds when determining length
-		   of the procedure to be read in from the trace file, then add a couple
-		   more bytes for the last CR-LF pair */
-		stop = stop - last_lines + 2;
-#endif
 		LEX_put_procedure(blob, start, stop);
 		gds__close_blob(status_vector, GDS_REF(blob));
 	END_STORE;

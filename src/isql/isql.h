@@ -19,12 +19,14 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.5 2002-06-29 13:39:11 skywalker Exp $
+ * $Id: isql.h,v 1.6 2002-10-31 05:05:56 seanleyne Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
  * Apparently this has to be done in show.e also,
  * but that is for another day :-)
+ *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
  *
  */
 
@@ -288,29 +290,22 @@ typedef struct sqltypes {
 
 #ifdef VMS
 #include <descrip.h>
-#define SCRATCH		"gds_query"
+#define SCRATCH		"Fb_query"
 #define LIB$_INPSTRTRU	0x15821c
 #endif
 
 #ifdef UNIX
 #ifdef SMALL_FILE_NAMES
-#define SCRATCH		"gds_q"
+#define SCRATCH		"Fb_q"
 #else
-#define SCRATCH		"gds_query"
+#define SCRATCH		"Fb_query"
 #endif
 #define UNIX_LINE	1
-#endif
-
-#ifdef PC_PLATFORM
-#include <io.h>
-#define SCRATCH		"I"
-#define UNIX_LINE	1
-#define PC_FILE_SEEK
 #endif
 
 #if (defined WIN_NT)
 #include <io.h>
-#define SCRATCH		"ib"
+#define SCRATCH		"Fb"
 #define UNIX_LINE	1
 #define PC_FILE_SEEK
 #endif

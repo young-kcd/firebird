@@ -22,6 +22,8 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 #ifndef _JRD_PIO_H_
@@ -74,28 +76,6 @@ class fil : public pool_alloc_rpt<SCHAR, type_fil>
 tyepdef fil *FIL;
 
 #endif
-
-#if (defined PC_PLATFORM)
-
-class fil : public pool_alloc_rpt<SCHAR, type_fil>
-{
-    public:
-	struct fil *fil_next;		/* Next file in database */
-	ULONG fil_min_page;			/* Minimum page number in file */
-	ULONG fil_max_page;			/* Maximum page number in file */
-	USHORT fil_sequence;		/* Sequence number of file */
-	USHORT fil_fudge;			/* Fudge factor for page relocation */
-	struct plc *fil_connect;	/* Connection to page server */
-	int fil_desc;
-	int *fil_trace;				/* Trace file, if any */
-	MUTX_T fil_mutex[1];
-	USHORT fil_length;			/* Length of expanded file name */
-	SCHAR fil_string[1];		/* Expanded file name */
-};
-typedef fil *FIL;
-
-#endif
-
 
 #ifdef WIN_NT
 #ifdef SUPERSERVER_V2

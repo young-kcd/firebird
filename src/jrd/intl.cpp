@@ -77,6 +77,8 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
 */
 
 
@@ -195,11 +197,6 @@ static void* intl_back_compat_obj_init_lookup(USHORT, SSHORT, SSHORT);
  */
 #define INTL_MODULE1    "FBINTL"
 #define INTL_MODULE2    "FBINTL2"
-#endif
-
-#if (defined PC_PLATFORM)
-#define INTL_MODULE1 "fbintl.dll"
-#define INTL_MODULE2 "fbintl2.dll"
 #endif
 
 #ifdef WIN_NT

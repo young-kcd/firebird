@@ -37,9 +37,12 @@
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
+ *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 /*
-$Id: exe.cpp,v 1.24 2002-10-29 20:20:36 skidder Exp $
+$Id: exe.cpp,v 1.25 2002-10-31 05:05:57 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -164,10 +167,6 @@ static SLONG memory_count = 0;
 /* macro definitions */
 
 #define NULL_STRING	"*** null ***"
-#ifdef PC_PLATFORM
-/* The PC cannot support that many recursions */
-#define	MAX_CLONES	75
-#endif
 
 #if (defined SUPERSERVER) && (defined WIN_NT || defined SOLARIS_MT)
 #define MAX_CLONES	750

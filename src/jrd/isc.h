@@ -24,9 +24,12 @@
  * 26-Sept-2001 Paul Beach - External File Directory Config. Parameter
  * 17-Oct-2001  Mike Nordell - CPU affinity
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 /*
-$Id: isc.h,v 1.4 2002-10-30 06:40:48 seanleyne Exp $
+$Id: isc.h,v 1.5 2002-10-31 05:05:57 seanleyne Exp $
 */
 #ifndef _JRD_ISC_H_
 #define _JRD_ISC_H_
@@ -248,16 +251,6 @@ typedef struct sh_mem
 	SLONG sh_mem_handle;
 } SH_MEM_T, *SH_MEM;
 #endif /* UNIX */
-
-
-#if (defined PC_PLATFORM)
-/* Temporary solution until PC supports events. */
-
-typedef struct event
-{
-	int event_count;
-} EVENT_T, *EVENT;
-#endif
 
 
 #ifdef WIN_NT

@@ -36,9 +36,11 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 /*
-$Id: cmp.cpp,v 1.16 2002-10-30 06:40:47 seanleyne Exp $
+$Id: cmp.cpp,v 1.17 2002-10-31 05:05:56 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -124,11 +126,7 @@ rel_MAX} RIDS;
 #define MAX_RECURSION		128
 #endif
 
-#if (defined PC_PLATFORM)
-#define MAX_REQUEST_SIZE	65534
-#else
 #define MAX_REQUEST_SIZE	262144
-#endif
 
 #ifdef SHLIB_DEFS
 #undef access

@@ -27,6 +27,8 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+// 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+//
  */
 
 #include "firebird.h"
@@ -95,12 +97,6 @@
 
 #ifndef VMS
 #include <fcntl.h>
-#endif
-
-#ifdef PC_PLATFORM
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <io.h>
 #endif
 
 #if (defined WIN_NT)

@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 #include "firebird.h"
@@ -36,10 +39,6 @@
 #include <sys/mman.h>
 #endif
 #define SYS_ARG		gds_arg_unix
-#endif
-
-#ifdef PC_PLATFORM
-#define SYS_ARG		gds_arg_dos
 #endif
 
 #ifdef WIN_NT

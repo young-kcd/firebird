@@ -24,6 +24,8 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 #ifndef JRD_PERF_H
@@ -33,9 +35,6 @@
 #define NOTIME
 #endif
 #if (defined (_MSC_VER) && defined (WIN32)) || (defined (__BORLANDC__) && defined (__WIN32__))
-#define NOTIME
-#endif
-#if defined (PC_PLATFORM)
 #define NOTIME
 #endif
 

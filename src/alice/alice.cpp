@@ -24,13 +24,15 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.17 2002-10-30 06:40:44 seanleyne Exp $
+//	$Id: alice.cpp,v 1.18 2002-10-31 05:05:49 seanleyne Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
 //                         readonly databases.
 //
 // 2002.10.29 Sean Leyne - Removed support for obsolete "Netware" port
+//
+// 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
 //
 //
 
@@ -68,9 +70,6 @@
 
 #ifdef WIN_NT
 #include <windows.h>
-#endif
-
-#if (defined WIN_NT || defined PC_PLATFORM)
 #include <io.h>
 #endif
 

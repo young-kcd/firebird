@@ -25,6 +25,8 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 #define IO_RETRY	20
@@ -66,10 +68,6 @@
 #include <CoreFoundation/CFURL.h>
 #endif
 
-#if (defined PC_PLATFORM)
-#include <io.h>
-#endif
-
 #if defined(WIN_NT)
 #include <io.h>
 #endif
@@ -88,10 +86,8 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#ifndef PC_PLATFORM
 #ifndef WIN_NT
 #include <sys/file.h>
-#endif
 #endif
 
 #ifndef O_RDWR
@@ -185,7 +181,7 @@ extern int ib_printf();
 #endif
 #endif
 
-#if !(defined VMS || defined PC_PLATFORM || defined WIN_NT || defined linux || defined FREEBSD || defined NETBSD || defined DARWIN )
+#if !(defined VMS || defined WIN_NT || defined linux || defined FREEBSD || defined NETBSD || defined DARWIN )
 extern int errno;
 extern SCHAR *sys_errlist[];
 extern int sys_nerr;
@@ -315,10 +311,6 @@ static void		validate_memory(void);
 #endif
 
 #define ALLOC_OVERHEAD		(ALLOC_HEADER_SIZE + ALLOC_TAILER_SIZE)
-
-#ifdef PC_PLATFORM
-#define GDS_ALLOC_EXTEND_SIZE	2048L
-#endif
 
 #ifndef GDS_ALLOC_EXTEND_SIZE
 #ifdef SUPERCLIENT
@@ -1753,7 +1745,6 @@ SLONG API_ROUTINE gds__interprete(char *s, STATUS ** vector)
 		break;
 
 	case gds_arg_unix:
-#ifndef PC_PLATFORM
 		if (code > 0 && code < sys_nerr && (p = (TEXT*)sys_errlist[code]))
 			strcpy(s, p);
 		else if (code == 60)
@@ -1761,7 +1752,6 @@ SLONG API_ROUTINE gds__interprete(char *s, STATUS ** vector)
 		else if (code == 61)
 			strcpy(s, "connection refused");
 		else
-#endif
 			sprintf(s, "unknown unix error %ld", code);	/* TXNN */
 		break;
 
@@ -3318,7 +3308,7 @@ void *gds__tmp_file2(
 		*p++ = *q++;
 
 #ifndef VMS
-#if (defined PC_PLATFORM || defined WIN_NT)
+#if (defined WIN_NT)
 	if (p > file_name && p[-1] != '\\' && p[-1] != '/' && p < end)
 		*p++ = '\\';
 #else

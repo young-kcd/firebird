@@ -36,6 +36,8 @@
  * 2002.10.29 Sean Leyne - Removed support for obsolete IPX/SPX Protocol
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 #ifdef SHLIB_DEFS
@@ -213,21 +215,6 @@ extern struct passwd *getpwnam(), *getpwuid();
 #endif	// UNIX
 
 
-/* MS/DOS / OS2 / NLM Junk */
-#ifdef PC_PLATFORM
-#include <stdlib.h>
-
-#define PARSE_FILENAME
-#define ISC_DATABASE	"ISC_DATABASE"	/* default database directory
-										   environment variable */
-
-/* definition of toupper () */
-#ifndef __CTYPE_H
-#include <ctype.h>
-#endif /* __CTYPE_H */
-
-#endif /* PC_PLATFORM */
-
 /* Windows NT stuff */
 #ifdef WIN_NT
 #include <windows.h>
@@ -271,11 +258,6 @@ static BOOLEAN get_mounts(MNT *, TEXT *, IB_FILE *);
 #endif
 #endif
 static BOOLEAN get_server(TEXT *, TEXT *);
-#if (defined PC_PLATFORM)
-static void string_parse(TEXT *, TEXT **, TEXT **, TEXT **, TEXT *);
-static void convert_slashes(char oldslash, char newslash, char *string);
-#endif
-
 
 #ifdef SHLIB_DEFS
 #define strlen		(*_libgds_strlen)
@@ -568,16 +550,6 @@ int DLL_EXPORT ISC_analyze_tcp(TEXT * file_name, TEXT * node_name)
 	if (!(p = strchr(file_name, INET_FLAG)))
 		return FALSE;
 
-#if (defined PC_PLATFORM)
-/* for DOS and OS/2, introduce a restriction against one-character
-   machine names as a kludge to prevent the situation of
-   trying to attach to C: as a remote machine -- there has
-   got to be a better way to resolve this */
-
-	if (p - file_name == 1)
-		return FALSE;
-#endif
-
 #ifdef WIN_NT
 /* For Windows NT, insure that a single character node name does
    not conflict with an existing drive letter. */
@@ -719,140 +691,6 @@ int ISC_expand_filename(TEXT * from_buff, USHORT length, TEXT * to_buff)
 	return expand_filename2(from_buff, length, to_buff);
 }
 #endif
-
-
-#if (defined PC_PLATFORM)
-int ISC_expand_filename(
-						TEXT * file_name,
-						USHORT file_length, TEXT * expanded_name)
-{
-/**************************************
- *
- *	I S C _ e x p a n d _ f i l e n a m e	( P C _ P L A T F O R M )
- *
- **************************************
- *
- * Functional description
- *      This looks for patterns in the file name like:
- *
- *          host:[\|/]path[\|/]          - TCP/IP node
- *
- *      If no host is specified, it checks for an ISC_DATABASE
- *      environment variable and uses that.
- *      If there is no slash after the node name, one is inserted.
- *      If there is no trailing slash after an ISC_DATABASE path,
- *      one is inserted.
- *
- *      The final result is an expanded path name.
- *
- **************************************/
-	TEXT c, *p, *in, *out, *default_directory, *colon, *colon2, *atsign;
-
-#ifdef STACK_EFFICIENT
-	TEXT *local = (TEXT *) gds__alloc((SLONG) (sizeof(TEXT) * MAXPATHLEN));
-#else /* STACK_EFFICIENT */
-	TEXT local[MAXPATHLEN];
-#endif /* STACK_EFFICIENT */
-
-/* if file_length is specified, make sure the string is null terminated */
-
-	if (!file_length)
-		file_length = strlen(file_name);
-
-	strncpy(local, file_name, file_length);
-	local[file_length] = 0;
-	in = local;
-	out = expanded_name;
-
-/* If there is an explicit node name of the form \\DOPEY or //DOPEY
-   assume named pipes.  Translate forward slashes to back slashes
-   and return with no further processing. */
-
-	if ((in[0] == '\\' && in[1] == '\\') || (in[0] == '/' && in[1] == '/')) {
-		strcpy(out, in);
-
-		/* Translate forward slashes to back slashes */
-		convert_slashes('/', '\\', out);
-		return file_length;
-	}
-
-/* do some parsing of the path to look for colons (nodes), two colons
-   (netware nodes), an at sign and a colon (spx), slashes and backslashes */
-
-	c = 0;
-	colon2 = NULL;
-	string_parse(in, &colon, &colon2, &atsign, &c);
-
-/* if there were two colons, netware has no slash so don't try any
-   expansion;   if there was only one colon, make sure the character
-   after the colon is a slash and if not, insert one;   if there was
-   an at sign, just copy the string */
-
-	if (atsign) {
-		strcpy(out, in);
-#ifdef STACK_EFFICIENT
-		gds__free((SLONG *) local);
-#endif /* STACK_EFFICIENT */
-		return file_length;
-	}
-	else if (colon) {
-			for (p = in; *p; p++) {
-				*out++ = *p;
-				if (p == colon && !colon2 && p[1] != '/' && p[1] != '\\' && c)
-					*out++ = c;
-			}
-	}
-	else {
-		/* assuming the filename is not already remote, look for
-		   an environment variable that will provide a default
-		   remote path specification */
-
-		if (default_directory = getenv(ISC_DATABASE)) {
-
-			/* once again, do some parsing, this time of the default path */
-
-			string_parse(default_directory, &colon, &colon2, &atsign, &c);
-
-			/* move the default path, putting in a trailing slash, if
-			   necessary, and putting in a slash at the start of the
-			   file name after the node name, if necessary */
-
-			for (p = default_directory; *p; p++) {
-				*out++ = *p;
-				if (p == colon && !colon2 && p[1] != '/' && p[1] != '\\' && c)
-					*out++ = c;
-			}
-			if (out[-1] != '/' && out[-1] != '\\' && c)
-				*out++ = c;
-		}
-
-		for (p = in; *p;)
-			*out++ = *p++;
-	}
-
-	*out = '\0';
-
-/* If there is an explicit node name of the form \\DOPEY or //DOPEY
-   assume named pipes and translate forward slashes to back slashes.
-   Otherwise, translate back slashes to forward. The end result
-   is a path with consistent separators. */
-
-	if ((expanded_name[0] == '\\' && expanded_name[1] == '\\') ||
-		(expanded_name[0] == '/' && expanded_name[1] == '/')) {
-		convert_slashes('/', '\\', expanded_name);
-	}
-	else {
-		convert_slashes('\\', '/', expanded_name);
-	}
-
-
-#ifdef STACK_EFFICIENT
-	gds__free((SLONG *) local);
-#endif /* STACK_EFFICIENT */
-
-	return (int) (out - expanded_name);
-}
-#endif /* PC_PLATFORM */
 
 
 #ifdef VMS
@@ -2099,57 +1937,3 @@ static void share_name_from_unc(
 	strcat(expanded_name, file_name + 2);
 }
 #endif /* WIN_NT */
-
-
-#if (defined PC_PLATFORM)
-static void string_parse(
-						 TEXT * string,
-						 TEXT ** colon,
-						 TEXT ** colon2, TEXT ** atsign, TEXT * slashchar)
-{
-/**************************************
- *
- *      s t r i n g _ p a r s e
- *
- **************************************
- *
- * Functional description
- *      Get the first and second colon and the first at sign
- *      positions from a string, plus do some verifications.
- *      Also return whether there's a slash or backslash
- *      in the string.
- *
- **************************************/
-	TEXT *p;
-
-/* if there were both an at sign and a colon, and if the at sign follows
-   the colon, the at sign should be considered part of the file name and
-   not part of an spx node name */
-
-	*colon = strchr(string, ':');
-	*atsign = strchr(string, '@');
-	if (*atsign && *colon && (*atsign > *colon))
-		*atsign = NULL;
-
-/* if there was a colon and no at sign, look for a second colon, which
-   implies a netware node */
-
-	if (*colon && !(*atsign))
-		*colon2 = strchr(*colon + 1, ':');
-	for (p = string; *p && !(*slashchar); p++)
-		if (*p == '/' || *p == '\\')
-			*slashchar = *p;
-}
-
-static void convert_slashes(char oldslash, char newslash, char *string)
-{
-	char *p;
-
-	for (p = string; *p != 0; p++) {
-		if (*p == oldslash)
-			*p = newslash;
-	}
-}
-
-#endif /* PC_PLATFORM */
-

@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 #include "firebird.h"
@@ -42,10 +45,6 @@
 
 #ifdef UNIX
 #define TARGET "help/help.gdb"
-#endif
-
-#ifdef PC_PLATFORM
-#define TARGET "help\\help.gdb"
 #endif
 
 #if (defined WIN_NT)

@@ -22,6 +22,8 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 #include "firebird.h"
@@ -59,10 +61,6 @@
 
 extern "C" {
 
-
-#if (defined PC_PLATFORM)
-#define getpid()	0
-#endif
 
 static void bug_lck(TEXT*);
 static void check_lock(LCK, USHORT);

@@ -22,6 +22,8 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ *
  */
 
 #ifndef JRD_SBM_H
@@ -31,14 +33,8 @@
 #include "../include/fb_blk.h"
 #include "../include/fb_vector.h"
 
-#if (defined PC_PLATFORM)
-#define BUNCH_BITS	4
-#define BUNCH		SSHORT
-#else
 #define BUNCH_BITS	LOG2_BITS_PER_LONG
 #define BUNCH		SLONG
-#endif
-
 #define SEGMENT_BITS	10
 #define BITS_BUNCH		(1 << BUNCH_BITS)
 #define BITS_SEGMENT	(1 << SEGMENT_BITS)
