@@ -550,6 +550,11 @@ class jrd_prc : public pool_alloc_rpt<SCHAR, type_prc>
 #define PRC_blocking          16	/* Blocking someone from dropping procedure */
 #define PRC_create            32	/* Newly created */
 #define PRC_being_altered     64	/* Procedure is getting altered */
+									// This flag is used to make sure that MET_remove_procedure
+									// does not delete and remove procedure block from cache
+									// so dfw.epp:modify_procedure() can flip procedure body without 
+									// invalidating procedure pointers from other parts of metadata cache
+
 #define PRC_check_existence	  128	/* Existence lock released */
 
 #define MAX_PROC_ALTER        64	/* No. of times an in-cache procedure can be altered */

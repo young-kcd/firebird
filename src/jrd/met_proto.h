@@ -85,7 +85,7 @@ void		MET_release_triggers(Jrd::thread_db*, Jrd::trig_vec**);
 #ifdef DEV_BUILD
 void		MET_verify_cache(Jrd::thread_db*);
 #endif
-bool		MET_clear_cache(Jrd::thread_db*, Jrd::jrd_prc*);
+void		MET_clear_cache(Jrd::thread_db*);
 bool		MET_procedure_in_use(Jrd::thread_db*, Jrd::jrd_prc*);
 void		MET_remove_procedure(Jrd::thread_db*, int, Jrd::jrd_prc*);
 void		MET_revoke(Jrd::thread_db*, Jrd::jrd_tra*, const TEXT*, const TEXT*, const TEXT*);

@@ -2333,7 +2333,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			wait = (transaction->tra_flags & TRA_nowait) ? FALSE : TRUE;
 			// Try to clear trigger cache to release lock
 			if (index->idl_count)
-				MET_clear_cache(tdbb, NULL);
+				MET_clear_cache(tdbb);
 			if (index->idl_count ||
 				!LCK_lock_non_blocking(tdbb, index->idl_lock, LCK_EX, wait))
 			{
@@ -2673,7 +2673,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 		wait = (transaction->tra_flags & TRA_nowait) ? FALSE : TRUE;
 		if (relation->rel_use_count)
-			MET_clear_cache(tdbb, NULL);
+			MET_clear_cache(tdbb);
 		if (relation->rel_use_count ||
 			(relation->rel_existence_lock &&
 			 !LCK_convert_non_blocking(tdbb, relation->rel_existence_lock,

@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.107 2004-04-10 19:03:42 skidder Exp $
+$Id: met.epp,v 1.108 2004-04-10 19:46:47 skidder Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -332,7 +332,7 @@ void MET_verify_cache(thread_db* tdbb) {
 }
 #endif
 
-bool MET_clear_cache(thread_db* tdbb, jrd_prc* proc)
+void MET_clear_cache(thread_db* tdbb)
 {
 /**************************************
  *
@@ -341,9 +341,8 @@ bool MET_clear_cache(thread_db* tdbb, jrd_prc* proc)
  **************************************
  *
  * Functional description
- *      Try to release all resources locked by cached triggers
- *		do not remove proc procedure from cache because it will be
- *		handled by the caller
+ *      Remove all unused objects from metadata cache to 
+ *      release resources they use
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -368,8 +367,6 @@ bool MET_clear_cache(thread_db* tdbb, jrd_prc* proc)
 		release_cached_triggers(tdbb, relation->rel_post_modify);
 	}
  
-	bool result = true;
-
 	vec* procedures = dbb->dbb_procedures;
 	if (procedures) {
 		jrd_prc* procedure;
@@ -396,17 +393,10 @@ bool MET_clear_cache(thread_db* tdbb, jrd_prc* proc)
 		{
 			if ( (procedure = (jrd_prc*)(*ptr)) && procedure->prc_request &&
 				 !(procedure->prc_flags & PRC_obsolete) && 
-				 procedure->prc_use_count != procedure->prc_int_use_count
-				 && procedure != proc )
+				 procedure->prc_use_count != procedure->prc_int_use_count )
 			{
 				adjust_dependencies(procedure);
 			}
-		}
-		
-		if (proc) {
-			result = proc->prc_use_count == proc->prc_int_use_count;
-			if (proc->prc_request)
-				adjust_dependencies(proc);
 		}
 		
 		/* Deallocate all used requests */		
@@ -419,8 +409,7 @@ bool MET_clear_cache(thread_db* tdbb, jrd_prc* proc)
 				if ( procedure->prc_request && 
 					 !(procedure->prc_flags & PRC_obsolete) && 
 					 procedure->prc_int_use_count >= 0 &&  
-					 procedure->prc_use_count == procedure->prc_int_use_count && 
-					 procedure != proc ) 
+					 procedure->prc_use_count == procedure->prc_int_use_count ) 
 				{
 					CMP_release(tdbb, procedure->prc_request);
 					procedure->prc_request = NULL;
@@ -441,9 +430,8 @@ bool MET_clear_cache(thread_db* tdbb, jrd_prc* proc)
 				ptr < end; ptr++) 
 		{
 			if ( (procedure = (jrd_prc*)(*ptr)) &&
-				 (procedure->prc_flags & PRC_obsolete) && (procedure != proc) ) 
+				 (procedure->prc_flags & PRC_obsolete) ) 
 			{
-				procedure->prc_flags &= ~PRC_being_altered; // Just a safety sake
 				MET_remove_procedure(tdbb, procedure->prc_id, procedure);			  
 			}
 		}
@@ -452,7 +440,6 @@ bool MET_clear_cache(thread_db* tdbb, jrd_prc* proc)
 #ifdef DEV_BUILD
 	MET_verify_cache(tdbb);
 #endif
-	return result;
 }
 
 bool MET_procedure_in_use(thread_db* tdbb, jrd_prc* proc)
