@@ -1,3 +1,169 @@
+2003-02-14 15:55  brodsom
+
+	* firebird2/src/: gpre/form.cpp, gpre/par.cpp, jrd/common.h,
+	jrd/termtype.h, qli/all.cpp, qli/command.cpp, qli/form.cpp,
+	qli/mov.cpp, qli/parse.cpp, qli/picstr.cpp, qli/show.epp:
+	
+	Remove some of the PYXIS remains
+
+2003-02-14 15:27  eku
+
+	* firebird2/src/jrd/event.cpp:
+	
+	Fixed "assignment to non-pointer type `SLONG' from NULL"
+
+2003-02-14 15:26  eku
+
+	* firebird2/src/remote/inet.cpp:
+	
+	Fixed "argument to non-pointer type `int' from NULL" and "NULL used
+	in arithmetic".
+
+2003-02-14 15:23  eku
+
+	* firebird2/src/lock/lock.cpp:
+	
+	Fixed "argument to non-pointer type `long int' from NULL"
+
+2003-02-14 15:22  eku
+
+	* firebird2/src/dsql/parse.y:
+	
+	Fixed "'SHARED' redefined"
+
+2003-02-14 15:20  eku
+
+	* firebird2/src/dsql/misc_func.h:
+	
+	Fixed "`static' is not at beginning of declaration"
+
+2003-02-14 15:05  eku
+
+	* firebird2/src/intl/ld.c:
+	
+	Added needed header file to provide prototypes for sprintf and
+	printf.
+
+2003-02-14 14:47  eku
+
+	* firebird2/src/intl/ld.h:
+	
+	Fixed nested comment.
+
+2003-02-14 10:26  dimitr
+
+	* firebird2/src/: jrd/exe.cpp, intl/ld.c, intl/ld2.c:
+	
+	Cleanup.
+
+2003-02-14 10:12  dimitr
+
+	* firebird2/builds/win32/msvc6/: engine.dsp, engine_classic.dsp:
+	
+	Updated project files.
+
+2003-02-14 07:55  eku
+
+	* firebird2/src/jrd/intl_builtin.cpp:
+	
+	GCC 3.2.1 complains about nested comments.
+
+2003-02-14 03:48  brodsom
+
+	* firebird2/src/: jrd/gds.cpp, jrd/intl.cpp, jrd/thd.cpp,
+	v5_examples/align.h, v5_examples/api16.c, v5_examples/apifull.c,
+	v5_examples/dynfull.e, v5_examples/example.h,
+	v5_examples/winevent.c:
+	
+	Remove __BORLANDC__ define
+
+2003-02-14 03:44  brodsom
+
+	* firebird2/src/: gpre/gpre.cpp, iscguard/iscguard.cpp,
+	isql/isql.epp, qli/lex.cpp:
+	
+	Remove __BORLANDC__ define
+
+2003-02-14 03:41  brodsom
+
+	* firebird2/src/: dudley/lex.cpp, extlib/ib_udf.h:
+	
+	Remove __BORLANDC__ define
+
+2003-02-14 03:23  brodsom
+
+	* firebird2/src/: remote/server.cpp, jrd/y-valve.cpp,
+	jrd/isc_sync.cpp, jrd/jrd.cpp, jrd/log.cpp, jrd/opt.cpp,
+	jrd/sort.cpp, jrd/utl.cpp, jrd/why.cpp, jrd/ail.cpp, jrd/blb.cpp,
+	jrd/common.h, jrd/cvt2.cpp, jrd/evl.cpp, jrd/gds.cpp,
+	jrd/isc_file.cpp, jrd/isc_ipc.cpp:
+	
+	Remove PIPE and STACK defines (PIPE_SERVER, PIPE_CLIENT,
+	PIPE_LIBRARY, PIPE_SERVER_YVALUE, PIPE_BRIDGE_TO_V3, V3, V3_PATH,
+	ALTPIPE)(STACK_EFFICIENT, STACK_REDUCTION)
+
+2003-02-14 03:23  brodsom
+
+	* firebird2/src/remote/inet_server.cpp:
+	
+	Change jrd/pwd.h to jrd/jrd_pwd.h
+
+2003-02-14 03:22  brodsom
+
+	* firebird2/src/lock/print.cpp:
+	
+	Change jrd/time.h to jrd/jrd_time.h
+
+2003-02-14 03:19  brodsom
+
+	* firebird2/src/: csv/csi.cpp, csv/csi.h, csv/css.cpp,
+	csv/css_proto.h, csv/csv.cpp, dsql/dsql.cpp:
+	
+	Remove PIPE and STACK defines (PIPE_SERVER, PIPE_CLIENT,
+	PIPE_LIBRARY, PIPE_SERVER_YVALUE, PIPE_BRIDGE_TO_V3, V3, V3_PATH,
+	ALTPIPE)(STACK_EFFICIENT, STACK_REDUCTION)
+
+2003-02-14 03:14  brodsom
+
+	* firebird2/src/utilities/: cmd_util.cpp, dba.epp, dba_full.epp,
+	ppg.cpp, rebuild.cpp:
+	
+	Change jrd/time.h and jrd/pwd.h to jrd/jrd_time.h and jrd/jrd_pwd.h
+
+2003-02-14 03:12  brodsom
+
+	* firebird2/src/journal/: server.e, misc.cpp, rebuild.e:
+	
+	Change jrd/time.h to jrd/jrd_time.h
+
+2003-02-14 03:11  brodsom
+
+	* firebird2/src/alice/alice.h:
+	
+	Remove __cplusplus
+
+2003-02-14 03:08  brodsom
+
+	* firebird2/src/jrd/dmp.cpp:
+	
+	Change jrd/time to jrd/jrd_time.h
+
+2003-02-14 03:05  brodsom
+
+	* firebird2/src/jrd/svc.h:
+	
+	Restore inline keyword, needed to avoid duplicated defs.
+
+2003-02-14 00:39  bellardo
+
+	* firebird2/src/: gpre/gpre.h, common/classes/alloc.h:
+	
+	Added some of the "inlines" back.  If the functions are really not
+	meant to be inlined they need to be moved from the header file to
+	an appropiate source file, and their declarations placed in the
+	header file.  Otherwise we get an overabundance of multiply defined
+	symbols.
+
 2003-02-14 00:18  bellardo
 
 	* firebird2/src/jrd/time.h:
