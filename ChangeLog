@@ -1,3 +1,22 @@
+2004-07-21 13:02  brodsom
+
+	* firebird2/doc/README.build.mingw.html (1.13):
+	
+	-Update
+
+2004-07-21 12:34  brodsom
+
+	* firebird2/src/isql/: extract.epp (1.40), isql.epp (1.90):
+	
+	-Correction (Found by Claudio)
+
+2004-07-21 08:33  hvlad
+
+	* firebird2/src/jrd/cvt.cpp (1.48):
+	
+	Fix for lost least significant bits of value when rounding
+	floating-point value to  int \ int64 value
+
 2004-07-21 00:56  skidder
 
 	* firebird2/src/jrd/evl.cpp (1.97):
