@@ -248,7 +248,7 @@ void IDX_create_index(
 
 	sort_context* sort_handle = SORT_init(tdbb->tdbb_status_vector,
 							key_length + sizeof(index_sort_record),
-							2, key_desc, callback, callback_arg,
+							2, 1, key_desc, callback, callback_arg,
 							tdbb->tdbb_attachment, 0);
 
 	if (!sort_handle)

@@ -43,7 +43,7 @@ ULONG	SORT_read_block(ISC_STATUS*, Jrd::sort_work_file*, ULONG, BLOB_PTR *,
 
 void	SORT_error(ISC_STATUS*, Jrd::sort_work_file*, TEXT *, ISC_STATUS, int);
 void	SORT_fini(Jrd::sort_context*, Jrd::Attachment*);
-Jrd::sort_context*	SORT_init(ISC_STATUS*, USHORT, USHORT, const Jrd::sort_key_def*,
+Jrd::sort_context*	SORT_init(ISC_STATUS*, USHORT, USHORT, USHORT, const Jrd::sort_key_def*,
 						Jrd::FPTR_REJECT_DUP_CALLBACK, void*, Jrd::Attachment*, UINT64);
 void	SORT_put(ISC_STATUS*, Jrd::sort_context*, ULONG **);
 void	SORT_shutdown(Jrd::Attachment*);

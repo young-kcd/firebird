@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.69 2004-10-04 08:14:57 robocop Exp $
+ * $Id: sort.cpp,v 1.70 2004-11-01 07:51:54 hvlad Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -691,6 +691,7 @@ void SORT_get(ISC_STATUS* status_vector, sort_context* scb, ULONG** record_addre
 sort_context* SORT_init(ISC_STATUS* status_vector,
 			  USHORT record_length,
 			  USHORT keys,
+			  USHORT unique_keys,
 			  const sort_key_def* key_description,
 			  FPTR_REJECT_DUP_CALLBACK call_back,
 			  void* user_arg,
@@ -711,6 +712,10 @@ sort_context* SORT_init(ISC_STATUS* status_vector,
  *      with three argument: the two records and the user supplied
  *      argument.  If the call back routine returns TRUE, the second
  *      duplicate record is eliminated.
+ *
+ * hvlad: when duplicates are eliminating only first unique_keys will be 
+ *		compared. This is used at creation of unique index since sort key 
+ *		includes index key (which must be unique) and record numbers
  *
  **************************************/
 
@@ -739,6 +744,7 @@ sort_context* SORT_init(ISC_STATUS* status_vector,
 
 	scb->scb_max_records = max_records;
 
+	fb_assert(unique_keys <= keys);
 	sort_key_def* p = scb->scb_description;
 	const sort_key_def* q = key_description;
 	do {
@@ -747,6 +753,13 @@ sort_context* SORT_init(ISC_STATUS* status_vector,
 
 	--p;
 	scb->scb_key_length =
+		ROUNDUP(p->skd_offset + p->skd_length, sizeof(SLONG)) >> SHIFTLONG;
+
+	while(unique_keys < scb->scb_keys) {
+		p--;
+		unique_keys++;
+	}
+	scb->scb_unique_length =
 		ROUNDUP(p->skd_offset + p->skd_length, sizeof(SLONG)) >> SHIFTLONG;
 
 	// Next, try to allocate a "big block". How big? Big enough!
@@ -2073,7 +2086,8 @@ static sort_record* get_merge(merge_control* merge, sort_context* scb
 
 		p = merge->mrg_record_a->sort_record_key;
 		q = merge->mrg_record_b->sort_record_key;
-		l = scb->scb_key_length;
+		//l = scb->scb_key_length;
+		l = scb->scb_unique_length;
 
 		DO_32_COMPARE(p, q, l);
 
@@ -2105,6 +2119,10 @@ static sort_record* get_merge(merge_control* merge, sort_context* scb
 			diddle_key((UCHAR *) merge->mrg_record_b, scb, true);
 #endif
 		}
+
+		l = scb->scb_key_length - scb->scb_unique_length;
+		if (l != 0)
+			DO_32_COMPARE(p, q, l);
 
 #ifdef SCROLLABLE_CURSORS
 		if (mode == RSE_get_forward && p[-1] < q[-1])
@@ -2866,13 +2884,10 @@ static void sort(sort_context* scb)
 			continue;
 		const SORTP* p = *i;
 		const SORTP* q = *j;
-		ULONG tl = scb->scb_longs - 1;
-		while (tl && *p == *q) {
-			p++;
-			q++;
-			tl--;
-		}
-		if ( (p > *i) && (ULONG) (p - *i) >= scb->scb_key_length ) {
+
+		ULONG l = scb->scb_unique_length;
+		DO_32_COMPARE(p, q, l);
+		if(l == 0) {
 #ifdef SCROLLABLE_CURSORS
 			SORT_diddle_key((UCHAR *) * i, scb, false);
 			SORT_diddle_key((UCHAR *) * j, scb, false);

@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.81 2004-10-30 05:12:52 robocop Exp $
+ * $Id: rse.cpp,v 1.82 2004-11-01 07:51:54 hvlad Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -3149,6 +3149,7 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, IRSB_SORT impure, UINT
 
 	sort_context* handle = SORT_init(tdbb->tdbb_status_vector,
 						   map->smb_length,
+						   map->smb_keys,
 						   map->smb_keys,
 						   map->smb_key_desc,
          				   ((map->smb_flags & SMB_project) ? reject : NULL), 0,

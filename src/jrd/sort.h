@@ -266,6 +266,7 @@ struct sort_context
 	USHORT scb_longs;			/* Length of record in longwords */
 	ULONG scb_keys;				/* Number of keys */
 	ULONG scb_key_length;		/* Key length */
+	ULONG scb_unique_length;	/* Unique key length, used when duplicates eliminated */
 	ULONG scb_records;			/* Number of records */
 	UINT64 scb_max_records;		/* Maximum number of records to store */
 	sort_work_file*	scb_sfb;		/* ALLOC: List of scratch files, if open */

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.117 2004-10-30 19:41:53 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.118 2004-11-01 07:51:54 hvlad Exp $ 
  */
 
 /*
@@ -3746,7 +3746,7 @@ static void init_agg_distinct(thread_db* tdbb, const jrd_nod* node)
 
 	sort_context* handle =
 		SORT_init(tdbb->tdbb_status_vector,
-				  ROUNDUP_LONG(sort_key->skd_length), 1, sort_key,
+				  ROUNDUP_LONG(sort_key->skd_length), 1, 1, sort_key,
 				  reject_duplicate, 0,
 				  tdbb->tdbb_attachment, 0);
 
