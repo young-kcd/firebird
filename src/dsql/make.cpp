@@ -1082,8 +1082,9 @@ void MAKE_desc_from_list( DSC * desc, NOD node)
 	UCHAR max_exact_dtype = 0;
 	SCHAR maxscale;
 	USHORT cnvlength, maxlength, maxtextlength = 0;
-	USHORT firstarg = 1, all_exact = 1, any_approx = 0, text_in_list = 0, varying_in_list = 0;
-	USHORT all_datetime = 1, max_datetime_dtype = 0;
+	BOOLEAN firstarg = TRUE, all_exact = TRUE, any_approx = FALSE, text_in_list = FALSE;
+	BOOLEAN varying_in_list = FALSE, all_datetime = TRUE, max_datetime_dtype = FALSE;
+
 	SSHORT ttype;	
 
 	/*------------------------------------------------------- 
@@ -1096,61 +1097,49 @@ void MAKE_desc_from_list( DSC * desc, NOD node)
     
 	/* Walk through arguments list */
 	arg = node->nod_arg;
-	for (end = arg + node->nod_count; arg < end; arg++)
-	{
+	for (end = arg + node->nod_count; arg < end; arg++) {
 		/* ignore NULL value from walking */
 		tnod = *arg;
-		if (tnod->nod_type == nod_null || tnod->nod_type == nod_parameter)
+		if (tnod->nod_type == nod_null || tnod->nod_type == nod_parameter) {
 			continue;
+		}
 		MAKE_desc(&desc1, *arg);
-		if (firstarg)
-		{
+		if (firstarg) {
 			desc2 = desc1;
 			maxscale = desc1.dsc_scale;
 			maxlength = desc1.dsc_length;
-			firstarg = 0;
+			firstarg = FALSE;
 		}
-		if (!any_approx)
-		{
+		if (!any_approx) {
 			any_approx = DTYPE_IS_APPROX(desc1.dsc_dtype);
 		}
-		if (DTYPE_IS_EXACT(desc1.dsc_dtype))
-		{
-			if (desc1.dsc_dtype > max_exact_dtype)
-			{
+		if (DTYPE_IS_EXACT(desc1.dsc_dtype)) {
+			if (desc1.dsc_dtype > max_exact_dtype) {
 				max_exact_dtype = desc1.dsc_dtype;
 			}
 		} 
-		else	  
-		{
-			all_exact = 0;       
+		else {
+			all_exact = FALSE;
 		}
 		/* scale is negative so check less than < ! */
-		if (desc1.dsc_scale < maxscale)
-		{
+		if (desc1.dsc_scale < maxscale) {
 			maxscale = desc1.dsc_scale;
 		}
-		if (desc1.dsc_length > maxlength)
-		{
+		if (desc1.dsc_length > maxlength) {
 			maxlength = desc1.dsc_length;
 		}
-		if (desc1.dsc_dtype <= dtype_any_text)
-		{ 
-			if (desc1.dsc_dtype == dtype_text)
-			{
+		if (desc1.dsc_dtype <= dtype_any_text) { 
+			if (desc1.dsc_dtype == dtype_text) {
 				cnvlength = desc1.dsc_length;
 			}
-			if (desc1.dsc_dtype == dtype_cstring)
-			{
+			if (desc1.dsc_dtype == dtype_cstring) {
 				cnvlength = desc1.dsc_length - 1;
 			}
-			if (desc1.dsc_dtype == dtype_varying) 
-			{
+			if (desc1.dsc_dtype == dtype_varying) {
 				cnvlength = desc1.dsc_length - sizeof (USHORT);
-				varying_in_list = 1;
+				varying_in_list = TRUE;
 			}
-			if (cnvlength > maxtextlength)
-			{
+			if (cnvlength > maxtextlength) {
 				maxtextlength = cnvlength;
 			}
 
@@ -1161,91 +1150,72 @@ void MAKE_desc_from_list( DSC * desc, NOD node)
 			 * Maybe first according SQL-standard which has an order UTF32,UTF16,UTF8
 			 * then by a Firebird specified order
 			 */
-			if (!text_in_list)
-			{
+			if (!text_in_list) {
 				ttype = desc1.dsc_ttype;
 			}
-			text_in_list = 1;
-			if (desc1.dsc_dtype == dtype_varying)
-			{
-				varying_in_list = 1;
+			text_in_list = TRUE;
+			if (desc1.dsc_dtype == dtype_varying) {
+				varying_in_list = TRUE;
 			}
 		}
-		else
-		{
+		else {
 			/* Get max needed-length for not text types suchs as int64,timestamp etc.. */
 			cnvlength = DSC_convert_to_text_length(desc1.dsc_dtype);
-			if (cnvlength > maxtextlength)
-			{
+			if (cnvlength > maxtextlength) {
 				maxtextlength = cnvlength;
 			}
 		}
-		if (DTYPE_IS_DATE(desc1.dsc_dtype))
-		{
+		if (DTYPE_IS_DATE(desc1.dsc_dtype)) {
 			if (desc1.dsc_dtype == dtype_timestamp && 
-				max_datetime_dtype != dtype_timestamp)
-			{
+				max_datetime_dtype != dtype_timestamp) {
 				max_datetime_dtype = dtype_timestamp;
 			}
-			if (desc1.dsc_dtype == dtype_sql_date) 
-			{ 
+			if (desc1.dsc_dtype == dtype_sql_date) { 
 				if (max_datetime_dtype != dtype_timestamp &&
-					max_datetime_dtype != dtype_sql_time) 
-				{
+					max_datetime_dtype != dtype_sql_time) {
 					max_datetime_dtype = dtype_sql_date;
 				}
-				else
-				{
-					if (max_datetime_dtype == dtype_sql_time)
-					{
+				else {
+					if (max_datetime_dtype == dtype_sql_time) {
 						/* Well raise exception or just cast everything to varchar ? */
-						text_in_list = 1;
-						varying_in_list = 1;		  
+						text_in_list = TRUE;
+						varying_in_list = TRUE;		  
 					}
 				}
 			}
-			if (desc1.dsc_dtype == dtype_sql_time) 
-			{ 
+			if (desc1.dsc_dtype == dtype_sql_time) { 
 				if (max_datetime_dtype != dtype_timestamp &&
-					max_datetime_dtype != dtype_sql_date) 
-				{
+					max_datetime_dtype != dtype_sql_date) {
 					max_datetime_dtype = dtype_sql_time;
 				}
-				else
-				{
-					if (max_datetime_dtype == dtype_sql_date)
-					{
+				else {
+					if (max_datetime_dtype == dtype_sql_date) {
 						/* Well raise exception or just cast everything to varchar ? */
-						text_in_list = 1;
-						varying_in_list = 1;		  
+						text_in_list = TRUE;
+						varying_in_list = TRUE;		  
 					}
 				}
 			}
 		}
-		else
-		{
-			all_datetime = 0;
+		else {
+			all_datetime = FALSE;
 		}
 	}
 
 	/* If we haven't had a type at all then all values are NULL and/or parameter nodes */
-	if (firstarg) 
-	{
+	if (firstarg) {
 		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 804,
 				  gds_arg_gds, gds_dsql_datatype_err, 0);
 	}
 
 	desc->dsc_flags = DSC_nullable;
 	/* If any of the arguments are from type text use a text type */
-	if (text_in_list)
-	{
-		if (varying_in_list) 
-		{
+	if (text_in_list) {
+		if (varying_in_list) {
 			desc->dsc_dtype = dtype_varying;
 			maxtextlength += sizeof(USHORT);
 		}
-		else
-		{
+		else {
 			desc->dsc_dtype = dtype_text;
 		}
 		desc->dsc_ttype = ttype;  /* same as dsc_subtype */
@@ -1253,16 +1223,14 @@ void MAKE_desc_from_list( DSC * desc, NOD node)
 		desc->dsc_scale = 0;
 		return;
 	}
-	if (all_exact)
-	{
+	if (all_exact) {
 		desc->dsc_dtype = max_exact_dtype;
 		desc->dsc_sub_type = dsc_num_type_numeric;
 		desc->dsc_scale = maxscale;
 		desc->dsc_length = maxlength;
 		return;
 	}
-	if (any_approx)
-	{
+	if (any_approx) {
 		desc->dsc_dtype  = dtype_double;
 		desc->dsc_length = sizeof(double);
 		desc->dsc_scale = 0;
@@ -1270,15 +1238,14 @@ void MAKE_desc_from_list( DSC * desc, NOD node)
 		/*desc->dsc_flags = 0;*/
 		return;
 	}
-	if (all_datetime)
-	{
+	if (all_datetime) {
 		desc->dsc_dtype  = max_datetime_dtype;
 		desc->dsc_length = type_lengths[desc->dsc_dtype];
 		desc->dsc_scale = 0;
 		desc->dsc_sub_type = 0;
 		return;
 	}
-	/* Any other handeling use 1st argument as descriptor */		
+	/* For any other handling, use the 1st argument as descriptor */		
 	/* According SQL standard handled by db-engine */		
 	desc->dsc_dtype = desc2.dsc_dtype;
 	desc->dsc_scale = desc2.dsc_scale;
