@@ -15,13 +15,12 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.linux:	$(VERSION)	$(PLATFORM)
-#$Id: prefix.linux,v 1.15 2003-03-05 15:42:26 brodsom Exp $
+#$Id: prefix.linux,v 1.16 2003-03-15 16:52:04 skidder Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major cleanup
 
-# The foillowing has been commented out since gcc 3.2 has some problems
-# when optimization is higher than -O1 AND target arch is greater than i386
-#PROD_FLAGS=-O3 -march=i686 -DNDEBUG -DLINUX -pipe -MMD -fPIC
-PROD_FLAGS=-O3 -march=i386 -DNDEBUG -DLINUX -pipe -MMD -fPIC
+# -fno-builtin is used because GCC 3.0-3.2.2 had bug with builtins expansion
+# you may remove it if engine is getting compiled with any other GCC version
+PROD_FLAGS=-O3 -march=i686 -fno-builtin -DNDEBUG -DLINUX -pipe -MMD -fPIC
 DEV_FLAGS=-ggdb -DLINUX -DDEBUG_GDS_ALLOC -pipe -MMD -p -fPIC -Wall -Wno-switch
 
 OS_ServerFiles=inet_server.cpp
