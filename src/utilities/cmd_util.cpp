@@ -53,16 +53,14 @@
 extern "C" {
 
 
-void CMD_UTIL_put_svc_status(
-							 STATUS * svc_status,
-							 USHORT facility,
-							 USHORT errcode,
-							 USHORT arg1_t,
-void *arg1,
-USHORT arg2_t,
-void *arg2,
-USHORT arg3_t,
-void *arg3, USHORT arg4_t, void *arg4, USHORT arg5_t, void *arg5)
+void CMD_UTIL_put_svc_status(STATUS* svc_status,
+							 USHORT  facility,
+							 USHORT  errcode,
+							 USHORT arg1_t, const void* arg1,
+							 USHORT arg2_t, const void* arg2,
+							 USHORT arg3_t, const void* arg3,
+							 USHORT arg4_t, const void* arg4,
+							 USHORT arg5_t, const void* arg5)
 {
 /**************************************
  *
@@ -89,7 +87,7 @@ void *arg3, USHORT arg4_t, void *arg4, USHORT arg5_t, void *arg5)
 	tmp_status_len = 3;
 
 	if (arg1) {
-		SVC_STATUS_ARG(status, arg1_t, reinterpret_cast < char *>(arg1));
+		SVC_STATUS_ARG(status, arg1_t, arg1);
 		tmp_status_len += 2;
 	}
 	if (arg2) {

@@ -29,7 +29,14 @@
 extern "C" {
 #endif
 
-extern void	CMD_UTIL_put_svc_status (STATUS *, USHORT, USHORT, USHORT, void *, USHORT, void *, USHORT, void *, USHORT, void *, USHORT, void *);
+void CMD_UTIL_put_svc_status(STATUS* svc_status,
+							 USHORT  facility,
+							 USHORT  errcode,
+							 USHORT arg1_t, const void* arg1,
+							 USHORT arg2_t, const void* arg2,
+							 USHORT arg3_t, const void* arg3,
+							 USHORT arg4_t, const void* arg4,
+							 USHORT arg5_t, const void* arg5);
 
 #ifdef __cplusplus
 }	/* extern "C" */
