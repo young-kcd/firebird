@@ -1,3 +1,16 @@
+2004-11-05 20:33  dimitr
+
+	* firebird2/src/iscguard/iscguard.cpp (1.38):
+	
+	Fix by Eugene Kilin.
+
+2004-11-05 09:01  hvlad
+
+	* firebird2/src/jrd/: common.h (1.128), dfw.epp (1.136), jrd.h
+	(1.118), tra.cpp (1.92), vio.cpp (1.118):
+	
+	New garbage collector thread implementation
+
 2004-11-04 20:38  skidder
 
 	* firebird2/src/common/classes/timestamp.cpp (1.3):
