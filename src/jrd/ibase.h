@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.18 2002-12-02 08:25:17 eku Exp $
+$Id: ibase.h,v 1.19 2002-12-03 03:55:08 seanleyne Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -783,6 +783,7 @@ ISC_INT64 ISC_EXPORT isc_portable_integer(unsigned char ISC_FAR*,
 
 #define sec_protocol_tcpip            1
 #define sec_protocol_netbeui          2
+/* sec_protocol_spx          3  -- Deprecated Protocol   */
 #define sec_protocol_local            4
 
 typedef struct {
