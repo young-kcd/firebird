@@ -149,10 +149,6 @@ SOURCE=..\..\..\src\jrd\isc_file.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\isc_win32.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\llio.cpp
 # End Source File
 # Begin Source File

@@ -117,10 +117,6 @@ SOURCE=..\..\..\src\jrd\isc_sync.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\isc_win32.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\thd.cpp
 # End Source File
 # End Group

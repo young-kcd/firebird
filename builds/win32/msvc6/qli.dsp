@@ -210,28 +210,10 @@ SOURCE=..\..\..\src\jrd\iberr.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\isc.cpp
-
-!IF  "$(CFG)" == "qli - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "qli - Win32 Release"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\isc_file.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\isc_win32.cpp
-
-!IF  "$(CFG)" == "qli - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "qli - Win32 Release"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
