@@ -79,7 +79,9 @@ static struct ipccfg WND_hdrtbl[] = {
 	ISCCFG_PRIORITY, -1, reinterpret_cast < SLONG * >(&WND_priority), 0, 0,
 	ISCCFG_MEMMIN, -1, reinterpret_cast < SLONG * >(&WND_working_min), 0, 0,
 	ISCCFG_MEMMAX, -1, reinterpret_cast < SLONG * >(&WND_working_max), 0, 0,
+#ifdef SUPERSERVER
 	ISCCFG_TRACE_POOLS, 0, &trace_pools, 0, 0,
+#endif
 	NULL, -1, NULL, 0, 0
 };
 
