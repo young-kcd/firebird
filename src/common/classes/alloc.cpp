@@ -23,7 +23,7 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *
- *  $Id: alloc.cpp,v 1.65 2004-08-26 11:04:14 robocop Exp $
+ *  $Id: alloc.cpp,v 1.66 2004-08-28 05:18:42 skidder Exp $
  *
  */
 
@@ -513,6 +513,8 @@ void* MemoryPool::allocate_nothrow(size_t size, SSHORT type
 #else
 	size = MEM_ALIGN(size);
 #endif
+	// Blocks with internal length of zero make allocator unhappy
+	if (!size) size = MEM_ALIGN(1);
 
 	if (parent_redirect) {
 		// We do not synchronize redirect_amount here. In the worst case we redirect slightly 
@@ -688,7 +690,7 @@ void* MemoryPool::allocate(size_t size, SSHORT type
 	return result;
 }
 
-bool MemoryPool::verify_pool() {
+bool MemoryPool::verify_pool(bool fast_checks_only) {
 	lock.enter();
 	mem_assert(!pendingFree || needSpare); // needSpare flag should be set if we are in 
 										// a critically low memory condition
@@ -760,20 +762,50 @@ bool MemoryPool::verify_pool() {
 			}
 			
 			mem_assert(blk->small.mbk_prev_length == prev_length); // Prev is correct ?
-			bool foundTree = false;
-			if (freeBlocks.locate(blk->small.mbk_length)) {
-				for (FreeMemoryBlock* freeBlk = freeBlocks.current().bli_fragments; freeBlk; freeBlk = freeBlk->fbk_next_fragment)
-					if (ptrToBlock(freeBlk) == blk) {
-						mem_assert(!foundTree); // Block may be present in free blocks tree only once
-						foundTree = true;
-					}
-			}
 			bool foundPending = false;
 			for (PendingFreeBlock *tmp = pendingFree; tmp; tmp = tmp->next)
 				if (tmp == (PendingFreeBlock *)((char*)blk + MEM_ALIGN(sizeof(MemoryBlock)))) {
 					mem_assert(!foundPending); // Block may be in pending list only one time
 					foundPending = true;
 				}
+			bool foundTree = false;
+			if (freeBlocks.locate(blk->small.mbk_length)) {
+				// Check previous fragment pointer if block is marked as unused
+				if (!(blk->mbk_flags & MBK_USED)) {
+					if (blk->mbk_prev_fragment) {
+						// See if previous fragment seems kosher
+						MemoryBlock *prev_fragment_blk = ptrToBlock(blk->mbk_prev_fragment);
+						mem_assert(
+							!(prev_fragment_blk->mbk_flags & (MBK_LARGE | MBK_PARENT | MBK_USED | MBK_DELAYED)) &&
+							prev_fragment_blk->small.mbk_length);
+					}
+					else {
+						// This is either the head or the list or block freom pendingFree list
+						mem_assert(foundPending || ptrToBlock(freeBlocks.current().bli_fragments) == blk);
+					}
+
+					// See if next fragment seems kosher 
+					// (note that FreeMemoryBlock has the same structure as PendingFreeBlock so we can do this check)
+					FreeMemoryBlock *next_fragment = blockToPtr<FreeMemoryBlock*>(blk)->fbk_next_fragment;
+					if (next_fragment) {
+						MemoryBlock *next_fragment_blk = ptrToBlock(next_fragment);
+						mem_assert(
+							!(next_fragment_blk->mbk_flags & (MBK_LARGE | MBK_PARENT | MBK_USED | MBK_DELAYED)) &&
+							next_fragment_blk->small.mbk_length);
+					}
+				}
+
+				if (fast_checks_only) {
+					foundTree = !(blk->mbk_flags & MBK_USED) && 
+						(blk->mbk_prev_fragment || ptrToBlock(freeBlocks.current().bli_fragments) == blk);
+				} else {
+					for (FreeMemoryBlock* freeBlk = freeBlocks.current().bli_fragments; freeBlk; freeBlk = freeBlk->fbk_next_fragment)
+						if (ptrToBlock(freeBlk) == blk) {
+							mem_assert(!foundTree); // Block may be present in free blocks tree only once
+							foundTree = true;
+						}
+				}
+			}
 			mem_assert(!(foundTree && foundPending)); // Block shouldn't be present both in
 												   // pending list and in tree list
 			
@@ -1232,6 +1264,7 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 					// Block is small enough to be returned AS IS
 					temp->mbk_flags |= MBK_USED;
 					temp->mbk_type = type;
+					temp->mbk_pool = this;
 #ifdef DEBUG_GDS_ALLOC
 					temp->mbk_file = file;
 					temp->mbk_line = line;
@@ -1306,7 +1339,8 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 			blk->small.mbk_length = size;
 			// Put the rest to the tree of free blocks
 			MemoryBlock *rest = next_block(blk);
-			rest->mbk_pool = this;
+			// Will be initialized (to NULL) by addFreeBlock code
+			// rest->mbk_pool = this;
 			rest->mbk_flags = MBK_LAST;
 			rest->small.mbk_length = EXTENT_SIZE - MEM_ALIGN(sizeof(MemoryExtent)) - 
 				MEM_ALIGN(sizeof(MemoryBlock)) - size - MEM_ALIGN(sizeof(MemoryBlock));
