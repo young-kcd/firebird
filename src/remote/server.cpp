@@ -3455,7 +3455,7 @@ ISC_STATUS port::que_events(P_EVENT * stuff, PACKET* send)
 				   GDS_REF(rdb->rdb_handle),
 				   GDS_REF(event->rvnt_id),
 				   stuff->p_event_items.cstr_length,
-				   GDS_VAL(stuff->p_event_items.cstr_address),
+				   reinterpret_cast<char *>(GDS_VAL(stuff->p_event_items.cstr_address)),
 				   reinterpret_cast<void (*)()>(server_ast),
 				   GDS_VAL(event));
 	THREAD_ENTER;

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.41 2003-08-06 16:30:44 skidder Exp $
+$Id: ibase.h,v 1.42 2003-08-07 10:37:33 aafemt Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -688,8 +688,8 @@ ISC_STATUS ISC_EXPORT isc_put_slice(ISC_STATUS *,
 ISC_STATUS ISC_EXPORT isc_que_events(ISC_STATUS *,
 									 isc_db_handle *,
 									 ISC_LONG *,
-									 ISC_USHORT,
-									 ISC_UCHAR *,
+									 short,
+									 char *,
 									 isc_callback,
 									 void *);
 

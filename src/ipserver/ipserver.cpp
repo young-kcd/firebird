@@ -2856,7 +2856,7 @@ static void que_events( ICC icc)
 							GDS_REF(idb->idb_handle),
 							GDS_REF(event->ivnt_handle),
 							length,
-							reinterpret_cast<UCHAR*>(GDS_VAL(events)),
+							reinterpret_cast<char*>(GDS_VAL(events)),
 							reinterpret_cast < void (*)() > (event_ast),
 							GDS_VAL(event));
 	if (!result)
