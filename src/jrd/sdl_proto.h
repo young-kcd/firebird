@@ -25,7 +25,7 @@
 #define JRD_SDL_PROTO_H
 
 namespace Jrd {
-	class internal_array_desc;
+	struct internal_array_desc;
 }
 
 UCHAR* SDL_clone_sdl(const UCHAR*, size_t, UCHAR*, size_t);
