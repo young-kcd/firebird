@@ -1,3 +1,70 @@
+2004-04-03 01:31  arnobrinkman
+
+	* firebird2/src/burp/burp.h (1.17.2.2):
+	
+	Bugfix: VIEWs are restored on storage order, this meant if we've a
+	VIEW2 which depends on a other VIEW1 then VIEW2 can be restored
+	before VIEW1 is restored.  Result of this is wrong DB_KEY_LENGTH
+	value for VIEW2.  This fix recalculates db_key_length for all VIEWs
+	when all relations are restored.
+
+2004-04-03 01:25  arnobrinkman
+
+	* firebird2/src/burp/restore.epp (1.31.2.2):
+	
+	Bugfix: VIEWs are restored on storage order, this meant if we've a
+	VIEW2 which depends on a other VIEW1 then VIEW2 can be restored
+	before VIEW1 is restored.  Result of this is wrong DB_KEY_LENGTH
+	value for VIEW2.  This fix recalculates db_key_length for all VIEWs
+	when all relations are restored.
+
+2004-04-03 01:14  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp (1.72.2.7):
+	
+	Fix wrong mapping for Count(*) in having clause when used with IN,
+	ANY, SOME, ALL
+
+2004-04-02 03:27  skidder
+
+	* firebird2/src/remote/interface.cpp (1.48.2.2):
+	
+	Backport fix for IBO crashy behavior (SF#919246)
+
+2004-04-01 05:33  skidder
+
+	* firebird2/src/jrd/opt.cpp (1.73.2.17):
+	
+	Backport fix for nulls placement ignored in some queries using
+	UNION, GROUP BY and DISTINCT clauses(SF#918653)
+
+2004-04-01 05:03  skidder
+
+	* firebird2/src/jrd/jrd.h (1.42.2.4):
+	
+	Backport jmpbuf fix for non-Linux/WIN_NT SS builds
+
+2004-04-01 04:43  skidder
+
+	* firebird2/src/jrd/blb.cpp (1.30.2.3):
+	
+	Backport fix for intensive transaction-level memory leak on
+	conversion from string to blob
+
+2004-04-01 04:36  skidder
+
+	* firebird2/src/jrd/: blb.cpp (1.30.2.2), cch.cpp (1.35.2.2),
+	dpm.epp (1.15.2.2):
+	
+	Backport fixes for all problems with readonly databases and
+	transactions mentioned in SF#750664
+
+2004-04-01 04:20  skidder
+
+	* firebird2/src/jrd/pag.cpp (1.37.2.6):
+	
+	Backport fix for memory leak in isc_database_info
+
 2004-03-31 07:56  skidder
 
 	* firebird2/src/jrd/: dfw.epp (1.45.2.5), met.epp (1.61.2.3),
