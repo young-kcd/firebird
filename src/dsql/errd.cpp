@@ -147,19 +147,20 @@ BOOLEAN ERRD_post_warning(STATUS status, ...)
  *
  **************************************/
 	va_list args;
-	int type, len;
 
 #pragma FB_COMPILER_MESSAGE("Warning, using STATUS array to hold pointers to STATUSes!")
+// meaning; if sizeof(long) != sizeof(void*), this code WILL crash something.
 
-	STATUS *status_vector;
-	int indx = 0, warning_indx = 0;
 
 	VA_START(args, status);
-	status_vector = ((TSQL) GET_THREAD_DATA)->tsql_status;
+
+	STATUS* status_vector = ((TSQL) GET_THREAD_DATA)->tsql_status;
+	int indx = 0;
 
 	if (status_vector[0] != gds_arg_gds ||
 		(status_vector[0] == gds_arg_gds && status_vector[1] == 0 &&
-		 status_vector[2] != gds_arg_warning)) {
+		 status_vector[2] != gds_arg_warning))
+	{
 		/* this is a blank status vector */
 		status_vector[0] = gds_arg_gds;
 		status_vector[1] = 0;
@@ -169,64 +170,69 @@ BOOLEAN ERRD_post_warning(STATUS status, ...)
 	else
 	{
 		/* find end of a status vector */
+		int warning_indx = 0;
 		PARSE_STATUS(status_vector, indx, warning_indx);
-		if (indx)
+		if (indx) {
 			--indx;
+		}
 	}
 
 /* stuff the warning */
-	if (indx + 3 < ISC_STATUS_LENGTH) {
-		status_vector[indx++] = gds_arg_warning;
-		status_vector[indx++] = status;
-		while ((type = va_arg(args, int)) && (indx + 3 < ISC_STATUS_LENGTH)) {
-
-            char* pszTmp = NULL;
-			switch (status_vector[indx++] = type) {
-			case gds_arg_warning:
-				status_vector[indx++] = (STATUS) va_arg(args, STATUS);
-				break;
-
-			case gds_arg_string: 
-                pszTmp = va_arg(args, char*);
-                if (strlen(pszTmp) >= MAX_ERRSTR_LEN) {
-                    status_vector[(indx - 1)] = gds_arg_cstring;
-                    status_vector[indx++] = MAX_ERRSTR_LEN;
-                }
-                status_vector[indx++] = reinterpret_cast<long>(ERR_cstring(pszTmp));
-				break;
-
-			case gds_arg_interpreted: 
-                pszTmp = va_arg(args, char*);
-                status_vector[indx++] = reinterpret_cast<long>(ERR_cstring(pszTmp));
-				break;
-
-			case gds_arg_cstring:
-                len = va_arg(args, int);
-                status_vector[indx++] =
-                    (STATUS) (len >= MAX_ERRSTR_LEN) ? MAX_ERRSTR_LEN : len;
-                pszTmp = va_arg(args, char*);
-                status_vector[indx++] = reinterpret_cast<long>(ERR_cstring(pszTmp));
-				break;
-
-			case gds_arg_number:
-				status_vector[indx++] = (STATUS) va_arg(args, SLONG);
-				break;
-
-			case gds_arg_vms:
-			case gds_arg_unix:
-			case gds_arg_win32:
-			default:
-				status_vector[indx++] = (STATUS) va_arg(args, int);
-				break;
-			}
-        }
-		status_vector[indx] = gds_arg_end;
-		return TRUE;
-	}
-	else {
+	if (indx + 3 >= ISC_STATUS_LENGTH)
+	{
 		/* not enough free space */
 		return FALSE;
 	}
+
+	status_vector[indx++] = gds_arg_warning;
+	status_vector[indx++] = status;
+	int type, len;
+	while ((type = va_arg(args, int)) && (indx + 3 < ISC_STATUS_LENGTH))
+	{
+
+        char* pszTmp = NULL;
+		switch (status_vector[indx++] = type)
+		{
+		case gds_arg_warning:
+			status_vector[indx++] = (STATUS) va_arg(args, STATUS);
+			break;
+
+		case gds_arg_string: 
+            pszTmp = va_arg(args, char*);
+            if (strlen(pszTmp) >= MAX_ERRSTR_LEN) {
+                status_vector[(indx - 1)] = gds_arg_cstring;
+                status_vector[indx++] = MAX_ERRSTR_LEN;
+            }
+            status_vector[indx++] = reinterpret_cast<long>(ERR_cstring(pszTmp));
+			break;
+
+		case gds_arg_interpreted: 
+            pszTmp = va_arg(args, char*);
+            status_vector[indx++] = reinterpret_cast<long>(ERR_cstring(pszTmp));
+			break;
+
+		case gds_arg_cstring:
+            len = va_arg(args, int);
+            status_vector[indx++] =
+                (STATUS) (len >= MAX_ERRSTR_LEN) ? MAX_ERRSTR_LEN : len;
+            pszTmp = va_arg(args, char*);
+            status_vector[indx++] = reinterpret_cast<long>(ERR_cstring(pszTmp));
+			break;
+
+		case gds_arg_number:
+			status_vector[indx++] = (STATUS) va_arg(args, SLONG);
+			break;
+
+		case gds_arg_vms:
+		case gds_arg_unix:
+		case gds_arg_win32:
+		default:
+			status_vector[indx++] = (STATUS) va_arg(args, int);
+			break;
+		}
+    }
+	status_vector[indx] = gds_arg_end;
+	return TRUE;
 }
 
 

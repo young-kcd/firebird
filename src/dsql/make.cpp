@@ -112,7 +112,7 @@ DSQL_NOD MAKE_constant(STR constant, int numeric_flag)
 		node->nod_desc.dsc_scale = static_cast < char >(constant->str_length);	/* Scale has no use for double */
 		node->nod_desc.dsc_sub_type = 0;
 		node->nod_desc.dsc_length = sizeof(double);
-		node->nod_desc.dsc_address = constant->str_data;
+		node->nod_desc.dsc_address = reinterpret_cast<UCHAR*>(constant->str_data);
 		node->nod_desc.dsc_ttype = ttype_ascii;
 		node->nod_arg[0] = (DSQL_NOD) constant;
 	}
@@ -125,7 +125,7 @@ DSQL_NOD MAKE_constant(STR constant, int numeric_flag)
 		   4-byte alignment.    -- ChrisJ 1999-02-20 */
 
 		UINT64 value = 0;
-		UCHAR *p = constant->str_data;
+		const char* p = constant->str_data;
 
 		node->nod_desc.dsc_dtype = dtype_int64;
 		node->nod_desc.dsc_length = sizeof(SINT64);
@@ -182,7 +182,7 @@ DSQL_NOD MAKE_constant(STR constant, int numeric_flag)
 		tmp.dsc_flags = 0;
 		tmp.dsc_ttype = ttype_ascii;
 		tmp.dsc_length = static_cast<USHORT>(constant->str_length);
-		tmp.dsc_address = constant->str_data;
+		tmp.dsc_address = reinterpret_cast<UCHAR*>(constant->str_data);
 
 		/* Now invoke the string_to_date/time/timestamp routines */
 
@@ -198,7 +198,7 @@ DSQL_NOD MAKE_constant(STR constant, int numeric_flag)
 		node->nod_desc.dsc_scale = 0;
 		node->nod_desc.dsc_length =
 			static_cast<USHORT>(constant->str_length);
-		node->nod_desc.dsc_address = constant->str_data;
+		node->nod_desc.dsc_address = reinterpret_cast<UCHAR*>(constant->str_data);
 		node->nod_desc.dsc_ttype = ttype_dynamic;
 		/* carry a pointer to the constant to resolve character set in pass1 */
 		node->nod_arg[0] = (DSQL_NOD) constant;
@@ -235,7 +235,7 @@ DSQL_NOD MAKE_str_constant(STR constant, SSHORT character_set)
 	node->nod_desc.dsc_sub_type = 0;
 	node->nod_desc.dsc_scale = 0;
 	node->nod_desc.dsc_length = static_cast<USHORT>(constant->str_length);
-	node->nod_desc.dsc_address = constant->str_data;
+	node->nod_desc.dsc_address = reinterpret_cast<UCHAR*>(constant->str_data);
 	node->nod_desc.dsc_ttype = character_set;
 /* carry a pointer to the constant to resolve character set in pass1 */
 	node->nod_arg[0] = (DSQL_NOD) constant;
@@ -244,7 +244,7 @@ DSQL_NOD MAKE_str_constant(STR constant, SSHORT character_set)
 }
 
 
-STR MAKE_cstring(CONST SCHAR * str)
+STR MAKE_cstring(const char* str)
 {
 /**************************************
  *
@@ -258,7 +258,7 @@ STR MAKE_cstring(CONST SCHAR * str)
  *
  **************************************/
 
-	return MAKE_string((UCHAR *) str, strlen(str));
+	return MAKE_string(str, strlen(str));
 }
 
 
@@ -1449,7 +1449,7 @@ PAR MAKE_parameter(DSQL_MSG message, USHORT sqlda_flag, USHORT null_flag, USHORT
 	return parameter;
 }
 
-STR MAKE_string(CONST UCHAR * str, int length)
+STR MAKE_string(const char* str, int length)
 {
 /**************************************
  *
@@ -1506,7 +1506,7 @@ SYM MAKE_symbol(DBB database,
 }
 
 
-STR MAKE_tagged_string(CONST UCHAR * str_, int length, CONST TEXT * charset)
+STR MAKE_tagged_string(const char* str_, size_t length, const char* charset)
 {
 /**************************************
  *
@@ -1519,17 +1519,14 @@ STR MAKE_tagged_string(CONST UCHAR * str_, int length, CONST TEXT * charset)
  *	Which is tagged with a character set descriptor.
  *
  **************************************/
-	UCHAR *p;
-	STR string;
-	TSQL tdsql;
 
-	tdsql = GET_THREAD_DATA;
 
-	string = FB_NEW_RPT(*tdsql->tsql_default, length) str;
-	string->str_charset = const_cast < char *>(charset);
-	string->str_length = length;
-	for (p = string->str_data; length; --length)
-		*p++ = *str_++;
+	TSQL tdsql = GET_THREAD_DATA;
+
+	STR string = FB_NEW_RPT(*tdsql->tsql_default, length) str;
+	string->str_charset = charset;
+	string->str_length  = length;
+	memcpy(string->str_data, str_, length);
 
 	return string;
 }
@@ -1548,7 +1545,8 @@ DSQL_NOD MAKE_trigger_type(DSQL_NOD prefix_node, DSQL_NOD suffix_node)
  *
  **************************************/
 
-	long prefix = (long) prefix_node->nod_arg[0], suffix = (long) suffix_node->nod_arg[0];
+	long prefix = (long) prefix_node->nod_arg[0];
+	long suffix = (long) suffix_node->nod_arg[0];
 	delete prefix_node;
 	delete suffix_node;
 	return MAKE_constant((STR) (prefix + suffix - 1), CONSTANT_SLONG);

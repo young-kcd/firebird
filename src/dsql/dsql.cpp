@@ -156,7 +156,7 @@ static UCHAR*	var_info(DSQL_MSG, CONST UCHAR*, CONST UCHAR*, UCHAR*, UCHAR*, USH
 
 extern DSQL_NOD DSQL_parse;
 
-static USHORT init_flag;
+static bool init_flag = false;
 static DBB databases;
 static OPN open_cursors;
 static CONST SCHAR db_hdr_info_items[] = {
@@ -286,9 +286,9 @@ extern "C" {
 //////////////////////////////////////////////////////////////////
 
 STATUS DLL_EXPORT
-GDS_DSQL_ALLOCATE(	STATUS*				user_status,
-					FRBRD**	db_handle,
-					struct dsql_req**	req_handle)
+GDS_DSQL_ALLOCATE(	STATUS*    user_status,
+					FRBRD**    db_handle,
+					dsql_req** req_handle)
 {
 	return GDS_DSQL_ALLOCATE_CPP(user_status, db_handle, req_handle);
 }
@@ -296,19 +296,19 @@ GDS_DSQL_ALLOCATE(	STATUS*				user_status,
 //////////////////////////////////////////////////////////////////
 
 STATUS DLL_EXPORT
-GDS_DSQL_EXECUTE(	STATUS*			user_status,
-					WHY_TRA*		trans_handle,
-					struct dsql_req**	req_handle,
-					USHORT			in_blr_length,
-					SCHAR*			in_blr,
-					USHORT			in_msg_type,
-					USHORT			in_msg_length,
-					SCHAR*			in_msg,
-					USHORT			out_blr_length,
-					SCHAR*			out_blr,
-					USHORT			out_msg_type,
-					USHORT			out_msg_length,
-					SCHAR*			out_msg)
+GDS_DSQL_EXECUTE(	STATUS*    user_status,
+					WHY_TRA*   trans_handle,
+					dsql_req** req_handle,
+					USHORT     in_blr_length,
+					SCHAR*     in_blr,
+					USHORT     in_msg_type,
+					USHORT     in_msg_length,
+					SCHAR*     in_msg,
+					USHORT     out_blr_length,
+					SCHAR*     out_blr,
+					USHORT     out_msg_type,
+					USHORT     out_msg_length,
+					SCHAR*     out_msg)
 {
 	return GDS_DSQL_EXECUTE_CPP(user_status,
 								trans_handle,
@@ -328,13 +328,13 @@ GDS_DSQL_EXECUTE(	STATUS*			user_status,
 //////////////////////////////////////////////////////////////////
 
 STATUS DLL_EXPORT
-GDS_DSQL_FETCH(	STATUS*				user_status,
-				 struct dsql_req**	req_handle,
-				 USHORT				blr_length,
-				 SCHAR*				blr,
-				 USHORT				msg_type,
-				 USHORT				msg_length,
-				 SCHAR*				dsql_msg
+GDS_DSQL_FETCH(	STATUS*    user_status,
+				dsql_req** req_handle,
+				USHORT     blr_length,
+				SCHAR*     blr,
+				USHORT     msg_type,
+				USHORT     msg_length,
+				SCHAR*     dsql_msg
 #ifdef SCROLLABLE_CURSORS
 				 , USHORT direction, SLONG offset
 #endif
@@ -356,13 +356,11 @@ GDS_DSQL_FETCH(	STATUS*				user_status,
 //////////////////////////////////////////////////////////////////
 
 STATUS DLL_EXPORT
-GDS_DSQL_FREE(	STATUS*				user_status,
-				struct dsql_req**	req_handle,
-				USHORT				option)
+GDS_DSQL_FREE(	STATUS*    user_status,
+				dsql_req** req_handle,
+				USHORT     option)
 {
-	return GDS_DSQL_FREE_CPP(user_status,
-							reinterpret_cast<dsql_req**>(req_handle),
-							option);
+	return GDS_DSQL_FREE_CPP(user_status, req_handle, option);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -425,7 +423,7 @@ GDS_DSQL_SQL_INFO(	STATUS*				user_status,
 	return GDS_DSQL_SQL_INFO_CPP(	user_status,
 									req_handle,
 									item_length,
-									reinterpret_cast<CONST UCHAR*>(items),
+									reinterpret_cast<const UCHAR*>(items),
 									info_length,
 									reinterpret_cast<UCHAR*>(info));
 }
@@ -439,7 +437,7 @@ GDS_DSQL_SET_CURSOR(STATUS*		user_status,
 					USHORT		type)
 {
 	return GDS_DSQL_SET_CURSOR_CPP(user_status,
-									reinterpret_cast<dsql_req**>(req_handle),
+									req_handle,
 									input_cursor,
 									type);
 }
@@ -457,9 +455,9 @@ extern "C" {
 
 
 static STATUS
-GDS_DSQL_ALLOCATE_CPP(	STATUS*	user_status,
-						FRBRD** db_handle,
-						dsql_req**	req_handle)
+GDS_DSQL_ALLOCATE_CPP(	STATUS*    user_status,
+						FRBRD**    db_handle,
+						dsql_req** req_handle)
 {
 /**************************************
  *
@@ -552,14 +550,17 @@ STATUS DLL_EXPORT GDS_DSQL_EXECUTE_CPP(STATUS*		user_status,
 		request = *req_handle;
 		tdsql->tsql_default = request->req_pool;
 
-		if ((SSHORT) in_msg_type == -1)
+		if ((SSHORT) in_msg_type == -1) {
 			request->req_type = REQ_EMBED_SELECT;
+		}
 
 /* Only allow NULL trans_handle if we're starting a transaction */
 
 		if (*trans_handle == NULL && request->req_type != REQ_START_TRANS)
+		{
 			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 901,
 				  	gds_arg_gds, gds_bad_trans_handle, 0);
+		}
 
 /* If the request is a SELECT or blob statement then this is an open.
    Make sure the cursor is not already open. */
@@ -569,19 +570,24 @@ STATUS DLL_EXPORT GDS_DSQL_EXECUTE_CPP(STATUS*		user_status,
 			request->req_type == REQ_EMBED_SELECT ||
 			request->req_type == REQ_GET_SEGMENT ||
 			request->req_type == REQ_PUT_SEGMENT)
-				if (request->req_flags & REQ_cursor_open) {
+		{
+			if (request->req_flags & REQ_cursor_open)
+			{
 				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 502,
 					  	gds_arg_gds, gds_dsql_cursor_open_err, 0);
 			}
+		}
 
 /* A select with a non zero output length is a singleton select */
 
-		if (request->req_type == REQ_SELECT && out_msg_length != 0)
+		if (request->req_type == REQ_SELECT && out_msg_length != 0) {
 			singleton = TRUE;
-		else
+		} else {
 			singleton = FALSE;
+		}
 
 		if (request->req_type != REQ_EMBED_SELECT)
+		{
 			sing_status =
 				execute_request(request,
 								trans_handle,
@@ -594,6 +600,7 @@ STATUS DLL_EXPORT GDS_DSQL_EXECUTE_CPP(STATUS*		user_status,
 								out_msg_length,
 								out_msg,
 								singleton);
+		}
 
 /* If the output message length is zero on a REQ_SELECT then we must
  * be doing an OPEN cursor operation.
@@ -605,7 +612,8 @@ STATUS DLL_EXPORT GDS_DSQL_EXECUTE_CPP(STATUS*		user_status,
 			request->req_type == REQ_SELECT_UPD ||
 			request->req_type == REQ_EMBED_SELECT ||
 			request->req_type == REQ_GET_SEGMENT ||
-			request->req_type == REQ_PUT_SEGMENT) {
+			request->req_type == REQ_PUT_SEGMENT)
+		{
 			request->req_flags |= REQ_cursor_open |
 				((request->
 			  	req_type == REQ_EMBED_SELECT) ? REQ_embedded_sql_cursor : 0);
@@ -733,8 +741,10 @@ static STATUS dsql8_execute_immediate_common(STATUS*	user_status,
 			request = prepare(request, length, string, dialect, parser_version);
 
 			if (!((1 << request->req_type) & possible_requests))
+			{
 				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -901,
 					gds_arg_gds, gds_wish_list, 0);
+			}
 
 			execute_request(request,
 					trans_handle,
@@ -855,9 +865,6 @@ STATUS callback_execute_immediate( STATUS* status,
  *
  **************************************/
 
-	why_hndl w;
-	WHY_DBB	why_db_handle = NULL;
-	WHY_TRA	why_trans_handle = &w;
 	DBB	database;
 
 	/* Other requests appear to be incorrect in this context */
@@ -872,8 +879,12 @@ STATUS callback_execute_immediate( STATUS* status,
 	THREAD_EXIT;
 	THD_MUTEX_LOCK (&databases_mutex);
 	for (database = databases; database; database = database->dbb_next)
+	{
 	    if (database->dbb_database_handle->handle.h_dbb == jrd_attachment_handle)
+		{
 			break;
+		}
+	}
 	if (! database) {
     	status[0] = gds_arg_gds;
     	status[1] = gds_bad_db_handle;
@@ -882,10 +893,12 @@ STATUS callback_execute_immediate( STATUS* status,
         THREAD_ENTER;
     	return status[1];
     }
-	why_db_handle = (WHY_DBB) (database->dbb_database_handle);
+	WHY_DBB	why_db_handle = (WHY_DBB) (database->dbb_database_handle);
 
 	/* 2. Create why_trans_handle - it's new, but points to the same jrd
     	  transaction as original before callback. */
+	why_hndl w;
+	WHY_TRA	why_trans_handle = &w;
 	memset (why_trans_handle, 0, sizeof(why_hndl));
 	why_trans_handle->implementation = why_db_handle->implementation;
 	why_trans_handle->handle.h_tra = jrd_transaction_handle;
@@ -924,12 +937,10 @@ STATUS GDS_DSQL_FETCH_CPP(	STATUS*	user_status,
  *	Fetch next record from a dynamic SQL cursor
  *
  **************************************/
-	DSQL_REQ request;
+
 	DSQL_MSG message;
-	PAR eof, parameter, null;
+	PAR parameter;
 	STATUS s;
-	USHORT *ret_length;
-	UCHAR *buffer;
 	struct tsql thd_context, *tdsql;
 
 	SET_THREAD_DATA;
@@ -941,7 +952,7 @@ STATUS GDS_DSQL_FETCH_CPP(	STATUS*	user_status,
 
 		init(0);
 
-		request = *req_handle;
+		DSQL_REQ request = *req_handle;
 		tdsql->tsql_default = request->req_pool;
 
 /* if the cursor isn't open, we've got a problem */
@@ -962,8 +973,10 @@ STATUS GDS_DSQL_FETCH_CPP(	STATUS*	user_status,
    type */
 
 		if (request->req_type == REQ_SELECT &&
-			request->req_dbb->dbb_base_level >= 5) {
-			switch (direction) {
+			request->req_dbb->dbb_base_level >= 5)
+		{
+			switch (direction)
+			{
 			case isc_fetch_next:
 				if (!(request->req_flags & REQ_backwards))
 					offset = 0;
@@ -1018,7 +1031,8 @@ STATUS GDS_DSQL_FETCH_CPP(	STATUS*	user_status,
 					  gds_arg_gds, gds_dsql_sqlda_err, 0);
 			}
 
-			if (offset) {
+			if (offset)
+			{
 				PAR offset_parameter;
 				DSC desc;
 
@@ -1051,8 +1065,9 @@ STATUS GDS_DSQL_FETCH_CPP(	STATUS*	user_status,
 							 0, direction, offset);
 				THREAD_ENTER;
 
-				if (s)
+				if (s) {
 					punt();
+				}
 			}
 		}
 #endif
@@ -1062,23 +1077,25 @@ STATUS GDS_DSQL_FETCH_CPP(	STATUS*	user_status,
 /* Insure that the blr for the message is parsed, regardless of
    whether anything is found by the call to receive. */
 
-		if (blr_length)
+		if (blr_length) {
 			parse_blr(blr_length, blr, msg_length, message->msg_parameters);
+		}
 
-		if (request->req_type == REQ_GET_SEGMENT) {
-		/* For get segment, use the user buffer and indicator directly. */
+		if (request->req_type == REQ_GET_SEGMENT)
+		{
+			// For get segment, use the user buffer and indicator directly.
 	
 			parameter = request->req_blob->blb_segment;
-			null = parameter->par_null;
-			ret_length =
+			PAR null = parameter->par_null;
+			USHORT* ret_length =
 				(USHORT *) (dsql_msg + (SLONG) null->par_user_desc.dsc_address);
-			buffer = dsql_msg + (SLONG) parameter->par_user_desc.dsc_address;
+			UCHAR* buffer = dsql_msg + (SLONG) parameter->par_user_desc.dsc_address;
 			THREAD_EXIT;
 			s = isc_get_segment(tdsql->tsql_status,
 							GDS_REF(request->req_handle),
 							GDS_VAL(ret_length),
 							parameter->par_user_desc.dsc_length,
-							reinterpret_cast < char *>(GDS_VAL(buffer)));
+							reinterpret_cast<char*>(GDS_VAL(buffer)));
 			THREAD_ENTER;
 			if (!s) {
 				RESTORE_THREAD_DATA;
@@ -1103,14 +1120,18 @@ STATUS GDS_DSQL_FETCH_CPP(	STATUS*	user_status,
 					message->msg_length, GDS_VAL(message->msg_buffer), 0);
 		THREAD_ENTER;
 
-		if (s)
+		if (s) {
 			punt();
+		}
 
-		if (eof = request->req_eof)
+		const PAR eof = request->req_eof;
+		if (eof)
+		{
 			if (!*((USHORT *) eof->par_desc.dsc_address)) {
 				RESTORE_THREAD_DATA;
 				return 100;
 			}
+		}
 
 		map_in_out(NULL, message, 0, blr, msg_length, dsql_msg);
 	}  // try
@@ -1236,8 +1257,8 @@ STATUS GDS_DSQL_INSERT_CPP(	STATUS*	user_status,
 
 			parameter = request->req_blob->blb_segment;
 			buffer =
-				reinterpret_cast <
-				SCHAR * >(dsql_msg + (SLONG) parameter->par_user_desc.dsc_address);
+				reinterpret_cast<SCHAR*>(
+					dsql_msg + (SLONG) parameter->par_user_desc.dsc_address);
 			THREAD_EXIT;
 			s = isc_put_segment(tdsql->tsql_status,
 							GDS_REF(request->req_handle),
@@ -2432,7 +2453,7 @@ static void cleanup( void *arg)
  **************************************/
 
 	if (init_flag) {
-		init_flag = FALSE;
+		init_flag = false;
 		databases = 0;
 		open_cursors = 0;
 		HSHD_fini();
@@ -2803,7 +2824,7 @@ static STATUS execute_request(DSQL_REQ			request,
 									&request->req_trans,
 									1,
 									&request->req_dbb->dbb_database_handle,
-									(int)(request->req_blr - request->req_blr_string->str_data),
+									(int)(reinterpret_cast<char*>(request->req_blr) - request->req_blr_string->str_data),
 									request->req_blr_string->str_data);
 		THREAD_ENTER;
 		if (s)
@@ -2895,14 +2916,13 @@ static STATUS execute_request(DSQL_REQ			request,
 		s = isc_transact_request(tdsql->tsql_status,
 								 &request->req_dbb->dbb_database_handle,
 								 &request->req_trans,
-								 (USHORT) (request->req_blr -
+								 (USHORT) (reinterpret_cast<char*>(request->req_blr) -
 										   request->req_blr_string->str_data),
-								 reinterpret_cast <
-								 char *>(request->req_blr_string->str_data),
+								 request->req_blr_string->str_data,
 								 in_msg_length,
-								 reinterpret_cast < char *>(in_msg),
+								 reinterpret_cast<char*>(in_msg),
 								 use_msg_length,
-								 reinterpret_cast < char *>(use_msg));
+								 reinterpret_cast<char*>(use_msg));
 		THREAD_ENTER;
 
 		if (s)
@@ -3263,7 +3283,7 @@ static USHORT get_plan_info(
 				/* assume we have run out of room in the buffer, try again with a larger one */
 
 				buffer_ptr =
-					reinterpret_cast < char *>(gds__alloc(BUFFER_XLARGE));
+					reinterpret_cast<char*>(gds__alloc(BUFFER_XLARGE));
 				buffer_length = BUFFER_XLARGE;
 				break;
 			}
@@ -3325,31 +3345,31 @@ static USHORT get_request_info(
 	while ((p = *data++) != gds_info_end) {
 		data_length =
 			static_cast < USHORT >
-			(gds__vax_integer(reinterpret_cast < UCHAR * >(data), 2));
+			(gds__vax_integer(reinterpret_cast<UCHAR*>(data), 2));
 		data += 2;
 
 		switch (p) {
 		case gds_info_req_update_count:
 			request->req_updates =
-				gds__vax_integer(reinterpret_cast < UCHAR * >(data),
+				gds__vax_integer(reinterpret_cast<UCHAR*>(data),
 								 data_length);
 			break;
 
 		case gds_info_req_delete_count:
 			request->req_deletes =
-				gds__vax_integer(reinterpret_cast < UCHAR * >(data),
+				gds__vax_integer(reinterpret_cast<UCHAR*>(data),
 								 data_length);
 			break;
 
 		case gds_info_req_select_count:
 			request->req_selects =
-				gds__vax_integer(reinterpret_cast < UCHAR * >(data),
+				gds__vax_integer(reinterpret_cast<UCHAR*>(data),
 								 data_length);
 			break;
 
 		case gds_info_req_insert_count:
 			request->req_inserts =
-				gds__vax_integer(reinterpret_cast < UCHAR * >(data),
+				gds__vax_integer(reinterpret_cast<UCHAR*>(data),
 								 data_length);
 			break;
 
@@ -3666,13 +3686,6 @@ static DBB init(FRBRD** db_handle)
  *
  **************************************/
 
-	STATUS user_status[ISC_STATUS_LENGTH];
-	DsqlMemoryPool *pool;
-	SCHAR buffer[128], *data;
-	UCHAR p;
-	SSHORT l;
-	STATUS s;
-
 #ifdef ANY_THREADING
 	if (!mutex_inited) {
 		mutex_inited = TRUE;
@@ -3685,8 +3698,9 @@ static DBB init(FRBRD** db_handle)
 	THD_MUTEX_LOCK(&databases_mutex);
 	THREAD_ENTER;
 
-	if (!init_flag) {
-		init_flag = TRUE;
+	if (!init_flag)
+	{
+		init_flag = true;
 		ALLD_init();
 		HSHD_init();
 
@@ -3715,13 +3729,15 @@ static DBB init(FRBRD** db_handle)
 		}
 	}
 
-	pool = DsqlMemoryPool::createPool();
+	DsqlMemoryPool* pool = DsqlMemoryPool::createPool();
 	database = FB_NEW(*pool) dbb;
 	database->dbb_pool = pool;
 	database->dbb_next = databases;
 	databases = database;
 	database->dbb_database_handle = *db_handle;
 	THD_MUTEX_UNLOCK(&databases_mutex);
+
+	STATUS user_status[ISC_STATUS_LENGTH];
 
 	THREAD_EXIT;
 	gds__database_cleanup(user_status,
@@ -3732,35 +3748,42 @@ static DBB init(FRBRD** db_handle)
 
 /* Determine if the database is V3 or V4 */
 
+	SCHAR buffer[128];
+
 	database->dbb_flags |= DBB_v3;
 	THREAD_EXIT;
-	s = isc_database_info(user_status, db_handle,
+	const STATUS s =
+		isc_database_info(user_status, db_handle,
 						  sizeof(db_hdr_info_items),
-						  const_cast < char *>(db_hdr_info_items),
+						  const_cast<char*>(db_hdr_info_items),
 						  sizeof(buffer), buffer);
 	THREAD_ENTER;
 
-	if (s)
+	if (s) {
 		return database;
+	}
 
 /* assume that server can not report current character set,
    and if not then emulate pre-patch actions. */
 	database->dbb_att_charset = 127;
 
-	data = buffer;
-	while ((p = *data++) != gds_info_end) {
-		l =
-			static_cast <
-			short >(gds__vax_integer(reinterpret_cast < UCHAR * >(data), 2));
+	SCHAR* data = buffer;
+	UCHAR p;
+	while ((p = *data++) != gds_info_end)
+	{
+		SSHORT l =
+			static_cast<SSHORT>(
+				gds__vax_integer(reinterpret_cast<UCHAR*>(data), 2));
 		data += 2;
 
-		switch (p) {
+		switch (p)
+		{
 		case isc_info_db_sql_dialect:
 			database->dbb_db_SQL_dialect = (USHORT) data[0];
 			break;
 
 		case gds_info_ods_version:
-			if (gds__vax_integer(reinterpret_cast < UCHAR * >(data), l) > 7)
+			if (gds__vax_integer(reinterpret_cast<UCHAR*>(data), l) > 7)
 				database->dbb_flags &= ~DBB_v3;
 			break;
 
@@ -3793,9 +3816,8 @@ static DBB init(FRBRD** db_handle)
 
 		case frb_info_att_charset:
 			database->dbb_att_charset =
-				static_cast <
-				short
-				>(gds__vax_integer(reinterpret_cast < UCHAR * >(data), 2));
+				static_cast<short>(
+					gds__vax_integer(reinterpret_cast<UCHAR*>(data), 2));
 			break;
 
 		default:
@@ -3804,8 +3826,6 @@ static DBB init(FRBRD** db_handle)
 
 		data += l;
 	}
-
-
 
 	return database;
 }
@@ -3829,30 +3849,32 @@ static void map_in_out(	DSQL_REQ		request,
  *	from message to external world.
  *
  **************************************/
-	PAR parameter, dbkey, null, rec_version;
-	USHORT count, length, null_offset;
-	DSC desc;
+	PAR parameter, null;
 	SSHORT *flag;
 
-	count = parse_blr(blr_length, blr, msg_length, message->msg_parameters);
+	USHORT count = parse_blr(blr_length, blr, msg_length, message->msg_parameters);
 
 /* When mapping data from the external world, request will be non-NULL.
    When mapping data from an internal message, request will be NULL. */
 
 	for (parameter = message->msg_parameters; parameter;
-		 parameter = parameter->par_next) if (parameter->par_index) {
+		 parameter = parameter->par_next)
+	{
+		if (parameter->par_index)
+		{
 			 /* Make sure the message given to us is long enough */
 
-			desc = parameter->par_user_desc;
-			length = (SLONG) desc.dsc_address + desc.dsc_length;
+			DSC    desc   = parameter->par_user_desc;
+			USHORT length = (SLONG) desc.dsc_address + desc.dsc_length;
 			if (length > msg_length)
 				break;
 			if (!desc.dsc_dtype)
 				break;
 
 			flag = NULL;
-			if ((null = parameter->par_null) != NULL) {
-				null_offset = (USHORT)(null->par_user_desc.dsc_address);
+			if ((null = parameter->par_null) != NULL)
+			{
+				USHORT null_offset = (USHORT)(null->par_user_desc.dsc_address);
 				length = null_offset + sizeof(SSHORT);
 				if (length > msg_length)
 					break;
@@ -3875,29 +3897,38 @@ static void map_in_out(	DSQL_REQ		request,
 
 			count--;
 		}
+	}
 
 /* If we got here because the loop was exited early or if part of the
    message given to us hasn't been used, complain. */
 
 	if (parameter || count)
+	{
 		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 804,
 				  gds_arg_gds, gds_dsql_sqlda_err, 0);
+	}
 
+	PAR dbkey;
 	if (request &&
 		((dbkey = request->req_parent_dbkey) != NULL) &&
-		((parameter = request->req_dbkey) != NULL)) {
+		((parameter = request->req_dbkey) != NULL))
+	{
 		MOVD_move(&dbkey->par_desc, &parameter->par_desc);
-		if ((null = parameter->par_null) != NULL) {
+		if ((null = parameter->par_null) != NULL)
+		{
 			flag = (SSHORT *) null->par_desc.dsc_address;
 			*flag = 0;
 		}
 	}
 
+	PAR rec_version;
 	if (request &&
 		((rec_version = request->req_parent_rec_version) != NULL) &&
-		((parameter = request->req_rec_version) != NULL)) {
+		((parameter = request->req_rec_version) != NULL))
+	{
 		MOVD_move(&rec_version->par_desc, &parameter->par_desc);
-		if ((null = parameter->par_null) != NULL) {
+		if ((null = parameter->par_null) != NULL)
+		{
 			flag = (SSHORT *) null->par_desc.dsc_address;
 			*flag = 0;
 		}
@@ -3951,21 +3982,30 @@ static USHORT parse_blr(
 /* If there's no blr length, then the format of the current message buffer
    is identical to the format of the previous one. */
 
-	if (!blr_length) {
+	if (!blr_length)
+	{
 		count = 0;
 		for (parameter = parameters; parameter;
-			 parameter = parameter->par_next) if (parameter->par_index)
+			 parameter = parameter->par_next)
+		{
+			if (parameter->par_index) {
 				count++;
+			}
+		}
 		return count;
 	}
 
 	if (*blr != blr_version4 && *blr != blr_version5)
+	{
 		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 804,
 				  gds_arg_gds, gds_dsql_sqlda_err, 0);
+	}
 	blr++;						/* skip the blr_version */
 	if (*blr++ != blr_begin || *blr++ != blr_message)
+	{
 		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 804,
 				  gds_arg_gds, gds_dsql_sqlda_err, 0);
+	}
 
 	blr++;						/* skip the message number */
 	count = *blr++;
@@ -3973,11 +4013,13 @@ static USHORT parse_blr(
 	count /= 2;
 
 	offset = 0;
-	for (index = 1; index <= count; index++) {
+	for (index = 1; index <= count; index++)
+	{
 		desc.dsc_scale = 0;
 		desc.dsc_sub_type = 0;
 		desc.dsc_flags = 0;
-		switch (*blr++) {
+		switch (*blr++)
+		{
 		case blr_text:
 			desc.dsc_dtype = dtype_text;
 			desc.dsc_sub_type = ttype_dynamic;
@@ -4102,8 +4144,10 @@ static USHORT parse_blr(
 	}
 
 	if (*blr++ != (UCHAR) blr_end || offset != msg_length)
+	{
 		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 804,
 				  gds_arg_gds, gds_dsql_sqlda_err, 0);
+	}
 
 	return count;
 }
@@ -4149,11 +4193,13 @@ static DSQL_REQ prepare(
 /* Get rid of the trailing ";" if there is one. */
 
 	for (p = string + string_length; p-- > string;)
+	{
 		if (*p != ' ') {
 			if (*p == ';')
 				string_length = p - string;
 			break;
 		}
+	}
 
 /* Allocate a storage pool and get ready to parse */
 
@@ -4161,9 +4207,11 @@ static DSQL_REQ prepare(
 
 /* Parse the SQL statement.  If it croaks, return */
 
-	if (dsql_yyparse
-		(client_dialect, request->req_dbb->dbb_db_SQL_dialect, parser_version,
-		 &stmt_ambiguous)) {
+	if (dsql_yyparse(client_dialect,
+	                 request->req_dbb->dbb_db_SQL_dialect,
+	                 parser_version,
+	                 &stmt_ambiguous))
+	{
 		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, gds_arg_gds, gds_command_end_err,	/* Unexpected end of command */
 				  0);
 	}
@@ -4202,19 +4250,25 @@ static DSQL_REQ prepare(
 
 	if (request->req_type == REQ_DDL && stmt_ambiguous &&
 		request->req_dbb->dbb_db_SQL_dialect != client_dialect)
+	{
 		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 817,
 				  gds_arg_gds, isc_ddl_not_allowed_by_db_sql_dial,
 				  gds_arg_number,
 				  (SLONG) request->req_dbb->dbb_db_SQL_dialect, 0);
+	}
 
 	if (request->req_type == REQ_COMMIT ||
 		request->req_type == REQ_COMMIT_RETAIN ||
-		request->req_type == REQ_ROLLBACK) return request;
+		request->req_type == REQ_ROLLBACK)
+	{
+		return request;
+	}
 
 /* Work on blob segment requests */
 
 	if (request->req_type == REQ_GET_SEGMENT ||
-		request->req_type == REQ_PUT_SEGMENT) {
+		request->req_type == REQ_PUT_SEGMENT)
+	{
 		GEN_port(request, request->req_blob->blb_open_in_msg);
 		GEN_port(request, request->req_blob->blb_open_out_msg);
 		GEN_port(request, request->req_blob->blb_segment_msg);
@@ -4225,7 +4279,8 @@ static DSQL_REQ prepare(
 
 	if (request->req_type == REQ_START_TRANS ||
 		request->req_type == REQ_DDL ||
-		request->req_type == REQ_EXEC_PROCEDURE) {
+		request->req_type == REQ_EXEC_PROCEDURE)
+	{
 		/* Allocate persistent blr string from request's pool. */
 
 		request->req_blr_string = FB_NEW_RPT(*tdsql->tsql_default, 980) str;
@@ -4237,7 +4292,7 @@ static DSQL_REQ prepare(
 		request->req_blr_string = FB_NEW_RPT(*DSQL_permanent_pool, 980) str;
 	}
 	request->req_blr_string->str_length = 980;
-	request->req_blr = request->req_blr_string->str_data;
+	request->req_blr = reinterpret_cast<BLOB_PTR*>(request->req_blr_string->str_data);
 	request->req_blr_yellow =
 		request->req_blr + request->req_blr_string->str_length;
 
@@ -4254,7 +4309,7 @@ static DSQL_REQ prepare(
 	else
 		request->req_flags |= REQ_blr_version4;
 	GEN_request(request, node);
-	length = request->req_blr - request->req_blr_string->str_data;
+	length = reinterpret_cast<char*>(request->req_blr) - request->req_blr_string->str_data;
 
 /* stop here for ddl requests */
 
@@ -4264,14 +4319,16 @@ static DSQL_REQ prepare(
 /* have the access method compile the request */
 
 #ifdef DEV_BUILD
-	if (DSQL_debug)
-		gds__print_blr(request->req_blr_string->str_data, 0, 0, 0);
+	if (DSQL_debug) {
+		gds__print_blr(reinterpret_cast<UCHAR*>(request->req_blr_string->str_data), 0, 0, 0);
+	}
 #endif
 
 /* stop here for execute procedure requests */
 
-	if (request->req_type == REQ_EXEC_PROCEDURE)
+	if (request->req_type == REQ_EXEC_PROCEDURE) {
 		return request;
+	}
 
 /* check for warnings */
 	if (tdsql->tsql_status[2] == isc_arg_warning) {
@@ -4285,12 +4342,12 @@ static DSQL_REQ prepare(
 								 GDS_REF(request->req_dbb->dbb_database_handle),
 								 GDS_REF(request->req_handle),
 								 length,
-								 reinterpret_cast <
-								 char *>(request->req_blr_string->str_data));
+								 request->req_blr_string->str_data);
 	THREAD_ENTER;
 
 /* restore warnings (if there are any) */
-	if (local_status[2] == isc_arg_warning) {
+	if (local_status[2] == isc_arg_warning)
+	{
 		int indx, len, warning;
 
 		/* find end of a status vector */

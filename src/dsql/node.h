@@ -349,7 +349,7 @@ public:
 	
 	dsql_nod() : nod_type(nod_unknown_type), nod_count(0), nod_flags(0) {}
 };
-typedef dsql_nod *DSQL_NOD;
+typedef dsql_nod* DSQL_NOD;
 
 /* values of flags */
 

@@ -2790,30 +2790,34 @@ static DSQL_NOD pass1_constant( DSQL_REQ request, DSQL_NOD constant)
  *	subtype ID.
  *
  **************************************/
-	STR string;
-	INTLSYM resolved;
-	INTLSYM resolved_collation = NULL;
 
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(constant, dsql_type_nod);
 
-	if (constant->nod_desc.dsc_dtype > dtype_any_text)
+	if (constant->nod_desc.dsc_dtype > dtype_any_text) {
 		return constant;
-	string = (STR) constant->nod_arg[0];
+	}
+
+	STR string = (STR) constant->nod_arg[0];
 	DEV_BLKCHK(string, dsql_type_str);
-	if (!string || !string->str_charset)
+	if (!string || !string->str_charset) {
 		return constant;
-	resolved =
+	}
+
+	INTLSYM resolved =
 		METD_get_charset(request, strlen(string->str_charset),
-						 reinterpret_cast < UCHAR * >(string->str_charset));
+						 string->str_charset);
 	if (!resolved)
+	{
 		/* character set name is not defined */
 		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 504, gds_arg_gds,
 				  gds_charset_not_found, gds_arg_string, string->str_charset,
 				  0);
+	}
 
-	if (temp_collation_name) {
-		resolved_collation = METD_get_collation(request, temp_collation_name);
+	if (temp_collation_name)
+	{
+		INTLSYM resolved_collation = METD_get_collation(request, temp_collation_name);
 		if (!resolved_collation)
 			/* 
 			   ** Specified collation not found 
@@ -4055,8 +4059,7 @@ static DSQL_REL pass1_base_table( DSQL_REQ request, DSQL_REL relation, STR alias
 	DEV_BLKCHK(alias, dsql_type_str);
 
 	return METD_get_view_relation(request,
-								  reinterpret_cast <
-								  UCHAR * >(relation->rel_name),
+								  relation->rel_name,
 								  alias->str_data, 0);
 }
 

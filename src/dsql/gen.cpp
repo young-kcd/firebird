@@ -29,7 +29,7 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 /*
-$Id: gen.cpp,v 1.23 2003-02-10 19:57:57 brodsom Exp $
+$Id: gen.cpp,v 1.24 2003-02-12 19:28:12 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -88,41 +88,32 @@ static CONST SCHAR db_key_name[] = "DB_KEY";
 #define NEGATE_VALUE TRUE
 #define USE_VALUE    FALSE
 
+
+//
+// The blr buffer needs to be expanded.
+//
 UCHAR GEN_expand_buffer( DSQL_REQ request, UCHAR byte)
 {
-/**************************************
- *
- *	G E N _ e x p a n d _ b u f f e r
- *
- **************************************
- *
- * Functional description
- *	The blr buffer needs to be expanded.
- *
- **************************************/
-
-	BLOB_PTR *p;				/* one huge pointer per line for LIBS */
-	BLOB_PTR *q;				/* one huge pointer per line for LIBS */
-	BLOB_PTR *end;				/* one huge pointer per line for LIBS */
-
 	TSQL tdsql = GET_THREAD_DATA;
 
-	ULONG length = request->req_blr_string->str_length + 2048;
-	DsqlMemoryPool *pool = (MemoryPool::blk_pool(request->req_blr_string) == DSQL_permanent_pool) ?
-		DSQL_permanent_pool : tdsql->tsql_default;
+	const ULONG length = request->req_blr_string->str_length + 2048;
+	const bool bIsPermanentPool = MemoryPool::blk_pool(request->req_blr_string) == DSQL_permanent_pool;
+	DsqlMemoryPool* pool = bIsPermanentPool ? DSQL_permanent_pool : tdsql->tsql_default;
 	STR new_buffer = FB_NEW_RPT(*pool, length) str;
 	new_buffer->str_length = length;
 
-	p = new_buffer->str_data;
-	q = request->req_blr_string->str_data;
-	end = request->req_blr;
-	ULONG copy_length = (ULONG) (end - q);
+	// one huge pointer per line for LIBS
+	// TMN: What does that mean???
+	char*       p   = new_buffer->str_data;
+	const char* q   = request->req_blr_string->str_data;
+	BLOB_PTR*   end = request->req_blr;
+	const size_t copy_length = (reinterpret_cast<char*>(end) - q);
 	memcpy(p, q, copy_length);
 
 	delete request->req_blr_string;
 	request->req_blr_string = new_buffer;
-	request->req_blr = p + copy_length;
-	request->req_blr_yellow = new_buffer->str_data + length;
+	request->req_blr = reinterpret_cast<BLOB_PTR*>(p + copy_length);
+	request->req_blr_yellow = reinterpret_cast<BLOB_PTR*>(new_buffer->str_data + length);
 
 	return (*request->req_blr++ = byte);
 }

@@ -256,9 +256,11 @@ void HSHD_insert(SYM symbol)
 }
 
 
-SYM HSHD_lookup(void *database,
-				TEXT * string,
-				SSHORT length, SYM_TYPE type, USHORT parser_version)
+SYM HSHD_lookup(void*    database,
+				TEXT*    string,
+				SSHORT   length,
+				SYM_TYPE type,
+				USHORT   parser_version)
 {
 /**************************************
  *
@@ -271,28 +273,34 @@ SYM HSHD_lookup(void *database,
  *	Make sure to only return a symbol of the desired type.
  *
  **************************************/
-	SYM symbol;
-	SSHORT h;
 
 	LOCK_HASH;
-	h = hash(string, length);
-	for (symbol = hash_table[h]; symbol; symbol = symbol->sym_collision)
+	SSHORT h = hash(string, length);
+	for (SYM symbol = hash_table[h]; symbol; symbol = symbol->sym_collision)
+	{
 		if ((database == symbol->sym_dbb) &&
-			scompare(string, length, symbol->sym_string, symbol->sym_length)) {
+			scompare(string, length, symbol->sym_string, symbol->sym_length))
+		{
 			/* Search for a symbol of the proper type */
-			while (symbol && symbol->sym_type != type)
+			while (symbol && symbol->sym_type != type) {
 				symbol = symbol->sym_homonym;
+			}
 			UNLOCK_HASH;
 
 			/* If the symbol found was not part of the list of keywords for the
 			 * client connecting, then assume nothing was found
 			 */
-			if (symbol) {
-				if (parser_version < symbol->sym_version
-					&& type == SYM_keyword) return NULL;
+			if (symbol)
+			{
+				if (parser_version < symbol->sym_version &&
+					type == SYM_keyword)
+				{
+					return NULL;
+				}
 			}
 			return symbol;
 		}
+	}
 
 	UNLOCK_HASH;
 	return NULL;

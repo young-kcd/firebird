@@ -339,11 +339,12 @@ INTLSYM METD_get_collation(DSQL_REQ request, STR name)
 }
 
 
-void METD_get_col_default(DSQL_REQ request,
-						  TEXT * for_rel_name,
-						  TEXT * for_col_name,
-						  BOOLEAN * has_default,
-TEXT * buffer, USHORT buff_length)
+void METD_get_col_default(DSQL_REQ    request,
+						  const char* for_rel_name,
+						  const char* for_col_name,
+						  BOOLEAN*    has_default,
+						  TEXT*       buffer,
+						  USHORT      buff_length)
 {
 /*************************************************************
  *
@@ -459,7 +460,7 @@ TEXT * buffer, USHORT buff_length)
 }
 
 
-INTLSYM METD_get_charset(DSQL_REQ request, USHORT length, UCHAR * name)
+INTLSYM METD_get_charset(DSQL_REQ request, USHORT length, const char* name /* UTF-8 */)
 {
 /**************************************
  *
@@ -617,7 +618,6 @@ STR METD_get_default_charset(DSQL_REQ request)
 	FRBRD *DB, *gds_trans;
 	DBB dbb;
 	isc_req_handle handle;
-	UCHAR *p;
 	UCHAR *str_;
 	USHORT length;
 
@@ -650,8 +650,9 @@ STR METD_get_default_charset(DSQL_REQ request)
         dbb->dbb_dfl_charset->str_length = length;
         dbb->dbb_dfl_charset->str_charset = NULL;
         str_ = (UCHAR*) DBB.RDB$CHARACTER_SET_NAME;
-        for (p = dbb->dbb_dfl_charset->str_data; length; --length)
+        for (char* p = dbb->dbb_dfl_charset->str_data; length; --length) {
             *p++ = *str_++;
+		}
 
         THREAD_EXIT;
 	END_FOR 
@@ -678,7 +679,7 @@ THREAD_EXIT;
 }
 
 
-USHORT METD_get_domain(DSQL_REQ request, DSQL_FLD field, UCHAR * name)
+USHORT METD_get_domain(DSQL_REQ request, DSQL_FLD field, const char* name /* UTF-8 */)
 {
 /**************************************
  *
@@ -690,13 +691,12 @@ USHORT METD_get_domain(DSQL_REQ request, DSQL_FLD field, UCHAR * name)
  *	Fetch domain information for field defined as 'name'
  *
  **************************************/
-	FRBRD *DB, *gds_trans;
-	DBB dbb;
-	USHORT found = FALSE;
 
-	dbb = request->req_dbb;
-	DB = dbb->dbb_database_handle;
-	gds_trans = request->req_trans;
+	bool found = false;
+
+	DBB    dbb       = request->req_dbb;
+	FRBRD* DB        = dbb->dbb_database_handle;
+	FRBRD* gds_trans = request->req_trans;
 
 	THREAD_EXIT;
 
@@ -705,7 +705,7 @@ USHORT METD_get_domain(DSQL_REQ request, DSQL_FLD field, UCHAR * name)
 
         THREAD_ENTER;
 
-	    found = TRUE;
+	    found = true;
         field->fld_length = FLX.RDB$FIELD_LENGTH;
         field->fld_scale = FLX.RDB$FIELD_SCALE;
         field->fld_sub_type = FLX.RDB$FIELD_SUB_TYPE;
@@ -737,7 +737,7 @@ USHORT METD_get_domain(DSQL_REQ request, DSQL_FLD field, UCHAR * name)
 
 	THREAD_ENTER;
     
-	return found;
+	return found ? TRUE : FALSE;
 }
 
 
@@ -1632,7 +1632,7 @@ DSQL_REL METD_get_relation(DSQL_REQ request, STR name)
 }
 
 
-STR METD_get_trigger_relation(DSQL_REQ request, STR name, USHORT * trig_type)
+STR METD_get_trigger_relation(DSQL_REQ request, STR name, USHORT* trig_type)
 {
 /**************************************
  *
@@ -1662,7 +1662,7 @@ STR METD_get_trigger_relation(DSQL_REQ request, STR name, USHORT * trig_type)
 
 	    metd_exact_name(X.RDB$RELATION_NAME);
 
-        relation = MAKE_string((UCHAR*) X.RDB$RELATION_NAME, strlen(X.RDB$RELATION_NAME));
+        relation = MAKE_string(X.RDB$RELATION_NAME, strlen(X.RDB$RELATION_NAME));
         *trig_type = X.RDB$TRIGGER_TYPE;
         
         THREAD_EXIT;
@@ -1677,7 +1677,7 @@ STR METD_get_trigger_relation(DSQL_REQ request, STR name, USHORT * trig_type)
 }
 
 
-USHORT METD_get_type(DSQL_REQ request, STR name, UCHAR * field, SSHORT * value)
+USHORT METD_get_type(DSQL_REQ request, STR name, char* field, SSHORT * value)
 {
 /**************************************
  *
@@ -1722,9 +1722,10 @@ USHORT METD_get_type(DSQL_REQ request, STR name, UCHAR * field, SSHORT * value)
 }
 
 
-DSQL_REL METD_get_view_relation(DSQL_REQ request,
-								UCHAR * view_name,
-								UCHAR * relation_or_alias, USHORT level)
+DSQL_REL METD_get_view_relation(DSQL_REQ    request,
+								const char* view_name         /* UTF-8 */,
+								const char* relation_or_alias /* UTF-8 */,
+								USHORT      level)
 {
 /**************************************
  *
@@ -1738,16 +1739,12 @@ DSQL_REL METD_get_view_relation(DSQL_REQ request,
  *	(the relation could be an alias).
  *
  **************************************/
-	DBB dbb;
-	FRBRD *DB, *gds_trans;
-	STR relation_name;
-	DSQL_REL relation;
 
-	dbb = request->req_dbb;
-	DB = dbb->dbb_database_handle;
-	gds_trans = request->req_trans;
+	DSQL_REL relation = 0;
 
-	relation = NULL;
+	DBB    dbb       = request->req_dbb;
+	FRBRD* DB        = dbb->dbb_database_handle;
+	FRBRD* gds_trans = request->req_trans;
 
 	THREAD_EXIT;
 
@@ -1759,19 +1756,22 @@ DSQL_REL METD_get_view_relation(DSQL_REQ request,
 	    metd_exact_name(X.RDB$CONTEXT_NAME);
         metd_exact_name(X.RDB$RELATION_NAME);
         
-        if (!strcmp((char*) X.RDB$RELATION_NAME, (char*) relation_or_alias) ||
-            !strcmp((char*) X.RDB$CONTEXT_NAME, (char*) relation_or_alias)) {
-            relation_name = MAKE_string((UCHAR*) X.RDB$RELATION_NAME,
+        if (!strcmp(X.RDB$RELATION_NAME, relation_or_alias) ||
+            !strcmp(X.RDB$CONTEXT_NAME, relation_or_alias))
+		{
+            STR relation_name = MAKE_string(X.RDB$RELATION_NAME,
                                         strlen(X.RDB$RELATION_NAME));
             relation = METD_get_relation(request, relation_name);
             delete relation_name;
             return relation;
         }
-        
-        if (relation =
-            METD_get_view_relation(request, (UCHAR*) X.RDB$RELATION_NAME,
-                                   relation_or_alias, (USHORT)level + 1))
+
+		relation =
+            METD_get_view_relation(request, X.RDB$RELATION_NAME,
+                                   relation_or_alias, (USHORT)level + 1);
+        if (relation) {
             return relation;
+		}
 
         THREAD_EXIT;
 

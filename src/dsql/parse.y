@@ -61,6 +61,7 @@
  * 2002.12.28 Dmitry Yemanov: Added support for parametrized events.
  * 2003.01.14 Dmitry Yemanov: Fixed bug with cursors in triggers.
  * 2003.01.15 Dmitry Yemanov: Added support for runtime trigger action checks.
+ * 2003.02.10 Mike Nordell  : Undefined Microsoft introduced macros to get a clean compile.
  */
 
 #if defined(DEV_BUILD) && defined(WIN_NT) && defined(SUPERSERVER)
@@ -116,6 +117,14 @@ static void	yyerror (TEXT *);
 #define MIN_CACHE_BUFFERS       250
 #define DEF_CACHE_BUFFERS       1000
 
+// TMN: Remove Microsoft introduced defines
+#ifdef DELETE
+#undef DELETE
+#endif
+#ifdef IN
+#undef IN
+#endif
+
 /* Fix 69th procedure problem - solution from Oleg Loa */
 #define YYSTACKSIZE		2048
 #define YYMAXDEPTH		2048
@@ -125,10 +134,8 @@ static void	yyerror (TEXT *);
 #define YYDEBUG		1
 #endif
 
-static CONST UCHAR
-	INTERNAL_FIELD_NAME [] = "DSQL internal"; /* NTX: placeholder */
-static CONST UCHAR
-	NULL_STRING [] = "";	
+static const char INTERNAL_FIELD_NAME [] = "DSQL internal"; /* NTX: placeholder */
+static const char NULL_STRING [] = "";	
 
 #define TRIGGER_TYPE_SUFFIX(slot1, slot2, slot3) \
 	((slot1 << 1) | (slot2 << 3) | (slot3 << 5))
@@ -917,7 +924,7 @@ null_constraint			: NOT KW_NULL
 
 domain_check_constraint 	: begin_trigger CHECK '(' search_condition ')' end_trigger
 				  { $$ = make_node (nod_def_constraint, 
-				  (int) e_cnstr_count, MAKE_string (NULL_STRING, 0), NULL, 
+				  (int) e_cnstr_count, MAKE_string(NULL_STRING, 0), NULL, 
 				  NULL, NULL, $4, NULL, $6, NULL, NULL); }
                                 ;
 
@@ -1316,7 +1323,7 @@ constraint_index_opt	: USING order_direction INDEX symbol_index_name
 
 check_constraint : begin_trigger CHECK '(' search_condition ')' end_trigger
 			{ $$ = make_node (nod_def_constraint, 
-				(int) e_cnstr_count, MAKE_string (NULL_STRING, 0), NULL, 
+				(int) e_cnstr_count, MAKE_string(NULL_STRING, 0), NULL, 
 				NULL, NULL, $4, NULL, $6, NULL, NULL); }
 		;
 
@@ -1729,7 +1736,7 @@ begin_string	:
 		;
 
 end_string	:
-			{ $$ = (DSQL_NOD) MAKE_string ((UCHAR *) beginning, 
+			{ $$ = (DSQL_NOD) MAKE_string(beginning, 
 			       (lex_position() == end) ?
 			       lex_position()-beginning : last_token-beginning);}
 		;
@@ -1739,14 +1746,14 @@ begin_trigger	:
 		;
 
 end_trigger	:
-			{ $$ = (DSQL_NOD) MAKE_string ((UCHAR *) beginning, 
+			{ $$ = (DSQL_NOD) MAKE_string(beginning, 
 					lex_position()-beginning); }
 		;
 
 
 check_opt	: WITH CHECK OPTION
 			{ $$ = make_node (nod_def_constraint, (int) e_cnstr_count, 
-					MAKE_string (NULL_STRING, 0), NULL, NULL, NULL, 
+					MAKE_string(NULL_STRING, 0), NULL, NULL, NULL, 
 					NULL, NULL, NULL, NULL, NULL); }
 		|
 			{ $$ = 0; }
@@ -1874,7 +1881,7 @@ domain_default_opt2	: DEFAULT begin_trigger default_value
 
 domain_check_constraint2 	: CHECK begin_trigger '(' search_condition ')' end_trigger
 				  { $$ = make_node (nod_def_constraint, 
-				  (int) e_cnstr_count, MAKE_string (NULL_STRING, 0), NULL, 
+				  (int) e_cnstr_count, MAKE_string(NULL_STRING, 0), NULL, 
 				  NULL, NULL, $4, NULL, $6, NULL, NULL); }
                                 ;
 
@@ -4056,15 +4063,17 @@ static BOOLEAN long_int (
  *	number and return an atol().
  *
  *************************************/
-UCHAR	*p;
 
-for (p = ((STR) string)->str_data; classes [*p] & CHR_DIGIT; p++)
-    if (!(classes [*p] & CHR_DIGIT))
-	return FALSE;
+	for (const char* p = ((STR) string)->str_data; classes [*p] & CHR_DIGIT; p++)
+	{
+		if (!(classes [*p] & CHR_DIGIT)) {
+			return FALSE;
+		}
+	}
 
-*long_value = atol ((char *)((STR) string)->str_data);
+	*long_value = atol ((char *)((STR) string)->str_data);
 
-return TRUE;
+	return TRUE;
 }
 
 
@@ -4323,42 +4332,46 @@ static BOOLEAN short_int (
  *	of a positive short int?
  *
  *************************************/
-UCHAR	*p;
-SCHAR	buf [10];    
-BOOLEAN return_value;
 
-if (((STR) string)->str_length > 5)
-    return FALSE;
+	if (((STR) string)->str_length > 5) {
+		return FALSE;
+	}
 
-for (p = ((STR) string)->str_data; classes [*p] & CHR_DIGIT; p++)
-    if (!(classes [*p] & CHR_DIGIT))
-	return FALSE;
+	for (char* p = ((STR) string)->str_data; classes [*p] & CHR_DIGIT; p++)
+	{
+		if (!(classes [*p] & CHR_DIGIT)) {
+			return FALSE;
+		}
+	}
 
-/* there are 5 or fewer digits, it's value may still be greater
- * than 32767... */
+	/* there are 5 or fewer digits, it's value may still be greater
+	 * than 32767... */
 
-buf [0] = ((STR) string)->str_data[0];
-buf [1] = ((STR) string)->str_data[1];
-buf [2] = ((STR) string)->str_data[2];
-buf [3] = ((STR) string)->str_data[3];
-buf [4] = ((STR) string)->str_data[4];
-buf [5] = '\0';
+	SCHAR buf[10];    
+	buf [0] = ((STR) string)->str_data[0];
+	buf [1] = ((STR) string)->str_data[1];
+	buf [2] = ((STR) string)->str_data[2];
+	buf [3] = ((STR) string)->str_data[3];
+	buf [4] = ((STR) string)->str_data[4];
+	buf [5] = '\0';
 
-*long_value = atoi (buf);
+	*long_value = atoi (buf);
 
-switch (range) 
-    {
-    case POSITIVE:
-        return_value = *long_value > SHRT_POS_MAX;		
-	break;
-    case NEGATIVE:
-	return_value = *long_value > SHRT_NEG_MAX;
-	break;
-    case UNSIGNED:
-	return_value = *long_value > SHRT_UNSIGNED_MAX;		
-	break;
-    }
-return !return_value;
+	BOOLEAN return_value;
+
+	switch (range) 
+	{
+		case POSITIVE:
+			return_value = *long_value > SHRT_POS_MAX;		
+			break;
+		case NEGATIVE:
+			return_value = *long_value > SHRT_NEG_MAX;
+			break;
+		case UNSIGNED:
+			return_value = *long_value > SHRT_UNSIGNED_MAX;		
+			break;
+	}
+	return !return_value;
 }
 
 
@@ -4502,7 +4515,12 @@ static int yylex (
  * Functional description: lexer.
  *
  **************************************/
-UCHAR	*p, tok_class, string [MAX_TOKEN_LEN], *buffer, *buffer_end, *new_buffer;
+UCHAR	tok_class;
+char  string[MAX_TOKEN_LEN];
+char* p;
+char* buffer;
+char* buffer_end;
+char* new_buffer;
 SYM	sym;
 SSHORT	c;
 USHORT	buffer_len;
@@ -4598,7 +4616,7 @@ if (tok_class & CHR_INTRODUCER)
     /* make a string value to hold the name, the name 
      * is resolved in pass1_constant */
 
-    yylval = (DSQL_NOD) (MAKE_string (string, p - string))->str_data;
+    yylval = (DSQL_NOD) (MAKE_string(string, p - string))->str_data;
 
     return INTRODUCER;
     }
@@ -4623,7 +4641,7 @@ if (tok_class & CHR_QUOTE)
 	    break;
         if (p > buffer_end)
 	    {
-	    new_buffer = (UCHAR *) gds__alloc (2 * buffer_len);
+	    new_buffer = (char*)gds__alloc (2 * buffer_len);
 	    /* FREE: at outer block */
 	    if (!new_buffer)		/* NOMEM: */
 		{
@@ -4661,7 +4679,7 @@ if (tok_class & CHR_QUOTE)
 		    gds__free (buffer);
 		yyabandon (-104, isc_token_too_long);
 		}
-	    yylval = (DSQL_NOD) MAKE_string (buffer, p - buffer);
+	    yylval = (DSQL_NOD) MAKE_string(buffer, p - buffer);
 	    delimited_id_str = (STR) yylval;
 	    delimited_id_str->str_flags |= STR_delimited_id;
 	    if (buffer != string)
@@ -4669,7 +4687,7 @@ if (tok_class & CHR_QUOTE)
 	    return SYMBOL;
 	    }
 	}
-    yylval = (DSQL_NOD) MAKE_string (buffer, p - buffer);
+    yylval = (DSQL_NOD) MAKE_string(buffer, p - buffer);
     if (buffer != string)
 	gds__free (buffer);
     return STRING;
@@ -4788,8 +4806,7 @@ if ((tok_class & CHR_DIGIT) ||
 
 	if (have_exp_digit)
 	    {
-	    yylval = (DSQL_NOD) MAKE_string ((UCHAR *) last_token,
-					ptr - last_token);
+	    yylval = (DSQL_NOD) MAKE_string(last_token, ptr - last_token);
 	    last_token_bk = last_token;
 	    line_start_bk = line_start;
 	    lines_bk = lines;
@@ -4832,8 +4849,7 @@ if ((tok_class & CHR_DIGIT) ||
 				       gds_arg_end );
 		    }
 
-		yylval = (DSQL_NOD) MAKE_string ((UCHAR *) last_token,
-					    ptr - last_token);
+		yylval = (DSQL_NOD) MAKE_string(last_token, ptr - last_token);
 
 		last_token_bk = last_token;
 		line_start_bk = line_start;
@@ -4882,7 +4898,7 @@ if (tok_class & CHR_LETTER)
 	yylval = (DSQL_NOD) sym->sym_object;
 	return sym->sym_keyword;
 	}
-    yylval = (DSQL_NOD) MAKE_string (string, p - string);
+    yylval = (DSQL_NOD) MAKE_string(string, p - string);
     last_token_bk = last_token;
     line_start_bk = line_start;
     lines_bk = lines;

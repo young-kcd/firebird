@@ -1,7 +1,9 @@
 /*
- *	PROGRAM:	Dynamic SQL runtime support
- *	MODULE:		metd_proto.h
- *	DESCRIPTION:	Prototype Header file for metd.e
+ *	PROGRAM:	 Dynamic SQL runtime support
+ *	MODULE:		 metd_proto.h
+ *	DESCRIPTION: Prototype Header file for metd.epp
+ *               This is a DSQL private header file. It is not included
+ *               by anything but DSQL itself.
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,30 +26,38 @@
 #ifndef _DSQL_METD_PROTO_H
 #define _DSQL_METD_PROTO_H
 
-#ifdef __cplusplus
+#ifndef __cplusplus
+#error This header file can only be used from C++
+#endif
+
+// forward declarations
+class dsql_req;
+class str;
+
 extern "C" {
-#endif
 
-void METD_drop_function(class dsql_req*, class str*);
-void METD_drop_procedure(class dsql_req*, class str*);
-void METD_drop_relation(class dsql_req*, class str*);
-INTLSYM METD_get_charset(class dsql_req*, USHORT, UCHAR *);
-USHORT METD_get_charset_bpc (struct dsql_req *, SSHORT);
-INTLSYM METD_get_collation(class dsql_req*, class str*);
-void METD_get_col_default(DSQL_REQ, TEXT*, TEXT*, BOOLEAN*, TEXT*, USHORT);
-STR METD_get_default_charset(class dsql_req*);
-USHORT METD_get_domain(class dsql_req*, class dsql_fld*, UCHAR*);
-void METD_get_domain_default(class dsql_req*, TEXT*, BOOLEAN*, TEXT*, USHORT);
-UDF METD_get_function(class dsql_req*, class str*);
-DSQL_NOD METD_get_primary_key(class dsql_req*, class str*);
-DSQL_PRC METD_get_procedure(class dsql_req*, class str*);
-DSQL_REL METD_get_relation(class dsql_req*, class str*);
-STR METD_get_trigger_relation(class dsql_req*, class str*, USHORT*);
-USHORT METD_get_type(class dsql_req*, class str*, UCHAR*, SSHORT*);
-DSQL_REL METD_get_view_relation(class dsql_req*, UCHAR*, UCHAR*, USHORT);
+void METD_drop_function(dsql_req*, str*);
+void METD_drop_procedure(dsql_req*, str*);
+void METD_drop_relation(dsql_req*, str*);
 
-#ifdef __cplusplus
+INTLSYM  METD_get_charset(dsql_req*, USHORT, const char* name /* UTF-8 */);
+USHORT   METD_get_charset_bpc (struct dsql_req *, SSHORT);
+INTLSYM  METD_get_collation(dsql_req*, str*);
+void     METD_get_col_default(DSQL_REQ, const char*, const char*, BOOLEAN*, TEXT*, USHORT);
+STR      METD_get_default_charset(dsql_req*);
+USHORT   METD_get_domain(dsql_req*, class dsql_fld*, const char* name /* UTF-8 */);
+void     METD_get_domain_default(dsql_req*, TEXT*, BOOLEAN*, TEXT*, USHORT);
+UDF      METD_get_function(dsql_req*, str*);
+DSQL_NOD METD_get_primary_key(dsql_req*, str*);
+DSQL_PRC METD_get_procedure(dsql_req*, str*);
+DSQL_REL METD_get_relation(dsql_req*, str*);
+STR      METD_get_trigger_relation(dsql_req*, str*, USHORT*);
+USHORT   METD_get_type(dsql_req*, str*, char*, SSHORT*);
+DSQL_REL METD_get_view_relation(dsql_req*   request,
+								const char* view_name         /* UTF-8 */,
+								const char* relation_or_alias /* UTF-8 */,
+								USHORT      level);
+
 } // extern "C"
-#endif
 
 #endif /*_DSQL_METD_PROTO_H */

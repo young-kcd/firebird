@@ -70,13 +70,13 @@ dsql_type_MAX};
 
 // generic data type used to store strings
 
-class str : public pool_alloc_rpt<SCHAR, dsql_type_str>
+class str : public pool_alloc_rpt<char, dsql_type_str>
 {
 public:
-	TEXT*	str_charset;	// ASCIIZ Character set identifier for string
-	USHORT	str_flags;
-	USHORT	str_length;		// length of string in BYTES
-	UCHAR	str_data[2];	// one for ALLOC and one for the NULL
+	const char* str_charset;	// ASCIIZ Character set identifier for string
+	USHORT      str_flags;
+	USHORT      str_length;		// length of string in BYTES
+	char        str_data[2];	// one for ALLOC and one for the NULL
 };
 typedef str* STR;
 
@@ -393,8 +393,8 @@ public:
 	inline void append_uchar(UCHAR byte);
 	inline void append_ushort(USHORT val);
 	inline void append_ulong(ULONG val);
-	void        append_cstring(UCHAR verb, char* string);
-	void        append_string(UCHAR verb, char* string, USHORT len);
+	void        append_cstring(UCHAR verb, const char* string);
+	void        append_string(UCHAR verb, const char* string, USHORT len);
 	void		append_number(UCHAR verb, SSHORT number);
 	void		begin_blr(UCHAR verb);
 	void		end_blr();
@@ -404,9 +404,9 @@ public:
 	void		append_file_length(ULONG length);
 	void		append_file_start(ULONG start);
 	void		generate_unnamed_trigger_beginning(	bool		on_update_trigger,
-													TEXT*		prim_rel_name,
+													const char*	prim_rel_name,
 													struct dsql_nod* prim_columns,
-													TEXT*		for_rel_name,
+													const char*	for_rel_name,
 													struct dsql_nod* for_columns);
 	// end - member functions that should be private
 

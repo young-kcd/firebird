@@ -24,11 +24,19 @@
 #ifndef _DSQL_DDL_PROTO_H_
 #define _DSQL_DDL_PROTO_H_
 
-void DDL_execute(class dsql_req*);
-void DDL_generate(class dsql_req*, struct dsql_nod*);
-int	DDL_ids(class dsql_req*);
-void DDL_put_field_dtype(class dsql_req*, class dsql_fld*, USHORT);
-void DDL_resolve_intl_type(class dsql_req*, class dsql_fld*, class str*);
-void DDL_resolve_intl_type2 (struct dsql_req *, struct dsql_fld *, struct str *, BOOLEAN);
+// This is a DSQL internal file. Not to be used by anything but
+// the DSQL module itself.
+
+class dsql_req;
+class dsql_fld;
+class dsql_nod;
+class str;
+
+void DDL_execute(dsql_req*);
+void DDL_generate(dsql_req*, dsql_nod*);
+bool DDL_ids(const dsql_req*);
+void DDL_put_field_dtype(dsql_req*, const dsql_fld*, USHORT);
+void DDL_resolve_intl_type(dsql_req*, dsql_fld*, str*);
+void DDL_resolve_intl_type2(dsql_req*, dsql_fld*, str*, bool);
 
 #endif /* _DSQL_DDL_PROTO_H_ */
