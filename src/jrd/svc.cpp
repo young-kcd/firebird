@@ -873,7 +873,7 @@ int SVC_output(Service* output_data, const UCHAR* output_buf)
 }
 
 #endif /*SUPERSERVER*/
-	ISC_STATUS SVC_query2(Service* service,
+ISC_STATUS SVC_query2(Service* service,
 					  thread_db* tdbb,
 					  USHORT send_item_length,
 					  const SCHAR* send_items,
@@ -1326,6 +1326,11 @@ int SVC_output(Service* output_data, const UCHAR* output_buf)
 		*info = isc_info_end;
 
 
+	if (!(service->svc_flags & SVC_thd_running))
+	{
+		SVC_finish(service, SVC_finished);
+	}
+
 	THREAD_ENTER;
 	return tdbb->tdbb_status_vector[1];
 }
@@ -1721,6 +1726,11 @@ void SVC_query(Service*		service,
 	if (info < end)
 	{
 		*info = isc_info_end;
+	}
+
+	if (!(service->svc_flags & SVC_thd_running))
+	{
+		SVC_finish(service, SVC_finished);
 	}
 
 	THREAD_ENTER;
