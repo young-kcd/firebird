@@ -31,7 +31,7 @@
  * to count virtual operations, not real I/O on the underlying tables.
  */
 /*
-$Id: exe.cpp,v 1.13 2002-08-22 08:20:26 dimitr Exp $
+$Id: exe.cpp,v 1.14 2002-09-11 11:30:44 eku Exp $
 */
 
 #include "firebird.h"
@@ -1512,7 +1512,7 @@ static REQ execute_triggers(TDBB	tdbb,
  *
  **************************************/
 
-	VOLATILE REQ trigger = NULL;
+	volatile REQ trigger = NULL;
 
 	DEV_BLKCHK(*triggers, type_vec);
 	DEV_BLKCHK(old_rec, type_rec);
@@ -1750,8 +1750,8 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 	SSHORT which_erase_trig = 0;
 	SSHORT which_sto_trig   = 0;
 	SSHORT which_mod_trig   = 0;
-	VOLATILE NOD top_node = 0;
-	VOLATILE NOD prev_node;
+	volatile NOD top_node = 0;
+	volatile NOD prev_node;
 	TRA transaction;
 
 /* If an error happens during the backout of a savepoint, then the transaction
@@ -1791,7 +1791,7 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 	SLONG save_point_number = (transaction->tra_save_point) ?
 		transaction->tra_save_point->sav_number : 0;
 
-	VOLATILE NOD node = in_node;
+	volatile NOD node = in_node;
 
 	// Catch errors so we can unwind cleanly
 
@@ -1816,7 +1816,7 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 		switch (node->nod_type) {
 		case nod_asn_list:
 			if (request->req_operation == req::req_evaluate) {
-				VOLATILE NOD *ptr, *end;
+				volatile NOD *ptr, *end;
 
 				for (ptr = node->nod_arg, end = ptr + node->nod_count;
 					 ptr < end; ptr++)
@@ -2006,7 +2006,7 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 
 			case req::req_unwind:
 				{
-					VOLATILE NOD *ptr, *end;
+					volatile NOD *ptr, *end;
 
 					if (request->req_flags & req_leave)
 					{
@@ -2034,7 +2034,7 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 						}
 					}
 
-					VOLATILE NOD handlers = node->nod_arg[e_blk_handlers];
+					volatile NOD handlers = node->nod_arg[e_blk_handlers];
 					if (handlers)
 					{
 						ULONG prev_req_error_handler;

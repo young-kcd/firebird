@@ -3645,7 +3645,7 @@ STATUS DLL_EXPORT GDS_START_MULTIPLE(STATUS * user_status,
  *	Start a transaction.
  *
  **************************************/
-	VOLATILE TRA transaction, prior;
+	volatile TRA transaction, prior;
 	STATUS temp_status[ISC_STATUS_LENGTH];
 	TEB *v, *end;
 	ATT attachment;

@@ -1078,8 +1078,8 @@ static void grant( GBL gbl, UCHAR ** ptr)
  **************************************/
 
 	BLK request;
-	//VOLATILE SSHORT err_num;
-	VOLATILE SSHORT id;
+	//volatile SSHORT err_num;
+	volatile SSHORT id;
 	TEXT privileges[16];
 	TEXT object[32];
 	TEXT field[32];
@@ -1431,7 +1431,7 @@ static bool grantor_can_grant(	GBL		gbl,
 	BOOLEAN relation_exists = FALSE;
 	BOOLEAN field_exists = FALSE;
 	BOOLEAN grantor_is_owner = FALSE;
-	VOLATILE USHORT err_num;
+	volatile USHORT err_num;
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
@@ -1800,7 +1800,7 @@ static void revoke_permission(GBL gbl, UCHAR ** ptr)
 	DBB dbb;
 	BLK request;
 	//BLK old_request;
-	VOLATILE USHORT old_id, id;
+	volatile USHORT old_id, id;
 	UCHAR verb;
 	SSHORT user_type, obj_type;
 	TEXT privileges[16], object[32], field[32], user[32], *p, *q, temp[2];

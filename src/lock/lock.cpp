@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: lock.cpp,v 1.10 2002-08-26 12:10:18 eku Exp $
+$Id: lock.cpp,v 1.11 2002-09-11 11:30:44 eku Exp $
 */
 
 #include "firebird.h"
@@ -70,10 +70,8 @@ $Id: lock.cpp,v 1.10 2002-08-26 12:10:18 eku Exp $
 #include <string.h>
 #endif
 
-#ifdef sparc
-#ifndef SOLARIS
+#ifdef HAVE_VFORK_H
 #include <vfork.h>
-#endif
 #endif
 
 #if ( defined DELTA || defined IMP )
@@ -260,10 +258,10 @@ static void wakeup_action(PTR *);
 
 static struct own LOCK_process_owner;	/* Place holder */
 static SSHORT LOCK_bugcheck = 0;
-static LHB VOLATILE LOCK_header = NULL;
+static LHB volatile LOCK_header = NULL;
 static PTR LOCK_owner_offset = 0;
 static OWN LOCK_owner = 0;
-static SSHORT VOLATILE LOCK_asts = -1;
+static SSHORT volatile LOCK_asts = -1;
 static int LOCK_pid = 0, LOCK_version = 0;
 static SLONG LOCK_shm_size = 0, LOCK_sem_count = 0;
 

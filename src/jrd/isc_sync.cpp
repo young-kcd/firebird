@@ -2222,7 +2222,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 	USHORT trunc_flag;
 	struct stat file_stat;
 	union semun arg;
-#ifdef NO_FLOCK
+#ifndef HAVE_FLOCK
 	struct flock lock;
 #endif
 
@@ -2259,7 +2259,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 		return NULL;
 	}
 
-#ifdef NO_FLOCK
+#ifndef HAVE_FLOCK
 /* get an exclusive lock on the INIT file with a block */
 	lock.l_type = F_WRLCK;
 	lock.l_whence = 0;
@@ -2285,7 +2285,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 
 	if (fd == -1) {
 		error(status_vector, "open", errno);
-#ifndef NO_FLOCK
+#ifdef HAVE_FLOCK
 		/* unlock init file */
 		flock(fd_init, LOCK_UN);
 #else
@@ -2305,7 +2305,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 		if (fstat(fd, &file_stat) == -1) {
 			error(status_vector, "fstat", errno);
 			close(fd);
-#ifndef NO_FLOCK
+#ifdef HAVE_FLOCK
 			/* unlock init file */
 			flock(fd_init, LOCK_UN);
 #else
@@ -2341,7 +2341,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 		flock(fd, LOCK_UN);
 #endif
 		close(fd);
-#ifndef NO_FLOCK
+#ifdef HAVE_FLOCK
 		/* unlock init file */
 		flock(fd_init, LOCK_UN);
 #else
@@ -2367,7 +2367,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 		flock(fd, LOCK_UN);
 #endif
 		close(fd);
-#ifndef NO_FLOCK
+#ifdef HAVE_FLOCK
 		/* unlock init file */
 		flock(fd_init, LOCK_UN);
 #else
@@ -2396,7 +2396,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 /* Try to get an exclusive lock on the lock file.  This will
    fail if somebody else has the exclusive lock */
 
-#ifndef NO_FLOCK
+#ifdef HAVE_FLOCK
 #ifndef DECOSF
 	if (!flock(fd, LOCK_EX | LOCK_NB))
 #else
@@ -2438,7 +2438,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 		if (trunc_flag)
 			ftruncate(fd, length);
 		(*init_routine) (init_arg, shmem_data, TRUE);
-#ifndef NO_FLOCK
+#ifdef HAVE_FLOCK
 		if (flock(fd, LOCK_SH)) {
 			error(status_vector, "flock", errno);
 			flock(fd, LOCK_UN);
@@ -2494,7 +2494,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 		}
 	}
 	else {
-#ifndef NO_FLOCK
+#ifdef HAVE_FLOCK
 		if (flock(fd, LOCK_SH)) {
 			error(status_vector, "flock", errno);
 			flock(fd, LOCK_UN);
@@ -2529,7 +2529,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 			(*init_routine) (init_arg, shmem_data, FALSE);
 	}
 
-#ifndef NO_FLOCK
+#ifdef HAVE_FLOCK
 /* unlock the init file to release the other process */
 	flock(fd_init, LOCK_UN);
 #else

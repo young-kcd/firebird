@@ -134,7 +134,15 @@ void divorce_terminal(int mask)
 
 /* Finally, get out of the process group */
 
-#if (!defined(VMS) && !defined(NETWARE_386) && !defined(WIN_NT))
-	s = SETPGRP;
-#endif
+#ifdef HAVE_SETPGRP
+#ifdef SETPGRP_VOID
+	s = setpgrp();
+#else
+	s = setpgrp(0, 0);
+#endif /* SETPGRP_VOID */
+#else
+#ifdef HAVE_SETPGID
+	s = setpgid(0, 0);
+#endif /* HAVE_SETPGID */
+#endif /* HAVE_SETPGRP */
 }

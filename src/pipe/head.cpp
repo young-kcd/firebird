@@ -28,7 +28,7 @@
  *
  */
 
- /* $Id: head.cpp,v 1.10 2002-08-22 10:57:37 dimitr Exp $ */
+ /* $Id: head.cpp,v 1.11 2002-09-11 11:30:45 eku Exp $ */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -59,11 +59,13 @@
 #include <unistd.h>
 #endif
 
+#ifdef HAVE_VFORK_H
+#include <vfork.h>
+#endif
+
 #ifdef sparc
 #ifdef SOLARIS
 #include <fcntl.h>
-#else
-#include <vfork.h>
 #endif
 #endif
 

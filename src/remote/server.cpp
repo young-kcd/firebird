@@ -255,7 +255,7 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
 #else
 
 	SERVER_REQ request = NULL, active;
-	VOLATILE PORT port = NULL;
+	volatile PORT port = NULL;
 	SLONG pending_requests;
 	P_OP operation;
 #ifdef DEV_BUILD

@@ -2,19 +2,23 @@
 #
 # Run this to generate all the initial makefiles, etc.
 #
-# $Id: autogen.sh,v 1.3 2002-08-14 11:13:56 eku Exp $
+# $Id: autogen.sh,v 1.4 2002-09-11 11:30:43 eku Exp $
 
 PKG_NAME=Firebird2
 SRCDIR=`dirname $0`
 DIE=0
 
-(autoconf --version) < /dev/null > /dev/null 2>&1 || {
+VER=` autoconf --version | grep '^[Aa]utoconf'|sed 's/^[^0-9]*//'`
+case "$VER" in
+ 0* | 1\.* | 2\.[0-9] | 2\.[0-9][a-z]* | \
+ 2\.[1-4][0-9] | 2\.5[0-2][a-z]* )
   echo
-  echo "**Error**: You must have \`autoconf' installed to."
-  echo "Download the appropriate package for your distribution,"
-  echo "or get the source tarball at ftp://ftp.gnu.org/pub/gnu/"
+  echo "**Error**: You must have autoconf 2.53 or later installed."
+  echo "Download the appropriate package for your distribution/OS,"
+  echo "or get the source tarball at ftp://ftp.gnu.org/pub/gnu/autoconf/"
   DIE=1
-}
+  ;;
+esac
 
 # Put other tests for programs here!
 

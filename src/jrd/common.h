@@ -35,7 +35,7 @@
  * 2002.04.16  Paul Beach - HP10 and unistd.h
  */
 /*
-$Id: common.h,v 1.25 2002-08-31 09:25:13 fsg Exp $
+$Id: common.h,v 1.26 2002-09-11 11:30:44 eku Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -102,14 +102,12 @@ $Id: common.h,v 1.25 2002-08-31 09:25:13 fsg Exp $
 #define IMPLEMENTATION  isc_info_db_impl_i386 /* 60  next higher unique number, See you later  */
 #endif /* i386 */
 
-#define SETPGRP         setpgrp ()
-#define ATEXIT(c)       atexit (c)
-
 #define MEMMOVE(from,to,length)		memmove ((void *)to, (void *)from, (size_t) length)
 #define MOVE_FAST(from,to,length)       memcpy (to, from, (int) (length))
 #define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
 #define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
 
+typedef RETSIGTYPE (*SIG_FPTR) (int);
 #endif /* LINUX */
 
 /* SINIX-Z 5.42 */
@@ -178,11 +176,8 @@ int shutdown(int s, int how);
 #define IMPLEMENTATION  isc_info_db_impl_sinixz  /* 64 */
 #endif /* i386 */
 
-#define SETPGRP         setpgrp ()
-#define ATEXIT(c)       atexit (c)
 #define setreuid(ruid,euid)     setuid(euid)
 #define setregid(rgid,egid)     setgid(egid)
-#define NO_FLOCK
 #define NO_PYXIS
 
 #define MEMMOVE(from,to,length)		memmove ((void *)to, (void *)from, (size_t) length)
@@ -190,6 +185,7 @@ int shutdown(int s, int how);
 #define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
 #define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
 
+typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* SINIXZ */
 
 /* Darwin Platforms */
@@ -202,10 +198,8 @@ int shutdown(int s, int how);
 #define ALIGNMENT       4
 #define DOUBLE_ALIGN    4
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
-#define SETPGRP         setpgrp (0, 0)
 #define BSD_UNIX        1
 #define UNIX            1
-#define ATEXIT(c)       atexit (c)
 #define IMPLEMENTATION  63
 #define IEEE
 #define QUADCONST(n) (n##LL)
@@ -230,6 +224,7 @@ int shutdown(int s, int how);
 #endif
 #endif
 
+typedef RETSIGTYPE (*SIG_FPTR) (int);
 #endif /* Darwin Platforms */
 
 
@@ -245,8 +240,6 @@ int shutdown(int s, int how);
 #define I386  1
 #define VAX   1
 #define IMPLEMENTATION    isc_info_db_impl_freebsd   /* 61 */
-#define SETPGRP         setpgrp ()
-#define ATEXIT(c)       atexit(c)
 
 #define QUADFORMAT "ll"
 #define QUADCONST(n) (n##LL)
@@ -258,8 +251,7 @@ int shutdown(int s, int how);
 #define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
 #define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
 
-#define VOLATILE        volatile
-
+typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* FREEBSD */
 
 /* NetBSD */
@@ -282,8 +274,6 @@ int shutdown(int s, int how);
 #endif
 
 #define UNIX  1
-#define SETPGRP         setpgrp ()
-#define ATEXIT(c)       atexit(c)
 
 #define KILLER_SIGNALS
 #define NO_NFS					/* no MTAB_OPEN or MTAB_CLOSE in isc_file.c */
@@ -293,8 +283,7 @@ int shutdown(int s, int how);
 #define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
 #define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
 
-#define VOLATILE        volatile
-
+typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* NETBSD */
 
 
@@ -335,9 +324,6 @@ int shutdown(int s, int how);
 #define LSEEK_OFFSET_CAST (off_t)
 #endif
 
-#define ATEXIT(c)       atexit (c)
-#define SETPGRP         setpgrp ()
-#define NO_FLOCK
 #define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)
 /*********   Reason for introducing MEMMOVE macro.
 
@@ -385,9 +371,7 @@ int shutdown(int s, int how);
 
 #else /* SOLARIS */
 
-#define ATEXIT(c)       on_exit (c, 0)
 #define BSD_UNIX        1
-#define SETPGRP         setpgrp (0, 0)
 
 #endif /* SOLARIS */
 
@@ -416,6 +400,8 @@ int shutdown(int s, int how);
 #define MOVE_FAST(from,to,length)       memcpy (to, from, (int) (length))
 #define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
 #define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
+
+typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* sun */
 
 
@@ -427,13 +413,10 @@ int shutdown(int s, int how);
 #define hpux
 #endif
 
-#define ATEXIT(c)       atexit (c)
 #define KILLER_SIGNALS
-#define SETPGRP         setpgid (0, 0)
 #define UNIX            1
 #define CURSES_KEYPAD   1
 #define INTL
-#define NO_FLOCK
 
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
 #define ALIGNMENT       8
@@ -458,6 +441,8 @@ int shutdown(int s, int how);
 #define MOVE_FAST(from,to,length)       memcpy (to, from, (int) (length))
 #define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
 #define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
+
+typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* hpux */
 
 
@@ -471,7 +456,6 @@ int shutdown(int s, int how);
 #define UNIX            1
 #define VAX             1
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
-#define SETPGRP         setpgrp (0, 0)
 
 #ifdef mips
 #define IMPLEMENTATION  isc_info_db_impl_isc_mips_ult /* 36 */
@@ -484,6 +468,7 @@ int shutdown(int s, int how);
 #define SHMEM_PICKY
 #endif
 
+typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* ultrix */
 
 
@@ -498,7 +483,6 @@ int shutdown(int s, int how);
 #define NO_PYXIS
 #define I386            1
 #define VAX						/* Use VAX style byte swapping */
-#define ATEXIT(c)
 #define NO_NFS
 #undef LINKS_EXIST
 #define IEEE					/* IEEE floating point arith.  */
@@ -522,6 +506,7 @@ int shutdown(int s, int how);
 #define DLL_EXPORT      API_ROUTINE
 #endif
 
+typedef RETSIGTYPE (API_ROUTINE * SIG_FPTR) ();
 #endif /* ifndef NETWARE_386 */
 
 
@@ -566,6 +551,7 @@ typedef unsigned int64 UATOM;
 #define STARTUP_ERROR   46		/* this is also used in iscguard.h, make sure these match */
 #define INTL
 
+typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* VMS */
 
 
@@ -576,10 +562,6 @@ typedef unsigned int64 UATOM;
 #ifndef _POWER					/* IBM RS/6000 */
 #define AIX
 #define KILLER_SIGNALS
-#define NO_FLOCK
-#define SETPGRP         setpgid (0, 0)
-#define ATEXIT(c)       atexit (c)
-#define vfork           fork
 #define UNIX            1
 #define CURSES_KEYPAD   1
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
@@ -592,14 +574,9 @@ typedef unsigned int64 UATOM;
 #define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
 #define SYSCALL_INTERRUPTED(err)        (((err) == EINTR) || ((err) == ERESTART))	/* pjpg 20001102 */
 #define INTL
-#define VOLATILE	volatile
 #else /* AIX PowerPC */
 #define AIX_PPC
 #define KILLER_SIGNALS
-#define NO_FLOCK
-#define SETPGRP         setpgid (0, 0)
-#define ATEXIT(c)       atexit (c)
-#define vfork           fork
 #define UNIX            1
 #define CURSES_KEYPAD   1
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
@@ -612,13 +589,14 @@ typedef unsigned int64 UATOM;
 #define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
 #define SYSCALL_INTERRUPTED(err)        (((err) == EINTR) || ((err) == ERESTART))	/* pjpg 20001102 */
 #define INTL
-#define VOLATILE	volatile
 
 #define VA_START(list,parmN)    va_start (list, parmN)	/* TMC 081700 */
 #define QUADFORMAT "ll"			/* TMC 081700 */
 #define QUADCONST(n) (n##LL)	/* TMC 081700 */
 
 #endif /* IBM PowerPC */
+
+typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* IBM AIX */
 
 
@@ -664,7 +642,6 @@ typedef unsigned __int64 UINT64;
 #define IMPLEMENTATION  isc_info_db_impl_isc_winnt_x86 /* 50 */
 #endif
 
-#define ATEXIT(c)       atexit (c)
 #define                 IEEE
 #define INTL
 #define VA_START(list,parmN)    va_start (list, parmN)
@@ -692,6 +669,7 @@ typedef unsigned __int64 UINT64;
 #define MAXPATHLEN	260
 #endif
 
+typedef RETSIGTYPE (CLIB_ROUTINE * SIG_FPTR) ();
 #endif /* WIN_NT */
 
 
@@ -706,8 +684,6 @@ typedef unsigned __int64 UINT64;
 #define NOHOSTNAME
 #define KILLER_SIGNALS
 #define SYSV_SIGNALS
-#define ATEXIT(c)       atexit (c)
-#define vfork           fork
 
 #ifndef MAXPATHLEN
 #define MAXPATHLEN      1024
@@ -721,19 +697,18 @@ typedef unsigned __int64 UINT64;
 
 #ifdef M_UNIX
 #define SCO_UNIX        1
-#define SETPGRP         setpgid (0, 0)
 #define IMPLEMENTATION  isc_info_db_impl_isc_sco_unix /* 42 */
 #define INTL
 #define INTL_BACKEND
 #else
 #define FB_ALIGN(n,b)      ((n+1) & ~1)
-#define SETPGRP
 #define IMPLEMENTATION  isc_info_db_impl_isc_xenix /* 37 */
 #endif
 
 #define                 IEEE
 #undef LINKS_EXIST
 
+typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* M_I386 */
 
 #else /* ifndef SCO_EV */
@@ -745,9 +720,6 @@ typedef unsigned __int64 UINT64;
 #define UNIX            1
 #define SCO_UNIX        1
 #define                 IEEE
-#define SETPGRP         setpgrp()
-#define NO_FLOCK
-#define ATEXIT(c)       atexit (c)
 /*
 #define KILLER_SIGNALS
 */
@@ -758,7 +730,6 @@ typedef unsigned __int64 UINT64;
 #define MOVE_FASTER(from,to,length)  memcpy (to, from, (unsigned int) (length))
 #define MOVE_CLEAR(to,length)        memset (to, 0, (unsigned int) (length))
 
-#define VOLATILE volatile		/* 5.5 SCO Port */
 #ifndef MAXPATHLEN
 #define MAXPATHLEN      1024
 #endif
@@ -767,6 +738,7 @@ typedef unsigned __int64 UINT64;
 #define setregid(rgid,egid)     setgid(egid)
 */
 
+typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* ifndef SCO_EV */
 
 
@@ -774,9 +746,6 @@ typedef unsigned __int64 UINT64;
 #ifdef DGUX
 #define UNIX            1
 #define KILLER_SIGNALS
-#define NO_FLOCK
-#define SETPGRP         setpgid (0, 0)
-#define ATEXIT(c)       atexit (c)
 #define CURSES_KEYPAD   1
 #ifndef DG_X86
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
@@ -796,6 +765,7 @@ typedef unsigned __int64 UINT64;
 #define MAXPATHLEN      1024
 #endif
 
+typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* DGUX */
 
 
@@ -807,7 +777,6 @@ typedef unsigned __int64 UINT64;
 #define NO_PYXIS
 #define KILLER_SIGNALS
 #define HAS_64BIT_POINTERS		/* if a machine has 64 bit pointers you need this */
-#define SETPGRP         setpgrp (0, 0)
 #define UNIX            1
 #define VAX             1
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
@@ -815,11 +784,9 @@ typedef unsigned __int64 UINT64;
 #define DOUBLE_ALIGN    8
 #define IMPLEMENTATION  isc_info_db_impl_alpha_osf	/* 52 */
 #define                 IEEE
-#define ATEXIT(c)       atexit (c)
 
 #ifndef MAXPATHLEN
 #define MAXPATHLEN      1024
-#define VOLATILE        volatile
 #endif
 
 #define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)
@@ -832,14 +799,13 @@ typedef unsigned __int64 UINT64;
 typedef long SATOM;				/* 64 bit */
 typedef unsigned long UATOM;
 
+typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* DECOSF */
 
 
 
 #ifdef sgi
-#define vfork           fork
 #define KILLER_SIGNALS
-#define SETPGRP         setpgid (0, 0)
 #define UNIX            1
 #define CURSES_KEYPAD   1
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
@@ -847,15 +813,14 @@ typedef unsigned long UATOM;
 #define IMPLEMENTATION  isc_info_db_impl_isc_sgi  /* 41 */
 #define DOUBLE_ALIGN    8
 #define                 IEEE
-#define NO_FLOCK
 #define INTL
-#define VOLATILE	volatile
 #define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)
 
 #ifndef MAXPATHLEN
 #define MAXPATHLEN      1024
 #endif
 
+typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* sgi */
 
 
@@ -880,7 +845,6 @@ typedef unsigned long DWORD;
 
 #define SMALL_FILE_NAMES
 #define NOHOSTNAME
-#define ATEXIT(c)       atexit (c)
 
 #define SYS_ARG		isc_arg_dos
 #ifndef MAXPATHLEN
@@ -893,7 +857,6 @@ typedef unsigned long DWORD;
 #define FB_ALIGN(n,b)      ((n+1) & ~1)
 #define OLD_ALIGNMENT
 #define NO_NFS
-#define SETPGRP
 #define IMPLEMENTATION isc_info_db_impl_netware_386,	/* 54 */
 #undef LINKS_EXIST
 #define VA_START(list,parmN)    va_start (list, parmN)
@@ -908,14 +871,13 @@ typedef unsigned long DWORD;
 
 #define STACK_REDUCTION
 
+typedef RETSIGTYPE (CLIB_ROUTINE * SIG_FPTR) ();
 #endif /* NETWARE_386 */
 
 
 #ifdef UNIXWARE
 #define INTL
-#define SETPGRP         setpgrp()
 #define KILLER_SIGNALS
-#define NO_FLOCK
 #define NO_PYXIS
 #define I386            1
 #define VAX             1
@@ -923,8 +885,6 @@ typedef unsigned long DWORD;
 #define CURSES_KEYPAD   1
 #define IMPLEMENTATION  isc_info_db_impl_unixware,	/* 49 */
 #define                 IEEE
-#define ATEXIT(c)       atexit (c)
-#define vfork           fork
 
 #ifndef MAXPATHLEN
 #define MAXPATHLEN      1024
@@ -936,6 +896,7 @@ typedef unsigned long DWORD;
 #define setreuid(ruid,euid)     setuid (euid)
 #define setregid(rgid,egid)     setgid (egid)
 
+typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* UNIXWARE */
 
 
@@ -1334,20 +1295,8 @@ typedef struct in_sw_tab_t {
 /* Just to be safe we will still define READONLY_DATABASE as it gets phased out */
 #define READONLY_DATABASE 1
 
-/* CLIB_ROUNTINE macro is already defined here,
-   so we can safely declare SIG_FPTR type */
-#ifdef SUN3_3
-typedef RETSIGTYPE (*CLIB_ROUTINE SIG_FPTR) ();
-#else
-#if ((defined(WIN32) || defined(_WIN32)) && defined(_MSC_VER))
-typedef RETSIGTYPE (CLIB_ROUTINE * SIG_FPTR) ();
-#else
-#if (defined(DARWIN) || defined(LINUX))
-typedef RETSIGTYPE (*CLIB_ROUTINE SIG_FPTR) (int);
-#else
-typedef RETSIGTYPE (*SIG_FPTR) ();
-#endif
-#endif
+#ifndef HAVE_WORKING_VFORK
+#define vfork fork
 #endif
 
 #endif /* JRD_COMMON_H */

@@ -74,11 +74,13 @@
 #include <unistd.h>
 #endif
 
+#ifdef HAVE_VFORK_H
+#include <vfork.h>
+#endif
+
 #ifdef sparc
 #ifdef SOLARIS
 #include <fcntl.h>
-#else
-#include <vfork.h>
 #endif
 #endif
 

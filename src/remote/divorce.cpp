@@ -95,7 +95,15 @@ void divorce_terminal( fd_set * mask)
 
 /* Finally, get out of the process group */
 
-#ifndef NETWARE_386
-	setpgrp(0, 0);
-#endif
+#ifdef HAVE_SETPGRP
+#ifdef SETPGRP_VOID
+	(void)setpgrp();
+#else
+	(void)setpgrp(0, 0);
+#endif /* SETPGRP_VOID */
+#else
+#ifdef HAVE_SETPGID
+	(void)setpgid(0, 0);
+#endif /* HAVE_SETPGID */
+#endif /* HAVE_SETPGRP */
 }

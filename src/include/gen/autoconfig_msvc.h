@@ -1,4 +1,4 @@
-#ident "$Id: autoconfig_msvc.h,v 1.26 2002-09-03 17:29:53 dimitr Exp $"
+#ident "$Id: autoconfig_msvc.h,v 1.27 2002-09-11 11:30:44 eku Exp $"
 
 /*
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
@@ -52,6 +52,7 @@
 #undef HAVE_READLINE_READLINE_H
 #undef HAVE_UNISTD_H
 #undef HAVE_VARARGS_H
+#undef HAVE_VFORK_H
 
 /* Functions */
 #undef HAVE_STRLCPY
@@ -65,6 +66,13 @@
 #undef HAVE_SIGACTION
 #define HAVE_SNPRINTF
 #undef HAVE_MMAP
+#undef HAVE_ATEXIT
+#undef HAVE_ON_EXIT
+#undef HAVE_WORKING_VFORK
+#undef HAVE_SETPGRP 
+#undef HAVE_SETPGID
+#undef SETPGRP_VOID
+#undef HAVE_FLOCK
 
 /* Types */
 #undef socklen_t

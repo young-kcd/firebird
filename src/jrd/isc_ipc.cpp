@@ -26,7 +26,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.16 2002-08-26 12:13:21 eku Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.17 2002-09-11 11:30:44 eku Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -44,11 +44,13 @@
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/thd_proto.h"
 
+#ifdef HAVE_VFORK_H
+#include <vfork.h>
+#endif
+
 #ifdef sparc
 #ifdef SOLARIS
 #define HANDLER_ADDR_ARG
-#else
-#include <vfork.h>
 #endif
 #endif
 
@@ -95,18 +97,18 @@ typedef struct sig {
 
 #ifndef REQUESTER
 static USHORT initialized_signals = FALSE;
-static SIG VOLATILE signals = NULL;
-static USHORT VOLATILE inhibit_count = 0;
-static SLONG VOLATILE overflow_count = 0;
+static SIG volatile signals = NULL;
+static USHORT volatile inhibit_count = 0;
+static SLONG volatile overflow_count = 0;
 
 #ifdef MULTI_THREAD
 static MUTX_T sig_mutex;
 #endif
 
 #ifdef GT_32_SIGNALS
-static SLONG VOLATILE pending_signals[2];
+static SLONG volatile pending_signals[2];
 #else
-static SLONG VOLATILE pending_signals = 0;
+static SLONG volatile pending_signals = 0;
 #endif
 static int process_id = 0;
 
@@ -167,7 +169,7 @@ static int process_id = 0;
 #define SHMEM_DELTA	(1 << 22)
 #endif
 
-static int VOLATILE relay_pipe = 0;
+static int volatile relay_pipe = 0;
 #endif
 
 

@@ -210,7 +210,7 @@ void SCL_check_index( TDBB tdbb, TEXT * index_name, UCHAR index_id, USHORT mask)
  *      becomes relation_name since index ids are relative to tables.
  *
  *******************************************************/
-	VOLATILE BLK request;
+	volatile BLK request;
 	SCL s_class, default_s_class;
     TEXT    reln_name[32], aux_idx_name[32];
     TEXT	*idx_name_ptr = index_name, *relation_name_ptr = index_name;
@@ -589,7 +589,7 @@ void SCL_init(BOOLEAN	create,
  **************************************/
 	DBB dbb;
 	BLK handle, handle1;
-	VOLATILE BLK request;
+	volatile BLK request;
 	USR user;
 	TEXT name[129], project[33], organization[33], *p;
 	USHORT length;
@@ -1130,7 +1130,7 @@ static SLONG compute_access(TDBB		tdbb,
 	SLONG privileges;
 	TEXT *acl;
 	TEXT *buffer;
-	VOLATILE STR str_buffer = NULL;
+	volatile STR str_buffer = NULL;
 	SLONG length = BLOB_BUFFER_SIZE, *length_ptr = &length;
 
 	SET_TDBB(tdbb);
@@ -1261,7 +1261,7 @@ static SLONG walk_acl(TDBB			tdbb,
 	TEXT		c;
 	TEXT*		p;
 	//BOOLEAN		is_member = FALSE;
-	VOLATILE BLK request;
+	volatile BLK request;
 	DBB			dbb;
 	TEXT* 	role_name;
 

@@ -172,9 +172,9 @@ void DYN_UTIL_generate_constraint_name( TDBB tdbb, GBL gbl, TEXT * buffer)
  *
  **************************************/
 	DBB dbb;
-	VOLATILE BLK request;
+	volatile BLK request;
 	USHORT found;
-	VOLATILE SSHORT id;
+	volatile SSHORT id;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -233,9 +233,9 @@ void DYN_UTIL_generate_field_name( TDBB tdbb, GBL gbl, TEXT * buffer)
  *
  **************************************/
 	DBB dbb;
-	VOLATILE BLK request;
+	volatile BLK request;
 	USHORT found;
-	VOLATILE SSHORT id;
+	volatile SSHORT id;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -296,7 +296,7 @@ void DYN_UTIL_generate_field_position(
  *
  **************************************/
 	DBB dbb;
-	VOLATILE BLK request;
+	volatile BLK request;
 	SLONG field_position = -1;
 
 	if (!relation_name)
@@ -349,9 +349,9 @@ void DYN_UTIL_generate_index_name(TDBB tdbb,
  *
  **************************************/
 	DBB dbb;
-	VOLATILE BLK request;
+	volatile BLK request;
 	USHORT found;
-	VOLATILE SSHORT id;
+	volatile SSHORT id;
 	SCHAR *format;
 
 	SET_TDBB(tdbb);
@@ -415,9 +415,9 @@ void DYN_UTIL_generate_trigger_name( TDBB tdbb, GBL gbl, TEXT * buffer)
  *
  **************************************/
 	DBB dbb;
-	VOLATILE BLK request;
+	volatile BLK request;
 	USHORT found;
-	VOLATILE SSHORT id;
+	volatile SSHORT id;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -477,7 +477,7 @@ BOOLEAN DYN_UTIL_get_prot(TDBB		tdbb,
  *	Get protection mask for relation or relation_field
  *
  **************************************/
-	VOLATILE REQ request;
+	volatile REQ request;
 	struct
 	{
 		SCHAR relation_name[32];
@@ -535,7 +535,7 @@ void DYN_UTIL_store_check_constraints(TDBB	tdbb,
  *
  **************************************/
 	DBB dbb;
-	VOLATILE BLK request;
+	volatile BLK request;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;

@@ -272,7 +272,7 @@ void DYN_delete_function( GBL gbl, UCHAR ** ptr)
 	TDBB tdbb;
 	DBB dbb;
 	BLK request;
-	VOLATILE USHORT id, found;
+	volatile USHORT id, found;
 	TEXT f[32];
 
 	tdbb = GET_THREAD_DATA;
@@ -409,7 +409,7 @@ void DYN_delete_global_field( GBL gbl, UCHAR ** ptr)
 	TDBB tdbb;
 	DBB dbb;
 	BLK request;
-	VOLATILE USHORT id, found;
+	volatile USHORT id, found;
 	TEXT f[32];
 
 	tdbb = GET_THREAD_DATA;
@@ -599,7 +599,7 @@ void DYN_delete_local_field(
 	TDBB tdbb;
 	DBB dbb;
 	BLK request, old_request;
-	VOLATILE USHORT id, found;
+	volatile USHORT id, found;
 	TEXT tbl_nm[32], col_nm[32], constraint[32], index_name[32];
 
 	tdbb = GET_THREAD_DATA;
@@ -811,7 +811,7 @@ void DYN_delete_parameter( GBL gbl, UCHAR ** ptr, TEXT * proc_name)
  **************************************/
 
 	BLK old_request, request;
-	VOLATILE USHORT old_id, id, found;
+	volatile USHORT old_id, id, found;
 	TEXT name[32];
 
 	GET_STRING(ptr, name);
@@ -905,7 +905,7 @@ void DYN_delete_procedure( GBL gbl, UCHAR ** ptr)
 	TDBB tdbb;
 	DBB dbb;
 	BLK old_request, request;
-	VOLATILE USHORT old_id, id, found;
+	volatile USHORT old_id, id, found;
 	TEXT name[32];
 
 	GET_STRING(ptr, name);
@@ -1063,7 +1063,7 @@ void DYN_delete_relation( GBL gbl, UCHAR ** ptr, TEXT * relation)
 	TDBB tdbb;
 	DBB dbb;
 	BLK request;
-	VOLATILE USHORT id, found;
+	volatile USHORT id, found;
 	TEXT relation_name[32];
 
 	tdbb = GET_THREAD_DATA;
@@ -1310,8 +1310,8 @@ void DYN_delete_role( GBL gbl, UCHAR ** ptr)
 	TDBB tdbb;
 	DBB dbb;
 	BLK request;
-	VOLATILE USHORT id;
-	//VOLATILE USHORT err_num;
+	volatile USHORT id;
+	//volatile USHORT err_num;
 	TEXT role_name[32], role_owner[32], user[32];
         //TEXT security_class[32];
 	TEXT *ptr1, *ptr2;

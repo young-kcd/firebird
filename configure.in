@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.42 2002-09-10 07:56:02 eku Exp $
+dnl $Id: configure.in,v 1.43 2002-09-11 11:30:43 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -127,7 +127,7 @@ AC_CHECK_HEADERS(unistd.h)
 AC_CHECK_HEADERS(varargs.h)
 
 
-dnl  Check for libraries
+dnl Check for libraries
 AC_CHECK_LIB(dl, main)
 AC_CHECK_LIB(c,main)
 AC_CHECK_LIB(m, main)
@@ -185,27 +185,24 @@ if test "$ac_cv_func_dirname" = "no"; then
 fi
 AC_CHECK_FUNCS(sigaction)
 AC_CHECK_FUNCS(snprintf)
-AC_CHECK_FUNCS(mmap)
+AC_FUNC_MMAP 
+AC_CHECK_FUNCS(atexit on_exit)
+AC_FUNC_FORK
+AC_CHECK_FUNCS(setgrp setpgid)
+AC_FUNC_SETPGRP 
+AC_CHECK_FUNCS(flock)
 
 
 dnl Check for other things
 AC_C_BIGENDIAN
+AC_C_CONST dnl EKU: we should replace the CONST define in the source!!!
+AC_C_VOLATILE 
 AC_TYPE_SIGNAL
-
-AC_MSG_CHECKING(for socklen_t type)
-AC_TRY_COMPILE([#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/socket.h>],
-[socklen_t a;],
-[AC_MSG_RESULT(yes)],
-[AC_DEFINE(socklen_t, int) AC_MSG_RESULT(no)])
-
-UNIX_64_BIT_IO=N
-AC_MSG_CHECKING(for 64 bit I/O support)
-AC_TRY_COMPILE([#include <sys/types.h>],
-[off64_t a;],
-[UNIX_64_BIT_IO=Y AC_DEFINE(UNIX_64_BIT_IO) AC_MSG_RESULT(yes)],
-[AC_MSG_RESULT(no)])
+AC_CHECK_TYPE(socklen_t,int)
+AC_CHECK_TYPE(off64_t,
+  [UNIX_64_BIT_IO=Y
+   AC_DEFINE(UNIX_64_BIT_IO)],
+  [UNIX_64_BIT_IO=N])
 
 dnl ##################### DO NOT ADD ANY TESTS BELOW ###########################
 
@@ -246,154 +243,144 @@ dnl AC_DEFINE_UNQUOTED(FILE_VER_STRING, "$FILE_VER_STRING")
 dnl AC_DEFINE_UNQUOTED(LICENSE_VER_STRING, "$FILE_VER_STRING")
 
 
+AC_CONFIG_COMMANDS_PRE([
+mkdir -p gen/csv
+mkdir -p gen/dudley
+mkdir -p gen/isql
+mkdir -p gen/lock
+mkdir -p gen/gpre
+mkdir -p gen/pipe
+mkdir -p gen/remote
+mkdir -p gen/wal
+mkdir -p gen/alice
+mkdir -p gen/refDatabases
+mkdir -p gen/v5_examples
+mkdir -p gen/journal
+mkdir -p gen/msgs
+mkdir -p gen/burp
+mkdir -p gen/dsql
+mkdir -p gen/extlib
+mkdir -p gen/intl
+mkdir -p gen/jrd
+mkdir -p gen/qli
+mkdir -p gen/utilities
+mkdir -p gen/fbutil
 
-dnl These AC_OUTPUT_COMMANDS should be replaced by AC_CONFIG_COMMANDS_PRE
-dnl by that version of autoconf is fresh off the shelf, and for now although
-dnl these cause an error it's acceptable.
-AC_OUTPUT_COMMANDS([mkdir -p gen/csv])
-AC_OUTPUT_COMMANDS([mkdir -p gen/dudley])
-AC_OUTPUT_COMMANDS([mkdir -p gen/isql])
-AC_OUTPUT_COMMANDS([mkdir -p gen/lock])
-AC_OUTPUT_COMMANDS([mkdir -p gen/gpre])
-AC_OUTPUT_COMMANDS([mkdir -p gen/pipe])
-AC_OUTPUT_COMMANDS([mkdir -p gen/remote])
-AC_OUTPUT_COMMANDS([mkdir -p gen/wal])
-AC_OUTPUT_COMMANDS([mkdir -p gen/alice])
-AC_OUTPUT_COMMANDS([mkdir -p gen/refDatabases])
-AC_OUTPUT_COMMANDS([mkdir -p gen/v5_examples])
-AC_OUTPUT_COMMANDS([mkdir -p gen/gpre])
-AC_OUTPUT_COMMANDS([mkdir -p gen/journal])
-AC_OUTPUT_COMMANDS([mkdir -p gen/msgs])
-AC_OUTPUT_COMMANDS([mkdir -p gen/burp])
-AC_OUTPUT_COMMANDS([mkdir -p gen/dsql])
-AC_OUTPUT_COMMANDS([mkdir -p gen/extlib])
-AC_OUTPUT_COMMANDS([mkdir -p gen/intl])
-AC_OUTPUT_COMMANDS([mkdir -p gen/jrd])
-AC_OUTPUT_COMMANDS([mkdir -p gen/qli])
-AC_OUTPUT_COMMANDS([mkdir -p gen/utilities])
-AC_OUTPUT_COMMANDS([mkdir -p gen/fbutil])
+mkdir -p gen/install
+mkdir -p gen/install/scripts
+mkdir -p gen/install/sinixz
 
-AC_OUTPUT_COMMANDS([mkdir -p gen/install])
-AC_OUTPUT_COMMANDS([mkdir -p gen/install/scripts])
-AC_OUTPUT_COMMANDS([mkdir -p gen/install/sinixz])
+mkdir -p gen/common
+mkdir -p gen/common/memory
 
-AC_OUTPUT_COMMANDS([mkdir -p gen/common])
-AC_OUTPUT_COMMANDS([mkdir -p gen/common/memory])
+mkdir -p gen/firebird/include
+mkdir -p gen/firebird/intl
+mkdir -p gen/firebird/UDF
+mkdir -p gen/firebird/bin
+mkdir -p gen/firebird/examples/v5
+mkdir -p gen/firebird/lib
+mkdir -p gen/firebird/misc
+mkdir -p gen/firebird/help
 
-AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/include])
-AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/intl])
-AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/UDF])
-AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/bin])
-AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/examples/v5])
-AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/lib])
-AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/misc])
-AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/help])
+src/misc/writeBuildNum.sh rebuildHeader
 
-AC_OUTPUT_COMMANDS([chmod a+x gen/install/install.sh])
-AC_OUTPUT_COMMANDS([chmod a+x gen/install/scripts/*.sh])
+mkdir -p gen/jrd/os
+mkdir -p gen/jrd/os/darwin
+mkdir -p gen/jrd/os/posix
+mkdir -p gen/jrd/os/win32
 
-AC_OUTPUT_COMMANDS([src/misc/writeBuildNum.sh rebuildHeader])
+mkdir -p gen/libfbcommon
+mkdir -p gen/libfbcommon/memory
+dnl mkdir -p gen/libdsqlserver
+mkdir -p gen/libfbserver
+mkdir -p gen/libfbserver/jrd
+mkdir -p gen/libfbserver/dsql
+mkdir -p gen/libfbserver/lock
+mkdir -p gen/libfbserver/remote
+mkdir -p gen/libfbserver/pipe
+mkdir -p gen/libfbserver/gpre
+mkdir -p gen/libfbserver/alice
+mkdir -p gen/libfbserver/burp
+mkdir -p gen/libfbserver/utilities
+mkdir -p gen/libfbserver/fbutil
+mkdir -p gen/libfbserver/wal
+mkdir -p gen/libfbserver/common/memory
+mkdir -p gen/libfbserver/jrd/os/posix
+mkdir -p gen/fbserver/remote
+mkdir -p gen/libfbclient/jrd
+mkdir -p gen/libfbclient/dsql
+mkdir -p gen/libfbclient/remote
+mkdir -p gen/libfbclient/utilities
+mkdir -p gen/libfbclient/fbutil
+mkdir -p gen/libfbclient/common/memory
+mkdir -p gen/client.gbak/burp
+mkdir -p gen/client.gfix/alice
+mkdir -p gen/client.gpre/gpre
+mkdir -p gen/client.isql/isql
+mkdir -p gen/client.util/utilities
+mkdir -p gen/intl/intl
 
-AC_OUTPUT_COMMANDS([mkdir -p gen/jrd/os])
-AC_OUTPUT_COMMANDS([mkdir -p gen/jrd/os/darwin])
-AC_OUTPUT_COMMANDS([mkdir -p gen/jrd/os/posix])
-AC_OUTPUT_COMMANDS([mkdir -p gen/jrd/os/win32])
+mkdir -p gen/libfbcommon/common/memory
+mkdir -p gen/libfbcommon/fbutil
+mkdir -p gen/boot.gpre/jrd
+mkdir -p gen/boot.gpre/gpre
+mkdir -p gen/static.gpre
+mkdir -p gen/static.gpre/jrd
+mkdir -p gen/static.gpre/dsql
+mkdir -p gen/static.gpre/lock
+mkdir -p gen/static.gpre/remote
+mkdir -p gen/static.gpre/pipe
+mkdir -p gen/static.gpre/gpre
+mkdir -p gen/static.gpre/alice
+mkdir -p gen/static.gpre/utilities
+mkdir -p gen/static.gpre/fbutil
+mkdir -p gen/static.gpre/jrd/os/posix
+mkdir -p gen/static.gpre/burp
+mkdir -p gen/static.gpre/wal
+mkdir -p gen/static.gbak/burp
+mkdir -p gen/static.isql/isql
 
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbcommon])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbcommon/memory])
-dnl AC_OUTPUT_COMMANDS([mkdir -p gen/libdsqlserver])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbserver])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbserver/jrd])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbserver/dsql])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbserver/lock])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbserver/remote])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbserver/pipe])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbserver/gpre])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbserver/alice])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbserver/burp])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbserver/utilities])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbserver/fbutil])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbserver/wal])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbserver/common/memory])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbserver/jrd/os/posix])
-AC_OUTPUT_COMMANDS([mkdir -p gen/fbserver/remote])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbclient/jrd])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbclient/dsql])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbclient/remote])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbclient/utilities])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbclient/fbutil])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbclient/common/memory])
-AC_OUTPUT_COMMANDS([mkdir -p gen/client.gbak/burp])
-AC_OUTPUT_COMMANDS([mkdir -p gen/client.gfix/alice])
-AC_OUTPUT_COMMANDS([mkdir -p gen/client.gpre/gpre])
-AC_OUTPUT_COMMANDS([mkdir -p gen/client.isql/isql])
-AC_OUTPUT_COMMANDS([mkdir -p gen/client.util/utilities])
-AC_OUTPUT_COMMANDS([mkdir -p gen/intl/intl])
+mkdir -p gen/libfbstatic
+mkdir -p gen/libfbstatic/jrd
+mkdir -p gen/libfbstatic/dsql
+mkdir -p gen/libfbstatic/lock
+mkdir -p gen/libfbstatic/remote
+mkdir -p gen/libfbstatic/pipe
+mkdir -p gen/libfbstatic/gpre
+mkdir -p gen/libfbstatic/alice
+mkdir -p gen/libfbstatic/utilities
+mkdir -p gen/libfbstatic/fbutil
+mkdir -p gen/libfbstatic/jrd/os/posix
+mkdir -p gen/libfbstatic/burp
+mkdir -p gen/libfbstatic/wal
+mkdir -p gen/embed.lockmgr/lock
+mkdir -p gen/embed.util/utilities
+mkdir -p gen/embed.gbak/burp
+mkdir -p gen/embed.gfix/alice
+mkdir -p gen/embed.isql/isql
+mkdir -p gen/embed.gdef/dudley
+mkdir -p gen/embed.qli/qli
+mkdir -p gen/embed.gpre/gpre
+mkdir -p gen/inet_server/remote
+mkdir -p gen/msgs/msgs
+mkdir -p gen/extlib/extlib/fbudf
+mkdir -p gen/v5_examples/v5_examples
 
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbcommon/common/memory])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbcommon/fbutil])
-AC_OUTPUT_COMMANDS([mkdir -p gen/boot.gpre/jrd])
-AC_OUTPUT_COMMANDS([mkdir -p gen/boot.gpre/gpre])
-AC_OUTPUT_COMMANDS([mkdir -p gen/static.gpre])
-AC_OUTPUT_COMMANDS([mkdir -p gen/static.gpre/jrd])
-AC_OUTPUT_COMMANDS([mkdir -p gen/static.gpre/dsql])
-AC_OUTPUT_COMMANDS([mkdir -p gen/static.gpre/lock])
-AC_OUTPUT_COMMANDS([mkdir -p gen/static.gpre/remote])
-AC_OUTPUT_COMMANDS([mkdir -p gen/static.gpre/pipe])
-AC_OUTPUT_COMMANDS([mkdir -p gen/static.gpre/gpre])
-AC_OUTPUT_COMMANDS([mkdir -p gen/static.gpre/alice])
-AC_OUTPUT_COMMANDS([mkdir -p gen/static.gpre/utilities])
-AC_OUTPUT_COMMANDS([mkdir -p gen/static.gpre/fbutil])
-AC_OUTPUT_COMMANDS([mkdir -p gen/static.gpre/jrd/os/posix])
-AC_OUTPUT_COMMANDS([mkdir -p gen/static.gpre/burp])
-AC_OUTPUT_COMMANDS([mkdir -p gen/static.gpre/wal])
-AC_OUTPUT_COMMANDS([mkdir -p gen/static.gbak/burp])
-AC_OUTPUT_COMMANDS([mkdir -p gen/static.isql/isql])
-
-
-
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbstatic])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbstatic/jrd])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbstatic/dsql])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbstatic/lock])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbstatic/remote])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbstatic/pipe])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbstatic/gpre])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbstatic/alice])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbstatic/utilities])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbstatic/fbutil])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbstatic/jrd/os/posix])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbstatic/burp])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbstatic/wal])
-AC_OUTPUT_COMMANDS([mkdir -p gen/embed.lockmgr/lock])
-AC_OUTPUT_COMMANDS([mkdir -p gen/embed.util/utilities])
-AC_OUTPUT_COMMANDS([mkdir -p gen/embed.gbak/burp])
-AC_OUTPUT_COMMANDS([mkdir -p gen/embed.gfix/alice])
-AC_OUTPUT_COMMANDS([mkdir -p gen/embed.isql/isql])
-AC_OUTPUT_COMMANDS([mkdir -p gen/embed.gdef/dudley])
-AC_OUTPUT_COMMANDS([mkdir -p gen/embed.qli/qli])
-AC_OUTPUT_COMMANDS([mkdir -p gen/embed.gpre/gpre])
-AC_OUTPUT_COMMANDS([mkdir -p gen/inet_server/remote])
-AC_OUTPUT_COMMANDS([mkdir -p gen/msgs/msgs])
-AC_OUTPUT_COMMANDS([mkdir -p gen/extlib/extlib/fbudf])
-AC_OUTPUT_COMMANDS([mkdir -p gen/v5_examples/v5_examples])
-
-
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbembed])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbembed/jrd])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbembed/dsql])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbembed/lock])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbembed/remote])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbembed/pipe])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbembed/gpre])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbembed/alice])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbembed/utilities])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbembed/fbutil])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbembed/jrd/os/posix])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbembed/burp])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbembed/wal])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbembed/common/memory])
-AC_OUTPUT_COMMANDS([mkdir -p gen/libfbembed/fbutil])
+mkdir -p gen/libfbembed
+mkdir -p gen/libfbembed/jrd
+mkdir -p gen/libfbembed/dsql
+mkdir -p gen/libfbembed/lock
+mkdir -p gen/libfbembed/remote
+mkdir -p gen/libfbembed/pipe
+mkdir -p gen/libfbembed/gpre
+mkdir -p gen/libfbembed/alice
+mkdir -p gen/libfbembed/utilities
+mkdir -p gen/libfbembed/fbutil
+mkdir -p gen/libfbembed/jrd/os/posix
+mkdir -p gen/libfbembed/burp
+mkdir -p gen/libfbembed/wal
+mkdir -p gen/libfbembed/common/memory
+])
 
 MAKE_SRC_DIR=builds/posix
 
@@ -451,6 +438,10 @@ gen/install/sinixz/postinstall:src/install/arch-specific/sinixz/postinstall.in
 gen/install/sinixz/postremove:src/install/arch-specific/sinixz/postremove.in
 dnl SINIX-Z end
 )
+
+dnl EKU: must be executed after AC_OUTPUT
+chmod a+x gen/install/install.sh gen/install/scripts/*.sh
+
 
 dnl Print out the build configuration (the most interesting thing)
 echo

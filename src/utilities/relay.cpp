@@ -63,10 +63,20 @@ int CLIB_ROUTINE main( int argc, char **argv)
 #ifndef DEBUG
 	if (setreuid(0, 0) < 0)
 		ib_printf("gds_relay: couldn't set uid to superuser\n");
-	SETPGRP;
+#ifdef HAVE_SETPGRP
+#ifdef SETPGRP_VOID
+	(void)setpgrp();
+#else
+	(void)setpgrp(0, 0);
+#endif /* SETPGRP_VOID */
+#else
+#ifdef HAVE_SETPGID
+	(void)setpgid(0, 0);
+#endif /* HAVE_SETPGID */
+#endif /* HAVE_SETPGRP */
 	signal(SIGINT, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);
-#endif
+#endif /* !DEBUG */
 
 /* Get the file descriptor ID - if it is present - make sure it's valid */
 	if (argc < 2 || (!(fd = atoi(argv[1])) && strcmp(argv[1], "0")))

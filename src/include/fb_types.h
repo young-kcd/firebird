@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.7 2002-08-27 11:47:11 dimitr Exp $
+ *  $Id: fb_types.h,v 1.8 2002-09-11 11:30:44 eku Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -40,10 +40,6 @@
 
 #ifndef CONST
 #    define CONST           const
-#endif
-
-#ifndef VOLATILE
-#    define VOLATILE        volatile
 #endif
 
 

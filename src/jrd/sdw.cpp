@@ -932,7 +932,7 @@ void SDW_start(
 	FIL dbb_file, shadow_file = 0;
 	WIN window;
 	HDR database_header, shadow_header;
-	VOLATILE USHORT header_fetched = 0;
+	volatile USHORT header_fetched = 0;
 	SLONG *spare_buffer = NULL, *spare_page;
 
 	tdbb = GET_THREAD_DATA;

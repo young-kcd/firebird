@@ -143,7 +143,7 @@ struct tgbl *gdgbl;
 #define OUTPUT_SUPPRESS	"SUPPRESS"
 #define BURP_MSG_FAC    12
 
-static void close_out_transaction(VOLATILE SSHORT, isc_tr_handle *);
+static void close_out_transaction(volatile SSHORT, isc_tr_handle *);
 static void enable_signals(void);
 static void excp_handler(void);
 static SLONG get_number(SCHAR *);
@@ -465,7 +465,7 @@ int DLL_EXPORT BURP_gbak(int		argc,
    for AIX PowerPC because of the problem (see comments below). So
    whoever will do a port on AIX, must reconsider a static definition */
 #ifdef AIX_PPC
-	static TEXT *file2;			/* SomeHow, making this VOLATILE does'nt give the
+	static TEXT *file2;			/* SomeHow, making this volatile does'nt give the
 								   desired value in case of AIX PowerPC */
 #else
 	TEXT *file2;
@@ -477,11 +477,11 @@ int DLL_EXPORT BURP_gbak(int		argc,
 	int temp, result;
 	SLONG clock;
 	SLONG redir_in, redir_out, redir_err;
-	VOLATILE SSHORT action = QUIT;
+	volatile SSHORT action = QUIT;
 	BOOLEAN					sw_ods7 = FALSE;
 	USHORT					sw_replace;
 	USHORT					sw_tape;
-	VOLATILE struct tgbl*	tdgbl;
+	volatile struct tgbl*	tdgbl;
 	JMP_BUF					env;
 	IB_FILE*				tmp_outfile;
 
@@ -1454,7 +1454,7 @@ void BURP_verbose(USHORT number,
 }	// extern "C"
 
 
-static void close_out_transaction(VOLATILE  SSHORT action,
+static void close_out_transaction(volatile  SSHORT action,
 								  isc_tr_handle* handle)
 {
 /**************************************

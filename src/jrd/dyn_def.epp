@@ -153,9 +153,9 @@ void DYN_define_cache( GBL gbl, UCHAR ** ptr)
 	TDBB tdbb;
 	DBB dbb;
 	UCHAR verb;
-	VOLATILE BLK request;
+	volatile BLK request;
 	USHORT found = FALSE;
-	VOLATILE SSHORT id;
+	volatile SSHORT id;
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
@@ -254,9 +254,9 @@ void DYN_define_constraint(GBL		gbl,
  **************************************/
 	TDBB tdbb;
 	DBB dbb;
-	VOLATILE BLK request;
+	volatile BLK request;
 	BLK old_request;
-	VOLATILE SSHORT id, old_id;
+	volatile SSHORT id, old_id;
 	UCHAR verb;
 	TEXT constraint_name[32], index_name[32], referred_index_name[32];
 	TEXT null_field_name[32], trigger_name[32];
@@ -654,7 +654,7 @@ void DYN_define_dimension(GBL		gbl,
 	DBB  dbb  = tdbb->tdbb_database;
 
 	UCHAR verb;
-	VOLATILE BLK request;
+	volatile BLK request;
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_dims, DYN_REQUESTS);
 
@@ -729,7 +729,7 @@ void DYN_define_exception( GBL gbl, UCHAR ** ptr)
  *
  **************************************/
 
-	VOLATILE BLK request;
+	volatile BLK request;
 	UCHAR verb;
 	TEXT exception_name[32];
 
@@ -814,11 +814,11 @@ void DYN_define_file(GBL		gbl,
 	TDBB tdbb;
 	DBB dbb;
 	UCHAR verb;
-	VOLATILE BLK request;
+	volatile BLK request;
 	SLONG temp;
 	USHORT man_auto;
 	TEXT temp_f1[MAXPATHLEN], temp_f[MAXPATHLEN];
-	VOLATILE SSHORT id;
+	volatile SSHORT id;
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
@@ -923,7 +923,7 @@ void DYN_define_filter( GBL gbl, UCHAR ** ptr)
 
 	UCHAR verb;
 	TEXT filter_name[32];
-	VOLATILE BLK request;
+	volatile BLK request;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB  dbb  = tdbb->tdbb_database;
@@ -1024,7 +1024,7 @@ void DYN_define_function( GBL gbl, UCHAR ** ptr)
 
 	UCHAR verb;
 	TEXT function_name[32];
-	VOLATILE BLK request;
+	volatile BLK request;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB  dbb  = tdbb->tdbb_database;
@@ -1131,7 +1131,7 @@ void DYN_define_function_arg(GBL gbl, UCHAR** ptr, TEXT* function_name)
 	TDBB tdbb;
 	DBB dbb;
 	UCHAR verb;
-	VOLATILE BLK request = NULL;
+	volatile BLK request = NULL;
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
@@ -1257,7 +1257,7 @@ void DYN_define_generator( GBL gbl, UCHAR ** ptr)
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB  dbb  = tdbb->tdbb_database;
 
-	VOLATILE BLK request;
+	volatile BLK request;
 	TEXT generator_name[32];
 
 	generator_name[0] = 0;
@@ -1325,7 +1325,7 @@ void DYN_define_global_field(GBL		gbl,
 
 	UCHAR verb;
 	TEXT global_field_name[32];
-	VOLATILE BLK request;
+	volatile BLK request;
 	USHORT dtype;
 
 	global_field_name[0] = 0;
@@ -1609,9 +1609,9 @@ void DYN_define_index(GBL		gbl,
  *
  **************************************/
 
-	VOLATILE BLK request;
+	volatile BLK request;
 	BLK old_request;
-	VOLATILE SSHORT id, old_id;
+	volatile SSHORT id, old_id;
 	const size_t field_name_size = 32;
 	TEXT index_name[32];
 	TEXT referenced_relation[32];
@@ -2176,9 +2176,9 @@ void DYN_define_local_field(GBL		gbl,
  **************************************/
 	TDBB tdbb;
 	DBB dbb;
-	VOLATILE BLK request;
+	volatile BLK request;
 	BLK old_request;
-	VOLATILE SSHORT id, old_id;
+	volatile SSHORT id, old_id;
 	UCHAR verb, *blr;
 	TEXT local_field_name[32];
 	USHORT dtype, length,
@@ -2533,9 +2533,9 @@ void DYN_define_log_file(
 	TDBB tdbb;
 	DBB dbb;
 	UCHAR verb;
-	VOLATILE BLK request;
+	volatile BLK request;
 	USHORT found = FALSE;
-	VOLATILE SSHORT id;
+	volatile SSHORT id;
 	STR db_filename;
 
 	tdbb = GET_THREAD_DATA;
@@ -2673,12 +2673,12 @@ void DYN_define_parameter( GBL gbl, UCHAR ** ptr, TEXT * procedure_name)
 	DBB dbb;
 	UCHAR verb;
 	TEXT parameter_name[32];
-	VOLATILE BLK request;
+	volatile BLK request;
 	BLK request2;
 	USHORT f_length, f_type, f_charlength, f_seg_length,
 		f_scale_null, f_subtype_null, f_seg_length_null,
 		f_charlength_null, f_precision_null, f_charset_null, f_collation_null;
-	VOLATILE SSHORT id;
+	volatile SSHORT id;
 	SSHORT f_subtype, f_scale, f_precision;
 	SSHORT f_charset, f_collation;
 
@@ -2909,10 +2909,10 @@ void DYN_define_procedure( GBL gbl, UCHAR ** ptr)
  **************************************/
 	TDBB tdbb;
 	DBB dbb;
-	VOLATILE BLK request;
+	volatile BLK request;
 	UCHAR verb;
 	USHORT sql_prot;
-	VOLATILE SSHORT id;
+	volatile SSHORT id;
 	TEXT procedure_name[PROC_NAME_SIZE], owner_name[32], *p;
 
 	tdbb = GET_THREAD_DATA;
@@ -3080,11 +3080,11 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
 	BOOLEAN	found_dir;
 	TDBB tdbb;
 	DBB dbb;
-	VOLATILE BLK request;
+	volatile BLK request;
 	BLK old_request;
 	UCHAR verb;
 	USHORT sql_prot, is_a_view, priv;
-	VOLATILE SSHORT id, old_id;
+	volatile SSHORT id, old_id;
 	STATUS *s;
 	TEXT relation_name[32], owner_name[32], field_name[32], *p;
 
@@ -3336,7 +3336,7 @@ void DYN_define_role( GBL gbl, UCHAR ** ptr)
  **************************************/
 	TDBB tdbb;
 	DBB dbb;
-	VOLATILE BLK request = NULL;
+	volatile BLK request = NULL;
 	TEXT dummy_name[32], owner_name[32], role_name[32], *p;
 
 	tdbb = GET_THREAD_DATA;
@@ -3451,7 +3451,7 @@ void DYN_define_security_class( GBL gbl, UCHAR ** ptr)
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB  dbb  = tdbb->tdbb_database;
 
-	VOLATILE BLK request;
+	volatile BLK request;
 	UCHAR verb;
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_classes, DYN_REQUESTS);
@@ -3528,9 +3528,9 @@ void DYN_define_sql_field(GBL		gbl,
  **************************************/
 	TDBB tdbb;
 	DBB dbb;
-	VOLATILE BLK request;
+	volatile BLK request;
 	BLK old_request;
-	VOLATILE SSHORT id, old_id;
+	volatile SSHORT id, old_id;
 	UCHAR verb;
 	TEXT sql_field_name[32];
 	USHORT dtype;
@@ -3832,7 +3832,7 @@ void DYN_define_shadow( GBL gbl, UCHAR ** ptr)
 	DBB  dbb  = tdbb->tdbb_database;
 
 	UCHAR verb;
-	VOLATILE BLK request;
+	volatile BLK request;
 	bool found = false;
 
 	SLONG shadow_number = DYN_get_number(ptr);
@@ -3908,7 +3908,7 @@ void DYN_define_trigger(GBL		gbl,
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB  dbb  = tdbb->tdbb_database;
 
-	VOLATILE BLK request;
+	volatile BLK request;
 	UCHAR	verb;
 	TEXT	t[32];
 
@@ -4091,7 +4091,7 @@ void DYN_define_trigger_msg(GBL gbl, UCHAR** ptr, TEXT* trigger_name)
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB  dbb  = tdbb->tdbb_database;
 
-	VOLATILE BLK request;
+	volatile BLK request;
 	UCHAR verb;
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_trg_msgs, DYN_REQUESTS);
@@ -4173,9 +4173,9 @@ void DYN_define_view_relation( GBL gbl, UCHAR ** ptr, TEXT * view)
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB  dbb  = tdbb->tdbb_database;
 
-	VOLATILE BLK request, old_request;
+	volatile BLK request, old_request;
 	UCHAR verb;
-	VOLATILE SSHORT id, old_id;
+	volatile SSHORT id, old_id;
 
 	MET_exact_name(view);
 	if (!view[0])
@@ -4279,7 +4279,7 @@ static void check_unique_name(	TDBB	tdbb,
  *
  **************************************/
 
-	VOLATILE BLK request;
+	volatile BLK request;
 	bool found;
 
 	SET_TDBB(tdbb);
@@ -4357,7 +4357,7 @@ static BOOLEAN find_field_source(TDBB	tdbb,
  *
  **************************************/
 
-	VOLATILE BLK request;
+	volatile BLK request;
 	BOOLEAN found;
 
 	SET_TDBB(tdbb);
@@ -4415,7 +4415,7 @@ static BOOLEAN get_who( TDBB tdbb, GBL gbl, SCHAR * name)
  *	Get user name
  *
  **************************************/
-	VOLATILE BLK request;
+	volatile BLK request;
 
 	SET_TDBB(tdbb);
 
@@ -4454,9 +4454,9 @@ BOOLEAN is_it_user_name(GBL gbl, TEXT* role_name, TDBB tdbb)
  *
  **************************************/
 
-	VOLATILE BLK request;
+	volatile BLK request;
 	BOOLEAN found = FALSE;
-	VOLATILE USHORT request_id;
+	volatile USHORT request_id;
 
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;

@@ -94,7 +94,17 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	if (setreuid(0, 0) < 0)
 		ib_printf("Shared cache manager: couldn't set uid to superuser\n");
 
-	SETPGRP;
+#ifdef HAVE_SETPGRP
+#ifdef SETPGRP_VOID
+	(void)setpgrp();
+#else
+	(void)setpgrp(0, 0);
+#endif /* SETPGRP_VOID */
+#else
+#ifdef HAVE_SETPGID
+	(void)setpgid(0, 0);
+#endif /* HAVE_SETPGID */
+#endif /* HAVE_SETPGRP */
 
 	signal(SIGINT, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);

@@ -45,10 +45,8 @@
 #include <unistd.h>
 #endif
 
-#ifdef sparc
-#ifndef SOLARIS
+#ifdef HAVE_VFORK_H
 #include <vfork.h>
-#endif
 #endif
 
 #ifndef FOPEN_WRITE_TYPE

@@ -1988,7 +1988,7 @@ static void modify_lfield_position(TDBB tdbb,
  *	    if new_position == original_position -- no_op
  *
  ***********************************************************/
-	VOLATILE BLK request = NULL;
+	volatile BLK request = NULL;
 	USHORT new_pos = 0;
 	SLONG max_position = -1;
 	BOOLEAN move_down = FALSE;

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: util.cpp,v 1.5 2002-09-08 07:56:50 dimitr Exp $
+$Id: util.cpp,v 1.6 2002-09-11 11:30:45 eku Exp $
 */
 
 #include "firebird.h"
@@ -31,7 +31,7 @@ $Id: util.cpp,v 1.5 2002-09-08 07:56:50 dimitr Exp $
 #include <fcntl.h>				/* for open() and fcntl() */
 #include <errno.h>
 
-#ifndef NO_FLOCK
+#ifdef HAVE_FLOCK
 #include <sys/file.h>			/* for flock() */
 #endif
 
@@ -175,7 +175,7 @@ int UTIL_ex_lock( TEXT * file)
 	TEXT expanded_filename[MAXPATHLEN], tmp[MAXPATHLEN], hostname[64];
 	int fd_file;				/* file fd for the opened and locked file */
 
-#ifdef NO_FLOCK
+#ifndef HAVE_FLOCK
 	struct flock lock;
 #endif
 
@@ -191,7 +191,7 @@ int UTIL_ex_lock( TEXT * file)
 
 	assert(fd_file != -2);
 
-#ifdef NO_FLOCK
+#ifndef HAVE_FLOCK
 /* get an exclusive lock on the GUARD file without blocking on the call */
 	lock.l_type = F_WRLCK;
 	lock.l_whence = 0;
@@ -224,7 +224,7 @@ void UTIL_ex_unlock( int fd_file)
  **************************************/
 
 
-#ifdef NO_FLOCK
+#ifndef HAVE_FLOCK
 
 	struct flock lock;
 

@@ -361,8 +361,18 @@ fprintf (stderr, "gds_pipe here argc = %d argv[1] = '%s' getpid = %d\n",
 */
 
 #ifndef DEBUG
-SETPGRP;
-#endif
+#ifdef HAVE_SETPGRP
+#ifdef SETPGRP_VOID
+(void)setpgrp();
+#else 
+(void)setpgrp(0, 0);
+#endif /* SETPGRP_VOID */
+#else
+#ifdef HAVE_SETPGID
+(void)setpgid(0, 0);
+#endif /* HAVE_SETPGID */
+#endif /* HAVE_SETPGRP */
+#endif /*!DEBUG */
 
 signal (SIGINT, SIG_IGN);
 signal (SIGQUIT, SIG_IGN);
