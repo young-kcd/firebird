@@ -127,6 +127,10 @@ void ERR_corrupt(int number)
 }
 #endif
 
+const TEXT* ERR_cstring(const Firebird::string& in_string)
+{
+	return ERR_cstring(in_string.c_str());
+}
 
 const TEXT* ERR_cstring(const TEXT* in_string)
 {

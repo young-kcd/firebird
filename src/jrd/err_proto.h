@@ -24,6 +24,8 @@
 #ifndef JRD_ERR_PROTO_H
 #define JRD_ERR_PROTO_H
 
+#include "fb_string.h"
+
 #ifndef REQUESTER
 
 namespace Jrd {
@@ -38,7 +40,7 @@ typedef enum idx_e {
 	idx_e_foreign
 } IDX_E;
 
-	class jrd_rel;
+class jrd_rel;
 } //namespace Jrd
 
 bool	ERR_post_warning(ISC_STATUS, ...);
@@ -57,6 +59,7 @@ void	ERR_log(int, int, const TEXT*);
 #endif /* REQUESTER */
 
 const TEXT*		ERR_cstring(const TEXT*);
+const TEXT*		ERR_cstring(const Firebird::string&);
 const TEXT*		ERR_string(const TEXT*, int);
 
 #endif /* JRD_ERR_PROTO_H */
