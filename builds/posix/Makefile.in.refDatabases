@@ -29,7 +29,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.refDatabases,v 1.3 2002-08-31 09:25:13 fsg Exp $
+#  $Id: Makefile.in.refDatabases,v 1.4 2002-09-03 13:35:21 eku Exp $
 #
 ROOT=..
 ObjModuleName=refDatabases
@@ -68,7 +68,7 @@ empty_db : empty.gdb yachts.lnk
 
 empty.gdb : $(BIN)/create_db
 	-$(RM) $@
-	$(BIN)/create_db  $@
+	$(BIN)/create_db $@
 	touch $@
 	chmod 444 $@
 
@@ -89,37 +89,37 @@ ref_databases : msg.gdb help.gdb metadata.gdb isc4.gdb
 
 msg.gdb:	$(SRC_ROOT)/msgs/msg.gbak
 	$(BIN)/gbak_static -MODE read_only -R $< msg.gdb
-	chmod 444 msg.gdb
 	touch $@
+	chmod 444 $@
 
 help.gdb:	$(FIREBIRD)/help/help.gdb
 	ln -fs $^ $@
 
 $(FIREBIRD)/help/help.gdb:	$(SRC_ROOT)/misc/help.gbak
 	$(BIN)/gbak_static -MODE read_only -R $< $@
-	chmod 444 $@
 	touch $@
+	chmod 444 $@
 
 isc4.gdb:	$(FIREBIRD)/isc4.gdb
 	ln -fs $^ $@
 
 $(FIREBIRD)/isc4.gdb:	$(SRC_ROOT)/misc/isc4.gbak
 	$(BIN)/gbak_static -MODE read_only -R $< $@
-#	chmod 444 help.gdb
 	touch $@
+	chmod 444 $@
 
 metadata.gdb:	$(SRC_ROOT)/misc/metadata.gbak
 	$(BIN)/gbak_static -MODE read_only -R $< metadata.gdb
-	chmod 444 metadata.gdb
 	touch $@
+	chmod 444 $@
 
 # An alternative metadata creation method, this one is actually preferred
 # since it ensures the data is valid.
 
 metadata.gdb.x:	$(SRC_ROOT)/misc/metadata.sql
 	$(BIN)/isql -i $<
-	chmod 444 metadata.gdb
 	touch $@
+	chmod 444 $@
 
 
 FORCE:
