@@ -902,11 +902,13 @@ static IDX_E check_duplicates(
 	relation_1 = insertion->iib_relation;
 
 	while (SBM_next
-		   (insertion->iib_duplicates, &rpb.rpb_number, RSE_get_forward)) {
+		   (insertion->iib_duplicates, &rpb.rpb_number, RSE_get_forward))
+	{
 		if (rpb.rpb_number != insertion->iib_number
 			&& VIO_get_current(tdbb, &rpb, insertion->iib_transaction,
 							   reinterpret_cast < BLK > (tdbb->tdbb_default),
-							   record_idx->idx_flags & idx_foreign)) {
+							   record_idx->idx_flags & idx_foreign))
+		{
 			// dimitr: we shouldn't ignore status exceptions which take place
 			//		   inside the lock manager. Namely, they are: gds_deadlock,
 			//		   gds_lock_conflict, gds_lock_timeout. Otherwise we may
@@ -921,8 +923,14 @@ static IDX_E check_duplicates(
 			// P.S. I think the check for a status vector should be enough,
 			//      but for sure let's keep the old one as well.
 			//														2003.05.27
-			//
-			if (rpb.rpb_flags & rpb_deleted || tdbb->tdbb_status_vector[1]) {
+
+			bool lock_error =
+				(tdbb->tdbb_status_vector[1] == gds_deadlock ||
+				tdbb->tdbb_status_vector[1] == gds_lock_conflict ||
+				tdbb->tdbb_status_vector[1] == gds_lock_timeout);
+			// the above errors are not thrown but returned silently
+
+			if (rpb.rpb_flags & rpb_deleted || lock_error) {
 				result = idx_e_duplicate;
 				break;
 			}
