@@ -41,7 +41,6 @@ namespace {
 bool getRootFromRegistry(string& root)
 {
 	HKEY hkey;
-	DWORD type;
 
 	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, REG_KEY_ROOT_INSTANCES,
 		0, KEY_QUERY_VALUE, &hkey) != ERROR_SUCCESS)
@@ -51,6 +50,7 @@ bool getRootFromRegistry(string& root)
 
 	DWORD bufsize = MAXPATHLEN;
 	char buffer[MAXPATHLEN];
+	DWORD type;
 	const long RegRC = RegQueryValueEx(hkey, FB_DEFAULT_INSTANCE, 
 		NULL, &type, reinterpret_cast<UCHAR*>(buffer), &bufsize);
 	RegCloseKey(hkey);
@@ -99,3 +99,4 @@ void ConfigRoot::osConfigRoot()
 	index = bin_dir.rfind(PathUtils::dir_sep, bin_dir.length());
 	root_dir = (index ? bin_dir.substr(0, index) : bin_dir) + PathUtils::dir_sep;
 }
+

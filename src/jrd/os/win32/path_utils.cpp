@@ -38,7 +38,7 @@ void Win32DirItr::Win32DirInit(const Firebird::PathName& path)
 {
 	Firebird::PathName dirPrefix2 = dirPrefix;
 
-	if (dirPrefix.length() && dirPrefix[dirPrefix.length()-1] != PathUtils::dir_sep)
+	if (dirPrefix.length() && dirPrefix[dirPrefix.length() - 1] != PathUtils::dir_sep)
 		dirPrefix2 = dirPrefix2 + PathUtils::dir_sep;
 	dirPrefix2 += "*.*";
 	
@@ -79,9 +79,7 @@ PathUtils::dir_iterator *PathUtils::newDirItr(MemoryPool& p, const Firebird::Pat
 void PathUtils::splitLastComponent(Firebird::PathName& path, Firebird::PathName& file,
 		const Firebird::PathName& orgPath)
 {
-	Firebird::PathName::size_type pos;
-	
-	pos = orgPath.rfind(PathUtils::dir_sep);
+	Firebird::PathName::size_type pos = orgPath.rfind(PathUtils::dir_sep);
 	if (pos == Firebird::PathName::npos)
 	{
 		pos = orgPath.rfind('/');	// temp hack to make it work with paths,
@@ -115,13 +113,13 @@ void PathUtils::concatPath(Firebird::PathName& result,
 		return;
 	}
 	
-	if (first[first.length()-1] != PathUtils::dir_sep &&
+	if (first[first.length() - 1] != PathUtils::dir_sep &&
 		second[0] != PathUtils::dir_sep)
 	{
 		result = first + PathUtils::dir_sep + second;
 		return;
 	}
-	if (first[first.length()-1] == PathUtils::dir_sep &&
+	if (first[first.length() - 1] == PathUtils::dir_sep &&
 		second[0] == PathUtils::dir_sep)
 	{
 		result = first;
@@ -154,6 +152,8 @@ bool PathUtils::isSymLink(const Firebird::PathName& path)
 	return false;
 }
 
-bool PathUtils::canAccess(const Firebird::PathName& path, int mode) {
+bool PathUtils::canAccess(const Firebird::PathName& path, int mode)
+{
 	return _access(path.c_str(), mode) == 0;
 }
+

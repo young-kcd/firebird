@@ -33,8 +33,6 @@
  *  25 May 2003 - Nickolay Samofatov: Fix several bugs that prevented 
  *    compatibility with Kylix
  * 
- *
- *  $Id: config_root.cpp,v 1.11 2004-06-05 09:37:03 robocop Exp $
  */
 
 #include "firebird.h"
@@ -81,9 +79,7 @@ static string getRootPathFromExePath()
 {
 #ifdef HAVE__PROC_SELF_EXE
 	// get the pathname of the running executable
-	string bin_dir;
-
-    bin_dir = getExePathViaProcEntry();
+	string bin_dir = getExePathViaProcEntry();
 	if (bin_dir.length() == 0) 
 		return "";
 	

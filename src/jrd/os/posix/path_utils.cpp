@@ -75,9 +75,7 @@ PathUtils::dir_iterator *PathUtils::newDirItr(MemoryPool& p, const Firebird::Pat
 void PathUtils::splitLastComponent(Firebird::PathName& path, Firebird::PathName& file,
 		const Firebird::PathName& orgPath)
 {
-	Firebird::PathName::size_type pos;
-	
-	pos = orgPath.rfind(dir_sep);
+	Firebird::PathName::size_type pos = orgPath.rfind(dir_sep);
 	if (pos == Firebird::PathName::npos)
 	{
 		path = "";
@@ -106,13 +104,13 @@ void PathUtils::concatPath(Firebird::PathName& result,
 		return;
 	}
 	
-	if (first[first.length()-1] != dir_sep &&
+	if (first[first.length() - 1] != dir_sep &&
 		second[0] != dir_sep)
 	{
 		result = first + dir_sep + second;
 		return;
 	}
-	if (first[first.length()-1] == dir_sep &&
+	if (first[first.length() - 1] == dir_sep &&
 		second[0] == dir_sep)
 	{
 		result = first;
@@ -140,6 +138,8 @@ bool PathUtils::isSymLink(const Firebird::PathName& path)
 	return st.st_ino != lst.st_ino;
 }
 
-bool PathUtils::canAccess(const Firebird::PathName& path, int mode) {
+bool PathUtils::canAccess(const Firebird::PathName& path, int mode)
+{
 	return access(path.c_str(), mode) == 0;
 }
+
