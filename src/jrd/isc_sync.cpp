@@ -4270,7 +4270,7 @@ static SLONG create_semaphores(
 			if (buf.sem_nsems >= semaphores)
 				return semid;
 			// Number of semaphores in existing set is too small. Discard it.
-			if (semctl(semid, 0, IPC_RMID) == -1) {
+			if (semctl(semid, 0, IPC_RMID, arg) == -1) {
 				error(status_vector, "semctl", errno);
 				return -1;
 			}
