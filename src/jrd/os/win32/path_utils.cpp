@@ -133,7 +133,7 @@ bool PathUtils::isRelative(const Firebird::string& path)
 						ds = path[2];
 			}
 		}
-		return ds != PathUtils::dir_sep;
+		return ds != PathUtils::dir_sep && ds != '/';
 	}
 	return true;
 }

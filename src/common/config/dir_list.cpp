@@ -25,7 +25,8 @@
 #include "../jrd/os/path_utils.h"
 
 #define New FB_NEW(*getDefaultMemoryPool())
-#define None "-"
+#define NONE "-"
+#define ROOT "/"
 
 ParsedPath::ParsedPath(void) {
 	PathElem = 0;
@@ -43,6 +44,14 @@ ParsedPath::~ParsedPath() {
 
 void ParsedPath::Parse(const Firebird::string& path) {
 	delete PathElem;
+
+	if (path.length() == 1) {
+		nElem = 1;
+		PathElem = New Firebird::string[1];
+		PathElem[0] = path;
+		return;
+	}
+
 	nElem = 0;
 	Firebird::string oldpath = path;
 	do {
@@ -67,7 +76,7 @@ bool ParsedPath::operator==(const char* path) const {
 
 Firebird::string ParsedPath::SubPath(int n) const {
 	Firebird::string rc = PathElem[0];
-	if (PathUtils::isRelative(rc + PathUtils::dir_sep) && rc != None)
+	if (PathUtils::isRelative(rc + PathUtils::dir_sep) && rc != NONE)
 		rc = PathUtils::dir_sep + rc;
 	for (int i = 1; i < n; i++) {
 		Firebird::string newpath;
@@ -84,16 +93,20 @@ ParsedPath::operator Firebird::string() const {
 }
 
 bool ParsedPath::Contains(const ParsedPath& pPath) const {
-	if (pPath.nElem < nElem) {
+	int nFullElem = nElem;
+	if (nFullElem > 1 && PathElem[nFullElem - 1].length() == 0)
+		nFullElem--;
+
+	if (pPath.nElem < nFullElem) {
 		return false;
 	}
 	int i;
-	for (i = 0; i < nElem; i++) {
+	for (i = 0; i < nFullElem; i++) {
 		if (!PathUtils::comparePaths(pPath.PathElem[i], PathElem[i])) {
 			return false;
 		}
 	}
-	for (i = nElem + 1; i <= pPath.nElem; i++) {
+	for (i = nFullElem + 1; i <= pPath.nElem; i++) {
 		Firebird::string x = pPath.SubPath(i);
 		if (PathUtils::isSymLink(x)) {
 			return false;
@@ -130,7 +143,7 @@ void DirectoryList::Initialize(void) {
 			if (i > Last) {
 				dir = val.substr(Last, i-Last);
 			}
-			if (PathUtils::isRelative(dir) && dir != None) {
+			if (PathUtils::isRelative(dir) && dir != NONE && dir != ROOT) {
 				Firebird::string newdir;
 				PathUtils::concatPath(newdir, Root, dir);
 				dir = newdir;
@@ -143,7 +156,7 @@ void DirectoryList::Initialize(void) {
 	if (i > Last) {
 		dir = val.substr(Last, i - Last);
 	}
-	if (PathUtils::isRelative(dir) && dir != None) {
+	if (PathUtils::isRelative(dir) && dir != NONE && dir != ROOT) {
 		Firebird::string newdir;
 		PathUtils::concatPath(newdir, Root, dir);
 		dir = newdir;
@@ -165,9 +178,9 @@ bool DirectoryList::IsPathInList(const Firebird::string& path) {
 		return false;
 
 	// Handle special cases
-	if (ConfigDirs[0] == "/")					// all open
+	if (ConfigDirs[0] == ROOT)					// all open
 		return true;
-	if (nDirs == 1 && ConfigDirs[0] == None)	// all closed
+	if (nDirs == 1 && ConfigDirs[0] == NONE)	// all closed
 		return false;
 
 	Firebird::string varpath = path;
