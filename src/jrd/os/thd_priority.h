@@ -17,7 +17,7 @@
  *  The Original Code was created by Alexander Peshkoff
  *  for the Firebird Open Source RDBMS project.
  *
- *  Copyright (c) 2004 Alexander Peshkoff <peshkoff@mail.ru>
+ *  Copyright (c) 2002 Alexander Peshkoff <peshkoff@mail.ru>
  *  and all contributors signed below.
  *
  * 2002.10.20 Alexander Peshkoff: Created this scheduler, changing

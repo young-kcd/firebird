@@ -18,7 +18,7 @@
  *  The Original Code was created by Alexander Peshkoff
  *  for the Firebird Open Source RDBMS project.
  *
- *  Copyright (c) 2004 Alexander Peshkoff <peshkoff@mail.ru>
+ *  Copyright (c) 2003 Alexander Peshkoff <peshkoff@mail.ru>
  *  and all contributors signed below.
  *
  *  All Rights Reserved.

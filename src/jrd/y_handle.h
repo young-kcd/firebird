@@ -1,6 +1,3 @@
-#ifndef JRD_Y_HANDLE_H
-#define JRD_Y_HANDLE_H
-
 /*
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
@@ -16,7 +13,7 @@
  *  The Original Code was created by Alexander Peshkoff
  *  for the Firebird Open Source RDBMS project.
  *
- *  Copyright (c) 2004 Alexander Peshkoff <peshkoff@mail.ru>
+ *  Copyright (c) 2002 Alexander Peshkoff <peshkoff@mail.ru>
  *  and all contributors signed below.
  *
  *  All rights reserved.
@@ -24,6 +21,9 @@
  *  Contributor(s): ______________________________
  *
  */
+
+#ifndef JRD_Y_HANDLE_H
+#define JRD_Y_HANDLE_H
 
 /*
  * These definitions placed into separate file
