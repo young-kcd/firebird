@@ -494,6 +494,7 @@ void DYN_define_constraint(GBL		gbl,
 					found = FALSE;
 				}
 				if (found) {
+					EXE_unwind(tdbb,(REQ)request);
 					break;
 				}
 				list_ptr = field_list;
@@ -2038,8 +2039,10 @@ void DYN_define_index(GBL		gbl,
 				if (strcmp((char*)index_name, (char*)Y.RDB$INDEX_NAME)) {
 					if (list_ptr)
 						found = FALSE;
-					if (found)
+					if (found) {
+						EXE_unwind(tdbb,(REQ)request);
 						break;
+					}
 					list_ptr = field_list;
 					strcpy((char*)index_name, (char*)Y.RDB$INDEX_NAME);
 					found = TRUE;
