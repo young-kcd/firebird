@@ -36,7 +36,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.15 2004-11-24 09:16:23 robocop Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.16 2004-12-07 00:43:36 robocop Exp $ */
 
 #include "firebird.h"
 #include "../jrd/common.h"
@@ -154,8 +154,6 @@ int ISC_kill(SLONG pid, SLONG signal_number, void *object_hndl)
  *	Notify somebody else.
  *
  **************************************/
-	ULONG oldest_age;
-	OPN_EVENT opn_event, end_opn_event, oldest_opn_event;
 
 /* If we're simply trying to poke ourselves, do so directly. */
 	if (!process_id)
@@ -166,13 +164,17 @@ int ISC_kill(SLONG pid, SLONG signal_number, void *object_hndl)
 		return 0;
 	}
 
-	oldest_age = ~0;
+	OPN_EVENT oldest_opn_event;
+	ULONG oldest_age = ~0;
 
-	opn_event = opn_events;
-	end_opn_event = opn_event + opn_event_count;
+	OPN_EVENT opn_event = opn_events;
+	OPN_EVENT end_opn_event = opn_event + opn_event_count;
 	for (; opn_event < end_opn_event; opn_event++) {
 		if (opn_event->opn_event_pid == pid &&
-			opn_event->opn_event_signal == signal_number) break;
+			opn_event->opn_event_signal == signal_number)
+		{
+			break;
+		}
 		if (opn_event->opn_event_age < oldest_age) {
 			oldest_opn_event = opn_event;
 			oldest_age = opn_event->opn_event_age;
@@ -180,9 +182,8 @@ int ISC_kill(SLONG pid, SLONG signal_number, void *object_hndl)
 	}
 
 	if (opn_event >= end_opn_event) {
-		HANDLE lhandle;
-
-		if (!(lhandle = ISC_make_signal(false, false, pid, signal_number)))
+		HANDLE lhandle = ISC_make_signal(false, false, pid, signal_number);
+		if (!lhandle)
 			return -1;
 
 		if (opn_event_count < MAX_OPN_EVENTS)
@@ -250,9 +251,7 @@ static void cleanup(void *arg)
  **************************************/
 	process_id = 0;
 
-	OPN_EVENT opn_event;
-
-	opn_event = opn_events + opn_event_count;
+	OPN_EVENT opn_event = opn_events + opn_event_count;
 	opn_event_count = 0;
 	while (opn_event-- > opn_events)
 		CloseHandle(opn_event->opn_event_lhandle);
@@ -305,3 +304,4 @@ static void overflow_handler(int signal, int code) throw()
 	}
 }
 #endif
+
