@@ -1,3 +1,16 @@
+2004-04-26 00:05  skidder
+
+	* firebird2/src/jrd/blb.cpp (1.30.2.5):
+	
+	Use another approach to address memory leak when converting strings
+	to blobs. This one works for updatable views
+
+2004-04-25 11:57  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.52.2.12):
+	
+	Fixed bug in one of my previous commits.
+
 2004-04-24 01:12  arnobrinkman
 
 	* firebird2/src/jrd/opt.cpp (1.73.2.19):
