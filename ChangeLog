@@ -1,3 +1,84 @@
+2003-03-13 18:02  skidder
+
+	* firebird2/doc/WhatsNew:
+	
+	Added notes about Services API
+
+2003-03-13 17:54  skidder
+
+	* firebird2/src/alice/: exe.cpp, tdr.cpp:
+	
+	Fix up gfix to work with Services API on Linux CS
+
+2003-03-13 17:48  alexpeshkoff
+
+	* firebird2/src/jrd/os/win32/thd_priority.cpp:
+	
+	Small debugging-aid fix
+
+2003-03-13 16:46  alexpeshkoff
+
+	* firebird2/configure.in:
+	
+	Dropped HAVE_*EXIT defines
+
+2003-03-13 16:42  alexpeshkoff
+
+	* firebird2/src/: include/gen/autoconfig_msvc.h, jrd/gds.cpp,
+	make.new/config/config.h.in:
+	
+	Dropped HAVE_*EXIT defines
+
+2003-03-13 13:46  brodsom
+
+	* firebird2/src/iscguard/cntl_guard.cpp:
+	
+	Remove unused REMOVE macro. The two functions are duplicated in
+	cntl.cpp, with exactly the same code.
+
+2003-03-13 13:36  brodsom
+
+	* firebird2/src/remote/: ntoh.cpp, ntoh_proto.h:
+	
+	Remove win16 remains
+
+2003-03-13 13:35  brodsom
+
+	* firebird2/src/qli/: picst_proto.h, picstr.cpp, blk.h, eval.cpp,
+	exe.h, format.cpp, format.h:
+	
+	Change PIC struct name to avoid conflict with PIC libtool macro
+
+2003-03-13 13:30  brodsom
+
+	* firebird2/src/jrd/: dsc.h, ibase.h, val.h:
+	
+	Remove leading underscores from macro names
+
+2003-03-13 12:20  dimitr
+
+	* firebird2/doc/WhatsNew:
+	
+	Added Beta 4 changes.
+
+2003-03-13 11:04  dimitr
+
+	* firebird2/doc/install_win32.txt:
+	
+	Added win32 installation notes.
+
+2003-03-13 07:50  eku
+
+	* firebird2/: autogen.sh, aclocal.m4:
+	
+	Fixed problems with newer vesions of libtool.
+
+2003-03-13 01:49  brodsom
+
+	* firebird2/src/: remote/protocol.cpp, burp/canonical.cpp:
+	
+	Remove LOC_DOUBLE macro (mips || next remains)
+
 2003-03-12 18:46  brodsom
 
 	* firebird2/src/jrd/dsc.h:
