@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.207 2004-10-24 09:06:43 skidder Exp $
+dnl $Id: configure.in,v 1.208 2004-10-25 09:45:03 aafemt Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -135,6 +135,7 @@ case "$target" in
     MAKEFILE_PREFIX=mingw
     PLATFORM=win32
     AC_DEFINE(WIN_NT, 1, [Define this if OS is Windows NT])
+    AC_DEFINE(HAVE_MULTI_THREAD, 1, [Define this if multi-threading should be supported])
     LOCK_MANAGER_FLG=N
     EDITLINE_FLG=N
     RAW_DEVICES_FLG=N
@@ -477,7 +478,7 @@ if test "$ac_cv_sys_file_offset_bits" = "no"; then
   [AC_MSG_RESULT(no)])
 fi
 
-AC_CHECK_SIZEOF(void*)
+AC_CHECK_SIZEOF(void *)
 AC_CHECK_SIZEOF(long)
 AC_CHECK_TYPES([socklen_t],,,[#include <sys/socket.h>])
 AH_BOTTOM([#ifndef HAVE_SOCKLEN_T
