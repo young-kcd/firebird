@@ -38,6 +38,11 @@
 #include <stdlib.h> /* XPG: prototypes for malloc/free have to be in
 					   stdlib.h (EKU) */
 #endif
+#ifdef _MSC_VER
+#define THROW_BAD_ALLOC
+#else
+#define THROW_BAD_ALLOC throw (std::bad_alloc)
+#endif
 
 #define MAX_TREE_DEPTH 4
 // Must be a power of 2
@@ -226,8 +231,8 @@ using Firebird::MemoryPool;
 MemoryPool* getDefaultMemoryPool();
 
 // Global versions of operator new() for compatibility with crappy libraries
-void* operator new(size_t);
-void* operator new[](size_t);
+void* operator new(size_t) THROW_BAD_ALLOC;
+void* operator new[](size_t) THROW_BAD_ALLOC;
 
 #ifdef DEBUG_GDS_ALLOC
 inline void* operator new(size_t s, Firebird::MemoryPool& pool, char* file, int line) {

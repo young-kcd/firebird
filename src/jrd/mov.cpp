@@ -589,7 +589,7 @@ void MOV_time_stamp(GDS_TIMESTAMP * date)
  *	Get the current timestamp in gds format.
  *
  **************************************/
-	SLONG clock;
+	time_t clock;
 	struct tm times;
 
 	clock = time(NULL);

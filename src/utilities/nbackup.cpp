@@ -59,6 +59,10 @@
 #define vsnprintf _vsnprintf
 #endif
 
+#if defined(FREEBSD)
+#define O_LARGEFILE 0
+#endif
+
 #define EXIT_OK 0
 #define EXIT_ERROR 1
 

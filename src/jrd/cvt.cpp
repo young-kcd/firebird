@@ -2458,7 +2458,7 @@ static void string_to_datetime(
 	USHORT position_day = 2;
 	BOOLEAN have_english_month = FALSE;
 	BOOLEAN dot_separator_seen = FALSE;
-	SLONG clock;
+	time_t clock;
 	struct tm times, times2;
 	TEXT buffer[100];			/* arbitrarily large */
 
