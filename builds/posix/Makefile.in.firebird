@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.23 2002-12-22 19:45:45 nmcc Exp $
+#  $Id: Makefile.in.firebird,v 1.24 2002-12-29 14:59:40 nmcc Exp $
 #
 
 ROOT=..
@@ -43,14 +43,15 @@ ISC_USER=	sysdba
 ISC_PASSWORD=	masterkey
 #LD_LIBRARY_PATH=/home/odonohue/src/firebird2/gen/firebird/lib:/usr/lib
 TEST_PATH = @FIREBIRD_BUILD_DIR@
-LD_LIBRARY_PATH=$(RealFirebirdPath)/lib
+# Firebird libs path set at link time (-R) so do not override local requirements - nmcc 28/12/2002
+#LD_LIBRARY_PATH=$(RealFirebirdPath)/lib
 
 #export ISC_USER
 #export ISC_PASSWORD
 #export INTERBASE
 export FIREBIRD
 export DYLD_FRAMEWORK_PATH
-export LD_LIBRARY_PATH
+#export LD_LIBRARY_PATH
 
 ######################################################################
 ###########  Build process overview  #################################
