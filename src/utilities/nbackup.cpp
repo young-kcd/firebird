@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbackup.cpp,v 1.16 2004-03-12 20:19:41 skidder Exp $
+ *  $Id: nbackup.cpp,v 1.17 2004-03-13 22:17:55 skidder Exp $
  *
  */
  
@@ -806,7 +806,7 @@ void nbackup::restore_database(int filecount, const char* const* files) {
 				header_page header;
 				if (read_file(dbase, &header, sizeof(header)) != sizeof(header))
 					b_error::raise("Unexpected end of file when reading restored database header");
-				page_buffer = FB_NEW(*getDefaultMemoryPool) UCHAR[header.hdr_page_size];
+				page_buffer = FB_NEW(*getDefaultMemoryPool()) UCHAR[header.hdr_page_size];
 		
 				seek_file(dbase, 0);
 		
