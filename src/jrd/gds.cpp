@@ -4383,9 +4383,9 @@ static void init(void)
 
 		IB_FILE *file = ib_fopen(DBG_MEM_FILE, "r");
 		if (file) {
-			ib_fscanf(file, "%ld", &gds_bug_alloc_count);
-			ib_fscanf(file, "%ld", &gds_bug_free_count);
-			PRINTF("gds_bug_alloc_count=%d, gds_bug_free_count=%d\n",
+			ib_fscanf(file, "%lu", &gds_bug_alloc_count);
+			ib_fscanf(file, "%lu", &gds_bug_free_count);
+			PRINTF("gds_bug_alloc_count=%"ULONGFORMAT", gds_bug_free_count=%"ULONGFORMAT"\n",
 				   gds_bug_alloc_count, gds_bug_free_count);
 			ib_fclose(file);
 		}
@@ -4772,25 +4772,25 @@ static void freemap(int cod)
 	for (next = &pool; (free_blk = *next) != NULL; next = &(*next)->free_next) {
 		++free_list_count;
 		total_free += free_blk->free_length;
-		ib_printf("%x\t\t\t%d\t\t\t%x\n", (UCHAR *) free_blk,
+		ib_printf("%x\t\t\t%"SLONGFORMAT"\t\t\t%x\n", (UCHAR *) free_blk,
 				  free_blk->free_length,
 				  (UCHAR *) (free_blk + free_blk->free_length));
 	}
 	ib_printf("Stats after %s\n", (cod) ? "Merging" : "Allocating");
-	ib_printf("Free list count    = %d\n", free_list_count);
-	ib_printf("Total Free         = %d\n", total_free);
+	ib_printf("Free list count    = %"ULONGFORMAT"\n", free_list_count);
+	ib_printf("Total Free         = %"ULONGFORMAT"\n", total_free);
 	gds_print_delta_counters(ib_stdout);
 }
 
 void gds_print_delta_counters(IB_FILE * fptr)
 {
 #ifdef DEV_BUILD
-	ib_fprintf(fptr, "gds_delta_alloc    = %d\n", gds_delta_alloc);
-	ib_fprintf(fptr, "gds_max_alloc      = %d\n", gds_max_alloc);
+	ib_fprintf(fptr, "gds_delta_alloc    = %"SLONGFORMAT"\n", gds_delta_alloc);
+	ib_fprintf(fptr, "gds_max_alloc      = %"SLONGFORMAT"\n", gds_max_alloc);
 #endif
-	ib_fprintf(fptr, "allr_delta_alloc   = %d\n", allr_delta_alloc);
-	ib_fprintf(fptr, "alld_delta_alloc   = %d\n", alld_delta_alloc);
-	ib_fprintf(fptr, "all_delta_alloc    = %d\n", all_delta_alloc);
+	ib_fprintf(fptr, "allr_delta_alloc   = %"SLONGFORMAT"\n", allr_delta_alloc);
+	ib_fprintf(fptr, "alld_delta_alloc   = %"SLONGFORMAT"\n", alld_delta_alloc);
+	ib_fprintf(fptr, "all_delta_alloc    = %"SLONGFORMAT"\n", all_delta_alloc);
 }
 #endif
 

@@ -169,7 +169,7 @@ int API_ROUTINE perf_format(
 			case 'b':
 			case 'c':
 			case 'x':
-				sprintf(p, "%d", delta);
+				sprintf(p, "%"SLONGFORMAT, delta);
 				while (*p)
 					p++;
 				break;
