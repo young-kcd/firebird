@@ -1004,7 +1004,9 @@ static void prompt_for_name(SCHAR* name, int length)
 			BURP_msg_get(229, msg, 0, 0, 0, 0, 0);
 			// \n\nERROR: Backup incomplete\n
 			ib_fprintf(term_out, msg);
-			EXIT(FINI_ERROR);
+			tdgbl->exit_code = FINI_ERROR;
+			if (tdgbl->burp_env != NULL)
+				Firebird::status_exception::raise(1);
 		}
 
 		// If the user typed just a carriage return, they
