@@ -1,3 +1,15 @@
+2002-10-13 12:30  dimitr
+
+	* firebird2/src/jrd/: scl.epp, winnt.cpp:
+	
+	Fixed one possible bug and one typo.
+
+2002-10-13 12:24  dimitr
+
+	* firebird2/src/jrd/: ibase.h, intlnames.h:
+	
+	Fixed a few little bugs.
+
 2002-10-12 22:27  skidder
 
 	* firebird2/src/jrd/opt.cpp:
