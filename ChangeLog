@@ -1,3 +1,35 @@
+2002-12-07 14:50  kkuznetsov
+
+	* firebird2/builds/posix/: make.defaults, prefix.solx86:
+	
+	Adding linker option what prevent user to   setting LD_LIBRARY_PATH
+
+2002-12-07 14:49  dimitr
+
+	* firebird2/src/: common/config/config.cpp, common/config/config.h,
+	remote/inet_server.cpp, remote/window.cpp:
+	
+	More usage of the new config stuff.
+
+2002-12-07 14:32  dimitr
+
+	* firebird2/src/utilities/drop.cpp:
+	
+	More usage of the new config stuff.
+
+2002-12-07 14:27  dimitr
+
+	* firebird2/src/jrd/event.cpp:
+	
+	More usage of the new config stuff.
+
+2002-12-07 14:23  dimitr
+
+	* firebird2/src/: common/config/config.cpp, common/config/config.h,
+	lock/lock.cpp:
+	
+	More usage of the new config stuff.
+
 2002-12-06 23:14  hippoman
 
 	* firebird2/src/remote/ibconfig.cpp:
