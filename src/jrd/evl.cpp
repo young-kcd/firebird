@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.89 2004-05-21 06:15:40 robocop Exp $ 
+  * $Id: evl.cpp,v 1.90 2004-05-21 23:26:38 skidder Exp $ 
  */
 
 /*
@@ -4590,25 +4590,39 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 	else {
 		/* Source string is a blob, things get interesting */
 
-		/* Get address and length of search string - make it string if neccessary
-		 * but don't transliterate character set if the source blob is binary
-		 */
-
 		if (desc1->dsc_sub_type == isc_blob_text) {
 			type1 = desc1->dsc_scale;	/* pick up character set of blob */
-			if (!computed_invariant) {
-				l2 =
-					MOV_make_string2(desc2, type1, &p2,
-								 	reinterpret_cast<vary*>(temp2),
-								 	sizeof(temp2), &match_str);
+
+			// 21-May-2004, Nickolay Samofatov. 
+			// This is the ugly hack to solve ugly problem. 
+			// Engine support for MBCS BLOBs is almost non-existent now thus
+			// we have to match them using binary approach (instead of crashing).
+			// Proper fix is to (1) add support for streamed charset converters 
+			// to INTL module and to (2) make metadata blobs use true unicode.
+			// Note how we check that character set is MBCS. This is ugly, but 
+			// will do as a temporary solution until INTL troubles are addressed
+			TextType obj = INTL_texttype_lookup(tdbb, type1, ERR_post, NULL);
+			if (obj.getStruct()->texttype_fn_matches == EVL_mb_matches) {
+				type1 = ttype_none;
 			}
 		}
 		else {
 			type1 = ttype_none;	/* Do byte matching */
-			if (!computed_invariant) {
+		}
+
+		/* Get address and length of search string - make it string if neccessary
+		 * but don't transliterate character set if the source blob is binary
+		 */
+		if (!computed_invariant) {
+			if (type1 == ttype_none) {
 				l2 =
 					MOV_get_string(desc2, &p2, reinterpret_cast<vary*>(temp2),
 								sizeof(temp2));
+			} else {
+				l2 =
+					MOV_make_string2(desc2, type1, &p2,
+								 	reinterpret_cast<vary*>(temp2),
+								 	sizeof(temp2), &match_str);
 			}
 		}
 
