@@ -1,3 +1,47 @@
+2002-12-22 20:45  nmcc
+
+	* firebird2/builds/posix/Makefile.in.firebird:
+	
+	Remove gpre generated files when doing a make clean.
+
+2002-12-22 15:19  alexpeshkoff
+
+	* firebird2/src/jrd/vio.cpp:
+	
+	My code cleanup to standard style
+
+2002-12-22 14:32  alexpeshkoff
+
+	* firebird2/src/jrd/why.cpp:
+	
+	Few type-casting fixes
+
+2002-12-22 14:08  alexpeshkoff
+
+	* firebird2/src/jrd/: dyn_def.epp, gds_proto.h, met.epp:
+	
+	Removed pSCHAR - not needed any more.
+
+2002-12-22 13:18  alexpeshkoff
+
+	* firebird2/src/remote/interface.cpp:
+	
+	Reverted my incorrect change.
+
+2002-12-22 12:42  alexpeshkoff
+
+	* firebird2/src/: jrd/y_handle.h, dsql/ddl_proto.h:
+	
+	Fixed problem with extern "C" DDL_resolve_intl_type
+
+2002-12-22 02:54  hippoman
+
+	* firebird2/builds/win32/msvc7/: Firebird2.sln, engine.vcproj,
+	engine_classic.vcproj, fbclient.vcproj, gpre.vcproj,
+	gpre_boot.vcproj:
+	
+	Fixed the MSVC7 build, why.c has been removed
+
 2002-12-19 15:48  dimitr
 
 	* firebird2/src/dsql/: parse.cpp, parse.y:
