@@ -211,7 +211,7 @@ typedef struct inv {
 /* ASB impure area */
 
 struct iasb {
-	SLONG *iasb_sort_handle;
+	scb* iasb_sort_handle;
 };
 
 

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.64 2004-02-24 05:34:33 robocop Exp $ 
+  * $Id: evl.cpp,v 1.65 2004-03-06 11:56:09 dimitr Exp $ 
  */
 
 /*
@@ -1405,12 +1405,16 @@ USHORT EVL_group(TDBB tdbb, Rsb* rsb, jrd_nod* node, USHORT state)
 
 	vlu vtemp;
 	vtemp.vlu_string = NULL;
+
 	jrd_req* request = tdbb->tdbb_request;
 	jrd_nod* map = node->nod_arg[e_agg_map];
 	jrd_nod* group = node->nod_arg[e_agg_group];
 
-/* Initialize the aggregate record */
 	jrd_nod **ptr, **end;
+
+	try {
+
+/* Initialize the aggregate record */
 
 	for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++) {
 		const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
@@ -1671,8 +1675,7 @@ USHORT EVL_group(TDBB tdbb, Rsb* rsb, jrd_nod* node, USHORT state)
 					ASB asb = (ASB) from->nod_arg[1];
 					iasb* asb_impure = (iasb*) ((SCHAR *) request + asb->nod_impure);
 					UCHAR* data;
-					SORT_put(tdbb->tdbb_status_vector,
-							 reinterpret_cast<scb*>(asb_impure->iasb_sort_handle),
+					SORT_put(tdbb->tdbb_status_vector, asb_impure->iasb_sort_handle,
 							 reinterpret_cast<ULONG**>(&data));
 					MOVE_CLEAR(data, ROUNDUP_LONG(asb->asb_key_desc->skd_length));
 					asb->asb_desc.dsc_address = data;
@@ -1796,6 +1799,30 @@ USHORT EVL_group(TDBB tdbb, Rsb* rsb, jrd_nod* node, USHORT state)
                 default: /* Shut up some compiler warnings */
                     break;
 		}
+	}
+
+	}
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+		for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++)
+		{
+			const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
+			switch (from->nod_type)
+			{
+			case nod_agg_count_distinct:
+			case nod_agg_total_distinct:
+			case nod_agg_average_distinct:
+			case nod_agg_average_distinct2:
+			case nod_agg_total_distinct2:
+				{
+				const ASB asb = (ASB) from->nod_arg[1];
+				iasb* asb_impure = (iasb*) ((SCHAR *) request + asb->nod_impure);
+				SORT_fini(asb_impure->iasb_sort_handle, tdbb->tdbb_attachment);
+				asb_impure->iasb_sort_handle = NULL;
+				}
+			}
+		}
+		ERR_punt();
 	}
 
 	return state;
@@ -2993,8 +3020,7 @@ static void compute_agg_distinct(TDBB tdbb, jrd_nod* node)
 
 /* Sort the values already "put" to sort */
 
-	if (!SORT_sort(tdbb->tdbb_status_vector,
-				   reinterpret_cast<SCB>(asb_impure->iasb_sort_handle)))
+	if (!SORT_sort(tdbb->tdbb_status_vector, asb_impure->iasb_sort_handle))
 	{
 		ERR_punt();
 	}
@@ -3003,8 +3029,7 @@ static void compute_agg_distinct(TDBB tdbb, jrd_nod* node)
 
 	while (true) {
 		UCHAR* data;
-		SORT_get(tdbb->tdbb_status_vector,
-				 reinterpret_cast<SCB>(asb_impure->iasb_sort_handle),
+		SORT_get(tdbb->tdbb_status_vector, asb_impure->iasb_sort_handle,
 				 reinterpret_cast<ULONG**>(&data)
 #ifdef SCROLLABLE_CURSORS
 				 , RSE_get_forward
@@ -3013,8 +3038,7 @@ static void compute_agg_distinct(TDBB tdbb, jrd_nod* node)
 
 		if (data == NULL) {
 			/* we are done, close the sort */
-			SORT_fini(reinterpret_cast<SCB>(asb_impure->iasb_sort_handle),
-					  tdbb->tdbb_attachment);
+			SORT_fini(asb_impure->iasb_sort_handle, tdbb->tdbb_attachment);
 			asb_impure->iasb_sort_handle = NULL;
 			break;
 		}
@@ -3540,7 +3564,7 @@ static void init_agg_distinct(TDBB tdbb, const jrd_nod* node)
 				  reject_duplicate, 0,
 				  tdbb->tdbb_attachment, 0);
 
-	if (!(asb_impure->iasb_sort_handle = (SLONG *) handle))
+	if (!(asb_impure->iasb_sort_handle = handle))
 		ERR_punt();
 }
 
