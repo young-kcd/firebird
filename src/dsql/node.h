@@ -328,7 +328,8 @@ typedef ENUM nod_t
 	nod_redef_view, /* allows silent creation/overwriting of a view */
 	nod_for_update, /* FOR UPDATE clause */
 	nod_user_savepoint, /* Savepoints support */
-	nod_undo_savepoint
+	nod_undo_savepoint,
+	nod_label /* label support */
 } NOD_TYPE;
 
 
@@ -729,7 +730,6 @@ typedef dsql_nod *DSQL_NOD;
 #define e_order_nulls   3
 #define e_order_count   4
 
-
 #define e_lock_tables	0
 #define e_lock_mode	1
 
@@ -825,8 +825,13 @@ typedef dsql_nod *DSQL_NOD;
 #define e_mod_fld_pos_count		2
 
 /* CVC: blr_leave used to emulate break */
-#define e_break_number	0	/* nod_breakleave */
-#define e_break_count	1
+#define e_breakleave_label	0	/* nod_breakleave */
+#define e_breakleave_number	1
+#define e_breakleave_count	2
+
+#define e_label_name	0	/* nod_label */
+#define e_label_number	1
+#define e_label_count	2
 
 /* SQL substring() function */
 

@@ -38,7 +38,6 @@
 
 #include "../jrd/common.h"
 #include "../dsql/all.h"
-#include <vector>
 
 // Dynamic SQL Error Status Block
 
@@ -447,7 +446,7 @@ public:
 	USHORT	req_context_number;	// Next available context number
 	USHORT	req_scope_level;		// Scope level for parsing aliases in subqueries
 	USHORT	req_message_number;	// Next available message number
-	USHORT	req_loop_number;		// Next available loop number
+	USHORT	req_loop_level;		// Loop level
 	SSHORT	req_inhibit_map;		// Map inhibit count
 	USHORT	req_in_select_list;	// now processing "select list"
 	USHORT	req_in_where_clause;	// processing "where clause"

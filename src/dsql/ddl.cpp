@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.31 2002-12-16 15:37:18 alexpeshkoff Exp $
+ * $Id: ddl.cpp,v 1.32 2002-12-18 15:01:46 dimitr Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -2493,10 +2493,9 @@ static void define_procedure( DSQL_REQ request, NOD_TYPE op)
    any exit statement can get out */
 	request->append_uchar(blr_label);
 	request->append_uchar(0);
-	request->req_loop_number = 1;
+	request->req_loop_level = 0;
 	GEN_statement(request,
-				  PASS1_statement(request,
-								  procedure_node->nod_arg[e_prc_body], 1));
+		PASS1_statement(request, procedure_node->nod_arg[e_prc_body], 1));
 	request->req_type = REQ_DDL;
 	request->append_uchar(blr_end);
 	GEN_return(request, procedure_node, TRUE);
@@ -2891,7 +2890,7 @@ static void define_trigger( DSQL_REQ request, DSQL_NOD node)
 		// although trigger doesn't have global EXIT command,
 		// we must set loop number != 0 in order to avoid zero-label
 		// in trigger's for/while loops
-		request->req_loop_number = 1;
+		request->req_loop_level = 0;
 		GEN_statement(request, PASS1_statement(request, actions, 1));
 		request->req_scope_level--;
 		request->append_uchar(blr_end);

@@ -57,6 +57,7 @@
  * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  * 2002.12.03 Dmitry Yemanov: Implemented ORDER BY clause in subqueries.
+ * 2002.12.18 Dmitry Yemanov: Added support for SQL-compliant labels and LEAVE statement
  */
 
 #if defined(DEV_BUILD) && defined(WIN32) && defined(SUPERSERVER)
@@ -263,6 +264,7 @@ static void	yyerror (TEXT *);
 %token LPAREN
 %token LEFT
 %token LEQ
+%token LEAVE
 %token LEVEL
 %token LIKE
 %token LOG_BUF_SIZE
@@ -803,7 +805,7 @@ replace_clause	: PROCEDURE replace_procedure_clause
 /* CREATE INDEX */
 
 unique_opt	: UNIQUE
-			{ $$ = make_node (nod_unique, (int) 0, NULL); }
+			{ $$ = make_node (nod_unique, 0, NULL); }
 		|
 			{ $$ = NULL; }
 		;
@@ -1275,20 +1277,20 @@ constraint_name_opt : CONSTRAINT symbol_constraint_name
                     ;
 
 table_constraint : unique_constraint
-		 | primary_constraint
-		 | referential_constraint
-		 | check_constraint
-		 ;
+			| primary_constraint
+			| referential_constraint
+			| check_constraint
+		;
 
-unique_constraint : UNIQUE column_parens constraint_index_opt
-                    { $$ = make_node (nod_unique, 2, $2, $3); }
-                  ;
+unique_constraint	: UNIQUE column_parens constraint_index_opt
+			{ $$ = make_node (nod_unique, 2, $2, $3); }
+		;
 
-primary_constraint : PRIMARY KEY column_parens constraint_index_opt
+primary_constraint	: PRIMARY KEY column_parens constraint_index_opt
 			{ $$ = make_node (nod_primary, e_pri_count, $3, $4); }
 		;
 
-referential_constraint 	: FOREIGN KEY column_parens REFERENCES 
+referential_constraint	: FOREIGN KEY column_parens REFERENCES 
 			  simple_table_name column_parens_opt 
 			  referential_trigger_action constraint_index_opt
 			{ $$ = make_node (nod_foreign, e_for_count, $3, $5, 
@@ -1486,8 +1488,10 @@ proc_statement	: assignment ';'
 			{ $$ = make_node (nod_return, e_rtn_count, NULL); }
 		| EXIT ';'
 			{ $$ = make_node (nod_exit, 0, NULL); }
-		| KW_BREAK ';'
-			{ $$ = make_node (nod_breakleave, e_break_count, NULL); }
+/* dimitr: commented out until pass1.cpp is ready to assign label numbers properly
+		| label
+*/
+		| breakleave
 		;
 
 excp_statement	: EXCEPTION symbol_exception_name ';'
@@ -1559,6 +1563,20 @@ variable_list	: variable
 while		: WHILE '(' search_condition ')' DO proc_block
 			{ $$ = make_node (nod_while, e_while_count,
 					  $3, $6, NULL); }
+		;
+
+label	: symbol_label_name ':'
+			{ $$ = make_node (nod_label, e_label_count, $1, NULL); }
+		;
+
+breakleave	: KW_BREAK ';'
+			{ $$ = make_node (nod_breakleave, e_breakleave_count, NULL, NULL); }
+		| LEAVE ';'
+			{ $$ = make_node (nod_breakleave, e_breakleave_count, NULL, NULL); }
+/* dimitr: commented out until pass1.cpp is ready to assign label numbers properly
+		| LEAVE symbol_label_name ';'
+			{ $$ = make_node (nod_breakleave, e_breakleave_count, $2, NULL); }
+*/
 		;
 
 cursor_def	: AS CURSOR symbol_cursor_name
@@ -3793,6 +3811,9 @@ symbol_index_name			: SYMBOL
 			;
 
 symbol_item_alias_name			: SYMBOL
+			;
+
+symbol_label_name			: SYMBOL
 			;
 
 symbol_procedure_name			: SYMBOL

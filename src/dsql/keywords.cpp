@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.10 2002-12-16 15:37:55 alexpeshkoff Exp $
+ *  $Id: keywords.cpp,v 1.11 2002-12-18 15:01:47 dimitr Exp $
  *
  */
 
@@ -166,6 +166,7 @@ static CONST TOK tokens [] = {
 	{JOIN, "JOIN", 1},
 	{KEY, "KEY", 1},
 	{LAST, "LAST", 2},
+	{LEAVE, "LEAVE", 2},
 	{LEFT, "LEFT", 1},
 	{LENGTH, "LENGTH", 1},
 	{LEVEL, "LEVEL", 1},

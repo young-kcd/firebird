@@ -113,6 +113,9 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  *
  * 2002.12.03 Dmitry Yemanov: Implemented ORDER BY clause in subqueries
+ *
+ * 2002.12.18 Dmitry Yemanov: Fixed bug with BREAK and partially implemented
+ *							  SQL-compliant labels and LEAVE statement
  */
 
 #include "firebird.h"
@@ -1148,8 +1151,7 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 			cursor->nod_arg[e_cur_context] = node;
 		}
 		node->nod_arg[e_flp_select] = PASS1_statement(request,
-													  input->
-													  nod_arg[e_flp_select],
+													  input->nod_arg[e_flp_select],
 													  proc_flag);
 		into_in = input->nod_arg[e_flp_into];
 		node->nod_arg[e_flp_into] = into_out =
@@ -1164,12 +1166,13 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 		if (input->nod_arg[e_flp_action]) {
             /* CVC: Let's add the ability to BREAK the for_select same as the while.
                but only if the command is FOR SELECT, otherwise we have singular SELECT. */
-            node->nod_arg [e_flp_number] = (DSQL_NOD) request->req_loop_number++;
+			node->nod_arg [e_flp_number] = (DSQL_NOD) ++request->req_loop_level;
 
 			node->nod_arg[e_flp_action] = PASS1_statement(request, 
                                                           input->nod_arg
 														  [e_flp_action],
 														  proc_flag);
+			request->req_loop_level--;
         }
 
 		if (cursor && procedure
@@ -1207,8 +1210,7 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 			PASS1_statement(request, input->nod_arg[e_if_true], proc_flag);
 		if (input->nod_arg[e_if_false])
 			node->nod_arg[e_if_false] =
-				PASS1_statement(request, input->nod_arg[e_if_false],
-								proc_flag);
+				PASS1_statement(request, input->nod_arg[e_if_false], proc_flag);
 		else
 			node->nod_arg[e_if_false] = NULL;
 		break;
@@ -1281,8 +1283,7 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 		node = MAKE_node(input->nod_type, input->nod_count);
 		node->nod_arg[e_err_errs] = input->nod_arg[e_err_errs];
 		node->nod_arg[e_err_action] = PASS1_statement(request,
-													  input->
-													  nod_arg[e_err_action],
+													  input->nod_arg[e_err_action],
 													  proc_flag);
 		return node;
 
@@ -1310,11 +1311,27 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 					  gds_arg_gds, gds_random, gds_arg_string, "EXIT", 0);
 		return input;
 
-    case nod_breakleave:
+	case nod_label:
 		if (request->req_flags & REQ_trigger)
 			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, gds_arg_gds, gds_token_err,	/* Token unknown */
-					  gds_arg_gds, gds_random, gds_arg_string, "BREAK", 0);
-        input->nod_arg [e_break_number] = (DSQL_NOD) (request->req_loop_number - 1);
+					  gds_arg_gds, gds_random, gds_arg_string, "LABEL", 0);
+		/* dimitr: should be something like this:
+			input->nod_arg[e_label_number] = (DSQL_NOD) pass1_label(request, input); */
+        input->nod_arg[e_label_number] = 0;
+		return input;
+
+    case nod_breakleave:
+		{
+		if (request->req_flags & REQ_trigger)
+			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, gds_arg_gds, gds_token_err,	/* Token unknown */
+				gds_arg_gds, gds_random, gds_arg_string, "BREAK/LEAVE", 0);
+		if (!request->req_loop_level)
+			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, gds_arg_gds, gds_token_err,	/* Token unknown */
+				gds_arg_gds, gds_random, gds_arg_string, "BREAK/LEAVE", 0);
+		/* dimitr: should be something like this:
+			input->nod_arg[e_breakleave_number] = (DSQL_NOD) pass1_label(request, input); */
+        input->nod_arg[e_breakleave_number] = (DSQL_NOD) request->req_loop_level;
+		}
         return input;
 
 	case nod_return:
@@ -1364,6 +1381,7 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 		break;
 
 	case nod_while:
+		{
 		node = MAKE_node(input->nod_type, input->nod_count);
 		node->nod_arg[e_while_cond] = PASS1_node(request,
 												 input->nod_arg[e_while_cond],
@@ -1371,10 +1389,11 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 
         /* CVC: loop numbers should be incremented before analyzing the body
            to preserve nesting <==> increasing level number. */
-        node->nod_arg [e_while_number] = (DSQL_NOD) request->req_loop_number++;
+		node->nod_arg [e_while_number] = (DSQL_NOD) ++request->req_loop_level;
 		node->nod_arg[e_while_action] =
-        PASS1_statement(request, input->nod_arg[e_while_action],
-                        proc_flag);
+			PASS1_statement(request, input->nod_arg[e_while_action], proc_flag);
+		request->req_loop_level--;
+		}
 		break;
 
 	case nod_abort:

@@ -29,7 +29,7 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 /*
-$Id: gen.cpp,v 1.20 2002-12-11 09:45:59 dimitr Exp $
+$Id: gen.cpp,v 1.21 2002-12-18 15:01:47 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -1051,11 +1051,16 @@ void GEN_statement( DSQL_REQ request, DSQL_NOD node)
 		STUFF(0);
 		return;
 
-    case nod_breakleave:
-        STUFF(blr_leave);
-        STUFF((int) node->nod_arg[e_break_number]);
+    case nod_label:
+        STUFF(blr_label);
+        STUFF((int) node->nod_arg[e_label_number]);
         return;
 	
+    case nod_breakleave:
+        STUFF(blr_leave);
+        STUFF((int) node->nod_arg[e_breakleave_number]);
+        return;
+
 	case nod_store:
 		if ((temp = node->nod_arg[e_sto_rse]) != NULL) {
 			STUFF(blr_for);
