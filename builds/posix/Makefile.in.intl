@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.intl,v 1.11.2.1 2003-07-19 05:52:49 bellardo Exp $
+#  $Id: Makefile.in.intl,v 1.11.2.2 2004-04-10 01:54:10 skidder Exp $
 #
 ROOT=..
 ObjModuleName=intl
@@ -43,7 +43,7 @@ include     $(ROOT)/gen/make.shared.variables
 
 
 INTL_Files1=	ld.c         cv_narrow.c \
-		cs_narrow.c  lc_ascii.c lc_narrow.c lc_iso8859_1.c lc_iso8859_2.c lc_dos.c \
+		cs_narrow.c  lc_ascii.c lc_narrow.c lc_iso8859_1.c lc_iso8859_13.c lc_iso8859_2.c lc_dos.c \
 		cs_unicode_ucs2.c lc_unicode_ucs2.c \
 		cs_unicode_fss.c cv_unicode_fss.c \
 		cs_big5.c    cv_big5.c   lc_big5.c \
