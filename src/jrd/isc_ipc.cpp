@@ -34,7 +34,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.33 2003-03-03 09:22:30 brodsom Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.34 2003-03-11 12:29:41 brodsom Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -313,13 +313,11 @@ void DLL_EXPORT ISC_enter(void)
  *	Enter ISC world from caller.
  *
  **************************************/
-#ifndef ISC_ENTER
 /* Cancel our handler for SIGFPE - in case it was already there */
 	ISC_signal_cancel(SIGFPE, (FPTR_VOID) overflow_handler, NULL);
 
 /* Setup overflow handler - with chaining to any user handler */
 	isc_signal2(SIGFPE, (SIG_FPTR) overflow_handler, NULL, SIG_informs);
-#endif
 
 #ifdef DEBUG_FPE_HANDLING
 /* Debug code to simulate an FPE occuring during DB Operation */
@@ -402,10 +400,8 @@ void DLL_EXPORT ISC_exit(void)
  *
  **************************************/
 
-#ifndef ISC_EXIT
 /* No longer attempt to handle overflow internally */
 	ISC_signal_cancel(SIGFPE, (FPTR_VOID) overflow_handler, 0);
-#endif
 }
 } // Extern "C"
 
