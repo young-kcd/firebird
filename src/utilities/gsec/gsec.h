@@ -26,7 +26,6 @@
 
 #include "../jrd/ibsetjmp.h"
 #include "../jrd/thd.h"
-#include "../jrd/thd_proto.h"
 
 const USHORT GSEC_MSG_FAC	= 18;
 const int MSG_LENGTH		= 128;
@@ -100,8 +99,9 @@ struct internal_user_data {
 
 };
 
-typedef struct tsec {
-    struct thdd			tsec_thd_data;
+class tsec : public thdd 
+{
+public:
     internal_user_data*	tsec_user_data;
     int					tsec_exit_code;
     jmp_buf*			tsec_env;
@@ -115,18 +115,18 @@ typedef struct tsec {
     Jrd::Service*		tsec_output_data;
     FILE*				tsec_output_file;
     Jrd::Service*		tsec_service_blk;
-} *TSEC;
+};
 
 #ifdef SUPERSERVER
 inline tsec* GSEC_get_thread_data() {
-	return (tsec*) THD_get_specific();
+	return (tsec*) thdd::getSpecific();
 }
 inline void GSEC_set_thread_data(tsec* tdsec) {
-	THD_put_specific ((THDD) tdsec);
-	tdsec->tsec_thd_data.thdd_type = THDD_TYPE_TSEC;
+	tdsec->thdd_type = THDD_TYPE_TSEC;
+	tdsec->putSpecific();
 }
 inline void GSEC_restore_thread_data() {
-	THD_restore_specific();
+	thdd::restoreSpecific();
 }
 #else
 extern tsec* gdsec;
@@ -135,8 +135,8 @@ inline tsec* GSEC_get_thread_data() {
 	return gdsec;
 }
 inline void GSEC_set_thread_data(tsec* tdsec) {
+	tdsec->thdd_type = THDD_TYPE_TSEC;
 	gdsec = tdsec;
-	tdsec->tsec_thd_data.thdd_type = THDD_TYPE_TSEC;
 }
 inline void GSEC_restore_thread_data() {
 }

@@ -32,7 +32,6 @@
 #include "../jrd/tra.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/err_proto.h"
-#include "../jrd/thd_proto.h"
 
 #include <algorithm>
 

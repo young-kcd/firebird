@@ -30,7 +30,7 @@
  * 2003.08.10 Claudio Valderrama: Fix SF Bugs #544132 and #728839.
  */
 /*
-$Id: fun.epp,v 1.60 2004-05-27 16:25:59 alexpeshkoff Exp $
+$Id: fun.epp,v 1.61 2004-06-08 13:39:34 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -62,7 +62,7 @@ $Id: fun.epp,v 1.60 2004-05-27 16:25:59 alexpeshkoff Exp $
 #include "../jrd/gds_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/sym.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/isc_s_proto.h"

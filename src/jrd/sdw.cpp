@@ -50,7 +50,7 @@
 #include "../jrd/pag_proto.h"
 #include "../jrd/os/pio_proto.h"
 #include "../jrd/sdw_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 
 
 using namespace Jrd;

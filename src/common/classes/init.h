@@ -52,6 +52,21 @@ public:
 			leave();
 		}
 	} 
+	void cleanup() {
+		if (flag) {
+			try {
+				enter();
+				if (flag) {
+					C::cleanup();
+					flag = false;
+				}
+			} catch(const std::exception&) {
+				leave();
+				throw;
+			}
+			leave();
+		}
+	} 
 };
 
 // InitInstance - initialize pointer to class once and only once,

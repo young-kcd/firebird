@@ -87,7 +87,6 @@
 #include "../jrd/sch_proto.h"
 #include "../jrd/scl_proto.h"
 #include "../jrd/sqz_proto.h"
-#include "../jrd/thd_proto.h"
 #include "../jrd/tpc_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/vio_proto.h"
@@ -104,7 +103,7 @@ static void expunge(thread_db*, record_param*, const jrd_tra*, SLONG);
 static void garbage_collect(thread_db*, record_param*, SLONG, RecordStack&);
 static void garbage_collect_idx(thread_db*, record_param*, record_param*, Record*);
 #ifdef GARBAGE_THREAD
-static void THREAD_ROUTINE garbage_collector(Database*);
+static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM);
 #endif
 static void list_staying(thread_db*, record_param*, RecordStack&);
 #ifdef GARBAGE_THREAD
@@ -1982,8 +1981,7 @@ void VIO_init(thread_db* tdbb)
 		SLONG count = ISC_event_clear(gc_event_init);
 
 		if (gds__thread_start
-			(reinterpret_cast<FPTR_INT_VOID_PTR>(garbage_collector), dbb,
-			THREAD_medium, 0, 0))
+			(garbage_collector, dbb, THREAD_medium, 0, 0))
 		{
 			ERR_bugcheck_msg("cannot start thread");
 		}
@@ -3533,7 +3531,7 @@ static void garbage_collect_idx(
 
 
 #ifdef GARBAGE_THREAD
-static void THREAD_ROUTINE garbage_collector(Database* dbb)
+static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 {
 /**************************************
  *
@@ -3549,6 +3547,7 @@ static void THREAD_ROUTINE garbage_collector(Database* dbb)
  *	improve query response time and throughput.
  *
  **************************************/
+	Database* dbb = (Database*)arg;
 	THREAD_ENTER();
 	CHECK_DBB(dbb);
 	event_t* gc_event = dbb->dbb_gc_event;

@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.71 2004-05-27 16:26:00 alexpeshkoff Exp $
+ * $Id: rse.cpp,v 1.72 2004-06-08 13:39:36 alexpeshkoff Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -72,7 +72,7 @@
 #include "../jrd/rse_proto.h"
 #include "../jrd/sbm_proto.h"
 #include "../jrd/sort_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/vio_proto.h"
 
 #ifdef HAVE_UNISTD_H

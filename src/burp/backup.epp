@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.60 2004-05-24 11:01:00 brodsom Exp $
+$Id: backup.epp,v 1.61 2004-06-08 13:39:53 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -48,7 +48,7 @@ $Id: backup.epp,v 1.60 2004-05-24 11:01:00 brodsom Exp $
 #include "../jrd/ods.h"
 #include "../jrd/align.h"
 #include "../jrd/gdsassert.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../common/stuff.h"
 #include "../burp/backu_proto.h"
 #include "../burp/burp_proto.h"

@@ -61,7 +61,7 @@ const int MAXARGS		= 20;		/* max number of args allowed on command line */
 const USHORT MAXSTUFF	= 1000;		/* longest interactive command line */
 
 #ifndef SUPERSERVER
-struct tsec *gdsec;
+class tsec *gdsec;
 #endif
 
 static int common_main(int, char**, Jrd::pfn_svc_output, Jrd::Service*);
@@ -76,7 +76,7 @@ static void printhelp(void);
 static int output_main(Jrd::Service*, const UCHAR*);
 #endif
 
-void inline gsec_exit(int code, TSEC tdsec)
+void inline gsec_exit(int code, tsec* tdsec)
 {
 	tdsec->tsec_exit_code = code;
 	if (tdsec->tsec_env != NULL)
@@ -84,7 +84,7 @@ void inline gsec_exit(int code, TSEC tdsec)
 }
 
 #ifdef SUPERSERVER
-int GSEC_main(Jrd::Service* service)
+THREAD_ENTRY_DECLARE GSEC_main(THREAD_ENTRY_PARAM arg)
 {
 /**********************************************
  *
@@ -94,6 +94,7 @@ int GSEC_main(Jrd::Service* service)
  * Functional Description:
  *   Entrypoint for GSEC via the services manager
  **********************************************/
+	Jrd::Service* service = (Jrd::Service*)arg;
 	const int exit_code = common_main(service->svc_argc, service->svc_argv,
 						  SVC_output, service);
 
@@ -101,7 +102,7 @@ int GSEC_main(Jrd::Service* service)
 /* If service is detached, cleanup memory being used by service. */
 	SVC_finish(service, Jrd::SVC_finished);
 
-	return exit_code;
+	return (THREAD_ENTRY_RETURN)(exit_code);
 }
 
 #else
@@ -166,7 +167,7 @@ int common_main(int argc,
 	argc = VMS_parse(&argv, argc);
 #endif
 
-	tsec* tdsec = (struct tsec *) gds__alloc(sizeof(struct tsec));
+	tsec* tdsec = (tsec *) gds__alloc(sizeof(tsec));
 /* NOMEM: return error, FREE: during function exit in the SETJMP */
 	if (tdsec == NULL) {
 		gsec_exit(FINI_ERROR, tdsec);
@@ -1131,7 +1132,7 @@ void GSEC_print_status(const ISC_STATUS* status_vector)
 	if (status_vector) {
 		const ISC_STATUS* vector = status_vector;
 #ifdef SUPERSERVER
-		TSEC tdsec = GSEC_get_thread_data();
+		tsec* tdsec = GSEC_get_thread_data();
 		ISC_STATUS* status = tdsec->tsec_service_blk->svc_status;
 		if (status != status_vector) {
 		    int i = 0, j;

@@ -41,6 +41,7 @@
 #include "../jrd/exe.h"
 #include "../jrd/rse.h"
 #include "../jrd/jrd_pwd.h"
+#include "../jrd/thd.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cch_proto.h"
@@ -58,7 +59,6 @@
 #include "../jrd/rlck_proto.h"
 #include "../jrd/sbm_proto.h"
 #include "../jrd/sch_proto.h"
-#include "../jrd/thd_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/tpc_proto.h"
 #include "../jrd/tra_proto.h"
@@ -114,7 +114,7 @@ static SSHORT limbo_transaction(thread_db*, SLONG);
 static void restart_requests(thread_db*, jrd_tra*);
 #ifdef SWEEP_THREAD
 static void start_sweeper(thread_db*, Database*);
-static void THREAD_ROUTINE sweep_database(char*);
+static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM);
 #endif
 static void transaction_options(thread_db*, jrd_tra*, const UCHAR*, USHORT);
 #ifdef VMS
@@ -2667,11 +2667,8 @@ static void start_sweeper(thread_db* tdbb, Database* dbb)
 	}
 
 	strcpy(database, pszFilename);
-	if (gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>(sweep_database),
-							database,
-							THREAD_medium,
-							0,
-							0))
+	if (gds__thread_start(sweep_database, database,
+						  THREAD_medium, 0, 0))
 	{
 		gds__free(database);
 		ERR_log(0, 0, "cannot start sweep thread");
@@ -2681,7 +2678,7 @@ static void start_sweeper(thread_db* tdbb, Database* dbb)
 }
 
 
-static void THREAD_ROUTINE sweep_database(char* database)
+static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM database)
 {
 /**************************************
  *
@@ -2727,7 +2724,7 @@ static void THREAD_ROUTINE sweep_database(char* database)
 	// Temporary disable security for this thread to proceed with internal attachment
 	JRD_thread_security_disable(true);
 
-	isc_attach_database(status_vector, 0, database,
+	isc_attach_database(status_vector, 0, (char*)database,
 						 &db_handle, dpb_length,
 						 reinterpret_cast<const char*>(sweep_dpb));
 
@@ -2739,6 +2736,7 @@ static void THREAD_ROUTINE sweep_database(char* database)
 	}
 
 	gds__free(database);
+	return 0;
 }
 #endif
 

@@ -47,7 +47,7 @@
 #include "../jrd/cch_proto.h"
 #include "../jrd/met_proto.h"
 #endif
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/dbg_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"

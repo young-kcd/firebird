@@ -28,7 +28,6 @@
 
 #include "../jrd/ibase.h"
 #include "../jrd/thd.h"
-#include "../jrd/thd_proto.h"
 #include "../alice/all.h"
 #include "../include/fb_blk.h"
 #include "../common/classes/alloc.h"
@@ -161,13 +160,12 @@ enum redirect_vals {
 	NOOUTPUT = 2
 };
 
-class Tgbl
+class Tgbl : public thdd
 {
 public:
 	Tgbl(AliceMemoryPool* p) : pools(0, (AliceMemoryPool*)0,
 				pool_vec_t::allocator_type(*p)) {}
 	
-	thdd			tgbl_thd_data;
 	user_action		ALICE_data;
 	AliceMemoryPool* ALICE_permanent_pool;
 	AliceMemoryPool* ALICE_default_pool;
@@ -190,14 +188,14 @@ public:
 
 #ifdef SUPERSERVER
 inline Tgbl* ALICE_get_thread_data() {
-	return (Tgbl*) THD_get_specific();
+	return (Tgbl*) thdd::getSpecific();
 }
 inline void ALICE_set_thread_data(Tgbl* tdgbl) {
-	THD_put_specific ((THDD) tdgbl);
-	tdgbl->tgbl_thd_data.thdd_type = THDD_TYPE_TALICE;
+	tdgbl->thdd_type = THDD_TYPE_TALICE;
+	tdgbl->putSpecific();
 }
 inline void ALICE_restore_thread_data() {
-	THD_restore_specific();
+	thdd::restoreSpecific();
 }
 #else
 extern Tgbl* gdgbl;
@@ -207,7 +205,7 @@ inline Tgbl* ALICE_get_thread_data() {
 }
 inline void ALICE_set_thread_data(Tgbl* tdgbl) {
 	gdgbl = tdgbl;
-	tdgbl->tgbl_thd_data.thdd_type = THDD_TYPE_TALICE;
+	tdgbl->thdd_type = THDD_TYPE_TALICE;
 }
 inline void ALICE_restore_thread_data() {
 }

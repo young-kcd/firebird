@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: movg.cpp,v 1.7 2003-11-11 12:08:12 brodsom Exp $
+//	$Id: movg.cpp,v 1.8 2004-06-08 13:41:00 alexpeshkoff Exp $
 //
 
 #include "firebird.h"
@@ -43,7 +43,7 @@
 #include "../gpre/gpre.h"
 #include "../gpre/gpre_proto.h"
 #include "../jrd/cvt_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 
 static void post_error(ISC_STATUS, ...);
 

@@ -66,7 +66,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/err_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/thread_proto.h"
 
 #if defined(SIG_RESTART) || defined(UNIX) 

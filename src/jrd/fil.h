@@ -33,9 +33,6 @@
 
 #include "../jrd/thd.h"
 
-// Needed in common/config/dir_list.cpp
-const ULONG ALLROOM			= -1UL;	 /* use all available space */
-
 /* Defined the directory list structures. */
 
 /* Temporary workfile directory list. */
@@ -53,6 +50,8 @@ struct mutexed_dir_list {
 	bool mdls_mutex_init;
 	MUTX_T mdls_mutex[1];		/* Mutex for directory list. Must
 								   be locked before list operations */
+	mutexed_dir_list()
+		: mdls_dls(0), mdls_mutex_init(false) {}
 };
 
 /* external function directory list */

@@ -20,12 +20,13 @@
 #define JRD_GDSASSERT_H
 
 
+#include "../jrd/gds_proto.h"
+
 #ifdef DEV_BUILD
 
 #include <stdlib.h>		// abort()
 
 #include <stdio.h>
-#include "../jrd/gds_proto.h"
 
 
 /* fb_assert() has been made into a generic version that works across

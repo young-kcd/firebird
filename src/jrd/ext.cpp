@@ -52,7 +52,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/dls_proto.h"
 #include "../common/config/config.h"

@@ -31,7 +31,7 @@
 
 #include "../jrd/common.h"
 #include "../remote/remote_def.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 
 /* Include some apollo include files for tasking */
 
@@ -502,25 +502,27 @@ const USHORT PORT_dummy_pckt_set= 1024;	/* A dummy packet interval is set  */
 
 /* Thread specific remote database block */
 
-typedef struct trdb
+class trdb : public thdd
 {
-	struct thdd	trdb_thd_data;
+public:
 	rdb*	trdb_database;
 	ISC_STATUS*	trdb_status_vector;
-} *TRDB;
+};
+
+typedef trdb* TRDB;
 
 
 inline trdb* REM_get_thread_data() {
-	return (trdb*) THD_get_specific();
+	return (trdb*) thdd::getSpecific();
 }
 inline void REM_set_thread_data(trdb* &tdrdb, trdb* thd_context) {
 	tdrdb = thd_context;
 	tdrdb->trdb_status_vector = NULL;
-	THD_put_specific ((THDD) tdrdb);
-	tdrdb->trdb_thd_data.thdd_type = THDD_TYPE_TRDB;
+	tdrdb->thdd_type = THDD_TYPE_TRDB;
+	tdrdb->putSpecific();
 }
 inline void REM_restore_thread_data() {
-	THD_restore_specific();
+	thdd::restoreSpecific();
 }
 
 /* Queuing structure for Client batch fetches */

@@ -58,7 +58,7 @@
 //#undef IBERROR
 
 #include "../jrd/gds_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 
 
 #ifdef DEV_BUILD

@@ -5,7 +5,6 @@
 //
 #include "../jrd/thd.h"
 #include "../jrd/sch_proto.h"
-#include "../jrd/thd_proto.h"
 
 #ifdef MULTI_THREAD
 #ifdef SUPERSERVER

@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: srvrmgr.cpp,v 1.14 2004-05-24 11:03:54 brodsom Exp $
+ * $Id: srvrmgr.cpp,v 1.15 2004-06-08 13:41:02 alexpeshkoff Exp $
  */
 
 #include "firebird.h"
@@ -659,7 +659,7 @@ static bool print_pool( ibmgr_data_t* data)
 	const USHORT path_length = strlen(data->print_file);
 	*sptr = isc_info_svc_dump_pool_info;
 	++sptr;
-	add_word(sptr, path_length);
+	add_word(reinterpret_cast<UCHAR*>(sptr), path_length);
 	strcpy(sptr, data->print_file);
 	sptr += path_length;
 

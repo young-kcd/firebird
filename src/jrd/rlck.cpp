@@ -38,7 +38,7 @@
 
 #include "../jrd/lck_proto.h"
 #include "../jrd/rlck_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/vio_proto.h"
 
 using namespace Jrd;

@@ -25,14 +25,12 @@
 #include <stdio.h>
 #include "../jrd/common.h"
 #include "../remote/remote.h"
-#include "../jrd/os/thd_priority.h"
 #include "../jrd/thd.h"
 #include "../utilities/install/install_nt.h"
 #include "../remote/os/win32/cntl_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/sch_proto.h"
-#include "../jrd/thd_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/jrd_proto.h"
 
@@ -48,12 +46,13 @@ typedef struct thread {
 } *THREAD;
 
 static void WINAPI control_thread(DWORD);
-static int cleanup_thread(void *lpv);
+static THREAD_ENTRY_DECLARE cleanup_thread(THREAD_ENTRY_PARAM);
+
 static void parse_switch(const TEXT*, int*);
 static USHORT report_status(DWORD, DWORD, DWORD, DWORD);
 
 static DWORD current_state;
-static void (*main_handler) ();
+static thdd::EntryPoint *main_handler;
 static SERVICE_STATUS_HANDLE global_service_handle;
 static const TEXT* global_service_name;
 static HANDLE stop_event_handle;
@@ -63,7 +62,7 @@ static HANDLE hMutex = NULL;
 static bool bGuarded = false;
 
 
-void CNTL_init( void (*handler) (), const TEXT* name)
+void CNTL_init(thdd::EntryPoint* handler, const TEXT* name)
 {
 /**************************************
  *
@@ -126,8 +125,6 @@ void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
 	if (!global_service_handle)
 		return;
 
-	THD_mutex_init(thread_mutex);
-
 #if (defined SUPERCLIENT || defined SUPERSERVER)
 	int flag = SRVR_multi_client;
 #else
@@ -150,8 +147,7 @@ void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
 	if (report_status(SERVICE_START_PENDING, NO_ERROR, 1, 3000) &&
 		(stop_event_handle = CreateEvent(NULL, TRUE, FALSE, NULL)) != NULL &&
 		report_status(SERVICE_START_PENDING, NO_ERROR, 2, 3000) &&
-		!gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
-						   (main_handler), (void *) flag, 0, 0, 0)
+		!gds__thread_start(main_handler, (void *) flag, 0, 0, 0)
 		&& report_status(SERVICE_RUNNING, NO_ERROR, 0, 0))
 	{
 		status = 0;
@@ -168,16 +164,14 @@ void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
  * cleanup thread to exit or the timer to expire, once we reach the max number
  * of loops or the thread exits set the state to shutdown and exit */
 	HANDLE cleanup_thread_handle;
-#pragma FB_COMPILER_MESSAGE("May we always use gds__thread_start?")
-#ifdef THREAD_PSCHED
-	gds__thread_start(cleanup_thread, NULL, THREAD_medium, 0, 
-		&cleanup_thread_handle);
-#else
-	DWORD cleanup_thread_id;
-	cleanup_thread_handle =
-		CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) cleanup_thread, NULL,
-					 0, &cleanup_thread_id);
-#endif
+	if (gds__thread_start(cleanup_thread, NULL, THREAD_medium, 0, 
+		&cleanup_thread_handle) != 0) 
+	{
+		last_error = GetLastError();
+		report_status(SERVICE_STOPPED, last_error, 0, 0);
+		return;
+	}
+
 	DWORD count = 1;
 	DWORD return_from_wait;
 
@@ -308,8 +302,7 @@ static void WINAPI control_thread( DWORD action)
 	report_status(state, NO_ERROR, 0, 0);
 }
 
-
-static int cleanup_thread(void *lpv)
+static THREAD_ENTRY_DECLARE cleanup_thread(THREAD_ENTRY_PARAM)
 {
 /**************************************
  *
@@ -324,12 +317,12 @@ static int cleanup_thread(void *lpv)
 	USHORT attach_count, database_count;
 	TEXT return_buffer[ERROR_BUFFER_LENGTH], *buff_ptr = return_buffer;
 
-/* find out if we have any attachments if we do then log a message to the log
- * file */
+// find out if we have any attachments 
+// if we do then log a message to the log file
 	JRD_num_attachments(return_buffer, ERROR_BUFFER_LENGTH, JRD_info_dbnames,
 						&attach_count, &database_count);
 
-/* if we have active attachments then log messages */
+// if we have active attachments then log messages
 	if (attach_count > 0) {
 		TEXT print_buffer[ERROR_BUFFER_LENGTH], *print_ptr;
 		sprintf(print_buffer,
@@ -338,7 +331,7 @@ static int cleanup_thread(void *lpv)
 		gds__log(print_buffer);
 
 		TEXT out_message[ERROR_BUFFER_LENGTH + 100];
-		/* just get the ushort value and increment it by a ushort length */
+		// just get the ushort value and increment it by a ushort length
 		const USHORT num_databases = (USHORT) * ((USHORT *) buff_ptr);
 		buff_ptr += sizeof(USHORT);
 		for (USHORT i = 0; i < num_databases; i++) {
@@ -359,12 +352,9 @@ static int cleanup_thread(void *lpv)
 	THREAD_ENTER();
 	JRD_shutdown_all();
 
-/* There is no THREAD_EXIT to help ensure that no
- * threads will get in and try to access the data-
- * structures we released in JRD_shutdown_all()
- */
-
-	THD_mutex_destroy(thread_mutex);
+// There is no THREAD_EXIT to help ensure that no
+// threads will get in and try to access the data-
+// structures we released in JRD_shutdown_all()
 	return 0;
 }
 

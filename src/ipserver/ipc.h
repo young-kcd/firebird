@@ -651,12 +651,15 @@ typedef struct eventq {
 
 /* interprocess database thread structure */
 
-typedef struct tidb {
-	struct thdd tidb_thd_data;
+class tidb : public thdd 
+{
+public:
 	struct rdb *tidb_database;
 	ISC_STATUS *tidb_status_vector;
 	UCHAR *tidb_setjmp;
-} *TIDB;
+};
+
+typedef tidb* TIDB;
 
 
 /* bias for connect messages */

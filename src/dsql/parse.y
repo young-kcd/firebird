@@ -92,7 +92,7 @@
 #include "../dsql/keywords.h"
 #include "../dsql/misc_func.h"
 #include "../jrd/gds_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/err_proto.h"
 
 static void	yyerror(const TEXT*);

@@ -45,7 +45,7 @@
 #include "../jrd/vmslo_proto.h"
 #endif
 #include "../jrd/sch_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/gdsassert.h"
 
 #ifdef HAVE_SYS_TYPES_H

@@ -32,7 +32,7 @@
 #include "../jrd/common.h"
 #include "../jrd/thd.h"
 #include "../jrd/isc.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/os/thd_priority.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/gdsassert.h"
@@ -41,7 +41,6 @@
 #ifdef WIN_NT
 #include <process.h>
 #include <windows.h>
-#include "os/thd_priority.h"
 #endif
 
 #ifdef HAVE_UNISTD_H
@@ -54,546 +53,13 @@
 #include <signal.h>
 #endif
 
-
-#ifndef ANY_THREADING
-THDD gdbb;
-#endif
+#ifdef NOT_USED_OR_REPLACED
 #ifdef VMS
-/* THE SOLE PURPOSE OF THE FOLLOWING DECLARATION IS TO ALLOW THE VMS KIT TO
-   COMPILE.  IT IS NOT CORRECT AND MUST BE REMOVED AT SOME POINT. */
-THDD gdbb;
+// THE SOLE PURPOSE OF THE FOLLOWING DECLARATION IS TO ALLOW THE VMS KIT TO
+// COMPILE.  IT IS NOT CORRECT AND MUST BE REMOVED AT SOME POINT.
+thdd* gdbb;
 #endif
 
-static void init(void);
-static void init_tkey(void);
-static void put_specific(THDD);
-static int thread_start(int (*)(void *), void *, int, int, void *);
-
-static USHORT initialized = FALSE;
-static USHORT t_init = FALSE;
-
-#ifdef ANY_THREADING
-static MUTX_T ib_mutex;
-
-#ifdef USE_POSIX_THREADS
-static pthread_key_t specific_key;
-static pthread_key_t t_key;
-#endif
-
-#ifdef SOLARIS_MT
-static thread_key_t specific_key;
-static thread_key_t t_key;
-#endif
-
-#ifdef WIN_NT
-static DWORD specific_key;
-static DWORD t_key;
-#endif
-#endif // ANY_THREADING
-
-
-int API_ROUTINE gds__thread_start(
-								  FPTR_INT_VOID_PTR entrypoint,
-								  void *arg,
-								  int priority, int flags, void *thd_id)
-{
-/**************************************
- *
- *	g d s _ $ t h r e a d _ s t a r t
- *
- **************************************
- *
- * Functional description
- *	Start a thread.
- *
- **************************************/
-
-	return thread_start(entrypoint, arg, priority, flags, thd_id);
-}
-
-
-FB_THREAD_ID THD_get_thread_id(void)
-{
-/**************************************
- *
- *	T H D _ g e t _ t h r e a d _ i d
- *
- **************************************
- *
- * Functional description
- *	Get platform's notion of a thread ID.
- *
- **************************************/
-	FB_THREAD_ID id = 1;
-#ifdef WIN_NT
-	id = GetCurrentThreadId();
-#endif
-#ifdef SOLARIS_MT
-	id = thr_self();
-#endif
-#ifdef USE_POSIX_THREADS
-
-/* The following is just a temp. decision.
-*/
-#ifdef HP10
-
-	id = (FB_THREAD_ID) (pthread_self().field1);
-
-#else
-
-	id = (FB_THREAD_ID) pthread_self();
-
-#endif /* HP10 */
-#endif /* USE_POSIX_THREADS */
-
-	return id;
-}
-
-
-#ifdef ANY_THREADING
-#ifdef USE_POSIX_THREADS
-#define GET_SPECIFIC_DEFINED
-THDD THD_get_specific(void)
-{
-/**************************************
- *
- *	T H D _ g e t _ s p e c i f i c		( P O S I X )
- *
- **************************************
- *
- * Functional description
- * Gets thread specific data and returns
- * a pointer to it.
- *
- **************************************/
-#ifdef HP10
-
-	THDD current_context;
-
-	pthread_getspecific(specific_key, (pthread_addr_t *) & current_context);
-	return current_context;
-
-#else
-
-	return ((THDD) pthread_getspecific(specific_key));
-
-#endif /* HP10 */
-}
-#endif /* USE_POSIX_THREADS */
-#endif /* ANY_THREADING */
-
-
-#ifdef ANY_THREADING
-#ifdef SOLARIS_MT
-#define GET_SPECIFIC_DEFINED
-THDD THD_get_specific(void)
-{
-/**************************************
- *
- *	T H D _ g e t _ s p e c i f i c		( S o l a r i s )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	THDD current_context;
-
-	if (thr_getspecific(specific_key, (void **) &current_context)) {
-		perror("thr_getspecific");
-		exit(1);
-	}
-
-	return current_context;
-}
-#endif
-#endif
-
-
-#ifdef ANY_THREADING
-#ifdef WIN_NT
-#define GET_SPECIFIC_DEFINED
-THDD THD_get_specific(void)
-{
-/**************************************
- *
- *	T H D _ g e t _ s p e c i f i c		( W I N _ N T )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	return THPS_GET(specific_key);
-}
-#endif
-#endif
-
-
-#ifndef GET_SPECIFIC_DEFINED
-THDD THD_get_specific(void)
-{
-/**************************************
- *
- *	T H D _ g e t _ s p e c i f i c		( G e n e r i c )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	return gdbb;
-}
-#endif
-
-
-void THD_getspecific_data(void **t_data)
-{
-/**************************************
- *
- *	T H D _ g e t s p e c i f i c _ d a t a
- *
- **************************************
- *
- * Functional description
- *	return the previously stored t_data.
- *
- **************************************/
-
-#ifdef ANY_THREADING
-
-/* There are some circumstances in which we do not call THD_putspecific_data(),
-   such as services API, and local access on NT. As result of that, t_init
-   does not get initialized. So don't use an fb_assert in here but rather do
-   the work only if t_init is initialised */
-	if (t_init) {
-#ifdef USE_POSIX_THREADS
-#ifdef HP10
-		pthread_getspecific(t_key, t_data);
-#else
-		*t_data = (void *) pthread_getspecific(t_key);
-#endif /* HP10 */
-#endif /* USE_POSIX_THREADS */
-
-#ifdef SOLARIS_MT
-		thr_getspecific(t_key, t_data);
-#endif
-
-#ifdef WIN_NT
-		*t_data = (void *) TlsGetValue(t_key);
-#endif
-	}
-#endif
-}
-
-
-void THD_cleanup(void)
-{
-/**************************************
- *
- *	T H D _ c l e a n u p
- *
- **************************************
- *
- * Functional description
- * This is the cleanup function called from the DLL
- * cleanup function. This helps to remove the allocated
- * thread specific key.
- *
- **************************************/
-
-	if (initialized) {
-		initialized = FALSE;
-#ifdef USE_POSIX_THREADS
-#endif
-
-#ifdef SOLARIS_MT
-#endif
-
-#ifdef ANY_THREADING
-#ifdef WIN_NT
-		TlsFree(specific_key);
-#endif
-		/* destroy the mutex ib_mutex which was created */
-		THD_mutex_destroy(&ib_mutex);
-#ifdef WIN_NT
-		THPS_FINI();
-#endif /* WIN_NT */
-#endif /* ANY_THREADING */
-	}
-}
-
-
-void THD_init(void)
-{
-/**************************************
- *
- *	T H D _ i n i t
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-#ifdef USE_POSIX_THREADS
-
-/* In case of Posix threads we take advantage of using function
-   pthread_once. This function makes sure that init() routine
-   will be called only once by the first thread to call pthread_once.
-*/
-#ifndef PTHREAD_ONCE_INIT
-	static pthread_once_t once = pthread_once_init;
-#else
-	static pthread_once_t once = PTHREAD_ONCE_INIT;
-#endif
-
-	pthread_once(&once, init);
-
-#else
-
-	init();
-
-#endif /* USE_POSIX_THREADS */
-}
-
-
-void THD_init_data(void)
-{
-/**************************************
- *
- *	T H D _ i n i t _ d a t a
- *
- **************************************
- *
- * Functional description
- *	init function for t_key. This is called 
- *	to ensure that the key is created.
- *
- **************************************/
-#ifdef USE_POSIX_THREADS
-
-/* In case of Posix threads we take advantage of using function
-   pthread_once. This function makes sure that init_tkey() routine
-   will be called only once by the first thread to call pthread_once.
-*/
-#ifndef PTHREAD_ONCE_INIT
-	static pthread_once_t once = pthread_once_init;
-#else
-	static pthread_once_t once = PTHREAD_ONCE_INIT;
-#endif
-
-	pthread_once(&once, init_tkey);
-
-#else
-
-	init_tkey();
-
-#endif /* USE_POSIX_THREADS */
-}
-
-
-#ifdef ANY_THREADING
-#ifdef USE_POSIX_THREADS
-#define THREAD_MUTEXES_DEFINED
-int THD_mutex_destroy(MUTX_T * mutex)
-{
-/**************************************
- *
- *	T H D _ m u t e x _ d e s t r o y 	( P O S I X )
- *
- **************************************
- *
- * Functional description
- * Tries to destroy mutex and returns 0 if success,
- * error number in case of error
- *
- **************************************/
-#ifdef HP10
-
-	int state;
-
-	state = pthread_mutex_destroy(mutex);
-	if (!state)
-		return 0;
-	fb_assert(state == -1);		/* if state is not 0, it should be -1 */
-	return errno;
-
-#else
-
-	return pthread_mutex_destroy(&mutex->mutx_mutex);
-
-#endif /* HP10 */
-
-}
-
-
-int THD_mutex_init(MUTX_T * mutex)
-{
-/**************************************
- *
- *	T H D _ m u t e x _ i n i t		( P O S I X )
- *
- **************************************
- *
- * Functional description
- * Tries to initialize mutex and returns 0 if success,
- * error number in case of error
- *
- **************************************/
-#ifdef HP10
-
-	int state;
-
-	state = pthread_mutex_init(mutex, pthread_mutexattr_default);
-	if (!state)
-		return 0;
-	fb_assert(state == -1);		/* if state is not 0, it should be -1 */
-	return errno;
-
-#else
-
-	return pthread_mutex_init(&mutex->mutx_mutex, NULL);
-
-#endif /* HP10 */
-}
-
-
-int THD_mutex_lock(MUTX_T * mutex)
-{
-/**************************************
- *
- *	T H D _ m u t e x _ l o c k		( P O S I X )
- *
- **************************************
- *
- * Functional description
- * Tries to lock mutex and returns 0 if success,
- * error number in case of error
- *
- **************************************/
-#ifdef HP10
-
-	int state;
-
-	state = pthread_mutex_lock(mutex);
-	if (!state)
-		return 0;
-	fb_assert(state == -1);		/* if state is not 0, it should be -1 */
-	return errno;
-
-#else
-
-	return pthread_mutex_lock(&mutex->mutx_mutex);
-
-#endif /* HP10 */
-}
-
-
-int THD_mutex_unlock(MUTX_T * mutex)
-{
-/**************************************
- *
- *	T H D _ m u t e x _ u n l o c k		( P O S I X )
- *
- **************************************
- *
- * Functional description
- * Tries to unlock mutex and returns 0 if success,
- * error number in case of error
- *
- **************************************/
-#ifdef HP10
-
-	int state;
-
-	state = pthread_mutex_unlock(mutex);
-	if (!state)
-		return 0;
-	fb_assert(state == -1);		/* if state is not 0, it should be -1 */
-	return errno;
-
-#else
-
-	return pthread_mutex_unlock(&mutex->mutx_mutex);
-
-#endif /* HP10 */
-}
-#endif /* USE_POSIX_THREADS */
-#endif /* ANY_THREADING */
-
-
-#ifdef ANY_THREADING
-#ifdef SOLARIS_MT
-#define THREAD_MUTEXES_DEFINED
-int THD_mutex_destroy(MUTX_T * mutex)
-{
-/**************************************
- *
- *	T H D _ m u t e x _ d e s t r o y 	( S o l a r i s )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	return mutex_destroy(&mutex->mutx_mutex);
-}
-
-
-int THD_mutex_init(MUTX_T * mutex)
-{
-/**************************************
- *
- *	T H D _ m u t e x _ i n i t		( S o l a r i s )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	return mutex_init(&mutex->mutx_mutex, USYNC_THREAD, NULL);
-}
-
-
-int THD_mutex_lock(MUTX_T * mutex)
-{
-/**************************************
- *
- *	T H D _ m u t e x _ l o c k		( S o l a r i s )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	return mutex_lock(&mutex->mutx_mutex);
-}
-
-
-int THD_mutex_unlock(MUTX_T * mutex)
-{
-/**************************************
- *
- *	T H D _ m u t e x _ u n l o c k		( S o l a r i s )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	return mutex_unlock(&mutex->mutx_mutex);
-}
-#endif
-#endif
-
-
-#ifdef ANY_THREADING
 #ifdef VMS
 #define THREAD_MUTEXES_DEFINED
 int THD_mutex_destroy(MUTX_T * mutex)
@@ -658,583 +124,189 @@ int THD_mutex_unlock(MUTX_T * mutex)
 
 	return ISC_mutex_unlock(mutex);
 }
-#endif
-#endif
+#endif //VMS
+#endif //NOT_USED_OR_REPLACED
 
 
+#include "../common/classes/locks.h"
+#include "../common/classes/rwlock.h"
+Firebird::Mutex ib_mutex;
 
-#ifdef ANY_THREADING
+TLS_DECLARE (void*, thdd::tSpecific);
+TLS_DECLARE (thdd*, thdd::tData);
 
+
+int API_ROUTINE gds__thread_start(
+								  thdd::EntryPoint* entrypoint,
+								  void *arg,
+								  int priority, int flags, void *thd_id)
+{
+/**************************************
+ *
+ *	g d s _ $ t h r e a d _ s t a r t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Start a thread.
+ *
+ **************************************/
+
+	int rc = 0;
+	try {
+		thdd::start(entrypoint, arg, priority, flags, thd_id);
+	}
+	catch(const Firebird::status_exception& status) {
+		rc = status.value()[1];
+	}
+	return rc;
+}
+
+
+FB_THREAD_ID thdd::getId(void)
+{
+/**************************************
+ *
+ *	T H D _ g e t _ t h r e a d _ i d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Get platform's notion of a thread ID.
+ *
+ **************************************/
+	FB_THREAD_ID id = 1;
 #ifdef WIN_NT
-
-#define THREAD_MUTEXES_DEFINED
-
-int THD_mutex_destroy(MUTX_T * mutex)
-{
-/**************************************
- *
- *	T H D _ m u t e x _ d e s t r o y	( W I N _ N T )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-#pragma FB_COMPILER_MESSAGE("Fix! Bad struct ptr type cast.")
-	DeleteCriticalSection(reinterpret_cast < LPCRITICAL_SECTION > (mutex));
-
-	return 0;
-}
-
-
-int THD_mutex_init(MUTX_T * mutex)
-{
-/**************************************
- *
- *	T H D _ m u t e x _ i n i t		( W I N _ N T )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-#pragma FB_COMPILER_MESSAGE("Fix! Bad struct ptr type cast.")
-	InitializeCriticalSection(reinterpret_cast < LPCRITICAL_SECTION >
-							  (mutex));
-
-	return 0;
-}
-
-
-int THD_mutex_lock(MUTX_T * mutex)
-{
-/**************************************
- *
- *	T H D _ m u t e x _ l o c k		( W I N _ N T )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-#pragma FB_COMPILER_MESSAGE("Fix! Bad struct ptr type cast.")
-	EnterCriticalSection(reinterpret_cast < LPCRITICAL_SECTION > (mutex));
-
-	return 0;
-}
-
-
-int THD_mutex_unlock(MUTX_T * mutex)
-{
-/**************************************
- *
- *	T H D _ m u t e x _ u n l o c k		( W I N _ N T )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-#pragma FB_COMPILER_MESSAGE("Fix! Bad struct ptr type cast.")
-	LeaveCriticalSection(reinterpret_cast < LPCRITICAL_SECTION > (mutex));
-
-	return 0;
-}
-
-#endif // WIN_NT
-
-#endif // ANY_THREADING
-
-
-#ifndef THREAD_MUTEXES_DEFINED
-int THD_mutex_destroy(MUTX_T * mutex)
-{
-/**************************************
- *
- *	T H D _ m u t e x _ d e s t r o y	( G e n e r i c )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	return 0;
-}
-
-
-int THD_mutex_init(MUTX_T * mutex)
-{
-/**************************************
- *
- *	T H D _ m u t e x _ i n i t		( G e n e r i c )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	return 0;
-}
-
-
-int THD_mutex_lock(MUTX_T * mutex)
-{
-/**************************************
- *
- *	T H D _ m u t e x _ l o c k		( G e n e r i c )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	return 0;
-}
-
-
-int THD_mutex_unlock(MUTX_T * mutex)
-{
-/**************************************
- *
- *	T H D _ m u t e x _ u n l o c k		( G e n e r i c )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	return 0;
-}
+	id = GetCurrentThreadId();
 #endif
-
-
-int THD_mutex_destroy_n(MUTX_T * mutexes, USHORT n)
-{
-/**************************************
- *
- *	T H D _ m u t e x _ d e s t r o y _ n
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	while (n--)
-		THD_mutex_destroy(mutexes++);
-
-	return 0;
-}
-
-
-int THD_mutex_init_n(MUTX_T * mutexes, USHORT n)
-{
-/**************************************
- *
- *	T H D _ m u t e x _ i n i t _ n
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	while (n--)
-		THD_mutex_init(mutexes++);
-
-	return 0;
-}
-
-
-#ifdef ANY_THREADING
-int THD_mutex_lock_global(void)
-{
-/**************************************
- *
- *	T H D _ m u t e x _ l o c k _ g l o b a l
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	return THD_mutex_lock(&ib_mutex);
-}
-
-
-int THD_mutex_unlock_global(void)
-{
-/**************************************
- *
- *	T H D _ m u t e x _ u n l o c k _ g l o b a l
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	return THD_mutex_unlock(&ib_mutex);
-}
-#endif
-
-
-#ifdef V4_THREADING
 #ifdef SOLARIS_MT
-#ifdef THD_RWLOCK_STRUCT
-#define RW_LOCK_DEFINED
-int THD_wlck_destroy(WLCK_T * wlock)
-{
-/**************************************
- *
- *	T H D _ w l c k _ d e s t r o y		( S o l a r i s )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	int status;
-
-#ifdef DEBUG_THREAD
-	fprintf(stderr, "calling rwlock_destroy %x\n", wlock);
+	id = thr_self();
 #endif
+#ifdef USE_POSIX_THREADS
 
-	status = rwlock_destroy(wlock);
+/* The following is just a temp. decision.
+*/
+#ifdef HP10
 
-#ifdef DEBUG_THREAD
-	if (status)
-		fprintf(stderr, "status = %d errno = %d\n", status, errno);
-#endif
+	id = (FB_THREAD_ID) (pthread_self().field1);
 
-	return status;
+#else
+
+	id = (FB_THREAD_ID) pthread_self();
+
+#endif /* HP10 */
+#endif /* USE_POSIX_THREADS */
+
+	return id;
 }
 
 
-int THD_wlck_init(WLCK_T * wlock)
+thdd* thdd::getSpecific(void)
 {
 /**************************************
  *
- *	T H D _ w l c k _ i n i t		( S o l a r i s )
+ *	T H D _ g e t _ s p e c i f i c
  *
  **************************************
  *
  * Functional description
+ * Gets thread specific data and returns
+ * a pointer to it.
  *
  **************************************/
-	int status;
-
-#ifdef DEBUG_THREAD
-	fprintf(stderr, "calling rwlock_init %x\n", wlock);
-#endif
-
-	status = rwlock_init(wlock, USYNC_THREAD, NULL);
-
-#ifdef DEBUG_THREAD
-	if (status)
-		fprintf(stderr, "status = %d errno = %d\n", status, errno);
-#endif
-
-	return status;
+	return TLS_GET(tData);
 }
 
 
-int THD_wlck_lock(WLCK_T * wlock, USHORT type)
+void thdd::getSpecificData(void **t_data)
 {
 /**************************************
  *
- *	T H D _ w l c k _ l o c k		( S o l a r i s )
+ *	T H D _ g e t s p e c i f i c _ d a t a
+ *
+ **************************************
+ *
+ * Functional description
+ *	return the previously stored t_data.
+ *
+ **************************************/
+
+	*t_data = TLS_GET(tSpecific);
+}
+
+
+int THD_wlck_lock(WLCK_T* wlock, WLCK_type type)
+{
+/**************************************
+ *
+ *	T H D _ w l c k _ l o c k
  *
  **************************************
  *
  * Functional description
  *
  **************************************/
-	int status;
 
+	switch(type)
+	{
+	case WLCK_read:
 #ifdef DEBUG_THREAD
-	if (type == WLCK_read)
 		fprintf(stderr, "calling rwlock_rdlock %x\n", wlock);
-	else
+#endif
+		wlock->rwLock.beginRead();
+		break;
+
+	case WLCK_write:
+#ifdef DEBUG_THREAD
 		fprintf(stderr, "calling rwlock_wrlock %x\n", wlock);
 #endif
+		wlock->rwLock.beginWrite();
+		break;
 
-	if (type == WLCK_read)
-		status = rw_rdlock(wlock);
-	else
-		status = rw_wrlock(wlock);
-
-#ifdef DEBUG_THREAD
-	if (status)
-		fprintf(stderr, "status = %d errno = %d\n", status, errno);
+#ifdef DEV_BUILD
+	default:
+		fb_assert(false);
+		break;
 #endif
+	}
 
-	return status;
+	wlock->type = type;
+	return 0;
 }
 
 
-int THD_wlck_unlock(WLCK_T * wlock)
+int THD_wlck_unlock(WLCK_T* wlock)
 {
 /**************************************
  *
- *	T H D _ w l c k _ u n l o c k	( S o l a r i s )
+ *	T H D _ w l c k _ u n l o c k
  *
  **************************************
  *
  * Functional description
  *
  **************************************/
-	int status;
 
 #ifdef DEBUG_THREAD
 	fprintf(stderr, "calling rwlock_unlock %x\n", wlock);
 #endif
 
-	status = rw_unlock(wlock);
+	switch(wlock->type)
+	{
+	case WLCK_read:
+		wlock->rwLock.endRead();
+		break;
 
-#ifdef DEBUG_THREAD
-	if (status)
-		fprintf(stderr, "status = %d errno = %d\n", status, errno);
-#endif
-
-	return status;
-}
-#endif
-#endif
-#endif
-
-
-#ifdef V4_THREADING
-#ifndef THD_RWLOCK_STRUCT
-#define RW_LOCK_DEFINED
-int THD_wlck_destroy(WLCK_T * wlock)
-{
-/**************************************
- *
- *	T H D _ w l c k _ d e s t r o y 	( s i m u l a t e )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	return cond_destroy(&wlock->wlck_cond);
-}
-
-
-int THD_wlck_init(WLCK_T * wlock)
-{
-/**************************************
- *
- *	T H D _ w l c k _ i n i t		( s i m u l a t e )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	wlock->wlck_count = 0;
-	wlock->wlck_waiters = 0;
-
-	return cond_init(&wlock->wlck_cond);
-}
-
-
-int THD_wlck_lock(WLCK_T * wlock, USHORT type)
-{
-/**************************************
- *
- *	T H D _ w l c k _ l o c k		( s i m u l a t e )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	int status, incr;
-
-#ifdef DEBUG_THREAD
-	if (type == WLCK_read)
-		fprintf(stderr, "calling rwlock_rdlock %x\n", wlock);
-	else
-		fprintf(stderr, "calling rwlock_wrlock %x\n", wlock);
-#endif
-
-	if (status = THD_mutex_lock(&wlock->wlck_cond.cond_mutex))
-		return status;
-
-	if (type == WLCK_read) {
-		if (wlock->wlck_count < 0)
-			incr = ++wlock->wlck_waiters;
-		else
-			incr = 0;
-
-		while (wlock->wlck_count < 0)
-			cond_wait(&wlock->wlck_cond, NULL);
-
-		wlock->wlck_count++;
-	}
-	else {
-		if (wlock->wlck_count > 0)
-			incr = ++wlock->wlck_waiters;
-		else
-			incr = 0;
-
-		while (wlock->wlck_count > 0)
-			cond_wait(&wlock->wlck_cond, NULL);
-
-		wlock->wlck_count = -1;
+	case WLCK_write:
+		wlock->rwLock.endWrite();
+		break;
 	}
 
-	if (incr)
-		wlock->wlck_waiters--;
-
-	return THD_mutex_unlock(&wlock->wlck_cond.cond_mutex);
-}
-
-
-int THD_wlck_unlock(WLCK_T * wlock)
-{
-/**************************************
- *
- *	T H D _ w l c k _ u n l o c k	( s i m u l a t e )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	int status;
-
-	if (status = THD_mutex_lock(&wlock->wlck_cond.cond_mutex))
-		return status;
-
-	if (wlock->wlck_count > 0)
-		wlock->wlck_count--;
-	else
-		wlock->wlck_count = 0;
-
-	if (wlock->wlck_waiters)
-		cond_broadcast(&wlock->wlck_cond);
-
-	return THD_mutex_unlock(&wlock->wlck_cond.cond_mutex);
-}
-#endif
-#endif
-
-
-#ifndef RW_LOCK_DEFINED
-int THD_wlck_destroy(WLCK_T * wlock)
-{
-/**************************************
- *
- *	T H D _ w l c k _ d e s t r o y		( G e n e r i c )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
 	return 0;
 }
 
 
-int THD_wlck_init(WLCK_T * wlock)
-{
-/**************************************
- *
- *	T H D _ w l c k _ i n i t		( G e n e r i c )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	return 0;
-}
-
-
-int THD_wlck_lock(WLCK_T * wlock, USHORT type)
-{
-/**************************************
- *
- *	T H D _ w l c k _ l o c k		( G e n e r i c )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	return 0;
-}
-
-
-int THD_wlck_unlock(WLCK_T * wlock)
-{
-/**************************************
- *
- *	T H D _ w l c k _ u n l o c k	( G e n e r i c )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	return 0;
-}
-#endif
-
-
-void THD_wlck_destroy_n(WLCK_T * wlocks, USHORT n)
-{
-/**************************************
- *
- *	T H D _ w l c k _ d e s t r o y _ n
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	while (n--)
-		THD_wlck_destroy(wlocks++);
-}
-
-
-void THD_wlck_init_n(WLCK_T * wlocks, USHORT n)
-{
-/**************************************
- *
- *	T H D _ w l c k _ i n i t _ n
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	while (n--)
-		THD_wlck_init(wlocks++);
-}
-
-
-void THD_put_specific(THDD new_context)
+void thdd::putSpecific()
 {
 /**************************************
  *
@@ -1246,18 +318,12 @@ void THD_put_specific(THDD new_context)
  *
  **************************************/
 
-	if (!initialized)
-		THD_init();
-
-/* Save the current context */
-
-	new_context->thdd_prior_context = THD_get_specific();
-
-	put_specific(new_context);
+	thdd_prior_context = TLS_GET(tData);
+	TLS_SET(tData, this);
 }
 
 
-void THD_putspecific_data(void *t_data)
+void thdd::putSpecificData(void *t_data)
 {
 /**************************************
  *
@@ -1266,31 +332,15 @@ void THD_putspecific_data(void *t_data)
  **************************************
  *
  * Functional description
- *	Store the passed t_data using the ket t_key
+ *	Store the passed t_data
  *
  **************************************/
 
-	if (!t_init)
-		THD_init_data();
-#ifdef ANY_THREADING
-
-#ifdef USE_POSIX_THREADS
-	pthread_setspecific(t_key, t_data);
-#endif
-
-#ifdef SOLARIS_MT
-	thr_setspecific(t_key, t_data);
-#endif
-
-#ifdef WIN_NT
-	TlsSetValue(t_key, (LPVOID) t_data);
-#endif
-
-#endif
+	TLS_SET(tSpecific, t_data);
 }
 
 
-THDD THD_restore_specific(void)
+void thdd::restoreSpecific()
 {
 /**************************************
  *
@@ -1301,15 +351,9 @@ THDD THD_restore_specific(void)
  * Functional description
  *
  **************************************/
-	THDD current_context;
+	thdd* current_context = getSpecific();
 
-	current_context = THD_get_specific();
-
-#pragma FB_COMPILER_MESSAGE("Fix! Bad struct ptr type cast.")
-	put_specific(reinterpret_cast < THDD >
-				 (current_context->thdd_prior_context));
-
-	return reinterpret_cast < THDD > (current_context->thdd_prior_context);
+	TLS_SET(tData, current_context->thdd_prior_context);
 }
 
 
@@ -1326,7 +370,7 @@ int THD_rec_mutex_destroy(REC_MUTX_T * rec_mutex)
  *
  **************************************/
 
-	return THD_mutex_destroy(rec_mutex->rec_mutx_mtx);
+	return 0;
 }
 
 
@@ -1342,7 +386,6 @@ int THD_rec_mutex_init(REC_MUTX_T * rec_mutex)
  *
  **************************************/
 
-	THD_mutex_init(rec_mutex->rec_mutx_mtx);
 	rec_mutex->rec_mutx_id = 0;
 	rec_mutex->rec_mutx_count = 0;
 	return 0;
@@ -1362,12 +405,12 @@ int THD_rec_mutex_lock(REC_MUTX_T * rec_mutex)
  **************************************/
 	int ret;
 
-	if (rec_mutex->rec_mutx_id == THD_get_thread_id())
+	if (rec_mutex->rec_mutx_id == thdd::getId())
 		rec_mutex->rec_mutx_count++;
 	else {
 		if (ret = THD_mutex_lock(rec_mutex->rec_mutx_mtx))
 			return ret;
-		rec_mutex->rec_mutx_id = THD_get_thread_id();
+		rec_mutex->rec_mutx_id = thdd::getId();
 		rec_mutex->rec_mutx_count = 1;
 	}
 	return 0;
@@ -1386,7 +429,7 @@ int THD_rec_mutex_unlock(REC_MUTX_T * rec_mutex)
  *
  **************************************/
 
-	if (rec_mutex->rec_mutx_id != THD_get_thread_id())
+	if (rec_mutex->rec_mutx_id != thdd::getId())
 		return FB_FAILURE;
 
 	rec_mutex->rec_mutx_count--;
@@ -1567,268 +610,41 @@ void THD_yield(void)
 #endif /* ANY_THREADING */
 }
 
-
-#ifdef V4_THREADING
-#ifdef SOLARIS_MT
-#define CONDITION_DEFINED
-static int cond_broadcast(COND_T * cond)
-{
-/**************************************
- *
- *	c o n d _ b r o a d c a s t	( S o l a r i s )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	return cond_broadcast(&cond->cond_cond);
-}
-
-
-static int cond_destroy(COND_T * cond)
-{
-/**************************************
- *
- *	c o n d _ d e s t r o y		( S o l a r i s )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	THD_mutex_destroy(&cond->cond_mutex);
-
-	return cond_destroy(&cond->cond_cond);
-}
-
-
-static int cond_init(COND_T * cond)
-{
-/**************************************
- *
- *	c o n d _ i n i t		( S o l a r i s )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	THD_mutex_init(&cond->cond_mutex);
-
-	return cond_init(&cond->cond_cond, USYNC_THREAD, NULL);
-}
-
-
-static int cond_wait(COND_T * cond, timestruc_t * time)
-{
-/**************************************
- *
- *	c o n d _ w a i t		( S o l a r i s )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	if (time)
-		return cond_timedwait(&cond->cond_cond, &cond->cond_mutex, time);
-	else
-		return cond_wait(&cond->cond_cond, &cond->cond_mutex);
-}
-#endif
-#endif
-
-
-static void init(void)
-{
-/**************************************
- *
- *	i n i t
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	if (initialized)
-		return;
-
-	initialized = TRUE;
-
-#ifdef ANY_THREADING
-	THD_mutex_init(&ib_mutex);
-
-#ifdef USE_POSIX_THREADS
-	pthread_key_create(&specific_key, NULL);
-#endif
-
-#ifdef SOLARIS_MT
-	if (thr_keycreate(&specific_key, NULL)) {
-		/* This call to thr_min_stack exists simply to force a link error
-		 * for a client application that neglects to include -lthread.
-		 * Solaris, for unknown reasons, includes stubs for all the
-		 * thread functions in libC.  Should the stubs be linked in
-		 * there is no compile error, no runtime error, and InterBase
-		 * will core drop.
-		 * Including this call gives an undefined symbol if -lthread is
-		 * omitted, looking at the man page will inform the client programmer
-		 * that -lthread is needed to resolve the symbol.
-		 * Note that we don't care if this thr_min_stack() is called or
-		 * not, we just need to have a reference to it to force a link error.
-		 */
-		thr_min_stack();
-		perror("thr_keycreate");
-		exit(1);
+#ifdef THREAD_PSCHED
+static THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg) {
+	ThreadPriorityScheduler* tps = 
+		reinterpret_cast<ThreadPriorityScheduler*>(arg);
+	try {
+		tps->run();
 	}
-#endif /* SOLARIS _MT */
-
-#ifdef WIN_NT
-	specific_key = TlsAlloc();
-#endif /* WIN_NT */
-
-#pragma FB_COMPILER_MESSAGE("Fix! Bad function ptr type cast.")
-	gds__register_cleanup(reinterpret_cast < FPTR_VOID_PTR > (THD_cleanup),
-						  0);
-
-#ifdef WIN_NT
-	THPS_INIT();
-#endif
-#endif /* ANY_THREADING */
-}
-
-
-static void init_tkey(void)
-{
-/**************************************
- *
- *	i n i t
- *
- **************************************
- *
- * Functional description
- *	Function which actually creates the key which
- *	can be used by the threads to store t_data
- *
- **************************************/
-
-	if (t_init)
-		return;
-
-	t_init = TRUE;
-
-#ifdef ANY_THREADING
-
-#ifdef USE_POSIX_THREADS
-	pthread_key_create(&t_key, NULL);
-#endif
-
-#ifdef SOLARIS_MT
-	thr_keycreate(&t_key, NULL);
-#endif
-
-#ifdef WIN_NT
-	t_key = TlsAlloc();
-#endif
-#endif
-}
-
-
-#ifdef ANY_THREADING
-#ifdef USE_POSIX_THREADS
-#define PUT_SPECIFIC_DEFINED
-static void put_specific(THDD new_context)
-{
-/**************************************
- *
- *	p u t _ s p e c i f i c		( P O S I X )
- *
- **************************************
- *
- * Functional description
- * Puts new thread specific data
- *
- **************************************/
-
-	pthread_setspecific(specific_key, new_context);
-}
-#endif /* ANY_THREADING */
-#endif /* USE_POSIX_THREADS */
-
-
-#ifdef ANY_THREADING
-#ifdef SOLARIS_MT
-#define PUT_SPECIFIC_DEFINED
-static void put_specific(THDD new_context)
-{
-/**************************************
- *
- *	p u t _ s p e c i f i c		( S o l a r i s )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	if (thr_setspecific(specific_key, new_context)) {
-		perror("thr_setspecific");
-		exit(1);
+	catch (...) {
+		tps->detach();
+		throw;
 	}
+	tps->detach();
+	return 0;
 }
-#endif
-#endif
 
+#define THREAD_ENTRYPOINT threadStart
+#define THREAD_ARG tps
 
-#ifdef ANY_THREADING
-#ifdef WIN_NT
-#define PUT_SPECIFIC_DEFINED
-static void put_specific(THDD new_context)
-{
-/**************************************
- *
- *	p u t _ s p e c i f i c		( W I N _ N T )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	THPS_SET(specific_key, new_context);
-}
-#endif
-#endif
+#else  //THREAD_PSCHED
 
+// due to same names of parameters for various thdd::start(...),
+// we may use common macro for various platforms
+#define THREAD_ENTRYPOINT reinterpret_cast<THREAD_ENTRY_RETURN (THREAD_ENTRY_CALL *) (THREAD_ENTRY_PARAM)>(routine)
+#define THREAD_ARG reinterpret_cast<THREAD_ENTRY_PARAM>(arg)
 
-#ifndef PUT_SPECIFIC_DEFINED
-static void put_specific(THDD new_context)
-{
-/**************************************
- *
- *	p u t _ s p e c i f i c		( G e n e r i c )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	gdbb = new_context;
-}
-#endif
-
+#endif //THREAD_PSCHED
 
 #ifdef ANY_THREADING
 #ifdef USE_POSIX_THREADS
 #define START_THREAD
-static int thread_start(
-						int (*routine) (void *),
-						void *arg, int priority_arg, int flags, void *thd_id)
+void thdd::start(EntryPoint* routine,
+				void *arg, 
+				int priority_arg, 
+				int flags, 
+				void *thd_id)
 {
 /**************************************
  *
@@ -1846,34 +662,36 @@ static int thread_start(
 	int state;
 
 #if ( !defined HP10 && !defined LINUX && !defined FREEBSD )
-		state = pthread_attr_init(&pattr);
+	state = pthread_attr_init(&pattr);
 	if (state)
-		return state;
+		Firebird::system_call_failed::raise("pthread_attr_init", state);
 
-/* Do not make thread bound for superserver/client */
-
+	// Do not make thread bound for superserver/client
 #if (!defined (SUPERCLIENT) && !defined (SUPERSERVER))
 	pthread_attr_setscope(&pattr, PTHREAD_SCOPE_SYSTEM);
 #endif
 
 	pthread_attr_setdetachstate(&pattr, PTHREAD_CREATE_DETACHED);
-	state = pthread_create(&thread, &pattr, (void*(*)(void*))routine, arg);
+	state = pthread_create(&thread, &pattr, THREAD_ENTRYPOINT, THREAD_ARG);
 	pthread_attr_destroy(&pattr);
-	return state;
+	if (state)
+		Firebird::system_call_failed::raise("pthread_create", state);
 
 #else
 #if ( defined LINUX || defined FREEBSD )
-		if (state = pthread_create(&thread, NULL, (void*(*)(void*))routine, arg))
-		return state;
-	return pthread_detach(thread);
+
+	if (state = pthread_create(&thread, NULL, THREAD_ENTRYPOINT, THREAD_ARG))
+		Firebird::system_call_failed::raise("pthread_create", state);
+	if (state = pthread_detach(thread))
+		Firebird::system_call_failed::raise("pthread_detach", state);
+
 #else
-		long stack_size;
+	
+	long stack_size;
 
 	state = pthread_attr_create(&pattr);
-	if (state) {
-		fb_assert(state == -1);
-		return errno;
-	}
+	if (state)
+		Firebird::system_call_failed::raise("pthread_attr_create", state);
 
 /* The default HP's stack size is too small. HP's documentation
    says it is "machine specific". My test showed it was less
@@ -1885,49 +703,41 @@ static int thread_start(
 */
 	stack_size = pthread_attr_getstacksize(pattr);
 	if (stack_size == -1)
-		return errno;
+		Firebird::system_call_failed::raise("pthread_attr_getstacksize");
 
 	if (stack_size < 0x40000L) {
 		state = pthread_attr_setstacksize(&pattr, 0x40000L);
-		if (state) {
-			fb_assert(state == -1);
-			return errno;
-		}
+		if (state)
+			Firebird::system_call_failed::raise("pthread_attr_setstacksize", state);
 	}
 
 /* HP's Posix threads implementation does not support
    bound attribute. It just a user level library.
 */
-	state = pthread_create(&thread, pattr, routine, arg);
-	if (state) {
-		fb_assert(state == -1);
-		return errno;
-	}
+	state = pthread_create(&thread, pattr, THREAD_ENTRYPOINT, THREAD_ARG);
+	if (state)
+		Firebird::system_call_failed::raise("pthread_create", state);
+
 	state = pthread_detach(&thread);
-	if (state) {
-		fb_assert(state == -1);
-		return errno;
-	}
+	if (state)
+		Firebird::system_call_failed::raise("pthread_detach", state);
 	state = pthread_attr_delete(&pattr);
-	if (state) {
-		fb_assert(state == -1);
-		return errno;
-	}
-	return 0;
+	if (state)
+		Firebird::system_call_failed::raise("pthread_attr_delete", state);
 
 #endif /* linux */
 #endif /* HP10 */
 }
 #endif /* USE_POSIX_THREADS */
-#endif /* ANY_THREADING */
 
 
-#ifdef ANY_THREADING
 #ifdef SOLARIS_MT
 #define START_THREAD
-static int thread_start(
-						int (*routine) (void *),
-						void *arg, int priority_arg, int flags, void *thd_id)
+void thdd::start(EntryPoint* routine,
+				void *arg, 
+				int priority_arg, 
+				int flags, 
+				void *thd_id)
 {
 /**************************************
  *
@@ -1947,17 +757,18 @@ static int thread_start(
 	sigfillset(&new_mask);
 	sigdelset(&new_mask, SIGALRM);
 	if (rval = thr_sigsetmask(SIG_SETMASK, &new_mask, &orig_mask))
-		return rval;
+		Firebird::system_call_failed::raise("thr_sigsetmask", rval);
 #if (defined SUPERCLIENT || defined SUPERSERVER)
-	rval = thr_create(NULL, 0, (void* (*)(void*) )routine, arg, THR_DETACHED, &thread_id);
+	rval = thr_create(NULL, 0, THREAD_ENTRYPOINT, THREAD_ARG, THR_DETACHED, &thread_id);
 #else
 	rval =
-		thr_create(NULL, 0, (void* (*)(void*) ) routine, arg, (THR_BOUND | THR_DETACHED),
+		thr_create(NULL, 0, THREAD_ENTRYPOINT, THREAD_ARG, (THR_BOUND | THR_DETACHED),
 				   &thread_id);
 #endif
 	thr_sigsetmask(SIG_SETMASK, &orig_mask, NULL);
 
-	return rval;
+	if (rval)
+		Firebird::system_call_failed::raise("thr_create", rval);
 }
 #endif
 #endif
@@ -1965,8 +776,11 @@ static int thread_start(
 
 #ifdef WIN_NT
 #define START_THREAD
-static int thread_start(int (*routine) (void *),
-						void *arg, int priority_arg, int flags, void *thd_id)
+void thdd::start(EntryPoint* routine,
+				void *arg, 
+				int priority_arg, 
+				int flags, 
+				void *thd_id)
 {
 /**************************************
  *
@@ -1983,25 +797,6 @@ static int thread_start(int (*routine) (void *),
 	HANDLE handle;
 	DWORD thread_id;
 	int priority;
-
-	/* I have changed the CreateThread here to _beginthreadex() as using
-	 * CreateThread() can lead to memory leaks caused by C-runtime library.
-	 * Advanced Windows by Richter pg. # 109. */
-
-#pragma FB_COMPILER_MESSAGE("Fix! Bad, bad, bad function ptr type cast!!!")
-	unsigned long real_handle = _beginthreadex(NULL,
-											   0,
-											   reinterpret_cast <
-											   unsigned (__stdcall *) (void *)
-											   >(routine),
-											   arg,
-											   CREATE_SUSPENDED,
-											   reinterpret_cast <
-											   unsigned *>(&thread_id));
-	if (!real_handle) {
-		return GetLastError();
-	}
-	handle = reinterpret_cast < HANDLE > (real_handle);
 
 	switch (priority_arg) {
 	case THREAD_critical:
@@ -2025,16 +820,41 @@ static int thread_start(int (*routine) (void *),
 		break;
 	}
 
-	THPS_ATTACH(handle, thread_id, priority);
-	SetThreadPriority(handle, priority);
-	if (! (flags & THREAD_wait))
-		ResumeThread(handle);
-	if (thd_id)
-		*(HANDLE *) thd_id = handle;
-	else
-		CloseHandle(handle);
+#ifdef THREAD_PSCHED
+	ThreadPriorityScheduler::Init();
 
-	return 0;
+	ThreadPriorityScheduler *tps = FB_NEW(*getDefaultMemoryPool()) 
+		ThreadPriorityScheduler(routine, arg, 
+			ThreadPriorityScheduler::adjustPriority(priority));
+#endif //THREAD_PSCHED
+
+	/* I have changed the CreateThread here to _beginthreadex() as using
+	 * CreateThread() can lead to memory leaks caused by C-runtime library.
+	 * Advanced Windows by Richter pg. # 109. */
+
+	unsigned long real_handle = 
+		_beginthreadex(NULL, 0, THREAD_ENTRYPOINT, THREAD_ARG, CREATE_SUSPENDED,
+					   reinterpret_cast <unsigned *>(&thread_id));
+	if (!real_handle)
+	{
+		Firebird::system_call_failed::raise("_beginthreadex", GetLastError());
+	}
+	handle = reinterpret_cast<HANDLE>(real_handle);
+
+	SetThreadPriority(handle, priority);
+
+	if (! (flags & THREAD_wait))
+	{
+		ResumeThread(handle);
+	}
+	if (thd_id)
+	{
+		*(HANDLE *) thd_id = handle;
+	}
+	else
+	{
+		CloseHandle(handle);
+	}
 }
 #endif
 
@@ -2060,9 +880,11 @@ static int thread_start(int (*routine) (void *),
 
 
 #ifndef START_THREAD
-static int thread_start(
-						int (*routine) (void *),
-						void *arg, int priority_arg, int flags, void *thd_id)
+void thdd::start(EntryPoint* routine,
+				void *arg, 
+				int priority_arg, 
+				int flags, 
+				void *thd_id)
 {
 /**************************************
  *
@@ -2071,12 +893,10 @@ static int thread_start(
  **************************************
  *
  * Functional description
- *	Start a new thread.  Return 0 if successful,
- *	status if not.
+ *	Wrong attempt to start a new thread.
  *
  **************************************/
 
-	return 1;
 }
 #endif
 

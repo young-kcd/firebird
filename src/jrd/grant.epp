@@ -53,7 +53,7 @@
 #include "../jrd/jrd_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/scl_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../common/utils_proto.h"
 
 using namespace Jrd;

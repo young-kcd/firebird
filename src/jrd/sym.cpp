@@ -28,7 +28,7 @@
 #include "../jrd/val.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/sym.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 
 
 using namespace Jrd;

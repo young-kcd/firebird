@@ -155,7 +155,6 @@
 #include "../dsql/pass1_proto.h"
 #include "../dsql/misc_func.h"
 #include "../jrd/dsc_proto.h"
-#include "../jrd/thd_proto.h"
 #include "../common/classes/array.h"
 #include "../common/utils_proto.h"
 

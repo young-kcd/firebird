@@ -71,7 +71,7 @@ typedef unsigned char MBCHAR;	/* Multibyte Char */
 
 namespace Jrd {
 	class vec;
-	struct thread_db;
+	class thread_db;
 	class TextType;
 }
 

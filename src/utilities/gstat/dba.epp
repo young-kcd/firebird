@@ -56,7 +56,6 @@
 #include "../jrd/enc_proto.h"
 #ifdef SUPERSERVER
 #include "../utilities/common/cmd_util_proto.h"
-#include "../jrd/thd_proto.h"
 #endif
 #include "../common/utils_proto.h"
 
@@ -191,8 +190,9 @@ struct dba_mem {
 
 /* threading declarations for thread data */
 
-struct tdba {
-	struct thdd tdba_thd_data;
+class tdba : public thdd 
+{
+public:
 	UCHAR *dba_env;
 	dba_fil* files;
 	dba_rel* relations;
@@ -216,15 +216,15 @@ struct tdba {
 
 #ifdef SUPERSERVER
 inline tdba* DBA_get_thread_data() {
-	return (tdba*) THD_get_specific();
+	return (tdba*) thdd::getSpecific();
 }
 inline void DBA_set_thread_data(tdba* &tddba, tdba* thd_context) {
 	tddba = thd_context;
-	THD_put_specific ((THDD) tddba);
-	tddba->tdba_thd_data.thdd_type = THDD_TYPE_TDBA;
+	tddba->thdd_type = THDD_TYPE_TDBA;
+	tddba->putSpecific();
 }
 inline void DBA_restore_thread_data() {
-	THD_restore_specific();
+	thdd::restoreSpecific();
 }
 #else
 static tdba* gddba;
@@ -235,7 +235,7 @@ inline tdba* DBA_get_thread_data() {
 inline void DBA_set_thread_data(tdba* &tddba, tdba* thd_context) {
 	tddba = thd_context;
 	gddba = tddba;
-	tddba->tdba_thd_data.thdd_type = THDD_TYPE_TDBA;
+	tddba->thdd_type = THDD_TYPE_TDBA;
 }
 inline void DBA_restore_thread_data() {
 }
@@ -262,7 +262,7 @@ static bool fAnsiCP = false;
 
 
 #ifdef SUPERSERVER
-int main_gstat(Jrd::Service* service)
+THREAD_ENTRY_DECLARE main_gstat(THREAD_ENTRY_PARAM arg)
 #else
 
 int CLIB_ROUTINE main(int argc, char** argv)
@@ -293,7 +293,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 	UCHAR buf[256];
 	UCHAR pass_buff[128], user_buff[128], *password = pass_buff, *username =
 		user_buff;
-	struct tdba thd_context, *tddba;
+	tdba thd_context, *tddba;
 	JMP_BUF env;
 #if defined (WIN95) && !defined (SUPERSERVER)
 	BOOL fAnsiCP;
@@ -306,6 +306,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 
 #ifdef SUPERSERVER
 /* Reinitialize static variables for multi-threading */
+	Jrd::Service* service = (Jrd::Service*)arg;
 	int argc = service->svc_argc;
 	char** argv = service->svc_argv;
 #endif
@@ -938,7 +939,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 		DBA_restore_thread_data();
 
 #ifdef SUPERSERVER
-		return exit_code;
+		return (THREAD_ENTRY_RETURN)(exit_code);
 #else
 		exit(exit_code);
 #endif

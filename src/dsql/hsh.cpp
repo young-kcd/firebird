@@ -30,7 +30,7 @@
 #include "../dsql/errd_proto.h"
 #include "../dsql/hsh_proto.h"
 #include "../jrd/sch_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 
 
 const int HASH_SIZE = 211;
@@ -86,7 +86,6 @@ void HSHD_init(void)
 #ifdef SUPERSERVER
 	if (!hash_mutex_inited) {
 		hash_mutex_inited = 1;
-		THD_mutex_init(&hash_mutex);
 	}
 #endif
 

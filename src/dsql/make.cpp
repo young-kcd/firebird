@@ -49,7 +49,7 @@
 #include "../dsql/errd_proto.h"
 #include "../dsql/hsh_proto.h"
 #include "../dsql/make_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/dsc_proto.h"
 #include "../jrd/cvt_proto.h"
 #include "../common/config/config.h"

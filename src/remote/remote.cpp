@@ -33,7 +33,7 @@
 #include "../remote/proto_proto.h"
 #include "../remote/remot_proto.h"
 #include "../jrd/gds_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/thread_proto.h"
 #include "../common/config/config.h"
 
@@ -51,8 +51,6 @@ static TEXT* attach_failures_ptr;
 
 static void cleanup_memory(void*);
 static SLONG get_parameter(const UCHAR**);
-
-void THD_init_data();
 
 
 void REMOTE_cleanup_transaction( RTR transaction)
@@ -377,8 +375,6 @@ void REMOTE_get_timeout_params(
 			has already called THREAD_ENTER
 		    **/
 					{
-						THD_init_data();
-
 						char* t_data;
 						int i = 0;
 						int l = *(p++);
@@ -397,7 +393,7 @@ void REMOTE_get_timeout_params(
 						t_data[i] = 0;
 
 
-						THD_putspecific_data((void *) t_data);
+						thdd::putSpecificData((void *) t_data);
 
 					}
 					break;

@@ -62,7 +62,6 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/sdl_proto.h"
-#include "../jrd/thd_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 
@@ -124,7 +123,7 @@ static ISC_STATUS error(ISC_STATUS* user_status, const std::exception& ex);
 #ifndef MULTI_THREAD
 static void event_handler(rem_port*);
 #else
-static void THREAD_ROUTINE event_thread(rem_port*);
+static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM);
 #endif
 static ISC_STATUS fetch_blob(ISC_STATUS*, RSR, USHORT, const UCHAR*, USHORT,
 						USHORT, UCHAR*);
@@ -3105,8 +3104,8 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 				return error(user_status);
 			}
 
-			gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>(event_thread),
-							port->port_async, THREAD_high, THREAD_ast, 0);
+			gds__thread_start(event_thread, port->port_async, 
+				THREAD_high, THREAD_ast, 0);
 #else
 			if (!port->connect(packet, event_handler)) {
 				return error(user_status);
@@ -5491,7 +5490,7 @@ static void event_handler( rem_port* port)
 
 
 #else /* MULTI_THREAD  */
-static void THREAD_ROUTINE event_thread( rem_port* port)
+static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 {
 /**************************************
  *
@@ -5503,6 +5502,7 @@ static void THREAD_ROUTINE event_thread( rem_port* port)
  *	Wait on auxilary mailbox for event notification.
  *
  **************************************/
+	rem_port* port = (rem_port*)arg;
 	PACKET packet;
 
 	for (;;) {
@@ -5552,6 +5552,8 @@ static void THREAD_ROUTINE event_thread( rem_port* port)
 
 		REMOTE_free_packet(port, &packet);
 	}							/* end of infinite for loop */
+	// to make compilers happy
+	return 0;
 }
 #endif /* MULTI_THREAD  */
 

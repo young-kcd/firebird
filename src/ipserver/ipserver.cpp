@@ -32,7 +32,7 @@
 #include "../jrd/ibase.h"
 #include "../jrd/gds_proto.h"
 #include "../ipserver/alli_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../ipserver/ipsrv_proto.h"
 #include "../ipserver/ips.h"
 #include "../jrd/isc_proto.h"
@@ -535,8 +535,7 @@ ULONG IPS_start_thread(ULONG client_pid)
 
 	// finally, start the thread for this client 
 
-	gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR > (ipi_server),
-					  icc, THREAD_medium, 0, 0);
+	gds__thread_start(ipi_server, icc, THREAD_medium, 0, 0);
 
 	// return combined mapped area and number 
 

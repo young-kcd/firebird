@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.91 2004-05-26 16:12:05 alexpeshkoff Exp $ 
+  * $Id: evl.cpp,v 1.92 2004-06-08 13:39:34 alexpeshkoff Exp $ 
  */
 
 /*
@@ -106,7 +106,7 @@
 #include "../jrd/rse_proto.h"
 #include "../jrd/sbm_proto.h"
 #include "../jrd/scl_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/sort_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/align.h"

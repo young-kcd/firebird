@@ -41,7 +41,6 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/sch_proto.h"
-#include "../jrd/thd_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/os/isc_i_proto.h"
@@ -112,7 +111,7 @@ static void remove_que(srq *);
 static bool request_completed(EVT_REQ);
 static ISC_STATUS return_ok(ISC_STATUS *);
 #ifdef MULTI_THREAD
-static void THREAD_ROUTINE watcher_thread(void *);
+static THREAD_ENTRY_DECLARE watcher_thread(THREAD_ENTRY_PARAM);
 #endif
 
 static SSHORT acquire_count;
@@ -752,7 +751,7 @@ static SLONG create_process(void)
 
 #ifdef MULTI_THREAD
 	if (gds__thread_start
-		(reinterpret_cast<FPTR_INT_VOID_PTR>(watcher_thread), NULL,
+		(watcher_thread, NULL,
 		 THREAD_medium, THREAD_blast, 0))
 		ERR_bugcheck_msg("cannot start thread");
 #endif
@@ -1572,7 +1571,7 @@ static int validate(void)
 
 
 #ifdef MULTI_THREAD
-static void THREAD_ROUTINE watcher_thread(void *dummy)
+static THREAD_ENTRY_DECLARE watcher_thread(THREAD_ENTRY_PARAM)
 {
 /**************************************
  *
@@ -1626,7 +1625,7 @@ static void THREAD_ROUTINE watcher_thread(void *dummy)
 #endif
 		ISC_event_wait(1, &events, &value, 0, 0, 0);
 	}
-
+	return 0;
 }
 #endif
 

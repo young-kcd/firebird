@@ -66,7 +66,7 @@ static DWORD aMenuHelpIDs[] = {
 
 /* Function prototypes */
 static LRESULT CALLBACK WindowFunc(HWND, UINT, WPARAM, LPARAM);
-static int WINDOW_main(int);
+static THREAD_ENTRY_DECLARE WINDOW_main(THREAD_ENTRY_PARAM);
 #ifdef NOT_USED_OR_REPLACED
 static void StartGuardian(HWND);
 #endif
@@ -138,7 +138,7 @@ int WINAPI WinMain(
 
 /* since the flag is set we run as a service */
 	if (service_flag == true) {
-		CNTL_init((FPTR_VOID) WINDOW_main, ISCGUARD_SERVICE);
+		CNTL_init(WINDOW_main, ISCGUARD_SERVICE);
 //
 // BRS There is a error in MinGW (3.1.0) headers 
 // the parameter of StartServiceCtrlDispatcher is declared const in msvc headers
@@ -153,7 +153,7 @@ int WINAPI WinMain(
 		}
 	}
 	else {
-		return (WINDOW_main(TRUE));
+		return (WINDOW_main(0));
 	}
 
 	return (TRUE);
@@ -199,7 +199,7 @@ static bool parse_args(LPCSTR lpszArgs, bool* pserver_flag)
 	return return_value;
 }
 
-static int WINDOW_main(int option)
+static THREAD_ENTRY_DECLARE WINDOW_main(THREAD_ENTRY_PARAM)
 {
 /**************************************
  *

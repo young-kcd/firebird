@@ -30,7 +30,7 @@
  *       John Bellardo  <bellardo@cs.ucsd.edu>
  *
  *
- *  $Id: firebird.h,v 1.25 2004-05-26 16:13:22 alexpeshkoff Exp $
+ *  $Id: firebird.h,v 1.26 2004-06-08 13:40:19 alexpeshkoff Exp $
  *
  */
 
@@ -107,6 +107,14 @@
 
 #ifndef NULL
 #define NULL            0L
+#endif
+
+#if defined(WIN_NT) && defined(SUPERSERVER) && !defined(EMBEDDED)
+#include <windows.h>
+// Comment this definition to build without priority scheduler 
+//	OR:
+// Uncomment this definition to build with priority scheduler
+#define THREAD_PSCHED
 #endif
 
 #endif /* INCLUDE_Firebird_H */

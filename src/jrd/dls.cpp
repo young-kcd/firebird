@@ -37,7 +37,7 @@
 
 using namespace Jrd;
 
-static mutexed_dir_list DLS_cfg_tmpdir = { NULL, false };	/* directory list object */
+static mutexed_dir_list DLS_cfg_tmpdir;	/* directory list object */
 
 /*  Note that the only kind of writing permitted on the function_dir_list is
  *  appending a new entry to the existing (possibly empty) list.

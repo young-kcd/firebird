@@ -103,12 +103,33 @@ typedef struct sh_mem* SH_MEM;
 #ifdef UNIX
 #define MTX_STRUCTURE_DEFINED
 
-#include "../jrd/thd.h"
+// This is the only place where COND_STRUCT and MUTEX_STRUCT are used.
+// Therefore it's definitions were moved here from thd.h in order 
+// to avoid circular dependencies in h-files.
+// Alex Peshkov. Tue 08 Jun 2004 02:22:08 PM MSD.
 
+#if (defined(SOLARIS) && defined(SOLARIS_MT))
+#include <thread.h>
+#define COND_STRUCT cond_t
+#define MUTEX_STRUCT mutex_t
+#endif
+
+#ifdef USE_POSIX_THREADS
+#include <pthread.h>
+#define COND_STRUCT pthread_cond_t
+#define MUTEX_STRUCT pthread_mutex_t
+#endif
+
+#ifndef COND_STRUCT
+#define COND_STRUCT SCHAR
+#endif
+#ifndef MUTEX_STRUCT
+#define MUTEX_STRUCT SCHAR
+#endif
 
 #ifdef ANY_THREADING
 struct mtx {
-	THD_MUTEX_STRUCT mtx_mutex[1];
+	MUTEX_STRUCT mtx_mutex[1];
 };
 typedef mtx MTX_T;
 typedef mtx* MTX;
@@ -125,12 +146,13 @@ typedef mtx* MTX;
 
 
 #ifdef ANY_THREADING
+
 struct event_t
 {
 	SLONG event_semid;
 	SLONG event_count;
-	THD_MUTEX_STRUCT event_mutex[1];
-	THD_COND_STRUCT event_semnum[1];
+	MUTEX_STRUCT event_mutex[1];
+	COND_STRUCT event_semnum[1];
 };
 #else
 struct event_t

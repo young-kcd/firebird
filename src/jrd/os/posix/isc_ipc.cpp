@@ -36,7 +36,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.15 2004-05-29 13:34:19 brodsom Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.16 2004-06-08 13:40:38 alexpeshkoff Exp $ */
 
 #include "firebird.h"
 #include <stdio.h>
@@ -49,7 +49,7 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/os/isc_i_proto.h"
 #include "../jrd/isc_s_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 
 #ifdef HAVE_VFORK_H
 #include <vfork.h>
@@ -442,8 +442,6 @@ void ISC_signal_init(void)
 
 	process_id = getpid();
 
-	THD_MUTEX_INIT(&sig_mutex);
-
 	isc_signal2(SIGFPE, reinterpret_cast<FPTR_VOID>(overflow_handler), 0, SIG_informs);
 
 }
@@ -462,8 +460,6 @@ static void cleanup(void* arg)
  *
  **************************************/
 	signals = NULL;
-
-	THD_MUTEX_DESTROY(&sig_mutex);
 
 	process_id = 0;
 

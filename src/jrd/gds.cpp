@@ -165,7 +165,6 @@ static const char * FB_PID_FILE = "fb_%d";
 #ifdef WIN_NT
 #define _WINSOCKAPI_
 #include <share.h>
-#include "thd_proto.h"
 #include "err_proto.h"
 #undef leave
 #endif /* WIN_NT */

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.80 2004-05-27 16:25:58 alexpeshkoff Exp $
+$Id: blb.cpp,v 1.81 2004-06-08 13:39:32 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -69,7 +69,7 @@ $Id: blb.cpp,v 1.80 2004-05-27 16:25:58 alexpeshkoff Exp $
 #include "../jrd/mov_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/sdl_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/dsc_proto.h"
 
 using namespace Jrd;

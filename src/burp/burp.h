@@ -36,8 +36,7 @@
 #include "../burp/misc_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/thd.h"
-#include "../jrd/thd_proto.h"
-
+	
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -763,9 +762,9 @@ const unsigned int MIN_SPLIT_SIZE	= 2048;	// bytes
 
 // Global switches and data 
 
-struct tgbl
+class tgbl : public thdd
 {
-	thdd		tgbl_thd_data;
+public:
 	const TEXT*	gbl_database_file_name;
 	TEXT		gbl_backup_start_time[30];
 	bool		gbl_sw_verbose;
@@ -899,14 +898,14 @@ void	BURP_exit_local(int code, tgbl* tdgbl);
 
 #ifdef SUPERSERVER
 inline tgbl* BURP_get_thread_data() {
-	return (tgbl*) THD_get_specific();
+	return (tgbl*) thdd::getSpecific();
 }
 inline void BURP_set_thread_data(tgbl* tdgbl) {
-	THD_put_specific ((THDD) tdgbl);
-	tdgbl->tgbl_thd_data.thdd_type = THDD_TYPE_TGBL;
+	tdgbl->thdd_type = THDD_TYPE_TGBL;
+	tdgbl->putSpecific();
 }
 inline void BURP_restore_thread_data() {
-	THD_restore_specific();
+	thdd::restoreSpecific();
 }
 #else
 extern tgbl* gdgbl;
@@ -916,7 +915,7 @@ inline tgbl* BURP_get_thread_data() {
 }
 inline void BURP_set_thread_data(tgbl* tdgbl) {
 	gdgbl = tdgbl;
-	tdgbl->tgbl_thd_data.thdd_type = THDD_TYPE_TGBL;
+	tdgbl->thdd_type = THDD_TYPE_TGBL;
 }
 inline void BURP_restore_thread_data() {
 }

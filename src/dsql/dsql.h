@@ -612,28 +612,27 @@ public:
 };
 
 #include "../jrd/thd.h"
-#include "../jrd/thd_proto.h"
 
 // DSQL threading declarations
 
-struct tsql
+class tsql : public thdd
 {
-	thdd		tsql_thd_data;
+public:
 	DsqlMemoryPool*		tsql_default;
 	ISC_STATUS*		tsql_status;
 	ISC_STATUS*		tsql_user_status;
 };
 
 inline tsql* DSQL_get_thread_data() {
-	return (tsql*) THD_get_specific();
+	return (tsql*) thdd::getSpecific();
 }
 inline void DSQL_set_thread_data(tsql* &tdsql, tsql* thd_context) {
 	tdsql = thd_context;
-	THD_put_specific ((THDD) tdsql);
-	tdsql->tsql_thd_data.thdd_type = THDD_TYPE_TSQL;
+	tdsql->thdd_type = THDD_TYPE_TSQL;
+	tdsql->putSpecific();
 }
 inline void DSQL_restore_thread_data() {
-	THD_restore_specific();
+	thdd::restoreSpecific();
 }
 
 /*! \var unsigned DSQL_debug

@@ -33,7 +33,7 @@
 #include "../dsql/errd_proto.h"
 #include "../dsql/movd_proto.h"
 #include "../jrd/cvt_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 
 static void post_error(ISC_STATUS, ...);
 

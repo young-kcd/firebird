@@ -51,7 +51,7 @@
 #include "../jrd/rng_proto.h"
 #include "../jrd/rse_proto.h"
 #include "../jrd/sbm_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/vio_proto.h"
 
 using namespace Jrd;

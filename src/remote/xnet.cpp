@@ -39,7 +39,6 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/sch_proto.h"
-#include "../jrd/thd_proto.h"
 #include "../jrd/thread_proto.h"
 #include <time.h>
 
@@ -454,7 +453,6 @@ rem_port* XNET_connect(const TEXT* name, PACKET* packet,
 
 	if (!xnet_initialized) {
 		xnet_initialized = TRUE;
-		THD_mutex_init(&xnet_mutex);
 		CurrentProcessId = GetCurrentProcessId();
 		gds__register_cleanup((FPTR_VOID_PTR) exit_handler, NULL);
 	}
@@ -2081,10 +2079,6 @@ void xnet_release_all()
 
 	THD_mutex_unlock(&xnet_mutex);
 
-#if defined(SUPERSERVER) || defined(SUPERCLIENT)
-	THD_mutex_destroy(&xnet_mutex);
-#endif
-
 	xnet_initialized = FALSE;
 }
 
@@ -2126,8 +2120,6 @@ static bool_t xnet_srv_init()
 
 	xnet_connect_event = 0;
 	xnet_response_event = 0;
-
-	THD_mutex_init(&xnet_mutex);
 
 	try {
 		sprintf(name_buffer, XNET_MU_CONNECT_MUTEX, XNET_PREFIX);
@@ -2592,7 +2584,7 @@ void XNET_srv(USHORT flag)
 					
 		if (xpm && port) {
 			// start the thread for this client
-			gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>(process_connection_thread),
+			gds__thread_start(process_connection_thread,
 				              port, THREAD_medium, 0, 0);
 		}
 		else {

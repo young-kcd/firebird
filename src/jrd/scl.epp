@@ -59,7 +59,7 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/grant_proto.h"
 #include "../jrd/scl_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../include/fb_exception.h"
 #include "../common/utils_proto.h"
 

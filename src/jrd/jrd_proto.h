@@ -35,7 +35,7 @@ namespace Jrd {
 	class jrd_req;
 	class Service;
 	class BlockingThread;
-	struct thread_db;
+	class thread_db;
 	struct teb;
 }
 

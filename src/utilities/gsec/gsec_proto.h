@@ -1,8 +1,10 @@
 #ifndef GSEC_PROTO_H
 #define GSEC_PROTO_H
 
+#include "../jrd/thd.h"
+
 #ifdef SUPERSERVER
-int		GSEC_main(Jrd::Service* service);
+THREAD_ENTRY_DECLARE GSEC_main(THREAD_ENTRY_PARAM);
 #endif
 
 // Output reporting utilities

@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.104 2004-05-22 02:11:56 brodsom Exp $
+$Id: lock.cpp,v 1.105 2004-06-08 13:40:57 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -57,7 +57,6 @@ $Id: lock.cpp,v 1.104 2004-05-22 02:11:56 brodsom Exp $
 #include "../jrd/os/isc_i_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/sch_proto.h"
-#include "../jrd/thd_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../common/config/config.h"
 #include <errno.h>
@@ -169,7 +168,7 @@ static void blocking_action(void *_owner_offset);
 #endif
 static void blocking_action2(SRQ_PTR, SRQ_PTR);
 #ifdef USE_BLOCKING_THREAD
-static void THREAD_ROUTINE blocking_action_thread(SRQ_PTR *);
+static THREAD_ENTRY_DECLARE blocking_action_thread(THREAD_ENTRY_PARAM);
 #endif
 static void bug(ISC_STATUS *, const TEXT *);
 #ifdef DEV_BUILD
@@ -772,9 +771,11 @@ int LOCK_init(
 	blocking_event[0] = ISC_make_signal(TRUE, FALSE, LOCK_pid, LOCK_block_signal);
 	owner->own_blocking_hndl = blocking_event[0];
 	AST_ALLOC();
-	if (gds__thread_start
-		(reinterpret_cast < FPTR_INT_VOID_PTR > (blocking_action_thread),
-		 &LOCK_owner_offset, THREAD_critical, 0, &blocking_action_thread_handle))
+	if (gds__thread_start(blocking_action_thread, 
+						  &LOCK_owner_offset, 
+						  THREAD_critical, 
+						  0, 
+						  &blocking_action_thread_handle))
 	{
 		*status_vector++ = isc_arg_gds;
 		*status_vector++ = isc_lockmanerr;
@@ -806,8 +807,8 @@ int LOCK_init(
 
 #if !defined SUPERSERVER && defined SOLARIS_MT
 	AST_ALLOC();
-	const ULONG status = gds__thread_start( reinterpret_cast < FPTR_INT_VOID_PTR > (
-		blocking_action_thread ), &LOCK_owner_offset, THREAD_high, 0, 0);
+	const ULONG status = gds__thread_start(blocking_action_thread, 
+					&LOCK_owner_offset, THREAD_high, 0, 0);
 	if (status) {
 		*status_vector++ = isc_arg_gds;
 		*status_vector++ = isc_lockmanerr;
@@ -1819,7 +1820,7 @@ static void blocking_action2(
 
 
 #if !defined SUPERSERVER && defined WIN_NT
-static void THREAD_ROUTINE blocking_action_thread( SRQ_PTR * owner_offset_ptr)
+static THREAD_ENTRY_DECLARE blocking_action_thread(THREAD_ENTRY_PARAM arg)
 {
 /**************************************
  *
@@ -1832,6 +1833,7 @@ static void THREAD_ROUTINE blocking_action_thread( SRQ_PTR * owner_offset_ptr)
  *	will send to itself.
  *
  **************************************/
+	SRQ_PTR* owner_offset_ptr = (SRQ_PTR*)arg;
 	AST_INIT();					/* Check into scheduler as AST thread */
 
 	while (true) {
@@ -1849,12 +1851,14 @@ static void THREAD_ROUTINE blocking_action_thread( SRQ_PTR * owner_offset_ptr)
 
 	AST_EXIT();
 	AST_FINI();					/* Check out of scheduler as AST thread */
+
+	return 0;
 }
 #endif
 
 
 #if (defined SOLARIS_MT && !defined SUPERSERVER)
-static void THREAD_ROUTINE blocking_action_thread( SRQ_PTR * owner_offset_ptr)
+static THREAD_ENTRY_DECLARE blocking_action_thread(THREAD_ENTRY_PARAM arg)
 {
 /**************************************
  *
@@ -1866,6 +1870,7 @@ static void THREAD_ROUTINE blocking_action_thread( SRQ_PTR * owner_offset_ptr)
  *	Thread to handle blocking signals.
  *
  **************************************/
+	SRQ_PTR* owner_offset_ptr = (SRQ_PTR*)arg;
 	AST_INIT();					/* Check into scheduler as AST thread */
 
 	while (true) {

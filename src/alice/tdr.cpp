@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.37 2004-05-20 00:56:23 brodsom Exp $
+//	$Id: tdr.cpp,v 1.38 2004-06-08 13:39:27 alexpeshkoff Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -47,7 +47,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/svc_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 
 static ULONG ask(void);
 static void print_description(const tdr*);

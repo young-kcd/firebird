@@ -39,7 +39,7 @@
 #include "../jrd/filte_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/intl_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 
 using namespace Jrd;
 

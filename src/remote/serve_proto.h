@@ -32,13 +32,14 @@ extern "C" {
 #define rem_port void
 #endif
 
+#include "../jrd/thd.h"
 
 void SRVR_main(rem_port*, USHORT);
 
 void SRVR_multi_thread(rem_port*, USHORT);
 bool process_packet(rem_port*, PACKET *, PACKET *, rem_port**);
 void set_server(rem_port*, USHORT);
-void THREAD_ROUTINE process_connection_thread(rem_port*);
+THREAD_ENTRY_DECLARE process_connection_thread(THREAD_ENTRY_PARAM);
 
 #ifdef __cplusplus
 } // extern "C"

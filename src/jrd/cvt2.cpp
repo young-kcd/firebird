@@ -41,7 +41,7 @@
 #include "../jrd/cvt2_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/intl_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/intl_classes.h"
 #include "../jrd/gds_proto.h"
 /* CVC: I needed them here. */

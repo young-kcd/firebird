@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.120 2004-05-24 17:28:32 brodsom Exp $
+$Id: common.h,v 1.121 2004-06-08 13:39:33 alexpeshkoff Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -618,7 +618,6 @@ typedef unsigned __int64 UINT64;
 #define API_ROUTINE     __stdcall
 #define API_ROUTINE_VARARG      __cdecl
 #define CLIB_ROUTINE    __cdecl
-#define THREAD_ROUTINE  __stdcall
 #define INTERNAL_API_ROUTINE	API_ROUTINE
 
 #define SYNC_WRITE_DEFAULT
@@ -708,10 +707,6 @@ typedef unsigned __int64 UINT64;
 
 #ifndef CLIB_ROUTINE
 #define CLIB_ROUTINE
-#endif
-
-#ifndef THREAD_ROUTINE
-#define THREAD_ROUTINE
 #endif
 
 

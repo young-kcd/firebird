@@ -30,7 +30,7 @@ namespace Jrd {
 	class jrd_tra;
 	struct record_param;
 	class Attachment;
-	struct thread_db;
+	class thread_db;
 }
 struct blk;
 

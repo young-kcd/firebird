@@ -26,75 +26,56 @@
  *
  */
 /*
-$Id: thd.h,v 1.29 2004-05-24 17:28:33 brodsom Exp $
+$Id: thd.h,v 1.30 2004-06-08 13:39:37 alexpeshkoff Exp $
 */
 
 #ifndef JRD_THD_H
 #define JRD_THD_H
 
-#ifdef SOLARIS
-#ifdef SOLARIS_MT
-#include <thread.h>
-#define THD_MUTEX_STRUCT	mutex_t
-#define THD_COND_STRUCT		cond_t
-#define THD_RWLOCK_STRUCT	rwlock_t
-#endif
-#endif
- 
-
-#ifdef VMS
-//
-//#define POSIX_THREADS
-//
+#include "firebird.h"
 #include "../jrd/isc.h"
-#define THD_MUTEX_STRUCT	MTX_T
+#include "../common/classes/locks.h"
+#include "../common/classes/rwlock.h"
+#include "../common/classes/fb_tls.h"
+
+// compatibility definitions
+enum	WLCK_type {WLCK_read = 1, WLCK_write = 2};
+int		THD_wlck_lock(struct wlck_t*, enum WLCK_type);
+int		THD_wlck_unlock(struct wlck_t*);
+
+inline int	THD_mutex_lock(Firebird::Mutex* m) {
+	m->enter();
+	return 0;
+}
+
+inline int	THD_mutex_unlock(Firebird::Mutex* m) {
+	m->leave();
+	return 0;
+}
+
+extern	Firebird::Mutex ib_mutex;
+inline int	THD_mutex_lock_global(void) {
+	ib_mutex.enter();
+	return 0;
+}
+inline int	THD_mutex_unlock_global(void) {
+	ib_mutex.leave();
+	return 0;
+}
+
+// recursive mutex
+#ifdef SUPERSERVER
+int		THD_rec_mutex_destroy(struct rec_mutx_t*);
+int		THD_rec_mutex_init(struct rec_mutx_t*);
+int		THD_rec_mutex_lock(struct rec_mutx_t*);
+int		THD_rec_mutex_unlock(struct rec_mutx_t*);
 #endif
 
-#ifdef WIN_NT
-#define THD_MUTEX_STRUCT	struct IB_RTL_CRITICAL_SECTION
-
-/* The following code fragment has been extracted from <winnt.h>.
-   Microsoft being what it is, one is forced to include just about the
-   entire world even if you want only one little declaration.  Since
-   including the whole world tends to break things (Microsoft also
-   doesn't believe in benign naming conversions) we must copy code. */
-
-struct IB_RTL_CRITICAL_SECTION
-{
-	void*	DebugInfo;
-	ULONG	LockCount;
-	ULONG	RecursionCount;
-	void*	OwningThread;
-	void*	LockSemaphore;
-	ULONG	Reserved;
-};
-#endif
-
-#ifdef USE_POSIX_THREADS
-#include <pthread.h>
-#define THD_MUTEX_STRUCT	pthread_mutex_t
-#define THD_COND_STRUCT		pthread_cond_t
-
-#ifndef PTHREAD_PROCESS_SHARED
-#define PTHREAD_PROCESS_SHARED
-#endif
-
-#ifndef PTHREAD_CREATE_DETACHED
-#define PTHREAD_CREATE_DETACHED
-#endif
-
-#ifdef HAVE_PTHREAD_KEYCREATE
-#define pthread_key_create	pthread_keycreate
-#endif
-#endif
-
-#ifndef THD_MUTEX_STRUCT
-#define THD_MUTEX_STRUCT	SCHAR
-#endif
-#ifndef THD_COND_STRUCT
-#define THD_COND_STRUCT		SCHAR
-#endif
-
+// thread run-ability control
+int		THD_resume(THD_T);
+void	THD_sleep(ULONG);
+int		THD_suspend(THD_T);
+void	THD_yield(void);
 
 /* Thread priorities (may be ignored) */
 
@@ -119,12 +100,50 @@ const int SWEEP_QUANTUM		= 10;	/* Make sweeps less disruptive */
 
 /* Thread specific data */
 
-struct thdd {
-	void *thdd_prior_context;
-	ULONG thdd_type;		/* what kind of structure this is */
-};
+#if defined(WIN_NT)
+#define THREAD_ENTRY_PARAM void*
+#define THREAD_ENTRY_RETURN unsigned int
+#define THREAD_ENTRY_CALL __stdcall
+#elif defined(USE_POSIX_THREADS)
+#define THREAD_ENTRY_PARAM void*
+#define THREAD_ENTRY_RETURN void*
+#define THREAD_ENTRY_CALL
+#else
+// Define correct types for other platforms
+#define THREAD_ENTRY_PARAM void*
+#define THREAD_ENTRY_RETURN int
+#define THREAD_ENTRY_CALL
+#endif
 
-typedef thdd *THDD;
+#define THREAD_ENTRY_DECLARE THREAD_ENTRY_RETURN THREAD_ENTRY_CALL
+
+class thdd
+{
+public:
+	thdd*		thdd_prior_context;
+	ULONG		thdd_type;	/* what kind of thread context this is */
+public:
+	typedef THREAD_ENTRY_DECLARE EntryPoint(THREAD_ENTRY_PARAM);
+
+private:
+	static TLS_DECLARE (void*, tSpecific);
+	static TLS_DECLARE (thdd*, tData);
+
+public:
+	static void		start(EntryPoint* routine, 
+						  void* arg, 
+						  int priority_arg, 
+						  int flags, 
+						  void* thd_id);
+	static void		init(void) {}
+	static void		cleanup(void) {}
+	static thdd*	getSpecific(void);
+	void			putSpecific();
+	static void		restoreSpecific(void);
+	static FB_THREAD_ID getId(void);
+	static void		getSpecificData(void** t_data);
+	static void		putSpecificData(void* t_data);
+};
 
 /* Thread structure types */
 
@@ -149,12 +168,8 @@ typedef iuo *IUO;
 
 /* Mutex structure */
 
-struct mutx_t {
-	THD_MUTEX_STRUCT mutx_mutex;
-};
-
-typedef mutx_t MUTX_T;
-typedef mutx_t* MUTX;
+typedef Firebird::Mutex MUTX_T;
+typedef Firebird::Mutex* MUTX;
 
 /* Recursive mutex structure */
 struct rec_mutx_t {
@@ -166,92 +181,42 @@ struct rec_mutx_t {
 typedef rec_mutx_t REC_MUTX_T;
 typedef rec_mutx_t *REC_MUTX;
 
-/* Combined mutex and condition variable structure */
-#ifndef SOLARIS
-struct cond_t {
-	THD_MUTEX_STRUCT cond_mutex;
-	THD_COND_STRUCT cond_cond;
-};
-
-typedef cond_t COND_T;
-typedef cond_t *COND;
-
-#endif
 /* Read/write lock structure */
 
 struct wlck_t {
-#ifdef THD_RWLOCK_STRUCT
-	THD_RWLOCK_STRUCT wlck_wlock;
-#else
-	COND_T wlck_cond;
-	int wlck_count;
-	int wlck_waiters;
-#endif
+	Firebird::RWLock rwLock;
+	WLCK_type type;
 };
 
-typedef wlck_t WLCK_T;
-typedef wlck_t *WLCK;
-
-const int WLCK_read		= 1;
-const int WLCK_write	= 2;
-
-/* Threading allocation size */
-
-#define THREAD_STRUCT_SIZE(type,n)	(n * sizeof (type) + ALIGNMENT)
-#define THREAD_STRUCT_ALIGN(blk)	FB_ALIGN((U_IPTR) blk, ALIGNMENT)
+typedef struct wlck_t WLCK_T;
+typedef struct wlck_t* WLCK;
 
 #ifdef V4_THREADING
-#define V4_INIT				THD_init()
+#define V4_MUTEX_LOCK(mutx)			THD_mutex_lock (mutx)
+#define V4_MUTEX_UNLOCK(mutx)		THD_mutex_unlock (mutx)
 #define V4_GLOBAL_MUTEX_LOCK		THD_mutex_lock_global()
 #define V4_GLOBAL_MUTEX_UNLOCK		THD_mutex_unlock_global()
-#define V4_MUTEX_INIT(mutx)		THD_mutex_init (mutx)
-#define V4_MUTEX_LOCK(mutx)		THD_mutex_lock (mutx)
-#define V4_MUTEX_UNLOCK(mutx)		THD_mutex_unlock (mutx)
-#define V4_MUTEX_DESTROY(mutx)		THD_mutex_destroy (mutx)
-#define V4_RW_LOCK_INIT_N(wlck,n)	THD_wlck_init_n (wlck, n)
-#define V4_RW_LOCK_INIT(wlck)		THD_wlck_init (wlck)
 #define V4_RW_LOCK_LOCK(wlck,type)	THD_wlck_lock (wlck, type)
 #define V4_RW_LOCK_UNLOCK(wlck)		THD_wlck_unlock (wlck)
-#define V4_RW_LOCK_DESTROY(wlck)	THD_wlck_destroy (wlck)
-#define V4_RW_LOCK_DESTROY_N(wlck,n)	THD_wlck_destroy_n (wlck, n)
-// BRS. 03/23/2003
-// Those empty defines was substituted with #ifdef V4_THREADING
-//#else
-//#define V4_INIT
-//#define V4_GLOBAL_MUTEX_LOCK
-//#define V4_GLOBAL_MUTEX_UNLOCK
-//#define V4_MUTEX_INIT(mutx)
-//#define V4_MUTEX_LOCK(mutx)
-//#define V4_MUTEX_UNLOCK(mutx)
-//#define V4_MUTEX_DESTROY(mutx)
-//#define V4_RW_LOCK_INIT_N(wlck,n)
-//#define V4_RW_LOCK_INIT(wlck)
-//#define V4_RW_LOCK_LOCK(wlck,type)
-//#define V4_RW_LOCK_UNLOCK(wlck)
-//#define V4_RW_LOCK_DESTROY_N(wlck,n)
-//#define V4_RW_LOCK_DESTROY(wlck)
 #endif
 
 #ifdef ANY_THREADING
-#define THD_INIT			THD_init()
+#define THD_INIT
 #define THD_GLOBAL_MUTEX_LOCK		THD_mutex_lock_global()
 #define THD_GLOBAL_MUTEX_UNLOCK		THD_mutex_unlock_global()
-#define THD_MUTEX_INIT_N(mutx,n)	THD_mutex_init_n (mutx, n)
-#define THD_MUTEX_DESTROY_N(mutx,n)	THD_mutex_destroy_n (mutx, n)
-#define THD_MUTEX_INIT(mutx)		THD_mutex_init (mutx)
 #define THD_MUTEX_LOCK(mutx)		THD_mutex_lock (mutx)
 #define THD_MUTEX_UNLOCK(mutx)		THD_mutex_unlock (mutx)
-#define THD_MUTEX_DESTROY(mutx)		THD_mutex_destroy (mutx)
 #else
 #define THD_INIT
 #define THD_GLOBAL_MUTEX_LOCK
 #define THD_GLOBAL_MUTEX_UNLOCK
-#define THD_MUTEX_INIT_N(mutx,n)
-#define THD_MUTEX_DESTROY_N(mutx,n)
-#define THD_MUTEX_INIT(mutx)
 #define THD_MUTEX_LOCK(mutx)
 #define THD_MUTEX_UNLOCK(mutx)
-#define THD_MUTEX_DESTROY(mutx)
 #endif
+
+extern "C" {
+	int		API_ROUTINE gds__thread_start(thdd::EntryPoint*, void*, int, int,
+										 void*);
+}
 
 #endif /* JRD_THD_H */

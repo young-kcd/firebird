@@ -32,7 +32,7 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/mov_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 
 using namespace Jrd;
 

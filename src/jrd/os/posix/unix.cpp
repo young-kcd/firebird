@@ -65,7 +65,7 @@
 #include "../jrd/lck_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/os/pio_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 
 using namespace Jrd;
 

@@ -48,7 +48,7 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/rlck_proto.h"
 #include "../jrd/rng_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/event_proto.h"
 

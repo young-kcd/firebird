@@ -44,7 +44,7 @@
 #include "../jrd/err_proto.h"
 
 #ifdef SUPERSERVER
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/err_proto.h"
 #endif
 

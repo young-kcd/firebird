@@ -58,7 +58,7 @@
 #include "../jrd/intl_proto.h"
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/met_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/vio_proto.h"
 #include "../common/utils_proto.h"
 

@@ -75,7 +75,6 @@
 #include "../jrd/opt_proto.h"
 #include "../jrd/par_proto.h"
 #include "../jrd/sbm_proto.h"
-#include "../jrd/thd_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/dbg_proto.h"
 #include "../common/classes/array.h"

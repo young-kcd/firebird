@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.105 2004-06-05 09:36:51 robocop Exp $
+ * $Id: ddl.cpp,v 1.106 2004-06-08 13:39:40 alexpeshkoff Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -85,7 +85,6 @@
 #include "../dsql/metd_proto.h"
 #include "../dsql/pass1_proto.h"
 #include "../jrd/sch_proto.h"
-#include "../jrd/thd_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/gds_proto.h"
 

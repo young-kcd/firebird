@@ -35,6 +35,7 @@
 #include <string.h>
 #include "../jrd/jrd_time.h"
 #include "../jrd/common.h"
+#include "../jrd/thd.h"
 #include "../jrd/file_params.h"
 #include <stdarg.h>
 #include "../jrd/jrd.h"
@@ -53,7 +54,6 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/svc_proto.h"
-#include "../jrd/thd_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/why_proto.h"
 #include "../jrd/utl_proto.h"
@@ -198,7 +198,7 @@ static void service_enqueue_byte(UCHAR, Service*);
 static USHORT service_add_one(USHORT i);
 static USHORT service_empty(Service* service);
 static USHORT service_full(Service* service);
-static void service_fork(pfn_svc_main, Service*);
+static void service_fork(thdd::EntryPoint*, Service*);
 #else
 static void service_fork(TEXT*, Service*);
 #endif
@@ -212,7 +212,7 @@ static USHORT service_read(Service*, SCHAR *, USHORT, USHORT);
 #endif
 
 #ifdef DEBUG
-int test_thread(Service*);
+THREAD_ENTRY_DECLARE test_thread(THREAD_ENTRY_PARAM);
 void test_cmd(USHORT, SCHAR *, TEXT **);
 #define TEST_THREAD test_thread
 #define TEST_CMD test_cmd
@@ -229,17 +229,13 @@ static ULONG shutdown_param = 0L;
 const char* const SPB_SEC_USERNAME = "isc_spb_sec_username";
 
 static MUTX_T svc_mutex[1], thd_mutex[1];
-static bool svc_initialized = false, thd_initialized = false;
 
 /* Service Functions */
 #ifdef SUPERSERVER
-//int main_gbak(Service* service);
 #include "../burp/burp_proto.h"
-//int main_gfix(Service* service);
 #include "../alice/alice_proto.h"
 int main_lock_print();
-int main_gstat(Service* service);
-//int main_gsec(Service* service);
+THREAD_ENTRY_DECLARE main_gstat(THREAD_ENTRY_PARAM arg);
 #include "../utilities/gsec/gsec_proto.h"
 
 #define MAIN_GBAK		BURP_main
@@ -663,7 +659,7 @@ Service* SVC_attach(USHORT	service_length,
 
 
 #if defined(SUPERSERVER) && defined(SERVER_SHUTDOWN)
-static int shutdown_thread(void *arg) {
+static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg) {
 /**************************************
  *
  *	s h u t d o w n _ t h r e a d
@@ -1754,11 +1750,6 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb)
 	if (service->svc_user_flag == SVC_user_none)
 		ERR_post(isc_bad_spb_form, 0);
 
-	if (!thd_initialized) {
-		THD_MUTEX_INIT(thd_mutex);
-		thd_initialized = true;
-	}
-
 	THD_MUTEX_LOCK(thd_mutex);
 	if (service->svc_flags & SVC_thd_running) {
 		THD_MUTEX_UNLOCK(thd_mutex);
@@ -1999,8 +1990,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb)
 		ISC_event_init(evnt_ptr, 0, 0);
 		SLONG count = ISC_event_clear(evnt_ptr);
 
-		gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>
-						  (serv->serv_thd), service, THREAD_medium, 0,
+		gds__thread_start(serv->serv_thd, service, THREAD_medium, 0,
 						  (void *) &service->svc_handle);
 
 		/* check for the service being detached.  This will prevent the thread
@@ -2045,7 +2035,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb)
 }
 
 
-int SVC_read_ib_log(Service* service)
+THREAD_ENTRY_DECLARE SVC_read_ib_log(THREAD_ENTRY_PARAM arg)
 {
 /**************************************
  *
@@ -2060,6 +2050,7 @@ int SVC_read_ib_log(Service* service)
  **************************************/
 	TEXT name[MAXPATHLEN], buffer[100];
 	bool svc_started = false;
+	Service* service = (Service*)arg;
 #ifdef SUPERSERVER
 	ISC_STATUS *status = service->svc_status;
 	*status++ = isc_arg_gds;
@@ -2747,7 +2738,7 @@ static void service_enqueue_byte(UCHAR ch, Service* service)
 }
 
 
-static void service_fork(pfn_svc_main service_executable, Service* service)
+static void service_fork(thdd::EntryPoint* service_executable, Service* service)
 {
 /**************************************
  *
@@ -2805,7 +2796,7 @@ static void service_fork(pfn_svc_main service_executable, Service* service)
 		ERR_post(isc_virmemexh, 0);
 
 	THREAD_EXIT();
-	gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>(service_executable),
+	gds__thread_start(service_executable,
 						service, 0, 0, (void*)&service->svc_handle);
 	THREAD_ENTER();
 }
@@ -3301,12 +3292,6 @@ void SVC_finish(Service* service, USHORT flag)
  *	  used by service.
  *
  **************************************/
-
-	if (!svc_initialized)
-	{
-		THD_MUTEX_INIT(svc_mutex);
-		svc_initialized = true;
-	}
 
 	THD_MUTEX_LOCK(svc_mutex);
 	if (service && ((flag == SVC_finished) || (flag == SVC_detached)))
@@ -3842,7 +3827,7 @@ static bool get_action_svc_parameter(
  * test that the paths for starting services and parsing command-lines
  * are followed correctly.
  */
-int test_thread(Service* service)
+THREAD_ENTRY_DECLARE test_thread(THREAD_ENTRY_PARAM)
 {
 	gds__log("Starting service");
 	return FINI_OK;

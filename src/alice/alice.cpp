@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.65 2004-05-23 22:56:51 brodsom Exp $
+//	$Id: alice.cpp,v 1.66 2004-06-08 13:39:20 alexpeshkoff Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -54,7 +54,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/svc.h"
 #include "../jrd/svc_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../alice/alice_proto.h"
 
 #ifdef HAVE_UNISTD_H
@@ -132,8 +132,9 @@ static int output_svc(Jrd::Service* output_data, const UCHAR * output_buf)
 //	Entry point for GFIX in case of service manager.
 //
 
-int ALICE_main(Jrd::Service* service)
+THREAD_ENTRY_DECLARE ALICE_main(THREAD_ENTRY_PARAM arg)
 {
+	Jrd::Service* service = (Jrd::Service*)arg;
 	const int exit_code = common_main(service->svc_argc, service->svc_argv,
 					SVC_output, service);
 
@@ -141,7 +142,7 @@ int ALICE_main(Jrd::Service* service)
 //  If service is detached, cleanup memory being used by service.
 	SVC_finish(service, Jrd::SVC_finished);
 
-	return exit_code;
+	return (THREAD_ENTRY_RETURN)(exit_code);
 }
 
 //____________________________________________________________

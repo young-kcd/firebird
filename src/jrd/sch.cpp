@@ -34,7 +34,6 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/sch_proto.h"
-#include "../jrd/thd_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/iberr_proto.h"
@@ -221,7 +220,7 @@ void SCH_abort(void)
 
 /* See if we can find thread.  If not, don't worry about it */
 
-	const FB_THREAD_ID id = THD_get_thread_id();
+	const FB_THREAD_ID id = thdd::getId();
 	THREAD thread;
 	for (THREAD* ptr = &active_thread; thread = *ptr; ptr = &thread->thread_next) {
 		if (thread->thread_id == id)
@@ -296,7 +295,7 @@ void SCH_ast(enum ast_t action)
 		break;
 
 	case AST_init:
-		ast_thread->thread_id = THD_get_thread_id();
+		ast_thread->thread_id = thdd::getId();
 		break;
 
 		/* Check out of thread scheduler as AST thread */
@@ -401,7 +400,7 @@ void SCH_enter(void)
 		free_threads = NULL;
 		thread->thread_next = thread->thread_prior = thread;
 		thread->thread_flags = 0;
-		thread->thread_id = THD_get_thread_id();
+		thread->thread_id = thdd::getId();
 		return;
 	}
 #endif
@@ -418,7 +417,7 @@ void SCH_enter(void)
 	}
 
 	THREAD thread = alloc_thread();
-	thread->thread_id = THD_get_thread_id();
+	thread->thread_id = thdd::getId();
 
 /* Link thread block into circular list of active threads */
 
@@ -439,7 +438,7 @@ void SCH_enter(void)
 		thread->thread_next = thread->thread_prior = thread;
 		active_thread = thread;
 	}
-	THPS_ENTER();
+	ThreadPriorityScheduler::enter();
 
 	if (active_thread->thread_flags & THREAD_hiber) {
 		schedule();
@@ -495,7 +494,7 @@ void SCH_exit(void)
 		prior->thread_next = next;
 		next->thread_prior = prior;
 	}
-	THPS_EXIT();
+	ThreadPriorityScheduler::exit();
 
 	thread->thread_next = free_threads;
 	free_threads = thread;
@@ -550,9 +549,6 @@ void SCH_init(void)
 		if (!init_flag) {
 #endif
 			gds__register_cleanup(cleanup, 0);
-			const int mutex_state = THD_mutex_init(thread_mutex);
-			if (mutex_state)
-				mutex_bugcheck("mutex init", mutex_state);
 			init_flag = true;
 #ifdef MULTI_THREAD
 			THD_INIT;
@@ -599,7 +595,7 @@ bool SCH_thread_enter_check(void)
 
 /* if active thread is not null and thread_id matches the we are the
    active thread */
-	if ((active_thread) && (active_thread->thread_id == THD_get_thread_id()))
+	if ((active_thread) && (active_thread->thread_id == thdd::getId()))
 		return true;
 
 	return false;
@@ -628,7 +624,7 @@ bool SCH_validate(void)
 	}
 
 #ifdef MULTI_THREAD
-	if (active_thread->thread_id != THD_get_thread_id()) {
+	if (active_thread->thread_id != thdd::getId()) {
 		gds__log("SCH_validate -- wrong thread");
 		return false;
 	}
@@ -709,7 +705,7 @@ static bool ast_enable(void)
 		return false;
 
 	if (ast_thread->thread_flags & THREAD_ast_active &&
-		ast_thread->thread_id == THD_get_thread_id())
+		ast_thread->thread_id == thdd::getId())
 		return false;
 
 	if (!ast_thread->thread_count || !--ast_thread->thread_count) {
@@ -743,11 +739,11 @@ static void ast_disable(void)
 		return;
 
 	if (ast_thread->thread_flags & THREAD_ast_active) {
-		if (ast_thread->thread_id == THD_get_thread_id())
+		if (ast_thread->thread_id == thdd::getId())
 			return;
 		else {
 			if (active_thread
-				&& active_thread->thread_id == THD_get_thread_id()) 
+				&& active_thread->thread_id == thdd::getId()) 
 			{
 				stall(active_thread);
 				return;
@@ -830,9 +826,6 @@ static void cleanup(void *arg)
 	}
 
 	THD_mutex_unlock(thread_mutex);
-
-/* add the the destroy for the thread_mutex */
-	THD_mutex_destroy(thread_mutex);
 #endif /* SUPERCLIENT */
 
 	init_flag = false;

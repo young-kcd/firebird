@@ -1,7 +1,7 @@
 #ifndef INCLUDE_FB_BLK
 #define INCLUDE_FB_BLK
 
-//#include <vector>
+#include <vector>
 #include "../common/classes/alloc.h"
 
 struct blk

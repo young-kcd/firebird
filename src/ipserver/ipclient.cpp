@@ -46,7 +46,7 @@
 #include "../ipserver/ipevt_proto.h"
 #include "../ipserver/ipapi_proto.h"
 #include "../ipserver/ips.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/sch_proto.h"
@@ -2385,16 +2385,14 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 			event_semaphore = 0;
 		}
 		if (event_semaphore) {
-			gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
-							  (event_packer), idb->idb_thread, THREAD_high, 0,
+			gds__thread_start(event_packer, idb->idb_thread, THREAD_high, 0,
 							  &event_packer_handle);
 			if (!event_packer_handle)
 				gds__log("unable to start event packer thread %ld",
 						 (long) GetLastError());
 			else {
 				WaitForSingleObject(event_semaphore, INFINITE);
-				gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
-								  (event_thread), NULL, THREAD_high, 0,
+				gds__thread_start(event_thread, NULL, THREAD_high, 0,
 								  &event_thread_handle);
 				if (!event_thread_handle)
 					gds__log("unable to start event processing thread %ld",
@@ -3977,7 +3975,7 @@ static SSHORT init( ISC_STATUS * user_status, ICC * picc)
 		if (!server_watcher_handle)
 		{
 			server_process_handle = icc->icc_server_proc;
-			gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>(server_watcher),
+			gds__thread_start(server_watcher,
 								NULL,
 								THREAD_high,
 								0,

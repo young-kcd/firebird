@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.76 2004-06-07 06:50:38 kkuznetsov Exp $
+$Id: why.cpp,v 1.77 2004-06-08 13:39:37 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -81,7 +81,6 @@ $Id: why.cpp,v 1.76 2004-06-07 06:50:38 kkuznetsov Exp $
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/sch_proto.h"
 #endif
-#include "../jrd/thd_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/utl_proto.h"
 #include "../dsql/dsql_proto.h"

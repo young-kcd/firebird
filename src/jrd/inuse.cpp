@@ -27,7 +27,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/inuse_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 
 static void cleanup(void *);
 static void init(void);
@@ -214,8 +214,6 @@ static void cleanup(void *arg)
  * Functional description
  *
  **************************************/
-	THD_MUTEX_DESTROY(inuse_mutex);
-
 	while (free_list) {
 		IUO iuo = free_list;
 		free_list = iuo->iuo_next;
@@ -242,7 +240,6 @@ static void init(void)
 		THD_INIT;
 		THD_GLOBAL_MUTEX_LOCK;
 		if (!initialized) {
-			THD_MUTEX_INIT(inuse_mutex);
 			gds__register_cleanup(cleanup, 0);
 			initialized = true;
 		}

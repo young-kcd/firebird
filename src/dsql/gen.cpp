@@ -46,7 +46,7 @@
 #include "../dsql/make_proto.h"
 #include "../dsql/metd_proto.h"
 #include "../dsql/misc_func.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/dsc_proto.h"
 #include "gen/iberror.h"
 

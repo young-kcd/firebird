@@ -37,7 +37,7 @@ namespace Jrd {
 
 class Lock;
 class Precedence;
-struct thread_db;
+class thread_db;
 struct que;
 class BufferDesc;
 class SparseBitmap;

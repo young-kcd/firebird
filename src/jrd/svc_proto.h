@@ -24,9 +24,11 @@
 #ifndef JRD_SVC_PROTO_H
 #define JRD_SVC_PROTO_H
 
+#include "../jrd/thd.h"
+
 namespace Jrd {
 	class Service;
-	struct thread_db;
+	class thread_db;
 }
 
 Jrd::Service* SVC_attach(USHORT, const TEXT*, USHORT, const SCHAR*);
@@ -40,7 +42,7 @@ ISC_STATUS SVC_query2(Jrd::Service*, Jrd::thread_db*, USHORT, const SCHAR*,
 	USHORT, const SCHAR*, USHORT, SCHAR*);
 void*  SVC_start(Jrd::Service*, USHORT, const SCHAR*);
 void   SVC_finish(Jrd::Service*, USHORT);
-int   SVC_read_ib_log(Jrd::Service*);
+THREAD_ENTRY_DECLARE SVC_read_ib_log(THREAD_ENTRY_PARAM);
 const TEXT* SVC_err_string(const TEXT*, USHORT);
 int SVC_output(Jrd::Service*, const UCHAR*);
 

@@ -29,7 +29,7 @@
 #include "../remote/allr_proto.h"
 #include "../remote/remot_proto.h"
 #include "../jrd/gds_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../common/classes/alloc.h"
 
 

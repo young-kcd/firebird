@@ -51,7 +51,7 @@
 #include "../jrd/lck_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/os/pio_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 
 #include <windows.h>
 
@@ -154,7 +154,6 @@ void PIO_close(jrd_file* main_file)
 				}
 			}
 #endif
-			THD_MUTEX_DESTROY(file->fil_mutex);
 		}
 	}
 }
@@ -1040,7 +1039,6 @@ static jrd_file* setup_file(Database*		dbb,
 #endif
 	MOVE_FAST(file_name, file->fil_string, file_length);
 	file->fil_string[file_length] = 0;
-	THD_MUTEX_INIT(file->fil_mutex);
 
 /* If this isn't the primary file, we're done */
 

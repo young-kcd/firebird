@@ -103,18 +103,17 @@
 #include "../jrd/thread_proto.h"
 #include "../jrd/svc_proto.h"
 #include "../jrd/isc_proto.h"
-#include "../jrd/thd_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/os/isc_i_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/file_params.h"
 #include "../common/config/config.h"
 
-static void THREAD_ROUTINE inet_connect_wait_thread(void*);
-static void THREAD_ROUTINE ipc_connect_wait_thread(void*);
-static void THREAD_ROUTINE start_connections_thread(int);
-static void THREAD_ROUTINE wnet_connect_wait_thread(void*);
-static void THREAD_ROUTINE xnet_connect_wait_thread(void*);
+static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM);
+static THREAD_ENTRY_DECLARE ipc_connect_wait_thread(THREAD_ENTRY_PARAM);
+static THREAD_ENTRY_DECLARE start_connections_thread(THREAD_ENTRY_PARAM);
+static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM);
+static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM);
 static HANDLE parse_args(LPSTR, USHORT*);
 static void service_connection(rem_port*);
 
@@ -254,7 +253,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 		}
 	}
 	else if (!(server_flag & SRVR_non_service)) {
-		CNTL_init((FPTR_VOID) start_connections_thread, REMOTE_SERVICE);
+		CNTL_init(start_connections_thread, REMOTE_SERVICE);
 //
 // BRS There is a error in MinGW (3.1.0) headers 
 // the parameter of StartServiceCtrlDispatcher is declared const in msvc headers
@@ -272,18 +271,15 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	}
 	else {
 		if (server_flag & SRVR_inet) {
-			gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>
-							  (inet_connect_wait_thread), 0, THREAD_medium, 0,
+			gds__thread_start(inet_connect_wait_thread, 0, THREAD_medium, 0,
 							  0);
 		}
 		if (server_flag & SRVR_wnet) {
-			gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>
-							  (wnet_connect_wait_thread), 0, THREAD_medium, 0,
+			gds__thread_start(wnet_connect_wait_thread, 0, THREAD_medium, 0,
 							  0);
 		}
 		if (server_flag & SRVR_xnet) {
-			gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>
-							  (xnet_connect_wait_thread), 0, THREAD_medium, 0,
+			gds__thread_start(xnet_connect_wait_thread, 0, THREAD_medium, 0,
 							  0);
 		}
 		/* No need to waste a thread if we are running as a window.  Just start
@@ -320,7 +316,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 }
 
 
-void THREAD_ROUTINE process_connection_thread( rem_port* port)
+THREAD_ENTRY_DECLARE process_connection_thread(THREAD_ENTRY_PARAM arg)
 {
 /**************************************
  *
@@ -336,14 +332,15 @@ void THREAD_ROUTINE process_connection_thread( rem_port* port)
 	if (!(server_flag & SRVR_non_service)) {
 		thread = CNTL_insert_thread();
 	}
-	service_connection(port);
+	service_connection((rem_port*)arg);
 	if (!(server_flag & SRVR_non_service)) {
 		CNTL_remove_thread(thread);
 	}
+	return 0;
 }
 
 
-static void THREAD_ROUTINE inet_connect_wait_thread( void* dummy)
+static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM)
 {
 /**************************************
  *
@@ -371,10 +368,11 @@ static void THREAD_ROUTINE inet_connect_wait_thread( void* dummy)
 
 	if (!(server_flag & SRVR_non_service))
 		CNTL_remove_thread(thread);
+	return 0;
 }
 
 
-static void THREAD_ROUTINE wnet_connect_wait_thread( void *dummy)
+static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 {
 /**************************************
  *
@@ -405,18 +403,18 @@ static void THREAD_ROUTINE wnet_connect_wait_thread( void *dummy)
 			}
 			break;
 		}
-		gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>
-						  (process_connection_thread), port, THREAD_medium, 0,
+		gds__thread_start(process_connection_thread, port, THREAD_medium, 0,
 						  0);
 	}
 
 	if (!(server_flag & SRVR_non_service)) {
 		CNTL_remove_thread(thread);
 	}
+	return 0;
 }
 
 
-static void THREAD_ROUTINE ipc_connect_wait_thread( void *dummy)
+static THREAD_ENTRY_DECLARE ipc_connect_wait_thread(THREAD_ENTRY_PARAM)
 {
 /**************************************
  *
@@ -441,10 +439,11 @@ static void THREAD_ROUTINE ipc_connect_wait_thread( void *dummy)
 
 	if (!(server_flag & SRVR_non_service))
 		CNTL_remove_thread(thread);
+	return 0;
 }
 
 
-static void THREAD_ROUTINE xnet_connect_wait_thread(void *dummy)
+static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 {
 /**************************************
  *
@@ -467,6 +466,7 @@ static void THREAD_ROUTINE xnet_connect_wait_thread(void *dummy)
 
 	if (!(server_flag & SRVR_non_service))
 		CNTL_remove_thread(thread);
+	return 0;
 }
 
 
@@ -486,7 +486,7 @@ static void service_connection( rem_port* port)
 }
 
 
-static void THREAD_ROUTINE start_connections_thread( int flag)
+static THREAD_ENTRY_DECLARE start_connections_thread(THREAD_ENTRY_PARAM)
 {
 /**************************************
  *
@@ -500,21 +500,17 @@ static void THREAD_ROUTINE start_connections_thread( int flag)
 	HANDLE ipc_thread_handle = 0;
 
 	if (server_flag & SRVR_inet) {
-		gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>
-						  (inet_connect_wait_thread), 0, THREAD_medium, 0, 0);
+		gds__thread_start(inet_connect_wait_thread, 0, THREAD_medium, 0, 0);
 	}
 	if (server_flag & SRVR_wnet) {
-		gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>
-						  (wnet_connect_wait_thread), 0, THREAD_medium, 0, 0);
+		gds__thread_start(wnet_connect_wait_thread, 0, THREAD_medium, 0, 0);
 	}
 	if (server_flag & SRVR_xnet) {
-		gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>
-						  (xnet_connect_wait_thread), 0, THREAD_medium, 0, 0);
+		gds__thread_start(xnet_connect_wait_thread, 0, THREAD_medium, 0, 0);
 	}
 	if (server_flag & SRVR_ipc) {
 		const int bFailed =
-			gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>
-							  (ipc_connect_wait_thread),
+			gds__thread_start(ipc_connect_wait_thread,
 							  0,
 							  THREAD_medium,
 							  0,
@@ -530,9 +526,10 @@ static void THREAD_ROUTINE start_connections_thread( int flag)
 				CloseHandle(ipc_thread_handle);
 			}
 			CNTL_shutdown_service("Could not start service");
-			return;
+			return 0;
 		}
 	}
+	return 0;
 }
 
 

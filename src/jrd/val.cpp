@@ -568,7 +568,7 @@ VI. ADDITIONAL NOTES
 #include "../jrd/met_proto.h"
 #include "../jrd/sbm_proto.h"
 #include "../jrd/sch_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/val_proto.h"
 #include "../jrd/thread_proto.h"

@@ -51,7 +51,6 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/sch_proto.h"
-#include "../jrd/thd_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/why_proto.h"
 #include "../common/classes/semaphore.h"
@@ -160,7 +159,7 @@ static REM_MSG	scroll_cache(rrq::rrq_repeat*, USHORT *, ULONG *);
 static void	server_ast(void*, USHORT, const UCHAR*);
 static void		success(ISC_STATUS *);
 #ifdef MULTI_THREAD
-static int THREAD_ROUTINE loopThread(void *);
+static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM);
 #endif
 static void		zap_packet(PACKET*, bool);
 
@@ -443,7 +442,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 			 */
 			extra_threads = threads_waiting - pending_requests;
 			if (extra_threads < 0) {
-				gds__thread_start(	reinterpret_cast<FPTR_INT_VOID_PTR>(loopThread),
+				gds__thread_start(	loopThread,
 									(void*)(ULONG) flags,
 									THREAD_medium,
 									THREAD_ast,
@@ -2945,8 +2944,8 @@ bool process_packet(rem_port* port,
 	// BRS: This is the same as REM_set_thread_data but it not set status vector to null
 	trdb* tdrdb = &thd_context;
 	tdrdb->trdb_status_vector = port->port_status_vector;
-	THD_put_specific((THDD) tdrdb);
-	tdrdb->trdb_thd_data.thdd_type = THDD_TYPE_TRDB;
+	tdrdb->putSpecific();
+	tdrdb->thdd_type = THDD_TYPE_TRDB;
 
 	try {
 		P_OP op = receive->p_operation;
@@ -2969,7 +2968,7 @@ bool process_packet(rem_port* port,
 					gds__log
 						("SERVER/process_packet: connect reject, server exiting",
 						 0);
-					THD_restore_specific();
+					thdd::restoreSpecific();
 					return false;
 				}
 			}
@@ -3013,7 +3012,7 @@ bool process_packet(rem_port* port,
 						gds__log("SERVER/process_packet: Multi-client server shutdown", 0);
 					}
 					port->disconnect(sendL, receive);
-					THD_restore_specific();
+					thdd::restoreSpecific();
 					return false;
 				}
 			}
@@ -3191,7 +3190,7 @@ bool process_packet(rem_port* port,
 					port->disconnect();
 				else
 					port->disconnect(sendL, receive);
-				THD_restore_specific();
+				thdd::restoreSpecific();
 				return false;
 			}
 			port->disconnect(sendL, receive);
@@ -3201,7 +3200,7 @@ bool process_packet(rem_port* port,
 		if (result)
 			*result = port;
 
-		THD_restore_specific();
+		thdd::restoreSpecific();
 	
 	}	// try
 	catch (const std::exception&) {
@@ -3213,7 +3212,7 @@ bool process_packet(rem_port* port,
 		port->send_response(sendL, 0, 0, tdrdb->trdb_status_vector);
 		port->disconnect(sendL, receive);	/*  Well, how about this...  */
 
-		THD_restore_specific();
+		thdd::restoreSpecific();
 		return false;
 	}
 
@@ -4627,7 +4626,7 @@ static void success( ISC_STATUS * status_vector)
 }
 
 #ifdef MULTI_THREAD
-static int THREAD_ROUTINE loopThread(void* flags)
+static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM flags)
 {
 /**************************************
  *

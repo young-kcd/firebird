@@ -84,7 +84,6 @@ nested FOR loops are added.
 #include "../dsql/pass1_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/sch_proto.h"
-#include "../jrd/thd_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/why_proto.h"
 #include "../jrd/y_handle.h"
@@ -161,7 +160,6 @@ static const UCHAR sql_records_info[] = {
 #ifdef	ANY_THREADING
 static MUTX_T databases_mutex;
 static MUTX_T cursors_mutex;
-static bool mutex_inited = false;
 #endif
 
 
@@ -4136,15 +4134,6 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
  **/
 static dsql_dbb* init(FB_API_HANDLE* db_handle)
 {
-
-#ifdef ANY_THREADING
-	if (!mutex_inited) {
-		mutex_inited = true;
-		THD_MUTEX_INIT(&databases_mutex);
-		THD_MUTEX_INIT(&cursors_mutex);
-	}
-#endif
-
 	THREAD_EXIT();
 	THD_MUTEX_LOCK(&databases_mutex);
 	THREAD_ENTER();

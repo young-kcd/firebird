@@ -39,7 +39,7 @@
 
 #include "../jrd/lck_proto.h"
 #include "../jrd/os/pio_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 
 const char* DEFAULT_FILE_NAME	= ".fdb";
 const SLONG EVENT_FLAG			= 15;

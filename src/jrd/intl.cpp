@@ -118,7 +118,7 @@
 #include "../jrd/iberr_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/isc_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/evl_string.h"
 
 #include "../common/classes/init.h"

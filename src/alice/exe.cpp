@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.34 2004-05-20 00:56:23 brodsom Exp $
+//	$Id: exe.cpp,v 1.35 2004-06-08 13:39:27 alexpeshkoff Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -47,7 +47,7 @@
 #include "../alice/alice_meta.h"
 #include "../alice/tdr_proto.h"
 #include "../jrd/gds_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 
 
 static USHORT build_dpb(UCHAR*, const ULONG);

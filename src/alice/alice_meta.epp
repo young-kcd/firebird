@@ -27,7 +27,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: alice_meta.epp,v 1.37 2004-05-20 00:56:23 brodsom Exp $
+ *	$Id: alice_meta.epp,v 1.38 2004-06-08 13:39:27 alexpeshkoff Exp $
  */
 
 #include "firebird.h"
@@ -39,7 +39,7 @@
 #include "../alice/all.h"
 #include "../alice/alice_meta.h"
 #include "../jrd/gds_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../include/fb_exception.h"
 #include "../common/classes/alloc.h"
 #include "../alice/alice_proto.h"

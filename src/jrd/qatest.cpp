@@ -101,7 +101,7 @@ defined APIs for this function.
 #include "../jrd/err_proto.h"
 #include "../jrd/flu_proto.h"
 #include "../jrd/sch_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/thread_proto.h"
 #ifdef WIN_NT
 #include <windows.h>

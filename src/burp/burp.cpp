@@ -40,7 +40,7 @@
 #include <stdarg.h>
 #include "../jrd/ibsetjmp.h"
 #include "../jrd/msg_encode.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/ods.h"			// to get MAX_PAGE_SIZE
 #include "../jrd/svc.h"
 #include "../burp/burp.h"
@@ -167,7 +167,7 @@ static int output_svc(Jrd::Service* output_data, const UCHAR* output_buf)
 }
 
 #ifdef SUPERSERVER
-int BURP_main(Jrd::Service* service)
+THREAD_ENTRY_DECLARE BURP_main(THREAD_ENTRY_PARAM arg)
 {
 /**************************************
  *
@@ -179,6 +179,7 @@ int BURP_main(Jrd::Service* service)
  *	Entrypoint for GBAK via services manager.
  *
  **************************************/
+	Jrd::Service* service = (Jrd::Service*)arg;
 	const int exit_code = common_main(service->svc_argc, service->svc_argv,
 						  SVC_output, service);
 
@@ -186,7 +187,7 @@ int BURP_main(Jrd::Service* service)
 // If service is detached, cleanup memory being used by service. 
 	SVC_finish(service, Jrd::SVC_finished);
 
-	return exit_code;
+	return (THREAD_ENTRY_RETURN)(exit_code);
 }
 
 

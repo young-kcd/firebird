@@ -24,123 +24,134 @@
 #ifndef JRD_OS_THD_PRIORITY_H
 #define JRD_OS_THD_PRIORITY_H
 
-#ifdef WIN_NT
-#include <windows.h>
-#if defined(SUPERSERVER) && !defined(EMBEDDED)
-// Comment this definition to build without priority scheduler 
-//	OR:
-// Uncomment this definition to build with priority scheduler
-#define THREAD_PSCHED
-#endif
-#endif
-
-#include "../jrd/thd.h"
-
 #ifdef THREAD_PSCHED
 
+#include "firebird.h"
 #include "../common/classes/alloc.h"
+#include "../common/classes/fb_tls.h"
+#include "../common/classes/init.h"
+#include "../common/classes/array.h"
+#include "../jrd/thd.h"
 #include <process.h>
-
-// Each thread, issuing THREAD_EXIT / THREAD_ENTER, must
-// have associated with it THPS class. That is
-// what thread local storage points to, instead of 
-// struct thdd. We keep pointer to this struct inside this 
-// class.
-class ThreadPriorityScheduler {
-private:
-	static MUTX_T mutex;			// locks modification of thps chains
-	static MemoryPool* pool;		// where we should place our thps
-	static ThreadPriorityScheduler* chain;	// where starts thps chain
-	static ThreadPriorityScheduler* news;	// where starts new thps chain
-	static bool initialized;
-	static DWORD specific_key;		// for thread LS access
-	static bool shutdown;		// server shutting down
-
-	ThreadPriorityScheduler* next;			// next thread in list
-	union {
-	struct thdd *context;	// current context
-	DWORD id;				// ID on startup
-	};
-    HANDLE handle;			// thread handle for SetPriority
-	USHORT ticks;			// ticks left till keepalive verification
-// use separate bytes for flags in order to guarantee there 
-// modification independence by different threads without
-// affecting each other
-	UCHAR inside;			// executing between ENTER and EXIT
-	UCHAR goneout;			// pass through EXIT since last scheduling
-	UCHAR gonein;			// pass through ENTER since last scheduling
-	UCHAR flags;			// flags that can't be modified concurrently
-	static ThreadPriorityScheduler *Attach(void);
-	static unsigned int __stdcall Scheduler(LPVOID);
-	static ThreadPriorityScheduler *InternalGet(void);
-public:
-	static void Enter(void);
-	static void Exit(void);
-	static thdd *Get(void);
-	static void Set(thdd *val);
-	static bool Boosted(void);
-	static void Cleanup(void);
-	static void Init(void);
-	static void Attach(HANDLE tHandle, DWORD thread_id, int &p);
-	static void Attach(HANDLE tHandle, DWORD thread_id, UCHAR flags);
-};
 
 // thps_flags values
 const UCHAR THPS_PSCHED		= 1;	// thread controlled by priority scheduler
 const UCHAR THPS_UP			= 2;	// candidate for priority boost
 const UCHAR THPS_LOW		= 4;	// candidate for priority decrement
-const UCHAR THPS_BOOSTED	= 8;	// thread controlled by priority scheduler
+const UCHAR THPS_BOOSTED	= 8;	// thread priority raised by priority scheduler
 
-inline void THPS_ENTER() {
-	ThreadPriorityScheduler::Enter();
-}
-inline void THPS_EXIT() {
-	ThreadPriorityScheduler::Exit();
-}
-inline thdd* THPS_GET(DWORD specific_key) {
-	return (thdd*) ThreadPriorityScheduler::Get();
-}
-inline void THPS_SET(DWORD specific_key, thdd* new_context) {
-	ThreadPriorityScheduler::Set(new_context);
-}
-inline void THPS_INIT() {
-	ThreadPriorityScheduler::Init();
-}
-inline void THPS_FINI() {
-	ThreadPriorityScheduler::Cleanup();
-}
-inline void THPS_ATTACH(HANDLE handle, DWORD thread_id, int priority) {
-	ThreadPriorityScheduler::Attach(handle, thread_id, priority);
-}
-inline bool THPS_BOOSTDONE() {
-	return ThreadPriorityScheduler::Boosted();
-}
+#endif // THREAD_PSCHED
+
+class ThreadPriorityScheduler {
+#ifdef THREAD_PSCHED
+
+private:
+	typedef Firebird::SortedArray<ThreadPriorityScheduler*, 
+		Firebird::InlineStorage<ThreadPriorityScheduler*, 16> > TpsPointers;
+	enum OperationMode {Running, Stopping, ShutdownComplete};
+
+	static TLS_DECLARE (ThreadPriorityScheduler*, currentScheduler);
+	static Firebird::Mutex mutex;	// locks modification of thps chains
+	static ThreadPriorityScheduler* chain;	// where starts thps chain
+	static Firebird::InitMutex<ThreadPriorityScheduler> initialized;
+	static OperationMode opMode;	// current mode
+	static TpsPointers* toDetach;	// instances to be detached
+
+	thdd::EntryPoint* routine;		// real thread entrypoint
+	void* arg;						// arg to pass to it
+	ThreadPriorityScheduler* next;		// next thread in list
+	HANDLE handle;			// thread handle for SetPriority
+	// use separate bytes for flags in order to guarantee there 
+	// modification independence by different threads without
+	// affecting each other
+	UCHAR inside;			// executing between ENTER and EXIT
+	UCHAR gonein;			// pass through ENTER since last scheduling
+	UCHAR flags;			// flags that can't be modified concurrently
+	
+	// Scheduler Thread
+	static unsigned int __stdcall schedulerMain(LPVOID);
+
+	// Get instance for current thread
+	static ThreadPriorityScheduler *get()
+	{
+		return TLS_GET(currentScheduler);
+	}
+
+	// process instances, stored in toDetach array
+	static void doDetach();
+	// Add current instance to the chain
+	void attach();
+	~ThreadPriorityScheduler() {
+		CloseHandle(handle);
+	}
+
+public:
+	ThreadPriorityScheduler(thdd::EntryPoint* r, void* a, UCHAR f)
+		: routine(r), arg(a), flags(f), inside(0), gonein(0) {}
+	// Unregister thread from priorities scheduler
+	void detach();
+
+	// Initialize priority scheduler
+	static void init();
+	// Stop priority scheduler
+	static void cleanup();
+
+	// This CAPITAL_letter-starting methods use InitMutex
+	static void ThreadPriorityScheduler::Init()
+	{
+		initialized.init();
+	}
+	static void Cleanup(void*);
+	
+	// Goes to low priority zone
+	static void enter()
+	{
+		ThreadPriorityScheduler *t = get();
+		t->inside = 1;
+		t->gonein = 1;
+	}
+	
+	// Goes from low priority zone
+	static void exit()
+	{
+		ThreadPriorityScheduler *t = get();
+		t->inside = 0;
+	}
+	
+	// Check whether current thread has high priority
+	static bool boosted()
+	{
+		return get()->flags & THPS_BOOSTED;
+	}
+
+	// Checks, wheather thread's priority 'p'
+	// should be altered in scheduler
+	static UCHAR adjustPriority(int& p)
+	{
+		UCHAR flags = 0;
+		if (p == THREAD_PRIORITY_NORMAL)
+		{
+			flags = THPS_PSCHED | THPS_BOOSTED;
+			p = THREAD_PRIORITY_HIGHEST;
+		}
+		return flags;
+	}
+
+	// Starts thread under scheduler control
+	void run();
 
 #else // THREAD_PSCHED
 
-inline void THPS_ENTER() {
-}
-inline void THPS_EXIT() {
-}
-#ifdef WIN_NT
-inline thdd* THPS_GET(DWORD specific_key) {
-	return (thdd*) TlsGetValue(specific_key);
-}
-inline void THPS_SET(DWORD specific_key, thdd* new_context) {
-	TlsSetValue(specific_key, (LPVOID) new_context);
-}
-inline void THPS_ATTACH(HANDLE handle, DWORD thread_id, int priority) {
-}
-#endif
-inline void THPS_INIT() {
-}
-inline void THPS_FINI() {
-}
-inline bool THPS_BOOSTDONE() {
-	return false;
-}
+public:
+	static void enter() {}
+	static void exit() {}
+	static bool boosted()
+	{
+		return false;
+	}
 
 #endif // THREAD_PSCHED
+};
 
 #endif // JRD_OS_THD_PRIORITY_H
 

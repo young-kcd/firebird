@@ -36,14 +36,9 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.13 2004-05-29 13:34:54 brodsom Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.14 2004-06-08 13:40:41 alexpeshkoff Exp $ */
 
-#include <windows.h>
-#include <process.h>
-#include <signal.h>
 #include "firebird.h"
-#include <stdio.h>
-#include <stdlib.h>
 #include "../jrd/common.h"
 #include "gen/iberror.h"
 #include "../jrd/isc.h"
@@ -51,8 +46,13 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/os/isc_i_proto.h"
 #include "../jrd/isc_s_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 
+#include <windows.h>
+#include <process.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
@@ -226,8 +226,6 @@ void ISC_signal_init(void)
 
 	process_id = getpid();
 
-	THD_MUTEX_INIT(&sig_mutex);
-
 	system_overflow_handler =
 		signal(SIGFPE, reinterpret_cast<void(*)(int)>(overflow_handler));
 
@@ -250,8 +248,6 @@ static void cleanup(void *arg)
  *	Module level cleanup handler.
  *
  **************************************/
-	THD_MUTEX_DESTROY(&sig_mutex);
-
 	process_id = 0;
 
 	OPN_EVENT opn_event;

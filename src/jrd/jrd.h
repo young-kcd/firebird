@@ -105,7 +105,7 @@ const int HASH_SIZE		= 101;
 
 // fwd. decl.
 class vec;
-struct thread_db;
+class thread_db;
 class Attachment;
 class jrd_tra;
 class jrd_req;
@@ -902,11 +902,11 @@ const USHORT WIN_garbage_collect	= 8;	/* scan left a page for garbage collector 
 
 
 // Thread specific database block
-struct thread_db
+class thread_db : public thdd
 {
-	struct thdd	tdbb_thd_data;
+public:
 	Database*	tdbb_database;
-	Attachment*		tdbb_attachment;
+	Attachment*	tdbb_attachment;
 	jrd_tra*	tdbb_transaction;
 	jrd_req*	tdbb_request;
 	JrdMemoryPool*	tdbb_default;
@@ -1005,13 +1005,13 @@ public:
  * there is no tdbb_database set up.
  */
 
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 
 #ifdef DEV_BUILD
 #include "../jrd/err_proto.h"
 
 inline Jrd::thread_db* JRD_get_thread_data() {
-	THDD p1 = THD_get_specific();
+	thdd* p1 = thdd::getSpecific();
 	if (p1 && p1->thdd_type == THDD_TYPE_TDBB)
 	{
 		Jrd::thread_db* p2 = (Jrd::thread_db*)p1;
@@ -1023,8 +1023,7 @@ inline Jrd::thread_db* JRD_get_thread_data() {
 	return (Jrd::thread_db*) p1;
 }
 inline void CHECK_TDBB(const Jrd::thread_db* tdbb) {
-	fb_assert(tdbb &&
-			(((THDD)tdbb)->thdd_type == THDD_TYPE_TDBB) &&
+	fb_assert(tdbb && (tdbb->thdd_type == THDD_TYPE_TDBB) &&
 			(!tdbb->tdbb_database ||
 				MemoryPool::blk_type(tdbb->tdbb_database) == type_dbb));
 }
@@ -1035,7 +1034,7 @@ inline void CHECK_DBB(const Jrd::Database* dbb) {
 #else
 /* PROD_BUILD */
 inline Jrd::thread_db* JRD_get_thread_data() {
-	return (Jrd::thread_db*) THD_get_specific();
+	return (Jrd::thread_db*) thdd::getSpecific();
 }
 inline void CHECK_DBB(const Jrd::Database* dbb) {
 }
@@ -1107,12 +1106,12 @@ inline static void JRD_set_thread_data(Jrd::thread_db* &tdbb, Jrd::thread_db& th
 {
 	tdbb = &thd_context;
 	MOVE_CLEAR(tdbb, sizeof(Jrd::thread_db));
-	THD_put_specific(reinterpret_cast<struct thdd*>(tdbb));
-	tdbb->tdbb_thd_data.thdd_type = THDD_TYPE_TDBB;
+	tdbb->thdd_type = THDD_TYPE_TDBB;
+	tdbb->putSpecific();
 }
 
 inline void JRD_restore_thread_data() {
-	THD_restore_specific();
+	thdd::restoreSpecific();
 }
 
 

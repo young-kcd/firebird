@@ -24,8 +24,10 @@
 #ifndef BURP_BURP_PROTO_H
 #define BURP_BURP_PROTO_H
 
+#include "../jrd/thd.h"
+
 #ifdef SUPERSERVER
-int BURP_main(Jrd::Service* service);
+THREAD_ENTRY_DECLARE BURP_main(THREAD_ENTRY_PARAM);
 #endif
 
 void	BURP_abort(void);

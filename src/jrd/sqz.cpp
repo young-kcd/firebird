@@ -31,7 +31,7 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/sqz_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 
 
 using namespace Jrd;

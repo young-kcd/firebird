@@ -32,7 +32,7 @@
 #include "../burp/misc_proto.h"
 
 #ifdef SUPERSERVER
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #endif
 
 

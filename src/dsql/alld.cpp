@@ -58,7 +58,7 @@ nested FOR loops are added.
 #include "../dsql/alld_proto.h"
 #include "../dsql/errd_proto.h"
 #include "../jrd/gds_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/thread_proto.h"
 
 #include "../include/fb_vector.h"

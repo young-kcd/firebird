@@ -95,7 +95,7 @@
 
 #include "../jrd/rse_proto.h"
 #include "../jrd/rng_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/isc_s_proto.h"

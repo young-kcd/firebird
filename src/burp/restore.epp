@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.76 2004-05-24 11:01:00 brodsom Exp $
+$Id: restore.epp,v 1.77 2004-06-08 13:39:54 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -38,7 +38,7 @@ $Id: restore.epp,v 1.76 2004-05-24 11:01:00 brodsom Exp $
 #include "../jrd/license.h"
 #include "../jrd/obj.h"
 #include "../jrd/ods.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../common/stuff.h"
 #include "../burp/burp_proto.h"
 #include "../burp/canon_proto.h"

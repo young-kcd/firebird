@@ -24,7 +24,9 @@
 #ifndef REMOTE_CNTL_PROTO_H
 #define REMOTE_CNTL_PROTO_H
 
-void	CNTL_init(FPTR_VOID, const TEXT*);
+#include "../jrd/thd.h"
+
+void	CNTL_init(thdd::EntryPoint*, const TEXT*);
 void*	CNTL_insert_thread(void);
 void	CNTL_main_thread(SLONG, SCHAR* []);
 void	CNTL_remove_thread(void*);

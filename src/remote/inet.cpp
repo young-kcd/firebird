@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.112 2004-05-21 06:16:08 robocop Exp $
+$Id: inet.cpp,v 1.113 2004-06-08 13:39:50 alexpeshkoff Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -396,9 +396,6 @@ static TEXT INET_command_line[MAXPATHLEN + 32], *INET_p;
 #endif
 
 #ifdef  SUPERSERVER
-/* TMN: 28 Jul 2000 - Added include to remove warnings */
-
-#include "../jrd/thd_proto.h"
 
 static MUTX_T	port_mutex;
 static bool		port_mutex_inited = false;
@@ -408,7 +405,6 @@ static bool		port_mutex_inited = false;
 inline void START_PORT_CRITICAL() {
 	if (!port_mutex_inited) {
 		port_mutex_inited = true;
-		THD_mutex_init (&port_mutex);
 	}
 	THREAD_EXIT();
 	THD_mutex_lock (&port_mutex);

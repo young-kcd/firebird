@@ -31,7 +31,6 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/sch_proto.h"
-#include "../jrd/thd_proto.h"
 #include "../jrd/gds_proto.h"
 
 #ifdef WIN_NT
@@ -48,7 +47,7 @@ static void parse_switch(const TEXT*, int*);
 static USHORT report_status(DWORD, DWORD, DWORD, DWORD);
 
 static DWORD current_state;
-static FPTR_VOID main_handler;
+static thdd::EntryPoint* main_handler;
 static SERVICE_STATUS_HANDLE service_handle;
 static const TEXT* service_name;
 static HANDLE stop_event_handle;
@@ -58,7 +57,7 @@ static thread* threads;
 #endif
 
 
-void CNTL_init(FPTR_VOID handler, const TEXT* name)
+void CNTL_init(thdd::EntryPoint* handler, const TEXT* name)
 {
 /**************************************
  *
@@ -119,8 +118,7 @@ void CNTL_main_thread( SLONG argc, SCHAR* argv[])
 	if (report_status(SERVICE_START_PENDING, NO_ERROR, 1, 3000) &&
 		(stop_event_handle = CreateEvent(NULL, TRUE, FALSE, NULL)) != NULL &&
 		report_status(SERVICE_START_PENDING, NO_ERROR, 2, 3000) &&
-		!gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
-						   (main_handler), (void *) flag, 0, 0, 0)
+		!gds__thread_start(main_handler, (void *) flag, 0, 0, 0)
 		&& report_status(SERVICE_RUNNING, NO_ERROR, 0, 0))
 	{
 		status = 0;

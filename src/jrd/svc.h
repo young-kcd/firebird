@@ -24,6 +24,7 @@
 #ifndef JRD_SVC_H
 #define JRD_SVC_H
 
+#include "../jrd/thd.h"
 #include "../jrd/jrd_pwd.h"
 #include "../jrd/isc.h"
 #include "../jrd/svc_undoc.h"
@@ -81,7 +82,7 @@ const USHORT isc_action_max				= 14;
 #ifdef SUPERSERVER
 #define SVC_PUTSPECIFIC_DATA	{\
 				char    t_data[] = {'\0'};\
-				THD_putspecific_data((void*)t_data);\
+				thdd::putSpecificData((void*)t_data);\
 				}
 #else
 #define SVC_PUTSPECIFIC_DATA	/* nothing */
@@ -154,17 +155,16 @@ inline void Service::svc_started()
 
 #endif /* SUPERSERVER */
 
-typedef int (*pfn_svc_main) (Service*);
 typedef int (*pfn_svc_output)(Service*, const UCHAR*);
 
 struct serv_entry
 {
-	USHORT			serv_action;
-	const TEXT*		serv_name;
-	const TEXT*		serv_std_switches;
-	const TEXT*		serv_executable;
-	pfn_svc_main	serv_thd;
-	bool*			serv_in_use;
+	USHORT				serv_action;
+	const TEXT*			serv_name;
+	const TEXT*			serv_std_switches;
+	const TEXT*			serv_executable;
+	thdd::EntryPoint*	serv_thd;
+	bool*				serv_in_use;
 };
 
 } //namespace Jrd

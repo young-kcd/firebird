@@ -38,6 +38,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "../jrd/common.h"
+#include "../jrd/thd.h"
 #include "../jrd/os/thd_priority.h"
 #include <stdarg.h>
 #ifdef HAVE_UNISTD_H
@@ -112,7 +113,6 @@
 #include "../jrd/shut_proto.h"
 #include "../jrd/sort_proto.h"
 #include "../jrd/svc_proto.h"
-#include "../jrd/thd_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/val_proto.h"
@@ -175,17 +175,6 @@ const SSHORT WAIT_PERIOD	= -1;
 #   define V4_JRD_MUTEX_UNLOCK(mutx) THD_JRD_MUTEX_UNLOCK (mutx)
 #  endif /* SUPERSERVER */
 # endif /* V4_THREADING */
-
-// BRS. 03/23/2003
-// Those two macros are defined in thd.h when V4_THREADING is true, but thd.h is included
-// before V4_THREADING is defined, so the two must be defined as empty if not defined 
-// to allow the use of V4_THREADING ifdefs
-// The include chain is
-// os/thd_priority.h -> thd.h
-#if defined(V4_THREADING) && !defined(V4_RW_LOCK_DESTROY_N)
-#   define V4_RW_LOCK_DESTROY_N(wlck,n)
-#   define V4_RW_LOCK_INIT_N(wlck,n)
-#endif
 
 #ifdef SUPERSERVER
 
@@ -677,8 +666,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	dbb->dbb_attachments = attachment;
 	dbb->dbb_flags &= ~DBB_being_opened;
 	dbb->dbb_sys_trans->tra_attachment = attachment;
-	tdbb->tdbb_quantum = (THPS_BOOSTDONE() ? 
-						  Config::getPriorityBoost() : 1) * QUANTUM;
+	tdbb->tdbb_quantum = (ThreadPriorityScheduler::boosted() ? 
+		Config::getPriorityBoost() : 1) * QUANTUM;
 	tdbb->tdbb_request = NULL;
 	tdbb->tdbb_transaction = NULL;
 	tdbb->tdbb_inhibit = 0;
@@ -4027,7 +4016,7 @@ bool JRD_getdir(Firebird::PathName& buf)
 	char* t_data = NULL;
 	char b[MAXPATHLEN];
 
-	THD_getspecific_data((void**) &t_data);
+	thdd::getSpecificData((void**) &t_data);
 
 	if (t_data) {
 #ifdef WIN_NT
@@ -4061,7 +4050,7 @@ bool JRD_getdir(Firebird::PathName& buf)
    **/
 
 		Attachment* attachment;
-		if (tdbb && (tdbb->tdbb_thd_data.thdd_type == THDD_TYPE_TDBB))
+		if (tdbb && (tdbb->thdd_type == THDD_TYPE_TDBB))
 			attachment = tdbb->tdbb_attachment;
 		else
 			return false;
@@ -4288,7 +4277,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 	}
 
 	tdbb->tdbb_quantum = (tdbb->tdbb_quantum <= 0) ?
-		(quantum ? quantum : (THPS_BOOSTDONE() ? 
+		(quantum ? quantum : (ThreadPriorityScheduler::boosted() ? 
 			Config::getPriorityBoost() : 1) * QUANTUM) : 
 		tdbb->tdbb_quantum;
 
@@ -4322,7 +4311,7 @@ void JRD_restore_context(void)
 /* Charlie will fill this in
 cleaned_up |= INUSE_cleanup (&tdbb->tdbb_pages, (FPTR_VOID) CCH_?);
 */
-	THD_restore_specific();
+	thdd::restoreSpecific();
 
 #ifdef DEV_BUILD
 	if (tdbb->tdbb_status_vector &&
@@ -4354,8 +4343,8 @@ void JRD_set_context(thread_db* tdbb)
 	INUSE_clear(&tdbb->tdbb_rw_locks);
 	INUSE_clear(&tdbb->tdbb_pages);
 	tdbb->tdbb_status_vector = NULL;
-	THD_put_specific((THDD) tdbb);
-	tdbb->tdbb_thd_data.thdd_type = THDD_TYPE_TDBB;
+	tdbb->thdd_type = THDD_TYPE_TDBB;
+	tdbb->putSpecific();
 }
 
 
@@ -4856,7 +4845,7 @@ static void get_options(const UCHAR*	dpb,
 				options->dpb_working_directory =
 					get_string_parameter(&p, scratch, &buf_size);
 
-				THD_getspecific_data((void **) &t_data);
+				thdd::getSpecificData((void **) &t_data);
 
 				/*
 				   Null value for working_directory implies remote database. So get
@@ -4896,7 +4885,7 @@ static void get_options(const UCHAR*	dpb,
 					t_data = NULL;
 				}
 				/* Null out the thread local data so that further references will fail */
-				THD_putspecific_data(0);
+				thdd::putSpecificData(0);
 			}
 			break;
 
@@ -5403,10 +5392,6 @@ static Database* init(thread_db*	tdbb,
 /* Clean up temporary Database */
 
 	/* MOVE_CLEAR(&temp, (SLONG) sizeof(Database)); */
-	THD_MUTEX_INIT_N(temp_mutx, DBB_MUTX_max);
-#ifdef V4_THREADING
-	V4_RW_LOCK_INIT_N(temp_wlck, DBB_WLCK_max);
-#endif
 
 /* set up the temporary database block with fields that are
    required for doing the ALL_init() */
@@ -5432,25 +5417,11 @@ static Database* init(thread_db*	tdbb,
 
 	ALL_init();
 
-	THD_MUTEX_DESTROY_N(temp_mutx, DBB_MUTX_max);
-#ifdef V4_THREADING
-	V4_RW_LOCK_DESTROY_N(temp_wlck, DBB_WLCK_max);
-#endif
-
 	dbb->dbb_next = databases;
 	databases = dbb;
 
-	str* string =
-		FB_NEW_RPT(*dbb->dbb_permanent, THREAD_STRUCT_SIZE(MUTX_T, DBB_MUTX_max)) str();
-
-	dbb->dbb_mutexes = (MUTX) THREAD_STRUCT_ALIGN(string->str_data);
-	THD_MUTEX_INIT_N(dbb->dbb_mutexes, DBB_MUTX_max);
-	string =
-		FB_NEW_RPT(*dbb->dbb_permanent, THREAD_STRUCT_SIZE(WLCK_T, DBB_WLCK_max)) str();
-	dbb->dbb_rw_locks = (WLCK) THREAD_STRUCT_ALIGN(string->str_data);
-#ifdef V4_THREADING
-	V4_RW_LOCK_INIT_N(dbb->dbb_rw_locks, DBB_WLCK_max);
-#endif
+	dbb->dbb_mutexes = FB_NEW(*dbb->dbb_permanent) MUTX_T[DBB_MUTX_max];
+	dbb->dbb_rw_locks = FB_NEW(*dbb->dbb_permanent) WLCK_T[DBB_WLCK_max];
 	vec* vector = vec::newVector(*dbb->dbb_permanent, irq_MAX);
 	dbb->dbb_internal = vector;
 	dbb->dbb_dyn_req = vector = vec::newVector(*dbb->dbb_permanent, drq_MAX);
@@ -5854,10 +5825,8 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 		INUSE_remove(&tdbb->tdbb_rw_locks, dbb->dbb_rw_locks + i, true);
 	}
 
-	THD_MUTEX_DESTROY_N(dbb->dbb_mutexes, DBB_MUTX_max);
-#ifdef V4_THREADING
-	V4_RW_LOCK_DESTROY_N(dbb->dbb_rw_locks, DBB_WLCK_max);
-#endif
+	delete[] dbb->dbb_mutexes;
+	delete[] dbb->dbb_rw_locks;
 #ifdef SUPERSERVER
 	if (dbb->dbb_flags & DBB_sp_rec_mutex_init) {
 		THD_rec_mutex_destroy(&dbb->dbb_sp_rec_mutex);

@@ -27,7 +27,7 @@
 #include "../jrd/intl_classes.h"
 
 namespace Jrd {
-	struct thread_db;
+	class thread_db;
 }
 
 struct dsc;

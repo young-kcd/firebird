@@ -65,7 +65,7 @@
 #include "../jrd/sch_proto.h"
 #include "../jrd/sdw_proto.h"
 #include "../jrd/shut_proto.h"
-#include "../jrd/thd_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../common/config/config.h"
@@ -116,10 +116,10 @@ static void btc_insert(Database*, BufferDesc*);
 static void btc_remove(BufferDesc*);
 static void cache_bugcheck(int);
 #ifdef CACHE_READER
-static void THREAD_ROUTINE cache_reader(Database*);
+static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM);
 #endif
 #ifdef CACHE_WRITER
-static void THREAD_ROUTINE cache_writer(Database*);
+static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM);
 #endif
 static void check_precedence(thread_db*, WIN *, SLONG);
 static void clear_precedence(Database*, BufferDesc*);
@@ -1707,9 +1707,7 @@ void CCH_init(thread_db* tdbb, ULONG number)
 	event_t* event = dbb->dbb_reader_event;
 	ISC_event_init(event, 0, 0);
 	count = ISC_event_clear(event);
-	if (gds__thread_start
-		(reinterpret_cast<FPTR_INT_VOID_PTR>(cache_reader), dbb,
-		 THREAD_high, 0, 0))
+	if (gds__thread_start(cache_reader, dbb, THREAD_high, 0, 0))
 	{
 		ERR_bugcheck_msg("cannot start thread");
 	}
@@ -1726,8 +1724,7 @@ void CCH_init(thread_db* tdbb, ULONG number)
 		ISC_event_init(event, 0, 0);
 		count = ISC_event_clear(event);
 
-		if (gds__thread_start
-			(reinterpret_cast<FPTR_INT_VOID_PTR>(cache_writer), dbb,
+		if (gds__thread_start(cache_writer, dbb,
 			THREAD_high, 0, 0))
 		{
 			ERR_bugcheck_msg("cannot start thread");
@@ -3054,7 +3051,7 @@ static void cache_bugcheck(int number)
 
 
 #ifdef CACHE_READER
-static void THREAD_ROUTINE cache_reader(Database* dbb)
+static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 {
 /**************************************
  *
@@ -3068,6 +3065,7 @@ static void THREAD_ROUTINE cache_reader(Database* dbb)
  *	busy at a time.
  *
  **************************************/
+	Database* dbb = (Database*)arg;
 	THREAD_ENTER();
 
 /* Establish a thread context. */
@@ -3107,7 +3105,7 @@ static void THREAD_ROUTINE cache_reader(Database* dbb)
 		Firebird::stuff_exception(status_vector, ex);
 		gds__log_status(dbb->dbb_file->fil_string, status_vector);
 		THREAD_EXIT();
-		return;
+		return -1;
 	}
 
 	try {
@@ -3217,12 +3215,13 @@ static void THREAD_ROUTINE cache_reader(Database* dbb)
 		bcb = dbb->dbb_bcb;
 		gds__log_status(dbb->dbb_file->fil_string, status_vector);
 	}
+	return 0;
 }
 #endif
 
 
 #ifdef CACHE_WRITER
-static void THREAD_ROUTINE cache_writer(Database* dbb)
+static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 {
 /**************************************
  *
@@ -3237,6 +3236,7 @@ static void THREAD_ROUTINE cache_writer(Database* dbb)
  *	deems it necessary.
  *
  **************************************/
+	Database* dbb = (Database*)arg;
 	THREAD_ENTER();
 
 /* Establish a thread context. */
@@ -3278,7 +3278,7 @@ static void THREAD_ROUTINE cache_writer(Database* dbb)
 		gds__log_status(dbb->dbb_file->fil_string, status_vector);
 		ISC_event_fini(writer_event);
 		THREAD_EXIT();
-		return;
+		return (THREAD_ENTRY_RETURN)(-1);
 	}
 
 	try {
@@ -3379,6 +3379,7 @@ static void THREAD_ROUTINE cache_writer(Database* dbb)
 		bcb = dbb->dbb_bcb;
 		gds__log_status(dbb->dbb_file->fil_string, status_vector);
 	}
+	return 0;
 }
 #endif
 
