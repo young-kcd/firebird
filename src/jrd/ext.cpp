@@ -127,17 +127,6 @@ EXT EXT_file(JRD_REL relation, TEXT * file_name, SLONG * description)
  *	Create a file block for external file access.
  *
  **************************************/
-#ifdef WIN_NT
-	TEXT ib_file_path[MAXPATHLEN];
-	TEXT absolute_file[MAXPATHLEN];
-	TEXT drive_buf[_MAX_DRIVE];
-	TEXT dir_buf[_MAX_DIR];
-	TEXT file_buf[_MAX_FNAME];
-	TEXT ext_buf[_MAX_EXT];
-	EDLS *dir_list;
-	BOOLEAN found_dir;
-#endif
-
 	DBB dbb;
 	EXT file;
 
@@ -156,41 +145,9 @@ EXT EXT_file(JRD_REL relation, TEXT * file_name, SLONG * description)
 	_setmaxstdio(2048);
 #endif
 
-#ifdef WIN_NT
-	found_dir = FALSE;	
-	dir_list = DLS_get_file_dirs();
-		
-	while (dir_list && !found_dir)
-	{
-		strcpy(ib_file_path, dir_list->edls_directory);
-		strcat(ib_file_path, "\\");
-		_splitpath(file_name, drive_buf, dir_buf, file_buf, ext_buf);
-		strcpy(absolute_file, file_buf);
-		strcat(absolute_file, ext_buf);
-		strncat(ib_file_path, absolute_file, MAXPATHLEN - strlen(ib_file_path) - 1);
-			
-		if (!_access(ib_file_path, 4))
-		{
-			relation->rel_file = file =
-				FB_NEW_RPT(*dbb->dbb_permanent, strlen(ib_file_path) + 1) ext();
-			strcpy(reinterpret_cast<char*>(file->ext_filename), absolute_file);
-			found_dir = TRUE;
-		}
-		dir_list = dir_list->edls_next;
-	}
-
-	if (!found_dir)
-	{
-		relation->rel_file = file =
-			FB_NEW_RPT(*dbb->dbb_permanent, strlen(file_name) + 1) ext();
-		strcpy(reinterpret_cast<char*>(file->ext_filename), file_name);
-	}
-#else
 	relation->rel_file = file =
 		FB_NEW_RPT(*dbb->dbb_permanent, (strlen(file_name) + 1)) ext();
 	strcpy(reinterpret_cast<char*>(file->ext_filename), file_name);
-#endif
-
 	file->ext_flags = 0;
 	file->ext_ifi = (int *) NULL;
 
@@ -198,40 +155,6 @@ EXT EXT_file(JRD_REL relation, TEXT * file_name, SLONG * description)
  * RW mode. If the DB is ReadOnly, then open the external files only in
  * ReadOnly mode, thus being consistent.
  */
-#ifdef WIN_NT
-	if (found_dir)
-	{
-		if (!(file->ext_ifi = (int*) ext_fopen(ib_file_path, FOPEN_TYPE)))
-		{
-			/* could not open the file as read write attempt as read only */
-    		if (!(file->ext_ifi = (int*) ext_fopen(ib_file_path, FOPEN_READ_ONLY)))
-				ERR_post(isc_io_error, 
-    					 gds_arg_string, "ib_fopen", 
-    					 gds_arg_string,
-						 ERR_cstring(reinterpret_cast <
-									 char *>(file->ext_filename)),
-						 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
-			else 
-				file->ext_flags |= EXT_readonly;
-		}
-	}
-	else
-	{
-		if (!(file->ext_ifi = (int*) ext_fopen(file_name, FOPEN_TYPE)))
-		{
-			/* could not open the file as read write attempt as read only */
-			if (!(file->ext_ifi = (int*) ext_fopen(file_name, FOPEN_READ_ONLY)))
-				ERR_post(isc_io_error, 
-    					 gds_arg_string, "ib_fopen", 
-    					 gds_arg_string,
-						 ERR_cstring(reinterpret_cast <
-									 char *>(file->ext_filename)),
-						 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
-			else 
-				file->ext_flags |= EXT_readonly;
-		}
-	}
-#else
 	if (!(dbb->dbb_flags & DBB_read_only))
 		file->ext_ifi = (int *) ext_fopen(file_name, FOPEN_TYPE);
 	if (!(file->ext_ifi))
@@ -247,7 +170,6 @@ EXT EXT_file(JRD_REL relation, TEXT * file_name, SLONG * description)
 		else
 			file->ext_flags |= EXT_readonly;
 	}
-#endif
 
 	return file;
 }
@@ -658,7 +580,7 @@ void EXT_trans_start(JRD_TRA transaction)
 
 class ExternalFilesDirectoryList : public DirectoryList {
 	virtual const Firebird::string GetConfigString(void) {
-		return Firebird::string(Config::getExternalTablesDirectory());
+		return Firebird::string(Config::getExternalTablesDirs());
 	}
 };
 static ExternalFilesDirectoryList iExternalFilesDirectoryList;
