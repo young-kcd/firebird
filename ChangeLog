@@ -1,3 +1,69 @@
+2003-10-08 15:03  dimitr
+
+	* firebird2/src/jrd/pag.cpp:
+	
+	Fixed the issue related to the previous commit.
+
+2003-10-08 14:43  dimitr
+
+	* firebird2/src/jrd/rse.h:
+	
+	Corrected optimizer limits to avoid possible issues found by
+	Nickolay.
+
+2003-10-08 13:49  dimitr
+
+	* firebird2/: src/install/misc/firebird.conf,
+	builds/install/misc/firebird.conf:
+	
+	no message
+
+2003-10-08 11:42  epocman
+
+	* firebird2/src/: jrd/os/win32/config_root.cpp,
+	utilities/install/install_nt.h, utilities/install/install_reg.cpp,
+	utilities/install/install_svc.cpp, utilities/install/registry.cpp,
+	utilities/install/registry.h:
+	
+	Win32 - Syncing with the recent FB 1.5 branch installation changes.
+
+2003-10-08 11:15  dimitr
+
+	* firebird2/doc/sql.extensions/README.context_variables:
+	
+	Added extra note.
+
+2003-10-08 10:49  dimitr
+
+	* firebird2/doc/sql.extensions/README.context_variables:
+	
+	Added extra note.
+
+2003-10-08 10:42  robocop
+
+	* firebird2/src/: journal/miscj.cpp, journal/miscj_proto.h,
+	journal/server.epp, jrd/alt.cpp, jrd/blb.cpp, jrd/blb_proto.h,
+	jrd/cch.cpp, jrd/cvt.cpp, jrd/cvt2.cpp, jrd/cvt2_proto.h,
+	jrd/evl.cpp, jrd/exe.cpp, jrd/gds.cpp, jrd/gds.hxx,
+	jrd/gds_proto.h, jrd/gdsold.h, jrd/ibase.h, jrd/intl.cpp,
+	jrd/intl_proto.h, jrd/jrd.cpp, jrd/mov.cpp, jrd/mov_proto.h,
+	jrd/pwd.cpp, lock/print.cpp, qli/mov.cpp, remote/xnet.cpp,
+	wal/walw.cpp:
+	
+	const correctness
+
+2003-10-08 01:08  stryqx
+
+	* firebird2/src/journal/server.e:
+	
+	Define clock as time_t rather than SLONG
+
+2003-10-08 01:03  stryqx
+
+	* firebird2/src/journal/server.epp:
+	
+	Define clock as time_t rather than SLONG
+
 2003-10-07 13:02  stryqx
 
 	* firebird2/src/jrd/jrd.cpp:
