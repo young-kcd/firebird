@@ -99,6 +99,12 @@
  * 2002.09.28 Dmitry Yemanov: Reworked internal_info stuff, enhanced
  *                            exception handling in SPs/triggers,
  *                            implemented ROWS_AFFECTED system variable
+ *
+ * 2002.09.29 Arno Brinkman: Adding more checking for aggregate functions
+ *   and adding support for 'linking' from sub-selects to aggregate functions
+ *   which are in an lower level. 
+ *   Modified functions pass1_field, pass1_rse, copy_field, pass1_sort.
+ *   Functions pass1_found_aggregate and pass1_found_field added.
  */
 
 #include "firebird.h"
@@ -157,6 +163,8 @@ static CTX pass1_cursor_context(REQ, NOD, NOD);
 static NOD pass1_dbkey(REQ, NOD);
 static NOD pass1_delete(REQ, NOD);
 static NOD pass1_field(REQ, NOD, USHORT);
+static BOOLEAN pass1_found_aggregate(NOD, USHORT, USHORT);
+static BOOLEAN pass1_found_field(NOD, USHORT, USHORT, BOOLEAN *);
 static NOD pass1_insert(REQ, NOD);
 static void	pass1_put_args_on_stack(REQ, NOD, DLLS *, USHORT);
 static NOD pass1_relation(REQ, NOD);
@@ -164,7 +172,7 @@ static NOD pass1_rse(REQ, NOD, NOD);
 static NOD pass1_searched_case(REQ, NOD, USHORT);
 static NOD pass1_sel_list(REQ, NOD);
 static NOD pass1_simple_case(REQ, NOD, USHORT);
-static NOD pass1_sort(REQ, NOD, NOD);
+static NOD pass1_sort(REQ, NOD, NOD, CTX);
 static NOD pass1_udf(REQ, NOD, USHORT);
 static void pass1_udf_args(REQ, NOD, UDF, USHORT, DLLS *, USHORT);
 static NOD pass1_union(REQ, NOD, NOD);
@@ -187,6 +195,11 @@ STR temp_collation_name = NULL;
 								   *
 								   * Bug 10061, bsriram - 19-Apr-1999
 								 */
+#define FIELD_MATCH_TYPE_EQUAL			0
+#define FIELD_MATCH_TYPE_LOWER			1
+#define FIELD_MATCH_TYPE_LOWER_EQUAL	2
+#define FIELD_MATCH_TYPE_HIGHER			3
+#define FIELD_MATCH_TYPE_HIGHER_EQUAL	4
 
 #ifndef PRINTF
 #define PRINTF		ib_printf
@@ -1487,6 +1500,36 @@ static BOOLEAN aggregate_found2(
 		/* for expressions in which an aggregate might
 		   be buried, recursively check for one */
 
+	case nod_select_expr:
+	case nod_or:
+	case nod_and:
+	case nod_not:
+	case nod_eql:
+	case nod_neq:
+	case nod_gtr:
+	case nod_geq:
+	case nod_lss:
+	case nod_leq:
+	case nod_eql_any:
+	case nod_neq_any:
+	case nod_gtr_any:
+	case nod_geq_any:
+	case nod_lss_any:
+	case nod_leq_any:
+	case nod_eql_all:
+	case nod_neq_all:
+	case nod_gtr_all:
+	case nod_geq_all:
+	case nod_lss_all:
+	case nod_leq_all:
+	case nod_between:
+	case nod_like:
+	case nod_containing:
+	case nod_starting:
+	case nod_exists:
+	case nod_singular:
+	case nod_missing:
+
 	case nod_add:
 	case nod_concatenate:
 	case nod_divide:
@@ -1506,8 +1549,10 @@ static BOOLEAN aggregate_found2(
 	case nod_list:
 		aggregate = FALSE;
 		for (ptr = sub->nod_arg, end = ptr + sub->nod_count; ptr < end; ptr++) {
-			DEV_BLKCHK(*ptr, dsql_type_nod);
-			aggregate |= aggregate_found2(request, *ptr, proj, field);
+			if (*ptr) {
+				DEV_BLKCHK(*ptr, dsql_type_nod);
+				aggregate |= aggregate_found2(request, *ptr, proj, field);
+			}
 		}
 		return aggregate;
 
@@ -1691,121 +1736,133 @@ static NOD copy_field( NOD field, CTX context)
  **************************************
  *
  * Functional description
- *	Copy a field list for a SELECT against an artificial context.
+ *	Copy a field list for a SELECT, ORDER BY
+ *  against an artificial context.
  *
  **************************************/
 	NOD temp, actual, *ptr, *end, *ptr2;
-	MAP map;
 	STR alias;
+	CTX lcontext;
 
 	DEV_BLKCHK(field, dsql_type_nod);
 	DEV_BLKCHK(context, dsql_type_ctx);
 
 	switch (field->nod_type) {
-	case nod_map:
-		map = (MAP) field->nod_arg[e_map_map];
-		DEV_BLKCHK(map, dsql_type_map);
-		temp = map->map_node;
-		return post_map(temp, context);
 
-	case nod_alias:
-		actual = field->nod_arg[e_alias_value];
-		alias = (STR) field->nod_arg[e_alias_alias];
-		DEV_BLKCHK(alias, dsql_type_str);
-		temp = MAKE_node(nod_alias, e_alias_count);
-		temp->nod_arg[e_alias_value] = copy_field(actual, context);
-		temp->nod_arg[e_alias_alias] = (NOD) alias;
-		return temp;
+		case nod_alias:
+			actual = field->nod_arg[e_alias_value];
+			alias = (STR) field->nod_arg[e_alias_alias];
+			DEV_BLKCHK(alias, dsql_type_str);
+			temp = MAKE_node(nod_alias, e_alias_count);
+			temp->nod_arg[e_alias_value] = copy_field(actual, context);
+			temp->nod_arg[e_alias_alias] = (NOD) alias;
+			return temp;
 
-/*-- Added for allowing EXTRACT, SUBSTRING, CASE, ... functions in GROUP BY CLAUSE --*/
+		case nod_field:
+			lcontext = reinterpret_cast<CTX>(field->nod_arg[e_fld_context]);
+			if (lcontext->ctx_scope_level == context->ctx_scope_level) {
+				return post_map(field, context);			
+			}
+			else {
+				return field;			
+			}
+		
+		case nod_via:
+			temp = MAKE_node(field->nod_type, field->nod_count);
+			temp->nod_arg[e_via_rse] = copy_field(field->nod_arg[e_via_rse], context);
+			temp->nod_arg[e_via_value_1] = field->nod_arg[e_via_value_1];
+			temp->nod_arg[e_via_value_2] = field->nod_arg[e_via_value_2];
+			return temp;
 
-	case nod_via:
-		return post_map(field, context);
+		case nod_rse:
+			temp = MAKE_node(field->nod_type, field->nod_count);
+			temp->nod_arg[e_rse_streams] = field->nod_arg[e_rse_streams];
+			if (field->nod_arg[e_rse_boolean])
+				temp->nod_arg[e_rse_boolean] = copy_field(field->nod_arg[e_rse_boolean], context);
+			temp->nod_arg[e_rse_sort] = field->nod_arg[e_rse_sort];
+			temp->nod_arg[e_rse_reduced] = field->nod_arg[e_rse_reduced];
+			if (field->nod_arg[e_rse_items])
+				temp->nod_arg[e_rse_items] = copy_field(field->nod_arg[e_rse_items], context);
+			temp->nod_arg[e_rse_first] = field->nod_arg[e_rse_first];
+			temp->nod_arg[e_rse_singleton] = field->nod_arg[e_rse_singleton];
+			temp->nod_arg[e_rse_plan] = field->nod_arg[e_rse_plan];
+			temp->nod_arg[e_rse_skip] = field->nod_arg[e_rse_skip];
+			return temp;
 
-	case nod_rse:
-		temp = MAKE_node(field->nod_type, field->nod_count);
-		ptr2 = temp->nod_arg;
-		for (ptr = field->nod_arg, end = ptr + field->nod_count; ptr < end;
-			 ptr++)	*ptr2++ = *ptr;
-		return temp;
+		case nod_coalesce:
+		case nod_simple_case:
+		case nod_searched_case:
+			temp = MAKE_node(field->nod_type, field->nod_count);
+			temp->nod_desc = field->nod_desc;
+			ptr2 = temp->nod_arg;
+			for (ptr = field->nod_arg, end = ptr + field->nod_count; ptr < end;
+				 ptr++)
+				*ptr2++ = copy_field(*ptr, context);
+			return temp;
 
-	case nod_coalesce:
-	case nod_simple_case:
-	case nod_searched_case:
-		temp = MAKE_node(field->nod_type, field->nod_count);
-		temp->nod_desc = field->nod_desc;
-		ptr2 = temp->nod_arg;
-		for (ptr = field->nod_arg, end = ptr + field->nod_count; ptr < end;
-			 ptr++)
-			*ptr2++ = copy_field(*ptr, context);
-		return temp;
+		case nod_relation:
+		case nod_or:
+		case nod_and:
+		case nod_not:
+		case nod_eql:
+		case nod_neq:
+		case nod_gtr:
+		case nod_geq:
+		case nod_lss:
+		case nod_leq:
+		case nod_eql_any:
+		case nod_neq_any:
+		case nod_gtr_any:
+		case nod_geq_any:
+		case nod_lss_any:
+		case nod_leq_any:
+		case nod_eql_all:
+		case nod_neq_all:
+		case nod_gtr_all:
+		case nod_geq_all:
+		case nod_lss_all:
+		case nod_leq_all:
+		case nod_between:
+		case nod_like:
+		case nod_containing:
+		case nod_starting:
+		case nod_exists:
+		case nod_singular:
+		case nod_missing:
+		case nod_add:
+		case nod_add2:
+		case nod_concatenate:
+		case nod_divide:
+		case nod_divide2:
+		case nod_multiply:
+		case nod_multiply2:
+		case nod_negate:
+		case nod_substr:
+		case nod_subtract:
+		case nod_subtract2:
+		case nod_upcase:
+		case nod_internal_info:
+		case nod_extract:
+		case nod_list:
+			temp = MAKE_node(field->nod_type, field->nod_count);
+			ptr2 = temp->nod_arg;
+			for (ptr = field->nod_arg, end = ptr + field->nod_count; ptr < end;
+				 ptr++)
+				*ptr2++ = copy_field(*ptr, context);
+			return temp;
 
-	case nod_relation:
-	case nod_or:
-	case nod_and:
-	case nod_not:
-	case nod_eql:
-	case nod_neq:
-	case nod_gtr:
-	case nod_geq:
-	case nod_lss:
-	case nod_leq:
-	case nod_eql_any:
-	case nod_neq_any:
-	case nod_gtr_any:
-	case nod_geq_any:
-	case nod_lss_any:
-	case nod_leq_any:
-	case nod_eql_all:
-	case nod_neq_all:
-	case nod_gtr_all:
-	case nod_geq_all:
-	case nod_lss_all:
-	case nod_leq_all:
-	case nod_between:
-	case nod_like:
-	case nod_containing:
-	case nod_starting:
-	case nod_exists:
-	case nod_singular:
-	case nod_missing:
-/*--- ---*/
-
-	case nod_add:
-	case nod_add2:
-	case nod_concatenate:
-	case nod_divide:
-	case nod_divide2:
-	case nod_multiply:
-	case nod_multiply2:
-	case nod_negate:
-	case nod_substr:
-	case nod_subtract:
-	case nod_subtract2:
-	case nod_upcase:
-	case nod_internal_info:
-	case nod_proc_internal_info:
-	case nod_extract:
-	case nod_list:
-		temp = MAKE_node(field->nod_type, field->nod_count);
-		ptr2 = temp->nod_arg;
-		for (ptr = field->nod_arg, end = ptr + field->nod_count; ptr < end;
-			 ptr++)
-			*ptr2++ = copy_field(*ptr, context);
-		return temp;
-
-	case nod_cast:
-	case nod_gen_id:
-	case nod_gen_id2:
-	case nod_udf:
-		temp = MAKE_node(field->nod_type, field->nod_count);
-		temp->nod_arg[0] = field->nod_arg[0];
-		if (field->nod_count == 2)
-			temp->nod_arg[1] = copy_field(field->nod_arg[1], context);
-		return temp;
-
-	default:
-		return post_map(field, context);
+		case nod_cast:
+		case nod_gen_id:
+		case nod_gen_id2:
+		case nod_udf:
+			temp = MAKE_node(field->nod_type, field->nod_count);
+			temp->nod_arg[0] = field->nod_arg[0];
+			if (field->nod_count == 2)
+				temp->nod_arg[1] = copy_field(field->nod_arg[1], context);
+			return temp;
+	
+		default:
+			return field;
 	}
 }
 
@@ -3272,14 +3329,23 @@ static NOD pass1_field( REQ request, NOD input, USHORT list)
 				node = MAKE_field(context, field, indices);
 
 
-                /* remember the agg context so that we can post the agg to its map. */
-
+				/* remember the agg context so that we can post the agg to its map. */
 				if (context->ctx_parent) {
-					if (!request->req_inhibit_map)
-						node = post_map(node, context->ctx_parent);
-					else if (request->req_context != stack)
+					if (request->req_inhibit_map) {
+						if (request->req_outer_agg_context  && 
+							request->req_outer_agg_context != context->ctx_parent) {
+							/* AB: If we come here then in an aggregate is referenced 
+							   to two fields which have a different "parent_context" 
+							   meaning pointing to a different aggregate context 
+							   and there's now way to do calculations between 2 
+							   different aggregate contexts */
+							ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, 
+								gds_arg_gds, gds_field_ref_err, 0); /* invalid field reference */
+						}
 						request->req_outer_agg_context = context->ctx_parent;
+					}
 				}
+
                 if (is_check_constraint || qualifier) {
                     break;
                 }
@@ -3319,6 +3385,363 @@ static NOD pass1_field( REQ request, NOD input, USHORT list)
        is only to make the compiler happy. */
     
 	return NULL;
+}
+
+
+static BOOLEAN pass1_found_aggregate(NOD node, USHORT check_scope_level, 
+									 USHORT match_type)
+{
+/**************************************
+ *
+ *	p a s s 1 _ f o u n d _ a g g r e g a t e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Check the fields inside an aggregate 
+ *  and check if the field scope_level 
+ *  meets the specified conditions.
+ *
+ **************************************/
+	NOD *ptr, *end;
+	BOOLEAN found, field;
+	MAP map_;
+
+	DEV_BLKCHK(node, dsql_type_nod);
+
+	if (node == NULL) return FALSE;
+
+	found = FALSE;
+
+	switch (node->nod_type) {
+		case nod_gen_id:
+		case nod_gen_id2:
+		case nod_cast:
+		case nod_udf:
+			/* If arguments are given to the UDF then there's a node list */
+			if (node->nod_count == 2) {
+				found |= pass1_found_aggregate(node->nod_arg [1], 
+					check_scope_level, match_type);
+			}
+			break;
+
+		case nod_exists:     
+		case nod_singular:   
+		case nod_coalesce:
+		case nod_simple_case:
+		case nod_searched_case:
+		case nod_add:
+		case nod_concatenate:
+		case nod_divide:
+		case nod_multiply:
+		case nod_negate:
+		case nod_substr:
+		case nod_subtract:
+		case nod_upcase:
+		case nod_extract:
+		case nod_add2:
+		case nod_divide2:
+		case nod_multiply2:
+		case nod_subtract2:
+		case nod_eql:
+		case nod_neq:
+		case nod_gtr:
+		case nod_geq:
+		case nod_leq:
+		case nod_lss:
+		case nod_eql_any:
+		case nod_neq_any:
+		case nod_gtr_any:
+		case nod_geq_any:
+		case nod_leq_any:
+		case nod_lss_any:
+		case nod_eql_all:
+		case nod_neq_all:
+		case nod_gtr_all:
+		case nod_geq_all:
+		case nod_leq_all:
+		case nod_lss_all:
+		case nod_between:
+		case nod_like:
+		case nod_missing:
+		case nod_and:
+		case nod_or:
+		case nod_any:
+		case nod_ansi_any:
+		case nod_ansi_all:
+		case nod_not:
+		case nod_unique:
+		case nod_containing:
+		case nod_starting:
+		case nod_list:
+			for (ptr = node->nod_arg, end = ptr + node->nod_count;
+				 ptr < end; ptr++)
+				found |= pass1_found_aggregate(*ptr, check_scope_level, match_type);
+			break;
+
+		case nod_via:
+			/* Pass only the rse from the nod_via */
+			found |= pass1_found_aggregate(node->nod_arg[e_via_rse],
+				check_scope_level, match_type);
+			break;
+
+		case nod_rse:
+			/* Pass rse_boolean (where clause) and rse_items (select items) */
+			found |= pass1_found_aggregate(node->nod_arg[e_rse_boolean],
+				check_scope_level, match_type);
+			found |= pass1_found_aggregate(node->nod_arg[e_rse_items], 
+				check_scope_level, match_type);
+			break;
+
+		case nod_alias:
+			found |= pass1_found_aggregate(node->nod_arg[e_alias_value],
+				check_scope_level, match_type);
+			break;
+
+		case nod_aggregate:
+			/* Pass only rse_group (group by clause) */
+			found |= pass1_found_aggregate(node->nod_arg[e_agg_group],
+				check_scope_level, match_type);
+			break;
+
+		case nod_agg_average:
+		case nod_agg_count:
+		case nod_agg_max:
+		case nod_agg_min:
+		case nod_agg_total:
+		case nod_agg_average2:
+		case nod_agg_total2:
+			field = FALSE;
+			if (node->nod_count) {
+				found |= pass1_found_field(node->nod_arg[0], check_scope_level, 
+					match_type, &field);
+			}
+			if (!field) {
+				/* For example COUNT(*) is always same scope_level (node->nod_count = 0) 
+				   Normaly COUNT(*) is the only way to come here but something stupid
+				   as SUM(5) is also possible */
+				switch (match_type) {
+					case FIELD_MATCH_TYPE_EQUAL:
+					case FIELD_MATCH_TYPE_LOWER_EQUAL:
+					case FIELD_MATCH_TYPE_HIGHER_EQUAL:
+						return TRUE;
+
+					case FIELD_MATCH_TYPE_LOWER:
+					case FIELD_MATCH_TYPE_HIGHER:
+						return FALSE;
+
+					default:
+						ASSERT_FAIL;
+				}
+			}
+			break;
+
+		case nod_map:
+			map_ =  reinterpret_cast <MAP>(node->nod_arg[e_map_map]);
+			found |= pass1_found_aggregate(map_->map_node,
+				check_scope_level, match_type);
+			break;
+
+		case nod_field:
+		case nod_parameter:
+		case nod_relation:
+		case nod_variable:
+		case nod_constant:
+		case nod_null:
+		case nod_current_date:
+		case nod_current_time:
+		case nod_current_timestamp:
+		case nod_user_name:
+		case nod_current_role:
+		case nod_internal_info:
+			return FALSE;
+
+		default:
+			ASSERT_FAIL;			
+		}
+
+	return found;
+}
+
+static BOOLEAN pass1_found_field(NOD node, USHORT check_scope_level, 
+								 USHORT match_type, BOOLEAN * field)
+{
+/**************************************
+ *
+ *	p a s s 1 _ f o u n d _ f i e l d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Check the fields inside an aggregate 
+ *  and check if the field scope_level 
+ *  meets the specified conditions.
+ *
+ **************************************/
+	NOD *ptr, *end;
+	BOOLEAN found;
+	CTX field_context;
+	MAP map_;
+
+	DEV_BLKCHK(node, dsql_type_nod);
+
+	if (node == NULL) return FALSE;
+	found = FALSE;
+
+	switch (node->nod_type) {
+		case nod_field:
+			field_context = (CTX) node->nod_arg[e_fld_context];
+			DEV_BLKCHK(field_context, dsql_type_ctx);
+			*field = TRUE;
+			switch (match_type) {
+				case FIELD_MATCH_TYPE_EQUAL:
+					return (field_context->ctx_scope_level == check_scope_level);
+
+				case FIELD_MATCH_TYPE_LOWER:
+					return (field_context->ctx_scope_level < check_scope_level);
+
+				case FIELD_MATCH_TYPE_LOWER_EQUAL:
+					return (field_context->ctx_scope_level <= check_scope_level);
+
+				case FIELD_MATCH_TYPE_HIGHER:
+					return (field_context->ctx_scope_level > check_scope_level);
+
+				case FIELD_MATCH_TYPE_HIGHER_EQUAL:
+					return (field_context->ctx_scope_level >= check_scope_level);
+
+				default:
+					ASSERT_FAIL;
+			}
+			break;
+			
+		case nod_gen_id:
+		case nod_gen_id2:
+		case nod_cast:
+		case nod_udf:
+			/* If arguments are given to the UDF then there's a node list */
+			if (node->nod_count == 2) {
+				found |= pass1_found_field(node->nod_arg [1], check_scope_level, 
+					match_type, field);
+			}
+			break;
+
+		case nod_exists:     
+		case nod_singular:   
+		case nod_coalesce:
+		case nod_simple_case:
+		case nod_searched_case:
+		case nod_add:
+		case nod_concatenate:
+		case nod_divide:
+		case nod_multiply:
+		case nod_negate:
+		case nod_substr:
+		case nod_subtract:
+		case nod_upcase:
+		case nod_extract:
+		case nod_add2:
+		case nod_divide2:
+		case nod_multiply2:
+		case nod_subtract2:
+		case nod_eql:
+		case nod_neq:
+		case nod_gtr:
+		case nod_geq:
+		case nod_leq:
+		case nod_lss:
+		case nod_eql_any:
+		case nod_neq_any:
+		case nod_gtr_any:
+		case nod_geq_any:
+		case nod_leq_any:
+		case nod_lss_any:
+		case nod_eql_all:
+		case nod_neq_all:
+		case nod_gtr_all:
+		case nod_geq_all:
+		case nod_leq_all:
+		case nod_lss_all:
+		case nod_between:
+		case nod_like:
+		case nod_missing:
+		case nod_and:
+		case nod_or:
+		case nod_any:
+		case nod_ansi_any:
+		case nod_ansi_all:
+		case nod_not:
+		case nod_unique:
+		case nod_containing:
+		case nod_starting:
+		case nod_list:
+			for (ptr = node->nod_arg, end = ptr + node->nod_count;
+				 ptr < end; ptr++)
+				found |= pass1_found_field(*ptr, check_scope_level, 
+					match_type, field);
+			break;
+
+		case nod_via:
+			/* Pass only the rse from the nod_via */
+			found |= pass1_found_field(node->nod_arg[e_via_rse], 
+				check_scope_level, match_type, field);
+			break;
+
+		case nod_rse:
+			/* Pass rse_boolean (where clause) and rse_items (select items) */
+			found |= pass1_found_field(node->nod_arg[e_rse_boolean], 
+				check_scope_level, match_type, field);
+			found |= pass1_found_field(node->nod_arg[e_rse_items], 
+				check_scope_level, match_type, field);
+			break;
+
+		case nod_alias:
+			found |= pass1_found_field(node->nod_arg[e_alias_value], 
+				check_scope_level, match_type, field);
+			break;
+
+		case nod_aggregate:
+			/* Pass only rse_group (group by clause) */
+			found |= pass1_found_field(node->nod_arg[e_agg_group], 
+				check_scope_level, match_type, field);
+			break;
+
+		case nod_agg_average:
+		case nod_agg_count:
+		case nod_agg_max:
+		case nod_agg_min:
+		case nod_agg_total:
+		case nod_agg_average2:
+		case nod_agg_total2:
+			if (node->nod_count) {
+				found |= pass1_found_field(node->nod_arg[0], check_scope_level, 
+					match_type, field);
+			}
+			break;
+
+		case nod_map:
+			map_ =  reinterpret_cast <MAP>(node->nod_arg[e_map_map]);
+			found |= pass1_found_field(map_->map_node, check_scope_level, 
+					match_type, field);
+			break;
+
+		case nod_parameter:
+		case nod_relation:
+		case nod_variable:
+		case nod_constant:
+		case nod_null:
+		case nod_current_date:
+		case nod_current_time:
+		case nod_current_timestamp:
+		case nod_user_name:
+		case nod_current_role:
+		case nod_internal_info:
+			return FALSE;
+
+		default:
+			ASSERT_FAIL;
+		}
+
+	return found;
 }
 
 
@@ -3708,6 +4131,7 @@ static NOD pass1_rse( REQ request, NOD input, NOD order)
 	CTX parent_context;
 	TSQL tdsql;
 	ULONG position;
+	BOOLEAN field;
 
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
@@ -3756,6 +4180,7 @@ static NOD pass1_rse( REQ request, NOD input, NOD order)
 
 	if (parent_context) {
 		parent_context->ctx_context = request->req_context_number++;
+		parent_context->ctx_scope_level = request->req_scope_level;
 		aggregate = MAKE_node(nod_aggregate, e_agg_count);
 		if (proj) {
 			rse->nod_arg[e_rse_reduced] = MAKE_node(nod_list, 1);
@@ -3793,6 +4218,13 @@ static NOD pass1_rse( REQ request, NOD input, NOD order)
 		++request->req_in_where_clause;
 		rse->nod_arg[e_rse_boolean] = PASS1_node(request, node, 0);
 		--request->req_in_where_clause;
+
+		/* AB: An aggregate pointing to it's own parent_context isn't
+		   allowed, HAVING should be used in stead */
+		if (pass1_found_aggregate(rse->nod_arg[e_rse_boolean], 
+				request->req_scope_level, FIELD_MATCH_TYPE_EQUAL))
+			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
+				gds_arg_gds, gds_field_ref_err, 0);/* invalid field reference */
 	}
 
 /* Process GROUP BY clause, if any */
@@ -3828,10 +4260,24 @@ static NOD pass1_rse( REQ request, NOD input, NOD order)
 				*ptr2 = PASS1_node(request, sub, 0);
 			}
 		}
+
+		/* AB: An field pointing to another parent_context isn't
+		   allowed and GROUP BY items can't contain aggregates */
+		if (pass1_found_field(aggregate->nod_arg[e_agg_group], 
+				request->req_scope_level, FIELD_MATCH_TYPE_LOWER, &field) ||
+		    pass1_found_aggregate(aggregate->nod_arg[e_agg_group], 
+				request->req_scope_level, FIELD_MATCH_TYPE_LOWER_EQUAL))
+			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
+				gds_arg_gds, gds_field_ref_err, 0); /* invalid field reference */
     }
 
-	if (parent_context)
+	if (parent_context) {
 		LLS_PUSH(parent_context, &request->req_context);
+		/* AB: remap_... moved from after plan process to here */
+		/* If there is a parent context, replace original contexts with parent context */
+		remap_streams_to_parent_context(rse->nod_arg[e_rse_streams],
+										parent_context);
+	}
 
 #ifdef DEV_BUILD
 	if (DSQL_debug > 2)
@@ -3876,13 +4322,6 @@ static NOD pass1_rse( REQ request, NOD input, NOD order)
 		rse->nod_arg[e_rse_plan] = PASS1_node(request, node, 0);
 	}
 
-/* If there is a parent context, replace original contexts with parent context */
-
-	if (parent_context) {
-		remap_streams_to_parent_context(rse->nod_arg[e_rse_streams],
-										parent_context);
-	}
-
 	if (input->nod_arg[e_sel_distinct])
 		target_rse->nod_arg[e_rse_reduced] = target_rse->nod_arg[e_rse_items];
 
@@ -3891,7 +4330,7 @@ static NOD pass1_rse( REQ request, NOD input, NOD order)
 	if (order) {
 		++request->req_in_order_by_clause;
 		target_rse->nod_arg[e_rse_sort] =
-			pass1_sort(request, order, input->nod_arg[e_sel_list]);
+			pass1_sort(request, order, input->nod_arg[e_sel_list], parent_context);
 		--request->req_in_order_by_clause;
 	}
 
@@ -3916,6 +4355,15 @@ static NOD pass1_rse( REQ request, NOD input, NOD order)
 		++request->req_in_having_clause;
 		parent_rse->nod_arg[e_rse_boolean] = PASS1_node(request, node, 0);
 		--request->req_in_having_clause;
+
+		/* AB: An aggregate pointing to another parent_context isn't
+		   allowed. fields in HAVING items can ONLY point to the same
+		   scope_level items */
+		if (pass1_found_field(parent_rse->nod_arg[e_rse_boolean], 
+				request->req_scope_level, FIELD_MATCH_TYPE_LOWER, &field))
+			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
+				gds_arg_gds, gds_field_ref_err, 0);/* invalid field reference */
+
 #ifdef	CHECK_HAVING
 		if (aggregate)
 			if (invalid_reference(parent_rse->nod_arg[e_rse_boolean],
@@ -4111,7 +4559,7 @@ static NOD pass1_simple_case( REQ request, NOD input, USHORT proc_flag)
 }
 
 
-static NOD pass1_sort( REQ request, NOD input, NOD s_list)
+static NOD pass1_sort( REQ request, NOD input, NOD s_list, CTX parent_context)
 {
 /**************************************
  *
@@ -4152,7 +4600,12 @@ static NOD pass1_sort( REQ request, NOD input, NOD s_list)
 		node2->nod_arg[e_order_nulls] = node1->nod_arg[e_order_nulls]; /* nulls first/last flag */
 		node1 = node1->nod_arg[0];
 		if (node1->nod_type == nod_field_name) {
-			node2->nod_arg[0] = pass1_field(request, node1, 0);
+			if (parent_context) {			
+				node2->nod_arg[0] = copy_field(pass1_field(request, node1, 0), parent_context);
+			}
+			else {
+				node2->nod_arg[0] = pass1_field(request, node1, 0);
+			}
         }
 		else if (node1->nod_type == nod_position) {
 			position = (ULONG) (node1->nod_arg[0]);
@@ -4164,8 +4617,13 @@ static NOD pass1_sort( REQ request, NOD input, NOD s_list)
 														  gds_arg_gds,
 														  gds_dsql_command_err, gds_arg_gds, gds_order_by_err,	/* invalid ORDER BY clause */
 														  0);
-			node2->nod_arg[0] =
-				PASS1_node(request, s_list->nod_arg[position - 1], 0);
+			if (parent_context) {			
+				node2->nod_arg[0] = copy_field(PASS1_node(request, s_list->nod_arg[position - 1], 0), parent_context);
+			}
+			else {
+				node2->nod_arg[0] =
+					PASS1_node(request, s_list->nod_arg[position - 1], 0);
+			}
 		}
 		else
 			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
