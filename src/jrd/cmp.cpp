@@ -3331,11 +3331,6 @@ static JRD_NOD pass1(
 			return node;
 		}
 
-	case nod_function:
-		pass1(tdbb, csb, node->nod_arg[e_fun_args], view, view_stream,
-			  validate_expr);
-		break;
-
 	case nod_abort:
 		pass1(tdbb, csb, node->nod_arg[e_xcp_msg], view, view_stream,
 			  validate_expr);
@@ -4366,7 +4361,6 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 
 			value = node->nod_arg[e_fun_args];
 			function = (FUN) node->nod_arg[e_fun_function];
-			pass2(tdbb, csb, value, node);
 			/* For gbak attachments, there is no need to resolve the UDF function */
 			/* Also if we are dropping a procedure don't bother resolving the
 			   UDF that the procedure invokes.
