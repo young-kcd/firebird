@@ -62,7 +62,7 @@
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Fixed bug SF #1111570
-        Drop table having check references more than one column
+        Drop table having check that references more than one column
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
 
