@@ -495,6 +495,15 @@ SOURCE=..\..\..\src\jrd\tra.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\utl.cpp
+
+!IF  "$(CFG)" == "engine - Win32 Release"
+
+# SUBTRACT CPP /Og
+
+!ELSEIF  "$(CFG)" == "engine - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
