@@ -1836,7 +1836,7 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
  **/
 void DSQL_pretty(DSQL_NOD node, int column)
 {
-	MAP map;
+	DSQL_MAP map;
 	DSQL_REL relation;
 	DSQL_PRC procedure;
 	DSQL_CTX context;
@@ -2403,7 +2403,7 @@ void DSQL_pretty(DSQL_NOD node, int column)
 		PRINTF("%s%s\n", buffer, verb);
 		context = (DSQL_CTX) node->nod_arg[e_map_context];
 		PRINTF("%s   context %d\n", buffer, context->ctx_context);
-		for (map = (MAP) node->nod_arg[e_map_map]; map; map = map->map_next) {
+		for (map = (DSQL_MAP) node->nod_arg[e_map_map]; map; map = map->map_next) {
 			PRINTF("%s   position %d\n", buffer, map->map_position);
 			DSQL_pretty(map->map_node, column + 1);
 		}

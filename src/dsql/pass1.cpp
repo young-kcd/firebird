@@ -193,6 +193,7 @@ static BOOLEAN pass1_found_field(DSQL_NOD, USHORT, USHORT, BOOLEAN *);
 static DSQL_NOD pass1_group_by_list(DSQL_REQ, DSQL_NOD, DSQL_NOD);
 static DSQL_NOD pass1_insert(DSQL_REQ, DSQL_NOD);
 static DSQL_NOD pass1_join(DSQL_REQ, DSQL_NOD, USHORT);
+static DSQL_NOD pass1_label(DSQL_REQ, DSQL_NOD);
 static DSQL_NOD pass1_make_alias_from_field(TSQL, DSQL_FLD);
 static void	pass1_put_args_on_stack(DSQL_REQ, DSQL_NOD, DLLS *, USHORT);
 static DSQL_NOD pass1_relation(DSQL_REQ, DSQL_NOD);
@@ -1183,13 +1184,12 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 		if (input->nod_arg[e_flp_action]) {
             /* CVC: Let's add the ability to BREAK the for_select same as the while.
                but only if the command is FOR SELECT, otherwise we have singular SELECT. */
-			node->nod_arg [e_flp_number] = (DSQL_NOD) (ULONG) ++request->req_loop_level;
-
-			node->nod_arg[e_flp_action] = PASS1_statement(request, 
-                                                          input->nod_arg
-														  [e_flp_action],
-														  proc_flag);
+			request->req_loop_level++;
+			node->nod_arg[e_flp_label] = pass1_label(request, input);
+			node->nod_arg[e_flp_action] =
+				PASS1_statement(request, input->nod_arg[e_flp_action], proc_flag);
 			request->req_loop_level--;
+			LLS_POP(&request->req_labels);
         }
 
 		if (cursor && procedure
@@ -1307,11 +1307,15 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 		node->nod_arg[e_exec_into_stmnt] = PASS1_node(request,
 					input->nod_arg[e_exec_into_stmnt],
 					proc_flag);
-		node->nod_arg[e_exec_into_block] = input->nod_arg[e_exec_into_block] ? 
-					PASS1_statement(request,
-						input->nod_arg[e_exec_into_block],
-						proc_flag) : 
-					0;
+		if (input->nod_arg[e_exec_into_block]) {
+			request->req_loop_level++;
+			node->nod_arg[e_exec_into_label] = pass1_label(request, input);
+			node->nod_arg[e_exec_into_block] =
+				PASS1_statement(request, input->nod_arg[e_exec_into_block], proc_flag);
+			request->req_loop_level--;
+			LLS_POP(&request->req_labels);
+        }
+
 		node->nod_arg[e_exec_into_list] = PASS1_node(request,
 					input->nod_arg[e_exec_into_list], 
 					proc_flag);
@@ -1324,23 +1328,12 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 	case nod_exit:
 		return input;
 
-	case nod_label:
-		if (request->req_flags & REQ_trigger)
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, gds_arg_gds, gds_token_err,	/* Token unknown */
-					  gds_arg_gds, gds_random, gds_arg_string, "LABEL", 0);
-		/* dimitr: should be something like this:
-			input->nod_arg[e_label_number] = (DSQL_NOD) pass1_label(request, input); */
-        input->nod_arg[e_label_number] = 0;
-		return input;
-
     case nod_breakleave:
 		{
 		if (!request->req_loop_level)
 			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, gds_arg_gds, gds_token_err,	/* Token unknown */
 				gds_arg_gds, gds_random, gds_arg_string, "BREAK/LEAVE", 0);
-		/* dimitr: should be something like this:
-			input->nod_arg[e_breakleave_number] = (DSQL_NOD) pass1_label(request, input); */
-        input->nod_arg[e_breakleave_number] = (DSQL_NOD) (ULONG) request->req_loop_level;
+		input->nod_arg[e_breakleave_label] = pass1_label(request, input);
 		}
         return input;
 
@@ -1391,10 +1384,12 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 
         /* CVC: loop numbers should be incremented before analyzing the body
            to preserve nesting <==> increasing level number. */
-		node->nod_arg [e_while_number] = (DSQL_NOD) (ULONG) ++request->req_loop_level;
+		request->req_loop_level++;
+		node->nod_arg[e_while_label] = pass1_label(request, input);
 		node->nod_arg[e_while_action] =
 			PASS1_statement(request, input->nod_arg[e_while_action], proc_flag);
 		request->req_loop_level--;
+		LLS_POP(&request->req_labels);
 		}
 		break;
 
@@ -1604,7 +1599,7 @@ static BOOLEAN aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT * curren
 				return TRUE;			
 			}
 			else {
-				MAP lmap = reinterpret_cast<MAP>(node->nod_arg[e_map_map]);
+				DSQL_MAP lmap = reinterpret_cast<DSQL_MAP>(node->nod_arg[e_map_map]);
 				aggregate = aggregate_found2(request, lmap->map_node, current_level, deepest_level, ignore_sub_selects);
 				return aggregate;
 			}
@@ -2203,7 +2198,7 @@ static BOOLEAN invalid_reference(DSQL_CTX context, DSQL_NOD node, DSQL_NOD list,
 	DSQL_NOD *ptr, *end;
 	BOOLEAN invalid;
 	DSQL_CTX lcontext, lrelation_context;
-	MAP lmap;
+	DSQL_MAP lmap;
 
 	DEV_BLKCHK(node, dsql_type_nod);
 	DEV_BLKCHK(list, dsql_type_nod);
@@ -2231,7 +2226,7 @@ static BOOLEAN invalid_reference(DSQL_CTX context, DSQL_NOD node, DSQL_NOD list,
 
 		case nod_map:
 			lcontext = reinterpret_cast<DSQL_CTX>(node->nod_arg[e_map_context]);
-			lmap = reinterpret_cast<MAP>(node->nod_arg[e_map_map]);
+			lmap = reinterpret_cast<DSQL_MAP>(node->nod_arg[e_map_map]);
 			if (lcontext->ctx_scope_level == context->ctx_scope_level) {
 				invalid |= invalid_reference(context, lmap->map_node, list, TRUE, FALSE);
 			}
@@ -2453,7 +2448,7 @@ static BOOLEAN invalid_reference(DSQL_CTX context, DSQL_NOD node, DSQL_NOD list,
 static BOOLEAN node_match( DSQL_NOD node1, DSQL_NOD node2, BOOLEAN ignore_map_cast)
 {
 	DSQL_NOD *ptr1, *ptr2, *end;
-	MAP map1, map2;
+	DSQL_MAP map1, map2;
 	USHORT l;
 	UCHAR *p1, *p2;
 
@@ -2483,10 +2478,10 @@ static BOOLEAN node_match( DSQL_NOD node1, DSQL_NOD node2, BOOLEAN ignore_map_ca
 	}
 
 	if (ignore_map_cast && node1->nod_type == nod_map) {
-		map1 = (MAP)node1->nod_arg[e_map_map];
+		map1 = (DSQL_MAP)node1->nod_arg[e_map_map];
 		DEV_BLKCHK(map1, dsql_type_map);
 		if (node2->nod_type == nod_map) {
-			map2 = (MAP)node2->nod_arg[e_map_map];
+			map2 = (DSQL_MAP)node2->nod_arg[e_map_map];
 			DEV_BLKCHK(map2, dsql_type_map);
 			if (node1->nod_arg[e_map_context] != node2->nod_arg[e_map_context]) {
 				return FALSE;
@@ -2577,8 +2572,8 @@ static BOOLEAN node_match( DSQL_NOD node1, DSQL_NOD node2, BOOLEAN ignore_map_ca
 	}
 
 	if (node1->nod_type == nod_map) {
-		map1 = (MAP)node1->nod_arg[e_map_map];
-		map2 = (MAP)node2->nod_arg[e_map_map];
+		map1 = (DSQL_MAP)node1->nod_arg[e_map_map];
+		map2 = (DSQL_MAP)node2->nod_arg[e_map_map];
 		DEV_BLKCHK(map1, dsql_type_map);
 		DEV_BLKCHK(map2, dsql_type_map);
 		return node_match(map1->map_node, map2->map_node, ignore_map_cast);
@@ -3424,7 +3419,7 @@ static DSQL_NOD pass1_derived_table(DSQL_REQ request, DSQL_NOD input)
 		}
 		else if (node_select_item->nod_type == nod_map) {
 			// Don't forget aggregate's that have map on top.
-			MAP map_ = (MAP) node_select_item->nod_arg[e_map_map];
+			DSQL_MAP map_ = (DSQL_MAP) node_select_item->nod_arg[e_map_map];
 			if (map_->map_node && (map_->map_node->nod_type == nod_field)) {
 				DSQL_FLD field = (DSQL_FLD) map_->map_node->nod_arg[e_fld_field];
 				DSQL_NOD node_alias = pass1_make_alias_from_field(tdsql, field);
@@ -3791,7 +3786,7 @@ static BOOLEAN pass1_found_aggregate(DSQL_NOD node, USHORT check_scope_level,
 {
 	DSQL_NOD *ptr, *end;
 	BOOLEAN found, field;
-	MAP map_;
+	DSQL_MAP map_;
 
 	DEV_BLKCHK(node, dsql_type_nod);
 
@@ -3939,7 +3934,7 @@ static BOOLEAN pass1_found_aggregate(DSQL_NOD node, USHORT check_scope_level,
 			break;
 
 		case nod_map:
-			map_ =  reinterpret_cast <MAP>(node->nod_arg[e_map_map]);
+			map_ =  reinterpret_cast <DSQL_MAP>(node->nod_arg[e_map_map]);
 			found |= pass1_found_aggregate(map_->map_node,
 				check_scope_level, match_type, current_scope_level_equal);
 			break;
@@ -3987,7 +3982,7 @@ static BOOLEAN pass1_found_field(DSQL_NOD node, USHORT check_scope_level,
 	DSQL_NOD *ptr, *end;
 	BOOLEAN found;
 	DSQL_CTX field_context;
-	MAP map_;
+	DSQL_MAP map_;
 
 	DEV_BLKCHK(node, dsql_type_nod);
 
@@ -4132,7 +4127,7 @@ static BOOLEAN pass1_found_field(DSQL_NOD node, USHORT check_scope_level,
 			break;
 
 		case nod_map:
-			map_ =  reinterpret_cast <MAP>(node->nod_arg[e_map_map]);
+			map_ =  reinterpret_cast <DSQL_MAP>(node->nod_arg[e_map_map]);
 			found |= pass1_found_field(map_->map_node, check_scope_level, 
 					match_type, field);
 			break;
@@ -4398,6 +4393,102 @@ static DSQL_NOD pass1_join(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 	node->nod_arg[e_join_boolean] = 
 		PASS1_node(request, input->nod_arg[e_join_boolean], proc_flag);
 	return node;
+}
+
+
+/**
+  
+ 	pass1_label
+  
+    @brief	Process loop interruption
+ 
+
+    @param request
+    @param input
+
+ **/
+static DSQL_NOD pass1_label(DSQL_REQ request, DSQL_NOD input)
+{
+	DEV_BLKCHK(request, dsql_type_req);
+	DEV_BLKCHK(input, dsql_type_nod);
+
+	DSQL_NOD label = 0;
+	USHORT number = 0, position = 0;
+
+	// retrieve a label
+
+	if (input->nod_type == nod_breakleave) {
+		label = input->nod_arg[e_breakleave_label];
+	}
+	else if (input->nod_type == nod_for_select) {
+		label = input->nod_arg[e_flp_label];
+	}
+	else if (input->nod_type == nod_exec_into) {
+		label = input->nod_arg[e_exec_into_label];
+	}
+	else if (input->nod_type == nod_while) {
+		label = input->nod_arg[e_while_label];
+	}
+	else {
+		assert(0);
+	}
+
+	// look for a label, if specified
+
+	TEXT* label_string = 0;
+
+	if (label) {
+		assert(label->nod_type == nod_label);
+		STR str = (STR) label->nod_arg[0];
+		label_string = (TEXT*) str->str_data;
+		int index = request->req_loop_level;
+		for (DLLS stack = request->req_labels; stack; stack = stack->lls_next) {
+			TEXT* temp_string = (TEXT*) stack->lls_object;
+			if (temp_string && !strcmp(label_string, temp_string)) {
+				position = index;
+				break;
+			}
+			index--;
+		}
+	}
+
+	if (input->nod_type == nod_breakleave) {
+		if (position > 0) {
+			// break the specified loop
+			number = position;
+		}
+		else if (label) {
+			// ERROR: Label %s is not found in the current scope
+			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
+				gds_arg_gds, gds_dsql_command_err,
+				gds_arg_gds, gds_dsql_invalid_label,
+				gds_arg_string, label_string,
+				gds_arg_string, "is not found", 0);
+		}
+		else {
+			// break the current loop
+			number = request->req_loop_level;
+		}
+	}
+	else {
+		if (position > 0) {
+			// ERROR: Label %s already exists in the current scope
+			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
+				gds_arg_gds, gds_dsql_command_err,
+				gds_arg_gds, gds_dsql_invalid_label,
+				gds_arg_string, label_string,
+				gds_arg_string, "already exists", 0);
+		}
+		else {
+			// store label name, if specified
+			LLS_PUSH(label_string, &request->req_labels);
+			number = request->req_loop_level;
+		}
+	}
+
+	assert(number > 0 && number <= request->req_loop_level);
+
+	return (DSQL_NOD) number;
 }
 
 
@@ -5565,7 +5656,7 @@ static DSQL_NOD pass1_union( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order_li
 	items = union_node->nod_arg[0]->nod_arg[e_rse_items];
 
 	// Create mappings for union.
-	MAP map_;
+	DSQL_MAP map_;
 	SSHORT count = 0;
 	DSQL_NOD map_node;
 	DSQL_NOD union_items = MAKE_node(nod_list, items->nod_count);
@@ -5574,10 +5665,10 @@ static DSQL_NOD pass1_union( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order_li
 		 ptr < end; ptr++) {
 		*ptr = map_node = MAKE_node(nod_map, e_map_count);
 		map_node->nod_arg[e_map_context] = (DSQL_NOD) union_context;
-		map_ = FB_NEW(*tdsql->tsql_default) map;
+		map_ = FB_NEW(*tdsql->tsql_default) dsql_map;
 		map_node->nod_arg[e_map_map] = (DSQL_NOD) map_;
 
-		// set up the MAP between the sub-rses and the union context.
+		// set up the DSQL_MAP between the sub-rses and the union context.
 		map_->map_position = count++;
 		map_->map_node = *uptr++;
 		map_->map_next = union_context->ctx_map;
@@ -5759,7 +5850,7 @@ static void pass1_union_auto_cast(DSQL_NOD input, DSC desc, SSHORT position, boo
 					// Only replace the node where the map points to, because they could be changed.
 					DSQL_NOD union_items = input->nod_arg[e_rse_items];
 					DSQL_NOD sub_rse_items = streams->nod_arg[0]->nod_arg[e_rse_items];
-					MAP map_ = (MAP) union_items->nod_arg[position]->nod_arg[e_map_map];
+					DSQL_MAP map_ = (DSQL_MAP) union_items->nod_arg[position]->nod_arg[e_map_map];
 					map_->map_node = sub_rse_items->nod_arg[position];
 					union_items->nod_arg[position]->nod_desc = desc;
 				}
@@ -5951,7 +6042,7 @@ static DSQL_NOD pass1_variable( DSQL_REQ request, DSQL_NOD input)
 static DSQL_NOD post_map( DSQL_NOD node, DSQL_CTX context)
 {
 	DSQL_NOD new_node;
-	MAP map_;
+	DSQL_MAP map_;
 	USHORT count;
 	TSQL tdsql;
 
@@ -5967,7 +6058,7 @@ static DSQL_NOD post_map( DSQL_NOD node, DSQL_CTX context)
 			break;
 
 	if (!map_) {
-		map_ = FB_NEW(*tdsql->tsql_default) map;
+		map_ = FB_NEW(*tdsql->tsql_default) dsql_map;
 		map_->map_position = count;
 		map_->map_next = context->ctx_map;
 		context->ctx_map = map_;
@@ -6005,7 +6096,7 @@ static DSQL_NOD remap_field(DSQL_REQ request, DSQL_NOD field, DSQL_CTX context, 
 {
 	DSQL_NOD *ptr, *end;
 	DSQL_CTX lcontext, lrelation_context;
-	MAP lmap;
+	DSQL_MAP lmap;
 	USHORT ldeepest_level, lcurrent_level;
 
 	DEV_BLKCHK(request, dsql_type_req);
@@ -6041,7 +6132,7 @@ static DSQL_NOD remap_field(DSQL_REQ request, DSQL_NOD field, DSQL_CTX context, 
 
 		case nod_map:
 			lcontext = reinterpret_cast<DSQL_CTX>(field->nod_arg[e_map_context]);
-			lmap = reinterpret_cast<MAP>(field->nod_arg[e_map_map]);			
+			lmap = reinterpret_cast<DSQL_MAP>(field->nod_arg[e_map_map]);			
 			lmap->map_node = remap_field(request, lmap->map_node, context, lcontext->ctx_scope_level);
 			return field;
 

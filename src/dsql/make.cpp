@@ -280,7 +280,7 @@ void MAKE_desc( DSC * desc, DSQL_NOD node)
 {
 	DSC desc1, desc2;
 	USHORT dtype, dtype1, dtype2;
-	MAP map;
+	DSQL_MAP map;
 	DSQL_CTX context;
 	DSQL_REL relation;
 	UDF udf;
@@ -308,7 +308,7 @@ void MAKE_desc( DSC * desc, DSQL_NOD node)
 		return;
 
 	case nod_map:
-		map = (MAP) node->nod_arg[e_map_map];
+		map = (DSQL_MAP) node->nod_arg[e_map_map];
 		MAKE_desc(desc, map->map_node);
 		return;
 

@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.52 2003-08-14 23:31:13 arnobrinkman Exp $
+ * $Id: ddl.cpp,v 1.53 2003-08-26 07:12:16 dimitr Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -743,7 +743,7 @@ static USHORT check_array_or_blob(DSQL_NOD node)
 
 	case nod_map:
 	{
-		MAP map = (MAP) node->nod_arg[e_map_map];
+		DSQL_MAP map = (DSQL_MAP) node->nod_arg[e_map_map];
 		return check_array_or_blob(map->map_node);
 	}
 

@@ -1598,19 +1598,17 @@ exec_sql	: EXECUTE varstate value ';'
 
 varstate	: VARCHAR | STATEMENT ;
 
-for_select	: FOR select INTO variable_list cursor_def DO proc_block
-			{ $$ = make_node (nod_for_select, e_flp_count, $2,
-					  make_list ($4), $5, $7, NULL); }
+for_select	: label_opt FOR select INTO variable_list cursor_def DO proc_block
+			{ $$ = make_node (nod_for_select, e_flp_count, $3,
+					  make_list ($5), $6, $8, $1); }
 		;
 
-for_exec_into	: FOR EXECUTE varstate value INTO variable_list DO proc_block 
-			{ 
-				$$ = make_node (nod_exec_into, e_exec_into_count, $4, $8, make_list($6)); }
+for_exec_into	: label_opt FOR EXECUTE varstate value INTO variable_list DO proc_block 
+			{ $$ = make_node (nod_exec_into, e_exec_into_count, $5, $9, make_list ($7), $1); }
 		;
 
 exec_into	: EXECUTE varstate value INTO variable_list ';'
-			{ 
-				$$ = make_node (nod_exec_into, e_exec_into_count, $3, 0, make_list($5)); }
+			{ $$ = make_node (nod_exec_into, e_exec_into_count, $3, 0, make_list ($5)); }
 		;
 
 if_then_else	: IF '(' search_condition ')' THEN proc_block ELSE proc_block
@@ -1663,25 +1661,23 @@ variable_list	: variable
 			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
 
-while		: WHILE '(' search_condition ')' DO proc_block
-			{ $$ = make_node (nod_while, e_while_count,
-					  $3, $6, NULL); }
+while		: label_opt WHILE '(' search_condition ')' DO proc_block
+			{ $$ = make_node (nod_while, e_while_count, $4, $7, $1); }
 		;
 
-/* dimitr: commented out until pass1.cpp is ready to assign label numbers properly
-label	: symbol_label_name ':'
-			{ $$ = make_node (nod_label, e_label_count, $1, NULL); }
+label_opt	: symbol_label_name ':'
+			{ $$ = make_node (nod_label, 1, $1); }
+		|
+			{ $$ = NULL; }
 		;
-*/
 
 breakleave	: KW_BREAK ';'
-			{ $$ = make_node (nod_breakleave, e_breakleave_count, NULL, NULL); }
+			{ $$ = make_node (nod_breakleave, e_breakleave_count, NULL); }
 		| LEAVE ';'
-			{ $$ = make_node (nod_breakleave, e_breakleave_count, NULL, NULL); }
-/* dimitr: commented out until pass1.cpp is ready to assign label numbers properly
+			{ $$ = make_node (nod_breakleave, e_breakleave_count, NULL); }
 		| LEAVE symbol_label_name ';'
-			{ $$ = make_node (nod_breakleave, e_breakleave_count, $2, NULL); }
-*/
+			{ $$ = make_node (nod_breakleave, e_breakleave_count,
+				make_node (nod_label, 1, $2)); }
 		;
 
 cursor_def	: AS CURSOR symbol_cursor_name
@@ -3827,32 +3823,40 @@ aggregate_function	: COUNT '(' '*' ')'
 /* Firebird specific functions into 'generate_value_function' */
 
 generate_value_function	: GEN_ID '(' symbol_generator_name ',' value ')'	
-				{ 
-				  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
-				      $$ = make_node (nod_gen_id2, 2, $3, $5);
-				  else
-					  $$ = make_node (nod_gen_id, 2, $3, $5);
-				}
-			;
+			{ 
+			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
+			      $$ = make_node (nod_gen_id2, 2, $3, $5);
+			  else
+				  $$ = make_node (nod_gen_id, 2, $3, $5);
+			}
+		;
 
-numeric_value_function	:  EXTRACT '(' timestamp_part FROM value ')'
-				{ $$ = make_node (nod_extract, e_extract_count, $3, $5); }
-			;
+numeric_value_function	: extract_expression
+		;
 
-string_value_function	:  SUBSTRING '(' value FROM pos_short_integer ')'
-				{ $$ = make_node (nod_substr, e_substr_count, $3,
-					MAKE_constant ((STR) ((SLONG)($5) - 1), CONSTANT_SLONG),
-					MAKE_constant ((STR) SHRT_POS_MAX, CONSTANT_SLONG)); }
-			/* CVC: It was easier to provide a constant with maximum value if the
-			third parameter -length- is ommitted than to chase and fix the functions
-			that treat nod_substr as an aggregate and do not expect NULL arguments. */
-			| SUBSTRING '(' value FROM pos_short_integer FOR nonneg_short_integer ')'
-				{ $$ = make_node (nod_substr, e_substr_count, $3,
-					MAKE_constant ((STR) ((SLONG)($5) - 1), CONSTANT_SLONG),
-					MAKE_constant ((STR) ($7), CONSTANT_SLONG)); }
-			| KW_UPPER '(' value ')'
-				{ $$ = make_node (nod_upcase, 1, $3); }
-			;
+extract_expression	: EXTRACT '(' timestamp_part FROM value ')'
+			{ $$ = make_node (nod_extract, e_extract_count, $3, $5); }
+		;
+
+string_value_function	:  substring_function
+		| KW_UPPER '(' value ')'
+			{ $$ = make_node (nod_upcase, 1, $3); }
+		;
+
+substring_function	: SUBSTRING '(' value FROM value string_length_opt ')'
+			/* SQL spec requires numbering to start with 1,
+			   hence we decrement the first parameter to make it
+			   compatible with the engine's implementation */
+			{ $$ = make_node (nod_substr, e_substr_count, $3,
+				make_node (nod_subtract, 2, $5,
+					MAKE_constant ((STR) 1, CONSTANT_SLONG)), $6); }
+		;
+
+string_length_opt	: FOR value
+			{ $$ = $2; }
+		|
+			{ $$ = MAKE_constant ((STR) SHRT_POS_MAX, CONSTANT_SLONG); }
+		;
 
 udf		: symbol_UDF_name '(' value_list ')'
 			{ $$ = make_node (nod_udf, 2, $1, $3); }
@@ -3987,10 +3991,8 @@ symbol_index_name	: valid_symbol_name
 symbol_item_alias_name	: valid_symbol_name
 	;
 
-/* dimitr: commented out until pass1.cpp is ready to assign label numbers properly
 symbol_label_name	: valid_symbol_name
 	;
-*/
 
 symbol_procedure_name	: valid_symbol_name
 	;

@@ -463,7 +463,8 @@ typedef dsql_nod* DSQL_NOD;
 #define e_exec_into_stmnt	0	/* nod_exec_into */
 #define e_exec_into_block	1
 #define e_exec_into_list	2
-#define e_exec_into_count	3
+#define e_exec_into_label	3
+#define e_exec_into_count	4
 
 #define e_internal_info	0		/* nod_internal_info */
 #define e_internal_info_count	1
@@ -513,8 +514,7 @@ typedef dsql_nod* DSQL_NOD;
 #define e_flp_into	1
 #define e_flp_cursor	2
 #define e_flp_action	3
-/* CVC: This node added to support basic BREAK functionality */
-#define e_flp_number	4
+#define e_flp_label	4
 #define e_flp_count	5
 
 #define e_cur_name	0			/* nod_cursor */
@@ -636,7 +636,7 @@ typedef dsql_nod* DSQL_NOD;
 
 #define e_while_cond	0
 #define e_while_action	1
-#define e_while_number	2
+#define e_while_label	2
 #define e_while_count	3
 
 #define e_drl_name	0			/* nod_def_relation */
@@ -839,12 +839,7 @@ typedef dsql_nod* DSQL_NOD;
 
 /* CVC: blr_leave used to emulate break */
 #define e_breakleave_label	0	/* nod_breakleave */
-#define e_breakleave_number	1
-#define e_breakleave_count	2
-
-#define e_label_name	0	/* nod_label */
-#define e_label_number	1
-#define e_label_count	2
+#define e_breakleave_count	1
 
 /* SQL substring() function */
 

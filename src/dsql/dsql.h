@@ -372,7 +372,6 @@ enum REQ_TYPE
 	REQ_COMMIT_RETAIN, REQ_SET_GENERATOR, REQ_SAVEPOINT
 };
 
-
 class dsql_req : public pool_alloc<dsql_type_req>
 {
 public:
@@ -436,6 +435,7 @@ public:
 	USHORT	req_scope_level;		//!< Scope level for parsing aliases in subqueries
 	USHORT	req_message_number;	//!< Next available message number
 	USHORT	req_loop_level;		//!< Loop level
+	DLLS	req_labels;			//!< Loop labels
 	USHORT	req_in_select_list;	//!< now processing "select list"
 	USHORT	req_in_where_clause;	//!< processing "where clause"
 	USHORT	req_in_group_by_clause;	//!< processing "group by clause"
@@ -507,7 +507,7 @@ public:
 	dsql_rel*			ctx_relation;		//!< Relation for context
 	dsql_prc*			ctx_procedure;		//!< Procedure for context
 	struct dsql_nod*	ctx_proc_inputs;	//!< Procedure input parameters
-	class map*			ctx_map;			//!< Map for aggregates
+	class dsql_map*		ctx_map;			//!< Map for aggregates
 	struct dsql_nod*	ctx_rse;			//!< Sub-rse for aggregates
 	dsql_ctx*			ctx_parent;			//!< Parent context for aggregates
 	TEXT*				ctx_alias;			//!< Context alias
@@ -524,16 +524,14 @@ typedef dsql_ctx* DSQL_CTX;
 
 //! Aggregate/union map block to map virtual fields to their base
 //! TMN: NOTE! This datatype should definitely be renamed!
-class map : public pool_alloc<dsql_type_map>
+class dsql_map : public pool_alloc<dsql_type_map>
 {
 public:
-	map*		map_next;		//!< Next map in item
-	struct dsql_nod*	map_node;		//!< Value for map item
-	USHORT		map_position;	//!< Position in map
+	dsql_map*			map_next;			//!< Next map in item
+	struct dsql_nod*	map_node;			//!< Value for map item
+	USHORT				map_position;		//!< Position in map
 };
-typedef map* MAP;
-
-
+typedef dsql_map* DSQL_MAP;
 
 //! Message block used in communicating with a running request
 class dsql_msg : public pool_alloc<dsql_type_msg>
