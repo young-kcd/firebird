@@ -5669,7 +5669,7 @@ static JRD_NOD make_missing(TDBB tdbb,
 	node = make_index_node(tdbb, relation, opt->opt_csb, idx);
 	retrieval = (IRB) node->nod_arg[e_idx_retrieval];
 	retrieval->irb_relation = relation;
-	retrieval->irb_generic = irb_starting;
+	//retrieval->irb_generic = irb_starting;  // AB: irb_starting? Why?
 	retrieval->irb_lower_count = retrieval->irb_upper_count = 1;
 /* If we are matching less than the full index, this is a partial match */
 	if (retrieval->irb_upper_count < idx->idx_count)

@@ -24,18 +24,20 @@
  *
  */
 
-#ifndef JRD_BTR_H
-#define JRD_BTR_H
+#ifndef JRD_BTR_H_
+#define JRD_BTR_H_
 
+#include "../jrd/constants.h"
 #include "../common/classes/array.h"
 #include "../jrd/jrd_blks.h"
-#include "../jrd/constants.h"
 #include "../include/fb_blk.h"
 
 #include "../jrd/err_proto.h"    /* Index error types */
 
 /* 64 turns out not to be enough indexes */
 /* #define MAX_IDX		 64	*/	/* that should be plenty of indexes */
+
+#define MAX_KEY_LIMIT		(dbb->dbb_page_size / 4)
 
 enum idx_null_state {
   idx_nulls_none,
@@ -63,7 +65,7 @@ typedef struct idx {
 	struct idx_repeat {
 		USHORT idx_field;		/* field id */
 		USHORT idx_itype;		/* data of field in index */
-	} idx_rpt[MAX_INDEX_SEGMENTS];
+	} idx_rpt[16];
 } IDX;
 
 /* index types and flags */
@@ -131,11 +133,15 @@ typedef struct iib {
 
 typedef struct key {
 	USHORT key_length;
-	UCHAR key_data[MAX_KEY * 2];	/* This needs to be on a SHORT boundary. 
-									   This is because key_data is complemented as 
-									   (SSHORT *) if value is negative.
-									   See compress() (JRD/btr.c) for more details */
+	UCHAR key_data[MAX_KEY];
+ /* AB: I don't see the use of multiplying with 2 anymore. */
+	//UCHAR key_data[MAX_KEY * 2];	
+		// This needs to be on a SHORT boundary. 
+		// This is because key_data is complemented as 
+		// (SSHORT *) if value is negative.
+		//  See compress() (JRD/btr.c) for more details
 } KEY;
+
 
 /* Index Sort Record -- fix part of sort record for index fast load */
 
@@ -145,8 +151,9 @@ typedef struct isr {
 	ULONG isr_record_number;
 } *ISR;
 
-#define ISR_secondary	1		/* Record is secondary version */
-#define ISR_null		2		/* Record consists of NULL values only */
+#define ISR_secondary	1	// Record is secondary version
+#define ISR_null		2	// Record consists of NULL values only
+
 
 
 /* Index retrieval block -- hold stuff for index retrieval */
@@ -172,43 +179,16 @@ typedef irb *IRB;
 										   * ignore looking at null value keys */
 #define irb_descending	16		/* ?Base index uses descending order */
 
+// macros used to manipulate btree nodes
+#define BTR_SIZE	OFFSETA(BTR, btr_nodes);
 
-#define DATA_SIZE	1
+#define NEXT_NODE(node)	(btn*)(node->btn_data + node->btn_length)
+#define NEXT_NODE_RECNR(node)	(btn*)(node->btn_data + node->btn_length + sizeof(SLONG))
 
-/* format of expanded index node, used for backwards navigation */
-
-typedef struct btx {
-	UCHAR btx_previous_length;	/* length of data for previous node  */
-	UCHAR btx_btr_previous_length;	/* length of data for previous node on btree page */
-	UCHAR btx_data[DATA_SIZE];	/* expanded data element */
-} *BTX;
-
-#define BTX_SIZE	2
-
-/* format of expanded index buffer */
-
-typedef struct jrd_exp {
-	USHORT exp_length;
-	ULONG exp_incarnation;
-	btx exp_nodes[1];
-} *EXP;
-
-#define EXP_SIZE	OFFSETA (EXP, exp_nodes)
-
-
-/* macros used to manipulate btree nodes */
-
-#define QUAD_MOVE(a,b)	quad_move(a, b)
-
-#define QE(a,b,n)	(((UCHAR*) b)[n] == ((UCHAR*) a)[n])
-#define QUAD_EQUAL(a,b)	(QE(a,b,0) && QE(a,b,1) && QE(a,b,2) && QE(a,b,3))
-
-#define NEXT_NODE(xxx)	(BTN) (((xxx)->btn_data + (xxx)->btn_length))
 #define LAST_NODE(page)	(BTN) ((UCHAR*) page + page->btr_length)
 
-#define NEXT_EXPANDED(xxx,yyy)	(BTX) ((UCHAR*) xxx->btx_data + (yyy)->btn_prefix + (yyy)->btn_length)
+//#define NEXT_EXPANDED(xxx,yyy)	(BTX) ((UCHAR*) xxx->btx_data + (yyy)->btn_prefix + (yyy)->btn_length)
 
 typedef Firebird::HalfStaticArray<float, 1> SelectivityList;
 
-#endif /* JRD_BTR_H */
-
+#endif /* JRD_BTR_H_ */

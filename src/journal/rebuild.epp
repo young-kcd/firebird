@@ -712,8 +712,7 @@ static void apply_index(BTR page,
 	JRNB temp, *clump;
 	SCHAR *p, *q;
 	SLONG l;
-	SLONG delta;
-	BTN node, next;
+	//SLONG delta;
 
 	if (sw_debug)
 		GJRN_printf(24, (TEXT*) record->jrnd_page, NULL, NULL, NULL);
@@ -726,6 +725,11 @@ static void apply_index(BTR page,
 
 		switch (clump->jrnb_type) {
 		case JRNP_BTREE_NODE:
+
+			// AB: Not used
+			rebuild_abort(72);
+
+			/*
 			if (sw_debug) {
 				GJRN_printf(25, (TEXT*)(ULONG) temp.jrnb_offset,
 							(TEXT*)(ULONG) temp.jrnb_length, NULL, NULL);
@@ -761,6 +765,7 @@ static void apply_index(BTR page,
 							(TEXT*)(ULONG) temp.jrnb_length, NULL, NULL);
 				GJRN_printf(27, (TEXT*)(SLONG) page->btr_length, NULL, NULL, NULL);
 			}
+			*/
 			break;
 
 		case JRNP_BTREE_SEGMENT:
@@ -785,43 +790,14 @@ static void apply_index(BTR page,
 
 		case JRNP_BTREE_DELETE:
 
+			// AB: Not used
+			rebuild_abort(72);
+
 			// delete a node entry
-
-			node = (BTN) ((UCHAR *) page + temp.jrnb_offset);
-			next = (BTN) (node->btn_data + node->btn_length);
-			QUAD_MOVE(next->btn_number, node->btn_number);
-			p = (SCHAR *) node->btn_data;
-			q = (SCHAR *) next->btn_data;
-			l = next->btn_length;
-			if (node->btn_prefix < next->btn_prefix) {
-				node->btn_length = next->btn_length + next->btn_prefix
-					- node->btn_prefix;
-				p += next->btn_prefix - node->btn_prefix;
-			}
-			else {
-				node->btn_length = l;
-				node->btn_prefix = next->btn_prefix;
-			}
-
-			if (l)
-				do
-					*p++ = *q++;
-				while (--l);
-
-			// Compute length of rest of bucket and move it down.
-
-			l = page->btr_length - ((UCHAR *) q - (UCHAR *) page);
-
-			if (l)
-				do
-					*p++ = *q++;
-				while (--l);
-
-			page->btr_length = (UCHAR *) p - (UCHAR *) page;
+			/*delta = BTR_delete_node(tdbb, page, temp.jrnb_offset);
 			page->btr_prefix_total = temp.jrnb_prefix_total;
 
 			// Error Check
-
 			if (node->btn_prefix != temp.jrnb_delta) {
 				rebuild_abort(60);
 			}
@@ -833,8 +809,7 @@ static void apply_index(BTR page,
 				GJRN_printf(30, (TEXT*)(ULONG) temp.jrnb_offset, NULL, NULL, NULL);
 				GJRN_printf(27, (TEXT*)(SLONG) page->btr_length, NULL, NULL, NULL);
 			}
-
-			break;
+			break;*/
 
 		default:
 			rebuild_abort(72);

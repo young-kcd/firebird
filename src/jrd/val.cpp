@@ -551,6 +551,7 @@ VI. ADDITIONAL NOTES
 #include "../jrd/ibase.h"
 #include "../jrd/val.h"
 #include "../jrd/btr.h"
+#include "../jrd/btn.h"
 #include "../jrd/all.h"
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
@@ -1383,101 +1384,182 @@ static RTN walk_index(TDBB tdbb,
  *	So errors are reported against index id+1
  *
  **************************************/
-	DBB dbb;
 	WIN window, down_window;
 	BTR page, down_page;
-	BTN node, end, down_node;
-	SLONG next, down, down_number, previous_number, next_number;
-	KEY key;
+	SLONG down_number, next_number;
 	UCHAR *p, *q, l;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	next = down = page_number;
+	SLONG next = page_number;
+	SLONG down = page_number;
+	KEY key;
 	key.key_length = 0;
-	previous_number = 0;
+	SLONG previous_number = 0;
 
-	if (control)
+	if (control) {
 		SBM_reset(&control->vdr_idx_records);
+	}
+
+	bool firstNode = true;
+	SCHAR flags;
+	UCHAR *pointer;
+	UCHAR *endPointer;
+	IndexNode node, lastNode;
 
 	while (next) {
 		fetch_page(tdbb, control, next, pag_index, &window, &page);
+		if ((next != page_number) &&
+			(page->btr_header.pag_flags & BTR_FLAG_COPY_MASK) != 
+			(flags & BTR_FLAG_COPY_MASK))
+		{
+			corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
+				id + 1, next);
+		}
+		flags = page->btr_header.pag_flags;
+		bool leafPage = (page->btr_level == 0);
+		bool useJumpInfo = (flags & btr_jump_info);
+		bool useAllRecordNumbers = (flags & btr_all_record_number);
 
-		if (page->btr_relation != relation->rel_id || page->btr_id != (UCHAR) (id % 256)) 
+		if (page->btr_relation != relation->rel_id || 
+			page->btr_id != (UCHAR) (id % 256)) 
 		{
 			corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation, id + 1,
 					next);
 			CCH_RELEASE(tdbb, &window);
 			return rtn_corrupt;
 		}
-
-		/* go through all the nodes on the page and check for validity */
-
-		for (node = (BTN) page->btr_nodes, end =
-			 (BTN) ((UCHAR *) page + page->btr_length); node < end;
-			 node = NEXT_NODE(node)) 
+		
+		if (useJumpInfo) 
 		{
-			/* make sure the current key is not less than the previous key */
-
-			q = node->btn_data;
-			p = key.key_data + node->btn_prefix;
-			for (l = MIN(node->btn_length,
-				 (UCHAR) (key.key_length - node->btn_prefix)); l; l--, p++, q++)
+			IndexJumpInfo jumpInfo;
+			pointer = BTreeNode::getPointerFirstNode(page, &jumpInfo);
+			USHORT headerSize = (pointer - (UCHAR*)page);
+			// Check if firstNodeOffset is not out of page area.
+			if ((jumpInfo.firstNodeOffset < headerSize) ||
+				(jumpInfo.firstNodeOffset > page->btr_length)) 
 			{
-				if (*p > *q)
-					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next);
-				else if (*p < *q)
-					break;
+				corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
+					id + 1, next);
 			}
 
-			/* save the current key */
+			USHORT n = jumpInfo.jumpers;
+			USHORT jumpersSize = 0;
+			IndexNode checknode;
+			IndexJumpNode jumpNode;
+			while (n) {
+				pointer = BTreeNode::readJumpNode(&jumpNode, pointer, flags);
+				jumpersSize += BTreeNode::getJumpNodeSize(&jumpNode, flags);
+				// Check if jump node offset is inside page.
+				if ((jumpNode.offset < jumpInfo.firstNodeOffset) ||
+					(jumpNode.offset > page->btr_length))
+				{
+					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
+						id + 1, next);
+				}
+				else {
+					// Check if jump node has same length as data node prefix.
+					BTreeNode::readNode(&checknode, 
+						(UCHAR*)page + jumpNode.offset, flags, leafPage);
+					if ((jumpNode.prefix + jumpNode.length) != checknode.prefix) {
+						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
+							id + 1, next);
+					}
+				}
+				n--;
+			}
+		}
 
-			q = node->btn_data;
-			p = key.key_data + node->btn_prefix;
-			for (l = node->btn_length; l; l--)
+		// go through all the nodes on the page and check for validity
+		pointer = BTreeNode::getPointerFirstNode(page);
+		if (useAllRecordNumbers) {
+			BTreeNode::readNode(&lastNode, pointer, flags, leafPage);
+		}
+
+		endPointer = ((UCHAR *) page + page->btr_length);
+		while (pointer < endPointer) {
+
+			pointer = BTreeNode::readNode(&node, pointer, flags, leafPage);
+
+			// make sure the current key is not less than the previous key
+			q = node.data;
+			p = key.key_data + node.prefix;
+			l = MIN(node.length, (USHORT) (key.key_length - node.prefix));
+			for (; l; l--, p++, q++) {
+				if (*p > *q) {
+					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
+							id + 1, next);
+				}
+				else if (*p < *q) {
+					break;
+				}
+			}
+
+			if (useAllRecordNumbers && (node.recordNumber >= 0) &&
+				!firstNode && !BTreeNode::isEndLevel(&node, leafPage))
+			{
+				// If this node is equal to the previous one and it's
+				// not a MARKER, record number should be same or higher.
+				if ((node.length == 0) && 
+					(node.prefix == (lastNode.prefix + lastNode.length))) 
+				{
+					if (node.recordNumber < lastNode.recordNumber) {
+						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
+							id + 1, next);
+					}
+				}
+				lastNode = node;
+			}
+
+			if (firstNode) {
+				firstNode = false;
+			}
+
+			// save the current key
+			q = node.data;
+			p = key.key_data +  node.prefix;
+			for (l = node.length; l; l--) {
 				*p++ = *q++;
+			}
 			key.key_length = p - key.key_data;
 
-			if (QUAD_EQUAL(node->btn_number, &end_level) ||
-				QUAD_EQUAL(node->btn_number, &end_bucket))
+			if (BTreeNode::isEndBucket(&node, leafPage) ||
+				BTreeNode::isEndLevel(&node, leafPage)) 
 			{
-				node = NEXT_NODE(node);
 				break;
 			}
 
-			/* Record the existance of a primary version of a record */
-			if (!page->btr_level && control	&& (control->vdr_flags & vdr_records))
-			{
-				SBM_set(tdbb, &control->vdr_idx_records, get_long(node->btn_number));
+			// Record the existance of a primary version of a record
+			if (leafPage && control && (control->vdr_flags & vdr_records)) {
+			  SBM_set(tdbb, &control->vdr_idx_records, node.recordNumber);
 			}
 
-			/* fetch the next page down (if full validation was specified) */
+			// fetch the next page down (if full validation was specified)
+			if (!leafPage && control && (control->vdr_flags & vdr_records)) {
+				down_number = node.pageNumber;
+				SLONG down_record_number = node.recordNumber;
 
-			if (page->btr_level && control && (control->vdr_flags & vdr_records))
-			{
-				down_number = get_long(node->btn_number);
-
-				/* Note: control == 0 for the fetch_page() call here 
-				   as we don't want to mark the page as visited yet - we'll 
-				   mark it when we visit it for real later on */
-
+				// Note: control == 0 for the fetch_page() call here 
+				// as we don't want to mark the page as visited yet - we'll 
+				// mark it when we visit it for real later on
 				fetch_page(tdbb, 0, down_number, pag_index, &down_window,
-						   &down_page);
+					&down_page);
+				bool downLeafPage = (down_page->btr_level == 0);
 
-				/* make sure the initial key is greater than the pointer key */
+				// make sure the initial key is greater than the pointer key
+				UCHAR *downPointer;
+				downPointer = BTreeNode::getPointerFirstNode(down_page);
 
-				down_node = (BTN) down_page->btr_nodes;
-				p = down_node->btn_data;
+				IndexNode downNode;
+				downPointer = BTreeNode::readNode(&downNode, downPointer, flags, downLeafPage);
+
+				p = downNode.data;
 				q = key.key_data;
-				for (l = static_cast<UCHAR>(MIN(key.key_length,
-											down_node->btn_length));
-					l; l--, p++, q++)
-				{
-					if (*p < *q)
-					{
+				l = MIN(key.key_length, downNode.length);
+				for (; l; l--, p++, q++) {
+					if (*p < *q) {
 						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT,
 								relation, id + 1, next);
 					}
@@ -1486,31 +1568,68 @@ static RTN walk_index(TDBB tdbb,
 					}
 				}
 
-				/* check the left and right sibling pointers against the parent pointers */
+				// Only check record-number if this isn't the first page in 
+				// the level and it isn't a MARKER.
+				if (useAllRecordNumbers && down_page->btr_left_sibling &&
+					!(BTreeNode::isEndBucket(&downNode, downLeafPage) ||
+					  BTreeNode::isEndLevel(&downNode, downLeafPage))) 
+				{
+					// Check record number if key is equal with node on
+					// pointer page. In that case record number on page 
+					// down should be same or larger.
+					if ((l == 0) && (key.key_length == downNode.length) &&
+						(downNode.recordNumber < down_record_number))
+					{
+						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT,
+								relation, id + 1, next);							
+					}
+				}
 
-				if (previous_number != down_page->btr_left_sibling)
+				// check the left and right sibling pointers against the parent pointers
+				if (previous_number != down_page->btr_left_sibling) {
 					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
 							id + 1, next);
-				next_number = get_long((NEXT_NODE(node))->btn_number);
-				if (next_number >= 0 && next_number != down_page->btr_sibling)
+				}
+
+				BTreeNode::readNode(&downNode, pointer, flags, leafPage);
+				next_number = downNode.pageNumber;
+
+				if (!(BTreeNode::isEndBucket(&downNode, leafPage) ||
+					  BTreeNode::isEndLevel(&downNode, leafPage)) && 
+					(next_number != down_page->btr_sibling)) 
+				{
 					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
 							id + 1, next);
-				if (next_number == END_LEVEL && down_page->btr_sibling)
+				}
+
+				if (BTreeNode::isEndLevel(&downNode, leafPage) && 
+					down_page->btr_sibling) 
+				{
 					corrupt(tdbb, control, VAL_INDEX_ORPHAN_CHILD, relation,
 							id + 1, next);
+				}
 				previous_number = down_number;
 
 				CCH_RELEASE(tdbb, &down_window);
 			}
 		}
 
-		if (node != end || page->btr_length > dbb->dbb_page_size)
+		if (pointer != endPointer || page->btr_length > dbb->dbb_page_size) {
 			corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation, id + 1,
 					next);
+		}
 
-		if (next == down)
-			down =
-				(page->btr_level) ? get_long(page->btr_nodes[0].btn_number) : 0;
+		if (next == down) {
+			if (page->btr_level) {
+				IndexNode newPageNode;
+				BTreeNode::readNode(&newPageNode, 
+					BTreeNode::getPointerFirstNode(page), flags, false);
+				down = newPageNode.pageNumber;
+			} 
+			else {
+				down = 0;
+			}
+		}
 
 		if (!(next = page->btr_sibling)) {
 			next = down;
@@ -1521,9 +1640,8 @@ static RTN walk_index(TDBB tdbb,
 		CCH_RELEASE(tdbb, &window);
 	}
 
-/* If the index & relation contain different sets of records we
-   have a corrupt index */
-
+	// If the index & relation contain different sets of records we
+	// have a corrupt index
 	if (control && (control->vdr_flags & vdr_records)) {
 		THREAD_EXIT;
 		next_number = -1;

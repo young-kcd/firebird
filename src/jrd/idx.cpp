@@ -183,7 +183,6 @@ void IDX_create_index(
  *	Create and populate index.
  *
  **************************************/
-	DBB dbb;
 	ATT attachment;
 	USHORT key_length, l;
 	RPB primary, secondary;
@@ -201,7 +200,7 @@ void IDX_create_index(
 	struct ifl ifl_data;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	if (relation->rel_file)
 		ERR_post(isc_no_meta_update, isc_arg_gds, isc_extfile_uns_op,
@@ -219,12 +218,19 @@ void IDX_create_index(
 	primary.rpb_window.win_flags = secondary.rpb_window.win_flags = 0;
 
 	key_length = ROUNDUP(BTR_key_length(relation, idx), sizeof(SLONG));
-	if (key_length >= MAX_KEY)
+
+	USHORT max_key_size = MAX_KEY_LIMIT;
+	if (dbb->dbb_ods_version < ODS_VERSION11) {
+		max_key_size = MAX_KEY_PRE_ODS11;
+	}
+	if (key_length >= max_key_size) {
 		ERR_post(isc_no_meta_update,
 				 isc_arg_gds,
 				 isc_keytoobig,
 				 isc_arg_string,
 				 ERR_cstring(reinterpret_cast < char *>(index_name)), 0);
+	}
+
 	stack = NULL;
 	pad = (idx->idx_flags & idx_descending) ? -1 : 0;
 
@@ -389,11 +395,11 @@ void IDX_create_index(
 			l = key.key_length;
 			q = key.key_data;
 
-			fb_assert(l > 0);
-
-			do
-				*p++ = *q++;
-			while (--l);
+			if (l > 0) {
+				do
+					*p++ = *q++;
+				while (--l);
+			}
 			if ( (l = key_length - key.key_length) )
 				do
 					*p++ = pad;

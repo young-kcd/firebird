@@ -193,26 +193,57 @@ typedef struct btn
 
 #define BTN_SIZE	6
 
-/* B-tree page ("bucket") */
-
+// B-tree page ("bucket")
 typedef struct btr {
 	struct pag btr_header;
-	SLONG btr_sibling;			/* right sibling page */
-	SLONG btr_left_sibling;		/* left sibling page */
-	SLONG btr_prefix_total;		/* sum of all prefixes on page */
-	USHORT btr_relation;		/* relation id for consistency */
-	USHORT btr_length;			/* length of data in bucket */
-	UCHAR btr_id;				/* index id for consistency */
-	UCHAR btr_level;			/* index level (0 = leaf) */
+	SLONG btr_sibling;			// right sibling page
+	SLONG btr_left_sibling;		// left sibling page
+	SLONG btr_prefix_total;		// sum of all prefixes on page
+	USHORT btr_relation;		// relation id for consistency
+	USHORT btr_length;			// length of data in bucket
+	UCHAR btr_id;				// index id for consistency
+	UCHAR btr_level;			// index level (0 = leaf)
 	struct btn btr_nodes[1];
 } *BTR;
 
-#define btr_dont_gc		1		/* Don't garbage-collect this page */
-#define btr_not_propogated	2	/* page is not propogated upward */
-#define btr_descending  	8	/* Page/bucket is part of a descending index */
+// Firebird B-tree nodes
+#define BTN_LEAF_SIZE	6
+#define BTN_PAGE_SIZE	10
 
-#define MAX_NODES	((dbb->dbb_page_size - OFFSETA (BTR, btr_nodes)) / sizeof (struct btn))
+struct IndexNode
+{
+	UCHAR* nodePointer;	// pointer to where this node can be read from the page
+	USHORT prefix;		// size of compressed prefix
+	USHORT length;		// length of data in node
+	SLONG pageNumber;	// page number
+	UCHAR* data;		// Data can be read from here
+	SLONG recordNumber;	// record number
+};
 
+struct IndexJumpNode
+{
+	UCHAR* nodePointer;	// pointer to where this node can be read from the page
+	USHORT prefix;		// length of prefix against previous jump node
+	USHORT length;		// length of data in jump node (together with prefix this is prefix for pointing node)
+	USHORT offset;		// offset to node in page  
+	UCHAR* data;		// Data can be read from here
+};
+
+struct IndexJumpInfo {
+	USHORT firstNodeOffset;		// offset to node in page
+	USHORT jumpAreaSize;		// size area before a new jumpnode is made
+	UCHAR  jumpers;				// nr of jump-nodes in page, with a maximum of 255
+	USHORT keyLength;			// maximum length of key
+};
+
+#define btr_dont_gc				1	// Don't garbage-collect this page
+#define btr_not_propogated		2	// page is not propogated upward
+#define btr_descending  		8	// Page/bucket is part of a descending index
+#define btr_all_record_number	16	// Non-leaf-nodes will contain record number information
+#define btr_large_keys			32	// AB: 2003-index-structure enhancement
+#define btr_jump_info			64	// AB: 2003-index-structure enhancement
+
+#define BTR_FLAG_COPY_MASK (btr_descending | btr_all_record_number | btr_large_keys | btr_jump_info)
 
 /* Data Page */
 
@@ -273,9 +304,6 @@ typedef struct irtd {
 #define STUFF_COUNT	4
 #define END_LEVEL	-1
 #define END_BUCKET	-2
-
-
-
 
 /* Header page */
 
@@ -350,7 +378,7 @@ typedef struct sfd {
 	SLONG sfd_max_page;			/* Maximum page number */
 	UCHAR sfd_index;			/* Sequence of secondary file */
 	UCHAR sfd_file[1];			/* Given file name */
-} SFD;
+} SFD; 
 
 /* Page Inventory Page */
 

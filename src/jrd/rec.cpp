@@ -35,6 +35,7 @@
 #include "../wal/wal.h"
 #include "../jrd/rse.h"
 #include "../jrd/all_proto.h"
+#include "../jrd/btr_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/dpm_proto.h"
 #include "../jrd/err_proto.h"
@@ -367,8 +368,8 @@ static void apply_index(BTR page, JRND * record)
 	JRNB temp, *clump;
 	UCHAR *p, *q;
 	SLONG l;
-	SLONG delta;
-	BTN node, next;
+	//SLONG delta;
+	TDBB tdbb = GET_THREAD_DATA;
 
 	for (clump = NULL;
 		 (clump =
@@ -383,15 +384,18 @@ static void apply_index(BTR page, JRND * record)
 			 * add node and increment btr_length 
 			 */
 
-			delta = temp.jrnb_delta;
-			p = (UCHAR *) page + page->btr_length;
+			// AB: This isn't used anymore
+			BUGCHECK(274);	// msg 274 error in recovery! wrong b-tree page record
+
+			/*delta = temp.jrnb_delta;
+			p = (UCHAR*)page + page->btr_length;
 			q = p + delta;
 			if ( (l = page->btr_length - temp.jrnb_offset) )
 				do
 					*--q = *--p;
 				while (--l);
 
-			/* move in node , then BTN */
+			// move in node , then BTN
 
 			p = (UCHAR *) page + temp.jrnb_offset;
 			q = clump->jrnb_data;
@@ -401,15 +405,15 @@ static void apply_index(BTR page, JRND * record)
 
 			page->btr_length += delta;
 			page->btr_prefix_total = temp.jrnb_prefix_total;
+			*/
 
 			break;
 
 		case JRNP_BTREE_SEGMENT:
 
-			/* apply change directly */
-
-			p = (UCHAR *) page;
-			q = (UCHAR *) clump->jrnb_data;
+			// apply change directly
+			p = (UCHAR*) page;
+			q = (UCHAR*) clump->jrnb_data;
 
 			if ( (l = temp.jrnb_length) )
 				MOVE_FAST(q, p, l);
@@ -417,48 +421,24 @@ static void apply_index(BTR page, JRND * record)
 
 		case JRNP_BTREE_DELETE:
 
-			/* delete a node entry */
+			// AB: This isn't used anymore
+			BUGCHECK(274);	// msg 274 error in recovery! wrong b-tree page record
 
-			node = (BTN) ((UCHAR *) page + temp.jrnb_offset);
-			next = (BTN) (node->btn_data + node->btn_length);
-			QUAD_MOVE(next->btn_number, node->btn_number);
-			p = node->btn_data;
-			q = next->btn_data;
-			l = next->btn_length;
-			if (node->btn_prefix < next->btn_prefix) {
-				node->btn_length = next->btn_length + next->btn_prefix
-					- node->btn_prefix;
-				p += next->btn_prefix - node->btn_prefix;
-			}
-			else {
-				node->btn_length = l;
-				node->btn_prefix = next->btn_prefix;
-			}
-
-			if (l)
-				do
-					*p++ = *q++;
-				while (--l);
-
-			/* Compute length of rest of bucket and move it down. */
-
-			if ( (l = page->btr_length - (q - (UCHAR *) page)) )
-				do
-					*p++ = *q++;
-				while (--l);
-
-			page->btr_length = p - (UCHAR *) page;
+			/*
+			// delete a node entry 
+			delta = BTR_delete_node(tdbb, page, temp.jrnb_offset);
 			page->btr_prefix_total = temp.jrnb_prefix_total;
 
-			/* Error Check */
-
-			if ((node->btn_prefix != temp.jrnb_delta) ||
-				(page->btr_length != temp.jrnb_length)) BUGCHECK(274);	/* msg 274 error in recovery! wrong b-tree page record */
-
-			break;
+			// Error Check
+			if ((delta != temp.jrnb_delta) ||
+				(page->btr_length != temp.jrnb_length)) 
+			{
+				BUGCHECK(274);	// msg 274 error in recovery! wrong b-tree page record
+			}
+			break;*/
 
 		default:
-			BUGCHECK(274);		/* msg 274 error in recovery! wrong b-tree page record */
+			BUGCHECK(274);	// msg 274 error in recovery! wrong b-tree page record
 		}
 	}
 }

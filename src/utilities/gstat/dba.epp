@@ -41,6 +41,7 @@
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/ods.h"
+#include "../jrd/btn.h"
 #include "../jrd/license.h"
 #include "../jrd/msg_encode.h"
 #include "../jrd/gdsassert.h"
@@ -142,7 +143,6 @@ static PAG db_read(SLONG);
 #ifdef SUPERSERVER
 static void db_close(int);
 #endif
-static bool key_equality(SSHORT, SCHAR *, BTN);
 static void move(SCHAR *, SCHAR *, SSHORT);
 static void print_distribution(SCHAR *, SLONG *);
 static void truncate_name(SCHAR *);
@@ -1141,82 +1141,113 @@ static void analyze_index( DBA_REL relation, DBA_IDX index)
  * Functional description
  *
  **************************************/
-	BTR bucket;
-	IRT index_root;
-	BTN node;
-	SSHORT space, key_length, l, n;
-	bool dup;
-	UCHAR key[256], *p, *q;
-	SLONG number, page, duplicates;
-	TDBA tddba;
+	TDBA tddba = GET_THREAD_DATA;
 
-	tddba = GET_THREAD_DATA;
+	IRT index_root = (IRT) db_read(relation->rel_index_root);
 
-	index_root = (IRT) db_read(relation->rel_index_root);
-
+	SLONG page;
 	if (index_root->irt_count <= index->idx_id ||
-		!(page = index_root->irt_rpt[index->idx_id].irt_root))
+		!(page = index_root->irt_rpt[index->idx_id].irt_root)) 
+	{
 		return;
-
-	bucket = (BTR) db_read(page);
-	index->idx_depth = bucket->btr_level + 1;
-
-	while (bucket->btr_level) {
-		move((SCHAR*) bucket->btr_nodes[0].btn_number, (SCHAR*) &page, sizeof(page));
-		bucket = (BTR) db_read(page);
 	}
 
-	duplicates = 0;
-	key_length = 0;
+	BTR bucket = (BTR) db_read(page);
+	index->idx_depth = bucket->btr_level + 1;
 
-	for (;;) {
+	UCHAR *pointer;
+	IndexNode node;
+	while (bucket->btr_level) 
+	{
+		pointer = BTreeNode::getPointerFirstNode(bucket);
+		BTreeNode::readNode(&node, pointer, bucket->btr_header.pag_flags, false);
+		bucket = (BTR) db_read(node.pageNumber);
+	}
+
+	bool dup;
+	bool firstLeafNode = true;
+	SLONG number;
+	SLONG duplicates = 0;
+	// AB: In fact length for KEY should be MAX_KEY (1/4 of used page-size)
+	// This value should be kept equal with size declared in btr.h
+	//UCHAR key[4096];
+	UCHAR* key = (UCHAR*) ALLOC(tddba->page_size / 4);
+	UCHAR* p;
+	UCHAR* q;
+	UCHAR* firstNode;
+	USHORT l, space, n, header;
+	USHORT key_length = 0;
+	while (true)
+	{
 		++index->idx_leaf_buckets;
-		for (node = bucket->btr_nodes;;
-			 node = (BTN) (node->btn_data + node->btn_length)) {
-			move((SCHAR*) node->btn_number, (SCHAR*) &number, sizeof(number));
+		pointer = firstNode = BTreeNode::getPointerFirstNode(bucket);
+		while (true) 
+		{
+			pointer = BTreeNode::readNode(&node, pointer, 
+				bucket->btr_header.pag_flags, true);
 
-			if (number == END_LEVEL || number == END_BUCKET)
+			if (BTreeNode::isEndBucket(&node, true) || 
+				BTreeNode::isEndLevel(&node, true)) 
+			{
 				break;
+			}
+
 			++index->idx_nodes;
-			index->idx_data_length += node->btn_length;
-			l = node->btn_length + node->btn_prefix;
-			if (node == bucket->btr_nodes)
-				dup = key_equality(key_length, (SCHAR*) key, node);
-			else
-				dup = !node->btn_length && l == key_length;
+			index->idx_data_length += node.length;
+			l = node.length + node.prefix;
+			if (node.nodePointer == firstNode) {
+				dup = BTreeNode::keyEquality(key_length, key, &node);
+			}
+			else {
+				dup = (!node.length) && (l == key_length);
+			}
+			if (firstLeafNode) {
+				dup = false;
+				firstLeafNode = false;
+			}
 			if (dup) {
 				++index->idx_total_duplicates;
 				++duplicates;
 			}
 			else {
-				if (duplicates > index->idx_max_duplicates)
+				if (duplicates > index->idx_max_duplicates) {
 					index->idx_max_duplicates = duplicates;
+				}
 				duplicates = 0;
 			}
+
 			key_length = l;
-			if (l = node->btn_length) {
-				p = key + node->btn_prefix;
-				q = node->btn_data;
-				do
+			l = node.length;
+			if (l) {
+				p = key + node.prefix;
+				q = node.data;
+				do {
 					*p++ = *q++;
-				while (--l);
+				} while (--l);
 			}
 		}
-		if (duplicates > index->idx_max_duplicates)
+
+		if (duplicates > index->idx_max_duplicates) {
 			index->idx_max_duplicates = duplicates;
-		space = bucket->btr_length - OFFSETA(BTR, btr_nodes);
-		n = (space * BUCKETS) / (tddba->page_size - OFFSETA(BTR, btr_nodes));
-		if (n == BUCKETS)
+		}
+
+		header = (USHORT)(firstNode - (UCHAR*) bucket);
+		space = bucket->btr_length - header;
+		n = (space * BUCKETS) / (tddba->page_size - header);
+		if (n == BUCKETS) {
 			--n;
+		}
 		++index->idx_fill_distribution[n];
-		if (number == END_LEVEL)
+
+		if (BTreeNode::isEndLevel(&node, true)) {
 			break;
+		}
 		number = page;
 		page = bucket->btr_sibling;
 		bucket = (BTR) db_read(page);
 		if (bucket->btr_header.pag_type != pag_index) {
 			dba_print(19, (TEXT *) page, (TEXT *) number, 0, 0, 0);
-			// mag 19: "    Expected b-tree bucket on page %ld from %ld" 
+			// mag 19: "    Expected b-tree bucket on page %ld from %ld"
 			break;
 		}
 	}
@@ -1732,39 +1763,6 @@ static void dba_print(
 					arg1, arg2, arg3, arg4, arg5);
 	TRANSLATE_CP(buffer);
 	FPRINTF(tddba->sw_outfile, "%s\n", buffer);
-}
-
-
-static bool key_equality( SSHORT length, SCHAR * key, BTN node)
-{
-/**************************************
- *
- *	k e y _ e q u a l i t y
- *
- **************************************
- *
- * Functional description
- *	Check a B-tree node against a key for equality.
- *
- **************************************/
-	SSHORT l;
-	SCHAR *p;
-
-	if (length != node->btn_length + node->btn_prefix)
-		return false;
-
-	if (!(l = node->btn_length))
-		return true;
-
-	p = (SCHAR *) node->btn_data;
-	key += node->btn_prefix;
-
-	do
-		if (*p++ != *key++)
-			return false;
-	while (--l);
-
-	return true;
 }
 
 

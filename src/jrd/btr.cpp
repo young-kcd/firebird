@@ -28,11 +28,13 @@
 #include <string.h>
 #include <stdlib.h>
 #include "memory_routines.h"
+#include "../common/classes/vector.h"
 #include "../jrd/ib_stdio.h"
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/val.h"
 #include "../jrd/btr.h"
+#include "../jrd/btn.h"
 #include "../jrd/req.h"
 #include "../jrd/tra.h"
 #include "../jrd/intl.h"
@@ -68,7 +70,7 @@
 /*********************************************
       eliminate this conversion - kk
 #ifdef VMS
-double	MTH$CVT_G_D();
+extern double	MTH$CVT_G_D();
 #endif
 **********************************************/
 
@@ -79,15 +81,22 @@ inline void MOVE_BYTE(UCHAR*& x_from, UCHAR*& x_to)
 	*x_to++ = *x_from++;
 }
 
-#define OVERSIZE	(MAX_PAGE_SIZE + BTN_SIZE + MAX_KEY + sizeof (SLONG) - 1) / sizeof (SLONG)
+#define OVERSIZE	(MAX_PAGE_SIZE + BTN_PAGE_SIZE + MAX_KEY + sizeof (SLONG) - 1) / sizeof (SLONG)
 
-typedef union {
-	SLONG n;
-	SCHAR c[4];
-} LONGCHAR;
+// END_LEVEL (-1) is choosen here as a unknown/none value, because it's 
+// already reserved as END_LEVEL marker for page number and record number.
+#define NO_VALUE END_LEVEL
+// A split page will never have the number 0, because that's the value
+// of the main page.
+#define NO_SPLIT 0
 
-#define GARBAGE_COLLECTION_THRESHOLD	(dbb->dbb_page_size / 4)
-
+// Thresholds for determing of a page should be garbage collected
+// Garbage collect if page size is below GARBAGE_COLLECTION_THRESHOLD
+#define GARBAGE_COLLECTION_BELOW_THRESHOLD	(dbb->dbb_page_size / 4)
+// Garbage collect only if new merged page will 
+// be lower as GARBAGE_COLLECTION_NEW_PAGE_MAX_THRESHOLD
+// 256 is the old maximum possible key_length.
+#define GARBAGE_COLLECTION_NEW_PAGE_MAX_THRESHOLD	((dbb->dbb_page_size - 256))
 
 typedef struct {
 	double d_part;
@@ -151,31 +160,30 @@ typedef enum contents {
 	contents_above_threshold
 } CONTENTS;
 
-static SLONG add_node(TDBB, WIN *, IIB *, KEY *, SLONG *, SLONG *);
+static SLONG add_node(TDBB, WIN *, IIB *, KEY *, SLONG *, SLONG *, SLONG *);
 static void complement_key(KEY *);
 static void compress(TDBB, DSC *, KEY *, USHORT, bool, bool, USHORT);
 static USHORT compress_root(TDBB, IRT);
-static USHORT compute_prefix(KEY *, UCHAR *, USHORT);
 static void copy_key(KEY *, KEY *);
-static CONTENTS delete_node(TDBB, WIN *, BTN);
+static CONTENTS delete_node(TDBB, WIN *, UCHAR *);
 static void delete_tree(TDBB, USHORT, USHORT, SLONG, SLONG);
 static DSC *eval(TDBB, JRD_NOD, DSC *, bool *);
 static SLONG fast_load(TDBB, JRD_REL, IDX *, USHORT, SCB, SelectivityList&);
 static IRT fetch_root(TDBB, WIN *, JRD_REL);
-static SLONG find_node(BTR, KEY *, bool);
+static UCHAR *find_node_start_point(BTR, KEY *, UCHAR *, USHORT *, bool, bool, bool = false, SLONG = NO_VALUE);
+static UCHAR *find_area_start_point(BTR, KEY *, UCHAR *, USHORT *, bool, bool, SLONG = NO_VALUE);
+static SLONG find_page(BTR, KEY *, UCHAR, SLONG = NO_VALUE);
 static CONTENTS garbage_collect(TDBB, WIN *, SLONG);
-static SLONG insert_node(TDBB, WIN *, IIB *, KEY *, SLONG *, SLONG *);
+static void generate_jump_nodes(TDBB, BTR, jumpNodeList*, USHORT, USHORT*, USHORT*, USHORT*);
+static SLONG insert_node(TDBB, WIN *, IIB *, KEY *, SLONG *, SLONG *, SLONG *);
 static void journal_btree_segment(TDBB, WIN *, BTR);
-static bool key_equality(KEY *, BTN);
 static INT64_KEY make_int64_key(SINT64, SSHORT);
 #ifdef DEBUG_INDEXKEY
 static void print_int64_key(SINT64, SSHORT, INT64_KEY);
 #endif
-static void quad_put(SLONG, UCHAR *);
-static void quad_move(UCHAR*, UCHAR*);
 static CONTENTS remove_node(TDBB, IIB *, WIN *);
 static CONTENTS remove_leaf_node(TDBB, IIB *, WIN *);
-static bool scan(TDBB, BTN, SBM *, USHORT, KEY *, USHORT);
+static bool scan(TDBB, UCHAR *, SBM *, USHORT, KEY *, USHORT, SCHAR);
 
 
 USHORT BTR_all(TDBB    tdbb,
@@ -230,7 +238,7 @@ USHORT BTR_all(TDBB    tdbb,
 		}
 	}
 	*csb_idx = *start_buffer;
-	*idx_size = *idx_size - ((UCHAR *) buffer - (UCHAR *) * start_buffer);
+	*idx_size = *idx_size - ((UCHAR*)buffer - (UCHAR*) *start_buffer);
 	*start_buffer = buffer;
 
 	CCH_RELEASE(tdbb, &window);
@@ -407,20 +415,20 @@ void BTR_evaluate(TDBB tdbb, IRB retrieval, SBM * bitmap)
  **************************************/
 	SET_TDBB(tdbb);
 	SBM_reset(bitmap);
+
 	IDX idx;
 	WIN window;
 	window.win_flags = 0;
-
 	KEY lower, upper;
-	USHORT prefix;
 	BTR page = BTR_find_page(tdbb, retrieval, &window, &idx, &lower, &upper, false);
 
 	// If there is a starting descriptor, search down index to starting position.
 	// This may involve sibling buckets if splits are in progress.  If there 
 	// isn't a starting descriptor, walk down the left side of the index.
-	BTN node;
+	USHORT prefix;
+	UCHAR *pointer;
 	if (retrieval->irb_lower_count) {
-		while (!(node = BTR_find_leaf(page, &lower, 0, &prefix,
+		while (!(pointer = find_node_start_point(page, &lower, 0, &prefix,
 					idx.idx_flags & idx_descending, true)))
 		{
 			page =(BTR) CCH_HANDOFF(tdbb, &window, page->btr_sibling,
@@ -429,45 +437,49 @@ void BTR_evaluate(TDBB tdbb, IRB retrieval, SBM * bitmap)
 
 		// Compute the number of matching characters in lower and upper bounds
 		if (retrieval->irb_upper_count) {
-			prefix = compute_prefix(&upper, lower.key_data, lower.key_length);
+			prefix = BTreeNode::computePrefix(upper.key_data, upper.key_length,
+				lower.key_data, lower.key_length);
 		}
 	}
 	else {
-		node = page->btr_nodes;
+		pointer = BTreeNode::getPointerFirstNode(page);
 		prefix = 0;
 	}
 
+	SCHAR flags = page->btr_header.pag_flags;
 	// if there is an upper bound, scan the index pages looking for it
 	if (retrieval->irb_upper_count) {
-		while (scan(tdbb, node, bitmap, prefix, &upper,
+		while (scan(tdbb, pointer, bitmap, prefix, &upper,
 				(USHORT) (retrieval->irb_generic &
-				(irb_partial | irb_descending | irb_starting | irb_equality))))
+				(irb_partial | irb_descending | irb_starting | irb_equality)),
+				flags))
 		{
 			page = (BTR) CCH_HANDOFF(tdbb, &window, page->btr_sibling,
 				LCK_read, pag_index);
-			node = page->btr_nodes;
+			pointer = BTreeNode::getPointerFirstNode(page);
 			prefix = 0;
 		}
 	}
 	else {
 		// if there isn't an upper bound, just walk the index to the end of the level
-		SLONG number;
+		IndexNode node;
+		pointer = BTreeNode::readNode(&node, pointer, flags, true);
 		while (true) {
-			number = get_long(node->btn_number);
 
-			if (number == END_LEVEL) {
+			if (BTreeNode::isEndLevel(&node, true)) {
 				break;
 			}
 
-			if (number != END_BUCKET) {
-				SBM_set(tdbb, bitmap, number);
-				node = NEXT_NODE(node);
+			if (!BTreeNode::isEndBucket(&node, true)) {
+				SBM_set(tdbb, bitmap, node.recordNumber);
+				pointer = BTreeNode::readNode(&node, pointer, flags, true);
 				continue;
 			}
 
 			page = (BTR) CCH_HANDOFF(tdbb, &window, page->btr_sibling,
 				LCK_read, pag_index);
-			node = page->btr_nodes;
+			pointer = BTreeNode::getPointerFirstNode(page);
+			pointer = BTreeNode::readNode(&node, pointer, flags, true);
 		}
 	}
 
@@ -475,10 +487,8 @@ void BTR_evaluate(TDBB tdbb, IRB retrieval, SBM * bitmap)
 }
 
 
-BTN BTR_find_leaf(BTR bucket,
-				  KEY * key,
-				  UCHAR * value,
-				  USHORT * return_value, int descending, bool retrieval)
+UCHAR *BTR_find_leaf(BTR bucket, KEY *key, UCHAR *value,
+					 USHORT *return_value, int descending, bool retrieval)
 {
 /**************************************
  *
@@ -492,96 +502,7 @@ BTN BTR_find_leaf(BTR bucket,
  *	A flag indicates the index is descending.
  *
  **************************************/
-	UCHAR *key_end, *node_end;
-	UCHAR *p, *q, *r;
-	USHORT l;
-	SLONG number;
-
-	BTN node = bucket->btr_nodes;
-	USHORT prefix = 0;
-	p = key->key_data;
-	key_end = p + key->key_length;
-
-	// If this is an non-leaf bucket of a descending index, the dummy node on the
-	// front will trip us up.  NOTE: This code may be apocryphal.  I don't see 
-	// anywhere that a dummy node is stored for a descending index.  - deej
-	if (bucket->btr_level && descending && !node->btn_length) {
-		node = NEXT_NODE(node);
-	}
-
-	while (true) {
-
-		// Pick up data from node
-		if (value && (l = node->btn_length)) {
-			r = value + node->btn_prefix;
-			q = node->btn_data;
-			do {
-				*r++ = *q++;
-			}
-			while (--l);
-		}
-
-		// If the page/record number is -1, the node is the last in the level
-		// and, by definition, is the insertion point.  Otherwise, if the
-		// prefix of the current node is less than the running prefix, the 
-		// node must have a value greater than the key, so it is the insertion
-		// point.
-		number = get_long(node->btn_number);
-
-		if (number == END_LEVEL || node->btn_prefix < prefix) {
-			if (return_value) {
-				*return_value = prefix;
-			}
-			return node;
-		}
-
-		// If the node prefix is greater than current prefix , it must be less 
-		// than the key, so we can skip it.  If it has zero length, then
-		// it is a duplicate, and can also be skipped.
-		if (node->btn_prefix == prefix) {
-			q = node->btn_data;
-			node_end = q + node->btn_length;
-			if (descending) {
-				while (true) {
-					if (q == node_end || retrieval && p == key_end) {
-						goto done;
-					}
-					else if (p == key_end || *p > *q) {
-						break;
-					}
-					else if (*p++ < *q++) {
-						goto done;
-					}
-				}
-			}
-			else if (node->btn_length > 0) {
-				while (true) {
-					if (p == key_end) {
-						goto done;
-					}
-					else if (q == node_end || *p > *q) {
-						break;
-					}
-					else if (*p++ < *q++) {
-						goto done;
-					}
-				}
-			}
-			prefix = (p - key->key_data);
-		}
-
-		// this part of the code moved up for IGNORE_NULL...
-		if (number == END_BUCKET) {
-			return NULL;
-		}
-		node = NEXT_NODE(node);
-	}
-
-  done:
-	if (return_value) {
-		*return_value = prefix;
-	}
-	return node;
+	return find_node_start_point(bucket, key, value, return_value, (descending > 0), retrieval);
 }
 
 
@@ -643,12 +564,11 @@ BTR BTR_find_page(TDBB tdbb,
 	// side if we are going backwards).
 	SLONG number;
 	if ((!backwards && retrieval->irb_lower_count) ||
-		(backwards && retrieval->irb_upper_count)) 
+		(backwards && retrieval->irb_upper_count))
 	{
 		while (page->btr_level > 0) {
 			while (true) {
-				number = find_node(page, backwards ? upper : lower,
-					(idx->idx_flags & idx_descending));
+				number = find_page(page, backwards ? upper : lower, idx->idx_flags);
 				if (number != END_BUCKET) {
 					page = (BTR) CCH_HANDOFF(tdbb, window, number, 
 						LCK_read, pag_index);
@@ -661,17 +581,21 @@ BTR BTR_find_page(TDBB tdbb,
 		}
 	}
 	else {
-		BTN node;
+		IndexNode node;
+		UCHAR *pointer;
 		while (page->btr_level > 0) {
 #ifdef SCROLLABLE_CURSORS
-			if (backwards)
-				node = BTR_last_node(page, NAV_expand_index(window, 0), 0);
+			if (backwards) {
+				pointer = BTR_last_node(page, NAV_expand_index(window, 0), 0);
+			{
 			else
 #endif
-				node = page->btr_nodes;
+			{
+				pointer = BTreeNode::getPointerFirstNode(page);
+			}
 
-			number = get_long(node->btn_number);
-			page = (BTR) CCH_HANDOFF(tdbb, window, number, 
+			BTreeNode::readNode(&node, pointer, page->btr_header.pag_flags, false);
+			page = (BTR) CCH_HANDOFF(tdbb, window, node.pageNumber, 
 				LCK_read, pag_index);
 
 			// make sure that we are actually on the last page on this
@@ -703,9 +627,11 @@ void BTR_insert(TDBB tdbb, WIN * root_window, IIB * insertion)
  *
  **************************************/
 
+	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
 	IDX *idx;
 	WIN window;
+
 	idx = insertion->iib_descriptor;
 	window.win_page = idx->idx_root;
 	window.win_flags = 0;
@@ -718,8 +644,10 @@ void BTR_insert(TDBB tdbb, WIN * root_window, IIB * insertion)
 	CCH_RELEASE(tdbb, root_window);
 
 	KEY key;
-	SLONG split_page = add_node(tdbb, &window, insertion, &key, NULL, NULL);
-	if (split_page == 0) {
+	SLONG recordNumber = 0;
+	SLONG split_page = add_node(tdbb, &window, insertion, &key, 
+		&recordNumber, NULL, NULL);
+	if (split_page == NO_SPLIT) {
 		return;
 	}
 
@@ -750,47 +678,64 @@ void BTR_insert(TDBB tdbb, WIN * root_window, IIB * insertion)
 	CCH_RELEASE(tdbb, &new_window);
 	CCH_RELEASE(tdbb, &window);
 
-	// Allocate and format new bucket
+	if ((bucket->btr_level + 1) > MAX_LEVELS) {
+		// Maximum level depth reached.
+		// AB: !! NEW ERROR MESSAGE ? !!
+		CORRUPT(204);	// msg 204 index inconsistent
+	}
+
+	// Allocate and format new bucket, this will always be a non-leaf page
+	SCHAR flags = bucket->btr_header.pag_flags;
 	new_bucket = (BTR) DPM_allocate(tdbb, &new_window);
 	CCH_precedence(tdbb, &new_window, window.win_page);
 	new_bucket->btr_header.pag_type = pag_index;
 	new_bucket->btr_relation = bucket->btr_relation;
 	new_bucket->btr_level = bucket->btr_level + 1;
 	new_bucket->btr_id = bucket->btr_id;
-	new_bucket->btr_header.pag_flags |=
-		(bucket->btr_header.pag_flags & btr_descending);
+	new_bucket->btr_header.pag_flags |= (flags & BTR_FLAG_COPY_MASK);
+
+	UCHAR *pointer;
+	bool useJumpInfo = (bucket->btr_header.pag_flags & btr_jump_info);
+	if (useJumpInfo) {
+		IndexJumpInfo jumpInfo;
+		// First get jumpinfo from the level deeper, because we need 
+		// to know jumpAreaSize and keyLength.
+		BTreeNode::getPointerFirstNode(bucket, &jumpInfo);
+		// Write uncomplete jumpinfo, so we can set the firstNodeOffset
+		// to the correct position.
+		jumpInfo.jumpers = 0;
+		pointer = BTreeNode::writeJumpInfo(new_bucket, &jumpInfo);
+		// Finally write correct jumpinfo.
+		jumpInfo.firstNodeOffset = (pointer - (UCHAR*)new_bucket);
+		pointer = BTreeNode::writeJumpInfo(new_bucket, &jumpInfo);
+	}
+	else {
+		pointer = BTreeNode::getPointerFirstNode(new_bucket);
+	}
 
 	// Set up first node as degenerate, but pointing to first bucket on
 	// next level.
-	BTN node = new_bucket->btr_nodes;
-	quad_put(window.win_page, node->btn_number);
-	node->btn_prefix = 0;
-	node->btn_length = 0;
-	node = NEXT_NODE(node);
+	IndexNode node;
+	node.pageNumber = window.win_page;
+	node.recordNumber = 0; // First record-number of level must be zero
+	node.prefix = 0;
+	node.length = 0;
+	pointer = BTreeNode::writeNode(&node, pointer, flags, false);
 
 	// Move in the split node
-	UCHAR *p, *q;
-	USHORT l;
-	quad_put(split_page, node->btn_number);
-	node->btn_prefix = 0;
-	fb_assert(key.key_length <= MAX_UCHAR);
-	l = node->btn_length = (UCHAR) key.key_length;
-	q = node->btn_data;
-	p = key.key_data;
-	if (l) {
-		do {
-			MOVE_BYTE(p, q);
-		} while (--l);
-	}
-	node = NEXT_NODE(node);
+	node.pageNumber = split_page;
+	node.recordNumber = recordNumber;
+	node.prefix = 0;
+	node.length = key.key_length;
+	node.data = key.key_data;
+	pointer = BTreeNode::writeNode(&node, pointer, flags, false);
 
 	// mark end of level
-	node->btn_prefix = 0;
-	node->btn_length = 0;
-	quad_put((SLONG) END_LEVEL, node->btn_number);
-	node = NEXT_NODE(node);
+	BTreeNode::setEndLevel(&node, false);
+	pointer = BTreeNode::writeNode(&node, pointer, flags, false);
 
-	new_bucket->btr_length = (UCHAR *) node - (UCHAR *) new_bucket;
+	// Calculate length of bucket
+	new_bucket->btr_length = pointer - (UCHAR*)new_bucket;
 
 	// update the root page to point to the new top-level page, 
 	// and make sure the new page has higher precedence so that 
@@ -807,11 +752,12 @@ void BTR_insert(TDBB tdbb, WIN * root_window, IIB * insertion)
 		journal.jrnrp_type = JRNP_ROOT_PAGE;
 		journal.jrnrp_id = idx->idx_id;
 		journal.jrnrp_page = new_window.win_page;
-		CCH_journal_record(tdbb, root_window, (UCHAR *) & journal,
+		CCH_journal_record(tdbb, root_window, (UCHAR*)&journal,
 						   JRNRP_SIZE, 0, 0);
 	}
 
 	CCH_RELEASE(tdbb, root_window);
+
 }
 
 
@@ -831,14 +777,20 @@ IDX_E BTR_key(TDBB tdbb, JRD_REL relation, REC record, IDX * idx, KEY * key, idx
  *
  **************************************/
 	KEY temp;
-	DSC desc, *desc_ptr;
+	DSC desc;
+	DSC* desc_ptr;
+	UCHAR* p;
+	UCHAR* q;
 	SSHORT stuff_count;
 	USHORT n, l;
-	UCHAR *p, *q;
 	IDX_E result;
-	idx::idx_repeat * tail;
-	bool missing;
+	idx::idx_repeat* tail;
+	bool isNull;
 	int missing_unique_segments = 0;
+
+	SET_TDBB(tdbb);
+	DBB dbb = tdbb->tdbb_database;
+	CHECK_DBB(dbb);
 
 	result = idx_e_ok;
 	tail = idx->idx_rpt;
@@ -860,7 +812,7 @@ IDX_E BTR_key(TDBB tdbb, JRD_REL relation, REC record, IDX * idx, KEY * key, idx
 					desc_ptr = &idx->idx_expression_desc;
 				}
 
-				missing = ((tdbb->tdbb_request->req_flags & req_null) == req_null);
+				isNull = ((tdbb->tdbb_request->req_flags & req_null) == req_null);
 				tdbb->tdbb_request = current_request;
 			}
 			else
@@ -871,14 +823,14 @@ IDX_E BTR_key(TDBB tdbb, JRD_REL relation, REC record, IDX * idx, KEY * key, idx
 				// the relation block is referenced. 
 				// Reference: Bug 10116, 10424 
 				//
-				missing = !EVL_field(relation, record, tail->idx_field, desc_ptr);
+				isNull = !EVL_field(relation, record, tail->idx_field, desc_ptr);
 			}
 
-			if (missing && (idx->idx_flags & idx_unique)) {
+			if (isNull && (idx->idx_flags & idx_unique)) {
 				missing_unique_segments++;
 			}
 
-			compress(tdbb, desc_ptr, key, tail->idx_itype, missing,
+			compress(tdbb, desc_ptr, key, tail->idx_itype, isNull,
 				(idx->idx_flags & idx_descending), (USHORT) FALSE);
 		}
 		else {
@@ -893,12 +845,12 @@ IDX_E BTR_key(TDBB tdbb, JRD_REL relation, REC record, IDX * idx, KEY * key, idx
 				// In order to "map a null to a default" value (in EVL_field()), 
 				// the relation block is referenced. 
 				// Reference: Bug 10116, 10424 
-				missing = !EVL_field(relation, record, tail->idx_field, desc_ptr);
-				if (missing && (idx->idx_flags & idx_unique)) {
+				isNull = !EVL_field(relation, record, tail->idx_field, desc_ptr);
+				if (isNull && (idx->idx_flags & idx_unique)) {
 					missing_unique_segments++;
 				}
 
-				compress(tdbb, desc_ptr, &temp, tail->idx_itype, missing,
+				compress(tdbb, desc_ptr, &temp, tail->idx_itype, isNull,
 					(idx->idx_flags & idx_descending), (USHORT) FALSE);
 
 				for (q = temp.key_data, l = temp.key_length; l;
@@ -914,7 +866,7 @@ IDX_E BTR_key(TDBB tdbb, JRD_REL relation, REC record, IDX * idx, KEY * key, idx
 			key->key_length = (p - key->key_data);
 		}
 
-		if (key->key_length >= MAX_KEY) {
+		if (key->key_length >= MAX_KEY_LIMIT) {
 			result = idx_e_keytoobig;
 		}
 
@@ -1046,7 +998,7 @@ USHORT BTR_key_length(JRD_REL relation, IDX * idx)
 
 
 #ifdef SCROLLABLE_CURSORS
-BTN BTR_last_node(BTR page, EXP expanded_page, BTX * expanded_node)
+UCHAR *BTR_last_node(BTR page, EXP expanded_page, BTX * expanded_node)
 {
 /**************************************
  *
@@ -1059,36 +1011,31 @@ BTN BTR_last_node(BTR page, EXP expanded_page, BTX * expanded_node)
  *	down the right side of an index tree.  
  *
  **************************************/
-	BTN node, prior;
-	SLONG number;
-	BTX enode;
 
-/* the last expanded node is always at the end of the page 
-   minus the size of a BTX, since there is always an extra
-   BTX node with zero-length tail at the end of the page */
+	// the last expanded node is always at the end of the page 
+	// minus the size of a BTX, since there is always an extra
+	// BTX node with zero-length tail at the end of the page
+	BTX enode = (BTX) ((UCHAR*)expanded_page + expanded_page->exp_length - BTX_SIZE);
 
-
-
-	enode =
-		(BTX) ((UCHAR *) expanded_page + expanded_page->exp_length -
-			   BTX_SIZE);
-	node = (BTN) ((UCHAR *) page + page->btr_length);
-
-/* starting at the end of the page, find the
-   first node that is not an end marker */
-
+	// starting at the end of the page, find the
+	// first node that is not an end marker
+	UCHAR *pointer = ((UCHAR*)page + page->btr_length);
+	SCHAR flags = page->btr_header.pag_flags;
+	IndexNode node;
 	while (true) {
-		node = BTR_previous_node(node, &enode);
-
-		number = get_long(node->btn_number);
-		if (number != END_BUCKET && number != END_LEVEL) {
-			if (expanded_node)
+		pointer = BTR_previousNode(&node, pointer, flags, &enode);
+		if (node.recordNumber != END_BUCKET && 
+			node.recordNumber != END_LEVEL) {
+			if (expanded_node) {
 				*expanded_node = enode;
-			return node;
+			}
+			return node.nodePointer;
 		}
 	}
 }
 #endif
+
+
 #ifdef SCROLLABLE_CURSORS
 BTR BTR_left_handoff(TDBB tdbb, WIN * window, BTR page, SSHORT lock_level)
 {
@@ -1105,43 +1052,39 @@ BTR BTR_left_handoff(TDBB tdbb, WIN * window, BTR page, SSHORT lock_level)
  *	off to the right could result in deadlock.)
  *
  **************************************/
-	SLONG original_page, sibling, left_sibling;
-	WIN fix_win;
-	BTR fix_page;
-	DBB dbb;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	original_page = window->win_page;
-	left_sibling = page->btr_left_sibling;
+	SLONG original_page = window->win_page;
+	SLONG left_sibling = page->btr_left_sibling;
 
 	CCH_RELEASE(tdbb, window);
 	window->win_page = left_sibling;
 	page = (BTR) CCH_FETCH(tdbb, window, lock_level, pag_index);
 
-	if ((sibling = page->btr_sibling) == original_page)
+	if ((sibling = page->btr_sibling) == original_page) {
 		return page;
+	}
 
-/* Since we are not handing off pages, a page could split before we get to it.
- * To detect this case, fetch the left sibling pointer and then handoff right
- * sibling pointers until we reach the page to the left of the page passed 
- * to us. 
- */
+	// Since we are not handing off pages, a page could split before we get to it.
+	// To detect this case, fetch the left sibling pointer and then handoff right
+	// sibling pointers until we reach the page to the left of the page passed 
+	// to us.
 
+	SLONG sibling;
 	while (sibling != original_page) {
-		page =
-			(BTR) CCH_HANDOFF(tdbb, window, page->btr_sibling,
-							  lock_level, pag_index);
+		page = (BTR) CCH_HANDOFF(tdbb, window, page->btr_sibling,
+			lock_level, pag_index);
 		sibling = page->btr_sibling;
 	}
+	WIN fix_win;
 	fix_win.win_page = original_page;
 	fix_win.win_flags = 0;
-	fix_page = (BTR) CCH_FETCH(tdbb, &fix_win, LCK_write, pag_index);
+	BTR fix_page = (BTR) CCH_FETCH(tdbb, &fix_win, LCK_write, pag_index);
 
-/* if someone else already fixed it, just return */
-
+	// if someone else already fixed it, just return
 	if (fix_page->btr_left_sibling == window->win_page) {
 		CCH_RELEASE(tdbb, &fix_win);
 		return page;
@@ -1150,8 +1093,9 @@ BTR BTR_left_handoff(TDBB tdbb, WIN * window, BTR page, SSHORT lock_level)
 	CCH_MARK(tdbb, &fix_win);
 	fix_page->btr_left_sibling = window->win_page;
 
-	if (dbb->dbb_journal)
+	if (dbb->dbb_journal) {
 		CCH_journal_page(tdbb, &fix_win);
+	}
 
 	CCH_RELEASE(tdbb, &fix_win);
 
@@ -1213,10 +1157,12 @@ void BTR_make_key(TDBB tdbb,
 	USHORT n, l;
 	UCHAR *p, *q;
 	KEY temp;
-	bool missing;
+	bool isNull;
 	idx::idx_repeat * tail;
 
 	SET_TDBB(tdbb);
+	DBB dbb = tdbb->tdbb_database;
+
 	fb_assert(count > 0);
 	fb_assert(idx != NULL);
 	fb_assert(exprs != NULL);
@@ -1227,8 +1173,8 @@ void BTR_make_key(TDBB tdbb,
 	// If the index is a single segment index, don't sweat the compound
 	// stuff.
 	if (idx->idx_count == 1) {
-		desc = eval(tdbb, *exprs, &temp_desc, &missing);
-		compress(tdbb, desc, key, tail->idx_itype, missing,
+		desc = eval(tdbb, *exprs, &temp_desc, &isNull);
+		compress(tdbb, desc, key, tail->idx_itype, isNull,
 			(idx->idx_flags & idx_descending), fuzzy);
 	}
 	else {
@@ -1240,8 +1186,8 @@ void BTR_make_key(TDBB tdbb,
 			for (; stuff_count; --stuff_count) {
 				*p++ = 0;
 			}
-			desc = eval(tdbb, *exprs++, &temp_desc, &missing);
-			compress(tdbb, desc, &temp, tail->idx_itype, missing,
+			desc = eval(tdbb, *exprs++, &temp_desc, &isNull);
+			compress(tdbb, desc, &temp, tail->idx_itype, isNull,
 				(idx->idx_flags & idx_descending),
 				(USHORT) ((n == count - 1) ? fuzzy : FALSE));
 			for (q = temp.key_data, l = temp.key_length; l;
@@ -1311,7 +1257,7 @@ bool BTR_next_index(TDBB tdbb,
 			if ((trans_state == tra_dead)
 				|| (trans_state == tra_committed)) 
 			{
-				/* clean up this left-over index */
+				// clean up this left-over index
 				root = (IRT) CCH_FETCH(tdbb, window, LCK_write, pag_root);
 				irt_desc = root->irt_rpt + id;
 				if (!irt_desc->irt_root &&
@@ -1341,11 +1287,12 @@ bool BTR_next_index(TDBB tdbb,
 }
 
 
-BTN BTR_next_node(BTN node, BTX * expanded_node)
+UCHAR *BTR_nextNode(IndexNode * node, UCHAR * pointer, 
+					SCHAR flags,  BTX * expanded_node)
 {
 /**************************************
  *
- *	B T R _ n e x t _ n o d e
+ *	B T R _ n e x t N o d e
  *
  **************************************
  *
@@ -1355,19 +1302,23 @@ BTN BTR_next_node(BTN node, BTX * expanded_node)
  *
  **************************************/
 
+	pointer = BTreeNode::readNode(node, pointer, flags, true);
+
 	if (*expanded_node) {
-		*expanded_node = NEXT_EXPANDED((*expanded_node), node);
+		*expanded_node = (BTX) ((UCHAR*) (*expanded_node)->btx_data + 
+			node->prefix + node->length);
 	}
 
-	return NEXT_NODE(node);
+	return pointer;
 }
 
 
-BTN BTR_previous_node(BTN node, BTX * expanded_node)
+UCHAR *BTR_previousNode(IndexNode * node, UCHAR * pointer,
+					SCHAR flags,  BTX * expanded_node)
 {
 /**************************************
  *
- *	B T R _ p r e v i o u s _ n o d e
+ *	B T R _ p r e v i o u s N o d e
  *
  **************************************
  *
@@ -1377,12 +1328,11 @@ BTN BTR_previous_node(BTN node, BTX * expanded_node)
  *
  **************************************/
 
-	node = (BTN) ((UCHAR *) node - (*expanded_node)->btx_btr_previous_length - BTN_SIZE);
+	pointer = (pointer - (*expanded_node)->btx_btr_previous_length);
 
-	*expanded_node = (BTX) ((UCHAR *) * expanded_node -
-		(*expanded_node)->btx_previous_length - BTX_SIZE);
+	*expanded_node = (BTX) ((UCHAR*) *expanded_node - (*expanded_node)->btx_previous_length);
 
-	return node;
+	return pointer;
 }
 
 
@@ -1399,6 +1349,7 @@ void BTR_remove(TDBB tdbb, WIN * root_window, IIB * insertion)
  *	If the node doesn't exist, don't get overly excited.
  *
  **************************************/
+
 	DBB dbb = tdbb->tdbb_database;
 	IDX *idx;
 	idx = insertion->iib_descriptor;
@@ -1422,7 +1373,6 @@ void BTR_remove(TDBB tdbb, WIN * root_window, IIB * insertion)
 	// do this only if the level is greater than 1 to prevent 
 	// excessive thrashing in the case where a small table is 
 	// constantly being loaded and deleted.
-
 	if ((result == contents_single) && (level > 1)) {
 		// we must first release the windows to obtain the root for write 
 		// without getting deadlocked
@@ -1435,10 +1385,16 @@ void BTR_remove(TDBB tdbb, WIN * root_window, IIB * insertion)
 
 		// get the page number of the child, and check to make sure 
 		// the page still has only one node on it
-		BTN node = page->btr_nodes;
-		SLONG number = get_long(node->btn_number);
-		node = NEXT_NODE(node);
-		if (get_long(node->btn_number) >= 0) {
+		UCHAR *pointer = BTreeNode::getPointerFirstNode(page);
+		SCHAR flags = page->btr_header.pag_flags;
+		IndexNode pageNode;
+		pointer = BTreeNode::readNode(&pageNode, pointer, flags, false);
+
+		SLONG number = pageNode.pageNumber;
+		pointer = BTreeNode::readNode(&pageNode, pointer, flags, false);
+		if (!(BTreeNode::isEndBucket(&pageNode, false) ||
+			BTreeNode::isEndLevel(&pageNode, false))) 
+		{
 			CCH_RELEASE(tdbb, &window);
 			CCH_RELEASE(tdbb, root_window);
 			return;
@@ -1453,7 +1409,7 @@ void BTR_remove(TDBB tdbb, WIN * root_window, IIB * insertion)
 			journal.jrnrp_type = JRNP_ROOT_PAGE;
 			journal.jrnrp_id = idx->idx_id;
 			journal.jrnrp_page = number;
-			CCH_journal_record(tdbb, root_window, (UCHAR *) & journal,
+			CCH_journal_record(tdbb, root_window, (UCHAR*) &journal,
 							   JRNRP_SIZE, 0, 0);
 		}
 
@@ -1471,6 +1427,7 @@ void BTR_remove(TDBB tdbb, WIN * root_window, IIB * insertion)
 	if (root_window->win_bdb) {
 		CCH_RELEASE(tdbb, root_window);
 	}
+
 }
 
 
@@ -1532,7 +1489,7 @@ retry:
 	}
 
 	space -= l;
-	desc = (IRTD *) ((UCHAR *) root + space);
+	desc = (IRTD *) ((UCHAR*)root + space);
 
 	// Verify that there is enough room on the Index root page.
 	if (desc < (IRTD *) (end + 1)) {
@@ -1601,21 +1558,26 @@ void BTR_selectivity(TDBB tdbb, JRD_REL relation, USHORT id, SelectivityList& se
 		return;
 	}
 
-	SLONG page = root->irt_rpt[id].irt_root;
-	if (root->irt_count <= id || !page) {
+	SLONG page;
+	if (id >= root->irt_count || !(page = root->irt_rpt[id].irt_root)) {
 		CCH_RELEASE(tdbb, &window);
 		return;
 	}
 	window.win_flags = WIN_large_scan;
 	window.win_scans = 1;
 	BTR bucket = (BTR) CCH_HANDOFF(tdbb, &window, page, LCK_read, pag_index);
+	SCHAR flags = bucket->btr_header.pag_flags;
 
 	// go down the left side of the index to leaf level
-	BTN node;
+	UCHAR *pointer;
+	pointer = BTreeNode::getPointerFirstNode(bucket);
 	while (bucket->btr_level) {
-		node = bucket->btr_nodes;
-		page = get_long(node->btn_number);
-		bucket = (BTR) CCH_HANDOFF(tdbb, &window, page, LCK_read, pag_index);
+		IndexNode pageNode;
+		BTreeNode::readNode(&pageNode, pointer, flags, false);
+		bucket = (BTR) CCH_HANDOFF(tdbb, &window, pageNode.pageNumber, LCK_read, pag_index);
+		pointer = BTreeNode::getPointerFirstNode(bucket);
+		flags = bucket->btr_header.pag_flags;
+		page = pageNode.pageNumber;
 	}
 
 	bool dup;
@@ -1625,59 +1587,160 @@ void BTR_selectivity(TDBB tdbb, JRD_REL relation, USHORT id, SelectivityList& se
 	key.key_length = 0;
 	SSHORT l; 
 	UCHAR *p, *q;
+	bool firstNode = true;
+	const USHORT segments = root->irt_rpt[id].irt_keys;
+
+	UCHAR *p1, *p2, *p1_end, *p2_end;
+	SSHORT count, stuff_count, pos, i;
+	Firebird::HalfStaticArray<SLONG, 4> duplicatesList(tdbb->tdbb_default);
+	duplicatesList.grow(segments);
+	SLONG* segmentDuplicates = duplicatesList.begin();
+	for (i = 0; i < segments; i++) {
+		segmentDuplicates[i] = 0;
+	}
+	DBB dbb = tdbb->tdbb_database;
 
 	// go through all the leaf nodes and count them; 
 	// also count how many of them are duplicates
+	IndexNode node;
 	while (page) {
-		for (node = bucket->btr_nodes;; node = NEXT_NODE(node)) {
-			page = get_long(node->btn_number);
-			if (page < 0) {
+		pointer = BTreeNode::readNode(&node, pointer, flags, true);
+		while (true) {
+			if (BTreeNode::isEndBucket(&node, true) ||
+				BTreeNode::isEndLevel(&node, true) ) 
+			{
 				break;
 			}
 			++nodes;
-			l = node->btn_length + node->btn_prefix;
+			l = node.length + node.prefix;
+
+			if ((dbb->dbb_ods_version >= ODS_VERSION11) && 
+				(segments >= 2) && !firstNode) 
+			{
+
+				// Initialize variables for segment duplicate check.
+				// count holds the current checking segment (starting by
+				// the maximum segment number to 1).
+				p1 = key.key_data;
+				p1_end = key.key_data + key.key_length;
+				p2 = node.data;
+				p2_end = node.data + node.length;
+				if (node.prefix == 0) {
+					count = *p2; 
+					pos = 0;
+					stuff_count = 0;
+				}
+				else {
+					pos = node.prefix;
+					// find the segment number were we're starting.
+					i = (pos / (STUFF_COUNT + 1)) * (STUFF_COUNT + 1);
+					if (i == pos) {
+						// We _should_ pick number from data if available
+						count = *p2;
+					}
+					else {
+						count = *(p1 + i);
+					}
+					// update stuff_count to the current position.
+					stuff_count = STUFF_COUNT + 1 - (pos - i);
+					p1 += pos;
+				}
+
+				//Look for duplicates in the segments
+				while ((p1 < p1_end) && (p2 < p2_end)) {
+					if (stuff_count == 0) {
+						if (*p1 != *p2) {
+							// We're done
+							break;
+						}
+						count = *p2;
+						p1++;
+						p2++;
+						stuff_count = STUFF_COUNT;
+					}
+					if (*p1 != *p2) {
+						//We're done
+						break;
+					}
+					p1++;
+					p2++;
+					stuff_count--;
+				}
+
+				if ((p1 == p1_end) && (p2 == p2_end)) {
+					count = 0; // All segments are duplicates
+				}
+				for (i = count + 1; i <= segments; i++) {
+					segmentDuplicates[segments - i]++;
+				}
+
+			}
 
 			// figure out if this is a duplicate
-			if (node == bucket->btr_nodes) {
-				dup = key_equality(&key, node);
+			if (node.nodePointer == BTreeNode::getPointerFirstNode(bucket)) {
+				dup = BTreeNode::keyEquality(key.key_length, key.key_data, &node);
 			}
 			else {
-				dup = (!node->btn_length && (l == key.key_length));
+				dup = (!node.length && (l == key.key_length));
 			}
-			if (dup) {
+			if (dup && !firstNode) {
 				++duplicates;
+			}
+			if (firstNode) {
+				firstNode = false;
 			}
 
 			// keep the key value current for comparison with the next key
 			key.key_length = l;
-			if ( (l = node->btn_length) ) {
-				p = key.key_data + node->btn_prefix;
-				q = node->btn_data;
+			l = node.length;
+			if (l) {
+				p = key.key_data + node.prefix;
+				q = node.data;
 				do {
 					*p++ = *q++;
-				}
-				while (--l);
+				} while (--l);
 			}
+			pointer = BTreeNode::readNode(&node, pointer, flags, true);
 		}
 
-		if (page == END_LEVEL || !(page = bucket->btr_sibling)) {
+		if (node.recordNumber == END_LEVEL || 
+			!(page = bucket->btr_sibling)) 
+		{
 			break;
 		}
 		bucket = (BTR) CCH_HANDOFF_TAIL(tdbb, &window, page, LCK_read, pag_index);
+		pointer = BTreeNode::getPointerFirstNode(bucket);
+		flags = bucket->btr_header.pag_flags;
 	}
 
 	CCH_RELEASE_TAIL(tdbb, &window);
 
-	// calculate the selectivity and store it on the root page
-	const USHORT count = root->irt_rpt[id].irt_keys;
-	selectivity.grow(count);
-	selectivity.back() =
+	// calculate the selectivity 
+	float totalSelectivity = 
 		(float) ((nodes) ? 1.0 / (float) (nodes - duplicates) : 0.0);
+	if (dbb->dbb_ods_version >= ODS_VERSION11) {
+		selectivity.grow(segments);
+	}
+	else {
+		selectivity.grow(1);
+	}
+	float* selectivities = selectivity.begin();
+	if ((dbb->dbb_ods_version >= ODS_VERSION11) && (segments >= 2)) {
+		for (i = 0; i < segments; i++) {
+			selectivities[i] = 
+				(float) ((nodes) ? 1.0 / (float) (nodes - segmentDuplicates[i]) : 0.0);
+		}	
+	}
+	else {
+		selectivities[0] = totalSelectivity;
+	}
+
+	// Store the selectivity on the root page
 	window.win_page = relation->rel_index_root;
 	window.win_flags = 0;
 	root = (IRT) CCH_FETCH(tdbb, &window, LCK_write, pag_root);
 	CCH_MARK(tdbb, &window);
-	root->irt_rpt[id].irt_stuff.irt_selectivity = selectivity.back();
+	root->irt_rpt[id].irt_stuff.irt_selectivity = totalSelectivity;
 	CCH_RELEASE(tdbb, &window);
 }
 
@@ -1686,7 +1749,9 @@ static SLONG add_node(TDBB tdbb,
 					  WIN * window,
 					  IIB * insertion,
 					  KEY * new_key,
-					  SLONG * original_page, SLONG * sibling_page)
+					  SLONG * new_record_number,
+					  SLONG * original_page, 
+					  SLONG * sibling_page)
 {
 /**************************************
  *
@@ -1701,6 +1766,7 @@ static SLONG add_node(TDBB tdbb,
  *
  **************************************/
 
+	SET_TDBB(tdbb);
 	SLONG split;
 	BTR bucket = (BTR) window->win_buffer;
 
@@ -1709,8 +1775,8 @@ static SLONG add_node(TDBB tdbb,
 	if (bucket->btr_level == 0) {
 		while (true) {
 			split = insert_node(tdbb, window, insertion, new_key,
-				original_page, sibling_page);
-			if (split >= 0) {
+				new_record_number, original_page, sibling_page);
+			if (split != NO_VALUE) {
 				return split;
 			}
 			else {
@@ -1725,8 +1791,8 @@ static SLONG add_node(TDBB tdbb,
 	// split at the lower level, in which case we need to insert the new page at this level.
 	SLONG page;
 	while (true) {
-		page = find_node(bucket, insertion->iib_key,
-			(insertion->iib_descriptor->idx_flags & idx_descending));
+		page = find_page(bucket, insertion->iib_key, 
+			insertion->iib_descriptor->idx_flags, insertion->iib_number);
 		if (page != END_BUCKET) {
 			break;
 		}
@@ -1742,10 +1808,10 @@ static SLONG add_node(TDBB tdbb,
 
 	// now recursively try to insert the node at the next level down
 	IIB propogate;
-	split = add_node(tdbb, window, insertion, new_key, &page,
-		&propogate.iib_sibling);
-	if (split == 0) {
-		return 0;
+	split = add_node(tdbb, window, insertion, new_key, new_record_number, 
+		&page, &propogate.iib_sibling);
+	if (split == NO_SPLIT) {
+		return NO_SPLIT;
 	}
 
 	// The page at the lower level split, so we need to insert a pointer 
@@ -1765,15 +1831,15 @@ static SLONG add_node(TDBB tdbb,
 	SLONG original_page2; 
 	SLONG sibling_page2;
 	while (true) {
-		split = insert_node(tdbb, window, &propogate, new_key,
-			&original_page2, &sibling_page2);
-		if (split >= 0) {
+		split = insert_node(tdbb, window, &propogate, new_key, 
+			new_record_number, &original_page2, &sibling_page2);
+
+		if (split != NO_VALUE) {
 			break;
 		}
 		else {
-			bucket =
-				(BTR) CCH_HANDOFF(tdbb, window, bucket->btr_sibling,
-								  LCK_write, pag_index);
+			bucket = (BTR) CCH_HANDOFF(tdbb, window, bucket->btr_sibling,
+				LCK_write, pag_index);
 		}
 	}
 
@@ -1819,7 +1885,7 @@ static void compress(TDBB tdbb,
 					 DSC * desc,
 					 KEY * key,
 					 USHORT itype,
-					 bool missing, bool descending, USHORT fuzzy)
+					 bool isNull, bool descending, USHORT fuzzy)
 {
 /**************************************
  *
@@ -1852,10 +1918,21 @@ static void compress(TDBB tdbb,
 
 	p = key->key_data;
 
-	if (missing && dbb->dbb_ods_version >= ODS_VERSION7) {
+	if (isNull && dbb->dbb_ods_version >= ODS_VERSION7) {
 		pad = 0;
-		if (!descending) {
-			pad ^= -1;
+		// AB: NULL should be threated as lowest value possible.
+		//     Therefore don't complement pad when we have a
+		//     ascending index.
+		if (dbb->dbb_ods_version < ODS_VERSION11) {
+			if (!descending) { 
+				pad ^= -1;
+			}
+		}
+		else {
+			if (!descending) {
+				key->key_length = 0;
+				return;
+			}
 		}
 		if (itype == idx_numeric || itype == idx_timestamp1) {
 			length = sizeof(double);
@@ -1897,7 +1974,7 @@ static void compress(TDBB tdbb,
 		UCHAR temp1[MAX_KEY];
 		pad = (itype == idx_string) ? ' ' : 0;
 
-		if (missing) {
+		if (isNull) {
 			length = 0;
 		}
 		else if (itype >= idx_first_intl_string || itype == idx_metadata) {
@@ -1948,7 +2025,7 @@ static void compress(TDBB tdbb,
 	//   then zap it to compare in a byte-wise order. 
 
 	temp_copy_length = sizeof(double);
-	if (missing) {
+	if (isNull) {
 		memset(&temp, 0, sizeof(temp));
 	}
 	if (itype == idx_timestamp1) {
@@ -2159,7 +2236,7 @@ static USHORT compress_root(TDBB tdbb, IRT page)
 	DBB dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	temp = (UCHAR *) tdbb->tdbb_default->allocate((SLONG) dbb->dbb_page_size, 0
+	temp = (UCHAR*)tdbb->tdbb_default->allocate((SLONG) dbb->dbb_page_size, 0
 #ifdef DEBUG_GDS_ALLOC
 	  ,__FILE__,__LINE__
 #endif
@@ -2184,38 +2261,6 @@ static USHORT compress_root(TDBB tdbb, IRT page)
 }
 
 
-static USHORT compute_prefix(KEY * key, UCHAR * string, USHORT length)
-{
-/**************************************
- *
- *	c o m p u t e _ p r e f i x
- *
- **************************************
- *
- * Functional description
- *	Compute and return prefix common to two strings.
- *
- **************************************/
-	UCHAR *p;
-	USHORT l;
-
-	if (!(l = MIN(key->key_length, length))) {
-		return 0;
-	}
-
-	p = key->key_data;
-
-	while (*p == *string) {
-		p++;
-		string++;
-		if (!--l) {
-			break;
-		}
-	}
-	return (p - key->key_data);
-}
-
-
 static void copy_key(KEY * in, KEY * out)
 {
 /**************************************
@@ -2228,21 +2273,21 @@ static void copy_key(KEY * in, KEY * out)
  *	Copy a key.
  *
  **************************************/
-	UCHAR *p, *q;
 	USHORT l;
 
-	if ( (l = out->key_length = in->key_length) ) {
+	l = out->key_length = in->key_length;
+	if (l) {
+		UCHAR *p, *q;
 		p = out->key_data;
 		q = in->key_data;
 		do {
 			*p++ = *q++;
-		}
-		while (--l);
+		} while (--l);
 	}
 }
 
 
-static CONTENTS delete_node(TDBB tdbb, WIN * window, BTN node)
+static CONTENTS delete_node(TDBB tdbb, WIN *window, UCHAR *pointer)
 {
 /**************************************
  *
@@ -2262,84 +2307,180 @@ static CONTENTS delete_node(TDBB tdbb, WIN * window, BTN node)
 	CHECK_DBB(dbb);
 
 	BTR page = (BTR) window->win_buffer;
-	SLONG node_offset = (UCHAR*) node - (UCHAR*) page;
 
 	CCH_MARK(tdbb, window);
+	//USHORT nodeOffset = pointer - (UCHAR*)page;
+	//USHORT delta = BTR_delete_node(tdbb, page, nodeOffset);
 
-	// move the rest of the page to the left to cover over this node
-	BTN next = (BTN) (node->btn_data + node->btn_length);
-	QUAD_MOVE(next->btn_number, node->btn_number);
+	SCHAR flags = page->btr_header.pag_flags;
+	bool leafPage = (page->btr_level == 0);
+	bool useJumpInfo = (flags & btr_jump_info);
+	SLONG nodeOffset = pointer - (UCHAR*)page;
 
-	USHORT l;
-	UCHAR *p, *q;
-	p = node->btn_data;
-	q = next->btn_data;
-	l = next->btn_length;
-	if (node->btn_prefix < next->btn_prefix) {
-		node->btn_length =
-			next->btn_length + next->btn_prefix - node->btn_prefix;
-		p += next->btn_prefix - node->btn_prefix;
-	}
-	else {
-		page->btr_prefix_total -= node->btn_prefix;
-		fb_assert(l <= MAX_UCHAR);
-		node->btn_length = (UCHAR) l;
-		node->btn_prefix = next->btn_prefix;
-	}
+	// Read node that need to be removed
+	IndexNode removingNode;
+	UCHAR* localPointer = BTreeNode::readNode(&removingNode, pointer, flags, leafPage);
+	USHORT offsetDeletePoint = (pointer - (UCHAR*)page);
 
-	if (l) {
-		do {
-			*p++ = *q++;
-		}
-		while (--l);
+	// Read the next node after the removing node
+	IndexNode nextNode;
+	localPointer = BTreeNode::readNode(&nextNode, localPointer, flags, leafPage);
+	USHORT offsetNextPoint = (localPointer - (UCHAR*)page);
+
+	// Save data in tempKey so we can rebuild from it
+	USHORT newNextPrefix = nextNode.prefix;
+	USHORT newNextLength = 0;
+	USHORT length = MAX(removingNode.length + removingNode.prefix, 
+		nextNode.length + nextNode.prefix);
+	UCHAR* tempData = FB_NEW(*tdbb->tdbb_default) UCHAR[length];
+	length = 0;
+	if (nextNode.prefix > removingNode.prefix) {
+		// The next node uses data from the node that is going to
+		// be removed so save it.
+		length = nextNode.prefix - removingNode.prefix;
+		newNextPrefix -= length;
+		newNextLength += length;
+		MOVE_FASTER(removingNode.data, tempData, length);
 	}
+	MOVE_FASTER(nextNode.data, tempData + length, nextNode.length);
+	newNextLength += nextNode.length;
+
+	// Update the page prefix total.
+	page->btr_prefix_total -= (removingNode.prefix + (nextNode.prefix - newNextPrefix));
+
+	// Update the next node so we are ready to save it.	
+	nextNode.prefix = newNextPrefix;
+	nextNode.length = newNextLength;
+	nextNode.data = tempData;
+	pointer = BTreeNode::writeNode(&nextNode, pointer, flags, leafPage);
+	delete tempData;
 
 	// Compute length of rest of bucket and move it down.
-	l = page->btr_length - (q - (UCHAR *) page);
-
-	if (l) {
+	length = page->btr_length - (localPointer - (UCHAR*) page);
+	if (length) {
 		// Could be overlapping buffers. 
 		// Use MEMMOVE macro which is memmove() in most platforms, instead 
 		// of MOVE_FAST which is memcpy() in most platforms. 
 		// memmove() is guaranteed to work non-destructivly on overlapping buffers. 
-		MEMMOVE(q, p, l);
-		p += l;
-		q += l;
-		l = 0;
+		MEMMOVE(localPointer, pointer, length);
+		pointer += length;
+		localPointer += length;
 	}
 
-	page->btr_length = p - (UCHAR *) page;
+	// Set page size and get delta
+	USHORT delta = page->btr_length;
+	page->btr_length = pointer - (UCHAR*) page;
+	delta -= page->btr_length;
+
+	if (useJumpInfo) {
+		// We use a fast approach here.
+		// Only update offsets pointing after the deleted node and 
+		// remove jump nodes pointing to the deleted node or node
+		// next to the deleted one.
+		jumpNodeList* jumpNodes = FB_NEW(*tdbb->tdbb_default) 
+			jumpNodeList(tdbb->tdbb_default);
+
+		IndexJumpInfo jumpInfo;
+		pointer = BTreeNode::getPointerFirstNode(page, &jumpInfo);
+
+		bool rebuild = false;
+		USHORT n = jumpInfo.jumpers;
+		IndexJumpNode jumpNode, delJumpNode;
+		while (n) {
+			pointer = BTreeNode::readJumpNode(&jumpNode, pointer, flags);
+			// Jump nodes pointing to the deleted node are removed.
+			if ((jumpNode.offset < offsetDeletePoint) || 
+				(jumpNode.offset > offsetNextPoint)) 
+			{
+				IndexJumpNode newJumpNode;
+				if (rebuild && jumpNode.prefix > delJumpNode.prefix) {
+					// This node has prefix against a removing jump node
+					USHORT addLength = jumpNode.prefix - delJumpNode.prefix;
+					newJumpNode.prefix = jumpNode.prefix - addLength;
+					newJumpNode.length = jumpNode.length + addLength;
+					newJumpNode.offset = jumpNode.offset;
+					if (jumpNode.offset > offsetDeletePoint) {
+						newJumpNode.offset -= delta;
+					}
+					newJumpNode.data = FB_NEW(*tdbb->tdbb_default) UCHAR[newJumpNode.length];
+					MOVE_FASTER(delJumpNode.data, newJumpNode.data, addLength);					
+					MOVE_FASTER(jumpNode.data, newJumpNode.data + addLength, 
+						jumpNode.length);
+				}
+				else {
+					newJumpNode.prefix = jumpNode.prefix;
+					newJumpNode.length = jumpNode.length;
+					newJumpNode.offset = jumpNode.offset;
+					if (jumpNode.offset > offsetDeletePoint) {
+						newJumpNode.offset -= delta;
+					}
+					newJumpNode.data = FB_NEW(*tdbb->tdbb_default) UCHAR[newJumpNode.length];
+					MOVE_FASTER(jumpNode.data, newJumpNode.data, newJumpNode.length);
+				}
+				jumpNodes->add(newJumpNode);
+				rebuild = false;
+			}
+			else {
+				delJumpNode = jumpNode;
+				rebuild = true;
+			}
+			n--;
+		}
+
+		// Update jump information.
+		jumpInfo.jumpers = jumpNodes->getCount();
+		pointer = BTreeNode::writeJumpInfo(page, &jumpInfo);
+		// Write jump nodes.
+		IndexJumpNode* walkJumpNode = jumpNodes->begin();
+		for (int i = 0; i < jumpNodes->getCount(); i++) {
+			pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer, flags);
+			if (walkJumpNode[i].data) {
+				delete walkJumpNode[i].data;
+			}
+		}
+		jumpNodes->clear();
+		delete jumpNodes;
+	}
 
 	// Journal b-tree page - logical log of delete
 	if (dbb->dbb_wal) {
-		JRNB journal;
-		fb_assert(node_offset <= MAX_USHORT);
+		// AB: Because very often the complete page changes this
+		// is changed to journal_btree_segment()
+		journal_btree_segment(tdbb, window, page);
+		/*JRNB journal;
+		fb_assert(nodeOffset <= MAX_USHORT);
 		journal.jrnb_type = JRNP_BTREE_DELETE;
 		journal.jrnb_prefix_total = page->btr_prefix_total;
-		journal.jrnb_offset = (USHORT) node_offset;
-		journal.jrnb_delta = node->btn_prefix;	/* DEBUG ONLY */
-		journal.jrnb_length = page->btr_length;	/* DEBUG ONLY */
-		CCH_journal_record(tdbb, window, (UCHAR *) & journal,
-						   JRNB_SIZE, 0, 0);
+		journal.jrnb_offset = nodeOffset;
+		journal.jrnb_delta = delta;				// DEBUG ONLY
+		journal.jrnb_length = page->btr_length;	// DEBUG ONLY
+		CCH_journal_record(tdbb, window, (UCHAR*) &journal,
+						   JRNB_SIZE, 0, 0);*/
 	}
 
 	// check to see if the page is now empty
-	node = page->btr_nodes;
-	SLONG number = get_long(node->btn_number);
-	if (number < 0) {
+	IndexNode node;
+	pointer = BTreeNode::getPointerFirstNode(page);
+	//bool leafPage = (page->btr_level == 0);
+	//SCHAR flags = page->btr_header.pag_flags;
+	pointer = BTreeNode::readNode(&node, pointer, flags, leafPage);
+	if (BTreeNode::isEndBucket(&node, leafPage) ||
+		BTreeNode::isEndLevel(&node, leafPage)) 
+	{
 		return contents_empty;
 	}
 
 	// check to see if there is just one node
-	node = NEXT_NODE(node);
-	number = get_long(node->btn_number);
-	if (number < 0) {
+	pointer = BTreeNode::readNode(&node, pointer, flags, leafPage);
+	if (BTreeNode::isEndBucket(&node, leafPage) ||
+		BTreeNode::isEndLevel(&node, leafPage)) 
+	{
 		return contents_single;
 	}
 
 	// check to see if the size of the page is below the garbage collection threshold, 
 	// meaning below the size at which it should be merged with its left sibling if possible.
-	if (page->btr_length < GARBAGE_COLLECTION_THRESHOLD) {
+	if (page->btr_length < GARBAGE_COLLECTION_BELOW_THRESHOLD) {
 		return contents_below_threshold;
 	}
 
@@ -2388,8 +2529,11 @@ static void delete_tree(TDBB tdbb,
 		// "down" to the beginning of the next level down
 		if (next == down) {
 			if (page->btr_level) {
-				BTN node = page->btr_nodes;
-				down = get_long(node->btn_number);
+				UCHAR *pointer = BTreeNode::getPointerFirstNode(page);
+				IndexNode pageNode;
+				BTreeNode::readNode(&pageNode, pointer, 
+					page->btr_header.pag_flags, false);
+				down = pageNode.pageNumber;
 			}
 			else {
 				down = 0;
@@ -2410,7 +2554,7 @@ static void delete_tree(TDBB tdbb,
 }
 
 
-static DSC *eval(TDBB tdbb, JRD_NOD node, DSC * temp, bool *missing)
+static DSC *eval(TDBB tdbb, JRD_NOD node, DSC * temp, bool *isNull)
 {
 /**************************************
  *
@@ -2428,13 +2572,13 @@ static DSC *eval(TDBB tdbb, JRD_NOD node, DSC * temp, bool *missing)
 	SET_TDBB(tdbb);
 
 	desc = EVL_expr(tdbb, node);
-	*missing = false;
+	*isNull = false;
 
 	if (desc && !(tdbb->tdbb_request->req_flags & req_null)) {
 		return desc;
 	}
 	else {
-		*missing = true;
+		*isNull = true;
 	}
 
 	temp->dsc_dtype = dtype_text;
@@ -2443,7 +2587,7 @@ static DSC *eval(TDBB tdbb, JRD_NOD node, DSC * temp, bool *missing)
 	temp->dsc_scale = 0;
 	temp->dsc_length = 1;
 	temp->dsc_ttype = ttype_ascii;
-	temp->dsc_address = (UCHAR *) " ";
+	temp->dsc_address = (UCHAR*) " ";
 
 	return temp;
 }
@@ -2468,20 +2612,89 @@ static SLONG fast_load(TDBB tdbb,
  *	comprehendable.
  *
  **************************************/
-	KEY keys[MAX_LEVELS];
-	BTN nodes[MAX_LEVELS];
-	BTR buckets[MAX_LEVELS];
+	
+ 	KEY keys[MAX_LEVELS];
+	btr *buckets[MAX_LEVELS];
 	WIN windows[MAX_LEVELS];
 	ULONG split_pages[MAX_LEVELS];
+	SLONG split_record_numbers[MAX_LEVELS];
+	UCHAR* pointers[MAX_LEVELS];
+	UCHAR* newAreaPointers[MAX_LEVELS];
+	USHORT totalJumpSize[MAX_LEVELS];
 
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	// leaf-page and pointer-page size limits.
-	USHORT lp_fill_limit = dbb->dbb_page_size - 2 * BTN_SIZE; 
-	USHORT pp_fill_limit = dbb->dbb_page_size - 2 * BTN_SIZE;
-	keys[0].key_length = 0;
+	// leaf-page and pointer-page size limits, we always need to 
+	// leave room for the END_LEVEL node.
+	USHORT lp_fill_limit = dbb->dbb_page_size - BTN_LEAF_SIZE; 
+	USHORT pp_fill_limit = dbb->dbb_page_size - BTN_PAGE_SIZE;
+	USHORT flags = 0;
+	if (idx->idx_flags & idx_descending) {
+		flags |= btr_descending;
+	}
+	if (dbb->dbb_ods_version >= ODS_VERSION11) {
+		flags |= btr_all_record_number;
+	}
+	if (key_length > 255) {
+		flags |= btr_large_keys;
+	}
+
+	// Jump information initialization
+	bool useJumpInfo = (dbb->dbb_ods_version >= ODS_VERSION11);
+
+	typedef Firebird::vector<jumpNodeList*> jumpNodeListContainer;
+	jumpNodeListContainer* jumpNodes = FB_NEW(*tdbb->tdbb_default) 
+		jumpNodeListContainer(*tdbb->tdbb_default);
+	jumpNodes->push_back(FB_NEW(*tdbb->tdbb_default) jumpNodeList(tdbb->tdbb_default));
+
+	keyList* jumpKeys = FB_NEW(*tdbb->tdbb_default) keyList(*tdbb->tdbb_default);
+	jumpKeys->push_back(FB_NEW(*tdbb->tdbb_default) dynKey);
+	(*jumpKeys)[0]->keyData = FB_NEW(*tdbb->tdbb_default) UCHAR[key_length];
+
+	IndexJumpInfo jumpInfo;
+	jumpInfo.jumpAreaSize = 0;
+	jumpInfo.jumpers = 0;
+	jumpInfo.keyLength = key_length;
+
+	UCHAR *pointer;
+	if (useJumpInfo) {
+		// AB: Let's try to determine to size between the jumps to speed up
+		// index search. Ofcourse the size depends on the key_length. How
+		// bigger the key, the less jumps we can make. (Although we must
+		// not forget that mostly the keys are compressed and much smaller
+		// as the maximum possible key!).
+		// These values can easily change without effect on previous created
+		// indices, cause this value is stored on each page.
+		// Remember, the lower the value how more jumpkeys are generated and
+		// how faster jumpkeys are recalculated on insert.
+		if (key_length <= 8) {
+		  jumpInfo.jumpAreaSize = 384;
+		}
+		else if (key_length <= 64) {
+		  jumpInfo.jumpAreaSize = 512;
+		}
+		else if (key_length <= 128) {
+		  jumpInfo.jumpAreaSize = 768;
+		}
+		else if (key_length <= 255) {
+		  jumpInfo.jumpAreaSize = 1024;
+		}
+		else {
+		  jumpInfo.jumpAreaSize = 2048;
+		}
+
+		// If our half page_size is smaller as the jump_size then jump_size isn't
+		// needfull at all.
+		if ((dbb->dbb_page_size / 2) < jumpInfo.jumpAreaSize) {
+			jumpInfo.jumpAreaSize = 0;
+		}
+		useJumpInfo = (jumpInfo.jumpAreaSize > 0);
+		if (useJumpInfo) {
+			flags |= btr_jump_info;
+		}
+	}
 
 	// Allocate and format the first leaf level bucket.  Awkwardly,
 	// the bucket header has room for only a byte of index id and that's
@@ -2489,46 +2702,77 @@ static SLONG fast_load(TDBB tdbb,
 	// of the id and hope for the best.  Index buckets are (almost) always
 	// located through the index structure (dmp being an exception used 
 	// only for debug) so the id is actually redundant.
-
-	BTR bucket = (BTR) DPM_allocate(tdbb, &windows[0]);
+	btr *bucket = (btr*) DPM_allocate(tdbb, &windows[0]);
 	bucket->btr_header.pag_type = pag_index;
 	bucket->btr_relation = relation->rel_id;
 	bucket->btr_id = (UCHAR)(idx->idx_id % 256);
 	bucket->btr_level = 0;
-	bucket->btr_length = OFFSETA(BTR, btr_nodes);
-	if (idx->idx_flags & idx_descending) {
-		bucket->btr_header.pag_flags |= btr_descending;
+	bucket->btr_length = BTR_SIZE;
+	bucket->btr_header.pag_flags |= flags;
+
+	if (useJumpInfo) {
+		pointer = BTreeNode::writeJumpInfo(bucket, &jumpInfo);
+		jumpInfo.firstNodeOffset = (USHORT)(pointer - (UCHAR*)bucket);
+		jumpInfo.jumpers = 0;
+		pointer = BTreeNode::writeJumpInfo(bucket, &jumpInfo);
+		bucket->btr_length = jumpInfo.firstNodeOffset;
+		newAreaPointers[0] = pointer + jumpInfo.firstNodeOffset;
 	}
-
-	buckets[0] = bucket;
-	buckets[1] = NULL;
-	nodes[0] = bucket->btr_nodes;
-
-	ULONG count = 0;
-	ULONG duplicates = 0;
-	bool error = false;
-	bool duplicate = false;
-	BTN node, split_node, next_node;
-	USHORT level, prefix, i, l;
-	WIN *window, split_window;
-	KEY *key, split_key, temp_key;
-	UCHAR *record, *p, *q;
-	ISR isr;
+	else {
+		pointer = BTreeNode::getPointerFirstNode(bucket);
+	}
 
 	tdbb->tdbb_flags |= TDBB_no_cache_unwind;
 
+	buckets[0] = bucket;
+	buckets[1] = NULL;
+	keys[0].key_length = 0;
+
+	WIN *window;
+	bool error = false;
+	ULONG count = 0;
+	ULONG duplicates = 0;
+	const USHORT segments = idx->idx_count;
+	UCHAR *p1, *p2, *p1_end, *p2_end;
+	SSHORT segment, stuff_count, pos, i;
+	Firebird::HalfStaticArray<SLONG, 4> duplicatesList(tdbb->tdbb_default);
+	duplicatesList.grow(segments);
+	SLONG* segmentDuplicates = duplicatesList.begin();
+	for (i = 0; i < segments; i++) {
+		segmentDuplicates[i] = 0;
+	}
 	try {
 
 		// If there's an error during index construction, fall
 		// thru to release the last index bucket at each level
 		// of the index. This will prepare for a single attempt
 		// to deallocate the index pages for reuse.
+		IndexNode newNode;
+		IndexNode previousNode;
+		// pointer holds the "main" pointer for inserting new nodes.
+
+		ISR isr;
+		WIN split_window;
+		KEY split_key, temp_key;
+		key* key;
+		dynKey* jumpKey = (*jumpKeys)[0];
+		jumpNodeList* leafJumpNodes = (*jumpNodes)[0];
+		bool duplicate = false;
+		USHORT level, prefix, l;
+		UCHAR *record, *p, *q;
+		totalJumpSize[0] = 0;
+		USHORT headerSize = (pointer - (UCHAR*)bucket);
+
+		UCHAR* levelPointer;
+		IndexNode levelNode;
+		IndexNode tempNode;
+		jumpKey->keyLength = 0;
 
 		while (!error) {
 			// Get the next record in sorted order.
 
 			SORT_get(tdbb->tdbb_status_vector, sort_handle,
-				 /* TMN: cast */ (ULONG **) & record
+				  (ULONG **) & record // TMN: cast
 #ifdef SCROLLABLE_CURSORS
 				 , RSE_get_forward
 #endif
@@ -2539,101 +2783,220 @@ static SLONG fast_load(TDBB tdbb,
 			}
 			isr = (ISR) (record + key_length);
 			count++;
-
+			
+			// restore previous values
 			bucket = buckets[0];
-			node = nodes[0];
 			split_pages[0] = 0;
 			key = &keys[0];
 
 			// Compute the prefix as the length in common with the previous record's key.
-			prefix = compute_prefix(key, record, isr->isr_key_length);
+			prefix = BTreeNode::computePrefix(key->key_data, key->key_length,
+				record, isr->isr_key_length);
+
+			// set node values
+			newNode.prefix = prefix;
+			newNode.length = isr->isr_key_length - prefix;
+			newNode.recordNumber = isr->isr_record_number;
+			newNode.data = record + prefix;
 
 			// If the length of the new node will cause us to overflow the bucket, 
 			// form a new bucket.
-			if (bucket->btr_length + isr->isr_key_length - prefix > lp_fill_limit) {
-				BTR split = (BTR) DPM_allocate(tdbb, &split_window);
+			if (bucket->btr_length + totalJumpSize[0] +
+				BTreeNode::getNodeSize(&newNode, flags) > lp_fill_limit) 
+			{
+				// mark the end of the previous page
+				SLONG lastRecordNumber = previousNode.recordNumber;
+				previousNode.recordNumber = END_BUCKET;
+				BTreeNode::writeNode(&previousNode, previousNode.nodePointer, flags, true, false);
+
+				if (useJumpInfo && totalJumpSize[0]) {
+					// Slide down current nodes;
+					l = bucket->btr_length - headerSize;
+					p = (UCHAR*)bucket + bucket->btr_length;
+					q = p + totalJumpSize[0];
+					while (l) {
+						*--q = *--p;
+						l--;
+					}
+
+					// Update JumpInfo
+					jumpInfo.firstNodeOffset = headerSize + totalJumpSize[0];
+					if (leafJumpNodes->getCount() > 255) {
+						BUGCHECK(205);	// msg 205 index bucket overfilled
+					}
+					jumpInfo.jumpers = (UCHAR)leafJumpNodes->getCount();
+					pointer = BTreeNode::writeJumpInfo(bucket, &jumpInfo);
+
+					// Write jumpnodes on page.
+					pointer = (UCHAR*)bucket + headerSize;
+					IndexJumpNode* walkJumpNode = leafJumpNodes->begin();
+					for (int i = 0; i < leafJumpNodes->getCount(); i++) {
+						// Update offset position first.
+						walkJumpNode[i].offset += totalJumpSize[0];
+						pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer, flags);
+					}
+					bucket->btr_length += totalJumpSize[0];
+				}
+
+				// Allocate new bucket.
+				btr *split = (btr*) DPM_allocate(tdbb, &split_window);
 				bucket->btr_sibling = split_window.win_page;
 				split->btr_left_sibling = windows[0].win_page;
 				split->btr_header.pag_type = pag_index;
 				split->btr_relation = bucket->btr_relation;
 				split->btr_level = bucket->btr_level;
 				split->btr_id = bucket->btr_id;
-				split->btr_header.pag_flags |=
-					(bucket->btr_header.pag_flags & btr_descending);
+				split->btr_header.pag_flags |= flags;
 
-				// store the first node on the split page
-				split_node = split->btr_nodes;
-				QUAD_MOVE(node->btn_number, split_node->btn_number);
-				split_node->btn_prefix = 0;
-				p = split_node->btn_data;
-				q = key->key_data;
-				fb_assert(key->key_length <= MAX_UCHAR);
-				if ( (l = split_node->btn_length = (UCHAR) key->key_length) ) {
-					do {
-						*p++ = *q++;
-					}
-					while (--l);
+				if (useJumpInfo) {
+					pointer = BTreeNode::writeJumpInfo(split, &jumpInfo);
+					jumpInfo.firstNodeOffset = (USHORT)(pointer - (UCHAR*)split);
+					jumpInfo.jumpers = 0;
+					pointer = BTreeNode::writeJumpInfo(split, &jumpInfo);
+					// Reset position and size for generating jumpnode
+					newAreaPointers[0] = pointer + jumpInfo.jumpAreaSize;
+					totalJumpSize[0] = 0;
+					jumpKey->keyLength = 0;
+				}
+				else {
+					pointer = BTreeNode::getPointerFirstNode(split);
 				}
 
-				// mark the end of the previous page
-				quad_put((SLONG) END_BUCKET, node->btn_number);
+				// store the first node on the split page
+				IndexNode splitNode;
+				splitNode.prefix = 0;
+				splitNode.recordNumber = lastRecordNumber;
+				splitNode.data = key->key_data;
+				splitNode.length = key->key_length;
+				pointer = BTreeNode::writeNode(&splitNode, pointer, flags, true);
 
 				// save the page number of the previous page and release it
 				split_pages[0] = windows[0].win_page;
+				split_record_numbers[0] = splitNode.recordNumber;
 				CCH_RELEASE(tdbb, &windows[0]);
 
 				// set up the new page as the "current" page
-
 				windows[0] = split_window;
-				node = split_node;
 				buckets[0] = bucket = split;
 
 				// save the first key on page as the page to be propogated
-
 				copy_key(key, &split_key);
-			}
 
-			if (bucket->btr_length != OFFSETA(BTR, btr_nodes)) {
-				node = NEXT_NODE(node);
-			}
-
-			// Insert the new node in the now current bucket
-
-			fb_assert(prefix <= MAX_UCHAR);
-			node->btn_prefix = (UCHAR) prefix;
-			bucket->btr_prefix_total += prefix;
-			quad_put(isr->isr_record_number, node->btn_number);
-			p = node->btn_data;
-			q = record + prefix;
-			if ( (l = node->btn_length = isr->isr_key_length - prefix) ) {
-				do {
-					*p++ = *q++;
+				if (useJumpInfo) {
+					// Clear jumplist.
+					IndexJumpNode* walkJumpNode = leafJumpNodes->begin();
+					for (int i = 0; i < leafJumpNodes->getCount(); i++) {
+						if (walkJumpNode[i].data) {
+							delete walkJumpNode[i].data;
+						}
+					}
+					leafJumpNodes->clear();
 				}
-				while (--l);
+
+			}
+
+			// Insert the new node in the current bucket
+			bucket->btr_prefix_total += prefix;
+			pointer = BTreeNode::writeNode(&newNode, pointer, flags, true);
+			previousNode = newNode;
+
+			// if we have a compound-index calculate duplicates per segment.
+			if ((dbb->dbb_ods_version >= ODS_VERSION11) && 
+				(segments >= 2) && (count > 1)) 
+			{
+				// Initialize variables for segment duplicate check.
+				// count holds the current checking segment (starting by
+				// the maximum segment number to 1).
+				p1 = key->key_data;
+				p1_end = key->key_data + key->key_length;
+				p2 = newNode.data;
+				p2_end = newNode.data + newNode.length;
+				if (newNode.prefix == 0) {
+					segment = *p2;
+					pos = 0;
+					stuff_count = 0;
+				}
+				else {
+					pos = newNode.prefix;
+					// find the segment number were we're starting.
+					i = (pos / (STUFF_COUNT + 1)) * (STUFF_COUNT + 1);
+					if (i == pos) {
+						// We _should_ pick number from data if available
+						segment = *p2;
+					}
+					else {
+						segment = *(p1 + i);
+					}
+					// update stuff_count to the current position.
+					stuff_count = STUFF_COUNT + 1 - (pos - i);
+					p1 += pos;
+				}
+
+				//Look for duplicates in the segments
+				while ((p1 < p1_end) && (p2 < p2_end)) {
+					if (stuff_count == 0) {
+						if (*p1 != *p2) {
+							// We're done
+							break;
+						}
+						segment = *p2;
+						p1++;
+						p2++;
+						stuff_count = STUFF_COUNT;
+					}
+					if (*p1 != *p2) {
+						//We're done
+						break;
+					}
+					p1++;
+					p2++;
+					stuff_count--;
+				}
+
+				if ((p1 == p1_end) && (p2 == p2_end)) {
+					segment = 0; // All segments are duplicates
+				}
+				for (i = segment + 1; i <= segments; i++) {
+					segmentDuplicates[segments - i]++;
+				}
+
 			}
 
 			// check if this is a duplicate node
-			duplicate = (!node->btn_length && prefix == key->key_length);
-			if (duplicate) {
+			duplicate = (!newNode.length && prefix == key->key_length);
+			if (duplicate && (count > 1)) {
 				++duplicates;
 			}
 
-			// set this node as the current node, and update the length of the page
-			nodes[0] = node;
-			next_node = NEXT_NODE(node);
-			bucket->btr_length = (UCHAR *) (next_node) - (UCHAR *) bucket;
+			// Update the length of the page.
+			bucket->btr_length = pointer - (UCHAR*) bucket;
 			if (bucket->btr_length > dbb->dbb_page_size) {
-				BUGCHECK(205);	// msg 205 index bucket overfilled
+				BUGCHECK(205);		// msg 205 index bucket overfilled
 			}
 
 			// Remember the last key inserted to compress the next one.
-			p = key->key_data;
-			q = record;
-			if ( (l = key->key_length = isr->isr_key_length) ) {
-				do {
-					*p++ = *q++;
-				}
-				while (--l);
+			key->key_length = isr->isr_key_length;
+			MOVE_FAST(record, key->key_data, key->key_length);
+
+			if (useJumpInfo && (newAreaPointers[0] < pointer) &&
+				(bucket->btr_length + totalJumpSize[0] + newNode.prefix + 6 < lp_fill_limit)) 
+			{
+				// Create a jumpnode
+				IndexJumpNode jumpNode;
+				jumpNode.prefix = BTreeNode::computePrefix(jumpKey->keyData,
+					jumpKey->keyLength, key->key_data, newNode.prefix);
+				jumpNode.length = newNode.prefix - jumpNode.prefix;
+				jumpNode.offset = (newNode.nodePointer - (UCHAR*)bucket);
+				jumpNode.data = FB_NEW(*tdbb->tdbb_default) UCHAR[jumpNode.length];
+				MOVE_FAST(key->key_data + jumpNode.prefix, jumpNode.data, jumpNode.length);
+				// Push node on end in list
+				leafJumpNodes->add(jumpNode);
+				// Store new data in jumpKey, so a new jump node can calculate prefix
+				MOVE_FAST(jumpNode.data, jumpKey->keyData + jumpNode.prefix, jumpNode.length);
+				jumpKey->keyLength = jumpNode.length + jumpNode.prefix;
+				// Set new position for generating jumpnode
+				newAreaPointers[0] += jumpInfo.jumpAreaSize;
+				totalJumpSize[0] += BTreeNode::getJumpNodeSize(&jumpNode, flags);
 			}
 
 			// If there wasn't a split, we're done.  If there was, propogate the
@@ -2643,108 +3006,201 @@ static SLONG fast_load(TDBB tdbb,
 				window = &windows[level];
 				key = &keys[level];
 				split_pages[level] = 0;
-				node = nodes[level];
+				levelPointer = pointers[level];
 
 				// If there isn't already a bucket at this level, make one.  Remember to 
 				// shorten the index id to a byte
 				if (!(bucket = buckets[level])) {
 					buckets[level + 1] = NULL;
-					buckets[level] = bucket = (BTR) DPM_allocate(tdbb, window);
+					buckets[level] = bucket = (btr*) DPM_allocate(tdbb, window);
 					bucket->btr_header.pag_type = pag_index;
 					bucket->btr_relation = relation->rel_id;
 					bucket->btr_id = (UCHAR)(idx->idx_id % 256);
 					fb_assert(level <= MAX_UCHAR);
 					bucket->btr_level = (UCHAR) level;
-					if (idx->idx_flags & idx_descending)
-						bucket->btr_header.pag_flags |= btr_descending;
-					bucket->btr_length = OFFSETA(BTR, btr_nodes) + BTN_SIZE;
+					bucket->btr_header.pag_flags |= flags;
 
-					// since this is the beginning of the level, we propogate 
-					// the lower-level page with a "degenerate" zero-length 
-					// node indicating that this page holds any key value 
-					// less than the next node
-					node = bucket->btr_nodes;
-					node->btn_length = node->btn_prefix = 0;
-					quad_put(split_pages[level - 1], node->btn_number);
+					// since this is the beginning of the level, we propogate the lower-level 
+					// page with a "degenerate" zero-length node indicating that this page holds 
+					// any key value less than the next node
+
+					if (useJumpInfo) {
+						levelPointer = BTreeNode::writeJumpInfo(bucket, &jumpInfo);
+						jumpInfo.firstNodeOffset = (USHORT)(levelPointer - (UCHAR*)bucket);
+						jumpInfo.jumpers = 0;
+						levelPointer = BTreeNode::writeJumpInfo(bucket, &jumpInfo);
+					}
+					else {
+						levelPointer = BTreeNode::getPointerFirstNode(bucket);
+					}
+
+					levelNode.prefix = 0;
+					levelNode.length = 0;
+					levelNode.pageNumber = split_pages[level - 1];
+					levelNode.recordNumber = 0; // First record-number of level must be zero
+					levelPointer = BTreeNode::writeNode(&levelNode, levelPointer, flags, false);
+					bucket->btr_length = levelPointer - (UCHAR*) bucket;
 					key->key_length = 0;
+
+					// Initialize jumpNodes variables for new level
+					jumpNodes->push_back(FB_NEW(*tdbb->tdbb_default) 
+						jumpNodeList(tdbb->tdbb_default));
+					jumpKeys->push_back(FB_NEW(*tdbb->tdbb_default) dynKey);
+					(*jumpKeys)[level]->keyLength = 0;
+					(*jumpKeys)[level]->keyData = 
+						FB_NEW(*tdbb->tdbb_default) UCHAR[key_length];
+					totalJumpSize[level] = 0;
+					newAreaPointers[level] = levelPointer + jumpInfo.jumpAreaSize;
 				}
 
+				dynKey* pageJumpKey = (*jumpKeys)[level];
+				jumpNodeList* pageJumpNodes = (*jumpNodes)[level];
+
 				// Compute the prefix in preparation of insertion
-				prefix = compute_prefix(key, split_key.key_data, split_key.key_length);
+				prefix = BTreeNode::computePrefix(key->key_data, key->key_length,
+					split_key.key_data, split_key.key_length);
 
 				// Remember the last key inserted to compress the next one.
 				copy_key(&split_key, &temp_key);
 
-				// See if the new node fits in the current bucket.  If not, split
-				// the bucket.
+				// Save current node if we need to split.
+				tempNode = levelNode;
+				// Set new node values.
+				levelNode.prefix = prefix;
+				levelNode.length = temp_key.key_length - prefix;
+				levelNode.data = temp_key.key_data + prefix;
+				levelNode.pageNumber = windows[level - 1].win_page;
+				levelNode.recordNumber = split_record_numbers[level - 1];
 
-				if (bucket->btr_length + temp_key.key_length - prefix >
-					pp_fill_limit) 
+				// See if the new node fits in the current bucket.  
+				// If not, split the bucket.
+				if (bucket->btr_length + totalJumpSize[level] +
+					BTreeNode::getNodeSize(&levelNode, flags, false) > pp_fill_limit) 
 				{
-					BTR split = (BTR) DPM_allocate(tdbb, &split_window);
+					// mark the end of the page; note that the end_bucket marker must 
+					// contain info about the first node on the next page
+					SLONG lastPageNumber = tempNode.pageNumber;
+					BTreeNode::setEndBucket(&tempNode, false);
+					BTreeNode::writeNode(&tempNode, tempNode.nodePointer, flags, false, false);
+
+					if (useJumpInfo && totalJumpSize[level]) {
+						// Slide down current nodes;
+						l = bucket->btr_length - headerSize;
+						p = (UCHAR*)bucket + bucket->btr_length;
+						q = p + totalJumpSize[level];
+						while (l) {
+							*--q = *--p;
+							l--;
+						}
+
+						// Update JumpInfo
+						jumpInfo.firstNodeOffset = headerSize + totalJumpSize[level];
+						if (pageJumpNodes->getCount() > 255) {
+							BUGCHECK(205);	// msg 205 index bucket overfilled
+						}
+						jumpInfo.jumpers = (UCHAR)pageJumpNodes->getCount();
+						levelPointer = BTreeNode::writeJumpInfo(bucket, &jumpInfo);
+
+						// Write jumpnodes on page.
+						levelPointer = (UCHAR*)bucket + headerSize;
+						IndexJumpNode* walkJumpNode = pageJumpNodes->begin();
+						for (int i = 0; i < pageJumpNodes->getCount(); i++) {
+							// Update offset position first.
+							walkJumpNode[i].offset += totalJumpSize[level];
+							levelPointer = BTreeNode::writeJumpNode(&walkJumpNode[i], 
+								levelPointer, flags);
+						}
+						bucket->btr_length += totalJumpSize[level];
+					}
+
+					btr *split = (btr*) DPM_allocate(tdbb, &split_window);
 					bucket->btr_sibling = split_window.win_page;
 					split->btr_left_sibling = window->win_page;
 					split->btr_header.pag_type = pag_index;
 					split->btr_relation = bucket->btr_relation;
 					split->btr_level = bucket->btr_level;
 					split->btr_id = bucket->btr_id;
-					split->btr_header.pag_flags |=
-						(bucket->btr_header.pag_flags & btr_descending);
-					split_node = split->btr_nodes;
+					split->btr_header.pag_flags |= flags;
 
-					// insert the new node in the new bucket
-					QUAD_MOVE(node->btn_number, split_node->btn_number);
-					split_node->btn_prefix = 0;
-					p = split_node->btn_data;
-					q = key->key_data;
-					fb_assert(key->key_length <= MAX_UCHAR);
-					if ( (l = split_node->btn_length = (UCHAR) key->key_length) ) {
-						do {
-							MOVE_BYTE(q, p);
-						}
-						while (--l);
+					if (useJumpInfo) {
+						levelPointer = BTreeNode::writeJumpInfo(split, &jumpInfo);
+						jumpInfo.firstNodeOffset = (USHORT)(levelPointer - (UCHAR*)split);
+						jumpInfo.jumpers = 0;
+						levelPointer = BTreeNode::writeJumpInfo(split, &jumpInfo);
+						// Reset position and size for generating jumpnode
+						newAreaPointers[level] = levelPointer + jumpInfo.jumpAreaSize;
+						totalJumpSize[level] = 0;
+						pageJumpKey->keyLength = 0;
+					}
+					else {
+						levelPointer = BTreeNode::getPointerFirstNode(split);
 					}
 
-					// mark the end of the page; note that the end_bucket marker must 
-					// contain info about the first node on the next page
-					quad_put((SLONG) END_BUCKET, node->btn_number);
+					// insert the new node in the new bucket
+					IndexNode splitNode;
+					splitNode.prefix = 0;
+					splitNode.length = key->key_length;
+					splitNode.pageNumber = lastPageNumber;
+					splitNode.recordNumber = tempNode.recordNumber;
+					splitNode.data = key->key_data;
+					levelPointer = BTreeNode::writeNode(&splitNode, levelPointer, flags, false);
 
 					// indicate to propogate the page we just split from
 					split_pages[level] = window->win_page;
+					split_record_numbers[level] = splitNode.recordNumber;
 					CCH_RELEASE(tdbb, window);
 
 					// and make the new page the current page
 					*window = split_window;
-					node = split_node;
 					buckets[level] = bucket = split;
 					copy_key(key, &split_key);
+
+					if (useJumpInfo) {
+						// Clear jumplist.
+						IndexJumpNode* walkJumpNode = pageJumpNodes->begin();
+						for (int i = 0; i < pageJumpNodes->getCount(); i++) {
+							if (walkJumpNode[i].data) {
+								delete walkJumpNode[i].data;
+							}
+						}
+						pageJumpNodes->clear();
+					}
 
 				}
 
 				// Now propogate up the lower-level bucket by storing a "pointer" to it.
-				node = NEXT_NODE(node);
-				fb_assert(prefix <= MAX_UCHAR);
-				node->btn_prefix = (UCHAR) prefix;
 				bucket->btr_prefix_total += prefix;
-				quad_put(windows[level - 1].win_page, node->btn_number);
+				levelPointer = BTreeNode::writeNode(&levelNode, levelPointer, flags, false);
 
-				// Store the key associated with the page as the first unique key 
-				// value on the page.
-				p = node->btn_data;
-				q = temp_key.key_data + prefix;
-				if ( (l = node->btn_length = temp_key.key_length - prefix) ) {
-					do {
-						MOVE_BYTE(q, p);
-					}
-					while (--l);
+				if (useJumpInfo && (newAreaPointers[level] < levelPointer) &&
+					(bucket->btr_length + totalJumpSize[level] + 
+					levelNode.prefix + 6 < pp_fill_limit)) 
+				{
+					// Create a jumpnode
+					IndexJumpNode jumpNode;
+					jumpNode.prefix = BTreeNode::computePrefix(pageJumpKey->keyData,
+						pageJumpKey->keyLength, temp_key.key_data, levelNode.prefix);
+					jumpNode.length = levelNode.prefix - jumpNode.prefix;
+					jumpNode.offset = (levelNode.nodePointer - (UCHAR*)bucket);
+					jumpNode.data = FB_NEW(*tdbb->tdbb_default) UCHAR[jumpNode.length];
+					MOVE_FAST(temp_key.key_data + jumpNode.prefix, 
+						jumpNode.data, jumpNode.length);
+					// Push node on end in list
+					pageJumpNodes->add(jumpNode);
+					// Store new data in jumpKey, so a new jump node can calculate prefix
+					MOVE_FAST(jumpNode.data, pageJumpKey->keyData + jumpNode.prefix, 
+						jumpNode.length);
+					pageJumpKey->keyLength = jumpNode.length + jumpNode.prefix;
+					// Set new position for generating jumpnode
+					newAreaPointers[level] += jumpInfo.jumpAreaSize;
+					totalJumpSize[level] += BTreeNode::getJumpNodeSize(&jumpNode, flags);
 				}
 
 				// Now restore the current key value and save this node as the 
 				// current node on this level; also calculate the new page length.
 				copy_key(&temp_key, key);
-				nodes[level] = node;
-				next_node = NEXT_NODE(node);
-				bucket->btr_length = (UCHAR *) next_node - (UCHAR *) bucket;
+				pointers[level] = levelPointer;
+				bucket->btr_length = levelPointer - (UCHAR*) bucket;				
 				if (bucket->btr_length > dbb->dbb_page_size) {
 					BUGCHECK(205);	// msg 205 index bucket overfilled
 				}
@@ -2759,38 +3215,93 @@ static SLONG fast_load(TDBB tdbb,
 
 		// To finish up, put an end of level marker on the last bucket 
 		// of each level.
-
-		for (i = 0; (bucket = buckets[i]); i++) {
+		for (level = 0; (bucket = buckets[level]); level++) {
 			// retain the top level window for returning to the calling routine
-			window = &windows[i];
+			bool leafPage = (bucket->btr_level == 0);
+			window = &windows[level];
 
 			// store the end of level marker
-			node = LAST_NODE(bucket);
-			node->btn_length = node->btn_prefix = 0;
-			quad_put((SLONG) END_LEVEL, node->btn_number);
+			pointer = (UCHAR*)bucket + bucket->btr_length;
+			BTreeNode::setEndLevel(&levelNode, leafPage);
+			pointer = BTreeNode::writeNode(&levelNode, pointer, flags, leafPage);
 
 			// and update the final page length
-			bucket->btr_length += BTN_SIZE;
+			bucket->btr_length = pointer - (UCHAR*)bucket;
+
+			// Store jump nodes on page if needed.
+			jumpNodeList* pageJumpNodes = (*jumpNodes)[level];
+			if (useJumpInfo && totalJumpSize[level]) {
+				// Slide down current nodes;
+				l = bucket->btr_length - headerSize;
+				p = (UCHAR*)bucket + bucket->btr_length;
+				q = p + totalJumpSize[level];
+				while (l) {
+					*--q = *--p;
+					l--;
+				}
+
+				// Update JumpInfo
+				jumpInfo.firstNodeOffset = headerSize + totalJumpSize[level];
+				if (pageJumpNodes->getCount() > 255) {
+					BUGCHECK(205);	// msg 205 index bucket overfilled
+				}
+				jumpInfo.jumpers = (UCHAR)pageJumpNodes->getCount();
+				pointer = BTreeNode::writeJumpInfo(bucket, &jumpInfo);
+
+				// Write jumpnodes on page.
+				IndexJumpNode* walkJumpNode = pageJumpNodes->begin();
+				for (int i = 0; i < pageJumpNodes->getCount(); i++) {
+					// Update offset position first.
+					walkJumpNode[i].offset += totalJumpSize[level];
+					pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer, flags);
+				}
+
+				bucket->btr_length += totalJumpSize[level];
+			}
+
 			if (bucket->btr_length > dbb->dbb_page_size) {
 				BUGCHECK(205);	// msg 205 index bucket overfilled
 			}
 
-			CCH_RELEASE(tdbb, &windows[i]);
+			CCH_RELEASE(tdbb, &windows[level]);
 		}
-		tdbb->tdbb_flags &= ~TDBB_no_cache_unwind;
 
-		// do some final housekeeping
-		SORT_fini(sort_handle, tdbb->tdbb_attachment);
+		// Finally clean up dynamic memory used.
+		for (jumpNodeListContainer::iterator itr = jumpNodes->begin(); 
+			itr < jumpNodes->end(); ++itr) 
+		{
+			jumpNodeList* freeJumpNodes = *itr;
+			IndexJumpNode* walkJumpNode = freeJumpNodes->begin();
+			for (int i = 0; i < freeJumpNodes->getCount(); i++) {
+				if (walkJumpNode[i].data) {
+					delete walkJumpNode[i].data;
+				}
+			}
+			freeJumpNodes->clear();
+			delete freeJumpNodes;
+		}
+		delete jumpNodes;
+		for (keyList::iterator itr3 = jumpKeys->begin(); 
+			itr3 < jumpKeys->end(); ++itr3) 
+		{
+			delete (*itr3)->keyData;
+			delete (*itr3);
+		}
+		delete jumpKeys;
+
 
 	}	// try
 	catch (const std::exception&) {
 		error = true;
 	}
 
+	tdbb->tdbb_flags &= ~TDBB_no_cache_unwind;
+
+	// do some final housekeeping
+	SORT_fini(sort_handle, tdbb->tdbb_attachment);
 
 	// If index flush fails, try to delete the index tree.
 	// If the index delete fails, just go ahead and punt.
-
 	try {
 
 		if (error) {
@@ -2799,9 +3310,25 @@ static SLONG fast_load(TDBB tdbb,
 		}
 
 		CCH_flush(tdbb, (USHORT) FLUSH_ALL, 0);
-		selectivity.grow(idx->idx_count);
-		selectivity.back() =
-			(float) ((count) ? (1. / (double) (count - duplicates)) : 0);
+
+		// Calculate selectivity, also per segment when newer ODS
+		if (dbb->dbb_ods_version >= ODS_VERSION11) {
+			selectivity.grow(segments);
+		}
+		else {
+			selectivity.grow(1);
+		}
+		float* selectivities = selectivity.begin();
+		if ((dbb->dbb_ods_version >= ODS_VERSION11) && (segments >= 2)) {
+			for (i = 0; i < segments; i++) {
+				selectivities[i] = 
+					(float) ((count) ? 1.0 / (float) (count - segmentDuplicates[i]) : 0.0);
+			}	
+		}
+		else {
+			selectivities[0] = 
+				(float) ((count) ? (1.0 / (double) (count - duplicates)) : 0.0);
+		}
 
 		return window->win_page;
 
@@ -2814,8 +3341,7 @@ static SLONG fast_load(TDBB tdbb,
 			ERR_punt();
 		}
 	}
-
-	return -1L; /* lint */
+	return -1L; // lint
 }
 
 
@@ -2849,101 +3375,729 @@ static IRT fetch_root(TDBB tdbb, WIN * window, JRD_REL relation)
 }
 
 
-static SLONG find_node(BTR bucket, KEY * key, bool descending)
+static UCHAR *find_node_start_point(BTR bucket, KEY * key, UCHAR * value,
+						   USHORT * return_value, bool descending, 
+						   bool retrieval, bool pointer_by_marker,
+						   SLONG find_record_number)
 {
 /**************************************
  *
- *	f i n d _ n o d e
+ *	f i n d _ n o d e _ s t a r t _ p o i n t 
  *
  **************************************
  *
  * Functional description
- *	Find a node in an index level.  Return either the 
+ *	Locate and return a pointer to the insertion point.
+ *	If the key doesn't belong in this bucket, return NULL.
+ *	A flag indicates the index is descending.
+ *
+ **************************************/
+
+	SCHAR flags = bucket->btr_header.pag_flags;
+	register UCHAR *p, *q, *r;
+	USHORT prefix = 0;
+	UCHAR *key_end = key->key_data + key->key_length;
+	UCHAR *nodeEnd;
+	if (!(flags & btr_all_record_number)) {
+		find_record_number = NO_VALUE;
+	}
+	bool firstPass = true;
+	bool leafPage = (bucket->btr_level == 0);
+
+	// Find point where we can start search.
+	UCHAR *pointer;
+	if (flags & btr_jump_info) {
+		pointer = find_area_start_point(bucket, key, value,
+			&prefix, descending, retrieval, find_record_number);
+	}
+	else {
+		pointer = BTreeNode::getPointerFirstNode(bucket);
+	}
+	p = key->key_data + prefix;
+
+
+	if (flags & btr_large_keys) {
+		IndexNode node;
+		pointer = BTreeNode::readNode(&node, pointer, flags, leafPage);
+
+		// If this is an non-leaf bucket of a descending index, the dummy node on the
+		// front will trip us up.  NOTE: This code may be apocryphal.  I don't see 
+		// anywhere that a dummy node is stored for a descending index.  - deej
+		//
+		// AB: This node ("dummy" node) is inserted on every first page in a level.
+		// Because it's length and prefix is 0 a descending index would see it 
+		// always as the first matching node. 
+		if (!leafPage && descending && 
+			(node.nodePointer == BTreeNode::getPointerFirstNode(bucket)) && 
+			(node.length == 0)) 
+		{
+			pointer = BTreeNode::readNode(&node, pointer, flags, leafPage);
+		}
+
+		while (true) {
+			// Pick up data from node
+			if (value && node.length) {
+				r = value + node.prefix;
+				MOVE_FAST(node.data, r, node.length);
+			}
+
+			// If the record number is -1, the node is the last in the level
+			// and, by definition, is the insertion point.  Otherwise, if the
+			// prefix of the current node is less than the running prefix, the 
+			// node must have a value greater than the key, so it is the insertion
+			// point.
+			if (BTreeNode::isEndLevel(&node, leafPage) || node.prefix < prefix) {
+				if (return_value) {
+					*return_value = prefix;
+				}
+				return node.nodePointer;
+			}
+
+			// If the node prefix is greater than current prefix , it must be less 
+			// than the key, so we can skip it.  If it has zero length, then
+			// it is a duplicate, and can also be skipped.
+			if (node.prefix == prefix) {
+				q = node.data;
+				nodeEnd = q + node.length;
+				if (descending) {
+					while (true) {
+						if (q == nodeEnd || (retrieval && p == key_end)) {
+							goto done1;
+						}
+						else if (p == key_end || *p > *q) {
+							break;
+						}
+						else if (*p++ < *q++) {
+							goto done1;
+						}
+					}
+				}
+				else if (node.length > 0 || firstPass) {
+					firstPass = false;
+					while (true) {
+						if (p == key_end) {
+							goto done1;
+						}
+						else if (q == nodeEnd || *p > *q) {
+							break;
+						}
+						else if (*p++ < *q++) {
+							goto done1;
+						}
+					}
+				}
+				prefix = (USHORT)(p - key->key_data);
+			}
+
+			if (BTreeNode::isEndBucket(&node, leafPage)) {
+				if (pointer_by_marker) {
+					goto done1;
+				}
+				else {
+					return NULL;
+				}
+			}
+			pointer = BTreeNode::readNode(&node, pointer, flags, leafPage);
+		}
+
+	  done1:
+		if (return_value) {
+			*return_value = prefix;
+		}
+		return node.nodePointer;
+	}
+	else {
+		// Uses fastest approach when possible. 
+		register btn* node;
+		SLONG number;
+
+		node = (btn*)pointer;
+
+		// If this is an non-leaf bucket of a descending index, the dummy node on the
+		// front will trip us up.  NOTE: This code may be apocryphal.  I don't see 
+		// anywhere that a dummy node is stored for a descending index.  - deej
+		//
+		// AB: This node ("dummy" node) is inserted on every first page in a level.
+		// Because it's length and prefix is 0 a descending index would see it 
+		// always as the first matching node. 
+		if (!leafPage && descending && 
+			(pointer == BTreeNode::getPointerFirstNode(bucket)) && 
+			(node->btn_length == 0)) 
+		{
+			if (flags & btr_all_record_number) {
+				node = NEXT_NODE_RECNR(node);
+			}
+			else {
+				node = NEXT_NODE(node);
+			}
+		}
+
+		while (true) {
+			// Pick up data from node
+
+			if (value && node->btn_length) {
+				r = value + node->btn_prefix;
+				MOVE_FAST(node->btn_data, r, node->btn_length);
+			}
+
+			// If the page/record number is -1, the node is the last in the level
+			// and, by definition, is the insertion point.  Otherwise, if the
+			// prefix of the current node is less than the running prefix, the 
+			// node must have a value greater than the key, so it is the insertion
+			// point. 
+			number = get_long(node->btn_number);
+
+			if (number == END_LEVEL || node->btn_prefix < prefix) {
+				if (return_value) {
+					*return_value = prefix;
+				}
+				return (UCHAR*)node;
+			}
+
+			// If the node prefix is greater than current prefix , it must be less 
+			// than the key, so we can skip it.  If it has zero length, then
+			// it is a duplicate, and can also be skipped.
+			if (node->btn_prefix == prefix) {
+				q = node->btn_data;
+				nodeEnd = q + node->btn_length;
+				if (descending) {
+					while (true) {
+						if (q == nodeEnd || retrieval && p == key_end) {
+							goto done2;
+						}
+						else if (p == key_end || *p > *q) {
+							break;
+						}
+						else if (*p++ < *q++) {
+							goto done2;
+						}
+					}
+				}
+				else if (node->btn_length > 0 || firstPass) {
+					firstPass = false;
+					while (true) {
+						if (p == key_end) {
+							goto done2;
+						}
+						else if (q == nodeEnd || *p > *q) {
+							break;
+						}
+						else if (*p++ < *q++) {
+							goto done2;
+						}
+					}
+				}
+				prefix = (USHORT)(p - key->key_data);
+			}
+			if (number == END_BUCKET) {
+				if (pointer_by_marker) {
+					goto done2;
+				}
+				else {
+					return NULL;
+				}
+			}
+
+			// Get next node
+			if (!leafPage && (flags & btr_all_record_number)) {
+				node = NEXT_NODE_RECNR(node);
+			}
+			else {
+				node = NEXT_NODE(node);
+			}
+		}
+
+	  done2:
+		if (return_value) {
+			*return_value = prefix;
+		}
+		return (UCHAR*)node;
+	}  
+}
+
+
+static UCHAR *find_area_start_point(BTR bucket, KEY * key, UCHAR * value,
+									USHORT * return_prefix, bool descending,
+									bool retrieval, SLONG find_record_number)
+{
+/**************************************
+ *
+ *	f i n d _ a r e a _ s t a r t _ p o i n t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Locate and return a pointer to a start area.
+ *	The starting nodes for a area are 
+ *  defined with jump nodes. A jump node
+ *  contains the prefix information for
+ *  a node at a specific offset.
+ *
+ **************************************/
+	SCHAR flags = bucket->btr_header.pag_flags;
+	UCHAR *pointer;
+	USHORT prefix = 0;
+	if (flags & btr_jump_info) {
+		if (!(flags & btr_all_record_number)) {
+			find_record_number = NO_VALUE;
+		}
+		bool useFindRecordNumber = (find_record_number != NO_VALUE);
+		bool leafPage = (bucket->btr_level == 0);
+		UCHAR *q, *nodeEnd;
+		UCHAR *keyPointer = key->key_data;
+		UCHAR *keyEnd = keyPointer + key->key_length;
+		IndexJumpInfo jumpInfo;
+		IndexJumpNode jumpNode, prevJumpNode;
+		IndexNode node;
+
+		// Retrieve jump information.
+		pointer = BTreeNode::getPointerFirstNode(bucket, &jumpInfo);
+		USHORT n = jumpInfo.jumpers;
+		KEY jumpKey; 
+
+		// Set begin of page as default.
+		prevJumpNode.offset = jumpInfo.firstNodeOffset; 
+		prevJumpNode.prefix = 0;
+		prevJumpNode.length = 0;
+		jumpKey.key_length = 0;
+		USHORT testPrefix = 0;
+		bool done;
+		while (n) {
+			pointer = BTreeNode::readJumpNode(&jumpNode, pointer, flags);
+			BTreeNode::readNode(&node, (UCHAR*)bucket + jumpNode.offset, flags, leafPage);
+
+			// jumpKey will hold complete data off referenced node 
+			q = jumpKey.key_data + jumpNode.prefix;
+			MOVE_FASTER(jumpNode.data, q, jumpNode.length);
+			q = jumpKey.key_data + node.prefix;
+			MOVE_FASTER(node.data, q, node.length);
+			jumpKey.key_length = node.prefix + node.length;
+
+			keyPointer = key->key_data + jumpNode.prefix;
+			q = jumpKey.key_data + jumpNode.prefix;
+			nodeEnd = jumpKey.key_data + jumpKey.key_length;
+			done = false;
+
+			if ((jumpNode.prefix <= testPrefix) && descending) {
+				while (true) {
+					if (q == nodeEnd) {
+						done = true;
+						// Check if this is a exact match or a duplicate.
+						// If the node is pointing to its end and the length is 
+						// the same as the key then we have found a exact match.
+						// Now start walking between the jump nodes until we
+						// found a node reference that's not equal anymore 
+						// or the record number is higher then the one we need.
+						if (useFindRecordNumber && (keyPointer == keyEnd)) 
+						{
+							n--;
+							while (n) {
+								if (find_record_number < node.recordNumber) {
+									// If the record number from leaf is higer
+									// then we should be in our previous area.
+									break;
+								}
+								// Calculate new prefix to return right prefix.
+								prefix = jumpNode.length + jumpNode.prefix;
+
+								prevJumpNode = jumpNode;
+								pointer = BTreeNode::readJumpNode(&jumpNode, pointer, flags);
+								BTreeNode::readNode(&node, (UCHAR*)bucket + 
+									jumpNode.offset, flags, leafPage);
+
+								if (node.length != 0 ||
+									node.prefix != prevJumpNode.prefix + prevJumpNode.length ||
+									jumpNode.prefix != prevJumpNode.prefix + prevJumpNode.length ||
+									BTreeNode::isEndBucket(&node, leafPage) ||
+									BTreeNode::isEndLevel(&node, leafPage))
+								{
+									break;
+								}
+								n--;
+							}
+						}
+						break;
+					}
+					else if (retrieval && keyPointer == keyEnd) {
+						done = true;
+						break;
+					}
+					else if (keyPointer == keyEnd) {
+						// End of key reached
+						break;
+					} 
+					else if (*keyPointer > *q) {
+						// Our key is bigger so check next node.
+						break;
+					}
+					else if (*keyPointer++ < *q++) {
+						done = true;
+						break;
+					}
+				}
+				testPrefix = (USHORT)(keyPointer - key->key_data);
+			}
+			else if (jumpNode.prefix <= testPrefix) {
+				while (true) {
+					if (keyPointer == keyEnd) {
+						// Reached end of our key we're searching for.
+						done = true;
+						// Check if this is a exact match or a duplicate
+						// If the node is pointing to its end and the length is 
+						// the same as the key then we have found a exact match.
+						// Now start walking between the jump nodes until we
+						// found a node reference that's not equal anymore 
+						// or the record number is higher then the one we need.
+						if (useFindRecordNumber && q == nodeEnd) {
+							n--;
+							while (n) {
+								if (find_record_number < node.recordNumber) {
+									// If the record number from leaf is higer
+									// then we should be in our previous area.
+									break;
+								}
+								// Calculate new prefix to return right prefix.
+								prefix = jumpNode.length + jumpNode.prefix;
+
+								prevJumpNode = jumpNode;
+								pointer = BTreeNode::readJumpNode(&jumpNode, pointer, flags);
+								BTreeNode::readNode(&node, (UCHAR*)bucket + 
+									jumpNode.offset, flags, leafPage);
+
+								if (node.length != 0 ||
+									node.prefix != prevJumpNode.prefix + prevJumpNode.length ||
+									jumpNode.prefix != prevJumpNode.prefix + prevJumpNode.length ||
+									BTreeNode::isEndBucket(&node, leafPage) ||
+									BTreeNode::isEndLevel(&node, leafPage))
+								{
+									break;
+								}
+								n--;
+							}
+						}
+						break;
+					} 
+					else if (q == nodeEnd) {
+						// End of node data reached
+						break;
+					}
+					else if (*keyPointer > *q) {
+						// Our key is bigger so check next node.
+						break;
+					}
+					else if (*keyPointer++ < *q++) {
+						done = true;
+						break;
+					}
+				}
+				testPrefix = (USHORT)(keyPointer - key->key_data);
+			}
+			if (done) {
+				// We're done, go out of main loop.
+				break;
+			}
+			else {
+				prefix = MIN(jumpNode.length + jumpNode.prefix, testPrefix);
+				if (value && (jumpNode.length + jumpNode.prefix)) {
+					// Copy prefix data from referenced node to value
+					UCHAR *r = value;
+					MOVE_FASTER(jumpKey.key_data, r, jumpNode.length + jumpNode.prefix);
+				}
+				prevJumpNode = jumpNode;
+			}
+			n--;
+		}
+
+		// Set return pointer
+		pointer = (UCHAR*)bucket + prevJumpNode.offset;
+	}
+	else {
+		pointer = BTreeNode::getPointerFirstNode(bucket);
+	}
+	if (return_prefix) {
+		*return_prefix = prefix;
+	}
+	return pointer;
+}
+
+
+static SLONG find_page(BTR bucket, KEY * key, UCHAR idx_flags, SLONG find_record_number)
+{
+/**************************************
+ *
+ *	f i n d _ p a g e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Find a page number in an index level.  Return either the 
  *	node equal to the key or the last node less than the key.
  *	Note that this routine can be called only for non-leaf 
  *	pages, because it assumes the first node on page is 
  *	a degenerate, zero-length node.
  *
  **************************************/
-	UCHAR *key_end, *node_end;
-	UCHAR *p, *q;
 
-	BTN node = bucket->btr_nodes;
+	SCHAR flags = bucket->btr_header.pag_flags;
+	bool leafPage = (bucket->btr_level == 0);
+	bool firstPass = true;
+	bool descending = (idx_flags & idx_descending);
+	bool allRecordNumber = (flags & btr_all_record_number);
 
-	// Compute common prefix of key and first node
-	USHORT prefix = compute_prefix(key, node->btn_data, node->btn_length);
-	p = key->key_data + prefix;
-	key_end = key->key_data + key->key_length;
-	SLONG number = get_long(node->btn_number);
-
-	if (number == END_LEVEL) {
-		BUGCHECK(206);	// msg 206 exceeded index level
+	if (!allRecordNumber) {
+		find_record_number = NO_VALUE;
 	}
 
-	if (key->key_length == 0) {
-		return number;
-	}
+	UCHAR* p;			// pointer on key
+	UCHAR* q;			// pointer on processing node
+	UCHAR* keyEnd;		// pointer on end of key
+	UCHAR* nodeEnd;		// pointer on end of processing node
+	UCHAR* pointer;		// pointer where to start reading next node
+	USHORT prefix = 0;	// last computed prefix against processed node
 
-	BTN prior;
-	while (true) {
-		// If this is the end of bucket, return node.  Somebody else can
-		// deal with this
-		if (number == END_BUCKET) {
-			return number;
+	pointer = find_area_start_point(bucket, key, 0, &prefix,
+		descending, false, find_record_number);
+
+	if (flags & btr_large_keys) {
+		IndexNode node;
+		pointer = BTreeNode::readNode(&node, pointer, flags, leafPage);
+
+		if (BTreeNode::isEndBucket(&node, leafPage) ||
+			BTreeNode::isEndLevel(&node, leafPage))
+		{
+			pointer = BTreeNode::getPointerFirstNode(bucket);
+			pointer = BTreeNode::readNode(&node, pointer, flags, leafPage);
 		}
 
-		prior = node;
-		node = NEXT_NODE(node);
+		if (BTreeNode::isEndLevel(&node, leafPage)) {
+			BUGCHECK(206);	// msg 206 exceeded index level
+		}
+
+		SLONG previousNumber = node.pageNumber;
+		if (pointer == BTreeNode::getPointerFirstNode(bucket)) {
+			prefix = 0;
+			// Handle degenerating node, always generated at first
+			// page in a level. 
+			if ((node.prefix == 0) && (node.length == 0)) {
+				// Compute common prefix of key and first node
+				previousNumber = node.pageNumber;
+				pointer = BTreeNode::readNode(&node, pointer, flags, leafPage);
+			}
+		}		
+		p = key->key_data + prefix;
+		keyEnd = key->key_data + key->key_length;
+
+		while (true) {
+
+			// If the page/record number is -1, the node is the last in the level
+			// and, by definition, is the target node.  Otherwise, if the
+			// prefix of the current node is less than the running prefix, its
+			// node must have a value greater than the key, which is the fb_insertion
+			// point.
+			if (BTreeNode::isEndLevel(&node, leafPage) || node.prefix < prefix) {
+				return previousNumber;
+			}
+
+			// If the node prefix is greater than current prefix , it must be less 
+			// than the key, so we can skip it.  If it has zero length, then
+			// it is a duplicate, and can also be skipped.
+			q = node.data;
+			nodeEnd = q + node.length;
+			if (node.prefix == prefix) {
+				if (descending) {
+					// Descending indexes
+					while (true) {
+						// Check for exact match and if we need to do
+						// record number matching.
+						if (q == nodeEnd || p == keyEnd) {
+							if (find_record_number != NO_VALUE && 
+								q == nodeEnd && p == keyEnd) 
+							{
+								return BTreeNode::findPageInDuplicates(bucket, 
+									node.nodePointer, previousNumber, find_record_number);
+							}
+							else {
+								return previousNumber;
+							}
+						}
+						else if (*p > *q) {
+							break;
+						}
+						else if (*p++ < *q++) {
+							return previousNumber;
+						}
+					}
+				}
+				else if (node.length > 0 || firstPass) {
+					firstPass = false;
+					// Ascending index
+					while (true) {
+						if (p == keyEnd) {
+							// Check for exact match and if we need to do
+							// record number matching.
+							if (find_record_number != NO_VALUE && 
+								 q == nodeEnd) 
+							{
+								return BTreeNode::findPageInDuplicates(bucket, 
+									node.nodePointer, previousNumber, find_record_number);
+							}
+							else {
+								return previousNumber;
+							}
+						}
+						else if (q == nodeEnd || *p > *q) {
+							break;
+						}
+						else if (*p++ < *q++) {
+							return previousNumber;
+						}
+					}
+				}
+			}
+			prefix = p - key->key_data;
+
+			// If this is the end of bucket, return node.  Somebody else can
+			// deal with this
+			if (BTreeNode::isEndBucket(&node, leafPage)) {
+				return node.pageNumber;
+			}
+
+			previousNumber = node.pageNumber;
+			pointer = BTreeNode::readNode(&node, pointer, flags, leafPage);
+		}
+	}
+	else {
+		// Uses fastest approach when possible.
+		// Use direct struct to memory location which is faster then
+		// processing readNode from BTreeNode, this is only possible
+		// for small keys (key_length < 255)
+		btn* node;
+		btn* prior;
+
+		prior = node = (btn*)pointer;
+		SLONG number = get_long(node->btn_number);
+		if (number == END_LEVEL || number == END_BUCKET) {
+			pointer = BTreeNode::getPointerFirstNode(bucket);
+			node = (btn*)pointer;
+		}
+
 		number = get_long(node->btn_number);
-
-		// If the page/record number is -1, the node is the last in the level
-		// and, by definition, is the target node.  Otherwise, if the
-		// prefix of the current node is less than the running prefix, its
-		// node must have a value greater than the key, which is the insertion
-		// point.
-		if (number == END_LEVEL || node->btn_prefix < prefix) {
-			return get_long(prior->btn_number);
+		if (number == END_LEVEL) {
+			BUGCHECK(206);	// msg 206 exceeded index level
 		}
 
-		// If the node prefix is greater than current prefix , it must be less 
-		// than the key, so we can skip it.  If it has zero length, then
-		// it is a duplicate, and can also be skipped.
-		q = node->btn_data;
-		node_end = q + node->btn_length;
-		if (descending) {
+		if (key->key_length == 0) {
+			//return get_long(node->btn_number);
+			key->key_length = 0;
+		}
+
+		if (pointer == BTreeNode::getPointerFirstNode(bucket)) {
+			prefix = 0;
+			// Handle degenerating node, always generated at first
+			// page in a level. 
+			if ((node->btn_prefix == 0) && (node->btn_length == 0)) {
+				// Compute common prefix of key and first node
+				prior = node;
+				if (flags & btr_all_record_number) {
+					node = NEXT_NODE_RECNR(node);
+				}
+				else {
+					node = NEXT_NODE(node);
+				}
+			}
+		}
+		p = key->key_data + prefix;
+		keyEnd = key->key_data + key->key_length;
+
+		while (true) {
+
+			number = get_long(node->btn_number);
+
+			// If the page/record number is -1, the node is the last in the level
+			// and, by definition, is the target node.  Otherwise, if the
+			// prefix of the current node is less than the running prefix, its
+			// node must have a value greater than the key, which is the insertion
+			// point.
+			if (number == END_LEVEL || node->btn_prefix < prefix) {
+				return get_long(prior->btn_number);
+			}
+
+			// If the node prefix is greater than current prefix , it must be less 
+			// than the key, so we can skip it.  If it has zero length, then
+			// it is a duplicate, and can also be skipped.
+			q = node->btn_data;
+			nodeEnd = q + node->btn_length;
 			if (node->btn_prefix == prefix) {
-				while (true) {
-					if (q == node_end || p == key_end) {
-						return get_long(prior->btn_number);
+				if (descending) {
+					while (true) {
+						if (q == nodeEnd || p == keyEnd) {
+							if (find_record_number != NO_VALUE && 
+								q == nodeEnd && p == keyEnd) 
+							{
+								return BTreeNode::findPageInDuplicates(bucket, 
+									(UCHAR*)node, get_long(prior->btn_number), 
+									find_record_number);
+							}
+							else {
+								return get_long(prior->btn_number);
+							}
+						}
+						else if (*p > *q) {
+							break;
+						}
+						else if (*p++ < *q++) {
+							return get_long(prior->btn_number);
+						}
 					}
-					else if (*p > *q) {
-						break;
-					}
-					else if (*p++ < *q++) {
-						return get_long(prior->btn_number);
+				}
+				else if (node->btn_length > 0 || firstPass) {
+					firstPass = false;
+					// Ascending index
+					while (true) {
+						if (p == keyEnd) {
+							// Check for exact match and if we need to do
+							// record number matching.
+							if (find_record_number != NO_VALUE && 
+								 q == nodeEnd) 
+							{
+								return BTreeNode::findPageInDuplicates(bucket, 
+									(UCHAR*)node, get_long(prior->btn_number), 
+									find_record_number);
+							}
+							else {
+								return get_long(prior->btn_number);
+							}
+						}
+						else if (q == nodeEnd || *p > *q) {
+							break;
+						}
+						else if (*p++ < *q++) {
+							return get_long(prior->btn_number);
+						}
 					}
 				}
 			}
-		}
-		else if (node->btn_prefix == prefix && node->btn_length > 0) {
-			while (true) {
-				if (p == key_end) {
-					return get_long(prior->btn_number);
-				}
-				else if (q == node_end || *p > *q) {
-					break;
-				}
-				else if (*p++ < *q++) {
-					return get_long(prior->btn_number);
-				}
-			}
-		}
+			prefix = (USHORT)(p - key->key_data);
 
-		prefix = (p - key->key_data);
+			// If this is the end of bucket, return node.  Somebody else can
+			// deal with this
+			if (number == END_BUCKET) {
+				return get_long(node->btn_number);
+			}
+
+			prior = node;
+			if (flags & btr_all_record_number) {
+				node = NEXT_NODE_RECNR(node);
+			}
+			else {
+				node = NEXT_NODE(node);
+			}
+
+		}
 	}
 
 	// NOTREACHED
-	return 0;	// superfluous return to shut lint up
+	return -1;	// superfluous return to shut lint up
 }
 
 
@@ -3057,7 +4211,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 	// now refetch the original page and make sure it is still 
 	// below the threshold for garbage collection.
 	gc_page = (BTR) CCH_FETCH(tdbb, window, LCK_write, pag_index);
-	if ((gc_page->btr_length >= GARBAGE_COLLECTION_THRESHOLD)
+	if ((gc_page->btr_length >= GARBAGE_COLLECTION_BELOW_THRESHOLD)
 		|| (gc_page->btr_header.pag_flags & btr_dont_gc)) 
 	{
 		CCH_RELEASE(tdbb, &parent_window);
@@ -3087,37 +4241,37 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 		}
 	}
 
+	SCHAR flags = gc_page->btr_header.pag_flags;
+	// Check if flags are valid.
+	if ((parent_page->btr_header.pag_flags & BTR_FLAG_COPY_MASK) !=
+		(flags & BTR_FLAG_COPY_MASK))
+	{
+		CORRUPT(204);	// msg 204 index inconsistent
+	}
+
 	// Find the node on the parent's level--the parent page could 
 	// have split while we didn't have it locked
-
-#ifdef DEBUG_BTR
-	SLONG previous_number = 0;
-#endif
-	SLONG number;
-	BTN parent_node;
-	for (parent_node = parent_page->btr_nodes;;) {
-		number = get_long(parent_node->btn_number);
-
-		if (number == END_BUCKET) {
+	UCHAR *parentPointer = BTreeNode::getPointerFirstNode(parent_page);
+	IndexNode parentNode;
+	while (true) {
+		parentPointer = BTreeNode::readNode(&parentNode, parentPointer, flags, false);
+		if (BTreeNode::isEndBucket(&parentNode, false)) {
 			parent_page = (BTR) CCH_HANDOFF(tdbb, &parent_window,
 				parent_page->btr_sibling, LCK_write, pag_index);
-			parent_node = parent_page->btr_nodes;
+			parentPointer = BTreeNode::getPointerFirstNode(parent_page);
 			continue;
 		}
 
-		if (number == window->win_page || number == END_LEVEL) {
+		if (parentNode.pageNumber == window->win_page || 
+			BTreeNode::isEndLevel(&parentNode, false)) 
+		{
 			break;
 		}
 
-#ifdef DEBUG_BTR
-		previous_number = number;
-#endif
-		parent_node = NEXT_NODE(parent_node);
 	}
 
 	// we should always find the node, but just in case we don't, bow out gracefully
-
-	if (number == END_LEVEL) {
+	if (BTreeNode::isEndLevel(&parentNode, false)) {
 		CCH_RELEASE(tdbb, &left_window);
 		if (right_page) {
 			CCH_RELEASE(tdbb, &right_window);
@@ -3125,10 +4279,11 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 		CCH_RELEASE(tdbb, &parent_window);
 		CCH_RELEASE(tdbb, window);
 #ifdef DEBUG_BTR
-		CORRUPT(204);			/* msg 204 index inconsistent */
+		CORRUPT(204);	// msg 204 index inconsistent
 #endif
 		return contents_above_threshold;
 	}
+
 
 	// Fix for ARINC database corruption bug: in most cases we update the END_BUCKET 
 	// marker of the left sibling page to contain the END_BUCKET of the garbage-collected 
@@ -3143,8 +4298,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 	// no more keys on this page, it will not be garbage-collected itself.  When the page 
 	// to the right falls below the threshold for garbage collection, it will be merged with 
 	// this page.
-
-	if (parent_node == parent_page->btr_nodes) {
+	if (parentNode.nodePointer == BTreeNode::getPointerFirstNode(parent_page)) {
 		CCH_RELEASE(tdbb, &left_window);
 		if (right_page) {
 			CCH_RELEASE(tdbb, &right_window);
@@ -3155,156 +4309,324 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 	}
 
 	// find the last node on the left sibling and save its key value
-	BTN last_node;
-	KEY last_key;
-	UCHAR *p, *q;
-	USHORT l;
-	p = last_key.key_data;
-	for (last_node = left_page->btr_nodes;
-		 (number = get_long(last_node->btn_number) >= 0); 
-		 last_node = NEXT_NODE(last_node))
+	// Check if flags are valid.
+	if ((left_page->btr_header.pag_flags & BTR_FLAG_COPY_MASK) !=
+		(flags & BTR_FLAG_COPY_MASK))
 	{
-		if ( (l = last_node->btn_length) ) {
-			p = last_key.key_data + last_node->btn_prefix;
-			q = last_node->btn_data;
-			do {
-				*p++ = *q++;
+		CORRUPT(204);	// msg 204 index inconsistent
+	}
+	bool useJumpInfo = (flags & btr_jump_info);
+	bool leafPage = (gc_page->btr_level == 0);
+	UCHAR* leftPointer;
+	UCHAR* p;
+	KEY lastKey;
+
+	leftPointer = BTreeNode::getPointerFirstNode(left_page);
+	lastKey.key_length = 0;
+
+	IndexNode leftNode;
+	if (useJumpInfo) {
+		IndexJumpInfo leftJumpInfo;
+		UCHAR* pointer;
+		pointer = BTreeNode::getPointerFirstNode(left_page, &leftJumpInfo);
+
+		// Walk trough node jumpers.
+		USHORT n = leftJumpInfo.jumpers;
+		IndexJumpNode jumpNode;
+		while (n) {
+			pointer = BTreeNode::readJumpNode(&jumpNode, pointer, flags);
+			BTreeNode::readNode(&leftNode, 
+				(UCHAR*)left_page + jumpNode.offset, flags, leafPage);
+
+			if (!(BTreeNode::isEndBucket(&leftNode, leafPage) ||
+				BTreeNode::isEndLevel(&leftNode, leafPage))) 
+			{
+				if (jumpNode.length) {
+					MOVE_FASTER(jumpNode.data, lastKey.key_data + jumpNode.prefix,
+						jumpNode.length);
+				}
+				leftPointer = (UCHAR*)left_page + jumpNode.offset;
+				lastKey.key_length = jumpNode.prefix + jumpNode.length;
 			}
-			while (--l);
+			else {
+				break;
+			}
+			n--;
 		}
 	}
-	last_key.key_length = p - last_key.key_data;
+	while (true) {
+		leftPointer = BTreeNode::readNode(&leftNode, leftPointer, flags, leafPage);
+		// If it isn't a recordnumber were done
+		if (BTreeNode::isEndBucket(&leftNode, leafPage) ||
+			BTreeNode::isEndLevel(&leftNode, leafPage)) 
+		{
+			break;
+		}
+		// Save data
+		if (leftNode.length) {
+			p = lastKey.key_data + leftNode.prefix;
+			MOVE_FASTER(leftNode.data, p, leftNode.length);
+			lastKey.key_length = leftNode.prefix + leftNode.length;
+		}
+	}
+	leftPointer = leftNode.nodePointer;
 
 	// see if there's enough space on the left page to move all the nodes to it
 	// and leave some extra space for expansion (at least one key length)
-	BTN node = gc_page->btr_nodes;
+	SCHAR gcFlags = gc_page->btr_header.pag_flags;
+	UCHAR* gcPointer = BTreeNode::getPointerFirstNode(gc_page);
+	IndexNode gcNode;
+	BTreeNode::readNode(&gcNode, gcPointer, gcFlags, leafPage);
+	USHORT prefix = BTreeNode::computePrefix(lastKey.key_data, lastKey.key_length,
+		gcNode.data, gcNode.length);
+	if (useJumpInfo) {
+		// Get pointer for calculating gcSize (including jump nodes).
+		IndexJumpInfo leftJumpInfo;
+		gcPointer = BTreeNode::getPointerFirstNode(gc_page, &leftJumpInfo);
+	}
+	USHORT gcSize = gc_page->btr_length - (gcPointer - (UCHAR*)(gc_page));
+	USHORT leftAssumedSize = left_page->btr_length + gcSize - prefix;
 
-	USHORT prefix = compute_prefix(&last_key, node->btn_data, node->btn_length);
-
-	if (left_page->btr_length +
-		gc_page->btr_length - prefix -
-		last_node->btn_length - BTN_SIZE -
-		((UCHAR *) gc_page->btr_nodes -
-		 (UCHAR *) gc_page) > dbb->dbb_page_size - MAX_KEY) {
+	// If the new page will be larger then the thresholds don't gc.
+	//GARBAGE_COLLECTION_NEW_PAGE_MAX_THRESHOLD
+	USHORT max_threshold = GARBAGE_COLLECTION_NEW_PAGE_MAX_THRESHOLD;
+	//USHORT max_threshold = dbb->dbb_page_size - 50;
+	if (leftAssumedSize > max_threshold) {
 		CCH_RELEASE(tdbb, &parent_window);
 		CCH_RELEASE(tdbb, &left_window);
 		CCH_RELEASE(tdbb, window);
-		if (right_page)
+		if (right_page) {
 			CCH_RELEASE(tdbb, &right_window);
+		}
 		return contents_above_threshold;
 	}
 
-#ifdef DEBUG_BTR
-	{
-		SLONG next_number;
-		BTN next_parent_node;
-		// do a consistency check to be sure that the parent page has the proper 
-		// nodes to the left and to the right--this assumes single-user, because 
-		// it's possible that leaf pages in a duplicate chain could be out of 
-		// order when two different processes split pages at the same time
-		next_parent_node = NEXT_NODE(parent_node);
-		next_number = get_long(next_parent_node->btn_number);
+	if (useJumpInfo) {
+		// First copy left page to scratch page.
+		SLONG scratchPage[OVERSIZE];
+		BTR newBucket = (BTR) scratchPage;
 
-		if ((left_page && previous_number && (previous_number != left_window.win_page)) || 
-			(right_page && (next_number > 0) && (next_number != right_window.win_page))) 
-		{
+		IndexJumpInfo jumpInfo;
+		UCHAR *pointer = BTreeNode::getPointerFirstNode(left_page, &jumpInfo);
+		USHORT headerSize = (pointer - (UCHAR*)left_page);
+		USHORT jumpersOriginalSize = jumpInfo.firstNodeOffset - headerSize;
+
+		// Copy header and data
+		MOVE_FASTER((UCHAR*)left_page, newBucket, headerSize);
+		MOVE_FASTER((UCHAR*)left_page + jumpInfo.firstNodeOffset, 
+			(UCHAR*)newBucket + headerSize, 
+			left_page->btr_length - jumpInfo.firstNodeOffset);
+
+		// Update leftPointer to scratch page. 
+		leftPointer = (UCHAR*)newBucket + (leftPointer - (UCHAR*)left_page) - 
+			jumpersOriginalSize;
+		SCHAR flags = newBucket->btr_header.pag_flags;
+		gcPointer = BTreeNode::getPointerFirstNode(gc_page);
+		//
+		BTreeNode::readNode(&leftNode, leftPointer, flags, leafPage);
+		// Calculate the total amount of compression on page as the combined 
+		// totals of the two pages, plus the compression of the first node 
+		// on the g-c'ed page, minus the prefix of the END_BUCKET node to 
+		// be deleted.
+		newBucket->btr_prefix_total += 
+			gc_page->btr_prefix_total + prefix - leftNode.prefix;
+
+		// Get first node from gc-page.
+		gcPointer = BTreeNode::readNode(&gcNode, gcPointer, gcFlags, leafPage);
+
+		// Write first node with prefix compression on left page.
+		leftNode.prefix = prefix;
+		leftNode.length = gcNode.length - prefix;
+		leftNode.recordNumber = gcNode.recordNumber;
+		leftNode.pageNumber = gcNode.pageNumber;
+		leftNode.data = gcNode.data + prefix;
+		leftPointer = BTreeNode::writeNode(&leftNode, leftPointer, flags, leafPage);
+
+		// Update page-size.
+		newBucket->btr_length = (leftPointer - (UCHAR*)newBucket);
+		// copy over the remainder of the page to be garbage-collected.
+		USHORT l = gc_page->btr_length - (gcPointer - (UCHAR*)(gc_page));
+		MOVE_FASTER(gcPointer, leftPointer, l);
+		// update page size.
+		newBucket->btr_length += l;
+		
+		// Generate new jump nodes.
+		jumpNodeList* jumpNodes = FB_NEW(*tdbb->tdbb_default) jumpNodeList(tdbb->tdbb_default);
+		USHORT jumpersNewSize = 0;
+		// Update jump information on scratch page, so generate_jump_nodes
+		// can deal with it.
+		jumpInfo.firstNodeOffset = headerSize;
+		jumpInfo.jumpers = 0;
+		BTreeNode::writeJumpInfo(newBucket, &jumpInfo);
+		generate_jump_nodes(tdbb, newBucket, jumpNodes, 0, &jumpersNewSize, NULL, NULL);
+		
+		// Now we know exact how big our updated left page is, so check size 
+		// again to be sure it all will fit.
+		// If the new page will be larger then the page size don't gc ofcourse.
+		if (newBucket->btr_length + jumpersNewSize > dbb->dbb_page_size) {
 			CCH_RELEASE(tdbb, &parent_window);
 			CCH_RELEASE(tdbb, &left_window);
 			CCH_RELEASE(tdbb, window);
 			if (right_page) {
 				CCH_RELEASE(tdbb, &right_window);
 			}
-			CORRUPT(204);	// msg 204 index inconsistent
+			IndexJumpNode* walkJumpNode = jumpNodes->begin();
+			for (int i = 0; i < jumpNodes->getCount(); i++) {
+				if (walkJumpNode[i].data) {
+					delete walkJumpNode[i].data;
+				}
+			}
+			jumpNodes->clear();
+			delete jumpNodes;
 			return contents_above_threshold;
 		}
-	}
-#endif
 
-	// Now begin updating the pages.  We must write them out in such 
-	// a way as to maintain on-disk integrity at all times.  That means 
-	// not having pointers to released pages, and not leaving things in 
-	// an inconsistent state for navigation through the pages.
+		// Update the parent first.  If the parent is not written out first, 
+		// we will be pointing to a page which is not in the doubly linked 
+		// sibling list, and therefore navigation back and forth won't work.
+		// AB: Parent is always a index pointer page.
+		result = delete_node(tdbb, &parent_window, parentNode.nodePointer);
+		CCH_RELEASE(tdbb, &parent_window);
 
-	// Update the parent first.  If the parent is not written out first, 
-	// we will be pointing to a page which is not in the doubly linked 
-	// sibling list, and therefore navigation back and forth won't work.
-	result = delete_node(tdbb, &parent_window, parent_node);
-	CCH_RELEASE(tdbb, &parent_window);
+		// Update the right sibling page next, since it does not really 
+		// matter that the left sibling pointer points to the page directly 
+		// to the left, only that it point to some page to the left.
+		// Set up the precedence so that the parent will be written first.
+		if (right_page) {
+			if (parent_page) {
+				CCH_precedence(tdbb, &right_window, parent_window.win_page);
+			}
+			CCH_MARK(tdbb, &right_window);
+			right_page->btr_left_sibling = left_window.win_page;
 
-	// Update the right sibling page next, since it does not really 
-	// matter that the left sibling pointer points to the page directly 
-	// to the left, only that it point to some page to the left.
-	// Set up the precedence so that the parent will be written first.
-	if (right_page) {
-		if (parent_page) {
-			CCH_precedence(tdbb, &right_window, parent_window.win_page);
+			if (dbb->dbb_journal) {
+				CCH_journal_page(tdbb, &right_window);
+			}
+			CCH_RELEASE(tdbb, &right_window);
 		}
-		CCH_MARK(tdbb, &right_window);
-		right_page->btr_left_sibling = left_window.win_page;
 
-		if (dbb->dbb_journal) {
-			CCH_journal_page(tdbb, &right_window);
+		// Now update the left sibling, effectively removing the garbage-collected page 
+		// from the tree.  Set the precedence so the right sibling will be written first.
+		if (right_page) {
+			CCH_precedence(tdbb, &left_window, right_window.win_page);
 		}
-		CCH_RELEASE(tdbb, &right_window);
-	}
+		else if (parent_page) {
+			CCH_precedence(tdbb, &left_window, parent_window.win_page);
+		}
 
-	// Now update the left sibling, effectively removing the garbage-collected page 
-	// from the tree.  Set the precedence so the right sibling will be written first.
-	if (right_page) {
-		CCH_precedence(tdbb, &left_window, right_window.win_page);
-	}
-	else if (parent_page) {
-		CCH_precedence(tdbb, &left_window, parent_window.win_page);
-	}
+		CCH_MARK(tdbb, &left_window);
 
-	CCH_MARK(tdbb, &left_window);
+		if (right_page) {
+			left_page->btr_sibling = right_window.win_page;
+		}
+		else {
+			left_page->btr_sibling = 0;
+		}
 
-	if (right_page) {
-		left_page->btr_sibling = right_window.win_page;
+		// Finally write all data to left page.
+		jumpInfo.firstNodeOffset = headerSize + jumpersNewSize;
+		jumpInfo.jumpers = jumpNodes->getCount();
+		pointer = BTreeNode::writeJumpInfo(left_page, &jumpInfo);
+		// Write jump nodes.
+		IndexJumpNode* walkJumpNode = jumpNodes->begin();
+		for (int i = 0; i < jumpNodes->getCount(); i++) {
+			// Update offset to real position with new jump nodes.
+			walkJumpNode[i].offset += jumpersNewSize;
+			pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer, flags);
+			if (walkJumpNode[i].data) {
+				delete walkJumpNode[i].data;
+			}
+		}
+		// Copy data.
+		MOVE_FASTER((UCHAR*)newBucket + headerSize, pointer,
+			newBucket->btr_length - headerSize);
+		// Update page header information.
+		left_page->btr_prefix_total = newBucket->btr_prefix_total;
+		left_page->btr_length = newBucket->btr_length + jumpersNewSize;
+
+		jumpNodes->clear();
+		delete jumpNodes;
 	}
 	else {
-		left_page->btr_sibling = 0;
-	}
+		// Now begin updating the pages.  We must write them out in such 
+		// a way as to maintain on-disk integrity at all times.  That means 
+		// not having pointers to released pages, and not leaving things in 
+		// an inconsistent state for navigation through the pages.
 
-	// move all the nodes from the garbage-collected page to the left sibling, 
-	// overwriting the END_BUCKET of the left sibling
-	node = gc_page->btr_nodes;
+		// Update the parent first.  If the parent is not written out first, 
+		// we will be pointing to a page which is not in the doubly linked 
+		// sibling list, and therefore navigation back and forth won't work.
+		// AB: Parent is always a index pointer page.
+		result = delete_node(tdbb, &parent_window, parentNode.nodePointer);
+		CCH_RELEASE(tdbb, &parent_window);
 
-	// calculate the total amount of compression on page as the combined totals 
-	// of the two pages, plus the compression of the first node on the g-c'ed page,
-	// minus the prefix of the END_BUCKET node to be deleted
-	left_page->btr_prefix_total +=
-		gc_page->btr_prefix_total + prefix - last_node->btn_prefix;
+		// Update the right sibling page next, since it does not really 
+		// matter that the left sibling pointer points to the page directly 
+		// to the left, only that it point to some page to the left.
+		// Set up the precedence so that the parent will be written first.
+		if (right_page) {
+			if (parent_page) {
+				CCH_precedence(tdbb, &right_window, parent_window.win_page);
+			}
+			CCH_MARK(tdbb, &right_window);
+			right_page->btr_left_sibling = left_window.win_page;
 
-	// fix up the last node of the left page to contain the compressed first node
-	last_node->btn_prefix = prefix;
-	last_node->btn_length = node->btn_length - prefix;
-	p = last_node->btn_number;
-	q = node->btn_number;
-	l = 4;
-	do {
-		*p++ = *q++;
-	}
-	while (--l);
-
-	// copy over the remainder of the page to be garbage-collected
-	p = last_node->btn_data;
-	q = node->btn_data + prefix;
-	l = gc_page->btr_length - (q - (UCHAR *) gc_page);
-	if (l) {
-		do {
-			*p++ = *q++;
+			if (dbb->dbb_journal) {
+				CCH_journal_page(tdbb, &right_window);
+			}
+			CCH_RELEASE(tdbb, &right_window);
 		}
-		while (--l);
-	}
 
-	left_page->btr_length = p - (UCHAR *) left_page;
+		// Now update the left sibling, effectively removing the garbage-collected page 
+		// from the tree.  Set the precedence so the right sibling will be written first.
+		if (right_page) {
+			CCH_precedence(tdbb, &left_window, right_window.win_page);
+		}
+		else if (parent_page) {
+			CCH_precedence(tdbb, &left_window, parent_window.win_page);
+		}
+
+		CCH_MARK(tdbb, &left_window);
+
+		if (right_page) {
+			left_page->btr_sibling = right_window.win_page;
+		}
+		else {
+			left_page->btr_sibling = 0;
+		}
+
+		gcPointer = BTreeNode::getPointerFirstNode(gc_page);
+		BTreeNode::readNode(&leftNode, leftPointer, flags, leafPage);
+		// Calculate the total amount of compression on page as the combined totals 
+		// of the two pages, plus the compression of the first node on the g-c'ed page,
+		// minus the prefix of the END_BUCKET node to be deleted.
+		left_page->btr_prefix_total += 
+			gc_page->btr_prefix_total + prefix - leftNode.prefix;
+
+		// Get first node from gc-page.
+		gcPointer = BTreeNode::readNode(&gcNode, gcPointer, gcFlags, leafPage);
+
+		// Write first node with prefix compression on left page.
+		leftNode.prefix = prefix;
+		leftNode.length = gcNode.length - prefix;
+		leftNode.recordNumber = gcNode.recordNumber;
+		leftNode.pageNumber = gcNode.pageNumber;
+		leftNode.data = gcNode.data + prefix;
+		leftPointer = BTreeNode::writeNode(&leftNode, leftPointer, flags, leafPage);
+
+		// copy over the remainder of the page to be garbage-collected
+		USHORT l = gc_page->btr_length - (gcPointer - (UCHAR*)(gc_page));
+		MOVE_FASTER(gcPointer, leftPointer, l);
+		leftPointer += l;
+		// update page size
+		left_page->btr_length = leftPointer - (UCHAR*)(left_page);
+	}
 
 #ifdef DEBUG_BTR
 	if (left_page->btr_length > dbb->dbb_page_size) {
 		CCH_RELEASE(tdbb, &left_window);
 		CCH_RELEASE(tdbb, window);
-		CORRUPT(204);			/* msg 204 index inconsistent */
+		CORRUPT(204);	// msg 204 index inconsistent
 		return contents_above_threshold;
 	}
 #endif
@@ -3340,21 +4662,25 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 		}
 
 		// check whether it is empty
-		parent_node = parent_page->btr_nodes;
-		number = get_long(parent_node->btn_number);
-		if (number < 0) {
+		parentPointer = BTreeNode::getPointerFirstNode(parent_page);
+		IndexNode parentNode;
+		parentPointer = BTreeNode::readNode(&parentNode, parentPointer, flags, false);
+		if (BTreeNode::isEndBucket(&parentNode, false) ||
+			BTreeNode::isEndLevel(&parentNode, false)) 
+		{
 			return contents_empty;
 		}
 
 		// check whether there is just one node
-		parent_node = NEXT_NODE(parent_node);
-		number = get_long(parent_node->btn_number);
-		if (number < 0) {
+		parentPointer = BTreeNode::readNode(&parentNode, parentPointer, flags, false);
+		if (BTreeNode::isEndBucket(&parentNode, false) ||
+			BTreeNode::isEndLevel(&parentNode, false)) 
+		{
 			return contents_single;
 		}
 
 		// check to see if the size of the page is below the garbage collection threshold
-		if (parent_page->btr_length < GARBAGE_COLLECTION_THRESHOLD) {
+		if (parent_page->btr_length < GARBAGE_COLLECTION_BELOW_THRESHOLD) {
 			return contents_below_threshold;
 		}
 
@@ -3368,11 +4694,169 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 }
 
 
+static void generate_jump_nodes(TDBB tdbb, BTR page, jumpNodeList* jumpNodes, 
+								USHORT excludeOffset, USHORT* jumpersSize,  
+								USHORT* splitIndex, USHORT* splitPrefix)
+{
+/**************************************
+ *
+ *	g e n e r a t e _ j u m p _ n o d e s
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+
+	SET_TDBB(tdbb);
+	DBB dbb = tdbb->tdbb_database;
+	fb_assert(page);
+	fb_assert(jumpNodes);
+	fb_assert(jumpersSize);
+
+	IndexJumpInfo jumpInfo;
+	BTreeNode::getPointerFirstNode(page, &jumpInfo);
+	SCHAR flags = page->btr_header.pag_flags;
+	bool leafPage = (page->btr_level == 0);
+
+	*jumpersSize = 0;
+	UCHAR* pointer = (UCHAR*)page + jumpInfo.firstNodeOffset;
+
+	key jumpKey, currentKey;
+	UCHAR* jumpData = jumpKey.key_data;// FB_NEW(*tdbb->tdbb_default) UCHAR[jumpInfo.keyLength];
+	USHORT jumpLength = 0;
+	UCHAR* currentData = currentKey.key_data;//FB_NEW(*tdbb->tdbb_default) UCHAR[jumpInfo.keyLength];
+
+	if (splitIndex) {
+		*splitIndex = 0;
+	}
+	if (splitPrefix) {
+		*splitPrefix = 0;
+	}
+
+	UCHAR *newAreaPosition = pointer + jumpInfo.jumpAreaSize;
+	UCHAR *endpoint = ((UCHAR*)page + page->btr_length);
+	UCHAR *halfpoint = ((UCHAR*)page + (dbb->dbb_page_size / 2));
+	UCHAR *excludePointer = ((UCHAR*)page + excludeOffset);
+	UCHAR *q;
+	IndexJumpNode jumpNode;
+
+	if (flags & btr_large_keys) {
+		IndexNode node;
+		while (pointer < endpoint) {
+			pointer = BTreeNode::readNode(&node, pointer, flags, leafPage);
+			if (node.length) {
+				q = currentData + node.prefix;
+				MOVE_FAST(node.data, q, node.length);
+			}
+					
+			if (splitIndex && splitPrefix && !*splitIndex) {
+				*splitPrefix += node.prefix;
+			}
+
+			if ((node.nodePointer > newAreaPosition) && 
+				(node.nodePointer != excludePointer) &&
+				!BTreeNode::isEndBucket(&node, leafPage) &&
+				!BTreeNode::isEndLevel(&node, leafPage)) 
+			{
+				// Create a jumpnode, but it may not point to the new
+				// insert pointer or any MARKER else we make split 
+				// more difficult then needed.
+				jumpNode.offset = (node.nodePointer - (UCHAR*)page);
+				jumpNode.prefix = BTreeNode::computePrefix(jumpData, jumpLength, 
+					currentData, node.prefix);
+				jumpNode.length = node.prefix - jumpNode.prefix;
+				if (jumpNode.length) {
+					jumpNode.data = FB_NEW(*tdbb->tdbb_default) UCHAR[jumpNode.length];
+					q = currentData + jumpNode.prefix;
+					MOVE_FAST(q, jumpNode.data, jumpNode.length);
+				}
+				else {
+					jumpNode.data = NULL;
+				}
+				// Push node on end in list
+				jumpNodes->add(jumpNode);
+				// Store new data in jumpKey, so a new jump node can calculate prefix
+				MOVE_FAST(jumpNode.data, jumpData + jumpNode.prefix, jumpNode.length);
+				jumpLength = jumpNode.length + jumpNode.prefix;
+				// Check if this could be our split point (if we need to split)
+				if (splitIndex && !*splitIndex && (pointer > halfpoint)) {
+					*splitIndex = jumpNodes->getCount();
+				}
+				// Set new position for generating jumpnode
+				newAreaPosition += jumpInfo.jumpAreaSize;
+				*jumpersSize += BTreeNode::getJumpNodeSize(&jumpNode, flags);
+			}
+		}
+	}
+	else {
+		btn* node;
+		while (pointer < endpoint) {
+
+			node = (btn*)pointer;
+			if (!leafPage && (flags & btr_all_record_number)) {
+				pointer = (UCHAR*)NEXT_NODE_RECNR(node);
+			}
+			else {
+				pointer = (UCHAR*)NEXT_NODE(node);
+			}
+			if (node->btn_length) {
+				q = currentData + node->btn_prefix;
+				MOVE_FAST(node->btn_data, q, node->btn_length);
+			}
+					
+			if (splitIndex && splitPrefix && !*splitIndex) {
+				*splitPrefix += node->btn_prefix;
+			}
+
+			if (((UCHAR*)node > newAreaPosition) && 
+				(get_long(node->btn_number) >= 0) &&
+				((UCHAR*)node != excludePointer)) 
+			{
+				// Create a jumpnode, but it may not point to the new
+				// insert pointer or any MARKER else we make split 
+				// more difficult then needed.
+				jumpNode.offset = ((UCHAR*)node - (UCHAR*)page);
+				jumpNode.prefix = BTreeNode::computePrefix(jumpData, jumpLength, 
+					currentData, node->btn_prefix);
+				jumpNode.length = node->btn_prefix - jumpNode.prefix;
+				if (jumpNode.length) {
+					jumpNode.data = FB_NEW(*tdbb->tdbb_default) UCHAR[jumpNode.length];
+					q = currentData + jumpNode.prefix;
+					MOVE_FAST(q, jumpNode.data, jumpNode.length);
+				}
+				else {
+					jumpNode.data = NULL;
+				}
+				// Push node on end in list
+				jumpNodes->add(jumpNode);
+				// Store new data in jumpKey, so a new jump node can calculate prefix
+				MOVE_FAST(jumpNode.data, jumpData + jumpNode.prefix, jumpNode.length);
+				jumpLength = jumpNode.length + jumpNode.prefix;
+				// Check if this could be our split point (if we need to split)
+				if (splitIndex && !*splitIndex && (pointer > halfpoint)) {
+					*splitIndex = jumpNodes->getCount();
+				}
+				// Set new position for generating jumpnode
+				newAreaPosition += jumpInfo.jumpAreaSize;
+				*jumpersSize += BTreeNode::getJumpNodeSize(&jumpNode, flags);
+			}
+
+		}
+	}
+
+	//delete jumpData;
+	//delete currentData;
+}
+
+
 static SLONG insert_node(TDBB tdbb,
 						 WIN * window,
 						 IIB * insertion,
 						 KEY * new_key,
-						 SLONG * original_page, SLONG * sibling_page)
+						 SLONG * new_record_number,
+						 SLONG * original_page, 
+						 SLONG * sibling_page)
 {
 /**************************************
  *
@@ -3381,8 +4865,9 @@ static SLONG insert_node(TDBB tdbb,
  **************************************
  *
  * Functional description
- *	Insert a node in a bucket.  If this isn't the right bucket, 
- *	return -1.  If it splits, return the split page number and 
+ *	Insert a node in a index leaf page.
+ *  If this isn't the right bucket, return NO_VALUE.  
+ *  If it splits, return the split page number and 
  *	leading string.  This is the workhorse for add_node.
  *
  **************************************/
@@ -3393,180 +4878,307 @@ static SLONG insert_node(TDBB tdbb,
 
 	// find the insertion point for the specified key
 	BTR bucket = (BTR) window->win_buffer;
-	KEY *key;
+	SCHAR flags = bucket->btr_header.pag_flags;
+	KEY* key;
 	key = insertion->iib_key;
 
-	USHORT prefix;
-	BTN node = BTR_find_leaf(bucket, key, 0, &prefix,
-		insertion->iib_descriptor->idx_flags & idx_descending, false);
-	if (!node) {
-			return -1;
+	bool unique = (insertion->iib_descriptor->idx_flags & idx_unique);
+	bool leafPage = (bucket->btr_level == 0);
+	bool allRecordNumber = (flags & btr_all_record_number);
+	USHORT prefix = 0;
+	SLONG newRecordNumber;
+	if (leafPage) {
+		newRecordNumber = insertion->iib_number;
 	}
+	else {
+		newRecordNumber = *new_record_number;
+	}
+	UCHAR* pointer = find_node_start_point(bucket, key, 0, &prefix,
+		insertion->iib_descriptor->idx_flags & idx_descending, 
+		false, allRecordNumber, newRecordNumber);
+	if (!pointer) {
+		return NO_VALUE;
+	}
+
+	IndexNode beforeInsertNode;
+	pointer = BTreeNode::readNode(&beforeInsertNode, pointer, flags, leafPage);
 
 	// loop through the equivalent nodes until the correct insertion 
 	// point is found; for leaf level this will be the first node
-	UCHAR *p, *q;
-	USHORT old_prefix, old_length;
-	USHORT node_offset, l;
-	SLONG old_number;
-	for (;;) {
-		node_offset = (UCHAR *) node - (UCHAR *) bucket;
+	UCHAR* p;
+	UCHAR* q;
+	USHORT newPrefix, newLength;
+	USHORT nodeOffset, l;
+	while (true) {
+		nodeOffset = (USHORT) (beforeInsertNode.nodePointer - (UCHAR*) bucket);
+		newPrefix = beforeInsertNode.prefix;
+		newLength = beforeInsertNode.length;
 
-		old_number = get_long(node->btn_number);
-		old_prefix = node->btn_prefix;
-		old_length = node->btn_length;
-
-		p = key->key_data + old_prefix;
-		q = node->btn_data;
-		l = MIN(key->key_length - old_prefix, old_length);
-		if (l) {
-			do {
-				if (*p++ != *q++) {
-					break;
-				}
-				--old_length;
-				old_prefix++;
-			} 
-			while (--l);
+		// update the newPrefix and newLength against the node (key) that will
+		// be inserted before it.
+		p = key->key_data + newPrefix;
+		q = beforeInsertNode.data;
+		l = MIN(key->key_length - newPrefix, newLength);
+		while (l) {
+			if (*p++ != *q++) {
+				break;
+			}
+			--newLength;
+			newPrefix++;
+			l--;
 		}
 
 		// check if the inserted node has the same value as the next node
-		if (old_prefix != key->key_length ||
-			old_prefix != node->btn_length + node->btn_prefix) {
+		if (newPrefix != key->key_length ||
+			newPrefix != beforeInsertNode.length + beforeInsertNode.prefix) {
 			break;
 		}
-
-		// This block of code moved up for IGNORE_NULL_IDX_KEY
-		if (old_number == END_BUCKET) {
-			return -1;
-		}
-		if (old_number == END_LEVEL) {
-			break;
-		}
-
-		// if this is a non-leaf page, we need to find 
-		// the correct insertion point in the duplicate chain
-		if (!bucket->btr_level) {
-			break;
-		}
-		if (old_number == insertion->iib_sibling) {
-			break;
-		}
-
-		// since the node is equivalent and we are about to skip past it, 
-		// the prefix of the inserted node is now the same
-		prefix = old_prefix;
-
-		while (old_number != insertion->iib_sibling) {
-			node = NEXT_NODE(node);
-			old_number = get_long(node->btn_number);
-
-			if (node->btn_length) {
+		else {
+			// We have a equal node, so find the correct insertion point.
+			if (BTreeNode::isEndBucket(&beforeInsertNode, leafPage)) {
+				if (allRecordNumber) {
+					break;
+				}
+				else {
+					return NO_VALUE;
+				}
+			}
+			if (BTreeNode::isEndLevel(&beforeInsertNode, leafPage)) {
 				break;
 			}
-			if (old_number == END_BUCKET) {
-				return -1;
+			if (leafPage && unique) {
+				// Save the duplicate so the main caller can validate them.
+				SBM_set(tdbb, &insertion->iib_duplicates, 
+					beforeInsertNode.recordNumber);
 			}
-			if (old_number == END_LEVEL) {
+			// AB: Never insert a duplicate node with the same record number.
+			// This would lead to nodes which will never be deleted.
+			//if (leafPage && (newRecordNumber == beforeInsertNode.recordNumber)) {
+				// AB: It seems this is not enough, because on mass duplicate
+				// update to many nodes are deleted, possible staying and
+				// going are wrong checked before BTR_remove is called.
+			//	CCH_RELEASE(tdbb, window);
+			//	return 0;
+			//} 
+			//else 
+			if (allRecordNumber) {
+				// if recordnumber is higher we need to insert before it.
+				if (newRecordNumber <= beforeInsertNode.recordNumber) {
+					break;
+				}
+			}
+			else if (!unique) {
 				break;
 			}
+			prefix = newPrefix;
+			pointer = BTreeNode::readNode(&beforeInsertNode, pointer, flags, leafPage);
 		}
 	}
 
-	// Compute the length of the updated page.  This is a function of the
-	// new string length minus prefix and recompression done to the string
-	// following the insertion.
-	USHORT delta = BTN_SIZE + key->key_length - prefix + node->btn_prefix - old_prefix;
+	USHORT beforeInsertOriginalSize = 
+		BTreeNode::getNodeSize(&beforeInsertNode, flags, leafPage);
+	USHORT orginalPrefix = beforeInsertNode.prefix;
 
-	// Prepare to slide down tail of bucket.  If we're going to split,
-	// move the initialized hunk of the bucket to an overflow area big
-	// enough to hold the split.  If the bucket isn't going to split,
-	// mark the buffer as dirty.
-	SLONG overflow_page[OVERSIZE];
-	if (bucket->btr_length + delta > dbb->dbb_page_size) {
-		MOVE_FASTER(bucket, overflow_page, bucket->btr_length);
-		node = (BTN) ((UCHAR *) overflow_page + node_offset);
-		bucket = (BTR) overflow_page;
+	// Update the values for the next node after our new node.
+	// First, store needed data for beforeInsertNode into tempData.
+	UCHAR *tempData = FB_NEW(*tdbb->tdbb_default) UCHAR[newLength];
+	p = beforeInsertNode.data + newPrefix - beforeInsertNode.prefix;
+	MOVE_FASTER(p, tempData, newLength);
+
+	beforeInsertNode.prefix = newPrefix;
+	beforeInsertNode.length = newLength;
+	USHORT beforeInsertSize = 
+		BTreeNode::getNodeSize(&beforeInsertNode, flags, leafPage);
+
+	// Set values for our new node.
+	IndexNode newNode;
+	newNode.prefix = prefix;
+	newNode.length = key->key_length - prefix; 
+	newNode.data = key->key_data + prefix;
+	newNode.recordNumber = newRecordNumber;
+	if (!leafPage) {
+		newNode.pageNumber = insertion->iib_number;
 	}
-	else {
-		// if we are a pointer page, make sure that the page we are 
-		// pointing to gets written before we do for on-disk integrity
-		if (bucket->btr_level != 0) {
-			CCH_precedence(tdbb, window, insertion->iib_number);
-		}
-		CCH_MARK(tdbb, window);
-	}
 
-	BTN new_node = node;
+	// Compute the delta between current and new page.
+	USHORT delta = BTreeNode::getNodeSize(&newNode, flags, leafPage) +
+		beforeInsertSize - beforeInsertOriginalSize;
 
-	// Slide down the upper hunk of the bucket to make room for the
-	// insertion.
-	l = bucket->btr_length - node_offset;
-	p = (UCHAR *) bucket + bucket->btr_length;
-	q = p + delta;
-	do {
-		*--q = *--p;
-	}
-	while (--l);
+	// Copy data up to insert point to scratch page.
+	SLONG scratchPage[OVERSIZE];
+	MOVE_FASTER(bucket, scratchPage, nodeOffset);
+	BTR newBucket = (BTR) scratchPage;
 
+	// Set pointer of new node to right place.
+	pointer = ((UCHAR*)newBucket + nodeOffset);
 	// Insert the new node.
-	bucket->btr_length += delta;
-	bucket->btr_prefix_total += prefix - node->btn_prefix;
-	node->btn_prefix = prefix;
-	quad_put(insertion->iib_number, node->btn_number);
-	p = node->btn_data;
-	q = key->key_data + prefix;
-	if ( (l = node->btn_length = key->key_length - prefix) ) {
-		do {
-			MOVE_BYTE(q, p);
-		}
-		while (--l);
-	}
+	pointer = BTreeNode::writeNode(&newNode, pointer, flags, leafPage);
+	newBucket->btr_prefix_total += prefix - orginalPrefix;
 
 	// Recompress and rebuild the next node.
-	node = (BTN) p;
-	bucket->btr_prefix_total += old_prefix;
-	node->btn_prefix = old_prefix;
-	node->btn_length = old_length;
-	quad_put(old_number, node->btn_number);
-	// We don't need to rebuild btn_data of first pushed node here because,
-	// if old_prefix has increased we only move down part of the node anyway
+	beforeInsertNode.data = tempData;
+	pointer = BTreeNode::writeNode(&beforeInsertNode, pointer, flags, leafPage);
+	newBucket->btr_prefix_total += newPrefix;
+	delete tempData;
+
+	// Copy remaining data to scratch page.
+	MOVE_FASTER((UCHAR*)bucket + nodeOffset + beforeInsertOriginalSize, pointer, 
+		bucket->btr_length - (nodeOffset + beforeInsertOriginalSize));
+
+	// Update bucket size.
+	newBucket->btr_length += delta;
 
 	// figure out whether this node was inserted at the end of the page
-	bool end_of_page = (old_number < 0);
+	bool endOfPage = BTreeNode::isEndBucket(&beforeInsertNode, leafPage) ||
+		BTreeNode::isEndLevel(&beforeInsertNode, leafPage);
 
-	// If the index is unique, look for duplicates in this bucket.
-	if (insertion->iib_descriptor->idx_flags & idx_unique) {
-		while (node->btn_length == 0 && node->btn_prefix == key->key_length) {
-			old_number = get_long(node->btn_number);
-			if (old_number < 0)
+	// Initialize variables needed for generating jump information
+	bool useJumpInfo = (flags & btr_jump_info);
+	bool fragmentedOffset = false;
+	USHORT jumpersOriginalSize = 0;
+	USHORT jumpersNewSize = 0;
+	USHORT headerSize = 0;
+	USHORT newPrefixTotalBySplit = 0;
+	USHORT splitJumpNodeIndex = 0;
+	IndexJumpInfo jumpInfo;
+	jumpNodeList* jumpNodes = FB_NEW(*tdbb->tdbb_default) jumpNodeList(tdbb->tdbb_default);
+		
+	if (useJumpInfo) {
+		// Get the total size of the jump nodes currently in use.
+		pointer = BTreeNode::getPointerFirstNode(newBucket, &jumpInfo);
+		headerSize = (pointer - (UCHAR*)newBucket);
+		jumpersOriginalSize = jumpInfo.firstNodeOffset - headerSize;
+
+		// Allow some fragmentation, 10% below or above actual point.
+		jumpersNewSize = jumpersOriginalSize;
+		USHORT n = jumpInfo.jumpers;
+		USHORT index = 1;
+		USHORT minOffset, maxOffset;
+		USHORT fragmentedThreshold = (jumpInfo.jumpAreaSize / 5);
+		IndexJumpNode jumpNode;
+		while (n) {
+			pointer = BTreeNode::readJumpNode(&jumpNode, pointer, flags);
+			if (jumpNode.offset == nodeOffset) {
+				fragmentedOffset = true;
 				break;
-			SBM_set(tdbb, &insertion->iib_duplicates, old_number);
-			node = (BTN) node->btn_data;
+			}
+			if (jumpNode.offset > nodeOffset) {
+				jumpNode.offset += delta;
+			}
+			minOffset = headerSize + jumpersOriginalSize + 
+				(index * jumpInfo.jumpAreaSize) - fragmentedThreshold;
+			if (jumpNode.offset < minOffset) {
+				fragmentedOffset = true;
+				break;
+			}
+			maxOffset =  headerSize + jumpersOriginalSize + 
+				(index * jumpInfo.jumpAreaSize) + fragmentedThreshold;
+			if (jumpNode.offset > maxOffset) {
+				fragmentedOffset = true;
+				break;
+			}
+			jumpNodes->add(jumpNode);
+			index++;
+			n--;
+		}
+		// Rebuild jump nodes if new node is inserted after last
+		// jump node offset + jumpAreaSize.
+		if (nodeOffset >= (headerSize + jumpersOriginalSize + 
+			((jumpInfo.jumpers + 1) * jumpInfo.jumpAreaSize)))
+		{
+			fragmentedOffset = true;
+		}
+		// Rebuild jump nodes if we gona split.
+		if (newBucket->btr_length > dbb->dbb_page_size) {
+			fragmentedOffset = true;
+		}
+
+		if (fragmentedOffset) {
+			// Clean up any previous nodes.
+			jumpNodes->clear();
+			// Generate new jump nodes.			
+			generate_jump_nodes(tdbb, newBucket, jumpNodes, 
+				(USHORT)(newNode.nodePointer - (UCHAR*)newBucket),
+				&jumpersNewSize, &splitJumpNodeIndex, &newPrefixTotalBySplit);
 		}
 	}
 
 	// If the bucket still fits on a page, we're almost done.
-	if (bucket->btr_length <= dbb->dbb_page_size) {
+	if (newBucket->btr_length + jumpersNewSize - jumpersOriginalSize <= 
+		dbb->dbb_page_size) 
+	{
+		// if we are a pointer page, make sure that the page we are 
+		// pointing to gets written before we do for on-disk integrity
+		if (!leafPage) {
+			CCH_precedence(tdbb, window, insertion->iib_number);
+		}
+		// Mark page as dirty.
+		CCH_MARK(tdbb, window);
 
-		// Journal new node added. The node is journalled as the compressed
-		// new node and the BTN of the re compressed next node.
+		if (useJumpInfo) {
+			// Put all data back into bucket (= window->win_buffer).
+
+			// Write jump information header.
+			jumpInfo.firstNodeOffset = headerSize + jumpersNewSize;
+			jumpInfo.jumpers = jumpNodes->getCount();
+			pointer = BTreeNode::writeJumpInfo(bucket, &jumpInfo);
+
+			// Write jump nodes.
+			IndexJumpNode* walkJumpNode = jumpNodes->begin();
+			for (int i = 0; i < jumpNodes->getCount(); i++) {
+				// Update offset to real position with new jump nodes.
+				walkJumpNode[i].offset += jumpersNewSize - jumpersOriginalSize;
+				pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer, flags);
+				if (fragmentedOffset) {
+					if (walkJumpNode[i].data) {
+						delete walkJumpNode[i].data;
+					}
+				}
+			}		
+			pointer = (UCHAR*)bucket + jumpInfo.firstNodeOffset;
+			// Copy data block.
+			MOVE_FASTER((UCHAR*)newBucket + headerSize + jumpersOriginalSize, 
+				pointer, newBucket->btr_length - (headerSize + jumpersOriginalSize));
+			
+			// Update header information.
+			bucket->btr_prefix_total = newBucket->btr_prefix_total;
+			bucket->btr_length = newBucket->btr_length + jumpersNewSize - jumpersOriginalSize;
+		} 
+		else {
+			// Copy temp-buffer data to window buffer.
+			MOVE_FASTER(newBucket, window->win_buffer, newBucket->btr_length);
+		}
+
+		// journal the page
 		if (dbb->dbb_wal) {
+			// AB: Because very often the complete page changes this
+			// is changed to journal_btree_segment()
+			journal_btree_segment(tdbb, window, bucket);
+
+			/*
+			// Journal new node added. The node is journalled as the compressed
+			// new node and the BTN of the re compressed next node.
 			JRNB journal;
 			journal.jrnb_type = JRNP_BTREE_NODE;
-			journal.jrnb_prefix_total = bucket->btr_prefix_total;
-			journal.jrnb_offset = node_offset;
+			journal.jrnb_prefix_total = newBucket->btr_prefix_total;
+			journal.jrnb_offset = nodeOffset;
 			journal.jrnb_delta = delta;
-			journal.jrnb_length = BTN_SIZE + BTN_SIZE + new_node->btn_length;
+			//journal.jrnb_length = BTN_SIZE + BTN_SIZE + BTN_LENGTH(new_node);
+			journal.jrnb_length = beforeInsertSize - beforeInsertNode.length + 
+				BTreeNode::getNodeSize(&newNode, flags, leafPage);
 			CCH_journal_record(tdbb,
 							   window,
-							   (UCHAR *) & journal, JRNB_SIZE, (UCHAR *)
-							   bucket + node_offset, journal.jrnb_length);
+							   (UCHAR*) & journal, JRNB_SIZE, (UCHAR*)
+							   newBucket + nodeOffset, journal.jrnb_length);
+			*/
 		}
 
 		CCH_RELEASE(tdbb, window);
 
-		return 0;
+		jumpNodes->clear();
+		delete jumpNodes;
+
+		return NO_SPLIT;
 	}
 
 	// We've a bucket split in progress.  We need to determine the split point.
@@ -3575,30 +5187,110 @@ static SLONG insert_node(TDBB tdbb,
 	// that pages get filled in the case of a monotonically increasing key. 
 	// Make sure that the original page has room, in case the END_BUCKET marker 
 	// is now longer because it is pointing at the new node.
-	UCHAR *midpoint;
-	if (end_of_page &&
-		((UCHAR *) NEXT_NODE(new_node) <= (UCHAR *) bucket + dbb->dbb_page_size)) 
-	{
-		midpoint = (UCHAR *) new_node;
+	//
+	// Note! : newBucket contains still old jump nodes and info.
+	SLONG prefix_total = 0;
+	UCHAR *splitpoint = NULL;
+	USHORT jumpersSplitSize = 0;
+	IndexNode node;
+	if (useJumpInfo && splitJumpNodeIndex) {
+		// Get pointer after new inserted node.
+		splitpoint = BTreeNode::readNode(&node, newNode.nodePointer, flags, leafPage);
+		if (endOfPage && ((splitpoint + jumpersNewSize - jumpersOriginalSize) <= 
+			(UCHAR*)newBucket + dbb->dbb_page_size))
+		{
+			// Copy data from inserted key and this key will we the END_BUCKET marker
+			// as the first key on the next page.
+			p = key->key_data;
+			q = new_key->key_data;
+			l = new_key->key_length = key->key_length;
+			MOVE_FAST(p, q, l);
+			prefix_total = newBucket->btr_prefix_total - beforeInsertNode.prefix;
+			splitJumpNodeIndex = 0;
+		}
+		else {
+			jumpersNewSize = 0;
+
+			// splitJumpNodeIndex should always be 1 or higher
+			if (splitJumpNodeIndex < 1) {
+				BUGCHECK(205);	// msg 205 index bucket overfilled
+			}
+
+			// First get prefix data from jump node.
+			USHORT index = 1;
+			IndexJumpNode* jn;
+			IndexJumpNode* walkJumpNode = jumpNodes->begin();
+			for (int i = 0; i < jumpNodes->getCount(); i++, index++) {
+				q = new_key->key_data + walkJumpNode[i].prefix;
+				MOVE_FAST(walkJumpNode[i].data, q, walkJumpNode[i].length);
+				if (index == splitJumpNodeIndex) {
+					jn = &walkJumpNode[i];
+					break;
+				}
+			}
+
+			// Get data from node.
+			splitpoint = (UCHAR*)newBucket + jn->offset;
+			splitpoint = BTreeNode::readNode(&node, splitpoint, flags, leafPage);
+			q = new_key->key_data + node.prefix;
+			MOVE_FAST(node.data, q, node.length);
+			new_key->key_length = node.prefix + node.length;
+			prefix_total = newPrefixTotalBySplit;
+
+			// Rebuild first jumpnode on splitpage
+			index = 1;
+			walkJumpNode = jumpNodes->begin();
+			for (i = 0; i < jumpNodes->getCount(); i++, index++) {
+				if (index > splitJumpNodeIndex) {
+					USHORT length = walkJumpNode[i].prefix + walkJumpNode[i].length;
+					UCHAR *newData = FB_NEW(*tdbb->tdbb_default) UCHAR[length];
+					MOVE_FAST(new_key->key_data, newData, walkJumpNode[i].prefix);
+					MOVE_FAST(walkJumpNode[i].data, newData + walkJumpNode[i].prefix, 
+						walkJumpNode[i].length);
+					if (walkJumpNode[i].data) {
+						delete walkJumpNode[i].data;
+					}
+					walkJumpNode[i].prefix = 0;
+					walkJumpNode[i].length = length;
+					walkJumpNode[i].data = newData;
+					break;
+				}
+			}
+
+			// Initalize new offsets for original page and split page.
+			index = 1;
+			walkJumpNode = jumpNodes->begin();
+			for (i = 0; i < jumpNodes->getCount(); i++, index++) {
+				// The jump node where the split is done isn't included anymore!
+				if (index < splitJumpNodeIndex) {
+					jumpersNewSize += BTreeNode::getJumpNodeSize(&walkJumpNode[i], flags);
+				}
+				else if (index > splitJumpNodeIndex) {
+					jumpersSplitSize += BTreeNode::getJumpNodeSize(&walkJumpNode[i], flags);
+				}
+			}
+		}
 	}
 	else {
-		midpoint = (UCHAR *) bucket +
-			(dbb->dbb_page_size - OFFSETA(BTR, btr_nodes)) / 2;
-	}
-
-	// Copy the bucket up to the midpoint, restructing the full midpoint key
-	SLONG prefix_total = 0;
-	for (p = (UCHAR *) bucket->btr_nodes; p < midpoint;) {
-		node = (BTN) p;
-		prefix_total += node->btn_prefix;
-		p = node->btn_data;
-		q = new_key->key_data + node->btn_prefix;
-		new_key->key_length = node->btn_prefix + node->btn_length;
-		if ( (l = node->btn_length) )
-			do {
-				*q++ = *p++;
-			}
-			while (--l);
+		UCHAR *midpoint = NULL;
+		splitpoint = BTreeNode::readNode(&newNode, newNode.nodePointer, flags, leafPage);
+		if (endOfPage && ((UCHAR*) splitpoint <= (UCHAR*)newBucket + dbb->dbb_page_size)){
+			midpoint = splitpoint;
+		}
+		else {
+			midpoint = (UCHAR*)newBucket + ((dbb->dbb_page_size - 
+				(BTreeNode::getPointerFirstNode(newBucket) - (UCHAR*)newBucket)) / 2);
+		}
+		// Start from the begin of the nodes
+		splitpoint = BTreeNode::getPointerFirstNode(newBucket);
+		// Copy the bucket up to the midpoint, restructing the full midpoint key
+		while (splitpoint < midpoint) {
+			splitpoint = BTreeNode::readNode(&node, splitpoint, flags, leafPage);
+			prefix_total += node.prefix;
+			q = new_key->key_data + node.prefix;
+			new_key->key_length = node.prefix + node.length;
+			MOVE_FASTER(node.data, q, node.length);
+		}
 	}
 
 	// Allocate and format the overflow page
@@ -3606,8 +5298,8 @@ static SLONG insert_node(TDBB tdbb,
 	BTR split = (BTR) DPM_allocate(tdbb, &split_window);
 
 	// if we're a pointer page, make sure the child page is written first
-	if (bucket->btr_level != 0) {
-		if ((UCHAR *) new_node < midpoint) {
+	if (!leafPage) {
+		if (newNode.nodePointer < splitpoint) {
 			CCH_precedence(tdbb, window, insertion->iib_number);
 		}
 		else {
@@ -3616,72 +5308,134 @@ static SLONG insert_node(TDBB tdbb,
 	}
 
 	// format the new page to look like the old page
-	SLONG right_sibling;
+	SLONG right_sibling = bucket->btr_sibling;
 	split->btr_header.pag_type = bucket->btr_header.pag_type;
 	split->btr_relation = bucket->btr_relation;
 	split->btr_id = bucket->btr_id;
 	split->btr_level = bucket->btr_level;
-	split->btr_sibling = right_sibling = bucket->btr_sibling;
+	split->btr_sibling = right_sibling;
 	split->btr_left_sibling = window->win_page;
-	split->btr_header.pag_flags |=
-		(bucket->btr_header.pag_flags & btr_descending);
+	split->btr_header.pag_flags |= (flags & BTR_FLAG_COPY_MASK);
 
 	// Format the first node on the overflow page
-	new_node = split->btr_nodes;
-	new_node->btn_prefix = 0;
-	QUAD_MOVE(node->btn_number, new_node->btn_number);
-	p = new_node->btn_data;
-	q = new_key->key_data;
-	fb_assert(new_key->key_length <= MAX_UCHAR);
-	if ( (l = new_node->btn_length = (UCHAR) new_key->key_length) ) {
-		do {
-			MOVE_BYTE(q, p);
+	newNode.prefix = 0;
+	newNode.pageNumber = node.pageNumber;
+	newNode.recordNumber = node.recordNumber;
+	// Return first record number on split page to caller. 
+	*new_record_number = newNode.recordNumber;
+	newNode.length = new_key->key_length;
+	newNode.data = new_key->key_data;
+	USHORT firstSplitNodeSize = BTreeNode::getNodeSize(&newNode, flags, leafPage);
+
+	// Format the first node on the overflow page
+	if (useJumpInfo) {
+		IndexJumpInfo splitJumpInfo;
+		splitJumpInfo.firstNodeOffset = headerSize + jumpersSplitSize;
+		splitJumpInfo.jumpAreaSize = jumpInfo.jumpAreaSize;
+		splitJumpInfo.keyLength = jumpInfo.keyLength;
+		if (splitJumpNodeIndex > 0) {
+			splitJumpInfo.jumpers = jumpNodes->getCount() - splitJumpNodeIndex;
 		}
-		while (--l);
-	}
-
-	// Copy down the remaining half of the original bucket on the overflow page
-	q = (UCHAR *) (NEXT_NODE(node));
-	l = bucket->btr_length - (q - (UCHAR *) bucket);
-
-	if (((U_IPTR) p & (ALIGNMENT - 1))
-		|| ((U_IPTR) q & (ALIGNMENT - 1)))
-	{
-		MOVE_FAST(q, p, l);
+		else {
+			splitJumpInfo.jumpers = 0;
+		}
+		pointer = BTreeNode::writeJumpInfo(split, &splitJumpInfo);
+		if (splitJumpNodeIndex > 0) {
+			// Write jump nodes to split page.
+			USHORT index = 1;
+			// Calculate size that's between header and splitpoint.
+			USHORT splitOffset = (splitpoint - (UCHAR*)newBucket);
+			IndexJumpNode* walkJumpNode = jumpNodes->begin();
+			for (int i = 0; i < jumpNodes->getCount(); i++, index++) {
+				if (index > splitJumpNodeIndex) {
+					// Update offset to correct position.
+					walkJumpNode[i].offset = walkJumpNode[i].offset - splitOffset + 
+						splitJumpInfo.firstNodeOffset + firstSplitNodeSize;
+					pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer, flags);
+				}
+			}
+		}
+		pointer = (UCHAR*)split + splitJumpInfo.firstNodeOffset;
 	}
 	else {
-		MOVE_FASTER(q, p, l);
+		pointer = BTreeNode::getPointerFirstNode(split);
 	}
-	split->btr_length = p + l - (UCHAR *) split;
+
+	pointer = BTreeNode::writeNode(&newNode, pointer, flags, leafPage);
+
+	// Copy down the remaining data from scratch page.
+	l = newBucket->btr_length - (splitpoint - (UCHAR*)newBucket);
+	MOVE_FASTER(splitpoint, pointer, l);
+	split->btr_length = ((pointer + l) - (UCHAR*)split);
 
 	// the sum of the prefixes on the split page is the previous total minus
 	// the prefixes found on the original page; the sum of the prefixes on the 
 	// original page must exclude the split node
-	split->btr_prefix_total = bucket->btr_prefix_total - prefix_total;
-	bucket->btr_prefix_total = prefix_total - node->btn_prefix;
+	split->btr_prefix_total = newBucket->btr_prefix_total - prefix_total;
 	SLONG split_page = split_window.win_page;
 
 	CCH_RELEASE(tdbb, &split_window);
 	CCH_precedence(tdbb, window, split_window.win_page);
 	CCH_mark_must_write(tdbb, window);
 
-	// The split bucket is still residing in the overflow area.  Copy it
+	// The split bucket is still residing in the scratch page. Copy it
 	// back to the original buffer.  After cleaning up the last node,
 	// we're done!
 
-	bucket->btr_sibling = split_window.win_page;
-
 	// mark the end of the page; note that the end_bucket marker must 
-	// contain info about the first node on the next page.
-	quad_put((SLONG) END_BUCKET, node->btn_number);
-	BTN next_node = NEXT_NODE(node);
-	bucket->btr_length = (UCHAR *) next_node - (UCHAR *) bucket;
-	MOVE_FASTER(bucket, window->win_buffer, bucket->btr_length);
+	// contain info about the first node on the next page. So we don't
+	// overwrite the existing data.
+	BTreeNode::setEndBucket(&node, leafPage);
+	pointer = BTreeNode::writeNode(&node, node.nodePointer, flags, leafPage, false);
+	newBucket->btr_length = pointer - (UCHAR*)newBucket;
 
+	if (useJumpInfo) {
+		// Write jump information.
+		jumpInfo.firstNodeOffset = headerSize + jumpersNewSize;
+		if (splitJumpNodeIndex > 0) {
+			jumpInfo.jumpers = splitJumpNodeIndex - 1;
+		}
+		else {
+			jumpInfo.jumpers = jumpNodes->getCount();
+		}
+		pointer = BTreeNode::writeJumpInfo(bucket, &jumpInfo);
+
+		// Write jump nodes.
+		USHORT index = 1;
+		IndexJumpNode* walkJumpNode = jumpNodes->begin();
+		for (int i = 0; i < jumpNodes->getCount(); i++, index++) {
+			if (index <= jumpInfo.jumpers) {
+				// Update offset to correct position.
+				walkJumpNode[i].offset = walkJumpNode[i].offset + 
+					jumpersNewSize - jumpersOriginalSize;
+				pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer, flags);
+			}
+		}
+		pointer = (UCHAR*)bucket + jumpInfo.firstNodeOffset;
+
+		MOVE_FASTER((UCHAR*)newBucket + headerSize + jumpersOriginalSize, 
+			pointer, newBucket->btr_length - (headerSize + jumpersOriginalSize));
+		bucket->btr_length = newBucket->btr_length + jumpersNewSize - jumpersOriginalSize;
+
+		if (fragmentedOffset) {
+			IndexJumpNode* walkJumpNode = jumpNodes->begin();
+			for (int i = 0; i < jumpNodes->getCount(); i++, index++) {
+				if (walkJumpNode[i].data) {
+					delete walkJumpNode[i].data;
+				}
+			}
+		}
+	}
+	else {
+		MOVE_FASTER(newBucket, window->win_buffer, newBucket->btr_length);
+	}
+
+	// Update page information.
+	bucket->btr_sibling = split_window.win_page;
+	bucket->btr_prefix_total = prefix_total;
 	// mark the bucket as non garbage-collectable until we can propogate 
 	// the split page up to the parent; otherwise its possible that the 
 	// split page we just created will be lost.
-
 	bucket->btr_header.pag_flags |= btr_dont_gc;
 
 	// journal the split page
@@ -3696,8 +5450,7 @@ static SLONG insert_node(TDBB tdbb,
 	// now we need to go to the right sibling page and update its 
 	// left sibling pointer to point to the newly split page
 	if (right_sibling) {
-		bucket = (BTR) CCH_HANDOFF(tdbb,
-			window, right_sibling, LCK_write, pag_index);
+		bucket = (BTR) CCH_HANDOFF(tdbb, window, right_sibling, LCK_write, pag_index);
 		CCH_MARK(tdbb, window);
 		bucket->btr_left_sibling = split_window.win_page;
 		if (dbb->dbb_journal) {
@@ -3710,6 +5463,9 @@ static SLONG insert_node(TDBB tdbb,
 	if (sibling_page) {
 		*sibling_page = right_sibling;
 	}
+
+	jumpNodes->clear();
+	delete jumpNodes;
 
 	return split_page;
 }
@@ -3736,45 +5492,9 @@ static void journal_btree_segment(TDBB tdbb, WIN * window, BTR bucket)
 	journal.jrnb_delta = 0;
 	journal.jrnb_length = bucket->btr_length;
 
-	CCH_journal_record(tdbb, window, (UCHAR *) & journal, JRNB_SIZE, (UCHAR *)
+	CCH_journal_record(tdbb, window, (UCHAR*) &journal, JRNB_SIZE, (UCHAR*)
 					   bucket, journal.jrnb_length);
 } 
-
-
-static bool key_equality(KEY * key, BTN node)
-{
-/**************************************
- *
- *	k e y _ e q u a l i t y
- *
- **************************************
- *
- * Functional description
- *	Check a B-tree node against a key for equality.
- *
- **************************************/
-
-	if (key->key_length != node->btn_length + node->btn_prefix) {
-		return false;
-	}
-
-	SSHORT l;
-	if (!(l = node->btn_length)) {
-		return true;
-	}
-
-	UCHAR *p, *q;
-	p = node->btn_data;
-	q = key->key_data + node->btn_prefix;
-	do {
-		if (*p++ != *q++) {
-			return false;
-		}
-	}
-	while (--l);
-
-	return true;
-}
 
 
 static INT64_KEY make_int64_key(SINT64 q, SSHORT scale)
@@ -3823,6 +5543,7 @@ static INT64_KEY make_int64_key(SINT64 q, SSHORT scale)
 	return key;
 }
 
+
 #ifdef DEBUG_INDEXKEY
 static void print_int64_key(SINT64 value, SSHORT scale, INT64_KEY key)
 {
@@ -3844,7 +5565,7 @@ static void print_int64_key(SINT64 value, SSHORT scale, INT64_KEY key)
 			   "%20" QUADFORMAT
 			   "d  %4d  %.15e  %6d  ", value, scale, key.d_part, key.s_part);
 
-	p = (UCHAR *) & key;
+	p = (UCHAR*) &key;
 	for (n = 10; n--; n > 0)
 		ib_fprintf(ib_stderr, "%02x ", *p++);
 
@@ -3852,48 +5573,6 @@ static void print_int64_key(SINT64 value, SSHORT scale, INT64_KEY key)
 	return;
 }
 #endif /* DEBUG_INDEXKEY */
-
-
-static void quad_put(SLONG value, UCHAR* data)
-{
-/**************************************
- *
- *	q u a d _ p u t
- *
- **************************************
- *
- * Functional description
- *	Move SLONG to a four byte vector.
- *
- **************************************/
-
-	const UCHAR* p = (UCHAR*) &value;
-
-	data[0] = p[0];
-	data[1] = p[1];
-	data[2] = p[2];
-	data[3] = p[3];
-}
-
-
-static void quad_move(UCHAR* a, UCHAR* b)
-{
-/**************************************
- *
- *	q u a d _ m o v e
- *
- **************************************
- *
- * Functional description
- *	Move an unaligned longword (4 bytes).
- *
- **************************************/
-
-	MOVE_BYTE(a, b);
-	MOVE_BYTE(a, b);
-	MOVE_BYTE(a, b);
-	MOVE_BYTE(a, b);
-}
 
 
 static CONTENTS remove_node(TDBB tdbb, IIB * insertion, WIN * window)
@@ -3924,8 +5603,7 @@ static CONTENTS remove_node(TDBB tdbb, IIB * insertion, WIN * window)
 	SLONG number, parent_number;
 	CONTENTS result;
 	while (true) {
-		number = find_node(page, insertion->iib_key, 
-			(idx->idx_flags & idx_descending));
+		number = find_page(page, insertion->iib_key, idx->idx_flags, insertion->iib_number);
 
 		// we should always find the node, but let's make sure
 		if (number == END_LEVEL) {
@@ -3986,27 +5664,28 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
  **************************************/
 	SET_TDBB(tdbb);
 	BTR page = (BTR) window->win_buffer;
-	BTN node;
-	KEY *key;
-	key = insertion->iib_key;
-	USHORT prefix;
+	KEY *key = insertion->iib_key;
 
 	// Look for the first node with the value to be removed.
-	while (!(node = BTR_find_leaf(page, key, 0, &prefix,
-				insertion->iib_descriptor->idx_flags & idx_descending, 
-				false)))
+	UCHAR *pointer;
+	USHORT prefix;
+	while (!(pointer = find_node_start_point(page, key, 0, &prefix,
+			insertion->iib_descriptor->idx_flags & idx_descending, 
+			false, false, insertion->iib_number)))
 	{
-		page = (BTR) CCH_HANDOFF(tdbb, window, 
-			page->btr_sibling, LCK_write, pag_index);
+		page = (BTR) CCH_HANDOFF(tdbb, window, page->btr_sibling, LCK_write, pag_index);
 	}
 
 	// Make sure first node looks ok
-	if (prefix > node->btn_prefix
-		|| key->key_length != node->btn_length + node->btn_prefix)
+	SCHAR flags = page->btr_header.pag_flags;
+	IndexNode node;
+	pointer = BTreeNode::readNode(&node, pointer, flags, true);
+	if (prefix > node.prefix
+		|| key->key_length != node.length + node.prefix)
 	{
 #ifdef DEBUG_BTR
 		CCH_RELEASE(tdbb, window);
-		CORRUPT(204);			/* msg 204 index inconsistent */
+		CORRUPT(204);	// msg 204 index inconsistent
 #endif
 		return contents_above_threshold;
 	}
@@ -4014,9 +5693,9 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 	// check to make sure the node has the same value
 	USHORT l;
 	UCHAR *p, *q;
-	p = node->btn_data;
-	q = key->key_data + node->btn_prefix;
-	if ( (l = node->btn_length) ) {
+	p = node.data;
+	q = key->key_data + node.prefix;
+	if ( (l = node.length) ) {
 		do {
 			if (*p++ != *q++) {
 #ifdef DEBUG_BTR
@@ -4025,30 +5704,27 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 #endif
 				return contents_above_threshold;
 			}
-		}
-		while (--l);
+		} while (--l);
 	}
 
 	// *****************************************************
 	// AB: This becomes a very expensive task if there are
 	// many duplicates inside the index (non-unique index)!
-	// Therefor we also need to add the record-number to the
+	// Therefore we also need to add the record-number to the
 	// non-leaf pages and sort duplicates by record-number.
 	// *****************************************************
 
 	// now look through the duplicate nodes to find the one 
 	// with matching record number
 	ULONG pages = 0;
-	SLONG number;
 	while (true) {
 
 		// if we find the right one, quit
-		number = get_long(node->btn_number);
-		if (insertion->iib_number == number) {
+		if (insertion->iib_number == node.recordNumber) {
 			break;
 		}
 
-		if (number == END_LEVEL) {
+		if (BTreeNode::isEndLevel(&node, true)) {
 #ifdef DEBUG_BTR
 			CCH_RELEASE(tdbb, window);
 			CORRUPT(204);	// msg 204 index inconsistent
@@ -4057,9 +5733,9 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 		}
 
 		// go to the next node and check that it is a duplicate
-		if (number != END_BUCKET) {
-			node = (BTN) (node->btn_data + node->btn_length);
-			if (node->btn_length != 0 || node->btn_prefix != key->key_length)
+		if (!BTreeNode::isEndBucket(&node, true)) {
+			pointer = BTreeNode::readNode(&node, pointer, flags, true);
+			if (node.length != 0 || node.prefix != key->key_length)
 			{
 #ifdef DEBUG_BTR
 				CCH_RELEASE(tdbb, window);
@@ -4073,11 +5749,11 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 		// if we hit the end of bucket, go to the right sibling page, 
 		// and check that the first node is a duplicate
 		++pages;
-		page = (BTR) CCH_HANDOFF(tdbb, window, page->btr_sibling, 
-			LCK_write, pag_index);
+		page = (BTR) CCH_HANDOFF(tdbb, window, page->btr_sibling, LCK_write, pag_index);
 
-		node = page->btr_nodes;
-		l = node->btn_length;
+		pointer = BTreeNode::getPointerFirstNode(page);
+		pointer = BTreeNode::readNode(&node, pointer, flags, true);
+		l = node.length;
 		if (l != key->key_length) {
 #ifdef DEBUG_BTR
 			CCH_RELEASE(tdbb, window);
@@ -4087,7 +5763,7 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 		}
 
 		if (l) {
-			p = node->btn_data;
+			p = node.data;
 			q = key->key_data;
 			do {
 				if (*p++ != *q++) {
@@ -4097,8 +5773,7 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 #endif
 					return contents_above_threshold;
 				}
-			}
-			while (--l);
+			} while (--l);
 		}
 
 #ifdef SUPERSERVER
@@ -4119,14 +5794,12 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 		CCH_expand(tdbb, pages + 25);
 	}
 
-	return delete_node(tdbb, window, node);
+	return delete_node(tdbb, window, node.nodePointer);
 }
 
 
-static bool scan(TDBB tdbb,
-					BTN node,
-					SBM * bitmap,
-					USHORT prefix, KEY * key, USHORT flag)
+static bool scan(TDBB tdbb, UCHAR *pointer, SBM *bitmap, 
+				 USHORT prefix, KEY *key, USHORT flag, SCHAR page_flags)
 {
 /**************************************
  *
@@ -4135,23 +5808,24 @@ static bool scan(TDBB tdbb,
  **************************************
  *
  * Functional description
- *	Do an index scan.  If we run over the bucket, return TRUE.  If
- *	we're completely done, return FALSE.
+ *	Do an index scan.  
+ *  If we run over the bucket, return TRUE.
+ *  If we're completely done (passed END_LEVEL),
+ *  return FALSE.
  *
  **************************************/
-	USHORT l;
-	UCHAR *p = NULL, *q = NULL;
-	USHORT i, count;
 
 	SET_TDBB(tdbb);
 
 	// if the search key is flagged to indicate a multi-segment index
 	// stuff the key to the stuff boundary
+	USHORT count;
 	if ((flag & irb_partial) && (flag & irb_equality)
 		&& !(flag & irb_starting) && !(flag & irb_descending)) 
 	{
 		count = STUFF_COUNT -
 			((key->key_length + STUFF_COUNT) % (STUFF_COUNT + 1));
+		USHORT i;
 		for (i = 0; i < count; i++) {
 			key->key_data[key->key_length + i] = 0;
 		}
@@ -4161,66 +5835,127 @@ static bool scan(TDBB tdbb,
 		count = key->key_length;
 	}
 
-	UCHAR* end_key = key->key_data + count;
+	UCHAR *end_key = key->key_data + count;
 	count -= key->key_length;
 
 	// reset irb_equality flag passed for optimization
 	flag &= ~irb_equality;
 
-	SLONG number;
-	while (true) {
-		number = get_long(node->btn_number);
+	UCHAR *p = NULL;
+	UCHAR *q = NULL;
+	USHORT l;
 
-		if (number == END_LEVEL) {
-			return false;
-		}
+	if (page_flags & btr_large_keys) {
+		IndexNode node;
+		pointer = BTreeNode::readNode(&node, pointer, page_flags, true);
+		while (true) {
 
-		if (node->btn_prefix <= prefix) {
-			prefix = node->btn_prefix;
-			p = key->key_data + prefix;
-			q = node->btn_data;
-			for (l = node->btn_length; l; --l, prefix++) {
-				if (p >= end_key) {
-					if (flag) {
-						break;
+			if (BTreeNode::isEndLevel(&node, true)) {
+				return false;
+			}
+
+			if (node.prefix <= prefix) {
+				prefix = node.prefix;
+				p = key->key_data + prefix;
+				q = node.data;
+				for (l = node.length; l; --l, prefix++) {
+					if (p >= end_key) {
+						if (flag) {
+							break;
+						}
+						else {
+							return false;
+						}
 					}
-					else {
+					if (p > (end_key - count)) {
+						if (*p++ == *q++) {
+							break;
+						}
+						else {
+							continue;
+						}
+					}
+					if (*p < *q) {
 						return false;
 					}
-				}
-				if (p > (end_key - count)) {
-					if (*p++ == *q++) {
+					if (*p++ > *q++) {
 						break;
 					}
-					else {
-						continue;
-					}
-				}
-				if (*p < *q) {
-					return false;
-				}
-				if (*p++ > *q++) {
-					break;
 				}
 			}
-		}
 
-		if (number == END_BUCKET) {
-			return true;
-		}
+			if (BTreeNode::isEndBucket(&node, true)) {
+				// Our caller will fetch the next page
+				return true;
+			}
 
-		if ((flag & irb_starting) || !count) {
-			SBM_set(tdbb, bitmap, number);
-		}
-		else if (p > (end_key - count)) {
-			SBM_set(tdbb, bitmap, number);
-		}
+			if ((flag & irb_starting) || !count) {
+				SBM_set(tdbb, bitmap, node.recordNumber);
+			}
+			else if (p > (end_key - count)) {
+				SBM_set(tdbb, bitmap, node.recordNumber);
+			}
 
-		node = NEXT_NODE(node);
+			pointer = BTreeNode::readNode(&node, pointer, page_flags, true);
+		}
+	}
+	else {
+		SLONG number;
+		btn* node = (btn*)pointer;
+		while (true) {
+
+			number = get_long(node->btn_number);
+
+			if (number == END_LEVEL) {
+				return false;
+			}
+
+			if (node->btn_prefix <= prefix) {
+				prefix = node->btn_prefix;
+				p = key->key_data + prefix;
+				q = node->btn_data;
+				for (l = node->btn_length; l; --l, prefix++) {
+					if (p >= end_key) {
+						if (flag) {
+							break;
+						}
+						else {
+							return false;
+						}
+					}
+					if (p > (end_key - count)) {
+						if (*p++ == *q++) {
+							break;
+						}
+						else {
+							continue;
+						}
+					}
+					if (*p < *q) {
+						return false;
+					}
+					if (*p++ > *q++) {
+						break;
+					}
+				}
+			}
+
+			if (number == END_BUCKET) {
+				// Our caller will fetch the next page
+				return true;
+			}
+
+			if ((flag & irb_starting) || !count) {
+				SBM_set(tdbb, bitmap, number);
+			}
+			else if (p > (end_key - count)) {
+				SBM_set(tdbb, bitmap, number);
+			}
+
+			node = NEXT_NODE(node);
+		}
 	}
 
 	// NOTREACHED
 	return false;	// superfluous return to shut lint up
 }
-
-

@@ -101,7 +101,10 @@ enum frb_sysflag {
 #define MAX_INDEX_SEGMENTS 16
 
 // Maximum index key length
-#define MAX_KEY 256
+// AB: If the maximum key-size will change, don't forget dyn.h and dba.epp 
+// which cannot use these defines.
+#define MAX_KEY				4096	// Maximum page size possible divide by 4 (16384 / 4)
+#define MAX_KEY_PRE_ODS11	255		// Max key-size before ODS11
 
 #endif /* JRD_CONSTANTS_H */
 

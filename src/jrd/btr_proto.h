@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_BTR_PROTO_H
-#define JRD_BTR_PROTO_H
+#ifndef _JRD_BTR_PROTO_H_
+#define _JRD_BTR_PROTO_H_
 
 #include "../jrd/btr.h"
 #include "../jrd/ods.h"
@@ -31,23 +31,21 @@
 USHORT	BTR_all(TDBB, jrd_rel*, idx**, idx**, str**, SLONG*);
 void	BTR_create(TDBB, jrd_rel*, idx*, USHORT, scb*, SelectivityList&);
 void	BTR_delete_index(TDBB, win*, USHORT);
+//USHORT	BTR_delete_node(TDBB, btr*, USHORT);
 bool	BTR_description(JRD_REL, irt*, idx*, SSHORT);
 void	BTR_evaluate(tdbb*, irb*, sbm**);
-btn*	BTR_find_leaf(btr*, key*, UCHAR*, USHORT*, int, bool);
+UCHAR*	BTR_find_leaf(btr*, key*, UCHAR*, USHORT*, int, bool);
 btr*	BTR_find_page(tdbb*, irb*, win*, idx*, key*, key*, bool);
 void	BTR_insert(tdbb*, win*, iib*);
 enum idx_e	BTR_key(tdbb*, jrd_rel*, rec*, idx*, key*, idx_null_state*);
 USHORT	BTR_key_length(jrd_rel*, idx*);
-btn*	BTR_last_node(btr*, jrd_exp*, btx**);
+UCHAR*	BTR_last_node(btr*, jrd_exp*, struct btx**);
 btr*	BTR_left_handoff(tdbb*, win*, btr*, SSHORT);
 USHORT	BTR_lookup(TDBB, jrd_rel*, USHORT, idx*);
 void	BTR_make_key(tdbb*, USHORT, jrd_nod**, idx*, key*, USHORT);
 bool	BTR_next_index(TDBB, jrd_rel*, jrd_tra*, idx*, win*);
-btn*	BTR_next_node(btn*, btx**);
-btn*	BTR_previous_node(btn*, btx**);
 void	BTR_remove(tdbb*, win*, iib*);
 void	BTR_reserve_slot(TDBB, jrd_rel*, jrd_tra*, idx*);
 void	BTR_selectivity(TDBB, jrd_rel*, USHORT, SelectivityList&);
 
 #endif // JRD_BTR_PROTO_H
-

@@ -46,6 +46,7 @@
 #include "../jrd/iberr.h"
 #include "../jrd/rse.h"
 #include "../jrd/btr.h"
+#include "../jrd/btn.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/cch_proto.h"
@@ -165,11 +166,11 @@ static void update_write_direction(TDBB, BDB);
 #define BCB_MUTEX_ACQUIRE
 #define BCB_MUTEX_RELEASE
 
-#define PRE_MUTEX_ACQUIRE
-#define PRE_MUTEX_RELEASE
+#define PRE_MUTEX_ACQUIRE 
+#define PRE_MUTEX_RELEASE 
 
-#define BTC_MUTEX_ACQUIRE
-#define BTC_MUTEX_RELEASE
+#define BTC_MUTEX_ACQUIRE 
+#define BTC_MUTEX_RELEASE 
 
 #define LATCH_MUTEX_ACQUIRE
 #define LATCH_MUTEX_RELEASE
@@ -3601,6 +3602,10 @@ static void THREAD_ROUTINE cache_writer(DBB dbb)
 			}
 #endif
 
+			THREAD_EXIT;
+			THREAD_YIELD;
+			THREAD_ENTER;
+
 			if (bcb->bcb_flags & BCB_free_pending) {
 				if (bdb = get_buffer(tdbb, FREE_PAGE, LATCH_none, 1)) {
 					write_buffer(tdbb, bdb, bdb->bdb_page, TRUE, status_vector, TRUE);
@@ -4267,6 +4272,8 @@ static BDB get_buffer(TDBB tdbb, SLONG page, LATCH latch, SSHORT latch_wait)
 			/* This code is only used by the background I/O threads:
 			   cache writer, cache reader and garbage collector. */
 
+			THREAD_EXIT;
+
 			for (que = bcb->bcb_in_use.que_backward;
 				 que != &bcb->bcb_in_use; que = que->que_backward) {
 				bdb = BLOCK(que, BDB, bdb_in_use);
@@ -4274,6 +4281,7 @@ static BDB get_buffer(TDBB tdbb, SLONG page, LATCH latch, SSHORT latch_wait)
 					if (bdb->bdb_use_count ||
 						bdb->bdb_flags & BDB_free_pending) continue;
 					if (bdb->bdb_flags & BDB_db_dirty) {
+						THREAD_ENTER;
 						BCB_MUTEX_RELEASE;
 						return bdb;
 					}
@@ -4285,12 +4293,14 @@ static BDB get_buffer(TDBB tdbb, SLONG page, LATCH latch, SSHORT latch_wait)
 				else {			/* if (page == CHECKPOINT_PAGE) */
 
 					if (bdb->bdb_flags & BDB_checkpoint) {
+						THREAD_ENTER;
 						BCB_MUTEX_RELEASE;
 						return bdb;
 					}
 				}
 			}
 
+			THREAD_ENTER;
 			BCB_MUTEX_RELEASE;
 			return NULL;
 		}
