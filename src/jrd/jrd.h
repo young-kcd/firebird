@@ -131,7 +131,7 @@ public:
 			return;
 		JrdMemoryPool *perm = toDelete->dbb_permanent;
 		delete toDelete;
-		JrdMemoryPool::deletePool(perm);
+		JrdMemoryPool::noDbbDeletePool(perm);
 	}
 	
 	class dbb *dbb_next;		/* Next database block in system */

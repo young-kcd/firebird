@@ -134,6 +134,11 @@ void JrdMemoryPool::deletePool(JrdMemoryPool* pool) {
 	MemoryPool::deletePool(pool);
 }
 
+void JrdMemoryPool::noDbbDeletePool(JrdMemoryPool* pool) {
+	pool->lls_cache.~BlockCache<lls>();
+	MemoryPool::deletePool(pool);
+}
+
 TEXT* ALL_cstring(TEXT* in_string)
 {
 /**************************************

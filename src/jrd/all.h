@@ -50,6 +50,7 @@ public:
 	static JrdMemoryPool *createPool(int *cur_mem, int *max_mem);
 	static JrdMemoryPool *createPool();
 	static void deletePool(JrdMemoryPool* pool);
+	static void noDbbDeletePool(JrdMemoryPool* pool);
 
 	static class blk* ALL_pop(class lls**);
 	static void       ALL_push(class blk*, class lls**);
