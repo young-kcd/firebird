@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: semaphore.h,v 1.10 2004-05-21 14:14:34 kkuznetsov Exp $
+ *  $Id: semaphore.h,v 1.11 2004-05-23 06:07:46 robocop Exp $
  *
  */
 
@@ -104,11 +104,11 @@ public:
 	Semaphore() : init(false) {
 		/* USINC_PROCESS got  ability to syncronise Classic
 		*/
-		if ( mutex_init(&mu, USYNC_PROCESS, NULL) !=0) {
+		if ( mutex_init(&mu, USYNC_PROCESS, NULL) != 0) {
 			//gds__log("Error on semaphore.h: constructor");
 			system_call_failed::raise("mutex_init");
 		}
-		if (cond_init(&cv,USYNC_PROCESS, NULL)!= 0) {
+		if (cond_init(&cv,USYNC_PROCESS, NULL) != 0) {
 			//gds__log("Error on semaphore.h: constructor");
 			system_call_failed::raise("cond_init");
 		}
@@ -136,81 +136,87 @@ public:
 		fb_assert(init == true);
 		if (seconds == 0) {
 			// Instant try
-			if (mutex_trylock(&mu)!=0){
+			if (mutex_trylock(&mu) != 0) {
 			
-			    if (cond_wait(&cv,&mu)!=0){
-				rt=false;
+				if (cond_wait(&cv, &mu) != 0) {
+					rt = false;
 				
-			    } else 
-				rt=true;
-			    if (errno=ETIMEDOUT)
-				rt=false;
-			    
-			    mutex_unlock(&mu);
-			    return rt;	
-			} else if (errno==EBUSY){
-			    rt=false;
-			    return rt;
-			};    
+				}
+				else
+					rt = true;
+			    if (errno == ETIMEDOUT)
+					rt = false;
+
+				mutex_unlock(&mu);
+				return rt;
+			}
+			else if (errno == EBUSY) {
+				rt = false;
+				return rt;
+			};
 			
 			system_call_failed::raise("mutex_lock");
 		}
 		if (seconds < 0) {
 			// Unlimited wait, like enter()
-			if (mutex_lock(&mu)!=0){
+			if (mutex_lock(&mu) != 0) {
 			
-			    if (cond_wait(&cv,&mu)!=0){
-				rt=false;
-			    } else 
-				rt=true;
+			    if (cond_wait(&cv, &mu) != 0) {
+					rt = false;
+				}
+				else 
+					rt = true;
 
-			    if (errno=ETIMEDOUT)
-				rt=false;
-			    
-			    mutex_unlock(&mu);
-			    return rt;	
-			} else if (errno==EBUSY){
-			    rt=false;
-			    return rt;
-			}    
+				if (errno == ETIMEDOUT)
+					rt = false;
+
+				mutex_unlock(&mu);
+				return rt;
+			}
+			else if (errno == EBUSY) {
+				rt = false;
+				return rt;
+			}
 			else 
-			system_call_failed::raise("mutex_lock");			
+				system_call_failed::raise("mutex_lock");
 			
 		}
 		// Wait with timeout
 		timestruc_t timeout;
 		timeout.tv_sec = time(NULL) + seconds;
 		timeout.tv_nsec = 0;
-		if (mutex_lock(&mu)!=0){
-				
-		    if (cond_timedwait(&cv,&mu,&timeout)!=0){
-				rt=false;
-				
-			    } else 
-				rt=true;
-			    if (errno=ETIMEDOUT)
-				rt=false;
-			    
-			    mutex_unlock(&mu);
-			    return rt;	
-			} else if (errno==EBUSY){
-			    rt=false;
-	                    return rt;
-			}    
-		     else 			
-			system_call_failed::raise("mutex_lock");			
+		if (mutex_lock(&mu) != 0) {
+
+			if (cond_timedwait(&cv, &mu, &timeout) != 0) {
+				rt = false;
+			}
+			else
+				rt = true;
+			if (errno == ETIMEDOUT)
+				rt = false;
+
+			mutex_unlock(&mu);
+			return rt;
+		}
+		else if (errno == EBUSY) {
+			rt = false;
+			return rt;
+  		}
+		else
+			system_call_failed::raise("mutex_lock");
 	}
 	
 	void enter() {
 		fb_assert(init == true);
-			if (mutex_lock(&mu)!=0){
+			if (mutex_lock(&mu) != 0) {
 			
-			    if (cond_wait(&cv,&mu)!=0){
-			    }; 
-			    mutex_unlock(&mu);
-			}    
+				if (cond_wait(&cv, &mu) != 0) {
+				}
+				// Is the above if() meant to be empty?
+				mutex_unlock(&mu);
+			}
 			else 
-			system_call_failed::raise("mutex_lock");			
+				system_call_failed::raise("mutex_lock");
 
 	}
 	
@@ -218,20 +224,17 @@ public:
 		fb_assert(init == true);
 		for (int i = 0; i < count; i++) 
 
-			if (mutex_lock(&mu)!=0){
+			if (mutex_lock(&mu) != 0) {
 			
-			    if (cond_signal(&cv)!=0){
-				system_call_failed::raise("cond_sinal");
-			    } ;
+				if (cond_signal(&cv) != 0) {
+					system_call_failed::raise("cond_sinal");
+				}
 
-			    
-			    mutex_unlock(&mu);
+				mutex_unlock(&mu);
 			} else {
 				//gds__log("Error on semaphore.h: release");
 				system_call_failed::raise("mutex_lock");
 			}
-
-			
 	}
 };
 
