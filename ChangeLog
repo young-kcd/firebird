@@ -1,3 +1,75 @@
+2004-11-29 02:08  skidder
+
+	* firebird2/src/common/classes/GenericMap.h (1.4):
+	
+	Fix GCC build curing MSVC build at the same time
+
+2004-11-29 00:09  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp (1.206):
+	
+	1) Try to make new nodes from conjunctions applied to the top RSE
+	of a UNION.	 Deliver the new nodes (created per rse inside the
+	union) to the optimizing phase of every rse.  2) Little refactoring
+	of above function and the one for aggregate
+
+2004-11-28 23:38  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp (1.179):
+	
+	bugfix: Making a derived field on a mapping failed when the mapping
+	was mapping to another derived field.	 Make also a derived field
+	from a derived field node.
+
+2004-11-28 09:36  robocop
+
+	* firebird2/src/jrd/evl.cpp (1.130):
+	
+	Misc.
+
+2004-11-28 09:36  robocop
+
+	* firebird2/src/isql/isql.epp (1.115):
+	
+	Apply Adriano change with the following explanation: Fix a bug that
+	occur when a BLOB column is added after the start of the DML
+	transaction.
+
+2004-11-28 09:25  robocop
+
+	* firebird2/src/jrd/evl.cpp (1.129):
+	
+	Change my FB1 logic that returned the table's owner for the role
+	when a not null field with default CURRENT_ROLE is added, the table
+	has records already and the user does a SELECT. Now, if
+	CURRENT_USER==table's owner, then the CURRENT_ROLE is returned,
+	otherwise NONE.
+
+2004-11-28 08:05  robocop
+
+	* firebird2/src/isql/isql.epp (1.114):
+	
+	Completed (I hope) Damyan Ivanov's patch that didn't work with
+	insertions, updates and deletions.
+
+2004-11-28 05:59  robocop
+
+	* firebird2/src/gpre/cob.cpp (1.55):
+	
+	Overwrote the good version of the file thanks to the CVS Id tag.
+
+2004-11-28 04:44  robocop
+
+	* firebird2/src/dsql/: node.h (1.54), pass1.cpp (1.178):
+	
+	Silence warning.
+
+2004-11-28 04:43  robocop
+
+	* firebird2/src/gpre/cob.cpp (1.54):
+	
+	Misc.
+
 2004-11-28 02:00  robocop
 
 	* firebird2/: builds/posix/firebird.vers (1.6),
