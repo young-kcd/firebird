@@ -49,11 +49,11 @@ DefaultDirName={code:InstallDir|{pf}\Firebird\Firebird_{#BaseVer}}
 DefaultGroupName=Firebird_{#BaseVer}
 AllowNoIcons=true
 SourceDir=..\..\..\..\..\firebird2
-LicenseFile=src\install\misc\IPLicense.txt
-InfoBeforeFile=src\install\arch-specific\win32\installation_readme.txt
-InfoAfterFile=src\install\arch-specific\win32\readme.txt
+LicenseFile=builds\install\misc\IPLicense.txt
+InfoBeforeFile=builds\install\arch-specific\win32\installation_readme.txt
+InfoAfterFile=builds\install\arch-specific\win32\readme.txt
 AlwaysShowComponentsList=true
-WizardImageFile=src\install\arch-specific\win32\firebird_install_logo1.bmp
+WizardImageFile=builds\install\arch-specific\win32\firebird_install_logo1.bmp
 PrivilegesRequired=admin
 #ifdef classic_server_install
 UninstallDisplayIcon={app}\bin\fb_inet_server.exe
@@ -120,8 +120,8 @@ Name: "{group}\Firebird 1.5 Readme"; Filename: {app}\readme.txt; MinVersion: 4.0
 Name: "{group}\Uninstall Firebird"; Filename: {uninstallexe}; Comment: "Uninstall Firebird"
 
 [Files]
-Source: src\install\misc\IPLicense.txt; DestDir: {app}; Components: ClientComponent; Flags: sharedfile ignoreversion;
-Source: src\install\arch-specific\win32\readme.txt; DestDir: {app}; Components: DevAdminComponent; Flags: ignoreversion;
+Source: builds\install\misc\IPLicense.txt; DestDir: {app}; Components: ClientComponent; Flags: sharedfile ignoreversion;
+Source: builds\install\arch-specific\win32\readme.txt; DestDir: {app}; Components: DevAdminComponent; Flags: ignoreversion;
 Source: output\firebird.conf; DestDir: {app}; Components: ServerComponent; Flags: uninsneveruninstall onlyifdoesntexist;
 Source: output\aliases.conf; DestDir: {app}; Components: ServerComponent; Flags: uninsneveruninstall onlyifdoesntexist;
 Source: output\security.fdb; DestDir: {app}; Components: ServerComponent; Flags: uninsneveruninstall onlyifdoesntexist;
@@ -164,8 +164,8 @@ Source: output\examples\*.*; DestDir: {app}\examples; Components: DevAdminCompon
 ;Source: output\bin\fbclient.dll; DestDir: {app}\bin; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder;
 Source: output\bin\gds32.dll; DestDir: {sys}\; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder;
 Source: output\bin\fbclient.dll; DestDir: {sys}\; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder;
-Source: src\install\arch-specific\win32\msvcrt.dll; DestDir: {sys}\; Components: ClientComponent; Flags: uninsneveruninstall sharedfile onlyifdoesntexist;
-Source: src\install\arch-specific\win32\msvcp{#msvc_version}0.dll; DestDir: {sys}\; Components: ClientComponent; Flags: uninsneveruninstall sharedfile onlyifdoesntexist;
+Source: builds\install\arch-specific\win32\msvcrt.dll; DestDir: {sys}\; Components: ClientComponent; Flags: uninsneveruninstall sharedfile onlyifdoesntexist;
+Source: builds\install\arch-specific\win32\msvcp{#msvc_version}0.dll; DestDir: {sys}\; Components: ClientComponent; Flags: uninsneveruninstall sharedfile onlyifdoesntexist;
 Source: src\extlib\fbudf\fbudf.sql; DestDir: {app}\examples; Components: ServerComponent;  Flags: ignoreversion;
 Source: src\extlib\fbudf\fbudf.txt; DestDir: {app}\doc; Components: ServerComponent;  Flags: ignoreversion;
 Source: src\extlib\ib_util.pas; DestDir: {app}\include; Components: DevAdminComponent;  Flags: ignoreversion;

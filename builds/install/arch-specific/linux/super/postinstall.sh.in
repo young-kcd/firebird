@@ -1,0 +1,319 @@
+#! /bin/sh
+
+
+#------------------------------------------------------------------------
+# Prompt for response, store result in Answer
+
+Answer=""
+
+AskQuestion() {
+    Test=$1
+    DefaultAns=$2
+    echo -n "${1}"
+    Answer="$DefaultAns"
+    read Answer
+}
+
+#------------------------------------------------------------------------
+# add a service line in the (usually) /etc/services or /etc/inetd.conf file
+# Here there are three cases, not found         => add service line,
+#                             found & different => ask user to check
+#                             found & same      => do nothing
+#                             
+
+replaceLineInFile() {
+    FileName=$1
+    newLine=$2
+    oldLine=$3
+
+    if [ -z "$oldLine" ] 
+      then
+        echo "$newLine" >> $FileName
+
+    elif [ "$oldLine" != "$newLine"  ]
+      then
+        echo ""
+        echo "--- Warning ----------------------------------------------"
+        echo ""
+        echo "    In file $FileName found line: "
+        echo "    $oldLine"
+        echo "    Which differs from the expected line:"
+        echo "    $newLine"
+        echo ""
+
+#        AskQuestion "Press return to update file or ^C to abort install"
+
+        cat $FileName | grep -v "$oldLine" > ${FileName}.tmp
+        mv ${FileName}.tmp $FileName
+        echo "$newLine" >> $FileName
+        echo "Updated."
+
+    fi
+}
+
+#------------------------------------------------------------------------
+# remove line from config file if it exists in it.
+
+removeLineFromFile() {
+    FileName=$1
+    oldLine=$2
+
+    if [ ! -z "$oldLine" ] 
+      then
+        cat $FileName | grep -v "$oldLine" > ${FileName}.tmp
+        mv ${FileName}.tmp $FileName
+        echo "Updated."
+
+    fi
+}
+
+
+
+#------------------------------------------------------------------------
+#  changeInitPassword
+
+
+changeInitPassword() {
+
+    NewPasswd=$1
+
+    InitFile=/etc/rc.d/init.d/firebird
+    if [ -f $InitFile ] 
+      then
+        ed $InitFile <<EOF
+/ISC_PASSWORD/s/ISC_PASSWORD:=.*\}/ISC_PASSWORD:=$NewPasswd\}/g
+w
+q
+EOF
+    chmod u=rwx,g=rx,o= $InitFile
+
+    fi
+}
+
+#------------------------------------------------------------------------
+#  Unable to generate the password for the rpm, so put out a message
+#  instead
+
+
+keepOrigDBAPassword() {
+
+    DBAPasswordFile=$IBRootDir/SYSDBA.password
+
+    NewPasswd='masterkey'
+    echo "Firebird initial install password " > $DBAPasswordFile
+    echo "for user SYSDBA is : $NewPasswd" >> $DBAPasswordFile
+
+    echo "for install on `hostname` at time `date`" >> $DBAPasswordFile
+    echo "You should change this password at the earliest oportunity" >> $DBAPasswordFile
+    echo ""
+
+    echo "(For superserver you will also want to check the password in the" >> $DBAPasswordFile
+    echo "daemon init routine in the file /etc/rc.d/init.d/firebird)" >> $DBAPasswordFile
+    echo "" >> $DBAPasswordFile
+    echo "Your should password can be changed to a more suitable one using the" >> $DBAPasswordFile
+    echo "/usr/local/firebird/bin/gsec program as show below:" >> $DBAPasswordFile
+    echo "" >> $DBAPasswordFile
+    echo ">cd /usr/local/firebird" >> $DBAPasswordFile
+    echo ">bin/gsec -user sysdba -password <password>" >> $DBAPasswordFile
+    echo "GSEC>modify sysdba -pw <newpassword>" >> $DBAPasswordFile
+    echo "GSEC>quit" >> $DBAPasswordFile
+
+    chmod u=r,go= $DBAPasswordFile
+
+}
+
+#------------------------------------------------------------------------
+#  Generate new sysdba password
+
+
+generateNewDBAPassword() {
+
+
+# Not all systems have mkpasswd, and there is also another mkpasswd which
+# does different things.  So if not at this specific place leave as default
+
+
+    NewPasswd=`/usr/bin/mkpasswd -l 8`
+   
+    DBAPasswordFile=$IBRootDir/SYSDBA.password
+    NewPasswd=`mkpasswd -l 8`
+    echo "Firebird generated password " > $DBAPasswordFile
+    echo "for user SYSDBA is : $NewPasswd" >> $DBAPasswordFile
+    echo "generated on `hostname` at time `date`" >> $DBAPasswordFile
+    echo "" >> $DBAPasswordFile
+    echo "(For superserver you will also want to check the password in the" >> $DBAPasswordFile
+    echo "daemon init routine in the file /etc/rc.d/init.d/firebird)" >> $DBAPasswordFile
+    echo "" >> $DBAPasswordFile
+    echo "Your password can be changed to a more suitable one using the" >> $DBAPasswordFile
+    echo "/usr/local/firebird/bin/gsec program as show below:" >> $DBAPasswordFile
+    echo "" >> $DBAPasswordFile
+    echo ">cd /usr/local/firebird" >> $DBAPasswordFile
+    echo ">bin/gsec -user sysdba -password <password>" >> $DBAPasswordFile
+    echo "GSEC>modify sysdba -pw <newpassword>" >> $DBAPasswordFile
+    echo "GSEC>quit" >> $DBAPasswordFile
+
+    chmod u=rw,go= $DBAPasswordFile
+
+    $IBBin/gsec -user sysdba -password masterkey <<EOF
+modify sysdba -pw $NewPasswd
+EOF
+
+    changeInitPassword "$NewPasswd"
+
+
+}
+
+
+#------------------------------------------------------------------------
+#  Change sysdba password - this routine is interactive and is only 
+#  used in the install shell script not the rpm one.
+
+
+askUserForNewDBAPassword() {
+
+    NewPasswd=""
+
+    echo "" 
+    while [ -z "$NewPasswd" ]
+      do
+          AskQuestion "Please enter new password for SYSDBA user: "
+          NewPasswd=$Answer
+          if [ ! -z "$NewPasswd" ]
+            then
+             $IBBin/gsec -user sysdba -password masterkey <<EOF
+modify sysdba -pw $NewPasswd
+EOF
+              echo ""
+
+              changeInitPassword "$NewPasswd"
+
+          fi
+          
+      done
+}
+
+
+#------------------------------------------------------------------------
+#  Change sysdba password - this routine is interactive and is only 
+#  used in the install shell script not the rpm one.
+
+#  On some systems the mkpasswd program doesn't appear and on others
+#  there is another mkpasswd which does a different operation.  So if
+#  the specific one isn't available then keep the original password.
+
+
+changeDBAPassword() {
+
+    if [ -z "$InteractiveInstall" ]
+      then
+        if [ -f /usr/bin/mkpasswd ]
+            then
+              generateNewDBAPassword
+        else
+              keepOrigDBAPassword
+        fi
+      else
+        askUserForNewDBAPassword
+    fi
+}
+
+
+#= Main Post ===============================================================
+
+    # Make sure the links are in place 
+    if [ ! -L /usr/local/firebird -a ! -d /usr/local/firebird ] 
+      then 
+    # Main link and... 
+        ln -s $RPM_INSTALL_PREFIX/interbase /usr/local/firebird 
+    fi 
+
+
+    IBRootDir=/usr/local/firebird
+    IBBin=$IBRootDir/bin
+    RunUser=root
+
+
+    # Update /etc/services
+
+
+    FileName=/etc/services
+    newLine="gds_db          3050/tcp  # InterBase Database Remote Protocol"
+    oldLine=`grep "^gds_db" $FileName`
+
+    replaceLineInFile "$FileName" "$newLine" "$oldLine"
+
+
+
+
+    # remove any gds_db line in the /etc/inetd.conf
+
+
+    FileName=/etc/inetd.conf
+    oldLine=`grep "^gds_db" $FileName`
+
+    removeLineFromFile "$FileName" "$oldLine"
+
+
+    # Get inetd to reread new init files.
+
+    if [ -f /var/run/inetd.pid ]
+      then
+        kill -HUP `cat /var/run/inetd.pid`
+    fi
+
+
+    # Update ownership of programs
+
+    chown -R $RunUser.$RunUser $IBRootDir
+
+    cd $IBBin
+
+
+    # Create the ibmgr shell script.
+    cat > ibmgr <<EOF
+#!/bin/sh
+INTERBASE=$IBRootDir
+export INTERBASE
+exec \$INTERBASE/bin/ibmgr.bin \$@
+EOF
+
+    chmod u=rwx,go=rx *
+
+    # These two should only be executed by firebird user.
+    chmod u=rwx,go= ibguard ibserver
+
+
+
+
+    # Lock files
+
+    cd $IBRootDir
+
+    for i in isc_init1 isc_lock1 isc_event1 isc_guard1
+      do
+        FileName=$i.`hostname`
+        touch $FileName
+        chmod ug=rw,o= $FileName
+      done
+
+    touch interbase.log
+    chmod u=rw,go= interbase.log
+
+    # make examples writable by anyone              
+    chmod uga+rw examples/*.gdb
+
+
+    chmod ug+rx,o= /etc/rc.d/init.d/firebird
+
+    # This will start it at runlevel defined within the firebird file itself.
+
+    /sbin/chkconfig --add firebird
+
+
+    # start the db server so we can change the password
+
+    (cd /etc/rc.d/init.d; ./firebird start)
+
+    # Change sysdba password
+
+    changeDBAPassword

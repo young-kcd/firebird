@@ -1,0 +1,97 @@
+#! /bin/sh
+#
+#  This library is part of the FirebirdSQL project
+#
+#  This library is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU Lesser General Public
+#  License as published by the Free Software Foundation; either
+#  version 2.1 of the License, or (at your option) any later version.
+#  You may obtain a copy of the Licence at
+#  http://www.gnu.org/licences/lgpl.html
+#  
+#  As a special exception this file can also be included in modules
+#  with other source code as long as that source code has been 
+#  released under an Open Source Initiative certificed licence.  
+#  More information about OSI certification can be found at: 
+#  http://www.opensource.org 
+#  
+#  This module is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public Licence for more details.
+#  
+#  This module was created by members of the firebird development 
+#  team.  All individual contributions remain the Copyright (C) of 
+#  those individuals and all rights are reserved.  Contributors to 
+#  this file are either listed below or can be obtained from a CVS 
+#  history command.
+# 
+#   Created by:  Mark O'Donohue <mark.odonohue@ludwig.edu.au>
+# 
+#   Contributor(s):
+#  
+# 
+#   $Id: preuninstall.sh.in,v 1.1 2003-07-08 22:59:57 brodsom Exp $
+# 
+
+# The pre uninstall routines for Firebird Classic
+
+#------------------------------------------------------------------------
+#  stop server if it is running
+
+
+checkIfServerRunning() {
+
+# Check is server is being actively used.
+
+    checkString=`ps -ef| egrep "(gds_inet_server|gds_pipe)" |grep -v grep`
+
+    if [ ! -z "$checkString" ] 
+      then
+        echo "An instance of the Firebird/InterBase server seems to be running." 
+        echo "(the gds_inet_server or gds_pipe process was detected running on your system)"
+        echo "Please quit all interbase applications and then proceed." 
+        exit 1 
+    fi
+
+
+
+# Stop lock manager if it is the only thing running.
+
+    for i in `ps -ef | egrep "[gds|fb]_lock_mgr" | cut -d' ' -f3`
+     do
+        kill $i
+     done
+
+}
+
+
+#= Main PreUn ================================================================
+# This is a bit simple, but should work for now.  
+# cron will remove files in /tmp after a while. 
+
+    if  [ -z "$FirebirdInstallPrefix" ]
+       then
+        FirebirdInstallPrefix=@prefix@
+    fi
+
+    FBRootDir=$FirebirdInstallPrefix
+    FBBin=$FBRootDir/bin
+
+    checkIfServerRunning
+
+    cd $FBRootDir
+    
+    if [ -f security.fdb ] 
+      then 
+        cp security.fdb /tmp 
+        echo "Saved a copy of security.fdb in /tmp" 
+    fi 
+    
+    for i in isc_init1* isc_event1* isc_lock1* isc_guard* firebird.log SYSDBA.password
+      do
+        if [ -f $i ]
+          then
+            rm -f $i
+        fi
+      done

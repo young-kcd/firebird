@@ -75,7 +75,7 @@ copy %SystemRoot%\System32\msvcp%msvc_version%0.dll . >nul
 
 :: grab some missing bits'n'pieces  from different parts of the source tree
 ::=========================================================================
-copy %ROOT_PATH%\src\install\misc\firebird.conf %ROOT_PATH%\output\ > nul
+copy %ROOT_PATH%\builds\install\misc\firebird.conf %ROOT_PATH%\output\ > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY of firebird.conf failed ) & (goto :EOF))
 
 mkdir %ROOT_PATH%\output\examples 2>nul 

@@ -1,0 +1,47 @@
+    %dir /usr/local/firebird 
+    %dir /usr/local/firebird/bin 
+    %dir /usr/local/firebird/lib 
+    %dir /usr/local/firebird/UDF 
+    %dir /usr/local/firebird/intl 
+    %dir /usr/local/firebird/help 
+    /usr/local/firebird/bin/gbak 
+    /usr/local/firebird/bin/gdef 
+    /usr/local/firebird/bin/gds_lock_print 
+    /usr/local/firebird/bin/gfix 
+    /usr/local/firebird/bin/gpre 
+    /usr/local/firebird/bin/gsec 
+    /usr/local/firebird/bin/gsplit 
+    /usr/local/firebird/bin/gstat 
+    /usr/local/firebird/bin/security.gbak 
+    /usr/local/firebird/bin/isql 
+    /usr/local/firebird/bin/qli 
+    /usr/local/firebird/bin/fbmgr.bin 
+    /usr/local/firebird/bin/fbserver 
+    /usr/local/firebird/bin/fbguard 
+
+    /usr/local/firebird/bin/SSchangeRunUser.sh
+    /usr/local/firebird/bin/SSrestoreRootRunUser.sh
+    /usr/local/firebird/bin/changeDBAPassword.sh
+
+    /usr/local/firebird/examples 
+    /usr/local/firebird/help/help.gbak 
+    /usr/local/firebird/help/help.fdb 
+    /usr/local/firebird/include 
+    /usr/include/gds.h 
+    /usr/include/iberror.h 
+    /usr/include/ibase.h 
+    /usr/local/firebird/doc 
+    /usr/local/firebird/firebird.msg 
+    /usr/local/firebird/security.fdb 
+    /usr/local/firebird/firebird.conf
+    /usr/lib/libgds.so.0 
+    /usr/lib/libgds.so 
+    /usr/lib/libib_util.so 
+    /usr/lib/libgds_pyxis.a 
+    /usr/local/firebird/intl/gdsintl 
+    /usr/local/firebird/UDF/ib_udf 
+    /usr/local/firebird/services.isc 
+    /usr/local/firebird/README
+
+    /etc/rc.d/init.d/firebird
+
