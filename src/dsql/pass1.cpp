@@ -4641,13 +4641,13 @@ static DSQL_NOD pass1_sort( DSQL_REQ request, DSQL_NOD input, DSQL_NOD s_list, D
 		node2 = MAKE_node(nod_order, e_order_count);
 		node2->nod_arg[e_order_flag] = node1->nod_arg[e_order_flag]; /* asc/desc flag */
 		node2->nod_arg[e_order_nulls] = node1->nod_arg[e_order_nulls]; /* nulls first/last flag */
-		node1 = node1->nod_arg[0];
+		node1 = node1->nod_arg[e_order_field];
 		if (node1->nod_type == nod_field_name) {
 			if (parent_context) {			
-				node2->nod_arg[0] = copy_field(pass1_field(request, node1, 0), parent_context);
+				node2->nod_arg[e_order_field] = copy_field(pass1_field(request, node1, 0), parent_context);
 			}
 			else {
-				node2->nod_arg[0] = pass1_field(request, node1, 0);
+				node2->nod_arg[e_order_field] = pass1_field(request, node1, 0);
 			}
         }
 		else if (node1->nod_type == nod_position) {
@@ -4661,10 +4661,10 @@ static DSQL_NOD pass1_sort( DSQL_REQ request, DSQL_NOD input, DSQL_NOD s_list, D
 														  gds_dsql_command_err, gds_arg_gds, gds_order_by_err,	/* invalid ORDER BY clause */
 														  0);
 			if (parent_context) {			
-				node2->nod_arg[0] = copy_field(PASS1_node(request, s_list->nod_arg[position - 1], 0), parent_context);
+				node2->nod_arg[e_order_field] = copy_field(PASS1_node(request, s_list->nod_arg[position - 1], 0), parent_context);
 			}
 			else {
-				node2->nod_arg[0] =
+				node2->nod_arg[e_order_field] =
 					PASS1_node(request, s_list->nod_arg[position - 1], 0);
 			}
 		}
@@ -4675,8 +4675,8 @@ static DSQL_NOD pass1_sort( DSQL_REQ request, DSQL_NOD input, DSQL_NOD s_list, D
 
 		if ((*ptr)->nod_arg[e_order_collate]) {
 			DEV_BLKCHK((*ptr)->nod_arg[e_order_collate], dsql_type_str);
-			node2->nod_arg[0] =
-				pass1_collate(request, node2->nod_arg[0],
+			node2->nod_arg[e_order_field] =
+				pass1_collate(request, node2->nod_arg[e_order_field],
 							  (STR) (*ptr)->nod_arg[e_order_collate]);
 		}
 		*ptr2++ = node2;
@@ -4899,7 +4899,7 @@ static DSQL_NOD pass1_union( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order_li
 		for (ptr = order_list->nod_arg, end = ptr + order_list->nod_count;
 			 ptr < end; ptr++, uptr++) {
 			order1 = *ptr;
-			position = order1->nod_arg[0];
+			position = order1->nod_arg[e_order_field];
 			if (position->nod_type != nod_position)
 				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
 						  gds_arg_gds, gds_dsql_command_err, gds_arg_gds, gds_order_by_err,	/* invalid ORDER BY clause */
@@ -4912,9 +4912,14 @@ static DSQL_NOD pass1_union( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order_li
 
 			/* make a new order node pointing at the Nth item in the select list */
 
-			*uptr = order2 = MAKE_node(nod_order, 2);
-			order2->nod_arg[0] = union_items->nod_arg[number - 1];
-			order2->nod_arg[1] = order1->nod_arg[1];
+			*uptr = order2 = MAKE_node(nod_order, e_order_count);
+			order2->nod_arg[e_order_field] = union_items->nod_arg[number - 1];
+			order2->nod_arg[e_order_flag] = order1->nod_arg[e_order_flag];
+			if (order1->nod_arg[e_order_collate])
+				order2->nod_arg[e_order_field] = 
+					pass1_collate(request, order2->nod_arg[e_order_field],
+						(STR) order1->nod_arg[e_order_collate]);
+			order2->nod_arg[e_order_nulls] = order1->nod_arg[e_order_nulls];
 		}
 		union_rse->nod_arg[e_rse_sort] = sort;
 	}
