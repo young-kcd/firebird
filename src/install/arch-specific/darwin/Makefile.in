@@ -28,6 +28,7 @@ package packages dist: package_@FIREBIRD_ARCH_TYPE@
 package_classic package_embedded: INST_NM=Firebird-CS-$(FB_INST_VERS)
 package_classic package_embedded: BLOCKSIZE=1048576
 package_classic package_embedded:
+	-rm -rf $(DIR)
 	mkdir -p $(DIR)/t
 	mv $(ROOT)/gen/firebird/frameworks/FirebirdCS.framework \
 			$(DIR)/t/Firebird.framework
@@ -78,6 +79,7 @@ package_classic package_embedded:
 			>> $(DIR)/$(INST_NM).pkg/Contents/Resources/$(INST_NM).sizes
 	echo "CompressedSize 0" >> \
 			$(DIR)/$(INST_NM).pkg/Contents/Resources/$(INST_NM).sizes
+	-rm -rf $(ROOT)/gen/firebird/$(INST_NM).pkg
 	mv $(DIR)/$(INST_NM).pkg $(ROOT)/gen/firebird
 	rm -rf $(DIR)
 
@@ -86,6 +88,7 @@ package_classic package_embedded:
 package_super package_server: INST_NM=Firebird-SS-$(FB_INST_VERS)
 package_super package_server: BLOCKSIZE=1048576
 package_super package_server:
+	-rm -rf $(DIR)
 	mkdir -p $(DIR)/t
 	mv $(ROOT)/gen/firebird/frameworks/FirebirdSS.framework \
 			$(DIR)/t/Firebird.framework
@@ -136,6 +139,7 @@ package_super package_server:
 			>> $(DIR)/$(INST_NM).pkg/Contents/Resources/$(INST_NM).sizes
 	echo "CompressedSize 0" >> \
 			$(DIR)/$(INST_NM).pkg/Contents/Resources/$(INST_NM).sizes
+	-rm -rf $(ROOT)/gen/firebird/$(INST_NM).pkg
 	mv $(DIR)/$(INST_NM).pkg $(ROOT)/gen/firebird
 	rm -rf $(DIR)
 
