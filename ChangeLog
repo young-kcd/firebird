@@ -1,3 +1,77 @@
+2004-08-29 09:37  robocop
+
+	* firebird2/src/jrd/ini.epp (1.58):
+	
+	Take repeating code to a small function
+
+2004-08-29 08:53  robocop
+
+	* firebird2/src/burp/: backup.epp (1.64), mvol.cpp (1.40),
+	mvol_proto.h (1.9), restore.epp (1.81):
+	
+	Got rid of some silly back and forth cast: to call MVOL_init_read
+	or MVOL_init_write, callers forced char* vars to UCHAR*, but then
+	those MVOL functions internally forced those params again to char*.
+	 Fixed some indentation in loops, too.
+
+2004-08-29 08:47  robocop
+
+	* firebird2/src/burp/spit.cpp (1.29):
+	
+	misc
+
+2004-08-29 01:14  skidder
+
+	* firebird2/src/common/classes/: alloc.cpp (1.67), class_test.cpp
+	(1.22), test.sh (1.15):
+	
+	Fix typo and small bug in memory manager test code
+
+2004-08-28 10:20  dimitr
+
+	* firebird2/src/jrd/ini.epp (1.57):
+	
+	Restored ODS compatibility after new fields were added to
+	RDB$ROLES.
+
+2004-08-28 09:30  dimitr
+
+	* firebird2/src/remote/server.cpp (1.91):
+	
+	Fixed bug introduced by Blas' cleanup yesterday.
+
+2004-08-28 07:19  skidder
+
+	* firebird2/src/common/classes/: class_test.cpp (1.21), test.sh
+	(1.14):
+	
+	Update memory manager tests
+
+2004-08-28 07:18  skidder
+
+	* firebird2/src/common/classes/alloc.cpp (1.66):
+	
+	fix handling of zero-length allocations, fix rare memory management
+	error, add quick pool verification logic
+
+2004-08-28 07:15  skidder
+
+	* firebird2/src/common/classes/alloc.h (1.49):
+	
+	quick pool verification logic
+
+2004-08-28 04:55  skidder
+
+	* firebird2/src/jrd/svc.h (1.33):
+	
+	Change style of comment to avoid multi-line comment warning
+
+2004-08-28 04:51  skidder
+
+	* firebird2/src/common/classes/rwlock.h (1.22):
+	
+	Some Linux targets may miss support for fancy rwlock options
+
 2004-08-27 19:39  skidder
 
 	* firebird2/src/jrd/thd.h (1.36):
