@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.10 2001-12-29 11:41:21 tamlin Exp $
+//	$Id: alice.cpp,v 1.11 2002-01-04 11:34:14 skywalker Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -97,7 +97,7 @@ static bool fAnsiCP = false;
 #endif
 
 static void ALICE_error(USHORT number);	// overloaded to keep down param count
-static inline void translate_cp(LPSTR sz);
+static inline void translate_cp(TEXT* sz);
 static void expand_filename(TEXT*, TEXT*);
 static int output_thread(SLONG, UCHAR*);
 static int output_main(SLONG, UCHAR*);
@@ -815,7 +815,7 @@ static void alice_output(CONST SCHAR * format, ...)
 //  2. The macro GUI_TOOLS is NOT defined AND
 //  3. The static variable fAnsiCP is false.
 //
-static inline void translate_cp(LPSTR sz)
+static inline void translate_cp(TEXT* sz)
 {
 #if defined (WIN95) && !defined (GUI_TOOLS)
 	if (!fAnsiCP) {

@@ -70,19 +70,19 @@ typedef struct pp_table {
 } PP_TABLE;
 
 static CONST PP_TABLE pp_symbols[] = {
-	"CREATE", 6, CREATE,
-	"DATABASE", 8, DATABASE,
-	"SCHEMA", 6, SCHEMA,
-	"PAGE_SIZE", 9, PAGE_SIZE,
-	"USER", 4, USER,
-	"PASSWORD", 8, PASSWORD,
-	"PAGESIZE", 8, PAGESIZE,
-	"LENGTH", 6, LENGTH,
-	"PAGES", 5, PAGES,
-	"PAGE", 4, PAGE,
-	"SET", 3, SET,
-	"NAMES", 5, NAMES,
-	"", 0, 0
+	{"CREATE", 6, CREATE},
+	{"DATABASE", 8, DATABASE},
+	{"SCHEMA", 6, SCHEMA},
+	{"PAGE_SIZE", 9, PAGE_SIZE},
+	{"USER", 4, USER},
+	{"PASSWORD", 8, PASSWORD},
+	{"PAGESIZE", 8, PAGESIZE},
+	{"LENGTH", 6, LENGTH},
+	{"PAGES", 5, PAGES},
+	{"PAGE", 4, PAGE},
+	{"SET", 3, SET},
+	{"NAMES", 5, NAMES},
+	{"", 0, 0}
 };
 
 /* define the tokens */

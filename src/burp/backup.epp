@@ -22,7 +22,7 @@
  * Toni Martir: Added verbose backup records as BACKUP_VERBOSE_INTERVAL
  */
 /*
-$Id: backup.epp,v 1.3 2001-12-24 02:50:47 tamlin Exp $
+$Id: backup.epp,v 1.4 2002-01-04 11:34:14 skywalker Exp $
 */
 
 #include "firebird.h"
@@ -145,23 +145,23 @@ typedef struct rfr_tab_t {
 } *RFR_TAB;
 
 static CONST struct rfr_tab_t rfr_table[] = {
-	"RDB$INDICES", "RDB$INDEX_INACTIVE", BCK_idx_inactive,
+	{"RDB$INDICES", "RDB$INDEX_INACTIVE", BCK_idx_inactive},
 /* Backup of V2 triggers no longer supported 1996-Aug-05 David Schnepper  
-	"RDB$RELATIONS",	"RDB$STORE_TRIGGER",	BCK_triggers, 
+	{"RDB$RELATIONS",	"RDB$STORE_TRIGGER",	BCK_triggers}, 
 */
-	"RDB$RELATIONS", "RDB$EXTERNAL_FILE", BCK_external,
-	"RDB$SECURITY_CLASSES", "RDB$SECURITY_CLASS", BCK_security,
-	"RDB$FILES", "RDB$FILE_NAME", BCK_files,
-	"RDB$VIEW_RELATIONS", "RDB$CONTEXT_NAME", BCK_context_name,
-	"RDB$DATABASE", "RDB$DESCRIPTION", BCK_db_description,
-	"RDB$FUNCTIONS", "RDB$FUNCTION_NAME", BCK_ffmptt,
-	"RDB$FIELDS", "RDB$EXTERNAL_LENGTH", BCK_attributes_v3,
-	"RDB$RELATION_FIELDS", "RDB$SYSTEM_FLAG", BCK_rfr_sys_flag,
-	"RDB$FIELD_DIMENSIONS", "RDB$DIMENSION", BCK_ods6,
-	"RDB$PROCEDURES", "RDB$PROCEDURE_NAME", BCK_ods8,
-	"RDB$ROLES", "RDB$ROLE_NAME", BCK_ods9,
-	"RDB$FIELDS", "RDB$FIELD_PRECISION", BCK_ods10,
-	0, 0, 0
+	{"RDB$RELATIONS", "RDB$EXTERNAL_FILE", BCK_external},
+	{"RDB$SECURITY_CLASSES", "RDB$SECURITY_CLASS", BCK_security},
+	{"RDB$FILES", "RDB$FILE_NAME", BCK_files},
+	{"RDB$VIEW_RELATIONS", "RDB$CONTEXT_NAME", BCK_context_name},
+	{"RDB$DATABASE", "RDB$DESCRIPTION", BCK_db_description},
+	{"RDB$FUNCTIONS", "RDB$FUNCTION_NAME", BCK_ffmptt},
+	{"RDB$FIELDS", "RDB$EXTERNAL_LENGTH", BCK_attributes_v3},
+	{"RDB$RELATION_FIELDS", "RDB$SYSTEM_FLAG", BCK_rfr_sys_flag},
+	{"RDB$FIELD_DIMENSIONS", "RDB$DIMENSION", BCK_ods6},
+	{"RDB$PROCEDURES", "RDB$PROCEDURE_NAME", BCK_ods8},
+	{"RDB$ROLES", "RDB$ROLE_NAME", BCK_ods9},
+	{"RDB$FIELDS", "RDB$FIELD_PRECISION", BCK_ods10},
+	{0, 0, 0}
 };
 
 static CONST SCHAR blob_items[] =

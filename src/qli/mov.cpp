@@ -70,6 +70,9 @@ static TEXT *type_name(USHORT);
 #endif
 
 
+typedef vary VARY;
+
+
 #define LETTER(c)	(c >= 'A' && c <= 'Z')
 #define DIGIT(c)	(c >= '0' && c <= '9')
 #define TODAY		"TODAY"

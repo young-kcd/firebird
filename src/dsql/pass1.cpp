@@ -23,6 +23,7 @@
 
 #include "firebird.h"
 #include <string.h>
+#include <memory>
 #include "../jrd/ib_stdio.h"
 #include "../jrd/gds.h"
 #include "../dsql/dsql.h"
@@ -272,15 +273,18 @@ CTX PASS1_make_context( REQ request, NOD relation_node)
 			if (count)
 			{
 				// Initialize this stack variable, and make it look like a node
-				nod desc_node;
+                std::auto_ptr<nod> desc_node(new(*tdsql->tsql_default, 0) nod);
+
 				for (input = context->ctx_proc_inputs->nod_arg,
 					 field = procedure->prc_inputs;
 					 field; input++, field = field->fld_next)
 				{
 					DEV_BLKCHK(field, dsql_type_fld);
 					DEV_BLKCHK(*input, dsql_type_nod);
-					MAKE_desc_from_field(&desc_node.nod_desc, field);
-					set_parameter_type(*input, &desc_node, FALSE);
+                    // MAKE_desc_from_field(&desc_node.nod_desc, field);
+                    //	set_parameter_type(*input, &desc_node, FALSE);
+					MAKE_desc_from_field(&(desc_node->nod_desc), field);
+					set_parameter_type(*input, desc_node.get(), FALSE);
 				}
 			}
 		}

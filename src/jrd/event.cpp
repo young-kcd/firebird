@@ -126,10 +126,10 @@ static MTX_T event_mutex[1];
 static struct ipccfg EVENT_hdrtbl[] =
 {
 #if !(defined WIN_NT)
-	"V4_EVENT_MEM_SIZE", -1, &EVENT_default_size, 0, 0,
-	"ANY_EVENT_MEM_SIZE", -1, &EVENT_default_size, -1, 0,
+	{"V4_EVENT_MEM_SIZE", -1, &EVENT_default_size, 0, 0},
+	{"ANY_EVENT_MEM_SIZE", -1, &EVENT_default_size, -1, 0},
 #endif
-	NULL, -1, NULL, 0, 0
+	{NULL, -1, NULL, 0, 0}
 };
 
 

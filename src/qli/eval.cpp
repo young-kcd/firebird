@@ -41,6 +41,9 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"
 
+typedef vary VARY;
+
+
 extern USHORT QLI_prompt_count, QLI_reprompt;
 extern USHORT sw_forms;
 

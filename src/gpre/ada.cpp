@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.4 2001-12-24 02:50:49 tamlin Exp $
+//	$Id: ada.cpp,v 1.5 2002-01-04 11:34:14 skywalker Exp $
 //
 
 #include "firebird.h"
@@ -1044,7 +1044,7 @@ static void gen_compatibility_symbol(
 {
 	TEXT *v3_prefix;
 
-	v3_prefix = (sw_language == lang_cxx) ? "gds_" : "gds__";
+	v3_prefix = (isLangCpp(sw_language)) ? "gds_" : "gds__";
 
 	ib_fprintf(out_file, "#define %s%s\t%s%s%s\n", v3_prefix, symbol,
 			   v4_prefix, symbol, trailer);

@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.3 2001-12-24 02:50:49 tamlin Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.4 2002-01-04 11:34:15 skywalker Exp $
  */
 
 #include "firebird.h"
@@ -206,7 +206,7 @@ BOOLEAN MET_get_domain_default(DBB dbb,
 							   TEXT * domain_name,
 							   TEXT * buffer, USHORT buff_length)
 {
-	SLONG *DB, *gds__trans;
+	SLONG *DB, *gds__rans;
 	SCHAR name[NAME_SIZE];
 	SSHORT length;
 	BOOLEAN has_default;

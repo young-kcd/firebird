@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.jrd,v 1.9 2001-12-24 02:50:52 tamlin Exp $
+#   $Id: Makefile.in.jrd,v 1.10 2002-01-04 11:34:16 skywalker Exp $
 # 
 
 ROOT=../..
@@ -660,7 +660,9 @@ rebuild_codes: codes
 
 codes:		codes.o $(STDIO) $(LIBGDS_DEP)
 	-$(RM) codes
-	$(EXE_LINK) $(LINK_OPTIONS) $(LIBGDS_LINK) $(CXX_INCLUDE_DIRS) -o codes $^
+	echo "Hello"
+	$(EXE_LINK) $(LINK_OPTS) $(LIBGDS_LINK) $(CXX_INCLUDE_DIRS) $^ -o $@ $(LINK_LIBS)
+#	$(EXE_LINK) $(LINK_OPTIONS) $(LIBGDS_LINK) $(CXX_INCLUDE_DIRS) -o codes $^
 	$(CHMOD_7) codes
 
 
@@ -712,8 +714,13 @@ build_alt_use_main: alt_use_sec.h.pre
 #blob_filter.cpp: blob_filter.epp
 #	$(GPRE_BOOT) -lang_internal -n -manual -raw -O $< $@
 
-$(SRC)/codes.cpp:	$(SRC)/codes.epp
+#$(SRC)/codes.cpp:	$(SRC)/codes.epp
+codes.cpp:	$(SRC)/codes.epp  msgs.gdb
 	$(GPRE) -n -manual -raw -string $< $@
+
+
+msg.gdb:
+	ln -fs $(SRC_ROOT)/refDatabases/msg.gdb msg.gdb
 
 #$(SRC)/fun.cpp: $(SRC)/fun.epp
 #	$(GPRE) -n -gds -raw -ids $< $@

@@ -23,7 +23,7 @@
  * FSG 16.03.2001 
  */
 /*
-$Id: inet.cpp,v 1.4 2001-12-24 02:50:53 tamlin Exp $
+$Id: inet.cpp,v 1.5 2002-01-04 11:34:16 skywalker Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -44,9 +44,11 @@ $Id: inet.cpp,v 1.4 2001-12-24 02:50:53 tamlin Exp $
 #include <sys/param.h>
 #endif
 
+
 #ifdef HAVE_GRP_H
 #include <grp.h>
 #endif
+
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -253,8 +255,8 @@ static BOOLEAN first_time = TRUE;
 
 static struct ipccfg INET_tcp_buffer[] =
 {
-	ISCCFG_REMOTE_BUFFER, 0, &INET_remote_buffer, 0, 0,
-	NULL, 0, NULL, 0, 0
+	{ISCCFG_REMOTE_BUFFER, 0, &INET_remote_buffer, 0, 0},
+	{NULL, 0, NULL, 0, 0}
 };
 
 
@@ -777,14 +779,14 @@ PORT INET_analyze(	TEXT*	file_name,
 
 	static const p_cnct::p_cnct_repeat protocols_to_try1[] =
 	{
-		PROTOCOL_VERSION8,				arch_generic, ptype_rpc, MAX_PTYPE, 2,
-		PROTOCOL_VERSION8,				ARCHITECTURE, ptype_rpc, MAX_PTYPE, 3,
-		PROTOCOL_VERSION10,				arch_generic, ptype_rpc, MAX_PTYPE, 4,
-		PROTOCOL_VERSION10,				ARCHITECTURE, ptype_rpc, MAX_PTYPE, 5
+		{PROTOCOL_VERSION8,				arch_generic, ptype_rpc, MAX_PTYPE, 2},
+		{PROTOCOL_VERSION8,				ARCHITECTURE, ptype_rpc, MAX_PTYPE, 3},
+		{PROTOCOL_VERSION10,				arch_generic, ptype_rpc, MAX_PTYPE, 4},
+        {PROTOCOL_VERSION10,				ARCHITECTURE, ptype_rpc, MAX_PTYPE, 5}
 #ifdef SCROLLABLE_CURSORS
 		,
-		PROTOCOL_SCROLLABLE_CURSORS,	arch_generic, ptype_rpc, MAX_PTYPE, 6,
-		PROTOCOL_SCROLLABLE_CURSORS,	ARCHITECTURE, ptype_rpc, MAX_PTYPE, 7
+		{PROTOCOL_SCROLLABLE_CURSORS,	arch_generic, ptype_rpc, MAX_PTYPE, 6},
+		{PROTOCOL_SCROLLABLE_CURSORS,	ARCHITECTURE, ptype_rpc, MAX_PTYPE, 7}
 #endif
 	};
 
@@ -819,10 +821,10 @@ PORT INET_analyze(	TEXT*	file_name,
 
 		static const p_cnct::p_cnct_repeat protocols_to_try2[] =
 		{
-			PROTOCOL_VERSION6, arch_generic, ptype_rpc, ptype_batch_send,	2,
-			PROTOCOL_VERSION6, ARCHITECTURE, ptype_rpc, ptype_batch_send,	3,
-			PROTOCOL_VERSION7, arch_generic, ptype_rpc, MAX_PTYPE,			4,
-			PROTOCOL_VERSION7, ARCHITECTURE, ptype_rpc, MAX_PTYPE,			5
+			{PROTOCOL_VERSION6, arch_generic, ptype_rpc, ptype_batch_send,	2},
+			{PROTOCOL_VERSION6, ARCHITECTURE, ptype_rpc, ptype_batch_send,	3},
+			{PROTOCOL_VERSION7, arch_generic, ptype_rpc, MAX_PTYPE,			4},
+			{PROTOCOL_VERSION7, ARCHITECTURE, ptype_rpc, MAX_PTYPE,			5}
 		};
 
 		cnct->p_cnct_count = INET_PRIVATE_COUNTOF(protocols_to_try2);
@@ -848,10 +850,10 @@ PORT INET_analyze(	TEXT*	file_name,
 
 		static const p_cnct::p_cnct_repeat protocols_to_try3[] =
 		{
-			PROTOCOL_VERSION3, arch_generic, ptype_rpc, ptype_batch_send, 2,
-			PROTOCOL_VERSION3, ARCHITECTURE, ptype_rpc, ptype_batch_send, 3,
-			PROTOCOL_VERSION4, arch_generic, ptype_rpc, ptype_batch_send, 4,
-			PROTOCOL_VERSION4, ARCHITECTURE, ptype_rpc, ptype_batch_send, 5
+			{PROTOCOL_VERSION3, arch_generic, ptype_rpc, ptype_batch_send, 2},
+			{PROTOCOL_VERSION3, ARCHITECTURE, ptype_rpc, ptype_batch_send, 3},
+			{PROTOCOL_VERSION4, arch_generic, ptype_rpc, ptype_batch_send, 4},
+			{PROTOCOL_VERSION4, ARCHITECTURE, ptype_rpc, ptype_batch_send, 5}
 		};
 
 		cnct->p_cnct_count = INET_PRIVATE_COUNTOF(protocols_to_try3);

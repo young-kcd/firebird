@@ -1093,7 +1093,7 @@ static SLONG compute_access(TDBB		tdbb,
 				ULONG old_offset = (ULONG) (acl - buffer);
 				length += BLOB_BUFFER_SIZE;
 				// TMN: Cast away volatile
-				str::extend(const_cast<str*>(str_buffer), length);
+				str::extend(const_cast<str*&>(str_buffer), length);
 				buffer = (TEXT*) str_buffer->str_data;
 				acl = buffer + old_offset;
 			}

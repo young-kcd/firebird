@@ -124,7 +124,7 @@ void* operator new(size_t s)
 	{
 		printf("You MUST allocate all memory from a pool.  Don't use the default global new().\n");
 #if !defined(_MSC_VER)
-		throw std::bad_alloc();
+        //		throw std::bad_alloc();
 #endif
 	}
 #endif	// DEV_BUILD
@@ -145,7 +145,7 @@ void* operator new[](size_t s)
 	if (++badNewCount > 1)
 	{
 		printf("You MUST allocate all memory from a pool.  Don't use the default global new[]().\n");
-		throw std::bad_alloc();
+        //		throw std::bad_alloc();
 	}
 #endif
 	poolLoader.loadPool();

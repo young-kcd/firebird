@@ -29,6 +29,8 @@
 /*
  *   Define domains.
  */
+/* set echo on;
+*/
 
 CREATE DOMAIN firstname     AS VARCHAR(15);
 

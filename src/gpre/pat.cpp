@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pat.cpp,v 1.3 2001-12-24 02:50:49 tamlin Exp $
+//	$Id: pat.cpp,v 1.4 2002-01-04 11:34:15 skywalker Exp $
 //
 
 #include "firebird.h"
@@ -134,7 +134,7 @@ void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 	val = "";
 	valend = "";
 
-	if ((sw_language == lang_c) || (sw_language == lang_cxx)) {
+	if ((sw_language == lang_c) || (isLangCpp(sw_language))) {
 		ref = "&";
 		refend = "";
 	}

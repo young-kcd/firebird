@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.2 2001-12-24 02:50:49 tamlin Exp $
+ * $Id: gpre.h,v 1.3 2002-01-04 11:34:15 skywalker Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -193,6 +193,25 @@ typedef enum lang_t
 	lang_cpp
 } LANG_T;
 
+//___________________________________________________________________
+// Test if input language is cpp based.
+//
+// The lang_internal is used to compile some internal stuff without 
+// reference to a database.  Previously it was based on lang_c (but even then
+// if you look carefully there are some areas where lang_c is specifically 
+// treated and lang_internal would be ignored). 
+// Now the base language used for lang_internal is cpp, so we have this 
+// inline function to tell if language is cpp. 
+// Internally the sw_language variable is set to lang_cxx for the
+// c++ source files, cxx, cpp, cplusplus, so we only need to test lang_cxx 
+// and lang_internal.
+//
+inline bool isLangCpp(LANG_T lang) { 
+    if (lang == lang_cxx || lang == lang_internal) {
+        return true;
+    }
+    return false;
+}
 
 typedef enum act_t {
 	ACT_any,

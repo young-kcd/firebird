@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmp.cpp,v 1.4 2001-12-24 02:50:49 tamlin Exp $
+//	$Id: cmp.cpp,v 1.5 2002-01-04 11:34:15 skywalker Exp $
 //
 
 #include "firebird.h"
@@ -1552,6 +1552,7 @@ static void cmp_sdl_fudge( REQ request, SLONG lower_bound)
 	case lang_c:
 	case lang_cxx:
 	case lang_basic:
+    case lang_internal:
 		if (!lower_bound)
 			break;
 		STUFF(gds_sdl_add);

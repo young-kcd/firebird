@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exp.cpp,v 1.4 2001-12-24 02:50:49 tamlin Exp $
+//	$Id: exp.cpp,v 1.5 2002-01-04 11:34:15 skywalker Exp $
 //
 
 #include "firebird.h"
@@ -1230,8 +1230,7 @@ static NOD par_and( REQ request)
 //		in an RSE.
 //  
 
-static NOD par_array(
-					 REQ request,
+static NOD par_array(REQ request,
 					 FLD field, SSHORT subscript_flag, SSHORT sql_flag)
 {
 	BOOLEAN paren = FALSE, bracket = FALSE;
@@ -1282,6 +1281,7 @@ static NOD par_array(
 			case lang_c:
 			case lang_cxx:
 			case lang_basic:
+            case lang_internal:
 				index_node->nod_arg[0] =
 					normalize_index(dimension, index_node->nod_arg[0],
 									ZERO_BASED);

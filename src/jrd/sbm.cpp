@@ -104,11 +104,11 @@ SBM *SBM_and(register SBM * bitmap1, register SBM * bitmap2)
 					*bucket1 = NULL;
 				}
 				else if (!(result_bucket =
-					SBM_and((SBM*)bucket1, (SBM*)bucket2))) {
-					bucket_reset((SBM)*bucket1);
+					SBM_and((SBM*) &*bucket1, (SBM*) &*bucket2))) {
+					bucket_reset((SBM) *bucket1);
 					*bucket1 = NULL;
 				}
-				else if (result_bucket == (SBM*) bucket2) {
+				else if (result_bucket == (SBM*) &*bucket2) {
 					temp = (SBM)*bucket2;
 					*bucket2 = *bucket1;
 					*bucket1 = (BMS)temp;
@@ -644,8 +644,10 @@ SBM *SBM_or(register SBM * bitmap1, register SBM * bitmap2)
 		SBM *bucket1, *bucket2, *end_buckets;
 		SBM temp;
 
-		bucket1 = (SBM *) map1->sbm_segments.begin();
-		bucket2 = (SBM *) map2->sbm_segments.begin();
+        //bucket1 = (SBM *) &*(map1->sbm_segments.begin());
+		//bucket2 = (SBM *) &*(map2->sbm_segments.begin());
+		bucket1 = (SBM *) &(map1->sbm_segments[0]);
+		bucket2 = (SBM *) &(map2->sbm_segments[0]);
 		end_buckets = bucket2 + map2->sbm_high_water + 1;
 
 		for (; bucket2 < end_buckets; bucket1++, bucket2++) {

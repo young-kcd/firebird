@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.7 2001-12-29 11:41:22 tamlin Exp $
+//  $Id: gpre.cpp,v 1.8 2002-01-04 11:34:15 skywalker Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -38,7 +38,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.7 2001-12-29 11:41:22 tamlin Exp $
+//	$Id: gpre.cpp,v 1.8 2002-01-04 11:34:15 skywalker Exp $
 //
 
 #define GPRE_MAIN
@@ -168,7 +168,7 @@ static struct ext_table_t dml_ext_table[] =
 
 	{ lang_cxx, IN_SW_GPRE_CXX, ".exx", ".cxx" },
 	{ lang_cpp, IN_SW_GPRE_CXX, ".epp", ".cpp" },
-	{ lang_internal, IN_SW_GPRE_G, ".e", ".c" },
+	{ lang_internal, IN_SW_GPRE_G, ".epp", ".cpp" },
 	{ lang_pascal, IN_SW_GPRE_P, ".epas", ".pas" },
 
 #ifdef FORTRAN
@@ -669,13 +669,14 @@ int main(int argc, char* argv[])
 			sw_language = lang_internal;
 			gen_routine = C_CXX_action;
 			sw_cstring = TRUE;
-			transaction_name = "gds__trans";
+			transaction_name = "gds_trans";
 			sw_know_interp = FALSE;
 			sw_interp = 0;
 			ident_pattern = "isc_%d"; 
 			utility_name = "isc_utility";
 			count_name = "isc_count";
 			slack_name = "isc_slack";
+			database_name	= "gds_database";
 			break;
 
 		case IN_SW_GPRE_I:
@@ -2183,7 +2184,7 @@ static TOK get_token()
 
 			if (next == '\\' &&
 				!sw_sql &&
-				((sw_language == lang_c) || (sw_language == lang_cxx)))
+				((sw_language == lang_c) || (isLangCpp(sw_language))))
 			{
 				peek = nextchar();
 				if (peek == '\n') {
@@ -2517,7 +2518,7 @@ static void pass2( SLONG start_position)
 
 	const bool sw_block_comments =
 		sw_language == lang_c		||
-		sw_language == lang_cxx		||
+		isLangCpp(sw_language)      ||
 		sw_language == lang_pascal	||
 		sw_language == lang_pli;
 
@@ -2699,7 +2700,7 @@ static void pass2( SLONG start_position)
 		(*gen_routine) (action, start);
 		if (action->act_type == ACT_routine &&
 			!action->act_object &&
-			((sw_language == lang_c) || (sw_language == lang_cxx))) continue;
+			((sw_language == lang_c) || (isLangCpp(sw_language)))) continue;
 
 		if (action->act_flags & ACT_break)
 			return;
@@ -2871,11 +2872,11 @@ static SSHORT skip_white()
 
 		if (c == '/' &&
 			(sw_language == lang_c ||
-			 sw_language == lang_internal ||
-			 sw_language == lang_cxx || sw_language == lang_pli))
+			 isLangCpp(sw_language) ||
+			 sw_language == lang_pli))
 		{
 			if ((next = nextchar()) != '*') {
-				if (sw_language == lang_cxx && next == '/') {
+				if (isLangCpp(sw_language) && next == '/') {
 					while ((c = nextchar()) != '\n' && c != EOF);
 					continue;
 				}

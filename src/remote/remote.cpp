@@ -53,9 +53,9 @@ static SLONG dummy_interval = DUMMY_INTERVAL;
 #define DUMMY_PACKET_INTRVL_IDX   1
 
 static struct ipccfg INET_cfgtbl[] = {
-	ISCCFG_CONN_TIMEOUT, 0, &conn_timeout, 0, 0,
-	ISCCFG_DUMMY_INTRVL, 0, &dummy_interval, 0, 0,
-	NULL, 0, NULL, 0, 0
+	{ISCCFG_CONN_TIMEOUT, 0, &conn_timeout, 0, 0},
+	{ISCCFG_DUMMY_INTRVL, 0, &dummy_interval, 0, 0},
+     {NULL, 0, NULL, 0, 0}
 };
 
 static void cleanup_memory(void *);

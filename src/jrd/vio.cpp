@@ -1501,7 +1501,8 @@ REC VIO_gc_record(TDBB tdbb, REL relation)
 
 	for (rec_ptr = vector->begin(), end =
 		 vector->end(); rec_ptr != end; ++rec_ptr)
-		if ((record = *(REC*)rec_ptr) && !(record->rec_flags & REC_gc_active)) {
+		if ((record = *(REC*) &*rec_ptr) && !(record->rec_flags & REC_gc_active)) {
+            //		if ((record = *(REC*) &*rec_ptr) && !(record->rec_flags & REC_gc_active)) {
 			record->rec_flags |= REC_gc_active;
 /*	V4_MUTEX_UNLOCK (&relation->rel_mutex); */
 			return record;

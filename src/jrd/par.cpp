@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: par.cpp,v 1.4 2001-12-24 02:50:52 tamlin Exp $
+$Id: par.cpp,v 1.5 2002-01-04 11:34:16 skywalker Exp $
 */
 
 #include "firebird.h"
@@ -75,7 +75,7 @@ static CONST struct {
 	SLONG code_number;
 } FAR_VARIABLE codes[] = {
 #include "gen/codetext.h"
-	NULL, 0
+	{NULL, 0}
 };
 
 static void error(CSB, ...);
@@ -1459,7 +1459,7 @@ static NOD par_message(TDBB tdbb, CSB * csb)
 	offset = 0;
 
 	for (desc = format->fmt_desc.begin(), end = desc + n; desc < end; desc++) {
-		alignment = PAR_desc(csb, desc);
+		alignment = PAR_desc(csb, &*desc);
 		if (alignment)
 			offset = FB_ALIGN(offset, alignment);
 		desc->dsc_address = (UCHAR *) (SLONG) offset;

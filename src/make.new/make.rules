@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.rules,v 1.12 2001-12-24 02:50:52 tamlin Exp $
+#   $Id: make.rules,v 1.13 2002-01-04 11:34:16 skywalker Exp $
 # 
 
 #____________________________________________________________________________
@@ -59,7 +59,11 @@ BIN=$(GEN_ROOT)/firebird/bin
 # This picks up the current directory and maps it to the equivalent module
 # in the src and gen area.
 
-ModuleName:=$(notdir $(CURDIR))
+RealSrcRootPath = $(shell cd $(SRC_ROOT); pwd)
+
+#ModuleName:=$(notdir $(CURDIR))
+ModuleName:=$(subst $(RealSrcRootPath)/,,$(CURDIR))
+
 SRC=$(SRC_ROOT)/$(ModuleName)
 OBJ=$(GEN_ROOT)/$(ModuleName)
 DEP=$(OBJ)

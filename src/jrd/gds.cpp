@@ -2461,6 +2461,7 @@ void API_ROUTINE gds__prefix(TEXT * resultString, TEXT * root)
 			{
               // Try and get value from config file.
               const Firebird::string regPrefix = FirebirdConfig::getSysString("RootDirectory");
+
               int len = regPrefix.length();
               if ( len > 0) {
                   if (len > sizeof(ib_prefix_val)) {
@@ -3498,12 +3499,14 @@ void API_ROUTINE gds__unregister_cleanup(FPTR_VOID_PTR routine, void *arg)
 	CLEAN *clean_ptr, clean;
 
 	for (clean_ptr = &cleanup_handlers; clean = *clean_ptr;
-		 clean_ptr = &clean->clean_next) if (clean->clean_routine == routine
-											 && clean->clean_arg == arg) {
+		 clean_ptr = &clean->clean_next) {
+        if (clean->clean_routine == routine
+            && clean->clean_arg == arg) {
 			*clean_ptr = clean->clean_next;
 			FREE_LIB_MEMORY(clean);
 			break;
 		}
+    }
 }
 
 

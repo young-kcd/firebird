@@ -46,8 +46,8 @@ static int test(long, char *);
 #pragma FB_COMPILER_MESSAGE("Fix! function pointer cast!")
 
 static FN isc_functions[] = {
-	"test_module", "test_function", (int (*)()) test,
-	0, 0, 0
+	{"test_module", "test_function", (int (*)()) test},
+	{0, 0, 0}
 };
 
 #ifdef SHLIB_DEFS

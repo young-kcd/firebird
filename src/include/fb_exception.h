@@ -35,8 +35,8 @@ public:
 	explicit status_exception(STATUS s)
 	:	m_s(s)
 	{}
-	virtual ~status_exception() {}
-	virtual const char* what() const
+	virtual ~status_exception() throw() {}
+	virtual const char* what() const throw()
 		{ return "Firebird::status_exception"; }
 	STATUS value() const { return m_s; }
 
@@ -50,7 +50,7 @@ private:
 class red_zone_error : public std::exception
 {
 public:
-	virtual const char* what() const
+	virtual const char* what() const throw()
 		{ return "Firebird::red_zone_error"; }
 
 	// TMN: to be moved into its own source file!
@@ -60,7 +60,7 @@ public:
 class memory_corrupt : public std::exception
 {
 public:
-	virtual const char* what() const
+	virtual const char* what() const throw()
 		{ return "Firebird::memory_corrupt"; }
 
 	// TMN: to be moved into its own source file!

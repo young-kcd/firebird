@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.4 2001-12-24 02:50:49 tamlin Exp $
+//	$Id: ftn.cpp,v 1.5 2002-01-04 11:34:15 skywalker Exp $
 //
 
 #include "firebird.h"
@@ -5013,7 +5013,7 @@ static int gen_compatibility_symbol(
 {
 	TEXT *v3_prefix;
 
-	v3_prefix = (sw_language == lang_cxx) ? "isc_" : "isc_";
+	v3_prefix = (isLangCpp(sw_language)) ? "isc_" : "isc_";
 
 	ib_fprintf(out_file, "#define %s%s\t%s%s%s\n", v3_prefix, symbol,
 			   v4_prefix, symbol, trailer);

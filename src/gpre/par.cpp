@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.5 2001-12-29 11:41:22 tamlin Exp $
+//  $Id: par.cpp,v 1.6 2002-01-04 11:34:15 skywalker Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: par.cpp,v 1.5 2001-12-29 11:41:22 tamlin Exp $
+//	$Id: par.cpp,v 1.6 2002-01-04 11:34:15 skywalker Exp $
 //
 
 #include "firebird.h"
@@ -673,7 +673,9 @@ BOOLEAN PAR_end()
 
 	if ((sw_language == lang_ada) ||
 		(sw_language == lang_c) ||
-		(sw_language == lang_cxx)) return MATCH(KW_SEMI_COLON);
+		(isLangCpp(sw_language))) {
+        return MATCH(KW_SEMI_COLON);
+    }
 
 	return KEYWORD(KW_SEMI_COLON);
 }
@@ -1675,8 +1677,9 @@ static ACT par_derived_from()
 	ACT action;
 	TEXT s[64];
 
-	if ((sw_language != lang_c) && (sw_language != lang_cxx))
+	if ((sw_language != lang_c) && (!isLangCpp(sw_language))) {
 		return (NULL);
+    }
 
 	action = MAKE_ACTION(0, ACT_basedon);
 	based_on = (BAS) ALLOC(BAS_LEN);

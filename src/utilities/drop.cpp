@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: drop.cpp,v 1.4 2001-12-24 02:50:53 tamlin Exp $
+$Id: drop.cpp,v 1.5 2002-01-04 11:34:16 skywalker Exp $
 */
 
 #include "firebird.h"
@@ -76,16 +76,16 @@ static SCHAR **orig_argv;
 
 static struct ipccfg config_table[] = {
 #ifndef MMAP_SUPPORTED
-	"V4_LOCK_MEM_SIZE", -1, &LOCK_shm_size, 0, 0,
-	"ANY_LOCK_MEM_SIZE", -1, &LOCK_shm_size, -1, 0,
-	"V4_EVENT_MEM_SIZE", -1, &EVENT_default_size, 0, 0,
-	"ANY_EVENT_MEM_SIZE", -1, &EVENT_default_size, -1, 0,
+	{"V4_LOCK_MEM_SIZE", -1, &LOCK_shm_size, 0, 0},
+	{"ANY_LOCK_MEM_SIZE", -1, &LOCK_shm_size, -1, 0},
+	{"V4_EVENT_MEM_SIZE", -1, &EVENT_default_size, 0, 0},
+	{"ANY_EVENT_MEM_SIZE", -1, &EVENT_default_size, -1, 0},
 #endif
 #ifndef NO_SEMAPHORES
-	"V4_LOCK_SEM_COUNT", -1, &LOCK_sem_count, 0, 0,
-	"ANY_LOCK_SEM_COUNT", -1, &LOCK_sem_count, -1, 0,
+	{"V4_LOCK_SEM_COUNT", -1, &LOCK_sem_count, 0, 0},
+	{"ANY_LOCK_SEM_COUNT", -1, &LOCK_sem_count, -1, 0},
 #endif
-	NULL, -1, NULL, 0, 0
+     {NULL, -1, NULL, 0, 0}
 };
 
 

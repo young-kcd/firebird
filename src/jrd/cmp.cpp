@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: cmp.cpp,v 1.4 2001-12-24 02:50:51 tamlin Exp $
+$Id: cmp.cpp,v 1.5 2002-01-04 11:34:15 skywalker Exp $
 */
 
 #include "firebird.h"
@@ -1783,7 +1783,8 @@ REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
 		}
 	}
 
-	csb_repeat* tail = csb->csb_rpt.begin();
+	//csb_repeat* tail = &*(csb->csb_rpt.begin());
+    csb_repeat* tail = &(csb->csb_rpt[0]);
 	csb_repeat* end  = tail + csb->csb_n_stream;
 	DEBUG;
 

@@ -63,11 +63,14 @@ static struct {
 	int *vptr;
 } LOCK_hdrtbl[] = {
 #ifndef MMAP_SUPPORTED
-	"SHMSIZE", &LOCK_shm_size,
+	{"SHMSIZE", &LOCK_shm_size},
 #else
-	"SEMKEY", &LOCK_sem_key, "BLKSIG", &LOCK_blk_signal,
+	{"SEMKEY", &LOCK_sem_key}, 
+    {"BLKSIG", &LOCK_blk_signal},
 #endif
-"SEMCOUNT", &LOCK_sem_count, NULL, NULL};
+    {"SEMCOUNT", &LOCK_sem_count}, 
+    {NULL, NULL}
+};
 
 
 int V3_drop(int argc, UCHAR **argv)

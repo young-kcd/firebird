@@ -40,6 +40,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"
 
+
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -53,6 +54,8 @@
 #ifndef FOPEN_WRITE_TYPE
 #define FOPEN_WRITE_TYPE	"w"
 #endif
+
+typedef vary VARY;
 
 extern jmp_buf QLI_env;
 

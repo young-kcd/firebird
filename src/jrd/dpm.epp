@@ -1978,16 +1978,19 @@ SLONG DPM_store_blob(TDBB tdbb, BLB blob, REC record)
 		length = vector->count() * sizeof(SLONG);
 		//q = (UCHAR *) vector->vcl_long;
 		// JMB: Not such a good thing with std::vector
-		q = (UCHAR *) vector->begin();
+		q = (UCHAR *) &*(vector->begin());
+//		q = (UCHAR *) &(vector->[0]);
 	}
 
 /* Figure out precedence pages, if any */
 
 	stack = NULL;
 
-	if (blob->blb_level > 0)
-		for (ptr = vector->begin(), end = vector->end();
-			 ptr < end;) LLS_PUSH((BLK) * ptr++, &stack);
+	if (blob->blb_level > 0) {
+		for (ptr = vector->begin(), end = vector->end(); ptr < end;) {
+            LLS_PUSH((BLK) * ptr++, &stack);
+        }
+    }
 
 /* Locate space to store blob */
 

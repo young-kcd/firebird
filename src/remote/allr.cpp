@@ -40,22 +40,22 @@ static const struct
 	USHORT	typ_tail_length;
 } REM_block_sizes[] =
 {
-	type_MIN	, 0, 0,
-	type_vec	, sizeof(vec)		, sizeof(((VEC) 0)->vec_object[0]),
-	type_rdb	, sizeof(rdb)		, 0,
-	type_fmt	, sizeof(fmt)		, sizeof(((FMT) 0)->fmt_desc[0]),
-	type_rrq	, sizeof(rrq)		, sizeof(((RRQ) 0)->rrq_rpt [0]),
-	type_rtr	, sizeof(rtr)		, 0,
-	type_str	, sizeof(str)		, 1,	// random string block
-	type_rbl	, sizeof(rbl)		, 1,
-	type_port	, sizeof(port)		, 1,
-	type_msg	, sizeof(message)	, 1,
-	type_rsr	, sizeof(rsr)		, 0,
-	type_rvnt	, sizeof(rvnt)		, 0,
-	type_rpr	, sizeof(rpr)		, 0,
-	type_rmtque	, sizeof(rmtque)	, 0,
+	{type_MIN	, 0, 0},
+	{type_vec	, sizeof(vec)		, sizeof(((VEC) 0)->vec_object[0])},
+	{type_rdb	, sizeof(rdb)		, 0},
+	{type_fmt	, sizeof(fmt)		, sizeof(((FMT) 0)->fmt_desc[0])},
+	{type_rrq	, sizeof(rrq)		, sizeof(((RRQ) 0)->rrq_rpt [0])},
+	{type_rtr	, sizeof(rtr)		, 0},
+	{type_str	, sizeof(str)		, 1},	// random string block
+	{type_rbl	, sizeof(rbl)		, 1},
+	{type_port	, sizeof(port)		, 1},
+	{type_msg	, sizeof(message)	, 1},
+	{type_rsr	, sizeof(rsr)		, 0},
+	{type_rvnt	, sizeof(rvnt)		, 0},
+	{type_rpr	, sizeof(rpr)		, 0},
+	{type_rmtque	, sizeof(rmtque)	, 0},
 
-	type_MIN,	0, 0,
+	{type_MIN,	0, 0}
 };
 
 

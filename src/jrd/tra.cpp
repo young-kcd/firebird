@@ -905,7 +905,7 @@ BOOLEAN TRA_precommited(TDBB tdbb, SLONG old_number, SLONG new_number)
 		if (*p == old_number)
 			return (*p = new_number) ? TRUE : FALSE;
 		if (!zp && !*p)
-			zp = p;
+			zp = &*p;
 	}
 
 	if (old_number == new_number || new_number == 0)

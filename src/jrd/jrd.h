@@ -632,7 +632,8 @@ public:
 	void clear() { vector.clear(); }
 	void prepend(int n) { vector.insert(vector.begin(), n); }
 	
-	T* memPtr() { return (T*)begin(); }
+//	T* memPtr() { return &*(vector.begin()); }
+	T* memPtr() { return &vector[0]; }
 
 	void resize(size_t n, T val = T()) { vector.resize(n, val); }
 

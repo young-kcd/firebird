@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: lock.cpp,v 1.4 2001-12-24 02:50:52 tamlin Exp $
+$Id: lock.cpp,v 1.5 2002-01-04 11:34:16 skywalker Exp $
 */
 
 #include "firebird.h"
@@ -296,23 +296,23 @@ static struct ipccfg LOCK_hdrtbl[] =
 {
 /* 5.5 SCO Port: Classic server on SCO - following is not supported */
 #if (!(defined WIN_NT) && !(defined SCO_EV))
-	"V4_LOCK_MEM_SIZE"		, -1, &LOCK_shm_size		, 0, 0,
-	"ANY_LOCK_MEM_SIZE"		, -1, &LOCK_shm_size		, -1, 0,
+	{"V4_LOCK_MEM_SIZE"		, -1, &LOCK_shm_size		, 0, 0},
+	{"ANY_LOCK_MEM_SIZE"		, -1, &LOCK_shm_size		, -1, 0},
 #endif
 #ifdef STATIC_SEMAPHORES
-	"V4_LOCK_SEM_COUNT"		, -1, &LOCK_sem_count		, 0, 0,
-	"ANY_LOCK_SEM_COUNT"	, -1, &LOCK_sem_count		, -1, 0,
+	{"V4_LOCK_SEM_COUNT"		, -1, &LOCK_sem_count		, 0, 0},
+	{"ANY_LOCK_SEM_COUNT"	, -1, &LOCK_sem_count		, -1, 0},
 #endif
-	"V4_LOCK_SIGNAL"		, -1, &LOCK_block_signal	, 0, 0,
-	"ANY_LOCK_SIGNAL"		, -1, &LOCK_block_signal	, -1, 0,
-	"V4_LOCK_GRANT_ORDER"	, -1, &LOCK_ordering		, 0, 0,
-	"LOCK_HASH_SLOTS"		, -1, &LOCK_hash_slots		, 0, 0,
-	"DEADLOCK_TIMEOUT"		, -1, &LOCK_scan_interval	, 0, 0,
-	"LOCK_ACQUIRE_SPINS"	, -1, &LOCK_acquire_spins	, 0, 0,
+	{"V4_LOCK_SIGNAL"		, -1, &LOCK_block_signal	, 0, 0},
+	{"ANY_LOCK_SIGNAL"		, -1, &LOCK_block_signal	, -1, 0},
+	{"V4_LOCK_GRANT_ORDER"	, -1, &LOCK_ordering		, 0, 0},
+	{"LOCK_HASH_SLOTS"		, -1, &LOCK_hash_slots		, 0, 0},
+	{"DEADLOCK_TIMEOUT"		, -1, &LOCK_scan_interval	, 0, 0},
+	{"LOCK_ACQUIRE_SPINS"	, -1, &LOCK_acquire_spins	, 0, 0},
 #if (defined SOLARIS_MT && !defined SUPERSERVER)
-	"V4_SOLARIS_STALL_VALUE", -1, &LOCK_solaris_stall	, 0, 0,
+	{"V4_SOLARIS_STALL_VALUE", -1, &LOCK_solaris_stall	, 0, 0},
 #endif
-	NULL, 0, NULL, 0, 0
+     {NULL, 0, NULL, 0, 0}
 };
 
 #define GET_TIME	time (NULL)

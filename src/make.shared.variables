@@ -23,7 +23,7 @@ JRD_Sources=	ail.cpp all.cpp alt.cpp bookmark.cpp blb.cpp blob_filter.cpp btr.cp
 		event.cpp evl.cpp exe.cpp ext.cpp filters.cpp flu.cpp fun.cpp functions.cpp \
 		gds.cpp grant.cpp idx.cpp inf.cpp ini.cpp intl.cpp inuse.cpp \
 		isc.cpp isc_file.cpp isc_ipc.cpp isc_sync.cpp \
-		jrd.cpp jrn.cpp lck.cpp llio.cpp log.cpp met.cpp memory_pool.cpp \
+		jrd.cpp jrn.cpp lck.cpp llio.cpp log.cpp met.cpp \
 		misc.cpp mov.cpp nav.cpp old.cpp opt.cpp pag.cpp par.cpp pcmet.cpp \
 		perf.cpp pwd.cpp rec.cpp rlck.cpp \
 		rng.cpp rse.cpp sbm.cpp sch.cpp scl.cpp \
@@ -139,6 +139,15 @@ FBUTIL_Objects = $(FBUTIL_Sources:%.cpp=$(GEN_ROOT)/fbutil/%.o)
 FBUTIL_SharedObjects = $(FBUTIL_Objects:.o=.lo)
 
 
+#________________________________________________________________________
+#
+# common/memory
+
+FBMemory_Sources=allocators.cpp memory_pool.cpp
+
+FBMemory_Objects = $(FBMemory_Sources:%.cpp=$(GEN_ROOT)/common/memory/%.o)
+FBMemory_SharedObjects = $(FB_Objects:.o=.lo)
+
 
 
 #________________________________________________________________________
@@ -155,7 +164,8 @@ GDSLIB_Objects = $(JRD_Objects) \
                 $(WAL_Objects) \
                 $(GPRELIB_Objects) \
                 $(SECURITY_Objects) \
-                $(FBUTIL_Objects)
+                $(FBUTIL_Objects) \
+				$(FBMemory_Objects)
 
 # Notice that $(SECURITY_Objects) are missing, because that file can't be
 # compiled until later in the build process.
@@ -167,4 +177,5 @@ BOOT_GDSLIB_Objects = $(JRD_Objects) \
                 $(PIPE_Objects) \
                 $(WAL_Objects) \
                 $(GPRELIB_Objects) \
-                $(FBUTIL_Objects)
+                $(FBUTIL_Objects) \
+				$(FBMemory_Objects)

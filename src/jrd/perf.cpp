@@ -78,6 +78,10 @@ extern void ftime();
 #define TICK	100
 #endif
 
+#if defined(CLOCKS_PER_SEC)
+#define TICK CLOCKS_PER_SEC
+#endif
+
 #ifndef TICK
 #define TICK	CLK_TCK
 #endif

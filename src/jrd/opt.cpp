@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: opt.cpp,v 1.3 2001-12-24 02:50:51 tamlin Exp $
+$Id: opt.cpp,v 1.4 2002-01-04 11:34:16 skywalker Exp $
 */
 
 #include "firebird.h"
@@ -4175,7 +4175,8 @@ static BOOLEAN gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 	}
 
 	scratch = vec::newVector(*dbb->dbb_permanent, opt->opt_count * cnt);
-	classes = (NOD *) scratch->begin();
+	classes = (NOD *) &*(scratch->begin());
+    //    classes = (NOD *) &(scratch->[0]);
 /* Compute equivalence classes among streams.  This involves finding groups
    of streams joined by field equalities.  */
 	last_class = classes;

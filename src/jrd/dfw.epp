@@ -3179,7 +3179,7 @@ static FMT make_format( TDBB tdbb, REL relation, USHORT version, TFB stack)
 		if (desc2->dsc_dtype)
 		{
 			old_offset = offset;
-			offset = MET_align(desc2, (USHORT) offset);
+			offset = MET_align(&*desc2, (USHORT) offset);
 
 			/* see of record too big */
 
@@ -3241,7 +3241,8 @@ static FMT make_format( TDBB tdbb, REL relation, USHORT version, TFB stack)
 		blob = BLB_create(tdbb, dbb->dbb_sys_trans, (BID)&FMT.RDB$DESCRIPTOR);
 		BLB_put_segment(tdbb,
 						blob,
-						(UCHAR*)format->fmt_desc.begin(),
+//						(UCHAR*) &*(format->fmt_desc.begin()),
+						(UCHAR*) &(format->fmt_desc[0]),
 						(USHORT)(format->fmt_count * sizeof(struct dsc)));
 		BLB_close(tdbb, blob);
     END_STORE;

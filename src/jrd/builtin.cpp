@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: builtin.cpp,v 1.3 2001-12-24 02:50:50 tamlin Exp $
+ * $Id: builtin.cpp,v 1.4 2002-01-04 11:34:15 skywalker Exp $
  */
 
 #include "firebird.h"
@@ -46,7 +46,7 @@ FSG 18.Dez.2000
 */
 
 
-	NULL, NULL, NULL			/* End of list marker */
+	{NULL, NULL, NULL}			/* End of list marker */
 };
 
 #ifdef SHLIB_DEFS

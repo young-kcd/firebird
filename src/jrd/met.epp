@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: met.epp,v 1.4 2001-12-28 05:16:31 tamlin Exp $
+$Id: met.epp,v 1.5 2002-01-04 11:34:15 skywalker Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -530,7 +530,8 @@ FMT MET_format(TDBB tdbb, register REL relation, USHORT number)
 		count = blob->blb_length / sizeof(struct dsc);
 		format = fmt::newFmt(*dbb->dbb_permanent, count);
 		format->fmt_count = count;
-		BLB_get_data(tdbb, blob, (UCHAR*)format->fmt_desc.begin(), blob->blb_length);
+//		BLB_get_data(tdbb, blob, (UCHAR*) &*(format->fmt_desc.begin()), blob->blb_length);
+		BLB_get_data(tdbb, blob, (UCHAR*) &(format->fmt_desc[0]), blob->blb_length);
 
 		for (desc = format->fmt_desc.end() - 1;
 			 desc >= format->fmt_desc.begin();
@@ -2511,7 +2512,7 @@ PRC MET_procedure(TDBB tdbb, int id, USHORT flags)
 				if (parameter)
 				{
 					*desc = parameter->prm_desc;
-					length = MET_align(desc, length);
+					length = MET_align(&*desc, length);
 					desc->dsc_address = (UCHAR *) length;
 					length += desc->dsc_length;
 				}
@@ -3718,7 +3719,7 @@ static BOOLEAN par_messages(TDBB	tdbb,
 		format->fmt_count = count;
 		offset = 0;
 		for (desc = format->fmt_desc.begin(); count; --count, ++desc) {
-			align = PAR_desc(csb, desc);
+			align = PAR_desc(csb, &*desc);
 			if (align)
 				offset = FB_ALIGN(offset, align);
 			desc->dsc_address = (UCHAR *) offset;

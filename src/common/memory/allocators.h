@@ -115,16 +115,21 @@ namespace Firebird
 		template <class _Tp1> struct rebind {
 			typedef Firebird::allocator<_Tp1> other;
 		};
-	
-		bool operator==(const allocator<T>& rhs)
+
+
+		bool operator==(const allocator<T>& rhs) const
 		{
 			return pool == rhs.pool && type == rhs.type;
 		}
+
+
 	
 	private:
 		MemoryPool *pool;
 		SSHORT type;
 	};
+
 };
+
 
 #endif	// COMMON_ALLOCATORS_H
