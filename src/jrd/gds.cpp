@@ -620,7 +620,7 @@ void API_ROUTINE isc_encode_timestamp(const void* times_arg, GDS_TIMESTAMP* date
 {
 /**************************************
  *
- *	i s c _ e n c o d e _ d a t e
+ *	i s c _ e n c o d e _ t i m e s t a m p
  *
  **************************************
  *
