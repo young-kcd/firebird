@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.inet_server,v 1.7 2003-03-05 20:59:06 brodsom Exp $
+#  $Id: Makefile.in.inet_server,v 1.8 2003-03-06 13:16:15 brodsom Exp $
 #
 ROOT=..
 ObjModuleName=inet_server
@@ -43,7 +43,7 @@ IPSERVER_Files = $(WIN_IPSERVER_Files)
 IPSERVER_Sources =  $(addprefix ipserver/, $(IPSERVER_Files))
 IPSERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(IPSERVER_Sources))))
 
-SERVER_Files = $(OS_ServerFiles) server.cpp cntl.cpp
+SERVER_Files = $(OS_ServerFiles) server.cpp 
 SERVER_Sources = $(addprefix remote/, $(SERVER_Files))
 SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Sources))))
 

@@ -25,7 +25,7 @@ JRDBOOT_Extra_Files=isc_sync.cpp thd.cpp
 
 OS_SPECIFIC_Files=thd_priority.cpp
 
-OS_ServerFiles=srvr_w32 window.cpp chop.cpp property.cpp ibconfig.cpp
+OS_ServerFiles=srvr_w32 window.cpp chop.cpp property.cpp ibconfig.cpp cntl.cpp 
 
 LIB_LINK_OPTIONS:=-shared
 LIB_LINK_RPATH:=-Wl,-rpath,
