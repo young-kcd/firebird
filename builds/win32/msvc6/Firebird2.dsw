@@ -480,7 +480,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "instgds"=.\instgds.dsp - Package Owner=<4>
+Project: "instclient"=.\instclient.dsp - Package Owner=<4>
 
 Package=<5>
 {{{

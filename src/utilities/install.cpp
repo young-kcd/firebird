@@ -1,7 +1,7 @@
 /*
- *	PROGRAM:		Windows NT GDS Client Library Installation
- *	MODULE:			gdsclient.cpp
- *	DESCRIPTION:	Functions which install the FBCLIENT.DLL as GDS32.DLL
+ *	PROGRAM:		Windows Win32 Client Library Installation Tools
+ *	MODULE:			install.cpp
+ *	DESCRIPTION:	Functions which help installing components to WinSysDir
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -30,10 +30,11 @@
 #include "../jrd/common.h"
 #include "../jrd/license.h"
 #include "../utilities/install_nt.h"
-#include "../utilities/gdsclient_proto.h"
+#include "../utilities/install_proto.h"
 
 #define GDSVER_MAJOR	6
 #define GDSVER_MINOR	3
+
 #define SHARED_KEY	"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\SharedDLLs"
 
 namespace {
@@ -56,17 +57,18 @@ namespace {
 //	--- Public Functions ---
 //
 
-USHORT GDSCLIENT_install(const TEXT * rootdir, bool sw_force,
+USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
 	USHORT(*err_handler)(ULONG, const TEXT *))
 {
 /**************************************
  *
- *	G D S C L I E N T _ i n s t a l l
+ *	C L I E N T _ i n s t a l l
  *
  **************************************
  *
  * Functional description
- *	Install FBCLIENT.DLL as GDS32.DLL in the Windows System directory.
+ *	Depending on the USHORT client parameter, installs FBCLIENT.DLL or
+ *	GDS32.DLL in the Windows System directory.
  *
  *	When installing and -force is NOT used then 
  * 
@@ -89,82 +91,93 @@ USHORT GDSCLIENT_install(const TEXT * rootdir, bool sw_force,
 	if (len == 0)
 		return (*err_handler) (GetLastError(), "GetSystemDirectory()");
 
-	// Compute newverMS and newverLS. They will contain the full GDS version
+	// Compute newverMS and newverLS. They will contain the full client version
 	// number that we intend to install to WinSysDir.
 	TEXT fbdll[MAXPATHLEN];
 	lstrcpy(fbdll, rootdir);
-	lstrcat(fbdll, "\\bin\\FBCLIENT.DLL");
+	lstrcat(fbdll, "\\bin\\");
+	lstrcat(fbdll, FBCLIENT_NAME);
 
 	DWORD newverMS = 0, newverLS = 0;
 	USHORT status = GetVersion(fbdll, newverMS, newverLS, err_handler);
 	if (status != FB_SUCCESS)
 		return status;
-	newverMS = (GDSVER_MAJOR << 16) | GDSVER_MINOR;
 
-	// Check for existence and version of current installed GDS32.DLL
-	TEXT gds32[MAXPATHLEN];
-	lstrcpy(gds32, sysdir);
-	lstrcat(gds32, "\\GDS32.DLL");
+	if (client == CLIENT_GDS)
+	{
+		// For the GDS32.DLL installation, the major/minor version is hardcoded
+		newverMS = (GDSVER_MAJOR << 16) | GDSVER_MINOR;
+	}
 
-	DWORD gdsverMS = 0, gdsverLS = 0;
-	status = GetVersion(gds32, gdsverMS, gdsverLS, err_handler);
+	// Check for existence and version of current installed DLL
+	TEXT target[MAXPATHLEN];
+	lstrcpy(target, sysdir);
+	lstrcat(target, "\\");
+	lstrcat(target, client == CLIENT_GDS ? GDS32_NAME : FBCLIENT_NAME);
+
+	DWORD targetverMS = 0, targetverLS = 0;
+	status = GetVersion(target, targetverMS, targetverLS, err_handler);
 	if (status == FB_FAILURE)
 		return FB_FAILURE;
 
 	if (status == FB_SUCCESS)
 	{
-		// gds32.dll do exists
+		// The target DLL already exists
 		if (! sw_force)
 		{
-			if (gdsverMS > newverMS)
-				return FB_NEWER_GDS32_FOUND;
-			if (gdsverMS == newverMS && gdsverLS > newverLS)
-				return FB_NEWER_GDS32_FOUND;
+			if (targetverMS > targetverMS)
+				return FB_INSTALL_NEWER_VERSION_FOUND;
+			if (targetverMS == newverMS && targetverLS > newverLS)
+				return FB_INSTALL_NEWER_VERSION_FOUND;
 		}
-		if (gdsverMS == newverMS && gdsverLS == newverLS)
-			return FB_SAME_GDS32_FOUND;
+		if (targetverMS == newverMS && targetverLS == newverLS)
+			return FB_INSTALL_SAME_VERSION_FOUND;
 	}
 
-	// Copy FBCLIENT.DLL as _GDS32.DLL (in WinSysDir).
+	// Copy FBCLIENT.DLL as _FBCLIENT.DLL (in WinSysDir).
 	// Such a step is needed because the MoveFile techniques used later
 	// can't span different volumes. So the intermediate target has to be
-	// already on the same final destination volume as final GDS32.DLL.
+	// already on the same final destination volume as the final target.
 	TEXT workfile[MAXPATHLEN];
 	lstrcpy(workfile, sysdir);
-	lstrcat(workfile, "\\_GDS32.DLL");
+	lstrcat(workfile, "\\_");
+	lstrcat(workfile, FBCLIENT_NAME);
 	
 	if (CopyFile(fbdll, workfile, FALSE) == 0)
 	{
 		return (*err_handler) (GetLastError(),
-			"CopyFile(FBCLIENT.DLL, WinSysDir\\_GDS32.DLL)");
+			"CopyFile(FBCLIENT.DLL, WinSysDir\\_FBCLIENT.DLL)");
 	}
 
-	// Patch _GDS32.DLL File Version
-	status = PatchVersion(workfile, newverMS, err_handler);
-	if (status != FB_SUCCESS)
-		return status;
-
-	// Move _GDS32.DLL as GDS32.DLL
-	if (MoveFile(workfile, gds32) == 0)
+	if (client == CLIENT_GDS)
 	{
-		// MoveFile failed, this is expected if GDS32.DLL already exists
+		// Patch File Version, this is needed only for GDS32.DLL indeed.
+		status = PatchVersion(workfile, newverMS, err_handler);
+		if (status != FB_SUCCESS)
+			return status;
+	}
+
+	// Move _FBCLIENT.DLL as the final target
+	if (MoveFile(workfile, target) == 0)
+	{
+		// MoveFile failed, this is expected if target already exists
 		ULONG werr = GetLastError();
 		if (werr != ERROR_ALREADY_EXISTS)
 		{
 			DeleteFile(workfile);
 			return (*err_handler) (werr,
-				"MoveFile(_GDS32.DLL, GDS32.DLL)");
+				"MoveFile(_FBCLIENT.DLL, 'target')");
 		}
 		
-		// Failed moving because a destination GDS32.DLL file already exists
+		// Failed moving because a destination target file already exists
 		// Let's try again by attempting a remove of the destination
-		if (DeleteFile(gds32) != 0)
+		if (DeleteFile(target) != 0)
 		{
 			// Success deleting the target, MoveFile should now succeed.
-			if (MoveFile(workfile, gds32) != 0)
+			if (MoveFile(workfile, target) != 0)
 			{
 				// Successfull !
-				IncrementSharedCount(gds32, err_handler);
+				IncrementSharedCount(target, err_handler);
 				return FB_SUCCESS;
 			}
 		}
@@ -182,23 +195,23 @@ USHORT GDSCLIENT_install(const TEXT * rootdir, bool sw_force,
 				// We are definitely running on a system supporting the
 				// MoveFileEx API. Let's use it for setting up the reboot-copy.
 
-				if ((*ntmove) (gds32, 0, MOVEFILE_DELAY_UNTIL_REBOOT) == 0)
+				if ((*ntmove) (target, 0, MOVEFILE_DELAY_UNTIL_REBOOT) == 0)
 				{
 					ULONG werr = GetLastError();
 					FreeLibrary(kernel32);
-					return (*err_handler) (werr, "MoveFileEx(delete GDS32.DLL)");
+					return (*err_handler) (werr, "MoveFileEx(delete 'target')");
 				}
 
-				if ((*ntmove) (workfile, gds32, MOVEFILE_DELAY_UNTIL_REBOOT) == 0)
+				if ((*ntmove) (workfile, target, MOVEFILE_DELAY_UNTIL_REBOOT) == 0)
 				{
 					ULONG werr = GetLastError();
 					FreeLibrary(kernel32);
-					return (*err_handler) (werr, "MoveFileEx(replace GDS32.DLL)");
+					return (*err_handler) (werr, "MoveFileEx(replace 'target')");
 				}
 					
 				FreeLibrary(kernel32);
-				IncrementSharedCount(gds32, err_handler);
-				return FB_GDS32_COPY_REQUIRES_REBOOT;
+				IncrementSharedCount(target, err_handler);
+				return FB_INSTALL_COPY_REQUIRES_REBOOT;
 			}
 
 			FreeLibrary(kernel32);
@@ -214,48 +227,51 @@ USHORT GDSCLIENT_install(const TEXT * rootdir, bool sw_force,
 
 		TEXT sworkfile[MAXPATHLEN];
 		lstrcpy(sworkfile, ssysdir);
-		lstrcat(sworkfile, "\\_GDS32.DLL");
+		lstrcat(sworkfile, "\\_");
+		lstrcat(sworkfile, FBCLIENT_NAME);
 		
-		TEXT sgds32[MAXPATHLEN];
-		lstrcpy(sgds32, ssysdir);
-		lstrcat(sgds32, "\\GDS32.DLL");
+		TEXT starget[MAXPATHLEN];
+		lstrcpy(starget, ssysdir);
+		lstrcat(starget, "\\");
+		lstrcat(starget, client == CLIENT_GDS ? GDS32_NAME : FBCLIENT_NAME);
 
-		if (WritePrivateProfileString("rename", "NUL", sgds32,
+		if (WritePrivateProfileString("rename", "NUL", starget,
 				"WININIT.INI") == 0)
 		{
 			return (*err_handler) (GetLastError(),
-				"WritePrivateProfileString(delete GDS32.DLL)");
+				"WritePrivateProfileString(delete 'target')");
 		}
 
-		if (WritePrivateProfileString("rename", gds32, sworkfile,
+		if (WritePrivateProfileString("rename", starget, sworkfile,
 				"WININIT.INI") == 0)
 		{
 			return (*err_handler) (GetLastError(),
-				"WritePrivateProfileString(replace GDS32.DLL)");
+				"WritePrivateProfileString(replace 'target')");
 		}
 
-		IncrementSharedCount(gds32, err_handler);
-		return FB_GDS32_COPY_REQUIRES_REBOOT;
+		IncrementSharedCount(target, err_handler);
+		return FB_INSTALL_COPY_REQUIRES_REBOOT;
 	}
 	else
 	{
 		// Straight plain MoveFile succeeded immediately.
-		IncrementSharedCount(gds32, err_handler);
+		IncrementSharedCount(target, err_handler);
 		return FB_SUCCESS;
 	}
 }
 
-USHORT GDSCLIENT_remove(const TEXT * rootdir, bool sw_force,
+USHORT CLIENT_remove(const TEXT * rootdir, USHORT client, bool sw_force,
 	USHORT(*err_handler)(ULONG, const TEXT *))
 {
 /**************************************
  *
- *	G D S C L I E N T _ r e m o v e
+ *	C L I E N T _ r e m o v e
  *
  **************************************
  *
  * Functional description
- *	Remove Firebird GDS32.DLL from the Windows System directory.
+ *	Depending on the USHORT client parameter, remove FBCLIENT.DLL or GDS32.DLL
+ *	from the Windows System directory.
  *
  *	when removing and -force is NOT used
  *     
@@ -278,57 +294,65 @@ USHORT GDSCLIENT_remove(const TEXT * rootdir, bool sw_force,
 	if (len == 0)
 		return (*err_handler) (GetLastError(), "GetSystemDirectory()");
 
-	// Compute ourverMS and ourverLS. They will contain the full GDS version
+	// Compute ourverMS and ourverLS. They will contain the full client version
 	// number that we could have installed to WinSysDir.
 	TEXT fbdll[MAXPATHLEN];
 	lstrcpy(fbdll, rootdir);
-	lstrcat(fbdll, "\\bin\\FBCLIENT.DLL");
+	lstrcat(fbdll, "\\bin\\");
+	lstrcat(fbdll, FBCLIENT_NAME);
 
 	DWORD ourverMS = 0, ourverLS = 0;
 	USHORT status = GetVersion(fbdll, ourverMS, ourverLS, err_handler);
 	if (status != FB_SUCCESS)
 		return status;
-	ourverMS = (GDSVER_MAJOR << 16) | GDSVER_MINOR;
 
-	// Check for existence and version of current installed GDS32.DLL
-	TEXT gds32[MAXPATHLEN];
-	lstrcpy(gds32, sysdir);
-	lstrcat(gds32, "\\GDS32.DLL");
-
-	DWORD gdsverMS = 0, gdsverLS = 0;
-	status = GetVersion(gds32, gdsverMS, gdsverLS, err_handler);
-	if (status != FB_SUCCESS)
-		return status;	// FB_FAILURE or FB_GDS32_NOT_FOUND
-
-	if (gdsverMS != ourverMS || gdsverLS != ourverLS)
-		return FB_CANNOT_REMOVE_ALIEN_GDS32;
-
-	status = DecrementSharedCount(gds32, sw_force, err_handler);
-	if (status == FB_SHARED_COUNT_ZERO)
+	if (client == CLIENT_GDS)
 	{
-		if (! DeleteFile(gds32))
+		// For the GDS32.DLL, the major/minor version is hardcoded
+		ourverMS = (GDSVER_MAJOR << 16) | GDSVER_MINOR;
+	}
+
+	// Check for existence and version of current installed client
+	TEXT target[MAXPATHLEN];
+	lstrcpy(target, sysdir);
+	lstrcat(target, "\\");
+	lstrcat(target, client == CLIENT_GDS ? GDS32_NAME : FBCLIENT_NAME);
+
+	DWORD targetverMS = 0, targetverLS = 0;
+	status = GetVersion(target, targetverMS, targetverLS, err_handler);
+	if (status != FB_SUCCESS)
+		return status;	// FB_FAILURE or FB_INSTALL_FILE_NOT_FOUND
+
+	if (targetverMS != ourverMS || targetverLS != ourverLS)
+		return FB_INSTALL_CANT_REMOVE_ALIEN_VERSION;
+
+	status = DecrementSharedCount(target, sw_force, err_handler);
+	if (status == FB_INSTALL_SHARED_COUNT_ZERO)
+	{
+		if (! DeleteFile(target))
 		{
 			// Could not delete the file, restore shared count
-			IncrementSharedCount(gds32, err_handler);
-			return FB_GDS32_PROBABLY_IN_USE;
+			IncrementSharedCount(target, err_handler);
+			return FB_INSTALL_FILE_PROBABLY_IN_USE;
 		}
 	}
 
 	return FB_SUCCESS;
 }
 
-USHORT GDSCLIENT_query(ULONG& verMS, ULONG& verLS, ULONG& sharedCount,
-	USHORT(*err_handler)(ULONG, const TEXT *))
+USHORT CLIENT_query(USHORT client, ULONG& verMS, ULONG& verLS,
+	ULONG& sharedCount, USHORT(*err_handler)(ULONG, const TEXT *))
 {
 /**************************************
  *
- *	G D S C L I E N T _ q u e r y
+ *	C L I E N T _ q u e r y
  *
  **************************************
  *
  * Functional description
- *	Returns version info and shared dll count of the currently installed
- *	GDS32.DLL. Eventually return FB_GDS32_NOT_FOUND.
+ *	Depending on the USHORT client parameter, returns version info and
+ *	shared dll count of the currently installed GDS32.DLL or FBCLIENT.DLL.
+ *	Eventually return FB_INSTALL_FILE_NOT_FOUND.
  *
  **************************************/
 
@@ -338,14 +362,32 @@ USHORT GDSCLIENT_query(ULONG& verMS, ULONG& verLS, ULONG& sharedCount,
 	if (len == 0)
 		return (*err_handler) (GetLastError(), "GetSystemDirectory()");
 
-	TEXT gds32[MAXPATHLEN];
-	lstrcpy(gds32, sysdir);
-	lstrcat(gds32, "\\GDS32.DLL");
+	TEXT target[MAXPATHLEN];
+	lstrcpy(target, sysdir);
+	lstrcat(target, "\\");
+	lstrcat(target, client == CLIENT_GDS ? GDS32_NAME : FBCLIENT_NAME);
 
 	verMS = verLS = sharedCount = 0;
-	USHORT status = GetVersion(gds32, verMS, verLS, err_handler);
+	USHORT status = GetVersion(target, verMS, verLS, err_handler);
 	if (status != FB_SUCCESS)
-		return status;	// FB_FAILURE or FB_GDS32_NOT_FOUND
+		return status;	// FB_FAILURE or FB_INSTALL_FILE_NOT_FOUND
+
+	HKEY hkey;
+	LONG keystatus = RegOpenKeyEx(HKEY_LOCAL_MACHINE, SHARED_KEY, 0,
+		KEY_READ, &hkey);
+	if (keystatus != ERROR_SUCCESS)
+		return (*err_handler) (keystatus, "RegOpenKeyEx");
+
+	DWORD type, size = sizeof(sharedCount);
+	sharedCount = 0;
+	keystatus = RegQueryValueEx(hkey, target, NULL, &type,
+		reinterpret_cast<BYTE*>(&sharedCount), &size);
+	if (keystatus != ERROR_SUCCESS)
+	{
+		RegCloseKey(hkey);
+		return (*err_handler) (keystatus, "RegQueryValueEx");
+	}
+	RegCloseKey(hkey);
 
 	return FB_SUCCESS;
 }
@@ -356,7 +398,7 @@ USHORT GDSCLIENT_query(ULONG& verMS, ULONG& verLS, ULONG& sharedCount,
 
 namespace {
 
-USHORT GetVersion(const TEXT* gds32, DWORD& verMS, DWORD& verLS,
+USHORT GetVersion(const TEXT* filename, DWORD& verMS, DWORD& verLS,
 		USHORT(*err_handler)(ULONG, const TEXT *))
 {
 /**************************************
@@ -366,22 +408,22 @@ USHORT GetVersion(const TEXT* gds32, DWORD& verMS, DWORD& verLS,
  **************************************
  *
  * Functional description
- *	Get the file version of the gds32.dll whose full path and name is given.
+ *	Get the file version of a dll whose full path and name is given.
  *	Returns a status value to report a failure, a non-existing file or success.
  *	'version' is only updated in case of success.
  *
  **************************************/
 
-	HANDLE hfile = CreateFile(gds32, GENERIC_READ,
+	HANDLE hfile = CreateFile(filename, GENERIC_READ,
 		FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
 	if (hfile == INVALID_HANDLE_VALUE)
-		return FB_GDS32_NOT_FOUND;
+		return FB_INSTALL_FILE_NOT_FOUND;
 
 	// We'll keep hfile opened until we have read version so that the file
 	// can't be deleted between check for existence and version read.
 	
 	DWORD dwUnused;
-	DWORD rsize = GetFileVersionInfoSize(const_cast<TEXT*>(gds32), &dwUnused);
+	DWORD rsize = GetFileVersionInfoSize(const_cast<TEXT*>(filename), &dwUnused);
 	if (rsize == 0)
 	{
 		ULONG werr = GetLastError();
@@ -390,7 +432,7 @@ USHORT GetVersion(const TEXT* gds32, DWORD& verMS, DWORD& verLS,
 	}
 
 	BYTE* hver = new BYTE[rsize];
-	if (! GetFileVersionInfo(const_cast<TEXT*>(gds32), 0, rsize, hver))
+	if (! GetFileVersionInfo(const_cast<TEXT*>(filename), 0, rsize, hver))
 	{
 		ULONG werr = GetLastError();
 		delete [] hver;
@@ -415,7 +457,7 @@ USHORT GetVersion(const TEXT* gds32, DWORD& verMS, DWORD& verLS,
 	return FB_SUCCESS;
 }
 
-USHORT PatchVersion(const TEXT* gds32, DWORD verMS,
+USHORT PatchVersion(const TEXT* filename, DWORD verMS,
 	USHORT(*err_handler)(ULONG, const TEXT *))
 {
 /**************************************
@@ -425,8 +467,8 @@ USHORT PatchVersion(const TEXT* gds32, DWORD verMS,
  **************************************
  *
  * Functional description
- *	Patches the FileVersion and ProductVersion of the GDS32.DLL whose full
- *	path is given as "gds32" parameter. The function only updates the major
+ *	Patches the FileVersion and ProductVersion of a DLL whose full
+ *	path is given as "filename" parameter. The function only updates the major
  *	and minor version numbers, leaving the sub-minor and build intact.
  *	We typically use this trick to build a GDS32.DLL whose version is 6.3
  *	from our FBCLIENT.DLL whose version is 1.5.
@@ -438,11 +480,12 @@ USHORT PatchVersion(const TEXT* gds32, DWORD verMS,
  *	Unfortunately those last 3 APIs are not implemented on Win95/98/Me.
  *
  *	Therefore this function proceeds by straight hacking of the dll file.
- *	This is not intellectually satisfactory, but does work and fits the bill.
+ *	This is not intellectually satisfactory, but does work perfectly and
+ *	fits the bill.
  *
  **************************************/
 
-	HANDLE hfile = CreateFile(gds32, GENERIC_READ | GENERIC_WRITE,
+	HANDLE hfile = CreateFile(filename, GENERIC_READ | GENERIC_WRITE,
 		0 /* FILE_SHARE_NONE */, 0, OPEN_EXISTING,
 		FILE_FLAG_SEQUENTIAL_SCAN, 0);
 	if (hfile == INVALID_HANDLE_VALUE)
@@ -513,7 +556,7 @@ USHORT PatchVersion(const TEXT* gds32, DWORD verMS,
 	return FB_SUCCESS;
 }
 
-USHORT IncrementSharedCount(const TEXT* gds32,
+USHORT IncrementSharedCount(const TEXT* filename,
 	USHORT(*err_handler)(ULONG, const TEXT *))
 {
 /**************************************
@@ -524,7 +567,7 @@ USHORT IncrementSharedCount(const TEXT* gds32,
  *
  * Functional description
  *	Increment the registry Shared Count of a module whose full path & file
- *	name is given in parameter 'gds32'. Typically used to increment the
+ *	name is given in parameter 'filename'. Typically used to increment the
  *	shared count of the GDS32.DLL after its installation to WinSysDir. But
  *	can be used for just about any other shared component.
  *	User has to have enough rights to write to the HKLM key tree.
@@ -537,14 +580,14 @@ USHORT IncrementSharedCount(const TEXT* gds32,
 	if (status != ERROR_SUCCESS)
 		return (*err_handler) (status, "RegCreateKeyEx");
 
-	DWORD type, size;
 	DWORD count = 0;
-	RegQueryValueEx(hkey, gds32, NULL, &type,
+	DWORD type, size = sizeof(count);
+	RegQueryValueEx(hkey, filename, NULL, &type,
 		reinterpret_cast<BYTE*>(&count), &size);
 
 	++count;
 
-	status = RegSetValueEx(hkey, gds32, 0, REG_DWORD,
+	status = RegSetValueEx(hkey, filename, 0, REG_DWORD,
 		reinterpret_cast<BYTE*>(&count), sizeof(DWORD));
 	if (status != ERROR_SUCCESS)
 	{
@@ -556,7 +599,7 @@ USHORT IncrementSharedCount(const TEXT* gds32,
 	return FB_SUCCESS;
 }
 
-USHORT DecrementSharedCount(const TEXT* gds32, bool sw_force,
+USHORT DecrementSharedCount(const TEXT* filename, bool sw_force,
 	USHORT(*err_handler)(ULONG, const TEXT *))
 {
 /**************************************
@@ -567,14 +610,14 @@ USHORT DecrementSharedCount(const TEXT* gds32, bool sw_force,
  *
  * Functional description
  *	Decrements the registry Shared Count of a module whose full path & file
- *	name is given in parameter 'gds32'. Typically used to decrement the
+ *	name is given in parameter 'filename'. Typically used to decrement the
  *	shared count of the GDS32.DLL prior to its eventual removal from WinSysDir.
  *	Can be used for just about any other shared component.
  *	User has to have enough rights to write to the HKLM key tree.
  *	If the shared count reaches zero (or was already zero), the shared count
- *	value is removed and FB_SHARED_COUNT_ZERO is returned.
+ *	value is removed and FB_INSTALL_SHARED_COUNT_ZERO is returned.
  *	If the sw_force is set, the shared count value is removed and
- *	FB_SHARED_COUNT_ZERO returned too).
+ *	FB_INSTALL_SHARED_COUNT_ZERO returned too).
  *	FB_SUCCESS is returned when the count was decremented without reaching
  *	zero. FB_FAILURE is returned only in cases of registry access failures.
  *
@@ -587,12 +630,12 @@ USHORT DecrementSharedCount(const TEXT* gds32, bool sw_force,
 	if (status != ERROR_SUCCESS)
 		return (*err_handler) (status, "RegCreateKeyEx");
 
-	DWORD size;
 	LONG count = 0;
 	if (! sw_force)
 	{
 		DWORD type;
-		RegQueryValueEx(hkey, gds32, NULL, &type,
+		DWORD size = sizeof(count);
+		RegQueryValueEx(hkey, filename, NULL, &type,
 			reinterpret_cast<BYTE*>(&count), &size);
 
 		--count;
@@ -600,7 +643,7 @@ USHORT DecrementSharedCount(const TEXT* gds32, bool sw_force,
 
 	if (count > 0)
 	{
-		status = RegSetValueEx(hkey, gds32, 0, REG_DWORD,
+		status = RegSetValueEx(hkey, filename, 0, REG_DWORD,
 			reinterpret_cast<BYTE*>(&count), sizeof(DWORD));
 		if (status != ERROR_SUCCESS)
 		{
@@ -612,14 +655,14 @@ USHORT DecrementSharedCount(const TEXT* gds32, bool sw_force,
 	}
 	else
 	{
-		status = RegDeleteValue(hkey, gds32);
+		status = RegDeleteValue(hkey, filename);
 		if (status != ERROR_SUCCESS)
 		{
 			RegCloseKey(hkey);
 			return (*err_handler) (status, "RegDeleteValue");
 		}
 		RegCloseKey(hkey);
-		return FB_SHARED_COUNT_ZERO;
+		return FB_INSTALL_SHARED_COUNT_ZERO;
 	}
 }
 

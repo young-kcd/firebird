@@ -1,7 +1,7 @@
 /*
- *	PROGRAM:		Windows NT GDS Client Library Installation
- *	MODULE:			install_gds.cpp
- *	DESCRIPTION:	Program which install the FBCLIENT.DLL as GDS32.DLL
+ *	PROGRAM:		Windows Win32 Client Libraries Installation
+ *	MODULE:			install_client.cpp
+ *	DESCRIPTION:	Program which install the FBCLIENT.DLL or GDS32.DLL
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -29,14 +29,14 @@
 #include "../jrd/common.h"
 #include "../jrd/license.h"
 #include "../utilities/install_nt.h"
-#include "../utilities/gdsclient_proto.h"
+#include "../utilities/install_proto.h"
 
-static USHORT gds_error(ULONG, const TEXT *);
+static USHORT inst_error(ULONG, const TEXT *);
 static void usage(void);
 
 static struct
 {
-	TEXT *name;
+	TEXT* name;
 	USHORT abbrev;
 	USHORT code;
 } commands[] =
@@ -44,6 +44,18 @@ static struct
 	{"INSTALL", 1, COMMAND_INSTALL},
 	{"REMOVE", 1, COMMAND_REMOVE},
 	{"QUERY", 1, COMMAND_QUERY},
+	{NULL, 0, 0}
+};
+
+static struct
+{
+	TEXT* name;
+	USHORT abbrev;
+	USHORT code;
+} clients[] =
+{
+	{"FBCLIENT", 1, CLIENT_FB},
+	{"GDS32", 1, CLIENT_GDS},
 	{NULL, 0, 0}
 };
 
@@ -56,11 +68,12 @@ int CLIB_ROUTINE main( int argc, char **argv)
  **************************************
  *
  * Functional description
- *	Installs the FBCLIENT.DLL as GDS32.DLL in the Windows system directory.
+ *	Installs the FBCLIENT.DLL or GDS32.DLL in the Windows system directory.
  *
  **************************************/
 
 	USHORT sw_command = COMMAND_NONE;
+	USHORT sw_client = CLIENT_NONE;
 	bool sw_force = false;
 	bool sw_version = false;
 
@@ -70,7 +83,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	TEXT directory[MAXPATHLEN];
 	USHORT len = GetModuleFileName(NULL, directory, sizeof(directory));
 	if (len == 0)
-		return gds_error(GetLastError(), "GetModuleFileName");
+		return inst_error(GetLastError(), "GetModuleFileName");
 
 	// Get to the last '\' (this one precedes the filename part). There is
 	// always one after a call to GetModuleFileName().
@@ -87,21 +100,42 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	{
 		if (**argv != '-')
 		{
-			TEXT* cmd;
-			int i;
-			for (i = 0; cmd = commands[i].name; i++)
+			if (sw_command == COMMAND_NONE)
 			{
-				TEXT* q;
-				for (p = *argv, q = cmd; *p && UPPER(*p) == *q; p++, q++);
-				if (!*p && commands[i].abbrev <= (USHORT) (q - cmd))
-					break;
+				TEXT* cmd;
+				int i;
+				for (i = 0; cmd = commands[i].name; i++)
+				{
+					TEXT* q;
+					for (p = *argv, q = cmd; *p && UPPER(*p) == *q; p++, q++);
+					if (!*p && commands[i].abbrev <= (USHORT) (q - cmd))
+						break;
+				}
+				if (!cmd)
+				{
+					ib_printf("Unknown command \"%s\"\n", *argv);
+					usage();
+				}
+				sw_command = commands[i].code;
 			}
-			if (!cmd)
+			else
 			{
-				ib_printf("Unknown command \"%s\"\n", *argv);
-				usage();
+				TEXT* cln;
+				int i;
+				for (i = 0; cln = clients[i].name; i++)
+				{
+					TEXT* q;
+					for (p = *argv, q = cln; *p && UPPER(*p) == *q; p++, q++);
+					if (!*p && clients[i].abbrev <= (USHORT) (q - cln))
+						break;
+				}
+				if (!cln)
+				{
+					ib_printf("Unknown library \"%s\"\n", *argv);
+					usage();
+				}
+				sw_client = clients[i].code;
 			}
-			sw_command = commands[i].code;
 		}
 		else
 		{
@@ -124,78 +158,84 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	}
 
 	if (sw_version)
-		ib_printf("instgds version %s\n", GDS_VERSION);
+		ib_printf("instclient version %s\n", GDS_VERSION);
 
-	if (sw_command == COMMAND_NONE)
+	if (sw_command == COMMAND_NONE || sw_client == CLIENT_NONE)
 	{
 		usage();
 	}
+
+	TEXT* clientname = sw_client == CLIENT_GDS ? GDS32_NAME : FBCLIENT_NAME;
 
 	USHORT status;
 	switch (sw_command)
 	{
 		
 		case COMMAND_INSTALL:
-			status = GDSCLIENT_install(directory, sw_force, gds_error);
+			status = CLIENT_install(directory, sw_client, sw_force, inst_error);
 			switch (status)
 			{
-				case FB_SAME_GDS32_FOUND :
-					ib_printf("Existing GDS32.DLL (same version) found.\n");
+				case FB_INSTALL_SAME_VERSION_FOUND :
+					ib_printf("Existing %s (same version) found.\n", clientname);
 					ib_printf("No update needed.\n");
 					break;
-				case FB_NEWER_GDS32_FOUND :
-					ib_printf("Existing GDS32.DLL (newer version) found.\n");
+				case FB_INSTALL_NEWER_VERSION_FOUND :
+					ib_printf("Existing %s (newer version) found.\n", clientname);
 					ib_printf("You can force replacing the DLL with -f[orce] switch.\n");
 					ib_printf("Though this could break some other InterBase(R) "
 						"or Firebird installation.\n");
 					break;
-				case FB_GDS32_COPY_REQUIRES_REBOOT :
-					ib_printf("GDS32.DLL has been scheduled for installation "
-						"at the next system reboot.\n");
+				case FB_INSTALL_COPY_REQUIRES_REBOOT :
+					ib_printf("%s has been scheduled for installation "
+						"at the next system reboot.\n", clientname);
 					break;
 				case FB_SUCCESS :
-					ib_printf("GDS32.DLL has been installed to the "
-						"System directory.\n");
+					ib_printf("%s has been installed to the "
+						"System directory.\n", clientname);
 					break;
 			}
 			break;
 
 		case COMMAND_REMOVE:
-			status = GDSCLIENT_remove(directory, sw_force, gds_error);
+			status = CLIENT_remove(directory, sw_client, sw_force, inst_error);
 			switch (status)
 			{
-				case FB_GDS32_NOT_FOUND :
-					ib_printf("GDS32.DLL was not found in the System directory.\n");
+				case FB_INSTALL_FILE_NOT_FOUND :
+					ib_printf("%s was not found in the System directory.\n",
+						clientname);
 					break;
-				case FB_CANNOT_REMOVE_ALIEN_GDS32 :
-					ib_printf("The installed GDS32.DLL appears to be from an "
-						"unsupported version.\n");
+				case FB_INSTALL_CANT_REMOVE_ALIEN_VERSION :
+					ib_printf("The installed %s appears to be from an "
+						"unsupported version.\n", clientname);
 					ib_printf("It probably belongs to another version of "
 						"Firebird or InterBase(R).\n");
 					break;
-				case FB_GDS32_PROBABLY_IN_USE :
-					ib_printf("The GDS32.DLL can't be removed. It is probably "
-						"currently in use.\n");
+				case FB_INSTALL_FILE_PROBABLY_IN_USE :
+					ib_printf("The %s can't be removed. It is probably "
+						"currently in use.\n", clientname);
 					break;
 				case FB_SUCCESS :
-					ib_printf("The GDS32.DLL has been removed from the "
-						"System directory.\n");
+					ib_printf("The %s has been removed from the "
+						"System directory.\n", clientname);
 					break;
 			}
 			break;
 
 		case COMMAND_QUERY:
 			ULONG verMS, verLS, sharedCount;
-			status = GDSCLIENT_query(verMS, verLS, sharedCount, gds_error);
+			status = CLIENT_query(sw_client, verMS, verLS, sharedCount, inst_error);
 			switch (status)
 			{
-				case FB_GDS32_NOT_FOUND :
-					ib_printf("GDS32.DLL was not found in the System directory.\n");
+				case FB_INSTALL_FILE_NOT_FOUND :
+					ib_printf("%s was not found in the System directory.\n",
+						clientname);
 					break;
 				case FB_SUCCESS :
-					ib_printf("Installed GDS32.DLL version : %u.%u.%u.%u\n",
+					ib_printf("Installed %s version : %u.%u.%u.%u "
+						"(shared DLL count %d)\n", clientname,
 						verMS >> 16, verMS & 0x0000ffff,
-						verLS >> 16, verLS & 0x0000ffff);
+						verLS >> 16, verLS & 0x0000ffff,
+						sharedCount);
 					break;
 			}
 			break;
@@ -203,8 +243,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	switch (status)
 	{
-		case FB_GDS32_COPY_REQUIRES_REBOOT :
-			return -FB_GDS32_COPY_REQUIRES_REBOOT;
+		case FB_INSTALL_COPY_REQUIRES_REBOOT :
+			return -FB_INSTALL_COPY_REQUIRES_REBOOT;
 		case FB_SUCCESS :
 			return FINI_OK;
 		default :
@@ -212,7 +252,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	}
 }
 
-static USHORT gds_error(ULONG status, const TEXT * string)
+static USHORT inst_error(ULONG status, const TEXT * string)
 {
 /**************************************
  *
@@ -266,21 +306,33 @@ static void usage(void)
  * Functional description
  *
  **************************************/
-	ib_printf("\nUsage:\n");
-	ib_printf("  instgds i[nstall] [ -f[orce] ]\n");
-	ib_printf("          q[uery]\n");
-	ib_printf("          r[emove]\n\n");
-	ib_printf("  This utility should be located and run from the 'bin' directory\n");
-	ib_printf("  of your Firebird installation.\n\n");
-	ib_printf("  '-z' can be used with any other option, prints version\n");
 
-	ib_printf("\nPurpose:\n");
-	ib_printf("  This utility installs a copy of the Firebird client library (FBCLIENT.DLL),\n");
-	ib_printf("  renamed GDS32.DLL, to the Windows System Directory. This configuration\n");
-	ib_printf("  step might be usefull for legacy application support.\n\n");
+	ib_printf("Usage:\n");
+	ib_printf("  instclient i[nstall] [ -f[orce] ] library\n");
+	ib_printf("             q[uery] library\n");
+	ib_printf("             r[emove] library\n");
+	ib_printf("\n");
+	ib_printf("  where library is:  f[bclient] | g[ds32] \n");
+	ib_printf("\n");
+	ib_printf("  This utility should be located and run from the 'bin' directory\n");
+	ib_printf("  of your Firebird installation.\n");
+	ib_printf("  '-z' can be used with any other option, prints version\n");
+	ib_printf("\n");
+	ib_printf("Purpose:\n");
+	ib_printf("  This utility manages deployment of the Firebird client library \n");
+	ib_printf("  into the Windows system directory. It caters for two installation\n");
+	ib_printf("  scenarios:\n");
+	ib_printf("\n");
+	ib_printf("    Deployment of the native fbclient.dll.\n");
+	ib_printf("    Deployment of gds32.dll to support legacy applications.\n");
+	ib_printf("\n");
+	ib_printf("  Version information and shared library counts are handled \n");
+	ib_printf("  automatically. You may provide the -f[orce] option to override\n");
+	ib_printf("  version checks.\n");
+	ib_printf("\n");
 	ib_printf("  Please, note that if you -f[orce] the installation, you might have\n");
 	ib_printf("  to reboot the machine in order to finalize the copy and you might\n");
-	ib_printf("  break some other Firebird or InterBase(R) version on the system.\n\n");
+	ib_printf("  break some other Firebird or InterBase(R) version on the system.\n");
 
 	exit(FINI_ERROR);
 }

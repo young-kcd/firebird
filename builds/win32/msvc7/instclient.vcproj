@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.00"
-	Name="instgds"
+	Name="instclient"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>
@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\..\..\temp\release\instgds"
-			IntermediateDirectory="..\..\..\temp\release\instgds"
+			OutputDirectory="..\..\..\temp\release\instclient"
+			IntermediateDirectory="..\..\..\temp\release\instclient"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -31,10 +31,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE,SUPERCLIENT"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile="..\..\..\temp\release\instgds/instgds.pch"
-				AssemblerListingLocation="..\..\..\temp\release\instgds/"
-				ObjectFile="..\..\..\temp\release\instgds/"
-				ProgramDataBaseFileName="..\..\..\temp\release\instgds/"
+				PrecompiledHeaderFile="..\..\..\temp\release\instclient/instclient.pch"
+				AssemblerListingLocation="..\..\..\temp\release\instclient/"
+				ObjectFile="..\..\..\temp\release\instclient/"
+				ProgramDataBaseFileName="..\..\..\temp\release\instclient/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -44,14 +44,14 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="release/firebird/bin/instgds.exe"
+				OutputFile="release/firebird/bin/instclient.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\release\instgds/instgds.pdb"
+				ProgramDatabaseFile="..\..\..\temp\release\instclient/instclient.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\release\instgds/instgds.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\instclient/instclient.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -69,8 +69,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="..\..\..\temp\debug\instgds"
-			IntermediateDirectory="..\..\..\temp\debug\instgds"
+			OutputDirectory="..\..\..\temp\debug\instclient"
+			IntermediateDirectory="..\..\..\temp\debug\instclient"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -82,10 +82,10 @@
 				PreprocessorDefinitions="WIN32,_DEBUG,_CONSOLE,SUPERCLIENT,DEV_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile="..\..\..\temp\debug\instgds/instgds.pch"
-				AssemblerListingLocation="..\..\..\temp\debug\instgds/"
-				ObjectFile="..\..\..\temp\debug\instgds/"
-				ProgramDataBaseFileName="..\..\..\temp\debug\instgds/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\instclient/instclient.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\instclient/"
+				ObjectFile="..\..\..\temp\debug\instclient/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\instclient/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
@@ -96,15 +96,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="debug/firebird/bin/instgds.exe"
+				OutputFile="debug/firebird/bin/instclient.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\instgds/instgds.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\instclient/instclient.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\debug\instgds/instgds.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\instclient/instclient.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -126,17 +126,17 @@
 			Name="UTILITIES files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
-				RelativePath="..\..\..\src\utilities\install_gds.cpp">
+				RelativePath="..\..\..\src\utilities\install_client.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\gdsclient.cpp">
+				RelativePath="..\..\..\src\utilities\install.cpp">
 			</File>
 		</Filter>
 		<Filter
 			Name="Header files"
 			Filter="h;hpp;hxx;hm;inl">
 			<File
-				RelativePath="..\..\..\src\utilities\gdsclient_proto.h">
+				RelativePath="..\..\..\src\utilities\install_proto.h">
 			</File>
 		</Filter>
 		<Filter

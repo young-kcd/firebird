@@ -21,16 +21,16 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _UTILITIES_GDSCLIENT_PROTO_H_
-#define _UTILITIES_GDSCLIENT_PROTO_H_
+#ifndef _UTILITIES_INSTALL_PROTO_H_
+#define _UTILITIES_INSTALL_PROTO_H_
 
-extern USHORT GDSCLIENT_install(const TEXT* rootdirectory, bool sw_force,
-	USHORT(*err_handler)(ULONG, const TEXT*));
+extern USHORT CLIENT_install(const TEXT* rootdirectory, USHORT client,
+	bool sw_force, USHORT(*err_handler)(ULONG, const TEXT*));
 
-extern USHORT GDSCLIENT_remove(const TEXT* rootdirectory, bool sw_force,
-	USHORT(*err_handler)(ULONG, const TEXT*));
+extern USHORT CLIENT_remove(const TEXT* rootdirectory, USHORT client,
+	bool sw_force, USHORT(*err_handler)(ULONG, const TEXT*));
 
-extern USHORT GDSCLIENT_query(ULONG& verMS, ULONG& verLS, ULONG& sharedCount,
-	USHORT(*err_handler)(ULONG, const TEXT *));
+extern USHORT CLIENT_query(USHORT client, ULONG& verMS, ULONG& verLS,
+	ULONG& sharedCount, USHORT(*err_handler)(ULONG, const TEXT *));
 
 #endif /* _UTILITIES_GDSCLIENT_PROTO_H_ */
