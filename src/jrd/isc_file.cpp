@@ -210,10 +210,12 @@ static void share_name_from_resource(TEXT *, TEXT *, LPNETRESOURCE);
 static void share_name_from_unc(TEXT *, TEXT *, LPREMOTE_NAME_INFO);
 #endif
 
+#ifndef NO_NFS
 #if (defined AIX || defined AIX_PPC)
 static BOOLEAN get_mounts(MNT *, TEXT *, TEXT **, int *);
 #else
 static BOOLEAN get_mounts(MNT *, TEXT *, IB_FILE *);
+#endif
 #endif
 
 #ifdef hpux
@@ -1366,7 +1368,7 @@ static BOOLEAN get_mounts(
 
 	return TRUE;
 }
-#endif
+#endif // (defined AIX || defined AIX_PPC)
 
 #if defined(HAVE_GETMNTENT) && !defined(SOLARIS)
 #define GET_MOUNTS
@@ -1415,7 +1417,7 @@ static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 	else
 		return FALSE;
 }
-#else /* !GETMNTENT_TAKES_TWO_ARGUMENTS */
+#else // !GETMNTENT_TAKES_TWO_ARGUMENTS 
 static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 {
 /**************************************
@@ -1461,8 +1463,8 @@ static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 
 	return FALSE;
 }
-#endif /* GETMNTENT_TAKES_TWO_ARGUMENTS */
-#endif /* HAVE_GETMNTENT && !SOLARIS */
+#endif // GETMNTENT_TAKES_TWO_ARGUMENTS
+#endif // HAVE_GETMNTENT && !SOLARIS
 
 #ifdef SCO_UNIX
 #define GET_MOUNTS
@@ -1525,7 +1527,7 @@ static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 
 	return FALSE;
 }
-#endif
+#endif // SCO_UNIX
 
 #ifndef GET_MOUNTS
 static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
@@ -1593,7 +1595,7 @@ static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 
 	return FALSE;
 }
-#endif
+#endif // GET_MOUNTS
 
 #ifdef hpux
 /* RITTER - added HP11 to the pre-processor condition below */
@@ -1627,8 +1629,8 @@ static BOOLEAN get_server(TEXT * file_name, TEXT * node_name)
 	return TRUE;
 }
 #endif
-#endif
-#endif
+#endif // hpux
+#endif // NO_NFS
 
 
 #ifdef WIN_NT
