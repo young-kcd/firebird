@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.82 2003-12-03 08:19:05 robocop Exp $
+ * $Id: ddl.cpp,v 1.83 2004-01-10 18:04:40 arnobrinkman Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -192,10 +192,6 @@ enum trigger_type {
 	PRE_ERASE_TRIGGER = 5,
 	POST_ERASE_TRIGGER = 6
 };
-
-const char* const OLD_CONTEXT		= "OLD";
-const char* const NEW_CONTEXT		= "NEW";
-const char* const TEMP_CONTEXT		= "TEMP";
 
 const int DEFAULT_BUFFER	= 2048;
 

@@ -217,7 +217,7 @@ static dsql_nod* post_map(dsql_nod*, dsql_ctx*);
 static dsql_nod* remap_field(dsql_req*, dsql_nod*, dsql_ctx*, USHORT);
 static dsql_nod* remap_fields(dsql_req*, dsql_nod*, dsql_ctx*);
 static void remap_streams_to_parent_context(dsql_nod*, dsql_ctx*);
-static dsql_fld* resolve_context(dsql_req*, const dsql_str*, dsql_ctx*);
+static dsql_fld* resolve_context(dsql_req*, const dsql_str*, dsql_ctx*, bool);
 static bool set_parameter_type(dsql_nod*, dsql_nod*, bool);
 static void set_parameters_name(dsql_nod*, const dsql_nod*);
 static void set_parameter_name(dsql_nod*, const dsql_nod*, const dsql_rel*);
@@ -3718,11 +3718,11 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input, const bool lis
 			if (request->req_alias_relation_prefix && qualifier) {
 				dsql_str* req_qualifier = 
 					pass1_alias_concat(request->req_alias_relation_prefix, qualifier);
-				field = resolve_context(request, req_qualifier, context);
+				field = resolve_context(request, req_qualifier, context, is_check_constraint);
 				delete req_qualifier;
 			}
 			else {
-				field = resolve_context(request, qualifier, context);
+				field = resolve_context(request, qualifier, context, is_check_constraint);
 			}
 			// AB: When there's no relation and no procedure then we have a derived table.
 			bool is_derived_table = 
@@ -6743,7 +6743,7 @@ static void remap_streams_to_parent_context( dsql_nod* input, dsql_ctx* parent_c
 
  **/
 static dsql_fld* resolve_context( dsql_req* request, const dsql_str* qualifier,
-	dsql_ctx* context)
+	dsql_ctx* context, bool isCheckConstraint)
 {
 	// CVC: Warning: the second param, "name" was is not used anymore and
 	// therefore it was removed. Thus, the local variable "table_name"
@@ -6766,11 +6766,22 @@ static dsql_fld* resolve_context( dsql_req* request, const dsql_str* qualifier,
 //		return NULL;
 //	}
 
-	TEXT* table_name;
+	TEXT* table_name = NULL;
 	if (context->ctx_alias) {
 		table_name = context->ctx_alias;
 	}
-	else {
+// AB: For a check constraint we should ignore the alias if the alias
+//     contains "NEW" or "OLD" alias. This is because it is possible
+//     to reference a field by the complete table-name as alias 
+//     (see EMPLOYEE table in examples for a example).
+	if (isCheckConstraint && table_name) {
+		if ((!strcmp(reinterpret_cast<const char*>(table_name), OLD_CONTEXT)) || 
+			(!strcmp(reinterpret_cast<const char*>(table_name), NEW_CONTEXT))) 
+		{
+			table_name = NULL;
+		}
+	}
+	if (table_name == NULL) {
 		if (relation) {
 			table_name = relation->rel_name;
 		}

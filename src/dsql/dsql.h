@@ -76,6 +76,11 @@ public:
 
 const long STR_delimited_id		= 0x1L;
 
+// Context aliases used in triggers
+const char* const OLD_CONTEXT		= "OLD";
+const char* const NEW_CONTEXT		= "NEW";
+const char* const TEMP_CONTEXT		= "TEMP";
+
 //! macros and block used to implement a generic stack mechanism
 class dsql_lls : public pool_alloc<dsql_type_lls>
 {
