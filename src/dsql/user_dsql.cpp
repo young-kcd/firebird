@@ -57,9 +57,6 @@
 #endif
 
 
-extern "C" {
-
-
 #define NAME_statement	1
 #define NAME_cursor		2
 
@@ -1702,5 +1699,3 @@ static bool scompare(SCHAR* string1,
 	return true;
 }
 
-
-}	// extern "C"

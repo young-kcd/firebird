@@ -30,7 +30,7 @@
  */
 
 /*
-$Id: utld.cpp,v 1.14 2003-08-19 10:25:21 robocop Exp $
+$Id: utld.cpp,v 1.15 2003-09-20 23:28:10 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -44,9 +44,6 @@ $Id: utld.cpp,v 1.14 2003-08-19 10:25:21 robocop Exp $
 #include "../jrd/align.h"
 #include "../dsql/utld_proto.h"
 #include "../jrd/gds_proto.h"
-
-
-extern "C" {
 
 
 static void cleanup(void *);
@@ -934,5 +931,3 @@ static void xsqlvar_to_sqlvar( XSQLVAR * xsqlvar, SQLVAR * sqlvar)
 		sqlvar->sqllen = sizeof(GDS_QUAD) | (xsqlvar->sqlscale << 8);
 }
 
-
-} // extern "C"

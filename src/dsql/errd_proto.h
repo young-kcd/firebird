@@ -24,10 +24,6 @@
 #ifndef DSQL_ERRD_PROTO_H
 #define DSQL_ERRD_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifdef DEV_BUILD
 void ERRD_assert_msg(const char*, const char*, ULONG);
 #endif
@@ -37,9 +33,5 @@ void ERRD_error(int, const char*);
 void ERRD_post(ISC_STATUS, ...);
 bool ERRD_post_warning(ISC_STATUS, ...);
 void ERRD_punt(void);
-
-#ifdef __cplusplus
-}	/* extern "C" */
-#endif
 
 #endif /* DSQL_ERRD_PROTO_H */

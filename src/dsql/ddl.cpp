@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.60 2003-09-13 10:26:47 robocop Exp $
+ * $Id: ddl.cpp,v 1.61 2003-09-20 23:28:11 brodsom Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -91,10 +91,6 @@
 #include "../gpre/prett_proto.h"
 #endif
 
-
-extern "C" {
-
-}	// extern "C"
 
 #define BLOB_BUFFER_SIZE   4096	/* to read in blr blob for default values */
 

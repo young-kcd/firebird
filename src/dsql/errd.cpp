@@ -61,9 +61,6 @@
 #include "../jrd/thd_proto.h"
 
 
-extern "C" {
-
-
 ASSERT_FILENAME					/* Define things assert() needs */
 #ifdef DEV_BUILD
 /**
@@ -381,5 +378,3 @@ void ERRD_punt(void)
 	Firebird::status_exception::raise(tdsql->tsql_status[1]);
 }
 
-
-}	// extern "C"

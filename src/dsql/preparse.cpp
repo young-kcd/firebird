@@ -49,9 +49,6 @@
 #define MAX_TOKEN_SIZE	1024
 
 
-extern "C" {
-
-
 /* use STUFF_DPB in place of STUFF to avoid confusion with BLR STUFF
    macro defined in dsql.h */
 
@@ -590,5 +587,3 @@ static SSHORT get_token(ISC_STATUS * status,
 	return FB_FAILURE;
 }
 
-
-} // extern "C"

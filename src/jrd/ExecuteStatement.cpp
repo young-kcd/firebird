@@ -39,7 +39,7 @@
 
 #include "../jrd/ExecuteStatement.h"
 
-extern "C" WHY_DBB GetWhyAttachment(ISC_STATUS* status,
+WHY_DBB GetWhyAttachment(ISC_STATUS* status,
 						  class att* jrd_attachment_handle);
 
 static struct {

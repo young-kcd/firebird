@@ -1018,12 +1018,12 @@ int common_main(int		argc,
 		for (FIL file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
 		{
 			if (file->fil_fd != INVALID_HANDLE_VALUE)
-				CLOSE(file->fil_fd);
+				close_platf(file->fil_fd);
 			if (exit_code != 0
 				&& (tdgbl->action->act_action == ACT_backup_split
 					|| tdgbl->action->act_action == ACT_backup))
 			{
-				UNLINK(file->fil_name);
+				unlink_platf(file->fil_name);
 			}
 		}
 
@@ -1582,7 +1582,7 @@ static gbak_action open_files(const TEXT * file1,
 #ifndef WIN_NT
 				signal(SIGPIPE, SIG_IGN);
 #endif
-				fil->fil_fd = reinterpret_cast<DESC>(GBAK_STDOUT_DESC);
+				fil->fil_fd = reinterpret_cast<DESC>(GBAK_STDOUT_DESC());
 				break;
 			}
 			else
@@ -1701,7 +1701,7 @@ static gbak_action open_files(const TEXT * file1,
 
 	tdgbl->action->act_action = ACT_restore;
 	if (!strcmp(fil->fil_name, "stdin")) {
-		fil->fil_fd = reinterpret_cast<DESC>(GBAK_STDIN_DESC);
+		fil->fil_fd = reinterpret_cast<DESC>(GBAK_STDIN_DESC());
 		tdgbl->file_desc = fil->fil_fd;
 		tdgbl->gbl_sw_files = fil->fil_next;
 	}

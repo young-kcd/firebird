@@ -638,14 +638,31 @@ const int MAX_FILE_NAME_LENGTH		= 256;
 
 #ifdef WIN_NT
 typedef void *DESC;
-#define CLOSE	CloseHandle 
-#define UNLINK  DeleteFile
-#define FLUSH(x) FlushFileBuffers(x)
+inline static void close_platf(DESC file)
+{
+	CloseHandle(file);
+}
+inline static void unlink_platf(TEXT * file_name)
+{
+	DeleteFile(file_name);
+}
+inline static void flush_platf(DESC file)
+{
+	FlushFileBuffers(file);
+}
 #else
 typedef int DESC;
-#define CLOSE	close
-#define UNLINK  unlink
-#define FLUSH(x) /* nothing */
+inline static void close_platf(DESC file)
+{
+	close(file);
+}
+inline static void unlink_platf(TEXT * file_name)
+{
+	unlink(file_name);
+}
+inline static void flush_platf(DESC file)
+{
+}
 const int INVALID_HANDLE_VALUE	= -1;
 #endif /* WIN_NT */
 
@@ -875,7 +892,7 @@ const int FINI_DB_NOT_ONLINE		= 2;	/* database is not on-line due to
 #endif
 #endif
 
-#define GBAK_IO_BUFFER_SIZE	(16 * (IO_BUFFER_SIZE))
+const int GBAK_IO_BUFFER_SIZE = (16 * (IO_BUFFER_SIZE));
 
 /* Burp will always write a backup in multiples of the following number
  * of bytes.  The initial value is the smallest which ensures that writes
@@ -887,7 +904,10 @@ const int FINI_DB_NOT_ONLINE		= 2;	/* database is not on-line due to
  */
 
 const int BURP_BLOCK		= 512;
-#define BURP_UP_TO_BLOCK(n)	(((n) + BURP_BLOCK - 1) & ~(BURP_BLOCK - 1))
+inline static ULONG BURP_UP_TO_BLOCK(ULONG size)
+{
+	return (((size) + BURP_BLOCK - 1) & ~(BURP_BLOCK - 1));
+}
 
 /* Move the read and write mode declarations in here from burp.c
    so that other files can see them for multivolume opens */

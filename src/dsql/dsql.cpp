@@ -101,8 +101,6 @@ ASSERT_FILENAME
 #include <descrip.h>
 #endif
 
-extern "C" {
-
 #ifndef PRINTF
 #define PRINTF		ib_printf
 #endif
@@ -261,10 +259,6 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*		user_status,
 #define GDS_DSQL_PREPARE		dsql8_prepare
 #define GDS_DSQL_SET_CURSOR		dsql8_set_cursor
 #define GDS_DSQL_SQL_INFO		dsql8_sql_info
-
-}	// extern "C"
-
-extern "C" {
 
 //////////////////////////////////////////////////////////////////
 // Begin : C API -> C++ wrapper functions
@@ -437,10 +431,6 @@ GDS_DSQL_SET_CURSOR(ISC_STATUS*		user_status,
 // End : C API -> C++ wrapper functions
 //////////////////////////////////////////////////////////////////
 
-
-}	// extern "C"
-
-extern "C" {
 
 
 /**
@@ -4839,5 +4829,3 @@ static UCHAR *var_info(
 	return info;
 }
 
-
-} // extern "C"

@@ -34,9 +34,6 @@
 #include "../jrd/thd_proto.h"
 
 
-extern "C" {
-
-
 ASSERT_FILENAME
 #define HASH_SIZE 211
 static SSHORT hash(SCHAR *, USHORT);
@@ -523,5 +520,3 @@ static bool scompare(TEXT * string1,
 	return true;
 }
 
-
-}	// extern "C"

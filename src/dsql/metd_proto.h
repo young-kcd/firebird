@@ -34,8 +34,6 @@
 class dsql_req;
 class str;
 
-extern "C" {
-
 void METD_drop_function(dsql_req*, str*);
 void METD_drop_procedure(dsql_req*, str*);
 void METD_drop_relation(dsql_req*, str*);
@@ -57,7 +55,5 @@ DSQL_REL METD_get_view_relation(dsql_req*   request,
 								const char* view_name         /* UTF-8 */,
 								const char* relation_or_alias /* UTF-8 */,
 								USHORT      level);
-
-} // extern "C"
 
 #endif /*_DSQL_METD_PROTO_H */

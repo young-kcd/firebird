@@ -120,7 +120,7 @@ UINT64 MVOL_fini_read()
 
 	if (strcmp(tdgbl->mvol_old_file, "stdin") != 0)
 	{
-		CLOSE(tdgbl->file_desc);
+		close_platf(tdgbl->file_desc);
 
 		FIL	file;
 		for (file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
@@ -148,10 +148,10 @@ UINT64 MVOL_fini_write(int* io_cnt, UCHAR** io_ptr)
 	TGBL tdgbl = GET_THREAD_DATA;
 
 	MVOL_write(rec_end, io_cnt, io_ptr);
-	FLUSH(tdgbl->file_desc);
+	flush_platf(tdgbl->file_desc);
 	if (strcmp(tdgbl->mvol_old_file, "stdout") != 0)
 	{
-		CLOSE(tdgbl->file_desc);
+		close_platf(tdgbl->file_desc);
 		for (FIL file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
 		{
 			if (file->fil_fd == tdgbl->file_desc)
@@ -553,7 +553,7 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 			{
 				if (tdgbl->action->act_file->fil_next)
 				{
-					CLOSE(tdgbl->file_desc);
+					close_platf(tdgbl->file_desc);
 					for (FIL file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
 					{
 						if (file->fil_fd == tdgbl->file_desc)
@@ -621,7 +621,7 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 					   issue an error and give up */
 					if (tdgbl->action->act_file->fil_next)
 					{
-						CLOSE(tdgbl->file_desc);
+						close_platf(tdgbl->file_desc);
 						for (FIL file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
 						{
 							if (file->fil_fd == tdgbl->file_desc)
@@ -861,7 +861,7 @@ static DESC next_volume( DESC handle, int mode, bool full_buffer)
 	if (handle > -1)
 #endif // WIN_NT 
 	{
-		CLOSE(handle);
+		close_platf(handle);
 	}
 
 	if (tdgbl->action->act_action == ACT_restore_join)
@@ -893,7 +893,7 @@ static DESC next_volume( DESC handle, int mode, bool full_buffer)
 		// We aim to keep our descriptors clean 
 
 		if (new_desc != INVALID_HANDLE_VALUE) {
-			CLOSE(new_desc);
+			close_platf(new_desc);
 			new_desc = INVALID_HANDLE_VALUE;
 		}
 

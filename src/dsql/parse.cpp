@@ -144,15 +144,12 @@ static const char NULL_STRING [] = "";
 #define TRIGGER_TYPE_SUFFIX(slot1, slot2, slot3) \
 	((slot1 << 1) | (slot2 << 3) | (slot3 << 5))
 
-extern "C" {
-
 #ifndef SHLIB_DEFS
 DSQL_NOD		DSQL_parse;
 #else
 extern DSQL_NOD	DSQL_parse;
 #endif
 
-}	/* extern "C"*/
 static void	yyerror (TEXT *);
 
 #define YYPARSE_PARAM_TYPE

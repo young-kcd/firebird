@@ -314,7 +314,7 @@ int main( int argc, char *argv[])
 	FILE_DESC input_file_desc;
 	switch (sw_replace) {
 	case (IN_SW_SPIT_SP):
-		input_file_desc = reinterpret_cast<FILE_DESC>(GBAK_STDIN_DESC);
+		input_file_desc = reinterpret_cast<FILE_DESC>(GBAK_STDIN_DESC());
 		ret_cd = gen_multy_bakup_files(file_list, input_file_desc, file_num);
 		if (ret_cd == FB_FAILURE) {
 			ib_fprintf(ib_stderr,
@@ -967,7 +967,7 @@ static int join_multy_bakup_files( b_fil* file_list)
 *********************************************************************
 */
 
-	FILE_DESC output_fl_desc = reinterpret_cast<FILE_DESC>(GBAK_STDOUT_DESC);
+	FILE_DESC output_fl_desc = reinterpret_cast<FILE_DESC>(GBAK_STDOUT_DESC());
 
 	// See comment near the beginning of gen_multy_bakup_files() as it
 	// also applies to read_and_write_for_join().
