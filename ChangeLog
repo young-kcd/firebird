@@ -1,3 +1,50 @@
+2002-11-07 17:54  skywalker
+
+	* firebird2/builds/posix/Makefile.in.firebird:
+	
+	add firebird.conf into files moved to install area
+
+2002-11-07 17:53  skywalker
+
+	* firebird2/src/install/classic/: install.sh.in,
+	makeInstallImage.sh.in, postinstall.sh.in, postuninstall.sh.in,
+	preinstall.sh.in, preuninstall.sh.in:
+	
+	Changes to install procedure, basically finishing merge of some of
+	the fb1 install code into the fb2 codebase (the fb1 code had been
+	committed prematurely, this should fix those differences)
+
+2002-11-07 15:06  eku
+
+	* firebird2/configure.in:
+	
+	Fixed C&P error.
+
+2002-11-07 14:05  eku
+
+	* firebird2/: configure.in, src/make.new/config/config.h.in:
+	
+	Autoconfigured pipe name for wnet protocol.
+
+2002-11-07 12:41  dimitr
+
+	* firebird2/src/jrd/gds.cpp:
+	
+	Fixed old config manager usage.
+
+2002-11-07 10:40  dimitr
+
+	* firebird2/src/fbutil/: FirebirdConfig.cpp, FirebirdConfig.h,
+	FirebirdConfigFile.cpp, FirebirdConfigFile.h, main.cpp:
+	
+	We no longer need old config stuff.
+
+2002-11-07 08:16  dimitr
+
+	* firebird2/builds/win32/msvc6/fbguard.dsp:
+	
+	Removed redundant absolute path.
+
 2002-11-06 21:37  skidder
 
 	* firebird2/configure.in:
