@@ -238,7 +238,7 @@ const USHORT ITR_limbo	= 1;
 
 /* blob control block */
 
-typedef struct ibl
+struct ibl
 {
 	blk			ibl_header;
 	struct idb*	ibl_idb;
