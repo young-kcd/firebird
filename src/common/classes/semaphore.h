@@ -75,7 +75,7 @@ public:
 #ifdef SOLARIS_MT
 /* This is dummy, untested implementation of FB::Semaphore
  on Solaris using conditional variable protected by mutex.
- I'll review it later
+
  Konstantin
  thank's to Claudio ...
 */ 

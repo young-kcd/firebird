@@ -104,8 +104,10 @@ public:
 };
 #else
 #ifdef SOLARIS_MT
-// Who knows why Solaris 2.6 have not THIS funny spins?
-//The next code is not comlpeted but let me compile //Konstantin
+/* Who knows why Solaris 2.6 have not THIS funny spins?
+Konstantin */
+
+
 class Mutex {
 private:
 	mutex_t spinlock;
