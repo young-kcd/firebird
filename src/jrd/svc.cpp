@@ -2177,7 +2177,7 @@ void *SVC_start(SVC service, USHORT spb_length, SCHAR * spb)
 		count = ISC_event_clear(evnt_ptr);
 
 		gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
-						  (serv->serv_thd), service, 0, 0,
+						  (serv->serv_thd), service, THREAD_medium, 0,
 						  (void *) &service->svc_handle);
 
 		/* check for the service being detached.  This will prevent the thread
