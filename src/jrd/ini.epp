@@ -1131,7 +1131,7 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 
 	sprintf(default_class, "%s%" QUADFORMAT "d", DEFAULT_CLASS,
 			DPM_gen_id(tdbb, MET_lookup_generator(tdbb, DEFAULT_CLASS),
-					   0, (SINT64) 1));
+					   false, (SINT64) 1));
 
 	jrd_req* handle1;
 

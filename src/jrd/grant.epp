@@ -308,7 +308,7 @@ static void define_default_class(
 
 	if (!*default_class) {
 		sprintf(default_class, "%s%" QUADFORMAT "d", DEFAULT_CLASS,
-				DPM_gen_id(tdbb, MET_lookup_generator(tdbb, DEFAULT_CLASS), 0,
+				DPM_gen_id(tdbb, MET_lookup_generator(tdbb, DEFAULT_CLASS), false,
 						   (SINT64) 1));
 
 		jrd_req* request = CMP_find_request(tdbb, irq_grant7, IRQ_REQUESTS);
@@ -882,7 +882,7 @@ static SecurityClass::flags_t save_field_privileges(
 			    */
 			    sprintf(s_class, "%s%" QUADFORMAT "d", "SQL$GRANT", 
 				DPM_gen_id(tdbb, MET_lookup_generator(tdbb, "RDB$SECURITY_CLASS"), 
-						   0, (SINT64) 1));
+						   false, (SINT64) 1));
 
 				FOR(REQUEST_HANDLE request2)
 					FLD2 IN RDB$RELATION_FIELDS WITH

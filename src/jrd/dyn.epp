@@ -1857,7 +1857,7 @@ static void set_field_class_name(Global* gbl, const TEXT* relation, const TEXT* 
 	    {
 			sprintf(RFR.RDB$SECURITY_CLASS, "%s%" QUADFORMAT "d", "SQL$GRANT", 
 			DPM_gen_id(tdbb, 
-				MET_lookup_generator(tdbb, "RDB$SECURITY_CLASS"), 0, (SINT64) 1));
+				MET_lookup_generator(tdbb, "RDB$SECURITY_CLASS"), false, (SINT64) 1));
 
 			unique = true;
 			request2 = CMP_find_request(tdbb, drq_s_u_class, DYN_REQUESTS);

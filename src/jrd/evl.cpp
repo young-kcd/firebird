@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.94 2004-06-29 04:37:45 robocop Exp $ 
+  * $Id: evl.cpp,v 1.95 2004-07-07 03:47:11 robocop Exp $ 
  */
 
 /*
@@ -1167,7 +1167,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 		case nod_gen_id:		/* return a 32-bit generator value */
 			impure->vlu_misc.vlu_long =
 				(SLONG) DPM_gen_id(tdbb, (SLONG)(IPTR) node->nod_arg[e_gen_id],
-									0, MOV_get_int64(values[0], 0));
+									false, MOV_get_int64(values[0], 0));
 			impure->vlu_desc.dsc_dtype = dtype_long;
 			impure->vlu_desc.dsc_length = sizeof(SLONG);
 			impure->vlu_desc.dsc_scale = 0;
@@ -1178,7 +1178,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 
 		case nod_gen_id2:
 			impure->vlu_misc.vlu_int64 = DPM_gen_id(tdbb,
-				(IPTR) node->nod_arg[e_gen_id], 0, MOV_get_int64(values[0], 0));
+				(IPTR) node->nod_arg[e_gen_id], false, MOV_get_int64(values[0], 0));
 			impure->vlu_desc.dsc_dtype = dtype_int64;
 			impure->vlu_desc.dsc_length = sizeof(SINT64);
 			impure->vlu_desc.dsc_scale = 0;

@@ -1051,7 +1051,7 @@ void DPM_fetch_fragment( thread_db* tdbb, record_param* rpb, USHORT lock)
 }
 
 
-SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, USHORT initialize, SINT64 val)
+SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
 {
 /**************************************
  *
