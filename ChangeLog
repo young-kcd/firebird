@@ -1,3 +1,9 @@
+2004-10-16 14:52  dimitr
+
+	* firebird2/src/jrd/nbak.cpp (1.44):
+	
+	Extra protection for previous non-FB databases.
+
 2004-10-16 01:07  skidder
 
 	* firebird2/src/: jrd/isc_sync.cpp (1.94),
