@@ -71,7 +71,7 @@ set ERRLEV=0
 if "%ERRLEV%"=="1" goto :END
 @copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\bin\gpre_boot.exe %ROOT_PATH%\gen\ > nul
 ::=======
-@echo Preprocessing the entire source tree...
+@echo Preprocessing the source files needed to build gpre_static...
 @call preprocess.bat BOOT
 ::=======
 @if "%DBG%"=="" (
