@@ -4150,8 +4150,8 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 
 	if (input->nod_arg[e_sel_group] || 
 		input->nod_arg[e_sel_having] ||
-		aggregate_found(request, rse->nod_arg[e_rse_items]) ||
-		aggregate_found(request, rse->nod_arg[e_rse_sort])) {
+		(rse->nod_arg[e_rse_items] && aggregate_found(request, rse->nod_arg[e_rse_items])) ||
+		(rse->nod_arg[e_rse_sort] && aggregate_found(request, rse->nod_arg[e_rse_sort]))) {
 
 		parent_context = FB_NEW(*tdsql->tsql_default) dsql_ctx;
 		parent_context->ctx_context = request->req_context_number++;
