@@ -5900,7 +5900,7 @@ static SSHORT print_item(TEXT ** s,
 			vary->vary_string[vary->vary_length] = 0;
  
 			// If CHARACTER SET OCTETS, print two hex digits per octet
-			if (var->sqlsubtype == BLOB_text)
+			if (var->sqlsubtype == 1)
 			{
 				SLONG hex_len = 2 * vary->vary_length;
 				char *buff2 = static_cast<char*>(ISQL_ALLOC(hex_len + 1));
