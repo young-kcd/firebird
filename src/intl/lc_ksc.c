@@ -156,7 +156,7 @@ STATIC USHORT LCKSC_string_to_key(obj, iInLen, pInChar, iOutLen, pOutChar)
 	 BYTE *pOutChar;
 {
 	USHORT i;
-	int order, idx;
+	int idx;
 	BYTE *inbuff;
 	BYTE *outbuff;
 
