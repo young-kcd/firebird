@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.44 2004-09-26 07:42:53 robocop Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.45 2004-10-23 00:54:26 robocop Exp $
  */
 
 #include "firebird.h"
@@ -231,7 +231,7 @@ gpre_lls* MET_get_primary_key(DBB db, const TEXT* relation_name)
 	if (db == NULL)
 		return NULL;
 
-	if ((db->dbb_handle == 0) && !MET_database(db, FALSE))
+	if ((db->dbb_handle == 0) && !MET_database(db, false))
 		CPR_exit(FINI_ERROR);
 
 	fb_assert(db->dbb_transaction == 0);

@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.46 2004-09-26 07:42:52 robocop Exp $
+ *	$Id: gpre_meta.epp,v 1.47 2004-10-23 00:54:26 robocop Exp $
  */
 
 #include "firebird.h"
@@ -678,7 +678,7 @@ gpre_lls* MET_get_primary_key(dbb* database, const TEXT* relation_name)
 		AND Z.RDB$CONSTRAINT_TYPE EQ "PRIMARY KEY"
 		SORTED BY Y.RDB$FIELD_POSITION
 		
-		STR field_name = (str*) MSC_string(Y.RDB$FIELD_NAME);
+		str* field_name = (str*) MSC_string(Y.RDB$FIELD_NAME);
 		// Strip off any trailing spaces from field name
 		// CVC: This code stops at the first space, even in the middle.
 		TEXT* tmp = (TEXT*) field_name;

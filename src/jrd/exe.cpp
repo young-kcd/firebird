@@ -2562,26 +2562,26 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 		case nod_exec_into: 
 			{
-			ExecuteStatement* impure =
-				(ExecuteStatement*)
-					((SCHAR *) request + node->nod_impure);
-			switch (request->req_operation) {
-			case jrd_req::req_evaluate:
-				impure->Open(tdbb, node->nod_arg[0], node->nod_count - 2, 
-						(!node->nod_arg[1]));
-			case jrd_req::req_return:
-			case jrd_req::req_sync:
-				if (impure->Fetch(tdbb, &node->nod_arg[2])) {
-					request->req_operation = jrd_req::req_evaluate;
-					node = node->nod_arg[1];
-					break;
+				ExecuteStatement* impure =
+					(ExecuteStatement*)
+						((SCHAR *) request + node->nod_impure);
+				switch (request->req_operation) {
+				case jrd_req::req_evaluate:
+					impure->Open(tdbb, node->nod_arg[0], node->nod_count - 2,
+							(!node->nod_arg[1]));
+				case jrd_req::req_return:
+				case jrd_req::req_sync:
+					if (impure->Fetch(tdbb, &node->nod_arg[2])) {
+						request->req_operation = jrd_req::req_evaluate;
+						node = node->nod_arg[1];
+						break;
+					}
+					request->req_operation = jrd_req::req_return;
+				default:
+					// if have active opened request - close it
+					impure->Close(tdbb);
+					node = node->nod_parent;
 				}
-				request->req_operation = jrd_req::req_return;
-			default:
-				// if have active opened request - close it
-				impure->Close(tdbb);
-				node = node->nod_parent;
-			}
 			}
 			break;
 

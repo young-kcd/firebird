@@ -1,7 +1,7 @@
 /*
  *      PROGRAM:        JRD Access Method
  *      MODULE:         dflt.h
- *      DESCRIPTION:    Defalut values for fields in system relations.
+ *      DESCRIPTION:    Default values for fields in system relations.
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
