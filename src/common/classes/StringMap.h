@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: StringMap.h,v 1.1 2004-11-22 20:21:54 skidder Exp $
+ *  $Id: StringMap.h,v 1.2 2004-11-22 22:31:31 skidder Exp $
  *
  */
 
