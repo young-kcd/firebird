@@ -23,7 +23,7 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *
- *  $Id: alloc.cpp,v 1.67 2004-08-28 23:14:45 skidder Exp $
+ *  $Id: alloc.cpp,v 1.68 2004-09-01 09:36:44 skidder Exp $
  *
  */
 
@@ -42,7 +42,7 @@
 #endif
 
 #ifdef USE_VALGRIND
-#include <memcheck.h>
+#include <valgrind/memcheck.h>
 #endif
 
 // Fill blocks with patterns
