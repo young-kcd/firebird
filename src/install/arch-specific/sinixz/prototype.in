@@ -1,4 +1,4 @@
-# $Header: /home/job/firebird/cvs-backup/firebird2/src/install/arch-specific/sinixz/prototype.in,v 1.3 2002-09-20 10:23:15 eku Exp $
+# $Header: /home/job/firebird/cvs-backup/firebird2/src/install/arch-specific/sinixz/prototype.in,v 1.4 2002-09-24 12:58:43 eku Exp $
 #-------------------------------------------------------------------------------
 
 !SRCDIR=@NEW_FIREBIRD_DIR@
@@ -55,12 +55,12 @@ d none @prefix@/help  0755 root root
 f none @prefix@/help/help.gdb=$SRCDIR/help/help.gdb  0444 root root
 
 d none @prefix@/include  0755 root root
-f none @prefix@/include/blr.h=$SRCDIR/include/blr.h  0600 root root
+f none @prefix@/include/blr.h=$SRCDIR/include/blr.h  0644 root root
 f none @prefix@/include/gds.h=$SRCDIR/include/gds.h  0644 root root
-f none @prefix@/include/ib_util.h=$SRCDIR/include/ib_util.h  0600 root root
+f none @prefix@/include/ib_util.h=$SRCDIR/include/ib_util.h  0644 root root
 f none @prefix@/include/ibase.h=$SRCDIR/include/ibase.h  0644 root root
-f none @prefix@/include/iberror.h=$SRCDIR/include/iberror.h  0600 root root
-f none @prefix@/include/perf.h=$SRCDIR/include/perf.h  0600 root root
+f none @prefix@/include/iberror.h=$SRCDIR/include/iberror.h  0644 root root
+f none @prefix@/include/perf.h=$SRCDIR/include/perf.h  0644 root root
 
 d none @prefix@/intl  0755 root root
 f none @prefix@/intl/libfbintl.so=$SRCDIR/intl/libfbintl.so  0755 root root
@@ -69,8 +69,8 @@ d none @prefix@/lib  0755 root root
 f none @prefix@/lib/ib_util.so=$SRCDIR/lib/ib_util.so  0755 root root
 #f none @prefix@/lib/libfbcommon.a=$SRCDIR/lib/libfbcommon.a  0644 root root
 f none @prefix@/lib/libfbembed.so.1.5.0=$SRCDIR/lib/libfbembed.so.1.5.0  0755 root root
-s none @prefix@/lib/libfbembed.so.1=@prefix@/lib/libfbembed.so.1/libfbembed.so.1.5.0
-s none @prefix@/lib/libfbembed.so=@prefix@/lib/libfbembed.so.1/libfbembed.so.1
+s none @prefix@/lib/libfbembed.so.1=@prefix@/lib/libfbembed.so.1.5.0
+s none @prefix@/lib/libfbembed.so=@prefix@/lib/libfbembed.so.1
 #f none @prefix@/lib/libfbstatic.a=$SRCDIR/lib/libfbstatic.a  0644 root root
 
 d none @prefix@/UDF  0755 root root
