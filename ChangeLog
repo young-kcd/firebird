@@ -1,3 +1,92 @@
+2004-11-23 02:12  skidder
+
+	* firebird2/src/jrd/inf.cpp (1.50):
+	
+	Let's use out new database ID for isc_info_db_id
+
+2004-11-22 23:33  skidder
+
+	* firebird2/builds/posix/make.shared.variables (1.44):
+	
+	Fix POSIX build
+
+2004-11-22 23:31  skidder
+
+	* firebird2/src/common/classes/: StringMap.cpp (1.2), StringMap.h
+	(1.2):
+	
+	Fix POSIX build warning
+
+2004-11-22 21:53  skidder
+
+	* firebird2/src/dsql/: dsql.tab.h (1.47), parse.cpp (1.135):
+	
+	Regenerate parse.cpp
+
+2004-11-22 21:49  skidder
+
+	* firebird2/src/: dsql/dsql.cpp (1.133), dsql/gen.cpp (1.77),
+	dsql/keywords.cpp (1.38), dsql/make.cpp (1.80), dsql/node.h (1.53),
+	dsql/parse.y (1.160), dsql/pass1.cpp (1.174), jrd/blp.h (1.16),
+	jrd/blr.h (1.18), jrd/cmp.cpp (1.161), jrd/evl.cpp (1.128),
+	jrd/exe.h (1.63), jrd/nod.h (1.14), jrd/opt.cpp (1.202),
+	jrd/par.cpp (1.109), misc/blrtable.cpp (1.17):
+	
+	Remove CURRENT_DATABASE keyword
+
+2004-11-22 21:21  skidder
+
+	* firebird2/: builds/win32/msvc7/common.vcproj (1.19),
+	builds/win32/msvc7/common_classic.vcproj (1.17),
+	lang_helpers/gds_codes.ftn (1.11), lang_helpers/gds_codes.pas
+	(1.11), src/common/classes/StringMap.cpp (1.1),
+	src/common/classes/StringMap.h (1.1), src/include/gen/codetext.h
+	(1.18), src/include/gen/iberror.h (1.17), src/include/gen/msgs.h
+	(1.23), src/include/gen/rdb_codes.h (1.18),
+	src/include/gen/sql_code.h (1.20), src/jrd/constants.h (1.18),
+	src/jrd/flu_proto.h (1.10), src/jrd/functions.cpp (1.17),
+	src/jrd/functions.h (1.1), src/jrd/ini.epp (1.62), src/jrd/jrd.h
+	(1.123), src/jrd/tra.h (1.42):
+	
+	Context variables support
+
+2004-11-22 20:45  skidder
+
+	* firebird2/src/msgs/: facilities.sql (1.9), messages.sql (1.16),
+	system_errors.sql (1.8):
+	
+	Add messages for context variables and correct bad SQL code used
+	for couple messages added earlier
+
+2004-11-22 15:00  paul_reeves
+
+	*
+	
+	file telepitesi_segedlet.txt was initially added on branch
+	B1_5_Release.
+	firebird2/src/install/arch-specific/win32/hu/telepitesi_segedlet.tx
+	t (1.1):
+
+2004-11-22 15:00  paul_reeves
+
+	* firebird2/src/install/arch-specific/win32/hu/olvass_el.txt (1.1):
+	
+	file olvass_el.txt was initially added on branch B1_5_Release.
+
+2004-11-22 09:00  robocop
+
+	* firebird2/src/isql/: isql.epp (1.110), isql.h (1.39):
+	
+	Allow basic leaks reporting, fix a couple of leaks and delete
+	obsolete comment.
+
+2004-11-22 07:27  robocop
+
+	* firebird2/lang_helpers/: gds_codes.ftn (1.10), gds_codes.pas
+	(1.10):
+	
+	Update misc files.
+
 2004-11-21 17:46  alexpeshkoff
 
 	* firebird2/src/jrd/isc_file.cpp (1.87):
