@@ -31,9 +31,6 @@
 #include "../jrd/flags.h"
 #include "../jrd/gds.h"
 #include "../qli/reqs.h"
-#if (defined JPN_SJIS || defined JPN_EUC)
-#include "../intl/kanji.h"
-#endif
 #include "../qli/all_proto.h"
 #include "../qli/err_proto.h"
 #include "../qli/form_proto.h"
@@ -1454,20 +1451,7 @@ void MET_ready( SYN node, USHORT create_flag)
 /* Only a SQL CREATE DATABASE will have a pagesize parameter,
    so only looking at the first pointer is justified.	*/
 
-#if (defined JPN_SJIS || defined JPN_EUC)
-
-	/* Always generate a dpb  and populate it with the language info. */
-
 	*p++ = gds_dpb_version1;
-	*p++ = gds_dpb_interp;
-	*p++ = 2;
-	*p++ = QLI_interp % 256;
-	*p++ = QLI_interp / 256;
-
-
-#else
-	*p++ = gds_dpb_version1;
-#endif
 
 	if ((lc_ctype = QLI_charset) && (length = strlen(lc_ctype))) {
 		*p++ = gds_dpb_lc_ctype;
@@ -1983,10 +1967,6 @@ static int blob_copy( RLB rlb, QLI_REL source, SLONG * source_blob_id)
 
 	gds__blob_size(&source_blob, (SLONG*) &size, &segment_count, &max_segment);
 
-#if JPN_EUC
-	max_segment *= 2;			/* prepare for SJIS->EUC expansion */
-#endif /* JPN_EUC */
-
 	if (max_segment < sizeof(fixed_buffer)) {
 		buffer_length = sizeof(fixed_buffer);
 		buffer = fixed_buffer;
@@ -2125,14 +2105,7 @@ static int check_global_field( DBB database, QLI_FLD field, TEXT * name)
 				 X.RDB$FIELD_LENGTH !=
 				 ((field->fld_dtype == dtype_varying) ? field->fld_length -
 				  sizeof(SSHORT) : field->fld_length) ||
-#if (! (defined JPN_SJIS || defined JPN_EUC) )
 				 X.RDB$FIELD_SCALE != field->fld_scale))
-#else
-				 /* The scale of char type data columns is set by triggers,
-					so it is possible that the scale specifed by the user may not
-					match the actual scale in the database, so dont complain */
-				 (field->fld_dtype > dtype_varying && X.RDB$FIELD_SCALE != field->fld_scale)))
-#endif
 			{
 				rollback_update(database);
 				ERRQ_print_error(255, name, NULL, NULL, NULL, NULL);	/* Msg255 Datatype conflict with existing global field %s */
@@ -2307,16 +2280,8 @@ static int clone_fields( QLI_REL target, QLI_REL source)
 		}
 
 		if (!Y.RDB$EDIT_STRING.NULL) {
-#if (! (defined JPN_SJIS || defined JPN_EUC) )
 
 			STUFF(gds_dyn_fld_edit_string);
-
-#else
-
-			STUFF(gds_dyn_fld_edit_string2);
-			STUFF_WORD(QLI_interp);
-
-#endif
 			STUFF_STRING(Y.RDB$EDIT_STRING);
 		}
 		if (!Y.RDB$UPDATE_FLAG.NULL) {
@@ -2326,31 +2291,12 @@ static int clone_fields( QLI_REL target, QLI_REL source)
 		}
 
 		if (!Y.RDB$QUERY_HEADER.NULL) {
-#if (! (defined JPN_SJIS || defined JPN_EUC) )
-
 			STUFF(gds_dyn_fld_query_header);
-
-#else
-
-			STUFF(gds_dyn_fld_query_header2);
-			STUFF_WORD(QLI_interp);
-
-#endif
 			blob_copy(rlb, source, (SLONG*) &Y.RDB$QUERY_HEADER);
 		}
 
 		if (!Y.RDB$DESCRIPTION.NULL) {
-#if (! (defined JPN_SJIS || defined JPN_EUC) )
-
 			STUFF(gds_dyn_description);
-
-#else
-
-			STUFF(gds_dyn_description2);
-			STUFF_WORD(QLI_interp);
-
-#endif
-
 			blob_copy(rlb, source, (SLONG*) &Y.RDB$DESCRIPTION);
 		}
 
@@ -2381,16 +2327,7 @@ static int clone_fields( QLI_REL target, QLI_REL source)
 		{
 			STUFF(gds_dyn_fld_computed_blr);
 			blob_copy(rlb, source, (SLONG*) &F.RDB$COMPUTED_BLR);
-#if (! (defined JPN_SJIS || defined JPN_EUC) )
-
 			STUFF(gds_dyn_fld_computed_source);
-
-#else
-			STUFF(gds_dyn_fld_computed_source2);
-			STUFF_WORD(QLI_interp);
-
-#endif
-
 			blob_copy(rlb, source, (SLONG*) &F.RDB$COMPUTED_SOURCE);
 
 			STUFF(gds_dyn_fld_type);
@@ -2562,17 +2499,7 @@ static int clone_global_fields( QLI_REL target, QLI_REL source)
 		}
 
 		if (!Y.RDB$EDIT_STRING.NULL) {
-#if (! (defined JPN_SJIS || defined JPN_EUC) )
-
 			STUFF(gds_dyn_fld_edit_string);
-
-#else
-
-			STUFF(gds_dyn_fld_edit_string2);
-			STUFF_WORD(QLI_interp);
-
-#endif
-
 			STUFF_STRING(Y.RDB$EDIT_STRING);
 		}
 
@@ -2587,31 +2514,12 @@ static int clone_global_fields( QLI_REL target, QLI_REL source)
 		}
 
 		if (!Y.RDB$QUERY_HEADER.NULL) {
-#if (! (defined JPN_SJIS || defined JPN_EUC) )
-
 			STUFF(gds_dyn_fld_query_header);
-
-#else
-
-			STUFF(gds_dyn_fld_query_header2);
-			STUFF_WORD(QLI_interp);
-
-#endif
 			blob_copy(rlb, source, (SLONG*) &Y.RDB$QUERY_HEADER);
 		}
 
 		if (!Y.RDB$DESCRIPTION.NULL) {
-#if (! (defined JPN_SJIS || defined JPN_EUC) )
-
 			STUFF(gds_dyn_description);
-
-#else
-
-			STUFF(gds_dyn_description2);
-			STUFF_WORD(QLI_interp);
-
-#endif
-
 			blob_copy(rlb, source, (SLONG*) &Y.RDB$DESCRIPTION);
 		}
 
@@ -2621,17 +2529,7 @@ static int clone_global_fields( QLI_REL target, QLI_REL source)
 		}
 
 		if (!Y.RDB$VALIDATION_SOURCE.NULL) {
-#if (! (defined JPN_SJIS || defined JPN_EUC) )
-
 			STUFF(gds_dyn_fld_validation_source);
-
-#else
-
-			STUFF(gds_dyn_fld_validation_source2);
-			STUFF_WORD(QLI_interp);
-
-#endif
-
 			blob_copy(rlb, source, (SLONG*) &Y.RDB$VALIDATION_SOURCE);
 		}
 
@@ -3089,34 +2987,12 @@ static TEXT *get_query_header( DBB database, SLONG blob_id[2])
 	STATUS status, status_vector[ISC_STATUS_LENGTH];
 	USHORT length;
 	TEXT header[1024], buffer[1024], *p, *q;
-#if (defined JPN_EUC || defined JPN_SJIS)
-	USHORT bpb_length;
-	UCHAR bpb2[20], *bpb, *p2;
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
-
 	blob = NULL;
 
-#if (defined JPN_EUC || defined JPN_SJIS)
-	p2 = bpb2;
-	*p2++ = gds__bpb_version1;
-	*p2++ = gds__bpb_target_interp;
-	*p2++ = 2;
-	*p2++ = QLI_interp;
-	*p2++ = QLI_interp >> 8;
-	bpb_length = p2 - bpb2;
-	bpb = bpb2;
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
 
-#if (defined JPN_EUC || defined JPN_SJIS)
-	if (gds__open_blob2(status_vector,
-						GDS_REF(database->dbb_handle),
-						GDS_REF(gds_trans),
-						GDS_REF(blob), GDS_VAL(blob_id), bpb_length, bpb))
-#else
 	if (gds__open_blob(status_vector,
 					   GDS_REF(database->dbb_handle),
 					   GDS_REF(gds_trans), GDS_REF(blob), (GDS__QUAD*) GDS_VAL(blob_id)))
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
 		ERRQ_database_error(database, status_vector);
 
 	p = header;
@@ -3434,12 +3310,6 @@ static SYN parse_blr( UCHAR ** ptr, SYM symbol)
 	UCHAR *p, *blr;
 	SSHORT args, dtype, scale, length, l, op;
 
-#if (defined JPN_SJIS || defined JPN_EUC)
-	USHORT length_specified_in_blr;
-	USHORT scale_specified_in_blr;
-#endif
-
-
 	blr = *ptr;
 	args = 2;
 	node = NULL;
@@ -3571,50 +3441,15 @@ static SYN parse_blr( UCHAR ** ptr, SYM symbol)
 		case blr_text:
 			dtype = dtype_text;
 			length = l = gds__vax_integer(blr, 2);
-#if (defined JPN_SJIS || defined JPN_EUC)
-			scale_specified_in_blr = gds__interp_eng_ascii;
-			scale = (UCHAR) (QLI_interp);
-#endif
 			blr += 2;
 			break;
 
 		case blr_text2:
 			dtype = dtype_text;
-#if !(defined JPN_SJIS || defined JPN_EUC)
 			scale = gds__vax_integer(blr, 2);
 			blr += 2;
 			length = l = gds__vax_integer(blr, 2);
 			blr += 2;
-#else
-			scale = (UCHAR) QLI_interp;
-			scale_specified_in_blr = gds__vax_integer(blr, 2);
-			blr += 2;
-			length_specified_in_blr = gds__vax_integer(blr, 2);
-			blr += 2;
-
-			if (QLI_interp == scale_specified_in_blr)
-				length = l = length_specified_in_blr;
-			else if (QLI_interp == gds__interp_jpn_euc &&
-					 scale_specified_in_blr == gds__interp_jpn_sjis) {
-				if (KANJI_euc_len(blr, length_specified_in_blr, &length)) {
-					ERRQ_print_error(258, (TEXT *) op, NULL, NULL, NULL,
-									 NULL);
-					/* Msg258 don't understand BLR operatr %d */
-				}
-			}
-			else if (QLI_interp == gds__interp_jpn_sjis &&
-					 scale_specified_in_blr == gds__interp_jpn_euc) {
-				if (KANJI_sjis_len(blr, length_specified_in_blr, &length)) {
-					ERRQ_print_error(258, (TEXT *) op, NULL, NULL, NULL,
-									 NULL);
-					/* Msg258 don't understand BLR operatr %d */
-				}
-			}
-			else {
-				ERRQ_print_error(258, (TEXT *) op, NULL, NULL, NULL, NULL);
-				/* Msg258 don't understand BLR operatr %d */
-			}
-#endif
 			break;
 
 		case blr_varying:
@@ -3683,46 +3518,8 @@ static SYN parse_blr( UCHAR ** ptr, SYM symbol)
 		constant->con_desc.dsc_length = length;
 		constant->con_desc.dsc_address = p = constant->con_data;
 		if (dtype == dtype_text)
-#if (!( defined JPN_SJIS || defined JPN_EUC) )
 			while (l--)
 				*p++ = BLR_BYTE;
-#else
-		{
-			if ((scale_specified_in_blr == gds__interp_eng_ascii) ||
-				(QLI_interp == scale_specified_in_blr)) {
-				while (l--)
-					*p++ = BLR_BYTE;
-			}
-
-			else if (QLI_interp == gds__interp_jpn_euc &&
-					 scale_specified_in_blr == gds__interp_jpn_sjis) {
-				if (KANJI_sjis2euc
-					(blr, length_specified_in_blr, p, length, &length)) {
-					ERRQ_print_error(258, (TEXT *) op, NULL, NULL, NULL,
-									 NULL);
-					/* Msg258 don't understand BLR operatr %d */
-				}
-				constant->con_desc.dsc_length = length;
-				blr += length_specified_in_blr;
-			}
-
-			else if (QLI_interp == gds__interp_jpn_sjis &&
-					 scale_specified_in_blr == gds__interp_jpn_euc) {
-				if (KANJI_euc2sjis
-					(blr, length_specified_in_blr, p, length, &length)) {
-					ERRQ_print_error(258, (TEXT *) op, NULL, NULL, NULL,
-									 NULL);
-					/* Msg258 don't understand BLR operatr %d */
-				}
-				constant->con_desc.dsc_length = length;
-				blr += length_specified_in_blr;
-			}
-			else {
-				ERRQ_print_error(258, (TEXT *) op, NULL, NULL, NULL, NULL);
-				/* Msg258 don't understand BLR operatr %d */
-			}
-		}
-#endif
 		else if (dtype == dtype_short) {
 			*(SSHORT *) p = gds__vax_integer(blr, l);
 			blr += l;

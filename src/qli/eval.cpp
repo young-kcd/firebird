@@ -28,9 +28,6 @@
 #include "../jrd/common.h"
 #include "../qli/dtr.h"
 #include "../qli/exe.h"
-#if (defined JPN_EUC || defined JPN_SJIS)
-#include "../intl/kanji.h"
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
 #include "../qli/err_proto.h"
 #include "../qli/eval_proto.h"
 #include "../qli/exe_proto.h"
@@ -53,28 +50,12 @@ static DSC *execute_edit(QLI_NOD);
 static DSC *execute_function(QLI_NOD);
 static DSC *execute_prompt(QLI_NOD);
 static DSC *execute_statistical(QLI_NOD);
-#if (defined JPN_EUC || defined JPN_SJIS)
-static int like(USHORT *, SSHORT, USHORT *, SSHORT, USHORT);
-static int like2(UCHAR *, SSHORT, UCHAR *, SSHORT, UCHAR);
-#else
 static int like(UCHAR *, SSHORT, UCHAR *, SSHORT, UCHAR);
-#endif
 static TEXT *make_blob_buffer(FRBRD *, USHORT *);
-#if (defined JPN_EUC || defined JPN_SJIS)
-static int matches(USHORT *, SSHORT, USHORT *, SSHORT);
-static int matches2(UCHAR *, SSHORT, UCHAR *, SSHORT);
-#else
 static int matches(TEXT *, SSHORT, TEXT *, SSHORT);
-#endif
 static int sleuth(QLI_NOD, DSC *, DSC *, DSC *);
-#if (defined JPN_EUC || defined JPN_SJIS)
-static int sleuth_check(USHORT, USHORT *, USHORT *, USHORT *, USHORT *);
-static int sleuth_check2(USHORT, TEXT *, TEXT *, TEXT *, TEXT *);
-static int sleuth_class(USHORT, USHORT *, USHORT *, USHORT);
-#else
 static int sleuth_check(USHORT, UCHAR *, UCHAR *, UCHAR *, UCHAR *);
 static int sleuth_class(USHORT, UCHAR *, UCHAR *, UCHAR);
-#endif
 static int sleuth_merge(UCHAR *, UCHAR *, UCHAR *, UCHAR *, UCHAR *);
 static int string_boolean(QLI_NOD);
 static int string_function(QLI_NOD, SSHORT, TEXT *, SSHORT, TEXT *);
@@ -686,12 +667,7 @@ static DSC *execute_edit( QLI_NOD node)
 		id[0] = id[1] = NULL;
 
 	field_name = (TEXT *) node->nod_arg[e_edt_name];
-#if (defined JPN_EUC || defined JPN_SJIS)
-	BLOB_edit2((GDS_QUAD_t*)id, dbb->dbb_handle, dbb->dbb_transaction, field_name,
-			   node->nod_desc.dsc_sub_type);
-#else
 	BLOB_edit((GDS_QUAD_t*)id, dbb->dbb_handle, dbb->dbb_transaction, field_name);
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
 
 	node->nod_desc.dsc_missing = (id[0] || id[1]) ? 0 : DSC_missing;
 
@@ -836,55 +812,9 @@ static DSC *execute_statistical( QLI_NOD node)
 	return EXEC_receive((QLI_MSG) node->nod_arg[e_stt_receive], node->nod_import);
 }
 
-
-#if (defined JPN_EUC || defined JPN_SJIS)
-static int like2(
-				 UCHAR * p1,
-				 SSHORT l1, UCHAR * p2, SSHORT l2, UCHAR escape_char)
-{
-/**************************************
- *
- *      l i k e 2
- *
- **************************************
- *
- * Functional description
- *      Front-end of like() in Japanese version.
- *      Prepare buffer of short, then "copy" char-based data
- *      into the new short-based buffer. Use the new buffer for
- *      later processing with like().
- *
- **************************************/
-	USHORT *buf1, *buf2;
-	int ret_val;
-
-	buf1 = (USHORT *) gds__alloc((l1 + 1) * sizeof(SSHORT));
-	buf2 = (USHORT *) gds__alloc((l2 + 1) * sizeof(SSHORT));
-
-	l1 = KANJI_byte2short(p1, buf1, l1);
-	l2 = KANJI_byte2short(p2, buf2, l2);
-
-	*(buf1 + l1) = 0;
-	*(buf2 + l2) = 0;
-
-	ret_val = like(buf1, l1, buf2, l2, (USHORT) escape_char);
-
-	gds__free(buf1);
-	gds__free(buf2);
-
-	return ret_val;
-}
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
-
-
 static int like(
-#if (defined JPN_EUC || defined JPN_SJIS)
-				   USHORT * p1,
-				   SSHORT l1, USHORT * p2, SSHORT l2, USHORT escape_char)
-#else
 				   UCHAR * p1,
 				   SSHORT l1, UCHAR * p2, SSHORT l2, UCHAR escape_char)
-#endif							/* (defined JPN_EUC || defined JPN_SJIS) */
 {
 /**************************************
  *
@@ -901,11 +831,7 @@ static int like(
  *      instead of char-based.
  *
  **************************************/
-#if (defined JPN_EUC || defined JPN_SJIS)
-	USHORT c;
-#else
 	UCHAR c;
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
 	int escape;
 
 	escape = FALSE;
@@ -954,10 +880,6 @@ static TEXT *make_blob_buffer( FRBRD * blob, USHORT * length)
 
 	gds__blob_size(&blob, &size, &segment_count, &max_segment);
 
-#ifdef JPN_EUC
-	max_segment = MIN(max_segment * 2, 32768);	/* prepare for SJIS->EUC expansion */
-#endif /* JPN_EUC */
-
 	if (max_segment >= *length) {
 		TEXT *buffer;
 		*length = max_segment;
@@ -972,51 +894,8 @@ static TEXT *make_blob_buffer( FRBRD * blob, USHORT * length)
 	return 0;
 }
 
-
-#if (defined JPN_EUC || defined JPN_SJIS)
-static int matches2( UCHAR * p1, SSHORT l1, UCHAR * p2, SSHORT l2)
-{
-/**************************************
- *
- *      m a t c h e s 2
- *
- **************************************
- *
- * Functional description
- *      Front-end of matches() in Japanese version.
- *      Prepare buffer of short, then "copy" char-based data
- *      into the new short-based buffer. Use the new buffer for
- *      later processing with matches().
- *
- **************************************/
-	USHORT *buf1, *buf2;
-	int ret_val;
-
-	buf1 = (USHORT *) gds__alloc((l1 + 1) * sizeof(SSHORT));
-	buf2 = (USHORT *) gds__alloc((l2 + 1) * sizeof(SSHORT));
-
-	l1 = KANJI_byte2short(p1, buf1, l1);
-	l2 = KANJI_byte2short(p2, buf2, l2);
-
-	*(buf1 + l1) = 0;
-	*(buf2 + l2) = 0;
-
-	ret_val = matches(buf1, l1, buf2, l2);
-
-	gds__free(buf1);
-	gds__free(buf2);
-
-	return ret_val;
-}
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
-
-
 static int matches(
-#if (defined JPN_EUC || defined JPN_SJIS)
-					  USHORT * p1, SSHORT l1, USHORT * p2, SSHORT l2)
-#else
 					  TEXT * p1, SSHORT l1, TEXT * p2, SSHORT l2)
-#endif							/* (defined JPN_EUC || defined JPN_SJIS) */
 {
 /**************************************
  *
@@ -1031,11 +910,7 @@ static int matches(
  *	of characters.
  *
  **************************************/
-#if (defined JPN_EUC || defined JPN_SJIS)
-	USHORT c;
-#else
 	TEXT c;
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
 
 	while (--l2 >= 0) {
 		c = *p2++;
@@ -1095,11 +970,7 @@ static int sleuth( QLI_NOD node, DSC * desc1, DSC * desc2, DSC * desc3)
 
 	if (desc1->dsc_dtype != dtype_blob) {
 		l1 = MOVQ_get_string(desc1, &p1, (VARY*) temp1, TEMP_LENGTH);
-#if (defined JPN_EUC || defined JPN_SJIS)
-		return sleuth_check2(0, (UCHAR*) p1, (UCHAR*) (p1 + l1), (UCHAR*) control, (UCHAR*) (control + l2));
-#else
 		return sleuth_check(0, (UCHAR*) p1, (UCHAR*) (p1 + l1), (UCHAR*) control, (UCHAR*) (control + l2));
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
 	}
 
 /* Source string is a blob, things get interesting */
@@ -1116,11 +987,7 @@ static int sleuth( QLI_NOD node, DSC * desc1, DSC * desc2, DSC * desc3)
 	while (!gds__get_segment(status_vector,
 							 GDS_REF(blob),
 							 (USHORT*) GDS_REF(l1), buffer_length, GDS_VAL(buffer)))
-#if (defined JPN_EUC || defined JPN_SJIS)
-		if (sleuth_check2(0, (UCHAR*) buffer, (UCHAR*) (buffer + l1), (UCHAR*) control, (UCHAR*) (control + l2)))
-#else
 		if (sleuth_check(0, (UCHAR*) buffer, (UCHAR*) (buffer + l1), (UCHAR*) control, (UCHAR*) (control + l2)))
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
 		{
 			result = TRUE;
 			break;
@@ -1139,63 +1006,11 @@ static int sleuth( QLI_NOD node, DSC * desc1, DSC * desc2, DSC * desc3)
 	return result;
 }
 
-
-#if (defined JPN_EUC || defined JPN_SJIS)
-static int sleuth_check2(
-						 USHORT flags,
-						 TEXT * search,
-						 TEXT * end_search, TEXT * match, TEXT * end_match)
-{
-/**************************************
- *
- *      s l e u t h _ c h e c k 2
- *
- **************************************
- *
- * Functional description
- *      Front-end of sleuth_check() in Japanese version.
- *      Prepare buffer of short, then "copy" char-based data
- *      into the new short-based buffer. Use the new buffer for
- *      later processing with sleuth_check().
- *
- **************************************/
-	USHORT l1, l2, *buf1, *buf2;
-	int ret_val;
-
-	l1 = end_search - search;
-	l2 = end_match - match;
-
-	buf1 = (USHORT *) gds__alloc((l1 + 1) * sizeof(SSHORT));
-	buf2 = (USHORT *) gds__alloc((l2 + 1) * sizeof(SSHORT));
-
-	l1 = KANJI_byte2short(search, buf1, l1);
-	l2 = KANJI_byte2short(match, buf2, l2);
-
-	*(buf1 + l1) = 0;
-	*(buf2 + l2) = 0;
-
-	ret_val = sleuth_check(flags, buf1, buf1 + l1, buf2, buf2 + l2);
-
-	gds__free(buf1);
-	gds__free(buf2);
-
-	return ret_val;
-}
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
-
-
 static int sleuth_check(
-#if (defined JPN_EUC || defined JPN_SJIS)
-						   USHORT flags,
-						   USHORT * search,
-						   USHORT * end_search,
-						   USHORT * match, USHORT * end_match)
-#else
 						   USHORT flags,
 						   UCHAR * search,
 						   UCHAR * end_search,
 						   UCHAR * match, UCHAR * end_match)
-#endif							/* (defined JPN_EUC || defined JPN_SJIS) */
 {
 /**************************************
  *
@@ -1207,19 +1022,11 @@ static int sleuth_check(
  *	Evaluate the "sleuth" search operator.
  *
  **************************************/
-#if (defined JPN_EUC || defined JPN_SJIS)
-	USHORT c, d, *class_, *end_class;
-#else
 	UCHAR c, d, *class_, *end_class;
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
 
 	while (match < end_match) {
 		c = *match++;
-#if (defined JPN_EUC || defined JPN_SJIS)
-		if ((c == '@' && (c = *match++)) || KANJISHORT(c) || !special[c])
-#else
 		if ((c == '@' && (c = *match++)) || !special[c])
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
 		{
 			c = COND_UPPER(c);
 			if (match >= end_match || *match != '*') {
@@ -1305,11 +1112,7 @@ static int sleuth_check(
 
 
 static int sleuth_class( USHORT flags,
-#if (defined JPN_EUC || defined JPN_SJIS)
-						USHORT * class_, USHORT * end_class, USHORT character)
-#else
 						UCHAR * class_, UCHAR * end_class, UCHAR character)
-#endif							/* (defined JPN_EUC || defined JPN_SJIS) */
 {
 /**************************************
  *
@@ -1321,11 +1124,7 @@ static int sleuth_class( USHORT flags,
  *	See if a character is a member of a class.
  *
  **************************************/
-#if (defined JPN_EUC || defined JPN_SJIS)
-	USHORT c;
-#else
 	UCHAR c;
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
 	USHORT result;
 
 	result = TRUE;
@@ -1422,25 +1221,6 @@ static int sleuth_merge(
 /* Interpret matching string, substituting where appropriate */
 
 	while (c = *match++) {
-#if (defined JPN_EUC || defined JPN_SJIS)
-		if (KANJI1(c)) {
-
-			/* it is a kanji, copy the 2 bytes */
-
-			*comb++ = c;
-			*comb++ = *match++;;
-			continue;
-		}
-#ifdef JPN_SJIS
-		else if (SJIS_SINGLE(c)) {
-
-			/* it is an SJIS half-width kana, copy the 1 byte */
-
-			*comb++ = c;
-			continue;
-		}
-#endif /* JPN_SJIS */
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
 
 		/* if we've got a defined character, slurp the definition */
 		if (c <= max_op && (p = vector[c])) {
@@ -1564,11 +1344,6 @@ static int string_function(
  **************************************/
 	TEXT *q1, *q2, c1, c2, temp[16];
 	SSHORT l;
-#if (defined JPN_EUC || defined JPN_SJIS)
-	TEXT *p1_orig = p1;
-	TEXT *p2_orig = p2;
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
-
 
 /* Handle "STARTS WITH" */
 
@@ -1584,21 +1359,6 @@ static int string_function(
 /* Handle CONTAINS */
 
 	if (node->nod_type == nod_containing) {
-#if (defined JPN_EUC || defined JPN_SJIS)
-		USHORT c1, c2, *p1, *p2, *q1, *q2, *buf1, *buf2;
-
-		buf1 = (USHORT *) gds__alloc((l1 + 1) * sizeof(SSHORT));
-		buf2 = (USHORT *) gds__alloc((l2 + 1) * sizeof(SSHORT));
-
-		l1 = KANJI_byte2short(p1_orig, buf1, l1);
-		l2 = KANJI_byte2short(p2_orig, buf2, l2);
-
-		*(buf1 + l1) = 0;
-		*(buf2 + l2) = 0;
-
-		p1 = buf1;
-		p2 = buf2;
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
 		while (l1 >= l2) {
 			--l1;
 			q1 = p1++;
@@ -1606,23 +1366,11 @@ static int string_function(
 			l = l2;
 			do {
 				if (--l < 0)
-#if (defined JPN_EUC || defined JPN_SJIS)
-				{
-					gds__free(buf1);
-					gds__free(buf2);
 					return TRUE;
-				}
-#else
-					return TRUE;
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
 				c1 = *q1++;
 				c2 = *q2++;
 			} while (UPPER(c1) == UPPER(c2));
 		}
-#if (defined JPN_EUC || defined JPN_SJIS)
-		gds__free(buf1);
-		gds__free(buf2);
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
 		return FALSE;
 	}
 
@@ -1633,11 +1381,7 @@ static int string_function(
 		if (node->nod_count > 2 &&
 			MOVQ_get_string(EVAL_value(node->nod_arg[2]), &q1, (VARY*) temp,
 							sizeof(temp))) c1 = *q1;
-#if (defined JPN_EUC || defined JPN_SJIS)
-		if (like2((UCHAR*) p1, l1, (UCHAR*) p2, l2, c1))
-#else
 		if (like((UCHAR*) p1, l1, (UCHAR*) p2, l2, c1))
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
 			return TRUE;
 		return FALSE;
 	}
@@ -1645,11 +1389,7 @@ static int string_function(
 /* Handle MATCHES */
 
 	if (node->nod_type == nod_matches)
-#if (defined JPN_EUC || defined JPN_SJIS)
-		if (matches2(p1, l1, p2, l2))
-#else
 		if (matches(p1, l1, p2, l2))
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
 			return TRUE;
 
 	return FALSE;

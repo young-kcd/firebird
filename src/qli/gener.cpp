@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gener.cpp,v 1.12 2003-02-05 02:40:14 brodsom Exp $
+$Id: gener.cpp,v 1.13 2003-02-08 00:58:10 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -654,27 +654,6 @@ static void gen_descriptor( DSC * desc, QLI_REQ request)
 	rlb = CHECK_RLB(request->req_blr);
 
 	switch (desc->dsc_dtype) {
-#if (defined JPN_SJIS || defined JPN_EUC)
-
-	case dtype_text:
-		STUFF(blr_text2);
-		STUFF_WORD(QLI_interp);
-		STUFF_WORD(desc->dsc_length);
-		break;
-
-	case dtype_varying:
-		STUFF(blr_varying2);
-		STUFF_WORD(QLI_interp);
-		STUFF_WORD(desc->dsc_length - sizeof(SSHORT));
-		break;
-
-	case dtype_cstring:
-		STUFF(blr_cstring2);
-		STUFF_WORD(QLI_interp);
-		STUFF_WORD(desc->dsc_length);
-		break;
-
-#else
 
 	case dtype_text:
 		STUFF(blr_text);
@@ -690,8 +669,6 @@ static void gen_descriptor( DSC * desc, QLI_REQ request)
 		STUFF(blr_cstring);
 		STUFF_WORD(desc->dsc_length);
 		break;
-
-#endif
 
 	case dtype_short:
 		STUFF(blr_short);

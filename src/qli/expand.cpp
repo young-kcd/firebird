@@ -29,9 +29,6 @@
 #include "../qli/exe.h"
 #include "../qli/report.h"
 #include "../qli/form.h"
-#ifdef JPN_SJIS
-#include "../intl/kanji.h"
-#endif
 #include "../qli/all_proto.h"
 #include "../qli/comma_proto.h"
 #include "../qli/compi_proto.h"
@@ -520,17 +517,6 @@ static NAM decompile_symbol( SYM symbol)
 		do {
 			c = *q++;
 			*p++ = UPPER(c);
-
-#ifdef JPN_SJIS
-
-			/* Do not upcase second byte of a sjis kanji character */
-
-			if ((KANJI1(c)) && (l > 1)) {
-				*p++ = *q++;
-				--l;
-			}
-
-#endif
 
 		} while (--l);
 
@@ -3215,41 +3201,16 @@ static QLI_NOD possible_literal( SYN input, LLS stack, USHORT upper_flag)
 
 	if (upper_flag) {
 		if (l)
-#ifdef JPN_SJIS
-			do {
-				c = *q++;
-				*p++ = UPPER(c);
-
-				/* Do not upcase second byte of a sjis kanji character */
-
-				if ((KANJI1(c)) && (l > 1)) {
-					*p++ = *q++;
-					--l;
-				}
-			} while (--l);
-
-#else
 			do {
 				c = *q++;
 				*p++ = UPPER(c);
 			} while (--l);
-#endif
-
 	}
 	else if (l)
 		do {
 			c = *q++;
 			*p++ = (c >= 'A' && c <= 'Z') ? c - 'A' + 'a' : c;
 
-#ifdef JPN_SJIS
-
-			/* Do not upcase second byte of a sjis kanji character */
-
-			if ((KANJI1(c)) && (l > 1)) {
-				*p++ = *q++;
-				--l;
-			}
-#endif
 		} while (--l);
 
 	node = MAKE_NODE(nod_constant, 0);

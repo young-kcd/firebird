@@ -106,11 +106,6 @@ static void view_info(DBB, TEXT *, TEXT *, SSHORT, SSHORT);
 static CONST SCHAR db_items[] =
 	{ gds_info_page_size, isc_info_db_size_in_pages, gds_info_end };
 static CONST UCHAR
-#if (defined JPN_EUC || defined JPN_SJIS)
-  text_bpb[] = { gds_bpb_version1, gds_bpb_target_interp, 2,
-	(HOST_INTERP & 0xff), (HOST_INTERP >> 8)
-},
-#endif							/* (defined JPN_EUC || defined JPN_SJIS) */
   acl_bpb[] = {
 gds_bpb_version1, gds_bpb_source_type, 1, 3,
 
@@ -540,11 +535,7 @@ static void display_text( DBB dbb, SLONG blob_id[2], TEXT * prefix, int strip)
  *
  **************************************/
 
-#if (defined JPN_EUC || defined JPN_SJIS)
-	display_blob(dbb, blob_id, prefix, sizeof(text_bpb), text_bpb, strip);
-#else
 	display_blob(dbb, blob_id, prefix, 0, (UCHAR*) NULL_PTR, strip);
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
 }
 
 

@@ -31,9 +31,6 @@
 #include "../qli/parse.h"
 #include "../qli/compile.h"
 #include "../qli/report.h"
-#if (defined JPN_SJIS || defined JPN_EUC)
-#include "../intl/kanji.h"
-#endif
 #include "../qli/all_proto.h"
 #include "../qli/err_proto.h"
 #include "../qli/hsh_proto.h"
@@ -543,15 +540,6 @@ static NAM make_name(void)
 		do {
 			c = *q++;
 			*p++ = UPPER(c);
-#ifdef JPN_SJIS
-
-			/* Do not upcase second byte of a sjis kanji character */
-
-			if (KANJI1(c) && l > 1) {
-				*p++ = *q++;
-				l--;
-			}
-#endif
 		} while (--l);
 
 	return name;
@@ -2718,16 +2706,6 @@ static NAM parse_name(void)
 		do {
 			c = *q++;
 			*p++ = UPPER(c);
-#ifdef JPN_SJIS
-
-			/* Do not upcase second byte of a sjis kanji character */
-
-			if ((KANJI1(c)) && (l > 1)) {
-				*p++ = *q++;
-				--l;
-			}
-
-#endif /* JPN_SJIS */
 
 		} while (--l);
 
@@ -4041,13 +4019,6 @@ static SYN parse_set(void)
 			PAR_token();
 			value = (U_IPTR) parse_literal();
 			break;
-
-#if (defined JPN_EUC || defined JPN_SJIS)
-		case KW_EUC_JUSTIFY:
-			sw = set_euc_justify;
-			PAR_token();
-			break;
-#endif
 
 		case KW_USER:
 			sw = set_user;
@@ -5494,16 +5465,6 @@ static SYM parse_symbol(void)
 		do {
 			c = *q++;
 			*p++ = UPPER(c);
-#ifdef JPN_SJIS
-
-			/* Do not upcase second byte of a sjis kanji character */
-
-			if (KANJI1(c) && l > 1) {
-				*p++ = *q++;
-				l--;
-			}
-
-#endif
 		} while (--l);
 
 	PAR_token();

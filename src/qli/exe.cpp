@@ -263,15 +263,6 @@ FRBRD *EXEC_open_blob( QLI_NOD node)
 	*p++ = 1;
 	*p++ = 1;
 
-#if (defined JPN_EUC || defined JPN_SJIS)
-	if (desc->dsc_sub_type == 1) {
-		*p++ = gds_bpb_target_interp;
-		*p++ = 2;
-		*p++ = QLI_interp;
-		*p++ = QLI_interp >> 8;
-	}
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
-
 	bpb_length = p - bpb;
 
 	if (gds__open_blob2(status_vector,
@@ -300,8 +291,11 @@ struct file *EXEC_open_output(QLI_NOD node)
  **************************************/
 	IB_FILE *file;
 	DSC *desc;
-	TEXT filename[256], temp[64], *p, *q, *argv[20], **arg;
+	TEXT filename[256], temp[64], *p, *q;
+#ifndef WIN_NT
+	TEXT *argv[20], **arg;
 	int pair[2];
+#endif
 	SSHORT l;
 
 /* Evaluate filename and copy to a null terminated string */
@@ -330,7 +324,7 @@ struct file *EXEC_open_output(QLI_NOD node)
 	IBERROR(35);				/* Msg35 output pipe is not supported on VMS */
 #else
 
-#if (defined WIN_NT)
+#ifdef WIN_NT
 	if (file = _popen(filename, "w"))
 		return (struct file *) file;
 #else
@@ -540,14 +534,6 @@ static DSC *assignment(	QLI_NOD		from_node,
 
 	try {
 
-#if (defined JPN_EUC || defined JPN_SJIS)
-	if (from_node->nod_type == nod_edit_blob) {
-		from_node->nod_desc.dsc_scale = to_desc->dsc_scale;
-		from_node->nod_desc.dsc_sub_type = to_desc->dsc_sub_type;
-	}
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
-
-
 	memcpy(QLI_env, old_env, sizeof(QLI_env));
 	from_desc = EVAL_value(from_node);
 
@@ -684,10 +670,6 @@ static int copy_blob( QLI_NOD value, PAR parameter)
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	USHORT bpb_length, length, buffer_length;
 	UCHAR bpb[20], *p, fixed_buffer[4096], *buffer;
-#if (defined JPN_EUC || defined JPN_SJIS)
-	USHORT bpb2_length;
-	UCHAR bpb2x[20], *p2, *bpb2;
-#endif
 
 	if (value->nod_type == nod_form_field)
 		return FORM_get_blob(value, parameter);
@@ -738,34 +720,10 @@ static int copy_blob( QLI_NOD value, PAR parameter)
 	*p++ = to_desc->dsc_sub_type >> 8;
 	bpb_length = p - bpb;
 
-#if (defined JPN_EUC || defined JPN_SJIS)
-	if ((to_desc->dsc_sub_type == 1) &&
-		(to_desc->dsc_scale != from_desc->dsc_scale)) {
-		p2 = bpb2x;
-		*p2++ = gds_bpb_version1;
-		*p2++ = gds_bpb_source_interp;
-		*p2++ = 2;
-		*p2++ = from_desc->dsc_scale;
-		*p2++ = from_desc->dsc_scale >> 8;
-		bpb2_length = p2 - bpb2x;
-		bpb2 = bpb2x;
-	}
-	else {
-		bpb2_length = 0;
-		bpb2 = NULL;
-	}
-
-	if (gds__create_blob2(status_vector,
-						  GDS_REF(to_dbb->dbb_handle),
-						  GDS_REF(to_dbb->dbb_transaction),
-						  GDS_REF(to_blob),
-						  GDS_VAL(to_desc->dsc_address), bpb2_length, bpb2))
-#else
 	if (gds__create_blob(status_vector,
 						 GDS_REF(to_dbb->dbb_handle),
 						 GDS_REF(to_dbb->dbb_transaction),
 						 GDS_REF(to_blob), (GDS__QUAD*) GDS_VAL(to_desc->dsc_address)))
-#endif
 		ERRQ_database_error(to_dbb, status_vector);
 
 	if (gds__open_blob2(status_vector,

@@ -30,9 +30,6 @@
 #include "../qli/dtr.h"
 #include "../qli/parse.h"
 #include "../qli/compile.h"
-#if (defined JPN_EUC || defined JPN_SJIS)
-#include "../intl/kanji.h"
-#endif
 #include "../qli/err_proto.h"
 #include "../qli/lex_proto.h"
 #include "../qli/meta_proto.h"
@@ -162,14 +159,6 @@ void PRO_copy_procedure(
 
 	p = bpb;
 
-#if (defined JPN_EUC || defined JPN_SJIS)
-	*p++ = gds__bpb_version1;
-	*p++ = gds__bpb_source_interp;
-	*p++ = 2;
-	*p++ = QLI_interp;
-	*p++ = QLI_interp >> 8;
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
-
 	bpb_length = p - bpb;
 
 	STORE(REQUEST_HANDLE store_request TRANSACTION_HANDLE new_database->dbb_proc_trans)
@@ -231,16 +220,6 @@ void PRO_create( DBB database, TEXT * name)
 	stop = start;
 
 	p = bpb;
-
-#if (defined JPN_EUC || defined JPN_SJIS)
-/* create blob parameter block since procedure is a text blob */
-
-	*p++ = gds__bpb_version1;
-	*p++ = gds__bpb_source_interp;
-	*p++ = 2;
-	*p++ = QLI_interp;
-	*p++ = QLI_interp >> 8;
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
 
 	bpb_length = p - bpb;
 
@@ -333,13 +312,8 @@ void PRO_edit_procedure( DBB database, TEXT * name)
 	FOR(REQUEST_HANDLE database->dbb_edit_blob) X IN DB.QLI$PROCEDURES WITH
 		X.QLI$PROCEDURE_NAME EQ name
 		MODIFY X USING
-#if (defined JPN_EUC  || defined JPN_SJIS)
-			if (!BLOB_edit2(&X.QLI$PROCEDURE, database->dbb_handle,
-							gds_trans, name, 1))
-#else
 			if (!BLOB_edit(&X.QLI$PROCEDURE, database->dbb_handle,
 						   gds_trans, name))
-#endif /* (defined JPN_EUC  || defined JPN_SJIS) */
 				return;
 		END_MODIFY
 		PRO_commit(database);
@@ -348,13 +322,8 @@ void PRO_edit_procedure( DBB database, TEXT * name)
 
 	STORE(REQUEST_HANDLE database->dbb_edit_store) X IN DB.QLI$PROCEDURES
 		X.QLI$PROCEDURE = gds_blob_null;
-#if (defined JPN_EUC  || defined JPN_SJIS)
-		if (!BLOB_edit2(&X.QLI$PROCEDURE, database->dbb_handle,
-						gds_trans, name, 1))
-#else
 		if (!BLOB_edit(&X.QLI$PROCEDURE, database->dbb_handle,
 					   gds_trans, name))
-#endif /* (defined JPN_EUC  || defined JPN_SJIS) */
 			return;
 		gds__vtof(name, X.QLI$PROCEDURE_NAME, sizeof(X.QLI$PROCEDURE_NAME));
 	END_STORE
@@ -486,16 +455,6 @@ FRBRD *PRO_open_blob( DBB database, SLONG * blob_id)
 
 	blob = NULL;
 	p = bpb;
-
-#if (defined JPN_EUC || defined JPN_SJIS)
-/* create blob parameter block since procedure is a text blob */
-
-	*p++ = gds__bpb_version1;
-	*p++ = gds__bpb_target_interp;
-	*p++ = 2;
-	*p++ = QLI_interp;
-	*p++ = QLI_interp >> 8;
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
 
 	bpb_length = p - bpb;
 
@@ -939,17 +898,5 @@ static int upcase_name( TEXT * name, TEXT * buffer)
 		if (++l > 31)
 			IBERROR(79);		/* Msg 79 procedure name over 31 characters */
 
-#ifdef JPN_SJIS
-		/* Do not upcase second byte of a sjis kanji character */
-
-		if (KANJI1(c)) {
-			c = *name++;
-			*buffer++ = c;
-			if (!c)
-				return l;
-			if (++l > 31)
-				IBERROR(79);
-		}
-#endif
 	}
 }

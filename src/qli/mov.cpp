@@ -31,9 +31,6 @@
 #endif
 #include "../jrd/jrd_time.h"
 #include "../jrd/intl.h"
-#if (defined JPN_SJIS || defined JPN_EUC)
-#include "../intl/kanji.h"
-#endif
 #ifndef PYXIS
 #include "../qli/err_proto.h"
 #endif
@@ -314,26 +311,8 @@ int MOVQ_compare( DSC * arg1, DSC * arg2)
 			SSHORT scale;
 			SLONG temp1, temp2;
 
-#if (defined JPN_SJIS || defined JPN_EUC)
-
-			/* For character data, scale contains interpretation of the string */
-
-			SSHORT scale1, scale2;
-
-			scale1 = arg1->dsc_scale;
-			scale2 = arg2->dsc_scale;
-			if (arg1->dsc_dtype <= dtype_varying)
-				scale1 = 0;
-			if (arg2->dsc_dtype <= dtype_varying)
-				scale2 = 0;
-			scale = MIN(scale1, scale2);
-
-#else
-
 			scale = MIN(arg1->dsc_scale, arg2->dsc_scale);
 
-
-#endif
 			temp1 = MOVQ_get_long(arg1, scale);
 			temp2 = MOVQ_get_long(arg2, scale);
 			if (temp1 == temp2)
@@ -697,18 +676,8 @@ SLONG MOVQ_get_long(DSC * desc, SSHORT scale)
 	SSHORT fraction, length;
 	TEXT *p;
 
-#if (!(defined JPN_SJIS || defined JPN_EUC))
-
 	scale -= (SSHORT) desc->dsc_scale;
 
-#else
-
-/* For character data, scale field is used for interpretation of the string */
-
-	if (desc->dsc_dtype > dtype_varying)
-		scale -= desc->dsc_scale;
-
-#endif
 	p = (TEXT *) desc->dsc_address;
 	switch (desc->dsc_dtype) {
 	case dtype_short:
@@ -968,13 +937,6 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 			switch (to->dsc_dtype) {
 			case dtype_text:
 				length = MIN(length, to->dsc_length);
-#if (defined JPN_SJIS || defined JPN_EUC)
-
-				/* Check truncation of a double byte character */
-
-				if (KANJI_check(q, length))
-					length -= 1;
-#endif
 				fill = to->dsc_length - length;
 				if (length)
 					do
@@ -988,13 +950,6 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 
 			case dtype_cstring:
 				length = MIN(length, to->dsc_length - 1);
-#if (defined JPN_SJIS || defined JPN_EUC)
-
-				/* Check truncation of a double byte character */
-
-				if (KANJI_check(q, length))
-					length -= 1;
-#endif
 				if (length)
 					do
 						*p++ = *q++;
@@ -1004,13 +959,6 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 
 			case dtype_varying:
 				length = MIN(length, to->dsc_length - sizeof(SSHORT));
-#if (defined JPN_SJIS || defined JPN_EUC)
-
-				/* Check truncation of a double byte character */
-
-				if (KANJI_check(q, length))
-					length -= 1;
-#endif
 				((VARY *) p)->vary_length = length;
 				p = (UCHAR *) ((VARY *) p)->vary_string;
 				if (length)
@@ -1108,13 +1056,6 @@ void MOVQ_terminate(
  *	buffer room.
  *
  **************************************/
-
-#if (defined JPN_SJIS || defined JPN_EUC)
-
-/* No need to fix this routine.
-   It is used safely everywhere.  */
-
-#endif
 
 	if (length) {
 		length = MIN(length, max_length - 1);
@@ -1245,18 +1186,9 @@ static void timestamp_to_text( SLONG date[2], DSC * to)
 	struct tm times;
 
 	isc_decode_date((GDS_QUAD*)date, &times);
-#if ((defined JPN_SJIS || defined JPN_EUC) && defined JPN_DATE)
-
-/* By default the Japanese date format is yyyy.mm.dd */
-
-	sprintf(temp, "%04d.%02d.%02d", times.tm_year + 1900, times.tm_mon + 1,
-			times.tm_mday);
-
-#else
 
 	sprintf(temp, "%2d-%.3s-%04d", times.tm_mday,
 			months[times.tm_mon], times.tm_year + 1900);
-#endif
 
 	if (times.tm_hour || times.tm_min || times.tm_sec || date[1]) {
 		sprintf(time, " %2d:%.2d:%.2d.%.4d", times.tm_hour, times.tm_min,
@@ -1478,21 +1410,6 @@ static void string_to_date( TEXT * string, USHORT length, SLONG date[2])
 
 	p = string;
 
-#if ((defined JPN_SJIS || defined JPN_EUC) && defined JPN_DATE)
-
-/* Make sure there are no Japanese characters */
-
-	n = length;
-	end = p;
-
-	while (n--)
-		if (*end++ & KANJI_MASK) {
-			date_error(string, length);
-			return;
-		}
-
-#endif
-
 	end = p + length;
 	year = month_position = 0;
 
@@ -1523,11 +1440,7 @@ static void string_to_date( TEXT * string, USHORT length, SLONG date[2])
 				n = n * 10 + *p++ - '0';
 				precision++;
 			}
-#if ((defined JPN_SJIS || defined JPN_EUC) && defined JPN_DATE)
-			if (i == 0)
-#else
 			if (i == 2)
-#endif
 				year = TRUE;
 		}
 		else if (LETTER(c)) {
@@ -1579,14 +1492,6 @@ static void string_to_date( TEXT * string, USHORT length, SLONG date[2])
 		components[i] = n;
 		while (p < end && *p == ' ')
 			p++;
-#if ((defined JPN_SJIS || defined JPN_EUC) && defined JPN_DATE)
-
-		if (*p == '/' || *p == '-' || *p == ',' || *p == ':' || *p == '.') {
-			p++;
-			continue;
-		}
-
-#else
 
 		if (*p == '/' || *p == '-' || *p == ',' || *p == ':') {
 			p++;
@@ -1598,18 +1503,9 @@ static void string_to_date( TEXT * string, USHORT length, SLONG date[2])
 			p++;
 			continue;
 		}
-
-#endif
 	}
 
 /* Slide things into day, month, year form */
-
-#if ((defined JPN_SJIS || defined JPN_EUC) && defined JPN_DATE)
-
-	times.tm_mon = components[1];
-	times.tm_mday = components[2];
-
-#else
 
 	if (month_position) {
 		times.tm_mon = components[1];
@@ -1620,17 +1516,9 @@ static void string_to_date( TEXT * string, USHORT length, SLONG date[2])
 		times.tm_mday = components[1];
 	}
 
-#endif
-
 /* Handle defaulting of year */
 
-#if ((defined JPN_SJIS || defined JPN_EUC) && defined JPN_DATE)
-
-	if (((times.tm_year = components[0]) == 0) && !year)
-#else
-
 	if (((times.tm_year = components[2]) == 0) && !year)
-#endif
 		times.tm_year = today->tm_year + 1900;
 	else if (times.tm_year < 100) {
 		if (times.tm_year < (today->tm_year - 50) % 100)

@@ -32,9 +32,6 @@
 #include "../qli/dtr.h"
 #include "../qli/parse.h"
 #include "../jrd/gds.h"
-#if (defined JPN_SJIS || defined JPN_EUC)
-#include "../intl/kanji.h"
-#endif
 #include "../qli/all_proto.h"
 #include "../qli/err_proto.h"
 #include "../qli/hsh_proto.h"
@@ -171,7 +168,10 @@ void LEX_edit( SLONG start, SLONG stop)
  *
  **************************************/
 	IB_FILE *scratch;
-	TEXT filename[128], *p;
+	TEXT filename[128];
+#ifdef __BORLANDC__
+	TEXT *p;
+#endif
 	SSHORT c;
 
 #ifndef __BORLANDC__
@@ -575,7 +575,10 @@ void LEX_init(void)
  *	scratch trace file to keep all input.
  *
  **************************************/
+
+#ifdef __BORLANDC__
 	TEXT *p;
+#endif
 
 #ifndef __BORLANDC__
 	trace_file = (IB_FILE*) gds__temp_file(TRUE, SCRATCH, (TEXT*) trace_file_name);
@@ -896,51 +899,11 @@ TOK LEX_token(void)
 
 /* On end of file, generate furious but phone end of line tokens */
 
-#if (defined JPN_SJIS || defined JPN_EUC)
-	class_ = (JPN1_CHAR(c) ? CHR_LETTER : classes[c]);
-#else
 	class_ = classes[c];
-#endif
 
 	if (class_ & CHR_letter) {
-#if (defined JPN_EUC || defined JPN_SJIS)
-
-		p--;
-		while (1) {
-			if (KANJI1(c)) {
-
-				/* If it is a double byte kanji either EUC or SJIS
-				   then handle both the bytes together */
-
-				*p++ = c;
-				c = nextchar(TRUE);
-				if (!KANJI2(c)) {
-					c = *(--p);
-					break;
-				}
-				else
-					*p++ = c;
-			}
-
-			else {
-#ifdef JPN_SJIS
-				if ((SJIS_SINGLE(c)) || (classes[c] & CHR_ident))
-#else
-				if (classes[c] & CHR_ident)
-#endif
-					*p++ = c;
-				else
-					break;
-			}
-			c = nextchar(TRUE);
-		}
-
-#else
-
 		while (classes[c = nextchar(TRUE)] & CHR_ident)
 			*p++ = c;
-
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
 		retchar(c);
 		token->tok_type = tok_ident;
 	}
@@ -1089,14 +1052,7 @@ static int nextchar( BOOLEAN eof_ok)
 
 	while (QLI_line) {
 		if (c = *QLI_line->line_ptr++)
-#if (defined JPN_SJIS || defined JPN_EUC)
-		{
-			c = c & 0xff;		/* negative values are bugs */
 			return c;
-		}
-#else
-			return c;
-#endif
 		next_line(eof_ok);
 	}
 

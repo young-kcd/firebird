@@ -36,9 +36,6 @@
 #include "../pyxis/all.h"
 #endif
 #include "../jrd/jrd_time.h"
-#if (defined JPN_SJIS || defined JPN_EUC)
-#include "../intl/kanji.h"
-#endif
 #include "../jrd/gds_proto.h"
 
 #define PRECISION	10000
@@ -118,25 +115,6 @@ PIC PIC_analyze( TEXT * string, DSC * desc)
 /* Make a first pass just counting characters */
 
 	while ((c = generate(picture)) && c != '?') {
-#ifdef JPN_SJIS
-
-		/* Be sure to lex double byte sjis characters correctly */
-
-		if SJIS1
-			(c) {
-			++picture->pic_literals;
-			picture->pic_flags |= PIC_literal;
-			if (generate(picture)) {
-				++picture->pic_literals;
-				picture->pic_flags &= ~PIC_literal;
-				continue;
-			}
-			else {
-				picture->pic_flags &= ~PIC_literal;
-				break;
-			}
-			}
-#endif
 
 		c = UPPER(c);
 		switch (c) {
@@ -498,21 +476,10 @@ TEXT *PICSTR_default_edit_string(
 			sprintf(buff, "-(%d)9", 11 + scale);
 		break;
 
-#if ( (defined JPN_SJIS || defined JPN_EUC) && defined JPN_DATE)
-
-		/* For Japanese the default date format is "YYYY.NN.DD" */
-
-	case dtype_sql_date:
-	case dtype_timestamp:
-		return "YYYY.NN.DD";
-
-#else
-
 	case dtype_sql_date:
 	case dtype_timestamp:
 		return "DD-MMM-YYYY";
 
-#endif
 	case dtype_sql_time:
 		return "TT:TT:TT.TTTT";
 
@@ -567,59 +534,9 @@ static void edit_alpha(
 		if (!c || c == '?')
 			break;
 
-#if (defined JPN_SJIS || defined JPN_EUC)
-
-		/* Be sure to group double byte characters correctly */
-
-		if KANJI1
-			(c) {
-			*out++ = c;
-			picture->pic_flags |= PIC_literal;
-			c = generate(picture);
-
-			/* Make sure it is not a truncated kanji else punt */
-
-			if (!c)
-				IBERROR(69);
-
-			/* Try to put the second byte in the output buffer 
-			   If both bytes dont fit in, put a single space and break */
-
-			if ((out - *output) >= max_length) {
-				*(out - 1) = ' ';
-				break;
-			}
-			else {
-				*out++ = c;
-				picture->pic_flags &= ~PIC_literal;
-				continue;
-			}
-			}
-#endif
-
 		c = UPPER(c);
 		switch (c) {
 		case 'X':
-#if (defined JPN_SJIS || defined JPN_EUC)
-
-			*out++ = *p++;
-
-			/* Make sure double bytes are handled correctly */
-
-			if (KANJI1(*(out - 1))) {
-				c = generate(picture);
-				if (!c || (out - *output) >= max_length) {
-					*(out - 1) = ' ';
-					*output = out;
-					return;
-				}
-				if (c != 'X' || p == end) {
-					IBERROR(69);
-				}
-				*out++ = *p++;
-			}
-			break;
-#endif
 
 #ifdef PYXIS
 		case 'A':
@@ -740,28 +657,6 @@ static void edit_date( DSC * desc, PIC picture, TEXT ** output)
 		c = generate(picture);
 		if (!c || c == '?')
 			break;
-#if (defined JPN_SJIS || defined JPN_EUC)
-
-		if KANJI1
-			(c) {
-
-			/* group double byte characters correctly */
-
-			*out++ = c;
-			picture->pic_flags |= PIC_literal;
-			c = generate(picture);
-
-			/* Make sure it is not a truncated kanji else punt */
-
-			if (!c)
-				IBERROR(69);
-
-			*out++ = c;
-			picture->pic_flags &= ~PIC_literal;
-			continue;
-			}
-#endif
-
 		c = UPPER(c);
 
 		switch (c) {
@@ -967,27 +862,6 @@ static void edit_float( DSC * desc, PIC picture, TEXT ** output)
 		c = e = generate(picture);
 		if (!c || c == '?')
 			break;
-#if (defined JPN_SJIS || defined JPN_EUC)
-
-		if KANJI1
-			(c) {
-			/* group double byte characters correctly */
-
-			*out++ = c;
-			picture->pic_flags |= PIC_literal;
-			c = generate(picture);
-
-			/* Make sure it is not a truncated kanji else punt */
-
-			if (!c)
-				IBERROR(69);
-
-			*out++ = c;
-			picture->pic_flags &= ~PIC_literal;
-			continue;
-			}
-#endif
-
 		c = UPPER(c);
 		switch (c) {
 		case 'G':
@@ -1150,26 +1024,6 @@ static void edit_numeric( DSC * desc, PIC picture, TEXT ** output)
 		c = generate(picture);
 		if (!c || c == '?')
 			break;
-#if (defined JPN_SJIS || defined JPN_EUC)
-
-		if KANJI1
-			(c) {
-			/* group double byte characters correctly */
-
-			*out++ = c;
-			picture->pic_flags |= PIC_literal;
-			c = generate(picture);
-
-			/* Make sure it is not a truncated kanji else punt */
-
-			if (!c)
-				IBERROR(69);
-
-			*out++ = c;
-			picture->pic_flags &= ~PIC_literal;
-			continue;
-			}
-#endif
 
 		c = UPPER(c);
 		if (overflow && c != 'H') {

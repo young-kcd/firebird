@@ -391,12 +391,6 @@ void CMD_set( SYN node)
 				string->con_desc.dsc_length;
 			break;
 
-#if (defined JPN_SJIS || defined JPN_EUC)
-		case set_euc_justify:
-			QLI_euc_justify = (USHORT) value;
-			break;
-#endif
-
 		case set_user:
 			string = (CON) value;
 			length =

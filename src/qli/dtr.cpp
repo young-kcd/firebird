@@ -117,7 +117,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
  *
  **************************************/
 	TEXT **arg_end, *p, *q, *r, *end, c, *startup_file, *application_file;
+#ifdef UNIX
 	SCHAR home_directory[256];
+#endif
 	PLB temp;
 	USHORT flush_flag, banner_flag, version_flag, got_started;
 #ifdef VMS
@@ -164,11 +166,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 #ifdef DEVBUILD
 	QLI_hex_output = 0;
 #endif
-
-#if (defined JPN_EUC  || defined JPN_SJIS)
-	QLI_interp = HOST_INTERP;
-#endif /* (defined JPN_EUC  || defined JPN_SJIS) */
-
 
 #ifdef VMS
 	argc = VMS_parse(&argv, argc);

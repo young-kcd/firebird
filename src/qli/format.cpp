@@ -59,11 +59,7 @@ static void format_value(ITM, int);
 static TEXT *get_buffer(STR *, TEXT *, USHORT);
 static int match_expr(QLI_NOD, QLI_NOD);
 static void print_blobs(PRT, ITM *, ITM *);
-#ifdef JPN_EUC
-static int print_line(ITM, TEXT **, USHORT *);
-#else
 static int print_line(ITM, TEXT **);
-#endif
 static void put_line(PRT, TEXT **, TEXT *, TEXT);
 static void report_break(BRK, VEC *, int);
 static void report_item(ITM, VEC *, USHORT *);
@@ -79,15 +75,6 @@ static STR fmt_buffer, blob_buffer;
 #define BUFFER_CHECK(ptr, length)	ptr = get_buffer (&fmt_buffer, ptr, length)
 #define BUFFER_BEGINNING		fmt_buffer->str_data
 #define BUFFER_REMAINING(ptr)		(fmt_buffer->str_length - (ptr - fmt_buffer->str_data))
-
-#ifdef JPN_EUC
-#define EUC_FORMATTING_ERROR \
-    { \
-    ERRQ_msg_put (501);			/* Msg501 bad kanji found while formatting output */
-ERRQ_exit(FINI_ERROR);
-\}
-#endif
-
 
 int FMT_expression( QLI_NOD node)
 {
@@ -143,9 +130,6 @@ TEXT *FMT_format(LLS stack)
 	LLS temp, temp2;
 	TEXT *line, *p, *q, *segments[10], *bottom;
 	ULONG size;
-#ifdef JPN_EUC
-	TEXT **p2;
-#endif /* JPN_EUC */
 
 /* Start by inverting the item stack into an item que */
 
@@ -203,25 +187,9 @@ TEXT *FMT_format(LLS stack)
 					decompose_header(item->itm_query_header, segments,
 									 (SSHORT*) lengths);
 				number_segments = MAX(n, number_segments);
-#ifdef JPN_EUC
-				for (j = 0, ptr = lengths, p2 = segments; j < n;
-					 j++, ptr++, p2++) {
-					USHORT x;
-
-					/* The "display width" of a EUC string is not the length 
-					   in bytes but the length of corresponding SJIS string */
-
-					if (KANJI_sjis_len(*p2, *ptr, &x))
-						EUC_FORMATTING_ERROR;	/* See macro above */
-					item->itm_header_length = MAX(item->itm_header_length,
-												  (QLI_euc_justify ? x :
-												   *ptr));
-				}
-#else
 				for (j = 0, ptr = lengths; j < n; j++, ptr++)
 					item->itm_header_length =
 						MAX(item->itm_header_length, *ptr);
-#endif /* JPN_EUC */
 			}
 
 		format_value(item, 0);
@@ -300,11 +268,6 @@ TEXT *FMT_format(LLS stack)
 
 	size = (max_offset + 1) * (number_segments + 1) + 2;
 
-#ifdef JPN_EUC
-	size = size * 2;			/* prepare for SJIS->EUC expansion! */
-#endif /*JPN_EUC */
-
-
 	if (size >= 60000)
 		ERRQ_print_error(482, (TEXT *) max_offset,
 						 (TEXT *) (number_segments + 1), NULL, NULL, NULL);
@@ -315,9 +278,6 @@ TEXT *FMT_format(LLS stack)
 /* Generate the various lines of the header line at a time. */
 
 	for (j = 0; j < number_segments; j++) {
-#ifdef JPN_EUC
-		USHORT n_half_kanas = 0;	/* number of half kanas in the header line */
-#endif /* JPN_EUC */
 		*p++ = '\n';
 		line = p;
 		for (temp = stack; temp; temp = temp->lls_next) {
@@ -330,18 +290,6 @@ TEXT *FMT_format(LLS stack)
 				continue;
 			l = lengths[segment];
 			q = line + item->itm_header_offset - l / 2;
-#ifdef JPN_EUC
-			if (QLI_euc_justify) {
-				USHORT x;
-
-				/* use SJIS length to compute the center of an EUC header */
-
-				if (KANJI_sjis_len(segments[segment], l, &x))
-					EUC_FORMATTING_ERROR;	/* See macro above */
-				q = line + item->itm_header_offset - x / 2 + n_half_kanas;
-				n_half_kanas += l - x;
-			}
-#endif /* JPN_EUC */
 
 			while (p < q)
 				*p++ = ' ';
@@ -502,9 +450,6 @@ void FMT_print( QLI_NOD list, PRT print)
 	QLI_NOD *ptr, *end;
 	RPT report;
 	STATUS status_vector[ISC_STATUS_LENGTH];
-#ifdef JPN_EUC
-	USHORT n_half_kanas = 0;	/* number of half kanas in the current line */
-#endif /* JPN_EUC */
 
 /* Now go thru and make up the first line */
 
@@ -567,19 +512,9 @@ void FMT_print( QLI_NOD list, PRT print)
 		BUFFER_CHECK(p, item->itm_print_offset + item->itm_print_length + 2);
 		buffer = BUFFER_BEGINNING;
 		q = buffer + item->itm_print_offset;
-#ifdef JPN_EUC
-		if (QLI_euc_justify)
-			q += n_half_kanas;	/* advance the pointer for next item */
-#endif /* JPN_EUC */
 		if (p > q) {
 			put_line(print, &p, buffer, '\n');
 			print_blobs(print, (ITM*) list->nod_arg, (ITM*) ptr);
-#ifdef JPN_EUC
-			if (QLI_euc_justify) {
-				q -= n_half_kanas;	/* undo the previous addition of blanks */
-				n_half_kanas = 0;	/* start the new line, with no padded blanks */
-			}
-#endif /* JPN_EUC */
 		}
 		while (p < q)
 			*p++ = ' ';
@@ -587,28 +522,12 @@ void FMT_print( QLI_NOD list, PRT print)
 		/* Next, handle simple formated values */
 
 		if (item->itm_dtype != dtype_blob) {
-#ifdef JPN_EUC
-			TEXT *oldp;
-			oldp = p;
-#endif /* JPN_EUC */
 			desc = EVAL_value(item->itm_value);
 			if (!(desc->dsc_missing & DSC_missing))
 				PIC_edit(desc, item->itm_picture, &p, BUFFER_REMAINING(p));
 			else if (item->itm_picture->pic_missing)
 				PIC_edit(desc, item->itm_picture->pic_missing, &p,
 						 BUFFER_REMAINING(p));
-#ifdef JPN_EUC
-			if (QLI_euc_justify) {
-				USHORT x, len;
-
-				/* compute the padding for each item being printed */
-
-				len = p - oldp;
-				if (KANJI_sjis_len(q, len, &x))
-					EUC_FORMATTING_ERROR;	/* See macro above */
-				n_half_kanas += len - x;
-			}
-#endif /* JPN_EUC */
 			continue;
 		}
 
@@ -617,22 +536,13 @@ void FMT_print( QLI_NOD list, PRT print)
 		if (!(item->itm_stream = EXEC_open_blob(item->itm_value)))
 			continue;
 
-#ifdef JPN_EUC
-		if (print_line(item, &p, &n_half_kanas) != EOF)
-#else
 		if (print_line(item, &p) != EOF)
-#endif /* JPN_EUC */
 			if (item->itm_flags & ITM_overlapped)
 				for (;;) {
 					put_line(print, &p, buffer, '\n');
 					while (p < q)
 						*p++ = ' ';
-#ifdef JPN_EUC
-					n_half_kanas = 0;
-					if (print_line(item, &p, &n_half_kanas) == EOF)
-#else
 					if (print_line(item, &p) == EOF)
-#endif /* JPN_EUC */
 						break;
 				}
 	}
@@ -931,9 +841,6 @@ static TEXT *format_report( VEC columns_vec, USHORT width, USHORT * max_width)
 		*ptr, flag, column_width, max_print_width, right_adjust, right_offset;
 	LLS *col, *col_end, temp;
 	TEXT *line, *p, *q, *segments[10], *bottom;
-#ifdef JPN_EUC
-	TEXT **p2;
-#endif /* JPN_EUC */
 
 /* Make a pass thru print items computing print lengths and header
    lengths, and the number of header segments. */
@@ -981,21 +888,9 @@ static TEXT *format_report( VEC columns_vec, USHORT width, USHORT * max_width)
 					decompose_header(item->itm_query_header, segments,
 									 (SSHORT*) lengths);
 				number_segments = MAX(n, number_segments);
-#ifdef JPN_EUC
-				for (j = 0, ptr = lengths, p2 = segments; j < n;
-					 j++, ptr++, p2++) {
-					USHORT x;
-					if (KANJI_sjis_len(*p2, *ptr, &x))
-						EUC_FORMATTING_ERROR;	/* See macro above */
-					item->itm_header_length = MAX(item->itm_header_length,
-												  (QLI_euc_justify ? x :
-												   *ptr));
-				}
-#else
 				for (j = 0, ptr = lengths; j < n; j++, ptr++)
 					item->itm_header_length =
 						MAX(item->itm_header_length, *ptr);
-#endif /* JPN_EUC */
 			}
 
 			format_value(item, 0);
@@ -1321,9 +1216,6 @@ static void print_blobs( PRT print, ITM * first, ITM * last)
 	USHORT blob_active, do_line, length;
 	TEXT *p, *q, *buffer, *pp;
 	int c;
-#ifdef JPN_EUC
-	USHORT n_half_kanas = 0;
-#endif /* JPN_EUC */
 
 	if (QLI_abort)
 		return;
@@ -1337,19 +1229,8 @@ static void print_blobs( PRT print, ITM * first, ITM * last)
 					item->itm_print_offset + item->itm_print_length + 2);
 	}
 
-#ifdef JPN_EUC
-
-/* When euc_justify is on, blob's buffer has to be doubled for EUC */
-
-	buffer =
-		get_buffer(&blob_buffer, NULL,
-				   (QLI_euc_justify ? (2 * length) : length));
-
-#else
 
 	buffer = get_buffer(&blob_buffer, NULL, length);
-
-#endif /* JPN_EUC */
 
 	while (!QLI_abort) {
 		blob_active = FALSE;
@@ -1360,43 +1241,24 @@ static void print_blobs( PRT print, ITM * first, ITM * last)
 			if (item->itm_dtype != dtype_blob || !item->itm_stream)
 				continue;
 			q = buffer + item->itm_print_offset;
-#ifdef JPN_EUC
-			if (QLI_euc_justify)
-				q += n_half_kanas;
-#endif /* JPN_EUC */
 			while (p < q)
 				*p++ = ' ';
 			pp = p;
-#ifdef JPN_EUC
-			c = print_line(item, &p, &n_half_kanas);
-#else
 			c = print_line(item, &p);
-#endif /* JPN_EUC */
 			if (c != EOF)
 				blob_active = TRUE;
 			if (pp != p || c == '\n')
 				do_line = TRUE;
 		}
 		if (do_line)
-#ifdef JPN_EUC
-		{
 			put_line(print, &p, buffer, '\n');
-			n_half_kanas = 0;
-		}
-#else
-			put_line(print, &p, buffer, '\n');
-#endif /* JPN_EUC */
 		if (!blob_active)
 			break;
 	}
 }
 
 
-#ifdef JPN_EUC
-static int print_line( ITM item, TEXT ** ptr, USHORT * n_half_kanas)
-#else
 static int print_line( ITM item, TEXT ** ptr)
-#endif							/* JPN_EUC */
 {
 /**************************************
  *
@@ -1412,11 +1274,6 @@ static int print_line( ITM item, TEXT ** ptr)
 	USHORT l, length;
 	TEXT *p;
 	STATUS status_vector[ISC_STATUS_LENGTH], status;
-#ifdef JPN_EUC
-	TEXT *p2;
-	USHORT x, len;
-	USHORT last_shot;
-#endif /* JPN_EUC */
 
 	EXEC_poll_abort();
 
@@ -1428,105 +1285,6 @@ static int print_line( ITM item, TEXT ** ptr)
 	p = *ptr;
 	l = item->itm_print_length;
 
-#ifdef JPN_EUC
-
-	if (!QLI_euc_justify || item->itm_sub_type != 1) {
-
-		/* no justification needed, printout is just as easy as SJIS */
-
-		if ((status = gds__get_segment(status_vector,
-									   GDS_REF(item->itm_stream),
-									   GDS_REF(length),
-									   l,
-									   GDS_VAL(p))) &&
-			status != gds__segment) {
-			gds__close_blob(status_vector, GDS_REF(item->itm_stream));
-			return EOF;
-		}
-	}
-	else {
-
-		/* justification needed, here comes the mambo-jambo to print blobs */
-
-		p2 = p;
-		last_shot = 0;
-		length = 0;
-
-		if (item->itm_kanji_fragment) {
-			*p2++ = item->itm_kanji_fragment >> 8;
-			*p2++ = item->itm_kanji_fragment;
-			item->itm_kanji_fragment = 0;
-			l -= 2;
-			length += 2;
-
-			/* if the last fetch status says "no more data in the segment",
-			   this kanji is the last char of the segment. force it to not 
-			   get more data. */
-
-			if (item->itm_blob_status != gds__segment)
-				l = 0;
-		}
-
-		while (l > 0) {
-			if ((status = gds__get_segment(status_vector,
-										   GDS_REF(item->itm_stream),
-										   GDS_REF(len),
-										   l,
-										   GDS_VAL(p2))) &&
-				status != gds__segment) {
-				gds__close_blob(status_vector, GDS_REF(item->itm_stream));
-				return EOF;
-			}
-
-			length += len;
-
-			if ((len == 0) && (l == 1)) {
-
-				if (status != gds__segment)
-					break;		/* no more data in the segment, get out of here! */
-
-				/* the buffer is too small to fetch anything. But the last
-				   character maybe a single-width kana that fits to print..
-				   well, give it a last shot: expand the buffer */
-
-				l = 2;
-				last_shot = 1;
-				continue;
-			}
-
-			if (KANJI_sjis_len(p2, len, &x))
-				EUC_FORMATTING_ERROR;	/* See macro above */
-			*n_half_kanas += len - x;
-
-			if (last_shot) {
-				if (x != 1) {
-
-					/* aaahh, the last character is a double-width kanji,
-					   cannot print it. keep the bytes for later */
-
-					item->itm_kanji_fragment = ((UCHAR) * (p2)) << 8;
-					item->itm_kanji_fragment |= ((UCHAR) * (p2 + 1));
-					item->itm_blob_status = status;
-					length -= 2;
-				}
-				break;
-			}
-
-			/* get out if there's no more data in the segment or
-			   no half-kanas within the fresh-picked data */
-
-			if ((status != gds__segment) || (len == x))
-				break;
-
-			/* we found half-kanas in the buffer, try get some more data
-			   to fit into the given screen width */
-
-			l -= x;
-			p2 += len;
-		}
-	}
-
-#else
 
 	if ((status = gds__get_segment(status_vector,
 								   GDS_REF(item->itm_stream),
@@ -1538,8 +1296,6 @@ static int print_line( ITM item, TEXT ** ptr)
 			ERRQ_database_error(0, status_vector);
 		return EOF;
 	}
-
-#endif /* JPN_EUC */
 
 /* If this is not a partial segment and the last character
    is a newline, throw away the newline */

@@ -24,9 +24,6 @@
 #include "firebird.h"
 #include "../qli/dtr.h"
 #include "../qli/parse.h"
-#ifdef JPN_SJIS
-#include "../intl/kanji.h"
-#endif
 #include "../qli/all_proto.h"
 #include "../qli/err_proto.h"
 #include "../qli/hsh_proto.h"
@@ -217,12 +214,6 @@ static int hash( register SCHAR * string, register int length)
 	while (length--) {
 		c = *string++;
 		value = (value << 1) + UPPER(c);
-
-#ifdef JPN_SJIS
-
-/* It should be ok to not japanize this function. */
-
-#endif
 	}
 
 	return ((value >= 0) ? value : -value) % HASH_SIZE;
@@ -250,26 +241,8 @@ static BOOLEAN scompare(
 		return FALSE;
 
 	while (length1--)
-#ifndef JPN_SJIS
-
 		if ((c1 = *string1++) != (c2 = *string2++) && UPPER(c1) != UPPER(c2))
 			return FALSE;
-
-#else /*JPN_SJIS */
-
-		/* Do not upcase second byte of a sjis kanji character */
-
-		if ((c1 = *string1++) != (c2 = *string2++)) {
-			if (UPPER(c1) != UPPER(c2))
-				return FALSE;
-		}
-		else if (SJIS1(c1)) {
-			if (!(length1--))
-				break;
-			if ((c1 = *string1++) != (c2 = *string2++))
-				return FALSE;
-		}
-#endif /*JPN_SJIS */
 
 	return TRUE;
 }
