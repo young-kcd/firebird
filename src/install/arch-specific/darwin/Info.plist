@@ -5,7 +5,7 @@
 	<key>CFBundleGetInfoString</key>
 	<string>Firebird 1.5 RC 7</string>
 	<key>CFBundleIdentifier</key>
-	<string>org.firebirdsql.darwin-firebird</string>
+	<string>org.firebirdsql.Firebird</string>
 	<key>CFBundleName</key>
 	<string>Firebird 1.5 RC 7</string>
 	<key>CFBundleShortVersionString</key>

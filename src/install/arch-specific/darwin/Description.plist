@@ -5,10 +5,10 @@
 	<key>IFPkgDescriptionDeleteWarning</key>
 	<string></string>
 	<key>IFPkgDescriptionDescription</key>
-	<string>Firebird 1.5 RC 7</string>
+	<string>_FB_BUILD_SUFFIX_</string>
 	<key>IFPkgDescriptionTitle</key>
 	<string>Firebird SQL Database</string>
 	<key>IFPkgDescriptionVersion</key>
-	<string>1.5 RC 7</string>
+	<string>_SMFB_BUILD_SUFFIX_</string>
 </dict>
 </plist>

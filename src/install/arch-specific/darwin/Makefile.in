@@ -16,7 +16,11 @@ export BLOCKSIZE
 
 all: package
 
-package packages dist: INST_NM=Firebird
+FB_INST_VERS:=$(shell cpp -DDARWIN -I.  install/arch-specific/darwin/buildsuffix.c | tail -1 | sed -e 's/" "//g' -e 's/"//g' -e 's/Firebird[ ]*//' -e 's/Release Candidate/RC/' -e 's/ /-/g')
+FB_VER_SUFFIX:=$(shell cpp -DDARWIN -I.  install/arch-specific/darwin/buildsuffix.c | tail -1 | sed -e 's/" "//g' -e 's/"//g')
+FB_VER_SUFFIX_SM:=$(shell cpp -DDARWIN -I.  install/arch-specific/darwin/buildsuffix.c | tail -1 | sed -e 's/" "//g' -e 's/"//g' -e 's/Firebird[ ]*//' -e 's/Release Candidate/RC/')
+
+package packages dist: INST_NM=Firebird-CS-$(FB_INST_VERS)
 package packages dist: BLOCKSIZE=1048576
 package packages dist:
 	mkdir -p $(DIR)/t
@@ -30,8 +34,10 @@ package packages dist:
 	mv $(DIR)/Archive.* $(DIR)/$(INST_NM).pkg/Contents
 	cp install/arch-specific/darwin/Info.plist $(DIR)/$(INST_NM).pkg/Contents
 	cp install/arch-specific/darwin/PkgInfo $(DIR)/$(INST_NM).pkg/Contents
-	cp install/arch-specific/darwin/Description.plist \
-			$(DIR)/$(INST_NM).pkg/Contents/Resources
+	sed -e 's/_FB_BUILD_SUFFIX_/$(FB_VER_SUFFIX)/g' -e \
+			's/_SMFB_BUILD_SUFFIX_/$(FB_VER_SUFFIX_SM)/g' \
+			install/arch-specific/darwin/Description.plist \
+			> $(DIR)/$(INST_NM).pkg/Contents/Resources/Description.plist
 	cp install/arch-specific/darwin/install-script \
 			$(DIR)/$(INST_NM).pkg/Contents/Resources/postinstall
 	cp install/arch-specific/darwin/install-script \
@@ -60,6 +66,8 @@ package packages dist:
 			$(DIR)/$(INST_NM).pkg/Contents/Resources/$(INST_NM).sizes
 	mv $(DIR)/$(INST_NM).pkg $(ROOT)/gen/firebird
 	rm -rf $(DIR)
+
+# cpp -DDARWIN -I. install/arch-specific/darwin/fullvers.c | tail -1 | sed -e 's/" "//g' -e 's/"//g'
 	
 
 install: package
