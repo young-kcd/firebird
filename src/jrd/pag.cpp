@@ -23,6 +23,7 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "NCR3000" port
  *
  */
 
@@ -171,10 +172,6 @@ static BOOLEAN find_type(SLONG, WIN *, PAG *, USHORT, USHORT, UCHAR **,
 #endif
 
 #ifdef UNIXWARE
-#define CLASS		2
-#endif
-
-#ifdef NCR3000
 #define CLASS		2
 #endif
 

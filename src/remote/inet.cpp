@@ -25,10 +25,11 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "NCR3000" port
  *
  */
 /*
-$Id: inet.cpp,v 1.8 2002-02-16 03:27:32 seanleyne Exp $
+$Id: inet.cpp,v 1.9 2002-02-16 03:33:53 seanleyne Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -124,10 +125,6 @@ extern int h_errno;
 
 #if (defined UNIXWARE || defined NCR3000 || defined M88K)
 #include <sys/sockio.h>
-#endif
-
-#ifdef NCR3000
-#include <sys/filio.h>
 #endif
 
 #ifdef NETWARE_386
@@ -3340,34 +3337,6 @@ static void inet_handler( PORT port)
 /* If there isn't any out of band data, this signal isn't for us */
 
 	if ((n = recv((SOCKET) port->port_handle, &junk, 1, MSG_OOB)) < 0) {
-
-#ifdef NCR3000
-		/* this is all being added for ncr's pecular behaviour with
-		   SIGURG.  As if we get a sigurg and a receive with OOB fails
-		   we need to do a regular recv call to enable SIGURG
-		   signals on further OOB data. */
-		if (errno == EWOULDBLOCK) {
-			/* set the flag to non blocking and attempt a normal recv */
-			char arg = 1;
-			int n_recv;
-
-			if (ioctl(port->port_handle, FIONBIO, &arg) < 0) {
-				/* donot want to peek if we cannot set the socket to
-				   non blocking as then recv() with PEEK waits till
-				   data arrives, and we donot want ot block in a
-				   signal handler that long. In fact we always expect
-				   recv to fail. */
-
-				return;
-			}
-			/* attempt normal receive this is done inorder to make sigurg
-			   work correctly on the ncr system. */
-			n_recv = recv(port->port_handle, &junk, 1, MSG_PEEK);
-			/* set socket to blocking again */
-			arg = 0;
-			ioctl(port->port_handle, FIONBIO, &arg);
-		}
-#endif
 
 		return;
 	}

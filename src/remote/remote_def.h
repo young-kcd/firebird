@@ -24,6 +24,7 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "NCR3000" port
  *
  */
 
@@ -68,10 +69,6 @@
 
 #ifdef UNIXWARE
 #define ARCHITECTURE		arch_unixware
-#endif
-
-#ifdef NCR3000
-#define ARCHITECTURE		arch_ncr3000
 #endif
 
 #ifdef NETWARE_386

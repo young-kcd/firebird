@@ -3,6 +3,7 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "NCR3000" port
  */
 
 #ifndef AUTOCONFIG_H
@@ -80,6 +81,5 @@
 #undef _CRAY
 #undef M88K
 #undef UNIXWARE
-#undef NCR3000
 
 #endif

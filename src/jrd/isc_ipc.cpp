@@ -24,10 +24,11 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "NCR3000" port
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.9 2002-02-16 03:27:32 seanleyne Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.10 2002-02-16 03:33:53 seanleyne Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -98,19 +99,20 @@ typedef void (*CLIB_ROUTINE SIG_FPTR) ();
 #ifdef DGUX
 #define GT_32_SIGNALS
 #endif
+
 #if (defined AIX || defined AIX_PPC)
 #define GT_32_SIGNALS
 #endif
+
 #ifdef M88K
 #define GT_32_SIGNALS
 #define HANDLER_ADDR_ARG
 #endif
+
 #ifdef UNIXWARE
 #define HANDLER_ADDR_ARG
 #endif
-#ifdef NCR3000
-#define HANDLER_ADDR_ARG
-#endif
+
 #ifdef SCO_EV
 #define HANDLER_ADDR_ARG
 #endif

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: license.h,v 1.8 2002-02-16 03:27:32 seanleyne Exp $
+ * $Id: license.h,v 1.9 2002-02-16 03:33:53 seanleyne Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -34,11 +34,12 @@
  * So all changes to version numbers, build types etc. can
  * now be done in 'builds_win32/original/build_no.ksh'.
  *
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "MAC" and "MAC_CP" defines
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "MAC" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "NCR3000" port
  *
  */
 
@@ -171,10 +172,6 @@
 
 #ifdef UNIXWARE
 #define	FB_PLATFORM	"UW"		/* Unixware */
-#endif
-
-#ifdef NCR3000
-#define	FB_PLATFORM	"NC"		/* NCR3000 */
 #endif
 
 #ifdef LINUX

@@ -31,10 +31,11 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "NCR3000" port
  *
  */
 /*
-$Id: common.h,v 1.11 2002-02-16 03:27:32 seanleyne Exp $
+$Id: common.h,v 1.12 2002-02-16 03:33:52 seanleyne Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -920,40 +921,6 @@ typedef unsigned long DWORD;
 #define setregid(rgid,egid)     setgid (egid)
 
 #endif /* UNIXWARE */
-
-
-
-#ifdef NCR3000
-#define INTL
-#define SETPGRP         setpgrp()
-#define KILLER_SIGNALS
-#define SIGACTION_SUPPORTED
-#define MMAP_SUPPORTED
-#define NO_FLOCK
-#define NO_PYXIS
-#define I386            1
-#define VAX             1
-#define UNIX            1
-#define CURSES_KEYPAD   1
-#define IMPLEMENTATION  56
-#define                 IEEE
-#define ATEXIT(c)       atexit (c)
-
-#ifndef MAXPATHLEN
-#define MAXPATHLEN      1024
-#endif
-
-#define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)
-#define MOVE_FAST(from,to,length)     memcpy (to, from, (int) (length))
-#define MOVE_FASTER(from,to,length)   memcpy (to, from, (int) (length))
-#define MOVE_CLEAR(to,length)         memset (to, 0, (int) (length))
-#define setreuid(ruid,euid)   setuid (euid)
-#define setregid(rgid,egid)   setgid (egid)
-
-#define SYSCALL_INTERRUPTED(err)        (((err) == EINTR) || ((err) == ERESTART))
-
-#endif /* NCR3000 */
-
 
 
 #ifdef UNIX

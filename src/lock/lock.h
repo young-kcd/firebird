@@ -23,6 +23,7 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "NCR3000" port
  *
  */
 
@@ -92,10 +93,6 @@
 
 #ifdef UNIXWARE
 #define SEMAPHORES      10
-#endif
-
-#ifdef NCR3000
-#define SEMAPHORES      25
 #endif
 
 #ifdef SCO_UNIX
