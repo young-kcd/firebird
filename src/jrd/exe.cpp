@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.33 2002-11-20 23:16:37 hippoman Exp $
+$Id: exe.cpp,v 1.34 2002-11-24 13:47:17 skidder Exp $
 */
 
 #include "firebird.h"
@@ -905,15 +905,13 @@ void EXE_start(TDBB tdbb, JRD_REQ request, JRD_TRA transaction)
 		/* Set all invariants to not computed. */
 
 		vec::iterator ptr, end;
-		USHORT *invariant_flags;
 		VLU impure;
 
 		for (ptr = request->req_invariants->begin(),
 			end = request->req_invariants->end(); ptr < end; ptr++)
 			if (*ptr) {
 				impure = (VLU) ((SCHAR *) request + ((JRD_NOD)(*ptr))->nod_impure);
-				invariant_flags = (USHORT *) & impure->vlu_string;
-				*invariant_flags = 0;
+				impure->vlu_flags = 0;
 			}
 	}
 

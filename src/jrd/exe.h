@@ -170,6 +170,7 @@ typedef struct sta {
 
 typedef struct vlu {
 	struct dsc vlu_desc;
+	USHORT vlu_flags; // Computed/invariant flags
 	struct str *vlu_string;
 	union {
 		SSHORT vlu_short;
@@ -187,6 +188,7 @@ typedef struct vlu {
 
 typedef struct vlux {
 	struct dsc vlu_desc;
+	USHORT vlu_flags; // Computed/invariant flags
 	struct str *vlu_string;
 	union {
 		SSHORT vlu_short;

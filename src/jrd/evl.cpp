@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.22 2002-11-17 00:10:48 hippoman Exp $ 
+  * $Id: evl.cpp,v 1.23 2002-11-24 13:47:16 skidder Exp $ 
  */
 
 /*
@@ -509,7 +509,7 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, register JRD_NOD node)
 
 			if (node->nod_flags & nod_invariant) {
 				impure = (VLU) ((SCHAR *) request + node->nod_impure);
-				invariant_flags = (USHORT *) & impure->vlu_string;
+				invariant_flags = & impure->vlu_flags;
 				if (*invariant_flags & VLU_computed) {
 					/* An invariant node has already been computed. */
 
@@ -641,7 +641,7 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, register JRD_NOD node)
 
 			if (node->nod_flags & nod_invariant) {
 				impure = (VLU) ((SCHAR *) request + node->nod_impure);
-				invariant_flags = (USHORT *) & impure->vlu_string;
+				invariant_flags = & impure->vlu_flags;
 				if (*invariant_flags & VLU_computed) {
 					/* An invariant node has already been computed. */
 
@@ -3356,7 +3356,7 @@ static DSC *eval_statistical(TDBB tdbb, JRD_NOD node, VLU impure)
 	desc = &impure->vlu_desc;
 
 	if (node->nod_flags & nod_invariant) {
-		invariant_flags = (USHORT *) & impure->vlu_string;
+		invariant_flags = & impure->vlu_flags;
 		if (*invariant_flags & VLU_computed) {
 			/* An invariant node has already been computed. */
 
