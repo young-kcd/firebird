@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.22 2003-02-14 02:45:55 brodsom Exp $
+  $Id: isql.epp,v 1.23 2003-02-22 17:13:07 dimitr Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -651,7 +651,7 @@ static void readNextInputLine() {
     readNextInputLine(userPrompt.c_str());
 }
 
-char getNextInputChar() {
+int getNextInputChar() {
 
     // If reading from a file do it the old way.
 	if (Ifp != ib_stdin) { 
