@@ -1768,27 +1768,16 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			DSC	desc1, desc2;
 			CMP_get_desc(tdbb, csb, node->nod_arg [1], &desc1);
 			CMP_get_desc(tdbb, csb, node->nod_arg [2], &desc2);
-			ULONG rc_len;
 			if (desc1.dsc_flags & DSC_null || desc2.dsc_flags & DSC_null)
 			{
-				rc_len = 0;
 				desc->dsc_flags |= DSC_null;
-			}
-			else
-			{
-				const SLONG sl1 = MOV_get_long(&desc1, 0);
-				const SLONG sl2 = MOV_get_long(&desc2, 0);
-				// error() is a local routine in par.c, so we use plain ERR_post
-				if (sl1 < 0 || sl2 < 0 || sl2 > (SLONG) MAX_COLUMN_SIZE - (SLONG) sizeof(USHORT))
-				{
-					ERR_post(isc_imp_exc, isc_arg_gds, isc_blktoobig, 0);
-				}
-				rc_len = sl2;
 			}
 			desc->dsc_dtype = dtype_varying;
 			desc->dsc_ttype() = desc->dsc_scale;
 			desc->dsc_scale = 0;
-			desc->dsc_length = static_cast<USHORT>(rc_len) + sizeof(USHORT);
+			// We may suppose length of MAX_SSHORT here, but it will cause issues
+			// with concatenation. Let's be optimistic...
+			desc->dsc_length = sizeof(USHORT);
 		}
 		return;
 
@@ -4575,26 +4564,6 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 		}
 		break;
 
-	case nod_function:
-		{
-			// For gbak attachments, there is no need to resolve the UDF function */
-			// Also if we are dropping a procedure don't bother resolving the
-			// UDF that the procedure invokes.
-			if (!(tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment) &&
-				!(tdbb->tdbb_flags & TDBB_prc_being_dropped))
-			{
-				jrd_nod* value = node->nod_arg[e_fun_args];
-				UserFunction* function = (UserFunction*) node->nod_arg[e_fun_function];
-				node->nod_arg[e_fun_function] =
-					(jrd_nod*) FUN_resolve(csb, function, value);
-				if (!node->nod_arg[e_fun_function]) {
-					ERR_post(isc_funmismat, isc_arg_string,
-							 function->fun_symbol->sym_string.c_str(), 0);
-				}
-			}
-		}
-		break;
-
 #ifdef PC_ENGINE
 		// the remainder of the node types are for IDAPI support:
 		// fix up the stream to point to the base table, and preserve 
@@ -4930,12 +4899,34 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 	case nod_multiply:
 	case nod_add:
 	case nod_subtract:
-	case nod_function:
 	case nod_add2:
 	case nod_subtract2:
 	case nod_multiply2:
 	case nod_divide2:
 		{
+			dsc descriptor_a;
+			CMP_get_desc(tdbb, csb, node, &descriptor_a);
+			csb->csb_impure += sizeof(impure_value);
+		}
+		break;
+
+	case nod_function:
+		{
+			// For gbak attachments, there is no need to resolve the UDF function
+			// Also if we are dropping a procedure don't bother resolving the
+			// UDF that the procedure invokes.
+			if (!(tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment) &&
+				!(tdbb->tdbb_flags & TDBB_prc_being_dropped))
+			{
+				jrd_nod* value = node->nod_arg[e_fun_args];
+				UserFunction* function = (UserFunction*) node->nod_arg[e_fun_function];
+				node->nod_arg[e_fun_function] =
+					(jrd_nod*) FUN_resolve(csb, function, value);
+				if (!node->nod_arg[e_fun_function]) {
+					ERR_post(isc_funmismat, isc_arg_string,
+							function->fun_symbol->sym_string.c_str(), 0);
+				}
+			}
 			dsc descriptor_a;
 			CMP_get_desc(tdbb, csb, node, &descriptor_a);
 			csb->csb_impure += sizeof(impure_value);
