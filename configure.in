@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.129 2003-03-12 12:39:54 eku Exp $
+dnl $Id: configure.in,v 1.130 2003-03-13 15:46:34 alexpeshkoff Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -361,7 +361,6 @@ AC_CHECK_FUNCS(sigaction setitimer)
 AC_CHECK_FUNCS(snprintf)
 AC_CHECK_FUNCS(swab _swab)
 AC_FUNC_MMAP 
-AC_CHECK_FUNCS(atexit on_exit)
 AC_FUNC_FORK
 AC_CHECK_FUNCS(setgrp setpgid getpgrp)
 AC_FUNC_SETPGRP 

@@ -4420,13 +4420,7 @@ static void init(void)
 #endif /* SUPERSERVER */
 #endif /* UNIX */
 
-#ifdef HAVE_ATEXIT
 	atexit(gds__cleanup);
-#else
-#ifdef HAVE_ON_EXIT
-	on_exit(gds__cleanup, 0);
-#endif
-#endif
 
 	initialized = 1;
 
