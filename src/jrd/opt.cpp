@@ -144,6 +144,7 @@ static RecordSource* gen_sort(thread_db*, OptimizerBlk*, const UCHAR*, const UCH
 static bool gen_sort_merge(thread_db*, OptimizerBlk*, RiverStack&);
 static RecordSource* gen_union(thread_db*, OptimizerBlk*, jrd_nod*, UCHAR *, USHORT, NodeStack*, UCHAR);
 static void get_inactivities(const CompilerScratch*, ULONG*);
+static jrd_nod* get_unmapped_node(thread_db*, jrd_nod*, jrd_nod*, UCHAR, bool);
 static IndexedRelationship* indexed_relationship(thread_db*, OptimizerBlk*, USHORT);
 static RecordSource* make_cross(thread_db*, OptimizerBlk*, RiverStack&);
 static jrd_nod* make_index_node(thread_db*, jrd_rel*, CompilerScratch*, const index_desc*);
@@ -4016,41 +4017,13 @@ static void gen_deliver_unmapped(thread_db* tdbb, NodeStack* deliverStack,
 		deliverNode->nod_flags = boolean->nod_flags;
 		bool wrongNode = false;
 		for (indexArg = 0; (indexArg < boolean->nod_count) && (!wrongNode); indexArg++) {
-			jrd_nod* booleanNode = boolean->nod_arg[indexArg];
-			wrongNode = (booleanNode == NULL);
-			// Only allow simple expressions. Check if node is a mapping 
-			// and if so unmap it.
-			// This can be expanded by checking complete expression
-			// (Then don't forget to leave aggregate-functions alone 
-			//  in case of aggregate rse)
-			if ((booleanNode->nod_type == nod_field) && 
-				((USHORT)(IPTR) booleanNode->nod_arg[e_fld_stream] == shellStream)) 
-			{
-				USHORT fieldId = (USHORT)(IPTR) booleanNode->nod_arg[e_fld_id];
-				if (fieldId >= map->nod_count) {
-					wrongNode = true;
-				}
-				booleanNode = map->nod_arg[fieldId]->nod_arg[e_asgn_from];
-			}
 
-			switch (booleanNode->nod_type) {
-				case nod_argument:
-				case nod_current_date:
-				case nod_current_role:
-				case nod_current_time:
-				case nod_current_timestamp:
-				case nod_field:
-				case nod_gen_id:
-				case nod_gen_id2:
-				case nod_internal_info:
-				case nod_literal:
-				case nod_null:
-				case nod_user_name:
-				case nod_variable:
-					deliverNode->nod_arg[indexArg] = booleanNode;
-					break;
-				default:
-					wrongNode = true;
+			jrd_nod* booleanNode = 
+				get_unmapped_node(tdbb, boolean->nod_arg[indexArg], map, shellStream, true);
+
+			wrongNode = (booleanNode == NULL);
+			if (!wrongNode) {
+				deliverNode->nod_arg[indexArg] = booleanNode;
 			}
 		}
 		if (wrongNode) {
@@ -5742,6 +5715,111 @@ static void get_inactivities(const CompilerScratch* csb, ULONG* dependencies)
 		if (tail->csb_flags & csb_active)
 			CLEAR_DEP_BIT(dependencies, n);
 	}
+}
+
+
+static jrd_nod* get_unmapped_node(thread_db* tdbb, jrd_nod* node,
+	jrd_nod* map, UCHAR shellStream, bool rootNode)
+{
+/**************************************
+ *
+ *	g e t _ u n m a p p e d _ n o d e
+ *
+ **************************************
+ *
+ *	Return correct node if this node is
+ *  allowed in a unmapped boolean.
+ *
+ **************************************/
+	DEV_BLKCHK(map, type_nod);
+	SET_TDBB(tdbb);
+
+	// Check if node is a mapping and if so unmap it, but
+	// only for root nodes (not contained in an other node).
+	// This can be expanded by checking complete expression
+	// (Then don't forget to leave aggregate-functions alone 
+	//  in case of aggregate rse)
+	// Because this is only to help using a index we keep 
+	// it simple.
+	if ((node->nod_type == nod_field) && 
+		((USHORT)(IPTR) node->nod_arg[e_fld_stream] == shellStream)) 
+	{
+		USHORT fieldId = (USHORT)(IPTR) node->nod_arg[e_fld_id];
+		if (!rootNode || (fieldId >= map->nod_count)) {
+			return NULL;
+		}
+		return map->nod_arg[fieldId]->nod_arg[e_asgn_from];
+	}
+
+	jrd_nod* returnNode = NULL;
+
+	switch (node->nod_type) {
+
+		case nod_cast:
+			if (get_unmapped_node(tdbb, node->nod_arg[e_cast_source], 
+				map, shellStream, false) != NULL)
+			{
+				returnNode = node;
+			}
+			break;
+
+		case nod_extract:
+			if (get_unmapped_node(tdbb, node->nod_arg[e_extract_value], 
+				map, shellStream, false) != NULL)
+			{
+				returnNode = node;
+			}
+			break;
+
+		case nod_argument:
+		case nod_current_date:
+		case nod_current_role:
+		case nod_current_time:
+		case nod_current_timestamp:
+		case nod_field:
+		case nod_gen_id:
+		case nod_gen_id2:
+		case nod_internal_info:
+		case nod_literal:
+		case nod_null:
+		case nod_user_name:
+		case nod_variable:
+			returnNode = node;
+			break;
+
+		case nod_add:
+		case nod_add2:
+		case nod_concatenate:
+		case nod_divide:
+		case nod_divide2:
+		case nod_multiply:
+		case nod_multiply2:
+		case nod_negate:
+		case nod_subtract:
+		case nod_subtract2:
+
+		case nod_upcase:
+		case nod_substr:
+		{
+			// Check all sub-nodes of this node.
+			jrd_nod** ptr = node->nod_arg;
+			for (const jrd_nod* const* const end = ptr + node->nod_count;
+				ptr < end; ptr++)
+			{
+				if (get_unmapped_node(tdbb, *ptr, map, shellStream, 
+					false) == NULL)
+				{
+					return NULL;
+				}
+			}
+			return node;
+		}
+
+		default:
+			return NULL;
+	}
+
+	return returnNode;
 }
 
 
