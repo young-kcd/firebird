@@ -48,7 +48,7 @@
 #endif
 
 short 			event_flag = 0;
-isc_callback 	ast_routine (char *, short, char *);
+void			ast_routine (void *, USHORT, const UCHAR *);
 
 int main(ARG(int, argc), ARG(char **, argv))
 ARGLIST(int argc)
@@ -132,7 +132,7 @@ ARGLIST(char **argv)
 	** que_events returns ast_returns value
 	*/
 	if(isc_que_events(status, &DB, &event_id, length,
-			 event_buffer, (isc_callback) ast_routine, result_buffer))
+			 event_buffer, ast_routine, result_buffer))
 		{ERREXIT(status, 1)};
 
 
@@ -196,7 +196,7 @@ ARGLIST(char **argv)
  	 	 /* Re-queue for the next event */
 
 		 if (isc_que_events(status, &DB, &event_id, length, 
-		    event_buffer, (isc_callback) ast_routine, result_buffer))
+		    event_buffer, ast_routine, result_buffer))
    		      {ERREXIT(status, 1)};
 		}
 
@@ -220,12 +220,12 @@ ARGLIST(char **argv)
 ** event will land us here .  PLus we get called once when the 
 ** program first starts.
 */
-isc_callback ast_routine(ARG(char *, result), 
-		ARG(short, length), 
-		ARG(char *, updated))
-ARGLIST(char  *result)
-ARGLIST(char  *updated)
-ARGLIST(short length)
+void ast_routine(ARG(void *, result), 
+		ARG(USHORT, length), 
+		ARG(const UCHAR *, updated))
+ARGLIST(void  *result)
+ARGLIST(const UCHAR  *updated)
+ARGLIST(USHORT length)
 {
 	/* Set the global event flag */
 
@@ -234,6 +234,5 @@ ARGLIST(short length)
 	printf("ast routine was called\n");
 	/* Copy the updated buffer to the result buffer */
 	while (length--)
-		*result++ = *updated++;
-	return 0;
+		*(UCHAR*)result++ = *updated++;
 }
