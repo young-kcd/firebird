@@ -1,3 +1,18 @@
+2002-12-05 23:28  arnobrinkman
+
+	* firebird2/src/jrd/cmp.cpp:
+	
+	bugfix: release wrong memory (introduced in last commit)
+
+2002-12-05 17:15  kkuznetsov
+
+	* firebird2/builds/posix/: Makefile.in.extlib, Makefile.in.intl,
+	Makefile.in.libfbclient, Makefile.in.libfbembed, make.defaults,
+	make.rules, prefix.darwin, prefix.example, prefix.freebsd,
+	prefix.linux, prefix.mingw, prefix.sinixz, prefix.solx86:
+	
+	Moving platform dependent linker option to platform files
+
 2002-12-04 21:05  arnobrinkman
 
 	* firebird2/src/jrd/opt.cpp:
