@@ -1,0 +1,16 @@
+# default: on
+# description: FirebirdSQL server
+service gds_db
+{
+	flags			= REUSE
+	socket_type		= stream
+	wait			= no
+#	user			= @FBRunUser@
+	user			= root
+	log_on_success		+= USERID
+	log_on_failure 		+= USERID
+	server			= @prefix@/bin/fb_inet_server
+#	server			= @sbindir@/gds_inet_server
+#	server			= @exec_bindir@/gds_inet_server
+    disable         = no
+}
