@@ -182,7 +182,7 @@ int UTIL_gsec(
  **************************************/
 	STATUS *status;
 	void *db_handle = NULL;		/* user info database handle */
-	TEXT user_info_name[512], *u;	/* user info database name */
+	TEXT user_info_name[MAXPATHLEN], *u;	/* user info database name */
 	SLONG redir_in, redir_out, redir_err;
 	int local_argc;
 	SCHAR *local_argv[MAXARGS];
