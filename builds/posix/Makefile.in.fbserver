@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.fbserver,v 1.4 2002-10-07 01:29:09 skywalker Exp $
+#  $Id: Makefile.in.fbserver,v 1.5 2003-03-05 16:07:13 brodsom Exp $
 #
 ROOT=..
 ObjModuleName=fbserver
@@ -40,8 +40,11 @@ include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@
 
+IPSERVER_Files = $(WIN_IPSERVER_Files)
+IPSERVER_Sources =  $(addprefix ipserver/, $(IPSERVER_Files))
+IPSERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(IPSERVER_Sources))))
 
-SERVER_Files = inet_server.cpp server.cpp
+SERVER_Files = $(OS_ServerFiles) server.cpp cntl.cpp
 SERVER_Sources = $(addprefix remote/, $(SERVER_Files))
 SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Sources))))
 
@@ -56,8 +59,8 @@ Dependencies = $(AllObjects:.o=.d)
 
 fbserver : $(BIN)/fbserver
 
-$(BIN)/fbserver:	$(SERVER_Objects) $(LIB)/libfbserver.a  
-	$(LD) $(LINK_OPTS) $(SERVER_Objects) -o $@ -L $(LIB) -lfbserver  $(LINK_LIBS)
+$(BIN)/fbserver:	$(SERVER_Objects) $(IPSERVER_Objects) $(LIB)/libfbserver.a  
+	$(LD) $(LINK_OPTS) $(SERVER_Objects) $(IPSERVER_Objects) -o $@ -L $(LIB) -lfbserver $(LIB_GUI) $(LINK_LIBS) 
 #	$(CHMOD_S7) $@
 
 #$(LIB)/libalice.a \
