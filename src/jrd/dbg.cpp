@@ -804,10 +804,9 @@ int DBG_pretty(register NOD node, register int column)
 		return TRUE;
 
 	case nod_procedure:
-		procedure = (PRC) node->nod_arg[e_prc_procedure];
-		ib_fprintf(dbg_file, ", stream: %d, %s (%X)\n",
-				   node->nod_arg[e_prc_stream], procedure->prc_name->str_data,
-				   procedure);
+		SSHORT procedure_id = (SSHORT) node->nod_arg[e_prc_procedure];
+		ib_fprintf(dbg_file, ", stream: %d, prc_id: %d\n",
+				   node->nod_arg[e_prc_stream], procedure_id);
 		if (node->nod_arg[e_prc_inputs])
 			DBG_pretty(node->nod_arg[e_prc_inputs], column);
 		return TRUE;

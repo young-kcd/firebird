@@ -3587,8 +3587,9 @@ static RSB gen_procedure(TDBB tdbb, OPT opt, JRD_NOD node)
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(node, type_nod);
 	SET_TDBB(tdbb);
-	csb = opt->opt_csb;
-	procedure = (PRC) node->nod_arg[e_prc_procedure];
+	csb = opt->opt_csb;	
+	procedure = MET_lookup_procedure_id(tdbb,
+	   (SSHORT)node->nod_arg[e_prc_procedure], FALSE, FALSE, 0);
 	rsb = FB_NEW_RPT(*tdbb->tdbb_default, RSB_PRC_count) Rsb();
 	rsb->rsb_type = rsb_procedure;
 	rsb->rsb_stream = (UCHAR) node->nod_arg[e_prc_stream];

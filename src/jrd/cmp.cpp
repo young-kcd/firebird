@@ -40,7 +40,7 @@
  *
  */
 /*
-$Id: cmp.cpp,v 1.20 2002-11-14 13:39:02 skidder Exp $
+$Id: cmp.cpp,v 1.21 2002-11-16 18:48:00 skidder Exp $
 */
 
 #include "firebird.h"
@@ -2638,7 +2638,9 @@ static JRD_NOD copy(
 			remap[stream] = (UCHAR) new_stream;
 			node->nod_arg[e_prc_procedure] = input->nod_arg[e_prc_procedure];
 			element = CMP_csb_element(csb, new_stream);
-			element->csb_procedure = (PRC) node->nod_arg[e_prc_procedure];
+			// SKIDDER: Maybe we need to check if we really found a procedure ?
+			element->csb_procedure = MET_lookup_procedure_id(tdbb,
+			  (SSHORT)node->nod_arg[e_prc_procedure],FALSE,FALSE,0);
 
 			(*csb)->csb_rpt[new_stream].csb_flags |=
 				(*csb)->csb_rpt[stream].csb_flags & csb_no_dbkey;
@@ -3841,7 +3843,8 @@ static void pass1_source(
 		PRC procedure;
 
 		pass1(tdbb, csb, source, parent_view, view_stream, FALSE);
-		procedure = (PRC) source->nod_arg[e_prc_procedure];
+		procedure = MET_lookup_procedure_id(tdbb, 
+		  (SSHORT)source->nod_arg[e_prc_procedure], FALSE, FALSE, 0);
 		post_procedure_access(tdbb, *csb, procedure);
 		CMP_post_resource(tdbb, &(*csb)->csb_resources, (BLK) procedure,
 						  rsc_procedure, procedure->prc_id);

@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.21 2002-11-11 19:42:46 hippoman Exp $
+$Id: par.cpp,v 1.22 2002-11-16 18:48:01 skidder Exp $
 */
 
 #include "firebird.h"
@@ -1783,7 +1783,7 @@ static JRD_NOD par_procedure(TDBB tdbb, CSB * csb, SSHORT operator_)
 	node = PAR_make_node(tdbb, e_prc_length);
 	node->nod_type = nod_procedure;
 	node->nod_count = count_table[blr_procedure];
-	node->nod_arg[e_prc_procedure] = (JRD_NOD) procedure;
+	node->nod_arg[e_prc_procedure] = (JRD_NOD) (SLONG) procedure->prc_id;
 
 	stream = par_context(csb, 0);
 	node->nod_arg[e_prc_stream] = (JRD_NOD) (SLONG) stream;

@@ -474,7 +474,7 @@ typedef att* ATT;
 class prc : public pool_alloc_rpt<SCHAR, type_prc>
 {
     public:
-	USHORT prc_id;
+	USHORT prc_id; // Should be first field because MET_remove_procedure relies on that
 	USHORT prc_flags;
 	USHORT prc_inputs;
 	USHORT prc_outputs;
