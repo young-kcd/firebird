@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.extlib,v 1.10.2.1 2003-07-19 05:52:49 bellardo Exp $
+#  $Id: Makefile.in.extlib,v 1.10.2.2 2003-07-19 06:12:38 bellardo Exp $
 #
 ROOT=..
 ObjModuleName=extlib
@@ -95,7 +95,7 @@ $(UDF)/ib_udf.$(SHRLIB_EXT):	$(UDF_Objects) $(UTIL_Objects)
 
 lib_fb_udf: $(UDF)/fb_udf.$(SHRLIB_EXT)
 
-$(UDF)/fb_udf.$(SHRLIB_EXT):	fb_udf.$(SHRLIB_EXT)
+$(UDF)/fb_udf.$(SHRLIB_EXT):	LINK_PROD=fb_udf.$(SHRLIB_EXT)
 $(UDF)/fb_udf.$(SHRLIB_EXT):	$(FBUDF_Objects) $(UTIL_Objects)
 	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME_LINE) $(LIB_LINK_RPATH_LINE) -o $@ $^
 #	-$(LN) $(@F) $(LIBFBINTL_SOBASENAME) 
