@@ -44,6 +44,12 @@ typedef struct btx {
 
 #define BTX_SIZE	2
 
+#define BTN_END_LEVEL_FLAG	1
+#define	BTN_END_BUCKET_FLAG	2
+#define BTN_DUPLICATE_FLAG	3
+
+#define BTN_DUPLICATE_MARKER	1
+
 // format of expanded index buffer
 struct jrd_exp {
 	USHORT exp_length;

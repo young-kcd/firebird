@@ -27,6 +27,7 @@
 #include "firebird.h"
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 #include "memory_routines.h"
 #include "../common/classes/vector.h"
 #include "../jrd/ib_stdio.h"
@@ -96,6 +97,9 @@ inline void MOVE_BYTE(UCHAR*& x_from, UCHAR*& x_to)
 // be lower as GARBAGE_COLLECTION_NEW_PAGE_MAX_THRESHOLD
 // 256 is the old maximum possible key_length.
 #define GARBAGE_COLLECTION_NEW_PAGE_MAX_THRESHOLD	((dbb->dbb_page_size - 256))
+
+//Debug page numbers into log file
+//#define DEBUG_BTR_PAGES
 
 struct INT64_KEY {
 	double d_part;
@@ -2246,8 +2250,6 @@ static CONTENTS delete_node(TDBB tdbb, WIN *window, UCHAR *pointer)
 	btree_page* page = (btree_page*) window->win_buffer;
 
 	CCH_MARK(tdbb, window);
-	//USHORT nodeOffset = pointer - (UCHAR*)page;
-	//USHORT delta = BTR_delete_node(tdbb, page, nodeOffset);
 
 	SCHAR flags = page->btr_header.pag_flags;
 	bool leafPage = (page->btr_level == 0);
@@ -2539,7 +2541,13 @@ static SLONG fast_load(TDBB tdbb,
 	UCHAR* pointers[MAX_LEVELS];
 	UCHAR* newAreaPointers[MAX_LEVELS];
 	USHORT totalJumpSize[MAX_LEVELS];
+	IndexNode levelNode[MAX_LEVELS];
+#ifdef DEBUG_BTR_PAGES
+	TEXT debugtext[1024];
+	//  ,__FILE__,__LINE__
+#endif
 
+	
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
@@ -2554,12 +2562,11 @@ static SLONG fast_load(TDBB tdbb,
 	}
 	if (dbb->dbb_ods_version >= ODS_VERSION11) {
 		flags |= btr_all_record_number;
-	}
-	if (key_length > 255) {
 		flags |= btr_large_keys;
 	}
 
 	// Jump information initialization
+	// Just set this variable to false to disable jump information inside indices.
 	bool useJumpInfo = (dbb->dbb_ods_version >= ODS_VERSION11);
 
 	typedef Firebird::vector<jumpNodeList*> jumpNodeListContainer;
@@ -2574,7 +2581,6 @@ static SLONG fast_load(TDBB tdbb,
 	IndexJumpInfo jumpInfo;
 	jumpInfo.jumpAreaSize = 0;
 	jumpInfo.jumpers = 0;
-	jumpInfo.keyLength = key_length;
 
 	if (useJumpInfo) {
 		// AB: Let's try to determine to size between the jumps to speed up
@@ -2586,21 +2592,18 @@ static SLONG fast_load(TDBB tdbb,
 		// indices, cause this value is stored on each page.
 		// Remember, the lower the value how more jumpkeys are generated and
 		// how faster jumpkeys are recalculated on insert.
-		if (key_length <= 8) {
-		  jumpInfo.jumpAreaSize = 384;
-		}
-		else if (key_length <= 64) {
-		  jumpInfo.jumpAreaSize = 512;
-		}
-		else if (key_length <= 128) {
-		  jumpInfo.jumpAreaSize = 768;
-		}
-		else if (key_length <= 255) {
-		  jumpInfo.jumpAreaSize = 1024;
-		}
-		else {
-		  jumpInfo.jumpAreaSize = 2048;
-		}
+		
+		
+		jumpInfo.jumpAreaSize = 512 + (sqrt(key_length) * 16);
+		//  key_size  |  jumpAreaSize
+		//  ----------+-----------------
+		//         4  |    544
+        //         8  |    557
+		//        16  |    576
+		//        64  |    640
+		//       128  |    693
+		//       256  |    768
+
 
 		// If our half page_size is smaller as the jump_size then jump_size isn't
 		// needfull at all.
@@ -2609,6 +2612,9 @@ static SLONG fast_load(TDBB tdbb,
 		}
 		useJumpInfo = (jumpInfo.jumpAreaSize > 0);
 		if (useJumpInfo) {
+			// If you want to do tests without jump information
+			// set the useJumpInfo boolean to false, but don't
+			// disable this flag.
 			flags |= btr_jump_info;
 		}
 	}
@@ -2626,6 +2632,10 @@ static SLONG fast_load(TDBB tdbb,
 	bucket->btr_level = 0;
 	bucket->btr_length = BTR_SIZE;
 	bucket->btr_header.pag_flags |= flags;
+#ifdef DEBUG_BTR_PAGES
+	sprintf(debugtext, "\t new page (%d)", windows[0].win_page);
+	gds__log(debugtext);
+#endif
 
 	UCHAR* pointer;
 	if (useJumpInfo) {
@@ -2679,7 +2689,6 @@ static SLONG fast_load(TDBB tdbb,
 		USHORT headerSize = (pointer - (UCHAR*)bucket);
 
 		UCHAR* levelPointer;
-		IndexNode levelNode;
 		IndexNode tempNode;
 		jumpKey->keyLength = 0;
 
@@ -2721,8 +2730,10 @@ static SLONG fast_load(TDBB tdbb,
 			{
 				// mark the end of the previous page
 				SLONG lastRecordNumber = previousNode.recordNumber;
-				previousNode.recordNumber = END_BUCKET;
-				BTreeNode::writeNode(&previousNode, previousNode.nodePointer, flags, true, false);
+				BTreeNode::readNode(&previousNode, previousNode.nodePointer, flags, true);
+				BTreeNode::setEndBucket(&previousNode, true);
+				pointer = BTreeNode::writeNode(&previousNode, previousNode.nodePointer, flags, true, false);
+				bucket->btr_length = pointer - (UCHAR*)bucket;
 
 				if (useJumpInfo && totalJumpSize[0]) {
 					// Slide down current nodes;
@@ -2752,6 +2763,11 @@ static SLONG fast_load(TDBB tdbb,
 					bucket->btr_length += totalJumpSize[0];
 				}
 
+				if (bucket->btr_length > dbb->dbb_page_size) {
+					BUGCHECK(205);	// msg 205 index bucket overfilled
+				}
+
+
 				// Allocate new bucket.
 				btree_page* split = (btree_page*) DPM_allocate(tdbb, &split_window);
 				bucket->btr_sibling = split_window.win_page;
@@ -2761,6 +2777,11 @@ static SLONG fast_load(TDBB tdbb,
 				split->btr_level = bucket->btr_level;
 				split->btr_id = bucket->btr_id;
 				split->btr_header.pag_flags |= flags;
+#ifdef DEBUG_BTR_PAGES
+				sprintf(debugtext, "\t new page (%d), left page (%d)", 
+					split_window.win_page, split->btr_left_sibling);
+				gds__log(debugtext);
+#endif
 
 				if (useJumpInfo) {
 					pointer = BTreeNode::writeJumpInfo(split, &jumpInfo);
@@ -2788,6 +2809,13 @@ static SLONG fast_load(TDBB tdbb,
 				split_pages[0] = windows[0].win_page;
 				split_record_numbers[0] = splitNode.recordNumber;
 				CCH_RELEASE(tdbb, &windows[0]);
+#ifdef DEBUG_BTR_PAGES
+				sprintf(debugtext, "\t release page (%d), left page (%d), right page (%d)", 
+					windows[0].win_page, 
+					((btr*)windows[0].win_buffer)->btr_left_sibling,
+					((btr*)windows[0].win_buffer)->btr_sibling);
+				gds__log(debugtext);
+#endif
 
 				// set up the new page as the "current" page
 				windows[0] = split_window;
@@ -2932,6 +2960,10 @@ static SLONG fast_load(TDBB tdbb,
 					fb_assert(level <= MAX_UCHAR);
 					bucket->btr_level = (UCHAR) level;
 					bucket->btr_header.pag_flags |= flags;
+#ifdef DEBUG_BTR_PAGES
+					sprintf(debugtext, "\t new page (%d)", window->win_page);
+					gds__log(debugtext);
+#endif
 
 					// since this is the beginning of the level, we propagate the lower-level
 					// page with a "degenerate" zero-length node indicating that this page holds 
@@ -2947,11 +2979,11 @@ static SLONG fast_load(TDBB tdbb,
 						levelPointer = BTreeNode::getPointerFirstNode(bucket);
 					}
 
-					levelNode.prefix = 0;
-					levelNode.length = 0;
-					levelNode.pageNumber = split_pages[level - 1];
-					levelNode.recordNumber = 0; // First record-number of level must be zero
-					levelPointer = BTreeNode::writeNode(&levelNode, levelPointer, flags, false);
+					levelNode[level].prefix = 0;
+					levelNode[level].length = 0;
+					levelNode[level].pageNumber = split_pages[level - 1];
+					levelNode[level].recordNumber = 0; // First record-number of level must be zero
+					levelPointer = BTreeNode::writeNode(&levelNode[level], levelPointer, flags, false);
 					bucket->btr_length = levelPointer - (UCHAR*) bucket;
 					key->key_length = 0;
 
@@ -2977,24 +3009,26 @@ static SLONG fast_load(TDBB tdbb,
 				copy_key(&split_key, &temp_key);
 
 				// Save current node if we need to split.
-				tempNode = levelNode;
+				tempNode = levelNode[level];
 				// Set new node values.
-				levelNode.prefix = prefix;
-				levelNode.length = temp_key.key_length - prefix;
-				levelNode.data = temp_key.key_data + prefix;
-				levelNode.pageNumber = windows[level - 1].win_page;
-				levelNode.recordNumber = split_record_numbers[level - 1];
+				levelNode[level].prefix = prefix;
+				levelNode[level].length = temp_key.key_length - prefix;
+				levelNode[level].data = temp_key.key_data + prefix;
+				levelNode[level].pageNumber = windows[level - 1].win_page;
+				levelNode[level].recordNumber = split_record_numbers[level - 1];
 
 				// See if the new node fits in the current bucket.  
 				// If not, split the bucket.
 				if (bucket->btr_length + totalJumpSize[level] +
-					BTreeNode::getNodeSize(&levelNode, flags, false) > pp_fill_limit) 
+					BTreeNode::getNodeSize(&levelNode[level], flags, false) > pp_fill_limit) 
 				{
 					// mark the end of the page; note that the end_bucket marker must 
 					// contain info about the first node on the next page
 					SLONG lastPageNumber = tempNode.pageNumber;
+					BTreeNode::readNode(&tempNode, tempNode.nodePointer, flags, false);
 					BTreeNode::setEndBucket(&tempNode, false);
-					BTreeNode::writeNode(&tempNode, tempNode.nodePointer, flags, false, false);
+					levelPointer = BTreeNode::writeNode(&tempNode, tempNode.nodePointer, flags, false, false);
+					bucket->btr_length = levelPointer - (UCHAR*)bucket;
 
 					if (useJumpInfo && totalJumpSize[level]) {
 						// Slide down current nodes;
@@ -3025,6 +3059,11 @@ static SLONG fast_load(TDBB tdbb,
 						bucket->btr_length += totalJumpSize[level];
 					}
 
+					if (bucket->btr_length > dbb->dbb_page_size) {
+						BUGCHECK(205);	// msg 205 index bucket overfilled
+					}
+
+
 					btree_page* split = (btree_page*) DPM_allocate(tdbb, &split_window);
 					bucket->btr_sibling = split_window.win_page;
 					split->btr_left_sibling = window->win_page;
@@ -3033,6 +3072,11 @@ static SLONG fast_load(TDBB tdbb,
 					split->btr_level = bucket->btr_level;
 					split->btr_id = bucket->btr_id;
 					split->btr_header.pag_flags |= flags;
+#ifdef DEBUG_BTR_PAGES
+					sprintf(debugtext, "\t new page (%d), left page (%d)", 
+						split_window.win_page, split->btr_left_sibling);
+					gds__log(debugtext);
+#endif
 
 					if (useJumpInfo) {
 						levelPointer = BTreeNode::writeJumpInfo(split, &jumpInfo);
@@ -3061,6 +3105,13 @@ static SLONG fast_load(TDBB tdbb,
 					split_pages[level] = window->win_page;
 					split_record_numbers[level] = splitNode.recordNumber;
 					CCH_RELEASE(tdbb, window);
+#ifdef DEBUG_BTR_PAGES
+					sprintf(debugtext, "\t release page (%d), left page (%d), right page (%d)", 
+						window->win_page, 
+						((btr*)window->win_buffer)->btr_left_sibling,
+						((btr*)window->win_buffer)->btr_sibling);
+					gds__log(debugtext);
+#endif
 
 					// and make the new page the current page
 					*window = split_window;
@@ -3082,18 +3133,18 @@ static SLONG fast_load(TDBB tdbb,
 
 				// Now propagate up the lower-level bucket by storing a "pointer" to it.
 				bucket->btr_prefix_total += prefix;
-				levelPointer = BTreeNode::writeNode(&levelNode, levelPointer, flags, false);
+				levelPointer = BTreeNode::writeNode(&levelNode[level], levelPointer, flags, false);
 
 				if (useJumpInfo && (newAreaPointers[level] < levelPointer) &&
 					(bucket->btr_length + totalJumpSize[level] + 
-					levelNode.prefix + 6 < pp_fill_limit)) 
+					levelNode[level].prefix + 6 < pp_fill_limit)) 
 				{
 					// Create a jumpnode
 					IndexJumpNode jumpNode;
 					jumpNode.prefix = BTreeNode::computePrefix(pageJumpKey->keyData,
-						pageJumpKey->keyLength, temp_key.key_data, levelNode.prefix);
-					jumpNode.length = levelNode.prefix - jumpNode.prefix;
-					jumpNode.offset = (levelNode.nodePointer - (UCHAR*)bucket);
+						pageJumpKey->keyLength, temp_key.key_data, levelNode[level].prefix);
+					jumpNode.length = levelNode[level].prefix - jumpNode.prefix;
+					jumpNode.offset = (levelNode[level].nodePointer - (UCHAR*)bucket);
 					jumpNode.data = FB_NEW(*tdbb->tdbb_default) UCHAR[jumpNode.length];
 					memcpy(jumpNode.data, temp_key.key_data + jumpNode.prefix, 
 						jumpNode.length);
@@ -3134,8 +3185,8 @@ static SLONG fast_load(TDBB tdbb,
 
 			// store the end of level marker
 			pointer = (UCHAR*)bucket + bucket->btr_length;
-			BTreeNode::setEndLevel(&levelNode, leafPage);
-			pointer = BTreeNode::writeNode(&levelNode, pointer, flags, leafPage);
+			BTreeNode::setEndLevel(&levelNode[level], leafPage);
+			pointer = BTreeNode::writeNode(&levelNode[level], pointer, flags, leafPage);
 
 			// and update the final page length
 			bucket->btr_length = pointer - (UCHAR*)bucket;
@@ -3175,6 +3226,13 @@ static SLONG fast_load(TDBB tdbb,
 			}
 
 			CCH_RELEASE(tdbb, &windows[level]);
+#ifdef DEBUG_BTR_PAGES
+			sprintf(debugtext, "\t release page (%d), left page (%d), right page (%d)", 
+				windows[level].win_page, 
+				((btr*)windows[level].win_buffer)->btr_left_sibling,
+				((btr*)windows[level].win_buffer)->btr_sibling);
+			gds__log(debugtext);
+#endif
 		}
 
 		// Finally clean up dynamic memory used.
@@ -3407,6 +3465,9 @@ static UCHAR *find_node_start_point(btree_page* bucket, KEY * key, UCHAR * value
 		if (return_value) {
 			*return_value = prefix;
 		}
+
+		//if (node.nodePointer + bucket
+
 		return node.nodePointer;
 	}
 	else {
@@ -4782,6 +4843,10 @@ static SLONG insert_node(TDBB tdbb,
 		return NO_VALUE;
 	}
 
+	if ((UCHAR*)pointer - (UCHAR*)bucket > dbb->dbb_page_size) {
+		BUGCHECK(205);	// msg 205 index bucket overfilled
+	}
+
 	IndexNode beforeInsertNode;
 	pointer = BTreeNode::readNode(&beforeInsertNode, pointer, flags, leafPage);
 
@@ -4853,6 +4918,10 @@ static SLONG insert_node(TDBB tdbb,
 			prefix = newPrefix;
 			pointer = BTreeNode::readNode(&beforeInsertNode, pointer, flags, leafPage);
 		}
+	}
+
+	if (nodeOffset > dbb->dbb_page_size) {
+		BUGCHECK(205);	// msg 205 index bucket overfilled
 	}
 
 	USHORT beforeInsertOriginalSize = 
@@ -5200,7 +5269,6 @@ static SLONG insert_node(TDBB tdbb,
 		IndexJumpInfo splitJumpInfo;
 		splitJumpInfo.firstNodeOffset = headerSize + jumpersSplitSize;
 		splitJumpInfo.jumpAreaSize = jumpInfo.jumpAreaSize;
-		splitJumpInfo.keyLength = jumpInfo.keyLength;
 		if (splitJumpNodeIndex > 0) {
 			splitJumpInfo.jumpers = jumpNodes->getCount() - splitJumpNodeIndex;
 		}

@@ -572,7 +572,6 @@ BOOLEAN NAV_get_record(TDBB tdbb,
 		if (pointer) {
 			BTreeNode::readNode(&node, pointer, flags, true);
 			number = node.recordNumber;
-			//number = get_long(BTN_NUMBER(node));
 		}
 
 #ifdef SCROLLABLE_CURSORS
@@ -1106,7 +1105,7 @@ static bool find_dbkey(Rsb* rsb, ULONG record_number)
 	// loop through the equivalent values of the given key, looking for a
 	// record which matches the passed dbkey 
 	for (;;) {
-		rpb->rpb_number = get_long(BTN_NUMBER(node));
+		rpb->rpb_number = get_long(node->btn_number);
 
 		// if we find an index entry with the proper dbkey, try to fetch the record 
 		if (rpb->rpb_number == record_number) {
@@ -1123,7 +1122,7 @@ static bool find_dbkey(Rsb* rsb, ULONG record_number)
 
 		// go to the next node; if we find a non-equivalent node, give up
 		node = BTR_next_node(node, &expanded_node);
-		if (BTN_LENGTH(node)) {
+		if (node->btn_length) {
 			CCH_RELEASE(tdbb, &window);
 			return false;
 		}
@@ -1221,7 +1220,7 @@ static bool find_record(
 	}
 
 	// seed the key value with the prefix seen up to the current key 
-	MOVE_FAST(impure->irsb_nav_data, value.key_data, BTN_PREFIX(node));
+	MOVE_FAST(impure->irsb_nav_data, value.key_data, node->btn_prefix);
 
 	// In case of an error, we still need to release the window we hold
 	// during the parse.  See HACKs for bug 7041
@@ -1241,7 +1240,7 @@ static bool find_record(
 
 	for (;;)
 	{
-		rpb->rpb_number = get_long(BTN_NUMBER(node));
+		rpb->rpb_number = get_long(node->btn_number);
 
 		// if we have gone past the search key value, stop looking
 		if (rpb->rpb_number == END_LEVEL) {
@@ -1262,10 +1261,10 @@ static bool find_record(
 		}
 
 		// update the current stored key value
-		value.key_length = BTN_LENGTH(node) + BTN_PREFIX(node);
-		p = value.key_data + BTN_PREFIX(node);
-		q = BTN_DATA(node);
-		for (l = BTN_LENGTH(node); l--;)
+		value.key_length = node->btn_length + node->btn_prefix;
+		p = value.key_data + node->btn_prefix;
+		q = node->btn_data;
+		for (l = node->btn_length; l--;)
 			*p++ = *q++;
 
 		// if the index key is greater than the search key, we didn't find the key 

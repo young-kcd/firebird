@@ -1379,7 +1379,8 @@ static RTN walk_index(TDBB tdbb,
  *
  **************************************/
 	SLONG down_number, next_number;
-	UCHAR *p, *q, l;
+	UCHAR *p, *q;
+	USHORT l; // temporary variable for length
 
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;

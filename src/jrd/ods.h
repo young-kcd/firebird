@@ -231,7 +231,6 @@ struct IndexJumpInfo {
 	USHORT firstNodeOffset;		// offset to node in page
 	USHORT jumpAreaSize;		// size area before a new jumpnode is made
 	UCHAR  jumpers;				// nr of jump-nodes in page, with a maximum of 255
-	USHORT keyLength;			// maximum length of key
 };
 
 #define btr_dont_gc				1	// Don't garbage-collect this page
