@@ -37,71 +37,95 @@ namespace Firebird
 // Left pair - left object in such pair has MemoryPool'ed constructor,
 //	right one - doesn't (typically POD or builtin type)
 
-template<class parLeft, class parRight> 
-	struct LeftPair {
+template<typename parLeft, typename parRight> 
+	struct Left {
 		typedef parLeft first_type;
 		typedef parRight second_type;
-		LeftPair(MemoryPool *p) : first(p), second() {}
-		LeftPair(MemoryPool *p, const parLeft& v1, const parRight& v2) 
-			: first(p, v1), second(v2) {}
-		LeftPair(MemoryPool *p, const LeftPair& lp) 
-			: first(p, lp.first), second(lp.second) {}
+		Left(MemoryPool& p)	: first(p), second() { }
+		Left(MemoryPool& p, const parLeft& v1, const parRight& v2) 
+			: first(p, v1), second(v2) { }
+		Left(MemoryPool& p, const Left& lp) 
+			: first(p, lp.first), second(lp.second) { }
 		parLeft first;
 		parRight second;
 	};
 
-template<class parLeft, class parRight>
-	inline bool operator==(const LeftPair<parLeft, parRight>& v1,
-		const LeftPair<parLeft, parRight>& v2)
-	{
-		return (v1.first == v2.first && v1.second == v2.second); 
-	}
+// Full pair - both objects in such pair have MemoryPool'ed constructors.
 
-template<class parLeft, class parRight>
-	inline bool operator!=(const LeftPair<parLeft, parRight>& v1,
-		const LeftPair<parLeft, parRight>& v2)
-	{
-		return (!(v1 == v2)); 
-	}
+template<typename parLeft, typename parRight> 
+	struct Full {
+		typedef parLeft first_type;
+		typedef parRight second_type;
+		Full(MemoryPool& p)	: first(p), second(p) { }
+		Full(MemoryPool& p, const parLeft& v1, const parRight& v2) 
+			: first(p, v1), second(p, v2) { }
+		Full(MemoryPool& p, const Full& lp) 
+			: first(p, lp.first), second(p, lp.second) { }
+		parLeft first;
+		parRight second;
+	};
 
-template<class parLeft, class parRight>
-	inline bool operator<(const LeftPair<parLeft, parRight>& v1,
-		const LeftPair<parLeft, parRight>& v2)
-	{
-		return (v1.first < v2.first ||
-			!(v2.first < v1.first) && v1.second < v2.second); 
-	}
+// Pair - template providing full bool op-s set
 
-template<class parLeft, class parRight>
-	inline bool operator>(const LeftPair<parLeft, parRight>& v1,
-		const LeftPair<parLeft, parRight>& v2)
-	{
-		return (v2 < v1); 
-	}
+template<typename BasePair> 
+	struct Pair : public BasePair {
+		Pair(MemoryPool& p) : BasePair(p) { }
+		Pair(MemoryPool& p, const BasePair::first_type& v1, 
+			const BasePair::second_type& v2) : BasePair(p, v1, v2) { }
+		Pair(MemoryPool& p, const Pair& lp) 
+			: BasePair(p, lp) { }
+		Pair() : BasePair(AutoStorage::getAutoMemoryPool()) { }
+		Pair(const BasePair::first_type& v1, const BasePair::second_type& v2) 
+			: BasePair(AutoStorage::getAutoMemoryPool(), v1, v2) { }
+		Pair(const Pair& lp) 
+			: BasePair(AutoStorage::getAutoMemoryPool(), lp) { }
+		bool operator==(const Pair& v)
+		{
+			return first == v.first && second == v.second; 
+		}
+		bool operator<(const Pair& v)
+		{
+			return first < v.first || (!(first < v.first) && second < v.second); 
+		}
+		bool operator!=(const Pair& v)
+		{
+			return ! (*this == v); 
+		}
+		bool operator>(const Pair& v)
+		{
+			return v < *this; 
+		}
+		bool operator<=(const Pair& v)
+		{
+			return ! (v < *this); 
+		}
+		bool operator>=(const Pair& v)
+		{
+			return ! (*this < v); 
+		}
+	};
 
-template<class parLeft, class parRight>
-	inline bool operator<=(const LeftPair<parLeft, parRight>& v1,
-		const LeftPair<parLeft, parRight>& v2)
-	{
-		return (!(v2 < v1)); 
-	}
-
-template<class parLeft, class parRight>
-	inline bool operator>=(const LeftPair<parLeft, parRight>& v1,
-		const LeftPair<parLeft, parRight>& v2)
-	{
-		return (!(v1 < v2)); 
-	}
-
-template <typename Pair>
+template <typename P>
 	class FirstKey 
 	{
 	public:
-		typedef typename Pair::first_type Pair_first_type;
+		typedef typename P::first_type Pair_first_type;
 		static const Pair_first_type& 
-			generate(void* sender, const Pair& Item) 
+			generate(void* sender, const P& Item) 
 		{ 
 			return Item.first; 
+		}
+	};
+
+template <typename P>
+	class FirstObjectKey 
+	{
+	public:
+		typedef typename P::first_type Pair_first_type;
+		static const Pair_first_type& 
+			generate(void* sender, const P* Item) 
+		{ 
+			return Item->first; 
 		}
 	};
 };
