@@ -1228,7 +1228,7 @@ void API_ROUTINE gds__log_status(const TEXT* database,
 		return;
 		
 #ifdef DEV_BUILD
-	const size_t db_len = strlen(database);
+	const size_t db_len = database ? strlen(database) : 0;
 	fb_assert(db_len < BUFFER_XLARGE - 2);
 	fb_assert(db_len < MAXPATHLEN);
 #endif
