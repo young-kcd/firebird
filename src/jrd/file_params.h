@@ -129,7 +129,6 @@
 
 #ifdef WIN_NT
 #define WORKFILE	"c:\\temp\\"
-#define FB_PREFIX	"c:\\Program Files\\Firebird/"
 #define MSG_FILE	"firebird.msg"
 #define MSG_FILE_LANG	"intl/%.8s.msg"
 #define LOCALE_MAX	6

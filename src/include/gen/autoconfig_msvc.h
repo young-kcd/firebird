@@ -175,6 +175,6 @@
 #undef SCO_EV
 #undef SINIXZ
 
-#define FB_PREFIX "/usr/local/firebird"
+#define FB_PREFIX "c:\\Program Files\\Firebird/"
 
 #endif
