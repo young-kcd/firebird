@@ -1,3 +1,29 @@
+2004-12-02 01:42  skidder
+
+	* firebird2/src/burp/backup.epp (1.75):
+	
+	Fix for another problem with backing up stream blobs - zero-length
+	stream blob may have non-zero segment count
+
+2004-12-01 09:25  robocop
+
+	* firebird2/src/isql/isql.epp (1.116):
+	
+	First attempt to fix the double charset reporting bug that our dear
+	Blas left in isql more than half a year ago.
+
+2004-12-01 09:16  robocop
+
+	* firebird2/src/burp/backup.epp (1.74):
+	
+	Misc.
+
+2004-12-01 08:38  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.h (1.129):
+	
+	removed fault comment
+
 2004-12-01 01:02  skidder
 
 	* firebird2/src/burp/backup.epp (1.73):
