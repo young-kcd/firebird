@@ -1333,7 +1333,10 @@ RecordSource* OptimizerRetrieval::generateNavigation()
 			if (idx->idx_flags & idx_expressn)
 			{
 				if (!expression_equal(tdbb, optimizer, idx, node, stream))
-					return NULL;	
+				{
+					usableIndex = false;
+					break;
+				}
 			}
 			else
 #endif
