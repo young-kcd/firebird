@@ -16,15 +16,9 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-#if defined __STDC__ || defined __BORLANDC__ || defined _MSC_VER
 #define args		args
 #define ARG(type, arg)		type arg
 #define ARGLIST(arg)
-#else
-#define args		()
-#define ARG(type, arg)		arg
-#define ARGLIST(arg)	arg;
-#endif
 
 #if defined __BORLANDC__ && defined __WIN32__
 #define EXPORT _export

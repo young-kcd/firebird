@@ -17,7 +17,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: align.cpp,v 1.7 2003-02-13 13:33:54 dimitr Exp $
+$Id: align.cpp,v 1.8 2003-02-13 15:33:51 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -53,26 +53,14 @@ static ALIGNMENT rules[] = {
 	0, 0, 0, 0, 0
 };
 
-#ifdef __STDC__
 static void check_byte_order(void);
 static int check_double(void);
 static void handler(void);
-#else
-static void check_byte_order();
-static int check_double();
-static void handler();
-#endif
 
 static JMP_BUF env;
 
 
-#ifdef __STDC__
 int main(int argc, char *argv[])
-#else
-int main(argc, argv)
-	 int argc;
-	 char *argv[];
-#endif
 {
 	double *p, d1;
 #if SIZEOF_LONG == 8
@@ -106,11 +94,7 @@ int main(argc, argv)
 	return 1;
 }
 
-#ifdef __STDC__
 static void check_byte_order(void)
-#else
-static void check_byte_order()
-#endif
 {
 	union {
 		short s;
@@ -124,11 +108,7 @@ static void check_byte_order()
 		ib_printf("#define WORDS_BIGENDIAN\t\t1\n");
 }
 
-#ifdef __STDC__
 static int check_double(void)
-#else
-static int check_double()
-#endif
 {
 	double *p, d1;
 #if SIZEOF_LONG == 8

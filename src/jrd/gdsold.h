@@ -73,12 +73,6 @@ extern "C" {
 typedef GDS_QUAD GDS__QUAD;
 #endif
 
-#if defined(__STDC__) || defined(_Windows) || \
-    (defined(_MSC_VER) && defined(WIN32)) || defined(_WINDOWS) || \
-    (defined(__BORLANDC__) && (defined(__WIN32__) )) || \
-    defined(AIX_PPC) || \
-	defined(__cplusplus)
-
 #ifndef FRBRD
 #define FRBRD void
 #endif
@@ -347,67 +341,6 @@ STATUS GDS_EXPORT gds__put_slice(STATUS GDS_FAR *,
 void GDS_EXPORT gds__vtof(char GDS_FAR *,
 						  char GDS_FAR *,
 						  unsigned short);
-
-#else /* __STDC__ && stuff */
-
-
-
-#ifndef _Windows
-#ifndef _WINDOWS
-STATUS GDS_EXPORT gds__attach_database();
-STATUS GDS_EXPORT gds__blob_info();
-STATUS GDS_EXPORT gds__cancel_blob();
-STATUS GDS_EXPORT gds__close_blob();
-STATUS GDS_EXPORT gds__commit_transaction();
-STATUS GDS_EXPORT gds__compile_request();
-STATUS GDS_EXPORT gds__compile_request2();
-STATUS GDS_EXPORT gds__create_blob();
-STATUS GDS_EXPORT gds__create_blob2();
-STATUS GDS_EXPORT gds__create_database();
-STATUS GDS_EXPORT gds__database_info();
-STATUS GDS_EXPORT gds__detach_database();
-STATUS GDS_EXPORT gds__get_segment();
-STATUS GDS_EXPORT gds__open_blob();
-STATUS GDS_EXPORT gds__open_blob2();
-STATUS GDS_EXPORT gds__prepare_transaction();
-STATUS GDS_EXPORT gds__prepare_transaction2();
-STATUS GDS_EXPORT gds__put_segment();
-STATUS GDS_EXPORT gds__receive();
-STATUS GDS_EXPORT gds__reconnect_transaction();
-STATUS GDS_EXPORT gds__request_info();
-STATUS GDS_EXPORT gds__release_request();
-STATUS GDS_EXPORT gds__rollback_transaction();
-STATUS GDS_EXPORT gds__seek_blob();
-STATUS GDS_EXPORT gds__send();
-STATUS GDS_EXPORT gds__start_and_send();
-STATUS GDS_EXPORT gds__start_multiple();
-STATUS GDS_EXPORT gds__start_request();
-STATUS GDS_EXPORT gds__start_transaction();
-STATUS GDS_EXPORT gds__transaction_info();
-STATUS GDS_EXPORT gds__unwind_request();
-STATUS GDS_EXPORT gds__ftof();
-STATUS GDS_EXPORT gds__print_status();
-STATUS GDS_EXPORT gds__sqlcode();
-STATUS GDS_EXPORT gds__ddl();
-STATUS GDS_EXPORT gds__commit_retaining();
-STATUS GDS_EXPORT gds__que_events();
-STATUS GDS_EXPORT gds__cancel_events();
-STATUS GDS_EXPORT gds__event_wait();
-STATUS GDS_EXPORT gds__event_block();
-STATUS GDS_EXPORT gds__get_slice();
-STATUS GDS_EXPORT gds__put_slice();
-STATUS GDS_EXPORT gds__seek_blob();
-
-void GDS_EXPORT gds__event_counts();
-void GDS_EXPORT gds__set_debug();
-void GDS_EXPORT gds__vtof();
-
-
-#endif /* _WINDOWS */
-
-#endif /* _Windows */
-
-#endif /* __STDC__ && stuff */
 
 #ifdef __cplusplus
 } /* extern "C" */

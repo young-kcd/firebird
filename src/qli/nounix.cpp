@@ -23,20 +23,12 @@
 
 #include "firebird.h"
 
-#ifdef __STDC__
 int pipe(void)
-#else
-int pipe()
-#endif
 {
 	return -1;
 }
 
-#ifdef __STDC__
 int vfork(void)
-#else
-int vfork()
-#endif
 {
 	return -1;
 }

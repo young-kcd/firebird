@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.56 2003-02-13 06:12:52 eku Exp $
+$Id: common.h,v 1.57 2003-02-13 15:33:50 brodsom Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -802,21 +802,7 @@ typedef struct
 
 /* variable argument definitions */
 
-#ifdef SCO
-#if __STDC__
 #define VA_START(list,parmN)    va_start (list, parmN)
-#endif
-#else
-#ifdef __STDC__
-#define VA_START(list,parmN)    va_start (list, parmN)
-#endif
-#endif /* SCO */
-
-#ifndef VA_START
-#define VA_START(list,parmN)    va_start (list)
-#endif
-
-
 
 /* conditional compilation macros */
 

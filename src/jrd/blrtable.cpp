@@ -294,14 +294,7 @@ int main(int argc, char *argv[])
 }
 
 
-#ifdef __STDC__
 static void print(const SCHAR ** table, int max, const SCHAR * fudge)
-#else
-static void print(table, max, fudge)
-	 SCHAR **table;
-	 int max;
-	 SCHAR *fudge;
-#endif
 {
 /**************************************
  *
