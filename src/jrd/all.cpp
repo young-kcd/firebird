@@ -118,8 +118,7 @@ TEXT* ALL_cstring(TEXT* in_string)
 	TDBB tdbb;
 	JrdMemoryPool *pool;
 	TEXT *p, *q;
-	STR string;
-	ULONG length;
+	size_t length;
 
 	tdbb = GET_THREAD_DATA;
 
@@ -136,23 +135,9 @@ TEXT* ALL_cstring(TEXT* in_string)
 	}
 
 	length = strlen(in_string);
-#ifdef DEBUG_GDS_ALLOC
-	string = (STR) pool->allocate(type_str, length, __FILE__, __LINE__);
-#else
-	string = (STR) pool->allocate(type_str, length);
-#endif
-/* TMN: Here we should really have the following assert */
-/* assert(length <= MAX_USHORT); */
-	string->str_length = (USHORT) length;
-
-	p = (TEXT *) string->str_data;
-	q = in_string;
-
-	while (length--)
-		*p++ = *q++;
-	*p = 0;
-
-	return (TEXT *) string->str_data;
+	p = FB_NEW(*pool) TEXT[length+1];
+	strcpy(p,in_string);	
+	return p;
 }
 
 
