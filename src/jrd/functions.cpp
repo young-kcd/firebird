@@ -229,8 +229,7 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 	}
 
 	Firebird::string ns_str(ns_vary->vary_string, ns_vary->vary_length),
-		name_str(name_vary->vary_string, name_vary->vary_length),
-		value_str(value_vary->vary_string, value_vary->vary_length);
+		name_str(name_vary->vary_string, name_vary->vary_length);
 
 	if (ns_str == "USER_SESSION") 
 	{
@@ -249,7 +248,8 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 			ERR_post(isc_ctx_too_big, 0);
 		}
 
-		return att->att_context_vars.put(name_str, value_str);
+		return att->att_context_vars.put(name_str,
+			Firebird::string(value_vary->vary_string, value_vary->vary_length));
 	} else if (ns_str == "USER_TRANSACTION") {
 		jrd_tra* tra = tdbb->tdbb_transaction;
 
@@ -266,7 +266,8 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 			ERR_post(isc_ctx_too_big, 0);
 		}
 
-		return tra->tra_context_vars.put(name_str, value_str);
+		return tra->tra_context_vars.put(name_str,
+			Firebird::string(value_vary->vary_string, value_vary->vary_length));
 	} else {
 		// "Invalid namespace name %s passed to %s"
 		ERR_post(isc_ctx_namespace_invalid,

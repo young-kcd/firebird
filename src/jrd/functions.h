@@ -30,7 +30,7 @@
 
 FUNCTION(get_context, "RDB$GET_CONTEXT", "system_module", "get_context", 0)
   // Result, variable value
-  FUNCTION_ARGUMENT(-FUN_ref_with_null, blr_varying, 0, 255, 0, 0, 0, 255)
+  FUNCTION_ARGUMENT(-FUN_reference, blr_varying, 0, 255, 0, 0, 0, 255)
   // Namespace
   FUNCTION_ARGUMENT(FUN_ref_with_null, blr_varying, 0, 80, 0, 0, 0, 80)
   // Variable name
