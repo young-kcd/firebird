@@ -1,3 +1,9 @@
+2004-10-22 12:40  paul_reeves
+
+	* firebird2/src/jrd/isc_version.h (1.1.2.22):
+	
+	Update build number for 1.5.2
+
 2004-10-22 00:26  arnobrinkman
 
 	* firebird2/doc/WhatsNew (1.36.2.29):
