@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.43.2.2 2003-10-10 23:17:10 skidder Exp $
+$Id: par.cpp,v 1.43.2.3 2003-12-21 00:43:51 skidder Exp $
 */
 
 #include "firebird.h"
@@ -2165,8 +2165,11 @@ static JRD_NOD par_sort(TDBB tdbb, CSB * csb, BOOLEAN flag)
 			if (code == blr_nullsfirst) {
 				*ptr3++ = (JRD_NOD) (SLONG) TRUE;
 				code = BLR_BYTE;
-			} else
+			} else {
+				if (code == blr_nullslast)
+					code = BLR_BYTE;
 				*ptr3++ = (JRD_NOD) (SLONG) FALSE;
+			}
 			  
 			*ptr2++ =
 				(JRD_NOD) (SLONG) ((code == blr_descending) ? TRUE : FALSE);

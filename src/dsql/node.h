@@ -378,6 +378,9 @@ typedef dsql_nod* DSQL_NOD;
 #define NOD_READ	4
 #define NOD_WRITE	8
 
+#define NOD_NULLS_FIRST	1
+#define	NOD_NULLS_LAST	2
+
 #define REF_ACTION_CASCADE 1
 #define REF_ACTION_SET_DEFAULT 2
 #define REF_ACTION_SET_NULL 4

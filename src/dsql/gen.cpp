@@ -29,7 +29,7 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 /*
-$Id: gen.cpp,v 1.33.2.2 2003-10-22 07:20:59 dimitr Exp $
+$Id: gen.cpp,v 1.33.2.3 2003-12-21 00:43:47 skidder Exp $
 */
 
 #include "firebird.h"
@@ -2534,8 +2534,17 @@ static void gen_sort( DSQL_REQ request, DSQL_NOD list)
 	STUFF(list->nod_count);
 
 	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++) {
-		if ((*ptr)->nod_arg[e_order_nulls])
-			STUFF(blr_nullsfirst);
+ 		dsql_nod* nulls_placement = (*ptr)->nod_arg[e_order_nulls];
+ 		if (nulls_placement) {
+ 			switch ((SLONG)nulls_placement->nod_arg[0]) {
+ 				case NOD_NULLS_FIRST:
+ 					STUFF(blr_nullsfirst);
+ 					break;
+ 				case NOD_NULLS_LAST:
+ 					STUFF(blr_nullslast);
+ 					break;
+ 			}
+ 		}
 		if ((*ptr)->nod_arg[e_order_flag])
 			STUFF(blr_descending);
 		else

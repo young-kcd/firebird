@@ -281,6 +281,7 @@
 #define blr_internal_info	(unsigned char)177
 #define blr_nullsfirst		(unsigned char)178
 #define blr_writelock		(unsigned char)179
+#define blr_nullslast       (unsigned char)180
 
 /* These codes reuse BLR code space */
 
