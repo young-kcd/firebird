@@ -1213,6 +1213,11 @@ bool DPM_get( thread_db* tdbb, record_param* rpb, SSHORT lock_type)
 	USHORT pp_sequence;
 	SSHORT slot, line;
 	rpb->rpb_number.decompose(dbb->dbb_max_records, dbb->dbb_dp_per_pp, line, slot, pp_sequence);
+/* Check if the record number is OK */
+
+	if (rpb->rpb_number.getValue() < 0) {
+		return false;
+	}
 
 /* Find the next pointer page, data page, and record */
 	pointer_page* page = get_pointer_page(tdbb, rpb->rpb_relation, window, pp_sequence,
