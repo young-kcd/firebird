@@ -180,6 +180,7 @@ isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 		break;
 
 	case sec_protocol_local:
+		service[0] = 0;
 		break;
 
 	default:
@@ -356,7 +357,7 @@ void callRemoteServiceManager(ISC_STATUS* status,
 	spb = spb_buffer;
 	stuffSpbByte(spb, isc_info_svc_timeout);
 	stuffSpbLong(spb, 10);
-	char request = isc_info_svc_get_users;
+	const char request = isc_info_svc_get_users;
 	const int resultBufSize = 512;
 	char resultBuffer[resultBufSize];
 	int startQuery = 0;
