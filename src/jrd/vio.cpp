@@ -2178,6 +2178,7 @@ BOOLEAN VIO_writelock(TDBB tdbb, RPB * org_rpb, JRD_TRA transaction)
 				// Do not spin wait if we have nowait transaction
 				if (transaction->tra_flags & TRA_nowait)
 					ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
+				org_rpb->rpb_stream_flags |= RPB_s_refetch;
 				continue;
 			case PREPARE_DELETE:
 				return FALSE;
