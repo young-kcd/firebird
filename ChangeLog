@@ -1,3 +1,32 @@
+2004-10-23 02:54  robocop
+
+	* firebird2/src/: jrd/dflt.h (1.5), jrd/exe.cpp (1.128),
+	gpre/gpre_meta.epp (1.47), gpre/gpre_meta_boot.cpp (1.45):
+	
+	Misc.
+
+2004-10-23 02:51  robocop
+
+	* firebird2/builds/win32/preprocess.bat (1.30):
+	
+	Indication on how to recover the build manually after adding fields
+	to the engine.
+
+2004-10-22 18:26  paulbeach
+
+	* firebird2/src/msgs/messages.sql (1.7):
+	
+	Somebody had saved this with word wrap. So some inserts failed on a
+	MSCV6 build. Corrected.
+
+2004-10-22 08:24  skidder
+
+	* firebird2/src/common/classes/: ClumpletReader.cpp (1.1),
+	ClumpletReader.h (1.1), ClumpletWriter.cpp (1.1), ClumpletWriter.h
+	(1.1):
+	
+	Classes for secure manipulations with clumplet structures
+
 2004-10-21 13:45  hvlad
 
 	* firebird2/src/jrd/idx.cpp (1.78):
