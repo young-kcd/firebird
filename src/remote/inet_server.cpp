@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: inet_server.cpp,v 1.43 2004-06-29 04:37:54 robocop Exp $
+$Id: inet_server.cpp,v 1.44 2004-09-29 10:11:54 paul_reeves Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -270,7 +270,8 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 			}
 	}
 #if (defined SUPERSERVER && defined UNIX )
-	set_signal(SIGPIPE, signal_sigpipe_handler);
+	/* set_signal(SIGPIPE, signal_sigpipe_handler); */
+	set_signal(SIGPIPE, signal_handler);
 	set_signal(SIGUSR1, signal_handler);
 	set_signal(SIGUSR2, signal_handler);
 #endif
