@@ -153,8 +153,12 @@ extern TextTypeAllocFunc INTL_texttype_alloc_func(short);
 extern CsConvertAllocFunc INTL_csconvert_alloc_func(short, short);
 
 static BOOLEAN all_spaces(TDBB, CHARSET_ID, BYTE *, USHORT, USHORT);
+#ifdef NOT_USED_OR_REPLACED
+#ifdef DEV_BUILD
 static void dump_hex(UCHAR *, USHORT);
 static void dump_latin(UCHAR *, USHORT);
+#endif
+#endif
 //static void finish_texttype_init(TextType*, FPTR_VOID, STATUS *);
 //static SSHORT internal_str_to_upper(TextType*, USHORT, UCHAR *, USHORT,
 //									UCHAR *);
@@ -162,8 +166,10 @@ static void dump_latin(UCHAR *, USHORT);
 //									 UCHAR *, USHORT);
 //static USHORT mb_to_wc(CsConvert*, UCS2_CHAR *, USHORT, MBCHAR *, USHORT, SSHORT *,
 //					   USHORT *);
+#ifdef NOT_USED_OR_REPLACED
 static USHORT nc_to_wc(CsConvert*, UCS2_CHAR *, USHORT, UCHAR *, USHORT, SSHORT *,
 					   USHORT *);
+#endif
 static void pad_spaces(TDBB, CHARSET_ID, BYTE *, USHORT);
 //static USHORT wc_to_mb(CsConvert*, MBCHAR *, USHORT, UCS2_CHAR *, USHORT, SSHORT *,
 //					   USHORT *);
@@ -1384,7 +1390,7 @@ static BOOLEAN all_spaces(
 		return (TRUE);
 	}
 }
-
+#ifdef NOT_USED_OR_REPLACED
 static USHORT internal_keylength(TextType* obj, USHORT iLength)
 {
 /**************************************
@@ -1440,7 +1446,7 @@ static USHORT nc_to_wc(CsConvert* obj, UCS2_CHAR * pWide, USHORT nWide,	/* byte 
 
 	return ((pWide - pStart) * sizeof(*pWide));
 }
-
+#endif
 
 static void pad_spaces(TDBB tdbb, CHARSET_ID charset, BYTE * ptr, USHORT len)
 {								/* byte count */
@@ -1489,6 +1495,7 @@ static void pad_spaces(TDBB tdbb, CHARSET_ID charset, BYTE * ptr, USHORT len)
 	}
 }
 
+#ifdef NOT_USED_OR_REPLACED
 #ifdef DEV_BUILD
 
 /*
@@ -1533,6 +1540,7 @@ static void dump_latin(UCHAR * p, USHORT len)
 			ib_printf("\0x%02X", *p++);
 	ib_printf("\n");
 }
+#endif
 #endif
 
 unsigned short TextTypeNC::to_wc(UCS2_CHAR *pWideUC,

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.32 2003-03-01 19:11:56 brodsom Exp $
+ * $Id: sort.cpp,v 1.33 2003-03-03 09:22:28 brodsom Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -147,8 +147,10 @@ static ULONG order(SCB);
 static void put_run(SCB);
 //static void release_merge(MRG);
 static void sort(SCB);
+#ifdef NOT_USED_OR_REPLACED
 #ifdef DEBUG
 static void validate(SCB);
+#endif
 #endif
 
 #ifdef DEBUG_SORT_TRACE
@@ -2972,7 +2974,7 @@ static void sort(SCB scb)
 	THREAD_ENTER;
 }
 
-
+#ifdef NOT_USED_OR_REPLACED
 #ifdef DEBUG
 static void validate(SCB scb)
 {
@@ -3004,7 +3006,7 @@ static void validate(SCB scb)
 	}
 }
 #endif
-
+#endif
 
 #ifdef DEBUG_SORT_TRACE
 static void write_trace(

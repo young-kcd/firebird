@@ -63,13 +63,17 @@ DATABASE DB = FILENAME "ODS.RDB";
 #define MAX_ACL_SIZE    4096
 #define DEFAULT_CLASS   "SQL$DEFAULT"
 
+#ifdef NOT_USED_OR_REPLACED
 static void add_generator(TEXT*, BLK*);
+#endif
 static void add_global_fields(USHORT);
 static void add_index_set(DBB, USHORT, USHORT, USHORT);
 static void add_new_triggers(USHORT, USHORT);
 static void add_relation_fields(USHORT);
 static void add_security_to_sys_rel(TDBB, TEXT*, TEXT*, TEXT*, SSHORT);
+#ifdef NOT_USED_OR_REPLACED
 static void add_trigger(TEXT*, BLK*, BLK*);
+#endif
 //static void add_user_priv(TDBB, TEXT*, TEXT*, TEXT*, TEXT);
 static void modify_relation_field(TDBB, const UCHAR*, const UCHAR*, BLK*);
 static void store_generator(TDBB, const GEN*, BLK*);
@@ -847,7 +851,7 @@ void INI_update_database(void)
 	CCH_RELEASE(tdbb, &window);
 }
 
-
+#ifdef NOT_USED_OR_REPLACED
 static void add_generator(TEXT* generator_name, BLK* handle)
 {
 /**************************************
@@ -878,7 +882,7 @@ static void add_generator(TEXT* generator_name, BLK* handle)
 
 	store_generator(tdbb, generator, handle);
 }
-
+#endif
 
 static void add_global_fields( USHORT minor_version)
 {
@@ -1270,7 +1274,7 @@ static void add_security_to_sys_rel(TDBB	tdbb,
 
 }
 
-
+#ifdef NOT_USED_OR_REPLACED
 static void add_trigger(TEXT* trigger_name, BLK* handle1, BLK* handle2)
 {
 /**************************************
@@ -1312,7 +1316,7 @@ static void add_trigger(TEXT* trigger_name, BLK* handle1, BLK* handle2)
 		}
 	}
 }
-
+#endif
 
 static void modify_relation_field(TDBB			tdbb,
 								  const UCHAR*	fld,

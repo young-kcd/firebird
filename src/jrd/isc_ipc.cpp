@@ -34,7 +34,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.32 2003-03-01 18:04:20 brodsom Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.33 2003-03-03 09:22:30 brodsom Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -209,8 +209,10 @@ extern "C" {
 #endif
 
 static void cleanup(void *);
+#ifdef NOT_USED_OR_REPLACED
 #ifndef REQUESTER
 static void error(STATUS *, TEXT *, STATUS);
+#endif
 #endif
 static void isc_signal2(int, SIG_FPTR, void *, ULONG);
 static SLONG overflow_handler(void *);
@@ -246,11 +248,11 @@ static void sigwait_thread(int);
 #define SIG_HOLD	SIG_DFL
 #endif
 
-/* Not thread-safe */
+// Not thread-safe 
 
 extern "C" ULONG isc_enter_count = 0;
 
-static SIGVEC client_sigfpe;
+//static SIGVEC client_sigfpe;
 
 #ifdef SHLIB_DEFS
 #define sprintf		(*_libgds_sprintf)
@@ -290,7 +292,7 @@ extern int execl();
 extern void (*sigset()) ();
 extern int ib_fprintf();
 extern int close();
-#endif
+#endif // SHLIB_DEFS
 
 
 #if (defined __cplusplus) && (defined SOLX86)
@@ -886,7 +888,7 @@ static void cleanup(void *arg)
 }
 #endif
 
-
+#ifdef NOT_USED_OR_REPLACED
 #ifndef REQUESTER
 static void error(STATUS * status_vector, TEXT * string, STATUS status)
 {
@@ -910,7 +912,7 @@ static void error(STATUS * status_vector, TEXT * string, STATUS status)
 	*status_vector++ = gds_arg_end;
 }
 #endif
-
+#endif
 
 #ifndef REQUESTER
 static SLONG overflow_handler(void *arg)

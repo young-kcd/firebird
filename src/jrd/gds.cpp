@@ -258,14 +258,18 @@ typedef struct alloc
 
 #define ALLOC_FREQUENCY			99	/* how often to validate memory */
 
-
+#ifdef NOT_USED_OR_REPLACED
 static ALLOC gds_alloc_chain = NULL;
 static ULONG gds_alloc_call_count = 0;
+#endif
 static ULONG gds_alloc_state = ~0;
 static ULONG gds_alloc_nomem = ~0;
+#ifdef NOT_USED_OR_REPLACED
 static ULONG gds_free_call_count = 0;
+#endif
 static ULONG gds_bug_alloc_count = 0;
 static ULONG gds_bug_free_count = 0;
+#ifdef NOT_USED_OR_REPLACED
 static struct alloc
  *gds_alloc_watchpoint = NULL;	/* For SUN debugging */
 static ULONG gds_alloc_watch_call_count = 0;
@@ -296,11 +300,13 @@ static BOOLEAN	gds_alloc_validate_free_pattern(UCHAR *, ULONG);
 static void		gds_alloc_validate_freed(ALLOC);
 static void		validate_memory(void);
 
-#endif
-
 #ifndef SAVE_DEBUG_INFO
 #define SAVE_DEBUG_INFO(b,f,l)
 #endif
+
+#endif // NOT_USED_OR_REPLACED
+#endif // DEBUG_GDS_ALLOC
+
 
 #ifndef ALLOC_HEADER_SIZE
 #define ALLOC_HEADER_SIZE 	ALLOC_ROUNDUP(sizeof (ULONG))
@@ -380,7 +386,9 @@ static void		blr_print_verb(CTL, SSHORT);
 static int		blr_print_word(CTL);
 
 static void		cleanup_malloced_memory(void *);
+#ifdef NOT_USED_OR_REPLACED
 static ULONG	free_memory(void *);
+#endif
 static void		init(void);
 static int		yday(struct tm *);
 
@@ -885,7 +893,7 @@ void* API_ROUTINE gds__alloc(SLONG size_request)
 	V4_MUTEX_UNLOCK(&alloc_mutex);
 	return (UCHAR *) block + ALLOC_HEADER_SIZE;
 }
-#endif
+#endif // NOT_USED_OR_REPLACED
 
 STATUS API_ROUTINE gds__decode(STATUS code, USHORT* fac, USHORT* class_)
 {
@@ -1197,7 +1205,7 @@ ULONG API_ROUTINE gds__free(void* blk)
 	V4_MUTEX_UNLOCK(&alloc_mutex);
 	return released;
 }
-#endif
+#endif // NOT_USED_OR_REPLACED
 
 
 #ifdef DEV_BUILD
@@ -1260,7 +1268,7 @@ SINT64 API_ROUTINE isc_portable_integer(UCHAR* ptr, SSHORT length)
 	return value;
 }
 
-
+#ifdef NOT_USED_OR_REPLACED
 #ifdef DEBUG_GDS_ALLOC
 
 static void validate_memory(void)
@@ -1364,7 +1372,7 @@ static void gds_alloc_validate(ALLOC p)
 	}
 #endif
 }
-#endif
+#endif // DEBUG_GDS_ALLOC
 
 
 #ifdef DEBUG_GDS_ALLOC
@@ -1458,7 +1466,7 @@ static void gds_alloc_validate_freed(ALLOC p)
 #endif
 }
 #endif
-
+#endif // NOT_USED_OR_REPLACED
 
 #ifdef DEBUG_GDS_ALLOC
 
@@ -1492,7 +1500,7 @@ void gds_alloc_watch(void* p)
 	}
 #endif
 }
-#endif /* DEBUG_GDS_ALLOC */
+#endif // DEBUG_GDS_ALLOC
 
 
 #ifdef DEBUG_GDS_ALLOC
@@ -1524,7 +1532,7 @@ void API_ROUTINE gds_alloc_flag_unfreed(void *blk)
 	p->alloc_flags |= ALLOC_dont_report;
 #endif
 }
-#endif /* DEBUG_GDS_ALLOC */
+#endif // DEBUG_GDS_ALLOC
 
 
 #ifdef DEBUG_GDS_ALLOC
@@ -1629,7 +1637,7 @@ void API_ROUTINE gds_alloc_report(ULONG flags, char* filename, int lineno)
 	}
 #endif
 }
-#endif
+#endif // DEBUG_GDS_ALLOC
 
 
 SLONG API_ROUTINE gds__interprete(char *s, STATUS ** vector)
@@ -4178,7 +4186,7 @@ static void cleanup_malloced_memory(void *arg)
 #endif
 }
 
-
+#ifdef NOT_USED_OR_REPLACED
 static ULONG free_memory(void *blk)
 {
 /**************************************
@@ -4311,7 +4319,7 @@ static ULONG free_memory(void *blk)
 
 	return length - ALLOC_OVERHEAD;
 }
-
+#endif
 
 static void init(void)
 {

@@ -59,7 +59,9 @@ extern "C" {
 static void activate_shadow(void);
 static SDW allocate_shadow(struct fil *, USHORT, USHORT);
 static BOOLEAN check_for_file(SCHAR *, USHORT);
+#ifdef NOT_USED_OR_REPLACED
 static void check_if_got_ast(struct fil *);
+#endif
 static void copy_header(void);
 static void update_dbb_to_sdw(struct dbb *);
 
@@ -1253,7 +1255,7 @@ static BOOLEAN check_for_file(SCHAR * name, USHORT length)
 	return TRUE;
 }
 
-
+#ifdef NOT_USED_OR_REPLACED
 static void check_if_got_ast(FIL file)
 {
 /**************************************
@@ -1284,7 +1286,7 @@ static void check_if_got_ast(FIL file)
 		LCK_convert(tdbb, lock, LCK_SR, TRUE);
 	}
 }
-
+#endif
 
 static void copy_header(void)
 {

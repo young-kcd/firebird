@@ -70,7 +70,9 @@
 DATABASE DB = STATIC "yachts.lnk";
 
 static void define_default_class(TDBB, TEXT *, TEXT *, UCHAR *, USHORT);
+#ifdef NOT_USED_OR_REPLACED
 static void delete_security_class(TDBB, TEXT *);
+#endif
 static void finish_security_class(UCHAR **, USHORT, STR *, ULONG *);
 static void get_object_info(TDBB, TEXT *, SSHORT,
 							TEXT *, TEXT *, TEXT *, USHORT *);
@@ -78,8 +80,10 @@ static USHORT get_public_privs(TDBB, TEXT *, SSHORT);
 static void get_user_privs(TDBB, UCHAR **, TEXT *,
 						   SSHORT, TEXT *, USHORT, STR *, ULONG *);
 static void grant_user(UCHAR**, TEXT*, SSHORT, USHORT, STR*, ULONG*);
+#ifdef NOT_USED_OR_REPLACED
 static void grant_views(UCHAR **, USHORT, STR *, ULONG *);
 static void purge_default_class(TEXT *, SSHORT);
+#endif
 static USHORT save_field_privileges(TDBB, STR *, UCHAR **,
 									TEXT *, TEXT *, USHORT, ULONG *);
 static void save_security_class(TDBB, TEXT *, UCHAR *, USHORT);
@@ -223,7 +227,9 @@ int GRANT_privileges( TDBB tdbb, SSHORT phase, DFW work)
 
 				/* SQL tables don't need the 'all priviliges to all views' acl anymore.
 				   This special acl was only generated for SQL. */
+#ifdef NOT_USED_OR_REPLACED
 				/* grant_views (&acl, VIEW_PRIVS); */
+#endif
 
 				/* finish off and store the security class for the relation */
 
@@ -349,7 +355,7 @@ static void define_default_class(
 	DFW_post_work(dbb->dbb_sys_trans, dfw_scan_relation, &desc, 0);
 }
 
-
+#ifdef NOT_USED_OR_REPLACED
 static void delete_security_class( TDBB tdbb, TEXT * s_class)
 {
 /**************************************
@@ -378,7 +384,7 @@ static void delete_security_class( TDBB tdbb, TEXT * s_class)
 
 	CMP_release(tdbb, (JRD_REQ)handle);
 }
-
+#endif // NOT_USED_OR_REPLACED
 
 static void finish_security_class(UCHAR**	acl_ptr,
 								  USHORT	public_priv,
@@ -672,7 +678,7 @@ static void grant_user(UCHAR**	acl_ptr,
 	*acl_ptr = acl;
 }
 
-
+#ifdef NOT_USED_OR_REPLACED
 static void grant_views(
 						UCHAR ** acl_ptr,
 						USHORT privs, STR * start_ptr, ULONG * length_ptr)
@@ -750,6 +756,7 @@ static void purge_default_class( TEXT * object_name, SSHORT obj_type)
 	desc.dsc_length = strlen((char*)desc.dsc_address);
 	DFW_post_work(dbb->dbb_sys_trans, dfw_scan_relation, &desc, 0);
 }
+#endif // NOT_USED_OR_REPLACED
 
 
 static USHORT save_field_privileges(

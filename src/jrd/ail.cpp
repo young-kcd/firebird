@@ -71,15 +71,20 @@
 
 extern "C" {
 
-
+#ifdef NOT_USED_OR_REPLACED
 static void build_wal_param(UCHAR *, LGFILE **, SLONG, LGFILE *, SLONG *);
+#endif
 static void delete_log_files(TEXT *, SLONG, LLS);
+#ifdef NOT_USED_OR_REPLACED
 static BOOLEAN get_walinfo(TEXT *);
+#endif
 static void initialize_wal(TDBB, TEXT *, WIN *, LIP, SSHORT, USHORT, SBM *);
+#ifdef NOT_USED_OR_REPLACED
 static void process_log_updater(LIP);
 static void process_recovery(TDBB, TEXT *, WIN *, LIP *,
 							 SSHORT, USHORT, SBM *);
 static void set_first_user(LGFILE **, LIP, TEXT *);
+#endif
 
 #define MOVE_BYTE(x_from,x_to)	*x_to++ = *x_from++;
 
@@ -1232,7 +1237,7 @@ void AIL_upd_cntrl_pt(
 	CCH_RELEASE(tdbb, &window);
 }
 
-
+#ifdef NOT_USED_OR_REPLACED
 static void build_wal_param(
 							UCHAR * wpb,
 							LGFILE ** log_files,
@@ -1334,7 +1339,7 @@ static void build_wal_param(
 
 	*wpb_len = p - wpb;
 }
-
+#endif
 
 static void delete_log_files(
 							 TEXT * latest_logname,
@@ -1373,7 +1378,7 @@ static void delete_log_files(
 	}
 }
 
-
+#ifdef NOT_USED_OR_REPLACED
 static BOOLEAN get_walinfo(TEXT * walname)
 {
 /**************************************
@@ -1415,7 +1420,7 @@ static BOOLEAN get_walinfo(TEXT * walname)
 
 	return TRUE;
 }
-
+#endif
 
 static void initialize_wal(
 						   TDBB tdbb,
@@ -1459,7 +1464,7 @@ static void initialize_wal(
 	}
 }
 
-
+#ifdef NOT_USED_OR_REPLACED
 static void process_log_updater(LIP logp)
 {
 /**************************************
@@ -1641,6 +1646,6 @@ static void set_first_user(LGFILE ** log_files, LIP logp, TEXT * walname)
 	logp->log_cp_2.cp_offset = 0;
 	logp->log_cp_2.cp_p_offset = 0;
 }
-
+#endif
 
 } // extern "C"

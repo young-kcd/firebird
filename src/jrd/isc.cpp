@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.28 2003-02-19 12:54:38 eku Exp $
+$Id: isc.cpp,v 1.29 2003-03-03 09:22:30 brodsom Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -103,10 +103,11 @@ static struct cfgtbl *ISC_cfg_tbl = NULL;
 static BOOLEAN dls_init = FALSE;
 static BOOLEAN dls_flag = FALSE;
 static BOOLEAN fdls_init = FALSE;
-static BOOLEAN fdls_flag = FALSE;
 static BOOLEAN edls_init = FALSE;
+#ifdef SUPERSERVER
+static BOOLEAN fdls_flag = FALSE;
 static BOOLEAN edls_flag = FALSE;
-
+#endif
 
 /* End of temporary file management specific stuff */
 
@@ -127,7 +128,7 @@ static BOOLEAN edls_flag = FALSE;
 static USHORT os_type;
 static SECURITY_ATTRIBUTES security_attr;
 
-static TEXT interbase_directory[MAXPATHLEN];
+//static TEXT interbase_directory[MAXPATHLEN];
 
 static BOOLEAN check_user_privilege();
 

@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.45 2003-03-01 19:19:21 alexpeshkoff Exp $
+$Id: exe.cpp,v 1.46 2003-03-03 09:22:32 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -157,7 +157,7 @@ static JRD_NOD set_index(TDBB, JRD_NOD);
 static JRD_NOD stream(TDBB, JRD_NOD);
 #endif
 
-#ifdef DEBUG_GDS_ALLOC
+#if defined(DEBUG_GDS_ALLOC) && defined(PROD_BUILD)
 static SLONG memory_debug = 1;
 static SLONG memory_count = 0;
 #endif /* DEBUG_GDS_ALLOC */
