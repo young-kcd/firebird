@@ -526,19 +526,21 @@ typedef struct fld {
     SSHORT	fld_number;
     SSHORT	fld_system_flag;
     SSHORT	fld_name_length;
-    TEXT	fld_name [32];
-    TEXT	fld_source [32];
-    TEXT	fld_base [32];
-    TEXT	fld_query_name [32];
-    TEXT	fld_security_class [32];
+    TEXT	fld_name [GDS_NAME_LEN];
+    TEXT	fld_source [GDS_NAME_LEN];
+    TEXT	fld_base [GDS_NAME_LEN];
+    TEXT	fld_query_name [GDS_NAME_LEN];
+    TEXT	fld_security_class [GDS_NAME_LEN];
     SSHORT	fld_edit_length;
     SSHORT	fld_view_context;
     SSHORT	fld_update_flag;
     SSHORT	fld_flags;
-    TEXT	fld_edit_string [256];
+    /* Can't do here
+       BASED_ON RDB$RDB$RELATION_FIELDS.RDB$EDIT_STRING fld_edit_string; */
+    TEXT   fld_edit_string [126]; /* was [256] */
     GDS__QUAD	fld_description;
     GDS__QUAD   fld_query_header;
-    TEXT	fld_complex_name [32];
+    TEXT	fld_complex_name [GDS_NAME_LEN];
     SSHORT	fld_dimensions;
     SLONG	fld_ranges [2 * MAX_DIMENSION];
     SSHORT	fld_null_flag;
@@ -589,7 +591,7 @@ typedef struct prc {
 
 
 typedef struct gfld {
-    TEXT	gfld_name [32];
+    TEXT	gfld_name [GDS_NAME_LEN];
     ISC_QUAD	gfld_vb;
     ISC_QUAD	gfld_vs;
     ISC_QUAD	gfld_vs2;
@@ -829,7 +831,7 @@ typedef struct tgbl {
     isc_req_handle	handles_write_function_args_req_handle2;
     isc_req_handle	handles_write_procedure_prms_req_handle1;
     USHORT	hdr_forced_writes;
-    TEXT	database_security_class[32]; /* To save database security class for deferred update */
+    TEXT	database_security_class[GDS_NAME_LEN]; /* To save database security class for deferred update */
 } *TGBL;
 
 #ifdef GET_THREAD_DATA

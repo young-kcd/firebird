@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: restore.epp,v 1.6 2002-06-27 10:14:54 dimitr Exp $
+$Id: restore.epp,v 1.7 2002-06-29 05:39:38 skywalker Exp $
 */
 
 #include "firebird.h"
@@ -113,6 +113,7 @@ static CONST struct s_t_cvtbl {
 	{152,	CS_LATIN1,		12},				/* EN_UK */
 	{153,	CS_LATIN1,		14},				/* EN_US */
 	{154,	CS_LATIN1,		15},				/* PT_PT */
+    {160,   CS_LATIN2,       1},                /* CS_CZ */
 	{180,	CS_NEXT,		1},				/* NXT_US */
 	{181,	CS_NEXT,		2},				/* NXT_GERMANY */
 	{182,	CS_NEXT,		3},				/* NXT_FRANCE */
@@ -2722,7 +2723,7 @@ static BOOLEAN get_exception(void)
  *
  **************************************/
 ATT_TYPE	attribute;
-TEXT		temp [32];
+TEXT		temp [GDS_NAME_LEN];
 ULONG		l;
 UCHAR	    scan_next_attr;
 TGBL	    tdgbl;
@@ -3319,7 +3320,7 @@ static BOOLEAN get_function (void)
  **************************************/
 ATT_TYPE	attribute;
 GDS_NAME	function_name;
-TEXT		temp [32];
+TEXT		temp [GDS_NAME_LEN];
 SSHORT		l;
 UCHAR	    scan_next_attr;
 TGBL	    tdgbl;
@@ -3400,7 +3401,7 @@ static void get_function_arg (
  **************************************/
 ATT_TYPE	attribute;
 SSHORT		l;
-TEXT		temp [32];
+TEXT		temp [GDS_NAME_LEN];
 UCHAR	    scan_next_attr;
 TGBL	    tdgbl;
 
@@ -3597,7 +3598,7 @@ static BOOLEAN get_global_field (void)
  *
  **************************************/
 ATT_TYPE	attribute;
-TEXT		temp [32];
+TEXT		temp [GDS_NAME_LEN];
 SSHORT		l;
 GFLD		gfld;
 UCHAR	    	scan_next_attr;
@@ -4549,7 +4550,7 @@ static BOOLEAN get_procedure (void)
  **************************************/
 ATT_TYPE	attribute;
 GDS_NAME	procedure_name;
-TEXT		temp [32];
+TEXT		temp [GDS_NAME_LEN];
 SSHORT		l;
 PRC		    procedure;
 UCHAR	    scan_next_attr;
@@ -4666,7 +4667,7 @@ static BOOLEAN get_procedure_prm (
  **************************************/
 ATT_TYPE	attribute;
 SSHORT		l;
-TEXT		temp [32];
+TEXT		temp [GDS_NAME_LEN];
 UCHAR	    scan_next_attr;
 isc_tr_handle	local_trans;
 TGBL	    tdgbl;
@@ -4814,7 +4815,7 @@ static BOOLEAN get_relation (void)
  **************************************/
 REL		relation;
 FLD		field, *ptr;
-TEXT		temp [32];
+TEXT		temp [GDS_NAME_LEN];
 SSHORT		l;
 ATT_TYPE	attribute;
 REC_TYPE	record;
@@ -5232,7 +5233,7 @@ static BOOLEAN get_sql_roles (void)
 ATT_TYPE        attribute;
 UCHAR	        scan_next_attr;
 TGBL	        tdgbl;
-TEXT            temp [32];
+TEXT            temp [GDS_NAME_LEN];
 SSHORT          l;
 
 tdgbl = GET_THREAD_DATA;
@@ -5321,7 +5322,7 @@ static BOOLEAN get_security_class (void)
  *
  **************************************/
 ATT_TYPE	attribute;
-TEXT		temp [32];
+TEXT		temp [GDS_NAME_LEN];
 SSHORT		l = 0;
 UCHAR	    scan_next_attr;
 TGBL	    tdgbl;
@@ -5484,14 +5485,14 @@ static USHORT get_text (
  *	Move a text attribute to a string and fill.
  *
  **************************************/
-ULONG	l, l2;
+ULONG	l;
 TGBL	tdgbl;
 
 tdgbl = GET_THREAD_DATA;
 
-l2 = l = GET();
+l = GET();
 
-if (length < l)
+if (length <= l)
     BURP_error_redirect ((STATUS *) NULL_PTR, 46, 0, 0); 
     /* msg 46 string truncated */
 
@@ -5500,7 +5501,7 @@ if (l)
 
 *text = 0;
 
-return (USHORT) l2;
+return (USHORT) l;
 }
 
 static BOOLEAN get_trigger_old (
@@ -5518,7 +5519,7 @@ static BOOLEAN get_trigger_old (
  **************************************/
 enum trig_t	type;
 ATT_TYPE	attribute;
-TEXT		*q, *p, *end, name [32];
+TEXT		*q, *p, *end, name [GDS_NAME_LEN];
 UCHAR	    scan_next_attr;
 TGBL	    tdgbl;
 
@@ -5862,7 +5863,7 @@ static BOOLEAN get_type (void)
  **************************************/
 ATT_TYPE	attribute;
 ULONG		l;
-TEXT		temp [32];
+TEXT		temp [GDS_NAME_LEN];
 UCHAR	    scan_next_attr;
 TGBL	    tdgbl;
 
