@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.8 2002-06-14 12:09:36 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.9 2002-06-16 14:19:14 dimitr Exp $ 
  */
 
 /*
@@ -1156,8 +1156,18 @@ BOOLEAN DLL_EXPORT EVL_field(register REL relation,
 	if ( (format = record->rec_format) )
 		*desc = format->fmt_desc[id];
 
+/*
+	dimitr: fixed bug SF #562417
+
+	AFAIU, there was an assumption here that if a field descriptor is not
+	filled, then a field doesn't exist. This is not true, because in fact
+	an empty string has dsc_length = 0, and being part of an aggregate it
+	becomes nod_field with zero length, hence we had NULL as a result.
+
 	if (!format || id >= format->fmt_count || !desc->dsc_length) {
-		/* Map a non-existent field to a default value, if available.
+*/
+	if (!format || id >= format->fmt_count || !desc->dsc_dtype) {
+	/* Map a non-existent field to a default value, if available.
 		 * This enables automatic format upgrade for data rows.
 		 * Handle Outer Joins and such specially!
 		 * Reference: Bug 10424, 10116
