@@ -19,13 +19,11 @@ Firebird 1.5.1 Embedded Server notes
 
   2.2. Database access
 
-    Client access can be only via the TCP/IP local loopback
-    protocol, i.e. a TCP/IP connection string that includes 
-    the server name "localhost" or IP address 127.0.0.1; or 
-    by using the Named Pipes protocol incorporating the 
-    Windows server name. 
+    Client access can be only via the local protocol, 
+    i.e. NOT a TCP/IP connection string that includes 
+    the server name "localhost" or IP address 127.0.0.1. 
     
-    The embedded server does not support the IPServer "local
+    The embedded server supports only the IPServer "local
     connect" to a database file path without a server name.
     The client must have exclusive access to the database file.
 
