@@ -1,3 +1,117 @@
+2003-11-09 23:59  bellardo
+
+	* firebird2/src/jrd/thd.h:
+	
+	Define POSIX_THREADS when compiling DARWIN && SUPERCLIENT
+
+2003-11-09 23:53  bellardo
+
+	* firebird2/src/common/classes/locks.h:
+	
+	The rest of the pthread_mutex spinlock implementation
+
+2003-11-09 23:36  bellardo
+
+	* firebird2/src/common/classes/locks.h:
+	
+	Darwin support for spinlocks
+
+2003-11-09 22:24  bellardo
+
+	* firebird2/configure.in:
+	
+	Create a needed darwin specific directory
+
+2003-11-09 20:58  bellardo
+
+	* firebird2/src/remote/xdr.cpp:
+	
+	use PowerPC instead of DARWIN
+
+2003-11-09 19:59  dimitr
+
+	* firebird2/src/jrd/dfw.epp:
+	
+	Reworked my previous fix. We shouldn't rely on the relation
+	scanning time.
+
+2003-11-09 19:52  bellardo
+
+	* firebird2/src/remote/xdr.cpp:
+	
+	Add SWAP_DOUBLE for darwin FB 1.5
+
+2003-11-09 19:34  bellardo
+
+	* firebird2/builds/posix/prefix.darwin:
+	
+	Use g++ to link, instead of ld
+
+2003-11-09 17:34  dimitr
+
+	* firebird2/src/jrd/isc_version.h:
+	
+	Adjusted build number.
+
+2003-11-09 17:19  dimitr
+
+	* firebird2/builds/win32/make_examples.bat:
+	
+	Polished up the examples build.
+
+2003-11-09 16:38  brodsom
+
+	* firebird2/src/jrd/: alt.cpp, alt_proto.h, utl.cpp, utl_proto.h,
+	why.cpp, why_proto.h:
+	
+	-Removing gdsold.h and gds.h -Replace gds__ functions with isc_
+	functions for internal use
+
+2003-11-09 16:38  brodsom
+
+	* firebird2/src/dsql/: dsql.cpp, user_dsql.cpp:
+	
+	-Removing gdsold.h and gds.h -Replace gds__ functions with isc__
+	functions for internal use
+
+2003-11-09 15:14  dimitr
+
+	* firebird2/src/misc/security.gbak:
+	
+	no message
+
+2003-11-09 13:03  dimitr
+
+	* firebird2/doc/WhatsNew:
+	
+	Let's clear this document for v2.0.
+
+2003-11-09 12:59  dimitr
+
+	* firebird2/doc/WhatsNew:
+	
+	Added RC7 changes.
+
+2003-11-09 11:47  dimitr
+
+	* firebird2/src/jrd/isc_version.h:
+	
+	Adjusted build number.
+
+2003-11-09 11:40  dimitr
+
+	* firebird2/doc/: README.user.embedded, README.user.embedded:
+	
+	Corrections.
+
+2003-11-09 10:51  dimitr
+
+	* firebird2/src/jrd/: cmp.cpp, cmp_proto.h, dfw.epp, exe.cpp,
+	exe_proto.h, jrd.cpp:
+	
+	1) Make view fields unconditionally updatable 2) Make views
+	updatable only directly or via the triggers 3) Cleanup
+
 2003-11-08 17:39  brodsom
 
 	* firebird2/src/jrd/: alt.cpp, blob_filter.cpp, opt.cpp, pag.cpp,
