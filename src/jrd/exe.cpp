@@ -129,7 +129,7 @@ void status_xcp::copy(ISC_STATUS* vector) const
 
 bool status_xcp::success() const
 {
-	return status[1] == FB_SUCCESS;
+	return (status[1] == FB_SUCCESS);
 }
 
 SLONG status_xcp::as_gdscode() const
