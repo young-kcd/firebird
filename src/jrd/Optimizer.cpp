@@ -45,7 +45,7 @@
 #include "../jrd/par_proto.h"
 
 
-#ifdef WIN_NT
+#ifdef _MSC_VER
 #undef min
 #define min _cpp_min
 #undef max
