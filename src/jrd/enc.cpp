@@ -60,7 +60,7 @@ extern "C" {
  */
 
 int des_setkey(const char* key);
-int des_cipher(const char* in, char* out, long salt, int num_iter);
+int des_cipher(const char* in, char* out, SLONG salt, int num_iter);
 
 /*
  * UNIX password, and DES, encryption.
@@ -92,12 +92,6 @@ int des_cipher(const char* in, char* out, long salt, int num_iter);
 #error C_block structure assumes 8 bit characters
 #endif
 #endif
-
-/*
- * define "LONG_IS_32_BITS" only if sizeof(long)==4.
- * This avoids use of bit fields (your compiler may be sloppy with them).
- */
-#define	LONG_IS_32_BITS
 
 /* compile with "-DSTATIC=int" when profiling */
 #ifndef STATIC
@@ -223,14 +217,9 @@ int des_cipher(const char* in, char* out, long salt, int num_iter);
 union C_block{
 	unsigned char b[8];
 	struct {
-#if defined(LONG_IS_32_BITS)
 		/* long is often faster than a 32-bit bit field */
-		long i0;
-		long i1;
-#else
-		long i0:32;
-		long i1:32;
-#endif
+		SLONG i0;
+		SLONG i1;
 	} b32;
 };
 
@@ -256,7 +245,7 @@ union C_block{
 #define	LOADREG(d,d0,d1,s,s0,s1)	d0 = s0, d1 = s1
 #define	OR(d,d0,d1,bl)			d0 |= (bl).b32.i0, d1 |= (bl).b32.i1
 #define	STORE(s,s0,s1,bl)		(bl).b32.i0 = s0, (bl).b32.i1 = s1
-#define	DCL_BLOCK(d,d0,d1)		long d0, d1
+#define	DCL_BLOCK(d,d0,d1)		SLONG d0, d1
 
 	/* "small data" */
 #define	LGCHUNKBITS	2
@@ -431,7 +420,7 @@ static C_block PC2ROT[2][64 / CHUNKBITS][1 << CHUNKBITS];
 static C_block IE3264[32 / CHUNKBITS][1 << CHUNKBITS];
 
 /* Table that combines the S, P, and E operations.  */
-static long SPE[2][8][64];
+static SLONG SPE[2][8][64];
 
 /* compressed/interleaved => final permutation table */
 static C_block CF6464[64 / CHUNKBITS][1 << CHUNKBITS];
@@ -451,11 +440,11 @@ void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
 {
 	fb_assert(bufSize >= RESULT_SIZE);
 
-	unsigned long a, b, d;
+	ULONG a, b, d;
 	char *encp;
-	long i;
+	SLONG i;
 	int t;
-	long salt;
+	SLONG salt;
 	int num_iter, salt_size;
 	C_block keyblock, rsltblock;
 
@@ -532,7 +521,7 @@ void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
 	/*
 	 * Encode the 64 cipher bits as 11 ascii characters.
 	 */
-	/* i = ((long)((rsltblock.b[0]<<8) | rsltblock.b[1])<<8) | rsltblock.b[2]; */
+	/* i = ((SLONG)((rsltblock.b[0]<<8) | rsltblock.b[1])<<8) | rsltblock.b[2]; */
 	a = rsltblock.b[0];
 	a = a << 8;
 	b = rsltblock.b[1];
@@ -550,7 +539,7 @@ void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
 	encp[0] = itoa64[i];
 	encp += 4;
 
-	/* i = ((long)((rsltblock.b[3]<<8) | rsltblock.b[4])<<8) | rsltblock.b[5]; */
+	/* i = ((SLONG)((rsltblock.b[3]<<8) | rsltblock.b[4])<<8) | rsltblock.b[5]; */
 	a = rsltblock.b[3];
 	a = a << 8;
 	b = rsltblock.b[4];
@@ -568,7 +557,7 @@ void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
 	encp[0] = itoa64[i];
 	encp += 4;
 
-/*	i = ((long)((rsltblock.b[6])<<8) | rsltblock.b[7])<<2; */
+/*	i = ((SLONG)((rsltblock.b[6])<<8) | rsltblock.b[7])<<2; */
 	a = rsltblock.b[6];
 	a = a << 8;
 	b = rsltblock.b[7];
@@ -629,10 +618,10 @@ int des_setkey(const char *key)
  * NOTE: the performance of this routine is critically dependent on your
  * compiler and machine architecture.
  */
-int des_cipher(const char* in, char* out, long salt, int num_iter)
+int des_cipher(const char* in, char* out, SLONG salt, int num_iter)
 {
 	/* variables that we want in registers, most important first */
-	long L0, L1, R0, R1, k;
+	SLONG L0, L1, R0, R1, k;
 	C_block *kp;
 	int ks_inc, loop_count;
 	C_block B;
@@ -680,7 +669,7 @@ int des_cipher(const char* in, char* out, long salt, int num_iter)
 		loop_count = 8;
 		do {
 
-#define	SPTAB(t, i)	(*(long *)((unsigned char *)t + i*(sizeof(long)/4)))
+#define	SPTAB(t, i)	(*(SLONG *)((unsigned char *)t + i*(sizeof(SLONG)/4)))
 			/* use this if "k" is allocated to a register ... */
 #define	DOXOR(x,y,i)	k=B.b[i]; x^=SPTAB(SPE[0][i],k); y^=SPTAB(SPE[1][i],k);
 
@@ -743,7 +732,7 @@ int des_cipher(const char* in, char* out, long salt, int num_iter)
 STATIC void init_des()
 {
 	int i, j;
-	long k;
+	SLONG k;
 	int tableno;
 	static unsigned char perm[64], tmp32[32];	/* "static" for speed */
 
