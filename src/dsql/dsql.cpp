@@ -436,23 +436,20 @@ GDS_DSQL_ALLOCATE_CPP(	ISC_STATUS*    user_status,
 						FB_API_HANDLE*    db_handle,
 						dsql_req** req_handle)
 {
-	tsql thd_context;
+	tsql thd_context(user_status);
 	tsql* tdsql;
 
 	DSQL_set_thread_data(tdsql, &thd_context);
 
     try
     {
-		tdsql->tsql_status = user_status;
-		tdsql->setDefaultPool(0);
-
 		init(0);
 
 // If we haven't been initialized yet, do it now 
 
 		dsql_dbb* database = init(db_handle);
 
-		tdsql->setDefaultPool(DsqlMemoryPool::createPool());
+		DsqlContextPoolHolder context(tdsql, DsqlMemoryPool::createPool());
 
 // allocate the request block 
 
@@ -509,7 +506,7 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 				USHORT		out_msg_length,
 				UCHAR*		out_msg)
 {
-	tsql thd_context;
+	tsql thd_context(user_status);
 	tsql* tdsql;
 	ISC_STATUS sing_status;
 
@@ -517,14 +514,11 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 
     try
     {
-		tdsql->tsql_status = user_status;
-		tdsql->setDefaultPool(0);
-
 		init(0);
 		sing_status = 0;
 
 		dsql_req* request = *req_handle;
-		tdsql->setDefaultPool(&request->req_pool);
+		DsqlContextPoolHolder context(tdsql, &request->req_pool);
 
 		if ((SSHORT) in_msg_type == -1) {
 			request->req_type = REQ_EMBED_SELECT;
@@ -651,19 +645,16 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
  *
  **************************************/
 	ISC_STATUS status;
-	tsql thd_context;
+	tsql thd_context(user_status);
 	tsql* tdsql;
 
 	DSQL_set_thread_data(tdsql, &thd_context);
 
     try
     {
-		tdsql->tsql_status = user_status;
-		tdsql->setDefaultPool(0);
-
 		dsql_dbb* database = init(db_handle);
 
-		tdsql->setDefaultPool(DsqlMemoryPool::createPool());
+		DsqlContextPoolHolder context(tdsql, DsqlMemoryPool::createPool());
 
 	// allocate the request block, then prepare the request 
 
@@ -958,20 +949,17 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 	dsql_msg* message;
 	dsql_par* parameter;
 	ISC_STATUS s;
-	tsql thd_context;
+	tsql thd_context(user_status);
 	tsql* tdsql;
 
 	DSQL_set_thread_data(tdsql, &thd_context);
 
     try
     {
-		tdsql->tsql_status = user_status;
-		tdsql->setDefaultPool(0);
-
 		init(0);
 
 		dsql_req* request = *req_handle;
-		tdsql->setDefaultPool(&request->req_pool);
+		DsqlContextPoolHolder context(tdsql, &request->req_pool);
 
 // if the cursor isn't open, we've got a problem 
 
@@ -1178,20 +1166,17 @@ ISC_STATUS GDS_DSQL_FREE_CPP(ISC_STATUS*	user_status,
 						 USHORT		option)
 {
 	dsql_req* request;
-	tsql thd_context;
+	tsql thd_context(user_status);
 	tsql* tdsql;
 
 	DSQL_set_thread_data(tdsql, &thd_context);
 
     try
     {
-		tdsql->tsql_status = user_status;
-		tdsql->setDefaultPool(0);
-
 		init(0);
 
 		request = *req_handle;
-		tdsql->setDefaultPool(&request->req_pool);
+		DsqlContextPoolHolder context(tdsql, &request->req_pool);
 
 		if (option & DSQL_drop) {
 		// Release everything associate with the request. 
@@ -1244,20 +1229,17 @@ ISC_STATUS GDS_DSQL_INSERT_CPP(	ISC_STATUS*	user_status,
 							USHORT	msg_length,
 							const UCHAR*	dsql_msg_buf)
 {
-	tsql thd_context;
+	tsql thd_context(user_status);
 	tsql* tdsql;
 
 	DSQL_set_thread_data(tdsql, &thd_context);
 
     try
     {
-		tdsql->tsql_status = user_status;
-		tdsql->setDefaultPool(0);
-
 		init(0);
 
 		dsql_req* request = *req_handle;
-		tdsql->setDefaultPool(&request->req_pool);
+		DsqlContextPoolHolder context(tdsql, &request->req_pool);
 
 // if the cursor isn't open, we've got a problem 
 
@@ -1332,16 +1314,13 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 							UCHAR*			buffer)
 {
 	ISC_STATUS status;
-	tsql thd_context;
+	tsql thd_context(user_status);
 	tsql* tdsql;
 
 	DSQL_set_thread_data(tdsql, &thd_context);
 
 	try
 	{
-		tdsql->tsql_status = user_status;
-		tdsql->setDefaultPool(0);
-
 		init(0);
 
 		dsql_req* old_request = *req_handle;
@@ -1376,7 +1355,7 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 /* Because that's the client's allocated statement handle and we
    don't want to trash the context in it -- 2001-Oct-27 Ann Harrison */
 
-		tdsql->setDefaultPool(DsqlMemoryPool::createPool());
+		DsqlContextPoolHolder context(tdsql, DsqlMemoryPool::createPool());
 		dsql_req* request = FB_NEW(*tdsql->getDefaultPool()) 
 			dsql_req(*tdsql->getDefaultPool());
 		request->req_dbb = database;
@@ -1440,9 +1419,10 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 
 // Now that we know that the new request exists, zap the old one. 
 
-			tdsql->setDefaultPool(&old_request->req_pool);
-			release_request(old_request, true);
-			tdsql->setDefaultPool(0);
+			{
+				DsqlContextPoolHolder context(tdsql, &old_request->req_pool);
+				release_request(old_request, true);
+			}
 
 /* The request was sucessfully prepared, and the old request was
  * successfully zapped, so set the client's handle to the new request */
@@ -1494,20 +1474,17 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 								const TEXT*	input_cursor,
 								USHORT	type)
 {
-	tsql thd_context;
+	tsql thd_context(user_status);
 	tsql* tdsql;
 
 	DSQL_set_thread_data(tdsql, &thd_context);
 
     try
     {
-		tdsql->tsql_status = user_status;
-		tdsql->setDefaultPool(0);
-
 		init(0);
 
 		dsql_req* request = *req_handle;
-		tdsql->setDefaultPool(&request->req_pool);
+		DsqlContextPoolHolder context(tdsql, &request->req_pool);
 
 		TEXT cursor[132];
 
@@ -1604,16 +1581,13 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 {
 	UCHAR buffer[256], *buffer_ptr;
 	USHORT length, number, first_index;
-	tsql thd_context;
+	tsql thd_context(user_status);
 	tsql* tdsql;
 
 	DSQL_set_thread_data(tdsql, &thd_context);
 
     try
     {
-		tdsql->tsql_status = user_status;
-		tdsql->setDefaultPool(0);
-
 		init(0);
 		memset(buffer, 0, sizeof(buffer));
 
@@ -4150,6 +4124,10 @@ static dsql_dbb* init(FB_API_HANDLE* db_handle)
 	{
 		init_flag = true;
 		ALLD_init();
+		
+		// may be someone needs context pool later - 
+		// lets set it correctly here, not in ALLD_init()
+		DsqlContextPoolHolder context(DSQL_get_thread_data(), DSQL_permanent_pool);
 		HSHD_init();
 
 #ifdef DSQL_DEBUG
@@ -4916,13 +4894,12 @@ static void release_request(dsql_req* request, bool top_level)
 	// If request is parent, orphan the children and
 	// release a portion of their requests
 
-	for (dsql_req* child = request->req_offspring; child; child = child->req_sibling) {
+	for (dsql_req* child = request->req_offspring; child; child = child->req_sibling)
+	{
 		child->req_flags |= REQ_orphan;
 		child->req_parent = NULL;
-		DsqlMemoryPool *save_default = tdsql->getDefaultPool();
-		tdsql->setDefaultPool(&child->req_pool);
+		DsqlContextPoolHolder(tdsql, &child->req_pool);
 		release_request(child, false);
-		tdsql->setDefaultPool(save_default);
 	}
 
 // For top level requests that are linked to a parent, unlink it

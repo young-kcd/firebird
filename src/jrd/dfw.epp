@@ -474,7 +474,7 @@ void DFW_perform_work(jrd_tra* transaction)
 		return;
 	}
 
-	tdbb->setDefaultPool(transaction->tra_pool);
+	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
 
 /* Loop for as long as any of the deferred work routines says that it has
    more to do.  A deferred work routine should be able to deal with any
@@ -3244,22 +3244,29 @@ static void get_procedure_dependencies(DeferredWork* work)
 
 	if (procedure && !blob_id.isEmpty())
 	{
-		JrdMemoryPool* old_pool = tdbb->getDefaultPool();
+		jrd_req* request = 0;
 		/* Nickolay Samofatov: allocate statement memory pool... */
-		tdbb->setDefaultPool(JrdMemoryPool::createPool());
-		jrd_req* request;
-		MET_get_dependencies(tdbb, NULL, NULL, NULL, &blob_id, &request,
+		JrdMemoryPool* new_pool = JrdMemoryPool::createPool();
+		// block is used to ensure MET_verify_cache
+		// works in not deleted context
+		{
+			Jrd::ContextPoolHolder context(tdbb, new_pool);
+
+			MET_get_dependencies(tdbb, NULL, NULL, NULL, &blob_id, &request,
 							NULL, work->dfw_name, obj_procedure);
-		if (request)
-			CMP_release(tdbb, request);
-		else
-			JrdMemoryPool::deletePool(tdbb->getDefaultPool());
+			if (request)
+			{
+				CMP_release(tdbb, request);
+			}
+			else
+			{
+				JrdMemoryPool::deletePool(new_pool);
+			}
+		}
 	
 #ifdef DEV_BUILD
 		MET_verify_cache(tdbb);
 #endif
-
-		tdbb->setDefaultPool(old_pool);
 	}
 }
 
@@ -3302,18 +3309,20 @@ static void get_trigger_dependencies( DeferredWork* work)
 
 	if (relation && !blob_id.isEmpty())
 	{
-		JrdMemoryPool* old_pool = tdbb->getDefaultPool();
+		jrd_req* request = 0;
 		/* Nickolay Samofatov: allocate statement memory pool... */
-		tdbb->setDefaultPool(JrdMemoryPool::createPool());
-		jrd_req* request;
+		JrdMemoryPool* new_pool = JrdMemoryPool::createPool();
+		Jrd::ContextPoolHolder context(tdbb, new_pool);
 		MET_get_dependencies(tdbb, relation, NULL, NULL, &blob_id,
 							 &request, NULL, work->dfw_name, obj_trigger);
 		if (request)
+		{
 			CMP_release(tdbb, request);
+		}
 		else
+		{
 			JrdMemoryPool::deletePool(tdbb->getDefaultPool());
-			
-		tdbb->setDefaultPool(old_pool);
+		}
 	}
 }
 

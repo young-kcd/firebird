@@ -195,9 +195,32 @@ class tdba;
 static tdba* gddba;
 #endif
 
-class tdba : public thdd 
+class tdba : public ThreadData 
 {
 public:
+	tdba()
+		: ThreadData(tddDBA) 
+	{
+		dba_env = 0;
+		files = 0;
+		relations = 0;
+		page_size = 0;
+		page_number = 0;
+		buffer1 = 0;
+		buffer2 = 0;
+		global_buffer = 0;
+		exit_code = 0;
+#ifdef SUPERSERVER
+		sw_outfile = 0;
+		head_of_mem_list = 0;
+		head_of_files_list = 0;
+		dba_service_blk = 0;
+#else
+		sw_outfile = 0;
+#endif
+		dba_status = dba_status_vector;
+	}
+
 	UCHAR *dba_env;
 	dba_fil* files;
 	dba_rel* relations;
@@ -220,15 +243,14 @@ public:
 
 #ifdef SUPERSERVER
 	static inline tdba* getSpecific() {
-		return (tdba*) thdd::getSpecific();
+		return (tdba*) ThreadData::getSpecific();
 	}
 	static inline void putSpecific(tdba* &tddba, tdba* thd_context) {
 		tddba = thd_context;
-		tddba->thdd_type = THDD_TYPE_TDBA;
-		((thdd*)tddba)->putSpecific();
+		tddba->ThreadData::putSpecific();
 	}
 	static inline void restoreSpecific() {
-		thdd::restoreSpecific();
+		ThreadData::restoreSpecific();
 	}
 #else
 	static inline tdba* getSpecific() {
@@ -237,7 +259,6 @@ public:
 	static inline void putSpecific(tdba* &tddba, tdba* thd_context) {
 		tddba = thd_context;
 		gddba = tddba;
-		tddba->thdd_type = THDD_TYPE_TDBA;
 	}
 	static inline void restoreSpecific() {
 	}
@@ -304,8 +325,6 @@ int CLIB_ROUTINE main(int argc, char** argv)
 #endif
 
 	tdba::putSpecific(tddba, &thd_context);
-//	SVC_PUTSPECIFIC_DATA;
-	memset(tddba, 0, sizeof(*tddba));
 	tddba->dba_env = (UCHAR *) env;
 
 #ifdef SUPERSERVER

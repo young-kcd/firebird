@@ -3141,13 +3141,13 @@ static bool expression_equal(thread_db* tdbb, OptimizerBlk* opt,
 		fb_assert(idx->idx_expression_request->req_caller == NULL);
 		idx->idx_expression_request->req_caller = tdbb->tdbb_request;
 		tdbb->tdbb_request = idx->idx_expression_request;
-		JrdMemoryPool* old_pool = tdbb->getDefaultPool();
-		tdbb->setDefaultPool(tdbb->tdbb_request->req_pool);
+		bool result = false;
+		{
+			Jrd::ContextPoolHolder(tdbb, tdbb->tdbb_request->req_pool);
 
-		bool result = expression_equal2(tdbb, opt, idx->idx_expression,
+			result = expression_equal2(tdbb, opt, idx->idx_expression,
 										node, stream);
-	
-		tdbb->setDefaultPool(old_pool);
+		}
 		tdbb->tdbb_request = idx->idx_expression_request->req_caller;
 		idx->idx_expression_request->req_caller = NULL;
 

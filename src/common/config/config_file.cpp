@@ -48,11 +48,9 @@
 // it's better to exit with appropriate diags rather continue
 // with missing / wrong configuration.
 #if (! defined(BOOT_BUILD)) && (! defined(EMBEDDED)) && (! defined(SUPERCLIENT))
-#define EXIT_ON_NO_CONF
-#define INFORM_ON_NO_CONF
+#define EXCEPTION_ON_NO_CONF
 #else
-#undef EXIT_ON_NO_CONF
-#undef INFORM_ON_NO_CONF
+#undef EXCEPTION_ON_NO_CONF
 #endif
 
 // config_file works with OS case-sensitivity
@@ -180,21 +178,21 @@ void ConfigFile::loadConfig()
 
 	Firebird::AutoPtr<FILE, FileClose> ifile(fopen(configFile.c_str(), "rt"));
 	
-#ifdef EXIT_ON_NO_CONF
+#ifdef EXCEPTION_ON_NO_CONF
 	int BadLinesCount = 0;
 #endif
     if (!ifile)
     {
         // config file does not exist
-#ifdef EXIT_ON_NO_CONF
-		if (fExitOnError)
+#ifdef EXCEPTION_ON_NO_CONF
+		if (fExceptionOnError)
 		{
 			Firebird::string Msg = "Missing configuration file: " + 
 				configFile.ToString() + ", exiting";
 			Firebird::Syslog::Record(Firebird::Syslog::Error, Msg);
 			Firebird::fatal_exception::raise(Msg.c_str());
 		}
-#endif //EXIT_ON_NO_CONF
+#endif //EXCEPTION_ON_NO_CONF
 		return;
     }
     string inputLine;
@@ -215,10 +213,10 @@ void ConfigFile::loadConfig()
         {
 			Firebird::string Msg = (configFile + ": illegal line \"" +
 				inputLine + "\"").ToString();
-			Firebird::Syslog::Record(fExitOnError ? 
+			Firebird::Syslog::Record(fExceptionOnError ? 
 					Firebird::Syslog::Error :
 					Firebird::Syslog::Warning, Msg);
-#ifdef EXIT_ON_NO_CONF
+#ifdef EXCEPTION_ON_NO_CONF
 			BadLinesCount++;
 #endif
             continue;
@@ -233,8 +231,8 @@ void ConfigFile::loadConfig()
 
 		parameters.add(Parameter(getPool(), key, value));
     }
-#ifdef EXIT_ON_NO_CONF
-	if (BadLinesCount && fExitOnError) 
+#ifdef EXCEPTION_ON_NO_CONF
+	if (BadLinesCount && fExceptionOnError) 
 	{
 		Firebird::fatal_exception::raise("Bad lines in firebird.conf");
 	}

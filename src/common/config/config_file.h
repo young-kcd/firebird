@@ -67,12 +67,12 @@ class ConfigFile : public Firebird::AutoStorage
 		string, Firebird::FirstObjectKey<Parameter> > mymap_t;
 
 public:
-	ConfigFile(MemoryPool& p, bool ExitOnError) 
+	ConfigFile(MemoryPool& p, bool ExceptionOnError) 
 		: AutoStorage(p), isLoadedFlg(false), 
-		  fExitOnError(ExitOnError), parameters(getPool()) {}
-    explicit ConfigFile(bool ExitOnError) 
+		  fExceptionOnError(ExceptionOnError), parameters(getPool()) {}
+    explicit ConfigFile(bool ExceptionOnError) 
 		: AutoStorage(), isLoadedFlg(false), 
-		  fExitOnError(ExitOnError), parameters(getPool()) {}
+		  fExceptionOnError(ExceptionOnError), parameters(getPool()) {}
 
 	// configuration file management
     const string getConfigFile() { return configFile; }
@@ -95,7 +95,7 @@ public:
 private:
     string configFile;
     bool isLoadedFlg;
-	bool fExitOnError;
+	bool fExceptionOnError;
     mymap_t parameters;
 };
 

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: all.cpp,v 1.27 2004-08-16 12:28:13 alexpeshkoff Exp $
+//	$Id: all.cpp,v 1.28 2004-08-30 18:10:28 alexpeshkoff Exp $
 //
 
 #include "firebird.h"
@@ -33,48 +33,6 @@
 #include "../alice/alice.h"
 #include "../jrd/thd.h"
 #include "../common/classes/alloc.h"
-
-
-//____________________________________________________________
-//  
-//		Get rid of everything.
-//  
-
-void ALLA_fini(void)
-{
-	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
-
-	for (AliceGlobals::pool_vec_t::iterator curr = tdgbl->pools.begin();
-					curr != tdgbl->pools.end(); ++curr)
-	{
-		AliceMemoryPool::deletePool(*curr);
-		*curr = 0;
-	}
-	tdgbl->pools.clear();
-
-	tdgbl->setDefaultPool(0);
-	tdgbl->ALICE_permanent_pool = 0;
-}
-
-
-//____________________________________________________________
-//  
-//		Initialize the pool system.
-//  
-
-void ALLA_init(void)
-{
-	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
-#ifdef NOT_USED_OR_REPLACED
-	tdgbl->ALICE_default_pool = tdgbl->ALICE_permanent_pool =
-		AliceMemoryPool::create_new_pool();
-#else
-	// TMN: John, what pool to use here?
-	tdgbl->ALICE_permanent_pool = AliceMemoryPool::createPool();
-	tdgbl->setDefaultPool(tdgbl->ALICE_permanent_pool);
-#endif
-}
-
 
 
 #ifdef NOT_USED_OR_REPLACED
@@ -165,22 +123,25 @@ AliceMemoryPool* AliceMemoryPool::create_new_pool(MemoryPool* parent)
 	//BUGCHECK ("ALLA_fini - finishing before starting");
     return 0;//pool;	// Never reached, but makes the compiler happy.
 }
-#endif
+#endif //NOT_USED_OR_REPLACED
+
+AliceMemoryPool* AliceMemoryPool::createPool() {
+	AliceMemoryPool* result = (AliceMemoryPool*)internal_create(sizeof(AliceMemoryPool));
+	AliceGlobals::getSpecific()->pools.add(result);
+	return result;
+}
 
 void AliceMemoryPool::deletePool(AliceMemoryPool* pool) 
 {
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 
-	AliceGlobals::pool_vec_t::iterator curr;
-	for (curr = tdgbl->pools.begin(); curr != tdgbl->pools.end(); ++curr)
+	for (int i = 0; i < tdgbl->pools.getCount(); ++i)
 	{
-		if (*curr == pool)
+		if (tdgbl->pools[i] == pool)
 		{
-			*curr = 0;
+			tdgbl->pools.remove(i);
 			break;
 		}
 	}
-//	pool->lls_cache.~BlockCache<alice_lls>();
 	MemoryPool::deletePool(pool);
 }
-

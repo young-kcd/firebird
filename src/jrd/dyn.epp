@@ -126,9 +126,8 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 
 	// Create a pool for DYN to operate in.  It will be released when
 	// the routine exits.
-	JrdMemoryPool* old_pool = tdbb->getDefaultPool();
 	JrdMemoryPool* tempPool = JrdMemoryPool::createPool();
-	tdbb->setDefaultPool(tempPool);
+	Jrd::ContextPoolHolder context(tdbb, tempPool);
 
 	try {
 
@@ -183,13 +182,8 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 #endif
 #endif
 
-		tdbb->setDefaultPool(old_pool);
-		JrdMemoryPool::deletePool(tempPool);
 		ERR_punt();
 	}
-
-	tdbb->setDefaultPool(old_pool);
-	JrdMemoryPool::deletePool(tempPool);
 }
 
 

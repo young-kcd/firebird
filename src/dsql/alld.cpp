@@ -105,40 +105,15 @@ void ALLD_init()
 		DSQL_permanent_pool = DsqlMemoryPool::createPool();
 		pools = FB_NEW(*DSQL_permanent_pool) Firebird::vector<DsqlMemoryPool*>
 					(10, *DSQL_permanent_pool, dsql_type_vec);
-		tdsql->setDefaultPool(DSQL_permanent_pool);
+		// I don't catch why this happens only for !init_flag. Alex.
+		// tdsql->setDefaultPool(DSQL_permanent_pool);
 	}
 }
 
-#ifdef NOT_USED_OR_REPLACED
-void DsqlMemoryPool::ALLD_push(BLK object, dsql_lls** stack)
-{
-	tsql* tdsql = DSQL_get_thread_data();
-	DsqlMemoryPool* pool = tdsql->getDefaultPool();
-
-	dsql_lls* node = pool->lls_cache.newBlock();
-	node->lls_object = object;
-	node->lls_next = *stack;
-	*stack = node;
-}
-
-
-BLK DsqlMemoryPool::ALLD_pop(dsql_lls* *stack)
-{
-	dsql_lls* node = *stack;
-	*stack = node->lls_next;
-	BLK object = node->lls_object;
-
-	DsqlMemoryPool* pool = (DsqlMemoryPool*)MemoryPool::blk_pool(node);
-	pool->lls_cache.returnBlock(node);
-
-	return object;
-}
-#endif //NOT_USED_OR_REPLACED
 
 DsqlMemoryPool* DsqlMemoryPool::createPool()
 {
 	DsqlMemoryPool* result = (DsqlMemoryPool*)internal_create(sizeof(DsqlMemoryPool));
-//	new (&result->lls_cache) BlockCache<class dsql_lls> (*result);
 	
 	if (!DSQL_permanent_pool)
 		return result;
@@ -168,7 +143,6 @@ DsqlMemoryPool* DsqlMemoryPool::createPool()
 
 void DsqlMemoryPool::deletePool(DsqlMemoryPool* pool)
 {
-//	pool->lls_cache.~BlockCache<class dsql_lls>();
 	MemoryPool::deletePool(pool);
 	
 	if (pool == DSQL_permanent_pool)

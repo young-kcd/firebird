@@ -218,18 +218,15 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 		SET_TDBB(tdbb);
 
 		compile_in_progress = true;
-		JrdMemoryPool* old_pool = tdbb->getDefaultPool(),
-		*new_pool = JrdMemoryPool::createPool();
 		// Allocate statement memory pool
-		tdbb->setDefaultPool(new_pool);
+		JrdMemoryPool* new_pool = JrdMemoryPool::createPool();
 		// Trigger request is not compiled yet. Lets do it now
 		try {
+			Jrd::ContextPoolHolder context(tdbb, new_pool);
 			PAR_blr(tdbb, relation, blr.begin(),  NULL, NULL, &request, true,
 					(USHORT)(flags & TRG_ignore_perm ? csb_ignore_perm : 0));
-			tdbb->setDefaultPool(old_pool);
 		}
 		catch (const std::exception&) {
-			tdbb->setDefaultPool(old_pool);
 			compile_in_progress = false;
 			if (request) {
 				CMP_release(tdbb,request);
@@ -240,7 +237,6 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 			}
 			throw;
 		}
-		tdbb->setDefaultPool(old_pool);
 		
 		if (name.hasData()) 
 		{
@@ -419,7 +415,6 @@ inline static void api_entry_point_init(ISC_STATUS* user_status)
 inline static thread_db* JRD_MAIN_set_thread_data(thread_db& thd_context)
 {
 	thread_db* tdbb = &thd_context;
-	MOVE_CLEAR(tdbb, sizeof(thread_db));
 	JRD_set_context(tdbb);
 	return tdbb;
 }
@@ -579,6 +574,9 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		JRD_restore_context();
 		return user_status[1];
 	}
+
+	// use database context pool
+	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 
 	dbb->dbb_flags |= DBB_being_opened;
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
@@ -1713,6 +1711,9 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 		return user_status[1];
 	}
 
+	// use database context pool
+	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
+
 	dbb->dbb_flags |= DBB_being_opened;
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
@@ -2209,7 +2210,6 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Attachment** handle)
 	tdbb->tdbb_attachment = attachment;
 	tdbb->tdbb_request = NULL;
 	tdbb->tdbb_transaction = NULL;
-	tdbb->setDefaultPool(0);
 
 /* Count active thread in database */
 
@@ -2318,63 +2318,66 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 	if (!attach)
 		return handle_error(user_status, isc_bad_db_handle, tdbb);
 
-	tdbb->tdbb_database = dbb;
-	tdbb->tdbb_attachment = attachment;
-	tdbb->tdbb_request = NULL;
-	tdbb->tdbb_transaction = NULL;
-	tdbb->setDefaultPool(dbb->dbb_permanent);
+	bool err = false; // so much for uninitialized vars... if something
+	// failed before the first call to drop_files, which was the value?
+	{
+		Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
+		tdbb->tdbb_database = dbb;
+		tdbb->tdbb_attachment = attachment;
+		tdbb->tdbb_request = NULL;
+		tdbb->tdbb_transaction = NULL;
 
 /* Count active thread in database */
 
-	++dbb->dbb_use_count;
+		++dbb->dbb_use_count;
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-	LOG_call(log_drop_database, *handle);
-	LOG_call(log_statistics, dbb->dbb_reads, dbb->dbb_writes,
+		LOG_call(log_drop_database, *handle);
+		LOG_call(log_statistics, dbb->dbb_reads, dbb->dbb_writes,
 			 dbb->dbb_max_memory);
 #endif
 
-	tdbb->tdbb_status_vector = user_status;
-	try
-	{
-		if (!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner)))
-			ERR_post(isc_no_priv,
+		tdbb->tdbb_status_vector = user_status;
+		try
+		{
+			if (!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner)))
+				ERR_post(isc_no_priv,
 					isc_arg_string, "drop",
 					isc_arg_string, "database",
 					isc_arg_string,
 					ERR_cstring((const SCHAR*) tdbb->tdbb_attachment->att_filename.c_str()), 0);
 
-		if (attachment->att_flags & ATT_shutdown)
-			ERR_post(isc_shutdown, isc_arg_string,
+			if (attachment->att_flags & ATT_shutdown)
+				ERR_post(isc_shutdown, isc_arg_string,
 					ERR_cstring((const SCHAR*) tdbb->tdbb_attachment->att_filename.c_str()), 0);
 
-		if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD))
-			ERR_post(isc_lock_timeout, isc_arg_gds, isc_obj_in_use,
+			if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD))
+				ERR_post(isc_lock_timeout, isc_arg_gds, isc_obj_in_use,
 					isc_arg_string,
 					ERR_cstring((const SCHAR*) tdbb->tdbb_attachment->att_filename.c_str()), 0);
 
-		JRD_SS_MUTEX_LOCK;
+			JRD_SS_MUTEX_LOCK;
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
-		V4_JRD_MUTEX_LOCK(databases_mutex);
-		V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
+			V4_JRD_MUTEX_LOCK(databases_mutex);
+			V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 #endif
-	}
-	catch(const std::exception& ex)
-	{
-		return error(user_status, ex);
-	}
+		}
+		catch(const std::exception& ex)
+		{
+			return error(user_status, ex);
+		}
 	
-	try {
+		try {
 
 /* Check if same process has more attachments */
 
-	if ((attach = dbb->dbb_attachments) && (attach->att_next)) {
-		ERR_post(isc_no_meta_update, isc_arg_gds, isc_obj_in_use,
-				 isc_arg_string, "DATABASE", 0);
-	}
+			if ((attach = dbb->dbb_attachments) && (attach->att_next)) {
+				ERR_post(isc_no_meta_update, isc_arg_gds, isc_obj_in_use,
+						isc_arg_string, "DATABASE", 0);
+			}
 
 #ifdef CANCEL_OPERATION
-	attachment->att_flags |= ATT_cancel_disable;
+			attachment->att_flags |= ATT_cancel_disable;
 #endif
 
 /* Here we have database locked in exclusive mode.
@@ -2382,24 +2385,22 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
    process can attach to this database once we release our exclusive
    lock and start dropping files. */
 
-   	WIN window(HEADER_PAGE);
-	Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
-	CCH_MARK_MUST_WRITE(tdbb, &window);
-	header->hdr_ods_version = 0;
-	CCH_RELEASE(tdbb, &window);
+		   	WIN window(HEADER_PAGE);
+			Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+			CCH_MARK_MUST_WRITE(tdbb, &window);
+			header->hdr_ods_version = 0;
+			CCH_RELEASE(tdbb, &window);
 
-	}	// try
-	catch (const std::exception& ex) {
+		}	// try
+		catch (const std::exception& ex) {
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
-		V4_JRD_MUTEX_UNLOCK(databases_mutex);
-		V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
+			V4_JRD_MUTEX_UNLOCK(databases_mutex);
+			V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 #endif
-		JRD_SS_MUTEX_UNLOCK;
-		return error(user_status, ex);
-	}
-
-    bool err = false; // so much for uninitialized vars... if something
-    // failed before the first call to drop_files, which was the value?
+			JRD_SS_MUTEX_UNLOCK;
+			return error(user_status, ex);
+		}
+	} // dbb permanent context
     
 /* A default catch all */
 	try {
@@ -2408,42 +2409,41 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 
 /* mark the dbb unusable */
 
-	dbb->dbb_flags |= DBB_not_in_use;
-	*handle = NULL;
+		dbb->dbb_flags |= DBB_not_in_use;
+		*handle = NULL;
 
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
-	V4_JRD_MUTEX_UNLOCK(databases_mutex);
+		V4_JRD_MUTEX_UNLOCK(databases_mutex);
 #endif
-	const jrd_file* file = dbb->dbb_file;
-	const Shadow* shadow = dbb->dbb_shadow;
-
-	tdbb->setDefaultPool(NULL);
+		const jrd_file* file = dbb->dbb_file;
+		const Shadow* shadow = dbb->dbb_shadow;
 
 #ifdef GOVERNOR
-	if (JRD_max_users) {
-		fb_assert(num_attached > 0);
-		num_attached--;
-	}
+		if (JRD_max_users) {
+			fb_assert(num_attached > 0);
+			num_attached--;
+		}
 #endif /* GOVERNOR */
 
 /* Unlink attachment from database */
 
-	release_attachment(attachment);
+		release_attachment(attachment);
 
 /* At this point, mutex dbb->dbb_mutexes [DBB_MUTX_init_fini] has been
    unlocked and mutex databases_mutex has been locked. */
 
-	shutdown_database(dbb, false);
+		shutdown_database(dbb, false);
 
 /* drop the files here. */
 
-	err = drop_files(file);
-	for (; shadow; shadow = shadow->sdw_next) {
-		err = err || drop_files(shadow->sdw_file);
-	}
+		err = drop_files(file);
+		for (; shadow; shadow = shadow->sdw_next) 
+		{
+			err = err || drop_files(shadow->sdw_file);
+		}
 
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
-	V4_JRD_MUTEX_UNLOCK(databases_mutex);
+		V4_JRD_MUTEX_UNLOCK(databases_mutex);
 #endif
 	}	// try
 	catch (const std::exception& ex) {
@@ -3697,41 +3697,42 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 			 blr_length, blr, in_msg_length, in_msg, out_msg_length);
 #endif
 
-	JrdMemoryPool *old_pool, *new_pool;
-	new_pool = old_pool = NULL;
 	jrd_req* request = NULL;
+	JrdMemoryPool* new_pool = 0;
 
 	tdbb->tdbb_status_vector = user_status;
 
-	try {
+	try 
+	{
 
 	jrd_tra* transaction = find_transaction(tdbb, *tra_handle, isc_req_wrong_db);
-
-	old_pool = tdbb->getDefaultPool();
-	tdbb->setDefaultPool(new_pool = JrdMemoryPool::createPool());
-
-	CompilerScratch* csb = PAR_parse(tdbb, reinterpret_cast<const UCHAR*>(blr), FALSE);
-	request = CMP_make_request(tdbb, csb);
-	CMP_verify_access(tdbb, request);
-
-    jrd_nod* in_message = NULL;
+	jrd_nod* in_message = NULL;
 	jrd_nod* out_message = NULL;
-	jrd_nod* node;
-	for (int i = 0; i < csb->csb_rpt.getCount(); i++)
+
 	{
-		if ( (node = csb->csb_rpt[i].csb_message) )
+		new_pool = JrdMemoryPool::createPool();
+		Jrd::ContextPoolHolder context(tdbb, new_pool);
+
+		CompilerScratch* csb = PAR_parse(tdbb, reinterpret_cast<const UCHAR*>(blr), FALSE);
+		request = CMP_make_request(tdbb, csb);
+		CMP_verify_access(tdbb, request);
+
+		jrd_nod* node;
+		for (int i = 0; i < csb->csb_rpt.getCount(); i++)
 		{
-			if ((int) (IPTR) node->nod_arg[e_msg_number] == 0) {
-				in_message = node;
-			}
-			else if ((int) (IPTR) node->nod_arg[e_msg_number] == 1) {
-				out_message = node;
+			if ( (node = csb->csb_rpt[i].csb_message) )
+			{
+				if ((int) (IPTR) node->nod_arg[e_msg_number] == 0) 
+				{
+					in_message = node;
+				}
+				else if ((int) (IPTR) node->nod_arg[e_msg_number] == 1) 
+				{
+					out_message = node;
+				}
 			}
 		}
-	}
-
-	tdbb->setDefaultPool(old_pool);
-	old_pool = NULL;
+	} // new context
 
 	request->req_attachment = attachment;
 
@@ -3799,9 +3800,6 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 		/* Set up to trap error in case release pool goes wrong. */
 
 		try {
-			if (old_pool) {
-				tdbb->setDefaultPool(old_pool);
-			}
 			if (request) {
 				CMP_release(tdbb, request);
 			}
@@ -4026,7 +4024,7 @@ bool JRD_getdir(Firebird::PathName& buf)
 	char* t_data = NULL;
 	char b[MAXPATHLEN];
 
-	thdd::getSpecificData((void**) &t_data);
+	ThreadData::getSpecificData((void**) &t_data);
 
 	if (t_data) {
 #ifdef WIN_NT
@@ -4060,7 +4058,7 @@ bool JRD_getdir(Firebird::PathName& buf)
    **/
 
 		Attachment* attachment;
-		if (tdbb && (tdbb->thdd_type == THDD_TYPE_TDBB))
+		if (tdbb && (tdbb->getType() == ThreadData::tddDBB))
 			attachment = tdbb->tdbb_attachment;
 		else
 			return false;
@@ -4321,7 +4319,7 @@ void JRD_restore_context(void)
 /* Charlie will fill this in
 cleaned_up |= INUSE_cleanup (&tdbb->tdbb_pages, (FPTR_VOID) CCH_?);
 */
-	thdd::restoreSpecific();
+	ThreadData::restoreSpecific();
 
 #ifdef DEV_BUILD
 	if (tdbb->tdbb_status_vector &&
@@ -4331,6 +4329,27 @@ cleaned_up |= INUSE_cleanup (&tdbb->tdbb_pages, (FPTR_VOID) CCH_?);
 		gds__log("mutexes or pages in use on successful return");
 	}
 #endif
+}
+
+
+void JRD_inuse_clear(thread_db* tdbb)
+{
+/**************************************
+ *
+ *	J R D _ i n u s e _ c l e a r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Prepare thread_db for later use .Initialize the in-use 
+ *	blocks so that we can unwind cleanly if an error occurs.
+ *  Used in constructor and JRD_set_context().
+ *
+ **************************************/
+
+	INUSE_clear(&tdbb->tdbb_mutexes);
+	INUSE_clear(&tdbb->tdbb_rw_locks);
+	INUSE_clear(&tdbb->tdbb_pages);
 }
 
 
@@ -4349,11 +4368,8 @@ void JRD_set_context(thread_db* tdbb)
  *
  **************************************/
 
-	INUSE_clear(&tdbb->tdbb_mutexes);
-	INUSE_clear(&tdbb->tdbb_rw_locks);
-	INUSE_clear(&tdbb->tdbb_pages);
+	JRD_inuse_clear(tdbb);
 	tdbb->tdbb_status_vector = NULL;
-	tdbb->thdd_type = THDD_TYPE_TDBB;
 	tdbb->putSpecific();
 }
 
@@ -4499,7 +4515,7 @@ static ISC_STATUS check_database(thread_db* tdbb, Attachment* attachment, ISC_ST
 	tdbb->tdbb_quantum = QUANTUM;
 	tdbb->tdbb_request = NULL;
 	tdbb->tdbb_transaction = NULL;
-	tdbb->setDefaultPool(0);
+	Jrd::ContextPoolHolder context(tdbb, 0);
 	tdbb->tdbb_inhibit = 0;
 	tdbb->tdbb_flags = 0;
 
@@ -4853,7 +4869,7 @@ static void get_options(const UCHAR*	dpb,
 				options->dpb_working_directory =
 					get_string_parameter(&p, scratch, &buf_size);
 
-				thdd::getSpecificData((void **) &t_data);
+				ThreadData::getSpecificData((void **) &t_data);
 
 				/*
 				   Null value for working_directory implies remote database. So get
@@ -4893,7 +4909,7 @@ static void get_options(const UCHAR*	dpb,
 					t_data = NULL;
 				}
 				/* Null out the thread local data so that further references will fail */
-				thdd::putSpecificData(0);
+				ThreadData::putSpecificData(0);
 			}
 			break;
 
@@ -5424,6 +5440,8 @@ static Database* init(thread_db*	tdbb,
 	tdbb->tdbb_database = dbb;
 
 	ALL_init();
+	// provide context pool for the rest stuff
+	Jrd::ContextPoolHolder context(tdbb, perm);
 
 	dbb->dbb_next = databases;
 	databases = dbb;
@@ -6175,7 +6193,7 @@ ULONG JRD_shutdown_all()
 				tdbb->tdbb_attachment = attach;
 				tdbb->tdbb_request = NULL;
 				tdbb->tdbb_transaction = NULL;
-				tdbb->setDefaultPool(0);
+				Jrd::ContextPoolHolder context(tdbb, 0);
 
 				++dbb->dbb_use_count;
 

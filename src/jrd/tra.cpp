@@ -361,7 +361,7 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 	if (transaction->tra_flags & TRA_invalidated)
 		ERR_post(isc_trans_invalid, 0);
 
-	tdbb->setDefaultPool(transaction->tra_pool);
+	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
 
 /* Perform any meta data work deferred */
 
@@ -758,8 +758,7 @@ void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, ResourceList& res
  **************************************/
 	SET_TDBB(tdbb);
 
-	JrdMemoryPool* const old_pool = tdbb->getDefaultPool();
-	tdbb->setDefaultPool(transaction->tra_pool);
+	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
 
 	for (Resource* rsc = resources.begin(); rsc < resources.end(); rsc++) 
 	{
@@ -792,8 +791,6 @@ void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, ResourceList& res
 			}
 		}
 	}
-
-	tdbb->setDefaultPool(old_pool);
 }
 
 
@@ -939,7 +936,7 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 		ERR_post(isc_read_only_database, 0);
 
 
-	tdbb->setDefaultPool(JrdMemoryPool::createPool());
+	Jrd::ContextPoolHolder context(tdbb, JrdMemoryPool::createPool());
 	jrd_tra* trans = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) jrd_tra(*tdbb->getDefaultPool());
 	trans->tra_pool = tdbb->getDefaultPool();
 	trans->tra_number = gds__vax_integer(id, length);
@@ -1095,7 +1092,7 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
  **************************************/
 	SET_TDBB(tdbb);
 
-	tdbb->setDefaultPool(transaction->tra_pool);
+	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
 
 /* Check in with external file system */
 
@@ -1424,7 +1421,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
    transaction block first, sieze relation locks, the go ahead and
    make up the real transaction block. */
 
-	tdbb->setDefaultPool(JrdMemoryPool::createPool());
+	Jrd::ContextPoolHolder context(tdbb, JrdMemoryPool::createPool());
 	jrd_tra* temp = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) jrd_tra(*tdbb->getDefaultPool());
 	temp->tra_pool = tdbb->getDefaultPool();
 	transaction_options(tdbb, temp, reinterpret_cast<const UCHAR*>(tpb),

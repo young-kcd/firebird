@@ -848,18 +848,18 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 				tdbb->tdbb_request = idx->idx_expression_request;
 				tdbb->tdbb_request->req_rpb[0].rpb_record = record;
 
-				JrdMemoryPool* old_pool = tdbb->getDefaultPool();
-				tdbb->setDefaultPool(tdbb->tdbb_request->req_pool);
+				{
+					Jrd::ContextPoolHolder(tdbb, tdbb->tdbb_request->req_pool);
 
-				tdbb->tdbb_request->req_flags &= ~req_null;
+					tdbb->tdbb_request->req_flags &= ~req_null;
 
-				if (!(desc_ptr = EVL_expr(tdbb, idx->idx_expression))) {
-					desc_ptr = &idx->idx_expression_desc;
+					if (!(desc_ptr = EVL_expr(tdbb, idx->idx_expression))) {
+						desc_ptr = &idx->idx_expression_desc;
+					}
+
+					isNull = (tdbb->tdbb_request->req_flags & req_null);
+
 				}
-
-				isNull = (tdbb->tdbb_request->req_flags & req_null);
-
-				tdbb->setDefaultPool(old_pool);
 				tdbb->tdbb_request = idx->idx_expression_request->req_caller;
 				idx->idx_expression_request->req_caller = NULL;
 			}

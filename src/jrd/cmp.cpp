@@ -553,13 +553,14 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag)
 
 	SET_TDBB(tdbb);
 
-	JrdMemoryPool* old_pool = tdbb->getDefaultPool();
 	// 26.09.2002 Nickolay Samofatov: default memory pool will become statement pool 
 	// and will be freed by CMP_release
-	JrdMemoryPool* new_pool = JrdMemoryPool::createPool();
-	tdbb->setDefaultPool(new_pool);
+	JrdMemoryPool* new_pool = 0;
 
 	try {
+
+		JrdMemoryPool* new_pool = JrdMemoryPool::createPool();
+		Jrd::ContextPoolHolder context(tdbb, new_pool);
 
 		CompilerScratch* csb = PAR_parse(tdbb, blr, internal_flag);
 		request = CMP_make_request(tdbb, csb);
@@ -571,12 +572,10 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag)
 		CMP_verify_access(tdbb, request);
 
 		delete csb;
-		tdbb->setDefaultPool(old_pool);
 
 	}
 	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);		
-		tdbb->setDefaultPool(old_pool);
 		if (request) {
 			CMP_release(tdbb, request);
 		}

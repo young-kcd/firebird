@@ -265,15 +265,15 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 	SSHORT request_count = 0;
 #endif /* DEBUG */
 #endif /* DEV_BUILD */
-	trdb thd_context, *tdrdb;
 	ISC_STATUS_ARRAY status_vector;
+	trdb thd_context(status_vector);
+	trdb* tdrdb;
 
 	gds__thread_enable(-1);
 
 	THREAD_ENTER();
 
 	REM_set_thread_data(tdrdb, &thd_context);
-	tdrdb->trdb_status_vector = status_vector;
 
 	try {
 
@@ -2945,11 +2945,9 @@ bool process_packet(rem_port* port,
  *
  **************************************/
 	TEXT msg[128];
-	trdb thd_context;
-	// BRS: This is the same as REM_set_thread_data but it not set status vector to null
+	trdb thd_context(port->port_status_vector);
+	// BRS: This is the same as REM_set_thread_data
 	trdb* tdrdb = &thd_context;
-	tdrdb->trdb_status_vector = port->port_status_vector;
-	tdrdb->thdd_type = THDD_TYPE_TRDB;
 	tdrdb->putSpecific();
 
 	try {
@@ -2973,7 +2971,7 @@ bool process_packet(rem_port* port,
 					gds__log
 						("SERVER/process_packet: connect reject, server exiting",
 						 0);
-					thdd::restoreSpecific();
+					ThreadData::restoreSpecific();
 					return false;
 				}
 			}
@@ -3017,7 +3015,7 @@ bool process_packet(rem_port* port,
 						gds__log("SERVER/process_packet: Multi-client server shutdown", 0);
 					}
 					port->disconnect(sendL, receive);
-					thdd::restoreSpecific();
+					ThreadData::restoreSpecific();
 					return false;
 				}
 			}
@@ -3195,7 +3193,7 @@ bool process_packet(rem_port* port,
 					port->disconnect();
 				else
 					port->disconnect(sendL, receive);
-				thdd::restoreSpecific();
+				ThreadData::restoreSpecific();
 				return false;
 			}
 			port->disconnect(sendL, receive);
@@ -3205,7 +3203,7 @@ bool process_packet(rem_port* port,
 		if (result)
 			*result = port;
 
-		thdd::restoreSpecific();
+		ThreadData::restoreSpecific();
 	
 	}	// try
 	catch (const std::exception&) {
@@ -3217,7 +3215,7 @@ bool process_packet(rem_port* port,
 		port->send_response(sendL, 0, 0, tdrdb->trdb_status_vector);
 		port->disconnect(sendL, receive);	/*  Well, how about this...  */
 
-		thdd::restoreSpecific();
+		ThreadData::restoreSpecific();
 		return false;
 	}
 

@@ -606,35 +606,45 @@ public:
 
 // DSQL threading declarations
 
-class tsql : public thdd
+class tsql : public ThreadData
 {
 private:
 	DsqlMemoryPool*		tsql_default;
-public:
-	ISC_STATUS*		tsql_status;
-	ISC_STATUS*		tsql_user_status;
+	friend class Firebird::SubsystemContextPoolHolder <tsql, DsqlMemoryPool>;
 
 	void setDefaultPool(DsqlMemoryPool* p)
 	{
-		thdd::setPool(p);
 		tsql_default = p;
 	}
+
+public:
+	tsql(ISC_STATUS* status) 
+		: ThreadData(tddSQL), tsql_default(0), 
+		tsql_status(status), tsql_user_status(0)
+	{
+	}
+
+	ISC_STATUS*		tsql_status;
+	ISC_STATUS*		tsql_user_status;
+
 	DsqlMemoryPool* getDefaultPool()
 	{
 		return tsql_default;
 	}
 };
 
+typedef Firebird::SubsystemContextPoolHolder <tsql, DsqlMemoryPool> 
+	DsqlContextPoolHolder;
+
 inline tsql* DSQL_get_thread_data() {
-	return (tsql*) thdd::getSpecific();
+	return (tsql*) ThreadData::getSpecific();
 }
 inline void DSQL_set_thread_data(tsql* &tdsql, tsql* thd_context) {
 	tdsql = thd_context;
-	tdsql->thdd_type = THDD_TYPE_TSQL;
 	tdsql->putSpecific();
 }
 inline void DSQL_restore_thread_data() {
-	thdd::restoreSpecific();
+	ThreadData::restoreSpecific();
 }
 
 /*! \var unsigned DSQL_debug

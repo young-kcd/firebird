@@ -363,7 +363,6 @@ static int api_gbak(int argc,
 	BurpGlobals ldgbl;
 	BurpGlobals* tdgbl = &ldgbl;
 	BurpGlobals::putSpecific(tdgbl);
-	memset((void *) tdgbl, 0, sizeof(BurpGlobals));
 	tdgbl->output_proc = output_main;
 
     const TEXT* usr;
@@ -582,18 +581,10 @@ int common_main(int		argc,
 //BurpGlobals	thd_context;
 
 	gbak_action action = QUIT;
-	BurpGlobals *tdgbl = (BurpGlobals*) gds__alloc(sizeof(BurpGlobals));
-// NOMEM: return error, FREE: during function exit in the SETJMP 
-	if (tdgbl == NULL)
-	{
-		Jrd::Service* service = (Jrd::Service*) output_data;
-		service->svc_started();
-		return FINI_ERROR;
-	}
+	BurpGlobals sgbl;
+	BurpGlobals *tdgbl = &sgbl;
 
 	BurpGlobals::putSpecific(tdgbl);
-//	SVC_PUTSPECIFIC_DATA;
-	memset((void *) tdgbl, 0, sizeof(BurpGlobals));
 	tdgbl->burp_env = reinterpret_cast<UCHAR*>(env);
 	tdgbl->file_desc = INVALID_HANDLE_VALUE;
 	tdgbl->output_proc = output_proc;
@@ -1211,9 +1202,6 @@ int common_main(int		argc,
 		}
 
 		BurpGlobals::restoreSpecific();
-		if (tdgbl != NULL) {
-			gds__free(tdgbl);
-		}
 
 #if defined(DEBUG_GDS_ALLOC) && !defined(SUPERSERVER)
 		gds_alloc_report(0, __FILE__, __LINE__);

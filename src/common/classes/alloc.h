@@ -29,7 +29,7 @@
  *		Alex Peshkoff <peshkoff@mail.ru>
  *				added PermanentStorage and AutoStorage classes.
  *
- *  $Id: alloc.h,v 1.49 2004-08-28 05:15:02 skidder Exp $
+ *  $Id: alloc.h,v 1.50 2004-08-30 18:10:49 alexpeshkoff Exp $
  *
  */
 
@@ -394,6 +394,32 @@ public:
 	}
 private:
 	MemoryPool* savedPool;	
+};
+
+// template enbaling common use of old and new pools control code
+// to be dropped when old-style code goes away
+template <typename SubsystemThreadData, typename SubsystemPool>
+class SubsystemContextPoolHolder
+: public ContextPoolHolder
+{
+public:
+	SubsystemContextPoolHolder <SubsystemThreadData, SubsystemPool> 
+	(
+		SubsystemThreadData* subThreadData, 
+		SubsystemPool* newPool
+	) 
+		: ContextPoolHolder(newPool), 
+		savedThreadData(subThreadData),
+		savedPool(savedThreadData->getDefaultPool()) 
+	{
+		savedThreadData->setDefaultPool(newPool);
+	}
+	~SubsystemContextPoolHolder() {
+		savedThreadData->setDefaultPool(savedPool);
+	}
+private:
+	SubsystemThreadData* savedThreadData;
+	SubsystemPool* savedPool;
 };
 
 } // namespace Firebird

@@ -220,7 +220,7 @@ void SCH_abort(void)
 
 /* See if we can find thread.  If not, don't worry about it */
 
-	const FB_THREAD_ID id = thdd::getId();
+	const FB_THREAD_ID id = ThreadData::getId();
 	THREAD thread;
 	for (THREAD* ptr = &active_thread; thread = *ptr; ptr = &thread->thread_next) {
 		if (thread->thread_id == id)
@@ -295,7 +295,7 @@ void SCH_ast(enum ast_t action)
 		break;
 
 	case AST_init:
-		ast_thread->thread_id = thdd::getId();
+		ast_thread->thread_id = ThreadData::getId();
 		break;
 
 		/* Check out of thread scheduler as AST thread */
@@ -400,7 +400,7 @@ void SCH_enter(void)
 		free_threads = NULL;
 		thread->thread_next = thread->thread_prior = thread;
 		thread->thread_flags = 0;
-		thread->thread_id = thdd::getId();
+		thread->thread_id = ThreadData::getId();
 		return;
 	}
 #endif
@@ -417,7 +417,7 @@ void SCH_enter(void)
 	}
 
 	THREAD thread = alloc_thread();
-	thread->thread_id = thdd::getId();
+	thread->thread_id = ThreadData::getId();
 
 /* Link thread block into circular list of active threads */
 
@@ -595,7 +595,7 @@ bool SCH_thread_enter_check(void)
 
 /* if active thread is not null and thread_id matches the we are the
    active thread */
-	if ((active_thread) && (active_thread->thread_id == thdd::getId()))
+	if ((active_thread) && (active_thread->thread_id == ThreadData::getId()))
 		return true;
 
 	return false;
@@ -624,7 +624,7 @@ bool SCH_validate(void)
 	}
 
 #ifdef MULTI_THREAD
-	if (active_thread->thread_id != thdd::getId()) {
+	if (active_thread->thread_id != ThreadData::getId()) {
 		gds__log("SCH_validate -- wrong thread");
 		return false;
 	}
@@ -705,7 +705,7 @@ static bool ast_enable(void)
 		return false;
 
 	if (ast_thread->thread_flags & THREAD_ast_active &&
-		ast_thread->thread_id == thdd::getId())
+		ast_thread->thread_id == ThreadData::getId())
 		return false;
 
 	if (!ast_thread->thread_count || !--ast_thread->thread_count) {
@@ -739,11 +739,11 @@ static void ast_disable(void)
 		return;
 
 	if (ast_thread->thread_flags & THREAD_ast_active) {
-		if (ast_thread->thread_id == thdd::getId())
+		if (ast_thread->thread_id == ThreadData::getId())
 			return;
 		else {
 			if (active_thread
-				&& active_thread->thread_id == thdd::getId()) 
+				&& active_thread->thread_id == ThreadData::getId()) 
 			{
 				stall(active_thread);
 				return;

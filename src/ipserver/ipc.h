@@ -651,7 +651,7 @@ typedef struct eventq {
 
 /* interprocess database thread structure */
 
-class tidb : public thdd 
+class tidb : public ThreadData 
 {
 public:
 	struct rdb *tidb_database;

@@ -688,7 +688,6 @@ bool VAL_validate(thread_db* tdbb, USHORT switches)
  **************************************/
 	struct vdr control;
 	JrdMemoryPool* val_pool = 0;
-	JrdMemoryPool* old_pool = 0;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -696,9 +695,8 @@ bool VAL_validate(thread_db* tdbb, USHORT switches)
 
 	try {
 
-	old_pool = tdbb->getDefaultPool();
-	val_pool = 0;
-	tdbb->setDefaultPool(val_pool = JrdMemoryPool::createPool());
+	val_pool = JrdMemoryPool::createPool();
+	Jrd::ContextPoolHolder context(tdbb, val_pool);
 
 	control.vdr_page_bitmap = NULL;
 	control.vdr_flags = 0;
@@ -735,18 +733,16 @@ bool VAL_validate(thread_db* tdbb, USHORT switches)
 	garbage_collect(tdbb, &control);
 	CCH_flush(tdbb, FLUSH_FINI, 0);
 
-	JrdMemoryPool::deletePool(val_pool);
-	tdbb->setDefaultPool(old_pool);
 	tdbb->tdbb_flags &= ~TDBB_sweeper;
 	}	// try
 	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		JrdMemoryPool::deletePool(val_pool);
-		tdbb->setDefaultPool(old_pool);
 		tdbb->tdbb_flags &= ~TDBB_sweeper;
 		return false;
 	}
 
+	JrdMemoryPool::deletePool(val_pool);
 	return true;
 }
 

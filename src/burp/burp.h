@@ -767,9 +767,17 @@ class BurpGlobals;
 extern BurpGlobals* gdgbl;
 #endif
 
-class BurpGlobals : public thdd
+class BurpGlobals : public ThreadData
 {
 public:
+	BurpGlobals() : ThreadData(ThreadData::tddGBL)
+	{
+		// this is VERY dirty hack to keep current behaviour
+		memset (&gbl_database_file_name, 0, 
+			reinterpret_cast<char*>(&veryEnd) - 
+				reinterpret_cast<char*>(&gbl_database_file_name));
+	}
+
 	const TEXT*	gbl_database_file_name;
 	TEXT		gbl_backup_start_time[30];
 	bool		gbl_sw_verbose;
@@ -897,14 +905,13 @@ public:
 	TEXT			database_security_class[GDS_NAME_LEN]; // To save database security class for deferred update 
 #ifdef SUPERSERVER
 	static inline BurpGlobals* getSpecific() {
-		return (BurpGlobals*) thdd::getSpecific();
+		return (BurpGlobals*) ThreadData::getSpecific();
 	}
 	static inline void putSpecific(BurpGlobals* tdgbl) {
-		tdgbl->thdd_type = THDD_TYPE_TGBL;
-		((thdd*)tdgbl)->putSpecific();
+		tdgbl->ThreadData::putSpecific();
 	}
 	static inline void restoreSpecific() {
-		thdd::restoreSpecific();
+		ThreadData::restoreSpecific();
 	}
 #else
 	static inline BurpGlobals* getSpecific() {
@@ -912,11 +919,12 @@ public:
 	}
 	static inline void putSpecific(BurpGlobals* tdgbl) {
 		gdgbl = tdgbl;
-		tdgbl->thdd_type = THDD_TYPE_TGBL;
 	}
 	static inline void restoreSpecific() {
 	}
 #endif
+
+	char veryEnd;
 };
 
 // CVC: This aux routine declared here to not force inclusion of burp.h with burp_proto.h

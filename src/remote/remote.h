@@ -502,9 +502,14 @@ const USHORT PORT_dummy_pckt_set= 1024;	/* A dummy packet interval is set  */
 
 /* Thread specific remote database block */
 
-class trdb : public thdd
+class trdb : public ThreadData
 {
 public:
+	trdb(ISC_STATUS* status) 
+		: ThreadData(ThreadData::tddRDB), trdb_status_vector(status)
+	{
+		trdb_database = 0;
+	}
 	rdb*	trdb_database;
 	ISC_STATUS*	trdb_status_vector;
 };
@@ -513,16 +518,14 @@ typedef trdb* TRDB;
 
 
 inline trdb* REM_get_thread_data() {
-	return (trdb*) thdd::getSpecific();
+	return (trdb*) ThreadData::getSpecific();
 }
 inline void REM_set_thread_data(trdb* &tdrdb, trdb* thd_context) {
 	tdrdb = thd_context;
-	tdrdb->trdb_status_vector = NULL;
-	tdrdb->thdd_type = THDD_TYPE_TRDB;
 	tdrdb->putSpecific();
 }
 inline void REM_restore_thread_data() {
-	thdd::restoreSpecific();
+	ThreadData::restoreSpecific();
 }
 
 /* Queuing structure for Client batch fetches */

@@ -35,24 +35,23 @@ namespace Jrd {
 	class Savepoint;
 	class Format;
 }
-struct blk;
 
 void	VIO_backout(Jrd::thread_db*, Jrd::record_param*, const Jrd::jrd_tra*);
 void	VIO_bump_count(Jrd::thread_db*, USHORT, Jrd::jrd_rel*, bool);
 bool	VIO_chase_record_version(Jrd::thread_db*, Jrd::record_param*, Jrd::RecordSource*,
-									Jrd::jrd_tra*, blk*, bool);
+									Jrd::jrd_tra*, JrdMemoryPool*, bool);
 #ifdef PC_ENGINE
 bool	VIO_check_if_updated(Jrd::thread_db*, Jrd::record_param*);
 #endif
-void	VIO_data(Jrd::thread_db*, Jrd::record_param*, blk*);
+void	VIO_data(Jrd::thread_db*, Jrd::record_param*, JrdMemoryPool*);
 void	VIO_erase(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*);
 #ifdef GARBAGE_THREAD
 void	VIO_fini(Jrd::thread_db*);
 #endif
 bool	VIO_garbage_collect(Jrd::thread_db*, Jrd::record_param*, const Jrd::jrd_tra*);
 Jrd::Record*	VIO_gc_record(Jrd::thread_db*, Jrd::jrd_rel*);
-bool	VIO_get(Jrd::thread_db*, Jrd::record_param*, Jrd::RecordSource*, Jrd::jrd_tra*, blk*);
-bool	VIO_get_current(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*, blk*, bool);
+bool	VIO_get(Jrd::thread_db*, Jrd::record_param*, Jrd::RecordSource*, Jrd::jrd_tra*, JrdMemoryPool*);
+bool	VIO_get_current(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*, JrdMemoryPool*, bool);
 #ifdef GARBAGE_THREAD
 void	VIO_init(Jrd::thread_db*);
 #endif
@@ -60,7 +59,7 @@ void	VIO_merge_proc_sav_points(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::Savepoint**)
 bool	VIO_writelock(Jrd::thread_db*, Jrd::record_param*, Jrd::RecordSource*, Jrd::jrd_tra*);
 void	VIO_modify(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*, Jrd::jrd_tra*);
 bool	VIO_next_record(Jrd::thread_db*, Jrd::record_param*, Jrd::RecordSource*, Jrd::jrd_tra*,
-							   blk*, bool, bool);
+							   JrdMemoryPool*, bool, bool);
 Jrd::Record*	VIO_record(Jrd::thread_db*, Jrd::record_param*, const Jrd::Format*, JrdMemoryPool*);
 void	VIO_start_save_point(Jrd::thread_db*, Jrd::jrd_tra*);
 void	VIO_store(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*);

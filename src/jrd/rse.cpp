@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.75 2004-08-17 11:28:49 dimitr Exp $
+ * $Id: rse.cpp,v 1.76 2004-08-30 18:10:42 alexpeshkoff Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -2251,7 +2251,7 @@ static bool get_record(thread_db*	tdbb,
 								rpb,
 								rsb,
 								request->req_transaction,
-								(BLK) request->req_pool,
+								request->req_pool,
 								(mode == RSE_get_backward),
 								false))
 			{
@@ -2281,7 +2281,7 @@ static bool get_record(thread_db*	tdbb,
 					}
 #endif
 					if (VIO_get(tdbb, rpb, rsb, request->req_transaction,
-								(BLK) request->req_pool))
+								request->req_pool))
 					{
 						result = true;
 						break;

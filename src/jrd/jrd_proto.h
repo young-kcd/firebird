@@ -155,6 +155,7 @@ void	JRD_mutex_unlock(struct mutx_t *);
 bool	JRD_reschedule(Jrd::thread_db*, SLONG, bool);
 void	JRD_restore_context(void);
 void	JRD_set_context(Jrd::thread_db*);
+void	JRD_inuse_clear(Jrd::thread_db* tdbb);
 void	JRD_unblock(Jrd::BlockingThread**);
 void	JRD_wlck_lock(struct mutx_t *);
 void	JRD_wlck_unlock(struct mutx_t *);

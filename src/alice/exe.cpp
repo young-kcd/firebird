@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.36 2004-07-02 10:02:46 brodsom Exp $
+//	$Id: exe.cpp,v 1.37 2004-08-30 18:10:28 alexpeshkoff Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -85,8 +85,7 @@ int EXE_action(const TEXT* database, const ULONG switches)
 {
 	UCHAR dpb[128];
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
-
-	ALLA_init();
+	AliceContextPoolHolder context(tdgbl, AliceMemoryPool::createPool());
 
 	for (USHORT i = 0; i < MAX_VAL_ERRORS; i++)
 		tdgbl->ALICE_data.ua_val_errors[i] = 0;
@@ -130,8 +129,6 @@ int EXE_action(const TEXT* database, const ULONG switches)
 		isc_detach_database(tdgbl->status, &handle);
 	}
 
-	ALLA_fini();
-
 	return ((error) ? FINI_ERROR : FINI_OK);
 }
 
@@ -144,8 +141,7 @@ int EXE_two_phase(const TEXT* database, const ULONG switches)
 {
 	UCHAR dpb[128];
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
-
-	ALLA_init();
+	AliceContextPoolHolder context(tdgbl, AliceMemoryPool::createPool());
 
 	for (USHORT i = 0; i < MAX_VAL_ERRORS; i++)
 		tdgbl->ALICE_data.ua_val_errors[i] = 0;
@@ -173,8 +169,6 @@ int EXE_two_phase(const TEXT* database, const ULONG switches)
 
 	if (handle)
 		isc_detach_database(tdgbl->status, &handle);
-
-	ALLA_fini();
 
 	return ((error) ? FINI_ERROR : FINI_OK);
 }

@@ -188,7 +188,7 @@ void ALL_init(void)
 	Database* dbb = tdbb->tdbb_database;
 
 	JrdMemoryPool* pool = dbb->dbb_permanent;
-	tdbb->setDefaultPool(pool);
+//	tdbb->setDefaultPool(pool);
 //	dbb->dbb_permanent->setExtendSize(PERM_EXTEND_SIZE);
 	dbb->dbb_pools[0] = pool;
 	dbb->dbb_bufferpool = JrdMemoryPool::createPool();

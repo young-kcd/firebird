@@ -24,8 +24,5 @@
 #ifndef ALICE_ALL_PROTO_H
 #define ALICE_ALL_PROTO_H
 
-void		ALLA_init();				// initialize pool system 
-void		ALLA_fini();				// get rid of everything 
-
 #endif // ALICE_ALL_PROTO_H
 

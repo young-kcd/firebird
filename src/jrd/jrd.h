@@ -36,6 +36,7 @@
 #include "../jrd/nbak.h"
 #include "../jrd/btn.h"
 #include "../jrd/all.h"
+#include "../jrd/jrd_proto.h"
 #if defined(UNIX) && defined(SUPERSERVER)
 #include <setjmp.h>
 #endif
@@ -911,11 +912,31 @@ const USHORT WIN_garbage_collect	= 8;	/* scan left a page for garbage collector 
 
 
 // Thread specific database block
-class thread_db : public thdd
+class thread_db : public ThreadData
 {
 private:
 	JrdMemoryPool*	tdbb_default;
+	void setDefaultPool(JrdMemoryPool* p)
+	{
+		tdbb_default = p;
+	}
+	friend class Firebird::SubsystemContextPoolHolder <Jrd::thread_db, JrdMemoryPool>;
 public:
+	thread_db() 
+		: ThreadData(ThreadData::tddDBB)
+	{
+		tdbb_default = 0;
+		tdbb_database = 0;
+		tdbb_attachment = 0;
+		tdbb_transaction = 0;
+		tdbb_request = 0;
+		tdbb_status_vector = 0;
+		tdbb_setjmp = 0;
+		tdbb_inhibit = 0;
+		tdbb_quantum = 0;
+		tdbb_flags = 0;
+		JRD_inuse_clear(this);
+	}
 	Database*	tdbb_database;
 	Attachment*	tdbb_attachment;
 	jrd_tra*	tdbb_transaction;
@@ -933,11 +954,6 @@ public:
     sigjmp_buf tdbb_sigsetjmp;
 #endif
 
-	void setDefaultPool(JrdMemoryPool* p)
-	{
-		thdd::setPool(p);
-		tdbb_default = p;
-	}
 	JrdMemoryPool* getDefaultPool()
 	{
 		return tdbb_default;
@@ -1032,8 +1048,8 @@ public:
 #include "../jrd/err_proto.h"
 
 inline Jrd::thread_db* JRD_get_thread_data() {
-	thdd* p1 = thdd::getSpecific();
-	if (p1 && p1->thdd_type == THDD_TYPE_TDBB)
+	ThreadData* p1 = ThreadData::getSpecific();
+	if (p1 && p1->getType() == ThreadData::tddDBB)
 	{
 		Jrd::thread_db* p2 = (Jrd::thread_db*)p1;
 		if (p2->tdbb_database && MemoryPool::blk_type(p2->tdbb_database) != type_dbb)
@@ -1044,7 +1060,7 @@ inline Jrd::thread_db* JRD_get_thread_data() {
 	return (Jrd::thread_db*) p1;
 }
 inline void CHECK_TDBB(const Jrd::thread_db* tdbb) {
-	fb_assert(tdbb && (tdbb->thdd_type == THDD_TYPE_TDBB) &&
+	fb_assert(tdbb && (tdbb->getType() == ThreadData::tddDBB) &&
 			(!tdbb->tdbb_database ||
 				MemoryPool::blk_type(tdbb->tdbb_database) == type_dbb));
 }
@@ -1055,7 +1071,7 @@ inline void CHECK_DBB(const Jrd::Database* dbb) {
 #else
 /* PROD_BUILD */
 inline Jrd::thread_db* JRD_get_thread_data() {
-	return (Jrd::thread_db*) thdd::getSpecific();
+	return (Jrd::thread_db*) ThreadData::getSpecific();
 }
 inline void CHECK_DBB(const Jrd::Database* dbb) {
 }
@@ -1126,16 +1142,17 @@ extern int debug;
 inline static void JRD_set_thread_data(Jrd::thread_db* &tdbb, Jrd::thread_db& thd_context)
 {
 	tdbb = &thd_context;
-	MOVE_CLEAR(tdbb, sizeof(Jrd::thread_db));
-	tdbb->thdd_type = THDD_TYPE_TDBB;
 	tdbb->putSpecific();
 }
 
 inline void JRD_restore_thread_data() {
-	thdd::restoreSpecific();
+	ThreadData::restoreSpecific();
 }
 
-
+namespace Jrd {
+	typedef Firebird::SubsystemContextPoolHolder <Jrd::thread_db, JrdMemoryPool> 
+		ContextPoolHolder;
+}
 
 #endif /* JRD_JRD_H */
 

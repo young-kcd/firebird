@@ -167,15 +167,9 @@ int common_main(int argc,
 	argc = VMS_parse(&argv, argc);
 #endif
 
-	tsec* tdsec = (tsec *) gds__alloc(sizeof(tsec));
-/* NOMEM: return error, FREE: during function exit in the SETJMP */
-	if (tdsec == NULL) {
-		gsec_exit(FINI_ERROR, tdsec);
-	}
-
+	tsec tsecInstance(output_proc, output_data);
+	tsec* tdsec = &tsecInstance;
 	tsec::putSpecific(tdsec);
-//	SVC_PUTSPECIFIC_DATA;
-	memset((void *) tdsec, 0, sizeof(*tdsec));
 
 	tdsec->tsec_user_data =
 		(internal_user_data*) gds__alloc(sizeof(internal_user_data));
@@ -183,7 +177,6 @@ int common_main(int argc,
 	if (tdsec->tsec_user_data == NULL) {
 		gsec_exit(FINI_ERROR, tdsec);
 	}
-
 	memset((void *) tdsec->tsec_user_data, 0, sizeof(internal_user_data));
 
 	try {
@@ -193,13 +186,7 @@ int common_main(int argc,
    by 3 file descriptors to use in re-directing stdin, stdout, and stderr. */
 
 	tdsec->tsec_env = &env;
-	tdsec->tsec_output_proc = output_proc;
-	tdsec->tsec_output_data = output_data;
 	tdsec->tsec_interactive = true;
-	tdsec->tsec_service_gsec = false;
-	tdsec->tsec_service_thd = false;
-	tdsec->tsec_service_blk = NULL;
-	tdsec->tsec_status = tdsec->tsec_status_vector;
 	internal_user_data* user_data = tdsec->tsec_user_data;
 
 	if (argc > 1 && !strcmp(argv[1], "-svc")) {
@@ -357,10 +344,9 @@ int common_main(int argc,
 		const int exit_code = tdsec->tsec_exit_code;
 
 		if (tdsec->tsec_user_data != NULL)
+		{
 			gds__free((SLONG *) tdsec->tsec_user_data);
-
-		if (tdsec != NULL)
-			gds__free((SLONG *) tdsec);
+		}
 
 		/* All returns occur from this point - even normal returns */
 		return exit_code;

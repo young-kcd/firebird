@@ -265,7 +265,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 		CCH_RELEASE(tdbb, &temp.rpb_window);
 	else {
 		temp.rpb_record = VIO_gc_record(tdbb, relation);
-		VIO_data(tdbb, &temp, reinterpret_cast<blk*>(dbb->dbb_permanent));
+		VIO_data(tdbb, &temp, dbb->dbb_permanent);
 		data = temp.rpb_prior;
 		old_data = temp.rpb_record;
 		rpb->rpb_prior = temp.rpb_prior;
@@ -297,8 +297,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 		if (temp.rpb_flags & rpb_deleted)
 			CCH_RELEASE(tdbb, &temp.rpb_window);
 		else
-			VIO_data(tdbb, &temp,
-					 reinterpret_cast<blk*>(dbb->dbb_permanent));
+			VIO_data(tdbb, &temp, dbb->dbb_permanent);
 		gc_rec1 = temp.rpb_record;
 		temp.rpb_page = rpb->rpb_b_page;
 		temp.rpb_line = rpb->rpb_b_line;
@@ -462,7 +461,7 @@ void VIO_bump_count(thread_db* tdbb, USHORT count_id, jrd_rel* relation, bool er
 
 bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* rsb, 
 							  jrd_tra* transaction,
-							 BLK pool, bool writelock)
+							  JrdMemoryPool* pool, bool writelock)
 {
 /**************************************
  *
@@ -1025,7 +1024,7 @@ bool VIO_check_if_updated(thread_db* tdbb, record_param* rpb)
 #endif
 
 
-void VIO_data(thread_db* tdbb, record_param* rpb, BLK pool)
+void VIO_data(thread_db* tdbb, record_param* rpb, JrdMemoryPool* pool)
 {
 /**************************************
  *
@@ -1066,7 +1065,7 @@ void VIO_data(thread_db* tdbb, record_param* rpb, BLK pool)
    the format block and set up the record block.  This is a performance
    optimization. */
 
-	Record* record = VIO_record(tdbb, rpb, 0, (JrdMemoryPool*) pool);
+	Record* record = VIO_record(tdbb, rpb, 0, pool);
 	const Format* format = record->rec_format;
 
 /* If the record is a delta version, start with data from prior record. */
@@ -1686,7 +1685,7 @@ Record* VIO_gc_record(thread_db* tdbb, jrd_rel* relation)
 }
 
 
-bool VIO_get(thread_db* tdbb, record_param* rpb, RecordSource* rsb, jrd_tra* transaction, BLK pool)
+bool VIO_get(thread_db* tdbb, record_param* rpb, RecordSource* rsb, jrd_tra* transaction, JrdMemoryPool* pool)
 {
 /**************************************
  *
@@ -1750,7 +1749,10 @@ bool VIO_get(thread_db* tdbb, record_param* rpb, RecordSource* rsb, jrd_tra* tra
 
 bool VIO_get_current(
 					thread_db* tdbb,
-					record_param* rpb, jrd_tra* transaction, BLK pool, bool foreign_key)
+					record_param* rpb, 
+					jrd_tra* transaction, 
+					JrdMemoryPool* pool, 
+					bool foreign_key)
 {
 /**************************************
  *
@@ -2028,13 +2030,12 @@ static void RefetchRecord(thread_db* tdbb, record_param* rpb, jrd_tra* transacti
 	if ((!DPM_get(tdbb, rpb, LCK_read)) ||
 		  (!VIO_chase_record_version
 			(tdbb, rpb, NULL, transaction,
-			reinterpret_cast<blk*>(tdbb->getDefaultPool()),
+			tdbb->getDefaultPool(),
 			false)))
 	{
 		ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
 	}
-	VIO_data(tdbb, rpb,
-			reinterpret_cast<blk*>(tdbb->tdbb_request->req_pool));
+	VIO_data(tdbb, rpb, tdbb->tdbb_request->req_pool);
 
 	/* If record is present, and the transaction is read committed,
 	 * make sure the record has not been updated.  Also, punt after
@@ -2332,12 +2333,11 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, RecordSource* rsb,
 			if ((!DPM_get(tdbb, org_rpb, LCK_read)) ||
 				(!VIO_chase_record_version
 				 (tdbb, org_rpb, NULL, transaction,
-				  reinterpret_cast<blk*>(tdbb->getDefaultPool()), true)))
+				  tdbb->getDefaultPool(), true)))
 			{
 				return false;
 			}
-			VIO_data(tdbb, org_rpb,
-					 reinterpret_cast<blk*>(tdbb->tdbb_request->req_pool));
+			VIO_data(tdbb, org_rpb, tdbb->tdbb_request->req_pool);
 
 			org_rpb->rpb_stream_flags &= ~RPB_s_refetch;
 			
@@ -2403,7 +2403,7 @@ bool VIO_next_record(thread_db* tdbb,
 						record_param* rpb,
 						RecordSource* rsb,
 						jrd_tra* transaction,
-						BLK pool, bool backwards, bool onepage)
+						JrdMemoryPool* pool, bool backwards, bool onepage)
 {
 /**************************************
  *
@@ -2861,12 +2861,12 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 	}
 
 	Savepoint* sav_point = transaction->tra_save_point;
-	if (!sav_point) {
+	if (!sav_point) 
+	{
 		return;
 	}
 
-	JrdMemoryPool* old_pool = tdbb->getDefaultPool();
-	tdbb->setDefaultPool(transaction->tra_pool);
+	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
 
 // If the current to-be-cleaned-up savepoint is very big, and the next
 // level savepoint is the transaction level savepoint, then get rid of
@@ -2933,8 +2933,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 						BUGCHECK(186);	/* msg 186 record disappeared */
 					}
 					if (rpb.rpb_flags & rpb_delta) {
-						VIO_data(tdbb, &rpb,
-								 reinterpret_cast<blk*>(tdbb->getDefaultPool()));
+						VIO_data(tdbb, &rpb, tdbb->getDefaultPool());
 					}
 					else {
 						CCH_RELEASE(tdbb, &rpb.rpb_window);
@@ -2967,8 +2966,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 									BUGCHECK(186);	/* msg 186 record disappeared */
 								}
 								if (rpb.rpb_flags & rpb_delta) {
-									VIO_data(tdbb, &rpb,
-											 reinterpret_cast<blk*>(tdbb->getDefaultPool()));
+									VIO_data(tdbb, &rpb, tdbb->getDefaultPool());
 								}
 								else {
 									CCH_RELEASE(tdbb, &rpb.rpb_window);
@@ -2987,8 +2985,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 								if (!DPM_get(tdbb, &rpb, LCK_write)) {
 									BUGCHECK(186);	/* msg 186 record disappeared */
 								}
-								VIO_data(tdbb, &rpb,
-										 reinterpret_cast<blk*>(tdbb->getDefaultPool()));
+								VIO_data(tdbb, &rpb, tdbb->getDefaultPool());
 							}
 							update_in_place(tdbb, transaction, &rpb, &new_rpb);
 							if (!(transaction->tra_flags & TRA_system)) {
@@ -3071,8 +3068,6 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 	{
 		VIO_verb_cleanup(tdbb, transaction);	// get rid of savepoint
 	}
-
-	tdbb->setDefaultPool(old_pool);
 }
 
 
@@ -3921,8 +3916,7 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 				CCH_RELEASE(tdbb, &temp.rpb_window);
 			}
 			else {
-				VIO_data(tdbb, &temp,
-						 reinterpret_cast<blk*>(tdbb->getDefaultPool()));
+				VIO_data(tdbb, &temp, tdbb->getDefaultPool());
 				staying.push(temp.rpb_record);
 				data = temp.rpb_record;
 			}
@@ -4418,7 +4412,7 @@ static void purge(thread_db* tdbb, record_param* rpb)
 	jrd_rel* relation = rpb->rpb_relation;
 	rpb->rpb_record = VIO_gc_record(tdbb, relation);
 
-	VIO_data(tdbb, rpb, reinterpret_cast<blk*>(dbb->dbb_permanent));
+	VIO_data(tdbb, rpb, dbb->dbb_permanent);
 
 	temp.rpb_prior = rpb->rpb_prior;
 	Record* record = rpb->rpb_record;
@@ -4635,8 +4629,7 @@ static void update_in_place(
 			BUGCHECK(291);	 // msg 291 cannot find record back version
         }
         
-		VIO_data(tdbb, &temp2,
-				 reinterpret_cast<blk*>(dbb->dbb_permanent));
+		VIO_data(tdbb, &temp2, dbb->dbb_permanent);
 		gc_rec = temp2.rpb_record;
 		temp2.rpb_flags = rpb_chained;
 		if (temp2.rpb_prior) {
@@ -4742,8 +4735,7 @@ static void verb_post(
 #pragma FB_COMPILER_MESSAGE("Out-of-memory condition in this function corrupts database. And it is likely due to huge amounts of allocations")
 	SET_TDBB(tdbb);
 
-	JrdMemoryPool* old_pool = tdbb->getDefaultPool();
-	tdbb->setDefaultPool(transaction->tra_pool);
+	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
 
 /* Find action block for relation */
 	VerbAction* action;
@@ -4840,8 +4832,6 @@ static void verb_post(
 
 		garbage_collect_idx(tdbb, rpb, new_rpb, old_data);
 	}
-
-	tdbb->setDefaultPool(old_pool);
 }
 
 

@@ -31,6 +31,7 @@
 #include "../alice/all.h"
 #include "../include/fb_blk.h"
 #include "../common/classes/alloc.h"
+#include "../common/classes/array.h"
 
 #include <vector>
 
@@ -133,23 +134,6 @@ enum tdr_state_vals {
 };
 
 
-// a couple of obscure blocks used only in data allocator routines 
-
-//class alice_vec : public pool_alloc_rpt<blk*, alice_type_vec>
-//{
-//public:
-//	ULONG vec_count;
-//	blk *vec_object[1];
-//};
-//typedef alice_vec* VEC;
-
-//class alice_vcl : public pool_alloc_rpt<SLONG, alice_type_vcl>
-//{
-//	ULONG vcl_count;
-//	SLONG vcl_long[1];
-//};
-//typedef alice_vcl* VCL;
-
 // Global switches and data 
 
 #include "../jrd/svc.h"
@@ -166,19 +150,29 @@ class AliceGlobals;
 extern AliceGlobals* gdgbl;
 #endif
 
-class AliceGlobals : public thdd
+class AliceGlobals : public ThreadData
 {
 private:
 	AliceMemoryPool* ALICE_default_pool;
+	friend class Firebird::SubsystemContextPoolHolder <AliceGlobals, AliceMemoryPool>;
 
-public:
-	AliceGlobals(AliceMemoryPool* p) : pools(0, (AliceMemoryPool*)0,
-				pool_vec_t::allocator_type(*p)) {}
 	void setDefaultPool(AliceMemoryPool* p)
 	{
-		thdd::setPool(p);
 		ALICE_default_pool = p;
 	}
+
+public:
+	AliceGlobals(MemoryPool& p, Jrd::pfn_svc_output outProc, Jrd::Service* outData) 
+		: ThreadData(ThreadData::tddALICE),	pools(p),
+		output_proc(outProc), output_data(outData), 
+		ALICE_permanent_pool(0), ALICE_default_pool(0)
+	{
+	}
+	~AliceGlobals()
+	{
+		subsystemCleanup();
+	}
+
 	AliceMemoryPool* getDefaultPool()
 	{
 		return ALICE_default_pool;
@@ -187,8 +181,8 @@ public:
 	user_action		ALICE_data;
 	AliceMemoryPool* ALICE_permanent_pool;
 	ISC_STATUS_ARRAY	status_vector;
-	typedef			std::vector<AliceMemoryPool*, Firebird::allocator<AliceMemoryPool*> > pool_vec_t;
-	pool_vec_t		pools;
+	typedef			Firebird::HalfStaticArray<AliceMemoryPool*, 4> PoolsArray;
+	PoolsArray		pools;
 	int				exit_code;
 	Jrd::pfn_svc_output  output_proc;
 	Jrd::Service*	output_data;
@@ -203,14 +197,13 @@ public:
 
 #ifdef SUPERSERVER
 	static inline AliceGlobals* getSpecific() {
-		return (AliceGlobals*) thdd::getSpecific();
+		return (AliceGlobals*) ThreadData::getSpecific();
 	}
 	static inline void putSpecific(AliceGlobals* tdgbl) {
-		tdgbl->thdd_type = THDD_TYPE_TALICE;
-		((thdd*)tdgbl)->putSpecific();
+		tdgbl->ThreadData::putSpecific();
 	}
 	static inline void restoreSpecific() {
-		thdd::restoreSpecific();
+		ThreadData::restoreSpecific();
 	}
 #else
 	static inline AliceGlobals* getSpecific() {
@@ -218,13 +211,28 @@ public:
 	}
 	static inline void putSpecific(AliceGlobals* tdgbl) {
 		gdgbl = tdgbl;
-		tdgbl->thdd_type = THDD_TYPE_TALICE;
 	}
 	static inline void restoreSpecific() {
 	}
 #endif
 
+private:
+	// Perform AliceGlobals cleanup
+	void subsystemCleanup(void)
+	{
+		for (int i = 0; i < pools.getCount(); ++i)
+		{
+			AliceMemoryPool::deletePool(pools[i]);
+			pools[i] = 0;
+		}
+		pools.clear();
+		setDefaultPool(0);
+		ALICE_permanent_pool = 0;
+	}
 };
+
+typedef Firebird::SubsystemContextPoolHolder <AliceGlobals, AliceMemoryPool> 
+	AliceContextPoolHolder;
 
 #endif	// ALICE_ALICE_H
 

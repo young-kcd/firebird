@@ -393,7 +393,7 @@ void REMOTE_get_timeout_params(
 						t_data[i] = 0;
 
 
-						thdd::putSpecificData((void *) t_data);
+						ThreadData::putSpecificData((void *) t_data);
 
 					}
 					break;

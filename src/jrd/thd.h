@@ -26,7 +26,7 @@
  *
  */
 /*
-$Id: thd.h,v 1.36 2004-08-27 17:39:34 skidder Exp $
+$Id: thd.h,v 1.37 2004-08-30 18:10:42 alexpeshkoff Exp $
 */
 
 #ifndef JRD_THD_H
@@ -126,15 +126,31 @@ const int SWEEP_QUANTUM		= 10;	/* Make sweeps less disruptive */
 // The definition inside the thdd class should be replaced with the following one.
 typedef THREAD_ENTRY_DECLARE ThreadEntryPoint(THREAD_ENTRY_PARAM);
 
-class thdd
+class ThreadData
 {
 public:
-	thdd*		thdd_prior_context;
-	ULONG		thdd_type;	/* what kind of thread context this is */
-//public:
-//	typedef THREAD_ENTRY_DECLARE EntryPoint(THREAD_ENTRY_PARAM);
+	enum ThreadDataType {
+		tddGBL = 1,		// used by backup/restore
+		tddSQL = 2,		// used by DSQL
+		tddDBB = 3,		// used in engine
+		tddRDB = 4,		// used in remote interface
+		tddDBA = 5,		// used in DBA utility
+		tddIDB = 6,		// used by interprocess server // ??
+		tddALICE = 7,	// used by gfix
+		tddSEC = 8,		// used by gsec
+	};
+private:
+	ThreadData*		threadDataPriorContext;
+	ThreadDataType	threadDataType;	// what kind of thread context this is
 
 public:
+	ThreadData(ThreadDataType t)
+		: threadDataPriorContext(0), threadDataType(t) {}
+	ThreadDataType getType() const
+	{
+		return threadDataType;
+	}
+
 	static void		start(ThreadEntryPoint* routine, 
 						  void* arg, 
 						  int priority_arg, 
@@ -142,65 +158,14 @@ public:
 						  void* thd_id);
 	static void		init(void) {}
 	static void		cleanup(void) {}
-	static thdd*	getSpecific(void);
+	static ThreadData*	getSpecific(void);
 	void			putSpecific();
 	static void		restoreSpecific(void);
 	static FB_THREAD_ID getId(void);
 	static void		getSpecificData(void** t_data);
 	static void		putSpecificData(void* t_data);
 
-private:
-	MemoryPool*	thdd_pool;
-
-public:
-    thdd() : thdd_prior_context(NULL), thdd_type(0), thdd_pool(NULL) {}
-
-	void makeDefaultPool()
-	{
-		thdd* previous = getSpecific();
-		if (previous)
-		{
-			thdd_pool = &previous->getPool();
-		}
-		if (! thdd_pool)
-		{
-			thdd_pool = getDefaultMemoryPool();
-		}
-	}
-
-	void setPool(MemoryPool* p)
-	{
-		if (p)
-		{
-			thdd_pool = p;
-		}
-		else
-		{
-			makeDefaultPool();
-		}
-	}
-
-	MemoryPool& getPool()
-	{
-		return *thdd_pool;
-	}
-
-	static MemoryPool& getDefaultPool()
-	{
-		return getSpecific()->getPool();
-	}
 };
-
-/* Thread structure types */
-
-const USHORT THDD_TYPE_TGBL	= 1;		/* used by backup/restore */
-const USHORT THDD_TYPE_TSQL	= 2;		/* used by DSQL */
-const USHORT THDD_TYPE_TDBB	= 3;		/* used in engine */
-const USHORT THDD_TYPE_TRDB	= 4;		/* used in remote interface */
-const USHORT THDD_TYPE_TDBA	= 5;		/* used in DBA utility */
-const USHORT THDD_TYPE_TIDB	= 6;		/* used by interprocess server */
-const USHORT THDD_TYPE_TALICE	= 7;		/* used by gfix */
-const USHORT THDD_TYPE_TSEC	= 8;		/* used by gsec */
 
 /* General purpose in use object structure */
 

@@ -1379,16 +1379,16 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 				/** Cannot call JRD_get_thread_data because that macro calls
 				BUGCHECK i.e. ERR_bugcheck() which is not part of
 				client library **/
-				thread_db* tdbb = (thread_db*) thdd::getSpecific();
+				thread_db* tdbb = (thread_db*) ThreadData::getSpecific();
 
-				/* If we're in the engine, then the THDD type must
-				   be a THDD_TYPE_TDBB.  So, if we're in the engine
+				/* If we're in the engine, then the ThreadData type must
+				   be a ThreadData_TYPE_TDBB.  So, if we're in the engine
 				   and have a request, pull the effective date out
 				   of the request timestamp.
 				   Otherwise, take the CURRENT date to populate the 
 				   date portion of the timestamp */
 
-				if (tdbb && (tdbb->thdd_type == THDD_TYPE_TDBB) &&
+				if (tdbb && (tdbb->getType() == ThreadData::tddDBB) &&
 					tdbb->tdbb_request)
 				{
 					if (tdbb->tdbb_request->req_timestamp)
@@ -1836,8 +1836,8 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 		/** Cannot call JRD_get_thread_data because that macro calls 
 			BUGCHECK i.e. ERR_bugcheck() which is not part of 
 			client library **/
-		tdbb = (thread_db*) thdd::getSpecific();
-		if (tdbb && (tdbb->thdd_type == THDD_TYPE_TDBB) &&
+		tdbb = (thread_db*) ThreadData::getSpecific();
+		if (tdbb && (tdbb->getType() == ThreadData::tddDBB) &&
 			tdbb->tdbb_request)
 		{
 			version4 = (tdbb->tdbb_request->req_flags & req_blr_version4) ?

@@ -154,21 +154,20 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 				/* allocate a new pool to contain the expression tree 
 				   for the expression index */
-
-				JrdMemoryPool* const old_pool = tdbb->getDefaultPool();
 				new_pool = JrdMemoryPool::createPool();
-				tdbb->setDefaultPool(new_pool);
-				MET_scan_relation(tdbb, relation);
+				{
+					Jrd::ContextPoolHolder context(tdbb, new_pool);
+					MET_scan_relation(tdbb, relation);
 
-				if (!IDX.RDB$EXPRESSION_BLR.NULL)
-					idx.idx_expression = MET_get_dependencies(tdbb, relation,
+					if (!IDX.RDB$EXPRESSION_BLR.NULL)
+						idx.idx_expression = MET_get_dependencies(tdbb, relation,
 															  NULL, NULL, 
 															  &IDX.RDB$EXPRESSION_BLR,
 															  &idx.idx_expression_request,
 															  &csb,
 															  IDX.RDB$INDEX_NAME,
 															  obj_expression_index);
-				tdbb->setDefaultPool(old_pool);
+				}
 
 				/* fake a description of the index */
 
@@ -288,12 +287,12 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 		   tree and request in its own pool so that it may be cached
 		   with the index block in the "permanent" metadata cache */
 
-		JrdMemoryPool* const old_pool = tdbb->getDefaultPool();
-		tdbb->setDefaultPool(JrdMemoryPool::createPool());
-		idx->idx_expression =
-			MET_parse_blob(tdbb, relation, &IDX.RDB$EXPRESSION_BLR, &csb,
+		{
+			Jrd::ContextPoolHolder(tdbb, JrdMemoryPool::createPool());
+			idx->idx_expression =
+				MET_parse_blob(tdbb, relation, &IDX.RDB$EXPRESSION_BLR, &csb,
 						   &idx->idx_expression_request, false, false);
-		tdbb->setDefaultPool(old_pool);
+		}
 
 	END_FOR;
 

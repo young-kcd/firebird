@@ -289,8 +289,7 @@ void IDX_create_index(
 		else {
 			primary.rpb_record = gc_record;
 			// JrdMemoryPool and its parent MemoryPool are unrelated to blk.
-			VIO_data(tdbb, &primary,
-					 reinterpret_cast<BLK>(dbb->dbb_permanent));
+			VIO_data(tdbb, &primary, dbb->dbb_permanent);
 			gc_record = primary.rpb_record;
 			stack.push(primary.rpb_record);
 		}
@@ -301,8 +300,7 @@ void IDX_create_index(
 			if (!DPM_fetch(tdbb, &secondary, LCK_read))
 				break;			/* must be garbage collected */
 			secondary.rpb_record = NULL;
-			VIO_data(tdbb, &secondary,
-					 reinterpret_cast<BLK>(tdbb->getDefaultPool()));
+			VIO_data(tdbb, &secondary, tdbb->getDefaultPool());
 			stack.push(secondary.rpb_record);
 			secondary.rpb_page = secondary.rpb_b_page;
 			secondary.rpb_line = secondary.rpb_b_line;
@@ -908,7 +906,7 @@ static IDX_E check_duplicates(
 	{
 		if (rpb.rpb_number != insertion->iib_number
 			&& VIO_get_current(tdbb, &rpb, insertion->iib_transaction,
-							   reinterpret_cast<BLK>(tdbb->getDefaultPool()),
+							   tdbb->getDefaultPool(),
 							   (record_idx->idx_flags & idx_foreign) != 0))
 		{
 			// dimitr: we shouldn't ignore status exceptions which take place

@@ -1604,7 +1604,7 @@ static bool get_record(
 				rpb,
 				rsb,
 				request->req_transaction,
-				reinterpret_cast<blk*>(request->req_pool));
+				request->req_pool);
 
 	temporary_key value;
 	if (result)

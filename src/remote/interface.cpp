@@ -256,7 +256,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
  *
  **************************************/
 	UCHAR	expanded_name[MAXPATHLEN];
-	trdb	thd_context;
+	trdb	thd_context(user_status);
 	trdb*	tdrdb;
 
 	TEXT	node_name[MAXPATHLEN];
@@ -324,7 +324,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	RDB rdb = port->port_context;
 
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 	try
 	{
@@ -373,7 +372,8 @@ ISC_STATUS GDS_BLOB_INFO(ISC_STATUS*	user_status,
  *	Provide information on blob object.
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -383,7 +383,6 @@ ISC_STATUS GDS_BLOB_INFO(ISC_STATUS*	user_status,
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	ISC_STATUS status;
@@ -414,7 +413,8 @@ ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS * user_status, RBL * blob_handle)
  *	Abort a partially completed blob.
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	RBL blob = *blob_handle;
 	if (!blob) {
@@ -433,7 +433,6 @@ ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS * user_status, RBL * blob_handle)
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 	try
 	{
@@ -465,7 +464,8 @@ ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS * user_status, RDB * handle, SLONG * id)
  *	Cancel an outstanding event.
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -473,7 +473,6 @@ ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS * user_status, RDB * handle, SLONG * id)
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 	rem_port* port = rdb->rdb_port;
 
@@ -514,7 +513,8 @@ ISC_STATUS GDS_CLOSE_BLOB(ISC_STATUS * user_status, RBL * blob_handle)
  *	Close a completed blob.
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -523,7 +523,6 @@ ISC_STATUS GDS_CLOSE_BLOB(ISC_STATUS * user_status, RBL * blob_handle)
 	RDB rdb = blob->rbl_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 	rem_port* port = rdb->rdb_port;
 
@@ -565,7 +564,8 @@ ISC_STATUS GDS_COMMIT(ISC_STATUS * user_status, RTR * rtr_handle)
  *	Commit a transaction.
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -575,7 +575,6 @@ ISC_STATUS GDS_COMMIT(ISC_STATUS * user_status, RTR * rtr_handle)
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -608,7 +607,8 @@ ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS * user_status, RTR * rtr_handle)
  * Functional description
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -618,7 +618,6 @@ ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS * user_status, RTR * rtr_handle)
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -655,7 +654,8 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
  * Functional description
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -666,7 +666,6 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -768,7 +767,8 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
  *	Open an existing blob.
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -779,7 +779,6 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 	RTR transaction = *rtr_handle;
 
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -850,7 +849,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
  *
  **************************************/
 	UCHAR expanded_name[MAXPATHLEN];
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	TEXT node_name[MAXPATHLEN];
 	memset((void *) node_name, 0, (size_t) MAXPATHLEN);
@@ -913,7 +913,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 	RDB rdb = port->port_context;
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -965,7 +964,8 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS*	user_status,
  **************************************/
 	ISC_STATUS	status;
 	UCHAR	temp[1024];
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -973,7 +973,6 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS*	user_status,
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -1037,7 +1036,8 @@ ISC_STATUS GDS_DDL(ISC_STATUS*	user_status,
  *
  **************************************/
 	ISC_STATUS status;
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -1049,7 +1049,6 @@ ISC_STATUS GDS_DDL(ISC_STATUS*	user_status,
 	RTR transaction = *rtr_handle;
 
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -1093,7 +1092,8 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, RDB* handle)
  *	Close down a database.
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -1102,7 +1102,6 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, RDB* handle)
 
 	rem_port* port = rdb->rdb_port;
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -1178,7 +1177,8 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, RDB* handle)
  *
  **************************************/
 	ISC_STATUS_ARRAY local_status;
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -1186,7 +1186,6 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, RDB* handle)
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 	rem_port* port = rdb->rdb_port;
 
@@ -1246,7 +1245,8 @@ ISC_STATUS GDS_DSQL_ALLOCATE(ISC_STATUS*	user_status,
  *	Allocate a statement handle.
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -1255,7 +1255,6 @@ ISC_STATUS GDS_DSQL_ALLOCATE(ISC_STATUS*	user_status,
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -1345,7 +1344,8 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
  *	Execute a non-SELECT dynamic SQL statement.
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -1361,7 +1361,6 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
 
 	rem_port* port = rdb->rdb_port;
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -1557,7 +1556,8 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
  *	Prepare and execute a statement.
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -1572,7 +1572,6 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 
 	rem_port* port = rdb->rdb_port;
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -1737,7 +1736,8 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
  *
  **************************************/
 	ISC_STATUS status;
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -1748,7 +1748,6 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 	RDB rdb = statement->rsr_rdb;
 	rem_port* port = rdb->rdb_port;
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -1998,7 +1997,8 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS * user_status, RSR * stmt_handle, USHORT opt
  *	Release request for a Dynamic SQL statement
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -2009,7 +2009,6 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS * user_status, RSR * stmt_handle, USHORT opt
 	RDB rdb = statement->rsr_rdb;
 
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -2070,7 +2069,8 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS * user_status,
  *	Insert next record into a dynamic SQL cursor.
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -2080,7 +2080,6 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS * user_status,
 	CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
 	RDB rdb = statement->rsr_rdb;
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -2172,7 +2171,8 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status, RTR * rtr_handle, RSR * st
  *	Prepare a dynamic SQL statement for execution.
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -2187,7 +2187,6 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status, RTR * rtr_handle, RSR * st
 		CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
 	}
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -2276,7 +2275,8 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
  *	parameter.
  *
  *****************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -2286,7 +2286,6 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
 	CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
 	RDB rdb = statement->rsr_rdb;
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -2346,7 +2345,8 @@ ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
  *
  **************************************/
 	ISC_STATUS status;
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -2356,7 +2356,6 @@ ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
 	CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
 	RDB rdb = statement->rsr_rdb;
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -2396,7 +2395,8 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
  *	them one by one to the caller.
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -2407,7 +2407,6 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 	RDB rdb = blob->rbl_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 	rem_port* port = rdb->rdb_port;
 
@@ -2632,7 +2631,8 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
  *	Snatch a slice of an array.
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -2641,7 +2641,6 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 	CHECK_HANDLE((*tra_handle), type_rtr, isc_bad_trans_handle);
 	RTR transaction = *tra_handle;
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -2736,7 +2735,8 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
  *	Open an existing blob.
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -2746,7 +2746,6 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 	CHECK_HANDLE((*rtr_handle), type_rtr, isc_bad_trans_handle);
 	RTR transaction = *rtr_handle;
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -2812,7 +2811,8 @@ ISC_STATUS GDS_PREPARE(ISC_STATUS * user_status,
  *	phase commit.
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -2821,7 +2821,6 @@ ISC_STATUS GDS_PREPARE(ISC_STATUS * user_status,
 	RDB rdb = (*rtr_handle)->rtr_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -2875,7 +2874,8 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
  *	batch put.
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -2886,7 +2886,6 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
 	RDB rdb = blob->rbl_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 	rem_port* port = rdb->rdb_port;
 
@@ -2972,7 +2971,8 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS* user_status,
  *	Store a slice of an array.
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -2981,7 +2981,6 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS* user_status,
 	CHECK_HANDLE((*tra_handle), type_rtr, isc_bad_trans_handle);
 	RTR transaction = *tra_handle;
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -3066,14 +3065,14 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
  *	Queue a request for event notification.
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
 	RDB rdb = *handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 	rem_port* port = rdb->rdb_port;
 	PACKET* packet = &rdb->rdb_packet;
@@ -3180,7 +3179,8 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
  *	Remote server to send it to us if necessary.
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -3191,7 +3191,6 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 	RDB rdb = request->rrq_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -3420,7 +3419,8 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
  * Functional description
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -3428,7 +3428,6 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
 	RDB rdb = *db_handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -3467,7 +3466,8 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, rrq** req_handle)
  *	Release a request.
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -3476,7 +3476,6 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, rrq** req_handle)
 	RDB rdb = request->rrq_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -3514,7 +3513,8 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
  *
  **************************************/
 	ISC_STATUS status;
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -3523,7 +3523,6 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 	RDB rdb = request->rrq_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -3612,7 +3611,8 @@ ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS * user_status, RTR * rtr_handle)
  *	Abort a transaction but keep its environment valid
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -3621,7 +3621,6 @@ ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS * user_status, RTR * rtr_handle)
 	RDB rdb = (*rtr_handle)->rtr_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -3657,7 +3656,8 @@ ISC_STATUS GDS_ROLLBACK(ISC_STATUS * user_status, RTR * rtr_handle)
  *	Abort a transaction.
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -3666,7 +3666,6 @@ ISC_STATUS GDS_ROLLBACK(ISC_STATUS * user_status, RTR * rtr_handle)
 	RDB rdb = (*rtr_handle)->rtr_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -3702,7 +3701,8 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS * user_status,
  *	Seek into a blob.
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -3711,7 +3711,6 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS * user_status,
 	RDB rdb = blob->rbl_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -3764,7 +3763,8 @@ ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
  *	Send a message to the server.
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -3776,7 +3776,6 @@ ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
 		return handle_error(user_status, isc_badmsgnum);
 
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -3830,7 +3829,8 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
  *
  **************************************/
 	UCHAR expanded_name[MAXPATHLEN];
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -3887,7 +3887,6 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 
 	RDB rdb = port->port_context;
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -3941,7 +3940,8 @@ ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS * user_status, RDB * handle)
  *	Close down a connection to an Interbase service.
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -3950,7 +3950,6 @@ ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS * user_status, RDB * handle)
 	RDB rdb = *handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_svc_handle);
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 	rem_port* port = rdb->rdb_port;
 
@@ -4011,7 +4010,8 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS* user_status,
  *	a later date.
  **************************************/
 	ISC_STATUS status;
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -4020,7 +4020,6 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS* user_status,
 	RDB rdb = *svc_handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_svc_handle);
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -4066,7 +4065,8 @@ ISC_STATUS GDS_SERVICE_START(ISC_STATUS * user_status,
  *	a later date.
  **************************************/
 	ISC_STATUS status;
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -4075,7 +4075,6 @@ ISC_STATUS GDS_SERVICE_START(ISC_STATUS * user_status,
 	RDB rdb = *svc_handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_svc_handle);
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -4117,7 +4116,8 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS * user_status,
  *	Get a record from the host program.
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -4130,7 +4130,6 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS * user_status,
 	if (msg_type > request->rrq_max_msg)
 		return handle_error(user_status, isc_badmsgnum);
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -4204,7 +4203,8 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
  *	Get a record from the host program.
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -4215,7 +4215,6 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
 	RDB rdb = request->rrq_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -4278,7 +4277,8 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
  *	Start a transaction.
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -4286,7 +4286,6 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
 	RDB rdb = *db_handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try
@@ -4332,7 +4331,8 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
  *	Execute a procedure on remote host.
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -4341,7 +4341,6 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
 	RTR transaction = *rtr_handle;
 	CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 	rem_port* port = rdb->rdb_port;
 
@@ -4467,7 +4466,8 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
  * Functional description
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -4476,7 +4476,6 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 	RDB rdb = transaction->rtr_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	ISC_STATUS status;
@@ -4510,7 +4509,8 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS* user_status, rrq** req_handle, USHORT level)
  *	Unwind a running request.
  *
  **************************************/
-	trdb thd_context, *tdrdb;
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 
 	REM_set_thread_data(tdrdb, &thd_context);
 
@@ -4519,7 +4519,6 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS* user_status, rrq** req_handle, USHORT level)
 	RDB rdb = request->rrq_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
 	try

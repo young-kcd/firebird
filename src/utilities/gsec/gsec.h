@@ -104,9 +104,25 @@ class tsec;
 extern tsec* gdsec;
 #endif
 
-class tsec : public thdd 
+class tsec : public ThreadData
 {
 public:
+	tsec(Jrd::pfn_svc_output outProc, Jrd::Service* outData) 
+		: ThreadData(ThreadData::tddSEC), 
+		tsec_output_proc(outProc), tsec_output_data(outData)
+	{
+		tsec_user_data = 0;
+		tsec_exit_code = 0;
+		tsec_env = 0;
+		tsec_status = tsec_status_vector;
+		tsec_interactive = false;
+		tsec_sw_version = false;
+		tsec_service_gsec = false;
+		tsec_service_thd = false;
+		tsec_output_file = 0;
+		tsec_service_blk = 0;
+	}
+
 	internal_user_data*	tsec_user_data;
 	int					tsec_exit_code;
 	jmp_buf*			tsec_env;
@@ -122,21 +138,19 @@ public:
 	Jrd::Service*		tsec_service_blk;
 #ifdef SUPERSERVER
 	static inline tsec* getSpecific() {
-		return (tsec*) thdd::getSpecific();
+		return (tsec*) ThreadData::getSpecific();
 	}
 	static inline void putSpecific(tsec* tdsec) {
-		tdsec->thdd_type = THDD_TYPE_TSEC;
-		((thdd*)tdsec)->putSpecific();
+		tdsec->ThreadData::putSpecific();
 	}
 	static inline void restoreSpecific() {
-		thdd::restoreSpecific();
+		ThreadData::restoreSpecific();
 	}
 #else
 	static inline tsec* getSpecific() {
 		return gdsec;
 	}
 	static inline void putSpecific(tsec* tdsec) {
-		tdsec->thdd_type = THDD_TYPE_TSEC;
 		gdsec = tdsec;
 	}
 	static inline void restoreSpecific() {

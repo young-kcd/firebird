@@ -58,7 +58,7 @@
 #ifdef VMS
 // THE SOLE PURPOSE OF THE FOLLOWING DECLARATION IS TO ALLOW THE VMS KIT TO
 // COMPILE.  IT IS NOT CORRECT AND MUST BE REMOVED AT SOME POINT.
-thdd* gdbb;
+ThreadData* gdbb;
 #endif
 
 #ifdef VMS
@@ -136,7 +136,7 @@ Firebird::Mutex ib_mutex;
 namespace {
 
 TLS_DECLARE (void*, tSpecific);
-TLS_DECLARE (thdd*, tData);
+TLS_DECLARE (ThreadData*, tData);
 
 }
 
@@ -159,7 +159,7 @@ int API_ROUTINE gds__thread_start(
 
 	int rc = 0;
 	try {
-		thdd::start(entrypoint, arg, priority, flags, thd_id);
+		ThreadData::start(entrypoint, arg, priority, flags, thd_id);
 	}
 	catch(const Firebird::status_exception& status) {
 		rc = status.value()[1];
@@ -168,7 +168,7 @@ int API_ROUTINE gds__thread_start(
 }
 
 
-FB_THREAD_ID thdd::getId(void)
+FB_THREAD_ID ThreadData::getId(void)
 {
 /**************************************
  *
@@ -206,7 +206,7 @@ FB_THREAD_ID thdd::getId(void)
 }
 
 
-thdd* thdd::getSpecific(void)
+ThreadData* ThreadData::getSpecific(void)
 {
 /**************************************
  *
@@ -223,7 +223,7 @@ thdd* thdd::getSpecific(void)
 }
 
 
-void thdd::getSpecificData(void **t_data)
+void ThreadData::getSpecificData(void **t_data)
 {
 /**************************************
  *
@@ -311,7 +311,7 @@ int THD_wlck_unlock(WLCK_T* wlock)
 }
 
 
-void thdd::putSpecific()
+void ThreadData::putSpecific()
 {
 /**************************************
  *
@@ -323,12 +323,12 @@ void thdd::putSpecific()
  *
  **************************************/
 
-	thdd_prior_context = TLS_GET(tData);
+	threadDataPriorContext = TLS_GET(tData);
 	TLS_SET(tData, this);
 }
 
 
-void thdd::putSpecificData(void *t_data)
+void ThreadData::putSpecificData(void *t_data)
 {
 /**************************************
  *
@@ -345,7 +345,7 @@ void thdd::putSpecificData(void *t_data)
 }
 
 
-void thdd::restoreSpecific()
+void ThreadData::restoreSpecific()
 {
 /**************************************
  *
@@ -356,9 +356,9 @@ void thdd::restoreSpecific()
  * Functional description
  *
  **************************************/
-	thdd* current_context = getSpecific();
+	ThreadData* current_context = getSpecific();
 
-	TLS_SET(tData, current_context->thdd_prior_context);
+	TLS_SET(tData, current_context->threadDataPriorContext);
 }
 
 
@@ -410,12 +410,12 @@ int THD_rec_mutex_lock(REC_MUTX_T * rec_mutex)
  **************************************/
 	int ret;
 
-	if (rec_mutex->rec_mutx_id == thdd::getId())
+	if (rec_mutex->rec_mutx_id == ThreadData::getId())
 		rec_mutex->rec_mutx_count++;
 	else {
 		if (ret = THD_mutex_lock(rec_mutex->rec_mutx_mtx))
 			return ret;
-		rec_mutex->rec_mutx_id = thdd::getId();
+		rec_mutex->rec_mutx_id = ThreadData::getId();
 		rec_mutex->rec_mutx_count = 1;
 	}
 	return 0;
@@ -434,7 +434,7 @@ int THD_rec_mutex_unlock(REC_MUTX_T * rec_mutex)
  *
  **************************************/
 
-	if (rec_mutex->rec_mutx_id != thdd::getId())
+	if (rec_mutex->rec_mutx_id != ThreadData::getId())
 		return FB_FAILURE;
 
 	rec_mutex->rec_mutx_count--;
@@ -635,7 +635,7 @@ static THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg) {
 
 #else  //THREAD_PSCHED
 
-// due to same names of parameters for various thdd::start(...),
+// due to same names of parameters for various ThreadData::start(...),
 // we may use common macro for various platforms
 #define THREAD_ENTRYPOINT reinterpret_cast<THREAD_ENTRY_RETURN (THREAD_ENTRY_CALL *) (THREAD_ENTRY_PARAM)>(routine)
 #define THREAD_ARG reinterpret_cast<THREAD_ENTRY_PARAM>(arg)
@@ -645,7 +645,7 @@ static THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg) {
 #ifdef ANY_THREADING
 #ifdef USE_POSIX_THREADS
 #define START_THREAD
-void thdd::start(ThreadEntryPoint* routine,
+void ThreadData::start(ThreadEntryPoint* routine,
 				void *arg, 
 				int priority_arg, 
 				int flags, 
@@ -738,7 +738,7 @@ void thdd::start(ThreadEntryPoint* routine,
 
 #ifdef SOLARIS_MT
 #define START_THREAD
-void thdd::start(ThreadEntryPoint* routine,
+void ThreadData::start(ThreadEntryPoint* routine,
 				void *arg, 
 				int priority_arg, 
 				int flags, 
@@ -782,7 +782,7 @@ void thdd::start(ThreadEntryPoint* routine,
 
 #ifdef WIN_NT
 #define START_THREAD
-void thdd::start(ThreadEntryPoint* routine,
+void ThreadData::start(ThreadEntryPoint* routine,
 				void *arg, 
 				int priority_arg, 
 				int flags, 
@@ -886,7 +886,7 @@ void thdd::start(ThreadEntryPoint* routine,
 
 
 #ifndef START_THREAD
-void thdd::start(ThreadEntryPoint* routine,
+void ThreadData::start(ThreadEntryPoint* routine,
 				void *arg, 
 				int priority_arg, 
 				int flags, 

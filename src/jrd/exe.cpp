@@ -967,8 +967,7 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 
 	if (request->req_flags & req_active) {
 		if (request->req_fors.getCount()) {
-			JrdMemoryPool* old_pool = tdbb->getDefaultPool();
-			tdbb->setDefaultPool(request->req_pool);
+			Jrd::ContextPoolHolder context(tdbb, request->req_pool);
 			jrd_req* old_request = tdbb->tdbb_request;
 			tdbb->tdbb_request = request;
 			jrd_tra* old_transaction = tdbb->tdbb_transaction;
@@ -981,7 +980,6 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 				if (*ptr)
 					RSE_close(tdbb, *ptr);
 			}
-			tdbb->setDefaultPool(old_pool);
 			tdbb->tdbb_request = old_request;
 			tdbb->tdbb_transaction = old_transaction;
 		}
@@ -1169,13 +1167,12 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 									   rpb,
 									   NULL,
 									   transaction,
-									   reinterpret_cast<blk*>(tdbb->getDefaultPool()),
+									   tdbb->getDefaultPool(),
 									   false)))
 		{
 			ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
 		}
-		VIO_data(tdbb, rpb,
-				 reinterpret_cast<blk*>(tdbb->tdbb_request->req_pool));
+		VIO_data(tdbb, rpb, tdbb->tdbb_request->req_pool);
 
 		/* If record is present, and the transaction is read committed,
 		 * make sure the record has not been updated.  Also, punt after
@@ -1441,43 +1438,40 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 			(SCHAR *) FB_ALIGN((U_IPTR) temp_buffer->str_data, DOUBLE_ALIGN);
 	}
 
-/* Save the old pool */
-
-	JrdMemoryPool* old_pool = tdbb->getDefaultPool();
-	tdbb->setDefaultPool(proc_request->req_pool);
 
 /* Catch errors so we can unwind cleanly */
 
 	try {
+		// Save the old pool
+		Jrd::ContextPoolHolder context(tdbb, proc_request->req_pool);
 
-	jrd_tra* transaction = request->req_transaction;
-	const SLONG save_point_number = transaction->tra_save_point->sav_number;
+		jrd_tra* transaction = request->req_transaction;
+		const SLONG save_point_number = transaction->tra_save_point->sav_number;
 
-	proc_request->req_timestamp = request->req_timestamp;
-	EXE_start(tdbb, proc_request, transaction);
-	if (in_message) {
-		EXE_send(tdbb, proc_request, 0, in_msg_length,
-				 reinterpret_cast<UCHAR*>(in_msg));
-	}
+		proc_request->req_timestamp = request->req_timestamp;
+		EXE_start(tdbb, proc_request, transaction);
+		if (in_message) {
+			EXE_send(tdbb, proc_request, 0, in_msg_length,
+					 reinterpret_cast<UCHAR*>(in_msg));
+		}
 
-	EXE_receive(tdbb, proc_request, 1, out_msg_length,
+		EXE_receive(tdbb, proc_request, 1, out_msg_length,
 				reinterpret_cast<UCHAR*>(out_msg));
 
 /* Clean up all savepoints started during execution of the
    procedure */
 
-	if (transaction != tdbb->tdbb_database->dbb_sys_trans) {
-		for (const Savepoint* save_point = transaction->tra_save_point;
-			 save_point && save_point_number < save_point->sav_number;
-			 save_point = transaction->tra_save_point)
-		{
-			VIO_verb_cleanup(tdbb, transaction);
+		if (transaction != tdbb->tdbb_database->dbb_sys_trans) {
+			for (const Savepoint* save_point = transaction->tra_save_point;
+				 save_point && save_point_number < save_point->sav_number;
+				 save_point = transaction->tra_save_point)
+			{
+				VIO_verb_cleanup(tdbb, transaction);
+			}
 		}
-	}
 
 	}	// try
 	catch (const std::exception&) {
-		tdbb->setDefaultPool(old_pool);
 		tdbb->tdbb_request = request;
 		EXE_unwind(tdbb, proc_request);
 		proc_request->req_attachment = NULL;
@@ -1487,7 +1481,6 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 		throw;
 	}
 
-	tdbb->setDefaultPool(old_pool);
 	EXE_unwind(tdbb, proc_request);
 	tdbb->tdbb_request = request;
 
@@ -1834,9 +1827,8 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	BLKCHK(in_node, type_nod);
 
 	// Save the old pool and request to restore on exit
-
 	JrdMemoryPool* old_pool = tdbb->getDefaultPool();
-	tdbb->setDefaultPool(request->req_pool);
+	Jrd::ContextPoolHolder context(tdbb, request->req_pool);
 
 	jrd_req* old_request = tdbb->tdbb_request;
 	tdbb->tdbb_request = request;
@@ -2330,41 +2322,42 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 								   On recursive calling we will loose the actual old
 								   request for that invocation of looper. Avoid this. */
 
-								tdbb->setDefaultPool(old_pool);
-								tdbb->tdbb_request = old_request;
-								fb_assert(request->req_caller == old_request);
-								request->req_caller = NULL;
+								{
+									Jrd::ContextPoolHolder contextLooper(tdbb, old_pool);
+									tdbb->tdbb_request = old_request;
+									fb_assert(request->req_caller == old_request);
+									request->req_caller = NULL;
 
-								/* Save the previous state of req_error_handler
-								   bit. We need to restore it later. This is
-								   necessary if the error handler is deeply 
-								   nested. */
+									/* Save the previous state of req_error_handler
+									   bit. We need to restore it later. This is
+									   necessary if the error handler is deeply 
+									   nested. */
 
-								const ULONG prev_req_error_handler =
-									request->req_flags & req_error_handler;
-								request->req_flags |= req_error_handler;
-								node = looper(tdbb, request, node);
-								request->req_flags &= ~(req_error_handler);
-								request->req_flags |= prev_req_error_handler;
+									const ULONG prev_req_error_handler =
+										request->req_flags & req_error_handler;
+									request->req_flags |= req_error_handler;
+									node = looper(tdbb, request, node);
+									request->req_flags &= ~(req_error_handler);
+									request->req_flags |= prev_req_error_handler;
 
-								/* Note: Previously the above call
-								   "node = looper (tdbb, request, node);"
-								   never returned back till the node tree
-								   was executed completely. Now that the looper
-								   has changed its behaviour such that it
-								   returns back after handling error. This 
-								   makes it necessary that the jmpbuf be reset
-								   so that looper can proceede with the 
-								   processing of execution tree. If this is
-								   not done then anymore errors will take the
-								   engine out of looper there by abruptly
-								   terminating the processing. */
+									/* Note: Previously the above call
+									   "node = looper (tdbb, request, node);"
+									   never returned back till the node tree
+									   was executed completely. Now that the looper
+									   has changed its behaviour such that it
+									   returns back after handling error. This 
+									   makes it necessary that the jmpbuf be reset
+									   so that looper can proceede with the 
+									   processing of execution tree. If this is
+									   not done then anymore errors will take the
+									   engine out of looper there by abruptly
+									   terminating the processing. */
 
-								catch_disabled = false;
-								tdbb->setDefaultPool(request->req_pool);
-								tdbb->tdbb_request = request;
-								fb_assert(request->req_caller == NULL);
-								request->req_caller = old_request;
+									catch_disabled = false;
+									tdbb->tdbb_request = request;
+									fb_assert(request->req_caller == NULL);
+									request->req_caller = old_request;
+								}
 
 								/* The error is dealt with by the application, cleanup
 								   this block's savepoint. */
@@ -2839,7 +2832,6 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	}
 
 	request->req_next = node;
-	tdbb->setDefaultPool(old_pool);
 	tdbb->tdbb_transaction = (tdbb->tdbb_request = old_request) ?
 		old_request->req_transaction : NULL;
 	fb_assert(request->req_caller == old_request);
@@ -2932,13 +2924,12 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 									   org_rpb,
 									   NULL,
 									   transaction,
-									   reinterpret_cast<blk*>(tdbb->getDefaultPool()),
+									   tdbb->getDefaultPool(),
 									   false)))
 		{
 			ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
 		}
-		VIO_data(tdbb, org_rpb,
-				 reinterpret_cast<BLK>(tdbb->tdbb_request->req_pool));
+		VIO_data(tdbb, org_rpb, tdbb->tdbb_request->req_pool);
 
 		/* If record is present, and the transaction is read committed,
 		 * make sure the record has not been updated.  Also, punt after
