@@ -34,11 +34,12 @@
 #include "../remote/xdr_proto.h"
 #include "../jrd/gds_proto.h"
 
-#ifdef M_I386
-#define		SWAP_DOUBLE
-#endif
-
-#ifdef WIN_NT
+// 30 Dec 2002. Nickolay Samofatov 
+// This needs to be checked for all supported platforms
+// The simpliest way to check it is to issue
+// "select abs(2.0/3.0) from rdb$database" from correct client
+// It will return big strange value in case of invalid define
+#if (defined WIN_NT) || (defined LINUX)
 #define		SWAP_DOUBLE
 #endif
 
