@@ -1,3 +1,15 @@
+2004-09-17 00:32  skidder
+
+	* firebird2/builds/posix/Makefile.in.libfbclient (1.24):
+	
+	Cleanup
+
+2004-09-17 00:25  skidder
+
+	* firebird2/src/remote/os/sun/server_main_dummy.cpp (1.2):
+	
+	Cleanup
+
 2004-09-15 11:36  kkuznetsov
 
 	* firebird2/configure.in (1.203):
