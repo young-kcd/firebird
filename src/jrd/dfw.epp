@@ -1697,6 +1697,9 @@ static bool create_index(	thread_db*	tdbb,
 				DFW_assign_index_type(work,
 									  gds_cvt_blr_dtype[FLD.RDB$FIELD_TYPE],
 									  text_type);
+
+			// Initialize selectivity to zero. Otherwise random rubbish makes its way into database
+			idx.idx_rpt[SEG.RDB$FIELD_POSITION].idx_selectivity = 0;
 		END_FOR;
 
 		if (!REQUEST(irq_c_index))

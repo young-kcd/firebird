@@ -162,6 +162,7 @@ int PCMET_expression_index(
 					DFW_assign_index_type(work,
 										  idx.idx_expression_desc.dsc_dtype,
 										  0);
+				idx.idx_rpt[0].idx_selectivity = 0;
 
 				ALL_release(csb);
 			}

@@ -956,6 +956,7 @@ static void add_index_set(Database*	dbb,
 					PAD(field->fld_name, Y.RDB$FIELD_NAME);
 					tail->idx_field = segment->ini_idx_rfld_id;
 					tail->idx_itype = segment->ini_idx_type;
+				    tail->idx_selectivity = 0;
 				END_STORE;
 			}
 			idx.idx_count = index->ini_idx_segment_count;
