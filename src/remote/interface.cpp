@@ -85,7 +85,7 @@
 
 #include <direct.h>				// getcwd
 
-#if defined(SUPERCLIENT) && !defined(IPSERV)
+#if defined(SUPERCLIENT)
 static USHORT ostype = 0;
 const USHORT OSTYPE_NT		= 1;
 const USHORT OSTYPE_WIN_95	= 2;
@@ -1669,7 +1669,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 		ex_now->p_sqlst_transaction = (transaction) ? transaction->rtr_id : 0;
 		ex_now->p_sqlst_SQL_dialect = dialect;
 		ex_now->p_sqlst_SQL_str.cstr_length =
-			length ? length : strlen((char *) string);
+			length ? length : strlen(string);
 		ex_now->p_sqlst_SQL_str.cstr_address = (UCHAR *) string;
 		ex_now->p_sqlst_items.cstr_length = 0;
 		ex_now->p_sqlst_buffer_length = 0;
@@ -2230,7 +2230,7 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status, RTR * rtr_handle, RSR * st
 		prepare->p_sqlst_statement = statement->rsr_id;
 		prepare->p_sqlst_SQL_dialect = dialect;
 		prepare->p_sqlst_SQL_str.cstr_length =
-			length ? length : strlen((char *) string);
+			length ? length : strlen(string);
 		prepare->p_sqlst_SQL_str.cstr_address = (UCHAR *) string;
 		prepare->p_sqlst_items.cstr_length = item_length;
 		prepare->p_sqlst_items.cstr_address = (UCHAR *) items;
@@ -3853,12 +3853,12 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 	NULL_CHECK(handle, isc_bad_svc_handle);
 
 	if (service_length) {
-		strncpy((char *) expanded_name, (char *) service_name,
+		strncpy((char *) expanded_name, service_name,
 				service_length);
 		expanded_name[service_length] = 0;
 	}
 	else
-		strcpy((char *) expanded_name, (char *) service_name);
+		strcpy((char *) expanded_name, service_name);
 	USHORT length = strlen((char *) expanded_name);
 
 	ISC_STATUS* v = user_status;
@@ -4743,7 +4743,7 @@ static rem_port* analyze(TEXT*	file_name,
 		}
 	}
 
-#if defined(XNET) && !defined(IPSERV)
+#if defined(XNET)
 
 /* all remote attempts have failed, so access locally through the
    interprocess server */
@@ -4764,7 +4764,6 @@ static rem_port* analyze(TEXT*	file_name,
 /* Coerce host connections to loopback to SUPERSERVER. */
 
 #ifdef WIN_NT
-#ifndef IPSERV
 	if (!ostype)
 	{
 		if (ISC_is_WinNT())
@@ -4779,23 +4778,22 @@ static rem_port* analyze(TEXT*	file_name,
 
 	if (ostype == OSTYPE_NT && !port)
 	{
-		strcpy((char*) expanded_name, (const char*) file_name);
-		strcpy((char*) file_name, "\\\\.\\");
-		strcat((char*) file_name, (const char*) expanded_name);
+		strcpy(expanded_name, file_name); // B.O.
+		strcpy(file_name, "\\\\.\\");
+		strcat(file_name, expanded_name);
 		if (ISC_analyze_pclan(file_name, node_name))
 			return WNET_analyze(file_name, file_length, status_vector,
 								node_name, user_string, uv_flag);
 	}
-#endif /* IPSERV */
 #endif /* WIN_NT */
 
 #ifdef UNIX
 
 	if (!port && !node_name[0])
 	{
-		strcpy((char*)expanded_name, (const char*)file_name);
-		strcpy((char*)file_name, "localhost:");
-		strcat((char*)file_name, (const char*)expanded_name);
+		strcpy(expanded_name, file_name); // B.O.
+		strcpy(file_name, "localhost:");
+		strcat(file_name, expanded_name);
 		if (ISC_analyze_tcp(file_name, node_name))
 		{
 			return INET_analyze(file_name,
@@ -4871,7 +4869,7 @@ static rem_port* analyze_service(TEXT* service_name,
 								dpb_length);
 	}
 
-#if defined(XNET) && !defined(IPSERV)
+#if defined(XNET)
 
 /* all remote attempts have failed, so access locally through the
    interprocess server */
@@ -4887,9 +4885,9 @@ static rem_port* analyze_service(TEXT* service_name,
 
 	if (!port && !node_name[0]) {
 		TEXT expanded_name[MAXPATHLEN];
-		strcpy((char *) expanded_name, (const char*) service_name);
-		strcpy((char *) service_name, "localhost:");
-		strcat((char *) service_name, (const char*) expanded_name);
+		strcpy(expanded_name, service_name); // B.O.
+		strcpy(service_name, "localhost:");
+		strcat(service_name, expanded_name);
 		if (ISC_analyze_tcp(service_name, node_name))
 		{
 			return INET_analyze(service_name,
