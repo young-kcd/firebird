@@ -2113,7 +2113,7 @@ SCHAR * prev_logname, SLONG prev_log_partition_offset, SSHORT * takeover)
 													 walfh_next_logname),
 										PARAM_BYTE(WALFH_end), 0);
 	}
-	else if (read_len < sizeof(struct walfh)) {
+	else if (read_len < (SLONG) sizeof(struct walfh)) {
 		LLIO_close(0, log_fd);
 		WAL_ERROR(status_vector, gds_logh_small, logname);
 		return FB_FAILURE;

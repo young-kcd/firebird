@@ -418,7 +418,7 @@ void MAKE_desc( DSC * desc, DSQL_NOD node)
             len = *(SLONG *) for_node->nod_desc.dsc_address;
             /* For now, our substring() doesn't handle MBCS blobs,
                neither at the DSQL layer nor at the JRD layer. */
-            if (len <= (ULONG) MAX_COLUMN_SIZE - sizeof (USHORT) && len >= 0) {
+            if (len <= MAX_COLUMN_SIZE - (SLONG) sizeof (USHORT) && len >= 0) {
                 desc->dsc_length = sizeof (USHORT) + len;
             }
             else {

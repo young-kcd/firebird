@@ -3777,7 +3777,7 @@ static void list_staying(TDBB tdbb, RPB * rpb, LLS * staying)
 		   The while-loop finds this next older version. */
 
 		while (temp.rpb_b_page &&
-			   !(temp.rpb_page == next_page && temp.rpb_line == next_line))
+			   !(temp.rpb_page == (SLONG) next_page && temp.rpb_line == (SSHORT) next_line))
 		{
 			temp.rpb_prior = (temp.rpb_flags & rpb_delta) ? data : NULL;
 			DPM_fetch_back(tdbb, &temp, LCK_read, 1);
@@ -3795,7 +3795,7 @@ static void list_staying(TDBB tdbb, RPB * rpb, LLS * staying)
 		/* If there is a next older version, then process it: remember that
 		   version's data in 'staying'. */
 
-		if (temp.rpb_page == next_page && temp.rpb_line == next_line)
+		if (temp.rpb_page == (SLONG) next_page && temp.rpb_line == (SSHORT) next_line)
 		{
 			next_page = temp.rpb_b_page;
 			next_line = temp.rpb_b_line;

@@ -655,7 +655,7 @@ SSHORT WALF_open_partitioned_log_file(STATUS * status_vector,
 				  reinterpret_cast < UCHAR * >(p_log_header),
 				  P_LOGFH_LENGTH, &read_len)) IO_ERROR_RETURN;
 
-	if (read_len < sizeof(struct p_logfh))
+	if (read_len < (SLONG) sizeof(struct p_logfh))
 		ERROR_RETURN(gds_logh_small);
 	if (p_log_header->p_logfh_version1 != P_LOGFH_VERSION)
 		ERROR_RETURN(gds_logh_inv_version);
@@ -706,7 +706,7 @@ SSHORT WALF_open_log_file(STATUS * status_vector,
 				  (UCHAR *) log_header, WALFH_LENGTH, &read_len))
 		IO_ERROR_RETURN;
 
-	if (read_len < sizeof(struct walfh))
+	if (read_len < (SLONG) sizeof(struct walfh))
 		ERROR_RETURN(gds_logh_small);
 	if (log_header->walfh_version != WALFH_VERSION)
 		ERROR_RETURN(gds_logh_inv_version);

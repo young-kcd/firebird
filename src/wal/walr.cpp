@@ -133,7 +133,7 @@ SSHORT WALR_get(STATUS * status_vector,
 
 	WALR_handle = WALRS_handle->walrs_walr;
 	remaining_block_bytes = BLKHDR->walblk_hdr_len - REC_OFFSET;
-	if (remaining_block_bytes < REC_HDROVHD) {
+	if (remaining_block_bytes < (int) REC_HDROVHD) {
 		/* Go to the next block */
 
 		if ((ret = read_next_block(status_vector, WALRS_handle)) != FB_SUCCESS)
@@ -429,7 +429,7 @@ static SSHORT log_open(
 					  sector_bytes, sizeof(sector_bytes), &read_len))
 			IO_ERR_RETURN;
 
-		if (read_len < (offset - sector_offset + REC_HDROVHD))
+		if (read_len < (offset - sector_offset + (SLONG) REC_HDROVHD))
 			FORMAT_ERR_RETURN(gds_logr_header_small, offset)
 
 				if (memcmp(log_terminator_block, sector_bytes, REC_HDROVHD) ==
@@ -463,7 +463,7 @@ static SSHORT log_open(
 		return -1;
 	}
 
-	if (read_len < BLK_HDROVHD)
+	if (read_len < (SLONG) BLK_HDROVHD)
 		FORMAT_ERR_RETURN(gds_logb_small, blk_offset)
 
 			memcpy((SCHAR *) & blkhdr, sector_bytes, BLK_HDROVHD);
