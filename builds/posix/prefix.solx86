@@ -18,7 +18,7 @@
 #
 # Use SOLX86 to identify x86 version of Solaris.  Neil McCalden
 #  
-# $Id: prefix.solx86,v 1.4 2002-09-26 09:53:42 kkuznetsov Exp $
+# $Id: prefix.solx86,v 1.5 2002-09-26 13:32:44 kkuznetsov Exp $
 #
 # Start of file prefix.solaris X 86 :	$(VERSION)	$(PLATFORM)
 
@@ -41,6 +41,7 @@ SFIO= /export/home/interbase/SfIO
 
 
 STLPort=/export/home/kostik/STL/STLport-4.5.3/stlport	
+
 
 ifdef SFIO
 COMM_SOLX_FLAGS:= $(COMM_SOLX_FLAGS)  -DSFIO -I$(SFIO)/include
