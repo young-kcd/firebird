@@ -207,6 +207,7 @@ static BOOLEAN set_parameter_type(DSQL_NOD, DSQL_NOD, BOOLEAN);
 static void set_parameters_name(DSQL_NOD, DSQL_NOD);
 static void set_parameter_name(DSQL_NOD, DSQL_NOD, DSQL_REL);
 static TEXT *pass_exact_name(TEXT*);
+static DSQL_NOD pass1_savepoint(DSQL_REQ, DSQL_NOD);
 
 STR temp_collation_name = NULL;
 
@@ -1086,14 +1087,7 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 		return input;
 
 	case nod_delete:
-		node = pass1_delete(request, input);
-		if (request->req_error_handlers) {
-			temp = MAKE_node(nod_list, 3);
-			temp->nod_arg[0] = MAKE_node(nod_start_savepoint, 0);
-			temp->nod_arg[1] = node;
-			temp->nod_arg[2] = MAKE_node(nod_end_savepoint, 0);
-			node = temp;
-		}
+		node = pass1_savepoint(request, pass1_delete(request, input));
 		break;
 
 	case nod_exec_procedure:
@@ -1197,13 +1191,8 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 				procedure->nod_type == nod_replace_trigger))
 			procedure->nod_arg[arg_cursors] = cursor->nod_arg[e_cur_next];
 
-		if (request->req_error_handlers &&
-			(input->nod_flags & NOD_SINGLETON_SELECT)) {
-			temp = MAKE_node(nod_list, 3);
-			temp->nod_arg[0] = MAKE_node(nod_start_savepoint, 0);
-			temp->nod_arg[1] = node;
-			temp->nod_arg[2] = MAKE_node(nod_end_savepoint, 0);
-			node = temp;
+		if (input->nod_flags & NOD_SINGLETON_SELECT) {
+			node = pass1_savepoint(request, node);
 		}
 		}
 		break;
@@ -1242,25 +1231,10 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 		{
 			node->nod_arg[e_xcp_msg] = 0;
 		}
-		if (request->req_error_handlers)
-		{
-			temp = MAKE_node(nod_list, 3);
-			temp->nod_arg[0] = MAKE_node(nod_start_savepoint, 0);
-			temp->nod_arg[1] = input;
-			temp->nod_arg[2] = MAKE_node(nod_end_savepoint, 0);
-			node = temp;
-		}
-		return node;
+		return pass1_savepoint(request, node);
 
 	case nod_insert:
-		node = pass1_insert(request, input);
-		if (request->req_error_handlers) {
-			temp = MAKE_node(nod_list, 3);
-			temp->nod_arg[0] = MAKE_node(nod_start_savepoint, 0);
-			temp->nod_arg[1] = node;
-			temp->nod_arg[2] = MAKE_node(nod_end_savepoint, 0);
-			node = temp;
-		}
+		node = pass1_savepoint(request, pass1_insert(request, input));
 		break;
 
 	case nod_block:
@@ -1315,7 +1289,7 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 		node->nod_arg[e_exec_sql_stmnt] = PASS1_node(request,
 						input->nod_arg[e_exec_sql_stmnt],
 						proc_flag);
-		return node;
+		return pass1_savepoint(request, node);
 
     case nod_exec_into:
 		node = MAKE_node(input->nod_type, input->nod_count);
@@ -1330,7 +1304,7 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 		node->nod_arg[e_exec_into_list] = PASS1_node(request,
 					input->nod_arg[e_exec_into_list], 
 					proc_flag);
-		return node;
+		return pass1_savepoint(request, node);
 
 	case nod_rollback:
 		request->req_type = REQ_ROLLBACK;
@@ -1401,14 +1375,7 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 		return input;
 
 	case nod_update:
-		node = pass1_update(request, input);
-		if (request->req_error_handlers) {
-			temp = MAKE_node(nod_list, 3);
-			temp->nod_arg[0] = MAKE_node(nod_start_savepoint, 0);
-			temp->nod_arg[1] = node;
-			temp->nod_arg[2] = MAKE_node(nod_end_savepoint, 0);
-			node = temp;
-		}
+		node = pass1_savepoint(request, pass1_update(request, input));
 		break;
 
 	case nod_while:
@@ -5804,4 +5771,27 @@ static TEXT *pass_exact_name (TEXT* str)
     *p = 0;
 
     return str;
+}
+
+/**
+
+ pass1_savepoint
+
+    @brief      Add savepoint pair of nodes 
+				to request having error handlers.
+
+
+    @param request
+	@param node
+
+ **/
+static DSQL_NOD pass1_savepoint(DSQL_REQ request, DSQL_NOD node) {
+	if (request->req_error_handlers) {
+		DSQL_NOD temp = MAKE_node(nod_list, 3);
+		temp->nod_arg[0] = MAKE_node(nod_start_savepoint, 0);
+		temp->nod_arg[1] = node;
+		temp->nod_arg[2] = MAKE_node(nod_end_savepoint, 0);
+		node = temp;
+	}
+	return node;
 }
