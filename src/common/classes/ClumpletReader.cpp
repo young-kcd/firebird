@@ -11,9 +11,9 @@ ClumpletReader::ClumpletReader(bool isTagged, const UCHAR* buffer, size_t buffLe
 {
 }
 
-void ClumpletReader::usage_mistake (const char* what) {
+void ClumpletReader::usage_mistake(const char* what) {
 	fatal_exception::raiseFmt(
- 		"Internal error when using clumplet API: %s", what);
+		"Internal error when using clumplet API: %s", what);
 }
 
 void ClumpletReader::invalid_structure() {

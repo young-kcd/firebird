@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: ClumpletReader.h,v 1.4 2004-11-15 16:34:47 alexpeshkoff Exp $
+ *  $Id: ClumpletReader.h,v 1.5 2004-11-16 06:22:12 robocop Exp $
  *
  */
 
@@ -75,7 +75,7 @@ protected:
 	// sensible, certainly not overwrite memory or read past the end of buffer
 
 	// This appears to be a programming error in buffer access pattern
-	virtual void usage_mistake (const char* what);
+	virtual void usage_mistake(const char* what);
 
 	// This is called when passed buffer appears invalid
 	virtual void invalid_structure();
