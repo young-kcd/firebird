@@ -1,3 +1,100 @@
+2004-03-30 12:26  aafemt
+
+	* firebird2/src/jrd/opt.cpp (1.147):
+	
+	Fix variables' scope
+
+2004-03-30 12:22  aafemt
+
+	* firebird2/src/jrd/dfw.epp (1.96):
+	
+	Fix double const
+
+2004-03-30 12:11  aafemt
+
+	* firebird2/src/misc/blrtable.cpp (1.8):
+	
+	Fix double const and please gcc
+
+2004-03-30 12:04  aafemt
+
+	* firebird2/configure.in (1.193):
+	
+	Missed dirs in temp
+
+2004-03-30 11:02  robocop
+
+	* firebird2/builds/win32/: msvc6/archive.dsp (1.5),
+	msvc6/journal.dsp (1.4), msvc6/wal.dsp (1.15),
+	msvc6/wal_classic.dsp (1.13), msvc6/walw.dsp (1.5),
+	msvc7/wal.vcproj (1.14), msvc7/wal_classic.vcproj (1.14):
+	
+	More cleanup. Get rid of obsolete files, too.
+
+2004-03-30 10:53  robocop
+
+	* firebird2/builds/: posix/make.shared.variables (1.38),
+	win32/msvc6/archive.dsp (1.4), win32/msvc6/engine.dsp (1.44),
+	win32/msvc6/engine_classic.dsp (1.39), win32/msvc6/engine_embed.dsp
+	(1.18), win32/msvc6/journal.dsp (1.3), win32/msvc6/walw.dsp (1.4),
+	win32/msvc7/engine.vcproj (1.35), win32/msvc7/engine_classic.vcproj
+	(1.34), win32/msvc7/engine_embed.vcproj (1.22),
+	win32/msvc7/gdef.vcproj (1.18), win32/msvc7/qli.vcproj (1.18):
+	
+	More cleanup. Get rid of obsolete files, too.
+
+2004-03-30 10:37  robocop
+
+	* firebird2/src/jrd/: misc.cpp (1.9), misc.h (1.7), misc_proto.h
+	(1.5):
+	
+	More cleanup. Get rid of obsolete files, too.
+
+2004-03-30 10:33  robocop
+
+	* firebird2/: builds/win32/msvc6/engine.dsp (1.43),
+	builds/win32/msvc6/engine_classic.dsp (1.38),
+	builds/win32/msvc6/gdef.dsp (1.17), builds/win32/msvc6/qli.dsp
+	(1.16), src/gpre/int_cxx.cpp (1.31), src/include/fb_types.h (1.42),
+	src/jrd/blb.cpp (1.64), src/jrd/cch.cpp (1.78), src/jrd/dsc.h
+	(1.13), src/jrd/dsc_proto.h (1.8), src/jrd/gds.cpp (1.129),
+	src/jrd/ibase.h (1.71), src/jrd/ini.h (1.14), src/jrd/misc.cpp
+	(1.8), src/jrd/misc.h (1.6), src/jrd/misc_proto.h (1.4),
+	src/jrd/mov_proto.h (1.10), src/jrd/sdl.cpp (1.34), src/jrd/sdl.h
+	(1.7), src/jrd/sdl_proto.h (1.14), src/jrd/utl.cpp (1.61),
+	src/jrd/val.h (1.21), src/remote/remote.h (1.30):
+	
+	More cleanup. Get rid of obsolete files, too.
+
+2004-03-30 06:10  robocop
+
+	* firebird2/src/: gpre/int_cxx.cpp (1.30), jrd/blb.cpp (1.63),
+	jrd/blk.h (1.22), jrd/bookmark.cpp (1.16), jrd/btr.cpp (1.80),
+	jrd/cmp.cpp (1.108), jrd/cmp_proto.h (1.24), jrd/dbg.cpp (1.23),
+	jrd/dbt.cpp (1.25), jrd/dfw.epp (1.95), jrd/dmp.cpp (1.21),
+	jrd/dpm.epp (1.39), jrd/dsc2.h (1.2), jrd/evl.cpp (1.74),
+	jrd/exe.cpp (1.110), jrd/exe.h (1.45), jrd/ext.cpp (1.48),
+	jrd/ext.h (1.8), jrd/fun.epp (1.44), jrd/fun_proto.h (1.11),
+	jrd/inf.cpp (1.43), jrd/ini.epp (1.43), jrd/intl.cpp (1.56),
+	jrd/jrd.cpp (1.148), jrd/jrd.h (1.85), jrd/met.epp (1.103),
+	jrd/met_proto.h (1.38), jrd/opt.cpp (1.146), jrd/par.cpp (1.85),
+	jrd/req.h (1.36), jrd/rse.cpp (1.66), jrd/rse.h (1.29), jrd/val.cpp
+	(1.43), jrd/val.h (1.20), jrd/vio.cpp (1.84), jrd/vio_proto.h
+	(1.21), jrd/os/vms/extvms.cpp (1.18), jrd/os/vms/map.cpp (1.9),
+	jrd/os/vms/map_proto.h (1.4), jrd/os/vms/mblr.cpp (1.4),
+	jrd/os/vms/mblr_proto.h (1.3), jrd/os/vms/rdb.cpp (1.10),
+	jrd/os/vms/rdbgpas.cpp (1.3), jrd/os/vms/rdbint.cpp (1.10),
+	jrd/os/vms/vms_command.cpp (1.2), jrd/os/vms/vmsevent.cpp (1.12),
+	jrd/os/vms/vmsthread.cpp (1.2):
+	
+	Cleanup
+
+2004-03-29 11:44  robocop
+
+	* firebird2/src/jrd/dsc2.h (1.1):
+	
+	Add alternative descriptor definitions for peer review.
+
 2004-03-28 11:10  robocop
 
 	* firebird2/: builds/win32/defs/fbclient.def (1.9),
@@ -78,21 +175,6 @@
 	* firebird2/src/common/classes/rwlock.h (1.16):
 	
 	Fix error in my previous commits spotted by claudio
-
-2004-03-27 14:36  alexpeshkoff
-
-	* firebird2/src/: dsql/dsql.cpp (1.54.2.2),
-	jrd/ExecuteStatement.cpp (1.14.2.3), jrd/ExecuteStatement.h
-	(1.5.2.2), jrd/exe.cpp (1.68.2.8), jrd/why.cpp (1.23.2.1),
-	jrd/why_proto.h (1.6.2.1):
-	
-	fixed memory leak in EXECUTE STATEMENT
-
-2004-03-27 14:34  alexpeshkoff
-
-	* firebird2/src/jrd/os/win32/config_root.cpp (1.7.2.3):
-	
-	fixed problem with searching firebird.conf in $FIREBIRD for win32
 
 2004-03-26 17:06  skidder
 
@@ -185,12 +267,6 @@
 	
 	Fix by Vladimir Tsvigun
 
-2004-03-25 08:38  aafemt
-
-	* firebird2/src/isql/extract.epp (1.10.2.1):
-	
-	Fix for procedure params extract. Global variables must die!!
-
 2004-03-25 08:33  aafemt
 
 	* firebird2/src/isql/extract.epp (1.26):
@@ -241,36 +317,6 @@
 	Fix crashes/lock-ups with multiple calls of isc_dsql_prepare for a
 	single statement like IBO does
 
-2004-03-24 22:43  dimitr
-
-	* firebird2/src/jrd/cmp.cpp (1.52.2.10):
-	
-	Fixed bug QC #7449.
-
-2004-03-24 22:36  dimitr
-
-	* firebird2/src/jrd/dpm.epp (1.15.2.1):
-	
-	Fixed wrong generator pages write order.
-
-2004-03-24 22:27  dimitr
-
-	* firebird2/src/jrd/evl.cpp (1.34.2.3):
-	
-	Fixed memory leak.
-
-2004-03-24 22:11  dimitr
-
-	* firebird2/src/jrd/evl.cpp (1.34.2.2):
-	
-	Fixed bug SF #784121 (by Claudio).
-
-2004-03-24 22:00  dimitr
-
-	* firebird2/src/jrd/cmp.cpp (1.52.2.9):
-	
-	Fixed procedures vs views issue (invalid impure area re-usage).
-
 2004-03-24 21:12  dimitr
 
 	* firebird2/src/remote/server.cpp (1.73):
@@ -318,16 +364,6 @@
 	
 	Remove DEBUG_GDS_ALLOC from platform files since Alex's added it
 	into make.rules
-
-2004-03-22 18:33  epocman
-
-	* firebird2/src/utilities/: fbcpl/fbdialog.cpp (1.1.2.5),
-	install_nt.h (1.7.2.12), install_svc.cpp (1.18.2.5), servi_proto.h
-	(1.3.2.5), services.cpp (1.9.2.6):
-	
-	Win32 - instsvc.exe adds a service description string to the
-	services configuration info on OSes that support it (Win2K, WinXP,
-	Win2K3).
 
 2004-03-22 16:16  alexpeshkoff
 
@@ -667,12 +703,6 @@
 	reinterpret_cast<PandoraBox*>(&can_of_worms); pbox->open();
 	pbox->flush(); Nickolay may want to undo my ods.h changes if gcc
 	insists in its crusade against non-PODs and poodles.
-
-2004-03-16 19:01  bellardo
-
-	* firebird2/src/install/arch-specific/darwin/Makefile.in (1.2.2.9):
-	
-	Fix small bug in makefile
 
 2004-03-16 18:34  alexpeshkoff
 
@@ -1292,10 +1322,9 @@
 	
 	correction
 
-2004-03-05 08:21  skidder
+2004-03-05 08:23  skidder
 
-	* firebird2/src/dsql/: user_dsql.cpp (1.20.2.1), user_dsql.cpp
-	(1.34):
+	* firebird2/src/dsql/user_dsql.cpp (1.34):
 	
 	Fix memory corruption
 
@@ -1647,35 +1676,6 @@
 	Cleanup Reduce reinterpret and C casts Fix isql so it can show all
 	predefined blob types in readable form.
 
-2004-02-22 12:13  paul_reeves
-
-	* firebird2/: builds/win32/make_all.bat (1.4.2.12),
-	src/install/arch-specific/win32/BuildExecutableInstall.bat
-	(1.10.2.7),
-	
-	Add check for dinkum patches under msvc6. Update Build Number.
-	src/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.in
-	c (1.1.2.7), src/install/arch-specific/win32/FirebirdInstall_15.iss
-	(1.5.2.14), src/install/arch-specific/win32/Readme.txt (1.2.2.4),
-	src/install/arch-specific/win32/installation_readme.txt (1.2.2.6),
-	src/jrd/isc_version.h (1.1.2.13):
-
-2004-02-22 00:04  skidder
-
-	*
-	
-	Fix SS problem with docs
-	firebird2/src/install/arch-specific/linux/super/makeInstallImage.sh
-	.in (1.1.2.9):
-
-2004-02-21 22:47  skidder
-
-	* firebird2/src/install/arch-specific/linux/:
-	classic/rpmheader.txt.in (1.2.2.1), super/rpmheader.txt.in
-	(1.2.2.2):
-	
-	Minor packaging fixes to make people writing docs happy
-
 2004-02-21 10:23  skidder
 
 	* firebird2/src/: jrd/met.epp (1.92), qli/exe.cpp (1.40),
@@ -1772,24 +1772,6 @@
 	Big cleanup.  God have pity on platform maintainers.  I only can
 	compile/test Win32; sorry, folks.
 
-2004-02-20 07:30  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.13):
-	
-	no message
-
-2004-02-19 09:12  dimitr
-
-	* firebird2/src/jrd/isc_version.h (1.1.2.12):
-	
-	Updated version info.
-
-2004-02-19 08:57  dimitr
-
-	* firebird2/src/jrd/isc_version.h (1.1.2.11):
-	
-	Updated version info.
-
 2004-02-19 02:41  skidder
 
 	* firebird2/src/utilities/ibmgr/ibmgr.cpp (1.11):
@@ -1839,12 +1821,6 @@
 	Change rdb$db_key recalculation to the right solution, Thanks to
 	Oleg.
 
-2004-02-15 09:51  dimitr
-
-	* firebird2/builds/posix/Makefile.in.extlib (1.10.2.5):
-	
-	Fixed a typo. Thanks To Oleg Kraynov.
-
 2004-02-13 12:15  aafemt
 
 	* firebird2/src/dsql/ddl.cpp (1.88):
@@ -1864,14 +1840,6 @@
 	Let semaphore.h see the definition of gds__log for successful build
 	on FreeBSD.
 
-2004-02-13 11:14  alexpeshkoff
-
-	*
-	firebird2/src/install/arch-specific/linux/super/preuninstall.sh.in
-	(1.1.2.8):
-	
-	Don't remove user & group firebird after uninstall
-
 2004-02-13 11:14  stryqx
 
 	* firebird2/builds/posix/: prefix.darwin (1.12), prefix.example
@@ -1879,13 +1847,6 @@
 	(1.12), prefix.solx86 (1.24), prefix.solx86gcc (1.7):
 	
 	change CLIENT_UTIL_TARGET from gds_delay to gds_relay
-
-2004-02-13 11:13  alexpeshkoff
-
-	* firebird2/src/install/arch-specific/linux/super/postinstall.sh.in
-	(1.2.2.19):
-	
-	Don't add lines to hosts.allow file
 
 2004-02-11 12:16  aafemt
 
@@ -1898,24 +1859,6 @@
 	* firebird2/builds/posix/make.shared.variables (1.36):
 	
 	Fix for my previous commit
-
-2004-02-10 19:53  dimitr
-
-	* firebird2/src/jrd/isc_version.h (1.1.2.10):
-	
-	Updated version info.
-
-2004-02-10 19:46  dimitr
-
-	* firebird2/src/isql/isql.epp (1.32.2.5):
-	
-	Fixed ISQL temp-file problem reported recently.
-
-2004-02-10 19:16  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.12):
-	
-	Updated WhatsNew
 
 2004-02-10 12:27  aafemt
 
@@ -1968,26 +1911,6 @@
 	
 	const correctness
 
-2004-02-08 12:34  alexpeshkoff
-
-	* firebird2/src/install/arch-specific/linux/super/postinstall.sh.in
-	(1.2.2.18):
-	
-	One more fix from Andreas Bentele
-
-2004-02-08 11:49  alexpeshkoff
-
-	* firebird2/src/install/misc/SSchangeRunUser.sh.in (1.1.2.3):
-	
-	Fixed typo
-
-2004-02-06 08:45  skidder
-
-	* firebird2/src/burp/: backup.epp (1.24.2.3), restore.epp
-	(1.31.2.1):
-	
-	Backport fix for backup/restore of streamed blobs
-
 2004-02-06 08:31  skidder
 
 	* firebird2/src/burp/restore.epp (1.65):
@@ -2001,40 +1924,17 @@
 	Preserve blob type (streamed/segmented) over backup/restore
 	process.
 
-2004-02-06 05:56  skidder
-
-	* firebird2/src/jrd/: blp.h (1.5.4.2), gds.cpp (1.84.2.6):
-	
-	Backport savepoint printing code to B1_5_Release.  Not tested in
-	this branch since logging facilities are broken there, works in
-	2.0. Backported correct output name for EXECUTE STATEMENT verb
-
 2004-02-05 12:17  aafemt
 
 	* firebird2/src/jrd/svc.cpp (1.103):
 	
 	Fix couple of warnings
 
-2004-02-05 11:16  paul_reeves
-
-	* firebird2/src/: jrd/isc_version.h (1.1.2.9), misc/security.gbak
-	(1.1.2.3):
-	
-	Restore SYSDBA grants to tables in security database. Update build
-	number.
-
 2004-02-05 07:58  alexpeshkoff
 
 	* firebird2/src/isql/isql.epp (1.68):
 	
 	Forward porting
-
-2004-02-04 16:30  alexpeshkoff
-
-	* firebird2/src/install/arch-specific/linux/super/postinstall.sh.in
-	(1.2.2.17):
-	
-	Fixed syntax error Thanks to Andreas Bentele
 
 2004-02-04 12:12  aafemt
 
@@ -2126,12 +2026,6 @@
 	Fix memory leak from transaction pool happening during conversion
 	from string to blob
 
-2004-01-31 20:33  dimitr
-
-	* firebird2/src/jrd/gds.cpp (1.84.2.5):
-	
-	Fixed the BLR blob filter.
-
 2004-01-31 20:27  kkuznetsov
 
 	* firebird2/builds/install/arch-specific/: solx86/Makefile.in
@@ -2145,22 +2039,6 @@
 	
 	fix comile error here
 
-2004-01-31 17:31  alexpeshkoff
-
-	* firebird2/src/install/arch-specific/linux/super/postinstall.sh.in
-	(1.2.2.16):
-	
-	One more way to register service - /usr/sbin/update-rc.d Thanks to
-	Andreas Bentele
-
-2004-01-31 16:50  alexpeshkoff
-
-	* firebird2/src/install/misc/: SSchangeRunUser.sh.in (1.1.2.2),
-	SSrestoreRootRunUser.sh.in (1.1.2.2), changeDBAPassword.sh.in
-	(1.1.2.4):
-	
-	Fixed scripts that modify SYSDBA password and RunUser
-
 2004-01-31 14:35  dimitr
 
 	* firebird2/src/dsql/: dsql.tab.h (1.33), parse.cpp (1.108),
@@ -2168,42 +2046,11 @@
 	
 	Removed obsolete EXECUTE VARCHAR syntax.
 
-2004-01-31 14:31  dimitr
-
-	* firebird2/src/dsql/: dsql.tab.h (1.18.2.3), parse.cpp (1.72.2.5),
-	parse.y (1.79.2.6):
-	
-	Removed obsolete EXECUTE VARCHAR syntax.
-
-2004-01-31 12:26  alexpeshkoff
-
-	* firebird2/src/jrd/: blp.h (1.5.4.1), gds.cpp (1.84.2.4):
-	
-	Fixed new blr print problems
-
 2004-01-29 20:55  arnobrinkman
 
 	* firebird2/doc/WhatsNew (1.45):
 	
 	Add enhanced UNION behaviour to whatsnew doc
-
-2004-01-29 14:37  alexpeshkoff
-
-	* firebird2/src/install/arch-specific/linux/super/:
-	taruninstall.sh.in (1.1.2.1), postinstall.sh.in (1.2.2.15),
-	preuninstall.sh.in (1.1.2.7), tarinstall.sh.in (1.1.2.3):
-	
-	Small fixes of SS install - mostly SuSE related Thanks to Andreas
-	Bentele
-
-2004-01-29 14:07  alexpeshkoff
-
-	*
-	
-	Small fixes of SS install - mostly SuSE related Thanks to Andreas
-	Bentele
-	firebird2/src/install/arch-specific/linux/misc/firebird.init.d.suse
-	.in (1.1.2.3):
 
 2004-01-29 10:47  skidder
 
@@ -2243,20 +2090,6 @@
 	Use better macros to detect 64-bit posix. They are non-standard,
 	anyway
 
-2004-01-28 17:26  dimitr
-
-	* firebird2/src/jrd/cmp.cpp (1.52.2.8):
-	
-	Rolled back one of the previous bugfixes diue to unpredicted
-	behaviour.
-
-2004-01-28 16:32  hvlad
-
-	* firebird2/src/v5_examples/: empbld.sql (1.4.2.1), empbuild.e
-	(1.3.2.1), empddl.sql (1.5.2.1), intlbld.e (1.2.2.1):
-	
-	Restore examples build. Thanks to Helen Borrie and Paul Beach
-
 2004-01-28 12:23  aafemt
 
 	* firebird2/src/gpre/cmd.cpp (1.29):
@@ -2269,9 +2102,9 @@
 	
 	Rollback my last change at the instance of Claudio
 
-2004-01-28 10:28  dimitr
+2004-01-28 10:31  dimitr
 
-	* firebird2/src/jrd/: jrd.cpp (1.76.2.6), jrd.cpp (1.130):
+	* firebird2/src/jrd/jrd.cpp (1.130):
 	
 	Fixed possible crashes when this routine is called from
 	verify_database_name().  Confirmed for the embedded server in the
@@ -2333,32 +2166,11 @@
 	Temporary hack to return Win32 to buildable state. No Win64 port is
 	possible before ULONG name clash is resolved
 
-2004-01-27 14:52  epocman
-
-	* firebird2/builds/win32/msvc6/: Firebird2.dsw (1.19.2.7),
-	instreg.dsp (1.12.2.3), instsvc.dsp (1.13.2.2):
-	
-	Static link instreg and instsvc, just as instclient.
-
-2004-01-27 12:12  paul_reeves
-
-	* firebird2/src/:
-	install/arch-specific/win32/FirebirdInstall_15.iss (1.5.2.13),
-	jrd/isc_version.h (1.1.2.8):
-	
-	Update build number. Minor tweak to win32 install script.
-
 2004-01-27 12:06  aafemt
 
 	* firebird2/src/jrd/common.h (1.101):
 	
 	Fortunatelly we know how many monthes in a year
-
-2004-01-27 08:17  stryqx
-
-	* firebird2/src/dsql/: dsql.tab.h (1.18.2.2), parse.cpp (1.72.2.4):
-	
-	Regenerate after changing PAGE_SIZE to KW_PAGE_SIZE.
 
 2004-01-27 08:09  stryqx
 
@@ -2403,15 +2215,9 @@
 	
 	Minor debugging corrections.
 
-2004-01-26 13:59  dimitr
-
-	* firebird2/src/jrd/val.cpp (1.15.2.2):
-	
-	Minor debugging corrections.
-
 2004-01-26 13:55  dimitr
 
-	* firebird2/src/jrd/: dfw.epp (1.82), dfw.epp (1.45.2.3):
+	* firebird2/src/jrd/dfw.epp (1.82):
 	
 	Fixed yet another porting bug. Thanks to Eugene Kilin.
 
@@ -2420,13 +2226,6 @@
 	* firebird2/src/jrd/gds.cpp (1.119):
 	
 	Fix unix error handling recently broken by Erik in 2.0 branch
-
-2004-01-26 08:10  stryqx
-
-	* firebird2/src/dsql/: keywords.cpp (1.18.2.1), parse.y (1.79.2.5):
-	
-	Change PAGE_SIZE to KW_PAGE_SIZE so as not to conflict with system
-	define on FreeBSD.
 
 2004-01-26 08:06  stryqx
 
@@ -2441,20 +2240,6 @@
 	
 	Use static bison parser stack and allocate it from thread stack
 
-2004-01-23 05:49  skidder
-
-	* firebird2/src/dsql/parse.y (1.79.2.4):
-	
-	Allocate static stack for bison parser
-
-2004-01-22 08:47  epocman
-
-	* firebird2/builds/win32/msvc6/: Firebird2.dsw (1.19.2.6),
-	common_utilities.dsp (1.1.2.1), instclient.dsp (1.1.2.3):
-	
-	Static link instclient.exe so it can be used from an installer when
-	MS compiler support DLLs are possibly not yet updated.
-
 2004-01-22 08:47  epocman
 
 	* firebird2/builds/win32/msvc6/common_utilities.dsp (1.1):
@@ -2468,20 +2253,6 @@
 	qli/eval.cpp (1.33), qli/mov.cpp (1.29):
 	
 	Engine fully builds on Linux AMD64 now
-
-2004-01-21 16:50  paul_reeves
-
-	* firebird2/: builds/win32/clean_all.bat (1.9.2.1),
-	src/install/arch-specific/win32/BuildExecutableInstall.bat
-	(1.10.2.6),
-	src/install/arch-specific/win32/FirebirdInstallSupportFunctions.inc
-	(1.1.2.5), src/install/arch-specific/win32/FirebirdInstall_15.iss
-	(1.5.2.12), src/jrd/isc_version.h (1.1.2.7), src/jrd/utl.cpp
-	(1.35.2.2):
-	
-	Update build number. Make isc_get_client_version return ISC_
-	version. Improve Installable Exe builder, especially to add support
-	for pdb files and make final name more descriptive.
 
 2004-01-21 08:15  skidder
 
@@ -2535,12 +2306,6 @@
 	Further AMD64 fixes. Given this fixes you may start playing with
 	databases using isql_static.
 
-2004-01-20 18:38  skidder
-
-	* firebird2/src/jrd/sch.cpp (1.6.2.4):
-	
-	Backport the fix into 1.5 tree
-
 2004-01-20 18:37  skidder
 
 	* firebird2/src/jrd/sch.cpp (1.16):
@@ -2548,46 +2313,11 @@
 	Fix race condition (incompletely fixed a month ago) in scheduler.
 	Noted by Alex Peshkoff.
 
-2004-01-20 04:09  skidder
-
-	* firebird2/src/jrd/ibinitdll.cpp (1.6.2.5):
-	
-	Rollback Alex initialization code since it is not needed anymore. 
-	I added implicit threading subsystem initialization during
-	scheduler initialization : read at first y-valve subsystem entry.
-
-2004-01-20 04:02  skidder
-
-	* firebird2/src/jrd/sch.cpp (1.6.2.3):
-	
-	Backport fix for thread scheduler initialization race condition
-	that affected client library stability and was the reason of crash
-	from Barry's coredump
-
 2004-01-20 03:52  skidder
 
 	* firebird2/src/jrd/sch.cpp (1.15):
 	
 	Fix Firebird initialization race condition
-
-2004-01-17 18:49  alexpeshkoff
-
-	* firebird2/src/remote/srvr_w32.cpp (1.26.2.2):
-	
-	Removed hack, which loaded fbclient.dll at server startup - UDF's
-	work fine in 9x without it now.
-
-2004-01-17 17:41  alexpeshkoff
-
-	* firebird2/src/isql/isql.epp (1.32.2.4):
-	
-	Fixed trivial AV when exiting w/o connect or create database
-
-2004-01-17 17:33  alexpeshkoff
-
-	* firebird2/src/jrd/ibinitdll.cpp (1.6.2.4):
-	
-	Added explicit thread subsystem initialization for fbclient
 
 2004-01-16 14:05  hvlad
 
@@ -2601,13 +2331,6 @@
 	(1.88), par.cpp (1.72):
 	
 	Added support for default parameters
-
-2004-01-16 12:13  stryqx
-
-	* firebird2/src/install/arch-specific/freebsd/install.sh.in
-	(1.1.2.6):
-	
-	Make it easier for PHP users to get up and running.
 
 2004-01-16 11:43  hvlad
 
@@ -2625,28 +2348,6 @@
 	
 	1. Added new EXECUTE BLOCK statement 2. Added	default paremeters
 	in stored procedures
-
-2004-01-15 15:07  alexpeshkoff
-
-	* firebird2/src/install/arch-specific/linux/super/preinstall.sh.in
-	(1.2.2.5):
-	
-	Changed check for 'ed' presence to 'ex'.
-
-2004-01-15 14:48  alexpeshkoff
-
-	*
-	
-	Fixed typo in script
-	firebird2/src/install/arch-specific/linux/misc/firebird.init.d.debi
-	an.in (1.1.2.2):
-
-2004-01-14 10:57  stryqx
-
-	* firebird2/src/install/arch-specific/freebsd/install.sh.in
-	(1.1.2.5):
-	
-	Make this script work on a clean system.
 
 2004-01-13 14:40  eku
 
@@ -2707,15 +2408,14 @@
 
 2004-01-12 07:24  stryqx
 
-	* firebird2/: builds/install/arch-specific/freebsd/install.sh.in
-	(1.6), src/install/arch-specific/freebsd/install.sh.in (1.1.2.4):
+	* firebird2/builds/install/arch-specific/freebsd/install.sh.in
+	(1.6):
 	
 	Cope with upgrades more gracefully.
 
-2004-01-12 06:57  stryqx
+2004-01-12 06:59  stryqx
 
-	* firebird2/: src/install/arch-specific/freebsd/install.sh.in
-	(1.1.2.3), builds/install/arch-specific/freebsd/install.sh.in
+	* firebird2/builds/install/arch-specific/freebsd/install.sh.in
 	(1.5):
 	
 	libgds links to libfbembed for ClassicServer.
@@ -2773,12 +2473,6 @@
 	
 	Fix check constraint bug caused by my previously commit
 
-2004-01-10 16:15  dimitr
-
-	* firebird2/src/jrd/cmp.cpp (1.52.2.7):
-	
-	Fixed bug with computed fields referenced in a trigger context.
-
 2004-01-10 02:48  skidder
 
 	* firebird2/src/jrd/: cmp.cpp (1.88), exe.cpp (1.95), exe.h (1.31),
@@ -2803,17 +2497,6 @@
 	
 	This fix should also be added in the first release (SP ?) after
 	FB1.5 final.
-
-2004-01-09 10:28  paul_reeves
-
-	* firebird2/src/:
-	install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
-	(1.1.2.6), install/arch-specific/win32/FirebirdInstall_15.iss
-	(1.5.2.11), misc/security.gbak (1.1.2.2):
-	
-	Add grants to public on tables in security.fdb. Update build
-	numbers for post-RC8 builds. Add a space to two string resources in
-	the Win32 installer.
 
 2004-01-09 03:23  arnobrinkman
 
@@ -2883,28 +2566,12 @@
 	available converters (I fixed up VSPC to be able to convert
 	Firebird projects, for example)
 
-2004-01-08 11:28  epocman
-
-	* firebird2/src/utilities/: install.cpp (1.1.2.5),
-	install_client.cpp (1.1.2.3):
-	
-	Minor bug fixes, as reported in firebird-devel by
-	<togniolli@uol.com.br>.
-
 2004-01-08 06:47  robocop
 
 	* firebird2/builds/: misc/journal.gbak (1.2), win32/prepare.bat
 	(1.29):
 	
 	Removing JOURNAL leftover. Thanks Blas.
-
-2004-01-07 17:49  alexpeshkoff
-
-	* firebird2/src/install/arch-specific/linux/super/postinstall.sh.in
-	(1.2.2.14):
-	
-	Fixed problems: 1. ex couldn't write to file with 0550 (even under
-	root) 2. don't run gsec twice for tar-install
 
 2004-01-07 11:22  dimitr
 
@@ -2917,14 +2584,6 @@
 
 	* firebird2/src/: alice/alice.cpp (1.48), burp/burp.cpp (1.62),
 	utilities/gstat/dba.epp (1.23):
-	
-	Removed handle leaks in the service manager.
-
-2004-01-07 11:09  dimitr
-
-	* firebird2/src/: alice/alice.cpp (1.27.2.1), burp/burp.cpp
-	(1.33.2.2), utilities/dba.epp (1.27.2.4), utilities/gsec.cpp
-	(1.16.2.1), jrd/svc.cpp (1.67.2.4):
 	
 	Removed handle leaks in the service manager.
 
@@ -3020,16 +2679,6 @@
 	
 	Fix my stupid mistake
 
-2004-01-05 09:48  paul_reeves
-
-	* firebird2/: builds/win32/msvc6/fb2control.dsp (1.1.2.5),
-	src/install/arch-specific/win32/installation_readme.txt (1.2.2.5),
-	src/utilities/fbcpl/fbdialog.cpp (1.1.2.4),
-	src/utilities/fbcpl/fbdialog.h (1.1.2.4):
-	
-	Update build number. Improve error detection in cpl applet. Update
-	some Win32 install notes.
-
 2004-01-05 06:03  skidder
 
 	* firebird2/builds/win32/msvc7/Firebird2.sln (1.16):
@@ -3070,32 +2719,6 @@
 	
 	More Win32 1.5 -> HEAD synchronisation.
 
-2004-01-03 13:36  skywalker
-
-	* firebird2/src/install/arch-specific/linux/super/postinstall.sh.in
-	(1.2.2.13):
-	
-	Change to remove libgds.so if it is a link, but not if it is an
-	actual file.
-
-2004-01-03 13:35  skywalker
-
-	*
-	firebird2/src/install/arch-specific/linux/classic/postinstall.sh.in
-	(1.10.2.10):
-	
-	Change to remove existing links for libgds.so but not remove it if
-	it is a file.
-
-2004-01-03 13:34  skywalker
-
-	*
-	
-	Change to use ex, and to write SYSDBA.password correctly (variable
-	was not set).
-	firebird2/src/install/arch-specific/linux/misc/changeDBAPassword.sh
-	.in (1.1.2.3):
-
 2004-01-03 13:32  epocman
 
 	* firebird2/doc/: README.Win32LibraryInstallation.txt (1.2),
@@ -3120,16 +2743,6 @@
 	Win32 HEAD porting of 1.5 branch RC8 latest updates, to keep HEAD
 	in synch with about to be released 1.5.  Please someone check and
 	adjust MSVC7 compile, cause I only have MSVC6.
-
-2004-01-03 12:40  epocman
-
-	* firebird2/src/utilities/: install_nt.h (1.7.2.11), servi_proto.h
-	(1.3.2.4), services.cpp (1.9.2.5):
-	
-	New helper function to check NT services status easier from other
-	tools (like control panel applet).  Mainly for P.Reeves useage for
-	now. The whole install helper functions is pending a OO rewrite in
-	HEAD branch.
 
 2004-01-03 11:59  robocop
 
@@ -3181,17 +2794,6 @@
 	(1.14):
 	
 	Fix up MSVC7 makefiles
-
-2004-01-02 15:32  epocman
-
-	* firebird2/src/utilities/install.cpp (1.1.2.4):
-	
-	instclient.exe : new code (commented out for now) that can patch
-	the string FileVersion (in addition to the numerical FileVersion)
-	in case this proves really usefull. There has been a report that
-	EMS IBManager had an issue with this, though I could not reproduce
-	myself. In case it proves true, the code is ready and tested. Just
-	need to uncomment it.
 
 2003-12-31 23:40  skidder
 
@@ -3299,48 +2901,6 @@
 	
 	Forward port generation of external debug info to FB2 HEAD
 
-2003-12-30 01:26  skidder
-
-	* firebird2/src/install/arch-specific/linux/Makefile.in (1.9.2.3):
-	
-	Correction
-
-2003-12-30 01:16  skidder
-
-	* firebird2/src/install/arch-specific/linux/Makefile.in (1.9.2.2):
-	
-	Make GDB happy with our debug info
-
-2003-12-30 01:15  epocman
-
-	* firebird2/src/iscguard/cntl_guard.cpp (1.8.2.2):
-	
-	Running as a service, while stopping, fbguard.exe did triggered the
-	engine service stop but did not wait for the complete stop before
-	reporting successfull stop. This could led to problems, dependent
-	on system response time, when attempting removal of services
-	immediately after a stop. Problem could be surfaced through instsvc
-	and through the control panel applet.
-
-2003-12-29 05:40  skidder
-
-	* firebird2/src/install/arch-specific/linux/Makefile.in (1.9.2.1):
-	
-	Build external debug info packages
-
-2003-12-29 03:31  skywalker
-
-	* firebird2/src/install/misc/aliases.conf.in (1.1.2.2):
-	
-	Add original entry with employee.fdb defined.
-
-2003-12-29 03:12  tmcsys
-
-	* firebird2/src/install/arch-specific/darwin/install-script
-	(1.1.2.7):
-	
-	change location of StartupItems for 10.3 OS/X Server
-
 2003-12-28 14:42  arnobrinkman
 
 	* firebird2/src/jrd/: btn.cpp (1.3), btr.cpp (1.58):
@@ -3348,65 +2908,17 @@
 	use standard memcpy / memmove functions and fix a bug with
 	large-key index
 
-2003-12-28 05:53  skidder
-
-	* firebird2/src/install/:
-	arch-specific/linux/classic/makeInstallImage.sh.in (1.13.2.6),
-	arch-specific/linux/super/makeInstallImage.sh.in (1.1.2.8),
-	misc/CSchangeRunUser.sh.in (1.1.2.4),
-	misc/CSrestoreRootRunUser.sh.in (1.1.2.2),
-	misc/changeDBAPassword.sh.in (1.1.2.3):
-	
-	Since ed is not installed in most configurations, eradicate its
-	usage from Firebird 1.5 installer. ex dependency is still present
-	(for more than a year) and may be replaced with sed dependency if
-	creates problem
-
 2003-12-28 00:48  skidder
 
 	* firebird2/builds/posix/prefix.linux (1.24):
 	
 	Build debuggable release binaries on Linux
 
-2003-12-28 00:39  skidder
-
-	* firebird2/builds/posix/prefix.linux (1.18.2.3):
-	
-	Distribute debuggable PROD_BUILD
-
-2003-12-28 00:13  skidder
-
-	*
-	firebird2/src/install/arch-specific/linux/classic/postinstall.sh.in
-	(1.10.2.9):
-	
-	Rollback recent changes and create normal user and group on
-	Mandrake. Usage of system users for non-system packages is likely
-	to create problems
-
 2003-12-28 00:09  skidder
 
 	* firebird2/src/install/misc/aliases.conf.in (1.1):
 	
 	file aliases.conf.in was initially added on branch B1_5_Release.
-
-2003-12-28 00:09  skidder
-
-	* firebird2/src/install/misc/aliases.conf.in (1.1.2.1):
-	
-	Add file forgotten by Mark
-
-2003-12-28 00:07  skidder
-
-	* firebird2/doc/WhatsNew (1.36.2.11):
-	
-	Document my change
-
-2003-12-28 00:06  skidder
-
-	* firebird2/src/jrd/ibase.h (1.40.2.5):
-	
-	Add version to ibase.h
 
 2003-12-27 23:03  skidder
 
@@ -3440,58 +2952,16 @@
 	BLOBs correctly 2. Their performace is improved 3. Fixed crash when
 	NULL is passed as escape value to LIKE
 
-2003-12-26 16:57  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.10):
-	
-	Added RC8 changes.
-
-2003-12-26 16:00  dimitr
-
-	* firebird2/src/jrd/exe.cpp (1.68.2.7):
-	
-	Fixed issue spotted by Claudio.
-
-2003-12-24 16:43  dimitr
-
-	* firebird2/builds/win32/msvc6/: alice.dsp (1.15.2.1),
-	alice_classic.dsp (1.12.2.1), burp.dsp (1.17.2.1), burp_classic.dsp
-	(1.15.2.1), common.dsp (1.21.2.2), common_classic.dsp (1.15.2.2),
-	dsql_server.dsp (1.20.2.1), dsql_server_classic.dsp (1.16.2.1),
-	engine.dsp (1.32.2.2), engine_classic.dsp (1.28.2.2),
-	engine_embed.dsp (1.9.2.1), fb2control.dsp (1.1.2.4),
-	fb_inet_server.dsp (1.17.2.1), fb_lock_print.dsp (1.17.2.1),
-	fbclient.dsp (1.33.2.3), fbembed.dsp (1.25.2.1), fbguard.dsp
-	(1.17.2.2), fbserver.dsp (1.28.2.1), fbudf.dsp (1.10.2.1), gbak.dsp
-	(1.19.2.1), gdef.dsp (1.14.2.1), gds32.dsp (1.18.2.2), gfix.dsp
-	(1.17.2.2), gpre.dsp (1.18.2.1), gsec.dsp (1.13.2.1), gsplit.dsp
-	(1.6.2.1), gstat.dsp (1.14.2.1), ib_udf.dsp (1.15.2.1), ib_util.dsp
-	(1.15.2.1), instclient.dsp (1.1.2.2), instreg.dsp (1.12.2.2),
-	instsvc.dsp (1.13.2.1), intl.dsp (1.20.2.1), intlcpp.dsp (1.5.2.1),
-	ipserver.dsp (1.13.2.1), isql.dsp (1.19.2.1), lock.dsp (1.12.2.1),
-	lock_classic.dsp (1.10.2.1), qli.dsp (1.13.2.1), remote.dsp
-	(1.17.2.1), remote_classic.dsp (1.14.2.1), utilities.dsp
-	(1.13.2.1), utilities_classic.dsp (1.11.2.1), v5_examples.dsp
-	(1.3.2.1), wal.dsp (1.12.2.1), wal_classic.dsp (1.10.2.1):
-	
-	Let's create PDB files as a part of the release builds.
-
 2003-12-24 16:09  dimitr
 
 	* firebird2/src/ipserver/ipserver.cpp (1.37):
 	
 	Fixed one more server crash.
 
-2003-12-24 15:53  dimitr
+2003-12-24 14:04  dimitr
 
-	* firebird2/src/ipserver/ipserver.cpp (1.19.2.2):
-	
-	Fixed one more server crash.
-
-2003-12-24 14:02  dimitr
-
-	* firebird2/src/jrd/: rse.cpp (1.28.2.3), sort.cpp (1.38.2.1),
-	sort.h (1.7.2.1), rse.cpp (1.47), sort.cpp (1.52), sort.h (1.15):
+	* firebird2/src/jrd/: rse.cpp (1.47), sort.cpp (1.52), sort.h
+	(1.15):
 	
 	Fixed server crashes in sort finilization. Thanks to Vlad Horsun
 	and Oleg Loa.
@@ -3502,46 +2972,6 @@
 	
 	Fixed internal window issue.
 
-2003-12-24 13:19  dimitr
-
-	* firebird2/src/remote/srvr_w32.cpp (1.26.2.1):
-	
-	Fixed internal window issue.
-
-2003-12-24 00:23  skywalker
-
-	* firebird2/configure.in (1.141.2.20):
-	
-	Added generation of new script files from .in templates
-
-2003-12-24 00:22  skywalker
-
-	* firebird2/src/install/arch-specific/linux/super/:
-	makeInstallImage.sh.in (1.1.2.7), postinstall.sh.in (1.2.2.12):
-	
-	Update install image to have new script files Update generation of
-	password for rpm installs Alias file set as default option (trial
-	go)
-
-2003-12-24 00:21  skywalker
-
-	* firebird2/src/install/arch-specific/linux/classic/:
-	makeInstallImage.sh.in (1.13.2.5), postinstall.sh.in (1.10.2.8),
-	preinstall.sh.in (1.4.2.2):
-	
-	Update install image to have two new script files Update generation
-	of password for rpm installs Make default for libgds.so point to
-	libfbembed.so Alias file set as default option (trial go)
-
-2003-12-24 00:17  skywalker
-
-	*
-	
-	updated to use the openssl passwd generation for random, and to
-	write out SYSDBA.password file
-	firebird2/src/install/arch-specific/linux/misc/changeDBAPassword.sh
-	.in (1.1.2.2):
-
 2003-12-24 00:14  skywalker
 
 	*
@@ -3550,24 +2980,6 @@
 	
 	file createAliasDB.sh.in was initially added on branch
 	B1_5_Release.
-
-2003-12-24 00:14  skywalker
-
-	*
-	firebird2/src/install/arch-specific/linux/misc/createAliasDB.sh.in
-	(1.1.2.1):
-	
-	A new script to add an entry into aliases.conf and to create an
-	empty database
-
-2003-12-24 00:13  skywalker
-
-	*
-	
-	Add a script to help change the libgds.so links between
-	libfbembed.so and libfbclient.so for classic distributions
-	firebird2/src/install/arch-specific/linux/misc/changeGdsLibraryComp
-	atibleLink.sh.in (1.1.2.1):
 
 2003-12-24 00:13  skywalker
 
@@ -3578,16 +2990,9 @@
 	firebird2/src/install/arch-specific/linux/misc/changeGdsLibraryComp
 	atibleLink.sh.in (1.1):
 
-2003-12-23 21:39  skywalker
+2003-12-22 19:32  dimitr
 
-	* firebird2/src/install/misc/changeDBAPassword.sh.in (1.1.2.2):
-	
-	Update password generate method, and change format of the local
-	SYSDBA.password file it writes.
-
-2003-12-22 19:30  dimitr
-
-	* firebird2/src/jrd/: isc_file.cpp (1.52.2.5), isc_file.cpp (1.67):
+	* firebird2/src/jrd/isc_file.cpp (1.67):
 	
 	Fixed bug introduced some months ago.
 
@@ -3603,9 +3008,9 @@
 	
 	Minor addition to one of my previous changes.
 
-2003-12-22 18:58  dimitr
+2003-12-22 19:00  dimitr
 
-	* firebird2/src/burp/: mvol.cpp (1.13.2.1), mvol.cpp (1.29):
+	* firebird2/src/burp/mvol.cpp (1.29):
 	
 	Another bugfix by Oleg Loa. Never terminate the server when GBAK is
 	running as a service.
@@ -3613,12 +3018,6 @@
 2003-12-22 18:51  dimitr
 
 	* firebird2/src/jrd/evl.cpp (1.54):
-	
-	Fixed bug in nulls handling in BETWEEN. Thanks to Oleg Loa.
-
-2003-12-22 18:43  dimitr
-
-	* firebird2/src/jrd/: cvt2.cpp (1.11.2.1), evl.cpp (1.34.2.1):
 	
 	Fixed bug in nulls handling in BETWEEN. Thanks to Oleg Loa.
 
@@ -3686,12 +3085,6 @@
 	Claudio Valderrama. We should not break compatibility with half of
 	the world without apparent reasons.
 
-2003-12-21 12:51  alexpeshkoff
-
-	* firebird2/src/jrd/lck.cpp (1.18.2.2):
-	
-	Rolled back my recent changes as absolutely wrong.
-
 2003-12-21 03:34  skidder
 
 	* firebird2/src/jrd/: blp.h (1.8), exe.h (1.28), opt.cpp (1.118),
@@ -3708,15 +3101,6 @@
 	
 	Update parse.cpp
 
-2003-12-21 01:43  skidder
-
-	* firebird2/src/: dsql/dsql.tab.h (1.18.2.1), dsql/gen.cpp
-	(1.33.2.3), dsql/node.h (1.23.2.3), dsql/parse.cpp (1.72.2.3),
-	dsql/parse.y (1.79.2.3), jrd/blr.h (1.12.2.1), jrd/par.cpp
-	(1.43.2.3):
-	
-	Fix NULLS FIRST/LAST issue and update parse.cpp
-
 2003-12-21 01:07  skidder
 
 	* firebird2/src/: dsql/gen.cpp (1.56), dsql/node.h (1.40),
@@ -3727,75 +3111,17 @@
 	critical for future development in this area and needs to be
 	backported in B1_5_Release.
 
-2003-12-19 16:43  paul_reeves
-
-	* firebird2/: builds/win32/msvc6/fb2control.dsp (1.1.2.3),
-	doc/README.Win32LibraryInstallation.txt (1.1.2.4),
-	src/install/arch-specific/win32/BuildExecutableInstall.bat
-	(1.10.2.5), src/install/arch-specific/win32/FirebirdInstall_15.iss
-	(1.5.2.10), src/utilities/install.cpp (1.1.2.3),
-	src/utilities/install_client.cpp (1.1.2.2),
-	src/utilities/install_proto.h (1.1.2.2):
-	
-	Update build number for Fb 1.5. Put correct link to IDPL in some
-	boiler plates. (Very) minor changes to Win32 build process.
-
-2003-12-19 12:48  paul_reeves
-
-	* firebird2/src/utilities/fbcpl/: fbdialog.cpp (1.1.2.3),
-	fbdialog.h (1.1.2.3), fbpanel.cpp (1.1.2.4), fbpanel.h (1.1.2.3),
-	res/fbcontrol.rc2 (1.1.2.2):
-	
-	cpl applet - Prevent runaway error dialogues. Disable controls if
-	user has insufficient access rights.
-
-2003-12-17 18:54  alexpeshkoff
-
-	* firebird2/src/jrd/lck.cpp (1.18.2.1):
-	
-	Fixed 'Fatal lock manager error: invalid lock id (0), errno: 0' (at
-	least one of the reasons for this error).  Bug happened when
-	attempt was made to call LCK_convert_non_blocking() for LCK_none
-	lock.
-
-2003-12-17 15:33  paul_reeves
-
-	* firebird2/: builds/win32/make_all.bat (1.4.2.11),
-	src/install/arch-specific/win32/BuildExecutableInstall.bat
-	(1.10.2.4),
-	
-	Integrate instclient into Win32 install script. Increment Build no
-	for Fb 1.5. Make some minor corrections to some license
-	boiler-plates.
-	src/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.in
-	c (1.1.2.5),
-	src/install/arch-specific/win32/FirebirdInstallSupportFunctions.inc
-	(1.1.2.4), src/install/arch-specific/win32/FirebirdInstall_15.iss
-	(1.5.2.9), src/jrd/isc_version.h (1.1.2.6):
-
 2003-12-17 12:05  aafemt
 
 	* firebird2/builds/posix/Makefile.in.client.util (1.18):
 	
 	Add db_alias.cpp to gstat
 
-2003-12-17 09:23  epocman
-
-	* firebird2/src/utilities/install.cpp (1.1.2.2):
-	
-	Get rid of temp file in case of errors.
-
 2003-12-15 22:10  dimitr
 
 	* firebird2/src/jrd/btr.cpp (1.56):
 	
 	Fixed my yesterday's bug.
-
-2003-12-15 18:12  epocman
-
-	* firebird2/doc/README.Win32LibraryInstallation.txt (1.1.2.3):
-	
-	Updated documentation.
 
 2003-12-15 17:23  epocman
 
@@ -3827,74 +3153,11 @@
 	
 	file instclient.dsp was initially added on branch B1_5_Release.
 
-2003-12-15 17:23  epocman
-
-	* firebird2/: builds/win32/make_all.bat (1.4.2.10),
-	builds/win32/msvc6/Firebird2.dsw (1.19.2.5),
-	builds/win32/msvc6/instclient.dsp (1.1.2.1),
-	builds/win32/msvc6/instgds.dsp (1.1.2.2),
-	src/utilities/gdsclient.cpp (1.1.2.6),
-	src/utilities/gdsclient_proto.h (1.1.2.4),
-	src/utilities/install.cpp (1.1.2.1),
-	src/utilities/install_client.cpp (1.1.2.1),
-	src/utilities/install_gds.cpp (1.1.2.4), src/utilities/install_nt.h
-	(1.7.2.10), src/utilities/install_proto.h (1.1.2.1),
-	builds/win32/msvc7/instclient.vcproj (1.1.2.1),
-	builds/win32/msvc7/instgds.vcproj (1.1.2.2):
-	
-	Win32 - new instclient.exe tool (replaces instgds.exe).
-	Documentation to follow shortly from me and/or Paul R.
-
 2003-12-15 05:32  skywalker
 
 	* firebird2/src/install/misc/fb_config.in (1.1):
 	
 	file fb_config.in was initially added on branch B1_5_Release.
-
-2003-12-15 05:32  skywalker
-
-	* firebird2/: configure.in (1.141.2.19),
-	builds/posix/Makefile.in.client.util (1.9.2.3),
-	builds/posix/Makefile.in.firebird (1.37.2.12),
-	doc/README.user.troubleshooting (1.1.2.2),
-	src/install/arch-specific/linux/classic/makeInstallImage.sh.in
-	(1.13.2.4), src/install/arch-specific/linux/misc/firebird.xinetd.in
-	(1.2.2.3),
-	src/install/arch-specific/linux/super/makeInstallImage.sh.in
-	(1.1.2.6), src/install/arch-specific/linux/super/postinstall.sh.in
-	(1.2.2.11),
-	src/install/arch-specific/linux/super/postuninstall.sh.in
-	(1.1.2.4), src/install/arch-specific/linux/super/preinstall.sh.in
-	(1.2.2.4), src/install/arch-specific/linux/super/preuninstall.sh.in
-	(1.1.2.6), src/install/misc/fb_config.in (1.1.2.1):
-	
-	Update makefile for gstat add -lfbstatic to allow build to find
-	db_alias.o
-	
-	Rollback xinetd flags - remove KEEPALIVE as Nickolay has this
-	option hardcoded and it is not required.
-	
-	Update make clean to remove links as well
-	
-	Change troubleshooting doco to use /opt/firebird rather than
-	/usr/local/firebird
-	
-	Add fb_lock_print to super install package
-	
-	Fix (my) syntax error in super uninstall
-	
-	Change super install scripts to use FBXXXX rather than IBXXX, I
-	kept getting into trouble copying stuff from classic to super - now
-	they are both the same
-	
-	also add a fb_config utility (undocumented currently)
-
-2003-12-15 00:40  skidder
-
-	* firebird2/src/: common/config/config.cpp (1.40.2.4), jrd/sch.cpp
-	(1.6.2.2):
-	
-	Backport fixes for race conditions to Firebird 1.5
 
 2003-12-14 23:29  skidder
 
@@ -3903,14 +3166,6 @@
 	
 	Linux-related Services API fixes. All Services API work on Linux CS
 	now.
-
-2003-12-14 23:07  skywalker
-
-	* firebird2/src/install/arch-specific/linux/misc/firebird.xinetd.in
-	(1.2.2.2):
-	
-	Changed FLAGS to include KEEPALIVE option needed apparantly for a
-	change that was introduced to the service
 
 2003-12-14 19:24  dimitr
 
@@ -3929,20 +3184,6 @@
 	array independent from ODS 3. Cleanup TODO - use per-segment
 	selectivities in the optimizer and get rid of idx::idx_selectivity
 	for ever
-
-2003-12-14 08:00  skywalker
-
-	* firebird2/src/install/arch-specific/linux/:
-	classic/postinstall.sh.in (1.10.2.7), classic/postuninstall.sh.in
-	(1.1.2.2), super/postinstall.sh.in (1.2.2.10),
-	super/postuninstall.sh.in (1.1.2.3):
-	
-	Fixed up the compatibility links, for libgds.so etc, checks now for
-	links explicitly ( -e looks for the file at the end of the link)
-	and removing the links when package is removed.
-	
-	Updated super to do uninstall the same way as classic did (use same
-	routine and put uninstall.sh into bin directory)
 
 2003-12-14 05:44  skidder
 
@@ -3986,61 +3227,6 @@
 	
 	Fix Linux build
 
-2003-12-14 05:13  skywalker
-
-	*
-	firebird2/src/install/arch-specific/linux/classic/postinstall.sh.in
-	(1.10.2.6):
-	
-	Remove extra copy of reset server left in build uninstall file
-	routine (my mistake from about 6mths ago).
-
-2003-12-14 05:06  skywalker
-
-	* firebird2/src/install/arch-specific/linux/misc/firebird.xinetd.in
-	(1.2.2.1):
-	
-	Change run user for classic to be user firebird
-
-2003-12-14 05:05  skywalker
-
-	* firebird2/src/install/arch-specific/linux/super/:
-	makeInstallImage.sh.in (1.1.2.5), postinstall.sh.in (1.2.2.9):
-	
-	Updated super install change replace of /etc/services entry
-
-2003-12-14 05:03  skywalker
-
-	* firebird2/src/install/arch-specific/linux/classic/:
-	makeInstallImage.sh.in (1.13.2.3), postinstall.sh.in (1.10.2.5),
-	postuninstall.sh.in (1.1.2.1):
-	
-	Update classic linux install
-	
-	1. fix examples database chmod to ug+rw *.fdb 2. fix check for
-	firebird user already exists 3. add mandrake specific useradd
-	method 4. makeImage gets .sh files from other location
-
-2003-12-14 04:59  skywalker
-
-	* firebird2/doc/README.user.troubleshooting (1.1.2.1):
-	
-	Update docs to specify that need to belong to firebird group to
-	access databases on classic.
-
-2003-12-14 04:58  skywalker
-
-	* firebird2/builds/posix/Makefile.in.firebird (1.37.2.11):
-	
-	make clean now should delete from tmp_root not gen_root
-
-2003-12-14 04:57  skywalker
-
-	* firebird2/configure.in (1.141.2.18):
-	
-	Change location of some of the generated files, so they won't be
-	deleted as part of make clean
-
 2003-12-13 15:43  dimitr
 
 	* firebird2/src/utilities/gstat/dba.epp (1.20):
@@ -4055,24 +3241,9 @@
 	
 	1) Move db_alias.cpp to common.lib 2) Add common.lib to gstat.exe
 
-2003-12-13 13:16  dimitr
-
-	* firebird2/builds/win32/msvc6/: Firebird2.dsw (1.19.2.4),
-	common.dsp (1.21.2.1), common_classic.dsp (1.15.2.1), engine.dsp
-	(1.32.2.1), engine_classic.dsp (1.28.2.1), fbclient.dsp (1.33.2.2):
-	
-	1) Move db_alias.cpp to common.lib 2) Add common.lib to gstat.exe
-
-2003-12-13 13:12  dimitr
-
-	* firebird2/src/utilities/dba.epp (1.27.2.3):
-	
-	Make gstat to work with database aliases.
-
 2003-12-13 11:59  dimitr
 
-	* firebird2/src/common/config/: config_file.cpp (1.13),
-	config_file.cpp (1.11.2.1):
+	* firebird2/src/common/config/config_file.cpp (1.13):
 	
 	Let's be compatible with the config files open in binary mode.
 
@@ -4145,36 +3316,12 @@
 	
 	Replaced itoa with snprintf.
 
-2003-12-11 09:18  dimitr
-
-	* firebird2/src/remote/inet.cpp (1.70.2.4):
-	
-	Replaced itoa with snprintf.
-
 2003-12-11 01:00  arnobrinkman
 
 	* firebird2/src/dsql/dsql.cpp (1.85):
 	
 	bugfix: Post a error when no input string is given else engine will
 	crash.
-
-2003-12-11 00:54  arnobrinkman
-
-	* firebird2/src/dsql/dsql.cpp (1.54.2.1):
-	
-	bugfix: Post a error when no input string is given else engine will
-	crash.
-
-2003-12-09 10:12  epocman
-
-	* firebird2/src/utilities/: gdsclient.cpp (1.1.2.5),
-	gdsclient_proto.h (1.1.2.3), install_gds.cpp (1.1.2.3),
-	install_nt.h (1.7.2.9):
-	
-	Win32 - instgds.exe - Note : according to design decisions this
-	will be replaced by instclient.exe within the next 12 hours. This
-	commit only to share temporary code with P.Reeves and D.Yemanov in
-	between.
 
 2003-12-06 19:13  dimitr
 
@@ -4183,23 +3330,11 @@
 	Fixed problem with parameters used as UDF arguments with type of
 	CSTRING.
 
-2003-12-06 17:01  dimitr
+2003-12-06 16:52  dimitr
 
-	* firebird2/src/jrd/ini.epp (1.18.2.1):
-	
-	Fixed initialization bug found by Claudio,
-
-2003-12-06 16:50  dimitr
-
-	* firebird2/src/remote/: inet.cpp (1.70.2.3), inet.cpp (1.92):
+	* firebird2/src/remote/inet.cpp (1.92):
 	
 	Fixed issues with TCP/IP port/service specification.
-
-2003-12-06 16:41  dimitr
-
-	* firebird2/src/common/config/config.cpp (1.40.2.3):
-	
-	Small correction.
 
 2003-12-06 10:40  alexpeshkoff
 
@@ -4213,13 +3348,6 @@
 	* firebird2/src/jrd/svc.cpp (1.95):
 	
 	fixed SS shutdown in case on internal deadlock
-
-2003-12-06 10:18  alexpeshkoff
-
-	* firebird2/src/install/arch-specific/linux/super/:
-	postinstall.sh.in (1.2.2.8), preuninstall.sh.in (1.1.2.5):
-	
-	SS scripts - slightly optimized for various linux distibutions
 
 2003-12-06 03:58  skidder
 
@@ -4240,12 +3368,6 @@
 	
 	Update MSVC7 makefiles. Files were actually edited using VS2003 and
 	then version numbers were replaced back to 7.0
-
-2003-12-05 11:40  alexpeshkoff
-
-	* firebird2/src/jrd/svc.cpp (1.67.2.3):
-	
-	fixed SS shutdown in case on internal deadlock
 
 2003-12-05 11:35  robocop
 
@@ -4326,24 +3448,6 @@
 	
 	Correction
 
-2003-12-02 22:57  bellardo
-
-	* firebird2/: configure.in (1.141.2.17),
-	src/install/arch-specific/darwin/Makefile.in (1.2.2.8),
-	src/install/arch-specific/darwin/install-script (1.1.2.6),
-	src/install/arch-specific/darwin/preupgrade-script (1.1.2.3),
-	src/install/arch-specific/darwin/Firebird.startupitem/Firebird
-	(1.1.2.3):
-	
-	Improved build system support for darwin SS
-
-2003-12-02 22:57  epocman
-
-	* firebird2/src/utilities/gdsclient.cpp (1.1.2.4):
-	
-	Win32 - Changed version info resource update methods for Win9x
-	compatibility.
-
 2003-12-02 17:04  brodsom
 
 	* firebird2/src/iscguard/iscguard.cpp (1.30):
@@ -4365,13 +3469,6 @@
 2003-12-02 16:08  alexpeshkoff
 
 	* firebird2/src/jrd/idx.cpp (1.33):
-	
-	Fixed use of descending index as table's primary key.  Problems
-	were related with referencing such table in foreign key.
-
-2003-12-02 14:40  alexpeshkoff
-
-	* firebird2/src/jrd/idx.cpp (1.16.2.6):
 	
 	Fixed use of descending index as table's primary key.  Problems
 	were related with referencing such table in foreign key.
@@ -4437,12 +3534,6 @@
 	for faster key-lookup in index on larger page-sizes.  5) Segment
 	selectivity calculation added.
 
-2003-12-01 08:54  epocman
-
-	* firebird2/src/utilities/gdsclient.cpp (1.1.2.3):
-	
-	const_cast fixup.
-
 2003-12-01 03:51  arnobrinkman
 
 	* firebird2/builds/win32/msvc6/: engine.dsp (1.37),
@@ -4470,23 +3561,6 @@
 	non-leafpages for faster lookup in many duplicates.  4) Jump-nodes
 	for faster key-lookup in index on larger page-sizes.  5) Segment
 	selectivity calculation added.
-
-2003-12-01 01:34  epocman
-
-	* firebird2/src/utilities/: gdsclient.cpp (1.1.2.2),
-	gdsclient_proto.h (1.1.2.2), install_gds.cpp (1.1.2.2),
-	install_nt.h (1.7.2.8):
-	
-	Win32 - Streamlined version info access. Added 'instgds remove'
-	support.
-
-2003-12-01 00:19  epocman
-
-	* firebird2/builds/win32/make_all.bat (1.4.2.9):
-	
-	Win32 - We don't need to build a gds32.dll anymore (stub or other).
-	Distribution package only needs to include fbclient.dll along with
-	instgds.exe tool.
 
 2003-11-30 22:13  dimitr
 
@@ -4522,18 +3596,6 @@
 	Fix a bug, when end() returns pointer with value 0x0000000 then
 	after -1 this value is bigger as begin()
 
-2003-11-30 21:00  epocman
-
-	* firebird2/doc/README.Win32LibraryInstallation.txt (1.1.2.2):
-	
-	Win32 - New tool 'instgds.exe'. This installs a copy of
-	fbclient.dll as gds32.dll in the windows system directory, but take
-	care of updating the file version info, so that gds32.dll appears
-	to be of version 6.3 instead of 1.5, for compatibility reasons with
-	some old legacy applications. There is no more 'stub' gds32.dll.
-	The gds32.dll is a full clone of fbclient.dll (only client library
-	to be build).
-
 2003-11-30 20:53  epocman
 
 	* firebird2/builds/win32/msvc7/instgds.vcproj (1.1):
@@ -4564,25 +3626,6 @@
 	
 	file instgds.dsp was initially added on branch B1_5_Release.
 
-2003-11-30 20:53  epocman
-
-	* firebird2/: builds/win32/make_all.bat (1.4.2.8),
-	builds/win32/msvc6/Firebird2.dsw (1.19.2.3),
-	builds/win32/msvc6/instgds.dsp (1.1.2.1), src/jrd/ibinitdll.cpp
-	(1.6.2.3), src/jrd/version.rc (1.3.4.2),
-	src/utilities/gdsclient.cpp (1.1.2.1), src/utilities/install_nt.h
-	(1.7.2.7), src/utilities/gdsclient_proto.h (1.1.2.1),
-	src/utilities/install_gds.cpp (1.1.2.1),
-	builds/win32/msvc7/instgds.vcproj (1.1.2.1):
-	
-	Win32 - New tool 'instgds.exe'. This installs a copy of
-	fbclient.dll as gds32.dll in the windows system directory, but take
-	care of updating the file version info, so that gds32.dll appears
-	to be of version 6.3 instead of 1.5, for compatibility reasons with
-	some old legacy applications. There is no more 'stub' gds32.dll.
-	The gds32.dll is a full clone of fbclient.dll (only client library
-	to be build).
-
 2003-11-30 20:13  skidder
 
 	* firebird2/src/jrd/: blb.h (1.9), btr.h (1.17), dpm_proto.h (1.7),
@@ -4600,13 +3643,6 @@
 	* firebird2/src/jrd/cmp.cpp (1.81):
 	
 	Little correction in my invariant-tracking changes
-
-2003-11-30 13:23  dimitr
-
-	* firebird2/src/: include/gen/msgs.h (1.5.2.2), msgs/msg.gbak
-	(1.6.2.2):
-	
-	Cleaned up some error messages.
 
 2003-11-30 07:41  robocop
 
@@ -4706,35 +3742,6 @@
 	
 	'struct' cleanup
 
-2003-11-27 12:09  dimitr
-
-	* firebird2/src/jrd/: cmp.cpp (1.52.2.6), dfw.epp (1.45.2.2):
-	
-	Backported view/trigger fixes from FB2.
-
-2003-11-26 21:00  bellardo
-
-	* firebird2/src/install/arch-specific/darwin/: install-script
-	(1.1.2.5), Firebird.startupitem/Firebird (1.1.2.2):
-	
-	Fix fbmgr.bin usage
-
-2003-11-26 20:43  bellardo
-
-	* firebird2/builds/posix/postfix.darwin (1.1.2.11):
-	
-	Install the qli and gdef utilities as part of SS, and other SS
-	packaging support changes
-
-2003-11-26 20:42  bellardo
-
-	* firebird2/: builds/posix/Makefile.in.client.qli (1.1.2.1),
-	builds/posix/Makefile.in.firebird (1.37.2.10), src/dudley/exe.epp
-	(1.18.2.1), src/qli/meta.epp (1.17.2.1):
-	
-	Build qli and gdef for SS.  Small changes to the posix build
-	system, plus removal of the WAL references.
-
 2003-11-26 20:33  bellardo
 
 	*
@@ -4761,16 +3768,6 @@
 	firebird2/src/install/arch-specific/darwin/Firebird.startupitem/Sta
 	rtupParameters.plist (1.1):
 
-2003-11-26 20:33  bellardo
-
-	* firebird2/src/install/arch-specific/darwin/: Makefile.in
-	(1.2.2.7), install-script (1.1.2.4), Firebird.startupitem/Firebird
-	(1.1.2.1), Firebird.startupitem/StartupParameters.plist (1.1.2.1),
-	Firebird.startupitem/Resources/English.lproj/Localizable.strings
-	(1.1.2.1):
-	
-	Changes to the mac os x install process to support SS.
-
 2003-11-26 12:15  aafemt
 
 	* firebird2/src/jrd/: blob_filter.cpp (1.14), builtin.cpp (1.7),
@@ -4779,51 +3776,6 @@
 	(1.43):
 	
 	'struct' cleanup
-
-2003-11-26 01:32  bellardo
-
-	* firebird2/builds/posix/postfix.darwin (1.1.2.10):
-	
-	Need the guard and manager for SS
-
-2003-11-26 00:41  bellardo
-
-	* firebird2/builds/posix/postfix.darwin (1.1.2.9):
-	
-	Fix the escaping problems
-
-2003-11-26 00:39  bellardo
-
-	* firebird2/src/install/arch-specific/darwin/Makefile.in (1.2.2.6):
-	
-	Make the package generation process a little less error prone.
-
-2003-11-26 00:28  bellardo
-
-	* firebird2/src/install/arch-specific/darwin/Makefile.in (1.2.2.5):
-	
-	Add support for SS installer
-
-2003-11-26 00:18  bellardo
-
-	* firebird2/builds/posix/: Makefile.in.firebird (1.37.2.9),
-	postfix.darwin (1.1.2.8), prefix.darwin (1.8.2.17):
-	
-	Automatically build the darwin installer package as part of the
-	compilation process.
-
-2003-11-26 00:09  bellardo
-
-	* firebird2/builds/posix/: Makefile.in.libfbclient (1.14.2.3),
-	postfix.darwin (1.1.2.7), prefix.darwin (1.8.2.16):
-	
-	More packaging work for darwin
-
-2003-11-25 23:13  bellardo
-
-	* firebird2/builds/posix/Makefile.in.firebird (1.37.2.8):
-	
-	Build hooks to allow proper packaging for darwin
 
 2003-11-25 17:55  bellardo
 
@@ -4834,18 +3786,9 @@
 	lock manager not to launch in darwin.  This fix removes the nested
 	vfork()s.
 
-2003-11-25 07:37  bellardo
+2003-11-24 19:04  alexpeshkoff
 
-	* firebird2/src/lock/lock.cpp (1.56.2.6):
-	
-	POSIX standard says you can only call an exec* function or exit
-	after a vfork().  This precludes nested vfork()s, which caused the
-	lock manager not to launch in darwin.  This fix removes the nested
-	vfork()s.
-
-2003-11-24 19:02  alexpeshkoff
-
-	* firebird2/src/jrd/: svc.cpp (1.67.2.2), svc.cpp (1.92):
+	* firebird2/src/jrd/svc.cpp (1.92):
 	
 	Fixed serious bug in CS's services API Second, third, etc attempt
 	to start service executed exactly what was done by the first one.
@@ -4859,15 +3802,15 @@
 	Fix invariant tracking in recursive procedures and when invariants
 	depend on variables. This solves issues like SF#627057.
 
-2003-11-23 19:18  dimitr
+2003-11-23 19:21  dimitr
 
-	* firebird2/src/jrd/: isc_file.cpp (1.52.2.4), isc_file.cpp (1.65):
+	* firebird2/src/jrd/isc_file.cpp (1.65):
 	
 	Applied patch by Jim Beesley.
 
 2003-11-23 18:54  dimitr
 
-	* firebird2/src/jrd/: cmp.cpp (1.78), cmp.cpp (1.52.2.5):
+	* firebird2/src/jrd/cmp.cpp (1.78):
 	
 	Minor protection against improper index locks reference.
 
@@ -4877,25 +3820,11 @@
 	
 	Minor protection against improper index locks reference.
 
-2003-11-23 18:47  dimitr
-
-	* firebird2/src/jrd/opt.cpp (1.73.2.15):
-	
-	Minor protection against improper index locks reference.
-
 2003-11-23 18:39  dimitr
 
-	* firebird2/src/jrd/: exe.cpp (1.87), exe.cpp (1.68.2.6):
+	* firebird2/src/jrd/exe.cpp (1.87):
 	
 	Fixed IF handling in the looper.
-
-2003-11-23 18:12  skidder
-
-	* firebird2/src/: intl/ld_proto.h (1.3.2.1), jrd/intl.cpp
-	(1.32.2.1):
-	
-	Backport some intl fixes from CVS HEAD (changes affect only
-	INTL_BUILTIN builds)
 
 2003-11-23 17:44  skidder
 
@@ -4923,9 +3852,9 @@
 	
 	Fixed initialization error.
 
-2003-11-22 23:40  arnobrinkman
+2003-11-22 23:43  arnobrinkman
 
-	* firebird2/src/dsql/: make.cpp (1.30.2.4), make.cpp (1.51):
+	* firebird2/src/dsql/make.cpp (1.51):
 	
 	bugfix: SF841696 calculated output descriptor for COALESCE/CASE
 	should give charsets other then NONE/ASCII precedence
@@ -4933,13 +3862,6 @@
 2003-11-22 01:07  arnobrinkman
 
 	* firebird2/src/jrd/cmp.cpp (1.77):
-	
-	bugfix: Charset problem when mixing none (constants)/ascii charset
-	and other character-sets in concatenation.
-
-2003-11-22 01:01  arnobrinkman
-
-	* firebird2/src/jrd/cmp.cpp (1.52.2.4):
 	
 	bugfix: Charset problem when mixing none (constants)/ascii charset
 	and other character-sets in concatenation.
@@ -4982,14 +3904,6 @@
 	Fix a memory management bug that resulted in sporadic crashes when
 	disconnecting from a database.
 
-2003-11-20 20:07  bellardo
-
-	* firebird2/src/jrd/: all.cpp (1.15.2.1), all.h (1.6.2.1), jrd.h
-	(1.42.2.2):
-	
-	Fix a memory management bug that resulted in sporadic crashes when
-	disconnecting from a database.
-
 2003-11-20 18:32  skidder
 
 	* firebird2/src/jrd/: evl_string.h (1.3), evl_string_test.cpp
@@ -5014,13 +3928,6 @@
 2003-11-18 17:54  dimitr
 
 	* firebird2/src/jrd/: opt.cpp (1.111), rse.cpp (1.44):
-	
-	1) Fixed server crashes when a SP is used as inner stream in left
-	joins 2) Fixed conjuncts out-of-limits issue
-
-2003-11-18 17:44  dimitr
-
-	* firebird2/src/jrd/: opt.cpp (1.73.2.14), rse.cpp (1.28.2.2):
 	
 	1) Fixed server crashes when a SP is used as inner stream in left
 	joins 2) Fixed conjuncts out-of-limits issue
@@ -5126,12 +4033,6 @@
 	* firebird2/src/dsql/parse.y (1.114):
 	
 	-Remove unneeded win32 headers
-
-2003-11-17 19:34  skidder
-
-	* firebird2/src/jrd/jrd.cpp (1.76.2.5):
-	
-	Fix problem with long stream blobs
 
 2003-11-17 19:09  skidder
 
@@ -5281,13 +4182,6 @@
 	Forcedly set SO_KEEPALIVE flag for POSIX CS connections
 	independently of what was given by xinetd/inetd to us
 
-2003-11-15 21:12  skidder
-
-	* firebird2/src/remote/inet.cpp (1.70.2.2):
-	
-	Forcedly set SO_KEEPALIVE flag for POSIX CS connections
-	independently of what was given by xinetd/inetd to us
-
 2003-11-15 13:07  alexpeshkoff
 
 	*
@@ -5296,129 +4190,17 @@
 	firebird2/builds/install/arch-specific/linux/super/postinstall.sh.i
 	n (1.5):
 
-2003-11-15 13:03  alexpeshkoff
+2003-11-14 12:12  aafemt
 
-	* firebird2/src/install/arch-specific/linux/super/postinstall.sh.in
-	(1.2.2.7):
-	
-	fixed install problems
-
-2003-11-14 14:48  paul_reeves
-
-	* firebird2/src/:
-	install/arch-specific/darwin/installer_background.pdf (1.1.2.2),
-	install/arch-specific/darwin/installer_background.psd (1.1.2.2),
-	install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
-	(1.1.2.4),
-	install/arch-specific/win32/FirebirdInstallSupportFunctions.inc
-	(1.1.2.3), install/arch-specific/win32/FirebirdInstall_15.iss
-	(1.5.2.8), install/arch-specific/win32/Readme.txt (1.2.2.3),
-	install/arch-specific/win32/installation_readme.txt (1.2.2.4),
-	jrd/isc_version.h (1.1.2.5):
-	
-	Add some refinements to Win32 install script. Update build_no for
-	1.5.
-
-2003-11-14 12:11  aafemt
-
-	* firebird2/src/: jrd/ibase.h (1.40.2.4), include/fb_types.h
-	(1.32):
+	* firebird2/src/include/fb_types.h (1.32):
 	
 	return isc_quad_high and _low
-
-2003-11-14 03:43  bellardo
-
-	* firebird2/builds/posix/postfix.darwin (1.1.2.6):
-	
-	Make sure we include the examples in our package
-
-2003-11-14 03:37  bellardo
-
-	* firebird2/builds/posix/postfix.darwin (1.1.2.5):
-	
-	Make sure extlib is compiled before we package everything up
-
-2003-11-14 02:16  bellardo
-
-	* firebird2/src/install/arch-specific/darwin/install-script
-	(1.1.2.3):
-	
-	Update installer script to handle xinetd
-
-2003-11-13 23:46  bellardo
-
-	* firebird2/src/isql/isql.epp (1.32.2.3):
-	
-	isql needs to understand '--' comments so as not to incorrectly
-	match the command termination string.
-
-2003-11-13 11:51  epocman
-
-	* firebird2/src/jrd/ibinitdll.cpp (1.6.2.2):
-	
-	Small fix to the logic finding fbclient from gds32, following
-	discussions with Dmitry Yemanov.
-
-2003-11-13 08:31  bellardo
-
-	* firebird2/src/isql/isql.epp (1.32.2.2):
-	
-	Fix isql bug that caused a mis-synchronization between stdout and
-	stderr.  The synchronization error resulted in incorrect output
-	ordering when stdout and stderr were tied to the same file
-	descriptor.
-
-2003-11-13 08:28  bellardo
-
-	* firebird2/src/extern/editline/editline.c (1.1.4.1):
-	
-	Fix editline bug that was reported to truncate redirected into to
-	isql at 80 characters.	In fact, it shouldn't have always been
-	exactly eighty characters, but that was how the bug manifested
-	itself.
-
-2003-11-13 05:57  tmcsys
-
-	* firebird2/configure.in (1.141.2.16):
-	
-	create directory for darwin SS build
-
-2003-11-13 05:51  tmcsys
-
-	* firebird2/builds/posix/: Makefile.in.fbserver (1.11.2.3),
-	Makefile.in.libfbclient (1.14.2.2):
-	
-	improved build for SS
-
-2003-11-13 05:46  tmcsys
-
-	* firebird2/builds/posix/prefix.darwin (1.8.2.15):
-	
-	change CLIENT_UTIL_TARGET from gds_delay to gds_relay
 
 2003-11-13 04:41  stryqx
 
 	* firebird2/configure.in (1.183):
 	
 	Fix build on FreeBSD 4.x
-
-2003-11-13 02:20  tmcsys
-
-	* firebird2/builds/posix/prefix.darwin (1.8.2.14):
-	
-	gcc 3.1 cpp-precomp is broken
-
-2003-11-13 02:13  bellardo
-
-	* firebird2/builds/posix/prefix.darwin (1.8.2.13):
-	
-	Use the darwin version specific compiler flags.
-
-2003-11-13 02:12  bellardo
-
-	* firebird2/configure.in (1.141.2.15):
-	
-	Set some compiler specific flags for darwin.
 
 2003-11-13 01:53  stryqx
 
@@ -5429,12 +4211,6 @@
 2003-11-12 19:30  dimitr
 
 	* firebird2/src/jrd/opt.cpp (1.110):
-	
-	Fixed new bug with explicit plans.
-
-2003-11-12 19:23  dimitr
-
-	* firebird2/src/jrd/opt.cpp (1.73.2.13):
 	
 	Fixed new bug with explicit plans.
 
@@ -5450,20 +4226,6 @@
 	
 	file minorvers.c was initially added on branch B1_5_Release.
 
-2003-11-12 10:02  bellardo
-
-	* firebird2/src/install/arch-specific/darwin/: majorvers.c
-	(1.1.2.1), minorvers.c (1.1.2.1):
-	
-	Need the source files too
-
-2003-11-12 10:00  bellardo
-
-	* firebird2/src/install/arch-specific/darwin/: FB.info (1.1.2.2),
-	Info.plist (1.1.2.3), Makefile.in (1.2.2.4):
-	
-	Fix up a few more version strings
-
 2003-11-12 09:34  bellardo
 
 	*
@@ -5472,14 +4234,6 @@
 	
 	file installer_background.psd was initially added on branch
 	B1_5_Release.
-
-2003-11-12 09:34  bellardo
-
-	* firebird2/src/install/arch-specific/darwin/: Makefile.in
-	(1.2.2.3), installer_background.pdf (1.1.2.1),
-	installer_background.psd (1.1.2.1):
-	
-	Add a background image to the installer
 
 2003-11-12 09:34  bellardo
 
@@ -5502,37 +4256,11 @@
 	
 	file buildsuffix.c was initially added on branch B1_5_Release.
 
-2003-11-12 08:10  bellardo
-
-	* firebird2/src/install/arch-specific/darwin/: Description.plist
-	(1.1.2.2), Info.plist (1.1.2.2), Makefile.in (1.2.2.2),
-	buildsuffix.c (1.1.2.1), fullvers.c (1.1.2.1):
-	
-	Determine the build version automatically
-
-2003-11-12 07:17  bellardo
-
-	* firebird2/src/install/arch-specific/darwin/: install-script
-	(1.1.2.2), preinstall-script (1.1.2.2), preupgrade-script
-	(1.1.2.2):
-	
-	Saved/Restore security.fdb when doing an "upgrade" install
-
 2003-11-12 06:57  bellardo
 
 	* firebird2/src/install/arch-specific/darwin/FB.info (1.1):
 	
 	file FB.info was initially added on branch B1_5_Release.
-
-2003-11-12 06:57  bellardo
-
-	* firebird2/src/install/arch-specific/darwin/: Description.plist
-	(1.1.2.1), FB.info (1.1.2.1), Info.plist (1.1.2.1), License.txt
-	(1.1.2.1), Makefile.in (1.2.2.1), PkgInfo (1.1.2.1), ReadMe.txt
-	(1.1.2.1), Welcome.txt (1.1.2.1), install-script (1.1.2.1),
-	preinstall-script (1.1.2.1), preupgrade-script (1.1.2.1):
-	
-	Darwin installer files
 
 2003-11-12 06:57  bellardo
 
@@ -5591,9 +4319,9 @@
 	
 	file preupgrade-script was initially added on branch B1_5_Release.
 
-2003-11-12 00:57  stryqx
+2003-11-12 00:58  stryqx
 
-	* firebird2/src/common/classes/: locks.h (1.5.2.4), locks.h (1.9):
+	* firebird2/src/common/classes/locks.h (1.9):
 	
 	Fix the spinlocks case for FreeBSD 4.x
 
@@ -5602,19 +4330,6 @@
 	* firebird2/src/dsql/parse.y (1.113):
 	
 	Yacc doesn't like C++ comments in the language section.
-
-2003-11-11 13:50  paul_reeves
-
-	* firebird2/: builds/win32/make_all.bat (1.4.2.7),
-	builds/win32/make_examples.bat (1.4.2.2),
-	src/install/arch-specific/win32/BuildExecutableInstall.bat
-	(1.10.2.3),
-	src/install/arch-specific/win32/FirebirdInstallSupportFunctions.inc
-	(1.1.2.2), src/install/arch-specific/win32/FirebirdInstall_15.iss
-	(1.5.2.7):
-	
-	Improve diagnostic output from make_all.log. Include Win32 examples
-	in install script.
 
 2003-11-11 13:19  brodsom
 
@@ -5711,126 +4426,17 @@
 	to alt.cpp and isc_ to gds.cpp -Use ISC_QUAD internally -Use
 	isc_vax_integer internally
 
-2003-11-11 09:24  tmcsys
-
-	* firebird2/autogen.sh (1.8.2.1):
-	
-	
-	1) User can specify tool path in ENV for systems with multiple
-	versions of tools installed.  For example:
-	
-	/bin/sh AUTOCONF=[path_to_autoconf]/autoconf; export AUTOCONF
-	LIBTOOL=[path_to_libtool]/libtool; export LIBTOOL
-	LIBTOOLIZE=[path_to_libtooliize]/libtoolize; export LIBTOOLIZE
-	./autogen.sh
-	
-	2) Autoconf version check.  Obsolete versions were caught by
-	AC_PREREQ in configure.in and not by this script.
-	
-	Libtool version check may also pass obsolete versions.
-
-2003-11-11 09:05  bellardo
-
-	* firebird2/: configure.in (1.141.2.14), builds/posix/prefix.darwin
-	(1.8.2.12):
-	
-	Darwin users need not shun editline.
-
-2003-11-11 08:49  bellardo
-
-	* firebird2/builds/posix/postfix.darwin (1.1.2.4):
-	
-	Make sure the intl library has the correct name.
-
 2003-11-11 07:52  eku
 
 	* firebird2/src/journal/server.epp (1.14):
 	
 	Fixed call setpgrp().
 
-2003-11-11 06:44  bellardo
-
-	* firebird2/builds/posix/prefix.darwin (1.8.2.11):
-	
-	Enable prebinding with the firebird library
-
-2003-11-11 03:34  bellardo
-
-	* firebird2/builds/posix/postfix.darwin (1.1.2.3):
-	
-	Make sure some critical installation files are added to the
-	framework
-
-2003-11-11 03:31  bellardo
-
-	* firebird2/src/jrd/os/darwin/config_root.cpp (1.1.2.2):
-	
-	root path needs a trailing path separator.  Style
-
-2003-11-11 02:01  bellardo
-
-	* firebird2/builds/posix/: Makefile.in.libfbembed (1.10.2.3),
-	make.defaults (1.25.2.6), postfix.darwin (1.1.2.2), prefix.darwin
-	(1.8.2.10):
-	
-	Add the ability to pass extra options when linking libfbembed
-
-2003-11-11 01:27  bellardo
-
-	* firebird2/builds/posix/: postfix.darwin (1.1.2.1), prefix.darwin
-	(1.8.2.9):
-	
-	add the darwin postfix file and update the prefix file accordingly
-
 2003-11-11 01:27  bellardo
 
 	* firebird2/builds/posix/postfix.darwin (1.1):
 	
 	file postfix.darwin was initially added on branch B1_5_Release.
-
-2003-11-11 01:26  bellardo
-
-	* firebird2/: configure.in (1.141.2.13),
-	builds/posix/Makefile.in.firebird (1.37.2.7):
-	
-	Add support for a "postfix" makefile.  Basically it is a platform
-	dependent makefile that gets included at the end of src/Makefile. 
-	configure.in checks for a postfix file before including it, so
-	everything should "just work".	To add a postfix file for a
-	platform, simply create "builds/posix/postfix.<PLATFORM>".
-
-2003-11-11 00:28  bellardo
-
-	* firebird2/builds/posix/: Makefile.in.embed.gbak (1.6.2.1),
-	Makefile.in.embed.gdef (1.5.2.1), Makefile.in.embed.gfix (1.7.2.1),
-	Makefile.in.embed.gpre (1.9.2.1), Makefile.in.embed.isql (1.6.2.1),
-	Makefile.in.embed.qli (1.10.2.1), Makefile.in.embed.util (1.8.2.2),
-	Makefile.in.inet_server (1.11.2.2), make.defaults (1.25.2.5):
-	
-	Abstract away the embeded client link command, to support a custom
-	one for darwin
-
-2003-11-10 23:57  bellardo
-
-	* firebird2/builds/posix/: Makefile.in.firebird (1.37.2.6),
-	prefix.darwin (1.8.2.8):
-	
-	Moving closer to correct packaging on darwin.  Added generic
-	targets (platform specifif) that get run before and after classic
-	build.	Also added darwin specific rules that handle the bulk of
-	the packaging.
-
-2003-11-10 21:34  tmcsys
-
-	* firebird2/src/jrd/isc_sync.cpp (1.55.2.2):
-	
-	fix arg list for fussy compilers
-
-2003-11-10 17:03  dimitr
-
-	* firebird2/src/iscguard/iscguard.cpp (1.19.2.3):
-	
-	Fixed typo.
 
 2003-11-10 12:25  aafemt
 
@@ -5882,21 +4488,6 @@
 	
 	Correction (Thanks to Claudio)
 
-2003-11-10 03:09  bellardo
-
-	* firebird2/builds/posix/: Makefile.in.client.gbak (1.6.2.1),
-	Makefile.in.client.gdef (1.5.2.1), Makefile.in.client.gfix
-	(1.7.2.1), Makefile.in.client.gpre (1.9.2.1),
-	Makefile.in.client.isql (1.6.2.1), Makefile.in.client.util
-	(1.9.2.2), make.defaults (1.25.2.4):
-	
-	The native shared library packaging system on Darwin is different
-	from other *nixes.  I'm in the process of adding native support. 
-	This change allows the platform makefile to specify the command
-	line options used to link against the firebird library.  It
-	shouldn't break other builds, as it is defaulted to the original
-	options.
-
 2003-11-10 01:04  brodsom
 
 	* firebird2/src/: ipserver/ipserver.cpp (1.30), jrd/alt_proto.h
@@ -5908,80 +4499,12 @@
 	
 	-Removing gdsold.h and gds.h
 
-2003-11-10 01:01  bellardo
-
-	* firebird2/builds/posix/: Makefile.in.libfbembed (1.10.2.2),
-	make.defaults (1.25.2.3), prefix.darwin (1.8.2.7):
-	
-	Slight "improvement" to the posix build process to support darwin. 
-	Basically, darwin needs different link commands depending on the
-	intented use of the dynamic library.  If the library is intended to
-	be included in the executable at link time a dylib is created.	If
-	a library is intended to be loaded by a program while it is running
-	(for example a plugin) it needs to be a bundle.  These makefile
-	changes differentiate between these two case, providing a different
-	set of options for each.  it should be backwards compatible.
-
-2003-11-09 23:59  bellardo
-
-	* firebird2/src/jrd/thd.h (1.12.2.3):
-	
-	Define POSIX_THREADS when compiling DARWIN && SUPERCLIENT
-
-2003-11-09 23:53  bellardo
-
-	* firebird2/src/common/classes/locks.h (1.5.2.3):
-	
-	The rest of the pthread_mutex spinlock implementation
-
-2003-11-09 23:36  bellardo
-
-	* firebird2/src/common/classes/locks.h (1.5.2.2):
-	
-	Darwin support for spinlocks
-
-2003-11-09 22:24  bellardo
-
-	* firebird2/configure.in (1.141.2.12):
-	
-	Create a needed darwin specific directory
-
-2003-11-09 20:58  bellardo
-
-	* firebird2/src/remote/xdr.cpp (1.9.2.3):
-	
-	use PowerPC instead of DARWIN
-
 2003-11-09 19:59  dimitr
 
 	* firebird2/src/jrd/dfw.epp (1.70):
 	
 	Reworked my previous fix. We shouldn't rely on the relation
 	scanning time.
-
-2003-11-09 19:52  bellardo
-
-	* firebird2/src/remote/xdr.cpp (1.9.2.2):
-	
-	Add SWAP_DOUBLE for darwin FB 1.5
-
-2003-11-09 19:34  bellardo
-
-	* firebird2/builds/posix/prefix.darwin (1.8.2.6):
-	
-	Use g++ to link, instead of ld
-
-2003-11-09 17:34  dimitr
-
-	* firebird2/src/jrd/isc_version.h (1.1.2.4):
-	
-	Adjusted build number.
-
-2003-11-09 17:19  dimitr
-
-	* firebird2/builds/win32/make_examples.bat (1.4.2.1):
-	
-	Polished up the examples build.
 
 2003-11-09 16:38  brodsom
 
@@ -5998,34 +4521,15 @@
 	-Removing gdsold.h and gds.h -Replace gds__ functions with isc__
 	functions for internal use
 
-2003-11-09 15:14  dimitr
-
-	* firebird2/src/misc/security.gbak (1.1.2.1):
-	
-	no message
-
 2003-11-09 13:03  dimitr
 
 	* firebird2/doc/WhatsNew (1.43):
 	
 	Let's clear this document for v2.0.
 
-2003-11-09 12:59  dimitr
+2003-11-09 11:41  dimitr
 
-	* firebird2/doc/WhatsNew (1.36.2.9):
-	
-	Added RC7 changes.
-
-2003-11-09 11:47  dimitr
-
-	* firebird2/src/jrd/isc_version.h (1.1.2.3):
-	
-	Adjusted build number.
-
-2003-11-09 11:40  dimitr
-
-	* firebird2/doc/: README.user.embedded (1.1.2.1),
-	README.user.embedded (1.2):
+	* firebird2/doc/README.user.embedded (1.2):
 	
 	Corrections.
 
@@ -6238,14 +4742,6 @@
 	functional changes, except correction of remote service name which
 	was incorrect in HEAD branch.
 
-2003-11-07 12:11  epocman
-
-	* firebird2/src/utilities/: install_nt.h (1.7.2.6), install_reg.cpp
-	(1.9.2.5), registry.cpp (1.10.2.5), services.cpp (1.9.2.4):
-	
-	Minor synch details with HEAD branch. Absolutely no interface nor
-	functional changes.
-
 2003-11-07 09:05  robocop
 
 	* firebird2/src/: burp/backup.epp (1.44), burp/restore.epp (1.53),
@@ -6307,14 +4803,6 @@
 	
 	Remove v3.3 to v4 restore
 
-2003-11-06 20:12  paul_reeves
-
-	* firebird2/src/jrd/isc_version.h (1.1.2.2):
-	
-	Try and get the buyild number more or less correct for the actual
-	commits to the B1_5_Release branch. Undo a feature of the Win32
-	install script that doesn't work.
-
 2003-11-06 18:56  brodsom
 
 	* firebird2/src/: dsql/parse_proto.h (1.8), dsql/prepa_proto.h
@@ -6334,21 +4822,9 @@
 	
 	Warning fixes
 
-2003-11-06 17:51  dimitr
-
-	* firebird2/doc/README.build.msvc.html (1.6.2.1):
-	
-	Minor corrections by Paul Beach.
-
 2003-11-06 17:21  dimitr
 
 	* firebird2/src/jrd/opt.cpp (1.107):
-	
-	Correction.
-
-2003-11-06 16:56  dimitr
-
-	* firebird2/src/jrd/opt.cpp (1.73.2.12):
 	
 	Correction.
 
@@ -6359,18 +4835,6 @@
 	file README.Win32LibraryInstallation.txt was initially added on
 	branch B1_5_Release.
 
-2003-11-06 14:05  paul_reeves
-
-	* firebird2/: doc/README.Win32LibraryInstallation.txt (1.1.2.1),
-	
-	More tweaks to the Win32 installer. Documentation added about
-	library installation policy. Installation notes for the binary
-	installer updated.
-	src/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.in
-	c (1.1.2.3), src/install/arch-specific/win32/FirebirdInstall_15.iss
-	(1.5.2.6), src/install/arch-specific/win32/installation_readme.txt
-	(1.2.2.3):
-
 2003-11-06 13:25  stryqx
 
 	* firebird2/builds/install/arch-specific/freebsd/install.sh.in
@@ -6378,13 +4842,6 @@
 	
 	Even though the libgds symlinks are commented out, make them
 	correct.
-
-2003-11-06 13:23  stryqx
-
-	* firebird2/src/install/arch-specific/freebsd/install.sh.in
-	(1.1.2.2):
-	
-	Save some disk space by copying the symlinks as symlinks.
 
 2003-11-06 13:20  stryqx
 
@@ -6415,12 +4872,6 @@
 	Look for the install script template for FreeBSD in the right
 	location.
 
-2003-11-06 10:28  stryqx
-
-	* firebird2/configure.in (1.141.2.11):
-	
-	Let configure know about the FreeBSD install script.
-
 2003-11-06 10:25  stryqx
 
 	* firebird2/configure.in (1.179):
@@ -6431,14 +4882,6 @@
 
 	* firebird2/builds/install/arch-specific/freebsd/: Makefile.in
 	(1.2), install.sh.in (1.1):
-	
-	First cut at the install script for FreeBSD.  Package management
-	for FreeBSD binaries will be done via the FreeBSD Ports Tree.
-
-2003-11-06 10:11  stryqx
-
-	* firebird2/src/install/arch-specific/freebsd/: Makefile.in
-	(1.1.2.1), install.sh.in (1.1.2.1):
 	
 	First cut at the install script for FreeBSD.  Package management
 	for FreeBSD binaries will be done via the FreeBSD Ports Tree.
@@ -6517,14 +4960,6 @@
 	server, noted by Dmitry.    simplified : PLAN MERGE (JOIN ..., JOIN
 	...)
 
-2003-11-06 01:21  arnobrinkman
-
-	* firebird2/src/jrd/opt.cpp (1.73.2.11):
-	
-	bugfix: A user specified PLAN with MERGE and JOINS crashed the
-	server, noted by Dmitry.    simplified : PLAN MERGE (JOIN ..., JOIN
-	...)
-
 2003-11-05 17:54  brodsom
 
 	* firebird2/builds/install/arch-specific/mingw/prepare_mingw.sh
@@ -6543,15 +4978,6 @@
 	builds/posix/make.defaults (1.32), configure.in (1.178):
 	
 	Add journal and archive to posix build
-
-2003-11-05 16:20  paul_reeves
-
-	* firebird2/src/:
-	install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
-	(1.1.2.2), install/arch-specific/win32/FirebirdInstall_15.iss
-	(1.5.2.5), jrd/isc_version.h (1.1.2.1):
-	
-	Minor tweaks to Win32 installer.
 
 2003-11-05 14:32  brodsom
 
@@ -6591,12 +5017,6 @@
 	BOOLEAN -> bool TEXT[32] as SqlIdentifier for DYN Stop random
 	garbage in firebird.msg's bytes 8 to 11 some cleanup
 
-2003-11-05 08:48  dimitr
-
-	* firebird2/src/jrd/tra.cpp (1.38.2.1):
-	
-	Backported recent bugfix.
-
 2003-11-04 13:18  paul_reeves
 
 	*
@@ -6614,22 +5034,6 @@
 	branch B1_5_Release.
 	firebird2/src/install/arch-specific/win32/FirebirdInstallSupportFun
 	ctions.inc (1.1):
-
-2003-11-04 13:18  paul_reeves
-
-	* firebird2/: builds/win32/make_all.bat (1.4.2.6),
-	doc/Firebird_conf.txt (1.2.2.1), doc/README.user (1.1.2.1),
-	doc/WhatsNew (1.36.2.8),
-	
-	Extensive reworking of install script for Win32. Main new feature
-	is better analysis of existing previous installs. This is necessary
-	to support new client library installation requirements.
-	src/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.in
-	c (1.1.2.1),
-	src/install/arch-specific/win32/FirebirdInstallSupportFunctions.inc
-	(1.1.2.1), src/install/arch-specific/win32/FirebirdInstall_15.iss
-	(1.5.2.4), src/install/arch-specific/win32/Readme.txt (1.2.2.2),
-	src/jrd/isc_version.rc (1.2.2.1), src/jrd/version.rc (1.3.4.1):
 
 2003-11-04 13:12  eku
 
@@ -6745,13 +5149,6 @@
 	
 	Replacing assert with fb_assert
 
-2003-11-03 22:40  skidder
-
-	* firebird2/src/jrd/met.epp (1.61.2.1):
-	
-	Fix one more problem in my cyclic metadata dependency handling
-	code. Noted and fixed by Dmitry Emanov
-
 2003-11-03 22:33  skidder
 
 	* firebird2/src/jrd/met.epp (1.74):
@@ -6865,7 +5262,7 @@
 
 2003-11-01 12:29  dimitr
 
-	* firebird2/src/jrd/: idx.cpp (1.26), idx.cpp (1.16.2.5):
+	* firebird2/src/jrd/idx.cpp (1.26):
 	
 	Slightly reworked one of the previous bugfixes.
 
@@ -6914,13 +5311,6 @@
 	
 	Do not create home directory for firebird user
 
-2003-10-31 17:39  skidder
-
-	* firebird2/src/install/: misc/CSchangeRunUser.sh.in (1.1.2.3),
-	arch-specific/linux/classic/postinstall.sh.in (1.10.2.4):
-	
-	Do not create home directory for firebird user
-
 2003-10-31 13:41  eku
 
 	* firebird2/: configure.in (1.174), builds/posix/Makefile.in.intl
@@ -6938,12 +5328,11 @@
 
 2003-10-31 13:21  skidder
 
-	* firebird2/:
-	builds/install/arch-specific/linux/classic/postinstall.sh.in (1.4),
-	src/install/arch-specific/linux/classic/postinstall.sh.in
-	(1.10.2.3):
+	*
 	
 	Fix SuSE 9.0 install problem
+	firebird2/builds/install/arch-specific/linux/classic/postinstall.sh
+	.in (1.4):
 
 2003-10-31 12:33  eku
 
@@ -6966,19 +5355,9 @@
 	
 	Added missing ;
 
-2003-10-30 23:25  skidder
-
-	* firebird2/src/: common/classes/alloc.cpp (1.29.2.2),
-	common/classes/alloc.h (1.21.2.3), common/classes/tree.h
-	(1.13.2.1), gpre/cmd.cpp (1.9.2.1), gpre/sql.cpp (1.14.2.1),
-	include/firebird.h (1.12.2.2), intl/ldcommon.h (1.5.2.1):
-	
-	Backport allocation operators hack
-
 2003-10-30 23:18  skidder
 
-	* firebird2/src/utilities/: security.epp (1.20.2.2),
-	gsec/security.epp (1.5):
+	* firebird2/src/utilities/gsec/security.epp (1.5):
 	
 	Return engine to buildable state on Linux after Alex bugfix
 
@@ -7000,18 +5379,6 @@
 	V1.5.  Please build maintainers, add advapi32.lib to msvc7/mingw
 	builds of gds32.dll. Thanks.
 
-2003-10-30 18:48  epocman
-
-	* firebird2/: builds/win32/msvc6/gds32.dsp (1.18.2.1),
-	src/jrd/ibinitdll.cpp (1.6.2.1):
-	
-	Win32 stub GDS32.DLL now preferably attempts to load FBCLIENT.DLL
-	from its installation location (rootdir/bin) instead of system
-	directories. Related to the finishing touches of the Win32
-	installation scheme looking forward multi-instances support after
-	V1.5.  Please build maintainers, add advapi32.lib to msvc7/mingw
-	builds of gds32.dll. Thanks.
-
 2003-10-30 17:46  alexpeshkoff
 
 	* firebird2/src/utilities/gsec/security.epp (1.4):
@@ -7019,14 +5386,6 @@
 	Forward - port: Fixed non-registered bug - buggy application might
 	add user with name, containing non-printable characters, which
 	couldn't be modified/deleted using standard tools like gsec.
-
-2003-10-30 15:38  alexpeshkoff
-
-	* firebird2/src/utilities/security.epp (1.20.2.1):
-	
-	Fixed non-registered bug - buggy application might add user with
-	name, containing non-printable characters, which couldn't be
-	modified/deleted using standard tools like gsec.
 
 2003-10-30 15:29  eku
 
@@ -7211,12 +5570,6 @@
 	
 	Progress the SuperServer build on FreeBSD 5.x
 
-2003-10-29 06:18  stryqx
-
-	* firebird2/src/jrd/thd.h (1.12.2.2):
-	
-	Fix build on FreeBSD
-
 2003-10-29 01:29  brodsom
 
 	* firebird2/src/: dudley/lex.cpp (1.22), gpre/gpre.cpp (1.42),
@@ -7225,28 +5578,12 @@
 	
 	Remove unneeded MINGW ifdef
 
-2003-10-28 23:47  arnobrinkman
-
-	* firebird2/src/jrd/cmp.cpp (1.52.2.3):
-	
-	bugfix: Missing literal node caused at least to fail on GROUP BY
-	constant expressions
-
 2003-10-28 23:44  arnobrinkman
 
 	* firebird2/src/jrd/cmp.cpp (1.68):
 	
 	bugfix: Missing literal node caused at least to fail on GROUP BY
 	constant expressions
-
-2003-10-28 19:21  skidder
-
-	* firebird2/: builds/posix/Makefile.in.firebird (1.37.2.5),
-	src/install/arch-specific/linux/classic/makeInstallImage.sh.in
-	(1.13.2.2),
-	src/install/arch-specific/linux/classic/preinstall.sh.in (1.4.2.1):
-	
-	Build libfbclient.so in Linux CS
 
 2003-10-28 18:58  skidder
 
@@ -7277,8 +5614,7 @@
 
 2003-10-28 13:37  skidder
 
-	* firebird2/builds/posix/: prefix.solaris (1.11), prefix.solaris
-	(1.5.2.3):
+	* firebird2/builds/posix/prefix.solaris (1.11):
 	
 	Remove unneeded define. Noted by Claudio
 
@@ -7306,21 +5642,6 @@
 	src/lock/lock.h (1.20):
 	
 	Forward port Solaris fixes
-
-2003-10-27 19:30  skidder
-
-	* firebird2/: configure.in (1.141.2.10),
-	builds/posix/prefix.solaris (1.5.2.2), src/gpre/exp.cpp (1.12.2.1),
-	src/intl/lc_ascii.c (1.15.2.1), src/jrd/common.h (1.73.2.3),
-	src/lock/lock.cpp (1.56.2.5), src/lock/lock.h (1.18.2.1):
-	
-	LP32 Solaris/Sparc/GCC port. Seems to work
-
-2003-10-27 19:29  skidder
-
-	* firebird2/builds/posix/Makefile.in.firebird (1.37.2.4):
-	
-	Make B1_5_Release compile on Linux
 
 2003-10-27 19:00  alexpeshkoff
 
@@ -7414,22 +5735,9 @@
 
 2003-10-26 12:12  hippoman
 
-	* firebird2/builds/win32/msvc7/: Firebird2.sln (1.9.2.3),
-	fb2control.vcproj (1.1.2.1):
-	
-	* added Control Panel Applet to msvc7 build
-
-2003-10-26 12:12  hippoman
-
 	* firebird2/builds/win32/msvc7/fb2control.vcproj (1.1):
 	
 	file fb2control.vcproj was initially added on branch B1_5_Release.
-
-2003-10-26 12:11  hippoman
-
-	* firebird2/builds/win32/make_all.bat (1.4.2.5):
-	
-	* Fixed buil log name for msvc7
 
 2003-10-25 14:44  dimitr
 
@@ -7496,19 +5804,6 @@
 	Fix bugs in isql (needed by fbtcs) -Detection of redirected input. 
 	-Avoid \n\n\r output in echo mode on win32.  -Fix echo mode prompt
 	output and make it work the same on win32 and linux.
-
-2003-10-23 15:18  alexpeshkoff
-
-	* firebird2/src/install/arch-specific/linux/super/postinstall.sh.in
-	(1.2.2.6):
-	
-	small fix to avoid unwanted error messages during installation
-
-2003-10-22 09:20  dimitr
-
-	* firebird2/src/dsql/gen.cpp (1.33.2.2):
-	
-	Backported Claudio's fix.
 
 2003-10-21 00:41  brodsom
 
@@ -7669,9 +5964,9 @@
 	
 	Keep gcc 3.3 happy.
 
-2003-10-19 08:58  stryqx
+2003-10-19 08:59  stryqx
 
-	* firebird2/: configure.in (1.141.2.9), configure.in (1.162):
+	* firebird2/configure.in (1.162):
 	
 	Make configure summary report match reality.
 
@@ -7748,36 +6043,12 @@
 	
 	Solve assertion failure in tests
 
-2003-10-17 09:21  paul_reeves
-
-	* firebird2/: builds/win32/make_all.bat (1.4.2.4),
-	src/install/arch-specific/win32/FirebirdInstall_15.iss (1.5.2.3),
-	src/install/arch-specific/win32/Readme.txt (1.2.2.1),
-	src/utilities/fbcpl/fbpanel.cpp (1.1.2.3):
-	
-	cpl applet now uses version.lib to detect installed default
-	instance.
-
-2003-10-16 23:27  arnobrinkman
-
-	* firebird2/src/jrd/opt.cpp (1.73.2.10):
-	
-	  Backport
-	bugfix: Missing initialization of position vector. Thanks for
-	Nickolay who notice this.
-
 2003-10-16 23:02  arnobrinkman
 
 	* firebird2/src/jrd/opt.cpp (1.97):
 	
 	bugfix: Missing initialization of position vector. Thanks for
 	Nickolay who notice this.
-
-2003-10-16 15:12  alexpeshkoff
-
-	* firebird2/src/alice/tdr.cpp (1.17.2.2):
-	
-	Backported Claudio's fix to 1_5
 
 2003-10-16 10:50  robocop
 
@@ -7811,49 +6082,6 @@
 	
 	file strip_comments.sed was initially added on branch B1_5_Release.
 
-2003-10-16 07:05  paul_reeves
-
-	* firebird2/: builds/win32/msvc6/fb2control.dsp (1.1.2.2),
-	src/install/arch-specific/win32/BuildExecutableInstall.bat
-	(1.10.2.2), src/install/arch-specific/win32/FirebirdInstall_15.iss
-	(1.5.2.2), src/install/arch-specific/win32/installation_readme.txt
-	(1.2.2.2), src/install/arch-specific/win32/strip_comments.sed
-	(1.1.2.1), src/utilities/fbcpl/FBControl.rc (1.1.2.2),
-	src/utilities/fbcpl/fbdialog.cpp (1.1.2.2),
-	src/utilities/fbcpl/fbdialog.h (1.1.2.2),
-	src/utilities/fbcpl/fbpanel.cpp (1.1.2.2),
-	src/utilities/fbcpl/fbpanel.h (1.1.2.2):
-	
-	Concatenate ibase.h for the binary installer. Tweak the InnoSetup
-	install script a little more.
-
-2003-10-15 18:16  alexpeshkoff
-
-	* firebird2/src/install/arch-specific/linux/super/postinstall.sh.in
-	(1.2.2.5):
-	
-	Fixed problem with overwritten hosts.equiv file during SS install
-
-2003-10-15 17:28  alexpeshkoff
-
-	* firebird2/src/: common/classes/array.h (1.3.2.1),
-	common/config/dir_list.cpp (1.14.2.1), common/config/dir_list.h
-	(1.9.2.1), jrd/ExecuteStatement.cpp (1.14.2.2),
-	jrd/ExecuteStatement.h (1.5.2.1), jrd/os/posix/fbsyslog.cpp
-	(1.1.2.1), jrd/os/win32/fbsyslog.cpp (1.1.2.1),
-	jrd/os/win32/thd_priority.cpp (1.10.2.1), jrd/os/fbsyslog.h
-	(1.1.2.1), jrd/os/thd_priority.h (1.6.2.1), burp/std_desc.h
-	(1.1.2.1):
-	
-	Applied IDPL instead of IPL to files, created by me
-
-2003-10-15 16:47  alexpeshkoff
-
-	* firebird2/builds/posix/: Makefile.in.extlib (1.10.2.4),
-	Makefile.in.firebird (1.37.2.3):
-	
-	fixed bug with server hangs on some UDFs in fbudf
-
 2003-10-15 16:43  brodsom
 
 	* firebird2/src/gpre/sql.cpp (1.29):
@@ -7867,29 +6095,6 @@
 	
 	Exit from build process if msdev returns errorlevel 1
 
-2003-10-15 13:09  alexpeshkoff
-
-	* firebird2/configure.in (1.141.2.8):
-	
-	changes required for SS install scripts
-
-2003-10-15 11:26  alexpeshkoff
-
-	* firebird2/src/install/arch-specific/linux/super/:
-	makeInstallImage.sh.in (1.1.2.4), postinstall.sh.in (1.2.2.4),
-	preinstall.sh.in (1.2.2.3), preuninstall.sh.in (1.1.2.4),
-	rpmfiles.txt.in (1.2.2.3):
-	
-	SS install scripts
-
-2003-10-15 11:19  alexpeshkoff
-
-	*
-	
-	Use common SYSDBA password change script for both CS & SS
-	firebird2/src/install/arch-specific/linux/super/SSchangePasswd.sh.i
-	n (1.1.2.2):
-
 2003-10-15 11:07  alexpeshkoff
 
 	*
@@ -7898,16 +6103,6 @@
 	B1_5_Release.
 	firebird2/src/install/arch-specific/linux/misc/firebird.init.d.gent
 	oo.in (1.1):
-
-2003-10-15 11:07  alexpeshkoff
-
-	* firebird2/src/install/arch-specific/linux/misc/:
-	changeDBAPassword.sh.in (1.1.2.1), firebird.init.d.debian.in
-	(1.1.2.1), firebird.init.d.generic.in (1.1.2.2),
-	firebird.init.d.gentoo.in (1.1.2.1), firebird.init.d.mandrake.in
-	(1.1.2.2), firebird.init.d.suse.in (1.1.2.2):
-	
-	SS install scripts
 
 2003-10-15 11:07  alexpeshkoff
 
@@ -7962,36 +6157,34 @@
 	
 	Fixed another compile problem with logf.
 
-2003-10-13 14:55  dimitr
+2003-10-13 14:56  dimitr
 
-	* firebird2/src/dsql/: pass1.cpp (1.72.2.6), pass1.cpp (1.111):
+	* firebird2/src/dsql/pass1.cpp (1.111):
 	
 	Fixed server crash with explicit plans used in subqueries, when
 	outer aggregation is performed.
 
 2003-10-12 16:21  skidder
 
-	* firebird2/src/jrd/: common.h (1.88), common.h (1.73.2.2):
+	* firebird2/src/jrd/common.h (1.88):
 	
 	Fix comment, noted by Claudio
 
 2003-10-12 15:17  epocman
 
-	* firebird2/doc/: install_win32.txt (1.5), install_win32.txt
-	(1.2.2.4):
+	* firebird2/doc/install_win32.txt (1.5):
 	
 	[no log message]
 
 2003-10-12 14:02  epocman
 
-	* firebird2/doc/: install_win32.txt (1.4), install_win32.txt
-	(1.2.2.3):
+	* firebird2/doc/install_win32.txt (1.4):
 	
 	[no log message]
 
 2003-10-12 13:54  epocman
 
-	* firebird2/doc/: README.instsvc (1.3), README.instsvc (1.1.2.2):
+	* firebird2/doc/README.instsvc (1.3):
 	
 	[no log message]
 
@@ -8003,33 +6196,6 @@
 	Win32 HKLM and service name change as per recent discussion in
 	fbdevel. Added more complete cleanup of registry keys when 'instreg
 	remove'.
-
-2003-10-12 12:40  epocman
-
-	* firebird2/src/utilities/install_nt.h (1.7.2.5):
-	
-	Win32 HKLM name change as per recent discussion in fbdevel.
-
-2003-10-12 11:06  epocman
-
-	* firebird2/src/utilities/: registry.cpp (1.10.2.4), registry.h
-	(1.3.2.3):
-	
-	Win32 HKLM name change as per recent discussion in fbdevel.  Nicer
-	cleanup of product and company level keys on instreg remove (when
-	they are empty).
-
-2003-10-11 10:12  paul_reeves
-
-	* firebird2/builds/win32/make_all.bat (1.4.2.3):
-	
-	remove intlcpp from msvc6 build
-
-2003-10-11 02:00  skidder
-
-	* firebird2/src/install/misc/CSchangeRunUser.sh.in (1.1.2.2):
-	
-	Fix minor install issues
 
 2003-10-11 01:56  skidder
 
@@ -8051,44 +6217,6 @@
 	
 	file prefix.linux_sparc32 was initially added on branch
 	B1_5_Release.
-
-2003-10-11 01:17  skidder
-
-	* firebird2/: configure.in (1.141.2.7),
-	builds/posix/prefix.linux_sparc32 (1.1.2.1),
-	src/common/classes/alloc.h (1.21.2.2),
-	src/install/arch-specific/linux/classic/postinstall.sh.in
-	(1.10.2.2), src/jrd/common.h (1.73.2.1), src/jrd/exe.h (1.15.2.1),
-	src/jrd/gds.cpp (1.84.2.3), src/jrd/ibase.h (1.40.2.3),
-	src/jrd/isc_sync.cpp (1.55.2.1), src/jrd/opt.cpp (1.73.2.9),
-	src/jrd/par.cpp (1.43.2.2), src/jrd/utl.cpp (1.35.2.1),
-	src/remote/xdr.cpp (1.9.2.1):
-	
-	Linux/Sparc port, seems to work. Uses 64-bit IO and 64-bit
-	instruction set (thus 64-bit alignment). Pointers are still 32-bit.
-
-2003-10-10 01:39  skidder
-
-	* firebird2/src/jrd/: log.cpp (1.7.2.1), log.h (1.2.4.1):
-	
-	Backport GCC 3.3 compile fix
-
-2003-10-10 01:08  skidder
-
-	* firebird2/: configure.in (1.141.2.6),
-	builds/posix/Makefile.in.client.util (1.9.2.1),
-	builds/posix/Makefile.in.embed.util (1.8.2.1),
-	builds/posix/make.defaults (1.25.2.2), builds/posix/prefix.darwin
-	(1.8.2.5), builds/posix/prefix.example (1.4.2.1),
-	builds/posix/prefix.freebsd (1.6.2.2), builds/posix/prefix.linux
-	(1.18.2.2), builds/posix/prefix.mingw (1.19.2.1),
-	builds/posix/prefix.sinixz (1.16.2.1), builds/posix/prefix.solaris
-	(1.5.2.1), builds/posix/prefix.solx86 (1.18.2.1),
-	builds/posix/prefix.solx86gcc (1.1.2.1), src/lock/print.cpp
-	(1.19.2.1):
-	
-	Backport fixes needed to build fb_lock_print as it is very
-	difficult to live without this tool
 
 2003-10-09 20:06  brodsom
 
@@ -8138,41 +6266,6 @@
 	firebird2/src/install/arch-specific/linux/misc/firebird.init.d.mand
 	rake.in (1.1):
 
-2003-10-09 18:45  alexpeshkoff
-
-	* firebird2/: configure.in (1.141.2.5),
-	src/install/arch-specific/linux/super/makeInstallImage.sh.in
-	(1.1.2.3), src/install/arch-specific/linux/super/postinstall.sh.in
-	(1.2.2.3),
-	src/install/arch-specific/linux/super/postuninstall.sh.in
-	(1.1.2.2), src/install/arch-specific/linux/super/preuninstall.sh.in
-	(1.1.2.3), src/install/arch-specific/linux/super/tarinstall.sh.in
-	(1.1.2.2),
-	src/install/arch-specific/linux/misc/firebird.init.d.generic.in
-	(1.1.2.1),
-	src/install/arch-specific/linux/misc/firebird.init.d.mandrake.in
-	(1.1.2.1),
-	src/install/arch-specific/linux/misc/firebird.init.d.suse.in
-	(1.1.2.1), src/install/arch-specific/linux/misc/firebird.initd.in
-	(1.1.2.3),
-	src/install/arch-specific/linux/misc/rc.config.firebird.in
-	(1.1.2.1):
-	
-	Next step to correct SS install
-
-2003-10-09 15:10  alexpeshkoff
-
-	* firebird2/src/utilities/: ibmgr.cpp (1.8.2.1), srvrmgr.cpp
-	(1.13.2.1):
-	
-	renamed ibmgr => fbmgr
-
-2003-10-09 11:35  dimitr
-
-	* firebird2/src/extlib/fbudf/fbudf.sql (1.2.4.1):
-	
-	Backported Claudio's fix.
-
 2003-10-09 05:54  robocop
 
 	* firebird2/src/extlib/fbudf/fbudf.sql (1.4):
@@ -8193,23 +6286,9 @@
 	
 	Macro cleaning
 
-2003-10-08 15:03  dimitr
+2003-10-08 13:50  dimitr
 
-	* firebird2/src/jrd/pag.cpp (1.37.2.4):
-	
-	Fixed the issue related to the previous commit.
-
-2003-10-08 14:43  dimitr
-
-	* firebird2/src/jrd/rse.h (1.13.2.1):
-	
-	Corrected optimizer limits to avoid possible issues found by
-	Nickolay.
-
-2003-10-08 13:49  dimitr
-
-	* firebird2/: src/install/misc/firebird.conf (1.28.2.3),
-	builds/install/misc/firebird.conf (1.3):
+	* firebird2/builds/install/misc/firebird.conf (1.3):
 	
 	no message
 
@@ -8230,12 +6309,6 @@
 	
 	Added extra note.
 
-2003-10-08 10:49  dimitr
-
-	* firebird2/doc/sql.extensions/README.context_variables (1.2.2.2):
-	
-	Added extra note.
-
 2003-10-08 10:42  robocop
 
 	* firebird2/src/: journal/miscj.cpp (1.5), journal/miscj_proto.h
@@ -8251,12 +6324,6 @@
 	
 	const correctness
 
-2003-10-08 01:08  stryqx
-
-	* firebird2/src/journal/server.e (1.10.2.1):
-	
-	Define clock as time_t rather than SLONG
-
 2003-10-08 01:03  stryqx
 
 	* firebird2/src/journal/server.epp (1.6):
@@ -8269,12 +6336,6 @@
 	
 	Define clock correctly, rather than casting it.  Pointed out by
 	Claudio.
-
-2003-10-07 12:48  stryqx
-
-	* firebird2/src/extlib/fbudf/fbudf.cpp (1.7.2.2):
-	
-	style
 
 2003-10-07 12:43  stryqx
 
@@ -8291,12 +6352,6 @@
 2003-10-07 12:32  stryqx
 
 	* firebird2/src/: extlib/fbudf/fbudf.cpp (1.8), qli/dtr.cpp (1.28):
-	
-	Fix build with gcc 3.3
-
-2003-10-07 12:17  stryqx
-
-	* firebird2/src/extlib/fbudf/fbudf.cpp (1.7.2.1):
 	
 	Fix build with gcc 3.3
 
@@ -8374,16 +6429,9 @@
 	
 	Fixed "name lookup of `n' changed for new ISO `for' scoping"
 
-2003-10-07 08:02  stryqx
+2003-10-06 15:22  alexpeshkoff
 
-	* firebird2/builds/posix/prefix.freebsd (1.6.2.1):
-	
-	Make builds work on both FreeBSD-stable and FreeBSD-current.
-
-2003-10-06 15:20  alexpeshkoff
-
-	* firebird2/doc/sql.extensions/: README.execute_statement
-	(1.2.2.2), README.execute_statement (1.4):
+	* firebird2/doc/sql.extensions/README.execute_statement (1.4):
 	
 	Added security note
 
@@ -8415,12 +6463,6 @@
 2003-10-06 11:40  alexpeshkoff
 
 	* firebird2/src/jrd/pag.cpp (1.46):
-	
-	Style fix - thanks to Claudio
-
-2003-10-06 11:35  alexpeshkoff
-
-	* firebird2/src/jrd/pag.cpp (1.37.2.3):
 	
 	Style fix - thanks to Claudio
 
@@ -8578,17 +6620,9 @@
 	
 	Removed win16 survivor
 
-2003-10-03 14:45  dimitr
+2003-10-03 14:34  dimitr
 
-	* firebird2/src/: utilities/dbaswi.h (1.3.4.1), jrd/ibase.h
-	(1.40.2.2), jrd/svc.cpp (1.67.2.1):
-	
-	Backported SvcAPI gstat fix.
-
-2003-10-03 14:33  dimitr
-
-	* firebird2/src/utilities/: dba.epp (1.27.2.2), gstat/dba.epp
-	(1.13):
+	* firebird2/src/utilities/gstat/dba.epp (1.13):
 	
 	Corrected gstat version info output.
 
@@ -8598,16 +6632,9 @@
 	
 	A few corrections.
 
-2003-10-03 14:19  dimitr
+2003-10-03 12:38  dimitr
 
-	* firebird2/src/jrd/: jrd_pwd.h (1.8.2.1), pwd.cpp (1.16.2.1):
-	
-	Correction in the security database cache code.
-
-2003-10-03 12:36  dimitr
-
-	* firebird2/src/common/config/: config.cpp (1.40.2.2), config.cpp
-	(1.44):
+	* firebird2/src/common/config/config.cpp (1.44):
 	
 	Increased a default size of the lock table, after discussion with
 	Nickolay.
@@ -8837,9 +6864,9 @@
 	
 	Fix error in last Alex commit to HEAD to make builds work again.
 
-2003-10-01 21:43  dimitr
+2003-10-01 21:46  dimitr
 
-	* firebird2/src/jrd/: opt.cpp (1.73.2.8), opt.cpp (1.94):
+	* firebird2/src/jrd/opt.cpp (1.94):
 	
 	Fixed bug introduced one year ago.
 
@@ -8875,31 +6902,11 @@
 	
 	Ported today fixes to HEAD.
 
-2003-10-01 17:10  alexpeshkoff
-
-	* firebird2/src/jrd/: pag.cpp (1.37.2.2), sdw.cpp (1.14.2.1):
-	
-	Security fix - verify names of additional database files before
-	actual use of them.  This protects from manual modification of
-	RDB$FILES system table.
-
 2003-10-01 14:51  skidder
 
-	* firebird2/src/jrd/: exe.cpp (1.68.2.5), exe.cpp (1.78):
+	* firebird2/src/jrd/exe.cpp (1.78):
 	
 	Fix bug in savepoints support introduced by Dmitry a few RCs ago
-
-2003-10-01 14:19  alexpeshkoff
-
-	* firebird2/src/jrd/jrd.cpp (1.76.2.4):
-	
-	small cleanup
-
-2003-10-01 13:57  alexpeshkoff
-
-	* firebird2/src/jrd/isc_file.cpp (1.52.2.3):
-	
-	comment added
 
 2003-10-01 12:57  aafemt
 
@@ -8912,15 +6919,6 @@
 	preparse.cpp (1.21), sym.h (1.7), utld_proto.h (1.4):
 	
 	sym -> dsql_sym + some 'struct' cleanup
-
-2003-10-01 10:24  epocman
-
-	* firebird2/src/: jrd/os/win32/config_root.cpp (1.7.2.2),
-	utilities/install_nt.h (1.7.2.4), utilities/registry.h (1.3.2.2):
-	
-	Win32 - Restoring backward compatible behaviour on
-	getRootFromRegistry(), while keeping the new registry setup
-	proposal in effect.
 
 2003-10-01 05:37  brodsom
 
@@ -8957,30 +6955,6 @@
 	* firebird2/src/jrd/par.cpp (1.53):
 	
 	Fix bug in my previous commit spotted by Blas
-
-2003-09-30 17:27  epocman
-
-	* firebird2/src/jrd/os/win32/config_root.cpp (1.7.2.1):
-	
-	Win32 getRootFromRegistry commented out. To be discussed with
-	Dmitry.
-
-2003-09-30 17:15  epocman
-
-	* firebird2/doc/README.instsvc (1.1.2.1):
-	
-	Updated documentation for the new instreg/instsvc Win32 setup
-	tools.
-
-2003-09-30 17:14  epocman
-
-	* firebird2/src/utilities/: install_nt.h (1.7.2.3), registry.cpp
-	(1.10.2.3), registry.h (1.3.2.1):
-	
-	Paving the way for multi-instances support (simultaneously running
-	multiple distinct installations of the product - on Win32). We
-	introduce adequate defaults that will generalize nicely on a next
-	release.
 
 2003-09-30 12:39  aafemt
 
@@ -9051,12 +7025,6 @@
 	* firebird2/builds/win32/msvc6/fb2control.dsp (1.1):
 	
 	file fb2control.dsp was initially added on branch B1_5_Release.
-
-2003-09-29 13:37  paul_reeves
-
-	* firebird2/builds/win32/msvc6/fb2control.dsp (1.1.2.1):
-	
-	[no log message]
 
 2003-09-29 13:00  dimitr
 
@@ -9145,19 +7113,6 @@
 
 2003-09-29 12:48  paul_reeves
 
-	* firebird2/src/utilities/fbcpl/: FBControl.rc (1.1.2.1),
-	ctrlpan.cpp (1.1.2.1), ctrlpan.h (1.1.2.1), fbcontrol.clw
-	(1.1.2.1), fbcontrol.cpp (1.1.2.1), fbcontrol.def (1.1.2.1),
-	fbcontrol.h (1.1.2.1), fbdialog.cpp (1.1.2.1), fbdialog.h
-	(1.1.2.1), fbpanel.cpp (1.1.2.1), fbpanel.h (1.1.2.1), resource.h
-	(1.1.2.1), stdafx.cpp (1.1.2.1), stdafx.h (1.1.2.1),
-	res/fbcontrol.rc2 (1.1.2.1), res/server.ico (1.1.2.1),
-	res/server_stop.ico (1.1.2.1):
-	
-	[no log message]
-
-2003-09-29 12:48  paul_reeves
-
 	* firebird2/src/utilities/fbcpl/stdafx.h (1.1):
 	
 	file stdafx.h was initially added on branch B1_5_Release.
@@ -9185,24 +7140,6 @@
 	* firebird2/src/utilities/fbcpl/fbpanel.cpp (1.1):
 	
 	file fbpanel.cpp was initially added on branch B1_5_Release.
-
-2003-09-29 11:54  paul_reeves
-
-	* firebird2/: builds/win32/make_all.bat (1.4.2.2),
-	builds/win32/make_boot.bat (1.5.2.1), builds/win32/prepare.bat
-	(1.19.2.3), builds/win32/msvc6/Firebird2.dsw (1.19.2.2),
-	builds/win32/msvc6/fbguard.dsp (1.17.2.1),
-	builds/win32/msvc6/instreg.dsp (1.12.2.1),
-	src/install/arch-specific/win32/BuildExecutableInstall.bat
-	(1.10.2.1), src/install/arch-specific/win32/FirebirdInstall_15.iss
-	(1.5.2.1), src/install/arch-specific/win32/installation_readme.txt
-	(1.2.2.1), src/install/arch-specific/win32/setenvvar.bat (1.2.2.1),
-	src/iscguard/iscguard.cpp (1.19.2.2), src/iscguard/iscguard.h
-	(1.5.2.1):
-	
-	Add Firebird Control Panel applet. Minor improvements to Win32
-	build process. Addition of command-line switch for Guardian to
-	start Classic server as an application. Updated InnoSetup script.
 
 2003-09-29 10:29  dimitr
 
@@ -9245,18 +7182,6 @@
 	parsing 4. Check BLR syntax for unititalized contexts usage 5. Some
 	type-safety and const-correctness fixes
 
-2003-09-28 22:51  skidder
-
-	* firebird2/builds/win32/msvc7/Firebird2.sln (1.9.2.2):
-	
-	Update MSVC7 makefiles
-
-2003-09-28 22:50  skidder
-
-	* firebird2/src/lock/lock.cpp (1.56.2.4):
-	
-	Re-enable automatic lock manager pool resizing on Win32 CS
-
 2003-09-28 20:49  dimitr
 
 	* firebird2/src/jrd/: evl.cpp (1.40), idx.cpp (1.25), rse.cpp
@@ -9289,9 +7214,9 @@
 	
 	Small cleanup.
 
-2003-09-28 17:38  dimitr
+2003-09-28 17:39  dimitr
 
-	* firebird2/src/jrd/: idx.cpp (1.16.2.4), idx.cpp (1.24):
+	* firebird2/src/jrd/idx.cpp (1.24):
 	
 	Fixed bug in the cleanup after unsuccessful index creation.
 
@@ -9304,12 +7229,6 @@
 2003-09-28 16:03  dimitr
 
 	* firebird2/src/jrd/: btr.h (1.9), idx.cpp (1.22):
-	
-	Fixed bug in unique indices.
-
-2003-09-28 15:51  dimitr
-
-	* firebird2/src/jrd/: btr.h (1.6.2.2), idx.cpp (1.16.2.3):
 	
 	Fixed bug in unique indices.
 
@@ -9375,14 +7294,6 @@
 	* firebird2/src/intl/collations/xx88592hun.h (1.1):
 	
 	file xx88592hun.h was initially added on branch B1_5_Release.
-
-2003-09-26 17:14  dimitr
-
-	* firebird2/src/: jrd/intlnames.h (1.7.2.2), intl/lc_iso8859_2.c
-	(1.7.2.1), intl/ld.c (1.15.2.1), intl/collations/xx88592hun.h
-	(1.1.2.1):
-	
-	Added new collation by Sandor Szollosi.
 
 2003-09-26 16:25  dimitr
 
@@ -9521,7 +7432,7 @@
 2003-09-24 16:52  dimitr
 
 	* firebird2/src/remote/: os/win32/wnet.cpp (1.4), inet.cpp (1.77),
-	xnet.cpp (1.29), inet.cpp (1.70.2.1), wnet.cpp (1.18.2.1):
+	xnet.cpp (1.29):
 	
 	Don't change screen cursor during CS attach.
 
@@ -9661,53 +7572,9 @@
 	firebird2/src/install/arch-specific/linux/super/SSchangePasswd.sh.i
 	n (1.1):
 
-2003-09-23 21:07  skidder
-
-	* firebird2/: configure.in (1.141.2.4),
-	builds/posix/Makefile.in.firebird (1.37.2.2),
-	src/install/arch-specific/linux/misc/firebird.initd.in (1.1.2.2),
-	src/install/arch-specific/linux/super/SSchangePasswd.sh (1.1.2.2),
-	src/install/arch-specific/linux/super/SSchangePasswd.sh.in
-	(1.1.2.1),
-	src/install/arch-specific/linux/super/makeInstallImage.sh.in
-	(1.1.2.2), src/install/arch-specific/linux/super/postinstall.sh.in
-	(1.2.2.2), src/install/arch-specific/linux/super/preinstall.sh.in
-	(1.2.2.2), src/install/arch-specific/linux/super/preuninstall.sh.in
-	(1.1.2.2), src/install/arch-specific/linux/super/rpmfiles.txt.in
-	(1.2.2.2), src/install/misc/CSchangeRunUser.sh (1.6.2.1),
-	src/install/misc/CSchangeRunUser.sh.in (1.1.2.1),
-	src/install/misc/CSrestoreRootRunUser.sh (1.3.2.1),
-	src/install/misc/CSrestoreRootRunUser.sh.in (1.1.2.1),
-	src/install/misc/SSchangeRunUser.sh (1.2.2.1),
-	src/install/misc/SSchangeRunUser.sh.in (1.1.2.1),
-	src/install/misc/SSrestoreRootRunUser.sh (1.2.2.1),
-	src/install/misc/SSrestoreRootRunUser.sh.in (1.1.2.1),
-	src/install/misc/changeDBAPassword.sh (1.3.2.1),
-	src/install/misc/changeDBAPassword.sh.in (1.1.2.1),
-	src/install/misc/firebird.init.d.generic (1.2.2.1),
-	src/install/misc/firebird.init.d.generic.in (1.1.2.1),
-	src/install/misc/firebird.init.d.mandrake (1.2.2.1),
-	src/install/misc/firebird.init.d.mandrake.in (1.1.2.1):
-	
-	Make Linux CS install prefix-aware
-
-2003-09-23 21:00  skidder
-
-	*
-	firebird2/src/install/arch-specific/linux/classic/postinstall.sh.in
-	(1.10.2.1):
-	
-	Let the default Linux CS RPM install be secure
-
 2003-09-23 16:21  dimitr
 
 	* firebird2/src/jrd/scl.epp (1.29):
-	
-	Fixed bug with CURRENT_ROLE, introduced in early v1.5 development.
-
-2003-09-23 16:15  dimitr
-
-	* firebird2/src/jrd/scl.epp (1.21.2.2):
 	
 	Fixed bug with CURRENT_ROLE, introduced in early v1.5 development.
 
@@ -10369,8 +8236,7 @@
 
 2003-09-15 11:33  dimitr
 
-	* firebird2/src/alice/: alice_meta.epp (1.15), alice_meta.epp
-	(1.11.2.1):
+	* firebird2/src/alice/alice_meta.epp (1.15):
 	
 	Fixed another problem in gfix. Thanks to Vlad Horsun.
 
@@ -10381,12 +8247,6 @@
 	Fixed problems with security.fdb access, introduced in RC6 -
 	front-port to HEAD
 
-2003-09-15 10:56  alexpeshkoff
-
-	* firebird2/src/jrd/jrd.cpp (1.76.2.3):
-	
-	Fixed problems with security.fdb access, introduced in RC6
-
 2003-09-15 10:24  dimitr
 
 	* firebird2/src/jrd/par.cpp (1.51):
@@ -10395,7 +8255,7 @@
 
 2003-09-15 10:05  dimitr
 
-	* firebird2/src/alice/: tdr.cpp (1.20), tdr.cpp (1.17.2.1):
+	* firebird2/src/alice/tdr.cpp (1.20):
 	
 	Fixed very old typo. Thanks to Vlad Horsun.
 
@@ -10480,15 +8340,6 @@
 
 	* firebird2/src/utilities/install/: install_reg.cpp (1.6),
 	install_svc.cpp (1.7):
-	
-	Win32 instreg / instsvc now returns FINI_ERROR instead of FINI_OK
-	when usage() function is called. This helps external automated
-	tools to detect mistakes in parameters.
-
-2003-09-13 15:29  epocman
-
-	* firebird2/src/utilities/: install_reg.cpp (1.9.2.4),
-	install_svc.cpp (1.18.2.4):
 	
 	Win32 instreg / instsvc now returns FINI_ERROR instead of FINI_OK
 	when usage() function is called. This helps external automated
@@ -10671,13 +8522,6 @@
 	
 	file tarinstall.sh.in was initially added on branch B1_5_Release.
 
-2003-09-12 08:20  alexpeshkoff
-
-	* firebird2/src/install/arch-specific/linux/super/tarinstall.sh.in
-	(1.1.2.1):
-	
-	fix typo in file name
-
 2003-09-12 04:22  brodsom
 
 	* firebird2/src/jrd/err_proto.h (1.10):
@@ -10773,12 +8617,6 @@
 	(1.5), rpmheader.txt.in (1.5):
 	
 	Move Alex commit to the right place
-
-2003-09-11 10:01  epocman
-
-	* firebird2/doc/install_win32.txt (1.2.2.2):
-	
-	Minor Win32 installation notes update
 
 2003-09-11 04:53  brodsom
 
@@ -10897,15 +8735,9 @@
 
 2003-09-10 19:29  dimitr
 
-	* firebird2/doc/: WhatsNew (1.36.2.7), WhatsNew (1.42):
+	* firebird2/doc/WhatsNew (1.42):
 	
 	no message
-
-2003-09-10 19:20  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.6):
-	
-	Added recent RC6 changes
 
 2003-09-10 17:31  skidder
 
@@ -10918,17 +8750,6 @@
 	* firebird2/src/jrd/os/posix/guid.cpp (1.3):
 	
 	Fix license of file that I created
-
-2003-09-10 15:33  epocman
-
-	* firebird2/src/: iscguard/cntl_guard.cpp (1.8.2.1),
-	iscguard/iscguard.cpp (1.19.2.1), utilities/install_reg.cpp
-	(1.9.2.3), utilities/install_svc.cpp (1.18.2.3),
-	utilities/servi_proto.h (1.3.2.3), utilities/services.cpp
-	(1.9.2.3):
-	
-	Back-port from HEAD to 1.5 of recent security enhancement running
-	as a service under a specific account in Win32.
 
 2003-09-10 15:26  epocman
 
@@ -10950,9 +8771,9 @@
 	
 	Code cleanup per Claudio request
 
-2003-09-10 14:52  dimitr
+2003-09-10 14:55  dimitr
 
-	* firebird2/src/jrd/: intlnames.h (1.7.2.1), intlnames.h (1.8):
+	* firebird2/src/jrd/intlnames.h (1.8):
 	
 	Applied Peter's patch
 
@@ -11155,13 +8976,6 @@
 	
 	Make engine compile after recent cleanup
 
-2003-09-08 16:48  alexpeshkoff
-
-	* firebird2/builds/posix/: Makefile.in.fbserver (1.11.2.2),
-	Makefile.in.libfbserver (1.6.2.1):
-	
-	define REENTRANT to make compiler build MT-safe binaries
-
 2003-09-08 16:14  dimitr
 
 	* firebird2/builds/win32/msvc6/: Firebird2.dsw (1.28), fbclient.dsp
@@ -11267,16 +9081,14 @@
 
 2003-09-07 23:39  epocman
 
-	* firebird2/builds/win32/: uninstall.bat (1.1.2.1), uninstall.bat
-	(1.2):
+	* firebird2/builds/win32/uninstall.bat (1.2):
 	
 	instsvc 'remove' new syntax does'nt need a '-g' option.
 
 2003-09-07 23:36  epocman
 
 	* firebird2/builds/win32/: install_classic.bat (1.2),
-	install_super.bat (1.2), install_classic.bat (1.1.2.1),
-	install_super.bat (1.1.2.1):
+	install_super.bat (1.2):
 	
 	instsvc new syntax does not take root_directory on the
 	command-line.
@@ -11346,12 +9158,6 @@
 	
 	Fix last Dmitry commit
 
-2003-09-05 15:03  alexpeshkoff
-
-	* firebird2/src/install/misc/firebird.conf (1.28.2.2):
-	
-	Added additional security warning
-
 2003-09-05 13:28  brodsom
 
 	* firebird2/src/dsql/dsql.cpp (1.59):
@@ -11392,37 +9198,12 @@
 	fix posix SS build - now rpm package appear to be successfully
 	buildable
 
-2003-09-05 12:39  alexpeshkoff
-
-	* firebird2/src/install/arch-specific/linux/super/:
-	SSchangePasswd.sh (1.1.2.1), makeInstallImage.sh.in (1.1.2.1),
-	postinstall.sh.in (1.2.2.1), postuninstall.sh.in (1.1.2.1),
-	preinstall.sh.in (1.2.2.1), preuninstall.sh.in (1.1.2.1),
-	rpmfiles.txt.in (1.2.2.1), rpmheader.txt.in (1.2.2.1):
-	
-	fix posix SS build - now rpm package appear to be successfully
-	buildable
-
-2003-09-05 12:35  alexpeshkoff
-
-	* firebird2/src/install/arch-specific/linux/super/install.sh.in
-	(1.1.2.1):
-	
-	fix posix SS build - removed old (1.0) installation script
-
 2003-09-05 12:30  alexpeshkoff
 
 	* firebird2/src/install/arch-specific/linux/misc/firebird.initd.in
 	(1.1):
 	
 	file firebird.initd.in was initially added on branch B1_5_Release.
-
-2003-09-05 12:30  alexpeshkoff
-
-	* firebird2/src/install/arch-specific/linux/misc/firebird.initd.in
-	(1.1.2.1):
-	
-	fix posix SS build - added script for /etc/init.d
 
 2003-09-05 12:14  aafemt
 
@@ -11502,12 +9283,6 @@
 	* firebird2/builds/win32/msvc6/archive.dsp (1.2):
 	
 	Correction
-
-2003-09-04 17:52  alexpeshkoff
-
-	* firebird2/builds/posix/Makefile.in.firebird (1.37.2.1):
-	
-	fix posix SS build - script files are copied for both SS and CS
 
 2003-09-04 17:26  brodsom
 
@@ -11598,10 +9373,9 @@
 	
 	Remove obsolete comment
 
-2003-09-03 09:37  dimitr
+2003-09-03 09:39  dimitr
 
-	* firebird2/src/utilities/: dba.epp (1.27.2.1), gstat/dba.epp
-	(1.7):
+	* firebird2/src/utilities/gstat/dba.epp (1.7):
 	
 	Fixed gstat crach reported by Phil Shrimpton.
 
@@ -11695,12 +9469,6 @@
 	
 	fix posix SS client library name
 
-2003-09-01 16:18  alexpeshkoff
-
-	* firebird2/builds/posix/make.defaults (1.25.2.1):
-	
-	fix posix SS client library name
-
 2003-09-01 16:17  brodsom
 
 	* firebird2/builds/win32/msvc6/gds32.dsp (1.20):
@@ -11711,12 +9479,6 @@
 2003-09-01 16:04  skidder
 
 	* firebird2/builds/win32/msvc7/fbclient_static.vcproj (1.5):
-	
-	Adjust MSVC7 makefiles
-
-2003-09-01 15:55  skidder
-
-	* firebird2/builds/win32/msvc7/fbclient_static.vcproj (1.1.2.2):
 	
 	Adjust MSVC7 makefiles
 
@@ -11818,19 +9580,6 @@
 	RDB$RELATION_FIELDS rf	 WHERE	   rf.RDB$RELATION_NAME || 'A' =
 	r.RDB$RELATION_NAME || 'A' 3) Do some code style issues
 
-2003-08-31 21:38  arnobrinkman
-
-	* firebird2/src/jrd/opt.cpp (1.73.2.7):
-	
-	fix: Unique index must be complete used else we keep on looking for
-	another one.
-
-2003-08-31 17:01  arnobrinkman
-
-	* firebird2/src/jrd/opt.cpp (1.73.2.6):
-	
-	fix: Choose a unique (prefer less fields) above other indices
-
 2003-08-31 14:55  robocop
 
 	* firebird2/src/jrd/svc.cpp (1.72):
@@ -11849,19 +9598,9 @@
 	
 	Unused var
 
-2003-08-31 11:08  epocman
+2003-08-31 09:44  dimitr
 
-	* firebird2/src/utilities/: install_nt.h (1.7.2.2), install_reg.cpp
-	(1.9.2.2), install_svc.cpp (1.18.2.2), regis_proto.h (1.2.4.1),
-	registry.cpp (1.10.2.2), servi_proto.h (1.3.2.2), services.cpp
-	(1.9.2.2):
-	
-	OEM/Ansi conversions, command-line password, other minor updates.
-
-2003-08-31 09:41  dimitr
-
-	* firebird2/doc/: install_win32.txt (1.2.2.1), install_win32.txt
-	(1.3):
+	* firebird2/doc/install_win32.txt (1.3):
 	
 	Small corrections.
 
@@ -11884,20 +9623,13 @@
 	
 	Fixed runtime check, as pointed by Claudio.
 
-2003-08-30 18:41  dimitr
+2003-08-30 18:43  dimitr
 
-	* firebird2/src/jrd/: exe.cpp (1.68.2.4), exe.cpp (1.74):
+	* firebird2/src/jrd/exe.cpp (1.74):
 	
 	Fixed broken savepoint handling in BREAK/LEAVE/EXIT.  The bug
 	caused to logical database corruption/inconsistency, such as PK/UK
 	violation, or BUGCHECK(287).
-
-2003-08-30 17:56  arnobrinkman
-
-	* firebird2/src/jrd/opt.cpp (1.73.2.5):
-	
-	Optimizer fix. Compound-indices were choosen above single-indices
-	where we need only the single-field-index.
 
 2003-08-30 15:54  epocman
 
@@ -11959,14 +9691,6 @@
 	servi_proto.h (1.2), services.cpp (1.2):
 	
 	Merged recent FB 1.5 instsvc / instreg changes to head branch.
-
-2003-08-29 15:45  epocman
-
-	* firebird2/src/utilities/: install_nt.h (1.7.2.1), install_reg.cpp
-	(1.9.2.1), install_svc.cpp (1.18.2.1), registry.cpp (1.10.2.1),
-	servi_proto.h (1.3.2.1), services.cpp (1.9.2.1):
-	
-	Fixes and enhancements to win32 instreg / instsvc install tools.
 
 2003-08-29 13:20  brodsom
 
@@ -12125,29 +9849,11 @@
 	
 	Remove unused sources
 
-2003-08-28 10:21  dimitr
-
-	* firebird2/src/isql/isql.epp (1.32.2.1):
-	
-	Applied Peter's patch for ISQL.
-
 2003-08-28 01:00  arnobrinkman
 
 	* firebird2/src/dsql/make.cpp (1.35):
 	
 	Change code-style and prepare for more info on error-message
-
-2003-08-28 00:47  arnobrinkman
-
-	* firebird2/src/dsql/make.cpp (1.30.2.3):
-	
-	Change code-style and prepare for more info on error-message
-
-2003-08-28 00:42  arnobrinkman
-
-	* firebird2/src/dsql/: parse.y (1.79.2.2), parse.cpp (1.72.2.2):
-	
-	missing line/column-numbers
 
 2003-08-27 17:27  skidder
 
@@ -12265,13 +9971,6 @@
 	loop labels and LEAVE <label> statement 5. Fixed SUBSTRING to
 	support value expressions as its arguments
 
-2003-08-26 08:57  dimitr
-
-	* firebird2/src/dsql/: gen.cpp (1.33.2.1), node.h (1.23.2.2),
-	pass1.cpp (1.72.2.5):
-	
-	Fixed BREAK/LEAVE incompatibility with FOR EXECUTE STATEMENT loops.
-
 2003-08-26 08:54  brodsom
 
 	* firebird2/src/utilities/: ibmgr/ibmgr.cpp (1.6), ibmgr/ibmgr.h
@@ -12311,27 +10010,6 @@
 	fields inside aggregate-functions.  Example :	SELECT	   (SELECT
 	Count(1) FROM RDB$DATABASE)   FROM     RDB$RELATIONS
 
-2003-08-26 00:40  arnobrinkman
-
-	* firebird2/src/dsql/: make.cpp (1.30.2.2), make_proto.h
-	(1.10.2.1), pass1.cpp (1.72.2.4):
-	
-	1) Make COALESCE/CASE output descriptor more SQL-standard.     
-	Exception is that we allow mixing datatypes with (var)char (except
-	blob), because all datatypes are convertable to character-type and
-	because this functionallity was available from 1st day COALESCE is
-	introduced inside Firebird.  2) Fix bug with expressions without
-	fields inside aggregate-functions.  Example :	SELECT	   (SELECT
-	Count(1) FROM RDB$DATABASE)   FROM     RDB$RELATIONS
-
-2003-08-25 17:09  alexpeshkoff
-
-	* firebird2/src/jrd/ExecuteStatement.cpp (1.14.2.1):
-	
-	Fixed bug with returning BLOBs from statement, reported privately
-	by Dmitry Y.  Don't front-port to HEAD, because ExecuteStatement is
-	to be reworked in 1.6.
-
 2003-08-25 14:09  robocop
 
 	* firebird2/src/qli/: err.cpp (1.11), err_proto.h (1.3):
@@ -12348,17 +10026,6 @@
 
 	* firebird2/lang_helpers/: gds_codes.ftn (1.3), gds_codes.pas
 	(1.3):
-	
-	Added new error message for Arno.
-
-2003-08-25 10:33  dimitr
-
-	* firebird2/src/: include/gen/codes.h (1.10.2.1),
-	include/gen/codetext.h (1.5.2.1), include/gen/gds_codes.ftn
-	(1.4.2.1), include/gen/gds_codes.pas (1.5.2.1),
-	include/gen/iberror.h (1.5.2.1), include/gen/msgs.h (1.5.2.1),
-	include/gen/rdb_codes.h (1.5.2.1), include/gen/sql_code.h
-	(1.6.2.1), msgs/msg.gbak (1.6.2.1):
 	
 	Added new error message for Arno.
 
@@ -12415,13 +10082,6 @@
 	Fixed BUGCHECK(178). Record fragment length calculation must be
 	consistent in VIO_erase.
 
-2003-08-23 00:52  arnobrinkman
-
-	* firebird2/builds/win32/msvc6/: Firebird2.dsw (1.19.2.1),
-	fbclient.dsp (1.33.2.1), fbclient_static.dsp (1.4.2.1):
-	
-	Fix MSVC6 build
-
 2003-08-22 15:09  robocop
 
 	* firebird2/src/msgs/build_file.epp (1.12):
@@ -12461,20 +10121,6 @@
 	* firebird2/builds/win32/msvc6/fbembed.dsp (1.30):
 	
 	update fbembed
-
-2003-08-22 00:35  skidder
-
-	* firebird2/src/: remote/remote.cpp (1.15.2.1),
-	common/config/config.cpp (1.40.2.1):
-	
-	Fix kernel memory leak
-
-2003-08-22 00:32  skidder
-
-	* firebird2/: doc/WhatsNew (1.36.2.5),
-	src/install/misc/firebird.conf (1.28.2.1):
-	
-	Fix kernel memory leak
 
 2003-08-22 00:27  skidder
 
@@ -12749,9 +10395,9 @@
 	
 	Added PLAN support for derived tables
 
-2003-08-20 01:08  skidder
+2003-08-20 01:09  skidder
 
-	* firebird2/doc/: WhatsNew (1.36.2.4), WhatsNew (1.39):
+	* firebird2/doc/WhatsNew (1.39):
 	
 	Get ready for RC6
 
@@ -12762,22 +10408,9 @@
 	Apply patch by Peter Jacobi to display OCTETS strings in hex
 	correctly
 
-2003-08-19 23:20  skidder
-
-	* firebird2/configure.in (1.141.2.3):
-	
-	Apply writebuildnum.sh at configure time to simplify building rpm
-	packages in release branch
-
-2003-08-19 15:02  skidder
-
-	* firebird2/src/burp/backup.epp (1.24.2.2):
-	
-	Backport Blas' fix to 1.5 tree
-
 2003-08-19 14:49  skidder
 
-	* firebird2/src/jrd/: opt.cpp (1.80), opt.cpp (1.73.2.4):
+	* firebird2/src/jrd/opt.cpp (1.80):
 	
 	Get rid of alloca usage
 
@@ -12866,16 +10499,6 @@
 	
 	-Fix unused warnings
 
-2003-08-18 23:44  skidder
-
-	* firebird2/src/jrd/: btr.cpp (1.33.2.1), btr.h (1.6.2.1), dfw.epp
-	(1.45.2.1), idx.cpp (1.16.2.2), idx_proto.h (1.5.2.1), jrd.h
-	(1.42.2.1), opt.cpp (1.73.2.3), pag.cpp (1.37.2.1), val.cpp
-	(1.15.2.1), vio.cpp (1.49.2.2):
-	
-	Finally, port 1.03 changes to 1.5 tree. Let's pray that I didn't
-	miss anything during this bytemoving process
-
 2003-08-18 23:37  arnobrinkman
 
 	* firebird2/src/dsql/pass1.cpp (1.79):
@@ -12936,13 +10559,6 @@
 	Fix const-correctness of ISC_expand_filename. Thanks to Andrew
 	Gough
 
-2003-08-18 13:32  skidder
-
-	* firebird2/src/jrd/isc_file.cpp (1.52.2.2):
-	
-	Fix const-correctness of ISC_expand_filename of UNIX. Thanks to
-	Andrew Gough
-
 2003-08-18 12:31  aafemt
 
 	* firebird2/src/: include/memory_routines.h (1.3), jrd/nav.cpp
@@ -12952,45 +10568,11 @@
 	get_long(UCHAR*) and old good BTR_get_quad(UCHAR*) reported by
 	Nikolay Samofatov
 
-2003-08-18 00:36  skidder
+2003-08-18 00:37  skidder
 
-	* firebird2/doc/: WhatsNew (1.36.2.3), WhatsNew (1.38):
+	* firebird2/doc/WhatsNew (1.38):
 	
 	Add RC6 changes
-
-2003-08-18 00:32  skidder
-
-	* firebird2/src/burp/backup.epp (1.24.2.1):
-	
-	Backport backup.epp portability fix
-
-2003-08-18 00:25  skidder
-
-	* firebird2/src/jrd/sch.cpp (1.6.2.1):
-	
-	Backport fix of SS crash on IO error
-
-2003-08-17 23:38  skidder
-
-	* firebird2/builds/win32/msvc7/: Firebird2.sln (1.9.2.1),
-	fbclient.vcproj (1.17.2.2):
-	
-	Adjust MSVC7 makefiles
-
-2003-08-17 23:28  skidder
-
-	* firebird2/src/ipserver/ipclient.cpp (1.21.2.1):
-	
-	Backport ACL and aliases bugfixes to v.1.5 tree
-
-2003-08-17 23:16  skidder
-
-	* firebird2/src/jrd/: cmp.cpp (1.52.2.2), cmp_proto.h (1.7.2.1),
-	db_alias.cpp (1.10.2.1), db_alias.h (1.1.2.1), idx.cpp (1.16.2.1),
-	isc_file.cpp (1.52.2.1), jrd.cpp (1.76.2.2), req.h (1.11.2.1),
-	scl.epp (1.21.2.1), scl_proto.h (1.4.2.1):
-	
-	Backport ACL and aliases bugfixes to v.1.5 tree
 
 2003-08-17 21:56  skidder
 
@@ -13144,12 +10726,6 @@
 	
 	Also fix MSVC6 gfix build in head branch
 
-2003-08-13 13:13  alexpeshkoff
-
-	* firebird2/builds/win32/msvc6/gfix.dsp (1.17.2.1):
-	
-	Fixed MSVC6 gfix build
-
 2003-08-13 13:11  robocop
 
 	* firebird2/builds/win32/msvc6/fbserver.dsp (1.32):
@@ -13284,66 +10860,6 @@
 	
 	`inline' is not at beginning of declaration
 
-2003-08-12 00:31  skidder
-
-	* firebird2/builds/win32/msvc7/: alice.vcproj (1.8.2.1),
-	alice_classic.vcproj (1.8.2.1), build_msg.vcproj (1.1.2.1),
-	burp.vcproj (1.11.2.1), burp_classic.vcproj (1.11.2.1),
-	codes.vcproj (1.1.2.1), common.vcproj (1.9.2.1),
-	common_classic.vcproj (1.7.2.1), dsql_server.vcproj (1.10.2.1),
-	dsql_server_classic.vcproj (1.10.2.1), engine.vcproj (1.21.2.1),
-	engine_classic.vcproj (1.20.2.1), engine_embed.vcproj (1.8.2.1),
-	fb_inet_server.vcproj (1.9.2.1), fb_lock_print.vcproj (1.13.2.1),
-	fbclient.vcproj (1.17.2.1), fbclient_static.vcproj (1.1.2.1),
-	fbembed.vcproj (1.14.2.1), fbguard.vcproj (1.11.2.1),
-	fbserver.vcproj (1.10.2.1), fbudf.vcproj (1.6.2.1), gbak.vcproj
-	(1.11.2.1), gdef.vcproj (1.11.2.1), gds32.vcproj (1.10.2.1),
-	gfix.vcproj (1.10.2.1), gpre.vcproj (1.13.2.1), gpre_boot.vcproj
-	(1.12.2.1), gsec.vcproj (1.10.2.1), gsplit.vcproj (1.5.2.1),
-	gstat.vcproj (1.11.2.1), ib_udf.vcproj (1.10.2.1), ib_util.vcproj
-	(1.10.2.1), instreg.vcproj (1.9.2.1), instsvc.vcproj (1.9.2.1),
-	intl.vcproj (1.10.2.1), intlcpp.vcproj (1.4.2.1), ipserver.vcproj
-	(1.9.2.1), isql.vcproj (1.11.2.1), lock.vcproj (1.8.2.1),
-	lock_classic.vcproj (1.8.2.1), qli.vcproj (1.10.2.1), remote.vcproj
-	(1.11.2.1), remote_classic.vcproj (1.11.2.1), utilities.vcproj
-	(1.10.2.1), utilities_classic.vcproj (1.9.2.1), wal.vcproj
-	(1.8.2.1), wal_classic.vcproj (1.8.2.1):
-	
-	Adjust MSVC7 makefiles
-
-2003-08-11 23:46  skidder
-
-	* firebird2/src/qli/mov.cpp (1.17.2.1):
-	
-	Backport FreeBSD fixes
-
-2003-08-11 23:41  skidder
-
-	* firebird2/src/: burp/burp.cpp (1.33.2.1), jrd/cvt.cpp (1.20.2.1),
-	jrd/mov.cpp (1.7.2.1):
-	
-	Backport FreeBSD fixes
-
-2003-08-11 23:37  skidder
-
-	* firebird2/src/: jrd/thd.h (1.12.2.1), include/firebird.h
-	(1.12.2.1):
-	
-	Backport Win32 CS startup race condition fix
-
-2003-08-11 23:34  skidder
-
-	* firebird2/src/common/classes/: alloc.cpp (1.29.2.1), alloc.h
-	(1.21.2.1), locks.cpp (1.3.2.1), locks.h (1.5.2.1):
-	
-	Backport Win32 CS startup race condition fix
-
-2003-08-11 23:07  skidder
-
-	* firebird2/src/lock/lock.cpp (1.56.2.3):
-	
-	Backport lock manager fixes
-
 2003-08-11 22:56  skidder
 
 	* firebird2/src/lock/lock.cpp (1.62):
@@ -13396,13 +10912,6 @@
 	* firebird2/src/dsql/parse.y (1.86):
 	
 	forgotten cleanup, thanks for your attention BLAS
-
-2003-08-11 02:58  arnobrinkman
-
-	* firebird2/src/dsql/make.cpp (1.30.2.1):
-	
-	bugfix: CASE / COALESCE functions determine always NUMERIC even
-	when all values where int or long.
 
 2003-08-11 02:43  arnobrinkman
 
@@ -13667,9 +11176,9 @@
 	-Format & casts warning fixes -Isolate unused code with ifdefs
 	-Code style corrections -Remove two unneeded NULL casts
 
-2003-08-08 23:33  arnobrinkman
+2003-08-08 23:35  arnobrinkman
 
-	* firebird2/src/jrd/: opt.cpp (1.73.2.2), opt.cpp (1.77):
+	* firebird2/src/jrd/opt.cpp (1.77):
 	
 	bugfix: All flags csb_flags were cleared except csb_active. Thanks
 	to Claudio V.
@@ -13700,16 +11209,14 @@
 
 2003-08-08 11:13  paulbeach
 
-	* firebird2/builds/win32/: setenvvar.bat (1.3), setenvvar.bat
-	(1.1.2.2):
+	* firebird2/builds/win32/setenvvar.bat (1.3):
 	
 	Fix moronic spelling mistake
 
 2003-08-08 09:52  paulbeach
 
 	* firebird2/builds/win32/: make_all.bat (1.15), prepare.bat (1.22),
-	setenvvar.bat (1.2), make_all.bat (1.4.2.1), prepare.bat
-	(1.19.2.2), setenvvar.bat (1.1.2.1):
+	setenvvar.bat (1.2):
 	
 	Fix Blas' fix for Firebird location in prepare, so it can handle
 	spaces in the path name. Echo %FIREBIRD% in setenvvar.bat. Copy
@@ -13748,12 +11255,6 @@
 	New backup technology seems to work on Windows SuperServer now.  At
 	least I can run 400MB AS3AP benchmark on it and lock/unlock/backup
 	database during this process.
-
-2003-08-07 21:30  skidder
-
-	* firebird2/src/jrd/jrd.cpp (1.76.2.1):
-	
-	Fix stack corruption when aliases are used
 
 2003-08-07 21:13  skidder
 
@@ -13808,13 +11309,6 @@
 
 	* firebird2/src/: ipserver/ipserver.cpp (1.20), jrd/alt.cpp (1.23),
 	jrd/ibase.h (1.42), remote/server.cpp (1.37):
-	
-	Rollback public API changes by Mike Nordell
-
-2003-08-07 12:18  aafemt
-
-	* firebird2/src/: ipserver/ipserver.cpp (1.19.2.1), jrd/alt.cpp
-	(1.21.2.1), jrd/ibase.h (1.40.2.1), remote/server.cpp (1.34.2.1):
 	
 	Rollback public API changes by Mike Nordell
 
@@ -13874,13 +11368,6 @@
 	
 	Correction
 
-2003-08-06 19:15  brodsom
-
-	* firebird2/builds/win32/msvc6/build_msg.dsp (1.3.2.1):
-	
-	This file should be in the branch but due to some CVS mistery it is
-	not.
-
 2003-08-06 18:55  skidder
 
 	* firebird2/src/common/classes/tree.h (1.15):
@@ -13931,8 +11418,7 @@
 
 2003-08-06 18:21  brodsom
 
-	* firebird2/builds/win32/: prepare.bat (1.19.2.1), prepare.bat
-	(1.21):
+	* firebird2/builds/win32/prepare.bat (1.21):
 	
 	Patch. previoulsy when the directory parameter have spaces (as in
 	the example) the script fail.
@@ -13950,38 +11436,6 @@
 	
 	Correction
 
-2003-08-05 00:18  skidder
-
-	* firebird2/builds/posix/Makefile.in.extlib (1.10.2.3):
-	
-	Backport fbudf/fb_udf fix to B1_5_Release
-
-2003-08-05 00:17  skidder
-
-	*
-	
-	Distribute docs in Linux builds
-	firebird2/src/install/arch-specific/linux/classic/makeInstallImage.
-	sh.in (1.13.2.1):
-
-2003-08-04 23:54  skidder
-
-	* firebird2/doc/sql.extensions/: README.aggregate_tracking
-	(1.1.2.1), README.context_variables (1.2.2.1), README.data_types
-	(1.2.2.1), README.exception_handling (1.1.2.1),
-	README.execute_statement (1.2.2.1), README.explicit_locks
-	(1.4.2.1), README.order_by_expressions_nulls (1.2.2.1),
-	README.savepoints (1.1.2.1), README.universal_triggers (1.1.2.1):
-	
-	Move docs to B1_5_Release
-
-2003-08-04 23:21  skidder
-
-	* firebird2/builds/posix/prefix.linux (1.18.2.1):
-	
-	Return Linux port to buildable state after fixup of Darwin port by
-	John Bellardo
-
 2003-08-04 17:32  skidder
 
 	* firebird2/: src/misc/ids.m (1.1), builds/posix/Makefile.in.codes
@@ -13997,39 +11451,15 @@
 	convention with CHAR/VARCHAR octets parameters.  Found and fixed by
 	Fred Polizo.
 
-2003-08-04 10:13  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.2):
-	
-	no message
-
 2003-08-04 10:12  dimitr
 
 	* firebird2/doc/WhatsNew (1.37):
 	
 	Added RC5 changes
 
-2003-08-04 10:08  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.1):
-	
-	Added RC5 changes
-
-2003-08-04 09:21  dimitr
-
-	* firebird2/src/jrd/exe.cpp (1.68.2.3):
-	
-	no message
-
 2003-08-04 09:20  dimitr
 
 	* firebird2/src/jrd/exe.cpp (1.70):
-	
-	A bit corrected GDSCODE handling + minor cleanup.
-
-2003-08-04 09:15  dimitr
-
-	* firebird2/src/jrd/exe.cpp (1.68.2.2):
 	
 	A bit corrected GDSCODE handling + minor cleanup.
 
@@ -14070,13 +11500,6 @@
 	
 	A couple TODO items I forgot
 
-2003-08-01 22:12  skidder
-
-	* firebird2/src/extlib/ib_udf.c (1.5.2.1):
-	
-	Fix bugs in ib_udf functions rtrim, ltrim and log. Found and fixed
-	by Paul Vinkenoog
-
 2003-08-01 22:08  skidder
 
 	* firebird2/src/extlib/ib_udf.c (1.6):
@@ -14084,9 +11507,9 @@
 	Fix bugs in ib_udf functions rtrim, ltrim and log. Found and fixed
 	by Paul Vinkenoog
 
-2003-07-31 17:33  dimitr
+2003-07-31 17:34  dimitr
 
-	* firebird2/src/burp/: burp.h (1.17.2.1), burp.h (1.18):
+	* firebird2/src/burp/burp.h (1.18):
 	
 	Fixed gbak version string.
 
@@ -14101,12 +11524,6 @@
 	* firebird2/src/lock/lock.cpp (1.58):
 	
 	Apply changes to HEAD too
-
-2003-07-30 16:51  skidder
-
-	* firebird2/src/lock/lock.cpp (1.56.2.2):
-	
-	Fix Win32 CS lock manager issue
 
 2003-07-29 15:31  skidder
 
@@ -14128,14 +11545,14 @@
 
 2003-07-29 02:29  arnobrinkman
 
-	* firebird2/src/dsql/: pass1.cpp (1.75), pass1.cpp (1.72.2.3):
+	* firebird2/src/dsql/pass1.cpp (1.75):
 	
 	2nd RC4 bugfix, but much better tracking of supported nested
 	aggregates.
 
-2003-07-28 21:20  arnobrinkman
+2003-07-28 21:22  arnobrinkman
 
-	* firebird2/src/dsql/: pass1.cpp (1.72.2.2), pass1.cpp (1.74):
+	* firebird2/src/dsql/pass1.cpp (1.74):
 	
 	bugfix RC4: a higher context was supported with nested aggregates,
 	but this isn't possible.  Only a lower context is possible with
@@ -14181,68 +11598,12 @@
 	
 	sdl is a plain char again. Some cleanup around it
 
-2003-07-24 00:45  arnobrinkman
-
-	* firebird2/src/jrd/par.cpp (1.43.2.1):
-	
-	bugfix: sub-select in aggregate select inside a view failed. Due
-	wrong context/stream parsing.
-
 2003-07-24 00:42  arnobrinkman
 
 	* firebird2/src/jrd/par.cpp (1.45):
 	
 	bugfix: sub-select in aggregate select inside a view failed. Due
 	wrong context/stream parsing.
-
-2003-07-19 08:20  bellardo
-
-	* firebird2/configure.in (1.141.2.2):
-	
-	Need to create the jrs/os/darwin directory in temp
-
-2003-07-19 08:19  bellardo
-
-	* firebird2/builds/posix/: make.rules (1.19.2.2), prefix.darwin
-	(1.8.2.4):
-	
-	More changes to the darwin prefix file
-
-2003-07-19 08:12  bellardo
-
-	* firebird2/builds/posix/Makefile.in.extlib (1.10.2.2):
-	
-	Fix an error in previous commit where I forgot to include a
-	variable name
-
-2003-07-19 07:52  bellardo
-
-	* firebird2/builds/posix/: Makefile.in.extlib (1.10.2.1),
-	Makefile.in.intl (1.11.2.1), Makefile.in.libfbclient (1.14.2.1),
-	Makefile.in.libfbembed (1.10.2.1), make.rules (1.19.2.1),
-	prefix.darwin (1.8.2.3):
-	
-	Darwin needs full control over some shared library link parameters,
-	so provide it in a way that should be backwards compatible.
-
-2003-07-19 07:02  bellardo
-
-	* firebird2/configure.in (1.141.2.1):
-	
-	Darwin need to link again CoreFoundation
-
-2003-07-19 06:57  bellardo
-
-	* firebird2/builds/posix/: Makefile.in.boot.gpre (1.14.2.1),
-	Makefile.in.codes (1.7.2.1), Makefile.in.embed.lockmgr (1.5.2.1),
-	Makefile.in.fbserver (1.11.2.1), Makefile.in.inet_server
-	(1.11.2.1), Makefile.in.static.gbak (1.6.2.1),
-	Makefile.in.static.gpre (1.10.2.1), make.shared.targets (1.13.2.1),
-	prefix.darwin (1.8.2.2):
-	
-	Darwin can't handle -L<space>lib_include_dir parameter to linker,
-	so all instances have been changed to -Llib_include_dir.  Also
-	update the darwin platform prefix file.
 
 2003-07-19 06:53  bellardo
 
@@ -14252,41 +11613,9 @@
 
 2003-07-19 06:53  bellardo
 
-	* firebird2/src/jrd/os/darwin/: config_root.cpp (1.1.2.1),
-	fbsyslog.cpp (1.1.2.1), mod_loader.cpp (1.2.4.1), path_utils.cpp
-	(1.1.2.1):
-	
-	Update darwin specific OS files.
-
-2003-07-19 06:53  bellardo
-
 	* firebird2/src/jrd/os/darwin/path_utils.cpp (1.1):
 	
 	file path_utils.cpp was initially added on branch B1_5_Release.
-
-2003-07-19 06:53  bellardo
-
-	* firebird2/src/jrd/gds.cpp (1.84.2.2):
-	
-	Darwin specific includes no longer needed.
-
-2003-07-19 06:42  bellardo
-
-	* firebird2/src/jrd/gds.cpp (1.84.2.1):
-	
-	Add a header needed for DARWIN
-
-2003-07-19 06:23  bellardo
-
-	* firebird2/builds/posix/prefix.darwin (1.8.2.1):
-	
-	Fix debug build compile flags
-
-2003-07-18 23:41  skidder
-
-	* firebird2/src/lock/lock.cpp (1.56.2.1):
-	
-	Apply Windows CS lock manager fix to release branch
 
 2003-07-18 23:34  skidder
 
@@ -14345,33 +11674,6 @@
 	utilities_classic.vcproj (1.11), wal.vcproj (1.9):
 	
 	Update output directories
-
-2003-07-17 10:26  dimitr
-
-	* firebird2/src/jrd/exe.cpp (1.68.2.1):
-	
-	Re-applied recent v1.5 fixes to the release branch.
-
-2003-07-17 10:21  dimitr
-
-	* firebird2/src/: dsql/node.h (1.23.2.1), dsql/parse.cpp
-	(1.72.2.1), dsql/parse.y (1.79.2.1), dsql/pass1.cpp (1.72.2.1),
-	jrd/rse.cpp (1.28.2.1), jrd/vio.cpp (1.49.2.1), jrd/vio_proto.h
-	(1.8.2.1), jrd/dyn.epp (1.27.2.1):
-	
-	Re-applied recent v1.5 fixes to the release branch.
-
-2003-07-17 10:07  dimitr
-
-	* firebird2/src/jrd/ids.m (1.2.2.1):
-	
-	Re-applied recent v1.5 fixes to the release branch.
-
-2003-07-17 10:04  dimitr
-
-	* firebird2/src/jrd/: opt.cpp (1.73.2.1), cmp.cpp (1.52.2.1):
-	
-	Re-applied recent v1.5 fixes to the release branch.
 
 2003-07-17 04:15  brodsom
 
@@ -28933,26 +26235,6 @@
 	Merging changes from skidder branch - explicit locks, savepoints,
 	build system changes
 
-2002-10-29 20:18  skidder
-
-	* firebird2/src/: dsql/dsql.cpp (1.24.2.1), dsql/dsql.h (1.5.2.1),
-	dsql/dsql.tab.h (1.6.2.2), dsql/gen.cpp (1.12.2.2),
-	dsql/keywords.cpp (1.8.2.2), dsql/node.h (1.13.2.2), dsql/parse.cpp
-	(1.29.2.1), dsql/parse.y (1.28.2.2), dsql/pass1.cpp (1.25.2.2),
-	include/gen/blrtable.h (1.4.2.2), include/gen/codes.h (1.6.2.1),
-	include/gen/codetext.h (1.3.2.1), include/gen/gds_codes.ftn
-	(1.2.2.1), include/gen/gds_codes.pas (1.2.2.1),
-	include/gen/iberror.h (1.3.2.1), include/gen/msgs.h (1.2.2.1),
-	include/gen/rdb_codes.h (1.3.2.1), include/gen/sql_code.h
-	(1.2.2.1), jrd/blr.h (1.6.2.2), jrd/blrtable.cpp (1.5.2.2),
-	jrd/cmp.cpp (1.14.2.2), jrd/dyn.epp (1.13.2.1), jrd/exe.cpp
-	(1.21.2.2), jrd/exe.h (1.6.2.2), jrd/ibase.h (1.13.2.1), jrd/nod.h
-	(1.4.2.2), jrd/par.cpp (1.13.2.2), jrd/tra.cpp (1.17.2.1),
-	jrd/tra.h (1.4.2.1), jrd/vio.cpp (1.15.2.2), jrd/vio_proto.h
-	(1.2.2.2), msgs/msg.gbak (1.3.2.1):
-	
-	Added support for savepoints
-
 2002-10-29 17:31  tamlin
 
 	* firebird2/src/burp/: restore.epp (1.10), backup.epp (1.8),
@@ -29074,12 +26356,6 @@
 	
 	Removed obsolete "DGUX" port
 
-2002-10-28 17:59  skidder
-
-	* firebird2/builds/posix/Makefile.in.codes (1.1.2.2):
-	
-	Fixed little problem with code regeneration
-
 2002-10-28 16:34  alexpeshkoff
 
 	* firebird2/builds/win32/msvc6/fbserver.dsp (1.7):
@@ -29186,15 +26462,6 @@
 	
 	file Makefile.in.codes was initially added on branch
 	B1_5_0_Alpha2-skidder.
-
-2002-10-27 16:35  skidder
-
-	* firebird2/: configure.in (1.54.2.2),
-	builds/posix/Makefile.in.codes (1.1.2.1),
-	builds/posix/Makefile.in.firebird (1.11.2.1), src/jrd/ids.m
-	(1.1.1.1.2.1):
-	
-	Generated headers are now updated automatically
 
 2002-10-27 13:51  dimitr
 
@@ -29372,21 +26639,6 @@
 	Replaced the different symbolic names for the maximum length of a
 	path (MAX_PATH, MAX_PATH_LENGTH, MAXPATHLEN) with one uniq symbol
 	MAXPATHLEN.
-
-2002-10-23 17:23  skidder
-
-	* firebird2/: configure.in (1.54.2.1), src/dsql/ddl.cpp (1.21.2.1),
-	src/dsql/dsql.tab.h (1.6.2.1), src/dsql/gen.cpp (1.12.2.1),
-	src/dsql/keywords.cpp (1.8.2.1), src/dsql/node.h (1.13.2.1),
-	src/dsql/parse.y (1.28.2.1), src/dsql/pass1.cpp (1.25.2.1),
-	src/dsql/pass1_proto.h (1.1.1.1.2.1), src/include/gen/blrtable.h
-	(1.4.2.1), src/jrd/blr.h (1.6.2.1), src/jrd/blrtable.cpp (1.5.2.1),
-	src/jrd/cmp.cpp (1.14.2.1), src/jrd/exe.cpp (1.21.2.1),
-	src/jrd/exe.h (1.6.2.1), src/jrd/nod.h (1.4.2.1), src/jrd/par.cpp
-	(1.13.2.1), src/jrd/vio.cpp (1.15.2.1), src/jrd/vio_proto.h
-	(1.2.2.1):
-	
-	Explicit locking changes
 
 2002-10-22 10:05  dimitr
 
@@ -31632,31 +28884,6 @@
 	* firebird2/src/jrd/plugin_manager.cpp (1.3):
 	
 	Fixed bug that caused all accesses to miss the internal cache.
-
-2002-07-19 08:22  skywalker
-
-	* firebird2/: builds/win32/msvc6/gpre.dsp (1.1.1.1),
-	builds/win32/msvc6/alice.dsp (1.1.1.1),
-	builds/win32/msvc6/dsql_server.dsp (1.1.1.1),
-	builds/win32/msvc6/fbguard.dsp (1.1.1.1),
-	builds/win32/msvc6/fbserver.dsp (1.1.1.1),
-	builds/win32/msvc6/gfix.dsp (1.1.1.1), builds/win32/msvc6/isql.dsp
-	(1.1.1.1), builds/win32/msvc6/remote.dsp (1.1.1.1),
-	builds/win32/msvc6/utilities.dsp (1.1.1.1),
-	builds/win32/msvc6/burp.dsp (1.1.1.1), builds/win32/msvc6/gbak.dsp
-	(1.1.1.1), builds/win32/msvc6/gds32_debug.def (1.1.1.1),
-	builds/win32/msvc6/gstat.dsp (1.1.1.1),
-	builds/win32/msvc6/ipserver.dsp (1.1.1.1),
-	builds/win32/msvc6/lock.dsp (1.1.1.1), builds/win32/msvc6/wal.dsp
-	(1.1.1.1), builds/win32/msvc6/Firebird2.dsw (1.1.1.1),
-	builds/win32/msvc6/ib_util.def (1.1.1.1),
-	builds/win32/msvc6/ib_util.dsp (1.1.1.1),
-	builds/win32/msvc6/common.dsp (1.1.1.1),
-	builds/win32/msvc6/gds32.def (1.1.1.1),
-	builds/win32/msvc6/gds32.dsp (1.1.1.1), builds/win32/msvc6/intl.dsp
-	(1.1.1.1), generated/makefile (1.1.1.2):
-	
-	no message
 
 2002-07-15 09:00  eku
 
@@ -34791,570 +32018,4 @@
 	src/wal/wstatus.cpp (1.1):
 	
 	Initial revision
-
-2001-05-23 15:25  tamlin
-
-	* firebird2/: generated/alice/makefile (1.1.1.1),
-	generated/alice/placeholder.txt (1.1.1.1), generated/burp/makefile
-	(1.1.1.1), generated/burp/placeholder.txt (1.1.1.1),
-	generated/dsql/makefile (1.1.1.1), generated/dsql/placeholder.txt
-	(1.1.1.1), generated/dudley/makefile (1.1.1.1),
-	generated/dudley/placeholder.txt (1.1.1.1), generated/gpre/makefile
-	(1.1.1.1), generated/gpre/placeholder.txt (1.1.1.1),
-	generated/isql/makefile (1.1.1.1), generated/isql/placeholder.txt
-	(1.1.1.1), generated/journal/placeholder.txt (1.1.1.1),
-	generated/jrd/makefile (1.1.1.1), generated/jrd/placeholder.txt
-	(1.1.1.1), generated/msgs/makefile (1.1.1.1),
-	generated/msgs/placeholder.txt (1.1.1.1),
-	generated/pyxis/placeholder.txt (1.1.1.1),
-	generated/qli/placeholder.txt (1.1.1.1),
-	generated/utilities/makefile (1.1.1.1),
-	generated/utilities/placeholder.txt (1.1.1.1),
-	src/journal/conso_proto.h (1.1.1.1), src/journal/depends.mak
-	(1.1.1.1), src/journal/gjrn_proto.h (1.1.1.1),
-	src/journal/journal.gdl (1.1.1.1), src/journal/journal.h (1.1.1.1),
-	src/journal/journal_vms.gdl (1.1.1.1), src/journal/misc_proto.h
-	(1.1.1.1), src/journal/oldr.cpp (1.1.1.1), src/journal/oldr_proto.h
-	(1.1.1.1), src/journal/rebui_proto.h (1.1.1.1),
-	src/journal/serve_proto.h (1.1.1.1), src/journal/archive.cpp
-	(1.1.1.1), src/journal/console.cpp (1.1.1.1), src/journal/gjrn.cpp
-	(1.1.1.1), src/journal/misc.cpp (1.1.1.1), src/journal/rebuild.e
-	(1.1.1.1), src/journal/server.e (1.1.1.1), src/gpre/cdbtable.h
-	(1.1.1.1), src/gpre/cmd.cpp (1.1.1.1), src/gpre/cmd_proto.h
-	(1.1.1.1), src/gpre/cme_proto.h (1.1.1.1), src/gpre/gpre.cpp
-	(1.1.1.1), src/gpre/par.cpp (1.1.1.1), src/journal/journal_vms.e
-	(1.1.1.1), src/gpre/cmp.cpp (1.1.1.1), src/gpre/cob.cpp (1.1.1.1),
-	src/gpre/exp.cpp (1.1.1.1), src/gpre/sql.cpp (1.1.1.1),
-	src/gpre/cme.cpp (1.1.1.1), src/gpre/cmp_proto.h (1.1.1.1),
-	src/gpre/dyntable.h (1.1.1.1), src/gpre/exp_proto.h (1.1.1.1),
-	src/gpre/form.cpp (1.1.1.1), src/gpre/form.h (1.1.1.1),
-	src/gpre/form__proto.h (1.1.1.1), src/gpre/form_proto.h (1.1.1.1),
-	src/gpre/form_trn.cpp (1.1.1.1), src/gpre/gpre.h (1.1.1.1),
-	src/gpre/gpre_proto.h (1.1.1.1), src/gpre/gpreswi.h (1.1.1.1),
-	src/gpre/hsh.cpp (1.1.1.1), src/gpre/hsh.h (1.1.1.1),
-	src/gpre/hsh_proto.h (1.1.1.1), src/gpre/int.cpp (1.1.1.1),
-	src/gpre/jrdme_proto.h (1.1.1.1), src/gpre/jrdmet.cpp (1.1.1.1),
-	src/gpre/pas.cpp (1.1.1.1), src/gpre/pat.cpp (1.1.1.1),
-	src/gpre/sqe.cpp (1.1.1.1), src/gpre/c_cxx.cpp (1.1.1.1),
-	src/gpre/dyntable.cpp (1.1.1.1), src/gpre/ftn.cpp (1.1.1.1),
-	src/gpre/gpre_meta.h (1.1.1.1), src/gpre/lang_proto.h (1.1.1.1),
-	src/gpre/movg.cpp (1.1.1.1), src/gpre/movg_proto.h (1.1.1.1),
-	src/gpre/msc.cpp (1.1.1.1), src/gpre/msc_proto.h (1.1.1.1),
-	src/gpre/noform.cpp (1.1.1.1), src/gpre/par_proto.h (1.1.1.1),
-	src/gpre/parse.h (1.1.1.1), src/gpre/pat.h (1.1.1.1),
-	src/gpre/pat_proto.h (1.1.1.1), src/gpre/prett_proto.h (1.1.1.1),
-	src/gpre/pretty.cpp (1.1.1.1), src/gpre/sdltable.h (1.1.1.1),
-	src/gpre/sqe_proto.h (1.1.1.1), src/gpre/sql_proto.h (1.1.1.1),
-	src/gpre/words.h (1.1.1.1), src/alice/alice.cpp (1.1.1.1),
-	src/alice/alice.h (1.1.1.1), src/alice/alice_meta.e (1.1.1.1),
-	src/alice/alice_meta.h (1.1.1.1), src/alice/alice_proto.h
-	(1.1.1.1), src/alice/aliceswi.h (1.1.1.1), src/alice/all.cpp
-	(1.1.1.1), src/alice/all.h (1.1.1.1), src/alice/all_proto.h
-	(1.1.1.1), src/alice/alloc.h (1.1.1.1), src/alice/blk.h (1.1.1.1),
-	src/alice/exe.cpp (1.1.1.1), src/alice/exe_proto.h (1.1.1.1),
-	src/alice/info.h (1.1.1.1), src/alice/lls.h (1.1.1.1),
-	src/alice/tdr.cpp (1.1.1.1), src/alice/tdr_proto.h (1.1.1.1),
-	src/csv/csi.cpp (1.1.1.1), src/csv/csi.h (1.1.1.1),
-	src/csv/csi_proto.h (1.1.1.1), src/csv/css.cpp (1.1.1.1),
-	src/csv/css_proto.h (1.1.1.1), src/csv/csu.cpp (1.1.1.1),
-	src/csv/depends.mak (1.1.1.1), src/csv/print.cpp (1.1.1.1),
-	src/gpre/ada.cpp (1.1.1.1), src/gpre/gpre_meta.e (1.1.1.1),
-	src/csv/csv.cpp (1.1.1.1), src/dsql/all.h (1.1.1.1),
-	src/dsql/array_proto.h (1.1.1.1), src/dsql/blk.h (1.1.1.1),
-	src/dsql/dsql.h (1.1.1.1), src/dsql/gen.cpp (1.1.1.1),
-	src/dsql/make.cpp (1.1.1.1), src/dsql/movd.cpp (1.1.1.1),
-	src/dsql/pass1.cpp (1.1.1.1), src/dsql/sqlda.h (1.1.1.1),
-	src/dsql/alld.cpp (1.1.1.1), src/dsql/blob.e (1.1.1.1),
-	src/dsql/blob_proto.h (1.1.1.1), src/dsql/chars.h (1.1.1.1),
-	src/dsql/ddl.cpp (1.1.1.1), src/dsql/ddl_proto.h (1.1.1.1),
-	src/dsql/depends.mak (1.1.1.1), src/dsql/dsql.def (1.1.1.1),
-	src/dsql/errd.cpp (1.1.1.1), src/dsql/gen_proto.h (1.1.1.1),
-	src/dsql/hsh.cpp (1.1.1.1), src/dsql/keywords.h (1.1.1.1),
-	src/dsql/makefile.mak (1.1.1.1), src/dsql/metd.e (1.1.1.1),
-	src/dsql/node.h (1.1.1.1), src/dsql/parse.y (1.1.1.1),
-	src/dsql/preparse.cpp (1.1.1.1), src/dsql/utld.cpp (1.1.1.1),
-	src/dsql/dsql.cpp (1.1.1.1), src/dsql/hsh_proto.h (1.1.1.1),
-	src/dsql/metd_proto.h (1.1.1.1), src/dsql/movd_proto.h (1.1.1.1),
-	src/dsql/user_dsql.cpp (1.1.1.1), src/dsql/alld_proto.h (1.1.1.1),
-	src/dsql/array.e (1.1.1.1), src/dsql/dsql_proto.h (1.1.1.1),
-	src/dsql/errd_proto.h (1.1.1.1), src/dsql/make_proto.h (1.1.1.1),
-	src/dsql/parse.awk (1.1.1.1), src/dsql/parse.cpp (1.1.1.1),
-	src/dsql/parse.sed (1.1.1.1), src/dsql/parse_proto.h (1.1.1.1),
-	src/dsql/pass1_proto.h (1.1.1.1), src/dsql/prepa_proto.h (1.1.1.1),
-	src/dsql/sym.h (1.1.1.1), src/dsql/user__proto.h (1.1.1.1),
-	src/dsql/utld_proto.h (1.1.1.1), src/dudley/ddl.cpp (1.1.1.1),
-	src/dudley/ddl.h (1.1.1.1), src/dudley/ddl_proto.h (1.1.1.1),
-	src/dudley/depends.mak (1.1.1.1), src/dudley/exe_proto.h (1.1.1.1),
-	src/dudley/expan_proto.h (1.1.1.1), src/dudley/expand.cpp
-	(1.1.1.1), src/dudley/expr.cpp (1.1.1.1), src/dudley/expr_proto.h
-	(1.1.1.1), src/dudley/extra_proto.h (1.1.1.1),
-	src/dudley/gener_proto.h (1.1.1.1), src/dudley/generate.cpp
-	(1.1.1.1), src/dudley/hsh.cpp (1.1.1.1), src/dudley/lex.cpp
-	(1.1.1.1), src/dudley/lex_proto.h (1.1.1.1), src/dudley/parse.cpp
-	(1.1.1.1), src/dudley/parse.h (1.1.1.1), src/dudley/parse_proto.h
-	(1.1.1.1), src/dudley/trn.cpp (1.1.1.1), src/dudley/trn_proto.h
-	(1.1.1.1), src/dudley/exe.e (1.1.1.1), src/dudley/extract.e
-	(1.1.1.1), src/dudley/hsh_proto.h (1.1.1.1), src/extlib/ib_udf.c
-	(1.1.1.1), src/extlib/ib_udf.h (1.1.1.1), src/extlib/ib_udf.sql
-	(1.1.1.1), src/extlib/ib_util.c (1.1.1.1), src/extlib/ib_util.h
-	(1.1.1.1), src/extlib/ib_util.pas (1.1.1.1),
-	src/extlib/makefile.mak (1.1.1.1), src/include/fb_blk.h (1.1.1.1),
-	src/include/fb_macros.h (1.1.1.1), src/include/fb_types.h
-	(1.1.1.1), src/include/iberror.h (1.1.1.1), src/include/jrd/gds.h
-	(1.1.1.1), src/intl/ancyrr.h (1.1.1.1), src/intl/anczech.h
-	(1.1.1.1), src/intl/angreek1.h (1.1.1.1), src/intl/anhundc.h
-	(1.1.1.1), src/intl/anpolish.h (1.1.1.1), src/intl/ansii850.h
-	(1.1.1.1), src/intl/ansiintl.h (1.1.1.1), src/intl/ansinor4.h
-	(1.1.1.1), src/intl/ansislov.h (1.1.1.1), src/intl/ansispan.h
-	(1.1.1.1), src/intl/ansiswfn.h (1.1.1.1), src/intl/anturk.h
-	(1.1.1.1), src/intl/ascii.h (1.1.1.1), src/intl/ascii2.h (1.1.1.1),
-	src/intl/bllt1ca0.h (1.1.1.1), src/intl/bllt1da0.h (1.1.1.1),
-	src/intl/bllt1de0.h (1.1.1.1), src/intl/bllt1es0.h (1.1.1.1),
-	src/intl/bllt1fi0.h (1.1.1.1), src/intl/bllt1fr0.h (1.1.1.1),
-	src/intl/bllt1is0.h (1.1.1.1), src/intl/bllt1it0.h (1.1.1.1),
-	src/intl/bllt1nl0.h (1.1.1.1), src/intl/bllt1no0.h (1.1.1.1),
-	src/intl/bllt1pt0.h (1.1.1.1), src/intl/bllt1sv0.h (1.1.1.1),
-	src/intl/bllt1uk0.h (1.1.1.1), src/intl/bllt1us0.h (1.1.1.1),
-	src/intl/blnxtde0.h (1.1.1.1), src/intl/blnxtes0.h (1.1.1.1),
-	src/intl/blnxtfr0.h (1.1.1.1), src/intl/blnxtit0.h (1.1.1.1),
-	src/intl/blnxtus0.h (1.1.1.1), src/intl/countries.h (1.1.1.1),
-	src/intl/country_codes.h (1.1.1.1), src/intl/csjis2_p.h (1.1.1.1),
-	src/intl/cs_437.h (1.1.1.1), src/intl/cs_850.h (1.1.1.1),
-	src/intl/cs_852.h (1.1.1.1), src/intl/cs_857.h (1.1.1.1),
-	src/intl/cs_860.h (1.1.1.1), src/intl/cs_861.h (1.1.1.1),
-	src/intl/cs_863.h (1.1.1.1), src/intl/cs_865.h (1.1.1.1),
-	src/intl/cs_big5.c (1.1.1.1), src/intl/cs_cyrl.h (1.1.1.1),
-	src/intl/cs_gb2312.c (1.1.1.1), src/intl/cs_jis_20208_1990.c
-	(1.1.1.1), src/intl/cs_ksc.c (1.1.1.1), src/intl/cs_latin1.h
-	(1.1.1.1), src/intl/cs_narrow.c (1.1.1.1), src/intl/cs_next.h
-	(1.1.1.1), src/intl/cs_sjis.h (1.1.1.1), src/intl/cs_unicode.c
-	(1.1.1.1), src/intl/cs_utffss.c (1.1.1.1), src/intl/cs_w1250.h
-	(1.1.1.1), src/intl/cs_w1251.h (1.1.1.1), src/intl/cs_w1252.h
-	(1.1.1.1), src/intl/cs_w1253.h (1.1.1.1), src/intl/cs_w1254.h
-	(1.1.1.1), src/intl/cv_big5.c (1.1.1.1), src/intl/cv_gb2312.c
-	(1.1.1.1), src/intl/cv_jis.c (1.1.1.1), src/intl/cv_ksc.c
-	(1.1.1.1), src/intl/cv_narrow.c (1.1.1.1), src/intl/cyrr.h
-	(1.1.1.1), src/intl/czech.h (1.1.1.1), src/intl/db437de0.h
-	(1.1.1.1), src/intl/db437es1.h (1.1.1.1), src/intl/db437fi0.h
-	(1.1.1.1), src/intl/db437fr0.h (1.1.1.1), src/intl/db437it0.h
-	(1.1.1.1), src/intl/db437nl0.h (1.1.1.1), src/intl/db437sv0.h
-	(1.1.1.1), src/intl/db437uk0.h (1.1.1.1), src/intl/db437us0.h
-	(1.1.1.1), src/intl/db850cf0.h (1.1.1.1), src/intl/db850de0.h
-	(1.1.1.1), src/intl/db850es0.h (1.1.1.1), src/intl/db850fr0.h
-	(1.1.1.1), src/intl/db850it1.h (1.1.1.1), src/intl/db850nl0.h
-	(1.1.1.1), src/intl/db850pt0.h (1.1.1.1), src/intl/db850sv1.h
-	(1.1.1.1), src/intl/db850uk0.h (1.1.1.1), src/intl/db850us0.h
-	(1.1.1.1), src/intl/db852cz0.h (1.1.1.1), src/intl/db852hdc.h
-	(1.1.1.1), src/intl/db852po0.h (1.1.1.1), src/intl/db852sl0.h
-	(1.1.1.1), src/intl/db857tr0.h (1.1.1.1), src/intl/db860pt0.h
-	(1.1.1.1), src/intl/db863cf1.h (1.1.1.1), src/intl/db865da0.h
-	(1.1.1.1), src/intl/db865no0.h (1.1.1.1), src/intl/db866ru0.h
-	(1.1.1.1), src/intl/depends.mak (1.1.1.1), src/intl/dtest2.c
-	(1.1.1.1), src/intl/hun852dc.h (1.1.1.1), src/intl/iceland.h
-	(1.1.1.1), src/intl/intl.def (1.1.1.1), src/intl/intl.h (1.1.1.1),
-	src/intl/lc_ascii.c (1.1.1.1), src/intl/lc_big5.c (1.1.1.1),
-	src/intl/lc_dos.c (1.1.1.1), src/intl/lc_gb2312.c (1.1.1.1),
-	src/intl/lc_jis.c (1.1.1.1), src/intl/lc_ksc.c (1.1.1.1),
-	src/intl/lc_latin1.c (1.1.1.1), src/intl/lc_narrow.c (1.1.1.1),
-	src/intl/lc_unicode.c (1.1.1.1), src/intl/ld.h (1.1.1.1),
-	src/intl/ldcommon.h (1.1.1.1), src/intl/mac_437.h (1.1.1.1),
-	src/intl/mac_865.h (1.1.1.1), src/intl/mac_lat1.h (1.1.1.1),
-	src/intl/make.maps (1.1.1.1), src/intl/makefile.mak (1.1.1.1),
-	src/intl/mapcompare.cpp (1.1.1.1), src/intl/mapdump.c (1.1.1.1),
-	src/intl/mapgen4.c (1.1.1.1), src/intl/maptest.cpp (1.1.1.1),
-	src/intl/maptest2.c (1.1.1.1), src/intl/nordan40.h (1.1.1.1),
-	src/intl/polish.h (1.1.1.1), src/intl/slovene.h (1.1.1.1),
-	src/intl/swedfin.h (1.1.1.1), src/intl/turk.h (1.1.1.1),
-	src/intl/tx437_865.h (1.1.1.1), src/intl/tx437_lat1.h (1.1.1.1),
-	src/intl/tx865_lat1.h (1.1.1.1), src/intl/undef.h (1.1.1.1),
-	src/intl/cs_big5.h (1.1.1.1), src/intl/cs_gb2312.h (1.1.1.1),
-	src/intl/cs_jis_0208_1990.h (1.1.1.1), src/intl/charsets.h
-	(1.1.1.1), src/intl/cs_jis.c (1.1.1.1), src/intl/cs_ksc5601.h
-	(1.1.1.1), src/intl/dtest.c (1.1.1.1), src/intl/langdrv.h
-	(1.1.1.1), src/intl/ld.c (1.1.1.1), src/intl/ld2.c (1.1.1.1),
-	src/intl/ld_proto.h (1.1.1.1), src/ipserver/alli.cpp (1.1.1.1),
-	src/ipserver/alli_proto.h (1.1.1.1), src/ipserver/blk.h (1.1.1.1),
-	src/ipserver/ipapi_proto.h (1.1.1.1), src/ipserver/ipc.h (1.1.1.1),
-	src/ipserver/ipcevent.cpp (1.1.1.1), src/ipserver/ipcli_proto.h
-	(1.1.1.1), src/ipserver/ipclient.cpp (1.1.1.1),
-	src/ipserver/ipevt_proto.h (1.1.1.1), src/ipserver/ips.h (1.1.1.1),
-	src/ipserver/ipsrv_proto.h (1.1.1.1), src/ipserver/ipserver.cpp
-	(1.1.1.1), src/iscguard/cntl_guard.cpp (1.1.1.1),
-	src/iscguard/cntlg_proto.h (1.1.1.1), src/iscguard/iscguard.cpp
-	(1.1.1.1), src/iscguard/iscguard.h (1.1.1.1),
-	src/iscguard/iscguard.rc (1.1.1.1), src/iscguard/iscguard.rh
-	(1.1.1.1), src/iscguard/iscguard_utils.cpp (1.1.1.1),
-	src/iscguard/salrt23i.ico (1.1.1.1), src/iscguard/sgard23i.ico
-	(1.1.1.1), src/isql/depends.mak (1.1.1.1), src/isql/extra_proto.h
-	(1.1.1.1), src/isql/extract.e (1.1.1.1), src/isql/isql.def
-	(1.1.1.1), src/isql/isql.h (1.1.1.1), src/isql/isql.rc (1.1.1.1),
-	src/isql/isql_proto.h (1.1.1.1), src/isql/isql_res.h (1.1.1.1),
-	src/isql/isql_win.cpp (1.1.1.1), src/isql/isql_win.h (1.1.1.1),
-	src/isql/isqlw_proto.h (1.1.1.1), src/isql/show_proto.h (1.1.1.1),
-	src/isql/isql.e (1.1.1.1), src/isql/show.e (1.1.1.1),
-	src/burp/backu_proto.h (1.1.1.1), src/burp/backup.e (1.1.1.1),
-	src/burp/burp.def (1.1.1.1), src/burp/burp.h (1.1.1.1),
-	src/burp/burp32.def (1.1.1.1), src/burp/burp_proto.h (1.1.1.1),
-	src/burp/burpswi.h (1.1.1.1), src/burp/canon_proto.h (1.1.1.1),
-	src/burp/depends.mak (1.1.1.1), src/burp/makefile.mak (1.1.1.1),
-	src/burp/misc.cpp (1.1.1.1), src/burp/misc_proto.h (1.1.1.1),
-	src/burp/mvol.cpp (1.1.1.1), src/burp/mvol_proto.h (1.1.1.1),
-	src/burp/restore.e (1.1.1.1), src/burp/spit.cpp (1.1.1.1),
-	src/burp/spit.h (1.1.1.1), src/burp/burp.cpp (1.1.1.1),
-	src/burp/canonical.cpp (1.1.1.1), src/burp/resto_proto.h (1.1.1.1),
-	src/jrd/acl.h (1.1.1.1), src/jrd/aif.cpp (1.1.1.1), src/jrd/ail.cpp
-	(1.1.1.1), src/jrd/ail.h (1.1.1.1), src/jrd/align.cpp (1.1.1.1),
-	src/jrd/align.h (1.1.1.1), src/jrd/all.h (1.1.1.1), src/jrd/ansi.h
-	(1.1.1.1), src/jrd/blr.h (1.1.1.1), src/jrd/fields.h (1.1.1.1),
-	src/jrd/old.cpp (1.1.1.1), src/jrd/perf.h (1.1.1.1),
-	src/jrd/svc.cpp (1.1.1.1), src/jrd/svc.h (1.1.1.1), src/jrd/utl.cpp
-	(1.1.1.1), src/jrd/atom.h (1.1.1.1), src/jrd/blb.h (1.1.1.1),
-	src/jrd/blk.h (1.1.1.1), src/jrd/blp.h (1.1.1.1),
-	src/jrd/blrtable.cpp (1.1.1.1), src/jrd/bookmark.cpp (1.1.1.1),
-	src/jrd/bookmark.h (1.1.1.1), src/jrd/btr.h (1.1.1.1),
-	src/jrd/dsc.h (1.1.1.1), src/jrd/err.cpp (1.1.1.1), src/jrd/ext.cpp
-	(1.1.1.1), src/jrd/ini.e (1.1.1.1), src/jrd/jrd.h (1.1.1.1),
-	src/jrd/math.h (1.1.1.1), src/jrd/perf_proto.h (1.1.1.1),
-	src/jrd/scl.h (1.1.1.1), src/jrd/why.c (1.1.1.1), src/jrd/winnt.cpp
-	(1.1.1.1), src/jrd/all_proto.h (1.1.1.1), src/jrd/blf_proto.h
-	(1.1.1.1), src/jrd/blrtable.h (1.1.1.1), src/jrd/builtin.cpp
-	(1.1.1.1), src/jrd/cch.h (1.1.1.1), src/jrd/cdefs.h (1.1.1.1),
-	src/jrd/codes.h (1.1.1.1), src/jrd/codetext.h (1.1.1.1),
-	src/jrd/dbt.cpp (1.1.1.1), src/jrd/dyn_del.e (1.1.1.1),
-	src/jrd/dyn_mod.e (1.1.1.1), src/jrd/fil.h (1.1.1.1), src/jrd/fun.e
-	(1.1.1.1), src/jrd/pwd.h (1.1.1.1), src/jrd/shrinit.cpp (1.1.1.1),
-	src/jrd/trig.h (1.1.1.1), src/jrd/aif.h (1.1.1.1), src/jrd/btr.cpp
-	(1.1.1.1), src/jrd/btr_proto.h (1.1.1.1), src/jrd/common.h
-	(1.1.1.1), src/jrd/constants.h (1.1.1.1), src/jrd/cvt.cpp
-	(1.1.1.1), src/jrd/cvt2.cpp (1.1.1.1), src/jrd/cvt2_proto.h
-	(1.1.1.1), src/jrd/cvt_proto.h (1.1.1.1), src/jrd/dbg.h (1.1.1.1),
-	src/jrd/dbg_proto.h (1.1.1.1), src/jrd/dfloat_stub.cpp (1.1.1.1),
-	src/jrd/dflt.gdl (1.1.1.1), src/jrd/dflt.h (1.1.1.1),
-	src/jrd/divorce.h (1.1.1.1), src/jrd/ini.h (1.1.1.1), src/jrd/isc.h
-	(1.1.1.1), src/jrd/sqz.cpp (1.1.1.1), src/jrd/dfw_proto.h
-	(1.1.1.1), src/jrd/dls.cpp (1.1.1.1), src/jrd/dls_proto.h
-	(1.1.1.1), src/jrd/dmp_proto.h (1.1.1.1), src/jrd/dpm_proto.h
-	(1.1.1.1), src/jrd/drq.h (1.1.1.1), src/jrd/dsc.cpp (1.1.1.1),
-	src/jrd/dyn_util.e (1.1.1.1), src/jrd/event.h (1.1.1.1),
-	src/jrd/evl.cpp (1.1.1.1), src/jrd/gdsold.h (1.1.1.1),
-	src/jrd/inf.cpp (1.1.1.1), src/jrd/intlobj.h (1.1.1.1),
-	src/jrd/pwd.cpp (1.1.1.1), src/jrd/tra.cpp (1.1.1.1),
-	src/jrd/windows.cpp (1.1.1.1), src/jrd/cch.cpp (1.1.1.1),
-	src/jrd/dbg.cpp (1.1.1.1), src/jrd/dyn_def.sed (1.1.1.1),
-	src/jrd/dyn_df_proto.h (1.1.1.1), src/jrd/dyn_dl_proto.h (1.1.1.1),
-	src/jrd/dyn_md_proto.h (1.1.1.1), src/jrd/isc_ipc.cpp (1.1.1.1),
-	src/jrd/pag.cpp (1.1.1.1), src/jrd/quad.cpp (1.1.1.1),
-	src/jrd/tra.h (1.1.1.1), src/jrd/val.h (1.1.1.1), src/jrd/dpm.e
-	(1.1.1.1), src/jrd/dsc_proto.h (1.1.1.1), src/jrd/dyn_ut_proto.h
-	(1.1.1.1), src/jrd/enc.cpp (1.1.1.1), src/jrd/entry.h (1.1.1.1),
-	src/jrd/ibsetjmp.h (1.1.1.1), src/jrd/isc.cpp (1.1.1.1),
-	src/jrd/jrd.cpp (1.1.1.1), src/jrd/shdef.h (1.1.1.1),
-	src/jrd/sort.h (1.1.1.1), src/jrd/codes.e (1.1.1.1),
-	src/jrd/dllshell.cpp (1.1.1.1), src/jrd/dyn.e (1.1.1.1),
-	src/jrd/dyn.h (1.1.1.1), src/jrd/err_proto.h (1.1.1.1),
-	src/jrd/flu.cpp (1.1.1.1), src/jrd/grant.e (1.1.1.1),
-	src/jrd/sun_ftn.cpp (1.1.1.1), src/jrd/vio.cpp (1.1.1.1),
-	src/jrd/dfw.e (1.1.1.1), src/jrd/dmp.cpp (1.1.1.1),
-	src/jrd/event_proto.h (1.1.1.1), src/jrd/evl_like.cpp (1.1.1.1),
-	src/jrd/evl_proto.h (1.1.1.1), src/jrd/exe.h (1.1.1.1),
-	src/jrd/exe_proto.h (1.1.1.1), src/jrd/ext.h (1.1.1.1),
-	src/jrd/extvms.cpp (1.1.1.1), src/jrd/filters.cpp (1.1.1.1),
-	src/jrd/par.cpp (1.1.1.1), src/jrd/scl.e (1.1.1.1), src/jrd/cmp.cpp
-	(1.1.1.1), src/jrd/envelope.e (1.1.1.1), src/jrd/filte_proto.h
-	(1.1.1.1), src/jrd/flags.h (1.1.1.1), src/jrd/flu.h (1.1.1.1),
-	src/jrd/flu_proto.h (1.1.1.1), src/jrd/functions.cpp (1.1.1.1),
-	src/jrd/gds.bas (1.1.1.1), src/jrd/gds.def (1.1.1.1),
-	src/jrd/gds.hxx (1.1.1.1), src/jrd/intl.cpp (1.1.1.1),
-	src/jrd/inuse.cpp (1.1.1.1), src/jrd/lck_proto.h (1.1.1.1),
-	src/jrd/ods.h (1.1.1.1), src/jrd/req.h (1.1.1.1), src/jrd/gds.pas
-	(1.1.1.1), src/jrd/gds.pli (1.1.1.1), src/jrd/gds.vpas (1.1.1.1),
-	src/jrd/gds5entry.mar (1.1.1.1), src/jrd/gds_aix.f (1.1.1.1),
-	src/jrd/gds_apollo.f (1.1.1.1), src/jrd/gds_h3.f (1.1.1.1),
-	src/jrd/gdsentry.mar (1.1.1.1), src/jrd/ibase.h (1.1.1.1),
-	src/jrd/iberr.h (1.1.1.1), src/jrd/inuse_proto.h (1.1.1.1),
-	src/jrd/file_params.h (1.1.1.1), src/jrd/gds_hp.f (1.1.1.1),
-	src/jrd/gds_sun.f (1.1.1.1), src/jrd/gds_vms.f (1.1.1.1),
-	src/jrd/grammar.cpp (1.1.1.1), src/jrd/grammar.y (1.1.1.1),
-	src/jrd/rse.cpp (1.1.1.1), src/jrd/divorce.cpp (1.1.1.1),
-	src/jrd/exe.cpp (1.1.1.1), src/jrd/gds_proto.h (1.1.1.1),
-	src/jrd/grant.gdl (1.1.1.1), src/jrd/iberr.cpp (1.1.1.1),
-	src/jrd/iberr_proto.h (1.1.1.1), src/jrd/ibinitdll.cpp (1.1.1.1),
-	src/jrd/jrn.h (1.1.1.1), src/jrd/val.cpp (1.1.1.1),
-	src/jrd/blb_proto.h (1.1.1.1), src/jrd/doserr.h (1.1.1.1),
-	src/jrd/dyn_def.e (1.1.1.1), src/jrd/grant_proto.h (1.1.1.1),
-	src/jrd/ib_stdio.cpp (1.1.1.1), src/jrd/ib_stdio.h (1.1.1.1),
-	src/jrd/ids.h (1.1.1.1), src/jrd/ids.m (1.1.1.1), src/jrd/idx.cpp
-	(1.1.1.1), src/jrd/idx.h (1.1.1.1), src/jrd/idx_proto.h (1.1.1.1),
-	src/jrd/inf.h (1.1.1.1), src/jrd/inf_proto.h (1.1.1.1),
-	src/jrd/ini_proto.h (1.1.1.1), src/jrd/intl.h (1.1.1.1),
-	src/jrd/intlnames.h (1.1.1.1), src/jrd/irq.h (1.1.1.1),
-	src/jrd/isc_cray.cpp (1.1.1.1), src/jrd/isc_sync.cpp (1.1.1.1),
-	src/jrd/iscmsgs.msg (1.1.1.1), src/jrd/jrn.cpp (1.1.1.1),
-	src/jrd/log.cpp (1.1.1.1), src/jrd/mov.cpp (1.1.1.1),
-	src/jrd/intl_proto.h (1.1.1.1), src/jrd/isc_file.cpp (1.1.1.1),
-	src/jrd/iutls.def (1.1.1.1), src/jrd/lck.cpp (1.1.1.1),
-	src/jrd/license.h (1.1.1.1), src/jrd/met.e (1.1.1.1),
-	src/jrd/perf.cpp (1.1.1.1), src/jrd/sch.cpp (1.1.1.1),
-	src/jrd/thd.cpp (1.1.1.1), src/jrd/thd.h (1.1.1.1),
-	src/jrd/thd_win32.cpp (1.1.1.1), src/jrd/isc_win32.cpp (1.1.1.1),
-	src/jrd/jio.cpp (1.1.1.1), src/jrd/jlx.cpp (1.1.1.1),
-	src/jrd/jrd.def (1.1.1.1), src/jrd/opt.cpp (1.1.1.1),
-	src/jrd/event.cpp (1.1.1.1), src/jrd/everything.h (1.1.1.1),
-	src/jrd/gds.cpp (1.1.1.1), src/jrd/jrd_proto.h (1.1.1.1),
-	src/jrd/jrd_ver.h (1.1.1.1), src/jrd/jrd_ver.rc (1.1.1.1),
-	src/jrd/jrn_proto.h (1.1.1.1), src/jrd/kanji.cpp (1.1.1.1),
-	src/jrd/kanji.h (1.1.1.1), src/jrd/kanji_proto.h (1.1.1.1),
-	src/jrd/lan.cpp (1.1.1.1), src/jrd/lck.h (1.1.1.1),
-	src/jrd/lck_dummy.cpp (1.1.1.1), src/jrd/llio.h (1.1.1.1),
-	src/jrd/llio_proto.h (1.1.1.1), src/jrd/lls.h (1.1.1.1),
-	src/jrd/lnmdef.h (1.1.1.1), src/jrd/log.h (1.1.1.1),
-	src/jrd/log_proto.h (1.1.1.1), src/jrd/loiter.cpp (1.1.1.1),
-	src/jrd/loiter.h (1.1.1.1), src/jrd/makefile.mak (1.1.1.1),
-	src/jrd/map.cpp (1.1.1.1), src/jrd/map_proto.h (1.1.1.1),
-	src/jrd/math.cpp (1.1.1.1), src/jrd/mblr.cpp (1.1.1.1),
-	src/jrd/mblr.h (1.1.1.1), src/jrd/mblr_proto.h (1.1.1.1),
-	src/jrd/mem.cpp (1.1.1.1), src/jrd/memtest.cpp (1.1.1.1),
-	src/jrd/met.h (1.1.1.1), src/jrd/misc.cpp (1.1.1.1), src/jrd/misc.h
-	(1.1.1.1), src/jrd/misc_proto.h (1.1.1.1), src/jrd/mmov.mar
-	(1.1.1.1), src/jrd/pio.h (1.1.1.1), src/jrd/rng.cpp (1.1.1.1),
-	src/jrd/sdl.cpp (1.1.1.1), src/jrd/sort.cpp (1.1.1.1),
-	src/jrd/stats.e (1.1.1.1), src/jrd/all.cpp (1.1.1.1),
-	src/jrd/alt.cpp (1.1.1.1), src/jrd/blb.cpp (1.1.1.1),
-	src/jrd/met_proto.h (1.1.1.1), src/jrd/msg.h (1.1.1.1),
-	src/jrd/msg_encode.h (1.1.1.1), src/jrd/msg_facs.h (1.1.1.1),
-	src/jrd/msgs.h (1.1.1.1), src/jrd/names.h (1.1.1.1),
-	src/jrd/nav.cpp (1.1.1.1), src/jrd/nav_proto.h (1.1.1.1),
-	src/jrd/netware.cpp (1.1.1.1), src/jrd/nlm_thd.h (1.1.1.1),
-	src/jrd/nod.h (1.1.1.1), src/jrd/nodebug.cpp (1.1.1.1),
-	src/jrd/obj.h (1.1.1.1), src/jrd/ods10.gdl (1.1.1.1),
-	src/jrd/ods72.gdl (1.1.1.1), src/jrd/pcmet.e (1.1.1.1),
-	src/jrd/arg.h (1.1.1.1), src/jrd/cch_proto.h (1.1.1.1),
-	src/jrd/cmp_proto.h (1.1.1.1), src/jrd/dyn_proto.h (1.1.1.1),
-	src/jrd/isc_f_proto.h (1.1.1.1), src/jrd/isc_i_proto.h (1.1.1.1),
-	src/jrd/isc_proto.h (1.1.1.1), src/jrd/isc_s_proto.h (1.1.1.1),
-	src/jrd/isc_signal.h (1.1.1.1), src/jrd/llio.cpp (1.1.1.1),
-	src/jrd/mov_proto.h (1.1.1.1), src/jrd/ods80.gdl (1.1.1.1),
-	src/jrd/ods80dif.gdl (1.1.1.1), src/jrd/ods81.gdl (1.1.1.1),
-	src/jrd/ods91.gdl (1.1.1.1), src/jrd/old.h (1.1.1.1),
-	src/jrd/old_proto.h (1.1.1.1), src/jrd/opt_proto.h (1.1.1.1),
-	src/jrd/os2.cpp (1.1.1.1), src/jrd/pag.h (1.1.1.1),
-	src/jrd/pag_proto.h (1.1.1.1), src/jrd/par_proto.h (1.1.1.1),
-	src/jrd/pcmet_proto.h (1.1.1.1), src/jrd/pcsleep.cpp (1.1.1.1),
-	src/jrd/perf.pas (1.1.1.1), src/jrd/pio_proto.h (1.1.1.1),
-	src/jrd/pragma.h (1.1.1.1), src/jrd/print.cpp (1.1.1.1),
-	src/jrd/procs2.gdl (1.1.1.1), src/jrd/prv_m_bypass.h (1.1.1.1),
-	src/jrd/pwd_proto.h (1.1.1.1), src/jrd/qatest.cpp (1.1.1.1),
-	src/jrd/quad.h (1.1.1.1), src/jrd/quad_proto.h (1.1.1.1),
-	src/jrd/que.h (1.1.1.1), src/jrd/rdb.cpp (1.1.1.1), src/jrd/rdb.h
-	(1.1.1.1), src/jrd/rdb_codes.h (1.1.1.1), src/jrd/rdbcodes.h
-	(1.1.1.1), src/jrd/rdbcodes.mar (1.1.1.1), src/jrd/rdbgentry.mar
-	(1.1.1.1), src/jrd/rdbgpas.cpp (1.1.1.1), src/jrd/rdbint.cpp
-	(1.1.1.1), src/jrd/rec.cpp (1.1.1.1), src/jrd/rec_proto.h
-	(1.1.1.1), src/jrd/relations.h (1.1.1.1), src/jrd/rlck_proto.h
-	(1.1.1.1), src/jrd/rng.h (1.1.1.1), src/jrd/rng_proto.h (1.1.1.1),
-	src/jrd/rse.h (1.1.1.1), src/jrd/rse_proto.h (1.1.1.1),
-	src/jrd/sbm.cpp (1.1.1.1), src/jrd/sbm.h (1.1.1.1),
-	src/jrd/sbm_proto.h (1.1.1.1), src/jrd/scl_proto.h (1.1.1.1),
-	src/jrd/scroll_cursors.h (1.1.1.1), src/jrd/sdl.h (1.1.1.1),
-	src/jrd/sdl_proto.h (1.1.1.1), src/jrd/sdw.cpp (1.1.1.1),
-	src/jrd/sdw.h (1.1.1.1), src/jrd/sdw_proto.h (1.1.1.1),
-	src/jrd/shrfinit.cpp (1.1.1.1), src/jrd/shut.cpp (1.1.1.1),
-	src/jrd/shut_proto.h (1.1.1.1), src/jrd/sort_proto.h (1.1.1.1),
-	src/jrd/sql_code.h (1.1.1.1), src/jrd/sqz.h (1.1.1.1),
-	src/jrd/sqz_proto.h (1.1.1.1), src/jrd/stored_proc.gdl (1.1.1.1),
-	src/jrd/stubs.cpp (1.1.1.1), src/jrd/svc_undoc.h (1.1.1.1),
-	src/jrd/time.h (1.1.1.1), src/jrd/why_proto.h (1.1.1.1),
-	src/jrd/blob_filter.e (1.1.1.1), src/jrd/blob_filter.h (1.1.1.1),
-	src/jrd/enc_proto.h (1.1.1.1), src/jrd/ext_proto.h (1.1.1.1),
-	src/jrd/fun_proto.h (1.1.1.1), src/jrd/gdsassert.h (1.1.1.1),
-	src/jrd/isc_sync_win32.cpp (1.1.1.1), src/jrd/rlck.cpp (1.1.1.1),
-	src/jrd/sch_proto.h (1.1.1.1), src/jrd/svc_proto.h (1.1.1.1),
-	src/jrd/syidef.h (1.1.1.1), src/jrd/sym.cpp (1.1.1.1),
-	src/jrd/sym_proto.h (1.1.1.1), src/jrd/termtype.h (1.1.1.1),
-	src/jrd/thd_proto.h (1.1.1.1), src/jrd/thin.asm (1.1.1.1),
-	src/jrd/thread.mar (1.1.1.1), src/jrd/tpc.cpp (1.1.1.1),
-	src/jrd/tpc.h (1.1.1.1), src/jrd/tpc_proto.h (1.1.1.1),
-	src/jrd/tra_proto.h (1.1.1.1), src/jrd/types.h (1.1.1.1),
-	src/jrd/unix.cpp (1.1.1.1), src/jrd/utl_proto.h (1.1.1.1),
-	src/jrd/utls.def (1.1.1.1), src/jrd/v2_triggers.gdl (1.1.1.1),
-	src/jrd/val_proto.h (1.1.1.1), src/jrd/version.rc (1.1.1.1),
-	src/jrd/version_95.rc (1.1.1.1), src/jrd/vio_debug.h (1.1.1.1),
-	src/jrd/vio_proto.h (1.1.1.1), src/jrd/vms.cpp (1.1.1.1),
-	src/jrd/vms.h (1.1.1.1), src/jrd/vms_command.cpp (1.1.1.1),
-	src/jrd/vmsevent.cpp (1.1.1.1), src/jrd/vmslo_proto.h (1.1.1.1),
-	src/jrd/vmslock.cpp (1.1.1.1), src/jrd/vmsthread.cpp (1.1.1.1),
-	src/jrd/winnt_dll.cpp (1.1.1.1), src/lock/config_params (1.1.1.1),
-	src/lock/depends.mak (1.1.1.1), src/lock/driver.cpp (1.1.1.1),
-	src/lock/fparamv3.h (1.1.1.1), src/lock/lock_header_mmap (1.1.1.1),
-	src/lock/lock_header_shmem (1.1.1.1), src/lock/lock_proto.h
-	(1.1.1.1), src/lock/lockv3s4.h (1.1.1.1), src/lock/manager.cpp
-	(1.1.1.1), src/lock/pls.cpp (1.1.1.1), src/lock/plserver.cpp
-	(1.1.1.1), src/lock/plserver.h (1.1.1.1), src/lock/printv3s4.cpp
-	(1.1.1.1), src/lock/prtv3_proto.h (1.1.1.1), src/lock/reset.cpp
-	(1.1.1.1), src/lock/ulimit.cpp (1.1.1.1), src/lock/lock.cpp
-	(1.1.1.1), src/lock/lock.h (1.1.1.1), src/lock/lockv3.h (1.1.1.1),
-	src/lock/print.cpp (1.1.1.1), src/lock/printv3.cpp (1.1.1.1),
-	src/misc/codes.h (1.1.1.1), src/misc/codetext.h (1.1.1.1),
-	src/misc/gds_codes.ftn (1.1.1.1), src/misc/gds_codes.pas (1.1.1.1),
-	src/misc/help.gbak (1.1.1.1), src/misc/metadata.gbak (1.1.1.1),
-	src/misc/msg_facs.h (1.1.1.1), src/misc/msgs.h (1.1.1.1),
-	src/misc/rdb_codes.h (1.1.1.1), src/misc/sql_code.h (1.1.1.1),
-	src/misc/status.cpp (1.1.1.1), src/misc/status.h (1.1.1.1),
-	src/msgs/build.def (1.1.1.1), src/msgs/change_msgs.e (1.1.1.1),
-	src/msgs/depends.mak (1.1.1.1), src/msgs/enter_msgs.e (1.1.1.1),
-	src/msgs/include.e (1.1.1.1), src/msgs/load.e (1.1.1.1),
-	src/msgs/makefile.mak (1.1.1.1), src/msgs/modify_msgs.e (1.1.1.1),
-	src/msgs/msg.gdl (1.1.1.1), src/msgs/build_file.e (1.1.1.1),
-	src/msgs/check_msgs.e (1.1.1.1), src/msgs/msg.gbak (1.1.1.1),
-	src/pipe/allp.cpp (1.1.1.1), src/pipe/allp_proto.h (1.1.1.1),
-	src/pipe/blk.h (1.1.1.1), src/pipe/foot.cpp (1.1.1.1),
-	src/pipe/head.cpp (1.1.1.1), src/pipe/head_proto.h (1.1.1.1),
-	src/pipe/pipe.h (1.1.1.1), src/pyxis/adm.cpp (1.1.1.1),
-	src/pyxis/all.h (1.1.1.1), src/pyxis/allp.cpp (1.1.1.1),
-	src/pyxis/altp.cpp (1.1.1.1), src/pyxis/attributes.h (1.1.1.1),
-	src/pyxis/blk.cpp (1.1.1.1), src/pyxis/blk.h (1.1.1.1),
-	src/pyxis/cdm.cpp (1.1.1.1), src/pyxis/curses_play.cpp (1.1.1.1),
-	src/pyxis/debug.cpp (1.1.1.1), src/pyxis/enumerations.h (1.1.1.1),
-	src/pyxis/everything.h (1.1.1.1), src/pyxis/field_edit.h (1.1.1.1),
-	src/pyxis/field_name.h (1.1.1.1), src/pyxis/file_name.h (1.1.1.1),
-	src/pyxis/form_ddl.h (1.1.1.1), src/pyxis/form_name.h (1.1.1.1),
-	src/pyxis/forms.gbk (1.1.1.1), src/pyxis/fred.e (1.1.1.1),
-	src/pyxis/keys.h (1.1.1.1), src/pyxis/menu.cpp (1.1.1.1),
-	src/pyxis/phase1.h (1.1.1.1), src/pyxis/phase2.cpp (1.1.1.1),
-	src/pyxis/phase2.h (1.1.1.1), src/pyxis/edit.cpp (1.1.1.1),
-	src/pyxis/edit.e (1.1.1.1), src/pyxis/phase3.cpp (1.1.1.1),
-	src/pyxis/pyxis.cpp (1.1.1.1), src/pyxis/pyxis.h (1.1.1.1),
-	src/pyxis/save.e (1.1.1.1), src/pyxis/scr.cpp (1.1.1.1),
-	src/pyxis/scr.h (1.1.1.1), src/pyxis/size_form.h (1.1.1.1),
-	src/pyxis/sun_ftn_pyxis.cpp (1.1.1.1), src/pyxis/vdm.cpp (1.1.1.1),
-	src/pyxis/vt100.cpp (1.1.1.1), src/qli/all.cpp (1.1.1.1),
-	src/qli/all_proto.h (1.1.1.1), src/qli/blk.h (1.1.1.1),
-	src/qli/comma_proto.h (1.1.1.1), src/qli/command.cpp (1.1.1.1),
-	src/qli/compi_proto.h (1.1.1.1), src/qli/compile.cpp (1.1.1.1),
-	src/qli/compile.h (1.1.1.1), src/qli/depends.mak (1.1.1.1),
-	src/qli/err.cpp (1.1.1.1), src/qli/err_proto.h (1.1.1.1),
-	src/qli/eval.cpp (1.1.1.1), src/qli/eval_proto.h (1.1.1.1),
-	src/qli/everything.h (1.1.1.1), src/qli/exe.h (1.1.1.1),
-	src/qli/exe_proto.h (1.1.1.1), src/qli/expan_proto.h (1.1.1.1),
-	src/qli/expand.cpp (1.1.1.1), src/qli/form.cpp (1.1.1.1),
-	src/qli/form.h (1.1.1.1), src/qli/form_proto.h (1.1.1.1),
-	src/qli/forma_proto.h (1.1.1.1), src/qli/format.cpp (1.1.1.1),
-	src/qli/format.h (1.1.1.1), src/qli/gener.cpp (1.1.1.1),
-	src/qli/gener_proto.h (1.1.1.1), src/qli/help_proto.h (1.1.1.1),
-	src/qli/hsh.cpp (1.1.1.1), src/qli/hsh_proto.h (1.1.1.1),
-	src/qli/lex_proto.h (1.1.1.1), src/qli/meta_proto.h (1.1.1.1),
-	src/qli/mov_proto.h (1.1.1.1), src/qli/noform.cpp (1.1.1.1),
-	src/qli/nounix.cpp (1.1.1.1), src/qli/parse.cpp (1.1.1.1),
-	src/qli/parse.h (1.1.1.1), src/qli/parse_proto.h (1.1.1.1),
-	src/qli/dtr.cpp (1.1.1.1), src/qli/dtr.h (1.1.1.1), src/qli/exe.cpp
-	(1.1.1.1), src/qli/help.e (1.1.1.1), src/qli/lex.cpp (1.1.1.1),
-	src/qli/mov.cpp (1.1.1.1), src/qli/picst_proto.h (1.1.1.1),
-	src/qli/picstr.cpp (1.1.1.1), src/qli/proc.e (1.1.1.1),
-	src/qli/proc_ddl.h (1.1.1.1), src/qli/proc_proto.h (1.1.1.1),
-	src/qli/procddl1.h (1.1.1.1), src/qli/procddl2.h (1.1.1.1),
-	src/qli/procddl3.h (1.1.1.1), src/qli/procddl4.h (1.1.1.1),
-	src/qli/repor_proto.h (1.1.1.1), src/qli/report.cpp (1.1.1.1),
-	src/qli/report.h (1.1.1.1), src/qli/reqs.h (1.1.1.1),
-	src/qli/show.e (1.1.1.1), src/qli/show_proto.h (1.1.1.1),
-	src/qli/symbols.h (1.1.1.1), src/qli/words.h (1.1.1.1),
-	src/qli/meta.e (1.1.1.1), src/remote/allr_proto.h (1.1.1.1),
-	src/remote/caution.ico (1.1.1.1), src/remote/chop.cpp (1.1.1.1),
-	src/remote/chop_proto.h (1.1.1.1), src/remote/chuser.cpp (1.1.1.1),
-	src/remote/cntl.cpp (1.1.1.1), src/remote/cntl_proto.h (1.1.1.1),
-	src/remote/dnet.cpp (1.1.1.1), src/remote/ipc.cpp (1.1.1.1),
-	src/remote/protocol.h (1.1.1.1), src/remote/server.cpp (1.1.1.1),
-	src/remote/types.h (1.1.1.1), src/remote/wnet.cpp (1.1.1.1),
-	src/remote/xdr.h (1.1.1.1), src/remote/allr.cpp (1.1.1.1),
-	src/remote/decne_proto.h (1.1.1.1), src/remote/decnet_server.cpp
-	(1.1.1.1), src/remote/depends.mak (1.1.1.1), src/remote/divorce.cpp
-	(1.1.1.1), src/remote/dllshell.cpp (1.1.1.1),
-	src/remote/dnet_proto.h (1.1.1.1), src/remote/dnet_server.cpp
-	(1.1.1.1), src/remote/faux.cpp (1.1.1.1), src/remote/faux.h
-	(1.1.1.1), src/remote/ibconfig.cpp (1.1.1.1), src/remote/ibconfig.h
-	(1.1.1.1), src/remote/ibconfig.rc (1.1.1.1), src/remote/ibsvrhlp.h
-	(1.1.1.1), src/remote/in.h (1.1.1.1), src/remote/inet.cpp
-	(1.1.1.1), src/remote/inet_proto.h (1.1.1.1),
-	src/remote/inetiodef.h (1.1.1.1), src/remote/ntoh.cpp (1.1.1.1),
-	src/remote/protocol.cpp (1.1.1.1), src/remote/remote.cpp (1.1.1.1),
-	src/remote/remote.h (1.1.1.1), src/remote/inet_server.cpp
-	(1.1.1.1), src/remote/inter_proto.h (1.1.1.1), src/remote/ipc.h
-	(1.1.1.1), src/remote/ipc_proto.h (1.1.1.1),
-	src/remote/ipc_server.cpp (1.1.1.1), src/remote/isc_tcpent.mar
-	(1.1.1.1), src/remote/jibdef.mar (1.1.1.1), src/remote/lanentry.h
-	(1.1.1.1), src/remote/makefile.mak (1.1.1.1), src/remote/merge.cpp
-	(1.1.1.1), src/remote/merge_proto.h (1.1.1.1),
-	src/remote/multivx.cpp (1.1.1.1), src/remote/netwcon.cpp (1.1.1.1),
-	src/remote/nlmtst.def (1.1.1.1), src/remote/nt_server.cpp
-	(1.1.1.1), src/remote/ntoh_proto.h (1.1.1.1), src/remote/nwserv.cpp
-	(1.1.1.1), src/remote/parse_proto.h (1.1.1.1),
-	src/remote/parser.cpp (1.1.1.1), src/remote/pcbdefv4.mar (1.1.1.1),
-	src/remote/pcbdefv5.mar (1.1.1.1), src/remote/property.cpp
-	(1.1.1.1), src/remote/property.rc (1.1.1.1), src/remote/property.rh
-	(1.1.1.1), src/remote/propty_proto.h (1.1.1.1),
-	src/remote/proto_proto.h (1.1.1.1), src/remote/remot_proto.h
-	(1.1.1.1), src/remote/remote.def (1.1.1.1), src/remote/remote_def.h
-	(1.1.1.1), src/remote/serve_proto.h (1.1.1.1),
-	src/remote/server.ico (1.1.1.1), src/remote/spxesr.cpp (1.1.1.1),
-	src/remote/spxne_proto.h (1.1.1.1), src/remote/spxnet.cpp
-	(1.1.1.1), src/remote/spxnet32.cpp (1.1.1.1),
-	src/remote/spxnet32_proto.h (1.1.1.1), src/remote/spxwi_proto.h
-	(1.1.1.1), src/remote/spxwin.h (1.1.1.1), src/remote/srvr_w32.cpp
-	(1.1.1.1), src/remote/tcptypes.h (1.1.1.1), src/remote/ucx.cpp
-	(1.1.1.1), src/remote/wfwnp.cpp (1.1.1.1), src/remote/wfwnp.h
-	(1.1.1.1), src/remote/wfwnp_proto.h (1.1.1.1), src/remote/xdr.cpp
-	(1.1.1.1), src/remote/xdr_proto.h (1.1.1.1), src/remote/xnet.cpp
-	(1.1.1.1), src/remote/decnet.cpp (1.1.1.1),
-	src/remote/interface.cpp (1.1.1.1), src/remote/mgr.cpp (1.1.1.1),
-	src/remote/window.aps (1.1.1.1), src/remote/window.cpp (1.1.1.1),
-	src/remote/window.h (1.1.1.1), src/remote/window.rc (1.1.1.1),
-	src/remote/window.rh (1.1.1.1), src/remote/window_proto.h
-	(1.1.1.1), src/remote/winerr.h (1.1.1.1), src/remote/winvx.cpp
-	(1.1.1.1), src/remote/wnet_proto.h (1.1.1.1), src/remote/xnet.h
-	(1.1.1.1), src/remote/xnet_proto.h (1.1.1.1), src/remote/zap.mar
-	(1.1.1.1), src/remote/neterr.h (1.1.1.1), src/remote/spxwin.cpp
-	(1.1.1.1), src/remote/winmain.cpp (1.1.1.1),
-	src/utilities/cache.cpp (1.1.1.1), src/utilities/cmd_util.cpp
-	(1.1.1.1), src/utilities/cmd_util_proto.h (1.1.1.1),
-	src/utilities/dba.e (1.1.1.1), src/utilities/dbaswi.h (1.1.1.1),
-	src/utilities/drop.cpp (1.1.1.1), src/utilities/dropv3.cpp
-	(1.1.1.1), src/utilities/drpv3_proto.h (1.1.1.1),
-	src/utilities/gsec.cpp (1.1.1.1), src/utilities/gsecswi.h
-	(1.1.1.1), src/utilities/guard.cpp (1.1.1.1),
-	src/utilities/ibmgr.cpp (1.1.1.1), src/utilities/ibmgrswi.h
-	(1.1.1.1), src/utilities/install_nt.h (1.1.1.1),
-	src/utilities/install_reg.cpp (1.1.1.1),
-	src/utilities/install_svc.cpp (1.1.1.1), src/utilities/isc.gdl
-	(1.1.1.1), src/utilities/isc4.gdl (1.1.1.1), src/utilities/isc4.sql
-	(1.1.1.1), src/utilities/ppg.cpp (1.1.1.1),
-	src/utilities/ppg_proto.h (1.1.1.1), src/utilities/print_pool.cpp
-	(1.1.1.1), src/utilities/rebui_proto.h (1.1.1.1),
-	src/utilities/rebuild.cpp (1.1.1.1), src/utilities/rebuild.gdl
-	(1.1.1.1), src/utilities/rebuild.h (1.1.1.1),
-	src/utilities/regis_proto.h (1.1.1.1), src/utilities/registry.cpp
-	(1.1.1.1), src/utilities/relay.cpp (1.1.1.1), src/utilities/rmet.e
-	(1.1.1.1), src/utilities/rmet_proto.h (1.1.1.1),
-	src/utilities/rstor_proto.h (1.1.1.1), src/utilities/rstore.e
-	(1.1.1.1), src/utilities/run_service.cpp (1.1.1.1),
-	src/utilities/sbc_print.cpp (1.1.1.1),
-	src/utilities/scrty_apollo.gdl (1.1.1.1),
-	src/utilities/scrty_unix.gdl (1.1.1.1), src/utilities/scrty_vms.gdl
-	(1.1.1.1), src/utilities/scrty_xl.gdl (1.1.1.1),
-	src/utilities/secur_proto.h (1.1.1.1), src/utilities/security.e
-	(1.1.1.1), src/utilities/servi_proto.h (1.1.1.1),
-	src/utilities/services.cpp (1.1.1.1), src/utilities/srvrmgr.cpp
-	(1.1.1.1), src/utilities/srvrmgr_proto.h (1.1.1.1),
-	src/utilities/util.cpp (1.1.1.1), src/utilities/util_proto.h
-	(1.1.1.1), src/utilities/v2_dmp.cpp (1.1.1.1),
-	src/utilities/analyse.cpp (1.1.1.1), src/utilities/dba_full.e
-	(1.1.1.1), src/utilities/gsec.h (1.1.1.1), src/utilities/ibmgr.h
-	(1.1.1.1), src/wal/driver.cpp (1.1.1.1), src/wal/wal.cpp (1.1.1.1),
-	src/wal/wal.h (1.1.1.1), src/wal/wal_prnt.cpp (1.1.1.1),
-	src/wal/wal_proto.h (1.1.1.1), src/wal/walc.cpp (1.1.1.1),
-	src/wal/walc_proto.h (1.1.1.1), src/wal/walf.cpp (1.1.1.1),
-	src/wal/walf_proto.h (1.1.1.1), src/wal/walr.cpp (1.1.1.1),
-	src/wal/walr_proto.h (1.1.1.1), src/wal/walw.cpp (1.1.1.1),
-	src/wal/walw_main.cpp (1.1.1.1), src/wal/walw_proto.h (1.1.1.1),
-	src/wal/wstat_proto.h (1.1.1.1), src/wal/wstatus.cpp (1.1.1.1):
-	
-	First steps towards a C++ conversion.
 
