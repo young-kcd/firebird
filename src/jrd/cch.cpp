@@ -452,7 +452,7 @@ if (dbb->dbb_use_count)
 
 /* If we are supposed to be exclusive, stay exclusive */
 
-	if (dbb->dbb_flags & DBB_exclusive) {
+	if ((dbb->dbb_flags & DBB_exclusive) || (dbb->dbb_ast_flags & DBB_shutdown_single)) {
 		RESTORE_THREAD_DATA;
 		return 0;
 	}
@@ -787,7 +787,7 @@ PAG CCH_fetch(TDBB tdbb,
 			  WIN* window,
 			  USHORT lock_type,
 			  SSHORT page_type,
-			  SHORT checksum, SSHORT latch_wait, bool read_shadow)
+			  SSHORT checksum, SSHORT latch_wait, bool read_shadow)
 {
 /**************************************
  *
@@ -2263,7 +2263,7 @@ void CCH_release_exclusive(TDBB tdbb)
  *	Release exclusive access to database.
  *
  **************************************/
-	SET_TDBB(tdbb);
+	SET_TDBB(tdbb);	
 	DBB dbb = tdbb->tdbb_database;
 	dbb->dbb_flags &= ~DBB_exclusive;
 

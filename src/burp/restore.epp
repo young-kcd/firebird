@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.68 2004-02-24 05:34:26 robocop Exp $
+$Id: restore.epp,v 1.69 2004-02-25 01:50:12 skidder Exp $
 */
 
 #include "firebird.h"
@@ -1002,10 +1002,11 @@ void create_database (const TEXT* file_name)
 	else
 		*d++ = (UCHAR) SQL_DIALECT_V5;
 
-	// start database up shut down 
+	// start database up shut down, 
+	// use single-user mode to avoid conflicts during restore process
 	*d++ = (UCHAR) isc_dpb_shutdown;
-	*d++ = 1;
-	*d++ = (UCHAR) isc_dpb_shut_attachment;
+	*d++ = 1;	
+	*d++ = (UCHAR) isc_dpb_shut_attachment | isc_dpb_shut_single;
 	*d++ = (UCHAR) isc_dpb_shutdown_delay;
 	*d++ = 2;
 	*d++ = 0;

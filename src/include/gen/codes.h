@@ -557,6 +557,7 @@ const SLONG gds_conf_access_denied               = 335544831L;
 const SLONG gds_wrong_backup_state               = 335544832L;
 const SLONG gds_wal_backup_err                   = 335544833L;
 const SLONG gds_invalid_cursor_state             = 335544834L;
+const SLONG gds_bad_shutdown_mode                = 335544835L;
 const SLONG gds_gfix_db_name                     = 335740929L;
 const SLONG gds_gfix_invalid_sw                  = 335740930L;
 const SLONG gds_gfix_incmp_sw                    = 335740932L;
@@ -759,7 +760,7 @@ const SLONG gds_gstat_unexpected_eof             = 336920580L;
 const SLONG gds_gstat_open_err                   = 336920605L;
 const SLONG gds_gstat_read_err                   = 336920606L;
 const SLONG gds_gstat_sysmemex                   = 336920607L;
-const SLONG gds_err_max                          = 716L;
+const SLONG gds_err_max                          = 717L;
 
 #else /* c definitions */
 
@@ -1297,6 +1298,7 @@ const SLONG gds_err_max                          = 716L;
 #define gds__wrong_backup_state               335544832L
 #define gds__wal_backup_err                   335544833L
 #define gds__invalid_cursor_state             335544834L
+#define gds__bad_shutdown_mode                335544835L
 #define gds__gfix_db_name                     335740929L
 #define gds__gfix_invalid_sw                  335740930L
 #define gds__gfix_incmp_sw                    335740932L
@@ -1499,7 +1501,7 @@ const SLONG gds_err_max                          = 716L;
 #define gds__gstat_open_err                   336920605L
 #define gds__gstat_read_err                   336920606L
 #define gds__gstat_sysmemex                   336920607L
-#define gds_err_max                          716
+#define gds_err_max                          717
 
 #endif
 

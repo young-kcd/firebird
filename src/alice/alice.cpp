@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.50 2004-02-20 06:42:27 robocop Exp $
+//	$Id: alice.cpp,v 1.51 2004-02-25 01:50:10 skidder Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -344,6 +344,28 @@ int common_main(int			argc,
 			break;
 		}
 		switches |= table->in_sw_value;
+
+		if ((table->in_sw_value & (sw_shut | sw_online)) && (argc > 1)) {
+			ALICE_down_case(*argv, string, sizeof(string));
+			bool found = false;
+			if ((found = (strcmp(string, "normal") == 0)))
+				tdgbl->ALICE_data.ua_shutdown_mode = SHUT_NORMAL;
+			else
+			if ((found = (strcmp(string, "multi") == 0)))
+				tdgbl->ALICE_data.ua_shutdown_mode = SHUT_MULTI;
+			else
+			if ((found = (strcmp(string, "single") == 0)))
+				tdgbl->ALICE_data.ua_shutdown_mode = SHUT_SINGLE;
+			else
+			if ((found = (strcmp(string, "full") == 0)))
+				tdgbl->ALICE_data.ua_shutdown_mode = SHUT_FULL;
+			// Consume argument only if we identified mode
+			// Let's hope that database with names of modes above are unusual
+			if (found) {
+				argv++;
+				argc--;
+			}
+		}
 
 		if (table->in_sw_value & sw_begin_log) {
 			if (--argc <= 0) {

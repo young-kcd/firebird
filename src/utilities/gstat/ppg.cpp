@@ -164,10 +164,22 @@ void PPG_print_header(const header_page* header, SLONG page,
 			FPRINTF(outfile, "active shadow");
 		}
 
-		if (flags & hdr_shutdown) {
+		if ((flags & hdr_shutdown_mask) == hdr_shutdown_multi) {
 			if (flag_count++)
 				FPRINTF(outfile, ", ");
-			FPRINTF(outfile, "database shutdown");
+			FPRINTF(outfile, "multi-user maintenance");
+		}
+
+		if ((flags & hdr_shutdown_mask) == hdr_shutdown_single) {
+			if (flag_count++)
+				FPRINTF(outfile, ", ");
+			FPRINTF(outfile, "single-user maintenance");
+		}
+
+		if ((flags & hdr_shutdown_mask) == hdr_shutdown_full) {
+			if (flag_count++)
+				FPRINTF(outfile, ", ");
+			FPRINTF(outfile, "full shutdown");
 		}
 
 		if (flags & hdr_read_only) {

@@ -88,6 +88,16 @@
 #include "../include/fb_blk.h"
 
 
+/* Shutdown lock data */
+
+typedef union {
+	struct {
+		SSHORT flag;
+		SSHORT delay;
+	} data_items;
+	SLONG data_long;
+} SDATA;
+
 /* the database block, the topmost block in the metadata 
    cache for a database */
 
@@ -305,6 +315,8 @@ typedef dbb* DBB;
 #define DBB_shut_tran		0x20L	// no new transactions accepted
 #define DBB_shut_force		0x40L	// forced shutdown in progress
 #define DBB_shutdown_locks	0x80L	// Database locks release by shutdown
+#define DBB_shutdown_full   0x100L  // Database fully shut down
+#define DBB_shutdown_single 0x200L  // Database is in single-user maintenance mode
 
 //
 // Database attachments

@@ -290,7 +290,13 @@ jrd_file* PIO_create(DBB dbb, const TEXT* string, SSHORT length, bool overwrite)
 
 	TEXT expanded_name[256]; // Shouldn't it be MAXPATHLEN?
 	length = PIO_expand(string, length, expanded_name);
-	jrd_file* file = setup_file(dbb, expanded_name, length, desc);
+	jrd_file *file;
+	try {
+		file = setup_file(dbb, expanded_name, length, desc);
+	} catch(const std::exception&) {
+		close(desc);
+		throw;
+	}
 	return file;
 }
 
@@ -661,7 +667,14 @@ jrd_file* PIO_open(DBB dbb,
 	}
 #endif /* SUPPORT_RAW_DEVICES */
 
-	return setup_file(dbb, string, length, desc);
+	jrd_file *file;
+	try {
+		file = setup_file(dbb, string, length, desc);
+	} catch(const std::exception&) {
+		close(desc);
+		throw;
+	}
+	return file;
 }
 
 
@@ -1012,7 +1025,35 @@ static jrd_file* setup_file(DBB dbb, const TEXT* file_name, USHORT file_length,
 	dbb->dbb_flags |= DBB_exclusive;
 	if (!LCK_lock(NULL, lock, LCK_EX, LCK_NO_WAIT)) {
 		dbb->dbb_flags &= ~DBB_exclusive;
-		LCK_lock(NULL, lock, LCK_SW, LCK_WAIT);
+		TDBB tdbb = GET_THREAD_DATA;
+		
+		while (!LCK_lock(tdbb, lock, LCK_SW, -1)) {
+			tdbb->tdbb_status_vector[0] = 0; // Clean status vector from lock manager error code
+			// If we are in a single-threaded maintenance mode then clean up and stop waiting
+			SCHAR spare_memory[MIN_PAGE_SIZE*2];
+			SCHAR *header_page_buffer = (SCHAR*) FB_ALIGN((IPTR)spare_memory, MIN_PAGE_SIZE);
+		
+			try {
+				dbb->dbb_file = file;
+				PIO_header(dbb, header_page_buffer, MIN_PAGE_SIZE);
+				/* Rewind file pointer */
+				if (lseek (file->fil_desc, LSEEK_OFFSET_CAST 0, 0) == (off_t)-1)
+					ERR_post (isc_io_error,
+						isc_arg_string, "lseek",
+						isc_arg_string, ERR_string (file_name, file_length),
+						isc_arg_gds, isc_io_read_err,
+						isc_arg_unix, errno, 0);
+				if ((reinterpret_cast<header_page*>(header_page_buffer)->hdr_flags & hdr_shutdown_mask) == hdr_shutdown_single)
+					ERR_post(isc_shutdown, isc_arg_string, ERR_string(file_name, file_length), 0);
+				dbb->dbb_file = NULL; // Will be set again later by the caller				
+			} catch(const std::exception&) {
+				delete dbb->dbb_lock;
+				dbb->dbb_lock = NULL;
+				delete file;
+				dbb->dbb_file = NULL; // Will be set again later by the caller
+				throw;
+			}
+		}
 	}
 
 	return file;
@@ -1317,8 +1358,8 @@ raw_devices_unlink_database (
 
 	for (i = 0; i < IO_RETRY; i++)
 	{
-		const ssize_t bytes = write (desc, header, sizeof(header);
-		if (bytes) == sizeof(header))
+		const ssize_t bytes = write (desc, header, sizeof(header));
+		if (bytes == sizeof(header))
 			break;
 		if (bytes == -1 && SYSCALL_INTERRUPTED(errno))
 			continue;

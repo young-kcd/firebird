@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.68 2004-02-02 11:01:34 robocop Exp $
+$Id: ibase.h,v 1.69 2004-02-25 01:50:34 skidder Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -1341,10 +1341,17 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 /* isc_dpb_shutdown specific flags */
 /***********************************/
 
-#define isc_dpb_shut_cache               1
-#define isc_dpb_shut_attachment          2
-#define isc_dpb_shut_transaction         4
-#define isc_dpb_shut_force               8
+#define isc_dpb_shut_cache               0x1
+#define isc_dpb_shut_attachment          0x2
+#define isc_dpb_shut_transaction         0x4
+#define isc_dpb_shut_force               0x8
+#define isc_dpb_shut_mode_mask          0x70
+
+#define isc_dpb_shut_default             0x0
+#define isc_dpb_shut_normal             0x10
+#define isc_dpb_shut_multi              0x20
+#define isc_dpb_shut_single             0x30
+#define isc_dpb_shut_full               0x40
 
 /**************************************/
 /* Bit assignments in RDB$SYSTEM_FLAG */

@@ -26,9 +26,10 @@
 
 class dbb;
 
-BOOLEAN		SHUT_blocking_ast(dbb*);
-BOOLEAN		SHUT_database(dbb*, SSHORT, SSHORT);
-BOOLEAN		SHUT_init(dbb*);
+bool		SHUT_blocking_ast(dbb*);
+bool        SHUT_online(dbb*, SSHORT);
+bool		SHUT_database(dbb*, SSHORT, SSHORT);
+bool		SHUT_init(dbb*);
 
 #endif // JRD_SHUT_PROTO_H
 

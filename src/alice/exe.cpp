@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.28 2004-02-20 06:42:27 robocop Exp $
+//	$Id: exe.cpp,v 1.29 2004-02-25 01:50:10 skidder Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -104,9 +104,14 @@ int EXE_action(const TEXT* database, const ULONG switches)
 
 	tdgbl->service_blk->svc_started();
 
-	if (tdgbl->status[1])
+	if (tdgbl->status[1] && 
+		// Ignore isc_shutdown error produced when we switch to full shutdown mode. It is expected.
+		(tdgbl->status[1] != isc_shutdown || !(switches & sw_shut) || tdgbl->ALICE_data.ua_shutdown_mode != SHUT_FULL)
+	   )
+	{
 		error = true;
-
+	}
+		
 	if (tdgbl->status[2] == isc_arg_warning)
 		ALICE_print_status(tdgbl->status);
 
@@ -276,6 +281,22 @@ static USHORT build_dpb(UCHAR* dpb, const ULONG switches)
 			*dpb2 |= isc_dpb_shut_force;
 		else if (switches & sw_tran)
 			*dpb2 |= isc_dpb_shut_transaction;
+		switch(tdgbl->ALICE_data.ua_shutdown_mode) {
+		case SHUT_NORMAL:
+			*dpb2 |= isc_dpb_shut_normal;
+			break;
+		case SHUT_SINGLE:
+			*dpb2 |= isc_dpb_shut_single;
+			break;
+		case SHUT_MULTI:
+			*dpb2 |= isc_dpb_shut_multi;
+			break;
+		case SHUT_FULL:
+			*dpb2 |= isc_dpb_shut_full;
+			break;
+		default:			
+			break;
+		}
 		dpb2++;
 		*dpb2++ = isc_dpb_shutdown_delay;
 		*dpb2++ = 2;				// Build room for shutdown delay 
@@ -287,7 +308,25 @@ static USHORT build_dpb(UCHAR* dpb, const ULONG switches)
 	}
 	else if (switches & sw_online) {
 		*dpb2++ = isc_dpb_online;
-		*dpb2++ = 0;
+		*dpb2++ = 1;
+		*dpb2 = 0;
+		switch(tdgbl->ALICE_data.ua_shutdown_mode) {
+		case SHUT_NORMAL:
+			*dpb2 |= isc_dpb_shut_normal;
+			break;
+		case SHUT_SINGLE:
+			*dpb2 |= isc_dpb_shut_single;
+			break;
+		case SHUT_MULTI:
+			*dpb2 |= isc_dpb_shut_multi;
+			break;
+		case SHUT_FULL:
+			*dpb2 |= isc_dpb_shut_full;
+			break;
+		default:
+			break;
+		}
+		dpb2++;		
 	}
 	else if (switches & sw_disable) {
 		*dpb2++ = isc_dpb_disable_wal;

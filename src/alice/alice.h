@@ -49,6 +49,14 @@ enum val_errors {
 	MAX_VAL_ERRORS			= 8
 };
 
+enum alice_shut_mode {
+	SHUT_DEFAULT = 0,
+	SHUT_NORMAL = 1,
+	SHUT_MULTI = 2,
+	SHUT_SINGLE = 3,
+	SHUT_FULL = 4
+};
+
 typedef struct user_action
 {
 	ULONG ua_switches;
@@ -65,6 +73,7 @@ typedef struct user_action
 	SLONG ua_val_errors[MAX_VAL_ERRORS];
 	TEXT ua_log_file[MAXPATHLEN];
 	USHORT ua_db_SQL_dialect;
+	alice_shut_mode ua_shutdown_mode;
 } *USER_ACTION;
 
 

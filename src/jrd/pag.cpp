@@ -1102,8 +1102,13 @@ if (header->hdr_implementation && header->hdr_implementation != CLASS)
 	if (header->hdr_flags & hdr_no_reserve)
 		dbb->dbb_flags |= DBB_no_reserve;
 
-	if (header->hdr_flags & hdr_shutdown)
+	if (header->hdr_flags & hdr_shutdown_mask) {
 		dbb->dbb_ast_flags |= DBB_shutdown;
+		if ((header->hdr_flags & hdr_shutdown_mask) == hdr_shutdown_full)
+			dbb->dbb_ast_flags |= DBB_shutdown_full;
+		else if ((header->hdr_flags & hdr_shutdown_mask) == hdr_shutdown_single)
+			dbb->dbb_ast_flags |= DBB_shutdown_single;
+	}
 
 	if (temp_buffer)
 		gds__free(temp_buffer);

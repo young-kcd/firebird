@@ -989,7 +989,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 #endif
 
-	if (options.dpb_shutdown || options.dpb_online)
+	if (options.dpb_shutdown)
 	{
 		/* By releasing the DBB_MUTX_init_fini mutex here, we would be allowing
 		   other threads to proceed with their detachments, so that shutdown does
@@ -1001,7 +1001,41 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 #endif
 		JRD_SS_MUTEX_UNLOCK;
 		if (!SHUT_database
-			(dbb, options.dpb_shutdown, options.dpb_shutdown_delay)) {
+			(dbb, options.dpb_shutdown, options.dpb_shutdown_delay)) 
+		{
+			JRD_SS_MUTEX_LOCK;
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
+			V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
+#endif
+			if (user_status[1] != FB_SUCCESS)
+				ERR_punt();
+			else
+				ERR_post(isc_no_priv,
+						 isc_arg_string, "shutdown or online",
+						 isc_arg_string, "database",
+						 isc_arg_string, 
+                         ERR_string(file_name, file_length), 
+                         0);
+		}
+		JRD_SS_MUTEX_LOCK;
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
+		V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
+#endif
+	}
+
+	if (options.dpb_online)
+	{
+		/* By releasing the DBB_MUTX_init_fini mutex here, we would be allowing
+		   other threads to proceed with their detachments, so that shutdown does
+		   not timeout for exclusive access and other threads don't have to wait
+		   behind shutdown */
+
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
+		V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
+#endif
+		JRD_SS_MUTEX_UNLOCK;
+		if (!SHUT_online(dbb, options.dpb_online)) 
+		{
 			JRD_SS_MUTEX_LOCK;
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
 			V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
@@ -1052,11 +1086,30 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 				ERR_string(file_name, file_length), 0);
 	}
 
-	if (dbb->dbb_ast_flags & DBB_shutdown &&
-		!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner)))
-	{
-		ERR_post(isc_shutdown, isc_arg_string, 
-				ERR_string(file_name, file_length), 0);
+	if (dbb->dbb_ast_flags & DBB_shutdown) {
+		// Allow only SYSDBA/owner to access database that is shut down
+		bool allow_access = attachment->att_user->usr_flags & (USR_locksmith | USR_owner);
+		// Handle special shutdown modes
+		if (allow_access) {
+			if (dbb->dbb_ast_flags & DBB_shutdown_full) {
+				// Full shutdown. Deny access always
+				allow_access = false;
+			}
+			else if (dbb->dbb_ast_flags & DBB_shutdown_single) {
+				// Single user maintenance. Allow access only if we were able to take exclusive lock
+				// Note that logic below this exclusive lock differs for SS and CS builds:
+				//   - CS keeps PW database lock from releasing in AST in single-user maintenance mode
+				//   - for SS this code effectively checks that no other attachments are present
+				//     at call point, ATT_exclusive bit is released just before this procedure exits
+				// Things are done this way to handle return to online mode nicely.
+				allow_access = CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD);
+			}
+		}
+		if (!allow_access) {
+			// Note we throw exception here when entering full-shutdown mode
+			ERR_post(isc_shutdown, isc_arg_string, 
+					ERR_string(file_name, file_length), 0);
+		}
 	}
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
@@ -1917,7 +1970,12 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 
 	INI_format(attachment->att_user->usr_user_name, options.dpb_set_db_charset);
 
-	if (options.dpb_shutdown || options.dpb_online) {
+	// There is no point to move database online at database creation since it is online by default.
+	// We do not allow to create database that is fully shut down.
+	if (options.dpb_online || (options.dpb_shutdown & isc_dpb_shut_mode_mask) == isc_dpb_shut_full)
+		ERR_post(isc_bad_shutdown_mode, isc_arg_string, ERR_string(file_name, file_length), 0);
+	
+	if (options.dpb_shutdown) {
 		/* By releasing the DBB_MUTX_init_fini mutex here, we would be allowing
 		   other threads to proceed with their detachments, so that shutdown does
 		   not timeout for exclusive access and other threads don't have to wait
@@ -1941,7 +1999,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 		V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 #endif
 	}
-
+	
 	if (options.dpb_sweep_interval != -1) {
 		PAG_sweep_interval(options.dpb_sweep_interval);
 		dbb->dbb_sweep_interval = options.dpb_sweep_interval;
@@ -4587,8 +4645,9 @@ static ISC_STATUS check_database(TDBB tdbb, ATT attachment, ISC_STATUS * user_st
 	}
 
 	if (attachment->att_flags & ATT_shutdown ||
-		(dbb->dbb_ast_flags & DBB_shutdown &&
-		 !(attachment->att_user->usr_flags & (USR_locksmith | USR_owner))))
+		((dbb->dbb_ast_flags & DBB_shutdown) &&
+		 ((dbb->dbb_ast_flags & DBB_shutdown_full) ||
+		 !(attachment->att_user->usr_flags & (USR_locksmith | USR_owner)))))
 	{
 		tdbb->tdbb_status_vector = ptr = user_status;
 		*ptr++ = isc_arg_gds;
@@ -5187,6 +5246,9 @@ static void get_options(const UCHAR*	dpb,
 
 		case isc_dpb_shutdown:
 			options->dpb_shutdown = (USHORT) get_parameter(&p);
+			// Enforce default
+			if ((options->dpb_shutdown & isc_dpb_shut_mode_mask) == isc_dpb_shut_default)
+				options->dpb_shutdown |= isc_dpb_shut_multi;
 			break;
 
 		case isc_dpb_shutdown_delay:
@@ -5194,9 +5256,10 @@ static void get_options(const UCHAR*	dpb,
 			break;
 
 		case isc_dpb_online:
-			options->dpb_online = TRUE;
-			l = *p++;
-			p += l;
+			options->dpb_online = (USHORT) get_parameter(&p);
+			// Enforce default
+			if ((options->dpb_online & isc_dpb_shut_mode_mask) == isc_dpb_shut_default)
+				options->dpb_online |= isc_dpb_shut_normal;
 			break;
 
 		case isc_dpb_reserved:

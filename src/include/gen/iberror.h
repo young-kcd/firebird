@@ -569,6 +569,7 @@ const SLONG isc_conf_access_denied               = 335544831L;
 const SLONG isc_wrong_backup_state               = 335544832L;
 const SLONG isc_wal_backup_err                   = 335544833L;
 const SLONG isc_invalid_cursor_state             = 335544834L;
+const SLONG isc_bad_shutdown_mode                = 335544835L;
 const SLONG isc_gfix_db_name                     = 335740929L;
 const SLONG isc_gfix_invalid_sw                  = 335740930L;
 const SLONG isc_gfix_incmp_sw                    = 335740932L;
@@ -771,7 +772,7 @@ const SLONG isc_gstat_unexpected_eof             = 336920580L;
 const SLONG isc_gstat_open_err                   = 336920605L;
 const SLONG isc_gstat_read_err                   = 336920606L;
 const SLONG isc_gstat_sysmemex                   = 336920607L;
-const SLONG isc_err_max                          = 716;
+const SLONG isc_err_max                          = 717;
 
 #else /* c definitions */
 
@@ -1310,6 +1311,7 @@ const SLONG isc_err_max                          = 716;
 #define isc_wrong_backup_state               335544832L
 #define isc_wal_backup_err                   335544833L
 #define isc_invalid_cursor_state             335544834L
+#define isc_bad_shutdown_mode                335544835L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -1512,7 +1514,7 @@ const SLONG isc_err_max                          = 716;
 #define isc_gstat_open_err                   336920605L
 #define isc_gstat_read_err                   336920606L
 #define isc_gstat_sysmemex                   336920607L
-#define isc_err_max                          716
+#define isc_err_max                          717
 
 #endif
 

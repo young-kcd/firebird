@@ -365,11 +365,18 @@ struct header_page {
 #define hdr_no_checksums	0x10	/* 16   don't calculate checksums */
 #define hdr_no_reserve		0x20	/* 32   don't reserve space for versions */
 #define hdr_disable_cache	0x40	/* 64   disable using shared cache file */
-#define hdr_shutdown		0x80	/* 128  database is shutdown */
+//#define hdr_shutdown		0x80	/* 128  database is shutdown */
 #define hdr_SQL_dialect_3	0x100	/* 256  database SQL dialect 3 */
 #define hdr_read_only		0x200	/* 512  Database in ReadOnly. If not set, DB is RW */
-/* backup status mask */
-#define hdr_backup_mask     0xC00
+/* backup status mask - see bit values in nbak.h */
+#define hdr_backup_mask		0xC00
+#define hdr_shutdown_mask	0x1080
+
+// Values for shutdown mask
+#define hdr_shutdown_none  0x0
+#define hdr_shutdown_multi 0x80
+#define hdr_shutdown_full 0x1000
+#define hdr_shutdown_single 0x1080
 
 /*
 typedef struct sfd {
