@@ -67,7 +67,7 @@ LINK32=link.exe
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "SUPERCLIENT" /D "CLIENT" /FD /GZ /c
 # SUBTRACT BASE CPP /YX
-# ADD CPP /nologo /MD /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "NDEBUG" /D "_WINDOWS" /D "CLIENT" /D "SUPERCLIENT" /D "WIN32_LEAN_AND_MEAN" /D "WIN32" /D "_MBCS" /D "_X86_" /FD /c
+# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "NDEBUG" /D "_WINDOWS" /D "CLIENT" /D "SUPERCLIENT" /D "WIN32_LEAN_AND_MEAN" /D "WIN32" /D "_MBCS" /D "_X86_" /FD /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe

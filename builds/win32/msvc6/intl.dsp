@@ -69,7 +69,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /D "_DEBUG" /D "_WINDOWS" /D "_USRDLL" /D "INTL_EXPORTS" /D "WINDOWS_ONLY" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
-# ADD CPP /nologo /MD /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "NDEBUG" /D "_WINDOWS" /D "_USRDLL" /D "INTL_EXPORTS" /D "WINDOWS_ONLY" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
+# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "NDEBUG" /D "_WINDOWS" /D "_USRDLL" /D "INTL_EXPORTS" /D "WINDOWS_ONLY" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
@@ -113,11 +113,11 @@ SOURCE=..\..\..\src\intl\cs_narrow.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_unicode_ucs2.c
+SOURCE=..\..\..\src\intl\cs_unicode_fss.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_unicode_fss.c
+SOURCE=..\..\..\src\intl\cs_unicode_ucs2.c
 # End Source File
 # Begin Source File
 
@@ -157,19 +157,19 @@ SOURCE=..\..\..\src\intl\lc_gb2312.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\lc_jis.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\intl\lc_ksc.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\intl\lc_iso8859_1.c
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\intl\lc_iso8859_2.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\lc_jis.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\lc_ksc.c
 # End Source File
 # Begin Source File
 
@@ -191,58 +191,6 @@ SOURCE=..\..\..\src\intl\ld2.c
 # Begin Group "Header files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
-# Begin Source File
-
-SOURCE=..\..\..\src\intl\collations\pw1251cyrr.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\intl\collations\pw1250czech.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\intl\collations\pw1253greek1.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\intl\collations\pw1250hun.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\intl\collations\pw1250hundc.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\intl\collations\pw1250polish.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\intl\collations\pw1252i850.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\intl\collations\pw1252intl.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\intl\collations\pw1252nor4.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\intl\collations\pw1250slov.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\intl\collations\pw1252span.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\intl\collations\pw1252swfn.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\intl\collations\pw1253turk.h
-# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\intl\collations\ascii.h
@@ -385,19 +333,19 @@ SOURCE=..\..\..\src\intl\charsets\cs_gb2312.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\charsets\cs_jis_0208_1990.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\intl\charsets\cs_ksc5601.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\intl\charsets\cs_iso8859_1.h
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\intl\charsets\cs_iso8859_2.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\charsets\cs_jis_0208_1990.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\charsets\cs_ksc5601.h
 # End Source File
 # Begin Source File
 
@@ -426,14 +374,6 @@ SOURCE=..\..\..\src\intl\charsets\cs_w1253.h
 # Begin Source File
 
 SOURCE=..\..\..\src\intl\charsets\cs_w1254.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\intl\collations\pd866cyrr.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\intl\collations\ps852czech.h
 # End Source File
 # Begin Source File
 
@@ -553,18 +493,6 @@ SOURCE=..\..\..\src\intl\collations\db866ru0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\collations\pd852hundc.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\intl\collations\pd861iceland.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\intl\collations\pd437intl.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\intl\kanji.h
 # End Source File
 # Begin Source File
@@ -589,11 +517,15 @@ SOURCE=..\..\..\src\intl\ldcommon.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\collations\xx88592czech.h
+SOURCE=..\..\..\src\intl\collations\pd437intl.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\collations\pd865nordan40.h
+SOURCE=..\..\..\src\intl\collations\pd437swedfin.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\collations\pd852hundc.h
 # End Source File
 # Begin Source File
 
@@ -605,11 +537,75 @@ SOURCE=..\..\..\src\intl\collations\pd852slovene.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\collations\pd437swedfin.h
+SOURCE=..\..\..\src\intl\collations\pd857turk.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\collations\pd857turk.h
+SOURCE=..\..\..\src\intl\collations\pd861iceland.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\collations\pd865nordan40.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\collations\pd866cyrr.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\collations\ps852czech.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\collations\pw1250czech.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\collations\pw1250hun.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\collations\pw1250hundc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\collations\pw1250polish.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\collations\pw1250slov.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\collations\pw1251cyrr.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\collations\pw1252i850.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\collations\pw1252intl.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\collations\pw1252nor4.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\collations\pw1252span.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\collations\pw1252swfn.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\collations\pw1253greek1.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\collations\pw1253turk.h
 # End Source File
 # Begin Source File
 
@@ -630,6 +626,10 @@ SOURCE=..\..\..\src\intl\collations\undef.h
 # Begin Source File
 
 SOURCE=..\..\..\src\intl\collations\win1251_ua.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\collations\xx88592czech.h
 # End Source File
 # End Group
 # Begin Group "Resource files"

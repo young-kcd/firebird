@@ -41,7 +41,7 @@ RSC=rc.exe
 # PROP Intermediate_Dir "release\engine_ss"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /Ot /Oi /Op /Oy /I "../../../src/include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "WIN32_LEAN_AND_MEAN" /D "_X86_" /D "SERVER_SHUTDOWN" /D "SUPERSERVER" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "WIN32_LEAN_AND_MEAN" /D "_X86_" /D "SERVER_SHUTDOWN" /D "SUPERSERVER" /YX /FD /c
 # SUBTRACT CPP /Ox
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
@@ -108,6 +108,15 @@ SOURCE=..\..\..\generated\jrd\blob_filter.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\btr.cpp
+
+!IF  "$(CFG)" == "engine - Win32 Release"
+
+# SUBTRACT CPP /Ox /Og
+
+!ELSEIF  "$(CFG)" == "engine - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -228,6 +237,15 @@ SOURCE=..\..\..\src\jrd\iberr.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\idx.cpp
+
+!IF  "$(CFG)" == "engine - Win32 Release"
+
+# SUBTRACT CPP /Ox /Og
+
+!ELSEIF  "$(CFG)" == "engine - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -300,6 +318,15 @@ SOURCE=..\..\..\src\jrd\mov.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\nav.cpp
+
+!IF  "$(CFG)" == "engine - Win32 Release"
+
+# SUBTRACT CPP /Og
+
+!ELSEIF  "$(CFG)" == "engine - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -312,6 +339,15 @@ SOURCE=..\..\..\src\jrd\old.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\opt.cpp
+
+!IF  "$(CFG)" == "engine - Win32 Release"
+
+# SUBTRACT CPP /Og
+
+!ELSEIF  "$(CFG)" == "engine - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -376,6 +412,15 @@ SOURCE=..\..\..\src\jrd\shut.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\sort.cpp
+
+!IF  "$(CFG)" == "engine - Win32 Release"
+
+# SUBTRACT CPP /Ox /Og
+
+!ELSEIF  "$(CFG)" == "engine - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
