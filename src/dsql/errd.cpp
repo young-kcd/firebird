@@ -59,6 +59,7 @@
 
 #include "../jrd/gds_proto.h"
 #include "../jrd/thd.h"
+#include "../common/utils_proto.h"
 
 
 #ifdef DEV_BUILD
@@ -77,9 +78,10 @@
 void ERRD_assert_msg(const char* msg, const char* file, ULONG lineno)
 {
 
-	char buffer[100];
+	char buffer[MAXPATHLEN + 100];
 
-	sprintf(buffer, "Assertion failure: %s File: %s Line: %ld\n",	// NTX: dev build 
+	fb_utils::snprintf(buffer, sizeof(buffer),
+			"Assertion failure: %s File: %s Line: %ld\n",	// NTX: dev build
 			(msg ? msg : ""), (file ? file : ""), lineno);
 	ERRD_bugcheck(buffer);
 }
@@ -98,9 +100,9 @@ void ERRD_assert_msg(const char* msg, const char* file, ULONG lineno)
  **/
 void ERRD_bugcheck(const char* text)
 {
-	TEXT s[128];
+	TEXT s[MAXPATHLEN + 120];
 
-	sprintf(s, "INTERNAL: %s", text);	// TXNN 
+	fb_utils::snprintf(s, sizeof(s), "INTERNAL: %s", text);	// TXNN
 	ERRD_error(-1, s);
 }
 
@@ -123,11 +125,11 @@ void ERRD_bugcheck(const char* text)
  **/
 void ERRD_error( int code, const char* text)
 {
-	TEXT s[256];
+	TEXT s[MAXPATHLEN + 140];
 
 	tsql* tdsql = DSQL_get_thread_data();
 
-	sprintf(s, "** DSQL error: %s **\n", text);
+	fb_utils::snprintf(s, sizeof(s), "** DSQL error: %s **\n", text);
 	TRACE(s);
 
 	ISC_STATUS* status_vector = tdsql->tsql_status;
@@ -204,7 +206,7 @@ bool ERRD_post_warning(ISC_STATUS status, ...)
 	while ((type = va_arg(args, int)) && (indx + 3 < ISC_STATUS_LENGTH))
 	{
 
-        char* pszTmp = NULL;
+        const char* pszTmp = NULL;
 		switch (status_vector[indx++] = type)
 		{
 		case isc_arg_warning:
@@ -217,12 +219,12 @@ bool ERRD_post_warning(ISC_STATUS status, ...)
                 status_vector[(indx - 1)] = isc_arg_cstring;
                 status_vector[indx++] = MAX_ERRSTR_LEN;
             }
-            status_vector[indx++] = reinterpret_cast<long>(ERR_cstring(pszTmp));
+            status_vector[indx++] = reinterpret_cast<ISC_STATUS>(ERR_cstring(pszTmp));
 			break;
 
 		case isc_arg_interpreted: 
             pszTmp = va_arg(args, char*);
-            status_vector[indx++] = reinterpret_cast<long>(ERR_cstring(pszTmp));
+            status_vector[indx++] = reinterpret_cast<ISC_STATUS>(ERR_cstring(pszTmp));
 			break;
 
 		case isc_arg_cstring:
@@ -230,7 +232,7 @@ bool ERRD_post_warning(ISC_STATUS status, ...)
             status_vector[indx++] =
                 (ISC_STATUS) (len >= MAX_ERRSTR_LEN) ? MAX_ERRSTR_LEN : len;
             pszTmp = va_arg(args, char*);
-            status_vector[indx++] = reinterpret_cast<long>(ERR_cstring(pszTmp));
+            status_vector[indx++] = reinterpret_cast<ISC_STATUS>(ERR_cstring(pszTmp));
 			break;
 
 		case isc_arg_number:
