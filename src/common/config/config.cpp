@@ -129,7 +129,7 @@ const ConfigImpl& ConfigImpl::instance()
 			config_init_lock.enter();
 			if (!sys_config) {
 #endif
-				sys_config = FB_NEW(*getDefaultMemoryPool()) ConfigImpl;
+				sys_config = FB_NEW(*getDefaultMemoryPool()) ConfigImpl(*getDefaultMemoryPool());
 #ifdef MULTI_THREAD
 			}
 		} catch(const std::exception&) {
@@ -149,15 +149,14 @@ const ConfigImpl& ConfigImpl::instance()
  *	Implementation interface
  */
 
-ConfigImpl::ConfigImpl()
+ConfigImpl::ConfigImpl(MemoryPool& p) : ConfigRoot(p) 
 {
 	/* Prepare some stuff */
 
 	ConfigFile file(true);
 	root_dir = getRootDirectory();
-	MemoryPool *pool = getDefaultMemoryPool();
 	int size = FB_NELEM(entries);
-	values = FB_NEW(*pool) ConfigValue[size];
+	values = FB_NEW(p) ConfigValue[size];
 
 	string val_sep = ",";
 	file.setConfigFile(getConfigFile());
@@ -190,7 +189,7 @@ ConfigImpl::ConfigImpl()
 		case TYPE_STRING:
 			{
 			const char *src = asString(value);
-			char *dst = FB_NEW(*pool) char[strlen(src) + 1];
+			char *dst = FB_NEW(p) char[strlen(src) + 1];
 			strcpy(dst, src);
 			values[i] = (ConfigValue) dst;
 			}

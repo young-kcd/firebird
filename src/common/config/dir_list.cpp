@@ -25,88 +25,59 @@
 #include "../jrd/os/path_utils.h"
 #include "../jrd/gds_proto.h"
 
-#define New FB_NEW(*getDefaultMemoryPool())
+namespace Firebird {
 
-ParsedPath::ParsedPath(void) {
-	PathElem = 0;
-	nElem = 0;
-}
-
-ParsedPath::ParsedPath(const Firebird::PathName& path) {
-	PathElem = 0;
-	Parse(path);
-}
-
-ParsedPath::~ParsedPath() {
-	delete[] PathElem;
-}
-
-void ParsedPath::Parse(const Firebird::PathName& path) {
-	delete[] PathElem;
+void ParsedPath::parse(const PathName& path) {
+	clear();
 
 	if (path.length() == 1) {
-		nElem = 1;
-		PathElem = New Firebird::PathName[1];
-		PathElem[0] = path;
+		add(path);
 		return;
 	}
 
-	nElem = 0;
-	Firebird::PathName oldpath = path;
+	PathName oldpath = path;
 	do {
-		Firebird::PathName newpath, elem;
+		PathName newpath, elem;
 		PathUtils::splitLastComponent(newpath, elem, oldpath);
 		oldpath = newpath;
-		nElem++;
+		insert(0, elem);
 	} while (oldpath.length() > 0);
-
-	PathElem = New Firebird::PathName[nElem];
-	oldpath = path;
-	for (int i = nElem; i--; ) {
-		Firebird::PathName newpath;
-		PathUtils::splitLastComponent(newpath, PathElem[i], oldpath);
-		oldpath = newpath;
-	}
 }
 
-bool ParsedPath::operator==(const char* path) const {
-	return (Firebird::PathName(*this) == Firebird::PathName(path));
-}
-
-Firebird::PathName ParsedPath::SubPath(int n) const {
-	Firebird::PathName rc = PathElem[0];
+PathName ParsedPath::subPath(int n) const {
+	PathName rc = (*this)[0];
 	if (PathUtils::isRelative(rc + PathUtils::dir_sep))
 		rc = PathUtils::dir_sep + rc;
 	for (int i = 1; i < n; i++) {
-		Firebird::PathName newpath;
-		PathUtils::concatPath(newpath, rc, PathElem[i]);
+		PathName newpath;
+		PathUtils::concatPath(newpath, rc, (*this)[i]);
 		rc = newpath;
 	}
 	return rc;
 }
 
-ParsedPath::operator Firebird::PathName() const {
-	if (!PathElem)
+ParsedPath::operator PathName() const {
+	if (!getCount())
 		return "";
-	return SubPath(nElem);
+	return subPath(getCount());
 }
 
-bool ParsedPath::Contains(const ParsedPath& pPath) const {
-	int nFullElem = nElem;
-	if (nFullElem > 1 && PathElem[nFullElem - 1].length() == 0)
+bool ParsedPath::contains(const ParsedPath& pPath) const {
+	int nFullElem = getCount();
+	if (nFullElem > 1 && (*this)[nFullElem - 1].length() == 0)
 		nFullElem--;
 
-	if (pPath.nElem < nFullElem) {
+	if (pPath.getCount() < nFullElem) {
 		return false;
 	}
 	int i;
 	for (i = 0; i < nFullElem; i++) {
-		if (!PathUtils::comparePaths(pPath.PathElem[i], PathElem[i])) {
+		if (pPath[i] != (*this)[i]) {
 			return false;
 		}
 	}
-	for (i = nFullElem + 1; i <= pPath.nElem; i++) {
-		Firebird::PathName x = pPath.SubPath(i);
+	for (i = nFullElem + 1; i <= pPath.getCount(); i++) {
+		PathName x = pPath.subPath(i);
 		if (PathUtils::isSymLink(x)) {
 			return false;
 		}
@@ -114,127 +85,106 @@ bool ParsedPath::Contains(const ParsedPath& pPath) const {
 	return true;
 }
 
-DirectoryList::DirectoryList() {
-	ConfigDirs = 0;
-	nDirs = 0;
-	Mode = NotInitialized;
-}
-
-DirectoryList::~DirectoryList() {
-	Clear();
-}
-
-bool DirectoryList::KeyWord(
-		const ListMode KeyMode, 
-		Firebird::PathName& Value, 
-		Firebird::PathName Key, 
-		Firebird::PathName Next
+bool DirectoryList::keyword(
+		const ListMode keyMode, 
+		PathName& value, 
+		PathName key, 
+		PathName next
 ) {
-	if (Value.length() < Key.length()) {
+	if (value.length() < key.length()) {
 		return false;
 	}
-	Firebird::PathName KeyValue = Value.substr(0, Key.length());
-	if (KeyValue != Key) {
+	PathName keyValue = value.substr(0, key.length());
+	if (keyValue != key) {
 		return false;
 	}
-	if (Next.length() > 0) {
-		if (Value.length() == Key.length()) {
+	if (next.length() > 0) {
+		if (value.length() == key.length()) {
 			return false;
 		}
-		KeyValue = Value.substr(Key.length());
-		if (Next.find(KeyValue[0]) == Firebird::PathName::npos) {
+		keyValue = value.substr(key.length());
+		if (next.find(keyValue[0]) == PathName::npos) {
 			return false;
 		}
-		Firebird::PathName::size_type startPos = 
-			KeyValue.find_first_not_of(Next);
-		if (startPos == Firebird::PathName::npos) {
+		PathName::size_type startPos = keyValue.find_first_not_of(next);
+		if (startPos == PathName::npos) {
 			return false;
 		}
-		Value = KeyValue.substr(startPos);
+		value = keyValue.substr(startPos);
 	}
 	else {
-		if (Value.length() > Key.length()) {
+		if (value.length() > key.length()) {
 			return false;
 		}
-		Value.erase();
+		value.erase();
 	}
-	Mode = KeyMode;
+	mode = keyMode;
 	return true;
 }
 
-void DirectoryList::Initialize(bool simple_mode) {
-	if (Mode != NotInitialized)
+void DirectoryList::initialize(bool simple_mode) {
+	if (mode != NotInitialized)
 		return;
 
-	Clear();
+	clear();
 
-	Firebird::PathName val = GetConfigString();
+	PathName val = getConfigString();
 
 	if (simple_mode) {
-		Mode = SimpleList;
+		mode = SimpleList;
 	}
 	else {
-		if (KeyWord(None, val, "None", "") || 
-			KeyWord(Full, val, "Full", "")) {
+		if (keyword(None, val, "None", "") || 
+			keyword(Full, val, "Full", "")) {
 			return;
 		}
-		if (! KeyWord(Restrict, val, "Restrict", " \t")) {
+		if (! keyword(Restrict, val, "Restrict", " \t")) {
 			gds__log("DirectoryList: unknown parameter '%s', "
 				"defaulting to None", val.c_str());
-			Mode = None;
+			mode = None;
 			return;
 		}
 	}
 
-	nDirs = 1;
-	unsigned int i;
-	for (i = 0; i < val.length(); i++) {
+	unsigned int last = 0;
+	PathName root = Config::getRootDirectory();
+	for (int i = 0; i < val.length(); i++) {
 		if (val[i] == ';') {
-			nDirs++;
-		}
-	}
-	ConfigDirs = New ParsedPath[nDirs];
-	unsigned int Last = 0;
-	nDirs = 0;
-	Firebird::PathName Root = Config::getRootDirectory();
-	for (i = 0; i < val.length(); i++) {
-		if (val[i] == ';') {
-			Firebird::PathName dir = "";
-			if (i > Last) {
-				dir = val.substr(Last, i-Last);
-				Trim(dir);
+			PathName dir = "";
+			if (i > last) {
+				dir = val.substr(last, i - last);
+				dir.trim();
 			}
 			if (PathUtils::isRelative(dir)) {
-				Firebird::PathName newdir;
-				PathUtils::concatPath(newdir, Root, dir);
+				PathName newdir;
+				PathUtils::concatPath(newdir, root, dir);
 				dir = newdir;
 			}
-			ConfigDirs[nDirs++].Parse(dir);
-			Last = i + 1;
+			add(ParsedPath(dir));
+			last = i + 1;
 		}
 	}
-	Firebird::PathName dir = "";
-	if (i > Last) {
-		dir = val.substr(Last, i - Last);
-		Trim(dir);
+	PathName dir = "";
+	if (i > last) {
+		dir = val.substr(last, i - last);
+		dir.trim();
 	}
 	if (PathUtils::isRelative(dir)) {
-		Firebird::PathName newdir;
-		PathUtils::concatPath(newdir, Root, dir);
+		PathName newdir;
+		PathUtils::concatPath(newdir, root, dir);
 		dir = newdir;
 	}
-	ConfigDirs[nDirs++].Parse(dir);
+	add(ParsedPath(dir));
 }
 
-bool DirectoryList::IsPathInList(const Firebird::PathName& path) {
+bool DirectoryList::isPathInList(const PathName& path) const {
 #ifdef BOOT_BUILD
 	return true;
 #else  //BOOT_BUILD
-	Initialize();
+	fb_assert(mode != NotInitialized);
 
 	// Handle special cases
-	switch(Mode) {
-	case NotInitialized:
+	switch(mode) {
 	case None:
 		return false;
 	case Full:
@@ -247,19 +197,19 @@ bool DirectoryList::IsPathInList(const Firebird::PathName& path) {
 	// Example of IIS attack attempt:
 	// "GET /scripts/..%252f../winnt/system32/cmd.exe?/c+dir HTTP/1.0"
 	//								(live from apache access.log :)
-	if (path.find(PathUtils::up_dir_link) != Firebird::PathName::npos)
+	if (path.find(PathUtils::up_dir_link) != PathName::npos)
 		return false;
 
-	Firebird::PathName varpath = path;
+	PathName varpath(path);
 	if (PathUtils::isRelative(path)) {
 		PathUtils::concatPath(varpath, 
-			Firebird::PathName(Config::getRootDirectory()), path);
+			PathName(Config::getRootDirectory()), path);
 	}
 
-	ParsedPath pPath = path;
+	ParsedPath pPath(path);
     bool rc = 0;
-    for (int i = 0; i < nDirs; i++) {
-		if (ConfigDirs[i].Contains(pPath)) {
+    for (int i = 0; i < getCount(); i++) {
+		if ((*this)[i].contains(pPath)) {
 			rc = true;
 			break;
 		}
@@ -268,49 +218,42 @@ bool DirectoryList::IsPathInList(const Firebird::PathName& path) {
 #endif //BOOT_BUILD
 }
 
-void DirectoryList::ExpandFileName (
-					Firebird::PathName & Path, 
-					const Firebird::PathName & Name,
-					int Access
-) {
-	if (Mode == NotInitialized)
-		Initialize();
-    for (int i = 0; i < nDirs; i++) {
-		PathUtils::concatPath(Path, ConfigDirs[i], Name);
-		if (PathUtils::canAccess(Path, Access)) {
+void DirectoryList::expandFileName (
+					PathName& path, 
+					const PathName& name,
+					int access
+) const {
+	fb_assert(mode != NotInitialized);
+    for (int i = 0; i < getCount(); i++) {
+		PathUtils::concatPath(path, (*this)[i], name);
+		if (PathUtils::canAccess(path, access)) {
 			return;
 		}
 	}
-	Path = Name;
+	path = name;
 }
 
-TempDirectoryList::TempDirectoryList() : items(0)
+TempDirectoryList::initTemp() 
 {
-	Initialize(true);
-
-	// Get directory list
-	const ParsedPath* dir_list = DirList();
+	initialize(true);
 
 	// Iterate through directories to parse them
 	// and fill the "items" vector
-	for (size_t i = 0; i < DirCount(); i++) {
-		Item item;
-		Firebird::PathName dir = dir_list[i];
+	for (size_t i = 0; i < getCount(); i++) {
+		PathName dir = (*(inherited*)this)[i];
 		size_t pos = dir.rfind(" ");
-		long size = atol(dir.substr(pos + 1, Firebird::PathName::npos).c_str());
-		if (pos != Firebird::PathName::npos && !size) {
-			pos = Firebird::PathName::npos;
+		long size = atol(dir.substr(pos + 1, PathName::npos).c_str());
+		if (pos != PathName::npos && !size) {
+			pos = PathName::npos;
 		}
 		if (size <= 0) {
 			size = ALLROOM;
 		}
-		item.dir = dir.substr(0, pos);
-		item.size = size;
-		items.push_back(item);
+		items.add(Item(dir.substr(0, pos), size));
 	}
 }
 
-const Firebird::PathName TempDirectoryList::GetConfigString() const
+const PathName TempDirectoryList::getConfigString() const
 {
 	const char* value;
 	char tmp_buf[MAXPATHLEN];
@@ -320,15 +263,7 @@ const Firebird::PathName TempDirectoryList::GetConfigString() const
 		gds__temp_dir(tmp_buf);
 		value = tmp_buf;
 	}
-	return Firebird::PathName(value);
+	return PathName(value);
 }
 
-size_t TempDirectoryList::Count() const
-{
-	return items.size();
-}
-
-const TempDirectoryList::Item& TempDirectoryList::operator[](size_t i) const
-{
-	return items[i];
-}
+} //namespace Firebird

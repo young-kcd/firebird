@@ -72,7 +72,7 @@ public:
 	inline static const ConfigImpl& instance();
 
 private:
-	ConfigImpl();
+	explicit ConfigImpl(MemoryPool& p);
 
 	static const ConfigEntry entries[];
 	const char *root_dir;

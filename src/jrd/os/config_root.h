@@ -51,7 +51,7 @@
 	getConfigFile() member function.
 **/
 
-class ConfigRoot
+class ConfigRoot : public Firebird::PermanentStorage
 {
 	// config_file works with OS case-sensitivity
 	typedef Firebird::PathName string;
@@ -70,7 +70,9 @@ private:
 	}
 
 public:
-	ConfigRoot() {
+	ConfigRoot(MemoryPool& p) : PermanentStorage(p),
+		root_dir(getPool()), config_file(getPool()) 
+	{
 		GetRoot();
 		config_file = root_dir + string(CONFIG_FILE);
 	}

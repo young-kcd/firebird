@@ -35,6 +35,8 @@
 #include <map>
 
 #include "../../common/classes/alloc.h"
+#include "../../common/classes/fb_pair.h"
+#include "../../common/classes/objects_array.h"
 #include "fb_string.h"
 
 /**
@@ -54,25 +56,23 @@
 	(common/config/config.cpp) and server-side alias manager (jrd/db_alias.cpp).
 **/
 
-class ConfigFile
+class ConfigFile : public Firebird::AutoStorage
 {
 	// config_file works with OS case-sensitivity
 	typedef Firebird::PathName string;
 
-	// used to provide proper filename handling in various OS
-	class key_compare : public std::binary_function<const string&, const string&, bool>
-	{
-	public:
-		key_compare() {}
-		bool operator()(const string&, const string&) const;
-	};
-
-    typedef std::map <string, string, key_compare,
-		Firebird::allocator <std::pair <const string, string> > > mymap_t;
+	typedef Firebird::Pair<Firebird::Full<string, string> > Parameter;
+    typedef Firebird::SortedObjectsArray <Parameter, 
+		Firebird::InlineStorage<Parameter *, 100>,
+		string, Firebird::FirstObjectKey<Parameter> > mymap_t;
 
 public:
-    ConfigFile(bool ExitOnError) 
-		: isLoadedFlg(false), fExitOnError(ExitOnError) {}
+    explicit ConfigFile(MemoryPool& p, bool ExitOnError) 
+		: AutoStorage(p), isLoadedFlg(false), 
+		  fExitOnError(ExitOnError), parameters(getPool()) {}
+    explicit ConfigFile(bool ExitOnError) 
+		: AutoStorage(), isLoadedFlg(false), 
+		  fExitOnError(ExitOnError), parameters(getPool()) {}
 
 	// configuration file management
     const string getConfigFile() { return configFile; }
@@ -88,8 +88,6 @@ public:
     string getString(const string&);
 
 	// utilities
-	static void stripLeadingWhiteSpace(string&);
-	static void stripTrailingWhiteSpace(string&);
 	static void stripComments(string&);
 	static string parseKeyFrom(const string&, string::size_type&);
 	static string parseValueFrom(string, string::size_type);

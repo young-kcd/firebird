@@ -25,6 +25,7 @@
 
 #include "fb_string.h"
 #include "fb_vector.h"
+#include "../jrd/os/path_utils.h"
 
 /**
 	Since the original (isc.cpp) code wasn't able to provide powerful and
@@ -317,5 +318,15 @@ public:
 	*/
 	static int getTraceDSQL();
 };
+
+namespace Firebird {
+
+// Add appropriate file prefix.
+inline void Prefix(PathName& result, const PathName& file)
+{
+	PathUtils::concatPath(result, Config::getRootDirectory(), file);
+}
+
+} //namespace Firebird
 
 #endif // CONFIG_H

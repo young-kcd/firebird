@@ -30,15 +30,17 @@
 
 #include "firebird.h"
 
+#include "../../common/classes/auto.h"
 #include "../../common/config/config_file.h"
 #include "../jrd/os/fbsyslog.h"
+#include "../jrd/ib_stdio.h"
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
 
-#include <fstream>
-#include <iostream>
+//#include <fstream>
+//#include <iostream>
 
 // Invalid or missing CONF_FILE may lead to severe errors
 // in applications. That's why for regular SERVER builds
@@ -54,61 +56,6 @@
 
 // config_file works with OS case-sensitivity
 typedef Firebird::PathName string;
-
-/******************************************************************************
- *
- *	Allow case-insensitive comparison
- */
-
-bool ConfigFile::key_compare::operator()(const string& x, const string& y) const
-{
-	return x < y;
-}
-
-/******************************************************************************
- *
- *	Strip leading spaces
- */
-
-void ConfigFile::stripLeadingWhiteSpace(string& s)
-{
-	if (!s.size())
-	{
-		return;
-	}
-
-	const string::size_type startPos = s.find_first_not_of(" \t\r");
-	if (startPos == string::npos)
-	{
-		s.erase();	// nothing but air
-	}
-	else if (startPos)
-	{
-		s = s.substr(startPos);
-	}
-}
-
-/******************************************************************************
- *
- *	Strip trailing spaces
- */
-
-void ConfigFile::stripTrailingWhiteSpace(string& s)
-{
-	if (!s.size())
-	{
-		return;
-	}
-
-	string::size_type endPos = s.find_last_not_of(" \t\r");
-	if (endPos != string::npos)
-	{
-		// Note that endPos is the index to the last non-ws char
-		// why we have to inc. it
-		++endPos;
-		s = s.substr(0, endPos);
-	}
-}
 
 /******************************************************************************
  *
@@ -150,16 +97,8 @@ string ConfigFile::getString(const string& key)
 {
     checkLoadConfig();
 
-    mymap_t::iterator lookup;
-
-    lookup = parameters.find(key);
-
-    if (lookup != parameters.end())
-    {
-    	return lookup->second;
-    }
-
-    return string();
+    int pos;
+    return parameters.find(key, pos) ? parameters[pos].second : string();
 }
 
 /******************************************************************************
@@ -169,7 +108,7 @@ string ConfigFile::getString(const string& key)
 
 string ConfigFile::parseKeyFrom(const string& inputLine, string::size_type& endPos)
 {
-    endPos = inputLine.find_first_of("=\t");
+    endPos = inputLine.find_first_of("=");
     if (endPos == string::npos)
     {
         return inputLine;
@@ -197,7 +136,7 @@ string ConfigFile::parseValueFrom(string inputLine, string::size_type initialPos
         return string();
     }
 
-    stripTrailingWhiteSpace(inputLine);
+    inputLine.rtrim(" \t\r");
     return inputLine.substr(startPos);
 }
 
@@ -219,13 +158,27 @@ void ConfigFile::checkLoadConfig()
  *	Load file immediately
  */
 
+namespace {
+	class FileClose
+	{
+public:
+		static void clear(IB_FILE *f)
+		{
+			if (f) {
+				ib_fclose(f);
+			}
+		}
+	};
+}
+
 void ConfigFile::loadConfig()
 {
 	isLoadedFlg = true;
 
 	parameters.clear();
 
-    FILE* ifile = fopen(configFile.c_str(), "rt");
+	Firebird::AutoPtr<IB_FILE, FileClose> ifile = 
+		fopen(configFile.c_str(), "rt");
 	
 #ifdef EXIT_ON_NO_CONF
 	int BadLinesCount = 0;
@@ -256,7 +209,7 @@ void ConfigFile::loadConfig()
 		inputLine.LoadFromFile(ifile);
 
 		stripComments(inputLine);
-		stripLeadingWhiteSpace(inputLine);
+		inputLine.ltrim(" \t\r");
 		
 		if (!inputLine.size())
 		{
@@ -279,13 +232,11 @@ void ConfigFile::loadConfig()
         string::size_type endPos;
 
         string key   = parseKeyFrom(inputLine, endPos);
-		stripTrailingWhiteSpace(key);
+		key.rtrim(" \t\r");
 		// TODO: here we must check for correct parameter spelling !
         string value = parseValueFrom(inputLine, endPos);
 
-		// parameters.insert(pair<string, string>(key, value));
-		// Just to display yet another template function
-        parameters.insert(std::make_pair(key, value));
+		parameters.add(Parameter(getPool(), key, value));
     }
 #ifdef EXIT_ON_NO_CONF
 	if (BadLinesCount && fExitOnError) {
