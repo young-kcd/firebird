@@ -507,6 +507,9 @@ static LexerState lex;
 %token IIF
 %token SCALAR_ARRAY
 %token CROSS
+%token NEXT
+%token SEQUENCE
+%token RESTART
 
 /* precedence declarations for expression evaluation */
 
@@ -569,30 +572,21 @@ statement	: alter
 
 /* GRANT statement */
 
-grant	 	: GRANT privileges ON prot_table_name
-			TO user_grantee_list grant_option
-			{ $$ = make_node (nod_grant, (int) e_grant_count, 
-					$2, $4, make_list($6), $7); }
-		| GRANT proc_privileges ON PROCEDURE simple_proc_name
-			TO user_grantee_list grant_option
+grant	: GRANT privileges ON table_noise simple_table_name
+			TO non_role_grantee_list grant_option
 			{ $$ = make_node (nod_grant, (int) e_grant_count, 
 					$2, $5, make_list($7), $8); }
-		| GRANT privileges ON prot_table_name
-			TO grantee_list
-			{ $$ = make_node (nod_grant, (int) e_grant_count, 
-					$2, $4, make_list($6), NULL); }
 		| GRANT proc_privileges ON PROCEDURE simple_proc_name
-			TO grantee_list
+			TO non_role_grantee_list grant_option
 			{ $$ = make_node (nod_grant, (int) e_grant_count, 
-					$2, $5, make_list($7), NULL); }
+					$2, $5, make_list($7), $8); }
 		| GRANT role_name_list TO role_grantee_list role_admin_option
 			{ $$ = make_node (nod_grant, (int) e_grant_count, 
 					make_list($2), make_list($4), NULL, $5); }
-				; 
+		;
 
-prot_table_name	: simple_table_name
-		| TABLE simple_table_name
-			{ $$ = $2; }
+table_noise	: TABLE
+		|
 		;
 
 privileges	: ALL
@@ -627,13 +621,13 @@ privilege	: SELECT
 grant_option	: WITH GRANT OPTION
 			{ $$ = make_node (nod_grant, (int) 0, NULL); }
 		|
-			{ $$ = 0; }
+			{ $$ = NULL; }
 		;
 
 role_admin_option   : WITH ADMIN OPTION
 			{ $$ = make_node (nod_grant_admin, (int) 0, NULL); }
 		|
-			{ $$ = 0; }
+			{ $$ = NULL; }
 		;
 
 simple_proc_name: symbol_procedure_name
@@ -643,44 +637,33 @@ simple_proc_name: symbol_procedure_name
 
 /* REVOKE statement */
 
-revoke	 	: REVOKE rev_grant_option privileges ON prot_table_name
-			FROM user_grantee_list
-			{ $$ = make_node (nod_revoke, 
-				(int) e_grant_count, $3, $5,
-				make_list($7), $2); }
-		| REVOKE rev_grant_option proc_privileges ON
-			PROCEDURE simple_proc_name FROM user_grantee_list
-			{ $$ = make_node (nod_revoke, 
-				(int) e_grant_count, $3, $6,
-				make_list($8), $2); }
-		| REVOKE privileges ON prot_table_name
-			FROM user_grantee_list
-			{ $$ = make_node (nod_revoke, 
-				(int) e_grant_count, $2, $4,
-				make_list($6), NULL); }
-		| REVOKE proc_privileges ON
-			PROCEDURE simple_proc_name FROM user_grantee_list
-			{ $$ = make_node (nod_revoke, 
-				(int) e_grant_count, $2, $5,
-				make_list($7), NULL); }
-		| REVOKE privileges ON prot_table_name
-			FROM grantee_list
-			{ $$ = make_node (nod_revoke, 
-				(int) e_grant_count, $2, $4,
-				make_list($6), NULL); }
-		| REVOKE proc_privileges ON
-			PROCEDURE simple_proc_name FROM grantee_list
-			{ $$ = make_node (nod_revoke, 
-				(int) e_grant_count, $2, $5,
-				make_list($7), NULL); }
-		| REVOKE role_name_list FROM role_grantee_list
-			{ $$ = make_node (nod_revoke, 
-				(int) e_grant_count, make_list($2), make_list($4),
-				NULL, NULL); }
-				; 
+revoke	: REVOKE rev_grant_option privileges ON table_noise simple_table_name
+			FROM non_role_grantee_list
+			{ $$ = make_node (nod_revoke, (int) e_grant_count,
+					$3, $6, make_list($8), $2); }
+		| REVOKE rev_grant_option proc_privileges ON PROCEDURE simple_proc_name
+			FROM non_role_grantee_list
+			{ $$ = make_node (nod_revoke, (int) e_grant_count,
+					$3, $6, make_list($8), $2); }
+		| REVOKE rev_admin_option role_name_list FROM role_grantee_list
+			{ $$ = make_node (nod_revoke, (int) e_grant_count,
+					make_list($3), make_list($5), NULL, $2); }
+		; 
 
 rev_grant_option : GRANT OPTION FOR
 			{ $$ = make_node (nod_grant, (int) 0, NULL); }
+		|
+			{ $$ = NULL; }
+		;
+
+rev_admin_option : ADMIN OPTION FOR
+			{ $$ = make_node (nod_grant_admin, (int) 0, NULL); }
+		|
+			{ $$ = NULL; }
+		;
+
+non_role_grantee_list	: grantee_list
+		| user_grantee_list
 		;
 
 grantee_list	: grantee
@@ -858,6 +841,8 @@ create_clause	: EXCEPTION symbol_exception_name sql_string
 			{ $$ = $2; }
 		| GENERATOR generator_clause
 			{ $$ = $2; }
+		| SEQUENCE generator_clause
+			{ $$ = $2; }
 		| DATABASE db_clause
 			{ $$ = $2; }
 		| DOMAIN   domain_clause
@@ -1017,19 +1002,17 @@ domain_check_constraint 	: begin_trigger CHECK '(' search_condition ')' end_trig
 								;
 
 
-/* CREATE GENERATOR */
+/* CREATE SEQUENCE/GENERATOR */
 
 generator_clause : symbol_generator_name
-			{ $$ = make_node (nod_def_generator, 
-						(int) e_gen_count, $1); }
+			{ $$ = make_node (nod_def_generator, (int) e_gen_count, $1); }
 		 ;
 
 
 /* CREATE ROLE */
 
 role_clause : symbol_role_name
-			{ $$ = make_node (nod_def_role, 
-						(int) 1, $1); }
+			{ $$ = make_node (nod_def_role, (int) 1, $1); }
 		;
 
 
@@ -2019,6 +2002,8 @@ alter_clause	: EXCEPTION symbol_exception_name sql_string
 		| INDEX alter_index_clause
 						{ $$ = make_node (nod_mod_index, 
 					 (int) e_mod_idx_count, $2); }
+		| SEQUENCE alter_sequence_clause
+			{ $$ = $2; }
 		;
 
 domain_default_opt2	: DEFAULT begin_trigger default_value
@@ -2157,6 +2142,14 @@ alter_index_clause	: symbol_index_name ACTIVE
 				{ $$ = make_node (nod_idx_inactive, 1, $1); }
 			;
 
+alter_sequence_clause	: symbol_generator_name RESTART WITH signed_long_integer
+			{ $$ = make_node (nod_set_generator2, e_gen_id_count, $1,
+				MAKE_constant ((dsql_str*) $4, CONSTANT_SLONG)); }
+		| symbol_generator_name RESTART WITH signed_64bit_integer
+			{ $$ = make_node (nod_set_generator2, e_gen_id_count, $1,
+				MAKE_constant((dsql_str*) $4, CONSTANT_SINT64)); }
+		;
+
 
 /* ALTER DATABASE */
 
@@ -2254,6 +2247,8 @@ drop_clause	: EXCEPTION symbol_exception_name
 		| ROLE symbol_role_name
 			{ $$ = make_node (nod_del_role, (int) 1, $2); }
 		| GENERATOR symbol_generator_name
+			{ $$ = make_node (nod_del_generator, (int) 1, $2); }
+		| SEQUENCE symbol_generator_name
 			{ $$ = make_node (nod_del_generator, (int) 1, $2); }
 		;
 
@@ -2690,21 +2685,11 @@ set		: set_transaction
 
 
 set_generator	: SET GENERATOR symbol_generator_name TO signed_long_integer
-			{ 
-			  $$ = make_node (nod_set_generator2, e_gen_id_count, $3,
-						MAKE_constant ((dsql_str*) $5, CONSTANT_SLONG));
-			}
-				| SET GENERATOR symbol_generator_name TO NUMBER64BIT
-						{
-			  $$ = make_node (nod_set_generator2, e_gen_id_count, $3,
-					   MAKE_constant((dsql_str*)$5, CONSTANT_SINT64));
-			}
-				| SET GENERATOR symbol_generator_name TO '-' NUMBER64BIT
-						{
-			  $$ = make_node (nod_set_generator2, (int) e_gen_id_count, $3,
-					  make_node(nod_negate, 1,
-							MAKE_constant((dsql_str*)$6, CONSTANT_SINT64)));
-			}
+			{ $$ = make_node (nod_set_generator2, e_gen_id_count, $3,
+				MAKE_constant ((dsql_str*) $5, CONSTANT_SLONG)); }
+		| SET GENERATOR symbol_generator_name TO signed_64bit_integer
+			{ $$ = make_node (nod_set_generator2, e_gen_id_count, $3,
+				MAKE_constant((dsql_str*)$5, CONSTANT_SINT64)); }
 		;
 
 
@@ -3635,6 +3620,7 @@ value	: column_name
 		| variable
 		| cast_specification
 		| case_expression
+		| next_value_expression
 		| udf
 		| '-' value
 			{ $$ = make_node (nod_negate, 1, $2); }
@@ -3871,11 +3857,16 @@ signed_long_integer	:	long_integer
 long_integer	: NUMBER
 			{ $$ = $1;}
 		;
+
+signed_64bit_integer	: NUMBER64BIT
+		| '-' NUMBER64BIT
+			{ $$ = (dsql_nod*) - (IPTR) $2; }
+		;
+
 	
 /* functions */
 
 function	: aggregate_function
-	| generate_value_function
 	| numeric_value_function
 	| string_value_function
 	;
@@ -3927,17 +3918,6 @@ aggregate_function	: COUNT '(' '*' ')'
 			{ $$ = make_node (nod_agg_max, 1, $4); }
 		| MAXIMUM '(' DISTINCT value ')'
 			{ $$ = make_node (nod_agg_max, 1, $4); }
-		;
-
-/* Firebird specific functions into 'generate_value_function' */
-
-generate_value_function	: GEN_ID '(' symbol_generator_name ',' value ')'	
-			{ 
-			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
-				  $$ = make_node (nod_gen_id2, 2, $3, $5);
-			  else
-				  $$ = make_node (nod_gen_id, 2, $3, $5);
-			}
 		;
 
 numeric_value_function	: extract_expression
@@ -4030,6 +4010,21 @@ case_operand	: value
 
 case_result	: value
 		;
+
+/* next value expression */
+
+next_value_expression	: NEXT KW_VALUE FOR symbol_generator_name
+			{ $$ = make_node (nod_gen_id, 2, $4,
+					MAKE_constant((dsql_str*) 1, CONSTANT_SLONG)); }
+		| GEN_ID '(' symbol_generator_name ',' value ')'
+			{ 
+			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
+				  $$ = make_node (nod_gen_id2, 2, $3, $5);
+			  else
+				  $$ = make_node (nod_gen_id, 2, $3, $5);
+			}
+		;
+
 
 timestamp_part	: YEAR
 			{ $$ = MAKE_constant ((dsql_str*)blr_extract_year, CONSTANT_SLONG); }
@@ -4167,6 +4162,9 @@ non_reserved_word :
 	| SCALAR_ARRAY
 	| WEEKDAY
 	| YEARDAY
+	| SEQUENCE
+	| NEXT
+	| RESTART
 	;
 
 %%

@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.38 2004-11-22 20:49:57 skidder Exp $
+ *  $Id: keywords.cpp,v 1.39 2004-12-02 22:51:40 dimitr Exp $
  *
  */
 
@@ -197,6 +197,7 @@ static const TOK tokens[] = {
 	{NATIONAL, "NATIONAL", 1},
 	{NATURAL, "NATURAL", 1},
 	{NCHAR, "NCHAR", 1},
+	{NEXT, "NEXT", 2},
 	{NO, "NO", 1},
 	{NOT, "NOT", 1},
 	{NULLIF, "NULLIF", 2},
@@ -238,6 +239,7 @@ static const TOK tokens[] = {
 	{RELEASE, "RELEASE", 2},
 	{RESERVING, "RESERV", 1},	// Alias of RESERVING 
 	{RESERVING, "RESERVING", 1},
+	{RESTART, "RESTART", 2},
 	{RESTRICT, "RESTRICT", 1},
 	{RETAIN, "RETAIN", 1},
 	{RETURNING_VALUES, "RETURNING_VALUES", 1},
@@ -254,6 +256,7 @@ static const TOK tokens[] = {
 	{SECOND, "SECOND", 2},
 	{SEGMENT, "SEGMENT", 1},
 	{SELECT, "SELECT", 1},
+	{SEQUENCE, "SEQUENCE", 2},
 	{SET, "SET", 1},
 	{SHADOW, "SHADOW", 1},
 	{KW_SHARED, "SHARED", 1},

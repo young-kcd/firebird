@@ -4361,9 +4361,9 @@ static void grant_revoke( dsql_req* request)
 	dsql_nod** uptr;
 	dsql_nod** uend;
 
-	SSHORT option = 0; // no grant/admin option
-	dsql_nod*    ddl_node = request->req_ddl_node;
-	dsql_nod*    privs    = ddl_node->nod_arg[e_grant_privs];
+	USHORT option = 0; // no grant/admin option
+	dsql_nod* ddl_node = request->req_ddl_node;
+	dsql_nod* privs = ddl_node->nod_arg[e_grant_privs];
 
     bool process_grant_role = false;
 	if (privs->nod_arg[0] != NULL) {
@@ -4385,12 +4385,8 @@ static void grant_revoke( dsql_req* request)
 		uend = users->nod_arg + users->nod_count;
 		for (uptr = users->nod_arg; uptr < uend; ++uptr)
 		{
-			modify_privileges(	request,
-								ddl_node->nod_type,
-								option,
-								privs,
-								table,
-								*uptr);
+			modify_privileges(request, ddl_node->nod_type, option,
+							  privs, table, *uptr);
 		}
 	}
 	else
@@ -4408,11 +4404,8 @@ static void grant_revoke( dsql_req* request)
 			uend = users->nod_arg + users->nod_count;
 			for (uptr = users->nod_arg; uptr < uend; ++uptr)
 			{
-				process_role_nm_list(	request,
-										option,
-										*uptr,
-										*role_ptr,
-										ddl_node->nod_type);
+				process_role_nm_list(request, option, *uptr, *role_ptr,
+									 ddl_node->nod_type);
 			}
 		}
 	}
