@@ -1,3 +1,29 @@
+2003-07-24 12:21  aafemt
+
+	* firebird2/src/: burp/backup.epp, burp/canon_proto.h,
+	burp/canonical.cpp, burp/restore.epp, dsql/array.epp,
+	dsql/array_proto.h, gpre/prett_proto.h, gpre/pretty.cpp,
+	jrd/blb.cpp, jrd/blb_proto.h, jrd/gdsold.h, jrd/jrd.cpp,
+	jrd/jrd_proto.h, jrd/sdl.cpp, jrd/sdl.h, jrd/sdl_proto.h,
+	remote/inter_proto.h, remote/interface.cpp, remote/protocol.cpp,
+	remote/protocol.h, remote/server.cpp:
+	
+	sdl is a plain char again. Some cleanup around it
+
+2003-07-24 00:45  arnobrinkman
+
+	* firebird2/src/jrd/par.cpp:
+	
+	bugfix: sub-select in aggregate select inside a view failed. Due
+	wrong context/stream parsing.
+
+2003-07-24 00:42  arnobrinkman
+
+	* firebird2/src/jrd/par.cpp:
+	
+	bugfix: sub-select in aggregate select inside a view failed. Due
+	wrong context/stream parsing.
+
 2003-07-19 08:20  bellardo
 
 	* firebird2/configure.in:
