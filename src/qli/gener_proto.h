@@ -24,10 +24,10 @@
 #ifndef QLI_GENER_PROTO_H
 #define QLI_GENER_PROTO_H
 
-extern struct qli_nod	*GEN_generate (struct qli_nod *);
+extern qli_nod*	GEN_generate(qli_nod*);
 extern void		GEN_release (void);
-extern struct rlb	*GEN_rlb_extend (struct rlb *);
-extern void		GEN_rlb_release (struct rlb *);
+extern rlb*		GEN_rlb_extend(rlb*);
+extern void		GEN_rlb_release(rlb*);
 
 #endif /* QLI_GENER_PROTO_H */
 

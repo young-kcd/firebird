@@ -25,6 +25,6 @@
 #define _QLI_HELP_PROTO_H_
 
 extern void	HELP_fini (void);
-extern void	HELP_help (struct syn *);
+extern void	HELP_help(syn*);
 
 #endif /* _QLI_HELP_PROTO_H_ */

@@ -36,7 +36,7 @@ static bool scompare(SCHAR *, int, SCHAR *, int);
 static SYM hash_table[HASH_SIZE];
 static SYM key_symbols;
 
-struct word {
+struct word_t {
 	KWWORDS id;
 	SCHAR *keyword;
 } keywords[] = {
@@ -84,7 +84,7 @@ void HSH_init(void)
 	SCHAR *string;
 	SYM symbol;
 	int i;
-	struct word *word;
+	word_t* word;
 
 	for (i = 0, word = keywords; i < FB_NELEM(keywords); i++, word++) {
 		for (string = word->keyword; *string; string++);

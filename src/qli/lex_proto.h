@@ -26,20 +26,20 @@
 
 extern bool		LEX_active_procedure (void);
 extern void		LEX_edit (SLONG, SLONG);
-extern struct tok	*LEX_edit_string (void);
-extern struct tok	*LEX_filename (void);
+extern tok*		LEX_edit_string(void);
+extern tok*		LEX_filename(void);
 extern void		LEX_fini (void);
 extern void		LEX_flush (void);
 extern bool		LEX_get_line (TEXT *, TEXT *, int);
 extern void		LEX_init (void);
 extern void		LEX_mark_statement (void);
 extern void		LEX_pop_line (void);
-extern void		LEX_procedure (struct dbb *, FRBRD *);
+extern void		LEX_procedure(dbb*, FRBRD*);
 extern bool		LEX_push_file (TEXT *, bool);
 extern bool		LEX_push_string (TEXT *);
 extern void		LEX_put_procedure (FRBRD *, SLONG, SLONG);
 extern void		LEX_real (void);
-extern struct lls	*LEX_statement_list (void);
-extern struct tok	*LEX_token (void);
+extern lls*		LEX_statement_list(void);
+extern tok*		LEX_token(void);
 
 #endif /* _QLI_LEX_PROTO_H_ */

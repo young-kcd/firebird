@@ -1915,7 +1915,7 @@ static QLI_NOD expand_sort( SYN input, LLS stack, QLI_NOD list)
 	ITM item;
 	SYN *syn_ptr, expr;
 	QLI_NOD node, *ptr;
-	USHORT i, position;
+	USHORT i;
 
 	node = MAKE_NODE(nod_list, input->syn_count);
 	node->nod_count = input->syn_count / 2;
@@ -1924,8 +1924,10 @@ static QLI_NOD expand_sort( SYN input, LLS stack, QLI_NOD list)
 
 	for (i = 0; i < node->nod_count; i++) {
 		expr = *syn_ptr++;
-		if (expr->syn_type == nod_position) {
-			position = (USHORT) expr->syn_arg[0];
+		if (expr->syn_type == nod_position)
+		{	// FIXME: isn't plain 'unsigned long' better here?
+			// On 64bit platforms long is 64bit as well as pointer
+			ULONG position = (ULONG) expr->syn_arg[0];
 			if (!list || !position || position > list->nod_count)
 				IBERROR(152);	// Msg152 invalid ORDER BY ordinal 
 			item = (ITM) list->nod_arg[position - 1];

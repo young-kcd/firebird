@@ -142,7 +142,7 @@ typedef struct rfr_tab_t {
 	int bit_mask;
 } *RFR_TAB;
 
-static const struct rfr_tab_t rfr_table[] = {
+static const rfr_tab_t rfr_table[] = {
 	{ "RDB$INDICES", "RDB$INDEX_INACTIVE", DBB_cap_idx_inactive },
 /* OBSOLETE - 1996-Aug-06 David Schnepper 
 	{ "RDB$RELATIONS",	"RDB$STORE_TRIGGER",	DBB_cap_triggers },

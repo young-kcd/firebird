@@ -30,6 +30,7 @@
 #include "../jrd/gds.h"
 #include "../qli/dtr.h"
 #include "../qli/compile.h"
+#include "../qli/parse.h"
 #include "../qli/err_proto.h"
 #include "../qli/help_proto.h"
 #include "../qli/lex_proto.h"

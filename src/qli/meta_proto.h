@@ -24,33 +24,33 @@
 #ifndef QLI_META_PROTO_H
 #define QLI_META_PROTO_H
 
-extern int	MET_declare (struct dbb *, struct qli_fld *, struct nam *);
-extern void	MET_define_field (struct dbb *, struct qli_fld *);
-extern void	MET_define_index (struct syn *);
-extern void	MET_define_relation (struct qli_rel *, struct qli_rel *);
-extern void	MET_define_sql_relation (struct qli_rel *);
-extern void	MET_delete_database (struct dbb *);
-extern void	MET_delete_field (struct dbb *, struct nam *);
-extern void	MET_delete_index (struct dbb *, struct nam *);
-extern void	MET_delete_relation (struct qli_rel *);
-extern int	MET_dimensions (struct dbb *, TEXT *);
-extern void	MET_fields (struct qli_rel *);
-extern void	MET_finish (struct dbb *);
+extern int	MET_declare(dbb*, qli_fld*, nam*);
+extern void	MET_define_field(dbb*, qli_fld*);
+extern void	MET_define_index(syn*);
+extern void	MET_define_relation(qli_rel*, qli_rel*);
+extern void	MET_define_sql_relation(qli_rel*);
+extern void	MET_delete_database(dbb*);
+extern void	MET_delete_field(dbb*, nam*);
+extern void	MET_delete_index(dbb*, nam*);
+extern void	MET_delete_relation(qli_rel*);
+extern int	MET_dimensions(dbb*, TEXT*);
+extern void	MET_fields(qli_rel*);
+extern void	MET_finish(dbb*);
 extern int	MET_get_datatype (USHORT);
 extern void	MET_index_info(const TEXT*, const TEXT*, SCHAR*);
-extern void	MET_meta_commit (struct dbb *);
-extern void	MET_meta_rollback (struct dbb *);
-extern FRBRD	*MET_meta_transaction (struct dbb *, int);
-extern void	MET_modify_field (struct dbb *, struct qli_fld *);
-extern void	MET_modify_index (struct syn *);
-extern void	MET_modify_relation (struct qli_rel *, struct qli_fld *);
-extern void	MET_ready (struct syn *, USHORT);
+extern void	MET_meta_commit(dbb*);
+extern void	MET_meta_rollback(dbb*);
+extern FRBRD*	MET_meta_transaction(dbb*, int);
+extern void	MET_modify_field(dbb*, qli_fld*);
+extern void	MET_modify_index(syn*);
+extern void	MET_modify_relation(qli_rel*, qli_fld*);
+extern void	MET_ready(syn*, USHORT);
 extern void	MET_shutdown (void);
-extern void	MET_sql_alter_table (struct qli_rel *, struct qli_fld *);
-extern void	MET_sql_cr_view (struct syn *);
-extern void	MET_sql_grant (struct syn *);
-extern void	MET_sql_revoke (struct syn *);
-extern FRBRD	*MET_transaction (NOD_T, struct dbb *);
+extern void	MET_sql_alter_table(qli_rel*, qli_fld*);
+extern void	MET_sql_cr_view(syn*);
+extern void	MET_sql_grant(syn*);
+extern void	MET_sql_revoke(syn*);
+extern FRBRD*	MET_transaction(NOD_T, dbb*);
 
 #endif /* QLI_META_PROTO_H */
 

@@ -28,6 +28,7 @@
 #include "../jrd/common.h"
 #include "../qli/dtr.h"
 #include "../qli/exe.h"
+#include "../qli/parse.h"
 #include "../qli/err_proto.h"
 #include "../qli/eval_proto.h"
 #include "../qli/exe_proto.h"

@@ -25,13 +25,13 @@
 #define _QLI_EXE_PROTO_H_
 
 extern void		EXEC_abort (void);
-extern void		EXEC_execute (struct qli_nod *);
-extern FRBRD	*EXEC_open_blob (struct qli_nod *);
-extern struct file	*EXEC_open_output (struct qli_nod *);
+extern void		EXEC_execute(qli_nod*);
+extern FRBRD*	EXEC_open_blob(qli_nod*);
+extern file*	EXEC_open_output(qli_nod*);
 extern void		EXEC_poll_abort (void);
-extern struct dsc	*EXEC_receive (struct qli_msg *, struct par *);
-extern void		EXEC_send (struct qli_msg *);
-extern void		EXEC_start_request (struct qli_req *, struct qli_msg *);
-extern void		EXEC_top (struct qli_nod *);
+extern dsc*		EXEC_receive(qli_msg*, par*);
+extern void		EXEC_send(qli_msg*);
+extern void		EXEC_start_request(qli_req*, qli_msg*);
+extern void		EXEC_top(qli_nod*);
 
 #endif /* _QLI_EXE_PROTO_H_ */

@@ -26,8 +26,8 @@
 
 extern void		HSH_fini (void);
 extern void		HSH_init (void);
-extern void		HSH_insert (struct sym *);
-extern struct sym	*HSH_lookup (SCHAR *, int);
-extern void		HSH_remove (struct sym *);
+extern void		HSH_insert(sym*);
+extern sym*		HSH_lookup(SCHAR*, int);
+extern void		HSH_remove(sym*);
 
 #endif /* QLI_HSH_PROTO_H */

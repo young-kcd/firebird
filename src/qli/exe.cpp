@@ -263,7 +263,7 @@ FRBRD *EXEC_open_blob( QLI_NOD node)
 }
 
 
-struct file *EXEC_open_output(QLI_NOD node)
+file* EXEC_open_output(QLI_NOD node)
 {
 /**************************************
  *
@@ -275,7 +275,7 @@ struct file *EXEC_open_output(QLI_NOD node)
  *	Open output stream to re-direct output.
  *
  **************************************/
-	IB_FILE *file;
+	IB_FILE *out_file;
 	DSC *desc;
 	TEXT filename[256], temp[64], *p, *q;
 #ifndef WIN_NT
@@ -298,8 +298,8 @@ struct file *EXEC_open_output(QLI_NOD node)
 // If output is to a file, just do it 
 
 	if (!node->nod_arg[e_out_pipe]) {
-		if (file = ib_fopen(filename, FOPEN_WRITE_TYPE))
-			return (struct file *) file;
+		if (out_file = ib_fopen(filename, FOPEN_WRITE_TYPE))
+			return (file*)out_file;
 
 		ERRQ_print_error(42, filename, NULL, NULL, NULL, NULL);
 		/* Msg42 Can't open output file %s */
@@ -312,8 +312,8 @@ struct file *EXEC_open_output(QLI_NOD node)
 #else
 
 #ifdef WIN_NT
-	if (file = _popen(filename, "w"))
-		return (struct file *) file;
+	if (out_file = _popen(filename, "w"))
+		return (file*)out_file;
 #else
 	arg = argv;
 	p = filename;
@@ -344,8 +344,8 @@ struct file *EXEC_open_output(QLI_NOD node)
 
 	close(pair[0]);
 
-	if (file = ib_fdopen(pair[1], "w"))
-		return (struct file *) file;
+	if (out_file = ib_fdopen(pair[1], "w"))
+		return (file*)out_file;
 #endif
 
 	IBERROR(37);				// Msg37 ib_fdopen failed 

@@ -24,15 +24,15 @@
 #ifndef QLI_MOV_PROTO_H
 #define QLI_MOV_PROTO_H
 
-extern int			MOVQ_compare (struct dsc *, struct dsc *);
-extern double		MOVQ_date_to_double (const struct dsc*);
+extern int			MOVQ_compare(dsc*, dsc*);
+extern double		MOVQ_date_to_double(const dsc*);
 extern int			MOVQ_decompose (const TEXT*, USHORT, SLONG *);
 extern void			MOVQ_double_to_date (double, SLONG [2]);
 extern void			MOVQ_fast (const SCHAR*, SCHAR*, ULONG);
-extern double		MOVQ_get_double (const struct dsc*);
-extern SLONG		MOVQ_get_long (const struct dsc*, SSHORT);
-extern int			MOVQ_get_string (const struct dsc*, TEXT**, struct vary*, USHORT);
-extern void			MOVQ_move (const struct dsc*, struct dsc*);
+extern double		MOVQ_get_double(const dsc*);
+extern SLONG		MOVQ_get_long(const dsc*, SSHORT);
+extern int			MOVQ_get_string(const dsc*, TEXT**, vary*, USHORT);
+extern void			MOVQ_move(const dsc*, dsc*);
 extern void			MOVQ_terminate (const SCHAR*, SCHAR*, SSHORT, SSHORT);
 
 #endif /* QLI_MOV_PROTO_H */

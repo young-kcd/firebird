@@ -37,7 +37,7 @@ static void timestamp_to_text(SLONG[2], DSC *);
 static void sql_time_to_text(ULONG[1], DSC *);
 static void sql_date_to_text(SLONG[1], DSC *);
 static void mover_error(int, USHORT, USHORT);
-static void now_to_date(struct tm *, SLONG[2]);
+static void now_to_date(tm*, SLONG[2]);
 static void numeric_to_text(const dsc*, dsc*);
 static void string_to_date(const TEXT*, USHORT, SLONG[2]);
 static void string_to_time(TEXT *, USHORT, SLONG[2]);
@@ -77,7 +77,7 @@ struct dtypes_t {
 	TEXT *description;
 };
 
-static const struct dtypes_t dtypes_table[] = {
+static const dtypes_t dtypes_table[] = {
 	{ dtype_null, "NULL" },
 	{ dtype_text, "character string" },
 	{ dtype_cstring, "character string" },
@@ -1042,7 +1042,7 @@ static void sql_date_to_text( SLONG date[1], DSC * to)
  **************************************/
 	DSC desc;
 	TEXT *p, temp[35];
-	struct tm times;
+	tm times;
 	SLONG date2[2];
 
 	date2[0] = date[0];
@@ -1077,7 +1077,7 @@ static void sql_time_to_text( ULONG date[1], DSC * to)
  **************************************/
 	DSC desc;
 	TEXT *p, temp[35];
-	struct tm times;
+	tm times;
 	SLONG date2[2];
 
 	date2[0] = 0;
@@ -1114,7 +1114,7 @@ static void timestamp_to_text( SLONG date[2], DSC * to)
  **************************************/
 	DSC desc;
 	TEXT *p, temp[35], time[15];
-	struct tm times;
+	tm times;
 
 	isc_decode_date((GDS_QUAD*)date, &times);
 
@@ -1171,7 +1171,7 @@ static void mover_error( int pattern, USHORT in_type, USHORT out_type)
 }
 
 
-static void now_to_date( struct tm *time, SLONG date[2])
+static void now_to_date(tm* time, SLONG date[2])
 {
 /**************************************
  *
@@ -1325,7 +1325,8 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
  **************************************/
 	TEXT c, temp[15], *t;
 	USHORT n, month_position, i, components[7], precision, year;
-	struct tm times, times2, *today;
+	tm times, times2;
+	tm* today;
 
 	if (!length) {
 		date[0] = date[1] = 0;
@@ -1490,7 +1491,8 @@ static void string_to_time( TEXT * string, USHORT length, SLONG date[2])
 	TEXT c, *p, temp[15], *t, *end;
 	USHORT n, i, components[7], precision;
 	time_t clock;
-	struct tm times, *today;
+	tm times;
+	tm* today;
 	if (!length) {
 		date[0] = date[1] = 0;
 		return;
