@@ -58,6 +58,8 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID reserved)
 		{
 		char buffer[MAXPATHLEN];
 		HKEY hkey_instances;
+
+		hFBDLLInstance = 0;
 		if (RegOpenKeyEx(HKEY_LOCAL_MACHINE,
 				REG_KEY_ROOT_INSTANCES, 0, KEY_READ,
 				&hkey_instances) == ERROR_SUCCESS)
@@ -73,14 +75,16 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID reserved)
 				if (!GetModuleHandle(buffer) && !GetModuleHandle(FBDLLNAME))
 				{
 					hFBDLLInstance = LoadLibrary(buffer);
-					if (!hFBDLLInstance)
-					{
-						hFBDLLInstance = LoadLibrary(FBDLLNAME);
-					}
 				}
 			}
 			RegCloseKey(hkey_instances);
 		}
+
+		if (!hFBDLLInstance)
+		{
+			hFBDLLInstance = LoadLibrary(FBDLLNAME);
+		}
+
 		}
 #endif
 		break;
