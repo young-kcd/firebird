@@ -1,3 +1,149 @@
+2003-08-30 21:51  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Optimizer fix. Compound-indices were choosen above single-indices
+	where we need only the single-field-index.
+
+2003-08-30 18:49  dimitr
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	Cleanup variable names.
+
+2003-08-30 18:45  dimitr
+
+	* firebird2/src/jrd/evl.cpp:
+	
+	Fixed runtime check, as pointed by Claudio.
+
+2003-08-30 18:41  dimitr
+
+	* firebird2/src/jrd/: exe.cpp, exe.cpp:
+	
+	Fixed broken savepoint handling in BREAK/LEAVE/EXIT.  The bug
+	caused to logical database corruption/inconsistency, such as PK/UK
+	violation, or BUGCHECK(287).
+
+2003-08-30 17:56  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Optimizer fix. Compound-indices were choosen above single-indices
+	where we need only the single-field-index.
+
+2003-08-30 15:54  epocman
+
+	* firebird2/src/utilities/install/: install_nt.h, install_reg.cpp,
+	install_svc.cpp, servi_proto.h, services.cpp:
+	
+	OEM/Ansi conversions, command-line password, other minor updates.
+
+2003-08-30 04:11  brodsom
+
+	* firebird2/src/: qli/eval.cpp, qli/exe.cpp, qli/format.cpp,
+	qli/gener.cpp, qli/lex.cpp, qli/meta.epp, qli/proc.epp,
+	gpre/gpre_meta.epp:
+	
+	-Remove GDS_VAL and GDS_REF
+
+2003-08-30 04:00  brodsom
+
+	* firebird2/src/: dudley/exe.epp, dudley/extract.epp,
+	dudley/lex.cpp, alice/alice_meta.epp, alice/exe.cpp, alice/tdr.cpp:
+	
+	-Remove GDS_VAL and GDS_REF
+
+2003-08-30 03:54  brodsom
+
+	* firebird2/src/dsql/: ddl.cpp, dsql.cpp, metd.epp, preparse.cpp:
+	
+	-Remove GDS_VAL and GDS_REF
+
+2003-08-30 03:49  brodsom
+
+	* firebird2/src/ipserver/: ipclient.cpp, ipserver.cpp:
+	
+	-Remove GDS_VAL and GDS_REF
+
+2003-08-30 03:41  brodsom
+
+	* firebird2/src/: remote/server.cpp, journal/gjrn.cpp:
+	
+	-Remove GDS_VAL and GDS_REF
+
+2003-08-30 03:34  brodsom
+
+	* firebird2/src/utilities/: rebuild/rmet.epp, gstat/dba.epp,
+	gstat/dba_full.epp, cache.cpp:
+	
+	-Remove GDS_VAL and GDS_REF
+
+2003-08-29 19:25  epocman
+
+	* firebird2/src/utilities/install/: install_nt.h, install_reg.cpp,
+	install_svc.cpp, registry.cpp, servi_proto.h, services.cpp:
+	
+	Merged recent FB 1.5 instsvc / instreg changes to head branch.
+
+2003-08-29 15:45  epocman
+
+	* firebird2/src/utilities/: install_nt.h, install_reg.cpp,
+	install_svc.cpp, registry.cpp, servi_proto.h, services.cpp:
+	
+	Fixes and enhancements to win32 instreg / instsvc install tools.
+
+2003-08-29 13:20  brodsom
+
+	* firebird2/builds/win32/preprocess.bat:
+	
+	Remove envelope.epp from preprocess
+
+2003-08-29 13:13  aafemt
+
+	* firebird2/src/jrd/ibase.h:
+	
+	No more isc_array_gen_sdl() in public API
+
+2003-08-29 12:55  aafemt
+
+	* firebird2/src/dsql/: array.epp, array_proto.h:
+	
+	No more isc_array_gen_sdl() in public API
+
+2003-08-29 12:52  aafemt
+
+	* firebird2/builds/win32/defs/: fbclient.def, fbclient_debug.def,
+	gds.def, gds32.def, gds32_debug.def:
+	
+	No more isc_array_gen_sdl() in public API
+
+2003-08-29 02:37  brodsom
+
+	* firebird2/src/: remote/os/win32/chop.cpp,
+	remote/os/win32/cntl.cpp, remote/os/win32/window.cpp,
+	remote/os/win32/wnet.cpp, msgs/build_file.epp,
+	msgs/change_msgs.epp, msgs/check_msgs.epp, msgs/enter_msgs.epp,
+	msgs/include.epp:
+	
+	-Remove BOOLEAN, TRUE and FALSE
+
+2003-08-29 02:34  brodsom
+
+	* firebird2/src/: wal/driver.cpp, wal/wal.cpp, wal/wal_proto.h,
+	wal/walc.cpp, wal/walw.cpp, utilities/gstat/dba_full.epp,
+	utilities/sbc_print.cpp:
+	
+	-Remove BOOLEAN, TRUE and FALSE
+
+2003-08-29 00:51  brodsom
+
+	* firebird2/src/: remote/os/win32/ibconfig.cpp,
+	remote/os/win32/property.cpp, remote/os/win32/window.cpp,
+	remote/os/win32/winmain.cpp, jrd/common.h:
+	
+	-Remove BOOLEAN_DEFINED macro -Remove MSG_DEFINED macro
+
 2003-08-28 22:29  arnobrinkman
 
 	* firebird2/src/dsql/: parse.cpp, parse.y:
