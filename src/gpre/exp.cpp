@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exp.cpp,v 1.10 2003-02-18 07:43:29 eku Exp $
+//	$Id: exp.cpp,v 1.11 2003-02-27 16:05:05 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -304,6 +304,7 @@ GPRE_FLD EXP_field(GPRE_CTX * rcontext)
 }
 
 
+#ifdef PYXIS
 //____________________________________________________________
 //  
 //		Parse a qualified form field clause.  If recognized,
@@ -401,7 +402,7 @@ GPRE_FLD EXP_form_field(GPRE_CTX * rcontext)
 	reference = reference->ref_null;
 	return reference->ref_field;
 }
-
+#endif
 
 //____________________________________________________________
 //  
@@ -702,7 +703,10 @@ void EXP_post_array( REF reference)
 REF EXP_post_field(GPRE_FLD field, GPRE_CTX context, USHORT null_flag)
 {
 	GPRE_REQ request;
-	REF reference, control;
+	REF reference;
+#ifdef PYXIS
+	REF control;
+#endif
 	GPRE_FLD ref_field;
 	TEXT s[128];
 
@@ -748,6 +752,7 @@ REF EXP_post_field(GPRE_FLD field, GPRE_CTX context, USHORT null_flag)
 	if (null_flag)
 		reference->ref_flags |= REF_null;
 
+#ifdef PYXIS
 //  If this is a form request, make up control field for form field 
 
 	if (request->req_type == REQ_form) {
@@ -769,6 +774,7 @@ REF EXP_post_field(GPRE_FLD field, GPRE_CTX context, USHORT null_flag)
 			control->ref_master = reference;
 		}
 	}
+#endif
 
 	return reference;
 }
@@ -1377,9 +1383,10 @@ static GPRE_NOD par_field( GPRE_REQ request)
 		if (MATCH(KW_DOT) && (cast = EXP_cast(field)))
 			field = cast;
 	}
+#ifdef PYXIS
 	else if (symbol->sym_type == SYM_form_map)
 		field = EXP_form_field(&context);
-
+#endif
 	else
 		SYNTAX_ERROR("qualified field reference");
 
@@ -1593,7 +1600,11 @@ static GPRE_NOD par_primitive_value( GPRE_REQ request, GPRE_FLD field)
 		return node;
 
 	if (!(symbol = token.tok_symbol) ||
-		(symbol->sym_type != SYM_context && symbol->sym_type != SYM_form_map))
+		(symbol->sym_type != SYM_context 
+#ifdef PYXIS
+		&& symbol->sym_type != SYM_form_map
+#endif
+		))
 		return par_native_value(request, field);
 
 	return par_field(request);

@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.21 2003-02-16 00:55:09 brodsom Exp $
+//  $Id: gpre.cpp,v 1.22 2003-02-27 16:04:53 brodsom Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -42,7 +42,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.21 2003-02-16 00:55:09 brodsom Exp $
+//	$Id: gpre.cpp,v 1.22 2003-02-27 16:04:53 brodsom Exp $
 //
 
 #define GPRE_MAIN
@@ -2488,13 +2488,16 @@ static void pass2( SLONG start_position)
 		const bool continue_flag =
 			(action->act_type == ACT_variable)			||
 			(action->act_type == ACT_segment)			||
-			(action->act_type == ACT_segment_length)	||
-			(action->act_type == ACT_title_text)		||
+			(action->act_type == ACT_segment_length)
+#ifdef PYXIS
+			|| (action->act_type == ACT_title_text)		||
 			(action->act_type == ACT_title_length)		||
 			(action->act_type == ACT_terminator)		||
 			(action->act_type == ACT_entree_text)		||
 			(action->act_type == ACT_entree_length)		||
-			(action->act_type == ACT_entree_value);
+			(action->act_type == ACT_entree_value)
+#endif
+			;
 
 		// Unless the action is purely a marker, insert a comment initiator
 		// into the output stream.

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmp.cpp,v 1.11 2003-02-10 13:28:18 eku Exp $
+//	$Id: cmp.cpp,v 1.12 2003-02-27 16:05:13 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -58,9 +58,13 @@ static void cmp_erase(ACT, GPRE_REQ);
 static void cmp_fetch(ACT);
 static void cmp_field(GPRE_REQ, GPRE_FLD, REF);
 static void cmp_for(GPRE_REQ);
+#ifdef PYXIS
 static void cmp_form(GPRE_REQ);
+#endif
 static void cmp_loop(GPRE_REQ);
+#ifdef PYXIS
 static void cmp_menu(GPRE_REQ);
+#endif
 static void cmp_modify(ACT, GPRE_REQ);
 static void cmp_port(POR, GPRE_REQ);
 static void cmp_procedure(GPRE_REQ);
@@ -190,11 +194,11 @@ void CMP_compile_request( GPRE_REQ request)
 	case REQ_ddl:
 		CMD_compile_ddl(request);
 		return;
-
+#ifdef PYXIS
 	case REQ_menu:
 		cmp_menu(request);
 		return;
-
+#endif
 	case REQ_slice:
 		cmp_slice(request);
 		return;
@@ -202,11 +206,11 @@ void CMP_compile_request( GPRE_REQ request)
 	case REQ_ready:
 		cmp_ready(request);
 		return;
-
+#ifdef PYXIS
 	case REQ_form:
 		cmp_form(request);
 		return;
-
+#endif
 	case REQ_procedure:
 		cmp_procedure(request);
 		return;
@@ -320,7 +324,7 @@ void CMP_compile_request( GPRE_REQ request)
 		cmp_blob(blob, FALSE);
 }
 
-
+#ifdef PYXIS
 //____________________________________________________________
 //  
 //		CMP_display_code is called by the code generators to compute
@@ -367,7 +371,7 @@ CMP_display_code(FINT display, REF reference)
 
 	return code;
 }
-
+#endif
 
 //____________________________________________________________
 //  
@@ -867,12 +871,13 @@ static void cmp_field( GPRE_REQ request, GPRE_FLD field, REF reference)
 		break;
 
 	case dtype_blob:
+#ifdef PYXIS
 		if (request->req_type == REQ_form) {
 			STUFF(blr_blob_id);
 			STUFF_WORD(field->fld_sub_type);
 			break;
 		}
-
+#endif
 	case dtype_quad:
 		STUFF(blr_quad);
 		STUFF(field->fld_scale);
@@ -1034,7 +1039,7 @@ static void cmp_for( GPRE_REQ request)
 	STUFF(blr_end);
 }
 
-
+#ifdef PYXIS
 //____________________________________________________________
 //  
 //		Compile a FORM request.  
@@ -1127,7 +1132,7 @@ static void cmp_form( GPRE_REQ request)
 	request->req_length = request->req_blr - request->req_base;
 	request->req_blr = request->req_base;
 }
-
+#endif
 
 //____________________________________________________________
 //  
@@ -1203,7 +1208,7 @@ static void cmp_loop( GPRE_REQ request)
 	STUFF(blr_end);
 }
 
-
+#ifdef PYXIS
 //____________________________________________________________
 //  
 //		Compile a MENU request.  This has very little to do
@@ -1271,7 +1276,7 @@ static void cmp_menu( GPRE_REQ request)
 	request->req_length = request->req_blr - request->req_base;
 	request->req_blr = request->req_base;
 }
-
+#endif
 
 //____________________________________________________________
 //  

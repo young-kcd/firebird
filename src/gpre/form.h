@@ -20,6 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
+#ifdef PYXIS
 
 #ifndef _GPRE_FORM_H_
 #define _GPRE_FORM_H_
@@ -77,3 +78,5 @@ typedef struct menu {
 #define		menu_entree_entree	menu_entree.entree_entree
 
 #endif /* _GPRE_FORM_H_ */
+
+#endif

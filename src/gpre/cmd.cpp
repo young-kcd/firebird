@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmd.cpp,v 1.8 2003-02-10 13:28:18 eku Exp $
+//	$Id: cmd.cpp,v 1.9 2003-02-27 16:05:14 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -2433,8 +2433,10 @@ static void init_field_struct( GPRE_FLD field)
 	field->fld_procedure = 0;
 	field->fld_symbol = 0;
 	field->fld_global = 0;
+#ifdef PYXIS
 	field->fld_handle = 0;
 	field->fld_prototype = 0;
+#endif
 	field->fld_array_info = 0;
 	field->fld_default_value = 0;
 	field->fld_default_source = 0;

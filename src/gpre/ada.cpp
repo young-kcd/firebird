@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.13 2003-02-12 12:44:17 brodsom Exp $
+//	$Id: ada.cpp,v 1.14 2003-02-27 16:05:18 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -89,15 +89,20 @@ static void	gen_event_wait (ACT, int);
 static void	gen_fetch (ACT, int);
 static void	gen_finish (ACT, int);
 static void	gen_for (ACT, int);
+#ifdef PYXIS
 static void	gen_form_display (ACT, int);
 static void	gen_form_end (ACT, int);
 static void	gen_form_for (ACT, int);
+#endif
 static void	gen_function (ACT, int);
 static void	gen_get_or_put_slice (ACT, REF, BOOLEAN, int);
 static void	gen_get_segment (ACT, int);
+#ifdef PYXIS
 static void	gen_item_end (ACT, int);
 static void	gen_item_for (ACT, int);
+#endif
 static void	gen_loop (ACT, int);
+#ifdef PYXIS
 static void	gen_menu (ACT, int);
 static void	gen_menu_display (ACT, int);
 static void	gen_menu_end (ACT, int);
@@ -107,6 +112,7 @@ static void	gen_menu_for (ACT, int);
 static void	gen_menu_item_end (ACT, int);
 static void	gen_menu_item_for (ACT, int);
 static void	gen_menu_request (GPRE_REQ, int);
+#endif
 static TEXT	*gen_name (TEXT *, REF, BOOLEAN);
 static void	gen_on_error (ACT, USHORT);
 static void	gen_procedure (ACT, int);
@@ -335,6 +341,7 @@ void ADA_action( ACT action, int column)
 	case ACT_for:
 		gen_for(action, column);
 		return;
+#ifdef PYXIS
 	case ACT_form_display:
 		gen_form_display(action, column);
 		break;
@@ -344,6 +351,7 @@ void ADA_action( ACT action, int column)
 	case ACT_form_for:
 		gen_form_for(action, column);
 		return;
+#endif
 	case ACT_function:
 		gen_function(action, column);
 		return;
@@ -359,6 +367,7 @@ void ADA_action( ACT action, int column)
 	case ACT_insert:
 		gen_s_start(action, column);
 		break;
+#ifdef PYXIS
 	case ACT_item_for:
 	case ACT_item_put:
 		gen_item_for(action, column);
@@ -366,9 +375,11 @@ void ADA_action( ACT action, int column)
 	case ACT_item_end:
 		gen_item_end(action, column);
 		break;
+#endif
 	case ACT_loop:
 		gen_loop(action, column);
 		break;
+#ifdef PYXIS
 	case ACT_menu:
 		gen_menu(action, column);
 		return;
@@ -393,7 +404,7 @@ void ADA_action( ACT action, int column)
 	case ACT_entree_value:
 		gen_menu_entree_att(action, column);
 		return;
-
+#endif
 	case ACT_open:
 		gen_s_start(action, column);
 		break;
@@ -463,6 +474,7 @@ void ADA_action( ACT action, int column)
 	case ACT_variable:
 		gen_variable(action, column);
 		return;
+#ifdef PYXIS
 	case ACT_window_create:
 		gen_window_create(action, column);
 		return;
@@ -472,6 +484,7 @@ void ADA_action( ACT action, int column)
 	case ACT_window_suspend:
 		gen_window_suspend(action, column);
 		return;
+#endif
 	default:
 		return;
 	}
@@ -995,9 +1008,11 @@ static void gen_clear_handles( ACT action, int column)
 	for (request = requests; request; request = request->req_next) {
 		if (!(request->req_flags & REQ_exp_hand))
 			printa(column, "%s = 0;", request->req_handle);
+#ifdef PYXIS
 		if (request->req_form_handle &&
 			!(request->req_flags & REQ_exp_form_handle))
 				printa(column, "%s = 0;", request->req_form_handle);
+#endif
 	}
 }
 
@@ -1237,7 +1252,9 @@ static void gen_database( ACT action, int column)
 	USHORT count;
 	SSHORT blob_subtype;
 	USHORT event_count, max_count;
+#ifdef PYXIS
 	FORM form;
+#endif
 	LLS stack_ptr;
 	TPB tpb;
 	REF reference;
@@ -1256,12 +1273,12 @@ static void gen_database( ACT action, int column)
 			make_port(port, column);
 	}
 	ib_fprintf(out_file, "\n");
-
+#ifdef PYXIS
 	for (db = isc_databases; db; db = db->dbb_next)
 		for (form = db->dbb_forms; form; form = form->form_next)
 			printa(column, "%s\t: interbase.form_handle := 0;\t-- form %s --",
 				   form->form_handle, form->form_name->sym_string);
-
+#endif
 	for (request = requests; request; request = request->req_routine) {
 		if (request->req_flags & REQ_local)
 			continue;
@@ -1336,6 +1353,7 @@ static void gen_database( ACT action, int column)
 		   "isc_status2\t: interbase.status_vector;\t-- status vector --");
 	printa(column, "SQLCODE\t: %s := 0;\t\t\t-- SQL status code --",
 		   LONG_DCL);
+#ifdef PYXIS
 	if (sw_pyxis && ((sw_window_scope != DBB_EXTERN) || !ada_package[0])) {
 		printa(column,
 			   "isc_window\t: interbase.window_handle := 0;\t-- window handle --");
@@ -1344,7 +1362,7 @@ static void gen_database( ACT action, int column)
 		printa(column, "isc_height\t: %s := 24;\t-- window height --",
 			   USHORT_DCL);
 	}
-
+#endif
 	if (!ada_package[0])
 		for (db = isc_databases; db; db = db->dbb_next)
 			printa(column,
@@ -2227,7 +2245,7 @@ static void gen_for( ACT action, int column)
 //  
 //		Generate code for a form interaction.
 //  
-
+#ifdef PYXIS
 static void gen_form_display( ACT action, int column)
 {
 	FINT display;
@@ -2262,8 +2280,8 @@ static void gen_form_display( ACT action, int column)
 		   ada_package, request->req_trans, ADA_WINDOW_PACKAGE,
 		   request->req_handle, port->por_ident, out);
 }
-
-
+#endif
+#ifdef PYXIS
 //____________________________________________________________
 //  
 //		Generate code for a form block.
@@ -2273,8 +2291,8 @@ static void gen_form_end( ACT action, int column)
 {
 	printa(column, "interbase.pop_window (%sisc_window)", ADA_WINDOW_PACKAGE);
 }
-
-
+#endif
+#ifdef PYXIS
 //____________________________________________________________
 //  
 //		Generate code for a form block.
@@ -2324,7 +2342,7 @@ static void gen_form_for( ACT action, int column)
 	printa(column, "interbase.reset_form (%s %s);",
 		   status, request->req_handle);
 }
-
+#endif
 
 //____________________________________________________________
 //  
@@ -2524,7 +2542,7 @@ static void gen_get_segment( ACT action, int column)
 	}
 }
 
-
+#ifdef PYXIS
 //____________________________________________________________
 //  
 //		Generate end of block for PUT_ITEM and FOR_ITEM.
@@ -2569,8 +2587,8 @@ static void gen_item_end( ACT action, int column)
 		   ada_package, request->req_trans,
 		   request->req_handle, port->por_ident);
 }
-
-
+#endif
+#ifdef PYXIS
 //____________________________________________________________
 //  
 //		Generate insert text for FOR_ITEM and PUT_ITEM.
@@ -2620,7 +2638,7 @@ static void gen_item_for( ACT action, int column)
 		   request->req_handle, request->req_ports->por_ident);
 	printa(column, "exit when %s = 0;", index);
 }
-
+#endif
 
 //____________________________________________________________
 //  
@@ -2652,7 +2670,7 @@ static void gen_loop( ACT action, int column)
 //____________________________________________________________
 //  
 //  
-
+#ifdef PYXIS
 static void gen_menu( ACT action, int column)
 {
 	GPRE_REQ request;
@@ -2662,8 +2680,8 @@ static void gen_menu( ACT action, int column)
 		   ADA_WINDOW_PACKAGE,
 		   request->req_handle, request->req_length, request->req_ident);
 }
-
-
+#endif
+#ifdef PYXIS
 //____________________________________________________________
 //  
 //		Generate code for a menu interaction.
@@ -2699,11 +2717,11 @@ static void gen_menu_display( ACT action, int column)
 		   menu->menu_entree_entree, menu->menu_entree_value);
 }
 
-
+#endif
 //____________________________________________________________
 //  
 //  
-
+#ifdef PYXIS
 static void gen_menu_end( ACT action, int column)
 {
 
@@ -2717,12 +2735,12 @@ static void gen_menu_end( ACT action, int column)
 	printa(column + INDENT, "null ;");
 	printa(column, "end case");
 }
-
+#endif
 
 //____________________________________________________________
 //  
 //  
-
+#ifdef PYXIS
 static void gen_menu_entree( ACT action, int column)
 {
 	GPRE_REQ request;
@@ -2731,8 +2749,8 @@ static void gen_menu_entree( ACT action, int column)
 
 	printa(column, "when %d =>", action->act_count);
 }
-
-
+#endif
+#ifdef PYXIS
 //____________________________________________________________
 //  
 //    Generate code for a reference to a menu or entree attribute.
@@ -2777,8 +2795,8 @@ static void gen_menu_entree_att( ACT action, int column)
 	else
 		printa(column, "isc_%d", ident);
 }
-
-
+#endif
+#ifdef PYXIS
 //____________________________________________________________
 //  
 //		Generate code for a menu block.
@@ -2796,8 +2814,8 @@ static void gen_menu_for( ACT action, int column)
 		printa(column, "interbase.initialize_menu (%s);",
 			   request->req_handle);
 }
-
-
+#endif
+#ifdef PYXIS
 //____________________________________________________________
 //  
 //		Generate end of block for PUT_ITEM and FOR_ITEM
@@ -2826,8 +2844,8 @@ static void gen_menu_item_end( ACT action, int column)
 			   entree->entree_entree, entree->entree_value);
 
 }
-
-
+#endif
+#ifdef PYXIS
 //____________________________________________________________
 //  
 //		Generate insert text for FOR_ITEM and PUT_ITEM
@@ -2859,13 +2877,13 @@ static void gen_menu_item_for( ACT action, int column)
 	printa(column, "exit when isc_%d /= 0;", entree->entree_end);
 
 }
-
+#endif
 
 //____________________________________________________________
 //  
 //		Generate definitions associated with a dynamic menu request.
 //  
-
+#ifdef PYXIS
 static void gen_menu_request( GPRE_REQ request, int column)
 {
 	ACT action;
@@ -2921,7 +2939,7 @@ static void gen_menu_request( GPRE_REQ request, int column)
 	}
 
 }
-
+#endif
 
 //____________________________________________________________
 //  
@@ -3185,9 +3203,14 @@ static void gen_request( GPRE_REQ request, int column)
 //  generate request handle, blob handles, and ports 
 
 	if (!(request->req_flags &
-		  (REQ_exp_hand | REQ_menu_for_item | REQ_sql_blob_open |
+		  (REQ_exp_hand 
+#ifdef PYXIS
+		| REQ_menu_for_item 
+#endif
+		| REQ_sql_blob_open |
 		   REQ_sql_blob_create)) &&
 		request->req_type != REQ_slice && request->req_type != REQ_procedure) {
+#ifdef PYXIS
 		if (request->req_type == REQ_menu)
 			printa(column,
 				   "%s\t: interbase.menu_handle := 0;-- menu handle --",
@@ -3196,6 +3219,7 @@ static void gen_request( GPRE_REQ request, int column)
 			printa(column, "%s\t: interbase.map_handle := 0;-- map handle --",
 				   request->req_handle);
 		else
+#endif
 			printa(column,
 				   "%s\t: interbase.request_handle := 0;-- request handle --",
 				   request->req_handle);
@@ -3274,7 +3298,7 @@ static void gen_request( GPRE_REQ request, int column)
                                        ( int (*)()) gen_blr, 0, 0))
 					IBERROR("internal error during dynamic DDL generation");
 				break;
-
+#ifdef PYXIS
 			case REQ_form:
 				string_type = "form map";
 				if (PRETTY_print_form_map((SCHAR*) request->req_blr,
@@ -3288,7 +3312,7 @@ static void gen_request( GPRE_REQ request, int column)
                                          (int (*)()) gen_blr, 0, 1))
 					IBERROR("internal error during menu generation");
 				break;
-
+#endif
 			case REQ_slice:
 				string_type = "SDL";
 				if (PRETTY_print_sdl((SCHAR*) request->req_blr,
@@ -3313,7 +3337,7 @@ static void gen_request( GPRE_REQ request, int column)
 			case REQ_ddl:
 				string_type = "DYN";
 				break;
-
+#ifdef PYXIS
 			case REQ_form:
 				string_type = "form map";
 				break;
@@ -3321,7 +3345,7 @@ static void gen_request( GPRE_REQ request, int column)
 			case REQ_menu:
 				string_type = "menu";
 				break;
-
+#endif
 			case REQ_slice:
 				string_type = "SDL";
 				break;
@@ -3366,10 +3390,10 @@ static void gen_request( GPRE_REQ request, int column)
 					column);
 			printa(INDENT, ");\n");
 		}
-
+#ifdef PYXIS
 	if (request->req_type == REQ_menu)
 		gen_menu_request(request, column);
-
+#endif
 //  If this is a GET_SLICE/PUT_slice, allocate some variables 
 
 	if (request->req_type == REQ_slice) {
@@ -3967,7 +3991,7 @@ static void gen_whenever( SWE label, int column)
 	}
 }
 
-
+#ifdef PYXIS
 //____________________________________________________________
 //  
 //		Create a new window.
@@ -4007,7 +4031,7 @@ static void gen_window_suspend( ACT action, int column)
 		   ADA_WINDOW_PACKAGE);
 }
 
-
+#endif
 //____________________________________________________________
 //  
 //		Generate a declaration of an array in the

@@ -20,6 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
+#ifdef PYXIS
 
 #ifndef _GPRE_FORM__PROTO_H_
 #define _GPRE_FORM__PROTO_H_
@@ -27,3 +28,5 @@
 extern USHORT FORM_TRN_dtype(USHORT);
 
 #endif /* _GPRE_FORM__PROTO_H_ */
+
+#endif

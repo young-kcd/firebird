@@ -20,6 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
+#ifdef PYXIS
 
 #ifndef _GPRE_FORM_PROTO_H_
 #define _GPRE_FORM_PROTO_H_
@@ -29,3 +30,5 @@ extern FORM FORM_lookup_form(DBB, UCHAR *);
 extern FORM FORM_lookup_subform(FORM, GPRE_FLD);
 
 #endif /* _GPRE_FORM_PROTO_H_ */
+
+#endif

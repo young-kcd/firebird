@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: form_trn.cpp,v 1.3 2001-12-24 02:50:49 tamlin Exp $
+//  $Id: form_trn.cpp,v 1.4 2003-02-27 16:05:00 brodsom Exp $
 //  Revision 1.3  2000/11/29 11:11:56  fsg
 //  Added some more PYXIS datatypes to form_trn.c
 //  
@@ -38,8 +38,9 @@
 //
 //____________________________________________________________
 //
-//	$Id: form_trn.cpp,v 1.3 2001-12-24 02:50:49 tamlin Exp $
+//	$Id: form_trn.cpp,v 1.4 2003-02-27 16:05:00 brodsom Exp $
 //
+#ifdef PYXIS
 
 #include "firebird.h"
 #include "../jrd/common.h"
@@ -166,3 +167,5 @@ USHORT FORM_TRN_dtype( USHORT pyxis_dtype)
 
 	return gpre_dtype;
 }
+
+#endif

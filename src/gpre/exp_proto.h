@@ -28,7 +28,9 @@ extern GPRE_NOD EXP_array(GPRE_REQ, GPRE_FLD, SSHORT, SSHORT);
 extern GPRE_FLD EXP_cast(GPRE_FLD);
 extern GPRE_CTX EXP_context(GPRE_REQ, SYM);
 extern GPRE_FLD EXP_field(GPRE_CTX *);
+#ifdef PYXIS
 extern GPRE_FLD EXP_form_field(GPRE_CTX *);
+#endif
 extern void EXP_left_paren(TEXT *);
 extern GPRE_NOD EXP_literal(void);
 extern void EXP_post_array(REF);

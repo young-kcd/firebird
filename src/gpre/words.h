@@ -27,7 +27,9 @@ KW_start_actions,
 	KW_CACHE,
 	KW_CANCEL_BLOB,
 	KW_CASE,
+#ifdef PYXIS
 	KW_CASE_MENU,
+#endif
 	KW_CHAR,
 	KW_CLEAR_HANDLES,
 	KW_CLOSE_BLOB,
@@ -35,11 +37,17 @@ KW_start_actions,
 	KW_COMMIT,
 	KW_CONSTRAINT,
 	KW_CREATE_BLOB,
+#ifdef PYXIS
 	KW_CREATE_WINDOW,
+#endif
 	KW_DATABASE,
+#ifdef PYXIS
 	KW_DELETE_WINDOW,
+#endif
 	KW_DERIVED_FROM,
+#ifdef PYXIS
 	KW_DISPLAY,
+#endif
 	KW_DOMAIN,
 	KW_DOUBLE,
 	KW_ELEMENT,
@@ -48,9 +56,11 @@ KW_start_actions,
 	KW_END_ERROR,
 	KW_END_FETCH,
 	KW_END_FOR,
+#ifdef PYXIS
 	KW_END_FORM,
 	KW_END_ITEM,
 	KW_END_MENU,
+#endif
 	KW_END_MODIFY,
 	KW_END_STORE,
 	KW_END_STREAM,
@@ -65,11 +75,15 @@ KW_start_actions,
 	KW_FINISH,
 	KW_FLOAT,
 	KW_FOR,
+#ifdef PYXIS
 	KW_FOR_FORM,
 	KW_FOR_ITEM,
 	KW_FOR_MENU,
+#endif
 	KW_FUNCTION,
+#ifdef PYXIS
 	KW_GDS_WINDOWS,
+#endif
 	KW_GET_SEGMENT,
 	KW_GET_SLICE,
 	KW_INACTIVE,
@@ -77,7 +91,9 @@ KW_start_actions,
 	KW_KEY,
 	KW_LONG,
 	KW_L_BRACE,
+#ifdef PYXIS
 	KW_MENU_ENTREE,
+#endif
 	KW_MODIFY,
 	KW_MONTH,
 	KW_NATIONAL,
@@ -88,7 +104,9 @@ KW_start_actions,
 	KW_PREPARE,
 	KW_PROC,
 	KW_PROCEDURE,
+#ifdef PYXIS
 	KW_PUT_ITEM,
+#endif
 	KW_PUT_SEGMENT,
 	KW_PUT_SLICE,
 	KW_READY,
@@ -162,15 +180,19 @@ KW_start_actions,
 	KW_DESCRIPTOR,
 	KW_DIALECT,
 	KW_DISCONNECT,
+#ifdef PYXIS
 	KW_DISPLAYING,
+#endif
 	KW_DISTINCT,
 	KW_DOT,
 	KW_DOT_DOT,
 	KW_DROP,
 	KW_END_EXEC,
+#ifdef PYXIS
 	KW_ENTREE_LENGTH,
 	KW_ENTREE_TEXT,
 	KW_ENTREE_VALUE,
+#endif
 	KW_ENTRY_POINT,
 	KW_EQ,
 	KW_EQUALS,
@@ -186,8 +208,10 @@ KW_start_actions,
 	KW_FILTER,
 	KW_FIRST,
 	KW_FOREIGN,
+#ifdef PYXIS
 	KW_FORM,
 	KW_FORM_HANDLE,
+#endif
 	KW_FORWARD,
 	KW_FOUND,
 	KW_FROM,

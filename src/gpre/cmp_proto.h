@@ -32,7 +32,9 @@ extern "C" {
 
 extern void CMP_check(GPRE_REQ, SSHORT);
 extern void CMP_compile_request(GPRE_REQ);
+#ifdef PYXIS
 extern int CMP_display_code(FINT, REF);
+#endif
 extern void CMP_external_field(GPRE_REQ, GPRE_FLD);
 extern void CMP_init(void);
 extern USHORT CMP_next_ident(void);

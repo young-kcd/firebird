@@ -24,8 +24,10 @@
 //
 //____________________________________________________________
 //
-//	$Id: noform.cpp,v 1.4 2002-11-30 17:40:24 hippoman Exp $
+//	$Id: noform.cpp,v 1.5 2003-02-27 16:04:50 brodsom Exp $
 //
+
+#ifdef PYXIS
 
 #include "firebird.h"
 #include "../gpre/gpre.h"
@@ -70,3 +72,5 @@ FORM FORM_lookup_subform(FORM parent, GPRE_FLD field)
 
 	return NULL;
 }
+
+#endif
