@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.20 2004-01-03 14:12:43 fsg Exp $
+ * $Id: isql.h,v 1.21 2004-01-04 04:43:11 robocop Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -310,9 +310,9 @@ struct sqltypes {
 
 #define TAB_AS_SPACES "        "
 
-const char BLANK=	'\040';
-const char DBL_QUOTE=	'\042';
-const char SINGLE_QUOTE=	'\'';
+const char BLANK		= '\040';
+const char DBL_QUOTE	= '\042';
+const char SINGLE_QUOTE	= '\'';
 
 
 
