@@ -113,7 +113,8 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 #else
  	{TYPE_BOOLEAN,		"BugcheckAbort",			(ConfigValue) false},	// whether to abort() engine when internal error is found
 #endif
-	{TYPE_INTEGER,		"TraceDSQL",				(ConfigValue) 0}			// bitmask
+	{TYPE_INTEGER,		"TraceDSQL",				(ConfigValue) 0},		// bitmask
+	{TYPE_BOOLEAN,		"LegacyHash",				(ConfigValue) false}	// let use old passwd hash verification
 };
 
 /******************************************************************************
@@ -483,3 +484,7 @@ int Config::getTraceDSQL()
 	return (int) sysConfig.values[KEY_TRACE_DSQL];
 }
 
+bool Config::getLegacyHash()
+{
+	return (bool) sysConfig.values[KEY_LEGACY_HASH];
+}

@@ -105,7 +105,8 @@ class Config
 		KEY_UDF_ACCESS,								// 39
 		KEY_TEMP_DIRECTORIES,						// 40
  		KEY_BUGCHECK_ABORT,							// 41
-		KEY_TRACE_DSQL								// 42
+		KEY_TRACE_DSQL,								// 42
+		KEY_LEGACY_HASH								// 43
 	};
 
 public:
@@ -324,6 +325,11 @@ public:
  		Abort on BUGCHECK and structured exceptions
  	*/
  	static bool getBugcheckAbort();
+
+	/*
+		Let use of des hash to verify passwords
+	*/
+	static bool getLegacyHash();
 };
 
 namespace Firebird {
