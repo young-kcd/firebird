@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.31 2003-07-24 10:21:41 aafemt Exp $
+$Id: blb.cpp,v 1.32 2003-08-09 20:58:34 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -859,7 +859,7 @@ void BLB_move(TDBB tdbb, DSC * from_desc, DSC * to_desc, JRD_NOD field)
 	request = tdbb->tdbb_request;
 	source = (BID) from_desc->dsc_address;
 	destination = (BID) to_desc->dsc_address;
-	id = (USHORT) field->nod_arg[e_fld_id];
+	id = (USHORT) (ULONG) field->nod_arg[e_fld_id];
 	rpb = &request->req_rpb[(int) field->nod_arg[e_fld_stream]];
 	relation = rpb->rpb_relation;
 	record = rpb->rpb_record;

@@ -804,7 +804,7 @@ int DBG_pretty(JRD_NOD node, int column)
 		return TRUE;
 
 	case nod_procedure:
-		SSHORT procedure_id = (SSHORT) node->nod_arg[e_prc_procedure];
+		SSHORT procedure_id = (SSHORT)(SLONG) node->nod_arg[e_prc_procedure];
 		ib_fprintf(dbg_file, ", stream: %d, prc_id: %d\n",
 				   node->nod_arg[e_prc_stream], procedure_id);
 		if (node->nod_arg[e_prc_inputs])

@@ -221,7 +221,7 @@ MDLS *DLS_get_access(void)
 	if (!is_initialized) {
 		is_initialized = true;
 		TempDirectoryList dir_list;
-		for (int i = 0; i < dir_list.Count(); i++) {
+		for (size_t i = 0; i < dir_list.Count(); i++) {
 			TempDirectoryList::Item item = dir_list[i];
 			DLS_add_dir(item.size, item.dir.c_str());
 		}

@@ -88,10 +88,10 @@
 
 #ifdef PAGE_LATCHING
 #define PAGE_LOCK(lock, lock_type, wait)
-#define PAGE_LOCK_RELEASE(lock)	{ 0; }	/* TMN: Silence compilers */
+#define PAGE_LOCK_RELEASE(lock)  
 #define PAGE_LOCK_ASSERT(lock)
 #define PAGE_LOCK_OPT(lock, lock_type, wait)
-#define PAGE_LOCK_RE_POST(lock) { 0; }	/* TMN: Silence compilers */
+#define PAGE_LOCK_RE_POST(lock) 
 #define PAGE_OVERHEAD	(sizeof (bcb_repeat) + sizeof (struct bdb) + \
 			 (int) dbb->dbb_page_size)
 #else
@@ -3972,10 +3972,8 @@ static BDB get_buffer(TDBB tdbb, SLONG page, LATCH latch, SSHORT latch_wait)
 
 			mod_que = &bcb->bcb_rpt[page % bcb->bcb_count].bcb_page_mod;
 			for (que = mod_que->que_forward; que != mod_que;
-				 que = que->que_forward) if ((bdb =
-											  BLOCK(que, BDB,
-													bdb_que))->bdb_page ==
-											 page) {
+				 que = que->que_forward) 
+				if ((bdb = BLOCK(que, BDB, bdb_que))->bdb_page == page) {
 #ifdef SUPERSERVER_V2
 					if (page != HEADER_PAGE)
 #endif
@@ -4683,7 +4681,8 @@ static SSHORT lock_buffer(
 		   error, and log it to firebird.log. */
 
 		gds__msg_format(0, JRD_BUGCHK, 215, sizeof(errmsg), errmsg,
-						(TEXT *) bdb->bdb_page, (TEXT *) page_type, 0, 0, 0);
+						(TEXT *) bdb->bdb_page, 
+						(TEXT *) (SLONG) page_type, 0, 0, 0);
 		IBERR_append_status(status, gds_random, gds_arg_string,
 							ERR_cstring(errmsg), 0);
 		ERR_log(JRD_BUGCHK, 215, errmsg);	/* msg 215 page %ld, page type %ld lock conversion denied */
@@ -4728,7 +4727,8 @@ static SSHORT lock_buffer(
    error, and log it to firebird.log. */
 
 	gds__msg_format(0, JRD_BUGCHK, 216, sizeof(errmsg), errmsg,
-					(TEXT *) bdb->bdb_page, (TEXT *) page_type, 0, 0, 0);
+					(TEXT*) bdb->bdb_page, 
+					(TEXT*) (SLONG) page_type, 0, 0, 0);
 	IBERR_append_status(status, gds_random, gds_arg_string,
 						ERR_cstring(errmsg), 0);
 	ERR_log(JRD_BUGCHK, 216, errmsg);	/* msg 216 page %ld, page type %ld lock denied */

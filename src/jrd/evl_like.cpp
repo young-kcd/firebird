@@ -326,7 +326,7 @@ USHORT SLEUTH_MERGE_NAME(TDBB tdbb_dummy,
 		   quote it. */
 
 		else {
-			if ((((int) c) < sizeof(special)) && special[c] &&
+			if ((((size_t) c) < sizeof(special)) && special[c] &&
 				comb > combined && comb[-1] != GDML_QUOTE)
 				*comb++ = GDML_QUOTE;
 			*comb++ = c;
@@ -373,7 +373,7 @@ SLEUTHTYPE * match, SLEUTHTYPE * end_match)
 	while (match < end_match) {
 		c = *match++;
 		if ((c == GDML_QUOTE && (c = *match++)) ||
-			((((int) c) < sizeof(special)) && !special[c])) {
+			((((size_t) c) < sizeof(special)) && !special[c])) {
 			c = COND_UPPER(obj, c);
 			if (match >= end_match || *match != GDML_MATCH_ANY) {
 				if (search >= end_search)

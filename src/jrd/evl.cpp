@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.34 2003-02-21 09:25:17 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.35 2003-08-09 20:58:33 brodsom Exp $ 
  */
 
 /*
@@ -263,8 +263,8 @@ DSC *DLL_EXPORT EVL_assign_to(TDBB tdbb, JRD_NOD node)
 
 	case nod_field:
 		record =
-			request->req_rpb[(int) node->nod_arg[e_fld_stream]].rpb_record;
-		EVL_field(0, record, (USHORT) node->nod_arg[e_fld_id],
+			request->req_rpb[(int)(SLONG) node->nod_arg[e_fld_stream]].rpb_record;
+		EVL_field(0, record, (USHORT)(ULONG) node->nod_arg[e_fld_id],
 				  &impure->vlu_desc);
 		if (!impure->vlu_desc.dsc_address)
 			ERR_post(gds_read_only_field, 0);
@@ -322,7 +322,7 @@ SBM *DLL_EXPORT EVL_bitmap(TDBB tdbb, JRD_NOD node)
 			impure = (INV) ((SCHAR *) tdbb->tdbb_request + node->nod_impure);
 			SBM_reset(&impure->inv_bitmap);
 			desc = EVL_expr(tdbb, node->nod_arg[0]);
-			id = 1 + 2 * (USHORT) node->nod_arg[1];
+			id = 1 + 2 * (USHORT)(ULONG) node->nod_arg[1];
 			numbers = desc->dsc_address;
 			numbers += id * sizeof(SLONG);
 			MOVE_FAST(numbers, &rel_dbkey, sizeof(SLONG));
@@ -789,7 +789,7 @@ DSC* DLL_EXPORT EVL_expr(TDBB tdbb, JRD_NOD node)
 			}
 			message = node->nod_arg[e_arg_message];
 			format = (FMT) message->nod_arg[e_msg_format];
-			desc = &format->fmt_desc[(int) node->nod_arg[e_arg_number]];
+			desc = &format->fmt_desc[(int)(ULONG) node->nod_arg[e_arg_number]];
 
 			impure->vlu_desc.dsc_address = (UCHAR *) request +
 				message->nod_impure + (int) desc->dsc_address;
@@ -812,14 +812,14 @@ DSC* DLL_EXPORT EVL_expr(TDBB tdbb, JRD_NOD node)
 	case nod_field:
 		{
 			REC record =
-				request->req_rpb[(int)node->nod_arg[e_fld_stream]].rpb_record;
+				request->req_rpb[(int)(SLONG)node->nod_arg[e_fld_stream]].rpb_record;
 			/* In order to "map a null to a default" value (in EVL_field()), 
 			 * the relation block is referenced. 
 			 * Reference: Bug 10116, 10424 
 			 */
-			if (!EVL_field(request->req_rpb[(USHORT) node->nod_arg[e_fld_stream]].rpb_relation,
+			if (!EVL_field(request->req_rpb[(USHORT)(ULONG) node->nod_arg[e_fld_stream]].rpb_relation,
 							record,
-							(USHORT) node->nod_arg[e_fld_id],
+							(USHORT)(ULONG) node->nod_arg[e_fld_id],
 							&impure->vlu_desc))
 			{
 				request->req_flags |= req_null;
@@ -1683,9 +1683,9 @@ USHORT DLL_EXPORT EVL_group(TDBB tdbb, BLK rsb, JRD_NOD node, USHORT state)
 	{
 		from = (*ptr)->nod_arg[e_asgn_from];
 		field = (*ptr)->nod_arg[e_asgn_to];
-		id = (USHORT) field->nod_arg[e_fld_id];
+		id = (USHORT)(ULONG) field->nod_arg[e_fld_id];
 		record =
-			request->req_rpb[(int) field->nod_arg[e_fld_stream]].rpb_record;
+			request->req_rpb[(int)(SLONG) field->nod_arg[e_fld_stream]].rpb_record;
 		impure = (VLUX) ((SCHAR *) request + from->nod_impure);
 		switch (from->nod_type)
 		{
@@ -3348,7 +3348,7 @@ static DSC *dbkey(TDBB tdbb, JRD_NOD node, VLU impure)
 
 	request = tdbb->tdbb_request;
 	impure = (VLU) ((SCHAR *) request + node->nod_impure);
-	rpb = &request->req_rpb[(int) node->nod_arg[0]];
+	rpb = &request->req_rpb[(int)(SLONG) node->nod_arg[0]];
 	relation = rpb->rpb_relation;
 
 /* Format dbkey as vector of relation id, record number */
@@ -4411,7 +4411,7 @@ static DSC* record_version(TDBB tdbb, JRD_NOD node, VLU impure)
 
 	request = tdbb->tdbb_request;
 	impure = (VLU) ((SCHAR *) request + node->nod_impure);
-	rpb = &request->req_rpb[(int) node->nod_arg[0]];
+	rpb = &request->req_rpb[(int)(SLONG) node->nod_arg[0]];
 
 /* If the current transaction has updated the record, the record version
  * coming in from DSQL will have the original transaction # (or current

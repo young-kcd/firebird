@@ -4388,7 +4388,7 @@ static void put_summary_record(BLB		blob,
 	TDBB tdbb = GET_THREAD_DATA;
 	UCHAR temp[129];
 
-	UCHAR* buffer = (length + 1 > (SSHORT) sizeof(temp)) ?
+	UCHAR* buffer = ((size_t) (length + 1) > sizeof(temp)) ?
 		(UCHAR *) gds__alloc((SLONG) (length + 1)) : temp;
 
 	UCHAR* p = buffer;

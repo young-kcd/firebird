@@ -374,8 +374,8 @@ void EXE_assignment(TDBB tdbb, JRD_NOD node)
 
 	if (to->nod_type == nod_field)
 	{
-		SSHORT id = (USHORT) to->nod_arg[e_fld_id];
-		REC record = request->req_rpb[(int) to->nod_arg[e_fld_stream]].rpb_record;
+		SSHORT id = (USHORT)(ULONG) to->nod_arg[e_fld_id];
+		REC record = request->req_rpb[(int)(SLONG) to->nod_arg[e_fld_stream]].rpb_record;
 		if (null) {
 			SET_NULL(record, id);
 		} else {
@@ -638,7 +638,7 @@ void EXE_receive(TDBB		tdbb,
 	message = request->req_message;
 	format = (FMT) message->nod_arg[e_msg_format];
 
-	if (msg != (USHORT) message->nod_arg[e_msg_number])
+	if (msg != (USHORT)(ULONG) message->nod_arg[e_msg_number])
 		ERR_post(gds_req_sync, 0);
 
 	if (length != format->fmt_length)
@@ -757,7 +757,7 @@ void EXE_send(TDBB		tdbb,
 
 	if ((message = request->req_async_message) &&
 		(node = message->nod_arg[e_send_message]) &&
-		(msg == (USHORT) node->nod_arg[e_msg_number])) {
+		(msg == (USHORT)(ULONG) node->nod_arg[e_msg_number])) {
 		/* save the current state of the request so we can go 
 		   back to what was interrupted */
 
@@ -790,7 +790,7 @@ void EXE_send(TDBB		tdbb,
 		for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end;
 			 ptr++) {
 			message = (*ptr)->nod_arg[e_send_message];
-			if ((USHORT) message->nod_arg[e_msg_number] == msg) {
+			if ((USHORT)(ULONG) message->nod_arg[e_msg_number] == msg) {
 				request->req_next = *ptr;
 				break;
 			}
@@ -800,7 +800,7 @@ void EXE_send(TDBB		tdbb,
 
 	format = (FMT) message->nod_arg[e_msg_format];
 
-	if (msg != (USHORT) message->nod_arg[e_msg_number])
+	if (msg != (USHORT)(ULONG) message->nod_arg[e_msg_number])
 		ERR_post(gds_req_sync, 0);
 
 	if (length != format->fmt_length)
@@ -1139,7 +1139,7 @@ static JRD_NOD erase(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 
 	request = tdbb->tdbb_request;
 	transaction = request->req_transaction;
-	rpb = &request->req_rpb[(int) node->nod_arg[e_erase_stream]];
+	rpb = &request->req_rpb[(int)(SLONG) node->nod_arg[e_erase_stream]];
 	relation = rpb->rpb_relation;
 
 #ifdef PC_ENGINE
@@ -2039,7 +2039,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 			case jrd_req::req_evaluate:
 				if (transaction != dbb->dbb_sys_trans) {
 
-					UCHAR operation = (UCHAR) node->nod_arg[e_sav_operation];
+					UCHAR operation = (UCHAR) (ULONG) node->nod_arg[e_sav_operation];
 					TEXT * node_savepoint_name = (TEXT*) node->nod_arg[e_sav_name]; 
 
 					// Skip the savepoint created by EXE_start
@@ -2345,7 +2345,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 				break;
 
 			case jrd_req::req_unwind:
-				if ((request->req_label == (USHORT) node->nod_arg[e_lbl_label]) &&
+				if ((request->req_label == (USHORT)(ULONG) node->nod_arg[e_lbl_label]) &&
 						(request->req_flags & (req_leave | req_error_handler))) {
 					request->req_flags &= ~req_leave;
 					request->req_operation = jrd_req::req_return;
@@ -2359,7 +2359,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 		case nod_leave:
 			request->req_flags |= req_leave;
 			request->req_operation = jrd_req::req_unwind;
-			request->req_label = (USHORT) node->nod_arg[0];
+			request->req_label = (USHORT)(ULONG) node->nod_arg[0];
 			node = node->nod_parent;
 			break;
 
@@ -2655,7 +2655,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 				RSE_reset_position(tdbb,
 								   *(RSB *) node->nod_arg[e_reset_from_rsb],
 								   request->req_rpb +
-								   (USHORT) node->nod_arg[e_reset_to_stream]);
+								   (USHORT)(ULONG) node->nod_arg[e_reset_to_stream]);
 				request->req_operation = jrd_req::req_return;
 			}
 			node = node->nod_parent;
@@ -2809,11 +2809,11 @@ static JRD_NOD modify(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 	transaction = request->req_transaction;
 	impure = (STA) ((SCHAR *) request + node->nod_impure);
 
-	org_stream = (USHORT) node->nod_arg[e_mod_org_stream];
+	org_stream = (USHORT)(ULONG) node->nod_arg[e_mod_org_stream];
 	org_rpb = &request->req_rpb[org_stream];
 	relation = org_rpb->rpb_relation;
 
-	new_stream = (USHORT) node->nod_arg[e_mod_new_stream];
+	new_stream = (USHORT)(ULONG) node->nod_arg[e_mod_new_stream];
 	new_rpb = &request->req_rpb[new_stream];
 
 #ifdef PC_ENGINE
@@ -3560,7 +3560,7 @@ static JRD_NOD set_bookmark(TDBB tdbb, JRD_NOD node)
 
 	if (request->req_operation == jrd_req::req_evaluate) {
 		bookmark = BKM_lookup(node->nod_arg[e_setmark_id]);
-		stream = (USHORT) node->nod_arg[e_setmark_stream];
+		stream = (USHORT)(ULONG) node->nod_arg[e_setmark_stream];
 		rpb = &request->req_rpb[stream];
 		rsb = *((RSB *) node->nod_arg[e_setmark_rsb]);
 		impure = (IRSB) ((UCHAR *) request + rsb->rsb_impure);
@@ -3718,7 +3718,7 @@ static JRD_NOD set_index(TDBB tdbb, JRD_NOD node)
 	BLKCHK(node, type_nod);
 
 	if (request->req_operation == jrd_req::req_evaluate) {
-		stream = (USHORT) node->nod_arg[e_index_stream];
+		stream = (USHORT)(ULONG) node->nod_arg[e_index_stream];
 
 		rpb = &request->req_rpb[stream];
 		relation = rpb->rpb_relation;
@@ -3810,7 +3810,7 @@ static JRD_NOD store(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 	JRD_REQ    request     = tdbb->tdbb_request;
 	JRD_TRA    transaction = request->req_transaction;
 	STA    impure      = (STA) ((SCHAR *) request + node->nod_impure);
-	SSHORT stream      = (USHORT) node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
+	SSHORT stream      = (USHORT)(ULONG) node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
 	RPB*   rpb         = &request->req_rpb[stream];
 	JRD_REL    relation    = rpb->rpb_relation;
 
@@ -4216,8 +4216,8 @@ static void validate(TDBB tdbb, JRD_NOD list)
 
 			if (node->nod_type == nod_field)
 			{
-				stream = (USHORT) node->nod_arg[e_fld_stream];
-				id = (USHORT) node->nod_arg[e_fld_id];
+				stream = (USHORT)(ULONG) node->nod_arg[e_fld_stream];
+				id = (USHORT)(ULONG) node->nod_arg[e_fld_id];
 				relation = request->req_rpb[stream].rpb_relation;
 
 				if ((vector = relation->rel_fields) &&

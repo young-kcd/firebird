@@ -1407,9 +1407,11 @@ int API_ROUTINE gds__msg_open(void **handle, TEXT * filename)
 		(void) close(n);
 		return -3;
 	}
+	// Trick to silence compiler when MSG_MINOR_VERSION == 0
+	USHORT minor = MSG_MINOR_VERSION;
 
 	if (header.msghdr_major_version != MSG_MAJOR_VERSION ||
-		(SSHORT) header.msghdr_minor_version < MSG_MINOR_VERSION) {
+		header.msghdr_minor_version < minor) {
 		(void) close(n);
 		return -4;
 	}
@@ -2304,7 +2306,7 @@ void * API_ROUTINE gds__temp_file(
 		strcat(file_name, string);
 		char suffix[] = TEMP_PATTERN;
 		__int64 temp = randomness;
-		for (int i=0; i<sizeof(suffix)-1; i++) {
+		for (size_t i=0; i< sizeof(suffix)-1; i++) {
 			suffix[i] = letters[temp % (sizeof(letters)-1)];
 			temp /= sizeof(letters)-1;
 		}

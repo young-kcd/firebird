@@ -266,7 +266,7 @@ int EXT_get(RSB rsb)
 	record = rpb->rpb_record;
 	format = record->rec_format;
 
-	offset = (SSHORT) format->fmt_desc[0].dsc_address;
+	offset = (SSHORT) (SLONG) format->fmt_desc[0].dsc_address;
 	p = record->rec_data + offset;
 	l = record->rec_length - offset;
 
@@ -528,7 +528,7 @@ void EXT_store(RPB * rpb, int *transaction)
 		}
 	}
 
-	offset = (USHORT) format->fmt_desc[0].dsc_address;
+	offset = (USHORT) (ULONG) format->fmt_desc[0].dsc_address;
 	p = record->rec_data + offset;
 	l = record->rec_length - offset;
 
