@@ -31,7 +31,7 @@
 // Utility functions
 
 
-#ifdef LINUX
+#if defined(LINUX) || defined(MINGW)
 #define __need_size_t
 #include <stddef.h>
 #undef __need_size_t
