@@ -848,7 +848,7 @@ return 1;
 			status[2] = isc_arg_end;
 			return status[1];
 		}
-		int l;
+		size_t l;
 		for (l = 0;
 			 input_user_data->user_name[l] != ' '
 			 && l < strlen(input_user_data->user_name); l++)
@@ -873,7 +873,7 @@ return 1;
 			status[2] = isc_arg_end;
 			return status[1];
 		}
-		int l;
+		size_t l;
 		for (l = 0;
 			 l < strlen(input_user_data->password) && input_user_data->password[l] != ' ';
 			 l++)
@@ -1038,7 +1038,7 @@ return 1;
 			status[2] = isc_arg_end;
 			return status[1];
 		}
-		int l;
+		size_t l;
 		for (l = 0;
 			 input_user_data->user_name[l] != ' '
 			 && l < strlen(input_user_data->user_name); l++)
@@ -1103,7 +1103,7 @@ return 1;
 			status[2] = isc_arg_end;
 			return status[1];
 		}
-		int l;
+		size_t l;
 		for (l = 0;
 			 input_user_data->user_name[l] != ' '
 			 && l < strlen(input_user_data->user_name); l++)
@@ -1128,7 +1128,7 @@ return 1;
 			status[2] = isc_arg_end;
 			return status[1];
 		}
-		int l;
+		size_t l;
 		for (l = 0;
 			 l < strlen(input_user_data->password) && input_user_data->password[l] != ' ';
 			 l++)
