@@ -82,10 +82,10 @@ namespace Firebird {
 			void split(int elem, Entry* target) 
 			{
 				fb_assert(elem > 0 && elem < count);
-				memcpy(target->data, this->data, elem * sizeof(Object));
-				target->count += elem;
-				this->count -= elem;
-				memmove(this->data, &this->data[elem], this->count * sizeof(Object));
+				fb_assert(target->count == 0);
+				target->count = count - elem;
+				memcpy(target->data, &data[elem], target->count * sizeof(Object));
+				count = elem;
 			}
 
 			Entry* dup(MemoryPool& p)
@@ -156,6 +156,8 @@ namespace Firebird {
 
 		class iterator {
 		private:
+			// friend definition here is required to implement
+			// Merge/Split pair of functions
 			friend class ::Firebird::Stack<Object, Capacity>;
 			const Entry* stk;
 			int elem;
@@ -247,7 +249,8 @@ namespace Firebird {
 		};
 
 		// Merge stack "s" to the end of current one.
-		// Returns - iterator to split stacks again.
+		// Returns - iterator to Split stacks again.
+		// This iterator will be used as "bookmark" for Split later.
 		const iterator merge(Stack<Object, Capacity>& s)
 		{
 			fb_assert(&getPool() == &s.getPool());
@@ -262,7 +265,7 @@ namespace Firebird {
 			return rc;
 		}
 
-		// split stacks at mark
+		// Split stacks at mark
 		void split (const iterator &mark, Stack<Object, Capacity>& s)
 		{
 			fb_assert(&getPool() == &s.getPool());
@@ -274,7 +277,7 @@ namespace Firebird {
 				return;
 			}
 
-			// find entry to split
+			// find entry to Split
 			Entry **toSplit = &stk;
 			while (*toSplit != mark.stk)
 			{
@@ -284,7 +287,7 @@ namespace Firebird {
 
 			// Determine whether some new elements were added
 			// to this stack. Depended on this we must
-			// split on entries boundary or cut one entry to halfs.
+			// Split on entries boundary or cut one entry to halfs.
 			fb_assert((*toSplit)->getCount() >= mark.elem);
 			if ((*toSplit)->getCount() == mark.elem)
 			{
@@ -294,8 +297,8 @@ namespace Firebird {
 			else {
 				Entry* newEntry = FB_NEW(getPool()) Entry(0);
 				(*toSplit)->split(mark.elem, newEntry);
-				s.stk = newEntry;
-				(*toSplit)->next = 0;
+				s.stk = *toSplit;
+				*toSplit = newEntry;
 			}
 		}
 
