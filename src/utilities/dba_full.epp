@@ -215,7 +215,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	isc_tr_handle transact1;
 	isc_req_handle request1, request2, request3;
 	STATUS status_vector[ISC_STATUS_LENGTH];
-#if defined (WIN95) && !defined (GUI_TOOLS)
+#if defined (WIN95)
 	BOOL fAnsiCP;
 #endif
 
@@ -247,7 +247,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	}
 	sw_outfile = tddba->sw_outfile = ib_stderr;
 
-#if defined (WIN95) && !defined (GUI_TOOLS)
+#if defined (WIN95)
 	fAnsiCP = FALSE;
 #endif
 
@@ -264,7 +264,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		redir_out = atol(argv[3]);
 		redir_err = atol(argv[4]);
 #ifdef WIN_NT
-#if defined (WIN95) && !defined (GUI_TOOLS)
+#if defined (WIN95)
 		fAnsiCP = TRUE;
 #endif
 		redir_in = _open_osfhandle(redir_in, 0);
@@ -335,7 +335,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	if (!sw_data && !sw_index)
 		sw_data = sw_index = TRUE;
 
-#if defined (WIN95) && !defined (GUI_TOOLS)
+#if defined (WIN95)
 	if (!fAnsiCP) {
 		ULONG ulConsoleCP;
 
@@ -367,7 +367,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		EXIT(FINI_ERROR);
 	}
 
-#if defined (WIN95) && !defined (GUI_TOOLS)
+#if defined (WIN95)
 	if (!fAnsiCP)
 		AnsiToOem(name, file_name);
 	else
@@ -396,7 +396,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				if (*vp == HDR_file) {
 					memcpy(file_name, vp + 2, vp[1]);
 					*(file_name + vp[1]) = '\0';
-#if defined (WIN95) && !defined (GUI_TOOLS)
+#if defined (WIN95)
 					if (!fAnsiCP)
 						AnsiToOem(file_name, file_name);
 #endif

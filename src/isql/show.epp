@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.11 2003-02-10 23:46:42 brodsom Exp $
+ * $Id: show.epp,v 1.12 2003-02-11 20:16:57 brodsom Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -41,9 +41,6 @@
 #include "../jrd/license.h"
 #include <string.h>
 
-#ifdef GUI_TOOLS
-#include <windows.h>
-#endif
 #include "../jrd/common.h"
 #include "../jrd/gds.h"
 #include "../dsql/dsql.h"
@@ -354,9 +351,6 @@ BOOLEAN SHOW_dbb_parameters(FRBRD * db_handle,
  * in Windows ISQL.  This will need to remain until we modify the messages
  * to remove the '\n' (on the PC its '\n\r').
  */
-#ifdef GUI_TOOLS
-		translate = FALSE;
-#endif
 		switch (item) {
 		case isc_info_end:
 			break;
@@ -1009,10 +1003,6 @@ void SHOW_print_metadata_text_blob( IB_FILE * fp, ISC_QUAD * blobid)
 	USHORT length;
 	UCHAR* buffer;
 
-#ifdef GUI_TOOLS
-	UCHAR* b;
-	UCHAR* start;
-#endif
 
 /* Don't bother with null blobs */
 
@@ -1042,26 +1032,9 @@ void SHOW_print_metadata_text_blob( IB_FILE * fp, ISC_QUAD * blobid)
  * Need to step through the buffer until we hit a '\n' and then print the
  * line.  This is because '\n' are included in blob text.
 */
-#ifdef GUI_TOOLS
-		buffer[length--] = 0;
-		for (b = buffer, start = buffer; b <= buffer + length; b++) {
-			if (*b == '\n') {
-				*b = 0;
-				sprintf(Print_buffer, "%s%s", start, NEWLINE);
-				ISQL_printf(fp, (TEXT*) Print_buffer);
-				start = b + 1;
-			}
-		}
-		sprintf(Print_buffer, "%s", start);
-		ISQL_printf(fp, Print_buffer);
-#else
 		buffer[length] = 0;
 		ISQL_printf(fp, (TEXT*) buffer);
-#endif
 	}
-#ifdef GUI_TOOLS
-	ISQL_printf(fp, NEWLINE);
-#endif
 
 	if (isc_status[1] && isc_status[1] != isc_segstr_eof)
 		ISQL_errmsg(isc_status);
@@ -1456,10 +1429,6 @@ static void local_fprintf(const char* format, const char* string)
 	ib_fprintf(Out, "%s", string);
 	ib_fprintf(Out, "%s", NEWLINE);
 
-#ifdef GUI_TOOLS
-	PaintOutputWindow(string);
-	PaintOutputWindow(NEWLINE);
-#endif
 }
 
 
@@ -1590,182 +1559,6 @@ static int show_all_tables( SSHORT flag)
 	else
 		return NOT_FOUND;
 }
-
-
-#ifdef GUI_TOOLS
-void SHOW_query_database( int *tables, int *views, int *indices)
-{
-/**************************************
- *
- *	 S H O W _ q u e r y _ d a t a b a s e 
- *
- **************************************
- *
- *	Query RDB$RELATIONS to determine if
- *	the database has tables, views and indices
- *	defined.
- *
- **************************************/
-
-	*tables = 0;
-	*views = 0;
-	*indices = 0;
-
-/* views */
-	FOR FIRST 1 REL IN RDB$RELATIONS WITH
-	    REL.RDB$VIEW_BLR NOT MISSING AND
-	    REL.RDB$FLAGS = REL_sql
-	    {  
-	       *views = 1;
-	    }
-	END_FOR
-	ON_ERROR 
-        ISQL_errmsg(isc_status);
-	    return;
-	END_ERROR;
-
-	FOR FIRST 1 REL IN RDB$RELATIONS WITH
-	    REL.RDB$SYSTEM_FLAG EQ 0 AND
-	    REL.RDB$VIEW_BLR MISSING AND
-	    REL.RDB$FLAGS = REL_sql
-	    {
-	       *tables = 1;
-	    }
-	END_FOR
-	ON_ERROR 
-        ISQL_errmsg(isc_status);
-	    return;
-	END_ERROR;
-	return;
-}
-#endif
-
-
-#ifdef GUI_TOOLS
-void SHOW_build_table_namelist( TBLLIST ** tbl_list)
-{
-/**************************************
- *
- *	 b u i l d _ t a b l e _ n a m e l i s t 
- *
- **************************************
- *
- *	Build a list of all user tables from
- *	rdb$relations.  We use a dynamic query 
- *
- **************************************/
-	SSHORT length = 0, save_length = 0;
-	TBLLIST *templist;
-	TBLLIST *tbl_node;
-
-	templist = *tbl_list;
-/* Tables */
-	FOR REL IN RDB$RELATIONS WITH
-        REL.RDB$SYSTEM_FLAG EQ 0 AND
-        REL.RDB$VIEW_BLR MISSING AND
-        REL.RDB$FLAGS = REL_sql
-        SORTED BY REL.RDB$RELATION_NAME
-	   
-	    sprintf (Print_buffer, "%s", REL.RDB$RELATION_NAME);
-	
-	    tbl_node = (TBLLIST *) ISQL_ALLOC ((SLONG) sizeof(TBLLIST));
-	    if (tbl_node) {
-            /* remove whitespace at end of table name */
-            length = strlen (Print_buffer) - 1;
-            save_length = length + 1;
-	        while (Print_buffer[length] == ' ' && length >= 0)
-                length--;
-            Print_buffer[length + 1] = NULL;
-            if (save_length > TBLNAME_LENGTH) {
-                strncpy (tbl_node->szName, Print_buffer, TBLNAME_LENGTH);
-                tbl_node->szName[TBLNAME_LENGTH] = NULL;    
-            }   
-            else
-                strcpy (tbl_node->szName, Print_buffer);
-            tbl_node->pNext = NULL;
-            if (templist == NULL)
-                *tbl_list     = tbl_node;
-            else
-                templist->pNext = tbl_node;
-            templist            = tbl_node; 
-        }
-	    else {
-            isc_status [0] = isc_arg_gds;
-            isc_status [1] = isc_virmemexh;
-            isc_status [2] = isc_arg_end;   
-            ISQL_errmsg (isc_status);
-            return;
-        }
-    END_FOR
-	ON_ERROR 
-        ISQL_errmsg(isc_status);
-	    return;
-	END_ERROR;
-}
-#endif
-
-
-#ifdef GUI_TOOLS
-void SHOW_build_view_namelist( VIEWLIST ** view_list)
-{
-/**************************************
- *
- *	 b u i l d _ v i e w _ n a m e l i s t 
- *
- **************************************
- *
- *	Build a list of all user views from
- *	rdb$relations.  We use a dynamic query 
- *
- **************************************/
-	SSHORT length = 0, save_length = 0;
-	VIEWLIST *templist;
-	VIEWLIST *view_node;
-
-	templist = *view_list;
-/* Views */
-	FOR REL IN RDB$RELATIONS WITH
-	    REL.RDB$VIEW_BLR NOT MISSING AND
-	    REL.RDB$FLAGS = REL_sql
-	    SORTED BY REL.RDB$RELATION_NAME
-	   
-	    sprintf (Print_buffer, "%s", REL.RDB$RELATION_NAME);
-	
-	    view_node = (VIEWLIST *) ISQL_ALLOC ((SLONG) sizeof(VIEWLIST));
-	    if (view_node) {
-            /* remove whitespace at end of view name */
-            length = strlen (Print_buffer) - 1;
-            save_length = length + 1;
-	        while (Print_buffer[length] == ' ' && length >= 0)
-                length--;
-            Print_buffer[length + 1] = NULL;
-            if (save_length > TBLNAME_LENGTH) {
-                strncpy (view_node->szName, Print_buffer, TBLNAME_LENGTH);
-                view_node->szName[TBLNAME_LENGTH] = NULL;   
-            }   
-            else
-                strcpy (view_node->szName, Print_buffer);
-            view_node->pNext = NULL;
-            if (templist == NULL)
-                *view_list    = view_node;
-            else
-                templist->pNext = view_node;
-            templist            = view_node;    
-        }
-	    else {
-            isc_status [0] = isc_arg_gds;
-            isc_status [1] = isc_virmemexh;
-            isc_status [2] = isc_arg_end;   
-            ISQL_errmsg (isc_status);
-            return;
-        }
-    END_FOR
-	ON_ERROR ISQL_errmsg(isc_status);
-	return;
-	END_ERROR;
-}
-#endif
-
 
 static void show_charsets( SCHAR * relation_name, SCHAR * field_name)
 {

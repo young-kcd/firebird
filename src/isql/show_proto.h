@@ -26,12 +26,6 @@
 
 
 
-#ifdef GUI_TOOLS
-#include "../wisql/isqlpb.h"
-extern void SHOW_build_table_namelist(TBLLIST **);
-extern void SHOW_build_view_namelist(VIEWLIST **);
-#endif /* GUI_TOOLS */
-
 extern BOOLEAN	SHOW_dbb_parameters (FRBRD *, SCHAR *, SCHAR *, USHORT, USHORT);
 extern int	SHOW_grants (SCHAR *, SCHAR *, USHORT);
 extern int	SHOW_grants2 (SCHAR *, SCHAR *, USHORT, TEXT *);

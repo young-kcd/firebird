@@ -49,10 +49,6 @@
 
 #include "../remote/ibsvrhlp.h"
 
-#ifdef GUI_TOOLS				// For server manager only
-void ShowErrDlg(int, char *, HWND);
-#endif
-
 // Symbolic constant definitions
 #define PASSWORD_LEN            33	// MAXIMUM PASSWORD LENGTH DEFINITION
 #define TEMP_BUFLEN             33
@@ -726,9 +722,6 @@ void PrintCfgStatus(STATUS * status_vector, int nErrCode, HWND hDlg)
 		}
 	}
 
-#ifdef GUI_TOOLS
-	ShowErrDlg(nErrCode, szErrStr[0] ? szErrStr : NULL, hDlg);
-#else
 	if (szErrStr[0]) {
 		strcpy(szHdrStr, "IB Configuration - ");
 		LoadString(hAppInstance, nErrCode, szHdrStr + strlen(szHdrStr),
@@ -739,7 +732,6 @@ void PrintCfgStatus(STATUS * status_vector, int nErrCode, HWND hDlg)
 		LoadString(hAppInstance, nErrCode, szErrStr, sizeof(szErrStr));
 		MessageBox(hDlg, szErrStr, "IB Configuration", MB_ICONSTOP | MB_OK);
 	}
-#endif
 }
 
 void FillSysdbaSPB(char *szSpb, char *szPasswd)

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.12 2003-01-12 18:16:49 alexpeshkoff Exp $
+//	$Id: tdr.cpp,v 1.13 2003-02-11 20:14:53 brodsom Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -58,11 +58,7 @@ static void reattach_databases(TDR);
 static BOOLEAN reconnect(FRBRD *, SLONG, TEXT *, ULONG);
 
 
-#ifdef GUI_TOOLS
-#define NEWLINE	"\r\n"
-#else
 #define NEWLINE	"\n"
-#endif
 
 static UCHAR limbo_info[] = { gds_info_limbo, gds_info_end };
 
@@ -189,10 +185,8 @@ BOOLEAN TDR_attach_database(STATUS * status_vector,
 
 	tdgbl = GET_THREAD_DATA;
 
-#ifndef GUI_TOOLS
 	if (tdgbl->ALICE_data.ua_debug)
 		ALICE_print(68, pathname, 0, 0, 0, 0);	/* msg 68: ATTACH_DATABASE: attempted attach of %s */
-#endif
 
 	d = dpb;
 
@@ -236,21 +230,17 @@ BOOLEAN TDR_attach_database(STATUS * status_vector,
 						 reinterpret_cast < char *>(GDS_VAL(dpb)));
 
 	if (status_vector[1]) {
-#ifndef GUI_TOOLS
 		if (tdgbl->ALICE_data.ua_debug) {
 			ALICE_print(69, 0, 0, 0, 0, 0);	/* msg 69:  failed */
 			ALICE_print_status(status_vector);
 		}
-#endif
 		return FALSE;
 	}
 
 	MET_set_capabilities(status_vector, trans);
 
-#ifndef GUI_TOOLS
 	if (tdgbl->ALICE_data.ua_debug)
 		ALICE_print(70, 0, 0, 0, 0, 0);	/* msg 70:  succeeded */
-#endif
 
 	return TRUE;
 }
@@ -292,7 +282,6 @@ void TDR_shutdown_databases(TDR trans)
 
 
 
-#ifndef GUI_TOOLS
 //
 // The following routines are only for the command line utility.
 // This should really be split into two files...
@@ -1003,5 +992,4 @@ static BOOLEAN reconnect(FRBRD *handle,
 
 	return FALSE;
 }
-#endif /* GUI_TOOLS */
 

@@ -550,8 +550,6 @@ typedef map* MAP;
 
 // Message block used in communicating with a running request
 
-#ifndef GUI_TOOLS
-
 class dsql_msg : public pool_alloc<dsql_type_msg>
 {
 public:
@@ -564,8 +562,6 @@ public:
 	USHORT	msg_index;			// Next index into SQLDA
 };
 typedef dsql_msg *DSQL_MSG;
-
-#endif
 
 // Parameter block used to describe a parameter of a message
 

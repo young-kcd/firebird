@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.19 2002-12-16 16:05:24 alexpeshkoff Exp $
+  $Id: isql.epp,v 1.20 2003-02-11 20:16:57 brodsom Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -92,7 +92,7 @@
 
 #define	ISQL_MAIN
 #include "../jrd/common.h"
-#if defined(WIN_NT) || defined(GUI_TOOLS)
+#if defined(WIN_NT)
 #include <windows.h>
 #endif
 // jrd/gds.h already pulls in the error codes, so remove codes.h
@@ -109,9 +109,6 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/perf_proto.h"
 #include "../jrd/utl_proto.h"
-#ifdef GUI_TOOLS
-#include "../wisql/isqlcomm.h"
-#endif
 #include "../jrd/gdsassert.h"
 
 DATABASE DB = COMPILETIME "yachts.lnk";
@@ -207,7 +204,7 @@ USHORT minor_ods = 0;
 SCHAR server_version [256];
 SSHORT Quiet;
 SSHORT Version_info = FALSE;
-#if defined (WIN95) && !defined (GUI_TOOLS)
+#if defined (WIN95)
 BOOL fAnsiCP;
 #endif
 
@@ -241,11 +238,6 @@ static IB_FILE *Diag;
 static IB_FILE *Help;
 static TEXT *sql_prompt = "SQL> ";
 static TEXT *fetch_prompt = "FETCH> ";
-
-#ifdef GUI_TOOLS
-static IB_FILE *Session;		/* WISQL session file */
-static TEXT *SaveOutfileName;	/* WISQL output file name */
-#endif
 
 static BOOLEAN global_psw = FALSE;
 static BOOLEAN global_usr = FALSE;
@@ -304,7 +296,6 @@ static RI_ACTIONS ri_actions_all[] = {
 
 
 
-#ifndef GUI_TOOLS
 int CLIB_ROUTINE main(int argc, char* argv[])
 {
 /**************************************
@@ -320,7 +311,7 @@ int CLIB_ROUTINE main(int argc, char* argv[])
  *
  **************************************/
 
-#if defined (WIN95) && !defined (GUI_TOOLS)
+#if defined (WIN95)
 	{
 		ULONG ulConsoleCP;
 
@@ -342,7 +333,6 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 
 	return Exit_value;
 }
-#endif
 
 
 SSHORT ISQL_main(int argc, char *argv[])
@@ -396,21 +386,6 @@ SSHORT ISQL_main(int argc, char *argv[])
 	tabname[0] = '\0';
 	db_SQL_dialect = 0;
 
-#ifdef GUI_TOOLS
-/* 
- * Since there is no concept of stdout & stderr, we set Out and Errfp to 
- * NULL initially.
-*/
-	Out = NULL;
-	Errfp = NULL;
-
-	ret = parse_arg(argc, argv, tabname, &Session);
-
-/* Init the diagnostics and help files */
-	Echo = TRUE;
-	Diag = Out;
-	Help = Out;
-#else
 /* Output goes to ib_stdout by default */
 	Out = ib_stdout;
 	Errfp = ib_stderr;
@@ -420,7 +395,6 @@ SSHORT ISQL_main(int argc, char *argv[])
 /* Init the diagnostics and help files */
 	Diag = ib_stdout;
 	Help = ib_stdout;
-#endif
 
 	if (Merge_stderr)
 		Errfp = Out;
@@ -430,19 +404,14 @@ SSHORT ISQL_main(int argc, char *argv[])
 	case EXTRACT:
 		/* This is a call to do extractions */
 		if (*Db_name) {
-#ifndef GUI_TOOLS
 			/* Let's use user and password if provided.
 			   This should solve bug #112263 FSG 28.Jan.2001 */
 			(void) newdb(Db_name, User, Password, Numbufs, Role, FALSE);
-#endif
-
 
 			Exit_value = EXTRACT_ddl(SQL_objects, tabname);
 
-#ifndef GUI_TOOLS
             ISQL_disconnect_database(TRUE);
 			// isc_detach_database(isc_status, &DB);
-#endif
 		}
 		break;
 
@@ -450,18 +419,14 @@ SSHORT ISQL_main(int argc, char *argv[])
 
 		if (*Db_name) {
             Interactive = FALSE;
-#ifndef GUI_TOOLS
 			/* Let's use user and password if provided.
 			   This should solve bug #112263 FSG 28.Jan.2001 */
 			(void) newdb(Db_name, User, Password, Numbufs, Role, FALSE);
-#endif
 
 			Exit_value = EXTRACT_ddl(ALL_objects, tabname);
 
-#ifndef GUI_TOOLS
             ISQL_disconnect_database (TRUE);
 			//isc_detach_database(isc_status, &DB);
-#endif
 		}
 		break;
 
@@ -504,13 +469,6 @@ SSHORT ISQL_main(int argc, char *argv[])
 	gds_alloc_report(0, __FILE__, __LINE__);
 #endif
 
-#ifdef GUI_TOOLS
-/* Free the original WISQL output file name */
-	if (SaveOutfileName) {
-		ISQL_FREE(SaveOutfileName);
-		SaveOutfileName = NULL;
-	}
-#endif
 	return Exit_value;
 }
 
@@ -616,15 +574,6 @@ BOOLEAN ISQL_dbcheck(void)
 							errbuf, (TEXT*) NULL_PTR, (TEXT*) NULL_PTR, (TEXT*) NULL_PTR, (TEXT*) NULL_PTR,
 							(TEXT*) NULL_PTR);
 			STDERROUT(errbuf, 1);
-#ifdef GUI_TOOLS
-			/*
-			 * This will force an extra carriage return line feed for better
-			 * formatting of errors when executing a script through windows ISQL.
-			 * The Merge_stderr flag is only set when scripts are running.
-			 */
-			if (Merge_stderr)
-				ISQL_printf(Out, (TEXT*) NEWLINE);
-#endif
 		}
 		else
 			Exit_value = FINI_ERROR;
@@ -652,15 +601,12 @@ void ISQL_prompt( TEXT * string)
  *	Print a prompt string for interactive user
  *	Not for Windows, otherwise flush the string
  **************************************/
-#ifndef GUI_TOOLS
     userPrompt = (char *) string;
 
     //#ifndef HAVE_READLINE_READLINE_H
     //    ib_fprintf(ib_stdout, userPrompt.c_str());
     //    ib_fflush(ib_stdout);
     //#endif
-
-#endif
 
 }
 
@@ -731,78 +677,6 @@ char getNextInputChar() {
     
     return  lastInputLine[ getColumn++];
 }
-
-
-#ifdef GUI_TOOLS
-int ISQL_commit_work(int response, IB_FILE * ipf, IB_FILE * opf, IB_FILE * sf)
-{
-/**************************************
- *
- *	I S Q L _ c o m m i t _ w o r k 
- *
- **************************************
- *
- * Functional description
- *	If response = WISQL_RESPONSE_YES then commit work.
- * 	If response = WISQL_RESPONSE_NO rollback.
- *
- **************************************/
-	ISC_STATUS ret_code;
-
-
-	Out = opf;
-	Ifp = ipf;
-	Diag = Out;
-	Help = Out;
-
-	ret_code = 0;
-/*
- * Commit transaction that was started on behalf of the request 
- * Don't worry about the error if one occurs it will be network 
- * related and caught later.
- */
-	if (gds_trans)
-		isc_rollback_transaction(isc_status, &gds_trans);
-
-	if (response == WISQL_RESPONSE_NO) {
-		/* add command to command history file */
-		ib_fprintf(sf, "%s%s%s", "Rollback", Term, NEWLINE);
-		ib_fflush(sf);
-		if (D__trans)
-			if (ret_code = isc_rollback_transaction(isc_status, &D__trans))
-				ISQL_errmsg(isc_status);
-
-		if (M__trans && !ret_code)
-			if (ret_code = isc_rollback_transaction(isc_status, &M__trans))
-				ISQL_errmsg(isc_status);
-
-		if (!D__trans && !M__trans && !ret_code) {
-			ISQL_printf(Out, (TEXT*) "Work Rolled Back");
-			ISQL_printf(Out, (TEXT*) NEWLINE);
-		}
-	}
-	else {
-		/* add command to command history file */
-		ib_fprintf(sf, "%s%s%s", "Commit", Term, NEWLINE);
-		ib_fflush(sf);
-		if (D__trans)
-			if (ret_code = isc_commit_transaction(isc_status, &D__trans))
-				ISQL_errmsg(isc_status);
-
-		if (M__trans && !ret_code)
-			if (ret_code = isc_commit_transaction(isc_status, &M__trans))
-				ISQL_errmsg(isc_status);
-
-		if (!D__trans && !M__trans && !ret_code) {
-			ISQL_printf(Out, (TEXT*) "Work Committed");
-			ISQL_printf(Out, (TEXT*) NEWLINE);
-		}
-	}
-
-	return ((int) ret_code);
-}
-#endif
-
 
 void ISQL_copy_SQL_id( TEXT * in_str, TEXT * output_str, TEXT escape_char)
 {
@@ -878,7 +752,7 @@ void ISQL_errmsg( STATUS * status)
  **************************************/
 	TEXT errbuf[MSG_LENGTH];
 	STATUS *vec;
-#if defined (WIN95) && !defined (GUI_TOOLS)
+#if defined (WIN95)
 #define TRANSLATE_CP if (!fAnsiCP) AnsiToOem(errbuf, errbuf)
 #else
 #define TRANSLATE_CP
@@ -897,46 +771,18 @@ void ISQL_errmsg( STATUS * status)
 		gds__msg_format(NULL_PTR, ISQL_MSG_FAC, 0, sizeof(errbuf), errbuf,
 						(TEXT *) isc_sqlcode(status), (TEXT*) NULL_PTR, (TEXT*) NULL_PTR,
 						(TEXT*) NULL_PTR, (TEXT*) NULL_PTR);
-#ifndef GUI_TOOLS
 		TRANSLATE_CP;
 		STDERROUT(errbuf, 1);
-#else
-		buffer_error_msg(errbuf, WISQL_SHORTMSG);
-#endif
-
 		isc_interprete(errbuf, &vec);
-#ifndef GUI_TOOLS
 		TRANSLATE_CP;
 		STDERROUT(errbuf, 1);
-#else
-		buffer_error_msg(errbuf, WISQL_DETAILEDMSG);
-		buffer_error_msg(NEWLINE, WISQL_DETAILEDMSG);
-#endif
 
 		/* Continuation of error */
 		errbuf[0] = '-';
 		while (isc_interprete(errbuf + 1, &vec)) {
-#ifndef GUI_TOOLS
 			TRANSLATE_CP;
 			STDERROUT(errbuf, 1);
-#else
-			buffer_error_msg(errbuf, WISQL_DETAILEDMSG);
-			buffer_error_msg(NEWLINE, WISQL_DETAILEDMSG);
-#endif
 		}
-#ifdef GUI_TOOLS
-		/*
-		 * This will force an extra carriage return line feed for better 
-		 * formatting of errors when executing a script through windows 
-		 * ISQL.  The Merge_stderr flag is only set when scripts are 
-		 * running.
-		 */
-		if (Merge_stderr)
-			ISQL_printf(Out, (TEXT*) NEWLINE);
-
-		/* Show the error dialog */
-		wisqlerr();
-#endif
 	}
 }
 
@@ -955,7 +801,7 @@ void ISQL_warning( STATUS * status)
  **************************************/
 	STATUS *vec;
 	TEXT buf[MSG_LENGTH];
-#if defined (WIN95) && !defined (GUI_TOOLS)
+#if defined (WIN95)
 #define TRANSLATE_CP if (!fAnsiCP) AnsiToOem(buf, buf)
 #else
 #define TRANSLATE_CP
@@ -970,158 +816,20 @@ void ISQL_warning( STATUS * status)
 			vec[2] != gds_arg_warning ||
 			(vec[2] == gds_arg_warning && !Warnings)) return;
 		isc_interprete(buf, &vec);
-#ifndef GUI_TOOLS
 		TRANSLATE_CP;
 		STDERROUT(buf, 1);
-#else
-		buffer_error_msg(buf, WISQL_DETAILEDMSG);
-		buffer_error_msg(NEWLINE, WISQL_DETAILEDMSG);
-#endif
 
 		/* Continuation of warning */
 		buf[0] = '-';
 		while (isc_interprete(buf + 1, &vec)) {
-#ifndef GUI_TOOLS
 			TRANSLATE_CP;
 			STDERROUT(buf, 1);
-#else
-			buffer_error_msg(buf, WISQL_DETAILEDMSG);
-			buffer_error_msg(NEWLINE, WISQL_DETAILEDMSG);
-#endif
 		}
-#ifdef GUI_TOOLS
-		/*
-		 * This will force an extra carriage return line feed for better
-		 * formatting of errors when executing a script through windows
-		 * ISQL.  The Merge_stderr flag is only set when scripts are
-		 * running.
-		 */
-		if (Merge_stderr)
-			ISQL_printf(Out, (TEXT*) NEWLINE);
-
-		/* Show the error dialog */
-		wisqlerr();
-#endif
 	}
 
 	status[2] = gds_arg_end;
 
 }
-
-
-#ifdef GUI_TOOLS
-void ISQL_exit_db(void)
-{
-/**************************************
- *
- *	I S Q L _ e x i t _ d b
- *
- **************************************
- *
- * Functional description
- *	Detach from the database.
- *
- **************************************/
-
-	if (D__trans)
-		isc_rollback_transaction(isc_status, &D__trans);
-	if (M__trans)
-		isc_rollback_transaction(isc_status, &M__trans);
-	if (gds_trans)
-		isc_rollback_transaction(isc_status, &gds_trans);
-
-	if (Stmt)
-		isc_dsql_free_statement(isc_status, &Stmt, DSQL_drop);
-
-	if (DB)
-		isc_detach_database(isc_status, &DB);
-
-	DB = NULL;
-	Db_name[0] = '\0';
-	D__trans = NULL;
-	M__trans = NULL;
-	gds_trans = NULL;
-	Stmt = NULL;
-	if (sqlda)
-		ISQL_FREE(sqlda);
-
-}
-#endif
-
-
-#ifdef GUI_TOOLS
-int ISQL_frontend_command(
-						  TEXT * string,
-						  IB_FILE * ipf, IB_FILE * opf, IB_FILE * sf)
-{
-/**************************************
- *
- *	I S Q L _ f r o n t e n d _ c o m m a n d
- *
- **************************************
- *
- * Functional description
- *	Process a frontend command for Windows ISQL.   This sets up
- *	the input and output files, and executes the statement.
- *
- **************************************/
-	SSHORT ret;
-	SCHAR *endpassword, savechar;
-	int length;
-	SSHORT connect_stmt;
-
-	Out = opf;
-	Ifp = ipf;
-	Diag = Out;
-	Help = Out;
-
-	connect_stmt = FALSE;
-
-	if (strncmp(string, WISQL_CONNECT_LITERAL, strlen(WISQL_CONNECT_LITERAL))) {
-		/* add command to command history file */
-		ib_fprintf(sf, "%s%s%s", string, Term, NEWLINE);
-		ib_fflush(sf);
-
-		if (strcmp(string, WISQL_DROP_DATABASE_LITERAL)) {
-			/* Echo string to Output */
-			ISQL_printf(Out, string);
-			ISQL_printf(Out, (TEXT*) NEWLINE);
-		}
-	}
-	else {
-		/* 
-		 *  Need to remove the users password from connect string.  Step through
-		 *  the string until you see the PASSWORD literal.  Save of the char,
-		 *  NULL terminate the string and print.  Restore the char and move
-		 *  on. 
-		 */
-		connect_stmt = TRUE;
-		endpassword = strstr(string, WISQL_PASSWORD_LITERAL);
-		if (endpassword) {
-			length = strlen(WISQL_PASSWORD_LITERAL);
-			endpassword = endpassword + length;
-			savechar = *endpassword;
-			*endpassword = NULL;
-
-			/* add command to command history file */
-			ib_fprintf(sf, "%s %s %s%s",
-					   string, WISQL_PASSWORD_COMMENT_LITERAL, Term, NEWLINE);
-			ib_fflush(sf);
-			*endpassword = savechar;
-		}
-	}
-
-	ret = (int) frontend(string);
-
-	if (ret == SKIP)
-		ret = 0;
-
-	if (!connect_stmt)
-		ISQL_printf(Out, (TEXT*) NEWLINE);
-
-	return (ret);
-}
-#endif
 
 
 SSHORT ISQL_get_default_char_set_id()
@@ -1167,329 +875,6 @@ SSHORT ISQL_get_default_char_set_id()
 
 	return (default_char_set_id);
 }
-
-
-#ifdef GUI_TOOLS
-int ISQL_extract(
-				 SCHAR * string,
-				 int type, IB_FILE * ipf, IB_FILE * opf, IB_FILE * sf)
-{
-/**************************************
- *
- *	I S Q L _ e x t r a c t
- *
- **************************************
- *
- * Functional description
- *	Process a extract command from Windows ISQL.   This sets up
- *	the input and output files, and executes the statement.
- *
- **************************************/
-	int ret;
-	isc_tr_handle save_trans_handle;
-
-	Out = opf;
-	Ifp = ipf;
-	Diag = Out;
-	Help = Out;
-	ret = 0;
-	strcpy(Target_db, Db_name);
-
-/* 
- *  Add command to command history file.  There is no way to perform an
- *  extract from an input script.  Will defer for now
- *
- *  ib_fprintf (sf, "%s%s%s \n\r", string, Term, NEWLINE);
- *  ib_fflush (sf);
- */
-
-/* Save off the transaction handle so we can set it to NULL */
-	save_trans_handle = gds_trans;
-	gds_trans = NULL;
-
-	if (type == EXTRACT_VIEW) {
-		ib_fprintf(sf, "/* Extract View %s%s */%s", string, Term, NEWLINE);
-		ib_fflush(sf);
-		ISQL_printf(Out, (TEXT*) "/* Extract View ");
-		ISQL_printf(Out, string);
-		ISQL_printf(Out, (TEXT*) " */");
-		ISQL_printf(Out, (TEXT*) NEWLINE);
-		EXTRACT_list_view(string);
-	}
-	else {
-		if (type == EXTRACT_TABLE) {
-			ib_fprintf(sf, "/* Extract Table %s%s */%s", string, Term,
-					   NEWLINE);
-			ib_fflush(sf);
-			ISQL_printf(Out, (TEXT*) "/* Extract Table ");
-			ISQL_printf(Out, string);
-			ISQL_printf(Out, (TEXT*) " */");
-			ISQL_printf(Out, (TEXT*) NEWLINE);
-		}
-		else {
-			ib_fprintf(sf, "/* Extract Database %s%s */%s", Db_name, Term,
-					   NEWLINE);
-			ib_fflush(sf);
-			ISQL_printf(Out, (TEXT*) "/* Extract Database ");
-			ISQL_printf(Out, Db_name);
-			ISQL_printf(Out, (TEXT*) " */");
-			ISQL_printf(Out, (TEXT*) NEWLINE);
-		}
-		ret = EXTRACT_ddl(type, string);
-	}
-
-	if (ret == FINI_OK)
-		ret = 0;
-
-/*
- * Commit transaction that was started on behalf of the request 
- * Don't worry about the error if one occurs it will be network related
- * and caught later.
-*/
-	if (gds_trans)
-		isc_rollback_transaction(isc_status, &gds_trans);
-
-/* Restore old tranasaction handle */
-	gds_trans = save_trans_handle;
-
-	ISQL_printf(Out, (TEXT*) NEWLINE);
-
-	return (ret);
-}
-#endif
-
-
-#ifdef GUI_TOOLS
-void ISQL_build_table_list(
-						   void **tbl_list,
-						   IB_FILE * ipf, IB_FILE * opf, IB_FILE * sf)
-{
-/**************************************
- *
- *      I S Q L _ b u i l d _ t a b l e _ l i s t
- *
- **************************************
- *
- * Functional description
- *      Build a list of table names within the connected
- *      database.
- *
- **************************************/
-	isc_tr_handle save_trans_handle;
-
-	Out = opf;
-	Ifp = ipf;
-	Diag = Out;
-	Help = Out;
-
-/* Transaction for all frontend commands */
-	if (DB) {
-		save_trans_handle = gds_trans;
-		gds_trans = NULL;
-		if (isc_start_transaction
-			(isc_status, &gds_trans, 1, &DB, 0, (SCHAR *) 0))
-			ISQL_errmsg(isc_status);
-		else {
-			SHOW_build_table_namelist(tbl_list);
-			/*
-			 * Commit transaction that was started on behalf of the request 
-			 * Don't worry about the error if one occurs it will be network 
-			 * related and caught later.
-			 */
-			isc_rollback_transaction(isc_status, &gds_trans);
-		}
-		gds_trans = save_trans_handle;
-	}
-	return;
-}
-#endif
-#ifdef GUI_TOOLS
-void ISQL_query_database(
-						 SSHORT * db_objects,
-						 IB_FILE * ipf, IB_FILE * opf, IB_FILE * sf)
-{
-/**************************************
- *
- *      I S Q L _ q u e r y _ d a t a b a s e 
- *
- **************************************
- *
- * Functional description
- *      Query the database to see if it has any 
- *	 objects defined.
- *
- **************************************/
-
-	int tables, views, indices;
-	isc_tr_handle save_trans_handle;
-
-	Out = opf;
-	Ifp = ipf;
-	Diag = Out;
-	Help = Out;
-	tables = 0;
-	views = 0;
-	indices = 0;
-
-	ISQL_get_version(FALSE);
-/*
- * This should only be executed if we are connected to a V4
- * database.  This query will return a list of SQL tables and
- * views that we use to instantiate our extract table/view list
- * box.
-*/
-
-	if (V4) {
-		/* Transaction for all frontend commands */
-		if (DB) {
-			save_trans_handle = gds_trans;
-			gds_trans = NULL;
-			if (isc_start_transaction(isc_status,
-									  &gds_trans, 1, &DB, 0, (SCHAR *) 0))
-				ISQL_errmsg(isc_status);
-			else {
-				/* Call SHOW_query_database to determine if the DB is empty */
-				SHOW_query_database(&tables, &views, &indices);
-				/*
-				 * Commit transaction that was started on behalf of the request 
-				 * Don't worry about the error if one occurs it will be network 
-				 * related and caught later.
-				 */
-				isc_rollback_transaction(isc_status, &gds_trans);
-				gds_trans = save_trans_handle;
-			}
-		}
-	}
-
-/* Set up the flags for Windows ISQL */
-	if (tables)
-		*db_objects |= TABLE_OBJECTS;
-	else if (*db_objects & TABLE_OBJECTS)
-		*db_objects ^= TABLE_OBJECTS;
-
-	if (views)
-		*db_objects |= VIEW_OBJECTS;
-	else if (*db_objects & VIEW_OBJECTS)
-		*db_objects ^= VIEW_OBJECTS;
-	return;
-}
-#endif
-
-
-#ifdef GUI_TOOLS
-void ISQL_build_view_list(
-						  void **view_list,
-						  IB_FILE * ipf, IB_FILE * opf, IB_FILE * sf)
-{
-/**************************************
- *
- *      I S Q L _ b u i l d _ v i e w _ l i s t
- *
- **************************************
- *
- * Functional description
- *      Build a list of view names within the connected
- *      database.
- *
- **************************************/
-	isc_tr_handle save_trans_handle;
-
-	Out = opf;
-	Ifp = ipf;
-	Diag = Out;
-	Help = Out;
-
-/* Transaction for all frontend commands */
-	if (DB) {
-		save_trans_handle = gds_trans;
-		gds_trans = NULL;
-		if (isc_start_transaction
-			(isc_status, &gds_trans, 1, &DB, 0, (SCHAR *) 0))
-			ISQL_errmsg(isc_status);
-		else {
-			SHOW_build_view_namelist(view_list);
-			/*
-			 * Commit transaction that was started on behalf of the request 
-			 * Don't worry about the error if one occurs it will be network 
-			 * related and caught later.
-			 */
-			isc_rollback_transaction(isc_status, &gds_trans);
-		}
-		gds_trans = save_trans_handle;
-	}
-	return;
-}
-#endif
-#ifdef GUI_TOOLS
-int ISQL_create_database(
-						 SCHAR * create_stmt,
-						 SCHAR ** database,
-						 SCHAR * username,
-						 SCHAR * password,
-IB_FILE * ipf, IB_FILE * opf, IB_FILE * sf)
-{
-/**************************************
- *
- *      I S Q L _ c r e a t e _ d a t a b a s e 
- *
- **************************************
- *
- * Functional description
- *      Set up the global user & password 
- *	 fields.  Call frontend to create a database
- *
- **************************************/
-
-	int ret;
-
-	Out = opf;
-	Ifp = ipf;
-	Diag = Out;
-	Help = Out;
-
-/* add command to command history file */
-	ib_fprintf(sf, "%s%s", create_stmt, NEWLINE);
-	ib_fflush(sf);
-
-/* 
- * Set up the username and password for the frontend create
- * database statement.  Uncomment the following lines if you wish to surface
- * to the user, a create db statement in which the username and password are
- * not required.  They are remembered from the connect statement.
- *
- * strcpy (Password, password);
- * global_psw  = TRUE;
- * strcpy (User, username);
- * global_usr  = TRUE;
- */
-
-	ret = (int) frontend(create_stmt);
-
-/*
- * Copy the database name to the ISQL parameter block field pszDatabase.
- * Check for skip because that signifies that create_db processed the
- * create database statement.
-*/
-	if (ret == SKIP) {
-		ret = 0;
-		strcpy(*database, Db_name);
-	}
-	else
-		*database[0] = NULL;
-
-/* 
- * Reset user name and password so that the user has to re-enter valid ones.
- * Uncomment the following lines if you wish to allow the user to issue the
- * create db statement without specifing a username and password.
- * Password[0] = NULL;
- * global_psw  = FALSE;
- * User[0]     = NULL;
- * global_usr  = FALSE;
- */
-
-	return (ret);
-}
-#endif
 
 
 SSHORT ISQL_get_field_length(TEXT * field_name)
@@ -1913,154 +1298,6 @@ BOOLEAN ISQL_get_null_flag(TEXT * rel_name, TEXT * field_name)
 	return null_flag;
 }
 
-
-#ifdef GUI_TOOLS
-SSHORT ISQL_init(IB_FILE * inputfile, IB_FILE * outputfile)
-{
-/**************************************
- *
- *	I S Q L _ i n i t
- *
- **************************************
- *
- * Functional description
- *	Open database and initialize input and output files for later
- *	access from Windows ISQL.
- *
- **************************************/
-	SSHORT ret;
-	int lgth;
-
-/* Initialize all pertinent stuff, start db and start transaction, and
-   set up the input and output files */
-
-	Out = outputfile;
-	Ifp = inputfile;
-	Diag = Out;
-	Help = Out;
-
-	Merge_stderr = FALSE;
-	Quiet = FALSE;
-	List = FALSE;
-	Docount = FALSE;
-	Plan = FALSE;
-	Planonly = FALSE;
-	Doblob = 1;
-	Time_display = FALSE;
-	Sqlda_display = FALSE;
-	Abort_flag = 0;
-	Echo = FALSE;
-	Interactive = FALSE;
-	Input_file = FALSE;
-	Pagelength = 20;
-	Stats = FALSE;
-	Autocommit = TRUE;
-	Autofetch = TRUE;
-
-/* Reset global user and password so that the user has o resupply them */
-	Password[0] = NULL;
-	global_psw = FALSE;
-	User[0] = NULL;
-	global_usr = FALSE;
-	Role[0] = NULL;
-	global_role = FALSE;
-	Numbufs[0] = 0;
-	global_numbufs = FALSE;
-
-	lgth = strlen(DEFCHARSET);
-	if (lgth <= MAXCHARSET_LENGTH)
-		strcpy(ISQL_charset, DEFCHARSET);
-	else
-		strncpy(ISQL_charset, DEFCHARSET, MAXCHARSET_LENGTH);
-
-	Termlen = strlen(DEFTERM);
-	if (Termlen <= MAXTERM_LENGTH)
-		strcpy(Term, DEFTERM);
-	else {
-		Termlen = MAXTERM_LENGTH;
-		strncpy(Term, DEFTERM, MAXTERM_LENGTH);
-	}
-
-	D__trans = NULL;
-	M__trans = NULL;
-	gds_trans = NULL;
-	DB = NULL;
-	Stmt = NULL;
-	signal(SIGINT, (void (*)(int)) query_abort);
-
-	sqlda = (XSQLDA *) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(20)));
-	sqlda->version = SQLDA_VERSION1;
-	sqlda->sqln = 20;
-	sqldap = &sqlda;
-	return 0;
-}
-#endif
-
-
-#ifdef GUI_TOOLS
-void ISQL_reset_settings()
-{
-/**************************************
- *
- *	I S Q L _ r e s e t _ s e t t i n g s
- *
- **************************************
- *
- * Functional description
- *	Called after a script is executed in 
- *	Windows ISQL to reset the ISQL session 
- * 	settings.
- *
- **************************************/
-	int lgth;
-
-	Merge_stderr = FALSE;
-	Quiet = FALSE;
-	List = FALSE;
-	Stats = FALSE;
-	Autocommit = TRUE;
-	Autofetch = TRUE;
-	Docount = FALSE;
-	Plan = FALSE;
-	Planonly = FALSE;
-	Doblob = 1;
-	Time_display = FALSE;
-	Sqlda_display = FALSE;
-	Echo = FALSE;
-	Pagelength = 20;
-	Abort_flag = 0;
-	Interactive = FALSE;
-	Input_file = FALSE;
-
-	lgth = strlen(DEFCHARSET);
-	if (lgth <= MAXCHARSET_LENGTH)
-		strcpy(ISQL_charset, DEFCHARSET);
-	else
-		strncpy(ISQL_charset, DEFCHARSET, MAXCHARSET_LENGTH);
-
-	Termlen = strlen(DEFTERM);
-	if (Termlen <= MAXTERM_LENGTH)
-		strcpy(Term, DEFTERM);
-	else {
-		Termlen = MAXTERM_LENGTH;
-		strncpy(Term, DEFTERM, MAXTERM_LENGTH);
-	}
-
-/* Reset global user and password so that the user has o resupply them */
-	Password[0] = NULL;
-	global_psw = FALSE;
-	User[0] = NULL;
-	global_usr = FALSE;
-	Role[0] = NULL;
-	global_role = FALSE;
-	Numbufs[0] = 0;
-	global_numbufs = FALSE;
-
-	return;
-}
-#endif
-
-
 void ISQL_disconnect_database( int nQuietMode)
  {
 /**************************************
@@ -2294,102 +1531,9 @@ void ISQL_printf( IB_FILE * fp, TEXT * buffer)
  *	Centralized printing facility
  *
  **************************************/
-#ifndef GUI_TOOLS
 
 	ib_fprintf(fp, "%s", buffer);
-
-#else
-
-	SCHAR *pszStartPos, *psChar, cSavChar;
-
-/* Check buffer to make sure we have data */
-	if (!*buffer)
-		return;
-
-/* Windows ISQL output routine */
-	psChar = buffer;
-	pszStartPos = buffer;
-
-/* If first char is newline then print PC newline */
-	if (*psChar == '\n') {
-		PaintOutputWindow(NEWLINE);
-		ib_fprintf(fp, "%s", "\n");
-		pszStartPos = buffer + 1;
-	}
-	psChar++;
-
-/* Step through output buffer displaying output when a newline is reached */
-	for (; *psChar != NULL; psChar++) {
-		if (*psChar == '\n' && *(psChar - 1) != '\r') {
-			cSavChar = *psChar;
-			*psChar = NULL;
-
-			/* Don't print the Null */
-			if (*pszStartPos) {
-				PaintOutputWindow(pszStartPos);
-				ib_fprintf(fp, "%s", pszStartPos);
-			}
-			PaintOutputWindow(NEWLINE);
-			ib_fprintf(fp, "%s", "\n");
-			*psChar = cSavChar;
-			pszStartPos = psChar + 1;
-		}
-	}
-
-/*
- * Display the remainder if newlines whre encountered, otherwise display the
- * whole buffer
-*/
-	if (*pszStartPos) {
-		PaintOutputWindow(pszStartPos);
-		if (!strcmp(pszStartPos, NEWLINE))
-			ib_fprintf(fp, "%s", "\n");
-		else
-			ib_fprintf(fp, "%s", pszStartPos);
-	}
-#endif
 }
-
-
-#ifdef GUI_TOOLS
-int ISQL_sql_statement(TEXT * string,
-					   IB_FILE * ipf, IB_FILE * opf, IB_FILE * sf)
-{
-/**************************************
- *
- *	I S Q L _ s q l _ s t a t e m e n t
- *
- **************************************
- *
- * Functional description
- *	Process a SQL statement for Windows ISQL.   This sets up
- *	the input and output files, and executes the statement.
- *
- **************************************/
-	int ret;
-
-	Out = opf;
-	Ifp = ipf;
-	Diag = Out;
-	Help = Out;
-
-/* add command to command history file */
-	ib_fprintf(sf, "%s%s", string, NEWLINE);
-	ib_fflush(sf);
-
-	ISQL_printf(Out, string);
-	ISQL_printf(Out, (TEXT*) NEWLINE);
-
-	ret = process_statement(string, sqldap);
-	if (ret == SKIP)
-		ret = 0;
-
-	ISQL_printf(Out, (TEXT*) NEWLINE);
-
-	return (ret);
-}
-#endif
-
 
 static SSHORT add_row(TEXT * tabname)
 {
@@ -3007,7 +2151,6 @@ static void copy_str(TEXT ** output_str,
 }
 
 
-#ifndef GUI_TOOLS
 static SSHORT copy_table( TEXT * source, TEXT * destination, TEXT * otherdb)
 {
 /**************************************
@@ -3096,8 +2239,6 @@ static SSHORT copy_table( TEXT * source, TEXT * destination, TEXT * otherdb)
 
 	return (SKIP);
 }
-#endif /* GUI_TOOLS */
-
 
 static SSHORT create_db( TEXT * statement, TEXT * d_name)
 {
@@ -3154,7 +2295,7 @@ static SSHORT create_db( TEXT * statement, TEXT * d_name)
 	strcpy(local_statement, statement);
 
 /* If there is a user parameter, we will set it into the create stmt. */
-#if defined (WIN95) && !defined(GUI_TOOLS)
+#if defined (WIN95)
 	if (!fAnsiCP || global_usr || global_psw ||
 #else
 	if (global_usr || global_psw ||
@@ -3178,7 +2319,7 @@ static SSHORT create_db( TEXT * statement, TEXT * d_name)
 			q++;
 			p = strchr(q, quote);
 			if (p) {
-#if defined (WIN95) && !defined (GUI_TOOLS)
+#if defined (WIN95)
 				/* If we are not using the ANSI codepage then we need to
 				 * translate the database name to ANSI from OEM.
 				 * We will translate (p - q) characters from (q) into
@@ -3425,13 +2566,11 @@ static void do_isql(void)
  * the file containing the script.
  */
 
-#ifndef GUI_TOOLS
 	(void) newdb(Db_name, User, Password, Numbufs, Role, TRUE);
 
 /* If that failed or no Dbname was specified */
 
 	(void) ISQL_dbcheck();
-#endif
 
 /* Set up SQLDA for SELECTs, allow up to 20 fields to be selected.
 **  If we subsequently encounter a query with more columns, we
@@ -3483,16 +2622,6 @@ static void do_isql(void)
 								errbuf, (TEXT*) NULL_PTR, (TEXT*) NULL_PTR, (TEXT*) NULL_PTR,
 								(TEXT*) NULL_PTR, (TEXT*) NULL_PTR);
 				STDERROUT(errbuf, 1);
-#ifdef GUI_TOOLS
-				/*
-				 * This will force an extra carriage return line feed for better
-				 * formatting of errors when executing a script through windows
-				 * ISQL.  The Merge_stderr flag is only set when scripts are
-				 * running.
-				 */
-				if (Merge_stderr)
-					ISQL_printf(Out, (TEXT*) NEWLINE);
-#endif
 			}
 			ret = SKIP;
 		}
@@ -3507,18 +2636,11 @@ static void do_isql(void)
 		case EOF:
 		case EXIT:
 			/* Quit upon EOF from top level file pointer */
-#ifdef GUI_TOOLS
-			Quiet = TRUE;
-#endif
 			if ((ret == EOF) && Continuation) {
 				gds__msg_format(NULL_PTR, ISQL_MSG_FAC, UNEXPECTED_EOF,
 								MSG_LENGTH, errbuf, (TEXT*) NULL_PTR, (TEXT*) NULL_PTR,
 								(TEXT*) NULL_PTR, (TEXT*) NULL_PTR, (TEXT*) NULL_PTR);
-#ifndef GUI_TOOLS
 				STDERROUT(errbuf, 1);
-#else
-				buffer_error_msg(errbuf, WISQL_SHORTMSG);
-#endif
 				Exit_value = FINI_ERROR;
 			}
 
@@ -3545,17 +2667,10 @@ static void do_isql(void)
 			if (Stmt)
 				isc_dsql_free_statement(isc_status, &Stmt, DSQL_drop);
 			isc_detach_database(isc_status, &DB);
-#ifdef GUI_TOOLS
-			ib_fclose(Out);
-			ib_fclose(Ifp);
-#endif
 			done = TRUE;
 			break;
 
 		case BACKOUT:
-#ifdef GUI_TOOLS
-			Quiet = TRUE;
-#endif
 			if (D__trans)
 				isc_rollback_transaction(isc_status, &D__trans);
 			if (M__trans)
@@ -3569,10 +2684,6 @@ static void do_isql(void)
 			if (Stmt)
 				isc_dsql_free_statement(isc_status, &Stmt, DSQL_drop);
 			isc_detach_database(isc_status, &DB);
-#ifdef GUI_TOOLS
-			ib_fclose(Out);
-			ib_fclose(Ifp);
-#endif
 			done = TRUE;
 			break;
 
@@ -3823,7 +2934,6 @@ static int end_trans(void)
 		else {					/* No answer, just roll back by default */
 
 			if (DB && M__trans) {
-#ifndef GUI_TOOLS
 /* For WISQL, we keep track of whether a commit is needed by setting a flag in the ISQLPB
  * structure.  This flag is set whenever a sql command is entered in the SQL input area or
  * if the user uses the create database dialog.  Because of this, this should only show up if 
@@ -3837,7 +2947,6 @@ static int end_trans(void)
 								(TEXT*) NULL_PTR,
 								(TEXT*) NULL_PTR, (TEXT*) NULL_PTR, (TEXT*) NULL_PTR, (TEXT*) NULL_PTR);
 				STDERROUT(infobuf, 1);
-#endif
 				if (isc_rollback_transaction(isc_status, &M__trans)) {
 					ISQL_errmsg(isc_status);
 					ret = FAIL;
@@ -3875,10 +2984,6 @@ static SSHORT escape( TEXT * cmd)
  **************************************/
 	TEXT *shellcmd;
 
-#ifdef GUI_TOOLS
-	return (SKIP);
-#else
-
 /* Advance past the shell */
 
 	shellcmd = cmd;
@@ -3907,7 +3012,6 @@ static SSHORT escape( TEXT * cmd)
 	}
 
 	return (SKIP);
-#endif
 }
 
 
@@ -4477,7 +3581,6 @@ static SSHORT frontend( TEXT * statement)
 			ISQL_FREE(lparms[j]);
 		}
 
-#ifndef GUI_TOOLS
 	if (ret == ERR) {
 		if (bad_dialect == TRUE)
 			gds__msg_format(NULL_PTR, ISQL_MSG_FAC, CMD_ERR, MSG_LENGTH,
@@ -4489,7 +3592,6 @@ static SSHORT frontend( TEXT * statement)
 							(TEXT*) NULL_PTR);
 		STDERROUT(errbuf, 1);
 	}
-#endif
 
 	if (buffer)
 		ISQL_FREE(buffer);
@@ -4581,13 +3683,11 @@ static SSHORT get_statement(TEXT ** statement_ref,
 		/* Otherwise just recall the address from last time */
 		statement = *statement_ref;
 
-#ifndef GUI_TOOLS
 	if (Ifp == ib_stdin) {
         ISQL_prompt(statement_prompt);
         //		ib_fprintf(ib_stdout, statement_prompt);
         //		ib_fflush(ib_stdout);
 	}
-#endif
 
 /* Clear out statement buffer */
 
@@ -4722,12 +3822,6 @@ static SSHORT get_statement(TEXT ** statement_ref,
 					*p = '\0';
 					ISQL_printf(Out, (TEXT*) statement);
 				}
-
-#ifdef GUI_TOOLS
-				/* add command to command history file */
-				ib_fprintf(Session, "%s", statement);
-				ib_fflush(Session);
-#endif
 
 				/* Lop off terminal comment */
 				*(q - Termlen) = '\0';
@@ -5403,11 +4497,9 @@ static SSHORT print_sets(void)
 	ISQL_printf(Out, (TEXT*) "Print statistics:        ");
 	ISQL_printf(Out,(TEXT*)  (Stats ? "ON" : "OFF"));
 	ISQL_printf(Out, (TEXT*) NEWLINE);
-#ifndef GUI_TOOLS
 	ISQL_printf(Out, (TEXT*) "Echo commands:           ");
 	ISQL_printf(Out, (TEXT*) (Echo ? "ON" : "OFF"));
 	ISQL_printf(Out, (TEXT*) NEWLINE);
-#endif
 	ISQL_printf(Out, (TEXT*) "List format:             ");
 	ISQL_printf(Out, (TEXT*) (List ? "ON" : "OFF"));
 	ISQL_printf(Out, (TEXT*) NEWLINE);
@@ -5479,7 +4571,6 @@ static SSHORT help(TEXT * what)
  *	List the known commands.
  *
  **************************************/
-#ifndef GUI_TOOLS
 	TEXT msg[MSG_LENGTH];
 	SSHORT *msgid;
 
@@ -5545,7 +4636,6 @@ static SSHORT help(TEXT * what)
 		}
 		ISQL_printf(Help, (TEXT*) NEWLINE);
 	}
-#endif
 	return (SKIP);
 }
 
@@ -5860,7 +4950,7 @@ static SSHORT newdb(TEXT * dbname, TEXT * usr, TEXT * psw, TEXT * numbufs,
 
 	local_name = Db_name;
 
-#if defined (WIN95) && !defined (GUI_TOOLS)
+#if defined (WIN95)
 	if (!fAnsiCP) {
 		local_name = save_database;
 		OemToAnsi(Db_name, local_name);
@@ -5934,7 +5024,6 @@ static SSHORT newdb(TEXT * dbname, TEXT * usr, TEXT * psw, TEXT * numbufs,
 		}
 	}
 
-#ifndef GUI_TOOLS
     /* CVC: Do not put the user and pw used to extract metadata in a script!
        Only acknowledge user connection parameters in interactive logins. */
 
@@ -5961,7 +5050,6 @@ static SSHORT newdb(TEXT * dbname, TEXT * usr, TEXT * psw, TEXT * numbufs,
             ISQL_printf(Out, Print_buffer);
         }
     }
-#endif
 
 	if (!V4 && !V33) {
 		gds__msg_format(NULL_PTR, ISQL_MSG_FAC, SERVER_TOO_OLD, MSG_LENGTH,
@@ -6076,25 +5164,13 @@ static SSHORT newoutput( TEXT * outfile)
 	if (*outfile) {
 		strip_quotes(outfile, path);
 		outfile = path;
-#ifdef GUI_TOOLS
-		if (fp = ib_fopen(outfile, "w"))
-#else
 		if (fp = ib_fopen(outfile, "a"))
-#endif
 		{
 			if (Out && Out != ib_stdout)
 				ib_fclose(Out);
 			Out = fp;
-#ifndef GUI_TOOLS
 			if (Merge_stderr)
 				Errfp = Out;
-#else
-			if (Merge_stderr) {
-				Errfp = Out;
-				Diag = Out;
-				Help = Out;
-			}
-#endif
 		}
 		else {
 			errbuf = (TEXT *) ISQL_ALLOC(MSG_LENGTH);
@@ -6113,7 +5189,6 @@ static SSHORT newoutput( TEXT * outfile)
 		}
 	}
 	else {
-#ifndef GUI_TOOLS
 		/* Revert to ib_stdout */
 		if (Out != ib_stdout) {
 			ib_fclose(Out);
@@ -6121,34 +5196,6 @@ static SSHORT newoutput( TEXT * outfile)
 			if (Merge_stderr)
 				Errfp = Out;
 		}
-#else
-		if (SaveOutfileName) {
-			if (fp = ib_fopen(SaveOutfileName, "a")) {
-				ib_fclose(Out);
-				Out = fp;
-				if (Merge_stderr) {
-					Errfp = Out;
-					Diag = Out;
-					Help = Out;
-				}
-			}
-			else {
-				errbuf = (TEXT *) ISQL_ALLOC(MSG_LENGTH);
-				if (errbuf) {
-					gds__msg_format(NULL_PTR,
-									ISQL_MSG_FAC,
-									FILE_OPEN_ERR,
-									MSG_LENGTH,
-									errbuf,
-									SaveOutfileName,
-									(TEXT*) NULL_PTR, (TEXT*) NULL_PTR, (TEXT*) NULL_PTR, (TEXT*) NULL_PTR);
-					STDERROUT(errbuf, 1);
-					ISQL_FREE(errbuf);
-				}
-				ret = FAIL;
-			}
-		}
-#endif
 	}
 	return (ret);
 }
@@ -6237,13 +5284,9 @@ static SSHORT parse_arg(
 
 	requested_SQL_dialect = SQL_DIALECT_V6;
 
-#ifdef GUI_TOOLS
-	Merge_stderr = TRUE;
-#else
 	Merge_stderr = FALSE;
-#endif
 
-#if defined (WIN95) && !defined (GUI_TOOLS)
+#if defined (WIN95)
 #define STRARGCPY(dest, src) fAnsiCP ? strcpy(dest, src) : AnsiToOem(src, dest)
 #define STRARGNCPY(dest, src, len) fAnsiCP ? strncpy(dest, src, len) : AnsiToOemBuff(src, dest, len)
 #else
@@ -6309,16 +5352,7 @@ static SSHORT parse_arg(
 				/* Alternate output file */
 
 				if ((s = argv[++i]) && (newoutput(s) != FAIL))
-#ifdef GUI_TOOLS
-				{
-					/* Save original output file for WINDOWS ISQL */
-					SaveOutfileName = NULL;
-					SaveOutfileName = (TEXT *) ISQL_ALLOC(strlen(s) + 1);
-					STRARGCPY(SaveOutfileName, s);
-				}
-#else
 					;
-#endif
 				else
 					ret = ERR;
 			}
@@ -6395,18 +5429,6 @@ static SSHORT parse_arg(
 					ret = ERR;
 			}
 
-#ifdef GUI_TOOLS
-			/* Get the WISQL specific session file */
-			else if (c == 'S') {
-				command line option '-s' is reserved for '-s[qldialect] n' Bie
-					Tie
-					/* Set up WISQL session file */
-				if (s = argv[++i])
-					*sess = (IB_FILE *) s;
-				else
-					ret = ERR;
-			}
-#endif
 			else if (c == 'Q')
 				/* Quiet flag */
 				Quiet = TRUE;
@@ -7705,11 +6727,6 @@ static int process_statement( TEXT * string, XSQLDA ** sqldap)
 /* Otherwise fetch and print records until EOF */
 	else {
 
-#ifdef GUI_TOOLS
-		ULONG dwRows;
-		dwRows = 0;
-#endif
-
 		for (lines = 0; !Abort_flag; ++lines) {
 
 			/* Fetch the current cursor */
@@ -7758,26 +6775,10 @@ static int process_statement( TEXT * string, XSQLDA ** sqldap)
 			}
 #endif
 
-#ifdef GUI_TOOLS
-			/* Update Row count for Windows ISQL */
-
-			UpdateRowCount(dwRows++);
-#endif
-
 			/* Print the header every Pagelength number of lines for
 			   command-line ISQL only.  For WISQL, print the column
 			   headings only once. */
 
-#ifdef GUI_TOOLS
-			if (!List && !lines) {
-				ISQL_printf(Out, (TEXT*) NEWLINE);
-				ISQL_printf(Out, header);
-				ISQL_printf(Out, (TEXT*) NEWLINE);
-				ISQL_printf(Out, header2);
-				ISQL_printf(Out, (TEXT*) NEWLINE);
-			}
-
-#else
 			if (!List && (lines % Pagelength == 0)) {
 				ISQL_printf(Out, (TEXT*) NEWLINE);
 				ISQL_printf(Out, header);
@@ -7785,7 +6786,6 @@ static int process_statement( TEXT * string, XSQLDA ** sqldap)
 				ISQL_printf(Out, header2);
 				ISQL_printf(Out, (TEXT*) NEWLINE);
 			}
-#endif
 
 			if (isc_status[1]) {
 				ISQL_errmsg(isc_status);

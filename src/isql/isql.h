@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.6 2002-10-31 05:05:56 seanleyne Exp $
+ * $Id: isql.h,v 1.7 2003-02-11 20:16:57 brodsom Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -148,7 +148,7 @@
 #define HLP_SETSCHEMA	42		/* \tSET SCHema/DB <db name> -- changes current database\n */
 #define YES_ANS		43			/* Yes */
 #define REPORT1		44			/* Current memory = !c\nDelta memory = !d\nMax memory = !x\nElapsed time= !e sec\n */
-#if (defined WIN_NT || defined GUI_TOOLS)
+#if (defined WIN_NT)
 #define REPORT2		93			/* Buffers = !b\nReads = !r\nWrites = !w\nFetches = !f\n */
 #else
 #define REPORT2		45			/* Cpu = !u sec\nBuffers = !b\nReads = !r\nWrites = !w\nFetches = !f\n */
@@ -310,45 +310,19 @@ typedef struct sqltypes {
 #define PC_FILE_SEEK
 #endif
 
-#ifdef GUI_TOOLS
-#ifndef WISQL_SHORTMSG
-#define WISQL_SHORTMSG	1
-#endif /* WISQL_SHORTMSG */
-
-#define	STDERROUT(st,l)	{ 					\
-			buffer_error_msg(st, WISQL_SHORTMSG);	\
-			wisqlerr(); 				\
-			}
-
-#define	__STDC__				/* why can't Windows gds.h work without this??? */
-#define NEWLINE		"\r\n"
-#endif /* GUI_TOOLS */
-
 #ifndef	STDERROUT
 #define	STDERROUT(st,l)	{ ib_fprintf (Errfp, "%s", st);\
 			  if (l) ib_fprintf (Errfp, "\n");\
 			  ib_fflush (Errfp); }
 #endif
 
-#ifdef GUI_TOOLS
-#ifndef ISQL_ALLOC
-#define ISQL_ALLOC(x)     malloc (x)
-#endif
-#else
 #ifndef ISQL_ALLOC
 #define ISQL_ALLOC(x)     gds__alloc (x)
 #endif
-#endif /* GUI_TOOLS */
 
-#ifdef GUI_TOOLS
-#ifndef ISQL_FREE
-#define ISQL_FREE(x)     {free (x); x = NULL;}
-#endif
-#else
 #ifndef ISQL_FREE
 #define ISQL_FREE(x)     {isc_free ((char*) x); x = NULL;}
 #endif
-#endif /* GUI_TOOLS */
 
 #ifndef NEWLINE
 #define NEWLINE 	"\n"

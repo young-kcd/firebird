@@ -143,9 +143,7 @@ static void burp_output(CONST SCHAR *, ...);
 #endif
 
 #ifndef	SUPERSERVER
-#ifndef GUI_TOOLS
 static int api_gbak(int, char**, USHORT, TEXT*, TEXT*, TEXT *, BOOLEAN, BOOLEAN);
-#endif
 #endif
 
 #define QUIT		0
@@ -162,7 +160,7 @@ static int api_gbak(int, char**, USHORT, TEXT*, TEXT*, TEXT *, BOOLEAN, BOOLEAN)
 #define	MBYTE	KBYTE * KBYTE
 #define GBYTE	MBYTE * KBYTE
 
-#if defined (WIN95) && !defined (GUI_TOOLS)
+#if defined (WIN95)
 static BOOL fAnsiCP = FALSE;
 #define TRANSLATE_CP(a) if (!fAnsiCP) AnsiToOem(a, a)
 #else
@@ -263,8 +261,6 @@ void BURP_svc_error(USHORT errcode,
 
 
 #else	// SUPERSERVER
-
-#if !defined(GUI_TOOLS)
 
 int CLIB_ROUTINE main(int argc, char* argv[])
 {
@@ -408,8 +404,6 @@ static int output_main( SLONG output_data, UCHAR * output_buf)
 	return 0;
 }
 
-#endif	// !GUI_TOOLS
-
 #endif	// SUPERSERVER
 
 
@@ -538,7 +532,7 @@ int DLL_EXPORT BURP_gbak(int		argc,
 		redir_out = atol(argv[3]);
 		redir_err = atol(argv[4]);
 #ifdef WIN_NT
-#if defined (WIN95) && !defined (GUI_TOOLS)
+#if defined (WIN95)
 		fAnsiCP = TRUE;
 #endif
 		redir_in = _open_osfhandle(redir_in, 0);
@@ -558,7 +552,7 @@ int DLL_EXPORT BURP_gbak(int		argc,
 		argc -= 4;
 	}
 
-#if defined (WIN95) && !defined (GUI_TOOLS)
+#if defined (WIN95)
 	if (!fAnsiCP)
 		fAnsiCP = (GetConsoleCP() == GetACP());
 #endif
@@ -2029,7 +2023,6 @@ static ULONG get_size( SCHAR * string, FIL file)
 
 
 #ifndef SUPERSERVER
-#ifndef GUI_TOOLS
 static int api_gbak(int argc,
 					char *argv[],
 					USHORT length,
@@ -2255,7 +2248,6 @@ static int api_gbak(int argc,
 	isc_service_detach(status, (&svc_handle));
 	return FINI_OK;
 }
-#endif	// !GUI_TOOLS
 
 #endif	// !SUPERSERVER
 

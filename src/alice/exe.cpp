@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.9 2003-02-07 15:20:33 brodsom Exp $
+//	$Id: exe.cpp,v 1.10 2003-02-11 20:14:54 brodsom Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -145,7 +145,6 @@ int EXE_action(TEXT * database, ULONG switches)
 }
 
 
-#ifndef GUI_TOOLS
 //____________________________________________________________
 //
 //
@@ -199,9 +198,6 @@ int EXE_two_phase(TEXT * database, ULONG switches)
 
 	return ((error) ? FINI_ERROR : FINI_OK);
 }
-#endif /* GUI_TOOLS */
-
-
 
 //____________________________________________________________
 //

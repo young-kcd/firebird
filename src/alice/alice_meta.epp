@@ -27,7 +27,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: alice_meta.epp,v 1.9 2003-01-16 17:47:01 skidder Exp $
+ *	$Id: alice_meta.epp,v 1.10 2003-02-11 20:14:54 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -88,15 +88,9 @@ static struct rfr_tab_t rfr_table[] = {
 	{ 0, 0, 0 }
 };
 
-#ifdef GUI_TOOLS
-#define RETURN_ERROR(user_status)	\
-	{	memcpy (user_status, gds_status, sizeof (gds_status)); \
-		Firebird::status_exception::raise(0); }
-#else
 #define RETURN_ERROR(user_status)	\
 	{	ALICE_print_status (gds_status); \
 		Firebird::status_exception::raise(0); }
-#endif
 
 
 /*____________________________________________________________

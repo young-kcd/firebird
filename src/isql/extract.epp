@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.8 2003-02-04 15:36:45 dimitr Exp $
+ * $Id: extract.epp,v 1.9 2003-02-11 20:16:58 brodsom Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -46,9 +46,6 @@
 #include <string.h>
 #include <math.h>
 #include <ctype.h>				/* isdigit */
-#ifdef GUI_TOOLS
-#include <windows.h>
-#endif
 #include "../jrd/common.h"
 #include "../jrd/gds.h"
 #include "../dsql/dsql.h"
@@ -728,101 +725,6 @@ SSHORT EXTRACT_list_table(SCHAR * relation_name,
 
 	return (SSHORT) FINI_OK;
 }
-
-
-#ifdef GUI_TOOLS
-void EXTRACT_list_view( SCHAR * viewname)
-{
-/**************************************
- *
- *	E X T R A C T _ l i s t _ v i e w 
- *
- **************************************
- *
- * Functional description
- *	Show text of the specified view.
- *	Use a SQL query to get the info and print it.
- *	Note: This should also contain check option
- *
- **************************************/
-	SSHORT first;
-
-	if (!DB)
-		if (isc_attach_database(gds_status, 0, Db_name, &DB, 0, (SCHAR *) 0))
-		{
-			ISQL_errmsg(gds_status);
-			return (SSHORT) FINI_ERROR;
-		}
-	if (!gds_trans)
-		isc_start_transaction(gds_status, &gds_trans, 1, &DB, 0,
-							  (SCHAR *) 0);
-
-/* If this is a view, use print_blob to print the view text */
-
-	FOR REL IN RDB$RELATIONS WITH
-	   (REL.RDB$SYSTEM_FLAG NE 1 OR REL.RDB$SYSTEM_FLAG MISSING) AND
-	   REL.RDB$VIEW_BLR NOT MISSING AND
-	   REL.RDB$RELATION_NAME = viewname AND
-	   REL.RDB$FLAGS = REL_sql
-	   SORTED BY REL.RDB$RELATION_ID
-	   
-	    first = TRUE;
-        ISQL_blankterm (REL.RDB$RELATION_NAME);
-	
-	    if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-            ISQL_copy_SQL_id (REL.RDB$RELATION_NAME, SQL_identifier, DBL_QUOTE);
-	    else
-            strcpy (SQL_identifier, REL.RDB$RELATION_NAME);
-        
-	    ISQL_blankterm (REL.RDB$OWNER_NAME);
-        
-	    sprintf (Print_buffer, "%s/* View: %s, Owner: %s */%s",
-                 NEWLINE,
-                 SQL_identifier, 
-                 REL.RDB$OWNER_NAME,
-                 NEWLINE);
-	    ISQL_printf (Out, Print_buffer);
-	    sprintf (Print_buffer, "CREATE VIEW %s (", SQL_identifier);
-	    ISQL_printf (Out, Print_buffer);
-	
-	    /* Get column list */
-	    FOR RFR IN RDB$RELATION_FIELDS WITH
-            RFR.RDB$RELATION_NAME = REL.RDB$RELATION_NAME
-            SORTED BY RFR.RDB$FIELD_POSITION
-	
-            ISQL_blankterm (RFR.RDB$FIELD_NAME);
-	
-	        if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-                ISQL_blankterm (RFR.RDB$FIELD_NAME, &SQL_identifier);
-            else
-                strcpy (SQL_identifier, RFR.RDB$FIELD_NAME);
-            
-	        sprintf (Print_buffer, "%s%s", (first ? "" : ", "), SQL_identifier);
-            
-            ISQL_printf (Out, Print_buffer);
-            first = FALSE;
-	
-	    END_FOR
-	    ON_ERROR
-	       ISQL_errmsg (gds_status);
-	       return;
-	    END_ERROR;
-	
-	    sprintf (Print_buffer, ") AS%s", NEWLINE);
-	    ISQL_printf (Out, Print_buffer);
-	    if (!REL.RDB$VIEW_SOURCE.NULL)
-            SHOW_print_metadata_text_blob (Out, &REL.RDB$VIEW_SOURCE);
-	    sprintf (Print_buffer, "%s%s", Term, NEWLINE);
-	    ISQL_printf (Out, Print_buffer);
-	
-	END_FOR
-	ON_ERROR 
-        ISQL_errmsg(gds_status);
-	    return;
-	END_ERROR;
-}
-#endif
-
 
 static void get_procedure_args(char* proc_name)
 {

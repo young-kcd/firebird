@@ -48,7 +48,7 @@
 #include <unistd.h>
 #endif
 
-#if defined (WIN95) && !defined (GUI_TOOLS)
+#if defined (WIN95)
 static BOOLEAN fAnsiCP = FALSE;
 #define TRANSLATE_CP(a) if (!fAnsiCP) CharToOem(a, a)
 #else

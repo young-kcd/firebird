@@ -238,7 +238,7 @@ static struct tdba *gddba;
 
 #define GSTAT_MSG_FAC	21
 
-#if defined (WIN95) && !defined (GUI_TOOLS)
+#if defined (WIN95)
 static BOOLEAN fAnsiCP = FALSE;
 #define TRANSLATE_CP(a) if (!fAnsiCP) CharToOem(a, a)
 #else
@@ -301,7 +301,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
 	isc_tr_handle transact1;
 	isc_req_handle request1, request2, request3;
 	STATUS *status_vector;
-#if defined (WIN95) && !defined (GUI_TOOLS) && !defined (SUPERSERVER)
+#if defined (WIN95)&& !defined (SUPERSERVER)
 	BOOL fAnsiCP;
 #endif
 
@@ -324,7 +324,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
 	sw_outfile = tddba->sw_outfile = ib_stdout;
 #endif
 
-#if defined (WIN95) && !defined (GUI_TOOLS) && !defined (SUPERSERVER)
+#if defined (WIN95) && !defined (SUPERSERVER)
 	fAnsiCP = FALSE;
 #endif
 
@@ -351,7 +351,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
 		redir_out = atol(argv[3]);
 		redir_err = atol(argv[4]);
 #ifdef WIN_NT
-#if defined (WIN95) && !defined (GUI_TOOLS) && !defined (SUPERSERVER)
+#if defined (WIN95) && !defined (SUPERSERVER)
 		fAnsiCP = TRUE;
 #endif
 		redir_in = _open_osfhandle(redir_in, 0);
@@ -474,7 +474,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
 	if (sw_record && !sw_data)
 		sw_data = TRUE;
 
-#if defined (WIN95) && !defined (GUI_TOOLS) && !defined (SUPERSERVER)
+#if defined (WIN95) && !defined (SUPERSERVER)
 	if (!fAnsiCP) {
 		ULONG ulConsoleCP;
 
@@ -524,7 +524,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
 				  0, 0, 0);		/* msg 3: Wrong ODS version, expected %d, encountered %d? */
 	}
 
-#if defined (WIN95) && !defined (GUI_TOOLS) && !defined (SUPERSERVER)
+#if defined (WIN95) && !defined (SUPERSERVER)
 	if (!fAnsiCP)
 		AnsiToOem(name, file_name);
 	else
@@ -555,7 +555,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
 				if (*vp == HDR_file) {
 					memcpy(file_name, vp + 2, vp[1]);
 					*(file_name + vp[1]) = '\0';
-#if defined (WIN95) && !defined (GUI_TOOLS) && !defined (SUPERSERVER)
+#if defined (WIN95) && !defined (SUPERSERVER)
 					if (!fAnsiCP)
 						AnsiToOem(file_name, file_name);
 #endif

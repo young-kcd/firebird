@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.18 2002-10-31 05:05:49 seanleyne Exp $
+//	$Id: alice.cpp,v 1.19 2003-02-11 20:14:54 brodsom Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -99,7 +99,7 @@ struct tgbl *gdgbl;
 #define EXIT(code)	{  tdgbl->exit_code = (code);	\
 						Firebird::status_exception::raise(1);  }
 
-#if defined (WIN95) && !defined (GUI_TOOLS)
+#if defined (WIN95)
 static bool fAnsiCP = false;
 #endif
 
@@ -160,8 +160,6 @@ static int output_thread(SLONG output_data, UCHAR * output_buf)
 
 #else	// SUPERSERVER
 
-#ifndef GUI_TOOLS
-
 //____________________________________________________________
 //
 //      Call the 'real' main.
@@ -185,7 +183,6 @@ static int output_main(SLONG output_data, UCHAR * output_buf)
 	ib_fprintf(ib_stderr, "%s", output_buf);
 	return 0;
 }
-#endif	// !GUI_TOOLS
 
 #endif	// SUPERSERVER
 
@@ -223,7 +220,7 @@ int DLL_EXPORT ALICE_gfix(	int			argc,
 	SLONG	redir_out;
 	SLONG	redir_err;
 
-#if defined (WIN95) && !defined (GUI_TOOLS)
+#if defined (WIN95)
 	fAnsiCP = (GetConsoleCP() == GetACP());
 #endif
 
@@ -278,7 +275,7 @@ int DLL_EXPORT ALICE_gfix(	int			argc,
 		redir_out = atol(argv[3]);
 		redir_err = atol(argv[4]);
 #ifdef WIN_NT
-#if defined (WIN95) && !defined (GUI_TOOLS)
+#if defined (WIN95)
 		fAnsiCP = true;
 #endif
 		redir_in = _open_osfhandle(redir_in, 0);
@@ -323,7 +320,7 @@ int DLL_EXPORT ALICE_gfix(	int			argc,
 			}
 			database = *argv++;
 
-#if defined (WIN95) && !defined (GUI_TOOLS)
+#if defined (WIN95)
 //  There is a small problem with SuperServer on NT, since it is a
 //  Windows app, it uses the ANSI character set.  All the console
 //  apps use the OEM character set.  We need to pass the database
@@ -827,7 +824,7 @@ static void alice_output(CONST SCHAR * format, ...)
 //
 static inline void translate_cp(TEXT* sz)
 {
-#if defined (WIN95) && !defined (GUI_TOOLS)
+#if defined (WIN95)
 	if (!fAnsiCP) {
 		CharToOem(sz, sz);
 	}
