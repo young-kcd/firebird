@@ -1,3 +1,59 @@
+2004-08-20 12:57  aafemt
+
+	* firebird2/src/msgs/msg.sql (1.1):
+	
+	SQL equivalent for msg.gdl
+
+2004-08-20 10:25  dimitr
+
+	* firebird2/src/jrd/exe.cpp (1.120):
+	
+	More asserts and some style changes. Thanks to Claudio.
+
+2004-08-20 09:55  dimitr
+
+	* firebird2/src/jrd/: btr.cpp (1.109), opt.cpp (1.184):
+	
+	More asserts and some style changes. Thanks to Claudio.
+
+2004-08-20 09:18  dimitr
+
+	* firebird2/src/jrd/btr.cpp (1.108):
+	
+	Cosmetics.
+
+2004-08-20 09:10  dimitr
+
+	* firebird2/src/jrd/dyn_del.epp (1.37):
+	
+	Reworked yesterday's code. The problem is spotted by Claudio.
+
+2004-08-20 07:11  skidder
+
+	* firebird2/: builds/posix/Makefile.in.firebird (1.57),
+	src/misc/src_bundle.sh (1.2):
+	
+	Erik's script producing source bundle including configure script.
+	Invoked via: make srctarfile
+
+2004-08-20 06:36  dimitr
+
+	* firebird2/src/jrd/common.h (1.122):
+	
+	Expose EXPRESSION_INDICES to public.
+
+2004-08-20 06:04  dimitr
+
+	* firebird2/src/jrd/: btr.cpp (1.107), opt.cpp (1.183):
+	
+	Make EXPRESSION_INDICES generally working.
+
+2004-08-20 04:08  dimitr
+
+	* firebird2/src/dsql/dsql.cpp (1.117):
+	
+	Fixed uninitialized variable usage reported by Valgrind.
+
 2004-08-19 20:41  dimitr
 
 	* firebird2/src/jrd/: btr.cpp (1.106), btr_proto.h (1.29),
