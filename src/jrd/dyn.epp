@@ -236,7 +236,7 @@ void DYN_delete_role( GBL gbl, UCHAR ** ptr)
 
 #pragma FB_COMPILER_MESSAGE("TMN: LOCKSMITH!")
 
-			if ((tdbb->tdbb_attachment->att_user->hasFlag(USR_locksmith)) ||
+			if ((tdbb->tdbb_attachment->att_user->usr_flags & USR_locksmith) ||
 				(strcmp(role_owner, user) == 0))
 			{
 				ERASE XX;
