@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.11 2003-03-09 02:25:57 brodsom Exp $
+//	$Id: sql.cpp,v 1.12 2003-07-03 23:02:45 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -235,7 +235,7 @@ ACT SQL_action(void)
 		break;
 
 	case KW_DATABASE:
-		action = PAR_database((USHORT) TRUE);
+		action = PAR_database((USHORT) TRUE, NULL);
 		break;
 
 	case KW_DROP:
@@ -4106,7 +4106,7 @@ static ACT act_set(void)
 		return act_set_statistics();
 
 	if (MATCH(KW_SCHEMA) || MATCH(KW_DATABASE))
-		return PAR_database((USHORT) TRUE);
+		return PAR_database((USHORT) TRUE, NULL);
 
 	if (MATCH(KW_GENERATOR))
 		return act_set_generator();
