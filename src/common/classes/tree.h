@@ -545,6 +545,7 @@ private:
 	
 	friend class MemoryPool;
 	friend class NodeList;
+	friend class Accessor;
 };
 
 /************************ BePlusTree implementation ******************/
