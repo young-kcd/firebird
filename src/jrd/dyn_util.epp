@@ -122,11 +122,7 @@ SINT64 DYN_UTIL_gen_unique_id(TDBB		tdbb,
  **************************************/
 	DBB dbb;
 	REQ req_handle;
-#ifndef EXACT_NUMERICS
-	SLONG value;
-#else
 	SINT64 value;
-#endif
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
