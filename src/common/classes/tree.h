@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: tree.h,v 1.26 2004-04-11 07:12:09 robocop Exp $
+ *  $Id: tree.h,v 1.27 2004-04-18 02:50:35 skidder Exp $
  *
  */
 
@@ -207,7 +207,7 @@ private:
 		int level;
 		NodeList *parent;
 		NodeList *next, *prev;
-		static const Key& generate(void *sender, void *item) { 
+		static const Key& generate(const void *sender, void *item) { 
 			for (int lev = ((NodeList *)sender)->level; lev > 0; lev--)
 				item = *((NodeList *)item)->begin();
 			return KeyOfValue::generate(item,*((BePlusTree::ItemList *)item)->begin());

@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.108 2004-04-10 19:46:47 skidder Exp $
+$Id: met.epp,v 1.109 2004-04-18 02:50:38 skidder Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -152,7 +152,7 @@ static bool verify_TRG_ignore_perm(thread_db*, const TEXT*);
 
 
 // Decompile all triggers from vector
-void release_cached_triggers(thread_db* tdbb, trig_vec* vector)
+static void release_cached_triggers(thread_db* tdbb, trig_vec* vector)
 {
 	if (!vector) {
 		return;
@@ -164,25 +164,32 @@ void release_cached_triggers(thread_db* tdbb, trig_vec* vector)
 	}
 }
 
+static void inc_int_use_count(jrd_req* req) {
+	// Increment int_use_count for all procedures in resource list of request
+	const ResourceList& list = req->req_resources;
+	int i;
+	for(list.find(Resource(Resource::rsc_procedure, 0, NULL, NULL), i);
+	    i < list.getCount(); i++) 
+	{
+		const Resource& resource = list[i];
+		if (resource.rsc_type != Resource::rsc_procedure) 
+			break;
+		fb_assert(resource.rsc_prc->prc_int_use_count >= 0);
+		++resource.rsc_prc->prc_int_use_count;
+	}
+}
+
 // Increment int_use_count for all procedures used by triggers
-void post_used_procedures(thread_db* tdbb, trig_vec* vector)
+static void post_used_procedures(thread_db* tdbb, trig_vec* vector)
 {
 	if (!vector) {
 		return;
 	}
 
 	trig_vec::iterator ptr = vector->begin();
-	for (const trig_vec::const_iterator end = vector->end(); ptr < end; ptr++) {
-		if (ptr->request && !CMP_clone_is_active(ptr->request)) {
-			for (Resource* resource = ptr->request->req_resources; resource;
-				 resource = resource->rsc_next)
-			{
-				if (resource->rsc_type == Resource::rsc_procedure) {
-					++resource->rsc_prc->prc_int_use_count;
-				}
-			}
-		}
-	}
+	for (const trig_vec::const_iterator end = vector->end(); ptr < end; ptr++)
+		if (ptr->request && !CMP_clone_is_active(ptr->request))
+			inc_int_use_count(ptr->request);
 }
 
 void MET_update_partners(thread_db* tdbb)
@@ -222,15 +229,19 @@ void adjust_dependencies(jrd_prc* procedure) {
 	}
 	procedure->prc_int_use_count = -1; // Mark as undeletable
 	if (procedure->prc_request) {
-		for (Resource* resource = procedure->prc_request->req_resources; resource;
-		  resource = resource->rsc_next) 
+		// Loop over procedures from resource list of prc_request
+		const ResourceList& list = procedure->prc_request->req_resources;
+		int i;
+		for (list.find(Resource(Resource::rsc_procedure, 0, NULL, NULL), i);
+			 i < list.getCount(); i++) 
 		{
-			if (resource->rsc_type == Resource::rsc_procedure) {
-				procedure = resource->rsc_prc;
-				if (procedure->prc_int_use_count == procedure->prc_use_count) {
-					// Mark it and all dependent procedures as undeletable
-					adjust_dependencies(procedure); 
-				}
+			const Resource& resource = list[i];
+			if (resource.rsc_type != Resource::rsc_procedure) 
+				break;
+			procedure = resource.rsc_prc;
+			if (procedure->prc_int_use_count == procedure->prc_use_count) {
+				// Mark it and all dependent procedures as undeletable
+				adjust_dependencies(procedure); 
 			}
 		}
 	}
@@ -273,14 +284,7 @@ void MET_verify_cache(thread_db* tdbb) {
 			if ( (procedure = (jrd_prc*)(*ptr)) && procedure->prc_request /*&&
 				 !(procedure->prc_flags & PRC_obsolete)*/ ) 
 			{
-				for (Resource* resource = procedure->prc_request->req_resources;
-					resource; resource = resource->rsc_next)
-				{
-					if (resource->rsc_type == Resource::rsc_procedure) {
-				  	    fb_assert(resource->rsc_prc->prc_int_use_count >= 0);
-						resource->rsc_prc->prc_int_use_count++;				
-					}
-				}
+				inc_int_use_count(procedure->prc_request);
 			}
 		}
 		
@@ -303,13 +307,17 @@ void MET_verify_cache(thread_db* tdbb) {
 					if (prc && prc->prc_request /*&&
 						!(prc->prc_flags & PRC_obsolete)*/ )
 					{
-						for (const Resource* resource = prc->prc_request->req_resources;
-							resource; resource = resource->rsc_next)
+						// Loop over procedures from resource list of prc_request
+						const ResourceList& list = prc->prc_request->req_resources;
+						int i;
+						for (list.find(Resource(Resource::rsc_procedure, 0, NULL, NULL), i);
+						     i < list.getCount(); i++) 
 						{
-							if (resource->rsc_type == Resource::rsc_procedure) {
-								if (resource->rsc_prc == procedure) {
-									buf += sprintf(buf, "%d:%s\n", prc->prc_id, prc->prc_name.c_str());
-								}
+							const Resource& resource = list[i];
+							if (resource.rsc_type != Resource::rsc_procedure) 
+								break;
+							if (resource.rsc_prc == procedure) {
+								buf += sprintf(buf, "%d:%s\n", prc->prc_id, prc->prc_name.c_str());
 							}
 						}
 					}
@@ -377,12 +385,7 @@ void MET_clear_cache(thread_db* tdbb)
 			if ( (procedure = (jrd_prc*)(*ptr)) && procedure->prc_request &&
 				 !(procedure->prc_flags & PRC_obsolete) ) 
 			{
-				for (Resource* resource = procedure->prc_request->req_resources;
-					resource; resource = resource->rsc_next)
-				{
-					if (resource->rsc_type == Resource::rsc_procedure)
-						resource->rsc_prc->prc_int_use_count++;				
-				}
+				inc_int_use_count(procedure->prc_request);
 			}
 		}
 		
@@ -492,12 +495,7 @@ bool MET_procedure_in_use(thread_db* tdbb, jrd_prc* proc)
 		if ( (procedure = (jrd_prc*)(*ptr)) && procedure->prc_request &&
 			 !(procedure->prc_flags & PRC_obsolete) ) 
 		{
-			for (Resource* resource = procedure->prc_request->req_resources;
-				resource; resource = resource->rsc_next)
-			{
-				if (resource->rsc_type == Resource::rsc_procedure)
-					resource->rsc_prc->prc_int_use_count++;				
-			}
+			inc_int_use_count(procedure->prc_request);
 		}
 	}
 		

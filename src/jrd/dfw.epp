@@ -2660,7 +2660,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		adjusted = false;
 		if (relation->rel_use_count == 1)
 		{
-			for (rsc = transaction->tra_resources; rsc; rsc = rsc->rsc_next)
+			for (rsc = transaction->tra_resources.begin(); rsc < transaction->tra_resources.end(); rsc++)
 			{
 				if (rsc->rsc_rel == relation)
 				{

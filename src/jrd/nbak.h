@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.h,v 1.12 2004-03-20 14:57:30 alexpeshkoff Exp $
+ *  $Id: nbak.h,v 1.13 2004-04-18 02:50:38 skidder Exp $
  *
  */
  
@@ -69,7 +69,7 @@ public:
 	ULONG db_page; // Page number in the main database file
 	ULONG diff_page; // Page number in the difference file
 	Record* rec_data;
-    static const ULONG& generate(void *sender, const AllocItem& item) {
+    static const ULONG& generate(const void *sender, const AllocItem& item) {
 		return item.db_page;
     }
 	AllocItem() {

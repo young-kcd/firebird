@@ -3768,15 +3768,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 
 	CompilerScratch* csb = PAR_parse(tdbb, reinterpret_cast<const UCHAR*>(blr), FALSE);
 	request = CMP_make_request(tdbb, csb);
-
-	for (const AccessItem* access = request->req_access; access;
-		access = access->acc_next)
-	{
-		const SecurityClass* sec_class = SCL_get_class(access->acc_security_name);
-		SCL_check_access(sec_class, access->acc_view_id, access->acc_trg_name,
-						 access->acc_prc_name, access->acc_mask,
-						 access->acc_type, access->acc_name);
-	}
+	CMP_verify_access(tdbb, request);
 
     jrd_nod* in_message = NULL;
 	jrd_nod* out_message = NULL;

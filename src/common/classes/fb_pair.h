@@ -113,7 +113,7 @@ template <typename P>
 	public:
 		typedef typename P::first_type Pair_first_type;
 		static const Pair_first_type& 
-			generate(void* sender, const P& Item) 
+			generate(const void* sender, const P& Item) 
 		{ 
 			return Item.first; 
 		}
@@ -125,7 +125,7 @@ template <typename P>
 	public:
 		typedef typename P::first_type Pair_first_type;
 		static const Pair_first_type& 
-			generate(void* sender, const P* Item) 
+			generate(const void* sender, const P* Item) 
 		{ 
 			return Item->first; 
 		}

@@ -443,7 +443,7 @@ void SCL_check_relation(const dsc* dsc_name, USHORT mask)
 }
 
 
-SecurityClass* SCL_get_class(/* INOUT */ TEXT* string)
+SecurityClass* SCL_get_class(const TEXT* _string)
 {
 /**************************************
  *
@@ -462,13 +462,15 @@ SecurityClass* SCL_get_class(/* INOUT */ TEXT* string)
 
 	// Name may be absent or terminated with NULL or blank.  Clean up name.
 
-	if (!string) {
+	if (!_string) {
 		return NULL;
 	}
 
+	Firebird::string string = _string;
+
 	fb_utils::fb_exact_name(string);
 
-	if (!string[0]) {
+	if (!string) {
 		return NULL;
 	}
 
@@ -481,15 +483,15 @@ SecurityClass* SCL_get_class(/* INOUT */ TEXT* string)
 		 s_class;
 		 s_class = s_class->scl_next)
 	{
-		if (!strcmp(string, s_class->scl_name)) {
+		if (string == s_class->scl_name) {
 			return s_class;
 		}
 	}
 
 	// Class isn't known. So make up a new security class block.
 
-	s_class = FB_NEW_RPT(*dbb->dbb_permanent, strlen(string)) SecurityClass();
-	strcpy(s_class->scl_name, string);
+	s_class = FB_NEW_RPT(*dbb->dbb_permanent, string.length()) SecurityClass();
+	strcpy(s_class->scl_name, string.c_str());
 	s_class->scl_flags = (USHORT) compute_access(tdbb, s_class, NULL, NULL, NULL);
 
 	if (s_class->scl_flags & SCL_exists)

@@ -34,7 +34,7 @@ void SCL_check_access(const Jrd::SecurityClass*, SLONG, const TEXT*,
 					  const TEXT*, USHORT, const TEXT*, const TEXT*);
 void SCL_check_procedure(const dsc*, USHORT);
 void SCL_check_relation(const dsc*, USHORT);
-Jrd::SecurityClass* SCL_get_class(/* INOUT */ TEXT*);
+Jrd::SecurityClass* SCL_get_class(const TEXT*);
 int SCL_get_mask(const TEXT*, const TEXT*);
 void SCL_init(bool, const TEXT*, const TEXT*, const TEXT*, const TEXT*,
 	const TEXT*, Jrd::thread_db*, const bool);

@@ -152,10 +152,12 @@ static void plan_check(const CompilerScratch*, const RecordSelExpr*);
 static void plan_set(CompilerScratch*, RecordSelExpr*, jrd_nod*);
 static void post_procedure_access(thread_db*, CompilerScratch*, jrd_prc*);
 static RecordSource* post_rse(thread_db*, CompilerScratch*, RecordSelExpr*);
-static void	post_trigger_access(thread_db*, CompilerScratch*, jrd_rel*, trig_vec*, jrd_rel*);
+static void	post_trigger_access(CompilerScratch*, jrd_rel*, ExternalAccess::exa_act, jrd_rel*);
 static void process_map(thread_db*, CompilerScratch*, jrd_nod*, Format**);
 static bool stream_in_rse(USHORT, RecordSelExpr*);
 static SSHORT strcmp_space(const TEXT*, const TEXT*);
+static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd_req* request);
+static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig_vec* triggers, jrd_rel* view);
 
 #ifdef PC_ENGINE
 static USHORT base_stream(CompilerScratch*, jrd_nod**, bool);
@@ -164,10 +166,6 @@ static USHORT base_stream(CompilerScratch*, jrd_nod**, bool);
 #ifdef CMP_DEBUG
 IMPLEMENT_TRACE_ROUTINE(cmp_trace, "CMP");
 #endif
-
-inline static int strcmp_null(const char* s1, const char* s2) {
-	return s1 == NULL ? s2 != NULL : s2 == NULL ? -1 : strcmp(s1, s2);
-}
 
 inline static char* clone_cstring(JrdMemoryPool* pool, const char* source) {
 	if (!source) {
@@ -238,6 +236,198 @@ jrd_nod* CMP_clone_node(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 	return clone;
 }
 
+static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd_req* request) 
+{
+/**************************************
+ *
+ *	b u i l d _ e x t e r n a l _ a c c e s s
+ *
+ **************************************
+ *
+ * Functional description
+ *  Recursively walk external dependencies (procedures, triggers) for request to assemble full
+ *  list of requests it depends on
+ *
+ **************************************/
+	for (ExternalAccess *item = request->req_external.begin(); item < request->req_external.end(); item++) 
+	{
+		int i;
+		if (list.find(*item, i)) continue;
+		list.insert(i, *item);
+
+		// Add externals recursively
+		if (item->exa_action == ExternalAccess::exa_procedure) {
+			jrd_prc* prc = MET_lookup_procedure_id(tdbb, item->exa_prc_id, false, false, 0);
+			if (prc && prc->prc_request)
+				build_external_access(tdbb, list, prc->prc_request);
+		} else {
+			jrd_rel* relation = MET_lookup_relation_id(tdbb, item->exa_rel_id, false);
+
+			if (!relation) continue;
+
+			trig_vec *vec1, *vec2;
+			switch(item->exa_action) {
+			case ExternalAccess::exa_insert:
+				vec1 = relation->rel_pre_store;
+				vec2 = relation->rel_post_store;
+				break;				
+			case ExternalAccess::exa_update:
+				vec1 = relation->rel_pre_modify;
+				vec2 = relation->rel_post_modify;
+				break;				
+			case ExternalAccess::exa_delete:
+				vec1 = relation->rel_pre_erase;
+				vec2 = relation->rel_post_erase;
+				break;
+			default:
+				continue; // should never happen, silence the compiler
+			}
+			trig_vec::iterator ptr;
+			if (vec1) {
+				ptr = vec1->begin();
+				for (const trig_vec::const_iterator end = vec1->end(); ptr < end; ptr++)
+				{
+					ptr->compile(tdbb);
+					if (ptr->request)
+						build_external_access(tdbb, list, ptr->request);
+				}
+			}
+			if (vec2) {
+				ptr = vec2->begin();
+				for (const trig_vec::const_iterator end = vec2->end(); ptr < end; ptr++)
+				{
+					ptr->compile(tdbb);
+					if (ptr->request)
+						build_external_access(tdbb, list, ptr->request);
+				}
+			}
+		}
+	}
+}
+
+static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig_vec* triggers, jrd_rel* view)
+{
+/**************************************
+ *
+ *	v e r i f y _ t r i g g e r _ a c c e s s
+ *
+ **************************************
+ *
+ * Functional description
+ *  Check that we have enough rights to access all resources this list of triggers touches
+ *
+ **************************************/
+	if (!triggers) {
+		return;
+	}
+
+	trig_vec::iterator ptr = triggers->begin();
+	for (const trig_vec::const_iterator end = triggers->end(); ptr < end; ptr++)
+	{
+		ptr->compile(tdbb);
+		if (!ptr->request) continue;
+
+
+		for (const AccessItem* access = ptr->request->req_access.begin();
+			 access < ptr->request->req_access.end(); access++)
+		{
+			// If this is not a system relation, we don't post access check if:
+			//
+			// - The table being checked is the owner of the trigger that's accessing it.
+			// - The field being checked is owned by the same table than the trigger
+			//   that's accessing the field.
+			// - Since the trigger name comes in the triggers vector of the table and each
+			//   trigger can be owned by only one table for now, we know for sure that
+			//   it's a trigger defined on our target table.
+
+			if (!(owner_relation->rel_flags & REL_system))
+			{
+				if (!strcmp(access->acc_type, object_table)
+					&& !strcmp(access->acc_name, owner_relation->rel_name))
+				{
+					continue;
+				}
+				if (!strcmp(access->acc_type, object_column)
+					&& (MET_lookup_field(tdbb, owner_relation, access->acc_name, access->acc_security_name) >= 0
+					|| MET_relation_default_class(tdbb, owner_relation->rel_name, access->acc_security_name)))
+				{
+					continue;
+				}
+			}
+			// a direct access to an object from this trigger
+			const SecurityClass* sec_class = SCL_get_class(access->acc_security_name);
+			SCL_check_access(sec_class,
+							(access->acc_view_id) ? access->acc_view_id : 
+								(view ? view->rel_id : 0),
+							ptr->request->req_trg_name, 0, access->acc_mask,
+							access->acc_type, access->acc_name);
+		}
+	}
+}
+
+void CMP_verify_access(thread_db* tdbb, jrd_req* request)
+{
+/**************************************
+ *
+ *	C M P _ v e r i f y _ a c c e s s
+ *
+ **************************************
+ *
+ * Functional description
+ *  Check that we have enough rights to access all resources this request touches including
+ *  resources it used indirectecty via procedures or triggers
+ *
+ **************************************/
+	ExternalAccessList external;
+	build_external_access(tdbb, external, request);
+
+	for (ExternalAccess* item = external.begin(); item < external.end(); item++) {
+		if (item->exa_action == ExternalAccess::exa_procedure) {
+			jrd_prc* prc = MET_lookup_procedure_id(tdbb, item->exa_prc_id, false, false, 0);
+			if (!prc->prc_request) continue;
+			for (const AccessItem* access = prc->prc_request->req_access.begin();
+				 access < prc->prc_request->req_access.end();
+				 access++) 
+			{
+				const SecurityClass* sec_class = SCL_get_class(access->acc_security_name);
+				SCL_check_access(sec_class, access->acc_view_id, NULL, prc->prc_name.c_str(), 
+								 access->acc_mask, access->acc_type, access->acc_name);
+			}
+		} else {
+			jrd_rel* relation = MET_lookup_relation_id(tdbb, item->exa_rel_id, false);
+			jrd_rel* view = NULL;
+			if (item->exa_view_id)
+				view = MET_lookup_relation_id(tdbb, item->exa_view_id, false);
+
+			if (!relation) continue;
+
+			switch(item->exa_action) {
+			case ExternalAccess::exa_insert:
+				verify_trigger_access(tdbb, relation, relation->rel_pre_store, view);
+				verify_trigger_access(tdbb, relation, relation->rel_post_store, view);
+				break;				
+			case ExternalAccess::exa_update:
+				verify_trigger_access(tdbb, relation, relation->rel_pre_modify, view);
+				verify_trigger_access(tdbb, relation, relation->rel_post_modify, view);
+				break;				
+			case ExternalAccess::exa_delete:
+				verify_trigger_access(tdbb, relation, relation->rel_pre_erase, view);
+				verify_trigger_access(tdbb, relation, relation->rel_post_erase, view);
+				break;
+			default:
+				continue; // should never happen, silence the compiler
+			}
+		}
+	}
+
+	for (const AccessItem* access = request->req_access.begin(); access < request->req_access.end();
+		access++) 
+	{
+		const SecurityClass* sec_class = SCL_get_class(access->acc_security_name);
+		SCL_check_access(sec_class, access->acc_view_id, NULL, NULL, 
+						 access->acc_mask, access->acc_type, access->acc_name);
+	}
+}
 
 jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool validate)
 {
@@ -269,7 +459,6 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 		return clone;
 	}
 
-	// validate the request
 
 	if (validate) {
 		jrd_prc* procedure = request->req_procedure;
@@ -283,14 +472,9 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 							 0, SCL_execute, object_procedure,
 							 procedure->prc_name.c_str());
 		}
-		for (const AccessItem* access = request->req_access; access;
-			access = access->acc_next) 
-		{
-			const SecurityClass* sec_class = SCL_get_class(access->acc_security_name);
-			SCL_check_access(sec_class, access->acc_view_id, access->acc_trg_name,
-							 access->acc_prc_name, access->acc_mask,
-							 access->acc_type, access->acc_name);
-		}
+
+		CMP_verify_access(tdbb, request);
+
 	}
 
 	// we need to clone the request - find someplace to put it
@@ -312,8 +496,10 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 	clone->req_trg_name = request->req_trg_name;
 	clone->req_flags = request->req_flags & REQ_FLAGS_CLONE_MASK;
 	clone->req_last_xcp = request->req_last_xcp;
-	clone->req_invariants.join(request->req_invariants);
-	clone->req_fors.join(request->req_fors);
+
+	// We are cloning full lists here, not assigning pointers
+	clone->req_invariants = request->req_invariants;
+	clone->req_fors = request->req_fors;
 
 	record_param* rpb1 = clone->req_rpb;
 	const record_param* const end = rpb1 + clone->req_count;
@@ -384,14 +570,7 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag)
 			request->req_flags |= req_internal;
 		}
 
-		for (const AccessItem* access = request->req_access; access;
-			access = access->acc_next)
-		{
-			const SecurityClass* sec_class = SCL_get_class(access->acc_security_name);
-			SCL_check_access(sec_class, access->acc_view_id, access->acc_trg_name,
-							 access->acc_prc_name, access->acc_mask,
-							 access->acc_type, access->acc_name);
-		}
+		CMP_verify_access(tdbb, request);
 
 		delete csb;
 		tdbb->tdbb_default = old_pool;
@@ -1794,8 +1973,9 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 	request->req_impure_size = csb->csb_impure;
 	request->req_top_node = csb->csb_node;
 	request->req_access = csb->csb_access;
+	request->req_external = csb->csb_external;
 	request->req_variables = csb->csb_variables;
-	request->req_resources = csb->csb_resources;
+	request->req_resources = csb->csb_resources; // Assign array contents
 	request->req_records_affected = 0;
 	if (csb->csb_g_flags & csb_blr_version4) {
 		request->req_flags |= req_blr_version4;
@@ -1886,8 +2066,7 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 	// a little complicated since relation locks MUST be taken before
 	// index locks.
 
-	for (Resource* resource = request->req_resources; resource;
-		 resource = resource->rsc_next)
+	for (Resource* resource = request->req_resources.begin(); resource < request->req_resources.end(); resource++)
 	{
 		switch (resource->rsc_type)
 		{
@@ -1952,12 +2131,12 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 	}
 
 	// make a vector of all used RSEs
-	request->req_fors.join(csb->csb_fors);
+	request->req_fors = csb->csb_fors;
 
 	// make a vector of all invariant-type nodes, so that we will
 	// be able to easily reinitialize them when we restart the request
 
-	request->req_invariants.join(csb->csb_invariants);
+	request->req_invariants = csb->csb_invariants;
 
 	DEBUG;
 	tdbb->tdbb_request = old_request;
@@ -1972,13 +2151,10 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 	return request;
 }
 
-
 void CMP_post_access(thread_db* tdbb,
 					 CompilerScratch* csb,
 					 const TEXT* security_name,
 					 SLONG view_id,
-					 const TEXT* trig,
-					 const TEXT* proc,
 					 USHORT mask,
 					 const TEXT* type_name,
 					 const TEXT* name)
@@ -2004,63 +2180,28 @@ void CMP_post_access(thread_db* tdbb,
 		return;
 
 	SET_TDBB(tdbb);
+	
+	int i;
 
-	AccessItem* last_entry = NULL;
-	AccessItem* access;
-	for (access = csb->csb_access; access; access = access->acc_next)
+	AccessItem temp(security_name, view_id, name, type_name, mask);
+
+	if (csb->csb_access.find(temp, i))
 	{
-		if (!strcmp_null(access->acc_security_name, security_name) &&
-			access->acc_view_id == view_id &&
-			!strcmp_null(access->acc_trg_name, trig) &&
-			!strcmp_null(access->acc_prc_name, proc) &&
-			access->acc_mask == mask &&
-			!strcmp(access->acc_type, type_name) &&
-			!strcmp(access->acc_name, name))
-		{
-			return;
-		}
-		if (!access->acc_next)
-		{
-			last_entry = access;
-		}
+		return;
 	}
 
-	access = FB_NEW(*tdbb->tdbb_default) AccessItem;
-
-	// append the security class to the existing list
-
-	if (last_entry)
-	{
-		access->acc_next = NULL;
-		last_entry->acc_next = access;
-	}
-	else
-	{
-		access->acc_next = csb->csb_access;
-		csb->csb_access = access;
-	}
-
-	access->acc_security_name = clone_cstring(tdbb->tdbb_default, security_name);
-	access->acc_view_id = view_id;
-	access->acc_trg_name = clone_cstring(tdbb->tdbb_default, trig);
-	access->acc_prc_name = clone_cstring(tdbb->tdbb_default, proc);
-	access->acc_mask = mask;
-	access->acc_type = type_name;	// no need to clone, should be static
-	access->acc_name = clone_cstring(tdbb->tdbb_default, name);
-
-#ifdef DEBUG_TRACE
-	ib_printf("%x: require %05X access to %s %s (sec %s view %ld trg %s prc %s)\n",
-		 csb, access->acc_mask, access->acc_type, access->acc_name,
-		 access->acc_security_name ? access->acc_security_name : "NULL",
-		 access->acc_view_id,
-		 access->acc_trg_name ? access->acc_trg_name : "NULL",
-		 access->acc_prc_name ? access->acc_prc_name : "NULL");
-#endif
+	AccessItem access(
+		clone_cstring(tdbb->tdbb_default, security_name),
+		view_id,
+		clone_cstring(tdbb->tdbb_default, name),
+		type_name,
+		mask
+	);
+	csb->csb_access.insert(i, access);
 }
 
 
-void CMP_post_resource(thread_db* tdbb,
-						Resource** rsc_ptr,
+void CMP_post_resource(	ResourceList* rsc_ptr,
 						BLK rel_or_prc,
 						enum Resource::rsc_s type,
 						USHORT id)
@@ -2075,37 +2216,30 @@ void CMP_post_resource(thread_db* tdbb,
  *	Post a resource usage to the compiler scratch block.
  *
  **************************************/
-	DEV_BLKCHK(*rsc_ptr, type_rsc);
-
-	SET_TDBB(tdbb);
-
-	Resource* resource;
-	for (resource = *rsc_ptr; resource; resource = resource->rsc_next) {
-		if (resource->rsc_type == type && resource->rsc_id == id)
-			return;
-	}
-
-	resource = FB_NEW(*tdbb->tdbb_default) Resource;
-	resource->rsc_next = *rsc_ptr;
-	*rsc_ptr = resource;
-	resource->rsc_type = type;
-	resource->rsc_id = id;
+	// Initialize resource block
+	Resource resource(type, id, NULL, NULL);
 	switch (type) {
 	case Resource::rsc_relation:
 	case Resource::rsc_index:
-		resource->rsc_rel = (jrd_rel*) rel_or_prc;
+		resource.rsc_rel = (jrd_rel*) rel_or_prc;
 		break;
 	case Resource::rsc_procedure:
-		resource->rsc_prc = (jrd_prc*) rel_or_prc;
+		resource.rsc_prc = (jrd_prc*) rel_or_prc;
 		break;
 	default:
 		BUGCHECK(220);			/* msg 220 unknown resource */
 		break;
 	}
+
+	// Add it into list if not present already
+	int pos;
+	if (!rsc_ptr->find(resource, pos))
+		rsc_ptr->insert(pos, resource);
 }
 
 
-void CMP_release_resource(Resource** rsc_ptr, enum Resource::rsc_s type, USHORT id)
+#ifdef PC_ENGINE
+void CMP_release_resource(ResourceList* rsc_ptr, enum Resource::rsc_s type, USHORT id)
 {
 /**************************************
  *
@@ -2114,11 +2248,12 @@ void CMP_release_resource(Resource** rsc_ptr, enum Resource::rsc_s type, USHORT 
  **************************************
  *
  * Functional description
- *	Release resource from request.
+ *	Release resource from request. 
+ *
+ *  10-Apr-2004, Nickolay Samofatov
+ *  This code is broken because it doesn't account case when resource is used more than once
  *
  **************************************/
-	DEV_BLKCHK(*rsc_ptr, type_rsc);
-
 	Resource* resource;
 	for (; (resource = *rsc_ptr); rsc_ptr = &resource->rsc_next) {
 		if (resource->rsc_type == type && resource->rsc_id == id)
@@ -2133,6 +2268,7 @@ void CMP_release_resource(Resource** rsc_ptr, enum Resource::rsc_s type, USHORT 
 	*rsc_ptr = resource->rsc_next;
 	delete resource;
 }
+#endif
 
 
 void CMP_decrement_prc_use_count(thread_db* tdbb, jrd_prc* procedure)
@@ -2209,8 +2345,8 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
 
 	Attachment* attachment = request->req_attachment;
 	if (!attachment || !(attachment->att_flags & ATT_shutdown)) {
-		for (Resource* resource = request->req_resources;
-			 resource; resource = resource->rsc_next)
+		for (Resource* resource = request->req_resources.begin();
+			 resource < request->req_resources.end(); resource++)
 		{
 			switch (resource->rsc_type) {
 			case Resource::rsc_relation:
@@ -2943,7 +3079,7 @@ static void ignore_dbkey(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* r
 				CMP_post_access(tdbb, csb, relation->rel_security_name,
 								(tail->csb_view) ? tail->csb_view->rel_id : 
 									(view ? view->rel_id : 0),
-								0, 0, SCL_read, object_table,
+								SCL_read, object_table,
 								relation->rel_name);
 			}
 			break;
@@ -3249,12 +3385,12 @@ static jrd_nod* pass1(thread_db* tdbb,
 					CMP_post_access(tdbb, csb, relation->rel_security_name,
 									(tail->csb_view) ? tail->csb_view->rel_id : 
 										(view ? view->rel_id : 0),
-									0, 0, SCL_sql_update, object_table,
+									SCL_sql_update, object_table,
 									relation->rel_name);
 					CMP_post_access(tdbb, csb, field->fld_security_name,
 									(tail->csb_view) ? tail->csb_view->rel_id : 
 										(view ? view->rel_id : 0),
-									0, 0, SCL_sql_update, object_column,
+									SCL_sql_update, object_column,
 									field->fld_name);
 				}
 			}
@@ -3262,29 +3398,29 @@ static jrd_nod* pass1(thread_db* tdbb,
 				CMP_post_access(tdbb, csb, relation->rel_security_name,
 								(tail->csb_view) ? tail->csb_view->rel_id :
 									(view ? view->rel_id : 0),
-								0, 0, SCL_sql_delete, object_table,
+								SCL_sql_delete, object_table,
 								relation->rel_name);
 			}
 			else if (tail->csb_flags & csb_store) {
 				CMP_post_access(tdbb, csb, relation->rel_security_name,
 								(tail->csb_view) ? tail->csb_view->rel_id : 
 									(view ? view->rel_id : 0),
-								0, 0, SCL_sql_insert, object_table,
+								SCL_sql_insert, object_table,
 								relation->rel_name);
 				CMP_post_access(tdbb, csb, field->fld_security_name,
 								(tail->csb_view) ? tail->csb_view->rel_id : 
-									(view ? view->rel_id : 0), 0,
-								0, SCL_sql_insert, object_column, field->fld_name);
+									(view ? view->rel_id : 0),
+								SCL_sql_insert, object_column, field->fld_name);
 			}
 			else {
 				CMP_post_access(tdbb, csb, relation->rel_security_name,
 								(tail->csb_view) ? tail->csb_view->rel_id : 
 									(view ? view->rel_id : 0),
-								0, 0, SCL_read, object_table, relation->rel_name);
+								SCL_read, object_table, relation->rel_name);
 				CMP_post_access(tdbb, csb, field->fld_security_name,
 								(tail->csb_view) ? tail->csb_view->rel_id : 
 									(view ? view->rel_id : 0),
-								0, 0, SCL_read, object_column, field->fld_name);
+								SCL_read, object_column, field->fld_name);
 			}
 
 			if (!(sub = field->fld_computation) && !(sub = field->fld_source)) {
@@ -3379,8 +3515,9 @@ static jrd_nod* pass1(thread_db* tdbb,
 
 	case nod_exec_proc:
 		procedure = (jrd_prc*) node->nod_arg[e_esp_procedure];
+		// Post access to procedure
 		post_procedure_access(tdbb, csb, procedure);
-		CMP_post_resource(tdbb, &csb->csb_resources, procedure,
+		CMP_post_resource(&csb->csb_resources, procedure,
 						  Resource::rsc_procedure, procedure->prc_id);
 		break;
 
@@ -3551,8 +3688,7 @@ static void pass1_erase(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		view = (relation->rel_view_rse) ? relation : view;
 		if (!parent)
 			parent = tail->csb_view;
-	    post_trigger_access(tdbb, csb, relation, relation->rel_pre_erase, view);
-		post_trigger_access(tdbb, csb, relation, relation->rel_post_erase, view);
+		post_trigger_access(csb, relation, ExternalAccess::exa_delete, view);
 
 		// if this is a view trigger operation, get an extra stream to play with
 
@@ -3719,8 +3855,8 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		view = (relation->rel_view_rse) ? relation : view;
 		if (!parent)
 			parent = tail->csb_view;
-	    post_trigger_access(tdbb, csb, relation, relation->rel_pre_modify, view);
-		post_trigger_access(tdbb, csb, relation, relation->rel_post_modify, view);
+		post_trigger_access(csb, relation, ExternalAccess::exa_update, view);
+
 		trig_vec* trigger =
 			(relation->rel_pre_modify) ? relation->
 			rel_pre_modify : relation->rel_post_modify;
@@ -4040,7 +4176,7 @@ static void pass1_source(thread_db*     tdbb,
 		jrd_prc* procedure = MET_lookup_procedure_id(tdbb,
 		  (SSHORT)(IPTR) source->nod_arg[e_prc_procedure], false, false, 0);
 		post_procedure_access(tdbb, csb, procedure);
-		CMP_post_resource(tdbb, &csb->csb_resources, procedure,
+		CMP_post_resource(&csb->csb_resources, procedure,
 						  Resource::rsc_procedure, procedure->prc_id);
 		return;
 	}
@@ -4066,7 +4202,7 @@ static void pass1_source(thread_db*     tdbb,
 	// relation is accessed.
 
 	jrd_rel* view = (jrd_rel*) source->nod_arg[e_rel_relation];
-	CMP_post_resource(tdbb, &csb->csb_resources, view, Resource::rsc_relation,
+	CMP_post_resource(&csb->csb_resources, view, Resource::rsc_relation,
 					  view->rel_id);
 	source->nod_arg[e_rel_view] = (jrd_nod*) parent_view;
 
@@ -4240,8 +4376,8 @@ static jrd_nod* pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node
 		if (!parent) {
 			parent = tail->csb_view;
 		}
-	    post_trigger_access(tdbb, csb, relation, relation->rel_pre_store, view);
-		post_trigger_access(tdbb, csb, relation, relation->rel_post_store, view);
+		post_trigger_access(csb, relation, ExternalAccess::exa_insert, view);
+
 		trig_vec* trigger =
 			(relation->rel_pre_store) ? relation->
 			rel_pre_store : relation->rel_post_store;
@@ -4258,7 +4394,7 @@ static jrd_nod* pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node
 			 pass1_update(tdbb, csb, relation, trigger, stream, stream, priv,
 						  parent, parent_stream);
 		if (!source) {
-			CMP_post_resource(tdbb, &csb->csb_resources, relation,
+			CMP_post_resource(&csb->csb_resources, relation,
 							  Resource::rsc_relation, relation->rel_id);
 			return very_orig;
 		}
@@ -4277,7 +4413,7 @@ static jrd_nod* pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node
 			}
 		}
 		else {
-			CMP_post_resource(tdbb, &csb->csb_resources, relation,
+			CMP_post_resource(&csb->csb_resources, relation,
 							  Resource::rsc_relation, relation->rel_id);
 			trigger_seen = true;
 			jrd_nod* view_node = copy(tdbb, csb, node, map, 0, NULL, false);
@@ -4337,7 +4473,7 @@ static jrd_nod* pass1_update(thread_db* tdbb,
 	// unless this is an internal request, check access permission
 
 	CMP_post_access(tdbb, csb, relation->rel_security_name, 
-					(view ? view->rel_id : 0), 0, 0, 
+					(view ? view->rel_id : 0),
 					priv, object_table, relation->rel_name);
 
 	// ensure that the view is set for the input streams,
@@ -5366,41 +5502,25 @@ static void post_procedure_access(thread_db* tdbb, CompilerScratch* csb, jrd_prc
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(procedure, type_prc);
 
+	// allow all access to internal requests
+
+	if (csb->csb_g_flags & (csb_internal | csb_ignore_perm))
+		return;
+
 	const TEXT* prc_sec_name = (procedure->prc_security_name ?
 					procedure->prc_security_name.c_str() : NULL);
 
 	// this request must have EXECUTE permission on the stored procedure
 	CMP_post_access(tdbb, csb, prc_sec_name, 0,
-					0, 0, SCL_execute,
+					SCL_execute,
 					object_procedure,
 					procedure->prc_name.c_str());
 
-	// this request also inherits all the access requirements that
-	// the procedure has
-	if (procedure->prc_request) {
-		for (const AccessItem* access = procedure->prc_request->req_access; access;
-			 access = access->acc_next)
-		{
-			if (access->acc_trg_name ||
-				access->acc_prc_name || access->acc_view_id)
-			{
-				// inherited access needs from the trigger, view or SP
-				// that this SP fires off
-				CMP_post_access(tdbb, csb, access->acc_security_name,
-								access->acc_view_id, access->acc_trg_name,
-								access->acc_prc_name, access->acc_mask,
-								access->acc_type, access->acc_name);
-			}
-			else {
-				// direct access from this SP to a resource
-				CMP_post_access(tdbb, csb, access->acc_security_name,
-								0, 0,
-								procedure->prc_name.c_str(),
-								access->acc_mask, access->acc_type,
-								access->acc_name);
-			}
-		}
-	}
+	// Add the procedure to list of external objects accessed
+	ExternalAccess temp(procedure->prc_id);
+	int idx;
+	if (!csb->csb_external.find(temp, idx))
+		csb->csb_external.insert(idx, temp);
 }
 
 
@@ -5465,9 +5585,9 @@ static RecordSource* post_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelEx
 }
 
 
-static void post_trigger_access(thread_db* tdbb, CompilerScratch* csb, 
+static void post_trigger_access(CompilerScratch* csb, 
 								jrd_rel* owner_relation,
-								trig_vec* triggers, jrd_rel* view)
+								ExternalAccess::exa_act operation, jrd_rel* view)
 {
 /**************************************
  *
@@ -5497,122 +5617,18 @@ static void post_trigger_access(thread_db* tdbb, CompilerScratch* csb,
  *   messages about false REFERENCES right failures.
  *
  **************************************/
-	SET_TDBB(tdbb);
-
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(view, type_rel);
 
-	if (!triggers) {
+	// allow all access to internal requests
+	if (csb->csb_g_flags & (csb_internal | csb_ignore_perm))
 		return;
-	}
 
-	trig_vec::iterator ptr = triggers->begin();
-	for (const trig_vec::const_iterator end = triggers->end(); ptr < end; ptr++)
-	{
-		ptr->compile(tdbb);
-		if (ptr->request) {
-			/* CVC: Definitely, I'm going to disable this check because REFERENCES should
-			be checked only at DDL time. If we discover another thing in the fluffy SQL
-			standard, we can revisit those lines.
-			bool read_only = true;
-			for (access = ((jrd_req*)(*ptr))->req_access; access;
-				 access = access->acc_next)
-			{
-				if (access->acc_mask & ~SCL_read) {
-					read_only = false;
-					break;
-				}
-			}
-			*/
-
-			// for read-only triggers, translate a READ access into a REFERENCES;
-			// we must check for read-only to make sure people don't abuse the
-			// REFERENCES privilege
-
-			for (const AccessItem* access = ptr->request->req_access; access;
-				 access = access->acc_next)
-			{
-				/* CVC:	Can't make any sense of this code, hence I disabled it.
-				if (read_only && (access->acc_mask & SCL_read)) {
-					access->acc_mask &= ~SCL_read;
-					access->acc_mask |= SCL_sql_references;
-				}
-				*/
-				if (access->acc_trg_name ||
-					access->acc_prc_name || access->acc_view_id)
-				{
-					// If this is not a system relation, we don't post access check if:
-					//
-					// - The table being checked is the owner of the trigger that's accessing it.
-					// - The field being checked is owned by the same table than the trigger
-					//   that's accessing the field.
-					// - Since the trigger name comes in the access list, we need to validate that
-					//   it's a trigger defined on our target table.
-					// - Incidentally, access requests made through objects accessed by this trigger
-					//   are granted automatically. We should achieve the same propagation in
-					//   post_procedure_access() in the future, so the called proc/trg can use the
-					//   rights of the caller even if the latter is a procedure or a trigger, with
-					//   the difference that proc aren't bound to tables, so we need another place
-					//   instead of post_procedure_access() to achieve such propagation.
-
-					if (access->acc_trg_name && !(owner_relation->rel_flags & REL_system))
-					{
-						if (!strcmp(access->acc_type, object_table)
-							&& !strcmp(access->acc_name, owner_relation->rel_name)
-							&& MET_relation_owns_trigger(tdbb, access->acc_name, access->acc_trg_name))
-						{
-							continue;
-						}
-						if (!strcmp(access->acc_type, object_column)
-							&& MET_relation_owns_trigger(tdbb, access->acc_name, access->acc_trg_name)
-							&& (MET_lookup_field(tdbb, owner_relation, access->acc_name, access->acc_security_name) >= 0
-							|| MET_relation_default_class(tdbb, owner_relation->rel_name, access->acc_security_name)))
-						{
-							continue;
-						}
-					}
-					// inherited access needs from "object" to acc_security_name
-					CMP_post_access(tdbb, csb, access->acc_security_name,
-									access->acc_view_id,
-									access->acc_trg_name,
-									access->acc_prc_name, access->acc_mask,
-									access->acc_type, access->acc_name);
-				}
-				else
-				{
-					// If this is not a system relation, we don't post access check if:
-					//
-					// - The table being checked is the owner of the trigger that's accessing it.
-					// - The field being checked is owned by the same table than the trigger
-					//   that's accessing the field.
-					// - Since the trigger name comes in the triggers vector of the table and each
-					//   trigger can be owned by only one table for now, we know for sure that
-					//   it's a trigger defined on our target table.
-
-					if (!(owner_relation->rel_flags & REL_system))
-					{
-						if (!strcmp(access->acc_type, object_table)
-							&& !strcmp(access->acc_name, owner_relation->rel_name))
-						{
-							continue;
-						}
-						if (!strcmp(access->acc_type, object_column)
-							&& (MET_lookup_field(tdbb, owner_relation, access->acc_name, access->acc_security_name) >= 0
-							|| MET_relation_default_class(tdbb, owner_relation->rel_name, access->acc_security_name)))
-						{
-							continue;
-						}
-					}
-					// a direct access to an object from this trigger
-					CMP_post_access(tdbb, csb, access->acc_security_name,
-									(access->acc_view_id) ? access->acc_view_id : 
-										(view ? view->rel_id : 0),
-									ptr->request->req_trg_name, 0, access->acc_mask,
-									access->acc_type, access->acc_name);
-				}
-			}
-		}
-	}
+	// Post trigger access
+	ExternalAccess temp(operation, owner_relation->rel_id, view ? view->rel_id : 0);
+	int i;
+	if (!csb->csb_external.find(temp, i))
+		csb->csb_external.insert(i, temp);
 }
 
 

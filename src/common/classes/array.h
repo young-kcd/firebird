@@ -94,6 +94,12 @@ protected:
   		return data[index];
 	}
 public:
+	Array<T, Storage>& operator =(const Array<T, Storage>& L) 
+	{
+		ensureCapacity(L.count);
+		memcpy(data, L.data, sizeof(T) * L.count);
+		count = L.count;
+	}
 	const T& operator[](int index) const {
   		return getElement(index);
 	}
@@ -151,7 +157,7 @@ public:
 		memset(data + count, 0, sizeof(T) * (newCount - count));
 		count = newCount;
 	}
-	void join(Array<T>& L) {
+	void join(const Array<T, Storage>& L) {
 		ensureCapacity(count + L.count);
 		memcpy(data + count, L.data, sizeof(T) * L.count);
 		count += L.count;
@@ -205,7 +211,7 @@ public:
 	explicit SortedArray(MemoryPool& p) : Array<Value, Storage>(p) {}
 	explicit SortedArray(int s) : Array<Value, Storage>(s) {}
 	SortedArray() : Array<Value, Storage>() {}
-	bool find(const Key& item, int& pos) {
+	bool find(const Key& item, int& pos) const {
 		int highBound = count, lowBound = 0;
 		while (highBound > lowBound) {
 			int temp = (highBound + lowBound) >> 1;

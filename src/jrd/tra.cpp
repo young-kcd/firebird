@@ -685,7 +685,7 @@ void TRA_init(thread_db* tdbb)
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	jrd_tra* trans = FB_NEW_RPT(*dbb->dbb_permanent, 0) jrd_tra();
+	jrd_tra* trans = FB_NEW_RPT(*dbb->dbb_permanent, 0) jrd_tra(*dbb->dbb_permanent);
 	dbb->dbb_sys_trans = trans;
 	trans->tra_flags |= TRA_system | TRA_ignore_limbo;
 	trans->tra_pool = dbb->dbb_permanent;
@@ -742,7 +742,7 @@ void TRA_link_transaction(thread_db* tdbb, jrd_tra* transaction)
 }
 
 
-void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, Resource* resources)
+void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, ResourceList& resources)
 {
 /**************************************
  *
@@ -761,38 +761,27 @@ void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, Resource* resourc
 	JrdMemoryPool* const old_pool = tdbb->tdbb_default;
 	tdbb->tdbb_default = transaction->tra_pool;
 
-	for (Resource* rsc = resources; rsc; rsc = rsc->rsc_next) {
+	for (Resource* rsc = resources.begin(); rsc < resources.end(); rsc++) 
+	{
 		if (rsc->rsc_type == Resource::rsc_relation ||
 			rsc->rsc_type == Resource::rsc_procedure)
 		{
-			Resource* tra_rsc;
-			for (tra_rsc = transaction->tra_resources; tra_rsc;
-				 tra_rsc = tra_rsc->rsc_next)
+			int i;
+			if (!transaction->tra_resources.find(*rsc, i)) 
 			{
-				if (rsc->rsc_type == tra_rsc->rsc_type && rsc->rsc_id == tra_rsc->rsc_id)
-					break;
-			}
-			if (!tra_rsc) {
-				Resource* new_rsc = FB_NEW(*tdbb->tdbb_default) Resource();
-				new_rsc->rsc_next = transaction->tra_resources;
-				transaction->tra_resources = new_rsc;
-				new_rsc->rsc_id = rsc->rsc_id;
-				new_rsc->rsc_type = rsc->rsc_type;
-
+				transaction->tra_resources.insert(i, *rsc);
 				switch (rsc->rsc_type) {
 				case Resource::rsc_relation:
-					new_rsc->rsc_rel = rsc->rsc_rel;
-					MET_post_existence(tdbb, new_rsc->rsc_rel);
+					MET_post_existence(tdbb, rsc->rsc_rel);
 					break;
 				case Resource::rsc_procedure:
-					new_rsc->rsc_prc = rsc->rsc_prc;
-					new_rsc->rsc_prc->prc_use_count++;
+					rsc->rsc_prc->prc_use_count++;
 #ifdef DEBUG_PROCS
 					{
 						char buffer[256];
 						sprintf(buffer,
 								"Called from TRA_post_resources():\n\t Incrementing use count of %s\n",
-								new_rsc->rsc_prc->prc_name->str_data);
+								rsc->rsc_prc->prc_name->str_data);
 						JRD_print_procedure_info(tdbb, buffer);
 					}
 #endif
@@ -951,7 +940,7 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 
 
 	tdbb->tdbb_default = JrdMemoryPool::createPool();
-	jrd_tra* trans = FB_NEW_RPT(*tdbb->tdbb_default, 0) jrd_tra();
+	jrd_tra* trans = FB_NEW_RPT(*tdbb->tdbb_default, 0) jrd_tra(*tdbb->tdbb_default);
 	trans->tra_pool = tdbb->tdbb_default;
 	trans->tra_number = gds__vax_integer(id, length);
 	trans->tra_flags |= TRA_prepared | TRA_reconnected | TRA_write;
@@ -1021,7 +1010,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 
 /* Release interest in relation/procedure existence for transaction */
 
-	for (Resource* rsc = transaction->tra_resources; rsc; rsc = rsc->rsc_next) {
+	for (Resource* rsc = transaction->tra_resources.begin(); rsc < transaction->tra_resources.end(); rsc++) {
 		switch (rsc->rsc_type) {
 		case Resource::rsc_procedure:
 			CMP_decrement_prc_use_count(tdbb, rsc->rsc_prc);
@@ -1424,7 +1413,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
    make up the real transaction block. */
 
 	tdbb->tdbb_default = JrdMemoryPool::createPool();
-	jrd_tra* temp = FB_NEW_RPT(*tdbb->tdbb_default, 0) jrd_tra;
+	jrd_tra* temp = FB_NEW_RPT(*tdbb->tdbb_default, 0) jrd_tra(*tdbb->tdbb_default);
 	temp->tra_pool = tdbb->tdbb_default;
 	transaction_options(tdbb, temp, reinterpret_cast<const UCHAR*>(tpb),
 						tpb_length);
@@ -1474,9 +1463,9 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
 
 	jrd_tra* trans;
 	if (temp->tra_flags & TRA_read_committed)
-		trans = FB_NEW_RPT(*tdbb->tdbb_default, 0) jrd_tra;
+		trans = FB_NEW_RPT(*tdbb->tdbb_default, 0) jrd_tra(*tdbb->tdbb_default);
 	else {
-		trans = FB_NEW_RPT(*tdbb->tdbb_default, (number - base + TRA_MASK) / 4) jrd_tra;
+		trans = FB_NEW_RPT(*tdbb->tdbb_default, (number - base + TRA_MASK) / 4) jrd_tra(*tdbb->tdbb_default);
 	}
 
 	trans->tra_pool = temp->tra_pool;

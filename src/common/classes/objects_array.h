@@ -137,7 +137,7 @@ namespace Firebird
 	template <typename T>
 	class ObjectKeyValue {
 	public:
-		static const T& generate(void* sender, const T* Item) { return Item; }
+		static const T& generate(const void* sender, const T* Item) { return Item; }
 	};
 
 	// Template for default value comparsion

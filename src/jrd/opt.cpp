@@ -1043,7 +1043,7 @@ int OPT_match_index(OptimizerBlk* opt, USHORT stream, index_desc* idx)
 }
 
 
-
+#ifdef PC_ENGINE
 void OPT_set_index(thread_db* tdbb,
 				   jrd_req* request, RecordSource** rsb_ptr, jrd_rel* relation, index_desc* idx)
 {
@@ -1195,6 +1195,7 @@ void OPT_set_index(thread_db* tdbb,
 
 	*rsb_ptr = new_rsb;
 }
+#endif
 
 
 static bool augment_stack(const jrd_nod* node, LLS * stack)
@@ -5568,11 +5569,11 @@ static jrd_nod* make_index_node(thread_db* tdbb, jrd_rel* relation,
 /* check whether this is during a compile or during
    a SET INDEX operation */
 	if (csb)
-		CMP_post_resource(tdbb, &csb->csb_resources,
+		CMP_post_resource(&csb->csb_resources,
 						  relation, Resource::rsc_index,
 						  idx->idx_id);
 	else
-		CMP_post_resource(tdbb, &tdbb->tdbb_request->req_resources,
+		CMP_post_resource(&tdbb->tdbb_request->req_resources,
 						  relation, Resource::rsc_index,
 						  idx->idx_id);
 

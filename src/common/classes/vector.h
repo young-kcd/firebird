@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: vector.h,v 1.6 2003-12-22 10:00:04 robocop Exp $
+ *  $Id: vector.h,v 1.7 2004-04-18 02:50:35 skidder Exp $
  *
  */
  
@@ -101,7 +101,7 @@ public:
 template <typename T>
 class DefaultKeyValue {
 public:
-	static const T& generate(void* sender, const T& Item) { return Item; }
+	static const T& generate(const void* sender, const T& Item) { return Item; }
 };
 
 // Fast sorted array of simple objects
@@ -112,7 +112,7 @@ template <typename Value, int Capacity, typename Key = Value,
 class SortedVector : public Vector<Value, Capacity> {
 public:
 	SortedVector() : Vector<Value, Capacity>() {}
-	bool find(const Key& item, int& pos) {
+	bool find(const Key& item, int& pos) const {
 		int highBound = count, lowBound = 0;
 		while (highBound > lowBound) {
 			const int temp = (highBound + lowBound) >> 1;

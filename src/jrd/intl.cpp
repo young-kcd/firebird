@@ -200,7 +200,7 @@ static const char *INTL_PLUGIN_DIR = "intl";
 class CharsetIDGetter
 {
 public:
-	static CHARSET_ID generate(void *sender, const CsConvert& Item) { 
+	static CHARSET_ID generate(const void *sender, const CsConvert& Item) { 
 		return Item.getToCS(); 
 	}
 };

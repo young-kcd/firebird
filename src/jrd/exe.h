@@ -70,9 +70,7 @@ class jrd_nod;
 struct sort_key_def;
 class SparseBitmap;
 class vec;
-class Resource;
 class jrd_prc;
-class AccessItem;
 struct index_desc;
 struct IndexDescAlloc;
 class Format;
@@ -522,6 +520,122 @@ struct impure_agg_sort {
 #define e_cursor_stmt_into		3
 #define e_cursor_stmt_length	4
 
+// Request resources
+
+struct Resource
+{
+	enum rsc_s
+	{
+		rsc_relation,
+		rsc_procedure,
+		rsc_index
+	};
+
+	enum rsc_s	rsc_type;
+	USHORT		rsc_id;			/* Id of the resource */
+	jrd_rel*	rsc_rel;		/* Relation block */
+	jrd_prc*	rsc_prc;		/* Procedure block */
+
+	static bool greaterThan(const Resource& i1, const Resource& i2) {
+		// A few places of the engine depend on fact that rsc_type 
+		// is the first field in ResourceList ordering
+		if (i1.rsc_type != i2.rsc_type)
+			return i1.rsc_type > i2.rsc_type;
+		if (i1.rsc_type == rsc_index) {
+			// Sort by relation ID for now
+			if (i1.rsc_rel->rel_id != i2.rsc_rel->rel_id)
+				return i1.rsc_rel->rel_id > i2.rsc_rel->rel_id;
+		}
+		return i1.rsc_id > i2.rsc_id;
+	}
+
+	Resource(rsc_s type, USHORT id, jrd_rel* rel, jrd_prc* prc) :
+		rsc_type(type), rsc_id(id), rsc_rel(rel), rsc_prc(prc) { }
+};
+
+typedef Firebird::SortedArray<Resource, Firebird::EmptyStorage<Resource>, 
+	Resource, Firebird::DefaultKeyValue<Resource>, Resource> ResourceList;
+
+/* Access items */
+
+struct AccessItem
+{
+	const TEXT*	acc_security_name;
+	SLONG	acc_view_id;
+	const TEXT*	acc_name;
+	const TEXT*	acc_type;
+	USHORT		acc_mask;
+
+	static int strcmp_null(const char* s1, const char* s2) {
+		return s1 == NULL ? s2 != NULL : s2 == NULL ? -1 : strcmp(s1, s2);
+	}
+
+	static bool greaterThan(const AccessItem& i1, const AccessItem& i2) {
+		int v;
+		if ((v = strcmp_null(i1.acc_security_name, i2.acc_security_name)) != 0)
+			return v > 0;
+
+		if (i1.acc_view_id != i2.acc_view_id)
+			return i1.acc_view_id > i2.acc_view_id;
+
+		if (i1.acc_mask != i2.acc_mask)
+			return i1.acc_mask > i2.acc_mask;
+
+		if ((v = strcmp(i1.acc_type, i2.acc_type)) != 0) 
+			return v > 0;
+
+		if ((v = strcmp(i1.acc_name, i2.acc_name)) != 0)
+			return v > 0;
+
+		return false; // Equal
+	}
+
+	AccessItem(const TEXT* security_name, SLONG view_id, const TEXT* name,
+		const TEXT* type, USHORT mask) 
+	: acc_security_name(security_name), acc_view_id(view_id), acc_name(name),
+		acc_type(type), acc_mask(mask)
+	{}
+};
+
+typedef Firebird::SortedArray<AccessItem, Firebird::EmptyStorage<AccessItem>, 
+	AccessItem, Firebird::DefaultKeyValue<AccessItem>, AccessItem> AccessItemList;
+
+// Triggers and procedures the request accesses
+struct ExternalAccess
+{
+	enum exa_act {
+		exa_procedure,
+		exa_insert,
+		exa_update,
+		exa_delete
+	};
+	exa_act exa_action;
+	USHORT exa_prc_id;
+	USHORT exa_rel_id;
+	USHORT exa_view_id;
+
+	// Procedure
+	ExternalAccess(USHORT prc_id) : 
+		exa_action(exa_procedure), exa_prc_id(prc_id), exa_rel_id(0), exa_view_id(0)
+	{ }
+
+	// Trigger
+	ExternalAccess(exa_act action, USHORT rel_id, USHORT view_id) :
+		exa_action(action), exa_prc_id(0), exa_rel_id(rel_id), exa_view_id(view_id)
+	{ }
+
+	static bool greaterThan(const ExternalAccess& i1, const ExternalAccess& i2) {
+		if (i1.exa_action != i2.exa_action) return i1.exa_action > i2.exa_action;
+		if (i1.exa_prc_id != i2.exa_prc_id) return i1.exa_prc_id > i2.exa_prc_id;
+		if (i1.exa_rel_id != i2.exa_rel_id) return i1.exa_rel_id > i2.exa_rel_id;
+		if (i1.exa_view_id != i2.exa_view_id) return i1.exa_view_id > i2.exa_view_id;
+		return false; // Equal
+	}
+};
+
+typedef Firebird::SortedArray<ExternalAccess, Firebird::EmptyStorage<ExternalAccess>, 
+	ExternalAccess, Firebird::DefaultKeyValue<ExternalAccess>, ExternalAccess> ExternalAccessList;
+
 /* Compile scratch block */
 
 /*
@@ -535,7 +649,6 @@ struct impure_agg_sort {
 typedef Firebird::SortedArray<SLONG> VarInvariantArray;
 typedef Firebird::Array<VarInvariantArray*> MsgInvariantArray;
 
-
 class CompilerScratch : public pool_alloc<type_csb>
 {
 public:
@@ -543,9 +656,7 @@ public:
 	:	/*csb_blr(0),
 		csb_running(0),
 		csb_node(0),
-		csb_access(0),
 		csb_variables(0),
-		csb_resources(0),
 		csb_dependencies(0),
 #ifdef SCROLLABLE_CURSORS
 		csb_current_rse(0),
@@ -556,6 +667,9 @@ public:
 		csb_msg_number(0),
 		csb_impure(0),
 		csb_g_flags(0),*/
+		csb_external(p),
+		csb_access(p),
+		csb_resources(p),
 		csb_fors(p),
 		csb_invariants(p),
 		csb_current_nodes(p),
@@ -578,9 +692,10 @@ public:
 	const UCHAR*	csb_blr;
 	const UCHAR*	csb_running;
 	jrd_nod*		csb_node;
-	AccessItem*		csb_access;			/* Access items to be checked */
+	ExternalAccessList csb_external;      /* Access to outside procedures/triggers to be checked */
+	AccessItemList	csb_access;			/* Access items to be checked */
 	vec*			csb_variables;		/* Vector of variables, if any */
-	Resource*		csb_resources;		/* Resources (relations and indexes) */
+	ResourceList	csb_resources;		/* Resources (relations and indexes) */
 	lls*			csb_dependencies;	/* objects this request depends upon */
 	Firebird::Array<RecordSource*> csb_fors;		/* stack of fors */
 	Firebird::Array<jrd_nod*> csb_invariants;	/* stack of invariant nodes */

@@ -49,8 +49,6 @@ class SaveRecordParam;
 class vec;
 class jrd_tra;
 class Savepoint;
-class Resource;
-class AccessItem;
 class RefreshRange;
 class RecordSource;
 
@@ -146,7 +144,9 @@ class SaveRecordParam : public pool_alloc<type_srpb>
 class jrd_req : public pool_alloc_rpt<record_param, type_req>
 {
 public:
-	jrd_req(JrdMemoryPool* pool) : req_fors(*pool), req_invariants(*pool) { };
+	jrd_req(JrdMemoryPool* pool) :
+		req_external(*pool), req_access(*pool), req_resources(*pool),
+		req_fors(*pool), req_invariants(*pool) { };
 	Attachment*	req_attachment;		// database attachment
 	USHORT		req_count;			// number of streams
 	USHORT		req_incarnation;	// incarnation number
@@ -155,9 +155,10 @@ public:
 	vec*		req_sub_requests;	// vector of sub-requests
 	jrd_tra*	req_transaction;
 	jrd_req*	req_request;		/* next request in Database */
-	AccessItem*	req_access;			/* Access items to be checked */
+	ExternalAccessList req_external;	/* Access to procedures/triggers to be checked */
+	AccessItemList req_access;		/* Access items to be checked */
 	vec*		req_variables;		/* Vector of variables, if any */
-	Resource*	req_resources;		/* Resources (relations and indices) */
+	ResourceList req_resources;		/* Resources (relations and indices) */
 	jrd_nod*	req_message;		/* Current message for send/receive */
 #ifdef SCROLLABLE_CURSORS
 	jrd_nod*	req_async_message;	/* Asynchronous message (used in scrolling) */
@@ -273,24 +274,6 @@ enum {
 };
 
 
-// Resources
-
-class Resource : public pool_alloc<type_rsc>
-{
-    public:
-	enum rsc_s
-	{
-		rsc_relation,
-		rsc_procedure,
-		rsc_index
-	};
-	Resource*	rsc_next;		/* Next resource in request */
-	jrd_rel*	rsc_rel;		/* Relation block */
-	jrd_prc*	rsc_prc;		/* Relation block */
-	USHORT		rsc_id;			/* Id of parent */
-	enum rsc_s	rsc_type;
-};
-
 /* Index lock block */
 
 class IndexLock : public pool_alloc<type_idl>
@@ -303,21 +286,6 @@ class IndexLock : public pool_alloc<type_idl>
 	USHORT		idl_count;		/* Use count */
 };
 
-
-/* Access items */
-
-class AccessItem : public pool_alloc<type_acc>
-{
-    public:
-	AccessItem*	acc_next;
-	TEXT*		acc_security_name;	/* WRITTEN into by SCL_get_class() */
-	SLONG	acc_view_id;
-	const TEXT*	acc_trg_name;
-	const TEXT*	acc_prc_name;
-	const TEXT*	acc_name;
-	const TEXT*	acc_type;
-	USHORT		acc_mask;
-};
 
 } //namespace Jrd
 

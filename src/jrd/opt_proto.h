@@ -54,8 +54,10 @@ Jrd::jrd_nod* OPT_make_index(Jrd::thread_db*, Jrd::OptimizerBlk*, Jrd::jrd_rel*,
 int OPT_match_index(Jrd::OptimizerBlk*, USHORT, Jrd::index_desc*);
 // End only exported for VMS
 
+#ifdef PC_ENGINE
 void OPT_set_index(Jrd::thread_db*, Jrd::jrd_req*, Jrd::RecordSource**, Jrd::jrd_rel*,
 						  Jrd::index_desc*);
+#endif
 
 #endif // JRD_OPT_PROTO_H
 

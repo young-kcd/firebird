@@ -43,11 +43,14 @@ Jrd::IndexLock* CMP_get_index_lock(Jrd::thread_db*, Jrd::jrd_rel*, USHORT);
 SLONG CMP_impure(Jrd::CompilerScratch*, USHORT);
 Jrd::jrd_req* CMP_make_request(Jrd::thread_db*, Jrd::CompilerScratch*);
 void CMP_post_access(Jrd::thread_db*, Jrd::CompilerScratch*, const TEXT*, SLONG,
-					 const TEXT*, const TEXT*, USHORT, const TEXT*, const TEXT*);
-void CMP_post_resource(Jrd::thread_db*, Jrd::Resource**, blk*, Jrd::Resource::rsc_s, USHORT);
-void CMP_release_resource(Jrd::Resource**, Jrd::Resource::rsc_s, USHORT);
+					 USHORT, const TEXT*, const TEXT*);
+void CMP_post_resource(Jrd::ResourceList*, blk*, Jrd::Resource::rsc_s, USHORT);
+#ifdef PC_ENGINE
+void CMP_release_resource(Jrd::ResourceList&, Jrd::Resource::rsc_s, USHORT);
+#endif
 void CMP_release(Jrd::thread_db*, Jrd::jrd_req*);
 void CMP_shutdown_database(Jrd::thread_db*);
+void CMP_verify_access(Jrd::thread_db* tdbb, Jrd::jrd_req* request);
 
 #endif // JRD_CMP_PROTO_H
 

@@ -29,7 +29,6 @@
 namespace Jrd {
 	class Attachment;
 	class jrd_tra;
-	class Resource;
 	class Database;
 }
 
@@ -49,7 +48,7 @@ void	TRA_header_write(Jrd::thread_db*, Jrd::Database*, SLONG);
 void	TRA_init(Jrd::thread_db*);
 void	TRA_invalidate(Jrd::Database*, ULONG);
 void	TRA_link_transaction(Jrd::thread_db*, Jrd::jrd_tra*);
-void	TRA_post_resources(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::Resource*);
+void	TRA_post_resources(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::ResourceList&);
 bool	TRA_precommited(Jrd::thread_db*, SLONG, SLONG);
 void	TRA_prepare(Jrd::thread_db*, Jrd::jrd_tra*, USHORT, const UCHAR*);
 Jrd::jrd_tra*	TRA_reconnect(Jrd::thread_db*, const UCHAR*, USHORT);
