@@ -20,10 +20,15 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: srvrmgr.cpp,v 1.13.2.1 2003-10-09 13:10:26 alexpeshkoff Exp $
+ * $Id: srvrmgr.cpp,v 1.13.2.2 2004-12-06 09:45:45 kkuznetsov Exp $
  */
 
 #include "firebird.h"
+
+#ifdef SOLARIS_MT
+#include <thread.h>
+#endif
+
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <string.h>
@@ -493,11 +498,30 @@ static BOOLEAN start_server( IBMGR_DATA * data)
 #ifdef DEBUG
 	ib_printf("Argument list:\n\"%s\"\n\"%s\"\n", argv[0], argv[1]);
 #endif
+#if (defined SOLARIS_MT)
+/* Accoding Sun's documentation vfork()  is not MT-safe
+   while linking with libthreads, fork1 - fork one thread
+*/
+	if (!(pid = fork1())) {
+		if (execv(path, argv)== -1){
+			ib_fprintf(OUTFILE, "Could not create child process %s with args %s\n",
+				   path, argv);
+
+		    }
+		
+		
+		
+		
+		_exit(FINI_ERROR);
+	}
+
+#else
 
 	if (!(pid = vfork())) {
 		execv(path, argv);
 		_exit(FINI_ERROR);
 	}
+#endif
 
 /* Wait a little bit to let the server start
 */
@@ -521,12 +545,27 @@ static BOOLEAN start_server( IBMGR_DATA * data)
 		   0 if an exit status of a child process is unavailable (that
 		   means in our case that the server is running).
 		 */
+
+#if (defined SOLARIS_MT)
+/* Trying to understand why it dead */
+		if ((ret_value == pid)&&( WIFEXITED(exit_status)
+					||WCOREDUMP(exit_status)
+					||WIFSIGNALED(exit_status))) {
+			ib_printf("Guardian process %ld terminated with code %ld\n",
+			 pid,WEXITSTATUS(exit_status)); 
+			break;
+		}
+
+#else		 
+
 		if (ret_value == pid) {
 #ifdef DEBUG
 			ib_printf("Guardian process %ld terminated\n", pid);
 #endif
 			break;
 		}
+#endif
+
 #ifdef DEBUG
 		else if (ret_value == -1) {
 			ib_printf("waitpid returned error, errno = %ld\n", errno);

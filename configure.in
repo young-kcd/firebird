@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.31 2004-11-11 11:19:07 kkuznetsov Exp $
+dnl $Id: configure.in,v 1.141.2.32 2004-12-06 09:45:32 kkuznetsov Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -122,6 +122,8 @@ case "$target" in
     LOCK_MANAGER_FLG=N
     EDITLINE_FLG=N
     SHRLIB_EXT=so
+    PTHREAD_CFLAGS=-threads
+    PTHREAD_LIBS=-lthread
     ;;
 
   sparc-sun-solaris*)
@@ -553,7 +555,8 @@ case "$PLATFORM" in
       SFIO_DIR=""
       SFIO_FLAGS=""
       SFIO_LDFLAGS=""
-    else		
+    else
+   	#AC_CHECK_LIB(sfio, main)		
       AC_CHECK_LIB(sfio-mt, main,, 
       AC_MSG_ERROR([sfio library not found]),-lvthread)
       XE_PREPEND(-lvthread,LIBS)		
@@ -662,6 +665,8 @@ mkdir -p temp/libfbclient/jrd
 mkdir -p temp/libfbclient/dsql
 mkdir -p temp/libfbclient/gpre
 mkdir -p temp/libfbclient/remote
+mkdir -p temp/libfbserver/remote/os
+mkdir -p temp/libfbserver/remote/os/sun
 mkdir -p temp/libfbclient/utilities
 mkdir -p temp/libfbclient/common/classes
 mkdir -p temp/libfbclient/common/config

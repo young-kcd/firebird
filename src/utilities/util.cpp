@@ -21,10 +21,15 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: util.cpp,v 1.8 2002-11-06 07:08:47 eku Exp $
+$Id: util.cpp,v 1.8.2.1 2004-12-06 09:45:45 kkuznetsov Exp $
 */
 
 #include "firebird.h"
+
+#ifdef SOLARIS_MT
+#include <thread.h>
+#endif
+
 #include "../jrd/ib_stdio.h"
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -97,11 +102,23 @@ pid_t UTIL_start_process(char *process, char **argv)
 
 /* add place in argv for visibility to "ps" */
 	strcpy(argv[0], string);
+#if (defined SOLARIS_MT)
+	if (!(pid = fork1())) {
+		if (execv(string, argv)== -1){
+			ib_fprintf(ib_stderr, "Could not create child process %s with args %s\n",
+				   string, argv);
+
+		    }
+		_exit(FINI_ERROR);
+	}
+
+#else
 
 	if (!(pid = vfork())) {
 		execv(string, argv);
 		_exit(FINI_ERROR);
 	}
+#endif
 
 	return (pid);
 }
