@@ -91,7 +91,7 @@ typedef fmt *FMT;
 typedef vary VARY;
 
 /* A macro to define a local vary stack variable of a given length
-   Usage:  VARY_STRING(5)	my_var;        */
+   Usage:  VARY_STR(5)	my_var;        */
 
 #define VARY_STR(x)	struct { USHORT vary_length; UCHAR vary_string [x]; }
 

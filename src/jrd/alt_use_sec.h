@@ -29,7 +29,7 @@
  *       John Bellardo  <bellardo@cs.ucsd.edu>
  *
  *
- *  $Id: alt_use_sec.h,v 1.4 2002-03-11 16:34:01 skywalker Exp $
+ *  $Id: alt_use_sec.h,v 1.5 2002-07-01 15:07:18 skywalker Exp $
  *
  */
 

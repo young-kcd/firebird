@@ -30,6 +30,7 @@
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
+#include "../jrd/common.h"
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -38,7 +39,6 @@
 #include <sys/stat.h>
 #include <string.h>
 
-#include "../jrd/common.h"
 #if !(defined SEEK_END && defined F_OK)
 #include <unistd.h>
 #endif
@@ -138,7 +138,7 @@ extern "C" {
 extern int errno;
 
 static void close_marker_file(TEXT *);
-static FIL seek_file(FIL, BDB, SLONG *, STATUS *);
+static FIL seek_file(FIL, BDB, UINT64 *, STATUS *);
 static FIL setup_file(DBB, TEXT *, USHORT, int);
 static BOOLEAN unix_error(TEXT *, FIL, STATUS, STATUS *);
 
@@ -290,7 +290,7 @@ int PIO_connection(TEXT * file_name, USHORT * file_length)
  *
  **************************************/
 
-	return NULL;
+	return 0;
 }
 
 
@@ -444,7 +444,7 @@ void PIO_header(DBB dbb, SCHAR * address, int length)
  **************************************/
 	FIL file;
 	SSHORT i;
-	SLONG bytes;
+	UINT64 bytes;
 
 	file = dbb->dbb_file;
 
@@ -532,7 +532,7 @@ SLONG PIO_max_alloc(DBB dbb)
  *
  **************************************/
 	struct stat statistics;
-	SLONG length;
+	UINT64 length;
 	FIL file;
 
 	for (file = dbb->dbb_file; file->fil_next; file = file->fil_next);
@@ -576,9 +576,9 @@ SLONG PIO_act_alloc(DBB dbb)
  *
  **************************************/
 	struct stat statistics;
-	SLONG length;
+	UINT64 length;
 	FIL file;
-	SLONG tot_pages = 0;
+	ULONG tot_pages = 0;
 
 /**
  **  Traverse the linked list of files and add up the number of pages
@@ -698,7 +698,7 @@ int PIO_read(FIL file, BDB bdb, PAG page, STATUS * status_vector)
  **************************************/
 	DBB dbb;
 	SSHORT i;
-	SLONG bytes, size, offset;
+	UINT64 bytes, size, offset;
 
 	ISC_inhibit();
 
@@ -716,8 +716,7 @@ int PIO_read(FIL file, BDB bdb, PAG page, STATUS * status_vector)
 			if (!(file = seek_file(file, bdb, &offset, status_vector)))
 				return FALSE;
 #ifdef PREAD_PWRITE
-			if ((bytes = pread(file->fil_desc, spare_buffer, size, offset)) ==
-				size)
+            if ((bytes = pread (file->fil_desc, spare_buffer, size, LSEEK_OFFSET_CAST offset)) == size) 
 #else
 			if ((bytes = read(file->fil_desc, spare_buffer, size)) == size)
 #endif
@@ -741,7 +740,7 @@ int PIO_read(FIL file, BDB bdb, PAG page, STATUS * status_vector)
 			if (!(file = seek_file(file, bdb, &offset, status_vector)))
 				return FALSE;
 #ifdef PREAD_PWRITE
-			if ((bytes = pread(file->fil_desc, page, size, offset)) == size)
+			if ((bytes = pread(file->fil_desc, page, size, LSEEK_OFFSET_CAST offset)) == size)
 				break;
 #else
 			if ((bytes = read(file->fil_desc, page, size)) == size)
@@ -793,7 +792,8 @@ int PIO_write(FIL file, BDB bdb, PAG page, STATUS * status_vector)
  **************************************/
 	DBB dbb;
 	SSHORT i;
-	SLONG bytes, size, offset;
+	SLONG bytes, size;
+    UINT64 offset;
 
 	ISC_inhibit();
 
@@ -814,8 +814,7 @@ int PIO_write(FIL file, BDB bdb, PAG page, STATUS * status_vector)
 			if (!(file = seek_file(file, bdb, &offset, status_vector)))
 				return FALSE;
 #ifdef PREAD_PWRITE
-			if ((bytes = pwrite(file->fil_desc, spare_buffer, size, offset))
-				== size)
+			if ((bytes = pwrite(file->fil_desc, spare_buffer, size, LSEEK_OFFSET_CAST offset)) == size)
 				break;
 #else
 			if ((bytes = write(file->fil_desc, spare_buffer, size)) == size)
@@ -834,7 +833,7 @@ int PIO_write(FIL file, BDB bdb, PAG page, STATUS * status_vector)
 			if (!(file = seek_file(file, bdb, &offset, status_vector)))
 				return FALSE;
 #ifdef PREAD_PWRITE
-			if ((bytes = pwrite(file->fil_desc, page, size, offset)) == size)
+			if ((bytes = pwrite(file->fil_desc, page, size, LSEEK_OFFSET_CAST offset)) == size)
 				break;
 #else
 			if ((bytes = write(file->fil_desc, page, size)) == size)
@@ -902,9 +901,7 @@ static void close_marker_file(TEXT * marker_filename)
 #endif
 
 
-static FIL seek_file(
-					 FIL file,
-					 BDB bdb, SLONG * offset, STATUS * status_vector)
+static FIL seek_file(FIL file, BDB bdb, UINT64 * offset, STATUS * status_vector)
 {
 /**************************************
  *
@@ -919,6 +916,8 @@ static FIL seek_file(
  **************************************/
 	ULONG page;
 	DBB dbb;
+    UINT64 lseek_offset;
+    static int bad_off_count = 0;
 
 	dbb = bdb->bdb_dbb;
 	page = bdb->bdb_page;
@@ -937,12 +936,21 @@ static FIL seek_file(
 
 	page -= file->fil_min_page - file->fil_fudge;
 
+    lseek_offset = page;
+    lseek_offset *= dbb->dbb_page_size;
+
+#ifndef UNIX_64_BIT_IO
+    if (lseek_offset > MAX_SLONG) {
+        return (FIL) unix_error ("lseek", file, isc_io_32bit_exceeded_err, status_vector);
+    }
+#endif
+
 #ifdef PREAD_PWRITE
-	*offset = (SLONG) (page * dbb->dbb_page_size);
+	*offset = lseek_offset;
 #else
 	THD_MUTEX_LOCK(file->fil_mutex);
 
-	if ((lseek(file->fil_desc, LSEEK_OFFSET_CAST (page * dbb->dbb_page_size), 0)) == -1) {
+	if ((lseek(file->fil_desc, LSEEK_OFFSET_CAST lseek_offset, 0)) == -1) {
 		THD_MUTEX_UNLOCK(file->fil_mutex);
 		return (FIL) unix_error("lseek", file, isc_io_access_err,
 								status_vector);
@@ -1070,6 +1078,13 @@ static BOOLEAN unix_error(
 				 gds_arg_string, ERR_string(file->fil_string,
 											file->fil_length), isc_arg_gds,
 				 operation, gds_arg_unix, errno, 0);
+
+
+    // Added a TRUE for final return - which seems to be the answer, 
+    // but is better than what it was which was nothing ie random 
+    // MOD 01-July-2002
+
+    return TRUE;
 }
 
 #if ((defined PREAD_PWRITE) && !(defined SOLARIS_MT || defined LINUX))

@@ -35,7 +35,7 @@
  * 2002.04.16  Paul Beach - HP10 and unistd.h
  */
 /*
-$Id: common.h,v 1.17 2002-06-29 13:00:56 dimitr Exp $
+$Id: common.h,v 1.18 2002-07-01 15:07:18 skywalker Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -44,11 +44,6 @@ $Id: common.h,v 1.17 2002-06-29 13:00:56 dimitr Exp $
 /* configure.sh builds the file 64bitio.h on all platforms
    except windows.  Windows doesn't need it, happily */
 
-#ifndef WIN32
-#include "../jrd/64bitio.h"
-#endif
-
-#include "../include/gen/autoconfig.h"
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>

@@ -39,7 +39,7 @@ void		SCL_init(BOOLEAN, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*, TDBB, BOOLEAN);
 void		SCL_move_priv(UCHAR**, USHORT, STR*, ULONG*);
 struct scl*	SCL_recompute_class(TDBB, TEXT*);
 void		SCL_release(struct scl*);
-void		SCL_check_index(TDBB, TEXT*, USHORT);
+void		SCL_check_index(TDBB, TEXT*, UCHAR, USHORT);
 
 #ifdef __cplusplus
 } /* extern "C" */

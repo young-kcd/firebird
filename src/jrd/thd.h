@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: thd.h,v 1.3 2001-12-24 02:50:52 tamlin Exp $
+$Id: thd.h,v 1.4 2002-07-01 15:07:18 skywalker Exp $
 */
 
 #ifndef _JRD_THD_H_
@@ -54,6 +54,18 @@ $Id: thd.h,v 1.3 2001-12-24 02:50:52 tamlin Exp $
 #endif
 
 #if (defined(LINUX) && defined(SUPERSERVER))
+#define POSIX_THREADS           1
+#define MULTI_THREAD            1
+#endif
+
+/* The following ifdef was added to build thread safe gds shared
+   library on linux platform. It seems the gdslib works now (20020220)
+   with thread enabled applications. Anyway, more tests should be 
+   done as I don't have deep knowledge of the interbase/firebird 
+   engine and this change may imply side effect I haven't known 
+   about yet. Tomas Nejedlik (tomas@nejedlik.cz)
+*/
+#if (defined(LINUX) && defined(SUPERCLIENT))
 #define POSIX_THREADS           1
 #define MULTI_THREAD            1
 #endif

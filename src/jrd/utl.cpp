@@ -20,6 +20,8 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
+ * 2001.06.14 Claudio Valderrama: isc_set_path() will append slash if missing,
+ *            so ISC_PATH environment variable won't fail for this cause.
  * 2002.02.15 Sean Leyne - Code Cleanup is required of obsolete "EPSON", "XENIX" ports
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
  * 23-Feb-2002 Dmitry Yemanov - Events wildcarding
@@ -174,10 +176,10 @@ static const SCHAR blob_items[] =
 /* gds__version stuff */
 
 static const UCHAR info[] =
-	{ gds_info_version, gds_info_implementation, gds_info_end };
+	{ isc_info_version, isc_info_implementation, isc_info_end };
 
 static const UCHAR ods_info[] =
-	{ gds_info_ods_version, gds_info_ods_minor_version, gds_info_end };
+	{ isc_info_ods_version, isc_info_ods_minor_version, isc_info_end };
 
 static const TEXT *const impl_class[] = {
 	NULL,						/* 0 */
@@ -192,71 +194,75 @@ static const TEXT *const impl_class[] = {
 	"central interface",		/* 9 */
 	"central server",			/* 10 */
 	"gateway",					/* 11 */
-}, *CONST impl_implementation[] = {
+	"classic server",		/* 12 */
+	"super server"			/* 13 */
+};
+
+static const TEXT *const impl_implementation[] = {
 	NULL,						/* 0 */
-		"Rdb/VMS",				/* 1 */
-		"Rdb/ELN target",		/* 2 */
-		"Rdb/ELN development",	/* 3 */
-		"Rdb/VMS Y",			/* 4 */
-		"Rdb/ELN Y",			/* 5 */
-		"JRI",					/* 6 */
-		"JSV",					/* 7 */
-		NULL,					/* 8 */
-		NULL,					/* 9 */
-        NULL, /* "InterBase/apollo",     /* 10 */
-		"InterBase/ultrix",		/* 11 */
-		"InterBase/vms",		/* 12 */
-		"InterBase/sun",		/* 13 */
-        NULL, /* "InterBase/OS2",        /* 14 */
-		NULL,					/* 15 */
-		NULL,					/* 16 */
-		NULL,					/* 17 */
-		NULL,					/* 18 */
-		NULL,					/* 19 */
-		NULL,					/* 20 */
-		NULL,					/* 21 */
-		NULL,					/* 22 */
-		NULL,					/* 23 */
-		NULL,					/* 24 */
-        NULL, /* "InterBase/apollo",     /* 25 */
-		"InterBase/ultrix",		/* 26 */
-		"InterBase/vms",		/* 27 */
-		"InterBase/sun",		/* 28 */
-        NULL, /* "InterBase/OS2",        /* 29 */
-		"InterBase/sun4",		/* 30 */
-		"InterBase/hpux800",	/* 31 */
-		"InterBase/sun386",		/* 32 */
-		"InterBase:ORACLE/vms",	/* 33 */
-        NULL, /* "InterBase/mac/aux",    /* 34 */
-		"InterBase/ibm/aix",	/* 35 */
-		"InterBase/mips/ultrix",	/* 36 */
-        NULL, /* "InterBase/xenix",      /* 37 */
-		"InterBase/AViiON",		/* 38 */
-		"InterBase/hp/mpexl",	/* 39 */
-		"InterBase/hp/ux300",	/* 40 */
-		"InterBase/sgi",		/* 41 */
-		"InterBase/sco/unix",	/* 42 */
-        NULL, /* "InterBase/Cray",       /* 43 */
-        NULL, /* "InterBase/imp",        /* 44 */
-        NULL, /* "InterBase/delta",      /* 45 */
-        NULL, /* "InterBase/NeXT",       /* 46 */
-		"InterBase/DOS",		/* 47 */
-        NULL, /* "InterBase/m88k",       /* 48 */
-		"InterBase/UNIXWARE",	/* 49 */
-		"InterBase/x86/Windows NT",	/* 50 */
-        NULL, /* "InterBase/epson",      /* 51 */
-		"InterBase/DEC/OSF",	/* 52 */
-		"InterBase/Alpha/OpenVMS",	/* 53 */
-		"InterBase/NetWare",	/* 54 */
-		"InterBase/Windows",	/* 55 */
-        NULL, /* "InterBase/NCR3000",    /* 56 */
-        NULL, /* "InterBase/PPC/Windows NT", /* 57 */
-		"InterBase/DG_X86",		/* 58 */
-		"InterBase/SCO_SV Intel",	/* 59 *//* 5.5 SCO Port */
-		"InterBase/linux Intel",	/* 60 */
-		"InterBase/FreeBSD/i386",	/* 61 */
-		"InterBase/NetBSD/i386",	/* 62 */
-		"Firebird/Darwin/PowerPC"	/* 63 */
+    "Rdb/VMS",				/* 1 */
+    "Rdb/ELN target",		/* 2 */
+    "Rdb/ELN development",	/* 3 */
+    "Rdb/VMS Y",			/* 4 */
+    "Rdb/ELN Y",			/* 5 */
+    "JRI",					/* 6 */
+    "JSV",					/* 7 */
+    NULL,					/* 8 */
+    NULL,					/* 9 */
+    NULL, // "Firebird/apollo",     /* 10 */
+    "Firebird/ultrix",		/* 11 */
+    "Firebird/vms",		/* 12 */
+    "Firebird/sun",		/* 13 */
+    NULL, // "Firebird/OS2",        /* 14 */
+    NULL,					/* 15 */
+    NULL,					/* 16 */
+    NULL,					/* 17 */
+    NULL,					/* 18 */
+    NULL,					/* 19 */
+    NULL,					/* 20 */
+    NULL,					/* 21 */
+    NULL,					/* 22 */
+    NULL,					/* 23 */
+    NULL,					/* 24 */
+    NULL, // "Firebird/apollo",     /* 25 */
+    "Firebird/ultrix",		/* 26 */
+    "Firebird/vms",		/* 27 */
+    "Firebird/sun",		/* 28 */
+    NULL, // "Firebird/OS2",        /* 29 */
+    "Firebird/sun4",		/* 30 */
+    "Firebird/hpux800",	/* 31 */
+    "Firebird/sun386",		/* 32 */
+    "Firebird:ORACLE/vms",	/* 33 */
+    NULL, // "Firebird/mac/aux",    /* 34 */
+    "Firebird/ibm/aix",	/* 35 */
+    "Firebird/mips/ultrix",	/* 36 */
+    NULL, // "Firebird/xenix",      /* 37 */
+    "Firebird/AViiON",		/* 38 */
+    "Firebird/hp/mpexl",	/* 39 */
+    "Firebird/hp/ux300",	/* 40 */
+    "Firebird/sgi",		/* 41 */
+    "Firebird/sco/unix",	/* 42 */
+    NULL, // "Firebird/Cray",       /* 43 */
+    NULL, // "Firebird/imp",        /* 44 */
+    NULL, // "Firebird/delta",      /* 45 */
+    NULL, // "Firebird/NeXT",       /* 46 */
+    "Firebird/DOS",		/* 47 */
+    NULL, // "Firebird/m88k",       /* 48 */
+    "Firebird/UNIXWARE",	/* 49 */
+    "Firebird/x86/Windows NT",	/* 50 */
+    NULL, // "Firebird/epson",      /* 51 */
+    "Firebird/DEC/OSF",	/* 52 */
+    "Firebird/Alpha/OpenVMS",	/* 53 */
+    "Firebird/NetWare",	/* 54 */
+    "Firebird/Windows",	/* 55 */
+    NULL, // "Firebird/NCR3000",    /* 56 */
+    NULL, // "Firebird/PPC/Windows NT", /* 57 */
+    "Firebird/DG_X86",		/* 58 */
+    "Firebird/SCO_SV Intel",	/* 59 *//* 5.5 SCO Port */
+    "Firebird/linux Intel",	/* 60 */
+    "Firebird/FreeBSD/i386",	/* 61 */
+    "Firebird/NetBSD/i386",	/* 62 */
+    "Firebird/Darwin/PowerPC"	/* 63 */
 };
 
 
@@ -1149,14 +1155,20 @@ BOOLEAN API_ROUTINE isc_set_path(TEXT * file_name,
 /* concatenate the strings */
 
 	strcpy(expanded_name, pathname);
+
+    /* CVC: Make the concatenation work if no slash is present. */
+    p = expanded_name + (strlen (expanded_name) - 1);
+    if (*p != ':' && *p != '/' && *p != '\\') {
+        strcat(expanded_name, "/");
+    }
+
 	strcat(expanded_name, file_name);
 
 	return TRUE;
 }
 
 
-void API_ROUTINE isc_set_single_user(
-									 UCHAR ** dpb,
+void API_ROUTINE isc_set_single_user(UCHAR ** dpb,
 									 SSHORT * dpb_size, TEXT * single_user)
 {
 /****************************************

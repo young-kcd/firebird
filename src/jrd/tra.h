@@ -19,6 +19,8 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * 2001.6.25 Claudio Valderrama: add dfw_delete_generator and dfw_delete_udf
+ *           to the dfw_t enumeration.
  */
 
 #ifndef JRD_TRA_H
@@ -172,7 +174,12 @@ ENUM dfw_t {
 		dfw_create_procedure,
 		dfw_modify_procedure,
 		dfw_delete_procedure,
-		dfw_delete_prm, dfw_delete_exception, dfw_unlink_file};
+		dfw_delete_prm, 
+        dfw_delete_exception, 
+        dfw_unlink_file,
+        dfw_delete_generator,
+        dfw_delete_udf
+};
 
 class dfw : public pool_alloc_rpt<SCHAR, type_dfw>
 {

@@ -19,6 +19,11 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * 2001.6.12 Claudio Valderrama: the role should be wiped out if invalid.
+ * 2001.8.12 Claudio Valderrama: Squash security bug when processing
+ *           identifiers with embedded blanks: check_procedure, check_relation 
+ *           and check_string, the latter being called from many places.
+ *
  */
 
 // This MUST be at the top of the file
@@ -186,7 +191,7 @@ void SCL_check_access(SCL			s_class,
 }
 
 
-void SCL_check_index( TDBB tdbb, TEXT * index_name, USHORT mask)
+void SCL_check_index( TDBB tdbb, TEXT * index_name, UCHAR index_id, USHORT mask)
 {
 /******************************************************
  *
@@ -198,11 +203,17 @@ void SCL_check_index( TDBB tdbb, TEXT * index_name, USHORT mask)
  *	Given a index name (as a TEXT), check for a 
  *      set of privileges on the table that the index is on and 
  *      on the fields involved in that index.  
+ *   CVC: Allow the same function to use the zero-based index id, too.
+ *      The idx.idx_id value is zero based but system tables use
+ *      index id's being one based, hence adjust the incoming value
+ *      before calling this function. If you use index_id, index_name
+ *      becomes relation_name since index ids are relative to tables.
  *
  *******************************************************/
 	VOLATILE BLK request;
 	SCL s_class, default_s_class;
-	TEXT reln_name[32];
+    TEXT    reln_name[32], aux_idx_name[32];
+    TEXT	*idx_name_ptr = index_name, *relation_name_ptr = index_name;
 	DBB dbb;
 
 	SET_TDBB(tdbb);
@@ -211,27 +222,51 @@ void SCL_check_index( TDBB tdbb, TEXT * index_name, USHORT mask)
 
 /* no security to check for if the index is not yet created */
 
-	if (!index_name || !*index_name)
-		return;
+    if ((!index_name || !*index_name) && index_id < 1) {
+        return;
+    }
+
+    reln_name[0] = aux_idx_name[0] = 0;
 
 	request = NULL;
 
 /* No need to cache this request handle, it's only used when
    new constraints are created */
 
-	FOR(REQUEST_HANDLE request) IND IN RDB$INDICES
-		CROSS REL IN RDB$RELATIONS
+    if (index_id < 1) {
+        FOR(REQUEST_HANDLE request) IND IN RDB$INDICES
+            CROSS REL IN RDB$RELATIONS
 			OVER RDB$RELATION_NAME
 			WITH IND.RDB$INDEX_NAME EQ index_name
 
-        strcpy(reln_name, REL.RDB$RELATION_NAME);
-		if (!REL.RDB$SECURITY_CLASS.NULL)
-			s_class = SCL_get_class(REL.RDB$SECURITY_CLASS);
-		if (!REL.RDB$DEFAULT_CLASS.NULL)
-			default_s_class = SCL_get_class(REL.RDB$DEFAULT_CLASS);
-	END_FOR;
+            strcpy(reln_name, REL.RDB$RELATION_NAME);
+		    if (!REL.RDB$SECURITY_CLASS.NULL)
+                s_class = SCL_get_class(REL.RDB$SECURITY_CLASS);
+            if (!REL.RDB$DEFAULT_CLASS.NULL)
+                default_s_class = SCL_get_class(REL.RDB$DEFAULT_CLASS);
+        END_FOR;
 
-	CMP_release(tdbb, (REQ) request);
+        CMP_release(tdbb, (REQ) request);
+    }
+    else {
+        idx_name_ptr = aux_idx_name;
+        FOR (REQUEST_HANDLE request) IND IN RDB$INDICES 
+            CROSS REL IN RDB$RELATIONS 
+            OVER RDB$RELATION_NAME
+            WITH IND.RDB$RELATION_NAME EQ relation_name_ptr
+            AND IND.RDB$INDEX_ID EQ index_id
+
+            strcpy (reln_name, REL.RDB$RELATION_NAME);
+            strcpy (aux_idx_name, IND.RDB$INDEX_NAME);
+            if (!REL.RDB$SECURITY_CLASS.NULL)
+                s_class = SCL_get_class (REL.RDB$SECURITY_CLASS);
+            if (!REL.RDB$DEFAULT_CLASS.NULL)
+                default_s_class = SCL_get_class (REL.RDB$DEFAULT_CLASS);
+        END_FOR;
+	
+        CMP_release (tdbb, (REQ)request);
+    }
+
 
 /* check if the relation exixts. It may not have been created yet.
    Just return in that case. */
@@ -239,7 +274,7 @@ void SCL_check_index( TDBB tdbb, TEXT * index_name, USHORT mask)
 	if (!reln_name || !*reln_name)
 		return;
 
-	SCL_check_access(s_class, NULL, NULL, NULL, mask, "TABLE", reln_name);
+	SCL_check_access(s_class, NULL, NULL, NULL, mask, object_table, reln_name);
 
 	request = NULL;
 
@@ -260,16 +295,16 @@ void SCL_check_index( TDBB tdbb, TEXT * index_name, USHORT mask)
 		CROSS RF IN RDB$RELATION_FIELDS
 			OVER RDB$FIELD_NAME
 			WITH RF.RDB$RELATION_NAME EQ reln_name
-			AND ISEG.RDB$INDEX_NAME EQ index_name
+			AND ISEG.RDB$INDEX_NAME EQ index_name_ptr
 
         if (!RF.RDB$SECURITY_CLASS.NULL) {
 			s_class = SCL_get_class(RF.RDB$SECURITY_CLASS);
 			SCL_check_access(s_class, NULL, NULL, NULL, mask,
-							 "COLUMN", RF.RDB$FIELD_NAME);
+							 object_column, RF.RDB$FIELD_NAME);
 		}
 		else
 			  SCL_check_access(default_s_class, NULL, NULL, NULL, mask,
-							   "COLUMN", RF.RDB$FIELD_NAME);
+							   object_column, RF.RDB$FIELD_NAME);
 
 	END_FOR;
 
@@ -312,9 +347,10 @@ void SCL_check_procedure( DSC * dsc_name, USHORT mask)
 
 	for (p = name, endp = name + sizeof(name) - 1,
 		 q = (TEXT*)dsc_name->dsc_address, endq = q + dsc_name->dsc_length;
-		 q < endq && p < endp && *q && *q != ' ';)
+		 q < endq && p < endp && *q;)
 		*p++ = *q++;
 	*p = 0;
+    MET_exact_name(name);
 
 	dbb = tdbb->tdbb_database;
 
@@ -335,7 +371,7 @@ void SCL_check_procedure( DSC * dsc_name, USHORT mask)
 	if (!REQUEST(irq_p_security))
 		REQUEST(irq_p_security) = request;
 
-	SCL_check_access(s_class, NULL, NULL, name, mask, "PROCEDURE", name);
+	SCL_check_access(s_class, NULL, NULL, name, mask, object_procedure, name);
 }
 
 
@@ -367,7 +403,7 @@ void SCL_check_relation( DSC * dsc_name, USHORT mask)
 
 	for (p = name, endp = name + sizeof(name) - 1,
 		 q = (TEXT*)dsc_name->dsc_address, endq = q + dsc_name->dsc_length;
-		 q < endq && p < endp && *q && *q != ' ';)
+		 q < endq && p < endp && *q;)
 		*p++ = *q++;
 	*p = 0;
 
@@ -390,7 +426,7 @@ void SCL_check_relation( DSC * dsc_name, USHORT mask)
 	if (!REQUEST(irq_v_security))
 		REQUEST(irq_v_security) = request;
 
-	SCL_check_access(s_class, NULL, NULL, NULL, mask, "TABLE", name);
+	SCL_check_access(s_class, NULL, NULL, NULL, mask, object_table, name);
 }
 
 
@@ -512,7 +548,7 @@ int SCL_get_mask(CONST TEXT* relation_name, CONST TEXT* field_name)
 			access &= s_class->scl_flags;
 		}
 		if (field_name &&
-			(id = MET_lookup_field(tdbb, relation, field_name)) >= 0 &&
+			(id = MET_lookup_field(tdbb, relation, field_name, 0)) >= 0 &&
 			(field = MET_get_field(relation, id)) &&
 			(s_class = SCL_get_class(field->fld_security_name)))
 		{
@@ -560,6 +596,7 @@ void SCL_init(BOOLEAN	create,
 	int id, group, wheel, node_id;
 	TEXT role_name[33], login_name[129], *q;
 	USHORT major_version, minor_original;
+    BOOLEAN preODS9;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -569,8 +606,9 @@ void SCL_init(BOOLEAN	create,
 	*project = *organization = *name = *role_name = *login_name = '\0';
 
 	node_id = 0;
-	if (!user_name)
-	{
+    id = -1; /* CVC: This var contained trash. */
+
+	if (!user_name) {
        wheel = ISC_get_user(name,
                            &id,
                            &group,
@@ -625,8 +663,11 @@ void SCL_init(BOOLEAN	create,
 **
 ****************************************************************/
 
-	if (ENCODE_ODS(major_version, minor_original) >= ODS_9_0)
-	{
+    /* CVC: We'll verify the role and wipe it out when it doesn't exist. */
+
+	if (ENCODE_ODS(major_version, minor_original) >= ODS_9_0) {
+        preODS9 = FALSE;
+
 		if (strlen(name) != 0)
 		{
 			for (p = login_name, q = name; (*p++ = UPPER7(*q)); q++)
@@ -656,12 +697,63 @@ void SCL_init(BOOLEAN	create,
 					REQUEST(irq_get_role_name) = request;
 			}
 		}
-	}
 
-	if (sql_role != NULL) {
+        /* CVC: If this is ODS>=ODS_9_0 and we aren't creating a db and sql_role was specified,
+           then verify it against rdb$roles and rdb$user_privileges. */
+        
+        if (!create && sql_role && *sql_role && strcmp (sql_role, "NONE")) {
+            BOOLEAN found = FALSE;
+            for (p = login_name, q = name; *p++ = UPPER7 (*q); q++);
+            
+            request = (BLK) CMP_find_request (tdbb, irq_verify_role_name, IRQ_REQUESTS);
+
+            /* CVC: The caller has hopefully uppercased the role or stripped quotes. Of course,
+               uppercase-UPPER7 should only happen if the role wasn't enclosed in quotes.
+               Shortsighted developers named the field rdb$relation_name instead of rdb$object_name.
+               This request is not exactly the same than irq_get_role_mem, sorry, I can't reuse that.
+               If you think that an unknown role cannot be granted, think again: someone made sure
+               in DYN that SYSDBA can do almost anything, including invalid grants. */
+
+            FOR (REQUEST_HANDLE request) FIRST 1 RR IN RDB$ROLES
+                CROSS UU IN RDB$USER_PRIVILEGES
+                WITH RR.RDB$ROLE_NAME        EQ sql_role
+                AND RR.RDB$ROLE_NAME         EQ UU.RDB$RELATION_NAME
+                AND UU.RDB$OBJECT_TYPE       EQ obj_sql_role
+                AND (UU.RDB$USER             EQ login_name
+                     OR UU.RDB$USER               EQ "PUBLIC")
+                AND UU.RDB$USER_TYPE         EQ obj_user
+                AND UU.RDB$PRIVILEGE         EQ "M"
+                
+                if (!REQUEST (irq_verify_role_name))
+                    REQUEST (irq_verify_role_name) = request;
+
+                if (!UU.RDB$USER.NULL)
+                    found = TRUE;
+
+            END_FOR;
+
+            if (!REQUEST (irq_verify_role_name))
+                REQUEST (irq_verify_role_name) = request;
+
+            if (!found)
+                strcpy (role_name, "NONE");
+        }
+    }
+    /* CVC: Let's clean any role in pre-ODS9 attachments. */
+    else {
+        preODS9 = TRUE;
+    }
+
+
+	if (sql_role) {
+        if (!preODS9 && strcmp (role_name, "NONE")) {
+            strcpy (role_name, sql_role);
+        }
+        /* CVC: Role is an identifier, it may have embedded blanks. */
+        MET_exact_name(role_name);
 		strcpy(role_name, sql_role);
 	}
-	else if (strlen(name) != 0) {
+	else {
 		strcpy(role_name, "NONE");
 	}
 
@@ -1004,7 +1096,13 @@ static BOOLEAN check_string(CONST TEXT* acl, CONST TEXT* string)
 		} while (--l);
 	}
 
-	return (*string && *string != ' ') ? TRUE : FALSE;
+    /* CVC: This was the original check made obsolete by dialect 3.
+       need to check all since can have embedded spaces. */
+    while (*string) {
+        if (*string++ != ' ')
+            return TRUE;
+    }
+    return FALSE;
 }
 
 

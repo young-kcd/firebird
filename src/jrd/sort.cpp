@@ -19,7 +19,10 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.7 2002-06-04 13:07:51 dimitr Exp $
+ * $Id: sort.cpp,v 1.8 2002-07-01 15:07:18 skywalker Exp $
+ *
+ * 2001-09-24  SJL - Temporary fix for large sort file bug
+ *
  */
 
 #define SORT_MEM
@@ -27,9 +30,15 @@
 #include "firebird.h"
 #include <errno.h>
 #include <string.h>
-#if ( defined FREEBSD || defined NETBSD || defined LINUX )
+
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+
 #include "../jrd/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/sort.h"
@@ -68,6 +77,7 @@
 #ifdef WIN_NT
 /* for SEEK_SET */
 #include <stdio.h>
+#include <windows.h>
 #endif
 
 #ifdef WIN_NT
@@ -111,7 +121,8 @@ extern double MTH$CVT_D_G(), MTH$CVT_G_D();
    As the diddle_key routines differ on VAX (little endian) and non VAX
    (big endian) patforms, making the following CONST caused a core on the 
    Intel Platforms, while Solaris was working fine. */
-static ULONG low_key[] = { 0, 0, 0, 0, 0, 0 }, high_key[] = {
+static ULONG low_key[] = { 0, 0, 0, 0, 0, 0 }, 
+static ULONG high_key[] = {
 	ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX,
 		ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX,
 		ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX,
@@ -1753,8 +1764,8 @@ static ULONG find_file_space(SCB scb, ULONG size, SFB * ret_sfb)
 			 ptr = &(*ptr)->wfs_next) {
 			/* if this is smaller than our previous best, use it */
 
-			if (space->wfs_size >= size &&
-				(!best || (space->wfs_size < (*best)->wfs_size))) {
+			if (space->wfs_size >= size && 
+                (!best || (space->wfs_size < (*best)->wfs_size))) {
 				best = ptr;
 				best_sfb = sfb;
 			}

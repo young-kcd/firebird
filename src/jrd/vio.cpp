@@ -1133,6 +1133,16 @@ void VIO_erase(TDBB tdbb, RPB * rpb, TRA transaction)
 			DFW_post_work(transaction, dfw_delete_exception, &desc, 0);
 			break;
 
+        case rel_gens:
+            EVL_field (0, rpb->rpb_record, f_prc_name, &desc);
+            DFW_post_work (transaction, dfw_delete_generator, &desc, 0);
+            break;
+
+        case rel_funs:
+            EVL_field (0, rpb->rpb_record, f_prc_name, &desc);
+            DFW_post_work (transaction, dfw_delete_udf, &desc, 0);
+            break;
+
 		case rel_indices:
 			EVL_field(0, rpb->rpb_record, f_idx_relation, &desc);
 			SCL_check_relation(&desc, SCL_control);

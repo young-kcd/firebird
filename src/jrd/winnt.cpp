@@ -23,6 +23,9 @@
  *                         conditionals, as the engine now fully supports
  *                         readonly databases.
  *
+ *
+ * 17-Oct-2001 Mike Nordell: Non-shared file access
+ *
  * 02-Nov-2001 Mike Nordell: Synch with FB1 changes.
  *
  * 17-Oct-2001 Mike Nordell: Non-shared file access
@@ -308,11 +311,10 @@ void PIO_force_write(FIL file, USHORT flag)
 
 	const bool bOldForce = (file->fil_flags & FIL_force_write_init) != 0;
 
-	if ((flag && !bOldForce) ||
-		(!flag && bOldForce))
-	{
+	if ((flag && !bOldForce) || (!flag && bOldForce)) {
 		SLONG& hOld = flag ? file->fil_desc : file->fil_force_write_desc;
 		HANDLE& hNew = reinterpret_cast<HANDLE&>(flag ? file->fil_force_write_desc : file->fil_desc);
+        int force = flag ? FILE_FLAG_WRITE_THROUGH : 0;
 
 		MaybeCloseFile(&hOld);
 		hNew = CreateFile(file->fil_string,
@@ -320,9 +322,7 @@ void PIO_force_write(FIL file, USHORT flag)
 						  g_dwShareFlags,
 						  NULL,
 						  OPEN_EXISTING,
-						  FILE_ATTRIBUTE_NORMAL |
-						  g_dwExtraFlags |
-						  (flag ? FILE_FLAG_WRITE_THROUGH : 0),
+						  FILE_ATTRIBUTE_NORMAL | force | g_dwExtraFlags,
 						  0);
 
 		if (hNew == INVALID_HANDLE_VALUE)

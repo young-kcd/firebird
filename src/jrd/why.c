@@ -30,7 +30,7 @@
  *
  */
 /*
-$Id: why.c,v 1.9 2002-04-03 08:39:57 dimitr Exp $
+$Id: why.c,v 1.10 2002-07-01 15:07:18 skywalker Exp $
 */
 
 #include "firebird.h"
@@ -231,7 +231,11 @@ static int get_database_info(STATUS *, TRA, UCHAR **);
 static PTR get_entrypoint(int, int);
 static SCHAR *get_sqlda_buffer(SCHAR *, USHORT, XSQLDA *, USHORT, USHORT *);
 static STATUS get_transaction_info(STATUS *, TRA, UCHAR **);
+
+#ifdef INITIALIZE_PATHS
 static void init_paths(void);
+#endif
+
 static void iterative_sql_info(STATUS *, STMT *, SSHORT, SCHAR *, SSHORT,
 							   SCHAR *, USHORT, XSQLDA *);
 static STATUS no_entrypoint(STATUS *);
@@ -1548,10 +1552,21 @@ STATUS API_ROUTINE GDS_CREATE_DATABASE(STATUS * user_status,
 					0,
 					expanded_filename))
 		{
+#ifdef WIN_NT
+            /*
+              if (!(length = (*handle)->att_database->dbb_filename->str_length))
+              length = strlen ((*handle)->att_database->dbb_filename->str_data);
+            */
+            /* Now we can expand, the file exists. */
+            ISC_expand_filename (temp_filename, org_length, expanded_filename);
+            length = strlen (expanded_filename);
+#else
 			length = org_length;
 			if (!length) {
 				length = strlen(temp_filename);
 			}
+#endif
+
 			database = allocate_handle(n, *handle, HANDLE_database);
 			if (database)
 			{
@@ -1578,8 +1593,15 @@ STATUS API_ROUTINE GDS_CREATE_DATABASE(STATUS * user_status,
 
 			*handle = database;
 			p = database->db_path;
-			for (q = temp_filename; length; length--)
-				*p++ = *q++;
+
+#ifdef WIN_NT
+            /* for (q = (*handle)->dbb_filename->str_data; length; length--) */
+            for (q = expanded_filename; length; length--)
+                *p++ = *q++;
+#else
+            for (q = temp_filename; length; length--)
+                *p++ = *q++;
+#endif
 			*p = 0;
 
 			if (current_dpb_ptr != dpb)

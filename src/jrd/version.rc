@@ -35,12 +35,12 @@ BEGIN
   BEGIN
     BLOCK "040904E4"
     BEGIN
-      VALUE "CompanyName", "Borland International\0"
-      VALUE "FileDescription", "InterBase Server\0"
+      VALUE "CompanyName", "Firebird Project\0"
+      VALUE "FileDescription", "FirebirdSQL Server\0"
       VALUE "FileVersion", FILE_VER_STRING
-      VALUE "InternalName", "IBWC\0"
-      VALUE "LegalCopyright", "Copyright(c) Borland International. 1996\0"
-      VALUE "ProductName", "\0"
+      VALUE "InternalName", "Firebird\0"
+      VALUE "LegalCopyright", "All Copyright (c) retained by individual contributors - original code Copyright (c) 2000 Inprise Corporation\0"
+      VALUE "ProductName", "FirebirdSQL Server\0"
       VALUE "ProductVersion", PRODUCT_VER_STRING
 
     END

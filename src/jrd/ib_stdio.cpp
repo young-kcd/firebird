@@ -87,11 +87,11 @@
  */
 
 /*
-$Id: ib_stdio.cpp,v 1.4 2001-12-29 11:41:23 tamlin Exp $
+$Id: ib_stdio.cpp,v 1.5 2002-07-01 15:07:18 skywalker Exp $
 */
 
 #include "firebird.h"
-#include "source/jrd/common.h"
+//#include "source/jrd/common.h"
 #ifdef NEED_IB_STDIO
 #include "ib_stdio.h"
 #include <stdlib.h>

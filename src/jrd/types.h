@@ -19,6 +19,10 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2001.10.03 Claudio Valderrama: add int64, user_group, role, generator,
+ *   udf, blob_filter and FB's new system flags for special triggers.
+ *
  */
 
 TYPE("TEXT", blr_text, nam_f_type)
@@ -34,6 +38,7 @@ TYPE("TEXT", blr_text, nam_f_type)
 	TYPE("BLOB_ID", blr_blob_id, nam_f_type)
 	TYPE("DATE", blr_sql_date, nam_f_type)
 	TYPE("TIME", blr_sql_time, nam_f_type)
+    TYPE ("INT64", blr_int64, nam_f_type)
 
 
 	TYPE("TEXT", 1, nam_f_sub_type)
@@ -61,18 +66,32 @@ TYPE("TEXT", blr_text, nam_f_type)
 	TYPE("PRE_ERASE", 5, nam_trg_type)
 	TYPE("POST_ERASE", 6, nam_trg_type)
 
-	TYPE("RELATION", 0, nam_obj_type)
-	TYPE("VIEW", 1, nam_obj_type)
-	TYPE("TRIGGER", 2, nam_obj_type)
-	TYPE("COMPUTED_FIELD", 3, nam_obj_type)
-	TYPE("VALIDATION", 4, nam_obj_type)
-	TYPE("PROCEDURE", 5, nam_obj_type)
-	TYPE("EXPRESSION_INDEX", 6, nam_obj_type)
-	TYPE("EXCEPTION", 7, nam_obj_type)
-	TYPE("USER", 8, nam_obj_type)
-	TYPE("FIELD", 9, nam_obj_type)
-	TYPE("INDEX", 10, nam_obj_type)
+    TYPE ("RELATION", obj_relation, nam_obj_type)
+    TYPE ("VIEW",  obj_view, nam_obj_type)
+    TYPE ("TRIGGER", obj_trigger, nam_obj_type)
+    TYPE ("COMPUTED_FIELD", obj_computed, nam_obj_type)
+    TYPE ("VALIDATION", obj_validation, nam_obj_type)
+    TYPE ("PROCEDURE", obj_procedure, nam_obj_type)
+    TYPE ("EXPRESSION_INDEX", obj_expression_index, nam_obj_type)
+    TYPE ("EXCEPTION", obj_exception, nam_obj_type)
+    TYPE ("USER",  obj_user, nam_obj_type)
+    TYPE ("FIELD",  obj_field, nam_obj_type)
+    TYPE ("INDEX",  obj_index, nam_obj_type)
+    TYPE ("DEPENDENT_COUNT", obj_count, nam_obj_type)
+    TYPE ("USER_GROUP", obj_user_group, nam_obj_type)
+    TYPE ("ROLE",  obj_sql_role, nam_obj_type)
+    TYPE ("GENERATOR", obj_generator, nam_obj_type)
+    TYPE ("UDF",  obj_udf, nam_obj_type)
+    TYPE ("BLOB_FILTER", obj_blob_filter, nam_obj_type)
 
 	TYPE("LIMBO", 1, nam_trans_state)
 	TYPE("COMMITTED", 2, nam_trans_state)
 	TYPE("ROLLED_BACK", 3, nam_trans_state)
+
+    TYPE ("USER",  0, nam_sys_flag)
+    TYPE ("SYSTEM",  1, nam_sys_flag)
+    TYPE ("QLI",  2, nam_sys_flag)
+    TYPE ("CHECK_CONSTRAINT", 3, nam_sys_flag)
+    TYPE ("REFERENTIAL_CONSTRAINT", 4, nam_sys_flag)
+    TYPE ("VIEW_CHECK", 5, nam_sys_flag)
+

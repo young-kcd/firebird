@@ -109,7 +109,7 @@ static void compute_oldest_retaining(TDBB, TRA, BOOLEAN);
 static void downgrade_lock(TRA);
 static void expand_view_lock(TRA, REL, SCHAR);
 static TIP fetch_inventory_page(TDBB, WIN *, SLONG, USHORT);
-static SLONG inventory_page(TDBB, int);
+static SLONG inventory_page(TDBB, SLONG);
 static SSHORT limbo_transaction(TDBB, SLONG);
 static void restart_requests(TDBB, TRA);
 static BOOLEAN start_sweeper(TDBB, DBB);
@@ -232,8 +232,9 @@ void TRA_cleanup(TDBB tdbb)
 	TIP tip;
 	ATT attachment;
 	UCHAR *byte;
-	SSHORT shift, sequence, last, state;
-	SLONG number, ceiling, active, trans_per_tip, max, limbo, trans_offset;
+	SSHORT shift, state;
+    SLONG	number, ceiling, active, trans_per_tip;
+    SLONG   max, limbo, sequence, last, trans_offset;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -532,7 +533,8 @@ int TRA_fetch_state(TDBB tdbb, SLONG number)
  *
  **************************************/
 	DBB dbb;
-	SLONG tip_seq, trans_per_tip;
+    SLONG trans_per_tip;
+	ULONG tip_number, tip_seq;
 	WIN window;
 	TIP tip;
 	ULONG byte;
@@ -544,15 +546,16 @@ int TRA_fetch_state(TDBB tdbb, SLONG number)
 
 /* locate and fetch the proper TIP page */
 
+    tip_number = (ULONG) number;
 	trans_per_tip = dbb->dbb_pcontrol->pgc_tpt;
-	tip_seq = number / trans_per_tip;
+	tip_seq = tip_number / trans_per_tip;
 	window.win_flags = 0;
 	tip = fetch_inventory_page(tdbb, &window, tip_seq, LCK_read);
 
 /* calculate the state of the desired transaction */
 
-	byte = TRANS_OFFSET(number % trans_per_tip);
-	shift = TRANS_SHIFT(number);
+	byte = TRANS_OFFSET(tip_number % trans_per_tip);
+	shift = TRANS_SHIFT(tip_number);
 	state = (tip->tip_transactions[byte] >> shift) & TRA_MASK;
 
 	CCH_RELEASE(tdbb, &window);
@@ -579,7 +582,7 @@ void TRA_get_inventory(TDBB tdbb, UCHAR * bit_vector, ULONG base, ULONG top)
  **************************************/
 	DBB dbb;
 	ULONG trans_per_tip;
-	USHORT sequence, last, l;
+	ULONG sequence, last, l;
 	WIN window;
 	TIP tip;
 	UCHAR *p, *q;
@@ -1255,7 +1258,8 @@ void TRA_set_state(TDBB tdbb, TRA transaction, SLONG number, SSHORT state)
 	TIP tip;
 	JRNI record;
 	UCHAR *address;
-	SSHORT sequence, shift;
+	SSHORT shift;
+    SLONG sequence;
 	ULONG byte, trans_per_tip;
 
 	SET_TDBB(tdbb);
@@ -1767,8 +1771,7 @@ TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
    transaction bitmap growth. It can be turned on for external use
    by removing the test for TDBB_sweeper. */
 
-	if (tdbb->tdbb_flags & TDBB_sweeper &&
-		trans->tra_flags & TRA_readonly &&
+	if (trans->tra_flags & TRA_readonly &&
 		trans->tra_flags & TRA_read_committed) {
 		TRA_set_state(tdbb, trans, trans->tra_number, tra_committed);
 		LCK_release(tdbb, trans->tra_lock);
@@ -2539,7 +2542,7 @@ static TIP fetch_inventory_page(
 
 
 #ifndef GATEWAY
-static SLONG inventory_page(TDBB tdbb, int sequence)
+static SLONG inventory_page(TDBB tdbb, SLONG sequence)
 {
 /**************************************
  *
@@ -2608,8 +2611,8 @@ static SSHORT limbo_transaction(TDBB tdbb, SLONG id)
 	WIN window;
 	TIP tip;
 	UCHAR *byte;
-	SSHORT shift, page, state;
-	SLONG number, trans_per_tip, trans_offset;
+	SSHORT shift, state;
+	SLONG page, number, trans_per_tip, trans_offset;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
