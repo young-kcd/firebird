@@ -4218,9 +4218,9 @@ static SLONG open_semaphores(
 			error(status_vector, "semctl", errno);
 			return -1;
 		}
-		if (semaphores != buf.sem_nsems) {
+		if (semaphores > buf.sem_nsems) {
 			gds__log("Number of requested semaphores (%d) "
-				"is not equal to the size of existing set (%d)", 
+				"is greater then size of the existing semaphore set (%d)", 
 				semaphores, buf.sem_nsems);
 			semaphores = buf.sem_nsems;
 		}
