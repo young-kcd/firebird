@@ -286,6 +286,15 @@ SOURCE=..\..\..\src\jrd\isc_sync.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\jrd.cpp
+
+!IF  "$(CFG)" == "engine - Win32 Release"
+
+# SUBTRACT CPP /Og
+
+!ELSEIF  "$(CFG)" == "engine - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
