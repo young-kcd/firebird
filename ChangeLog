@@ -1,3 +1,30 @@
+2004-02-06 08:45  skidder
+
+	* firebird2/src/burp/: backup.epp, restore.epp:
+	
+	Backport fix for backup/restore of streamed blobs
+
+2004-02-06 08:31  skidder
+
+	* firebird2/src/burp/restore.epp:
+	
+	Oops. Committed wrong file version
+
+2004-02-06 08:07  skidder
+
+	* firebird2/src/burp/: backup.epp, restore.epp:
+	
+	Preserve blob type (streamed/segmented) over backup/restore
+	process.
+
+2004-02-06 05:56  skidder
+
+	* firebird2/src/jrd/: blp.h, gds.cpp:
+	
+	Backport savepoint printing code to B1_5_Release.  Not tested in
+	this branch since logging facilities are broken there, works in
+	2.0. Backported correct output name for EXECUTE STATEMENT verb
+
 2004-02-05 12:17  aafemt
 
 	* firebird2/src/jrd/svc.cpp:
