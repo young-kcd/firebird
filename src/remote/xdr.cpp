@@ -42,7 +42,7 @@
 #if defined(i386) || defined(I386) || defined(_M_IX86)
 #define		SWAP_DOUBLE
 #else
-#if !defined(sparc)
+#if !defined(sparc) && !defined(DARWIN)
 #error "Define SWAP_DOUBLE for your platform correctly !"
 #endif
 #endif
