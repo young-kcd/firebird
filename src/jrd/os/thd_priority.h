@@ -28,7 +28,6 @@
 
 #include "firebird.h"
 #include "../common/classes/alloc.h"
-#include "../common/classes/fb_tls.h"
 #include "../common/classes/init.h"
 #include "../common/classes/array.h"
 #include "../jrd/thd.h"
@@ -50,7 +49,6 @@ private:
 		Firebird::InlineStorage<ThreadPriorityScheduler*, 16> > TpsPointers;
 	enum OperationMode {Running, Stopping, ShutdownComplete};
 
-	static TLS_DECLARE (ThreadPriorityScheduler*, currentScheduler);
 	static Firebird::Mutex mutex;	// locks modification of thps chains
 	static ThreadPriorityScheduler* chain;	// where starts thps chain
 	static Firebird::InitMutex<ThreadPriorityScheduler> initialized;
@@ -72,10 +70,7 @@ private:
 	static unsigned int __stdcall schedulerMain(LPVOID);
 
 	// Get instance for current thread
-	static ThreadPriorityScheduler *get()
-	{
-		return TLS_GET(currentScheduler);
-	}
+	static ThreadPriorityScheduler *get();
 
 	// process instances, stored in toDetach array
 	static void doDetach();

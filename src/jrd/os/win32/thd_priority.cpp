@@ -33,6 +33,7 @@
 #include "../jrd/os/thd_priority.h"
 #include "../common/config/config.h"
 #include "../jrd/gds_proto.h"
+#include "../common/classes/fb_tls.h"
 
 // configurable parameters
 #define THPS_TIME (Config::getPrioritySwitchDelay())	// ms between rescheds
@@ -48,10 +49,21 @@
 Firebird::Mutex ThreadPriorityScheduler::mutex;
 ThreadPriorityScheduler * ThreadPriorityScheduler::chain = 0;
 Firebird::InitMutex<ThreadPriorityScheduler> ThreadPriorityScheduler::initialized;
-TLS_DECLARE (ThreadPriorityScheduler*, ThreadPriorityScheduler::currentScheduler);
 ThreadPriorityScheduler::OperationMode 
 	ThreadPriorityScheduler::opMode = ThreadPriorityScheduler::Running;
 ThreadPriorityScheduler::TpsPointers* ThreadPriorityScheduler::toDetach = 0;
+
+namespace {
+
+TLS_DECLARE (ThreadPriorityScheduler*, currentScheduler);
+
+}
+
+// Get instance for current thread
+ThreadPriorityScheduler::ThreadPriorityScheduler *get()
+{
+	return TLS_GET(currentScheduler);
+}
 
 void ThreadPriorityScheduler::init()
 {

@@ -36,6 +36,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/gdsassert.h"
+#include "../common/classes/fb_tls.h"
 
 
 #ifdef WIN_NT
@@ -132,8 +133,12 @@ int THD_mutex_unlock(MUTX_T * mutex)
 #include "../common/classes/rwlock.h"
 Firebird::Mutex ib_mutex;
 
-TLS_DECLARE (void*, thdd::tSpecific);
-TLS_DECLARE (thdd*, thdd::tData);
+namespace {
+
+TLS_DECLARE (void*, tSpecific);
+TLS_DECLARE (thdd*, tData);
+
+}
 
 
 int API_ROUTINE gds__thread_start(

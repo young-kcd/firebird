@@ -26,7 +26,7 @@
  *
  */
 /*
-$Id: thd.h,v 1.33 2004-07-02 10:45:54 brodsom Exp $
+$Id: thd.h,v 1.34 2004-07-14 21:54:41 skidder Exp $
 */
 
 #ifndef JRD_THD_H
@@ -36,7 +36,6 @@ $Id: thd.h,v 1.33 2004-07-02 10:45:54 brodsom Exp $
 #include "../jrd/isc.h"
 #include "../common/classes/locks.h"
 #include "../common/classes/rwlock.h"
-#include "../common/classes/fb_tls.h"
 
 // compatibility definitions
 enum	WLCK_type {WLCK_read = 1, WLCK_write = 2};
@@ -133,10 +132,6 @@ public:
 	ULONG		thdd_type;	/* what kind of thread context this is */
 //public:
 //	typedef THREAD_ENTRY_DECLARE EntryPoint(THREAD_ENTRY_PARAM);
-
-private:
-	static TLS_DECLARE (void*, tSpecific);
-	static TLS_DECLARE (thdd*, tData);
 
 public:
 	static void		start(ThreadEntryPoint* routine, 
