@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.74 2004-08-16 12:28:20 alexpeshkoff Exp $
+ * $Id: rse.cpp,v 1.75 2004-08-17 11:28:49 dimitr Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -706,26 +706,33 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 			return;
 
         case rsb_first:
-            first_records = ((IRSB_FIRST) impure)->irsb_count =
-                MOV_get_int64(EVL_expr(tdbb, (jrd_nod*) rsb->rsb_arg[0]), 0);
+			{
+				const dsc* desc = EVL_expr(tdbb, (jrd_nod*) rsb->rsb_arg[0]);
+				first_records = (desc && !(request->req_flags & req_null)) ?
+					MOV_get_int64(desc, 0) : 0;
 
-            if (((IRSB_FIRST) impure)->irsb_count < 0)
-                ERR_post(isc_bad_limit_param, 0);
+	            if (first_records < 0)
+		            ERR_post(isc_bad_limit_param, 0);
 
-            rsb = rsb->rsb_next;
+				((IRSB_FIRST) impure)->irsb_count = first_records;
+				rsb = rsb->rsb_next;
+			}
             break;
 
         case rsb_skip:
-            skip_records = ((IRSB_SKIP) impure)->irsb_count =
-                MOV_get_int64(EVL_expr(tdbb, (jrd_nod*) rsb->rsb_arg[0]), 0);
+			{
+				const dsc* desc = EVL_expr(tdbb, (jrd_nod*) rsb->rsb_arg[0]);
+				skip_records = (desc && !(request->req_flags & req_null)) ?
+					MOV_get_int64(desc, 0) : 0;
 
-            if (((IRSB_SKIP) impure)->irsb_count < 0)
-                ERR_post(isc_bad_skip_param, 0);
-            ((IRSB_SKIP) impure)->irsb_count++;
+	            if (skip_records < 0)
+		            ERR_post(isc_bad_skip_param, 0);
 
-            rsb = rsb->rsb_next;
+				((IRSB_SKIP) impure)->irsb_count = skip_records + 1;
+				rsb = rsb->rsb_next;
+			}
             break;
-	
+
 		case rsb_boolean:
 			rsb = rsb->rsb_next;
 			break;
