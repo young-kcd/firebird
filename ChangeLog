@@ -1,3 +1,109 @@
+2003-09-12 18:49  brodsom
+
+	* firebird2/src/utilities/stats.epp:
+	
+	-Remove GDS_VAL and GDS_REF
+
+2003-09-12 18:35  brodsom
+
+	* firebird2/src/gpre/: sql.cpp, cmp.cpp, exp.cpp, gpre.cpp, gpre.h,
+	int.cpp, int_cxx.cpp, par.cpp, parse.h, pas.cpp, sqe.cpp, ada.cpp,
+	c_cxx.cpp, cmd.cpp, cme.cpp:
+	
+	-Remove some macros or transform to inline -Rename tok_quoted to
+	tok_sglquoted
+
+2003-09-12 18:32  brodsom
+
+	* firebird2/src/dudley/: ddl.h, exe.epp, parse.cpp, trn.cpp:
+	
+	Better idx_type use
+
+2003-09-12 12:20  aafemt
+
+	* firebird2/src/jrd/os/win32/isc_ipc.cpp:
+	
+	A bit more universal MINGW fix
+
+2003-09-12 12:16  aafemt
+
+	* firebird2/builds/posix/Makefile.in.client.util:
+	
+	instsvc doesn't need OS_specific_files
+
+2003-09-12 11:19  robocop
+
+	* firebird2/src/dsql/ddl.cpp:
+	
+	trivial correction
+
+2003-09-12 11:06  robocop
+
+	* firebird2/src/gpre/cob.cpp:
+	
+	trivial correction
+
+2003-09-12 11:04  robocop
+
+	* firebird2/src/burp/: backu_proto.h, backup.epp, burp.cpp, burp.h,
+	burp_proto.h, burpswi.h, canon_proto.h, canonical.cpp, misc.cpp,
+	misc_proto.h, mvol.cpp, mvol_proto.h, resto_proto.h, restore.epp,
+	spit.cpp, spit.h, std_desc.h:
+	
+	const correctness, variables in scope, bool, formatting, less
+	casts, etc.
+
+2003-09-12 11:00  robocop
+
+	* firebird2/src/dudley/exe.epp:
+	
+	trivial corrections
+
+2003-09-12 10:55  robocop
+
+	* firebird2/src/gpre/ada.cpp:
+	
+	trivial corrections
+
+2003-09-12 08:20  alexpeshkoff
+
+	* firebird2/src/install/arch-specific/linux/super/tarinstall.sh.in:
+	
+	file tarinstall.sh.in was initially added on branch B1_5_Release.
+
+2003-09-12 08:20  alexpeshkoff
+
+	* firebird2/src/install/arch-specific/linux/super/tarinstall.sh.in:
+	
+	fix typo in file name
+
+2003-09-12 04:22  brodsom
+
+	* firebird2/src/jrd/err_proto.h:
+	
+	-Correction
+
+2003-09-12 04:21  brodsom
+
+	* firebird2/src/gpre/: sqe_proto.h, sql.cpp, cmd.cpp, cme.cpp,
+	cme_proto.h, cmp.cpp, exp.cpp, exp_proto.h, gpre.cpp, gpre.h,
+	gpre_meta.epp, gpre_meta.h, gpre_meta_boot.cpp, par.cpp, sqe.cpp:
+	
+	-BOOLEAN cleaning -Rename rse to gpre_rse (Nickolay's request)
+
+2003-09-12 03:58  brodsom
+
+	* firebird2/src/jrd/: nav.cpp, ail.cpp, blb.cpp, cmp.cpp, evl.cpp:
+	
+	-Code format
+
+2003-09-12 03:40  brodsom
+
+	* firebird2/src/dsql/: parse.cpp, parse.y, ddl.cpp, errd.cpp,
+	errd_proto.h, metd.epp, metd_proto.h:
+	
+	BOOLEAN cleaning
+
 2003-09-11 23:33  skidder
 
 	* firebird2/src/jrd/gds.cpp:
