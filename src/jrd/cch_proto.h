@@ -36,14 +36,14 @@ bool		CCH_exclusive(Jrd::thread_db*, USHORT, SSHORT);
 bool		CCH_exclusive_attachment(Jrd::thread_db*, USHORT, SSHORT);
 void		CCH_expand(Jrd::thread_db*, ULONG);
 Ods::pag*	CCH_fake(Jrd::thread_db*, Jrd::win*, SSHORT);
-Ods::pag*	CCH_fetch(Jrd::thread_db*, Jrd::win*, USHORT, SSHORT, SSHORT, SSHORT, bool);
-SSHORT		CCH_fetch_lock(Jrd::thread_db*, Jrd::win*, USHORT, SSHORT, SSHORT, SSHORT);
+Ods::pag*	CCH_fetch(Jrd::thread_db*, Jrd::win*, USHORT, SCHAR, SSHORT, SSHORT, bool);
+SSHORT		CCH_fetch_lock(Jrd::thread_db*, Jrd::win*, USHORT, SSHORT, SSHORT, SCHAR);
 void		CCH_fetch_page(Jrd::thread_db*, Jrd::win*, SSHORT, bool);
 void		CCH_fini(Jrd::thread_db*);
 void		CCH_flush(Jrd::thread_db*, USHORT, SLONG);
 bool		CCH_free_page(Jrd::thread_db*);
 SLONG		CCH_get_incarnation(Jrd::win*);
-Ods::pag*	CCH_handoff(Jrd::thread_db*, Jrd::win*, SLONG, SSHORT, SSHORT, SSHORT, SSHORT);
+Ods::pag*	CCH_handoff(Jrd::thread_db*, Jrd::win*, SLONG, SSHORT, SCHAR, SSHORT, SSHORT);
 void		CCH_init(Jrd::thread_db*, ULONG);
 void		CCH_mark(Jrd::thread_db*, Jrd::win*, USHORT);
 void		CCH_mark_must_write(Jrd::thread_db*, Jrd::win*);
@@ -64,27 +64,27 @@ bool		CCH_write_all_shadows(Jrd::thread_db*, Jrd::Shadow*, Jrd::BufferDesc*,
 
 /* macros for dealing with cache pages */
 
-inline Ods::pag* CCH_FETCH(Jrd::thread_db* tdbb, Jrd::win* window, USHORT lock_type, SSHORT page_type)
+inline Ods::pag* CCH_FETCH(Jrd::thread_db* tdbb, Jrd::win* window, USHORT lock_type, SCHAR page_type)
 {
 	return CCH_fetch (tdbb, window, lock_type, page_type, 1, 1, true);
 }
 
-inline Ods::pag* CCH_FETCH_NO_SHADOW(Jrd::thread_db* tdbb, Jrd::win* window, USHORT lock_type, SSHORT page_type)
+inline Ods::pag* CCH_FETCH_NO_SHADOW(Jrd::thread_db* tdbb, Jrd::win* window, USHORT lock_type, SCHAR page_type)
 {
 	return CCH_fetch (tdbb, window, lock_type, page_type, 1, 1, false);
 }
 
-inline Ods::pag* CCH_FETCH_NO_CHECKSUM(Jrd::thread_db* tdbb, Jrd::win* window, USHORT lock_type, SSHORT page_type)
+inline Ods::pag* CCH_FETCH_NO_CHECKSUM(Jrd::thread_db* tdbb, Jrd::win* window, USHORT lock_type, SCHAR page_type)
 {
 	return CCH_fetch (tdbb, window, lock_type, page_type, 0, 1, true);
 }
 
-inline Ods::pag* CCH_FETCH_TIMEOUT(Jrd::thread_db* tdbb, Jrd::win* window, USHORT lock_type, SSHORT page_type, SSHORT latch_wait)
+inline Ods::pag* CCH_FETCH_TIMEOUT(Jrd::thread_db* tdbb, Jrd::win* window, USHORT lock_type, SCHAR page_type, SSHORT latch_wait)
 {
 	return CCH_fetch (tdbb, window, lock_type, page_type, 0, latch_wait, true);
 }
 
-inline SSHORT CCH_FETCH_LOCK(Jrd::thread_db* tdbb, Jrd::win * window, USHORT lock_type, SSHORT wait,  SSHORT latch_wait, SSHORT page_type)
+inline SSHORT CCH_FETCH_LOCK(Jrd::thread_db* tdbb, Jrd::win * window, USHORT lock_type, SSHORT wait,  SSHORT latch_wait, SCHAR page_type)
 {
 	return CCH_fetch_lock(tdbb, window, lock_type, wait, latch_wait, page_type);
 }
@@ -114,17 +114,17 @@ inline void CCH_MARK_SYSTEM(Jrd::thread_db* tdbb, Jrd::win * window)
 	CCH_mark (tdbb, window, 1);
 }
 
-inline Ods::pag* CCH_HANDOFF(Jrd::thread_db* tdbb, Jrd::win* window, SLONG page, SSHORT lock, SSHORT page_type)
+inline Ods::pag* CCH_HANDOFF(Jrd::thread_db* tdbb, Jrd::win* window, SLONG page, SSHORT lock, SCHAR page_type)
 {
 	return CCH_handoff (tdbb, window, page, lock, page_type, 1, 0);
 }
 
-inline Ods::pag* CCH_HANDOFF_TIMEOUT(Jrd::thread_db*	tdbb, Jrd::win* window, SLONG page, SSHORT lock, SSHORT page_type, SSHORT latch_wait)
+inline Ods::pag* CCH_HANDOFF_TIMEOUT(Jrd::thread_db*	tdbb, Jrd::win* window, SLONG page, SSHORT lock, SCHAR page_type, SSHORT latch_wait)
 {
 	return CCH_handoff (tdbb, window, page, lock, page_type, latch_wait, 0);
 }
 
-inline Ods::pag* CCH_HANDOFF_TAIL(Jrd::thread_db*	tdbb, Jrd::win* window, SLONG page, SSHORT lock, SSHORT page_type)
+inline Ods::pag* CCH_HANDOFF_TAIL(Jrd::thread_db*	tdbb, Jrd::win* window, SLONG page, SSHORT lock, SCHAR page_type)
 {
 	return CCH_handoff (tdbb, window, page, lock, page_type, 1, 1);
 }
@@ -157,12 +157,12 @@ inline void CCH_PREFETCH(Jrd::thread_db* tdbb, SLONG * pages, SSHORT count)
 
 /* Flush flags */
 
-const int FLUSH_ALL		= 1;		/* flush all dirty buffers in cache */
-const int FLUSH_RLSE	= 2;		/* release page locks after flush */
-const int FLUSH_TRAN	= 4;		/* flush transaction dirty buffers from dirty btree */
-const int FLUSH_SWEEP	= 8;		/* flush dirty buffers from garbage collection */
-const int FLUSH_SYSTEM	= 16;		/* flush system transaction only from dirty btree */
-const int FLUSH_FINI	= (FLUSH_ALL | FLUSH_RLSE);
+const USHORT FLUSH_ALL		= 1;		/* flush all dirty buffers in cache */
+const USHORT FLUSH_RLSE		= 2;		/* release page locks after flush */
+const USHORT FLUSH_TRAN		= 4;		/* flush transaction dirty buffers from dirty btree */
+const USHORT FLUSH_SWEEP	= 8;		/* flush dirty buffers from garbage collection */
+const USHORT FLUSH_SYSTEM	= 16;		/* flush system transaction only from dirty btree */
+const USHORT FLUSH_FINI		= (FLUSH_ALL | FLUSH_RLSE);
 
 #endif /* JRD_CCH_PROTO_H */
 

@@ -129,7 +129,7 @@ static void down_grade(thread_db*, BufferDesc*);
 static void expand_buffers(thread_db*, ULONG);
 static BufferDesc* get_buffer(thread_db*, SLONG, LATCH, SSHORT);
 static SSHORT latch_bdb(thread_db*, LATCH, BufferDesc*, SLONG, SSHORT);
-static SSHORT lock_buffer(thread_db*, BufferDesc*, SSHORT, SSHORT);
+static SSHORT lock_buffer(thread_db*, BufferDesc*, SSHORT, SCHAR);
 static ULONG memory_init(thread_db*, BufferControl*, ULONG);
 static void page_validation_error(thread_db*, win*, SSHORT);
 #ifdef CACHE_READER
@@ -158,17 +158,19 @@ const SLONG MIN_BUFFER_SEGMENT	= 65536L;
 #endif
 #endif
 
-#define BCB_MUTEX_ACQUIRE
-#define BCB_MUTEX_RELEASE
-
-#define PRE_MUTEX_ACQUIRE 
-#define PRE_MUTEX_RELEASE 
-
-#define BTC_MUTEX_ACQUIRE 
-#define BTC_MUTEX_RELEASE 
-
-#define LATCH_MUTEX_ACQUIRE
-#define LATCH_MUTEX_RELEASE
+//
+//#define BCB_MUTEX_ACQUIRE
+//#define BCB_MUTEX_RELEASE
+//
+//#define PRE_MUTEX_ACQUIRE 
+//#define PRE_MUTEX_RELEASE 
+//
+//#define BTC_MUTEX_ACQUIRE 
+//#define BTC_MUTEX_RELEASE 
+//
+//#define LATCH_MUTEX_ACQUIRE
+//#define LATCH_MUTEX_RELEASE
+//
 
 const int JOURNAL_PAGE		= -1;
 const int SHADOW_PAGE		= -2;
@@ -276,7 +278,7 @@ void CCH_flush_database(thread_db* tdbb)
 	// Redirect pages to the difference file
 
 	// Need to reconsider this protection for possible deadlocks when MT-safety is implemented
-	BCB_MUTEX_ACQUIRE; 
+//	BCB_MUTEX_ACQUIRE; 
 	for (ULONG i = 0; (bcb = dbb->dbb_bcb) && i < bcb->bcb_count; i++) {
 		BufferDesc* bdb = bcb->bcb_rpt[i].bcb_bdb;
 		if (bdb->bdb_write_direction != BDB_write_normal &&
@@ -287,7 +289,7 @@ void CCH_flush_database(thread_db* tdbb)
 		NBAK_TRACE(("Redirect page=%d use=%d flags=%d", bdb->bdb_page, bdb->bdb_use_count, bdb->bdb_flags));
 		update_write_direction(tdbb, bdb);
 	}
-	BCB_MUTEX_RELEASE;
+//	BCB_MUTEX_RELEASE;
 #else		
 	/* Do some fancy footwork to make sure that pages are
 	   not removed from the btc tree at AST level.  Then
@@ -694,9 +696,9 @@ void CCH_expand(thread_db* tdbb, ULONG number)
  **************************************/
 	SET_TDBB(tdbb);
 
-	BCB_MUTEX_ACQUIRE;
+//	BCB_MUTEX_ACQUIRE;
 	expand_buffers(tdbb, number);
-	BCB_MUTEX_RELEASE;
+//	BCB_MUTEX_RELEASE;
 }
 
 
@@ -782,11 +784,14 @@ pag* CCH_fake(thread_db* tdbb, WIN * window, SSHORT latch_wait)
 }
 
 
-pag* CCH_fetch(thread_db* tdbb,
-			  WIN* window,
-			  USHORT lock_type,
-			  SSHORT page_type,
-			  SSHORT checksum, SSHORT latch_wait, bool read_shadow)
+pag* CCH_fetch(
+		thread_db* tdbb,
+		WIN* window,
+		USHORT lock_type,
+		SCHAR page_type,
+		SSHORT checksum,
+		SSHORT latch_wait,
+		bool read_shadow)
 {
 /**************************************
  *
@@ -864,7 +869,7 @@ pag* CCH_fetch(thread_db* tdbb,
 
 /* Validate the fetched page matches the expected type */
 
-	if (bdb->bdb_buffer->pag_type != (SCHAR) page_type &&
+	if (bdb->bdb_buffer->pag_type != page_type &&
 		page_type != pag_undefined)
 	{
 		page_validation_error(tdbb, window, page_type);
@@ -874,10 +879,13 @@ pag* CCH_fetch(thread_db* tdbb,
 }
 
 
-SSHORT CCH_fetch_lock(thread_db* tdbb,
-					  WIN * window,
-					  USHORT lock_type,
-					  SSHORT wait, SSHORT latch_wait, SSHORT page_type)
+SSHORT CCH_fetch_lock(
+		thread_db* tdbb,
+		WIN * window,
+		USHORT lock_type,
+		SSHORT wait,
+		SSHORT latch_wait,
+		SCHAR page_type)
 {
 /**************************************
  *
@@ -1195,7 +1203,7 @@ void CCH_fini(thread_db* tdbb)
 				}
 			}
 			else {
-				CCH_flush(tdbb, (USHORT) FLUSH_FINI, (SLONG) 0);
+				CCH_flush(tdbb, FLUSH_FINI, (SLONG) 0);
 			}
 		}
 
@@ -1493,13 +1501,14 @@ SLONG CCH_get_incarnation(WIN * window)
 }
 
 
-pag* CCH_handoff(thread_db*	tdbb,
-				WIN* window,
-				SLONG	page,
-				SSHORT	lock,
-				SSHORT	page_type,
-				SSHORT	latch_wait,
-				SSHORT	release_tail)
+pag* CCH_handoff(
+		thread_db*	tdbb,
+		WIN* window,
+		SLONG	page,
+		SSHORT	lock,
+		SCHAR	page_type,
+		SSHORT	latch_wait,
+		SSHORT	release_tail)
 {
 /**************************************
  *
@@ -1603,7 +1612,7 @@ pag* CCH_handoff(thread_db*	tdbb,
 
 /* Validate the fetched page matches the expected type */
 
-	if (bdb->bdb_buffer->pag_type != (SCHAR) page_type &&
+	if (bdb->bdb_buffer->pag_type != page_type &&
 		page_type != pag_undefined)
 	{
 		page_validation_error(tdbb, window, page_type);
@@ -2771,7 +2780,7 @@ static void btc_flush(
 
 /* Pick starting place at leftmost node */
 
-	BTC_MUTEX_ACQUIRE;
+//	BTC_MUTEX_ACQUIRE;
 	BufferDesc* next = dbb->dbb_bcb->bcb_btree;
 	while (next && next->bdb_left) {
 		 next = next->bdb_left;
@@ -2832,9 +2841,9 @@ static void btc_flush(
 		   as a dependency while we were walking the tree */
 
 		if (!(bdb->bdb_flags & BDB_dirty)) {
-			BTC_MUTEX_RELEASE;
+//			BTC_MUTEX_RELEASE;
 			btc_remove(bdb);
-			BTC_MUTEX_ACQUIRE;
+//			BTC_MUTEX_ACQUIRE;
 			continue;
 		}
 
@@ -2842,7 +2851,7 @@ static void btc_flush(
 		   changes should be made in both places */
 
 		const SLONG page = bdb->bdb_page;
-		BTC_MUTEX_RELEASE;
+//		BTC_MUTEX_RELEASE;
 
 #ifndef SUPERSERVER
 		if (bdb->bdb_use_count)
@@ -2867,10 +2876,10 @@ static void btc_flush(
 		{
 			PAGE_LOCK_RE_POST(bdb->bdb_lock);
 		}
-		BTC_MUTEX_ACQUIRE;
+//		BTC_MUTEX_ACQUIRE;
 	}
 
-	BTC_MUTEX_RELEASE;
+//	BTC_MUTEX_RELEASE;
 }
 
 
@@ -2901,11 +2910,11 @@ static void btc_insert(Database* dbb, BufferDesc* bdb)
 
 /* if the tree is empty, this is now the tree */
 
-	BTC_MUTEX_ACQUIRE;
+//	BTC_MUTEX_ACQUIRE;
 	BufferDesc* node = dbb->dbb_bcb->bcb_btree;
 	if (!node) {
 		dbb->dbb_bcb->bcb_btree = bdb;
-		BTC_MUTEX_RELEASE;
+//		BTC_MUTEX_RELEASE;
 		return;
 	}
 
@@ -2940,7 +2949,7 @@ static void btc_insert(Database* dbb, BufferDesc* bdb)
 		}
 	}
 
-	BTC_MUTEX_RELEASE;
+//	BTC_MUTEX_RELEASE;
 }
 
 
@@ -2967,7 +2976,7 @@ static void btc_remove(BufferDesc* bdb)
 /* engage in a little defensive programming to make
    sure the node is actually in the tree */
 
-	BTC_MUTEX_ACQUIRE;
+//	BTC_MUTEX_ACQUIRE;
 	BufferControl* bcb = dbb->dbb_bcb;
 	if ((!bcb->bcb_btree) ||
 		(!bdb->bdb_parent &&
@@ -2976,7 +2985,7 @@ static void btc_remove(BufferDesc* bdb)
 		if ((bdb->bdb_flags & BDB_must_write) || !(bdb->bdb_flags & BDB_dirty))
 		{
 			/* Must writes aren't worth the effort */
-			BTC_MUTEX_RELEASE;
+//			BTC_MUTEX_RELEASE;
 			return;
 		}
 		else {
@@ -3022,7 +3031,7 @@ static void btc_remove(BufferDesc* bdb)
 /* initialize the node for next usage */
 
 	bdb->bdb_left = bdb->bdb_right = bdb->bdb_parent = NULL;
-	BTC_MUTEX_RELEASE;
+//	BTC_MUTEX_RELEASE;
 }
 
 
@@ -3411,8 +3420,8 @@ static void check_precedence(thread_db* tdbb, WIN * window, SLONG page)
 
 /* Start by finding the buffer containing the high priority page */
 
-	BCB_MUTEX_ACQUIRE;
-	PRE_MUTEX_ACQUIRE;
+//	BCB_MUTEX_ACQUIRE;
+//	PRE_MUTEX_ACQUIRE;
 	BufferControl* bcb = dbb->dbb_bcb;
 	QUE mod_que = &bcb->bcb_rpt[page % bcb->bcb_count].bcb_page_mod;
 
@@ -3424,9 +3433,9 @@ static void check_precedence(thread_db* tdbb, WIN * window, SLONG page)
 		}
 	}
 
-	BCB_MUTEX_RELEASE;
+//	BCB_MUTEX_RELEASE;
 	if (que_inst == mod_que) {
-		PRE_MUTEX_RELEASE;
+//		PRE_MUTEX_RELEASE;
 		return;
 	}
 
@@ -3436,7 +3445,7 @@ static void check_precedence(thread_db* tdbb, WIN * window, SLONG page)
 	if (!(high->bdb_flags & BDB_dirty)
 		|| (high->bdb_page == window->win_page))
 	{
-		PRE_MUTEX_RELEASE;
+//		PRE_MUTEX_RELEASE;
 		return;
 	}
 
@@ -3452,12 +3461,12 @@ static void check_precedence(thread_db* tdbb, WIN * window, SLONG page)
 	if (QUE_NOT_EMPTY(high->bdb_lower)) {
 		const SSHORT relationship = related(low, high, PRE_SEARCH_LIMIT);
 		if (relationship == PRE_EXISTS) {
-			PRE_MUTEX_RELEASE;
+//			PRE_MUTEX_RELEASE;
 			return;
 		}
 		else if (relationship == PRE_UNKNOWN) {
 			const SLONG high_page = high->bdb_page;
-			PRE_MUTEX_RELEASE;
+//			PRE_MUTEX_RELEASE;
 			if (!write_buffer
 				(tdbb, high, high_page, false, tdbb->tdbb_status_vector, true))
 			{
@@ -3476,13 +3485,13 @@ static void check_precedence(thread_db* tdbb, WIN * window, SLONG page)
 		const SSHORT relationship = related(high, low, PRE_SEARCH_LIMIT);
 		if (relationship == PRE_EXISTS || relationship == PRE_UNKNOWN) {
 			const SLONG low_page = low->bdb_page;
-			PRE_MUTEX_RELEASE;
+//			PRE_MUTEX_RELEASE;
 			if (!write_buffer
 				(tdbb, low, low_page, false, tdbb->tdbb_status_vector, true))
 			{
 				CCH_unwind(tdbb, true);
 			}
-			PRE_MUTEX_ACQUIRE;
+//			PRE_MUTEX_ACQUIRE;
 		}
 	}
 
@@ -3504,7 +3513,7 @@ static void check_precedence(thread_db* tdbb, WIN * window, SLONG page)
 	precedence->pre_flags = 0;
 	QUE_INSERT(low->bdb_higher, precedence->pre_higher);
 	QUE_INSERT(high->bdb_lower, precedence->pre_lower);
-	PRE_MUTEX_RELEASE;
+//	PRE_MUTEX_RELEASE;
 }
 
 
@@ -3523,7 +3532,7 @@ static void clear_precedence(Database* dbb, BufferDesc* bdb)
  **************************************/
 	SET_DBB(dbb);
 
-	PRE_MUTEX_ACQUIRE;
+//	PRE_MUTEX_ACQUIRE;
 	BufferControl* bcb = dbb->dbb_bcb;
 
 /* Loop thru lower precedence buffers.  If any can be downgraded,
@@ -3545,7 +3554,7 @@ static void clear_precedence(Database* dbb, BufferDesc* bdb)
 		}
 	}
 
-	PRE_MUTEX_RELEASE;
+//	PRE_MUTEX_RELEASE;
 }
 
 
@@ -3895,7 +3904,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, SLONG page, LATCH latch, SSHORT l
 	Database* dbb = tdbb->tdbb_database;
 	SSHORT walk = dbb->dbb_bcb->bcb_free_minimum;
 
-	BCB_MUTEX_ACQUIRE;
+//	BCB_MUTEX_ACQUIRE;
 
 	while (true) {
 	  find_page:
@@ -3914,14 +3923,14 @@ static BufferDesc* get_buffer(thread_db* tdbb, SLONG page, LATCH latch, SSHORT l
 					if (page != HEADER_PAGE)
 #endif
 						QUE_MOST_RECENTLY_USED(bdb->bdb_in_use);
-					BCB_MUTEX_RELEASE;
+//					BCB_MUTEX_RELEASE;
 					const SSHORT latch_return =
 						latch_bdb(tdbb, latch, bdb, page, latch_wait);
 					if (latch_return) {
 						if (latch_return == 1) {
 							return NULL;	/* permitted timeout happened */
 						}
-						BCB_MUTEX_ACQUIRE;
+//						BCB_MUTEX_ACQUIRE;
 						goto find_page;
 					}
 					else {
@@ -3951,7 +3960,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, SLONG page, LATCH latch, SSHORT l
 					}
 					if (bdb->bdb_flags & BDB_db_dirty) {
 						THREAD_ENTER;
-						BCB_MUTEX_RELEASE;
+//						BCB_MUTEX_RELEASE;
 						return bdb;
 					}
 					if (!--walk) {
@@ -3963,14 +3972,14 @@ static BufferDesc* get_buffer(thread_db* tdbb, SLONG page, LATCH latch, SSHORT l
 
 					if (bdb->bdb_flags & BDB_checkpoint) {
 						THREAD_ENTER;
-						BCB_MUTEX_RELEASE;
+//						BCB_MUTEX_RELEASE;
 						return bdb;
 					}
 				}
 			}
 
 			THREAD_ENTER;
-			BCB_MUTEX_RELEASE;
+//			BCB_MUTEX_RELEASE;
 			return NULL;
 		}
 #endif
@@ -4027,7 +4036,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, SLONG page, LATCH latch, SSHORT l
 				}
 #endif
 				//bdb->bdb_sequence = dbb->dbb_fetches++;
-				BCB_MUTEX_RELEASE;
+//				BCB_MUTEX_RELEASE;
 				return bdb;
 			}
 
@@ -4039,12 +4048,12 @@ static BufferDesc* get_buffer(thread_db* tdbb, SLONG page, LATCH latch, SSHORT l
 			}
 
 			BufferDesc* oldest = BLOCK(que_inst, BufferDesc*, bdb_in_use);
-			LATCH_MUTEX_ACQUIRE;
+//			LATCH_MUTEX_ACQUIRE;
 			if (oldest->bdb_use_count
 				|| (oldest->bdb_flags & BDB_free_pending)
 				|| !writeable(oldest))
 			{
-				LATCH_MUTEX_RELEASE;
+//				LATCH_MUTEX_RELEASE;
 				continue;
 			}
 
@@ -4056,11 +4065,11 @@ static BufferDesc* get_buffer(thread_db* tdbb, SLONG page, LATCH latch, SSHORT l
 				oldest->bdb_flags &= ~BDB_prefetch;
 				que_inst = que_inst->que_forward;
 				QUE_MOST_RECENTLY_USED(oldest->bdb_in_use);
-				LATCH_MUTEX_RELEASE;
+//				LATCH_MUTEX_RELEASE;
 				continue;
 			}
 #endif
-			LATCH_MUTEX_RELEASE;
+//			LATCH_MUTEX_RELEASE;
 #ifdef CACHE_WRITER
 			if (oldest->bdb_flags & (BDB_dirty | BDB_db_dirty)) {
 				bcb->bcb_flags |= BCB_free_pending;
@@ -4089,7 +4098,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, SLONG page, LATCH latch, SSHORT l
 			/* If the buffer selected is dirty, arrange to have it written. */
 
 			if (bdb->bdb_flags & (BDB_dirty | BDB_db_dirty)) {
-				BCB_MUTEX_RELEASE;
+//				BCB_MUTEX_RELEASE;
 #ifdef SUPERSERVER
 				if (!write_buffer
 					(tdbb, bdb, bdb->bdb_page, true, tdbb->tdbb_status_vector,
@@ -4126,7 +4135,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, SLONG page, LATCH latch, SSHORT l
 			   screwed up, the only precedence blocks that can still be hanging
 			   around are ones cleared at AST level. */
 
-			PRE_MUTEX_ACQUIRE;
+//			PRE_MUTEX_ACQUIRE;
 			while (QUE_NOT_EMPTY(bdb->bdb_higher)) {
 				QUE que2 = bdb->bdb_higher.que_forward;
 				Precedence* precedence = BLOCK(que2, Precedence*, pre_higher);
@@ -4135,14 +4144,14 @@ static BufferDesc* get_buffer(thread_db* tdbb, SLONG page, LATCH latch, SSHORT l
 				precedence->pre_hi = (BufferDesc*) bcb->bcb_free;
 				bcb->bcb_free = precedence;
 			}
-			PRE_MUTEX_RELEASE;
+//			PRE_MUTEX_RELEASE;
 
 			clear_precedence(dbb, bdb);
 
 			/* remove the buffer from the "mod" queue and place it
 			   in it's new spot, provided it's not a negative (scratch) page */
 
-			BCB_MUTEX_ACQUIRE;
+//			BCB_MUTEX_ACQUIRE;
 			if (bdb->bdb_page >= 0) {
 				QUE_DELETE(bdb->bdb_que);
 			}
@@ -4202,7 +4211,7 @@ static SSHORT latch_bdb(
 		return -1;
 	}
 
-	LATCH_MUTEX_ACQUIRE;
+//	LATCH_MUTEX_ACQUIRE;
 
 /* Handle the easy case first, no users of the buffer. */
 
@@ -4226,7 +4235,7 @@ static SSHORT latch_bdb(
 		case LATCH_none:
 			break;
 		}
-		LATCH_MUTEX_RELEASE;
+//		LATCH_MUTEX_RELEASE;
 		return 0;
 	}
 
@@ -4248,7 +4257,7 @@ static SSHORT latch_bdb(
 	switch (type) {
 
 	case LATCH_none:
-		LATCH_MUTEX_RELEASE;
+//		LATCH_MUTEX_RELEASE;
 		return 0;
 
 	case LATCH_shared:
@@ -4286,7 +4295,7 @@ static SSHORT latch_bdb(
 		}
 		++bdb->bdb_use_count;
 		bdb->bdb_shared[i] = tdbb;
-		LATCH_MUTEX_RELEASE;
+//		LATCH_MUTEX_RELEASE;
 		return 0;
 
 	case LATCH_io:
@@ -4298,7 +4307,7 @@ static SSHORT latch_bdb(
 		}
 		++bdb->bdb_use_count;
 		bdb->bdb_io = tdbb;
-		LATCH_MUTEX_RELEASE;
+//		LATCH_MUTEX_RELEASE;
 		return 0;
 
 	case LATCH_exclusive:
@@ -4315,7 +4324,7 @@ static SSHORT latch_bdb(
 		}
 		++bdb->bdb_use_count;
 		bdb->bdb_exclusive = tdbb;
-		LATCH_MUTEX_RELEASE;
+//		LATCH_MUTEX_RELEASE;
 		return 0;
 
 	case LATCH_mark:
@@ -4327,7 +4336,7 @@ static SSHORT latch_bdb(
 			break;
 		}
 		bdb->bdb_io = tdbb;
-		LATCH_MUTEX_RELEASE;
+//		LATCH_MUTEX_RELEASE;
 		return 0;
 
 	default:
@@ -4336,7 +4345,7 @@ static SSHORT latch_bdb(
 
 /* If the caller doesn't want to wait for this latch, then return now. */
 	if (latch_wait == 0) {
-		LATCH_MUTEX_RELEASE;
+//		LATCH_MUTEX_RELEASE;
 		return 1;
 	}
 
@@ -4380,7 +4389,7 @@ static SSHORT latch_bdb(
 		 ((lwt->lwt_flags & LWT_pending) && !timeout_occurred);
 		 count = ISC_event_clear(event))
 	{
-		LATCH_MUTEX_RELEASE;
+//		LATCH_MUTEX_RELEASE;
 		THREAD_EXIT;
 		if (latch_wait == 1) {
 			timeout_occurred =
@@ -4392,7 +4401,7 @@ static SSHORT latch_bdb(
 							   NULL, event);
 		}
 		THREAD_ENTER;
-		LATCH_MUTEX_ACQUIRE;
+//		LATCH_MUTEX_ACQUIRE;
 	}
 
 	bcb = dbb->dbb_bcb;			/* Re-initialize */
@@ -4401,7 +4410,7 @@ static SSHORT latch_bdb(
 
 /* If the latch is not granted then a timeout must have occurred. */
 	if ((lwt->lwt_flags & LWT_pending) && timeout_occurred) {
-		LATCH_MUTEX_RELEASE;
+//		LATCH_MUTEX_RELEASE;
 		if (latch_wait == 1) {
 			IBERR_build_status(tdbb->tdbb_status_vector, isc_deadlock, 0);
 			CCH_unwind(tdbb, true);
@@ -4412,12 +4421,12 @@ static SSHORT latch_bdb(
 	}
 
 	if (bdb->bdb_page != page) {
-		LATCH_MUTEX_RELEASE;
+//		LATCH_MUTEX_RELEASE;
 		release_bdb(tdbb, bdb, true, false, false);
 		return -1;
 	}
 
-	LATCH_MUTEX_RELEASE;
+//	LATCH_MUTEX_RELEASE;
 	return 0;
 }
 
@@ -4463,8 +4472,10 @@ static SSHORT latch_bdb(
 
 
 static SSHORT lock_buffer(
-						  thread_db* tdbb,
-						  BufferDesc* bdb, SSHORT wait, SSHORT page_type)
+		thread_db* tdbb,
+		BufferDesc* bdb,
+		SSHORT wait,
+		SCHAR page_type)
 {
 /**************************************
  *
@@ -5034,7 +5045,7 @@ static void release_bdb(
  **************************************/
 	SSHORT i;
 
-	LATCH_MUTEX_ACQUIRE;
+//	LATCH_MUTEX_ACQUIRE;
 
 	QUE wait_que = &bdb->bdb_waiters;
 
@@ -5060,7 +5071,7 @@ static void release_bdb(
 			bdb->bdb_shared[i] = tdbb;
 		}
 		else {
-			LATCH_MUTEX_RELEASE;
+//			LATCH_MUTEX_RELEASE;
 			return;
 		}
 	}
@@ -5128,7 +5139,7 @@ static void release_bdb(
 			switch (lwt->lwt_latch) {
 			case LATCH_exclusive:
 				if (bdb->bdb_use_count) {
-					LATCH_MUTEX_RELEASE;
+//					LATCH_MUTEX_RELEASE;
 					return;
 				}
 				else {
@@ -5136,7 +5147,7 @@ static void release_bdb(
 					bdb->bdb_exclusive = lwt->lwt_tdbb;
 					lwt->lwt_flags &= ~LWT_pending;
 					ISC_event_post(&lwt->lwt_event);
-					LATCH_MUTEX_RELEASE;
+//					LATCH_MUTEX_RELEASE;
 					return;
 				}
 
@@ -5196,11 +5207,11 @@ static void release_bdb(
 	}
 
 	if (bdb->bdb_use_count || !repost) {
-		LATCH_MUTEX_RELEASE;
+//		LATCH_MUTEX_RELEASE;
 		return;
 	}
 
-	LATCH_MUTEX_RELEASE;
+//	LATCH_MUTEX_RELEASE;
 
 	if (bdb->bdb_ast_flags & BDB_blocking)
 	{
@@ -5374,7 +5385,7 @@ static int write_buffer(
 
 /* If there are buffers that must be written first, write them now. */
 
-	PRE_MUTEX_ACQUIRE;
+//	PRE_MUTEX_ACQUIRE;
 
 	while (QUE_NOT_EMPTY(bdb->bdb_higher)) {
 		BufferControl* bcb = dbb->dbb_bcb;		/* Re-initialize in the loop */
@@ -5389,7 +5400,7 @@ static int write_buffer(
 		else {
 			BufferDesc* hi_bdb = precedence->pre_hi;
 			const SLONG hi_page = hi_bdb->bdb_page;
-			PRE_MUTEX_RELEASE;
+//			PRE_MUTEX_RELEASE;
 			release_bdb(tdbb, bdb, false, false, false);
 			const int write_status =
 				write_buffer(tdbb, hi_bdb, hi_page, write_thru, status,
@@ -5406,11 +5417,11 @@ static int write_buffer(
 			if (latch_bdb(tdbb, LATCH_io, bdb, page, 1) == -1) {
 				return 1;		/* cache buffer reassigned, return 'write successful' */
 			}
-			PRE_MUTEX_ACQUIRE;
+//			PRE_MUTEX_ACQUIRE;
 		}
 	}
 
-	PRE_MUTEX_RELEASE;
+//	PRE_MUTEX_RELEASE;
 
 #ifdef SUPERSERVER_V2
 /* Header page I/O is deferred until a dirty page, which was modified by a
