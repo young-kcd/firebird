@@ -2,12 +2,49 @@
   * v1.5.1
   **************
 
+    * Fixed the reported events issue.  Let's try to wake up the
+        parent port when the child one is getting disconnected.
+        It allows to close all broken connections ASAP.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fix QLI bug
+      Contributor(s):
+        Vladimir Tsvigun <praktik at hm.ukrtel.net>
+
+    *   Import (unmodified) libedit-2.6.9 to provide line editing
+        capabilities for isql
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed v1.5.1 bug.
+        Fix bug introduced in first prerelease of 1.5.1 which
+        caused a slow MERGE of some specific query.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed optimiser bug.
+        Fix bug with FULL JOIN and IS NULL in where clause.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed v1.5 bug.
+	Fix memory leak in cpl applet.
+      Contributor(s):
+        Paul Reeves <preeves at ibphoenix.com>
+
+    * Fixed v1.5 bug.
+        Fixed problem with system log overflow in case of missing
+        aliases.conf
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
     * Fixed v1.5 bug.
         Problem with /etc/init.d/firebird modification.
       Contributor(s):
         Alexander Peshkoff <peshkoff at hotmail.ru>
 
-	* Fixed unregistered bug.
+    * Fixed unregistered bug.
         GSTAT doesn't work with remote connection strings.
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
@@ -25,7 +62,7 @@
     * Charset improvement.
         Allowed using NONE as a fully transparent charset everywhere.
       Contributor(s):
-      	Jim Beesley <jim.beesley at sas.com>
+        Jim Beesley <jim.beesley at sas.com>
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
     * Added new collation.
@@ -746,7 +783,7 @@
         3) Make libfbembed.so compatible with third-party tools such as Kylix.
       Contributor(s):
         Nickolay Samofatov <skidder at bssys.com>
-	
+
     * Fixed unregistered bug.
         Allow easy adjustment of LockSemCount on POSIX platforms. No need to use gds_drop or reboot machine to make new setting take effect
       Contributor(s):
@@ -1067,8 +1104,8 @@
         Enabled Services API for posix CS builds.
       Notes:
         1. Appropriate changes in Win32 CS are not ready yet
-        2. Backup/restore service was fixed, tested and should work 
-        3. Database validation was partially fixed and may work 
+        2. Backup/restore service was fixed, tested and should work
+        3. Database validation was partially fixed and may work
         4. Other services are probably non-functional in CS builds yet
       Contributor(s):
         Nickolay Samofatov <skidder at bssys.com>
@@ -1095,7 +1132,7 @@
         (so transaction-level savepoint is dropped) and record was updated _not_ under the savepoint and deleted under savepoint.
       Contributor(s):
         Nickolay Samofatov <skidder at bssys.com>
-        
+
     * Improved EXECUTE STATEMENT.
         Now it's possible to return values from the dynamic SQL.
       Syntax:
@@ -1502,7 +1539,7 @@
         3. Allowed zero as valid argument for FIRST.
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
-	
+
     * Fixed unregistered bug.
         Buffer overflow (MAXPATHLEN) and rewritten local function dirname.
       Contributor(s):
@@ -1706,7 +1743,7 @@
     * Explicit record locking.
         Added support for explicit locking. Wait behavior in isc_tpb_wait transaction modes is not stable yet.
       Syntax:
-        SELECT <...> [FOR UPDATE [OF col [, col ...]] [WITH LOCK]]      
+        SELECT <...> [FOR UPDATE [OF col [, col ...]] [WITH LOCK]]
       Contributor(s):
         Nickolay Samofatov <skidder at bssys.com>
 
@@ -1720,7 +1757,7 @@
         Now you can use plans in triggers.
       Contributor(s):
         Ignacio J. Ortega <nacho at siapi.es>
-        
+
     * Fixed unregistered bug.
         Distributed (2PC) transaction cannot be properly rolled back due to network errors.
       Contributor(s):
@@ -1761,7 +1798,7 @@
     * Fixed bug SF #496784.
         When optimizer find indexes for LEFT JOIN, work like INNER JOIN.
       Note:
-        Fixed problem which caused complex outer joins to produce wrong	results.
+        Fixed problem which caused complex outer joins to produce wrong results.
       Contributor(s):
         Nickolay Samofatov <skidder at bssys.com>
 
@@ -1812,7 +1849,7 @@
         A well-known "decompression overran buffer" error appears during the schema creation.
       Contributor(s):
         Evgeny Kilin <john at citycard.izhnet.ru>
-        
+
     * New ROWS_AFFECTED system variable (SF #451927).
         Return number of rows affected by the last INSERT/UPDATE/DELETE statement.
       Notes:
@@ -2154,7 +2191,7 @@
     * New memory manager.
       Contributor(s):
         John Bellardo <bellardo at cs.ucsd.edu>
-        
+
     * New exception handling logic.
       Contributor(s):
         Mike Nordell <tamlin at algonet.se>,
@@ -2165,7 +2202,7 @@
         John Bellardo <bellardo at cs.ucsd.edu>,
         Mark O'Donohue <mark.odonohue at cytopia.com.au>,
         Erik Kunze <erik.kunze at philosys.de>
-        
+
     * The code port from C to C++.
       Contributor(s):
         Mike Nordell <tamlin at algonet.se>,
