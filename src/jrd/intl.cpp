@@ -2173,6 +2173,8 @@ static void* intl_back_compat_obj_init_lookup(
 #ifdef INTL_BUILTIN
 	if (LD_lookup(type, &function, parm1, parm2) != 0)
 		function = NULL;
+	else
+		return (void*)function;
 #else
 	/* Look for an InterBase supplied object to implement the text type */
 	/* The flu.c uses searchpath which expects a file name not a path */
@@ -2195,7 +2197,9 @@ static void* intl_back_compat_obj_init_lookup(
 /* Still not found, check the set of supplimental international objects */
 #ifdef INTL_BUILTIN
 	if (LD2_lookup(type, &function, parm1, parm2) != 0)
-		function = NULL
+		function = NULL;
+	else
+		return (void*)function;
 #else
 	/* Look for an InterBase supplied object to implement the text type */
 	/* The flu.c uses searchpath which expects a file name not a path */
