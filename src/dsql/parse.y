@@ -1621,22 +1621,20 @@ exec_procedure	: EXECUTE PROCEDURE symbol_procedure_name proc_inputs proc_output
 					  $4, $5); }
 		;
 
-exec_sql	: EXECUTE varstate value ';'
+exec_sql	: EXECUTE STATEMENT value ';'
 			{ $$ = make_node (nod_exec_sql, (int) e_exec_sql_count, $3); }
 		;
-
-varstate	: VARCHAR | STATEMENT ;
 
 for_select	: label_opt FOR select INTO variable_list cursor_def DO proc_block
 			{ $$ = make_node (nod_for_select, (int) e_flp_count, $3,
 					  make_list ($5), $6, $8, $1); }
 		;
 
-for_exec_into	: label_opt FOR EXECUTE varstate value INTO variable_list DO proc_block 
+for_exec_into	: label_opt FOR EXECUTE STATEMENT value INTO variable_list DO proc_block 
 			{ $$ = make_node (nod_exec_into, (int) e_exec_into_count, $5, $9, make_list ($7), $1); }
 		;
 
-exec_into	: EXECUTE varstate value INTO variable_list ';'
+exec_into	: EXECUTE STATEMENT value INTO variable_list ';'
 			{ $$ = make_node (nod_exec_into, (int) e_exec_into_count, $3, 0, make_list ($5)); }
 		;
 
