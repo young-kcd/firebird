@@ -389,7 +389,7 @@ bool BTR_description(JRD_REL relation, IRT root, IDX * idx, SSHORT id)
 		}
 		else {
 			idx_desc->idx_selectivity = irt_desc->irt_stuff.irt_selectivity;
-			ptr += (sizeof(irtd) - sizeof(float));
+			ptr += sizeof(irtd_ods10);
 		}
 	}
 	idx->idx_selectivity = irt_desc->irt_stuff.irt_selectivity;
@@ -1460,15 +1460,16 @@ void BTR_reserve_slot(TDBB tdbb, JRD_REL relation, JRD_TRA transaction, IDX * id
 	// Scan the index page looking for the high water mark of the descriptions and,
 	// perhaps, an empty index slot
 
-	IRTD *desc;
+	UCHAR *desc;
 	USHORT l, space;
 	irt::irt_repeat * root_idx, *end, *slot;
 	bool maybe_no_room = false;
 retry:
-	l = idx->idx_count * sizeof(IRTD);
 	// dimitr: irtd_selectivity member of IRTD is introduced in ODS11
 	if (dbb->dbb_ods_version < ODS_VERSION11)
-		l -= sizeof(float);
+		l = idx->idx_count * sizeof(irtd_ods10);
+	else
+		l = idx->idx_count * sizeof(irtd);
 
 	space = dbb->dbb_page_size;
 	slot = NULL;
@@ -1487,10 +1488,10 @@ retry:
 	}
 
 	space -= l;
-	desc = (IRTD *) ((UCHAR*)root + space);
+	desc = (UCHAR*)root + space;
 
 	// Verify that there is enough room on the Index root page.
-	if (desc < (IRTD *) (end + 1)) {
+	if (desc < (UCHAR *) (end + 1)) {
 		// Not enough room:  Attempt to compress the index root page and try again.
 		// If this is the second try already, then there really is no more room.
 		if (maybe_no_room) {
@@ -1520,7 +1521,18 @@ retry:
 	}
 
 	slot->irt_root = 0;
-	memcpy(desc, idx->idx_rpt, l);
+
+	if (dbb->dbb_ods_version < ODS_VERSION11) {
+		for (USHORT i=0; i<idx->idx_count; i++) {
+			irtd_ods10 temp;
+			temp.irtd_field = idx->idx_rpt[i].idx_field;
+			temp.irtd_itype = idx->idx_rpt[i].idx_itype;
+			memcpy(desc, &temp, sizeof(temp));
+			desc += sizeof(temp);
+		}
+	} else
+		// Exploit the fact idx_repeat structure matches ODS IRTD one
+		memcpy(desc, idx->idx_rpt, l);
 
 	if (dbb->dbb_wal) {
 		CCH_journal_page(tdbb, &window);
@@ -2230,7 +2242,10 @@ static USHORT compress_root(TDBB tdbb, IRT page)
 		 root_idx < end; root_idx++)
 	{
 		if (root_idx->irt_root) {
-			l = root_idx->irt_keys * sizeof(IRTD);
+			if (dbb->dbb_ods_version < ODS_VERSION11)
+				l = root_idx->irt_keys * sizeof(irtd_ods10);
+			else
+				l = root_idx->irt_keys * sizeof(irtd);
 			p -= l;
 			memcpy(p, (SCHAR*)page + root_idx->irt_desc, l);
 			root_idx->irt_desc = p - temp;

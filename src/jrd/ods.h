@@ -289,9 +289,12 @@ typedef struct irt {
 
 /* key descriptor */
 
-typedef struct irtd {
+struct irtd_ods10 {
 	USHORT irtd_field;
 	USHORT irtd_itype;
+};
+
+typedef struct irtd : public irtd_ods10 {
 	float irtd_selectivity;
 } IRTD;
 

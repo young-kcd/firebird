@@ -62,11 +62,12 @@ typedef struct idx {
 	jrd_nod* idx_expression;	/* node tree for indexed expresssion */
 	struct dsc idx_expression_desc;	/* descriptor for expression result */
 	struct jrd_req *idx_expression_request;	/* stored request for expression evaluation */
+	// This structure should exactly match IRTD structure for current ODS
 	struct idx_repeat {
 		USHORT idx_field;		/* field id */
 		USHORT idx_itype;		/* data of field in index */
 		float idx_selectivity;	/* segment selectivity */
-	} idx_rpt[16];
+	} idx_rpt[MAX_INDEX_SEGMENTS];
 } IDX;
 
 /* index types and flags */

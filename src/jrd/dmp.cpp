@@ -999,22 +999,28 @@ static void dmp_root(IRT page)
  *
  **************************************/
 	irt::irt_repeat * desc;
-	struct irtd *stuff;
 	USHORT i, j;
 
 	ib_fprintf(dbg_file,
 			   "INDEX ROOT PAGE\t checksum %d\t generation %ld\n\tRelation: %d, Count: %d\n",
 			   ((PAG) page)->pag_checksum, ((PAG) page)->pag_generation,
 			   page->irt_relation, page->irt_count);
+	bool ods11plus = (GET_THREAD_DATA->tdbb_database->dbb_ods_version >= ODS_VERSION11);
 	for (i = 0, desc = page->irt_rpt; i < page->irt_count; i++, desc++) {
 		ib_fprintf(dbg_file,
 				   "\t%d -- root: %ld, number of keys: %d, flags: %x\n", i,
 				   desc->irt_root, desc->irt_keys, desc->irt_flags);
 		ib_fprintf(dbg_file, "\t     keys (field, type): ");
-		stuff = (struct irtd *) ((SCHAR *) page + desc->irt_desc);
-		for (j = 0; j < desc->irt_keys; j++, stuff++)
+		SCHAR *ptr = (SCHAR *) page + desc->irt_desc;
+		for (j = 0; j < desc->irt_keys; j++) {
+			if (ods11plus) then
+				ptr += sizeof(irtd);
+			else
+				ptr += sizeof(irtd_ods10);
+			irtd* stuff = (irtd*)ptr;
 			ib_fprintf(dbg_file, "(%d, %d),", stuff->irtd_field,
 					   stuff->irtd_itype);
+		}
 		ib_fprintf(dbg_file, "\n");
 	}
 }
