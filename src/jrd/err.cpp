@@ -505,7 +505,7 @@ void DLL_EXPORT ERR_punt(void)
  **************************************/
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB  dbb  = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	TEXT* dbname;
 
@@ -514,7 +514,7 @@ void DLL_EXPORT ERR_punt(void)
 #ifndef GATEWAY
 		dbname = ((dbb->dbb_file) ? dbb->dbb_file->fil_string : NULL);
 #else
-		dbname = dbb->dbb_filename->str_data;
+		dbname = tdbb->tdbb_attachment->att_filename->str_data;
 #endif
 		gds__log_status(dbname, tdbb->tdbb_status_vector);
 	}
