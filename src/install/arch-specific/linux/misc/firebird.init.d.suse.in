@@ -79,7 +79,7 @@ rc_reset
 # considered a success.
 
 case "$1" in
-    start)
+  start)
 	echo -n "Starting Firebird"
 	## Start daemon with startproc(8). If this fails
 	## the echo return value is set appropriate.
@@ -91,7 +91,7 @@ case "$1" in
 	# Remember status and be verbose
 	rc_status -v
 	;;
-    stop)
+  stop)
 	echo -n "Shutting down Firebird"
 	## Stop daemon with killproc(8) and if this fails
 	## set echo the echo return value.
@@ -102,16 +102,16 @@ case "$1" in
 	# as root user alone should be sufficient privledge to stop/start
 	# the server.
 
-	: ${ISC_USER:=SYSDBA}
-	: ${ISC_PASSWORD:=masterkey}
-        $FIREBIRD/bin/fbmgr -shut -user $ISC_USER -password $ISC_PASSWORD  2>/dev/null
+	ISC_USER=SYSDBA
+	ISC_PASSWORD=masterkey
+	$FIREBIRD/bin/fbmgr -shut -user $ISC_USER -password $ISC_PASSWORD  2>/dev/null
 	unset ISC_USER
 	unset ISC_PASSWORD
 
 	# Remember status and be verbose
 	rc_status -v
 	;;
-    try-restart)
+  try-restart)
 	## Stop the service and if this succeeds (i.e. the
 	## service was running before), start it again.
 	## Note: try-restart is not (yet) part of LSB (as of 0.7.5)
@@ -120,7 +120,7 @@ case "$1" in
 	# Remember status and be quiet
 	rc_status
 	;;
-    restart|force-reload)
+  restart|force-reload)
 	## Stop the service and regardless of whether it was
 	## running or not, start it again.
 	echo "Restarting service Firebird"
@@ -130,10 +130,10 @@ case "$1" in
 	# Remember status and be quiet
 	rc_status
 	;;
-    reload)
+  reload)
 
 	;;
-    status)
+  status)
 	echo -n "Checking for Firebird: "
 	## Check status with checkproc(8), if process is running
 	## checkproc will return with exit status 0.
@@ -149,7 +149,7 @@ case "$1" in
 	rc_status -v
 	;;
 
-    *)
+  *)
 	echo "Usage: $0 {start|stop|status|try-restart|restart|force-reload|reload}"
 	exit 1
 	;;
