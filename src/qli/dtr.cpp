@@ -286,7 +286,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			memcpy(QLI_env, env, sizeof(QLI_env));
 			PAR_token();
 		}
-		catch (...) {
+		catch (const std::exception&) {
 			/* try again */
 			got_started = 0;
 			ERRQ_pending();

@@ -4653,7 +4653,7 @@ STATUS GDS_UNWIND(STATUS * user_status, RRQ * req_handle, USHORT level)
 	{
 		// EXE_unwind (*req_handle);
 	}
-	catch(...)
+	catch(const std::exception&)
 	{
 		return error(user_status);
 	}
@@ -6206,7 +6206,7 @@ static STATUS mov_dsql_message(	UCHAR*	from_msg,
 		}
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		return FB_FAILURE;
 	}
 

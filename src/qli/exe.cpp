@@ -565,7 +565,7 @@ static DSC *assignment(	QLI_NOD		from_node,
 	return from_desc;
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		if (QLI_abort || !QLI_prompt_count) {
 			memcpy(QLI_env, old_env, sizeof(QLI_env));
 			throw;
@@ -987,7 +987,7 @@ static void execute_output( QLI_NOD node)
 	ib_fclose((IB_FILE *) print->prt_file);
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		if (print->prt_file) {
 			ib_fclose((IB_FILE *) print->prt_file);
 		}

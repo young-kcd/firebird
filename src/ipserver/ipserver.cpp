@@ -802,7 +802,7 @@ static void ipi_server( ICC icc)
 	ipi_end_thread(icc);
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		gds__log("ipi_server: error during startup, shutting down");
 	}
 }

@@ -455,7 +455,7 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
 	THREAD_EXIT;
 
 	}	// try
-	catch (...)
+	catch (const std::exception&)
 	{
 		/* If we got as far as having a port allocated before the error, disconnect it
 		 * gracefully.
@@ -494,7 +494,7 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
 				port = NULL;
 
 			}	// try
-			catch (...) {
+			catch (const std::exception&) {
 				port->disconnect(NULL, NULL);
 				port = NULL;
 			}
@@ -511,7 +511,7 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
 	}
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		/* Some kind of unhandled error occured during server setup.  In lieu
 		 * of anything we CAN do, log something (and we might be so hosed
 		 * we can't log anything) and give up.
@@ -3270,7 +3270,7 @@ BOOLEAN process_packet(PORT port,
 		THD_restore_specific();
 	
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		/* There must be something better to do here.  BUT WHAT? */
 
 		gds__log("SERVER/process_packet: out of memory", 0);
