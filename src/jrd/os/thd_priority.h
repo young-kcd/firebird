@@ -86,8 +86,8 @@ private:
 	}
 
 public:
-	ThreadPriorityScheduler(thdd::EntryPoint* r, void* a, UCHAR f)
-		: routine(r), arg(a), flags(f), inside(0), gonein(0) {}
+	ThreadPriorityScheduler(ThreadEntryPoint* r, void* a, UCHAR f)
+		: routine(r), arg(a), inside(0), gonein(0), flags(f) {}
 	// Unregister thread from priorities scheduler
 	void detach();
 
@@ -97,7 +97,7 @@ public:
 	static void cleanup();
 
 	// This CAPITAL_letter-starting methods use InitMutex
-	static void ThreadPriorityScheduler::Init()
+	static void Init()
 	{
 		initialized.init();
 	}
