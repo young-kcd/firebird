@@ -42,7 +42,7 @@ private:
 	bool	SingleMode;
 	XSQLDA	* MakeSqlda(TDBB tdbb, SSHORT n);
 	ISC_STATUS	ReMakeSqlda(ISC_STATUS *vector, TDBB tdbb);
-	SSHORT	ParseSqlda(void);
+	ULONG	ParseSqlda(void);
 public:
 	void Open(TDBB tdbb, JRD_NOD sql, SSHORT nVars, bool SingleTon);
 	bool Fetch(TDBB tdbb, JRD_NOD * FirstVar);

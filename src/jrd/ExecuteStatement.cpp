@@ -308,19 +308,15 @@ ISC_STATUS ExecuteStatement::ReMakeSqlda(ISC_STATUS *vector, TDBB tdbb)
 	return vector[1];
 }
 
-SSHORT ExecuteStatement::ParseSqlda(void) {
-    SSHORT offset = 0;
+ULONG ExecuteStatement::ParseSqlda(void) {
+    ULONG offset = 0;
     int i=0;
     for (XSQLVAR *var=Sqlda->sqlvar;
                         i < Sqlda->sqld; var++, i++) {
-        SSHORT length = var->sqllen;
+        USHORT length = var->sqllen;
         int type = var->sqltype & (~1);
         if (type == SQL_VARYING)
-            length += short(sizeof (SSHORT) + 1);
-        /*  RISC machines are finicky about word alignment
-        **  So the output buffer values must be placed on
-        **  word boundaries where appropriate
-        */
+            length += sizeof (SSHORT);
         var->sqldata = &Buffer[offset];
         offset += length;
         var->sqlind = (short*) (&Buffer[offset]);
