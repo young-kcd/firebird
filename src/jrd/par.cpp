@@ -1545,6 +1545,13 @@ static USHORT par_name(CompilerScratch* csb, Firebird::string& string)
 		} while (--l);
 	}
 
+	// Check for overly long identifiers at BLR parse stage to prevent unwanted
+	// surprises in deeper layers of the engine.
+	if (string.length() > MAX_SQL_IDENTIFIER_LEN) {
+		string.resize(MAX_SQL_IDENTIFIER_LEN);
+		ERR_post(isc_identifier_too_long, isc_arg_string, ERR_cstring(string), 0);
+	}
+
 	return string.length();
 }
 

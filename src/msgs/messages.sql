@@ -2944,6 +2944,7 @@ INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FL
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('ctx_namespace_invalid', NULL, 'functions.cpp', NULL, 0, 524, NULL, 'Invalid namespace name %s passed to %s', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('ctx_too_big', NULL, 'functions.cpp', NULL, 0, 525, NULL, 'Too many context variables', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('ctx_bad_argument', NULL, 'functions.cpp', NULL, 0, 526, NULL, 'Invalid argument passed to %s', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('identifier_too_long', NULL, 'par.cpp', NULL, 0, 527, NULL, 'BLR syntax error. Identifier %s... is too long', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('HLP_SETBAIL', 'help', 'isql.epp', NULL, 17, 110, NULL, '    SET BAIL               -- toggle bailing out on errors in non-interactive mode', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('usage3', 'ISQL_main', 'isql.epp', NULL, 17, 111, NULL, '     [-page <pagelength>] [-n] [-m] [-m2] [-q] [-s <sql_dialect>] [-b]', NULL, NULL);
 
