@@ -1312,7 +1312,7 @@ NOD PASS1_statement(REQ request, NOD input, USHORT proc_flag)
 	case nod_return:
 		if (request->req_flags & REQ_trigger)
 			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, gds_arg_gds, gds_token_err,	/* Token unknown */
-					  gds_arg_gds, gds_random, gds_arg_string, "RETURN", 0);
+					  gds_arg_gds, gds_random, gds_arg_string, "SUSPEND", 0);
 
 		input->nod_arg[e_rtn_procedure] = request->req_ddl_node;
 		return input;
