@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.27 2003-10-05 22:51:28 brodsom Exp $
+ *  $Id: fb_types.h,v 1.28 2003-10-20 10:33:43 robocop Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -129,19 +129,19 @@ typedef long ISC_STATUS;
 typedef long IPTR;
 typedef unsigned long U_IPTR;
 typedef void (*FPTR_VOID) ();
-typedef void (*FPTR_VOID_PTR) (void *);
+typedef void (*FPTR_VOID_PTR) (void*);
 typedef int (*FPTR_INT) ();
-typedef int (*FPTR_INT_VOID_PTR) (void *);
+typedef int (*FPTR_INT_VOID_PTR) (void*);
 typedef void (*FPTR_PRINT_CALLBACK) (void*, SSHORT, const char*);
 typedef ULONG RCRD_OFFSET;
 typedef USHORT FLD_LENGTH;
-typedef int (*lock_ast_t)(void *);
+typedef int (*lock_ast_t)(void*);
 
 #define ISC_STATUS_LENGTH	20
 typedef ISC_STATUS ISC_STATUS_ARRAY[ISC_STATUS_LENGTH];
 
 /* Number of elements in an arry */
 #define FB_NELEM(x)	((int)(sizeof(x) / sizeof(x[0])))
-#define FB_ALIGN(n,b) ((n+b-1)&~(b-1))
+#define FB_ALIGN(n,b) ((n + b - 1) & ~(b - 1))
 
 #endif /* INCLUDE_FB_TYPES_H */

@@ -48,13 +48,13 @@ class pool_alloc_rpt : public blk
 {
     public:
 #ifdef DEBUG_GDS_ALLOC
-        void* operator new(size_t s, MemoryPool& p, int rpt, char *file, int line)
-            { return p.calloc(s + sizeof(RPT)*rpt, BLOCK_TYPE, file, line); }
+        void* operator new(size_t s, MemoryPool& p, int rpt, char* file, int line)
+            { return p.calloc(s + sizeof(RPT) * rpt, BLOCK_TYPE, file, line); }
 #else
         void* operator new(size_t s, MemoryPool& p, int rpt)
-            { return p.calloc(s + sizeof(RPT)*rpt, BLOCK_TYPE); }
+            { return p.calloc(s + sizeof(RPT) * rpt, BLOCK_TYPE); }
 #endif
-        void operator delete(void* mem, MemoryPool& p,int rpt)
+        void operator delete(void* mem, MemoryPool& p, int rpt)
             { if (mem) p.deallocate(mem); }
         void operator delete(void* mem) { if (mem) MemoryPool::globalFree(mem); }
 
@@ -88,3 +88,4 @@ class vector_rpt : public BASE
 }; */
 
 #endif	/* INCLUDE_FB_BLK */
+
