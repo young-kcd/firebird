@@ -102,6 +102,7 @@ EXPORTS
 	gds__start_multiple	@73
 	gds__start_request	@74
 	gds__start_transaction	@75
+	gds__temp_dir
 	gds__temp_file	@231
 	gds__thread_enable	@76
 	gds__thread_enter	@77
