@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: drop.cpp,v 1.24 2004-04-28 22:24:40 brodsom Exp $
+ * $Id: drop.cpp,v 1.25 2004-05-06 08:38:50 alexpeshkoff Exp $
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
@@ -72,7 +72,7 @@
 static void dummy_init(void);
 #endif
 static SLONG get_key(TEXT *);
-static void remove_resource(TEXT *, SLONG, SLONG, TEXT *);
+static void remove_resource(const TEXT*, SLONG, SLONG, const TEXT*);
 static int sem_exclusive(SLONG, SLONG);
 #ifndef HAVE_MMAP
 static int shm_exclusive(SLONG, SLONG);
@@ -207,8 +207,8 @@ static SLONG get_key( TEXT * filename)
 
 #ifndef HAVE_MMAP
 static void remove_resource(
-							TEXT * filename,
-							SLONG shm_length, SLONG sem_count, TEXT* label)
+							const TEXT* filename,
+							SLONG shm_length, SLONG sem_count, const TEXT* label)
 {
 /**************************************
  *
@@ -281,8 +281,8 @@ static void remove_resource(
 
 #ifdef HAVE_MMAP
 static void remove_resource(
-							TEXT * filename,
-							SLONG shm_length, SLONG sem_count, TEXT * label)
+							const TEXT* filename,
+							SLONG shm_length, SLONG sem_count, const TEXT* label)
 {
 /**************************************
  *
