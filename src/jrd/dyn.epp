@@ -844,7 +844,6 @@ static void grant( GBL gbl, UCHAR ** ptr)
 	TEXT priv[2];
 	bool grant_role_stmt = false;
 	TEXT grantor[32];
-	TEXT* p;
 	TEXT* ptr1;
 	TEXT* ptr2;
 
@@ -980,10 +979,10 @@ static void grant( GBL gbl, UCHAR ** ptr)
 	request = (BLK)CMP_find_request(tdbb,
 						(USHORT)(field[0] ? drq_l_grant1 : drq_l_grant2),
 						DYN_REQUESTS);
-	for (p = privileges; *p; p++)
+	for (const TEXT* pr = privileges; *pr; pr++)
 	{
 		bool duplicate = false;
-		priv[0] = *p;
+		priv[0] = *pr;
 		priv[1] = 0;
 		if (field[0])
 		{
@@ -1114,7 +1113,7 @@ static void grant( GBL gbl, UCHAR ** ptr)
 		}
 
 		id = drq_s_grant;
-		store_privilege(gbl, object, user, field, p, user_type, obj_type,
+		store_privilege(gbl, object, user, field, pr, user_type, obj_type,
 						options);
 	}	// for (...)
 
@@ -1554,13 +1553,11 @@ static void revoke_permission(GBL gbl, UCHAR ** ptr)
  *	1994-August-2 Rich Damon & David Schnepper
  *
  **************************************/
-	volatile USHORT old_id, id;
 	UCHAR verb;
-	TEXT privileges[16], object[32], field[32], user[32], temp[2];
+	TEXT privileges[16], object[32], field[32], user[32];
 	TEXT revoking_user_name[32], dummy_name[32];
 	//TEXT grantor[32], *ptr2;
     TEXT *ptr1;
-
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
@@ -1571,11 +1568,12 @@ static void revoke_permission(GBL gbl, UCHAR ** ptr)
 /* Stash away a copy of the revoker's name, in uppercase form */
 
 	const usr* revoking_user = tdbb->tdbb_attachment->att_user;
+	{ // this block to make sure there's no other bug due to wrong  scope
 	TEXT* q = revoking_user_name;
-	const TEXT* p;
-	for (p = revoking_user->usr_user_name; *p; p++, q++)
+	for (const TEXT* p = revoking_user->usr_user_name; *p; p++, q++)
 		*q = UPPER7(*p);
 	*q = 0;
+	} // end scope-only block
 
 	GET_STRING(ptr, privileges);
 	if (!strcmp(privileges, "A")) {
@@ -1690,6 +1688,8 @@ static void revoke_permission(GBL gbl, UCHAR ** ptr)
 			DYN_unsupported_verb();
 		}
 
+	volatile USHORT old_id, id;
+
 	BLK request = (BLK)CMP_find_request(tdbb,
 						(USHORT)(field[0] ? drq_e_grant1 : drq_e_grant2),
 						DYN_REQUESTS);
@@ -1697,6 +1697,7 @@ static void revoke_permission(GBL gbl, UCHAR ** ptr)
 
 	try {
 
+    TEXT temp[2];
 	temp[1] = 0;
 	for (const TEXT* pr = privileges; (temp[0] = *pr); pr++)
 	{
