@@ -863,7 +863,9 @@ void SVC_putc(SVC service, UCHAR ch)
 		service_enqueue_byte(ch, service);
 }
 #endif /*SUPERSERVER*/
-	ISC_STATUS SVC_query2(SVC service,
+
+
+ISC_STATUS SVC_query2(SVC service,
 					  TDBB tdbb,
 					  USHORT send_item_length,
 					  SCHAR * send_items,
@@ -1305,6 +1307,10 @@ void SVC_putc(SVC service, UCHAR ch)
 	if (info < end)
 		*info = isc_info_end;
 
+	if (!(service->svc_flags & SVC_thd_running))
+	{
+		SVC_finish(service, SVC_finished);
+	}
 
 	THREAD_ENTER;
 	return tdbb->tdbb_status_vector[1];
@@ -1720,6 +1726,11 @@ void SVC_query(SVC		service,
 	if (info < end)
 	{
 		*info = isc_info_end;
+	}
+
+	if (!(service->svc_flags & SVC_thd_running))
+	{
+		SVC_finish(service, SVC_finished);
 	}
 
 	THREAD_ENTER;
