@@ -3829,8 +3829,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 							USHORT*		level_ptr)
 {
 	const SCHAR* p;
-	SSHORT rsb_type, length;
-	USHORT join_count, union_count, union_level, union_join_count, save_level;
+	SSHORT rsb_type;
 
 	SSHORT explain_length = *explain_length_ptr;
 	const SCHAR* explain = *explain_ptr;
@@ -3882,13 +3881,15 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 		}
 
 		// put out the relation name 
-
+		{ // scope to keep length local.
 		explain_length--;
-		explain_length -= (length = (UCHAR) * explain++);
+		SSHORT length = (UCHAR) * explain++;
+		explain_length -= length;
 		if ((plan_length -= length) < 0)
 			return false;
 		while (length--)
 			*plan++ = *explain++;
+		} // scope
 		break;
 
 	case isc_info_rsb_type:
@@ -3901,14 +3902,14 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 		case isc_info_rsb_union:
 
 			// put out all the substreams of the join 
-
+			{ // scope to have union_count, union_level and union_join_count local.
 			explain_length--;
-			union_count = (USHORT) * explain++ - 1;
+			USHORT union_count = (USHORT) * explain++ - 1;
 
 			// finish the first union member 
 
-			union_level = *level_ptr;
-			union_join_count = 0;
+			USHORT union_level = *level_ptr;
+			USHORT union_join_count = 0;
 			while (true) {
 				if (!get_rsb_item(&explain_length, &explain, &plan_length, &plan,
 								  &union_join_count, &union_level)) 
@@ -3936,6 +3937,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 				}
 				union_count--;
 			}
+			} // scope
 			break;
 
 		case isc_info_rsb_cross:
@@ -3971,7 +3973,8 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			// put out all the substreams of the join 
 
 			explain_length--;
-			join_count = (USHORT) * explain++;
+			{ // scope to have join_count local.
+			USHORT join_count = (USHORT) * explain++;
 			while (join_count) {
 				if (!get_rsb_item(&explain_length, &explain, &plan_length,
 								  &plan, &join_count, level_ptr))
@@ -3983,6 +3986,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 					break;
 				}
 			}
+			} // scope
 
 			// put out the final parenthesis for the join 
 
@@ -4092,7 +4096,8 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			/* the rsb_sort should always be followed by a begin...end block,
 			   allowing us to include everything inside the sort in parentheses */
 
-			save_level = *level_ptr;
+			{ // scope to have save_level local.
+			const USHORT save_level = *level_ptr;
 			while (explain_length > 0 && plan_length > 0) {
 				if (!get_rsb_item(&explain_length, &explain, &plan_length,
 								  &plan, parent_join_count, level_ptr))
@@ -4104,11 +4109,12 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			if (--plan_length < 0)
 				return false;
 			*plan++ = ')';
+			} // scope
 			break;
 
 		default:
 			break;
-		}
+		} // switch (rsb_type = *explain++)
 		break;
 
 	default:
