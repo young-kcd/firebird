@@ -1,3 +1,27 @@
+2003-10-26 13:27  dimitr
+
+	* firebird2/: src/include/gen/msgs.h, builds/misc/msg.gbak:
+	
+	Modified an existing error message.
+
+2003-10-26 12:12  hippoman
+
+	* firebird2/builds/win32/msvc7/: Firebird2.sln, fb2control.vcproj:
+	
+	* added Control Panel Applet to msvc7 build
+
+2003-10-26 12:12  hippoman
+
+	* firebird2/builds/win32/msvc7/fb2control.vcproj:
+	
+	file fb2control.vcproj was initially added on branch B1_5_Release.
+
+2003-10-26 12:11  hippoman
+
+	* firebird2/builds/win32/make_all.bat:
+	
+	* Fixed buil log name for msvc7
+
 2003-10-25 14:44  dimitr
 
 	* firebird2/src/include/gen/: codes.h, codetext.h, iberror.h,
