@@ -1,3 +1,10 @@
+2003-10-23 15:18  alexpeshkoff
+
+	*
+	firebird2/src/install/arch-specific/linux/super/postinstall.sh.in:
+	
+	small fix to avoid unwanted error messages during installation
+
 2003-10-22 09:20  dimitr
 
 	* firebird2/src/dsql/gen.cpp:
