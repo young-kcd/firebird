@@ -42,7 +42,7 @@ void	ISC_prefix_lock(TEXT*, const TEXT*);
 void	ISC_prefix_msg(TEXT*, const TEXT*);
 
 #ifdef VMS
-int		ISC_expand_logical_once(const TEXT*, USHORT, TEXT*);
+int		ISC_expand_logical_once(const TEXT*, USHORT, TEXT*, USHORT);
 int		ISC_make_desc(const TEXT*, struct dsc$descriptor*, USHORT);
 void	ISC_wait(SSHORT *, SLONG);
 void	ISC_wake(SLONG);

@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.51 2004-06-05 09:37:01 robocop Exp $
+$Id: isc.cpp,v 1.52 2004-10-07 09:01:39 robocop Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -235,7 +235,7 @@ bool ISC_check_process_existence(SLONG	pid,
 
 #ifdef VMS
 int ISC_expand_logical_once(const TEXT* file_name,
-							USHORT file_length, TEXT* expanded_name)
+							USHORT file_length, TEXT* expanded_name, USHORT bufsize)
 {
 /**************************************
  *
@@ -257,7 +257,7 @@ int ISC_expand_logical_once(const TEXT* file_name,
 
 	USHORT l;
 	ITM items[2];
-	items[0].itm_length = 256;
+	items[0].itm_length = bufsize; //256;
 	items[0].itm_code = LNM$_STRING;
 	items[0].itm_buffer = expanded_name;
 	items[0].itm_return_length = &l;
@@ -268,8 +268,11 @@ int ISC_expand_logical_once(const TEXT* file_name,
 	int attr = LNM$M_CASE_BLIND;
 
 	if (!(sys$trnlnm(&attr, &desc2, &desc1, NULL, items) & 1)) {
-		while (file_length--)
+		while (file_length--) {
+			if (bufsize-- == 1)
+				break;
 			*expanded_name++ = *file_name++;
+		}
 		*expanded_name = 0;
 		return 0;
 	}
@@ -297,7 +300,10 @@ TEXT* ISC_get_host(TEXT* string, USHORT length)
 	struct utsname name;
 
 	if (uname(&name) >= 0)
+	{
 		strncpy(string, name.nodename, length);
+		string[length - 1] = 0;
+	}
 	else
 		strcpy(string, "local");
 
@@ -318,7 +324,7 @@ TEXT* ISC_get_host(TEXT* string, USHORT length)
  *      Get host name.
  *
  **************************************/
-	if (!ISC_expand_logical_once("SYS$NODE", sizeof("SYS$NODE") - 1, string))
+	if (!ISC_expand_logical_once("SYS$NODE", sizeof("SYS$NODE") - 1, string, length))
 		strcpy(string, "local");
 	else {
 		TEXT* p = string;
