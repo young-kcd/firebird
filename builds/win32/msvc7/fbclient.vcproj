@@ -259,7 +259,7 @@
 				RelativePath="..\..\..\src\jrd\utl.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\why.c">
+				RelativePath="..\..\..\src\jrd\why.cpp">
 			</File>
 		</Filter>
 		<Filter

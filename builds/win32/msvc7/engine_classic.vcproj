@@ -406,7 +406,7 @@
 				RelativePath="..\..\..\src\jrd\vio.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\why.c">
+				RelativePath="..\..\..\src\jrd\why.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\winnt.cpp">

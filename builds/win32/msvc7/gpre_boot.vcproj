@@ -95,7 +95,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="odbc32.lib odbccp32.lib"
+				AdditionalDependencies="odbc32.lib odbccp32.lib debug\fbclient\fbclient.lib"
 				OutputFile="debug/firebird/bin/gpre_boot.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
