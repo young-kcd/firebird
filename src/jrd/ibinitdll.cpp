@@ -78,6 +78,7 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID reserved)
 		FreeLibrary(hFBDLLInstance);
 #endif
 #ifdef EMBEDDED
+		THREAD_ENTER;
 		JRD_shutdown_all();
 #endif
 		break;
