@@ -2,6 +2,11 @@
   * v1.5 RC 8
   **************
 
+    * C/C++ client interface version added
+        FB_API_VER defined to 15 for Firebird 1.5 in ibase.h
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
     * Fixed unregistered bug.
         Server crash when closing a blob after a transaction is finished.
       Contributor(s):
