@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141 2003-07-08 01:04:52 brodsom Exp $
+dnl $Id: configure.in,v 1.141.2.1 2003-07-19 05:02:23 bellardo Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -36,6 +36,7 @@ case "$target" in
     MAKEFILE_PREFIX=darwin
     PLATFORM=DARWIN
     AC_DEFINE(DARWIN)
+	XE_APPEND(-framework CoreFoundation,LIBS)
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=N
     SHRLIB_EXT=so
