@@ -29,19 +29,19 @@
 
 // Size in bytes, must be aligned according to ALLOC_ALIGNMENT
 #define MIN_EXTENT_SIZE  100000
-// Must be a power of 2
-#define ALLOC_ALIGNMENT 4
-
-#define ALIGN(X) ((X+ALLOC_ALIGNMENT-1) & ~(ALLOC_ALIGNMENT-1))
 
 #define FB_MAX(M,N) ((M)>(N)?(M):(N))
 
 // TODO (in order of importance):
-// 1. Pool size limit
-// 2. debug alloc/free pattern
-// 3. line number debug info
-// 4. pool locking and allocation source
-// 5. red zones checking (not really needed because verify_pool is able to detect most corruption cases)
+// 1. local pool locking +
+// 2. line number debug info +
+// 3. debug alloc/free pattern
+// 4. print pool contents function
+//---- Not needed for current codebase
+// 5. Pool size limit
+// 6. allocation source
+// 7. shared pool locking
+// 8. red zones checking (not really needed because verify_pool is able to detect most corruption cases)
 
 namespace Firebird {
 
@@ -51,6 +51,19 @@ static void pool_out_of_memory()
 {
 	// FIXME: this is a temporary solution until we switch out of using STL exceptions
 	throw std::bad_alloc();
+}
+
+static MemoryPool* processMemoryPool = MemoryPool::createPool(
+// Do global pool locking only for SS
+#ifdef SUPERSERVER
+	true
+#else
+	false
+#endif
+);
+
+MemoryPool* MemoryPool::getProcessPool() {
+	return processMemoryPool;
 }
 
 void MemoryPool::updateSpare() {
@@ -70,7 +83,7 @@ void MemoryPool::updateSpare() {
 			while (pendingFree) {
 				PendingFreeBlock *temp = pendingFree;
 				pendingFree = temp->next;
-				MemoryBlock *blk = (MemoryBlock*)((char*)temp-ALIGN(sizeof(MemoryBlock)));
+				MemoryBlock *blk = (MemoryBlock*)((char*)temp-MEM_ALIGN(sizeof(MemoryBlock)));
 				BlockInfo info = {
 					blk,
 					blk->length
@@ -97,14 +110,15 @@ void MemoryPool::external_free(void *blk) {
 }
 
 void MemoryPool::verify_pool() {
+	if (locking) lock.enter();
 	assert (!pendingFree || needSpare); // needSpare flag should be set if we are in 
 										// a critically low memory condition
 	// check each block in each segment for consistency with free blocks structure
 	for (MemoryExtent *extent = extents; extent; extent=extent->next) {
 		MemoryBlock *prev = NULL;
-		for (MemoryBlock *blk = (MemoryBlock *)((char*)extent+ALIGN(sizeof(MemoryExtent))); 
+		for (MemoryBlock *blk = (MemoryBlock *)((char*)extent+MEM_ALIGN(sizeof(MemoryExtent))); 
 			!blk->last; 
-			blk = (MemoryBlock *)((char*)blk+ALIGN(sizeof(MemoryBlock))+blk->length))
+			blk = (MemoryBlock *)((char*)blk+MEM_ALIGN(sizeof(MemoryBlock))+blk->length))
 		{
 #ifndef NDEBUG
 			assert(blk->pool == this); // Pool is correct ?
@@ -112,7 +126,7 @@ void MemoryPool::verify_pool() {
 			BlockInfo temp = {blk, blk->length};
 			bool foundTree = freeBlocks.locate(temp), foundPending = false;
 			for (PendingFreeBlock *tmp = pendingFree; tmp; tmp = tmp->next)
-				if (tmp == (PendingFreeBlock *)((char*)blk+ALIGN(sizeof(MemoryBlock)))) {
+				if (tmp == (PendingFreeBlock *)((char*)blk+MEM_ALIGN(sizeof(MemoryBlock)))) {
 					assert(!foundPending); // Block may be in pending list only one time
 					foundPending = true;
 				}
@@ -127,17 +141,18 @@ void MemoryPool::verify_pool() {
 			prev = blk;
 		}
 	}
+	if (locking) lock.leave();
 }
 
-MemoryPool* MemoryPool::createPool() {
+MemoryPool* MemoryPool::createPool(bool locking) {
 	size_t alloc_size = FB_MAX(
 		// This is the exact initial layout of memory pool in the first extent //
-		ALIGN(sizeof(MemoryExtent)) +
-		ALIGN(sizeof(MemoryBlock)) +
-		ALIGN(sizeof(MemoryPool)) +
-		ALIGN(sizeof(MemoryBlock)) +
-		ALIGN(sizeof(FreeBlocksTree::ItemList)) +
-		ALIGN(sizeof(MemoryBlock)) +
+		MEM_ALIGN(sizeof(MemoryExtent)) +
+		MEM_ALIGN(sizeof(MemoryBlock)) +
+		MEM_ALIGN(sizeof(MemoryPool)) +
+		MEM_ALIGN(sizeof(MemoryBlock)) +
+		MEM_ALIGN(sizeof(FreeBlocksTree::ItemList)) +
+		MEM_ALIGN(sizeof(MemoryBlock)) +
 		ALLOC_ALIGNMENT,
 		// ******************************************************************* //
 		MIN_EXTENT_SIZE);
@@ -146,45 +161,46 @@ MemoryPool* MemoryPool::createPool() {
 	if (!mem) pool_out_of_memory();
 	((MemoryExtent *)mem)->next = NULL;
 	MemoryPool* pool = new(mem +
-		ALIGN(sizeof(MemoryExtent)) +
-		ALIGN(sizeof(MemoryBlock))) 
+		MEM_ALIGN(sizeof(MemoryExtent)) +
+		MEM_ALIGN(sizeof(MemoryBlock))) 
 	MemoryPool(mem, mem + 
-		ALIGN(sizeof(MemoryExtent)) + 
-		ALIGN(sizeof(MemoryBlock)) + 
-		ALIGN(sizeof(MemoryPool)) + 
-		ALIGN(sizeof(MemoryBlock)));
+		MEM_ALIGN(sizeof(MemoryExtent)) + 
+		MEM_ALIGN(sizeof(MemoryBlock)) + 
+		MEM_ALIGN(sizeof(MemoryPool)) + 
+		MEM_ALIGN(sizeof(MemoryBlock)),
+		locking);
 	
-	MemoryBlock *poolBlk = (MemoryBlock*) (mem+ALIGN(sizeof(MemoryExtent)));
+	MemoryBlock *poolBlk = (MemoryBlock*) (mem+MEM_ALIGN(sizeof(MemoryExtent)));
 	poolBlk->pool = pool;
 	poolBlk->used = true;
 	poolBlk->last = false;
 	poolBlk->type = TYPE_POOL;
-	poolBlk->length = ALIGN(sizeof(MemoryPool));
+	poolBlk->length = MEM_ALIGN(sizeof(MemoryPool));
 	poolBlk->prev = NULL;
 	
 	MemoryBlock *hdr = (MemoryBlock*) (mem +
-		ALIGN(sizeof(MemoryExtent)) +
-		ALIGN(sizeof(MemoryBlock)) +
-		ALIGN(sizeof(MemoryPool)));
+		MEM_ALIGN(sizeof(MemoryExtent)) +
+		MEM_ALIGN(sizeof(MemoryBlock)) +
+		MEM_ALIGN(sizeof(MemoryPool)));
 	hdr->pool = pool;
 	hdr->used = true;
 	hdr->last = false;
 	hdr->type = TYPE_LEAFPAGE;
-	hdr->length = ALIGN(sizeof(FreeBlocksTree::ItemList));
+	hdr->length = MEM_ALIGN(sizeof(FreeBlocksTree::ItemList));
 	hdr->prev = poolBlk;
 	MemoryBlock *blk = (MemoryBlock *)(mem +
-		ALIGN(sizeof(MemoryExtent)) +
-		ALIGN(sizeof(MemoryBlock)) +
-		ALIGN(sizeof(MemoryPool)) +
-		ALIGN(sizeof(MemoryBlock)) +
-		ALIGN(sizeof(FreeBlocksTree::ItemList)));
+		MEM_ALIGN(sizeof(MemoryExtent)) +
+		MEM_ALIGN(sizeof(MemoryBlock)) +
+		MEM_ALIGN(sizeof(MemoryPool)) +
+		MEM_ALIGN(sizeof(MemoryBlock)) +
+		MEM_ALIGN(sizeof(FreeBlocksTree::ItemList)));
 	int blockLength = alloc_size -
-		ALIGN(sizeof(MemoryExtent)) -
-		ALIGN(sizeof(MemoryBlock)) -
-		ALIGN(sizeof(MemoryPool)) -
-		ALIGN(sizeof(MemoryBlock)) -
-		ALIGN(sizeof(FreeBlocksTree::ItemList)) -
-		ALIGN(sizeof(MemoryBlock));
+		MEM_ALIGN(sizeof(MemoryExtent)) -
+		MEM_ALIGN(sizeof(MemoryBlock)) -
+		MEM_ALIGN(sizeof(MemoryPool)) -
+		MEM_ALIGN(sizeof(MemoryBlock)) -
+		MEM_ALIGN(sizeof(FreeBlocksTree::ItemList)) -
+		MEM_ALIGN(sizeof(MemoryBlock));
 	blk->pool = pool;
 	blk->used = false;
 	blk->last = true;
@@ -207,7 +223,11 @@ void MemoryPool::deletePool(MemoryPool* pool) {
 	}
 }
 
-void* MemoryPool::alloc(size_t size, SSHORT type) {
+void* MemoryPool::alloc(size_t size, SSHORT type
+#ifdef DEBUG_GDS_ALLOC
+	, char* file, int line
+#endif
+) {
 	if (internalAlloc) {
 		if (size == sizeof(FreeBlocksTree::ItemList))
 			// This condition is to handle case when nodelist and itemlist have equal size
@@ -229,36 +249,45 @@ void* MemoryPool::alloc(size_t size, SSHORT type) {
 		}
 		assert(false);
 	}
+	if (locking) lock.enter();
 	// Lookup a block greater or equal than size in freeBlocks tree
-	size = ALIGN(size);
+	size = MEM_ALIGN(size);
 	BlockInfo temp = {NULL, size};
 	void *result;
 	if (freeBlocks.locate(locGreatEqual,temp)) {
 		// Found large enough block
 		BlockInfo* current = &freeBlocks.current();
-		if (current->length-size < ALIGN(sizeof(MemoryBlock))+ALLOC_ALIGNMENT) {
+		if (current->length-size < MEM_ALIGN(sizeof(MemoryBlock))+ALLOC_ALIGNMENT) {
 			// Block is small enough to be returned AS IS
 			current->block->used = true;
 			current->block->type = type;
-			result = (char *)current->block + ALIGN(sizeof(MemoryBlock));
+#ifdef DEBUG_GDS_ALLOC
+			current->block->file = file;
+			current->block->line = line;
+#endif
+			result = (char *)current->block + MEM_ALIGN(sizeof(MemoryBlock));
 			internalAlloc = true;
 			freeBlocks.fastRemove();
 			internalAlloc = false;
 		} else {
 			// Cut a piece at the end of block in hope to avoid structural
 			// modification of free blocks tree
-			current->block->length -= ALIGN(sizeof(MemoryBlock))+size;
+			current->block->length -= MEM_ALIGN(sizeof(MemoryBlock))+size;
 			MemoryBlock *blk = (MemoryBlock *)((char*)current->block + 
-				ALIGN(sizeof(MemoryBlock)) + current->block->length);
+				MEM_ALIGN(sizeof(MemoryBlock)) + current->block->length);
 			blk->pool = this;
 			blk->used = true;
+#ifdef DEBUG_GDS_ALLOC
+			blk->file = file;
+			blk->line = line;
+#endif
 			blk->last = current->block->last;
 			current->block->last = false;
 			blk->type = type;
 			blk->length = size;
 			blk->prev = current->block;
 			if (!blk->last)
-				((MemoryBlock *)((char*)blk + ALIGN(sizeof(MemoryBlock)) + blk->length))->prev = blk;
+				((MemoryBlock *)((char*)blk + MEM_ALIGN(sizeof(MemoryBlock)) + blk->length))->prev = blk;
 			// Update tree of free blocks
 			if (!freeBlocks.getPrev() || freeBlocks.current().length < current->block->length)
 				current->length = current->block->length;
@@ -277,81 +306,99 @@ void* MemoryPool::alloc(size_t size, SSHORT type) {
 				addFreeBlock(block);
 				internalAlloc = false;
 			}
-			result = (char*)blk+ALIGN(sizeof(MemoryBlock));
+			result = (char*)blk+MEM_ALIGN(sizeof(MemoryBlock));
 		}
 	} else {
 		// If we are in a critically low memory condition look up for a block in a list
 		// of pending free blocks. We do not do "best fit" in this case
 		PendingFreeBlock *itr = pendingFree, *prev = NULL;
 		while (itr) {
-			MemoryBlock *temp = (MemoryBlock *)((char*)itr-ALIGN(sizeof(MemoryBlock)));
+			MemoryBlock *temp = (MemoryBlock *)((char*)itr-MEM_ALIGN(sizeof(MemoryBlock)));
 			if (temp->length >= size) {
-				if (temp->length-size < ALIGN(sizeof(MemoryBlock))+ALLOC_ALIGNMENT) {
+				if (temp->length-size < MEM_ALIGN(sizeof(MemoryBlock))+ALLOC_ALIGNMENT) {
 					// Block is small enough to be returned AS IS
 					temp->used = true;
 					temp->type = type;
+#ifdef DEBUG_GDS_ALLOC
+					temp->file = file;
+					temp->line = line;
+#endif
 					// Remove block from linked list
 					if (prev)
 						prev->next = itr->next;
 					else
 						pendingFree = itr->next;						
+					if (locking) lock.leave();
 					return itr;
 				} else {
 					// Cut a piece at the end of block
 					// We don't need to modify tree of free blocks or a list of
 					// pending free blocks in this case
-					temp->length -= ALIGN(sizeof(MemoryBlock))+size;
+					temp->length -= MEM_ALIGN(sizeof(MemoryBlock))+size;
 					MemoryBlock *blk = (MemoryBlock *)((char*)temp + 
-						ALIGN(sizeof(MemoryBlock)) + temp->length);
+						MEM_ALIGN(sizeof(MemoryBlock)) + temp->length);
 					blk->pool = this;
 					blk->used = true;
+#ifdef DEBUG_GDS_ALLOC
+					blk->file = file;
+					blk->line = line;
+#endif
 					blk->last = temp->last;
 					temp->last = false;
 					blk->type = type;
 					blk->length = size;
 					blk->prev = temp;
 					if (!blk->last)
-						((MemoryBlock *)((char*)blk + ALIGN(sizeof(MemoryBlock)) + blk->length))->prev = blk;
-					return (char *)blk + ALIGN(sizeof(MemoryBlock));
+						((MemoryBlock *)((char*)blk + MEM_ALIGN(sizeof(MemoryBlock)) + blk->length))->prev = blk;
+					if (locking) lock.leave();
+					return (char *)blk + MEM_ALIGN(sizeof(MemoryBlock));
 				}
 			}
 			prev = itr;
 			itr = itr->next;
 		}
 		// No large enough block found. We need to extend the pool
-		size_t alloc_size = FB_MAX(ALIGN(sizeof(MemoryExtent))+ALIGN(sizeof(MemoryBlock))+size, MIN_EXTENT_SIZE);
+		size_t alloc_size = FB_MAX(MEM_ALIGN(sizeof(MemoryExtent))+MEM_ALIGN(sizeof(MemoryBlock))+size, MIN_EXTENT_SIZE);
 		MemoryExtent* extent = (MemoryExtent *)external_alloc(alloc_size);
-		if (!extent) pool_out_of_memory();
+		if (!extent) {
+			if (locking) lock.leave();
+			pool_out_of_memory();
+		}
 		extent->next = extents;
 		extents = extent;
 			
-		MemoryBlock *blk = (MemoryBlock *)((char*)extent+ALIGN(sizeof(MemoryExtent)));
+		MemoryBlock *blk = (MemoryBlock *)((char*)extent+MEM_ALIGN(sizeof(MemoryExtent)));
 		blk->pool = this;
 		blk->used = true;
 		blk->type = type;
+#ifdef DEBUG_GDS_ALLOC
+		blk->file = file;
+		blk->line = line;
+#endif
 		blk->prev = NULL;
-		if (alloc_size-size-ALIGN(sizeof(MemoryExtent))-ALIGN(sizeof(MemoryBlock)) < ALIGN(sizeof(MemoryBlock))+ALLOC_ALIGNMENT) {
+		if (alloc_size-size-MEM_ALIGN(sizeof(MemoryExtent))-MEM_ALIGN(sizeof(MemoryBlock)) < MEM_ALIGN(sizeof(MemoryBlock))+ALLOC_ALIGNMENT) {
 			// Block is small enough to be returned AS IS
 			blk->last = true;
-			blk->length = alloc_size - ALIGN(sizeof(MemoryExtent)) - ALIGN(sizeof(MemoryBlock));
+			blk->length = alloc_size - MEM_ALIGN(sizeof(MemoryExtent)) - MEM_ALIGN(sizeof(MemoryBlock));
 		} else {
 			// Cut a piece at the beginning of the block
 			blk->last = false;
 			blk->length = size;
 			// Put the rest to the tree of free blocks
-			MemoryBlock *rest = (MemoryBlock *)((char *)blk + ALIGN(sizeof(MemoryBlock)) + size);
+			MemoryBlock *rest = (MemoryBlock *)((char *)blk + MEM_ALIGN(sizeof(MemoryBlock)) + size);
 			rest->pool = this;
 			rest->used = false;
 			rest->last = true;
-			rest->length = alloc_size - ALIGN(sizeof(MemoryExtent)) - 
-				ALIGN(sizeof(MemoryBlock)) - size - ALIGN(sizeof(MemoryBlock));
+			rest->length = alloc_size - MEM_ALIGN(sizeof(MemoryExtent)) - 
+				MEM_ALIGN(sizeof(MemoryBlock)) - size - MEM_ALIGN(sizeof(MemoryBlock));
 			rest->prev = blk;
 			internalAlloc = true;
 			addFreeBlock(rest);
 			internalAlloc = false;
 		}
-		result = (char*)blk+ALIGN(sizeof(MemoryBlock));
+		result = (char*)blk+MEM_ALIGN(sizeof(MemoryBlock));
 	}
+	if (locking) lock.leave();
 	// Grow spare blocks pool if necessary
 	if (needSpare && !updatingSpare) updateSpare();
 	return result;
@@ -364,7 +411,7 @@ void MemoryPool::addFreeBlock(MemoryBlock *blk) {
 	} catch(...) {
 		// Add item to the list of pending free blocks in case of critically-low memory condition
 		PendingFreeBlock* temp = (PendingFreeBlock *)((char *)freeBlocks.getAddErrorValue().block+
-			ALIGN(sizeof(MemoryBlock)));
+			MEM_ALIGN(sizeof(MemoryBlock)));
 		temp->next = pendingFree;
 		pendingFree = temp;
 	}
@@ -378,7 +425,7 @@ void MemoryPool::removeFreeBlock(MemoryBlock *blk) {
 		// If we are in a critically-low memory condition our block could be in the
 		// pending free blocks list. Remove it from there
 		PendingFreeBlock *itr = pendingFree, 
-			*temp = (PendingFreeBlock *)((char *)blk+ALIGN(sizeof(MemoryBlock)));
+			*temp = (PendingFreeBlock *)((char *)blk+MEM_ALIGN(sizeof(MemoryBlock)));
 		if (itr == temp)
 			pendingFree = itr->next;
 		else
@@ -399,33 +446,34 @@ void MemoryPool::removeFreeBlock(MemoryBlock *blk) {
 void MemoryPool::free(void *block) {
 	if (internalAlloc) {
 		((PendingFreeBlock*)block)->next = pendingFree;
-		((MemoryBlock*)((char*)block-ALIGN(sizeof(MemoryBlock))))->used = false;
+		((MemoryBlock*)((char*)block-MEM_ALIGN(sizeof(MemoryBlock))))->used = false;
 		pendingFree = (PendingFreeBlock*)block;
 		needSpare = true;
 		return;
 	}
 	internalAlloc = true;
-	MemoryBlock *blk = (MemoryBlock *)((char*)block - ALIGN(sizeof(MemoryBlock))), *prev;
+	if (locking) lock.enter();
+	MemoryBlock *blk = (MemoryBlock *)((char*)block - MEM_ALIGN(sizeof(MemoryBlock))), *prev;
 	// Try to merge block with preceding free block
 	if ((prev = blk->prev) && !prev->used) {
 		removeFreeBlock(prev);
-		prev->length += blk->length + ALIGN(sizeof(MemoryBlock));
+		prev->length += blk->length + MEM_ALIGN(sizeof(MemoryBlock));
 
 		MemoryBlock *next = NULL;
 		if (blk->last) {
 			prev->last = true;
 		} else {
-			next = (MemoryBlock *)((char *)blk+ALIGN(sizeof(MemoryBlock))+blk->length);
+			next = (MemoryBlock *)((char *)blk+MEM_ALIGN(sizeof(MemoryBlock))+blk->length);
 			if (next->used) {
 				next->prev = prev;
 				prev->last = false;
 			} else {
 				// Merge next block too
 				removeFreeBlock(next);
-				prev->length += next->length + ALIGN(sizeof(MemoryBlock));
+				prev->length += next->length + MEM_ALIGN(sizeof(MemoryBlock));
 				prev->last = next->last;
 				if (!next->last)
-					((MemoryBlock *)((char *)next+ALIGN(sizeof(MemoryBlock))+next->length))->prev = prev;
+					((MemoryBlock *)((char *)next+MEM_ALIGN(sizeof(MemoryBlock))+next->length))->prev = prev;
 			}
 		}
 		addFreeBlock(prev);
@@ -435,18 +483,68 @@ void MemoryPool::free(void *block) {
 		blk->used = false;
 		// Try to merge block with next free block
 		if (!blk->last && 
-			!(next = (MemoryBlock *)((char*)blk+ALIGN(sizeof(MemoryBlock))+blk->length))->used) 
+			!(next = (MemoryBlock *)((char*)blk+MEM_ALIGN(sizeof(MemoryBlock))+blk->length))->used) 
 		{
 			removeFreeBlock(next);
-			blk->length += next->length + ALIGN(sizeof(MemoryBlock));
+			blk->length += next->length + MEM_ALIGN(sizeof(MemoryBlock));
 			blk->last = next->last;
 			if (!next->last)
-				((MemoryBlock *)((char *)next+ALIGN(sizeof(MemoryBlock))+next->length))->prev = blk;
+				((MemoryBlock *)((char *)next+MEM_ALIGN(sizeof(MemoryBlock))+next->length))->prev = blk;
 		}
 		addFreeBlock(blk);
 	}
+	if (locking) lock.leave();
 	internalAlloc = false;
 	if (needSpare && !updatingSpare) updateSpare();
 }
 
 } /* namespace Firebird */
+
+#ifndef TESTING_ONLY
+
+extern "C" {
+
+#ifdef DEBUG_GDS_ALLOC
+void* API_ROUTINE gds__alloc_debug(SLONG size_request,
+                                   TEXT* filename,
+                                   ULONG lineno)
+{
+	return Firebird::processMemoryPool->alloc(size_request, 0, filename, lineno);
+}
+#else
+void* API_ROUTINE gds__alloc(SLONG size_request)
+{
+	return Firebird::processMemoryPool->alloc(size_request);
+}
+#endif
+
+ULONG API_ROUTINE gds__free(void* blk) {
+	Firebird::processMemoryPool->free(blk);
+	return 0;
+}
+
+};
+
+void* operator new(size_t s) {
+#if defined(DEV_BUILD)
+	printf("You MUST allocate all memory from a pool.  Don't use the default global new().\n");
+#endif	// DEV_BUILD
+	return Firebird::processMemoryPool->alloc(s, 0
+#ifdef DEBUG_GDS_ALLOC
+	  ,__FILE__,__LINE__
+#endif
+	);
+}
+
+void* operator new[](size_t s) {
+#if defined(DEV_BUILD)
+	printf("You MUST allocate all memory from a pool.  Don't use the default global new[]().\n");
+#endif	// DEV_BUILD
+	return Firebird::processMemoryPool->alloc(s, 0
+#ifdef DEBUG_GDS_ALLOC
+	  ,__FILE__,__LINE__
+#endif
+	);
+}
+
+#endif

@@ -317,7 +317,7 @@ void testAllocator() {
 	MemoryPool::deletePool(pool);
 }
 
-void main() {
+int main() {
 	testVector();
 	testSortedVector();
 	testBePlusTree();

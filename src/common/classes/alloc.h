@@ -28,9 +28,16 @@
 
 #include <malloc.h>
 #include "../../include/fb_types.h"
+#include "../../include/firebird.h"
+#include "../jrd/common.h"
 #include "tree.h"
+#include "locks.h"
 
 #define MAX_TREE_DEPTH 4
+// Must be a power of 2
+#define ALLOC_ALIGNMENT 4
+
+#define MEM_ALIGN(X) FB_ALIGN(X,ALLOC_ALIGNMENT)
 
 namespace Firebird {
 
@@ -41,10 +48,10 @@ struct MemoryBlock /* 16 bytes of block header is not too much I think */ {
 	SSHORT type;
 	size_t length; /* Includes only actual block size, header not included */
 	struct MemoryBlock *prev;
-/*#ifdef DEBUG_GDS_ALLOC
+#ifdef DEBUG_GDS_ALLOC
 	char *file;
 	int line;
-#endif*/
+#endif
 };
 
 #define TYPE_POOL     -1
@@ -72,6 +79,10 @@ struct PendingFreeBlock {
 };
 
 // Memory pool based on B+ tree of free memory blocks
+
+// We are going to have two target architectures:
+// 1. Multi-process server with customizable lock manager
+// 2. Multi-threaded server with single process (SUPERSERVER)
 class MemoryPool {
 private:
 	typedef BePlusTree<BlockInfo, BlockInfo, MemoryPool, 
@@ -85,15 +96,23 @@ private:
 	bool needSpare;
 	bool updatingSpare;
 	PendingFreeBlock *pendingFree;
+#ifdef SUPERSERVER
+	Spinlock lock;
+#else
+	// FIXME: Shared memory lock needs to be here. Any attempt to use shared pool locking in CS will fail
+	Spinlock lock;
+#endif
+	bool locking;
 	
 	// Do not allow to create and destroy pool directly from outside
-	MemoryPool(void *first_extent, void *root_page) : 
+	MemoryPool(void *first_extent, void *root_page, bool _locking) : 
 		freeBlocks(this, root_page),
 		extents((MemoryExtent *)first_extent), 
 		internalAlloc(false),
 		needSpare(false),
 		updatingSpare(false),
-		pendingFree(NULL)
+		pendingFree(NULL),
+		locking(_locking)
 	{
 	}
 	
@@ -112,22 +131,87 @@ private:
 		
 	void removeFreeBlock(MemoryBlock *blk);
 public:
-	static MemoryPool* createPool();
+	static MemoryPool* createPool(bool locking = false);
+	
+	static MemoryPool* getProcessPool();
 
 	static void deletePool(MemoryPool* pool);
 
-	void* alloc(size_t size, SSHORT type = 0);
+	void* alloc(size_t size, SSHORT type = 0
+#ifdef DEBUG_GDS_ALLOC
+		, char *file = NULL, int line = 0
+#endif
+	);
 
 	void free(void *block);
 	
 	void verify_pool();
 
-/*	void* calloc(size_t size) {
-		void* result = malloc(size);
+	static void globalFree(void *block) {
+		((MemoryBlock*)((char*)block-MEM_ALIGN(sizeof(MemoryBlock))))->pool->free(block);
+	}
+	
+	void* calloc(size_t size, SSHORT type = 0
+#ifdef DEBUG_GDS_ALLOC
+		, char *file = NULL, int line = 0
+#endif
+	) {
+		void* result = alloc(size, type
+#ifdef DEBUG_GDS_ALLOC
+			, file, line
+#endif
+		);
 		memset(result,size,0);
-	}*/
+		return result;
+	}
 };
 
+}; // namespace Firebird
+
+#ifndef TESTING_ONLY
+
+extern "C" {
+#ifdef DEBUG_GDS_ALLOC
+void* API_ROUTINE gds__alloc_debug(SLONG size_request,
+                                   TEXT* filename,
+                                   ULONG lineno);
+#else
+void* API_ROUTINE gds__alloc(SLONG size_request);
+#endif
+ULONG API_ROUTINE gds__free(void* blk);
 };
+
+// Global versions of operator new() for compatibility with crappy libraries
+void* operator new(size_t);
+void* operator new[](size_t);
+
+#ifdef DEBUG_GDS_ALLOC
+inline void* operator new(size_t s, Firebird::MemoryPool* pool, char* file, int line) {
+	pool->alloc(s, 0, file, line);
+}
+inline void* operator new[](size_t s, Firebird::MemoryPool* pool, char* file, int line) {
+	pool->alloc(s, 0, pool, file, line);
+}
+#define FB_NEW(pool) new(pool,__FILE__,__LINE__)
+#define FB_NEW_RPT(pool,count) new(pool,count,__FILE__,__LINE__)
+#else
+inline void* operator new(size_t s, Firebird::MemoryPool* pool) {
+	return pool->alloc(s);
+}
+inline void* operator new[](size_t s, Firebird::MemoryPool* pool) {
+	return pool->alloc(s);
+}
+#define FB_NEW(pool) new(pool)
+#define FB_NEW_RPT(pool,count) new(pool,count)
+#endif
+
+inline void operator delete(void* mem) {
+	Firebird::MemoryPool::globalFree(mem);
+}
+inline void operator delete[](void* mem) {
+	Firebird::MemoryPool::globalFree(mem);
+}
+
+#endif
 
 #endif

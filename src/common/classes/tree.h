@@ -45,6 +45,10 @@
 #define LEAF_PAGE_SIZE 100
 #define NODE_PAGE_SIZE 100
 
+/*inline void* operator new (size_t size, void *place) {
+	return place;
+}*/
+
 namespace Firebird {
 
 class MallocAllocator {
@@ -58,10 +62,6 @@ public:
 };
 
 enum LocType { locEqual, locLess, locGreat, locGreatEqual, locLessEqual };
-
-/*inline void* operator new (size_t size, void *place) {
-	return place;
-}*/
 
 // Fast and simple B+ tree of simple types
 // Tree has state (current item) and no iterator classes. 
