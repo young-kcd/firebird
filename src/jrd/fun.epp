@@ -30,7 +30,7 @@
  * 2003.08.10 Claudio Valderrama: Fix SF Bugs #544132 and #728839.
  */
 /*
-$Id: fun.epp,v 1.65 2004-08-27 04:58:10 robocop Exp $
+$Id: fun.epp,v 1.66 2004-09-20 08:41:49 robocop Exp $
 */
 
 #include "firebird.h"
@@ -67,6 +67,7 @@ $Id: fun.epp,v 1.65 2004-08-27 04:58:10 robocop Exp $
 #include "../jrd/thread_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/blb.h"
+#include "../common/classes/auto.h"
 
 using namespace Jrd;
 
@@ -107,9 +108,9 @@ static void invoke(UserFunction*,
 				   fun_repeat*, 
 				   impure_value*,
 				   UDF_ARG*,
+				   const udf_blob* const return_blob_struct,
 				   bool&,
-				   UCHAR*&,
-				   DSC
+				   bool&
 );
 
 
@@ -170,10 +171,6 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 	value->vlu_desc = return_ptr->fun_desc;
 	value->vlu_desc.dsc_address = (UCHAR *) & value->vlu_misc;
 
-	// We'll use to this trick to give the UDF a way to signal
-	// "I sent a null blob" when not using descriptors.
-	udf_blob* return_blob_struct = 0;
-
 // Trap any potential errors
 
 	try {
@@ -198,6 +195,10 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 		}
 		value->vlu_desc.dsc_address = string->str_data;
 	}
+
+	// We'll use to this trick to give the UDF a way to signal
+	// "I sent a null blob" when not using descriptors.
+	udf_blob* return_blob_struct = 0;
 
 	DSC temp_desc;
 	double  d;
@@ -224,14 +225,14 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 
 		if (tail->fun_mechanism == FUN_descriptor)
 		{
-            // CVC: We have to protect the UDF from Borland's ill null signaling
-            // See EVL_expr(...), case nod_field for reference: the request may be
-            // signaling NULL, but the placeholder field created by EVL_field(...)
-            // doesn't carry the null flag in the descriptor. Why Borland didn't
-            // set on such flag is maybe because it only has local meaning.
-            // This closes SF Bug #728839.
-            if ((request->req_flags & req_null) && !(input && (input->dsc_flags & DSC_null)))
-            {
+			// CVC: We have to protect the UDF from Borland's ill null signaling
+			// See EVL_expr(...), case nod_field for reference: the request may be
+			// signaling NULL, but the placeholder field created by EVL_field(...)
+			// doesn't carry the null flag in the descriptor. Why Borland didn't
+			// set on such flag is maybe because it only has local meaning.
+			// This closes SF Bug #728839.
+			if ((request->req_flags & req_null) && !(input && (input->dsc_flags & DSC_null)))
+			{
 			    *arg_ptr++ = NULL;
 			}
 			else
@@ -277,7 +278,7 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 				}
 			}
 		}
-		else if ((SSHORT) abs(tail->fun_mechanism) == FUN_scalar_array)
+		else if (tail->fun_mechanism == FUN_scalar_array)
 		{
 			length = get_scalar_array(tail, input, (scalar_array_desc*)temp_ptr, array_stack);
 		}
@@ -496,11 +497,32 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 	// We don't know or can't handle the data type is some cases.
 	bool unsup_datatype = false;
 
-	invoke(function, return_ptr, value, args, unsup_datatype, temp_ptr, temp_desc);
+	// Did the udf manage to signal null in some way?
+	// We acknowledge null in three cases:
+	// a) rc_ptr = udf(); returns a null pointer -> result_was_null becomes true
+	// b) Udf used RETURNS PARAMETER <n> for a descriptor whose DSC_null flag is activated
+	// c) Udf used RETURNS PARAMETER <n> for a blob and made the blob handle null,
+	// because there's no current way to do that. Notice that it doesn't affect
+	// the engine internals, since blob_struct is a mere wrapper around the blob.
+	// Udfs work in the assumption that they ignore that the handle is the real
+	// internal blob and this has been always the tale.
+	bool result_was_null = false;
+	
+	invoke(function, return_ptr, value, args, return_blob_struct,
+		unsup_datatype, result_was_null);
 
 	if (unsup_datatype) {
 		IBERROR(169);			// msg 169 return data type not supported
 	}
+	
+	if (result_was_null)
+	{
+		request->req_flags |= req_null;
+		value->vlu_desc.dsc_flags |= DSC_null; // redundant, but be safe
+	}
+	else
+		request->req_flags &= ~req_null;
+
 	} // try
 	catch (const std::exception&) 
 	{
@@ -512,9 +534,7 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 		throw;
 	}
 
-    // We can't do this here: if temp_string was allocated, temp_ptr points to it
-    // if the length of the stack-based buffer is not enough. Moved below.
-	//delete temp_string;
+	delete temp_string;
 
 	while (blob_stack.hasData())
 	{
@@ -526,31 +546,9 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 		delete[] array_stack.pop();
 	}
 
-    // We acknowledge null in three cases:
-    // a) temp_ptr = udf(); returns a null pointer
-    // b) Udf used RETURNS PARAMETER <n> for a descriptor whose DSC_flag is activated
-    // c) Udf used RETURNS PARAMETER <n> for a blob and made the blob handle null,
-    // because there's no current way to do that. Notice that it doesn't affect
-    // the engine internals, since blob_struct is a mere wrapper around the blob.
-    // Udfs work in the assumption that they ignore that the handle is the real
-    // internal blob and this has been always the tale.
-	if (temp_ptr == NULL || function->fun_return_arg &&
-		(abs(return_ptr->fun_mechanism) == FUN_descriptor && (value->vlu_desc.dsc_flags & DSC_null)
-        || abs(return_ptr->fun_mechanism) == FUN_blob_struct && return_blob_struct &&
-            !return_blob_struct->blob_handle))
-	{
-		request->req_flags |= req_null;
-	}
-	else
-	{
-		request->req_flags &= ~req_null;
-	}
-
-	delete temp_string;
-
 	if (null_flag)
 	{
-	   request->req_flags |= req_null;
+		request->req_flags |= req_null;
 	}
 }
 
@@ -628,8 +626,8 @@ UserFunction* FUN_lookup_function(const Firebird::string& name, bool ShowAccessE
 
 	FOR(REQUEST_HANDLE request_fun) X IN RDB$FUNCTIONS
 		WITH X.RDB$FUNCTION_NAME EQ name.c_str()
-        if (!REQUEST(irq_l_functions))
-            REQUEST(irq_l_functions) = request_fun;
+		if (!REQUEST(irq_l_functions))
+			REQUEST(irq_l_functions) = request_fun;
 		USHORT count = 0, args = 0;
 		MOVE_CLEAR(temp, (SLONG) sizeof(temp));
 		ULONG length = 0;
@@ -637,8 +635,8 @@ UserFunction* FUN_lookup_function(const Firebird::string& name, bool ShowAccessE
 			WITH Y.RDB$FUNCTION_NAME EQ X.RDB$FUNCTION_NAME
 				SORTED BY Y.RDB$ARGUMENT_POSITION 
 
-            if (!REQUEST(irq_l_args))
-                REQUEST(irq_l_args) = request_arg;
+			if (!REQUEST(irq_l_args))
+				REQUEST(irq_l_args) = request_arg;
 			fun_repeat* tail = temp + Y.RDB$ARGUMENT_POSITION;
 			tail->fun_mechanism = (FUN_T) Y.RDB$MECHANISM;
 			count = MAX(count, Y.RDB$ARGUMENT_POSITION);
@@ -771,12 +769,12 @@ UserFunction* FUN_resolve(CompilerScratch* csb, UserFunction* function, jrd_nod*
 		if (function->fun_entrypoint && function->fun_args == args->nod_count) {
 			int score = 0;
 			jrd_nod** ptr;
-			fun_repeat* tail;
+			const fun_repeat* tail;
 			for (ptr = args->nod_arg, tail = function->fun_rpt + 1; ptr < end;
 				 ptr++, tail++)
 			{
 				CMP_get_desc(tdbb, csb, *ptr, &arg);
-				if ((SSHORT) abs(tail->fun_mechanism) == FUN_descriptor)
+				if (tail->fun_mechanism == FUN_descriptor)
 					score += 10;
 				else if (tail->fun_desc.dsc_dtype == dtype_blob ||
 						 arg.dsc_dtype == dtype_blob)
@@ -918,9 +916,11 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 		to.dsc_scale != from.dsc_scale || to.dsc_length != from.dsc_length)
 	{
 		SLONG n = array_desc->iad_count;
-		UCHAR* temp = FB_NEW(*getDefaultMemoryPool()) UCHAR[(SLONG) to.dsc_length * n];
+		UCHAR* const temp = FB_NEW(*getDefaultMemoryPool()) UCHAR[(SLONG) to.dsc_length * n];
 		to.dsc_address = temp;
 		from.dsc_address = data;
+		
+		// This loop may call ERR_post indirectly.
 		for (; n; --n, to.dsc_address += to.dsc_length,
 			 from.dsc_address += array_desc->iad_element_length)
 		{
@@ -950,13 +950,28 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 		(dimensions - 1) * sizeof(scalar_array_desc::sad_repeat);
 }
 
+/* We'll use it the day we get rid of SEH.
+namespace {
+	class MemoryFree
+	{
+	public:
+		static void clear(void* p)
+		{
+			if (p)
+				free(p);
+		}
+	};
+} // namespace
+*/
+
+
 static void invoke(UserFunction* function, 
 				   fun_repeat* return_ptr, 
 				   impure_value* value,
 				   UDF_ARG* args,
+				   const udf_blob* const return_blob_struct,
 				   bool& unsup_datatype,
-				   UCHAR*& temp_ptr,
-				   DSC temp_desc
+				   bool& result_is_null
 )
 {
 /**************************************
@@ -978,9 +993,15 @@ static void invoke(UserFunction* function,
 		THREAD_EXIT();
 		CALL_UDF(function->fun_entrypoint, void);
 		THREAD_ENTER();
+		result_is_null = return_ptr->fun_mechanism == FUN_descriptor
+				&& (value->vlu_desc.dsc_flags & DSC_null)
+			|| return_ptr->fun_mechanism == FUN_blob_struct && return_blob_struct &&
+				!return_blob_struct->blob_handle;
 	}
-	else if ((SLONG) return_ptr->fun_mechanism == FUN_value)
+	else if (return_ptr->fun_mechanism == FUN_value)
 	{
+		result_is_null = false;
+		
 		switch (value->vlu_desc.dsc_dtype)
 		{
 		case dtype_sql_time:
@@ -1041,58 +1062,54 @@ static void invoke(UserFunction* function,
 	{
 		THREAD_EXIT();
 		typedef UCHAR* pUCHAR;
-		temp_ptr = CALL_UDF(function->fun_entrypoint, pUCHAR);
+		UCHAR* temp_ptr = CALL_UDF(function->fun_entrypoint, pUCHAR);
 		THREAD_ENTER();
-
+		
 		if (temp_ptr != NULL)
 		{
 			// CVC: Allow processing of return by descriptor.
-			//		The assumption is that the user didn't modify the return type,
-			//		that has no sense after all, because it is carved in stone.
+			//		If the user did modify the return type, then we'll try to
+			//		convert it to the declared return type of the UDF.
 			dsc* return_dsc = 0;
-			bool null_signaled = false;
-			if (abs(return_ptr->fun_mechanism) == FUN_descriptor)
+			result_is_null = false;
+			if ((FUN_T) abs(return_ptr->fun_mechanism) == FUN_descriptor)
 			{
-			    // The formal param's type is contained in value->vlu_desc.dsc_dtype
-			    // but I want to know if the UDF changed it to a compatible type
-			    // from its returned descriptor, that will be return_dsc.
-                return_dsc = reinterpret_cast<DSC*>(temp_ptr);
+				// The formal param's type is contained in value->vlu_desc.dsc_dtype
+				// but I want to know if the UDF changed it to a compatible type
+				// from its returned descriptor, that will be return_dsc.
+				return_dsc = reinterpret_cast<dsc*>(temp_ptr);
 				temp_ptr = return_dsc->dsc_address;
 				if (!temp_ptr || (return_dsc->dsc_flags & DSC_null))
-				{
-					null_signaled = true;
-					value->vlu_desc.dsc_flags |= DSC_null;
-				}
+					result_is_null = true;
 			}
-			if (!null_signaled)
+			
+			const bool must_free = (SLONG) return_ptr->fun_mechanism < 0;
+			/* We'll use it the day we get rid of SEH.
+			For now, if MOV_move calls ERR_post, we leak memory allocated in the UDF.
+			Firebird::AutoPtr<void, MemoryFree> sentryData(must_free ? temp_ptr: 0);
+			Firebird::AutoPtr<void, MemoryFree> sentryDsc(must_free ? return_dsc : 0);
+			*/
+			
+			if (result_is_null)
+				; // nothing to do
+			else
+			if (return_dsc)
 			{
+				MOV_move(return_dsc, &value->vlu_desc);
+			}
+			else
+			{
+				DSC temp_desc;
+				
 				switch (value->vlu_desc.dsc_dtype)
 				{
 				case dtype_sql_date:
 				case dtype_sql_time:
-				    value->vlu_misc.vlu_long = *(SLONG *) temp_ptr;
-				    break;
-				    
+					value->vlu_misc.vlu_long = *(SLONG *) temp_ptr;
+					break;
+
 				case dtype_long:
-				    if (return_dsc)
-				    {
-				    	switch (return_dsc->dsc_dtype)
-				    	{
-	                    case dtype_short:
-    		                value->vlu_misc.vlu_long = *(SSHORT *) temp_ptr;
-            	            break;
-                	    case dtype_long:
-                    	    value->vlu_misc.vlu_long = *(SLONG *) temp_ptr;
-                        	break;
-	                    default:
-    	                    unsup_datatype = true;
-        	                break;
-					    }
-					}
-				    else
-				    {
-					    value->vlu_misc.vlu_long = *(SLONG *) temp_ptr;
-					}
+						value->vlu_misc.vlu_long = *(SLONG *) temp_ptr;
 					break;
 
 				case dtype_short:
@@ -1104,28 +1121,7 @@ static void invoke(UserFunction* function,
 					break;
 
 				case dtype_int64:
-				    if (return_dsc)
-				    {
-					    switch (return_dsc->dsc_dtype)
-					    {
-					    case dtype_short:
-					        value->vlu_misc.vlu_int64 = *(SSHORT *) temp_ptr;
-					        break;
-                	    case dtype_long:
-                    	    value->vlu_misc.vlu_int64 = *(SLONG *) temp_ptr;
-                        	break;
-					    case dtype_int64:
-					        value->vlu_misc.vlu_int64 = *(SINT64 *) temp_ptr;
-					        break;
-					    default:
-                	        unsup_datatype = true;
-                    	    break;
-					    }
-					}
-				    else
-				    {
-					    value->vlu_misc.vlu_int64 = *(SINT64 *) temp_ptr;
-					}
+					value->vlu_misc.vlu_int64 = *(SINT64 *) temp_ptr;
 					break;
 
 				case dtype_double:
@@ -1136,32 +1132,32 @@ static void invoke(UserFunction* function,
 					break;
 
 				case dtype_text:
-                    temp_desc = value->vlu_desc;
-                    temp_desc.dsc_address = temp_ptr;
-                    MOV_move(&temp_desc, &value->vlu_desc);
-                    break;
-                                       
+					temp_desc = value->vlu_desc;
+					temp_desc.dsc_address = temp_ptr;
+					MOV_move(&temp_desc, &value->vlu_desc);
+					break;
+
 				case dtype_cstring:
-                    // For the ttype_binary char. set, this will truncate
-                    // the string after the first zero octet copied.
-                    temp_desc = value->vlu_desc;
-                    temp_desc.dsc_address = temp_ptr;
-                    temp_desc.dsc_length =
-                        strlen(reinterpret_cast<char *>(temp_ptr)) + 1;
-                    MOV_move(&temp_desc, &value->vlu_desc);
-                    break;
-                                       
+					// For the ttype_binary char. set, this will truncate
+					// the string after the first zero octet copied.
+					temp_desc = value->vlu_desc;
+					temp_desc.dsc_address = temp_ptr;
+					temp_desc.dsc_length =
+						strlen(reinterpret_cast<char*>(temp_ptr)) + 1;
+					MOV_move(&temp_desc, &value->vlu_desc);
+					break;
+
 				case dtype_varying:
 					temp_desc = value->vlu_desc;
 					temp_desc.dsc_address = temp_ptr;
-                    temp_desc.dsc_length =
-                        reinterpret_cast<vary*>(temp_ptr)->vary_length + sizeof(USHORT);
+					temp_desc.dsc_length =
+						reinterpret_cast<vary*>(temp_ptr)->vary_length + sizeof(USHORT);
 					MOV_move(&temp_desc, &value->vlu_desc);
 					break;
 
 				case dtype_timestamp:
 					{
-						SLONG* ip = (SLONG *) temp_ptr;
+						const SLONG* ip = (SLONG *) temp_ptr;
 						value->vlu_misc.vlu_dbkey[0] = *ip++;
 						value->vlu_misc.vlu_dbkey[1] = *ip;
 					}
@@ -1173,16 +1169,24 @@ static void invoke(UserFunction* function,
 				}
 			}
 			
-			// check if this is function has the FREE_IT set, if set and
-			// return_value is not null, then free the return value
-			if ((SLONG) return_ptr->fun_mechanism < 0 && temp_ptr)
-			{
-				free(temp_ptr);
+			/* We'll use it the day we get rid of SEH and the destructor can work.
+			CVC: This code is explicit but redundant. If it doesn't run,
+			the destructor of AutoPtr will invoke the cleanup anyway.
+			*/
+			// Check if this is function has the FREE_IT set, if set and
+			// return_value is not null, then free the return value.
+			if (must_free) {
+				//sentryData = 0;
+				if (temp_ptr)
+					free(temp_ptr);
+				// CVC: Let's free the descriptor, too.
+				//sentryDsc = 0;
+				if (return_dsc)
+					free(return_dsc);
 			}
-			// CVC: Let's free the descriptor, too.
-			if (return_dsc)
-			    free(return_dsc);
 		}
+		else
+			result_is_null = true;
 	}
 	END_CHECK_FOR_EXCEPTIONS(function->fun_exception_message.c_str());
 }
