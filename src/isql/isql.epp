@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.32.2.2 2003-11-13 07:31:24 bellardo Exp $
+  $Id: isql.epp,v 1.32.2.3 2003-11-13 22:46:06 bellardo Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -3671,6 +3671,7 @@ static SSHORT get_statement(TEXT ** statement_ref,
 	INDEV flist, oflist;
 	TEXT con_prompt[MSG_LENGTH];
 	SSHORT incomment = FALSE;
+	SSHORT incomment_eol_term = FALSE;
 	SSHORT in_single_quoted_string = FALSE;	/* set to true once we are
 											   inside a single quoted string */
 	SSHORT in_double_quoted_string = FALSE;
@@ -3782,6 +3783,14 @@ static SSHORT get_statement(TEXT ** statement_ref,
 			*p++ = c;
 			count++;
 
+			/* Check for comments that terminate at the end of line */
+			if (incomment && incomment_eol_term)
+			{
+				incomment = incomment_eol_term = FALSE;
+				Continuation = TRUE;
+				break;
+			}
+
 			/* If in a comment, keep reading */
 			if (incomment && Interactive && (Ifp == ib_stdin)) {
 				/*  Comment prompt */
@@ -3861,15 +3870,34 @@ static SSHORT get_statement(TEXT ** statement_ref,
 			}
 			break;
 
+		case '-':
+			/* Could this the be start of a comment until end of line.
+			   * ignore possibilities of a comment beginning inside
+			   * quoted strings.
+			 */
+			if (count && (*(p - 1) == '-') &&
+				!in_single_quoted_string && !in_double_quoted_string)
+			{
+					incomment = TRUE;
+					incomment_eol_term = TRUE;
+			}
+			*p++ = c;
+			blank = FALSE;
+			count++;
+			break;
+
 		case '*':
 			/* Could this the be start of a comment.  We can only look back,
 			   **   not forward
 			   * ignore possibilities of a comment beginning inside
 			   * quoted strings.
 			 */
-			if (count && (*(p - 1) == '/') &&
+			if (count && (*(p - 1) == '/') && !incomment_eol_term &&
 				!in_single_quoted_string && !in_double_quoted_string)
+				{
 					incomment = TRUE;
+					incomment_eol_term = FALSE;
+				}
 			*p++ = c;
 			blank = FALSE;
 			count++;
@@ -3880,9 +3908,12 @@ static SSHORT get_statement(TEXT ** statement_ref,
 			   * ignore possibilities of a comment ending inside
 			   * quoted strings.
 			 */
-			if (incomment && (*(p - 1) == '*') &&
+			if (incomment && (*(p - 1) == '*') && !incomment_eol_term &&
 				!in_single_quoted_string && !in_double_quoted_string)
+			{
 					incomment = FALSE;
+					incomment_eol_term = FALSE;
+			}
 			*p++ = c;
 			blank = FALSE;
 			count++;
