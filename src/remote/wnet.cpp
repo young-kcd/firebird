@@ -1138,7 +1138,7 @@ static STR make_pipe_name(
 	strcpy(q, PIPE_PREFIX);
 	q += strlen(PIPE_PREFIX);
 	*q++ = '\\';
-	const char *pipe_name = Config::getRemotePipePrefix();
+	const char *pipe_name = Config::getRemotePipeName();
 	strcpy(q, pipe_name);
 	q += strlen(pipe_name);
 	*q++ = '\\';
