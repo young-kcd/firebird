@@ -1,3 +1,33 @@
+2003-11-21 20:52  kkuznetsov
+
+	* firebird2/configure.in:
+	
+	first trying gcc for solx86
+
+2003-11-21 20:45  kkuznetsov
+
+	* firebird2/: builds/posix/prefix.solx86gcc, src/lock/lock.cpp:
+	
+	some solaris fixes
+
+2003-11-21 20:42  kkuznetsov
+
+	* firebird2/src/common/classes/rwlock.h:
+	
+	Write solaris portion of RWlock
+
+2003-11-21 16:42  skidder
+
+	* firebird2/src/include/gen/autoconfig_msvc.h:
+	
+	Fix MSVC build after Erik's changes
+
+2003-11-21 12:07  aafemt
+
+	* firebird2/src/jrd/: filte_proto.h, filters.cpp:
+	
+	'struct' and type cleanup
+
 2003-11-20 22:53  bellardo
 
 	* firebird2/src/jrd/: all.cpp, all.h, jrd.h:
