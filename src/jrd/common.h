@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.106 2004-03-08 18:44:24 skidder Exp $
+$Id: common.h,v 1.107 2004-03-09 00:17:02 skidder Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -930,6 +930,12 @@ typedef struct
 #define VSNPRINTF(a,b,c,d) vsnprintf(a,b,c,d)
 #else
 #define VSNPRINTF(a,b,c,d) vsprintf(a,c,d)
+#endif
+
+#ifdef HAVE_SNPRINTF
+#define SNPRINTF snprintf
+#else
+#define SNPRINTF(buffer, length, ...) sprintf(buffer, __VA_ARGS__)
 #endif
 
 #define IMPLEMENT_TRACE_ROUTINE(routine, subsystem) \

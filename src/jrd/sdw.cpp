@@ -175,8 +175,8 @@ int SDW_add_file(const TEXT* file_name, SLONG start, USHORT shadow_number)
    and set up to release it in case of error. Align
    the spare page buffer for raw disk access. */
 
-	SCHAR* const spare_buffer = (SCHAR*)
-		gds__alloc((SLONG) dbb->dbb_page_size + MIN_PAGE_SIZE);
+	SCHAR* const spare_buffer = 
+		FB_NEW(*tdbb->tdbb_default) char[dbb->dbb_page_size + MIN_PAGE_SIZE];
 	// And why doesn't the code check that the allocation succeeds?
 
 	SCHAR* spare_page =
@@ -206,9 +206,8 @@ int SDW_add_file(const TEXT* file_name, SLONG start, USHORT shadow_number)
 					reinterpret_cast<pag*>(header),
 					0))
 	{
-		if (spare_buffer) {
-			gds__free(spare_buffer);
-		}
+		if (spare_buffer)
+			delete[] spare_buffer;
 		return 0;
 	}
 	next->fil_fudge = 1;
@@ -254,9 +253,8 @@ else
 						reinterpret_cast<pag*>(header),
 						0))
 		{
-			if (spare_buffer) {
-				gds__free(spare_buffer);
-			}
+			if (spare_buffer)
+				delete[] spare_buffer;
 			return 0;
 		}
 		if (file->fil_min_page) {
@@ -268,15 +266,13 @@ else
 		file->fil_fudge = 1;
 	}
 
-	if (spare_buffer) {
-		gds__free(spare_buffer);
-	}
+	if (spare_buffer)
+		delete[] spare_buffer;
 
 	}	// try
 	catch (const std::exception&) {
-		if (spare_buffer) {
-			gds__free(spare_buffer);
-		}
+		if (spare_buffer)
+			delete[] spare_buffer;
 		throw;
 	}
 
@@ -947,7 +943,7 @@ void SDW_start(
 
 	shadow = NULL;
 	SLONG* const spare_buffer =
-		(SLONG *) gds__alloc((SLONG) dbb->dbb_page_size + MIN_PAGE_SIZE);
+		FB_NEW(*tdbb->tdbb_default) SLONG[(dbb->dbb_page_size + MIN_PAGE_SIZE)/sizeof(SLONG)];
 	SLONG* spare_page = reinterpret_cast<SLONG*>((SCHAR *)
 											  (((U_IPTR)
 												spare_buffer + MIN_PAGE_SIZE -
@@ -1041,9 +1037,8 @@ void SDW_start(
 /* get the ancillary files and reset the error environment */
 
 	PAG_init2(shadow_number);
-	if (spare_buffer) {
-		gds__free(spare_buffer);
-	}
+	if (spare_buffer)
+		delete[] spare_buffer;
 
 	}	// try
 	catch (const std::exception& ex) {
@@ -1055,9 +1050,8 @@ void SDW_start(
 			PIO_close(shadow_file);
 			delete shadow_file;
 		}
-		if (spare_buffer) {
-			gds__free(spare_buffer);
-		}
+		if (spare_buffer)
+			delete[] spare_buffer;
 		if (file_flags & FILE_manual && !delete_) {
 			ERR_post(isc_shadow_missing, isc_arg_number,
 					 (SLONG) shadow_number, 0);

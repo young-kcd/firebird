@@ -1813,11 +1813,7 @@ static void trace_line(const char* message, ...) {
 	char buffer[1024];
 	va_list params;
 	va_start(params, message);
-#ifdef HAVE_VSNPRINTF
-	vsnprintf(buffer, sizeof(buffer), message, params);
-#else
-	vsprintf(buffer, message, params);
-#endif
+	VSNPRINTF(buffer, sizeof(buffer), message, params);
 	va_end(params);
 	buffer[sizeof(buffer) - 1] = 0;
 	gds__trace_raw(buffer);
@@ -3693,10 +3689,15 @@ static USHORT get_plan_info(
 							  &join_count, &level)) 
 			{
 				// assume we have run out of room in the buffer, try again with a larger one 
-
-				buffer_ptr =
-					reinterpret_cast<char*>(gds__alloc(BUFFER_XLARGE));
-				buffer_length = BUFFER_XLARGE;
+				char* temp = reinterpret_cast<char*>(gds__alloc(BUFFER_XLARGE));
+				if (!temp) {
+					// NOMEM. Do not attempt one more try
+					i++;
+					continue;
+				} else {
+					buffer_ptr = temp;
+					buffer_length = BUFFER_XLARGE;
+				}
 				break;
 			}
 		}

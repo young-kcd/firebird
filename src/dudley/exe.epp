@@ -3793,6 +3793,9 @@ static void set_generator( DUDLEY_NOD node)
 
 	current_blr.str_current = current_blr.str_start =
 		reinterpret_cast<UCHAR *>(gds__alloc(1028));
+	if (!current_blr.str_current) {
+		DDL_error_abort(NULL, 14, 0, 0, 0, 0, 0);	/* msg 14: memory exhausted */
+	}
 	current_blr.str_length = 1028;
 
 #ifdef DEBUG_GDS_ALLOC
@@ -3817,6 +3820,9 @@ static void set_generator( DUDLEY_NOD node)
 	*number = new_val - gen_value;
 	new_blr.str_current = new_blr.str_start =
 		reinterpret_cast<UCHAR*>(gds__alloc(1028));
+	if (!new_blr.str_current) {
+		DDL_error_abort(NULL, 14, 0, 0, 0, 0, 0);	/* msg 14: memory exhausted */
+	}
 	new_blr.str_length = 1028;
 
 #ifdef DEBUG_GDS_ALLOC
@@ -3907,6 +3913,8 @@ static void store_blr( DUDLEY_NOD node, ISC_QUAD* blob_id, DUDLEY_REL relation)
 
 	blr.str_current = blr.str_start = 
 		reinterpret_cast<UCHAR*>(gds__alloc(4096));
+	if (!blr.str_current)
+		DDL_error_abort(NULL, 14, 0, 0, 0, 0, 0);	/* msg 14: memory exhausted */
 	blr.str_length = 4096;
 
 #ifdef DEBUG_GDS_ALLOC

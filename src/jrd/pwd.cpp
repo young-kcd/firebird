@@ -222,6 +222,14 @@ bool SecurityDatabase::prepare()
 	if (!ihandle)
 	{
 		ihandle = (ihndl*) gds__alloc ((SLONG) sizeof(struct ihndl));
+		if (!ihandle)
+		{
+			THREAD_EXIT;
+			status[0] = isc_arg_gds;
+			status[1] = isc_virmemexh;
+			status[2] = isc_arg_end;
+			return false;
+		}
 		ihandle->ihndl_object = &lookup_db;
 		ihandle->ihndl_next = internal_db_handles;
 		internal_db_handles = ihandle;

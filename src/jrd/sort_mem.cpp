@@ -61,13 +61,13 @@ SortMem::MemoryBlock::MemoryBlock(Block* tail, size_t length)
 	: Block(tail, length)
 {
 	// Allocate virtual memory block
-	address = reinterpret_cast<char*>(gds__alloc(size));
+	address = FB_NEW(*getDefaultMemoryPool()) char[size];
 }
 
 SortMem::MemoryBlock::~MemoryBlock()
 {
 	// Free virtual memory block
-	gds__free(address);
+	delete[] address;
 }
 
 size_t SortMem::MemoryBlock::read(ISC_STATUS *status, size_t position, char *buffer, size_t length)

@@ -4127,30 +4127,23 @@ static void put_summary_blob(blb* blob, RSR_T type, bid* blob_id)
 		return;
 
 	// Go ahead and open blob
-
 	blb* blr = BLB_open(tdbb, dbb->dbb_sys_trans, blob_id);
 	fb_assert(blr->blb_length <= MAX_USHORT);
 	USHORT length = (USHORT)blr->blb_length;
-	UCHAR* buffer = (length > sizeof(temp)) ?
-		(UCHAR*) gds__alloc((SLONG) blr->blb_length) : temp;
-
-	// Setup to cleanup after any error that may occur
-
+	UCHAR *buffer = (length > sizeof(temp)) ?
+		FB_NEW(*getDefaultMemoryPool()) UCHAR[blr->blb_length] : temp;
 	try {
 		length = (USHORT)BLB_get_data(tdbb, blr, buffer, (SLONG) length);
 		put_summary_record(blob, type, buffer, length);
 	}
-	catch (const std::exception& ex) {
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		if (buffer != temp) {
-			gds__free(buffer);
-		}
-		ERR_punt();
+	catch (const std::exception&) {
+		if (buffer != temp)
+			delete[] buffer;
+		throw;
 	}
 
-	if (buffer != temp) {
-		gds__free(buffer);
-	}
+	if (buffer != temp)
+		delete[] buffer;
 }
 
 
@@ -4174,7 +4167,7 @@ static void put_summary_record(blb*		blob,
 	UCHAR temp[129];
 
 	UCHAR* buffer = ((size_t) (length + 1) > sizeof(temp)) ?
-		(UCHAR *) gds__alloc((SLONG) (length + 1)) : temp;
+		FB_NEW(*getDefaultMemoryPool()) UCHAR[length + 1] : temp;
 
 	UCHAR* p = buffer;
 
@@ -4189,17 +4182,14 @@ static void put_summary_record(blb*		blob,
 	try {
 		BLB_put_segment(tdbb, blob, buffer, (USHORT)(p - buffer));
 	}
-	catch (const std::exception& ex) {
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		if (buffer != temp) {
-			gds__free(buffer);
-		}
-		ERR_punt();
+	catch (const std::exception&) {
+		if (buffer != temp)
+			delete[] buffer;
+		throw;
 	}
 
-	if (buffer != temp) {
-		gds__free(buffer);
-	}
+	if (buffer != temp)
+		delete[] buffer;
 }
 
 

@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.cpp,v 1.42 2004-03-07 07:58:25 robocop Exp $
+ *  $Id: alloc.cpp,v 1.43 2004-03-09 00:16:55 skidder Exp $
  *
  */
 
@@ -250,6 +250,24 @@ void* MemoryPool::allocate(size_t size, SSHORT type
 	lock.leave();
 	if (!result)
 		pool_out_of_memory();
+	// test with older behavior
+	// memset(result,0,size);
+	return result;
+}
+
+void* MemoryPool::allocate_nothrow(size_t size, SSHORT type
+#ifdef DEBUG_GDS_ALLOC
+	, const char* file, int line
+#endif
+) {
+	lock.enter();
+	void* result = internal_alloc(size, type
+#ifdef DEBUG_GDS_ALLOC
+		, file, line
+#endif
+	);
+	if (needSpare) updateSpare();
+	lock.leave();
 	// test with older behavior
 	// memset(result,0,size);
 	return result;

@@ -274,12 +274,12 @@ void* API_ROUTINE gds__alloc_debug(SLONG size_request,
                                    const TEXT* filename,
                                    ULONG lineno)
 {
-	return getDefaultMemoryPool()->allocate(size_request, 0, filename, lineno);
+	return getDefaultMemoryPool()->allocate_nothrow(size_request, 0, filename, lineno);
 }
 #else
 void* API_ROUTINE gds__alloc(SLONG size_request)
 {
-	return getDefaultMemoryPool()->allocate(size_request);
+	return getDefaultMemoryPool()->allocate_nothrow(size_request);
 }
 #endif
 

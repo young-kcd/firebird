@@ -2727,6 +2727,11 @@ static void THREAD_ROUTINE sweep_database(char* database)
 	if (!ihandle)
 	{
 		ihandle = (ihndl*) gds__alloc ((SLONG) sizeof (struct ihndl));
+		if (!ihandle) {
+			THREAD_EXIT;
+			ERR_log(0, 0, "cannot start sweep thread: out of memory");
+			return;
+		}
 		ihandle->ihndl_object = &db_handle;
 		ihandle->ihndl_next = internal_db_handles;
 		internal_db_handles = ihandle;

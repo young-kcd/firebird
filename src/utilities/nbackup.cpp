@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbackup.cpp,v 1.14 2004-02-20 06:43:20 robocop Exp $
+ *  $Id: nbackup.cpp,v 1.15 2004-03-09 00:17:05 skidder Exp $
  *
  */
  
@@ -107,11 +107,7 @@ public:
 		char temp[1024];		
 		va_list params;
 		va_start(params, message);
-#ifdef HAVE_VSNPRINTF
-		vsnprintf(temp, sizeof(temp), message, params);
-#else
-		vsprintf(temp, message, params);
-#endif
+		VSNPRINTF(temp, sizeof(temp), message, params);
 		fprintf(stderr, "Failure: %s\n", temp);
 		va_end(params);
 		throw b_error(temp);

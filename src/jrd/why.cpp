@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.56 2004-03-07 07:58:42 robocop Exp $
+$Id: why.cpp,v 1.57 2004-03-09 00:17:03 skidder Exp $
 */
 
 #include "firebird.h"
@@ -5413,15 +5413,13 @@ static const PTR get_entrypoint(int proc,
 
 	if (image && name)
 	{
-#define BufSize 128
+#define BufSize 128		
 		TEXT Buffer[BufSize];
 		SLONG NameLength = strlen(name) + 1;
-		TEXT *NamePointer = NameLength > BufSize ? 
-			reinterpret_cast<TEXT *>(gds__alloc(NameLength)) : Buffer;
+		fb_assert(NameLength < BufSize);
+		TEXT *NamePointer = Buffer;
 		memcpy(NamePointer, name, NameLength);
 		PTR entry = (PTR) ISC_lookup_entrypoint(image, NamePointer, NULL, false);
-		if (NameLength > BufSize)
-			gds__free(NamePointer);
 		if (entry)
 		{
 			// This const_cast appears to be safe, because:

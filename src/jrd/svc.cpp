@@ -479,6 +479,7 @@ svc* SVC_attach(USHORT	service_length,
 		USHORT param_length = sizeof(SERVICE_THD_PARAM) - 1;
 		USHORT spb_buf_length = spb_length + param_length - ignored_length + 1;
 		SCHAR* q = spb_buf = (TEXT*) gds__alloc(spb_buf_length + 1);
+		if(!q) ERR_post(isc_virmemexh, 0);
 		memcpy(q, spb, p - spb);
 		q += p - spb - 1;
 		*q++ += param_length - ignored_length + 1;

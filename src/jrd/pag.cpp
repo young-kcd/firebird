@@ -976,7 +976,7 @@ void PAG_header(const TEXT* file_name, USHORT file_length)
    and unit of transfer is a multiple of physical disk
    sector for raw disk access. */
 
-	SCHAR* const temp_buffer = (SCHAR*)gds__alloc((SLONG) 2 * MIN_PAGE_SIZE);
+	SCHAR* const temp_buffer = FB_NEW(*getDefaultMemoryPool()) SCHAR[2 * MIN_PAGE_SIZE];
 	SCHAR* temp_page =
 		(SCHAR *) (((U_IPTR) temp_buffer + MIN_PAGE_SIZE - 1) &
 				   ~((U_IPTR) MIN_PAGE_SIZE - 1));
@@ -1112,12 +1112,11 @@ if (header->hdr_implementation && header->hdr_implementation != CLASS)
 	}
 
 	if (temp_buffer)
-		gds__free(temp_buffer);
+		delete[] temp_buffer;
 	}	// try
 	catch (const std::exception&) {
-		if (temp_buffer) {
-			gds__free(temp_buffer);
-		}
+		if (temp_buffer)
+			delete[] temp_buffer;
 		throw;
 	}
 }
@@ -1213,8 +1212,7 @@ void PAG_init2(USHORT shadow_number)
    and set up to release it in case of error. Align
    the temporary page buffer for raw disk access. */
 
-	SCHAR* const temp_buffer = 
-		(SCHAR*) gds__alloc((SLONG) dbb->dbb_page_size + MIN_PAGE_SIZE);
+	SCHAR* const temp_buffer = FB_NEW(*getDefaultMemoryPool()) SCHAR[dbb->dbb_page_size + MIN_PAGE_SIZE];
 	SCHAR* temp_page =
 		(SCHAR *) (((U_IPTR) temp_buffer + MIN_PAGE_SIZE - 1) &
 				   ~((U_IPTR) MIN_PAGE_SIZE - 1));
@@ -1340,14 +1338,12 @@ void PAG_init2(USHORT shadow_number)
 		file->fil_sequence = sequence++;
 	}
 
-	if (temp_buffer) {
-		gds__free(temp_buffer);
-	}
+	if (temp_buffer)
+		delete[] temp_buffer;
 	}	// try
 	catch (const std::exception&) {
-		if (temp_buffer) {
-			gds__free(temp_buffer);
-		}
+		if (temp_buffer)
+			delete[] temp_buffer;
 		throw;
 	}
 }

@@ -27,7 +27,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: alice_meta.epp,v 1.32 2004-03-07 07:58:06 robocop Exp $
+ *	$Id: alice_meta.epp,v 1.33 2004-03-09 00:16:49 skidder Exp $
  */
 
 #include "firebird.h"
@@ -319,6 +319,14 @@ static TDR get_description(ISC_QUAD* blob_id)
 	const USHORT length = snarf_blob(blob_id, (USHORT) sizeof(buffer), buffer);
 	if (length) {
 		p = bigger_buffer = (TEXT *) gds__alloc((SLONG) length);
+		if(!p) {
+			tdgbl->status[0] = isc_arg_gds;
+			tdgbl->status[1] = isc_virmemexh;
+			tdgbl->status[2] = isc_arg_end;
+
+			ALICE_print_status(tdgbl->status);
+			return NULL;
+		}
 		snarf_blob(blob_id, length, bigger_buffer);
 	}
 

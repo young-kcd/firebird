@@ -118,6 +118,8 @@ void TRN_translate(void)
 	dyn = &d;
 	dyn->str_current = dyn->str_start =
 		reinterpret_cast<UCHAR*>(gds__alloc(8192));
+	if (!dyn->str_current)
+		DDL_error_abort(NULL, 14, 0, 0, 0, 0, 0);	/* msg 14: memory exhausted */
 	dyn->str_length = 8192;
 
 #ifdef DEBUG_GDS_ALLOC

@@ -6159,6 +6159,7 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 													 sizeof(TEXT) *
 													 dbb->
 													 dbb_filename->str_length));
+					if (!dbfp) throw std::bad_alloc();
 					dbf = dbfp;
 				}
 				else {
@@ -6167,6 +6168,7 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 								   (sizeof(struct dbf) +
 									sizeof(TEXT) *
 									dbb->dbb_filename->str_length));
+					if (!dbfp) throw std::bad_alloc();
 					dbfp = dbfp->dbf_next;
 				}
 				if (dbfp) {

@@ -888,7 +888,7 @@ int INF_request_info(const jrd_req* request,
 
 			if (!OPT_access_path(request, buffer_ptr, sizeof(buffer), &length))
 			{
-				buffer_ptr = (SCHAR *) gds__alloc(BUFFER_XLARGE);
+				buffer_ptr = FB_NEW(*getDefaultMemoryPool()) char[BUFFER_XLARGE];
 				OPT_access_path(request, buffer_ptr, BUFFER_XLARGE, &length);
 			}
 			break;
@@ -947,7 +947,7 @@ int INF_request_info(const jrd_req* request,
 		info = INF_put_item(item, length, buffer_ptr, info, end);
 
 		if (buffer_ptr != buffer) {
-			gds__free(buffer_ptr);
+			delete[] buffer_ptr;
 			buffer_ptr = buffer;
 		}
 

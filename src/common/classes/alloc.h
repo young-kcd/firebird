@@ -34,7 +34,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.h,v 1.34 2004-03-07 07:58:25 robocop Exp $
+ *  $Id: alloc.h,v 1.35 2004-03-09 00:16:55 skidder Exp $
  *
  */
 
@@ -191,6 +191,12 @@ public:
 	static void deletePool(MemoryPool* pool);
 
 	void* allocate(size_t size, SSHORT type = 0
+#ifdef DEBUG_GDS_ALLOC
+		, const char* file = NULL, int line = 0
+#endif
+	);
+
+	void* allocate_nothrow(size_t size, SSHORT type = 0
 #ifdef DEBUG_GDS_ALLOC
 		, const char* file = NULL, int line = 0
 #endif

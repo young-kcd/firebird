@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.57 2004-03-07 11:52:05 alexpeshkoff Exp $
+ * $Id: rse.cpp,v 1.58 2004-03-09 00:17:02 skidder Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -942,14 +942,14 @@ static void close_merge(TDBB tdbb, Rsb* rsb, IRSB_MRG impure)
 			if (sfb->sfb_file_name) {
 				close(sfb->sfb_file);
 				unlink(sfb->sfb_file_name);
-				gds__free(sfb->sfb_file_name);
+				delete[] sfb->sfb_file_name;
 			}
 			delete sfb->sfb_mem;
 			delete sfb;
 			mfb->mfb_sfb = 0;
 		}
 		if (mfb->mfb_block_data) {
-			gds__free(mfb->mfb_block_data);
+			delete[] mfb->mfb_block_data;
 			mfb->mfb_block_data = 0;
 		}
 	}
@@ -1750,7 +1750,7 @@ static BOOLEAN get_merge_join(
 		MFB mfb = &tail->irsb_mrg_file;
 		const ULONG key_length = map->smb_key_length * sizeof(ULONG);
 		if (key_length > sizeof(key))
-			first_data = (UCHAR *) gds__alloc(key_length);
+			first_data = FB_NEW(*tdbb->tdbb_default) [key_length];
 		else
 			first_data = (UCHAR *) key;
 		MOVE_FASTER(get_merge_data(tdbb, mfb, 0), first_data, key_length);
@@ -1769,7 +1769,7 @@ static BOOLEAN get_merge_join(
 		}
 
 		if (first_data != (UCHAR *) key)
-			gds__free(first_data);
+			delete[] first_data;
 		if (mfb->mfb_current_block)
 			write_merge_block(tdbb, mfb, mfb->mfb_current_block);
 	}
@@ -1943,7 +1943,7 @@ static BOOLEAN get_merge_join(TDBB tdbb, Rsb* rsb, IRSB_MRG impure)
 		mfb = &tail->irsb_mrg_file;
 		key_length = map->smb_key_length * sizeof(ULONG);
 		if (key_length > sizeof(key))
-			first_data = (UCHAR *) gds__alloc(key_length);
+			first_data = FB_NEW(*tdbb->tdbb_default) UCHAR[key_length];
 		else
 			first_data = (UCHAR *) key;
 		MOVE_FASTER(get_merge_data(tdbb, mfb, 0), first_data, key_length);
@@ -1962,7 +1962,7 @@ static BOOLEAN get_merge_join(TDBB tdbb, Rsb* rsb, IRSB_MRG impure)
 		}
 
 		if (first_data != (UCHAR *) key)
-			gds__free(first_data);
+			delete[] first_data;
 		if (mfb->mfb_current_block)
 			write_merge_block(tdbb, mfb, mfb->mfb_current_block);
 	}
@@ -3025,8 +3025,8 @@ static void open_merge(TDBB tdbb, Rsb* rsb, IRSB_MRG impure)
 		mfb->mfb_block_size = MAX(mfb->mfb_record_size, MERGE_BLOCK_SIZE);
 		mfb->mfb_blocking_factor = mfb->mfb_block_size / mfb->mfb_record_size;
 		if (!mfb->mfb_block_data)
-			mfb->mfb_block_data =
-				reinterpret_cast<UCHAR*>(gds__alloc(mfb->mfb_block_size));
+			mfb->mfb_block_data = 
+				FB_NEW(*tdbb->tdbb_request->req_pool) UCHAR[mfb->mfb_block_size];
 	}
 }
 
@@ -3789,8 +3789,8 @@ static void write_merge_block(TDBB tdbb, MFB mfb, ULONG block)
 		if (sfb_->sfb_file == -1)
 			SORT_error(tdbb->tdbb_status_vector, sfb_, "open", isc_io_error,
 					   errno);
-		sfb_->sfb_file_name = (SCHAR*)
-			gds__alloc((ULONG) (strlen(file_name) + 1));
+		sfb_->sfb_file_name = 
+			FB_NEW(*getDefaultMemoryPool()) char[strlen(file_name) + 1];
 		strcpy(sfb_->sfb_file_name, file_name);
 
 		sfb_->sfb_mem = FB_NEW (*getDefaultMemoryPool()) SortMem(sfb_, mfb->mfb_block_size);

@@ -599,6 +599,10 @@ static char* alloc( SLONG size)
  *
  **************************************/
 	char* const block = (char*) gds__alloc(size);
+	if (!block) {
+		/* NOMEM: return error */
+		dba_error(31, 0, 0, 0, 0, 0);
+	}
 	char* p = block;
 	do {
 		*p++ = 0;

@@ -1427,6 +1427,12 @@ void ISC_exception_post(ULONG sig_num, const TEXT* err_msg)
  *     When we got a sync exception, fomulate the error code
  *     write it to the log file, and abort.
  *
+ * 08-Mar-2004, Nickolay Samofatov.
+ *   This function is dangerous and requires rewrite using signal-safe operations only.
+ *   Main problem is that we call a lot of signal-unsafe functions from this signal handler,
+ *   examples are gds__alloc, gds__log, etc... sprintf is safe on some BSD platforms, 
+ *   but not on Linux. This may result in lock-up during signal handling.
+ *
  **************************************/
 	if (!SCH_thread_enter_check())
 		THREAD_ENTER;
@@ -1440,6 +1446,7 @@ void ISC_exception_post(ULONG sig_num, const TEXT* err_msg)
 	}
 
 	TEXT* log_msg = (TEXT *) gds__alloc(strlen(err_msg) + 256);
+	// NOMEM: crash!
 	log_msg[0] = '\0';
 
 	switch (sig_num) {
@@ -1523,6 +1530,7 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 	}
 
 	TEXT* log_msg = (TEXT*) gds__alloc(strlen(err_msg) + 256);
+	// NOMEM: crash!
 	log_msg[0] = '\0';
 
 	switch (except_code) {

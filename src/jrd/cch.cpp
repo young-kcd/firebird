@@ -3740,6 +3740,10 @@ static void expand_buffers(TDBB tdbb, ULONG number)
  *	Expand the cache to at least a given number of buffers.  If
  *	it's already that big, don't do anything.
  *
+ * Nickolay Samofatov, 08-Mar-2004.
+ *  This function does not handle exceptions correctly,
+ *  it looks like good handling requires rewrite.
+ *
  **************************************/
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -3827,6 +3831,7 @@ static void expand_buffers(TDBB tdbb, ULONG number)
 		if (!num_in_seg) {
 			memory = (UCHAR *)gds__alloc((SLONG) dbb->dbb_page_size *
 										 (num_per_seg + 1));
+			// NOMEM: crash!
 			LLS_PUSH(memory, &new_block->bcb_memory);
 			memory = (UCHAR *) (((U_IPTR) memory + dbb->dbb_page_size - 1) &
 								~((int) dbb->dbb_page_size - 1));
