@@ -29,7 +29,7 @@
  *		Alex Peshkoff <peshkoff@mail.ru>
  *				added PermanentStorage and AutoStorage classes.
  *
- *  $Id: alloc.h,v 1.52 2004-09-28 06:27:16 skidder Exp $
+ *  $Id: alloc.h,v 1.53 2004-10-25 05:14:05 skidder Exp $
  *
  */
 
@@ -346,6 +346,9 @@ public:
 
 	// Print out pool contents. This is debugging routine
 	void print_contents(FILE*, bool = false);
+	
+	// The same routine, but more easily callable from the debugger
+	void print_contents(const char* filename, bool = false);
 	
 	// Deallocate memory block. Pool is derived from block header
 	static void globalFree(void* block) {

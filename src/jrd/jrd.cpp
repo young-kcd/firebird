@@ -515,6 +515,12 @@ void	JRD_thread_security_disable(bool disable)
 }
 
 
+void JRD_print_pools(const char* filename) {
+	FILE *out = fopen(filename, "w");
+	ALL_print_memory_pool_info(out, databases);
+	fclose(out);	
+}
+
 ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 								SSHORT	file_length,
 								const TEXT*	file_name,

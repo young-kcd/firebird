@@ -23,7 +23,7 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *
- *  $Id: alloc.cpp,v 1.71 2004-10-11 10:00:37 robocop Exp $
+ *  $Id: alloc.cpp,v 1.72 2004-10-25 05:14:05 skidder Exp $
  *
  */
 
@@ -939,6 +939,12 @@ static void print_block(FILE *file, MemoryBlock *blk, bool used_only)
 			fprintf(file, "%p(%s): size=%d\n", 
 				mem, flags, size);
 	}
+}
+
+void MemoryPool::print_contents(const char* filename, bool used_only) {
+	FILE *out = fopen(filename, "w");
+	print_contents(out, used_only);
+	fclose(out);
 }
 
 // This member function can't be const because there are calls to the mutex.

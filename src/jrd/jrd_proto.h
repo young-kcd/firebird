@@ -161,6 +161,9 @@ void	JRD_wlck_lock(struct mutx_t *);
 void	JRD_wlck_unlock(struct mutx_t *);
 void	JRD_thread_security_disable(bool disable);
 
+// Call this function from the debugger if desired
+void	JRD_print_pools(const char* filename);
+
 #ifdef SUPERSERVER
 void	JRD_print_all_counters(const TEXT*);
 bool	JRD_getdir(Firebird::PathName&);

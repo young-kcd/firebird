@@ -192,10 +192,8 @@ void ALL_init(void)
 }
 
 
-#ifdef SUPERSERVER
 void ALL_print_memory_pool_info(FILE* fptr, Database* databases)
 {
-#ifdef NOT_USED_OR_REPLACED
 /***********************************************************
  *
  *	A L L _ p r i n t _ m e m o r y _ p o o l _ i n f o
@@ -208,13 +206,10 @@ void ALL_print_memory_pool_info(FILE* fptr, Database* databases)
  *
  **************************************/
 	Database* dbb;
-	STR string;
-	VEC vector;
-	HNK hnk;
 	Attachment* att;
 	int i, j, k, col;
 
-	fprintf(fptr, "\n\tALL_xx block types\n");
+	/*fprintf(fptr, "\n\tALL_xx block types\n");
 	fprintf(fptr, "\t------------------");
 	for (i = 0, col = 0; i < types->type_MAX; i++) {
 		if (types->all_block_type_count[i]) {
@@ -225,7 +220,7 @@ void ALL_print_memory_pool_info(FILE* fptr, Database* databases)
 			++col;
 		}
 	}
-	fprintf(fptr, "\n");
+	fprintf(fptr, "\n");*/
 
 	// TMN: Note. Evil code.
 	for (i = 0, dbb = databases; dbb; dbb = dbb->dbb_next, ++i);
@@ -233,66 +228,32 @@ void ALL_print_memory_pool_info(FILE* fptr, Database* databases)
 
 	for (k = 1, dbb = databases; dbb; dbb = dbb->dbb_next, ++k)
 	{
-		string = dbb->dbb_filename;
-		fprintf(fptr, "\n\t dbb%d -> %s\n", k, string->str_data);
-		vector = (VEC) dbb->dbb_pools;
+		fprintf(fptr, "\n\t dbb%d -> %s\n", k, dbb->dbb_filename.c_str());
 		j = 0;
-		for (pool_vec_type::iterator itr = dbb->dbb_pools.begin();
+		for (Firebird::vector<JrdMemoryPool*>::iterator itr = dbb->dbb_pools.begin();
 			itr != dbb->dbb_pools.end(); ++itr)
 		{
-			PLB myPool = *itr;
+			JrdMemoryPool *myPool = *itr;
 			if (myPool) {
 				++j;
 			}
 		}
-		fprintf(fptr, "\t    %s has %d pools", string->str_data, j);
+		fprintf(fptr, "\t    %s has %d pools", dbb->dbb_filename.c_str(), j);
 		for (j = 0, att = dbb->dbb_attachments; att; att = att->att_next)
 		{
 			j++;
 		}
 		fprintf(fptr, " and %d attachment(s)", j);
-		for (i = 0; i < (int) vector->vec_count; i++)
+		for (Firebird::vector<JrdMemoryPool*>::iterator itr = dbb->dbb_pools.begin();
+			itr != dbb->dbb_pools.end(); ++itr)
 		{
-			PLB myPool = (PLB) vector->vec_object[i];
+			JrdMemoryPool *myPool = *itr;
 			if (!myPool) {
 				continue;
 			}
-			fprintf(fptr, "\n\t    Pool %d", myPool->plb_pool_id);
-
-			// Count # of hunks
-			for (j = 0, hnk = myPool->plb_hunks; hnk; hnk = hnk->hnk_next) {
-				++j;
-			}
-			if (j) {
-				fprintf(fptr, " has %d hunks", j);
-			}
-			j = 0;
-
-			// Count # of "huge" hunks
-			for (hnk = myPool->plb_huge_hunks; hnk; hnk = hnk->hnk_next)
-			{
-				++j;
-			}
-			if (j) {
-				fprintf(fptr, " and %d huge_hunks", j);
-			}
-			fprintf(fptr, " Extend size is %d", myPool->plb_extend_size);
-			for (j = 0, col = 0; j < types->type_MAX; j++)
-			{
-				if (myPool->plb_blk_type_count[j])
-				{
-					if (col % 5 == 0)
-					{
-						fprintf(fptr, "\n\t    ");
-					}
-					fprintf(fptr, "%s = %d  ", types->ALL_types[j],
-							   myPool->plb_blk_type_count[j]);
-					++col;
-				}
-			}
+			
+			myPool->print_contents(fptr, true);
 		}
 	}
-#endif	// 0
 }
-#endif	// SUPERSERVER
 
