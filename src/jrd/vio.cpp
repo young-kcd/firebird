@@ -1101,11 +1101,12 @@ void VIO_data(TDBB tdbb, RPB * rpb, BLK pool)
 	{
 #ifdef VIO_DEBUG
 	    if (debug_flag > DEBUG_WRITES)
-			ib_printf ("VIO_erase (rpb %d, length %d expected %d)\n", rpb->rpb_number, 
+			ib_printf ("VIO_erase (rpb %"SLONGFORMAT"d, length %d expected %d)\n", rpb->rpb_number, 
 			    length, format->fmt_length);
 	
 	    if (debug_flag > DEBUG_WRITES_INFO)
-			ib_printf ("   record  %d:%d, rpb_trans %d, flags %d, back %d:%d, fragment %d:%d\n",
+			ib_printf ("   record  %"SLONGFORMAT"d:%d, rpb_trans %"SLONGFORMAT
+					   "d, flags %d, back %"SLONGFORMAT"d:%d, fragment %"SLONGFORMAT"d:%d\n",
 				rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction, rpb->rpb_flags,
 			    rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page, rpb->rpb_f_line);
 #endif
