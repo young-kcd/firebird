@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.36 2004-05-02 23:04:54 skidder Exp $
+ * $Id: extract.epp,v 1.37 2004-05-10 00:18:34 brodsom Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -1591,85 +1591,84 @@ static void list_create_db()
 		return;
 	END_ERROR;
 
-#ifdef NOT_USED_OR_REPLACED
-	// IGNORE WAL FOR THE FORESEEABLE FUTURE.
-	bool first_file = true;
-	first = true; // CVC: I'm not sure if this line should be added here.
-	bool has_wal = false;
-
-	FOR WAL IN RDB$LOG_FILES
-		SORTED BY WAL.RDB$FILE_FLAGS, WAL.RDB$FILE_SEQUENCE
-
-		has_wal = true;
-		if (first)
-		{
-			if (nodb)
-			{
-				sprintf (Print_buffer, "/*%s", NEWLINE);
-				ISQL_printf (Out, Print_buffer);
-			}
-			sprintf (Print_buffer, "%sALTER DATABASE ADD ", NEWLINE);
-			ISQL_printf (Out, Print_buffer);
-		}
-		first = false;
-
-		if (first_file)
-			ISQL_printf (Out, "LOGFILE ");
-
-		if (WAL.RDB$FILE_FLAGS & LOG_default)
-			;
-
-		// Overflow files also have the serial bit set 
-		else if (WAL.RDB$FILE_FLAGS & LOG_overflow)
-		{
-			sprintf (Print_buffer, ")%s   OVERFLOW '%s'",
-					 NEWLINE,
-					 WAL.RDB$FILE_NAME);
-			ISQL_printf (Out, Print_buffer);
-		}
-
-		else if (WAL.RDB$FILE_FLAGS & LOG_serial)
-		{
-			sprintf (Print_buffer, "%s  BASE_NAME '%s'",
-					 NEWLINE,
-					 WAL.RDB$FILE_NAME);
-			ISQL_printf (Out, Print_buffer);
-		}
-
-		// Since we are fetching order by FILE_FLAGS, the LOG_0verflow will
-		// be last.  It will only appear if there were named round robin,
-		// so we must close the parens first
-
-		// We have round robin and overflow file specifications 
-		else
-		{
-			if (first_file)
-				ISQL_printf (Out, "(");
-			else
-			{
-				sprintf (Print_buffer, ",%s  ", NEWLINE);
-				ISQL_printf (Out, Print_buffer);
-			}
-			first_file = false;
-
-			sprintf (Print_buffer, "'%s'", WAL.RDB$FILE_NAME);
-			ISQL_printf (Out, Print_buffer);
-		}
-
-		// Any file can have a length 
-		if (!WAL.RDB$FILE_LENGTH.NULL && WAL.RDB$FILE_LENGTH)
-		{
-			sprintf (Print_buffer, " SIZE %ld ", WAL.RDB$FILE_LENGTH);
-			ISQL_printf (Out, Print_buffer);
-		}
-
-	END_FOR
-	ON_ERROR
-		ISQL_errmsg(gds_status);
-		return;
-	END_ERROR;
-
-	ISQL_printf(Out, NEWLINE);
+// IGNORE WAL FOR THE FORESEEABLE FUTURE.
+//	bool first_file = true;
+//	first = true; // CVC: I'm not sure if this line should be added here.
+//	bool has_wal = false;
+//
+//	FOR WAL IN RDB$LOG_FILES
+//		SORTED BY WAL.RDB$FILE_FLAGS, WAL.RDB$FILE_SEQUENCE
+//
+//		has_wal = true;
+//		if (first)
+//		{
+//			if (nodb)
+//			{
+//				sprintf (Print_buffer, "/*%s", NEWLINE);
+//				ISQL_printf (Out, Print_buffer);
+//			}
+//			sprintf (Print_buffer, "%sALTER DATABASE ADD ", NEWLINE);
+//			ISQL_printf (Out, Print_buffer);
+//		}
+//		first = false;
+//
+//		if (first_file)
+//			ISQL_printf (Out, "LOGFILE ");
+//
+//		if (WAL.RDB$FILE_FLAGS & LOG_default)
+//			;
+//
+//		// Overflow files also have the serial bit set 
+//		else if (WAL.RDB$FILE_FLAGS & LOG_overflow)
+//		{
+//			sprintf (Print_buffer, ")%s   OVERFLOW '%s'",
+//					 NEWLINE,
+//					 WAL.RDB$FILE_NAME);
+//			ISQL_printf (Out, Print_buffer);
+//		}
+//
+//		else if (WAL.RDB$FILE_FLAGS & LOG_serial)
+//		{
+//			sprintf (Print_buffer, "%s  BASE_NAME '%s'",
+//					 NEWLINE,
+//					 WAL.RDB$FILE_NAME);
+//			ISQL_printf (Out, Print_buffer);
+//		}
+//
+//		// Since we are fetching order by FILE_FLAGS, the LOG_0verflow will
+//		// be last.  It will only appear if there were named round robin,
+//		// so we must close the parens first
+//
+//		// We have round robin and overflow file specifications 
+//		else
+//		{
+//			if (first_file)
+//				ISQL_printf (Out, "(");
+//			else
+//			{
+//				sprintf (Print_buffer, ",%s  ", NEWLINE);
+//				ISQL_printf (Out, Print_buffer);
+//			}
+//			first_file = false;
+//
+//			sprintf (Print_buffer, "'%s'", WAL.RDB$FILE_NAME);
+//			ISQL_printf (Out, Print_buffer);
+//		}
+//
+//		// Any file can have a length 
+//		if (!WAL.RDB$FILE_LENGTH.NULL && WAL.RDB$FILE_LENGTH)
+//		{
+//			sprintf (Print_buffer, " SIZE %ld ", WAL.RDB$FILE_LENGTH);
+//			ISQL_printf (Out, Print_buffer);
+//		}
+//
+//	END_FOR
+//	ON_ERROR
+//		ISQL_errmsg(gds_status);
+//		return;
+//	END_ERROR;
+//
+//	ISQL_printf(Out, NEWLINE);
 // **************************************************************
 // ** isc_info_num_wal_buffers         for NUM_LOG_BUFFERS
 // ** isc_info_wal_buffer_size         for LOG_BUFFER_SIZE
@@ -1677,72 +1676,71 @@ static void list_create_db()
 // ** isc_info_wal_ckpt_length         for CHECK_POINT_LENGTH
 // **
 // **************************************************************
-
-	bool set_used = false;
-	if (has_wal)
-	{
-		char* buffer = (SCHAR*) ISQL_ALLOC(BUFFER_LENGTH128);
-		if (!buffer)
-		{
-			isc_status[0] = isc_arg_gds;
-			isc_status[1] = isc_virmemexh;
-			isc_status[2] = isc_arg_end;
-			ISQL_errmsg(isc_status);
-			return;
-		}
-
-		if (!isc_database_info
-			(gds_status, &DB, sizeof(wal_items), wal_items, BUFFER_LENGTH128,
-			 buffer))
-		{
-			for (const char* d = buffer; *d != isc_info_end;)
-			{
-				const char item = *d++;
-				const int length = isc_vax_integer(d, 2);
-				d += 2;
-				const SLONG value_out = isc_vax_integer(d, length);
-				switch (item)
-				{
-				case isc_info_end:
-					break;
-
-				case isc_info_num_wal_buffers:
-					print_set(&set_used);
-					sprintf(Print_buffer, "NUM_LOG_BUFFERS = %ld", value_out);
-					ISQL_printf(Out, Print_buffer);
-					break;
-
-				case isc_info_wal_buffer_size:
-					print_set(&set_used);
-					sprintf(Print_buffer, "LOG_BUFFER_SIZE = %ld", value_out);
-					ISQL_printf(Out, Print_buffer);
-					break;
-
-				case isc_info_wal_grpc_wait_usecs:
-					print_set(&set_used);
-					sprintf(Print_buffer, "GROUP_COMMIT_WAIT_TIME = %ld",
-							value_out);
-					ISQL_printf(Out, Print_buffer);
-					break;
-
-				case isc_info_wal_ckpt_length:
-					print_set(&set_used);
-					sprintf(Print_buffer, "CHECK_POINT_LENGTH = %ld",
-							value_out);
-					ISQL_printf(Out, Print_buffer);
-					break;
-
-				default:
-					break;
-				}
-				d += length;
-			}
-		}
-		if (buffer)
-			ISQL_FREE(buffer);
-	}
-	// END OF WAL-RELATED CODE
-#endif
+//
+//	bool set_used = false;
+//	if (has_wal)
+//	{
+//		char* buffer = (SCHAR*) ISQL_ALLOC(BUFFER_LENGTH128);
+//		if (!buffer)
+//		{
+//			isc_status[0] = isc_arg_gds;
+//			isc_status[1] = isc_virmemexh;
+//			isc_status[2] = isc_arg_end;
+//			ISQL_errmsg(isc_status);
+//			return;
+//		}
+//
+//		if (!isc_database_info
+//			(gds_status, &DB, sizeof(wal_items), wal_items, BUFFER_LENGTH128,
+//			 buffer))
+//		{
+//			for (const char* d = buffer; *d != isc_info_end;)
+//			{
+//				const char item = *d++;
+//				const int length = isc_vax_integer(d, 2);
+//				d += 2;
+//				const SLONG value_out = isc_vax_integer(d, length);
+//				switch (item)
+//				{
+//				case isc_info_end:
+//					break;
+//
+//				case isc_info_num_wal_buffers:
+//					print_set(&set_used);
+//					sprintf(Print_buffer, "NUM_LOG_BUFFERS = %ld", value_out);
+//					ISQL_printf(Out, Print_buffer);
+//					break;
+//
+//				case isc_info_wal_buffer_size:
+//					print_set(&set_used);
+//					sprintf(Print_buffer, "LOG_BUFFER_SIZE = %ld", value_out);
+//					ISQL_printf(Out, Print_buffer);
+//					break;
+//
+//				case isc_info_wal_grpc_wait_usecs:
+//					print_set(&set_used);
+//					sprintf(Print_buffer, "GROUP_COMMIT_WAIT_TIME = %ld",
+//							value_out);
+//					ISQL_printf(Out, Print_buffer);
+//					break;
+//
+//				case isc_info_wal_ckpt_length:
+//					print_set(&set_used);
+//					sprintf(Print_buffer, "CHECK_POINT_LENGTH = %ld",
+//							value_out);
+//					ISQL_printf(Out, Print_buffer);
+//					break;
+//
+//				default:
+//					break;
+//				}
+//				d += length;
+//			}
+//		}
+//		if (buffer)
+//			ISQL_FREE(buffer);
+//	}
+// END OF WAL-RELATED CODE
 
 	if (!first)
 	{

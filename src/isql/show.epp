@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.47 2004-05-09 05:47:55 robocop Exp $
+ * $Id: show.epp,v 1.48 2004-05-10 00:18:34 brodsom Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -389,67 +389,65 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 			sprintf (info, "Transaction - Next = %ld %s", value_out, NEWLINE);
 			break;
 
-#ifdef NOT_USED_OR_REPLACED
-		// IGNORE WAL
-		case isc_info_num_wal_buffers:
-			value_out = isc_vax_integer(d, length);
-			if (translate) {
-				ISQL_msg_get(NUM_WAL_BUFF, msg, (TEXT*)(IPTR)value_out, NULL,
-							 NULL, NULL, NULL);
-				sprintf(info, msg);
-			}
-			else
-				sprintf(info, "Number of wal buffers = %ld %s",
-						value_out, NEWLINE);
-			break;
-
-		case isc_info_wal_buffer_size:
-			value_out = isc_vax_integer(d, length);
-			if (translate) {
-				ISQL_msg_get(WAL_BUFF_SIZE, msg, (TEXT*)(IPTR)value_out, NULL,
-							 NULL, NULL, NULL);
-				sprintf(info, msg);
-			}
-			else
-				sprintf(info, "Wal buffer size = %ld %s", value_out, NEWLINE);
-			break;
-
-		case isc_info_wal_ckpt_length:
-			value_out = isc_vax_integer(d, length);
-			if (translate) {
-				ISQL_msg_get(CKPT_LENGTH, msg, (TEXT*)(IPTR)value_out, NULL, NULL,
-							 NULL, NULL);
-				sprintf(info, msg);
-			}
-			else
-				sprintf(info, "Check point length = %ld %s",
-						value_out, NEWLINE);
-			break;
-
-		case isc_info_wal_cur_ckpt_interval:
-			value_out = isc_vax_integer(d, length);
-			if (translate) {
-				ISQL_msg_get(CKPT_INTERV, msg, (TEXT*)(IPTR)value_out, NULL, NULL,
-							 NULL, NULL);
-				sprintf(info, msg);
-			}
-			else
-				sprintf(info, "Check point interval = %ld %s",
-						value_out, NEWLINE);
-			break;
-
-		case isc_info_wal_grpc_wait_usecs:
-			value_out = isc_vax_integer(d, length);
-			if (translate) {
-				ISQL_msg_get(WAL_GRPC_WAIT, msg, (TEXT*)(IPTR)value_out, NULL,
-							 NULL, NULL, NULL);
-				sprintf(info, msg);
-			}
-			else
-				sprintf(info, "Wal group commit wait = %ld %s",
-						value_out, NEWLINE);
-			break;
-#endif
+// IGNORE WAL
+//		case isc_info_num_wal_buffers:
+//			value_out = isc_vax_integer(d, length);
+//			if (translate) {
+//				ISQL_msg_get(NUM_WAL_BUFF, msg, (TEXT*)(IPTR)value_out, NULL,
+//							 NULL, NULL, NULL);
+//				sprintf(info, msg);
+//			}
+//			else
+//				sprintf(info, "Number of wal buffers = %ld %s",
+//						value_out, NEWLINE);
+//			break;
+//
+//		case isc_info_wal_buffer_size:
+//			value_out = isc_vax_integer(d, length);
+//			if (translate) {
+//				ISQL_msg_get(WAL_BUFF_SIZE, msg, (TEXT*)(IPTR)value_out, NULL,
+//							 NULL, NULL, NULL);
+//				sprintf(info, msg);
+//			}
+//			else
+//				sprintf(info, "Wal buffer size = %ld %s", value_out, NEWLINE);
+//			break;
+//
+//		case isc_info_wal_ckpt_length:
+//			value_out = isc_vax_integer(d, length);
+//			if (translate) {
+//				ISQL_msg_get(CKPT_LENGTH, msg, (TEXT*)(IPTR)value_out, NULL, NULL,
+//							 NULL, NULL);
+//				sprintf(info, msg);
+//			}
+//			else
+//				sprintf(info, "Check point length = %ld %s",
+//						value_out, NEWLINE);
+//			break;
+//
+//		case isc_info_wal_cur_ckpt_interval:
+//			value_out = isc_vax_integer(d, length);
+//			if (translate) {
+//				ISQL_msg_get(CKPT_INTERV, msg, (TEXT*)(IPTR)value_out, NULL, NULL,
+//							 NULL, NULL);
+//				sprintf(info, msg);
+//			}
+//			else
+//				sprintf(info, "Check point interval = %ld %s",
+//						value_out, NEWLINE);
+//			break;
+//
+//		case isc_info_wal_grpc_wait_usecs:
+//			value_out = isc_vax_integer(d, length);
+//			if (translate) {
+//				ISQL_msg_get(WAL_GRPC_WAIT, msg, (TEXT*)(IPTR)value_out, NULL,
+//							 NULL, NULL, NULL);
+//				sprintf(info, msg);
+//			}
+//			else
+//				sprintf(info, "Wal group commit wait = %ld %s",
+//						value_out, NEWLINE);
+//			break;
 
 		case isc_info_base_level:
 			value_out = isc_vax_integer(d, length);
@@ -1785,68 +1783,66 @@ static void show_db()
 		ISQL_printf(Out, info_buf);
 	}
 
-#ifdef NOT_USED_OR_REPLACED
-	// IGNORE WAL
-
-	bool is_wal = false;
-
-	FOR LOG IN RDB$LOG_FILES SORTED BY LOG.RDB$FILE_FLAGS, LOG.RDB$FILE_SEQUENCE
-		SORTED BY LOG.RDB$FILE_FLAGS, LOG.RDB$FILE_SEQUENCE
-
-		// If there are log files, print Wal statistics
-
-		is_wal = true;
-
-		// reset nulls to zero
-
-		if (LOG.RDB$FILE_FLAGS.NULL)
-			LOG.RDB$FILE_FLAGS = 0;
-		if (LOG.RDB$FILE_LENGTH.NULL)
-			LOG.RDB$FILE_LENGTH = 0;
-		if (LOG.RDB$FILE_SEQUENCE.NULL)
-			LOG.RDB$FILE_SEQUENCE = 0;
-		fb_utils::fb_exact_name(LOG.RDB$FILE_NAME);
-
-		if (LOG.RDB$FILE_FLAGS & LOG_overflow) {
-			sprintf (Print_buffer, "overflow: %s, ", LOG.RDB$FILE_NAME);
-			ISQL_printf (Out, Print_buffer);
-		}
-		else if (LOG.RDB$FILE_FLAGS & LOG_serial) {
-			sprintf (Print_buffer, "Logfile serial: %s, ", LOG.RDB$FILE_NAME);
-			ISQL_printf (Out, Print_buffer);
-		}
-		else if (LOG.RDB$FILE_FLAGS & LOG_default) {
-			sprintf (Print_buffer, "Logfile default, ");
-			ISQL_printf (Out, Print_buffer);
-		}
-		else if (LOG.RDB$FILE_FLAGS & LOG_raw) {
-			sprintf (Print_buffer, "Logfile raw: %s, %d partitions, ", LOG.RDB$FILE_NAME, LOG.RDB$FILE_PARTITIONS);
-			ISQL_printf (Out, Print_buffer);
-		}
-		else {
-			sprintf (Print_buffer, "Logfile #%d: %s, ", LOG.RDB$FILE_SEQUENCE, LOG.RDB$FILE_NAME);
-			ISQL_printf (Out, Print_buffer);
-		}
-		sprintf (Print_buffer, "length %ld%s", LOG.RDB$FILE_LENGTH, NEWLINE);
-		ISQL_printf (Out, Print_buffer);
-
-	END_FOR
-	ON_ERROR
-		ISQL_errmsg(isc_status);
-		if (info_buf)
-			ISQL_FREE(info_buf);
-		return;
-	END_ERROR;
-
+// IGNORE WAL
+//
+//	bool is_wal = false;
+//
+//	FOR LOG IN RDB$LOG_FILES SORTED BY LOG.RDB$FILE_FLAGS, LOG.RDB$FILE_SEQUENCE
+//		SORTED BY LOG.RDB$FILE_FLAGS, LOG.RDB$FILE_SEQUENCE
+//
+//		// If there are log files, print Wal statistics
+//
+//		is_wal = true;
+//
+//		// reset nulls to zero
+//
+//		if (LOG.RDB$FILE_FLAGS.NULL)
+//			LOG.RDB$FILE_FLAGS = 0;
+//		if (LOG.RDB$FILE_LENGTH.NULL)
+//			LOG.RDB$FILE_LENGTH = 0;
+//		if (LOG.RDB$FILE_SEQUENCE.NULL)
+//			LOG.RDB$FILE_SEQUENCE = 0;
+//		fb_utils::fb_exact_name(LOG.RDB$FILE_NAME);
+//
+//		if (LOG.RDB$FILE_FLAGS & LOG_overflow) {
+//			sprintf (Print_buffer, "overflow: %s, ", LOG.RDB$FILE_NAME);
+//			ISQL_printf (Out, Print_buffer);
+//		}
+//		else if (LOG.RDB$FILE_FLAGS & LOG_serial) {
+//			sprintf (Print_buffer, "Logfile serial: %s, ", LOG.RDB$FILE_NAME);
+//			ISQL_printf (Out, Print_buffer);
+//		}
+//		else if (LOG.RDB$FILE_FLAGS & LOG_default) {
+//			sprintf (Print_buffer, "Logfile default, ");
+//			ISQL_printf (Out, Print_buffer);
+//		}
+//		else if (LOG.RDB$FILE_FLAGS & LOG_raw) {
+//			sprintf (Print_buffer, "Logfile raw: %s, %d partitions, ", LOG.RDB$FILE_NAME, LOG.RDB$FILE_PARTITIONS);
+//			ISQL_printf (Out, Print_buffer);
+//		}
+//		else {
+//			sprintf (Print_buffer, "Logfile #%d: %s, ", LOG.RDB$FILE_SEQUENCE, LOG.RDB$FILE_NAME);
+//			ISQL_printf (Out, Print_buffer);
+//		}
+//		sprintf (Print_buffer, "length %ld%s", LOG.RDB$FILE_LENGTH, NEWLINE);
+//		ISQL_printf (Out, Print_buffer);
+//
+//	END_FOR
+//	ON_ERROR
+//		ISQL_errmsg(isc_status);
+//		if (info_buf)
+//			ISQL_FREE(info_buf);
+//		return;
+//	END_ERROR;
+//
 // And now for Rich's show db parameters
-
-	if (is_wal
-		&& SHOW_dbb_parameters(DB, info_buf, wal_items,
-							sizeof(wal_items), translate))
-	{
-		ISQL_printf(Out, info_buf);
-	}
-#endif
+//
+//	if (is_wal
+//		&& SHOW_dbb_parameters(DB, info_buf, wal_items,
+//							sizeof(wal_items), translate))
+//	{
+//		ISQL_printf(Out, info_buf);
+//	}
 
 	FOR DBB IN RDB$DATABASE
 		WITH DBB.RDB$CHARACTER_SET_NAME NOT MISSING
