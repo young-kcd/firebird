@@ -773,7 +773,9 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 			fprintf(stderr, "xdr_packet: operation %d not recognized\n",
 					   p->p_operation);
 #endif
+#ifndef SOLARIS
 		fb_assert(xdrs->x_op == XDR_FREE);
+#endif
 		return P_FALSE(xdrs, p);
 	}
 }
