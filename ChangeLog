@@ -1,3 +1,96 @@
+2003-02-04 21:19  dimitr
+
+	* firebird2/builds/win32/msvc6/isql.dsp:
+	
+	Cleanup.
+
+2003-02-04 21:16  dimitr
+
+	* firebird2/: src/common/classes/alloc.cpp,
+	src/common/classes/alloc.h, src/jrd/gds.cpp, src/jrd/sort_mem.cpp,
+	builds/win32/msvc6/gfix.dsp:
+	
+	Moved allocator functions back to GDS. MemoryPool is no longer
+	exported.
+
+2003-02-04 20:07  dimitr
+
+	* firebird2/doc/WhatsNew:
+	
+	Beta 2 changes so far.
+
+2003-02-04 19:10  dimitr
+
+	* firebird2/builds/win32/ib_udf.def:
+	
+	Committed contribution by Juan Guerrero (?). Functions LPAD and
+	RPAD added to IB_UDF library.
+
+2003-02-04 19:09  dimitr
+
+	* firebird2/src/install/misc/firebird.conf:
+	
+	Prepared the current version of firebird.conf for publishing.
+
+2003-02-04 18:27  dimitr
+
+	* firebird2/src/extlib/: ib_udf.c, ib_udf.sql:
+	
+	Committed contribution by Juan Guerrero (?). Functions LPAD and
+	RPAD added to IB_UDF library.
+
+2003-02-04 16:43  brodsom
+
+	* firebird2/builds/win32/: make6_debug.bat, make6_release.bat:
+	
+	command line make corrections
+
+2003-02-04 16:36  dimitr
+
+	* firebird2/src/isql/: extract.epp, show.epp:
+	
+	Added support of universal triggers to ISQL (metadata extraction).
+
+2003-02-04 16:01  brodsom
+
+	* firebird2/builds/win32/: make6_release.bat, uninstall.bat,
+	install_classic.bat, install_super.bat, make6_debug.bat:
+	
+	Add command line makes Add install batchs
+
+2003-02-04 14:31  dimitr
+
+	* firebird2/src/jrd/par.cpp:
+	
+	Temporary fix for the bad memory references issue. Still waiting
+	for the Nickolay's analysis.
+
+2003-02-04 14:14  dimitr
+
+	* firebird2/src/alice/aliceswi.h:
+	
+	Why on earth should we bark on -user and -pass switches and
+	consider them incompatible with something?
+
+2003-02-04 12:30  dimitr
+
+	* firebird2/src/jrd/ibinitdll.cpp:
+	
+	Don't try to load the client library twice or thrice.
+
+2003-02-04 12:18  dimitr
+
+	* firebird2/src/common/classes/alloc.cpp:
+	
+	Fixed bug in the memory manager. We shouldn't use the uninitialized
+	pool. gpre_boot no longer crashes.
+
+2003-02-04 11:28  dimitr
+
+	* firebird2/builds/win32/msvc6/gpre_boot.dsp:
+	
+	Fixed debug build of gpre_boot.
+
 2003-02-03 16:01  dimitr
 
 	* firebird2/src/jrd/pwd.cpp:
