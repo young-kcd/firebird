@@ -1757,7 +1757,8 @@ ULONG ISC_exception_post(ULONG except_code, TEXT * err_msg)
 
 	if (is_critical)
 	{
-		exit(3);
+		// Pass exception to outer handler in case debugger is present to collect memory dump
+		return EXCEPTION_CONTINUE_SEARCH;
 	}
 	else
 	{

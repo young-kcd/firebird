@@ -29,13 +29,14 @@
  * the length of string types containing binary data (char. set octets).
  */
 /*
-$Id: fun.epp,v 1.22.2.2 2004-03-29 04:00:24 skidder Exp $
+$Id: fun.epp,v 1.22.2.3 2004-04-06 07:51:12 skidder Exp $
 */
 
 #include "firebird.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "../common/config/config.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/exe.h"

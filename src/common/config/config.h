@@ -104,7 +104,8 @@ class Config
 		KEY_EXTERNAL_FILE_ACCESS,					// 37
 		KEY_DATABASE_ACCESS,						// 38
 		KEY_UDF_ACCESS,								// 39
-		KEY_TEMP_DIRECTORIES						// 40
+		KEY_TEMP_DIRECTORIES,						// 40
+		KEY_BUGCHECK_ABORT							// 41
 	};
 
 public:
@@ -313,6 +314,11 @@ public:
 		Temporary directories list
 	*/
 	static const char *getTempDirectories();
+
+	/*
+		Abort on BUGCHECK and structured exceptions
+	*/
+	static bool getBugcheckAbort();
 };
 
 #endif // CONFIG_H

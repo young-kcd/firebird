@@ -107,7 +107,8 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_STRING,		"ExternalFileAccess",		(ConfigValue) "None"},	// location(s) of external files for tables
 	{TYPE_STRING,		"DatabaseAccess",			(ConfigValue) "Full"},	// location(s) of databases
 	{TYPE_STRING,		"UdfAccess",				(ConfigValue) "Restrict UDF"},	// location(s) of UDFs
-	{TYPE_STRING,		"TempDirectories",			(ConfigValue) 0}
+	{TYPE_STRING,		"TempDirectories",			(ConfigValue) 0},
+	{TYPE_BOOLEAN,		"BugcheckAbort",			(ConfigValue) false}	// whether to abort() engine when internal error is found
 };
 
 /******************************************************************************
@@ -470,3 +471,9 @@ const char *Config::getTempDirectories()
 {
 	return (const char*) sysConfig.values[KEY_TEMP_DIRECTORIES];
 }
+
+bool Config::getBugcheckAbort()
+{
+	return (bool) sysConfig.values[KEY_BUGCHECK_ABORT];
+}
+

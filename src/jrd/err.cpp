@@ -51,6 +51,7 @@
 #include "../jrd/dbg_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../common/config/config.h"
 
 #define JRD_FAILURE_SPACE	2048
 #define JRD_FAILURE_UNKNOWN	"<UNKNOWN>"	/* Used when buffer fails */
@@ -509,6 +510,7 @@ void DLL_EXPORT ERR_punt(void)
 		dbname = ((tdbb->tdbb_attachment->att_filename) ?
 			tdbb->tdbb_attachment->att_filename->str_data : NULL);
 		gds__log_status(reinterpret_cast<char*>(dbname), tdbb->tdbb_status_vector);
+		if (Config::getBugcheckAbort()) abort();
 	}
 
 #pragma FB_COMPILER_MESSAGE("FIXME! C functions can not throw! FIXME!")

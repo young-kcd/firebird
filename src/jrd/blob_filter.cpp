@@ -34,6 +34,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "../common/config/config.h"
 #include "../jrd/jrd.h"
 #include "../jrd/gds.h"
 #include "../jrd/blob_filter.h"
