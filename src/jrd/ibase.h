@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.40.2.3 2003-10-10 23:17:10 skidder Exp $
+$Id: ibase.h,v 1.40.2.4 2003-11-14 11:11:26 aafemt Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -116,6 +116,8 @@ typedef GDS_QUAD GDS__QUAD;
 
 typedef struct GDS_QUAD_t ISC_QUAD;
 
+#define	isc_quad_high	gds_quad_high
+#define	isc_quad_low	gds_quad_low
 
 typedef struct
 {
