@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.21 2004-03-29 03:49:17 skidder Exp $
+dnl $Id: configure.in,v 1.141.2.22 2004-06-23 06:33:11 kkuznetsov Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -106,7 +106,7 @@ case "$target" in
     ;;
 
   i386-pc-solaris*)
-    MAKEFILE_PREFIX=solx86
+    MAKEFILE_PREFIX=solx86gcc
     PLATFORM=solx86
     AC_DEFINE(solx86)
     LOCK_MANAGER_FLG=N
