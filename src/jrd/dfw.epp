@@ -2458,11 +2458,12 @@ static bool delete_procedure(	TDBB	tdbb,
 			return false;
 		}
 
-		wait = (transaction->tra_flags & TRA_nowait) ? FALSE : TRUE;
-		LCK_convert_non_blocking(	tdbb,
-									procedure->prc_existence_lock,
-									LCK_SR,
-									wait);
+		if (procedure->prc_existence_lock)
+		{
+			wait = (transaction->tra_flags & TRA_nowait) ? FALSE : TRUE;
+			LCK_convert_non_blocking(tdbb, procedure->prc_existence_lock,
+									 LCK_SR, wait);
+		}
 		return false;
 
 	case 1:
@@ -2476,16 +2477,17 @@ static bool delete_procedure(	TDBB	tdbb,
 			return false;
 		}
 
-		wait = (transaction->tra_flags & TRA_nowait) ? FALSE : TRUE;
-		if (!LCK_convert_non_blocking(	tdbb,
-										procedure->prc_existence_lock,
-										LCK_EX,
-										wait))
+		if (procedure->prc_existence_lock)
 		{
-			ERR_post(gds_no_meta_update,
-					 gds_arg_gds, gds_obj_in_use,
-					 gds_arg_string, ERR_cstring(work->dfw_name),
-					 0);
+			wait = (transaction->tra_flags & TRA_nowait) ? FALSE : TRUE;
+			if (!LCK_convert_non_blocking(tdbb, procedure->prc_existence_lock,
+										  LCK_EX, wait))
+			{
+				ERR_post(gds_no_meta_update,
+						 gds_arg_gds, gds_obj_in_use,
+						 gds_arg_string, ERR_cstring(work->dfw_name),
+						 0);
+			}
 		}
 
 		/* If we are in a multi-client server, someone else may have marked
@@ -2511,7 +2513,9 @@ static bool delete_procedure(	TDBB	tdbb,
 			gds__log("Deleting unfreed procedure %s",work->dfw_name);
 			MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure);
 
-			LCK_release(tdbb, procedure->prc_existence_lock);
+			if (procedure->prc_existence_lock) {
+				LCK_release(tdbb, procedure->prc_existence_lock);
+			}
 			(*tdbb->tdbb_database->dbb_procedures)[procedure->prc_id] =
 				(BLK) NULL_PTR;
 			return false;
@@ -2538,7 +2542,9 @@ static bool delete_procedure(	TDBB	tdbb,
 
 		MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure);
 
-		LCK_release(tdbb, procedure->prc_existence_lock);
+		if (procedure->prc_existence_lock) {
+			LCK_release(tdbb, procedure->prc_existence_lock);
+		}
 		break;
 	}
 
@@ -2579,10 +2585,8 @@ static bool delete_relation(TDBB tdbb, SSHORT phase, DFW work, JRD_TRA transacti
 		if (relation->rel_existence_lock)
 		{
 			wait = (transaction->tra_flags & TRA_nowait) ? FALSE : TRUE;
-			LCK_convert_non_blocking(tdbb,
-									relation->rel_existence_lock,
-									LCK_SR,
-									wait);
+			LCK_convert_non_blocking(tdbb, relation->rel_existence_lock,
+									 LCK_SR, wait);
 		}
 
 		relation->rel_flags &= ~REL_deleting;
@@ -2647,10 +2651,8 @@ static bool delete_relation(TDBB tdbb, SSHORT phase, DFW work, JRD_TRA transacti
 			MET_clear_cache(tdbb, NULL);
 		if (relation->rel_use_count ||
 			(relation->rel_existence_lock &&
-			 !LCK_convert_non_blocking(	tdbb,
-										relation->rel_existence_lock,
-										LCK_EX,
-										wait)))
+			 !LCK_convert_non_blocking(tdbb, relation->rel_existence_lock,
+									   LCK_EX, wait)))
 		{
 			if (adjusted) {
 				++relation->rel_use_count;
@@ -3788,9 +3790,12 @@ static bool modify_procedure(	TDBB	tdbb,
 			return false;
 		}
 
-		wait = (transaction->tra_flags & TRA_nowait) ? FALSE : TRUE;
-		LCK_convert_non_blocking(tdbb, procedure->prc_existence_lock, LCK_SR,
-								 wait);
+		if (procedure->prc_existence_lock)
+		{
+			wait = (transaction->tra_flags & TRA_nowait) ? FALSE : TRUE;
+			LCK_convert_non_blocking(tdbb, procedure->prc_existence_lock,
+									 LCK_SR, wait);
+		}
 		return false;
 	}
 	case 1:
@@ -3804,17 +3809,21 @@ static bool modify_procedure(	TDBB	tdbb,
 		if (!procedure) {
 			return false;
 		}
-		wait = (transaction->tra_flags & TRA_nowait) ? FALSE : TRUE;
 
-		/* Let relation be deleted if only this transaction is using it */
-
-		if (!LCK_convert_non_blocking(tdbb, procedure->prc_existence_lock,
-									  LCK_EX, wait))
+		if (procedure->prc_existence_lock)
 		{
-			ERR_post(gds_no_meta_update,
-					 gds_arg_gds, gds_obj_in_use,
-					 gds_arg_string, ERR_cstring(work->dfw_name),
-					 0);
+			wait = (transaction->tra_flags & TRA_nowait) ? FALSE : TRUE;
+
+			/* Let relation be deleted if only this transaction is using it */
+
+			if (!LCK_convert_non_blocking(tdbb, procedure->prc_existence_lock,
+										  LCK_EX, wait))
+			{
+				ERR_post(gds_no_meta_update,
+						 gds_arg_gds, gds_obj_in_use,
+						 gds_arg_string, ERR_cstring(work->dfw_name),
+						0);
+			}
 		}
 
 		/* If we are in a multi-client server, someone else may have marked
@@ -3858,7 +3867,9 @@ static bool modify_procedure(	TDBB	tdbb,
 						 0);
 				/* Msg357: too many versions */
 			}
-			LCK_release(tdbb, procedure->prc_existence_lock);
+			if (procedure->prc_existence_lock) {
+				LCK_release(tdbb, procedure->prc_existence_lock);
+			}
 			(*tdbb->tdbb_database->dbb_procedures)
 				[procedure->prc_id] = (BLK) NULL_PTR;
 
@@ -3903,8 +3914,9 @@ static bool modify_procedure(	TDBB	tdbb,
 		 */
 		procedure->prc_flags = (PRC_obsolete | PRC_being_altered);
 
-		if (procedure->prc_existence_lock)
+		if (procedure->prc_existence_lock) {
 			LCK_release(tdbb, procedure->prc_existence_lock);
+		}
 
 		/* remove procedure from cache */
 
