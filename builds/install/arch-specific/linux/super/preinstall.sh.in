@@ -21,7 +21,7 @@ AskQuestion() {
 
 stopServerIfRunning() {
 
-    checkString=`ps -efww| egrep "(ibserver|ibguard)" |grep -v grep`
+    checkString=`ps -efww| egrep "(fbserver|fbguard|ibserver|ibguard)" |grep -v grep`
 
     if [ ! -z "$checkString" ] 
       then
@@ -41,7 +41,7 @@ checkIfServerRunning() {
 
     stopServerIfRunning
 
-    checkString=`ps -efww| egrep "(ibserver|ibguard)" |grep -v grep`
+    checkString=`ps -efww| egrep "(fbserver|fbguard|ibserver|ibguard)" |grep -v grep`
 
     if [ ! -z "$checkString" ] 
       then
@@ -52,11 +52,11 @@ checkIfServerRunning() {
 
 
 
-    checkString=`ps -efww| egrep "(gds_inet_server|gds_pipe)" |grep -v grep`
+    checkString=`ps -efww| egrep "(fb_inet_server|gds_inet_server)" |grep -v grep`
 
     if [ ! -z "$checkString" ] 
       then
-        echo "An instance of the Firebird/InterBase server seems to be running." 
+        echo "An instance of the Firebird/InterBase Classic server seems to be running." 
         echo "Please quit all interbase applications and then proceed." 
         exit 1 
     fi
@@ -123,7 +123,7 @@ archivePriorInstallSystemFiles() {
     cd /
 
 
-    DestFile="opt/interbase"
+    DestFile="usr/local/firebird"
     if [ -e "$DestFile"  ]
       then
         echo ""
@@ -148,7 +148,7 @@ archivePriorInstallSystemFiles() {
     fi
 
 
-    for i in gds.h ibase.h iberror.h ib_util.h
+    for i in ibase.h ib_util.h
       do
         DestFile=usr/include/$i
         if [ -e $DestFile ]
@@ -157,7 +157,7 @@ archivePriorInstallSystemFiles() {
         fi
       done
 
-    for i in gds_pyxis.a gds.a libgds.so.0 libgds.so ib_util.so
+    for i in libib_util.so libfbclient.so.1.5.0 libfbclient.so.1 libfbclient.so
       do
         DestFile=usr/lib/$i
         if [ -e $DestFile ]
@@ -212,7 +212,7 @@ checkForRPMInstall() {
 
 #== Main Pre =================================================================
 
-    IBRootDir=/opt/interbase
+    IBRootDir=/usr/local/firebird
     IBBin=$IBRootDir/bin
     ArchiveDateTag=`date +"%Y%m%d_%H%M"`
     ArchiveMainFile="${IBRootDir}_${ArchiveDateTag}.tar.gz"
