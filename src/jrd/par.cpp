@@ -192,7 +192,7 @@ jrd_nod* PAR_blr(thread_db*	tdbb,
 		// AB: csb_n_stream replaced by view_csb->csb_rpt.getCount(), because there could
 		// be more then just csb_n_stream-numbers that hold data. 
 		// Certainly csb_stream (see par_context where the context is retrieved)
-		const Csb::rpt_itr const end = view_csb->csb_rpt.end();
+		const Csb::rpt_itr end = view_csb->csb_rpt.end();
 		for (stream = 0; ptr != end; ++ptr, ++stream) {
 			t2 = CMP_csb_element(csb, stream);
 			t2->csb_relation = ptr->csb_relation;
