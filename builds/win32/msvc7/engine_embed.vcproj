@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding = "Windows-1252"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.00"
+	Version="7.0"
 	Name="engine_embed"
 	SccProjectName=""
 	SccLocalPath="">
@@ -60,6 +60,12 @@
 				Culture="1049"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
@@ -106,15 +112,20 @@
 				Culture="1049"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 	</Configurations>
+	<References>
+	</References>
 	<Files>
 		<Filter
 			Name="JRD files"
 			Filter="">
-			<File
-				RelativePath="..\..\..\src\jrd\ExecuteStatement.cpp">
-			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\ail.cpp">
 			</File>
@@ -129,6 +140,12 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\blob_filter.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\btn.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\btn.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\btr.cpp">
@@ -201,6 +218,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\exe.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\ExecuteStatement.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\ext.cpp">
@@ -420,9 +440,6 @@
 			Name="Header files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\src\jrd\ExecuteStatement.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\acl.h">
 			</File>
 			<File
@@ -592,6 +609,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\exe_proto.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\ExecuteStatement.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\ext.h">
