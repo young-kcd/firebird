@@ -616,8 +616,12 @@ DSQL_NOD PASS1_node(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 					  gds_arg_gds, gds_dsql_command_err, 0);
 		node = MAKE_node(input->nod_type, e_par_count);
 		node->nod_count = 0;
-		node->nod_arg[e_par_parameter] =
-			(DSQL_NOD) MAKE_parameter(request->req_send, TRUE, TRUE);
+		node->nod_arg[e_par_parameter] = 
+			(DSQL_NOD) MAKE_parameter(request->req_send, 
+									  TRUE, TRUE,
+									  /* Pass 0 here to restore older parameter 
+										ordering behavior */
+									  (USHORT)input->nod_arg[0]);
 		return node;
 
 	case nod_udf:
@@ -2021,7 +2025,7 @@ static DSQL_NOD explode_outputs( DSQL_REQ request, DSQL_PRC procedure)
 		DEV_BLKCHK(*ptr, dsql_type_nod);
 		*ptr = p_node = MAKE_node(nod_parameter, e_par_count);
 		p_node->nod_count = 0;
-		parameter = MAKE_parameter(request->req_receive, TRUE, TRUE);
+		parameter = MAKE_parameter(request->req_receive, TRUE, TRUE, 0);
 		p_node->nod_arg[e_par_parameter] = (DSQL_NOD) parameter;
 		MAKE_desc_from_field(&parameter->par_desc, field);
 		parameter->par_name = parameter->par_alias = field->fld_name;
@@ -2696,7 +2700,7 @@ static void pass1_blob( DSQL_REQ request, DSQL_NOD input)
 /* Create a parameter for the blob segment */
 
 	blob->blb_segment = parameter =
-		MAKE_parameter(blob->blb_segment_msg, TRUE, TRUE);
+		MAKE_parameter(blob->blb_segment_msg, TRUE, TRUE, 0);
 	parameter->par_desc.dsc_dtype = dtype_text;
 	parameter->par_desc.dsc_ttype = ttype_binary;
 	parameter->par_desc.dsc_length =
@@ -2717,7 +2721,7 @@ static void pass1_blob( DSQL_REQ request, DSQL_NOD input)
 													nod_get_segment) ? blob->
 												   blb_open_in_msg : blob->
 												   blb_open_out_msg, TRUE,
-												   TRUE);
+												   TRUE, 0);
 	parameter->par_desc = field->nod_desc;
 	parameter->par_desc.dsc_dtype = dtype_quad;
 	parameter->par_desc.dsc_scale = 0;
@@ -2956,7 +2960,7 @@ static DSQL_NOD pass1_cursor( DSQL_REQ request, DSQL_NOD cursor, DSQL_NOD relati
 	node->nod_arg[1] = temp = MAKE_node(nod_parameter, e_par_count);
 	temp->nod_count = 0;
 	parameter = request->req_dbkey =
-		MAKE_parameter(request->req_send, FALSE, FALSE);
+		MAKE_parameter(request->req_send, FALSE, FALSE, 0);
 	temp->nod_arg[e_par_parameter] = (DSQL_NOD) parameter;
 	parameter->par_desc = source->par_desc;
 
@@ -2968,7 +2972,7 @@ static DSQL_NOD pass1_cursor( DSQL_REQ request, DSQL_NOD cursor, DSQL_NOD relati
 		node->nod_arg[1] = temp = MAKE_node(nod_parameter, e_par_count);
 		temp->nod_count = 0;
 		parameter = request->req_rec_version =
-			MAKE_parameter(request->req_send, FALSE, FALSE);
+			MAKE_parameter(request->req_send, FALSE, FALSE, 0);
 		temp->nod_arg[e_par_parameter] = (DSQL_NOD) parameter;
 		parameter->par_desc = rv_source->par_desc;
 

@@ -1371,7 +1371,7 @@ DSQL_NOD MAKE_node(NOD_TYPE type, int count)
 }
 
 
-PAR MAKE_parameter(DSQL_MSG message, USHORT sqlda_flag, USHORT null_flag)
+PAR MAKE_parameter(DSQL_MSG message, USHORT sqlda_flag, USHORT null_flag, USHORT sqlda_index)
 {
 /**************************************
  *
@@ -1388,6 +1388,14 @@ PAR MAKE_parameter(DSQL_MSG message, USHORT sqlda_flag, USHORT null_flag)
 	TSQL tdsql;
 
 	DEV_BLKCHK(message, dsql_type_msg);
+	
+	if (sqlda_flag && sqlda_index && (sqlda_index < message->msg_index)) {
+		// This parameter possibly already here. Look for it
+		for (PAR temp = message->msg_parameters; temp; temp = temp->par_next) {
+			if (temp->par_index == sqlda_index)
+				return temp;
+		}
+	}
 
 	tdsql = GET_THREAD_DATA;
 
@@ -1404,14 +1412,19 @@ PAR MAKE_parameter(DSQL_MSG message, USHORT sqlda_flag, USHORT null_flag)
 	parameter->par_owner_name = NULL;
 
 /* If the parameter is used declared, set SQLDA index */
-
-	if (sqlda_flag)
-		parameter->par_index = ++message->msg_index;
-
+	if (sqlda_flag) {
+		if (sqlda_index) {
+			parameter->par_index = sqlda_index;
+			if (message->msg_index < sqlda_index) message->msg_index = sqlda_index;
+		} else {
+			parameter->par_index = ++message->msg_index;
+		}
+	}
+		
 /* If a null handing has been requested, set up a null flag */
 
 	if (null_flag) {
-		parameter->par_null = null = MAKE_parameter(message, FALSE, FALSE);
+		parameter->par_null = null = MAKE_parameter(message, FALSE, FALSE, 0);
 		null->par_desc.dsc_dtype = dtype_short;
 		null->par_desc.dsc_scale = 0;
 		null->par_desc.dsc_length = sizeof(SSHORT);

@@ -29,7 +29,7 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 /*
-$Id: gen.cpp,v 1.17 2002-11-19 12:35:28 dimitr Exp $
+$Id: gen.cpp,v 1.18 2002-11-24 15:22:00 skidder Exp $
 */
 
 #include "firebird.h"
@@ -2161,7 +2161,7 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 	list = rse->nod_arg[e_rse_items];
 	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++) {
 		item = *ptr;
-		parameter = MAKE_parameter(request->req_receive, TRUE, TRUE);
+		parameter = MAKE_parameter(request->req_receive, TRUE, TRUE, 0);
 		parameter->par_node = item;
 		MAKE_desc(&parameter->par_desc, item);
 		if (item->nod_type == nod_field) {
@@ -2281,7 +2281,7 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 /* Set up parameter to handle EOF */
 
 	request->req_eof = parameter =
-		MAKE_parameter(request->req_receive, FALSE, FALSE);
+		MAKE_parameter(request->req_receive, FALSE, FALSE, 0);
 	parameter->par_desc.dsc_dtype = dtype_short;
 	parameter->par_desc.dsc_scale = 0;
 	parameter->par_desc.dsc_length = sizeof(SSHORT);
@@ -2298,7 +2298,7 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 				if (relation = context->ctx_relation) {
 					/* Set up dbkey */
 					parameter =
-						MAKE_parameter(request->req_receive, FALSE, FALSE);
+						MAKE_parameter(request->req_receive, FALSE, FALSE, 0);
 					parameter->par_dbkey_ctx = context;
 					parameter->par_desc.dsc_dtype = dtype_text;
 					parameter->par_desc.dsc_ttype = ttype_binary;
@@ -2310,7 +2310,7 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 					if (!(request->req_dbb->dbb_flags & DBB_v3)) {
 						parameter =
 							MAKE_parameter(request->req_receive, FALSE,
-										   FALSE);
+										   FALSE, 0);
 						parameter->par_rec_version_ctx = context;
 						parameter->par_desc.dsc_dtype = dtype_text;
 						parameter->par_desc.dsc_ttype = ttype_binary;
@@ -2327,14 +2327,14 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 
 	if (request->req_type == REQ_SELECT &&
 		request->req_dbb->dbb_base_level >= 5) {
-		parameter = MAKE_parameter(request->req_async, FALSE, FALSE);
+		parameter = MAKE_parameter(request->req_async, FALSE, FALSE, 0);
 		parameter->par_desc.dsc_dtype = dtype_short;
 		parameter->par_desc.dsc_length = sizeof(USHORT);
 		parameter->par_desc.dsc_scale = 0;
 		parameter->par_desc.dsc_flags = 0;
 		parameter->par_desc.dsc_sub_type = 0;
 
-		parameter = MAKE_parameter(request->req_async, FALSE, FALSE);
+		parameter = MAKE_parameter(request->req_async, FALSE, FALSE, 0);
 		parameter->par_desc.dsc_dtype = dtype_long;
 		parameter->par_desc.dsc_length = sizeof(ULONG);
 		parameter->par_desc.dsc_scale = 0;

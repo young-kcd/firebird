@@ -3473,7 +3473,7 @@ u_constant	: u_numeric_constant
 		;
 
 parameter	: '?'
-			{ $$ = make_node (nod_parameter, 0, NULL); }
+			{ $$ = make_parameter (); }
 		;
 
 current_user	: USER
@@ -3828,6 +3828,7 @@ static FLD	make_field (DSQL_NOD);
 static FIL	make_file (void);
 static DSQL_NOD	make_list (DSQL_NOD);
 static DSQL_NOD	make_node (NOD_TYPE, int, ...);
+static DSQL_NOD	make_parameter (void);
 static DSQL_NOD	make_flag_node (NOD_TYPE, SSHORT, int, ...);
 static void	prepare_console_debug (int, int  *);
 static BOOLEAN	short_int (DSQL_NOD, SLONG *, SSHORT);
@@ -3842,6 +3843,7 @@ static TEXT	*last_token_bk, *line_start_bk;
 static SSHORT	lines, att_charset;
 static SSHORT	lines_bk;
 static BOOLEAN	first_time;
+static USHORT   param_number;
 
 
 void LEX_dsql_init (void)
@@ -3903,6 +3905,7 @@ void LEX_string (
     line_start_bk = line_start;
     lines_bk = lines;
     first_time = TRUE;
+	param_number = 1;
 #ifdef DEV_BUILD
     if (DSQL_debug > 10)
         printf("%.*s\n", (int)length, string);
@@ -4082,6 +4085,35 @@ ptr = node->nod_arg + node->nod_count;
 
 while (stack)
     *--ptr = (DSQL_NOD) LLS_POP (&stack);
+
+return node;
+}
+
+
+static DSQL_NOD make_parameter (void)
+{
+/**************************************
+ *
+ *	m a k e _ p a r a m e t e r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Make parameter node
+ *	Any change should also be made to function below
+ *
+ **************************************/
+DSQL_NOD	node, *p;
+TSQL    tdsql;
+
+tdsql = GET_THREAD_DATA;
+
+node = FB_NEW_RPT(*tdsql->tsql_default, 1) dsql_nod;
+node->nod_type = nod_parameter;
+node->nod_line = (USHORT) lines_bk;
+node->nod_column = (USHORT) (last_token_bk - line_start_bk + 1);
+node->nod_count = 1;
+node->nod_arg[0] = (DSQL_NOD)param_number++;
 
 return node;
 }
