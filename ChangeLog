@@ -1,3 +1,73 @@
+2003-11-23 21:17  skidder
+
+	* firebird2/src/: common/classes/array.h, jrd/cmp.cpp, jrd/evl.cpp,
+	jrd/exe.cpp, jrd/exe.h, jrd/req.h:
+	
+	Fix invariant tracking in recursive procedures and when invariants
+	depend on variables. This solves issues like SF#627057.
+
+2003-11-23 19:18  dimitr
+
+	* firebird2/src/jrd/: isc_file.cpp, isc_file.cpp:
+	
+	Applied patch by Jim Beesley.
+
+2003-11-23 18:54  dimitr
+
+	* firebird2/src/jrd/: cmp.cpp, cmp.cpp:
+	
+	Minor protection against improper index locks reference.
+
+2003-11-23 18:51  dimitr
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Minor protection against improper index locks reference.
+
+2003-11-23 18:47  dimitr
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Minor protection against improper index locks reference.
+
+2003-11-23 18:39  dimitr
+
+	* firebird2/src/jrd/: exe.cpp, exe.cpp:
+	
+	Fixed IF handling in the looper.
+
+2003-11-23 18:12  skidder
+
+	* firebird2/src/: intl/ld_proto.h, jrd/intl.cpp:
+	
+	Backport some intl fixes from CVS HEAD (changes affect only
+	INTL_BUILTIN builds)
+
+2003-11-23 17:44  skidder
+
+	* firebird2/src/intl/: ld.cpp, ld.h, ld2.cpp, ld_proto.h:
+	
+	Change DLL_EXPORT to FB_DLL_EXPORT in intl module to match engine
+	(needed for INTL_BUILTIN on Linux)
+
+2003-11-23 17:37  skidder
+
+	* firebird2/configure.in:
+	
+	Correction.
+
+2003-11-23 17:27  skidder
+
+	* firebird2/configure.in:
+	
+	Enable support for raw devices by default
+
+2003-11-23 10:39  dimitr
+
+	* firebird2/src/remote/allr.cpp:
+	
+	Fixed initialization error.
+
 2003-11-22 23:40  arnobrinkman
 
 	* firebird2/src/dsql/: make.cpp, make.cpp:
