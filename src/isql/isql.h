@@ -362,15 +362,5 @@ const char BLANK		= '\040';
 const char DBL_QUOTE	= '\042';
 const char SINGLE_QUOTE	= '\'';
 
-
-
-//const SCHAR wal_items[] = {
-//	isc_info_num_wal_buffers,
-//	isc_info_wal_buffer_size,
-//	isc_info_wal_ckpt_length,
-//	isc_info_wal_grpc_wait_usecs,
-//	isc_info_end
-//};
-
-#endif // ISQL_ISQL_H 
+#endif // ISQL_ISQL_H
 
