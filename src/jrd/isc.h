@@ -111,7 +111,7 @@ typedef struct sh_mem* SH_MEM;
 // to avoid circular dependencies in h-files.
 // Alex Peshkov. Tue 08 Jun 2004 02:22:08 PM MSD.
 
-#if (defined(SOLARIS) && defined(SOLARIS_MT))
+#if  defined(SOLARIS_MT)
 #include <thread.h>
 #define COND_STRUCT cond_t
 #define MUTEX_STRUCT mutex_t

@@ -23,6 +23,10 @@
  */
 
 #include "firebird.h"
+#ifdef SOLARIS_MT
+#include <thread.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -489,17 +493,37 @@ static bool start_server( ibmgr_data_t* data)
 	else
 		argv[1] = option_f;
 	argv[2] = NULL;
-
+	argv[3] = NULL;
 
 #ifdef DEBUG
 	printf("Argument list:\n\"%s\"\n\"%s\"\n", argv[0], argv[1]);
 #endif
 
 	pid_t pid;
+#if (defined SOLARIS_MT)
+/* Accoding Sun's documentation vfork()  is not MT-safe
+   while linking with libthreads, fork1 - fork one thread
+*/
+	if (!(pid = fork1())) {
+		if (execv(path, argv)== -1){
+			ib_fprintf(OUTFILE, "Could not create child process %s with args %s\n",
+				   path, argv);
+
+		    }
+		
+		
+		
+		
+		_exit(FINI_ERROR);
+	}
+
+#else
+
 	if (!(pid = vfork())) {
 		execv(path, argv);
 		_exit(FINI_ERROR);
 	}
+#endif
 
 /* Wait a little bit to let the server start
 */
@@ -524,12 +548,28 @@ static bool start_server( ibmgr_data_t* data)
 		   0 if an exit status of a child process is unavailable (that
 		   means in our case that the server is running).
 		 */
+#if (defined SOLARIS_MT)
+/* Trying to understand why it dead */
+		if ((ret_value == pid)&&( WIFEXITED(exit_status)
+					||WCOREDUMP(exit_status)
+					||WIFSIGNALED(exit_status))) {
+			ib_printf("Guardian process %ld terminated with code %ld\n",
+			 pid,WEXITSTATUS(exit_status)); 
+			break;
+		}
+
+#else		 
+
+
 		if (ret_value == pid) {
 #ifdef DEBUG
 			printf("Guardian process %ld terminated\n", pid);
 #endif
 			break;
 		}
+
+#endif /*SOLARIS_MT*/
+
 #ifdef DEBUG
 		else if (ret_value == -1) {
 			printf("waitpid returned error, errno = %ld\n", errno);

@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  * 
  *
- *  $Id: rwlock.h,v 1.23 2004-11-07 10:52:32 robocop Exp $
+ *  $Id: rwlock.h,v 1.24 2004-12-24 09:35:39 kkuznetsov Exp $
  *
  */
 
@@ -155,7 +155,7 @@ public:
 
 #ifdef MULTI_THREAD
 
-#ifdef SOLARIS
+#ifdef SOLARIS_MT
 
 #include <thread.h>
 #include <synch.h>
@@ -306,7 +306,7 @@ public:
 
 } // namespace Firebird
 
-#endif /*solaris*/
+#endif /*solaris threading (not posix)*/
 
 #else
 

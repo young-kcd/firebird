@@ -26,7 +26,7 @@
  *
  */
 /*
-$Id: thd.h,v 1.39 2004-11-24 09:22:07 robocop Exp $
+$Id: thd.h,v 1.40 2004-12-24 09:35:42 kkuznetsov Exp $
 */
 
 #ifndef JRD_THD_H
@@ -108,7 +108,7 @@ const int SWEEP_QUANTUM		= 10;	/* Make sweeps less disruptive */
 #define THREAD_ENTRY_PARAM void*
 #define THREAD_ENTRY_RETURN void*
 #define THREAD_ENTRY_CALL
-#elif defined(SOLARIS)
+#elif defined(SOLARIS_MT)
 #define THREAD_ENTRY_PARAM void*
 #define THREAD_ENTRY_RETURN void *
 #define THREAD_ENTRY_CALL

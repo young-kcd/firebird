@@ -49,7 +49,7 @@
 #endif
 
 
-#ifdef SOLARIS
+#ifdef SOLARIS_MT
 #include <thread.h>
 #include <signal.h>
 #endif

@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: semaphore.h,v 1.16 2004-11-24 09:05:12 robocop Exp $
+ *  $Id: semaphore.h,v 1.17 2004-12-24 09:35:39 kkuznetsov Exp $
  *
  */
 
@@ -74,7 +74,7 @@ public:
 
 #ifdef MULTI_THREAD
 
-#ifdef SOLARIS
+#ifdef SOLARIS_MT
 /* This is dummy, untested implementation of FB::Semaphore
  on Solaris using conditional variable protected by mutex.
  I'll review it later

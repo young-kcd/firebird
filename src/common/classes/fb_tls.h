@@ -93,7 +93,7 @@ private:
 //# define TLS_SET(NAME, VALUE) NAME = (VALUE)
 #else
 
-#if not (defined SOLARIS)
+#if not (defined SOLARIS_MT)
 
 #include <pthread.h>
 
@@ -123,7 +123,7 @@ public:
 private:
 	pthread_key_t key;	
 };
-#else //SOLARIS
+#else //SOLARIS_MT
 #include <thread.h>
 #include <string.h>
 
@@ -167,7 +167,7 @@ private:
 };
 
 
-#endif //SOLARIS
+#endif //SOLARIS_MT
 
 } // namespace Firebird
 

@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: locks.h,v 1.18 2004-11-07 10:52:32 robocop Exp $
+ *  $Id: locks.h,v 1.19 2004-12-24 09:35:39 kkuznetsov Exp $
  *
  */
 
@@ -39,7 +39,7 @@
 // in thd.h ? This is Windows platform maintainers choice
 #include <windows.h>
 #else
-#ifndef SOLARIS
+#ifndef SOLARIS_MT
 #include <pthread.h>
 #else
 #include <thread.h>
@@ -82,7 +82,7 @@ public:
 
 /* Process-local spinlock. Used to manage memory heaps in threaded environment. */
 // Pthreads version of the class
-#if !defined(SOLARIS) && !defined(DARWIN) && !defined(FREEBSD) && !defined(NETBSD)
+#if !defined(SOLARIS_MT) && !defined(DARWIN) && !defined(FREEBSD) && !defined(NETBSD)
 class Mutex {
 private:
 	pthread_spinlock_t spinlock;
@@ -105,7 +105,7 @@ public:
 	}
 };
 #else
-#ifdef SOLARIS
+#ifdef SOLARIS_MT
 // Who knows why Solaris 2.6 have not THIS funny spins?
 //The next code is not comlpeted but let me compile //Konstantin
 class Mutex {
