@@ -63,6 +63,7 @@ extern struct btn *BTR_previous_node(struct btn *, struct btx **);
 extern void BTR_remove(struct tdbb *, struct win *, struct iib *);
 extern void BTR_reserve_slot(TDBB, struct jrd_rel *, struct jrd_tra *, struct idx *);
 extern float BTR_selectivity(TDBB, struct jrd_rel *, USHORT);
+extern void BTR_complement_key(struct key *);
 
 #ifdef __cplusplus
 } /* extern "C" */

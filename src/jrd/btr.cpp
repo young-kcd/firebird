@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.33.2.2 2004-03-29 03:50:09 skidder Exp $
+$Id: btr.cpp,v 1.33.2.3 2005-01-26 09:50:36 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -156,7 +156,6 @@ typedef enum contents {
 } CONTENTS;
 
 static SLONG add_node(TDBB, WIN *, IIB *, KEY *, SLONG *, SLONG *);
-static void complement_key(KEY *);
 static void compress(TDBB, DSC *, KEY *, USHORT, USHORT, USHORT, USHORT);
 static USHORT compress_root(TDBB, IRT);
 static USHORT compute_prefix(KEY *, UCHAR *, USHORT);
@@ -1053,7 +1052,7 @@ IDX_E BTR_key(TDBB tdbb, JRD_REL relation, REC record, IDX * idx, KEY * key, idx
 		result = idx_e_keytoobig;
 
 	if (idx->idx_flags & idx_descending)
-		complement_key(key);
+		BTR_complement_key(key);
 
 	if (null_state) {
 		*null_state = !missing_unique_segments ? idx_nulls_none :
@@ -1395,7 +1394,7 @@ void BTR_make_key(TDBB tdbb,
 	}
 
 	if (idx->idx_flags & idx_descending)
-		complement_key(key);
+		BTR_complement_key(key);
 }
 
 
@@ -1955,7 +1954,7 @@ static SLONG add_node(TDBB tdbb,
 }
 
 
-static void complement_key(KEY * key)
+void BTR_complement_key(KEY * key)
 {
 /**************************************
  *
