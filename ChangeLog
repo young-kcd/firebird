@@ -1,3 +1,9 @@
+2003-10-22 09:20  dimitr
+
+	* firebird2/src/dsql/gen.cpp:
+	
+	Backported Claudio's fix.
+
 2003-10-21 00:41  brodsom
 
 	* firebird2/src/dudley/: ddl.cpp, exe.epp, expand.cpp, extract.epp,
