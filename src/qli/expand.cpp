@@ -552,7 +552,6 @@ static QLI_NOD expand_assignment( SYN input, LLS right, LLS left)
  **************************************/
 	QLI_NOD node, from, to;
 	QLI_FLD field;
-	TEXT s[80];
 
 	node = MAKE_NODE(input->syn_type, e_asn_count);
 	node->nod_arg[e_asn_to] = to =
@@ -594,7 +593,6 @@ static QLI_NOD expand_any( SYN input, LLS stack)
  *	for existence.
  *
  **************************************/
-	SYN sub;
 	QLI_NOD rse, node, negation, boolean;
 
 	node = MAKE_NODE(input->syn_type, e_any_count);
@@ -817,7 +815,7 @@ static QLI_NOD expand_erase( SYN input, LLS right, LLS left)
 	QLI_NOD node, loop;
 	LLS contexts;
 	QLI_CTX context;
-	USHORT count, i;
+	USHORT count;
 
 	loop = NULL;
 	count = 0;
@@ -873,12 +871,10 @@ static QLI_NOD expand_expression( SYN input, LLS stack)
  *
  **************************************/
 	QLI_NOD *ptr, node;
-	STR string;
 	CON constant;
 	QLI_CTX context;
 	NAM name;
 	SYN value;
-	SCHAR s[80];
 	SSHORT i;
 
 	switch (input->syn_type) {
@@ -1398,7 +1394,6 @@ static QLI_NOD expand_group_by( SYN input, LLS stack, QLI_CTX context)
  **************************************/
 	SYN *ptr, *end;
 	QLI_NOD node, *ptr2;
-	USHORT i;
 
 	node = MAKE_NODE(input->syn_type, input->syn_count);
 	ptr2 = node->nod_arg;
@@ -1426,7 +1421,6 @@ static QLI_NOD expand_menu( SYN input, LLS right, LLS left)
  *
  **************************************/
 	QLI_NOD node;
-	SYN sub, *ptr;
 
 	node = MAKE_NODE(input->syn_type, e_men_count);
 	node->nod_arg[e_men_string] =
@@ -1452,9 +1446,8 @@ static QLI_NOD expand_modify( SYN input, LLS right, LLS left)
  *	Expand a statement.
  *
  **************************************/
-	QLI_NOD node, loop, assignment, prompt, list, *ptr;
+	QLI_NOD node, loop, list, *ptr;
 	SYN value, syn_list, *syn_ptr;
-	QLI_FLD field;
 	LLS contexts;
 	QLI_CTX new_context, context;
 	USHORT count, i;
@@ -1588,14 +1581,13 @@ static QLI_NOD expand_print( SYN input, LLS right, LLS left)
 	SYN syn_list, syn_item, syn_rse, *sub, *end;
 	ITM item;
 	QLI_NOD node, loop, list, *ptr, rse;
-	QLI_NOD group_list, reduced;
+	QLI_NOD reduced;
 	LLS items, new_right;
 	QLI_CTX context;
 	QLI_REL relation;
 	QLI_FLD field;
 	PRT print;
 	USHORT i, count;
-	UCHAR valid;
 
 	syn_rse = input->syn_arg[s_prt_rse];
 
@@ -1737,7 +1729,6 @@ static QLI_NOD expand_print_form( SYN input, LLS right, LLS left)
 	SYN syn_rse;
 	QLI_NOD node, loop, rse;
 	LLS new_right;
-	QLI_REL relation;
 
 	loop = rse = NULL;
 	new_right = right;
@@ -1788,7 +1779,6 @@ static ITM expand_print_item( SYN syn_item, LLS right)
 	ITM item;
 	SYN syn_expr;
 	QLI_NOD node;
-	QLI_FLD field;
 
 	item = (ITM) ALLOCD(type_itm);
 
@@ -1874,7 +1864,6 @@ static QLI_NOD expand_report( SYN input, LLS right, LLS left)
  *
  **************************************/
 	RPT report;
-	BRK control;
 	SYN sub;
 	QLI_NOD node, loop;
 	PRT print;
@@ -2032,7 +2021,7 @@ static QLI_NOD expand_rse( SYN input, LLS * stack)
  **************************************/
 	QLI_NOD node, boolean, eql_node, *ptr2, *end, parent_rse, temp;
 	QLI_CTX context, parent_context;
-	SYN *ptr, over, field, rel_node, list, value, stream;
+	SYN *ptr, over, field, rel_node, list, value;
 	SYM symbol;
 	QLI_REL relation;
 	LLS old_stack, new_stack, short_stack;
@@ -2381,14 +2370,13 @@ static QLI_NOD expand_store( SYN input, LLS right, LLS left)
  *	something neat if nothing looks obvious.
  *
  **************************************/
-	QLI_NOD node, assignment, prompt, loop;
+	QLI_NOD node, assignment, loop;
 	SYN sub, rel_node;
 	QLI_REL relation;
 	QLI_FLD field;
 	SYM symbol;
 	QLI_CTX context, secondary;
 	LLS stack;
-	SSHORT field_count, value_count;
 
 	loop = NULL;
 
@@ -2489,7 +2477,7 @@ static void expand_values( SYN input, LLS right)
  *	a nod_prompt, the second a nod_star.
  *
  **************************************/
-	SSHORT field_count, value_count, group;
+	SSHORT field_count, value_count;
 	SYN value, *ptr, list, assignment;
 	QLI_CTX context;
 	LLS stack, fields, values, temp;
@@ -2605,7 +2593,6 @@ static int generate_fields( QLI_CTX context, LLS values, SYN rse)
 	int count;
 	QLI_REL relation;
 	QLI_FLD field;
-	QLI_NOD temp;
 	SYN value, group_list;
 
 	if (context->ctx_type == CTX_AGGREGATE)

@@ -137,12 +137,9 @@ TEXT *FMT_format(LLS stack)
 	ITM item, item2;
 	STR header;
 	QLI_NOD value;
-	QLI_FLD field;
-	PIC picture;
 	SSHORT segment;
-	USHORT i, j, l, offset, max_offset, number_segments, n, lengths[10], *ptr,
+	USHORT j, l, offset, max_offset, number_segments, n, lengths[10], *ptr,
 		flag;
-	DSC *desc;
 	LLS temp, temp2;
 	TEXT *line, *p, *q, *segments[10], *bottom;
 	ULONG size;
@@ -389,7 +386,6 @@ QLI_NOD FMT_list(QLI_NOD list)
 	ITM new_item, *item, *end, *new_ptr;
 	SYM name;
 	QLI_FLD field;
-	CON constant;
 	QLI_NOD value, new_nod;
 	USHORT column, expression;
 	DSC *desc;
@@ -500,12 +496,11 @@ void FMT_print( QLI_NOD list, PRT print)
  *
  **************************************/
 	ITM item;
-	USHORT l, do_line;
+	USHORT l;
 	DSC *desc;
-	TEXT *p, *q, *buffer, *pp;
+	TEXT *p, *q, *buffer;
 	QLI_NOD *ptr, *end;
 	RPT report;
-	BRK control;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 #ifdef JPN_EUC
 	USHORT n_half_kanas = 0;	/* number of half kanas in the current line */
@@ -726,9 +721,8 @@ void FMT_report( RPT report)
  *	Format a report.
  *
  **************************************/
-	BRK control;
 	QLI_NOD list;
-	USHORT lengths[16], n, i, max_segment, column, width, max_offset;
+	USHORT lengths[16], n, i, column, width;
 	TEXT *segments[16], *p, *q, *end;
 	STR string;
 	VEC columns_vec;
@@ -929,15 +923,12 @@ static TEXT *format_report( VEC columns_vec, USHORT width, USHORT * max_width)
  *	headers.  Return a pointer to the header string.
  *
  **************************************/
-	ITM item, item2;
+	ITM item;
 	STR header;
 	QLI_NOD node;
-	QLI_FLD field;
-	PIC picture;
 	SSHORT segment;
-	USHORT i, j, l, offset, max_offset, number_segments, n, lengths[10],
+	USHORT j, l, offset, max_offset, number_segments, n, lengths[10],
 		*ptr, flag, column_width, max_print_width, right_adjust, right_offset;
-	DSC *desc;
 	LLS *col, *col_end, temp;
 	TEXT *line, *p, *q, *segments[10], *bottom;
 #ifdef JPN_EUC
@@ -1238,8 +1229,6 @@ static int match_expr( QLI_NOD node1, QLI_NOD node2)
  *
  **************************************/
 	QLI_NOD *ptr1, *ptr2, *end;
-	USHORT l;
-	TEXT *p1, *p2;
 
 /* If either is missing, they can't match. */
 
@@ -1421,7 +1410,7 @@ static int print_line( ITM item, TEXT ** ptr)
  *
  **************************************/
 	USHORT l, length;
-	TEXT *p, *q;
+	TEXT *p;
 	STATUS status_vector[ISC_STATUS_LENGTH], status;
 #ifdef JPN_EUC
 	TEXT *p2;

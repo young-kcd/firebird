@@ -125,7 +125,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 #endif
 	SLONG debug_value;
 	jmp_buf env;
-	int status;
 
 #ifdef __OVERLAY__
 	_OvrInitEms(0, 0, 0);
@@ -344,7 +343,6 @@ static void enable_signals(void)
  *	Enable signals.
  *
  **************************************/
-	SLONG mask;
 	void (*prev_handler) ();
 
 	signal(SIGQUIT, (void(*)(int)) signal_quit);
@@ -371,7 +369,7 @@ static USHORT process_statement( USHORT flush_flag)
 	BLK expanded_tree, execution_tree;
 	DBB dbb;
 	PERF statistics;
-	TEXT buffer[512], report[256], *p;
+	TEXT buffer[512], report[256];
 	jmp_buf env;
 
 /* Clear database active flags in preparation for a new statement */
@@ -628,7 +626,7 @@ static BOOLEAN yes_no( USHORT number, TEXT * arg1)
  *	acceptable answer (e.g. y, Yes, N, etc.)
  *
  **************************************/
-	TEXT buffer[256], prompt[256], *p, *q, c;
+	TEXT buffer[256], prompt[256], *p, *q;
 	ANS response;
 
 	ERRQ_msg_format(number, sizeof(prompt), prompt, arg1, NULL, NULL, NULL,
