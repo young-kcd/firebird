@@ -735,6 +735,7 @@ static DWORD ShortToLongPathName(
     WIN32_FIND_DATA fd;
 
     // Main parse block - step through path.
+	HANDLE hf = INVALID_HANDLE_VALUE;
     while (npos != right)
     {
         left = right; // catch up
@@ -748,7 +749,7 @@ static DWORD ShortToLongPathName(
             path[right] = 0;
 
         // See what FindFirstFile makes of the path so far.
-        HANDLE hf = FindFirstFile(path.c_str(), &fd);
+        hf = FindFirstFile(path.c_str(), &fd);
         if (INVALID_HANDLE_VALUE == hf)
 			break;
         FindClose(hf);
@@ -773,6 +774,10 @@ static DWORD ShortToLongPathName(
                 right = npos;
         }
     }
+
+	// We failed to find this file.
+    if (INVALID_HANDLE_VALUE == hf)
+        return 0;
 
     // If buffer is too small then return the required size.
     if (cchBuffer <= path.length())
