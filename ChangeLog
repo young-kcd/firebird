@@ -1,3 +1,61 @@
+2004-11-22 16:37  paul_reeves
+
+	*
+	
+	Fix some minor presentation issues in Win32 install kit.
+	firebird2/src/install/arch-specific/win32/fr/installation_lisezmoi.
+	txt (1.1.2.4):
+
+2004-11-22 16:12  paul_reeves
+
+	* firebird2/src/install/arch-specific/win32/:
+	BuildExecutableInstall.bat (1.10.2.19),
+	fr/installation_lisezmoi.txt (1.1.2.3), fr/lisezmoi.txt (1.1.2.3),
+	hu/custom_messages_hu.inc (1.1.2.6):
+	
+	Fix some minor presentation issues in Win32 install kit.
+
+2004-11-22 15:04  paul_reeves
+
+	* firebird2/src/:
+	install/arch-specific/win32/FirebirdInstall_15.iss (1.5.2.21),
+	jrd/isc_version.h (1.1.2.25):
+	
+	Sync build number
+
+2004-11-22 15:00  paul_reeves
+
+	*
+	
+	file telepitesi_segedlet.txt was initially added on branch
+	B1_5_Release.
+	firebird2/src/install/arch-specific/win32/hu/telepitesi_segedlet.tx
+	t (1.1):
+
+2004-11-22 15:00  paul_reeves
+
+	* firebird2/src/install/arch-specific/win32/hu/:
+	custom_messages_hu.inc (1.1.2.5), installation_readme_hu.txt
+	(1.1.2.2), olvass_el.txt (1.1.2.1), telepitesi_segedlet.txt
+	(1.1.2.1):
+	
+	Update Hungarian translations of Win32 install kit
+
+2004-11-22 15:00  paul_reeves
+
+	* firebird2/src/install/arch-specific/win32/hu/olvass_el.txt (1.1):
+	
+	file olvass_el.txt was initially added on branch B1_5_Release.
+
+2004-11-22 06:11  skidder
+
+	* firebird2/: builds/posix/firebird.vers (1.3.2.3), src/jrd/gds.cpp
+	(1.84.2.7), src/jrd/gds_proto.h (1.17.2.1):
+	
+	Konstantin's change made to B1_5_Release branch on Nov, 13 was
+	breaking DEV_BUILD on POSIX. Undo the change and backport the fix
+	from HEAD which is supposed to make Solaris happy
+
 2004-11-20 10:22  paul_reeves
 
 	* firebird2/src/jrd/isc_version.h (1.1.2.24):
