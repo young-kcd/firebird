@@ -28,14 +28,14 @@
 #define JRD_FLU_H
 
 /* RITTER - changed HP10 to HPUX in the line below */
-#ifdef HPUX
+#if defined(HPUX)
 #  include <dl.h>
 #  include <shl.h>
 typedef shl_t HMOD;
-#elif SOLARIS
+#elif defined(SOLARIS)
 #  include <dlfcn.h>
 typedef void *HMOD;
-#elif WIN_NT
+#elif defined(WIN_NT)
 #  include <windows.h>
 typedef HMODULE HMOD;
 #else
