@@ -1032,6 +1032,22 @@ void DYN_delete_procedure( Global* gbl, const UCHAR** ptr)
 	if (!DYN_REQUEST(drq_e_prc_prvs))
 		DYN_REQUEST(drq_e_prc_prvs) = request;
 
+	request = CMP_find_request(tdbb, drq_e_prc_prv, DYN_REQUESTS);
+	id = drq_e_prc_prv;
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+		PRIV IN RDB$USER_PRIVILEGES WITH PRIV.RDB$USER EQ name
+			AND PRIV.RDB$USER_TYPE = obj_procedure
+
+        if (!DYN_REQUEST(drq_e_prc_prv))
+            DYN_REQUEST(drq_e_prc_prv) = request;
+
+		ERASE PRIV;
+	END_FOR;
+
+	if (!DYN_REQUEST(drq_e_prc_prv))
+		DYN_REQUEST(drq_e_prc_prv) = request;
+
 	}	// try
 	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
@@ -1235,17 +1251,36 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const TEXT* relation)
 
 /* Triggers must be deleted after check constraints   */
 
+	SqlIdentifier trigger_name;
+
 	request = CMP_find_request(tdbb, drq_e_trigger2, DYN_REQUESTS);
 	id = drq_e_trigger2;
 
-	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$TRIGGERS WITH X.RDB$RELATION_NAME EQ relation_name
 
         if (!DYN_REQUEST(drq_e_trigger2))
             DYN_REQUEST(drq_e_trigger2) = request;
 
+		gds__vtov(X.RDB$TRIGGER_NAME, trigger_name, sizeof(trigger_name));
 		ERASE X;
+
+		request = CMP_find_request(tdbb, drq_e_trg_prv, DYN_REQUESTS);
+		id = drq_e_trg_prv;
+
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			PRIV IN RDB$USER_PRIVILEGES WITH PRIV.RDB$USER EQ trigger_name
+				AND PRIV.RDB$USER_TYPE = obj_trigger
+
+			if (!DYN_REQUEST(drq_e_trg_prv))
+				DYN_REQUEST(drq_e_trg_prv) = request;
+
+			ERASE PRIV;
+		END_FOR;
+
+		if (!DYN_REQUEST(drq_e_trg_prv))
+			DYN_REQUEST(drq_e_trg_prv) = request;
+
 	END_FOR;
 
 	if (!DYN_REQUEST(drq_e_trigger2))
@@ -1265,8 +1300,22 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const TEXT* relation)
 		ERASE PRIV;
 	END_FOR;
 
-	if (!DYN_REQUEST(drq_e_usr_prvs)) {
-		DYN_REQUEST(drq_e_usr_prvs) = request;
+	request = CMP_find_request(tdbb, drq_e_view_prv, DYN_REQUESTS);
+	id = drq_e_view_prv;
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+		PRIV IN RDB$USER_PRIVILEGES WITH
+			PRIV.RDB$USER EQ relation_name AND
+            PRIV.RDB$USER_TYPE = obj_view
+
+        if (!DYN_REQUEST(drq_e_view_prv))
+			DYN_REQUEST(drq_e_view_prv) = request;
+
+		ERASE PRIV;
+	END_FOR;
+
+	if (!DYN_REQUEST(drq_e_view_prv)) {
+		DYN_REQUEST(drq_e_view_prv) = request;
 	}
 	}	// try
 	catch (const std::exception& ex) {
@@ -1602,6 +1651,22 @@ void DYN_delete_trigger( Global* gbl, const UCHAR** ptr)
 		goto dyn_punt_67;
 	}
 
+	request = CMP_find_request(tdbb, drq_e_trg_prv, DYN_REQUESTS);
+	id = drq_e_trg_prv;
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+		PRIV IN RDB$USER_PRIVILEGES WITH PRIV.RDB$USER EQ t
+			AND PRIV.RDB$USER_TYPE = obj_trigger
+
+        if (!DYN_REQUEST(drq_e_trg_prv))
+            DYN_REQUEST(drq_e_trg_prv) = request;
+
+		ERASE PRIV;
+	END_FOR;
+
+	if (!DYN_REQUEST(drq_e_trg_prv))
+		DYN_REQUEST(drq_e_trg_prv) = request;
+
 /* clear the update flags on the fields if this is the last remaining
    trigger that changes a view */
 
@@ -1657,6 +1722,11 @@ void DYN_delete_trigger( Global* gbl, const UCHAR** ptr)
 		{
 			DYN_error_punt(true, 66, NULL, NULL, NULL, NULL, NULL);
 			/* msg 66: "ERASE RDB$TRIGGERS failed" */
+		}
+		else if (id == drq_e_trg_prv)
+		{
+			DYN_error_punt(true, 62, NULL, NULL, NULL, NULL, NULL);
+			/* msg 62: "ERASE RDB$USER_PRIVILEGES failed" */
 		}
 		else
 		{
