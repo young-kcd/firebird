@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: license.h,v 1.12 2002-02-20 19:21:21 dimitr Exp $
+ * $Id: license.h,v 1.13 2002-02-25 10:45:23 dimitr Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -60,7 +60,6 @@
 #ifdef HP10
 #define FB_PLATFORM	"HU"
 #endif /* HP10 */
-#endif
 #endif
 
 #ifdef sun
@@ -138,14 +137,19 @@
 #endif /* WIN95 */
 #else
 #define FB_PLATFORM	"NI"
-#endif /* SUPERCLIENT || SUPERSERVER */
-#elif alpha
+#endif
+#else
+#ifdef alpha
 #define FB_PLATFORM	"NA"
-#elif mips
+#else
+#ifdef mips
 #define FB_PLATFORM	"NM"
 #else /* PowerPC */
 #define FB_PLATFORM	"NP"
-#endif /* WIN_NT */
+#endif
+#endif
+#endif
+#endif
 
 #ifdef ALPHA_NT
 #define	FB_PLATFORM	"AN"		/* Alpha NT */
