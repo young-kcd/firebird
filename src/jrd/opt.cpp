@@ -695,7 +695,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 			outer_rivers = true;
 			// AB: We could already have multiple rivers at this
 			// point so try to do some sort/merging now.
-			while (rivers_stack.getCount() > 1
+			while (rivers_stack.hasMore(1)
 			   && gen_sort_merge(tdbb, opt, rivers_stack));
 			// AB: Mark the previous used streams (sub-RecordSelExpr's) again
 			// as active, because an SORT/MERGE could reset the flags
@@ -710,7 +710,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 				 rse->rse_plan);
 
 		// If there are multiple rivers, try some sort/merging
-		while (rivers_stack.getCount() > 1
+		while (rivers_stack.hasMore(1)
 			   && gen_sort_merge(tdbb, opt, rivers_stack));
 
 		rsb = make_cross(tdbb, opt, rivers_stack);
@@ -2139,8 +2139,7 @@ static USHORT distribute_equalities(NodeStack& org_stack, CompilerScratch* csb, 
 /* Start by making a pass distributing field equalities */
 
 	for (eq_class = classes.begin(); eq_class != classes.end(); ++eq_class) {
-		int n = eq_class->getCount();
-		if (n >= 3) {
+		if (eq_class->hasMore(3)) {
 			for (NodeStack::iterator outer(*eq_class); outer.notEmpty(); ++outer) {
 				for (NodeStack::iterator inner(outer); (++inner).notEmpty(); ) {
 					jrd_nod* boolean =

@@ -94,6 +94,20 @@ namespace Firebird {
 				rc->join(*next);
 				return rc;
 			}
+
+			bool hasMore(int value) const
+			{
+				fb_assert(value >= 0);
+				
+				if (value <= getCount())
+					return true;
+
+				for(const Entry * stk = this; stk && value > 0; stk = stk->next)
+					value -= stk->getCount();
+
+				return (value <= 0);
+			}
+
 		};
 
 		Entry* stk;
@@ -163,6 +177,24 @@ namespace Firebird {
 					}
 				}
 				return *this;
+			}
+
+			bool hasMore(int value) const
+			{
+				fb_assert(value >= 0);
+
+				if (elem)
+				{
+					if (value < elem)
+						return true;
+				
+					value -= elem-1;
+				}
+
+				if(stk && stk->next)
+					return stk->next->hasMore(value);
+				else
+					return false;
 			}
 
 			bool notEmpty() const
@@ -315,6 +347,12 @@ namespace Firebird {
 				rc += entry->getCount();
 			}
 			return rc;
+		}
+
+		bool hasMore(int value) const
+		{
+			fb_assert(value >= 0);
+			return (stk && stk->hasMore(value));
 		}
 
 		// returns topmost element on the stack

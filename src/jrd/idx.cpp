@@ -646,7 +646,7 @@ void IDX_garbage_collect(thread_db*			tdbb,
 
 				BTR_remove(tdbb, &window, &insertion);
 				root = (index_root_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_root);
-				if (stack1.notEmpty())
+				if (stack1.hasMore(1))
 				{
 					BTR_description(rpb->rpb_relation, root, &idx, i);
 				}
