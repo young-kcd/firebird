@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.13 2003-02-10 11:00:18 eku Exp $
+#   $Id: make.defaults,v 1.14 2003-02-10 11:54:30 dimitr Exp $
 # 
 
 
@@ -167,7 +167,7 @@ GDS_INSTALL     = $(BIN)/gds_install$(EXEC_EXT)
 GDS_INSTALL     = $(BIN)/gds_install_service$(EXEC_EXT)
 FBGUARD         = $(BIN)/fbguard$(EXEC_EXT)
 FBMGR_BIN       = $(BIN)/fbmgr.bin$(EXEC_EXT)
-ISC_GDB         = $(FIREBIRD)/security.gdb
+ISC_GDB         = $(FIREBIRD)/security.fdb
 ISC_GBAK        = $(BIN)/security.gbak
 
 # From qli
