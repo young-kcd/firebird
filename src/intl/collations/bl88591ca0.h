@@ -552,7 +552,7 @@ static const BYTE ToLowerConversionTbl[LOWERCASE_LEN] = {
 	255							/*   255 ->   255 */
 };
 
-static const struct ExpandChar ExpansionTbl[NUM_EXPAND_CHARS + 1] = {
+static const ExpandChar ExpansionTbl[NUM_EXPAND_CHARS + 1] = {
 	{230, 97, 101},				/* æ -> ae */
 	{198, 65, 69},				/* Æ -> AE */
 	{223, 115, 115},			/* ß -> ss */
@@ -561,11 +561,11 @@ static const struct ExpandChar ExpansionTbl[NUM_EXPAND_CHARS + 1] = {
 	{0, 0, 0}					/* END OF TABLE */
 };
 
-static const struct CompressPair CompressTbl[NUM_COMPRESS_CHARS + 1] = {
+static const CompressPair CompressTbl[NUM_COMPRESS_CHARS + 1] = {
 	{{0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}}	/*END OF TABLE */
 };
 
-static const struct SortOrderTblEntry NoCaseOrderTbl[NOCASESORT_LEN] = {
+static const SortOrderTblEntry NoCaseOrderTbl[NOCASESORT_LEN] = {
 	{FIRST_IGNORE + 0, NULL_SECONDARY, NULL_TERTIARY, 1, 1},	/*   0   */
 	{FIRST_IGNORE + 1, NULL_SECONDARY, NULL_TERTIARY, 1, 1},	/*   1   */
 	{FIRST_IGNORE + 2, NULL_SECONDARY, NULL_TERTIARY, 1, 1},	/*   2   */

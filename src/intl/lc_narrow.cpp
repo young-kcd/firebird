@@ -124,7 +124,7 @@ USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHOR
 
 	BYTE *outbuff;
 	BYTE *inbuff;
-	struct SortOrderTblEntry *coll;
+	SortOrderTblEntry* coll;
 
 	assert(pOutChar != NULL);
 	assert(pInChar != NULL);
@@ -161,7 +161,7 @@ USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHOR
 		assert(lspecial < sizeof(special));
 
 		coll =
-			&((struct SortOrderTblEntry *) obj->
+			&((SortOrderTblEntry*) obj->
 			  texttype_collation_table)[*pInChar];
 		if (!(coll->IsExpand || coll->IsCompress)) {
 			if (coll->Primary != NULL_WEIGHT)
@@ -180,15 +180,14 @@ USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHOR
 			};
 		}
 		else if (coll->IsExpand) {
-			struct ExpandChar *exp;
-			exp = &((struct ExpandChar *) obj->texttype_expand_table)[0];
+			ExpandChar* exp = &((ExpandChar*) obj->texttype_expand_table)[0];
 			while (exp->Ch && exp->Ch != *pInChar)
 				exp++;
 			assert(exp->Ch == *pInChar);
 			for (j = 0; j < 2; j++) {
 				if (j)
 					coll =
-						&((struct SortOrderTblEntry *) obj->
+						&((SortOrderTblEntry*) obj->
 						  texttype_collation_table)[exp->ExpCh2];
 				if (coll->Primary != NULL_WEIGHT)
 					outbuff[lprimary++] = coll->Primary;
@@ -200,10 +199,10 @@ USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHOR
 		}
 		else {					/* (col->IsCompress) */
 
-			struct CompressPair *cmp;
+			CompressPair* cmp;
 			if ((USHORT) (i + 1) < iInLen) {
 				cmp =
-					&((struct CompressPair *) obj->
+					&((CompressPair*) obj->
 					  texttype_compress_table)[0];
 				while (cmp->CharPair[0]) {
 					if ((cmp->CharPair[0] == *pInChar) &&
@@ -294,7 +293,7 @@ USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHOR
 
 typedef struct coltab_status {
 	USHORT stat_flags;
-	struct SortOrderTblEntry *stat_waiting;
+	SortOrderTblEntry* stat_waiting;
 } *COLSTAT;
 
 
@@ -302,8 +301,8 @@ typedef struct coltab_status {
 
 static SSHORT special_scan(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2)
 {
-	struct SortOrderTblEntry *col1;
-	struct SortOrderTblEntry *col2;
+	SortOrderTblEntry* col1;
+	SortOrderTblEntry* col2;
 	USHORT index1, index2;
 
 	index1 = 0;
@@ -313,7 +312,7 @@ static SSHORT special_scan(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s
 		/* Scan to find ignore char from l1 */
 		while (l1) {
 			col1 =
-				&((struct SortOrderTblEntry *) obj->
+				&((SortOrderTblEntry*) obj->
 				  texttype_collation_table)[*s1];
 			if (col1->IsExpand && col1->IsCompress)
 				break;
@@ -325,7 +324,7 @@ static SSHORT special_scan(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s
 		/* Scan to find ignore char from l2 */
 		while (l2) {
 			col2 =
-				&((struct SortOrderTblEntry *) obj->
+				&((SortOrderTblEntry*) obj->
 				  texttype_collation_table)[*s2];
 			if (col2->IsExpand && col2->IsCompress)
 				break;
@@ -355,9 +354,9 @@ static SSHORT special_scan(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s
 }
 
 
-struct SortOrderTblEntry *get_coltab_entry(TEXTTYPE obj, UCHAR **p, USHORT *l, COLSTAT stat)
+SortOrderTblEntry* get_coltab_entry(TEXTTYPE obj, UCHAR **p, USHORT *l, COLSTAT stat)
 {
-	struct SortOrderTblEntry *col;
+	SortOrderTblEntry* col;
 
 	if (stat->stat_flags & HAVE_WAITING) {
 		(*l)--;
@@ -370,7 +369,7 @@ struct SortOrderTblEntry *get_coltab_entry(TEXTTYPE obj, UCHAR **p, USHORT *l, C
 	stat->stat_waiting = NULL;
 	while (*l) {
 		col =
-			&((struct SortOrderTblEntry *) obj->
+			&((SortOrderTblEntry*) obj->
 			  texttype_collation_table)[**p];
 		if (!(col->IsExpand || col->IsCompress)) {
 			/* Have col */
@@ -387,8 +386,7 @@ struct SortOrderTblEntry *get_coltab_entry(TEXTTYPE obj, UCHAR **p, USHORT *l, C
 			continue;
 		}
 		else if (col->IsExpand) {
-			struct ExpandChar *exp;
-			exp = &((struct ExpandChar *) obj->texttype_expand_table)[0];
+			ExpandChar* exp = &((ExpandChar*) obj->texttype_expand_table)[0];
 			while (exp->Ch && exp->Ch != **p)
 				exp++;
 			assert(exp->Ch == **p);
@@ -396,17 +394,17 @@ struct SortOrderTblEntry *get_coltab_entry(TEXTTYPE obj, UCHAR **p, USHORT *l, C
 			/* Have waiting */
 
 			stat->stat_waiting =
-				&((struct SortOrderTblEntry *) obj->
+				&((SortOrderTblEntry*) obj->
 				  texttype_collation_table)[exp->ExpCh2];
 			stat->stat_flags |= HAVE_WAITING;
 			return col;
 		}
 		else {					/* (col->IsCompress) */
 
-			struct CompressPair *cmp;
+			CompressPair* cmp;
 			if (*l > 1) {
 				cmp =
-					&((struct CompressPair *) obj->
+					&((CompressPair*) obj->
 					  texttype_compress_table)[0];
 				while (cmp->CharPair[0]) {
 					if ((cmp->CharPair[0] == **p) &&
@@ -435,8 +433,9 @@ struct SortOrderTblEntry *get_coltab_entry(TEXTTYPE obj, UCHAR **p, USHORT *l, C
 
 SSHORT LC_NARROW_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2)
 {
-	struct SortOrderTblEntry *col1, *col2;
-	struct coltab_status stat1, stat2;
+	SortOrderTblEntry* col1;
+	SortOrderTblEntry* col2;
+	coltab_status stat1, stat2;
 	SSHORT save_secondary = 0;
 	SSHORT save_tertiary = 0;
 	SSHORT save_quandary = 0;

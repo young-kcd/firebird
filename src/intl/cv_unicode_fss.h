@@ -31,13 +31,13 @@ USHORT CS_UTFFSS_unicode_to_fss(CSCONVERT obj, MBCHAR *fss_str, USHORT fss_len, 
 
 SSHORT CS_UTFFSS_fss_mbtowc(TEXTTYPE *obj, UCS2_CHAR *wc, NCHAR *p, USHORT n);
 
-typedef struct {
+struct Tab {
 	int cmask;
 	int cval;
 	int shift;
 	long lmask;
 	long lval;
-} Tab;
+};
 
 static const Tab tab[] = {
 	{ 0x80, 0x00, 0 * 6, 0x7F, 0 },	/* 1 byte sequence */
