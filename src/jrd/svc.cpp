@@ -2590,7 +2590,7 @@ static void service_put(SVC service, SCHAR * buffer, USHORT length)
 
 	is_service_running(service);
 
-		while (length) {
+	while (length) {
 		if (!WriteFile((HANDLE) service->svc_output, buffer, (SLONG) length,
 					   (ULONG*) &n, NULL))
 		{
@@ -3140,9 +3140,9 @@ static void service_get(
 	SSHORT iter = 0;
 	int errno_save;
 
-	is_service_running(service)
+	is_service_running(service);
 
-		errno = 0;
+	errno = 0;
 	service->svc_flags &= ~SVC_timeout;
 	buf = buffer;
 
@@ -3203,9 +3203,9 @@ static void service_put(SVC service, SCHAR * buffer, USHORT length)
  *
  **************************************/
 
-	is_service_running(service)
+	is_service_running(service);
 
-		while (length--) {
+	while (length--) {
 		if (ib_putc(*buffer, (IB_FILE *) service->svc_output) != EOF)
 			buffer++;
 		else if (SYSCALL_INTERRUPTED(errno)) {
