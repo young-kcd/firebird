@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.14 2003-11-11 08:05:46 bellardo Exp $
+dnl $Id: configure.in,v 1.141.2.15 2003-11-13 01:12:50 bellardo Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -145,6 +145,22 @@ AC_LIBTOOL_DLOPEN
 AC_LIBTOOL_WIN32_DLL
 AC_PROG_LIBTOOL
 AC_PROG_YACC
+
+if test "$PLATFORM" = "DARWIN"; then
+	COMP_VERS=`$CC --version | head -1 | sed -e 's/[[^0123456789]]*\([[0123456789]][[0123456789]]*\(\.[[0123456789]][[0123456789]]*\)*\).*/\1/g'`
+	case "$COMP_VERS" in
+  		2.*)
+    		AC_MSG_ERROR(Incorrect version of GCC.  FB requires 3.1 or later. Please upgrade.)
+			;;
+		3.1*)
+			DARWIN_VERSPEC_CFLAGS=-no-cpp-precomp
+			;;
+		*)
+			DARWIN_VERSPEC_CFLAGS=
+			;;
+	esac
+	AC_SUBST(DARWIN_VERSPEC_CFLAGS)
+fi
 
 
 dnl Some controllable options
@@ -732,6 +748,9 @@ case "$PLATFORM" in
                      gen/install/postremove:src/install/arch-specific/sinixz/postremove.in
       ],[chmod a+x gen/install/pre* gen/install/post* 2>/dev/null])
     ;;
+
+  DARWIN)
+  	;;
 esac
 
 if test -f ${MAKE_SRC_DIR}/postfix.${MAKEFILE_PREFIX};then
