@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.rules,v 1.4 2001-08-04 22:48:18 bellardo Exp $
+#   $Id: make.rules,v 1.5 2001-08-06 15:08:18 skywalker Exp $
 # 
 
 #____________________________________________________________________________
@@ -79,7 +79,7 @@ export FIREBIRD
 # I would like to remove this one.
 SOURCE=$(ROOT)/src
 
-CFLAGS:= $(CFLAGS) -g -pipe -MMD -I$(ROOT)/src -I$(ROOT)/src/include
+CFLAGS:= $(CFLAGS) -g -pipe -MMD -p -fPIC -I$(ROOT)/src -I$(ROOT)/src/include
 
 CXXFLAGS:= $(CXXFLAGS) $(CFLAGS) 
 
@@ -148,7 +148,7 @@ STATICLINK_LIBS = $(LINK_LIBS)
 
 
 ifdef IsProdTypeBuild
-    CXXFLAGS:=            -O3 -m486 -DPROD_BUILD $(CXXFLAGS)
+    CXXFLAGS:=            -O3 -m486 -DPROD_BUILD  $(CXXFLAGS)
 
 else
     CXXFLAGS:=		-ggdb -DDEV_BUILD $(CXXFLAGS)
@@ -193,12 +193,12 @@ GPRE_FLAGS=	-r -m -z -n
 .cpp.o:
 	$(CXX) -c $(CXXFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $<
 
-.c.lo:
-	$(CC) -c $(PIC_FLAGS) $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) -o $*.lo $<
-
-.cpp.lo:
-	$(CXX) -c $(PIC_FLAGS) $(CXXFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) -o $*.lo $<
-
+#.c.lo:
+#	$(CC) -c $(PIC_FLAGS) $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) -o $*.lo $<
+#
+#.cpp.lo:
+#	$(CXX) -c $(PIC_FLAGS) $(CXXFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) -o $*.lo $<
+#
 
 
 $(OBJ)/%.o:: $(SRC)/%.c 

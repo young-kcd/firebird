@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.utilities,v 1.4 2001-08-01 08:11:52 skywalker Exp $
+#   $Id: Makefile.in.utilities,v 1.5 2001-08-06 15:08:18 skywalker Exp $
 # 
 
 ROOT=../..
@@ -233,12 +233,15 @@ $(GDS_RELAY):	$(RELAY_Objects)	 $(LIBGDS_LA)
 	$(CHMOD_7) $@
 
 
-# Eventually this one wants to be a $(GEN_SRC)/dba.cpp 
+# Eventually these two want to be a $(GEN_SRC)/dba.cpp 
+
+#$(SRC)/security.cpp : isc4.gdb 
 
 $(SRC)/dba.cpp:	yachts.lnk $(SRC)/dba.epp
 
 yachts.lnk: 
 	ln -fs $(SRC_ROOT)/refDatabases/empty.gdb yachts.lnk
+
 
 
 # I was hoping one of these was going to allow me to compile security.epp

@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.jrd,v 1.4 2001-08-04 22:48:18 bellardo Exp $
+#   $Id: Makefile.in.jrd,v 1.5 2001-08-06 15:08:18 skywalker Exp $
 # 
 
 ROOT=../..
@@ -99,7 +99,7 @@ jrdlib_main : $(LIBGDS_LA)
 
 
 $(LIBGDS_SO) : $(GDSLIB_Objects)
-	$(LIB_LINK) $(LIB_LINK_OPTIONS)  -o $@ $(GDSLIB_SharedObjects)
+	$(LIB_LINK) $(LIB_LINK_OPTIONS)  -o $@ $^
 
 $(LIBGDS_A) : $(GDSLIB_Objects)
 	$(STATICLIB_LINK) $(LIB_LINK_OPTIONS)  $@ $^
